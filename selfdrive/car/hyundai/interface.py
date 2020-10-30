@@ -22,9 +22,9 @@ class CarInterface(CarInterfaceBase):
     # Most Hyundai car ports are community features for now
     ret.communityFeature = candidate not in [CAR.SONATA, CAR.PALISADE]
 
-    ret.steerActuatorDelay = 0.1  # Default delay
-    ret.steerRateCost = 0.5
-    ret.steerLimitTimer = 0.4
+    ret.steerActuatorDelay = 0.3  # Default delay
+    ret.steerRateCost = 0.45
+    ret.steerLimitTimer = 0.8
     tire_stiffness_factor = 1.
 
     if candidate == CAR.SANTA_FE:
@@ -144,6 +144,22 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 0.385
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
+    elif candidate == CAR.KONA_EV_2020:
+      ret.lateralTuning.pid.kf = 0.00006
+      ret.mass = 1685. + STD_CARGO_KG
+      ret.wheelbase = 2.7
+      ret.steerRatio = 13.73  # Spec
+      tire_stiffness_factor = 0.385
+      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0., 10., 30.], [0., 10., 30.]]
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.01, 0.02, 0.03], [0.001, 0.0015, 0.002]]
+    elif candidate in CAR.IONIQ_EV_2020:
+      ret.lateralTuning.pid.kf = 0.00006
+      ret.mass = 1490. + STD_CARGO_KG   #weight per hyundai site https://www.hyundaiusa.com/ioniq-electric/specifications.aspx
+      ret.wheelbase = 2.7
+      ret.steerRatio = 13.73 * 1.15   #Spec
+      tire_stiffness_factor = 0.385
+      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0., 10., 30.], [0., 10., 30.]]
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.01, 0.02, 0.03], [0.001, 0.0015, 0.002]]
     elif candidate in [CAR.IONIQ, CAR.IONIQ_EV_LTD]:
       ret.lateralTuning.pid.kf = 0.00006
       ret.mass = 1490. + STD_CARGO_KG   #weight per hyundai site https://www.hyundaiusa.com/ioniq-electric/specifications.aspx
@@ -171,8 +187,10 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]  
 
     # these cars require a special panda safety mode due to missing counters and checksums in the messages
-    if candidate in [CAR.HYUNDAI_GENESIS, CAR.IONIQ_EV_LTD, CAR.IONIQ, CAR.KONA_EV, CAR.KIA_SORENTO, CAR.SONATA_2019, 
-                     CAR.KIA_NIRO_EV, CAR.KIA_OPTIMA, CAR.VELOSTER, CAR.KIA_STINGER, CAR.GENESIS_G70]:
+
+    if candidate in [CAR.HYUNDAI_GENESIS, CAR.IONIQ_EV_2020, CAR.IONIQ_EV_LTD, CAR.IONIQ, CAR.KONA_EV, CAR.KONA_EV_2020, CAR.KIA_SORENTO, CAR.SONATA_2019, 
+                     CAR.KIA_OPTIMA, CAR.VELOSTER, CAR.KIA_STINGER, CAR.GENESIS_G70]:
+
       ret.safetyModel = car.CarParams.SafetyModel.hyundaiLegacy
 
     ret.centerToFront = ret.wheelbase * 0.4
