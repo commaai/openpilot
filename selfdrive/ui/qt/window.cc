@@ -115,7 +115,7 @@ void GLWindow::backlightUpdate(){
 
 #ifdef QCOM2
   if (!ui_state->started){
-    brightness = 70;
+    brightness = 150;
   }
 #endif
 

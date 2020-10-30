@@ -123,7 +123,6 @@ QWidget * device_panel() {
 
   QVBoxLayout *device_layout = new QVBoxLayout;
 
-
   Params params = Params();
   std::vector<std::pair<std::string, std::string>> labels = {
     {"Serial Number", "abcdefghijk"},
@@ -135,9 +134,37 @@ QWidget * device_panel() {
     device_layout->addWidget(new QLabel(text));
   }
 
+  std::map<std::string, const char *> power_btns = {
+    {"Power Off", "poweroff"},
+    {"Reboot", "reboot"},
+  };
+
+  for (auto b : power_btns) {
+    QPushButton *btn = new QPushButton(QString::fromStdString(b.first));
+    btn->setStyleSheet(R"(
+      QPushButton {
+        padding: 30px;
+      }
+    )");
+    device_layout->addWidget(btn);
+
+#ifdef __aarch64__
+    QObject::connect(btn, &QPushButton::released,
+                     [=]() {std::system(b.second);});
+#endif
+  }
+
   QWidget *widget = new QWidget;
   widget->setLayout(device_layout);
   return widget;
+}
+
+void handlePower() {
+  std::cout << "btn pressed" << std::endl;
+#ifdef __aarch64__
+
+
+#endif
 }
 
 QWidget * developer_panel() {
@@ -146,8 +173,11 @@ QWidget * developer_panel() {
   // TODO: enable SSH toggle and github keys
 
   Params params = Params();
+
+  std::string brand = params.read_db_bool("Passive") ? "dashcam" : "openpilot";
+
   std::vector<std::pair<std::string, std::string>> labels = {
-    {"Version", params.get("Version", false)},
+    {"Version", brand + " " + params.get("Version", false)},
     {"Git Branch", params.get("GitBranch", false)},
     {"Git Commit", params.get("GitCommit", false)},
     {"Panda Firmware", params.get("PandaFirmwareHex", false)},
@@ -164,7 +194,7 @@ QWidget * developer_panel() {
 }
 
 void SettingsWindow::setActivePanel() {
-  QPushButton* btn = qobject_cast<QPushButton*>(sender());
+  QPushButton *btn = qobject_cast<QPushButton*>(sender());
   panel_layout->setCurrentWidget(panels[btn->text()]);
 }
 
@@ -175,26 +205,38 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
   panel_layout = new QStackedLayout();
 
   // close button
-  QPushButton * close_button = new QPushButton("<- back");
+  QPushButton *close_button = new QPushButton("<- back");
   sidebar_layout->addWidget(close_button);
   QObject::connect(close_button, SIGNAL(released()), this, SIGNAL(closeSettings()));
 
   // setup panels
   panels = {
-    {"toggles", toggles_panel()},
     {"device", device_panel()},
+    {"toggles", toggles_panel()},
     {"developer", developer_panel()},
   };
 
   for (auto &panel : panels) {
-    QPushButton * btn = new QPushButton(panel.first);
+    QPushButton *btn = new QPushButton(panel.first);
+    btn->setStyleSheet(R"(
+      QPushButton {
+        padding-top: 35px;
+        padding-bottom: 35px;
+        font-size: 60px;
+        text-align: right;
+        border: none;
+        background: none;
+        font-weight: bold;
+      }
+    )");
+
     sidebar_layout->addWidget(btn);
     panel_layout->addWidget(panel.second);
     QObject::connect(btn, SIGNAL(released()), this, SLOT(setActivePanel()));
   }
 
   QHBoxLayout *settings_layout = new QHBoxLayout();
-  settings_layout->addSpacing(20);
+  settings_layout->addSpacing(45);
   settings_layout->addLayout(sidebar_layout);
   settings_layout->addSpacing(45);
   settings_layout->addLayout(panel_layout);
@@ -205,15 +247,6 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
     * {
       color: white;
       font-size: 50px;
-    }
-    QPushButton {
-      padding-top: 35px;
-      padding-bottom: 35px;
-      font-size: 60px;
-      text-align: right;
-      border: none;
-      background: none;
-      font-weight: bold;
     }
   )");
 }
