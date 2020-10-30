@@ -160,25 +160,31 @@ IGNORED_FINGERPRINTS = [CAR.VELOSTER, CAR.GENESIS_G70, CAR.KONA]
 FW_VERSIONS = {
   CAR.SONATA: {
     (Ecu.fwdRadar, 0x7d0, None): [
+      b'\xf1\x00DN8_ SCC FHCUP      1.00 1.01 99110-L1000         ',
       b'\xf1\x00DN8_ SCC FHCUP      1.00 1.00 99110-L0000         ',
       b'\xf1\x00DN8_ SCC F-CU-      1.00 1.00 99110-L0000         ',
     ],
     (Ecu.esp, 0x7d1, None): [
+      b'\xf1\x00DN ESC \x01 102\x19\x04\x13 58910-L1300\xf1\xa01.02',
       b'\xf1\x8758910-L0100\xf1\x00DN ESC \x06 104\x19\x08\x01 58910-L0100\xf1\xa01.04',
     ],
     (Ecu.engine, 0x7e0, None): [
+      b'HM6M2_0a0_BD0',
       b'\xf1\x87391162M003\xf1\xa0000F',
       b'\xf1\x87391162M003\xf1\xa00240',
     ],
     (Ecu.eps, 0x7d4, None): [
+      b'\xf1\x8756310-L1010\xf1\x00DN8 MDPS C 1.00 1.03 56310-L1010 4DNDC103\xf1\xa01.03',
       b'\xf1\x8756310L0010\x00\xf1\x00DN8 MDPS C 1.00 1.01 56310L0010\x00 4DNAC101\xf1\xa01.01',
       b'\xf1\x8756310-L0010\xf1\x00DN8 MDPS C 1.00 1.01 56310-L0010 4DNAC101\xf1\xa01.01',
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00DN8 MFC  AT KOR LHD 1.00 1.02 99211-L1000 190422',
       b'\xf1\x00DN8 MFC  AT USA LHD 1.00 1.00 99211-L0000 190716',
       b'\xf1\x00DN8 MFC  AT USA LHD 1.00 1.01 99211-L0000 191016',
     ],
     (Ecu.transmission, 0x7e1, None): [
+      b'\xf1\x00HT6TA260BLHT6TA800A1TDN8C20KS4\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'\xf1\x00bcsh8p54  U903\x00\x00\x00\x00\x00\x00SDN8T16NB0z{\xd4v',
     ],
   },
