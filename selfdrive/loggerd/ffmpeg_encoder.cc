@@ -18,7 +18,7 @@ extern "C" {
 
 #include "common/swaglog.h"
 #include "common/utilpp.h"
-#include "raw_logger.h"
+#include "ffmpeg_encoder.h"
 
 FFmpegEncoder::FFmpegEncoder(std::string filename, AVCodecID codec_id, int bitrate,
  int in_width, int in_height, int out_width, int out_height,  int fps)
@@ -137,7 +137,6 @@ int FFmpegEncoder::EncodeFrame(uint64_t cnt, const uint8_t *y_ptr, const uint8_t
   av_init_packet(&pkt);
   pkt.data = NULL;
   pkt.size = 0;
-
   
   bool ret = true;
   int got_output = 0;

@@ -47,7 +47,7 @@
 #ifndef DISABLE_ENCODER
 #include "encoder.h"
 #endif
-#include "raw_logger.h"
+#include "ffmpeg_encoder.h"
 
 #define MAIN_BITRATE 5000000
 #define QCAM_BITRATE 128000
