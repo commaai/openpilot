@@ -38,6 +38,18 @@ git pull
 git reset xx979xx/HKG_community --hard
 ```
 
+Debugging issues:
+------
+<b> To print debug info for Panda and Harness issue:</b>
+```
+python panda/tests/debug_console.py
+```
+<b> To print Opentpilot live data:</b>
+```
+python selfdirve/debug/dump.py <category>
+```
+  - replace `<category>` with any one of these: `health carState carControl controlsState carParams sendcan can`
+
 Changes:
 ------
 - <b>  UI Toggles for community features:</b> you do not have to modify the code to enable/disable community features anymore, find the new toggels in Developer Settings. Toggles take affect from next drive, if you are already driving, restart or disconnect your device will end the current drive.i.e.
