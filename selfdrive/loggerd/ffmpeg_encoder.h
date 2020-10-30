@@ -11,19 +11,19 @@ extern "C" {
 #include <libavutil/imgutils.h>
 }
 #include "camerad/cameras/camera_common.h"
+#include "frame_logger.h"
 
-class FFmpegEncoder{
+class FFmpegEncoder : public FrameLogger{
 public:
   FFmpegEncoder(std::string filename, AVCodecID codec_id, int bitrate, 
   int in_width, int in_height, int out_width, int out_height,  int fps);
   virtual ~FFmpegEncoder();
-  void Rotate(const std::string new_path);
-  int EncodeFrame(uint64_t cnt, const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr);
-  bool Open(const std::string path);
+  int ProcessFrame(uint64_t cnt, const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr);
+  void Open(const std::string &path);
   void Close();
 protected:
-  int in_width, in_height, out_width, out_height, fps, bitrate, count;
-  std::string filename, lock_path;
+  int in_width, in_height, out_width, out_height, fps, bitrate, counter;
+  std::string filename;
 
   AVCodec *codec = nullptr;
   AVCodecContext *codec_ctx = nullptr;

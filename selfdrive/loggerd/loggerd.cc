@@ -39,13 +39,10 @@
 #include "messaging.hpp"
 #include "services.h"
 
-#if !(defined(QCOM) || defined(QCOM2))
-// no encoder on PC
-#define PC_ENCODER
-#endif
-
-#ifndef PC_ENCODER
+#if defined(QCOM) || defined(QCOM2)
 #include "encoder.h"
+#else
+#define PC_ENCODER
 #endif
 #include "ffmpeg_encoder.h"
 
@@ -317,7 +314,7 @@ void encoder_thread(RotateState *rotate_state, bool raw_clips, int cam_idx) {
           }
 #endif
           if (raw_clips) {
-            rawlogger->Rotate(s.segment_path);
+            rawlogger->Rotate(s.segment_path, s.rotate_segment);
           }
           encoder_segment = s.rotate_segment;
           if (lh) {
@@ -346,9 +343,9 @@ void encoder_thread(RotateState *rotate_state, bool raw_clips, int cam_idx) {
             encoder_alt.rotating = false;
           }
 #else
-          encoder->Rotate(s.segment_path);
+          encoder->Rotate(s.segment_path, s.rotate_segment);
           if (encoder_alt) {
-            encoder_alt->Rotate(s.segment_path);
+            encoder_alt->Rotate(s.segment_path, s.rotate_segment);
           }
 #endif
           s.finish_close += 1;
@@ -382,10 +379,9 @@ void encoder_thread(RotateState *rotate_state, bool raw_clips, int cam_idx) {
                                &out_segment_alt, &extra);
         }
 #else
-        out_segment = encoder_segment;
-        int out_id = encoder->EncodeFrame(cnt, y, u, v);
+        int out_id = encoder->LogFrame(cnt, y, u, v, &out_segment);
         if (encoder_alt) {
-          encoder_alt->EncodeFrame(cnt, y, u, v);
+          encoder_alt->LogFrame(cnt, y, u, v, &out_segment);
         }
 #endif
 
@@ -417,10 +413,11 @@ void encoder_thread(RotateState *rotate_state, bool raw_clips, int cam_idx) {
         double ts = seconds_since_boot();
         if (ts > rawlogger_start_time) {
           // encode raw if in clip
-          int out_id = rawlogger->EncodeFrame(cnt, y, u, v);
+          int out_segment = -1;
+          int out_id = rawlogger->LogFrame(cnt, y, u, v, &out_segment);
 
           if (rawlogger_clip_cnt == 0) {
-            LOG("starting raw clip in seg %d", encoder_segment);
+            LOG("starting raw clip in seg %d", out_segment);
           }
 
           // publish encode index
@@ -429,7 +426,7 @@ void encoder_thread(RotateState *rotate_state, bool raw_clips, int cam_idx) {
           eidx.setFrameId(extra.frame_id);
           eidx.setType(cereal::EncodeIndex::Type::FULL_LOSSLESS_CLIP);
           eidx.setEncodeId(cnt);
-          eidx.setSegmentNum(encoder_segment);
+          eidx.setSegmentNum(out_segment);
           eidx.setSegmentId(out_id);
 
           auto bytes = msg.toBytes();
@@ -445,7 +442,7 @@ void encoder_thread(RotateState *rotate_state, bool raw_clips, int cam_idx) {
             rawlogger_clip_cnt = 0;
             rawlogger_start_time = ts+RAW_CLIP_FREQUENCY;
 
-            LOG("ending raw clip in seg %d, next in %.1f sec", encoder_segment, rawlogger_start_time-ts);
+            LOG("ending raw clip in seg %d, next in %.1f sec", out_segment, rawlogger_start_time-ts);
           }
         }
       }
@@ -675,7 +672,7 @@ int main(int argc, char** argv) {
   s.num_encoder = 0;
   pthread_mutex_init(&s.rotate_lock, NULL);
   // rear camera
-  std::thread encoder_thread_handle(encoder_thread, &s.rotate_state[LOG_CAMERA_ID_FCAMERA], false, LOG_CAMERA_ID_FCAMERA);
+  std::thread encoder_thread_handle(encoder_thread, &s.rotate_state[LOG_CAMERA_ID_FCAMERA], true, LOG_CAMERA_ID_FCAMERA);
   s.rotate_state[LOG_CAMERA_ID_FCAMERA].enabled = true;
   // front camera
   std::thread front_encoder_thread_handle;
