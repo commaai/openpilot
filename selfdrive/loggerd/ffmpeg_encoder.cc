@@ -140,7 +140,7 @@ int FFmpegEncoder::EncodeFrame(uint64_t cnt, const uint8_t *y_ptr, const uint8_t
   
   bool ret = true;
   int got_output = 0;
-  int err = avcodec_encode_video2(codec_ctx, &pkt, GetFrame(cnt, y_ptr, u_ptr, v_ptr), &got_output);
+  int err = avcodec_encode_video2(codec_ctx, &pkt, frame, &got_output);
   if (err) {
     LOGW("encoding error\n");
     ret = false;
