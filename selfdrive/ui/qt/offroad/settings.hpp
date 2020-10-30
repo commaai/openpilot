@@ -4,7 +4,6 @@
 #include <QFrame>
 #include <QTimer>
 #include <QCheckBox>
-#include <QPushButton>
 #include <QStackedLayout>
 
 
@@ -39,5 +38,3 @@ private:
 private slots:
   void setActivePanel();
 };
-
-

@@ -122,17 +122,23 @@ QWidget * toggles_panel() {
 QWidget * device_panel() {
 
   QVBoxLayout *device_layout = new QVBoxLayout;
+  device_layout->setSpacing(50);
 
   Params params = Params();
   std::vector<std::pair<std::string, std::string>> labels = {
-    {"Serial Number", "abcdefghijk"},
     {"Dongle ID", params.get("DongleId", false)},
+    //{"Serial Number", "abcdefghijk"},
   };
 
   for (auto l : labels) {
     QString text = QString::fromStdString(l.first + ": " + l.second);
     device_layout->addWidget(new QLabel(text));
   }
+
+  QPushButton *clear_cal_btn = new QPushButton("Reset Calibration");
+  device_layout->addWidget(clear_cal_btn);
+  QObject::connect(clear_cal_btn, &QPushButton::released,
+                   [=]() { Params().delete_db_value("CalibrationParams"); });
 
   std::map<std::string, const char *> power_btns = {
     {"Power Off", "poweroff"},
@@ -141,30 +147,22 @@ QWidget * device_panel() {
 
   for (auto b : power_btns) {
     QPushButton *btn = new QPushButton(QString::fromStdString(b.first));
-    btn->setStyleSheet(R"(
-      QPushButton {
-        padding: 30px;
-      }
-    )");
     device_layout->addWidget(btn);
-
 #ifdef __aarch64__
     QObject::connect(btn, &QPushButton::released,
                      [=]() {std::system(b.second);});
 #endif
   }
 
+
   QWidget *widget = new QWidget;
   widget->setLayout(device_layout);
+  widget->setStyleSheet(R"(
+    QPushButton {
+      padding: 60px;
+    }
+  )");
   return widget;
-}
-
-void handlePower() {
-  std::cout << "btn pressed" << std::endl;
-#ifdef __aarch64__
-
-
-#endif
 }
 
 QWidget * developer_panel() {
