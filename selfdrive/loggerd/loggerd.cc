@@ -11,6 +11,7 @@
 #include <streambuf>
 #include <thread>
 #include <mutex>
+#include <shared_mutex>
 #include <condition_variable>
 #include <atomic>
 #include <random>
@@ -132,8 +133,8 @@ struct LoggerdState {
   double last_rotate_tms;
 
   std::atomic<int> rotate_segment;
-  std::mutex rotate_mutex;
-  std::condition_variable rotate_cv;
+  mutable std::shared_mutex rotate_mutex;
+  std::condition_variable_any rotate_cv;
 };
 
 #ifndef DISABLE_ENCODER
@@ -198,7 +199,7 @@ public:
     Message *msg;
     while((msg = frame_sock->receive(true)) != nullptr) {
       lh_log(lh, (uint8_t*)msg->getData(), msg->getSize(),
-             frame_sock_decimation == -1 ? false : total_frame_cnt % frame_sock_decimation == 0);
+             frame_sock_decimation <= 0 ? false : total_frame_cnt % frame_sock_decimation == 0);
       delete msg;
     }
     
@@ -242,7 +243,7 @@ private:
         segment_frame_cnt == log_s->segment_length * MAIN_FPS) {
       char segment_path[4096] = {};
       {  // wait log finished rotated
-        std::unique_lock<std::mutex> lock(log_s->rotate_mutex);
+        std::shared_lock lock(log_s->rotate_mutex);
         log_s->rotate_cv.wait(lock, [&] { return log_s->rotate_segment > encoder_segment; });
         strcpy(segment_path, log_s->segment_path);
         encoder_segment = log_s->rotate_segment;
@@ -464,12 +465,11 @@ typedef struct QlogState {
   int freq;
 } QlogState;
 
-
 void rotate_if_needed(LoggerdState &s) {
   double tms = millis_since_boot(); 
   if ((tms - s.last_rotate_tms) >= s.segment_length * 1000) {
     {
-      std::unique_lock<std::mutex> lock(s.rotate_mutex);
+      std::unique_lock lock(s.rotate_mutex);
       int segment = 0;
       int err = logger_next(&s.logger, LOG_ROOT, s.segment_path, sizeof(s.segment_path), &segment);
       assert(err == 0);
