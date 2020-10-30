@@ -22,7 +22,7 @@ env:
 jobs:
   build_release:
     name: build release
-    runs-on: ubuntu-16.04
+    runs-on: ubuntu-20.04
     timeout-minutes: 50
     env:
       TEST_DIR: tmppilot
@@ -79,7 +79,7 @@ jobs:
 
   build_webcam:
     name: build webcam
-    runs-on: ubuntu-16.04
+    runs-on: ubuntu-20.04
     timeout-minutes: 90
     steps:
     - uses: actions/checkout@v2
@@ -100,7 +100,7 @@ jobs:
   
   docker_push:
     name: docker push
-    runs-on: ubuntu-16.04
+    runs-on: ubuntu-20.04
     timeout-minutes: 50
     if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
     needs: static_analysis # hack to ensure slow tests run first since this and static_analysis are fast
@@ -120,7 +120,7 @@ jobs:
 
   docker_push_prebuilt:
     name: docker push prebuilt
-    runs-on: ubuntu-16.04
+    runs-on: ubuntu-20.04
     timeout-minutes: 50
     if: github.event_name == 'status' && github.repository == 'commaai/openpilot'
     needs: [static_analysis, unit_tests, process_replay, test_longitudinal, test_car_models]
@@ -138,7 +138,7 @@ jobs:
 
   static_analysis:
     name: static analysis
-    runs-on: ubuntu-16.04
+    runs-on: ubuntu-20.04
     timeout-minutes: 50
     steps:
       - uses: actions/checkout@v2
@@ -151,7 +151,7 @@ jobs:
 
   valgrind:
     name: valgrind
-    runs-on: ubuntu-16.04
+    runs-on: ubuntu-20.04
     timeout-minutes: 50
     steps:
       - uses: actions/checkout@v2
@@ -185,7 +185,7 @@ jobs:
 
   unit_tests:
     name: unit tests
-    runs-on: ubuntu-16.04
+    runs-on: ubuntu-20.04
     timeout-minutes: 50
     steps:
       - uses: actions/checkout@v2
@@ -216,7 +216,7 @@ jobs:
 
   process_replay:
     name: process replay
-    runs-on: ubuntu-16.04
+    runs-on: ubuntu-20.04
     timeout-minutes: 50
     steps:
       - uses: actions/checkout@v2
@@ -254,7 +254,7 @@ jobs:
 
   test_longitudinal:
     name: longitudinal
-    runs-on: ubuntu-16.04
+    runs-on: ubuntu-20.04
     timeout-minutes: 50
     steps:
       - uses: actions/checkout@v2
@@ -283,7 +283,7 @@ jobs:
 
   test_car_models:
     name: test car models
-    runs-on: ubuntu-16.04
+    runs-on: ubuntu-20.04
     timeout-minutes: 50
     steps:
       - uses: actions/checkout@v2
