@@ -2,17 +2,16 @@
 #include <iostream>
 #include <sstream>
 #include <cassert>
+#include <utility>
 
 #include "settings.hpp"
 
+#include <QString>
+#include <QStackedLayout>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QPushButton>
 #include <QLabel>
-#include <QScrollArea>
-#include <QScroller>
-#include <QScrollerProperties>
-#include <QDebug>
 #include <QPixmap>
 
 #include "common/params.h"
@@ -75,16 +74,16 @@ void ParamsToggle::checkboxClicked(int state){
   Params().write_db_value(param.toStdString().c_str(), &value, 1);
 }
 
-SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
+QWidget * toggles_panel() {
 
   QVBoxLayout *toggles_list = new QVBoxLayout();
-                                              /*
+  toggles_list->setSpacing(25);
+
   toggles_list->addWidget(new ParamsToggle("OpenpilotEnabledToggle",
                                             "Enable Openpilot",
                                             "Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off.",
                                             "../assets/offroad/icon_openpilot.png"
                                               ));
-                                              */
   toggles_list->addWidget(new ParamsToggle("LaneChangeEnabled",
                                             "Enable Lane Change Assist",
                                             "Perform assisted lane changes with openpilot by checking your surroundings for safety, activating the turn signal and gently nudging the steering wheel towards your desired lane. openpilot is not capable of checking if a lane change is safe. You must continuously observe your surroundings to use this feature.",
@@ -95,7 +94,6 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
                                             "Receive alerts to steer back into the lane when your vehicle drifts over a detected lane line without a turn signal activated while driving over 31mph (50kph).",
                                             "../assets/offroad/icon_warning.png"
                                               ));
-                                              /*
   toggles_list->addWidget(new ParamsToggle("RecordFront",
                                             "Record and Upload Driver Camera",
                                             "Upload data from the driver facing camera and help improve the driver monitoring algorithm.",
@@ -106,7 +104,6 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
                                             "Allow openpilot to obey left-hand traffic conventions and perform driver monitoring on right driver seat.",
                                             "../assets/offroad/icon_openpilot_mirrored.png"
                                             ));
-                                            */
   toggles_list->addWidget(new ParamsToggle("IsMetric",
                                             "Use Metric System",
                                             "Display speed in km/h instead of mp/h.",
@@ -118,33 +115,50 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
                                             "../assets/offroad/icon_shell.png"
                                             ));
 
-  toggles_list->setSpacing(25);
+  QWidget *widget = new QWidget;
+  widget->setLayout(toggles_list);
+  return widget;
+}
 
-  QWidget *container = new QWidget(this);
-  container->setLayout(toggles_list);
-  container->setFixedWidth(1900);
 
-  QHBoxLayout *main_layout = new QHBoxLayout;
-  main_layout->addSpacing(50);
-  main_layout->addWidget(container);
+SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
 
-  QVBoxLayout *button_layout = new QVBoxLayout;
-  QPushButton * button = new QPushButton("X");
-  button_layout->addWidget(button);
-  button_layout->addSpacing(900);
+  std::vector<std::pair<QString, QWidget *>> panels = {
+    {"toggles", toggles_panel()},
+  };
 
-  main_layout->addLayout(button_layout);
-  main_layout->addSpacing(20);
+  // sidebar
+  QVBoxLayout *sidebar_layout = new QVBoxLayout();
+  QStackedLayout *panes_layout = new QStackedLayout();
 
-  setLayout(main_layout);
+  // close button
+  QPushButton * close_button = new QPushButton("<- back");
+  sidebar_layout->addWidget(close_button);
+  QObject::connect(close_button, SIGNAL(clicked()), this, SIGNAL(closeSettings()));
 
-  QObject::connect(button, SIGNAL(clicked()), this, SIGNAL(closeSettings()));
+  for (auto &panel : panels) {
+    sidebar_layout->addWidget(new QPushButton(panel.first));
+    panes_layout->addWidget(panel.second);
+    //QObject::connect(close_button, SIGNAL(clicked()), this, SIGNAL(closeSettings()));
+  }
+
+
+  QHBoxLayout *settings_layout = new QHBoxLayout();
+  settings_layout->addLayout(sidebar_layout);
+  settings_layout->addSpacing(10);
+  settings_layout->addLayout(panes_layout);
+  setLayout(settings_layout);
 
   setStyleSheet(R"(
-    QPushButton { font-size: 100px }
     * {
       color: white;
       background-color: #072339;
+    }
+
+    QPushButton {
+      font-size: 80px;
+      border: none;
+      background-color: rgba(0, 0, 0, 0);
     }
   )");
 }

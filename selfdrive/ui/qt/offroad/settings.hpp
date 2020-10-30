@@ -7,8 +7,6 @@
 #include <QPushButton>
 
 
-// *** settings UI widgets ***
-
 class ParamsToggle : public QFrame {
   Q_OBJECT
 
@@ -23,8 +21,6 @@ public slots:
   void checkboxClicked(int state);
 };
 
-
-// *** settings UI elements ***
 
 class SettingsWindow : public QWidget {
   Q_OBJECT
