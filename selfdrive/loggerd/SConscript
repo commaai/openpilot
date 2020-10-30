@@ -6,12 +6,13 @@ libs = ['zmq', 'capnp', 'kj', 'z',
   'yuv', 'bz2', common, cereal, messaging, visionipc]
 
 if arch == "aarch64":
-  src += ['encoder.c', 'raw_logger.cc']
+  src += ['encoder.c', 'ffmpeg_encoder.cc']
   libs += ['OmxVenc', 'OmxCore', 'cutils']
 elif arch == "larch64":
-  src += ['encoder.c', 'raw_logger.cc']
+  src += ['encoder.c', 'ffmpeg_encoder.cc']
   libs += ['OmxVenc', 'OmxCore', 'pthread']
 else:
+  src += ['ffmpeg_encoder.cc']
   libs += ['pthread']
 
 env.Program(src, LIBS=libs)
