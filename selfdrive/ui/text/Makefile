@@ -10,7 +10,7 @@ WARN_FLAGS = -Werror=implicit-function-declaration \
              -Werror=format-extra-args
 
 CFLAGS = -std=gnu11 -fPIC -O2 $(WARN_FLAGS)
-CXXFLAGS = -std=c++11 -fPIC -O2 $(WARN_FLAGS)
+CXXFLAGS = -std=c++1z -fPIC -O2 $(WARN_FLAGS)
 
 NANOVG_FLAGS = -I$(PHONELIBS)/nanovg
 

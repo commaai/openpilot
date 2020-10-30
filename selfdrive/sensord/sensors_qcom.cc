@@ -99,6 +99,7 @@ void sensor_loop() {
     std::set<int> offroad_sensors = {
       SENSOR_LIGHT,
       SENSOR_ACCELEROMETER,
+      SENSOR_GYRO_UNCALIBRATED,
     };
 
     // init all the sensors

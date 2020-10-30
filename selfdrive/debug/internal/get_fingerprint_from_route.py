@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
-# type: ignore
 
 import sys
+from tools.lib.route import Route
 from tools.lib.logreader import MultiLogIterator
-from xx.chffr.lib.route import Route  # pylint: disable=import-error
 
 
 def get_fingerprint(lr):
@@ -28,7 +27,6 @@ if __name__ == "__main__":
     print("Usage: ./get_fingerprint_internal.py <route>")
     sys.exit(1)
 
-  route = sys.argv[1]
-  route = Route(route)
+  route = Route(sys.argv[1])
   lr = MultiLogIterator(route.log_paths()[:5], wraparound=False)
   get_fingerprint(lr)

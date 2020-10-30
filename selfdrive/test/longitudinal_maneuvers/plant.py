@@ -112,7 +112,7 @@ class Plant():
       Plant.logcan = messaging.pub_sock('can')
       Plant.sendcan = messaging.sub_sock('sendcan')
       Plant.model = messaging.pub_sock('model')
-      Plant.frame_pub = messaging.pub_sock('frame')
+      Plant.front_frame = messaging.pub_sock('frontFrame')
       Plant.live_params = messaging.pub_sock('liveParameters')
       Plant.live_location_kalman = messaging.pub_sock('liveLocationKalman')
       Plant.health = messaging.pub_sock('health')
@@ -162,7 +162,7 @@ class Plant():
   def close(self):
     Plant.logcan.close()
     Plant.model.close()
-    Plant.frame_pub.close()
+    Plant.front_frame.close()
     Plant.live_params.close()
     Plant.live_location_kalman.close()
 
@@ -393,7 +393,7 @@ class Plant():
     if publish_model and self.frame % 5 == 0:
       md = messaging.new_message('model')
       cal = messaging.new_message('liveCalibration')
-      fp = messaging.new_message('frame')
+      fp = messaging.new_message('frontFrame')
       md.model.frameId = 0
       for x in [md.model.path, md.model.leftLane, md.model.rightLane]:
         x.points = [0.0]*50
@@ -425,7 +425,7 @@ class Plant():
       # fake values?
       Plant.model.send(md.to_bytes())
       Plant.cal.send(cal.to_bytes())
-      Plant.frame_pub.send(fp.to_bytes())
+      Plant.front_frame.send(fp.to_bytes())
 
     Plant.logcan.send(can_list_to_can_capnp(can_msgs))
 

@@ -3,7 +3,6 @@ import bz2
 import os
 import sys
 import numbers
-
 import dictdiffer
 
 if "CI" in os.environ:
@@ -59,6 +58,7 @@ def compare_logs(log1, log2, ignore_fields=None, ignore_msgs=None, tolerance=Non
     ignore_msgs = []
 
   log1, log2 = [list(filter(lambda m: m.which() not in ignore_msgs, log)) for log in (log1, log2)]
+
   if len(log1) != len(log2):
     raise Exception(f"logs are not same length: {len(log1)} VS {len(log2)}")
 
