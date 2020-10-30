@@ -34,10 +34,10 @@ ParamsToggle::ParamsToggle(QString param, QString title, QString description, QS
   QLabel *label = new QLabel(description);
   label->setWordWrap(true);
 
-  vlayout->addSpacing(50);
+  //vlayout->addSpacing(50);
   vlayout->addWidget(checkbox);
-  vlayout->addWidget(label);
-  vlayout->addSpacing(50);
+  //vlayout->addWidget(label);
+  //vlayout->addSpacing(50);
   hlayout->addLayout(vlayout);
 
   setLayout(hlayout);
@@ -164,12 +164,6 @@ void SettingsWindow::setActivePanel() {
 
 SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
 
-  panels = {
-    {"device", device_panel()},
-    {"developer", developer_panel()},
-    {"toggles", toggles_panel()},
-  };
-
   // sidebar
   QVBoxLayout *sidebar_layout = new QVBoxLayout();
   panel_layout = new QStackedLayout();
@@ -178,6 +172,13 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
   QPushButton * close_button = new QPushButton("<- back");
   sidebar_layout->addWidget(close_button);
   QObject::connect(close_button, SIGNAL(released()), this, SIGNAL(closeSettings()));
+
+  // setup panels
+  panels = {
+    {"toggles", toggles_panel()},
+    {"device", device_panel()},
+    {"developer", developer_panel()},
+  };
 
   for (auto &panel : panels) {
     QPushButton * btn = new QPushButton(panel.first);
