@@ -182,11 +182,3 @@ def get_camera_frame_from_calib_frame(camera_frame_from_road_frame, intrinsics=f
   ground_from_calib_frame = np.linalg.inv(calib_frame_from_ground)
   camera_frame_from_calib_frame = np.dot(camera_frame_from_ground, ground_from_calib_frame)
   return camera_frame_from_calib_frame
-
-
-def pretransform_from_calib(calib, intrinsics=fcam_intrinsics):
-  roll, pitch, yaw, height = calib
-  view_frame_from_road_frame = get_view_frame_from_road_frame(roll, pitch, yaw, height)
-  camera_frame_from_road_frame = np.dot(intrinsics, view_frame_from_road_frame)
-  camera_frame_from_calib_frame = get_camera_frame_from_calib_frame(camera_frame_from_road_frame)
-  return np.linalg.inv(camera_frame_from_calib_frame)
