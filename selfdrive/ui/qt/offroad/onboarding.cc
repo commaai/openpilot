@@ -12,7 +12,7 @@
 #include "common/params.h"
 
 
-QWidget * terms_screen() {
+QWidget * OnboardingWindow::terms_screen() {
   QVBoxLayout *main_layout = new QVBoxLayout();
 
   QLabel *title = new QLabel("Review Terms");
@@ -39,6 +39,11 @@ QWidget * terms_screen() {
   btn_layout->addWidget(accept_btn);
   main_layout->addLayout(btn_layout);
 
+  QObject::connect(accept_btn, &QPushButton::released, [=]() {
+    Params().write_db_value("HasAcceptedTerms", LATEST_TERMS_VERSION);
+    updateActiveScreen();
+  });
+
   QWidget *widget = new QWidget;
   widget->setLayout(main_layout);
   widget->setStyleSheet(R"(
@@ -55,9 +60,15 @@ QWidget * terms_screen() {
   return widget;
 }
 
+void OnboardingWindow::updateActiveScreen() {
 
-void OnboardingWindow::setActiveScreen() {
+  Params params = Params();
 
+  bool accepted_terms = params.get("HasAcceptedTerms", false).compare(LATEST_TERMS_VERSION) == 0;
+
+  if (accepted_terms) {
+    emit onboardingDone();
+  }
 }
 
 OnboardingWindow::OnboardingWindow(QWidget *parent) : QWidget(parent) {
@@ -68,6 +79,5 @@ OnboardingWindow::OnboardingWindow(QWidget *parent) : QWidget(parent) {
   main_layout->addWidget(terms_screen());
   setLayout(main_layout);
 
-  // TODO: determine correct state
-  emit onboardingDone();
+  updateActiveScreen();
 }

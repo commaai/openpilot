@@ -8,8 +8,6 @@
 
 #include <QVBoxLayout>
 #include <QMouseEvent>
-#include <QPushButton>
-#include <QGridLayout>
 
 #include "window.hpp"
 #include "offroad/settings.hpp"
@@ -39,13 +37,13 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   set_core_affinity(7);
 #endif
 
-  GLWindow * glWindow = new GLWindow(this);
+  GLWindow *glWindow = new GLWindow(this);
   main_layout->addWidget(glWindow);
 
-  SettingsWindow * settingsWindow = new SettingsWindow(this);
+  SettingsWindow *settingsWindow = new SettingsWindow(this);
   main_layout->addWidget(settingsWindow);
 
-  OnboardingWindow * onboardingWindow = new OnboardingWindow(this);
+  OnboardingWindow *onboardingWindow = new OnboardingWindow(this);
   main_layout->addWidget(onboardingWindow);
 
   main_layout->setMargin(0);
@@ -57,8 +55,6 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   main_layout->setCurrentWidget(onboardingWindow);
   QObject::connect(onboardingWindow, SIGNAL(onboardingDone()), this, SLOT(closeSettings()));
 
-  std::cout << "index: " << main_layout->currentIndex() << "\n";
-
   setStyleSheet(R"(
     * {
       color: white;
@@ -68,7 +64,6 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
 }
 
 void MainWindow::openSettings() {
-  std::cout << "open settings\n";
   main_layout->setCurrentIndex(1);
 }
 
