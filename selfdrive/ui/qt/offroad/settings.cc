@@ -154,7 +154,6 @@ QWidget * device_panel() {
 #endif
   }
 
-
   QWidget *widget = new QWidget;
   widget->setLayout(device_layout);
   widget->setStyleSheet(R"(
