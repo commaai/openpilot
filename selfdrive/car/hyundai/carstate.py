@@ -19,7 +19,7 @@ class CarState(CarStateBase):
     self.scc_bus = CP.sccBus
     self.leftBlinker = False
     self.rightBlinker = False
-    self.lkas_button = True
+    self.lkas_button_on = True
     self.has_scc13 = CP.carFingerprint in FEATURES["has_scc13"]
     self.has_scc14 = CP.carFingerprint in FEATURES["has_scc14"]
     self.cruise_main_button = 0
@@ -35,7 +35,6 @@ class CarState(CarStateBase):
     self.prev_cruise_main_button = self.cruise_main_button
     self.prev_left_blinker = self.leftBlinker
     self.prev_right_blinker = self.rightBlinker
-    self.prev_lkas_button = self.lkas_button
 
     ret = car.CarState.new_message()
 
@@ -168,9 +167,6 @@ class CarState(CarStateBase):
     self.steer_state = cp_mdps.vl["MDPS12"]['CF_Mdps_ToiActive'] #0 NOT ACTIVE, 1 ACTIVE
     self.cruise_unavail = cp.vl["TCS13"]['CF_VSM_Avail'] != 1
     self.lead_distance = cp_scc.vl["SCC11"]['ACC_ObjDist'] if not self.no_radar else 0
-    self.lkas_button = cp_cam.vl["LKAS11"]["CF_Lkas_LdwsSysState"]
-    self.left_blinker_flash = cp.vl["CGW1"]['CF_Gway_TurnSigLh']
-    self.right_blinker_flash = cp.vl["CGW1"]['CF_Gway_TurnSigRh']
     if self.has_scc13:
       self.scc13 = cp_scc.vl["SCC13"]
     if self.has_scc14:
@@ -179,6 +175,15 @@ class CarState(CarStateBase):
       self.ems11 = cp.vl["EMS11"]
       self.mdps11_strang = cp_mdps.vl["MDPS11"]["CR_Mdps_StrAng"]
       self.mdps11_stat = cp_mdps.vl["MDPS11"]["CF_Mdps_Stat"]
+
+    self.lkas_error = cp_cam.vl["LKAS11"]["CF_Lkas_LdwsSysState"] == 7
+    if not self.lkas_error and self.car_fingerprint not in [CAR.SONATA,CAR.PALISADE,
+                    CAR.SONATA_HEV, CAR.SANTA_FE, CAR.KONA_EV, CAR.NIRO_EV, CAR.KONA]:
+      lkas_button = bool(cp_cam.vl["LKAS11"]["CF_Lkas_LdwsSysState"])
+      if lkas_button != self.prev_lkas_button:
+        self.lkas_button_on = not self.lkas_button_on
+      self.prev_lkas_button = lkas_button
+
 
     return ret
 
@@ -577,4 +582,3 @@ class CarState(CarStateBase):
       ]
 
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2)
-

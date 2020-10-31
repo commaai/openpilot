@@ -73,7 +73,6 @@ class CarController():
     self.last_resume_frame = 0
     self.last_lead_distance = 0
     self.turning_signal_timer = 0
-    self.lkas_button_on = True
     self.longcontrol = CP.openpilotLongitudinalControl
     self.scc_live = not CP.radarOffCan
     if CP.spasEnabled:
@@ -115,19 +114,15 @@ class CarController():
     spas_active = CS.spas_enabled and enabled and (self.spas_always or CS.out.vEgo < 7.0) # 25km/h
 
     # disable if steer angle reach 90 deg, otherwise mdps fault in some models
-    # temporarily disable steering when LKAS button off 
-    lkas_active = enabled and abs(CS.out.steeringAngle) < 90. and self.lkas_button_on and not spas_active
+    # temporarily disable steering when LKAS button off
+    lkas_active = enabled and abs(CS.out.steeringAngle) < 90. and CS.lkas_button_on and not spas_active
 
     # fix for Genesis hard fault at low speed
     if CS.out.vEgo < 60 * CV.KPH_TO_MS and self.car_fingerprint == CAR.GENESIS and not CS.mdps_bus:
       lkas_active = False
 
-    # Optima has blinker flash signal only
-    if self.car_fingerprint in [CAR.OPTIMA, CAR.OPTIMA_HEV]:
-      if CS.left_blinker_flash or CS.right_blinker_flash: 
-        self.turning_signal_timer = 100
     # Disable steering while turning blinker on and speed below 60 kph
-    elif CS.out.leftBlinker or CS.out.rightBlinker:
+    if CS.out.leftBlinker or CS.out.rightBlinker:
       self.turning_signal_timer = 100  # Disable for 1.0 Seconds after blinker turned off
     if self.turning_indicator_alert: # set and clear by interface
       lkas_active = 0
@@ -151,7 +146,7 @@ class CarController():
       enabled_speed = clu11_speed
 
     if not(min_set_speed < set_speed < 255 * CV.KPH_TO_MS):
-      set_speed = min_set_speed 
+      set_speed = min_set_speed
     set_speed *= CV.MS_TO_MPH if CS.is_set_speed_in_mph else CV.MS_TO_KPH
 
     if frame == 0: # initialize counts from last received count signals
@@ -208,13 +203,13 @@ class CarController():
           self.clu11_cnt = 0
     # reset lead distnce after the car starts moving
     elif self.last_lead_distance != 0:
-      self.last_lead_distance = 0 
+      self.last_lead_distance = 0
 
     if CS.mdps_bus: # send mdps12 to LKAS to prevent LKAS error
       can_sends.append(create_mdps12(self.packer, frame, CS.mdps12))
 
     # send scc to car if longcontrol enabled and SCC not on bus 0 or ont live
-    if self.longcontrol and (CS.scc_bus or not self.scc_live) and frame % 2 == 0: 
+    if self.longcontrol and (CS.scc_bus or not self.scc_live) and frame % 2 == 0:
       can_sends.append(create_scc12(self.packer, apply_accel, enabled, self.scc12_cnt, self.scc_live, CS.scc12))
       can_sends.append(create_scc11(self.packer, frame, enabled, set_speed, lead_visible, self.scc_live, CS.scc11))
       if CS.has_scc13 and frame % 20 == 0:
@@ -240,7 +235,7 @@ class CarController():
         if self.en_spas == 7 and self.en_cnt >= 8:
           self.en_spas = 3
           self.en_cnt = 0
-  
+
         if self.en_cnt < 8 and spas_active:
           self.en_spas = 4
         elif self.en_cnt >= 8 and spas_active:
