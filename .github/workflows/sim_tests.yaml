@@ -1,7 +1,8 @@
 name: simulator
 on:
-  schedule:
-  - cron: '0 * * * *'
+  #schedule:
+  #- cron: '0 * * * *'
+  push:
 
 jobs:
   docker_build:

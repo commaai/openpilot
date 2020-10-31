@@ -8,20 +8,13 @@ RUN apt-get update && apt-get install -y \
     xz-utils \
 
     beignet-opencl-icd \
+    libglvnd-dev \
 
     alien \
     dbus \
     gcc-arm-none-eabi \
     tmux \
     vim \
-
-    # libglvnd dependencies
-    automake \
-    libtool \
-    libxext-dev \
-    libx11-dev \
-    x11proto-gl-dev \
-    libpng16-16 \
   && rm -rf /var/lib/apt/lists/*
 
 # Intel OpenCL driver
@@ -76,8 +69,6 @@ RUN mkdir -p $HOME/openpilot
 COPY SConstruct $HOME/openpilot/
 
 COPY ./phonelibs $HOME/openpilot/phonelibs
-COPY ./laika $HOME/openpilot/laika
-COPY ./laika_repo $HOME/openpilot/laika_repo
 COPY ./rednose $HOME/openpilot/rednose
 COPY ./common $HOME/openpilot/common
 COPY ./models $HOME/openpilot/models
