@@ -2,7 +2,6 @@
 
 #include "onboarding.hpp"
 
-#include <QString>
 #include <QStackedLayout>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -14,25 +13,36 @@
 
 QWidget * OnboardingWindow::terms_screen() {
   QVBoxLayout *main_layout = new QVBoxLayout();
+  main_layout->setMargin(30);
+  main_layout->setSpacing(30);
 
   QLabel *title = new QLabel("Review Terms");
+  title->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
   title->setStyleSheet(R"(
     QLabel {
       font-size: 80px;
       text-align: left;
+      margin: 0;
+      padding: 0;
     }
   )");
-  main_layout->addWidget(title, Qt::AlignTop);
+  main_layout->addWidget(title);
 
   QLabel *terms = new QLabel("See terms at https://my.comma.ai/terms");
+  terms->setAlignment(Qt::AlignCenter);
   terms->setStyleSheet(R"(
     QLabel {
-      font-size: 30px;
+      font-size: 35px;
+      border-radius: 10px;
+      text-align: center;
+      background-color: #292929;
     }
   )");
   main_layout->addWidget(terms, Qt::AlignTop);
 
   QHBoxLayout *btn_layout = new QHBoxLayout();
+  //btn_layout->setSpacing(30);
+
   QPushButton *decline_btn = new QPushButton("Decline");
   btn_layout->addWidget(decline_btn);
   QPushButton *accept_btn = new QPushButton("Accept");
@@ -49,11 +59,12 @@ QWidget * OnboardingWindow::terms_screen() {
   widget->setStyleSheet(R"(
     QLabel {
       color: white;
-      padding-left: 10px;
     }
     QPushButton {
-      font-size: 45px;
+      font-size: 50px;
       padding: 50px;
+      border-radius: 10px;
+      background-color: #292929;
     }
   )");
 
@@ -73,11 +84,20 @@ void OnboardingWindow::updateActiveScreen() {
 
 OnboardingWindow::OnboardingWindow(QWidget *parent) : QWidget(parent) {
 
-  // Onboarding flow: terms -> training guide -> connect/prime
+  // Onboarding flow: terms -> account pairing -> training
+
 
   QStackedLayout *main_layout = new QStackedLayout;
   main_layout->addWidget(terms_screen());
   setLayout(main_layout);
+  setStyleSheet(R"(
+    * {
+      background-color: black;
+    }
+  )");
+
+  // TODO: implement the training guide
+  Params().write_db_value("CompletedTrainingVersion", LATEST_TRAINING_VERSION);
 
   updateActiveScreen();
 }

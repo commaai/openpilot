@@ -52,7 +52,7 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   QObject::connect(settingsWindow, SIGNAL(closeSettings()), this, SLOT(closeSettings()));
 
   // start at onboarding
-  main_layout->setCurrentWidget(onboardingWindow);
+  //main_layout->setCurrentWidget(onboardingWindow);
   QObject::connect(onboardingWindow, SIGNAL(onboardingDone()), this, SLOT(closeSettings()));
 
   setStyleSheet(R"(
