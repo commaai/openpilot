@@ -15,6 +15,18 @@ void sig_handler(int signal) {
   msgq_do_exit = 1;
 }
 
+static size_t get_size(std::string endpoint){
+  size_t sz = DEFAULT_SEGMENT_SIZE;
+
+#if !defined(QCOM) && !defined(QCOM2)
+  if (endpoint == "frame" || endpoint == "frontFrame" || endpoint == "wideFrame"){
+    sz *= 10;
+  }
+#endif
+
+  return sz;
+}
+
 
 MSGQContext::MSGQContext() {
 }
@@ -49,13 +61,12 @@ MSGQMessage::~MSGQMessage() {
   this->close();
 }
 
-
 int MSGQSubSocket::connect(Context *context, std::string endpoint, std::string address, bool conflate){
   assert(context);
   assert(address == "127.0.0.1");
 
   q = new msgq_queue_t;
-  int r = msgq_new_queue(q, endpoint.c_str(), DEFAULT_SEGMENT_SIZE);
+  int r = msgq_new_queue(q, endpoint.c_str(), get_size(endpoint));
   if (r != 0){
     return r;
   }
@@ -143,7 +154,7 @@ int MSGQPubSocket::connect(Context *context, std::string endpoint){
   assert(context);
 
   q = new msgq_queue_t;
-  int r = msgq_new_queue(q, endpoint.c_str(), DEFAULT_SEGMENT_SIZE);
+  int r = msgq_new_queue(q, endpoint.c_str(), get_size(endpoint));
   if (r != 0){
     return r;
   }

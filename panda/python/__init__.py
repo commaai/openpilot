@@ -10,7 +10,6 @@ import traceback
 import subprocess
 import sys
 from .dfu import PandaDFU  # pylint: disable=import-error
-from .esptool import ESPROM, CesantaFlasher  # noqa pylint: disable=import-error
 from .flash_release import flash_release  # noqa pylint: disable=import-error
 from .update import ensure_st_up_to_date  # noqa pylint: disable=import-error
 from .serial import PandaSerial  # noqa pylint: disable=import-error
@@ -147,6 +146,10 @@ class Panda(object):
   HW_TYPE_BLACK_PANDA = b'\x03'
   HW_TYPE_PEDAL = b'\x04'
   HW_TYPE_UNO = b'\x05'
+
+  CLOCK_SOURCE_MODE_DISABLED = 0
+  CLOCK_SOURCE_MODE_FREE_RUNNING = 1
+  CLOCK_SOURCE_MODE_EXTERNAL_SYNC = 2
 
   def __init__(self, serial=None, claim=True):
     self._serial = serial
@@ -458,7 +461,7 @@ class Panda(object):
     self._handle.controlWrite(Panda.REQUEST_OUT, 0xe5, int(enable), 0, b'')
 
   def set_can_enable(self, bus_num, enable):
-    # sets the can transciever enable pin
+    # sets the can transceiver enable pin
     self._handle.controlWrite(Panda.REQUEST_OUT, 0xf4, int(bus_num), int(enable), b'')
 
   def set_can_speed_kbps(self, bus, speed):
@@ -665,3 +668,11 @@ class Panda(object):
   # ****************** Phone *****************
   def set_phone_power(self, enabled):
     self._handle.controlWrite(Panda.REQUEST_OUT, 0xb3, int(enabled), 0, b'')
+
+  # ************** Clock Source **************
+  def set_clock_source_mode(self, mode):
+    self._handle.controlWrite(Panda.REQUEST_OUT, 0xf5, int(mode), 0, b'')
+
+  # ****************** Siren *****************
+  def set_siren(self, enabled):
+    self._handle.controlWrite(Panda.REQUEST_OUT, 0xf6, int(enabled), 0, b'')

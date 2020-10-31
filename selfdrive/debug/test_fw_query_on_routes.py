@@ -37,7 +37,7 @@ if __name__ == "__main__":
   for route in tqdm(routes):
     route = route.rstrip()
     dongle_id, time = route.split('|')
-    qlog_path = f"cd:/{dongle_id}/{time}/0/qlog.bz2"
+    qlog_path = f"cd:/{dongle_id}/{time}/1/qlog.bz2"
 
     if dongle_id in dongles:
       continue

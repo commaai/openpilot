@@ -78,6 +78,8 @@ frontFrame: [8072, true, 10.]
 dMonitoringState: [8073, true, 5., 1]
 offroadLayout: [8074, false, 0.]
 wideEncodeIdx: [8075, true, 20.]
+wideFrame: [8076, true, 20.]
+modelV2: [8077, true, 20., 20]
 
 testModel: [8040, false, 0.]
 testLiveLocation: [8045, false, 0.]

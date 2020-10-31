@@ -17,7 +17,6 @@ from collections import defaultdict
 
 cdef int CAN_INVALID_CNT = 5
 
-
 cdef class CANParser:
   cdef:
     cpp_CANParser *can
@@ -37,10 +36,11 @@ cdef class CANParser:
   def __init__(self, dbc_name, signals, checks=None, bus=0):
     if checks is None:
       checks = []
-
     self.can_valid = True
     self.dbc_name = dbc_name
     self.dbc = dbc_lookup(dbc_name)
+    if not self.dbc:
+      raise RuntimeError("Can't lookup" + dbc_name)
     self.vl = {}
     self.ts = {}
 
@@ -110,7 +110,7 @@ cdef class CANParser:
 
 
     for cv in can_values:
-      # Cast char * directly to unicde
+      # Cast char * directly to unicode
       name = <unicode>self.address_to_msg_name[cv.address].c_str()
       cv_name = <unicode>cv.name
 
@@ -148,7 +148,9 @@ cdef class CANDefine():
   def __init__(self, dbc_name):
     self.dbc_name = dbc_name
     self.dbc = dbc_lookup(dbc_name)
-
+    if not self.dbc:
+      raise RuntimeError("Can't lookup" + dbc_name)
+      
     num_vals = self.dbc[0].num_vals
 
     address_to_msg_name = {}

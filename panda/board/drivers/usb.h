@@ -842,7 +842,7 @@ void usb_irqhandler(void) {
       // TODO: why was this here? fires when TX buffers when we can't clear NAK
       // USBx_OUTEP(3)->DOEPTSIZ = (1U << 19) | 0x40U;
       // USBx_OUTEP(3)->DOEPCTL |= USB_OTG_DOEPCTL_CNAK;
-    } else if ((USBx_OUTEP(3)->DOEPINT) != 0) {
+    } else if ((USBx_OUTEP(3)->DOEPINT) != 0 && (USBx_OUTEP(3)->DOEPINT) != 0x10) {
       puts("OUTEP3 error ");
       puth(USBx_OUTEP(3)->DOEPINT);
       puts("\n");
