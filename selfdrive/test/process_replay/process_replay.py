@@ -336,6 +336,7 @@ def python_replay_process(cfg, lr):
   params.put("CommunityFeaturesToggle", "1")
 
   os.environ['NO_RADAR_SLEEP'] = "1"
+  os.environ['SKIP_FW_QUERY'] = "1"
   manager.prepare_managed_process(cfg.proc_name)
   mod = importlib.import_module(manager.managed_processes[cfg.proc_name])
   thread = threading.Thread(target=mod.main, args=args)
