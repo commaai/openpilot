@@ -196,7 +196,7 @@ class CarInterface(CarInterfaceBase):
     elif candidate in (CAR.ACCORD, CAR.ACCORD_15, CAR.ACCORDH):
       stop_and_go = True
       if not candidate == CAR.ACCORDH:  # Hybrid uses same brake msg as hatch
-        ret.safetyParam = 1  # Accord and CRV 5G use an alternate user brake msg
+        ret.safetyParam = 1  # Accord(ICE), CRV 5G, and RDX 3G use an alternate user brake msg
       ret.mass = 3279. * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 2.83
       ret.centerToFront = ret.wheelbase * 0.39
@@ -243,7 +243,7 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate == CAR.CRV_5G:
       stop_and_go = True
-      ret.safetyParam = 1  # Accord and CRV 5G use an alternate user brake msg
+      ret.safetyParam = 1  # Accord(ICE), CRV 5G, and RDX 3G use an alternate user brake msg
       ret.mass = 3410. * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 2.66
       ret.centerToFront = ret.wheelbase * 0.41
@@ -265,7 +265,7 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate == CAR.CRV_HYBRID:
       stop_and_go = True
-      ret.safetyParam = 1  # Accord and CRV 5G use an alternate user brake msg
+      ret.safetyParam = 1  # Accord(ICE), CRV 5G, and RDX 3G use an alternate user brake msg
       ret.mass = 1667. + STD_CARGO_KG  # mean of 4 models in kg
       ret.wheelbase = 2.66
       ret.centerToFront = ret.wheelbase * 0.41
@@ -315,6 +315,21 @@ class CarInterface(CarInterfaceBase):
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 1000], [0, 1000]]  # TODO: determine if there is a dead zone at the top end
       tire_stiffness_factor = 0.444
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.8], [0.24]]
+      ret.longitudinalTuning.kpBP = [0., 5., 35.]
+      ret.longitudinalTuning.kpV = [1.2, 0.8, 0.5]
+      ret.longitudinalTuning.kiBP = [0., 35.]
+      ret.longitudinalTuning.kiV = [0.18, 0.12]
+
+    elif candidate == CAR.ACURA_RDX_3G:
+      stop_and_go = True
+      ret.safetyParam = 1  # Accord(ICE), CRV 5G, and RDX 3G use an alternate user brake msg
+      ret.mass = 4068. * CV.LB_TO_KG + STD_CARGO_KG
+      ret.wheelbase = 2.75
+      ret.centerToFront = ret.wheelbase * 0.41
+      ret.steerRatio = 11.95  # as spec
+      ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 3840], [0, 3840]]
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.18]]
+      tire_stiffness_factor = 0.677
       ret.longitudinalTuning.kpBP = [0., 5., 35.]
       ret.longitudinalTuning.kpV = [1.2, 0.8, 0.5]
       ret.longitudinalTuning.kiBP = [0., 35.]
@@ -478,7 +493,7 @@ class CarInterface(CarInterfaceBase):
     events = self.create_common_events(ret, pcm_enable=False)
     if self.CS.brake_error:
       events.add(EventName.brakeUnavailable)
-    if self.CS.brake_hold and self.CS.CP.carFingerprint not in HONDA_BOSCH:
+    if self.CS.brake_hold and self.CS.CP.openpilotLongitudinalControl:
       events.add(EventName.brakeHold)
     if self.CS.park_brake:
       events.add(EventName.parkBrake)

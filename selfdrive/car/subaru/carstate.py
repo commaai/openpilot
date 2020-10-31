@@ -10,8 +10,6 @@ from selfdrive.car.subaru.values import DBC, STEER_THRESHOLD, CAR, PREGLOBAL_CAR
 class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
-    self.left_blinker_cnt = 0
-    self.right_blinker_cnt = 0
     can_define = CANDefine(DBC[CP.carFingerprint]['pt'])
     self.shifter_values = can_define.dv["Transmission"]['Gear']
 
@@ -36,10 +34,8 @@ class CarState(CarStateBase):
     ret.standstill = ret.vEgoRaw < 0.01
 
     # continuous blinker signals for assisted lane change
-    self.left_blinker_cnt = 50 if cp.vl["Dashlights"]['LEFT_BLINKER'] else max(self.left_blinker_cnt - 1, 0)
-    ret.leftBlinker = self.left_blinker_cnt > 0
-    self.right_blinker_cnt = 50 if cp.vl["Dashlights"]['RIGHT_BLINKER'] else max(self.right_blinker_cnt - 1, 0)
-    ret.rightBlinker = self.right_blinker_cnt > 0
+    ret.leftBlinker, ret.rightBlinker = self.update_blinker(50, cp.vl["Dashlights"]['LEFT_BLINKER'],
+                                                            cp.vl["Dashlights"]['RIGHT_BLINKER'])
 
     ret.leftBlindspot = (cp.vl["BSD_RCTA"]['L_ADJACENT'] == 1) or (cp.vl["BSD_RCTA"]['L_APPROACHING'] == 1)
     ret.rightBlindspot = (cp.vl["BSD_RCTA"]['R_ADJACENT'] == 1) or (cp.vl["BSD_RCTA"]['R_APPROACHING'] == 1)

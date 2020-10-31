@@ -15,7 +15,7 @@ fi
 
 # TODO: never clear qcom_replay cache
 # clear scons cache dirs that haven't been written to in one day
-cd /tmp && find -name 'scons_cache_*' -type d -maxdepth 1 -mtime 1 -exec rm -rf '{}' \;
+cd /tmp && find -name 'scons_cache_*' -type d -maxdepth 1 -mtime +1 -exec rm -rf '{}' \;
 
 # set up environment
 cd $SOURCE_DIR

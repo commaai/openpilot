@@ -31,9 +31,17 @@ def start_offroad():
   system("am start -n ai.comma.plus.offroad/.MainActivity")
 
 def set_package_permissions():
-  pm_grant("ai.comma.plus.offroad", "android.permission.ACCESS_FINE_LOCATION")
-  pm_grant("ai.comma.plus.offroad", "android.permission.READ_PHONE_STATE")
-  pm_grant("ai.comma.plus.offroad", "android.permission.READ_EXTERNAL_STORAGE")
+  try:
+    output = subprocess.check_output(['dumpsys', 'package', 'ai.comma.plus.offroad'], encoding="utf-8")
+    given_permissions = output.split("runtime permissions")[1]
+  except Exception:
+    given_permissions = ""
+
+  wanted_permissions = ["ACCESS_FINE_LOCATION", "READ_PHONE_STATE", "READ_EXTERNAL_STORAGE"]
+  for permission in wanted_permissions:
+    if permission not in given_permissions:
+      pm_grant("ai.comma.plus.offroad", "android.permission."+permission)
+
   appops_set("ai.comma.plus.offroad", "SU", "allow")
   appops_set("ai.comma.plus.offroad", "WIFI_SCAN", "allow")
 
