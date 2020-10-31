@@ -134,15 +134,7 @@ std::unique_ptr<zdl::DlSystem::IUserBuffer> SNPEModel::addExtra(float *state, in
   return ret;
 }
 
-void SNPEModel::execute(float *old_input_buf, int buf_size) {
-  unsigned int img_area = buf_size / 12;
-  float *net_input_buf = (float *)malloc(buf_size*sizeof(float));
-  for (int c = 0; c < 12; c++) {
-    for (int i = 0; i < img_area; i++) {
-      net_input_buf[i * 12 + c] = old_input_buf[c * img_area + i];
-    }
-  }
-
+void SNPEModel::execute(float *net_input_buf, int buf_size) {
 #ifdef USE_THNEED
   if (Runtime == zdl::DlSystem::Runtime_t::GPU) {
     float *inputs[4] = {recurrent, trafficConvention, desire, net_input_buf};
@@ -187,6 +179,5 @@ void SNPEModel::execute(float *old_input_buf, int buf_size) {
 #ifdef USE_THNEED
   }
 #endif
-  free(net_input_buf);
 }
 
