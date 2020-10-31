@@ -1,0 +1,34 @@
+version: "3.8"
+services:
+
+  sim:
+    image: commaai/openpilot-sim:latest
+    container_name: openpilot_client
+    stdin_open: true # docker run -i
+    tty: true # docker run -t
+    build:
+        context: .
+        dockerfile: ./tools/sim/Dockerfile.sim
+    shm_size: 1G
+    network_mode: host
+    volumes:
+      - /tmp/.X11-unix
+    devices:
+      - /dev/dri
+    runtime: nvidia
+    environment:
+      DISPLAY: ${DISPLAY}
+      NVIDIA_VISIBLE_DEVICES: all
+    depends_on:
+      - carla
+    command: bash -c "cd tools && cd sim && sh tmux_script.sh $$*"
+
+  carla:
+    image: carlasim/carla:0.9.8
+    container_name: carla
+    stdin_open: true # docker run -i
+    tty: true # docker run -t
+    network_mode: host
+    runtime: nvidia
+    environment:
+      NVIDIA_VISIBLE_DEVICES: all
