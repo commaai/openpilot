@@ -5,26 +5,27 @@ libs = [common, 'zmq', 'capnp', 'kj', 'm', cereal, messaging, gpucommon, visioni
 
 
 if qt_env is None:
-  libs += ['EGL', 'GLESv3', 'gnustl_shared', 'log', 'utils', 'gui', 'hardware', 'ui', 'CB', 'gsl', 'adreno_utils', 'OpenSLES', 'cutils', 'uuid', 'OpenCL']
+  libs += ['EGL', 'GLESv3', 'gnustl_shared', 'log', 'utils', 'gui', 'hardware',
+           'ui', 'CB', 'gsl', 'adreno_utils', 'OpenSLES', 'cutils', 'uuid', 'OpenCL']
   linkflags = ['-Wl,-rpath=/system/lib64,-rpath=/system/comma/usr/lib']
 
   src += ["android/ui.cc", "android/sl_sound.cc"]
   env.Program('_ui', src,
     LINKFLAGS=linkflags,
     LIBS=libs)
-
 else:
   qt_libs = ["pthread"]
 
+  qt_modules = ["Widgets", "Gui", "Core", "DBus", "Multimedia"]
   if arch == "Darwin":
-    qt_env["FRAMEWORKS"] += ["QtWidgets", "QtGui", "QtCore", "QtDBus", "QtMultimedia"]
+    qt_env["FRAMEWORKS"] += [f"Qt{m}" for m in qt_modules]
   else:
-    qt_libs += ["Qt5Widgets", "Qt5Gui", "Qt5Core", "Qt5DBus", "Qt5Multimedia"]
+    qt_libs += [f"Qt5{m}" for m in qt_modules]
 
   if arch == "larch64":
     qt_libs += ["GLESv2", "wayland-client"]
   else:
     qt_libs += ["GL"]
 
-  qt_src = ["qt/ui.cc", "qt/window.cc", "qt/settings.cc", "qt/qt_sound.cc"] + src
+  qt_src = ["qt/ui.cc", "qt/window.cc", "qt/offroad/settings.cc", "qt/qt_sound.cc"] + src
   qt_env.Program("_ui", qt_src, LIBS=qt_libs + libs)

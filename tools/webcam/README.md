@@ -1,8 +1,8 @@
 Run openpilot with webcam on PC/laptop
 =====================
 What's needed:
-- Ubuntu 16.04
-- Python 3.7.3
+- Ubuntu 20.04
+- Python 3.8.2
 - GPU (recommended)
 - Two USB webcams, at least 720p and 78 degrees FOV (e.g. Logitech C920/C615)
 - [Car harness](https://comma.ai/shop/products/comma-car-harness) with black panda (or the outdated grey panda/giraffe combo) to connect to your car
