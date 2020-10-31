@@ -203,7 +203,14 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
   panel_layout = new QStackedLayout();
 
   // close button
-  QPushButton *close_button = new QPushButton("<- back");
+  QPushButton *close_button = new QPushButton("X");
+  close_button->setStyleSheet(R"(
+    QPushButton {
+      padding: 50px;
+      font-weight: bold;
+      font-size: 100px;
+    }
+  )");
   sidebar_layout->addWidget(close_button);
   QObject::connect(close_button, SIGNAL(released()), this, SIGNAL(closeSettings()));
 
