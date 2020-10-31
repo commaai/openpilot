@@ -12,7 +12,7 @@
 #include <QGridLayout>
 
 #include "window.hpp"
-#include "settings.hpp"
+#include "offroad/settings.hpp"
 
 #include "paint.hpp"
 #include "common/util.h"
@@ -115,7 +115,7 @@ void GLWindow::backlightUpdate(){
 
 #ifdef QCOM2
   if (!ui_state->started){
-    brightness = 0;
+    brightness = 150;
   }
 #endif
 

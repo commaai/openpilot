@@ -354,6 +354,8 @@ selfdrive/ui/text/text.c
 
 selfdrive/ui/qt/*.cc
 selfdrive/ui/qt/*.hpp
+selfdrive/ui/qt/offroad/*.cc
+selfdrive/ui/qt/offroad/*.hpp
 
 selfdrive/ui/android/*.cc
 selfdrive/ui/android/*.hpp
