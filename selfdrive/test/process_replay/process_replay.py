@@ -337,6 +337,11 @@ def python_replay_process(cfg, lr):
 
   os.environ['NO_RADAR_SLEEP'] = "1"
   os.environ['SKIP_FW_QUERY'] = "1"
+  for msg in lr:
+    if msg.which() == 'carParams':
+      os.environ['FINGERPRINT'] = msg.carParams.carFingerprint
+      break
+
   manager.prepare_managed_process(cfg.proc_name)
   mod = importlib.import_module(manager.managed_processes[cfg.proc_name])
   thread = threading.Thread(target=mod.main, args=args)

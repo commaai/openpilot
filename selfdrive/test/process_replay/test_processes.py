@@ -12,7 +12,7 @@ from tools.lib.logreader import LogReader
 INJECT_MODEL = 0
 
 segments = [
-  ("HONDA", "0e7a2ba168465df5|2020-10-18--14-14-22--3"),      # HONDA.ACURA_RDX_3G (BOSCH)
+  ("HONDA", "d83f36766f8012a5|2020-02-05--18-42-21--2"),      # HONDA.CIVIC_BOSCH_DIESEL (BOSCH)
   ("HONDA", "99c94dc769b5d96e|2019-08-03--14-19-59--2"),      # HONDA.CIVIC (NIDEC)
   ("TOYOTA", "77611a1fac303767|2020-02-29--13-29-33--3"),     # TOYOTA.COROLLA_TSS2
   ("TOYOTA", "b14c5b4742e6fc85|2020-10-14--11-04-47--4"),     # TOYOTA.RAV4  (LQR)
