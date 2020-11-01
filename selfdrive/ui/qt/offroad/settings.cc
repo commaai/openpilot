@@ -171,13 +171,11 @@ QWidget * developer_panel() {
   // TODO: enable SSH toggle and github keys
 
   Params params = Params();
-
   std::string brand = params.read_db_bool("Passive") ? "dashcam" : "openpilot";
-
   std::vector<std::pair<std::string, std::string>> labels = {
-    {"Version", brand + " " + params.get("Version", false)},
+    {"Version", brand + " v" + params.get("Version", false)},
     {"Git Branch", params.get("GitBranch", false)},
-    {"Git Commit", params.get("GitCommit", false)},
+    {"Git Commit", params.get("GitCommit", false).substr(0, 10)},
     {"Panda Firmware", params.get("PandaFirmwareHex", false)},
   };
 
