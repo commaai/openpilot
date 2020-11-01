@@ -490,10 +490,9 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
 
   EventName.lkasButtonOff: {
     ET.WARNING: Alert(
-      "lkasButtonOff",
-      "LKAS button off",
-      "",
-      AlertStatus.userPrompt, AlertSize.small,
+      "TAKE CONTROL",
+      "Steer disabled by LKAS button",
+      AlertStatus.userPrompt, AlertSize.mid,
       Priority.LOW, VisualAlert.steerRequired, AudibleAlert.none, 0., .1, .2),
   },
 
