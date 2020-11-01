@@ -40,7 +40,7 @@ int default_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   }
   // set CAN2 mode to normal if int_cnt expaired
   if (HKG_obd_int_cnt == 1) {
-    if (current_safety_mode != SAFETY_ELM327 && board_has_obd() && !HKG_forward_obd) {
+    if (board_has_obd() && !HKG_forward_obd) {
       current_board->set_can_mode(CAN_MODE_NORMAL); puts("  OBD2 CAN empty: setting can mode normal\n");}
     HKG_obd_int_cnt = 0;
   }
