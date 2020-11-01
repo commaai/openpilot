@@ -398,8 +398,10 @@ def cleanup_all_processes(signal, frame):
 
 
 def send_managed_process_signal(name, sig):
-  if name not in running or name not in managed_processes:
+  if name not in running or name not in managed_processes or \
+     running[name].exitcode is not None:
     return
+
   cloudlog.info(f"sending signal {sig} to {name}")
   os.kill(running[name].pid, sig)
 
