@@ -63,6 +63,7 @@ class Panda {
   // Panda functionality
   cereal::HealthData::HwType get_hw_type();
   void set_safety_model(cereal::CarParams::SafetyModel safety_model, int safety_param=0);
+  void set_unsafe_mode(uint16_t unsafe_mode);
   void set_rtc(struct tm sys_time);
   struct tm get_rtc();
   void set_fan_speed(uint16_t fan_speed);
