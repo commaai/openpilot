@@ -21,9 +21,8 @@ void bs_init(struct bitstream* bs, const uint8_t* buffer, size_t input_size) {
 }
 
 uint32_t bs_get(struct bitstream* bs, int n) {
-  if (n > 32)
-    return 0;
-
+  if (n > 32) return 0;
+    
   bs->pos += n;
   bs->shift += n;
   while (bs->shift > 8) {
@@ -90,7 +89,7 @@ uint32_t bs_ue(struct bitstream* bs) {
       done = 1;
     } else {
       read = bs_peek(bs, 8);
-      if (read == 0) {
+      if (!read) {
         bs_get(bs, 8);
         bits += 8;
       } else {
@@ -107,9 +106,8 @@ uint32_t bs_ue(struct bitstream* bs) {
 }
 
 int32_t bs_se(struct bitstream* bs) {
-  uint32_t ret;
-  ret = bs_ue(bs);
-  if ((ret & 0x1) == 0) {
+  uint32_t ret = bs_ue(bs);
+  if (!(ret & 0x1)) {
     ret >>= 1;
     int32_t temp = 0 - ret;
     return temp;
