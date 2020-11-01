@@ -137,8 +137,9 @@ QWidget * device_panel() {
 
   QPushButton *clear_cal_btn = new QPushButton("Reset Calibration");
   device_layout->addWidget(clear_cal_btn);
-  QObject::connect(clear_cal_btn, &QPushButton::released,
-                   [=]() { Params().delete_db_value("CalibrationParams"); });
+  QObject::connect(clear_cal_btn, &QPushButton::released, [=]() {
+    Params().delete_db_value("CalibrationParams");
+  });
 
   std::map<std::string, const char *> power_btns = {
     {"Power Off", "sudo poweroff"},
@@ -153,7 +154,6 @@ QWidget * device_panel() {
                      [=]() {std::system(b.second);});
 #endif
   }
-
 
   QWidget *widget = new QWidget;
   widget->setLayout(device_layout);
