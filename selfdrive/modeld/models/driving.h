@@ -59,7 +59,6 @@ typedef struct ModelState {
   ModelFrame frame;
   float *output;
   float *input_frames;
-  float *input_frames_permuted;
   RunModel *m;
 #ifdef DESIRE
   std::unique_ptr<float[]> prev_desire;
