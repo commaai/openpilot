@@ -19,8 +19,7 @@ class CarState(CarStateBase):
     self.scc_bus = CP.sccBus
     self.leftBlinker = False
     self.rightBlinker = False
-    self.lkas_button_on = False
-    self.prev_lkas_button = True
+    self.lkas_button_on = True
     self.has_scc13 = CP.carFingerprint in FEATURES["has_scc13"]
     self.has_scc14 = CP.carFingerprint in FEATURES["has_scc14"]
     self.cruise_main_button = 0
@@ -36,6 +35,7 @@ class CarState(CarStateBase):
     self.prev_cruise_main_button = self.cruise_main_button
     self.prev_left_blinker = self.leftBlinker
     self.prev_right_blinker = self.rightBlinker
+    self.prev_lkas_button = self.lkas_button_on
 
     ret = car.CarState.new_message()
 
@@ -62,7 +62,7 @@ class CarState(CarStateBase):
     ret.steeringTorqueEps = cp_mdps.vl["MDPS12"]['CR_Mdps_OutTq']
     ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD
     self.mdps_error_cnt += 1 if cp_mdps.vl["MDPS12"]['CF_Mdps_ToiUnavail'] != 0 else -self.mdps_error_cnt
-    ret.steerWarning = self.mdps_error_cnt > 100 #cp_mdps.vl["MDPS12"]['CF_Mdps_ToiUnavail'] != 0
+    ret.steerWarning = self.mdps_error_cnt > 10 #cp_mdps.vl["MDPS12"]['CF_Mdps_ToiUnavail'] != 0
 
     # cruise state
     ret.cruiseState.enabled = (cp_scc.vl["SCC12"]['ACCMode'] != 0) if not self.no_radar else \
@@ -183,8 +183,6 @@ class CarState(CarStateBase):
       lkas_button = bool(cp_cam.vl["LKAS11"]["CF_Lkas_LdwsSysState"])
       if lkas_button != self.prev_lkas_button:
         self.lkas_button_on = not self.lkas_button_on
-      self.prev_lkas_button = lkas_button
-
 
     return ret
 
