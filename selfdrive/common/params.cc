@@ -62,7 +62,7 @@ static int fsync_dir(const char* path){
     goto cleanup;
   }
 
- cleanup:
+cleanup:
   int result_close = 0;
   if (fd >= 0){
     result_close = close(fd);
@@ -237,10 +237,6 @@ cleanup:
 }
 
 int Params::delete_db_value(std::string key) {
-  return delete_db_value(key.c_str());
-}
-
-int Params::delete_db_value(const char* key) {
   int lock_fd = -1;
   int result;
   std::string path;
@@ -256,7 +252,7 @@ int Params::delete_db_value(const char* key) {
   }
 
   // Delete value.
-  path = params_path + "/d/" + std::string(key);
+  path = params_path + "/d/" + key;
   result = remove(path.c_str());
   if (result != 0) {
     result = ERR_NO_VALUE;
