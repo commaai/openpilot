@@ -8,7 +8,7 @@ Ecu = car.CarParams.Ecu
 class SteerLimitParams:
   def __init__(self, CP):
 
-    if CP.carFingerprint in [CAR.KONA_EV_2020, CAR.IONIQ_EV_2020, CAR.SONATA, CAR.PALISADE]:
+    if CP.carFingerprint in [CAR.KONA_EV_2020, CAR.IONIQ_EV_2020, CAR.SONATA, CAR.PALISADE, CAR.SANTA_FE, CAR.VELOSTER]:
 
       self.STEER_MAX = 384
     else:
