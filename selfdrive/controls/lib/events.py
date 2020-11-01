@@ -485,15 +485,15 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       "TAKE CONTROL",
       "Steer Unavailable while Turning",
       AlertStatus.userPrompt, AlertSize.mid,
-      Priority.LOW, VisualAlert.steerRequired, AudibleAlert.none, .0, .1, .2),
+      Priority.MID, VisualAlert.steerRequired, AudibleAlert.none, .0, .1, .2),
   },
 
   EventName.lkasButtonOff: {
     ET.WARNING: Alert(
       "TAKE CONTROL",
-      "Steer disabled by LKAS button",
+      "Steer Disabled by LKAS button",
       AlertStatus.userPrompt, AlertSize.mid,
-      Priority.LOW, VisualAlert.steerRequired, AudibleAlert.none, 0., .1, .2),
+      Priority.HIGH, VisualAlert.steerRequired, AudibleAlert.none, 0., .1, .2),
   },
 
   EventName.autoLaneChange: {
