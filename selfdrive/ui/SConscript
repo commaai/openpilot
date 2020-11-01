@@ -27,5 +27,5 @@ else:
   else:
     qt_libs += ["GL"]
 
-  qt_src = ["qt/ui.cc", "qt/window.cc", "qt/offroad/settings.cc", "qt/qt_sound.cc"] + src
+  qt_src = ["qt/ui.cc", "qt/window.cc", "qt/qt_sound.cc", "qt/offroad/settings.cc", "qt/offroad/onboarding.cc"] + src
   qt_env.Program("_ui", qt_src, LIBS=qt_libs + libs)
