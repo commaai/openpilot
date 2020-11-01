@@ -100,14 +100,7 @@ ModelDataRaw model_eval_frame(ModelState* s, cl_command_queue q,
   float *new_frame_buf = frame_prepare(&s->frame, q, yuv_cl, width, height, transform);
   memmove(&s->input_frames[0], &s->input_frames[MODEL_FRAME_SIZE], sizeof(float)*MODEL_FRAME_SIZE);
   memmove(&s->input_frames[MODEL_FRAME_SIZE], new_frame_buf, sizeof(float)*MODEL_FRAME_SIZE);
-  unsigned int img_area = MODEL_FRAME_SIZE*2 / 12;
-  float *net_input_buf = (float *)malloc(MODEL_FRAME_SIZE*2*sizeof(float));
-  for (int c = 0; c < 12; c++) {
-    for (int i = 0; i < img_area; i++) {
-      net_input_buf[i * 12 + c] = s->input_frames[c * img_area + i];
-    }
-  }
-  s->m->execute(net_input_buf, MODEL_FRAME_SIZE*2);
+  s->m->execute(s->input_frames, MODEL_FRAME_SIZE*2);
 
   #ifdef DUMP_YUV
     FILE *dump_yuv_file = fopen("/sdcard/dump.yuv", "wb");
