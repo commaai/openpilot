@@ -345,19 +345,19 @@ std::thread start_process_thread(MultiCameraState *cameras, const char *tname,
 void common_camera_process_front(SubMaster *sm, PubMaster *pm, CameraState *c, int cnt) {
   const CameraBuf *b = &c->buf;
 
-  static int x_min = 0, x_max, y_min, y_max = 0;
+  static int x_min = 0, x_max = 0, y_min = 0, y_max = 0;
   static const bool rhd_front = Params().read_db_bool("IsRHD");
 
   // auto exposure
   if (cnt % 3 == 0) {
-    if (sm->update(0) > 0) {
+    if (sm->update(0) > 0 && sm->updated("driverState")) {
       auto state = (*sm)["driverState"].getDriverState();
       // set front camera metering target
       if (state.getFaceProb() > 0.4) {
         auto face_position = state.getFacePosition();
-        int x_offset = rhd_front ? 0 : b->rgb_width - 0.5 * b->rgb_height;
+        int x_offset = rhd_front ? 0 : b->rgb_width - (0.5 * b->rgb_height);
         x_offset += (face_position[0] + 0.5) * (0.5 * b->rgb_height);
-        const int y_offset = (face_position[1] + 0.5) * (b->rgb_height);
+        const int y_offset = (face_position[1] + 0.5) * b->rgb_height;
 
         x_min = std::max(0, x_offset - 72);
         x_max = std::min(b->rgb_width - 1, x_offset + 72);
@@ -374,8 +374,8 @@ void common_camera_process_front(SubMaster *sm, PubMaster *pm, CameraState *c, i
       // default setting
       x_min = rhd_front ? 0 : b->rgb_width * 3 / 5;
       x_max = rhd_front ? b->rgb_width * 2 / 5 : b->rgb_width;
-      y_min = b->rgb_height * 1 / 3;
-      y_max = b->rgb_height * 1;
+      y_min = b->rgb_height / 3;
+      y_max = b->rgb_height;
     }
 #ifdef QCOM2
     x_min = 96;
