@@ -46,7 +46,7 @@ python panda/tests/debug_console.py
 ```
 <b> To print Opentpilot live data:</b>
 ```
-python selfdirve/debug/dump.py <category>
+python selfdrive/debug/dump.py <category>
 ```
   - replace `<category>` with any one of these: `health carState carControl controlsState carParams sendcan can`
 
