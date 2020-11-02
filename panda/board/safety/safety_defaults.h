@@ -39,11 +39,12 @@ int default_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     }
   }
   // check if we have a MDPS or SCC on Bus1
-  if (bus == 1 && (addr == 593 || addr == 897 || addr == 1057) && !HKG_LCAN_on_bus1) {
-    if (HKG_forward_bus1 != true) {
-      HKG_forward_bus1 = true;
-      puts("  MDPS or SCC on bus1: forwarding enabled\n");
-      if (HKG_obd_int_cnt > 1 && HKG_obd_int_cnt < 11 && board_has_obd()) {HKG_forward_obd = true; puts("  MDPS or SCC on OBD2 CAN: setting can mode obd\n");}
+  if (bus == 1 && (addr == 593 || addr == 897 || addr == 1057)) {
+    if (HKG_forward_bus1 != true && !HKG_LCAN_on_bus1) {
+      HKG_forward_bus1 = true; puts("  MDPS or SCC on bus1: forwarding enabled\n");
+    }
+    if (HKG_obd_int_cnt > 1 && HKG_obd_int_cnt < 11 && board_has_obd()) {
+      HKG_forward_obd = true; puts("  MDPS or SCC on OBD2 CAN: setting can mode obd\n");
     }
   }
   if ((addr == 593) && (HKG_MDPS12_checksum == -1)){
@@ -96,14 +97,14 @@ static int default_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
   int addr = GET_ADDR(to_fwd);
   int bus_fwd = -1;
 
-  if (bus_num == 0 && HKG_forward_bus1) {
-    bus_fwd = HKG_forward_bus1 ? 12 : 2;
+  if (bus_num == 0) {
+    bus_fwd = (HKG_forward_bus1 || HKG_forward_obd) ? 12 : 2;
   }
-  if (bus_num == 1 && HKG_forward_bus1) {
+  if (bus_num == 1 && (HKG_forward_bus1 || HKG_forward_obd)) {
     bus_fwd = 20;
   }
   if (bus_num == 2) {
-    bus_fwd = HKG_forward_bus1 ? 10 : 0;
+    bus_fwd = (HKG_forward_bus1 || HKG_forward_obd) ? 10 : 0;
   }
     // Code for LKA/LFA/HDA anti-nagging.
   if (addr == 593 && bus_fwd != -1) {
