@@ -68,7 +68,7 @@ static int hyundai_community_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   if ((addr == 1056 || addr == 1057) && HKG_scc_bus != bus) {
     if (bus != 1 || !HKG_LCAN_on_bus1) {
       HKG_scc_bus = bus;
-      if (bus == 1) { puts("  SCC on bus1\n"); if (!HKG_forward_bus1) {HKG_forward_bus1 = true;puts("  bus1 forwarding enabled\n")}}
+      if (bus == 1) { puts("  SCC on bus1\n"); if (!HKG_forward_bus1) {HKG_forward_bus1 = true;puts("  bus1 forwarding enabled\n");}}
       if (bus == 2) { puts("  SCC bus = bus2\n");}
     }
   }
