@@ -46,7 +46,7 @@ static int hyundai_community_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   if (bus == 1 && HKG_LCAN_on_bus1) {valid = false;}
   // check if we have a LCAN on Bus1
   if (bus == 1 && (addr == 1296 || addr == 524)) {
-    HKG_Lcan_bus1_cnt = 500;
+    HKG_Lcan_bus1_cnt = 200;
     if (HKG_forward_bus1 || !HKG_LCAN_on_bus1) {
       HKG_LCAN_on_bus1 = true;
       HKG_forward_bus1 = false;
@@ -61,14 +61,15 @@ static int hyundai_community_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   if ((addr == 593 || addr == 897) && HKG_mdps_bus != bus) {
     if (bus != 1 || !HKG_LCAN_on_bus1) {
       HKG_mdps_bus = bus;
-      if (bus == 1 && !HKG_forward_bus1) {HKG_forward_bus1 = true; puts("  MDPS on bus1: forwarding enabled\n");}
+      if (bus == 1) { puts("  MDPS on bus1\n"); if (!HKG_forward_bus1) {HKG_forward_bus1 = true; puts("  bus1 forwarding enabled\n");}}
     }
   }
   // check SCC on Bus
   if ((addr == 1056 || addr == 1057) && HKG_scc_bus != bus) {
     if (bus != 1 || !HKG_LCAN_on_bus1) {
       HKG_scc_bus = bus;
-      if (bus == 1 && !HKG_forward_bus1) {HKG_forward_bus1 = true;puts("  SCC on bus1: forwarding enabled\n");}
+      if (bus == 1) { puts("  SCC on bus1\n"); if (!HKG_forward_bus1) {HKG_forward_bus1 = true;puts("  bus1 forwarding enabled\n")}}
+      if (bus == 2) { puts("  SCC bus = bus2\n");
     }
   }
 
