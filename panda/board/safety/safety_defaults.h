@@ -2,7 +2,7 @@ bool HKG_LCAN_on_bus1 = false;
 bool HKG_forward_bus1 = false;
 bool HKG_forward_obd = false;
 bool HKG_forward_bus2 = true;
-int HKG_obd_int_cnt = 10;
+int HKG_obd_int_cnt = 20;
 int HKG_LKAS_bus0_cnt = 0;
 int HKG_Lcan_bus1_cnt = 0;
 int HKG_MDPS12_checksum = -1;
@@ -18,6 +18,14 @@ int default_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     if (bus == 2) {
       if (HKG_LKAS_bus0_cnt > 0) {HKG_LKAS_bus0_cnt--;} else if (!HKG_forward_bus2) {HKG_forward_bus2 = true; puts("  LKAS on bus2 & not on bus0: forwarding enabled\n");}
       if (HKG_Lcan_bus1_cnt > 0) {HKG_Lcan_bus1_cnt--;} else if (HKG_LCAN_on_bus1) {HKG_LCAN_on_bus1 = false; puts("  Lcan not on bus1\n");}
+      // set CAN2 mode to normal if int_cnt expaired
+      if (HKG_obd_int_cnt == 11 && !HKG_forward_bus1 && board_has_obd()) {
+        current_board->set_can_mode(CAN_MODE_OBD_CAN2); puts("  checking bus1: setting can2 mode obd\n");}
+      if (HKG_obd_int_cnt == 1) {
+        if (board_has_obd() && !HKG_forward_obd) {
+          current_board->set_can_mode(CAN_MODE_NORMAL); puts("  OBD2 CAN empty: setting can2 mode normal\n");}
+        HKG_obd_int_cnt = 0;
+      }
       if (HKG_obd_int_cnt > 1) {HKG_obd_int_cnt--;}
     }
   }
@@ -35,16 +43,9 @@ int default_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     if (HKG_forward_bus1 != true) {
       HKG_forward_bus1 = true;
       puts("  MDPS or SCC on bus1: forwarding enabled\n");
-      if (board_has_obd() && HKG_obd_int_cnt > 0) {HKG_forward_obd = true; puts("  MDPS or SCC on OBD2 CAN: setting can mode obd\n");}
+      if (board_has_obd() && 11 > HKG_obd_int_cnt > 0) {HKG_forward_obd = true; puts("  MDPS or SCC on OBD2 CAN: setting can mode obd\n");}
     }
   }
-  // set CAN2 mode to normal if int_cnt expaired
-  if (HKG_obd_int_cnt == 1) {
-    if (board_has_obd() && !HKG_forward_obd) {
-      current_board->set_can_mode(CAN_MODE_NORMAL); puts("  OBD2 CAN empty: setting can mode normal\n");}
-    HKG_obd_int_cnt = 0;
-  }
-
   if ((addr == 593) && (HKG_MDPS12_checksum == -1)){
     int New_Chksum2 = 0;
     uint8_t dat[8];
@@ -73,7 +74,7 @@ static void nooutput_init(int16_t param) {
   UNUSED(param);
   controls_allowed = false;
   relay_malfunction_reset();
-  if (board_has_obd() && (HKG_forward_obd || HKG_obd_int_cnt > 0)) {
+  if (board_has_obd() && HKG_forward_obd) {
     current_board->set_can_mode(CAN_MODE_OBD_CAN2);
     puts("setting can mode obd\n");
   }
