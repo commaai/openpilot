@@ -19,6 +19,8 @@ AddOption('--asan',
 
 # Rebuild cython extensions if python, distutils, or cython change
 cython_dependencies = [Value(v) for v in (sys.version, distutils.__version__, Cython.__version__)]
+# for v in (sys.version, distutils.__version__, Cython.__version__):
+#   print(v)
 Export('cython_dependencies')
 
 real_arch = arch = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()
@@ -151,6 +153,7 @@ env = Environment(
     "#phonelibs/libyuv/include",
     "#phonelibs/openmax/include",
     "#phonelibs/json11",
+    "/usr/include/python3.8",
     "#phonelibs/curl/include",
     "#phonelibs/libgralloc/include",
     "#phonelibs/android_frameworks_native/include",
