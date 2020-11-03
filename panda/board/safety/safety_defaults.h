@@ -16,7 +16,7 @@ int default_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   if (addr == 832) {
     if (bus == 0 && HKG_forward_bus2) {HKG_forward_bus2 = false; HKG_LKAS_bus0_cnt = 20; puts("  LKAS on bus0: forwarding disabled\n");}
     if (bus == 2) {
-      it (HKG_obd_int_cnt == 20) {puts("  LKAS on bus2: forwarding enabled\n");}
+      if (HKG_obd_int_cnt == 20) {puts("  LKAS on bus2: forwarding enabled\n");}
       if (HKG_LKAS_bus0_cnt > 0) {HKG_LKAS_bus0_cnt--;} else if (!HKG_forward_bus2) {HKG_forward_bus2 = true; puts("  LKAS on bus2 & not on bus0: forwarding enabled\n");}
       if (HKG_Lcan_bus1_cnt > 0) {HKG_Lcan_bus1_cnt--;} else if (HKG_LCAN_on_bus1) {HKG_LCAN_on_bus1 = false; puts("  Lcan not on bus1\n");}
       // set CAN2 mode to normal if int_cnt expaired
