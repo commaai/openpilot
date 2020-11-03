@@ -23,7 +23,7 @@ int default_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
       if (HKG_obd_int_cnt == 11 && !HKG_forward_bus1 && board_has_obd()) {
         current_board->set_can_mode(CAN_MODE_OBD_CAN2); puts("  checking bus1: setting can2 mode obd\n");}
       if (HKG_obd_int_cnt == 1) {
-        if (board_has_obd() && !HKG_forward_obd) {
+        if (!HKG_forward_obd && !HKG_forward_bus1 && board_has_obd()) {
           current_board->set_can_mode(CAN_MODE_NORMAL); puts("  OBD2 CAN empty: setting can2 mode normal\n");}
         HKG_obd_int_cnt = 0;
       }
@@ -45,7 +45,7 @@ int default_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
       HKG_forward_bus1 = true; puts("  MDPS or SCC on bus1: forwarding enabled\n");
     }
     if (!HKG_forward_bus1 && HKG_obd_int_cnt > 1 && HKG_obd_int_cnt < 11 && board_has_obd()) {
-      HKG_forward_obd = true; current_board->set_can_mode(CAN_MODE_OBD_CAN2); puts("  MDPS or SCC on OBD2 CAN: setting can mode obd\n");
+      HKG_forward_obd = true; puts("  MDPS or SCC on OBD2 CAN: setting can mode obd\n");
     }
   }
   if ((addr == 593) && (HKG_MDPS12_checksum == -1)){
