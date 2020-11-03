@@ -1407,6 +1407,7 @@ static void camera_open(CameraState *s, bool rear) {
         {
           .reg_write_type = MSM_ACTUATOR_WRITE_DAC,
           .hw_mask = 0,
+          // MSB here at address 3
           .reg_addr = 3,
           .hw_shift = 0,
           .data_type = 9,
@@ -1423,8 +1424,8 @@ static void camera_open(CameraState *s, bool rear) {
         { .reg_addr=6, .addr_type=MSM_ACTUATOR_BYTE_ADDR, .reg_data=64, .data_type = MSM_ACTUATOR_BYTE_DATA, .i2c_operation = MSM_ACT_WRITE, .delay = 0 },  // 0x40 = SAC3 mode
         { .reg_addr=7, .addr_type=MSM_ACTUATOR_BYTE_ADDR, .reg_data=113, .data_type = MSM_ACTUATOR_BYTE_DATA, .i2c_operation = MSM_ACT_WRITE, .delay = 0 },
         // 0x71 = DIV1 | DIV0 | SACT0 -- Tvib x 1/4 (quarter)
-        // SAC Tvib = 6.3 ms + 0.1 ms = 6.4 ms
-        // LSC 1-step = 252 + 1*4 = 255 ms
+        // SAC Tvib = 6.3 ms + 0.1 ms = 6.4 ms / 4 = 1.6 ms
+        // LSC 1-step = 252 + 1*4 = 256 ms / 4 = 64 ms
       };
 
       struct region_params_t region_params[] = {
