@@ -339,7 +339,9 @@ def python_replay_process(cfg, lr):
   os.environ['SKIP_FW_QUERY'] = "1"
   for msg in lr:
     if msg.which() == 'carParams':
-      os.environ['FINGERPRINT'] = msg.carParams.carFingerprint
+      # TODO: get a stock VW route
+      if "Generic Volkswagen" not in msg.carParams.carFingerprint:
+        os.environ['FINGERPRINT'] = msg.carParams.carFingerprint
       break
 
   manager.prepare_managed_process(cfg.proc_name)
