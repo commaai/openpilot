@@ -368,7 +368,7 @@ routes = {
     'enableCamera': True,
     'enableDsu': False,
   },
-  "964c09eb11ca8089|2020-10-30--21-38-07": {
+  "964c09eb11ca8089|2020-11-03--22-04-00": {
     'carFingerprint': TOYOTA.LEXUS_NX,
     'enableCamera': True,
     'enableDsu': False,
