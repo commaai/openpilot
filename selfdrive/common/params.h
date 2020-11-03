@@ -39,7 +39,6 @@ public:
   int read_db_value_blocking(const char* key, char** value, size_t* value_sz);
 
   int read_db_all(std::map<std::string, std::string> *params);
-  std::vector<char> read_db_bytes(const char* param_name);
   bool read_db_bool(const char* param_name);
 
   std::string get(std::string key, bool block=false);

@@ -75,7 +75,7 @@ void safety_setter_thread() {
     if (vin.size() > 0) {
       // sanity check VIN format
       assert(vin.size() == 17);
-      LOGW("got CarVin %s", str_vin.c_str());
+      LOGW("got CarVin %s", vin.c_str());
       break;
     }
     usleep(100*1000);
