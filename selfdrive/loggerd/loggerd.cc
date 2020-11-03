@@ -524,17 +524,17 @@ kj::Array<capnp::word> gen_init_data() {
   }
   Params params = Params();
 
-  std::vector<char> git_commit = params.read_db_bytes("GitCommit");
+  std::string git_commit = params.get("GitCommit", false);
   if (git_commit.size() > 0) {
     init.setGitCommit(capnp::Text::Reader(git_commit.data(), git_commit.size()));
   }
 
-  std::vector<char> git_branch = params.read_db_bytes("GitBranch");
+  std::string git_branch = params.get("GitBranch", false);
   if (git_branch.size() > 0) {
-    init.setGitBranch(capnp::Text::Reader(git_branch.data(), git_branch.size()));
+    init.setGitBranch(git_branch);
   }
 
-  std::vector<char> git_remote = params.read_db_bytes("GitRemote");
+  std::string git_remote = params.get("GitRemote", false);
   if (git_remote.size() > 0) {
     init.setGitRemote(capnp::Text::Reader(git_remote.data(), git_remote.size()));
   }

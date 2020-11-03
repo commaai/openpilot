@@ -71,11 +71,10 @@ void safety_setter_thread() {
       return;
     };
 
-    std::vector<char> value_vin = Params().read_db_bytes("CarVin");
-    if (value_vin.size() > 0) {
+    std::string vin = Params().get("CarVin", true);
+    if (vin.size() > 0) {
       // sanity check VIN format
-      assert(value_vin.size() == 17);
-      std::string str_vin(value_vin.begin(), value_vin.end());
+      assert(vin.size() == 17);
       LOGW("got CarVin %s", str_vin.c_str());
       break;
     }
@@ -85,7 +84,7 @@ void safety_setter_thread() {
   // VIN query done, stop listening to OBDII
   panda->set_safety_model(cereal::CarParams::SafetyModel::NO_OUTPUT);
 
-  std::vector<char> params;
+  std::string params;
   LOGW("waiting for params to set safety model");
   while (1) {
     if (do_exit || !panda->connected){
@@ -93,7 +92,7 @@ void safety_setter_thread() {
       return;
     };
 
-    params = Params().read_db_bytes("CarParams");
+    params = Params().get("CarParams", true);
     if (params.size() > 0) break;
     usleep(100*1000);
   }

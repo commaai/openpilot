@@ -358,19 +358,6 @@ int Params::read_db_all(std::map<std::string, std::string> *params) {
   return 0;
 }
 
-std::vector<char> Params::read_db_bytes(const char* param_name) {
-  std::vector<char> bytes;
-  char* value;
-  size_t sz;
-  int result = read_db_value(param_name, &value, &sz);
-  if (result == 0) {
-    bytes.assign(value, value+sz);
-    free(value);
-  }
-  return bytes;
-}
-
 bool Params::read_db_bool(const char* param_name) {
-  std::vector<char> bytes = read_db_bytes(param_name);
-  return bytes.size() > 0 and bytes[0] == '1';
+  return get(param_name, false).compare("1") == 0;
 }
