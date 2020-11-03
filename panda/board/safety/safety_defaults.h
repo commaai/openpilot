@@ -14,7 +14,7 @@ int default_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   int addr = GET_ADDR(to_push);
 
   if (addr == 832) {
-    if (bus == 0 && HKG_forward_bus2) {HKG_forward_bus2 = false; HKG_LKAS_bus0_cnt = 20; puts("  LKAS on bus0: forwarding disabled\n");}
+    if (bus == 0) { HKG_LKAS_bus0_cnt = 20; if (HKG_forward_bus2) {HKG_forward_bus2 = false; puts("  LKAS on bus0: forwarding disabled\n");}}
     if (bus == 2) {
       if (HKG_obd_int_cnt == 20) {puts("  LKAS on bus2: forwarding enabled\n");}
       if (HKG_LKAS_bus0_cnt > 0) {HKG_LKAS_bus0_cnt--;} else if (!HKG_forward_bus2) {HKG_forward_bus2 = true; puts("  LKAS on bus2 & not on bus0: forwarding enabled\n");}
