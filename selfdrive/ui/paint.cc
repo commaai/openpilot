@@ -127,17 +127,13 @@ static void draw_lead(UIState *s, const cereal::RadarState::LeadData::Reader &le
   draw_chevron(s, d_rel, lead.getYRel(), 25, nvgRGBA(201, 34, 49, fillAlpha), COLOR_YELLOW);
 }
 
-static float clip(float a, float min, float max) {
-  return fmax(fmin(a, max), min);
-}
-
 static void ui_draw_line(UIState *s, const vertex_data *v, const int cnt, NVGcolor *color, NVGpaint *paint) {
   if (cnt == 0) return;
 
   nvgBeginPath(s->vg);
-  nvgMoveTo(s->vg, clip(v[0].x, 0, s->fb_w), clip(v[0].y, 0, s->fb_h));
+  nvgMoveTo(s->vg, std::clamp<float>(v[0].x, 0, s->fb_w), std::clamp<float>(v[0].y, 0, s->fb_h));
   for (int i = 1; i < cnt; i++) {
-    nvgLineTo(s->vg, clip(v[i].x, 0, s->fb_w), clip(v[i].y, 0, s->fb_h));
+    nvgLineTo(s->vg, std::clamp<float>(v[i].x, 0, s->fb_w), std::clamp<float>(v[i].y, 0, s->fb_h));
   }
   nvgClosePath(s->vg);
   if (color) {
