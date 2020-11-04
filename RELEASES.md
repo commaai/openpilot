@@ -1,5 +1,6 @@
 Version 0.7.11 (2020-XX-XX)
 ========================
+ * Grey panda is no longer supported, upgrade to comma two or black panda
  * Lexus NX 2018 support thanks to matt12eagles!
  * Kia Niro EV 2020 support thanks to nickn17!
 
