@@ -1,26 +1,27 @@
 #pragma once
-#include "qt/keyboard.hpp"
+
 #include <QWidget>
-#include <QPushButton>
-#include <QButtonGroup>
+#include <QLineEdit>
 #include <QVBoxLayout>
 #include <QStackedLayout>
-#include <QLineEdit>
 
+#include "keyboard.hpp"
 
 class InputField : public QWidget {
   Q_OBJECT
 
-  public:
-    explicit InputField(QWidget* parent = 0);
+public:
+  explicit InputField(QWidget* parent = 0);
   
-  private:
-    Keyboard* k;
-    QLineEdit* line;
-    QVBoxLayout* l;
-    bool eventFilter(QObject* object, QEvent* event);
-  public slots:
-    void getText(QString s);
-  signals:
-    void emitText(QString s);
+private:
+  Keyboard *k;
+  QLineEdit *line;
+  QVBoxLayout *l;
+  bool eventFilter(QObject* object, QEvent* event);
+
+public slots:
+  void getText(QString s);
+
+signals:
+  void emitText(QString s);
 };

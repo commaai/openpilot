@@ -1,11 +1,7 @@
-#include "qt/input_field.hpp"
-#include "qt/keyboard.hpp"
-#include <QDebug>
 #include <QListWidget>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLabel>
-#include <QPixmap>
 #include <QPushButton>
 #include <QInputDialog>
 #include <QLineEdit>
@@ -17,9 +13,12 @@
 #include <QApplication>
 #include <QDesktopWidget>
 
+#include "input_field.hpp"
+#include "keyboard.hpp"
+
 InputField::InputField(QWidget *parent){
-  l= new QVBoxLayout();
-  
+  l = new QVBoxLayout();
+
   line = new QLineEdit("");
   line->installEventFilter(this);
   l->addWidget(line);
@@ -32,7 +31,6 @@ InputField::InputField(QWidget *parent){
 
 bool InputField::eventFilter(QObject* object, QEvent* event){
   if(object == line && event->type() == QEvent::MouseButtonPress) {
-    qDebug() << "click";
     k->setWindowFlags(Qt::FramelessWindowHint);
     k->resize(2560, k->height());
     k->move(1920, 1300); //TODO: move to the correct position for TICI
@@ -56,7 +54,7 @@ void InputField::getText(QString s){
   }
 
   QVector<QString> control_buttons {"⇧", "↑", "ABC", "⏎", "#+=", "⌫", "123"};
-  for(QString c:control_buttons){
+  for(QString c :control_buttons){
     if(!QString::compare(s, c)){
       return;
     }
