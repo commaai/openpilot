@@ -28,8 +28,9 @@ else:
 
   if arch == "Darwin":
     del libs[libs.index('OpenCL')]
+    del libs[libs.index(gpucommon)][gpucommon.index('GL')]
     env = env.Clone()
-    env['FRAMEWORKS'] = ['OpenCL']
+    env['FRAMEWORKS'] = ['OpenCL', 'OpenGL']
 
 env.SharedLibrary('snapshot/visionipc',
   ["#selfdrive/common/visionipc.c", "#selfdrive/common/ipc.c"])
