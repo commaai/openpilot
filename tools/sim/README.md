@@ -3,19 +3,7 @@ openpilot in simulator
 
 
 ## Running the simulator
-First, start the CARLA server.
-```
-./start_carla.sh
-```
-
-Then start bridge and openpilot.
-```
-./start_openpilot_docker.sh
-```
-
-Or
-
-Start Carla a background container and openpilot in a foreground container with an interactive terminal running tmux.
+Start Carla in a background container and openpilot in a foreground container with an interactive terminal running tmux.
 ```
 ./start_sim.sh
 ```
