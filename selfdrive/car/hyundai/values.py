@@ -291,7 +291,12 @@ FW_VERSIONS = {
     (Ecu.eps, 0x7d4, None): [b'\xf1\x00TM  MDPS C 1.00 1.00 56340-S2000 8409'],
     (Ecu.fwdCamera, 0x7c4, None): [b'\xf1\x00JFA LKAS AT USA LHD 1.00 1.02 95895-D5000 h31'],
     (Ecu.transmission, 0x7e1, None): [b'\xf1\x816U2V8051\x00\x00\xf1\x006U2V0_C2\x00\x006U2V8051\x00\x00DJF0T16NL0\t\xd2GW'],
-  }
+  },
+  CAR.IONIQ_EV_LTD: {
+    (Ecu.eps, 0x7d4, None): [b'\xf1\x00AE  MDPS C 1.00 1.04 56310/G7301 4AEEC104', ],
+    (Ecu.fwdRadar, 0x7d0, None): [b'\xf1\x00AEev SCC F-CUP      1.00 1.00 96400-G7000         ', ],
+    (Ecu.fwdCamera, 0x7c4, None): [b'\xf1\x00AEE MFC  AT EUR LHD 1.00 1.00 95740-G2400 180222', ],
+  },
 }
 
 CHECKSUM = {
