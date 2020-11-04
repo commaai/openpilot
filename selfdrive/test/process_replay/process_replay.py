@@ -75,10 +75,6 @@ class DumbSocket:
         # lists
         dat = messaging.new_message(s, 0)
 
-      # TODO: remove this after deprecated all hw without a relay
-      if s == "health":
-        dat.health.hwType = log.HealthData.HwType.uno
-
       self.data = dat.to_bytes()
 
   def receive(self, non_blocking=False):
