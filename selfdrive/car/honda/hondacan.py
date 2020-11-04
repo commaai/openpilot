@@ -16,7 +16,7 @@ def get_lkas_cmd_bus(car_fingerprint, radar_disabled=False):
     # when radar is disabled, steering commands are sent directly to powertrain bus
     return get_pt_bus(car_fingerprint)
   # normally steering commands are sent to radar, which forwards them to powertrain bus
-  return 2 if car_fingerprint in HONDA_BOSCH else 0
+  return 0
 
 
 def create_brake_command(packer, apply_brake, pump_on, pcm_override, pcm_cancel_cmd, fcw, idx, car_fingerprint, stock_brake):

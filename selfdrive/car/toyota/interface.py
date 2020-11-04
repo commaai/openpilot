@@ -243,7 +243,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.3], [0.05]]
       ret.lateralTuning.pid.kf = 0.00007
 
-    elif candidate == CAR.LEXUS_NXH:
+    elif candidate in [CAR.LEXUS_NXH, CAR.LEXUS_NX]:
       stop_and_go = True
       ret.safetyParam = 73
       ret.wheelbase = 2.66
