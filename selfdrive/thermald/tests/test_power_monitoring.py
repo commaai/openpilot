@@ -18,8 +18,7 @@ def mock_sec_since_boot():
 with patch("common.realtime.sec_since_boot", new=mock_sec_since_boot):
   with patch("common.params.put_nonblocking", new=params.put):
     from selfdrive.thermald.power_monitoring import PowerMonitoring, CAR_BATTERY_CAPACITY_uWh, \
-                                                    PANDA_OUTPUT_VOLTAGE, CAR_CHARGING_RATE_W, \
-                                                    VBATT_PAUSE_CHARGING
+                                                    CAR_CHARGING_RATE_W, VBATT_PAUSE_CHARGING
 
 def actual_current_to_panda_current(actual_current):
   return max(int(((3.3 - (actual_current * 8.25)) * 4096) / 3.3), 0)
@@ -65,16 +64,6 @@ class TestPowerMonitoring(unittest.TestCase):
     for _ in range(10):
       pm.calculate(self.mock_health(True, hw_type))
     self.assertEqual(pm.get_power_used(), 0)
-
-  # Test to see that it integrates with white/grey panda while charging
-  @parameterized.expand([(log.HealthData.HwType.whitePanda,), (log.HealthData.HwType.greyPanda,)])
-  def test_offroad_integration_white(self, hw_type):
-    with pm_patch("get_battery_voltage", 4e6), pm_patch("get_battery_current", 1e5), pm_patch("get_battery_status", "Charging"):
-      pm = PowerMonitoring()
-      for _ in range(TEST_DURATION_S + 1):
-        pm.calculate(self.mock_health(False, hw_type, current=0.1))
-      expected_power_usage = ((TEST_DURATION_S/3600) * (0.1 * PANDA_OUTPUT_VOLTAGE) * 1e6)
-      self.assertLess(abs(pm.get_power_used() - expected_power_usage), 10)
 
   # Test to see that it integrates with discharging battery
   @parameterized.expand(ALL_PANDA_TYPES)

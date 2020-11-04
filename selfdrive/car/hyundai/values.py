@@ -150,10 +150,6 @@ FINGERPRINTS = {
   }]
 }
 
-ECU_FINGERPRINT = {
-  Ecu.fwdCamera: [832, 1156, 1191, 1342]
-}
-
 # Don't use these fingerprints for fingerprinting, they are still used for ECU detection
 IGNORED_FINGERPRINTS = [CAR.VELOSTER, CAR.GENESIS_G70, CAR.KONA]
 

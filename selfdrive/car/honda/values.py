@@ -1036,10 +1036,4 @@ SPEED_FACTOR = {
   CAR.INSIGHT: 1.,
 }
 
-# msgs sent for steering controller by camera module on can 0.
-# those messages are mutually exclusive on CRV and non-CRV cars
-ECU_FINGERPRINT = {
-  Ecu.fwdCamera: [0xE4, 0x194],   # steer torque cmd
-}
-
 HONDA_BOSCH = set([CAR.ACCORD, CAR.ACCORD_15, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_5G, CAR.CRV_HYBRID, CAR.INSIGHT, CAR.ACURA_RDX_3G])
