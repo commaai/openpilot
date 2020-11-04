@@ -24,10 +24,8 @@ services:
     command: bash -c "cd tools && cd sim && sh tmux_script.sh $$*"
 
   carla:
-    image: carlasim/carla:0.9.8
+    image: carlasim/carla:0.9.7
     container_name: carla
-    stdin_open: true # docker run -i
-    tty: true # docker run -t
     network_mode: host
     runtime: nvidia
     environment:

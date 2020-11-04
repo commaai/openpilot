@@ -11,7 +11,20 @@ First, start the CARLA server.
 Then start bridge and openpilot.
 ```
 ./start_openpilot_docker.sh
-``` 
+```
+
+Or
+
+Start Carla a background container and openpilot in a foreground container with an interactive terminal running tmux.
+```
+./start_sim.sh
+```
+
+Clean up with:
+```
+./stop_sim.sh
+```
+(shuts down Carla and cleans up the containers)
 
 To engage openpilot press 1 a few times while focused on bridge.py to increase the cruise speed. 
 ## Controls

@@ -14,15 +14,7 @@ RUN apt-get update && apt-get install -y \
     gcc-arm-none-eabi \
     tmux \
     vim \
-
-    # libglvnd dependencies
-    automake \
-    libtool \
-    libxext-dev \
-    libx11-dev \
-    x11proto-gl-dev \
-    libpng16-16 \
-  && rm -rf /var/lib/apt/lists/*
+    libglvnd-dev
 
 # Intel OpenCL driver
 ARG INTEL_DRIVER=opencl_runtime_16.1.1_x64_ubuntu_6.4.0.25.tgz
@@ -51,14 +43,6 @@ ENV NVIDIA_VISIBLE_DEVICES all
 ENV NVIDIA_DRIVER_CAPABILITIES compute,utility,display
 
 RUN dbus-uuidgen > /etc/machine-id
-
-# we can apt-get after moving to a newer ubuntu
-WORKDIR /opt/libglvnd
-RUN git clone --branch="0.1.1" https://github.com/NVIDIA/libglvnd.git . && \
-    ./autogen.sh && \
-    ./configure --prefix=/usr/local --libdir=/usr/local/lib/x86_64-linux-gnu && \
-    make -j"$(nproc)" install-strip && \
-    find /usr/local/lib/x86_64-linux-gnu -type f -name 'lib*.la' -delete
 
 ENV LD_LIBRARY_PATH /usr/local/lib/x86_64-linux-gnu:/usr/local/lib/i386-linux-gnu${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
 
