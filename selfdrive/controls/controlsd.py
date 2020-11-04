@@ -201,7 +201,8 @@ class Controls:
 
     if self.can_rcv_error or (not CS.canValid and self.sm.frame > 5 / DT_CTRL):
       self.events.add(EventName.canError)
-    if self.mismatch_counter >= 200:
+    if (self.sm['health'].safetyModel != self.CP.safetyModel and self.sm.frame > 2 / DT_CTRL) or \
+       self.mismatch_counter >= 200:
       self.events.add(EventName.controlsMismatch)
     if not self.sm.alive['plan'] and self.sm.alive['pathPlan']:
       # only plan not being received: radar not communicating
