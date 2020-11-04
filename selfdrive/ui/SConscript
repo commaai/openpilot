@@ -20,11 +20,10 @@ else:
 
   if arch == "larch64":
     qt_libs += ["GLESv2", "wayland-client"]
-  else:
+  elif != "Darwin":
     qt_libs += ["GL"]
 
   if arch == "Darwin":
-    del qt_libs[qt_libs.index("GL")]
     qt_env["FRAMEWORKS"] += [f"Qt{m}" for m in qt_modules] + ["OpenGL"]
   else:
     qt_libs += [f"Qt5{m}" for m in qt_modules]
