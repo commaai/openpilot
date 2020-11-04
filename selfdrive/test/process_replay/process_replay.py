@@ -337,12 +337,11 @@ def python_replay_process(cfg, lr):
 
   os.environ['NO_RADAR_SLEEP'] = "1"
   os.environ['SKIP_FW_QUERY'] = "1"
+  os.environ['FINGERPRINT'] = ""
   for msg in lr:
     if msg.which() == 'carParams':
       # TODO: get a stock VW route
-      if "Generic Volkswagen" in msg.carParams.carFingerprint:
-        os.environ['FINGERPRINT'] = ""
-      else:
+      if "Generic Volkswagen" not in msg.carParams.carFingerprint:
         os.environ['FINGERPRINT'] = msg.carParams.carFingerprint
       break
 
