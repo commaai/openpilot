@@ -14,20 +14,17 @@ int default_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   int addr = GET_ADDR(to_push);
 
   if (addr == 832) {
-    if (bus == 0) { HKG_LKAS_bus0_cnt = 20; if (HKG_forward_bus2) {HKG_forward_bus2 = false; puts("  LKAS on bus0: forwarding disabled\n");}}
+    if (bus == 0) { HKG_LKAS_bus0_cnt = 10; if (HKG_forward_bus2) {HKG_forward_bus2 = false; puts("  LKAS on bus0: forwarding disabled\n");}}
     if (bus == 2) {
-      if (HKG_obd_int_cnt == 20) {puts("  LKAS on bus2: forwarding enabled\n");}
       if (HKG_LKAS_bus0_cnt > 0) {HKG_LKAS_bus0_cnt--;} else if (!HKG_forward_bus2) {HKG_forward_bus2 = true; puts("  LKAS on bus2 & not on bus0: forwarding enabled\n");}
+      if (HKG_obd_int_cnt == 20) {puts("  LKAS on bus2: forwarding enabled\n");}
       if (HKG_Lcan_bus1_cnt > 0) {HKG_Lcan_bus1_cnt--;} else if (HKG_LCAN_on_bus1) {HKG_LCAN_on_bus1 = false; puts("  Lcan not on bus1\n");}
       // set CAN2 mode to normal if int_cnt expaired
       if (HKG_obd_int_cnt == 11 && !HKG_forward_bus1 && board_has_obd()) {
         current_board->set_can_mode(CAN_MODE_OBD_CAN2); puts("  checking bus1: setting can2 mode obd\n");}
-      if (HKG_obd_int_cnt == 1) {
-        if (!HKG_forward_obd && !HKG_forward_bus1 && board_has_obd()) {
+      if (HKG_obd_int_cnt == 1 && !HKG_forward_obd && !HKG_forward_bus1 && board_has_obd()) {
           current_board->set_can_mode(CAN_MODE_NORMAL); puts("  OBD2 CAN empty: setting can2 mode normal\n");}
-        HKG_obd_int_cnt = 0;
-      }
-      if (HKG_obd_int_cnt > 1) {HKG_obd_int_cnt--;}
+      if (HKG_obd_int_cnt > 0) {HKG_obd_int_cnt--;}
     }
   }
   // check if we have a LCAN on Bus1
@@ -41,11 +38,11 @@ int default_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   }
   // check if we have a MDPS or SCC on Bus1
   if (bus == 1 && (addr == 593 || addr == 897 || addr == 1057)) {
-    if (HKG_forward_bus1 != true && !HKG_LCAN_on_bus1) {
-      HKG_forward_bus1 = true; puts("  MDPS or SCC on bus1: forwarding enabled\n");
-    }
     if (!HKG_forward_bus1 && HKG_obd_int_cnt > 1 && HKG_obd_int_cnt < 11 && board_has_obd()) {
       HKG_forward_obd = true; puts("  MDPS or SCC on OBD2 CAN: setting can mode obd\n");
+    }
+    else if (!HKG_forward_bus1 && !HKG_LCAN_on_bus1) {
+      HKG_forward_bus1 = true; puts("  MDPS or SCC on bus1: forwarding enabled\n");
     }
   }
   if ((addr == 593) && (HKG_MDPS12_checksum == -1)){
