@@ -20,7 +20,7 @@ else:
 
   if arch == "larch64":
     qt_libs += ["GLESv2", "wayland-client"]
-  elif != "Darwin":
+  elif arch != "Darwin":
     qt_libs += ["GL"]
 
   if arch == "Darwin":
