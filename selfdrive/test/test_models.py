@@ -30,6 +30,12 @@ ignore_can_valid = [
   "TOYOTA AVALON 2016",
   "HONDA PILOT 2019 ELITE",
   "HYUNDAI SANTA FE LIMITED 2019",
+
+  # TODO: get new routes for these cars, current routes are from giraffe with different buses
+  "HONDA CR-V 2019 HYBRID",
+  "HONDA ACCORD 2018 SPORT 2T",
+  "HONDA INSIGHT 2019 TOURING",
+  "HONDA ACCORD 2018 HYBRID TOURING",
 ]
 
 @parameterized_class(('car_model'), [(car,) for car in all_known_cars()])
@@ -53,7 +59,6 @@ class TestCarModel(unittest.TestCase):
         if seg == 0:
           raise
 
-    has_relay = False
     can_msgs = []
     fingerprint = {i: dict() for i in range(3)}
     for msg in lr:
@@ -62,41 +67,38 @@ class TestCarModel(unittest.TestCase):
           if m.src < 128:
             fingerprint[m.src][m.address] = len(m.dat)
         can_msgs.append(msg)
-      elif msg.which() == "health":
-        has_relay = msg.health.hwType in [HwType.blackPanda, HwType.uno, HwType.dos]
     cls.can_msgs = sorted(can_msgs, key=lambda msg: msg.logMonoTime)
 
     CarInterface, CarController, CarState = interfaces[cls.car_model]
 
-    # TODO: test with relay and without
-    cls.car_params = CarInterface.get_params(cls.car_model, fingerprint, has_relay, [])
-    assert cls.car_params
+    cls.CP = CarInterface.get_params(cls.car_model, fingerprint, [])
+    assert cls.CP
 
-    cls.CI = CarInterface(cls.car_params, CarController, CarState)
+    cls.CI = CarInterface(cls.CP, CarController, CarState)
     assert cls.CI
 
   def test_car_params(self):
-    if self.car_params.dashcamOnly:
+    if self.CP.dashcamOnly:
       self.skipTest("no need to check carParams for dashcamOnly")
 
     # make sure car params are within a valid range
-    self.assertGreater(self.car_params.mass, 1)
-    self.assertGreater(self.car_params.steerRateCost, 1e-3)
+    self.assertGreater(self.CP.mass, 1)
+    self.assertGreater(self.CP.steerRateCost, 1e-3)
 
-    tuning = self.car_params.lateralTuning.which()
+    tuning = self.CP.lateralTuning.which()
     if tuning == 'pid':
-      self.assertTrue(len(self.car_params.lateralTuning.pid.kpV))
+      self.assertTrue(len(self.CP.lateralTuning.pid.kpV))
     elif tuning == 'lqr':
-      self.assertTrue(len(self.car_params.lateralTuning.lqr.a))
+      self.assertTrue(len(self.CP.lateralTuning.lqr.a))
     elif tuning == 'indi':
-      self.assertGreater(self.car_params.lateralTuning.indi.outerLoopGain, 1e-3)
+      self.assertGreater(self.CP.lateralTuning.indi.outerLoopGain, 1e-3)
 
-    self.assertTrue(self.car_params.enableCamera)
+    self.assertTrue(self.CP.enableCamera)
 
     # TODO: check safetyModel is in release panda build
     safety = libpandasafety_py.libpandasafety
-    set_status = safety.set_safety_hooks(self.car_params.safetyModel.raw, self.car_params.safetyParam)
-    self.assertEqual(0, set_status, f"failed to set safetyModel {self.car_params.safetyModel}")
+    set_status = safety.set_safety_hooks(self.CP.safetyModel.raw, self.CP.safetyParam)
+    self.assertEqual(0, set_status, f"failed to set safetyModel {self.CP.safetyModel}")
 
   def test_car_interface(self):
     # TODO: also check for checkusm and counter violations from can parser
@@ -115,8 +117,8 @@ class TestCarModel(unittest.TestCase):
 
   def test_radar_interface(self):
     os.environ['NO_RADAR_SLEEP'] = "1"
-    RadarInterface = importlib.import_module('selfdrive.car.%s.radar_interface' % self.car_params.carName).RadarInterface
-    RI = RadarInterface(self.car_params)
+    RadarInterface = importlib.import_module('selfdrive.car.%s.radar_interface' % self.CP.carName).RadarInterface
+    RI = RadarInterface(self.CP)
     assert RI
 
     error_cnt = 0
@@ -127,11 +129,11 @@ class TestCarModel(unittest.TestCase):
     self.assertLess(error_cnt, 20)
 
   def test_panda_safety_rx(self):
-    if self.car_params.dashcamOnly:
+    if self.CP.dashcamOnly:
       self.skipTest("no need to check panda safety for dashcamOnly")
 
     safety = libpandasafety_py.libpandasafety
-    set_status = safety.set_safety_hooks(self.car_params.safetyModel.raw, self.car_params.safetyParam)
+    set_status = safety.set_safety_hooks(self.CP.safetyModel.raw, self.CP.safetyParam)
     self.assertEqual(0, set_status)
 
     failed_addrs = Counter()
