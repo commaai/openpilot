@@ -1,5 +1,3 @@
-#include "qt/wifi.hpp"
-
 #include <algorithm>
 #include <set>
 
@@ -15,6 +13,8 @@
 #include <QCoreApplication>
 #include <QButtonGroup>
 #include <QStackedLayout>
+
+#include "wifi.hpp"
 
 typedef QMap<QString, QMap<QString, QVariant> > Connection;
 
