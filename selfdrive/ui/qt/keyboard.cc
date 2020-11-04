@@ -1,14 +1,9 @@
 #include <QDebug>
-#include <QListWidget>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
-#include <QLabel>
-#include <QPixmap>
 #include <QPushButton>
-#include <QInputDialog>
 #include <QButtonGroup>
 #include <QStackedLayout>
-#include <QLayout>
 
 #include "keyboard.hpp"
 
@@ -75,7 +70,6 @@ Keyboard::Keyboard(QWidget *parent) : QWidget(parent) {
   main_layout->setCurrentIndex(0);
 
   setStyleSheet(R"(
-    QLabel { font-size: 40px }
     QPushButton { font-size: 40px }
     * {
       background-color: #99777777;

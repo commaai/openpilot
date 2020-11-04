@@ -1,17 +1,6 @@
-#include <QListWidget>
+#include <QEvent>
 #include <QVBoxLayout>
-#include <QHBoxLayout>
-#include <QLabel>
-#include <QPushButton>
-#include <QInputDialog>
 #include <QLineEdit>
-#include <QCoreApplication>
-#include <QButtonGroup>
-#include <QStackedLayout>
-#include <QLayout>
-#include <QLineEdit>
-#include <QApplication>
-#include <QDesktopWidget>
 
 #include "input_field.hpp"
 #include "keyboard.hpp"
