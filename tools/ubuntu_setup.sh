@@ -41,7 +41,7 @@ sudo apt-get update && sudo apt-get install -y \
     ocl-icd-opencl-dev \
     opencl-headers \
     python-dev \
-    python-pip \
+    python3-pip \
     qt5-default \
     qtmultimedia5-dev \
     screen \
