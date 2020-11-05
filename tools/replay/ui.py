@@ -196,7 +196,7 @@ def ui_thread(addr, frame_address):
     if sm.updated['liveCalibration'] and num_px:
       extrinsic_matrix = np.asarray(sm['liveCalibration'].extrinsicMatrix).reshape(3, 4)
       ke = intrinsic_matrix.dot(extrinsic_matrix)
-      warp_matrix = get_camera_frame_from_model_frame(ke)
+      warp_matrix = get_camera_frame_from_model_frame(ke, camera_fl=intrinsic_matrix[0][0])
       calibration = CalibrationTransformsForWarpMatrix(num_px, warp_matrix, intrinsic_matrix, extrinsic_matrix)
 
     # draw red pt for lead car in the main img
