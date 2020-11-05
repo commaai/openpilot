@@ -40,6 +40,7 @@ class CAR:
   KIA_OPTIMA_H = "KIA OPTIMA HYBRID 2017 & SPORTS 2019"
   KIA_SORENTO = "KIA SORENTO GT LINE 2018"
   KIA_STINGER = "KIA STINGER GT2 2018"
+  KIA_STINGER_2021 = "KIA STINGER 2021"
 
   # Genesis
   GENESIS_G70 = "GENESIS G70 2018"
@@ -104,6 +105,9 @@ FINGERPRINTS = {
   }],
   CAR.KIA_STINGER: [{
     67: 8, 127: 8, 304: 8, 320: 8, 339: 8, 356: 4, 358: 6, 359: 8, 544: 8, 576: 8, 593: 8, 608: 8, 688: 5, 809: 8, 832: 8, 854: 7, 870: 7, 871: 8, 872: 8, 897: 8, 902: 8, 909: 8, 916: 8, 1040: 8, 1042: 8, 1056: 8, 1057: 8, 1064: 8, 1078: 4, 1107: 5, 1136: 8, 1151: 6, 1168: 7, 1170: 8, 1173: 8, 1184: 8, 1265: 4, 1280: 1, 1281: 4, 1287: 4, 1290: 8, 1292: 8, 1294: 8, 1312: 8, 1322: 8, 1342: 6, 1345: 8, 1348: 8, 1363: 8, 1369: 8, 1371: 8, 1378: 4, 1379: 8, 1384: 8, 1407: 8, 1419: 8, 1425: 2, 1427: 6, 1456: 4, 1470: 8
+  }],
+  CAR.KIA_STINGER_2021: [{
+    67: 8, 127: 8, 304: 8, 320: 8, 339: 8, 356: 4, 358: 6, 359: 8, 544: 8, 576: 8, 593: 8, 608: 8, 688: 5, 809: 8, 832: 8, 854: 7, 870: 7, 871: 8, 872: 8, 897: 8, 902: 8, 909: 8, 916: 8, 1040: 8, 1042: 8, 1056: 8, 1057: 8, 1064: 8, 1078: 4, 1107: 5, 1136: 8, 1151: 6, 1168: 7, 1170: 8, 1173: 8, 1184: 8, 1265: 4, 1280: 1, 1281: 4, 1287: 4, 1290: 8, 1292: 8, 1294: 8, 1312: 8, 1322: 8, 1342: 6, 1345: 8, 1348: 8, 1363: 8, 1369: 8, 1371: 8, 1378: 4, 1384: 8, 1407: 8, 1419: 8, 1425: 2, 1427: 6, 1456: 4, 1470: 8, 2015: 8
   }],
   CAR.GENESIS_G70: [{
     67: 8, 127: 8, 304: 8, 320: 8, 339: 8, 356: 4, 358: 6, 544: 8, 576: 8, 593: 8, 608: 8, 688: 5, 809: 8, 832:8, 854: 7, 870: 7, 871: 8, 872: 8, 897: 8, 902: 8, 909: 8, 916: 8, 1040: 8, 1042: 8, 1056: 8, 1057: 8, 1064: 8, 1078: 4, 1107: 5, 1136: 8, 1151: 6, 1156: 8, 1168: 7, 1170: 8, 1173:8, 1184: 8, 1186: 2, 1191: 2, 1265: 4, 1280: 1, 1287: 4, 1290: 8, 1292: 8, 1294: 8, 1312: 8, 1322: 8, 1342: 6, 1345: 8, 1348: 8, 1363: 8, 1369: 8, 1379: 8, 1384: 8, 1407: 8, 1419:8, 1427: 6, 1456: 4, 1470: 8, 1988: 8, 1996: 8, 2000: 8, 2004: 8, 2008: 8, 2012: 8, 2015: 8
@@ -207,6 +211,13 @@ FW_VERSIONS = {
       b'\xf1\x87VDHLG17000192DK2xdFffT\xa5VUD$DwT\x86wveVeeD&T\x99\xba\x8f\xff\xcc\x99\xf1\x81E21\x00\x00\x00\x00\x00\x00\x00\xf1\x00bcsh8p54  E21\x00\x00\x00\x00\x00\x00\x00SCK0T33NB0\x88\xa2\xe6\xf0',
     ],
   },
+  CAR.KIA_STINGER_2021: {
+    (Ecu.fwdRadar, 0x7d0, None): [b'\xf1\x00CK__ SCC F_CUP      1.00 1.03 96400-J5100         \xf1\xa01.03'],
+    (Ecu.engine, 0x7e0, None): [b'\xf1\x81640L0051\x00\x00\x00\x00\x00\x00\x00\x00'],
+    (Ecu.eps, 0x7d4, None): [b'\xf1\x00CK  MDPS R 1.00 1.07 57700-J5420 4C4VL107'],
+    (Ecu.fwdCamera, 0x7c4, None): [b'\xf1\x00CK  MFC  AT USA LHD 1.00 1.04 95740-J5000 180504'],
+    (Ecu.transmission, 0x7e1, None): [b'\xf1\x87VDJLG18425192DK2xeGewfgf\x86eFeweWv\x88eVeuTGT\x89vo\xff\tJ\xf1\x81E24\x00\x00\x00\x00\x00\x00\x00\xf1\x00bcsh8p54  E24\x00\x00\x00\x00\x00\x00\x00SCK0T33NB1\x8a\xdcM\x90'],
+  },
   CAR.KIA_OPTIMA_H: {
     (Ecu.fwdRadar, 0x7d0, None): [b'\xf1\x00DEhe SCC H-CUP      1.01 1.02 96400-G5100         ',],
     (Ecu.engine, 0x7e0, None): [b'\xf1\x816H6F4051\x00\x00\x00\x00\x00\x00\x00\x00',],
@@ -307,7 +318,7 @@ FEATURES = {
   "use_elect_gears": set([CAR.KIA_NIRO_EV, CAR.KIA_OPTIMA_H, CAR.IONIQ_EV_LTD, CAR.KONA_EV, CAR.IONIQ]),
 
   # these cars use the FCA11 message for the AEB and FCW signals, all others use SCC12
-  "use_fca": set([CAR.SONATA, CAR.ELANTRA, CAR.ELANTRA_GT_I30, CAR.KIA_STINGER, CAR.IONIQ, CAR.KONA_EV, CAR.KIA_FORTE, CAR.KIA_NIRO_EV, CAR.PALISADE, CAR.GENESIS_G70, CAR.KONA]),
+  "use_fca": set([CAR.SONATA, CAR.ELANTRA, CAR.ELANTRA_GT_I30, CAR.KIA_STINGER, CAR.KIA_STINGER_2021, CAR.IONIQ, CAR.KONA_EV, CAR.KIA_FORTE, CAR.KIA_NIRO_EV, CAR.PALISADE, CAR.GENESIS_G70, CAR.KONA]),
 
   "use_bsm": set([CAR.SONATA, CAR.PALISADE, CAR.HYUNDAI_GENESIS, CAR.GENESIS_G70, CAR.GENESIS_G80, CAR.GENESIS_G90, CAR.KONA]),
 }
@@ -329,6 +340,7 @@ DBC = {
   CAR.KIA_OPTIMA_H: dbc_dict('hyundai_kia_generic', None),
   CAR.KIA_SORENTO: dbc_dict('hyundai_kia_generic', None),
   CAR.KIA_STINGER: dbc_dict('hyundai_kia_generic', None),
+  CAR.KIA_STINGER_2021: dbc_dict('hyundai_kia_generic', None),
   CAR.KONA: dbc_dict('hyundai_kia_generic', None),
   CAR.KONA_EV: dbc_dict('hyundai_kia_generic', None),
   CAR.SANTA_FE: dbc_dict('hyundai_kia_generic', None),
