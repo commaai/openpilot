@@ -4,10 +4,7 @@ env.Program('boardd', ['boardd.cc', 'panda.cc', 'pigeon.cc'], LIBS=['usb-1.0', c
 env.Library('libcan_list_to_can_capnp', ['can_list_to_can_capnp.cc'])
 
 
-env.Cython('boardd_api_impl.pyx')
-
-env["CPPPATH"]+=["/home/batman/.pyenv/versions/3.8.2/include/python3.8"]
+env.Cython('boardd_api_impl.cpp', 'boardd_api_impl.pyx')
 env["LINKFLAGS"]=["-pthread", "-shared"]
-env["LIBPATH"]+=["#selfdrive/boardd"]
 
 env.Program('boardd_api_impl.so', 'boardd_api_impl.cpp', LIBS=["can_list_to_can_capnp", 'capnp'])

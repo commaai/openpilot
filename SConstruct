@@ -131,6 +131,11 @@ else:
 # change pythonpath to this
 lenv["PYTHONPATH"] = Dir("#").path
 
+#Get the path for Python.h for cython linking
+py_path_split = sys.executable.split("/")[:-2]
+py_path = "/".join(py_path_split)
+python_path = os.path.join(py_path ,"include/python3.8")
+print(python_path)
 env = Environment(
   ENV=lenv,
   CCFLAGS=[
@@ -148,6 +153,7 @@ env = Environment(
   ] + cflags + ccflags_asan,
 
   CPPPATH=cpppath + [
+    python_path,
     "#",
     "#selfdrive",
     "#phonelibs/bzip2",
@@ -185,6 +191,7 @@ env = Environment(
   CXXFLAGS=["-std=c++1z"] + cxxflags,
   LIBPATH=libpath + [
     "#cereal",
+    "#selfdrive/boardd",
     "#selfdrive/common",
     "#phonelibs",
   ]
