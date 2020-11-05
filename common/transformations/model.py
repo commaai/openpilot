@@ -1,34 +1,33 @@
 import numpy as np
 
-from common.transformations.camera import (FULL_FRAME_SIZE, eon_focal_length,
+from common.transformations.camera import (FULL_FRAME_SIZE,
+                                           FOCAL,
                                            get_view_frame_from_road_frame,
                                            get_view_frame_from_calib_frame,
                                            vp_from_ke)
 
 # segnet
-
 SEGNET_SIZE = (512, 384)
 
-segnet_frame_from_camera_frame = np.array([
-  [float(SEGNET_SIZE[0])/FULL_FRAME_SIZE[0],    0.,          ],
-  [     0.,          float(SEGNET_SIZE[1])/FULL_FRAME_SIZE[1]]])
-
+def get_segnet_frame_from_camera_frame(segnet_size=SEGNET_SIZE, full_frame_size=FULL_FRAME_SIZE):
+  return np.array([[float(segnet_size[0]) / full_frame_size[0],  0.0],
+                   [0.0,  float(segnet_size[1]) / full_frame_size[1]]])
+segnet_frame_from_camera_frame = get_segnet_frame_from_camera_frame() # xx
 
 # model
-
 MODEL_INPUT_SIZE = (320, 160)
 MODEL_YUV_SIZE = (MODEL_INPUT_SIZE[0], MODEL_INPUT_SIZE[1] * 3 // 2)
-MODEL_CX = MODEL_INPUT_SIZE[0]/2.
+MODEL_CX = MODEL_INPUT_SIZE[0] / 2.
 MODEL_CY = 21.
 
-model_zoom = 1.25
+model_fl = 728.0
 model_height = 1.22
 
 # canonical model transform
-model_intrinsics = np.array(
-  [[ eon_focal_length / model_zoom,    0. ,  MODEL_CX],
-   [   0. ,  eon_focal_length / model_zoom,  MODEL_CY],
-   [   0. ,                            0. ,   1.]])
+model_intrinsics = np.array([
+  [model_fl,  0.0,  MODEL_CX],
+  [0.0,  model_fl,  MODEL_CY],
+  [0.0,  0.0,            1.0]])
 
 
 # MED model
@@ -36,34 +35,45 @@ MEDMODEL_INPUT_SIZE = (512, 256)
 MEDMODEL_YUV_SIZE = (MEDMODEL_INPUT_SIZE[0], MEDMODEL_INPUT_SIZE[1] * 3 // 2)
 MEDMODEL_CY = 47.6
 
-medmodel_zoom = 1.
-medmodel_intrinsics = np.array(
-  [[ eon_focal_length / medmodel_zoom,    0. ,  0.5 * MEDMODEL_INPUT_SIZE[0]],
-   [   0. ,  eon_focal_length / medmodel_zoom,  MEDMODEL_CY],
-   [   0. ,                            0. ,   1.]])
+medmodel_fl = 910.0
+medmodel_intrinsics = np.array([
+  [medmodel_fl,  0.0,  0.5 * MEDMODEL_INPUT_SIZE[0]],
+  [0.0,  medmodel_fl,                   MEDMODEL_CY],
+  [0.0,  0.0,                                   1.0]])
+
 
 # CAL model
 CALMODEL_INPUT_SIZE = (512, 256)
 CALMODEL_YUV_SIZE = (CALMODEL_INPUT_SIZE[0], CALMODEL_INPUT_SIZE[1] * 3 // 2)
 CALMODEL_CY = 47.6
 
-calmodel_zoom = 1.5
-calmodel_intrinsics = np.array(
-  [[ eon_focal_length / calmodel_zoom,    0. ,  0.5 * CALMODEL_INPUT_SIZE[0]],
-   [   0. ,  eon_focal_length / calmodel_zoom,  CALMODEL_CY],
-   [   0. ,                            0. ,   1.]])
+calmodel_fl = 606.7
+calmodel_intrinsics = np.array([
+  [calmodel_fl,  0.0,  0.5 * CALMODEL_INPUT_SIZE[0]],
+  [0.0,  calmodel_fl,                   CALMODEL_CY],
+  [0.0,  0.0,                                   1.0]])
 
 
 # BIG model
-
 BIGMODEL_INPUT_SIZE = (1024, 512)
 BIGMODEL_YUV_SIZE = (BIGMODEL_INPUT_SIZE[0], BIGMODEL_INPUT_SIZE[1] * 3 // 2)
 
-bigmodel_zoom = 1.
-bigmodel_intrinsics = np.array(
-  [[ eon_focal_length / bigmodel_zoom,    0. , 0.5 * BIGMODEL_INPUT_SIZE[0]],
-   [   0. ,  eon_focal_length / bigmodel_zoom,  256+MEDMODEL_CY],
-   [   0. ,                            0. ,   1.]])
+bigmodel_fl = 910.0
+bigmodel_intrinsics = np.array([
+  [bigmodel_fl,  0.0,  0.5 * BIGMODEL_INPUT_SIZE[0]],
+  [0.0,  bigmodel_fl,             256 + MEDMODEL_CY],
+  [0.0,  0.0,                                   1.0]])
+
+
+# SBIG model (big model with the size of small model)
+SBIGMODEL_INPUT_SIZE = (512, 256)
+SBIGMODEL_YUV_SIZE = (SBIGMODEL_INPUT_SIZE[0], SBIGMODEL_INPUT_SIZE[1] * 3 // 2)
+
+sbigmodel_fl = 455.0
+sbigmodel_intrinsics = np.array([
+  [sbigmodel_fl,  0.0,  0.5 * SBIGMODEL_INPUT_SIZE[0]],
+  [0.0,  sbigmodel_fl,      0.5 * (256 + MEDMODEL_CY)],
+  [0.0,  0.0,                                     1.0]])
 
 model_frame_from_road_frame = np.dot(model_intrinsics,
   get_view_frame_from_road_frame(0, 0, 0, model_height))
@@ -80,20 +90,21 @@ medmodel_frame_from_calib_frame = np.dot(medmodel_intrinsics,
 model_frame_from_bigmodel_frame = np.dot(model_intrinsics, np.linalg.inv(bigmodel_intrinsics))
 medmodel_frame_from_bigmodel_frame = np.dot(medmodel_intrinsics, np.linalg.inv(bigmodel_intrinsics))
 
+
 # 'camera from model camera'
 def get_model_height_transform(camera_frame_from_road_frame, height):
   camera_frame_from_road_ground = np.dot(camera_frame_from_road_frame, np.array([
-      [1, 0, 0],
-      [0, 1, 0],
-      [0, 0, 0],
-      [0, 0, 1],
+    [1, 0, 0],
+    [0, 1, 0],
+    [0, 0, 0],
+    [0, 0, 1],
   ]))
 
   camera_frame_from_road_high = np.dot(camera_frame_from_road_frame, np.array([
-      [1, 0, 0],
-      [0, 1, 0],
-      [0, 0, height - model_height],
-      [0, 0, 1],
+    [1, 0, 0],
+    [0, 1, 0],
+    [0, 0, height - model_height],
+    [0, 0, 1],
   ]))
 
   road_high_from_camera_frame = np.linalg.inv(camera_frame_from_road_high)
@@ -104,13 +115,14 @@ def get_model_height_transform(camera_frame_from_road_frame, height):
 
 # camera_frame_from_model_frame aka 'warp matrix'
 # was: calibration.h/CalibrationTransform
-def get_camera_frame_from_model_frame(camera_frame_from_road_frame, height=model_height):
+def get_camera_frame_from_model_frame(camera_frame_from_road_frame, height=model_height, camera_fl=FOCAL):
   vp = vp_from_ke(camera_frame_from_road_frame)
 
+  model_zoom = camera_fl / model_fl
   model_camera_from_model_frame = np.array([
-    [model_zoom,         0., vp[0] - MODEL_CX * model_zoom],
-    [        0., model_zoom, vp[1] - MODEL_CY * model_zoom],
-    [        0.,         0.,                            1.],
+    [model_zoom,  0.0,  vp[0] - MODEL_CX * model_zoom],
+    [0.0,  model_zoom,  vp[1] - MODEL_CY * model_zoom],
+    [0.0,  0.0,                                   1.0],
   ])
 
   # This function is super slow, so skip it if height is very close to canonical

@@ -13,7 +13,6 @@ from tools.lib.logreader import LogReader
 INJECT_MODEL = 0
 Segment = namedtuple('Segment', ['car_brand', 'route', 'whitelist_procs', 'blacklist_procs'])
 
-
 segments = [
   Segment(
     car_brand="HONDA", # HONDA.ACCORD
@@ -87,6 +86,7 @@ segments = [
     whitelist_procs=[],
     blacklist_procs=["ubloxd", "locationd"]
   ),
+
   # Enable when port is tested and dascamOnly is no longer set
   #Segment(
   #  car_brand="MAZDA", # MAZDA.CX5

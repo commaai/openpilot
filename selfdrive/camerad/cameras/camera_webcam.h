@@ -13,23 +13,15 @@
 #define FRAME_BUF_COUNT 16
 
 typedef struct CameraState {
-  int camera_id;
   CameraInfo ci;
-
   int fps;
   float digital_gain;
-
-  float cur_gain_frac;
-
   mat3 transform;
-
   CameraBuf buf;
 } CameraState;
 
 
 typedef struct MultiCameraState {
-  int ispif_fd;
-
   CameraState rear;
   CameraState front;
 

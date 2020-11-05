@@ -233,6 +233,10 @@ routes = {
     'carFingerprint': HYUNDAI.VELOSTER,
     'enableCamera': True,
   },
+  "50c6c9b85fd1ff03|2020-10-26--17-56-06": {
+    'carFingerprint': HYUNDAI.KIA_NIRO_EV,
+    'enableCamera': True,
+  },
   "f7b6be73e3dfd36c|2019-05-12--18-07-16": {
     'carFingerprint': TOYOTA.AVALON,
     'enableCamera': False,
@@ -364,6 +368,11 @@ routes = {
     'enableCamera': True,
     'enableDsu': False,
   },
+  "964c09eb11ca8089|2020-11-03--22-04-00": {
+    'carFingerprint': TOYOTA.LEXUS_NX,
+    'enableCamera': True,
+    'enableDsu': False,
+  },
   # TODO: missing some combos for highlander
   "0a302ffddbb3e3d3|2020-02-08--16-19-08": {
     'carFingerprint': TOYOTA.HIGHLANDER_TSS2,
@@ -388,6 +397,11 @@ routes = {
   "2e07163a1ba9a780|2019-08-29--09-35-42": {
     'carFingerprint': TOYOTA.LEXUS_IS,
     'enableCamera': False,
+    'enableDsu': False,
+  },
+  "0a0de17a1e6a2d15|2020-09-21--21-24-41": {
+    'carFingerprint': TOYOTA.PRIUS_TSS2,
+    'enableCamera': True,
     'enableDsu': False,
   },
   "76b83eb0245de90e|2019-10-20--15-42-29": {
