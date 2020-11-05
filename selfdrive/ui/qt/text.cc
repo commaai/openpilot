@@ -6,6 +6,7 @@
 #include <QPushButton>
 #include <QVBoxLayout>
 #include <QApplication>
+#include <QDesktopWidget>
 
 #ifdef QCOM2
 #include <qpa/qplatformnativeinterface.h>
@@ -26,8 +27,10 @@ int main(int argc, char *argv[]) {
   w.showFullScreen();
 #endif
 
+  QRect screen = a.desktop()->screenGeometry();
+
   QWidget window = QWidget();
-  window.setFixedSize(1920, 1080);
+  window.setFixedSize(screen.width(), screen.height());
 
   QVBoxLayout *main_layout = new QVBoxLayout();
 
