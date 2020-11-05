@@ -8,6 +8,7 @@ import numpy as np
 
 from opendbc import DBC_PATH
 
+from cereal import car
 from common.realtime import Ratekeeper
 from selfdrive.config import Conversions as CV
 import cereal.messaging as messaging
@@ -375,6 +376,7 @@ class Plant():
     Plant.driverState.send(driver_state.to_bytes())
 
     health = messaging.new_message('health')
+    health.health.safetyModel = car.CarParams.SafetyModel.hondaNidec
     health.health.controlsAllowed = True
     Plant.health.send(health.to_bytes())
 

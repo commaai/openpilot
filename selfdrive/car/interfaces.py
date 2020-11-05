@@ -42,15 +42,15 @@ class CarInterfaceBase():
     raise NotImplementedError
 
   @staticmethod
-  def get_params(candidate, fingerprint=gen_empty_fingerprint(), has_relay=False, car_fw=None):
+  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None):
     raise NotImplementedError
 
   # returns a set of default params to avoid repetition in car specific params
   @staticmethod
-  def get_std_params(candidate, fingerprint, has_relay):
+  def get_std_params(candidate, fingerprint):
     ret = car.CarParams.new_message()
     ret.carFingerprint = candidate
-    ret.isPandaBlack = has_relay
+    ret.isPandaBlack = True # TODO: deprecate this field
 
     # standard ALC params
     ret.steerControlType = car.CarParams.SteerControlType.torque
