@@ -153,7 +153,6 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
 
-
     # Genesis
     elif candidate == CAR.GENESIS_G70:
       ret.lateralTuning.pid.kf = 0.00005
