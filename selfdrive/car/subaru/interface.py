@@ -11,8 +11,8 @@ class CarInterface(CarInterfaceBase):
     return float(accel) / 4.0
 
   @staticmethod
-  def get_params(candidate, fingerprint=gen_empty_fingerprint(), has_relay=False, car_fw=None):
-    ret = CarInterfaceBase.get_std_params(candidate, fingerprint, has_relay)
+  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None):
+    ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
 
     ret.carName = "subaru"
     ret.radarOffCan = True
@@ -24,11 +24,8 @@ class CarInterface(CarInterfaceBase):
 
     # Subaru port is a community feature, since we don't own one to test
     ret.communityFeature = True
-
     ret.dashcamOnly = candidate in PREGLOBAL_CARS
 
-    # force openpilot to fake the stock camera, since car harness is not supported yet and old style giraffe (with switches)
-    # was never released
     ret.enableCamera = True
 
     ret.steerRateCost = 0.7

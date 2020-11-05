@@ -944,11 +944,23 @@ FW_VERSIONS = {
     ],
   },
   CAR.HRV: {
-    (Ecu.gateway, 0x18daeff1, None): [b'38897-T7A-A010\x00\x00'],
-    (Ecu.eps, 0x18da30f1, None): [b'39990-THX-A020\x00\x00'],
-    (Ecu.fwdRadar, 0x18dab0f1, None): [b'36161-T7A-A240\x00\x00'],
-    (Ecu.srs, 0x18da53f1, None): [b'77959-T7A-A230\x00\x00'],
-    (Ecu.combinationMeter, 0x18da60f1, None): [b'78109-THX-A210\x00\x00'],
+    (Ecu.gateway, 0x18daeff1, None): [
+      b'38897-T7A-A010\x00\x00',
+    ],
+    (Ecu.eps, 0x18da30f1, None): [
+      b'39990-THX-A020\x00\x00',
+    ],
+    (Ecu.fwdRadar, 0x18dab0f1, None): [
+      b'36161-T7A-A140\x00\x00',
+      b'36161-T7A-A240\x00\x00',
+    ],
+    (Ecu.srs, 0x18da53f1, None): [
+      b'77959-T7A-A230\x00\x00',
+    ],
+    (Ecu.combinationMeter, 0x18da60f1, None): [
+      b'78109-THX-A110\x00\x00',
+      b'78109-THX-A210\x00\x00',
+    ],
   },
 }
 
@@ -1022,12 +1034,6 @@ SPEED_FACTOR = {
   CAR.PILOT_2019: 1.,
   CAR.RIDGELINE: 1.,
   CAR.INSIGHT: 1.,
-}
-
-# msgs sent for steering controller by camera module on can 0.
-# those messages are mutually exclusive on CRV and non-CRV cars
-ECU_FINGERPRINT = {
-  Ecu.fwdCamera: [0xE4, 0x194],   # steer torque cmd
 }
 
 HONDA_BOSCH = set([CAR.ACCORD, CAR.ACCORD_15, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_5G, CAR.CRV_HYBRID, CAR.INSIGHT, CAR.ACURA_RDX_3G])
