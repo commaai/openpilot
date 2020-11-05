@@ -1,5 +1,6 @@
 #include <cstdlib>
 
+#include <QString>
 #include <QLabel>
 #include <QWidget>
 #include <QScreen>
@@ -34,9 +35,17 @@ int main(int argc, char *argv[]) {
 
   QVBoxLayout *main_layout = new QVBoxLayout();
 
-  QLabel *text = new QLabel("Manager failed to start\n\n some error");
-  text->setAlignment(Qt::AlignTop);
-  main_layout->addWidget(text);
+  QString text = "";
+  for (int i = 1; i < argc; i++) {
+    if (i > 1) {
+      text.append(" ");
+    }
+    text.append(argv[i]);
+  }
+
+  QLabel *label = new QLabel(text);
+  label->setAlignment(Qt::AlignTop);
+  main_layout->addWidget(label);
 
   QPushButton *btn = new QPushButton("Reboot");
 #ifdef QCOM2
@@ -62,7 +71,7 @@ int main(int argc, char *argv[]) {
       padding: 60px;
       margin-left: 1500px;
       border-color: white;
-      border-width: 1px;
+      border-width: 2px;
       border-style: solid;
       border-radius: 10px;
     }
