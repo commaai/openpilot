@@ -33,6 +33,7 @@ Spinner::Spinner(QWidget *parent) {
   progress_bar->setMaximum(100);
   progress_bar->setValue(50);
   progress_bar->setTextVisible(false);
+  progress_bar->setVisible(false);
   main_layout->addWidget(progress_bar, 1, 0, Qt::AlignHCenter);
 
   setLayout(main_layout);
@@ -62,6 +63,10 @@ void Spinner::update() {
   // rotate spinner
   transform.rotate(1);
   track->setPixmap(track_img.transformed(transform));
+
+  // update text or progress
+
+
 };
 
 
