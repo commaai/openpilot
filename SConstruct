@@ -155,7 +155,6 @@ env = Environment(
   ] + cflags + ccflags_asan,
 
   CPPPATH=cpppath + [
-    python_path,
     "#",
     "#selfdrive",
     "#phonelibs/bzip2",
@@ -181,6 +180,7 @@ env = Environment(
     "#cereal/messaging",
     "#cereal",
     "#opendbc/can",
+    python_path,
   ],
 
   CC='clang',
