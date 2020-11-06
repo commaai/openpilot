@@ -75,7 +75,7 @@ mypy = "*"
 parameterized = "*"
 torch = "*"
 torchsummary = "*"
-blosc = "*"
+blosc = "==1.9.2"
 
 [packages]
 atomicwrites = "*"
