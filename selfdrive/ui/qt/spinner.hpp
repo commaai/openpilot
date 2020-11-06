@@ -4,6 +4,7 @@
 #include <QPixmap>
 #include <QProgressBar>
 #include <QTransform>
+#include <QSocketNotifier>
 
 class Spinner : public QWidget {
   Q_OBJECT
@@ -13,12 +14,14 @@ public:
 
 private:
   QPixmap track_img;
-  QTimer *timer;
+  QTimer *rotate_timer;
   QLabel *comma, *track;
   QLabel *text;
   QProgressBar *progress_bar;
   QTransform transform;
+  QSocketNotifier *notifier;
 
 public slots:
-  void update();
+  void rotate();
+  void update(int n);
 };

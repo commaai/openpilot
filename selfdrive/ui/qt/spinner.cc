@@ -1,3 +1,8 @@
+#include <stdio.h>
+#include <string>
+#include <iostream>
+
+#include <QString>
 #include <QGridLayout>
 #include <QApplication>
 #include <QDesktopWidget>
@@ -8,9 +13,8 @@
 #include <wayland-client-protocol.h>
 #endif
 
-#include <iostream>
-
 #include "spinner.hpp"
+
 
 Spinner::Spinner(QWidget *parent) {
   QGridLayout *main_layout = new QGridLayout();
@@ -25,13 +29,12 @@ Spinner::Spinner(QWidget *parent) {
   main_layout->addWidget(track, 0, 0, Qt::AlignHCenter | Qt::AlignVCenter);
 
   text = new QLabel("building boardd");
-  main_layout->addWidget(text, 1, 0, Qt::AlignHCenter);
   text->setVisible(false);
+  main_layout->addWidget(text, 1, 0, Qt::AlignHCenter);
 
   progress_bar = new QProgressBar();
   progress_bar->setMinimum(5);
   progress_bar->setMaximum(100);
-  progress_bar->setValue(50);
   progress_bar->setTextVisible(false);
   progress_bar->setVisible(false);
   main_layout->addWidget(progress_bar, 1, 0, Qt::AlignHCenter);
@@ -54,21 +57,33 @@ Spinner::Spinner(QWidget *parent) {
     }
   )");
 
-  timer = new QTimer(this);
-  timer->start(1000/60);
-  QObject::connect(timer, SIGNAL(timeout()), this, SLOT(update()));
+  rotate_timer = new QTimer(this);
+  rotate_timer->start(1000/60);
+  QObject::connect(rotate_timer, SIGNAL(timeout()), this, SLOT(rotate()));
+
+  notifier = new QSocketNotifier(fileno(stdin), QSocketNotifier::Read);
+  QObject::connect(notifier, SIGNAL(activated(int)), this, SLOT(update(int)));
 };
 
-void Spinner::update() {
-  // rotate spinner
+void Spinner::rotate() {
   transform.rotate(1);
   track->setPixmap(track_img.transformed(transform));
-
-  // update text or progress
-
-
 };
 
+void Spinner::update(int n) {
+  std::string line;
+  std::getline(std::cin, line);
+
+  if (line.length()) {
+    bool number = std::all_of(line.begin(), line.end(), ::isdigit);
+    text->setVisible(!number);
+    progress_bar->setVisible(number);
+    text->setText(QString::fromStdString(line));
+    if (number) {
+      progress_bar->setValue(std::stoi(line));
+    }
+  }
+}
 
 int main(int argc, char *argv[]) {
   QApplication a(argc, argv);
