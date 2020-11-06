@@ -36,9 +36,9 @@ def calc_d_poly(l_poly, r_poly, p_poly, l_prob, r_prob, lane_width, v_ego, l_std
 
   # Remove reliance on uncertain lanelines
   # these numbers were tested on 2000segments and found to work well
-  l_std_mod = interp(l_std, [.15, .3], [1.0, 0.0])
+  l_std_mod = interp(float(l_std), [.15, .3], [1.0, 0.0])
   l_prob = l_std_mod * l_prob
-  r_std_mod = interp(r_std, [.15, .3], [1.0, 0.0])
+  r_std_mod = interp(float(r_std), [.15, .3], [1.0, 0.0])
   r_prob = r_std_mod * r_prob
 
   path_from_left_lane = l_poly.copy()
