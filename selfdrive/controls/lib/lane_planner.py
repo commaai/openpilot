@@ -36,9 +36,9 @@ def calc_d_poly(l_poly, r_poly, p_poly, l_prob, r_prob, lane_width, v_ego, l_std
 
   # Remove reliance on uncertain lanelines
   # these numbers were tested on 2000segments and found to work well
-  l_std_mod = interp(float(l_std), [.15, .3], [1.0, 0.0])
+  l_std_mod = interp(l_std, [.15, .3], [1.0, 0.0])
   l_prob = l_std_mod * l_prob
-  r_std_mod = interp(float(r_std), [.15, .3], [1.0, 0.0])
+  r_std_mod = interp(r_std, [.15, .3], [1.0, 0.0])
   r_prob = r_std_mod * r_prob
 
   path_from_left_lane = l_poly.copy()
@@ -66,6 +66,9 @@ class LanePlanner():
     self.l_prob = 0.
     self.r_prob = 0.
 
+    self.l_std = 0.
+    self.r_std = 0.
+
     self.l_lane_change_prob = 0.
     self.r_lane_change_prob = 0.
 
@@ -75,9 +78,9 @@ class LanePlanner():
   def parse_model(self, md):
     if len(md.leftLane.poly):
       self.l_poly = np.array(md.leftLane.poly)
-      self.l_std = np.array(md.leftLane.std)
+      self.l_std = float(md.leftLane.std)
       self.r_poly = np.array(md.rightLane.poly)
-      self.r_std = np.array(md.rightLane.std)
+      self.r_std = float(md.rightLane.std)
       self.p_poly = np.array(md.path.poly)
     else:
       self.l_poly = model_polyfit(md.leftLane.points, self._path_pinv)  # left line
