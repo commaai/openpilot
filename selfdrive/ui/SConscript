@@ -73,4 +73,4 @@ else:
   qt_env.Program("_ui", qt_src, LIBS=qt_libs + libs)
 
   # text window
-  qt_env.Program("_qt_text", ["qt/text.cc"], LIBS=qt_libs + libs)
+  qt_env.Program("qt/text", ["qt/text.cc"], LIBS=qt_libs + libs)
