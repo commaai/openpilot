@@ -162,7 +162,6 @@ env = Environment(
     "#phonelibs/libyuv/include",
     "#phonelibs/openmax/include",
     "#phonelibs/json11",
-    "/usr/include/python3.8",
     "#phonelibs/curl/include",
     "#phonelibs/libgralloc/include",
     "#phonelibs/android_frameworks_native/include",
