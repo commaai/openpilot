@@ -132,12 +132,11 @@ else:
 lenv["PYTHONPATH"] = Dir("#").path
 
 #Get the path for Python.h for cython linking
-py_path_split = sys.executable.split("/")[:-2]
-py_path = "/".join(py_path_split)
-python_path = os.path.join(py_path ,"include/python3.8")
+python_path = os.popen("python-config --cflags").read().split(" ")[0][2:]
 print(python_path)
 for pfile in os.listdir(python_path):
   print(pfile)
+
 env = Environment(
   ENV=lenv,
   CCFLAGS=[
