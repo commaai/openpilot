@@ -1,4 +1,3 @@
-
 Import('env', 'common', 'cereal', 'messaging', 'cython_dependencies')
 
 env.Program('boardd', ['boardd.cc', 'panda.cc', 'pigeon.cc'], LIBS=['usb-1.0', common, cereal, messaging, 'pthread', 'zmq', 'capnp', 'kj'])
