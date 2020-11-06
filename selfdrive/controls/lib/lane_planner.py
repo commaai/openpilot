@@ -21,7 +21,7 @@ def eval_poly(poly, x):
   return poly[3] + poly[2]*x + poly[1]*x**2 + poly[0]*x**3
 
 
-def calc_d_poly(l_poly, r_poly, p_poly, l_prob, r_prob, lane_width, v_ego, l_std, r_std):
+def calc_d_poly(l_poly, r_poly, p_poly, l_prob, r_prob, lane_width, v_ego, l_std=0.05, r_std=0.05):
   # This will improve behaviour when lanes suddenly widen
   # these numbers were tested on 2000segments and found to work well
   lane_width = min(4.0, lane_width)
