@@ -1,7 +1,8 @@
 CC = clang
 CXX = clang++
 
-PHONELIBS = ../../../phonelibs
+PHONELIBS = ../../../../phonelibs
+COMMON = ../../../common
 
 WARN_FLAGS = -Werror=implicit-function-declaration \
              -Werror=incompatible-pointer-types \
@@ -19,9 +20,9 @@ OPENGL_LIBS = -lGLESv3
 FRAMEBUFFER_LIBS = -lutils -lgui -lEGL
 
 OBJS = text.o \
-       ../../common/framebuffer.o \
-       ../../common/util.o \
-       ../../../selfdrive/common/touch.o \
+       $(COMMON)/framebuffer.o \
+       $(COMMON)/util.o \
+       $(COMMON)/touch.o \
        $(PHONELIBS)/nanovg/nanovg.o \
        opensans_regular.o \
 
@@ -39,7 +40,7 @@ text: $(OBJS)
         $(OPENGL_LIBS) \
         -lm -llog
 
-opensans_regular.o: ../../assets/fonts/opensans_regular.ttf
+opensans_regular.o: ../../../assets/fonts/opensans_regular.ttf
 	@echo "[ bin2o ] $@"
 	cd '$(dir $<)' && ld -r -b binary '$(notdir $<)' -o '$(abspath $@)'
 
@@ -47,7 +48,7 @@ opensans_regular.o: ../../assets/fonts/opensans_regular.ttf
 	mkdir -p $(@D)
 	@echo "[ CC ] $@"
 	$(CC) $(CPPFLAGS) $(CFLAGS) \
-          -I../.. \
+          -I../../.. \
           -I$(PHONELIBS)/android_frameworks_native/include \
           -I$(PHONELIBS)/android_system_core/include \
           -I$(PHONELIBS)/android_hardware_libhardware/include \
@@ -58,8 +59,8 @@ opensans_regular.o: ../../assets/fonts/opensans_regular.ttf
 	mkdir -p $(@D)
 	@echo "[ CXX ] $@"
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) \
-           -I../../selfdrive \
-           -I../../ \
+           -I../../../selfdrive \
+           -I../../../ \
            -I$(PHONELIBS)/android_frameworks_native/include \
            -I$(PHONELIBS)/android_system_core/include \
            -I$(PHONELIBS)/android_hardware_libhardware/include \
