@@ -22,8 +22,6 @@ AddOption('--asan',
 
 # Rebuild cython extensions if python, distutils, or cython change
 cython_dependencies = [Value(v) for v in (sys.version, distutils.__version__, Cython.__version__)]
-# for v in (sys.version, distutils.__version__, Cython.__version__):
-#   print(v)
 Export('cython_dependencies')
 
 real_arch = arch = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()
@@ -138,6 +136,8 @@ py_path_split = sys.executable.split("/")[:-2]
 py_path = "/".join(py_path_split)
 python_path = os.path.join(py_path ,"include/python3.8")
 print(python_path)
+for pfile in os.listdir(python_path):
+  print(pfile)
 env = Environment(
   ENV=lenv,
   CCFLAGS=[
