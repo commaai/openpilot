@@ -1,11 +1,4 @@
-#include <cstdlib>
-
-#include <QString>
-#include <QLabel>
-#include <QWidget>
-#include <QPixmap>
-#include <QVBoxLayout>
-#include <QProgressBar>
+#include <QGridLayout>
 #include <QApplication>
 #include <QDesktopWidget>
 
@@ -15,43 +8,36 @@
 #include <wayland-client-protocol.h>
 #endif
 
+#include <iostream>
 
-int main(int argc, char *argv[]) {
-  QApplication a(argc, argv);
-  QWidget *window = new QWidget();
+#include "spinner.hpp"
 
-  // TODO: get size from QScreen, doesn't work on tici
-#ifdef QCOM2
-  int w = 2160, h = 1080;
-#else
-  int w = 1920, h = 1080;
-#endif
-  window->setFixedSize(w, h);
+Spinner::Spinner(QWidget *parent) {
+  QGridLayout *main_layout = new QGridLayout();
 
-  QVBoxLayout *main_layout = new QVBoxLayout();
+  comma = new QLabel();
+  comma->setPixmap(QPixmap("../assets/img_spinner_comma.png"));
+  main_layout->addWidget(comma, 0, 0, Qt::AlignHCenter | Qt::AlignVCenter);
 
-  QPixmap pix("../assets/img_spinner_comma.png");
-  QLabel *comma_img = new QLabel();
-  comma_img->setPixmap(pix);
-  comma_img->setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
-  main_layout->addWidget(comma_img);
+  track_img = QPixmap("../assets/img_spinner_track.png");
+  track = new QLabel();
+  track->setPixmap(track_img);
+  main_layout->addWidget(track, 0, 0, Qt::AlignHCenter | Qt::AlignVCenter);
 
-  // TODO: read this from stdin
-  QLabel *text = new QLabel("building boardd");
-  text->setAlignment(Qt::AlignHCenter);
-  main_layout->addWidget(text);
+  text = new QLabel("building boardd");
+  main_layout->addWidget(text, 1, 0, Qt::AlignHCenter);
+  text->setVisible(false);
 
-  QProgressBar *bar = new QProgressBar();
-  bar->setMinimum(5);
-  bar->setMaximum(100);
-  bar->setValue(50);
-  bar->setTextVisible(false);
-  main_layout->addWidget(bar);
+  progress_bar = new QProgressBar();
+  progress_bar->setMinimum(5);
+  progress_bar->setMaximum(100);
+  progress_bar->setValue(50);
+  progress_bar->setTextVisible(false);
+  main_layout->addWidget(progress_bar, 1, 0, Qt::AlignHCenter);
 
-  window->setLayout(main_layout);
-  window->setStyleSheet(R"(
-    QWidget {
-      margin: 60px;
+  setLayout(main_layout);
+  setStyleSheet(R"(
+    Spinner {
       background-color: black;
     }
     QLabel {
@@ -60,19 +46,45 @@ int main(int argc, char *argv[]) {
     }
     QProgressBar {
       color: white;
+      background-color: transparent;
       border: none;
       margin: 100px;
+      width: 1000px;
     }
   )");
-  window->show();
 
+  timer = new QTimer(this);
+  timer->start(1000/60);
+  QObject::connect(timer, SIGNAL(timeout()), this, SLOT(update()));
+};
+
+void Spinner::update() {
+  // rotate spinner
+  transform.rotate(1);
+  track->setPixmap(track_img.transformed(transform));
+};
+
+
+int main(int argc, char *argv[]) {
+  QApplication a(argc, argv);
+
+  Spinner *spinner = new Spinner();
+
+  // TODO: get size from QScreen, doesn't work on tici
+#ifdef QCOM2
+  int w = 2160, h = 1080;
+#else
+  int w = 1920, h = 1080;
+#endif
+  spinner->setFixedSize(w, h);
+  spinner->show();
 
 #ifdef QCOM2
   QPlatformNativeInterface *native = QGuiApplication::platformNativeInterface();
-  wl_surface *s = reinterpret_cast<wl_surface*>(native->nativeResourceForWindow("surface", window->windowHandle()));
+  wl_surface *s = reinterpret_cast<wl_surface*>(native->nativeResourceForWindow("surface", spinner->windowHandle()));
   wl_surface_set_buffer_transform(s, WL_OUTPUT_TRANSFORM_270);
   wl_surface_commit(s);
-  window->showFullScreen();
+  spinner->showFullScreen();
 #endif
 
   return a.exec();
