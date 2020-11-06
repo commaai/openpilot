@@ -4,6 +4,8 @@
 #include <cmath>
 #include <iostream>
 #include "common/util.h"
+#include <algorithm>
+
 
 #define NANOVG_GLES3_IMPLEMENTATION
 #include "nanovg_gl.h"
