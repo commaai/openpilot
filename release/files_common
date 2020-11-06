@@ -348,9 +348,9 @@ selfdrive/ui/spinner/Makefile
 selfdrive/ui/spinner/spinner
 selfdrive/ui/spinner/spinner.c
 
-selfdrive/ui/text/Makefile
-selfdrive/ui/text/text
-selfdrive/ui/text/text.c
+selfdrive/ui/android/text/Makefile
+selfdrive/ui/android/text/text
+selfdrive/ui/android/text/text.c
 
 selfdrive/ui/qt/*.cc
 selfdrive/ui/qt/*.hpp
