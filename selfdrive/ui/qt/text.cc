@@ -3,7 +3,6 @@
 #include <QString>
 #include <QLabel>
 #include <QWidget>
-#include <QScreen>
 #include <QPushButton>
 #include <QVBoxLayout>
 #include <QApplication>
@@ -15,23 +14,18 @@
 #include <wayland-client-protocol.h>
 #endif
 
-#define MAX_TEXT_SIZE 2048
 
 int main(int argc, char *argv[]) {
   QApplication a(argc, argv);
+  QWidget *window = new QWidget();
 
+  // TODO: get size from QScreen, doesn't work on tici
 #ifdef QCOM2
-  QPlatformNativeInterface *native = QGuiApplication::platformNativeInterface();
-  wl_surface *s = reinterpret_cast<wl_surface*>(native->nativeResourceForWindow("surface", w.windowHandle()));
-  wl_surface_set_buffer_transform(s, WL_OUTPUT_TRANSFORM_270);
-  wl_surface_commit(s);
-  w.showFullScreen();
+  int w = 2160, h = 1080;
+#else
+  int w = 1920, h = 1080;
 #endif
-
-  QRect screen = QGuiApplication::primaryScreen()->geometry();
-
-  QWidget window = QWidget();
-  window.setFixedSize(screen.width(), screen.height());
+  window->setFixedSize(w, h);
 
   QVBoxLayout *main_layout = new QVBoxLayout();
 
@@ -57,14 +51,13 @@ int main(int argc, char *argv[]) {
   btn->setText("Exit");
   QObject::connect(btn, SIGNAL(released()), &a, SLOT(quit()));
 #endif
-
   main_layout->addWidget(btn);
 
-  window.setLayout(main_layout);
-  window.setStyleSheet(R"(
+  window->setLayout(main_layout);
+  window->setStyleSheet(R"(
     QWidget {
-      background-color: black;
       margin: 60px;
+      background-color: black;
     }
     QLabel {
       color: white;
@@ -78,10 +71,20 @@ int main(int argc, char *argv[]) {
       border-color: white;
       border-width: 2px;
       border-style: solid;
-      border-radius: 10px;
+      border-radius: 20px;
     }
   )");
 
-  window.show();
+  window->show();
+
+
+#ifdef QCOM2
+  QPlatformNativeInterface *native = QGuiApplication::platformNativeInterface();
+  wl_surface *s = reinterpret_cast<wl_surface*>(native->nativeResourceForWindow("surface", window->windowHandle()));
+  wl_surface_set_buffer_transform(s, WL_OUTPUT_TRANSFORM_270);
+  wl_surface_commit(s);
+  window->showFullScreen();
+#endif
+
   return a.exec();
 }
