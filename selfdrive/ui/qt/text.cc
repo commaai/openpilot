@@ -28,7 +28,7 @@ int main(int argc, char *argv[]) {
   w.showFullScreen();
 #endif
 
-  QRect screen = a.desktop()->screenGeometry();
+  QRect screen = QGuiApplication::primaryScreen()->geometry();
 
   QWidget window = QWidget();
   window.setFixedSize(screen.width(), screen.height());
@@ -47,12 +47,17 @@ int main(int argc, char *argv[]) {
   label->setAlignment(Qt::AlignTop);
   main_layout->addWidget(label);
 
-  QPushButton *btn = new QPushButton("Reboot");
-#ifdef QCOM2
+  QPushButton *btn = new QPushButton();
+#ifdef __aarch64__
+  btn->setText("Reboot");
   QObject::connect(btn, &QPushButton::released, [=]() {
     std::system("sudo reboot");
   });
+#else
+  btn->setText("Exit");
+  QObject::connect(btn, SIGNAL(released()), &a, SLOT(quit()));
 #endif
+
   main_layout->addWidget(btn);
 
   window.setLayout(main_layout);

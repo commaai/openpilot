@@ -22,7 +22,7 @@ FRAMEBUFFER_LIBS = -lutils -lgui -lEGL
 OBJS = text.o \
        $(COMMON)/framebuffer.o \
        $(COMMON)/util.o \
-       $(COMMON)/common/touch.o \
+       $(COMMON)/touch.o \
        $(PHONELIBS)/nanovg/nanovg.o \
        opensans_regular.o \
 
@@ -40,7 +40,7 @@ text: $(OBJS)
         $(OPENGL_LIBS) \
         -lm -llog
 
-opensans_regular.o: ../../assets/fonts/opensans_regular.ttf
+opensans_regular.o: ../../../assets/fonts/opensans_regular.ttf
 	@echo "[ bin2o ] $@"
 	cd '$(dir $<)' && ld -r -b binary '$(notdir $<)' -o '$(abspath $@)'
 
