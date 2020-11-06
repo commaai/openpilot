@@ -180,9 +180,7 @@ class CarState(CarStateBase):
     self.lkas_error = cp_cam.vl["LKAS11"]["CF_Lkas_LdwsSysState"] == 7
     if not self.lkas_error and self.car_fingerprint not in [CAR.SONATA,CAR.PALISADE,
                     CAR.SONATA_HEV, CAR.SANTA_FE, CAR.KONA_EV, CAR.NIRO_EV, CAR.KONA]:
-      lkas_button = bool(cp_cam.vl["LKAS11"]["CF_Lkas_LdwsSysState"])
-      if lkas_button != self.prev_lkas_button:
-        self.lkas_button_on = not self.lkas_button_on
+      self.lkas_button_on = bool(cp_cam.vl["LKAS11"]["CF_Lkas_LdwsSysState"])
 
     return ret
 
