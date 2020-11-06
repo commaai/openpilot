@@ -12,6 +12,17 @@ class CarController():
     self.packer_pt = CANPacker(DBC[CP.carFingerprint]['pt'])
     self.acc_bus = CANBUS.pt if CP.networkLocation == NWL.fwdCamera else CANBUS.cam
 
+    if CP.safetyModel == car.CarParams.SafetyModel.volkswagen:
+      self.create_steering_control = volkswagencan.create_mqb_steering_control
+      self.create_acc_buttons_control = volkswagencan.create_mqb_acc_buttons_control
+      self.create_hud_control = volkswagencan.create_mqb_hud_control
+      self.ldw_step = CarControllerParams.PQ_LDW_STEP
+    elif CP.safetyModel == car.CarParams.SafetyModel.volkswagenPq:
+      self.create_steering_control = volkswagencan.create_pq_steering_control
+      self.create_acc_buttons_control = volkswagencan.create_pq_acc_buttons_control
+      self.create_hud_control = volkswagencan.create_pq_hud_control
+      self.ldw_step = CarControllerParams.MQB_LDW_STEP
+
     self.hcaSameTorqueCount = 0
     self.hcaEnabledFrameCount = 0
     self.graButtonStatesToSend = None
@@ -110,7 +121,7 @@ class CarController():
     # The factory camera emits this message at 10Hz. When OP is active, Panda
     # filters LDW_02 from the factory camera and OP emits LDW_02 at 10Hz.
 
-    if frame % P.LDW_STEP == 0:
+    if frame % self.ldw_step == 0:
       hcaEnabled = True if enabled and not CS.out.standstill else False
 
       if visual_alert == car.CarControl.HUDControl.VisualAlert.steerRequired:

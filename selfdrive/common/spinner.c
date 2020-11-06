@@ -61,6 +61,7 @@ int spin(int argc, char** argv) {
   FramebufferState *fb = framebuffer_init("spinner", 0x00001000, false,
                                           &fb_w, &fb_h);
   assert(fb);
+  framebuffer_set_power(fb, HWC_POWER_MODE_NORMAL);
 
   NVGcontext *vg = nvgCreateGLES3(NVG_ANTIALIAS | NVG_STENCIL_STROKES);
   assert(vg);

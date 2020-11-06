@@ -1,6 +1,27 @@
-Version 0.7.8 (2020-08-XX)
+Version 0.7.9 + VW 1.6 (2020-10-18)
 ========================
- * New driver monitoring model
+ * (VW Community) Restore AVRT and de-deprecate White Panda (experimental)
+ * (VW Community) Use raw steering angle signal (experimental)
+ * (VW Community) Adjust torque rate controls to match stock Volkswagen behavior
+ * (VW Community) Lane Change Assist radar input for auto lane-change blocking
+ * (VW Community) FCW/AEB detection support (experimental)
+ * (VW Community) Several additional MQB vehicles added to fingerprint
+ * (VW Community) Manual config support for "unsafe" gas pedal mode
+ * (VW Community) Manual config support for C2/BP integrations at the CAN gateway
+ * (VW Community) Fix bug with steering angle-change-rate signal handling
+ * (VW Community) Major overhaul of MQB CAN database (DBC)
+ * Improved car battery power management
+ * Improved updater robustness
+ * Improved realtime performance
+ * Reduced UI and modeld lags
+ * Increased torque on 2020 Hyundai Sonata and Palisade
+
+Version 0.7.8 (2020-08-19)
+========================
+ * New driver monitoring model: improved face detection and better compatibility with sunglasses
+ * Download NEOS operating system updates in the background
+ * Improved updater reliability and responsiveness
+ * Hyundai Kona 2020, Veloster 2019, and Genesis G70 2018 support thanks to xps-genesis!
 
 Version 0.7.7 (2020-07-20)
 ========================
@@ -18,27 +39,36 @@ Version 0.7.7 (2020-07-20)
 
 Version 0.7.6.1 (2020-06-16)
 ========================
-* Hotfix: update kernel on some comma twos (orders #8570-#8680)
+ * Hotfix: update kernel on some comma twos (orders #8570-#8680)
 
 Version 0.7.6 (2020-06-05)
 ========================
-* White panda is deprecated, upgrade to comma two or black panda
-* 2017 Nissan X-Trail, 2018-19 Leaf and 2019 Rogue support thanks to avolmensky!
-* 2017 Mazda CX-5 support in dashcam mode thanks to Jafaral!
-* Huge CPU savings in modeld by using thneed!
-* Lots of code cleanup and refactors
+ * White panda is deprecated, upgrade to comma two or black panda
+ * 2017 Nissan X-Trail, 2018-19 Leaf and 2019 Rogue support thanks to avolmensky!
+ * 2017 Mazda CX-5 support in dashcam mode thanks to Jafaral!
+ * Huge CPU savings in modeld by using thneed!
+ * Lots of code cleanup and refactors
 
 Version 0.7.5 (2020-05-13)
 ========================
-* Right-Hand Drive support for both driving and driver monitoring!
-* New driving model: improved at sharp turns and lead speed estimation
-* New driver monitoring model: overall improvement on comma two
-* Driver camera preview in settings to improve mounting position
-* Added support for many Hyundai, Kia, Genesis models thanks to xx979xx!
-* Improved lateral tuning for 2020 Toyota Rav 4 (hybrid)
+ * Right-Hand Drive support for both driving and driver monitoring!
+ * New driving model: improved at sharp turns and lead speed estimation
+ * New driver monitoring model: overall improvement on comma two
+ * Driver camera preview in settings to improve mounting position
+ * Added support for many Hyundai, Kia, Genesis models thanks to xx979xx!
+ * Improved lateral tuning for 2020 Toyota Rav 4 (hybrid)
 
-Version 0.7.4 (2020-03-20)
+Version 0.7.4 + VW 1.3 (2020-04-17)
 ========================
+ * (VW Community) Hotfix for SEAT Ateca missing CAN messages
+ * (VW Community) Hotfix for manual trans users
+ * (VW Community) Hotfix to add missing CAN messages from VW Touran
+ * (VW Community) Hotfix to add missing CAN messages from high-trim Skoda Superb
+ * (VW Community) Network position auto-detect, no more R242 vs J533 branch!
+ * (VW Community) Trans type auto-detect, no more regular vs manual/e-Golf branch!
+ * (VW Community) Now fully in-sync with Comma upstream safety at full torque!
+ * (VW Community) Improved ISO24242 compliance in Panda code
+ * (VW Community) Fix for virtual Panda relay code breaking BP/C2 cars with real relays
  * New driving model: improved lane changes and lead car detection
  * Improved driver monitoring model: improve eye detection
  * Improved calibration stability
@@ -55,8 +85,18 @@ Version 0.7.3 (2020-02-21)
  * Speed up ECU firmware query
  * Fix bug where manager would sometimes hang after shutting down the car
 
-Version 0.7.2 (2020-02-07)
+Version 0.7.2 + VW 1.2.1 (2020-03-05)
 ========================
+ * (VW Community) Hotfix for "no comms between process" on cars without factory LKAS
+ * (VW Community) Hotfix for occasional steering fault messages after engaging
+
+Version 0.7.2 + VW 1.2 (2020-02-08)
+========================
+ * (VW Community) Updated MQB tuning parameters for less ping-pong and better banked road handling
+ * (VW Community) Updated CC button handling for 2019 vehicles with overloaded Set/Resume semantics
+ * (VW Community) First steps toward improving auto-resume from stop, more to come
+ * (VW Community) New fingerprint messages in support of the 2019 Jetta
+ * (VW Community) Additional Panda safety CRC and counter validation
  * ECU firmware version based fingerprinting for Honda & Toyota
  * New driving model: improved path prediction during turns and lane changes and better lead speed tracking
  * Improve driver monitoring under extreme lighting and add low accuracy alert
@@ -73,8 +113,11 @@ Version 0.7.1 (2020-01-20)
  * More robust updater thanks to jyoung8607! Requires NEOS update
  * Improve low speed ACC tuning
 
-Version 0.7 (2019-12-13)
+Version 0.7 + VW 1.1 (2020-01-01)
 ========================
+ * (VW Community) Enabled Comma's unofficial Lane Change Assist feature!
+ * (VW Community) Advanced Virtual Relay Technology!
+ * (VW Community) Closer alignment with Comma recommended safety parameters
  * Move to SCons build system!
  * Add Lane Departure Warning (LDW) for all supported vehicles!
  * NEOS update: increase wifi speed thanks to jyoung8607!
@@ -471,96 +514,96 @@ Version 0.3.4 (2017-07-28)
 
 Version 0.3.3  (2017-06-28)
 ===========================
-  * Improved model trained on more data
-  * Alpha CR-V support thanks to energee and johnnwvs!
-  * Using the opendbc project for DBC files
-  * Minor performance improvements
-  * UI update thanks to pjlao307
-  * Power off button
-  * 6% more torque on the Civic
+ * Improved model trained on more data
+ * Alpha CR-V support thanks to energee and johnnwvs!
+ * Using the opendbc project for DBC files
+ * Minor performance improvements
+ * UI update thanks to pjlao307
+ * Power off button
+ * 6% more torque on the Civic
 
 Version 0.3.2  (2017-05-22)
 ===========================
-  * Minor stability bugfixes
-  * Added metrics and rear view mirror disable to settings
-  * Update model with more crowdsourced data
+ * Minor stability bugfixes
+ * Added metrics and rear view mirror disable to settings
+ * Update model with more crowdsourced data
 
 Version 0.3.1  (2017-05-17)
 ===========================
-  * visiond stability bugfix
-  * Add logging for angle and flashing
+ * visiond stability bugfix
+ * Add logging for angle and flashing
 
 Version 0.3.0  (2017-05-12)
 ===========================
-  * Add CarParams struct to improve the abstraction layer
-  * Refactor visiond IPC to support multiple clients
-  * Add raw GPS and beginning support for navigation
-  * Improve model in visiond using crowdsourced data
-  * Add improved system logging to diagnose instability
-  * Rewrite baseui in React Native
-  * Moved calibration to the cloud
+ * Add CarParams struct to improve the abstraction layer
+ * Refactor visiond IPC to support multiple clients
+ * Add raw GPS and beginning support for navigation
+ * Improve model in visiond using crowdsourced data
+ * Add improved system logging to diagnose instability
+ * Rewrite baseui in React Native
+ * Moved calibration to the cloud
 
 Version 0.2.9  (2017-03-01)
 ===========================
-  * Retain compatibility with NEOS v1
+ * Retain compatibility with NEOS v1
 
 Version 0.2.8  (2017-02-27)
 ===========================
-  * Fix bug where frames were being dropped in minute 71
+ * Fix bug where frames were being dropped in minute 71
 
 Version 0.2.7  (2017-02-08)
 ===========================
-  * Better performance and pictures at night
-  * Fix ptr alignment issue in boardd
-  * Fix brake error light, fix crash if too cold
+ * Better performance and pictures at night
+ * Fix ptr alignment issue in boardd
+ * Fix brake error light, fix crash if too cold
 
 Version 0.2.6  (2017-01-31)
 ===========================
-  * Fix bug in visiond model execution
+ * Fix bug in visiond model execution
 
 Version 0.2.5  (2017-01-30)
 ===========================
-  * Fix race condition in manager
+ * Fix race condition in manager
 
 Version 0.2.4  (2017-01-27)
 ===========================
-  * OnePlus 3T support
-  * Enable installation as NEOS app
-  * Various minor bugfixes
+ * OnePlus 3T support
+ * Enable installation as NEOS app
+ * Various minor bugfixes
 
 Version 0.2.3  (2017-01-11)
 ===========================
-  * Reduce space usage by 80%
-  * Add better logging
-  * Add Travis CI
+ * Reduce space usage by 80%
+ * Add better logging
+ * Add Travis CI
 
 Version 0.2.2  (2017-01-10)
 ===========================
-  * Board triggers started signal on CAN messages
-  * Improved autoexposure
-  * Handle out of space, improve upload status
+ * Board triggers started signal on CAN messages
+ * Improved autoexposure
+ * Handle out of space, improve upload status
 
 Version 0.2.1  (2016-12-14)
 ===========================
-  * Performance improvements, removal of more numpy
-  * Fix boardd process priority
-  * Make counter timer reset on use of steering wheel
+ * Performance improvements, removal of more numpy
+ * Fix boardd process priority
+ * Make counter timer reset on use of steering wheel
 
 Version 0.2  (2016-12-12)
 =========================
-  * Car/Radar abstraction layers have shipped, see cereal/car.capnp
-  * controlsd has been refactored
-  * Shipped plant model and testing maneuvers
-  * visiond exits more gracefully now
-  * Hardware encoder in visiond should always init
-  * ui now turns off the screen after 30 seconds
-  * Switch to openpilot release branch for future releases
-  * Added preliminary Docker container to run tests on PC
+ * Car/Radar abstraction layers have shipped, see cereal/car.capnp
+ * controlsd has been refactored
+ * Shipped plant model and testing maneuvers
+ * visiond exits more gracefully now
+ * Hardware encoder in visiond should always init
+ * ui now turns off the screen after 30 seconds
+ * Switch to openpilot release branch for future releases
+ * Added preliminary Docker container to run tests on PC
 
 Version 0.1  (2016-11-29)
 =========================
-  * Initial release of openpilot
-  * Adaptive cruise control is working
-  * Lane keep assist is working
-  * Support for Acura ILX 2016 with AcuraWatch Plus
-  * Support for Honda Civic 2016 Touring Edition
+ * Initial release of openpilot
+ * Adaptive cruise control is working
+ * Lane keep assist is working
+ * Support for Acura ILX 2016 with AcuraWatch Plus
+ * Support for Honda Civic 2016 Touring Edition

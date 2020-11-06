@@ -5,10 +5,11 @@ TARGET_DIR=/data/openpilot
 
 ln -sf $TARGET_DIR /data/pythonpath
 
-export GIT_COMMITTER_NAME="Vehicle Researcher"
-export GIT_COMMITTER_EMAIL="user@comma.ai"
-export GIT_AUTHOR_NAME="Vehicle Researcher"
-export GIT_AUTHOR_EMAIL="user@comma.ai"
+export GITHUB_REPO="jyoung8607/openpilot.git"
+export GIT_COMMITTER_NAME="Jason Young"
+export GIT_COMMITTER_EMAIL="jyoung8607@gmail.com"
+export GIT_AUTHOR_NAME="Jason Young"
+export GIT_AUTHOR_EMAIL="jyoung8607@gmail.com"
 export GIT_SSH_COMMAND="ssh -i /data/gitkey"
 
 echo "[-] Setting up repo T=$SECONDS"
@@ -16,7 +17,7 @@ if [ ! -d "$TARGET_DIR" ]; then
   mkdir -p $TARGET_DIR
   cd $TARGET_DIR
   git init
-  git remote add origin git@github.com:commaai/openpilot.git
+  git remote add origin git@github.com:$GITHUB_REPO
 fi
 
 echo "[-] fetching public T=$SECONDS"
@@ -25,12 +26,12 @@ git prune || true
 git remote prune origin || true
 
 echo "[-] bringing master-ci and devel in sync T=$SECONDS"
-git fetch origin master-ci
+git fetch origin master
 git fetch origin devel
 
-git checkout -f --track origin/master-ci
-git reset --hard master-ci
-git checkout master-ci
+git checkout -f --track origin/master
+git reset --hard master
+git checkout master
 git reset --hard origin/devel
 git clean -xdf
 
@@ -76,8 +77,8 @@ popd
 
 if [ ! -z "$CI_PUSH" ]; then
   echo "[-] Pushing to $CI_PUSH T=$SECONDS"
-  git remote set-url origin git@github.com:commaai/openpilot.git
-  git push -f origin master-ci:$CI_PUSH
+  git remote set-url origin git@github.com:$GITHUB_REPO
+  git push -f origin master:$CI_PUSH
 fi
 
 echo "[-] done T=$SECONDS"

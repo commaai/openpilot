@@ -11,6 +11,9 @@ if __name__ == "__main__":
 
   while True:
     m = messaging.recv_one(modeld_sock)
+    if m is None:
+      continue
+
     frame_id = m.model.frameId
     t = m.logMonoTime / 1e9
     frame_cnt += 1

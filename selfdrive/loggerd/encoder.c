@@ -474,17 +474,16 @@ int encoder_encode_frame(EncoderState *s,
 
   // this sometimes freezes... put it outside the encoder lock so we can still trigger rotates...
   // THIS IS A REALLY BAD IDEA, but apparently the race has to happen 30 times to trigger this
-  pthread_mutex_unlock(&s->lock);
+  //pthread_mutex_unlock(&s->lock);
   OMX_BUFFERHEADERTYPE* in_buf = queue_pop(&s->free_in);
-  pthread_mutex_lock(&s->lock);
+  //pthread_mutex_lock(&s->lock);
 
-  if (s->rotating) {
-    encoder_close(s);
-    encoder_open(s, s->next_path);
-    s->segment = s->next_segment;
-    s->rotating = false;
-  }
-
+  // if (s->rotating) {
+  //   encoder_close(s);
+  //   encoder_open(s, s->next_path);
+  //   s->segment = s->next_segment;
+  //   s->rotating = false;
+  // }
   int ret = s->counter;
 
   uint8_t *in_buf_ptr = in_buf->pBuffer;
@@ -565,6 +564,9 @@ void encoder_open(EncoderState *s, const char* path) {
     avformat_alloc_output_context2(&s->ofmt_ctx, NULL, NULL, s->vid_path);
     assert(s->ofmt_ctx);
 
+#ifdef QCOM2
+    s->ofmt_ctx->oformat->flags = AVFMT_TS_NONSTRICT;
+#endif
     s->out_stream = avformat_new_stream(s->ofmt_ctx, NULL);
     assert(s->out_stream);
 
@@ -638,6 +640,7 @@ void encoder_close(EncoderState *s) {
 
     if (s->remuxing) {
       av_write_trailer(s->ofmt_ctx);
+      avcodec_free_context(&s->codec_ctx);
       avio_closep(&s->ofmt_ctx->pb);
       avformat_free_context(s->ofmt_ctx);
     } else {

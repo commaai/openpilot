@@ -1,7 +1,7 @@
 from cereal import car
 from selfdrive.swaglog import cloudlog
-from selfdrive.car.volkswagen.values import CAR, BUTTON_STATES, NWL, TRANS, GEAR
-from common.params import put_nonblocking
+from selfdrive.car.volkswagen.values import CAR, BUTTON_STATES, NWL, TRANS, GEAR, MQB_CARS, PQ_CARS
+from common.params import Params, put_nonblocking
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
 from selfdrive.car.interfaces import CarInterfaceBase
 
@@ -29,46 +29,72 @@ class CarInterface(CarInterfaceBase):
     ret.carName = "volkswagen"
     ret.radarOffCan = True
 
-    if candidate == CAR.GENERICMQB:
-      # Set common MQB parameters that will apply globally
+    # Common default parameters that may be overridden per-vehicle
+    ret.steerRateCost = 1.0
+    ret.steerActuatorDelay = 0.1
+    ret.steerLimitTimer = 0.4
+    ret.lateralTuning.pid.kf = 0.00006
+    ret.lateralTuning.pid.kpV = [0.6]
+    ret.lateralTuning.pid.kiV = [0.2]
+    tire_stiffness_factor = 1.0
+
+    ret.lateralTuning.pid.kpBP = [0.]
+    ret.lateralTuning.pid.kiBP = [0.]
+
+    if candidate in MQB_CARS:
+      # Configuration items shared between all MQB vehicles
       ret.safetyModel = car.CarParams.SafetyModel.volkswagen
 
-      # Additional common MQB parameters that may be overridden per-vehicle
-      ret.steerRateCost = 1.0
-      ret.steerActuatorDelay = 0.1  # Hopefully all MQB racks are similar here
-      ret.steerLimitTimer = 0.4
-
-      ret.lateralTuning.pid.kpBP = [0.]
-      ret.lateralTuning.pid.kiBP = [0.]
+      # Determine transmission type by CAN message(s) present on the bus
+      if 0xAD in fingerprint[0]:
+        # Getribe_11 message detected: traditional automatic or DSG gearbox
+        ret.transmissionType = TRANS.automatic
+      elif 0x187 in fingerprint[0]:
+        # EV_Gearshift message detected: e-Golf or similar direct-drive electric
+        ret.transmissionType = TRANS.direct
+      else:
+        # No trans message at all, must be a true stick-shift manual
+        ret.transmissionType = TRANS.manual
 
       # FIXME: Per-vehicle parameters need to be reintegrated.
-      # Until that time, defaulting to VW Golf Mk7 as a baseline.
-      ret.mass = 1500 + STD_CARGO_KG
-      ret.wheelbase = 2.64
-      ret.centerToFront = ret.wheelbase * 0.45
-      ret.steerRatio = 15.6
-      ret.lateralTuning.pid.kf = 0.00006
-      ret.lateralTuning.pid.kpV = [0.6]
-      ret.lateralTuning.pid.kiV = [0.2]
-      tire_stiffness_factor = 1.0
+      if candidate == CAR.GENERICMQB:
+        ret.mass = 1500 + STD_CARGO_KG
+        ret.wheelbase = 2.64
+        ret.centerToFront = ret.wheelbase * 0.45
+        ret.steerRatio = 15.9
 
-    # Determine installed network location by checking for radar-camera
-    # sensor fusion messages on bus 1.
-    if 0x238 in fingerprint[1]:
+    elif candidate in PQ_CARS:
+      # Configuration items shared between all PQ35/PQ46/NMS vehicles
+      ret.safetyModel = car.CarParams.SafetyModel.volkswagenPq
+
+      # Determine transmission type by CAN message(s) present on the bus
+      if 0x440 in fingerprint[0]:
+        # Getriebe_1 detected: traditional automatic or DSG gearbox
+        ret.transmissionType = TRANS.automatic
+      else:
+        # No trans message at all, must be a true stick-shift manual
+        ret.transmissionType = TRANS.manual
+
+      # FIXME: Per-vehicle parameters need to be reintegrated.
+      if candidate == CAR.GENERICPQ:
+        ret.mass = 1375 + STD_CARGO_KG
+        ret.wheelbase = 2.58
+        ret.centerToFront = ret.wheelbase * 0.45  # Estimated
+        ret.steerRatio = 15.6
+
+    # Determine installed network location: take a manually forced setting if
+    # present, otherwise assume camera for C2/BP and gateway for white/grey Panda.
+    # TODO: autodetect C2/BP gateway-side installation based on convenience/powertrain on CAN1
+    params = Params()
+    manual_network_location = params.get("ForceNetworkLocation", encoding='utf8')
+    if manual_network_location == "camera":
+      ret.networkLocation = NWL.fwdCamera
+    elif manual_network_location == "gateway":
+      ret.networkLocation = NWL.gateway
+    elif has_relay:
       ret.networkLocation = NWL.fwdCamera
     else:
       ret.networkLocation = NWL.gateway
-
-    # Determine transmission type by CAN message(s) present on the bus
-    if 0xAD in fingerprint[0]:
-      # Getribe_11 message detected: traditional automatic or DSG gearbox
-      ret.transmissionType = TRANS.automatic
-    elif 0x187 in fingerprint[0]:
-      # EV_Gearshift message detected: e-Golf or similar direct-drive electric
-      ret.transmissionType = TRANS.direct
-    else:
-      # No trans message at all, must be a true stick-shift manual
-      ret.transmissionType = TRANS.manual
 
     cloudlog.warning("Detected network location: %s", ret.networkLocation)
     cloudlog.warning("Detected transmission type: %s", ret.transmissionType)
@@ -98,6 +124,7 @@ class CarInterface(CarInterfaceBase):
     ret.canValid = self.cp.can_valid  # FIXME: Restore cp_cam valid check after proper LKAS camera detect
     ret.steeringRateLimited = self.CC.steer_rate_limited if self.CC is not None else False
 
+    # TODO: add a field for this to carState, car interface code shouldn't write params
     # Update the device metric configuration to match the car at first startup,
     # or if there's been a change.
     if self.CS.displayMetricUnits != self.displayMetricUnitsPrev:
