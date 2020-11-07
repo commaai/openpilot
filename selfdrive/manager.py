@@ -78,7 +78,7 @@ import traceback
 from multiprocessing import Process
 
 # Run scons
-spinner = Spinner(noop=(__name__ != "__main__" or not ANDROID))
+spinner = Spinner()
 spinner.update("0")
 
 if not prebuilt:
@@ -138,9 +138,8 @@ if not prebuilt:
         cloudlog.error("scons build failed\n" + error_s)
 
         # Show TextWindow
-        no_ui = __name__ != "__main__" or not ANDROID
         error_s = "\n \n".join(["\n".join(textwrap.wrap(e, 65)) for e in errors])
-        with TextWindow("openpilot failed to build\n \n" + error_s, noop=no_ui) as t:
+        with TextWindow("openpilot failed to build\n \n" + error_s) as t:
           t.wait_for_exit()
 
         exit(1)
@@ -398,8 +397,10 @@ def cleanup_all_processes(signal, frame):
 
 
 def send_managed_process_signal(name, sig):
-  if name not in running or name not in managed_processes:
+  if name not in running or name not in managed_processes or \
+     running[name].exitcode is not None:
     return
+
   cloudlog.info(f"sending signal {sig} to {name}")
   os.kill(running[name].pid, sig)
 

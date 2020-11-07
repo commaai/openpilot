@@ -219,8 +219,6 @@ selfdrive/common/visionbuf.h
 selfdrive/common/visionbuf_ion.c
 selfdrive/common/visionimg.cc
 selfdrive/common/visionimg.h
-selfdrive/common/spinner.c
-selfdrive/common/spinner.h
 
 selfdrive/common/gpio.cc
 selfdrive/common/gpio.h
@@ -344,16 +342,20 @@ selfdrive/ui/SConscript
 selfdrive/ui/*.cc
 selfdrive/ui/*.hpp
 selfdrive/ui/ui
-selfdrive/ui/spinner/Makefile
-selfdrive/ui/spinner/spinner
-selfdrive/ui/spinner/spinner.c
+selfdrive/ui/text
+selfdrive/ui/spinner
+selfdrive/ui/android/spinner/Makefile
+selfdrive/ui/android/spinner/spinner
+selfdrive/ui/android/spinner/spinner.c
 
-selfdrive/ui/text/Makefile
-selfdrive/ui/text/text
-selfdrive/ui/text/text.c
+selfdrive/ui/android/text/Makefile
+selfdrive/ui/android/text/text
+selfdrive/ui/android/text/text.c
 
 selfdrive/ui/qt/*.cc
 selfdrive/ui/qt/*.hpp
+selfdrive/ui/qt/offroad/*.cc
+selfdrive/ui/qt/offroad/*.hpp
 
 selfdrive/ui/android/*.cc
 selfdrive/ui/android/*.hpp
@@ -572,6 +574,7 @@ opendbc/toyota_sienna_xle_2018_pt_generated.dbc
 opendbc/lexus_is_2018_pt_generated.dbc
 opendbc/lexus_ct200h_2018_pt_generated.dbc
 opendbc/lexus_nx300h_2018_pt_generated.dbc
+opendbc/lexus_nx300_2018_pt_generated.dbc
 opendbc/toyota_adas.dbc
 opendbc/toyota_tss2_adas.dbc
 

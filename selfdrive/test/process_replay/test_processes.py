@@ -72,10 +72,14 @@ segments = {
     'car_brand': "NISSAN",
     'carFingerprint': NISSAN.XTRAIL,
   },
+  "7cc2a8365b4dd8a9|2018-12-02--12-10-44--2": {
+    'car_brand': "GM",
+    'carFingerprint': GM.ACADIA,
+  },
 }
 
 # ford doesn't need to be tested until a full port is done
-excluded_interfaces = ["mock", "ford", "mazda", "gm"]
+excluded_interfaces = ["mock", "ford", "mazda"]
 
 BASE_URL = "https://commadataci.blob.core.windows.net/openpilotci/"
 

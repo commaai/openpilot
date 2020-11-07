@@ -1,10 +1,12 @@
-FROM ubuntu:16.04
+FROM ubuntu:20.04
 ENV PYTHONUNBUFFERED 1
 
+ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y --no-install-recommends \
     autoconf \
     build-essential \
     bzip2 \
+    ca-certificates \
     capnproto \
     libcapnp-dev \
     clang \
@@ -35,7 +37,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ocl-icd-opencl-dev \
     opencl-headers \
     python-dev \
-    python-pip \
     qt5-default \
     qtmultimedia5-dev \
     sudo \

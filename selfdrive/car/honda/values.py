@@ -231,6 +231,7 @@ FW_VERSIONS = {
       b'37805-6A0-A850\x00\x00',
       b'37805-6A0-C540\x00\x00',
       b'37805-6A1-H650\x00\x00',
+      b'37805-6M4-B730\x00\x00',
     ],
     (Ecu.transmission, 0x18da1ef1, None): [
       b'28101-6A7-A220\x00\x00',
@@ -239,6 +240,7 @@ FW_VERSIONS = {
       b'28101-6A7-A330\x00\x00',
       b'28101-6A7-A510\x00\x00',
       b'28101-6A9-H140\x00\x00',
+      b'28101-6A9-H420\x00\x00',
     ],
     (Ecu.gateway, 0x18daeff1, None): [
       b'38897-TVA-A230\x00\x00',
@@ -249,6 +251,7 @@ FW_VERSIONS = {
       b'46114-TVA-A080\x00\x00',
       b'46114-TVA-A120\x00\x00',
       b'46114-TVE-H550\x00\x00',
+      b'46114-TVE-H560\x00\x00',
     ],
     (Ecu.combinationMeter, 0x18da60f1, None): [
       b'78109-TVA-A010\x00\x00',
@@ -259,6 +262,7 @@ FW_VERSIONS = {
       b'78109-TVA-C010\x00\x00',
       b'78109-TVE-H610\x00\x00',
       b'78109-TWA-A210\x00\x00',
+      b'78109-TBX-H310\x00\x00',
     ],
     (Ecu.hud, 0x18da61f1, None): [
       b'78209-TVA-A010\x00\x00',
@@ -266,10 +270,12 @@ FW_VERSIONS = {
     (Ecu.fwdCamera, 0x18dab5f1, None): [
       b'36161-TVA-A060\x00\x00',
       b'36161-TVE-H050\x00\x00',
+      b'36161-TBX-H130\x00\x00',
     ],
     (Ecu.srs, 0x18da53f1, None): [
       b'77959-TVA-A460\x00\x00',
       b'77959-TVA-H230\x00\x00',
+      b'77959-TBX-H230\x00\x00',
     ],
     (Ecu.vsa, 0x18da28f1, None): [
       b'57114-TVA-B050\x00\x00',
@@ -281,12 +287,14 @@ FW_VERSIONS = {
       b'36802-TVA-A160\x00\x00',
       b'36802-TVA-A170\x00\x00',
       b'36802-TVE-H070\x00\x00',
+      b'36802-TBX-H140\x00\x00',
     ],
     (Ecu.eps, 0x18da30f1, None): [
       b'39990-TVA-A140\x00\x00',
       b'39990-TVA-A150\x00\x00',  # Are these two different steerRatio?
       b'39990-TVA-A160\x00\x00',  # Sport, Sport 2.0T and Touring 2.0T have different ratios
       b'39990-TVE-H130\x00\x00',
+      b'39990-TBX-H120\x00\x00',
     ],
   },
   CAR.ACCORDH: {
@@ -936,11 +944,23 @@ FW_VERSIONS = {
     ],
   },
   CAR.HRV: {
-    (Ecu.gateway, 0x18daeff1, None): [b'38897-T7A-A010\x00\x00'],
-    (Ecu.eps, 0x18da30f1, None): [b'39990-THX-A020\x00\x00'],
-    (Ecu.fwdRadar, 0x18dab0f1, None): [b'36161-T7A-A240\x00\x00'],
-    (Ecu.srs, 0x18da53f1, None): [b'77959-T7A-A230\x00\x00'],
-    (Ecu.combinationMeter, 0x18da60f1, None): [b'78109-THX-A210\x00\x00'],
+    (Ecu.gateway, 0x18daeff1, None): [
+      b'38897-T7A-A010\x00\x00',
+    ],
+    (Ecu.eps, 0x18da30f1, None): [
+      b'39990-THX-A020\x00\x00',
+    ],
+    (Ecu.fwdRadar, 0x18dab0f1, None): [
+      b'36161-T7A-A140\x00\x00',
+      b'36161-T7A-A240\x00\x00',
+    ],
+    (Ecu.srs, 0x18da53f1, None): [
+      b'77959-T7A-A230\x00\x00',
+    ],
+    (Ecu.combinationMeter, 0x18da60f1, None): [
+      b'78109-THX-A110\x00\x00',
+      b'78109-THX-A210\x00\x00',
+    ],
   },
 }
 
@@ -1014,12 +1034,6 @@ SPEED_FACTOR = {
   CAR.PILOT_2019: 1.,
   CAR.RIDGELINE: 1.,
   CAR.INSIGHT: 1.,
-}
-
-# msgs sent for steering controller by camera module on can 0.
-# those messages are mutually exclusive on CRV and non-CRV cars
-ECU_FINGERPRINT = {
-  Ecu.fwdCamera: [0xE4, 0x194],   # steer torque cmd
 }
 
 HONDA_BOSCH = set([CAR.ACCORD, CAR.ACCORD_15, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_5G, CAR.CRV_HYBRID, CAR.INSIGHT, CAR.ACURA_RDX_3G])

@@ -233,6 +233,10 @@ routes = {
     'carFingerprint': HYUNDAI.VELOSTER,
     'enableCamera': True,
   },
+  "50c6c9b85fd1ff03|2020-10-26--17-56-06": {
+    'carFingerprint': HYUNDAI.KIA_NIRO_EV,
+    'enableCamera': True,
+  },
   "f7b6be73e3dfd36c|2019-05-12--18-07-16": {
     'carFingerprint': TOYOTA.AVALON,
     'enableCamera': False,
@@ -361,6 +365,11 @@ routes = {
   },
   "ec429c0f37564e3c|2020-02-01--17-28-12": {
     'carFingerprint': TOYOTA.LEXUS_NXH,
+    'enableCamera': True,
+    'enableDsu': False,
+  },
+  "964c09eb11ca8089|2020-11-03--22-04-00": {
+    'carFingerprint': TOYOTA.LEXUS_NX,
     'enableCamera': True,
     'enableDsu': False,
   },
