@@ -252,7 +252,7 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 4070 * CV.LB_TO_KG + STD_CARGO_KG
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.1]]
       ret.lateralTuning.pid.kf = 0.00006
-      
+
     elif candidate == CAR.PRIUS_TSS2:
       stop_and_go = True
       ret.safetyParam = 73

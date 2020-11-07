@@ -38,16 +38,15 @@ void* live_thread(void *arg) {
     -1.09890110e-03, 0.00000000e+00, 2.81318681e-01,
     -1.84808520e-20, 9.00738606e-04,-4.28751576e-02;
 
+  Eigen::Matrix<float, 3, 3> fcam_intrinsics;
 #ifndef QCOM2
-  Eigen::Matrix<float, 3, 3> eon_intrinsics;
-  eon_intrinsics <<
+  fcam_intrinsics <<
     910.0, 0.0, 582.0,
     0.0, 910.0, 437.0,
     0.0,   0.0,   1.0;
   float db_s = 0.5; // debayering does a 2x downscale
 #else
-  Eigen::Matrix<float, 3, 3> eon_intrinsics;
-  eon_intrinsics <<
+  fcam_intrinsics <<
     2648.0, 0.0, 1928.0/2,
     0.0, 2648.0, 1208.0/2,
     0.0,   0.0,   1.0;
@@ -69,7 +68,7 @@ void* live_thread(void *arg) {
         extrinsic_matrix_eigen(i / 4, i % 4) = extrinsic_matrix[i];
       }
 
-      auto camera_frame_from_road_frame = eon_intrinsics * extrinsic_matrix_eigen;
+      auto camera_frame_from_road_frame = fcam_intrinsics * extrinsic_matrix_eigen;
       Eigen::Matrix<float, 3, 3> camera_frame_from_ground;
       camera_frame_from_ground.col(0) = camera_frame_from_road_frame.col(0);
       camera_frame_from_ground.col(1) = camera_frame_from_road_frame.col(1);
