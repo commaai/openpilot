@@ -44,3 +44,6 @@ public:
 
   std::string get(std::string key, bool block=false);
 };
+
+int ensure_dir_exists(std::string path);
+

@@ -15,6 +15,7 @@
 #include "messaging.hpp"
 
 #include "common/swaglog.h"
+#include "common/params.h"
 
 #include "logger.h"
 
@@ -25,22 +26,6 @@ static void log_sentinel(LoggerState *s, cereal::Sentinel::SentinelType type) {
   auto bytes = msg.toBytes();
 
   logger_log(s, bytes.begin(), bytes.size(), true);
-}
-
-static int mkpath(char* file_path) {
-  assert(file_path && *file_path);
-  char* p;
-  for (p=strchr(file_path+1, '/'); p; p=strchr(p+1, '/')) {
-    *p = '\0';
-    if (mkdir(file_path, 0777)==-1) {
-      if (errno != EEXIST) {
-        *p = '/';
-        return -1;
-      }
-    }
-    *p = '/';
-  }
-  return 0;
 }
 
 void logger_init(LoggerState *s, const char* log_name, const uint8_t* init_data, size_t init_data_len, bool has_qlog) {
@@ -87,7 +72,7 @@ static LoggerHandle* logger_open(LoggerState *s, const char* root_path) {
   snprintf(h->qlog_path, sizeof(h->qlog_path), "%s/qlog.bz2", h->segment_path);
   snprintf(h->lock_path, sizeof(h->lock_path), "%s.lock", h->log_path);
 
-  err = mkpath(h->log_path);
+  err = ensure_dir_exists(h->log_path);
   if (err) return NULL;
 
   FILE* lock_file = fopen(h->lock_path, "wb");
