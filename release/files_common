@@ -219,8 +219,6 @@ selfdrive/common/visionbuf.h
 selfdrive/common/visionbuf_ion.c
 selfdrive/common/visionimg.cc
 selfdrive/common/visionimg.h
-selfdrive/common/spinner.c
-selfdrive/common/spinner.h
 
 selfdrive/common/gpio.cc
 selfdrive/common/gpio.h
@@ -344,9 +342,11 @@ selfdrive/ui/SConscript
 selfdrive/ui/*.cc
 selfdrive/ui/*.hpp
 selfdrive/ui/ui
-selfdrive/ui/spinner/Makefile
-selfdrive/ui/spinner/spinner
-selfdrive/ui/spinner/spinner.c
+selfdrive/ui/text
+selfdrive/ui/spinner
+selfdrive/ui/android/spinner/Makefile
+selfdrive/ui/android/spinner/spinner
+selfdrive/ui/android/spinner/spinner.c
 
 selfdrive/ui/android/text/Makefile
 selfdrive/ui/android/text/text
