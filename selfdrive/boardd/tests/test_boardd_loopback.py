@@ -36,7 +36,7 @@ os.environ['BASEDIR'] = BASEDIR
 @with_processes(['boardd'])
 def test_boardd_loopback():
   # wait for boardd to init
-  spinner = Spinner(noop=(not ANDROID))
+  spinner = Spinner()
   time.sleep(2)
 
   # boardd blocks on CarVin and CarParams
