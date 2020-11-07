@@ -5,7 +5,6 @@ from common.basedir import BASEDIR
 
 class Spinner():
   def __init__(self):
-    self.spinner_proc = None
     try:
       self.spinner_proc = subprocess.Popen(["./spinner"],
                                            stdin=subprocess.PIPE,
