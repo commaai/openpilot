@@ -1,0 +1,8 @@
+#!/bin/sh
+
+if [ -f /EON ]; then
+  export LD_LIBRARY_PATH="/system/lib64:$LD_LIBRARY_PATH"
+  exec ./android/spinner/spinner "$1"
+else
+  exec ./qt/spinner "$1"
+fi
