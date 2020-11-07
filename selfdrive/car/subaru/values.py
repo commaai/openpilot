@@ -18,7 +18,6 @@ FINGERPRINTS = {
   CAR.ASCENT: [{
   # SUBARU ASCENT LIMITED 2019
     2: 8, 64: 8, 65: 8, 72: 8, 73: 8, 280: 8, 281: 8, 290: 8, 312: 8, 313: 8, 314: 8, 315: 8, 316: 8, 326: 8, 544: 8, 545: 8, 546: 8, 552: 8, 554: 8, 557: 8, 576: 8, 577: 8, 722: 8, 801: 8, 802: 8, 805: 8, 808: 8, 811: 8, 816: 8, 826: 8, 837: 8, 838: 8, 839: 8, 842: 8, 912: 8, 915: 8, 940: 8, 1614: 8, 1617: 8, 1632: 8, 1650: 8, 1657: 8, 1658: 8, 1677: 8, 1722: 8, 1743: 8, 1759: 8, 1785: 5, 1786: 5, 1787: 5, 1788: 8
-  # END ASCENT
   }],
   CAR.IMPREZA: [{
   # SUBARU IMPREZA LIMITED 2019
@@ -274,26 +273,31 @@ FW_VERSIONS = {
     # 2018 Outback Premium 2.5i - UDM / @zhoux260
     # 2018 Outback 3.6r UDM / @mirroregami
     # 2018 Outback 2.5i Premium UDM / @dirkmm
+    # 2019 Outback UDM / @Valhalla
     # Ecu, addr, subaddr: ROM ID
     (Ecu.esp, 0x7b0, None): [
       b'\x8b\x97\xac\x00',
       b'\x8b\x9a\xac\x00',
+      b'\x9b\x97\xac\x00',
     ],
     (Ecu.eps, 0x746, None): [
       b'{\xb0\x00\x00',
     ],
     (Ecu.fwdCamera, 0x787, None): [
       b'\x00\x00df\x1f@ \n',
+      b'\x00\x00d\xfe\x1f@ \x15',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\xb5"@p\a',
       b'\xb5+@@\a',
       b'\xb5"@P\a',
+      b'\xc4"@0\a',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xbc\xf2@\x81\x00',
       b'\xbc\xfb\xe0\x80\x00',
       b'\xbc\xf2@\x80\x00',
+      b'\xbb\xf2@`\x00',
     ],
   },
 }
