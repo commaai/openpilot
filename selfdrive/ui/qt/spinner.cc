@@ -18,18 +18,25 @@
 
 Spinner::Spinner(QWidget *parent) {
   QGridLayout *main_layout = new QGridLayout();
+  main_layout->setSpacing(0);
+  main_layout->setMargin(50);
+
+  const int img_size = 500;
 
   comma = new QLabel();
-  comma->setPixmap(QPixmap("../assets/img_spinner_comma.png"));
+  comma->setPixmap(QPixmap("../assets/img_spinner_comma.png").scaled(img_size, img_size, Qt::KeepAspectRatio));
+  comma->setFixedSize(img_size, img_size);
   main_layout->addWidget(comma, 0, 0, Qt::AlignHCenter | Qt::AlignVCenter);
 
-  track_img = QPixmap("../assets/img_spinner_track.png");
+  track_img = QPixmap("../assets/img_spinner_track.png").scaled(img_size, img_size, Qt::KeepAspectRatio);
   track = new QLabel();
   track->setPixmap(track_img);
+  track->setFixedSize(img_size, img_size);
   main_layout->addWidget(track, 0, 0, Qt::AlignHCenter | Qt::AlignVCenter);
 
   text = new QLabel("building boardd");
   text->setVisible(false);
+  text->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
   main_layout->addWidget(text, 1, 0, Qt::AlignHCenter);
 
   progress_bar = new QProgressBar();
@@ -37,6 +44,7 @@ Spinner::Spinner(QWidget *parent) {
   progress_bar->setMaximum(100);
   progress_bar->setTextVisible(false);
   progress_bar->setVisible(false);
+  progress_bar->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
   main_layout->addWidget(progress_bar, 1, 0, Qt::AlignHCenter);
 
   setLayout(main_layout);
@@ -49,16 +57,19 @@ Spinner::Spinner(QWidget *parent) {
       font-size: 80px;
     }
     QProgressBar {
-      color: white;
-      background-color: transparent;
+      background-color: #373737;
       border: none;
       margin: 100px;
+      height: 50px;
       width: 1000px;
+    }
+    QProgressBar::chunk {
+      background-color: white;
     }
   )");
 
   rotate_timer = new QTimer(this);
-  rotate_timer->start(1000/60);
+  rotate_timer->start(1000/30.);
   QObject::connect(rotate_timer, SIGNAL(timeout()), this, SLOT(rotate()));
 
   notifier = new QSocketNotifier(fileno(stdin), QSocketNotifier::Read);
@@ -66,7 +77,7 @@ Spinner::Spinner(QWidget *parent) {
 };
 
 void Spinner::rotate() {
-  transform.rotate(1);
+  transform.rotate(5);
 
   QPixmap r = track_img.transformed(transform);
   int x = (r.width() - track_img.width()) / 2;
