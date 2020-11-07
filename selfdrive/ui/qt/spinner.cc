@@ -46,7 +46,7 @@ Spinner::Spinner(QWidget *parent) {
     }
     QLabel {
       color: white;
-      font-size: 30px;
+      font-size: 80px;
     }
     QProgressBar {
       color: white;
@@ -67,7 +67,11 @@ Spinner::Spinner(QWidget *parent) {
 
 void Spinner::rotate() {
   transform.rotate(1);
-  track->setPixmap(track_img.transformed(transform));
+
+  QPixmap r = track_img.transformed(transform);
+  int x = (r.width() - track_img.width()) / 2;
+  int y = (r.height() - track_img.height()) / 2;
+  track->setPixmap(r.copy(x, y, track_img.width(), track_img.height()));
 };
 
 void Spinner::update(int n) {
