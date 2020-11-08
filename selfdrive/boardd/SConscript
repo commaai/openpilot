@@ -10,7 +10,12 @@ arch = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()
 #             "cd selfdrive/boardd && python3 boardd_setup.py build_ext --inplace")
 
 envB = env.Clone()
-envB["LINKFLAGS"]=["-pthread", "-shared", "-bundle", "-undefined", "dynamic_lookup"]
+
+if arch == "Darwin":
+  envB["LINKFLAGS"]=["-bundle", "-undefined", "dynamic_lookup"]
+else:
+  envB["LINKFLAGS"]=["-pthread", "-shared"]
+
 envB.Cython('boardd_api_impl.cpp', 'boardd_api_impl.pyx')
 
 envB.Program('boardd_api_impl.so', 'boardd_api_impl.cpp', LIBS=["can_list_to_can_capnp", 'capnp', 'kj'])
