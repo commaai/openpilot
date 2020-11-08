@@ -606,6 +606,8 @@ static void bootlog() {
 int main(int argc, char** argv) {
   int err;
 
+  set_realtime_priority(50);
+
   if (argc > 1 && strcmp(argv[1], "--bootlog") == 0) {
     bootlog();
     return 0;
