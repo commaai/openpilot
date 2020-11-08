@@ -622,8 +622,6 @@ int main(int argc, char** argv) {
   record_front = Params().read_db_bool("RecordFront");
 #endif
 
-  setpriority(PRIO_PROCESS, 0, -12);
-
   clear_locks();
 
   signal(SIGINT, (sighandler_t)set_do_exit);
