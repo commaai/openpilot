@@ -10,7 +10,7 @@ from common.hardware import TICI
 ARCH = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()  # pylint: disable=unexpected-keyword-arg
 
 sourcefiles = ['params_pyx.pyx']
-extra_compile_args = ["-std=c++11"]
+extra_compile_args = ["-std=c++1z"]
 
 if ARCH == "aarch64":
   if TICI:
