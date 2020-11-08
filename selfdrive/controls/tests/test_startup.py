@@ -49,7 +49,7 @@ class TestStartup(unittest.TestCase):
     params.put("OpenpilotEnabledToggle", b"1")
     params.put("CommunityFeaturesToggle", b"1" if toggle_enabled else b"0")
 
-    time.sleep(2) # wait for controlsd to be ready
+    time.sleep(12) # wait for controlsd to be ready
 
     health = messaging.new_message('health')
     health.health.hwType = log.HealthData.HwType.uno
