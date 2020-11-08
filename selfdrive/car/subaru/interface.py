@@ -24,7 +24,6 @@ class CarInterface(CarInterfaceBase):
 
     # Subaru port is a community feature, since we don't own one to test
     ret.communityFeature = True
-    ret.dashcamOnly = candidate in PREGLOBAL_CARS
 
     ret.enableCamera = True
 
