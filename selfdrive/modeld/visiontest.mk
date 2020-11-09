@@ -48,7 +48,7 @@ endif
 all: visiontest
 
 libvisiontest_inputs := visiontest.c \
-                        transforms/transform.c \
+                        transforms/transform.cc \
                         transforms/loadyuv.c \
                         ../common/clutil.c \
                         $(BASEDIR)/selfdrive/common/util.c \
