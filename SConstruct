@@ -30,6 +30,7 @@ if platform.system() == "Darwin":
 
 if arch == "aarch64" and TICI:
   arch = "larch64"
+Export('arch')
 
 USE_WEBCAM = os.getenv("USE_WEBCAM") is not None
 QCOM_REPLAY = arch == "aarch64" and os.getenv("QCOM_REPLAY") is not None
@@ -135,8 +136,8 @@ lenv["PYTHONPATH"] = Dir("#").path
 python_path = os.popen("python-config --cflags").read().split(" ")[0][2:]
 print(arch)
 print(python_path)
-for pfile in os.listdir(python_path):
-  print(pfile)
+# for pfile in os.listdir(python_path):
+#   print(pfile)
 
 env = Environment(
   ENV=lenv,
