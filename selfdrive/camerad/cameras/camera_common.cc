@@ -147,7 +147,6 @@ bool CameraBuf::acquire() {
   cur_rgb_idx = tbuffer_select(&ui_tb);
   cur_rgb_buf = &rgb_bufs[cur_rgb_idx];
 
-  double at1 = millis_since_boot();
   cl_event debayer_event;
   cl_mem camrabuf_cl = camera_bufs[buf_idx].buf_cl;
   if (camera_state->ci.bayer) {
@@ -179,8 +178,6 @@ bool CameraBuf::acquire() {
   clWaitForEvents(1, &debayer_event);
   clReleaseEvent(debayer_event);
 
-  double at2 = millis_since_boot();
-  printf("DBT %f\n", at2-at1);
   tbuffer_release(&camera_tb, buf_idx);
   visionbuf_sync(cur_rgb_buf, VISIONBUF_SYNC_FROM_DEVICE);
 

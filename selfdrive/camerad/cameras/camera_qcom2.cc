@@ -582,7 +582,7 @@ static void camera_init(CameraState *s, int camera_id, int camera_num, unsigned 
   s->skipped = true;
   s->ef_filtered = 1.0;
 
-  s->debayer_cl_localMemSize = (DEBAYER_LOCAL_WORKSIZE) * (DEBAYER_LOCAL_WORKSIZE) * sizeof(uint16_t);
+  s->debayer_cl_localMemSize = (DEBAYER_LOCAL_WORKSIZE + 2 * (3 / 2)) * (DEBAYER_LOCAL_WORKSIZE + 2 * (3 / 2)) * sizeof(float);
   s->debayer_cl_globalWorkSize[0] = s->ci.frame_width;
   s->debayer_cl_globalWorkSize[1] = s->ci.frame_height;
   s->debayer_cl_localWorkSize[0] = DEBAYER_LOCAL_WORKSIZE;
