@@ -1,11 +1,11 @@
 Import('env', 'cython_dependencies', 'arch')
 
-# # Build cython clock module
-# env.Command(['common_pyx.so', 'clock.cpp'],
-#             cython_dependencies + ['common_pyx_setup.py', 'clock.pyx'],
-#             "cd common && python3 common_pyx_setup.py build_ext --inplace")
+# Build cython clock module
+env.Command(['common_pyx.so', 'clock.cpp'],
+            cython_dependencies + ['common_pyx_setup.py', 'clock.pyx'],
+            "cd common && python3 common_pyx_setup.py build_ext --inplace")
 
-# # Build cython params module
+# Build cython params module
 # env.Command(['params_pyx.so', 'params_pyx.cpp'],
 #             cython_dependencies + [
 #                 'params_pyx_setup.py', 'params_pyx.pyx', 'params_pxd.pxd',
@@ -28,9 +28,13 @@ elif arch == "aarch64":
 else:
   envB["LINKFLAGS"]=["-pthread", "-shared"]
 
-envB.Cython('clock.cpp', 'clock.pyx')
+#envB.Cython('clock.cpp', 'clock.pyx')
 
-envB.Program('common_pyx.so', 'clock.cpp', LIBS=[] + added_libs)
+# envB.Program('common_pyx.so', 'clock.cpp', LIBS=[] + added_libs)
+
+# envB.Command('clock.o', 'clock.cpp', "gcc -pthread -Wno-unused-result -Wsign-compare -DNDEBUG -g -fwrapv -O3 -Wall -fPIC -I/home/batman/.pyenv/versions/3.8.2/include/python3.8 -c common/clock.cpp -o common/build/temp.linux-x86_64-3.8/clock.o -std=c++1z")
+# envB.Command('clock.so', 'clock.o', "g++ -pthread -shared -L/home/batman/.pyenv/versions/3.8.2/lib -Wl,-rpath=/home/batman/.pyenv/versions/3.8.2/lib -L/home/batman/.pyenv/versions/3.8.2/lib -Wl,-rpath=/home/batman/.pyenv/versions/3.8.2/lib common/build/temp.linux-x86_64-3.8/clock.o -L/home/batman/.pyenv/versions/3.8.2/lib -o /home/batman/openpilot/common/common_pyx.so")
+
 
 envB.Cython('params_pyx.cpp', 'params_pyx.pyx')
 
