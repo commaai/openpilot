@@ -136,6 +136,8 @@ lenv["PYTHONPATH"] = Dir("#").path
 python_path = os.popen("python-config --cflags").read().split(" ")[0][2:]
 print(arch)
 print(python_path)
+Export("python_path")
+
 # for pfile in os.listdir(python_path):
 #   print(pfile)
 

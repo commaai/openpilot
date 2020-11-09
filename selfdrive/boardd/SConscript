@@ -15,7 +15,11 @@ if arch == "Darwin":
   envB["LINKFLAGS"]=["-bundle", "-undefined", "dynamic_lookup"]
 elif arch == "aarch64":
   envB["LINKFLAGS"]=["-shared"]
-  added_libs.append('python3.8')
+
+  Import("python_path")
+  print(python_path.split("/")[-1])
+  added_libs.append(python_path.split("/")[-1])
+  
 else:
   envB["LINKFLAGS"]=["-pthread", "-shared"]
 
