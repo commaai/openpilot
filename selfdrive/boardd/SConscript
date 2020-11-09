@@ -5,7 +5,6 @@ env.Program('boardd', ['boardd.cc', 'panda.cc', 'pigeon.cc'], LIBS=['usb-1.0', c
 env.Library('libcan_list_to_can_capnp', ['can_list_to_can_capnp.cc'])
 
 envB = env.Clone()
-
 added_libs = []
 if arch == "Darwin":
   envB["LINKFLAGS"]=["-bundle", "-undefined", "dynamic_lookup"]

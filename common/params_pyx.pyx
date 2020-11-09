@@ -2,7 +2,7 @@
 # cython: language_level = 3
 from libcpp cimport bool
 from libcpp.string cimport string
-from params_pxd cimport Params as c_Params
+from common.params_pxd cimport Params as c_Params
 
 import os
 import threading

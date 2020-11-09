@@ -1,14 +1,37 @@
-Import('env', 'cython_dependencies')
+Import('env', 'cython_dependencies', 'arch')
 
-# Build cython clock module
-env.Command(['common_pyx.so', 'clock.cpp'],
-            cython_dependencies + ['common_pyx_setup.py', 'clock.pyx'],
-            "cd common && python3 common_pyx_setup.py build_ext --inplace")
+# # Build cython clock module
+# env.Command(['common_pyx.so', 'clock.cpp'],
+#             cython_dependencies + ['common_pyx_setup.py', 'clock.pyx'],
+#             "cd common && python3 common_pyx_setup.py build_ext --inplace")
 
-# Build cython params module
-env.Command(['params_pyx.so', 'params_pyx.cpp'],
-            cython_dependencies + [
-                'params_pyx_setup.py', 'params_pyx.pyx', 'params_pxd.pxd',
-                '#selfdrive/common/params.cc', '#selfdrive/common/params.h',
-                '#selfdrive/common/util.c', '#selfdrive/common/util.h'],
-            "cd common && python3 params_pyx_setup.py build_ext --inplace")
+# # Build cython params module
+# env.Command(['params_pyx.so', 'params_pyx.cpp'],
+#             cython_dependencies + [
+#                 'params_pyx_setup.py', 'params_pyx.pyx', 'params_pxd.pxd',
+#                 '#selfdrive/common/params.cc', '#selfdrive/common/params.h',
+#                 '#selfdrive/common/util.c', '#selfdrive/common/util.h'],
+#             "cd common && python3 params_pyx_setup.py build_ext --inplace")
+
+
+envB = env.Clone()
+envB["CCFLAGS"].remove("-Werror")
+
+added_libs = []
+if arch == "Darwin":
+  envB["LINKFLAGS"]=["-bundle", "-undefined", "dynamic_lookup"]
+elif arch == "aarch64":
+  envB["LINKFLAGS"]=["-shared"]
+
+  Import("python_path")
+  added_libs.append(python_path.split("/")[-1])
+else:
+  envB["LINKFLAGS"]=["-pthread", "-shared"]
+
+envB.Cython('clock.cpp', 'clock.pyx')
+
+envB.Program('common_pyx.so', 'clock.cpp', LIBS=[] + added_libs)
+
+envB.Cython('params_pyx.cpp', 'params_pyx.pyx')
+
+envB.Program('params_pyx.so', 'params_pyx.cpp', LIBS=[] + added_libs)
