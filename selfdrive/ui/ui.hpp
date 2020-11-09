@@ -98,11 +98,6 @@ typedef struct UIScene {
   Rect viz_rect;
   int ui_viz_ro;
 
-  std::string alert_text1;
-  std::string alert_text2;
-  std::string alert_type;
-  cereal::ControlsState::AlertSize alert_size;
-
   cereal::HealthData::HwType hwType;
   int satelliteCount;
   NetStatus athenaStatus;
