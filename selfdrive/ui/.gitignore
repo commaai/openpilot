@@ -3,3 +3,4 @@ moc_*
 
 qt/text
 qt/spinner
+qt/setup/setup
