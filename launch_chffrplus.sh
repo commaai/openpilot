@@ -27,8 +27,6 @@ function two_init {
   [ -d "/proc/irq/733" ] && echo 3 > /proc/irq/733/smp_affinity_list # USB for LeEco
   [ -d "/proc/irq/736" ] && echo 3 > /proc/irq/736/smp_affinity_list # USB for OP3T
 
-  # restrict unbound kworkers to first two cores
-  #find /sys/devices/virtual/workqueue -name cpumask  -exec sh -c 'echo 3 > {}' ';'
 
   # Check for NEOS update
   if [ $(< /VERSION) != "$REQUIRED_NEOS_VERSION" ]; then
