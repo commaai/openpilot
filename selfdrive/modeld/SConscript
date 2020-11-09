@@ -6,10 +6,10 @@ libs = [cereal, messaging, common, 'OpenCL', 'SNPE', 'symphony-cpu', 'capnp', 'z
 TEST_THNEED = False
 
 common_src = [
-  "models/commonmodel.c",
+  "models/commonmodel.cc",
   "runners/snpemodel.cc",
   "transforms/loadyuv.c",
-  "transforms/transform.c"
+  "transforms/transform.cc"
 ]
 
 if arch == "aarch64":
