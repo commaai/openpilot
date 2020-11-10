@@ -5,9 +5,9 @@ from cereal import log
 CAMERA_OFFSET = 0.06  # m from center car to camera
 
 
-def compute_path_pinv(l=50):
+def compute_path_pinv(length=50):
   deg = 3
-  x = np.arange(l*1.0)
+  x = np.arange(length*1.0)
   X = np.vstack(tuple(x**n for n in range(deg, -1, -1))).T
   pinv = np.linalg.pinv(X)
   return pinv
@@ -19,37 +19,6 @@ def model_polyfit(points, path_pinv):
 
 def eval_poly(poly, x):
   return poly[3] + poly[2]*x + poly[1]*x**2 + poly[0]*x**3
-
-
-def calc_d_poly(l_poly, r_poly, p_poly, l_prob, r_prob, lane_width, v_ego, l_std=0.05, r_std=0.05):
-  # This will improve behaviour when lanes suddenly widen
-  # these numbers were tested on 2000 segments and found to work well
-  lane_width = min(4.0, lane_width)
-  width_poly = l_poly - r_poly
-  prob_mods = []
-  for t_check in [0.0, 1.5, 3.0]:
-    width_at_t = eval_poly(width_poly, t_check * (v_ego + 7))
-    prob_mods.append(interp(width_at_t, [4.0, 5.0], [1.0, 0.0]))
-  mod = min(prob_mods)
-  l_prob = mod * l_prob
-  r_prob = mod * r_prob
-
-  # Remove reliance on uncertain lanelines
-  # these numbers were tested on 2000 segments and found to work well
-  l_std_mod = interp(l_std, [.15, .3], [1.0, 0.0])
-  l_prob = l_std_mod * l_prob
-  r_std_mod = interp(r_std, [.15, .3], [1.0, 0.0])
-  r_prob = r_std_mod * r_prob
-
-  path_from_left_lane = l_poly.copy()
-  path_from_left_lane[3] -= lane_width / 2.0
-  path_from_right_lane = r_poly.copy()
-  path_from_right_lane[3] += lane_width / 2.0
-
-  lr_prob = l_prob + r_prob - l_prob * r_prob
-
-  d_poly_lane = (l_prob * path_from_left_lane + r_prob * path_from_right_lane) / (l_prob + r_prob + 0.0001)
-  return lr_prob * d_poly_lane + (1.0 - lr_prob) * p_poly
 
 
 class LanePlanner:
@@ -106,4 +75,32 @@ class LanePlanner:
     self.lane_width = self.lane_width_certainty * self.lane_width_estimate + \
                       (1 - self.lane_width_certainty) * speed_lane_width
 
-    self.d_poly = calc_d_poly(self.l_poly, self.r_poly, self.p_poly, self.l_prob, self.r_prob, self.lane_width, v_ego, self.l_std, self.r_std)
+    # This will improve behaviour when lanes suddenly widen
+    # these numbers were tested on 2000 segments and found to work well
+    l_prob, r_prob = self.l_prob, self.r_prob
+    width_poly = self.l_poly - self.r_poly
+    prob_mods = []
+    for t_check in [0.0, 1.5, 3.0]:
+      width_at_t = eval_poly(width_poly, t_check * (v_ego + 7))
+      prob_mods.append(interp(width_at_t, [4.0, 5.0], [1.0, 0.0]))
+    mod = min(prob_mods)
+    l_prob *= mod
+    r_prob *= mod
+
+    # Remove reliance on uncertain lanelines
+    # these numbers were tested on 2000 segments and found to work well
+    l_std_mod = interp(self.l_std, [.15, .3], [1.0, 0.0])
+    r_std_mod = interp(self.r_std, [.15, .3], [1.0, 0.0])
+    l_prob *= l_std_mod
+    r_prob *= r_std_mod
+
+    clipped_lane_width = min(4.0, self.lane_width)
+    path_from_left_lane = self.l_poly.copy()
+    path_from_left_lane[3] -= clipped_lane_width / 2.0
+    path_from_right_lane = self.r_poly.copy()
+    path_from_right_lane[3] += clipped_lane_width / 2.0
+
+    lr_prob = l_prob + r_prob - l_prob * r_prob
+
+    d_poly_lane = (l_prob * path_from_left_lane + r_prob * path_from_right_lane) / (l_prob + r_prob + 0.0001)
+    self.d_poly = lr_prob * d_poly_lane + (1.0 - lr_prob) * self.p_poly.copy()
