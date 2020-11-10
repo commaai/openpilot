@@ -8,6 +8,7 @@ import shutil
 import subprocess
 import sys
 import platform
+import numpy as np
 
 TICI = os.path.isfile('/TICI')
 Decider('MD5-timestamp')
@@ -136,7 +137,7 @@ lenv["PYTHONPATH"] = Dir("#").path
 python_path = os.popen("python-config --cflags").read().split(" ")[0][2:]
 
 numpy_path = "/".join(python_path.split("/")[:-2])
-numpy_path = os.path.join(numpy_path, "lib/"+python_path.split("/")[-1]+"/site-packages/numpy/core/include")
+numpy_path = np.get_include()
 print(arch)
 print(python_path)
 print(numpy_path)
