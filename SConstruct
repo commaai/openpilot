@@ -202,9 +202,9 @@ env = Environment(
   ],
   CYTHONCFILESUFFIX=".cpp",
   tools=["default", "cython"],
-  toolpath = ['./site_scons/site_tools']
+  toolpath = [os.path.join(os.getcwd(),'site_scons/site_tools')]
 )
-
+print(os.path.join(os.getcwd(),'site_scons/site_tools'))
 if os.environ.get('SCONS_CACHE'):
   cache_dir = '/tmp/scons_cache'
 
