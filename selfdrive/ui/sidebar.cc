@@ -2,7 +2,7 @@
 #include <string.h>
 #include <math.h>
 #include <map>
-
+#include "common/timing.h"
 #include "paint.hpp"
 #include "sidebar.hpp"
 
@@ -145,12 +145,26 @@ static void ui_draw_sidebar_panda_metric(UIState *s) {
 }
 
 static void ui_draw_sidebar_connectivity(UIState *s) {
+  static NetStatus athenaStatus = NET_DISCONNECTED;
+  static uint64_t last_athena_ping = 0;
+  static uint64_t last_frame = 0;
   static std::map<NetStatus, std::pair<const char *, int>> connectivity_map = {
-    {NET_ERROR, {"CONNECT\nERROR", 2}},
-    {NET_CONNECTED, {"CONNECT\nONLINE", 0}},
-    {NET_DISCONNECTED, {"CONNECT\nOFFLINE", 1}},
+      {NET_ERROR, {"CONNECT\nERROR", 2}},
+      {NET_CONNECTED, {"CONNECT\nONLINE", 0}},
+      {NET_DISCONNECTED, {"CONNECT\nOFFLINE", 1}},
   };
-  auto net_params = connectivity_map[s->scene.athenaStatus];
+  if ((s->sm->frame - last_frame) >= (5 * UI_FREQ)) {
+    int param_read = read_param(&last_athena_ping, "LastAthenaPingTime");
+    if (param_read != 0) {  // Failed to read param
+      athenaStatus = NET_DISCONNECTED;
+    } else if (nanos_since_boot() - last_athena_ping < 70e9) {
+      athenaStatus = NET_CONNECTED;
+    } else {
+      athenaStatus = NET_ERROR;
+    }
+    last_frame = s->sm->frame;
+  }
+  auto net_params = connectivity_map[athenaStatus];
   ui_draw_sidebar_metric(s, NULL, NULL, net_params.second, 180+158, net_params.first);
 }
 

@@ -105,7 +105,6 @@ typedef struct UIScene {
 
   cereal::HealthData::HwType hwType;
   int satelliteCount;
-  NetStatus athenaStatus;
 
   cereal::ThermalData::Reader thermal;
   cereal::RadarState::LeadData::Reader lead_data[2];
@@ -184,7 +183,6 @@ typedef struct UIState {
   bool ignition;
   bool is_metric;
   bool longitudinal_control;
-  uint64_t last_athena_ping;
   uint64_t started_frame;
 
   bool alert_blinked;
