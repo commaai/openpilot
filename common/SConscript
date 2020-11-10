@@ -1,4 +1,4 @@
-Import('envB', 'added_libs', 'cython_dependencies', 'arch')
+Import('envB', 'added_libs')
 
 envB.SharedLibrary('clock.so', source='clock.pyx', LIBS=added_libs)
 envB.SharedLibrary('params_pyx.so', source='params_pyx.pyx', LIBS=added_libs)

@@ -12,6 +12,7 @@ CONTRIBUTING.md
 README.md
 RELEASES.md
 SAFETY.md
+site_scons/site_tools/cython.py
 
 apk/ai.comma*.apk
 

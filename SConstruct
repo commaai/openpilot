@@ -1,7 +1,4 @@
 import Cython
-import SCons
-from SCons.Builder import Builder
-from SCons.Action import Action
 import distutils
 import os
 import shutil
@@ -202,7 +199,9 @@ env = Environment(
     "#selfdrive/boardd",
     "#selfdrive/common",
     "#phonelibs",
-  ]
+  ],
+  CYTHONCFILESUFFIX=".cpp",
+  tools=["default", "cython"]
 )
 
 if os.environ.get('SCONS_CACHE'):
@@ -241,42 +240,6 @@ def abspath(x):
     # rpath works elsewhere
     return x[0].path.rsplit("/", 1)[1][:-3]
 
-
-cythonAction = Action("$CYTHONCOM")
-
-def create_builder(env):
-    try:
-        cython = env['BUILDERS']['Cython']
-    except KeyError:
-        cython = SCons.Builder.Builder(
-                  action = cythonAction,
-                  emitter = {},
-                  suffix = cython_suffix_emitter,
-                  single_source = 1)
-        env['BUILDERS']['Cython'] = cython
-
-    return cython
-
-def cython_suffix_emitter(env, source):
-    return ".cpp"
-
-def generate(env):
-    env["CYTHON"] = "cythonize"
-    env["CYTHONCOM"] = "$CYTHON $CYTHONFLAGS $SOURCE"
-    env["CYTHONCFILESUFFIX"] = ".cpp"
-
-    c_file, _ = SCons.Tool.createCFileBuilders(env)
-
-    c_file.suffix['.pyx'] = cython_suffix_emitter
-    c_file.add_action('.pyx', cythonAction)
-
-    c_file.suffix['.py'] = cython_suffix_emitter
-    c_file.add_action('.py', cythonAction)
-
-    create_builder(env)
-
-create_builder(env)
-generate(env)
 #Cython build enviroment
 envB = env.Clone()
 envB["CCFLAGS"].remove("-Werror")

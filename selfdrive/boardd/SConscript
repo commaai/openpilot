@@ -1,5 +1,5 @@
 import subprocess
-Import('env', 'envB', 'added_libs', 'common', 'cereal', 'messaging', 'cython_dependencies', 'arch')
+Import('env', 'envB', 'added_libs', 'common', 'cereal', 'messaging')
 
 env.Program('boardd', ['boardd.cc', 'panda.cc', 'pigeon.cc'], LIBS=['usb-1.0', common, cereal, messaging, 'pthread', 'zmq', 'capnp', 'kj'])
 env.Library('libcan_list_to_can_capnp', ['can_list_to_can_capnp.cc'])
