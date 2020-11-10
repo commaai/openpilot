@@ -184,6 +184,7 @@ env = Environment(
     "#cereal",
     "#opendbc/can",
     python_path,
+    "/home/batman/.pyenv/versions/3.8.2/lib/python3.8/site-packages/numpy/core/include"
   ],
 
   CC='clang',
