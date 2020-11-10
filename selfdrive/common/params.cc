@@ -49,30 +49,17 @@ void params_sig_handler(int signal) {
 }
 
 static int fsync_dir(const char* path){
-  int result = 0;
   int fd = open(path, O_RDONLY, 0755);
-
   if (fd < 0){
-    result = -1;
-    goto cleanup;
+    return -1;
   }
 
-  result = fsync(fd);
-  if (result < 0) {
-    goto cleanup;
-  }
-
-cleanup:
-  int result_close = 0;
-  if (fd >= 0){
-    result_close = close(fd);
-  }
-
+  int result = fsync(fd);
+  int result_close = close(fd);
   if (result_close < 0) {
-    return result_close;
-  } else {
-    return result;
+    result = result_close;
   }
+  return result;
 }
 
 static int mkdir_p(std::string path) {

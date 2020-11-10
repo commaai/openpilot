@@ -1,0 +1,8 @@
+#!/bin/sh
+
+if [ -f /EON ]; then
+  export LD_LIBRARY_PATH="/system/lib64:$LD_LIBRARY_PATH"
+  exec ./android/text/text "$1"
+else
+  exec ./qt/text "$1"
+fi

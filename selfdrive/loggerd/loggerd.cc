@@ -606,6 +606,8 @@ static void bootlog() {
 int main(int argc, char** argv) {
   int err;
 
+  set_realtime_priority(50);
+
   if (argc > 1 && strcmp(argv[1], "--bootlog") == 0) {
     bootlog();
     return 0;
@@ -619,8 +621,6 @@ int main(int argc, char** argv) {
 #ifndef QCOM2
   record_front = Params().read_db_bool("RecordFront");
 #endif
-
-  setpriority(PRIO_PROCESS, 0, -12);
 
   clear_locks();
 

@@ -155,12 +155,15 @@ class CarInterface(CarInterfaceBase):
 
     # Genesis
     elif candidate == CAR.GENESIS_G70:
-      ret.lateralTuning.pid.kf = 0.00005
-      ret.mass = 1640. + STD_CARGO_KG
+      ret.lateralTuning.init('indi')
+      ret.lateralTuning.indi.innerLoopGain = 2.5
+      ret.lateralTuning.indi.outerLoopGain = 3.5
+      ret.lateralTuning.indi.timeConstant = 1.4
+      ret.lateralTuning.indi.actuatorEffectiveness = 1.8
+      ret.steerActuatorDelay = 0.1
+      ret.mass = 1640.0 + STD_CARGO_KG
       ret.wheelbase = 2.84
-      ret.steerRatio = 16.5
-      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.16], [0.01]]
+      ret.steerRatio = 13.56
     elif candidate == CAR.GENESIS_G80:
       ret.lateralTuning.pid.kf = 0.00005
       ret.mass = 2060. + STD_CARGO_KG
