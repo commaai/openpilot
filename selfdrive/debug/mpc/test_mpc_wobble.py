@@ -32,10 +32,11 @@ p_l[3] += LANE_WIDTH / 2.0
 p_r = p[:]
 p_r[3] -= LANE_WIDTH / 2.0
 
+DOUBLE_4="double[4]"
 
-l_poly = libmpc_py.ffi.new("double[4]", p_l)
-r_poly = libmpc_py.ffi.new("double[4]", p_r)
-p_poly = libmpc_py.ffi.new("double[4]", p)
+l_poly = libmpc_py.ffi.new(DOUBLE_4, p_l)
+r_poly = libmpc_py.ffi.new(DOUBLE_4, p_r)
+p_poly = libmpc_py.ffi.new(DOUBLE_4, p)
 
 l_prob = 1.0
 r_prob = 1.0
