@@ -9,6 +9,7 @@
 #include "common/params.h"
 #include "driving.h"
 
+#define MIN_VALID_LEN 10.0
 #define TRAJECTORY_SIZE 33
 #define TRAJECTORY_TIME 10.0
 #define TRAJECTORY_DISTANCE 192.0
@@ -325,7 +326,7 @@ void model_publish_v2(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
     }
   }
   float valid_len = net_outputs.plan[plan_mhp_max_idx*(PLAN_MHP_GROUP_SIZE) + 30*32];
-  valid_len = fmin(MODEL_PATH_DISTANCE, fmax(5, valid_len));
+  valid_len = fmin(MODEL_PATH_DISTANCE, fmax(MIN_VALID_LEN, valid_len));
   int valid_len_idx = 0;
   for (int i=1; i<TRAJECTORY_SIZE; i++) {
     if (valid_len >= X_IDXS[valid_len_idx]){
@@ -406,7 +407,7 @@ void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
   // x pos at 10s is a good valid_len
   float valid_len = net_outputs.plan[plan_mhp_max_idx*(PLAN_MHP_GROUP_SIZE) + 30*32];
   // clamp to 5 and MODEL_PATH_DISTANCE
-  valid_len = fmin(MODEL_PATH_DISTANCE, fmax(5, valid_len));
+  valid_len = fmin(MODEL_PATH_DISTANCE, fmax(MIN_VALID_LEN, valid_len));
   int valid_len_idx = 0;
   for (int i=1; i<TRAJECTORY_SIZE; i++) {
     if (valid_len >= X_IDXS[valid_len_idx]){
