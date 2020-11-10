@@ -1,23 +1,7 @@
-Import('env', 'cython_dependencies', 'arch')
-
-envB = env.Clone()
-envB["CCFLAGS"].remove("-Werror")
-
-added_libs = []
-if arch == "Darwin":
-  envB["LINKFLAGS"]=["-bundle", "-undefined", "dynamic_lookup"]
-elif arch == "aarch64":
-  envB["LINKFLAGS"]=["-shared"]
-
-  Import("python_path")
-  added_libs.append(python_path.split("/")[-1])
-else:
-  envB["LINKFLAGS"]=["-pthread", "-shared"]
+Import('envB', 'added_libs', 'cython_dependencies', 'arch')
 
 envB.Cython('clock.cpp', 'clock.pyx')
-
 envB.Program('clock.so', 'clock.cpp', LIBS=[] + added_libs)
 
 envB.Cython('params_pyx.cpp', 'params_pyx.pyx')
-
 envB.Program('params_pyx.so', 'params_pyx.cpp', LIBS=[] + added_libs)

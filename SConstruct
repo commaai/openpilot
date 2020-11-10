@@ -321,6 +321,22 @@ def generate(env):
 
 create_builder(env)
 generate(env)
+#Cython build enviroment
+envB = env.Clone()
+envB["CCFLAGS"].remove("-Werror")
+
+added_libs = []
+if arch == "Darwin":
+  envB["LINKFLAGS"]=["-bundle", "-undefined", "dynamic_lookup"]
+elif arch == "aarch64":
+  envB["LINKFLAGS"]=["-shared"]
+
+  Import("python_path")
+  added_libs.append(python_path.split("/")[-1])
+else:
+  envB["LINKFLAGS"]=["-pthread", "-shared"]
+
+Export('envB', 'added_libs')
 # still needed for apks
 zmq = 'zmq'
 Export('env', 'qt_env', 'arch', 'zmq', 'SHARED', 'USE_WEBCAM', 'QCOM_REPLAY')
