@@ -1,4 +1,4 @@
 Import('envB', 'added_libs')
 
-envB.SharedLibrary('clock.so', source='clock.pyx', LIBS=added_libs)
-envB.SharedLibrary('params_pyx.so', source='params_pyx.pyx', LIBS=added_libs)
+envB.Program('clock.so', 'clock.pyx', LIBS=added_libs)
+envB.Program('params_pyx.so', 'params_pyx.pyx', LIBS=added_libs)
