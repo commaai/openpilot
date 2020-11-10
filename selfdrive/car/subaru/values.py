@@ -274,6 +274,7 @@ FW_VERSIONS = {
     # 2018 Outback 3.6r UDM / @mirroregami
     # 2018 Outback 2.5i Premium UDM / @dirkmm
     # 2019 Outback UDM / @Valhalla
+    # 2018 Outback 2.5 / @haak
     # Ecu, addr, subaddr: ROM ID
     (Ecu.esp, 0x7b0, None): [
       b'\x8b\x97\xac\x00',
@@ -282,22 +283,26 @@ FW_VERSIONS = {
     ],
     (Ecu.eps, 0x746, None): [
       b'{\xb0\x00\x00',
+      b'{\xb0\x00\x01',
     ],
     (Ecu.fwdCamera, 0x787, None): [
       b'\x00\x00df\x1f@ \n',
       b'\x00\x00d\xfe\x1f@ \x15',
+      b'\x00\x00d\x95\x00\x00\x00\x00',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\xb5"@p\a',
       b'\xb5+@@\a',
       b'\xb5"@P\a',
       b'\xc4"@0\a',
+      b'\xb5b@1\x07',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xbc\xf2@\x81\x00',
       b'\xbc\xfb\xe0\x80\x00',
       b'\xbc\xf2@\x80\x00',
       b'\xbb\xf2@`\x00',
+      b'\xbc\xe2@\x80\x00',
     ],
   },
 }
