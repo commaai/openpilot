@@ -134,8 +134,12 @@ lenv["PYTHONPATH"] = Dir("#").path
 
 #Get the path for Python.h for cython linking
 python_path = os.popen("python-config --cflags").read().split(" ")[0][2:]
+
+numpy_path = "/".join(python_path.split("/")[:-2])
+numpy_path = os.path.join(numpy_path, "lib/"+python_path.split("/")[-1]+"/site-packages/numpy/core/include")
 print(arch)
 print(python_path)
+print(numpy_path)
 Export("python_path")
 
 # for pfile in os.listdir(python_path):
@@ -184,7 +188,7 @@ env = Environment(
     "#cereal",
     "#opendbc/can",
     python_path,
-    "/home/batman/.pyenv/versions/3.8.2/lib/python3.8/site-packages/numpy/core/include"
+    numpy_path
   ],
 
   CC='clang',
