@@ -27,7 +27,6 @@ def dmonitoringd_thread(sm=None, pm=None):
   sm['carState'].steeringPressed = False
   sm['carState'].gasPressed = False
   sm['carState'].standstill = True
-  sm['controlsState'].enabled = False
 
   v_cruise_last = 0
   driver_engaged = False
