@@ -42,7 +42,6 @@ common/text_window.py
 common/cython_hacks.py
 common/apk.py
 common/SConscript
-common/common_pyx_setup.py
 
 common/kalman/.gitignore
 common/kalman/*
