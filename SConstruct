@@ -140,6 +140,8 @@ numpy_path = os.path.join(numpy_path, "lib/"+python_path.split("/")[-1]+"/site-p
 print(arch)
 print(python_path)
 print(numpy_path)
+for x in os.listdir(numpy_path):
+  print(x)
 Export("python_path")
 
 # for pfile in os.listdir(python_path):
