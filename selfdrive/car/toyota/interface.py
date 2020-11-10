@@ -27,6 +27,9 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.init('pid')
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
 
+    # Detect Zorro Steer Sensor, which is an aftermarket steering angle sensor
+    zss = 0x23 in fingerprint[0]
+
     if candidate == CAR.PRIUS:
       stop_and_go = True
       ret.safetyParam = 66  # see conversion factor for STEER_TORQUE_EPS in dbc file
@@ -39,6 +42,8 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.indi.innerLoopGain = 4.0
       ret.lateralTuning.indi.outerLoopGain = 3.0
       ret.lateralTuning.indi.timeConstant = 1.0
+      if zss:
+         ret.lateralTuning.indi.timeConstant = 0.1
       ret.lateralTuning.indi.actuatorEffectiveness = 1.0
       ret.steerActuatorDelay = 0.5
 
@@ -264,6 +269,10 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kf = 0.00007818594
 
     ret.steerRateCost = 1.
+    
+    if zss:
+      ret.steerRateCost = 0.5
+
     ret.centerToFront = ret.wheelbase * 0.44
 
     # TODO: get actual value, for now starting with reasonable value for
@@ -292,8 +301,8 @@ class CarInterface(CarInterfaceBase):
     ret.minEnableSpeed = -1. if (stop_and_go or ret.enableGasInterceptor) else 19. * CV.MPH_TO_MS
 
     # removing the DSU disables AEB and it's considered a community maintained feature
-    # intercepting the DSU is a community feature since it requires unofficial hardware
-    ret.communityFeature = ret.enableGasInterceptor or ret.enableDsu or smartDsu
+    # intercepting the DSU, Comma Pedal, or using a ZSS is a community feature since it requires unofficial hardware
+    ret.communityFeature = ret.enableGasInterceptor or ret.enableDsu or smartDsu or zss
 
     ret.longitudinalTuning.deadzoneBP = [0., 9.]
     ret.longitudinalTuning.deadzoneV = [0., .15]

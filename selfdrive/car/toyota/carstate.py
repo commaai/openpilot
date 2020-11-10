@@ -51,8 +51,14 @@ class CarState(CarStateBase):
     if abs(cp.vl["STEER_TORQUE_SENSOR"]['STEER_ANGLE']) > 1e-3:
       self.accurate_steer_angle_seen = True
 
+    # Some people have installed ZSS in their vehicles. Use if non-zero
+    if abs(cp.vl[("ZORRO_STEER", "SECONDARY_STEER_ANGLE", 0)]) > 1e-3:
+      self.zss_steer_angle_seen = True
+
     if self.accurate_steer_angle_seen:
       ret.steeringAngle = cp.vl["STEER_TORQUE_SENSOR"]['STEER_ANGLE'] - self.angle_offset
+    elif self.zss_steer_angle_seen:
+      ret.steeringAngle = cp.vl[("ZORRO_STEER", "SECONDARY_STEER_ANGLE", 0)] - self.angle_offset
 
       if self.needs_angle_offset:
         angle_wheel = cp.vl["STEER_ANGLE_SENSOR"]['STEER_ANGLE'] + cp.vl["STEER_ANGLE_SENSOR"]['STEER_FRACTION']
