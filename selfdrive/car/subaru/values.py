@@ -274,6 +274,7 @@ FW_VERSIONS = {
     # 2018 Outback 3.6r UDM / @mirroregami
     # 2018 Outback 2.5i Premium UDM / @dirkmm
     # 2019 Outback UDM / @Valhalla
+    # 2018 Outback 3.6r USDM / @Scripty_
     # Ecu, addr, subaddr: ROM ID
     (Ecu.esp, 0x7b0, None): [
       b'\x8b\x97\xac\x00',
@@ -298,6 +299,7 @@ FW_VERSIONS = {
       b'\xbc\xfb\xe0\x80\x00',
       b'\xbc\xf2@\x80\x00',
       b'\xbb\xf2@`\x00',
+      b'\xbc\xfb\xe0`\x00',
     ],
   },
 }
