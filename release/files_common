@@ -32,7 +32,6 @@ common/numpy_fast.py
 common/params.py
 common/params_pxd.pxd
 common/params_pyx.pyx
-common/params_pyx_setup.py
 common/xattr.py
 common/profiler.py
 common/basedir.py
@@ -53,7 +52,6 @@ common/transformations/camera.py
 common/transformations/model.py
 
 common/transformations/SConscript
-common/transformations/setup.py
 common/transformations/coordinates.py
 common/transformations/coordinates.cc
 common/transformations/coordinates.hpp

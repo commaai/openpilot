@@ -1,6 +1,25 @@
-Import('env', 'cython_dependencies')
+Import('env', 'cython_dependencies', 'arch')
 
-env.Command(['simple_kalman_impl.so'],
-            cython_dependencies + ['simple_kalman_impl.pyx', 'simple_kalman_impl.pxd', 'simple_kalman_setup.py'],
-            "cd common/kalman && python3 simple_kalman_setup.py build_ext --inplace")
+# env.Command(['simple_kalman_impl.so'],
+#             cython_dependencies + ['simple_kalman_impl.pyx', 'simple_kalman_impl.pxd', 'simple_kalman_setup.py'],
+#             "cd common/kalman && python3 simple_kalman_setup.py build_ext --inplace")
 
+
+envB = env.Clone()
+envB["CCFLAGS"].remove("-Werror")
+
+added_libs = []
+if arch == "Darwin":
+  envB["LINKFLAGS"]=["-bundle", "-undefined", "dynamic_lookup"]
+elif arch == "aarch64":
+  envB["LINKFLAGS"]=["-shared"]
+
+  Import("python_path")
+  added_libs.append(python_path.split("/")[-1])
+else:
+  envB["LINKFLAGS"]=["-pthread", "-shared"]
+
+
+envB.Cython('simple_kalman_impl.c', 'simple_kalman_impl.pyx')
+
+envB.Program('simple_kalman_impl.so', 'simple_kalman_impl.c', LIBS=[] + added_libs)
