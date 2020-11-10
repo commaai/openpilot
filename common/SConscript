@@ -1,8 +1,4 @@
 Import('envB', 'added_libs', 'cython_dependencies', 'arch')
-from Cython.Build import cythonize
 
-cythonize('clock.pyx')
-envB.Program('clock.so', 'clock.cpp', LIBS=[] + added_libs)
-
-cythonize('params_pyx.pyx')
-envB.Program('params_pyx.so', 'params_pyx.cpp', LIBS=[] + added_libs)
+envB.SharedLibrary('clock.so', source='clock.pyx', LIBS=added_libs)
+envB.SharedLibrary('params_pyx.so', source='params_pyx.pyx', LIBS=added_libs)

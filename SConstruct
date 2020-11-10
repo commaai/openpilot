@@ -258,12 +258,12 @@ def create_builder(env):
     return cython
 
 def cython_suffix_emitter(env, source):
-    return ".cc"
+    return ".cpp"
 
 def generate(env):
     env["CYTHON"] = "cythonize"
     env["CYTHONCOM"] = "$CYTHON $CYTHONFLAGS $SOURCE"
-    env["CYTHONCFILESUFFIX"] = ".cc"
+    env["CYTHONCFILESUFFIX"] = ".cpp"
 
     c_file, _ = SCons.Tool.createCFileBuilders(env)
 
@@ -347,7 +347,6 @@ SConscript(['selfdrive/ui/SConscript'])
 
 if arch != "Darwin":
   SConscript(['selfdrive/logcatd/SConscript'])
-
 
 if arch == "x86_64":
   SConscript(['tools/lib/index_log/SConscript'])

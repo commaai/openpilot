@@ -1,4 +1,3 @@
 Import('envB', 'added_libs', 'cython_dependencies', 'arch')
-from Cython.Build import cythonize
-cythonize('simple_kalman_impl.pyx')
-envB.Program('simple_kalman_impl.so', 'simple_kalman_impl.cpp', LIBS=[] + added_libs)
+
+envB.SharedLibrary('simple_kalman_impl.so', source='simple_kalman_impl.pyx', LIBS=added_libs)

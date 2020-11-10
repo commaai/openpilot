@@ -1,4 +1,3 @@
 Import('envB', 'added_libs', 'cython_dependencies', 'arch')
-from Cython.Build import cythonize
-cythonize('transformations.pyx')
-envB.Program('transformations.so', 'transformations.cpp', LIBS=[] + added_libs)
+
+envB.SharedLibrary('transformations.so', source='transformations.pyx', LIBS=added_libs)
