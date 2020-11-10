@@ -209,8 +209,6 @@ void ui_update(UIState *s) {
 
     s->active_app = cereal::UiLayoutState::App::NONE;
     s->scene.uilayout_sidebarcollapsed = true;
-    s->alert_blinked = false;
-    s->alert_blinking_alpha = 1.0;
   }
 
   // Read params

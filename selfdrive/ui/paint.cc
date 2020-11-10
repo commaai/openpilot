@@ -525,8 +525,29 @@ static void ui_draw_vision_footer(UIState *s) {
   ui_draw_vision_face(s);
 }
 
+static float ui_get_alert_blinking_alpha(float blinking_rate) {
+  static bool blinked = false;
+  static float alpha = 1.0;
+
+  const float delta = (0.05 * blinking_rate);
+  if (blinking_rate > 0.) {
+    alpha += blinked ? delta : -delta;
+    if (alpha > 1.0) {
+      blinked = false;
+      alpha = 1.0;
+    } else if (alpha <= 0.25) {
+      blinked = true;
+      alpha = 0.25;
+    }
+  } else {
+    alpha = 1.0;
+    blinked = false;
+  }
+  return alpha;
+}
+
 void ui_draw_vision_alert(UIState *s, cereal::ControlsState::AlertSize va_size, UIStatus va_color,
-                          const std::string va_text1, const std::string va_text2) {
+                          const std::string va_text1, const std::string va_text2, float blinking_rate = 1.0) {
   static std::map<cereal::ControlsState::AlertSize, const int> alert_size_map = {
       {cereal::ControlsState::AlertSize::NONE, 0},
       {cereal::ControlsState::AlertSize::SMALL, 241},
@@ -537,7 +558,7 @@ void ui_draw_vision_alert(UIState *s, cereal::ControlsState::AlertSize va_size, 
   bool longAlert1 = va_text1.length() > 15;
 
   NVGcolor color = bg_colors[va_color];
-  color.a *= s->alert_blinking_alpha;
+  color.a *= ui_get_alert_blinking_alpha(blinking_rate);
   int alr_s = alert_size_map[va_size];
 
   const int alr_x = scene->viz_rect.x - bdr_s;
@@ -589,24 +610,24 @@ static bool ui_handle_alert(UIState *s) {
   const auto &cs = s->scene.controls_state;
 
   // Handle controls timeout
-  if (s->started && !s->scene.frontview && ((s->sm)->frame - s->started_frame) > 5 * UI_FREQ) {
-    cereal::ControlsState::AlertSize alert_size = cereal::ControlsState::AlertSize::NONE;
+  if (s->started && !s->scene.frontview) {
     const uint64_t cs_frame = (s->sm)->rcv_frame("controlsState");
-    std::string alert_text1, alert_text2;
-    if (cs_frame < s->started_frame) {
-      // car is started, but controlsState hasn't been seen at all
-      alert_text1 = "openpilot Unavailable";
-      alert_text2 = "Waiting for controls to start";
-      alert_size = cereal::ControlsState::AlertSize::MID;
-    } else if (((s->sm)->frame - cs_frame) > 5 * UI_FREQ) {
-      // car is started, but controls is lagging or died
-      ui_play_sound(s, AudibleAlert::CHIME_WARNING_REPEAT);
-      alert_text1 = "TAKE CONTROL IMMEDIATELY";
-      alert_text2 = "Controls Unresponsive";
-      alert_size = cereal::ControlsState::AlertSize::FULL;
-      s->status = STATUS_ALERT;
-    }
-    if (alert_size != cereal::ControlsState::AlertSize::NONE) {
+    if (((s->sm)->frame - cs_frame) > 5 * UI_FREQ) {
+      cereal::ControlsState::AlertSize alert_size;
+      std::string alert_text1, alert_text2;
+      if (cs_frame < s->started_frame) {
+        // car is started, but controlsState hasn't been seen at all
+        alert_text1 = "openpilot Unavailable";
+        alert_text2 = "Waiting for controls to start";
+        alert_size = cereal::ControlsState::AlertSize::MID;
+      } else {
+        // car is started, but controls is lagging or died
+        ui_play_sound(s, AudibleAlert::CHIME_WARNING_REPEAT);
+        alert_text1 = "TAKE CONTROL IMMEDIATELY";
+        alert_text2 = "Controls Unresponsive";
+        alert_size = cereal::ControlsState::AlertSize::FULL;
+        s->status = STATUS_ALERT;
+      }
       ui_draw_vision_alert(s, alert_size, s->status, alert_text1, alert_text2);
       return true;
     }
@@ -615,33 +636,14 @@ static bool ui_handle_alert(UIState *s) {
   ui_play_sound(s, cs.getAlertSound());
 
   if (cs.getAlertSize() != cereal::ControlsState::AlertSize::NONE) {
-    const float alert_blinkingrate = cs.getAlertBlinkingRate();
-    if (alert_blinkingrate > 0.) {
-      if (s->alert_blinked) {
-        if (s->alert_blinking_alpha > 0.0 && s->alert_blinking_alpha < 1.0) {
-          s->alert_blinking_alpha += (0.05 * alert_blinkingrate);
-        } else {
-          s->alert_blinked = false;
-        }
-      } else {
-        if (s->alert_blinking_alpha > 0.25) {
-          s->alert_blinking_alpha -= (0.05 * alert_blinkingrate);
-        } else {
-          s->alert_blinking_alpha += 0.25;
-          s->alert_blinked = true;
-        }
-      }
-    }
-
     const auto alertStatus = cs.getAlertStatus();
     if (alertStatus == cereal::ControlsState::AlertStatus::USER_PROMPT) {
       s->status = STATUS_WARNING;
     } else if (alertStatus == cereal::ControlsState::AlertStatus::CRITICAL) {
       s->status = STATUS_ALERT;
-    } else {
-      s->status = cs.getEnabled() ? STATUS_ENGAGED : STATUS_DISENGAGED;
     }
-    ui_draw_vision_alert(s, cs.getAlertSize(), s->status, cs.getAlertText1(), cs.getAlertText2());
+    ui_draw_vision_alert(s, cs.getAlertSize(), s->status,
+                         cs.getAlertText1(), cs.getAlertText2(), cs.getAlertBlinkingRate());
     return true;
   }
   return false;
