@@ -4,5 +4,5 @@ from Cython.Build import cythonize
 cythonize('clock.pyx')
 envB.Program('clock.so', 'clock.cpp', LIBS=[] + added_libs)
 
-cythonize('params_pyx.cpp', 'params_pyx.pyx')
+cythonize('params_pyx.pyx')
 envB.Program('params_pyx.so', 'params_pyx.cpp', LIBS=[] + added_libs)
