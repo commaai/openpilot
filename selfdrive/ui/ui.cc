@@ -124,6 +124,7 @@ void update_sockets(UIState *s) {
 
   if (s->started && sm.updated("controlsState")) {
     scene.controls_state = sm["controlsState"].getControlsState();
+    s->status = scene.controls_state.getEnabled() ? STATUS_ENGAGED : STATUS_DISENGAGED;
   }
   if (sm.updated("radarState")) {
     auto data = sm["radarState"].getRadarState();
@@ -206,7 +207,6 @@ void ui_update(UIState *s) {
   } else if (s->started && s->status == STATUS_OFFROAD) {
     s->status = STATUS_DISENGAGED;
     s->started_frame = s->sm->frame;
-
     s->active_app = cereal::UiLayoutState::App::NONE;
     s->scene.uilayout_sidebarcollapsed = true;
   }

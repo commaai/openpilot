@@ -529,8 +529,8 @@ static float ui_get_alert_blinking_alpha(float blinking_rate) {
   static bool blinked = false;
   static float alpha = 1.0;
 
-  const float delta = (0.05 * blinking_rate);
   if (blinking_rate > 0.) {
+    const float delta = (0.05 * blinking_rate);
     alpha += blinked ? delta : -delta;
     if (alpha > 1.0) {
       blinked = false;
@@ -540,14 +540,14 @@ static float ui_get_alert_blinking_alpha(float blinking_rate) {
       alpha = 0.25;
     }
   } else {
-    alpha = 1.0;
     blinked = false;
+    alpha = 1.0;
   }
   return alpha;
 }
 
 void ui_draw_vision_alert(UIState *s, cereal::ControlsState::AlertSize va_size, UIStatus va_color,
-                          const std::string va_text1, const std::string va_text2, float blinking_rate = 1.0) {
+                          const char *va_text1, const char *va_text2, float blinking_rate = 1.0) {
   static std::map<cereal::ControlsState::AlertSize, const int> alert_size_map = {
       {cereal::ControlsState::AlertSize::NONE, 0},
       {cereal::ControlsState::AlertSize::SMALL, 241},
@@ -555,7 +555,7 @@ void ui_draw_vision_alert(UIState *s, cereal::ControlsState::AlertSize va_size, 
       {cereal::ControlsState::AlertSize::FULL, s->fb_h}};
 
   const UIScene *scene = &s->scene;
-  bool longAlert1 = va_text1.length() > 15;
+  bool longAlert1 = strlen(va_text1) > 15;
 
   NVGcolor color = bg_colors[va_color];
   color.a *= ui_get_alert_blinking_alpha(blinking_rate);
@@ -578,19 +578,19 @@ void ui_draw_vision_alert(UIState *s, cereal::ControlsState::AlertSize va_size, 
   const int center_x = alr_x+alr_w/2;
   const int center_y = alr_y+alr_h/2;
   if (va_size == cereal::ControlsState::AlertSize::SMALL) {
-    ui_draw_text(s->vg, center_x, center_y+15, va_text1.c_str(), 40*2.5, COLOR_WHITE, s->font_sans_semibold);
+    ui_draw_text(s->vg, center_x, center_y+15, va_text1, 40*2.5, COLOR_WHITE, s->font_sans_semibold);
   } else if (va_size == cereal::ControlsState::AlertSize::MID) {
-    ui_draw_text(s->vg, center_x, center_y-45, va_text1.c_str(), 48*2.5, COLOR_WHITE, s->font_sans_bold);
-    ui_draw_text(s->vg, center_x, center_y+75, va_text2.c_str(), 36*2.5, COLOR_WHITE, s->font_sans_regular);
+    ui_draw_text(s->vg, center_x, center_y-45, va_text1, 48*2.5, COLOR_WHITE, s->font_sans_bold);
+    ui_draw_text(s->vg, center_x, center_y+75, va_text2, 36*2.5, COLOR_WHITE, s->font_sans_regular);
   } else if (va_size == cereal::ControlsState::AlertSize::FULL) {
     nvgFontSize(s->vg, (longAlert1?72:96)*2.5);
     nvgFontFaceId(s->vg, s->font_sans_bold);
     nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
-    nvgTextBox(s->vg, alr_x, alr_y+(longAlert1?360:420), alr_w-60, va_text1.c_str(), NULL);
+    nvgTextBox(s->vg, alr_x, alr_y+(longAlert1?360:420), alr_w-60, va_text1, NULL);
     nvgFontSize(s->vg, 48*2.5);
     nvgFontFaceId(s->vg,  s->font_sans_regular);
     nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BOTTOM);
-    nvgTextBox(s->vg, alr_x, alr_h-(longAlert1?300:360), alr_w-60, va_text2.c_str(), NULL);
+    nvgTextBox(s->vg, alr_x, alr_h-(longAlert1?300:360), alr_w-60, va_text2, NULL);
   }
 }
 
@@ -608,7 +608,6 @@ static void ui_play_sound(UIState *s, AudibleAlert alert) {
 
 static bool ui_handle_alert(UIState *s) {
   const auto &cs = s->scene.controls_state;
-
   // Handle controls timeout
   if (s->started && !s->scene.frontview) {
     const uint64_t cs_frame = (s->sm)->rcv_frame("controlsState");
@@ -628,7 +627,7 @@ static bool ui_handle_alert(UIState *s) {
         alert_size = cereal::ControlsState::AlertSize::FULL;
         s->status = STATUS_ALERT;
       }
-      ui_draw_vision_alert(s, alert_size, s->status, alert_text1, alert_text2);
+      ui_draw_vision_alert(s, alert_size, s->status, alert_text1.c_str(), alert_text2.c_str());
       return true;
     }
   }
@@ -643,7 +642,7 @@ static bool ui_handle_alert(UIState *s) {
       s->status = STATUS_ALERT;
     }
     ui_draw_vision_alert(s, cs.getAlertSize(), s->status,
-                         cs.getAlertText1(), cs.getAlertText2(), cs.getAlertBlinkingRate());
+                         cs.getAlertText1().cStr(), cs.getAlertText2().cStr(), cs.getAlertBlinkingRate());
     return true;
   }
   return false;
