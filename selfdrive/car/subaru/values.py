@@ -280,6 +280,7 @@ FW_VERSIONS = {
       b'\x8b\x97\xac\x00',
       b'\x8b\x9a\xac\x00',
       b'\x9b\x97\xac\x00',
+      b'\x8b\x97\xbc\x00',
     ],
     (Ecu.eps, 0x746, None): [
       b'{\xb0\x00\x00',
