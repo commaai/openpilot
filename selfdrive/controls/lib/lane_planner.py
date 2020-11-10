@@ -77,7 +77,7 @@ class LanePlanner:
 
     # This will improve behaviour when lanes suddenly widen
     # these numbers were tested on 2000 segments and found to work well
-    l_prob, r_prob = self.l_prob.copy(), self.r_prob.copy()
+    l_prob, r_prob = self.l_prob, self.r_prob
     width_poly = self.l_poly - self.r_poly
     prob_mods = []
     for t_check in [0.0, 1.5, 3.0]:
