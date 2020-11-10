@@ -201,7 +201,8 @@ env = Environment(
     "#phonelibs",
   ],
   CYTHONCFILESUFFIX=".cpp",
-  tools=["default", "cython"]
+  tools=["default", "cython"],
+  toolpath = ['./site_scons/site_tools']
 )
 
 if os.environ.get('SCONS_CACHE'):
