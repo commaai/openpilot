@@ -9,6 +9,7 @@ import subprocess
 import sys
 import platform
 import numpy as np
+from sysconfig import get_paths
 
 TICI = os.path.isfile('/TICI')
 Decider('MD5-timestamp')
@@ -134,15 +135,9 @@ else:
 lenv["PYTHONPATH"] = Dir("#").path
 
 #Get the path for Python.h for cython linking
-python_path = os.popen("python-config --cflags").read().split(" ")[0][2:]
-
-numpy_path = "/".join(python_path.split("/")[:-2])
+python_path = get_paths()['include']
 numpy_path = np.get_include()
-print(arch)
-print(python_path)
-print(numpy_path)
-for x in os.listdir(numpy_path):
-  print(x)
+
 Export("python_path")
 
 # for pfile in os.listdir(python_path):
