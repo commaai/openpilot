@@ -12,18 +12,19 @@ from tools.lib.logreader import LogReader
 INJECT_MODEL = 0
 
 segments = [
-  ("HONDA", "0375fdf7b1ce594d|2019-06-13--08-32-25--3"),      # HONDA.ACCORD
-  ("HONDA", "99c94dc769b5d96e|2019-08-03--14-19-59--2"),      # HONDA.CIVIC
+  ("HONDA", "d83f36766f8012a5|2020-02-05--18-42-21--2"),      # HONDA.CIVIC_BOSCH_DIESEL (BOSCH)
+  ("HONDA", "a74b011b32b51b56|2020-07-26--17-09-36--6"),      # HONDA.CIVIC (NIDEC)
   ("TOYOTA", "77611a1fac303767|2020-02-29--13-29-33--3"),     # TOYOTA.COROLLA_TSS2
   ("TOYOTA", "b14c5b4742e6fc85|2020-10-14--11-04-47--4"),     # TOYOTA.RAV4  (LQR)
   ("TOYOTA", "0982d79ebb0de295|2020-10-18--19-11-36--5"),     # TOYOTA.PRIUS (INDI)
-  ("GM", "7cc2a8365b4dd8a9|2018-12-02--12-10-44--2"),         # GM.ACADIA
   ("CHRYSLER", "b6849f5cf2c926b1|2020-02-28--07-29-48--13"),  # CHRYSLER.PACIFICA
   ("HYUNDAI", "5b7c365c50084530|2020-04-15--16-13-24--3"),    # HYUNDAI.SONATA
-  #("CHRYSLER", "b6e1317e1bfbefa6|2020-03-04--13-11-40"),   # CHRYSLER.JEEP_CHEROKEE
-  ("SUBARU", "7873afaf022d36e2|2019-07-03--18-46-44--0"),     # SUBARU.IMPREZA
+  ("SUBARU", "c321c6b697c5a5ff|2020-06-23--11-04-33--12"),     # SUBARU.FORESTER
   ("VOLKSWAGEN", "76b83eb0245de90e|2020-03-05--19-16-05--3"),  # VW.GOLF
   ("NISSAN", "fbbfa6af821552b9|2020-03-03--08-09-43--0"),     # NISSAN.XTRAIL
+
+  # TODO: update this route
+  ("GM", "7cc2a8365b4dd8a9|2018-12-02--12-10-44--2"),         # GM.ACADIA
 
   # Enable when port is tested and dascamOnly is no longer set
   #("MAZDA", "32a319f057902bb3|2020-04-27--15-18-58--2"),      # MAZDA.CX5

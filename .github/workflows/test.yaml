@@ -97,7 +97,7 @@ jobs:
           docker login -u wmelching -p ${{ secrets.COMMA_DOCKERHUB_TOKEN}}
           docker tag tmppilotwebcam docker.io/commaai/openpilotwebcamci:latest
           docker push docker.io/commaai/openpilotwebcamci:latest
-  
+
   docker_push:
     name: docker push
     runs-on: ubuntu-20.04
