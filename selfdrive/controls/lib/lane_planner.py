@@ -84,8 +84,8 @@ class LanePlanner:
       width_at_t = eval_poly(width_poly, t_check * (v_ego + 7))
       prob_mods.append(interp(width_at_t, [4.0, 5.0], [1.0, 0.0]))
     mod = min(prob_mods)
-    l_prob *= mod * l_prob
-    r_prob *= mod * r_prob
+    l_prob *= mod
+    r_prob *= mod
 
     # Remove reliance on uncertain lanelines
     # these numbers were tested on 2000 segments and found to work well
