@@ -15,13 +15,13 @@ Segment = namedtuple('Segment', ['car_brand', 'route', 'whitelist_procs', 'black
 
 segments = [
   Segment(
-    car_brand="HONDA", # HONDA.ACCORD
-    route="0375fdf7b1ce594d|2019-06-13--08-32-25--3",
+    car_brand="HONDA", # HONDA.CIVIC_BOSCH_DIESEL (BOSCH)
+    route="d83f36766f8012a5|2020-02-05--18-42-21--2",
     whitelist_procs=[],
     blacklist_procs=[]
   ),
   Segment(
-    car_brand="HONDA", # HONDA.CIVIC
+    car_brand="HONDA", # HONDA.CIVIC (NIDEC)
     route="99c94dc769b5d96e|2019-08-03--14-19-59--2",
     whitelist_procs=[],
     blacklist_procs=[]
