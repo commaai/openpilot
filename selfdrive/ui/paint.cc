@@ -241,8 +241,11 @@ static void ui_draw_vision_lane_lines(UIState *s) {
     if(s->sm->updated("modelV2")) {
       update_line_data(s, scene->model.getRoadEdges()[re_idx], 0.025, pvd_re + re_idx, scene->max_distance);
     }
-    NVGcolor color = nvgRGBAf(1.0, 0.0, 0.0, 0.6);
-    ui_draw_line(s, (pvd_re + re_idx)->v, (pvd_re + re_idx)->cnt, &color, nullptr);
+    float re_opacity = std::clamp<float>(1.0-scene->model.getRoadEdgeStds()[re_idx], 0.0, 1.0);
+    if (re_opacity > 0.0) {
+      NVGcolor color = nvgRGBAf(1.0, 0.0, 0.0, re_opacity);
+      ui_draw_line(s, (pvd_re + re_idx)->v, (pvd_re + re_idx)->cnt, &color, nullptr);
+    }
   }
   
   // paint path
