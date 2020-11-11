@@ -245,7 +245,7 @@ if arch == "Darwin":
 elif arch == "aarch64":
   envCython["LINKFLAGS"]=["-shared"]
 
-  python_libs.append(python_path.split("/")[-1])
+  python_libs.append(os.path.basename(python_path))
 else:
   envCython["LINKFLAGS"]=["-pthread", "-shared"]
 
