@@ -148,8 +148,6 @@ env = Environment(
     "-Wno-inconsistent-missing-override",
     "-Wno-c99-designator",
     "-Wno-reorder-init-list",
-    "-Wno-#warnings",
-    "-Wno-deprecated-declarations"
   ] + cflags + ccflags_asan,
 
   CPPPATH=cpppath + [
@@ -178,8 +176,6 @@ env = Environment(
     "#cereal/messaging",
     "#cereal",
     "#opendbc/can",
-    python_path,
-    numpy_path
   ],
 
   CC='clang',
@@ -238,6 +234,8 @@ def abspath(x):
 
 #Cython build enviroment
 envCython = env.Clone()
+envCython["CPPPATH"] += [python_path, numpy_path]
+envCython["CCFLAGS"] += ["-Wno-#warnings", "-Wno-deprecated-declarations"]
 
 python_libs = []
 if arch == "Darwin":
