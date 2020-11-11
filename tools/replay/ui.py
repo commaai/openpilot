@@ -125,9 +125,6 @@ def ui_thread(addr, frame_address):
     fpkt = messaging.recv_one(frame)
     rgb_img_raw = fpkt.frame.image
 
-    if fpkt.frame.transform:
-      img_transform = np.array(fpkt.frame.transform).reshape(3, 3)
-
     num_px = len(rgb_img_raw) // 3
     if rgb_img_raw and num_px in _FULL_FRAME_SIZE.keys():
       FULL_FRAME_SIZE = _FULL_FRAME_SIZE[num_px]
