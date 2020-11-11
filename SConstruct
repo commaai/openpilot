@@ -244,6 +244,7 @@ def abspath(x):
 #Cython build enviroment
 envB = env.Clone()
 #envB["CCFLAGS"].remove("-Werror")
+envB["CCFLAGS"].append("-Wno-deprecated-declarations")
 
 added_libs = []
 if arch == "Darwin":
