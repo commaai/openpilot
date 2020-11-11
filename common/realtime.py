@@ -5,7 +5,7 @@ import time
 import multiprocessing
 
 from common.hardware import PC
-from common.common_pyx import sec_since_boot  # pylint: disable=no-name-in-module, import-error
+from common.clock import sec_since_boot  # pylint: disable=no-name-in-module, import-error
 
 
 # time step for each process
