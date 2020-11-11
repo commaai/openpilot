@@ -205,7 +205,7 @@ jobs:
         run: chmod -R 777 /tmp
       - name: Run unit tests
         run: |
-          $PERSIST_WITH_CACHE "cd /tmp/openpilot && \
+          $PERSIST_WITH_ONLY_SCONS_CACHE "cd /tmp/openpilot && \
                     SCONS_CACHE=1 scons -j$(nproc) && \
                     coverage run selfdrive/test/test_fingerprints.py && \
                     $UNIT_TEST common && \
