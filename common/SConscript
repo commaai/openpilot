@@ -1,14 +1,4 @@
-Import('env', 'cython_dependencies')
+Import('envCython')
 
-# Build cython clock module
-env.Command(['common_pyx.so', 'clock.cpp'],
-            cython_dependencies + ['common_pyx_setup.py', 'clock.pyx'],
-            "cd common && python3 common_pyx_setup.py build_ext --inplace")
-
-# Build cython params module
-env.Command(['params_pyx.so', 'params_pyx.cpp'],
-            cython_dependencies + [
-                'params_pyx_setup.py', 'params_pyx.pyx', 'params_pxd.pxd',
-                '#selfdrive/common/params.cc', '#selfdrive/common/params.h',
-                '#selfdrive/common/util.c', '#selfdrive/common/util.h'],
-            "cd common && python3 params_pyx_setup.py build_ext --inplace")
+envCython.Program('clock.so', 'clock.pyx')
+envCython.Program('params_pyx.so', 'params_pyx.pyx')
