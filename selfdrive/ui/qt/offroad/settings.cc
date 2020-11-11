@@ -3,7 +3,9 @@
 #include <sstream>
 #include <cassert>
 
+#include "clickablelabel.hpp"
 #include "settings.hpp"
+#include "toggle_switch.hpp"
 
 #include <QString>
 #include <QVBoxLayout>
@@ -11,6 +13,7 @@
 #include <QPushButton>
 #include <QLabel>
 #include <QPixmap>
+#include <QDebug>
 
 #include "common/params.h"
 
@@ -196,58 +199,205 @@ void SettingsWindow::setActivePanel() {
 
 SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
 
-  // sidebar
-  QVBoxLayout *sidebar_layout = new QVBoxLayout();
-  panel_layout = new QStackedLayout();
 
-  // close button
-  QPushButton *close_button = new QPushButton("X");
-  close_button->setStyleSheet(R"(
-    QPushButton {
-      padding: 50px;
+  QWidget *lWidget = new QWidget();
+  QSizePolicy leftPolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+  leftPolicy.setHorizontalStretch(1);
+  lWidget->setSizePolicy(leftPolicy);
+  lWidget->setStyleSheet(R"(
+    * {
+      font-size: 50px;
+      padding: 0;
+      margin: 0;
+    }
+    QLabel {
       font-weight: bold;
-      font-size: 100px;
+      padding-left: 30px;
+      padding-top: 10px;
     }
   )");
-  sidebar_layout->addWidget(close_button);
-  QObject::connect(close_button, SIGNAL(released()), this, SIGNAL(closeSettings()));
 
-  // setup panels
-  panels = {
-    {"device", device_panel()},
-    {"toggles", toggles_panel()},
-    {"developer", developer_panel()},
-  };
+  // sidebar
+  QVBoxLayout *left_panel_layout = new QVBoxLayout();
+  left_panel_layout->setContentsMargins(0, 0, 0, 0);
 
-  for (auto &panel : panels) {
-    QPushButton *btn = new QPushButton(panel.first);
-    btn->setStyleSheet(R"(
-      QPushButton {
-        padding-top: 35px;
-        padding-bottom: 35px;
-        font-size: 60px;
-        text-align: right;
-        border: none;
-        background: none;
-        font-weight: bold;
-      }
+  left_panel_layout->addStretch(1);
+  {
+    QLabel *settingsLabel = new QLabel();
+    settingsLabel->setText("SETTINGS");
+    settingsLabel->setStyleSheet(R"(
+      padding-left: 40px;
+      font-size: 20px;
+      font-weight: normal;
+      margin-bottom:25px;
+      color: #bfbfbf;
     )");
-
-    sidebar_layout->addWidget(btn);
-    panel_layout->addWidget(panel.second);
-    QObject::connect(btn, SIGNAL(released()), this, SLOT(setActivePanel()));
+    left_panel_layout->addWidget(settingsLabel);
+  }
+  {
+    QLabel *settingsLabel = new ClickableLabel();
+    settingsLabel->setText("General");
+    left_panel_layout->addWidget(settingsLabel);
+  }
+  {
+    QLabel *settingsLabel = new ClickableLabel();
+    settingsLabel->setText("Device");
+    left_panel_layout->addWidget(settingsLabel);
+  }
+  {
+    QLabel *settingsLabel = new ClickableLabel();
+    settingsLabel->setText("Network");
+    left_panel_layout->addWidget(settingsLabel);
+  }
+  {
+    QLabel *settingsLabel = new ClickableLabel();
+    settingsLabel->setText("Developer");
+    left_panel_layout->addWidget(settingsLabel);
   }
 
-  QHBoxLayout *settings_layout = new QHBoxLayout();
-  settings_layout->addSpacing(45);
-  settings_layout->addLayout(sidebar_layout);
-  settings_layout->addSpacing(45);
-  settings_layout->addLayout(panel_layout);
-  settings_layout->addSpacing(45);
-  setLayout(settings_layout);
+  left_panel_layout->addStretch(3);
+  lWidget->setLayout(left_panel_layout);
+
+  QWidget *rWidget = new QWidget();
+  rWidget->setStyleSheet(R"(
+    * {
+      background-color: #292929;
+      font-size: 50px;
+      margin: 0;
+      padding-left: 30px;
+      padding-right: 30px;
+      padding-top: 10px;
+    }
+    QLabel {
+      font-weight: bold;
+    }
+  )");
+
+  QSizePolicy rightPolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+  rightPolicy.setHorizontalStretch(3);
+  rWidget->setSizePolicy(rightPolicy);
+
+  QVBoxLayout *general_settings_layout = new QVBoxLayout();
+  QWidget *line_break = new QWidget();
+  line_break->setFixedHeight(2);
+  line_break->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+  line_break->setStyleSheet(R"(
+      background-color: #c0c0c0;
+    )");
+
+  {
+    QHBoxLayout *row_layout = new QHBoxLayout();
+    auto text = new QLabel("General");
+    QSizePolicy text_policy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+    text_policy.setHorizontalStretch(8);
+    text->setSizePolicy(text_policy);
+
+    auto btn = new QPushButton("?");
+    QSizePolicy btn_policy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+    btn_policy.setHorizontalStretch(1);
+    btn->setSizePolicy(btn_policy);
+
+    row_layout->addWidget(text);
+    row_layout->addWidget(btn);
+    general_settings_layout->addLayout(row_layout);
+  }
+
+  {
+    QHBoxLayout *row_layout = new QHBoxLayout();
+
+    auto text = new QLabel("Enable openpilot");
+    QSizePolicy text_policy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+    text_policy.setHorizontalStretch(6);
+    text->setSizePolicy(text_policy);
+    row_layout->addWidget(text);
+
+    auto toggle_switch = new Switch();
+    QSizePolicy switch_policy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+    text_policy.setHorizontalStretch(2);
+    toggle_switch->setSizePolicy(switch_policy);
+    row_layout->addWidget(toggle_switch);
+
+    general_settings_layout->addLayout(row_layout);
+  }
+
+  general_settings_layout->addStretch(3);
+
+  //{
+  //  auto label = new QLabel("Enable openpilot");
+  //  auto toggleSwitch = new Switch();
+  //}
+
+  //{
+  //  auto label = new QLabel("Lane change assist");
+  //  auto toggleSwitch = new Switch();
+  //  settingsGrid->addWidget(label, 2, 0, 1, 5, Qt::AlignLeft);
+  //  settingsGrid->addWidget(toggleSwitch, 2, 5, 1, 2, Qt::AlignRight);
+  //  QWidget *hline = new QWidget();
+  //  hline->setFixedHeight(2);
+  //  hline->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+  //  hline->setStyleSheet(R"(
+  //    background-color: #c0c0c0;
+  //  )");
+  //}
+
+  rWidget->setLayout(general_settings_layout);
+
+  QHBoxLayout *panel_separator_layout = new QHBoxLayout();
+  panel_separator_layout->addWidget(lWidget);
+  panel_separator_layout->addWidget(rWidget);
+
+  setLayout(panel_separator_layout);
+  //panel_layout = new QStackedLayout();
+
+  // close button
+  //QPushButton *close_button = new QPushButton("X");
+  //close_button->setStyleSheet(R"(
+  //  QPushButton {
+  //    padding: 50px;
+  //    font-weight: bold;
+  //    font-size: 100px;
+  //  }
+  //)");
+  //sidebar_layout->addWidget(close_button);
+  //QObject::connect(close_button, SIGNAL(released()), this, SIGNAL(closeSettings()));
+
+  // setup panels
+  //panels = {
+  //  {"device", device_panel()},
+  //  {"toggles", toggles_panel()},
+  //  {"developer", developer_panel()},
+  //};
+
+  //for (auto &panel : panels) {
+  //  QPushButton *btn = new QPushButton(panel.first);
+  //  btn->setStyleSheet(R"(
+  //    QPushButton {
+  //      padding-top: 35px;
+  //      padding-bottom: 35px;
+  //      font-size: 60px;
+  //      text-align: right;
+  //      border: none;
+  //      background: none;
+  //      font-weight: bold;
+  //    }
+  //  )");
+
+  //  sidebar_layout->addWidget(btn);
+  //  panel_layout->addWidget(panel.second);
+  //  QObject::connect(btn, SIGNAL(released()), this, SLOT(setActivePanel()));
+  //}
+
+  //QHBoxLayout *settings_layout = new QHBoxLayout();
+  //settings_layout->addSpacing(45);
+  //settings_layout->addLayout(sidebar_layout);
+  //settings_layout->addSpacing(45);
+  //settings_layout->addLayout(panel_layout);
+  //settings_layout->addSpacing(45);
+  //setLayout(settings_layout);
 
   setStyleSheet(R"(
     * {
+      background-color: #000000;
       color: white;
       font-size: 50px;
     }
