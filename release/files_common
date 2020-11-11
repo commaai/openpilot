@@ -12,6 +12,7 @@ CONTRIBUTING.md
 README.md
 RELEASES.md
 SAFETY.md
+site_scons/site_tools/cython.py
 
 apk/ai.comma*.apk
 
@@ -32,7 +33,6 @@ common/numpy_fast.py
 common/params.py
 common/params_pxd.pxd
 common/params_pyx.pyx
-common/params_pyx_setup.py
 common/xattr.py
 common/profiler.py
 common/basedir.py
@@ -43,7 +43,6 @@ common/text_window.py
 common/cython_hacks.py
 common/apk.py
 common/SConscript
-common/common_pyx_setup.py
 
 common/kalman/.gitignore
 common/kalman/*
@@ -53,7 +52,6 @@ common/transformations/camera.py
 common/transformations/model.py
 
 common/transformations/SConscript
-common/transformations/setup.py
 common/transformations/coordinates.py
 common/transformations/coordinates.cc
 common/transformations/coordinates.hpp
@@ -95,7 +93,6 @@ selfdrive/boardd/__init__.py
 selfdrive/boardd/boardd.cc
 selfdrive/boardd/boardd.py
 selfdrive/boardd/boardd_api_impl.pyx
-selfdrive/boardd/boardd_setup.py
 selfdrive/boardd/can_list_to_can_capnp.cc
 selfdrive/boardd/panda.cc
 selfdrive/boardd/panda.h
