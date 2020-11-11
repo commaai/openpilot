@@ -247,7 +247,6 @@ if arch == "Darwin":
 elif arch == "aarch64":
   envB["LINKFLAGS"]=["-shared"]
 
-  Import("python_path")
   added_libs.append(python_path.split("/")[-1])
 else:
   envB["LINKFLAGS"]=["-pthread", "-shared"]
