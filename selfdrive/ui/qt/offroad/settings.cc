@@ -388,6 +388,62 @@ void SettingsWindow::initDeviceSettingsWidget() {
   device_settings_widget->setLayout(device_settings_layout);
 }
 
+void SettingsWindow::initNetworkSettingsWidget() {
+  network_settings_widget = newSettingsPanelBaseWidget();
+
+  QVBoxLayout *network_settings_layout = new QVBoxLayout();
+  auto text = new QLabel("Network");
+  text->setStyleSheet(R"(
+      font-size: 50px;
+      font-weight: bold;
+    )");
+  network_settings_layout->addStretch(1);
+  network_settings_layout->addWidget(text);
+  network_settings_layout->addStretch(2);
+
+  // WiFi settings
+  {
+    QHBoxLayout *row_layout = new QHBoxLayout();
+    auto label = new QLabel("WiFi settings");
+    QSizePolicy text_policy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+    text_policy.setHorizontalStretch(6);
+    label->setSizePolicy(text_policy);
+    row_layout->addWidget(label);
+
+    QSizePolicy btn_policy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+    btn_policy.setHorizontalStretch(1);
+    auto btn = new QPushButton("OPEN");
+    btn->setSizePolicy(btn_policy);
+    row_layout->addWidget(btn);
+    network_settings_layout->addLayout(row_layout);
+    network_settings_layout->addStretch(1);
+    network_settings_layout->addWidget(newLinebreakWidget());
+    network_settings_layout->addStretch(1);
+  }
+
+  // Tethering settings
+  {
+    QHBoxLayout *row_layout = new QHBoxLayout();
+    auto label = new QLabel("Tethering settings");
+    QSizePolicy text_policy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+    text_policy.setHorizontalStretch(6);
+    label->setSizePolicy(text_policy);
+    row_layout->addWidget(label);
+
+    QSizePolicy btn_policy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+    btn_policy.setHorizontalStretch(1);
+    auto btn = new QPushButton("OPEN");
+    btn->setSizePolicy(btn_policy);
+    row_layout->addWidget(btn);
+    network_settings_layout->addLayout(row_layout);
+    network_settings_layout->addStretch(1);
+    network_settings_layout->addWidget(newLinebreakWidget());
+    network_settings_layout->addStretch(1);
+  }
+  network_settings_layout->addStretch(8);
+  network_settings_widget->setLayout(network_settings_layout);
+}
+
 SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
 
   QWidget *lWidget = new QWidget();
@@ -440,7 +496,9 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
   device_settings_label->setText("Device");
   left_panel_layout->addWidget(device_settings_label);
 
-  network_settings_label = new ClickableLabel(lWidget);
+  initNetworkSettingsWidget();
+  int network_panel_idx = panel_layout->addWidget(network_settings_widget);
+  network_settings_label = new ClickableLabel(lWidget, network_panel_idx);
   network_settings_label->setText("Network");
   left_panel_layout->addWidget(network_settings_label);
 

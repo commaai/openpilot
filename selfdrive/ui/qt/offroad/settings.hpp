@@ -35,6 +35,7 @@ private:
 
   void initGeneralSettingsWidget();
   void initDeviceSettingsWidget();
+  void initNetworkSettingsWidget();
 
 signals:
   void closeSettings();
@@ -42,8 +43,8 @@ signals:
 private:
   std::map<QString, QWidget *> panels;
   QStackedLayout *panel_layout = nullptr;
-  QWidget *general_settings_widget = nullptr;
-  QWidget *device_settings_widget = nullptr;
+  QWidget *general_settings_widget, *device_settings_widget,
+          *network_settings_widget;
   QLabel *general_settings_label, *device_settings_label,
          *network_settings_label, *developer_settings_label;
 
