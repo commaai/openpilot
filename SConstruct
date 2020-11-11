@@ -29,7 +29,6 @@ if platform.system() == "Darwin":
 
 if arch == "aarch64" and TICI:
   arch = "larch64"
-Export('arch')
 
 USE_WEBCAM = os.getenv("USE_WEBCAM") is not None
 QCOM_REPLAY = arch == "aarch64" and os.getenv("QCOM_REPLAY") is not None
@@ -198,8 +197,7 @@ env = Environment(
     "#phonelibs",
   ],
   CYTHONCFILESUFFIX=".cpp",
-  tools=["default", "cython"],
-  toolpath = [os.path.join(os.getcwd(),'site_scons/site_tools')]
+  tools=["default", "cython"]
 )
   
 if os.environ.get('SCONS_CACHE'):
