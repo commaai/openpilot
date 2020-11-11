@@ -8,6 +8,7 @@ on:
 env:
   RUN: docker run --shm-size 1G --rm tmppilot /bin/sh -c
   PERSIST_WITH_CACHE: docker run --shm-size 1G -v /tmp/comma_download_cache:/tmp/comma_download_cache -v /tmp/scons_cache:/tmp/scons_cache  --name tmppilot tmppilot /bin/sh -c
+  PERSIST_WITH_ONLY_SCONS_CACHE: docker run --shm-size 1G -v /tmp/scons_cache:/tmp/scons_cache --name tmppilot tmppilot /bin/sh -c
   PERSIST: docker run --shm-size 1G --name tmppilot tmppilot /bin/sh -c
   CI_RUN: docker run -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID --rm tmppilotci /bin/bash -c
   UNIT_TEST: coverage run --append -m unittest discover
@@ -201,7 +202,7 @@ jobs:
       - name: Build Docker image
         run: eval "$BUILD"
       - name: Set permissions
-        run: mkdir /tmp && chmod -R 777 /tmp
+        run: chmod -R 777 /tmp
       - name: Run unit tests
         run: |
           $PERSIST_WITH_CACHE "cd /tmp/openpilot && \
