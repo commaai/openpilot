@@ -2,11 +2,10 @@
 # TODO: why are the keras models saved with python 2?
 from __future__ import print_function
 
-import tensorflow as tf  # pylint: disable=import-error
 import os
 import sys
 import numpy as np
-from tensorflow.keras.models import load_model  # pylint: disable=import-error
+import onnxruntime as ort
 
 def read(sz):
   dd = []
@@ -22,28 +21,22 @@ def write(d):
   os.write(1, d.tobytes())
 
 def run_loop(m):
-  ishapes = [[1]+ii.shape[1:] for ii in m.inputs]
-  print("ready to run keras model", ishapes, file=sys.stderr)
+  ishapes = [[1]+ii.shape[1:] for ii in m.get_inputs()]
+  keys = [x.name for x in m.get_inputs()]
+  print("ready to run onnx model", keys, ishapes, file=sys.stderr)
   while 1:
     inputs = []
     for shp in ishapes:
       ts = np.product(shp)
       #print("reshaping %s with offset %d" % (str(shp), offset), file=sys.stderr)
       inputs.append(read(ts).reshape(shp))
-    ret = m.predict_on_batch(inputs)
+    ret = m.run(None, dict(zip(keys, inputs)))
     #print(ret, file=sys.stderr)
     for r in ret:
       write(r)
 
 
 if __name__ == "__main__":
-  print(tf.__version__, file=sys.stderr)
-  # limit gram alloc
-  gpus = tf.config.experimental.list_physical_devices('GPU')
-  if len(gpus) > 0:
-    tf.config.experimental.set_virtual_device_configuration(gpus[0], [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=1024)])
+  ort_session = ort.InferenceSession(sys.argv[1])
+  run_loop(ort_session)
 
-  m = load_model(sys.argv[1])
-  print(m, file=sys.stderr)
-
-  run_loop(m)
