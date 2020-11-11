@@ -8,6 +8,7 @@
 #include "toggle_switch.hpp"
 
 #include <QString>
+#include <QStringList>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QPushButton>
@@ -229,7 +230,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
       padding-left: 40px;
       font-size: 20px;
       font-weight: normal;
-      margin-bottom:25px;
+      margin-bottom: 25px;
       color: #bfbfbf;
     )");
     left_panel_layout->addWidget(settingsLabel);
@@ -262,14 +263,10 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
   rWidget->setStyleSheet(R"(
     * {
       background-color: #292929;
-      font-size: 50px;
-      margin: 0;
+      font-size: 30px;
       padding-left: 30px;
       padding-right: 30px;
       padding-top: 10px;
-    }
-    QLabel {
-      font-weight: bold;
     }
   )");
 
@@ -278,16 +275,14 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
   rWidget->setSizePolicy(rightPolicy);
 
   QVBoxLayout *general_settings_layout = new QVBoxLayout();
-  QWidget *line_break = new QWidget();
-  line_break->setFixedHeight(2);
-  line_break->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-  line_break->setStyleSheet(R"(
-      background-color: #c0c0c0;
-    )");
 
   {
     QHBoxLayout *row_layout = new QHBoxLayout();
     auto text = new QLabel("General");
+    text->setStyleSheet(R"(
+      font-size: 50px;
+      font-weight: bold;
+    )");
     QSizePolicy text_policy(QSizePolicy::Preferred, QSizePolicy::Preferred);
     text_policy.setHorizontalStretch(8);
     text->setSizePolicy(text_policy);
@@ -299,47 +294,44 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
 
     row_layout->addWidget(text);
     row_layout->addWidget(btn);
+    general_settings_layout->addStretch(1);
     general_settings_layout->addLayout(row_layout);
+    general_settings_layout->addStretch(2);
   }
 
-  {
+  QStringList general_text_items = {
+    "Enable openpilot",
+    "Lane change assist",
+    "Lane departure warnings",
+    "Upload driver camera",
+  };
+
+  for (int i = 0; i < general_text_items.size(); i++) {
+    auto &text = general_text_items[i];
     QHBoxLayout *row_layout = new QHBoxLayout();
 
-    auto text = new QLabel("Enable openpilot");
-    QSizePolicy text_policy(QSizePolicy::Preferred, QSizePolicy::Preferred);
-    text_policy.setHorizontalStretch(6);
-    text->setSizePolicy(text_policy);
-    row_layout->addWidget(text);
-
+    auto label = new QLabel(text);
+    row_layout->addWidget(label);
     auto toggle_switch = new Switch();
-    QSizePolicy switch_policy(QSizePolicy::Preferred, QSizePolicy::Preferred);
-    text_policy.setHorizontalStretch(2);
-    toggle_switch->setSizePolicy(switch_policy);
     row_layout->addWidget(toggle_switch);
-
     general_settings_layout->addLayout(row_layout);
+
+    if (i == general_text_items.size() - 1) continue;
+
+    // Sigh... line break won't obey the padding so we need to give it a margin.
+    QWidget *line_break = new QWidget();
+    line_break->setFixedHeight(2);
+    line_break->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    line_break->setStyleSheet(R"(
+        background-color: #414141;
+        margin-left: 30px;
+      )");
+    general_settings_layout->addStretch(1);
+    general_settings_layout->addWidget(line_break);
+    general_settings_layout->addStretch(1);
   }
 
-  general_settings_layout->addStretch(3);
-
-  //{
-  //  auto label = new QLabel("Enable openpilot");
-  //  auto toggleSwitch = new Switch();
-  //}
-
-  //{
-  //  auto label = new QLabel("Lane change assist");
-  //  auto toggleSwitch = new Switch();
-  //  settingsGrid->addWidget(label, 2, 0, 1, 5, Qt::AlignLeft);
-  //  settingsGrid->addWidget(toggleSwitch, 2, 5, 1, 2, Qt::AlignRight);
-  //  QWidget *hline = new QWidget();
-  //  hline->setFixedHeight(2);
-  //  hline->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-  //  hline->setStyleSheet(R"(
-  //    background-color: #c0c0c0;
-  //  )");
-  //}
-
+  general_settings_layout->addStretch(general_text_items.size());
   rWidget->setLayout(general_settings_layout);
 
   QHBoxLayout *panel_separator_layout = new QHBoxLayout();
