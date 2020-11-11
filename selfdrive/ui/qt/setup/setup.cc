@@ -3,6 +3,7 @@
 #include <QString>
 #include <QLabel>
 #include <QWidget>
+#include <QLineEdit>
 #include <QPushButton>
 #include <QVBoxLayout>
 #include <QApplication>
@@ -75,6 +76,21 @@ QWidget * Setup::software_selection() {
   main_layout->addWidget(dashcam_btn);
   QObject::connect(dashcam_btn, SIGNAL(released()), this, SLOT(nextPage()));
 
+  main_layout->addSpacing(50);
+
+  const char* env_url = getenv("CUSTOM_URL");
+  QString default_url = env_url == NULL ? "" : QString::fromStdString(env_url);
+  QLineEdit *url_input = new QLineEdit(default_url);
+  url_input->setStyleSheet(R"(
+    QLineEdit {
+      color: black;
+      background-color: white;
+      font-size: 55px;
+      padding: 40px;
+    }
+  )");
+  main_layout->addWidget(url_input);
+
   QPushButton *custom_btn = new QPushButton("Custom");
   main_layout->addWidget(custom_btn);
   QObject::connect(custom_btn, SIGNAL(released()), this, SLOT(nextPage()));
@@ -129,13 +145,14 @@ int main(int argc, char *argv[]) {
 #endif
 
   QApplication a(argc, argv);
-  Setup setup = Setup();
+
+  Setup setup;
   setup.setFixedSize(w, h);
   setup.show();
 
 #ifdef QCOM2
   QPlatformNativeInterface *native = QGuiApplication::platformNativeInterface();
-  wl_surface *s = reinterpret_cast<wl_surface*>(native->nativeResourceForWindow("surface", window->windowHandle()));
+  wl_surface *s = reinterpret_cast<wl_surface*>(native->nativeResourceForWindow("surface", setup.windowHandle()));
   wl_surface_set_buffer_transform(s, WL_OUTPUT_TRANSFORM_270);
   wl_surface_commit(s);
   setup.showFullScreen();
