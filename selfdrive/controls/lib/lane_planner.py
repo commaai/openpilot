@@ -68,13 +68,6 @@ class LanePlanner:
     self.r_poly[3] += CAMERA_OFFSET
 
     # Find current lanewidth
-    self.lane_width_certainty += 0.05 * (self.l_prob * self.r_prob - self.lane_width_certainty)
-    current_lane_width = abs(self.l_poly[3] - self.r_poly[3])
-    self.lane_width_estimate += 0.005 * (current_lane_width - self.lane_width_estimate)
-    speed_lane_width = interp(v_ego, [0., 31.], [2.8, 3.5])
-    self.lane_width = self.lane_width_certainty * self.lane_width_estimate + \
-                      (1 - self.lane_width_certainty) * speed_lane_width
-
     # This will improve behaviour when lanes suddenly widen
     # these numbers were tested on 2000 segments and found to work well
     l_prob, r_prob = self.l_prob, self.r_prob
@@ -93,6 +86,13 @@ class LanePlanner:
     r_std_mod = interp(self.r_std, [.15, .3], [1.0, 0.0])
     l_prob *= l_std_mod
     r_prob *= r_std_mod
+
+    self.lane_width_certainty += 0.05 * (l_prob * r_prob - self.lane_width_certainty)
+    current_lane_width = abs(self.l_poly[3] - self.r_poly[3])
+    self.lane_width_estimate += 0.005 * (current_lane_width - self.lane_width_estimate)
+    speed_lane_width = interp(v_ego, [0., 31.], [2.8, 3.5])
+    self.lane_width = self.lane_width_certainty * self.lane_width_estimate + \
+                      (1 - self.lane_width_certainty) * speed_lane_width
 
     clipped_lane_width = min(4.0, self.lane_width)
     path_from_left_lane = self.l_poly.copy()
