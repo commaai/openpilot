@@ -237,11 +237,20 @@ def abspath(x):
     return x[0].path.rsplit("/", 1)[1][:-3]
 
 #Cython build enviroment
-envB = env.Clone()
+envCython = env.Clone()
 
-added_libs = []
+python_libs = []
+if arch == "Darwin":
+  envCython["LINKFLAGS"]=["-bundle", "-undefined", "dynamic_lookup"]
+elif arch == "aarch64":
+  envCython["LINKFLAGS"]=["-shared"]
 
-Export('envB', 'added_libs')
+  python_libs.append(python_path.split("/")[-1])
+else:
+  envCython["LINKFLAGS"]=["-pthread", "-shared"]
+
+Export('envCython', 'python_libs')
+
 # still needed for apks
 zmq = 'zmq'
 Export('env', 'arch', 'real_arch', 'zmq', 'SHARED', 'USE_WEBCAM', 'QCOM_REPLAY')
