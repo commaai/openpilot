@@ -41,8 +41,8 @@ def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
   elif car_fingerprint == CAR.GENESIS:
     # Genesis and Optima fault when forwarding while engaged
     values["CF_Lkas_LdwsActivemode"] = 2
-  elif car_fingerprint == CAR.KIA_SPORTAGE:
-    values["CF_Lkas_LdwsActivemode"] = 0
+  #elif car_fingerprint == CAR.KIA_SPORTAGE:
+    #values["CF_Lkas_LdwsActivemode"] = 0
 
   dat = packer.make_can_msg("LKAS11", 0, values)[2]
 
