@@ -201,7 +201,7 @@ jobs:
       - name: Build Docker image
         run: eval "$BUILD"
       - name: Set permissions
-        run: chmod -R 777 /tmp/comma_download_cache
+        run: mkdir /tmp/comma_download_cache && chmod -R 777 /tmp/comma_download_cache
       - name: Run unit tests
         run: |
           $PERSIST_WITH_CACHE "cd /tmp/openpilot && \
