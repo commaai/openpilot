@@ -249,7 +249,7 @@ elif arch == "aarch64":
 else:
   envCython["LINKFLAGS"]=["-pthread", "-shared"]
 
-envCython["PYLIB"] = python_libs
+envCython["LIBS"] = python_libs
 
 Export('envCython')
 
