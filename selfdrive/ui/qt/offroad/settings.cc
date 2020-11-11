@@ -198,69 +198,28 @@ void SettingsWindow::setActivePanel() {
   panel_layout->setCurrentWidget(panels[btn->text()]);
 }
 
-SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
+void SettingsWindow::selected(int index) {
+  Q_ASSERT(index >= 0);
+  qDebug() << "panel:" << index;
+  panel_layout->setCurrentIndex(index);
+}
 
+inline QWidget* SettingsWindow::newLinebreakWidget() {
+  QWidget *line_break = new QWidget();
+  line_break->setFixedHeight(2);
+  line_break->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 
-  QWidget *lWidget = new QWidget();
-  QSizePolicy leftPolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
-  leftPolicy.setHorizontalStretch(1);
-  lWidget->setSizePolicy(leftPolicy);
-  lWidget->setStyleSheet(R"(
-    * {
-      font-size: 50px;
-      padding: 0;
-      margin: 0;
-    }
-    QLabel {
-      font-weight: bold;
-      padding-left: 30px;
-      padding-top: 10px;
-    }
-  )");
+  // Sigh... line break won't obey the padding so we need to give it a margin.
+  line_break->setStyleSheet(R"(
+        background-color: #414141;
+        margin-left: 30px;
+      )");
+  return line_break;
+}
 
-  // sidebar
-  QVBoxLayout *left_panel_layout = new QVBoxLayout();
-  left_panel_layout->setContentsMargins(0, 0, 0, 0);
-
-  left_panel_layout->addStretch(1);
-  {
-    QLabel *settingsLabel = new QLabel();
-    settingsLabel->setText("SETTINGS");
-    settingsLabel->setStyleSheet(R"(
-      padding-left: 40px;
-      font-size: 20px;
-      font-weight: normal;
-      margin-bottom: 25px;
-      color: #bfbfbf;
-    )");
-    left_panel_layout->addWidget(settingsLabel);
-  }
-  {
-    QLabel *settingsLabel = new ClickableLabel();
-    settingsLabel->setText("General");
-    left_panel_layout->addWidget(settingsLabel);
-  }
-  {
-    QLabel *settingsLabel = new ClickableLabel();
-    settingsLabel->setText("Device");
-    left_panel_layout->addWidget(settingsLabel);
-  }
-  {
-    QLabel *settingsLabel = new ClickableLabel();
-    settingsLabel->setText("Network");
-    left_panel_layout->addWidget(settingsLabel);
-  }
-  {
-    QLabel *settingsLabel = new ClickableLabel();
-    settingsLabel->setText("Developer");
-    left_panel_layout->addWidget(settingsLabel);
-  }
-
-  left_panel_layout->addStretch(3);
-  lWidget->setLayout(left_panel_layout);
-
-  QWidget *rWidget = new QWidget();
-  rWidget->setStyleSheet(R"(
+void SettingsWindow::initGeneralSettingsWidget() {
+  general_settings_widget = new QWidget();
+  general_settings_widget->setStyleSheet(R"(
     * {
       background-color: #292929;
       font-size: 30px;
@@ -269,10 +228,6 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
       padding-top: 10px;
     }
   )");
-
-  QSizePolicy rightPolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
-  rightPolicy.setHorizontalStretch(3);
-  rWidget->setSizePolicy(rightPolicy);
 
   QVBoxLayout *general_settings_layout = new QVBoxLayout();
 
@@ -318,28 +273,153 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
 
     if (i == general_text_items.size() - 1) continue;
 
-    // Sigh... line break won't obey the padding so we need to give it a margin.
-    QWidget *line_break = new QWidget();
-    line_break->setFixedHeight(2);
-    line_break->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-    line_break->setStyleSheet(R"(
-        background-color: #414141;
-        margin-left: 30px;
-      )");
     general_settings_layout->addStretch(1);
-    general_settings_layout->addWidget(line_break);
+    general_settings_layout->addWidget(newLinebreakWidget());
     general_settings_layout->addStretch(1);
   }
 
   general_settings_layout->addStretch(general_text_items.size());
-  rWidget->setLayout(general_settings_layout);
+  general_settings_widget->setLayout(general_settings_layout);
+}
+
+void SettingsWindow::initDeviceSettingsWidget() {
+  device_settings_widget = new QWidget();
+  device_settings_widget->setStyleSheet(R"(
+    * {
+      background-color: #292929;
+      font-size: 30px;
+      padding-left: 30px;
+      padding-right: 30px;
+      padding-top: 10px;
+    }
+
+    QPushButton {
+      background-color: #393939;
+      font-size: 20px;
+      padding-bottom: 12px;
+      border-radius: 20px;
+    }
+    QPushButton:hover {
+      background-color:  #4d4d4d;
+    }
+  )");
+
+  QVBoxLayout *device_settings_layout = new QVBoxLayout();
+  auto text = new QLabel("Device");
+  text->setStyleSheet(R"(
+      font-size: 50px;
+      font-weight: bold;
+    )");
+  QSizePolicy text_policy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+  text_policy.setHorizontalStretch(8);
+  text->setSizePolicy(text_policy);
+  device_settings_layout->addWidget(text);
+
+  device_settings_layout->addStretch(1);
+  device_settings_widget->setLayout(device_settings_layout);
+  device_settings_layout->addStretch(2);
+
+  // Camera calibration
+  {
+    QHBoxLayout *row_layout = new QHBoxLayout();
+    auto label = new QLabel("Camera calibration");
+    QSizePolicy text_policy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+    text_policy.setHorizontalStretch(6);
+    label->setSizePolicy(text_policy);
+    row_layout->addWidget(label);
+
+    QSizePolicy btn_policy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+    btn_policy.setHorizontalStretch(1);
+    auto btn = new QPushButton("RESET");
+    btn->setSizePolicy(btn_policy);
+    row_layout->addWidget(btn);
+    device_settings_layout->addLayout(row_layout);
+    device_settings_layout->addWidget(newLinebreakWidget());
+  }
+
+  // Driver Camera View
+}
+
+SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
+
+  QWidget *lWidget = new QWidget();
+  QWidget *rWidget = new QWidget();
+  QSizePolicy leftPolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+  leftPolicy.setHorizontalStretch(1);
+  lWidget->setSizePolicy(leftPolicy);
+  lWidget->setStyleSheet(R"(
+    * {
+      font-size: 50px;
+      padding: 0;
+      margin: 0;
+    }
+    QLabel {
+      font-weight: bold;
+      padding-left: 30px;
+      padding-top: 10px;
+    }
+  )");
+
+  // sidebar
+  QVBoxLayout *left_panel_layout = new QVBoxLayout();
+  left_panel_layout->setContentsMargins(0, 0, 0, 0);
+
+  left_panel_layout->addStretch(1);
+  {
+    QLabel *settingsLabel = new QLabel();
+    settingsLabel->setText("SETTINGS");
+    settingsLabel->setStyleSheet(R"(
+      padding-left: 40px;
+      font-size: 20px;
+      font-weight: normal;
+      margin-bottom: 25px;
+      color: #bfbfbf;
+    )");
+    left_panel_layout->addWidget(settingsLabel);
+  }
+
+  panel_layout = new QStackedLayout();
+
+  initGeneralSettingsWidget();
+  int general_panel_idx = panel_layout->addWidget(general_settings_widget);
+  general_settings_label = new ClickableLabel(lWidget, general_panel_idx);
+  general_settings_label->setText("General");
+  left_panel_layout->addWidget(general_settings_label);
+
+  initDeviceSettingsWidget();
+  int device_panel_idx = panel_layout->addWidget(device_settings_widget);
+  device_settings_label = new ClickableLabel(lWidget, device_panel_idx);
+  device_settings_label->setText("Device");
+  left_panel_layout->addWidget(device_settings_label);
+
+  network_settings_label = new ClickableLabel(lWidget);
+  network_settings_label->setText("Network");
+  left_panel_layout->addWidget(network_settings_label);
+
+  developer_settings_label = new ClickableLabel(lWidget);
+  developer_settings_label->setText("Developer");
+  left_panel_layout->addWidget(developer_settings_label);
+
+  left_panel_layout->addStretch(3);
+  lWidget->setLayout(left_panel_layout);
+
+  QSizePolicy rightPolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+  rightPolicy.setHorizontalStretch(3);
+  rWidget->setSizePolicy(rightPolicy);
+  rWidget->setLayout(panel_layout);
 
   QHBoxLayout *panel_separator_layout = new QHBoxLayout();
+
   panel_separator_layout->addWidget(lWidget);
   panel_separator_layout->addWidget(rWidget);
 
   setLayout(panel_separator_layout);
-  //panel_layout = new QStackedLayout();
+
+  // Layout switching signals
+  QObject::connect(general_settings_label, SIGNAL(selected(int)), this, SLOT(selected(int)));
+  QObject::connect(device_settings_label, SIGNAL(selected(int)), this, SLOT(selected(int)));
+  QObject::connect(network_settings_label, SIGNAL(selected(int)), this, SLOT(selected(int)));
+  QObject::connect(developer_settings_label, SIGNAL(selected(int)), this, SLOT(selected(int)));
 
   // close button
   //QPushButton *close_button = new QPushButton("X");

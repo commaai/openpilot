@@ -3,7 +3,9 @@
 #include <QDebug>
 #include <QEvent>
 
-ClickableLabel::ClickableLabel(QWidget *parent) : QLabel(parent) {
+ClickableLabel::ClickableLabel(QWidget *parent, int index)
+  : QLabel(parent),
+    index(index) {
   setStyleSheet(R"(color: #8a8a8a;)");
 }
 
@@ -18,6 +20,5 @@ void ClickableLabel::leaveEvent(QEvent *e) {
 }
 
 void ClickableLabel::mousePressEvent(QMouseEvent *e) {
-  // TODO: Toggle righthand layouts here.
-  // Either send a signal or pass in the layout to this class.
+  if (index != -1) emit selected(index);
 }
