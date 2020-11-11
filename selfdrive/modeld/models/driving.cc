@@ -352,17 +352,24 @@ void model_publish_v2(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
   // lane lines
   auto lane_lines = framed.initLaneLines(4);
   float lane_line_probs_arr[4];
+  float lane_line_stds_arr[4];
   for (int i = 0; i < 4; i++) {
     fill_xyzt(lane_lines[i], &net_outputs.lane_lines[i*TRAJECTORY_SIZE*2], 2, -1, plan_t_arr);
     lane_line_probs_arr[i] = sigmoid(net_outputs.lane_lines_prob[i]);
+    lane_line_stds_arr[i] = exp(net_outputs.lane_lines[2*TRAJECTORY_SIZE*(4 + i)]);
   }
   kj::ArrayPtr<const float> lane_line_probs(lane_line_probs_arr, 4);
   framed.setLaneLineProbs(lane_line_probs);
+  framed.setLaneLineStds(lane_line_stds_arr);
 
   // road edges
   auto road_edges = framed.initRoadEdges(2);
-  fill_xyzt(road_edges[0], &net_outputs.road_edges[0*TRAJECTORY_SIZE*2], 2, -1, plan_t_arr);
-  fill_xyzt(road_edges[1], &net_outputs.road_edges[1*TRAJECTORY_SIZE*2], 2, -1, plan_t_arr);
+  float road_edge_stds_arr[2];
+  for (int i = 0; i < 2; i++) {
+    fill_xyzt(road_edges[i], &net_outputs.road_edges[i*TRAJECTORY_SIZE*2], 2, -1, plan_t_arr);
+    road_edge_stds_arr[i] = exp(net_outputs.road_edges[2*TRAJECTORY_SIZE*(2 + i)]);
+  }
+  framed.setRoadEdgeStds(road_edge_stds_arr);
 
   // meta
   auto meta = framed.initMeta();
