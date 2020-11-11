@@ -201,8 +201,6 @@ jobs:
           key: SCONS_CACHE+${{ hashFiles('.github/workflows/test.yaml') }}
       - name: Build Docker image
         run: eval "$BUILD"
-      - name: Set permissions
-        run: chmod -R 777 /tmp
       - name: Run unit tests
         run: |
           $PERSIST_WITH_ONLY_SCONS_CACHE "cd /tmp/openpilot && \
