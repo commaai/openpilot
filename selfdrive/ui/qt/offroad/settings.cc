@@ -200,7 +200,6 @@ void SettingsWindow::setActivePanel() {
 
 void SettingsWindow::selected(int index) {
   Q_ASSERT(index >= 0);
-  qDebug() << "panel:" << index;
   panel_layout->setCurrentIndex(index);
 }
 
@@ -450,6 +449,100 @@ void SettingsWindow::initNetworkSettingsWidget() {
   network_settings_widget->setLayout(network_settings_layout);
 }
 
+void SettingsWindow::initDeveloperSettingsWidget() {
+  developer_settings_widget = newSettingsPanelBaseWidget();
+
+  QVBoxLayout *developer_settings_layout = new QVBoxLayout();
+  auto text = new QLabel("Developer");
+  text->setStyleSheet(R"(
+      font-size: 50px;
+      font-weight: bold;
+    )");
+  developer_settings_layout->addStretch(1);
+  developer_settings_layout->addWidget(text);
+  developer_settings_layout->addStretch(2);
+
+  // Community Features
+  {
+    QHBoxLayout *row_layout = new QHBoxLayout();
+    auto label = new QLabel("Community Features");
+    QSizePolicy text_policy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+    text_policy.setHorizontalStretch(13);
+    label->setSizePolicy(text_policy);
+    row_layout->addWidget(label);
+    auto toggle_switch = new Switch();
+    QSizePolicy switch_policy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+    switch_policy.setHorizontalStretch(1);
+    toggle_switch->setSizePolicy(switch_policy);
+    row_layout->addWidget(toggle_switch);
+    developer_settings_layout->addLayout(row_layout);
+    developer_settings_layout->addStretch(1);
+    developer_settings_layout->addWidget(newLinebreakWidget());
+    developer_settings_layout->addStretch(1);
+  }
+
+  // SSH
+  {
+    QHBoxLayout *row_layout = new QHBoxLayout();
+    auto label = new QLabel("SSH");
+    QSizePolicy text_policy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+    text_policy.setHorizontalStretch(13);
+    label->setSizePolicy(text_policy);
+    row_layout->addWidget(label);
+    auto toggle_switch = new Switch();
+    QSizePolicy switch_policy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+    switch_policy.setHorizontalStretch(1);
+    toggle_switch->setSizePolicy(switch_policy);
+    row_layout->addWidget(toggle_switch);
+    developer_settings_layout->addLayout(row_layout);
+    developer_settings_layout->addStretch(1);
+    developer_settings_layout->addWidget(newLinebreakWidget());
+    developer_settings_layout->addStretch(1);
+  }
+
+  // Authorized SSH Keys
+  {
+    QHBoxLayout *row_layout = new QHBoxLayout();
+    auto label = new QLabel("Authorized SSH keys");
+    QSizePolicy text_policy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+    text_policy.setHorizontalStretch(6);
+    label->setSizePolicy(text_policy);
+    row_layout->addWidget(label);
+
+    QSizePolicy btn_policy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+    btn_policy.setHorizontalStretch(1);
+    auto btn = new QPushButton("EDIT");
+    btn->setSizePolicy(btn_policy);
+    row_layout->addWidget(btn);
+    developer_settings_layout->addLayout(row_layout);
+    developer_settings_layout->addStretch(1);
+    developer_settings_layout->addWidget(newLinebreakWidget());
+    developer_settings_layout->addStretch(1);
+  }
+
+  // Version
+  {
+    QHBoxLayout *row_layout = new QHBoxLayout();
+    auto label = new QLabel("Version");
+    QSizePolicy text_policy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+    text_policy.setHorizontalStretch(5);
+    label->setSizePolicy(text_policy);
+    row_layout->addWidget(label);
+
+    QSizePolicy dongle_policy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+    dongle_policy.setHorizontalStretch(1);
+    auto dongle_label = new QLabel("openpilot v0.7.7");
+    dongle_label->setStyleSheet(R"(
+      color: #b5b5b5;
+    )");
+    dongle_label->setSizePolicy(dongle_policy);
+    row_layout->addWidget(dongle_label);
+    developer_settings_layout->addLayout(row_layout);
+  }
+  developer_settings_layout->addStretch(4);
+  developer_settings_widget->setLayout(developer_settings_layout);
+}
+
 SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
 
   QWidget *lWidget = new QWidget();
@@ -508,7 +601,9 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
   network_settings_label->setText("Network");
   left_panel_layout->addWidget(network_settings_label);
 
-  developer_settings_label = new ClickableLabel(lWidget);
+  initDeveloperSettingsWidget();
+  int developer_panel_idx = panel_layout->addWidget(developer_settings_widget);
+  developer_settings_label = new ClickableLabel(lWidget, developer_panel_idx);
   developer_settings_label->setText("Developer");
   left_panel_layout->addWidget(developer_settings_label);
 
