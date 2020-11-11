@@ -204,9 +204,6 @@ env = Environment(
   tools=["default", "cython"],
   toolpath = [os.path.join(os.getcwd(),'site_scons/site_tools')]
 )
-# print(os.path.join(os.getcwd(),'site_scons/site_tools'))
-# for x in os.listdir(os.path.join(os.getcwd(),'site_scons/site_tools')):
-#   print(x)
   
 if os.environ.get('SCONS_CACHE'):
   cache_dir = '/tmp/scons_cache'
@@ -246,7 +243,7 @@ def abspath(x):
 
 #Cython build enviroment
 envB = env.Clone()
-envB["CCFLAGS"].remove("-Werror")
+#envB["CCFLAGS"].remove("-Werror")
 
 added_libs = []
 if arch == "Darwin":
