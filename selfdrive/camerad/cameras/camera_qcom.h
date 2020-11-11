@@ -142,7 +142,8 @@ typedef struct MultiCameraState {
   CameraState rear;
   CameraState front;
 
-  SubMaster *sm;
+  SubMaster *sm_driver;
+  SubMaster *sm_sensor;
   PubMaster *pm;
 
 } MultiCameraState;

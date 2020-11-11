@@ -333,7 +333,8 @@ void cameras_init(MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
   s->rear.device = s->device;
   s->front.device = s->device;
 
-  s->sm = new SubMaster({"driverState", "sensorEvents"});
+  s->sm_driver = new SubMaster({"driverState"});
+  s->sm_sensor = new SubMaster({"sensorEvents"});
   s->pm = new PubMaster({"frame", "frontFrame", "thumbnail"});
 
   int err;
@@ -2046,7 +2047,7 @@ static void* ops_thread(void* arg) {
 }
 
 void camera_process_front(MultiCameraState *s, CameraState *c, int cnt) {
-  common_camera_process_front(s->sm, s->pm, c, cnt);
+  common_camera_process_front(s->sm_driver, s->pm, c, cnt);
 }
 
 // called by processing_thread
@@ -2055,11 +2056,11 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
   // cache rgb roi and write to cl
 
   // gz compensation
-  s->sm->update(0);
-  if (s->sm->updated("sensorEvents")) {
+  s->sm_sensor->update(0);
+  if (s->sm_sensor->updated("sensorEvents")) {
     float vals[3] = {0.0};
     bool got_accel = false;
-    auto sensor_events = (*(s->sm))["sensorEvents"].getSensorEvents();
+    auto sensor_events = (*(s->sm_sensor))["sensorEvents"].getSensorEvents();
     for (auto sensor_event : sensor_events) {
       if (sensor_event.which() == cereal::SensorEventData::ACCELERATION) {
         auto v = sensor_event.getAcceleration().getV();
@@ -2291,6 +2292,7 @@ void cameras_close(MultiCameraState *s) {
 
   clReleaseProgram(s->prg_rgb_laplacian);
   clReleaseKernel(s->krnl_rgb_laplacian);
-  delete s->sm;
+  delete s->sm_driver;
+  delete s->sm_sensor;
   delete s->pm;
 }
