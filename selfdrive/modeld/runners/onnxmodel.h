@@ -1,15 +1,13 @@
-#ifndef TFMODEL_H
-#define TFMODEL_H
+#ifndef ONNXMODEL_H
+#define ONNXMODEL_H
 
 #include <stdlib.h>
 #include "runmodel.h"
 
-struct TFState;
-
-class TFModel : public RunModel {
+class ONNXModel : public RunModel {
 public:
-  TFModel(const char *path, float *output, size_t output_size, int runtime);
-	~TFModel();
+  ONNXModel(const char *path, float *output, size_t output_size, int runtime);
+	~ONNXModel();
   void addRecurrent(float *state, int state_size);
   void addDesire(float *state, int state_size);
   void addTrafficConvention(float *state, int state_size);
