@@ -3,7 +3,6 @@ import numpy as np
 from selfdrive.car.honda.interface import CarInterface
 from selfdrive.controls.lib.lateral_mpc import libmpc_py
 from selfdrive.controls.lib.vehicle_model import VehicleModel
-from selfdrive.controls.lib.lane_planner import calc_d_poly
 
 
 def run_mpc(v_ref=30., x_init=0., y_init=0., psi_init=0., delta_init=0.,
@@ -25,7 +24,7 @@ def run_mpc(v_ref=30., x_init=0., y_init=0., psi_init=0., delta_init=0.,
   p_p = poly_p.copy()
   p_p[3] += poly_shift
 
-  d_poly = calc_d_poly(p_l, p_r, p_p, l_prob, r_prob, lane_width, v_ref)
+  d_poly = p_p
 
   CP = CarInterface.get_params("HONDA CIVIC 2016 TOURING")
   VM = VehicleModel(CP)

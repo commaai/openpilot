@@ -5,6 +5,8 @@ import shutil
 import subprocess
 import sys
 import platform
+import numpy as np
+from sysconfig import get_paths
 
 TICI = os.path.isfile('/TICI')
 Decider('MD5-timestamp')
@@ -128,6 +130,10 @@ else:
 # change pythonpath to this
 lenv["PYTHONPATH"] = Dir("#").path
 
+#Get the path for Python.h for cython linking
+python_path = get_paths()['include']
+numpy_path = np.get_include()
+
 env = Environment(
   ENV=lenv,
   CCFLAGS=[
@@ -159,6 +165,7 @@ env = Environment(
     "#phonelibs/linux/include",
     "#phonelibs/snpe/include",
     "#phonelibs/nanovg",
+    "#selfdrive/boardd",
     "#selfdrive/common",
     "#selfdrive/camerad",
     "#selfdrive/camerad/include",
@@ -181,11 +188,14 @@ env = Environment(
   CXXFLAGS=["-std=c++1z"] + cxxflags,
   LIBPATH=libpath + [
     "#cereal",
+    "#selfdrive/boardd",
     "#selfdrive/common",
     "#phonelibs",
-  ]
+  ],
+  CYTHONCFILESUFFIX=".cpp",
+  tools=["default", "cython"]
 )
-
+  
 if os.environ.get('SCONS_CACHE'):
   cache_dir = '/tmp/scons_cache'
 
@@ -221,6 +231,25 @@ def abspath(x):
   else:
     # rpath works elsewhere
     return x[0].path.rsplit("/", 1)[1][:-3]
+
+#Cython build enviroment
+envCython = env.Clone()
+envCython["CPPPATH"] += [python_path, numpy_path]
+envCython["CCFLAGS"] += ["-Wno-#warnings", "-Wno-deprecated-declarations"]
+
+python_libs = []
+if arch == "Darwin":
+  envCython["LINKFLAGS"]=["-bundle", "-undefined", "dynamic_lookup"]
+elif arch == "aarch64":
+  envCython["LINKFLAGS"]=["-shared"]
+
+  python_libs.append(os.path.basename(python_path))
+else:
+  envCython["LINKFLAGS"]=["-pthread", "-shared"]
+
+envCython["LIBS"] = python_libs
+
+Export('envCython')
 
 # still needed for apks
 zmq = 'zmq'
@@ -276,7 +305,6 @@ SConscript(['selfdrive/ui/SConscript'])
 
 if arch != "Darwin":
   SConscript(['selfdrive/logcatd/SConscript'])
-
 
 if arch == "x86_64":
   SConscript(['tools/lib/index_log/SConscript'])
