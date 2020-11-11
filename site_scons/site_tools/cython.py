@@ -1,5 +1,6 @@
 import SCons
 from SCons.Action import Action
+
 cythonAction = Action("$CYTHONCOM")
 
 def create_builder(env):
@@ -12,7 +13,6 @@ def create_builder(env):
                   suffix = cython_suffix_emitter,
                   single_source = 1)
         env['BUILDERS']['Cython'] = cython
-
     return cython
 
 def cython_suffix_emitter(env, source):
@@ -32,5 +32,6 @@ def generate(env):
     c_file.add_action('.py', cythonAction)
 
     create_builder(env)
+
 def exists(env):
   return True
