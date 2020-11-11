@@ -1,7 +1,4 @@
-#include <QTimer>
-#include <QLabel>
 #include <QWidget>
-#include <QPixmap>
 #include <QStackedLayout>
 
 class Setup : public QWidget {

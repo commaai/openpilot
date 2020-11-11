@@ -4,10 +4,8 @@
 #include <QLabel>
 #include <QWidget>
 #include <QPushButton>
-#include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QApplication>
-#include <QDesktopWidget>
 
 #include "setup.hpp"
 
