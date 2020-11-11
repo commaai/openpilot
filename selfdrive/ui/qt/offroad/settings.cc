@@ -217,9 +217,9 @@ inline QWidget* SettingsWindow::newLinebreakWidget() {
   return line_break;
 }
 
-void SettingsWindow::initGeneralSettingsWidget() {
-  general_settings_widget = new QWidget();
-  general_settings_widget->setStyleSheet(R"(
+inline QWidget* SettingsWindow::newSettingsPanelBaseWidget() {
+  auto base_widget = new QWidget();
+  base_widget->setStyleSheet(R"(
     * {
       background-color: #292929;
       font-size: 30px;
@@ -227,12 +227,27 @@ void SettingsWindow::initGeneralSettingsWidget() {
       padding-right: 30px;
       padding-top: 10px;
     }
+
+    QPushButton {
+      background-color: #393939;
+      font-size: 20px;
+      padding-bottom: 12px;
+      border-radius: 20px;
+    }
+    QPushButton:hover {
+      background-color:  #4d4d4d;
+    }
   )");
+
+  return base_widget;
+}
+
+void SettingsWindow::initGeneralSettingsWidget() {
+  general_settings_widget = newSettingsPanelBaseWidget();
 
   QVBoxLayout *general_settings_layout = new QVBoxLayout();
 
   {
-    QHBoxLayout *row_layout = new QHBoxLayout();
     auto text = new QLabel("General");
     text->setStyleSheet(R"(
       font-size: 50px;
@@ -242,15 +257,8 @@ void SettingsWindow::initGeneralSettingsWidget() {
     text_policy.setHorizontalStretch(8);
     text->setSizePolicy(text_policy);
 
-    auto btn = new QPushButton("?");
-    QSizePolicy btn_policy(QSizePolicy::Preferred, QSizePolicy::Preferred);
-    btn_policy.setHorizontalStretch(1);
-    btn->setSizePolicy(btn_policy);
-
-    row_layout->addWidget(text);
-    row_layout->addWidget(btn);
     general_settings_layout->addStretch(1);
-    general_settings_layout->addLayout(row_layout);
+    general_settings_layout->addWidget(text);
     general_settings_layout->addStretch(2);
   }
 
@@ -283,26 +291,7 @@ void SettingsWindow::initGeneralSettingsWidget() {
 }
 
 void SettingsWindow::initDeviceSettingsWidget() {
-  device_settings_widget = new QWidget();
-  device_settings_widget->setStyleSheet(R"(
-    * {
-      background-color: #292929;
-      font-size: 30px;
-      padding-left: 30px;
-      padding-right: 30px;
-      padding-top: 10px;
-    }
-
-    QPushButton {
-      background-color: #393939;
-      font-size: 20px;
-      padding-bottom: 12px;
-      border-radius: 20px;
-    }
-    QPushButton:hover {
-      background-color:  #4d4d4d;
-    }
-  )");
+  device_settings_widget = newSettingsPanelBaseWidget();
 
   QVBoxLayout *device_settings_layout = new QVBoxLayout();
   auto text = new QLabel("Device");
@@ -310,13 +299,8 @@ void SettingsWindow::initDeviceSettingsWidget() {
       font-size: 50px;
       font-weight: bold;
     )");
-  QSizePolicy text_policy(QSizePolicy::Preferred, QSizePolicy::Preferred);
-  text_policy.setHorizontalStretch(8);
-  text->setSizePolicy(text_policy);
-  device_settings_layout->addWidget(text);
-
   device_settings_layout->addStretch(1);
-  device_settings_widget->setLayout(device_settings_layout);
+  device_settings_layout->addWidget(text);
   device_settings_layout->addStretch(2);
 
   // Camera calibration
@@ -334,10 +318,74 @@ void SettingsWindow::initDeviceSettingsWidget() {
     btn->setSizePolicy(btn_policy);
     row_layout->addWidget(btn);
     device_settings_layout->addLayout(row_layout);
+    device_settings_layout->addStretch(1);
     device_settings_layout->addWidget(newLinebreakWidget());
+    device_settings_layout->addStretch(1);
   }
 
   // Driver Camera View
+  {
+    QHBoxLayout *row_layout = new QHBoxLayout();
+    auto label = new QLabel("Driver camera view");
+    QSizePolicy text_policy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+    text_policy.setHorizontalStretch(6);
+    label->setSizePolicy(text_policy);
+    row_layout->addWidget(label);
+
+    QSizePolicy btn_policy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+    btn_policy.setHorizontalStretch(1);
+    auto btn = new QPushButton("PREVIEW");
+    btn->setSizePolicy(btn_policy);
+    row_layout->addWidget(btn);
+    device_settings_layout->addLayout(row_layout);
+    device_settings_layout->addStretch(1);
+    device_settings_layout->addWidget(newLinebreakWidget());
+    device_settings_layout->addStretch(1);
+  }
+
+  // Comma Connect (TODO: need the checkmark icon)
+  {
+    QHBoxLayout *row_layout = new QHBoxLayout();
+    auto label = new QLabel("Comma Connect");
+    QSizePolicy text_policy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+    text_policy.setHorizontalStretch(9);
+    label->setSizePolicy(text_policy);
+    row_layout->addWidget(label);
+
+    QSizePolicy btn_policy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+    btn_policy.setHorizontalStretch(1);
+    auto btn = new QPushButton("+");
+    btn->setEnabled(false);
+    btn->setSizePolicy(btn_policy);
+    row_layout->addWidget(btn);
+    device_settings_layout->addLayout(row_layout);
+    device_settings_layout->addStretch(1);
+    device_settings_layout->addWidget(newLinebreakWidget());
+    device_settings_layout->addStretch(1);
+  }
+
+  // Dongle ID (TODO: get rid of placeholder text)
+  {
+    QHBoxLayout *row_layout = new QHBoxLayout();
+    auto label = new QLabel("Dongle ID");
+    QSizePolicy text_policy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+    text_policy.setHorizontalStretch(5);
+    label->setSizePolicy(text_policy);
+    row_layout->addWidget(label);
+
+    QSizePolicy dongle_policy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+    dongle_policy.setHorizontalStretch(1);
+    auto dongle_label = new QLabel("ea79584g45a1bbca1");
+    dongle_label->setStyleSheet(R"(
+      color: #b5b5b5;
+    )");
+    dongle_label->setSizePolicy(dongle_policy);
+    row_layout->addWidget(dongle_label);
+    device_settings_layout->addLayout(row_layout);
+  }
+
+  device_settings_layout->addStretch(4);
+  device_settings_widget->setLayout(device_settings_layout);
 }
 
 SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {

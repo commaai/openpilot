@@ -31,6 +31,8 @@ public:
 
 private:
   inline QWidget* newLinebreakWidget();
+  inline QWidget* newSettingsPanelBaseWidget();
+
   void initGeneralSettingsWidget();
   void initDeviceSettingsWidget();
 
