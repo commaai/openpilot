@@ -135,11 +135,6 @@ lenv["PYTHONPATH"] = Dir("#").path
 python_path = get_paths()['include']
 numpy_path = np.get_include()
 
-Export("python_path")
-
-# for pfile in os.listdir(python_path):
-#   print(pfile)
-
 env = Environment(
   ENV=lenv,
   CCFLAGS=[
@@ -154,6 +149,8 @@ env = Environment(
     "-Wno-inconsistent-missing-override",
     "-Wno-c99-designator",
     "-Wno-reorder-init-list",
+    "-Wno-#warnings",
+    "-Wno-deprecated-declarations"
   ] + cflags + ccflags_asan,
 
   CPPPATH=cpppath + [
@@ -243,9 +240,6 @@ def abspath(x):
 
 #Cython build enviroment
 envB = env.Clone()
-#envB["CCFLAGS"].remove("-Werror")
-envB["CCFLAGS"].append("-Wno-deprecated-declarations")
-envB["CCFLAGS"].append("-Wno-#warnings")
 
 added_libs = []
 if arch == "Darwin":
