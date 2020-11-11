@@ -392,6 +392,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
       background-color: #000000;
       color: white;
       font-size: 50px;
+      font-family: inter;
     }
   )");
 }
