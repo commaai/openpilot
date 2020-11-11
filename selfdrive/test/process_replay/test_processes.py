@@ -22,7 +22,7 @@ segments = [
   ),
   Segment(
     car_brand="HONDA", # HONDA.CIVIC (NIDEC)
-    route="99c94dc769b5d96e|2019-08-03--14-19-59--2",
+    route="a74b011b32b51b56|2020-07-26--17-09-36--6",
     whitelist_procs=[],
     blacklist_procs=[]
   ),
@@ -62,15 +62,9 @@ segments = [
     whitelist_procs=[],
     blacklist_procs=[]
   ),
-  #Segment(
-  #  car_brand="CHRYSLER", # CHRYSLER.JEEP_CHEROKEE
-  #  route="b6e1317e1bfbefa6|2020-03-04--13-11-40",
-  #  whitelist_procs=[],
-  #  blacklist_procs=[]
-  #),
   Segment(
-    car_brand="SUBARU", # SUBARU.IMPREZA
-    route="7873afaf022d36e2|2019-07-03--18-46-44--0",
+    car_brand="SUBARU", # SUBARU.FORESTER
+    route="c321c6b697c5a5ff|2020-06-23--11-04-33--12",
     whitelist_procs=[],
     blacklist_procs=[]
   ),
