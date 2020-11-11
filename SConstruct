@@ -249,7 +249,9 @@ elif arch == "aarch64":
 else:
   envCython["LINKFLAGS"]=["-pthread", "-shared"]
 
-Export('envCython', 'python_libs')
+envCython["PYLIB"] = python_libs
+
+Export('envCython')
 
 # still needed for apks
 zmq = 'zmq'

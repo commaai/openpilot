@@ -1,3 +1,3 @@
-Import('envCython', 'python_libs')
+Import('envCython')
 
-envCython.Program('transformations.so', 'transformations.pyx', LIBS=python_libs)
+envCython.Program('transformations.so', 'transformations.pyx', LIBS=envCython["PYLIB"])
