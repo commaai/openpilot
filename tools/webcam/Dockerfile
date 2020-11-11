@@ -43,3 +43,4 @@ COPY ./opendbc /tmp/openpilot/opendbc
 COPY ./cereal /tmp/openpilot/cereal
 COPY ./panda /tmp/openpilot/panda
 COPY ./selfdrive /tmp/openpilot/selfdrive
+COPY ./site_scons /tmp/openpilot/site_scons
