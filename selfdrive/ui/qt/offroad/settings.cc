@@ -274,8 +274,14 @@ void SettingsWindow::initGeneralSettingsWidget() {
     QHBoxLayout *row_layout = new QHBoxLayout();
 
     auto label = new QLabel(text);
+    QSizePolicy text_policy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+    text_policy.setHorizontalStretch(13);
+    label->setSizePolicy(text_policy);
     row_layout->addWidget(label);
     auto toggle_switch = new Switch();
+    QSizePolicy switch_policy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+    switch_policy.setHorizontalStretch(1);
+    toggle_switch->setSizePolicy(switch_policy);
     row_layout->addWidget(toggle_switch);
     general_settings_layout->addLayout(row_layout);
 

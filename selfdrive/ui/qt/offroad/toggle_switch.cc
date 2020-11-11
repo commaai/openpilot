@@ -38,7 +38,7 @@ void Switch::paintEvent(QPaintEvent *e) {
         p.setBrush(_switch ? brush() : Qt::black);
         p.setOpacity(_switch ? 1 : 0.38);
         p.setRenderHint(QPainter::Antialiasing, true);
-        p.drawRoundedRect(QRect(_margin, _margin, width() - 2 * _margin, height() - 2 * _margin), 16.0, 16.0);
+        p.drawRoundedRect(QRect(_margin, _margin, width() - 2 * _margin, height() - 2 * _margin), 20.0, 20.0);
         p.setBrush(_thumb);
         p.setOpacity(1.0);
         p.setBrush(_switch ? QColor("#ffffff") : QColor("#bdbdbd"));
