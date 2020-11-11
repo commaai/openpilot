@@ -9,8 +9,8 @@
 
 #include "common.h"
 
-#define DEBUG(...)
-// #define DEBUG printf
+// #define DEBUG(...)
+#define DEBUG printf
 #define INFO printf
 
 
@@ -32,7 +32,7 @@ bool MessageState::parse(uint64_t sec, uint16_t ts_, uint8_t * dat) {
       tmp -= (tmp >> (sig.b2-1)) ? (1ULL << sig.b2) : 0; //signed
     }
 
-    DEBUG("parse 0x%X %s -> %lld\n", address, sig.name, tmp);
+    // DEBUG("parse 0x%X %s -> %lld\n", address, sig.name, tmp);
 
     if (sig.type == SignalType::HONDA_CHECKSUM) {
       if (honda_checksum(address, dat_be, size) != tmp) {
@@ -172,7 +172,7 @@ CANParser::CANParser(int abus, const std::string& dbc_name,
 void CANParser::UpdateCans(uint64_t sec, const capnp::List<cereal::CanData>::Reader& cans) {
     int msg_count = cans.size();
 
-    DEBUG("got %d messages\n", msg_count);
+    // DEBUG("got %d messages\n", msg_count);
 
     // parse the messages
     for (int i = 0; i < msg_count; i++) {
