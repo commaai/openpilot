@@ -240,14 +240,6 @@ def abspath(x):
 envB = env.Clone()
 
 added_libs = []
-if arch == "Darwin":
-  envB["LINKFLAGS"]=["-bundle", "-undefined", "dynamic_lookup"]
-elif arch == "aarch64":
-  envB["LINKFLAGS"]=["-shared"]
-
-  added_libs.append(python_path.split("/")[-1])
-else:
-  envB["LINKFLAGS"]=["-pthread", "-shared"]
 
 Export('envB', 'added_libs')
 # still needed for apks
