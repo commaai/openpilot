@@ -53,7 +53,7 @@ bool car_space_to_full_frame(const UIState *s, float in_x, float in_y, float in_
   *out_x = KEp.v[0] / KEp.v[2];
   *out_y = KEp.v[1] / KEp.v[2];
 
-  return *out_x >= 0 && *out_y >= 0;
+  return *out_x >= 0 && *out_x <= s->fb_w && *out_y >= 0 && *out_y <= s->fb_h;
 }
 
 
@@ -133,9 +133,9 @@ static void ui_draw_line(UIState *s, const vertex_data *v, const int cnt, NVGcol
   if (cnt == 0) return;
 
   nvgBeginPath(s->vg);
-  nvgMoveTo(s->vg, std::clamp<float>(v[0].x, 0, s->fb_w), std::clamp<float>(v[0].y, 0, s->fb_h));
+  nvgMoveTo(s->vg, v[0].x, v[0].y);
   for (int i = 1; i < cnt; i++) {
-    nvgLineTo(s->vg, std::clamp<float>(v[i].x, 0, s->fb_w), std::clamp<float>(v[i].y, 0, s->fb_h));
+    nvgLineTo(s->vg, v[i].x, v[i].y);
   }
   nvgClosePath(s->vg);
   if (color) {
