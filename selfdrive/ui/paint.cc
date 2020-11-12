@@ -161,12 +161,15 @@ static void update_track_data(UIState *s, const cereal::ModelDataV2::XYZTData::R
 
 
   vertex_data *v = &pvd->v[0];
-  for (int i = 0; line.getX()[i] <= path_length and i < TRAJECTORY_SIZE; i++) {
-    v += car_space_to_full_frame(s, line.getX()[i], -line.getY()[i] - off, -line.getZ()[i], &v->x, &v->y);
+  auto line_x = line.getX();
+  auto line_y = line.getY();
+  auto line_z = line.getZ();
+  for (int i = 0; line_x[i] <= path_length and i < TRAJECTORY_SIZE; i++) {
+    v += car_space_to_full_frame(s, line_x[i], -line_y[i] - off, -line_z[i], &v->x, &v->y);
     max_idx = i;
   }
   for (int i = max_idx; i >= 0; i--) {
-    v += car_space_to_full_frame(s, line.getX()[i], -line.getY()[i] + off, -line.getZ()[i], &v->x, &v->y);
+    v += car_space_to_full_frame(s, line_x[i], -line_y[i] + off, -line_z[i], &v->x, &v->y);
   }
   pvd->cnt = v - pvd->v;
 }
@@ -212,12 +215,15 @@ static void update_line_data(UIState *s, const cereal::ModelDataV2::XYZTData::Re
   // TODO check that this doesn't overflow max vertex buffer
   int max_idx;
   vertex_data *v = &pvd->v[0];
-  for (int i = 0; ((i < TRAJECTORY_SIZE) and (line.getX()[i] < fmax(MIN_DRAW_DISTANCE, max_distance))); i++) {
-    v += car_space_to_full_frame(s, line.getX()[i], -line.getY()[i] - off, -line.getZ()[i] + 1.22, &v->x, &v->y);
+  auto line_x = line.getX();
+  auto line_y = line.getY();
+  auto line_z = line.getZ();
+  for (int i = 0; ((i < TRAJECTORY_SIZE) and (line_x[i] < fmax(MIN_DRAW_DISTANCE, max_distance))); i++) {
+    v += car_space_to_full_frame(s, line_x[i], -line_y[i] - off, -line_z[i] + 1.22, &v->x, &v->y);
     max_idx = i;
   }
   for (int i = max_idx - 1; i > 0; i--) {
-    v += car_space_to_full_frame(s, line.getX()[i], -line.getY()[i] + off, -line.getZ()[i] + 1.22, &v->x, &v->y);
+    v += car_space_to_full_frame(s, line_x[i], -line_y[i] + off, -line_z[i] + 1.22, &v->x, &v->y);
   }
   pvd->cnt = v - pvd->v;
 }
@@ -226,10 +232,11 @@ static void update_line_data(UIState *s, const cereal::ModelDataV2::XYZTData::Re
 static void ui_draw_vision_lane_lines(UIState *s) {
   const UIScene *scene = &s->scene;
   // paint lanelines
+  const bool model_updated = s->sm->updated("modelV2");
   line_vertices_data *pvd_ll = &s->lane_line_vertices[0];
-  for (int ll_idx = 0; ll_idx < 4; ll_idx++) {
-    if(s->sm->updated("modelV2")) {
-      update_line_data(s, scene->model.getLaneLines()[ll_idx], 0.025*scene->model.getLaneLineProbs()[ll_idx], pvd_ll + ll_idx, scene->max_distance);
+  for (int ll_idx = 0; ll_idx < ARRAYSIZE(scene->lane_line_probs); ll_idx++) {
+    if(model_updated) {
+      update_line_data(s, scene->model.getLaneLines()[ll_idx], 0.025*scene->lane_line_probs[ll_idx], pvd_ll + ll_idx, scene->max_distance);
     }
     NVGcolor color = nvgRGBAf(1.0, 1.0, 1.0, scene->lane_line_probs[ll_idx]);
     ui_draw_line(s, (pvd_ll + ll_idx)->v, (pvd_ll + ll_idx)->cnt, &color, nullptr);
@@ -237,8 +244,8 @@ static void ui_draw_vision_lane_lines(UIState *s) {
   
   // paint road edges
   line_vertices_data *pvd_re = &s->road_edge_vertices[0];
-  for (int re_idx = 0; re_idx < 2; re_idx++) {
-    if(s->sm->updated("modelV2")) {
+  for (int re_idx = 0; re_idx < ARRAYSIZE(scene->road_edge_stds); re_idx++) {
+    if(model_updated) {
       update_line_data(s, scene->model.getRoadEdges()[re_idx], 0.025, pvd_re + re_idx, scene->max_distance);
     }
     NVGcolor color = nvgRGBAf(1.0, 0.0, 0.0, std::clamp<float>(1.0-scene->road_edge_stds[re_idx], 0.0, 1.0));
@@ -246,7 +253,7 @@ static void ui_draw_vision_lane_lines(UIState *s) {
   }
   
   // paint path
-  if(s->sm->updated("modelV2")) {
+  if(model_updated) {
     update_track_data(s, scene->model.getPosition(), &s->track_vertices);
   }
   ui_draw_track(s, &s->track_vertices);

@@ -175,17 +175,19 @@ void update_sockets(UIState *s) {
   if (sm.updated("modelV2")) {
     scene.model = sm["modelV2"].getModelV2();
     scene.max_distance = fmin(scene.model.getPosition().getX()[TRAJECTORY_SIZE - 1], MAX_DRAW_DISTANCE);
-    for (int ll_idx = 0; ll_idx < 4; ll_idx++) {
-      if (scene.model.getLaneLineProbs().size() > ll_idx) {
-        scene.lane_line_probs[ll_idx] = scene.model.getLaneLineProbs()[ll_idx];
+    auto ll_probs = scene.model.getLaneLineProbs();
+    for (int ll_idx = 0; ll_idx < ARRAYSIZE(scene.lane_line_probs); ll_idx++) {
+      if (ll_probs.size() > ll_idx) {
+        scene.lane_line_probs[ll_idx] = ll_probs[ll_idx];
       } else {
         scene.lane_line_probs[ll_idx] = 0.0;
       }
     }
 
-    for (int re_idx = 0; re_idx < 2; re_idx++) {
-      if (scene.model.getRoadEdgeStds().size() > re_idx) {
-        scene.road_edge_stds[re_idx] = scene.model.getRoadEdgeStds()[re_idx];
+    auto re_stds = scene.model.getRoadEdgeStds();
+    for (int re_idx = 0; re_idx < ARRAYSIZE(scene.road_edge_stds); re_idx++) {
+      if (re_stds.size() > re_idx) {
+        scene.road_edge_stds[re_idx] = re_stds[re_idx];
       } else {
         scene.road_edge_stds[re_idx] = 1.0;
       }
