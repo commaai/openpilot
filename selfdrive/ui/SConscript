@@ -79,5 +79,5 @@ else:
 
   # setup and installer
   if "BUILD_SETUP" in os.environ:
-    qt_env.Program("qt/setup/setup", ["qt/setup/setup.cc"], LIBS=qt_libs + libs)
+    qt_env.Program("qt/setup/setup", ["qt/setup/setup.cc"], LIBS=qt_libs + libs + ['curl'])
     qt_env.Program("qt/setup/installer", ["qt/setup/installer.cc"], LIBS=qt_libs + libs)

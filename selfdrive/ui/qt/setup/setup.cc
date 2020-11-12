@@ -1,4 +1,5 @@
-#include <cstdlib>
+#include <stdio.h>
+#include <curl/curl.h>
 
 #include <QString>
 #include <QLabel>
@@ -16,6 +17,25 @@
 #include <wayland-client-protocol.h>
 #endif
 
+#include <iostream>
+
+
+int download(std::string url) {
+  CURL *curl;
+  curl = curl_easy_init();
+  if (!curl) return -1;
+
+  FILE *fp;
+  fp = fopen("/tmp/installer", "wb");
+  curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+  curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, NULL);
+  curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
+  curl_easy_setopt (curl, CURLOPT_VERBOSE, 1L);
+  curl_easy_perform(curl);
+  curl_easy_cleanup(curl);
+  fclose(fp);
+  return 0;
+}
 
 QLabel * title_label(QString text) {
   QLabel *l = new QLabel(text);
@@ -80,14 +100,12 @@ QWidget * Setup::software_selection() {
 
   const char* env_url = getenv("CUSTOM_URL");
   QString default_url = env_url == NULL ? "" : QString::fromStdString(env_url);
-  QLineEdit *url_input = new QLineEdit(default_url);
+  url_input = new QLineEdit(default_url);
   url_input->setStyleSheet(R"(
-    QLineEdit {
-      color: black;
-      background-color: white;
-      font-size: 55px;
-      padding: 40px;
-    }
+    color: black;
+    background-color: white;
+    font-size: 55px;
+    padding: 40px;
   )");
   main_layout->addWidget(url_input);
 
@@ -112,6 +130,13 @@ QWidget * Setup::downloading() {
 
 void Setup::nextPage() {
   layout->setCurrentIndex(layout->currentIndex() + 1);
+
+  // start download
+  if (layout->currentIndex() == layout->count() - 1)  {
+    std::string url = url_input->text().toStdString();
+    std::cout << "downloading " << url << std::endl;
+    download(url);
+  }
 }
 
 Setup::Setup(QWidget *parent) {

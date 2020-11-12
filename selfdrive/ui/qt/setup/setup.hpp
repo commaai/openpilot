@@ -1,4 +1,5 @@
 #include <QWidget>
+#include <QLineEdit>
 #include <QStackedLayout>
 
 class Setup : public QWidget {
@@ -9,6 +10,8 @@ public:
 
 private:
   QStackedLayout *layout;
+
+  QLineEdit *url_input;
 
   QWidget *getting_started();
   QWidget *network_setup();
