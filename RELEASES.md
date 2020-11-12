@@ -2,6 +2,7 @@ Version 0.8.0 (2020-XX-XX)
 ========================
  * New driving model: fully 3D and improved cut-in detection
  * UI draws 2 road edges, 4 lanelines and paths in 3D
+ * Major fixes to cut-in detection for openpilot longitudinal
  * Grey panda is no longer supported, upgrade to comma two or black panda
  * Lexus NX 2018 support thanks to matt12eagles!
  * Kia Niro EV 2020 support thanks to nickn17!
