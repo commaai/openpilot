@@ -67,9 +67,8 @@ class LanePlanner:
     self.l_poly[3] += CAMERA_OFFSET
     self.r_poly[3] += CAMERA_OFFSET
 
-    # Find current lanewidth
-    # This will improve behaviour when lanes suddenly widen
-    # these numbers were tested on 2000 segments and found to work well
+    # Reduce reliance on lanelines that are too far apart or
+    # will be in a few seconds
     l_prob, r_prob = self.l_prob, self.r_prob
     width_poly = self.l_poly - self.r_poly
     prob_mods = []
@@ -80,13 +79,13 @@ class LanePlanner:
     l_prob *= mod
     r_prob *= mod
 
-    # Remove reliance on uncertain lanelines
-    # these numbers were tested on 2000 segments and found to work well
+    # Reduce reliance on uncertain lanelines
     l_std_mod = interp(self.l_std, [.15, .3], [1.0, 0.0])
     r_std_mod = interp(self.r_std, [.15, .3], [1.0, 0.0])
     l_prob *= l_std_mod
     r_prob *= r_std_mod
 
+    # Find current lanewidth
     self.lane_width_certainty += 0.05 * (l_prob * r_prob - self.lane_width_certainty)
     current_lane_width = abs(self.l_poly[3] - self.r_poly[3])
     self.lane_width_estimate += 0.005 * (current_lane_width - self.lane_width_estimate)
