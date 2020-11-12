@@ -177,7 +177,7 @@ void update_sockets(UIState *s) {
     scene.max_distance = fmin(scene.model.getPosition().getX()[TRAJECTORY_SIZE - 1], MAX_DRAW_DISTANCE);
     auto ll_probs = scene.model.getLaneLineProbs();
     for (int ll_idx = 0; ll_idx < ARRAYSIZE(scene.lane_line_probs); ll_idx++) {
-      if (ll_probs.size() > ll_idx) {
+      if (ll_idx < ll_probs.size()) {
         scene.lane_line_probs[ll_idx] = ll_probs[ll_idx];
       } else {
         scene.lane_line_probs[ll_idx] = 0.0;
@@ -186,7 +186,7 @@ void update_sockets(UIState *s) {
 
     auto re_stds = scene.model.getRoadEdgeStds();
     for (int re_idx = 0; re_idx < ARRAYSIZE(scene.road_edge_stds); re_idx++) {
-      if (re_stds.size() > re_idx) {
+      if (re_idx < re_stds.size()) {
         scene.road_edge_stds[re_idx] = re_stds[re_idx];
       } else {
         scene.road_edge_stds[re_idx] = 1.0;
