@@ -60,7 +60,7 @@ def create_preglobal_steering_control(packer, apply_steer, frame, steer_step):
 def create_es_throttle_control(packer, fake_button, es_accel_msg):
 
   values = copy.copy(es_accel_msg)
-  values["Button"] = fake_button
+  values["Cruise_Button"] = fake_button
 
   values["Checksum"] = subaru_preglobal_checksum(packer, values, "ES_CruiseThrottle")
 
