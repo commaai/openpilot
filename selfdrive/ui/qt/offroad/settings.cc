@@ -195,12 +195,16 @@ QWidget * developer_panel() {
 
 void SettingsWindow::setActivePanel() {
   QPushButton *btn = qobject_cast<QPushButton*>(sender());
-  panel_layout->setCurrentWidget(panels[btn->text()]);
+  panel_layout->setCurrentWidget(_panels[btn->text()]);
 }
 
 void SettingsWindow::selected(int index) {
   Q_ASSERT(index >= 0);
+  ClickableLabel *last_selected = panels[panel_layout->currentIndex()];
+  ClickableLabel *now_selected = panels[index];
   panel_layout->setCurrentIndex(index);
+  last_selected->deemphasize();
+  now_selected->emphasize();
 }
 
 inline QWidget* SettingsWindow::newLinebreakWidget() {
@@ -546,7 +550,12 @@ void SettingsWindow::initDeveloperSettingsWidget() {
 SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
 
   QWidget *lWidget = new QWidget();
-  QWidget *rWidget = new QWidget();
+  QFrame *rWidget = new QFrame();
+  rWidget->setStyleSheet(R"(
+    * {
+      border-radius: 25px;
+    }
+  )");
   QSizePolicy leftPolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
   leftPolicy.setHorizontalStretch(1);
   lWidget->setSizePolicy(leftPolicy);
@@ -586,24 +595,29 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
   initGeneralSettingsWidget();
   int general_panel_idx = panel_layout->addWidget(general_settings_widget);
   general_settings_label = new ClickableLabel(lWidget, general_panel_idx);
+  panels[general_panel_idx] = general_settings_label;
   general_settings_label->setText("General");
+  general_settings_label->emphasize();
   left_panel_layout->addWidget(general_settings_label);
 
   initDeviceSettingsWidget();
   int device_panel_idx = panel_layout->addWidget(device_settings_widget);
   device_settings_label = new ClickableLabel(lWidget, device_panel_idx);
+  panels[device_panel_idx] = device_settings_label;
   device_settings_label->setText("Device");
   left_panel_layout->addWidget(device_settings_label);
 
   initNetworkSettingsWidget();
   int network_panel_idx = panel_layout->addWidget(network_settings_widget);
   network_settings_label = new ClickableLabel(lWidget, network_panel_idx);
+  panels[network_panel_idx] = network_settings_label;
   network_settings_label->setText("Network");
   left_panel_layout->addWidget(network_settings_label);
 
   initDeveloperSettingsWidget();
   int developer_panel_idx = panel_layout->addWidget(developer_settings_widget);
   developer_settings_label = new ClickableLabel(lWidget, developer_panel_idx);
+  panels[developer_panel_idx] = developer_settings_label;
   developer_settings_label->setText("Developer");
   left_panel_layout->addWidget(developer_settings_label);
 

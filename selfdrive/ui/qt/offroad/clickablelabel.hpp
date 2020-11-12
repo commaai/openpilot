@@ -7,6 +7,9 @@ class ClickableLabel : public QLabel {
 public:
     explicit ClickableLabel(QWidget *parent = nullptr, int index = -1);
 
+    void emphasize();
+    void deemphasize();
+
 signals:
     void selected(int);
 

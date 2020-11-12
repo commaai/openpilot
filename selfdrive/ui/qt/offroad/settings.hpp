@@ -7,6 +7,7 @@
 #include <QTimer>
 #include <QWidget>
 
+#define MAX_PANELS 4
 
 class ParamsToggle : public QFrame {
   Q_OBJECT
@@ -22,6 +23,8 @@ public slots:
   void checkboxClicked(int state);
 };
 
+
+class ClickableLabel;
 
 class SettingsWindow : public QWidget {
   Q_OBJECT
@@ -42,11 +45,12 @@ signals:
   void closeSettings();
 
 private:
-  std::map<QString, QWidget *> panels;
+  ClickableLabel* panels[MAX_PANELS];
+  std::map<QString, QWidget *> _panels;
   QStackedLayout *panel_layout = nullptr;
   QWidget *general_settings_widget, *device_settings_widget,
           *network_settings_widget, *developer_settings_widget;
-  QLabel *general_settings_label, *device_settings_label,
+  ClickableLabel *general_settings_label, *device_settings_label,
          *network_settings_label, *developer_settings_label;
 
 private slots:
