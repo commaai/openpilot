@@ -1,3 +1,4 @@
+import os
 Import('env', 'arch', 'real_arch', 'common', 'messaging', 'gpucommon', 'visionipc', 'cereal')
 
 qt_env = None
@@ -75,3 +76,8 @@ else:
   # spinner and text window
   qt_env.Program("qt/text", ["qt/text.cc"], LIBS=qt_libs + libs)
   qt_env.Program("qt/spinner", ["qt/spinner.cc"], LIBS=qt_libs + libs)
+
+  # setup and installer
+  if "BUILD_SETUP" in os.environ:
+    qt_env.Program("qt/setup/setup", ["qt/setup/setup.cc"], LIBS=qt_libs + libs + ['curl'])
+    qt_env.Program("qt/setup/installer", ["qt/setup/installer.cc"], LIBS=qt_libs + libs)
