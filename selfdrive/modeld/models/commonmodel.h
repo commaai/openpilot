@@ -8,6 +8,7 @@
 #include <CL/cl.h>
 #endif
 
+#include <float.h>
 #include "common/mat.h"
 #include "transforms/transform.h"
 #include "transforms/loadyuv.h"
@@ -16,6 +17,7 @@
 extern "C" {
 #endif
 
+void softmax(const float* input, float* output, size_t len);
 float softplus(float input);
 float sigmoid(float input);
 

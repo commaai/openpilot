@@ -99,14 +99,14 @@ void transform_queue(Transform* s,
   err = clSetKernelArg(s->krnl, 10, sizeof(cl_mem), &s->m_y_cl);
   assert(err == 0);
 
-  const size_t work_size_y[2] = {out_y_width, out_y_height};
+  const size_t work_size_y[2] = {(size_t)out_y_width, (size_t)out_y_height};
 
   err = clEnqueueNDRangeKernel(q, s->krnl, 2, NULL,
                               (const size_t*)&work_size_y, NULL, 0, 0, NULL);
   assert(err == 0);
 
 
-  const size_t work_size_uv[2] = {out_uv_width, out_uv_height};
+  const size_t work_size_uv[2] = {(size_t)out_uv_width, (size_t)out_uv_height};
 
   err = clSetKernelArg(s->krnl, 1, sizeof(cl_int), &in_uv_width);
   assert(err == 0);

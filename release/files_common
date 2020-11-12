@@ -388,7 +388,7 @@ selfdrive/modeld/constants.py
 selfdrive/modeld/modeld
 selfdrive/modeld/dmonitoringmodeld
 
-selfdrive/modeld/models/commonmodel.c
+selfdrive/modeld/models/commonmodel.cc
 selfdrive/modeld/models/commonmodel.h
 selfdrive/modeld/models/driving.cc
 selfdrive/modeld/models/driving.h
@@ -397,7 +397,8 @@ selfdrive/modeld/models/dmonitoring.h
 
 selfdrive/modeld/transforms/loadyuv.[c,h]
 selfdrive/modeld/transforms/loadyuv.cl
-selfdrive/modeld/transforms/transform.[c,h]
+selfdrive/modeld/transforms/transform.cc
+selfdrive/modeld/transforms/transform.h
 selfdrive/modeld/transforms/transform.cl
 
 selfdrive/modeld/thneed/thneed.*
