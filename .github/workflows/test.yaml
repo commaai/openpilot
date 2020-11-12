@@ -16,7 +16,7 @@ env:
       docker pull $(grep -ioP '(?<=^from)\s+\S+' Dockerfile.openpilot_base) || true
       docker pull docker.io/commaai/openpilot-base:latest || true
       docker build --cache-from docker.io/commaai/openpilot-base:latest -t commaai/openpilot-base:latest -f Dockerfile.openpilot_base .
-
+  BUILD_LATEST: |
       docker pull docker.io/commaai/openpilotci:latest || true
       docker build --cache-from docker.io/commaai/openpilotci:latest -t tmppilot -f Dockerfile.openpilotci .
 
@@ -46,7 +46,7 @@ jobs:
         cd $TEST_DIR
         mkdir laika laika_repo tools
     - name: Build Docker image
-      run: cd $TEST_DIR && eval "$BUILD"
+      run: cd $TEST_DIR && eval "$BUILD_LATEST"
     - name: Build openpilot and run quick check
       run: |
           $RUN "cd /tmp/openpilot && \
@@ -111,6 +111,8 @@ jobs:
           submodules: true
       - name: Build Docker image
         run: eval "$BUILD"
+      - name: Build Docker image_latest
+        run: eval "$BUILD_LATEST" 
       - name: Push to dockerhub
         run: |
           docker login -u wmelching -p ${{ secrets.COMMA_DOCKERHUB_TOKEN}}
@@ -146,7 +148,7 @@ jobs:
         with:
           submodules: true
       - name: Build Docker image
-        run: eval "$BUILD"
+        run: eval "$BUILD_LATEST"
       - name: pre-commit
         run: $RUN "cd /tmp/openpilot/ && git init && git add -A && pre-commit run --all"
 
@@ -166,7 +168,7 @@ jobs:
             /tmp/comma_download_cache
           key: VALGRIND+${{ hashFiles('.github/workflows/test.yaml', 'selfdrive/test/test_valgrind_replay.py') }}
       - name: Build Docker image
-        run: eval "$BUILD"
+        run: eval "$BUILD_LATEST"
       - name: Run valgrind
         run: |
           $PERSIST_WITH_CACHE "cd /tmp/openpilot && \
@@ -200,7 +202,7 @@ jobs:
             /tmp/scons_cache
           key: SCONS_CACHE+${{ hashFiles('.github/workflows/test.yaml') }}
       - name: Build Docker image
-        run: eval "$BUILD"
+        run: eval "$BUILD_LATEST"
       - name: Run unit tests
         run: |
           $PERSIST_WITH_ONLY_SCONS_CACHE "cd /tmp/openpilot && \
@@ -238,7 +240,7 @@ jobs:
             /tmp/scons_cache
           key: SCONS_CACHE+${{ hashFiles('.github/workflows/test.yaml') }}
       - name: Build Docker image
-        run: eval "$BUILD"
+        run: eval "$BUILD_LATEST"
       - name: Run loggerd tests
         run: |
           $PERSIST_WITH_CACHE "cd /tmp/openpilot && \
@@ -266,7 +268,7 @@ jobs:
             /tmp/scons_cache
           key: PROCESS_REPLAY+${{ hashFiles('.github/workflows/test.yaml', 'selfdrive/test/process_replay/test_processes.py') }}
       - name: Build Docker image
-        run: eval "$BUILD"
+        run: eval "$BUILD_LATEST"
       - name: Run replay
         run: |
           $PERSIST_WITH_CACHE  "cd /tmp/openpilot && \
@@ -304,7 +306,7 @@ jobs:
             /tmp/scons_cache
           key: SCONS_CACHE+${{ hashFiles('.github/workflows/test.yaml') }}
       - name: Build Docker image
-        run: eval "$BUILD"
+        run: eval "$BUILD_LATEST"
       - name: Test longitudinal
         run: |
           $PERSIST_WITH_CACHE "mkdir -p /tmp/openpilot/selfdrive/test/out && \
@@ -341,7 +343,7 @@ jobs:
             /tmp/scons_cache
           key: TEST_CAR_MODELS+${{ hashFiles('.github/workflows/test.yaml', 'selfdrive/test/test_car_models.py') }}
       - name: Build Docker image
-        run: eval "$BUILD"
+        run: eval "$BUILD_LATEST"
       - name: Test car models
         run: |
           $PERSIST_WITH_CACHE "cd /tmp/openpilot && \
