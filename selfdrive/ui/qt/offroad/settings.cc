@@ -193,9 +193,7 @@ QWidget * developer_panel() {
 QWidget * network_panel() {
   QVBoxLayout *main_layout = new QVBoxLayout;
 
-#ifdef QCOM2
   main_layout->addWidget(new WifiSettings());
-#endif
 
   QWidget *widget = new QWidget;
   widget->setLayout(main_layout);

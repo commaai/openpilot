@@ -72,7 +72,7 @@ void WifiSettings::refresh(){
 
   QList<Network> networks = get_networks(adapter);
   QString active_ap = get_active_ap(adapter);
-  QByteArray active_ssid = get_ap_ssid(active_ap);
+  QByteArray active_ssid = get_property(active_ap, "Ssid");
 
   QButtonGroup* myButtongroup=new QButtonGroup(this);
   QObject::connect(myButtongroup, SIGNAL(buttonClicked(QAbstractButton*)), this, SLOT(handleButton(QAbstractButton*)));
@@ -116,15 +116,22 @@ void WifiSettings::refresh(){
 void WifiSettings::handleButton(QAbstractButton* m_button){
   int id = m_button->text().length()-7;  //7="Connect".length()
   qDebug() << "Clicked a button:" << id;
-  qDebug() << get_ap_ssid(seen_networks[id].path);
-  qDebug() << get_ap_security(seen_networks[id].path);
+  qDebug() << get_property(seen_networks[id].path, "Ssid");
+  QString security_type = get_property(seen_networks[id].path, "Flags");
+  qDebug() << get_property(seen_networks[id].path, "Flags");
+  qDebug() << get_property(seen_networks[id].path, "WpaFlags");
+  qDebug() << get_property(seen_networks[id].path, "RsnFlags");
   QByteArray ssid = seen_ssids[id];
-  bool ok;
-  QString password = QInputDialog::getText(this, "Password for "+ssid, "Password", QLineEdit::Normal, QDir::home().dirName(), &ok);
-  if(ok){
-    connect_to(ssid, password);
-  }else{
-    qDebug() << "Connection cancelled, user not willing to provide a password.";
+  if(security_type == "0"){
+    connect_to_open(ssid);
+  }else if(security_type == "1"){
+    bool ok;
+    QString password = QInputDialog::getText(this, "Password for "+ssid, "Password", QLineEdit::Normal, "Put_the_password_HERE", &ok);
+    if(ok){
+      connect_to_WPA(ssid, password);
+    }else{
+      qDebug() << "Connection cancelled, user not willing to provide a password.";
+    }
   }
 }
 
@@ -141,7 +148,7 @@ QList<Network> WifiSettings::get_networks(QString adapter){
     QDBusObjectPath path;
     args >> path;
 
-    QByteArray ssid = get_ap_ssid(path.path());
+    QByteArray ssid = get_property(path.path(), "Ssid");
     unsigned int strength = get_ap_strength(path.path());
     Network network = {path.path(), ssid, strength};
 
@@ -156,15 +163,38 @@ QList<Network> WifiSettings::get_networks(QString adapter){
 
   return r;
 }
+void WifiSettings::connect_to_open(QByteArray ssid){
 
-void WifiSettings::connect_to(QByteArray ssid, QString password){
+  Connection connection;
+  connection["connection"]["type"] = "802-11-wireless";
+  connection["connection"]["uuid"] = QUuid::createUuid().toString().remove('{').remove('}');
+  connection["connection"]["id"] = "Connection open";
+
+  connection["802-11-wireless"]["ssid"] = ssid;
+  connection["802-11-wireless"]["mode"] = "infrastructure";
+
+  connection["ipv4"]["method"] = "auto";
+  connection["ipv6"]["method"] = "ignore";
+
+  QDBusConnection bus = QDBusConnection::systemBus();
+  QDBusInterface nm_settings(nm_service, nm_settings_path, nm_settings_iface, bus);
+  QDBusReply<QDBusObjectPath> result = nm_settings.call("AddConnection", QVariant::fromValue(connection));
+  if (!result.isValid()) {
+    qDebug() << result.error().name() << result.error().message();
+  } else {
+    qDebug() << result.value().path();
+  }
+
+}
+
+void WifiSettings::connect_to_WPA(QByteArray ssid, QString password){
   // TODO: handle different authentication types, None, WEP, WPA, WPA Enterprise
   // TODO: hande exisiting connection for same ssid
 
   Connection connection;
   connection["connection"]["type"] = "802-11-wireless";
   connection["connection"]["uuid"] = QUuid::createUuid().toString().remove('{').remove('}');
-  connection["connection"]["id"] = "Connection 2";
+  connection["connection"]["id"] = "Connection WPA";
 
   connection["802-11-wireless"]["ssid"] = ssid;
   connection["802-11-wireless"]["mode"] = "infrastructure";
@@ -195,7 +225,6 @@ void WifiSettings::request_scan(QString adapter){
 
   qDebug() << response;
 }
-
 QString WifiSettings::get_active_ap(QString adapter){
   QDBusConnection bus = QDBusConnection::systemBus();
   QDBusInterface device_props(nm_service, adapter, props_iface, bus);
@@ -203,19 +232,10 @@ QString WifiSettings::get_active_ap(QString adapter){
   QDBusObjectPath r = get_response<QDBusObjectPath>(response);
   return r.path();
 }
-
-QByteArray WifiSettings::get_ap_ssid(QString network_path){
-  // TODO: abstract get propery function with template
+QByteArray WifiSettings::get_property(QString network_path ,QString property){
   QDBusConnection bus = QDBusConnection::systemBus();
   QDBusInterface device_props(nm_service, network_path, props_iface, bus);
-  QDBusMessage response = device_props.call("Get", ap_iface, "Ssid");
-  return get_response<QByteArray>(response);
-}
-QByteArray WifiSettings::get_ap_security(QString network_path){
-  // TODO: abstract get propery function with template
-  QDBusConnection bus = QDBusConnection::systemBus();
-  QDBusInterface device_props(nm_service, network_path, props_iface, bus);
-  QDBusMessage response = device_props.call("Get", ap_iface, "WpaFlags");
+  QDBusMessage response = device_props.call("Get", ap_iface, property);
   return get_response<QByteArray>(response);
 }
 

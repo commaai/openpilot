@@ -23,11 +23,12 @@ class WifiSettings : public QWidget {
     void refresh();
     QString get_adapter();
     QList<Network> get_networks(QString adapter);
-    void connect_to(QByteArray ssid, QString password);
+    void connect_to_open(QByteArray ssid);
+    void connect_to_WPA(QByteArray ssid, QString password);
     void request_scan(QString adapter);
     QString get_active_ap(QString adapter);
     QByteArray get_ap_ssid(QString network_path);
-    QByteArray get_ap_security(QString network_path);
+    QByteArray get_property(QString network_path, QString property);
     unsigned int get_ap_strength(QString network_path);
   public:
     explicit WifiSettings(QWidget *parent = 0);
