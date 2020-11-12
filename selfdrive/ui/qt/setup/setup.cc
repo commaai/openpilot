@@ -17,8 +17,6 @@
 #include <wayland-client-protocol.h>
 #endif
 
-#include <iostream>
-
 
 int download(std::string url) {
   CURL *curl;
@@ -134,7 +132,6 @@ void Setup::nextPage() {
   // start download
   if (layout->currentIndex() == layout->count() - 1)  {
     std::string url = url_input->text().toStdString();
-    std::cout << "downloading " << url << std::endl;
     download(url);
   }
 }
