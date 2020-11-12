@@ -111,7 +111,7 @@ int main(int argc, char **argv) {
   assert(err == 0);
 
   // messaging
-  PubMaster pm({"model", "cameraOdometry"});
+  PubMaster pm({"modelV2", "model", "cameraOdometry"});
   SubMaster sm({"pathPlan", "frame"});
 
 #if defined(QCOM) || defined(QCOM2)
@@ -173,7 +173,7 @@ int main(int argc, char **argv) {
 
       if (sm.update(0) > 0){
         // TODO: path planner timeout?
-        desire = ((int)sm["pathPlan"].getPathPlan().getDesire()) - 1;
+        desire = ((int)sm["pathPlan"].getPathPlan().getDesire());
         frame_id = sm["frame"].getFrame().getFrameId();
       }
 
@@ -200,6 +200,7 @@ int main(int argc, char **argv) {
         float frame_drop_perc = frames_dropped / MODEL_FREQ;
 
         model_publish(pm, extra.frame_id, frame_id,  vipc_dropped_frames, frame_drop_perc, model_buf, extra.timestamp_eof);
+        model_publish_v2(pm, extra.frame_id, frame_id,  vipc_dropped_frames, frame_drop_perc, model_buf, extra.timestamp_eof);
         posenet_publish(pm, extra.frame_id, frame_id, vipc_dropped_frames, frame_drop_perc, model_buf, extra.timestamp_eof);
 
         LOGD("model process: %.2fms, from last %.2fms, vipc_frame_id %zu, frame_id, %zu, frame_drop %.3f", mt2-mt1, mt1-last, extra.frame_id, frame_id, frame_drop_perc);
