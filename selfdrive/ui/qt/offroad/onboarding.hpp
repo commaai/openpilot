@@ -1,7 +1,7 @@
 #pragma once
 
 #include <QWidget>
-
+#include <QStackedLayout>
 
 // TODO: this is defined in python too
 #define LATEST_TERMS_VERSION "2"
@@ -18,6 +18,8 @@ signals:
 
 private:
   QWidget * terms_screen();
+  QWidget * training_screen();
+  QStackedLayout *layout;
 
 private slots:
   void updateActiveScreen();
