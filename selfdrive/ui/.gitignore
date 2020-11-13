@@ -1,6 +1,5 @@
 moc_*
 *.moc
 
-qt/text
 qt/setup/setup
 qt/setup/installer
