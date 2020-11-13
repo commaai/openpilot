@@ -27,6 +27,7 @@ if arch in ["x86_64", "Darwin", "larch64"]:
       f"/usr/include/{real_arch}-linux-gnu/qt5/QtDBus",
       f"/usr/include/{real_arch}-linux-gnu/qt5/QtMultimedia",
       f"/usr/include/{real_arch}-linux-gnu/qt5/QtGui/5.5.1/QtGui",
+      f"/usr/include/{real_arch}-linux-gnu/qt5/QtGui/5.12.8/QtGui",
     ]
 
   qt_env.Tool('qt')
