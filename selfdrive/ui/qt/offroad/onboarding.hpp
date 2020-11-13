@@ -13,14 +13,14 @@ class OnboardingWindow : public QWidget {
 public:
   explicit OnboardingWindow(QWidget *parent = 0);
 
-signals:
-  void onboardingDone();
-
 private:
   QWidget * terms_screen();
   QWidget * training_screen();
   QStackedLayout *layout;
 
-private slots:
+signals:
+  void onboardingDone();
+
+public slots:
   void updateActiveScreen();
 };
