@@ -26,27 +26,27 @@ static void ui_draw_sidebar_home_button(UIState *s) {
 }
 
 static void ui_draw_sidebar_network_strength(UIState *s) {
-  static std::map<cereal::ThermalData::NetworkStrength, int> network_strength_map = {
+static std::map<cereal::ThermalData::NetworkStrength, int> network_strength_map = {
       {cereal::ThermalData::NetworkStrength::UNKNOWN, 1},
       {cereal::ThermalData::NetworkStrength::POOR, 2},
       {cereal::ThermalData::NetworkStrength::MODERATE, 3},
       {cereal::ThermalData::NetworkStrength::GOOD, 4},
       {cereal::ThermalData::NetworkStrength::GREAT, 5}};
   const Rect rect = {58, 196, 176, 27};
-  const int img_idx = s->scene.thermal.getNetworkType() == cereal::ThermalData::NetworkType::NONE ? 0 : network_strength_map[s->scene.thermal.getNetworkStrength()];
+  const int img_idx = s->scene.network_type == cereal::ThermalData::NetworkType::NONE ? 0 : network_strength_map[s->scene.network_strength];
   ui_draw_image(s->vg, rect, s->img_network[img_idx], 1.0f);
 }
 
 static void ui_draw_sidebar_battery_icon(UIState *s) {
-  int battery_img = s->scene.thermal.getBatteryStatus() == "Charging" ? s->img_battery_charging : s->img_battery;
+  int battery_img = s->scene.battery_status == "Charging" ? s->img_battery_charging : s->img_battery;
   const Rect rect = {160, 255, 76, 36};
   ui_draw_rect(s->vg, rect.x + 6, rect.y + 5,
-               ((rect.w - 19) * (s->scene.thermal.getBatteryPercent() * 0.01)), rect.h - 11, COLOR_WHITE);
+               ((rect.w - 19) * (s->scene.battery_percent * 0.01)), rect.h - 11, COLOR_WHITE);
   ui_draw_image(s->vg, rect, battery_img, 1.0f);
 }
 
 static void ui_draw_sidebar_network_type(UIState *s) {
-  static std::map<cereal::ThermalData::NetworkType, const char *> network_type_map = {
+static std::map<cereal::ThermalData::NetworkType, const char *> network_type_map = {
       {cereal::ThermalData::NetworkType::NONE, "--"},
       {cereal::ThermalData::NetworkType::WIFI, "WiFi"},
       {cereal::ThermalData::NetworkType::CELL2_G, "2G"},
@@ -56,7 +56,7 @@ static void ui_draw_sidebar_network_type(UIState *s) {
   const int network_x = 50;
   const int network_y = 273;
   const int network_w = 100;
-  const char *network_type = network_type_map[s->scene.thermal.getNetworkType()];
+  const char *network_type = network_type_map[s->scene.network_type];
   nvgFillColor(s->vg, COLOR_WHITE);
   nvgFontSize(s->vg, 48);
   nvgFontFaceId(s->vg, s->font_sans_regular);
@@ -110,13 +110,13 @@ static void ui_draw_sidebar_metric(UIState *s, const char* label_str, const char
 }
 
 static void ui_draw_sidebar_temp_metric(UIState *s) {
-  static std::map<cereal::ThermalData::ThermalStatus, const int> temp_severity_map = {
+static std::map<cereal::ThermalData::ThermalStatus, const int> temp_severity_map = {
       {cereal::ThermalData::ThermalStatus::GREEN, 0},
       {cereal::ThermalData::ThermalStatus::YELLOW, 1},
       {cereal::ThermalData::ThermalStatus::RED, 2},
       {cereal::ThermalData::ThermalStatus::DANGER, 3}};
-  std::string temp_val = std::to_string((int)s->scene.thermal.getAmbient()) + "°C";
-  ui_draw_sidebar_metric(s, "TEMP", temp_val.c_str(), temp_severity_map[s->scene.thermal.getThermalStatus()], 0, NULL);
+  std::string temp_val = std::to_string((int)s->scene.ambient) + "°C";
+  ui_draw_sidebar_metric(s, "TEMP", temp_val.c_str(), temp_severity_map[s->scene.thermal_status], 0, NULL);
 }
 
 static void ui_draw_sidebar_panda_metric(UIState *s) {
@@ -127,7 +127,7 @@ static void ui_draw_sidebar_panda_metric(UIState *s) {
   if (s->scene.hwType == cereal::HealthData::HwType::UNKNOWN) {
     panda_severity = 2;
     panda_message = "NO\nVEHICLE";
-  } else if (s->started) {
+  } else if (s->scene.started) {
     if (s->scene.satelliteCount < 6) {
       panda_severity = 1;
       panda_message = "VEHICLE\nNO GPS";
@@ -150,7 +150,7 @@ static void ui_draw_sidebar_connectivity(UIState *s) {
 }
 
 void ui_draw_sidebar(UIState *s) {
-  if (s->scene.sidebar_collapsed) {
+  if (s->sidebar_collapsed) {
     return;
   }
   ui_draw_sidebar_background(s);

@@ -13,6 +13,9 @@
 
 #include <atomic>
 #include <map>
+#include <mutex>
+#include <condition_variable>
+#include <thread>
 #include <string>
 #include <sstream>
 
@@ -25,6 +28,22 @@
 #include "common/modeldata.h"
 #include "common/params.h"
 #include "sound.hpp"
+
+// TODO: this is also hardcoded in common/transformations/camera.py
+// TODO: choose based on frame input size
+#ifdef QCOM2
+const mat3 intrinsic_matrix = (mat3){{
+  2648.0, 0.0, 1928.0/2,
+  0.0, 2648.0, 1208.0/2,
+  0.0,   0.0,   1.0
+}};
+#else
+const mat3 intrinsic_matrix = (mat3){{
+  910., 0., 1164.0/2,
+  0., 910., 874.0/2,
+  0.,   0.,   1.
+}};
+#endif
 
 #define COLOR_BLACK nvgRGBA(0, 0, 0, 255)
 #define COLOR_BLACK_ALPHA(x) nvgRGBA(0, 0, 0, x)
@@ -100,30 +119,42 @@ typedef struct {
 } track_vertices_data;
 
 typedef struct UIScene {
+  UIStatus status = STATUS_OFFROAD;
+  bool started = false, is_rhd = false, frontview = false, longitudinal_control = false;
 
-  mat4 extrinsic_matrix;      // Last row is 0 so we can use mat4.
-  bool world_objects_visible;
+  int satelliteCount = -1;
+  NetStatus athenaStatus = NET_DISCONNECTED;
+  
+  // alert
+  float alert_blinking_rate = 0;
+  std::string alert_type, alert_text1, alert_text2;
+  cereal::ControlsState::AlertSize alert_size = cereal::ControlsState::AlertSize::NONE;
 
-  bool is_rhd;
-  bool frontview;
-  bool sidebar_collapsed;
-  // responsive layout
-  Rect viz_rect;
+  // controlsState
+  float v_cruise = 0., v_ego = 0.;
+  bool controls_enabled = false, engageable = false, decel_for_model = false;
 
-  std::string alert_text1;
-  std::string alert_text2;
-  std::string alert_type;
-  cereal::ControlsState::AlertSize alert_size;
+  // health
+  bool ignition = false;
+  cereal::HealthData::HwType hwType = cereal::HealthData::HwType::UNKNOWN;
 
-  cereal::HealthData::HwType hwType;
-  int satelliteCount;
-  NetStatus athenaStatus;
+  // driverState
+  float face_position[2] = {};
+  bool face_detected = false;
 
-  cereal::ThermalData::Reader thermal;
-  cereal::RadarState::LeadData::Reader lead_data[2];
-  cereal::ControlsState::Reader controls_state;
-  cereal::DriverState::Reader driver_state;
-  cereal::DMonitoringState::Reader dmonitoring_state;
+  // thermal
+  cereal::ThermalData::ThermalStatus thermal_status;
+  cereal::ThermalData::NetworkType network_type;
+  cereal::ThermalData::NetworkStrength network_strength;
+  std::string battery_status;
+  int16_t battery_percent;
+  float ambient;
+
+  // sensors
+  float light_sensor = 0, accel_sensor = 0, gyro_sensor = 0;
+
+  // paramaters
+  bool is_metric = false;
 
   // modelV2
   float lane_line_probs[4];
@@ -131,9 +162,51 @@ typedef struct UIScene {
   track_vertices_data track_vertices;
   line_vertices_data lane_line_vertices[4];
   line_vertices_data road_edge_vertices[2];
+
+  // radarState
+  struct LeadData{
+    bool status;
+    float d_rel, v_rel, y_rel;
+    vertex_data vd;
+  } lead[2] = {};
 } UIScene;
 
+struct UIState;
+class UIStateThread {
+public:
+  UIStateThread(UIState *s);
+  ~UIStateThread();
+  void getScene(UIScene *scene);
+  void stop();
+  bool car_space_to_full_frame(float in_x, float in_y, float in_z, float *out_x, float *out_y, float margin=0.0);
+private:
+  enum class UIStateSync {
+    kFetch = 0,
+    kReady,
+  };
+  void threadMain();
+  void update();
+  void updateSockets();
+  void update_params();
+  void handleAlert();
+  void update_model(const cereal::ModelDataV2::Reader &model);
+  
+  UIState *ui_state;
+
+  SubMaster sm;
+  UIScene scene = {};
+  uint64_t started_frame = 0;
+  std::atomic<bool> run = true;
+  mat4 extrinsic_matrix = {};  // Last row is 0 so we can use mat4.
+
+  std::mutex lock;
+  UIStateSync state_type = UIStateSync::kFetch;
+  std::condition_variable cv;
+  std::thread thread;
+};
+
 typedef struct UIState {
+  UIState() : state_thread(this) {}
   // framebuffer
   FramebufferState *fb;
   int fb_w, fb_h;
@@ -157,13 +230,11 @@ typedef struct UIState {
   SubMaster *sm;
 
   Sound *sound;
-  UIStatus status;
-  UIScene scene;
-  cereal::UiLayoutState::App active_app;
+  UIScene scene = {};
 
   // vision state
-  bool vision_connected;
-  VisionStream stream;
+  bool vision_connected = false;
+  VisionStream stream = {};
 
   // graphics
   GLuint frame_program;
@@ -176,20 +247,15 @@ typedef struct UIState {
   GLuint frame_vao[2], frame_vbo[2], frame_ibo[2];
   mat4 rear_frame_mat, front_frame_mat;
 
-  // device state
-  bool awake;
-  float light_sensor, accel_sensor, gyro_sensor;
+  bool awake = false;
 
-  bool started;
-  bool ignition;
-  bool is_metric;
-  bool longitudinal_control;
-  uint64_t started_frame;
+  Rect video_rect = {}, viz_rect = {};
+  int ui_viz_ro = 0;
 
-  bool alert_blinked;
-  float alert_blinking_alpha;
-
-  Rect video_rect;
+  UIStateThread state_thread;
+  // accessed from ui & state thread
+  std::atomic<cereal::UiLayoutState::App> active_app = cereal::UiLayoutState::App::HOME;
+  std::atomic<bool> sidebar_collapsed = false, world_objects_visible = false;
 } UIState;
 
 void ui_init(UIState *s);
