@@ -266,7 +266,7 @@ CONFIGS = [
     proc_name="dmonitoringd",
     pub_sub={
       "driverState": ["dMonitoringState"],
-      "liveCalibration": [], "carState": [], "model": [], "gpsLocation": [],
+      "liveCalibration": [], "carState": [], "model": [], "controlsState": [],
     },
     ignore=["logMonoTime", "valid"],
     init_callback=get_car_params,
