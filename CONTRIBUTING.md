@@ -12,10 +12,6 @@ Most open source development activity is coordinated through our [Discord](https
 
 ## Testing
 
-### Local Testing
-
-You can test your changes on your machine by running `run_docker_tests.sh`. This will run some automated tests in docker against your code.
-
 ### Automated Testing
 
 All PRs and commits are automatically checked by Github Actions. Check out `.github/workflows/` for what Github Actions runs. Any new tests should be added to Github Actions.
