@@ -92,7 +92,7 @@ void ui_update_vision(UIState *s) {
     // poll for a new frame
     struct pollfd fds[1] = {{
       .fd = s->stream.ipc_fd,
-      .events = POLLOUT,
+      .events = POLLIN,
     }};
     int ret = poll(fds, 1, 100);
     if (ret > 0) {
