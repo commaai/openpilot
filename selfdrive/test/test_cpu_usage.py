@@ -102,5 +102,7 @@ if __name__ == "__main__":
   passed = False
   try:
     passed = test_cpu_usage()
+  except Exception as e:
+    print("\n\n\n", "TEST FAILED:", str(e), "\n\n\n")
   finally:
     sys.exit(int(not passed))
