@@ -143,6 +143,9 @@ Setup::Setup(QWidget *parent) {
   layout->addWidget(software_selection());
   layout->addWidget(downloading());
 
+  // TODO: this is needed to make first page not squished, why?
+  layout->setSizeConstraint(QLayout::SetMinimumSize);
+
   setLayout(layout);
   setStyleSheet(R"(
     QWidget {
