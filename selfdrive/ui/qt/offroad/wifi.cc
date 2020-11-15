@@ -45,6 +45,7 @@ bool compare_by_strength(const Network &a, const Network &b){
 
 WifiSettings::WifiSettings(QWidget *parent) : QWidget(parent) {
   vlayout = new QVBoxLayout;
+  wifi = new WifiSettingsModel;
   refresh();
   setLayout(vlayout);
 
@@ -66,48 +67,32 @@ WifiSettings::WifiSettings(QWidget *parent) : QWidget(parent) {
 }
 
 void WifiSettings::refresh(){
-  qDBusRegisterMetaType<Connection>();
-  QString adapter = get_adapter();
-  request_scan(adapter);
-
-  QList<Network> networks = get_networks(adapter);
-  QString active_ap = get_active_ap(adapter);
-  QByteArray active_ssid = get_property(active_ap, "Ssid");
-
+  wifi->refreshNetworks();
+  int i=0;
+  
   QButtonGroup* myButtongroup=new QButtonGroup(this);
   QObject::connect(myButtongroup, SIGNAL(buttonClicked(QAbstractButton*)), this, SLOT(handleButton(QAbstractButton*)));
-  int i=0;
-  for (Network &network : networks){
-    bool connected = active_ap == network.path;
-    unsigned int strength = std::round(network.strength / 25.0) * 25;
-
-    if (seen_ssids.count(network.ssid) && !connected){
-      continue;
-    }
-
+  for (Network &network : wifi->seen_networks){
     QHBoxLayout *hlayout = new QHBoxLayout;
     hlayout->addWidget(new QLabel(QString::fromUtf8(network.ssid)));
-    QPixmap pix("../assets/offroad/indicator_wifi_" + QString::number(strength) + ".png");
+    QPixmap pix("../assets/offroad/indicator_wifi_" + QString::number(100) + ".png");
     QLabel *icon = new QLabel();
     icon->setPixmap(pix.scaledToWidth(100, Qt::SmoothTransformation));
     icon->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
     hlayout->addWidget(icon);
     hlayout->addSpacing(20);
 
-    QPushButton* m_button = new QPushButton((connected ? "Connected" : "Connect")+(QString(i, QChar(' '))));
+    QPushButton* m_button = new QPushButton((network.connected ? "Connected" : "Connect")+(QString(i, QChar(' '))));
     m_button->setFixedWidth(250);
-    m_button->setDisabled(connected);
-    // connect(m_button, SIGNAL (released()), this, SLOT (handleButton(m_button)));
-    myButtongroup->addButton(m_button,i++);
+    m_button->setDisabled(network.connected);
+    connect(m_button, SIGNAL (released()), this, SLOT (handleButton(m_button)));
+    myButtongroup->addButton(m_button,i);
 
     hlayout->addWidget(m_button);
     hlayout->addSpacing(20);
     vlayout->addLayout(hlayout);
-
-    seen_ssids.push_back(network.ssid);
-    seen_networks.push_back(network);
+    i+=1;
   }
-  qDebug() <<"Adding networks "<< i;
   // QPushButton* refreshButton = new QPushButton("Refresh networks");
   // connect(refreshButton, SIGNAL (released()), this, SLOT (refresh()));
   // vlayout->addWidget(refreshButton);
@@ -116,31 +101,55 @@ void WifiSettings::refresh(){
 void WifiSettings::handleButton(QAbstractButton* m_button){
   int id = m_button->text().length()-7;  //7="Connect".length()
   qDebug() << "Clicked a button:" << id;
-  qDebug() << get_property(seen_networks[id].path, "Ssid");
-  QString security_type = get_property(seen_networks[id].path, "Flags");
-  qDebug() << get_property(seen_networks[id].path, "Flags");
-  qDebug() << get_property(seen_networks[id].path, "WpaFlags");
-  qDebug() << get_property(seen_networks[id].path, "RsnFlags");
-  QByteArray ssid = seen_ssids[id];
-  if(security_type == "0"){
-    connect_to_open(ssid);
-  }else if(security_type == "1"){
-    bool ok;
-    QString password = QInputDialog::getText(this, "Password for "+ssid, "Password", QLineEdit::Normal, "Put_the_password_HERE", &ok);
-    if(ok){
-      connect_to_WPA(ssid, password);
-    }else{
-      qDebug() << "Connection cancelled, user not willing to provide a password.";
-    }
-  }
+  qDebug() << wifi->seen_networks[id].ssid;
+  // QString security_type = get_property(seen_networks[id].path, "Flags");
+  // qDebug() << get_property(seen_networks[id].path, "Flags");
+  // qDebug() << get_property(seen_networks[id].path, "WpaFlags");
+  // qDebug() << get_property(seen_networks[id].path, "RsnFlags");
+  // QByteArray ssid = seen_ssids[id];
+  // if(security_type == "0"){
+  //   connect_to_open(ssid);
+  // }else if(security_type == "1"){
+  //   bool ok;
+  //   QString password = QInputDialog::getText(this, "Password for "+ssid, "Password", QLineEdit::Normal, "Put_the_password_HERE", &ok);
+  //   if(ok){
+  //     connect_to_WPA(ssid, password);
+  //   }else{
+  //     qDebug() << "Connection cancelled, user not willing to provide a password.";
+  //   }
+  // }
 }
 
-QList<Network> WifiSettings::get_networks(QString adapter){
+
+
+WifiSettingsModel::WifiSettingsModel(){
+  refreshNetworks();
+}
+
+void WifiSettingsModel::refreshNetworks(){
+  qDBusRegisterMetaType<Connection>();
+  QString adapter = get_adapter();
+  request_scan(adapter);
+  QString active_ap = get_active_ap(adapter);
+
+  QList<Network> networks = get_networks(adapter);
+  QByteArray active_ssid = get_property(active_ap, "Ssid");
+
+  for (Network &network : networks){
+    seen_ssids.push_back(network.ssid);
+    seen_networks.push_back(network);
+  }
+  qDebug() <<"Adding networks ";
+}
+
+QList<Network> WifiSettingsModel::get_networks(QString adapter){
   QList<Network> r;
   QDBusConnection bus = QDBusConnection::systemBus();
   QDBusInterface nm(nm_service, adapter, wireless_device_iface, bus);
   QDBusMessage response = nm.call("GetAllAccessPoints");
   QVariant first =  response.arguments().at(0);
+
+  QString active_ap = get_active_ap(adapter);
 
   const QDBusArgument &args = first.value<QDBusArgument>();
   args.beginArray();
@@ -150,7 +159,7 @@ QList<Network> WifiSettings::get_networks(QString adapter){
 
     QByteArray ssid = get_property(path.path(), "Ssid");
     unsigned int strength = get_ap_strength(path.path());
-    Network network = {path.path(), ssid, strength};
+    Network network = {path.path(), ssid, strength, path.path()==active_ap};
 
     if (ssid.length()){
       r.push_back(network);
@@ -163,7 +172,8 @@ QList<Network> WifiSettings::get_networks(QString adapter){
 
   return r;
 }
-void WifiSettings::connect_to_open(QByteArray ssid){
+
+void WifiSettingsModel::connect_to_open(QByteArray ssid){
 
   Connection connection;
   connection["connection"]["type"] = "802-11-wireless";
@@ -187,7 +197,7 @@ void WifiSettings::connect_to_open(QByteArray ssid){
 
 }
 
-void WifiSettings::connect_to_WPA(QByteArray ssid, QString password){
+void WifiSettingsModel::connect_to_WPA(QByteArray ssid, QString password){
   // TODO: handle different authentication types, None, WEP, WPA, WPA Enterprise
   // TODO: hande exisiting connection for same ssid
 
@@ -218,28 +228,28 @@ void WifiSettings::connect_to_WPA(QByteArray ssid, QString password){
 
 }
 
-void WifiSettings::request_scan(QString adapter){
+void WifiSettingsModel::request_scan(QString adapter){
   QDBusConnection bus = QDBusConnection::systemBus();
   QDBusInterface nm(nm_service, adapter, wireless_device_iface, bus);
   QDBusMessage response = nm.call("RequestScan",  QVariantMap());
 
   qDebug() << response;
 }
-QString WifiSettings::get_active_ap(QString adapter){
+QString WifiSettingsModel::get_active_ap(QString adapter){
   QDBusConnection bus = QDBusConnection::systemBus();
   QDBusInterface device_props(nm_service, adapter, props_iface, bus);
   QDBusMessage response = device_props.call("Get", wireless_device_iface, "ActiveAccessPoint");
   QDBusObjectPath r = get_response<QDBusObjectPath>(response);
   return r.path();
 }
-QByteArray WifiSettings::get_property(QString network_path ,QString property){
+QByteArray WifiSettingsModel::get_property(QString network_path ,QString property){
   QDBusConnection bus = QDBusConnection::systemBus();
   QDBusInterface device_props(nm_service, network_path, props_iface, bus);
   QDBusMessage response = device_props.call("Get", ap_iface, property);
   return get_response<QByteArray>(response);
 }
 
-unsigned int WifiSettings::get_ap_strength(QString network_path){
+unsigned int WifiSettingsModel::get_ap_strength(QString network_path){
   qDebug() << network_path;
   // TODO: abstract get propery function with template
   QDBusConnection bus = QDBusConnection::systemBus();
@@ -248,7 +258,7 @@ unsigned int WifiSettings::get_ap_strength(QString network_path){
   return get_response<unsigned int>(response);
 }
 
-QString WifiSettings::get_adapter(){
+QString WifiSettingsModel::get_adapter(){
   QDBusConnection bus = QDBusConnection::systemBus();
 
   QDBusInterface nm(nm_service, nm_path, nm_iface, bus);
