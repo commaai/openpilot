@@ -606,6 +606,10 @@ static void bootlog() {
 int main(int argc, char** argv) {
   int err;
 
+#ifdef QCOM
+  set_realtime_priority(50);
+#endif
+
   if (argc > 1 && strcmp(argv[1], "--bootlog") == 0) {
     bootlog();
     return 0;
@@ -619,8 +623,6 @@ int main(int argc, char** argv) {
 #ifndef QCOM2
   record_front = Params().read_db_bool("RecordFront");
 #endif
-
-  setpriority(PRIO_PROCESS, 0, -12);
 
   clear_locks();
 
@@ -751,7 +753,7 @@ int main(int argc, char** argv) {
 
     if (s.logger.part > -1) {
       new_segment = true;
-      if (tms - last_camera_seen_tms <= NO_CAMERA_PATIENCE) {
+      if (tms - last_camera_seen_tms <= NO_CAMERA_PATIENCE && s.num_encoder > 0) {
         for (int cid=0;cid<=MAX_CAM_IDX;cid++) {
           // this *should* be redundant on tici since all camera frames are synced
           new_segment &= (((s.rotate_state[cid].stream_frame_id >= s.rotate_state[cid].last_rotate_frame_id + segment_length * MAIN_FPS) &&

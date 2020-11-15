@@ -4,6 +4,8 @@
 #include <cmath>
 #include <iostream>
 #include "common/util.h"
+#include <algorithm>
+
 
 #define NANOVG_GLES3_IMPLEMENTATION
 #include "nanovg_gl.h"
@@ -37,26 +39,23 @@ const mat3 intrinsic_matrix = (mat3){{
 
 // Projects a point in car to space to the corresponding point in full frame
 // image space.
-vec3 car_space_to_full_frame(const UIState *s, vec4 car_space_projective) {
-  const UIScene *scene = &s->scene;
-
+bool car_space_to_full_frame(const UIState *s, float in_x, float in_y, float in_z, float *out_x, float *out_y) {
+  const vec4 car_space_projective = (vec4){{in_x, in_y, in_z, 1.}};
   // We'll call the car space point p.
   // First project into normalized image coordinates with the extrinsics matrix.
-  const vec4 Ep4 = matvecmul(scene->extrinsic_matrix, car_space_projective);
+  const vec4 Ep4 = matvecmul(s->scene.extrinsic_matrix, car_space_projective);
 
   // The last entry is zero because of how we store E (to use matvecmul).
   const vec3 Ep = {{Ep4.v[0], Ep4.v[1], Ep4.v[2]}};
   const vec3 KEp = matvecmul3(intrinsic_matrix, Ep);
 
   // Project.
-  const vec3 p_image = {{KEp.v[0] / KEp.v[2], KEp.v[1] / KEp.v[2], 1.}};
-  return p_image;
+  *out_x = KEp.v[0] / KEp.v[2];
+  *out_y = KEp.v[1] / KEp.v[2];
+
+  return *out_x >= 0 && *out_x <= s->fb_w && *out_y >= 0 && *out_y <= s->fb_h;
 }
 
-// Calculate an interpolation between two numbers at a specific increment
-static float lerp(float v0, float v1, float t) {
-  return (1 - t) * v0 + t * v1;
-}
 
 static void ui_draw_text(NVGcontext *vg, float x, float y, const char* string, float size, NVGcolor color, int font){
   nvgFontFaceId(vg, font);
@@ -67,12 +66,8 @@ static void ui_draw_text(NVGcontext *vg, float x, float y, const char* string, f
 
 static void draw_chevron(UIState *s, float x_in, float y_in, float sz,
                           NVGcolor fillColor, NVGcolor glowColor) {
-  const vec4 p_car_space = (vec4){{x_in, y_in, 0., 1.}};
-  const vec3 p_full_frame = car_space_to_full_frame(s, p_car_space);
-
-  float x = p_full_frame.v[0];
-  float y = p_full_frame.v[1];
-  if (x < 0 || y < 0.){
+  float x, y;
+  if (!car_space_to_full_frame(s, x_in, y_in, 0.0, &x, &y)) {
     return;
   }
 
@@ -134,110 +129,52 @@ static void draw_lead(UIState *s, const cereal::RadarState::LeadData::Reader &le
   draw_chevron(s, d_rel, lead.getYRel(), 25, nvgRGBA(201, 34, 49, fillAlpha), COLOR_YELLOW);
 }
 
-static void ui_draw_lane_line(UIState *s, const model_path_vertices_data *pvd, NVGcolor color) {
-  if (pvd->cnt == 0) return;
+static void ui_draw_line(UIState *s, const vertex_data *v, const int cnt, NVGcolor *color, NVGpaint *paint) {
+  if (cnt == 0) return;
 
   nvgBeginPath(s->vg);
-  nvgMoveTo(s->vg, pvd->v[0].x, pvd->v[0].y);
-  for (int i=1; i<pvd->cnt; i++) {
-    nvgLineTo(s->vg, pvd->v[i].x, pvd->v[i].y);
+  nvgMoveTo(s->vg, v[0].x, v[0].y);
+  for (int i = 1; i < cnt; i++) {
+    nvgLineTo(s->vg, v[i].x, v[i].y);
   }
   nvgClosePath(s->vg);
-  nvgFillColor(s->vg, color);
+  if (color) {
+    nvgFillColor(s->vg, *color);
+  } else if (paint) {
+    nvgFillPaint(s->vg, *paint);
+  }
   nvgFill(s->vg);
 }
 
-static void update_track_data(UIState *s, bool is_mpc, track_vertices_data *pvd) {
+static void update_track_data(UIState *s, const cereal::ModelDataV2::XYZTData::Reader &line, track_vertices_data *pvd) {
   const UIScene *scene = &s->scene;
-  const float *points = scene->path_points;
-  const float *mpc_x_coords = &scene->mpc_x[0];
-  const float *mpc_y_coords = &scene->mpc_y[0];
-
-  float off = is_mpc?0.3:0.5;
-  float lead_d = scene->lead_data[0].getDRel()*2.;
-  float path_height = is_mpc?(lead_d>5.)?fmin(lead_d, 25.)-fmin(lead_d*0.35, 10.):20.
-                            :(lead_d>0.)?fmin(lead_d, 50.)-fmin(lead_d*0.35, 10.):49.;
-  path_height = fmin(path_height, scene->model.getPath().getValidLen());
-  pvd->cnt = 0;
-  // left side up
-  for (int i=0; i<=path_height; i++) {
-    float px, py, mpx;
-    if (is_mpc) {
-      mpx = i==0?0.0:mpc_x_coords[i];
-      px = lerp(mpx+1.0, mpx, i/100.0);
-      py = mpc_y_coords[i] - off;
-    } else {
-      px = lerp(i+1.0, i, i/100.0);
-      py = points[i] - off;
-    }
-
-    vec4 p_car_space = (vec4){{px, py, 0., 1.}};
-    vec3 p_full_frame = car_space_to_full_frame(s, p_car_space);
-    if (p_full_frame.v[0] < 0. || p_full_frame.v[1] < 0.) {
-      continue;
-    }
-    pvd->v[pvd->cnt].x = p_full_frame.v[0];
-    pvd->v[pvd->cnt].y = p_full_frame.v[1];
-    pvd->cnt += 1;
-  }
-
-  // right side down
-  for (int i=path_height; i>=0; i--) {
-    float px, py, mpx;
-    if (is_mpc) {
-      mpx = i==0?0.0:mpc_x_coords[i];
-      px = lerp(mpx+1.0, mpx, i/100.0);
-      py = mpc_y_coords[i] + off;
-    } else {
-      px = lerp(i+1.0, i, i/100.0);
-      py = points[i] + off;
-    }
-
-    vec4 p_car_space = (vec4){{px, py, 0., 1.}};
-    vec3 p_full_frame = car_space_to_full_frame(s, p_car_space);
-    if (p_full_frame.v[0] < 0. || p_full_frame.v[1] < 0.) {
-      continue;
-    }
-    pvd->v[pvd->cnt].x = p_full_frame.v[0];
-    pvd->v[pvd->cnt].y = p_full_frame.v[1];
-    pvd->cnt += 1;
-  }
-}
-
-static void update_all_track_data(UIState *s) {
-  const UIScene *scene = &s->scene;
-  // Draw vision path
-  update_track_data(s, false, &s->track_vertices[0]);
-
-  if (scene->controls_state.getEnabled()) {
-    // Draw MPC path when engaged
-    update_track_data(s, true, &s->track_vertices[1]);
-  }
-}
-
-static void ui_draw_track(UIState *s, bool is_mpc, track_vertices_data *pvd) {
- if (pvd->cnt == 0) return;
-
-  nvgBeginPath(s->vg);
-  nvgMoveTo(s->vg, pvd->v[0].x, pvd->v[0].y);
-  for (int i=1; i<pvd->cnt; i++) {
-    nvgLineTo(s->vg, pvd->v[i].x, pvd->v[i].y);
-  }
-  nvgClosePath(s->vg);
-
-  NVGpaint track_bg;
-  if (is_mpc) {
-    // Draw colored MPC track
-    const NVGcolor clr = bg_colors[s->status];
-    track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h*.4,
-                                 nvgRGBA(clr.r, clr.g, clr.b, 255), nvgRGBA(clr.r, clr.g, clr.b, 255/2));
+  const float off = 0.5;
+  int max_idx;
+  float lead_d;
+  if(s->sm->updated("radarState")) {
+    lead_d = scene->lead_data[0].getDRel()*2.;
   } else {
-    // Draw white vision track
-    track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h*.4,
-                                 COLOR_WHITE, COLOR_WHITE_ALPHA(0));
+    lead_d = MAX_DRAW_DISTANCE;
   }
-  nvgFillPaint(s->vg, track_bg);
-  nvgFill(s->vg);
+  float path_length = (lead_d>0.)?lead_d-fmin(lead_d*0.35, 10.):MAX_DRAW_DISTANCE;
+  path_length = fmin(path_length, scene->max_distance);
+
+
+  vertex_data *v = &pvd->v[0];
+  for (int i = 0; line.getX()[i] <= path_length and i < TRAJECTORY_SIZE; i++) {
+    v += car_space_to_full_frame(s, line.getX()[i], -line.getY()[i] - off, -line.getZ()[i], &v->x, &v->y);
+    max_idx = i;
+  }
+  for (int i = max_idx; i >= 0; i--) {
+    v += car_space_to_full_frame(s, line.getX()[i], -line.getY()[i] + off, -line.getZ()[i], &v->x, &v->y);
+  }
+  pvd->cnt = v - pvd->v;
+}
+
+static void ui_draw_track(UIState *s, track_vertices_data *pvd) {
+  NVGpaint track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h * .4,
+                                        COLOR_WHITE, COLOR_WHITE_ALPHA(0));
+  ui_draw_line(s, &pvd->v[0], pvd->cnt, nullptr, &track_bg);
 }
 
 static void draw_frame(UIState *s) {
@@ -271,72 +208,48 @@ static void draw_frame(UIState *s) {
   glBindVertexArray(0);
 }
 
-static inline bool valid_frame_pt(UIState *s, float x, float y) {
-  return x >= 0 && x <= s->stream.bufs_info.width && y >= 0 && y <= s->stream.bufs_info.height;
-}
-
-static void update_lane_line_data(UIState *s, const float *points, float off, model_path_vertices_data *pvd, float valid_len) {
-  pvd->cnt = 0;
-  int rcount = fmin(MODEL_PATH_MAX_VERTICES_CNT / 2, valid_len);
-  for (int i = 0; i < rcount; i++) {
-    float px = (float)i;
-    float py = points[i] - off;
-    const vec4 p_car_space = (vec4){{px, py, 0., 1.}};
-    const vec3 p_full_frame = car_space_to_full_frame(s, p_car_space);
-    if(!valid_frame_pt(s, p_full_frame.v[0], p_full_frame.v[1]))
-      continue;
-    pvd->v[pvd->cnt].x = p_full_frame.v[0];
-    pvd->v[pvd->cnt].y = p_full_frame.v[1];
-    pvd->cnt += 1;
+static void update_line_data(UIState *s, const cereal::ModelDataV2::XYZTData::Reader &line, float off, line_vertices_data *pvd, float max_distance) {
+  // TODO check that this doesn't overflow max vertex buffer
+  int max_idx;
+  vertex_data *v = &pvd->v[0];
+  for (int i = 0; ((i < TRAJECTORY_SIZE) and (line.getX()[i] < fmax(MIN_DRAW_DISTANCE, max_distance))); i++) {
+    v += car_space_to_full_frame(s, line.getX()[i], -line.getY()[i] - off, -line.getZ()[i] + 1.22, &v->x, &v->y);
+    max_idx = i;
   }
-  for (int i = rcount - 1; i > 0; i--) {
-    float px = (float)i;
-    float py = points[i] + off;
-    const vec4 p_car_space = (vec4){{px, py, 0., 1.}};
-    const vec3 p_full_frame = car_space_to_full_frame(s, p_car_space);
-    if(!valid_frame_pt(s, p_full_frame.v[0], p_full_frame.v[1]))
-      continue;
-    pvd->v[pvd->cnt].x = p_full_frame.v[0];
-    pvd->v[pvd->cnt].y = p_full_frame.v[1];
-    pvd->cnt += 1;
+  for (int i = max_idx - 1; i > 0; i--) {
+    v += car_space_to_full_frame(s, line.getX()[i], -line.getY()[i] + off, -line.getZ()[i] + 1.22, &v->x, &v->y);
   }
+  pvd->cnt = v - pvd->v;
 }
 
-static void update_all_lane_lines_data(UIState *s, const cereal::ModelData::PathData::Reader &path, const float *points, model_path_vertices_data *pstart) {
-  update_lane_line_data(s, points, 0.025*path.getProb(), pstart, path.getValidLen());
-  update_lane_line_data(s, points, fmin(path.getStd(), 0.7), pstart + 1, path.getValidLen());
-}
 
-static void ui_draw_lane(UIState *s,  model_path_vertices_data *pstart, NVGcolor color) {
-  ui_draw_lane_line(s, pstart, color);
-  color.a /= 25;
-  ui_draw_lane_line(s, pstart + 1, color);
-}
-
-static void ui_draw_vision_lanes(UIState *s) {
+static void ui_draw_vision_lane_lines(UIState *s) {
   const UIScene *scene = &s->scene;
-  model_path_vertices_data *pvd = &s->model_path_vertices[0];
-  if(s->sm->updated("model")) {
-    update_all_lane_lines_data(s, scene->model.getLeftLane(), scene->left_lane_points, pvd);
-    update_all_lane_lines_data(s, scene->model.getRightLane(), scene->right_lane_points, pvd + MODEL_LANE_PATH_CNT);
+  // paint lanelines
+  line_vertices_data *pvd_ll = &s->lane_line_vertices[0];
+  for (int ll_idx = 0; ll_idx < 4; ll_idx++) {
+    if(s->sm->updated("modelV2")) {
+      update_line_data(s, scene->model.getLaneLines()[ll_idx], 0.025*scene->model.getLaneLineProbs()[ll_idx], pvd_ll + ll_idx, scene->max_distance);
+    }
+    NVGcolor color = nvgRGBAf(1.0, 1.0, 1.0, scene->lane_line_probs[ll_idx]);
+    ui_draw_line(s, (pvd_ll + ll_idx)->v, (pvd_ll + ll_idx)->cnt, &color, nullptr);
   }
-
-  // Draw left lane edge
-  ui_draw_lane(s, pvd, nvgRGBAf(1.0, 1.0, 1.0, scene->model.getLeftLane().getProb()));
-
-  // Draw right lane edge
-  ui_draw_lane(s, pvd + MODEL_LANE_PATH_CNT, nvgRGBAf(1.0, 1.0, 1.0, scene->model.getRightLane().getProb()));
-
-  if(s->sm->updated("radarState")) {
-    update_all_track_data(s);
+  
+  // paint road edges
+  line_vertices_data *pvd_re = &s->road_edge_vertices[0];
+  for (int re_idx = 0; re_idx < 2; re_idx++) {
+    if(s->sm->updated("modelV2")) {
+      update_line_data(s, scene->model.getRoadEdges()[re_idx], 0.025, pvd_re + re_idx, scene->max_distance);
+    }
+    NVGcolor color = nvgRGBAf(1.0, 0.0, 0.0, std::clamp<float>(1.0-scene->road_edge_stds[re_idx], 0.0, 1.0));
+    ui_draw_line(s, (pvd_re + re_idx)->v, (pvd_re + re_idx)->cnt, &color, nullptr);
   }
-
-  // Draw vision path
-  ui_draw_track(s, false, &s->track_vertices[0]);
-  if (scene->controls_state.getEnabled()) {
-    // Draw MPC path when engaged
-    ui_draw_track(s, true, &s->track_vertices[1]);
+  
+  // paint path
+  if(s->sm->updated("modelV2")) {
+    update_track_data(s, scene->model.getPosition(), &s->track_vertices);
   }
+  ui_draw_track(s, &s->track_vertices);
 }
 
 // Draw all world space objects.
@@ -344,7 +257,9 @@ static void ui_draw_world(UIState *s) {
   const UIScene *scene = &s->scene;
 
   nvgSave(s->vg);
-  nvgScissor(s->vg, s->video_rect.x, s->video_rect.y, s->video_rect.w, s->video_rect.h);
+
+  // Don't draw on top of sidebar
+  nvgScissor(s->vg, scene->viz_rect.x, scene->viz_rect.y, scene->viz_rect.w, scene->viz_rect.h);
 
   // Apply transformation such that video pixel coordinates match video
   // 1) Put (0, 0) in the middle of the video
@@ -357,7 +272,7 @@ static void ui_draw_world(UIState *s) {
   nvgTranslate(s->vg, -intrinsic_matrix.v[2], -intrinsic_matrix.v[5]);
 
   // Draw lane edges and vision/mpc tracks
-  ui_draw_vision_lanes(s);
+  ui_draw_vision_lane_lines(s);
 
   // Draw lead indicators if openpilot is handling longitudinal
   if (s->longitudinal_control) {

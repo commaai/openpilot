@@ -8,6 +8,7 @@ import numpy as np
 
 from opendbc import DBC_PATH
 
+from cereal import car
 from common.realtime import Ratekeeper
 from selfdrive.config import Conversions as CV
 import cereal.messaging as messaging
@@ -117,7 +118,7 @@ class Plant():
       Plant.live_location_kalman = messaging.pub_sock('liveLocationKalman')
       Plant.health = messaging.pub_sock('health')
       Plant.thermal = messaging.pub_sock('thermal')
-      Plant.driverState = messaging.pub_sock('driverState')
+      Plant.dMonitoringState = messaging.pub_sock('dMonitoringState')
       Plant.cal = messaging.pub_sock('liveCalibration')
       Plant.controls_state = messaging.sub_sock('controlsState')
       Plant.plan = messaging.sub_sock('plan')
@@ -369,12 +370,12 @@ class Plant():
     live_parameters.liveParameters.stiffnessFactor = 1.0
     Plant.live_params.send(live_parameters.to_bytes())
 
-    driver_state = messaging.new_message('driverState')
-    driver_state.driverState.faceOrientation = [0.] * 3
-    driver_state.driverState.facePosition = [0.] * 2
-    Plant.driverState.send(driver_state.to_bytes())
+    dmon_state = messaging.new_message('dMonitoringState')
+    dmon_state.dMonitoringState.isDistracted = False
+    Plant.dMonitoringState.send(dmon_state.to_bytes())
 
     health = messaging.new_message('health')
+    health.health.safetyModel = car.CarParams.SafetyModel.hondaNidec
     health.health.controlsAllowed = True
     Plant.health.send(health.to_bytes())
 

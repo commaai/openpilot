@@ -17,7 +17,7 @@ from selfdrive.test.helpers import set_params_enabled
 parser = argparse.ArgumentParser(description='Bridge between CARLA and openpilot.')
 parser.add_argument('--joystick', action='store_true')
 parser.add_argument('--town', type=str, default='Town04')
-parser.add_argument('--spawn_point', dest='num_selected_spawn_point', 
+parser.add_argument('--spawn_point', dest='num_selected_spawn_point',
         type=int, default=16)
 parser.add_argument('--cloudyness', default=0.1, type=float)
 parser.add_argument('--precipitation', default=0.0, type=float)
@@ -88,7 +88,7 @@ def health_function():
     dat.valid = True
     dat.health = {
       'ignitionLine': True,
-      'hwType': "greyPanda",
+      'hwType': "blackPanda",
       'controlsAllowed': True
     }
     pm.send('health', dat)
@@ -145,7 +145,7 @@ def go(q):
   vehicle_bp = blueprint_library.filter('vehicle.tesla.*')[0]
   spawn_points = world_map.get_spawn_points()
   assert len(spawn_points) > args.num_selected_spawn_point, \
-    f'''No spawn point {args.num_selected_spawn_point}, try a value between 0 and 
+    f'''No spawn point {args.num_selected_spawn_point}, try a value between 0 and
     {len(spawn_points)} for this town.'''
   spawn_point = spawn_points[args.num_selected_spawn_point]
   vehicle = world.spawn_actor(vehicle_bp, spawn_point)

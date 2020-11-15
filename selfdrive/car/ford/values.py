@@ -15,10 +15,6 @@ FINGERPRINTS = {
   }],
 }
 
-ECU_FINGERPRINT = {
-  Ecu.fwdCamera: [970, 973, 984]
-}
-
 DBC = {
   CAR.FUSION: dbc_dict('ford_fusion_2018_pt', 'ford_fusion_2018_adas'),
 }

@@ -1,30 +1,84 @@
-Import('env', 'qt_env', 'arch', 'common', 'messaging', 'gpucommon', 'visionipc', 'cereal')
+import os
+Import('env', 'arch', 'real_arch', 'common', 'messaging', 'gpucommon', 'visionipc', 'cereal')
+
+qt_env = None
+if arch in ["x86_64", "Darwin", "larch64"]:
+  qt_env = env.Clone()
+
+  if arch == "Darwin":
+    qt_env['QTDIR'] = "/usr/local/opt/qt"
+    QT_BASE = "/usr/local/opt/qt/"
+    qt_dirs = [
+      QT_BASE + "include/",
+      QT_BASE + "include/QtWidgets",
+      QT_BASE + "include/QtGui",
+      QT_BASE + "include/QtCore",
+      QT_BASE + "include/QtDBus",
+      QT_BASE + "include/QtMultimedia",
+    ]
+    qt_env["LINKFLAGS"] += ["-F" + QT_BASE + "lib"]
+  else:
+    qt_env['QTDIR'] = "/usr"
+    qt_dirs = [
+      f"/usr/include/{real_arch}-linux-gnu/qt5",
+      f"/usr/include/{real_arch}-linux-gnu/qt5/QtWidgets",
+      f"/usr/include/{real_arch}-linux-gnu/qt5/QtGui",
+      f"/usr/include/{real_arch}-linux-gnu/qt5/QtCore",
+      f"/usr/include/{real_arch}-linux-gnu/qt5/QtDBus",
+      f"/usr/include/{real_arch}-linux-gnu/qt5/QtMultimedia",
+      f"/usr/include/{real_arch}-linux-gnu/qt5/QtGui/5.5.1/QtGui",
+      f"/usr/include/{real_arch}-linux-gnu/qt5/QtGui/5.12.8/QtGui",
+    ]
+
+  qt_env.Tool('qt')
+  qt_env['CPPPATH'] += qt_dirs
+  qt_flags = [
+    "-D_REENTRANT",
+    "-DQT_NO_DEBUG",
+    "-DQT_WIDGETS_LIB",
+    "-DQT_GUI_LIB",
+    "-DQT_CORE_LIB"
+  ]
+  qt_env['CXXFLAGS'] += qt_flags
+
+
 
 src = ['ui.cc', 'paint.cc', 'sidebar.cc', '#phonelibs/nanovg/nanovg.c']
 libs = [common, 'zmq', 'capnp', 'kj', 'm', cereal, messaging, gpucommon, visionipc]
 
 
 if qt_env is None:
-  libs += ['EGL', 'GLESv3', 'gnustl_shared', 'log', 'utils', 'gui', 'hardware', 'ui', 'CB', 'gsl', 'adreno_utils', 'OpenSLES', 'cutils', 'uuid', 'OpenCL']
+  libs += ['EGL', 'GLESv3', 'gnustl_shared', 'log', 'utils', 'gui', 'hardware',
+           'ui', 'CB', 'gsl', 'adreno_utils', 'OpenSLES', 'cutils', 'uuid', 'OpenCL']
   linkflags = ['-Wl,-rpath=/system/lib64,-rpath=/system/comma/usr/lib']
 
   src += ["android/ui.cc", "android/sl_sound.cc"]
   env.Program('_ui', src,
     LINKFLAGS=linkflags,
     LIBS=libs)
-
 else:
   qt_libs = ["pthread"]
 
-  if arch == "Darwin":
-    qt_env["FRAMEWORKS"] += ["QtWidgets", "QtGui", "QtCore", "QtDBus", "QtMultimedia"]
-  else:
-    qt_libs += ["Qt5Widgets", "Qt5Gui", "Qt5Core", "Qt5DBus", "Qt5Multimedia"]
+  qt_modules = ["Widgets", "Gui", "Core", "DBus", "Multimedia"]
 
   if arch == "larch64":
     qt_libs += ["GLESv2", "wayland-client"]
-  else:
+  elif arch != "Darwin":
     qt_libs += ["GL"]
 
-  qt_src = ["qt/ui.cc", "qt/window.cc", "qt/settings.cc", "qt/qt_sound.cc"] + src
+  if arch == "Darwin":
+    qt_env["FRAMEWORKS"] += [f"Qt{m}" for m in qt_modules] + ["OpenGL"]
+  else:
+    qt_libs += [f"Qt5{m}" for m in qt_modules]
+
+  qt_src = ["qt/ui.cc", "qt/window.cc", "qt/qt_sound.cc", "qt/offroad/settings.cc", "qt/offroad/onboarding.cc"] + src
   qt_env.Program("_ui", qt_src, LIBS=qt_libs + libs)
+
+  # spinner and text window
+  qt_env.Program("qt/text", ["qt/text.cc"], LIBS=qt_libs + libs)
+  qt_env.Program("qt/spinner", ["qt/spinner.cc"], LIBS=qt_libs + libs)
+
+  # setup and installer
+  if "BUILD_SETUP" in os.environ:
+    qt_env.Program("qt/setup/setup", ["qt/setup/setup.cc"], LIBS=qt_libs + libs + ['curl'])
+    qt_env.Program("qt/setup/installer", ["qt/setup/installer.cc"], LIBS=qt_libs + libs)
