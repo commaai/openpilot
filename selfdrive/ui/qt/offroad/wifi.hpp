@@ -10,17 +10,14 @@ struct Network {
   QString path;
   QByteArray ssid;
   unsigned int strength;
+  bool connected;
 };
 
-class WifiSettings : public QWidget {
-  Q_OBJECT
 
+class WifiSettingsModel{
   private:
     QVector<QByteArray> seen_ssids;
-    QVector<Network> seen_networks;
-    QVBoxLayout* vlayout;
 
-    void refresh();
     QString get_adapter();
     QList<Network> get_networks(QString adapter);
     void connect_to_open(QByteArray ssid);
@@ -30,9 +27,26 @@ class WifiSettings : public QWidget {
     QByteArray get_ap_ssid(QString network_path);
     QByteArray get_property(QString network_path, QString property);
     unsigned int get_ap_strength(QString network_path);
+
+  public:
+    QVector<Network> seen_networks;
+
+    explicit WifiSettingsModel();
+    void refreshNetworks();
+};
+
+
+class WifiSettings : public QWidget {
+  Q_OBJECT
+
+  private:
+    WifiSettingsModel* wifi;
+    QVBoxLayout* vlayout;
+
   public:
     explicit WifiSettings(QWidget *parent = 0);
 
   private slots:
     void handleButton(QAbstractButton* m_button);
+    void refresh();
 };
