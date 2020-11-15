@@ -284,7 +284,7 @@ bash -c "$(curl https://raw.githubusercontent.com/commaai/openpilot/master/tools
 ```
 3) Press 1 to engage openpilot
 
-For further information see the full [README](tools/sim/README.md), as well as the [CARLA](https://github.com/commaai/openpilot/wiki/CARLA) page on the openpilot wiki
+See the full [README](tools/sim/README.md)
 
 You should also take a look at the tools directory in master: lots of tools you can use to replay driving data, test, and develop openpilot from your PC.
 
