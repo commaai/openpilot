@@ -11,6 +11,9 @@ Most open source development activity is coordinated through our [Discord](https
  * Fork [our repositories](https://github.com/commaai) on GitHub
 
 ## Testing
+### Local Testing	
+
+You can test your changes on your machine by looking in tests folder near the changes you are making, or you can simulate a Github Action to run all unit-tests significantly faster than on Github CI. 
 
 ### Automated Testing
 
