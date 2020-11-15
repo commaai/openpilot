@@ -27,9 +27,13 @@ class CarInterface(CarInterfaceBase):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint, has_relay)
 
     ret.carName = "hyundai"
-    ret.safetyModel = car.CarParams.SafetyModel.hyundaiLegacy
-    if candidate in [CAR.SONATA]:
-      ret.safetyModel = car.CarParams.SafetyModel.hyundai
+    ret.safetyModel = car.CarParams.SafetyModel.hyundaiLegacy      
+    # these cars require a special panda safety mode due to missing counters and checksums in the messages
+    if candidate in [CAR.KIA_SPORTAGE, CAR.HYUNDAI_GENESIS, CAR.IONIQ_EV_LTD, CAR.IONIQ, CAR.KONA_EV, CAR.KIA_SORENTO, CAR.SONATA_2019,
+                     CAR.KIA_NIRO_EV, CAR.KIA_OPTIMA, CAR.VELOSTER, CAR.KIA_STINGER, CAR.GENESIS_G70]:
+      ret.safetyModel = car.CarParams.SafetyModel.hyundaiLegacy
+    ret.radarOffCan = True
+
 
     # Most Hyundai car ports are community features for now
     ret.communityFeature = candidate not in [CAR.SONATA, CAR.PALISADE]
@@ -227,11 +231,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kf = 0.00005
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
-
-    # these cars require a special panda safety mode due to missing counters and checksums in the messages
-     if candidate in [CAR.KIA_SPORTAGE, CAR.GENESIS, CAR.IONIQ_EV, CAR.KONA_EV]:
-      ret.safetyModel = car.CarParams.SafetyModel.hyundaiLegacy
-
+      
     ret.centerToFront = ret.wheelbase * 0.4
 
     # TODO: get actual value, for now starting with reasonable value for
