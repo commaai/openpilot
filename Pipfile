@@ -115,6 +115,7 @@ pycryptodome = "*"
 "Jinja2" = "*"
 PyJWT = "*"
 pyserial = "*"
+onnx = "*"
 onnxruntime = "*"
 
 [requires]
