@@ -69,7 +69,7 @@ void WifiUI::refresh(){
 
     QPushButton* m_button = new QPushButton((network.connected ? "Connected" : "Connect")+(QString(i, QChar(0))));
     m_button->setFixedWidth(250);
-    m_button->setDisabled(network.connected);
+    m_button->setDisabled(network.connected || network.security_type < 0);
     connectButtons->addButton(m_button,i);
 
     hlayout->addWidget(m_button);
