@@ -33,6 +33,7 @@ class WifiManager{
 
     explicit WifiManager();
     void refreshNetworks();
+    
 };
 
 
@@ -49,4 +50,5 @@ class WifiUI : public QWidget {
   private slots:
     void handleButton(QAbstractButton* m_button);
     void refresh();
+    void clearAll();
 };
