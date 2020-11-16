@@ -83,16 +83,16 @@ QList<Network> WifiManager::get_networks(QString adapter){
 
   // Sort by strength
   std::sort(r.begin(), r.end(), compare_by_strength);
-
   return r;
 }
+
 int WifiManager::getSecurityType(QString path){
   int sflag = get_property(path, "Flags").toInt();
   int wpaflag = get_property(path, "WpaFlags").toInt();
   int rsnflag = get_property(path, "RsnFlags").toInt();
   if(sflag == 0){
     return 0;
-  }else if(sflag == 1){
+  }else if(sflag == 1 && wpaflag < 400){
     return 1;
   }else{
     qDebug() << "Cannot determine security type for " << get_property(path, "Ssid") << " with flags"; 
