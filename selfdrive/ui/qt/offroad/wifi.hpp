@@ -14,7 +14,7 @@ struct Network {
 };
 
 
-class WifiSettingsModel{
+class WifiManager{
   private:
     QVector<QByteArray> seen_ssids;
 
@@ -31,20 +31,20 @@ class WifiSettingsModel{
   public:
     QVector<Network> seen_networks;
 
-    explicit WifiSettingsModel();
+    explicit WifiManager();
     void refreshNetworks();
 };
 
 
-class WifiSettings : public QWidget {
+class WifiUI : public QWidget {
   Q_OBJECT
 
   private:
-    WifiSettingsModel* wifi;
+    WifiManager* wifi;
     QVBoxLayout* vlayout;
 
   public:
-    explicit WifiSettings(QWidget *parent = 0);
+    explicit WifiUI(QWidget *parent = 0);
 
   private slots:
     void handleButton(QAbstractButton* m_button);

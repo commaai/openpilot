@@ -193,7 +193,7 @@ QWidget * developer_panel() {
 QWidget * network_panel() {
   QVBoxLayout *main_layout = new QVBoxLayout;
 
-  main_layout->addWidget(new WifiSettings());
+  main_layout->addWidget(new WifiUI());
 
   QWidget *widget = new QWidget;
   widget->setLayout(main_layout);
