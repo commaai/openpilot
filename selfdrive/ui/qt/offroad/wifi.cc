@@ -43,9 +43,9 @@ bool compare_by_strength(const Network &a, const Network &b){
   return a.strength > b.strength;
 }
 
-WifiSettings::WifiSettings(QWidget *parent) : QWidget(parent) {
+WifiUI::WifiUI(QWidget *parent) : QWidget(parent) {
   vlayout = new QVBoxLayout;
-  wifi = new WifiSettingsModel;
+  wifi = new WifiManager;
   refresh();
   setLayout(vlayout);
 
@@ -66,7 +66,7 @@ WifiSettings::WifiSettings(QWidget *parent) : QWidget(parent) {
   qDebug() << "Running";
 }
 
-void WifiSettings::refresh(){
+void WifiUI::refresh(){
   wifi->refreshNetworks();
   int i=0;
   
@@ -98,7 +98,7 @@ void WifiSettings::refresh(){
   // vlayout->addWidget(refreshButton);
 }
 
-void WifiSettings::handleButton(QAbstractButton* m_button){
+void WifiUI::handleButton(QAbstractButton* m_button){
   int id = m_button->text().length()-7;  //7="Connect".length()
   qDebug() << "Clicked a button:" << id;
   qDebug() << wifi->seen_networks[id].ssid;
@@ -122,11 +122,11 @@ void WifiSettings::handleButton(QAbstractButton* m_button){
 
 
 
-WifiSettingsModel::WifiSettingsModel(){
+WifiManager::WifiManager(){
   refreshNetworks();
 }
 
-void WifiSettingsModel::refreshNetworks(){
+void WifiManager::refreshNetworks(){
   qDBusRegisterMetaType<Connection>();
   QString adapter = get_adapter();
   request_scan(adapter);
@@ -142,7 +142,7 @@ void WifiSettingsModel::refreshNetworks(){
   qDebug() <<"Adding networks ";
 }
 
-QList<Network> WifiSettingsModel::get_networks(QString adapter){
+QList<Network> WifiManager::get_networks(QString adapter){
   QList<Network> r;
   QDBusConnection bus = QDBusConnection::systemBus();
   QDBusInterface nm(nm_service, adapter, wireless_device_iface, bus);
@@ -173,7 +173,7 @@ QList<Network> WifiSettingsModel::get_networks(QString adapter){
   return r;
 }
 
-void WifiSettingsModel::connect_to_open(QByteArray ssid){
+void WifiManager::connect_to_open(QByteArray ssid){
 
   Connection connection;
   connection["connection"]["type"] = "802-11-wireless";
@@ -197,7 +197,7 @@ void WifiSettingsModel::connect_to_open(QByteArray ssid){
 
 }
 
-void WifiSettingsModel::connect_to_WPA(QByteArray ssid, QString password){
+void WifiManager::connect_to_WPA(QByteArray ssid, QString password){
   // TODO: handle different authentication types, None, WEP, WPA, WPA Enterprise
   // TODO: hande exisiting connection for same ssid
 
@@ -228,28 +228,28 @@ void WifiSettingsModel::connect_to_WPA(QByteArray ssid, QString password){
 
 }
 
-void WifiSettingsModel::request_scan(QString adapter){
+void WifiManager::request_scan(QString adapter){
   QDBusConnection bus = QDBusConnection::systemBus();
   QDBusInterface nm(nm_service, adapter, wireless_device_iface, bus);
   QDBusMessage response = nm.call("RequestScan",  QVariantMap());
 
   qDebug() << response;
 }
-QString WifiSettingsModel::get_active_ap(QString adapter){
+QString WifiManager::get_active_ap(QString adapter){
   QDBusConnection bus = QDBusConnection::systemBus();
   QDBusInterface device_props(nm_service, adapter, props_iface, bus);
   QDBusMessage response = device_props.call("Get", wireless_device_iface, "ActiveAccessPoint");
   QDBusObjectPath r = get_response<QDBusObjectPath>(response);
   return r.path();
 }
-QByteArray WifiSettingsModel::get_property(QString network_path ,QString property){
+QByteArray WifiManager::get_property(QString network_path ,QString property){
   QDBusConnection bus = QDBusConnection::systemBus();
   QDBusInterface device_props(nm_service, network_path, props_iface, bus);
   QDBusMessage response = device_props.call("Get", ap_iface, property);
   return get_response<QByteArray>(response);
 }
 
-unsigned int WifiSettingsModel::get_ap_strength(QString network_path){
+unsigned int WifiManager::get_ap_strength(QString network_path){
   qDebug() << network_path;
   // TODO: abstract get propery function with template
   QDBusConnection bus = QDBusConnection::systemBus();
@@ -258,7 +258,7 @@ unsigned int WifiSettingsModel::get_ap_strength(QString network_path){
   return get_response<unsigned int>(response);
 }
 
-QString WifiSettingsModel::get_adapter(){
+QString WifiManager::get_adapter(){
   QDBusConnection bus = QDBusConnection::systemBus();
 
   QDBusInterface nm(nm_service, nm_path, nm_iface, bus);
