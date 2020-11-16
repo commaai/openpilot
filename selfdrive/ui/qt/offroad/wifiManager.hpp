@@ -6,6 +6,9 @@ struct Network {
   QByteArray ssid;
   unsigned int strength;
   bool connected;
+
+  //-1->unknown, 0->open, 1->WPA    
+  int security_type;
 };
 
 class WifiManager{
@@ -21,11 +24,14 @@ class WifiManager{
     QByteArray get_ap_ssid(QString network_path);
     QByteArray get_property(QString network_path, QString property);
     unsigned int get_ap_strength(QString network_path);
+    int getSecurityType(QString ssid);
 
   public:
     QVector<Network> seen_networks;
 
     explicit WifiManager();
     void refreshNetworks();
-    
+    void connect(Network ssid);
+    void connect(Network ssid, QString password);
+    void connect(Network ssid, QString username, QString password);
 };

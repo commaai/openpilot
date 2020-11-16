@@ -42,10 +42,10 @@ void WifiManager::refreshNetworks(){
   request_scan(adapter);
   QString active_ap = get_active_ap(adapter);
 
-  QList<Network> all_networks = get_networks(adapter);
   QByteArray active_ssid = get_property(active_ap, "Ssid");
+  qDebug() << "Currently active network is:" << active_ssid;
 
-  for (Network &network : all_networks){
+  for (Network &network : get_networks(adapter)){
     if(seen_ssids.count(network.ssid)){
       continue;
     }
@@ -72,7 +72,8 @@ QList<Network> WifiManager::get_networks(QString adapter){
 
     QByteArray ssid = get_property(path.path(), "Ssid");
     unsigned int strength = get_ap_strength(path.path());
-    Network network = {path.path(), ssid, strength, path.path()==active_ap};
+    int security = getSecurityType(path.path());
+    Network network = {path.path(), ssid, strength, path.path()==active_ap, security};
 
     if (ssid.length()){
       r.push_back(network);
@@ -85,7 +86,39 @@ QList<Network> WifiManager::get_networks(QString adapter){
 
   return r;
 }
+int WifiManager::getSecurityType(QString path){
+  int sflag = get_property(path, "Flags").toInt();
+  int wpaflag = get_property(path, "WpaFlags").toInt();
+  int rsnflag = get_property(path, "RsnFlags").toInt();
+  if(sflag == 0){
+    return 0;
+  }else if(sflag == 1){
+    return 1;
+  }else{
+    qDebug() << "Cannot determine security type for " << get_property(path, "Ssid") << " with flags"; 
+    qDebug() << "flag    " << sflag;
+    qDebug() << "WpaFlag " << wpaflag;
+    qDebug() << "RsnFlag " << rsnflag;
+    return -1;
+  }
+}
+void WifiManager::connect(Network n){
+  return connect(n,"","");
+}
+void WifiManager::connect(Network n, QString password){
+  return connect(n, "", password);
+}
 
+void WifiManager::connect(Network n, QString username, QString password){
+  qDebug() << "Connecting to"<< n.ssid << "with username, password =" << username << "," <<password;
+  if(n.security_type==0){
+    connect_to_open(n.ssid);
+  }else if(n.security_type == 1){
+    connect_to_WPA(n.ssid, password);
+  }else{
+    qDebug() << "Network cannot be connected to; unknown security type";
+  }
+}
 void WifiManager::connect_to_open(QByteArray ssid){
 
   Connection connection;

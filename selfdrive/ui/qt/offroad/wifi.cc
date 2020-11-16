@@ -48,9 +48,6 @@ WifiUI::WifiUI(QWidget *parent) : QWidget(parent) {
 
   qDebug() << "Running";
 }
-void WifiUI::clearAll(){
-  clearLayout(vlayout);
-}
 void WifiUI::refresh(){
   clearLayout(vlayout);
 
@@ -83,33 +80,30 @@ void WifiUI::refresh(){
   QPushButton* refreshButton = new QPushButton("Refresh networks");
   connect(refreshButton, SIGNAL (released()), this, SLOT (refresh()));
   vlayout->addWidget(refreshButton);
-  QPushButton* deleteButton = new QPushButton("Delete Networks");
-  connect(deleteButton, SIGNAL (released()), this, SLOT (clearAll()));
-  vlayout->addWidget(deleteButton);
-  QWidget::repaint();
 
 }
 
 void WifiUI::handleButton(QAbstractButton* m_button){
   int id = m_button->text().length()-7;  //7="Connect".length()
+  Network n = wifi->seen_networks[id];
   qDebug() << "Clicked a button:" << id;
-  qDebug() << wifi->seen_networks[id].ssid;
-  // QString security_type = get_property(seen_networks[id].path, "Flags");
-  // qDebug() << get_property(seen_networks[id].path, "Flags");
-  // qDebug() << get_property(seen_networks[id].path, "WpaFlags");
-  // qDebug() << get_property(seen_networks[id].path, "RsnFlags");
-  // QByteArray ssid = seen_ssids[id];
-  // if(security_type == "0"){
-  //   connect_to_open(ssid);
-  // }else if(security_type == "1"){
-  //   bool ok;
-  //   QString password = QInputDialog::getText(this, "Password for "+ssid, "Password", QLineEdit::Normal, "Put_the_password_HERE", &ok);
-  //   if(ok){
-  //     connect_to_WPA(ssid, password);
-  //   }else{
-  //     qDebug() << "Connection cancelled, user not willing to provide a password.";
-  //   }
-  // }
+  qDebug() << n.ssid;
+  m_button->setText("Connecting");
+  m_button->setDisabled(true);
+  if(n.security_type==0){
+    wifi->connect(n);
+  }else if(n.security_type==1){
+    bool ok;
+    QString password = QInputDialog::getText(this, "Password for "+n.ssid, "Password", QLineEdit::Normal, "Put_the_password_HERE", &ok);
+    if(ok){
+      wifi->connect(n, password);
+    }else{
+      qDebug() << "Connection cancelled, user not willing to provide a password.";
+    }
+  }else{
+    qDebug() << "Cannot determine a network's security type";
+  }
+
 }
 
 
