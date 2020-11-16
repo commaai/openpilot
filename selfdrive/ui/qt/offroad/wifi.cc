@@ -42,6 +42,17 @@ T get_response(QDBusMessage response){
 bool compare_by_strength(const Network &a, const Network &b){
   return a.strength > b.strength;
 }
+void clearLayout(QLayout* layout){
+  while (QLayoutItem* item = layout->takeAt(0)){
+    if (QWidget* widget = item->widget()){
+      widget->deleteLater();
+    }
+    if (QLayout* childLayout = item->layout()){
+      clearLayout(childLayout);
+    }
+    delete item;
+  }
+}
 
 WifiUI::WifiUI(QWidget *parent) : QWidget(parent) {
   vlayout = new QVBoxLayout;
@@ -65,37 +76,46 @@ WifiUI::WifiUI(QWidget *parent) : QWidget(parent) {
 
   qDebug() << "Running";
 }
-
+void WifiUI::clearAll(){
+  clearLayout(vlayout);
+}
 void WifiUI::refresh(){
+  clearLayout(vlayout);
+
   wifi->refreshNetworks();
   int i=0;
   
-  QButtonGroup* myButtongroup=new QButtonGroup(this);
-  QObject::connect(myButtongroup, SIGNAL(buttonClicked(QAbstractButton*)), this, SLOT(handleButton(QAbstractButton*)));
+  QButtonGroup* connectButtons=new QButtonGroup(this);
+  QObject::connect(connectButtons, SIGNAL(buttonClicked(QAbstractButton*)), this, SLOT(handleButton(QAbstractButton*)));
   for (Network &network : wifi->seen_networks){
     QHBoxLayout *hlayout = new QHBoxLayout;
     hlayout->addWidget(new QLabel(QString::fromUtf8(network.ssid)));
-    QPixmap pix("../assets/offroad/indicator_wifi_" + QString::number(100) + ".png");
+    unsigned int strength_scale = std::round(network.strength / 25.0) * 25;
+    QPixmap pix("../assets/offroad/indicator_wifi_" + QString::number(strength_scale) + ".png");
     QLabel *icon = new QLabel();
     icon->setPixmap(pix.scaledToWidth(100, Qt::SmoothTransformation));
     icon->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
     hlayout->addWidget(icon);
     hlayout->addSpacing(20);
 
-    QPushButton* m_button = new QPushButton((network.connected ? "Connected" : "Connect")+(QString(i, QChar(' '))));
+    QPushButton* m_button = new QPushButton((network.connected ? "Connected" : "Connect")+(QString(i, QChar(0))));
     m_button->setFixedWidth(250);
     m_button->setDisabled(network.connected);
-    connect(m_button, SIGNAL (released()), this, SLOT (handleButton(m_button)));
-    myButtongroup->addButton(m_button,i);
+    connectButtons->addButton(m_button,i);
 
     hlayout->addWidget(m_button);
     hlayout->addSpacing(20);
     vlayout->addLayout(hlayout);
     i+=1;
   }
-  // QPushButton* refreshButton = new QPushButton("Refresh networks");
-  // connect(refreshButton, SIGNAL (released()), this, SLOT (refresh()));
-  // vlayout->addWidget(refreshButton);
+  QPushButton* refreshButton = new QPushButton("Refresh networks");
+  connect(refreshButton, SIGNAL (released()), this, SLOT (refresh()));
+  vlayout->addWidget(refreshButton);
+  QPushButton* deleteButton = new QPushButton("Delete Networks");
+  connect(deleteButton, SIGNAL (released()), this, SLOT (clearAll()));
+  vlayout->addWidget(deleteButton);
+  QWidget::repaint();
+
 }
 
 void WifiUI::handleButton(QAbstractButton* m_button){
@@ -127,15 +147,21 @@ WifiManager::WifiManager(){
 }
 
 void WifiManager::refreshNetworks(){
+  seen_networks.clear();
+  seen_ssids.clear();
+
   qDBusRegisterMetaType<Connection>();
   QString adapter = get_adapter();
   request_scan(adapter);
   QString active_ap = get_active_ap(adapter);
 
-  QList<Network> networks = get_networks(adapter);
+  QList<Network> all_networks = get_networks(adapter);
   QByteArray active_ssid = get_property(active_ap, "Ssid");
 
-  for (Network &network : networks){
+  for (Network &network : all_networks){
+    if(seen_ssids.count(network.ssid)){
+      continue;
+    }
     seen_ssids.push_back(network.ssid);
     seen_networks.push_back(network);
   }
@@ -250,7 +276,6 @@ QByteArray WifiManager::get_property(QString network_path ,QString property){
 }
 
 unsigned int WifiManager::get_ap_strength(QString network_path){
-  qDebug() << network_path;
   // TODO: abstract get propery function with template
   QDBusConnection bus = QDBusConnection::systemBus();
   QDBusInterface device_props(nm_service, network_path, props_iface, bus);
