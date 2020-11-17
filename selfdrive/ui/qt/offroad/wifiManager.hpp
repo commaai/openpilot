@@ -1,5 +1,6 @@
 #pragma once
 #include <QWidget>
+#include <QtDBus>
 
 struct Network {
   QString path;
@@ -14,7 +15,8 @@ struct Network {
 class WifiManager{
   private:
     QVector<QByteArray> seen_ssids;
-    QString adapter;
+    QString adapter;//Path to network manager wifi-device
+    QDBusConnection bus = QDBusConnection::systemBus();
 
     QString get_adapter();
     QList<Network> get_networks();
@@ -22,6 +24,7 @@ class WifiManager{
     void connect_to_WPA(QByteArray ssid, QString password);
     void request_scan();
     QString get_active_ap();
+    uint get_wifi_device_state();
     QByteArray get_ap_ssid(QString network_path);
     QByteArray get_property(QString network_path, QString property);
     unsigned int get_ap_strength(QString network_path);
