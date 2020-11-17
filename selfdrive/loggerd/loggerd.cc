@@ -377,7 +377,9 @@ void encoder_thread(RotateState *rotate_state, bool raw_clips, int cam_idx) {
 
         // publish encode index
         MessageBuilder msg;
-        auto eidx = msg.initEvent().initEncodeIdx();
+        // this is really ugly
+        auto eidx = cam_idx == LOG_CAMERA_ID_DCAMERA ? msg.initEvent().initFrontEncodeIdx() :
+                    (cam_idx == LOG_CAMERA_ID_ECAMERA ? msg.initEvent().initWideEncodeIdx() : msg.initEvent().initEncodeIdx());
         eidx.setFrameId(extra.frame_id);
   #ifdef QCOM2
         eidx.setType(cereal::EncodeIndex::Type::FULL_H_E_V_C);
