@@ -2141,7 +2141,7 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
     auto framed = msg.initEvent().initFrame();
     fill_frame_data(framed, b->cur_frame_data, cnt);
     if (getenv("SEND_REAR")) {
-      fill_frame_image(framed, b->cur_rgb_buf->addr, b->rgb_width, b->rgb_height);
+      fill_frame_image(framed, (uint8_t*)b->cur_rgb_buf->addr, b->rgb_width, b->rgb_height);
     }
     framed.setFocusVal(kj::ArrayPtr<const int16_t>(&s->rear.focus[0], NUM_FOCUS));
     framed.setFocusConf(kj::ArrayPtr<const uint8_t>(&s->rear.confidence[0], NUM_FOCUS));
