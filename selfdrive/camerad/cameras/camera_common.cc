@@ -164,9 +164,8 @@ bool CameraBuf::acquire() {
     }
     assert(clSetKernelArg(krnl_debayer, 2, sizeof(float), &digital_gain) == 0);
     const size_t debayer_work_size = rgb_height;  // doesn't divide evenly, is this okay?
-    const size_t debayer_local_work_size = 128;
     assert(clEnqueueNDRangeKernel(q, krnl_debayer, 1, NULL,
-                                  &debayer_work_size, &debayer_local_work_size, 0, 0, &debayer_event) == 0);
+                                  &debayer_work_size, NULL, 0, 0, &debayer_event) == 0);
 #endif
   } else {
     assert(cur_rgb_buf->len >= frame_size);
