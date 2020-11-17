@@ -1128,6 +1128,9 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
   MessageBuilder msg;
   auto framed = c == &s->rear ? msg.initEvent().initFrame() : msg.initEvent().initWideFrame();
   fill_frame_data(framed, b->cur_frame_data, cnt);
+  if ((c == &s->rear && getenv("SEND_REAR")) || (c == &s->wide && getenv("SEND_WIDE"))) {
+    fill_frame_image(framed, b->cur_rgb_buf->addr, b->rgb_width, b->rgb_height);
+  }
   if (c == &s->rear) {
     framed.setTransform(kj::ArrayPtr<const float>(&b->yuv_transform.v[0], 9));
   }
