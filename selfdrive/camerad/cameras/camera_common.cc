@@ -231,7 +231,7 @@ void fill_frame_image(cereal::FrameData::Builder &framed, uint8_t *dat, int w, i
     if (getenv("SCALE")) scale = atoi(getenv("SCALE"));
     int new_width = (x_max - x_min + 1) / scale;
     int new_height = (y_max - y_min + 1) / scale;
-    uint8_t resized_dat[new_width*new_height*3];
+    uint8_t *resized_dat = new uint8_t[new_width*new_height*3];
 
     int goff = x_min*3 + y_min*stride;
     for (int r=0;r<new_height;r++) {
@@ -240,6 +240,7 @@ void fill_frame_image(cereal::FrameData::Builder &framed, uint8_t *dat, int w, i
       }
     }
     framed.setImage(kj::arrayPtr((const uint8_t*)resized_dat, new_width*new_height*3));
+    delete[] resized_dat;
   }
 }
 
