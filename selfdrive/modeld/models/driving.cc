@@ -342,12 +342,12 @@ void model_publish_v2(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
 
   auto position = framed.initPosition();
   fill_xyzt(position, best_plan, PLAN_MHP_COLUMNS, 0, plan_t_arr);
-  auto orientation = framed.initOrientation();
-  fill_xyzt(orientation, best_plan, PLAN_MHP_COLUMNS, 3, plan_t_arr);
   auto velocity = framed.initVelocity();
-  fill_xyzt(velocity, best_plan, PLAN_MHP_COLUMNS, 6, plan_t_arr);
+  fill_xyzt(velocity, best_plan, PLAN_MHP_COLUMNS, 3, plan_t_arr);
+  auto orientation = framed.initOrientation();
+  fill_xyzt(orientation, best_plan, PLAN_MHP_COLUMNS, 9, plan_t_arr);
   auto orientation_rate = framed.initOrientationRate();
-  fill_xyzt(orientation_rate, best_plan, PLAN_MHP_COLUMNS, 9, plan_t_arr);
+  fill_xyzt(orientation_rate, best_plan, PLAN_MHP_COLUMNS, 12, plan_t_arr);
 
   // lane lines
   auto lane_lines = framed.initLaneLines(4);
