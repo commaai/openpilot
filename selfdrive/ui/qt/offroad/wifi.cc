@@ -49,6 +49,7 @@ WifiUI::WifiUI(QWidget *parent) : QWidget(parent) {
   qDebug() << "Running";
 }
 void WifiUI::refresh(){
+  qDebug() << "";
   clearLayout(vlayout);
 
   wifi->refreshNetworks();
