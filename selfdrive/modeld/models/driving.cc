@@ -325,14 +325,6 @@ void model_publish_v2(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
       plan_mhp_max_idx = i;
     }
   }
-  float valid_len = net_outputs.plan[plan_mhp_max_idx*(PLAN_MHP_GROUP_SIZE) + 30*32];
-  valid_len = fmin(MODEL_PATH_DISTANCE, fmax(MIN_VALID_LEN, valid_len));
-  int valid_len_idx = 0;
-  for (int i=1; i<TRAJECTORY_SIZE; i++) {
-    if (valid_len >= X_IDXS[valid_len_idx]){
-      valid_len_idx = i;
-    }
-  }
 
   float * best_plan = &net_outputs.plan[plan_mhp_max_idx*(PLAN_MHP_GROUP_SIZE)];
   float plan_t_arr[TRAJECTORY_SIZE];
@@ -411,9 +403,17 @@ void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
       plan_mhp_max_idx = i;
     }
   }
+
   // x pos at 10s is a good valid_len
-  float valid_len = net_outputs.plan[plan_mhp_max_idx*(PLAN_MHP_GROUP_SIZE) + 30*32];
-  // clamp to 5 and MODEL_PATH_DISTANCE
+  float valid_len = 0;
+  float valid_len_candidate;
+  for (int i=1; i<TRAJECTORY_SIZE; i++) {
+    valid_len_candidate = net_outputs.plan[plan_mhp_max_idx*(PLAN_MHP_GROUP_SIZE) + 30*i];
+    if (valid_len_candidate >= valid_len){
+      valid_len = valid_len_candidate;
+    }
+  }
+  // clamp to 10 and MODEL_PATH_DISTANCE
   valid_len = fmin(MODEL_PATH_DISTANCE, fmax(MIN_VALID_LEN, valid_len));
   int valid_len_idx = 0;
   for (int i=1; i<TRAJECTORY_SIZE; i++) {
