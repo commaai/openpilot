@@ -14,13 +14,14 @@ struct Network {
 class WifiManager{
   private:
     QVector<QByteArray> seen_ssids;
+    QString adapter;
 
     QString get_adapter();
-    QList<Network> get_networks(QString adapter);
+    QList<Network> get_networks();
     void connect_to_open(QByteArray ssid);
     void connect_to_WPA(QByteArray ssid, QString password);
-    void request_scan(QString adapter);
-    QString get_active_ap(QString adapter);
+    void request_scan();
+    QString get_active_ap();
     QByteArray get_ap_ssid(QString network_path);
     QByteArray get_property(QString network_path, QString property);
     unsigned int get_ap_strength(QString network_path);

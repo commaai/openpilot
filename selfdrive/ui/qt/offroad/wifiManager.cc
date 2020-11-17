@@ -34,18 +34,26 @@ WifiManager::WifiManager(){
 }
 
 void WifiManager::refreshNetworks(){
+  adapter = get_adapter();
+
+  QDBusConnection bus = QDBusConnection::systemBus();
+  QDBusInterface device_props(nm_service, adapter, props_iface, bus);
+  QDBusMessage response = device_props.call("Get", device_iface, "State");
+  uint resp = get_response<uint>(response);
+  qDebug() << "State" << resp;
+
+
   seen_networks.clear();
   seen_ssids.clear();
 
   qDBusRegisterMetaType<Connection>();
-  QString adapter = get_adapter();
-  request_scan(adapter);
-  QString active_ap = get_active_ap(adapter);
+  request_scan();
+  QString active_ap = get_active_ap();
 
   QByteArray active_ssid = get_property(active_ap, "Ssid");
   qDebug() << "Currently active network is:" << active_ssid;
 
-  for (Network &network : get_networks(adapter)){
+  for (Network &network : get_networks()){
     if(seen_ssids.count(network.ssid)){
       continue;
     }
@@ -55,14 +63,14 @@ void WifiManager::refreshNetworks(){
   qDebug() <<"Adding networks ";
 }
 
-QList<Network> WifiManager::get_networks(QString adapter){
+QList<Network> WifiManager::get_networks(){
   QList<Network> r;
   QDBusConnection bus = QDBusConnection::systemBus();
   QDBusInterface nm(nm_service, adapter, wireless_device_iface, bus);
   QDBusMessage response = nm.call("GetAllAccessPoints");
   QVariant first =  response.arguments().at(0);
 
-  QString active_ap = get_active_ap(adapter);
+  QString active_ap = get_active_ap();
 
   const QDBusArgument &args = first.value<QDBusArgument>();
   args.beginArray();
@@ -90,6 +98,7 @@ int WifiManager::getSecurityType(QString path){
   int sflag = get_property(path, "Flags").toInt();
   int wpaflag = get_property(path, "WpaFlags").toInt();
   int rsnflag = get_property(path, "RsnFlags").toInt();
+
   if(sflag == 0){
     return 0;
   }else if(sflag == 1 && wpaflag < 400){
@@ -174,14 +183,14 @@ void WifiManager::connect_to_WPA(QByteArray ssid, QString password){
 
 }
 
-void WifiManager::request_scan(QString adapter){
+void WifiManager::request_scan(){
   QDBusConnection bus = QDBusConnection::systemBus();
   QDBusInterface nm(nm_service, adapter, wireless_device_iface, bus);
   QDBusMessage response = nm.call("RequestScan",  QVariantMap());
 
   qDebug() << response;
 }
-QString WifiManager::get_active_ap(QString adapter){
+QString WifiManager::get_active_ap(){
   QDBusConnection bus = QDBusConnection::systemBus();
   QDBusInterface device_props(nm_service, adapter, props_iface, bus);
   QDBusMessage response = device_props.call("Get", wireless_device_iface, "ActiveAccessPoint");
