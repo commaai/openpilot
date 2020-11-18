@@ -6,22 +6,13 @@ RUN apt-get update && apt-get install -y \
     tar \
     curl \
     xz-utils \
-
     beignet-opencl-icd \
-
+    libglvnd-dev \
     alien \
     dbus \
     gcc-arm-none-eabi \
     tmux \
     vim \
-
-    # libglvnd dependencies
-    automake \
-    libtool \
-    libxext-dev \
-    libx11-dev \
-    x11proto-gl-dev \
-    libpng16-16 \
   && rm -rf /var/lib/apt/lists/*
 
 # Intel OpenCL driver
@@ -52,16 +43,6 @@ ENV NVIDIA_DRIVER_CAPABILITIES compute,utility,display
 
 RUN dbus-uuidgen > /etc/machine-id
 
-# we can apt-get after moving to a newer ubuntu
-WORKDIR /opt/libglvnd
-RUN git clone --branch="0.1.1" https://github.com/NVIDIA/libglvnd.git . && \
-    ./autogen.sh && \
-    ./configure --prefix=/usr/local --libdir=/usr/local/lib/x86_64-linux-gnu && \
-    make -j"$(nproc)" install-strip && \
-    find /usr/local/lib/x86_64-linux-gnu -type f -name 'lib*.la' -delete
-
-ENV LD_LIBRARY_PATH /usr/local/lib/x86_64-linux-gnu:/usr/local/lib/i386-linux-gnu${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
-
 # CARLA python api
 COPY ./tools/sim/install_carla.sh /tmp
 RUN /tmp/install_carla.sh
@@ -76,8 +57,7 @@ RUN mkdir -p $HOME/openpilot
 COPY SConstruct $HOME/openpilot/
 
 COPY ./phonelibs $HOME/openpilot/phonelibs
-COPY ./laika $HOME/openpilot/laika
-COPY ./laika_repo $HOME/openpilot/laika_repo
+COPY ./site_scons $HOME/openpilot/site_scons
 COPY ./rednose $HOME/openpilot/rednose
 COPY ./common $HOME/openpilot/common
 COPY ./models $HOME/openpilot/models
