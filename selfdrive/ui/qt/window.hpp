@@ -21,7 +21,6 @@ private:
 public slots:
   void openSettings();
   void closeSettings();
-
 };
 
 #ifdef QCOM2

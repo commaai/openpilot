@@ -27,3 +27,7 @@ You can control openpilot driving in the simulation with the following keys
 
 To see the options for changing the environment, such as the town, spawn point or precipitation, you can run `./start_openpilot_docker.sh --help`.
 This will print the help output inside the docker container. You need to exit the docker container before running `./start_openpilot_docker.sh` again.
+
+## Further Reading
+The following resources contain more details and troubleshooting tips.
+* [CARLA on the openpilot wiki](https://github.com/commaai/openpilot/wiki/CARLA) 

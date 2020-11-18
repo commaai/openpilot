@@ -4,5 +4,9 @@ if [ -f /EON ]; then
   export LD_LIBRARY_PATH="/system/lib64:$LD_LIBRARY_PATH"
   exec ./android/text/text "$1"
 else
+  if [ -f /TICI ] && [ ! -f qt/text ]; then
+    cp qt/text_aarch64 qt/text
+  fi
+
   exec ./qt/text "$1"
 fi
