@@ -167,6 +167,7 @@ FW_VERSIONS = {
     ],
     (Ecu.esp, 0x7d1, None): [
       b'\xf1\x00DN ESC \x01 102\x19\x04\x13 58910-L1300\xf1\xa01.02',
+      b'\xf1\x00DN ESC \x06 104\x19\x08\x01 58910-L0100',
       b'\xf1\x8758910-L0100\xf1\x00DN ESC \x06 104\x19\x08\x01 58910-L0100\xf1\xa01.04',
     ],
     (Ecu.engine, 0x7e0, None): [
