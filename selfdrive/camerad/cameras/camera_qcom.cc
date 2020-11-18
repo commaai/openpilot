@@ -34,6 +34,7 @@
 
 
 extern volatile sig_atomic_t do_exit;
+const char *env_send_rear = getenv("SEND_REAR");
 
 // global var for AE/AF ops
 std::atomic<CameraExpInfo> rear_exp{{0}};
@@ -2140,7 +2141,7 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
     MessageBuilder msg;
     auto framed = msg.initEvent().initFrame();
     fill_frame_data(framed, b->cur_frame_data, cnt);
-    if (getenv("SEND_REAR")) {
+    if (env_send_rear) {
       fill_frame_image(framed, (uint8_t*)b->cur_rgb_buf->addr, b->rgb_width, b->rgb_height, b->rgb_stride);
     }
     framed.setFocusVal(kj::ArrayPtr<const int16_t>(&s->rear.focus[0], NUM_FOCUS));

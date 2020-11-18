@@ -34,6 +34,8 @@
 
 
 extern volatile sig_atomic_t do_exit;
+const char *env_send_rear = getenv("SEND_REAR");
+const char *env_send_wide = getenv("SEND_WIDE");
 
 // global var for AE ops
 std::atomic<CameraExpInfo> cam_exp[3] = {{{0}}};
@@ -1109,7 +1111,7 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
   MessageBuilder msg;
   auto framed = c == &s->rear ? msg.initEvent().initFrame() : msg.initEvent().initWideFrame();
   fill_frame_data(framed, b->cur_frame_data, cnt);
-  if ((c == &s->rear && getenv("SEND_REAR")) || (c == &s->wide && getenv("SEND_WIDE"))) {
+  if ((c == &s->rear && env_send_rear) || (c == &s->wide && env_send_wide)) {
     fill_frame_image(framed, (uint8_t*)b->cur_rgb_buf->addr, b->rgb_width, b->rgb_height, b->rgb_stride);
   }
   if (c == &s->rear) {
