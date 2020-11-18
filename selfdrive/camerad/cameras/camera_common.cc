@@ -24,6 +24,12 @@
 #include "common/util.h"
 #include "imgproc/utils.h"
 
+const int env_xmin = getenv("XMIN") ? atoi(getenv("XMIN")) : 0;
+const int env_xmax = getenv("XMAX") ? atoi(getenv("XMAX")) : -1;
+const int env_ymin = getenv("YMIN") ? atoi(getenv("YMIN")) : 0;
+const int env_ymax = getenv("YMAX") ? atoi(getenv("YMAX")) : -1;
+const int env_scale = getenv("SCALE") ? atoi(getenv("SCALE")) : 1;
+
 static cl_program build_debayer_program(cl_device_id device_id, cl_context context, const CameraInfo *ci, const CameraBuf *b) {
   char args[4096];
   snprintf(args, sizeof(args),
@@ -219,6 +225,27 @@ void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &fr
   framed.setGainFrac(frame_data.gain_frac);
 }
 
+void fill_frame_image(cereal::FrameData::Builder &framed, uint8_t *dat, int w, int h, int stride) {
+  if (dat != nullptr) {
+    int scale = env_scale;
+    int x_min = env_xmin; int y_min = env_ymin; int x_max = w-1; int y_max = h-1;
+    if (env_xmax != -1) x_max = env_xmax;
+    if (env_ymax != -1) y_max = env_ymax;
+    int new_width = (x_max - x_min + 1) / scale;
+    int new_height = (y_max - y_min + 1) / scale;
+    uint8_t *resized_dat = new uint8_t[new_width*new_height*3];
+
+    int goff = x_min*3 + y_min*stride;
+    for (int r=0;r<new_height;r++) {
+      for (int c=0;c<new_width;c++) {
+        memcpy(&resized_dat[(r*new_width+c)*3], &dat[goff+r*stride*scale+c*3*scale], 3*sizeof(uint8_t));
+      }
+    }
+    framed.setImage(kj::arrayPtr((const uint8_t*)resized_dat, new_width*new_height*3));
+    delete[] resized_dat;
+  }
+}
+
 void create_thumbnail(MultiCameraState *s, CameraState *c, uint8_t *bgr_ptr) {
   const CameraBuf *b = &c->buf;
 
@@ -402,5 +429,8 @@ void common_camera_process_front(SubMaster *sm, PubMaster *pm, CameraState *c, i
   auto framed = msg.initEvent().initFrontFrame();
   framed.setFrameType(cereal::FrameData::FrameType::FRONT);
   fill_frame_data(framed, b->cur_frame_data, cnt);
+  if (env_send_front) {
+    fill_frame_image(framed, (uint8_t*)b->cur_rgb_buf->addr, b->rgb_width, b->rgb_height, b->rgb_stride);
+  }
   pm->send("frontFrame", msg);
 }

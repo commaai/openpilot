@@ -1,5 +1,6 @@
 #pragma once
 
+#include <stdlib.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <memory>
@@ -33,6 +34,10 @@
 #define LOG_CAMERA_ID_ECAMERA 2
 #define LOG_CAMERA_ID_QCAMERA 3
 #define LOG_CAMERA_ID_MAX 4
+
+const bool env_send_front = getenv("SEND_FRONT") != NULL;
+const bool env_send_rear = getenv("SEND_REAR") != NULL;
+const bool env_send_wide = getenv("SEND_WIDE") != NULL;
 
 typedef struct CameraInfo {
   const char* name;
@@ -128,6 +133,7 @@ public:
 typedef void (*process_thread_cb)(MultiCameraState *s, CameraState *c, int cnt);
 
 void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &frame_data, uint32_t cnt);
+void fill_frame_image(cereal::FrameData::Builder &framed, uint8_t *dat, int w, int h, int stride);
 void create_thumbnail(MultiCameraState *s, CameraState *c, uint8_t *bgr_ptr);
 void set_exposure_target(CameraState *c, const uint8_t *pix_ptr, int x_start, int x_end, int x_skip, int y_start, int y_end, int y_skip);
 std::thread start_process_thread(MultiCameraState *cameras, const char *tname,
