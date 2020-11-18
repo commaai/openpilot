@@ -8,13 +8,14 @@ typedef QMap<QString, QMap<QString, QVariant> > Connection;
 QString nm_path               = "/org/freedesktop/NetworkManager";
 QString nm_settings_path      = "/org/freedesktop/NetworkManager/Settings";
 
-QString nm_iface              = "org.freedesktop.NetworkManager";
-QString props_iface           = "org.freedesktop.DBus.Properties";
-QString nm_settings_iface     = "org.freedesktop.NetworkManager.Settings";
-QString device_iface          = "org.freedesktop.NetworkManager.Device";
-QString wireless_device_iface = "org.freedesktop.NetworkManager.Device.Wireless";
-QString ap_iface              = "org.freedesktop.NetworkManager.AccessPoint";
-QString connection_iface      = "org.freedesktop.NetworkManager.Connection.Active";
+QString nm_iface                    = "org.freedesktop.NetworkManager";
+QString props_iface                 = "org.freedesktop.DBus.Properties";
+QString nm_settings_iface           = "org.freedesktop.NetworkManager.Settings";
+QString nm_settings_conn_iface      = "org.freedesktop.NetworkManager.Settings.Connection";
+QString device_iface                = "org.freedesktop.NetworkManager.Device";
+QString wireless_device_iface       = "org.freedesktop.NetworkManager.Device.Wireless";
+QString ap_iface                    = "org.freedesktop.NetworkManager.AccessPoint";
+QString connection_iface            = "org.freedesktop.NetworkManager.Connection.Active";
 
 QString nm_service            = "org.freedesktop.NetworkManager";
 
@@ -39,25 +40,7 @@ void WifiManager::refreshNetworks(){
   bus = QDBusConnection::systemBus();
   seen_networks.clear();
   seen_ssids.clear();
-  
-  QDBusInterface nm_settings(nm_service, nm_settings_path, nm_settings_iface, bus);
-  QDBusMessage response = nm_settings.call("ListConnections");
-  QVariant first =  response.arguments().at(0);
-  const QDBusArgument &args = first.value<QDBusArgument>();
-  args.beginArray();
-  qDebug()<<"Printing list of connections; ";
-  while (!args.atEnd()) {
-    QDBusObjectPath path;
-    args >> path;
-    qDebug()<<path.path();
-    
-    // nmcli c show --active
-    QDBusInterface connection_props3(nm_service, "/org/freedesktop/NetworkManager/ActiveConnection/63", props_iface, bus);
-    QDBusMessage response3 = connection_props3.call("Get", connection_iface, "Type");
-    qDebug()<<get_response<QByteArray>(response3);
 
-
-  }
   qDebug() << "Device path" << adapter ;
   
   qDBusRegisterMetaType<Connection>();
@@ -133,6 +116,7 @@ void WifiManager::connect(Network n, QString password){
 }
 
 void WifiManager::connect(Network n, QString username, QString password){
+  clear_connections(n.ssid);
   qDebug() << "Connecting to"<< n.ssid << "with username, password =" << username << "," <<password;
   if(n.security_type==0){
     connect_to_open(n.ssid);
@@ -195,6 +179,41 @@ void WifiManager::connect_to_WPA(QByteArray ssid, QString password){
 
 }
 
+void WifiManager::clear_connections(QString ssid){
+  QDBusInterface nm(nm_service, nm_settings_path, nm_settings_iface, bus);
+  QDBusMessage response = nm.call("ListConnections");
+  QVariant first =  response.arguments().at(0);
+  const QDBusArgument &args = first.value<QDBusArgument>();
+  args.beginArray();
+  // qDebug()<<"Printing list of connections; ";
+  while (!args.atEnd()) {
+    QDBusObjectPath path;
+    args >> path;
+    // qDebug()<<path.path();
+    QDBusInterface nm2(nm_service, path.path(), nm_settings_conn_iface, bus);
+    QDBusMessage response = nm2.call("GetSettings");
+
+    const QDBusArgument &dbusArg = response.arguments().at(0).value<QDBusArgument>();
+
+    QMap<QString,QMap<QString,QVariant> > map;
+    dbusArg >> map;
+    for( QString outer_key : map.keys() ){
+        QMap<QString,QVariant> innerMap = map.value(outer_key);
+
+        // qDebug() << "Key: " << outer_key;
+        for( QString inner_key : innerMap.keys() ){
+            // qDebug() << "    " << inner_key << ":" << innerMap.value(inner_key);
+            if(inner_key=="ssid"){
+              QString value = innerMap.value(inner_key).value<QString>();
+              if(value == ssid){
+                qDebug()<<"Deleting "<<value;
+                nm2.call("Delete");
+              }
+            }
+        }
+    }
+  }
+}
 void WifiManager::request_scan(){
   QDBusInterface nm(nm_service, adapter, wireless_device_iface, bus);
   QDBusMessage response = nm.call("RequestScan",  QVariantMap());

@@ -24,6 +24,7 @@ class WifiManager{
     void connect_to_WPA(QByteArray ssid, QString password);
     void request_scan();
     QString get_active_ap();
+    void clear_connections(QString ssid);
     uint get_wifi_device_state();
     QByteArray get_ap_ssid(QString network_path);
     QByteArray get_property(QString network_path, QString property);
