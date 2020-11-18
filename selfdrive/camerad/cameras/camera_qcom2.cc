@@ -34,8 +34,6 @@
 
 
 extern volatile sig_atomic_t do_exit;
-const char *env_send_rear = getenv("SEND_REAR");
-const char *env_send_wide = getenv("SEND_WIDE");
 
 // global var for AE ops
 std::atomic<CameraExpInfo> cam_exp[3] = {{{0}}};

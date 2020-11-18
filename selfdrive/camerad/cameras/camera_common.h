@@ -35,6 +35,10 @@
 #define LOG_CAMERA_ID_QCAMERA 3
 #define LOG_CAMERA_ID_MAX 4
 
+const bool env_send_front = getenv("SEND_FRONT") != NULL;
+const bool env_send_rear = getenv("SEND_REAR") != NULL;
+const bool env_send_wide = getenv("SEND_WIDE") != NULL;
+
 typedef struct CameraInfo {
   const char* name;
   int frame_width, frame_height;

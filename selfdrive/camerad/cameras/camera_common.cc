@@ -29,7 +29,6 @@ const int env_xmax = getenv("XMAX") ? atoi(getenv("XMAX")) : -1;
 const int env_ymin = getenv("YMIN") ? atoi(getenv("YMIN")) : 0;
 const int env_ymax = getenv("YMAX") ? atoi(getenv("YMAX")) : -1;
 const int env_scale = getenv("SCALE") ? atoi(getenv("SCALE")) : 1;
-const char *env_send_front = getenv("SEND_FRONT");
 
 static cl_program build_debayer_program(cl_device_id device_id, cl_context context, const CameraInfo *ci, const CameraBuf *b) {
   char args[4096];
