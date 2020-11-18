@@ -27,9 +27,9 @@ public slots:
 #ifdef QCOM2
 const int vwp_w = 2160;
 #else
-const int vwp_w = 1920;
+const int vwp_w = 500;
 #endif
-const int vwp_h = 1080;
+const int vwp_h = 500;
 
 class GLWindow : public QOpenGLWidget, protected QOpenGLFunctions {
   Q_OBJECT

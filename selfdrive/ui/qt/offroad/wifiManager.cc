@@ -40,13 +40,32 @@ void WifiManager::refreshNetworks(){
   bus = QDBusConnection::systemBus();
   seen_networks.clear();
   seen_ssids.clear();
-
   qDebug() << "Device path" << adapter ;
   
+  QDBusInterface nm(nm_service, nm_path, props_iface, bus);
+  QDBusMessage response = nm.call("Get", nm_iface, "ActiveConnections");
+  qDebug() << response;
+  QVariant step1 = response.arguments().at(0);
+  qDebug() << step1;
+  QDBusVariant dbvFirst = step1.value<QDBusVariant>();
+  QVariant converted = dbvFirst.variant();
+  qDebug()<<converted;
+  QDBusArgument step4 = converted.value<QDBusArgument>();
+  qDebug() << "QDBusArgument current type is" << step4.currentType();
+  QDBusObjectPath path;
+  step4.beginArray();
+  while (!step4.atEnd())
+  {
+      step4 >> path;
+      qDebug()<<path.path();
+  }
+  step4.endArray();
+
+
+
   qDBusRegisterMetaType<Connection>();
   request_scan();
   QString active_ap = get_active_ap();
-
   QByteArray active_ssid = get_property(active_ap, "Ssid");
   qDebug() << "Currently active network is:" << active_ssid;
 
@@ -94,17 +113,17 @@ QList<Network> WifiManager::get_networks(){
 int WifiManager::getSecurityType(QString path){
   int sflag = get_property(path, "Flags").toInt();
   int wpaflag = get_property(path, "WpaFlags").toInt();
-  int rsnflag = get_property(path, "RsnFlags").toInt();
+  // int rsnflag = get_property(path, "RsnFlags").toInt();
 
   if(sflag == 0){
     return 0;
   }else if(sflag == 1 && wpaflag < 400){
     return 1;
   }else{
-    qDebug() << "Cannot determine security type for " << get_property(path, "Ssid") << " with flags"; 
-    qDebug() << "flag    " << sflag;
-    qDebug() << "WpaFlag " << wpaflag;
-    qDebug() << "RsnFlag " << rsnflag;
+    // qDebug() << "Cannot determine security type for " << get_property(path, "Ssid") << " with flags"; 
+    // qDebug() << "flag    " << sflag;
+    // qDebug() << "WpaFlag " << wpaflag;
+    // qDebug() << "RsnFlag " << rsnflag;
     return -1;
   }
 }
