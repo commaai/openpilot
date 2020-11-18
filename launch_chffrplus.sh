@@ -19,6 +19,9 @@ function two_init {
   # openpilot gets all the cores
   echo 0-3 > /dev/cpuset/app/cpus
 
+  # set the cpubw governor to performance
+  echo "performance" > /sys/devices/soc/soc:qcom,cpubw/devfreq/soc:qcom,cpubw/governor
+
   # Collect RIL and other possibly long-running I/O interrupts onto CPU 1
   echo 1 > /proc/irq/78/smp_affinity_list # qcom,smd-modem (LTE radio)
   echo 1 > /proc/irq/33/smp_affinity_list # ufshcd (flash storage)
