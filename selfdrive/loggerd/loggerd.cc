@@ -381,6 +381,8 @@ void encoder_thread(RotateState *rotate_state, bool raw_clips, int cam_idx) {
         auto eidx = cam_idx == LOG_CAMERA_ID_DCAMERA ? msg.initEvent().initFrontEncodeIdx() :
                     (cam_idx == LOG_CAMERA_ID_ECAMERA ? msg.initEvent().initWideEncodeIdx() : msg.initEvent().initEncodeIdx());
         eidx.setFrameId(extra.frame_id);
+        eidx.setTimestampSof(extra.timestamp_sof);
+        eidx.setTimestampEof(extra.timestamp_eof);
   #ifdef QCOM2
         eidx.setType(cereal::EncodeIndex::Type::FULL_H_E_V_C);
   #else
