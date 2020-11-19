@@ -72,7 +72,7 @@ QList<Network> WifiManager::get_networks(){
 
     QByteArray ssid = get_property(path.path(), "Ssid");
     unsigned int strength = get_ap_strength(path.path());
-    int security = getSecurityType(path.path());
+    SecurityType security = getSecurityType(path.path());
     Network network = {path.path(), ssid, strength, path.path()==active_ap, security};
 
     if (ssid.length()){
@@ -86,21 +86,21 @@ QList<Network> WifiManager::get_networks(){
   return r;
 }
 
-int WifiManager::getSecurityType(QString path){
+SecurityType WifiManager::getSecurityType(QString path){
   int sflag = get_property(path, "Flags").toInt();
   int wpaflag = get_property(path, "WpaFlags").toInt();
-  // int rsnflag = get_property(path, "RsnFlags").toInt();
-
+  int rsnflag = get_property(path, "RsnFlags").toInt();
+  int wpa_props = wpaflag | rsnflag;
   if(sflag == 0){
-    return 0;
-  }else if(sflag == 1 && wpaflag < 400){
-    return 1;
+    return SecurityType::OPEN;
+  }else if((sflag & 0x1) && (wpa_props & (0x333) && !(wpa_props & 0x200)) ){
+    return SecurityType::WPA;
   }else{
     // qDebug() << "Cannot determine security type for " << get_property(path, "Ssid") << " with flags"; 
     // qDebug() << "flag    " << sflag;
     // qDebug() << "WpaFlag " << wpaflag;
     // qDebug() << "RsnFlag " << rsnflag;
-    return -1;
+    return SecurityType::UNSUPPORTED;
   }
 }
 void WifiManager::connect(Network n){
@@ -117,56 +117,27 @@ void WifiManager::connect(Network n, QString username, QString password){
   }
   clear_connections(n.ssid);
   qDebug() << "Connecting to"<< n.ssid << "with username, password =" << username << "," <<password;
-  if(n.security_type==0){
-    connect_to_open(n.ssid);
-  }else if(n.security_type == 1){
-    connect_to_WPA(n.ssid, password);
-  }else{
-    qDebug() << "Network cannot be connected to; unknown security type";
-  }
+  connect(n.ssid, username, password, n.security_type);
 }
-void WifiManager::connect_to_open(QByteArray ssid){
+void WifiManager::connect(QByteArray ssid, QString username, QString password, SecurityType security_type){
 
   Connection connection;
   connection["connection"]["type"] = "802-11-wireless";
   connection["connection"]["uuid"] = QUuid::createUuid().toString().remove('{').remove('}');
-  connection["connection"]["id"] = "Connection open";
+
+  connection["connection"]["id"] = "Connection"; //TODO Add security type
 
   connection["802-11-wireless"]["ssid"] = ssid;
   connection["802-11-wireless"]["mode"] = "infrastructure";
 
-  connection["ipv4"]["method"] = "auto";
-  connection["ipv6"]["method"] = "ignore";
-
-  QDBusInterface nm_settings(nm_service, nm_settings_path, nm_settings_iface, bus);
-  QDBusReply<QDBusObjectPath> result = nm_settings.call("AddConnection", QVariant::fromValue(connection));
-  if (!result.isValid()) {
-    qDebug() << result.error().name() << result.error().message();
-  } else {
-    qDebug() << result.value().path();
+  if(security_type == SecurityType::WPA){
+    connection["802-11-wireless-security"]["key-mgmt"] = "wpa-psk";
+    connection["802-11-wireless-security"]["auth-alg"] = "open";
+    connection["802-11-wireless-security"]["psk"] = password;
   }
 
-}
-
-void WifiManager::connect_to_WPA(QByteArray ssid, QString password){
-  // TODO: handle different authentication types, None, WEP, WPA, WPA Enterprise
-  // TODO: hande exisiting connection for same ssid
-
-  Connection connection;
-  connection["connection"]["type"] = "802-11-wireless";
-  connection["connection"]["uuid"] = QUuid::createUuid().toString().remove('{').remove('}');
-  connection["connection"]["id"] = "Connection WPA";
-
-  connection["802-11-wireless"]["ssid"] = ssid;
-  connection["802-11-wireless"]["mode"] = "infrastructure";
-
-  connection["802-11-wireless-security"]["key-mgmt"] = "wpa-psk";
-  connection["802-11-wireless-security"]["auth-alg"] = "open";
-  connection["802-11-wireless-security"]["psk"] = password;
-
   connection["ipv4"]["method"] = "auto";
   connection["ipv6"]["method"] = "ignore";
-
 
   QDBusInterface nm_settings(nm_service, nm_settings_path, nm_settings_iface, bus);
   QDBusReply<QDBusObjectPath> result = nm_settings.call("AddConnection", QVariant::fromValue(connection));
