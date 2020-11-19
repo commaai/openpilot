@@ -55,6 +55,9 @@ WifiUI::WifiUI(QWidget *parent) : QWidget(parent) {
   timer = new QTimer(this);
   QObject::connect(timer, SIGNAL(timeout()), this, SLOT(refresh()));
   timer->start(1000);
+
+  // Scan on startup
+  wifi->request_scan();
 }
 
 void WifiUI::refresh(){
