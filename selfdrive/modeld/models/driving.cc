@@ -467,8 +467,7 @@ void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
 
 void posenet_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
                      uint32_t vipc_dropped_frames, float frame_drop,
-                     const ModelDataRaw &net_outputs, uint64_t timestamp_eof,
-                     float model_execution_time) {
+                     const ModelDataRaw &net_outputs, uint64_t timestamp_eof) {
   float trans_arr[3];
   float trans_std_arr[3];
   float rot_arr[3];

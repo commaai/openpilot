@@ -85,5 +85,5 @@ void model_publish_v2(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
                    uint64_t timestamp_eof, float model_execution_time);
 void posenet_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
                      uint32_t vipc_dropped_frames, float frame_drop, const ModelDataRaw &data,
-                     uint64_t timestamp_eof, float model_execution_time);
+                     uint64_t timestamp_eof);
 #endif
