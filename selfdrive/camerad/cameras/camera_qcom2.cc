@@ -1007,6 +1007,7 @@ static void set_camera_exposure(CameraState *s, float grey_frac) {
   // TODO: get stats from sensor?
   float target_grey = 0.3 - (s->analog_gain / 105.0);
   float exposure_factor = 1 + 30 * pow((target_grey - grey_frac), 3);
+  exposure_factor = std::max(exposure_factor, 0.55f);
 
   if (s->camera_num != 1) {
     s->ef_filtered = (1 - EF_LOWPASS_K) * s->ef_filtered + EF_LOWPASS_K * exposure_factor;
