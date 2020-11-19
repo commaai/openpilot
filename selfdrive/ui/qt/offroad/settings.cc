@@ -12,6 +12,7 @@
 
 #include "wifi.hpp"
 #include "settings.hpp"
+#include "input_field.hpp"
 
 #include "common/params.h"
 
