@@ -40,11 +40,9 @@ WifiUI::WifiUI(QWidget *parent) : QWidget(parent) {
     }
   )");
 
-  // TODO: Handle NetworkManager not running
-  // TODO: Handle no wireless adapter found
   // TODO: periodically request scan
   // TODO: periodically update network list
-  // TODO: implement connecting (including case with wrong password)
+  // TODO: implement (not) connecting with wrong password
 
   qDebug() << "Running";
 }
@@ -69,7 +67,7 @@ void WifiUI::refresh(){
 
     QPushButton* m_button = new QPushButton((network.connected ? "Connected" : "Connect")+(QString(i, QChar(0))));
     m_button->setFixedWidth(250);
-    m_button->setDisabled(network.connected || network.security_type < 0);
+    m_button->setDisabled(network.connected || network.security_type == SecurityType::UNSUPPORTED);
     connectButtons->addButton(m_button,i);
 
     hlayout->addWidget(m_button);
@@ -90,9 +88,9 @@ void WifiUI::handleButton(QAbstractButton* m_button){
   // qDebug() << n.ssid;
   m_button->setText("Connecting");
   m_button->setDisabled(true);
-  if(n.security_type==0){
+  if(n.security_type==SecurityType::OPEN){
     wifi->connect(n);
-  }else if(n.security_type==1){
+  }else if(n.security_type==SecurityType::WPA){
     bool ok;
     QString password = QInputDialog::getText(this, "Password for "+n.ssid, "Password", QLineEdit::Normal, "PASSWORD", &ok);
     if(ok){

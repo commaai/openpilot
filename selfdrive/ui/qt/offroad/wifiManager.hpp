@@ -1,15 +1,15 @@
 #pragma once
 #include <QWidget>
 #include <QtDBus>
+enum class SecurityType{OPEN, WPA, UNSUPPORTED};
 
 struct Network {
   QString path;
   QByteArray ssid;
   unsigned int strength;
   bool connected;
-
-  //-1->unknown, 0->open, 1->WPA    
-  int security_type;
+  
+  SecurityType security_type;
 };
 
 class WifiManager{
@@ -20,8 +20,7 @@ class WifiManager{
 
     QString get_adapter();
     QList<Network> get_networks();
-    void connect_to_open(QByteArray ssid);
-    void connect_to_WPA(QByteArray ssid, QString password);
+    void connect(QByteArray ssid, QString username, QString password, SecurityType security_type);
     void request_scan();
     QString get_active_ap();
     void clear_connections(QString ssid);
@@ -30,7 +29,7 @@ class WifiManager{
     QByteArray get_ap_ssid(QString network_path);
     QByteArray get_property(QString network_path, QString property);
     unsigned int get_ap_strength(QString network_path);
-    int getSecurityType(QString ssid);
+    SecurityType getSecurityType(QString ssid);
 
   public:
     QVector<Network> seen_networks;
