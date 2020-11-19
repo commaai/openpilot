@@ -81,9 +81,6 @@ typedef struct MultiCameraState {
   CameraState rear;
   CameraState front;
   CameraState wide;
-#ifdef NOSCREEN
-  zsock_t *rgb_sock;
-#endif
 
   pthread_mutex_t isp_lock;
 
@@ -95,6 +92,3 @@ void cameras_init(MultiCameraState *s, cl_device_id device_id, cl_context ctx);
 void cameras_open(MultiCameraState *s);
 void cameras_run(MultiCameraState *s);
 void camera_autoexposure(CameraState *s, float grey_frac);
-#ifdef NOSCREEN
-void sendrgb(MultiCameraState *s, uint8_t* dat, int len, uint8_t cam_id);
-#endif

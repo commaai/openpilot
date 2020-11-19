@@ -71,7 +71,7 @@ else:
   else:
     qt_libs += [f"Qt5{m}" for m in qt_modules]
 
-  qt_src = ["qt/ui.cc", "qt/window.cc", "qt/qt_sound.cc", "qt/offroad/settings.cc", "qt/offroad/onboarding.cc"] + src
+  qt_src = ["qt/ui.cc", "qt/window.cc", "qt/qt_sound.cc", "qt/offroad/settings.cc", "qt/offroad/onboarding.cc", "qt/offroad/wifi.cc", "qt/offroad/wifiManager.cc"] + src
   qt_env.Program("_ui", qt_src, LIBS=qt_libs + libs)
 
   # spinner and text window
