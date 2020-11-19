@@ -394,9 +394,6 @@ void encoder_thread(RotateState *rotate_state, bool raw_clips, int cam_idx) {
         if (idx_sock->send((char*)bytes.begin(), bytes.size()) < 0) {
           printf("err sending encodeIdx pkt: %s\n", strerror(errno));
         }
-        if (lh) {
-          lh_log(lh, bytes.begin(), bytes.size(), false);
-        }
       }
 
       if (raw_clips) {
