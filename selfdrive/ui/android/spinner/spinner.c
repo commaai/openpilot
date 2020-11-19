@@ -42,8 +42,7 @@ bool stdin_input_available() {
   return (FD_ISSET(0, &fds));
 }
 
-int spin(int argc, char** argv) {
-  int err;
+int main(int argc, char** argv) {
 
   bool draw_progress = false;
   float progress_val = 0.0;

@@ -37,7 +37,7 @@ if __name__ == "__main__":
   for route in tqdm(routes):
     route = route.rstrip()
     dongle_id, time = route.split('|')
-    qlog_path = f"cd:/{dongle_id}/{time}/1/qlog.bz2"
+    qlog_path = f"cd:/{dongle_id}/{time}/0/qlog.bz2"
 
     if dongle_id in dongles:
       continue
@@ -65,7 +65,7 @@ if __name__ == "__main__":
             live_fingerprint = args.car
 
           if live_fingerprint not in list(TOYOTA_FINGERPRINTS.keys()) + list(HONDA_FINGERPRINTS.keys()) + list(HYUNDAI_FINGERPRINTS.keys()):
-            continue
+            break
 
           candidates = match_fw_to_car(car_fw)
           if (len(candidates) == 1) and (list(candidates)[0] == live_fingerprint):

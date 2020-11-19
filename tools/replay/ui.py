@@ -125,9 +125,6 @@ def ui_thread(addr, frame_address):
     fpkt = messaging.recv_one(frame)
     rgb_img_raw = fpkt.frame.image
 
-    if fpkt.frame.transform:
-      img_transform = np.array(fpkt.frame.transform).reshape(3, 3)
-
     num_px = len(rgb_img_raw) // 3
     if rgb_img_raw and num_px in _FULL_FRAME_SIZE.keys():
       FULL_FRAME_SIZE = _FULL_FRAME_SIZE[num_px]
@@ -196,7 +193,7 @@ def ui_thread(addr, frame_address):
     if sm.updated['liveCalibration'] and num_px:
       extrinsic_matrix = np.asarray(sm['liveCalibration'].extrinsicMatrix).reshape(3, 4)
       ke = intrinsic_matrix.dot(extrinsic_matrix)
-      warp_matrix = get_camera_frame_from_model_frame(ke)
+      warp_matrix = get_camera_frame_from_model_frame(ke, camera_fl=intrinsic_matrix[0][0])
       calibration = CalibrationTransformsForWarpMatrix(num_px, warp_matrix, intrinsic_matrix, extrinsic_matrix)
 
     # draw red pt for lead car in the main img
