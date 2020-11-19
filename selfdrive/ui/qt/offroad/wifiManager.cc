@@ -29,11 +29,8 @@ T get_response(QDBusMessage response){
 }
 
 bool compare_by_strength(const Network &a, const Network &b){
+  if (a.connected) return true;
   return a.strength > b.strength;
-}
-
-bool compare_by_connected(const Network &a, const Network &b){
-  return a.connected > b.connected;
 }
 
 WifiManager::WifiManager(){
@@ -87,7 +84,6 @@ QList<Network> WifiManager::get_networks(){
   args.endArray();
 
   std::sort(r.begin(), r.end(), compare_by_strength);
-  std::sort(r.begin(), r.end(), compare_by_connected);
   return r;
 }
 
