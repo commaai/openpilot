@@ -7,7 +7,7 @@
 
 #include "keyboard.hpp"
 
-KeyboardLayout::KeyboardLayout(QWidget* parent, std::vector<QVector<QString>> layout){
+KeyboardLayout::KeyboardLayout(QWidget* parent, std::vector<QVector<QString>> layout) : QWidget(parent) {
   QVBoxLayout* vlayout = new QVBoxLayout;
   QButtonGroup* btn_group = new QButtonGroup(this);
 
@@ -18,7 +18,7 @@ KeyboardLayout::KeyboardLayout(QWidget* parent, std::vector<QVector<QString>> la
     for(QString p : s){
       QPushButton* btn = new QPushButton(p);
       btn_group->addButton(btn);
-      hlayout->addSpacing(10);
+      hlayout->addSpacing(5);
       hlayout->addWidget(btn);
     }
     vlayout->addLayout(hlayout);

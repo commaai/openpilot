@@ -5,32 +5,18 @@
 #include "input_field.hpp"
 #include "keyboard.hpp"
 
-InputField::InputField(QWidget *parent){
+InputField::InputField(QWidget *parent): QWidget(parent) {
   l = new QVBoxLayout();
 
   line = new QLineEdit("");
-  line->installEventFilter(this);
   l->addWidget(line);
 
-  k = new Keyboard();
+  k = new Keyboard(this);
   QObject::connect(k, SIGNAL(emitButton(QString)), this, SLOT(getText(QString)));
-
+  l->addWidget(k);
   setLayout(l);
 }
 
-bool InputField::eventFilter(QObject* object, QEvent* event){
-  if(object == line && event->type() == QEvent::MouseButtonPress) {
-    k->setWindowFlags(Qt::FramelessWindowHint);
-    k->resize(2560, k->height());
-    k->move(1920, 1300); //TODO: move to the correct position for TICI
-
-    // k->setWindowState(Qt::WindowFullScreen);
-    // k->setAttribute(Qt::WA_NoSystemBackground);
-    // k->setAttribute(Qt::WA_TranslucentBackground);
-    k->show();
-  }
-  return false;
-}
 
 void InputField::getText(QString s){
   if(!QString::compare(s,"⌫")){

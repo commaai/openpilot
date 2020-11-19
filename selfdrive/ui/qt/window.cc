@@ -10,6 +10,7 @@
 #include <QMouseEvent>
 
 #include "window.hpp"
+#include "offroad/input_field.hpp"
 #include "offroad/settings.hpp"
 #include "offroad/onboarding.hpp"
 
@@ -46,6 +47,9 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   OnboardingWindow *onboardingWindow = new OnboardingWindow(this);
   main_layout->addWidget(onboardingWindow);
 
+  InputField *inputField = new InputField(this);
+  main_layout->addWidget(inputField);
+
   main_layout->setMargin(0);
   setLayout(main_layout);
   QObject::connect(glWindow, SIGNAL(openSettings()), this, SLOT(openSettings()));
@@ -65,7 +69,7 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
 }
 
 void MainWindow::openSettings() {
-  main_layout->setCurrentIndex(1);
+  main_layout->setCurrentIndex(3);
 }
 
 void MainWindow::closeSettings() {

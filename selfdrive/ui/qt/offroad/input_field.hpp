@@ -17,7 +17,6 @@ private:
   Keyboard *k;
   QLineEdit *line;
   QVBoxLayout *l;
-  bool eventFilter(QObject* object, QEvent* event);
 
 public slots:
   void getText(QString s);
