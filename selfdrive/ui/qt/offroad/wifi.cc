@@ -49,8 +49,6 @@ WifiUI::WifiUI(QWidget *parent) : QWidget(parent) {
   qDebug() << "Running";
 }
 void WifiUI::refresh(){
-  qDebug() << "";
-  qDebug() << "";
   clearLayout(vlayout);
 
   wifi->refreshNetworks();
@@ -88,15 +86,15 @@ void WifiUI::refresh(){
 void WifiUI::handleButton(QAbstractButton* m_button){
   int id = m_button->text().length()-7;  //7="Connect".length()
   Network n = wifi->seen_networks[id];
-  qDebug() << "Clicked a button:" << id;
-  qDebug() << n.ssid;
+  // qDebug() << "Clicked a button:" << id;
+  // qDebug() << n.ssid;
   m_button->setText("Connecting");
   m_button->setDisabled(true);
   if(n.security_type==0){
     wifi->connect(n);
   }else if(n.security_type==1){
     bool ok;
-    QString password = QInputDialog::getText(this, "Password for "+n.ssid, "Password", QLineEdit::Normal, "Put_the_password_HERE", &ok);
+    QString password = QInputDialog::getText(this, "Password for "+n.ssid, "Password", QLineEdit::Normal, "PASSWORD", &ok);
     if(ok){
       wifi->connect(n, password);
     }else{

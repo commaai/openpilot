@@ -25,6 +25,7 @@ class WifiManager{
     void request_scan();
     QString get_active_ap();
     void clear_connections(QString ssid);
+    void print_active_connections();
     uint get_wifi_device_state();
     QByteArray get_ap_ssid(QString network_path);
     QByteArray get_property(QString network_path, QString property);
