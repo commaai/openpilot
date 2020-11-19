@@ -6,6 +6,7 @@
 #include <QButtonGroup>
 #include <QVBoxLayout>
 #include <QStackedLayout>
+#include <QTimer>
 
 
 class CustomConnectButton : public QPushButton{
@@ -21,6 +22,7 @@ class WifiUI : public QWidget {
   private:
     WifiManager* wifi;
     QVBoxLayout* vlayout;
+    QTimer * timer;
 
   public:
     explicit WifiUI(QWidget *parent = 0);

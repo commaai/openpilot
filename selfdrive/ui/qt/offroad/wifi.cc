@@ -52,12 +52,17 @@ WifiUI::WifiUI(QWidget *parent) : QWidget(parent) {
   // TODO: periodically request scan and update network list
   // TODO: implement (not) connecting with wrong password
 
-  qDebug() << "Running";
+  // Update network list every second
+  timer = new QTimer(this);
+  QObject::connect(timer, SIGNAL(timeout()), this, SLOT(refresh()));
+  timer->start(1000);
 }
-void WifiUI::refresh(){
-  clearLayout(vlayout);
 
+void WifiUI::refresh(){
+  wifi->request_scan();
   wifi->refreshNetworks();
+
+  clearLayout(vlayout);
   int i=0;
 
   QButtonGroup* connectButtons=new QButtonGroup(this);
@@ -83,10 +88,6 @@ void WifiUI::refresh(){
     vlayout->addLayout(hlayout);
     i+=1;
   }
-  QPushButton* refreshButton = new QPushButton("Refresh networks");
-  connect(refreshButton, SIGNAL (released()), this, SLOT (refresh()));
-  vlayout->addWidget(refreshButton);
-
 }
 
 void WifiUI::handleButton(QAbstractButton* button){
@@ -96,19 +97,17 @@ void WifiUI::handleButton(QAbstractButton* button){
   // qDebug() << "Clicked a button:" << id;
   // qDebug() << n.ssid;
   if(n.security_type==SecurityType::OPEN){
-    m_button->setText("Connecting");
-    m_button->setDisabled(true);
     wifi->connect(n);
-  }else if(n.security_type==SecurityType::WPA){
+  } else if (n.security_type==SecurityType::WPA){
     bool ok;
     QString password = QInputDialog::getText(this, "Password for "+n.ssid, "Password", QLineEdit::Normal, "", &ok);
-    if(ok){
-      m_button->setText("Connecting");
-      m_button->setDisabled(true);
+
+    if (ok){
       wifi->connect(n, password);
-    }else{
+    } else {
       qDebug() << "Connection cancelled, user not willing to provide a password.";
     }
+
   }else{
     qDebug() << "Cannot determine a network's security type";
   }

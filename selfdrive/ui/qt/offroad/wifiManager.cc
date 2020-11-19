@@ -36,19 +36,17 @@ bool compare_by_strength(const Network &a, const Network &b){
 
 WifiManager::WifiManager(){
   qDBusRegisterMetaType<Connection>();
-  refreshNetworks();
+
+  adapter = get_adapter();
+  has_adapter = adapter != "";
 }
 
 void WifiManager::refreshNetworks(){
-  adapter = get_adapter();
+  if (!has_adapter) return;
+
   bus = QDBusConnection::systemBus();
   seen_networks.clear();
   seen_ssids.clear();
-  if(adapter==""){ // No wifi device deteced, aborting
-    return;
-  }
-
-  request_scan();
 
   for (Network &network : get_networks()){
     if(seen_ssids.count(network.ssid)){
@@ -197,11 +195,12 @@ void WifiManager::clear_connections(QString ssid){
   }
 }
 void WifiManager::request_scan(){
+  if (!has_adapter) return;
+
   QDBusInterface nm(nm_service, adapter, wireless_device_iface, bus);
   QDBusMessage response = nm.call("RequestScan",  QVariantMap());
-
-  qDebug() << response;
 }
+
 uint WifiManager::get_wifi_device_state(){
   QDBusInterface device_props(nm_service, adapter, props_iface, bus);
   QDBusMessage response = device_props.call("Get", device_iface, "State");
