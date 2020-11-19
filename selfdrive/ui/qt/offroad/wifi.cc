@@ -35,18 +35,17 @@ WifiUI::WifiUI(QWidget *parent) : QWidget(parent) {
   setStyleSheet(R"(
     QLabel { font-size: 40px }
     QPushButton:enabled {
-      background-color: #114265
+      background-color: #114265;
     }
     QPushButton:disabled {
-      background-color: #151515
+      background-color: #323C43;
     }
     * {
       background-color: #114265;
     }
   )");
 
-  // TODO: periodically request scan
-  // TODO: periodically update network list
+  // TODO: periodically request scan and update network list
   // TODO: implement (not) connecting with wrong password
 
   qDebug() << "Running";
