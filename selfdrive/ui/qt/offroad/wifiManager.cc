@@ -30,6 +30,7 @@ T get_response(QDBusMessage response){
 
 bool compare_by_strength(const Network &a, const Network &b){
   if (a.connected) return true;
+  if (b.connected) return false;
   return a.strength > b.strength;
 }
 
