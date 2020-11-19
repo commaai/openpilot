@@ -34,7 +34,14 @@ WifiUI::WifiUI(QWidget *parent) : QWidget(parent) {
 
   setStyleSheet(R"(
     QLabel { font-size: 40px }
-    QPushButton { font-size: 40px }
+    QPushButton:enabled {
+      color: #114265;
+      background-color: #114265 
+    }
+    QPushButton:disabled {
+      color: #114265;
+      background-color: #151515
+    } 
     * {
       background-color: #114265;
     }
@@ -65,7 +72,7 @@ void WifiUI::refresh(){
     hlayout->addWidget(icon);
     hlayout->addSpacing(20);
 
-    QPushButton* m_button = new QPushButton((network.connected ? "Connected" : "Connect")+(QString(i, QChar(0))));
+    QPushButton* m_button = new QPushButton(QString(i, QChar(' '))+(network.connected ? "Connected" : "Connect")+(QString(i, QChar(' '))));
     m_button->setFixedWidth(250);
     m_button->setDisabled(network.connected || network.security_type == SecurityType::UNSUPPORTED);
     connectButtons->addButton(m_button,i);
@@ -82,18 +89,20 @@ void WifiUI::refresh(){
 }
 
 void WifiUI::handleButton(QAbstractButton* m_button){
-  int id = m_button->text().length()-7;  //7="Connect".length()
+  int id = (m_button->text().length()-7)/2;
   Network n = wifi->seen_networks[id];
-  // qDebug() << "Clicked a button:" << id;
-  // qDebug() << n.ssid;
-  m_button->setText("Connecting");
-  m_button->setDisabled(true);
+  qDebug() << "Clicked a button:" << id;
+  qDebug() << n.ssid;
   if(n.security_type==SecurityType::OPEN){
+    m_button->setText("Connecting");
+    m_button->setDisabled(true);
     wifi->connect(n);
   }else if(n.security_type==SecurityType::WPA){
     bool ok;
-    QString password = QInputDialog::getText(this, "Password for "+n.ssid, "Password", QLineEdit::Normal, "PASSWORD", &ok);
+    QString password = QInputDialog::getText(this, "Password for "+n.ssid, "Password", QLineEdit::Normal, "", &ok);
     if(ok){
+      m_button->setText("Connecting");
+      m_button->setDisabled(true);
       wifi->connect(n, password);
     }else{
       qDebug() << "Connection cancelled, user not willing to provide a password.";

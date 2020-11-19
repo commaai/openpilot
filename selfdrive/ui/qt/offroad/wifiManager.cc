@@ -120,12 +120,11 @@ void WifiManager::connect(Network n, QString username, QString password){
   connect(n.ssid, username, password, n.security_type);
 }
 void WifiManager::connect(QByteArray ssid, QString username, QString password, SecurityType security_type){
-
   Connection connection;
   connection["connection"]["type"] = "802-11-wireless";
   connection["connection"]["uuid"] = QUuid::createUuid().toString().remove('{').remove('}');
 
-  connection["connection"]["id"] = "Connection"; //TODO Add security type
+  connection["connection"]["id"] = "OpenPilot connection "+QString::fromStdString(ssid.toStdString()); //TODO Add security type
 
   connection["802-11-wireless"]["ssid"] = ssid;
   connection["802-11-wireless"]["mode"] = "infrastructure";
