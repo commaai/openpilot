@@ -49,7 +49,6 @@ WifiUI::WifiUI(QWidget *parent) : QWidget(parent) {
     }
   )");
 
-  // TODO: periodically request scan and update network list
   // TODO: implement (not) connecting with wrong password
 
   // Update network list every second
@@ -59,6 +58,10 @@ WifiUI::WifiUI(QWidget *parent) : QWidget(parent) {
 }
 
 void WifiUI::refresh(){
+  if (!this->isVisible()){
+    return;
+  }
+
   wifi->request_scan();
   wifi->refreshNetworks();
 
