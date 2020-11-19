@@ -13,6 +13,10 @@
 
 #include "wifi.hpp"
 #include "wifiManager.hpp"
+CustomConnectButton::CustomConnectButton(QString text, int iid){
+    setText(text);
+    id=iid;
+}
 
 void clearLayout(QLayout* layout){
   while (QLayoutItem* item = layout->takeAt(0)){
@@ -69,7 +73,7 @@ void WifiUI::refresh(){
     hlayout->addWidget(icon);
     hlayout->addSpacing(20);
 
-    QPushButton* m_button = new QPushButton(QString(i, QChar(' '))+(network.connected ? "Connected" : "Connect")+(QString(i, QChar(' '))));
+    CustomConnectButton* m_button = new CustomConnectButton(network.connected ? "Connected" : "Connect",i);
     m_button->setFixedWidth(300);
     m_button->setDisabled(network.connected || network.security_type == SecurityType::UNSUPPORTED);
     connectButtons->addButton(m_button,i);
@@ -85,11 +89,12 @@ void WifiUI::refresh(){
 
 }
 
-void WifiUI::handleButton(QAbstractButton* m_button){
-  int id = (m_button->text().length()-7)/2;
+void WifiUI::handleButton(QAbstractButton* button){
+  CustomConnectButton* m_button = static_cast<CustomConnectButton*>(button);
+  int id = m_button->id;
   Network n = wifi->seen_networks[id];
-  qDebug() << "Clicked a button:" << id;
-  qDebug() << n.ssid;
+  // qDebug() << "Clicked a button:" << id;
+  // qDebug() << n.ssid;
   if(n.security_type==SecurityType::OPEN){
     m_button->setText("Connecting");
     m_button->setDisabled(true);

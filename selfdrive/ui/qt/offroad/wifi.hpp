@@ -7,6 +7,14 @@
 #include <QVBoxLayout>
 #include <QStackedLayout>
 
+
+class CustomConnectButton : public QPushButton{
+
+public:
+    explicit CustomConnectButton(QString text, int iid);
+    int id;
+};
+
 class WifiUI : public QWidget {
   Q_OBJECT
 
