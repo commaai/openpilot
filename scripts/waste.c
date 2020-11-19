@@ -1,12 +1,16 @@
+// gcc -O2 waste.c -lpthread -owaste
+
 #define _GNU_SOURCE
 #include <stdio.h>
 #include <sched.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <pthread.h>
 #include <arm_neon.h>
+#include <sys/sysinfo.h>
 #include "../selfdrive/common/timing.h"
 
-#define CORES 4
-double ttime[CORES];
-double oout[CORES];
+double *ttime, *oout;
 
 void waste(int pid) {
   cpu_set_t my_set;
@@ -37,6 +41,10 @@ void waste(int pid) {
 }
 
 int main() {
+  int CORES = get_nprocs();
+  ttime = (double *)malloc(CORES*sizeof(double));
+  oout = (double *)malloc(CORES*sizeof(double));
+
   pthread_t waster[CORES];
   for (int i = 0 ; i < CORES; i++) {
     pthread_create(&waster[i], NULL, waste, (void*)i);

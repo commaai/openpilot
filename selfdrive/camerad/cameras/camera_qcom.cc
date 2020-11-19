@@ -1,4 +1,3 @@
-#include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
 #include <assert.h>
@@ -333,7 +332,8 @@ void cameras_init(MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
   s->rear.device = s->device;
   s->front.device = s->device;
 
-  s->sm = new SubMaster({"driverState", "sensorEvents"});
+  s->sm_front = new SubMaster({"driverState"});
+  s->sm_rear = new SubMaster({"sensorEvents"});
   s->pm = new PubMaster({"frame", "frontFrame", "thumbnail"});
 
   int err;
@@ -2046,7 +2046,7 @@ static void* ops_thread(void* arg) {
 }
 
 void camera_process_front(MultiCameraState *s, CameraState *c, int cnt) {
-  common_camera_process_front(s->sm, s->pm, c, cnt);
+  common_camera_process_front(s->sm_front, s->pm, c, cnt);
 }
 
 // called by processing_thread
@@ -2055,11 +2055,11 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
   // cache rgb roi and write to cl
 
   // gz compensation
-  s->sm->update(0);
-  if (s->sm->updated("sensorEvents")) {
+  s->sm_rear->update(0);
+  if (s->sm_rear->updated("sensorEvents")) {
     float vals[3] = {0.0};
     bool got_accel = false;
-    auto sensor_events = (*(s->sm))["sensorEvents"].getSensorEvents();
+    auto sensor_events = (*(s->sm_rear))["sensorEvents"].getSensorEvents();
     for (auto sensor_event : sensor_events) {
       if (sensor_event.which() == cereal::SensorEventData::ACCELERATION) {
         auto v = sensor_event.getAcceleration().getV();
@@ -2140,6 +2140,9 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
     MessageBuilder msg;
     auto framed = msg.initEvent().initFrame();
     fill_frame_data(framed, b->cur_frame_data, cnt);
+    if (env_send_rear) {
+      fill_frame_image(framed, (uint8_t*)b->cur_rgb_buf->addr, b->rgb_width, b->rgb_height, b->rgb_stride);
+    }
     framed.setFocusVal(kj::ArrayPtr<const int16_t>(&s->rear.focus[0], NUM_FOCUS));
     framed.setFocusConf(kj::ArrayPtr<const uint8_t>(&s->rear.confidence[0], NUM_FOCUS));
     framed.setSharpnessScore(kj::ArrayPtr<const uint16_t>(&s->lapres[0], ARRAYSIZE(s->lapres)));
@@ -2291,6 +2294,7 @@ void cameras_close(MultiCameraState *s) {
 
   clReleaseProgram(s->prg_rgb_laplacian);
   clReleaseKernel(s->krnl_rgb_laplacian);
-  delete s->sm;
+  delete s->sm_front;
+  delete s->sm_rear;
   delete s->pm;
 }
