@@ -105,16 +105,19 @@ void WifiUI::handleButton(QAbstractButton* button){
   if(n.security_type==SecurityType::OPEN){
     wifi->connect(n);
   } else if (n.security_type==SecurityType::WPA){
-    bool ok;
-    QString password = QInputDialog::getText(this, "Password for "+n.ssid, "Password", QLineEdit::Normal, "", &ok);
+    bool ok = false;
+    QString password;
 
+#ifdef QCOM2
+    // TODO: implement touch keyboard
+#else
+    password = QInputDialog::getText(this, "Password for "+n.ssid, "Password", QLineEdit::Normal, "", &ok);
+#endif
     if (ok){
       wifi->connect(n, password);
-    } else {
-      qDebug() << "Connection cancelled, user not willing to provide a password.";
     }
 
-  }else{
+  } else {
     qDebug() << "Cannot determine a network's security type";
   }
 
