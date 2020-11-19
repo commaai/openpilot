@@ -31,6 +31,11 @@ T get_response(QDBusMessage response){
 bool compare_by_strength(const Network &a, const Network &b){
   return a.strength > b.strength;
 }
+
+bool compare_by_connected(const Network &a, const Network &b){
+  return a.connected > b.connected;
+}
+
 WifiManager::WifiManager(){
   qDBusRegisterMetaType<Connection>();
   refreshNetworks();
@@ -81,8 +86,8 @@ QList<Network> WifiManager::get_networks(){
   }
   args.endArray();
 
-  // Sort by strength
   std::sort(r.begin(), r.end(), compare_by_strength);
+  std::sort(r.begin(), r.end(), compare_by_connected);
   return r;
 }
 
@@ -96,7 +101,7 @@ SecurityType WifiManager::getSecurityType(QString path){
   }else if((sflag & 0x1) && (wpa_props & (0x333) && !(wpa_props & 0x200)) ){
     return SecurityType::WPA;
   }else{
-    // qDebug() << "Cannot determine security type for " << get_property(path, "Ssid") << " with flags"; 
+    // qDebug() << "Cannot determine security type for " << get_property(path, "Ssid") << " with flags";
     // qDebug() << "flag    " << sflag;
     // qDebug() << "WpaFlag " << wpaflag;
     // qDebug() << "RsnFlag " << rsnflag;
