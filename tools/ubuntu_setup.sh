@@ -85,6 +85,9 @@ pyenv rehash
 
 # **** in python env ****
 
+# upgrade pip
+pip install --upgrade pip==20.2.4
+
 # install pipenv
 pip install pipenv==2020.8.13
 
