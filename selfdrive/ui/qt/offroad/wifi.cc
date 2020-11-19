@@ -35,13 +35,11 @@ WifiUI::WifiUI(QWidget *parent) : QWidget(parent) {
   setStyleSheet(R"(
     QLabel { font-size: 40px }
     QPushButton:enabled {
-      color: #114265;
-      background-color: #114265 
+      background-color: #114265
     }
     QPushButton:disabled {
-      color: #114265;
       background-color: #151515
-    } 
+    }
     * {
       background-color: #114265;
     }
@@ -58,7 +56,7 @@ void WifiUI::refresh(){
 
   wifi->refreshNetworks();
   int i=0;
-  
+
   QButtonGroup* connectButtons=new QButtonGroup(this);
   QObject::connect(connectButtons, SIGNAL(buttonClicked(QAbstractButton*)), this, SLOT(handleButton(QAbstractButton*)));
   for (Network &network : wifi->seen_networks){
@@ -112,6 +110,3 @@ void WifiUI::handleButton(QAbstractButton* m_button){
   }
 
 }
-
-
-
