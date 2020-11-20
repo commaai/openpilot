@@ -1,4 +1,4 @@
-// clang++ -mcpu=cortex-a57 -O2 repro.cc
+// clang++ -O2 repro.cc && ./a.out
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,20 +15,13 @@ static inline double millis_since_boot() {
   return t.tv_sec * 1000.0 + t.tv_nsec * 1e-6;
 }
 
-int set_realtime_priority(int level) {
-  long tid = getpid();
-
-  // should match python using chrt
-  struct sched_param sa;
-  memset(&sa, 0, sizeof(sa));
-  sa.sched_priority = level;
-  return sched_setscheduler(tid, SCHED_FIFO, &sa);
-}
-
 #define MODEL_WIDTH 320
 #define MODEL_HEIGHT 640
-#define input_lambda(x) (x - 128.f) * 0.0078125f
 
+// null function still breaks it
+#define input_lambda(x) x
+
+// this is copied from models/dmonitoring.cc, and is the code that triggers the issue
 void inner(uint8_t *resized_buf, float *net_input_buf) {
   int resized_width = MODEL_WIDTH;
   int resized_height = MODEL_HEIGHT;
@@ -59,31 +52,28 @@ float trial() {
 
   int yuv_buf_len = (MODEL_WIDTH/2) * (MODEL_HEIGHT/2) * 6; // Y|u|v -> y|y|y|y|u|v
 
+  // allocate the buffers
   uint8_t *resized_buf = (uint8_t*)malloc(resized_width*resized_height*3/2);
   float *net_input_buf = (float*)malloc(yuv_buf_len*sizeof(float));
-
   printf("allocate -- %p 0x%x -- %p 0x%lx\n", resized_buf, resized_width*resized_height*3/2, net_input_buf, yuv_buf_len*sizeof(float));
 
+  // test for bad buffers
+  static int CNT = 20;
   float avg = 0.0;
-  for (int i = 0; i < 20; i++) {
-    __builtin___clear_cache((char*)resized_buf, (char*)resized_buf + (resized_width*resized_height*3/2));
-    __builtin___clear_cache((char*)net_input_buf, (char*)net_input_buf + yuv_buf_len);
-
+  for (int i = 0; i < CNT; i++) {
     double s4 = millis_since_boot();
     inner(resized_buf, net_input_buf);
     double s5 = millis_since_boot();
     avg += s5-s4;
   }
+  avg /= CNT;
 
-  avg /= 20;
-  if (avg > 5) {
+  // once it's bad, it's reliably bad
+  if (avg > 10) {
     printf("HIT %f\n", avg);
     printf("BAD\n");
 
     for (int i = 0; i < 200; i++) {
-      __builtin___clear_cache((char*)resized_buf, (char*)resized_buf + (resized_width*resized_height*3/2));
-      __builtin___clear_cache((char*)net_input_buf, (char*)net_input_buf + yuv_buf_len);
-
       double s4 = millis_since_boot();
       inner(resized_buf, net_input_buf);
       double s5 = millis_since_boot();
@@ -94,7 +84,7 @@ float trial() {
     exit(0);
   }
 
-  // don't free
+  // don't free so we get a different buffer each time
   //free(resized_buf);
   //free(net_input_buf);
 
@@ -102,10 +92,6 @@ float trial() {
 }
 
 int main() {
-  // the realtime priority seems to be what breaks it
-  // nope, breaks without it too
-  //set_realtime_priority(51);
-
   while (1) {
     float ret = trial();
     printf("got %f\n", ret);
