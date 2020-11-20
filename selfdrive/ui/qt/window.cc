@@ -10,6 +10,9 @@
 #include <QMouseEvent>
 
 #include "window.hpp"
+#include "offroad/input_field.hpp"
+#include "offroad/settings.hpp"
+#include "offroad/onboarding.hpp"
 
 #include "paint.hpp"
 #include "common/util.h"
@@ -55,6 +58,9 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
 
   onboardingWindow = new OnboardingWindow(this);
   main_layout->addWidget(onboardingWindow);
+
+  InputField *inputField = new InputField(this);
+  main_layout->addWidget(inputField);
 
   main_layout->setMargin(0);
   setLayout(main_layout);
