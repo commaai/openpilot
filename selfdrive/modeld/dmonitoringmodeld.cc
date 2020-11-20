@@ -65,7 +65,7 @@ int main(int argc, char **argv) {
       double t2 = millis_since_boot();
 
       // send dm packet
-      dmonitoring_publish(pm, extra.frame_id, res);
+      dmonitoring_publish(pm, extra.frame_id, res, t2-t1);
 
       LOGD("dmonitoring process: %.2fms, from last %.2fms", t2-t1, t1-last);
       last = t1;
