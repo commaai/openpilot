@@ -113,5 +113,8 @@ void Keyboard::handleButton(QAbstractButton* m_button){
   if(!QString::compare(m_button->text(),"⏎")){
     main_layout->setCurrentIndex(0);
   }
+  if("A" <= id && id <= "Z"){
+    main_layout->setCurrentIndex(0);
+  }
   emit emitButton(m_button->text());
 }
