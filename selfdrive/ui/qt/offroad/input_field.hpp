@@ -12,13 +12,14 @@ class InputField : public QWidget {
 
 public:
   explicit InputField(QWidget* parent = 0);
+  QLineEdit *line;
   
 private:
   Keyboard *k;
-  QLineEdit *line;
   QVBoxLayout *l;
 
 public slots:
+  void emitEmpty();
   void getText(QString s);
 
 signals:

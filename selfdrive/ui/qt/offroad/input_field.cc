@@ -1,16 +1,27 @@
 #include <QEvent>
 #include <QVBoxLayout>
 #include <QLineEdit>
+#include <QLabel>
+#include <QPushButton>
 
 #include "input_field.hpp"
 #include "keyboard.hpp"
 
 InputField::InputField(QWidget *parent): QWidget(parent) {
   l = new QVBoxLayout();
+  QHBoxLayout *r = new QHBoxLayout();
+  QLabel *label = new QLabel(this);
+  label->setText("password");
+  r->addWidget(label);
+  QPushButton* cancel = new QPushButton("Cancel");
+  QObject::connect(cancel, SIGNAL(released()), this, SLOT(emitEmpty()));
+  r->addWidget(cancel);
+  l->addLayout(r);
+  l->addSpacing(80);
 
   line = new QLineEdit("");
   l->addWidget(line);
-  l->addSpacing(400);
+  l->addSpacing(300);
 
   k = new Keyboard(this);
   QObject::connect(k, SIGNAL(emitButton(QString)), this, SLOT(getText(QString)));
@@ -18,7 +29,10 @@ InputField::InputField(QWidget *parent): QWidget(parent) {
   setLayout(l);
 }
 
-
+void InputField::emitEmpty(){
+  emitText("");
+  line->setText("");
+}
 void InputField::getText(QString s){
   if(!QString::compare(s,"⌫")){
     line->backspace();

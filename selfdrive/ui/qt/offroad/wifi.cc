@@ -45,7 +45,7 @@ WifiUI::WifiUI(QWidget *parent) : QWidget(parent) {
   swidget->addWidget(wifi_widget);
 
   // Keyboard page
-  InputField *a = new InputField;
+  InputField *a = new InputField();
   QObject::connect(a, SIGNAL(emitText(QString)), this, SLOT(receiveText(QString)));
   swidget->addWidget(a);
   swidget->setCurrentIndex(0);
@@ -58,7 +58,7 @@ WifiUI::WifiUI(QWidget *parent) : QWidget(parent) {
   // Update network list
   timer = new QTimer(this);
   QObject::connect(timer, SIGNAL(timeout()), this, SLOT(refresh()));
-  timer->start(1000);
+  timer->start(400);
 
   // Scan on startup
   wifi->request_scan();
@@ -121,12 +121,16 @@ void WifiUI::refresh(){
 void WifiUI::handleButton(QAbstractButton* button){
   CustomConnectButton* m_button = static_cast<CustomConnectButton*>(button);
   int id = m_button->id;
+  qDebug()<<id;
   Network n = wifi->seen_networks[id];
   if(n.security_type==SecurityType::OPEN){
     wifi->connect(n);
   } else if (n.security_type==SecurityType::WPA){
+    
     QString password = getStringFromUser();
-    wifi->connect(n, password);
+    if(password != ""){
+      wifi->connect(n, password);
+    }
   } else {
     qDebug() << "Cannot determine a network's security type";
   }
@@ -136,16 +140,14 @@ void WifiUI::handleButton(QAbstractButton* button){
 QString WifiUI::getStringFromUser(){
   swidget->setCurrentIndex(1);
 
-  QEventLoop loop;
-  QObject::connect(this, SIGNAL(gotText()), &loop, SLOT(quit()));
   loop.exec();
+
   swidget->setCurrentIndex(0);
 
   return text;
 }
 
 void WifiUI::receiveText(QString t){
-  emit gotText();
-  qDebug() << t;
+  loop.quit();
   text = t;
 }

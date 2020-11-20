@@ -27,6 +27,7 @@ private:
   QVBoxLayout* vlayout;
   QWidget * wifi_widget;
 
+  QEventLoop loop;
   QTimer * timer;
   QString text;
   QString getStringFromUser();
