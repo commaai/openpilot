@@ -25,6 +25,8 @@ int main(int argc, char *argv[]) {
   w.setFixedSize(vwp_w, vwp_h);
   w.show();
 
+  a.installEventFilter(&w);
+
 #ifdef QCOM2
   QPlatformNativeInterface *native = QGuiApplication::platformNativeInterface();
   wl_surface *s = reinterpret_cast<wl_surface*>(native->nativeResourceForWindow("surface", w.windowHandle()));
