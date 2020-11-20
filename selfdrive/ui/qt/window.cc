@@ -85,7 +85,7 @@ void MainWindow::closeSettings() {
 
 
 bool MainWindow::eventFilter(QObject *obj, QEvent *event){
-  if (event->type() == QEvent::MouseButtonPress	) {
+  if (event->type() == QEvent::MouseButtonPress) {
     glWindow->wake();
   }
   return false;
