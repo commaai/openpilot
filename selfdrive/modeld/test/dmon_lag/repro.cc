@@ -1,6 +1,7 @@
 // clang++ -mcpu=cortex-a57 -O2 repro.cc
 
-#include <vector>
+#include <stdio.h>
+#include <stdlib.h>
 #include <time.h>
 #include <sched.h>
 
@@ -23,14 +24,6 @@ int set_realtime_priority(int level) {
 #define MODEL_WIDTH 320
 #define MODEL_HEIGHT 640
 #define input_lambda(x) (x - 128.f) * 0.0078125f
-
-template <class T>
-static inline T *get_buffer(std::vector<T> &buf, const size_t size) {
-  if (buf.size() < size) {
-    buf.resize(size);
-  }
-  return buf.data();
-}
 
 void inner(uint8_t *resized_buf, float *net_input_buf) {
   int resized_width = MODEL_WIDTH;
@@ -57,15 +50,15 @@ void inner(uint8_t *resized_buf, float *net_input_buf) {
 }
 
 float trial() {
-  std::vector<uint8_t> vec_resized_buf;
-  std::vector<float> vec_net_input_buf;
-
   int resized_width = MODEL_WIDTH;
   int resized_height = MODEL_HEIGHT;
-  uint8_t *resized_buf = get_buffer(vec_resized_buf, resized_width*resized_height*3/2);
 
   int yuv_buf_len = (MODEL_WIDTH/2) * (MODEL_HEIGHT/2) * 6; // Y|u|v -> y|y|y|y|u|v
-  float *net_input_buf = get_buffer(vec_net_input_buf, yuv_buf_len);
+
+  uint8_t *resized_buf = (uint8_t*)malloc(resized_width*resized_height*3/2);
+  float *net_input_buf = (float*)malloc(yuv_buf_len*sizeof(float));
+
+  printf("allocate -- %p 0x%x -- %p 0x%lx\n", resized_buf, resized_width*resized_height*3/2, net_input_buf, yuv_buf_len*sizeof(float));
 
   float avg = 0.0;
   for (int i = 0; i < 20; i++) {
@@ -96,12 +89,18 @@ float trial() {
 
     exit(0);
   }
+
+  // don't free
+  //free(resized_buf);
+  //free(net_input_buf);
+
   return avg;
 }
 
 int main() {
   // the realtime priority seems to be what breaks it
-  set_realtime_priority(51);
+  // nope, breaks without it too
+  //set_realtime_priority(51);
 
   while (1) {
     float ret = trial();
