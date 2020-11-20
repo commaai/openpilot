@@ -3,6 +3,7 @@
 
 #define _GNU_SOURCE
 #include <stdio.h>
+#include <math.h>
 #include <sched.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -11,6 +12,7 @@
 #include <sys/sysinfo.h>
 #include "../selfdrive/common/timing.h"
 
+int get_nprocs(void);
 double *ttime, *oout;
 
 void waste(int pid) {
@@ -21,12 +23,12 @@ void waste(int pid) {
   printf("set affinity to %d: %d\n", pid, ret);
 
   // 256 MB
-  float32x4_t *tmp = (float32x4_t *)malloc(0x1000001*sizeof(float32x4_t));
+  float32x4_t *tmp = (float32x4_t *)malloc(0x1000000*sizeof(float32x4_t));
 
   // comment out the memset for CPU only and not RAM
   // otherwise we need this to avoid the zero page
 #ifdef MEM
-  memset(tmp, 0xaa, 0x1000001*sizeof(float32x4_t));
+  memset(tmp, 0xaa, 0x1000000*sizeof(float32x4_t));
 #endif
 
   float32x4_t out;
@@ -34,7 +36,7 @@ void waste(int pid) {
   double sec = seconds_since_boot();
   while (1) {
     for (int i = 0; i < 8; i++) {
-      for (int j = 0; j < 0x1000000; j++) {
+      for (int j = 0; j < 0x1000000; j+=2) {
         out = vmlaq_f32(out, tmp[j], tmp[j+1]);
       }
     }
@@ -51,16 +53,19 @@ int main() {
   oout = (double *)malloc(CORES*sizeof(double));
 
   pthread_t waster[CORES];
-  for (int i = 0 ; i < CORES; i++) {
-    pthread_create(&waster[i], NULL, waste, (void*)i);
+  for (long i = 0; i < CORES; i++) {
+    ttime[i] = NAN;
+    pthread_create(&waster[i], NULL, (void *(*)(void *))waste, (void*)i);
   }
   while (1) {
     double avg = 0.0;
-    for (int i = 0 ; i < CORES; i++) {
+    for (int i = 0; i < CORES; i++) {
       avg += ttime[i];
-      printf("%.2f ", ttime[i]);
+      printf("%4.2f ", ttime[i]);
     }
-    printf("-- %.2f\n", avg/CORES);
+    avg /= CORES;
+    double mb_per_sec = (8.*0x1000000/(1024*1024))*sizeof(float32x4_t)*CORES*(1/avg);
+    printf("-- %4.2f -- %.2f MB/s \n", avg, mb_per_sec);
     sleep(1);
   }
 }
