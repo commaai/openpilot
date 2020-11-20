@@ -17,4 +17,7 @@ else:
     'sensors/lsm6ds3_gyro.cc',
     'sensors/lsm6ds3_temp.cc',
   ]
-  env.Program('_sensord', ['sensors_qcom2.cc'] + sensors, LIBS=[common, cereal, messaging, 'capnp', 'zmq', 'kj'])
+  libs = [common, cereal, messaging, 'capnp', 'zmq', 'kj']
+  if arch == "larch64":
+    libs.append('i2c')
+  env.Program('_sensord', ['sensors_qcom2.cc'] + sensors, LIBS=libs)

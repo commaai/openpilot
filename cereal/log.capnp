@@ -628,6 +628,7 @@ struct ModelData {
   frameAge @12 :UInt32;
   frameDropPerc @13 :Float32;
   timestampEof @9 :UInt64;
+  modelExecutionTime @14 :Float32;
 
   path @1 :PathData;
   leftLane @2 :PathData;
@@ -694,6 +695,7 @@ struct ModelDataV2 {
   frameAge @1 :UInt32;
   frameDropPerc @2 :Float32;
   timestampEof @3 :UInt64;
+  modelExecutionTime @15 :Float32;
 
   position @4 :XYZTData;
   orientation @5 :XYZTData;
@@ -701,7 +703,9 @@ struct ModelDataV2 {
   orientationRate @7 :XYZTData;
   laneLines @8 :List(XYZTData);
   laneLineProbs @9 :List(Float32);
+  laneLineStds @13 :List(Float32);
   roadEdges @10 :List(XYZTData);
+  roadEdgeStds @14 :List(Float32);
   leads @11 :List(LeadDataV2);
 
   meta @12 :MetaData;
@@ -754,6 +758,8 @@ struct EncodeIndex {
   segmentId @4 :UInt32;
   # index into camera file in segment in encode order
   segmentIdEncode @5 :UInt32;
+  timestampSof @6 :UInt64;
+  timestampEof @7 :UInt64;
 
   enum Type {
     bigBoxLossless @0;   # rcamera.mkv
@@ -2125,5 +2131,7 @@ struct Event {
     sentinel @73 :Sentinel;
     wideFrame @74: FrameData;
     modelV2 @75 :ModelDataV2;
+    frontEncodeIdx @76 :EncodeIndex;
+    wideEncodeIdx @77 :EncodeIndex;
   }
 }

@@ -8,11 +8,10 @@
 
 #include <QVBoxLayout>
 #include <QMouseEvent>
-#include <QPushButton>
-#include <QGridLayout>
 
 #include "window.hpp"
-#include "settings.hpp"
+#include "offroad/settings.hpp"
+#include "offroad/onboarding.hpp"
 
 #include "paint.hpp"
 #include "common/util.h"
@@ -38,17 +37,24 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   set_core_affinity(7);
 #endif
 
-  GLWindow * glWindow = new GLWindow(this);
+  GLWindow *glWindow = new GLWindow(this);
   main_layout->addWidget(glWindow);
 
-  SettingsWindow * settingsWindow = new SettingsWindow(this);
+  SettingsWindow *settingsWindow = new SettingsWindow(this);
   main_layout->addWidget(settingsWindow);
 
+  OnboardingWindow *onboardingWindow = new OnboardingWindow(this);
+  main_layout->addWidget(onboardingWindow);
 
   main_layout->setMargin(0);
   setLayout(main_layout);
   QObject::connect(glWindow, SIGNAL(openSettings()), this, SLOT(openSettings()));
   QObject::connect(settingsWindow, SIGNAL(closeSettings()), this, SLOT(closeSettings()));
+
+  // start at onboarding
+  main_layout->setCurrentWidget(onboardingWindow);
+  QObject::connect(onboardingWindow, SIGNAL(onboardingDone()), this, SLOT(closeSettings()));
+  onboardingWindow->updateActiveScreen();
 
   setStyleSheet(R"(
     * {
@@ -115,7 +121,7 @@ void GLWindow::backlightUpdate(){
 
 #ifdef QCOM2
   if (!ui_state->started){
-    brightness = 0;
+    brightness = 150;
   }
 #endif
 

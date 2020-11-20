@@ -196,14 +196,14 @@ class Localizer():
     orientation_ned = ned_euler_from_ecef(ecef_pos, orientation_ecef)
     orientation_ned_gps = np.array([0, 0, np.radians(log.bearing)])
     orientation_error = np.mod(orientation_ned - orientation_ned_gps - np.pi, 2*np.pi) - np.pi
+    initial_pose_ecef_quat = quat_from_euler(ecef_euler_from_ned(ecef_pos, orientation_ned_gps))
     if np.linalg.norm(ecef_vel) > 5 and np.linalg.norm(orientation_error) > 1:
       cloudlog.error("Locationd vs ubloxLocation orientation difference too large, kalman reset")
-      initial_pose_ecef_quat = quat_from_euler(ecef_euler_from_ned(ecef_pos, orientation_ned_gps))
-      self.reset_kalman(init_orient=initial_pose_ecef_quat)
+      self.reset_kalman(init_pos=ecef_pos, init_orient=initial_pose_ecef_quat)
       self.update_kalman(current_time, ObservationKind.ECEF_ORIENTATION_FROM_GPS, initial_pose_ecef_quat)
     elif gps_est_error > 50:
       cloudlog.error("Locationd vs ubloxLocation position difference too large, kalman reset")
-      self.reset_kalman()
+      self.reset_kalman(init_pos=ecef_pos, init_orient=initial_pose_ecef_quat)
 
     self.update_kalman(current_time, ObservationKind.ECEF_POS, ecef_pos, R=ecef_pos_R)
     self.update_kalman(current_time, ObservationKind.ECEF_VEL, ecef_vel, R=ecef_vel_R)
@@ -267,12 +267,14 @@ class Localizer():
       self.calib_from_device = self.device_from_calib.T
       self.calibrated = log.calStatus == 1
 
-  def reset_kalman(self, current_time=None, init_orient=None):
+  def reset_kalman(self, current_time=None, init_orient=None, init_pos=None):
     self.filter_time = current_time
     init_x = LiveKalman.initial_x.copy()
     # too nonlinear to init on completely wrong
     if init_orient is not None:
       init_x[3:7] = init_orient
+    if init_pos is not None:
+      init_x[:3] = init_pos
     self.kf.init_state(init_x, covs=np.diag(LiveKalman.initial_P_diag), filter_time=current_time)
 
     self.observation_buffer = []
