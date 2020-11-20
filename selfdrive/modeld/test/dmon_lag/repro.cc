@@ -69,8 +69,8 @@ float trial() {
 
   float avg = 0.0;
   for (int i = 0; i < 20; i++) {
-    //__builtin___clear_cache((char*)resized_buf, (char*)resized_buf + (resized_width*resized_height*3/2));
-    //__builtin___clear_cache((char*)net_input_buf, (char*)net_input_buf + yuv_buf_len);
+    __builtin___clear_cache((char*)resized_buf, (char*)resized_buf + (resized_width*resized_height*3/2));
+    __builtin___clear_cache((char*)net_input_buf, (char*)net_input_buf + yuv_buf_len);
 
     double s4 = millis_since_boot();
     inner(resized_buf, net_input_buf);
@@ -84,8 +84,8 @@ float trial() {
     printf("BAD\n");
 
     for (int i = 0; i < 200; i++) {
-      //__builtin___clear_cache((char*)resized_buf, (char*)resized_buf + (resized_width*resized_height*3/2));
-      //__builtin___clear_cache((char*)net_input_buf, (char*)net_input_buf + yuv_buf_len);
+      __builtin___clear_cache((char*)resized_buf, (char*)resized_buf + (resized_width*resized_height*3/2));
+      __builtin___clear_cache((char*)net_input_buf, (char*)net_input_buf + yuv_buf_len);
 
       double s4 = millis_since_boot();
       inner(resized_buf, net_input_buf);
@@ -100,6 +100,7 @@ float trial() {
 }
 
 int main() {
+  // the realtime priority seems to be what breaks it
   set_realtime_priority(51);
 
   while (1) {
