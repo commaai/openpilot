@@ -9,7 +9,7 @@
 #include <QLineEdit>
 #include <QCoreApplication>
 #include <QButtonGroup>
-#include <QStackedLayout>
+#include <QStackedWidget>
 
 #include "wifi.hpp"
 #include "wifiManager.hpp"
@@ -31,38 +31,27 @@ void clearLayout(QLayout* layout){
     delete item;
   }
 }
-QWidget* wrap(QLayout* l){
-    auto widget = new QWidget();
-    widget->setLayout(l);
-    return widget;
-}
 
 WifiUI::WifiUI(QWidget *parent) : QWidget(parent) {
-  slayout = new QStackedLayout;
-
-  vlayout = new QVBoxLayout;
   wifi = new WifiManager;
-  refresh();
 
-  slayout->addWidget(wrap(vlayout));
-  InputField *a=new InputField();
+  QVBoxLayout * top_layout = new QVBoxLayout;
+  swidget = new QStackedWidget;
+
+  // Networks page
+  wifi_widget = new QWidget;
+  vlayout = new QVBoxLayout;
+  wifi_widget->setLayout(vlayout);
+  swidget->addWidget(wifi_widget);
+
+  // Keyboard page
+  InputField *a = new InputField;
   QObject::connect(a, SIGNAL(emitText(QString)), this, SLOT(receiveText(QString)));
-  slayout->addWidget(a);
-  slayout->setCurrentIndex(0);
-  setLayout(slayout);
+  swidget->addWidget(a);
+  swidget->setCurrentIndex(0);
 
-  setStyleSheet(R"(
-    QLabel { font-size: 40px }
-    QPushButton:enabled {
-      background-color: #114265;
-    }
-    QPushButton:disabled {
-      background-color: #323C43;
-    }
-    * {
-      background-color: #114265;
-    }
-  )");
+  top_layout->addWidget(swidget);
+  setLayout(top_layout);
 
   // TODO: implement (not) connecting with wrong password
 
@@ -106,7 +95,25 @@ void WifiUI::refresh(){
 
     hlayout->addWidget(m_button);
     hlayout->addSpacing(20);
-    vlayout->addLayout(hlayout);
+
+    QWidget * w = new QWidget;
+    w->setLayout(hlayout);
+    vlayout->addWidget(w);
+
+    w->setStyleSheet(R"(
+      QLabel { 
+        font-size: 40px 
+      }
+      QPushButton:enabled {
+        background-color: #114265;
+      }
+      QPushButton:disabled {
+        background-color: #323C43;
+      }
+      * {
+        background-color: #114265;
+      }
+    )");
     i+=1;
   }
 }
@@ -115,8 +122,6 @@ void WifiUI::handleButton(QAbstractButton* button){
   CustomConnectButton* m_button = static_cast<CustomConnectButton*>(button);
   int id = m_button->id;
   Network n = wifi->seen_networks[id];
-  // qDebug() << "Clicked a button:" << id;
-  // qDebug() << n.ssid;
   if(n.security_type==SecurityType::OPEN){
     wifi->connect(n);
   } else if (n.security_type==SecurityType::WPA){
@@ -129,20 +134,18 @@ void WifiUI::handleButton(QAbstractButton* button){
 }
 
 QString WifiUI::getStringFromUser(){
-  timer->stop();
-  slayout->setCurrentIndex(1);
+  swidget->setCurrentIndex(1);
 
   QEventLoop loop;
   QObject::connect(this, SIGNAL(gotText()), &loop, SLOT(quit()));
   loop.exec();
-  slayout->setCurrentIndex(0);
+  swidget->setCurrentIndex(0);
 
   return text;
 }
 
 void WifiUI::receiveText(QString t){
-  gotText();
-  qDebug()<<t;
-  timer->start();
-  text=t;
+  emit gotText();
+  qDebug() << t;
+  text = t;
 }

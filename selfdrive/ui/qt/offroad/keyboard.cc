@@ -13,15 +13,33 @@ KeyboardLayout::KeyboardLayout(QWidget* parent, std::vector<QVector<QString>> la
 
   QObject::connect(btn_group, SIGNAL(buttonClicked(QAbstractButton*)), parent, SLOT(handleButton(QAbstractButton*)));
 
+  int i = 0;
   for(auto s : layout){
     QHBoxLayout *hlayout = new QHBoxLayout;
+
+    if (i == 1){
+      hlayout->addSpacing(50);
+    }
+
     for(QString p : s){
       QPushButton* btn = new QPushButton(p);
+      btn->setFixedHeight(100);
+
+      if (p == QString("  ")){
+        btn->setFixedWidth(1024);
+      }
+
       btn_group->addButton(btn);
       hlayout->addSpacing(5);
       hlayout->addWidget(btn);
     }
+
+    if (i == 1){
+      hlayout->addSpacing(50);
+    }
+
     vlayout->addLayout(hlayout);
+    i++;
   }
 
   setLayout(vlayout);
@@ -35,7 +53,7 @@ Keyboard::Keyboard(QWidget *parent) : QWidget(parent) {
     {"q","w","e","r","t","y","u","i","o","p"},
     {"a","s","d","f","g","h","j","k","l"},
     {"⇧","z","x","c","v","b","n","m","⌫"},
-    {"123"," ","⏎"},
+    {"123","  ","⏎"},
   };
   main_layout->addWidget(new KeyboardLayout(this, lowercase));
 
@@ -44,7 +62,7 @@ Keyboard::Keyboard(QWidget *parent) : QWidget(parent) {
     {"Q","W","E","R","T","Y","U","I","O","P"},
     {"A","S","D","F","G","H","J","K","L"},
     {"↑","Z","X","C","V","B","N","M","⌫"},
-    {"123"," ","⏎"},
+    {"123","  ","⏎"},
   };
   main_layout->addWidget(new KeyboardLayout(this, uppercase));
 
@@ -53,16 +71,16 @@ Keyboard::Keyboard(QWidget *parent) : QWidget(parent) {
     {"1","2","3","4","5","6","7","8","9","0"},
     {"-","/",":",";","(",")","$","&&","@","\""},
     {"#+=",".",",","?","!","`","⌫"},
-    {"ABC"," ","⏎"},
+    {"ABC","  ","⏎"},
   };
   main_layout->addWidget(new KeyboardLayout(this, numbers));
 
   // Special characters
   std::vector<QVector<QString>> specials = {
     {"[","]","{","}","#","%","^","*","+","="},
-    {"_","\\","|","~","<",">","€","£","¥","🞄"},
+    {"_","\\","|","~","<",">","€","£","¥"," "},
     {"123",".",",","?","!","`","⌫"},
-    {"ABC"," ","⏎"},
+    {"ABC","  ","⏎"},
   };
   main_layout->addWidget(new KeyboardLayout(this, specials));
 
@@ -77,9 +95,9 @@ Keyboard::Keyboard(QWidget *parent) : QWidget(parent) {
   )");
 }
 
+
 void Keyboard::handleButton(QAbstractButton* m_button){
   QString id = m_button->text();
-  qDebug() << "Clicked a button:" << id;
   if(!QString::compare(m_button->text(),"↑")||!QString::compare(m_button->text(),"ABC")){
     main_layout->setCurrentIndex(0);
   }
@@ -91,6 +109,9 @@ void Keyboard::handleButton(QAbstractButton* m_button){
   }
   if(!QString::compare(m_button->text(),"#+=")){
     main_layout->setCurrentIndex(3);
+  }
+  if(!QString::compare(m_button->text(),"⏎")){
+    main_layout->setCurrentIndex(0);
   }
   emit emitButton(m_button->text());
 }

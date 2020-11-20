@@ -6,6 +6,7 @@
 #include <QButtonGroup>
 #include <QVBoxLayout>
 #include <QStackedLayout>
+#include <QStackedWidget>
 #include <QTimer>
 
 
@@ -21,8 +22,11 @@ class WifiUI : public QWidget {
 
 private:
   WifiManager* wifi;
-  QStackedLayout* slayout;
+
+  QStackedWidget* swidget;
   QVBoxLayout* vlayout;
+  QWidget * wifi_widget;
+
   QTimer * timer;
   QString text;
   QString getStringFromUser();

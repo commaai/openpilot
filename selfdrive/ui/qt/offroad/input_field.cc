@@ -10,6 +10,7 @@ InputField::InputField(QWidget *parent): QWidget(parent) {
 
   line = new QLineEdit("");
   l->addWidget(line);
+  l->addSpacing(400);
 
   k = new Keyboard(this);
   QObject::connect(k, SIGNAL(emitButton(QString)), this, SLOT(getText(QString)));
@@ -20,11 +21,10 @@ InputField::InputField(QWidget *parent): QWidget(parent) {
 
 void InputField::getText(QString s){
   if(!QString::compare(s,"⌫")){
-    line->setText(line->text().left(line->text().length()-1));
+    line->backspace();
   }
 
   if(!QString::compare(s,"⏎")){
-    // k->hide();
     emitText(line->text());
     line->setText("");
   }
