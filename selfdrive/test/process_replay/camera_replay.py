@@ -90,7 +90,7 @@ if __name__ == "__main__":
     log_fn = "%s_%s_%s.bz2" % (TEST_ROUTE, "model", ref_commit)
     cmp_log = LogReader(BASE_URL + log_fn)
     results: Any = {TEST_ROUTE: {}}
-    results[TEST_ROUTE]["modeld"] = compare_logs(cmp_log, log_msgs, ignore_fields=['logMonoTime', 'valid', 'model.frameDropPerc'])
+    results[TEST_ROUTE]["modeld"] = compare_logs(cmp_log, log_msgs, ignore_fields=['logMonoTime', 'valid', 'model.frameDropPerc', 'model.modelExecutionTime'])
     diff1, diff2, failed = format_diff(results, ref_commit)
 
     print(diff1)
