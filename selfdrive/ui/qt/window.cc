@@ -69,7 +69,7 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
 }
 
 void MainWindow::openSettings() {
-  main_layout->setCurrentIndex(3);
+  main_layout->setCurrentIndex(1);
 }
 
 void MainWindow::closeSettings() {

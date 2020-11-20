@@ -13,6 +13,8 @@
 
 #include "wifi.hpp"
 #include "wifiManager.hpp"
+#include "input_field.hpp"
+
 CustomConnectButton::CustomConnectButton(QString text, int iid){
     setText(text);
     id=iid;
@@ -29,12 +31,25 @@ void clearLayout(QLayout* layout){
     delete item;
   }
 }
+QWidget* wrap(QLayout* l){
+    auto widget = new QWidget();
+    widget->setLayout(l);
+    return widget;
+}
 
 WifiUI::WifiUI(QWidget *parent) : QWidget(parent) {
+  slayout = new QStackedLayout;
+
   vlayout = new QVBoxLayout;
   wifi = new WifiManager;
   refresh();
-  setLayout(vlayout);
+
+  slayout->addWidget(wrap(vlayout));
+  InputField *a=new InputField();
+  QObject::connect(a, SIGNAL(emitText(QString)), this, SLOT(receiveText(QString)));
+  slayout->addWidget(a);
+  slayout->setCurrentIndex(0);
+  setLayout(slayout);
 
   setStyleSheet(R"(
     QLabel { font-size: 40px }
@@ -51,7 +66,7 @@ WifiUI::WifiUI(QWidget *parent) : QWidget(parent) {
 
   // TODO: implement (not) connecting with wrong password
 
-  // Update network list every second
+  // Update network list
   timer = new QTimer(this);
   QObject::connect(timer, SIGNAL(timeout()), this, SLOT(refresh()));
   timer->start(1000);
@@ -105,20 +120,29 @@ void WifiUI::handleButton(QAbstractButton* button){
   if(n.security_type==SecurityType::OPEN){
     wifi->connect(n);
   } else if (n.security_type==SecurityType::WPA){
-    bool ok = false;
-    QString password;
-
-#ifdef QCOM2
-    // TODO: implement touch keyboard
-#else
-    password = QInputDialog::getText(this, "Password for "+n.ssid, "Password", QLineEdit::Normal, "", &ok);
-#endif
-    if (ok){
-      wifi->connect(n, password);
-    }
-
+    QString password = getStringFromUser();
+    wifi->connect(n, password);
   } else {
     qDebug() << "Cannot determine a network's security type";
   }
 
+}
+
+QString WifiUI::getStringFromUser(){
+  timer->stop();
+  slayout->setCurrentIndex(1);
+
+  QEventLoop loop;
+  QObject::connect(this, SIGNAL(gotText()), &loop, SLOT(quit()));
+  loop.exec();
+  slayout->setCurrentIndex(0);
+
+  return text;
+}
+
+void WifiUI::receiveText(QString t){
+  gotText();
+  qDebug()<<t;
+  timer->start();
+  text=t;
 }

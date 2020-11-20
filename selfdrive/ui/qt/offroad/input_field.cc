@@ -24,8 +24,9 @@ void InputField::getText(QString s){
   }
 
   if(!QString::compare(s,"⏎")){
-    k->hide();
+    // k->hide();
     emitText(line->text());
+    line->setText("");
   }
 
   QVector<QString> control_buttons {"⇧", "↑", "ABC", "⏎", "#+=", "⌫", "123"};

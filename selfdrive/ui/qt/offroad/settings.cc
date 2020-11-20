@@ -181,8 +181,6 @@ QWidget * developer_panel() {
     {"Panda Firmware", params.get("PandaFirmwareHex", false)},
   };
 
-  main_layout->addWidget(new InputField());
-
   for (auto l : labels) {
     QString text = QString::fromStdString(l.first + ": " + l.second);
     main_layout->addWidget(new QLabel(text));
