@@ -213,7 +213,6 @@ void CameraBuf::stop() {
 
 void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &frame_data, uint32_t cnt) {
   framed.setFrameId(frame_data.frame_id);
-  framed.setEncodeId(cnt);
   framed.setTimestampEof(frame_data.timestamp_eof);
   framed.setFrameLength(frame_data.frame_length);
   framed.setIntegLines(frame_data.integ_lines);
