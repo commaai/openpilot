@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 from selfdrive.manager import start_managed_process, kill_managed_process
-import random
 import os
-import time
 import cereal.messaging as messaging
 
 if __name__ == "__main__":
