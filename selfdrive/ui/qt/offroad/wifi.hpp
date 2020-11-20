@@ -1,5 +1,6 @@
 #pragma once
 #include "wifiManager.hpp"
+#include "input_field.hpp"
 #include <QWidget>
 #include <QtDBus>
 #include <QPushButton>
@@ -27,6 +28,7 @@ private:
   QVBoxLayout* vlayout;
   QWidget * wifi_widget;
 
+  InputField *a;
   QEventLoop loop;
   QTimer * timer;
   QString text;

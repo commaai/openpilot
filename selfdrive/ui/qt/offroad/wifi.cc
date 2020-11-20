@@ -45,13 +45,18 @@ WifiUI::WifiUI(QWidget *parent) : QWidget(parent) {
   swidget->addWidget(wifi_widget);
 
   // Keyboard page
-  InputField *a = new InputField();
+  a = new InputField();
   QObject::connect(a, SIGNAL(emitText(QString)), this, SLOT(receiveText(QString)));
   swidget->addWidget(a);
   swidget->setCurrentIndex(0);
 
   top_layout->addWidget(swidget);
   setLayout(top_layout);
+  a->setStyleSheet(R"(
+      QLineEdit {
+        background-color: #114265;
+      }
+    )");
 
   // TODO: implement (not) connecting with wrong password
 
@@ -123,10 +128,11 @@ void WifiUI::handleButton(QAbstractButton* button){
   int id = m_button->id;
   qDebug()<<id;
   Network n = wifi->seen_networks[id];
+  a->label->setText("Password for "+n.ssid);
   if(n.security_type==SecurityType::OPEN){
     wifi->connect(n);
   } else if (n.security_type==SecurityType::WPA){
-    
+
     QString password = getStringFromUser();
     if(password != ""){
       wifi->connect(n, password);

@@ -10,18 +10,20 @@
 InputField::InputField(QWidget *parent): QWidget(parent) {
   l = new QVBoxLayout();
   QHBoxLayout *r = new QHBoxLayout();
-  QLabel *label = new QLabel(this);
+  label = new QLabel(this);
   label->setText("password");
   r->addWidget(label);
-  QPushButton* cancel = new QPushButton("Cancel");
-  QObject::connect(cancel, SIGNAL(released()), this, SLOT(emitEmpty()));
+  QPushButton* cancel = new QPushButton("cancel");
+  QObject::connect(cancel, SIGNAL(released()), this, SLOT(emitEmpty()));  
+  cancel->setFixedHeight(150);
+  cancel->setFixedWidth(300);
   r->addWidget(cancel);
   l->addLayout(r);
   l->addSpacing(80);
 
   line = new QLineEdit("");
   l->addWidget(line);
-  l->addSpacing(300);
+  l->addSpacing(200);
 
   k = new Keyboard(this);
   QObject::connect(k, SIGNAL(emitButton(QString)), this, SLOT(getText(QString)));
