@@ -59,13 +59,14 @@ int main() {
   }
   while (1) {
     double avg = 0.0;
+    double iavg = 0.0;
     for (int i = 0; i < CORES; i++) {
       avg += ttime[i];
+      iavg += 1/ttime[i];
       printf("%4.2f ", ttime[i]);
     }
-    avg /= CORES;
-    double mb_per_sec = (8.*0x1000000/(1024*1024))*sizeof(float32x4_t)*CORES*(1/avg);
-    printf("-- %4.2f -- %.2f MB/s \n", avg, mb_per_sec);
+    double mb_per_sec = (8.*0x1000000/(1024*1024))*sizeof(float32x4_t)*iavg;
+    printf("-- %4.2f -- %.2f MB/s \n", avg/CORES, mb_per_sec);
     sleep(1);
   }
 }
