@@ -118,8 +118,8 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
   float *net_input_buf = get_buffer(s->net_input_buf, yuv_buf_len);
   // one shot conversion, O(n) anyway
   // yuvframe2tensor, normalize
-  for (int r = 0; r < MODEL_HEIGHT/2; r++) {
-    for (int c = 0; c < MODEL_WIDTH/2; c++) {
+  for (int c = 0; c < MODEL_WIDTH/2; c++) {
+    for (int r = 0; r < MODEL_HEIGHT/2; r++) {
       // Y_ul
       net_input_buf[(c*MODEL_HEIGHT/2) + r] = input_lambda(resized_buf[(2*r*resized_width) + (2*c)]);
       // Y_ur
