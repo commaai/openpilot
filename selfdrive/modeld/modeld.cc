@@ -193,17 +193,18 @@ int main(int argc, char **argv) {
             model_eval_frame(&model, q, yuv_ion.buf_cl, buf_info.width, buf_info.height,
                              model_transform, NULL, vec_desire);
         mt2 = millis_since_boot();
+        float model_execution_time = (mt2 - mt1) / 1000.0;
 
         // tracked dropped frames
         uint32_t vipc_dropped_frames = extra.frame_id - last_vipc_frame_id - 1;
         frames_dropped = (1. - frame_filter_k) * frames_dropped + frame_filter_k * (float)std::min(vipc_dropped_frames, 10U);
-        float frame_drop_perc = frames_dropped / MODEL_FREQ;
+        float frame_drop_ratio = frames_dropped / (1 + frames_dropped);
 
-        model_publish(pm, extra.frame_id, frame_id,  vipc_dropped_frames, frame_drop_perc, model_buf, extra.timestamp_eof);
-        model_publish_v2(pm, extra.frame_id, frame_id,  vipc_dropped_frames, frame_drop_perc, model_buf, extra.timestamp_eof);
-        posenet_publish(pm, extra.frame_id, frame_id, vipc_dropped_frames, frame_drop_perc, model_buf, extra.timestamp_eof);
+        model_publish(pm, extra.frame_id, frame_id,  vipc_dropped_frames, frame_drop_ratio, model_buf, extra.timestamp_eof, model_execution_time);
+        model_publish_v2(pm, extra.frame_id, frame_id,  vipc_dropped_frames, frame_drop_ratio, model_buf, extra.timestamp_eof, model_execution_time);
+        posenet_publish(pm, extra.frame_id, frame_id, vipc_dropped_frames, frame_drop_ratio, model_buf, extra.timestamp_eof);
 
-        LOGD("model process: %.2fms, from last %.2fms, vipc_frame_id %zu, frame_id, %zu, frame_drop %.3f", mt2-mt1, mt1-last, extra.frame_id, frame_id, frame_drop_perc);
+        LOGD("model process: %.2fms, from last %.2fms, vipc_frame_id %zu, frame_id, %zu, frame_drop %.3f", mt2-mt1, mt1-last, extra.frame_id, frame_id, frame_drop_ratio);
         last = mt1;
         last_vipc_frame_id = extra.frame_id;
       }
