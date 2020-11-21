@@ -51,7 +51,7 @@ WifiUI::WifiUI(QWidget *parent) : QWidget(parent) {
   // Update network list
   timer = new QTimer(this);
   QObject::connect(timer, SIGNAL(timeout()), this, SLOT(refresh()));
-  timer->start(1000);
+  timer->start(400);
 
   // Scan on startup
   wifi->request_scan();
@@ -75,7 +75,7 @@ void WifiUI::refresh() {
   for (Network &network : wifi->seen_networks){
     QHBoxLayout *hlayout = new QHBoxLayout;
 
-    if(page*networks_per_page <= i && i < (page+1)*networks_per_page){
+    if(page * networks_per_page <= i && i < (page + 1) * networks_per_page){
       // SSID
       hlayout->addSpacing(50);
       hlayout->addWidget(new QLabel(QString::fromUtf8(network.ssid)));
