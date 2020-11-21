@@ -1,19 +1,12 @@
 #include <QDebug>
-#include <QListWidget>
-#include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QPixmap>
 #include <QPushButton>
-#include <QInputDialog>
 #include <QLineEdit>
-#include <QCoreApplication>
-#include <QButtonGroup>
 #include <QStackedWidget>
 
 #include "wifi.hpp"
-#include "wifiManager.hpp"
-#include "input_field.hpp"
 
 
 void clearLayout(QLayout* layout){
@@ -132,9 +125,9 @@ void WifiUI::handleButton(QAbstractButton* button){
 
   a->label->setText("Enter password for \"" + n.ssid  + "\"");
 
-  if(n.security_type==SecurityType::OPEN){
+  if(n.security_type == SecurityType::OPEN){
     wifi->connect(n);
-  } else if (n.security_type==SecurityType::WPA){
+  } else if (n.security_type == SecurityType::WPA){
     QString password = getStringFromUser();
 
     if(password.size()){

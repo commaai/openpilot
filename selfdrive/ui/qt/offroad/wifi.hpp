@@ -1,14 +1,13 @@
 #pragma once
-#include "wifiManager.hpp"
-#include "input_field.hpp"
+
 #include <QWidget>
-#include <QtDBus>
-#include <QPushButton>
 #include <QButtonGroup>
 #include <QVBoxLayout>
-#include <QStackedLayout>
 #include <QStackedWidget>
 #include <QTimer>
+
+#include "wifiManager.hpp"
+#include "input_field.hpp"
 
 
 class WifiUI : public QWidget {
