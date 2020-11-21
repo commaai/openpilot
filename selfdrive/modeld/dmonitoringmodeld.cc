@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <signal.h>
 #include <cassert>
+#include <sys/resource.h>
 
 #include "common/visionbuf.h"
 #include "common/visionipc.h"
