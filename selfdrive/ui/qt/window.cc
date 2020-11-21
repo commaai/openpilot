@@ -48,6 +48,9 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
 
 #ifdef QCOM2
   set_core_affinity(7);
+
+  // TODO: this is needed to make first page not squished, why?
+  main_layout->setSizeConstraint(QLayout::SetMinimumSize);
 #endif
 
   glWindow = new GLWindow(this);
@@ -71,9 +74,6 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   main_layout->setCurrentWidget(onboardingWindow);
   QObject::connect(onboardingWindow, SIGNAL(onboardingDone()), this, SLOT(closeSettings()));
   onboardingWindow->updateActiveScreen();
-
-  // TODO: this is needed to make first page not squished, why?
-  main_layout->setSizeConstraint(QLayout::SetMinimumSize);
 
   setStyleSheet(R"(
     * {

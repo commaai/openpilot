@@ -6,6 +6,7 @@ sudo apt-get update && sudo apt-get install -y \
     build-essential \
     bzip2 \
     capnproto \
+    cppcheck \
     libcapnp-dev \
     clang \
     cmake \
