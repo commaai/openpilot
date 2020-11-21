@@ -147,7 +147,7 @@ int main(int argc, char **argv) {
 
     // setup filter to track dropped frames
     const float dt = 1. / MODEL_FREQ;
-    const float ts = 5.0;  // 5 s filter time constant
+    const float ts = 10.0;  // filter time constant (s)
     const float frame_filter_k = (dt / ts) / (1. + dt / ts);
     float frames_dropped = 0;
 
@@ -201,7 +201,7 @@ int main(int argc, char **argv) {
         // tracked dropped frames
         uint32_t vipc_dropped_frames = extra.frame_id - last_vipc_frame_id - 1;
         frames_dropped = (1. - frame_filter_k) * frames_dropped + frame_filter_k * (float)std::min(vipc_dropped_frames, 10U);
-        if (run_count < 10) frames_dropped = 0;    // let frame drops warm up
+        if (run_count < 10) frames_dropped = 0;  // let frame drops warm up
         float frame_drop_ratio = frames_dropped / (1 + frames_dropped);
 
         model_publish(pm, extra.frame_id, frame_id,  vipc_dropped_frames, frame_drop_ratio, model_buf, extra.timestamp_eof, model_execution_time);
