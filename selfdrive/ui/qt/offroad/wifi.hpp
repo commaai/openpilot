@@ -11,13 +11,6 @@
 #include <QTimer>
 
 
-class CustomConnectButton : public QPushButton{
-
-public:
-  explicit CustomConnectButton(QString text, int iid);
-  int id;
-};
-
 class WifiUI : public QWidget {
   Q_OBJECT
 
@@ -33,6 +26,8 @@ private:
   QTimer * timer;
   QString text;
   QString getStringFromUser();
+
+  QButtonGroup *connectButtons;
 
 public:
   explicit WifiUI(QWidget *parent = 0);

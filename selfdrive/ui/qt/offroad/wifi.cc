@@ -15,10 +15,6 @@
 #include "wifiManager.hpp"
 #include "input_field.hpp"
 
-CustomConnectButton::CustomConnectButton(QString text, int iid){
-    setText(text);
-    id=iid;
-}
 
 void clearLayout(QLayout* layout){
   while (QLayoutItem* item = layout->takeAt(0)){
@@ -53,10 +49,10 @@ WifiUI::WifiUI(QWidget *parent) : QWidget(parent) {
   top_layout->addWidget(swidget);
   setLayout(top_layout);
   a->setStyleSheet(R"(
-      QLineEdit {
-        background-color: #114265;
-      }
-    )");
+    QLineEdit {
+      background-color: #114265;
+    }
+  )");
 
   // TODO: implement (not) connecting with wrong password
 
@@ -78,14 +74,16 @@ void WifiUI::refresh(){
   wifi->refreshNetworks();
 
   clearLayout(vlayout);
-  int i=0;
 
-  QButtonGroup* connectButtons=new QButtonGroup(this);
+  connectButtons = new QButtonGroup(this);
   QObject::connect(connectButtons, SIGNAL(buttonClicked(QAbstractButton*)), this, SLOT(handleButton(QAbstractButton*)));
+
+  int i = 0;
   for (Network &network : wifi->seen_networks){
     QHBoxLayout *hlayout = new QHBoxLayout;
     hlayout->addWidget(new QLabel(QString::fromUtf8(network.ssid)));
     unsigned int strength_scale = std::round(network.strength / 25.0) * 25;
+
     QPixmap pix("../assets/offroad/indicator_wifi_" + QString::number(strength_scale) + ".png");
     QLabel *icon = new QLabel();
     icon->setPixmap(pix.scaledToWidth(100, Qt::SmoothTransformation));
@@ -93,12 +91,12 @@ void WifiUI::refresh(){
     hlayout->addWidget(icon);
     hlayout->addSpacing(20);
 
-    CustomConnectButton* m_button = new CustomConnectButton(network.connected ? "Connected" : "Connect",i);
-    m_button->setFixedWidth(300);
-    m_button->setDisabled(network.connected || network.security_type == SecurityType::UNSUPPORTED);
-    connectButtons->addButton(m_button,i);
+    QPushButton* btn = new QPushButton(network.connected ? "Connected" : "Connect");
+    btn->setFixedWidth(300);
+    btn->setDisabled(network.connected || network.security_type == SecurityType::UNSUPPORTED);
+    connectButtons->addButton(btn, i++);
 
-    hlayout->addWidget(m_button);
+    hlayout->addWidget(btn);
     hlayout->addSpacing(20);
 
     QWidget * w = new QWidget;
@@ -106,8 +104,8 @@ void WifiUI::refresh(){
     vlayout->addWidget(w);
 
     w->setStyleSheet(R"(
-      QLabel { 
-        font-size: 40px 
+      QLabel {
+        font-size: 40px;
       }
       QPushButton:enabled {
         background-color: #114265;
@@ -119,28 +117,27 @@ void WifiUI::refresh(){
         background-color: #114265;
       }
     )");
-    i+=1;
   }
 }
 
 void WifiUI::handleButton(QAbstractButton* button){
-  CustomConnectButton* m_button = static_cast<CustomConnectButton*>(button);
-  int id = m_button->id;
-  qDebug()<<id;
-  Network n = wifi->seen_networks[id];
-  a->label->setText("Password for "+n.ssid);
+  QPushButton* btn = static_cast<QPushButton*>(button);
+  qDebug() << connectButtons->id(btn);
+  Network n = wifi->seen_networks[connectButtons->id(btn)];
+
+  a->label->setText("Enter password for " + n.ssid);
+
   if(n.security_type==SecurityType::OPEN){
     wifi->connect(n);
   } else if (n.security_type==SecurityType::WPA){
-
     QString password = getStringFromUser();
-    if(password != ""){
+
+    if(password.size()){
       wifi->connect(n, password);
     }
   } else {
-    qDebug() << "Cannot determine a network's security type";
+    qDebug() << "Cannot determine network's security type";
   }
-
 }
 
 QString WifiUI::getStringFromUser(){
