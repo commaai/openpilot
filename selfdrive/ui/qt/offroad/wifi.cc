@@ -4,12 +4,11 @@
 #include <QPixmap>
 #include <QPushButton>
 #include <QLineEdit>
-#include <QStackedWidget>
 
 #include "wifi.hpp"
 
 
-void clearLayout(QLayout* layout){
+void clearLayout(QLayout* layout) {
   while (QLayoutItem* item = layout->takeAt(0)) {
     if (QWidget* widget = item->widget()){
       widget->deleteLater();
@@ -58,8 +57,8 @@ WifiUI::WifiUI(QWidget *parent) : QWidget(parent) {
   wifi->request_scan();
 }
 
-void WifiUI::refresh(){
-  if (!this->isVisible()){
+void WifiUI::refresh() {
+  if (!this->isVisible()) {
     return;
   }
 
@@ -92,10 +91,10 @@ void WifiUI::refresh(){
     QPushButton* btn = new QPushButton(network.connected ? "Connected" : "Connect");
     btn->setFixedWidth(300);
     btn->setDisabled(network.connected || network.security_type == SecurityType::UNSUPPORTED);
-    connectButtons->addButton(btn, i++);
-
     hlayout->addWidget(btn);
     hlayout->addSpacing(20);
+
+    connectButtons->addButton(btn, i++);
 
     QWidget * w = new QWidget;
     w->setLayout(hlayout);
@@ -118,7 +117,7 @@ void WifiUI::refresh(){
   }
 }
 
-void WifiUI::handleButton(QAbstractButton* button){
+void WifiUI::handleButton(QAbstractButton* button) {
   QPushButton* btn = static_cast<QPushButton*>(button);
   qDebug() << connectButtons->id(btn);
   Network n = wifi->seen_networks[connectButtons->id(btn)];
@@ -140,15 +139,12 @@ void WifiUI::handleButton(QAbstractButton* button){
 
 QString WifiUI::getStringFromUser(){
   swidget->setCurrentIndex(1);
-
   loop.exec();
-
   swidget->setCurrentIndex(0);
-
   return text;
 }
 
-void WifiUI::receiveText(QString t){
+void WifiUI::receiveText(QString t) {
   loop.quit();
   text = t;
 }

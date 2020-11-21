@@ -2,8 +2,7 @@
 #include <set>
 
 #include "wifiManager.hpp"
-#include "wifi.hpp"
-typedef QMap<QString, QMap<QString, QVariant>> Connection;
+
 
 QString nm_path                = "/org/freedesktop/NetworkManager";
 QString nm_settings_path       = "/org/freedesktop/NetworkManager/Settings";
@@ -149,7 +148,6 @@ void WifiManager::connect(QByteArray ssid, QString username, QString password, S
   } else {
     qDebug() << result.value().path();
   }
-
 }
 
 void WifiManager::print_active_connections(){
@@ -185,10 +183,10 @@ void WifiManager::clear_connections(QString ssid){
 
     QMap<QString,QMap<QString,QVariant> > map;
     dbusArg >> map;
-    for( QString outer_key : map.keys() ){
+    for(QString outer_key : map.keys()) {
       QMap<QString,QVariant> innerMap = map.value(outer_key);
-      for( QString inner_key : innerMap.keys() ){
-        if(inner_key=="ssid"){
+      for(QString inner_key : innerMap.keys()) {
+        if(inner_keyo == "ssid"){
           QString value = innerMap.value(inner_key).value<QString>();
           if(value == ssid){
             // qDebug()<<"Deleting "<<value;
@@ -252,7 +250,7 @@ QString WifiManager::get_adapter(){
     QDBusMessage response = device_props.call("Get", device_iface, "DeviceType");
     uint device_type = get_response<uint>(response);
 
-    if (device_type == 2){ // Wireless
+    if (device_type == 2) { // Wireless
       adapter_path = path.path();
       break;
     }
