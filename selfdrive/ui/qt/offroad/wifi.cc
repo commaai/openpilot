@@ -81,9 +81,13 @@ void WifiUI::refresh(){
   int i = 0;
   for (Network &network : wifi->seen_networks){
     QHBoxLayout *hlayout = new QHBoxLayout;
-    hlayout->addWidget(new QLabel(QString::fromUtf8(network.ssid)));
-    unsigned int strength_scale = std::round(network.strength / 25.0) * 25;
 
+    // SSID
+    hlayout->addSpacing(50);
+    hlayout->addWidget(new QLabel(QString::fromUtf8(network.ssid)));
+
+    // strength indicator
+    unsigned int strength_scale = std::round(network.strength / 25.0) * 25;
     QPixmap pix("../assets/offroad/indicator_wifi_" + QString::number(strength_scale) + ".png");
     QLabel *icon = new QLabel();
     icon->setPixmap(pix.scaledToWidth(100, Qt::SmoothTransformation));
@@ -91,6 +95,7 @@ void WifiUI::refresh(){
     hlayout->addWidget(icon);
     hlayout->addSpacing(20);
 
+    // connect button
     QPushButton* btn = new QPushButton(network.connected ? "Connected" : "Connect");
     btn->setFixedWidth(300);
     btn->setDisabled(network.connected || network.security_type == SecurityType::UNSUPPORTED);
@@ -125,7 +130,7 @@ void WifiUI::handleButton(QAbstractButton* button){
   qDebug() << connectButtons->id(btn);
   Network n = wifi->seen_networks[connectButtons->id(btn)];
 
-  a->label->setText("Enter password for " + n.ssid);
+  a->label->setText("Enter password for \"" + n.ssid  + "\"");
 
   if(n.security_type==SecurityType::OPEN){
     wifi->connect(n);

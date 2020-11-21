@@ -25,9 +25,9 @@ private:
   QEventLoop loop;
   QTimer * timer;
   QString text;
-  QString getStringFromUser();
-
   QButtonGroup *connectButtons;
+
+  QString getStringFromUser();
 
 public:
   explicit WifiUI(QWidget *parent = 0);
