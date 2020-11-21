@@ -2,8 +2,7 @@
 #include <set>
 
 #include "wifiManager.hpp"
-#include "wifi.hpp"
-typedef QMap<QString, QMap<QString, QVariant> > Connection;
+
 
 QString nm_path                = "/org/freedesktop/NetworkManager";
 QString nm_settings_path       = "/org/freedesktop/NetworkManager/Settings";
@@ -91,11 +90,12 @@ SecurityType WifiManager::getSecurityType(QString path){
   int wpaflag = get_property(path, "WpaFlags").toInt();
   int rsnflag = get_property(path, "RsnFlags").toInt();
   int wpa_props = wpaflag | rsnflag;
+
   if(sflag == 0){
     return SecurityType::OPEN;
-  }else if((sflag & 0x1) && (wpa_props & (0x333) && !(wpa_props & 0x200)) ){
+  } else if((sflag & 0x1) && (wpa_props & (0x333) && !(wpa_props & 0x200))) {
     return SecurityType::WPA;
-  }else{
+  } else {
     // qDebug() << "Cannot determine security type for " << get_property(path, "Ssid") << " with flags";
     // qDebug() << "flag    " << sflag;
     // qDebug() << "WpaFlag " << wpaflag;
@@ -103,22 +103,25 @@ SecurityType WifiManager::getSecurityType(QString path){
     return SecurityType::UNSUPPORTED;
   }
 }
+
 void WifiManager::connect(Network n){
-  return connect(n,"","");
+  return connect(n, "", "");
 }
+
 void WifiManager::connect(Network n, QString password){
   return connect(n, "", password);
 }
 
 void WifiManager::connect(Network n, QString username, QString password){
   QString active_ap = get_active_ap();
-  if(active_ap!=""){
-    clear_connections(get_property(active_ap,"Ssid"));
+  if (active_ap!="") {
+    clear_connections(get_property(active_ap, "Ssid"));
   }
   clear_connections(n.ssid);
   qDebug() << "Connecting to"<< n.ssid << "with username, password =" << username << "," <<password;
   connect(n.ssid, username, password, n.security_type);
 }
+
 void WifiManager::connect(QByteArray ssid, QString username, QString password, SecurityType security_type){
   Connection connection;
   connection["connection"]["type"] = "802-11-wireless";
@@ -145,7 +148,6 @@ void WifiManager::connect(QByteArray ssid, QString username, QString password, S
   } else {
     qDebug() << result.value().path();
   }
-
 }
 
 void WifiManager::print_active_connections(){
@@ -159,11 +161,12 @@ void WifiManager::print_active_connections(){
   QDBusObjectPath path;
   step4.beginArray();
   while (!step4.atEnd()){
-      step4 >> path;
-      qDebug()<<path.path();
+    step4 >> path;
+    qDebug()<<path.path();
   }
   step4.endArray();
 }
+
 void WifiManager::clear_connections(QString ssid){
   QDBusInterface nm(nm_service, nm_settings_path, nm_settings_iface, bus);
   QDBusMessage response = nm.call("ListConnections");
@@ -180,20 +183,21 @@ void WifiManager::clear_connections(QString ssid){
 
     QMap<QString,QMap<QString,QVariant> > map;
     dbusArg >> map;
-    for( QString outer_key : map.keys() ){
-        QMap<QString,QVariant> innerMap = map.value(outer_key);
-        for( QString inner_key : innerMap.keys() ){
-            if(inner_key=="ssid"){
-              QString value = innerMap.value(inner_key).value<QString>();
-              if(value == ssid){
-                // qDebug()<<"Deleting "<<value;
-                nm2.call("Delete");
-              }
-            }
+    for(QString outer_key : map.keys()) {
+      QMap<QString,QVariant> innerMap = map.value(outer_key);
+      for(QString inner_key : innerMap.keys()) {
+        if(inner_key == "ssid"){
+          QString value = innerMap.value(inner_key).value<QString>();
+          if(value == ssid){
+            // qDebug()<<"Deleting "<<value;
+            nm2.call("Delete");
+          }
         }
+      }
     }
   }
 }
+
 void WifiManager::request_scan(){
   if (!has_adapter) return;
 
@@ -207,12 +211,14 @@ uint WifiManager::get_wifi_device_state(){
   uint resp = get_response<uint>(response);
   return resp;
 }
+
 QString WifiManager::get_active_ap(){
   QDBusInterface device_props(nm_service, adapter, props_iface, bus);
   QDBusMessage response = device_props.call("Get", wireless_device_iface, "ActiveAccessPoint");
   QDBusObjectPath r = get_response<QDBusObjectPath>(response);
   return r.path();
 }
+
 QByteArray WifiManager::get_property(QString network_path ,QString property){
   QDBusInterface device_props(nm_service, network_path, props_iface, bus);
   QDBusMessage response = device_props.call("Get", ap_iface, property);
@@ -244,7 +250,7 @@ QString WifiManager::get_adapter(){
     QDBusMessage response = device_props.call("Get", device_iface, "DeviceType");
     uint device_type = get_response<uint>(response);
 
-    if (device_type == 2){ // Wireless
+    if (device_type == 2) { // Wireless
       adapter_path = path.path();
       break;
     }
