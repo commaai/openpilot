@@ -377,7 +377,6 @@ def thermald_thread():
       if started_ts is None:
         started_ts = sec_since_boot()
         started_seen = True
-        os.system('echo performance > /sys/class/devfreq/soc:qcom,cpubw/governor')
     else:
       if startup_conditions["ignition"] and (startup_conditions != startup_conditions_prev):
         cloudlog.event("Startup blocked", startup_conditions=startup_conditions)
@@ -387,7 +386,6 @@ def thermald_thread():
       started_ts = None
       if off_ts is None:
         off_ts = sec_since_boot()
-        os.system('echo powersave > /sys/class/devfreq/soc:qcom,cpubw/governor')
 
     # Offroad power monitoring
     pm.calculate(health)
