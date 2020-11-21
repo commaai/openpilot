@@ -36,6 +36,4 @@ private slots:
   void handleButton(QAbstractButton* m_button);
   void refresh();
   void receiveText(QString text);
-signals:
-  void gotText();
 };
