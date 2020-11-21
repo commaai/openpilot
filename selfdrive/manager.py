@@ -80,6 +80,8 @@ from multiprocessing import Process
 # Run scons
 spinner = Spinner()
 spinner.update("0")
+if __name__ != "__main__":
+  spinner.close()
 
 if not prebuilt:
   for retry in [True, False]:
