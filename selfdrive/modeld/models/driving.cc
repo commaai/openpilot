@@ -368,7 +368,7 @@ void model_publish_v2(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
   // meta
   auto meta = framed.initMeta();
   fill_meta_v2(meta, net_outputs.meta);
-  
+
   // leads
   auto leads = framed.initLeads(LEAD_MHP_SELECTION);
   int mdn_max_idx = 0;
