@@ -186,7 +186,7 @@ void WifiManager::clear_connections(QString ssid){
     for(QString outer_key : map.keys()) {
       QMap<QString,QVariant> innerMap = map.value(outer_key);
       for(QString inner_key : innerMap.keys()) {
-        if(inner_keyo == "ssid"){
+        if(inner_key == "ssid"){
           QString value = innerMap.value(inner_key).value<QString>();
           if(value == ssid){
             // qDebug()<<"Deleting "<<value;
