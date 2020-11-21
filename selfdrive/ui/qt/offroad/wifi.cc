@@ -51,10 +51,11 @@ WifiUI::WifiUI(QWidget *parent) : QWidget(parent) {
   // Update network list
   timer = new QTimer(this);
   QObject::connect(timer, SIGNAL(timeout()), this, SLOT(refresh()));
-  timer->start(400);
+  timer->start(1000);
 
   // Scan on startup
   wifi->request_scan();
+  page = 0;
 }
 
 void WifiUI::refresh() {
@@ -74,47 +75,79 @@ void WifiUI::refresh() {
   for (Network &network : wifi->seen_networks){
     QHBoxLayout *hlayout = new QHBoxLayout;
 
-    // SSID
-    hlayout->addSpacing(50);
-    hlayout->addWidget(new QLabel(QString::fromUtf8(network.ssid)));
+    if(page*networks_per_page <= i && i < (page+1)*networks_per_page){
+      // SSID
+      hlayout->addSpacing(50);
+      hlayout->addWidget(new QLabel(QString::fromUtf8(network.ssid)));
 
-    // strength indicator
-    unsigned int strength_scale = std::round(network.strength / 25.0) * 25;
-    QPixmap pix("../assets/offroad/indicator_wifi_" + QString::number(strength_scale) + ".png");
-    QLabel *icon = new QLabel();
-    icon->setPixmap(pix.scaledToWidth(100, Qt::SmoothTransformation));
-    icon->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
-    hlayout->addWidget(icon);
-    hlayout->addSpacing(20);
+      // strength indicator
+      unsigned int strength_scale = std::round(network.strength / 25.0) * 25;
+      QPixmap pix("../assets/offroad/indicator_wifi_" + QString::number(strength_scale) + ".png");
+      QLabel *icon = new QLabel();
+      icon->setPixmap(pix.scaledToWidth(100, Qt::SmoothTransformation));
+      icon->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
+      hlayout->addWidget(icon);
+      hlayout->addSpacing(20);
 
-    // connect button
-    QPushButton* btn = new QPushButton(network.connected ? "Connected" : "Connect");
-    btn->setFixedWidth(300);
-    btn->setDisabled(network.connected || network.security_type == SecurityType::UNSUPPORTED);
-    hlayout->addWidget(btn);
-    hlayout->addSpacing(20);
+      // connect button
+      QPushButton* btn = new QPushButton(network.connected ? "Connected" : "Connect");
+      btn->setFixedWidth(300);
+      btn->setDisabled(network.connected || network.security_type == SecurityType::UNSUPPORTED);
+      hlayout->addWidget(btn);
+      hlayout->addSpacing(20);
 
-    connectButtons->addButton(btn, i++);
+      connectButtons->addButton(btn, i);
 
-    QWidget * w = new QWidget;
-    w->setLayout(hlayout);
-    vlayout->addWidget(w);
+      QWidget * w = new QWidget;
+      w->setLayout(hlayout);
+      vlayout->addWidget(w);
 
-    w->setStyleSheet(R"(
-      QLabel {
-        font-size: 40px;
-      }
+      w->setStyleSheet(R"(
+        QLabel {
+          font-size: 40px;
+        }
+        QPushButton:enabled {
+          background-color: #114265;
+        }
+        QPushButton:disabled {
+          background-color: #323C43;
+        }
+        * {
+          background-color: #114265;
+        }
+      )");
+    }
+    i+=1;
+  }
+  QHBoxLayout *prev_next_buttons = new QHBoxLayout;
+  QPushButton* prev = new QPushButton("Previous page");
+  prev->setEnabled(page);
+
+  QPushButton* next = new QPushButton("Next page");
+  //If there are more visible networks then we can show, enable going to next page
+  if(wifi->seen_networks.size() > (page + 1) * networks_per_page){
+    next->setEnabled(true);
+  }else{
+    next->setDisabled(true);
+  }
+  QObject::connect(prev, SIGNAL(released()), this, SLOT(prevPage()));
+  QObject::connect(next, SIGNAL(released()), this, SLOT(nextPage()));
+  prev_next_buttons->addWidget(prev);
+  prev_next_buttons->addWidget(next);
+
+  QWidget * w = new QWidget;
+  w->setLayout(prev_next_buttons);
+  w->setStyleSheet(R"(
       QPushButton:enabled {
         background-color: #114265;
       }
       QPushButton:disabled {
         background-color: #323C43;
       }
-      * {
-        background-color: #114265;
-      }
-    )");
-  }
+  )");
+  w->setFixedHeight(100);
+  vlayout->addWidget(w);
+  
 }
 
 void WifiUI::handleButton(QAbstractButton* button) {
@@ -128,7 +161,6 @@ void WifiUI::handleButton(QAbstractButton* button) {
     wifi->connect(n);
   } else if (n.security_type == SecurityType::WPA){
     QString password = getStringFromUser();
-
     if(password.size()){
       wifi->connect(n, password);
     }
@@ -147,4 +179,12 @@ QString WifiUI::getStringFromUser(){
 void WifiUI::receiveText(QString t) {
   loop.quit();
   text = t;
+}
+void WifiUI::prevPage() {
+  page--;
+  refresh();
+}
+void WifiUI::nextPage() {
+  page++;
+  refresh();
 }
