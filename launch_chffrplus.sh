@@ -19,6 +19,19 @@ function two_init {
   # openpilot gets all the cores
   echo 0-3 > /dev/cpuset/app/cpus
 
+  # set up governors
+  # +50mW offroad, +500mW onroad for 30% more RAM bandwidth
+  echo "performance" > /sys/class/devfreq/soc:qcom,cpubw/governor
+  echo 1056000 > /sys/class/devfreq/soc:qcom,m4m/max_freq
+  echo "performance" > /sys/class/devfreq/soc:qcom,m4m/governor
+
+  # unclear if these help, but they don't seem to hurt
+  echo "performance" > /sys/class/devfreq/soc:qcom,memlat-cpu0/governor
+  echo "performance" > /sys/class/devfreq/soc:qcom,memlat-cpu2/governor
+
+  # /sys/class/devfreq/soc:qcom,mincpubw is the only one left at "powersave"
+  # it seems to gain nothing but a wasted 500mW
+
   # Collect RIL and other possibly long-running I/O interrupts onto CPU 1
   echo 1 > /proc/irq/78/smp_affinity_list # qcom,smd-modem (LTE radio)
   echo 1 > /proc/irq/33/smp_affinity_list # ufshcd (flash storage)
