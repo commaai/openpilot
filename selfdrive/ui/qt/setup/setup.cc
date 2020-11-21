@@ -18,8 +18,6 @@
 #include <wayland-client-protocol.h>
 #endif
 
-#include <iostream>
-
 int download(std::string url) {
   CURL *curl;
   curl = curl_easy_init();
