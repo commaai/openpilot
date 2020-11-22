@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <curl/curl.h>
 
 #include <QString>
@@ -17,14 +18,14 @@
 #include <wayland-client-protocol.h>
 #endif
 
-
 int download(std::string url) {
   CURL *curl;
   curl = curl_easy_init();
   if (!curl) return -1;
 
-  FILE *fp;
-  fp = fopen("/tmp/installer", "wb");
+  char tmpfile[] = "/tmp/installer_XXXXXX";
+  FILE *fp = fdopen(mkstemp(tmpfile), "w");
+
   curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
   curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, NULL);
   curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
@@ -32,6 +33,8 @@ int download(std::string url) {
   curl_easy_perform(curl);
   curl_easy_cleanup(curl);
   fclose(fp);
+
+  rename(tmpfile, "/tmp/installer");
   return 0;
 }
 
