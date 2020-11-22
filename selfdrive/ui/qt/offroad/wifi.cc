@@ -79,8 +79,8 @@ void WifiUI::refresh() {
     hlayout->addWidget(new QLabel(QString::fromUtf8(network.ssid)));
 
     // strength indicator
-    unsigned int strength_scale = std::round(network.strength / 25.0) * 25;
-    QPixmap pix("../assets/offroad/indicator_wifi_" + QString::number(strength_scale) + ".png");
+    unsigned int strength_scale = network.strength / 17;
+    QPixmap pix("../assets/images/network_" + QString::number(strength_scale) + ".png");
     QLabel *icon = new QLabel();
     icon->setPixmap(pix.scaledToWidth(100, Qt::SmoothTransformation));
     icon->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
@@ -99,7 +99,6 @@ void WifiUI::refresh() {
     QWidget * w = new QWidget;
     w->setLayout(hlayout);
     vlayout->addWidget(w);
-
     w->setStyleSheet(R"(
       QLabel {
         font-size: 40px;
@@ -114,6 +113,9 @@ void WifiUI::refresh() {
         background-color: #114265;
       }
     )");
+    if(i > 10){
+      return;
+    }
   }
 }
 

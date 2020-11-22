@@ -62,9 +62,6 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   onboardingWindow = new OnboardingWindow(this);
   main_layout->addWidget(onboardingWindow);
 
-  InputField *inputField = new InputField(this);
-  main_layout->addWidget(inputField);
-
   main_layout->setMargin(0);
   setLayout(main_layout);
   QObject::connect(glWindow, SIGNAL(openSettings()), this, SLOT(openSettings()));
