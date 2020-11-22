@@ -99,7 +99,6 @@ void WifiUI::refresh() {
     QWidget * w = new QWidget;
     w->setLayout(hlayout);
     vlayout->addWidget(w);
-
     w->setStyleSheet(R"(
       QLabel {
         font-size: 40px;
@@ -114,6 +113,9 @@ void WifiUI::refresh() {
         background-color: #114265;
       }
     )");
+    if(i > 10){
+      return;
+    }
   }
 }
 
