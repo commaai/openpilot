@@ -79,7 +79,7 @@ void WifiUI::refresh() {
     hlayout->addWidget(new QLabel(QString::fromUtf8(network.ssid)));
 
     // strength indicator
-    unsigned int strength_scale = std::round(network.strength / 20.0);
+    unsigned int strength_scale = network.strength / 17;
     QPixmap pix("../assets/images/network_" + QString::number(strength_scale) + ".png");
     QLabel *icon = new QLabel();
     icon->setPixmap(pix.scaledToWidth(100, Qt::SmoothTransformation));
