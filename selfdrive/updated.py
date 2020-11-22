@@ -23,6 +23,9 @@
 # disable this service.
 
 import os
+import json
+import lzma
+import hashlib
 import datetime
 import subprocess
 import psutil
@@ -214,6 +217,47 @@ def finalize_update() -> None:
   cloudlog.info("done finalizing overlay")
 
 
+def download(filename, url, img_hash):
+  decompressor = lzma.LZMADecompressor(format=lzma.FORMAT_AUTO)
+  sha256 = hashlib.sha256()
+  with requests.get(url, stream=True, headers={'Accept-Encoding': None}) as stream:
+    stream.raise_for_status()
+    size = int(stream.headers.get("Content-Length"))
+    with open(filename, 'wb') as f:
+      for chunk in stream.iter_content(chunk_size=1024*1024):
+        decompressed_chunk = decompressor.decompress(chunk)
+        sha256.update(decompressed_chunk)
+        f.write(decompressed_chunk)
+
+  print(f"Downloaded '{filename}'")
+  if sha256.hexdigest().lower() != img_hash.lower():
+    raise Exception(f"'{filename}' hash mismatch, got {sha256.hexdigest().lower()}")
+
+
+def handle_agnos_update(wait_helper):
+  # TODO: add version file to agnos and check for update
+  update = json.load(open("release.json"))
+
+  current_slot = subprocess.check_output(["abctl", "--boot_slot"], encoding='utf-8').strip()
+  target_slot = "_a" if current_slot == "_b" else "_b"
+
+  # set target slot as unbootable
+  os.system(f"abctl --set_unbootable {target_slot}")
+
+  for partition in update:
+    # just do boot for now
+    if partition['name'] != "boot":
+      continue
+
+    img_path = f"/tmp/{img['name']}_{img['hash']}"
+    download(img['name'], img[''])
+    update_cmd = f"sudo dd if={img_path} of=/dev/disk/by-partlabel/{img['name']}{target_slot}"
+    os.system(update_cmd)
+
+  os.system(f"abctl --set_unbootable {target_slot}")
+  os.system(f"abctl --set_active {target_slot}")
+
+
 def handle_neos_update(wait_helper: WaitTimeHelper) -> None:
   with open(NEOS_VERSION, "r") as f:
     cur_neos = f.read().strip()
@@ -294,6 +338,8 @@ def fetch_update(wait_helper: WaitTimeHelper) -> bool:
 
       if EON:
         handle_neos_update(wait_helper)
+      elif TICI:
+        handle_agnos_update(wait_helper)
 
     # Create the finalized, ready-to-swap update
     finalize_update()
