@@ -63,7 +63,7 @@ class TestLoggerd(unittest.TestCase):
 
   # TODO: this should run faster than real time
   @parameterized.expand(ALL_CAMERA_COMBINATIONS)
-  @with_processes(['camerad', 'loggerd'], init_time=5)
+  @with_processes(['camerad', 'sensord', 'loggerd'], init_time=5)
   def test_log_rotation(self, cameras):
     print("checking targets:", cameras)
     Params().put("RecordFront", "1" if 'dcamera' in cameras else "0")
