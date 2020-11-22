@@ -7,9 +7,10 @@
 #define BRANCH "master"
 #endif
 
-#define GIT_CLONE_COMMAND "git clone https://github.com/commaai/openpilot.git"
+#define GIT_URL "https://github.com/commaai/openpilot.git"
+#define GIT_SSH_URL "git@github.com:commaai/openpilot.git"
 
-#define CONTINUE_PATH "/home/comma/continue.sh"
+#define CONTINUE_PATH "/data/continue.sh"
 
 bool time_valid() {
   time_t rawtime;
@@ -29,9 +30,11 @@ int fresh_clone() {
   if(err) return 1;
 
   // Clone
-  err = std::system(GIT_CLONE_COMMAND " -b " BRANCH " --depth=1 /tmp/openpilot");
+  err = std::system("git clone " GIT_URL " -b " BRANCH " --depth=1 /tmp/openpilot");
   if(err) return 1;
   err = std::system("cd /tmp/openpilot && git submodule update --init");
+  if(err) return 1;
+  err = std::system("cd /tmp/openpilot && git remote set-url origin --push " GIT_SSH_URL);
   if(err) return 1;
 
   err = std::system("mv /tmp/openpilot /data");
