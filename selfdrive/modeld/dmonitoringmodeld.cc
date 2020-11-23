@@ -66,7 +66,11 @@ int main(int argc, char **argv) {
       double t2 = millis_since_boot();
 
       // send dm packet
-      dmonitoring_publish(pm, extra.frame_id, res, (t2-t1)/1000.0);
+      const float* raw_pred_ptr = nullptr;
+        if (env_send_raw_dmonitor) {
+          raw_pred_ptr = (const float *)dmonitoringmodel.output;
+        }
+      dmonitoring_publish(pm, extra.frame_id, res, raw_pred_ptr, (t2-t1)/1000.0);
 
       LOGD("dmonitoring process: %.2fms, from last %.2fms", t2-t1, t1-last);
       last = t1;

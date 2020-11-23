@@ -11,6 +11,8 @@ extern "C" {
 
 #define OUTPUT_SIZE 34
 
+const bool env_send_raw_dmonitor = getenv("SEND_RAW_DMONITOR") != NULL;
+
 typedef struct DMonitoringResult {
   float face_orientation[3];
   float face_orientation_meta[3];
@@ -36,7 +38,7 @@ typedef struct DMonitoringModelState {
 
 void dmonitoring_init(DMonitoringModelState* s);
 DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_buf, int width, int height);
-void dmonitoring_publish(PubMaster &pm, uint32_t frame_id, const DMonitoringResult &res, float execution_time);
+void dmonitoring_publish(PubMaster &pm, uint32_t frame_id, const DMonitoringResult &res, void* raw_pred, float execution_time);
 void dmonitoring_free(DMonitoringModelState* s);
 
 #ifdef __cplusplus

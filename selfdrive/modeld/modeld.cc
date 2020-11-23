@@ -204,8 +204,12 @@ int main(int argc, char **argv) {
         if (run_count < 10) frames_dropped = 0;  // let frame drops warm up
         float frame_drop_ratio = frames_dropped / (1 + frames_dropped);
 
-        model_publish(pm, extra.frame_id, frame_id,  vipc_dropped_frames, frame_drop_ratio, model_buf, extra.timestamp_eof, model_execution_time);
-        model_publish_v2(pm, extra.frame_id, frame_id,  vipc_dropped_frames, frame_drop_ratio, model_buf, extra.timestamp_eof, model_execution_time);
+        const float* raw_pred_ptr = nullptr;
+        if (env_send_raw_driving) {
+          raw_pred_ptr = (const float *)model.output;
+        }
+        model_publish(pm, extra.frame_id, frame_id,  vipc_dropped_frames, frame_drop_ratio, model_buf, raw_pred_ptr, extra.timestamp_eof, model_execution_time);
+        model_publish_v2(pm, extra.frame_id, frame_id,  vipc_dropped_frames, frame_drop_ratio, model_buf, raw_pred_ptr, extra.timestamp_eof, model_execution_time);
         posenet_publish(pm, extra.frame_id, frame_id, vipc_dropped_frames, frame_drop_ratio, model_buf, extra.timestamp_eof);
 
         LOGD("model process: %.2fms, from last %.2fms, vipc_frame_id %zu, frame_id, %zu, frame_drop %.3f", mt2-mt1, mt1-last, extra.frame_id, frame_id, frame_drop_ratio);
