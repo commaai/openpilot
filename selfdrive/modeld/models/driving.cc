@@ -307,7 +307,7 @@ void fill_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const float * data,
 
 void model_publish_v2(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
                      uint32_t vipc_dropped_frames, float frame_drop,
-                     const ModelDataRaw &net_outputs, void* raw_pred, uint64_t timestamp_eof,
+                     const ModelDataRaw &net_outputs, const float* raw_pred, uint64_t timestamp_eof,
                      float model_execution_time) {
   // make msg
   MessageBuilder msg;
@@ -391,7 +391,7 @@ void model_publish_v2(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
 
 void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
                    uint32_t vipc_dropped_frames, float frame_drop,
-                   const ModelDataRaw &net_outputs, void* raw_pred, uint64_t timestamp_eof,
+                   const ModelDataRaw &net_outputs, const float* raw_pred, uint64_t timestamp_eof,
                    float model_execution_time) {
 
   uint32_t frame_age = (frame_id > vipc_frame_id) ? (frame_id - vipc_frame_id) : 0;
