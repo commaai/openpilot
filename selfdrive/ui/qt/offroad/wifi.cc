@@ -119,10 +119,12 @@ void WifiUI::refresh() {
     i+=1;
   }
   QHBoxLayout *prev_next_buttons = new QHBoxLayout;
-  QPushButton* prev = new QPushButton("Previous page");
+  QPushButton* prev = new QPushButton("Previous");
   prev->setEnabled(page);
+  prev->setFixedHeight(100);
 
-  QPushButton* next = new QPushButton("Next page");
+  QPushButton* next = new QPushButton("Next");
+  next->setFixedHeight(100);
   //If there are more visible networks then we can show, enable going to next page
   if(wifi->seen_networks.size() > (page + 1) * networks_per_page){
     next->setEnabled(true);
@@ -147,7 +149,6 @@ void WifiUI::refresh() {
       background-color: #114265;
     }
   )");
-  w->setFixedHeight(100);
   vlayout->addWidget(w);
 }
 
