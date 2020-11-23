@@ -116,10 +116,10 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
 
   // new, with prerotate
 
-  uint8_t *resized_buf_rot = get_buffer(s->resized_buf, resized_width*resized_height*3/2);
-  uint8_t *resized_y_buf_rot = resized_buf;
-  uint8_t *resized_u_buf_rot = resized_y_buf + (resized_width * resized_height);
-  uint8_t *resized_v_buf_rot = resized_u_buf + ((resized_width/2) * (resized_height/2));
+  uint8_t *resized_buf_rot = get_buffer(s->resized_buf_rot, resized_width*resized_height*3/2);
+  uint8_t *resized_y_buf_rot = resized_buf_rot;
+  uint8_t *resized_u_buf_rot = resized_y_buf_rot + (resized_width * resized_height);
+  uint8_t *resized_v_buf_rot = resized_u_buf_rot + ((resized_width/2) * (resized_height/2));
 
   libyuv::I420Rotate(resized_y_buf, resized_width,
                      resized_u_buf, resized_width/2,
@@ -136,11 +136,11 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
   for (int c = 0; c < MODEL_WIDTH/2; c++) {
     for (int r = 0; r < MODEL_HEIGHT/2; r++) {
       // Y_ul
-      net_input_buf[(c*MODEL_HEIGHT/2) + r] = input_lambda(resized_buf_rot[(2*r) + (2*c*resized_height)]);
+      net_input_buf[(c*MODEL_HEIGHT/2) + r + (0*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = input_lambda(resized_buf_rot[(2*r) + (2*c*resized_height)]);
+      // Y_dl
+      net_input_buf[(c*MODEL_HEIGHT/2) + r + (1*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = input_lambda(resized_buf_rot[(2*r+1) + (2*c*resized_height)]);
       // Y_ur
       net_input_buf[(c*MODEL_HEIGHT/2) + r + (2*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = input_lambda(resized_buf_rot[(2*r) + (2*c*resized_height+1)]);
-      // Y_dl
-      net_input_buf[(c*MODEL_HEIGHT/2) + r + ((MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = input_lambda(resized_buf_rot[(2*r+1) + (2*c*resized_height)]);
       // Y_dr
       net_input_buf[(c*MODEL_HEIGHT/2) + r + (3*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = input_lambda(resized_buf_rot[(2*r+1) + (2*c*resized_height+1)]);
       // U
