@@ -110,7 +110,18 @@ function two_init {
   fi
 }
 
+function tici_init {
+
+  # set success flag for current boot slot
+  sudo abctl --set_success
+
+}
+
 function launch {
+<<<<<<< HEAD
+=======
+
+>>>>>>> 9dafc66d (add manifest)
   # Remove orphaned git lock if it exists on boot
   [ -f "$DIR/.git/index.lock" ] && rm -f $DIR/.git/index.lock
 
@@ -153,7 +164,7 @@ function launch {
     fi
   fi
 
-  # comma two init
+  # hardware specific init
   if [ -f /EON ]; then
     two_init
   elif [ -f /TICI ]; then

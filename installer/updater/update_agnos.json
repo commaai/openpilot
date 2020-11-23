@@ -1,0 +1,12 @@
+[
+  {
+    "name": "system",
+    "url": "https://commadist.azureedge.net/agnosupdate-staging/system-79e2e1d13e39d0611764ff5e12db8316811201783483fc46959e9b8ed9e80d7e.img.xz",
+    "hash": "79e2e1d13e39d0611764ff5e12db8316811201783483fc46959e9b8ed9e80d7e"
+  },
+  {
+    "name": "boot",
+    "url": "https://commadist.azureedge.net/agnosupdate-staging/boot-21649cb35935a92776155e7bb23e437e7e7eb0500c082df89f59a6d4a4ed639a.img.xz",
+    "hash": "21649cb35935a92776155e7bb23e437e7e7eb0500c082df89f59a6d4a4ed639a"
+  }
+]

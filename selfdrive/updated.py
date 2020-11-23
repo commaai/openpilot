@@ -34,6 +34,7 @@ import signal
 import fcntl
 import time
 import threading
+import requests
 from pathlib import Path
 from typing import List, Tuple, Optional
 
@@ -222,40 +223,52 @@ def download(filename, url, img_hash):
   sha256 = hashlib.sha256()
   with requests.get(url, stream=True, headers={'Accept-Encoding': None}) as stream:
     stream.raise_for_status()
-    size = int(stream.headers.get("Content-Length"))
     with open(filename, 'wb') as f:
       for chunk in stream.iter_content(chunk_size=1024*1024):
         decompressed_chunk = decompressor.decompress(chunk)
         sha256.update(decompressed_chunk)
         f.write(decompressed_chunk)
 
-  print(f"Downloaded '{filename}'")
   if sha256.hexdigest().lower() != img_hash.lower():
     raise Exception(f"'{filename}' hash mismatch, got {sha256.hexdigest().lower()}")
 
 
 def handle_agnos_update(wait_helper):
-  # TODO: add version file to agnos and check for update
-  update = json.load(open("release.json"))
+  with open(NEOS_VERSION, "r") as f:
+    cur_version = f.read().strip()
+
+  updated_version = run(["bash", "-c", r"unset AGNOS_VERSION && source launch_env.sh && \
+                       echo -n $AGNOS_VERSION"], OVERLAY_MERGED).strip()
+
+  cloudlog.info(f"AGNOS version check: {cur_version} vs {updated_version}")
+  if cur_version == updated_version:
+    return
+
+  update = json.load(open(os.path.join(BASEDIR, "installer/upater/update_agnos.json")))
 
   current_slot = subprocess.check_output(["abctl", "--boot_slot"], encoding='utf-8').strip()
-  target_slot = "_a" if current_slot == "_b" else "_b"
+  target_slot = "_b" if current_slot == "_a" else "_a"
+  target_slot_number = "0" if target_slot == "_a" else "1"
 
   # set target slot as unbootable
-  os.system(f"abctl --set_unbootable {target_slot}")
+  #os.system(f"abctl --set_unbootable {target_slot_number}")
 
   for partition in update:
     # just do boot for now
     if partition['name'] != "boot":
       continue
 
-    img_path = f"/tmp/{img['name']}_{img['hash']}"
-    download(img['name'], img[''])
-    update_cmd = f"sudo dd if={img_path} of=/dev/disk/by-partlabel/{img['name']}{target_slot}"
-    os.system(update_cmd)
+    cloudlog.info(f"Downloading {partition['name']}")
+    img_path = f"/tmp/{partition['name']}_{partition['hash']}"
+    download(partition['name'], partition['url'], partition['hash'])
 
-  os.system(f"abctl --set_unbootable {target_slot}")
-  os.system(f"abctl --set_active {target_slot}")
+    cloudlog.info(f"Writing {partition['name']}")
+    run(["sudo", "dd", f"if={img_path}", f"of=/dev/disk/by-partlabel/{partition['name']}{target_slot}"])
+
+  cloudlog.info("AGNOS update successful")
+
+  # TODO: this should be done at the same time as the openpilot swap
+  run(["abctl", "--set_active", target_slot_number])
 
 
 def handle_neos_update(wait_helper: WaitTimeHelper) -> None:
