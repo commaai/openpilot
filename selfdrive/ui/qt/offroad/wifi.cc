@@ -51,10 +51,13 @@ WifiUI::WifiUI(QWidget *parent) : QWidget(parent) {
   // Update network list
   timer = new QTimer(this);
   QObject::connect(timer, SIGNAL(timeout()), this, SLOT(refresh()));
-  timer->start(400);
+  timer->start(2000);
 
   // Scan on startup
   wifi->request_scan();
+  QLabel* scanning = new QLabel(this);
+  scanning->setText("Scanning for networks");
+  vlayout->addWidget(scanning);
 }
 
 void WifiUI::refresh() {
@@ -71,6 +74,7 @@ void WifiUI::refresh() {
   QObject::connect(connectButtons, SIGNAL(buttonClicked(QAbstractButton*)), this, SLOT(handleButton(QAbstractButton*)));
 
   int i = 0;
+  // qDebug()<<"There are"<<wifi->seen_networks.size()<<"networks.";
   for (Network &network : wifi->seen_networks){
     QHBoxLayout *hlayout = new QHBoxLayout;
 
