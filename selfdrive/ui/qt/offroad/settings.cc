@@ -15,6 +15,8 @@
 #include "input_field.hpp"
 
 #include "common/params.h"
+#include "common/utilpp.h"
+
 
 ParamsToggle::ParamsToggle(QString param, QString title, QString description, QString icon_path, QWidget *parent): QFrame(parent) , param(param) {
   QHBoxLayout *hlayout = new QHBoxLayout;
@@ -174,8 +176,10 @@ QWidget * developer_panel() {
 
   Params params = Params();
   std::string brand = params.read_db_bool("Passive") ? "dashcam" : "openpilot";
+  std::string os_version = util::read_file("/VERSION");
   std::vector<std::pair<std::string, std::string>> labels = {
     {"Version", brand + " v" + params.get("Version", false)},
+    {"OS Version", os_version},
     {"Git Branch", params.get("GitBranch", false)},
     {"Git Commit", params.get("GitCommit", false).substr(0, 10)},
     {"Panda Firmware", params.get("PandaFirmwareHex", false)},
