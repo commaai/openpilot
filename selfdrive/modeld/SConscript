@@ -19,7 +19,11 @@ if arch == "aarch64":
     lenv['CFLAGS'].append("-DUSE_THNEED")
     lenv['CXXFLAGS'].append("-DUSE_THNEED")
 elif arch == "larch64":
-  libs += ['gsl', 'CB', 'pthread']
+  libs += ['gsl', 'CB', 'pthread', 'dl']
+  if not TEST_THNEED:
+    common_src += ["thneed/thneed.cc"]
+    lenv['CFLAGS'].append("-DUSE_THNEED")
+    lenv['CXXFLAGS'].append("-DUSE_THNEED")
 else:
   libs += ['pthread']
 
