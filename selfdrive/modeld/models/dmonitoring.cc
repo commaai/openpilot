@@ -114,7 +114,45 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
                     resized_width, resized_height,
                     mode);
 
+  // new, with prerotate
+
+  uint8_t *resized_buf_rot = get_buffer(s->resized_buf, resized_width*resized_height*3/2);
+  uint8_t *resized_y_buf_rot = resized_buf;
+  uint8_t *resized_u_buf_rot = resized_y_buf + (resized_width * resized_height);
+  uint8_t *resized_v_buf_rot = resized_u_buf + ((resized_width/2) * (resized_height/2));
+
+  libyuv::I420Rotate(resized_y_buf, resized_width,
+                     resized_u_buf, resized_width/2,
+                     resized_v_buf, resized_width/2,
+                     resized_y_buf_rot, resized_height,
+                     resized_u_buf_rot, resized_height/2,
+                     resized_v_buf_rot, resized_height/2,
+                     resized_width, resized_height, libyuv::kRotate90);
+
   int yuv_buf_len = (MODEL_WIDTH/2) * (MODEL_HEIGHT/2) * 6; // Y|u|v -> y|y|y|y|u|v
+  float *net_input_buf = get_buffer(s->net_input_buf, yuv_buf_len);
+  // one shot conversion, O(n) anyway
+  // yuvframe2tensor, normalize
+  for (int c = 0; c < MODEL_WIDTH/2; c++) {
+    for (int r = 0; r < MODEL_HEIGHT/2; r++) {
+      // Y_ul
+      net_input_buf[(c*MODEL_HEIGHT/2) + r] = input_lambda(resized_buf_rot[(2*r) + (2*c*resized_height)]);
+      // Y_ur
+      net_input_buf[(c*MODEL_HEIGHT/2) + r + (2*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = input_lambda(resized_buf_rot[(2*r) + (2*c*resized_height+1)]);
+      // Y_dl
+      net_input_buf[(c*MODEL_HEIGHT/2) + r + ((MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = input_lambda(resized_buf_rot[(2*r+1) + (2*c*resized_height)]);
+      // Y_dr
+      net_input_buf[(c*MODEL_HEIGHT/2) + r + (3*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = input_lambda(resized_buf_rot[(2*r+1) + (2*c*resized_height+1)]);
+      // U
+      net_input_buf[(c*MODEL_HEIGHT/2) + r + (4*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = input_lambda(resized_buf_rot[(resized_width*resized_height) + r + (c*resized_height/2)]);
+      // V
+      net_input_buf[(c*MODEL_HEIGHT/2) + r + (5*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = input_lambda(resized_buf_rot[(resized_width*resized_height) + ((resized_width/2)*(resized_height/2)) + r + (c*resized_height/2)]);
+    }
+  }
+
+  // old rotation
+
+  /*int yuv_buf_len = (MODEL_WIDTH/2) * (MODEL_HEIGHT/2) * 6; // Y|u|v -> y|y|y|y|u|v
   float *net_input_buf = get_buffer(s->net_input_buf, yuv_buf_len);
   // one shot conversion, O(n) anyway
   // yuvframe2tensor, normalize
@@ -133,7 +171,7 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
       // V
       net_input_buf[(c*MODEL_HEIGHT/2) + r + (5*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = input_lambda(resized_buf[(resized_width*resized_height) + ((resized_width/2)*(resized_height/2)) + (r*resized_width/2) + c]);
     }
-  }
+  }*/
 
   //printf("preprocess completed. %d \n", yuv_buf_len);
   //FILE *dump_yuv_file = fopen("/tmp/rawdump.yuv", "wb");
