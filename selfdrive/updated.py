@@ -244,7 +244,7 @@ def handle_agnos_update(wait_helper):
   if cur_version == updated_version:
     return
 
-  update = json.load(open(os.path.join(BASEDIR, "installer/upater/update_agnos.json")))
+  update = json.load(open(os.path.join(BASEDIR, "installer/updater/update_agnos.json")))
 
   current_slot = subprocess.check_output(["abctl", "--boot_slot"], encoding='utf-8').strip()
   target_slot = "_b" if current_slot == "_a" else "_a"
@@ -254,10 +254,6 @@ def handle_agnos_update(wait_helper):
   #os.system(f"abctl --set_unbootable {target_slot_number}")
 
   for partition in update:
-    # just do boot for now
-    if partition['name'] != "boot":
-      continue
-
     cloudlog.info(f"Downloading {partition['name']}")
     img_path = f"/tmp/{partition['name']}_{partition['hash']}"
     download(partition['name'], partition['url'], partition['hash'])
