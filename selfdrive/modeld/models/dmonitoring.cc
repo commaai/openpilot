@@ -187,7 +187,7 @@ void dmonitoring_publish(PubMaster &pm, uint32_t frame_id, const DMonitoringResu
   framed.setRightBlinkProb(res.right_blink_prob);
   framed.setSgProb(res.sg_prob);
   if (env_send_raw_dmonitor) {
-    framed.setRawPred(kj::arrayPtr((const float*)raw_pred, OUTPUT_SIZE*sizeof(float)));
+    framed.setRawPred(kj::arrayPtr((const uint8_t*)raw_pred, OUTPUT_SIZE*sizeof(float)));
   }
 
   pm.send("driverState", msg);

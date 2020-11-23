@@ -319,7 +319,7 @@ void model_publish_v2(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
   framed.setTimestampEof(timestamp_eof);
   framed.setModelExecutionTime(model_execution_time);
   if (env_send_raw_driving) {
-    framed.setRawPred(kj::arrayPtr((const float*)raw_pred, (OUTPUT_SIZE+TEMPORAL_SIZE)*sizeof(float)));
+    framed.setRawPred(kj::arrayPtr((const uint8_t*)raw_pred, (OUTPUT_SIZE+TEMPORAL_SIZE)*sizeof(float)));
   }
 
   // plan 
@@ -403,7 +403,7 @@ void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
   framed.setTimestampEof(timestamp_eof);
   framed.setModelExecutionTime(model_execution_time);
   if (env_send_raw_driving) {
-    framed.setRawPred(kj::arrayPtr((const float*)raw_pred, (OUTPUT_SIZE+TEMPORAL_SIZE)*sizeof(float)));
+    framed.setRawPred(kj::arrayPtr((const uint8_t*)raw_pred, (OUTPUT_SIZE+TEMPORAL_SIZE)*sizeof(float)));
   }
 
   // Find the distribution that corresponds to the most probable plan
