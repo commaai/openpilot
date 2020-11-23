@@ -15,6 +15,8 @@ class WifiUI : public QWidget {
 
 private:
   WifiManager* wifi;
+  int page;
+  const int networks_per_page = 10;
 
   QStackedWidget* swidget;
   QVBoxLayout* vlayout;
@@ -35,4 +37,6 @@ private slots:
   void handleButton(QAbstractButton* m_button);
   void refresh();
   void receiveText(QString text);
+  void prevPage();
+  void nextPage();
 };
