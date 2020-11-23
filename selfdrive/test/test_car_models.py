@@ -189,6 +189,10 @@ routes = {
     'carFingerprint': HYUNDAI.IONIQ_EV_2020,
     'enableCamera': True,
   },
+  "6b301bf83f10aa90|2020-11-22--16-45-07": {
+    'carFingerprint': HYUNDAI.GENESIS_G80,
+    'enableCamera': True,
+  },
   "38bfd238edecbcd7|2018-08-22--09-45-44": {
     'carFingerprint': HYUNDAI.SANTA_FE,
     'enableCamera': False,
@@ -499,7 +503,6 @@ non_tested_cars = [
   HONDA.RIDGELINE,
   HYUNDAI.ELANTRA,
   HYUNDAI.ELANTRA_GT_I30,
-  HYUNDAI.GENESIS_G80,
   HYUNDAI.GENESIS_G90,
   HYUNDAI.KIA_FORTE,
   HYUNDAI.KIA_OPTIMA_H,

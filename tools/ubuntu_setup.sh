@@ -6,6 +6,7 @@ sudo apt-get update && sudo apt-get install -y \
     build-essential \
     bzip2 \
     capnproto \
+    cppcheck \
     libcapnp-dev \
     clang \
     cmake \
@@ -84,6 +85,9 @@ pyenv global 3.8.2
 pyenv rehash
 
 # **** in python env ****
+
+# upgrade pip
+pip install --upgrade pip==20.2.4
 
 # install pipenv
 pip install pipenv==2020.8.13

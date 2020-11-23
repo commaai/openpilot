@@ -3,6 +3,7 @@ openpilot in simulator
 
 
 ## Running the simulator
+
 First, start the CARLA server.
 ```
 ./start_carla.sh
@@ -14,6 +15,7 @@ Then start bridge and openpilot.
 ```
 
 To engage openpilot press 1 a few times while focused on bridge.py to increase the cruise speed.
+
 ## Controls
 
 You can control openpilot driving in the simulation with the following keys

@@ -1,4 +1,3 @@
-#include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
 #include <assert.h>
@@ -2141,6 +2140,9 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
     MessageBuilder msg;
     auto framed = msg.initEvent().initFrame();
     fill_frame_data(framed, b->cur_frame_data, cnt);
+    if (env_send_rear) {
+      fill_frame_image(framed, (uint8_t*)b->cur_rgb_buf->addr, b->rgb_width, b->rgb_height, b->rgb_stride);
+    }
     framed.setFocusVal(kj::ArrayPtr<const int16_t>(&s->rear.focus[0], NUM_FOCUS));
     framed.setFocusConf(kj::ArrayPtr<const uint8_t>(&s->rear.confidence[0], NUM_FOCUS));
     framed.setSharpnessScore(kj::ArrayPtr<const uint16_t>(&s->lapres[0], ARRAYSIZE(s->lapres)));

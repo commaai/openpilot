@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <signal.h>
 #include <cassert>
+#include <sys/resource.h>
 
 #include "common/visionbuf.h"
 #include "common/visionipc.h"
@@ -23,7 +24,7 @@ static void set_do_exit(int sig) {
 
 int main(int argc, char **argv) {
   int err;
-  set_realtime_priority(51);
+  setpriority(PRIO_PROCESS, 0, -15);
 
 #ifdef QCOM2
   set_core_affinity(5);
@@ -65,7 +66,7 @@ int main(int argc, char **argv) {
       double t2 = millis_since_boot();
 
       // send dm packet
-      dmonitoring_publish(pm, extra.frame_id, res);
+      dmonitoring_publish(pm, extra.frame_id, res, (t2-t1)/1000.0);
 
       LOGD("dmonitoring process: %.2fms, from last %.2fms", t2-t1, t1-last);
       last = t1;

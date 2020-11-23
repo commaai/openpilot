@@ -205,6 +205,7 @@ void* visionserver_client_thread(void* arg) {
             stream_i == VISION_STREAM_YUV_WIDE) {
           CameraBuf *b = get_camerabuf_by_type(s, (VisionStreamType)stream_i);
           rep.d.stream_acq.extra.frame_id = b->yuv_metas[idx].frame_id;
+          rep.d.stream_acq.extra.timestamp_sof = b->yuv_metas[idx].timestamp_sof;
           rep.d.stream_acq.extra.timestamp_eof = b->yuv_metas[idx].timestamp_eof;
         }
         vipc_send(fd, &rep);
