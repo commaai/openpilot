@@ -38,7 +38,7 @@ bool compare_by_strength(const Network &a, const Network &b){
 
 WifiManager::WifiManager(){
   qDBusRegisterMetaType<Connection>();
-
+  last_network="";
   adapter = get_adapter();
   has_adapter = adapter != "";
   if(has_adapter){
@@ -140,6 +140,7 @@ void WifiManager::connect(Network n, QString password){
 }
 
 void WifiManager::connect(Network n, QString username, QString password){
+  last_network=n.ssid;
   QString active_ap = get_active_ap();
   deactivate_connections(get_property(active_ap, "Ssid")); //Disconnect from any connected networks 
   clear_connections(n.ssid); //Clear all connections that may already exist to the network we are connecting
@@ -306,13 +307,6 @@ void WifiManager::change(unsigned int a,unsigned int b,unsigned int c){
   qDebug()<<"CHANGE!"<<b<<"-->"<<a<<" reason:"<<c;
   raw_adapter_state = a;
   if(a==60 && c==8){
-    QVector<QDBusObjectPath> temp = get_active_connections();
-    qDebug()<<"Number of connections"<<temp.size();
-    QString connection = temp[0].path();
-    
-    QDBusInterface nm(nm_service, connection, props_iface, bus);
-    QString network_path = get_response<QDBusObjectPath>(nm.call("Get", connection_iface, "SpecificObject")).path();
-    qDebug()<<"Network path is"<<network_path;
-    wrongPassword(get_property(network_path, "Ssid"));
+    wrongPassword(last_network);
   }
 }

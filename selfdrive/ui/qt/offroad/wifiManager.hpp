@@ -44,7 +44,8 @@ private:
   QString adapter;//Path to network manager wifi-device
   QDBusConnection bus = QDBusConnection::systemBus();
   unsigned int raw_adapter_state;
-
+  QString last_network;
+  
   QString get_adapter();
   QList<Network> get_networks();
   void connect(QByteArray ssid, QString username, QString password, SecurityType security_type);
