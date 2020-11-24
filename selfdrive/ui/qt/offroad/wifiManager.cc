@@ -306,8 +306,13 @@ void WifiManager::change(unsigned int a,unsigned int b,unsigned int c){
   qDebug()<<"CHANGE!"<<b<<"-->"<<a<<" reason:"<<c;
   raw_adapter_state = a;
   if(a==60 && c==8){
-    qDebug()<<"Number of connections"<<get_active_connections().size();
-    QDBusInterface nm(nm_service, get_active_connections()[0].path(), props_iface, bus);
-    wrongPassword(get_property(get_response<QDBusObjectPath>(nm.call("Get", connection_iface, "SpecificObject")).path(), "Ssid"));
+    QVector<QDBusObjectPath> temp = get_active_connections();
+    qDebug()<<"Number of connections"<<temp.size();
+    QString connection = temp[0].path();
+    
+    QDBusInterface nm(nm_service, connection, props_iface, bus);
+    QString network_path = get_response<QDBusObjectPath>(nm.call("Get", connection_iface, "SpecificObject")).path();
+    qDebug()<<"Network path is"<<network_path;
+    wrongPassword(get_property(network_path, "Ssid"));
   }
 }
