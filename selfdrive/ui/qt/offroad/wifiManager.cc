@@ -141,7 +141,7 @@ void WifiManager::connect(Network n, QString password){
 
 void WifiManager::connect(Network n, QString username, QString password){
   QString active_ap = get_active_ap();
-  // deactivate_connections(get_property(active_ap, "Ssid")); //Disconnect from any connected networks 
+  deactivate_connections(get_property(active_ap, "Ssid")); //Disconnect from any connected networks 
   clear_connections(n.ssid); //Clear all connections that may already exist to the network we are connecting
   qDebug() << "Connecting to"<< n.ssid << "with username, password =" << username << "," <<password;
   connect(n.ssid, username, password, n.security_type);
@@ -179,20 +179,18 @@ void WifiManager::deactivate_connections(QString ssid){
   for(QDBusObjectPath active_connection_raw:get_active_connections()){
     QString active_connection = active_connection_raw.path();
     QDBusInterface nm(nm_service, active_connection, props_iface, bus);
-    uint state = get_response<uint>(nm.call("Get", connection_iface, "State"));
-    uint stateFlags = get_response<uint>(nm.call("Get", connection_iface, "StateFlags"));
-    qDebug() << active_connection;
-    qDebug() << state;
-    qDebug() << stateFlags;
+    // uint state = get_response<uint>(nm.call("Get", connection_iface, "State"));
+    // uint stateFlags = get_response<uint>(nm.call("Get", connection_iface, "StateFlags"));
+
     QDBusObjectPath pth = get_response<QDBusObjectPath>(nm.call("Get", connection_iface, "SpecificObject"));
-    qDebug() << pth.path();//This is an accessPoint!!! Get property should work
+    // qDebug() << pth.path();//This is an accessPoint!!! Get property should work
     QString Ssid = get_property(pth.path(), "Ssid");
-    qDebug() << Ssid << ssid;
+    // qDebug() << Ssid << ssid;
     if(Ssid == ssid){
       QDBusInterface nm2(nm_service, nm_path, nm_iface, bus);
-      qDebug() << nm2.call("DeactivateConnection", QVariant::fromValue(active_connection_raw));
+      nm2.call("DeactivateConnection", QVariant::fromValue(active_connection_raw));
     }    
-    qDebug()<<"";
+    // qDebug()<<"";
   }
 }
 
@@ -200,20 +198,14 @@ QVector<QDBusObjectPath> WifiManager::get_active_connections(){
   QDBusInterface nm(nm_service, nm_path, props_iface, bus);
   QDBusMessage response = nm.call("Get", nm_iface, "ActiveConnections");
   QDBusArgument arr = get_response<QDBusArgument>(response);
-  qDebug()<<arr.currentType();
   QVector<QDBusObjectPath> conns;
 
   QDBusObjectPath path;
   arr.beginArray();
   while (!arr.atEnd()){
     arr >> path;
-    QString conn_active_path = path.path();
-    qDebug()<<conn_active_path;
     conns.push_back(path);
   }
-  // arr.endArray();
-
-  qDebug()<<"Found"<<conns.size()<<"active connections";
   return conns;
 }
 
