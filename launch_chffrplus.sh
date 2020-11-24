@@ -8,6 +8,11 @@ source "$BASEDIR/launch_env.sh"
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 
+function tici_init {
+  sudo su -c 'echo "performance" > /sys/class/devfreq/soc:qcom,memlat-cpu0/governor'
+  sudo su -c 'echo "performance" > /sys/class/devfreq/soc:qcom,memlat-cpu4/governor'
+}
+
 function two_init {
   # Restrict Android and other system processes to the first two cores
   echo 0-1 > /dev/cpuset/background/cpus
@@ -121,6 +126,10 @@ function launch {
   # comma two init
   if [ -f /EON ]; then
     two_init
+  fi
+
+  if [ -f /TICI ]; then
+    tici_init
   fi
 
   # handle pythonpath

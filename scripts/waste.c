@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <sched.h>
+#include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <pthread.h>
@@ -22,21 +23,21 @@ void waste(int pid) {
   int ret = sched_setaffinity(0, sizeof(cpu_set_t), &my_set);
   printf("set affinity to %d: %d\n", pid, ret);
 
-  // 256 MB
-  float32x4_t *tmp = (float32x4_t *)malloc(0x1000000*sizeof(float32x4_t));
+  // 128 MB
+  float32x4_t *tmp = (float32x4_t *)malloc(0x800000*sizeof(float32x4_t));
 
   // comment out the memset for CPU only and not RAM
   // otherwise we need this to avoid the zero page
 #ifdef MEM
-  memset(tmp, 0xaa, 0x1000000*sizeof(float32x4_t));
+  memset(tmp, 0xaa, 0x800000*sizeof(float32x4_t));
 #endif
 
   float32x4_t out;
 
   double sec = seconds_since_boot();
   while (1) {
-    for (int i = 0; i < 8; i++) {
-      for (int j = 0; j < 0x1000000; j+=0x20) {
+    for (int i = 0; i < 0x10; i++) {
+      for (int j = 0; j < 0x800000; j+=0x20) {
         out = vmlaq_f32(out, tmp[j+0], tmp[j+1]);
         out = vmlaq_f32(out, tmp[j+2], tmp[j+3]);
         out = vmlaq_f32(out, tmp[j+4], tmp[j+5]);
@@ -80,7 +81,7 @@ int main() {
       iavg += 1/ttime[i];
       printf("%4.2f ", ttime[i]);
     }
-    double mb_per_sec = (8.*0x1000000/(1024*1024))*sizeof(float32x4_t)*iavg;
+    double mb_per_sec = (16.*0x800000/(1024*1024))*sizeof(float32x4_t)*iavg;
     printf("-- %4.2f -- %.2f MB/s \n", avg/CORES, mb_per_sec);
     sleep(1);
   }
