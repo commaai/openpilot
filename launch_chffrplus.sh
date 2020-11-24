@@ -34,6 +34,9 @@ function two_init {
   echo "performance" > /sys/class/devfreq/soc:qcom,memlat-cpu0/governor
   echo "performance" > /sys/class/devfreq/soc:qcom,memlat-cpu2/governor
 
+  # GPU
+  echo "performance" > /sys/class/devfreq/b00000.qcom,kgsl-3d0/governor
+
   # /sys/class/devfreq/soc:qcom,mincpubw is the only one left at "powersave"
   # it seems to gain nothing but a wasted 500mW
 
