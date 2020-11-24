@@ -70,6 +70,7 @@ void WifiManager::refreshNetworks(){
     seen_networks.push_back(network);
   }
   qDebug()<<"Device state"<<raw_adapter_state;
+  get_active_connections();
   // for(auto p:get_active_connections()){
   //   qDebug()<<"We have "<<p.path();
   // }
@@ -140,7 +141,7 @@ void WifiManager::connect(Network n, QString password){
 
 void WifiManager::connect(Network n, QString username, QString password){
   QString active_ap = get_active_ap();
-  deactivate_connections(get_property(active_ap, "Ssid")); //Disconnect from any connected networks 
+  // deactivate_connections(get_property(active_ap, "Ssid")); //Disconnect from any connected networks 
   clear_connections(n.ssid); //Clear all connections that may already exist to the network we are connecting
   qDebug() << "Connecting to"<< n.ssid << "with username, password =" << username << "," <<password;
   connect(n.ssid, username, password, n.security_type);
@@ -199,15 +200,20 @@ QVector<QDBusObjectPath> WifiManager::get_active_connections(){
   QDBusInterface nm(nm_service, nm_path, props_iface, bus);
   QDBusMessage response = nm.call("Get", nm_iface, "ActiveConnections");
   QDBusArgument arr = get_response<QDBusArgument>(response);
-  QDBusObjectPath path;
+  qDebug()<<arr.currentType();
   QVector<QDBusObjectPath> conns;
+
+  QDBusObjectPath path;
   arr.beginArray();
   while (!arr.atEnd()){
     arr >> path;
-    // QString conn_active_path = path.path();
+    QString conn_active_path = path.path();
+    qDebug()<<conn_active_path;
     conns.push_back(path);
   }
-  arr.endArray();
+  // arr.endArray();
+
+  qDebug()<<"Found"<<conns.size()<<"active connections";
   return conns;
 }
 
@@ -308,6 +314,7 @@ void WifiManager::change(unsigned int a,unsigned int b,unsigned int c){
   qDebug()<<"CHANGE!"<<b<<"-->"<<a<<" reason:"<<c;
   raw_adapter_state = a;
   if(a==60 && c==8){
+    qDebug()<<"Number of connections"<<get_active_connections().size();
     QDBusInterface nm(nm_service, get_active_connections()[0].path(), props_iface, bus);
     wrongPassword(get_property(get_response<QDBusObjectPath>(nm.call("Get", connection_iface, "SpecificObject")).path(), "Ssid"));
   }
