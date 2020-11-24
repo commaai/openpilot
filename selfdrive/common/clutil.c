@@ -41,26 +41,22 @@ cl_device_id cl_get_device_id(cl_device_type device_type) {
   cl_device_id device_id = NULL;
 
   cl_uint num_platforms = 0;
-  int err = clGetPlatformIDs(0, NULL, &num_platforms);
-  assert(err == 0);
+  CL_CHECK(clGetPlatformIDs(0, NULL, &num_platforms));
   cl_platform_id* platform_ids = malloc(sizeof(cl_platform_id) * num_platforms);
-  err = clGetPlatformIDs(num_platforms, platform_ids, NULL);
-  assert(err == 0);
+  CL_CHECK(clGetPlatformIDs(num_platforms, platform_ids, NULL));
 
   char cBuffer[1024];
   for (size_t i = 0; i < num_platforms; i++) {
-    err = clGetPlatformInfo(platform_ids[i], CL_PLATFORM_NAME, sizeof(cBuffer), &cBuffer, NULL);
-    assert(err == 0);
+    CL_CHECK(clGetPlatformInfo(platform_ids[i], CL_PLATFORM_NAME, sizeof(cBuffer), &cBuffer, NULL));
     printf("platform[%zu] CL_PLATFORM_NAME: %s\n", i, cBuffer);
 
     cl_uint num_devices;
-    err = clGetDeviceIDs(platform_ids[i], device_type, 0, NULL, &num_devices);
+    int err = clGetDeviceIDs(platform_ids[i], device_type, 0, NULL, &num_devices);
     if (err != 0 || !num_devices) {
       continue;
     }
     // Get first device
-    err = clGetDeviceIDs(platform_ids[i], device_type, 1, &device_id, NULL);
-    assert(err == 0);
+    CL_CHECK(clGetDeviceIDs(platform_ids[i], device_type, 1, &device_id, NULL));
     cl_print_info(platform_ids[i], device_id);
     opencl_platform_found = true;
     break;
@@ -77,25 +73,17 @@ cl_device_id cl_get_device_id(cl_device_type device_type) {
 cl_program cl_create_program_from_file(cl_context ctx, const char* path) {
   char* src_buf = read_file(path, NULL);
   assert(src_buf);
-
-  int err = 0;
-  cl_program ret = clCreateProgramWithSource(ctx, 1, (const char**)&src_buf, NULL, &err);
-  assert(err == 0);
-
+  cl_program ret = CL_CHECK_ERR(clCreateProgramWithSource(ctx, 1, (const char**)&src_buf, NULL, &err));
   free(src_buf);
-
   return ret;
 }
 
 static char* get_version_string(cl_platform_id platform) {
   size_t size = 0;
-  int err;
-  err = clGetPlatformInfo(platform, CL_PLATFORM_VERSION, 0, NULL, &size);
-  assert(err == 0);
+  CL_CHECK(clGetPlatformInfo(platform, CL_PLATFORM_VERSION, 0, NULL, &size));
   char *str = malloc(size);
   assert(str);
-  err = clGetPlatformInfo(platform, CL_PLATFORM_VERSION, size, str, NULL);
-  assert(err == 0);
+  CL_CHECK(clGetPlatformInfo(platform, CL_PLATFORM_VERSION, size, str, NULL));
   return str;
 }
 
@@ -191,8 +179,6 @@ uint64_t clu_fnv_hash(const uint8_t *data, size_t len) {
 }
 
 cl_program cl_cached_program_from_hash(cl_context ctx, cl_device_id device_id, uint64_t hash) {
-  int err;
-
   char cache_path[1024];
   snprintf(cache_path, sizeof(cache_path), "/tmp/clcache/%016" PRIx64 ".clb", hash);
 
@@ -202,29 +188,22 @@ cl_program cl_cached_program_from_hash(cl_context ctx, cl_device_id device_id, u
     return NULL;
   }
 
-  cl_program prg = clCreateProgramWithBinary(ctx, 1, &device_id, &bin_size, (const uint8_t**)&bin, NULL, &err);
-  assert(err == 0);
+  cl_program prg = CL_CHECK_ERR(clCreateProgramWithBinary(ctx, 1, &device_id, &bin_size, (const uint8_t**)&bin, NULL, &err));
 
   free(bin);
 
-  err = clBuildProgram(prg, 1, &device_id, NULL, NULL, NULL);
-  assert(err == 0);
-
+  CL_CHECK(clBuildProgram(prg, 1, &device_id, NULL, NULL, NULL));
   return prg;
 }
 
 #ifndef CLU_NO_CACHE
 static uint8_t* get_program_binary(cl_program prg, size_t *out_size) {
-  int err;
-
   cl_uint num_devices;
-  err = clGetProgramInfo(prg, CL_PROGRAM_NUM_DEVICES, sizeof(num_devices), &num_devices, NULL);
-  assert(err == 0);
+  CL_CHECK(clGetProgramInfo(prg, CL_PROGRAM_NUM_DEVICES, sizeof(num_devices), &num_devices, NULL));
   assert(num_devices == 1);
 
   size_t binary_size = 0;
-  err = clGetProgramInfo(prg, CL_PROGRAM_BINARY_SIZES, sizeof(binary_size), &binary_size, NULL);
-  assert(err == 0);
+  CL_CHECK(clGetProgramInfo(prg, CL_PROGRAM_BINARY_SIZES, sizeof(binary_size), &binary_size, NULL));
   assert(binary_size > 0);
 
   uint8_t *binary_buf = malloc(binary_size);
@@ -232,8 +211,7 @@ static uint8_t* get_program_binary(cl_program prg, size_t *out_size) {
 
   uint8_t* bufs[1] = { binary_buf, };
 
-  err = clGetProgramInfo(prg, CL_PROGRAM_BINARIES, sizeof(bufs), &bufs, NULL);
-  assert(err == 0);
+  CL_CHECK(clGetProgramInfo(prg, CL_PROGRAM_BINARIES, sizeof(bufs), &bufs, NULL));
 
   *out_size = binary_size;
   return binary_buf;
@@ -243,11 +221,8 @@ static uint8_t* get_program_binary(cl_program prg, size_t *out_size) {
 cl_program cl_cached_program_from_string(cl_context ctx, cl_device_id device_id,
                                          const char* src, const char* args,
                                          uint64_t *out_hash) {
-  int err;
-
   cl_platform_id platform;
-  err = clGetDeviceInfo(device_id, CL_DEVICE_PLATFORM, sizeof(platform), &platform, NULL);
-  assert(err == 0);
+  CL_CHECK(clGetDeviceInfo(device_id, CL_DEVICE_PLATFORM, sizeof(platform), &platform, NULL));
 
   const char* platform_version = get_version_string(platform);
 
@@ -266,10 +241,9 @@ cl_program cl_cached_program_from_string(cl_context ctx, cl_device_id device_id,
   prg = cl_cached_program_from_hash(ctx, device_id, hash);
 #endif
   if (prg == NULL) {
-    prg = clCreateProgramWithSource(ctx, 1, (const char**)&src, NULL, &err);
-    assert(err == 0);
+    prg = CL_CHECK_ERR(clCreateProgramWithSource(ctx, 1, (const char**)&src, NULL, &err));
 
-    err = clBuildProgram(prg, 1, &device_id, args, NULL, NULL);
+    int err = clBuildProgram(prg, 1, &device_id, args, NULL, NULL);
     if (err != 0) {
       cl_print_build_errors(prg, device_id);
     }
@@ -315,8 +289,6 @@ static void add_index(uint64_t index_hash, uint64_t src_hash) {
 #endif
 
 cl_program cl_program_from_index(cl_context ctx, cl_device_id device_id, uint64_t index_hash) {
-  int err;
-
   int i;
   for (i=0; i<ARRAYSIZE(clu_index); i++) {
     if (clu_index[i].index_hash == index_hash) {
@@ -330,11 +302,9 @@ cl_program cl_program_from_index(cl_context ctx, cl_device_id device_id, uint64_
   size_t bin_size = clu_index[i].bin_end - clu_index[i].bin_data;
   const uint8_t *bin_data = clu_index[i].bin_data;
 
-  cl_program prg = clCreateProgramWithBinary(ctx, 1, &device_id, &bin_size, (const uint8_t**)&bin_data, NULL, &err);
-  assert(err == 0);
+  cl_program prg = CL_CHECK_ERR(clCreateProgramWithBinary(ctx, 1, &device_id, &bin_size, (const uint8_t**)&bin_data, NULL, &err));
 
-  err = clBuildProgram(prg, 1, &device_id, NULL, NULL, NULL);
-  assert(err == 0);
+  CL_CHECK(clBuildProgram(prg, 1, &device_id, NULL, NULL, NULL));
 
   return prg;
 }
