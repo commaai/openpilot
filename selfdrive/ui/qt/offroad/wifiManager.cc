@@ -1,9 +1,12 @@
 #include <algorithm>
 #include <set>
-
+#include<iostream>
 #include "wifiManager.hpp"
 
-
+/**
+ * We are using a NetworkManager DBUS API : https://developer.gnome.org/NetworkManager/1.26/spec.html
+ * */
+ 
 QString nm_path                = "/org/freedesktop/NetworkManager";
 QString nm_settings_path       = "/org/freedesktop/NetworkManager/Settings";
 
@@ -28,8 +31,8 @@ T get_response(QDBusMessage response){
 }
 
 bool compare_by_strength(const Network &a, const Network &b){
-  if (a.connected) return true;
-  if (b.connected) return false;
+  if (a.connected == ConnectedType::CONNECTED) return true;
+  if (b.connected == ConnectedType::CONNECTED) return false;
   return a.strength > b.strength;
 }
 
@@ -38,6 +41,18 @@ WifiManager::WifiManager(){
 
   adapter = get_adapter();
   has_adapter = adapter != "";
+  if(has_adapter){
+    QDBusInterface nm(nm_service, adapter, device_iface, bus);
+    bus.connect(nm_service, adapter, device_iface, "StateChanged", this, SLOT(change(unsigned int, unsigned int, unsigned int)));
+    
+    QDBusInterface device_props(nm_service, adapter, props_iface, bus);
+    QDBusMessage response = device_props.call("Get", device_iface, "State");
+    raw_adapter_state = get_response<uint>(response);
+    change(raw_adapter_state, 0, 0);
+    qDebug()<<"Device state"<<raw_adapter_state;
+  }else{
+    qDebug()<<"No wifi device connected";
+  }
 }
 
 void WifiManager::refreshNetworks(){
@@ -54,6 +69,10 @@ void WifiManager::refreshNetworks(){
     seen_ssids.push_back(network.ssid);
     seen_networks.push_back(network);
   }
+  qDebug()<<"Device state"<<raw_adapter_state;
+  // for(auto p:get_active_connections()){
+  //   qDebug()<<"We have "<<p.path();
+  // }
 }
 
 QList<Network> WifiManager::get_networks(){
@@ -73,7 +92,14 @@ QList<Network> WifiManager::get_networks(){
     QByteArray ssid = get_property(path.path(), "Ssid");
     unsigned int strength = get_ap_strength(path.path());
     SecurityType security = getSecurityType(path.path());
-    Network network = {path.path(), ssid, strength, path.path()==active_ap, security};
+    ConnectedType ctype;
+    if(path.path()!=active_ap){
+      ctype = ConnectedType::DISCONNECTED;
+    }else{
+      //TODO, determine if connecting
+      ctype = ConnectedType::CONNECTED;
+    }
+    Network network = {path.path(), ssid, strength, ctype, security};
 
     if (ssid.length()){
       r.push_back(network);
@@ -114,10 +140,8 @@ void WifiManager::connect(Network n, QString password){
 
 void WifiManager::connect(Network n, QString username, QString password){
   QString active_ap = get_active_ap();
-  if (active_ap!="") {
-    clear_connections(get_property(active_ap, "Ssid"));
-  }
-  clear_connections(n.ssid);
+  deactivate_connections(get_property(active_ap, "Ssid")); //Disconnect from any connected networks 
+  clear_connections(n.ssid); //Clear all connections that may already exist to the network we are connecting
   qDebug() << "Connecting to"<< n.ssid << "with username, password =" << username << "," <<password;
   connect(n.ssid, username, password, n.security_type);
 }
@@ -127,7 +151,7 @@ void WifiManager::connect(QByteArray ssid, QString username, QString password, S
   connection["connection"]["type"] = "802-11-wireless";
   connection["connection"]["uuid"] = QUuid::createUuid().toString().remove('{').remove('}');
 
-  connection["connection"]["id"] = "OpenPilot connection "+QString::fromStdString(ssid.toStdString()); //TODO Add security type
+  connection["connection"]["id"] = "OpenPilot connection "+QString::fromStdString(ssid.toStdString());
 
   connection["802-11-wireless"]["ssid"] = ssid;
   connection["802-11-wireless"]["mode"] = "infrastructure";
@@ -150,21 +174,41 @@ void WifiManager::connect(QByteArray ssid, QString username, QString password, S
   }
 }
 
-void WifiManager::print_active_connections(){
-  //TO-DO clean up, the code is not currently in use.
+void WifiManager::deactivate_connections(QString ssid){
+  for(QDBusObjectPath active_connection_raw:get_active_connections()){
+    QString active_connection = active_connection_raw.path();
+    QDBusInterface nm(nm_service, active_connection, props_iface, bus);
+    uint state = get_response<uint>(nm.call("Get", connection_iface, "State"));
+    uint stateFlags = get_response<uint>(nm.call("Get", connection_iface, "StateFlags"));
+    qDebug() << active_connection;
+    qDebug() << state;
+    qDebug() << stateFlags;
+    QDBusObjectPath pth = get_response<QDBusObjectPath>(nm.call("Get", connection_iface, "SpecificObject"));
+    qDebug() << pth.path();//This is an accessPoint!!! Get property should work
+    QString Ssid = get_property(pth.path(), "Ssid");
+    qDebug() << Ssid << ssid;
+    if(Ssid == ssid){
+      QDBusInterface nm2(nm_service, nm_path, nm_iface, bus);
+      qDebug() << nm2.call("DeactivateConnection", QVariant::fromValue(active_connection_raw));
+    }    
+    qDebug()<<"";
+  }
+}
+
+QVector<QDBusObjectPath> WifiManager::get_active_connections(){
   QDBusInterface nm(nm_service, nm_path, props_iface, bus);
   QDBusMessage response = nm.call("Get", nm_iface, "ActiveConnections");
-  QVariant first = response.arguments().at(0);
-  QDBusVariant dbvFirst = first.value<QDBusVariant>();
-  QVariant vFirst = dbvFirst.variant();
-  QDBusArgument step4 = vFirst.value<QDBusArgument>();
+  QDBusArgument arr = get_response<QDBusArgument>(response);
   QDBusObjectPath path;
-  step4.beginArray();
-  while (!step4.atEnd()){
-    step4 >> path;
-    qDebug()<<path.path();
+  QVector<QDBusObjectPath> conns;
+  arr.beginArray();
+  while (!arr.atEnd()){
+    arr >> path;
+    // QString conn_active_path = path.path();
+    conns.push_back(path);
   }
-  step4.endArray();
+  arr.endArray();
+  return conns;
 }
 
 void WifiManager::clear_connections(QString ssid){
@@ -258,4 +302,13 @@ QString WifiManager::get_adapter(){
   args.endArray();
 
   return adapter_path;
+}
+
+void WifiManager::change(unsigned int a,unsigned int b,unsigned int c){
+  qDebug()<<"CHANGE!"<<b<<"-->"<<a<<" reason:"<<c;
+  raw_adapter_state = a;
+  if(a==60 && c==8){
+    QDBusInterface nm(nm_service, get_active_connections()[0].path(), props_iface, bus);
+    wrongPassword(get_property(get_response<QDBusObjectPath>(nm.call("Get", connection_iface, "SpecificObject")).path(), "Ssid"));
+  }
 }

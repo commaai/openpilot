@@ -26,6 +26,7 @@ private:
   QString text;
   QButtonGroup *connectButtons;
 
+  void connectToNetwork(Network n);
   QString getStringFromUser();
 
 public:
@@ -35,4 +36,5 @@ private slots:
   void handleButton(QAbstractButton* m_button);
   void refresh();
   void receiveText(QString text);
+  void wrongPassword(QString ssid);
 };
