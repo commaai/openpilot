@@ -39,6 +39,12 @@ int ioctl(int filedes, unsigned long request, void *argp) {
   // save the fd
   if (request == IOCTL_KGSL_GPUOBJ_ALLOC) g_fd = filedes;
 
+  if (request == IOCTL_KGSL_DRAWCTXT_CREATE) {
+    struct kgsl_drawctxt_create *create = (struct kgsl_drawctxt_create *)argp;
+    create->flags |= 1 << KGSL_CONTEXT_PRIORITY_SHIFT;   // priority from 1-15, 1 is max priority
+    printf("creating context with flags 0x%x\n", create->flags);
+  }
+
   if (thneed != NULL) {
     if (request == IOCTL_KGSL_GPU_COMMAND) {
       struct kgsl_gpu_command *cmd = (struct kgsl_gpu_command *)argp;
