@@ -1,4 +1,4 @@
-Version 0.8.0 (2020-XX-XX)
+Version 0.8.0 (2020-11-30)
 ========================
  * New driving model: fully 3D and improved cut-in detection
  * UI draws 2 road edges, 4 lanelines and paths in 3D
