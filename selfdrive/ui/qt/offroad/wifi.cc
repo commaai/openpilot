@@ -50,8 +50,8 @@ WifiUI::WifiUI(QWidget *parent) : QWidget(parent) {
   // Update network list
   timer = new QTimer(this);
   QObject::connect(timer, SIGNAL(timeout()), this, SLOT(refresh()));
-  timer->start(5000);//Reduce to 2000 before merging into master
-  timer->setSingleShot(true);//For debugging, remove 
+  timer->start(500);//Reduce to 2000 before merging into master
+  // timer->setSingleShot(true);//For debugging, remove 
 
   // Scan on startup
   wifi->request_scan();
@@ -149,6 +149,7 @@ void WifiUI::connectToNetwork(Network n){
   } else {
     qDebug() << "Cannot determine network's security type";
   }
+  refresh();
 }
 
 QString WifiUI::getStringFromUser(){

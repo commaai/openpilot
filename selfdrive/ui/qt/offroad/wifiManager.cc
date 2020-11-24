@@ -66,14 +66,12 @@ void WifiManager::refreshNetworks(){
     if(seen_ssids.count(network.ssid)){
       continue;
     }
+    // qDebug()<<network.ssid<<conn_to_str(network.connected);
     seen_ssids.push_back(network.ssid);
     seen_networks.push_back(network);
   }
   qDebug()<<"Device state"<<raw_adapter_state;
   get_active_connections();
-  // for(auto p:get_active_connections()){
-  //   qDebug()<<"We have "<<p.path();
-  // }
 }
 
 QList<Network> WifiManager::get_networks(){
@@ -83,7 +81,7 @@ QList<Network> WifiManager::get_networks(){
   QVariant first =  response.arguments().at(0);
 
   QString active_ap = get_active_ap();
-
+  qDebug()<<"Active is "<<get_property(active_ap, "Ssid");
   const QDBusArgument &args = first.value<QDBusArgument>();
   args.beginArray();
   while (!args.atEnd()) {
@@ -97,8 +95,11 @@ QList<Network> WifiManager::get_networks(){
     if(path.path()!=active_ap){
       ctype = ConnectedType::DISCONNECTED;
     }else{
-      //TODO, determine if connecting
-      ctype = ConnectedType::CONNECTED;
+      if(ssid==last_network){
+        ctype = ConnectedType::CONNECTING;
+      }else{
+        ctype = ConnectedType::CONNECTED;
+      }
     }
     Network network = {path.path(), ssid, strength, ctype, security};
 
@@ -245,7 +246,7 @@ void WifiManager::request_scan(){
   if (!has_adapter) return;
 
   QDBusInterface nm(nm_service, adapter, wireless_device_iface, bus);
-  QDBusMessage response = nm.call("RequestScan",  QVariantMap());
+  nm.call("RequestScan",  QVariantMap());
 }
 
 uint WifiManager::get_wifi_device_state(){
@@ -308,5 +309,7 @@ void WifiManager::change(unsigned int a,unsigned int b,unsigned int c){
   raw_adapter_state = a;
   if(a==60 && c==8){
     wrongPassword(last_network);
+  }else if(a==100){
+    last_network="";
   }
 }

@@ -28,7 +28,6 @@ class WifiManager : public QWidget {
   Q_OBJECT
 public:
   explicit WifiManager();
-  unsigned int adapter_state;//0 disconnected, 1 connecting, 2 connected
 
   bool has_adapter;
   void request_scan();
@@ -43,9 +42,9 @@ private:
   QVector<QByteArray> seen_ssids;
   QString adapter;//Path to network manager wifi-device
   QDBusConnection bus = QDBusConnection::systemBus();
-  unsigned int raw_adapter_state;
+  unsigned int raw_adapter_state;//Connection status https://developer.gnome.org/NetworkManager/1.26/nm-dbus-types.html#NMDeviceState
   QString last_network;
-  
+
   QString get_adapter();
   QList<Network> get_networks();
   void connect(QByteArray ssid, QString username, QString password, SecurityType security_type);
@@ -62,4 +61,5 @@ private slots:
   void change(unsigned int a, unsigned int b, unsigned int c);
 signals:
   void wrongPassword(QString ssid);
+  void refresh();
 };
