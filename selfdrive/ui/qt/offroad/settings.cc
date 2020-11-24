@@ -14,13 +14,15 @@
 #include "settings.hpp"
 #include "input_field.hpp"
 
+#include "toggle_switch.hpp"
+
 #include "common/params.h"
 #include "common/utilpp.h"
 
 
 ParamsToggle::ParamsToggle(QString param, QString title, QString description, QString icon_path, QWidget *parent): QFrame(parent) , param(param) {
   QHBoxLayout *hlayout = new QHBoxLayout;
-  QVBoxLayout *vlayout = new QVBoxLayout;
+  // QVBoxLayout *vlayout = new QVBoxLayout;
 
   hlayout->addSpacing(25);
   if (icon_path.length()){
@@ -35,19 +37,28 @@ ParamsToggle::ParamsToggle(QString param, QString title, QString description, QS
   hlayout->addSpacing(25);
 
   checkbox = new QCheckBox(title);
-  QLabel *label = new QLabel(description);
+  QLabel *label = new QLabel(title);
   label->setWordWrap(true);
+
+  Switch* toggle_switch = new Switch();
+  QSizePolicy switch_policy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+  switch_policy.setHorizontalStretch(1);
+  toggle_switch->setSizePolicy(switch_policy);
+  toggle_switch->setFixedWidth(150);
+  toggle_switch->setFixedHeight(50);
+  // row_layout->addWidget(toggle_switch);
 
   // TODO: show descriptions on tap
   //vlayout->addSpacing(50);
-  vlayout->addWidget(checkbox);
-  //vlayout->addWidget(label);
-  //vlayout->addSpacing(50);
-  hlayout->addLayout(vlayout);
+  // vlayout->addWidget(checkbox);
+  hlayout->addWidget(toggle_switch);
+  hlayout->addSpacing(50);
+  hlayout->addWidget(label);
 
   setLayout(hlayout);
-
-  checkbox->setChecked(Params().read_db_bool(param.toStdString().c_str()));
+  if(Params().read_db_bool(param.toStdString().c_str())){
+    toggle_switch->change();
+  }
 
   setStyleSheet(R"(
     QCheckBox {
