@@ -1,0 +1,15 @@
+Import('env', 'common', 'cereal', 'messaging')
+
+loc_libs = [cereal, messaging, 'zmq', common, 'capnp', 'kj', 'pthread']
+
+env.Program("ubloxd", [
+  "ubloxd.cc",
+  "ublox_msg.cc",
+  "ubloxd_main.cc"],
+  LIBS=loc_libs)
+
+env.Program("ubloxd_test", [
+  "ubloxd_test.cc",
+  "ublox_msg.cc",
+  "ubloxd_main.cc"],
+  LIBS=loc_libs)

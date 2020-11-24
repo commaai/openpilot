@@ -1,0 +1,2 @@
+Import('env', 'cereal', 'messaging')
+env.Program('proclogd.cc', LIBS=[cereal, messaging, 'pthread', 'zmq', 'capnp', 'kj'])
