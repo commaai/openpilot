@@ -37,8 +37,6 @@ extern volatile sig_atomic_t do_exit;
 
 // global var for AE ops
 std::atomic<CameraExpInfo> cam_exp[3] = {{{0}}};
-// for each camera's individual event handlers
-std::atomic<cam_req_mgr_message> cam_req_evt[3] = {{{0}}};
 
 CameraInfo cameras_supported[CAMERA_ID_MAX] = {
   [CAMERA_ID_AR0231] = {
@@ -973,29 +971,6 @@ void handle_camera_event(CameraState *s, void *evdat) {
   }
 }
 
-static void* handler_thread(void* arg) {
-  CameraState *s = (CameraState*)arg;
-  int cidx = s->camera_num;
-
-  cam_req_mgr_message evt;
-  uint64_t tl = 0;
-
-  char thread_name[64];
-  snprintf(thread_name, sizeof(thread_name), "camera_event_handler_%d", cidx);
-  set_thread_name(thread_name);
-
-  while(!do_exit) {
-    evt = cam_req_evt[cidx].load();
-    if (evt.u.frame_msg.timestamp != tl) {
-      handle_camera_event(s, (void*)&evt);
-      tl = evt.u.frame_msg.timestamp;
-    }
-    usleep(1000);
-  }
-
-  return NULL;
-}
-
 // ******************* exposure control helpers *******************
 
 void set_exposure_time_bounds(CameraState *s) {
@@ -1172,16 +1147,9 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
 }
 
 void cameras_run(MultiCameraState *s) {
-  CameraState *c_handles[3] = {&s->wide, &s->rear, &s->front};
   int err;
   // start threads
   LOG("-- Starting threads");
-  pthread_t handler_thread_handle[3];
-  for (int i=0;i<3;i++) {
-    err = pthread_create(&handler_thread_handle[i], NULL, handler_thread, c_handles[i]);
-    assert(err == 0);
-  }
-
   pthread_t ae_thread_handle;
   err = pthread_create(&ae_thread_handle, NULL,
                        ae_thread, s);
@@ -1223,14 +1191,11 @@ void cameras_run(MultiCameraState *s) {
       // printf("sess_hdl %d, link_hdl %d, frame_id %lu, req_id %lu, timestamp 0x%lx, sof_status %d\n", event_data->session_hdl, event_data->u.frame_msg.link_hdl, event_data->u.frame_msg.frame_id, event_data->u.frame_msg.request_id, event_data->u.frame_msg.timestamp, event_data->u.frame_msg.sof_status);
 
       if (event_data->session_hdl == s->rear.req_mgr_session_info.session_hdl) {
-        // handle_camera_event(&s->rear, event_data);
-        cam_req_evt[s->rear.camera_num].store(*event_data);
+        handle_camera_event(&s->rear, event_data);
       } else if (event_data->session_hdl == s->wide.req_mgr_session_info.session_hdl) {
-        // handle_camera_event(&s->wide, event_data);
-        cam_req_evt[s->wide.camera_num].store(*event_data);
+        handle_camera_event(&s->wide, event_data);
       } else if (event_data->session_hdl == s->front.req_mgr_session_info.session_hdl) {
-        // handle_camera_event(&s->front, event_data);
-        cam_req_evt[s->front.camera_num].store(*event_data);
+        handle_camera_event(&s->front, event_data);
       } else {
         printf("Unknown vidioc event source\n");
         assert(false);
@@ -1239,11 +1204,6 @@ void cameras_run(MultiCameraState *s) {
   }
 
   LOG(" ************** STOPPING **************");
-
-  for (int i=0;i<3;i++) {
-    err = pthread_join(handler_thread_handle[i], NULL);
-    assert(err == 0);
-  }
 
   err = pthread_join(ae_thread_handle, NULL);
   assert(err == 0);
