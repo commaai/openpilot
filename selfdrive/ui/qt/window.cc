@@ -174,7 +174,10 @@ void GLWindow::paintGL() {
 }
 
 void GLWindow::wake(){
-  handle_display_state(ui_state, 1, true);
+  // UI state might not be initialized yet
+  if (ui_state != nullptr){
+    handle_display_state(ui_state, 1, true);
+  }
 }
 
 void GLWindow::mousePressEvent(QMouseEvent *e) {
