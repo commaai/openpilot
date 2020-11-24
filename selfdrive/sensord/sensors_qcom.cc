@@ -150,8 +150,7 @@ void sensor_loop() {
         switch (data.type) {
         case SENSOR_TYPE_ACCELEROMETER: {
           auto svec = log_event.initAcceleration();
-          kj::ArrayPtr<const float> vs(&data.acceleration.v[0], 3);
-          svec.setV(vs);
+          svec.setV(data.acceleration.v);
           svec.setStatus(data.acceleration.status);
           break;
         }
@@ -164,8 +163,7 @@ void sensor_loop() {
         }
         case SENSOR_TYPE_MAGNETIC_FIELD: {
           auto svec = log_event.initMagnetic();
-          kj::ArrayPtr<const float> vs(&data.magnetic.v[0], 3);
-          svec.setV(vs);
+          svec.setV(data.magnetic.v);
           svec.setStatus(data.magnetic.status);
           break;
         }
@@ -178,8 +176,7 @@ void sensor_loop() {
         }
         case SENSOR_TYPE_GYROSCOPE: {
           auto svec = log_event.initGyro();
-          kj::ArrayPtr<const float> vs(&data.gyro.v[0], 3);
-          svec.setV(vs);
+          svec.setV(data.gyro.v);
           svec.setStatus(data.gyro.status);
           break;
         }

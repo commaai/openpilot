@@ -171,8 +171,7 @@ void fill_path(cereal::ModelData::PathData::Builder path, const float * data, fl
   std = stds_arr[0];
   poly_fit(points_arr, stds_arr, poly_arr, valid_len_idx);
 
-  kj::ArrayPtr<const float> poly(&poly_arr[0], ARRAYSIZE(poly_arr));
-  path.setPoly(poly);
+  path.setPoly(poly_arr);
   path.setProb(1.0);
   path.setStd(std);
   path.setValidLen(valid_len);
@@ -192,8 +191,7 @@ void fill_lane_line(cereal::ModelData::PathData::Builder path, const float * dat
   std = stds_arr[0];
   poly_fit(points_arr, stds_arr, poly_arr, valid_len_idx);
 
-  kj::ArrayPtr<const float> poly(&poly_arr[0], ARRAYSIZE(poly_arr));
-  path.setPoly(poly);
+  path.setPoly(poly_arr);
   path.setProb(prob);
   path.setStd(std);
   path.setValidLen(valid_len);
@@ -208,10 +206,8 @@ void fill_lead_v2(cereal::ModelDataV2::LeadDataV2::Builder lead, const float * d
     xyva_arr[i] = data[LEAD_MHP_VALS + i];
     xyva_stds_arr[i] = exp(data[LEAD_MHP_VALS + i]);
   }
-  kj::ArrayPtr<const float> xyva(xyva_arr, LEAD_MHP_VALS);
-  kj::ArrayPtr<const float> xyva_stds(xyva_stds_arr, LEAD_MHP_VALS);
-  lead.setXyva(xyva);
-  lead.setXyvaStd(xyva_stds);
+  lead.setXyva(xyva_arr);
+  lead.setXyvaStd(xyva_stds_arr);
 }
 
 void fill_lead(cereal::ModelData::LeadData::Builder lead, const float * data, float prob) {
@@ -235,39 +231,35 @@ void fill_meta(cereal::ModelData::MetaData::Builder meta, const float * meta_dat
     softmax(&meta_data[DESIRE_LEN + OTHER_META_SIZE + i*DESIRE_LEN],
             &desire_pred_softmax[i*DESIRE_LEN], DESIRE_LEN);
   }
-  kj::ArrayPtr<const float> desire_state(desire_state_softmax, DESIRE_LEN);
-  meta.setDesireState(desire_state);
+  meta.setDesireState(desire_state_softmax);
   meta.setEngagedProb(sigmoid(meta_data[DESIRE_LEN]));
   meta.setGasDisengageProb(sigmoid(meta_data[DESIRE_LEN + 1]));
   meta.setBrakeDisengageProb(sigmoid(meta_data[DESIRE_LEN + 2]));
   meta.setSteerOverrideProb(sigmoid(meta_data[DESIRE_LEN + 3]));
-  kj::ArrayPtr<const float> desire_pred(desire_pred_softmax, DESIRE_PRED_SIZE);
-  meta.setDesirePrediction(desire_pred);
+  meta.setDesirePrediction(desire_pred_softmax);
 }
 
 void fill_meta_v2(cereal::ModelDataV2::MetaData::Builder meta, const float * meta_data) {
-  float desire_state_softmax[DESIRE_LEN];
-  float desire_pred_softmax[4*DESIRE_LEN];
+  float desire_state_softmax[DESIRE_LEN] = {};
+  float desire_pred_softmax[4*DESIRE_LEN] = {};
   softmax(&meta_data[0], desire_state_softmax, DESIRE_LEN);
   for (int i=0; i<4; i++) {
     softmax(&meta_data[DESIRE_LEN + OTHER_META_SIZE + i*DESIRE_LEN],
             &desire_pred_softmax[i*DESIRE_LEN], DESIRE_LEN);
   }
-  kj::ArrayPtr<const float> desire_state(desire_state_softmax, DESIRE_LEN);
-  meta.setDesireState(desire_state);
+  meta.setDesireState(desire_state_softmax);
   meta.setEngagedProb(sigmoid(meta_data[DESIRE_LEN]));
   meta.setGasDisengageProb(sigmoid(meta_data[DESIRE_LEN + 1]));
   meta.setBrakeDisengageProb(sigmoid(meta_data[DESIRE_LEN + 2]));
   meta.setSteerOverrideProb(sigmoid(meta_data[DESIRE_LEN + 3]));
-  kj::ArrayPtr<const float> desire_pred(desire_pred_softmax, DESIRE_PRED_SIZE);
-  meta.setDesirePrediction(desire_pred);
+  meta.setDesirePrediction(desire_pred_softmax);
 }
 
 void fill_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const float * data,
                int columns, int column_offset, float * plan_t_arr) {
-  float x_arr[TRAJECTORY_SIZE];
-  float y_arr[TRAJECTORY_SIZE];
-  float z_arr[TRAJECTORY_SIZE];
+  float x_arr[TRAJECTORY_SIZE] = {};
+  float y_arr[TRAJECTORY_SIZE] = {};
+  float z_arr[TRAJECTORY_SIZE] = {};
   //float x_std_arr[TRAJECTORY_SIZE];
   //float y_std_arr[TRAJECTORY_SIZE];
   //float z_std_arr[TRAJECTORY_SIZE];
@@ -288,20 +280,16 @@ void fill_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const float * data,
     z_arr[i] = data[i*columns + 2 + column_offset];
     //z_std_arr[i] = data[columns*(TRAJECTORY_SIZE + i) + 2 + column_offset];
   }
-  kj::ArrayPtr<const float> x(x_arr, TRAJECTORY_SIZE);
-  kj::ArrayPtr<const float> y(y_arr, TRAJECTORY_SIZE);
-  kj::ArrayPtr<const float> z(z_arr, TRAJECTORY_SIZE);
   //kj::ArrayPtr<const float> x_std(x_std_arr, TRAJECTORY_SIZE);
   //kj::ArrayPtr<const float> y_std(y_std_arr, TRAJECTORY_SIZE);
   //kj::ArrayPtr<const float> z_std(z_std_arr, TRAJECTORY_SIZE);
-  kj::ArrayPtr<const float> t(t_arr, TRAJECTORY_SIZE);
-  xyzt.setX(x);
-  xyzt.setY(y);
-  xyzt.setZ(z);
+  xyzt.setX(x_arr);
+  xyzt.setY(y_arr);
+  xyzt.setZ(z_arr);
   //xyzt.setXStd(x_std);
   //xyzt.setYStd(y_std);
   //xyzt.setZStd(z_std);
-  xyzt.setT(t);
+  xyzt.setT(t_arr);
 }
 
 
@@ -334,14 +322,10 @@ void model_publish_v2(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
     plan_t_arr[i] = best_plan[i*PLAN_MHP_COLUMNS + 15];
   }
 
-  auto position = framed.initPosition();
-  fill_xyzt(position, best_plan, PLAN_MHP_COLUMNS, 0, plan_t_arr);
-  auto velocity = framed.initVelocity();
-  fill_xyzt(velocity, best_plan, PLAN_MHP_COLUMNS, 3, plan_t_arr);
-  auto orientation = framed.initOrientation();
-  fill_xyzt(orientation, best_plan, PLAN_MHP_COLUMNS, 9, plan_t_arr);
-  auto orientation_rate = framed.initOrientationRate();
-  fill_xyzt(orientation_rate, best_plan, PLAN_MHP_COLUMNS, 12, plan_t_arr);
+  fill_xyzt(framed.initPosition(), best_plan, PLAN_MHP_COLUMNS, 0, plan_t_arr);
+  fill_xyzt(framed.initVelocity(), best_plan, PLAN_MHP_COLUMNS, 3, plan_t_arr);
+  fill_xyzt(framed.initOrientation(), best_plan, PLAN_MHP_COLUMNS, 9, plan_t_arr);
+  fill_xyzt(framed.initOrientationRate(), best_plan, PLAN_MHP_COLUMNS, 12, plan_t_arr);
 
   // lane lines
   auto lane_lines = framed.initLaneLines(4);
@@ -352,8 +336,7 @@ void model_publish_v2(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
     lane_line_probs_arr[i] = sigmoid(net_outputs.lane_lines_prob[i]);
     lane_line_stds_arr[i] = exp(net_outputs.lane_lines[2*TRAJECTORY_SIZE*(4 + i)]);
   }
-  kj::ArrayPtr<const float> lane_line_probs(lane_line_probs_arr, 4);
-  framed.setLaneLineProbs(lane_line_probs);
+  framed.setLaneLineProbs(lane_line_probs_arr);
   framed.setLaneLineStds(lane_line_stds_arr);
 
   // road edges
@@ -483,14 +466,10 @@ void posenet_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
 
   MessageBuilder msg;
   auto posenetd = msg.initEvent(vipc_dropped_frames < 1).initCameraOdometry();
-  kj::ArrayPtr<const float> trans_vs(&trans_arr[0], 3);
-  posenetd.setTrans(trans_vs);
-  kj::ArrayPtr<const float> rot_vs(&rot_arr[0], 3);
-  posenetd.setRot(rot_vs);
-  kj::ArrayPtr<const float> trans_std_vs(&trans_std_arr[0], 3);
-  posenetd.setTransStd(trans_std_vs);
-  kj::ArrayPtr<const float> rot_std_vs(&rot_std_arr[0], 3);
-  posenetd.setRotStd(rot_std_vs);
+  posenetd.setTrans(trans_arr);
+  posenetd.setRot(rot_arr);
+  posenetd.setTransStd(trans_std_arr);
+  posenetd.setRotStd(rot_std_arr);
 
   posenetd.setTimestampEof(timestamp_eof);
   posenetd.setFrameId(vipc_frame_id);

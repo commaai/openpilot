@@ -1114,7 +1114,7 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
     fill_frame_image(framed, (uint8_t*)b->cur_rgb_buf->addr, b->rgb_width, b->rgb_height, b->rgb_stride);
   }
   if (c == &s->rear) {
-    framed.setTransform(kj::ArrayPtr<const float>(&b->yuv_transform.v[0], 9));
+    framed.setTransform(b->yuv_transform.v);
   }
   s->pm->send(c == &s->rear ? "frame" : "wideFrame", msg);
 
