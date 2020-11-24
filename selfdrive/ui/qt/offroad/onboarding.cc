@@ -24,7 +24,6 @@ QWidget * OnboardingWindow::terms_screen() {
 
   QLabel *terms = new QLabel("See terms at https://my.comma.ai/terms");
   terms->setAlignment(Qt::AlignCenter);
-  terms->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
   terms->setStyleSheet(R"(
     font-size: 75px;
     border-radius: 10px;
@@ -82,20 +81,24 @@ void OnboardingWindow::updateActiveScreen() {
   bool training_done = params.get("CompletedTrainingVersion", false).compare(LATEST_TRAINING_VERSION) == 0;
 
   if (!accepted_terms) {
-    layout->setCurrentIndex(0);
+    swidget->setCurrentIndex(0);
   } else if (!training_done) {
-    layout->setCurrentIndex(1);
+    swidget->setCurrentIndex(1);
   } else {
     emit onboardingDone();
   }
 }
 
 OnboardingWindow::OnboardingWindow(QWidget *parent) : QWidget(parent) {
-  layout = new QStackedLayout();
-  layout->addWidget(terms_screen());
-  layout->addWidget(training_screen());
+  QVBoxLayout * top_layout = new QVBoxLayout;
 
-  setLayout(layout);
+  swidget = new QStackedWidget();
+  swidget->addWidget(terms_screen());
+  swidget->addWidget(training_screen());
+
+  top_layout->addWidget(swidget);
+
+  setLayout(top_layout);
   setStyleSheet(R"(
     * {
       background-color: black;
