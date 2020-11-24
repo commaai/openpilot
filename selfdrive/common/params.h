@@ -33,7 +33,6 @@ public:
   // Delete a value from the params database.
   // Inputs are the same as read_db_value, without value and value_sz.
   int delete_db_value(std::string key);
-  int delete_db_value(const char* key);
 
   // Reads a value from the params database, blocking until successful.
   // Inputs are the same as read_db_value.

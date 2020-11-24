@@ -39,7 +39,7 @@ void clu_init(void) {
 cl_device_id cl_get_device_id(cl_device_type device_type) {
   bool opencl_platform_found = false;
   cl_device_id device_id = NULL;
-  
+
   cl_uint num_platforms = 0;
   int err = clGetPlatformIDs(0, NULL, &num_platforms);
   assert(err == 0);
@@ -66,7 +66,7 @@ cl_device_id cl_get_device_id(cl_device_type device_type) {
     break;
   }
   free(platform_ids);
-  
+
   if (!opencl_platform_found) {
     printf("No valid openCL platform found\n");
     assert(opencl_platform_found);

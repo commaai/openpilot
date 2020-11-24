@@ -28,7 +28,7 @@ Code is automatically checked for style by Github Actions as part of the automat
 
 We've released a [Model Port guide](https://medium.com/@comma_ai/openpilot-port-guide-for-toyota-models-e5467f4b5fe6) for porting to Toyota/Lexus models.
 
-If you port openpilot to a substantially new car brand, see this more generic [Brand Port guide](https://medium.com/@comma_ai/how-to-write-a-car-port-for-openpilot-7ce0785eda84). You might also be eligible for a bounty. 
+If you port openpilot to a substantially new car brand, see this more generic [Brand Port guide](https://medium.com/@comma_ai/how-to-write-a-car-port-for-openpilot-7ce0785eda84). You might also be eligible for a bounty.
 
 ## Pull Requests
 

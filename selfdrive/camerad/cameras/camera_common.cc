@@ -24,6 +24,12 @@
 #include "common/util.h"
 #include "imgproc/utils.h"
 
+const int env_xmin = getenv("XMIN") ? atoi(getenv("XMIN")) : 0;
+const int env_xmax = getenv("XMAX") ? atoi(getenv("XMAX")) : -1;
+const int env_ymin = getenv("YMIN") ? atoi(getenv("YMIN")) : 0;
+const int env_ymax = getenv("YMAX") ? atoi(getenv("YMAX")) : -1;
+const int env_scale = getenv("SCALE") ? atoi(getenv("SCALE")) : 1;
+
 static cl_program build_debayer_program(cl_device_id device_id, cl_context context, const CameraInfo *ci, const CameraBuf *b) {
   char args[4096];
   snprintf(args, sizeof(args),
@@ -164,9 +170,8 @@ bool CameraBuf::acquire() {
     }
     assert(clSetKernelArg(krnl_debayer, 2, sizeof(float), &digital_gain) == 0);
     const size_t debayer_work_size = rgb_height;  // doesn't divide evenly, is this okay?
-    const size_t debayer_local_work_size = 128;
     assert(clEnqueueNDRangeKernel(q, krnl_debayer, 1, NULL,
-                                  &debayer_work_size, &debayer_local_work_size, 0, 0, &debayer_event) == 0);
+                                  &debayer_work_size, NULL, 0, 0, &debayer_event) == 0);
 #endif
   } else {
     assert(cur_rgb_buf->len >= frame_size);
@@ -208,7 +213,6 @@ void CameraBuf::stop() {
 
 void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &frame_data, uint32_t cnt) {
   framed.setFrameId(frame_data.frame_id);
-  framed.setEncodeId(cnt);
   framed.setTimestampEof(frame_data.timestamp_eof);
   framed.setFrameLength(frame_data.frame_length);
   framed.setIntegLines(frame_data.integ_lines);
@@ -218,6 +222,27 @@ void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &fr
   framed.setLensErr(frame_data.lens_err);
   framed.setLensTruePos(frame_data.lens_true_pos);
   framed.setGainFrac(frame_data.gain_frac);
+}
+
+void fill_frame_image(cereal::FrameData::Builder &framed, uint8_t *dat, int w, int h, int stride) {
+  if (dat != nullptr) {
+    int scale = env_scale;
+    int x_min = env_xmin; int y_min = env_ymin; int x_max = w-1; int y_max = h-1;
+    if (env_xmax != -1) x_max = env_xmax;
+    if (env_ymax != -1) y_max = env_ymax;
+    int new_width = (x_max - x_min + 1) / scale;
+    int new_height = (y_max - y_min + 1) / scale;
+    uint8_t *resized_dat = new uint8_t[new_width*new_height*3];
+
+    int goff = x_min*3 + y_min*stride;
+    for (int r=0;r<new_height;r++) {
+      for (int c=0;c<new_width;c++) {
+        memcpy(&resized_dat[(r*new_width+c)*3], &dat[goff+r*stride*scale+c*3*scale], 3*sizeof(uint8_t));
+      }
+    }
+    framed.setImage(kj::arrayPtr((const uint8_t*)resized_dat, new_width*new_height*3));
+    delete[] resized_dat;
+  }
 }
 
 void create_thumbnail(MultiCameraState *s, CameraState *c, uint8_t *bgr_ptr) {
@@ -283,21 +308,14 @@ void create_thumbnail(MultiCameraState *s, CameraState *c, uint8_t *bgr_ptr) {
   }
 }
 
-void set_exposure_target(CameraState *c, const uint8_t *pix_ptr, bool front, int x_start, int x_end, int x_skip, int y_start, int y_end, int y_skip) {
+void set_exposure_target(CameraState *c, const uint8_t *pix_ptr, int x_start, int x_end, int x_skip, int y_start, int y_end, int y_skip) {
   const CameraBuf *b = &c->buf;
 
   uint32_t lum_binning[256] = {0};
   for (int y = y_start; y < y_end; y += y_skip) {
     for (int x = x_start; x < x_end; x += x_skip) {
-      if (!front) {
-        uint8_t lum = pix_ptr[(y * b->yuv_width) + x];
-        lum_binning[lum]++;
-      } else {
-        // TODO: should get rid of RGB here
-        const uint8_t *pix = &pix_ptr[y * b->rgb_stride + x * 3];
-        unsigned int lum = (unsigned int)(pix[0] + pix[1] + pix[2]);
-        lum_binning[std::min(lum / 3, 255u)]++;
-      }
+      uint8_t lum = pix_ptr[(y * b->yuv_width) + x];
+      lum_binning[lum]++;
     }
   }
 
@@ -403,12 +421,15 @@ void common_camera_process_front(SubMaster *sm, PubMaster *pm, CameraState *c, i
     y_end = 1148;
     skip = 4;
 #endif
-    set_exposure_target(c, (const uint8_t *)b->cur_rgb_buf->addr, 1, x_start, x_end, 2, y_start, y_end, skip);
+    set_exposure_target(c, (const uint8_t *)b->yuv_bufs[b->cur_yuv_idx].y, x_start, x_end, 2, y_start, y_end, skip);
   }
 
   MessageBuilder msg;
   auto framed = msg.initEvent().initFrontFrame();
   framed.setFrameType(cereal::FrameData::FrameType::FRONT);
   fill_frame_data(framed, b->cur_frame_data, cnt);
+  if (env_send_front) {
+    fill_frame_image(framed, (uint8_t*)b->cur_rgb_buf->addr, b->rgb_width, b->rgb_height, b->rgb_stride);
+  }
   pm->send("frontFrame", msg);
 }
