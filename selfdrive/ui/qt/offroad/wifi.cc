@@ -194,6 +194,10 @@ void WifiUI::receiveText(QString t) {
 
 void WifiUI::wrongPassword(QString ssid){
   qDebug()<<"Wrong password for networrk "<<ssid;
+  if(loop.isRunning()){
+    qDebug()<<"Not fixing password, connecting to another network";
+    return;
+  }
   for(Network n:wifi->seen_networks){
     if(n.ssid==ssid){
       a->label->setText("Wrong password for \"" + n.ssid +"\"");
