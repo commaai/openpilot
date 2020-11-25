@@ -17,7 +17,7 @@ int main(int argc, char *argv[]) {
   QApplication a(argc, argv);
 
   MainWindow w;
-  setWindowSize(&w);
+  setMainWindow(&w);
   w.show();
 
   a.installEventFilter(&w);

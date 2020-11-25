@@ -10,6 +10,7 @@
 #include <QMouseEvent>
 
 #include "window.hpp"
+#include "qt_window.hpp"
 #include "offroad/input_field.hpp"
 #include "offroad/settings.hpp"
 #include "offroad/onboarding.hpp"
@@ -124,10 +125,8 @@ void GLWindow::initializeGL() {
 
   ui_state = new UIState();
   ui_state->sound = &sound;
-
-  // TODO: we can probably get this from gl
-  ui_state->fb_w = 1920;
-  ui_state->fb_h = 1080;
+  ui_state->fb_w = vwp_w;
+  ui_state->fb_h = vwp_h;
   ui_init(ui_state);
 
   wake();

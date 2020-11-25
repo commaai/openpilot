@@ -8,7 +8,7 @@
 
 #include "qt_window.hpp"
 
-void setWindowSize(QWidget *w) {
+void setMainWindow(QWidget *w) {
   float scale = getenv("SCALE") != NULL ? std::stof(getenv("SCALE")) : 1.0;
   w->setFixedSize(vwp_w*scale, vwp_h*scale);
   w->show();

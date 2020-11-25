@@ -6,4 +6,4 @@
   const int vwp_w = 1920, vwp_h = 1080;
 #endif
 
-void setWindowSize(QWidget *w);
+void setMainWindow(QWidget *w);
