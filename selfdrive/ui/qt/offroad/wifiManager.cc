@@ -39,7 +39,7 @@ bool compare_by_strength(const Network &a, const Network &b){
 
 WifiManager::WifiManager(){
   qDBusRegisterMetaType<Connection>();
-  connecting_to_network="";
+  connecting_to_network = "";
   adapter = get_adapter();
   has_adapter = adapter != "";
   if(has_adapter){
@@ -88,10 +88,10 @@ QList<Network> WifiManager::get_networks(){
     unsigned int strength = get_ap_strength(path.path());
     SecurityType security = getSecurityType(path.path());
     ConnectedType ctype;
-    if(path.path()!=active_ap){
+    if(path.path() != active_ap){
       ctype = ConnectedType::DISCONNECTED;
     }else{
-      if(ssid==connecting_to_network){
+      if(ssid == connecting_to_network){
         ctype = ConnectedType::CONNECTING;
       }else{
         ctype = ConnectedType::CONNECTED;
@@ -138,7 +138,7 @@ void WifiManager::connect(Network n, QString password){
 
 void WifiManager::connect(Network n, QString username, QString password){
   qDebug() << "Connecting to"<< n.ssid << "with username, password =" << username << "," <<password;
-  connecting_to_network=n.ssid;
+  connecting_to_network = n.ssid;
   QString active_ap = get_active_ap();
   if(active_ap!="" && active_ap!="/"){
     deactivate_connections(get_property(active_ap, "Ssid")); //Disconnect from any connected networks 
@@ -176,7 +176,7 @@ void WifiManager::connect(QByteArray ssid, QString username, QString password, S
 }
 
 void WifiManager::deactivate_connections(QString ssid){
-  for(QDBusObjectPath active_connection_raw:get_active_connections()){
+  for(QDBusObjectPath active_connection_raw : get_active_connections()){
     QString active_connection = active_connection_raw.path();
     QDBusInterface nm(nm_service, active_connection, props_iface, bus);
     QDBusObjectPath pth = get_response<QDBusObjectPath>(nm.call("Get", connection_iface, "SpecificObject"));
@@ -300,7 +300,7 @@ void WifiManager::change(unsigned int a,unsigned int b,unsigned int c){
   raw_adapter_state = a;
   if(a==60 && c==8){
     wrongPassword(connecting_to_network);
-  }else if(a==100){
+  }else if(a == 100){
     connecting_to_network="";
   }
 }

@@ -92,7 +92,7 @@ void WifiUI::refresh() {
       hlayout->addSpacing(20);
 
       // connect button
-      QPushButton* btn = new QPushButton(network.connected ==ConnectedType::CONNECTED? "Connected" : (network.connected == ConnectedType::CONNECTING ? "Connecting" : "Connect"));
+      QPushButton* btn = new QPushButton(network.connected == ConnectedType::CONNECTED ? "Connected" : (network.connected == ConnectedType::CONNECTING ? "Connecting" : "Connect"));
       btn->setFixedWidth(300);
       btn->setDisabled(network.connected == ConnectedType::CONNECTED || network.connected == ConnectedType::CONNECTING || network.security_type == SecurityType::UNSUPPORTED);
       hlayout->addWidget(btn);
@@ -198,8 +198,8 @@ void WifiUI::wrongPassword(QString ssid){
     qDebug()<<"Not fixing password, connecting to another network";
     return;
   }
-  for(Network n:wifi->seen_networks){
-    if(n.ssid==ssid){
+  for(Network n : wifi->seen_networks){
+    if(n.ssid == ssid){
       a->label->setText("Wrong password for \"" + n.ssid +"\"");
       connectToNetwork(n);
     }
