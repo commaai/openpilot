@@ -4,6 +4,7 @@ on:
     branches-ignore:
       - 'testing-closet*'
   pull_request:
+  status:
 
 env:
   RUN: docker run --shm-size 1G --rm tmppilot /bin/sh -c
