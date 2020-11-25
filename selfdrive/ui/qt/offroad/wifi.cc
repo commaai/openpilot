@@ -95,9 +95,9 @@ void WifiUI::refresh() {
       hlayout->addSpacing(20);
 
       // connect button
-      QPushButton* btn = new QPushButton(network.connected ? "Connected" : "Connect");
+      QPushButton* btn = new QPushButton(network.connected ==ConnectedType::CONNECTED? "Connected" : (network.connected == ConnectedType::CONNECTING ? "Connecting" : "Connect"));
       btn->setFixedWidth(300);
-      btn->setDisabled(network.connected || network.security_type == SecurityType::UNSUPPORTED);
+      btn->setDisabled(network.connected == ConnectedType::CONNECTED || network.connected == ConnectedType::CONNECTING || network.security_type == SecurityType::UNSUPPORTED);
       hlayout->addWidget(btn);
       hlayout->addSpacing(20);
 
