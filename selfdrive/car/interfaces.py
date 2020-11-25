@@ -1,19 +1,22 @@
 import os
 import time
+from typing import Dict
+
 from cereal import car
 from common.kalman.simple_kalman import KF1D
 from common.realtime import DT_CTRL
 from selfdrive.car import gen_empty_fingerprint
 from selfdrive.config import Conversions as CV
+from selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX
 from selfdrive.controls.lib.events import Events
 from selfdrive.controls.lib.vehicle_model import VehicleModel
-from selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX
 
 GearShifter = car.CarState.GearShifter
 EventName = car.CarEvent.EventName
 MAX_CTRL_SPEED = (V_CRUISE_MAX + 4) * CV.KPH_TO_MS  # 144 + 4 = 92 mph
 
 # generic car and radar interfaces
+
 
 class CarInterfaceBase():
   def __init__(self, CP, CarController, CarState):
@@ -132,6 +135,7 @@ class CarInterfaceBase():
 
     return events
 
+
 class RadarInterfaceBase():
   def __init__(self, CP):
     self.pts = {}
@@ -144,6 +148,7 @@ class RadarInterfaceBase():
     if not self.no_radar_sleep:
       time.sleep(self.radar_ts)  # radard runs on RI updates
     return ret
+
 
 class CarStateBase:
   def __init__(self, CP):
@@ -175,10 +180,13 @@ class CarStateBase:
     return self.left_blinker_cnt > 0, self.right_blinker_cnt > 0
 
   @staticmethod
-  def parse_gear_shifter(gear):
-    return {'P': GearShifter.park, 'R': GearShifter.reverse, 'N': GearShifter.neutral,
-            'E': GearShifter.eco, 'T': GearShifter.manumatic, 'D': GearShifter.drive,
-            'S': GearShifter.sport, 'L': GearShifter.low, 'B': GearShifter.brake}.get(gear, GearShifter.unknown)
+  def parse_gear_shifter(gear: str) -> car.CarState.GearShifter:
+    d: Dict[str, car.CarState.GearShifter] = {
+      'P': GearShifter.park, 'R': GearShifter.reverse, 'N': GearShifter.neutral,
+      'E': GearShifter.eco, 'T': GearShifter.manumatic, 'D': GearShifter.drive,
+      'S': GearShifter.sport, 'L': GearShifter.low, 'B': GearShifter.brake
+    }
+    return d.get(gear, GearShifter.unknown)
 
   @staticmethod
   def get_cam_can_parser(CP):

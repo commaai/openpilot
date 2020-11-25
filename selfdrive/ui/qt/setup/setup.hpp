@@ -1,16 +1,14 @@
 #include <QWidget>
 #include <QLineEdit>
-#include <QStackedLayout>
+#include <QStackedWidget>
 
-class Setup : public QWidget {
+class Setup : public QStackedWidget {
   Q_OBJECT
 
 public:
   explicit Setup(QWidget *parent = 0);
 
 private:
-  QStackedLayout *layout;
-
   QLineEdit *url_input;
 
   QWidget *getting_started();
