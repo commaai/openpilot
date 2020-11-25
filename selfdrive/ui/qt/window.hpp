@@ -13,17 +13,6 @@
 #include "offroad/settings.hpp"
 #include "offroad/onboarding.hpp"
 
-
-#ifdef QCOM2
-const int vwp_w = 2160;
-const int vwp_h = 1080;
-#else
-const float window_scale = getenv("SCALE") != nullptr ? std::stof(getenv("SCALE")) : 1.0;
-const int vwp_w = 1920 * window_scale;
-const int vwp_h = 1080 * window_scale;
-#endif
-
-
 class GLWindow : public QOpenGLWidget, protected QOpenGLFunctions {
   Q_OBJECT
 
