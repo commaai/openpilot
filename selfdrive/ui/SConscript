@@ -40,7 +40,7 @@ if arch in ["x86_64", "Darwin", "larch64"]:
     "-DQT_CORE_LIB"
   ]
   qt_env['CXXFLAGS'] += qt_flags
-
+  qt_env['LIBPATH'] += ['#selfdrive/ui']
 
 
 src = ['ui.cc', 'paint.cc', 'sidebar.cc', '#phonelibs/nanovg/nanovg.c']
@@ -71,7 +71,13 @@ else:
   else:
     qt_libs += [f"Qt5{m}" for m in qt_modules]
 
-  qt_src = ["qt/ui.cc", "qt/window.cc", "qt/qt_sound.cc", "qt//offroad/keyboard.cc", "qt/offroad/input_field.cc", "qt/offroad/settings.cc", "qt/offroad/onboarding.cc", "qt/offroad/wifi.cc", "qt/offroad/wifiManager.cc"] + src
+  qt_env.Library("qt_widgets",
+                 ["qt/qt_window.cc", "qt/qt_sound.cc", "qt/offroad/keyboard.cc", "qt/offroad/input_field.cc",
+                  "qt/offroad/wifi.cc", "qt/offroad/wifiManager.cc"],
+                 LIBS=qt_libs)
+  qt_libs.append("qt_widgets")
+
+  qt_src = ["qt/ui.cc", "qt/window.cc", "qt/offroad/settings.cc", "qt/offroad/onboarding.cc"] + src
   qt_env.Program("_ui", qt_src, LIBS=qt_libs + libs)
 
   # spinner and text window

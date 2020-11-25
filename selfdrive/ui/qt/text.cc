@@ -6,26 +6,13 @@
 #include <QPushButton>
 #include <QVBoxLayout>
 #include <QApplication>
-#include <QDesktopWidget>
 
-#ifdef QCOM2
-#include <qpa/qplatformnativeinterface.h>
-#include <QPlatformSurfaceEvent>
-#include <wayland-client-protocol.h>
-#endif
-
+#include "qt_window.hpp"
 
 int main(int argc, char *argv[]) {
   QApplication a(argc, argv);
   QWidget *window = new QWidget();
-
-  // TODO: get size from QScreen, doesn't work on tici
-#ifdef QCOM2
-  int w = 2160, h = 1080;
-#else
-  int w = 1920, h = 1080;
-#endif
-  window->setFixedSize(w, h);
+  setMainWindow(window);
 
   QVBoxLayout *main_layout = new QVBoxLayout();
 
@@ -74,17 +61,6 @@ int main(int argc, char *argv[]) {
       border-radius: 20px;
     }
   )");
-
-  window->show();
-
-
-#ifdef QCOM2
-  QPlatformNativeInterface *native = QGuiApplication::platformNativeInterface();
-  wl_surface *s = reinterpret_cast<wl_surface*>(native->nativeResourceForWindow("surface", window->windowHandle()));
-  wl_surface_set_buffer_transform(s, WL_OUTPUT_TRANSFORM_270);
-  wl_surface_commit(s);
-  window->showFullScreen();
-#endif
 
   return a.exec();
 }
