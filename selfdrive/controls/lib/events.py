@@ -34,7 +34,7 @@ class ET:
   PERMANENT = 'permanent'
 
 # get event name from enum
-EVENT_NAME = {v: k for k, v in EventName.schema.enumerants.items()}  # type: ignore
+EVENT_NAME = {v: k for k, v in EventName.schema.enumerants.items()}
 
 
 class Events:
