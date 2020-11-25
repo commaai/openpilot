@@ -1,6 +1,3 @@
-#include <cstdlib>
-
-#include <QString>
 #include <QLabel>
 #include <QWidget>
 #include <QPushButton>
@@ -11,22 +8,14 @@
 
 int main(int argc, char *argv[]) {
   QApplication a(argc, argv);
-  QWidget *window = new QWidget();
-  setMainWindow(window);
+  QWidget window;
+  setMainWindow(&window);
 
-  QVBoxLayout *main_layout = new QVBoxLayout();
+  QVBoxLayout *layout = new QVBoxLayout();
+  layout->setContentsMargins(30, 30, 30, 30);
 
-  QString text = "";
-  for (int i = 1; i < argc; i++) {
-    if (i > 1) {
-      text.append(" ");
-    }
-    text.append(argv[i]);
-  }
-
-  QLabel *label = new QLabel(text);
-  label->setAlignment(Qt::AlignTop);
-  main_layout->addWidget(label);
+  // TODO: make this scroll
+  layout->addWidget(new QLabel(argv[1]), 0, Qt::AlignTop);
 
   QPushButton *btn = new QPushButton();
 #ifdef __aarch64__
@@ -38,26 +27,20 @@ int main(int argc, char *argv[]) {
   btn->setText("Exit");
   QObject::connect(btn, SIGNAL(released()), &a, SLOT(quit()));
 #endif
-  main_layout->addWidget(btn);
+  layout->addWidget(btn, 0, Qt::AlignRight);
 
-  window->setLayout(main_layout);
-  window->setStyleSheet(R"(
-    QWidget {
-      margin: 60px;
-      background-color: black;
-    }
-    QLabel {
+  window.setLayout(layout);
+  window.setStyleSheet(R"(
+    * {
       color: white;
+      background-color: black;
       font-size: 60px;
     }
     QPushButton {
-      color: white;
-      font-size: 50px;
-      padding: 60px;
-      margin-left: 1500px;
-      border-color: white;
-      border-width: 2px;
-      border-style: solid;
+      padding: 50px;
+      padding-right: 100px;
+      padding-left: 100px;
+      border: 2px solid white;
       border-radius: 20px;
     }
   )");
