@@ -15,6 +15,8 @@ class WifiUI : public QWidget {
 
 private:
   WifiManager* wifi;
+  int page;
+  const int networks_per_page = 10;
 
   QStackedWidget* swidget;
   QVBoxLayout* vlayout;
@@ -37,4 +39,7 @@ private slots:
   void refresh();
   void receiveText(QString text);
   void wrongPassword(QString ssid);
+
+  void prevPage();
+  void nextPage();
 };
