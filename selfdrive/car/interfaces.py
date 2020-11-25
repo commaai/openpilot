@@ -1,6 +1,5 @@
 import os
 import time
-from abc import abstractmethod
 from typing import Dict
 
 from cereal import car
@@ -196,7 +195,3 @@ class CarStateBase:
   @staticmethod
   def get_body_can_parser(CP):
     return None
-
-  @abstractmethod
-  def update(self, cp, cp_cam):
-    pass
