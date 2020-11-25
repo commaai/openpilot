@@ -50,8 +50,7 @@ WifiUI::WifiUI(QWidget *parent) : QWidget(parent) {
   // Update network list
   timer = new QTimer(this);
   QObject::connect(timer, SIGNAL(timeout()), this, SLOT(refresh()));
-  timer->start(1000);//Reduce to 2000 before merging into master
-  // timer->setSingleShot(true);//For debugging, remove 
+  timer->start(1000);
 
   // Scan on startup
   wifi->request_scan();
@@ -63,7 +62,6 @@ WifiUI::WifiUI(QWidget *parent) : QWidget(parent) {
 }
 
 void WifiUI::refresh() {
-  qDebug()<<"Refreshing";
   if (!this->isVisible()) {
     return;
   }
@@ -77,7 +75,6 @@ void WifiUI::refresh() {
   QObject::connect(connectButtons, SIGNAL(buttonClicked(QAbstractButton*)), this, SLOT(handleButton(QAbstractButton*)));
 
   int i = 0;
-  // qDebug()<<"There are"<<wifi->seen_networks.size()<<"networks.";
   for (Network &network : wifi->seen_networks){
     QHBoxLayout *hlayout = new QHBoxLayout;
     if(page * networks_per_page <= i && i < (page + 1) * networks_per_page){
@@ -185,12 +182,12 @@ void WifiUI::connectToNetwork(Network n){
 QString WifiUI::getStringFromUser(){
   swidget->setCurrentIndex(1);
   loop.exec();
+  swidget->setCurrentIndex(0);
   return text;
 }
 
 void WifiUI::receiveText(QString t) {
   loop.quit();
-  swidget->setCurrentIndex(0);
   text = t;
 }
 

@@ -1,6 +1,5 @@
 #include <algorithm>
 #include <set>
-#include<iostream>
 #include "wifiManager.hpp"
 
 /**
@@ -33,12 +32,14 @@ T get_response(QDBusMessage response){
 bool compare_by_strength(const Network &a, const Network &b){
   if (a.connected == ConnectedType::CONNECTED) return true;
   if (b.connected == ConnectedType::CONNECTED) return false;
+  if (a.connected == ConnectedType::CONNECTING) return true;
+  if (b.connected == ConnectedType::CONNECTING) return false;
   return a.strength > b.strength;
 }
 
 WifiManager::WifiManager(){
   qDBusRegisterMetaType<Connection>();
-  last_network="";
+  connecting_to_network="";
   adapter = get_adapter();
   has_adapter = adapter != "";
   if(has_adapter){
@@ -49,7 +50,6 @@ WifiManager::WifiManager(){
     QDBusMessage response = device_props.call("Get", device_iface, "State");
     raw_adapter_state = get_response<uint>(response);
     change(raw_adapter_state, 0, 0);
-    qDebug()<<"Device state"<<raw_adapter_state;
   }else{
     qDebug()<<"No wifi device connected";
   }
@@ -66,12 +66,9 @@ void WifiManager::refreshNetworks(){
     if(seen_ssids.count(network.ssid)){
       continue;
     }
-    // qDebug()<<network.ssid<<conn_to_str(network.connected);
     seen_ssids.push_back(network.ssid);
     seen_networks.push_back(network);
   }
-  qDebug()<<"Device state"<<raw_adapter_state;
-  get_active_connections();
 }
 
 QList<Network> WifiManager::get_networks(){
@@ -81,7 +78,6 @@ QList<Network> WifiManager::get_networks(){
   QVariant first =  response.arguments().at(0);
 
   QString active_ap = get_active_ap();
-  qDebug()<<"Active is "<<get_property(active_ap, "Ssid");
   const QDBusArgument &args = first.value<QDBusArgument>();
   args.beginArray();
   while (!args.atEnd()) {
@@ -95,7 +91,7 @@ QList<Network> WifiManager::get_networks(){
     if(path.path()!=active_ap){
       ctype = ConnectedType::DISCONNECTED;
     }else{
-      if(ssid==last_network){
+      if(ssid==connecting_to_network){
         ctype = ConnectedType::CONNECTING;
       }else{
         ctype = ConnectedType::CONNECTED;
@@ -142,9 +138,8 @@ void WifiManager::connect(Network n, QString password){
 
 void WifiManager::connect(Network n, QString username, QString password){
   qDebug() << "Connecting to"<< n.ssid << "with username, password =" << username << "," <<password;
-  last_network=n.ssid;
+  connecting_to_network=n.ssid;
   QString active_ap = get_active_ap();
-  qDebug()<<"Disconnecting from "<<n.ssid<<" active_access_point_is"<<active_ap;
   if(active_ap!="" && active_ap!="/"){
     deactivate_connections(get_property(active_ap, "Ssid")); //Disconnect from any connected networks 
   }
@@ -181,24 +176,15 @@ void WifiManager::connect(QByteArray ssid, QString username, QString password, S
 }
 
 void WifiManager::deactivate_connections(QString ssid){
-  qDebug()<<"Deactivating connections with SSID"<<ssid;
-  qDebug()<<"Number of active conenctions"<<get_active_connections().size();
   for(QDBusObjectPath active_connection_raw:get_active_connections()){
     QString active_connection = active_connection_raw.path();
-    qDebug()<<active_connection;
     QDBusInterface nm(nm_service, active_connection, props_iface, bus);
-    // uint state = get_response<uint>(nm.call("Get", connection_iface, "State"));
-    // uint stateFlags = get_response<uint>(nm.call("Get", connection_iface, "StateFlags"));
-
     QDBusObjectPath pth = get_response<QDBusObjectPath>(nm.call("Get", connection_iface, "SpecificObject"));
-    // qDebug() << pth.path();//This is an accessPoint!!! Get property should work
     QString Ssid = get_property(pth.path(), "Ssid");
-    qDebug() << Ssid << ssid;
     if(Ssid == ssid){
       QDBusInterface nm2(nm_service, nm_path, nm_iface, bus);
       nm2.call("DeactivateConnection", QVariant::fromValue(active_connection_raw));
-    }    
-    // qDebug()<<"";
+    }
   }
 }
 
@@ -311,11 +297,10 @@ QString WifiManager::get_adapter(){
 }
 
 void WifiManager::change(unsigned int a,unsigned int b,unsigned int c){
-  qDebug()<<"CHANGE!"<<b<<"-->"<<a<<" reason:"<<c;
   raw_adapter_state = a;
   if(a==60 && c==8){
-    wrongPassword(last_network);
+    wrongPassword(connecting_to_network);
   }else if(a==100){
-    last_network="";
+    connecting_to_network="";
   }
 }

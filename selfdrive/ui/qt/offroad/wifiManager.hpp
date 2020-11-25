@@ -43,7 +43,7 @@ private:
   QString adapter;//Path to network manager wifi-device
   QDBusConnection bus = QDBusConnection::systemBus();
   unsigned int raw_adapter_state;//Connection status https://developer.gnome.org/NetworkManager/1.26/nm-dbus-types.html#NMDeviceState
-  QString last_network;
+  QString connecting_to_network;
 
   QString get_adapter();
   QList<Network> get_networks();
