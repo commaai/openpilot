@@ -31,7 +31,7 @@ if arch in ["x86_64", "Darwin", "larch64"]:
     ]
 
   qt_env.Tool('qt')
-  qt_env['CPPPATH'] += qt_dirs
+  qt_env['CPPPATH'] += qt_dirs + ["#selfdrive/ui/qt/"]
   qt_flags = [
     "-D_REENTRANT",
     "-DQT_NO_DEBUG",
@@ -86,5 +86,5 @@ else:
 
   # setup and installer
   if "BUILD_SETUP" in os.environ:
-    qt_env.Program("qt/setup/setup", ["qt/setup/setup.cc"], LIBS=qt_libs + libs + ['curl'])
-    qt_env.Program("qt/setup/installer", ["qt/setup/installer.cc"], LIBS=qt_libs + libs)
+    qt_env.Program("qt/setup/setup", ["qt/setup/setup.cc"], LIBS=qt_libs + ['curl'])
+    qt_env.Program("qt/setup/installer", ["qt/setup/installer.cc"], LIBS=qt_libs)
