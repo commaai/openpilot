@@ -20,6 +20,9 @@ QString connection_iface       = "org.freedesktop.NetworkManager.Connection.Acti
 
 QString nm_service             = "org.freedesktop.NetworkManager";
 
+const int state_connected = 100;
+const int state_need_auth = 60;
+const int reason_wrong_password = 8;
 
 template <typename T>
 T get_response(QDBusMessage response){
@@ -50,8 +53,6 @@ WifiManager::WifiManager(){
     QDBusMessage response = device_props.call("Get", device_iface, "State");
     raw_adapter_state = get_response<uint>(response);
     change(raw_adapter_state, 0, 0);
-  }else{
-    qDebug()<<"No wifi device connected";
   }
 }
 
@@ -120,10 +121,6 @@ SecurityType WifiManager::getSecurityType(QString path){
   } else if((sflag & 0x1) && (wpa_props & (0x333) && !(wpa_props & 0x200))) {
     return SecurityType::WPA;
   } else {
-    // qDebug() << "Cannot determine security type for " << get_property(path, "Ssid") << " with flags";
-    // qDebug() << "flag    " << sflag;
-    // qDebug() << "WpaFlag " << wpaflag;
-    // qDebug() << "RsnFlag " << rsnflag;
     return SecurityType::UNSUPPORTED;
   }
 }
@@ -137,7 +134,6 @@ void WifiManager::connect(Network n, QString password){
 }
 
 void WifiManager::connect(Network n, QString username, QString password){
-  qDebug() << "Connecting to"<< n.ssid << "with username, password =" << username << "," <<password;
   connecting_to_network = n.ssid;
   QString active_ap = get_active_ap();
   if(active_ap!="" && active_ap!="/"){
@@ -168,11 +164,6 @@ void WifiManager::connect(QByteArray ssid, QString username, QString password, S
 
   QDBusInterface nm_settings(nm_service, nm_settings_path, nm_settings_iface, bus);
   QDBusReply<QDBusObjectPath> result = nm_settings.call("AddConnection", QVariant::fromValue(connection));
-  if (!result.isValid()) {
-    qDebug() << result.error().name() << result.error().message();
-  } else {
-    qDebug() << result.value().path();
-  }
 }
 
 void WifiManager::deactivate_connections(QString ssid){
@@ -225,7 +216,6 @@ void WifiManager::clear_connections(QString ssid){
         if(inner_key == "ssid"){
           QString value = innerMap.value(inner_key).value<QString>();
           if(value == ssid){
-            // qDebug()<<"Deleting "<<value;
             nm2.call("Delete");
           }
         }
@@ -296,11 +286,11 @@ QString WifiManager::get_adapter(){
   return adapter_path;
 }
 
-void WifiManager::change(unsigned int a,unsigned int b,unsigned int c){
-  raw_adapter_state = a;
-  if(a==60 && c==8){
-    wrongPassword(connecting_to_network);
-  }else if(a == 100){
+void WifiManager::change(unsigned int new_state,unsigned int previous_state,unsigned int change_reason){
+  raw_adapter_state = new_state;
+  if(new_state == state_need_auth && change_reason == reason_wrong_password){
+    emit wrongPassword(connecting_to_network);
+  }else if(new_state == state_connected){
     connecting_to_network="";
   }
 }

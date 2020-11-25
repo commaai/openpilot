@@ -50,7 +50,7 @@ WifiUI::WifiUI(QWidget *parent) : QWidget(parent) {
   // Update network list
   timer = new QTimer(this);
   QObject::connect(timer, SIGNAL(timeout()), this, SLOT(refresh()));
-  timer->start(1000);
+  timer->start(2000);
 
   // Scan on startup
   wifi->request_scan();
@@ -156,7 +156,6 @@ void WifiUI::refresh() {
 
 void WifiUI::handleButton(QAbstractButton* button) {
   QPushButton* btn = static_cast<QPushButton*>(button);
-  qDebug() << connectButtons->id(btn);
   Network n = wifi->seen_networks[connectButtons->id(btn)];
 
   a->label->setText("Enter password for \"" + n.ssid  + "\"");
@@ -172,8 +171,6 @@ void WifiUI::connectToNetwork(Network n){
     if(password.size()){
       wifi->connect(n, password);
     }
-  } else {
-    qDebug() << "Cannot determine network's security type";
   }
   refresh();
   timer->start();
@@ -193,9 +190,7 @@ void WifiUI::receiveText(QString t) {
 
 
 void WifiUI::wrongPassword(QString ssid){
-  qDebug()<<"Wrong password for networrk "<<ssid;
   if(loop.isRunning()){
-    qDebug()<<"Not fixing password, connecting to another network";
     return;
   }
   for(Network n : wifi->seen_networks){

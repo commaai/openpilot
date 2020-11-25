@@ -58,7 +58,7 @@ private:
   SecurityType getSecurityType(QString ssid);
 
 private slots:
-  void change(unsigned int a, unsigned int b, unsigned int c);
+  void change(unsigned int new_state, unsigned int previous_state, unsigned int change_reason);
 signals:
   void wrongPassword(QString ssid);
   void refresh();
