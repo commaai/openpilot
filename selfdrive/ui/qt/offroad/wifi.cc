@@ -22,6 +22,7 @@ void clearLayout(QLayout* layout) {
 
 WifiUI::WifiUI(QWidget *parent) : QWidget(parent) {
   wifi = new WifiManager;
+  QObject::connect(wifi, SIGNAL(wrongPassword(QString)), this, SLOT(wrongPassword(QString)));
 
   QVBoxLayout * top_layout = new QVBoxLayout;
   swidget = new QStackedWidget;
@@ -46,15 +47,17 @@ WifiUI::WifiUI(QWidget *parent) : QWidget(parent) {
     }
   )");
 
-  // TODO: implement (not) connecting with wrong password
-
   // Update network list
   timer = new QTimer(this);
   QObject::connect(timer, SIGNAL(timeout()), this, SLOT(refresh()));
-  timer->start(400);
+  timer->start(2000);
 
   // Scan on startup
   wifi->request_scan();
+  QLabel* scanning = new QLabel(this);
+  scanning->setText("Scanning for networks");
+  vlayout->addWidget(scanning);
+  refresh();
   page = 0;
 }
 
@@ -74,7 +77,6 @@ void WifiUI::refresh() {
   int i = 0;
   for (Network &network : wifi->seen_networks){
     QHBoxLayout *hlayout = new QHBoxLayout;
-
     if(page * networks_per_page <= i && i < (page + 1) * networks_per_page){
       // SSID
       hlayout->addSpacing(50);
@@ -90,9 +92,9 @@ void WifiUI::refresh() {
       hlayout->addSpacing(20);
 
       // connect button
-      QPushButton* btn = new QPushButton(network.connected ? "Connected" : "Connect");
+      QPushButton* btn = new QPushButton(network.connected == ConnectedType::CONNECTED ? "Connected" : (network.connected == ConnectedType::CONNECTING ? "Connecting" : "Connect"));
       btn->setFixedWidth(300);
-      btn->setDisabled(network.connected || network.security_type == SecurityType::UNSUPPORTED);
+      btn->setDisabled(network.connected == ConnectedType::CONNECTED || network.connected == ConnectedType::CONNECTING || network.security_type == SecurityType::UNSUPPORTED);
       hlayout->addWidget(btn);
       hlayout->addSpacing(20);
 
@@ -154,11 +156,14 @@ void WifiUI::refresh() {
 
 void WifiUI::handleButton(QAbstractButton* button) {
   QPushButton* btn = static_cast<QPushButton*>(button);
-  qDebug() << connectButtons->id(btn);
   Network n = wifi->seen_networks[connectButtons->id(btn)];
 
   a->label->setText("Enter password for \"" + n.ssid  + "\"");
+  connectToNetwork(n);
+}
 
+void WifiUI::connectToNetwork(Network n){
+  timer->stop();
   if(n.security_type == SecurityType::OPEN){
     wifi->connect(n);
   } else if (n.security_type == SecurityType::WPA){
@@ -166,9 +171,9 @@ void WifiUI::handleButton(QAbstractButton* button) {
     if(password.size()){
       wifi->connect(n, password);
     }
-  } else {
-    qDebug() << "Cannot determine network's security type";
   }
+  refresh();
+  timer->start();
 }
 
 QString WifiUI::getStringFromUser(){
@@ -182,6 +187,20 @@ void WifiUI::receiveText(QString t) {
   loop.quit();
   text = t;
 }
+
+
+void WifiUI::wrongPassword(QString ssid){
+  if(loop.isRunning()){
+    return;
+  }
+  for(Network n : wifi->seen_networks){
+    if(n.ssid == ssid){
+      a->label->setText("Wrong password for \"" + n.ssid +"\"");
+      connectToNetwork(n);
+    }
+  }
+}
+
 void WifiUI::prevPage() {
   page--;
   refresh();
