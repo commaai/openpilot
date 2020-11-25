@@ -3,7 +3,6 @@ import time
 from abc import abstractmethod
 from typing import Dict
 
-import cereal
 from cereal import car
 from common.kalman.simple_kalman import KF1D
 from common.realtime import DT_CTRL
@@ -182,8 +181,8 @@ class CarStateBase:
     return self.left_blinker_cnt > 0, self.right_blinker_cnt > 0
 
   @staticmethod
-  def parse_gear_shifter(gear: str) -> cereal.Car.CarState.GearShifter:
-    d: Dict[str, cereal.Car.CarState.GearShifter] = {
+  def parse_gear_shifter(gear: str) -> car.CarState.GearShifter:
+    d: Dict[str, car.CarState.GearShifter] = {
       'P': GearShifter.park, 'R': GearShifter.reverse, 'N': GearShifter.neutral,
       'E': GearShifter.eco, 'T': GearShifter.manumatic, 'D': GearShifter.drive,
       'S': GearShifter.sport, 'L': GearShifter.low, 'B': GearShifter.brake

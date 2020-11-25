@@ -17,11 +17,10 @@ from typing import Tuple
 import numpy as np
 from numpy.linalg import solve
 
-import cereal
-
+from cereal import car
 
 class VehicleModel:
-  def __init__(self, CP: cereal.Car.CarParams):
+  def __init__(self, CP: car.CarParams):
     """
     Args:
       CP: Car Parameters
