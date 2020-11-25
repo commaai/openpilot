@@ -36,10 +36,8 @@ int download(std::string url) {
 QLabel * title_label(QString text) {
   QLabel *l = new QLabel(text);
   l->setStyleSheet(R"(
-    QLabel {
-      font-size: 100px;
-      font-weight: bold;
-    }
+    font-size: 100px;
+    font-weight: bold;
   )");
   return l;
 }
@@ -59,8 +57,6 @@ QWidget * Setup::getting_started() {
   QPushButton *btn = new QPushButton("Continue");
   main_layout->addWidget(btn);
   QObject::connect(btn, SIGNAL(released()), this, SLOT(nextPage()));
-
-  main_layout->addSpacing(100);
 
   QWidget *widget = new QWidget();
   widget->setLayout(main_layout);
@@ -125,26 +121,21 @@ QWidget * Setup::downloading() {
 }
 
 void Setup::nextPage() {
-  layout->setCurrentIndex(layout->currentIndex() + 1);
+  setCurrentIndex(currentIndex() + 1);
 
   // start download
-  if (layout->currentIndex() == layout->count() - 1)  {
+  if (currentIndex() == count() - 1)  {
     std::string url = url_input->text().toStdString();
     download(url);
   }
 }
 
 Setup::Setup(QWidget *parent) {
-  layout = new QStackedLayout();
-  layout->addWidget(getting_started());
-  layout->addWidget(network_setup());
-  layout->addWidget(software_selection());
-  layout->addWidget(downloading());
+  addWidget(getting_started());
+  addWidget(network_setup());
+  addWidget(software_selection());
+  addWidget(downloading());
 
-  // TODO: this is needed to make first page not squished, why?
-  layout->setSizeConstraint(QLayout::SetMinimumSize);
-
-  setLayout(layout);
   setStyleSheet(R"(
     QWidget {
       color: white;
