@@ -6,7 +6,6 @@
 #include <QPushButton>
 #include <QVBoxLayout>
 #include <QApplication>
-#include <QDesktopWidget>
 
 #include "qt_window.hpp"
 
@@ -62,17 +61,6 @@ int main(int argc, char *argv[]) {
       border-radius: 20px;
     }
   )");
-
-  window->show();
-
-
-#ifdef QCOM2
-  QPlatformNativeInterface *native = QGuiApplication::platformNativeInterface();
-  wl_surface *s = reinterpret_cast<wl_surface*>(native->nativeResourceForWindow("surface", window->windowHandle()));
-  wl_surface_set_buffer_transform(s, WL_OUTPUT_TRANSFORM_270);
-  wl_surface_commit(s);
-  window->showFullScreen();
-#endif
 
   return a.exec();
 }
