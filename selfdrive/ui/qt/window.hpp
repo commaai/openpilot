@@ -38,7 +38,7 @@ private:
   QTimer * timer;
   QTimer * backlight_timer;
 
-  UIState * ui_state;
+  UIState * ui_state = nullptr;
   QtSound sound;
 
   bool onroad = true;
