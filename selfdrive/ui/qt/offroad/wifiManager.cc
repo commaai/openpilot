@@ -141,11 +141,14 @@ void WifiManager::connect(Network n, QString password){
 }
 
 void WifiManager::connect(Network n, QString username, QString password){
+  qDebug() << "Connecting to"<< n.ssid << "with username, password =" << username << "," <<password;
   last_network=n.ssid;
   QString active_ap = get_active_ap();
-  deactivate_connections(get_property(active_ap, "Ssid")); //Disconnect from any connected networks 
+  qDebug()<<"Disconnecting from "<<n.ssid<<" active_access_point_is"<<active_ap;
+  if(active_ap!="" && active_ap!="/"){
+    deactivate_connections(get_property(active_ap, "Ssid")); //Disconnect from any connected networks 
+  }
   clear_connections(n.ssid); //Clear all connections that may already exist to the network we are connecting
-  qDebug() << "Connecting to"<< n.ssid << "with username, password =" << username << "," <<password;
   connect(n.ssid, username, password, n.security_type);
 }
 
@@ -178,8 +181,11 @@ void WifiManager::connect(QByteArray ssid, QString username, QString password, S
 }
 
 void WifiManager::deactivate_connections(QString ssid){
+  qDebug()<<"Deactivating connections with SSID"<<ssid;
+  qDebug()<<"Number of active conenctions"<<get_active_connections().size();
   for(QDBusObjectPath active_connection_raw:get_active_connections()){
     QString active_connection = active_connection_raw.path();
+    qDebug()<<active_connection;
     QDBusInterface nm(nm_service, active_connection, props_iface, bus);
     // uint state = get_response<uint>(nm.call("Get", connection_iface, "State"));
     // uint stateFlags = get_response<uint>(nm.call("Get", connection_iface, "StateFlags"));
@@ -187,7 +193,7 @@ void WifiManager::deactivate_connections(QString ssid){
     QDBusObjectPath pth = get_response<QDBusObjectPath>(nm.call("Get", connection_iface, "SpecificObject"));
     // qDebug() << pth.path();//This is an accessPoint!!! Get property should work
     QString Ssid = get_property(pth.path(), "Ssid");
-    // qDebug() << Ssid << ssid;
+    qDebug() << Ssid << ssid;
     if(Ssid == ssid){
       QDBusInterface nm2(nm_service, nm_path, nm_iface, bus);
       nm2.call("DeactivateConnection", QVariant::fromValue(active_connection_raw));

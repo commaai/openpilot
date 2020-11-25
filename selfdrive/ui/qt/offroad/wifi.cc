@@ -50,7 +50,7 @@ WifiUI::WifiUI(QWidget *parent) : QWidget(parent) {
   // Update network list
   timer = new QTimer(this);
   QObject::connect(timer, SIGNAL(timeout()), this, SLOT(refresh()));
-  timer->start(500);//Reduce to 2000 before merging into master
+  timer->start(1000);//Reduce to 2000 before merging into master
   // timer->setSingleShot(true);//For debugging, remove 
 
   // Scan on startup
@@ -138,6 +138,7 @@ void WifiUI::handleButton(QAbstractButton* button) {
 }
 
 void WifiUI::connectToNetwork(Network n){
+  timer->stop();
   if(n.security_type == SecurityType::OPEN){
     wifi->connect(n);
   } else if (n.security_type == SecurityType::WPA){
@@ -150,17 +151,18 @@ void WifiUI::connectToNetwork(Network n){
     qDebug() << "Cannot determine network's security type";
   }
   refresh();
+  timer->start();
 }
 
 QString WifiUI::getStringFromUser(){
   swidget->setCurrentIndex(1);
   loop.exec();
-  swidget->setCurrentIndex(0);
   return text;
 }
 
 void WifiUI::receiveText(QString t) {
   loop.quit();
+  swidget->setCurrentIndex(0);
   text = t;
 }
 
