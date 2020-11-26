@@ -10,7 +10,7 @@
 #include "panda.h"
 
 #ifdef QCOM2
-bool is_legacy_hardware() {
+bool is_legacy_panda_reset() {
   FILE *file = fopen("/persist/LEGACY_PANDA_RESET", "r");
   if(file) {
     fclose(file);
@@ -22,7 +22,7 @@ bool is_legacy_hardware() {
 void panda_set_power(bool power){
 #ifdef QCOM2
   int err = 0;
-  bool is_legacy = is_legacy_hardware();
+  bool is_legacy = is_legacy_panda_reset();
 
   err += gpio_init(GPIO_STM_RST_N, true);
   err += gpio_init(GPIO_STM_BOOT0, true);
