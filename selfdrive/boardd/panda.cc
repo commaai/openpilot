@@ -9,18 +9,30 @@
 
 #include "panda.h"
 
+#ifdef QCOM2
+bool is_legacy_panda_reset() {
+  FILE *file = fopen("/persist/LEGACY_PANDA_RESET", "r");
+  if(file) {
+    fclose(file);
+  }
+  return (file != NULL);
+}
+#endif
+
 void panda_set_power(bool power){
 #ifdef QCOM2
   int err = 0;
+  bool is_legacy = is_legacy_panda_reset();
+
   err += gpio_init(GPIO_STM_RST_N, true);
   err += gpio_init(GPIO_STM_BOOT0, true);
 
-  err += gpio_set(GPIO_STM_RST_N, false);
+  err += gpio_set(GPIO_STM_RST_N, is_legacy ? false : true);
   err += gpio_set(GPIO_STM_BOOT0, false);
 
   usleep(100*1000); // 100 ms
 
-  err += gpio_set(GPIO_STM_RST_N, power);
+  err += gpio_set(GPIO_STM_RST_N, is_legacy ? power : (!power));
   assert(err == 0);
 #endif
 }
