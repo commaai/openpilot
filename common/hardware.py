@@ -48,6 +48,30 @@ class Pc(HardwareBase):
   def get_network_strength(self, network_type):
     return NetworkStrength.unknown
 
+  def get_battery_capacity(self):
+    return 100
+
+  def get_battery_status(self):
+    raise NotImplementedError()
+
+  def get_battery_current(self):
+    raise NotImplementedError()
+
+  def get_battery_voltage(self):
+    raise NotImplementedError()
+
+  def get_battery_charging(self):
+    raise NotImplementedError()
+
+  def set_battery_charging(self, on):
+    raise NotImplementedError()
+
+  def get_usb_present(self):
+    return False
+
+  def get_current_power_draw(self):
+    return 0
+
 
 if EON:
   HARDWARE = cast(HardwareBase, Android())
