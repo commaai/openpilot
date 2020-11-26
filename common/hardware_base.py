@@ -10,11 +10,11 @@ class HardwareBase:
 
   @staticmethod
   def read_param_file(path, parser, default=0):
-  try:
-    with open(path) as f:
-      return parser(f.read())
-  except Exception:
-    return default
+    try:
+      with open(path) as f:
+        return parser(f.read())
+    except Exception:
+      return default
 
   @abstractmethod
   def get_sound_card_online(self):
