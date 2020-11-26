@@ -52,19 +52,19 @@ class Pc(HardwareBase):
     return 100
 
   def get_battery_status(self):
-    raise NotImplementedError()
+    return ""
 
   def get_battery_current(self):
-    raise NotImplementedError()
+    return 0
 
   def get_battery_voltage(self):
-    raise NotImplementedError()
+    return 0
 
   def get_battery_charging(self):
-    raise NotImplementedError()
+    return True
 
   def set_battery_charging(self, on):
-    raise NotImplementedError()
+    print(f"SET BATTERY CHARGING: {on}")
 
   def get_usb_present(self):
     return False
