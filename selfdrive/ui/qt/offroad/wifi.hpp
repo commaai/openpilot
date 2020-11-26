@@ -15,8 +15,7 @@ class WifiUI : public QWidget {
 
 private:
   WifiManager* wifi;
-  int page;
-  const int networks_per_page = 10;
+  const int networks_per_page = 8;
 
   QStackedWidget* swidget;
   QVBoxLayout* vlayout;
@@ -28,15 +27,23 @@ private:
   QString text;
   QButtonGroup *connectButtons;
 
+  void connectToNetwork(Network n);
   QString getStringFromUser();
 
 public:
+  int page;
   explicit WifiUI(QWidget *parent = 0);
 
 private slots:
   void handleButton(QAbstractButton* m_button);
   void refresh();
   void receiveText(QString text);
+  void wrongPassword(QString ssid);
+
   void prevPage();
   void nextPage();
+
+signals:
+  void openKeyboard();
+  void closeKeyboard();
 };

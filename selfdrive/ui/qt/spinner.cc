@@ -7,14 +7,8 @@
 #include <QApplication>
 #include <QDesktopWidget>
 
-#ifdef QCOM2
-#include <qpa/qplatformnativeinterface.h>
-#include <QPlatformSurfaceEvent>
-#include <wayland-client-protocol.h>
-#endif
-
 #include "spinner.hpp"
-
+#include "qt_window.hpp"
 
 Spinner::Spinner(QWidget *parent) {
   QGridLayout *main_layout = new QGridLayout();
@@ -100,25 +94,7 @@ void Spinner::update(int n) {
 
 int main(int argc, char *argv[]) {
   QApplication a(argc, argv);
-
-  Spinner *spinner = new Spinner();
-
-  // TODO: get size from QScreen, doesn't work on tici
-#ifdef QCOM2
-  int w = 2160, h = 1080;
-#else
-  int w = 1920, h = 1080;
-#endif
-  spinner->setFixedSize(w, h);
-  spinner->show();
-
-#ifdef QCOM2
-  QPlatformNativeInterface *native = QGuiApplication::platformNativeInterface();
-  wl_surface *s = reinterpret_cast<wl_surface*>(native->nativeResourceForWindow("surface", spinner->windowHandle()));
-  wl_surface_set_buffer_transform(s, WL_OUTPUT_TRANSFORM_270);
-  wl_surface_commit(s);
-  spinner->showFullScreen();
-#endif
-
+  Spinner spinner;
+  setMainWindow(&spinner);
   return a.exec();
 }

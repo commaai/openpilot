@@ -474,7 +474,6 @@ cereal/messaging/messaging.cc
 cereal/messaging/messaging.hpp
 cereal/messaging/messaging.pxd
 cereal/messaging/messaging_pyx.pyx
-cereal/messaging/messaging_pyx_setup.py
 cereal/messaging/msgq.cc
 cereal/messaging/msgq.hpp
 cereal/messaging/socketmaster.cc

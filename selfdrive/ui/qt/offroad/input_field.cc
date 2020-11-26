@@ -23,7 +23,7 @@ InputField::InputField(QWidget *parent): QWidget(parent) {
 
   line = new QLineEdit("");
   l->addWidget(line);
-  l->addSpacing(200);
+  l->addSpacing(80);
 
   k = new Keyboard(this);
   QObject::connect(k, SIGNAL(emitButton(QString)), this, SLOT(getText(QString)));
