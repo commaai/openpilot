@@ -264,7 +264,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
   // settings_layout->addLayout(sidebar_layout);
   sidebar_widget = new QWidget;
   sidebar_widget->setLayout(sidebar_layout);
-  sidebar_widget->setFixedWidth(300);
+  sidebar_widget->setFixedWidth(350);
   settings_layout->addWidget(sidebar_widget);
 
   settings_layout->addSpacing(45);
@@ -286,5 +286,5 @@ void SettingsWindow::closeSidebar(){
 }
 void SettingsWindow::openSidebar(){
   qDebug()<<"Open sidebar";
-  sidebar_widget->setFixedWidth(300);
+  sidebar_widget->setFixedWidth(350);
 }
