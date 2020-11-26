@@ -106,7 +106,7 @@ void WifiUI::refresh() {
       vlayout->addWidget(w);
       w->setStyleSheet(R"(
         QLabel {
-          font-size: 40px;
+          font-size: 50px;
         }
         QPushButton:enabled {
           background-color: #114265;
@@ -124,7 +124,7 @@ void WifiUI::refresh() {
   }
 
   //Pad vlayout to prevert oversized network widgets in case of low visible network count
-  for(int i=countWidgets;i<networks_per_page;i++){
+  for(int i = countWidgets ; i < networks_per_page ; i++){
     QWidget * w = new QWidget;
     vlayout->addWidget(w);
   }
@@ -186,8 +186,10 @@ void WifiUI::connectToNetwork(Network n){
 }
 
 QString WifiUI::getStringFromUser(){
+  emit openKeyboard();
   swidget->setCurrentIndex(1);
   loop.exec();
+  emit closeKeyboard();
   swidget->setCurrentIndex(0);
   return text;
 }
