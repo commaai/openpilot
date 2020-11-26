@@ -9,9 +9,10 @@
 #include <QStackedLayout>
 
 #include "qt/qt_sound.hpp"
-#include "ui/ui.hpp"
 #include "offroad/settings.hpp"
 #include "offroad/onboarding.hpp"
+#include "ui/ui.hpp"
+
 
 class GLWindow : public QOpenGLWidget, protected QOpenGLFunctions {
   Q_OBJECT

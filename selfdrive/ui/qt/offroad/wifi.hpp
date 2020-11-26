@@ -15,7 +15,6 @@ class WifiUI : public QWidget {
 
 private:
   WifiManager* wifi;
-  int page;
   const int networks_per_page = 10;
 
   QStackedWidget* swidget;
@@ -32,6 +31,7 @@ private:
   QString getStringFromUser();
 
 public:
+  int page;
   explicit WifiUI(QWidget *parent = 0);
 
 private slots:
@@ -42,4 +42,8 @@ private slots:
 
   void prevPage();
   void nextPage();
+
+signals:
+  void openKeyboard();
+  void closeKeyboard();
 };

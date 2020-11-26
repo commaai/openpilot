@@ -186,8 +186,10 @@ void WifiUI::connectToNetwork(Network n){
 }
 
 QString WifiUI::getStringFromUser(){
+  emit openKeyboard();
   swidget->setCurrentIndex(1);
   loop.exec();
+  emit closeKeyboard();
   swidget->setCurrentIndex(0);
   return text;
 }
