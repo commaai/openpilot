@@ -82,10 +82,10 @@ class PowerMonitoring:
         current_power = HARDWARE.get_current_power_draw()
         if current_power is not None:
           pass
-        elif get_battery_status() == 'Discharging':
+        elif HARDWARE.get_battery_status() == 'Discharging':
           # If the battery is discharging, we can use this measurement
           # On C2: this is low by about 10-15%, probably mostly due to UNO draw not being factored in
-          current_power = ((get_battery_voltage() / 1000000) * (get_battery_current() / 1000000))
+          current_power = ((HARDWARE.get_battery_voltage() / 1000000) * (HARDWARE.get_battery_current() / 1000000))
         elif (self.next_pulsed_measurement_time is not None) and (self.next_pulsed_measurement_time <= now):
           # TODO: Figure out why this is off by a factor of 3/4???
           FUDGE_FACTOR = 1.33
@@ -93,22 +93,22 @@ class PowerMonitoring:
           # Turn off charging for about 10 sec in a thread that does not get killed on SIGINT, and perform measurement here to avoid blocking thermal
           def perform_pulse_measurement(now):
             try:
-              set_battery_charging(False)
+              HARDWARE.set_battery_charging(False)
               time.sleep(5)
 
               # Measure for a few sec to get a good average
               voltages = []
               currents = []
               for _ in range(6):
-                voltages.append(get_battery_voltage())
-                currents.append(get_battery_current())
+                voltages.append(HARDWARE.get_battery_voltage())
+                currents.append(HARDWARE.get_battery_current())
                 time.sleep(1)
               current_power = ((mean(voltages) / 1000000) * (mean(currents) / 1000000))
 
               self._perform_integration(now, current_power * FUDGE_FACTOR)
 
               # Enable charging again
-              set_battery_charging(True)
+              HARDWARE.set_battery_charging(True)
             except Exception:
               cloudlog.exception("Pulsed power measurement failed")
 
