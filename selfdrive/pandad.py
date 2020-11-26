@@ -15,11 +15,9 @@ def set_panda_power(power=True):
 
   gpio_init(GPIO_STM_RST_N, True)
   gpio_init(GPIO_STM_BOOT0, True)
-  gpio_init(GPIO_HUB_RST_N, True)
 
   gpio_set(GPIO_STM_RST_N, False)
   gpio_set(GPIO_HUB_RST_N, True)
-  gpio_set(GPIO_STM_BOOT0, False)
 
   time.sleep(0.1)
 
@@ -42,7 +40,11 @@ def get_expected_signature(fw_fn=None):
   if fw_fn is None:
     fw_fn = get_firmware_fn()
 
-  return Panda.get_signature_from_firmware(fw_fn)
+  try:
+    return Panda.get_signature_from_firmware(fw_fn)
+  except Exception:
+    cloudlog.exception("Error computing expected signature")
+    return b""
 
 
 def update_panda():

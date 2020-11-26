@@ -1,10 +1,11 @@
-#include "thneed.h"
 #include <cassert>
 #include <sys/mman.h>
 #include <dlfcn.h>
 #include <map>
 #include <string>
+#include <string.h>
 #include <errno.h>
+#include "thneed.h"
 
 Thneed *g_thneed = NULL;
 int g_fd = -1;
@@ -31,11 +32,19 @@ extern "C" {
 int (*my_ioctl)(int filedes, unsigned long request, void *argp) = NULL;
 #undef ioctl
 int ioctl(int filedes, unsigned long request, void *argp) {
+  request &= 0xFFFFFFFF;  // needed on QCOM2
   if (my_ioctl == NULL) my_ioctl = reinterpret_cast<decltype(my_ioctl)>(dlsym(RTLD_NEXT, "ioctl"));
   Thneed *thneed = g_thneed;
 
   // save the fd
   if (request == IOCTL_KGSL_GPUOBJ_ALLOC) g_fd = filedes;
+
+  if (request == IOCTL_KGSL_DRAWCTXT_CREATE) {
+    struct kgsl_drawctxt_create *create = (struct kgsl_drawctxt_create *)argp;
+    create->flags &= ~KGSL_CONTEXT_PRIORITY_MASK;
+    create->flags |= 1 << KGSL_CONTEXT_PRIORITY_SHIFT;   // priority from 1-15, 1 is max priority
+    printf("creating context with flags 0x%x\n", create->flags);
+  }
 
   if (thneed != NULL) {
     if (request == IOCTL_KGSL_GPU_COMMAND) {
@@ -440,7 +449,14 @@ cl_program thneed_clCreateProgramWithSource(cl_context context, cl_uint count, c
 #endif
 
 void *dlsym(void *handle, const char *symbol) {
+  // TODO: Find dlsym in a better way. Currently this is hand looked up in libdl.so
+#if defined QCOM
   void *(*my_dlsym)(void *handle, const char *symbol) = (void *(*)(void *handle, const char *symbol))((uintptr_t)dlopen-0x2d4);
+#elif defined QCOM2
+  void *(*my_dlsym)(void *handle, const char *symbol) = (void *(*)(void *handle, const char *symbol))((uintptr_t)dlopen+0x138);
+#else
+  #error "Unsupported platform for thneed"
+#endif
   if (memcmp("REAL_", symbol, 5) == 0) {
     return my_dlsym(handle, symbol+5);
   } else if (strcmp("clEnqueueNDRangeKernel", symbol) == 0) {

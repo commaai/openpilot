@@ -11,7 +11,7 @@ class SubSocket():
   def __init__(self, msgs, trigger):
     self.i = 0
     self.trigger = trigger
-    self.msgs = [m for m in msgs if m.which() == trigger]
+    self.msgs = [m.as_builder().to_bytes() for m in msgs if m.which() == trigger]
     self.max_i = len(self.msgs) - 1
 
   def receive(self, non_blocking=False):
@@ -23,11 +23,8 @@ class SubSocket():
 
     while True:
       msg = self.msgs[self.i]
-      msg = msg.as_builder()
-
       self.i += 1
-
-      return msg.to_bytes()
+      return msg
 
 
 class PubSocket():
@@ -37,12 +34,7 @@ class PubSocket():
 
 class SubMaster(messaging.SubMaster):
   def __init__(self, msgs, trigger, services):  # pylint: disable=super-init-not-called
-    msgs = [m for m in msgs if m.which() in services]
-    self.max_i = len(msgs) - 1
-    self.i = 0
     self.frame = 0
-    self.trigger = trigger
-    self.msgs = msgs
     self.data = {}
     self.ignore_alive = []
 
@@ -53,6 +45,16 @@ class SubMaster(messaging.SubMaster):
     self.valid = {s: True for s in services}
     self.logMonoTime = {}
     self.sock = {}
+
+    # TODO: specify multiple triggers for service like plannerd that poll on more than one service
+    cur_msgs = []
+    self.msgs = []
+    msgs = [m for m in msgs if m.which() in services]
+    for msg in msgs:
+      cur_msgs.append(msg)
+      if msg.which() == trigger:
+        self.msgs.append(cur_msgs)
+        cur_msgs = []
 
     for s in services:
       try:
@@ -66,28 +68,11 @@ class SubMaster(messaging.SubMaster):
       self.sock[s] = SubSocket(msgs, s)
 
   def update(self, timeout=None):
-    if self.i == self.max_i:
+    if not len(self.msgs):
       raise ReplayDone
 
-    self.updated = dict.fromkeys(self.updated, False)
-    self.frame += 1
-
-    while True:
-      msg = self.msgs[self.i]
-      w = msg.which()
-
-      self.updated[w] = True
-      self.rcv_time[w] = msg.logMonoTime / 1e9
-      self.rcv_frame[w] = self.frame
-      self.data[w] = getattr(msg, w)
-      self.logMonoTime[w] = msg.logMonoTime
-
-      self.i += 1
-      if self.i == self.max_i:
-        raise ReplayDone
-
-      if w == self.trigger:
-        break
+    cur_msgs = self.msgs.pop()
+    self.update_msgs(cur_msgs[0].logMonoTime, self.msgs.pop())
 
 
 class PubMaster(messaging.PubMaster):

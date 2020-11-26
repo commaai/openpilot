@@ -29,6 +29,7 @@ typedef struct DMonitoringModelState {
   bool is_rhd;
   float output[OUTPUT_SIZE];
   std::vector<uint8_t> resized_buf;
+  std::vector<uint8_t> resized_buf_rot;
   std::vector<uint8_t> cropped_buf;
   std::vector<uint8_t> premirror_cropped_buf;
   std::vector<float> net_input_buf;
@@ -36,7 +37,7 @@ typedef struct DMonitoringModelState {
 
 void dmonitoring_init(DMonitoringModelState* s);
 DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_buf, int width, int height);
-void dmonitoring_publish(PubMaster &pm, uint32_t frame_id, const DMonitoringResult &res);
+void dmonitoring_publish(PubMaster &pm, uint32_t frame_id, const DMonitoringResult &res, float execution_time);
 void dmonitoring_free(DMonitoringModelState* s);
 
 #ifdef __cplusplus

@@ -1,10 +1,12 @@
-FROM ubuntu:16.04
+FROM ubuntu:20.04
 ENV PYTHONUNBUFFERED 1
 
+ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y --no-install-recommends \
     autoconf \
     build-essential \
     bzip2 \
+    ca-certificates \
     capnproto \
     libcapnp-dev \
     clang \
@@ -29,17 +31,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libsqlite3-dev \
     libsystemd-dev \
     libusb-1.0-0-dev \
-    libczmq-dev \
     libzmq3-dev \
     locales \
     ocl-icd-libopencl1 \
     ocl-icd-opencl-dev \
     opencl-headers \
     python-dev \
-    python-pip \
     qt5-default \
     qtmultimedia5-dev \
     sudo \
+    valgrind \
     wget \
   && rm -rf /var/lib/apt/lists/*
 
@@ -56,7 +57,7 @@ RUN pyenv install 3.8.2 && \
     pyenv global 3.8.2 && \
     pyenv rehash && \
     pip install --no-cache-dir --upgrade pip==20.1.1 && \
-    pip install --no-cache-dir pipenv==2018.11.26 && \
+    pip install --no-cache-dir pipenv==2020.8.13 && \
     cd /tmp && \
     pipenv install --system --deploy --dev --clear && \
     pip uninstall -y pipenv

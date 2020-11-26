@@ -15,6 +15,14 @@ AlertSize = log.ControlsState.AlertSize
 
 OFFROAD_ALERTS_PATH = os.path.join(BASEDIR, "selfdrive/controls/lib/alerts_offroad.json")
 
+# TODO: add callback alerts
+ALERTS = []
+for event_types in EVENTS.values():
+  for alert in event_types.values():
+    if isinstance(alert, Alert):
+      ALERTS.append(alert)
+
+
 class TestAlerts(unittest.TestCase):
 
   @classmethod
@@ -50,13 +58,7 @@ class TestAlerts(unittest.TestCase):
                       ImageFont.truetype(regular_font_path, int(36 * font_scale_factor))],
     }
 
-    alerts = []
-    for event_types in EVENTS.values():
-      for alert in event_types.values():
-        if isinstance(alert, Alert):
-          alerts.append(alert)
-
-    for alert in alerts:
+    for alert in ALERTS:
       # for full size alerts, both text fields wrap the text,
       # so it's unlikely that they  would go past the max width
       if alert.alert_size in [AlertSize.none, AlertSize.full]:
@@ -70,6 +72,17 @@ class TestAlerts(unittest.TestCase):
         w, _ = draw.textsize(txt, font)
         msg = "type: %s msg: %s" % (alert.alert_type, txt)
         self.assertLessEqual(w, max_text_width, msg=msg)
+
+  def test_alert_sanity_check(self):
+    for a in ALERTS:
+      if a.alert_size == AlertSize.none:
+        self.assertEqual(0, len(a.alert_text_1))
+        self.assertEqual(0, len(a.alert_text_2))
+      else:
+        if a.alert_size == AlertSize.small:
+          self.assertEqual(0, len(a.alert_text_2))
+
+      self.assertTrue(all([n >= 0. for n in [a.duration_sound, a.duration_hud_alert, a.duration_text]]))
 
   def test_offroad_alerts(self):
     params = Params()

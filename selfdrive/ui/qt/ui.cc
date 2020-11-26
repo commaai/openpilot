@@ -1,8 +1,10 @@
 #include <QApplication>
 
 #include "window.hpp"
+#include "qt_window.hpp"
 
 int main(int argc, char *argv[]) {
+  // TODO: should probably be done in gl window
   QSurfaceFormat fmt;
 #ifdef __APPLE__
   fmt.setVersion(3, 2);
@@ -14,14 +16,8 @@ int main(int argc, char *argv[]) {
   QSurfaceFormat::setDefaultFormat(fmt);
 
   QApplication a(argc, argv);
-
   MainWindow w;
-#ifdef QCOM2
-  w.showFullScreen();
-#else
-  w.setFixedSize(vwp_w, vwp_h);
-  w.show();
-#endif
-
+  setMainWindow(&w);
+  a.installEventFilter(&w);
   return a.exec();
 }

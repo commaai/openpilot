@@ -1,34 +1,36 @@
 #!/usr/bin/env python3
 import os
 import subprocess
+from typing import List, Optional
+
 from common.basedir import BASEDIR
 from selfdrive.swaglog import cloudlog
 
 
-def run_cmd(cmd):
+def run_cmd(cmd: List[str]) -> str:
     return subprocess.check_output(cmd, encoding='utf8').strip()
 
 
-def run_cmd_default(cmd, default=None):
+def run_cmd_default(cmd: List[str], default: Optional[str] = None) -> Optional[str]:
   try:
     return run_cmd(cmd)
   except subprocess.CalledProcessError:
     return default
 
 
-def get_git_commit(branch="HEAD", default=None):
+def get_git_commit(branch: str = "HEAD", default: Optional[str] = None) -> Optional[str]:
   return run_cmd_default(["git", "rev-parse", branch], default=default)
 
 
-def get_git_branch(default=None):
+def get_git_branch(default: Optional[str] = None) -> Optional[str]:
   return run_cmd_default(["git", "rev-parse", "--abbrev-ref", "HEAD"], default=default)
 
 
-def get_git_full_branchname(default=None):
+def get_git_full_branchname(default: Optional[str] = None) -> Optional[str]:
   return run_cmd_default(["git", "rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}"], default=default)
 
 
-def get_git_remote(default=None):
+def get_git_remote(default: Optional[str] = None) -> Optional[str]:
   try:
     local_branch = run_cmd(["git", "name-rev", "--name-only", "HEAD"])
     tracking_remote = run_cmd(["git", "config", "branch." + local_branch + ".remote"])
@@ -42,12 +44,12 @@ with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "common", "ve
 
 prebuilt = os.path.exists(os.path.join(BASEDIR, 'prebuilt'))
 
-training_version = b"0.2.0"
-terms_version = b"2"
+training_version: bytes = b"0.2.0"
+terms_version: bytes = b"2"
 
-dirty = True
-comma_remote = False
-tested_branch = False
+dirty: bool = True
+comma_remote: bool = False
+tested_branch: bool = False
 origin = get_git_remote()
 branch = get_git_full_branchname()
 

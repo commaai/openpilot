@@ -5,11 +5,11 @@ from nose.tools import nottest
 
 from common.hardware import PC
 from common.apk import update_apks, start_offroad, pm_apply_packages, android_packages
-from common.params import Params
 from selfdrive.version import training_version, terms_version
 from selfdrive.manager import start_managed_process, kill_managed_process, get_running
 
 def set_params_enabled():
+  from common.params import Params
   params = Params()
   params.put("HasAcceptedTerms", terms_version)
   params.put("HasCompletedSetup", "1")
@@ -29,9 +29,10 @@ def with_processes(processes, init_time=0):
     @wraps(func)
     def wrap(*args, **kwargs):
       # start and assert started
-      for p in processes:
+      for n, p in enumerate(processes):
         start_managed_process(p)
-        time.sleep(init_time)
+        if n < len(processes)-1:
+          time.sleep(init_time)
       assert all(get_running()[name].exitcode is None for name in processes)
 
       # call the function

@@ -6,9 +6,9 @@ from statistics import mean
 from cereal import log
 from common.realtime import sec_since_boot
 from common.params import Params, put_nonblocking
+from common.hardware import TICI
 from selfdrive.swaglog import cloudlog
 
-PANDA_OUTPUT_VOLTAGE = 5.28
 CAR_VOLTAGE_LOW_PASS_K = 0.091 # LPF gain for 5s tau (dt/tau / (dt/tau + 1))
 
 # A C2 uses about 1W while idling, and 30h seens like a good shutoff for most cars
@@ -59,11 +59,6 @@ def _read_param(path, parser, default=0):
       return parser(f.read())
   except Exception:
     return default
-
-
-def panda_current_to_actual_current(panda_current):
-  # From white/grey panda schematic
-  return (3.3 - (panda_current * 3.3 / 4096)) / 8.25
 
 
 class PowerMonitoring:
@@ -127,15 +122,13 @@ class PowerMonitoring:
         is_uno = health.health.hwType == log.HealthData.HwType.uno
         # Get current power draw somehow
         current_power = 0
-        if get_battery_status() == 'Discharging':
+        if TICI:
+          with open("/sys/class/hwmon/hwmon1/power1_input") as f:
+            current_power = int(f.read()) / 1e6
+        elif get_battery_status() == 'Discharging':
           # If the battery is discharging, we can use this measurement
           # On C2: this is low by about 10-15%, probably mostly due to UNO draw not being factored in
           current_power = ((get_battery_voltage() / 1000000) * (get_battery_current() / 1000000))
-        elif (health.health.hwType in [log.HealthData.HwType.whitePanda, log.HealthData.HwType.greyPanda]) and (health.health.current > 1):
-          # If white/grey panda, use the integrated current measurements if the measurement is not 0
-          # If the measurement is 0, the current is 400mA or greater, and out of the measurement range of the panda
-          # This seems to be accurate to about 5%
-          current_power = (PANDA_OUTPUT_VOLTAGE * panda_current_to_actual_current(health.health.current))
         elif (self.next_pulsed_measurement_time is not None) and (self.next_pulsed_measurement_time <= now):
           # TODO: Figure out why this is off by a factor of 3/4???
           FUDGE_FACTOR = 1.33
@@ -232,4 +225,3 @@ class PowerMonitoring:
     should_shutdown |= ((get_battery_capacity() < BATT_PERC_OFF) and (not get_battery_charging()) and ((now - offroad_timestamp) > 60))
     should_shutdown &= started_seen
     return should_shutdown
-

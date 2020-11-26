@@ -14,9 +14,6 @@ STOPPING_BRAKE_RATE = 0.2  # brake_travel/s while trying to stop
 STARTING_BRAKE_RATE = 0.8  # brake_travel/s while releasing on restart
 BRAKE_STOPPING_TARGET = 0.5  # apply at least this amount of brake to maintain the vehicle stationary
 
-_MAX_SPEED_ERROR_BP = [0., 30.]  # speed breakpoints
-_MAX_SPEED_ERROR_V = [1.5, .8]  # max positive v_pid error VS actual speed; this avoids controls windup due to slow pedal resp
-
 RATE = 100.0
 
 
@@ -86,8 +83,7 @@ class LongControl():
     v_ego_pid = max(CS.vEgo, MIN_CAN_SPEED)  # Without this we get jumps, CAN bus reports 0 when speed < 0.3
 
     if self.long_control_state == LongCtrlState.off or CS.gasPressed:
-      self.v_pid = v_ego_pid
-      self.pid.reset()
+      self.reset(v_ego_pid)
       output_gb = 0.
 
     # tracking objects and driving
@@ -113,15 +109,13 @@ class LongControl():
         output_gb -= STOPPING_BRAKE_RATE / RATE
       output_gb = clip(output_gb, -brake_max, gas_max)
 
-      self.v_pid = CS.vEgo
-      self.pid.reset()
+      self.reset(CS.vEgo)
 
     # Intention is to move again, release brake fast before handing control to PID
     elif self.long_control_state == LongCtrlState.starting:
       if output_gb < -0.2:
         output_gb += STARTING_BRAKE_RATE / RATE
-      self.v_pid = CS.vEgo
-      self.pid.reset()
+      self.reset(CS.vEgo)
 
     self.last_output_gb = output_gb
     final_gas = clip(output_gb, 0., gas_max)

@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-import gc
 from cereal import car
-from common.realtime import set_realtime_priority
 from common.params import Params
 import cereal.messaging as messaging
 from selfdrive.controls.lib.events import Events
@@ -10,15 +8,11 @@ from selfdrive.locationd.calibrationd import Calibration
 
 
 def dmonitoringd_thread(sm=None, pm=None):
-  gc.disable()
-  set_realtime_priority(53)
-
-  # Pub/Sub Sockets
   if pm is None:
     pm = messaging.PubMaster(['dMonitoringState'])
 
   if sm is None:
-    sm = messaging.SubMaster(['driverState', 'liveCalibration', 'carState', 'model'], poll=['driverState'])
+    sm = messaging.SubMaster(['driverState', 'liveCalibration', 'carState', 'controlsState', 'model'], poll=['driverState'])
 
   driver_status = DriverStatus()
   driver_status.is_rhd_region = Params().get("IsRHD") == b"1"
@@ -28,7 +22,6 @@ def dmonitoringd_thread(sm=None, pm=None):
   sm['liveCalibration'].calStatus = Calibration.INVALID
   sm['liveCalibration'].rpyCalib = [0, 0, 0]
   sm['carState'].vEgo = 0.
-  sm['carState'].cruiseState.enabled = False
   sm['carState'].cruiseState.speed = 0.
   sm['carState'].buttonEvents = []
   sm['carState'].steeringPressed = False
@@ -53,7 +46,7 @@ def dmonitoringd_thread(sm=None, pm=None):
                         sm['carState'].steeringPressed or \
                         sm['carState'].gasPressed
       if driver_engaged:
-        driver_status.update(Events(), True, sm['carState'].cruiseState.enabled, sm['carState'].standstill)
+        driver_status.update(Events(), True, sm['controlsState'].enabled, sm['carState'].standstill)
       v_cruise_last = v_cruise
 
     if sm.updated['model']:
@@ -61,14 +54,14 @@ def dmonitoringd_thread(sm=None, pm=None):
 
     # Get data from dmonitoringmodeld
     events = Events()
-    driver_status.get_pose(sm['driverState'], sm['liveCalibration'].rpyCalib, sm['carState'].vEgo, sm['carState'].cruiseState.enabled)
+    driver_status.get_pose(sm['driverState'], sm['liveCalibration'].rpyCalib, sm['carState'].vEgo, sm['controlsState'].enabled)
 
     # Block engaging after max number of distrations
     if driver_status.terminal_alert_cnt >= MAX_TERMINAL_ALERTS or driver_status.terminal_time >= MAX_TERMINAL_DURATION:
       events.add(car.CarEvent.EventName.tooDistracted)
 
     # Update events from driver state
-    driver_status.update(events, driver_engaged, sm['carState'].cruiseState.enabled, sm['carState'].standstill)
+    driver_status.update(events, driver_engaged, sm['controlsState'].enabled, sm['carState'].standstill)
 
     # build dMonitoringState packet
     dat = messaging.new_message('dMonitoringState')

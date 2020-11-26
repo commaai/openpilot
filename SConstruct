@@ -5,6 +5,11 @@ import shutil
 import subprocess
 import sys
 import platform
+import numpy as np
+from sysconfig import get_paths
+
+TICI = os.path.isfile('/TICI')
+Decider('MD5-timestamp')
 
 AddOption('--test',
           action='store_true',
@@ -21,10 +26,11 @@ Export('cython_dependencies')
 real_arch = arch = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()
 if platform.system() == "Darwin":
   arch = "Darwin"
-if arch == "aarch64" and not os.path.isdir("/system"):
+
+if arch == "aarch64" and TICI:
   arch = "larch64"
 
-webcam = bool(ARGUMENTS.get("use_webcam", 0))
+USE_WEBCAM = os.getenv("USE_WEBCAM") is not None
 QCOM_REPLAY = arch == "aarch64" and os.getenv("QCOM_REPLAY") is not None
 
 if arch == "aarch64" or arch == "larch64":
@@ -44,7 +50,6 @@ if arch == "aarch64" or arch == "larch64":
 
   libpath = [
     "/usr/lib",
-    "/data/data/com.termux/files/usr/lib",
     "/system/vendor/lib64",
     "/system/comma/usr/lib",
     "#phonelibs/nanovg",
@@ -62,11 +67,12 @@ if arch == "aarch64" or arch == "larch64":
   else:
     libpath += [
       "#phonelibs/snpe/aarch64",
-      "#phonelibs/libyuv/lib"
+      "#phonelibs/libyuv/lib",
+      "/system/vendor/lib64"
     ]
     cflags = ["-DQCOM", "-mcpu=cortex-a57"]
     cxxflags = ["-DQCOM", "-mcpu=cortex-a57"]
-    rpath = ["/system/vendor/lib64"]
+    rpath = []
 
     if QCOM_REPLAY:
       cflags += ["-DQCOM_REPLAY"]
@@ -105,6 +111,7 @@ else:
     ]
 
   rpath = [
+    "phonelibs/snpe/x86_64-linux-clang",
     "external/tensorflow/lib",
     "cereal",
     "selfdrive/common"
@@ -123,6 +130,10 @@ else:
 # change pythonpath to this
 lenv["PYTHONPATH"] = Dir("#").path
 
+#Get the path for Python.h for cython linking
+python_path = get_paths()['include']
+numpy_path = np.get_include()
+
 env = Environment(
   ENV=lenv,
   CCFLAGS=[
@@ -131,8 +142,12 @@ env = Environment(
     "-O2",
     "-Wunused",
     "-Werror",
+    "-Wno-unknown-warning-option",
     "-Wno-deprecated-register",
+    "-Wno-register",
     "-Wno-inconsistent-missing-override",
+    "-Wno-c99-designator",
+    "-Wno-reorder-init-list",
   ] + cflags + ccflags_asan,
 
   CPPPATH=cpppath + [
@@ -150,6 +165,7 @@ env = Environment(
     "#phonelibs/linux/include",
     "#phonelibs/snpe/include",
     "#phonelibs/nanovg",
+    "#selfdrive/boardd",
     "#selfdrive/common",
     "#selfdrive/camerad",
     "#selfdrive/camerad/include",
@@ -169,50 +185,16 @@ env = Environment(
   RPATH=rpath,
 
   CFLAGS=["-std=gnu11"] + cflags,
-  CXXFLAGS=["-std=c++14"] + cxxflags,
+  CXXFLAGS=["-std=c++1z"] + cxxflags,
   LIBPATH=libpath + [
     "#cereal",
+    "#selfdrive/boardd",
     "#selfdrive/common",
     "#phonelibs",
-  ]
+  ],
+  CYTHONCFILESUFFIX=".cpp",
+  tools=["default", "cython"]
 )
-
-qt_env = None
-if arch in ["x86_64", "Darwin", "larch64"]:
-  qt_env = env.Clone()
-
-  if arch == "Darwin":
-    qt_env['QTDIR'] = "/usr/local/opt/qt"
-    QT_BASE = "/usr/local/opt/qt/"
-    qt_dirs = [
-      QT_BASE + "include/",
-      QT_BASE + "include/QtWidgets",
-      QT_BASE + "include/QtGui",
-      QT_BASE + "include/QtCore",
-      QT_BASE + "include/QtDBus",
-      QT_BASE + "include/QtMultimedia",
-    ]
-    qt_env["LINKFLAGS"] += ["-F" + QT_BASE + "lib"]
-  else:
-    qt_dirs = [
-      f"/usr/include/{real_arch}-linux-gnu/qt5",
-      f"/usr/include/{real_arch}-linux-gnu/qt5/QtWidgets",
-      f"/usr/include/{real_arch}-linux-gnu/qt5/QtGui",
-      f"/usr/include/{real_arch}-linux-gnu/qt5/QtCore",
-      f"/usr/include/{real_arch}-linux-gnu/qt5/QtDBus",
-      f"/usr/include/{real_arch}-linux-gnu/qt5/QtMultimedia",
-    ]
-
-  qt_env.Tool('qt')
-  qt_env['CPPPATH'] += qt_dirs
-  qt_flags = [
-    "-D_REENTRANT",
-    "-DQT_NO_DEBUG",
-    "-DQT_WIDGETS_LIB",
-    "-DQT_GUI_LIB",
-    "-DQT_CORE_LIB"
-  ]
-  qt_env['CXXFLAGS'] += qt_flags
 
 if os.environ.get('SCONS_CACHE'):
   cache_dir = '/tmp/scons_cache'
@@ -227,6 +209,9 @@ if os.environ.get('SCONS_CACHE'):
       if not os.path.isdir(cache_dir_branch) and os.path.isdir(cache_dir):
         shutil.copytree(cache_dir, cache_dir_branch)
       cache_dir = cache_dir_branch
+  elif TICI:
+    cache_dir = '/data/scons_cache'
+
   CacheDir(cache_dir)
 
 node_interval = 5
@@ -250,9 +235,28 @@ def abspath(x):
     # rpath works elsewhere
     return x[0].path.rsplit("/", 1)[1][:-3]
 
+#Cython build enviroment
+envCython = env.Clone()
+envCython["CPPPATH"] += [python_path, numpy_path]
+envCython["CCFLAGS"] += ["-Wno-#warnings", "-Wno-deprecated-declarations"]
+
+python_libs = []
+if arch == "Darwin":
+  envCython["LINKFLAGS"]=["-bundle", "-undefined", "dynamic_lookup"]
+elif arch == "aarch64":
+  envCython["LINKFLAGS"]=["-shared"]
+
+  python_libs.append(os.path.basename(python_path))
+else:
+  envCython["LINKFLAGS"]=["-pthread", "-shared"]
+
+envCython["LIBS"] = python_libs
+
+Export('envCython')
+
 # still needed for apks
 zmq = 'zmq'
-Export('env', 'qt_env', 'arch', 'zmq', 'SHARED', 'webcam', 'QCOM_REPLAY')
+Export('env', 'arch', 'real_arch', 'zmq', 'SHARED', 'USE_WEBCAM', 'QCOM_REPLAY')
 
 # cereal and messaging are shared with the system
 SConscript(['cereal/SConscript'])
@@ -304,7 +308,6 @@ SConscript(['selfdrive/ui/SConscript'])
 
 if arch != "Darwin":
   SConscript(['selfdrive/logcatd/SConscript'])
-
 
 if arch == "x86_64":
   SConscript(['tools/lib/index_log/SConscript'])

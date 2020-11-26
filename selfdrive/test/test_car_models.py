@@ -92,6 +92,11 @@ routes = {
     'carFingerprint': GM.BUICK_REGAL,
     'enableCamera': True,
   },
+  "0e7a2ba168465df5|2020-10-18--14-14-22": {
+    'carFingerprint': HONDA.ACURA_RDX_3G,
+    'enableCamera': True,
+    'fingerprintSource': 'fixed',
+  },
   "a74b011b32b51b56|2020-07-26--17-09-36": {
     'carFingerprint': HONDA.CIVIC,
     'enableCamera': True,
@@ -168,12 +173,20 @@ routes = {
     'carFingerprint': HONDA.CIVIC_BOSCH,
     'enableCamera': True,
   },
+  "f34a60d68d83b1e5|2020-10-06--14-35-55": {
+    'carFingerprint': HONDA.ACURA_RDX,
+    'enableCamera': True,
+  },
   "6fe86b4e410e4c37|2020-07-22--16-27-13": {
     'carFingerprint': HYUNDAI.HYUNDAI_GENESIS,
     'enableCamera': True,
   },
   "70c5bec28ec8e345|2020-08-08--12-22-23": {
     'carFingerprint': HYUNDAI.GENESIS_G70,
+    'enableCamera': True,
+  },
+  "6b301bf83f10aa90|2020-11-22--16-45-07": {
+    'carFingerprint': HYUNDAI.GENESIS_G80,
     'enableCamera': True,
   },
   "38bfd238edecbcd7|2018-08-22--09-45-44": {
@@ -222,6 +235,10 @@ routes = {
   },
   "d624b3d19adce635|2020-08-01--14-59-12": {
     'carFingerprint': HYUNDAI.VELOSTER,
+    'enableCamera': True,
+  },
+  "50c6c9b85fd1ff03|2020-10-26--17-56-06": {
+    'carFingerprint': HYUNDAI.KIA_NIRO_EV,
     'enableCamera': True,
   },
   "f7b6be73e3dfd36c|2019-05-12--18-07-16": {
@@ -355,6 +372,11 @@ routes = {
     'enableCamera': True,
     'enableDsu': False,
   },
+  "964c09eb11ca8089|2020-11-03--22-04-00": {
+    'carFingerprint': TOYOTA.LEXUS_NX,
+    'enableCamera': True,
+    'enableDsu': False,
+  },
   # TODO: missing some combos for highlander
   "0a302ffddbb3e3d3|2020-02-08--16-19-08": {
     'carFingerprint': TOYOTA.HIGHLANDER_TSS2,
@@ -379,6 +401,11 @@ routes = {
   "2e07163a1ba9a780|2019-08-29--09-35-42": {
     'carFingerprint': TOYOTA.LEXUS_IS,
     'enableCamera': False,
+    'enableDsu': False,
+  },
+  "0a0de17a1e6a2d15|2020-09-21--21-24-41": {
+    'carFingerprint': TOYOTA.PRIUS_TSS2,
+    'enableCamera': True,
     'enableDsu': False,
   },
   "76b83eb0245de90e|2019-10-20--15-42-29": {
@@ -468,12 +495,10 @@ non_tested_cars = [
   GM.CADILLAC_ATS,
   GM.HOLDEN_ASTRA,
   GM.MALIBU,
-  HONDA.ACURA_RDX,
   HONDA.CRV,
   HONDA.RIDGELINE,
   HYUNDAI.ELANTRA,
   HYUNDAI.ELANTRA_GT_I30,
-  HYUNDAI.GENESIS_G80,
   HYUNDAI.GENESIS_G90,
   HYUNDAI.KIA_FORTE,
   HYUNDAI.KIA_OPTIMA_H,

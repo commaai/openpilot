@@ -1,6 +1,6 @@
 //=============================================================================
 //
-//  Copyright (c) 2015 Qualcomm Technologies, Inc.
+//  Copyright (c) 2015-2020 Qualcomm Technologies, Inc.
 //  All Rights Reserved.
 //  Confidential and Proprietary - Qualcomm Technologies, Inc.
 //
@@ -13,7 +13,6 @@
 
 #include <memory>
 #include <iterator>
-#include <vector>
 
 namespace DlSystem
 {

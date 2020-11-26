@@ -14,12 +14,8 @@ void panda_set_power(bool power){
   int err = 0;
   err += gpio_init(GPIO_STM_RST_N, true);
   err += gpio_init(GPIO_STM_BOOT0, true);
-  err += gpio_init(GPIO_HUB_RST_N, true);
 
   err += gpio_set(GPIO_STM_RST_N, false);
-
-  // TODO: set hub somewhere else
-  err += gpio_set(GPIO_HUB_RST_N, true);
   err += gpio_set(GPIO_STM_BOOT0, false);
 
   usleep(100*1000); // 100 ms
@@ -192,6 +188,10 @@ void Panda::set_safety_model(cereal::CarParams::SafetyModel safety_model, int sa
   usb_write(0xdc, (uint16_t)safety_model, safety_param);
 }
 
+void Panda::set_unsafe_mode(uint16_t unsafe_mode) {
+  usb_write(0xdf, unsafe_mode, 0);
+}
+
 cereal::HealthData::HwType Panda::get_hw_type() {
   unsigned char hw_query[1] = {0};
 
@@ -283,7 +283,6 @@ const char* Panda::get_serial(){
 
   delete[] serial_buf;
   return NULL;
-
 }
 
 void Panda::set_power_saving(bool power_saving){
@@ -325,10 +324,10 @@ int Panda::can_receive(cereal::Event::Builder &event){
   uint32_t data[RECV_SIZE/4];
   int recv = usb_bulk_read(0x81, (unsigned char*)data, RECV_SIZE);
 
-  // return if length is 0
-  if (recv <= 0) {
-    return 0;
-  } else if (recv == RECV_SIZE) {
+  // Not sure if this can happen
+  if (recv < 0) recv = 0;
+
+  if (recv == RECV_SIZE) {
     LOGW("Receive buffer full");
   }
 

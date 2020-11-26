@@ -1,3 +1,4 @@
+from common.numpy_fast import mean
 from common.kalman.simple_kalman import KF1D
 from selfdrive.config import RADAR_TO_CAMERA
 
@@ -53,9 +54,6 @@ class Track():
     self.kf = KF1D([[self.vLead], [aLeadK]], self.K_A, self.K_C, self.K_K)
     self.aLeadK = aLeadK
     self.aLeadTau = aLeadTau
-
-def mean(l):
-  return sum(l) / len(l)
 
 
 class Cluster():

@@ -1,6 +1,6 @@
 //=============================================================================
 //
-//  Copyright (c) 2017 Qualcomm Technologies, Inc.
+//  Copyright (c) 2017-2020 Qualcomm Technologies, Inc.
 //  All Rights Reserved.
 //  Confidential and Proprietary - Qualcomm Technologies, Inc.
 //
@@ -8,7 +8,6 @@
 #include <initializer_list>
 #include <cstdio>
 #include <memory>
-#include <vector>
 #include "ZdlExportDefine.hpp"
 #include "DlSystem/TensorShape.hpp"
 #include "DlSystem/StringList.hpp"

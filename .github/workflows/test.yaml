@@ -1,29 +1,28 @@
 name: openpilot tests
 on:
   push:
+    branches-ignore:
+      - 'testing-closet*'
   pull_request:
-  schedule:
-  - cron: '0 * * * *'
 
 env:
   RUN: docker run --shm-size 1G --rm tmppilot /bin/sh -c
+  PERSIST_WITH_CACHE: docker run --shm-size 1G -v /tmp/comma_download_cache:/tmp/comma_download_cache  --name tmppilot tmppilot /bin/sh -c
   PERSIST: docker run --shm-size 1G --name tmppilot tmppilot /bin/sh -c
   CI_RUN: docker run -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID --rm tmppilotci /bin/bash -c
   UNIT_TEST: coverage run --append -m unittest discover
   BUILD: |
-      # build the openpilot docker base image
       docker pull $(grep -ioP '(?<=^from)\s+\S+' Dockerfile.openpilot_base) || true
       docker pull docker.io/commaai/openpilot-base:latest || true
       docker build --cache-from docker.io/commaai/openpilot-base:latest -t commaai/openpilot-base:latest -f Dockerfile.openpilot_base .
 
-      # build the final CI image
       docker pull docker.io/commaai/openpilotci:latest || true
       docker build --cache-from docker.io/commaai/openpilotci:latest -t tmppilot -f Dockerfile.openpilotci .
 
 jobs:
   build_release:
     name: build release
-    runs-on: ubuntu-16.04
+    runs-on: ubuntu-20.04
     timeout-minutes: 50
     env:
       TEST_DIR: tmppilot
@@ -39,7 +38,7 @@ jobs:
 
         # need this to build on x86
         cp -pR --parents phonelibs/libyuv phonelibs/snpe \
-                         external/bin selfdrive/modeld/runners $TEST_DIR
+                          external/bin selfdrive/modeld/runners $TEST_DIR
 
         # need these so docker copy won't fail
         cp Pipfile Pipfile.lock .pylintrc .pre-commit-config.yaml $TEST_DIR
@@ -53,34 +52,55 @@ jobs:
                 scons -j$(nproc) && \
                 $UNIT_TEST selfdrive/car"
 
-  #build_mac:
-  #  name: build macos
-  #  runs-on: macos-10.15
-  #  timeout-minutes: 60
-  #  steps:
-  #  - uses: actions/checkout@v2
-  #    with:
-  #      submodules: true
-  #  - name: Cache dependencies
-  #    id: dependency-cache
-  #    uses: actions/cache@v2
-  #    with:
-  #      path: |
-  #        ~/.pyenv
-  #        ~/Library/Caches/pip
-  #        ~/Library/Caches/pipenv
-  #        ~/Library/Caches/Homebrew
-  #      key: ${{ hashFiles('tools/mac_setup.sh') }}
-  #  - name: Install dependencies
-  #    run: ./tools/mac_setup.sh
-  #  - name: Build openpilot
-  #    run: eval "$(pyenv init -)" && scons -j$(nproc)
-  #  - name: Brew cleanup
-  #    run: brew cleanup # keeps our cache small
+  build_mac:
+    name: build macos
+    runs-on: macos-10.15
+    timeout-minutes: 60
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Cache dependencies
+      id: dependency-cache
+      uses: actions/cache@v2
+      with:
+        path: |
+          ~/.pyenv
+          ~/Library/Caches/pip
+          ~/Library/Caches/pipenv
+          ~/Library/Caches/Homebrew
+        key: ${{ hashFiles('tools/mac_setup.sh') }}
+    - name: Install dependencies
+      run: ./tools/mac_setup.sh
+    - name: Build openpilot
+      run: eval "$(pyenv init -)" && scons -j$(nproc)
+    - name: Brew cleanup
+      run: brew cleanup || true # keeps our cache small
+
+  build_webcam:
+    name: build webcam
+    runs-on: ubuntu-20.04
+    timeout-minutes: 90
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Build Docker image
+      run: |
+        docker pull docker.io/commaai/openpilotwebcamci:latest
+        docker build --cache-from docker.io/commaai/openpilotwebcamci:latest -t tmppilotwebcam -f tools/webcam/Dockerfile .
+    - name: Build openpilot
+      run: docker run --shm-size 1G --rm tmppilotwebcam /bin/sh -c "cd /tmp/openpilot && USE_WEBCAM=1 scons -j$(nproc)"
+    - name: Push to dockerhub
+      if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
+      run: |
+          docker login -u wmelching -p ${{ secrets.COMMA_DOCKERHUB_TOKEN}}
+          docker tag tmppilotwebcam docker.io/commaai/openpilotwebcamci:latest
+          docker push docker.io/commaai/openpilotwebcamci:latest
 
   docker_push:
     name: docker push
-    runs-on: ubuntu-16.04
+    runs-on: ubuntu-20.04
     timeout-minutes: 50
     if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
     needs: static_analysis # hack to ensure slow tests run first since this and static_analysis are fast
@@ -100,9 +120,9 @@ jobs:
 
   docker_push_prebuilt:
     name: docker push prebuilt
-    runs-on: ubuntu-16.04
+    runs-on: ubuntu-20.04
     timeout-minutes: 50
-    if: github.event_name == 'schedule' && github.repository == 'commaai/openpilot'
+    if: github.event_name == 'status' && github.repository == 'commaai/openpilot'
     needs: [static_analysis, unit_tests, process_replay, test_longitudinal, test_car_models]
     steps:
       - uses: actions/checkout@v2
@@ -118,7 +138,7 @@ jobs:
 
   static_analysis:
     name: static analysis
-    runs-on: ubuntu-16.04
+    runs-on: ubuntu-20.04
     timeout-minutes: 50
     steps:
       - uses: actions/checkout@v2
@@ -129,9 +149,43 @@ jobs:
       - name: pre-commit
         run: $RUN "cd /tmp/openpilot/ && git init && git add -A && pre-commit run --all"
 
+  valgrind:
+    name: valgrind
+    runs-on: ubuntu-20.04
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+      - name: Cache dependencies
+        id: dependency-cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            /tmp/comma_download_cache
+          key: ${{ hashFiles('.github/workflows/test.yaml', 'selfdrive/test/test_valgrind_replay.py') }}
+      - name: Build Docker image
+        run: eval "$BUILD"
+      - name: Run valgrind
+        run: |
+          $PERSIST_WITH_CACHE "cd /tmp/openpilot && \
+                    scons -j$(nproc) && \
+                    FILEREADER_CACHE=1 python selfdrive/test/test_valgrind_replay.py"
+      - name: Print logs
+        if: always()
+        run: |
+          docker cp tmppilot:/tmp/openpilot/selfdrive/test/valgrind_logs.txt valgrind_logs.txt
+          cat valgrind_logs.txt
+      - uses: actions/upload-artifact@v2
+        if: always()
+        continue-on-error: true
+        with:
+          name: valgrind_logs.txt
+          path: valgrind_logs.txt
+
   unit_tests:
     name: unit tests
-    runs-on: ubuntu-16.04
+    runs-on: ubuntu-20.04
     timeout-minutes: 50
     steps:
       - uses: actions/checkout@v2
@@ -162,19 +216,26 @@ jobs:
 
   process_replay:
     name: process replay
-    runs-on: ubuntu-16.04
+    runs-on: ubuntu-20.04
     timeout-minutes: 50
     steps:
       - uses: actions/checkout@v2
         with:
           submodules: true
+      - name: Cache dependencies
+        id: dependency-cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            /tmp/comma_download_cache
+          key: ${{ hashFiles('.github/workflows/test.yaml', 'selfdrive/test/process_replay/test_processes.py') }}
       - name: Build Docker image
         run: eval "$BUILD"
       - name: Run replay
         run: |
-          $PERSIST "cd /tmp/openpilot && \
-                    scons -j$(nproc) && \
-                    CI=1 coverage run selfdrive/test/process_replay/test_processes.py"
+          $PERSIST_WITH_CACHE  "cd /tmp/openpilot && \
+          scons -j$(nproc) && \
+          FILEREADER_CACHE=1 CI=1 coverage run selfdrive/test/process_replay/test_processes.py"
       - name: Upload coverage to Codecov
         run: |
           docker commit tmppilot tmppilotci
@@ -186,13 +247,14 @@ jobs:
           cat diff.txt
       - uses: actions/upload-artifact@v2
         if: always()
+        continue-on-error: true
         with:
           name: process_replay_diff.txt
           path: diff.txt
 
   test_longitudinal:
     name: longitudinal
-    runs-on: ubuntu-16.04
+    runs-on: ubuntu-20.04
     timeout-minutes: 50
     steps:
       - uses: actions/checkout@v2
@@ -214,25 +276,33 @@ jobs:
           docker cp tmppilot:/tmp/openpilot/selfdrive/test/longitudinal_maneuvers/out/longitudinal/ out/
       - uses: actions/upload-artifact@v2
         if: always()
+        continue-on-error: true
         with:
           name: longitudinal
           path: out
 
   test_car_models:
     name: test car models
-    runs-on: ubuntu-16.04
+    runs-on: ubuntu-20.04
     timeout-minutes: 50
     steps:
       - uses: actions/checkout@v2
         with:
           submodules: true
+      - name: Cache dependencies
+        id: dependency-cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            /tmp/comma_download_cache
+          key: ${{ hashFiles('.github/workflows/test.yaml', 'selfdrive/test/test_car_models.py') }}
       - name: Build Docker image
         run: eval "$BUILD"
       - name: Test car models
         run: |
-          $PERSIST "cd /tmp/openpilot && \
+          $PERSIST_WITH_CACHE "cd /tmp/openpilot && \
                     scons -j$(nproc) && \
-                    coverage run --parallel-mode -m nose --processes=4 --process-timeout=60 \
+                    FILEREADER_CACHE=1 coverage run --parallel-mode -m nose --processes=4 --process-timeout=60 \
                                  selfdrive/test/test_models.py && \
                     coverage combine"
       - name: Upload coverage to Codecov

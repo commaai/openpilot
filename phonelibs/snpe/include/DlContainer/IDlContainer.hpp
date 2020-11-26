@@ -1,6 +1,6 @@
 //=============================================================================
 //
-//  Copyright (c) 2015,2019 Qualcomm Technologies, Inc.
+//  Copyright (c) 2015-2020 Qualcomm Technologies, Inc.
 //  All Rights Reserved.
 //  Confidential and Proprietary - Qualcomm Technologies, Inc.
 //
@@ -14,7 +14,6 @@
 #include <string>
 #include <vector>
 #include <set>
-#include <stdexcept>
 
 #include "DlSystem/ZdlExportDefine.hpp"
 #include "DlSystem/String.hpp"
@@ -76,7 +75,7 @@ public:
     *
     * @return A pointer to the initialized container
     */
-   ZDL_EXPORT static std::unique_ptr<IDlContainer>
+   static std::unique_ptr<IDlContainer>
    open(const std::string &filename) noexcept;
 
    /**
@@ -86,7 +85,7 @@ public:
     *
     * @return A pointer to the initialized container
     */
-   ZDL_EXPORT static std::unique_ptr<IDlContainer>
+   static std::unique_ptr<IDlContainer>
    open(const zdl::DlSystem::String &filename) noexcept;
 
    /**
@@ -97,7 +96,7 @@ public:
     *
     * @return A pointer to the initialized container
     */
-   ZDL_EXPORT static std::unique_ptr<IDlContainer>
+   static std::unique_ptr<IDlContainer>
    open(const std::vector<uint8_t> &buffer) noexcept;
 
    /**
@@ -110,7 +109,7 @@ public:
     *
     * @return A pointer to the initialized container
     */
-   ZDL_EXPORT static std::unique_ptr<IDlContainer>
+   static std::unique_ptr<IDlContainer>
    open(const uint8_t* buffer, const size_t size) noexcept;
 
 

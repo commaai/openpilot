@@ -1,6 +1,6 @@
 //==============================================================================
 //
-//  Copyright (c) 2015-2017 Qualcomm Technologies, Inc.
+//  Copyright (c) 2015-2020 Qualcomm Technologies, Inc.
 //  All Rights Reserved.
 //  Confidential and Proprietary - Qualcomm Technologies, Inc.
 //
@@ -8,9 +8,6 @@
 
 #ifndef _SNPE_SNPE_HPP_
 #define _SNPE_SNPE_HPP_
-
-#include <map>
-#include <vector>
 
 #include "DlSystem/DlOptional.hpp"
 #include "DlSystem/DlVersion.hpp"

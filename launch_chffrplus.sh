@@ -8,24 +8,47 @@ source "$BASEDIR/launch_env.sh"
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 
+function tici_init {
+  sudo su -c 'echo "performance" > /sys/class/devfreq/soc:qcom,memlat-cpu0/governor'
+  sudo su -c 'echo "performance" > /sys/class/devfreq/soc:qcom,memlat-cpu4/governor'
+}
+
 function two_init {
-  # Android and other system processes are not permitted to run on CPU 3
-  # NEOS installed app processes can run anywhere
-  echo 0-2 > /dev/cpuset/background/cpus
-  echo 0-2 > /dev/cpuset/system-background/cpus
-  [ -d "/dev/cpuset/foreground/boost/cpus" ] && echo 0-2 > /dev/cpuset/foreground/boost/cpus  # Not present in < NEOS 15
-  echo 0-2 > /dev/cpuset/foreground/cpus
-  echo 0-2 > /dev/cpuset/android/cpus
+  # Restrict Android and other system processes to the first two cores
+  echo 0-1 > /dev/cpuset/background/cpus
+  echo 0-1 > /dev/cpuset/system-background/cpus
+  echo 0-1 > /dev/cpuset/foreground/cpus
+  echo 0-1 > /dev/cpuset/foreground/boost/cpus
+  echo 0-1 > /dev/cpuset/android/cpus
+
+  # openpilot gets all the cores
   echo 0-3 > /dev/cpuset/app/cpus
+
+  # set up governors
+  # +50mW offroad, +500mW onroad for 30% more RAM bandwidth
+  echo "performance" > /sys/class/devfreq/soc:qcom,cpubw/governor
+  echo 1056000 > /sys/class/devfreq/soc:qcom,m4m/max_freq
+  echo "performance" > /sys/class/devfreq/soc:qcom,m4m/governor
+
+  # unclear if these help, but they don't seem to hurt
+  echo "performance" > /sys/class/devfreq/soc:qcom,memlat-cpu0/governor
+  echo "performance" > /sys/class/devfreq/soc:qcom,memlat-cpu2/governor
+
+  # GPU
+  echo "performance" > /sys/class/devfreq/b00000.qcom,kgsl-3d0/governor
+
+  # /sys/class/devfreq/soc:qcom,mincpubw is the only one left at "powersave"
+  # it seems to gain nothing but a wasted 500mW
 
   # Collect RIL and other possibly long-running I/O interrupts onto CPU 1
   echo 1 > /proc/irq/78/smp_affinity_list # qcom,smd-modem (LTE radio)
   echo 1 > /proc/irq/33/smp_affinity_list # ufshcd (flash storage)
   echo 1 > /proc/irq/35/smp_affinity_list # wifi (wlan_pci)
+  echo 1 > /proc/irq/6/smp_affinity_list  # MDSS
+
   # USB traffic needs realtime handling on cpu 3
   [ -d "/proc/irq/733" ] && echo 3 > /proc/irq/733/smp_affinity_list # USB for LeEco
   [ -d "/proc/irq/736" ] && echo 3 > /proc/irq/736/smp_affinity_list # USB for OP3T
-
 
   # Check for NEOS update
   if [ $(< /VERSION) != "$REQUIRED_NEOS_VERSION" ]; then
@@ -42,17 +65,12 @@ function two_init {
     fi
 
     "$DIR/installer/updater/updater" "file://$DIR/installer/updater/update.json"
-  else
-    if [[ $(uname -v) == "#1 SMP PREEMPT Wed Jun 10 12:40:53 PDT 2020" ]]; then
-      "$DIR/installer/updater/updater" "file://$DIR/installer/updater/update_kernel.json"
-    fi
   fi
 
   # One-time fix for a subset of OP3T with gyro orientation offsets.
   # Remove and regenerate qcom sensor registry. Only done on OP3T mainboards.
   # Performed exactly once. The old registry is preserved just-in-case, and
   # doubles as a flag denoting we've already done the reset.
-  # TODO: we should really grow per-platform detect and setup routines
   if ! $(grep -q "letv" /proc/cmdline) && [ ! -f "/persist/comma/op3t-sns-reg-backup" ]; then
     echo "Performing OP3T sensor registry reset"
     mv /persist/sensors/sns.reg /persist/comma/op3t-sns-reg-backup &&
@@ -113,9 +131,16 @@ function launch {
     two_init
   fi
 
+  if [ -f /TICI ]; then
+    tici_init
+  fi
+
   # handle pythonpath
   ln -sfn $(pwd) /data/pythonpath
   export PYTHONPATH="$PWD"
+
+  # write tmux scrollback to a file
+  tmux capture-pane -pq -S-1000 > /tmp/launch_log
 
   # start manager
   cd selfdrive

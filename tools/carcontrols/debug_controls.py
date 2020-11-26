@@ -14,7 +14,6 @@ def steer_thread():
   poller = messaging.Poller()
 
   logcan = messaging.sub_sock('can')
-  health = messaging.sub_sock('health')
   joystick_sock = messaging.sub_sock('testJoystick', conflate=True, poller=poller)
 
   carstate = messaging.pub_sock('carState')
@@ -24,13 +23,11 @@ def steer_thread():
   button_1_last = 0
   enabled = False
 
-  # wait for health and CAN packets
-  hw_type = messaging.recv_one(health).health.hwType
-  has_relay = hw_type in [HwType.blackPanda, HwType.uno, HwType.dos]
+  # wait for CAN packets
   print("Waiting for CAN messages...")
   get_one_can(logcan)
 
-  CI, CP = get_car(logcan, sendcan, has_relay)
+  CI, CP = get_car(logcan, sendcan)
   Params().put("CarParams", CP.to_bytes())
 
   CC = car.CarControl.new_message()

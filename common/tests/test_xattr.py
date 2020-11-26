@@ -6,6 +6,7 @@ import unittest
 from common.xattr import getxattr, setxattr, listxattr, removexattr
 
 class TestParams(unittest.TestCase):
+  USER_TEST='user.test'
   def setUp(self):
     self.tmpdir = tempfile.mkdtemp()
     self.tmpfn = os.path.join(self.tmpdir, 'test.txt')
@@ -16,7 +17,7 @@ class TestParams(unittest.TestCase):
     shutil.rmtree(self.tmpdir)
 
   def test_getxattr_none(self):
-    a = getxattr(self.tmpfn, 'user.test')
+    a = getxattr(self.tmpfn, TestParams.USER_TEST)
     assert a is None
 
   def test_listxattr_none(self):
@@ -24,8 +25,8 @@ class TestParams(unittest.TestCase):
     assert l == []
 
   def test_setxattr(self):
-    setxattr(self.tmpfn, 'user.test', b'123')
-    a = getxattr(self.tmpfn, 'user.test')
+    setxattr(self.tmpfn, TestParams.USER_TEST, b'123')
+    a = getxattr(self.tmpfn, TestParams.USER_TEST)
     assert a == b'123'
 
   def test_listxattr(self):
@@ -35,11 +36,11 @@ class TestParams(unittest.TestCase):
     assert l == ['user.test1', 'user.test2']
 
   def test_removexattr(self):
-    setxattr(self.tmpfn, 'user.test', b'123')
-    a = getxattr(self.tmpfn, 'user.test')
+    setxattr(self.tmpfn, TestParams.USER_TEST, b'123')
+    a = getxattr(self.tmpfn, TestParams.USER_TEST)
     assert a == b'123'
-    removexattr(self.tmpfn, 'user.test')
-    a = getxattr(self.tmpfn, 'user.test')
+    removexattr(self.tmpfn, TestParams.USER_TEST)
+    a = getxattr(self.tmpfn, TestParams.USER_TEST)
     assert a is None
 
 if __name__ == "__main__":

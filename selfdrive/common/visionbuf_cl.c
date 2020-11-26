@@ -45,17 +45,8 @@ VisionBuf visionbuf_allocate(size_t len) {
   };
 }
 
-cl_mem visionbuf_to_cl(const VisionBuf* buf, cl_device_id device_id, cl_context ctx) {
-  // HACK because this platform is just for convenience
-  VisionBuf *w_buf = (VisionBuf*)buf;
-  cl_mem ret;
-  *w_buf = visionbuf_allocate_cl(buf->len, device_id, ctx, &ret);
-  return ret;
-}
-
-VisionBuf visionbuf_allocate_cl(size_t len, cl_device_id device_id, cl_context ctx, cl_mem *out_mem) {
+VisionBuf visionbuf_allocate_cl(size_t len, cl_device_id device_id, cl_context ctx) {
   int err;
-  assert(out_mem);
 
 #if __OPENCL_VERSION__ >= 200
   void* host_ptr =
@@ -71,8 +62,6 @@ VisionBuf visionbuf_allocate_cl(size_t len, cl_device_id device_id, cl_context c
 
   cl_mem mem = clCreateBuffer(ctx, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, len, host_ptr, &err);
   assert(err == 0);
-
-  *out_mem = mem;
 
   return (VisionBuf){
       .len = len, .addr = host_ptr, .handle = 0, .fd = fd,

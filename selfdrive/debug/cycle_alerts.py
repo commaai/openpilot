@@ -23,7 +23,6 @@ def cycle_alerts(duration=200, is_metric=False):
   thermal = messaging.pub_sock('thermal')
 
   idx, last_alert_millis = 0, 0
-  alert = alerts[0]
 
   events = Events()
   AM = AlertManager()

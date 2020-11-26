@@ -26,11 +26,11 @@ class TestStartup(unittest.TestCase):
 
     # community supported car
     (EventName.startupMaster, HYUNDAI.KIA_STINGER, True),
-    (EventName.startupMaster, HYUNDAI.KIA_STINGER, False),
+    (EventName.communityFeatureDisallowed, HYUNDAI.KIA_STINGER, False),
 
     # dashcamOnly car
-    (EventName.startupMaster, MAZDA.CX5, True),
-    (EventName.startupMaster, MAZDA.CX5, False),
+    (EventName.startupNoControl, MAZDA.CX5, True),
+    (EventName.startupNoControl, MAZDA.CX5, False),
 
     # unrecognized car
     (EventName.startupNoCar, None, True),

@@ -8,7 +8,9 @@ import numpy as np
 from tools.lib.framereader import FrameReader
 from tools.lib.logreader import LogReader
 
+
 class TestReaders(unittest.TestCase):
+  @unittest.skip("skip for bandwith reasons")
   def test_logreader(self):
     def _check_data(lr):
       hist = defaultdict(int)
@@ -29,6 +31,7 @@ class TestReaders(unittest.TestCase):
     lr_url = LogReader("https://github.com/commaai/comma2k19/blob/master/Example_1/b0c9d2329ad1606b%7C2018-08-02--08-34-47/40/raw_log.bz2?raw=true")
     _check_data(lr_url)
 
+  @unittest.skip("skip for bandwith reasons")
   def test_framereader(self):
     def _check_data(f):
       self.assertEqual(f.frame_count, 1200)
