@@ -106,7 +106,7 @@ void WifiUI::refresh() {
       vlayout->addWidget(w);
       w->setStyleSheet(R"(
         QLabel {
-          font-size: 40px;
+          font-size: 50px;
         }
         QPushButton:enabled {
           background-color: #114265;
