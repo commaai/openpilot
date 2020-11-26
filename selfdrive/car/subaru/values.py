@@ -69,6 +69,25 @@ FINGERPRINTS = {
   }],
 }
 
+
+# ADDED: FX_VERIONS for Subaru XV 2018.
+FW_VERSIONS = {
+  CAR.XV: {
+    (Ecu.enigine, 0x000007E0, None): [
+      b'\xf1\x00\xa2\x10\t',
+    ],
+    (Ecu.fwdCamera, 0x000007C4, None): [
+      b'\xf1\x00\xac\x02\x00',
+    ],
+    (Ecu.transmission, 0x000007E1, None): [
+      b'\xf1\x00\xa4\x10@',
+    ],
+    (Ecu.fwdRadar, 0x000007D0, None): [
+      b'\xf1\x00\x00\x00\x02',
+    ],
+  }
+}
+
 STEER_THRESHOLD = {
   CAR.ASCENT: 80,
   CAR.IMPREZA: 80,
