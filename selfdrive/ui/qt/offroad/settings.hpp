@@ -34,7 +34,6 @@ signals:
   void closeSettings();
 
 private:
-  WifiUI *w;
   QWidget *sidebar_widget;
   std::map<QString, QWidget *> panels;
   QStackedLayout *panel_layout;

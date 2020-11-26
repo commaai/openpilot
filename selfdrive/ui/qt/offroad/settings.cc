@@ -17,6 +17,7 @@
 #include "common/params.h"
 #include "common/utilpp.h"
 
+const int SIDEBAR_WIDTH = 400;
 
 ParamsToggle::ParamsToggle(QString param, QString title, QString description, QString icon_path, QWidget *parent): QFrame(parent) , param(param) {
   QHBoxLayout *hlayout = new QHBoxLayout;
@@ -264,7 +265,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
   // settings_layout->addLayout(sidebar_layout);
   sidebar_widget = new QWidget;
   sidebar_widget->setLayout(sidebar_layout);
-  sidebar_widget->setFixedWidth(400);
+  sidebar_widget->setFixedWidth(SIDEBAR_WIDTH);
   settings_layout->addWidget(sidebar_widget);
 
   settings_layout->addSpacing(45);
@@ -284,5 +285,5 @@ void SettingsWindow::closeSidebar(){
   sidebar_widget->setFixedWidth(0);
 }
 void SettingsWindow::openSidebar(){
-  sidebar_widget->setFixedWidth(400);
+  sidebar_widget->setFixedWidth(SIDEBAR_WIDTH);
 }

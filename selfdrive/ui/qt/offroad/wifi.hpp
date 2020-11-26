@@ -15,7 +15,7 @@ class WifiUI : public QWidget {
 
 private:
   WifiManager* wifi;
-  const int networks_per_page = 10;
+  const int networks_per_page = 8;
 
   QStackedWidget* swidget;
   QVBoxLayout* vlayout;
