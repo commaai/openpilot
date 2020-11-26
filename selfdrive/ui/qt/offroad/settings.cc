@@ -195,13 +195,16 @@ QWidget * developer_panel() {
   return widget;
 }
 
-QWidget * network_panel(WifiUI** w) {
+QWidget * network_panel(QWidget * parent) {
   QVBoxLayout *main_layout = new QVBoxLayout;
-  *w = new WifiUI();
-  main_layout->addWidget(*w);
+  WifiUI *w = new WifiUI();
+  main_layout->addWidget(w);
 
   QWidget *widget = new QWidget;
   widget->setLayout(main_layout);
+
+  QObject::connect(w, SIGNAL(openKeyboard()), parent, SLOT(closeSidebar()));
+  QObject::connect(w, SIGNAL(closeKeyboard()), parent, SLOT(openSidebar()));
   return widget;
 }
 
@@ -234,7 +237,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
     {"device", device_panel()},
     {"toggles", toggles_panel()},
     {"developer", developer_panel()},
-    {"network", network_panel(&w)},
+    {"network", network_panel(this)},
   };
 
   for (auto &panel : panels) {
@@ -255,8 +258,6 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
     panel_layout->addWidget(panel.second);
     QObject::connect(btn, SIGNAL(released()), this, SLOT(setActivePanel()));
   }
-  QObject::connect(w, SIGNAL(openKeyboard()), this, SLOT(closeSidebar()));
-  QObject::connect(w, SIGNAL(closeKeyboard()), this, SLOT(openSidebar()));
   QHBoxLayout *settings_layout = new QHBoxLayout();
   settings_layout->addSpacing(45);
 
