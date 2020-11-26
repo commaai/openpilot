@@ -1,10 +1,13 @@
 #pragma once
 
+
 #include <QWidget>
 #include <QFrame>
 #include <QTimer>
 #include <QCheckBox>
 #include <QStackedLayout>
+
+#include "wifi.hpp"
 
 
 class ParamsToggle : public QFrame {
@@ -31,9 +34,12 @@ signals:
   void closeSettings();
 
 private:
+  QWidget *sidebar_widget;
   std::map<QString, QWidget *> panels;
   QStackedLayout *panel_layout;
 
 private slots:
   void setActivePanel();
+  void closeSidebar();
+  void openSidebar();
 };

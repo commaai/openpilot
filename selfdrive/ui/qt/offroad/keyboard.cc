@@ -18,24 +18,24 @@ KeyboardLayout::KeyboardLayout(QWidget* parent, std::vector<QVector<QString>> la
     QHBoxLayout *hlayout = new QHBoxLayout;
 
     if (i == 1){
-      hlayout->addSpacing(50);
+      hlayout->addSpacing(90);
     }
 
     for(QString p : s){
       QPushButton* btn = new QPushButton(p);
-      btn->setFixedHeight(100);
+      btn->setFixedHeight(120);
 
       if (p == QString("  ")){
         btn->setFixedWidth(1024);
       }
 
       btn_group->addButton(btn);
-      hlayout->addSpacing(5);
+      hlayout->addSpacing(10);
       hlayout->addWidget(btn);
     }
 
     if (i == 1){
-      hlayout->addSpacing(50);
+      hlayout->addSpacing(90);
     }
 
     vlayout->addLayout(hlayout);
@@ -88,7 +88,7 @@ Keyboard::Keyboard(QWidget *parent) : QWidget(parent) {
   main_layout->setCurrentIndex(0);
 
   setStyleSheet(R"(
-    QPushButton { font-size: 40px }
+    QPushButton { font-size: 50px }
     * {
       background-color: #99777777;
     }

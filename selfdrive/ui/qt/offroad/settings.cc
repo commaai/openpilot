@@ -17,6 +17,7 @@
 #include "common/params.h"
 #include "common/utilpp.h"
 
+const int SIDEBAR_WIDTH = 400;
 
 ParamsToggle::ParamsToggle(QString param, QString title, QString description, QString icon_path, QWidget *parent): QFrame(parent) , param(param) {
   QHBoxLayout *hlayout = new QHBoxLayout;
@@ -195,13 +196,16 @@ QWidget * developer_panel() {
   return widget;
 }
 
-QWidget * network_panel() {
+QWidget * network_panel(QWidget * parent) {
   QVBoxLayout *main_layout = new QVBoxLayout;
-
-  main_layout->addWidget(new WifiUI());
+  WifiUI *w = new WifiUI();
+  main_layout->addWidget(w);
 
   QWidget *widget = new QWidget;
   widget->setLayout(main_layout);
+
+  QObject::connect(w, SIGNAL(openKeyboard()), parent, SLOT(closeSidebar()));
+  QObject::connect(w, SIGNAL(closeKeyboard()), parent, SLOT(openSidebar()));
   return widget;
 }
 
@@ -234,7 +238,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
     {"device", device_panel()},
     {"toggles", toggles_panel()},
     {"developer", developer_panel()},
-    {"network", network_panel()},
+    {"network", network_panel(this)},
   };
 
   for (auto &panel : panels) {
@@ -255,10 +259,15 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
     panel_layout->addWidget(panel.second);
     QObject::connect(btn, SIGNAL(released()), this, SLOT(setActivePanel()));
   }
-
   QHBoxLayout *settings_layout = new QHBoxLayout();
   settings_layout->addSpacing(45);
-  settings_layout->addLayout(sidebar_layout);
+
+  // settings_layout->addLayout(sidebar_layout);
+  sidebar_widget = new QWidget;
+  sidebar_widget->setLayout(sidebar_layout);
+  sidebar_widget->setFixedWidth(SIDEBAR_WIDTH);
+  settings_layout->addWidget(sidebar_widget);
+
   settings_layout->addSpacing(45);
   settings_layout->addLayout(panel_layout);
   settings_layout->addSpacing(45);
@@ -270,4 +279,11 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
       font-size: 50px;
     }
   )");
+}
+
+void SettingsWindow::closeSidebar(){
+  sidebar_widget->setFixedWidth(0);
+}
+void SettingsWindow::openSidebar(){
+  sidebar_widget->setFixedWidth(SIDEBAR_WIDTH);
 }

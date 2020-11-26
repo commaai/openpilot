@@ -66,3 +66,4 @@ pandaextra
 flycheck_*
 
 cppcheck_report.txt
+comma.sh
