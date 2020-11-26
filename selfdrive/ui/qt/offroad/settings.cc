@@ -255,7 +255,6 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
     panel_layout->addWidget(panel.second);
     QObject::connect(btn, SIGNAL(released()), this, SLOT(setActivePanel()));
   }
-  qDebug()<<w->page;
   QObject::connect(w, SIGNAL(openKeyboard()), this, SLOT(closeSidebar()));
   QObject::connect(w, SIGNAL(closeKeyboard()), this, SLOT(openSidebar()));
   QHBoxLayout *settings_layout = new QHBoxLayout();
@@ -264,7 +263,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
   // settings_layout->addLayout(sidebar_layout);
   sidebar_widget = new QWidget;
   sidebar_widget->setLayout(sidebar_layout);
-  sidebar_widget->setFixedWidth(350);
+  sidebar_widget->setFixedWidth(400);
   settings_layout->addWidget(sidebar_widget);
 
   settings_layout->addSpacing(45);
@@ -281,10 +280,8 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
 }
 
 void SettingsWindow::closeSidebar(){
-  qDebug()<<"Close sidebar";
   sidebar_widget->setFixedWidth(0);
 }
 void SettingsWindow::openSidebar(){
-  qDebug()<<"Open sidebar";
-  sidebar_widget->setFixedWidth(350);
+  sidebar_widget->setFixedWidth(400);
 }
