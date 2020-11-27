@@ -24,7 +24,8 @@ protected:
 
 private:
     bool _on;
-    int _x_circle, _y_circle, _padding_circle
+    int _x_circle, _y_circle;
     int _height, _radius;
+    int _height_rect, y_rect;
     QPropertyAnimation *_anim = nullptr;
 };
