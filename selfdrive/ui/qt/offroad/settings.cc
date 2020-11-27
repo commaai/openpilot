@@ -22,8 +22,8 @@ const int SIDEBAR_WIDTH = 400;
 
 ParamsToggle::ParamsToggle(QString param, QString title, QString description, QString icon_path, QWidget *parent): QFrame(parent) , param(param) {
   QHBoxLayout *hlayout = new QHBoxLayout;
-  // QVBoxLayout *vlayout = new QVBoxLayout;
-
+  
+  //Parameter image
   hlayout->addSpacing(25);
   if (icon_path.length()){
     QPixmap pix(icon_path);
@@ -35,21 +35,20 @@ ParamsToggle::ParamsToggle(QString param, QString title, QString description, QS
     hlayout->addSpacing(100);
   }
   hlayout->addSpacing(25);
-
+  
+  //Name of the parameter
   QLabel *label = new QLabel(title);
   label->setWordWrap(true);
 
+  //toggle switch
   Toggle* toggle_switch = new Toggle(this);
   QSizePolicy switch_policy(QSizePolicy::Preferred, QSizePolicy::Preferred);
   switch_policy.setHorizontalStretch(1);
   toggle_switch->setSizePolicy(switch_policy);
   toggle_switch->setFixedWidth(120);
   toggle_switch->setFixedHeight(50);
-  // row_layout->addWidget(toggle_switch);
 
   // TODO: show descriptions on tap
-  //vlayout->addSpacing(50);
-  // vlayout->addWidget(checkbox);
   hlayout->addWidget(label);
   hlayout->addSpacing(50);
   hlayout->addWidget(toggle_switch);
