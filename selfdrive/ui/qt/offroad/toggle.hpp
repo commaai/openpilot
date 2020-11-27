@@ -26,6 +26,6 @@ private:
     bool _on;
     int _x_circle, _y_circle;
     int _height, _radius;
-    int _height_rect, y_rect;
+    int _height_rect, _y_rect;
     QPropertyAnimation *_anim = nullptr;
 };
