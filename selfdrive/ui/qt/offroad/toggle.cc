@@ -1,11 +1,5 @@
 #include "toggle.hpp"
 
-#include <QAbstractButton>
-#include <QPropertyAnimation>
-#include <QWidget>
-#include <QDebug>
-#include "common/params.h" 
-
 Toggle::Toggle(QWidget *parent) : QAbstractButton(parent),
 _height(60),
 _height_rect(45),
@@ -17,7 +11,6 @@ _anim(new QPropertyAnimation(this, "offset_circle", this))
   _y_circle = _radius;
   _y_rect = (_height - _height_rect)/2;
 }
-
 
 void Toggle::paintEvent(QPaintEvent *e) {
   this->setFixedHeight(_height);
@@ -42,25 +35,18 @@ void Toggle::mouseReleaseEvent(QMouseEvent *e) {
     togglePosition();
     emit stateChanged(_on);
   }
-
 }
 
-void Toggle::togglePosition(){
+void Toggle::togglePosition() {
   _on = !_on;
-  if (_on) {
-    _anim->setStartValue(_radius);
-    _anim->setEndValue(width() - _radius);
-    _anim->setDuration(120);
-    _anim->start();
-  } else {
-    _anim->setStartValue(width() - _radius);
-    _anim->setEndValue(_radius);
-    _anim->setDuration(120);
-    _anim->start();
-  }
+  const int left = _radius;
+  const int right = width() - _radius;
+  _anim->setStartValue(_on ? left : right);
+  _anim->setEndValue(_on ? right : left);
+  _anim->setDuration(120);
+  _anim->start();
 }
 
 void Toggle::enterEvent(QEvent *e) {
-  setCursor(Qt::PointingHandCursor);
   QAbstractButton::enterEvent(e);
 }
