@@ -311,7 +311,7 @@ void model_publish_v2(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
                      float model_execution_time) {
   // make msg
   MessageBuilder msg;
-  auto framed = msg.initEvent(frame_drop < MAX_FRAME_DROP).initModelV2();
+  auto framed = msg.initEvent().initModelV2();
   uint32_t frame_age = (frame_id > vipc_frame_id) ? (frame_id - vipc_frame_id) : 0;
   framed.setFrameId(vipc_frame_id);
   framed.setFrameAge(frame_age);
@@ -319,7 +319,7 @@ void model_publish_v2(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
   framed.setTimestampEof(timestamp_eof);
   framed.setModelExecutionTime(model_execution_time);
 
-  // plan 
+  // plan
   int plan_mhp_max_idx = 0;
   for (int i=1; i<PLAN_MHP_N; i++) {
     if (net_outputs.plan[(i + 1)*(PLAN_MHP_GROUP_SIZE) - 1] >
@@ -393,7 +393,7 @@ void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
 
   uint32_t frame_age = (frame_id > vipc_frame_id) ? (frame_id - vipc_frame_id) : 0;
   MessageBuilder msg;
-  auto framed = msg.initEvent(frame_drop < MAX_FRAME_DROP).initModel();
+  auto framed = msg.initEvent().initModel();
   framed.setFrameId(vipc_frame_id);
   framed.setFrameAge(frame_age);
   framed.setFrameDropPerc(frame_drop * 100);
@@ -429,7 +429,7 @@ void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
 
   auto lpath = framed.initPath();
   fill_path(lpath, &net_outputs.plan[plan_mhp_max_idx*(PLAN_MHP_GROUP_SIZE)], valid_len, valid_len_idx);
-  
+
   auto left_lane = framed.initLeftLane();
   int ll_idx = 1;
   fill_lane_line(left_lane, net_outputs.lane_lines, ll_idx, valid_len, valid_len_idx,
