@@ -36,7 +36,6 @@ ParamsToggle::ParamsToggle(QString param, QString title, QString description, QS
   }
   hlayout->addSpacing(25);
 
-  checkbox = new QCheckBox(title);
   QLabel *label = new QLabel(title);
   label->setWordWrap(true);
 
@@ -81,7 +80,7 @@ ParamsToggle::ParamsToggle(QString param, QString title, QString description, QS
     }
   )");
 
-  QObject::connect(checkbox, SIGNAL(stateChanged(int)), this, SLOT(checkboxClicked(int)));
+  QObject::connect(toggle_switch, SIGNAL(stateChanged(int)), this, SLOT(checkboxClicked(int)));
 }
 
 void ParamsToggle::checkboxClicked(int state){

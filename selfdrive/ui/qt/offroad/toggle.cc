@@ -4,6 +4,7 @@
 #include <QPropertyAnimation>
 #include <QWidget>
 #include <QDebug>
+#include "common/params.h" 
 
 Toggle::Toggle(QWidget *parent) : QAbstractButton(parent),
 _height(60),
@@ -39,7 +40,9 @@ void Toggle::paintEvent(QPaintEvent *e) {
 void Toggle::mouseReleaseEvent(QMouseEvent *e) {
   if (e->button() & Qt::LeftButton) {
     togglePosition();
+    emit stateChanged(_on);
   }
+
 }
 
 void Toggle::togglePosition(){

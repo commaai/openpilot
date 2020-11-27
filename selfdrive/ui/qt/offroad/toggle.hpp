@@ -28,4 +28,7 @@ private:
     int _height, _radius;
     int _height_rect, _y_rect;
     QPropertyAnimation *_anim = nullptr;
+
+signals:
+  void stateChanged(int new_state);
 };
