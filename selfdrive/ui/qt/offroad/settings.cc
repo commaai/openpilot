@@ -13,8 +13,7 @@
 #include "wifi.hpp"
 #include "settings.hpp"
 #include "input_field.hpp"
-
-#include "toggle_switch.hpp"
+#include "toggle.hpp"
 
 #include "common/params.h"
 #include "common/utilpp.h"
@@ -41,24 +40,25 @@ ParamsToggle::ParamsToggle(QString param, QString title, QString description, QS
   QLabel *label = new QLabel(title);
   label->setWordWrap(true);
 
-  Switch* toggle_switch = new Switch();
+  Toggle* toggle_switch = new Toggle(this);
   QSizePolicy switch_policy(QSizePolicy::Preferred, QSizePolicy::Preferred);
   switch_policy.setHorizontalStretch(1);
   toggle_switch->setSizePolicy(switch_policy);
-  toggle_switch->setFixedWidth(150);
+  toggle_switch->setFixedWidth(120);
   toggle_switch->setFixedHeight(50);
   // row_layout->addWidget(toggle_switch);
 
   // TODO: show descriptions on tap
   //vlayout->addSpacing(50);
   // vlayout->addWidget(checkbox);
+  hlayout->addWidget(label);
+  hlayout->addSpacing(50);
   hlayout->addWidget(toggle_switch);
   hlayout->addSpacing(50);
-  hlayout->addWidget(label);
 
   setLayout(hlayout);
   if(Params().read_db_bool(param.toStdString().c_str())){
-    toggle_switch->change();
+    toggle_switch->togglePosition();
   }
 
   setStyleSheet(R"(
