@@ -71,9 +71,10 @@ else:
   else:
     qt_libs += [f"Qt5{m}" for m in qt_modules]
 
+
   qt_env.Library("qt_widgets",
                  ["qt/qt_window.cc", "qt/qt_sound.cc", "qt/offroad/keyboard.cc", "qt/offroad/input_field.cc",
-                  "qt/offroad/wifi.cc", "qt/offroad/wifiManager.cc"],
+                  "qt/offroad/wifi.cc", "qt/offroad/wifiManager.cc", "qt/offroad/toggle.cc"],
                  LIBS=qt_libs)
   qt_libs.append("qt_widgets")
 
