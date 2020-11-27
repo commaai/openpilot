@@ -234,7 +234,7 @@ static void ui_draw_vision_lane_lines(UIState *s) {
     NVGcolor color = nvgRGBAf(1.0, 1.0, 1.0, scene->lane_line_probs[ll_idx]);
     ui_draw_line(s, (pvd_ll + ll_idx)->v, (pvd_ll + ll_idx)->cnt, &color, nullptr);
   }
-  
+
   // paint road edges
   line_vertices_data *pvd_re = &s->road_edge_vertices[0];
   for (int re_idx = 0; re_idx < 2; re_idx++) {
@@ -244,7 +244,7 @@ static void ui_draw_vision_lane_lines(UIState *s) {
     NVGcolor color = nvgRGBAf(1.0, 0.0, 0.0, std::clamp<float>(1.0-scene->road_edge_stds[re_idx], 0.0, 1.0));
     ui_draw_line(s, (pvd_re + re_idx)->v, (pvd_re + re_idx)->cnt, &color, nullptr);
   }
-  
+
   // paint path
   if(s->sm->updated("modelV2")) {
     update_track_data(s, scene->model.getPosition(), &s->track_vertices);
@@ -486,7 +486,7 @@ void ui_draw_vision_alert(UIState *s, cereal::ControlsState::AlertSize va_size, 
   }
 }
 
-static void ui_draw_vision(UIState *s) {
+static void ui_draw_vision_frame(UIState *s) {
   const UIScene *scene = &s->scene;
   const Rect &viz_rect = scene->viz_rect;
 
@@ -498,6 +498,10 @@ static void ui_draw_vision(UIState *s) {
   glDisable(GL_SCISSOR_TEST);
 
   glViewport(0, 0, s->fb_w, s->fb_h);
+}
+
+static void ui_draw_vision(UIState *s) {
+  const UIScene *scene = &s->scene;
 
   // Draw augmented elements
   if (!scene->frontview && scene->world_objects_visible) {
@@ -533,14 +537,22 @@ void ui_draw(UIState *s) {
     s->scene.ui_viz_ro = -(sbr_w - 6 * bdr_s);
   }
 
+  const bool draw_vision = s->started && s->active_app == cereal::UiLayoutState::App::NONE &&
+                           s->status != STATUS_OFFROAD && s->vision_connected;
+
+  // GL drawing functions
   ui_draw_background(s);
+  if (draw_vision) {
+    ui_draw_vision_frame(s);
+  }
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glViewport(0, 0, s->fb_w, s->fb_h);
+
+  // NVG drawing functions - should be no GL inside NVG frame
   nvgBeginFrame(s->vg, s->fb_w, s->fb_h, 1.0f);
   ui_draw_sidebar(s);
-  if (s->started && s->active_app == cereal::UiLayoutState::App::NONE &&
-      s->status != STATUS_OFFROAD && s->vision_connected) {
+  if (draw_vision) {
     ui_draw_vision(s);
   }
   nvgEndFrame(s->vg);
