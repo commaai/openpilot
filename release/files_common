@@ -496,7 +496,6 @@ opendbc/can/common.cc
 opendbc/can/common.h
 opendbc/can/common.pxd
 opendbc/can/common_dbc.h
-opendbc/can/common_pyx_setup.py
 opendbc/can/dbc.cc
 opendbc/can/dbc.py
 opendbc/can/dbc_template.cc
