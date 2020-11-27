@@ -7,16 +7,18 @@ and the image input into the neural network is not corrected for roll.
 '''
 
 import os
+import capnp
 import copy
 import json
 import numpy as np
 import cereal.messaging as messaging
-from selfdrive.config import Conversions as CV
-from selfdrive.swaglog import cloudlog
+from cereal import log
 from common.params import Params, put_nonblocking
 from common.transformations.model import model_height
 from common.transformations.camera import get_view_frame_from_road_frame
 from common.transformations.orientation import rot_from_euler, euler_from_rot
+from selfdrive.config import Conversions as CV
+from selfdrive.swaglog import cloudlog
 
 MIN_SPEED_FILTER = 15 * CV.MPH_TO_MS
 MAX_VEL_ANGLE_STD = np.radians(0.25)
@@ -66,12 +68,18 @@ class Calibrator():
 
     if param_put and calibration_params:
       try:
+        msg = log.Event.from_bytes(calibration_params)
+        rpy_init = list(msg.liveCalibration.rpyCalib)
+        valid_blocks = msg.liveCalibration.validBlocks
+      except (ValueError, capnp.lib.capnp.KjException):
+        # TODO: remove this after next release
         calibration_params = json.loads(calibration_params)
         rpy_init = calibration_params["calib_radians"]
         valid_blocks = calibration_params['valid_blocks']
       except Exception:
         cloudlog.exception("CalibrationParams file found but error encountered")
-    self.reset(rpy_init, valid_blocks)
+
+      self.reset(rpy_init, valid_blocks)
     self.update_status()
 
   def reset(self, rpy_init=RPY_INIT, valid_blocks=0, smooth_from=None):
