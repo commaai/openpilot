@@ -56,10 +56,10 @@ public:
   }
 
   template <class T>
-  auto get(const char* param_name) {
+  std::optional<T> get(const char* param_name) {
     T value{};
-    read(param_name, &value);
-    return value;
+    bool ret = read(param_name, &value);
+    return ret ? std::optional<T>(value) : std::nullopt;
   }
 
   template <class T>
