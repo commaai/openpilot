@@ -10,12 +10,7 @@
 #include "ui.hpp"
 #include "paint.hpp"
 
-
-int write_param_float(float param, const char* param_name, bool persistent_param) {
-  char s[16];
-  int size = snprintf(s, sizeof(s), "%f", param);
-  return Params(persistent_param).write_db_value(param_name, s, size < sizeof(s) ? size : sizeof(s));
-}
+extern volatile sig_atomic_t do_exit;
 
 // Projects a point in car to space to the corresponding point in full frame
 // image space.

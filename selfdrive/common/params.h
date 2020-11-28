@@ -2,8 +2,7 @@
 #include <stddef.h>
 #include <map>
 #include <string>
-#include <vector>
-
+#include <sstream>
 #define ERR_NO_VALUE -33
 
 class Params {
@@ -27,8 +26,8 @@ public:
   //  persistent_param: Boolean indicating if the param store in the /persist partition is to be used.
   //                    e.g. for sensor calibration files. Will not be cleared after wipe or re-install.
   //
-  // Returns: Negative on failure, otherwise 0.
-  int read_db_value(const char* key, char** value, size_t* value_sz);
+  // Returns: false on failure, otherwise true.
+  bool read_db_value(const char* key, std::string &value);
 
   // Delete a value from the params database.
   // Inputs are the same as read_db_value, without value and value_sz.
@@ -36,11 +35,35 @@ public:
 
   // Reads a value from the params database, blocking until successful.
   // Inputs are the same as read_db_value.
-  int read_db_value_blocking(const char* key, char** value, size_t* value_sz);
+  bool read_db_value_blocking(const char* key, std::string &value);
 
   int read_db_all(std::map<std::string, std::string> *params);
-  std::vector<char> read_db_bytes(const char* param_name);
-  bool read_db_bool(const char* param_name);
 
   std::string get(std::string key, bool block=false);
+
+  template <typename T>
+  bool read(const char* param_name, T* value) {
+    if (std::string data; read_db_value(param_name, data)) {
+      T tmp_value{};
+      std::istringstream iss(data);
+      iss >> tmp_value;
+      if (!iss.fail()) {
+        *value = tmp_value;
+        return true;
+      }
+    }
+    return false;
+  }
+
+  template <class T>
+  auto get(const char* param_name) {
+    T value{};
+    read(param_name, &value);
+    return value;
+  }
+
+  template <class T>
+  int write(const char* param_name, const T& value) {
+    return write_db_value(param_name, std::to_string(value));
+  }
 };

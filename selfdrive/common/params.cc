@@ -155,7 +155,7 @@ int Params::write_db_value(const char* key, const char* value, size_t value_size
   // Write value to temp.
   tmp_path = params_path + "/.tmp_value_XXXXXX";
   tmp_fd = mkstemp((char*)tmp_path.c_str());
-  bytes_written = write(tmp_fd, value, value_size);
+  bytes_written = ::write(tmp_fd, value, value_size);
   if (bytes_written < 0 || (size_t)bytes_written != value_size) {
     result = -20;
     goto cleanup;
@@ -252,42 +252,39 @@ cleanup:
 }
 
 std::string Params::get(std::string key, bool block){
-  char* value;
-  size_t size;
-  int r;
-
-  if (block) {
-    r = read_db_value_blocking((const char*)key.c_str(), &value, &size);
-  } else {
-    r = read_db_value((const char*)key.c_str(), &value, &size);
-  }
-
-  if (r == 0){
-    std::string s(value, size);
-    free(value);
-    return s;
-  } else {
-    return "";
-  }
+  std::string value;
+  auto read_func = block ? &Params::read_db_value_blocking : &Params::read_db_value;
+  (this->*read_func)((const char*)key.c_str(), value);
+  return value;
 }
 
-int Params::read_db_value(const char* key, char** value, size_t* value_sz) {
-  std::string path = params_path + "/d/" + std::string(key);
-  *value = static_cast<char*>(read_file(path.c_str(), value_sz));
-  if (*value == NULL) {
-    return -22;
+bool Params::read_db_value(const char* key, std::string &value) {
+  char path[4096] = {};
+  snprintf(path, sizeof(path), "%s/d/%s", params_path.c_str(), key);
+  FILE* f = fopen(path, "rb");
+  if (f == nullptr) {
+    return false;
   }
-  return 0;
+  fseek(f, 0, SEEK_END);
+  long f_len = ftell(f);
+  rewind(f);
+  std::string v(f_len, '\0');
+  size_t num_read = fread(&v[0], f_len, 1, f);
+  fclose(f);
+  if (num_read != 1) {
+    return false;
+  }
+  value = v;
+  return true;
 }
 
-int Params::read_db_value_blocking(const char* key, char** value, size_t* value_sz) {
+bool Params::read_db_value_blocking(const char* key, std::string &value) {
   params_do_exit = 0;
   void (*prev_handler_sigint)(int) = std::signal(SIGINT, params_sig_handler);
   void (*prev_handler_sigterm)(int) = std::signal(SIGTERM, params_sig_handler);
 
   while (!params_do_exit) {
-    const int result = read_db_value(key, value, value_sz);
-    if (result == 0) {
+    if (read_db_value(key, value)) {
       break;
     } else {
       util::sleep_for(100); // 0.1 s
@@ -333,21 +330,4 @@ int Params::read_db_all(std::map<std::string, std::string> *params) {
 
   close(lock_fd);
   return 0;
-}
-
-std::vector<char> Params::read_db_bytes(const char* param_name) {
-  std::vector<char> bytes;
-  char* value;
-  size_t sz;
-  int result = read_db_value(param_name, &value, &sz);
-  if (result == 0) {
-    bytes.assign(value, value+sz);
-    free(value);
-  }
-  return bytes;
-}
-
-bool Params::read_db_bool(const char* param_name) {
-  std::vector<char> bytes = read_db_bytes(param_name);
-  return bytes.size() > 0 and bytes[0] == '1';
 }
