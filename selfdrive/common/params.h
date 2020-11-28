@@ -58,8 +58,7 @@ public:
   template <class T>
   std::optional<T> get(const char* param_name) {
     T value{};
-    bool ret = read(param_name, &value);
-    return ret ? std::optional<T>(value) : std::nullopt;
+    return read(param_name, &value) ? std::optional<T>(value) : std::nullopt;
   }
 
   template <class T>
