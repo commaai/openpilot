@@ -12,7 +12,7 @@ import copy
 import json
 import numpy as np
 import cereal.messaging as messaging
-from cereal import log
+from cereal import car, log
 from common.params import Params, put_nonblocking
 from common.transformations.model import model_height
 from common.transformations.camera import get_view_frame_from_road_frame
@@ -61,10 +61,18 @@ class Calibrator():
     self.param_put = param_put
 
     # Read saved calibration
-    calibration_params = Params().get("CalibrationParams")
+    params = Params()
+    calibration_params = params.get("CalibrationParams")
 
     rpy_init = RPY_INIT
     valid_blocks = 0
+
+    cached_params = params.get("CarParamsCache")
+    if cached_params is not None:
+      CP = params.get("CarParams", block=True)
+      cached_params = car.CarParams.from_bytes(cached_params)
+      if cached_params.carFingerprint != CP.carFingerprint:
+        calibration_params = None
 
     if param_put and calibration_params:
       try:
@@ -143,28 +151,28 @@ class Calibrator():
     straight_and_fast = ((self.v_ego > MIN_SPEED_FILTER) and (trans[0] > MIN_SPEED_FILTER) and (abs(rot[2]) < MAX_YAW_RATE_FILTER))
     certain_if_calib = ((np.arctan2(trans_std[1], trans[0]) < MAX_VEL_ANGLE_STD) or
                         (self.valid_blocks < INPUTS_NEEDED))
-    if straight_and_fast and certain_if_calib:
-      observed_rpy = np.array([0,
-                               -np.arctan2(trans[2], trans[0]),
-                               np.arctan2(trans[1], trans[0])])
-      new_rpy = euler_from_rot(rot_from_euler(self.get_smooth_rpy()).dot(rot_from_euler(observed_rpy)))
-      new_rpy = sanity_clip(new_rpy)
 
-      self.rpys[self.block_idx] = (self.idx*self.rpys[self.block_idx] + (BLOCK_SIZE - self.idx) * new_rpy) / float(BLOCK_SIZE)
-      self.idx = (self.idx + 1) % BLOCK_SIZE
-      if self.idx == 0:
-        self.block_idx += 1
-        self.valid_blocks = max(self.block_idx, self.valid_blocks)
-        self.block_idx = self.block_idx % INPUTS_WANTED
-      if self.valid_blocks > 0:
-        self.rpy = np.mean(self.rpys[:self.valid_blocks], axis=0)
-
-
-      self.update_status()
-
-      return new_rpy
-    else:
+    if not (straight_and_fast and certain_if_calib):
       return None
+
+    observed_rpy = np.array([0,
+                             -np.arctan2(trans[2], trans[0]),
+                             np.arctan2(trans[1], trans[0])])
+    new_rpy = euler_from_rot(rot_from_euler(self.get_smooth_rpy()).dot(rot_from_euler(observed_rpy)))
+    new_rpy = sanity_clip(new_rpy)
+
+    self.rpys[self.block_idx] = (self.idx*self.rpys[self.block_idx] + (BLOCK_SIZE - self.idx) * new_rpy) / float(BLOCK_SIZE)
+    self.idx = (self.idx + 1) % BLOCK_SIZE
+    if self.idx == 0:
+      self.block_idx += 1
+      self.valid_blocks = max(self.block_idx, self.valid_blocks)
+      self.block_idx = self.block_idx % INPUTS_WANTED
+    if self.valid_blocks > 0:
+      self.rpy = np.mean(self.rpys[:self.valid_blocks], axis=0)
+
+    self.update_status()
+
+    return new_rpy
 
   def get_msg(self):
     smooth_rpy = self.get_smooth_rpy()
