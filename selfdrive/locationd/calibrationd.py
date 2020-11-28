@@ -79,7 +79,7 @@ class Calibrator():
       except Exception:
         cloudlog.exception("CalibrationParams file found but error encountered")
 
-      self.reset(rpy_init, valid_blocks)
+    self.reset(rpy_init, valid_blocks)
     self.update_status()
 
   def reset(self, rpy_init=RPY_INIT, valid_blocks=0, smooth_from=None):
@@ -126,10 +126,7 @@ class Calibrator():
 
     write_this_cycle = (self.idx == 0) and (self.block_idx % (INPUTS_WANTED//5) == 5)
     if self.param_put and write_this_cycle:
-      # TODO: this should use the liveCalibration struct from cereal
-      cal_params = {"calib_radians": list(self.rpy),
-                    "valid_blocks": int(self.valid_blocks)}
-      put_nonblocking("CalibrationParams", json.dumps(cal_params).encode('utf8'))
+      put_nonblocking("CalibrationParams", self.get_msg().to_bytes())
 
   def handle_v_ego(self, v_ego):
     self.v_ego = v_ego
@@ -169,19 +166,21 @@ class Calibrator():
     else:
       return None
 
-  def send_data(self, pm):
+  def get_msg(self):
     smooth_rpy = self.get_smooth_rpy()
     extrinsic_matrix = get_view_frame_from_road_frame(0, smooth_rpy[1], smooth_rpy[2], model_height)
 
-    cal_send = messaging.new_message('liveCalibration')
-    cal_send.liveCalibration.validBlocks = self.valid_blocks
-    cal_send.liveCalibration.calStatus = self.cal_status
-    cal_send.liveCalibration.calPerc = min(100 * (self.valid_blocks * BLOCK_SIZE + self.idx) // (INPUTS_NEEDED * BLOCK_SIZE), 100)
-    cal_send.liveCalibration.extrinsicMatrix = [float(x) for x in extrinsic_matrix.flatten()]
-    cal_send.liveCalibration.rpyCalib = [float(x) for x in smooth_rpy]
-    cal_send.liveCalibration.rpyCalibSpread = [float(x) for x in self.calib_spread]
+    msg = messaging.new_message('liveCalibration')
+    msg.liveCalibration.validBlocks = self.valid_blocks
+    msg.liveCalibration.calStatus = self.cal_status
+    msg.liveCalibration.calPerc = min(100 * (self.valid_blocks * BLOCK_SIZE + self.idx) // (INPUTS_NEEDED * BLOCK_SIZE), 100)
+    msg.liveCalibration.extrinsicMatrix = [float(x) for x in extrinsic_matrix.flatten()]
+    msg.liveCalibration.rpyCalib = [float(x) for x in smooth_rpy]
+    msg.liveCalibration.rpyCalibSpread = [float(x) for x in self.calib_spread]
+    return msg
 
-    pm.send('liveCalibration', cal_send)
+  def send_data(self, pm):
+    pm.send('liveCalibration', self.get_msg())
 
 
 def calibrationd_thread(sm=None, pm=None):
