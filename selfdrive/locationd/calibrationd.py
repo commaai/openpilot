@@ -69,7 +69,7 @@ class Calibrator():
 
     cached_params = params.get("CarParamsCache")
     if cached_params is not None:
-      CP = params.get("CarParams", block=True)
+      CP = car.CarParams.from_bytes(params.get("CarParams", block=True))
       cached_params = car.CarParams.from_bytes(cached_params)
       if cached_params.carFingerprint != CP.carFingerprint:
         calibration_params = None
