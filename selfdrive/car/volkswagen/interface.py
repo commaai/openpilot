@@ -96,6 +96,7 @@ class CarInterface(CarInterfaceBase):
     else:
       ret.networkLocation = NWL.gateway
 
+    cloudlog.warning("Detected safety model: %s", ret.safetyModel)
     cloudlog.warning("Detected network location: %s", ret.networkLocation)
     cloudlog.warning("Detected transmission type: %s", ret.transmissionType)
 
