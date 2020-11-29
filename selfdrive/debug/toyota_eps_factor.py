@@ -18,14 +18,12 @@ def to_signed(n, bits):
 
 
 def get_eps_factor(lr, plot=False):
-  all_msgs = sorted(lr, key=lambda msg: msg.logMonoTime)
-
   engaged = False
   steering_pressed = False
   torque_cmd, eps_torque = None, None
   cmds, eps = [], []
 
-  for msg in all_msgs:
+  for msg in lr:
     if msg.which() != 'can':
       continue
 
