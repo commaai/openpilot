@@ -76,10 +76,10 @@ class CarInterface(CarInterfaceBase):
         ret.transmissionType = TRANS.manual
 
       # FIXME: Per-vehicle parameters need to be reintegrated.
-       ret.mass = 1375 + STD_CARGO_KG
-       ret.wheelbase = 2.58
-       ret.centerToFront = ret.wheelbase * 0.45  # Estimated 
-       ret.steerRatio = 16.4 
+      ret.mass = 1375 + STD_CARGO_KG
+      ret.wheelbase = 2.58
+      ret.centerToFront = ret.wheelbase * 0.45  # Estimated 
+      ret.steerRatio = 16.4 
       
     # Determine installed network location: take a manually forced setting if
     # present, otherwise assume camera for C2/BP and gateway for white/grey Panda.
