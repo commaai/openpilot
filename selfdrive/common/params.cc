@@ -33,8 +33,8 @@ void params_sig_handler(int signal) {
   params_do_exit = 1;
 }
 
-static int fsync_dir(const char* path){
-  int fd = open(path, O_RDONLY, 0755);
+static int fsync_dir(const std::string &path){
+  int fd = open(path.c_str(), O_RDONLY, 0755);
   if (fd < 0){
     return -1;
   }
@@ -68,10 +68,11 @@ static int mkdir_p(std::string path) {
   return 0;
 }
 
-static int ensure_dir_exists(std::string path) {
+static bool ensure_dir_exists(std::string path) {
   // TODO: replace by std::filesystem::create_directories
-  return mkdir_p(path.c_str());
+  return mkdir_p(path.c_str()) == 0;
 }
+
 
 Params::Params(bool persistent_param){
   params_path = persistent_param ? persistent_params_path : default_params_path;
@@ -82,10 +83,32 @@ Params::Params(std::string path) {
 }
 
 bool Params::put(std::string key, std::string dat){
-  return put(key.c_str(), dat.c_str(), dat.length());
+  return put(&key[0], dat.c_str(), dat.length());
 }
 
-bool Params::put(const char* key, const char* value, size_t value_size) {
+static bool ensure_symlink(std::string params_path) {
+  std::string path = params_path + "/d";
+  if (struct stat st; stat(&path[0], &st) == -1) {
+    // Create temp folder
+    std::string tmp_path = params_path + "/.tmp_XXXXXX";
+    char* tmp_dir = mkdtemp((char*)tmp_path.c_str());
+    if (tmp_dir == NULL) {
+      return false;
+    }
+    std::string link_path = tmp_dir;
+    link_path += ".link";
+    return chmod(tmp_dir, 0777) == 0 &&
+           // Symlink it to temp link
+           symlink(tmp_dir, &link_path[0]) == 0 &&
+           // Move symlink to <params>/d
+           rename(&link_path[0], &path[0]) == 0;
+  } else {
+    // Ensure permissions are correct in case we didn't create the symlink
+    return chmod(&path[0], 0777) == 0;
+  }
+}
+
+bool Params::put(const char* key, const char* value, size_t size) {
   // Information about safely and atomically writing a file: https://lwn.net/Articles/457667/
   // 1) Create temp file
   // 2) Write data to temp file
@@ -93,156 +116,62 @@ bool Params::put(const char* key, const char* value, size_t value_size) {
   // 4) rename the temp file to the real name
   // 5) fsync() the containing directory
 
-  int lock_fd = -1;
-  int tmp_fd = -1;
-  int result;
-  std::string path;
-  std::string tmp_path;
-  ssize_t bytes_written;
-
-  // Make sure params path exists
-  result = ensure_dir_exists(params_path);
-  if (result < 0) {
-    goto cleanup;
-  }
-
-  // See if the symlink exists, otherwise create it
-  path = params_path + "/d";
-  struct stat st;
-  if (stat(path.c_str(), &st) == -1) {
-    // Create temp folder
-    path = params_path + "/.tmp_XXXXXX";
-
-    char *t = mkdtemp((char*)path.c_str());
-    if (t == NULL){
-      goto cleanup;
-    }
-    std::string tmp_dir(t);
-
-    // Set permissions
-    result = chmod(tmp_dir.c_str(), 0777);
-    if (result < 0) {
-      goto cleanup;
-    }
-
-    // Symlink it to temp link
-    tmp_path = tmp_dir + ".link";
-    result = symlink(tmp_dir.c_str(), tmp_path.c_str());
-    if (result < 0) {
-      goto cleanup;
-    }
-
-    // Move symlink to <params>/d
-    path = params_path + "/d";
-    result = rename(tmp_path.c_str(), path.c_str());
-    if (result < 0) {
-      goto cleanup;
-    }
-  } else {
-    // Ensure permissions are correct in case we didn't create the symlink
-    result = chmod(path.c_str(), 0777);
-    if (result < 0) {
-      goto cleanup;
-    }
+  // Make sure params path exists and see if the symlink exists, otherwise create it
+  if (!ensure_dir_exists(params_path) || !ensure_symlink(params_path)) {
+    return false;
   }
 
   // Write value to temp.
-  tmp_path = params_path + "/.tmp_value_XXXXXX";
-  tmp_fd = mkstemp((char*)tmp_path.c_str());
-  bytes_written = write(tmp_fd, value, value_size);
-  if (bytes_written < 0 || (size_t)bytes_written != value_size) {
-    result = -20;
-    goto cleanup;
+  std::string tmp_path = params_path + "/.tmp_value_XXXXXX";
+  int tmp_fd = mkstemp((char*)tmp_path.c_str());
+  if (tmp_fd < 0) {
+    return false;
   }
 
-  // Build lock path
-  lock_fd = open(lock_path().c_str(), O_CREAT, 0775);
-
-  // Take lock.
-  result = flock(lock_fd, LOCK_EX);
-  if (result < 0) {
-    goto cleanup;
-  }
-
-  // change permissions to 0666 for apks
-  result = fchmod(tmp_fd, 0666);
-  if (result < 0) {
-    goto cleanup;
-  }
-
-  // fsync to force persist the changes.
-  result = fsync(tmp_fd);
-  if (result < 0) {
-    goto cleanup;
-  }
-
-  // Move temp into place.
-  result = rename(tmp_path.c_str(), key_path(key).c_str());
-  if (result < 0) {
-    goto cleanup;
-  }
-
-  // fsync parent directory
-  path = params_path + "/d";
-  result = fsync_dir(path.c_str());
-  if (result < 0) {
-    goto cleanup;
-  }
-
-cleanup:
-  // Release lock.
-  if (lock_fd >= 0) {
-    close(lock_fd);
-  }
-  if (tmp_fd >= 0) {
-    if (result < 0) {
-      remove(tmp_path.c_str());
+  bool ret = false;
+  if (ssize_t written = write(tmp_fd, value, size); written == (ssize_t)size) {
+    if (int lock_fd = open(lock_path().c_str(), O_CREAT, 0775); lock_fd >= 0) {
+      ret = flock(lock_fd, LOCK_EX) == 0 &&
+            // change permissions to 0666 for apks
+            fchmod(tmp_fd, 0666) == 0 &&
+            // fsync to force persist the changes.
+            fsync(tmp_fd) == 0 &&
+            // Move temp into place.
+            rename(&tmp_path[0], key_path(key).c_str()) == 0 &&
+            // fsync parent directory
+            fsync_dir(params_d_path()) == 0;
+      close(lock_fd);
     }
-    close(tmp_fd);
   }
-  return result == 0;
+
+  close(tmp_fd);
+  if (!ret) {
+    remove(&tmp_path[0]);
+  }
+  return ret;
 }
 
-int Params::delete_value(std::string key) {
-  int lock_fd = -1;
-  int result;
-  std::string path;
+bool Params::delete_value(std::string key) {
+  int lock_fd = open(lock_path().c_str(), O_CREAT, 0775);
+  if (lock_fd == -1) return -1;
 
-  // Build lock path, and open lockfile
-  lock_fd = open(lock_path().c_str(), O_CREAT, 0775);
-
-  // Take lock.
-  result = flock(lock_fd, LOCK_EX);
-  if (result < 0) {
-    goto cleanup;
+  bool deleted = false;
+  if (flock(lock_fd, LOCK_EX) == 0) {
+    std::string path = key_path(&key[0]);
+    deleted = access(&path[0], F_OK) == -1;
+    if (!deleted) {
+      deleted = remove(&path[0]) == 0 &&
+                fsync_dir(params_d_path()) == 0;
+    }
   }
-
-  // Delete value.
-  result = remove(key_path(key.c_str()).c_str());
-  if (result != 0) {
-    result = ERR_NO_VALUE;
-    goto cleanup;
-  }
-
-  // fsync parent directory
-  path = params_path + "/d";
-  result = fsync_dir(path.c_str());
-  if (result < 0) {
-    goto cleanup;
-  }
-
-cleanup:
-  // Release lock.
-  if (lock_fd >= 0) {
-    close(lock_fd);
-  }
-  return result;
+  close(lock_fd);
+  return deleted;
 }
 
 std::string Params::get(std::string key, bool block){
   std::string value;
   auto read_func = block ? &Params::read_value_blocking : &Params::read_value;
-  (this->*read_func)((const char*)key.c_str(), value);
+  (this->*read_func)(&key[0], value);
   return value;
 }
 
@@ -287,12 +216,12 @@ bool Params::read_all(std::map<std::string, std::string> &params) {
   
   bool ret =false;
   if (int err = flock(lock_fd, LOCK_SH); err == 0) {
-    std::string key_path = params_path + "/d";
-    if (DIR *d = opendir(key_path.c_str()); d) {
+    std::string key_path = params_d_path();
+    if (DIR *d = opendir(&key_path[0]); d) {
       struct dirent *de = NULL;
       while ((de = readdir(d))) {
         if (!isalnum(de->d_name[0])) continue;
-        std::string key = std::string(de->d_name);
+        std::string key = de->d_name;
         params[key] = util::read_file(key_path + "/" + key);
       }
       closedir(d);

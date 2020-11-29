@@ -320,10 +320,8 @@ void panda_state_thread(bool spoofing_started) {
 
     // clear VIN, CarParams, and set new safety on car start
     if (ignition && !ignition_last) {
-      int result = params.delete_value("CarVin");
-      assert((result == 0) || (result == ERR_NO_VALUE));
-      result = params.delete_value("CarParams");
-      assert((result == 0) || (result == ERR_NO_VALUE));
+      assert(params.delete_value("CarVin"));
+      assert(params.delete_value("CarParams"));
 
       if (!safety_setter_thread_running) {
         safety_setter_thread_running = true;

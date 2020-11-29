@@ -4,7 +4,6 @@
 #include <string>
 #include <sstream>
 #include <string.h>
-#define ERR_NO_VALUE -33
 
 class Params {
 private:
@@ -14,13 +13,13 @@ private:
   bool read_value_blocking(const char* key, std::string &value);
   std::string lock_path() const {return params_path + "/.lock";}
   std::string key_path(const char *key) const {return params_path + "/d/" + key;}
+  std::string params_d_path() const {return params_path + "/d";}
 
 public:
   Params(bool persistent_param = false);
   Params(std::string path);
   
-  // Delete a value from the params database.
-  int delete_value(std::string key);
+  bool delete_value(std::string key);
 
   bool read_all(std::map<std::string, std::string> &params);
 
