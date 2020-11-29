@@ -3,6 +3,7 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn import linear_model  # pylint: disable=import-error
+from selfdrive.car.toyota.values import STEER_THRESHOLD
 
 from tools.lib.route import Route
 from tools.lib.logreader import MultiLogIterator
@@ -25,9 +26,6 @@ def get_eps_factor(lr, plot=False):
   cmds, eps = [], []
 
   for msg in all_msgs:
-    if msg.which() == 'carState':
-      steering_pressed = msg.carState.steeringPressed
-
     if msg.which() != 'can':
       continue
 
@@ -37,6 +35,7 @@ def get_eps_factor(lr, plot=False):
         torque_cmd = to_signed((m.dat[1] << 8) | m.dat[2], 16)
       elif m.address == 0x260 and m.src == 0:
         eps_torque = to_signed((m.dat[5] << 8) | m.dat[6], 16)
+        steering_pressed = abs(to_signed((m.dat[1] << 8) | m.dat[2], 16)) > STEER_THRESHOLD
 
     if engaged and torque_cmd is not None and eps_torque is not None and not steering_pressed:
       cmds.append(torque_cmd)
