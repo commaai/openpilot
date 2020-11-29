@@ -12,6 +12,8 @@ private:
   bool read_value(const char* key, std::string &value);
   // Reads a value from the params database, blocking until successful.
   bool read_value_blocking(const char* key, std::string &value);
+  std::string lock_path() const {return params_path + "/.lock";}
+  std::string key_path(const char *key) const {return params_path + "/d/" + key;}
 
 public:
   Params(bool persistent_param = false);

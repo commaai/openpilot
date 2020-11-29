@@ -155,18 +155,14 @@ bool Params::put(const char* key, const char* value, size_t value_size) {
   // Write value to temp.
   tmp_path = params_path + "/.tmp_value_XXXXXX";
   tmp_fd = mkstemp((char*)tmp_path.c_str());
-  bytes_written = ::write(tmp_fd, value, value_size);
+  bytes_written = write(tmp_fd, value, value_size);
   if (bytes_written < 0 || (size_t)bytes_written != value_size) {
     result = -20;
     goto cleanup;
   }
 
   // Build lock path
-  path = params_path + "/.lock";
-  lock_fd = open(path.c_str(), O_CREAT, 0775);
-
-  // Build key path
-  path = params_path + "/d/" + std::string(key);
+  lock_fd = open(lock_path().c_str(), O_CREAT, 0775);
 
   // Take lock.
   result = flock(lock_fd, LOCK_EX);
@@ -187,7 +183,7 @@ bool Params::put(const char* key, const char* value, size_t value_size) {
   }
 
   // Move temp into place.
-  result = rename(tmp_path.c_str(), path.c_str());
+  result = rename(tmp_path.c_str(), key_path(key).c_str());
   if (result < 0) {
     goto cleanup;
   }
@@ -219,8 +215,7 @@ int Params::delete_value(std::string key) {
   std::string path;
 
   // Build lock path, and open lockfile
-  path = params_path + "/.lock";
-  lock_fd = open(path.c_str(), O_CREAT, 0775);
+  lock_fd = open(lock_path().c_str(), O_CREAT, 0775);
 
   // Take lock.
   result = flock(lock_fd, LOCK_EX);
@@ -229,8 +224,7 @@ int Params::delete_value(std::string key) {
   }
 
   // Delete value.
-  path = params_path + "/d/" + key;
-  result = remove(path.c_str());
+  result = remove(key_path(key.c_str()).c_str());
   if (result != 0) {
     result = ERR_NO_VALUE;
     goto cleanup;
@@ -259,9 +253,7 @@ std::string Params::get(std::string key, bool block){
 }
 
 bool Params::read_value(const char* key, std::string &value) {
-  char path[4096] = {};
-  snprintf(path, sizeof(path), "%s/d/%s", params_path.c_str(), key);
-  FILE* f = fopen(path, "rb");
+  FILE* f = fopen(key_path(key).c_str(), "rb");
   if (f == nullptr) {
     return false;
   }
@@ -296,8 +288,7 @@ bool Params::read_value_blocking(const char* key, std::string &value) {
 }
 
 bool Params::read_all(std::map<std::string, std::string> &params) {
-  std::string lock_path = params_path + "/.lock";
-  int lock_fd = open(lock_path.c_str(), 0);
+  int lock_fd = open(lock_path().c_str(), 0);
   if (lock_fd < 0) return false;
   
   bool ret =false;
