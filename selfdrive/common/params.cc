@@ -295,38 +295,25 @@ bool Params::read_value_blocking(const char* key, std::string &value) {
   return params_do_exit == 0; // Return true if we had no interrupt
 }
 
-int Params::read_all(std::map<std::string, std::string> *params) {
-  int err = 0;
-
+bool Params::read_all(std::map<std::string, std::string> &params) {
   std::string lock_path = params_path + "/.lock";
-
   int lock_fd = open(lock_path.c_str(), 0);
-  if (lock_fd < 0) return -1;
-
-  err = flock(lock_fd, LOCK_SH);
-  if (err < 0) {
-    close(lock_fd);
-    return err;
+  if (lock_fd < 0) return false;
+  
+  bool ret =false;
+  if (int err = flock(lock_fd, LOCK_SH); err == 0) {
+    std::string key_path = params_path + "/d";
+    if (DIR *d = opendir(key_path.c_str()); d) {
+      struct dirent *de = NULL;
+      while ((de = readdir(d))) {
+        if (!isalnum(de->d_name[0])) continue;
+        std::string key = std::string(de->d_name);
+        params[key] = util::read_file(key_path + "/" + key);
+      }
+      closedir(d);
+      ret = true;
+    }
   }
-
-  std::string key_path = params_path + "/d";
-  DIR *d = opendir(key_path.c_str());
-  if (!d) {
-    close(lock_fd);
-    return -1;
-  }
-
-  struct dirent *de = NULL;
-  while ((de = readdir(d))) {
-    if (!isalnum(de->d_name[0])) continue;
-    std::string key = std::string(de->d_name);
-    std::string value = util::read_file(key_path + "/" + key);
-
-    (*params)[key] = value;
-  }
-
-  closedir(d);
-
   close(lock_fd);
-  return 0;
+  return ret;
 }

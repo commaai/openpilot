@@ -20,7 +20,7 @@ public:
   // Delete a value from the params database.
   int delete_value(std::string key);
 
-  int read_all(std::map<std::string, std::string> *params);
+  bool read_all(std::map<std::string, std::string> &params);
 
   std::string get(std::string key, bool block=false);
   template <class T>
@@ -36,6 +36,7 @@ public:
     }
     return std::nullopt;
   }
+
   bool put(std::string key, std::string dat);
   bool put(const char* key, const char* value, size_t value_size);
   template <class T>
