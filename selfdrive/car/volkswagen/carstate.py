@@ -216,7 +216,13 @@ class CarState(CarStateBase):
     # preferences, including separate units for for distance vs. speed.
     # We use the speed preference for OP.
     self.displayMetricUnits = not pt_cp.vl["Einheiten_1"]["MFA_v_Einheit_02"]
-
+    
+    self.ldw_lane_warning_left = False
+    self.ldw_lane_warning_right = False
+    self.ldw_side_dlc_tlc = False
+    self.ldw_dlc = False
+    self.ldw_tlc = False
+    
     # Update ACC radar status.
     # FIXME: This is unfinished and not fully correct, need to improve further
     ret.cruiseState.available = bool(pt_cp.vl["GRA_neu"]['Hauptschalter'])
