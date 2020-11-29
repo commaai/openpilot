@@ -390,15 +390,15 @@ class CarState(CarStateBase):
       ("MFA_v_Einheit_02", "Einheiten_1", 0),       # MPH vs KMH speed display
       ("Bremsinfo", "Kombi_1", 0),                  # Manual handbrake applied
       ("GRA_Status", "Motor_2", 0),                 # ACC engagement status
-      ("Hauptschalter", "GRA_Neu", 0),              # ACC button, on/off
-      ("Abbrechen", "GRA_Neu", 0),                  # ACC button, cancel
-      ("Setzen", "GRA_Neu", 0),                     # ACC button, set
-      ("Lang_Tip_up", "GRA_Neu", 0),                # ACC button, increase or accel, long press
-      ("Lang_Tip_down", "GRA_Neu", 0),              # ACC button, decrease or decel, long press
-      ("Kurz_Tip_up", "GRA_Neu", 0),                # ACC button, increase or accel, short press
-      ("Kurz_Tip_down", "GRA_Neu", 0),              # ACC button, decrease or decel, short press
-      ("Wiederaufnahme", "GRA_Neu", 0),             # ACC button, resume
-      ("Zeitlueckenverstellung", "GRA_Neu", 0),     # ACC button, time gap adj
+      ("GRA_Hauptschalt", "GRA_Neu", 0),              # ACC button, on/off
+      ("GRA_Abbrechen", "GRA_Neu", 0),                  # ACC button, cancel
+      ("GRA_Neu_Setzen", "GRA_Neu", 0),                     # ACC button, set
+      ("GRA_Up_lang", "GRA_Neu", 0),                # ACC button, increase or accel, long press
+      ("GRA_Down_lang", "GRA_Neu", 0),              # ACC button, decrease or decel, long press
+      ("GRA_Up_kurz", "GRA_Neu", 0),                # ACC button, increase or accel, short press
+      ("GRA_Down_kurz", "GRA_Neu", 0),              # ACC button, decrease or decel, short press
+      ("GRA_Recall", "GRA_Neu", 0),             # ACC button, resume
+      ("GRA_Zeitluecke", "GRA_Neu", 0),     # ACC button, time gap adj
     ]
 
     checks = [
@@ -448,7 +448,7 @@ class CarState(CarStateBase):
     checks = [
       # sig_address, frequency
       # FIXME: LDW_02 should be checked when we have better detection of installed hardware
-      #("LDW_02", 10),  # From R242 Driver assistance camera
+      ("LDW_02", 10),  # From R242 Driver assistance camera
     ]
 
     if CP.networkLocation == NWL.gateway:
