@@ -81,6 +81,12 @@ class CarInterface(CarInterfaceBase):
       ret.centerToFront = ret.wheelbase * 0.45  # Estimated 
       ret.steerRatio = 16.4 
       
+      # PQ lateral tuning HCA_Status 7
+      ret.lateralTuning.pid.kpBP = [0., 14., 35.]
+      ret.lateralTuning.pid.kiBP = [0., 14., 35.]
+      ret.lateralTuning.pid.kpV = [0.12, 0.165, 0.185]
+      ret.lateralTuning.pid.kiV = [0.09, 0.10, 0.11]
+      
     # Determine installed network location: take a manually forced setting if
     # present, otherwise assume camera for C2/BP and gateway for white/grey Panda.
     # TODO: autodetect C2/BP gateway-side installation based on convenience/powertrain on CAN1
