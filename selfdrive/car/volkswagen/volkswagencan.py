@@ -66,7 +66,7 @@ def create_pq_steering_control(packer, bus, apply_steer, idx, lkas_enabled):
     "HCA_Zaehler": idx,
     "LM_Offset": abs(apply_steer),
     "LM_OffSign": 1 if apply_steer < 0 else 0,
-    "HCA_Status": 5 if (lkas_enabled and apply_steer != 0) else 3,
+    "HCA_Status": 7 if (lkas_enabled and apply_steer != 0) else 3,
     "Vib_Freq": 16,
   }
 
