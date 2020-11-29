@@ -26,7 +26,7 @@ def get_eps_factor(lr, plot=False):
 
   for msg in all_msgs:
     if msg.which() == 'carState':
-      steering_pressed = msg.carState.steeringpressed
+      steering_pressed = msg.carState.steeringPressed
 
     if msg.which() != 'can':
       continue
