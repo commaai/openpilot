@@ -159,26 +159,29 @@ class CarInterface(CarInterfaceBase):
     
     #PQTIMEBOMB STUFF START
     #Warning alert for the 6min timebomb found on PQ's
-    ret.stopSteering = False
-    if True: #(self.frame % 100) == 0: # Set this to false/False if you want to turn this feature OFF!
-      if ret.cruiseState.enabled:
-        self.pqCounter += 1
-      if self.pqCounter >= 10*100: #time in seconds until counter threshold for pqTimebombWarn alert
-        if not self.wheelGrabbed:
-          events.add(EventName.pqTimebombWarn)
-        if self.wheelGrabbed or ret.steeringPressed:
-          self.wheelGrabbed = True
-          ret.stopSteering = True
-          self.pqBypassCounter += 1
-          if self.pqBypassCounter >= 1.05*100: #time alloted for bypass
-            self.wheelGrabbed = False
+    def get_params(candidate):
+      ret = CarInterfaceBase.get_std_params(candidate)
+      if candidate in PQ_CARS:
+        ret.stopSteering = False
+        if True: #(self.frame % 100) == 0: # Set this to false/False if you want to turn this feature OFF!
+          if ret.cruiseState.enabled:
+            self.pqCounter += 1
+          if self.pqCounter >= 10*100: #time in seconds until counter threshold for pqTimebombWarn alert
+            if not self.wheelGrabbed:
+              events.add(EventName.pqTimebombWarn)
+            if self.wheelGrabbed or ret.steeringPressed:
+              self.wheelGrabbed = True
+              ret.stopSteering = True
+              self.pqBypassCounter += 1
+              if self.pqBypassCounter >= 1.05*100: #time alloted for bypass
+                self.wheelGrabbed = False
+                self.pqCounter = 0
+                self.pqBypassCounter = 0
+                events.add(EventName.pqTimebombBypassed)
+              else:
+                events.add(EventName.pqTimebombBypassing)
+          if not ret.cruiseState.enabled:
             self.pqCounter = 0
-            self.pqBypassCounter = 0
-            events.add(EventName.pqTimebombBypassed)
-          else:
-            events.add(EventName.pqTimebombBypassing)
-      if not ret.cruiseState.enabled:
-        self.pqCounter = 0
     #PQTIMEBOMB STUFF END
 
     ret.events = events.to_msg()
