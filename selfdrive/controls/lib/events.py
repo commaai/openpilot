@@ -468,6 +468,30 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       AlertStatus.userPrompt, AlertSize.mid,
       Priority.LOW, VisualAlert.steerRequired, AudibleAlert.chimePrompt, 1., 2., 3.),
   },
+  
+  EventName.pqTimebombWarn: {
+    ET.WARNING: Alert(
+      "WARNING",
+      "Grab wheel to start bypass",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOW, VisualAlert.steerRequired, AudibleAlert.chimePrompt, 1., 2., 3., alert_rate=0.75),
+  },
+  
+  EventName.pqTimebombBypassing: {
+    ET.WARNING: Alert(
+      "BYPASSING",
+      "HOLD WHEEL",
+      AlertStatus.userPrompt, AlertSize.mid,
+      Priority.LOW, VisualAlert.steerRequired, AudibleAlert.chimePrompt, 1., 2., 3.),
+  },
+  
+  EventName.pqTimebombBypassed: {
+    ET.WARNING: Alert(
+      "Bypassed!",
+      "Release wheel when ready",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOW, VisualAlert.steerRequired, AudibleAlert.chimePrompt, 1., 2., 3.),
+  },
 
   EventName.fanMalfunction: {
     ET.PERMANENT: Alert(
