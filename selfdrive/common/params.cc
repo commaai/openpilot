@@ -253,12 +253,12 @@ cleanup:
 
 std::string Params::get(std::string key, bool block){
   std::string value;
-  auto read_func = block ? &Params::read_db_value_blocking : &Params::read_db_value;
+  auto read_func = block ? &Params::read_value_blocking : &Params::read_value;
   (this->*read_func)((const char*)key.c_str(), value);
   return value;
 }
 
-bool Params::read_db_value(const char* key, std::string &value) {
+bool Params::read_value(const char* key, std::string &value) {
   char path[4096] = {};
   snprintf(path, sizeof(path), "%s/d/%s", params_path.c_str(), key);
   FILE* f = fopen(path, "rb");
@@ -278,13 +278,13 @@ bool Params::read_db_value(const char* key, std::string &value) {
   return true;
 }
 
-bool Params::read_db_value_blocking(const char* key, std::string &value) {
+bool Params::read_value_blocking(const char* key, std::string &value) {
   params_do_exit = 0;
   void (*prev_handler_sigint)(int) = std::signal(SIGINT, params_sig_handler);
   void (*prev_handler_sigterm)(int) = std::signal(SIGTERM, params_sig_handler);
 
   while (!params_do_exit) {
-    if (read_db_value(key, value)) {
+    if (read_value(key, value)) {
       break;
     }
     util::sleep_for(100); // 0.1 s
@@ -292,7 +292,7 @@ bool Params::read_db_value_blocking(const char* key, std::string &value) {
 
   std::signal(SIGINT, prev_handler_sigint);
   std::signal(SIGTERM, prev_handler_sigterm);
-  return params_do_exit; // Return 0 if we had no interrupt
+  return params_do_exit == 0; // Return true if we had no interrupt
 }
 
 int Params::read_all(std::map<std::string, std::string> *params) {
