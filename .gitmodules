@@ -10,6 +10,4 @@
 [submodule "rednose_repo"]
 	path = rednose_repo
 	url = ../../commaai/rednose.git
-[submodule "cereal"]
-	path = cereal
-	url = https://github.com/actuallylemoncurd/cereal
+
