@@ -2,26 +2,32 @@
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn import linear_model # pylint: disable=import-error
+from sklearn import linear_model  # pylint: disable=import-error
 
 from tools.lib.route import Route
 from tools.lib.logreader import MultiLogIterator
 
+MIN_SAMPLES = 30 * 100
 
-MIN_SAMPLES = 30*100
 
 def to_signed(n, bits):
   if n >= (1 << max((bits - 1), 0)):
     n = n - (1 << max(bits, 0))
   return n
 
+
 def get_eps_factor(lr, plot=False):
+  all_msgs = sorted(lr, key=lambda msg: msg.logMonoTime)
 
   engaged = False
+  steering_pressed = False
   torque_cmd, eps_torque = None, None
   cmds, eps = [], []
 
-  for msg in lr:
+  for msg in all_msgs:
+    if msg.which() == 'carState':
+      steering_pressed = msg.carState.steeringpressed
+
     if msg.which() != 'can':
       continue
 
@@ -32,7 +38,7 @@ def get_eps_factor(lr, plot=False):
       elif m.address == 0x260 and m.src == 0:
         eps_torque = to_signed((m.dat[5] << 8) | m.dat[6], 16)
 
-    if engaged and torque_cmd is not None and eps_torque is not None:
+    if engaged and torque_cmd is not None and eps_torque is not None and not steering_pressed:
       cmds.append(torque_cmd)
       eps.append(eps_torque)
     else:
@@ -45,13 +51,14 @@ def get_eps_factor(lr, plot=False):
 
   lm = linear_model.LinearRegression(fit_intercept=False)
   lm.fit(np.array(cmds).reshape(-1, 1), eps)
-  scale_factor = 1./lm.coef_[0]
+  scale_factor = 1. / lm.coef_[0]
 
   if plot:
-    plt.plot(np.array(eps)*scale_factor)
+    plt.plot(np.array(eps) * scale_factor)
     plt.plot(cmds)
     plt.show()
   return scale_factor
+
 
 if __name__ == "__main__":
   r = Route(sys.argv[1])
