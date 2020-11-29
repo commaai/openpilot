@@ -7,8 +7,10 @@ from tools.lib.api import CommaApi, APIError
 from tools.lib.auth_config import set_token
 from typing import Dict, Any
 
+
 class ClientRedirectServer(HTTPServer):
   query_params: Dict[str, Any] = {}
+
 
 class ClientRedirectHandler(BaseHTTPRequestHandler):
   def do_GET(self):
@@ -28,6 +30,7 @@ class ClientRedirectHandler(BaseHTTPRequestHandler):
   def log_message(self, format, *args):  # pylint: disable=redefined-builtin
     pass  # this prevent http server from dumping messages to stdout
 
+
 def auth_redirect_link(port):
   redirect_uri = f'http://localhost:{port}/auth_redirect'
   params = {
@@ -41,12 +44,14 @@ def auth_redirect_link(port):
 
   return (redirect_uri, 'https://accounts.google.com/o/oauth2/auth?' + urlencode(params))
 
+
 def login():
   port = 9090
   redirect_uri, oauth_uri = auth_redirect_link(port)
 
   web_server = ClientRedirectServer(('localhost', port), ClientRedirectHandler)
   print(f'To sign in, use your browser and navigate to {oauth_uri}')
+  print('\nOR visit https://jwt.comma.ai and re-run this script with token appended as argument')
   webbrowser.open(oauth_uri, new=2)
 
   while True:
@@ -67,5 +72,10 @@ def login():
   except APIError as e:
     print(f'Authentication Error: {e}', file=sys.stderr)
 
+
 if __name__ == '__main__':
-  login()
+  if len(sys.argv) > 1:
+    set_token(sys.argv[1])
+    print('Authenticated')
+  else:
+    login()
