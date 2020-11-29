@@ -8,7 +8,18 @@
 #include <QStackedLayout>
 
 #include "wifi.hpp"
+class OffroadAlert : public QWidget{
+  Q_OBJECT
 
+public:
+  explicit OffroadAlert(QWidget *parent = 0);
+  bool show_alert;
+
+private:
+  QVector<QString> alerts;
+
+  void parse_alerts();
+};
 
 class ParamsToggle : public QFrame {
   Q_OBJECT
@@ -38,7 +49,7 @@ private:
   std::map<QString, QWidget *> panels;
   QStackedLayout *panel_layout;
 
-private slots:
+public slots:
   void setActivePanel();
   void closeSidebar();
   void openSidebar();

@@ -19,6 +19,44 @@
 #include "common/utilpp.h"
 
 const int SIDEBAR_WIDTH = 400;
+OffroadAlert::OffroadAlert(QWidget* parent){
+  parse_alerts();
+  show_alert = alerts.size()>0;
+  qDebug()<<alerts.size();
+  QVBoxLayout *vlayout = new QVBoxLayout;
+  QLabel *l=new QLabel(alerts[0]);
+  vlayout->addWidget(l);
+  setLayout(vlayout);
+  setStyleSheet(R"(
+    * {
+      background-color: #ff0000;
+    }
+  )");
+}
+
+void OffroadAlert::parse_alerts(){
+  //We launch in selfdrive/ui
+  QFile inFile("../controls/lib/alerts_offroad.json");
+  inFile.open(QIODevice::ReadOnly|QIODevice::Text);
+  QByteArray data = inFile.readAll();
+  inFile.close();
+
+  QJsonDocument doc = QJsonDocument::fromJson(data);
+  if (doc.isNull()) {
+      qDebug() << "Parse failed";
+  }
+  QJsonObject json = doc.object();
+  foreach(const QString& key, json.keys()) {
+    qDebug()<<key;
+    std::vector<char> bytes = Params().read_db_bytes(key.toStdString().c_str());
+    if(bytes.size()>0){
+      QString message = QString::fromLatin1(&bytes[0]);
+      qDebug()<<message;
+      alerts.push_back(message);
+    }
+  }
+  
+}
 
 ParamsToggle::ParamsToggle(QString param, QString title, QString description, QString icon_path, QWidget *parent): QFrame(parent) , param(param) {
   QHBoxLayout *hlayout = new QHBoxLayout;
@@ -85,6 +123,7 @@ ParamsToggle::ParamsToggle(QString param, QString title, QString description, QS
 void ParamsToggle::checkboxClicked(int state){
   char value = state ? '1': '0';
   Params().write_db_value(param.toStdString().c_str(), &value, 1);
+  // debugJSON();
 }
 
 QWidget * toggles_panel() {
@@ -225,7 +264,6 @@ void SettingsWindow::setActivePanel() {
 }
 
 SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
-
   // sidebar
   QVBoxLayout *sidebar_layout = new QVBoxLayout();
   panel_layout = new QStackedLayout();
@@ -268,10 +306,17 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
     panel_layout->addWidget(panel.second);
     QObject::connect(btn, SIGNAL(released()), this, SLOT(setActivePanel()));
   }
+
+  // offroad alerts
+  OffroadAlert *alerts_widget=new OffroadAlert();
+  panel_layout->addWidget(alerts_widget);
+  if(alerts_widget->show_alert){
+    panel_layout->setCurrentWidget(alerts_widget);
+  }
+  
   QHBoxLayout *settings_layout = new QHBoxLayout();
   settings_layout->addSpacing(45);
 
-  // settings_layout->addLayout(sidebar_layout);
   sidebar_widget = new QWidget;
   sidebar_widget->setLayout(sidebar_layout);
   sidebar_widget->setFixedWidth(SIDEBAR_WIDTH);
