@@ -225,7 +225,7 @@ class CarState(CarStateBase):
     
     # Update ACC radar status.
     # FIXME: This is unfinished and not fully correct, need to improve further
-    ret.cruiseState.available = bool(pt_cp.vl["GRA_Neu"]['Hauptschalter'])
+    ret.cruiseState.available = bool(pt_cp.vl["GRA_Neu"]['GRA_Hauptschalt'])
     ret.cruiseState.enabled = True if pt_cp.vl["Motor_2"]['GRA_Status'] in [1, 2] else False
 
     # Update ACC setpoint. When the setpoint reads as 255, the driver has not
@@ -235,12 +235,12 @@ class CarState(CarStateBase):
       ret.cruiseState.speed = 0
 
     # Update control button states for turn signals and ACC controls.
-    self.buttonStates["accelCruise"] = bool(pt_cp.vl["GRA_Neu"]['Kurz_Tip_up']) or bool(pt_cp.vl["GRA_neu"]['Lang_Tip_up'])
-    self.buttonStates["decelCruise"] = bool(pt_cp.vl["GRA_Neu"]['Kurz_Tip_down']) or bool(pt_cp.vl["GRA_neu"]['Lang_Tip_down'])
-    self.buttonStates["cancel"] = bool(pt_cp.vl["GRA_Neu"]['Abbrechen'])
-    self.buttonStates["setCruise"] = bool(pt_cp.vl["GRA_Neu"]['Setzen'])
-    self.buttonStates["resumeCruise"] = bool(pt_cp.vl["GRA_Neu"]['Wiederaufnahme'])
-    self.buttonStates["gapAdjustCruise"] = bool(pt_cp.vl["GRA_Neu"]['Zeitlueckenverstellung'])
+    self.buttonStates["accelCruise"] = bool(pt_cp.vl["GRA_Neu"]['GRA_Up_kurz']) or bool(pt_cp.vl["GRA_neu"]['GRA_Up_lang'])
+    self.buttonStates["decelCruise"] = bool(pt_cp.vl["GRA_Neu"]['GRA_Down_kurz']) or bool(pt_cp.vl["GRA_neu"]['GRA_Down_lang'])
+    self.buttonStates["cancel"] = bool(pt_cp.vl["GRA_Neu"]['GRA_Abbrechen'])
+    self.buttonStates["setCruise"] = bool(pt_cp.vl["GRA_Neu"]['GRA_Neu_Setzen'])
+    self.buttonStates["resumeCruise"] = bool(pt_cp.vl["GRA_Neu"]['GRA_Recall'])
+    self.buttonStates["gapAdjustCruise"] = bool(pt_cp.vl["GRA_Neu"]['GRA_Zeitluecke'])
     ret.leftBlinker = bool(pt_cp.vl["Gate_Komf_1"]['GK1_Blinker_li'])
     ret.rightBlinker = bool(pt_cp.vl["Gate_Komf_1"]['GK1_Blinker_re'])
 
@@ -248,7 +248,7 @@ class CarState(CarStateBase):
     # to the radar. Ends up being different for steering wheel buttons vs
     # third stalk type controls.
     # TODO: Check to see what info we need to passthru and spoof on PQ
-    self.graHauptschalter = pt_cp.vl["GRA_Neu"]['Hauptschalter']
+    self.graHauptschalter = pt_cp.vl["GRA_Neu"]['GRA_Hauptschalt']
     self.graTypHauptschalter = False
     self.graButtonTypeInfo = False
     self.graTipStufe2 = False
@@ -390,15 +390,15 @@ class CarState(CarStateBase):
       ("MFA_v_Einheit_02", "Einheiten_1", 0),       # MPH vs KMH speed display
       ("Bremsinfo", "Kombi_1", 0),                  # Manual handbrake applied
       ("GRA_Status", "Motor_2", 0),                 # ACC engagement status
-      ("Hauptschalter", "GRA_Neu", 0),              # ACC button, on/off
-      ("Abbrechen", "GRA_Neu", 0),                  # ACC button, cancel
-      ("Setzen", "GRA_Neu", 0),                     # ACC button, set
-      ("Lang_Tip_up", "GRA_Neu", 0),                # ACC button, increase or accel, long press
-      ("Lang_Tip_down", "GRA_Neu", 0),              # ACC button, decrease or decel, long press
-      ("Kurz_Tip_up", "GRA_Neu", 0),                # ACC button, increase or accel, short press
-      ("Kurz_Tip_down", "GRA_Neu", 0),              # ACC button, decrease or decel, short press
-      ("Wiederaufnahme", "GRA_Neu", 0),             # ACC button, resume
-      ("Zeitlueckenverstellung", "GRA_Neu", 0),     # ACC button, time gap adj
+      ("GRA_Hauptschalt", "GRA_Neu", 0),              # ACC button, on/off
+      ("GRA_Abbrechen", "GRA_Neu", 0),                  # ACC button, cancel
+      ("GRA_Neu_Setzen", "GRA_Neu", 0),                     # ACC button, set
+      ("GRA_Up_lang", "GRA_Neu", 0),                # ACC button, increase or accel, long press
+      ("GRA_Down_lang", "GRA_Neu", 0),              # ACC button, decrease or decel, long press
+      ("GRA_Up_kurz", "GRA_Neu", 0),                # ACC button, increase or accel, short press
+      ("GRA_Down_kurz", "GRA_Neu", 0),              # ACC button, decrease or decel, short press
+      ("GRA_Recall", "GRA_Neu", 0),             # ACC button, resume
+      ("GRA_Zeitluecke", "GRA_Neu", 0),     # ACC button, time gap adj
     ]
 
     checks = [
@@ -448,7 +448,7 @@ class CarState(CarStateBase):
     checks = [
       # sig_address, frequency
       # FIXME: LDW_02 should be checked when we have better detection of installed hardware
-      #("LDW_02", 10),  # From R242 Driver assistance camera
+      ("LDW_02", 10),  # From R242 Driver assistance camera
     ]
 
     if CP.networkLocation == NWL.gateway:
