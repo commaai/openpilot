@@ -87,11 +87,11 @@ Params::Params(std::string path) {
   params_path = path;
 }
 
-int Params::write_db_value(std::string key, std::string dat){
-  return write_db_value(key.c_str(), dat.c_str(), dat.length());
+bool Params::put(std::string key, std::string dat){
+  return put(key.c_str(), dat.c_str(), dat.length());
 }
 
-int Params::write_db_value(const char* key, const char* value, size_t value_size) {
+bool Params::put(const char* key, const char* value, size_t value_size) {
   // Information about safely and atomically writing a file: https://lwn.net/Articles/457667/
   // 1) Create temp file
   // 2) Write data to temp file
@@ -210,10 +210,10 @@ cleanup:
     }
     close(tmp_fd);
   }
-  return result;
+  return result == 0;
 }
 
-int Params::delete_db_value(std::string key) {
+int Params::delete_value(std::string key) {
   int lock_fd = -1;
   int result;
   std::string path;
@@ -286,9 +286,8 @@ bool Params::read_db_value_blocking(const char* key, std::string &value) {
   while (!params_do_exit) {
     if (read_db_value(key, value)) {
       break;
-    } else {
-      util::sleep_for(100); // 0.1 s
     }
+    util::sleep_for(100); // 0.1 s
   }
 
   std::signal(SIGINT, prev_handler_sigint);
@@ -296,7 +295,7 @@ bool Params::read_db_value_blocking(const char* key, std::string &value) {
   return params_do_exit; // Return 0 if we had no interrupt
 }
 
-int Params::read_db_all(std::map<std::string, std::string> *params) {
+int Params::read_all(std::map<std::string, std::string> *params) {
   int err = 0;
 
   std::string lock_path = params_path + "/.lock";

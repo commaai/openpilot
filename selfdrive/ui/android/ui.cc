@@ -69,7 +69,7 @@ static void handle_vision_touch(UIState *s, int touch_x, int touch_y) {
     if (!s->scene.driver_view) {
       s->sidebar_collapsed = !s->sidebar_collapsed;
     } else {
-      Params().write_db_value("IsDriverViewEnabled", "0", 1);
+      Params().put("IsDriverViewEnabled", false);
     }
   }
 }

@@ -3,19 +3,12 @@
 #include <map>
 #include <string>
 #include <sstream>
+#include <string.h>
 #define ERR_NO_VALUE -33
 
 class Params {
 private:
   std::string params_path;
-
-public:
-  Params(bool persistent_param = false);
-  Params(std::string path);
-
-  int write_db_value(std::string key, std::string dat);
-  int write_db_value(const char* key, const char* value, size_t value_size);
-
   // Reads a value from the params database.
   // Inputs:
   //  key: The key to read.
@@ -29,40 +22,39 @@ public:
   // Returns: false on failure, otherwise true.
   bool read_db_value(const char* key, std::string &value);
 
-  // Delete a value from the params database.
-  // Inputs are the same as read_db_value, without value and value_sz.
-  int delete_db_value(std::string key);
-
   // Reads a value from the params database, blocking until successful.
   // Inputs are the same as read_db_value.
   bool read_db_value_blocking(const char* key, std::string &value);
 
-  int read_db_all(std::map<std::string, std::string> *params);
+public:
+  Params(bool persistent_param = false);
+  Params(std::string path);
+  
+  // Delete a value from the params database.
+  // Inputs are the same as read_db_value, without value and value_sz.
+  int delete_value(std::string key);
+
+  int read_all(std::map<std::string, std::string> *params);
 
   std::string get(std::string key, bool block=false);
-
-  template <typename T>
-  bool read(const char* param_name, T* value) {
-    if (std::string data; read_db_value(param_name, data)) {
-      T tmp_value{};
+  template <class T>
+  std::optional<T> get(const char* param_name, bool block=false) {
+    T value{};
+    auto read_func = block ? &Params::read_db_value_blocking : &Params::read_db_value;
+    if (std::string data; (this->*read_func)(param_name, data)) {
       std::istringstream iss(data);
-      iss >> tmp_value;
+      iss >> value;
       if (!iss.fail()) {
-        *value = tmp_value;
-        return true;
+        return std::optional<T>(value);
       }
     }
-    return false;
+    return std::nullopt;
   }
-
+  bool put(std::string key, std::string dat);
+  bool put(const char* key, const char* value, size_t value_size);
   template <class T>
-  std::optional<T> get(const char* param_name) {
-    T value{};
-    return read(param_name, &value) ? std::optional<T>(value) : std::nullopt;
-  }
-
-  template <class T>
-  int write(const char* param_name, const T& value) {
-    return write_db_value(param_name, std::to_string(value));
+  bool put(const char* param_name, const T value) {
+    std::string v = std::to_string(value);
+    return put(param_name, v.c_str(), v.length());
   }
 };

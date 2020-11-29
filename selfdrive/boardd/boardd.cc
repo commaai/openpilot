@@ -145,7 +145,7 @@ bool usb_connect() {
       fw_sig_hex_buf[2*i+1] = NIBBLE_TO_HEX((uint8_t)fw_sig_buf[i] & 0xF);
     }
 
-    params.write_db_value("PandaFirmwareHex", fw_sig_hex_buf, 16);
+    params.put("PandaFirmwareHex", fw_sig_hex_buf, 16);
     LOGW("fw signature: %.*s", 16, fw_sig_hex_buf);
   } else { return false; }
 
@@ -320,9 +320,9 @@ void panda_state_thread(bool spoofing_started) {
 
     // clear VIN, CarParams, and set new safety on car start
     if (ignition && !ignition_last) {
-      int result = params.delete_db_value("CarVin");
+      int result = params.delete_value("CarVin");
       assert((result == 0) || (result == ERR_NO_VALUE));
-      result = params.delete_db_value("CarParams");
+      result = params.delete_value("CarParams");
       assert((result == 0) || (result == ERR_NO_VALUE));
 
       if (!safety_setter_thread_running) {

@@ -167,9 +167,13 @@ QWidget * device_panel() {
   device_layout->addWidget(clear_cal_btn, 0, Qt::AlignBottom);
   device_layout->addWidget(horizontal_line(), Qt::AlignBottom);
   QObject::connect(clear_cal_btn, &QPushButton::released, [=]() {
+<<<<<<< HEAD
     if (ConfirmationDialog::confirm("Are you sure you want to reset calibration?")) {
       Params().delete_db_value("CalibrationParams");
     }
+=======
+    Params().delete_value("CalibrationParams");
+>>>>>>> same api with python version
   });
 
   // power buttons
