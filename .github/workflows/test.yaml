@@ -98,6 +98,17 @@ jobs:
           docker tag tmppilotwebcam docker.io/commaai/openpilotwebcamci:latest
           docker push docker.io/commaai/openpilotwebcamci:latest
 
+  build_aarch64:
+    name: build aarch64
+    runs-on: ubuntu-20.04
+    timeout-minutes: 20
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Build openpilot
+      run: cd selfdrive/test && ./test_aarch64_build.sh
+
   docker_push:
     name: docker push
     runs-on: ubuntu-20.04
