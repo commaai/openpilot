@@ -8,6 +8,7 @@
 
 #include "common/util.h"
 #include "common/timing.h"
+#include "common/clutil.h"
 #include "common/swaglog.h"
 
 #pragma clang diagnostic push
@@ -101,15 +102,14 @@ static void* rear_thread(void *arg) {
     cl_command_queue q = s->buf.camera_bufs[buf_idx].copy_q;
     cl_mem yuv_cl = s->buf.camera_bufs[buf_idx].buf_cl;
     cl_event map_event;
-    void *yuv_buf = (void *)clEnqueueMapBuffer(q, yuv_cl, CL_TRUE,
+    void *yuv_buf = (void *)CL_CHECK_ERR(clEnqueueMapBuffer(q, yuv_cl, CL_TRUE,
                                                 CL_MAP_WRITE, 0, transformed_size,
-                                                0, NULL, &map_event, &err);
-    assert(err == 0);
+                                                0, NULL, &map_event, &err));
     clWaitForEvents(1, &map_event);
     clReleaseEvent(map_event);
     memcpy(yuv_buf, transformed_mat.data, transformed_size);
 
-    clEnqueueUnmapMemObject(q, yuv_cl, yuv_buf, 0, NULL, &map_event);
+    CL_CHECK(clEnqueueUnmapMemObject(q, yuv_cl, yuv_buf, 0, NULL, &map_event));
     clWaitForEvents(1, &map_event);
     clReleaseEvent(map_event);
     tbuffer_dispatch(tb, buf_idx);
@@ -175,15 +175,14 @@ void front_thread(CameraState *s) {
     cl_command_queue q = s->buf.camera_bufs[buf_idx].copy_q;
     cl_mem yuv_cl = s->buf.camera_bufs[buf_idx].buf_cl;
     cl_event map_event;
-    void *yuv_buf = (void *)clEnqueueMapBuffer(q, yuv_cl, CL_TRUE,
+    void *yuv_buf = (void *)CL_CHECK_ERR(clEnqueueMapBuffer(q, yuv_cl, CL_TRUE,
                                                 CL_MAP_WRITE, 0, transformed_size,
-                                                0, NULL, &map_event, &err);
-    assert(err == 0);
+                                                0, NULL, &map_event, &err));
     clWaitForEvents(1, &map_event);
     clReleaseEvent(map_event);
     memcpy(yuv_buf, transformed_mat.data, transformed_size);
 
-    clEnqueueUnmapMemObject(q, yuv_cl, yuv_buf, 0, NULL, &map_event);
+    CL_CHECK(clEnqueueUnmapMemObject(q, yuv_cl, yuv_buf, 0, NULL, &map_event));
     clWaitForEvents(1, &map_event);
     clReleaseEvent(map_event);
     tbuffer_dispatch(tb, buf_idx);
