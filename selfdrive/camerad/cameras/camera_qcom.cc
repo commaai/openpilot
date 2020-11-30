@@ -2141,11 +2141,11 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
     if (env_send_rear) {
       fill_frame_image(framed, (uint8_t*)b->cur_rgb_buf->addr, b->rgb_width, b->rgb_height, b->rgb_stride);
     }
-    framed.setFocusVal(kj::ArrayPtr<const int16_t>(&s->rear.focus[0], NUM_FOCUS));
-    framed.setFocusConf(kj::ArrayPtr<const uint8_t>(&s->rear.confidence[0], NUM_FOCUS));
-    framed.setSharpnessScore(kj::ArrayPtr<const uint16_t>(&s->lapres[0], ARRAYSIZE(s->lapres)));
+    framed.setFocusVal(s->rear.focus);
+    framed.setFocusConf(s->rear.confidence);
+    framed.setSharpnessScore(s->lapres);
     framed.setRecoverState(self_recover);
-    framed.setTransform(kj::ArrayPtr<const float>(&b->yuv_transform.v[0], 9));
+    framed.setTransform(b->yuv_transform.v);
     s->pm->send("frame", msg);
   }
 

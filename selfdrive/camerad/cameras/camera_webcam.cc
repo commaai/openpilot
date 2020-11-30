@@ -266,7 +266,7 @@ void camera_process_rear(MultiCameraState *s, CameraState *c, int cnt) {
   auto framed = msg.initEvent().initFrame();
   fill_frame_data(framed, b->cur_frame_data, cnt);
   framed.setImage(kj::arrayPtr((const uint8_t *)b->yuv_ion[b->cur_yuv_idx].addr, b->yuv_buf_size));
-  framed.setTransform(kj::ArrayPtr<const float>(&b->yuv_transform.v[0], 9));
+  framed.setTransform(b->yuv_transform.v);
   s->pm->send("frame", msg);
 }
 

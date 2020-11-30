@@ -188,14 +188,10 @@ void dmonitoring_publish(PubMaster &pm, uint32_t frame_id, const DMonitoringResu
   framed.setFrameId(frame_id);
   framed.setModelExecutionTime(execution_time);
 
-  kj::ArrayPtr<const float> face_orientation(&res.face_orientation[0], ARRAYSIZE(res.face_orientation));
-  kj::ArrayPtr<const float> face_orientation_std(&res.face_orientation_meta[0], ARRAYSIZE(res.face_orientation_meta));
-  kj::ArrayPtr<const float> face_position(&res.face_position[0], ARRAYSIZE(res.face_position));
-  kj::ArrayPtr<const float> face_position_std(&res.face_position_meta[0], ARRAYSIZE(res.face_position_meta));
-  framed.setFaceOrientation(face_orientation);
-  framed.setFaceOrientationStd(face_orientation_std);
-  framed.setFacePosition(face_position);
-  framed.setFacePositionStd(face_position_std);
+  framed.setFaceOrientation(res.face_orientation);
+  framed.setFaceOrientationStd(res.face_orientation_meta);
+  framed.setFacePosition(res.face_position);
+  framed.setFacePositionStd(res.face_position_meta);
   framed.setFaceProb(res.face_prob);
   framed.setLeftEyeProb(res.left_eye_prob);
   framed.setRightEyeProb(res.right_eye_prob);
