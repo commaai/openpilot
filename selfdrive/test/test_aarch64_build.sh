@@ -1,6 +1,6 @@
-#!/bin/bash
+#!/bin/bash -e
 
-docker run --rm --privileged multiarch/qemu-user-static:aarch64 --reset -p yes
+docker run --rm --privileged multiarch/qemu-user-static:register
 docker pull docker.io/commaai/agnos:latest
 docker run -v $PWD/../..:/tmp/openpilot docker.io/commaai/agnos /bin/bash -c  "\
          chown -R comma /tmp/openpilot && \
