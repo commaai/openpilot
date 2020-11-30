@@ -159,7 +159,6 @@ class CarInterface(CarInterfaceBase):
     
     #PQTIMEBOMB STUFF START
     #Warning alert for the 6min timebomb found on PQ's
-  if candidate in PQ_CARS:
     ret.stopSteering = False
     if True: #(self.frame % 100) == 0: # Set this to false/False if you want to turn this feature OFF!
       if ret.cruiseState.enabled:
