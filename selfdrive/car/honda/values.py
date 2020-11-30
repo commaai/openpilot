@@ -946,6 +946,7 @@ FW_VERSIONS = {
   CAR.HRV: {
     (Ecu.gateway, 0x18daeff1, None): [
       b'38897-T7A-A010\x00\x00',
+      b'38897-T7A-A110\x00\x00',
     ],
     (Ecu.eps, 0x18da30f1, None): [
       b'39990-THX-A020\x00\x00',
@@ -953,6 +954,7 @@ FW_VERSIONS = {
     (Ecu.fwdRadar, 0x18dab0f1, None): [
       b'36161-T7A-A140\x00\x00',
       b'36161-T7A-A240\x00\x00',
+      b'36161-T7A-C440\x00\x00',
     ],
     (Ecu.srs, 0x18da53f1, None): [
       b'77959-T7A-A230\x00\x00',
@@ -960,6 +962,7 @@ FW_VERSIONS = {
     (Ecu.combinationMeter, 0x18da60f1, None): [
       b'78109-THX-A110\x00\x00',
       b'78109-THX-A210\x00\x00',
+      b'78109-THX-C220\x00\x00',
     ],
   },
 }
