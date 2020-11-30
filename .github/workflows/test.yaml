@@ -101,7 +101,7 @@ jobs:
   build_aarch64:
     name: build aarch64
     runs-on: ubuntu-20.04
-    timeout-minutes: 20
+    timeout-minutes: 35
     steps:
     - uses: actions/checkout@v2
       with:
