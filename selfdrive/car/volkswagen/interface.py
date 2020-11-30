@@ -17,7 +17,6 @@ class CarInterface(CarInterfaceBase):
     # Set up an alias to PT/CAM parser for ACC depending on its detected network location
     self.cp_acc = self.cp if CP.networkLocation == NWL.fwdCamera else self.cp_cam
     
-    self.isPQcheck = False
     self.pqCounter = 0
     self.wheelGrabbed = False
     self.pqBypassCounter = 0
@@ -71,7 +70,6 @@ class CarInterface(CarInterfaceBase):
     elif candidate in PQ_CARS:
       # Configuration items shared between all PQ35/PQ46/NMS vehicles
       ret.safetyModel = car.CarParams.SafetyModel.volkswagenPq
-      self.isPQcheck = True
 
       # Determine transmission type by CAN message(s) present on the bus
       if 0x440 in fingerprint[0]:
@@ -162,10 +160,10 @@ class CarInterface(CarInterfaceBase):
     #PQTIMEBOMB STUFF START
     #Warning alert for the 6min timebomb found on PQ's
     ret.stopSteering = False
-    if self.isPQcheck == True: #(self.frame % 100) == 0: # Set this to false/False if you want to turn this feature OFF!
+    if True: #(self.frame % 100) == 0: # Set this to false/False if you want to turn this feature OFF!
       if ret.cruiseState.enabled:
         self.pqCounter += 1
-      if self.pqCounter >= 10*100: #time in seconds until counter threshold for pqTimebombWarn alert
+      if self.pqCounter >= 330*100: #time in seconds until counter threshold for pqTimebombWarn alert
         if not self.wheelGrabbed:
           events.add(EventName.pqTimebombWarn)
         if self.wheelGrabbed or ret.steeringPressed:
