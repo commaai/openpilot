@@ -19,43 +19,96 @@
 #include "common/utilpp.h"
 
 const int SIDEBAR_WIDTH = 400;
-OffroadAlert::OffroadAlert(QWidget* parent){
-  parse_alerts();
-  show_alert = alerts.size()>0;
-  qDebug()<<alerts.size();
-  QVBoxLayout *vlayout = new QVBoxLayout;
-  QLabel *l=new QLabel(alerts[0]);
-  vlayout->addWidget(l);
-  setLayout(vlayout);
-  setStyleSheet(R"(
-    * {
-      background-color: #ff0000;
+
+
+void cleanLayout(QLayout* layout) {
+  while (QLayoutItem* item = layout->takeAt(0)) {
+    if (QWidget* widget = item->widget()){
+      widget->deleteLater();
     }
-  )");
+    if (QLayout* childLayout = item->layout()) {
+      cleanLayout(childLayout);
+    }
+    delete item;
+  }
+}
+
+OffroadAlert::OffroadAlert(QWidget* parent){
+  vlayout=new QVBoxLayout;
+  refresh();
+  setLayout(vlayout);
+}
+void OffroadAlert::refresh(){
+  cleanLayout(vlayout);
+  parse_alerts();
+  show_alert = alerts.size() > 0;
+  qDebug()<<alerts.size();
+  if(show_alert){
+    vlayout->addSpacing(60);
+    for(auto alert:alerts){
+      QLabel *l=new QLabel(alert.text);
+      l->setWordWrap(true);
+      l->setMargin(60);
+      if(alert.severity==1){
+        l->setStyleSheet(R"(
+          QLabel {
+            font-size: 40px;
+            font-weight: bold;
+            border-radius: 60px;
+            background-color: #971b1c;
+          }
+        )");
+      }else{
+        l->setStyleSheet(R"(
+          QLabel {
+            font-size: 40px;
+            font-weight: bold;
+            border-radius: 60px;
+            background-color: #111155;
+          }
+        )");
+      }
+      vlayout->addWidget(l);
+      vlayout->addSpacing(20);
+    }
+    for(int i = alerts.size() ; i < 4 ; i++){
+      QWidget *w = new QWidget();
+      vlayout->addWidget(w);
+      vlayout->addSpacing(20);
+    }
+    QPushButton *b = new QPushButton("Hide alerts");
+    vlayout->addWidget(b);
+    QObject::connect(b, SIGNAL(released()), this, SLOT(closeButtonPushed()));
+
+  }
 }
 
 void OffroadAlert::parse_alerts(){
+  alerts.clear();
   //We launch in selfdrive/ui
   QFile inFile("../controls/lib/alerts_offroad.json");
   inFile.open(QIODevice::ReadOnly|QIODevice::Text);
   QByteArray data = inFile.readAll();
   inFile.close();
-
   QJsonDocument doc = QJsonDocument::fromJson(data);
   if (doc.isNull()) {
       qDebug() << "Parse failed";
   }
   QJsonObject json = doc.object();
-  foreach(const QString& key, json.keys()) {
-    qDebug()<<key;
+  for(const QString& key : json.keys()) {
     std::vector<char> bytes = Params().read_db_bytes(key.toStdString().c_str());
     if(bytes.size()>0){
-      QString message = QString::fromLatin1(&bytes[0]);
-      qDebug()<<message;
-      alerts.push_back(message);
+      QJsonDocument doc_par = QJsonDocument::fromJson(QByteArray(bytes.data(), bytes.size()));
+      
+      QJsonObject obj = doc_par.object();
+      Alert alert = {obj.value("text").toString(), obj.value("severity").toInt()};
+      alerts.push_back(alert);
     }
   }
-  
+}
+
+void OffroadAlert::closeButtonPushed(){
+  emit closeAlerts();
 }
 
 ParamsToggle::ParamsToggle(QString param, QString title, QString description, QString icon_path, QWidget *parent): QFrame(parent) , param(param) {
@@ -280,6 +333,14 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
   sidebar_layout->addWidget(close_button);
   QObject::connect(close_button, SIGNAL(released()), this, SIGNAL(closeSettings()));
 
+  // offroad alerts
+  alerts_widget=new OffroadAlert();
+  panel_layout->addWidget(alerts_widget);
+  if(alerts_widget->show_alert){
+    panel_layout->setCurrentWidget(alerts_widget);
+  }
+  QObject::connect(alerts_widget, SIGNAL(closeAlerts()), this, SLOT(closeAlerts()));
+  
   // setup panels
   panels = {
     {"device", device_panel()},
@@ -307,13 +368,6 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
     QObject::connect(btn, SIGNAL(released()), this, SLOT(setActivePanel()));
   }
 
-  // offroad alerts
-  OffroadAlert *alerts_widget=new OffroadAlert();
-  panel_layout->addWidget(alerts_widget);
-  if(alerts_widget->show_alert){
-    panel_layout->setCurrentWidget(alerts_widget);
-  }
-  
   QHBoxLayout *settings_layout = new QHBoxLayout();
   settings_layout->addSpacing(45);
 
@@ -335,6 +389,13 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
   )");
 }
 
+void SettingsWindow::refreshParams(){
+  panel_layout->setCurrentIndex(0);
+  alerts_widget->refresh();
+}
+void SettingsWindow::closeAlerts(){
+  panel_layout->setCurrentIndex(1);
+}
 void SettingsWindow::closeSidebar(){
   sidebar_widget->setFixedWidth(0);
 }

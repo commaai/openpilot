@@ -8,17 +8,31 @@
 #include <QStackedLayout>
 
 #include "wifi.hpp"
+struct Alert{
+  QString text;
+  int severity;
+};
+
 class OffroadAlert : public QWidget{
   Q_OBJECT
 
 public:
   explicit OffroadAlert(QWidget *parent = 0);
   bool show_alert;
+  
 
 private:
-  QVector<QString> alerts;
+  QVector<Alert> alerts;
+  QVBoxLayout *vlayout;
 
   void parse_alerts();
+
+signals:
+  void closeAlerts();
+
+public slots:
+  void closeButtonPushed();
+  void refresh();
 };
 
 class ParamsToggle : public QFrame {
@@ -40,17 +54,21 @@ class SettingsWindow : public QWidget {
 
 public:
   explicit SettingsWindow(QWidget *parent = 0);
+  void refreshParams();
 
 signals:
   void closeSettings();
 
 private:
   QWidget *sidebar_widget;
+  OffroadAlert *alerts_widget;
   std::map<QString, QWidget *> panels;
   QStackedLayout *panel_layout;
 
+
 public slots:
   void setActivePanel();
+  void closeAlerts();
   void closeSidebar();
   void openSidebar();
 };
