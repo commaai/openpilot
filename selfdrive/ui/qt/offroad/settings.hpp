@@ -6,8 +6,10 @@
 #include <QTimer>
 #include <QCheckBox>
 #include <QStackedLayout>
+#include <QPushButton>
 
 #include "wifi.hpp"
+
 struct Alert{
   QString text;
   int severity;
@@ -19,10 +21,10 @@ class OffroadAlert : public QWidget{
 public:
   explicit OffroadAlert(QWidget *parent = 0);
   bool show_alert;
+  QVector<Alert> alerts;
   
 
 private:
-  QVector<Alert> alerts;
   QVBoxLayout *vlayout;
 
   void parse_alerts();
@@ -60,6 +62,7 @@ signals:
   void closeSettings();
 
 private:
+  QPushButton *sidebar_alert_widget;
   QWidget *sidebar_widget;
   OffroadAlert *alerts_widget;
   std::map<QString, QWidget *> panels;
@@ -69,6 +72,7 @@ private:
 public slots:
   void setActivePanel();
   void closeAlerts();
+  void openAlerts();
   void closeSidebar();
   void openSidebar();
 };

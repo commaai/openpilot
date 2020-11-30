@@ -56,6 +56,9 @@ void OffroadAlert::refresh(){
             font-weight: bold;
             border-radius: 60px;
             background-color: #971b1c;
+            border-style: solid;
+            border-width: 2px;
+            border-color: white;
           }
         )");
       }else{
@@ -64,7 +67,10 @@ void OffroadAlert::refresh(){
             font-size: 40px;
             font-weight: bold;
             border-radius: 60px;
-            background-color: #111155;
+            background-color: #114267;
+            border-style: solid;
+            border-width: 2px;
+            border-color: white;
           }
         )");
       }
@@ -99,7 +105,6 @@ void OffroadAlert::parse_alerts(){
     std::vector<char> bytes = Params().read_db_bytes(key.toStdString().c_str());
     if(bytes.size()>0){
       QJsonDocument doc_par = QJsonDocument::fromJson(QByteArray(bytes.data(), bytes.size()));
-      
       QJsonObject obj = doc_par.object();
       Alert alert = {obj.value("text").toString(), obj.value("severity").toInt()};
       alerts.push_back(alert);
@@ -336,11 +341,12 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
   // offroad alerts
   alerts_widget=new OffroadAlert();
   panel_layout->addWidget(alerts_widget);
-  if(alerts_widget->show_alert){
-    panel_layout->setCurrentWidget(alerts_widget);
-  }
+
   QObject::connect(alerts_widget, SIGNAL(closeAlerts()), this, SLOT(closeAlerts()));
-  
+  sidebar_alert_widget=new QPushButton("ERROR");
+  QObject::connect(sidebar_alert_widget, SIGNAL(released()), this, SLOT(openAlerts()));
+  sidebar_layout->addWidget(sidebar_alert_widget);
+
   // setup panels
   panels = {
     {"device", device_panel()},
@@ -365,6 +371,11 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
 
     sidebar_layout->addWidget(btn);
     panel_layout->addWidget(panel.second);
+    if(alerts_widget->show_alert){
+      panel_layout->setCurrentWidget(alerts_widget);
+    }else{
+      panel_layout->setCurrentIndex(1);
+    }
     QObject::connect(btn, SIGNAL(released()), this, SLOT(setActivePanel()));
   }
 
@@ -390,11 +401,36 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
 }
 
 void SettingsWindow::refreshParams(){
-  panel_layout->setCurrentIndex(0);
   alerts_widget->refresh();
+  if(!alerts_widget->show_alert){
+    sidebar_alert_widget->setFixedHeight(0);
+    return;
+  }
+  panel_layout->setCurrentIndex(0);
+  int alerts=alerts_widget->alerts.size();
+  bool hasImportantAlerts=false;
+  for(auto alert:alerts_widget->alerts){
+    if( alert.severity==1){
+      hasImportantAlerts=true;
+    }
+  }
+  sidebar_alert_widget->setText(QString::number(alerts)+" ALERT"+ (alerts>1?"S":""));
+  sidebar_alert_widget->setFixedHeight(100);
+  if(hasImportantAlerts){
+    sidebar_alert_widget->setStyleSheet(R"(
+      background-color: #661111;
+    )");
+  }else{
+    sidebar_alert_widget->setStyleSheet(R"(
+      background-color: #114267;
+    )");
+  }
 }
 void SettingsWindow::closeAlerts(){
   panel_layout->setCurrentIndex(1);
+}
+void SettingsWindow::openAlerts(){
+  panel_layout->setCurrentIndex(0);
 }
 void SettingsWindow::closeSidebar(){
   sidebar_widget->setFixedWidth(0);
