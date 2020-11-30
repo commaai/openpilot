@@ -7,5 +7,5 @@ docker run -v $PWD/../..:/tmp/openpilot docker.io/commaai/agnos /bin/bash -c  "\
          su -l -c \" \
          source ~/.bash_profile && \
          cd /tmp/openpilot && \
-         scons -j8 -c \
+         scons -j8 \
          \" -m \"comma\""
