@@ -11,7 +11,6 @@
 #include "common/util.h"
 #include "common/timing.h"
 #include "common/swaglog.h"
-#include "buffering.h"
 
 extern "C" {
 #include <libavcodec/avcodec.h>
@@ -36,21 +35,22 @@ void camera_init(CameraState *s, int camera_id, unsigned int fps, cl_device_id d
   assert(s->ci.frame_width != 0);
 
   s->fps = fps;
-  s->buf.init(device_id, ctx, s, FRAME_BUF_COUNT, "camera");
+  s->buf.init(device_id, ctx, s, FRAME_BUF_COUNT);
 }
 
 void run_frame_stream(MultiCameraState *s) {
   s->sm = new SubMaster({"frame"});
 
   CameraState *const rear_camera = &s->rear;
-  auto *tb = &rear_camera->buf.camera_tb;
 
   while (!do_exit) {
     if (s->sm->update(1000) == 0) continue;
 
     auto frame = (*(s->sm))["frame"].getFrame();
 
-    const int buf_idx = tbuffer_select(tb);
+    // Come up with good id for current camera buf
+    size_t buf_idx = 0;
+
     rear_camera->buf.camera_bufs_metadata[buf_idx] = {
       .frame_id = frame.getFrameId(),
       .timestamp_eof = frame.getTimestampEof(),
@@ -63,7 +63,7 @@ void run_frame_stream(MultiCameraState *s) {
     cl_mem yuv_cl = rear_camera->buf.camera_bufs[buf_idx].buf_cl;
 
     clEnqueueWriteBuffer(q, yuv_cl, CL_TRUE, 0, frame.getImage().size(), frame.getImage().begin(), 0, NULL, NULL);
-    tbuffer_dispatch(tb, buf_idx);
+    // Add idx to queue to be processed by camerad
   }
 }
 

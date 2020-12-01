@@ -260,6 +260,8 @@ if SHARED:
 else:
   cereal = [File('#cereal/libcereal.a')]
   messaging = [File('#cereal/libmessaging.a')]
+  visionipc = [File('#cereal/libvisionipc.a')]
+
 Export('cereal', 'messaging')
 
 SConscript(['selfdrive/common/SConscript'])
@@ -271,7 +273,7 @@ else:
   common = [_common, 'json11']
   gpucommon = [_gpucommon] + _gpu_libs
 
-Export('common', 'gpucommon')
+Export('common', 'gpucommon', 'visionipc')
 
 SConscript(['opendbc/can/SConscript'])
 
@@ -280,7 +282,7 @@ SConscript(['common/kalman/SConscript'])
 SConscript(['common/transformations/SConscript'])
 SConscript(['phonelibs/SConscript'])
 
-# SConscript(['selfdrive/camerad/SConscript'])
+SConscript(['selfdrive/camerad/SConscript'])
 # SConscript(['selfdrive/modeld/SConscript'])
 
 SConscript(['selfdrive/controls/lib/cluster/SConscript'])
