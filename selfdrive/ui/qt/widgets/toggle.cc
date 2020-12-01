@@ -1,8 +1,8 @@
 #include "toggle.hpp"
 
 Toggle::Toggle(QWidget *parent) : QAbstractButton(parent),
-_height(60),
-_height_rect(45),
+_height(80),
+_height_rect(60),
 _on(false),
 _anim(new QPropertyAnimation(this, "offset_circle", this))
 {

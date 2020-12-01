@@ -51,6 +51,7 @@ WifiUI::WifiUI(QWidget *parent, int page_length) : QWidget(parent), networks_per
   QLabel *scanning = new QLabel("Scanning for networks");
   scanning->setStyleSheet(R"(font-size: 65px;)");
   vlayout->addWidget(scanning, 0, Qt::AlignCenter);
+  vlayout->setSpacing(25);
 
   wifi->request_scan();
   refresh();
@@ -116,9 +117,9 @@ void WifiUI::refresh() {
           background-color: #114265;
         }
       )");
-      countWidgets += 1;
+      countWidgets++;
     }
-    i += 1;
+    i++;
   }
 
   // Pad vlayout to prevert oversized network widgets in case of low visible network count
@@ -146,8 +147,8 @@ void WifiUI::refresh() {
   w->setLayout(prev_next_buttons);
   w->setStyleSheet(R"(
     QPushButton {
-      padding: 0;
       background-color: #114265;
+      margin: 25px;
     }
     QPushButton:disabled {
       background-color: #323C43;

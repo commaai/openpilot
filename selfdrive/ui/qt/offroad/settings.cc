@@ -42,17 +42,14 @@ ParamsToggle::ParamsToggle(QString param, QString title, QString description, QS
 
   // toggle switch
   Toggle* toggle_switch = new Toggle(this);
-  QSizePolicy switch_policy(QSizePolicy::Preferred, QSizePolicy::Preferred);
-  switch_policy.setHorizontalStretch(1);
-  toggle_switch->setSizePolicy(switch_policy);
-  toggle_switch->setFixedWidth(120);
-  toggle_switch->setFixedHeight(50);
+  toggle_switch->setFixedWidth(180);
+  toggle_switch->setFixedHeight(100);
 
   // TODO: show descriptions on tap
   hlayout->addWidget(label);
   hlayout->addSpacing(50);
   hlayout->addWidget(toggle_switch);
-  hlayout->addSpacing(50);
+  hlayout->addSpacing(20);
 
   setLayout(hlayout);
   if(Params().read_db_bool(param.toStdString().c_str())){
@@ -206,16 +203,11 @@ QWidget * developer_panel() {
 }
 
 QWidget * network_panel(QWidget * parent) {
-  QVBoxLayout *main_layout = new QVBoxLayout;
   WifiUI *w = new WifiUI();
-  main_layout->addWidget(w);
-
-  QWidget *widget = new QWidget;
-  widget->setLayout(main_layout);
 
   QObject::connect(w, SIGNAL(openKeyboard()), parent, SLOT(closeSidebar()));
   QObject::connect(w, SIGNAL(closeKeyboard()), parent, SLOT(openSidebar()));
-  return widget;
+  return w;
 }
 
 
