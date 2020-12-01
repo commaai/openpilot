@@ -7,7 +7,7 @@ Ecu = car.CarParams.Ecu
 # Steer torque limits
 class SteerLimitParams:
   def __init__(self, CP):
-    if CP.carFingerprint in [CAR.SONATA, CAR.PALISADE, CAR.SANTA_FE, CAR.VELOSTER, CAR.GENESIS_G70]:
+    if CP.carFingerprint in [CAR.SONATA, CAR.PALISADE, CAR.SANTA_FE, CAR.VELOSTER, CAR.GENESIS_G70, CAR.KONA]:
       self.STEER_MAX = 384
     else:
       self.STEER_MAX = 255
@@ -262,10 +262,19 @@ FW_VERSIONS = {
   CAR.KONA: {
     (Ecu.fwdRadar, 0x7d0, None): [b'\xf1\x00OS__ SCC F-CUP      1.00 1.00 95655-J9200         \xf1\xa01.00', ],
     (Ecu.esp, 0x7d1, None): [b'\xf1\x816V5RAK00018.ELF\xf1\x00\x00\x00\x00\x00\x00\x00\xf1\xa01.05', ],
-    (Ecu.engine, 0x7e0, None): [b'"\x01TOS-0NU06F301J02', ],
-    (Ecu.eps, 0x7d4, None): [b'\xf1\x00OS  MDPS C 1.00 1.05 56310J9030\x00 4OSDC105', ],
+    (Ecu.engine, 0x7e0, None): [
+      b'"\x01TOS-0NU06F301J02', 
+      b'\x01TOS-0NU06F100H02', 
+    ],
+    (Ecu.eps, 0x7d4, None): [
+      b'\xf1\x00OS  MDPS C 1.00 1.05 56310J9030\x00 4OSDC105', 
+      b'\xf1\x00OS  MDPS C 1.00 1.05 56310/J9030 4OSDC105', 
+    ],
     (Ecu.fwdCamera, 0x7c4, None): [b'\xf1\x00OS9 LKAS AT USA LHD 1.00 1.00 95740-J9300 g21', ],
-    (Ecu.transmission, 0x7e1, None): [b'\xf1\x816U2VE051\x00\x00\xf1\x006U2V0_C2\x00\x006U2VE051\x00\x00DOS4T16NS3\x00\x00\x00\x00', ],
+    (Ecu.transmission, 0x7e1, None): [
+      b'\xf1\x816U2VE051\x00\x00\xf1\x006U2V0_C2\x00\x006U2VE051\x00\x00DOS4T16NS3\x00\x00\x00\x00',
+      b'\xf1\x816U2VE051\x00\x00\xf1\x006U2V0_C2\x00\x006U2VE051\x00\x00DOS0T16NS3\xd1\xa2U\xd7'
+    ],
   },
   CAR.KONA_EV: {
     (Ecu.esp, 0x7D1, None): [b'\xf1\x00OS IEB \r 105\x18\t\x18 58520-K4000\xf1\xa01.05', ],
