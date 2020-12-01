@@ -42,8 +42,7 @@ ParamsToggle::ParamsToggle(QString param, QString title, QString description, QS
 
   // toggle switch
   Toggle* toggle_switch = new Toggle(this);
-  toggle_switch->setFixedWidth(180);
-  toggle_switch->setFixedHeight(100);
+  toggle_switch->setFixedSize(150, 100);
 
   // TODO: show descriptions on tap
   hlayout->addWidget(label);

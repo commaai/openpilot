@@ -150,6 +150,7 @@ void WifiUI::refresh() {
   w->setLayout(prev_next_buttons);
   w->setStyleSheet(R"(
     QPushButton {
+      padding: 0;
       background-color: #114265;
     }
     QPushButton:disabled {
