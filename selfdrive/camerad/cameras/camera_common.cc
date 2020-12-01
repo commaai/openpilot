@@ -125,7 +125,6 @@ bool CameraBuf::acquire() {
   const FrameMetadata &frame_data = camera_bufs_metadata[buf_idx];
   if (frame_data.frame_id == -1) {
     LOGE("no frame data? wtf");
-    // tbuffer_release(&camera_tb, buf_idx);
     return false;
   }
 
@@ -184,6 +183,14 @@ void CameraBuf::release() {
 }
 
 void CameraBuf::stop() {
+}
+
+void CameraBuf::queue(size_t buf_idx){
+  {
+    std::lock_guard<std::mutex> lk(frame_queue_mutex);
+    frame_queue.push_back(buf_idx);
+  }
+  frame_queue_cv.notify_one();
 }
 
 // common functions

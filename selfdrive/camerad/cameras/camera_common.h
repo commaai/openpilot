@@ -125,6 +125,7 @@ public:
   bool acquire();
   void release();
   void stop();
+  void queue(size_t buf_idx);
 };
 
 typedef void (*process_thread_cb)(MultiCameraState *s, CameraState *c, int cnt);
