@@ -12,8 +12,7 @@
 
 #include "wifi.hpp"
 #include "settings.hpp"
-#include "input_field.hpp"
-#include "toggle.hpp"
+#include "widgets/toggle.hpp"
 
 #include "common/params.h"
 #include "common/utilpp.h"
@@ -22,8 +21,8 @@ const int SIDEBAR_WIDTH = 400;
 
 ParamsToggle::ParamsToggle(QString param, QString title, QString description, QString icon_path, QWidget *parent): QFrame(parent) , param(param) {
   QHBoxLayout *hlayout = new QHBoxLayout;
-  
-  //Parameter image
+
+  // Parameter image
   hlayout->addSpacing(25);
   if (icon_path.length()){
     QPixmap pix(icon_path);
@@ -35,12 +34,12 @@ ParamsToggle::ParamsToggle(QString param, QString title, QString description, QS
     hlayout->addSpacing(100);
   }
   hlayout->addSpacing(25);
-  
-  //Name of the parameter
+
+  // Name of the parameter
   QLabel *label = new QLabel(title);
   label->setWordWrap(true);
 
-  //toggle switch
+  // toggle switch
   Toggle* toggle_switch = new Toggle(this);
   QSizePolicy switch_policy(QSizePolicy::Preferred, QSizePolicy::Preferred);
   switch_policy.setHorizontalStretch(1);

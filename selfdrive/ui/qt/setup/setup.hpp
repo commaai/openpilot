@@ -1,5 +1,6 @@
 #include <QWidget>
 #include <QLineEdit>
+#include <QPushButton>
 #include <QStackedWidget>
 
 class Setup : public QStackedWidget {
@@ -10,6 +11,7 @@ public:
 
 private:
   QLineEdit *url_input;
+  QPushButton *continue_btn;
 
   QWidget *getting_started();
   QWidget *network_setup();
