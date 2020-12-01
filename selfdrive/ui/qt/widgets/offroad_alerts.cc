@@ -1,14 +1,5 @@
-#include <string>
-#include <iostream>
-#include <sstream>
-#include <cassert>
-
-#include <QString>
-#include <QVBoxLayout>
-#include <QHBoxLayout>
-#include <QPushButton>
+#include <QWidget>
 #include <QLabel>
-#include <QPixmap>
 #include <QFile>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -17,7 +8,6 @@
 #include "offroad_alerts.hpp"
 
 #include "common/params.h"
-#include "common/utilpp.h"
 
 
 void cleanLayout(QLayout* layout) {

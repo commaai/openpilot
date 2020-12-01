@@ -246,7 +246,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
   panel_layout->addWidget(alerts_widget);
 
   QObject::connect(alerts_widget, SIGNAL(closeAlerts()), this, SLOT(closeAlerts()));
-  sidebar_alert_widget=new QPushButton("ERROR");
+  sidebar_alert_widget=new QPushButton("ERROR");//You should never be able to see the text "ERROR" unless there is some kind of error in the code
   QObject::connect(sidebar_alert_widget, SIGNAL(released()), this, SLOT(openAlerts()));
   sidebar_layout->addWidget(sidebar_alert_widget);
 
