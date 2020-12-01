@@ -2,7 +2,7 @@
 
 #include <QWidget>
 #include <QLineEdit>
-#include <QVBoxLayout>
+#include <QGridLayout>
 #include <QStackedLayout>
 #include <QLabel>
 
@@ -18,7 +18,7 @@ public:
 private:
   QLineEdit *line;
   Keyboard *k;
-  QVBoxLayout *l;
+  QGridLayout *l;
 
 public slots:
   void emitEmpty();

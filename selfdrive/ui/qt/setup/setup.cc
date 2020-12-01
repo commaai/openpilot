@@ -68,16 +68,24 @@ QWidget * Setup::getting_started() {
 }
 
 QWidget * Setup::network_setup() {
+
   QVBoxLayout *main_layout = new QVBoxLayout();
   main_layout->setContentsMargins(50, 50, 50, 50);
 
   main_layout->addWidget(title_label("Connect to WiFi"), 0, Qt::AlignTop);
 
-  main_layout->addWidget(new WifiUI(this, 6));
+  WifiUI *wifi = new WifiUI(this, 6);
+  main_layout->addWidget(wifi);
+  QObject::connect(wifi, &WifiUI::openKeyboard, this, [=](){
+    this->continue_btn->setVisible(false);
+  });
+  QObject::connect(wifi, &WifiUI::closeKeyboard, this, [=](){
+    this->continue_btn->setVisible(true);
+  });
 
-  QPushButton *btn = new QPushButton("Continue");
-  main_layout->addWidget(btn);
-  QObject::connect(btn, SIGNAL(released()), this, SLOT(nextPage()));
+  continue_btn = new QPushButton("Continue");
+  main_layout->addWidget(continue_btn);
+  QObject::connect(continue_btn, SIGNAL(released()), this, SLOT(nextPage()));
 
   QWidget *widget = new QWidget();
   widget->setLayout(main_layout);
@@ -135,7 +143,7 @@ void Setup::nextPage() {
 }
 
 Setup::Setup(QWidget *parent) {
-  addWidget(getting_started());
+  //addWidget(getting_started());
   addWidget(network_setup());
   addWidget(software_selection());
   addWidget(downloading());

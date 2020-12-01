@@ -8,26 +8,35 @@
 #include "keyboard.hpp"
 
 InputField::InputField(QWidget *parent): QWidget(parent) {
-  l = new QVBoxLayout();
-  QHBoxLayout *r = new QHBoxLayout();
-  label = new QLabel(this);
-  label->setText("password");
-  r->addWidget(label);
-  QPushButton* cancel = new QPushButton("cancel");
-  QObject::connect(cancel, SIGNAL(released()), this, SLOT(emitEmpty()));  
-  cancel->setFixedHeight(150);
-  cancel->setFixedWidth(300);
-  r->addWidget(cancel);
-  l->addLayout(r);
-  l->addSpacing(80);
+  l = new QGridLayout();
+  l->setSpacing(30);
 
-  line = new QLineEdit("");
-  l->addWidget(line);
-  l->addSpacing(80);
+  label = new QLabel(this);
+  label->setStyleSheet(R"(font-size: 55px;)");
+  l->addWidget(label, 0, 0, Qt::AlignVCenter | Qt::AlignLeft);
+
+  QPushButton* cancel = new QPushButton("Cancel");
+  cancel->setFixedSize(300, 150);
+  cancel->setStyleSheet(R"(padding: 0;)");
+  l->addWidget(cancel, 0, 1, Qt::AlignVCenter | Qt::AlignRight);
+  QObject::connect(cancel, SIGNAL(released()), this, SLOT(emitEmpty()));
+
+  // text box
+  line = new QLineEdit();
+  line->setStyleSheet(R"(
+    color: black;
+    background-color: white;
+    font-size: 45px;
+    padding: 25px;
+  )");
+  l->addWidget(line, 1, 0);
+  l->setRowStretch(1, 1);
 
   k = new Keyboard(this);
   QObject::connect(k, SIGNAL(emitButton(QString)), this, SLOT(getText(QString)));
-  l->addWidget(k);
+  l->addWidget(k, 2, 0);
+  l->setRowStretch(2, 1);
+
   setLayout(l);
 }
 
@@ -35,6 +44,7 @@ void InputField::emitEmpty(){
   emitText("");
   line->setText("");
 }
+
 void InputField::getText(QString s){
   if(!QString::compare(s,"⌫")){
     line->backspace();
