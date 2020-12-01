@@ -13,6 +13,8 @@
 #include "setup.hpp"
 #include "qt_window.hpp"
 
+#define USER_AGENT "AGNOS-0.1"
+
 int download(std::string url) {
   CURL *curl;
   curl = curl_easy_init();
@@ -25,6 +27,7 @@ int download(std::string url) {
   curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, NULL);
   curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
   curl_easy_setopt (curl, CURLOPT_VERBOSE, 1L);
+  curl_easy_setopt (curl, CURLOPT_USERAGENT, USER_AGENT);
   curl_easy_perform(curl);
   curl_easy_cleanup(curl);
   fclose(fp);
