@@ -14,6 +14,9 @@ function tici_init {
 }
 
 function two_init {
+  # Wifi scan
+  wpa_cli IFNAME=wlan0 SCAN
+
   # Restrict Android and other system processes to the first two cores
   echo 0-1 > /dev/cpuset/background/cpus
   echo 0-1 > /dev/cpuset/system-background/cpus
@@ -81,9 +84,6 @@ function two_init {
 }
 
 function launch {
-  # Wifi scan
-  wpa_cli IFNAME=wlan0 SCAN
-
   # Remove orphaned git lock if it exists on boot
   [ -f "$DIR/.git/index.lock" ] && rm -f $DIR/.git/index.lock
 
@@ -129,9 +129,7 @@ function launch {
   # comma two init
   if [ -f /EON ]; then
     two_init
-  fi
-
-  if [ -f /TICI ]; then
+  elif [ -f /TICI ]; then
     tici_init
   fi
 
