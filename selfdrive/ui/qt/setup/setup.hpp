@@ -11,13 +11,12 @@ public:
 
 private:
   QLineEdit *url_input;
+  QPushButton *continue_btn;
 
   QWidget *getting_started();
+  QWidget *network_setup();
   QWidget *software_selection();
   QWidget *downloading();
-  QWidget *network_setup();
-
-  QPushButton *continue_btn;
 
 public slots:
   void nextPage();

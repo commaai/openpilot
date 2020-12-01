@@ -25,7 +25,7 @@ private:
   QVBoxLayout *vlayout;
   QWidget *wifi_widget;
 
-  InputField *a;
+  InputField *input_field;
   QEventLoop loop;
   QTimer *timer;
   QString text;

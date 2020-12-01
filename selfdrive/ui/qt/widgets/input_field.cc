@@ -1,24 +1,20 @@
-#include <QEvent>
-#include <QVBoxLayout>
-#include <QLineEdit>
-#include <QLabel>
 #include <QPushButton>
 
 #include "input_field.hpp"
-#include "keyboard.hpp"
 
 InputField::InputField(QWidget *parent): QWidget(parent) {
-  l = new QGridLayout();
-  l->setSpacing(30);
+  layout = new QGridLayout();
+  layout->setSpacing(30);
 
   label = new QLabel(this);
   label->setStyleSheet(R"(font-size: 55px;)");
-  l->addWidget(label, 0, 0, Qt::AlignVCenter | Qt::AlignLeft);
+  layout->addWidget(label, 0, 0, Qt::AlignVCenter | Qt::AlignLeft);
+  layout->setColumnStretch(0, 1);
 
   QPushButton* cancel = new QPushButton("Cancel");
   cancel->setFixedSize(300, 150);
   cancel->setStyleSheet(R"(padding: 0;)");
-  l->addWidget(cancel, 0, 1, Qt::AlignVCenter | Qt::AlignRight);
+  layout->addWidget(cancel, 0, 1, Qt::AlignVCenter | Qt::AlignRight);
   QObject::connect(cancel, SIGNAL(released()), this, SLOT(emitEmpty()));
 
   // text box
@@ -29,23 +25,25 @@ InputField::InputField(QWidget *parent): QWidget(parent) {
     font-size: 45px;
     padding: 25px;
   )");
-  l->addWidget(line, 1, 0);
-  l->setRowStretch(1, 1);
+  layout->addWidget(line, 1, 0, 1, -1);
 
   k = new Keyboard(this);
   QObject::connect(k, SIGNAL(emitButton(QString)), this, SLOT(getText(QString)));
-  l->addWidget(k, 2, 0);
-  l->setRowStretch(2, 1);
+  layout->addWidget(k, 2, 0, 1, -1);
 
-  setLayout(l);
+  setLayout(layout);
 }
 
-void InputField::emitEmpty(){
+void InputField::setPromptText(QString text) {
+  label->setText(text);
+}
+
+void InputField::emitEmpty() {
   emitText("");
   line->setText("");
 }
 
-void InputField::getText(QString s){
+void InputField::getText(QString s) {
   if(!QString::compare(s,"⌫")){
     line->backspace();
   }
@@ -56,11 +54,12 @@ void InputField::getText(QString s){
   }
 
   QVector<QString> control_buttons {"⇧", "↑", "ABC", "⏎", "#+=", "⌫", "123"};
-  for(QString c :control_buttons){
+  for(QString c : control_buttons){
     if(!QString::compare(s, c)){
       return;
     }
   }
+
   line->insert(s.left(1));
 }
 

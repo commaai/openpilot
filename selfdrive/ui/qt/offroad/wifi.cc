@@ -34,18 +34,13 @@ WifiUI::WifiUI(QWidget *parent, int page_length) : QWidget(parent), networks_per
   swidget->addWidget(wifi_widget);
 
   // Keyboard page
-  a = new InputField();
-  QObject::connect(a, SIGNAL(emitText(QString)), this, SLOT(receiveText(QString)));
-  swidget->addWidget(a);
+  input_field = new InputField();
+  QObject::connect(input_field, SIGNAL(emitText(QString)), this, SLOT(receiveText(QString)));
+  swidget->addWidget(input_field);
   swidget->setCurrentIndex(0);
 
   top_layout->addWidget(swidget);
   setLayout(top_layout);
-  a->setStyleSheet(R"(
-    QLineEdit {
-      background-color: #114265;
-    }
-  )");
 
   // Update network list
   timer = new QTimer(this);
@@ -168,7 +163,7 @@ void WifiUI::handleButton(QAbstractButton* button) {
   QPushButton* btn = static_cast<QPushButton*>(button);
   Network n = wifi->seen_networks[connectButtons->id(btn)];
 
-  a->label->setText("Enter password for \"" + n.ssid  + "\"");
+  input_field->setPromptText("Enter password for \"" + n.ssid + "\"");
   connectToNetwork(n);
 }
 
@@ -207,7 +202,7 @@ void WifiUI::wrongPassword(QString ssid){
   }
   for(Network n : wifi->seen_networks){
     if(n.ssid == ssid){
-      a->label->setText("Wrong password for \"" + n.ssid +"\"");
+      input_field->setPromptText("Wrong password for \"" + n.ssid +"\"");
       connectToNetwork(n);
     }
   }

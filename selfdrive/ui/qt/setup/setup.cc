@@ -143,7 +143,7 @@ void Setup::nextPage() {
 }
 
 Setup::Setup(QWidget *parent) {
-  //addWidget(getting_started());
+  addWidget(getting_started());
   addWidget(network_setup());
   addWidget(software_selection());
   addWidget(downloading());
