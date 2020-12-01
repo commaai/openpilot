@@ -6,9 +6,10 @@
 #include <QTimer>
 #include <QCheckBox>
 #include <QStackedLayout>
+#include <QPushButton>
 
 #include "wifi.hpp"
-
+#include "widgets/offroad_alerts.hpp"
 
 class ParamsToggle : public QFrame {
   Q_OBJECT
@@ -29,17 +30,23 @@ class SettingsWindow : public QWidget {
 
 public:
   explicit SettingsWindow(QWidget *parent = 0);
+  void refreshParams();
 
 signals:
   void closeSettings();
 
 private:
+  QPushButton *sidebar_alert_widget;
   QWidget *sidebar_widget;
+  OffroadAlert *alerts_widget;
   std::map<QString, QWidget *> panels;
   QStackedLayout *panel_layout;
 
-private slots:
+
+public slots:
   void setActivePanel();
+  void closeAlerts();
+  void openAlerts();
   void closeSidebar();
   void openSidebar();
 };

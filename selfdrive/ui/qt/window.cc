@@ -79,6 +79,7 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
 
 void MainWindow::openSettings() {
   main_layout->setCurrentIndex(1);
+  settingsWindow->refreshParams();
 }
 
 void MainWindow::closeSettings() {
