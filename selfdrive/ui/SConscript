@@ -73,8 +73,8 @@ else:
 
 
   qt_env.Library("qt_widgets",
-                 ["qt/qt_window.cc", "qt/qt_sound.cc", "qt/offroad/keyboard.cc", "qt/offroad/input_field.cc",
-                  "qt/offroad/wifi.cc", "qt/offroad/wifiManager.cc", "qt/offroad/toggle.cc"],
+                 ["qt/qt_window.cc", "qt/qt_sound.cc", "qt/widgets/keyboard.cc", "qt/widgets/input_field.cc",
+                  "qt/offroad/wifi.cc", "qt/offroad/wifiManager.cc", "qt/widgets/toggle.cc"],
                  LIBS=qt_libs)
   qt_libs.append("qt_widgets")
 
