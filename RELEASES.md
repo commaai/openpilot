@@ -1,3 +1,6 @@
+Version 0.8.1 (20XX-XX-XX)
+========================
+
 Version 0.8.0 (2020-11-30)
 ========================
  * New driving model: fully 3D and improved cut-in detection

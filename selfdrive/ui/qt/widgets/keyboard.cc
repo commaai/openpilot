@@ -88,7 +88,10 @@ Keyboard::Keyboard(QWidget *parent) : QWidget(parent) {
   main_layout->setCurrentIndex(0);
 
   setStyleSheet(R"(
-    QPushButton { font-size: 50px }
+    QPushButton {
+      padding: 0;
+      font-size: 50px;
+    }
     * {
       background-color: #99777777;
     }
