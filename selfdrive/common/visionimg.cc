@@ -17,8 +17,6 @@
 #endif
 
 #include "common/util.h"
-#include "common/visionbuf.h"
-
 #include "common/visionimg.h"
 
 #ifdef QCOM
@@ -52,7 +50,8 @@ VisionImg visionimg_alloc_rgb24(cl_device_id device_id, cl_context ctx, int widt
   int stride = aligned_w * 3;
   size_t size = (size_t) aligned_w * aligned_h * 3;
 
-  *out_buf = visionbuf_allocate_cl(size, device_id, ctx);
+  *out_buf = visionbuf_allocate(size);
+  visionbuf_init_cl(out_buf, device_id, ctx);
 
   return (VisionImg){
     .fd = out_buf->fd,

@@ -1,7 +1,7 @@
 #ifndef VISIONIMG_H
 #define VISIONIMG_H
 
-#include "common/visionbuf.h"
+#include "visionbuf.h"
 #include "common/glutil.h"
 
 #ifdef QCOM
