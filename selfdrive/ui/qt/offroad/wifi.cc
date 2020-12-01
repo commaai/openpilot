@@ -74,7 +74,7 @@ void WifiUI::refresh() {
 
   int i = 0;
   int countWidgets = 0;
-  int button_height = static_cast<int>(this->height()/(networks_per_page+1)*0.6);
+  int button_height = static_cast<int>(this->height() / (networks_per_page + 1) * 0.6);
   for (Network &network : wifi->seen_networks){
     QHBoxLayout *hlayout = new QHBoxLayout;
     if(page * networks_per_page <= i && i < (page + 1) * networks_per_page){
@@ -94,7 +94,7 @@ void WifiUI::refresh() {
       // connect button
       QPushButton* btn = new QPushButton(network.connected == ConnectedType::CONNECTED ? "Connected" : (network.connected == ConnectedType::CONNECTING ? "Connecting" : "Connect"));
       btn->setFixedWidth(300);
-      btn->setFixedHeight(button_height);//Tested for networks_per_page from 3 to 10
+      btn->setFixedHeight(button_height);
       btn->setDisabled(network.connected == ConnectedType::CONNECTED || network.connected == ConnectedType::CONNECTING || network.security_type == SecurityType::UNSUPPORTED);
       hlayout->addWidget(btn);
       hlayout->addSpacing(20);
