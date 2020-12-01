@@ -70,7 +70,7 @@ ParamsToggle::ParamsToggle(QString param, QString title, QString description, QS
     QCheckBox::indicator:checked {
       image: url(../assets/offroad/circled-checkmark.png);
     }
-    QLabel { font-size: 40px }
+    QLabel { font-size: 50px }
     * {
       background-color: #114265;
     }
