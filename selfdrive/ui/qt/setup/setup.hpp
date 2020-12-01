@@ -1,3 +1,4 @@
+#include <QString>
 #include <QWidget>
 #include <QLineEdit>
 #include <QPushButton>
@@ -16,8 +17,11 @@ private:
   QWidget *getting_started();
   QWidget *network_setup();
   QWidget *software_selection();
+  QWidget *custom_software();
   QWidget *downloading();
 
 public slots:
   void nextPage();
+  void prevPage();
+  void download(QString url);
 };
