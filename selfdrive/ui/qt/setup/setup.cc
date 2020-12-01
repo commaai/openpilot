@@ -18,11 +18,11 @@
 #define USER_AGENT "AGNOSSetup-0.1"
 
 void Setup::download(QString url) {
-  printf("download: %s\n", url.toStdString().c_str());
-  return;
+  setCurrentIndex(count() - 1);
+
   CURL *curl;
   curl = curl_easy_init();
-  //if (!curl) return -1;
+  // TODO: exit with return code
   if (!curl) return;
 
   char tmpfile[] = "/tmp/installer_XXXXXX";
@@ -38,7 +38,6 @@ void Setup::download(QString url) {
   fclose(fp);
 
   rename(tmpfile, "/tmp/installer");
-  //return 0;
 }
 
 QLabel * title_label(QString text) {
@@ -129,6 +128,7 @@ QWidget * Setup::software_selection() {
 
 QWidget * Setup::custom_software() {
   QVBoxLayout *main_layout = new QVBoxLayout();
+  main_layout->setMargin(50);
 
   main_layout->addWidget(title_label("Custom Software"), Qt::AlignTop | Qt::AlignHCenter);
 
@@ -153,7 +153,6 @@ QWidget * Setup::downloading() {
   return widget;
 }
 
-
 void Setup::prevPage() {
   setCurrentIndex(currentIndex() - 1);
 }
@@ -163,7 +162,7 @@ void Setup::nextPage() {
 }
 
 Setup::Setup(QWidget *parent) {
-  //addWidget(getting_started());
+  addWidget(getting_started());
   addWidget(network_setup());
   addWidget(software_selection());
   addWidget(custom_software());

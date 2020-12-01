@@ -23,6 +23,5 @@ private:
 public slots:
   void nextPage();
   void prevPage();
-
   void download(QString url);
 };
