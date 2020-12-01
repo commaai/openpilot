@@ -529,7 +529,7 @@ static void ui_draw_background(UIState *s) {
 }
 
 void ui_draw(UIState *s) {
-  s->scene.viz_rect = Rect{bdr_s * 3, bdr_s, s->fb_w - 4 * bdr_s, s->fb_h - 2 * bdr_s};
+  s->scene.viz_rect = Rect{bdr_s, bdr_s, s->fb_w - 2 * bdr_s, s->fb_h - 2 * bdr_s};
   s->scene.ui_viz_ro = 0;
   if (!s->scene.uilayout_sidebarcollapsed) {
     s->scene.viz_rect.x = sbr_w + bdr_s;
@@ -727,7 +727,7 @@ void ui_nvg_init(UIState *s) {
     glBindVertexArray(0);
   }
 
-  s->video_rect = Rect{bdr_s * 3, bdr_s, s->fb_w - 4 * bdr_s, s->fb_h - 2 * bdr_s};
+  s->video_rect = Rect{bdr_s, bdr_s, s->fb_w - 2 * bdr_s, s->fb_h - 2 * bdr_s};
   float zx = zoom * 2 * intrinsic_matrix.v[2] / s->video_rect.w;
   float zy = zoom * 2 * intrinsic_matrix.v[5] / s->video_rect.h;
 
