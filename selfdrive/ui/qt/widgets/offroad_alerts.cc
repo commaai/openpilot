@@ -35,19 +35,23 @@ OffroadAlert::OffroadAlert(QWidget* parent){
 void OffroadAlert::refresh(){
   cleanLayout(vlayout);
   parse_alerts();
+
   bool updateAvailable=false;
   std::vector<char> bytes = Params().read_db_bytes("UpdateAvailable");
-  if(bytes.size() && bytes[0] == '1'){
+  if (bytes.size() && bytes[0] == '1'){
     updateAvailable=true;
   }
   show_alert = updateAvailable || alerts.size() ;
    
-  if(updateAvailable){
+  if (updateAvailable){
     //If there is update available, don't show alerts
     alerts.clear();
+
     QFrame *f = new QFrame();
+
     QVBoxLayout *update_layout=new QVBoxLayout;
     update_layout->addWidget(new QLabel("Update available"));
+
     std::vector<char> release_notes_bytes = Params().read_db_bytes("ReleaseNotes");
     QString releaseNotes = vectorToQString(release_notes_bytes);
     QLabel *notes_label = new QLabel(releaseNotes);
@@ -55,12 +59,14 @@ void OffroadAlert::refresh(){
     update_layout->addSpacing(20);
     update_layout->addWidget(notes_label);
     update_layout->addSpacing(20);
+
     QPushButton *update_button = new QPushButton("Reboot and Update");
     update_layout->addWidget(update_button);
+    update_layout->setMargin(10);
 #ifdef __aarch64__
     QObject::connect(update_button, &QPushButton::released,[=]() {std::system("sudo reboot");});
 #endif
-    update_layout->setMargin(10);
+
     f->setLayout(update_layout);
     f->setStyleSheet(R"(
       .QFrame{
@@ -73,14 +79,17 @@ void OffroadAlert::refresh(){
         background-color: #114267;
       }
     )");
+
     vlayout->addWidget(f);
     vlayout->addSpacing(60);
   }else{
     vlayout->addSpacing(60);
-    for(auto alert : alerts){
-      QLabel *l=new QLabel(alert.text);
+
+    for (auto alert : alerts){
+      QLabel *l = new QLabel(alert.text);
       l->setWordWrap(true);
       l->setMargin(60);
+      
       if(alert.severity){
         l->setStyleSheet(R"(
           QLabel {
@@ -106,11 +115,13 @@ void OffroadAlert::refresh(){
           }
         )");//blue rounded rectange with white surround
       }
+
       vlayout->addWidget(l);
       vlayout->addSpacing(20);
     }
+
     //Pad the vlayout
-    for(int i = alerts.size() ; i < 4 ; i++){
+    for (int i = alerts.size(); i < 4; i++){
       QWidget *w = new QWidget();
       vlayout->addWidget(w);
       vlayout->addSpacing(50);
@@ -129,14 +140,17 @@ void OffroadAlert::parse_alerts(){
   inFile.open(QIODevice::ReadOnly | QIODevice::Text);
   QByteArray data = inFile.readAll();
   inFile.close();
+
   QJsonDocument doc = QJsonDocument::fromJson(data);
   if (doc.isNull()) {
-      qDebug() << "Parse failed";
+    qDebug() << "Parse failed";
   }
+  
   QJsonObject json = doc.object();
-  for(const QString& key : json.keys()) {
+  for (const QString& key : json.keys()) {
     std::vector<char> bytes = Params().read_db_bytes(key.toStdString().c_str());
-    if(bytes.size()){
+    
+    if (bytes.size()){
       QJsonDocument doc_par = QJsonDocument::fromJson(QByteArray(bytes.data(), bytes.size()));
       QJsonObject obj = doc_par.object();
       Alert alert = {obj.value("text").toString(), obj.value("severity").toInt()};
