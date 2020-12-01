@@ -1,5 +1,5 @@
 #pragma once
-#include <deque>
+#include <queue>
 #include <mutex>
 #include <condition_variable>
 
@@ -111,7 +111,7 @@ public:
 
   std::mutex frame_queue_mutex;
   std::condition_variable frame_queue_cv;
-  std::deque<size_t> frame_queue;
+  std::queue<size_t> frame_queue;
 
   std::unique_ptr<VisionBuf[]> camera_bufs;
   std::unique_ptr<FrameMetadata[]> camera_bufs_metadata;

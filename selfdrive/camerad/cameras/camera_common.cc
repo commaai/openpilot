@@ -113,13 +113,18 @@ CameraBuf::~CameraBuf() {
 
 bool CameraBuf::acquire() {
   std::unique_lock<std::mutex> lk(frame_queue_mutex);
-  frame_queue_cv.wait(lk);
-  if (frame_queue.size() == 0){
+
+  // TODO: also check for should_exit
+  // wait will first check if the list is not empty
+  frame_queue_cv.wait(lk, [this]{ return !frame_queue.empty(); });
+
+  // This can happen if should exit was set
+  if (frame_queue.empty()){
     return false;
   }
 
   const int buf_idx = frame_queue.front();
-  frame_queue.pop_front();
+  frame_queue.pop();
   lk.unlock();
 
   const FrameMetadata &frame_data = camera_bufs_metadata[buf_idx];
@@ -188,7 +193,7 @@ void CameraBuf::stop() {
 void CameraBuf::queue(size_t buf_idx){
   {
     std::lock_guard<std::mutex> lk(frame_queue_mutex);
-    frame_queue.push_back(buf_idx);
+    frame_queue.push(buf_idx);
   }
   frame_queue_cv.notify_one();
 }
