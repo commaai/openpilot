@@ -20,7 +20,7 @@ void clearLayout(QLayout* layout) {
   }
 }
 
-WifiUI::WifiUI(QWidget *parent) : QWidget(parent) {
+WifiUI::WifiUI(QWidget *parent, int page_length) : QWidget(parent), networks_per_page(page_length) {
   wifi = new WifiManager;
   QObject::connect(wifi, SIGNAL(wrongPassword(QString)), this, SLOT(wrongPassword(QString)));
 
@@ -150,7 +150,8 @@ void WifiUI::refresh() {
   QWidget *w = new QWidget;
   w->setLayout(prev_next_buttons);
   w->setStyleSheet(R"(
-    QPushButton:enabled {
+    QPushButton {
+      padding: 0;
       background-color: #114265;
     }
     QPushButton:disabled {

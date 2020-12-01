@@ -73,7 +73,7 @@ QWidget * Setup::network_setup() {
 
   main_layout->addWidget(title_label("Connect to WiFi"), 0, Qt::AlignTop);
 
-  main_layout->addWidget(new WifiUI());
+  main_layout->addWidget(new WifiUI(this, 6));
 
   QPushButton *btn = new QPushButton("Continue");
   main_layout->addWidget(btn);
