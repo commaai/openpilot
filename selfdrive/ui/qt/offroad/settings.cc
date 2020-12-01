@@ -242,7 +242,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
   QObject::connect(close_button, SIGNAL(released()), this, SIGNAL(closeSettings()));
 
   // offroad alerts
-  alerts_widget=new OffroadAlert();
+  alerts_widget = new OffroadAlert();
   QObject::connect(alerts_widget, SIGNAL(closeAlerts()), this, SLOT(closeAlerts()));
   panel_layout->addWidget(alerts_widget);
 

@@ -36,7 +36,7 @@ void OffroadAlert::refresh(){
   cleanLayout(vlayout);
   parse_alerts();
 
-  bool updateAvailable=false;
+  bool updateAvailable = false;
   std::vector<char> bytes = Params().read_db_bytes("UpdateAvailable");
   if (bytes.size() && bytes[0] == '1'){
     updateAvailable=true;
@@ -49,7 +49,7 @@ void OffroadAlert::refresh(){
 
     QFrame *f = new QFrame();
 
-    QVBoxLayout *update_layout=new QVBoxLayout;
+    QVBoxLayout *update_layout = new QVBoxLayout;
     update_layout->addWidget(new QLabel("Update available"));
 
     std::vector<char> release_notes_bytes = Params().read_db_bytes("ReleaseNotes");

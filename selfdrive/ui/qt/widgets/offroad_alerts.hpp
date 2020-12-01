@@ -20,7 +20,6 @@ public:
   explicit OffroadAlert(QWidget *parent = 0);
   bool show_alert;
   QVector<Alert> alerts;
-  
 
 private:
   QVBoxLayout *vlayout;
