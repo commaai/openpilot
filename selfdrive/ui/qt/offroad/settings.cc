@@ -32,14 +32,17 @@ void cleanLayout(QLayout* layout) {
     delete item;
   }
 }
+
 QString vectorToQString(std::vector<char> v){
   return QString::fromStdString(std::string(v.begin(), v.end()));
 }
+
 OffroadAlert::OffroadAlert(QWidget* parent){
   vlayout=new QVBoxLayout;
   refresh();
   setLayout(vlayout);
 }
+
 void OffroadAlert::refresh(){
   cleanLayout(vlayout);
   parse_alerts();
@@ -89,7 +92,7 @@ void OffroadAlert::refresh(){
         QLabel *l=new QLabel(alert.text);
         l->setWordWrap(true);
         l->setMargin(60);
-        if(alert.severity==1){
+        if(alert.severity){
           l->setStyleSheet(R"(
             QLabel {
               font-size: 40px;
@@ -101,7 +104,7 @@ void OffroadAlert::refresh(){
               border-color: white;
             }
           )");
-          }else{
+        }else{
           l->setStyleSheet(R"(
             QLabel {
               font-size: 40px;
@@ -118,8 +121,7 @@ void OffroadAlert::refresh(){
         vlayout->addSpacing(20);
       }
     }
-
-    for(int i = alerts.size() + (updateAvailable ? 2 : 0); i < 4 ; i++){
+    for(int i = alerts.size() ; i < 4 ; i++){
       QWidget *w = new QWidget();
       vlayout->addWidget(w);
       vlayout->addSpacing(50);
@@ -129,14 +131,13 @@ void OffroadAlert::refresh(){
   QPushButton *b = new QPushButton(updateAvailable ? "Later" : "Hide alerts");
   vlayout->addWidget(b);
   QObject::connect(b, SIGNAL(released()), this, SLOT(closeButtonPushed()));
-
 }
 
 void OffroadAlert::parse_alerts(){
   alerts.clear();
   //We launch in selfdrive/ui
   QFile inFile("../controls/lib/alerts_offroad.json");
-  inFile.open(QIODevice::ReadOnly|QIODevice::Text);
+  inFile.open(QIODevice::ReadOnly | QIODevice::Text);
   QByteArray data = inFile.readAll();
   inFile.close();
   QJsonDocument doc = QJsonDocument::fromJson(data);
@@ -146,7 +147,7 @@ void OffroadAlert::parse_alerts(){
   QJsonObject json = doc.object();
   for(const QString& key : json.keys()) {
     std::vector<char> bytes = Params().read_db_bytes(key.toStdString().c_str());
-    if(bytes.size()>0){
+    if(bytes.size() > 0){
       QJsonDocument doc_par = QJsonDocument::fromJson(QByteArray(bytes.data(), bytes.size()));
       QJsonObject obj = doc_par.object();
       Alert alert = {obj.value("text").toString(), obj.value("severity").toInt()};
@@ -224,7 +225,6 @@ ParamsToggle::ParamsToggle(QString param, QString title, QString description, QS
 void ParamsToggle::checkboxClicked(int state){
   char value = state ? '1': '0';
   Params().write_db_value(param.toStdString().c_str(), &value, 1);
-  // debugJSON();
 }
 
 QWidget * toggles_panel() {
@@ -450,28 +450,27 @@ void SettingsWindow::refreshParams(){
     return;
   }
   panel_layout->setCurrentIndex(0);
-  int alerts=alerts_widget->alerts.size();
-  bool hasImportantAlerts=false;
-  for(auto alert:alerts_widget->alerts){
-    if(alert.severity==1){
-      hasImportantAlerts=true;
-    }
-  }
-  if(alerts==0){
-    sidebar_alert_widget->setText("UPDATE");
-  }else{
-    sidebar_alert_widget->setText(QString::number(alerts) + " ALERT" + (alerts == 1 ? "S" : ""));
-  }
   sidebar_alert_widget->setFixedHeight(100);
-  if(hasImportantAlerts){
-    sidebar_alert_widget->setStyleSheet(R"(
-      background-color: #661111;
-    )");
+  sidebar_alert_widget->setStyleSheet(R"(
+    background-color: #114267;
+  )"); //light blue
+  int alerts = alerts_widget->alerts.size();
+  bool existsImportantAlert = false;
+  if(alerts){
+    for(auto alert : alerts_widget->alerts){
+      if(alert.severity){
+        existsImportantAlert=true;
+      }
+    }
+    sidebar_alert_widget->setText(QString::number(alerts) + " ALERT" + (alerts == 1 ? "S" : ""));
+    if(existsImportantAlert){
+      sidebar_alert_widget->setStyleSheet(R"(
+        background-color: #661111;
+      )"); //dark red
+    }
   }else{
-    sidebar_alert_widget->setStyleSheet(R"(
-      background-color: #114267;
-    )");
-  }
+    sidebar_alert_widget->setText("UPDATE");
+  }  
 }
 void SettingsWindow::closeAlerts(){
   panel_layout->setCurrentIndex(1);
