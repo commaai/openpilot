@@ -4,4 +4,4 @@ moc_*
 qt/text
 qt/spinner
 qt/setup/setup
-qt/setup/installer
+qt/setup/installer*

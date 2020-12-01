@@ -88,4 +88,13 @@ else:
   # setup and installer
   if "BUILD_SETUP" in os.environ:
     qt_env.Program("qt/setup/setup", ["qt/setup/setup.cc"], LIBS=qt_libs + ['curl'])
-    qt_env.Program("qt/setup/installer", ["qt/setup/installer.cc"], LIBS=qt_libs)
+
+    installers = [
+      ("openpilot", "master"),
+      ("openpilot_test", "master"),
+      #("dashcam", "dashcam"),
+      #("dashcam_test", "dashcam"),
+    ]
+    for name, branch in installers:
+      flags = qt_env["CXXFLAGS"] + [f"-D{branch}"]
+      qt_env.Program(f"qt/setup/installer_{name}", ["qt/setup/installer.cc"], LIBS=qt_libs, CXXFLAGS=flags)
