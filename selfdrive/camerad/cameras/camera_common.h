@@ -1,4 +1,7 @@
 #pragma once
+#include <deque>
+#include <mutex>
+#include <condition_variable>
 
 #include <stdlib.h>
 #include <stdbool.h>
@@ -105,6 +108,10 @@ public:
 
   VisionBuf *cur_rgb_buf;
   VisionBuf *cur_yuv_buf;
+
+  std::mutex frame_queue_mutex;
+  std::condition_variable frame_queue_cv;
+  std::deque<size_t> frame_queue;
 
   std::unique_ptr<VisionBuf[]> camera_bufs;
   std::unique_ptr<FrameMetadata[]> camera_bufs_metadata;

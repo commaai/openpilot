@@ -112,8 +112,15 @@ CameraBuf::~CameraBuf() {
 }
 
 bool CameraBuf::acquire() {
-  // Get buffer from queue of frames that are ready to be processed
-  const int buf_idx = 0;
+  std::unique_lock<std::mutex> lk(frame_queue_mutex);
+  frame_queue_cv.wait(lk);
+  if (frame_queue.size() == 0){
+    return false;
+  }
+
+  const int buf_idx = frame_queue.front();
+  frame_queue.pop_front();
+  lk.unlock();
 
   const FrameMetadata &frame_data = camera_bufs_metadata[buf_idx];
   if (frame_data.frame_id == -1) {

@@ -43,14 +43,12 @@ void run_frame_stream(MultiCameraState *s) {
 
   CameraState *const rear_camera = &s->rear;
 
+
+  size_t buf_idx = 0;
   while (!do_exit) {
     if (s->sm->update(1000) == 0) continue;
 
     auto frame = (*(s->sm))["frame"].getFrame();
-
-    // Come up with good id for current camera buf
-    size_t buf_idx = 0;
-
     rear_camera->buf.camera_bufs_metadata[buf_idx] = {
       .frame_id = frame.getFrameId(),
       .timestamp_eof = frame.getTimestampEof(),
@@ -63,7 +61,15 @@ void run_frame_stream(MultiCameraState *s) {
     cl_mem yuv_cl = rear_camera->buf.camera_bufs[buf_idx].buf_cl;
 
     clEnqueueWriteBuffer(q, yuv_cl, CL_TRUE, 0, frame.getImage().size(), frame.getImage().begin(), 0, NULL, NULL);
+
     // Add idx to queue to be processed by camerad
+    {
+      std::lock_guard<std::mutex> lk(rear_camera->buf.frame_queue_mutex);
+      rear_camera->buf.frame_queue.push_back(buf_idx);
+    }
+    rear_camera->buf.frame_queue_cv.notify_one();
+
+    buf_idx = (buf_idx + 1) % FRAME_BUF_COUNT;
   }
 }
 
