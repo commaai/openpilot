@@ -2,11 +2,7 @@
 #include <stdlib.h>
 #include <curl/curl.h>
 
-#include <QString>
 #include <QLabel>
-#include <QWidget>
-#include <QLineEdit>
-#include <QPushButton>
 #include <QVBoxLayout>
 #include <QApplication>
 
