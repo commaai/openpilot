@@ -15,7 +15,7 @@ class WifiUI : public QWidget {
 
 public:
   int page;
-  explicit WifiUI(QWidget *parent = 0, int page_length = 8);
+  explicit WifiUI(QWidget *parent = 0, int page_length = 6);
 
 private:
   WifiManager* wifi;
