@@ -27,7 +27,7 @@ QString vectorToQString(std::vector<char> v){
 }
 
 OffroadAlert::OffroadAlert(QWidget* parent){
-  vlayout=new QVBoxLayout;
+  vlayout = new QVBoxLayout;
   refresh();
   setLayout(vlayout);
 }
@@ -39,7 +39,7 @@ void OffroadAlert::refresh(){
   bool updateAvailable = false;
   std::vector<char> bytes = Params().read_db_bytes("UpdateAvailable");
   if (bytes.size() && bytes[0] == '1'){
-    updateAvailable=true;
+    updateAvailable = true;
   }
   show_alert = updateAvailable || alerts.size() ;
    
@@ -90,7 +90,7 @@ void OffroadAlert::refresh(){
       l->setWordWrap(true);
       l->setMargin(60);
       
-      if(alert.severity){
+      if (alert.severity){
         l->setStyleSheet(R"(
           QLabel {
             font-size: 40px;
