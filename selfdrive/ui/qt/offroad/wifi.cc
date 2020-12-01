@@ -25,6 +25,7 @@ WifiUI::WifiUI(QWidget *parent, int page_length) : QWidget(parent), networks_per
   QObject::connect(wifi, SIGNAL(wrongPassword(QString)), this, SLOT(wrongPassword(QString)));
 
   QVBoxLayout * top_layout = new QVBoxLayout;
+  top_layout->setSpacing(0);
   swidget = new QStackedWidget;
 
   // Networks page
@@ -51,6 +52,7 @@ WifiUI::WifiUI(QWidget *parent, int page_length) : QWidget(parent), networks_per
   QLabel *scanning = new QLabel("Scanning for networks");
   scanning->setStyleSheet(R"(font-size: 65px;)");
   vlayout->addWidget(scanning, 0, Qt::AlignCenter);
+  vlayout->setSpacing(25);
 
   wifi->request_scan();
   refresh();
@@ -72,6 +74,7 @@ void WifiUI::refresh() {
 
   int i = 0;
   int countWidgets = 0;
+  int button_height = static_cast<int>(this->height() / (networks_per_page + 1) * 0.6);
   for (Network &network : wifi->seen_networks){
     QHBoxLayout *hlayout = new QHBoxLayout;
     if(page * networks_per_page <= i && i < (page + 1) * networks_per_page){
@@ -91,6 +94,7 @@ void WifiUI::refresh() {
       // connect button
       QPushButton* btn = new QPushButton(network.connected == ConnectedType::CONNECTED ? "Connected" : (network.connected == ConnectedType::CONNECTING ? "Connecting" : "Connect"));
       btn->setFixedWidth(300);
+      btn->setFixedHeight(button_height);
       btn->setDisabled(network.connected == ConnectedType::CONNECTED || network.connected == ConnectedType::CONNECTING || network.security_type == SecurityType::UNSUPPORTED);
       hlayout->addWidget(btn);
       hlayout->addSpacing(20);
@@ -106,7 +110,7 @@ void WifiUI::refresh() {
         }
         QPushButton {
           padding: 0;
-          font-size: 40px;
+          font-size: 50px;
           background-color: #114265;
         }
         QPushButton:disabled {
@@ -116,9 +120,9 @@ void WifiUI::refresh() {
           background-color: #114265;
         }
       )");
-      countWidgets += 1;
+      countWidgets++;
     }
-    i += 1;
+    i++;
   }
 
   // Pad vlayout to prevert oversized network widgets in case of low visible network count
@@ -130,9 +134,9 @@ void WifiUI::refresh() {
   QHBoxLayout *prev_next_buttons = new QHBoxLayout;
   QPushButton* prev = new QPushButton("Previous");
   prev->setEnabled(page);
-  prev->setFixedHeight(100);
+  prev->setFixedHeight(button_height);
   QPushButton* next = new QPushButton("Next");
-  next->setFixedHeight(100);
+  next->setFixedHeight(button_height);
 
   // If there are more visible networks then we can show, enable going to next page
   next->setEnabled(wifi->seen_networks.size() > (page + 1) * networks_per_page);
