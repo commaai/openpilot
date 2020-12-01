@@ -53,10 +53,11 @@ WifiUI::WifiUI(QWidget *parent) : QWidget(parent) {
   timer->start(2000);
 
   // Scan on startup
+  QLabel *scanning = new QLabel("Scanning for networks");
+  scanning->setStyleSheet(R"(font-size: 65px;)");
+  vlayout->addWidget(scanning, 0, Qt::AlignCenter);
+
   wifi->request_scan();
-  QLabel* scanning = new QLabel(this);
-  scanning->setText("Scanning for networks");
-  vlayout->addWidget(scanning);
   refresh();
   page = 0;
 }
@@ -108,7 +109,9 @@ void WifiUI::refresh() {
         QLabel {
           font-size: 50px;
         }
-        QPushButton:enabled {
+        QPushButton {
+          padding: 0;
+          font-size: 40px;
           background-color: #114265;
         }
         QPushButton:disabled {
@@ -118,36 +121,33 @@ void WifiUI::refresh() {
           background-color: #114265;
         }
       )");
-      countWidgets+=1;
+      countWidgets += 1;
     }
-    i+=1;
+    i += 1;
   }
 
-  //Pad vlayout to prevert oversized network widgets in case of low visible network count
-  for(int i = countWidgets ; i < networks_per_page ; i++){
-    QWidget * w = new QWidget;
+  // Pad vlayout to prevert oversized network widgets in case of low visible network count
+  for(int i = countWidgets; i < networks_per_page; i++) {
+    QWidget *w = new QWidget;
     vlayout->addWidget(w);
   }
-  
+
   QHBoxLayout *prev_next_buttons = new QHBoxLayout;
   QPushButton* prev = new QPushButton("Previous");
   prev->setEnabled(page);
   prev->setFixedHeight(100);
   QPushButton* next = new QPushButton("Next");
   next->setFixedHeight(100);
-  
-  //If there are more visible networks then we can show, enable going to next page
-  if(wifi->seen_networks.size() > (page + 1) * networks_per_page){
-    next->setEnabled(true);
-  }else{
-    next->setDisabled(true);
-  }
+
+  // If there are more visible networks then we can show, enable going to next page
+  next->setEnabled(wifi->seen_networks.size() > (page + 1) * networks_per_page);
+
   QObject::connect(prev, SIGNAL(released()), this, SLOT(prevPage()));
   QObject::connect(next, SIGNAL(released()), this, SLOT(nextPage()));
   prev_next_buttons->addWidget(prev);
   prev_next_buttons->addWidget(next);
 
-  QWidget * w = new QWidget;
+  QWidget *w = new QWidget;
   w->setLayout(prev_next_buttons);
   w->setStyleSheet(R"(
     QPushButton:enabled {

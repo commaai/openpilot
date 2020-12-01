@@ -11,9 +11,10 @@
 #include <QApplication>
 
 #include "setup.hpp"
+#include "offroad/wifi.hpp"
 #include "qt_window.hpp"
 
-#define USER_AGENT "AGNOS-0.1"
+#define USER_AGENT "AGNOSSetup-0.1"
 
 int download(std::string url) {
   CURL *curl;
@@ -68,9 +69,11 @@ QWidget * Setup::getting_started() {
 
 QWidget * Setup::network_setup() {
   QVBoxLayout *main_layout = new QVBoxLayout();
-  main_layout->setMargin(100);
+  main_layout->setContentsMargins(50, 50, 50, 50);
 
-  main_layout->addWidget(title_label("Connect to WiFi"), 0, Qt::AlignCenter);
+  main_layout->addWidget(title_label("Connect to WiFi"), 0, Qt::AlignTop);
+
+  main_layout->addWidget(new WifiUI());
 
   QPushButton *btn = new QPushButton("Continue");
   main_layout->addWidget(btn);
@@ -93,9 +96,7 @@ QWidget * Setup::software_selection() {
 
   main_layout->addSpacing(50);
 
-  const char* env_url = getenv("CUSTOM_URL");
-  QString default_url = env_url == NULL ? "" : QString::fromStdString(env_url);
-  url_input = new QLineEdit(default_url);
+  url_input = new QLineEdit();
   url_input->setStyleSheet(R"(
     color: black;
     background-color: white;
