@@ -33,7 +33,6 @@ signals:
   void closeAlerts();
 
 public slots:
-  void closeButtonPushed();
   void refresh();
 };
 

@@ -48,22 +48,23 @@ void OffroadAlert::refresh(){
   parse_alerts();
   bool updateAvailable=false;
   std::vector<char> bytes = Params().read_db_bytes("UpdateAvailable");
-  if(bytes.size()>0 && bytes[0]=='1'){
+  if(bytes.size() && bytes[0] == '1'){
     updateAvailable=true;
   }
-  show_alert = updateAvailable || (alerts.size() > 0) ;
+  show_alert = updateAvailable || alerts.size() ;
    
   if(updateAvailable){
+    //If there is update available, don't show alerts
     alerts.clear();
     QFrame *f = new QFrame();
-    QVBoxLayout* update_layout=new QVBoxLayout;
+    QVBoxLayout *update_layout=new QVBoxLayout;
     update_layout->addWidget(new QLabel("Update available"));
-    bytes = Params().read_db_bytes("ReleaseNotes");
-    QString releaseNotes=vectorToQString(bytes);
-    QLabel* notes = new QLabel(releaseNotes);
-    notes->setWordWrap(true);
+    std::vector<char> release_notes_bytes = Params().read_db_bytes("ReleaseNotes");
+    QString releaseNotes = vectorToQString(release_notes_bytes);
+    QLabel *notes_label = new QLabel(releaseNotes);
+    notes_label->setWordWrap(true);
     update_layout->addSpacing(20);
-    update_layout->addWidget(notes);
+    update_layout->addWidget(notes_label);
     update_layout->addSpacing(20);
     QPushButton *update_button = new QPushButton("Reboot and Update");
     update_layout->addWidget(update_button);
@@ -73,54 +74,53 @@ void OffroadAlert::refresh(){
     update_layout->setMargin(10);
     f->setLayout(update_layout);
     f->setStyleSheet(R"(
-    .QFrame{
-      border-radius: 30px;
-      border: 2px solid white;
-      background-color: #114267;
-    }
-    QLabel{
-      font-size: 60px;
-      background-color: #114267;
-    }
+      .QFrame{
+        border-radius: 30px;
+        border: 2px solid white;
+        background-color: #114267;
+      }
+      QLabel{
+        font-size: 60px;
+        background-color: #114267;
+      }
     )");
     vlayout->addWidget(f);
     vlayout->addSpacing(60);
   }else{
-    if(show_alert){
-      vlayout->addSpacing(60);
-      for(auto alert:alerts){
-        QLabel *l=new QLabel(alert.text);
-        l->setWordWrap(true);
-        l->setMargin(60);
-        if(alert.severity){
-          l->setStyleSheet(R"(
-            QLabel {
-              font-size: 40px;
-              font-weight: bold;
-              border-radius: 30px;
-              background-color: #971b1c;
-              border-style: solid;
-              border-width: 2px;
-              border-color: white;
-            }
-          )");
-        }else{
-          l->setStyleSheet(R"(
-            QLabel {
-              font-size: 40px;
-              font-weight: bold;
-              border-radius: 30px;
-              background-color: #114267;
-              border-style: solid;
-              border-width: 2px;
-              border-color: white;
-            }
-          )");
-        }
-        vlayout->addWidget(l);
-        vlayout->addSpacing(20);
+    vlayout->addSpacing(60);
+    for(auto alert : alerts){
+      QLabel *l=new QLabel(alert.text);
+      l->setWordWrap(true);
+      l->setMargin(60);
+      if(alert.severity){
+        l->setStyleSheet(R"(
+          QLabel {
+            font-size: 40px;
+            font-weight: bold;
+            border-radius: 30px;
+            background-color: #971b1c;
+            border-style: solid;
+            border-width: 2px;
+            border-color: white;
+          }
+        )");//red rounded rectange with white surround
+      }else{
+        l->setStyleSheet(R"(
+          QLabel {
+            font-size: 40px;
+            font-weight: bold;
+            border-radius: 30px;
+            background-color: #114267;
+            border-style: solid;
+            border-width: 2px;
+            border-color: white;
+          }
+        )");//blue rounded rectange with white surround
       }
+      vlayout->addWidget(l);
+      vlayout->addSpacing(20);
     }
+    //Pad the vlayout
     for(int i = alerts.size() ; i < 4 ; i++){
       QWidget *w = new QWidget();
       vlayout->addWidget(w);
@@ -128,9 +128,9 @@ void OffroadAlert::refresh(){
     }
   }
 
-  QPushButton *b = new QPushButton(updateAvailable ? "Later" : "Hide alerts");
-  vlayout->addWidget(b);
-  QObject::connect(b, SIGNAL(released()), this, SLOT(closeButtonPushed()));
+  QPushButton *hide_alerts_button = new QPushButton(updateAvailable ? "Later" : "Hide alerts");
+  vlayout->addWidget(hide_alerts_button);
+  QObject::connect(hide_alerts_button, SIGNAL(released()), this, SIGNAL(closeAlerts()));
 }
 
 void OffroadAlert::parse_alerts(){
@@ -147,7 +147,7 @@ void OffroadAlert::parse_alerts(){
   QJsonObject json = doc.object();
   for(const QString& key : json.keys()) {
     std::vector<char> bytes = Params().read_db_bytes(key.toStdString().c_str());
-    if(bytes.size() > 0){
+    if(bytes.size()){
       QJsonDocument doc_par = QJsonDocument::fromJson(QByteArray(bytes.data(), bytes.size()));
       QJsonObject obj = doc_par.object();
       Alert alert = {obj.value("text").toString(), obj.value("severity").toInt()};
@@ -156,9 +156,6 @@ void OffroadAlert::parse_alerts(){
   }
 }
 
-void OffroadAlert::closeButtonPushed(){
-  emit closeAlerts();
-}
 
 ParamsToggle::ParamsToggle(QString param, QString title, QString description, QString icon_path, QWidget *parent): QFrame(parent) , param(param) {
   QHBoxLayout *hlayout = new QHBoxLayout;
@@ -424,7 +421,6 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
 
   QHBoxLayout *settings_layout = new QHBoxLayout();
   settings_layout->addSpacing(45);
-
   sidebar_widget = new QWidget;
   sidebar_widget->setLayout(sidebar_layout);
   sidebar_widget->setFixedWidth(SIDEBAR_WIDTH);
@@ -442,13 +438,15 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
     }
   )");
 }
-
+// Refreshes the offroad alerts from the params folder and sets up the sidebar alerts widget.
+// The function gets called every time a user opens the settings page
 void SettingsWindow::refreshParams(){
   alerts_widget->refresh();
   if(!alerts_widget->show_alert){
     sidebar_alert_widget->setFixedHeight(0);
     return;
   }
+  //Panel 0 contains the alerts or release notes. 
   panel_layout->setCurrentIndex(0);
   sidebar_alert_widget->setFixedHeight(100);
   sidebar_alert_widget->setStyleSheet(R"(
@@ -456,21 +454,22 @@ void SettingsWindow::refreshParams(){
   )"); //light blue
   int alerts = alerts_widget->alerts.size();
   bool existsImportantAlert = false;
-  if(alerts){
-    for(auto alert : alerts_widget->alerts){
-      if(alert.severity){
-        existsImportantAlert=true;
-      }
-    }
-    sidebar_alert_widget->setText(QString::number(alerts) + " ALERT" + (alerts == 1 ? "S" : ""));
-    if(existsImportantAlert){
-      sidebar_alert_widget->setStyleSheet(R"(
-        background-color: #661111;
-      )"); //dark red
-    }
-  }else{
+  if(!alerts){
+    //There is a new release
     sidebar_alert_widget->setText("UPDATE");
-  }  
+    return;
+  }
+  for(auto alert : alerts_widget->alerts){
+    if(alert.severity){
+      existsImportantAlert=true;
+    }
+  }
+  sidebar_alert_widget->setText(QString::number(alerts) + " ALERT" + (alerts == 1 ? "" : "S"));
+  if(existsImportantAlert){
+    sidebar_alert_widget->setStyleSheet(R"(
+      background-color: #661111;
+    )"); //dark red
+  }
 }
 void SettingsWindow::closeAlerts(){
   panel_layout->setCurrentIndex(1);
