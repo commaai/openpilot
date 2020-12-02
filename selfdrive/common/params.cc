@@ -19,11 +19,17 @@
 
 #include "common/util.h"
 
-
 #if defined(QCOM) || defined(QCOM2)
 const std::string default_params_path = "/data/params";
 const std::string persistent_params_path = "/persist/comma/params";
 #else
+static std::string getenv_default(const char* env_var, const char * suffix, const char* default_val) {
+  if (const char* env_val = getenv(env_var); env_val != nullptr) {
+    return std::string(env_val) + suffix;
+  } else{
+    return std::string(default_val);
+  }
+}
 const std::string default_params_path = getenv_default("HOME", "/.comma/params", "/data/params");
 const std::string persistent_params_path = default_params_path;
 #endif
@@ -73,7 +79,6 @@ static bool ensure_dir_exists(std::string path) {
   return mkdir_p(path.c_str()) == 0;
 }
 
-
 Params::Params(bool persistent_param){
   params_path = persistent_param ? persistent_params_path : default_params_path;
 }
@@ -83,12 +88,12 @@ Params::Params(std::string path) {
 }
 
 bool Params::put(std::string key, std::string dat){
-  return put(&key[0], dat.c_str(), dat.length());
+  return put(&key[0], &dat[0], dat.length());
 }
 
 static bool ensure_symlink(std::string params_path) {
   std::string path = params_path + "/d";
-  if (struct stat st; stat(&path[0], &st) == -1) {
+  if (struct stat st = {}; stat(&path[0], &st) == -1) {
     // Create temp folder
     std::string tmp_path = params_path + "/.tmp_XXXXXX";
     char* tmp_dir = mkdtemp((char*)tmp_path.c_str());
@@ -153,53 +158,46 @@ bool Params::put(const char* key, const char* value, size_t size) {
 
 bool Params::delete_value(std::string key) {
   int lock_fd = open(lock_path().c_str(), O_CREAT, 0775);
-  if (lock_fd == -1) return -1;
+  if (lock_fd == -1) return false;
 
   bool deleted = false;
   if (flock(lock_fd, LOCK_EX) == 0) {
     std::string path = key_path(&key[0]);
-    deleted = access(&path[0], F_OK) == -1;
-    if (!deleted) {
-      deleted = remove(&path[0]) == 0 &&
-                fsync_dir(params_d_path()) == 0;
-    }
+    deleted = access(&path[0], F_OK) == -1 ||
+              (remove(&path[0]) == 0 && fsync_dir(params_d_path()) == 0);
   }
   close(lock_fd);
   return deleted;
 }
 
 std::string Params::get(std::string key, bool block){
-  std::string value;
   auto read_func = block ? &Params::read_value_blocking : &Params::read_value;
-  (this->*read_func)(&key[0], value);
-  return value;
+  return (this->*read_func)(&key[0]).value_or("");
 }
 
-bool Params::read_value(const char* key, std::string &value) {
-  FILE* f = fopen(key_path(key).c_str(), "rb");
-  if (f == nullptr) {
-    return false;
+std::optional<std::string> Params::read_value(const char* key) {
+  std::optional<std::string> ret = std::nullopt;
+  if (FILE* f = fopen(key_path(key).c_str(), "rb"); f != nullptr) {
+    fseek(f, 0, SEEK_END);
+    if (long size = ftell(f); size > 0) {
+      rewind(f);
+      if (std::string value(size, '\0'); fread(&value[0], 1, size, f) == size) {
+        ret = value;
+      }
+    }
+    fclose(f);
   }
-  fseek(f, 0, SEEK_END);
-  long f_len = ftell(f);
-  rewind(f);
-  std::string v(f_len, '\0');
-  size_t num_read = fread(&v[0], f_len, 1, f);
-  fclose(f);
-  if (num_read != 1) {
-    return false;
-  }
-  value = v;
-  return true;
+  return ret;
 }
 
-bool Params::read_value_blocking(const char* key, std::string &value) {
+std::optional<std::string> Params::read_value_blocking(const char* key) {
   params_do_exit = 0;
   void (*prev_handler_sigint)(int) = std::signal(SIGINT, params_sig_handler);
   void (*prev_handler_sigterm)(int) = std::signal(SIGTERM, params_sig_handler);
 
+  std::optional<std::string> ret = std::nullopt;
   while (!params_do_exit) {
-    if (read_value(key, value)) {
+    if (ret = read_value(key); ret) {
       break;
     }
     util::sleep_for(100); // 0.1 s
@@ -207,7 +205,7 @@ bool Params::read_value_blocking(const char* key, std::string &value) {
 
   std::signal(SIGINT, prev_handler_sigint);
   std::signal(SIGTERM, prev_handler_sigterm);
-  return params_do_exit == 0; // Return true if we had no interrupt
+  return params_do_exit ? std::nullopt : ret;
 }
 
 bool Params::read_all(std::map<std::string, std::string> &params) {

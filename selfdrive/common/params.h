@@ -8,9 +8,9 @@
 class Params {
 private:
   std::string params_path;
-  bool read_value(const char* key, std::string &value);
+  std::optional<std::string> read_value(const char* key);
   // Reads a value from the params database, blocking until successful.
-  bool read_value_blocking(const char* key, std::string &value);
+  std::optional<std::string> read_value_blocking(const char* key);
   std::string lock_path() const {return params_path + "/.lock";}
   std::string key_path(const char *key) const {return params_path + "/d/" + key;}
   std::string params_d_path() const {return params_path + "/d";}
@@ -27,9 +27,9 @@ public:
   template <class T>
   std::optional<T> get(const char* param_name, bool block=false) {
     auto read_func = block ? &Params::read_value_blocking : &Params::read_value;
-    if (std::string data; (this->*read_func)(param_name, data)) {
+    if (auto data = (this->*read_func)(param_name)) {
+      std::istringstream iss(*data);
       T value{};
-      std::istringstream iss(data);
       iss >> value;
       if (!iss.fail()) {
         return value;
