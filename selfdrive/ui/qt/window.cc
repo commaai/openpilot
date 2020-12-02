@@ -1,7 +1,4 @@
-#include <QMouseEvent>
-
 #include "window.hpp"
-
 
 MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   main_layout = new QStackedLayout;

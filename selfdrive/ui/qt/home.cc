@@ -3,16 +3,45 @@
 #include <fstream>
 #include <thread>
 
+#include <QLabel>
 #include <QMouseEvent>
+#include <QBoxLayout>
+
+#include "common/params.h"
 
 #include "paint.hpp"
-
 #include "home.hpp"
 #include "qt_window.hpp"
 
 #define BACKLIGHT_DT 0.25
 #define BACKLIGHT_TS 2.00
 
+
+QWidget * home_widget() {
+  QBoxLayout *layout = new QBoxLayout(QBoxLayout::LeftToRight);
+  layout->setContentsMargins(sbr_w + 50, 50, 50, 50);
+
+  // header
+  layout->setDirection(QBoxLayout::LeftToRight);
+
+  QLabel *date = new QLabel("Monday, November 30th");
+  date->setStyleSheet(R"(font-size: 50px;)");
+  layout->addWidget(date, 0, Qt::AlignTop | Qt::AlignLeft);
+
+  QLabel *version = new QLabel(QString::fromStdString("openpilot v" + Params().get("Version")));
+  version->setStyleSheet(R"(font-size: 35px;)");
+  layout->addWidget(version, 0, Qt::AlignTop | Qt::AlignRight);
+
+
+  QWidget *w = new QWidget();
+  w->setLayout(layout);
+  w->setStyleSheet(R"(
+    * {
+      background-color: none;
+    }
+  )");
+  return w;
+}
 
 HomeWindow::HomeWindow(QWidget *parent) : QWidget(parent) {
 
@@ -22,15 +51,16 @@ HomeWindow::HomeWindow(QWidget *parent) : QWidget(parent) {
   glWindow = new GLWindow(this);
   layout->addWidget(glWindow, 0, 0);
 
+  // draw on top of GL widget
+  layout->addWidget(home_widget(), 0, 0);
+
   setLayout(layout);
   setStyleSheet(R"(
     * {
       color: white;
-      background-color: #072339;
     }
   )");
 }
-
 
 static void handle_display_state(UIState *s, int dt, bool user_input) {
   static int awake_timeout = 0;

@@ -3,6 +3,7 @@
 #include <QTimer>
 #include <QWidget>
 #include <QGridLayout>
+#include <QStackedWidget>
 #include <QOpenGLWidget>
 #include <QOpenGLFunctions>
 
@@ -10,7 +11,7 @@
 #include "ui/ui.hpp"
 
 
-// *** container window for onroad NVG UI ***
+// container window for onroad NVG UI
 class GLWindow : public QOpenGLWidget, protected QOpenGLFunctions {
   Q_OBJECT
 
@@ -49,6 +50,14 @@ signals:
 };
 
 
+class HomeWidget : public QStackedWidget {
+  Q_OBJECT
+
+public:
+  explicit HomeWidget(QWidget *parent = 0);
+};
+
+
 class HomeWindow : public QWidget {
   Q_OBJECT
 
@@ -58,8 +67,5 @@ public:
 
 private:
   QGridLayout *layout;
-
-signals:
-  void openSettings();
 };
 
