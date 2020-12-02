@@ -64,7 +64,7 @@ class Pc(HardwareBase):
     return True
 
   def set_battery_charging(self, on):
-    print(f"SET BATTERY CHARGING: {on}")
+    pass
 
   def get_usb_present(self):
     return False
