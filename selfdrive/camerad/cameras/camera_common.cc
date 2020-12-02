@@ -174,13 +174,13 @@ bool CameraBuf::acquire() {
   clWaitForEvents(1, &debayer_event);
   CL_CHECK(clReleaseEvent(debayer_event));
 
-  // visionbuf_sync(cur_rgb_buf, VISIONBUF_SYNC_FROM_DEVICE);
-
   cur_yuv_buf = vipc_server->get_buffer(yuv_type);
   cur_yuv_idx = cur_yuv_buf->idx;
   yuv_metas[cur_yuv_idx] = frame_data;
   rgb_to_yuv_queue(&rgb_to_yuv_state, q, cur_rgb_buf->buf_cl, cur_yuv_buf->buf_cl);
 
+  vipc_server->send(cur_rgb_buf);
+  vipc_server->send(cur_yuv_buf);
 
   tbuffer_dispatch(&ui_tb, cur_rgb_idx);
 
@@ -188,7 +188,6 @@ bool CameraBuf::acquire() {
 }
 
 void CameraBuf::release() {
-  // Send RGB and YUV frames
 }
 
 void CameraBuf::stop() {
