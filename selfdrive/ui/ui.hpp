@@ -19,12 +19,13 @@
 #include "nanovg.h"
 
 #include "common/mat.h"
-#include "common/visionipc.h"
 #include "common/visionimg.h"
 #include "common/framebuffer.h"
 #include "common/modeldata.h"
 #include "common/params.h"
 #include "sound.hpp"
+#include "visionipc.h"
+#include "visionipc_client.h"
 
 #define COLOR_BLACK nvgRGBA(0, 0, 0, 255)
 #define COLOR_BLACK_ALPHA(x) nvgRGBA(0, 0, 0, x)
@@ -142,6 +143,10 @@ typedef struct {
 
 
 typedef struct UIState {
+  VisionIpcClient * vipc_client;
+  bool vision_connected;
+  VisionBuf * last_frame;
+
   // framebuffer
   FramebufferState *fb;
   int fb_w, fb_h;
@@ -168,10 +173,6 @@ typedef struct UIState {
   UIStatus status;
   UIScene scene;
   cereal::UiLayoutState::App active_app;
-
-  // vision state
-  bool vision_connected;
-  VisionStream stream;
 
   // graphics
   GLuint frame_program;

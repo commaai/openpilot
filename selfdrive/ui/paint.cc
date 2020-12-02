@@ -191,12 +191,12 @@ static void draw_frame(UIState *s) {
   }
   glActiveTexture(GL_TEXTURE0);
 
-  if (s->stream.last_idx >= 0) {
-    glBindTexture(GL_TEXTURE_2D, s->frame_texs[s->stream.last_idx]);
+  if (s->last_frame) {
+    glBindTexture(GL_TEXTURE_2D, s->frame_texs[s->last_frame->idx]);
 #ifndef QCOM
     // this is handled in ion on QCOM
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, s->stream.bufs_info.width, s->stream.bufs_info.height,
-                 0, GL_RGB, GL_UNSIGNED_BYTE, s->priv_hnds[s->stream.last_idx]);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, s->last_frame->width, s->last_frame->height,
+                 0, GL_RGB, GL_UNSIGNED_BYTE, s->priv_hnds[s->last_frame->idx]);
 #endif
   }
 

@@ -44,7 +44,7 @@ if arch in ["x86_64", "Darwin", "larch64"]:
 
 
 src = ['ui.cc', 'paint.cc', 'sidebar.cc', '#phonelibs/nanovg/nanovg.c']
-libs = [common, 'zmq', 'capnp', 'kj', 'm', cereal, messaging, gpucommon, visionipc]
+libs = [common, 'zmq', 'capnp', 'kj', 'm', 'OpenCL', cereal, messaging, gpucommon, visionipc]
 
 
 if qt_env is None:
