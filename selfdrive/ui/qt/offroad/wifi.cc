@@ -6,7 +6,7 @@
 #include <QLineEdit>
 
 #include "wifi.hpp"
-
+#include "widgets/toggle.hpp"
 
 void clearLayout(QLayout* layout) {
   while (QLayoutItem* item = layout->takeAt(0)) {
@@ -68,6 +68,18 @@ void WifiUI::refresh() {
   wifi->refreshNetworks();
 
   clearLayout(vlayout);
+
+  QHBoxLayout *tethering_field = new QHBoxLayout;
+  tethering_field->addWidget(new QLabel("Enable Tethering"));
+  
+  QPushButton* toggle_switch = new QPushButton("Enable");
+  toggle_switch->setFixedWidth(300);
+  tethering_field->addWidget(toggle_switch);
+  QObject::connect(toggle_switch, SIGNAL(released()), this, SLOT(toggleTethering()));
+
+  QWidget* qw = new QWidget;
+  qw->setLayout(tethering_field);
+  vlayout->addWidget(qw);
 
   connectButtons = new QButtonGroup(this);
   QObject::connect(connectButtons, SIGNAL(buttonClicked(QAbstractButton*)), this, SLOT(handleButton(QAbstractButton*)));
@@ -161,6 +173,13 @@ void WifiUI::refresh() {
     }
   )");
   vlayout->addWidget(w);
+}
+
+
+
+void WifiUI::toggleTethering(){
+  qDebug()<<"Tethering is now enabled.(or not...)";
+  wifi->enableTethering();
 }
 
 void WifiUI::handleButton(QAbstractButton* button) {

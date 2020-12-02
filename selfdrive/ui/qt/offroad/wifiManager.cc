@@ -294,3 +294,33 @@ void WifiManager::change(unsigned int new_state,unsigned int previous_state,unsi
     connecting_to_network="";
   }
 }
+
+
+//Functions for tethering 
+
+void WifiManager::enableTethering(){
+  qDebug()<<"shold print this";
+  Connection connection;
+  connection["connection"]["id"] = "weedle";
+  connection["connection"]["uuid"] = QUuid::createUuid().toString().remove('{').remove('}');
+  connection["connection"]["type"] = "wifi";
+  connection["connection"]["autoconnect"] = "true";
+  connection["connection"]["interface-name"] = "wlan0";
+
+  connection["wifi"]["mac-address-blacklist"] = "";
+  connection["wifi"]["mode"] = "ap";
+  connection["wifi"]["ssid"] = "Weedle"; // Surely nobody will have a wifi named Weedle?
+
+  connection["wifi-security"]["group"] = "ccmp";
+  connection["wifi-security"]["key-mgmt"] = "wpa-psk";
+  connection["wifi-security"]["pairwise"] = "ccmp";
+  connection["wifi-security"]["proto"] = "rsn";
+  connection["wifi-security"]["psk"] = "test1234";
+
+  connection["ipv4"]["dns-search"] = "";
+  connection["ipv4"]["method"] = "shared";
+  
+  QDBusInterface nm_settings(nm_service, nm_settings_path, nm_settings_iface, bus);
+  QDBusObjectPath result = get_response<QDBusObjectPath>(nm_settings.call("AddConnection", QVariant::fromValue(connection)));
+  qDebug() << result.path();
+}

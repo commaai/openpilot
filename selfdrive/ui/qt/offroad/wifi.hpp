@@ -15,7 +15,7 @@ class WifiUI : public QWidget {
 
 public:
   int page;
-  explicit WifiUI(QWidget *parent = 0, int page_length = 6);
+  explicit WifiUI(QWidget *parent = 0, int page_length = 5);
 
 private:
   WifiManager* wifi;
@@ -36,6 +36,7 @@ private:
 
 private slots:
   void handleButton(QAbstractButton* m_button);
+  void toggleTethering();
   void refresh();
   void receiveText(QString text);
   void wrongPassword(QString ssid);
