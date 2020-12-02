@@ -10,8 +10,8 @@
 
 #include "common/params.h"
 
-#include "paint.hpp"
 #include "home.hpp"
+#include "paint.hpp"
 #include "qt_window.hpp"
 
 #define BACKLIGHT_DT 0.25
@@ -107,16 +107,6 @@ static void set_backlight(int brightness){
 
 
 GLWindow::GLWindow(QWidget *parent) : QOpenGLWidget(parent) {
-  QSurfaceFormat fmt;
-#ifdef __APPLE__
-  fmt.setVersion(3, 2);
-  fmt.setProfile(QSurfaceFormat::OpenGLContextProfile::CoreProfile);
-  fmt.setRenderableType(QSurfaceFormat::OpenGL);
-#else
-  fmt.setRenderableType(QSurfaceFormat::OpenGLES);
-#endif
-  QSurfaceFormat::setDefaultFormat(fmt);
-
   timer = new QTimer(this);
   QObject::connect(timer, SIGNAL(timeout()), this, SLOT(timerUpdate()));
 
