@@ -1,4 +1,0 @@
-#!/bin/sh
-export LD_LIBRARY_PATH="/data/openpilot/phonelibs/snpe/aarch64/:$HOME/openpilot/phonelibs/snpe/larch64:$HOME/openpilot/phonelibs/snpe/x86_64-linux-clang:$LD_LIBRARY_PATH"
-exec ./_thneed $@
-
