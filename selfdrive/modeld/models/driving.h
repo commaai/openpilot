@@ -41,8 +41,6 @@
 #define MODEL_FREQ 20
 #define MAX_FRAME_DROP 0.05
 
-const bool env_send_raw_driving = getenv("SEND_RAW_DRIVING") != NULL;
-
 struct ModelDataRaw {
     float *plan;
     float *lane_lines;

@@ -186,7 +186,7 @@ void dmonitoring_publish(PubMaster &pm, uint32_t frame_id, const DMonitoringResu
   framed.setLeftBlinkProb(res.left_blink_prob);
   framed.setRightBlinkProb(res.right_blink_prob);
   framed.setSgProb(res.sg_prob);
-  if (env_send_raw_dmonitor) {
+  if (send_raw_pred) {
     framed.setRawPred(kj::arrayPtr((const uint8_t*)raw_pred, OUTPUT_SIZE*sizeof(float)));
   }
 

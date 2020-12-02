@@ -11,8 +11,6 @@ extern "C" {
 
 #define OUTPUT_SIZE 34
 
-const bool env_send_raw_dmonitor = getenv("SEND_RAW_DMONITOR") != NULL;
-
 typedef struct DMonitoringResult {
   float face_orientation[3];
   float face_orientation_meta[3];
