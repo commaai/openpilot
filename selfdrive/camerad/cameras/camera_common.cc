@@ -47,7 +47,11 @@ static cl_program build_debayer_program(cl_device_id device_id, cl_context conte
 #endif
 }
 
-void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s, int frame_cnt) {
+void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s, VisionIpcServer * v, int frame_cnt, VisionStreamType rgb_type, VisionStreamType yuv_type) {
+  vipc_server = v;
+  rgb_type = rgb_type;
+  yuv_type = yuv_type;
+
   const CameraInfo *ci = &s->ci;
   camera_state = s;
   frame_buf_count = frame_cnt;
@@ -55,10 +59,12 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
   // RAW frame
   frame_size = ci->frame_height * ci->frame_stride;
   camera_bufs_metadata = std::make_unique<FrameMetadata[]>(frame_buf_count);
-  // TODO: Create `frame_cnt` camera bufs
 
+  for (int i = 0; i < frame_buf_count; i++) {
+    camera_bufs[i] = visionbuf_allocate(frame_size);
+    visionbuf_init_cl(&camera_bufs[i], device_id, context);
+  }
 
-  // TODO: Create `UI_BUF_COUNT` RGB buffers (get from visionipc?)
   rgb_width = ci->frame_width;
   rgb_height = ci->frame_height;
 #ifndef QCOM2
@@ -72,15 +78,15 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
   float db_s = 1.0;
 #endif
 
-  // TODO: create `YUV_COUNT` YUV buffers (get from visionipc?)
+  vipc_server->create_buffers(rgb_type, UI_BUF_COUNT, true, rgb_width, rgb_height);
+
   if (ci->bayer) {
     yuv_transform = transform_scale_buffer(s->transform, db_s);
   } else {
     yuv_transform = s->transform;
   }
-  yuv_width = rgb_width;
-  yuv_height = rgb_height;
-  yuv_buf_size = rgb_width * rgb_height * 3 / 2;
+
+  vipc_server->create_buffers(yuv_type, UI_BUF_COUNT, false, rgb_width, rgb_height);
 
   if (ci->bayer) {
     cl_program prg_debayer = build_debayer_program(device_id, context, ci, this);
@@ -88,7 +94,7 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
     CL_CHECK(clReleaseProgram(prg_debayer));
   }
 
-  rgb_to_yuv_init(&rgb_to_yuv_state, context, device_id, yuv_width, yuv_height, rgb_stride);
+  rgb_to_yuv_init(&rgb_to_yuv_state, context, device_id, rgb_width, rgb_height, rgb_stride);
 
 #ifdef __APPLE__
   q = CL_CHECK_ERR(clCreateCommandQueue(context, device_id, 0, &err));
@@ -135,9 +141,8 @@ bool CameraBuf::acquire() {
 
   cur_frame_data = frame_data;
 
-  // TODO: get fresh RGB buffer
-  // cur_rgb_idx = tbuffer_select(&ui_tb);
-  // cur_rgb_buf = &rgb_bufs[cur_rgb_idx];
+  cur_rgb_buf = vipc_server->get_buffer(rgb_type);
+  cur_rgb_idx = cur_rgb_buf->idx;
 
   cl_event debayer_event;
   cl_mem camrabuf_cl = camera_bufs[buf_idx].buf_cl;
@@ -171,9 +176,8 @@ bool CameraBuf::acquire() {
 
   // visionbuf_sync(cur_rgb_buf, VISIONBUF_SYNC_FROM_DEVICE);
 
-  // TODO: get fresh YUV buffer
-  // cur_yuv_idx = pool_select(&yuv_pool);
-  // cur_yuv_buf = nullptr;
+  cur_yuv_buf = vipc_server->get_buffer(yuv_type);
+  cur_yuv_idx = cur_yuv_buf->idx;
   yuv_metas[cur_yuv_idx] = frame_data;
   rgb_to_yuv_queue(&rgb_to_yuv_state, q, cur_rgb_buf->buf_cl, cur_yuv_buf->buf_cl);
 
@@ -305,7 +309,7 @@ void set_exposure_target(CameraState *c, const uint8_t *pix_ptr, int x_start, in
   uint32_t lum_binning[256] = {0};
   for (int y = y_start; y < y_end; y += y_skip) {
     for (int x = x_start; x < x_end; x += x_skip) {
-      uint8_t lum = pix_ptr[(y * b->yuv_width) + x];
+      uint8_t lum = pix_ptr[(y * b->rgb_width) + x];
       lum_binning[lum]++;
     }
   }

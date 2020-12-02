@@ -17,6 +17,7 @@
 #include "transforms/rgb_to_yuv.h"
 
 #include "visionipc.h"
+#include "visionipc_server.h"
 
 #define CAMERA_ID_IMX298 0
 #define CAMERA_ID_IMX179 1
@@ -89,6 +90,7 @@ struct CameraState;
 
 class CameraBuf {
 public:
+  VisionIpcServer *vipc_server;
   CameraState *camera_state;
   cl_kernel krnl_debayer;
   cl_command_queue q;
@@ -99,8 +101,8 @@ public:
 
   FrameMetadata yuv_metas[YUV_COUNT];
   size_t yuv_buf_size;
-  int yuv_width, yuv_height;
 
+  VisionStreamType rgb_type, yuv_type;
   int rgb_width, rgb_height, rgb_stride;
 
   int cur_yuv_idx, cur_rgb_idx;
@@ -121,7 +123,7 @@ public:
 
   CameraBuf() = default;
   ~CameraBuf();
-  void init(cl_device_id device_id, cl_context context, CameraState *s, int frame_cnt);
+  void init(cl_device_id device_id, cl_context context, CameraState *s, VisionIpcServer * v, int frame_cnt, VisionStreamType rgb_type, VisionStreamType yuv_type);
   bool acquire();
   void release();
   void stop();

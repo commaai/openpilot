@@ -22,6 +22,7 @@
 #include "common/params.h"
 #include "common/swaglog.h"
 #include "common/util.h"
+#include "visionipc_server.h"
 
 volatile sig_atomic_t do_exit = 0;
 
@@ -31,8 +32,9 @@ static void set_do_exit(int sig) {
 
 void party(cl_device_id device_id, cl_context context) {
   MultiCameraState cameras = {};
+  VisionIpcServer vipc_server("camerad", device_id, context);
 
-  cameras_init(&cameras, device_id, context);
+  cameras_init(&vipc_server, &cameras, device_id, context);
   cameras_open(&cameras);
 
   // priority for cameras
