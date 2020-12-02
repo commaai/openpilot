@@ -4,7 +4,7 @@
 #include <cassert>
 #include <unistd.h>
 #include <errno.h>
-#include <string.h>
+#include <poll.h>
 #include <inttypes.h>
 #include <pthread.h>
 #include <sys/resource.h>

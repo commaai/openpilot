@@ -12,5 +12,5 @@ cdef extern from "selfdrive/common/params.h":
     Params(bool)
     Params(string)
     string get(string, bool) nogil
-    int delete_value(string)
+    bool delete_value(string)
     bool put(string, string)

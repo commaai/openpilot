@@ -65,8 +65,11 @@ void OffroadAlert::refresh() {
   parse_alerts();
   cleanStackedWidget(alerts_stack);
 
-  std::vector<char> bytes = Params().read_db_bytes("UpdateAvailable");
-  updateAvailable = bytes.size() && bytes[0] == '1';
+  const bool updateAvailable = Params().getBool("UpdateAvailable");
+
+  if (updateAvailable) {
+    // If there is an update available, don't show alerts
+    alerts.clear();
 
   reboot_btn->setVisible(updateAvailable);
 
@@ -122,11 +125,11 @@ void OffroadAlert::parse_alerts() {
   }
 
   QJsonObject json = doc.object();
-  for (const QString &key : json.keys()) {
-    std::vector<char> bytes = Params().read_db_bytes(key.toStdString().c_str());
-
-    if (bytes.size()) {
-      QJsonDocument doc_par = QJsonDocument::fromJson(QByteArray(bytes.data(), bytes.size()));
+  for (const QString& key : json.keys()) {
+    std::string bytes = Params().get(key.toStdString().c_str());
+    
+    if (bytes.size()){
+      QJsonDocument doc_par = QJsonDocument::fromJson(QByteArray(bytes.data(), bytes.length()));
       QJsonObject obj = doc_par.object();
       Alert alert = {obj.value("text").toString(), obj.value("severity").toInt()};
       alerts.push_back(alert);

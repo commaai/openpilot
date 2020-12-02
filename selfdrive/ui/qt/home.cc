@@ -210,12 +210,9 @@ GLWindow::GLWindow(QWidget* parent) : QOpenGLWidget(parent) {
   backlight_timer = new QTimer(this);
   QObject::connect(backlight_timer, SIGNAL(timeout()), this, SLOT(backlightUpdate()));
 
-  int result = read_param(&brightness_b, "BRIGHTNESS_B", true);
-  result += read_param(&brightness_m, "BRIGHTNESS_M", true);
-  if (result != 0) {
-    brightness_b = 10.0;
-    brightness_m = 0.1;
-  }
+  Params params(true);
+  brightness_b = params.get<float>("BRIGHTNESS_B").value_or(10.0);
+  brightness_m = params.get<float>("BRIGHTNESS_M").value_or(0.1);
   smooth_brightness = BACKLIGHT_OFFROAD;
 }
 

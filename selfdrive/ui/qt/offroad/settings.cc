@@ -69,17 +69,22 @@ ParamsToggle::ParamsToggle(QString param, QString title, QString description, QS
   layout->addWidget(toggle);
   QObject::connect(toggle, SIGNAL(stateChanged(int)), this, SLOT(checkboxClicked(int)));
 
-  // set initial state from param
-  if (Params().read_db_bool(param.toStdString().c_str())) {
-    toggle->togglePosition();
+  // TODO: show descriptions on tap
+  hlayout->addWidget(label);
+  hlayout->addSpacing(50);
+  hlayout->addWidget(toggle_switch);
+  hlayout->addSpacing(20);
+
+  setLayout(hlayout);
+  if(Params().getBool(param.toStdString().c_str())){
+    toggle_switch->togglePosition();
   }
 
   setLayout(layout);
 }
 
 void ParamsToggle::checkboxClicked(int state) {
-  char value = state ? '1': '0';
-  Params().write_db_value(param.toStdString().c_str(), &value, 1);
+  Params().put(param.toStdString().c_str(), (bool)state);
 }
 
 QWidget * toggles_panel() {
@@ -222,8 +227,9 @@ QWidget * developer_panel() {
   main_layout->setMargin(100);
 
   Params params = Params();
-  std::string brand = params.read_db_bool("Passive") ? "dashcam" : "openpilot";
+  std::string brand = params.getBool("Passive") ? "dashcam" : "openpilot";
   std::vector<std::pair<std::string, std::string>> labels = {
+<<<<<<< HEAD
     {"Version", brand + " v" + params.get("Version", false)},
     {"Git Branch", params.get("GitBranch", false)},
     {"Git Commit", params.get("GitCommit", false).substr(0, 10)},
@@ -232,6 +238,19 @@ QWidget * developer_panel() {
   };
 
   for (int i = 0; i < labels.size(); i++) {
+=======
+    {"Version", brand + " v" + params.get("Version")},
+    {"Git Branch", params.get("GitBranch")},
+    {"Git Commit", params.get("GitCommit").substr(0, 10)},
+    {"Panda Firmware", params.get("PandaFirmwareHex")},
+  };
+
+  if (std::string os_version = util::read_file("/VERSION"); os_version.size()) {
+    labels.push_back({"OS Version", "AGNOS " + os_version});
+  }
+
+  for (int i = 0; i<labels.size(); i++) {
+>>>>>>> rebase master
     auto l = labels[i];
     main_layout->addWidget(labelWidget(QString::fromStdString(l.first), QString::fromStdString(l.second)));
 

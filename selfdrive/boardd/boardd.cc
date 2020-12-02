@@ -71,8 +71,7 @@ void safety_setter_thread() {
       return;
     };
 
-    std::string vin = Params().get("CarVin");
-    if (vin.size() > 0) {
+    if (std::string vin = Params().get("CarVin"); vin.size() > 0) {
       // sanity check VIN format
       assert(vin.size() == 17);
       LOGW("got CarVin %s", vin.c_str());

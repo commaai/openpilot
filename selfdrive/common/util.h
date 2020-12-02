@@ -4,6 +4,7 @@
 #include <csignal>
 #include <cstring>
 #include <cstdlib>
+#include <sys/stat.h>
 #include <string>
 #include <memory>
 #include <atomic>
@@ -99,6 +100,10 @@ inline std::string getenv_default(const char* env_var, const char * suffix, cons
 
 inline void sleep_for(const int milliseconds) {
   std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
+
+inline bool file_exists (std::string_view fn) {
+  struct stat st = {};
+  return stat(&fn[0], &st) == 0;
 }
 
 inline bool file_exists(const std::string& fn) {
