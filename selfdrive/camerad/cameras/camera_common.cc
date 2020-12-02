@@ -49,8 +49,8 @@ static cl_program build_debayer_program(cl_device_id device_id, cl_context conte
 
 void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s, VisionIpcServer * v, int frame_cnt, VisionStreamType rgb_type, VisionStreamType yuv_type) {
   vipc_server = v;
-  rgb_type = rgb_type;
-  yuv_type = yuv_type;
+  this->rgb_type = rgb_type;
+  this->yuv_type = yuv_type;
 
   const CameraInfo *ci = &s->ci;
   camera_state = s;
@@ -58,6 +58,7 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
 
   // RAW frame
   frame_size = ci->frame_height * ci->frame_stride;
+  camera_bufs = std::make_unique<VisionBuf[]>(frame_buf_count);
   camera_bufs_metadata = std::make_unique<FrameMetadata[]>(frame_buf_count);
 
   for (int i = 0; i < frame_buf_count; i++) {
@@ -78,7 +79,9 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
   float db_s = 1.0;
 #endif
 
+  // TODO create aligned RGB buffers
   vipc_server->create_buffers(rgb_type, UI_BUF_COUNT, true, rgb_width, rgb_height);
+  rgb_stride = rgb_width * 3;
 
   if (ci->bayer) {
     yuv_transform = transform_scale_buffer(s->transform, db_s);
