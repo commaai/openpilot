@@ -6,6 +6,7 @@
 #include <QLabel>
 #include <QMouseEvent>
 #include <QBoxLayout>
+#include <QDateTime>
 
 #include "common/params.h"
 
@@ -24,7 +25,8 @@ QWidget * home_widget() {
   // header
   layout->setDirection(QBoxLayout::LeftToRight);
 
-  QLabel *date = new QLabel("Monday, November 30th");
+  QString date_str = QDateTime::currentDateTime().toString("dddd, MMMM d");
+  QLabel *date = new QLabel(date_str);
   date->setStyleSheet(R"(font-size: 50px;)");
   layout->addWidget(date, 0, Qt::AlignTop | Qt::AlignLeft);
 
@@ -32,6 +34,11 @@ QWidget * home_widget() {
   version->setStyleSheet(R"(font-size: 35px;)");
   layout->addWidget(version, 0, Qt::AlignTop | Qt::AlignRight);
 
+  // center
+  layout->setDirection(QBoxLayout::TopToBottom);
+  QLabel *drive = new QLabel("Drive me");
+  drive->setStyleSheet(R"(font-size: 100px;)");
+  layout->addWidget(drive, 1, Qt::AlignHCenter);
 
   QWidget *w = new QWidget();
   w->setLayout(layout);
