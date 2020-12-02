@@ -9,7 +9,12 @@
 #include "include/msm_kgsl.h"
 #include <vector>
 #include <memory>
+#include <string>
 #include <CL/cl.h>
+
+#define THNEED_RECORD 1
+#define THNEED_DEBUG 2
+#define THNEED_VERBOSE_DEBUG 4
 
 using namespace std;
 
@@ -35,6 +40,28 @@ class CachedCommand {
     struct kgsl_command_object cmds[2];
     struct kgsl_command_object objs[1];
     Thneed *thneed;
+    vector<string> info;
+};
+
+class CLQueuedKernel {
+  public:
+    CLQueuedKernel(Thneed *lthneed,
+                   cl_kernel kernel,
+                   cl_uint _work_dim,
+                   const size_t *_global_work_size,
+                   const size_t *_local_work_size);
+    int exec();
+    int get_arg_num(const char *search_arg_name);
+    cl_program program;
+    string name;
+    cl_uint num_args;
+    vector<string> arg_names;
+    vector<string> args;
+  private:
+    Thneed *thneed;
+    cl_uint work_dim;
+    size_t global_work_size[3];
+    size_t local_work_size[3];
 };
 
 class Thneed {
@@ -42,10 +69,12 @@ class Thneed {
     Thneed();
     void stop();
     void execute(float **finputs, float *foutput, bool slow=false);
+    int optimize();
 
     vector<cl_mem> inputs;
     cl_mem output;
 
+    cl_context context;
     cl_command_queue command_queue;
     int context_id;
 
@@ -55,6 +84,8 @@ class Thneed {
     unique_ptr<GPUMalloc> ram;
     vector<unique_ptr<CachedCommand> > cmds;
     vector<string> syncobjs;
+    vector<string> info;
     int fd;
+    vector<unique_ptr<CLQueuedKernel> > kq;
 };
 
