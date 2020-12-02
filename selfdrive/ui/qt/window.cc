@@ -14,7 +14,7 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
 
   main_layout->setMargin(0);
   setLayout(main_layout);
-  QObject::connect(homeWindow->glWindow, SIGNAL(openSettings()), this, SLOT(openSettings()));
+  QObject::connect(homeWindow, SIGNAL(openSettings()), this, SLOT(openSettings()));
   QObject::connect(settingsWindow, SIGNAL(closeSettings()), this, SLOT(closeSettings()));
 
   // start at onboarding

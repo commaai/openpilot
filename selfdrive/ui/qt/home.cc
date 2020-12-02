@@ -27,17 +27,17 @@ QWidget * home_widget() {
 
   QString date_str = QDateTime::currentDateTime().toString("dddd, MMMM d");
   QLabel *date = new QLabel(date_str);
-  date->setStyleSheet(R"(font-size: 50px;)");
+  date->setStyleSheet(R"(font-size: 55px;)");
   layout->addWidget(date, 0, Qt::AlignTop | Qt::AlignLeft);
 
   QLabel *version = new QLabel(QString::fromStdString("openpilot v" + Params().get("Version")));
-  version->setStyleSheet(R"(font-size: 35px;)");
+  version->setStyleSheet(R"(font-size: 45px;)");
   layout->addWidget(version, 0, Qt::AlignTop | Qt::AlignRight);
 
   // center
   layout->setDirection(QBoxLayout::TopToBottom);
   QLabel *drive = new QLabel("Drive me");
-  drive->setStyleSheet(R"(font-size: 100px;)");
+  drive->setStyleSheet(R"(font-size: 125px;)");
   layout->addWidget(drive, 1, Qt::AlignHCenter);
 
   QWidget *w = new QWidget();
@@ -58,7 +58,6 @@ HomeWindow::HomeWindow(QWidget *parent) : QWidget(parent) {
   glWindow = new GLWindow(this);
   layout->addWidget(glWindow, 0, 0);
 
-  // draw on top of GL widget
   layout->addWidget(home_widget(), 0, 0);
 
   setLayout(layout);
@@ -68,6 +67,23 @@ HomeWindow::HomeWindow(QWidget *parent) : QWidget(parent) {
     }
   )");
 }
+
+void HomeWindow::mousePressEvent(QMouseEvent *e) {
+  UIState *ui_state = glWindow->ui_state;
+
+  glWindow->wake();
+
+  // Settings button click
+  if (!ui_state->scene.uilayout_sidebarcollapsed && settings_btn.ptInRect(e->x(), e->y())) {
+    emit openSettings();
+  }
+
+  // Vision click
+  if (ui_state->started && (e->x() >= ui_state->scene.viz_rect.x - bdr_s)){
+    ui_state->scene.uilayout_sidebarcollapsed = !ui_state->scene.uilayout_sidebarcollapsed;
+  }
+}
+
 
 static void handle_display_state(UIState *s, int dt, bool user_input) {
   static int awake_timeout = 0;
@@ -183,20 +199,6 @@ void GLWindow::wake(){
   // UI state might not be initialized yet
   if (ui_state != nullptr){
     handle_display_state(ui_state, 1, true);
-  }
-}
-
-void GLWindow::mousePressEvent(QMouseEvent *e) {
-  wake();
-
-  // Settings button click
-  if (!ui_state->scene.uilayout_sidebarcollapsed && settings_btn.ptInRect(e->x(), e->y())) {
-    emit openSettings();
-  }
-
-  // Vision click
-  if (ui_state->started && (e->x() >= ui_state->scene.viz_rect.x - bdr_s)){
-    ui_state->scene.uilayout_sidebarcollapsed = !ui_state->scene.uilayout_sidebarcollapsed;
   }
 }
 

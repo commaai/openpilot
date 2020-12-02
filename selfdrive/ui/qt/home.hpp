@@ -21,8 +21,9 @@ public:
   void wake();
   ~GLWindow();
 
+  UIState *ui_state = nullptr;
+
 protected:
-  void mousePressEvent(QMouseEvent *e) override;
   void initializeGL() override;
   void resizeGL(int w, int h) override;
   void paintGL() override;
@@ -31,7 +32,6 @@ private:
   QTimer *timer;
   QTimer *backlight_timer;
 
-  UIState *ui_state = nullptr;
   QtSound sound;
 
   bool onroad = true;
@@ -44,17 +44,6 @@ private:
 public slots:
   void timerUpdate();
   void backlightUpdate();
-
-signals:
-  void openSettings();
-};
-
-
-class HomeWidget : public QStackedWidget {
-  Q_OBJECT
-
-public:
-  explicit HomeWidget(QWidget *parent = 0);
 };
 
 
@@ -64,6 +53,12 @@ class HomeWindow : public QWidget {
 public:
   explicit HomeWindow(QWidget *parent = 0);
   GLWindow *glWindow;
+
+signals:
+  void openSettings();
+
+protected:
+  void mousePressEvent(QMouseEvent *e) override;
 
 private:
   QGridLayout *layout;
