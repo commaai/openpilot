@@ -114,11 +114,7 @@ int main(int argc, char **argv) {
   PubMaster pm({"modelV2", "model", "cameraOdometry"});
   SubMaster sm({"pathPlan", "frame"});
 
-#if defined(QCOM) || defined(QCOM2)
   cl_device_type device_type = CL_DEVICE_TYPE_DEFAULT;
-#else
-  cl_device_type device_type = CL_DEVICE_TYPE_CPU;
-#endif
 
   // cl init
   cl_device_id device_id = cl_get_device_id(device_type);
