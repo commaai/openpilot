@@ -188,6 +188,7 @@ int main(int argc, char **argv) {
 
         // TODO: don't make copies!
         memcpy(yuv_ion.addr, buf->addr, buf_info.buf_len);
+        visionbuf_sync(&yuv_ion, VISIONBUF_SYNC_TO_DEVICE);
 
         ModelDataRaw model_buf =
             model_eval_frame(&model, q, yuv_ion.buf_cl, buf_info.width, buf_info.height,
