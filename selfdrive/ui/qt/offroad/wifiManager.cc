@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <set>
+#include <stdlib.h>
 #include "wifiManager.hpp"
 
 /**
@@ -143,28 +144,6 @@ void WifiManager::connect(Network n, QString username, QString password){
   connect(n.ssid, username, password, n.security_type);
 }
 
-void WifiManager::connect(QByteArray ssid, QString username, QString password, SecurityType security_type){
-  Connection connection;
-  connection["connection"]["type"] = "802-11-wireless";
-  connection["connection"]["uuid"] = QUuid::createUuid().toString().remove('{').remove('}');
-
-  connection["connection"]["id"] = "OpenPilot connection "+QString::fromStdString(ssid.toStdString());
-
-  connection["802-11-wireless"]["ssid"] = ssid;
-  connection["802-11-wireless"]["mode"] = "infrastructure";
-
-  if(security_type == SecurityType::WPA){
-    connection["802-11-wireless-security"]["key-mgmt"] = "wpa-psk";
-    connection["802-11-wireless-security"]["auth-alg"] = "open";
-    connection["802-11-wireless-security"]["psk"] = password;
-  }
-
-  connection["ipv4"]["method"] = "auto";
-  connection["ipv6"]["method"] = "ignore";
-
-  QDBusInterface nm_settings(nm_service, nm_settings_path, nm_settings_iface, bus);
-  QDBusReply<QDBusObjectPath> result = nm_settings.call("AddConnection", QVariant::fromValue(connection));
-}
 
 void WifiManager::deactivate_connections(QString ssid){
   for(QDBusObjectPath active_connection_raw : get_active_connections()){
@@ -296,31 +275,75 @@ void WifiManager::change(unsigned int new_state,unsigned int previous_state,unsi
 }
 
 
+
+
+
+void WifiManager::connect(QByteArray ssid, QString username, QString password, SecurityType security_type){
+  qDebug()<<ssid;
+  Connection connection;
+  connection["connection"]["type"] = "802-11-wireless";
+  connection["connection"]["uuid"] = QUuid::createUuid().toString().remove('{').remove('}');
+
+  connection["connection"]["id"] = "OpenPilot connection "+QString::fromStdString(ssid.toStdString());
+
+  connection["802-11-wireless"]["ssid"] = ssid;
+  connection["802-11-wireless"]["mode"] = "infrastructure";
+
+  if(security_type == SecurityType::WPA){
+    connection["802-11-wireless-security"]["key-mgmt"] = "wpa-psk";
+    connection["802-11-wireless-security"]["auth-alg"] = "open";
+    connection["802-11-wireless-security"]["psk"] = password;
+  }
+
+  connection["ipv4"]["method"] = "auto";
+  connection["ipv6"]["method"] = "ignore";
+
+  QDBusInterface nm_settings(nm_service, nm_settings_path, nm_settings_iface, bus);
+  QDBusObjectPath result = get_response<QDBusObjectPath>(nm_settings.call("AddConnection", QVariant::fromValue(connection)));
+  qDebug() << result.path();
+}
 //Functions for tethering 
 
 void WifiManager::enableTethering(){
   qDebug()<<"shold print this";
-  Connection connection;
-  connection["connection"]["id"] = "weedle";
-  connection["connection"]["uuid"] = QUuid::createUuid().toString().remove('{').remove('}');
-  connection["connection"]["type"] = "wifi";
-  connection["connection"]["autoconnect"] = "true";
-  connection["connection"]["interface-name"] = "wlan0";
+  system("nmcli dev wifi hotspot ifname wlan0 ssid test password \"test1234\"");
+  // QString ssid="Weedle";
+  // QByteArray ssidArr=ssid.toUtf8();
+  // connect(ssidArr, "", "", SecurityType::OPEN);
+  // Simulate open connection to Weedle
+  // Connection connection;
+  // connection["connection"]["type"] = "802-11-wireless";
+  // connection["connection"]["uuid"] = QUuid::createUuid().toString().remove('{').remove('}');
 
-  connection["wifi"]["mac-address-blacklist"] = "";
-  connection["wifi"]["mode"] = "ap";
-  connection["wifi"]["ssid"] = "Weedle"; // Surely nobody will have a wifi named Weedle?
+  // connection["connection"]["id"] = "OpenPilot test Weedle";
 
-  connection["wifi-security"]["group"] = "ccmp";
-  connection["wifi-security"]["key-mgmt"] = "wpa-psk";
-  connection["wifi-security"]["pairwise"] = "ccmp";
-  connection["wifi-security"]["proto"] = "rsn";
-  connection["wifi-security"]["psk"] = "test1234";
+  // connection["802-11-wireless"]["ssid"] = ssidArr;
+  // connection["802-11-wireless"]["mode"] = "infrastructure";
 
-  connection["ipv4"]["dns-search"] = "";
-  connection["ipv4"]["method"] = "shared";
+  // connection["ipv4"]["method"] = "auto";
+  // connection["ipv6"]["method"] = "ignore";
+  // Connection connection;
+  // connection["connection"]["id"] = "Hotspot";
+  // connection["connection"]["uuid"] = QUuid::createUuid().toString().remove('{').remove('}');
+  // connection["connection"]["type"] = "wifi";
+  // connection["connection"]["autoconnect"] = "false";
+  // connection["connection"]["interface-name"] = "wlan0";
+
+  // connection["wifi"]["mode"] = "ap";
+  // connection["wifi"]["ssid"] = ssidArr; // Surely nobody will have a wifi named Weedle?
+
+  // connection["wifi-security"]["group"] = "ccmp";
+  // connection["wifi-security"]["key-mgmt"] = "wpa-psk";
+  // connection["wifi-security"]["pairwise"] = "ccmp";
+  // connection["wifi-security"]["proto"] = "rsn";
+  // connection["wifi-security"]["psk"] = "test1234";
+
+  // connection["ipv4"]["method"] = "shared";
+
+  // connection["ipv6"]["addr-gen-mode"] = "stable-privacy";
+  // connection["ipv6"]["method"] = "ignore";
   
-  QDBusInterface nm_settings(nm_service, nm_settings_path, nm_settings_iface, bus);
-  QDBusObjectPath result = get_response<QDBusObjectPath>(nm_settings.call("AddConnection", QVariant::fromValue(connection)));
-  qDebug() << result.path();
+  // QDBusInterface nm_settings(nm_service, nm_settings_path, nm_settings_iface, bus);
+  // QDBusObjectPath result = get_response<QDBusObjectPath>(nm_settings.call("AddConnection", QVariant::fromValue(connection)));
+  // qDebug() << result.path();
 }

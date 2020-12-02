@@ -185,8 +185,6 @@ void WifiUI::toggleTethering(){
 void WifiUI::handleButton(QAbstractButton* button) {
   QPushButton* btn = static_cast<QPushButton*>(button);
   Network n = wifi->seen_networks[connectButtons->id(btn)];
-
-  input_field->setPromptText("Enter password for \"" + n.ssid + "\"");
   connectToNetwork(n);
 }
 
@@ -195,6 +193,7 @@ void WifiUI::connectToNetwork(Network n){
   if(n.security_type == SecurityType::OPEN){
     wifi->connect(n);
   } else if (n.security_type == SecurityType::WPA){
+    input_field->setPromptText("Enter password for \"" + n.ssid + "\"");
     QString password = getStringFromUser();
     if(password.size()){
       wifi->connect(n, password);
