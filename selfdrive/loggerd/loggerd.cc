@@ -21,6 +21,7 @@
 #include <condition_variable>
 #include <atomic>
 #include <random>
+#include <filesystem>
 
 #include <ftw.h>
 #ifdef QCOM
@@ -474,7 +475,14 @@ kj::Array<capnp::word> gen_init_data() {
   MessageBuilder msg;
   auto init = msg.initEvent().initInitData();
 
-  init.setDeviceType(cereal::InitData::DeviceType::NEO);
+  if (std::filesystem::exists("/EON"))
+    init.setDeviceType(cereal::InitData::DeviceType::NEO);
+  else if (std::filesystem::exists("/TICI")) {
+    init.setDeviceType(cereal::InitData::DeviceType::TICI);
+  } else {
+    init.setDeviceType(cereal::InitData::DeviceType::PC);
+  }
+
   init.setVersion(capnp::Text::Reader(COMMA_VERSION));
 
   std::ifstream cmdline_stream("/proc/cmdline");
