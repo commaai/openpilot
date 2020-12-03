@@ -15,6 +15,7 @@
 #include <string>
 #include <iostream>
 #include <fstream>
+#include <fstream>
 #include <streambuf>
 #include <thread>
 #include <mutex>
@@ -127,6 +128,11 @@ double randrange(double a, double b) {
 volatile sig_atomic_t do_exit = 0;
 static void set_do_exit(int sig) {
   do_exit = 1;
+}
+
+static bool file_exists (const std::string& fn) {
+  std::ifstream f(fn);
+  return f.good();
 }
 
 class RotateState {
@@ -474,7 +480,14 @@ kj::Array<capnp::word> gen_init_data() {
   MessageBuilder msg;
   auto init = msg.initEvent().initInitData();
 
-  init.setDeviceType(cereal::InitData::DeviceType::NEO);
+  if (file_exists("/EON"))
+    init.setDeviceType(cereal::InitData::DeviceType::NEO);
+  else if (file_exists("/TICI")) {
+    init.setDeviceType(cereal::InitData::DeviceType::TICI);
+  } else {
+    init.setDeviceType(cereal::InitData::DeviceType::PC);
+  }
+
   init.setVersion(capnp::Text::Reader(COMMA_VERSION));
 
   std::ifstream cmdline_stream("/proc/cmdline");
