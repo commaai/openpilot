@@ -18,7 +18,6 @@
 #include "common/params.h"
 #include "common/utilpp.h"
 
-const int SIDEBAR_WIDTH = 400;
 
 ParamsToggle::ParamsToggle(QString param, QString title, QString description, QString icon_path, QWidget *parent): QFrame(parent) , param(param) {
   QHBoxLayout *hlayout = new QHBoxLayout;
@@ -56,20 +55,9 @@ ParamsToggle::ParamsToggle(QString param, QString title, QString description, QS
   }
 
   setStyleSheet(R"(
-    QCheckBox {
-      font-size: 70px;
+    QLabel {
+      font-size: 50px;
     }
-    QCheckBox::indicator {
-      width: 100px;
-      height: 100px;
-    }
-    QCheckBox::indicator:unchecked {
-      image: url(../assets/offroad/circled-checkmark-empty.png);
-    }
-    QCheckBox::indicator:checked {
-      image: url(../assets/offroad/circled-checkmark.png);
-    }
-    QLabel { font-size: 50px }
     * {
       background-color: #114265;
     }
@@ -182,14 +170,17 @@ QWidget * developer_panel() {
 
   Params params = Params();
   std::string brand = params.read_db_bool("Passive") ? "dashcam" : "openpilot";
-  std::string os_version = util::read_file("/VERSION");
   std::vector<std::pair<std::string, std::string>> labels = {
     {"Version", brand + " v" + params.get("Version", false)},
-    {"OS Version", os_version},
     {"Git Branch", params.get("GitBranch", false)},
     {"Git Commit", params.get("GitCommit", false).substr(0, 10)},
     {"Panda Firmware", params.get("PandaFirmwareHex", false)},
   };
+
+  std::string os_version = util::read_file("/VERSION");
+  if (os_version.size()) {
+    labels.push_back({"OS Version", "AGNOS " + os_version});
+  }
 
   for (auto l : labels) {
     QString text = QString::fromStdString(l.first + ": " + l.second);
@@ -198,12 +189,16 @@ QWidget * developer_panel() {
 
   QWidget *widget = new QWidget;
   widget->setLayout(main_layout);
+  widget->setStyleSheet(R"(
+    QLabel {
+      font-size: 50px;
+    }
+  )");
   return widget;
 }
 
 QWidget * network_panel(QWidget * parent) {
   WifiUI *w = new WifiUI();
-
   QObject::connect(w, SIGNAL(openKeyboard()), parent, SLOT(closeSidebar()));
   QObject::connect(w, SIGNAL(closeKeyboard()), parent, SLOT(openSidebar()));
   return w;
@@ -267,7 +262,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
     panel_layout->addWidget(panel.second);
     QObject::connect(btn, SIGNAL(released()), this, SLOT(setActivePanel()));
   }
-  
+
   // We either show the alerts, or the developer panel
   if (alerts_widget->show_alert){
     panel_layout->setCurrentWidget(alerts_widget);
@@ -275,16 +270,16 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
 
   QHBoxLayout *settings_layout = new QHBoxLayout();
   settings_layout->addSpacing(45);
+
   sidebar_widget = new QWidget;
   sidebar_widget->setLayout(sidebar_layout);
-  sidebar_widget->setFixedWidth(SIDEBAR_WIDTH);
   settings_layout->addWidget(sidebar_widget);
 
   settings_layout->addSpacing(45);
   settings_layout->addLayout(panel_layout);
   settings_layout->addSpacing(45);
+
   setLayout(settings_layout);
-  
   setStyleSheet(R"(
     * {
       color: white;
@@ -295,7 +290,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
 
 // Refreshes the offroad alerts from the params folder and sets up the sidebar alerts widget.
 // The function gets called every time a user opens the settings page
-void SettingsWindow::refreshParams(){
+void SettingsWindow::refreshParams() {
   alerts_widget->refresh();
   if (!alerts_widget->show_alert){
     sidebar_alert_widget->setFixedHeight(0);
@@ -303,21 +298,22 @@ void SettingsWindow::refreshParams(){
     return;
   }
 
-  // Panel 0 contains the alerts or release notes. 
+  // Panel 0 contains the alerts or release notes.
   panel_layout->setCurrentIndex(0);
   sidebar_alert_widget->setFixedHeight(100);
   sidebar_alert_widget->setStyleSheet(R"(
     background-color: #114267;
   )"); // light blue
-  
+
   // Check for alerts
   int alerts = alerts_widget->alerts.size();
   if (!alerts){
-    //There is a new release
+    // There is a new release
     sidebar_alert_widget->setText("UPDATE");
     return;
   }
-  //Check if there is an important alert
+
+  // Check if there is an important alert
   bool existsImportantAlert = false;
   for (auto alert : alerts_widget->alerts){
     if (alert.severity){
@@ -332,15 +328,19 @@ void SettingsWindow::refreshParams(){
     )"); //dark red
   }
 }
-void SettingsWindow::closeAlerts(){
+
+void SettingsWindow::closeAlerts() {
   panel_layout->setCurrentIndex(1);
 }
-void SettingsWindow::openAlerts(){
+
+void SettingsWindow::openAlerts() {
   panel_layout->setCurrentIndex(0);
 }
-void SettingsWindow::closeSidebar(){
-  sidebar_widget->setFixedWidth(0);
+
+void SettingsWindow::closeSidebar() {
+  sidebar_widget->setVisible(false);
 }
-void SettingsWindow::openSidebar(){
-  sidebar_widget->setFixedWidth(SIDEBAR_WIDTH);
+
+void SettingsWindow::openSidebar() {
+  sidebar_widget->setVisible(true);
 }

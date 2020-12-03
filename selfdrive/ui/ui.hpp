@@ -7,7 +7,6 @@
 #define nvgCreate nvgCreateGL3
 #else
 #include <GLES3/gl3.h>
-#include <EGL/egl.h>
 #define NANOVG_GLES3_IMPLEMENTATION
 #define nvgCreate nvgCreateGLES3
 #endif
