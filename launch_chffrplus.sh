@@ -8,7 +8,15 @@ source "$BASEDIR/launch_env.sh"
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 
+function tici_init {
+  sudo su -c 'echo "performance" > /sys/class/devfreq/soc:qcom,memlat-cpu0/governor'
+  sudo su -c 'echo "performance" > /sys/class/devfreq/soc:qcom,memlat-cpu4/governor'
+}
+
 function two_init {
+  # Wifi scan
+  wpa_cli IFNAME=wlan0 SCAN
+
   # Restrict Android and other system processes to the first two cores
   echo 0-1 > /dev/cpuset/background/cpus
   echo 0-1 > /dev/cpuset/system-background/cpus
@@ -28,6 +36,9 @@ function two_init {
   # unclear if these help, but they don't seem to hurt
   echo "performance" > /sys/class/devfreq/soc:qcom,memlat-cpu0/governor
   echo "performance" > /sys/class/devfreq/soc:qcom,memlat-cpu2/governor
+
+  # GPU
+  echo "performance" > /sys/class/devfreq/b00000.qcom,kgsl-3d0/governor
 
   # /sys/class/devfreq/soc:qcom,mincpubw is the only one left at "powersave"
   # it seems to gain nothing but a wasted 500mW
@@ -73,9 +84,6 @@ function two_init {
 }
 
 function launch {
-  # Wifi scan
-  wpa_cli IFNAME=wlan0 SCAN
-
   # Remove orphaned git lock if it exists on boot
   [ -f "$DIR/.git/index.lock" ] && rm -f $DIR/.git/index.lock
 
@@ -121,6 +129,8 @@ function launch {
   # comma two init
   if [ -f /EON ]; then
     two_init
+  elif [ -f /TICI ]; then
+    tici_init
   fi
 
   # handle pythonpath

@@ -10,7 +10,7 @@
 #include <QMouseEvent>
 
 #include "window.hpp"
-#include "offroad/input_field.hpp"
+#include "qt_window.hpp"
 #include "offroad/settings.hpp"
 #include "offroad/onboarding.hpp"
 
@@ -48,9 +48,6 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
 
 #ifdef QCOM2
   set_core_affinity(7);
-
-  // TODO: this is needed to make first page not squished, why?
-  main_layout->setSizeConstraint(QLayout::SetMinimumSize);
 #endif
 
   glWindow = new GLWindow(this);
@@ -82,6 +79,7 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
 
 void MainWindow::openSettings() {
   main_layout->setCurrentIndex(1);
+  settingsWindow->refreshParams();
 }
 
 void MainWindow::closeSettings() {
@@ -177,7 +175,10 @@ void GLWindow::paintGL() {
 }
 
 void GLWindow::wake(){
-  handle_display_state(ui_state, 1, true);
+  // UI state might not be initialized yet
+  if (ui_state != nullptr){
+    handle_display_state(ui_state, 1, true);
+  }
 }
 
 void GLWindow::mousePressEvent(QMouseEvent *e) {

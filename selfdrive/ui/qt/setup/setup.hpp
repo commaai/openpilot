@@ -1,23 +1,27 @@
+#include <QString>
 #include <QWidget>
 #include <QLineEdit>
-#include <QStackedLayout>
+#include <QPushButton>
+#include <QStackedWidget>
 
-class Setup : public QWidget {
+class Setup : public QStackedWidget {
   Q_OBJECT
 
 public:
   explicit Setup(QWidget *parent = 0);
 
 private:
-  QStackedLayout *layout;
-
   QLineEdit *url_input;
+  QPushButton *continue_btn;
 
   QWidget *getting_started();
   QWidget *network_setup();
   QWidget *software_selection();
+  QWidget *custom_software();
   QWidget *downloading();
 
 public slots:
   void nextPage();
+  void prevPage();
+  void download(QString url);
 };

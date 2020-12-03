@@ -1,10 +1,10 @@
 #pragma once
 
+#include <QLabel>
+#include <QString>
 #include <QWidget>
 #include <QLineEdit>
-#include <QVBoxLayout>
-#include <QStackedLayout>
-#include <QLabel>
+#include <QGridLayout>
 
 #include "keyboard.hpp"
 
@@ -13,12 +13,13 @@ class InputField : public QWidget {
 
 public:
   explicit InputField(QWidget* parent = 0);
-  QLabel *label;
-  
+  void setPromptText(QString text);
+
 private:
   QLineEdit *line;
   Keyboard *k;
-  QVBoxLayout *l;
+  QLabel *label;
+  QGridLayout *layout;
 
 public slots:
   void emitEmpty();

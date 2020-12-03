@@ -330,13 +330,11 @@ int main(int argc, char *argv[]) {
   signal(SIGINT, (sighandler_t)set_do_exit);
   signal(SIGTERM, (sighandler_t)set_do_exit);
 
-  int err;
   clu_init();
   cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
-  cl_context context = clCreateContext(NULL, 1, &device_id, NULL, NULL, &err);
-  assert(err == 0);
+  cl_context context = CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id, NULL, NULL, &err));
 
   party(device_id, context);
 
-  clReleaseContext(context);
+  CL_CHECK(clReleaseContext(context));
 }
