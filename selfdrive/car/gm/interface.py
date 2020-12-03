@@ -33,7 +33,7 @@ class CarInterface(CarInterfaceBase):
     ret.openpilotLongitudinalControl = ret.enableCamera
     tire_stiffness_factor = 0.444  # not optimized yet
 
-    ret.minSpeedCAN = 0.3
+    ret.minSpeedCan = 0.3
 
     # Start with a baseline lateral tuning for all GM vehicles. Override tuning as needed in each model section below.
     ret.minSteerSpeed = 7 * CV.MPH_TO_MS

@@ -19,7 +19,7 @@ class CarInterface(CarInterfaceBase):
     ret.safetyModel = car.CarParams.SafetyModel.hyundai
     ret.radarOffCan = True
 
-    ret.minSpeedCAN = 0.3
+    ret.minSpeedCan = 0.3
 
     # Most Hyundai car ports are community features for now
     ret.communityFeature = candidate not in [CAR.SONATA, CAR.PALISADE]

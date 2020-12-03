@@ -124,7 +124,7 @@ class CarInterface(CarInterfaceBase):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
     ret.carName = "honda"
 
-    ret.minSpeedCAN = 0.3
+    ret.minSpeedCan = 0.3
 
     if candidate in HONDA_BOSCH:
       ret.safetyModel = car.CarParams.SafetyModel.hondaBoschHarness

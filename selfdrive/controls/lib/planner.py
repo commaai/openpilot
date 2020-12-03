@@ -144,7 +144,7 @@ class Planner():
     else:
       starting = long_control_state == LongCtrlState.starting
       a_ego = min(sm['carState'].aEgo, 0.0)
-      reset_speed = self.CP.minSpeedCAN if starting else v_ego
+      reset_speed = self.CP.minSpeedCan if starting else v_ego
       reset_accel = self.CP.startAccel if starting else a_ego
       self.v_acc = reset_speed
       self.a_acc = reset_accel
