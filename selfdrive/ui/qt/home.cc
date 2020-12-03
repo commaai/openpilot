@@ -5,7 +5,8 @@
 
 #include <QLabel>
 #include <QMouseEvent>
-#include <QBoxLayout>
+#include <QHBoxLayout>
+#include <QVBoxLayout>
 #include <QDateTime>
 
 #include "common/params.h"
@@ -19,29 +20,29 @@
 
 
 QWidget * home_widget() {
-  QBoxLayout *layout = new QBoxLayout(QBoxLayout::LeftToRight);
-  layout->setContentsMargins(sbr_w + 50, 50, 50, 50);
+  QVBoxLayout *main_layout = new QVBoxLayout();
+  main_layout->setContentsMargins(sbr_w + 50, 50, 50, 50);
 
   // header
-  layout->setDirection(QBoxLayout::LeftToRight);
-
+  QHBoxLayout *header_layout = new QHBoxLayout();
   QString date_str = QDateTime::currentDateTime().toString("dddd, MMMM d");
   QLabel *date = new QLabel(date_str);
   date->setStyleSheet(R"(font-size: 55px;)");
-  layout->addWidget(date, 0, Qt::AlignTop | Qt::AlignLeft);
+  header_layout->addWidget(date, 0, Qt::AlignTop | Qt::AlignLeft);
 
   QLabel *version = new QLabel(QString::fromStdString("openpilot v" + Params().get("Version")));
   version->setStyleSheet(R"(font-size: 45px;)");
-  layout->addWidget(version, 0, Qt::AlignTop | Qt::AlignRight);
+  header_layout->addWidget(version, 0, Qt::AlignTop | Qt::AlignRight);
+
+  main_layout->addLayout(header_layout);
 
   // center
-  layout->setDirection(QBoxLayout::TopToBottom);
   QLabel *drive = new QLabel("Drive me");
-  drive->setStyleSheet(R"(font-size: 125px;)");
-  layout->addWidget(drive, 1, Qt::AlignHCenter);
+  drive->setStyleSheet(R"(font-size: 175px;)");
+  main_layout->addWidget(drive, 1, Qt::AlignHCenter);
 
   QWidget *w = new QWidget();
-  w->setLayout(layout);
+  w->setLayout(main_layout);
   w->setStyleSheet(R"(
     * {
       background-color: none;
