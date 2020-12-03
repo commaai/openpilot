@@ -1,8 +1,8 @@
-#include <QWidget>
 #include <QLabel>
 #include <QFile>
-#include <QJsonDocument>
+#include <QPushButton>
 #include <QJsonObject>
+#include <QJsonDocument>
 #include <QDebug>
 
 #include "offroad_alerts.hpp"
@@ -32,7 +32,7 @@ OffroadAlert::OffroadAlert(QWidget* parent){
   setLayout(vlayout);
 }
 
-void OffroadAlert::refresh(){
+void OffroadAlert::refresh() {
   cleanLayout(vlayout);
   parse_alerts();
 

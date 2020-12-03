@@ -19,7 +19,7 @@
 #define BACKLIGHT_TS 2.00
 
 
-QWidget * home_widget() {
+OffroadHome::OffroadHome(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout();
   main_layout->setContentsMargins(sbr_w + 50, 50, 50, 50);
 
@@ -37,18 +37,23 @@ QWidget * home_widget() {
   main_layout->addLayout(header_layout);
 
   // center
+
+  /*
   QLabel *drive = new QLabel("Drive me");
   drive->setStyleSheet(R"(font-size: 175px;)");
   main_layout->addWidget(drive, 1, Qt::AlignHCenter);
+  */
 
-  QWidget *w = new QWidget();
-  w->setLayout(main_layout);
-  w->setStyleSheet(R"(
+  alerts = new OffroadAlert();
+  main_layout->addWidget(alerts, 1, Qt::AlignCenter);
+  alerts->refresh();
+
+  setLayout(main_layout);
+  setStyleSheet(R"(
     * {
       background-color: none;
     }
   )");
-  return w;
 }
 
 HomeWindow::HomeWindow(QWidget *parent) : QWidget(parent) {
@@ -56,10 +61,12 @@ HomeWindow::HomeWindow(QWidget *parent) : QWidget(parent) {
   layout = new QGridLayout;
   layout->setMargin(0);
 
+  // onroad UI
   glWindow = new GLWindow(this);
   layout->addWidget(glWindow, 0, 0);
 
-  home = home_widget();
+  // draw offroad UI on top of onroad UI
+  home = new OffroadHome();
   layout->addWidget(home, 0, 0);
   QObject::connect(glWindow, SIGNAL(offroadTransition(bool)), this, SLOT(setVisibility(bool)));
 

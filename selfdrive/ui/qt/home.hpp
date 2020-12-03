@@ -8,6 +8,7 @@
 #include <QOpenGLFunctions>
 
 #include "qt_sound.hpp"
+#include "widgets/offroad_alerts.hpp"
 #include "ui/ui.hpp"
 
 
@@ -49,6 +50,18 @@ public slots:
   void backlightUpdate();
 };
 
+// offroad home screen
+class OffroadHome : public QWidget {
+  Q_OBJECT
+
+public:
+  explicit OffroadHome(QWidget *parent = 0);
+
+private:
+  // offroad home screen widgets
+  OffroadAlert *alerts;
+};
+
 
 class HomeWindow : public QWidget {
   Q_OBJECT
@@ -64,8 +77,8 @@ protected:
   void mousePressEvent(QMouseEvent *e) override;
 
 private:
-  QWidget *home;
   QGridLayout *layout;
+  OffroadHome *home;
 
 private slots:
   void setVisibility(bool offroad);

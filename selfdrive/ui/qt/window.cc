@@ -32,7 +32,6 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
 
 void MainWindow::openSettings() {
   main_layout->setCurrentWidget(settingsWindow);
-  settingsWindow->refreshParams();
 }
 
 void MainWindow::closeSettings() {
