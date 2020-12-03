@@ -49,6 +49,7 @@ private:
   QDBusConnection bus = QDBusConnection::systemBus();
   unsigned int raw_adapter_state;//Connection status https://developer.gnome.org/NetworkManager/1.26/nm-dbus-types.html#NMDeviceState
   QString connecting_to_network;
+  QString tethering_ssid;
 
   QString get_adapter();
   QList<Network> get_networks();
