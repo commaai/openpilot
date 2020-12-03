@@ -159,7 +159,6 @@ void WifiManager::connect(QByteArray ssid, QString username, QString password, S
   Connection connection;
   connection["connection"]["type"] = "802-11-wireless";
   connection["connection"]["uuid"] = QUuid::createUuid().toString().remove('{').remove('}');
-  connection["connection"]["autoconnect"] = true;
   connection["connection"]["id"] = "OpenPilot connection "+QString::fromStdString(ssid.toStdString());
 
   connection["802-11-wireless"]["ssid"] = ssid;
