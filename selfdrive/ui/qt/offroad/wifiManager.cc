@@ -322,7 +322,7 @@ void WifiManager::enableTethering(){
 
   connection["802-11-wireless-security"]["key-mgmt"] = "wpa-psk";
   connection["802-11-wireless-security"]["auth-alg"] = "open";
-  connection["802-11-wireless-security"]["psk"] = "test1234";
+  connection["802-11-wireless-security"]["psk"] = "swagswagcomma";
 
   connection["ipv4"]["method"] = "shared";
   connection["ipv6"]["method"] = "ignore";
