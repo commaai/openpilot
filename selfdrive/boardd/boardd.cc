@@ -482,10 +482,6 @@ void pigeon_thread() {
   Pigeon * pigeon = Pigeon::connect(panda);
 #endif
 
-  if (ignition) {
-    pigeon->init();
-  }
-
   while (!do_exit && panda->connected) {
     std::string recv = pigeon->receive();
     if (recv.length() > 0) {
