@@ -34,11 +34,10 @@ WifiUI::WifiUI(QWidget *parent, int page_length) : QWidget(parent), networks_per
   QHBoxLayout *tethering_field = new QHBoxLayout;
   tethering_field->addWidget(new QLabel("Enable Tethering"));
   
-  bool toggle_on = wifi->tetheringEnabled();
   Toggle* toggle_switch = new Toggle(this);
   toggle_switch->setFixedSize(150, 100);
   tethering_field->addWidget(toggle_switch);
-  if (toggle_on){
+  if (wifi->tetheringEnabled()){
     toggle_switch->togglePosition();
   }
   QObject::connect(toggle_switch, SIGNAL(stateChanged(int)), this, SLOT(toggleTethering(int)));
@@ -53,7 +52,7 @@ WifiUI::WifiUI(QWidget *parent, int page_length) : QWidget(parent), networks_per
   wifi_widget->setLayout(vlayout);
   networkLayout->addWidget(wifi_widget);
 
-  QWidget* networkWidget= new QWidget;
+  QWidget* networkWidget = new QWidget;
   networkWidget->setLayout(networkLayout);
   swidget->addWidget(networkWidget);
 
