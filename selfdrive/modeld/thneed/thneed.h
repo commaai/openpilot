@@ -45,6 +45,7 @@ class CLQueuedKernel {
     cl_uint num_args;
     vector<string> arg_names;
     vector<string> args;
+    vector<int> args_size;
   private:
     Thneed *thneed;
     cl_kernel kernel;

@@ -16,6 +16,7 @@
 Thneed *g_thneed = NULL;
 int g_fd = -1;
 map<pair<cl_kernel, int>, string> g_args;
+map<pair<cl_kernel, int>, int> g_args_size;
 
 static inline uint64_t nanos_since_boot() {
   struct timespec t;
@@ -302,6 +303,7 @@ void Thneed::execute(float **finputs, float *foutput, bool slow) {
 cl_int (*my_clSetKernelArg)(cl_kernel kernel, cl_uint arg_index, size_t arg_size, const void *arg_value) = NULL;
 cl_int thneed_clSetKernelArg(cl_kernel kernel, cl_uint arg_index, size_t arg_size, const void *arg_value) {
   if (my_clSetKernelArg == NULL) my_clSetKernelArg = reinterpret_cast<decltype(my_clSetKernelArg)>(dlsym(RTLD_NEXT, "REAL_clSetKernelArg"));
+  g_args_size[make_pair(kernel, arg_index)] = arg_size;
   if (arg_value != NULL) {
     g_args[make_pair(kernel, arg_index)] = string((char*)arg_value, arg_size);
   } else {
@@ -456,6 +458,7 @@ CLQueuedKernel::CLQueuedKernel(Thneed *lthneed,
     clGetKernelArgInfo(kernel, i, CL_KERNEL_ARG_NAME, sizeof(arg_name), arg_name, NULL);
     arg_names.push_back(string(arg_name));
     args.push_back(g_args[make_pair(kernel, i)]);
+    args_size.push_back(g_args_size[make_pair(kernel, i)]);
   }
 
   // get program
@@ -475,11 +478,14 @@ int CLQueuedKernel::exec(bool recreate_kernel) {
     // create a new exec kernel, don't use the passed in one
     kernel = clCreateKernel(program, name.c_str(), NULL);
     for (int j = 0; j < num_args; j++) {
+      cl_int ret;
       if (args[j].size() != 0) {
-        thneed_clSetKernelArg(kernel, j, args[j].size(), args[j].data());
+        assert(args[j].size() == args_size[j]);
+        ret = thneed_clSetKernelArg(kernel, j, args[j].size(), args[j].data());
       } else {
-        thneed_clSetKernelArg(kernel, j, 0, NULL);
+        ret = thneed_clSetKernelArg(kernel, j, args_size[j], NULL);
       }
+      assert(ret == CL_SUCCESS);
     }
   }
 
