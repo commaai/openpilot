@@ -30,6 +30,29 @@ class GPUMalloc {
     int remaining;
 };
 
+class CLQueuedKernel {
+  public:
+    CLQueuedKernel(Thneed *lthneed,
+                   cl_kernel kernel,
+                   cl_uint _work_dim,
+                   const size_t *_global_work_size,
+                   const size_t *_local_work_size);
+    int exec();
+    void debug_print(bool verbose);
+    int get_arg_num(const char *search_arg_name);
+    cl_program program;
+    string name;
+    cl_uint num_args;
+    vector<string> arg_names;
+    vector<string> args;
+  private:
+    Thneed *thneed;
+    cl_kernel kernel;
+    cl_uint work_dim;
+    size_t global_work_size[3];
+    size_t local_work_size[3];
+};
+
 class CachedCommand {
   public:
     CachedCommand(Thneed *lthneed, struct kgsl_gpu_command *cmd);
@@ -40,28 +63,7 @@ class CachedCommand {
     struct kgsl_command_object cmds[2];
     struct kgsl_command_object objs[1];
     Thneed *thneed;
-    vector<string> info;
-};
-
-class CLQueuedKernel {
-  public:
-    CLQueuedKernel(Thneed *lthneed,
-                   cl_kernel kernel,
-                   cl_uint _work_dim,
-                   const size_t *_global_work_size,
-                   const size_t *_local_work_size);
-    int exec();
-    int get_arg_num(const char *search_arg_name);
-    cl_program program;
-    string name;
-    cl_uint num_args;
-    vector<string> arg_names;
-    vector<string> args;
-  private:
-    Thneed *thneed;
-    cl_uint work_dim;
-    size_t global_work_size[3];
-    size_t local_work_size[3];
+    vector<shared_ptr<CLQueuedKernel> > kq;
 };
 
 class Thneed {
@@ -84,8 +86,12 @@ class Thneed {
     unique_ptr<GPUMalloc> ram;
     vector<unique_ptr<CachedCommand> > cmds;
     vector<string> syncobjs;
-    vector<string> info;
     int fd;
-    vector<unique_ptr<CLQueuedKernel> > kq;
+
+    // all CL kernels
+    vector<shared_ptr<CLQueuedKernel> > kq;
+
+    // current
+    vector<shared_ptr<CLQueuedKernel> > ckq;
 };
 

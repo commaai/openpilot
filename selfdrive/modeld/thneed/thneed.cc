@@ -161,8 +161,8 @@ CachedCommand::CachedCommand(Thneed *lthneed, struct kgsl_gpu_command *cmd) {
     objs[i].gpuaddr = (uint64_t)nn;
   }
 
-  info = thneed->info;
-  thneed->info.clear();
+  kq = thneed->ckq;
+  thneed->ckq.clear();
 }
 
 void CachedCommand::exec(bool wait) {
@@ -185,8 +185,8 @@ void CachedCommand::exec(bool wait) {
   }
 
   if (thneed->record & THNEED_VERBOSE_DEBUG) {
-    for (auto it : info) {
-      printf("%s\n", it.c_str());
+    for (auto &it : kq) {
+      it->debug_print(false);
     }
     #ifdef RUN_DISASSEMBLER
       disassemble();
@@ -470,8 +470,8 @@ int CLQueuedKernel::get_arg_num(const char *search_arg_name) {
 }
 
 int CLQueuedKernel::exec() {
-  // create the exec kernel
-  cl_kernel kernel = clCreateKernel(program, name.c_str(), NULL);
+  // create the exec kernel, don't use the passed in one
+  kernel = clCreateKernel(program, name.c_str(), NULL);
   for (int j = 0; j < num_args; j++) {
     if (args[j].size() != 0) {
       thneed_clSetKernelArg(kernel, j, args[j].size(), args[j].data());
@@ -495,24 +495,29 @@ int CLQueuedKernel::exec() {
     }
   }
 
-  // debug
-  if (thneed != NULL && thneed->record & THNEED_DEBUG) {
-    char tbuf[0x100];
-    char *buf = tbuf;
-    buf += sprintf(buf, "%p %56s -- ", kernel, name.c_str());
-    for (int i = 0; i < work_dim; i++) {
-      buf += sprintf(buf, "%4zu ", global_work_size[i]);
-    }
-    buf += sprintf(buf, " -- ");
-    for (int i = 0; i < work_dim; i++) {
-      buf += sprintf(buf, "%4zu ", local_work_size[i]);
-    }
-    thneed->info.push_back(tbuf);
-    printf("%s\n", tbuf);
+  if (thneed->record & THNEED_DEBUG) {
+    debug_print(thneed->record & THNEED_VERBOSE_DEBUG);
   }
 
-  // verbose debug
-  if (thneed != NULL && thneed->record & THNEED_VERBOSE_DEBUG) {
+  thneed->ckq.push_back(shared_ptr<CLQueuedKernel>(this));
+  int ret = my_clEnqueueNDRangeKernel(thneed->command_queue,
+    kernel, work_dim, NULL, global_work_size, local_work_size, 0, NULL, NULL);
+
+  return ret;
+}
+
+void CLQueuedKernel::debug_print(bool verbose) {
+  printf("%p %56s -- ", kernel, name.c_str());
+  for (int i = 0; i < work_dim; i++) {
+    printf("%4zu ", global_work_size[i]);
+  }
+  printf(" -- ");
+  for (int i = 0; i < work_dim; i++) {
+    printf("%4zu ", local_work_size[i]);
+  }
+  printf("\n");
+
+  if (verbose) {
     for (int i = 0; i < num_args; i++) {
       char arg_type[0x100];
       clGetKernelArgInfo(kernel, i, CL_KERNEL_ARG_TYPE_NAME, sizeof(arg_type), arg_type, NULL);
@@ -565,10 +570,5 @@ int CLQueuedKernel::exec() {
       printf("\n");
     }
   }
-
-  int ret = my_clEnqueueNDRangeKernel(thneed->command_queue,
-    kernel, work_dim, NULL, global_work_size, local_work_size, 0, NULL, NULL);
-
-  return ret;
 }
 
