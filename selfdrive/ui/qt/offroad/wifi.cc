@@ -30,9 +30,32 @@ WifiUI::WifiUI(QWidget *parent, int page_length) : QWidget(parent), networks_per
 
   // Networks page
   wifi_widget = new QWidget;
+  QVBoxLayout* networkLayout = new QVBoxLayout;
+  QHBoxLayout *tethering_field = new QHBoxLayout;
+  tethering_field->addWidget(new QLabel("Enable Tethering"));
+  
+  bool toggle_on = wifi->tetheringEnabled();
+  Toggle* toggle_switch = new Toggle(this);
+  toggle_switch->setFixedSize(150, 100);
+  tethering_field->addWidget(toggle_switch);
+  if (toggle_on){
+    toggle_switch->togglePosition();
+  }
+  QObject::connect(toggle_switch, SIGNAL(stateChanged(int)), this, SLOT(toggleTethering(int)));
+
+  QWidget* tetheringWidget = new QWidget;
+  tetheringWidget->setLayout(tethering_field);
+  tetheringWidget->setFixedHeight(150);
+  networkLayout->addWidget(tetheringWidget);
+
+
   vlayout = new QVBoxLayout;
   wifi_widget->setLayout(vlayout);
-  swidget->addWidget(wifi_widget);
+  networkLayout->addWidget(wifi_widget);
+
+  QWidget* networkWidget= new QWidget;
+  networkWidget->setLayout(networkLayout);
+  swidget->addWidget(networkWidget);
 
   // Keyboard page
   input_field = new InputField();
@@ -68,18 +91,6 @@ void WifiUI::refresh() {
   wifi->refreshNetworks();
 
   clearLayout(vlayout);
-
-  QHBoxLayout *tethering_field = new QHBoxLayout;
-  tethering_field->addWidget(new QLabel("Enable Tethering"));
-  
-  QPushButton* toggle_switch = new QPushButton("Enable");
-  toggle_switch->setFixedWidth(300);
-  tethering_field->addWidget(toggle_switch);
-  QObject::connect(toggle_switch, SIGNAL(released()), this, SLOT(toggleTethering()));
-
-  QWidget* qw = new QWidget;
-  qw->setLayout(tethering_field);
-  vlayout->addWidget(qw);
 
   connectButtons = new QButtonGroup(this);
   QObject::connect(connectButtons, SIGNAL(buttonClicked(QAbstractButton*)), this, SLOT(handleButton(QAbstractButton*)));
@@ -177,9 +188,12 @@ void WifiUI::refresh() {
 
 
 
-void WifiUI::toggleTethering(){
-  qDebug()<<"Tethering is now enabled.(or not...)";
-  wifi->enableTethering();
+void WifiUI::toggleTethering(int enable){
+  if(enable){
+    wifi->enableTethering();
+  }else{
+    wifi->disableTethering();
+  }
 }
 
 void WifiUI::handleButton(QAbstractButton* button) {

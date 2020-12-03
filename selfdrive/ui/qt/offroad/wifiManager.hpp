@@ -37,7 +37,11 @@ public:
   void connect(Network ssid);
   void connect(Network ssid, QString password);
   void connect(Network ssid, QString username, QString password);
+  // Tethering functions
+  
   void enableTethering();
+  void disableTethering();
+  bool tetheringEnabled();
 
 private:
   QVector<QByteArray> seen_ssids;
