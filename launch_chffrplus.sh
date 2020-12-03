@@ -59,7 +59,7 @@ function two_init {
   [ -d "/proc/irq/736" ] && echo 3 > /proc/irq/736/smp_affinity_list # USB for OP3T
 
   # GPU and camera get cpu 2
-  CAM_IRQS="178 179 180 181 182 183 184 185 186 192"
+  CAM_IRQS="177 178 179 180 181 182 183 184 185 186 192"
   for irq in $CAM_IRQS; do
     echo 2 > /proc/irq/$irq/smp_affinity_list
   done
