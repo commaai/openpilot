@@ -56,15 +56,12 @@ WifiManager::WifiManager(){
     raw_adapter_state = get_response<uint>(response);
     change(raw_adapter_state, 0, 0);
   }
+
   // Compute tethering ssid as "Weedle" + first 4 characters of serial number of a device
   tethering_ssid = "Weedle";
-  QString path = "DongleId";
-  std::vector<char> bytes = Params().read_db_bytes(path.toStdString().c_str());
-    
+  std::vector<char> bytes = Params().read_db_bytes("DongleId");
   if (bytes.size() >= 4){
-    for (int i = 0; i < 4; i++){
-      tethering_ssid += bytes[i];
-    }
+    tethering_ssid+=QString::fromStdString(std::string(bytes.begin(), bytes.begin()+4));
   }
 }
 
@@ -147,10 +144,7 @@ void WifiManager::connect(Network n, QString password){
 
 void WifiManager::connect(Network n, QString username, QString password){
   connecting_to_network = n.ssid;
-  QString active_ap = get_active_ap();
-  if(active_ap!="" && active_ap!="/"){
-    deactivate_connections(get_property(active_ap, "Ssid")); //Disconnect from any connected networks 
-  }
+  disconnect();
   clear_connections(n.ssid); //Clear all connections that may already exist to the network we are connecting
   connect(n.ssid, username, password, n.security_type);
 }
@@ -160,6 +154,7 @@ void WifiManager::connect(QByteArray ssid, QString username, QString password, S
   connection["connection"]["type"] = "802-11-wireless";
   connection["connection"]["uuid"] = QUuid::createUuid().toString().remove('{').remove('}');
   connection["connection"]["id"] = "OpenPilot connection "+QString::fromStdString(ssid.toStdString());
+  connection["connection"]["autoconnect-retries"] = 0;
 
   connection["802-11-wireless"]["ssid"] = ssid;
   connection["802-11-wireless"]["mode"] = "infrastructure";
@@ -306,16 +301,16 @@ void WifiManager::change(unsigned int new_state,unsigned int previous_state,unsi
   }
 }
 
-
+void WifiManager::disconnect(){
+  QString active_ap = get_active_ap();
+  if(active_ap!="" && active_ap!="/"){
+    deactivate_connections(get_property(active_ap, "Ssid"));
+  }
+}
 //Functions for tethering 
 
 void WifiManager::enableTethering(){
-  // Disconnect from active access_point
-  QString active_ap = get_active_ap();
-  if(active_ap!="" && active_ap!="/"){
-    deactivate_connections(get_property(active_ap, "Ssid")); //Disconnect from any connected networks 
-  }
-
+  disconnect();
 
   Connection connection;
   connection["connection"]["id"] = "Hotspot";
@@ -332,10 +327,14 @@ void WifiManager::enableTethering(){
   connection["802-11-wireless-security"]["psk"] = "swagswagcomma";
 
   connection["ipv4"]["method"] = "shared";
+  // QVector<QMap<QString,QVariant>> ip;
+  // QMap<QString, QVariant> ip0;
+  // ip.push_back(ip0);
+  // connection["ipv4"]["address-data"] = QVariant::fromValue(ip);
   connection["ipv6"]["method"] = "ignore";
 
   QDBusInterface nm_settings(nm_service, nm_settings_path, nm_settings_iface, bus);
-  nm_settings.call("AddConnection", QVariant::fromValue(connection));
+  qDebug()<<nm_settings.call("AddConnection", QVariant::fromValue(connection));
 }
 
 void WifiManager::disableTethering(){
