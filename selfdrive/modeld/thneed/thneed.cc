@@ -137,9 +137,8 @@ void *GPUMalloc::alloc(int size) {
 
 CachedCommand::CachedCommand(Thneed *lthneed, struct kgsl_gpu_command *cmd) {
   thneed = lthneed;
-  // Are these asserts needed?
-  //assert(cmd->numcmds == 2);
-  //assert(cmd->numobjs == 1);
+  assert(cmd->numcmds == 2);
+  assert(cmd->numobjs == 1);
   assert(cmd->numsyncs == 0);
 
   memcpy(cmds, (void *)cmd->cmdlist, sizeof(struct kgsl_command_object)*cmd->numcmds);
