@@ -47,11 +47,11 @@ endif
 .PHONY: all visiontest clean test
 all: visiontest
 
-libvisiontest_inputs := visiontest.c \
+libvisiontest_inputs := visiontest.cc \
                         transforms/transform.cc \
-                        transforms/loadyuv.c \
-                        ../common/clutil.c \
-                        $(BASEDIR)/selfdrive/common/util.c \
+                        transforms/loadyuv.cc \
+                        ../common/clutil.cc \
+                        $(BASEDIR)/selfdrive/common/util.cc \
                         $(CEREAL_OBJS)
 
 visiontest: libvisiontest.so

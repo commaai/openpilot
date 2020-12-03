@@ -18,7 +18,6 @@
 #include <string.h>
 
 #include "common/util.h"
-#include "common/utilpp.h"
 
 
 std::string getenv_default(const char* env_var, const char * suffix, const char* default_val) {

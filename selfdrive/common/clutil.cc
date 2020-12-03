@@ -42,7 +42,7 @@ cl_device_id cl_get_device_id(cl_device_type device_type) {
 
   cl_uint num_platforms = 0;
   CL_CHECK(clGetPlatformIDs(0, NULL, &num_platforms));
-  cl_platform_id* platform_ids = malloc(sizeof(cl_platform_id) * num_platforms);
+  cl_platform_id* platform_ids = (cl_platform_id*)malloc(sizeof(cl_platform_id) * num_platforms);
   CL_CHECK(clGetPlatformIDs(num_platforms, platform_ids, NULL));
 
   char cBuffer[1024];
@@ -71,7 +71,7 @@ cl_device_id cl_get_device_id(cl_device_type device_type) {
 }
 
 cl_program cl_create_program_from_file(cl_context ctx, const char* path) {
-  char* src_buf = read_file(path, NULL);
+  char* src_buf = (char*)read_file(path, NULL);
   assert(src_buf);
   cl_program ret = CL_CHECK_ERR(clCreateProgramWithSource(ctx, 1, (const char**)&src_buf, NULL, &err));
   free(src_buf);
@@ -81,7 +81,7 @@ cl_program cl_create_program_from_file(cl_context ctx, const char* path) {
 static char* get_version_string(cl_platform_id platform) {
   size_t size = 0;
   CL_CHECK(clGetPlatformInfo(platform, CL_PLATFORM_VERSION, 0, NULL, &size));
-  char *str = malloc(size);
+  char *str = (char*)malloc(size);
   assert(str);
   CL_CHECK(clGetPlatformInfo(platform, CL_PLATFORM_VERSION, size, str, NULL));
   return str;
@@ -141,7 +141,7 @@ void cl_print_build_errors(cl_program program, cl_device_id device) {
   clGetProgramBuildInfo(program, device,
           CL_PROGRAM_BUILD_LOG, 0, NULL, &log_size);
 
-  char* log = calloc(log_size+1, 1);
+  char* log = (char*)calloc(log_size+1, 1);
   assert(log);
 
   clGetProgramBuildInfo(program, device,
@@ -183,12 +183,13 @@ cl_program cl_cached_program_from_hash(cl_context ctx, cl_device_id device_id, u
   snprintf(cache_path, sizeof(cache_path), "/tmp/clcache/%016" PRIx64 ".clb", hash);
 
   size_t bin_size;
-  uint8_t *bin = read_file(cache_path, &bin_size);
+  uint8_t *bin = (uint8_t*)read_file(cache_path, &bin_size);
   if (!bin) {
     return NULL;
   }
 
-  cl_program prg = CL_CHECK_ERR(clCreateProgramWithBinary(ctx, 1, &device_id, &bin_size, (const uint8_t**)&bin, NULL, &err));
+  int err;
+  cl_program prg = clCreateProgramWithBinary(ctx, 1, &device_id, &bin_size, (const uint8_t**)&bin, NULL, &err);
 
   free(bin);
 
@@ -206,7 +207,7 @@ static uint8_t* get_program_binary(cl_program prg, size_t *out_size) {
   CL_CHECK(clGetProgramInfo(prg, CL_PROGRAM_BINARY_SIZES, sizeof(binary_size), &binary_size, NULL));
   assert(binary_size > 0);
 
-  uint8_t *binary_buf = malloc(binary_size);
+  uint8_t *binary_buf = (uint8_t*)malloc(binary_size);
   assert(binary_buf);
 
   uint8_t* bufs[1] = { binary_buf, };
@@ -227,7 +228,7 @@ cl_program cl_cached_program_from_string(cl_context ctx, cl_device_id device_id,
   const char* platform_version = get_version_string(platform);
 
   const size_t hash_len = strlen(platform_version)+1+strlen(src)+1+strlen(args)+1;
-  char* hash_buf = malloc(hash_len);
+  char* hash_buf = (char*)malloc(hash_len);
   assert(hash_buf);
   memset(hash_buf, 0, hash_len);
   snprintf(hash_buf, hash_len, "%s%c%s%c%s", platform_version, 1, src, 1, args);
@@ -272,7 +273,7 @@ cl_program cl_cached_program_from_string(cl_context ctx, cl_device_id device_id,
 
 cl_program cl_cached_program_from_file(cl_context ctx, cl_device_id device_id, const char* path, const char* args,
                                        uint64_t *out_hash) {
-  char* src_buf = read_file(path, NULL);
+  char* src_buf = (char*)read_file(path, NULL);
   assert(src_buf);
   cl_program ret = cl_cached_program_from_string(ctx, device_id, src_buf, args, out_hash);
   free(src_buf);

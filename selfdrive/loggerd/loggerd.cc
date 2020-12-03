@@ -32,7 +32,6 @@
 #include "common/params.h"
 #include "common/swaglog.h"
 #include "common/visionipc.h"
-#include "common/utilpp.h"
 #include "common/util.h"
 #include "camerad/cameras/camera_common.h"
 #include "logger.h"

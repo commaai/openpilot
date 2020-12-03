@@ -1,5 +1,4 @@
-#ifndef CLUTIL_H
-#define CLUTIL_H
+#pragma once
 
 #include <stdint.h>
 #include <stdio.h>
@@ -9,10 +8,6 @@
 #include <OpenCL/cl.h>
 #else
 #include <CL/cl.h>
-#endif
-
-#ifdef __cplusplus
-extern "C" {
 #endif
 
 #define CL_CHECK(_expr)          \
@@ -91,11 +86,5 @@ static inline int cl_check_error(int err) {
   cl_index_program_from_string(ctx, device_id, src, args, clu_index_hash("\1" __FILE__ "\1" CLU_LINESTR) ^ clu_fnv_hash((const uint8_t*)__func__, strlen(__func__)) ^ clu_fnv_hash((const uint8_t*)args, strlen(args)))
  #define CLU_LOAD_FROM_FILE(ctx, device_id, path, args) \
   cl_index_program_from_file(ctx, device_id, path, args, clu_index_hash("\2" path) ^ clu_fnv_hash((const uint8_t*)args, strlen(args)))
-
-#endif
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif

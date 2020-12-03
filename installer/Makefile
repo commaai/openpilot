@@ -10,7 +10,6 @@ WARN_FLAGS = -Werror=implicit-function-declaration \
              -Werror=return-type \
              -Werror=format-extra-args
 
-CFLAGS = -std=gnu11 -fPIC -O2 $(WARN_FLAGS)
 CXXFLAGS = -std=c++1z -fPIC -O2 $(WARN_FLAGS)
 
 NANOVG_FLAGS = -I$(PHONELIBS)/nanovg
@@ -88,17 +87,17 @@ img_spinner_comma.o: ../selfdrive/assets/img_spinner_comma.png
 	@echo "[ bin2o ] $@"
 	cd '$(dir $<)' && ld -r -b binary '$(notdir $<)' -o '$(abspath $@)'
 
-installer_openpilot.o: installer.c
+installer_openpilot.o: installer.cc
 	@echo "[ CC ] $@"
-	$(CC) $(CFLAGS) -MMD \
+	$(CC) $(CXXFLAGS) -MMD \
           -I.. -I../selfdrive \
           -DBRAND=openpilot \
 					-DBRANCH=release2 \
           -c -o '$@' '$<'
 
-installer_dashcam.o: installer.c
+installer_dashcam.o: installer.cc
 	@echo "[ CC ] $@"
-	$(CC) $(CFLAGS) -MMD \
+	$(CC) $(CXXFLAGS) -MMD \
           -I.. -I../selfdrive \
           -DBRAND=dashcam \
 					-DBRANCH=dashcam \
@@ -106,7 +105,7 @@ installer_dashcam.o: installer.c
 
 %.o: %.c
 	@echo "[ CC ] $@"
-	$(CC) $(CFLAGS) -MMD \
+	$(CC) $(CXXFLAGS) -MMD \
           -I.. -I../selfdrive \
           -c -o '$@' '$<'
 
