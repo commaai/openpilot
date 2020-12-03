@@ -22,6 +22,8 @@ class CarInterface(CarInterfaceBase):
     # Chrysler port is a community feature, since we don't own one to test
     ret.communityFeature = True
 
+    ret.minCANSpeed = 0.3
+
     # Speed conversion:              20, 45 mph
     ret.wheelbase = 3.089  # in meters for Pacifica Hybrid 2017
     ret.steerRatio = 16.2  # Pacifica Hybrid 2017

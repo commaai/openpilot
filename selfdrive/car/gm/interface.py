@@ -2,7 +2,7 @@
 from cereal import car
 from selfdrive.config import Conversions as CV
 from selfdrive.car.gm.values import CAR, CruiseButtons, \
-                                    AccState
+    AccState
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
 from selfdrive.car.interfaces import CarInterfaceBase
 
@@ -32,6 +32,8 @@ class CarInterface(CarInterfaceBase):
     ret.enableCamera = True
     ret.openpilotLongitudinalControl = ret.enableCamera
     tire_stiffness_factor = 0.444  # not optimized yet
+
+    ret.minCANSpeed = 0.3
 
     # Start with a baseline lateral tuning for all GM vehicles. Override tuning as needed in each model section below.
     ret.minSteerSpeed = 7 * CV.MPH_TO_MS

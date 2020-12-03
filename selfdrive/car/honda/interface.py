@@ -16,6 +16,7 @@ A_ACC_MAX = max(_A_CRUISE_MAX_V_FOLLOWING)
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
 
+
 def compute_gb_honda(accel, speed):
   creep_brake = 0.0
   creep_speed = 2.3
@@ -29,16 +30,16 @@ def get_compute_gb_acura():
   # generate a function that takes in [desired_accel, current_speed] -> [-1.0, 1.0]
   # where -1.0 is max brake and 1.0 is max gas
   # see debug/dump_accel_from_fiber.py to see how those parameters were generated
-  w0 = np.array([[ 1.22056961, -0.39625418,  0.67952657],
-                 [ 1.03691769,  0.78210306, -0.41343188]])
-  b0 = np.array([ 0.01536703, -0.14335321, -0.26932889])
-  w2 = np.array([[-0.59124422,  0.42899439,  0.38660881],
-                 [ 0.79973811,  0.13178682,  0.08550351],
-                 [-0.15651935, -0.44360259,  0.76910877]])
-  b2 = np.array([ 0.15624429,  0.02294923, -0.0341086 ])
+  w0 = np.array([[1.22056961, -0.39625418, 0.67952657],
+                 [1.03691769, 0.78210306, -0.41343188]])
+  b0 = np.array([0.01536703, -0.14335321, -0.26932889])
+  w2 = np.array([[-0.59124422, 0.42899439, 0.38660881],
+                 [0.79973811, 0.13178682, 0.08550351],
+                 [-0.15651935, -0.44360259, 0.76910877]])
+  b2 = np.array([0.15624429, 0.02294923, -0.0341086])
   w4 = np.array([[-0.31521443],
                  [-0.38626176],
-                 [ 0.52667892]])
+                 [0.52667892]])
   b4 = np.array([-0.02922216])
 
   def compute_output(dat, w0, b0, w2, b2, w4, b4):
@@ -83,7 +84,7 @@ class CarInterface(CarInterfaceBase):
       self.compute_gb = compute_gb_honda
 
   @staticmethod
-  def compute_gb(accel, speed): # pylint: disable=method-hidden
+  def compute_gb(accel, speed):  # pylint: disable=method-hidden
     raise NotImplementedError
 
   @staticmethod
@@ -122,6 +123,8 @@ class CarInterface(CarInterfaceBase):
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=[]):  # pylint: disable=dangerous-default-value
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
     ret.carName = "honda"
+
+    ret.minCANSpeed = 0.3
 
     if candidate in HONDA_BOSCH:
       ret.safetyModel = car.CarParams.SafetyModel.hondaBoschHarness

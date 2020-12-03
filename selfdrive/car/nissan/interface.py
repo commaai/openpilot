@@ -4,6 +4,7 @@ from selfdrive.car.nissan.values import CAR
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
 from selfdrive.car.interfaces import CarInterfaceBase
 
+
 class CarInterface(CarInterfaceBase):
   def __init__(self, CP, CarController, CarState):
     super().__init__(CP, CarController, CarState)
@@ -26,6 +27,7 @@ class CarInterface(CarInterfaceBase):
     ret.steerLimitAlert = False
     ret.enableCamera = True
     ret.steerRateCost = 0.5
+    ret.minCANSpeed = 0.3
 
     ret.steerActuatorDelay = 0.1
     ret.lateralTuning.pid.kf = 0.00006
