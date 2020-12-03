@@ -295,7 +295,7 @@ void fill_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const float * data,
 
 void model_publish_v2(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
                      uint32_t vipc_dropped_frames, float frame_drop,
-                     const ModelDataRaw &net_outputs, uint64_t timestamp_eof,
+                     const ModelDataRaw &net_outputs, const float* raw_pred, uint64_t timestamp_eof,
                      float model_execution_time) {
   // make msg
   MessageBuilder msg;
@@ -306,6 +306,9 @@ void model_publish_v2(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
   framed.setFrameDropPerc(frame_drop * 100);
   framed.setTimestampEof(timestamp_eof);
   framed.setModelExecutionTime(model_execution_time);
+  if (send_raw_pred) {
+    framed.setRawPred(kj::arrayPtr((const uint8_t*)raw_pred, (OUTPUT_SIZE+TEMPORAL_SIZE)*sizeof(float)));
+  }
 
   // plan
   int plan_mhp_max_idx = 0;
@@ -371,7 +374,7 @@ void model_publish_v2(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
 
 void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
                    uint32_t vipc_dropped_frames, float frame_drop,
-                   const ModelDataRaw &net_outputs, uint64_t timestamp_eof,
+                   const ModelDataRaw &net_outputs, const float* raw_pred, uint64_t timestamp_eof,
                    float model_execution_time) {
 
   uint32_t frame_age = (frame_id > vipc_frame_id) ? (frame_id - vipc_frame_id) : 0;
@@ -382,6 +385,9 @@ void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
   framed.setFrameDropPerc(frame_drop * 100);
   framed.setTimestampEof(timestamp_eof);
   framed.setModelExecutionTime(model_execution_time);
+  if (send_raw_pred) {
+    framed.setRawPred(kj::arrayPtr((const uint8_t*)raw_pred, (OUTPUT_SIZE+TEMPORAL_SIZE)*sizeof(float)));
+  }
 
   // Find the distribution that corresponds to the most probable plan
   int plan_mhp_max_idx = 0;

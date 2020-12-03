@@ -9,6 +9,7 @@
 #endif
 
 #include <float.h>
+#include <stdlib.h>
 #include "common/mat.h"
 #include "transforms/transform.h"
 #include "transforms/loadyuv.h"
@@ -16,6 +17,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+const bool send_raw_pred = getenv("SEND_RAW_PRED") != NULL;
 
 void softmax(const float* input, float* output, size_t len);
 float softplus(float input);
