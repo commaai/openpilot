@@ -52,8 +52,8 @@ WifiManager::WifiManager(){
     bus.connect(nm_service, adapter, device_iface, "StateChanged", this, SLOT(change(unsigned int, unsigned int, unsigned int)));
     
     QDBusInterface device_props(nm_service, adapter, props_iface, bus);
-    QDBusMessage response2 = device_props.call("Get", device_iface, "State");
-    raw_adapter_state = get_response<uint>(response2);
+    QDBusMessage response = device_props.call("Get", device_iface, "State");
+    raw_adapter_state = get_response<uint>(response);
     change(raw_adapter_state, 0, 0);
   }
   // Compute tethering ssid as "Weedle" + first 4 characters of serial number of a device
@@ -61,9 +61,9 @@ WifiManager::WifiManager(){
   QString path = "DongleId";
   std::vector<char> bytes = Params().read_db_bytes(path.toStdString().c_str());
     
-  if (bytes.size()>=4){
+  if (bytes.size() >= 4){
     for (int i = 0; i < 4; i++){
-      tethering_ssid+=bytes[i];
+      tethering_ssid += bytes[i];
     }
   }
 }
@@ -308,7 +308,6 @@ void WifiManager::change(unsigned int new_state,unsigned int previous_state,unsi
 }
 
 
-
 //Functions for tethering 
 
 void WifiManager::enableTethering(){
@@ -337,7 +336,6 @@ void WifiManager::enableTethering(){
   connection["ipv6"]["method"] = "ignore";
 
   QDBusInterface nm_settings(nm_service, nm_settings_path, nm_settings_iface, bus);
-
   nm_settings.call("AddConnection", QVariant::fromValue(connection));
 }
 
