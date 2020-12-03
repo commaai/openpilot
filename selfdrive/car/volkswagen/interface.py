@@ -25,7 +25,7 @@ class CarInterface(CarInterfaceBase):
     # VW port is a community feature, since we don't own one to test
     ret.communityFeature = True
 
-    ret.minCANSpeed = 0.3
+    ret.minSpeedCAN = 0.3
 
     if candidate == CAR.GOLF:
       # Set common MQB parameters that will apply globally

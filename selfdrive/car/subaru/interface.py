@@ -17,7 +17,7 @@ class CarInterface(CarInterfaceBase):
     ret.carName = "subaru"
     ret.radarOffCan = True
 
-    ret.minCANSpeed = 0.3
+    ret.minSpeedCAN = 0.3
 
     if candidate in PREGLOBAL_CARS:
       ret.safetyModel = car.CarParams.SafetyModel.subaruLegacy

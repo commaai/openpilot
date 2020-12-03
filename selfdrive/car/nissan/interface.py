@@ -27,7 +27,7 @@ class CarInterface(CarInterfaceBase):
     ret.steerLimitAlert = False
     ret.enableCamera = True
     ret.steerRateCost = 0.5
-    ret.minCANSpeed = 0.3
+    ret.minSpeedCAN = 0.3
 
     ret.steerActuatorDelay = 0.1
     ret.lateralTuning.pid.kf = 0.00006

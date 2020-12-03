@@ -20,7 +20,7 @@ class CarInterface(CarInterfaceBase):
     ret.safetyModel = car.CarParams.SafetyModel.ford
     ret.dashcamOnly = True
 
-    ret.minCANSpeed = 0.3
+    ret.minSpeedCAN = 0.3
 
     ret.wheelbase = 2.85
     ret.steerRatio = 14.8
