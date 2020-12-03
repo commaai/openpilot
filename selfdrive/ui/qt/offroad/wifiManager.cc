@@ -2,6 +2,7 @@
 #include <set>
 #include <stdlib.h>
 #include "wifiManager.hpp"
+#include "common/params.h"
 
 /**
  * We are using a NetworkManager DBUS API : https://developer.gnome.org/NetworkManager/1.26/spec.html
@@ -54,6 +55,16 @@ WifiManager::WifiManager(){
     QDBusMessage response2 = device_props.call("Get", device_iface, "State");
     raw_adapter_state = get_response<uint>(response2);
     change(raw_adapter_state, 0, 0);
+  }
+  // Compute tethering ssid as "Weedle" + first 4 characters of serial number of a device
+  tethering_ssid = "Weedle";
+  QString path = "DongleId";
+  std::vector<char> bytes = Params().read_db_bytes(path.toStdString().c_str());
+    
+  if (bytes.size()>=4){
+    for (int i = 0; i < 4; i++){
+      tethering_ssid+=bytes[i];
+    }
   }
 }
 
@@ -312,13 +323,11 @@ void WifiManager::enableTethering(){
   connection["connection"]["id"] = "Hotspot";
   connection["connection"]["uuid"] = QUuid::createUuid().toString().remove('{').remove('}');
   connection["connection"]["type"] = "802-11-wireless";
-  // connection["connection"]["autoconnect"] = false;
   connection["connection"]["interface-name"] = "wlan0";
 
   connection["802-11-wireless"]["band"] = "bg";
   connection["802-11-wireless"]["mode"] = "ap";
-  QString ssid="Weedle";
-  connection["802-11-wireless"]["ssid"] = ssid.toUtf8(); // Surely nobody will have a wifi named Weedle?
+  connection["802-11-wireless"]["ssid"] = tethering_ssid.toUtf8();
 
   connection["802-11-wireless-security"]["key-mgmt"] = "wpa-psk";
   connection["802-11-wireless-security"]["auth-alg"] = "open";
@@ -333,10 +342,10 @@ void WifiManager::enableTethering(){
 }
 
 void WifiManager::disableTethering(){
-  clear_connections("Weedle");
+  clear_connections(tethering_ssid);
 }
 
 bool WifiManager::tetheringEnabled(){
   QString active_ap = get_active_ap();
-  return get_property(active_ap, "Ssid")=="Weedle";
+  return get_property(active_ap, "Ssid")==tethering_ssid;
 }
