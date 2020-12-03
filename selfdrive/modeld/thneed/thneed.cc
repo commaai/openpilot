@@ -252,19 +252,19 @@ void Thneed::execute(float **finputs, float *foutput, bool slow) {
 
   // ****** run commands
   int i = 0;
-  for (auto it = cmds.begin(); it != cmds.end(); ++it) {
+  for (auto &it : cmds) {
     ++i;
     if (record & THNEED_DEBUG) printf("run %2d @ %7lu us: ", i, (nanos_since_boot()-tb)/1000);
-    (*it)->exec((i == cmds.size()) || slow);
+    it->exec((i == cmds.size()) || slow);
   }
 
   // ****** sync objects
-  for (auto it = syncobjs.begin(); it != syncobjs.end(); ++it) {
+  for (auto &it : syncobjs) {
     struct kgsl_gpuobj_sync cmd;
 
-    cmd.objs = (uint64_t)it->data();
-    cmd.obj_len = it->length();
-    cmd.count = it->length() / sizeof(struct kgsl_gpuobj_sync_obj);
+    cmd.objs = (uint64_t)it.data();
+    cmd.obj_len = it.length();
+    cmd.count = it.length() / sizeof(struct kgsl_gpuobj_sync_obj);
 
     ret = ioctl(fd, IOCTL_KGSL_GPUOBJ_SYNC, &cmd);
     assert(ret == 0);
@@ -295,6 +295,8 @@ void Thneed::execute(float **finputs, float *foutput, bool slow) {
     printf("model exec in %lu us\n", (te-tb)/1000);
   }
 }
+
+// *********** OpenCL interceptor ***********
 
 // TODO: with a different way of getting the input and output buffers, we don't have to intercept CL at all
 
@@ -343,13 +345,6 @@ cl_int thneed_clEnqueueNDRangeKernel(cl_command_queue command_queue,
       num_events_in_wait_list, event_wait_list, event);
   }
 
-  /*uint64_t tb = nanos_since_boot();
-  clWaitForEvents(1, event);
-  uint64_t te = nanos_since_boot();
-  if (thneed != NULL && thneed->record & THNEED_DEBUG) {
-    printf("  wait %lu us\n", (te-tb)/1000);
-  }*/
-
   return ret;
 }
 
@@ -359,12 +354,14 @@ cl_int thneed_clFinish(cl_command_queue command_queue) {
   Thneed *thneed = g_thneed;
 
   if (thneed != NULL && thneed->record & THNEED_RECORD) {
+    bool recreate_kernel = false;
     #ifdef RUN_OPTIMIZER
       thneed->optimize();
+      recreate_kernel = true;
     #endif
-    printf("clFinish: running queued kernels\n");
+    printf("clFinish: running %lu queued kernels\n", thneed->kq.size());
     for (auto &k : thneed->kq) {
-      k->exec();
+      k->exec(recreate_kernel);
     }
     thneed->kq.clear();
   }
@@ -432,12 +429,15 @@ void *dlsym(void *handle, const char *symbol) {
   }
 }
 
+// *********** CLQueuedKernel ***********
+
 CLQueuedKernel::CLQueuedKernel(Thneed *lthneed,
-                               cl_kernel kernel,
+                               cl_kernel _kernel,
                                cl_uint _work_dim,
                                const size_t *_global_work_size,
                                const size_t *_local_work_size) {
   thneed = lthneed;
+  kernel = _kernel;
   work_dim = _work_dim;
   for (int i = 0; i < work_dim; i++) {
     global_work_size[i] = _global_work_size[i];
@@ -469,29 +469,27 @@ int CLQueuedKernel::get_arg_num(const char *search_arg_name) {
   assert(false);
 }
 
-int CLQueuedKernel::exec() {
-  // create the exec kernel, don't use the passed in one
-  kernel = clCreateKernel(program, name.c_str(), NULL);
-  for (int j = 0; j < num_args; j++) {
-    if (args[j].size() != 0) {
-      thneed_clSetKernelArg(kernel, j, args[j].size(), args[j].data());
-    } else {
-      thneed_clSetKernelArg(kernel, j, 0, NULL);
+int CLQueuedKernel::exec(bool recreate_kernel) {
+  if (recreate_kernel) {
+    // create a new exec kernel, don't use the passed in one
+    kernel = clCreateKernel(program, name.c_str(), NULL);
+    for (int j = 0; j < num_args; j++) {
+      if (args[j].size() != 0) {
+        thneed_clSetKernelArg(kernel, j, args[j].size(), args[j].data());
+      } else {
+        thneed_clSetKernelArg(kernel, j, 0, NULL);
+      }
     }
   }
 
-  // check for global inputs/outputs
+  // save the global inputs/outputs
   for (int i = 0; i < num_args; i++) {
     if (name == "zero_pad_image_float" && arg_names[i] == "input") {
-      cl_mem mem;
-      memcpy(&mem, (void*)args[i].data(), sizeof(mem));
-      thneed->inputs.push_back(mem);
+      thneed->inputs.push_back(*(cl_mem*)args[i].data());
     }
 
     if (name == "image2d_to_buffer_float" && arg_names[i] == "output") {
-      cl_mem mem;
-      memcpy(&mem, (void*)args[i].data(), sizeof(mem));
-      thneed->output = mem;
+      thneed->output = *(cl_mem*)args[i].data();
     }
   }
 

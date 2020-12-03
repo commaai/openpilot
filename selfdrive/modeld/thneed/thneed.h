@@ -33,11 +33,11 @@ class GPUMalloc {
 class CLQueuedKernel {
   public:
     CLQueuedKernel(Thneed *lthneed,
-                   cl_kernel kernel,
+                   cl_kernel _kernel,
                    cl_uint _work_dim,
                    const size_t *_global_work_size,
                    const size_t *_local_work_size);
-    int exec();
+    int exec(bool recreate_kernel);
     void debug_print(bool verbose);
     int get_arg_num(const char *search_arg_name);
     cl_program program;
