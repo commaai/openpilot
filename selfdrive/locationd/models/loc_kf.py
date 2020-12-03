@@ -584,5 +584,6 @@ class LocKalman():
 
 
 if __name__ == "__main__":
+  N = int(sys.argv[1].split("_")[-1])
   generated_dir = sys.argv[2]
-  LocKalman.generate_code(generated_dir, N=4)
+  LocKalman.generate_code(generated_dir, N=N)
