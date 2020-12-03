@@ -30,13 +30,14 @@ private:
   QTimer *timer;
   QString text;
   QButtonGroup *connectButtons;
+  bool tetheringEnabled;
 
   void connectToNetwork(Network n);
   QString getStringFromUser();
 
 private slots:
   void handleButton(QAbstractButton* m_button);
-  void toggleTethering();
+  void toggleTethering(int enable);
   void refresh();
   void receiveText(QString text);
   void wrongPassword(QString ssid);
