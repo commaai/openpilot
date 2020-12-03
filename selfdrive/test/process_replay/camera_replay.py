@@ -10,10 +10,11 @@ os.environ['CI'] = "1"
 if ANDROID:
   os.environ['QCOM_REPLAY'] = "1"
 
+from common.spinner import Spinner
 from common.timeout import Timeout
 import selfdrive.manager as manager
 
-from common.spinner import Spinner
+from cereal import log
 import cereal.messaging as messaging
 from tools.lib.framereader import FrameReader
 from tools.lib.logreader import LogReader
@@ -24,11 +25,11 @@ from selfdrive.version import get_git_commit
 
 TEST_ROUTE = "99c94dc769b5d96e|2019-08-03--14-19-59"
 
-def camera_replay(lr, fr):
+def camera_replay(lr, fr, desire=None):
 
   spinner = Spinner()
 
-  pm = messaging.PubMaster(['frame', 'liveCalibration'])
+  pm = messaging.PubMaster(['frame', 'liveCalibration', 'pathPlan'])
   sm = messaging.SubMaster(['model'])
 
   # TODO: add dmonitoringmodeld
@@ -42,6 +43,8 @@ def camera_replay(lr, fr):
     time.sleep(5)
     print("procs started")
 
+    desires_by_index = {v:k for k,v in log.PathPlan.Desire.schema.enumerants.items()}
+
     cal = [msg for msg in lr if msg.which() == "liveCalibration"]
     for msg in cal[:5]:
       pm.send(msg.which(), msg.as_builder())
@@ -49,11 +52,17 @@ def camera_replay(lr, fr):
     log_msgs = []
     frame_idx = 0
     for msg in tqdm(lr):
-      if msg.which() == "liveCalibrationd":
+      if msg.which() == "liveCalibration":
         pm.send(msg.which(), msg.as_builder())
       elif msg.which() == "frame":
+        if desire is not None:
+          for i in desire[frame_idx].nonzero()[0]:
+            dat = messaging.new_message('pathPlan')
+            dat.pathPlan.desire = desires_by_index[i]
+            pm.send('pathPlan', dat)
+
         f = msg.as_builder()
-        img = fr.get(frame_idx, pix_fmt="rgb24")[0][:, ::, -1]
+        img = fr.get(frame_idx, pix_fmt="rgb24")[0][:,:,::-1]
         f.frame.image = img.flatten().tobytes()
         frame_idx += 1
 
