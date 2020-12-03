@@ -360,6 +360,7 @@ cl_int thneed_clFinish(cl_command_queue command_queue) {
     #endif
     printf("clFinish: running %lu queued kernels\n", thneed->kq.size());
     for (auto &k : thneed->kq) {
+      thneed->ckq.push_back(k);
       k->exec(recreate_kernel);
     }
     thneed->kq.clear();
@@ -438,6 +439,7 @@ CLQueuedKernel::CLQueuedKernel(Thneed *lthneed,
   thneed = lthneed;
   kernel = _kernel;
   work_dim = _work_dim;
+  assert(work_dim <= 3);
   for (int i = 0; i < work_dim; i++) {
     global_work_size[i] = _global_work_size[i];
     local_work_size[i] = _local_work_size[i];
@@ -484,11 +486,11 @@ int CLQueuedKernel::exec(bool recreate_kernel) {
   // save the global inputs/outputs
   for (int i = 0; i < num_args; i++) {
     if (name == "zero_pad_image_float" && arg_names[i] == "input") {
-      thneed->inputs.push_back(*(cl_mem*)args[i].data());
+      thneed->inputs.push_back(*(cl_mem*)(args[i].data()));
     }
 
     if (name == "image2d_to_buffer_float" && arg_names[i] == "output") {
-      thneed->output = *(cl_mem*)args[i].data();
+      thneed->output = *(cl_mem*)(args[i].data());
     }
   }
 
@@ -496,7 +498,6 @@ int CLQueuedKernel::exec(bool recreate_kernel) {
     debug_print(thneed->record & THNEED_VERBOSE_DEBUG);
   }
 
-  thneed->ckq.push_back(shared_ptr<CLQueuedKernel>(this));
   int ret = my_clEnqueueNDRangeKernel(thneed->command_queue,
     kernel, work_dim, NULL, global_work_size, local_work_size, 0, NULL, NULL);
 
