@@ -6,11 +6,7 @@
 #define NANOVG_GL3_IMPLEMENTATION
 #define nvgCreate nvgCreateGL3
 #else
-
 #include <GLES3/gl3.h>
-#ifdef __aarch64__
-#include <EGL/egl.h>
-#endif
 #define NANOVG_GLES3_IMPLEMENTATION
 #define nvgCreate nvgCreateGLES3
 #endif

@@ -23,6 +23,9 @@ public:
 
   UIState *ui_state = nullptr;
 
+signals:
+  void offroadTransition(bool offroad);
+
 protected:
   void initializeGL() override;
   void resizeGL(int w, int h) override;
@@ -61,6 +64,10 @@ protected:
   void mousePressEvent(QMouseEvent *e) override;
 
 private:
+  QWidget *home;
   QGridLayout *layout;
+
+private slots:
+  void setVisibility(bool offroad);
 };
 

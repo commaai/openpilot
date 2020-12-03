@@ -58,7 +58,9 @@ HomeWindow::HomeWindow(QWidget *parent) : QWidget(parent) {
   glWindow = new GLWindow(this);
   layout->addWidget(glWindow, 0, 0);
 
-  layout->addWidget(home_widget(), 0, 0);
+  home = home_widget();
+  layout->addWidget(home, 0, 0);
+  QObject::connect(glWindow, SIGNAL(offroadTransition(bool)), this, SLOT(setVisibility(bool)));
 
   setLayout(layout);
   setStyleSheet(R"(
@@ -66,6 +68,10 @@ HomeWindow::HomeWindow(QWidget *parent) : QWidget(parent) {
       color: white;
     }
   )");
+}
+
+void HomeWindow::setVisibility(bool offroad) {
+  home->setVisible(offroad);
 }
 
 void HomeWindow::mousePressEvent(QMouseEvent *e) {
@@ -162,12 +168,13 @@ void GLWindow::backlightUpdate(){
 }
 
 void GLWindow::timerUpdate() {
-#ifdef QCOM2
   if (ui_state->started != onroad){
     onroad = ui_state->started;
+    emit offroadTransition(!onroad);
+#ifdef QCOM2
     timer->setInterval(onroad ? 0 : 1000);
-  }
 #endif
+  }
 
   // Fix awake timeout if running 1 Hz when offroad
   int dt = timer->interval() == 0 ? 1 : 20;

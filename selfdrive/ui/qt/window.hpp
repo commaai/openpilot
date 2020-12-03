@@ -3,9 +3,9 @@
 #include <QWidget>
 #include <QStackedLayout>
 
-#include "home.hpp"
 #include "offroad/settings.hpp"
 #include "offroad/onboarding.hpp"
+#include "home.hpp"
 
 class MainWindow : public QWidget {
   Q_OBJECT
