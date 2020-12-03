@@ -25,8 +25,6 @@ class CarInterface(CarInterfaceBase):
 
     ret.radarOffCan = True
 
-    ret.minSpeedCan = 0.3
-
     ret.steerActuatorDelay = 0.1
     ret.steerRateCost = 1.0
     ret.steerLimitTimer = 0.8

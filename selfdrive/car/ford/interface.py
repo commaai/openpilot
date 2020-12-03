@@ -20,8 +20,6 @@ class CarInterface(CarInterfaceBase):
     ret.safetyModel = car.CarParams.SafetyModel.ford
     ret.dashcamOnly = True
 
-    ret.minSpeedCan = 0.3
-
     ret.wheelbase = 2.85
     ret.steerRatio = 14.8
     ret.mass = 3045. * CV.LB_TO_KG + STD_CARGO_KG

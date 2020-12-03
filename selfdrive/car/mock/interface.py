@@ -44,7 +44,6 @@ class CarInterface(CarInterfaceBase):
     ret.steerRatio = 13.  # reasonable
     ret.tireStiffnessFront = 1e6    # very stiff to neglect slip
     ret.tireStiffnessRear = 1e6     # very stiff to neglect slip
-    ret.minSpeedCan = 0.3
 
     return ret
 

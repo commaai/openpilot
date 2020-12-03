@@ -25,8 +25,6 @@ class CarInterface(CarInterfaceBase):
     # VW port is a community feature, since we don't own one to test
     ret.communityFeature = True
 
-    ret.minSpeedCan = 0.3
-
     if candidate == CAR.GOLF:
       # Set common MQB parameters that will apply globally
       ret.carName = "volkswagen"
@@ -81,7 +79,7 @@ class CarInterface(CarInterfaceBase):
     # TODO: add a field for this to carState, car interface code shouldn't write params
     # Update the device metric configuration to match the car at first startup,
     # or if there's been a change.
-    # if self.CS.displayMetricUnits != self.displayMetricUnitsPrev:
+    #if self.CS.displayMetricUnits != self.displayMetricUnitsPrev:
     #  put_nonblocking("IsMetric", "1" if self.CS.displayMetricUnits else "0")
 
     # Check for and process state-change events (button press or release) from
