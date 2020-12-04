@@ -50,6 +50,7 @@ void OffroadAlert::refresh() {
 
     QVBoxLayout *update_layout = new QVBoxLayout;
     update_layout->setMargin(10);
+    update_layout->setSpacing(20);
 
     QLabel *title = new QLabel("Update available");
     title->setStyleSheet(R"(
@@ -62,13 +63,10 @@ void OffroadAlert::refresh() {
     QLabel *notes_label = new QLabel(release_notes);
     notes_label->setStyleSheet(R"(font-size: 40px;)");
     notes_label->setWordWrap(true);
-    update_layout->addSpacing(20);
     update_layout->addWidget(notes_label, 1, Qt::AlignTop);
-    update_layout->addSpacing(20);
 
     QPushButton *update_button = new QPushButton("Reboot and Update");
     update_layout->addWidget(update_button);
-    update_layout->addSpacing(10);
 #ifdef __aarch64__
     QObject::connect(update_button, &QPushButton::released, [=]() {std::system("sudo reboot");});
 #endif
@@ -110,13 +108,6 @@ void OffroadAlert::refresh() {
       l->setStyleSheet(style);
       vlayout->addWidget(l);
       vlayout->addSpacing(20);
-    }
-
-    // Pad the vlayout
-    for (int i = alerts.size(); i < 4; i++) {
-      QWidget *w = new QWidget();
-      vlayout->addWidget(w);
-      vlayout->addSpacing(50);
     }
   }
 

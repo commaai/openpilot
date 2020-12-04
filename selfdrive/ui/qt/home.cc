@@ -60,7 +60,7 @@ OffroadHome::OffroadHome(QWidget *parent) : QWidget(parent) {
   timer = new QTimer(this);
   QObject::connect(timer, SIGNAL(timeout()), this, SLOT(refresh()));
   refresh();
-  timer->start(1000); // TODO: make this a reasonable value before merging
+  timer->start(10 * 1000);
 
   setLayout(main_layout);
   setStyleSheet(R"(background-color: none;)");
