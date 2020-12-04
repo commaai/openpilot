@@ -310,7 +310,7 @@ def handle_agnos_update(wait_helper):
     cloudlog.info(f"Downloading {partition['name']}")
 
     downloader = StreamingDecompressor(partition['url'])
-    with open(f"of=/dev/disk/by-partlabel/{partition['name']}{target_slot}", 'wb') as out:
+    with open(f"/dev/disk/by-partlabel/{partition['name']}{target_slot}", 'wb') as out:
       if partition['sparse']:
         raw_hash = hashlib.sha256()
         for chunk in unsparsify(downloader):
