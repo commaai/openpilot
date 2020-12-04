@@ -45,6 +45,7 @@ bool compare_by_strength(const Network &a, const Network &b){
 
 WifiManager::WifiManager(){
   qDBusRegisterMetaType<Connection>();
+  qDBusRegisterMetaType<IpConfig>();
   connecting_to_network = "";
   adapter = get_adapter();
   has_adapter = adapter != "";
@@ -59,10 +60,10 @@ WifiManager::WifiManager(){
   }
 
   // Compute tethering ssid as "Weedle" + first 4 characters of serial number of a device
-  tethering_ssid = "Weedle";
+  tethering_ssid = "weedle";
   std::vector<char> bytes = Params().read_db_bytes("DongleId");
   if (bytes.size() >= 4){
-    tethering_ssid+=QString::fromStdString(std::string(bytes.begin(), bytes.begin()+4));
+    tethering_ssid+="-"+QString::fromStdString(std::string(bytes.begin(), bytes.begin()+4));
   }
 }
 
@@ -322,19 +323,27 @@ void WifiManager::enableTethering(){
   connection["802-11-wireless"]["mode"] = "ap";
   connection["802-11-wireless"]["ssid"] = tethering_ssid.toUtf8();
 
+  QStringList group = {"ccmp"};
+  connection["802-11-wireless-security"]["group"] = group;
   connection["802-11-wireless-security"]["key-mgmt"] = "wpa-psk";
-  connection["802-11-wireless-security"]["auth-alg"] = "open";
+  QStringList pairwise = {"ccmp"};
+  connection["802-11-wireless-security"]["pairwise"] = pairwise;
+  QStringList proto = {"rsn"};
+  connection["802-11-wireless-security"]["proto"] = proto;
   connection["802-11-wireless-security"]["psk"] = "swagswagcomma";
 
   connection["ipv4"]["method"] = "shared";
-  // QVector<QMap<QString,QVariant>> ip;
-  // QMap<QString, QVariant> ip0;
-  // ip.push_back(ip0);
-  // connection["ipv4"]["address-data"] = QVariant::fromValue(ip);
+  IpConfig ip;
+  QMap<QString,QVariant> adress1;
+  adress1["address"]="192.168.43.1";
+  adress1["prefix"]=static_cast<uint>(24);
+  ip.push_back(adress1);
+  connection["ipv4"]["address-data"] = QVariant::fromValue(ip);
+  connection["ipv4"]["gateway"] = "192.168.43.1";
   connection["ipv6"]["method"] = "ignore";
 
   QDBusInterface nm_settings(nm_service, nm_settings_path, nm_settings_iface, bus);
-  qDebug()<<nm_settings.call("AddConnection", QVariant::fromValue(connection));
+  nm_settings.call("AddConnection", QVariant::fromValue(connection));
 
 }
 

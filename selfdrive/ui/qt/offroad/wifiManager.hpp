@@ -15,6 +15,7 @@ enum class ConnectedType{
 };
 
 typedef QMap<QString, QMap<QString, QVariant>> Connection;
+typedef QVector<QMap<QString, QVariant>> IpConfig;
 
 struct Network {
   QString path;
