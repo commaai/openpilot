@@ -230,8 +230,6 @@ class StreamingDecompressor:
     self.sha256 = hashlib.sha256()
 
   def read(self, length):
-    result = b""
-
     while len(self.buf) < length:
       self.req.raise_for_status()
 
@@ -243,7 +241,7 @@ class StreamingDecompressor:
       out = self.decompressor.decompress(compressed)
       self.buf += out
 
-    result += self.buf[:length]
+    result = self.buf[:length]
     self.buf = self.buf[length:]
 
     self.sha256.update(result)
@@ -271,13 +269,16 @@ def unsparsify(f):
   for _ in range(num_chunks):
     chunk_type = struct.unpack("H", f.read(2))[0]
     _ = struct.unpack("H", f.read(2))[0]
-    out_sz = block_sz * struct.unpack("I", f.read(4))[0]
+    out_blocks = struct.unpack("I", f.read(4))[0]
     _ = struct.unpack("I", f.read(4))[0]
 
     if chunk_type == 0xcac1:  # Raw
-      yield f.read(out_sz)
+      # TODO: yield in smaller chunks. Yielding only block_sz is too slow. Larged observed data chunk is 252 MB.
+      yield f.read(out_blocks * block_sz)
     elif chunk_type == 0xcac2:  # Fill
-      yield f.read(4) * (out_sz // 4)
+      filler = f.read(4) * (block_sz // 4)
+      for _ in range(out_blocks):
+        yield filler
     elif chunk_type == 0xcac3:  # Don't care
       yield b""
     else:
@@ -512,5 +513,15 @@ def main():
 
   dismount_overlay()
 
+
 if __name__ == "__main__":
   main()
+
+  # import tqdm
+  # f = StreamingDecompressor("https://commadist.azureedge.net/agnosupdate-staging/system-a0f8281af24d43673dbd1175e1dbbac908512fe0587c3d9b1c9455bdd8994e2a.img.xz")
+  # sha256 = hashlib.sha256()
+
+  # for chunk in tqdm.tqdm(unsparsify(f)):
+  #   sha256.update(chunk)
+  # print(sha256.hexdigest().lower())
+  # print(f.sha256.hexdigest().lower())
