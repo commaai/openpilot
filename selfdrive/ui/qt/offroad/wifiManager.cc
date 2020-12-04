@@ -309,6 +309,7 @@ void WifiManager::disconnect(){
     deactivate_connections(get_property(active_ap, "Ssid"));
   }
 }
+
 //Functions for tethering 
 
 void WifiManager::enableTethering(){
@@ -335,8 +336,8 @@ void WifiManager::enableTethering(){
   connection["ipv4"]["method"] = "shared";
   IpConfig ip;
   QMap<QString,QVariant> adress1;
-  adress1["address"]="192.168.43.1";
-  adress1["prefix"]=static_cast<uint>(24);
+  adress1["address"] = "192.168.43.1";
+  adress1["prefix"] = static_cast<uint>(24);
   ip.push_back(adress1);
   connection["ipv4"]["address-data"] = QVariant::fromValue(ip);
   connection["ipv4"]["gateway"] = "192.168.43.1";
