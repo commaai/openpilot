@@ -105,7 +105,8 @@ void OffroadHome::refresh() {
     padding-right: 30px;
     border: 1px solid;
     border-radius: 5px;
-    font-size: 25px;
+    font-size: 40px;
+    font-weight: bold;
     background-color: red;
   )"));
 }
