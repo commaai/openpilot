@@ -43,25 +43,32 @@ void OffroadAlert::refresh() {
   }
 
   if (updateAvailable) {
-    // If there is update available, don't show alerts
+    // If there is an update available, don't show alerts
     alerts.clear();
 
     QFrame *f = new QFrame();
 
     QVBoxLayout *update_layout = new QVBoxLayout;
-    update_layout->addWidget(new QLabel("Update available"));
+    update_layout->setMargin(10);
 
-    std::vector<char> release_notes_bytes = Params().read_db_bytes("ReleaseNotes");
-    QString releaseNotes = vectorToQString(release_notes_bytes);
-    QLabel *notes_label = new QLabel(releaseNotes);
+    QLabel *title = new QLabel("Update available");
+    title->setStyleSheet(R"(
+      font-size: 55px;
+      font-weight: bold;
+    )");
+    update_layout->addWidget(title, 0, Qt::AlignTop);
+
+    QString release_notes = QString::fromStdString(Params().get("ReleaseNotes"));
+    QLabel *notes_label = new QLabel(release_notes);
+    notes_label->setStyleSheet(R"(font-size: 40px;)");
     notes_label->setWordWrap(true);
     update_layout->addSpacing(20);
-    update_layout->addWidget(notes_label);
+    update_layout->addWidget(notes_label, 1, Qt::AlignTop);
     update_layout->addSpacing(20);
 
     QPushButton *update_button = new QPushButton("Reboot and Update");
     update_layout->addWidget(update_button);
-    update_layout->setMargin(10);
+    update_layout->addSpacing(10);
 #ifdef __aarch64__
     QObject::connect(update_button, &QPushButton::released, [=]() {std::system("sudo reboot");});
 #endif
@@ -69,13 +76,15 @@ void OffroadAlert::refresh() {
     f->setLayout(update_layout);
     f->setStyleSheet(R"(
       .QFrame{
-        border-radius: 30px;
+        border-radius: 20px;
         border: 2px solid white;
         background-color: #114267;
       }
-      QLabel{
-        font-size: 60px;
-        background-color: #114267;
+      QPushButton {
+        padding: 20px;
+        font-size: 35px;
+        color: white;
+        background-color: blue;
       }
     )");
 
@@ -89,32 +98,16 @@ void OffroadAlert::refresh() {
       l->setWordWrap(true);
       l->setMargin(60);
 
-      if (alert.severity){
-        l->setStyleSheet(R"(
-          QLabel {
-            font-size: 40px;
-            font-weight: bold;
-            border-radius: 30px;
-            background-color: #971b1c;
-            border-style: solid;
-            border-width: 2px;
-            border-color: white;
-          }
-        )");//red rounded rectange with white surround
-      }else{
-        l->setStyleSheet(R"(
-          QLabel {
-            font-size: 40px;
-            font-weight: bold;
-            border-radius: 30px;
-            background-color: #114267;
-            border-style: solid;
-            border-width: 2px;
-            border-color: white;
-          }
-        )");//blue rounded rectange with white surround
-      }
+      QString style = R"(
+        font-size: 40px;
+        font-weight: bold;
+        border-radius: 30px;
+        border: 2px solid;
+        border-color: white;
+      )";
+      style.append("background-color: " + QString(alert.severity ? "#971b1c" : "#114267"));
 
+      l->setStyleSheet(style);
       vlayout->addWidget(l);
       vlayout->addSpacing(20);
     }
@@ -127,9 +120,15 @@ void OffroadAlert::refresh() {
     }
   }
 
-  QPushButton *hide_alerts_button = new QPushButton(updateAvailable ? "Later" : "Hide alerts");
-  vlayout->addWidget(hide_alerts_button);
-  QObject::connect(hide_alerts_button, SIGNAL(released()), this, SIGNAL(closeAlerts()));
+  QPushButton *hide_btn = new QPushButton(updateAvailable ? "Later" : "Hide alerts");
+  hide_btn->setStyleSheet(R"(
+    padding: 20px;
+    font-size: 35px;
+    color: white;
+    background-color: blue;
+  )");
+  vlayout->addWidget(hide_btn);
+  QObject::connect(hide_btn, SIGNAL(released()), this, SIGNAL(closeAlerts()));
 }
 
 void OffroadAlert::parse_alerts(){

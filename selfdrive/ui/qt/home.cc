@@ -50,18 +50,17 @@ OffroadHome::OffroadHome(QWidget *parent) : QWidget(parent) {
   center_layout->addWidget(drive);
 
   alerts_widget = new OffroadAlert();
-  alerts_widget->refresh();
-  alerts_widget->hide();
   QObject::connect(alerts_widget, SIGNAL(closeAlerts()), this, SLOT(closeAlerts()));
   center_layout->addWidget(alerts_widget);
+  center_layout->setAlignment(alerts_widget, Qt::AlignCenter);
 
-  main_layout->addLayout(center_layout);
+  main_layout->addLayout(center_layout, 1);
 
   // set up refresh timer
   timer = new QTimer(this);
   QObject::connect(timer, SIGNAL(timeout()), this, SLOT(refresh()));
   refresh();
-  timer->start(10000);
+  timer->start(1000); // TODO: make this a reasonable value before merging
 
   setLayout(main_layout);
   setStyleSheet(R"(background-color: none;)");
