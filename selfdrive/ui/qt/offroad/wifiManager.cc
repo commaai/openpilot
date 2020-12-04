@@ -49,7 +49,7 @@ WifiManager::WifiManager(){
   connecting_to_network = "";
   adapter = get_adapter();
   has_adapter = adapter != "";
-  if(has_adapter){
+  if (has_adapter){
     QDBusInterface nm(nm_service, adapter, device_iface, bus);
     bus.connect(nm_service, adapter, device_iface, "StateChanged", this, SLOT(change(unsigned int, unsigned int, unsigned int)));
     
@@ -75,7 +75,7 @@ void WifiManager::refreshNetworks(){
   seen_ssids.clear();
 
   for (Network &network : get_networks()){
-    if(seen_ssids.count(network.ssid)){
+    if (seen_ssids.count(network.ssid)){
       continue;
     }
     seen_ssids.push_back(network.ssid);
@@ -100,12 +100,12 @@ QList<Network> WifiManager::get_networks(){
     unsigned int strength = get_ap_strength(path.path());
     SecurityType security = getSecurityType(path.path());
     ConnectedType ctype;
-    if(path.path() != active_ap){
+    if (path.path() != active_ap){
       ctype = ConnectedType::DISCONNECTED;
-    }else{
-      if(ssid == connecting_to_network){
+    }else {
+      if (ssid == connecting_to_network){
         ctype = ConnectedType::CONNECTING;
-      }else{
+      }else {
         ctype = ConnectedType::CONNECTED;
       }
     }
@@ -127,9 +127,9 @@ SecurityType WifiManager::getSecurityType(QString path){
   int rsnflag = get_property(path, "RsnFlags").toInt();
   int wpa_props = wpaflag | rsnflag;
 
-  if(sflag == 0){
+  if (sflag == 0){
     return SecurityType::OPEN;
-  } else if((sflag & 0x1) && (wpa_props & (0x333) && !(wpa_props & 0x200))) {
+  } else if ((sflag & 0x1) && (wpa_props & (0x333) && !(wpa_props & 0x200))) {
     return SecurityType::WPA;
   } else {
     return SecurityType::UNSUPPORTED;
@@ -161,7 +161,7 @@ void WifiManager::connect(QByteArray ssid, QString username, QString password, S
   connection["802-11-wireless"]["ssid"] = ssid;
   connection["802-11-wireless"]["mode"] = "infrastructure";
 
-  if(security_type == SecurityType::WPA){
+  if (security_type == SecurityType::WPA){
     connection["802-11-wireless-security"]["key-mgmt"] = "wpa-psk";
     connection["802-11-wireless-security"]["auth-alg"] = "open";
     connection["802-11-wireless-security"]["psk"] = password;
@@ -175,12 +175,12 @@ void WifiManager::connect(QByteArray ssid, QString username, QString password, S
 }
 
 void WifiManager::deactivate_connections(QString ssid){
-  for(QDBusObjectPath active_connection_raw : get_active_connections()){
+  for (QDBusObjectPath active_connection_raw : get_active_connections()){
     QString active_connection = active_connection_raw.path();
     QDBusInterface nm(nm_service, active_connection, props_iface, bus);
     QDBusObjectPath pth = get_response<QDBusObjectPath>(nm.call("Get", connection_iface, "SpecificObject"));
     QString Ssid = get_property(pth.path(), "Ssid");
-    if(Ssid == ssid){
+    if (Ssid == ssid){
       QDBusInterface nm2(nm_service, nm_path, nm_iface, bus);
       nm2.call("DeactivateConnection", QVariant::fromValue(active_connection_raw));
     }
@@ -218,12 +218,12 @@ void WifiManager::clear_connections(QString ssid){
 
     QMap<QString,QMap<QString,QVariant> > map;
     dbusArg >> map;
-    for(QString outer_key : map.keys()) {
+    for (QString outer_key : map.keys()) {
       QMap<QString,QVariant> innerMap = map.value(outer_key);
-      for(QString inner_key : innerMap.keys()) {
-        if(inner_key == "ssid"){
+      for (QString inner_key : innerMap.keys()) {
+        if (inner_key == "ssid"){
           QString value = innerMap.value(inner_key).value<QString>();
-          if(value == ssid){
+          if (value == ssid){
             nm2.call("Delete");
           }
         }
@@ -296,16 +296,16 @@ QString WifiManager::get_adapter(){
 
 void WifiManager::change(unsigned int new_state,unsigned int previous_state,unsigned int change_reason){
   raw_adapter_state = new_state;
-  if(new_state == state_need_auth && change_reason == reason_wrong_password){
+  if (new_state == state_need_auth && change_reason == reason_wrong_password){
     emit wrongPassword(connecting_to_network);
-  }else if(new_state == state_connected){
-    connecting_to_network="";
+  }else if (new_state == state_connected){
+    connecting_to_network = "";
   }
 }
 
 void WifiManager::disconnect(){
   QString active_ap = get_active_ap();
-  if(active_ap!="" && active_ap!="/"){
+  if (active_ap!="" && active_ap!="/"){
     deactivate_connections(get_property(active_ap, "Ssid"));
   }
 }
