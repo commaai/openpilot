@@ -3,10 +3,12 @@
 #include <fstream>
 #include <thread>
 
-#include <QLabel>
+#include <QWidget>
 #include <QMouseEvent>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
+#include <QStackedLayout>
+#include <QLayout>
 #include <QDateTime>
 
 #include "common/params.h"
@@ -19,14 +21,16 @@
 #define BACKLIGHT_TS 2.00
 
 
-QWidget * home_widget() {
+OffroadHome::OffroadHome(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout();
   main_layout->setContentsMargins(sbr_w + 50, 50, 50, 50);
 
+  center_layout = new QStackedLayout();
+
   // header
   QHBoxLayout *header_layout = new QHBoxLayout();
-  QString date_str = QDateTime::currentDateTime().toString("dddd, MMMM d");
-  QLabel *date = new QLabel(date_str);
+
+  date = new QLabel();
   date->setStyleSheet(R"(font-size: 55px;)");
   header_layout->addWidget(date, 0, Qt::AlignTop | Qt::AlignLeft);
 
@@ -36,33 +40,91 @@ QWidget * home_widget() {
 
   main_layout->addLayout(header_layout);
 
+  alert_notification = new QPushButton();
+  QObject::connect(alert_notification, SIGNAL(released()), this, SLOT(openAlerts()));
+  main_layout->addWidget(alert_notification, 0, Qt::AlignTop | Qt::AlignRight);
+
   // center
   QLabel *drive = new QLabel("Drive me");
   drive->setStyleSheet(R"(font-size: 175px;)");
-  main_layout->addWidget(drive, 1, Qt::AlignHCenter);
+  center_layout->addWidget(drive);
 
-  QWidget *w = new QWidget();
-  w->setLayout(main_layout);
-  w->setStyleSheet(R"(
-    * {
-      background-color: none;
-    }
-  )");
-  return w;
+  alerts_widget = new OffroadAlert();
+  QObject::connect(alerts_widget, SIGNAL(closeAlerts()), this, SLOT(closeAlerts()));
+  center_layout->addWidget(alerts_widget);
+  center_layout->setAlignment(alerts_widget, Qt::AlignCenter);
+
+  main_layout->addLayout(center_layout, 1);
+
+  // set up refresh timer
+  timer = new QTimer(this);
+  QObject::connect(timer, SIGNAL(timeout()), this, SLOT(refresh()));
+  refresh();
+  timer->start(10 * 1000);
+
+  setLayout(main_layout);
+  setStyleSheet(R"(background-color: none;)");
 }
 
-HomeWindow::HomeWindow(QWidget *parent) : QWidget(parent) {
+void OffroadHome::openAlerts() {
+  center_layout->setCurrentIndex(1);
+}
 
+void OffroadHome::closeAlerts() {
+  center_layout->setCurrentIndex(0);
+}
+
+void OffroadHome::refresh() {
+  bool first_refresh = !date->text().size();
+  if (!isVisible() && !first_refresh) {
+    return;
+  }
+
+  date->setText(QDateTime::currentDateTime().toString("dddd, MMMM d"));
+
+  // update alerts
+
+  alerts_widget->refresh();
+  if (!alerts_widget->alerts.size() && !alerts_widget->updateAvailable){
+    alert_notification->setVisible(false);
+    return;
+  }
+
+  if (alerts_widget->updateAvailable){
+    // There is a new release
+    alert_notification->setText("UPDATE");
+  } else {
+    int alerts = alerts_widget->alerts.size();
+    alert_notification->setText(QString::number(alerts) + " ALERT" + (alerts == 1 ? "" : "S"));
+  }
+
+  alert_notification->setVisible(true);
+  alert_notification->setStyleSheet(QString(R"(
+    padding: 15px;
+    padding-left: 30px;
+    padding-right: 30px;
+    border: 1px solid;
+    border-radius: 5px;
+    font-size: 40px;
+    font-weight: bold;
+    background-color: red;
+  )"));
+}
+
+
+HomeWindow::HomeWindow(QWidget *parent) : QWidget(parent) {
   layout = new QGridLayout;
   layout->setMargin(0);
 
+  // onroad UI
   glWindow = new GLWindow(this);
   layout->addWidget(glWindow, 0, 0);
 
-  home = home_widget();
+  // draw offroad UI on top of onroad UI
+  home = new OffroadHome();
   layout->addWidget(home, 0, 0);
   QObject::connect(glWindow, SIGNAL(offroadTransition(bool)), this, SLOT(setVisibility(bool)));
-
+  QObject::connect(this, SIGNAL(openSettings()), home, SLOT(refresh()));
   setLayout(layout);
   setStyleSheet(R"(
     * {
