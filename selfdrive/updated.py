@@ -35,6 +35,7 @@ import fcntl
 import time
 import threading
 import requests
+import struct
 from pathlib import Path
 from typing import List, Tuple, Optional
 
@@ -249,6 +250,40 @@ class StreamingDecompressor:
     return result
 
 
+def unsparsify(f):
+  magic = struct.unpack("I", f.read(4))[0]
+  assert(magic == 0xed26ff3a)
+
+  # Version
+  major = struct.unpack("H", f.read(2))[0]
+  minor = struct.unpack("H", f.read(2))[0]
+  assert(major == 1 and minor == 0)
+
+  # Header sizes
+  _ = struct.unpack("H", f.read(2))[0]
+  _ = struct.unpack("H", f.read(2))[0]
+
+  block_sz = struct.unpack("I", f.read(4))[0]
+  _ = struct.unpack("I", f.read(4))[0]
+  num_chunks = struct.unpack("I", f.read(4))[0]
+  _ = struct.unpack("I", f.read(4))[0]
+
+  for _ in range(num_chunks):
+    chunk_type = struct.unpack("H", f.read(2))[0]
+    _ = struct.unpack("H", f.read(2))[0]
+    out_sz = block_sz * struct.unpack("I", f.read(4))[0]
+    _ = struct.unpack("I", f.read(4))[0]
+
+    if chunk_type == 0xcac1:  # Raw
+      yield f.read(out_sz)
+    elif chunk_type == 0xcac2:  # Fill
+      yield f.read(4) * (out_sz // 4)
+    elif chunk_type == 0xcac3:  # Don't care
+      yield b""
+    else:
+      raise Exception("Unhandled sparse chunk type")
+
+
 def handle_agnos_update(wait_helper):
   with open(NEOS_VERSION, "r") as f:
     cur_version = f.read().strip()
@@ -274,14 +309,22 @@ def handle_agnos_update(wait_helper):
   for partition in update:
     cloudlog.info(f"Downloading {partition['name']}")
 
-    # TODO: Handle unsparsify
     downloader = StreamingDecompressor(partition['url'])
     with open(f"of=/dev/disk/by-partlabel/{partition['name']}{target_slot}", 'wb') as out:
-      while not downloader.eof:
-        out.write(downloader.read(1024 * 1024))
+      if partition['sparse']:
+        raw_hash = hashlib.sha256()
+        for chunk in unsparsify(downloader):
+          raw_hash.update(chunk)
+          out.write(chunk)
+
+        if raw_hash.hexdigest().lower() != partition['raw_hash'].lower():
+          raise Exception("Unsparse hash mismatch")
+      else:
+        while not downloader.eof:
+          out.write(downloader.read(1024 * 1024))
 
     if downloader.sha256.hexdigest().lower() != partition['hash'].lower():
-      raise Exception("Hash mismatch")
+      raise Exception("Uncompressed hash mismatch")
 
   cloudlog.info("AGNOS update successful")
 
@@ -471,7 +514,3 @@ def main():
 
 if __name__ == "__main__":
   main()
-  # # f = StreamingDecompressor("https://commadist.azureedge.net/agnosupdate-staging/system-a0f8281af24d43673dbd1175e1dbbac908512fe0587c3d9b1c9455bdd8994e2a.img.xz")
-  # f = StreamingDecompressor("https://commadist.azureedge.net/agnosupdate-staging/boot-2918aced5a0398b7888a73c829412bfba3723003f7d3ecb548d56961661b3b65.img.xz")
-  # r = f.read_all()
-  # print(f.sha256.hexdigest().lower())
