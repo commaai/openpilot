@@ -4,7 +4,6 @@
 #include <thread>
 
 #include <QWidget>
-#include <QLabel>
 #include <QMouseEvent>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
@@ -25,11 +24,13 @@
 OffroadHome::OffroadHome(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout();
   main_layout->setContentsMargins(sbr_w + 50, 50, 50, 50);
-  selection_layout = new QStackedLayout();
+
+  center_layout = new QStackedLayout();
+
   // header
   QHBoxLayout *header_layout = new QHBoxLayout();
-  QString date_str = QDateTime::currentDateTime().toString("dddd, MMMM d");
-  QLabel *date = new QLabel(date_str);
+
+  date = new QLabel();
   date->setStyleSheet(R"(font-size: 55px;)");
   header_layout->addWidget(date, 0, Qt::AlignTop | Qt::AlignLeft);
 
@@ -37,88 +38,81 @@ OffroadHome::OffroadHome(QWidget *parent) : QWidget(parent) {
   version->setStyleSheet(R"(font-size: 45px;)");
   header_layout->addWidget(version, 0, Qt::AlignTop | Qt::AlignRight);
 
-  alert_notification_widget = new QPushButton("");//Should get text when it is visible
-  QObject::connect(alert_notification_widget, SIGNAL(released()), this, SLOT(openAlerts()));
-  header_layout->addWidget(alert_notification_widget);
-
   main_layout->addLayout(header_layout);
-  // center
 
-  /*
+  alert_notification = new QPushButton();
+  QObject::connect(alert_notification, SIGNAL(released()), this, SLOT(openAlerts()));
+  main_layout->addWidget(alert_notification, 0, Qt::AlignTop | Qt::AlignRight);
+
+  // center
   QLabel *drive = new QLabel("Drive me");
   drive->setStyleSheet(R"(font-size: 175px;)");
-  main_layout->addWidget(drive, 1, Qt::AlignHCenter);
-  */
+  center_layout->addWidget(drive);
 
   alerts_widget = new OffroadAlert();
   alerts_widget->refresh();
   alerts_widget->hide();
   QObject::connect(alerts_widget, SIGNAL(closeAlerts()), this, SLOT(closeAlerts()));
-  refreshParams();
+  center_layout->addWidget(alerts_widget);
 
+  main_layout->addLayout(center_layout);
 
-  QWidget* q = new QWidget;
-  q->setLayout(main_layout);
-  selection_layout->addWidget(q);
-  selection_layout->addWidget(alerts_widget);
+  // set up refresh timer
+  timer = new QTimer(this);
+  QObject::connect(timer, SIGNAL(timeout()), this, SLOT(refresh()));
+  refresh();
+  timer->start(10000);
 
-  setLayout(selection_layout);
-  // setStyleSheet(R"(
-  //   * {
-  //     background-color: none;
-  //   }
-  // )");
+  setLayout(main_layout);
+  setStyleSheet(R"(background-color: none;)");
 }
 
 void OffroadHome::openAlerts() {
-  selection_layout->setCurrentIndex(1);
+  center_layout->setCurrentIndex(1);
 }
 
 void OffroadHome::closeAlerts() {
-  selection_layout->setCurrentIndex(0);
+  center_layout->setCurrentIndex(0);
 }
 
-// Refreshes the offroad alerts from the params folder and sets up the sidebar alerts widget.
-// The function gets called every time a user opens the settings page
-void OffroadHome::refreshParams() {
+void OffroadHome::refresh() {
+  bool first_refresh = !date->text().size();
+  if (!isVisible() && !first_refresh) {
+    return;
+  }
+
+  date->setText(QDateTime::currentDateTime().toString("dddd, MMMM d"));
+
+  // update alerts
+
   alerts_widget->refresh();
-  if (!alerts_widget->show_alert){
-    alert_notification_widget->setFixedHeight(0);
+  if (!alerts_widget->alerts.size() && !alerts_widget->updateAvailable){
+    alert_notification->setVisible(false);
     return;
   }
 
-  alert_notification_widget->setFixedHeight(100);
-  alert_notification_widget->setStyleSheet(R"(
-    background-color: #114267;
-  )"); // light blue
-
-  // Check for alerts
-  int alerts = alerts_widget->alerts.size();
-  if (!alerts){
+  if (alerts_widget->updateAvailable){
     // There is a new release
-    alert_notification_widget->setText("UPDATE");
-    return;
+    alert_notification->setText("UPDATE");
+  } else {
+    int alerts = alerts_widget->alerts.size();
+    alert_notification->setText(QString::number(alerts) + " ALERT" + (alerts == 1 ? "" : "S"));
   }
 
-  // Check if there is an important alert
-  bool existsImportantAlert = false;
-  for (auto alert : alerts_widget->alerts){
-    if (alert.severity){
-      existsImportantAlert = true;
-    }
-  }
-
-  alert_notification_widget->setText(QString::number(alerts) + " ALERT" + (alerts == 1 ? "" : "S"));
-  if (existsImportantAlert){
-    alert_notification_widget->setStyleSheet(R"(
-      background-color: #661111;
-    )"); //dark red
-  }
+  alert_notification->setVisible(true);
+  alert_notification->setStyleSheet(QString(R"(
+    padding: 15px;
+    padding-left: 30px;
+    padding-right: 30px;
+    border: 1px solid;
+    border-radius: 5px;
+    font-size: 25px;
+    background-color: red;
+  )"));
 }
 
 
 HomeWindow::HomeWindow(QWidget *parent) : QWidget(parent) {
-
   layout = new QGridLayout;
   layout->setMargin(0);
 
@@ -130,7 +124,7 @@ HomeWindow::HomeWindow(QWidget *parent) : QWidget(parent) {
   home = new OffroadHome();
   layout->addWidget(home, 0, 0);
   QObject::connect(glWindow, SIGNAL(offroadTransition(bool)), this, SLOT(setVisibility(bool)));
-  QObject::connect(this, SIGNAL(openSettings()), home, SLOT(refreshParams()));
+  QObject::connect(this, SIGNAL(openSettings()), home, SLOT(refresh()));
   setLayout(layout);
   setStyleSheet(R"(
     * {

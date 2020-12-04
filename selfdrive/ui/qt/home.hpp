@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QLabel>
 #include <QTimer>
 #include <QWidget>
 #include <QGridLayout>
@@ -60,15 +61,18 @@ public:
   explicit OffroadHome(QWidget *parent = 0);
 
 private:
+  QTimer *timer;
+
   // offroad home screen widgets
-  QStackedLayout *selection_layout;
+  QLabel *date;
+  QStackedLayout *center_layout;
   OffroadAlert *alerts_widget;
-  QPushButton *alert_notification_widget;
+  QPushButton *alert_notification;
 
 public slots:
   void closeAlerts();	
   void openAlerts();
-  void refreshParams();
+  void refresh();
 };
 
 
