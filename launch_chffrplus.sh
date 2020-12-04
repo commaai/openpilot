@@ -29,6 +29,9 @@ function two_init {
   # openpilot gets all the cores
   echo 0-3 > /dev/cpuset/app/cpus
 
+  # mask off 2-3 from RPS
+  echo 3 | tee  /sys/class/net/*/queues/*/rps_cpus
+
   # *** set up governors ***
 
   # +50mW offroad, +500mW onroad for 30% more RAM bandwidth
