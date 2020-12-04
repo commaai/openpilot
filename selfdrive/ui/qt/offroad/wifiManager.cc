@@ -42,6 +42,7 @@ bool compare_by_strength(const Network &a, const Network &b){
   return a.strength > b.strength;
 }
 
+
 WifiManager::WifiManager(){
   qDBusRegisterMetaType<Connection>();
   connecting_to_network = "";
@@ -62,7 +63,6 @@ WifiManager::WifiManager(){
   std::vector<char> bytes = Params().read_db_bytes("DongleId");
   if (bytes.size() >= 4){
     tethering_ssid+=QString::fromStdString(std::string(bytes.begin(), bytes.begin()+4));
-
   }
 }
 
