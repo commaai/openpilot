@@ -22,7 +22,7 @@ extern "C"{
 // TODO: this is also hardcoded in common/transformations/camera.py
 // TODO: choose based on frame input size
 #ifdef QCOM2
-const float y_offset = 200.0;
+const float y_offset = 0.0;
 const float zoom = 1.1;
 const mat3 intrinsic_matrix = (mat3){{
   2648.0, 0.0, 1928.0/2,
