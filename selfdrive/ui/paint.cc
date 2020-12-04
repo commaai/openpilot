@@ -23,7 +23,7 @@ extern "C"{
 // TODO: choose based on frame input size
 #ifdef QCOM2
 const float y_offset = 200.0;
-const float zoom = 1.5;
+const float zoom = 1.1;
 const mat3 intrinsic_matrix = (mat3){{
   2648.0, 0.0, 1928.0/2,
   0.0, 2648.0, 1208.0/2,
