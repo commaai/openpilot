@@ -218,19 +218,43 @@ def finalize_update() -> None:
   cloudlog.info("done finalizing overlay")
 
 
-def download(filename, url, img_hash):
-  decompressor = lzma.LZMADecompressor(format=lzma.FORMAT_AUTO)
-  sha256 = hashlib.sha256()
-  with requests.get(url, stream=True, headers={'Accept-Encoding': None}) as stream:
-    stream.raise_for_status()
-    with open(filename, 'wb') as f:
-      for chunk in stream.iter_content(chunk_size=1024*1024):
-        decompressed_chunk = decompressor.decompress(chunk)
-        sha256.update(decompressed_chunk)
-        f.write(decompressed_chunk)
+class StreamingDecompressor:
+  def __init__(self, url):
+    self.buf = b""
 
-  if sha256.hexdigest().lower() != img_hash.lower():
-    raise Exception(f"'{filename}' hash mismatch, got {sha256.hexdigest().lower()}")
+    self.req = requests.get(url, stream=True, headers={'Accept-Encoding': None})
+    self.it = self.req.iter_content(chunk_size=1024 * 1024)
+    self.decompressor = lzma.LZMADecompressor(format=lzma.FORMAT_AUTO)
+    self.eof = False
+    self.sha256 = hashlib.sha256()
+
+  def read(self, length):
+    result = b""
+
+    while len(self.buf) < length:
+      self.req.raise_for_status()
+
+      try:
+        compressed = next(self.it)
+      except StopIteration:
+        self.eof = True
+        break
+      out = self.decompressor.decompress(compressed)
+      self.buf += out
+
+    result += self.buf[:length]
+    self.buf = self.buf[length:]
+
+    self.sha256.update(result)
+    return result
+
+  def read_all(self):
+    result = b""
+
+    while not self.eof:
+      result += self.read(1024 * 1024)
+
+    return result
 
 
 def handle_agnos_update(wait_helper):
@@ -250,24 +274,27 @@ def handle_agnos_update(wait_helper):
 
   current_slot = subprocess.check_output(["abctl", "--boot_slot"], encoding='utf-8').strip()
   target_slot = "_b" if current_slot == "_a" else "_a"
-  target_slot_number = "0" if target_slot == "_a" else "1"
+  # target_slot_number = "0" if target_slot == "_a" else "1"
 
   # set target slot as unbootable
   #os.system(f"abctl --set_unbootable {target_slot_number}")
 
   for partition in update:
-    img_path = f"/tmp/{partition['name']}_{partition['hash']}.img"
-
     cloudlog.info(f"Downloading {partition['name']}")
-    download(img_path, partition['url'], partition['hash'])
 
-    cloudlog.info(f"Writing {partition['name']}")
-    run(["sudo", "dd", f"if={img_path}", f"of=/dev/disk/by-partlabel/{partition['name']}{target_slot}"])
+    # TODO: Handle unsparsify
+    downloader = StreamingDecompressor(partition['url'])
+    with open(f"of=/dev/disk/by-partlabel/{partition['name']}{target_slot}", 'wb') as out:
+      while not downloader.eof:
+        out.write(downloader.read(1024 * 1024))
+
+    if downloader.sha256.hexdigest().lower() != partition['hash'].lower():
+      raise Exception("Hash mismatch")
 
   cloudlog.info("AGNOS update successful")
 
   # TODO: this should be done at the same time as the openpilot swap
-  run(["abctl", "--set_active", target_slot_number])
+  # run(["abctl", "--set_active", target_slot_number])
 
 
 def handle_neos_update(wait_helper: WaitTimeHelper) -> None:
@@ -452,3 +479,7 @@ def main():
 
 if __name__ == "__main__":
   main()
+  # # f = StreamingDecompressor("https://commadist.azureedge.net/agnosupdate-staging/system-a0f8281af24d43673dbd1175e1dbbac908512fe0587c3d9b1c9455bdd8994e2a.img.xz")
+  # f = StreamingDecompressor("https://commadist.azureedge.net/agnosupdate-staging/boot-2918aced5a0398b7888a73c829412bfba3723003f7d3ecb548d56961661b3b65.img.xz")
+  # r = f.read_all()
+  # print(f.sha256.hexdigest().lower())
