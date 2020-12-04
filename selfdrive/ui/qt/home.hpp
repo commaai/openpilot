@@ -4,8 +4,10 @@
 #include <QWidget>
 #include <QGridLayout>
 #include <QStackedWidget>
+#include <QStackedLayout>
 #include <QOpenGLWidget>
 #include <QOpenGLFunctions>
+#include <QPushButton>
 
 #include "qt_sound.hpp"
 #include "widgets/offroad_alerts.hpp"
@@ -59,7 +61,14 @@ public:
 
 private:
   // offroad home screen widgets
-  OffroadAlert *alerts;
+  QStackedLayout *selection_layout;
+  OffroadAlert *alerts_widget;
+  QPushButton *alert_notification_widget;
+
+public slots:
+  void closeAlerts();	
+  void openAlerts();
+  void refreshParams();
 };
 
 
