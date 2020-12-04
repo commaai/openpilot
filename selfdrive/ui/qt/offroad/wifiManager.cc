@@ -1,13 +1,26 @@
 #include <algorithm>
 #include <set>
 #include <stdlib.h>
+#include <iostream>
 #include "wifiManager.hpp"
 #include "common/params.h"
 
 /**
  * We are using a NetworkManager DBUS API : https://developer.gnome.org/NetworkManager/1.26/spec.html
  * */
- 
+
+// https://developer.gnome.org/NetworkManager/1.26/nm-dbus-types.html#NM80211ApFlags
+const int NM_802_11_AP_FLAGS_PRIVACY = 0x00000001;
+
+// https://developer.gnome.org/NetworkManager/1.26/nm-dbus-types.html#NM80211ApSecurityFlags
+const int NM_802_11_AP_SEC_PAIR_WEP40      = 0x00000001;
+const int NM_802_11_AP_SEC_PAIR_WEP104     = 0x00000002;
+const int NM_802_11_AP_SEC_GROUP_WEP40     = 0x00000010;
+const int NM_802_11_AP_SEC_GROUP_WEP104    = 0x00000020;
+const int NM_802_11_AP_SEC_KEY_MGMT_PSK    = 0x00000100;
+const int NM_802_11_AP_SEC_KEY_MGMT_802_1X = 0x00000200;
+
+
 QString nm_path                = "/org/freedesktop/NetworkManager";
 QString nm_settings_path       = "/org/freedesktop/NetworkManager/Settings";
 
@@ -127,9 +140,12 @@ SecurityType WifiManager::getSecurityType(QString path){
   int rsnflag = get_property(path, "RsnFlags").toInt();
   int wpa_props = wpaflag | rsnflag;
 
+  // obtained by looking at flags of networks in the office as reported by an Android phone
+  const int supports_wpa = NM_802_11_AP_SEC_PAIR_WEP40 | NM_802_11_AP_SEC_PAIR_WEP104 | NM_802_11_AP_SEC_GROUP_WEP40 | NM_802_11_AP_SEC_GROUP_WEP104 | NM_802_11_AP_SEC_KEY_MGMT_PSK;
+  
   if (sflag == 0){
     return SecurityType::OPEN;
-  } else if ((sflag & 0x1) && (wpa_props & (0x333) && !(wpa_props & 0x200))) {
+  } else if ((sflag & NM_802_11_AP_FLAGS_PRIVACY) && (wpa_props & supports_wpa) && !(wpa_props & NM_802_11_AP_SEC_KEY_MGMT_802_1X)) {
     return SecurityType::WPA;
   } else {
     return SecurityType::UNSUPPORTED;
