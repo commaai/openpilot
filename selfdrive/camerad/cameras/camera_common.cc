@@ -368,58 +368,46 @@ std::thread start_process_thread(MultiCameraState *cameras, const char *tname,
 void common_camera_process_front(SubMaster *sm, PubMaster *pm, CameraState *c, int cnt) {
   const CameraBuf *b = &c->buf;
 
-  static int meteringbox_xmin = 0, meteringbox_xmax = 0;
-  static int meteringbox_ymin = 0, meteringbox_ymax = 0;
+  static int x_min = 0, x_max = 0, y_min = 0, y_max = 0;
   static const bool rhd_front = Params().read_db_bool("IsRHD");
-
-  sm->update(0);
-  if (sm->updated("driverState")) {
-    auto state = (*sm)["driverState"].getDriverState();
-    float face_prob = state.getFaceProb();
-    float face_position[2];
-    face_position[0] = state.getFacePosition()[0];
-    face_position[1] = state.getFacePosition()[1];
-
-    // set front camera metering target
-    if (face_prob > 0.4) {
-      int x_offset = rhd_front ? 0:b->rgb_width - 0.5 * b->rgb_height;
-      meteringbox_xmin = x_offset + (face_position[0] + 0.5) * (0.5 * b->rgb_height) - 72;
-      meteringbox_xmax = x_offset + (face_position[0] + 0.5) * (0.5 * b->rgb_height) + 72;
-      meteringbox_ymin = (face_position[1] + 0.5) * (b->rgb_height) - 72;
-      meteringbox_ymax = (face_position[1] + 0.5) * (b->rgb_height) + 72;
-    } else { // use default setting if no face
-      meteringbox_ymin = b->rgb_height * 1 / 3;
-      meteringbox_ymax = b->rgb_height * 1;
-      meteringbox_xmin = rhd_front ? 0:b->rgb_width * 3 / 5;
-      meteringbox_xmax = rhd_front ? b->rgb_width * 2 / 5:b->rgb_width;
-    }
-  }
 
   // auto exposure
   if (cnt % 3 == 0) {
-    // use driver face crop for AE
-    int x_start, x_end, y_start, y_end;
-    int skip = 1;
+    if (sm->update(0) > 0 && sm->updated("driverState")) {
+      auto state = (*sm)["driverState"].getDriverState();
+      // set front camera metering target
+      if (state.getFaceProb() > 0.4) {
+        auto face_position = state.getFacePosition();
+        int x_offset = rhd_front ? 0 : b->rgb_width - (0.5 * b->rgb_height);
+        x_offset += (face_position[0] + 0.5) * (0.5 * b->rgb_height);
+        const int y_offset = (face_position[1] + 0.5) * b->rgb_height;
 
-    if (meteringbox_xmax > 0) {
-      x_start = std::max(0, meteringbox_xmin);
-      x_end = std::min(b->rgb_width - 1, meteringbox_xmax);
-      y_start = std::max(0, meteringbox_ymin);
-      y_end = std::min(b->rgb_height - 1, meteringbox_ymax);
-    } else {
-      y_start = b->rgb_height * 1 / 3;
-      y_end = b->rgb_height * 1;
-      x_start = rhd_front ? 0 : b->rgb_width * 3 / 5;
-      x_end = rhd_front ? b->rgb_width * 2 / 5 : b->rgb_width;
+        x_min = std::max(0, x_offset - 72);
+        x_max = std::min(b->rgb_width - 1, x_offset + 72);
+        y_min = std::max(0, y_offset - 72);
+        y_max = std::min(b->rgb_height - 1, y_offset + 72);
+      } else {  // use default setting if no face
+        x_min = x_max = y_min = y_max = 0;
+      }
+    }
+
+    int skip = 1;
+    // use driver face crop for AE
+    if (x_max == 0) {
+      // default setting
+      x_min = rhd_front ? 0 : b->rgb_width * 3 / 5;
+      x_max = rhd_front ? b->rgb_width * 2 / 5 : b->rgb_width;
+      y_min = b->rgb_height / 3;
+      y_max = b->rgb_height;
     }
 #ifdef QCOM2
-    x_start = 96;
-    x_end = 1832;
-    y_start = 242;
-    y_end = 1148;
+    x_min = 96;
+    x_max = 1832;
+    y_min = 242;
+    y_max = 1148;
     skip = 4;
 #endif
-    set_exposure_target(c, (const uint8_t *)b->yuv_bufs[b->cur_yuv_idx].y, x_start, x_end, 2, y_start, y_end, skip);
+    set_exposure_target(c, (const uint8_t *)b->yuv_bufs[b->cur_yuv_idx].y, x_min, x_max, 2, y_min, y_max, skip);
   }
 
   MessageBuilder msg;
