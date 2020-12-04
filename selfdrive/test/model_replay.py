@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 import os
-import zipfile
-import tempfile
 import numpy as np
 
 from tools.lib.logreader import LogReader
@@ -22,11 +20,10 @@ if __name__ == "__main__":
     if os.path.isfile(cache_path):
       os.remove(cache_path)
 
-  output_path = os.path.expanduser('~/modeldata.zip')
-  with zipfile.ZipFile(output_path, mode='w') as archive:
-    for i, msg in enumerate(msgs):
-      with tempfile.NamedTemporaryFile(mode='wb') as outfile:
-        outfile.write(msg.as_builder().to_bytes())
-        archive.write(outfile.name, str(i))
+  output_size = len(np.frombuffer(msgs[0].model.rawPred, dtype=np.float32))
+  output_data = np.zeros((len(msgs), output_size), dtype=np.float32)
+  for i, msg in enumerate(msgs):
+    output_data[i] = np.frombuffer(msg.model.rawPred, dtype=np.float32)
+  np.save(os.path.expanduser('~/modeldata.npy'), output_data)
 
   print("Finished replay")
