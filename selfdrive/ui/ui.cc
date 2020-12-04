@@ -285,14 +285,11 @@ void ui_update(UIState *s) {
                 ((s->sm)->frame - (s->sm)->rcv_frame("frame")) > 5*UI_FREQ) ||
                ((s->sm)->frame - (s->sm)->rcv_frame("frame")) > 15*UI_FREQ) {
       // controls is fine, but rear camera is lagging or died
-      if (s->scene.alert_text2 != "Contact Support") {
-        LOGE("REAR camera malfunction");
-      }
       s->camera_unresponsive = true;
       s->scene.alert_text1 = "Camera Malfunction";
       s->scene.alert_text2 = "Contact Support";
       s->scene.alert_size = cereal::ControlsState::AlertSize::FULL;
-      s->status = STATUS_ALERT;
+      s->status = STATUS_DISENGAGED;
     }
   }
 
