@@ -118,10 +118,6 @@ function tici_init {
 }
 
 function launch {
-<<<<<<< HEAD
-=======
-
->>>>>>> 9dafc66d (add manifest)
   # Remove orphaned git lock if it exists on boot
   [ -f "$DIR/.git/index.lock" ] && rm -f $DIR/.git/index.lock
 
