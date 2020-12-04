@@ -57,3 +57,29 @@ class Tici(HardwareBase):
 
   def get_network_strength(self, network_type):
     return NetworkStrength.unknown
+
+  # We don't have a battery, so let's use some sane constants
+  def get_battery_capacity(self):
+    return 100
+
+  def get_battery_status(self):
+    return ""
+
+  def get_battery_current(self):
+    return 0
+
+  def get_battery_voltage(self):
+    return 0
+
+  def get_battery_charging(self):
+    return True
+
+  def set_battery_charging(self, on):
+    pass
+
+  def get_usb_present(self):
+    # Not sure if relevant on tici, but the file exists
+    return self.read_param_file("/sys/class/power_supply/usb/present", lambda x: bool(int(x)), False)
+
+  def get_current_power_draw(self):
+    return (self.read_param_file("/sys/class/hwmon/hwmon1/power1_input", int) / 1e6)

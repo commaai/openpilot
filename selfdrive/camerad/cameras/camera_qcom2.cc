@@ -489,7 +489,7 @@ void config_isp(struct CameraState *s, int io_mem_handle, int fence, int request
   release_fd(s->video0_fd, cam_packet_handle);
 }
 
-void enqueue_buffer(struct CameraState *s, int i) {
+void enqueue_buffer(struct CameraState *s, int i, bool dp) {
   int ret;
   int request_id = s->request_ids[i];
 
@@ -498,9 +498,12 @@ void enqueue_buffer(struct CameraState *s, int i) {
     // wait
     struct cam_sync_wait sync_wait = {0};
     sync_wait.sync_obj = s->sync_objs[i];
-    sync_wait.timeout_ms = 50;
+    sync_wait.timeout_ms = 50; // max dt tolerance, typical should be 23
     ret = cam_control(s->video1_fd, CAM_SYNC_WAIT, &sync_wait, sizeof(sync_wait));
     // LOGD("fence wait: %d %d", ret, sync_wait.sync_obj);
+
+    s->buf.camera_bufs_metadata[i].timestamp_eof = (uint64_t)nanos_since_boot(); // set true eof
+    if (dp) tbuffer_dispatch(&s->buf.camera_tb, i);
  
     // destroy old output fence
     struct cam_sync_info sync_destroy = {0};
@@ -543,10 +546,10 @@ void enqueue_buffer(struct CameraState *s, int i) {
   config_isp(s, s->buf_handle[i], s->sync_objs[i], request_id, s->buf0_handle, 65632*(i+1));
 }
 
-void enqueue_req_multi(struct CameraState *s, int start, int n) {
+void enqueue_req_multi(struct CameraState *s, int start, int n, bool dp) {
    for (int i=start;i<start+n;++i) {
      s->request_ids[(i - 1) % FRAME_BUF_COUNT] = i;
-     enqueue_buffer(s, (i - 1) % FRAME_BUF_COUNT);
+     enqueue_buffer(s, (i - 1) % FRAME_BUF_COUNT, dp);
    }
 }
 
@@ -797,7 +800,7 @@ static void camera_open(CameraState *s) {
   LOGD("start sensor: %d", ret);
   ret = device_control(s->sensor_fd, CAM_START_DEV, s->session_handle, s->sensor_dev_handle);
 
-  enqueue_req_multi(s, 1, FRAME_BUF_COUNT);
+  enqueue_req_multi(s, 1, FRAME_BUF_COUNT, 0);
 }
 
 void cameras_init(MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
@@ -935,7 +938,7 @@ void handle_camera_event(CameraState *s, void *evdat) {
     if (main_id > s->frame_id_last + 1 && !s->skipped) {
       // realign
       clear_req_queue(s->video0_fd, event_data->session_hdl, event_data->u.frame_msg.link_hdl);
-      enqueue_req_multi(s, real_id + 1, FRAME_BUF_COUNT - 1);
+      enqueue_req_multi(s, real_id + 1, FRAME_BUF_COUNT - 1, 0);
       s->skipped = true;
     } else if (main_id == s->frame_id_last + 1) {
       s->skipped = false;
@@ -943,26 +946,25 @@ void handle_camera_event(CameraState *s, void *evdat) {
 
     // check for dropped requests
     if (real_id > s->request_id_last + 1) {
-      enqueue_req_multi(s, s->request_id_last + 1 + FRAME_BUF_COUNT, real_id - (s->request_id_last + 1));
+      enqueue_req_multi(s, s->request_id_last + 1 + FRAME_BUF_COUNT, real_id - (s->request_id_last + 1), 0);
     }
 
     // metas
     s->frame_id_last = main_id;
     s->request_id_last = real_id;
     s->buf.camera_bufs_metadata[buf_idx].frame_id = main_id - s->idx_offset;
-    s->buf.camera_bufs_metadata[buf_idx].timestamp_eof = timestamp; // only has sof?
+    s->buf.camera_bufs_metadata[buf_idx].timestamp_sof = timestamp;
     s->buf.camera_bufs_metadata[buf_idx].global_gain = s->analog_gain + (100*s->dc_gain_enabled);
     s->buf.camera_bufs_metadata[buf_idx].gain_frac = s->analog_gain_frac;
     s->buf.camera_bufs_metadata[buf_idx].integ_lines = s->exposure_time;
 
     // dispatch
-    enqueue_req_multi(s, real_id + FRAME_BUF_COUNT, 1);
-    tbuffer_dispatch(&s->buf.camera_tb, buf_idx);
+    enqueue_req_multi(s, real_id + FRAME_BUF_COUNT, 1, 1);
   } else { // not ready
     // reset after half second of no response
     if (main_id > s->frame_id_last + 10) {
       clear_req_queue(s->video0_fd, event_data->session_hdl, event_data->u.frame_msg.link_hdl);
-      enqueue_req_multi(s, s->request_id_last + 1, FRAME_BUF_COUNT);
+      enqueue_req_multi(s, s->request_id_last + 1, FRAME_BUF_COUNT, 0);
       s->frame_id_last = main_id;
       s->skipped = true;
     }
@@ -1119,6 +1121,7 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
   s->pm->send(c == &s->rear ? "frame" : "wideFrame", msg);
 
   if (c == &s->rear && cnt % 100 == 3) {
+    // this takes 10ms???
     create_thumbnail(s, c, (uint8_t*)b->cur_rgb_buf->addr);
   }
 

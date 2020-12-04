@@ -4,7 +4,6 @@
 #include "qt_window.hpp"
 
 int main(int argc, char *argv[]) {
-  // TODO: should probably be done in gl window
   QSurfaceFormat fmt;
 #ifdef __APPLE__
   fmt.setVersion(3, 2);

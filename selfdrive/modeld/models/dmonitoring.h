@@ -37,7 +37,7 @@ typedef struct DMonitoringModelState {
 
 void dmonitoring_init(DMonitoringModelState* s);
 DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_buf, int width, int height);
-void dmonitoring_publish(PubMaster &pm, uint32_t frame_id, const DMonitoringResult &res, float execution_time);
+void dmonitoring_publish(PubMaster &pm, uint32_t frame_id, const DMonitoringResult &res, const float* raw_pred, float execution_time);
 void dmonitoring_free(DMonitoringModelState* s);
 
 #ifdef __cplusplus

@@ -1,29 +1,32 @@
 #pragma once
 
-
 #include <QWidget>
 #include <QFrame>
 #include <QTimer>
-#include <QCheckBox>
-#include <QStackedLayout>
 #include <QPushButton>
+#include <QStackedLayout>
 
 #include "wifi.hpp"
 #include "widgets/offroad_alerts.hpp"
+
+// *** settings widgets ***
 
 class ParamsToggle : public QFrame {
   Q_OBJECT
 
 public:
-  explicit ParamsToggle(QString param, QString title, QString description, QString icon, QWidget *parent = 0);
+  explicit ParamsToggle(QString param, QString title, QString description,
+                        QString icon, QWidget *parent = 0);
 
 private:
-  QCheckBox *checkbox;
   QString param;
 
 public slots:
   void checkboxClicked(int state);
 };
+
+
+// *** settings window ***
 
 class SettingsWindow : public QWidget {
   Q_OBJECT
@@ -41,7 +44,6 @@ private:
   OffroadAlert *alerts_widget;
   std::map<QString, QWidget *> panels;
   QStackedLayout *panel_layout;
-
 
 public slots:
   void setActivePanel();

@@ -62,6 +62,7 @@ WifiManager::WifiManager(){
   std::vector<char> bytes = Params().read_db_bytes("DongleId");
   if (bytes.size() >= 4){
     tethering_ssid+=QString::fromStdString(std::string(bytes.begin(), bytes.begin()+4));
+
   }
 }
 
@@ -301,6 +302,7 @@ void WifiManager::change(unsigned int new_state,unsigned int previous_state,unsi
   }
 }
 
+<<<<<<< HEAD
 void WifiManager::disconnect(){
   QString active_ap = get_active_ap();
   if(active_ap!="" && active_ap!="/"){
@@ -311,6 +313,18 @@ void WifiManager::disconnect(){
 
 void WifiManager::enableTethering(){
   disconnect();
+=======
+
+//Functions for tethering 
+
+void WifiManager::enableTethering(){
+  // Disconnect from active access_point
+  QString active_ap = get_active_ap();
+  if(active_ap!="" && active_ap!="/"){
+    deactivate_connections(get_property(active_ap, "Ssid")); //Disconnect from any connected networks 
+  }
+
+>>>>>>> 00f59116e8b7ca2aa9dcc871b0421e0938743de8
 
   Connection connection;
   connection["connection"]["id"] = "Hotspot";
@@ -327,6 +341,7 @@ void WifiManager::enableTethering(){
   connection["802-11-wireless-security"]["psk"] = "swagswagcomma";
 
   connection["ipv4"]["method"] = "shared";
+<<<<<<< HEAD
   // QVector<QMap<QString,QVariant>> ip;
   // QMap<QString, QVariant> ip0;
   // ip.push_back(ip0);
@@ -335,6 +350,12 @@ void WifiManager::enableTethering(){
 
   QDBusInterface nm_settings(nm_service, nm_settings_path, nm_settings_iface, bus);
   qDebug()<<nm_settings.call("AddConnection", QVariant::fromValue(connection));
+=======
+  connection["ipv6"]["method"] = "ignore";
+
+  QDBusInterface nm_settings(nm_service, nm_settings_path, nm_settings_iface, bus);
+  nm_settings.call("AddConnection", QVariant::fromValue(connection));
+>>>>>>> 00f59116e8b7ca2aa9dcc871b0421e0938743de8
 }
 
 void WifiManager::disableTethering(){
