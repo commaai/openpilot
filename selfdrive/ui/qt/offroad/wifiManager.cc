@@ -74,9 +74,9 @@ WifiManager::WifiManager(){
 
   // Compute tethering ssid as "Weedle" + first 4 characters of serial number of a device
   tethering_ssid = "weedle";
-  std::vector<char> bytes = Params().read_db_bytes("DongleId");
-  if (bytes.size() >= 4){
-    tethering_ssid+="-"+QString::fromStdString(std::string(bytes.begin(), bytes.begin()+4));
+  std::string bytes = Params().get("DongleId");
+  if (bytes.length() >= 4){
+    tethering_ssid+="-"+QString::fromStdString(bytes.substr(0,4));
   }
 }
 
