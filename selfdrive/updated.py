@@ -248,14 +248,6 @@ class StreamingDecompressor:
     self.sha256.update(result)
     return result
 
-  def read_all(self):
-    result = b""
-
-    while not self.eof:
-      result += self.read(1024 * 1024)
-
-    return result
-
 
 def handle_agnos_update(wait_helper):
   with open(NEOS_VERSION, "r") as f:
