@@ -513,6 +513,7 @@ int encoder_encode_frame(EncoderState *s,
   in_buf->nFlags = OMX_BUFFERFLAG_ENDOFFRAME;
   in_buf->nOffset = 0;
   in_buf->nTimeStamp = extra->timestamp_eof/1000LL;  // OMX_TICKS, in microseconds
+  s->last_t = in_buf->nTimeStamp;
 
   err = OMX_EmptyThisBuffer(s->handle, in_buf);
   assert(err == OMX_ErrorNone);
@@ -610,9 +611,8 @@ void encoder_close(EncoderState *s) {
 
       OMX_BUFFERHEADERTYPE* in_buf = queue_pop(&s->free_in);
       in_buf->nFilledLen = 0;
-      in_buf->nOffset = 0;
       in_buf->nFlags = OMX_BUFFERFLAG_EOS;
-      in_buf->nTimeStamp = 0;
+      in_buf->nTimeStamp = s->last_t;
 
       err = OMX_EmptyThisBuffer(s->handle, in_buf);
       assert(err == OMX_ErrorNone);
