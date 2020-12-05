@@ -276,9 +276,6 @@ void fill_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const float * data,
     z_arr[i] = data[i*columns + 2 + column_offset];
     //z_std_arr[i] = data[columns*(TRAJECTORY_SIZE + i) + 2 + column_offset];
   }
-  //kj::ArrayPtr<const float> x_std(x_std_arr, TRAJECTORY_SIZE);
-  //kj::ArrayPtr<const float> y_std(y_std_arr, TRAJECTORY_SIZE);
-  //kj::ArrayPtr<const float> z_std(z_std_arr, TRAJECTORY_SIZE);
   xyzt.setX(x_arr);
   xyzt.setY(y_arr);
   xyzt.setZ(z_arr);
