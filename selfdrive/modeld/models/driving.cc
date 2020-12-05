@@ -221,8 +221,21 @@ static int get_plan_max_idx(float *plan) {
   return max_idx;
 }
 
-void fill_lead(cereal::ModelData::LeadData::Builder lead, const float * data, float prob) {
-  lead.setProb(prob);
+static int get_mdn_max_idx(const float *lead, int t_offset) {
+  int mdn_max_idx = 0;
+  for (int i = 1; i < LEAD_MHP_N; i++) {
+    if (lead[(i + 1) * (LEAD_MHP_GROUP_SIZE) + t_offset - LEAD_MHP_SELECTION] >
+        lead[(mdn_max_idx + 1) * (LEAD_MHP_GROUP_SIZE) + t_offset - LEAD_MHP_SELECTION]) {
+      mdn_max_idx = i;
+    }
+  }
+  return mdn_max_idx;
+}
+
+void fill_lead(cereal::ModelData::LeadData::Builder lead, const float *lead_data, const float *prob, int t_offset) {
+  const int mdn_max_idx = get_mdn_max_idx(lead_data, t_offset);
+  const float *data = &lead_data[mdn_max_idx*(LEAD_MHP_GROUP_SIZE)];
+  lead.setProb(sigmoid(prob[t_offset]));
   lead.setDist(data[0]);
   lead.setStd(exp(data[LEAD_MHP_VALS]));
   // TODO make all msgs same format
@@ -288,7 +301,6 @@ void fill_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const float * data,
   xyzt.setT(t_arr);
 }
 
-
 void model_publish_v2(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
                      uint32_t vipc_dropped_frames, float frame_drop,
                      const ModelDataRaw &net_outputs, const float* raw_pred, uint64_t timestamp_eof,
@@ -348,14 +360,8 @@ void model_publish_v2(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
   // leads
   auto leads = framed.initLeads(LEAD_MHP_SELECTION);
   float t_offsets[LEAD_MHP_SELECTION] = {0.0, 2.0, 4.0};
-  for (int t_offset=0; t_offset<LEAD_MHP_SELECTION; t_offset++) {
-    int mdn_max_idx = 0;
-    for (int i=1; i<LEAD_MHP_N; i++) {
-      if (net_outputs.lead[(i+1)*(LEAD_MHP_GROUP_SIZE) + t_offset - LEAD_MHP_SELECTION] >
-          net_outputs.lead[(mdn_max_idx + 1)*(LEAD_MHP_GROUP_SIZE) + t_offset - LEAD_MHP_SELECTION]) {
-        mdn_max_idx = i;
-      }
-    }
+  for (int t_offset = 0; t_offset < LEAD_MHP_SELECTION; t_offset++) {
+    const int mdn_max_idx = get_mdn_max_idx(net_outputs.lead, t_offsets[t_offset]);
     fill_lead_v2(leads[t_offset], &net_outputs.lead[mdn_max_idx * (LEAD_MHP_GROUP_SIZE)],
                  sigmoid(net_outputs.lead_prob[t_offset]), t_offsets[t_offset]);
   }
@@ -412,26 +418,8 @@ void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
   fill_lane_line(right_lane, net_outputs.lane_lines, ll_idx, valid_len, valid_len_idx,
             sigmoid(net_outputs.lane_lines_prob[ll_idx]));
 
-  // Find the distribution that corresponds to the current lead
-  int mdn_max_idx = 0;
-  int t_offset = 0;
-  for (int i=1; i<LEAD_MHP_N; i++) {
-    if (net_outputs.lead[(i+1)*(LEAD_MHP_GROUP_SIZE) + t_offset - 3] >
-        net_outputs.lead[(mdn_max_idx + 1)*(LEAD_MHP_GROUP_SIZE) + t_offset - 3]) {
-      mdn_max_idx = i;
-    }
-  }
-  fill_lead(framed.initLead(), &net_outputs.lead[mdn_max_idx*(LEAD_MHP_GROUP_SIZE)], sigmoid(net_outputs.lead_prob[t_offset]));
-  // Find the distribution that corresponds to the lead in 2s
-  mdn_max_idx = 0;
-  t_offset = 1;
-  for (int i=1; i<LEAD_MHP_N; i++) {
-    if (net_outputs.lead[(i+1)*(LEAD_MHP_GROUP_SIZE) + t_offset - 3] >
-        net_outputs.lead[(mdn_max_idx + 1)*(LEAD_MHP_GROUP_SIZE) + t_offset - 3]) {
-      mdn_max_idx = i;
-    }
-  }
-  fill_lead(framed.initLeadFuture(), &net_outputs.lead[mdn_max_idx*(LEAD_MHP_GROUP_SIZE)], sigmoid(net_outputs.lead_prob[t_offset]));
+  fill_lead(framed.initLead(), net_outputs.lead, net_outputs.lead_prob, 0);
+  fill_lead(framed.initLeadFuture(), net_outputs.lead, net_outputs.lead_prob, 1);
 
   fill_meta(framed.initMeta(), net_outputs.meta);
 
