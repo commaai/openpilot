@@ -35,8 +35,11 @@ bool SLSound::init() {
   ReturnOnError((*engineInterface)->CreateOutputMix(engineInterface, &outputMix_, 1, ids, req), "Failed to create output mix");
   ReturnOnError((*outputMix_)->Realize(outputMix_, SL_BOOLEAN_FALSE), "Failed to realize output mix");
 
-  for (auto &kv : sound_map) {
-    SLDataLocator_URI locUri = {SL_DATALOCATOR_URI, (SLchar *)kv.second.first};
+  for (int i = 0; i < sizeof(sound_map) / sizeof(sound_map[0]); ++i) {
+    auto [file_path, loop_count] = sound_map[i];
+    if (!file_path) continue;
+
+    SLDataLocator_URI locUri = {SL_DATALOCATOR_URI, (SLchar *)file_path};
     SLDataFormat_MIME formatMime = {SL_DATAFORMAT_MIME, NULL, SL_CONTAINERTYPE_UNSPECIFIED};
     SLDataSource audioSrc = {&locUri, &formatMime};
     SLDataLocator_OutputMix outMix = {SL_DATALOCATOR_OUTPUTMIX, outputMix_};
@@ -49,7 +52,7 @@ bool SLSound::init() {
     ReturnOnError((*player)->GetInterface(player, SL_IID_PLAY, &playItf), "Failed to get player interface");
     ReturnOnError((*playItf)->SetPlayState(playItf, SL_PLAYSTATE_PAUSED), "Failed to initialize playstate to SL_PLAYSTATE_PAUSED");
 
-    player_[kv.first] = new SLSound::Player{player, playItf};
+    player_[(AudibleAlert)i] = new SLSound::Player{player, playItf};
   }
   return true;
 }
@@ -72,7 +75,7 @@ bool SLSound::play(AudibleAlert alert) {
   auto player = player_.at(alert);
   SLPlayItf playItf = player->playItf;
 
-  int loops = sound_map[alert].second;
+  int loops = sound_map[(int)alert].second;
   player->repeat = loops > 0 ? loops - 1 : loops;
   if (player->repeat != 0) {
     ReturnOnError((*playItf)->RegisterCallback(playItf, slplay_callback, player), "Failed to register callback");

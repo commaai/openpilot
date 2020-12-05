@@ -2,15 +2,18 @@
 #include "qt_sound.hpp"
 
 QtSound::QtSound() {
-  for (auto &kv : sound_map) {
-    auto path = QUrl::fromLocalFile(kv.second.first);
-    sounds[kv.first].setSource(path);
+  for (int i = 0; i < sizeof(sound_map) / sizeof(sound_map[0]); ++i) {
+    auto [file_path, loop_count] = sound_map[i];
+    if (!file_path) continue;
+
+    auto path = QUrl::fromLocalFile(file_path);
+    sounds[(AudibleAlert)i].setSource(path);
   }
 }
 
 bool QtSound::play(AudibleAlert alert) {
-  int loops = sound_map[alert].second> - 1 ? sound_map[alert].second : QSoundEffect::Infinite;
-  sounds[alert].setLoopCount(loops);
+  const int loops = sound_map[(int)alert].second;
+  sounds[alert].setLoopCount(loops > - 1 ? loops : QSoundEffect::Infinite);
   sounds[alert].setVolume(0.7);
   sounds[alert].play();
   return true;
@@ -19,7 +22,7 @@ bool QtSound::play(AudibleAlert alert) {
 void QtSound::stop() {
   for (auto &kv : sounds) {
     // Only stop repeating sounds
-    if (sound_map[kv.first].second != 0) {
+    if (sound_map[(int)kv.first].second != 0) {
       kv.second.stop();
     }
   }

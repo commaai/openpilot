@@ -444,18 +444,18 @@ static void ui_draw_vision_footer(UIState *s) {
 
 void ui_draw_vision_alert(UIState *s, cereal::ControlsState::AlertSize va_size, UIStatus va_color,
                           const char* va_text1, const char* va_text2) {
-  static std::map<cereal::ControlsState::AlertSize, const int> alert_size_map = {
-      {cereal::ControlsState::AlertSize::NONE, 0},
-      {cereal::ControlsState::AlertSize::SMALL, 241},
-      {cereal::ControlsState::AlertSize::MID, 390},
-      {cereal::ControlsState::AlertSize::FULL, s->fb_h}};
+  static int alert_size_map[] = {
+      [(int)cereal::ControlsState::AlertSize::NONE] = 0,
+      [(int)cereal::ControlsState::AlertSize::SMALL] = 241,
+      [(int)cereal::ControlsState::AlertSize::MID] = 390,
+      [(int)cereal::ControlsState::AlertSize::FULL] = s->fb_h};
 
   const UIScene *scene = &s->scene;
   bool longAlert1 = strlen(va_text1) > 15;
 
   NVGcolor color = bg_colors[va_color];
   color.a *= s->alert_blinking_alpha;
-  int alr_s = alert_size_map[va_size];
+  int alr_s = alert_size_map[(int)va_size];
 
   const int alr_x = scene->viz_rect.x - bdr_s;
   const int alr_w = scene->viz_rect.w + (bdr_s*2);
