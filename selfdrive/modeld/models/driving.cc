@@ -210,7 +210,7 @@ void fill_lead_v2(cereal::ModelDataV2::LeadDataV2::Builder lead, const float * d
   lead.setXyvaStd(xyva_stds_arr);
 }
 
-static int get_plan_max_idx(float *plan) {
+static const float *get_plan_data(float *plan) {
   int max_idx = 0;
   for (int i = 1; i < PLAN_MHP_N; i++) {
     if (plan[(i + 1) * (PLAN_MHP_GROUP_SIZE)-1] >
@@ -218,7 +218,7 @@ static int get_plan_max_idx(float *plan) {
       max_idx = i;
     }
   }
-  return max_idx;
+  return &plan[max_idx * (PLAN_MHP_GROUP_SIZE)];
 }
 
 static const float *get_lead_data(const float *lead, int t_offset) {
@@ -315,9 +315,7 @@ void model_publish_v2(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
   }
 
   // plan
-  const int plan_mhp_max_idx = get_plan_max_idx(net_outputs.plan);
-
-  float * best_plan = &net_outputs.plan[plan_mhp_max_idx*(PLAN_MHP_GROUP_SIZE)];
+  const float * best_plan = get_plan_data(net_outputs.plan);
   float plan_t_arr[TRAJECTORY_SIZE];
   for (int i=0; i<TRAJECTORY_SIZE; i++) {
     plan_t_arr[i] = best_plan[i*PLAN_MHP_COLUMNS + 15];
@@ -380,13 +378,12 @@ void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
   }
 
   // Find the distribution that corresponds to the most probable plan
-  const int plan_mhp_max_idx = get_plan_max_idx(net_outputs.plan);
-
+  const float *best_plan = get_plan_data(net_outputs.plan);
   // x pos at 10s is a good valid_len
   float valid_len = 0;
   float valid_len_candidate;
   for (int i=1; i<TRAJECTORY_SIZE; i++) {
-    valid_len_candidate = net_outputs.plan[plan_mhp_max_idx*(PLAN_MHP_GROUP_SIZE) + 30*i];
+    valid_len_candidate = best_plan[30*i];
     if (valid_len_candidate >= valid_len){
       valid_len = valid_len_candidate;
     }
@@ -400,7 +397,7 @@ void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
     }
   }
 
-  fill_path(framed.initPath(), &net_outputs.plan[plan_mhp_max_idx*(PLAN_MHP_GROUP_SIZE)], valid_len, valid_len_idx);
+  fill_path(framed.initPath(), best_plan, valid_len, valid_len_idx);
 
   int ll_idx = 1;
   fill_lane_line(framed.initLeftLane(), net_outputs.lane_lines, ll_idx, valid_len, valid_len_idx,
