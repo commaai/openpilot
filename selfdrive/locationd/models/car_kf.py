@@ -32,6 +32,8 @@ class States():
   YAW_RATE = _slice(1)  # [rad/s]
   STEER_ANGLE = _slice(1)  # [rad]
 
+  STEER_TORQUE = _slice(1)   # [torques?]
+
 
 class CarKalman(KalmanFilter):
   name = 'car'
@@ -43,6 +45,7 @@ class CarKalman(KalmanFilter):
     0.0,
 
     10.0, 0.0,
+    0.0,
     0.0,
     0.0,
   ])
@@ -57,11 +60,13 @@ class CarKalman(KalmanFilter):
     .1**2, .01**2,
     math.radians(0.1)**2,
     math.radians(0.1)**2,
+    10**2,
   ])
   P_initial = Q.copy()
 
   obs_noise: Dict[int, Any] = {
     ObservationKind.STEER_ANGLE: np.atleast_2d(math.radians(0.01)**2),
+    ObservationKind.STEER_TORQUE: np.atleast_2d(10),
     ObservationKind.ANGLE_OFFSET_FAST: np.atleast_2d(math.radians(10.0)**2),
     ObservationKind.STEER_RATIO: np.atleast_2d(5.0**2),
     ObservationKind.STIFFNESS: np.atleast_2d(5.0**2),
@@ -97,6 +102,7 @@ class CarKalman(KalmanFilter):
     angle_offset = state[States.ANGLE_OFFSET, :][0, 0]
     angle_offset_fast = state[States.ANGLE_OFFSET_FAST, :][0, 0]
     sa = state[States.STEER_ANGLE, :][0, 0]
+    st = state[States.STEER_TORQUE, :][0, 0]
 
     sR = state[States.STEER_RATIO, :][0, 0]
     u, v = state[States.VELOCITY, :]
@@ -120,6 +126,9 @@ class CarKalman(KalmanFilter):
     state_dot[States.VELOCITY.start + 1, 0] = x_dot[0]
     state_dot[States.YAW_RATE.start, 0] = x_dot[1]
 
+    # delta steering angle is all steering torque - holding torque
+    state_dot[States.STEER_ANGLE.start, 0] = st/15000 - sa/5
+
     # Basic descretization, 1st order integrator
     # Can be pretty bad if dt is big
     f_sym = state + dt * state_dot
@@ -132,6 +141,7 @@ class CarKalman(KalmanFilter):
       [sp.Matrix([u, v]), ObservationKind.ROAD_FRAME_XY_SPEED, None],
       [sp.Matrix([u]), ObservationKind.ROAD_FRAME_X_SPEED, None],
       [sp.Matrix([sa]), ObservationKind.STEER_ANGLE, None],
+      [sp.Matrix([st]), ObservationKind.STEER_TORQUE, None],
       [sp.Matrix([angle_offset_fast]), ObservationKind.ANGLE_OFFSET_FAST, None],
       [sp.Matrix([sR]), ObservationKind.STEER_RATIO, None],
       [sp.Matrix([x]), ObservationKind.STIFFNESS, None],

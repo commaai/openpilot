@@ -37,6 +37,7 @@ class ObservationKind:
   STIFFNESS = 28  # [-]
   STEER_RATIO = 29  # [-]
   ROAD_FRAME_X_SPEED = 30  # (x) [m/s]
+  STEER_TORQUE = 31  # [torques?]
 
   names = [
     'Unknown',
@@ -68,6 +69,8 @@ class ObservationKind:
     'Fast Angle Offset',
     'Stiffness',
     'Steer Ratio',
+    'Road Frame x speed',
+    'Steer Torque',
   ]
 
   @classmethod
