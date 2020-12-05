@@ -73,7 +73,7 @@ typedef enum UIStatus {
   STATUS_ALERT,
 } UIStatus;
 
-static NVGcolor bg_colors[] = {
+static const NVGcolor bg_colors[] = {
     [STATUS_OFFROAD] = nvgRGBA(0x07, 0x23, 0x39, 0xf1),
     [STATUS_DISENGAGED] = nvgRGBA(0x17, 0x33, 0x49, 0xc8),
     [STATUS_ENGAGED] = nvgRGBA(0x17, 0x86, 0x44, 0xf1),

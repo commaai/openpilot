@@ -4,7 +4,7 @@
 
 typedef cereal::CarControl::HUDControl::AudibleAlert AudibleAlert;
 
-static std::pair<const char *, int> sound_map[] = {
+static constexpr std::pair<const char *, int> sound_map[] = {
     // AudibleAlert, (file path, loop count)
     [(int)AudibleAlert::CHIME_DISENGAGE] = {"../assets/sounds/disengaged.wav", 0},
     [(int)AudibleAlert::CHIME_ENGAGE] = {"../assets/sounds/engaged.wav", 0},

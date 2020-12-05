@@ -21,7 +21,7 @@ static void ui_draw_sidebar_home_button(UIState *s) {
 }
 
 static void ui_draw_sidebar_network_strength(UIState *s) {
-  static int network_strength_map[] = {
+  static constexpr int network_strength_map[] = {
       [(int)cereal::ThermalData::NetworkStrength::UNKNOWN] = 1,
       [(int)cereal::ThermalData::NetworkStrength::POOR] = 2,
       [(int)cereal::ThermalData::NetworkStrength::MODERATE] = 3,
@@ -50,7 +50,7 @@ static void ui_draw_sidebar_battery_icon(UIState *s) {
 }
 
 static void ui_draw_sidebar_network_type(UIState *s) {
-  static const char *network_type_map[] = {
+  static constexpr const char *network_type_map[] = {
       [(int)cereal::ThermalData::NetworkType::NONE] = "--",
       [(int)cereal::ThermalData::NetworkType::WIFI] = "WiFi",
       [(int)cereal::ThermalData::NetworkType::CELL2_G] = "2G",
@@ -114,7 +114,7 @@ static void ui_draw_sidebar_metric(UIState *s, const char* label_str, const char
 }
 
 static void ui_draw_sidebar_temp_metric(UIState *s) {
-  static int temp_severity_map[] = {
+  static constexpr int temp_severity_map[] = {
       [(int)cereal::ThermalData::ThermalStatus::GREEN] = 0,
       [(int)cereal::ThermalData::ThermalStatus::YELLOW] = 1,
       [(int)cereal::ThermalData::ThermalStatus::RED] = 2,
@@ -144,7 +144,7 @@ static void ui_draw_sidebar_panda_metric(UIState *s) {
 }
 
 static void ui_draw_sidebar_connectivity(UIState *s) {
-  static std::pair<const char *, int> connectivity_map[] = {
+  static constexpr std::pair<const char *, int> connectivity_map[] = {
       [NET_ERROR] = {"CONNECT\nERROR", 2},
       [NET_CONNECTED] = {"CONNECT\nONLINE", 0},
       [NET_DISCONNECTED] = {"CONNECT\nOFFLINE", 1}};

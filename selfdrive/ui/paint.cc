@@ -444,7 +444,7 @@ static void ui_draw_vision_footer(UIState *s) {
 
 void ui_draw_vision_alert(UIState *s, cereal::ControlsState::AlertSize va_size, UIStatus va_color,
                           const char* va_text1, const char* va_text2) {
-  static int alert_size_map[] = {
+  static const int alert_size_map[] = {
       [(int)cereal::ControlsState::AlertSize::NONE] = 0,
       [(int)cereal::ControlsState::AlertSize::SMALL] = 241,
       [(int)cereal::ControlsState::AlertSize::MID] = 390,
