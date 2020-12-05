@@ -474,7 +474,6 @@ FW_VERSIONS = {
       b'57114-TGG-L320\x00\x00',
       b'57114-TGG-L330\x00\x00',
       b'57114-TGL-G330\x00\x00',
-
     ],
     (Ecu.eps, 0x18da30f1, None): [
       b'39990-TBA-C020\x00\x00',
@@ -601,8 +600,7 @@ FW_VERSIONS = {
       b'46114-TLA-A040\x00\x00',
       b'46114-TLA-A050\x00\x00',
       b'46114-TLA-A930\x00\x00',
-      b'46114-TMC-U020\x00\x00',
-      b'39494-TGL-G030\x00\x00',
+      b'46114-TMC-U020\x00\x00',      
     ],
     (Ecu.combinationMeter, 0x18da60f1, None): [
       b'78109-TLA-A110\x00\x00',
