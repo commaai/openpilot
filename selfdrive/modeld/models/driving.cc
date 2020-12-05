@@ -354,8 +354,7 @@ void model_publish_v2(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
   framed.setRoadEdgeStds(road_edge_stds_arr);
 
   // meta
-  auto meta = framed.initMeta();
-  fill_meta(meta, net_outputs.meta);
+  fill_meta(framed.initMeta(), net_outputs.meta);
 
   // leads
   auto leads = framed.initLeads(LEAD_MHP_SELECTION);
@@ -406,16 +405,13 @@ void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
     }
   }
 
-  auto lpath = framed.initPath();
-  fill_path(lpath, &net_outputs.plan[plan_mhp_max_idx*(PLAN_MHP_GROUP_SIZE)], valid_len, valid_len_idx);
+  fill_path(framed.initPath(), &net_outputs.plan[plan_mhp_max_idx*(PLAN_MHP_GROUP_SIZE)], valid_len, valid_len_idx);
 
-  auto left_lane = framed.initLeftLane();
   int ll_idx = 1;
-  fill_lane_line(left_lane, net_outputs.lane_lines, ll_idx, valid_len, valid_len_idx,
+  fill_lane_line(framed.initLeftLane(), net_outputs.lane_lines, ll_idx, valid_len, valid_len_idx,
             sigmoid(net_outputs.lane_lines_prob[ll_idx]));
-  auto right_lane = framed.initRightLane();
   ll_idx = 2;
-  fill_lane_line(right_lane, net_outputs.lane_lines, ll_idx, valid_len, valid_len_idx,
+  fill_lane_line(framed.initRightLane(), net_outputs.lane_lines, ll_idx, valid_len, valid_len_idx,
             sigmoid(net_outputs.lane_lines_prob[ll_idx]));
 
   fill_lead(framed.initLead(), net_outputs.lead, net_outputs.lead_prob, 0);
