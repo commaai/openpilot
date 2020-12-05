@@ -600,7 +600,7 @@ FW_VERSIONS = {
       b'46114-TLA-A040\x00\x00',
       b'46114-TLA-A050\x00\x00',
       b'46114-TLA-A930\x00\x00',
-      b'46114-TMC-U020\x00\x00',      
+      b'46114-TMC-U020\x00\x00',
     ],
     (Ecu.combinationMeter, 0x18da60f1, None): [
       b'78109-TLA-A110\x00\x00',
