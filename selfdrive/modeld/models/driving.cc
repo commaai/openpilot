@@ -221,7 +221,7 @@ static int get_plan_max_idx(float *plan) {
   return max_idx;
 }
 
-static int get_mdn_max_idx(const float *lead, int t_offset) {
+static const float *get_lead_data(const float *lead, int t_offset) {
   int mdn_max_idx = 0;
   for (int i = 1; i < LEAD_MHP_N; i++) {
     if (lead[(i + 1) * (LEAD_MHP_GROUP_SIZE) + t_offset - LEAD_MHP_SELECTION] >
@@ -229,12 +229,11 @@ static int get_mdn_max_idx(const float *lead, int t_offset) {
       mdn_max_idx = i;
     }
   }
-  return mdn_max_idx;
+  return &lead[mdn_max_idx*(LEAD_MHP_GROUP_SIZE)];
 }
 
 void fill_lead(cereal::ModelData::LeadData::Builder lead, const float *lead_data, const float *prob, int t_offset) {
-  const int mdn_max_idx = get_mdn_max_idx(lead_data, t_offset);
-  const float *data = &lead_data[mdn_max_idx*(LEAD_MHP_GROUP_SIZE)];
+  const float *data = get_lead_data(lead_data, t_offset);
   lead.setProb(sigmoid(prob[t_offset]));
   lead.setDist(data[0]);
   lead.setStd(exp(data[LEAD_MHP_VALS]));
@@ -289,9 +288,6 @@ void fill_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const float * data,
     z_arr[i] = data[i*columns + 2 + column_offset];
     //z_std_arr[i] = data[columns*(TRAJECTORY_SIZE + i) + 2 + column_offset];
   }
-  //kj::ArrayPtr<const float> x_std(x_std_arr, TRAJECTORY_SIZE);
-  //kj::ArrayPtr<const float> y_std(y_std_arr, TRAJECTORY_SIZE);
-  //kj::ArrayPtr<const float> z_std(z_std_arr, TRAJECTORY_SIZE);
   xyzt.setX(x_arr);
   xyzt.setY(y_arr);
   xyzt.setZ(z_arr);
@@ -360,8 +356,7 @@ void model_publish_v2(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
   auto leads = framed.initLeads(LEAD_MHP_SELECTION);
   float t_offsets[LEAD_MHP_SELECTION] = {0.0, 2.0, 4.0};
   for (int t_offset = 0; t_offset < LEAD_MHP_SELECTION; t_offset++) {
-    const int mdn_max_idx = get_mdn_max_idx(net_outputs.lead, t_offsets[t_offset]);
-    fill_lead_v2(leads[t_offset], &net_outputs.lead[mdn_max_idx * (LEAD_MHP_GROUP_SIZE)],
+    fill_lead_v2(leads[t_offset], get_lead_data(net_outputs.lead, t_offsets[t_offset]),
                  sigmoid(net_outputs.lead_prob[t_offset]), t_offsets[t_offset]);
   }
   pm.send("modelV2", msg);
