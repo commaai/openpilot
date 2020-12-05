@@ -220,6 +220,19 @@ void fill_lead_v2(cereal::ModelDataV2::LeadDataV2::Builder lead, const float *le
   lead.setXyvaStd(xyva_stds_arr);
 }
 
+
+static const float *get_lead_data(const float *lead, int t_offset) {
+  const float *data = &lead[0];
+  for (int i = 1; i < LEAD_MHP_N; ++i) {
+    const float *cur = &lead[i * LEAD_MHP_GROUP_SIZE + t_offset - LEAD_MHP_SELECTION];
+    if (*cur > *data) {
+      data = cur;
+    }
+  }
+  return data;
+}
+
+>>>>>>> e5d90d0a (combine fill_lane_line&fill_path into one function)
 void fill_lead(cereal::ModelData::LeadData::Builder lead, const float *lead_data, const float *prob, int t_offset) {
   const float *data = get_lead_data(lead_data, t_offset);
   lead.setProb(sigmoid(prob[t_offset]));
@@ -260,7 +273,7 @@ void fill_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const float * data,
   //float y_std_arr[TRAJECTORY_SIZE];
   //float z_std_arr[TRAJECTORY_SIZE];
   float t_arr[TRAJECTORY_SIZE];
-  for (int i=0; i<TRAJECTORY_SIZE; i++) {
+  for (int i=0; i<TRAJECTORY_SIZE; ++i) {
     // column_offset == -1 means this data is X indexed not T indexed
     if (column_offset >= 0) {
       t_arr[i] = T_IDXS[i];
