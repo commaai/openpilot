@@ -210,6 +210,17 @@ void fill_lead_v2(cereal::ModelDataV2::LeadDataV2::Builder lead, const float * d
   lead.setXyvaStd(xyva_stds_arr);
 }
 
+static int get_plan_max_idx(float *plan) {
+  int max_idx = 0;
+  for (int i = 1; i < PLAN_MHP_N; i++) {
+    if (plan[(i + 1) * (PLAN_MHP_GROUP_SIZE)-1] >
+        plan[(max_idx + 1) * (PLAN_MHP_GROUP_SIZE)-1]) {
+      max_idx = i;
+    }
+  }
+  return max_idx;
+}
+
 void fill_lead(cereal::ModelData::LeadData::Builder lead, const float * data, float prob) {
   lead.setProb(prob);
   lead.setDist(data[0]);
@@ -296,13 +307,7 @@ void model_publish_v2(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
   }
 
   // plan
-  int plan_mhp_max_idx = 0;
-  for (int i=1; i<PLAN_MHP_N; i++) {
-    if (net_outputs.plan[(i + 1)*(PLAN_MHP_GROUP_SIZE) - 1] >
-        net_outputs.plan[(plan_mhp_max_idx + 1)*(PLAN_MHP_GROUP_SIZE) - 1]) {
-      plan_mhp_max_idx = i;
-    }
-  }
+  const int plan_mhp_max_idx = get_plan_max_idx(net_outputs.plan);
 
   float * best_plan = &net_outputs.plan[plan_mhp_max_idx*(PLAN_MHP_GROUP_SIZE)];
   float plan_t_arr[TRAJECTORY_SIZE];
@@ -375,13 +380,7 @@ void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
   }
 
   // Find the distribution that corresponds to the most probable plan
-  int plan_mhp_max_idx = 0;
-  for (int i=1; i<PLAN_MHP_N; i++) {
-    if (net_outputs.plan[(i + 1)*(PLAN_MHP_GROUP_SIZE) - 1] >
-        net_outputs.plan[(plan_mhp_max_idx + 1)*(PLAN_MHP_GROUP_SIZE) - 1]) {
-      plan_mhp_max_idx = i;
-    }
-  }
+  const int plan_mhp_max_idx = get_plan_max_idx(net_outputs.plan);
 
   // x pos at 10s is a good valid_len
   float valid_len = 0;
