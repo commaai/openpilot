@@ -157,47 +157,30 @@ void poly_fit(float *in_pts, float *in_stds, float *out, int valid_len) {
   out[3] = y0;
 }
 
-void fill_path(cereal::ModelData::PathData::Builder path, const float * data, float valid_len, int valid_len_idx) {
-  float points_arr[TRAJECTORY_SIZE];
-  float stds_arr[TRAJECTORY_SIZE];
-  float poly_arr[POLYFIT_DEGREE];
-  float std;
+void fill_path(cereal::ModelData::PathData::Builder path, const float *data, const float prob, float valid_len, int valid_len_idx, int ll_idx) {
+  float points_arr[TRAJECTORY_SIZE] = {};
+  float stds_arr[TRAJECTORY_SIZE] = {};
+  float poly_arr[POLYFIT_DEGREE] = {};
 
   for (int i=0; i<TRAJECTORY_SIZE; i++) {
     // negative sign because mpc has left positive
-    points_arr[i] = -data[30*i + 16];
-    stds_arr[i] = exp(data[30*(33 + i) + 16]);
+    if (ll_idx == 0) {
+      points_arr[i] = -data[30 * i + 16];
+      stds_arr[i] = exp(data[30 * (33 + i) + 16]);
+    } else {
+      points_arr[i] = -data[2 * 33 * ll_idx + 2 * i];
+      stds_arr[i] = exp(data[2 * 33 * (4 + ll_idx) + 2 * i]);
+    }
   }
-  std = stds_arr[0];
   poly_fit(points_arr, stds_arr, poly_arr, valid_len_idx);
 
   path.setPoly(poly_arr);
-  path.setProb(1.0);
-  path.setStd(std);
+  path.setProb(prob);
+  path.setStd(stds_arr[0]);
   path.setValidLen(valid_len);
 }
 
-void fill_lane_line(cereal::ModelData::PathData::Builder path, const float * data, const float *prob, float valid_len, int valid_len_idx, int ll_idx) {
-  float points_arr[TRAJECTORY_SIZE];
-  float stds_arr[TRAJECTORY_SIZE];
-  float poly_arr[POLYFIT_DEGREE];
-  float std;
-
-  for (int i=0; i<TRAJECTORY_SIZE; i++) {
-    // negative sign because mpc has left positive
-    points_arr[i] = -data[2*33*ll_idx + 2*i];
-    stds_arr[i] = exp(data[2*33*(4 + ll_idx) + 2*i]);
-  }
-  std = stds_arr[0];
-  poly_fit(points_arr, stds_arr, poly_arr, valid_len_idx);
-
-  path.setPoly(poly_arr);
-  path.setProb(sigmoid(prob[ll_idx]));
-  path.setStd(std);
-  path.setValidLen(valid_len);
-}
-
-void fill_lead_v2(cereal::ModelDataV2::LeadDataV2::Builder lead, const float * data, float prob, float t) {
+void fill_lead_v2(cereal::ModelDataV2::LeadDataV2::Builder lead, const float *data, float prob, float t) {
   lead.setProb(prob);
   lead.setT(t);
   float xyva_arr[LEAD_MHP_VALS];
@@ -211,25 +194,24 @@ void fill_lead_v2(cereal::ModelDataV2::LeadDataV2::Builder lead, const float * d
 }
 
 static const float *get_plan_data(float *plan) {
-  int max_idx = 0;
-  for (int i = 1; i < PLAN_MHP_N; i++) {
-    if (plan[(i + 1) * (PLAN_MHP_GROUP_SIZE)-1] >
-        plan[(max_idx + 1) * (PLAN_MHP_GROUP_SIZE)-1]) {
-      max_idx = i;
+  const float *data = &plan[0];
+  for (int i = 1; i < PLAN_MHP_N; ++i) {
+    if (const float *cur = &plan[i * PLAN_MHP_GROUP_SIZE-1]; *cur > *data) {
+      data = cur;
     }
   }
-  return &plan[max_idx * (PLAN_MHP_GROUP_SIZE)];
+  return data;
 }
 
 static const float *get_lead_data(const float *lead, int t_offset) {
-  int mdn_max_idx = 0;
-  for (int i = 1; i < LEAD_MHP_N; i++) {
-    if (lead[(i + 1) * (LEAD_MHP_GROUP_SIZE) + t_offset - LEAD_MHP_SELECTION] >
-        lead[(mdn_max_idx + 1) * (LEAD_MHP_GROUP_SIZE) + t_offset - LEAD_MHP_SELECTION]) {
-      mdn_max_idx = i;
+  const float *data = &lead[0];
+  for (int i = 1; i < LEAD_MHP_N; ++i) {
+    const float *cur = &lead[i * LEAD_MHP_GROUP_SIZE + t_offset - LEAD_MHP_SELECTION];
+    if (*cur > *data) {
+      data = cur;
     }
   }
-  return &lead[mdn_max_idx*(LEAD_MHP_GROUP_SIZE)];
+  return data;
 }
 
 void fill_lead(cereal::ModelData::LeadData::Builder lead, const float *lead_data, const float *prob, int t_offset) {
@@ -272,7 +254,7 @@ void fill_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const float * data,
   //float y_std_arr[TRAJECTORY_SIZE];
   //float z_std_arr[TRAJECTORY_SIZE];
   float t_arr[TRAJECTORY_SIZE];
-  for (int i=0; i<TRAJECTORY_SIZE; i++) {
+  for (int i=0; i<TRAJECTORY_SIZE; ++i) {
     // column_offset == -1 means this data is X indexed not T indexed
     if (column_offset >= 0) {
       t_arr[i] = T_IDXS[i];
@@ -304,7 +286,7 @@ void model_publish_v2(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
   // make msg
   MessageBuilder msg;
   auto framed = msg.initEvent().initModelV2();
-  uint32_t frame_age = (frame_id > vipc_frame_id) ? (frame_id - vipc_frame_id) : 0;
+  const uint32_t frame_age = (frame_id > vipc_frame_id) ? (frame_id - vipc_frame_id) : 0;
   framed.setFrameId(vipc_frame_id);
   framed.setFrameAge(frame_age);
   framed.setFrameDropPerc(frame_drop * 100);
@@ -315,7 +297,7 @@ void model_publish_v2(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
   }
 
   // plan
-  const float * best_plan = get_plan_data(net_outputs.plan);
+  const float *best_plan = get_plan_data(net_outputs.plan);
   float plan_t_arr[TRAJECTORY_SIZE];
   for (int i=0; i<TRAJECTORY_SIZE; i++) {
     plan_t_arr[i] = best_plan[i*PLAN_MHP_COLUMNS + 15];
@@ -381,11 +363,9 @@ void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
   const float *best_plan = get_plan_data(net_outputs.plan);
   // x pos at 10s is a good valid_len
   float valid_len = 0;
-  float valid_len_candidate;
   for (int i=1; i<TRAJECTORY_SIZE; i++) {
-    valid_len_candidate = best_plan[30*i];
-    if (valid_len_candidate >= valid_len){
-      valid_len = valid_len_candidate;
+    if (const float len = best_plan[30*i]; len >= valid_len){
+      valid_len = len;
     }
   }
   // clamp to 10 and MODEL_PATH_DISTANCE
@@ -397,10 +377,10 @@ void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
     }
   }
 
-  fill_path(framed.initPath(), best_plan, valid_len, valid_len_idx);
+  fill_path(framed.initPath(), best_plan, 1.0, valid_len, valid_len_idx, 0);
 
-  fill_lane_line(framed.initLeftLane(), net_outputs.lane_lines, net_outputs.lane_lines_prob, valid_len, valid_len_idx, 1);
-  fill_lane_line(framed.initRightLane(), net_outputs.lane_lines, net_outputs.lane_lines_prob, valid_len, valid_len_idx, 2);
+  fill_path(framed.initLeftLane(), net_outputs.lane_lines, net_outputs.lane_lines_prob[1], valid_len, valid_len_idx, 1);
+  fill_path(framed.initRightLane(), net_outputs.lane_lines, net_outputs.lane_lines_prob[2], valid_len, valid_len_idx, 2);
 
   fill_lead(framed.initLead(), net_outputs.lead, net_outputs.lead_prob, 0);
   fill_lead(framed.initLeadFuture(), net_outputs.lead, net_outputs.lead_prob, 1);
