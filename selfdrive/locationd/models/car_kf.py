@@ -34,6 +34,9 @@ class States():
 
   STEER_TORQUE = _slice(1)   # [torques?]
 
+  STEER_TORQUE_FACTOR = _slice(1)
+  STEER_CENTERING_TORQUE_FACTOR = _slice(1)
+
 
 class CarKalman(KalmanFilter):
   name = 'car'
@@ -48,6 +51,8 @@ class CarKalman(KalmanFilter):
     0.0,
     0.0,
     0.0,
+
+    15000.0, 80.0
   ])
 
   # process noise
@@ -61,6 +66,8 @@ class CarKalman(KalmanFilter):
     math.radians(0.1)**2,
     math.radians(0.1)**2,
     10**2,
+
+    0.1**2, 0.01**2
   ])
   P_initial = Q.copy()
 
@@ -126,8 +133,12 @@ class CarKalman(KalmanFilter):
     state_dot[States.VELOCITY.start + 1, 0] = x_dot[0]
     state_dot[States.YAW_RATE.start, 0] = x_dot[1]
 
-    # delta steering angle is all steering torque - holding torque
-    state_dot[States.STEER_ANGLE.start, 0] = st/15000 - sa/5
+    # delta steering angle is applied steering torque - holding torque (linear function of steering angle * velocity?)
+    # TODO: should this factor be sa or (sa - angle_offset - angle_offset_fast)?
+    # TODO: there has to be a real model for this, and we can use it everywhere
+    stf = state[States.STEER_TORQUE_FACTOR, :][0, 0]
+    sctf = state[States.STEER_CENTERING_TORQUE_FACTOR, :][0, 0]
+    state_dot[States.STEER_ANGLE.start, 0] = st/stf - ((sa - angle_offset - angle_offset_fast)*u)/sctf
 
     # Basic descretization, 1st order integrator
     # Can be pretty bad if dt is big
