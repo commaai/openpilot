@@ -41,14 +41,13 @@ from typing import List, Tuple, Optional
 
 from common.basedir import BASEDIR
 from common.params import Params
-from selfdrive.hardware import EON, TICI
+from selfdrive.hardware import EON, TICI, HARDWARE
 from selfdrive.swaglog import cloudlog
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
 
 LOCK_FILE = os.getenv("UPDATER_LOCK_FILE", "/tmp/safe_staging_overlay.lock")
 STAGING_ROOT = os.getenv("UPDATER_STAGING_ROOT", "/data/safe_staging")
 
-NEOS_VERSION = os.getenv("UPDATER_NEOS_VERSION", "/VERSION")
 NEOSUPDATE_DIR = os.getenv("UPDATER_NEOSUPDATE_DIR", "/data/neoupdate")
 
 OVERLAY_UPPER = os.path.join(STAGING_ROOT, "upper")
@@ -273,7 +272,7 @@ def unsparsify(f):
     _ = struct.unpack("I", f.read(4))[0]
 
     if chunk_type == 0xcac1:  # Raw
-      # TODO: yield in smaller chunks. Yielding only block_sz is too slow. Larged observed data chunk is 252 MB.
+      # TODO: yield in smaller chunks. Yielding only block_sz is too slow. Largest observed data chunk is 252 MB.
       yield f.read(out_blocks * block_sz)
     elif chunk_type == 0xcac2:  # Fill
       filler = f.read(4) * (block_sz // 4)
@@ -286,11 +285,9 @@ def unsparsify(f):
 
 
 def handle_agnos_update(wait_helper):
-  with open(NEOS_VERSION, "r") as f:
-    cur_version = f.read().strip()
-
+  cur_version = HARDWARE.get_os_version()
   updated_version = run(["bash", "-c", r"unset AGNOS_VERSION && source launch_env.sh && \
-                       echo -n $AGNOS_VERSION"], OVERLAY_MERGED).strip()
+                          echo -n $AGNOS_VERSION"], OVERLAY_MERGED).strip()
 
   cloudlog.info(f"AGNOS version check: {cur_version} vs {updated_version}")
   if cur_version == updated_version:
@@ -298,17 +295,17 @@ def handle_agnos_update(wait_helper):
 
   cloudlog.info(f"Beginning background installation for AGNOS {updated_version}")
 
-  update = json.load(open(os.path.join(OVERLAY_MERGED, "installer/updater/update_agnos.json")))
+  update = json.load(open(os.path.join(BASEDIR, "installer/updater/update_agnos.json")))
 
   current_slot = subprocess.check_output(["abctl", "--boot_slot"], encoding='utf-8').strip()
   target_slot = "_b" if current_slot == "_a" else "_a"
-  # target_slot_number = "0" if target_slot == "_a" else "1"
+  target_slot_number = "0" if target_slot == "_a" else "1"
 
   # set target slot as unbootable
   #os.system(f"abctl --set_unbootable {target_slot_number}")
 
   for partition in update:
-    cloudlog.info(f"Downloading {partition['name']}")
+    cloudlog.info(f"Downloading and writing {partition['name']}")
 
     downloader = StreamingDecompressor(partition['url'])
     with open(f"/dev/disk/by-partlabel/{partition['name']}{target_slot}", 'wb') as out:
@@ -318,8 +315,8 @@ def handle_agnos_update(wait_helper):
           raw_hash.update(chunk)
           out.write(chunk)
 
-        if raw_hash.hexdigest().lower() != partition['raw_hash'].lower():
-          raise Exception("Unsparse hash mismatch")
+        if raw_hash.hexdigest().lower() != partition['hash_raw'].lower():
+          raise Exception(f"Unsparse hash mismatch '{raw_hash.hexdigest().lower()}'")
       else:
         while not downloader.eof:
           out.write(downloader.read(1024 * 1024))
@@ -327,16 +324,14 @@ def handle_agnos_update(wait_helper):
     if downloader.sha256.hexdigest().lower() != partition['hash'].lower():
       raise Exception("Uncompressed hash mismatch")
 
-  cloudlog.info("AGNOS update successful")
-
   # TODO: this should be done at the same time as the openpilot swap
-  # run(["abctl", "--set_active", target_slot_number])
+  run(["abctl", "--set_active", target_slot_number])
+
+  cloudlog.info("AGNOS update successful")
 
 
 def handle_neos_update(wait_helper: WaitTimeHelper) -> None:
-  with open(NEOS_VERSION, "r") as f:
-    cur_neos = f.read().strip()
-
+  cur_neos = HARDWARE.get_os_version()
   updated_neos = run(["bash", "-c", r"unset REQUIRED_NEOS_VERSION && source launch_env.sh && \
                        echo -n $REQUIRED_NEOS_VERSION"], OVERLAY_MERGED).strip()
 

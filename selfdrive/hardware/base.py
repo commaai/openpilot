@@ -22,6 +22,9 @@ class HardwareBase:
 
   @abstractmethod
   def uninstall(self):
+
+  @abstractmethod
+  def get_os_version(self):
     pass
 
   @abstractmethod
