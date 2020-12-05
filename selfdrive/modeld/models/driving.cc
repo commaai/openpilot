@@ -177,7 +177,7 @@ void fill_path(cereal::ModelData::PathData::Builder path, const float * data, fl
   path.setValidLen(valid_len);
 }
 
-void fill_lane_line(cereal::ModelData::PathData::Builder path, const float * data, int ll_idx, float valid_len, int valid_len_idx, float prob) {
+void fill_lane_line(cereal::ModelData::PathData::Builder path, const float * data, const float *prob, float valid_len, int valid_len_idx, int ll_idx) {
   float points_arr[TRAJECTORY_SIZE];
   float stds_arr[TRAJECTORY_SIZE];
   float poly_arr[POLYFIT_DEGREE];
@@ -192,7 +192,7 @@ void fill_lane_line(cereal::ModelData::PathData::Builder path, const float * dat
   poly_fit(points_arr, stds_arr, poly_arr, valid_len_idx);
 
   path.setPoly(poly_arr);
-  path.setProb(prob);
+  path.setProb(sigmoid(prob[ll_idx]));
   path.setStd(std);
   path.setValidLen(valid_len);
 }
@@ -399,12 +399,8 @@ void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
 
   fill_path(framed.initPath(), best_plan, valid_len, valid_len_idx);
 
-  int ll_idx = 1;
-  fill_lane_line(framed.initLeftLane(), net_outputs.lane_lines, ll_idx, valid_len, valid_len_idx,
-            sigmoid(net_outputs.lane_lines_prob[ll_idx]));
-  ll_idx = 2;
-  fill_lane_line(framed.initRightLane(), net_outputs.lane_lines, ll_idx, valid_len, valid_len_idx,
-            sigmoid(net_outputs.lane_lines_prob[ll_idx]));
+  fill_lane_line(framed.initLeftLane(), net_outputs.lane_lines, net_outputs.lane_lines_prob, valid_len, valid_len_idx, 1);
+  fill_lane_line(framed.initRightLane(), net_outputs.lane_lines, net_outputs.lane_lines_prob, valid_len, valid_len_idx, 2);
 
   fill_lead(framed.initLead(), net_outputs.lead, net_outputs.lead_prob, 0);
   fill_lead(framed.initLeadFuture(), net_outputs.lead, net_outputs.lead_prob, 1);
