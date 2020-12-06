@@ -270,23 +270,7 @@ void fill_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const float * data,
   xyzt.setT(t);
 }
 
-void model_publish_v2(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
-                     uint32_t vipc_dropped_frames, float frame_drop,
-                     const ModelDataRaw &net_outputs, const float* raw_pred, uint64_t timestamp_eof,
-                     float model_execution_time) {
-  // make msg
-  MessageBuilder msg;
-  auto framed = msg.initEvent().initModelV2();
-  const uint32_t frame_age = (frame_id > vipc_frame_id) ? (frame_id - vipc_frame_id) : 0;
-  framed.setFrameId(vipc_frame_id);
-  framed.setFrameAge(frame_age);
-  framed.setFrameDropPerc(frame_drop * 100);
-  framed.setTimestampEof(timestamp_eof);
-  framed.setModelExecutionTime(model_execution_time);
-  if (send_raw_pred) {
-    framed.setRawPred(kj::arrayPtr((const uint8_t*)raw_pred, (OUTPUT_SIZE+TEMPORAL_SIZE)*sizeof(float)));
-  }
-
+void fill_model(cereal::ModelDataV2::Builder &framed, const ModelDataRaw &net_outputs) {
   // plan
   const float *best_plan = get_plan_data(net_outputs.plan);
   float plan_t[TRAJECTORY_SIZE];
@@ -329,26 +313,9 @@ void model_publish_v2(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
   for (int t_offset = 0; t_offset < LEAD_MHP_SELECTION; t_offset++) {
     fill_lead_v2(leads[t_offset], net_outputs.lead, net_outputs.lead_prob[t_offset], t_offsets[t_offset]);
   }
-  pm.send("modelV2", msg);
 }
 
-void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
-                   uint32_t vipc_dropped_frames, float frame_drop,
-                   const ModelDataRaw &net_outputs, const float* raw_pred, uint64_t timestamp_eof,
-                   float model_execution_time) {
-
-  uint32_t frame_age = (frame_id > vipc_frame_id) ? (frame_id - vipc_frame_id) : 0;
-  MessageBuilder msg;
-  auto framed = msg.initEvent().initModel();
-  framed.setFrameId(vipc_frame_id);
-  framed.setFrameAge(frame_age);
-  framed.setFrameDropPerc(frame_drop * 100);
-  framed.setTimestampEof(timestamp_eof);
-  framed.setModelExecutionTime(model_execution_time);
-  if (send_raw_pred) {
-    framed.setRawPred(kj::arrayPtr((const uint8_t*)raw_pred, (OUTPUT_SIZE+TEMPORAL_SIZE)*sizeof(float)));
-  }
-
+void fill_model(cereal::ModelData::Builder &framed, const ModelDataRaw &net_outputs) {
   // Find the distribution that corresponds to the most probable plan
   const float *best_plan = get_plan_data(net_outputs.plan);
   // x pos at 10s is a good valid_len
@@ -366,7 +333,6 @@ void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
       valid_len_idx = i;
     }
   }
-
   fill_path(framed.initPath(), best_plan, 1.0, valid_len, valid_len_idx, 0);
   fill_path(framed.initLeftLane(), net_outputs.lane_lines, net_outputs.lane_lines_prob[1], valid_len, valid_len_idx, 1);
   fill_path(framed.initRightLane(), net_outputs.lane_lines, net_outputs.lane_lines_prob[2], valid_len, valid_len_idx, 2);
@@ -375,8 +341,29 @@ void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
   fill_lead(framed.initLeadFuture(), net_outputs.lead, net_outputs.lead_prob, 1);
 
   fill_meta(framed.initMeta(), net_outputs.meta);
+}
 
-  pm.send("model", msg);
+void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
+                   uint32_t vipc_dropped_frames, float frame_drop,
+                   const ModelDataRaw &net_outputs, const float *raw_pred, uint64_t timestamp_eof,
+                   float model_execution_time) {
+  const uint32_t frame_age = (frame_id > vipc_frame_id) ? (frame_id - vipc_frame_id) : 0;
+  auto do_publish = [&](auto init_model_func, const char *pub_name) {
+    MessageBuilder msg;
+    auto framed = (msg.initEvent().*(init_model_func))();
+    framed.setFrameId(vipc_frame_id);
+    framed.setFrameAge(frame_age);
+    framed.setFrameDropPerc(frame_drop * 100);
+    framed.setTimestampEof(timestamp_eof);
+    framed.setModelExecutionTime(model_execution_time);
+    if (send_raw_pred) {
+      framed.setRawPred(kj::arrayPtr((const uint8_t *)raw_pred, (OUTPUT_SIZE + TEMPORAL_SIZE) * sizeof(float)));
+    }
+    fill_model(framed, net_outputs);
+    pm.send(pub_name, msg);
+  };
+  do_publish(&cereal::Event::Builder::initModel, "model");
+  do_publish(&cereal::Event::Builder::initModelV2, "modelV2");
 }
 
 void posenet_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
