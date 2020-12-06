@@ -123,7 +123,6 @@ int main(int argc, char **argv) {
   // cl init
   cl_device_id device_id = cl_get_device_id(device_type);
   cl_context context = CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id, NULL, NULL, &err));
-  cl_command_queue q = CL_CHECK_ERR(clCreateCommandQueue(context, device_id, 0, &err));
 
   // init the models
   ModelState model;
@@ -190,7 +189,7 @@ int main(int argc, char **argv) {
         memcpy(yuv_ion.addr, buf->addr, buf_info.buf_len);
 
         ModelDataRaw model_buf =
-            model_eval_frame(&model, q, yuv_ion.buf_cl, buf_info.width, buf_info.height,
+            model_eval_frame(&model, yuv_ion.buf_cl, buf_info.width, buf_info.height,
                              model_transform, vec_desire);
         mt2 = millis_since_boot();
         float model_execution_time = (mt2 - mt1) / 1000.0;
@@ -221,8 +220,6 @@ int main(int argc, char **argv) {
   err = pthread_join(live_thread_handle, NULL);
   assert(err == 0);
   CL_CHECK(clReleaseContext(context));
-  CL_CHECK(clReleaseCommandQueue(q));
-
   pthread_mutex_destroy(&transform_lock);
   return 0;
 }
