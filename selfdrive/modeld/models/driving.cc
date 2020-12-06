@@ -233,7 +233,6 @@ static const float *get_lead_data(const float *lead, int t_offset) {
   return data;
 }
 
->>>>>>> e5d90d0a (combine fill_lane_line&fill_path into one function)
 void fill_lead(cereal::ModelData::LeadData::Builder lead, const float *lead_data, const float *prob, int t_offset) {
   const float *data = get_lead_data(lead_data, t_offset);
   lead.setProb(sigmoid(prob[t_offset]));
@@ -290,8 +289,7 @@ void fill_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const float * data,
     z_arr[i] = data[i*columns + 2 + column_offset];
     //z_std_arr[i] = data[columns*(TRAJECTORY_SIZE + i) + 2 + column_offset];
   }
-  xyzt.setX(x_arr);
-  xyzt.setY(y_arr);
+  xyzt.setX(x_arr), xyzt.setY(y_arr);
   xyzt.setZ(z_arr);
   //xyzt.setXStd(x_std);
   //xyzt.setYStd(y_std);
