@@ -12,7 +12,7 @@ int main(int argc, char *argv[]) {
   setMainWindow(&window);
 
   QVBoxLayout *layout = new QVBoxLayout();
-  layout->setContentsMargins(30, 30, 30, 30);
+  layout->setContentsMargins(125, 125, 125, 125);
 
   // TODO: make this scroll
   layout->addWidget(new QLabel(argv[1]), 0, Qt::AlignTop);

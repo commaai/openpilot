@@ -22,11 +22,8 @@ void dmonitoring_init(DMonitoringModelState* s) {
 #else
   const char* model_path = "../../models/dmonitoring_model.dlc";
 #endif
-#ifdef QCOM2
-  int runtime = USE_CPU_RUNTIME;
-#else
+
   int runtime = USE_DSP_RUNTIME;
-#endif
   s->m = new DefaultRunModel(model_path, (float*)&s->output, OUTPUT_SIZE, runtime);
   s->is_rhd = Params().read_db_bool("IsRHD");
 }
@@ -184,27 +181,26 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
   return ret;
 }
 
-void dmonitoring_publish(PubMaster &pm, uint32_t frame_id, const DMonitoringResult &res, float execution_time){
+void dmonitoring_publish(PubMaster &pm, uint32_t frame_id, const DMonitoringResult &res, const float* raw_pred, float execution_time){
   // make msg
   MessageBuilder msg;
   auto framed = msg.initEvent().initDriverState();
   framed.setFrameId(frame_id);
   framed.setModelExecutionTime(execution_time);
 
-  kj::ArrayPtr<const float> face_orientation(&res.face_orientation[0], ARRAYSIZE(res.face_orientation));
-  kj::ArrayPtr<const float> face_orientation_std(&res.face_orientation_meta[0], ARRAYSIZE(res.face_orientation_meta));
-  kj::ArrayPtr<const float> face_position(&res.face_position[0], ARRAYSIZE(res.face_position));
-  kj::ArrayPtr<const float> face_position_std(&res.face_position_meta[0], ARRAYSIZE(res.face_position_meta));
-  framed.setFaceOrientation(face_orientation);
-  framed.setFaceOrientationStd(face_orientation_std);
-  framed.setFacePosition(face_position);
-  framed.setFacePositionStd(face_position_std);
+  framed.setFaceOrientation(res.face_orientation);
+  framed.setFaceOrientationStd(res.face_orientation_meta);
+  framed.setFacePosition(res.face_position);
+  framed.setFacePositionStd(res.face_position_meta);
   framed.setFaceProb(res.face_prob);
   framed.setLeftEyeProb(res.left_eye_prob);
   framed.setRightEyeProb(res.right_eye_prob);
   framed.setLeftBlinkProb(res.left_blink_prob);
   framed.setRightBlinkProb(res.right_blink_prob);
   framed.setSgProb(res.sg_prob);
+  if (send_raw_pred) {
+    framed.setRawPred(kj::arrayPtr((const uint8_t*)raw_pred, OUTPUT_SIZE*sizeof(float)));
+  }
 
   pm.send("driverState", msg);
 }

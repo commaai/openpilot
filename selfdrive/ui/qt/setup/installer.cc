@@ -43,7 +43,7 @@ int fresh_clone() {
   return 0;
 }
 
-int install() { 
+int install() {
   int err;
 
   // TODO: Disable SSH after install done

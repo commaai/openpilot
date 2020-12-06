@@ -353,6 +353,8 @@ selfdrive/ui/qt/*.cc
 selfdrive/ui/qt/*.hpp
 selfdrive/ui/qt/offroad/*.cc
 selfdrive/ui/qt/offroad/*.hpp
+selfdrive/ui/qt/widgets/*.cc
+selfdrive/ui/qt/widgets/*.hpp
 
 selfdrive/ui/android/*.cc
 selfdrive/ui/android/*.hpp
@@ -474,7 +476,6 @@ cereal/messaging/messaging.cc
 cereal/messaging/messaging.hpp
 cereal/messaging/messaging.pxd
 cereal/messaging/messaging_pyx.pyx
-cereal/messaging/messaging_pyx_setup.py
 cereal/messaging/msgq.cc
 cereal/messaging/msgq.hpp
 cereal/messaging/socketmaster.cc
@@ -497,7 +498,6 @@ opendbc/can/common.cc
 opendbc/can/common.h
 opendbc/can/common.pxd
 opendbc/can/common_dbc.h
-opendbc/can/common_pyx_setup.py
 opendbc/can/dbc.cc
 opendbc/can/dbc.py
 opendbc/can/dbc_template.cc

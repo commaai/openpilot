@@ -19,12 +19,7 @@ from selfdrive.controls.lib.alertmanager import set_offroad_alert
 from selfdrive.loggerd.config import get_available_percent
 from selfdrive.pandad import get_expected_signature
 from selfdrive.swaglog import cloudlog
-from selfdrive.thermald.power_monitoring import (PowerMonitoring,
-                                                 get_battery_capacity,
-                                                 get_battery_current,
-                                                 get_battery_status,
-                                                 get_battery_voltage,
-                                                 get_usb_present)
+from selfdrive.thermald.power_monitoring import PowerMonitoring
 from selfdrive.version import get_git_branch, terms_version, training_version
 
 ThermalConfig = namedtuple('ThermalConfig', ['cpu', 'gpu', 'mem', 'bat', 'ambient'])
@@ -257,11 +252,11 @@ def thermald_thread():
     msg.thermal.cpuPerc = int(round(psutil.cpu_percent()))
     msg.thermal.networkType = network_type
     msg.thermal.networkStrength = network_strength
-    msg.thermal.batteryPercent = get_battery_capacity()
-    msg.thermal.batteryStatus = get_battery_status()
-    msg.thermal.batteryCurrent = get_battery_current()
-    msg.thermal.batteryVoltage = get_battery_voltage()
-    msg.thermal.usbOnline = get_usb_present()
+    msg.thermal.batteryPercent = HARDWARE.get_battery_capacity()
+    msg.thermal.batteryStatus = HARDWARE.get_battery_status()
+    msg.thermal.batteryCurrent = HARDWARE.get_battery_current()
+    msg.thermal.batteryVoltage = HARDWARE.get_battery_voltage()
+    msg.thermal.usbOnline = HARDWARE.get_usb_present()
 
     # Fake battery levels on uno for frame
     if (not EON) or is_uno:
