@@ -173,25 +173,25 @@ static const float *get_lead_data(const float *lead, int t_offset) {
 }
 
 void fill_path(cereal::ModelData::PathData::Builder path, const float *data, const float prob, float valid_len, int valid_len_idx, int ll_idx) {
-  float points_arr[TRAJECTORY_SIZE] = {};
-  float stds_arr[TRAJECTORY_SIZE] = {};
-  float poly_arr[POLYFIT_DEGREE] = {};
+  float points[TRAJECTORY_SIZE] = {};
+  float stds[TRAJECTORY_SIZE] = {};
+  float poly[POLYFIT_DEGREE] = {};
 
   for (int i=0; i<TRAJECTORY_SIZE; i++) {
     // negative sign because mpc has left positive
     if (ll_idx == 0) {
-      points_arr[i] = -data[30 * i + 16];
-      stds_arr[i] = exp(data[30 * (33 + i) + 16]);
+      points[i] = -data[30 * i + 16];
+      stds[i] = exp(data[30 * (33 + i) + 16]);
     } else {
-      points_arr[i] = -data[2 * 33 * ll_idx + 2 * i];
-      stds_arr[i] = exp(data[2 * 33 * (4 + ll_idx) + 2 * i]);
+      points[i] = -data[2 * 33 * ll_idx + 2 * i];
+      stds[i] = exp(data[2 * 33 * (4 + ll_idx) + 2 * i]);
     }
   }
-  poly_fit(points_arr, stds_arr, poly_arr, valid_len_idx);
+  poly_fit(points, stds, poly, valid_len_idx);
 
-  path.setPoly(poly_arr);
+  path.setPoly(poly);
   path.setProb(prob);
-  path.setStd(stds_arr[0]);
+  path.setStd(stds[0]);
   path.setValidLen(valid_len);
 }
 
@@ -199,14 +199,14 @@ void fill_lead_v2(cereal::ModelDataV2::LeadDataV2::Builder lead, const float *le
   lead.setProb(sigmoid(prob));
   lead.setT(t);
   const float *data = get_lead_data(lead_data, t);
-  float xyva_arr[LEAD_MHP_VALS];
-  float xyva_stds_arr[LEAD_MHP_VALS];
+  float xyva[LEAD_MHP_VALS];
+  float xyva_stds[LEAD_MHP_VALS];
   for (int i=0; i<LEAD_MHP_VALS; i++) {
-    xyva_arr[i] = data[LEAD_MHP_VALS + i];
-    xyva_stds_arr[i] = exp(data[LEAD_MHP_VALS + i]);
+    xyva[i] = data[LEAD_MHP_VALS + i];
+    xyva_stds[i] = exp(data[LEAD_MHP_VALS + i]);
   }
-  lead.setXyva(xyva_arr);
-  lead.setXyvaStd(xyva_stds_arr);
+  lead.setXyva(xyva);
+  lead.setXyvaStd(xyva_stds);
 }
 
 void fill_lead(cereal::ModelData::LeadData::Builder lead, const float *lead_data, const float *prob, int t_offset) {
@@ -241,36 +241,36 @@ void fill_meta(MetaBuilder meta, const float * meta_data) {
 }
 
 void fill_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const float * data,
-               int columns, int column_offset, float * plan_t_arr) {
-  float x_arr[TRAJECTORY_SIZE] = {};
-  float y_arr[TRAJECTORY_SIZE] = {};
-  float z_arr[TRAJECTORY_SIZE] = {};
+               int columns, int column_offset, float * plan_t) {
+  float x[TRAJECTORY_SIZE] = {};
+  float y[TRAJECTORY_SIZE] = {};
+  float z[TRAJECTORY_SIZE] = {};
   //float x_std_arr[TRAJECTORY_SIZE];
   //float y_std_arr[TRAJECTORY_SIZE];
   //float z_std_arr[TRAJECTORY_SIZE];
-  float t_arr[TRAJECTORY_SIZE];
+  float t[TRAJECTORY_SIZE];
   for (int i=0; i<TRAJECTORY_SIZE; ++i) {
     // column_offset == -1 means this data is X indexed not T indexed
     if (column_offset >= 0) {
-      t_arr[i] = T_IDXS[i];
-      x_arr[i] = data[i*columns + 0 + column_offset];
+      t[i] = T_IDXS[i];
+      x[i] = data[i*columns + 0 + column_offset];
       //x_std_arr[i] = data[columns*(TRAJECTORY_SIZE + i) + 0 + column_offset];
     } else {
-      t_arr[i] = plan_t_arr[i];
-      x_arr[i] = X_IDXS[i];
+      t[i] = plan_t[i];
+      x[i] = X_IDXS[i];
       //x_std_arr[i] = NAN;
     }
-    y_arr[i] = data[i*columns + 1 + column_offset];
-    //y_std_arr[i] = data[columns*(TRAJECTORY_SIZE + i) + 1 + column_offset];
-    z_arr[i] = data[i*columns + 2 + column_offset];
+    y[i] = data[i*columns + 1 + column_offset];
+    //y_std[i] = data[columns*(TRAJECTORY_SIZE + i) + 1 + column_offset];
+    z[i] = data[i*columns + 2 + column_offset];
     //z_std_arr[i] = data[columns*(TRAJECTORY_SIZE + i) + 2 + column_offset];
   }
-  xyzt.setX(x_arr), xyzt.setY(y_arr);
-  xyzt.setZ(z_arr);
+  xyzt.setX(x), xyzt.setY(y);
+  xyzt.setZ(z);
   //xyzt.setXStd(x_std);
   //xyzt.setYStd(y_std);
   //xyzt.setZStd(z_std);
-  xyzt.setT(t_arr);
+  xyzt.setT(t);
 }
 
 void model_publish_v2(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
@@ -292,22 +292,22 @@ void model_publish_v2(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
 
   // plan
   const float *best_plan = get_plan_data(net_outputs.plan);
-  float plan_t_arr[TRAJECTORY_SIZE];
+  float plan_t[TRAJECTORY_SIZE];
   for (int i=0; i<TRAJECTORY_SIZE; i++) {
-    plan_t_arr[i] = best_plan[i*PLAN_MHP_COLUMNS + 15];
+    plan_t[i] = best_plan[i*PLAN_MHP_COLUMNS + 15];
   }
 
-  fill_xyzt(framed.initPosition(), best_plan, PLAN_MHP_COLUMNS, 0, plan_t_arr);
-  fill_xyzt(framed.initVelocity(), best_plan, PLAN_MHP_COLUMNS, 3, plan_t_arr);
-  fill_xyzt(framed.initOrientation(), best_plan, PLAN_MHP_COLUMNS, 9, plan_t_arr);
-  fill_xyzt(framed.initOrientationRate(), best_plan, PLAN_MHP_COLUMNS, 12, plan_t_arr);
+  fill_xyzt(framed.initPosition(), best_plan, PLAN_MHP_COLUMNS, 0, plan_t);
+  fill_xyzt(framed.initVelocity(), best_plan, PLAN_MHP_COLUMNS, 3, plan_t);
+  fill_xyzt(framed.initOrientation(), best_plan, PLAN_MHP_COLUMNS, 9, plan_t);
+  fill_xyzt(framed.initOrientationRate(), best_plan, PLAN_MHP_COLUMNS, 12, plan_t);
 
   // lane lines
   auto lane_lines = framed.initLaneLines(4);
   float lane_line_probs[4];
   float lane_line_stds[4];
   for (int i = 0; i < 4; i++) {
-    fill_xyzt(lane_lines[i], &net_outputs.lane_lines[i*TRAJECTORY_SIZE*2], 2, -1, plan_t_arr);
+    fill_xyzt(lane_lines[i], &net_outputs.lane_lines[i*TRAJECTORY_SIZE*2], 2, -1, plan_t);
     lane_line_probs[i] = sigmoid(net_outputs.lane_lines_prob[i]);
     lane_line_stds[i] = exp(net_outputs.lane_lines[2*TRAJECTORY_SIZE*(4 + i)]);
   }
@@ -318,7 +318,7 @@ void model_publish_v2(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
   auto road_edges = framed.initRoadEdges(2);
   float road_edge_stds[2];
   for (int i = 0; i < 2; i++) {
-    fill_xyzt(road_edges[i], &net_outputs.road_edges[i*TRAJECTORY_SIZE*2], 2, -1, plan_t_arr);
+    fill_xyzt(road_edges[i], &net_outputs.road_edges[i*TRAJECTORY_SIZE*2], 2, -1, plan_t);
     road_edge_stds[i] = exp(net_outputs.road_edges[2*TRAJECTORY_SIZE*(2 + i)]);
   }
   framed.setRoadEdgeStds(road_edge_stds);
@@ -385,25 +385,23 @@ void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
 void posenet_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
                      uint32_t vipc_dropped_frames, float frame_drop,
                      const ModelDataRaw &net_outputs, uint64_t timestamp_eof) {
-  float trans_arr[3];
-  float trans_std_arr[3];
-  float rot_arr[3];
-  float rot_std_arr[3];
+  float trans[3], trans_std[3];
+  float rot[3], rot_std[3];
 
   for (int i =0; i < 3; i++) {
-    trans_arr[i] = net_outputs.pose[i];
-    trans_std_arr[i] = exp(net_outputs.pose[6 + i]);
+    trans[i] = net_outputs.pose[i];
+    trans_std[i] = exp(net_outputs.pose[6 + i]);
 
-    rot_arr[i] = net_outputs.pose[3 + i];
-    rot_std_arr[i] = exp(net_outputs.pose[9 + i]);
+    rot[i] = net_outputs.pose[3 + i];
+    rot_std[i] = exp(net_outputs.pose[9 + i]);
   }
 
   MessageBuilder msg;
   auto posenetd = msg.initEvent(vipc_dropped_frames < 1).initCameraOdometry();
-  posenetd.setTrans(trans_arr);
-  posenetd.setRot(rot_arr);
-  posenetd.setTransStd(trans_std_arr);
-  posenetd.setRotStd(rot_std_arr);
+  posenetd.setTrans(trans);
+  posenetd.setRot(rot);
+  posenetd.setTransStd(trans_std);
+  posenetd.setRotStd(rot_std);
 
   posenetd.setTimestampEof(timestamp_eof);
   posenetd.setFrameId(vipc_frame_id);
