@@ -160,8 +160,8 @@ static const float *get_plan_data(float *plan) {
 static const float *get_lead_data(const float *lead, int t_offset) {
   int max_idx = 0;
   for (int i = 1; i < LEAD_MHP_N; i++) {
-    if (lead[(i + 1) * LEAD_MHP_GROUP_SIZE + t_offset - 3] >
-        lead[(max_idx + 1) * LEAD_MHP_GROUP_SIZE + t_offset - 3]) {
+    if (lead[(i + 1) * LEAD_MHP_GROUP_SIZE + t_offset - LEAD_MHP_SELECTION] >
+        lead[(max_idx + 1) * LEAD_MHP_GROUP_SIZE + t_offset - LEAD_MHP_SELECTION]) {
       max_idx = i;
     }
   }
