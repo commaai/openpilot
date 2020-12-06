@@ -48,9 +48,7 @@ void model_init(ModelState* s, cl_device_id device_id, cl_context context, int t
 #endif
 
 #ifdef DESIRE
-  s->prev_desire = std::make_unique<float[]>(DESIRE_LEN);
-  s->pulse_desire = std::make_unique<float[]>(DESIRE_LEN);
-  s->m->addDesire(s->pulse_desire.get(), DESIRE_LEN);
+  s->m->addDesire(s->pulse_desire, DESIRE_LEN);
 #endif
 
 #ifdef TRAFFIC_CONVENTION
