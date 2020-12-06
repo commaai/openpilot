@@ -343,8 +343,7 @@ void fill_model(cereal::ModelData::Builder &framed, const ModelDataRaw &net_outp
   fill_meta(framed.initMeta(), net_outputs.meta);
 }
 
-void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
-                   uint32_t vipc_dropped_frames, float frame_drop,
+void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id, float frame_drop,
                    const ModelDataRaw &net_outputs, const float *raw_pred, uint64_t timestamp_eof,
                    float model_execution_time) {
   const uint32_t frame_age = (frame_id > vipc_frame_id) ? (frame_id - vipc_frame_id) : 0;
@@ -366,8 +365,7 @@ void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
   do_publish(&cereal::Event::Builder::initModelV2, "modelV2");
 }
 
-void posenet_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
-                     uint32_t vipc_dropped_frames, float frame_drop,
+void posenet_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_dropped_frames,
                      const ModelDataRaw &net_outputs, uint64_t timestamp_eof) {
   float trans[3], trans_std[3];
   float rot[3], rot_std[3];

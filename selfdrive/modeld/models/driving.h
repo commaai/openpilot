@@ -74,9 +74,8 @@ ModelDataRaw model_eval_frame(ModelState* s, cl_command_queue q,
                            mat3 transform, void* sock, float *desire_in);
 void model_free(ModelState* s);
 void poly_fit(float *in_pts, float *in_stds, float *out);
-void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
-                   uint32_t vipc_dropped_frames, float frame_drop, const ModelDataRaw &data, const float* raw_pred,
-                   uint64_t timestamp_eof, float model_execution_time);
-void posenet_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
-                     uint32_t vipc_dropped_frames, float frame_drop, const ModelDataRaw &data,
-                     uint64_t timestamp_eof);
+void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id, float frame_drop,
+                   const ModelDataRaw &net_outputs, const float *raw_pred, uint64_t timestamp_eof,
+                   float model_execution_time);
+void posenet_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_dropped_frames,
+                     const ModelDataRaw &net_outputs, uint64_t timestamp_eof);
