@@ -59,8 +59,8 @@ typedef struct ModelState {
   std::unique_ptr<float[]> input_frames;
   std::unique_ptr<RunModel> m;
 #ifdef DESIRE
-  std::unique_ptr<float[]> prev_desire;
-  std::unique_ptr<float[]> pulse_desire;
+  float prev_desire[DESIRE_LEN] = {};
+  float pulse_desire[DESIRE_LEN] = {};
 #endif
 #ifdef TRAFFIC_CONVENTION
   float traffic_convention[TRAFFIC_CONVENTION_LEN] = {};
