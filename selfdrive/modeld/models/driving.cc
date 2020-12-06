@@ -120,15 +120,15 @@ ModelDataRaw model_eval_frame(ModelState* s, cl_mem yuv_cl, int width, int heigh
   clEnqueueUnmapMemObject(s->q, s->frame.net_input, (void*)new_frame_buf, 0, NULL, NULL);
 
   // net outputs
-  ModelDataRaw net_outputs;
-  net_outputs.plan = &s->output[PLAN_IDX];
-  net_outputs.lane_lines = &s->output[LL_IDX];
-  net_outputs.lane_lines_prob = &s->output[LL_PROB_IDX];
-  net_outputs.road_edges = &s->output[RE_IDX];
-  net_outputs.lead = &s->output[LEAD_IDX];
-  net_outputs.lead_prob = &s->output[LEAD_PROB_IDX];
-  net_outputs.meta = &s->output[DESIRE_STATE_IDX];
-  net_outputs.pose = &s->output[POSE_IDX];
+  ModelDataRaw net_outputs = {
+      .plan = &s->output[PLAN_IDX],
+      .lane_lines = &s->output[LL_IDX],
+      .lane_lines_prob = &s->output[LL_PROB_IDX],
+      .road_edges = &s->output[RE_IDX],
+      .lead = &s->output[LEAD_IDX],
+      .lead_prob = &s->output[LEAD_PROB_IDX],
+      .meta = &s->output[DESIRE_STATE_IDX],
+      .pose = &s->output[POSE_IDX]};
   return net_outputs;
 }
 
@@ -211,9 +211,8 @@ void fill_lead_v2(cereal::ModelDataV2::LeadDataV2::Builder lead, const float *le
   lead.setProb(sigmoid(prob[t_offset]));
   lead.setT(t);
   const float *data = get_lead_data(lead_data, t);
-  float xyva[LEAD_MHP_VALS];
-  float xyva_stds[LEAD_MHP_VALS];
-  for (int i=0; i<LEAD_MHP_VALS; i++) {
+  float xyva[LEAD_MHP_VALS], xyva_stds[LEAD_MHP_VALS];
+  for (int i = 0; i < LEAD_MHP_VALS; i++) {
     xyva[i] = data[LEAD_MHP_VALS + i];
     xyva_stds[i] = exp(data[LEAD_MHP_VALS + i]);
   }
@@ -266,9 +265,7 @@ void fill_meta(MetaBuilder meta, const float *meta_data) {
 
 void fill_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const float * data,
                int columns, int column_offset, float * plan_t) {
-  float x[TRAJECTORY_SIZE] = {};
-  float y[TRAJECTORY_SIZE] = {};
-  float z[TRAJECTORY_SIZE] = {};
+  float x[TRAJECTORY_SIZE] = {}, y[TRAJECTORY_SIZE] = {}, z[TRAJECTORY_SIZE] = {};
   //float x_std_arr[TRAJECTORY_SIZE];
   //float y_std_arr[TRAJECTORY_SIZE];
   //float z_std_arr[TRAJECTORY_SIZE];
