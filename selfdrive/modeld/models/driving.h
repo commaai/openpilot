@@ -1,5 +1,4 @@
-#ifndef MODEL_H
-#define MODEL_H
+#pragma once
 
 // gate this here
 #define TEMPORAL
@@ -19,26 +18,26 @@
 
 #define MODEL_NAME "supercombo_dlc"
 
-#define MODEL_WIDTH 512
-#define MODEL_HEIGHT 256
-#define MODEL_FRAME_SIZE MODEL_WIDTH * MODEL_HEIGHT * 3 / 2
-#define DESIRE_LEN 8
-#define TRAFFIC_CONVENTION_LEN 2
+constexpr int MODEL_WIDTH = 512;
+constexpr int MODEL_HEIGHT = 256;
+constexpr int MODEL_FRAME_SIZE = MODEL_WIDTH * MODEL_HEIGHT * 3 / 2;
+constexpr int DESIRE_LEN = 8;
+constexpr int TRAFFIC_CONVENTION_LEN = 2;
 
-#define PLAN_MHP_N 5
-#define PLAN_MHP_COLUMNS 30
-#define PLAN_MHP_VALS 30*33
-#define PLAN_MHP_SELECTION 1
-#define PLAN_MHP_GROUP_SIZE (2*PLAN_MHP_VALS + PLAN_MHP_SELECTION)
+constexpr int PLAN_MHP_N = 5;
+constexpr int PLAN_MHP_COLUMNS = 30;
+constexpr int PLAN_MHP_VALS = 30*33;
+constexpr int PLAN_MHP_SELECTION = 1;
+constexpr int PLAN_MHP_GROUP_SIZE =  (2*PLAN_MHP_VALS + PLAN_MHP_SELECTION);
 
-#define LEAD_MHP_N 5
-#define LEAD_MHP_VALS 4
-#define LEAD_MHP_SELECTION 3
-#define LEAD_MHP_GROUP_SIZE (2*LEAD_MHP_VALS + LEAD_MHP_SELECTION)
+constexpr int LEAD_MHP_N = 5;
+constexpr int LEAD_MHP_VALS = 4;
+constexpr int LEAD_MHP_SELECTION = 3;
+constexpr int LEAD_MHP_GROUP_SIZE = (2*LEAD_MHP_VALS + LEAD_MHP_SELECTION);
 
-#define POSE_SIZE 12
+constexpr int POSE_SIZE = 12;
 
-#define MODEL_FREQ 20
+constexpr int MODEL_FREQ = 20;
 
 struct ModelDataRaw {
     float *plan;
@@ -85,4 +84,3 @@ void model_publish_v2(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
 void posenet_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
                      uint32_t vipc_dropped_frames, float frame_drop, const ModelDataRaw &data,
                      uint64_t timestamp_eof);
-#endif
