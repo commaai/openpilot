@@ -5,7 +5,6 @@
 #define DESIRE
 #define TRAFFIC_CONVENTION
 
-
 #include "common/mat.h"
 #include "common/util.h"
 #include "common/modeldata.h"
