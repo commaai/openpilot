@@ -397,7 +397,7 @@ static void handle_out_buf(EncoderState *s, OMX_BUFFERHEADERTYPE *out_buf) {
     memcpy(s->codec_config, buf_data, out_buf->nFilledLen);
   }
 
-  if (s->of && !(out_buf->nFlags & OMX_BUFFERFLAG_EOS)) {
+  if (s->of) {
     //printf("write %d flags 0x%x\n", out_buf->nFilledLen, out_buf->nFlags);
     fwrite(buf_data, out_buf->nFilledLen, 1, s->of);
   }
@@ -610,9 +610,9 @@ void encoder_close(EncoderState *s) {
       // drain output only if there could be frames in the encoder
 
       OMX_BUFFERHEADERTYPE* in_buf = queue_pop(&s->free_in);
-      in_buf->nFilledLen = 1;
-      in_buf->nFlags = OMX_BUFFERFLAG_EOS | OMX_BUFFERFLAG_ENDOFFRAME;
-      in_buf->nTimeStamp = s->last_t + 50000000;
+      in_buf->nFilledLen = 0;
+      in_buf->nFlags = OMX_BUFFERFLAG_EOS;
+      in_buf->nTimeStamp = s->last_t + 1000000LL/s->fps;
 
       err = OMX_EmptyThisBuffer(s->handle, in_buf);
       assert(err == OMX_ErrorNone);
