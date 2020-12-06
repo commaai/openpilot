@@ -162,26 +162,23 @@ void poly_fit(float *in_pts, float *in_stds, float *out, int valid_len) {
   out[3] = y0;
 }
 
-static const float *get_plan_data(float *plan) {
+static const float *get_best_data(const float *data, int size, int group_size, int offset) {
   int max_idx = 0;
-  for (int i = 1; i < PLAN_MHP_N; i++) {
-    if (plan[(i + 1) * PLAN_MHP_GROUP_SIZE - 1] >
-        plan[(max_idx + 1) * PLAN_MHP_GROUP_SIZE -1]) {
+  for (int i = 1; i < size; i++) {
+    if (data[(i + 1) * group_size + offset] >
+        data[(max_idx + 1) * group_size + offset]) {
       max_idx = i;
     }
   }
-  return &plan[max_idx * PLAN_MHP_GROUP_SIZE];
+  return &data[max_idx * group_size];
+}
+
+static const float *get_plan_data(float *plan) {
+  return get_best_data(plan, PLAN_MHP_N, PLAN_MHP_GROUP_SIZE, -1);
 }
 
 static const float *get_lead_data(const float *lead, int t_offset) {
-  int max_idx = 0;
-  for (int i = 1; i < LEAD_MHP_N; i++) {
-    if (lead[(i + 1) * LEAD_MHP_GROUP_SIZE + t_offset - LEAD_MHP_SELECTION] >
-        lead[(max_idx + 1) * LEAD_MHP_GROUP_SIZE + t_offset - LEAD_MHP_SELECTION]) {
-      max_idx = i;
-    }
-  }
-  return &lead[max_idx * LEAD_MHP_GROUP_SIZE];
+  return get_best_data(lead, LEAD_MHP_N, LEAD_MHP_GROUP_SIZE, t_offset - LEAD_MHP_SELECTION);
 }
 
 void fill_path(cereal::ModelData::PathData::Builder path, const float *data, const float prob,
