@@ -31,5 +31,5 @@ void frame_init(ModelFrame* frame, int width, int height,
                       cl_device_id device_id, cl_context context);
 float *frame_prepare(ModelFrame* frame, cl_command_queue q,
                            cl_mem yuv_cl, int width, int height,
-                           mat3 transform);
+                           const mat3 &transform);
 void frame_free(ModelFrame* frame);
