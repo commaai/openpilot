@@ -63,7 +63,7 @@ typedef struct ModelState {
   std::unique_ptr<float[]> pulse_desire;
 #endif
 #ifdef TRAFFIC_CONVENTION
-  std::unique_ptr<float[]> traffic_convention;
+  float traffic_convention[TRAFFIC_CONVENTION_LEN] = {};
 #endif
 } ModelState;
 
