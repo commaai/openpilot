@@ -16,7 +16,6 @@
 #include <memory>
 #include "messaging.hpp"
 
-#define MODEL_NAME "supercombo_dlc"
 constexpr int DESIRE_LEN = 8;
 constexpr int TRAFFIC_CONVENTION_LEN = 2;
 constexpr int MODEL_FREQ = 20;
