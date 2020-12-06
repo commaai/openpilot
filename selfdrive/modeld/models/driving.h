@@ -47,7 +47,7 @@ typedef struct ModelState {
 #endif
 } ModelState;
 
-void model_init(ModelState* s, cl_device_id device_id, cl_context context, int temporal);
+void model_init(ModelState* s, cl_device_id device_id, cl_context context);
 ModelDataRaw model_eval_frame(ModelState* s, cl_mem yuv_cl, int width, int height,
                            const mat3 &transform, float *desire_in);
 void model_free(ModelState* s);

@@ -52,7 +52,7 @@ Eigen::Matrix<float, MODEL_PATH_DISTANCE, POLYFIT_DEGREE - 1> vander;
 float X_IDXS[TRAJECTORY_SIZE];
 float T_IDXS[TRAJECTORY_SIZE];
 
-void model_init(ModelState* s, cl_device_id device_id, cl_context context, int temporal) {
+void model_init(ModelState* s, cl_device_id device_id, cl_context context) {
   frame_init(&s->frame, MODEL_WIDTH, MODEL_HEIGHT, device_id, context);
   s->input_frames = std::make_unique<float[]>(MODEL_FRAME_SIZE * 2);
 
@@ -61,7 +61,6 @@ void model_init(ModelState* s, cl_device_id device_id, cl_context context, int t
   s->m = std::make_unique<DefaultRunModel>("../../models/supercombo.dlc", &s->output[0], output_size, USE_GPU_RUNTIME);
 
 #ifdef TEMPORAL
-  assert(temporal);
   s->m->addRecurrent(&s->output[OUTPUT_SIZE], TEMPORAL_SIZE);
 #endif
 

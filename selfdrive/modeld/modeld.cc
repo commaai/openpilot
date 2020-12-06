@@ -120,7 +120,7 @@ int main(int argc, char **argv) {
 
   // init the models
   ModelState model;
-  model_init(&model, device_id, context, true);
+  model_init(&model, device_id, context);
   LOGW("models loaded, modeld starting");
 
   // loop
