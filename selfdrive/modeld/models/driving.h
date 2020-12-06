@@ -17,28 +17,9 @@
 #include "messaging.hpp"
 
 #define MODEL_NAME "supercombo_dlc"
-
-constexpr int MODEL_WIDTH = 512;
-constexpr int MODEL_HEIGHT = 256;
-constexpr int MODEL_FRAME_SIZE = MODEL_WIDTH * MODEL_HEIGHT * 3 / 2;
 constexpr int DESIRE_LEN = 8;
 constexpr int TRAFFIC_CONVENTION_LEN = 2;
-
-constexpr int PLAN_MHP_N = 5;
-constexpr int PLAN_MHP_COLUMNS = 30;
-constexpr int PLAN_MHP_VALS = 30*33;
-constexpr int PLAN_MHP_SELECTION = 1;
-constexpr int PLAN_MHP_GROUP_SIZE =  (2*PLAN_MHP_VALS + PLAN_MHP_SELECTION);
-
-constexpr int LEAD_MHP_N = 5;
-constexpr int LEAD_MHP_VALS = 4;
-constexpr int LEAD_MHP_SELECTION = 3;
-constexpr int LEAD_MHP_GROUP_SIZE = (2*LEAD_MHP_VALS + LEAD_MHP_SELECTION);
-
-constexpr int POSE_SIZE = 12;
-
 constexpr int MODEL_FREQ = 20;
-
 struct ModelDataRaw {
     float *plan;
     float *lane_lines;
