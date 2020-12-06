@@ -9,24 +9,23 @@
 #include "common/params.h"
 #include "driving.h"
 
-#define MIN_VALID_LEN 10.0
-#define TRAJECTORY_SIZE 33
-#define TRAJECTORY_TIME 10.0
-#define TRAJECTORY_DISTANCE 192.0
-#define PLAN_IDX 0
-#define LL_IDX PLAN_IDX + PLAN_MHP_N*(PLAN_MHP_GROUP_SIZE)
-#define LL_PROB_IDX LL_IDX + 4*2*2*33
-#define RE_IDX LL_PROB_IDX + 4
-#define LEAD_IDX RE_IDX + 2*2*2*33
-#define LEAD_PROB_IDX LEAD_IDX + LEAD_MHP_N*(LEAD_MHP_GROUP_SIZE)
-#define DESIRE_STATE_IDX LEAD_PROB_IDX + 3
-#define META_IDX DESIRE_STATE_IDX + DESIRE_LEN
-#define POSE_IDX META_IDX + OTHER_META_SIZE + DESIRE_PRED_SIZE
-#define OUTPUT_SIZE  POSE_IDX + POSE_SIZE
+constexpr int MIN_VALID_LEN = 10.0;
+constexpr int TRAJECTORY_TIME = 10.0;
+constexpr float TRAJECTORY_DISTANCE = 192.0;
+constexpr int PLAN_IDX = 0;
+constexpr int LL_IDX = PLAN_IDX + PLAN_MHP_N*PLAN_MHP_GROUP_SIZE;
+constexpr int LL_PROB_IDX = LL_IDX + 4*2*2*33;
+constexpr int RE_IDX = LL_PROB_IDX + 4;
+constexpr int LEAD_IDX = RE_IDX + 2*2*2*33;
+constexpr int LEAD_PROB_IDX = LEAD_IDX + LEAD_MHP_N*(LEAD_MHP_GROUP_SIZE);
+constexpr int DESIRE_STATE_IDX = LEAD_PROB_IDX + 3;
+constexpr int META_IDX = DESIRE_STATE_IDX + DESIRE_LEN;
+constexpr int POSE_IDX = META_IDX + OTHER_META_SIZE + DESIRE_PRED_SIZE;
+constexpr int OUTPUT_SIZE =  POSE_IDX + POSE_SIZE;
 #ifdef TEMPORAL
-  #define TEMPORAL_SIZE 512
+  constexpr int TEMPORAL_SIZE = 512;
 #else
-  #define TEMPORAL_SIZE 0
+  constexpr int TEMPORAL_SIZE =0;
 #endif
 
 // #define DUMP_YUV
@@ -39,7 +38,7 @@ void model_init(ModelState* s, cl_device_id device_id, cl_context context, int t
   frame_init(&s->frame, MODEL_WIDTH, MODEL_HEIGHT, device_id, context);
   s->input_frames = std::make_unique<float[]>(MODEL_FRAME_SIZE * 2);
 
-  const int output_size = OUTPUT_SIZE + TEMPORAL_SIZE;
+  constexpr int output_size = OUTPUT_SIZE + TEMPORAL_SIZE;
   s->output = std::make_unique<float[]>(output_size);
 
   s->m = std::make_unique<DefaultRunModel>("../../models/supercombo.dlc", &s->output[0], output_size, USE_GPU_RUNTIME);
