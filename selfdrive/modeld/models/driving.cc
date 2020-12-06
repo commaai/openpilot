@@ -357,17 +357,17 @@ void model_publish_v2(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
 
   // leads
   auto leads = framed.initLeads(LEAD_MHP_SELECTION);
-  int mdn_max_idx = 0;
   float t_offsets[LEAD_MHP_SELECTION] = {0.0, 2.0, 4.0};
   for (int t_offset=0; t_offset<LEAD_MHP_SELECTION; t_offset++) {
+    int mdn_max_idx = 0;
     for (int i=1; i<LEAD_MHP_N; i++) {
       if (net_outputs.lead[(i+1)*(LEAD_MHP_GROUP_SIZE) + t_offset - LEAD_MHP_SELECTION] >
           net_outputs.lead[(mdn_max_idx + 1)*(LEAD_MHP_GROUP_SIZE) + t_offset - LEAD_MHP_SELECTION]) {
         mdn_max_idx = i;
-        fill_lead_v2(leads[t_offset], &net_outputs.lead[mdn_max_idx*(LEAD_MHP_GROUP_SIZE)],
-                     sigmoid(net_outputs.lead_prob[t_offset]), t_offsets[t_offset]);
       }
     }
+    fill_lead_v2(leads[t_offset], &net_outputs.lead[mdn_max_idx * (LEAD_MHP_GROUP_SIZE)],
+                 sigmoid(net_outputs.lead_prob[t_offset]), t_offsets[t_offset]);
   }
   pm.send("modelV2", msg);
 }
