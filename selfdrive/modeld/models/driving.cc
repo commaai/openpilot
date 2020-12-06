@@ -210,6 +210,7 @@ void fill_lead_v2(cereal::ModelDataV2::LeadDataV2::Builder lead, const float *le
   const float *data = get_lead_data(lead_data, t_offset);
   lead.setProb(sigmoid(prob[t_offset]));
   lead.setT(t);
+  const float *data = get_lead_data(lead_data, t);
   float xyva_arr[LEAD_MHP_VALS];
   float xyva_stds_arr[LEAD_MHP_VALS];
   for (int i=0; i<LEAD_MHP_VALS; i++) {
@@ -313,24 +314,24 @@ void fill_model(cereal::ModelDataV2::Builder &framed, const ModelDataRaw &net_ou
 
   // lane lines
   auto lane_lines = framed.initLaneLines(4);
-  float lane_line_probs_arr[4];
-  float lane_line_stds_arr[4];
+  float lane_line_probs[4];
+  float lane_line_stds[4];
   for (int i = 0; i < 4; i++) {
     fill_xyzt(lane_lines[i], &net_outputs.lane_lines[i*TRAJECTORY_SIZE*2], 2, -1, plan_t_arr);
-    lane_line_probs_arr[i] = sigmoid(net_outputs.lane_lines_prob[i]);
-    lane_line_stds_arr[i] = exp(net_outputs.lane_lines[2*TRAJECTORY_SIZE*(4 + i)]);
+    lane_line_probs[i] = sigmoid(net_outputs.lane_lines_prob[i]);
+    lane_line_stds[i] = exp(net_outputs.lane_lines[2*TRAJECTORY_SIZE*(4 + i)]);
   }
-  framed.setLaneLineProbs(lane_line_probs_arr);
-  framed.setLaneLineStds(lane_line_stds_arr);
+  framed.setLaneLineProbs(lane_line_probs);
+  framed.setLaneLineStds(lane_line_stds);
 
   // road edges
   auto road_edges = framed.initRoadEdges(2);
-  float road_edge_stds_arr[2];
+  float road_edge_stds[2];
   for (int i = 0; i < 2; i++) {
     fill_xyzt(road_edges[i], &net_outputs.road_edges[i*TRAJECTORY_SIZE*2], 2, -1, plan_t_arr);
-    road_edge_stds_arr[i] = exp(net_outputs.road_edges[2*TRAJECTORY_SIZE*(2 + i)]);
+    road_edge_stds[i] = exp(net_outputs.road_edges[2*TRAJECTORY_SIZE*(2 + i)]);
   }
-  framed.setRoadEdgeStds(road_edge_stds_arr);
+  framed.setRoadEdgeStds(road_edge_stds);
 
   // meta
   fill_meta(framed.initMeta(), net_outputs.meta);
