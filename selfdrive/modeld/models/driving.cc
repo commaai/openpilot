@@ -216,6 +216,8 @@ void fill_lead_v2(cereal::ModelDataV2::LeadDataV2::Builder lead, const float *le
     xyva[i] = data[LEAD_MHP_VALS + i];
     xyva_stds[i] = exp(data[LEAD_MHP_VALS + i]);
   }
+  lead.setT(t);
+  lead.setProb(sigmoid(prob));
   lead.setXyva(xyva);
   lead.setXyvaStd(xyva_stds);
 }
@@ -269,7 +271,7 @@ void fill_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const float * data,
   //float x_std_arr[TRAJECTORY_SIZE];
   //float y_std_arr[TRAJECTORY_SIZE];
   //float z_std_arr[TRAJECTORY_SIZE];
-  float t[TRAJECTORY_SIZE];
+  float t[TRAJECTORY_SIZE] = {};
   for (int i=0; i<TRAJECTORY_SIZE; ++i) {
     // column_offset == -1 means this data is X indexed not T indexed
     if (column_offset >= 0) {
@@ -286,7 +288,8 @@ void fill_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const float * data,
     z[i] = data[i*columns + 2 + column_offset];
     //z_std_arr[i] = data[columns*(TRAJECTORY_SIZE + i) + 2 + column_offset];
   }
-  xyzt.setX(x), xyzt.setY(y);
+  xyzt.setX(x);
+  xyzt.setY(y);
   xyzt.setZ(z);
   //xyzt.setXStd(x_std);
   //xyzt.setYStd(y_std);
@@ -309,8 +312,7 @@ void fill_model(cereal::ModelDataV2::Builder &framed, const ModelDataRaw &net_ou
 
   // lane lines
   auto lane_lines = framed.initLaneLines(4);
-  float lane_line_probs[4];
-  float lane_line_stds[4];
+  float lane_line_probs[4], lane_line_stds[4];
   for (int i = 0; i < 4; i++) {
     fill_xyzt(lane_lines[i], &net_outputs.lane_lines[i*TRAJECTORY_SIZE*2], 2, -1, plan_t);
     lane_line_probs[i] = sigmoid(net_outputs.lane_lines_prob[i]);
