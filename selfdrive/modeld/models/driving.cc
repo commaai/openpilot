@@ -57,14 +57,12 @@ void model_init(ModelState* s, cl_device_id device_id, cl_context context, int t
 
 #ifdef TRAFFIC_CONVENTION
   s->traffic_convention = std::make_unique<float[]>(TRAFFIC_CONVENTION_LEN);
-  s->m->addTrafficConvention(s->traffic_convention.get(), TRAFFIC_CONVENTION_LEN);
-
-  bool is_rhd = Params().read_db_bool("IsRHD");
-  if (is_rhd) {
+  if (Params().read_db_bool("IsRHD")) {
     s->traffic_convention[1] = 1.0;
   } else {
     s->traffic_convention[0] = 1.0;
   }
+  s->m->addTrafficConvention(s->traffic_convention.get(), TRAFFIC_CONVENTION_LEN);
 #endif
 
   // Build Vandermonde matrix
@@ -180,9 +178,10 @@ void fill_path(cereal::ModelData::PathData::Builder path, const float *data, con
   path.setValidLen(valid_len);
 }
 
-void fill_lead_v2(cereal::ModelDataV2::LeadDataV2::Builder lead, const float *data, float prob, float t) {
-  lead.setProb(prob);
+void fill_lead_v2(cereal::ModelDataV2::LeadDataV2::Builder lead, const float *lead_data, float prob, float t) {
+  lead.setProb(sigmoid(prob));
   lead.setT(t);
+  const float *data = get_lead_data(lead_data, t);
   float xyva_arr[LEAD_MHP_VALS];
   float xyva_stds_arr[LEAD_MHP_VALS];
   for (int i=0; i<LEAD_MHP_VALS; i++) {
@@ -310,34 +309,33 @@ void model_publish_v2(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
 
   // lane lines
   auto lane_lines = framed.initLaneLines(4);
-  float lane_line_probs_arr[4];
-  float lane_line_stds_arr[4];
+  float lane_line_probs[4];
+  float lane_line_stds[4];
   for (int i = 0; i < 4; i++) {
     fill_xyzt(lane_lines[i], &net_outputs.lane_lines[i*TRAJECTORY_SIZE*2], 2, -1, plan_t_arr);
-    lane_line_probs_arr[i] = sigmoid(net_outputs.lane_lines_prob[i]);
-    lane_line_stds_arr[i] = exp(net_outputs.lane_lines[2*TRAJECTORY_SIZE*(4 + i)]);
+    lane_line_probs[i] = sigmoid(net_outputs.lane_lines_prob[i]);
+    lane_line_stds[i] = exp(net_outputs.lane_lines[2*TRAJECTORY_SIZE*(4 + i)]);
   }
-  framed.setLaneLineProbs(lane_line_probs_arr);
-  framed.setLaneLineStds(lane_line_stds_arr);
+  framed.setLaneLineProbs(lane_line_probs);
+  framed.setLaneLineStds(lane_line_stds);
 
   // road edges
   auto road_edges = framed.initRoadEdges(2);
-  float road_edge_stds_arr[2];
+  float road_edge_stds[2];
   for (int i = 0; i < 2; i++) {
     fill_xyzt(road_edges[i], &net_outputs.road_edges[i*TRAJECTORY_SIZE*2], 2, -1, plan_t_arr);
-    road_edge_stds_arr[i] = exp(net_outputs.road_edges[2*TRAJECTORY_SIZE*(2 + i)]);
+    road_edge_stds[i] = exp(net_outputs.road_edges[2*TRAJECTORY_SIZE*(2 + i)]);
   }
-  framed.setRoadEdgeStds(road_edge_stds_arr);
+  framed.setRoadEdgeStds(road_edge_stds);
 
   // meta
   fill_meta(framed.initMeta(), net_outputs.meta);
 
   // leads
   auto leads = framed.initLeads(LEAD_MHP_SELECTION);
-  float t_offsets[LEAD_MHP_SELECTION] = {0.0, 2.0, 4.0};
+  const float t_offsets[LEAD_MHP_SELECTION] = {0.0, 2.0, 4.0};
   for (int t_offset = 0; t_offset < LEAD_MHP_SELECTION; t_offset++) {
-    fill_lead_v2(leads[t_offset], get_lead_data(net_outputs.lead, t_offsets[t_offset]),
-                 sigmoid(net_outputs.lead_prob[t_offset]), t_offsets[t_offset]);
+    fill_lead_v2(leads[t_offset], net_outputs.lead, net_outputs.lead_prob[t_offset], t_offsets[t_offset]);
   }
   pm.send("modelV2", msg);
 }
@@ -378,7 +376,6 @@ void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id,
   }
 
   fill_path(framed.initPath(), best_plan, 1.0, valid_len, valid_len_idx, 0);
-
   fill_path(framed.initLeftLane(), net_outputs.lane_lines, net_outputs.lane_lines_prob[1], valid_len, valid_len_idx, 1);
   fill_path(framed.initRightLane(), net_outputs.lane_lines, net_outputs.lane_lines_prob[2], valid_len, valid_len_idx, 2);
 
