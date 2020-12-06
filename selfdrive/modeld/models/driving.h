@@ -58,6 +58,7 @@ typedef struct ModelState {
   std::unique_ptr<float[]> output;
   std::unique_ptr<float[]> input_frames;
   std::unique_ptr<RunModel> m;
+  cl_command_queue q;
 #ifdef DESIRE
   float prev_desire[DESIRE_LEN] = {};
   float pulse_desire[DESIRE_LEN] = {};
@@ -68,8 +69,7 @@ typedef struct ModelState {
 } ModelState;
 
 void model_init(ModelState* s, cl_device_id device_id, cl_context context, int temporal);
-ModelDataRaw model_eval_frame(ModelState* s, cl_command_queue q,
-                           cl_mem yuv_cl, int width, int height,
+ModelDataRaw model_eval_frame(ModelState* s, cl_mem yuv_cl, int width, int height,
                            const mat3 &transform, float *desire_in);
 void model_free(ModelState* s);
 void poly_fit(float *in_pts, float *in_stds, float *out);

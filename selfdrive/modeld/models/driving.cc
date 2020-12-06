@@ -8,6 +8,7 @@
 #include "common/timing.h"
 #include "common/params.h"
 #include "driving.h"
+#include "clutil.h"
 
 constexpr int MIN_VALID_LEN = 10.0;
 constexpr int TRAJECTORY_TIME = 10.0;
@@ -65,10 +66,11 @@ void model_init(ModelState* s, cl_device_id device_id, cl_context context, int t
       vander(i, j) = pow(X_IDXS[i], POLYFIT_DEGREE-j-1);
     }
   }
+
+  s->q = CL_CHECK_ERR(clCreateCommandQueue(context, device_id, 0, &err));
 }
 
-ModelDataRaw model_eval_frame(ModelState* s, cl_command_queue q,
-                           cl_mem yuv_cl, int width, int height,
+ModelDataRaw model_eval_frame(ModelState* s, cl_mem yuv_cl, int width, int height,
                            const mat3 &transform, float *desire_in) {
 #ifdef DESIRE
   if (desire_in != NULL) {
@@ -87,7 +89,7 @@ ModelDataRaw model_eval_frame(ModelState* s, cl_command_queue q,
 
   //for (int i = 0; i < OUTPUT_SIZE + TEMPORAL_SIZE; i++) { printf("%f ", s->output[i]); } printf("\n");
 
-  float *new_frame_buf = frame_prepare(&s->frame, q, yuv_cl, width, height, transform);
+  float *new_frame_buf = frame_prepare(&s->frame, s->q, yuv_cl, width, height, transform);
   memmove(&s->input_frames[0], &s->input_frames[MODEL_FRAME_SIZE], sizeof(float)*MODEL_FRAME_SIZE);
   memmove(&s->input_frames[MODEL_FRAME_SIZE], new_frame_buf, sizeof(float)*MODEL_FRAME_SIZE);
   s->m->execute(&s->input_frames[0], MODEL_FRAME_SIZE*2);
@@ -99,7 +101,7 @@ ModelDataRaw model_eval_frame(ModelState* s, cl_command_queue q,
     assert(1==2);
   #endif
 
-  clEnqueueUnmapMemObject(q, s->frame.net_input, (void*)new_frame_buf, 0, NULL, NULL);
+  clEnqueueUnmapMemObject(s->q, s->frame.net_input, (void*)new_frame_buf, 0, NULL, NULL);
 
   // net outputs
   ModelDataRaw net_outputs;
@@ -116,6 +118,7 @@ ModelDataRaw model_eval_frame(ModelState* s, cl_command_queue q,
 
 void model_free(ModelState* s) {
   frame_free(&s->frame);
+  CL_CHECK(clReleaseCommandQueue(s->q));
 }
 
 void poly_fit(float *in_pts, float *in_stds, float *out, int valid_len) {
