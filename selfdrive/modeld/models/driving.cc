@@ -69,8 +69,7 @@ void model_init(ModelState* s, cl_device_id device_id, cl_context context, int t
 
 ModelDataRaw model_eval_frame(ModelState* s, cl_command_queue q,
                            cl_mem yuv_cl, int width, int height,
-                           mat3 transform, void* sock,
-                           float *desire_in) {
+                           const mat3 &transform, float *desire_in) {
 #ifdef DESIRE
   if (desire_in != NULL) {
     for (int i = 1; i < DESIRE_LEN; i++) {
