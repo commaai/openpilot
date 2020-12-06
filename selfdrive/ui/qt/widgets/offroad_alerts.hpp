@@ -1,25 +1,20 @@
 #pragma once
 
-
 #include <QWidget>
-#include <QFrame>
-#include <QTimer>
-#include <QCheckBox>
-#include <QStackedLayout>
-#include <QPushButton>
+#include <QVBoxLayout>
 
-struct Alert{
+struct Alert {
   QString text;
   int severity;
 };
 
-class OffroadAlert : public QWidget{
+class OffroadAlert : public QWidget {
   Q_OBJECT
 
 public:
   explicit OffroadAlert(QWidget *parent = 0);
-  bool show_alert;
   QVector<Alert> alerts;
+  bool updateAvailable;
 
 private:
   QVBoxLayout *vlayout;

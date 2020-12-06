@@ -16,6 +16,7 @@ A_ACC_MAX = max(_A_CRUISE_MAX_V_FOLLOWING)
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
 
+
 def compute_gb_honda(accel, speed):
   creep_brake = 0.0
   creep_speed = 2.3

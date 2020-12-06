@@ -22,13 +22,15 @@ extern "C"{
 // TODO: this is also hardcoded in common/transformations/camera.py
 // TODO: choose based on frame input size
 #ifdef QCOM2
-const float zoom = 1.5;
+const float y_offset = 0.0;
+const float zoom = 1.1;
 const mat3 intrinsic_matrix = (mat3){{
   2648.0, 0.0, 1928.0/2,
   0.0, 2648.0, 1208.0/2,
   0.0,   0.0,   1.0
 }};
 #else
+const float y_offset = 0.0;
 const float zoom = 2.35;
 const mat3 intrinsic_matrix = (mat3){{
   910., 0., 1164.0/2,
@@ -263,7 +265,7 @@ static void ui_draw_world(UIState *s) {
 
   // Apply transformation such that video pixel coordinates match video
   // 1) Put (0, 0) in the middle of the video
-  nvgTranslate(s->vg, s->video_rect.x + s->video_rect.w / 2, s->video_rect.y + s->video_rect.h / 2);
+  nvgTranslate(s->vg, s->video_rect.x + s->video_rect.w / 2, s->video_rect.y + s->video_rect.h / 2 + y_offset);
 
   // 2) Apply same scaling as video
   nvgScale(s->vg, zoom, zoom);
@@ -733,7 +735,7 @@ void ui_nvg_init(UIState *s) {
 
   const mat4 frame_transform = {{
     zx, 0.0, 0.0, 0.0,
-    0.0, zy, 0.0, 0.0,
+    0.0, zy, 0.0, -y_offset / s->video_rect.h * zy,
     0.0, 0.0, 1.0, 0.0,
     0.0, 0.0, 0.0, 1.0,
   }};

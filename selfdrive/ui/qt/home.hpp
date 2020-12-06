@@ -1,13 +1,17 @@
 #pragma once
 
+#include <QLabel>
 #include <QTimer>
 #include <QWidget>
 #include <QGridLayout>
 #include <QStackedWidget>
+#include <QStackedLayout>
 #include <QOpenGLWidget>
 #include <QOpenGLFunctions>
+#include <QPushButton>
 
 #include "qt_sound.hpp"
+#include "widgets/offroad_alerts.hpp"
 #include "ui/ui.hpp"
 
 
@@ -49,6 +53,28 @@ public slots:
   void backlightUpdate();
 };
 
+// offroad home screen
+class OffroadHome : public QWidget {
+  Q_OBJECT
+
+public:
+  explicit OffroadHome(QWidget *parent = 0);
+
+private:
+  QTimer *timer;
+
+  // offroad home screen widgets
+  QLabel *date;
+  QStackedLayout *center_layout;
+  OffroadAlert *alerts_widget;
+  QPushButton *alert_notification;
+
+public slots:
+  void closeAlerts();	
+  void openAlerts();
+  void refresh();
+};
+
 
 class HomeWindow : public QWidget {
   Q_OBJECT
@@ -64,8 +90,8 @@ protected:
   void mousePressEvent(QMouseEvent *e) override;
 
 private:
-  QWidget *home;
   QGridLayout *layout;
+  OffroadHome *home;
 
 private slots:
   void setVisibility(bool offroad);
