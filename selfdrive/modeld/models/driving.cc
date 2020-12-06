@@ -42,7 +42,7 @@ void model_init(ModelState* s, cl_device_id device_id, cl_context context, int t
   const int output_size = OUTPUT_SIZE + TEMPORAL_SIZE;
   s->output = std::make_unique<float[]>(output_size);
 
-  s->m = std::make_unique<DefaultRunModel>("../../models/supercombo.dlc", s->output, output_size, USE_GPU_RUNTIME);
+  s->m = std::make_unique<DefaultRunModel>("../../models/supercombo.dlc", &s->output[0], output_size, USE_GPU_RUNTIME);
 
 #ifdef TEMPORAL
   assert(temporal);
@@ -152,6 +152,27 @@ void poly_fit(float *in_pts, float *in_stds, float *out, int valid_len) {
   out[3] = y0;
 }
 
+static const float *get_plan_data(float *plan) {
+  const float *data = &plan[0];
+  for (int i = 1; i < PLAN_MHP_N; ++i) {
+    if (const float *cur = &plan[i * PLAN_MHP_GROUP_SIZE-1]; *cur > *data) {
+      data = cur;
+    }
+  }
+  return data;
+}
+
+static const float *get_lead_data(const float *lead, int t_offset) {
+  const float *data = &lead[0];
+  for (int i = 1; i < LEAD_MHP_N; ++i) {
+    const float *cur = &lead[i * LEAD_MHP_GROUP_SIZE + t_offset - LEAD_MHP_SELECTION];
+    if (*cur > *data) {
+      data = cur;
+    }
+  }
+  return data;
+}
+
 void fill_path(cereal::ModelData::PathData::Builder path, const float *data, const float prob, float valid_len, int valid_len_idx, int ll_idx) {
   float points_arr[TRAJECTORY_SIZE] = {};
   float stds_arr[TRAJECTORY_SIZE] = {};
@@ -187,27 +208,6 @@ void fill_lead_v2(cereal::ModelDataV2::LeadDataV2::Builder lead, const float *le
   }
   lead.setXyva(xyva_arr);
   lead.setXyvaStd(xyva_stds_arr);
-}
-
-static const float *get_plan_data(float *plan) {
-  const float *data = &plan[0];
-  for (int i = 1; i < PLAN_MHP_N; ++i) {
-    if (const float *cur = &plan[i * PLAN_MHP_GROUP_SIZE-1]; *cur > *data) {
-      data = cur;
-    }
-  }
-  return data;
-}
-
-static const float *get_lead_data(const float *lead, int t_offset) {
-  const float *data = &lead[0];
-  for (int i = 1; i < LEAD_MHP_N; ++i) {
-    const float *cur = &lead[i * LEAD_MHP_GROUP_SIZE + t_offset - LEAD_MHP_SELECTION];
-    if (*cur > *data) {
-      data = cur;
-    }
-  }
-  return data;
 }
 
 void fill_lead(cereal::ModelData::LeadData::Builder lead, const float *lead_data, const float *prob, int t_offset) {
@@ -266,8 +266,7 @@ void fill_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const float * data,
     z_arr[i] = data[i*columns + 2 + column_offset];
     //z_std_arr[i] = data[columns*(TRAJECTORY_SIZE + i) + 2 + column_offset];
   }
-  xyzt.setX(x_arr);
-  xyzt.setY(y_arr);
+  xyzt.setX(x_arr), xyzt.setY(y_arr);
   xyzt.setZ(z_arr);
   //xyzt.setXStd(x_std);
   //xyzt.setYStd(y_std);
