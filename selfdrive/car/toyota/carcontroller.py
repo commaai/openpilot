@@ -70,8 +70,7 @@ class CarController():
       apply_accel = actuators.gas - actuators.brake
 
     apply_accel, self.accel_steady = accel_hysteresis(apply_accel, self.accel_steady, enabled)
-
-    accel_max = interp(CS.v_ego, SPEEDS, ACCELS)
+    accel_max = interp(CS.out.vEgo, SPEEDS, ACCELS)
     scale = max(accel_max, -ACCEL_MIN)
     apply_accel = clip(apply_accel * scale, ACCEL_MIN, accel_max)
 
