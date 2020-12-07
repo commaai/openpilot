@@ -410,7 +410,7 @@ void common_camera_process_front(SubMaster *sm, PubMaster *pm, CameraState *c, i
     y_max = 1148;
     skip = 4;
 #endif
-    set_exposure_target(c, (const uint8_t *)b->yuv_yuv_buf->y, x_min, x_max, 2, y_min, y_max, skip);
+    set_exposure_target(c, (const uint8_t *)b->cur_yuv_buf->y, x_min, x_max, 2, y_min, y_max, skip);
   }
 
   MessageBuilder msg;
