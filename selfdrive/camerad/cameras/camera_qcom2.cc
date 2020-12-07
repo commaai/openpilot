@@ -555,7 +555,7 @@ void enqueue_req_multi(struct CameraState *s, int start, int n, bool dp) {
 
 // ******************* camera *******************
 
-static void camera_init(CameraState *s, int camera_id, int camera_num, unsigned int fps, cl_device_id device_id, cl_context ctx) {
+static void camera_init(CameraState *s, int camera_id, int camera_num, unsigned int fps, cl_device_id device_id, cl_context ctx, VisionStreamType rgb_type, VisionStreamType yuv_type) {
   LOGD("camera init %d", camera_num);
 
   assert(camera_id < ARRAYSIZE(cameras_supported));
@@ -586,7 +586,7 @@ static void camera_init(CameraState *s, int camera_id, int camera_num, unsigned 
   s->debayer_cl_localWorkSize[0] = DEBAYER_LOCAL_WORKSIZE;
   s->debayer_cl_localWorkSize[1] = DEBAYER_LOCAL_WORKSIZE;
 
-  s->buf.init(device_id, ctx, s, FRAME_BUF_COUNT, "frame");
+  s->buf.init(device_id, ctx, s, v, FRAME_BUF_COUNT, rgb_type, yuv_type);
 }
 
 // TODO: refactor this to somewhere nicer, perhaps use in camera_qcom as well
@@ -809,12 +809,15 @@ static void camera_open(CameraState *s) {
   enqueue_req_multi(s, 1, FRAME_BUF_COUNT, 0);
 }
 
-void cameras_init(MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
-  camera_init(&s->rear, CAMERA_ID_AR0231, 1, 20, device_id, ctx); // swap left/right
+void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
+  camera_init(v, &s->rear, CAMERA_ID_AR0231, 1, 20, device_id, ctx,
+              VISION_STREAM_RGB_BACK, VISION_STREAM_YUV_BACK); // swap left/right
   printf("rear initted \n");
-  camera_init(&s->wide, CAMERA_ID_AR0231, 0, 20, device_id, ctx);
+  camera_init(v, &s->wide, CAMERA_ID_AR0231, 0, 20, device_id, ctx,
+              VISION_STREAM_RGB_WIDE, VISION_STREAM_YUV_WIDE);
   printf("wide initted \n");
-  camera_init(&s->front, CAMERA_ID_AR0231, 2, 20, device_id, ctx);
+  camera_init(v, &s->front, CAMERA_ID_AR0231, 2, 20, device_id, ctx,
+              VISION_STREAM_RGB_FRONT, VISION_STREAM_YUV_FRONT);
   printf("front initted \n");
 
   s->sm = new SubMaster({"driverState"});
