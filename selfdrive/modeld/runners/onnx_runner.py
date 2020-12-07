@@ -38,17 +38,18 @@ def run_loop(m):
 
 if __name__ == "__main__":
   print(ort.get_available_providers(), file=sys.stderr)
-  if 'OpenVINOExecutionProvider' in ort.get_available_providers() and 'ONNXCPU' not in os.environ:
-    print("OnnxJit is using openvino", file=sys.stderr)
+  if 'CUDAExecutionProvider' in ort.get_available_providers():
+    print("OnnxJit is using CUDA", file=sys.stderr)
     options = ort.SessionOptions()
     options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_DISABLE_ALL
-    provider = 'OpenVINOExecutionProvider'
+    provider = 'CUDAExecutionProvider'
   else:
-    print("OnnxJit is using CPU", file=sys.stderr)
-    options = ort.SessionOptions()
-    options.intra_op_num_threads = 4
-    options.inter_op_num_threads = 8
-    provider = 'CPUExecutionProvider'
+    for _ in range(10):
+      print("OnnxJit is using CPU", file=sys.stderr)
+      options = ort.SessionOptions()
+      options.intra_op_num_threads = 4
+      options.inter_op_num_threads = 8
+      provider = 'CPUExecutionProvider'
 
   ort_session = ort.InferenceSession(sys.argv[1], options)
   ort_session.set_providers([provider], None)

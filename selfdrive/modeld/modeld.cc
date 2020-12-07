@@ -114,11 +114,7 @@ int main(int argc, char **argv) {
   PubMaster pm({"modelV2", "model", "cameraOdometry"});
   SubMaster sm({"pathPlan", "frame"});
 
-#if defined(QCOM) || defined(QCOM2)
-  cl_device_type device_type = CL_DEVICE_TYPE_DEFAULT;
-#else
-  cl_device_type device_type = CL_DEVICE_TYPE_CPU;
-#endif
+  cl_device_type device_type = CL_DEVICE_TYPE_GPU;
 
   // cl init
   cl_device_id device_id = cl_get_device_id(device_type);
@@ -188,6 +184,7 @@ int main(int argc, char **argv) {
 
         // TODO: don't make copies!
         memcpy(yuv_ion.addr, buf->addr, buf_info.buf_len);
+        visionbuf_sync(&yuv_ion, VISIONBUF_SYNC_TO_DEVICE);
 
         ModelDataRaw model_buf =
             model_eval_frame(&model, q, yuv_ion.buf_cl, buf_info.width, buf_info.height,

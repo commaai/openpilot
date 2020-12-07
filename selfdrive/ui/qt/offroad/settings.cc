@@ -231,7 +231,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
   panels = {
     {"developer", developer_panel()},
     {"device", device_panel()},
-    {"network", network_panel(this)},
+    //{"network", network_panel(this)},
     {"toggles", toggles_panel()},
   };
 
