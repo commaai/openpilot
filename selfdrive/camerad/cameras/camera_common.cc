@@ -185,9 +185,6 @@ bool CameraBuf::acquire() {
   // TODO: send metadata
   vipc_server->send(cur_rgb_buf);
   vipc_server->send(cur_yuv_buf);
-
-  tbuffer_dispatch(&ui_tb, cur_rgb_idx);
-
   return true;
 }
 
