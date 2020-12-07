@@ -89,7 +89,7 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
     yuv_transform = s->transform;
   }
 
-  vipc_server->create_buffers(yuv_type, UI_BUF_COUNT, false, rgb_width, rgb_height);
+  vipc_server->create_buffers(yuv_type, YUV_COUNT, false, rgb_width, rgb_height);
 
   if (ci->bayer) {
     cl_program prg_debayer = build_debayer_program(device_id, context, ci, this);

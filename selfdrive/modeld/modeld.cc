@@ -128,10 +128,8 @@ int main(int argc, char **argv) {
 
   // loop
   while (!do_exit) {
-    {
-      VisionBuf *b = &vipc_client.buffers[0];
-      LOGW("connected with buffer size: %d (%d x %d)", b->len, b->width, b->height);
-    }
+    VisionBuf *b = &vipc_client.buffers[0];
+    LOGW("connected with buffer size: %d (%d x %d)", b->len, b->width, b->height);
 
     // setup filter to track dropped frames
     const float dt = 1. / MODEL_FREQ;
