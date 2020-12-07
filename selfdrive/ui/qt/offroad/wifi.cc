@@ -6,7 +6,7 @@
 #include <QLineEdit>
 
 #include "wifi.hpp"
-
+#include "widgets/toggle.hpp"
 
 void clearLayout(QLayout* layout) {
   while (QLayoutItem* item = layout->takeAt(0)) {
@@ -30,9 +30,31 @@ WifiUI::WifiUI(QWidget *parent, int page_length) : QWidget(parent), networks_per
 
   // Networks page
   wifi_widget = new QWidget;
+  QVBoxLayout* networkLayout = new QVBoxLayout;
+  QHBoxLayout *tethering_field = new QHBoxLayout;
+  tethering_field->addWidget(new QLabel("Enable Tethering"));
+  
+  Toggle* toggle_switch = new Toggle(this);
+  toggle_switch->setFixedSize(150, 100);
+  tethering_field->addWidget(toggle_switch);
+  if (wifi->tetheringEnabled()){
+    toggle_switch->togglePosition();
+  }
+  QObject::connect(toggle_switch, SIGNAL(stateChanged(int)), this, SLOT(toggleTethering(int)));
+
+  QWidget* tetheringWidget = new QWidget;
+  tetheringWidget->setLayout(tethering_field);
+  tetheringWidget->setFixedHeight(150);
+  networkLayout->addWidget(tetheringWidget);
+
+
   vlayout = new QVBoxLayout;
   wifi_widget->setLayout(vlayout);
-  swidget->addWidget(wifi_widget);
+  networkLayout->addWidget(wifi_widget);
+
+  QWidget* networkWidget = new QWidget;
+  networkWidget->setLayout(networkLayout);
+  swidget->addWidget(networkWidget);
 
   // Keyboard page
   input_field = new InputField();
@@ -163,11 +185,19 @@ void WifiUI::refresh() {
   vlayout->addWidget(w);
 }
 
+
+
+void WifiUI::toggleTethering(int enable){
+  if(enable){
+    wifi->enableTethering();
+  }else{
+    wifi->disableTethering();
+  }
+}
+
 void WifiUI::handleButton(QAbstractButton* button) {
   QPushButton* btn = static_cast<QPushButton*>(button);
   Network n = wifi->seen_networks[connectButtons->id(btn)];
-
-  input_field->setPromptText("Enter password for \"" + n.ssid + "\"");
   connectToNetwork(n);
 }
 
@@ -176,6 +206,7 @@ void WifiUI::connectToNetwork(Network n){
   if(n.security_type == SecurityType::OPEN){
     wifi->connect(n);
   } else if (n.security_type == SecurityType::WPA){
+    input_field->setPromptText("Enter password for \"" + n.ssid + "\"");
     QString password = getStringFromUser();
     if(password.size()){
       wifi->connect(n, password);
