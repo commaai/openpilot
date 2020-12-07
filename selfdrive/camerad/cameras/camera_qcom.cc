@@ -116,7 +116,7 @@ static void camera_init(VisionIpcServer *v, CameraState *s, int camera_id, int c
 
   s->self_recover = 0;
 
-  s->buf.init(device_id, ctx, s, v, FRAME_BUF_COUNT, rgb_type, yuv_type);
+  s->buf.init(device_id, ctx, s, v, FRAME_BUF_COUNT, rgb_type, yuv_type, camera_release_buffer);
 
   pthread_mutex_init(&s->frame_info_lock, NULL);
 }

@@ -47,10 +47,11 @@ static cl_program build_debayer_program(cl_device_id device_id, cl_context conte
 #endif
 }
 
-void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s, VisionIpcServer * v, int frame_cnt, VisionStreamType rgb_type, VisionStreamType yuv_type) {
+void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s, VisionIpcServer * v, int frame_cnt, VisionStreamType rgb_type, VisionStreamType yuv_type, release_cb release_callback) {
   vipc_server = v;
   this->rgb_type = rgb_type;
   this->yuv_type = yuv_type;
+  this->release_callback = release_callback;
 
   const CameraInfo *ci = &s->ci;
   camera_state = s;
@@ -185,6 +186,11 @@ bool CameraBuf::acquire() {
   // TODO: send metadata
   vipc_server->send(cur_rgb_buf);
   vipc_server->send(cur_yuv_buf);
+
+  if (release_callback){
+    release_callback((void*)camera_state, buf_idx);
+  }
+
   return true;
 }
 

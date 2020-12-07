@@ -42,6 +42,8 @@ const bool env_send_front = getenv("SEND_FRONT") != NULL;
 const bool env_send_rear = getenv("SEND_REAR") != NULL;
 const bool env_send_wide = getenv("SEND_WIDE") != NULL;
 
+typedef void (*release_cb)(void *cookie, int buf_idx);
+
 typedef struct CameraInfo {
   const char* name;
   int frame_width, frame_height;
@@ -121,9 +123,11 @@ public:
   int frame_buf_count;
   int frame_size;
 
+  release_cb release_callback;
+
   CameraBuf() = default;
   ~CameraBuf();
-  void init(cl_device_id device_id, cl_context context, CameraState *s, VisionIpcServer * v, int frame_cnt, VisionStreamType rgb_type, VisionStreamType yuv_type);
+  void init(cl_device_id device_id, cl_context context, CameraState *s, VisionIpcServer * v, int frame_cnt, VisionStreamType rgb_type, VisionStreamType yuv_type, release_cb release_callback=nullptr);
   bool acquire();
   void release();
   void stop();
