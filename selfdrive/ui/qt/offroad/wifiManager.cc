@@ -72,7 +72,7 @@ WifiManager::WifiManager(){
     change(raw_adapter_state, 0, 0);
   }
 
-  // Compute tethering ssid as "Weedle" + first 4 characters of serial number of a device
+  // Compute tethering ssid as "Weedle" + first 4 characters of a dongle id
   tethering_ssid = "weedle";
   std::string bytes = Params().get("DongleId");
   if (bytes.length() >= 4){
@@ -340,22 +340,17 @@ void WifiManager::enableTethering(){
   connection["802-11-wireless"]["mode"] = "ap";
   connection["802-11-wireless"]["ssid"] = tethering_ssid.toUtf8();
 
-  QStringList group = {"ccmp"};
-  connection["802-11-wireless-security"]["group"] = group;
+  connection["802-11-wireless-security"]["group"] = QStringList("ccmp");
   connection["802-11-wireless-security"]["key-mgmt"] = "wpa-psk";
-  QStringList pairwise = {"ccmp"};
-  connection["802-11-wireless-security"]["pairwise"] = pairwise;
-  QStringList proto = {"rsn"};
-  connection["802-11-wireless-security"]["proto"] = proto;
+  connection["802-11-wireless-security"]["pairwise"] = QStringList("ccmp");
+  connection["802-11-wireless-security"]["proto"] = QStringList("rsn");
   connection["802-11-wireless-security"]["psk"] = "swagswagcomma";
 
   connection["ipv4"]["method"] = "shared";
-  IpConfig ip;
   QMap<QString,QVariant> adress1;
   adress1["address"] = "192.168.43.1";
-  adress1["prefix"] = static_cast<uint>(24);
-  ip.push_back(adress1);
-  connection["ipv4"]["address-data"] = QVariant::fromValue(ip);
+  adress1["prefix"] = 24u;
+  connection["ipv4"]["address-data"] = QVariant::fromValue(IpConfig() << adress1);
   connection["ipv4"]["gateway"] = "192.168.43.1";
   connection["ipv6"]["method"] = "ignore";
 
