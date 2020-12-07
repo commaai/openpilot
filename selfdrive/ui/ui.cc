@@ -76,10 +76,9 @@ void ui_init(UIState *s) {
 
   ui_nvg_init(s);
 
-  // TODO create vipc client
   s->vision_connected = true;
   s->last_frame = nullptr;
-  s->vipc_client = new VisionIpcClient("camerad", VISION_STREAM_RGB_BACK, false);
+  s->vipc_client = new VisionIpcClient("camerad", VISION_STREAM_RGB_BACK, true, false);
   ui_init_vision(s);
 }
 
