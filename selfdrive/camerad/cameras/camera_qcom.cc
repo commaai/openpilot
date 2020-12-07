@@ -98,9 +98,10 @@ static void camera_release_buffer(void* cookie, int buf_idx) {
   ioctl(s->isp_fd, VIDIOC_MSM_ISP_ENQUEUE_BUF, &s->ss[0].qbuf_info[buf_idx]);
 }
 
-static void camera_init(CameraState *s, int camera_id, int camera_num,
+static void camera_init(VisionIpcServer *v, CameraState *s, int camera_id, int camera_num,
                         uint32_t pixel_clock, uint32_t line_length_pclk,
-                        unsigned int max_gain, unsigned int fps, cl_device_id device_id, cl_context ctx) {
+                        unsigned int max_gain, unsigned int fps, cl_device_id device_id, cl_context ctx,
+                        VisionStreamType rgb_type, VisionStreamType yuv_type) {
   s->camera_num = camera_num;
   s->camera_id = camera_id;
 
@@ -115,7 +116,7 @@ static void camera_init(CameraState *s, int camera_id, int camera_num,
 
   s->self_recover = 0;
 
-  s->buf.init(device_id, ctx, s, FRAME_BUF_COUNT, "frame", camera_release_buffer);
+  s->buf.init(device_id, ctx, s, v, FRAME_BUF_COUNT, rgb_type, yuv_type);
 
   pthread_mutex_init(&s->frame_info_lock, NULL);
 }
@@ -251,7 +252,7 @@ cl_program build_conv_program(cl_device_id device_id, cl_context context, int im
   return cl_program_from_file(context, device_id, "imgproc/conv.cl", args);
 }
 
-void cameras_init(MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
+void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
   char project_name[1024] = {0};
   property_get("ro.boot.project_name", project_name, "");
 
@@ -287,7 +288,7 @@ void cameras_init(MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
   // 508 = ISO 12800, 16x digital gain
   // 510 = ISO 25600, 32x digital gain
 
-  camera_init(&s->rear, CAMERA_ID_IMX298, 0,
+  camera_init(v, &s->rear, CAMERA_ID_IMX298, 0,
               /*pixel_clock=*/600000000, /*line_length_pclk=*/5536,
               /*max_gain=*/510,  //0 (ISO 100)- 448 (ISO 800, max analog gain) - 511 (super noisy)
 #ifdef HIGH_FPS
@@ -295,23 +296,27 @@ void cameras_init(MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
 #else
               /*fps*/ 20,
 #endif
-              device_id, ctx);
+              device_id, ctx,
+              VISION_STREAM_RGB_BACK, VISION_STREAM_YUV_BACK);
   s->rear.apply_exposure = imx298_apply_exposure;
 
   if (s->device == DEVICE_OP3T) {
-    camera_init(&s->front, CAMERA_ID_S5K3P8SP, 1,
+    camera_init(v, &s->front, CAMERA_ID_S5K3P8SP, 1,
                 /*pixel_clock=*/560000000, /*line_length_pclk=*/5120,
-                /*max_gain=*/510, 10, device_id, ctx);
+                /*max_gain=*/510, 10, device_id, ctx,
+                VISION_STREAM_RGB_FRONT, VISION_STREAM_YUV_FRONT);
     s->front.apply_exposure = imx179_s5k3p8sp_apply_exposure;
   } else if (s->device == DEVICE_LP3) {
-    camera_init(&s->front, CAMERA_ID_OV8865, 1,
+    camera_init(v, &s->front, CAMERA_ID_OV8865, 1,
                 /*pixel_clock=*/72000000, /*line_length_pclk=*/1602,
-                /*max_gain=*/510, 10, device_id, ctx);
+                /*max_gain=*/510, 10, device_id, ctx,
+                VISION_STREAM_RGB_FRONT, VISION_STREAM_YUV_FRONT);
     s->front.apply_exposure = ov8865_apply_exposure;
   } else {
-    camera_init(&s->front, CAMERA_ID_IMX179, 1,
+    camera_init(v, &s->front, CAMERA_ID_IMX179, 1,
                 /*pixel_clock=*/251200000, /*line_length_pclk=*/3440,
-                /*max_gain=*/224, 20, device_id, ctx);
+                /*max_gain=*/224, 20, device_id, ctx,
+                VISION_STREAM_RGB_FRONT, VISION_STREAM_YUV_FRONT);
     s->front.apply_exposure = imx179_s5k3p8sp_apply_exposure;
   }
 
@@ -2159,7 +2164,7 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
   const int exposure_height = 314;
   const int skip = 1;
   if (cnt % 3 == 0) {
-    set_exposure_target(c, (const uint8_t *)b->yuv_bufs[b->cur_yuv_idx].y, exposure_x, exposure_x + exposure_width, skip, exposure_y, exposure_y + exposure_height, skip);
+    set_exposure_target(c, (const uint8_t *)b->cur_yuv_buf->y, exposure_x, exposure_x + exposure_width, skip, exposure_y, exposure_y + exposure_height, skip);
   }
 }
 
