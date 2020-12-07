@@ -27,8 +27,9 @@ KeyboardLayout::KeyboardLayout(QWidget *parent, std::vector<QVector<QString>> la
       btn_group->addButton(btn);
       hlayout->addSpacing(10);
       if (p == QString("  ")){
+        // Spacebar is 3 times wider
         hlayout->addWidget(btn, 3);
-      }else{
+      }else {
         hlayout->addWidget(btn, 1);
       }
 
