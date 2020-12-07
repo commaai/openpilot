@@ -4,8 +4,8 @@
 #include <unistd.h>
 #include <eigen3/Eigen/Dense>
 
-#include "common/visionbuf.h"
-#include "common/visionipc.h"
+#include "visionbuf.h"
+#include "visionipc_client.h"
 #include "common/swaglog.h"
 #include "common/clutil.h"
 
@@ -123,17 +123,15 @@ int main(int argc, char **argv) {
   model_init(&model, device_id, context);
   LOGW("models loaded, modeld starting");
 
+  // TODO: conflate
+  auto vipc_client = VisionIpcClient("camerad", VISION_STREAM_YUV_BACK, device_id, context);
+
   // loop
-  VisionStream stream;
   while (!do_exit) {
-    VisionStreamBufs buf_info;
-    err = visionstream_init(&stream, VISION_STREAM_YUV, true, &buf_info);
-    if (err) {
-      LOGW("visionstream connect failed");
-      usleep(100000);
-      continue;
+    {
+      VisionBuf *b = &vipc_client.buffers[0];
+      LOGW("connected with buffer size: %d (%d x %d)", b->len, b->width, b->height);
     }
-    LOGW("connected with buffer size: %d", buf_info.buf_len);
 
     // setup filter to track dropped frames
     const float dt = 1. / MODEL_FREQ;
@@ -141,21 +139,16 @@ int main(int argc, char **argv) {
     const float frame_filter_k = (dt / ts) / (1. + dt / ts);
     float frames_dropped = 0;
 
-    // one frame in memory
-    VisionBuf yuv_ion = visionbuf_allocate_cl(buf_info.buf_len, device_id, context);
-
     uint32_t frame_id = 0, last_vipc_frame_id = 0;
     double last = 0;
     int desire = -1;
     uint32_t run_count = 0;
+
     while (!do_exit) {
-      VIPCBuf *buf;
-      VIPCBufExtra extra;
-      buf = visionstream_get(&stream, &extra);
-      if (buf == NULL) {
-        LOGW("visionstream get failed");
-        break;
-      }
+      VisionBuf *buf = vipc_client.recv();
+
+      // TODO receive extra data
+      VIPCBufExtra extra = {0};
 
       pthread_mutex_lock(&transform_lock);
       mat3 model_transform = cur_transform;
@@ -179,12 +172,8 @@ int main(int argc, char **argv) {
 
         mt1 = millis_since_boot();
 
-        // TODO: don't make copies!
-        memcpy(yuv_ion.addr, buf->addr, buf_info.buf_len);
-        visionbuf_sync(&yuv_ion, VISIONBUF_SYNC_TO_DEVICE);
-
         ModelDataRaw model_buf =
-            model_eval_frame(&model, yuv_ion.buf_cl, buf_info.width, buf_info.height,
+            model_eval_frame(&model, buf->buf_cl, buf->width, buf->height,
                              model_transform, vec_desire);
         mt2 = millis_since_boot();
         float model_execution_time = (mt2 - mt1) / 1000.0;
@@ -205,8 +194,6 @@ int main(int argc, char **argv) {
       }
 
     }
-    visionbuf_free(&yuv_ion);
-    visionstream_destroy(&stream);
   }
 
   model_free(&model);
