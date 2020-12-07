@@ -190,7 +190,7 @@ void WifiUI::refresh() {
 void WifiUI::toggleTethering(int enable){
   if (enable){
     wifi->enableTethering();
-  }else {
+  } else {
     wifi->disableTethering();
   }
 }

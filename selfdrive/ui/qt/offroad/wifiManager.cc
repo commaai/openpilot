@@ -115,10 +115,10 @@ QList<Network> WifiManager::get_networks(){
     ConnectedType ctype;
     if (path.path() != active_ap){
       ctype = ConnectedType::DISCONNECTED;
-    }else {
+    } else {
       if (ssid == connecting_to_network){
         ctype = ConnectedType::CONNECTING;
-      }else {
+      } else {
         ctype = ConnectedType::CONNECTED;
       }
     }
@@ -314,7 +314,7 @@ void WifiManager::change(unsigned int new_state,unsigned int previous_state,unsi
   raw_adapter_state = new_state;
   if (new_state == state_need_auth && change_reason == reason_wrong_password){
     emit wrongPassword(connecting_to_network);
-  }else if (new_state == state_connected){
+  } else if (new_state == state_connected){
     connecting_to_network = "";
   }
 }
