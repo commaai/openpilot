@@ -125,7 +125,6 @@ int main(int argc, char **argv) {
 
   auto vipc_client = VisionIpcClient("camerad", VISION_STREAM_YUV_BACK, true, device_id, context);
 
-
   // loop
   while (!do_exit) {
     VisionBuf *b = &vipc_client.buffers[0];
