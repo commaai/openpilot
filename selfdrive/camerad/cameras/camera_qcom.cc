@@ -2231,7 +2231,7 @@ void cameras_run(MultiCameraState *s) {
 
         if (buffer == 0) {
           c->buf.camera_bufs_metadata[buf_idx] = get_frame_metadata(c, isp_event_data->frame_id);
-          tbuffer_dispatch(&c->buf.camera_tb, buf_idx);
+          c->buf.queue(buf_idx);
         } else {
           uint8_t *d = (uint8_t*)(c->ss[buffer].bufs[buf_idx].addr);
           if (buffer == 1) {
