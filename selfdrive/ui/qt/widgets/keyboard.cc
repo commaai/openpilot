@@ -7,31 +7,31 @@
 
 #include "keyboard.hpp"
 
-KeyboardLayout::KeyboardLayout(QWidget* parent, std::vector<QVector<QString>> layout) : QWidget(parent) {
+KeyboardLayout::KeyboardLayout(QWidget *parent, std::vector<QVector<QString>> layout) : QWidget(parent) {
   QVBoxLayout* vlayout = new QVBoxLayout;
   QButtonGroup* btn_group = new QButtonGroup(this);
 
   QObject::connect(btn_group, SIGNAL(buttonClicked(QAbstractButton*)), parent, SLOT(handleButton(QAbstractButton*)));
 
   int i = 0;
-  for(auto s : layout){
+  for (auto s : layout){
     QHBoxLayout *hlayout = new QHBoxLayout;
 
     if (i == 1){
       hlayout->addSpacing(90);
     }
 
-    for(QString p : s){
+    for (QString p : s){
       QPushButton* btn = new QPushButton(p);
       btn->setFixedHeight(120);
-
-      if (p == QString("  ")){
-        btn->setFixedWidth(1024);
-      }
-
       btn_group->addButton(btn);
       hlayout->addSpacing(10);
-      hlayout->addWidget(btn);
+      if (p == QString("  ")){
+        hlayout->addWidget(btn, 3);
+      }else{
+        hlayout->addWidget(btn, 1);
+      }
+
     }
 
     if (i == 1){
@@ -101,22 +101,22 @@ Keyboard::Keyboard(QWidget *parent) : QWidget(parent) {
 
 void Keyboard::handleButton(QAbstractButton* m_button){
   QString id = m_button->text();
-  if(!QString::compare(m_button->text(),"↑")||!QString::compare(m_button->text(),"ABC")){
+  if (!QString::compare(m_button->text(), "↑") || !QString::compare(m_button->text(), "ABC")){
     main_layout->setCurrentIndex(0);
   }
-   if(!QString::compare(m_button->text(),"⇧")){
+  if (!QString::compare(m_button->text(), "⇧")){
     main_layout->setCurrentIndex(1);
   }
-  if(!QString::compare(m_button->text(),"123")){
+  if (!QString::compare(m_button->text(), "123")){
     main_layout->setCurrentIndex(2);
   }
-  if(!QString::compare(m_button->text(),"#+=")){
+  if (!QString::compare(m_button->text(), "#+=")){
     main_layout->setCurrentIndex(3);
   }
-  if(!QString::compare(m_button->text(),"⏎")){
+  if (!QString::compare(m_button->text(), "⏎")){
     main_layout->setCurrentIndex(0);
   }
-  if("A" <= id && id <= "Z"){
+  if ("A" <= id && id <= "Z"){
     main_layout->setCurrentIndex(0);
   }
   emit emitButton(m_button->text());

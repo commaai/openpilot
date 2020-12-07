@@ -99,7 +99,7 @@ void WifiUI::refresh() {
   int button_height = static_cast<int>(this->height() / (networks_per_page + 1) * 0.6);
   for (Network &network : wifi->seen_networks){
     QHBoxLayout *hlayout = new QHBoxLayout;
-    if(page * networks_per_page <= i && i < (page + 1) * networks_per_page){
+    if (page * networks_per_page <= i && i < (page + 1) * networks_per_page){
       // SSID
       hlayout->addSpacing(50);
       hlayout->addWidget(new QLabel(QString::fromUtf8(network.ssid)));
@@ -148,7 +148,7 @@ void WifiUI::refresh() {
   }
 
   // Pad vlayout to prevert oversized network widgets in case of low visible network count
-  for(int i = countWidgets; i < networks_per_page; i++) {
+  for (int i = countWidgets; i < networks_per_page; i++) {
     QWidget *w = new QWidget;
     vlayout->addWidget(w);
   }
@@ -188,7 +188,7 @@ void WifiUI::refresh() {
 
 
 void WifiUI::toggleTethering(int enable){
-  if(enable){
+  if (enable){
     wifi->enableTethering();
   }else{
     wifi->disableTethering();
@@ -203,12 +203,12 @@ void WifiUI::handleButton(QAbstractButton* button) {
 
 void WifiUI::connectToNetwork(Network n){
   timer->stop();
-  if(n.security_type == SecurityType::OPEN){
+  if (n.security_type == SecurityType::OPEN){
     wifi->connect(n);
   } else if (n.security_type == SecurityType::WPA){
     input_field->setPromptText("Enter password for \"" + n.ssid + "\"");
     QString password = getStringFromUser();
-    if(password.size()){
+    if (password.size()){
       wifi->connect(n, password);
     }
   }
@@ -232,11 +232,11 @@ void WifiUI::receiveText(QString t) {
 
 
 void WifiUI::wrongPassword(QString ssid){
-  if(loop.isRunning()){
+  if (loop.isRunning()){
     return;
   }
-  for(Network n : wifi->seen_networks){
-    if(n.ssid == ssid){
+  for (Network n : wifi->seen_networks){
+    if (n.ssid == ssid){
       input_field->setPromptText("Wrong password for \"" + n.ssid +"\"");
       connectToNetwork(n);
     }
