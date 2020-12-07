@@ -96,6 +96,8 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
     cl_program prg_debayer = build_debayer_program(device_id, context, ci, this);
     krnl_debayer = CL_CHECK_ERR(clCreateKernel(prg_debayer, "debayer10", &err));
     CL_CHECK(clReleaseProgram(prg_debayer));
+  } else {
+    krnl_debayer = nullptr;
   }
 
   rgb_to_yuv_init(&rgb_to_yuv_state, context, device_id, rgb_width, rgb_height, rgb_stride);
