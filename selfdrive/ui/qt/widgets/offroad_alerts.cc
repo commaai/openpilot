@@ -12,7 +12,7 @@
 
 void cleanLayout(QLayout* layout) {
   while (QLayoutItem* item = layout->takeAt(0)) {
-    if (QWidget* widget = item->widget()){
+    if (QWidget* widget = item->widget()) {
       widget->deleteLater();
     }
     if (QLayout* childLayout = item->layout()) {
@@ -22,11 +22,11 @@ void cleanLayout(QLayout* layout) {
   }
 }
 
-QString vectorToQString(std::vector<char> v){
+QString vectorToQString(std::vector<char> v) {
   return QString::fromStdString(std::string(v.begin(), v.end()));
 }
 
-OffroadAlert::OffroadAlert(QWidget* parent){
+OffroadAlert::OffroadAlert(QWidget* parent) {
   vlayout = new QVBoxLayout;
   refresh();
   setLayout(vlayout);
@@ -38,7 +38,7 @@ void OffroadAlert::refresh() {
 
   updateAvailable = false;
   std::vector<char> bytes = Params().read_db_bytes("UpdateAvailable");
-  if (bytes.size() && bytes[0] == '1'){
+  if (bytes.size() && bytes[0] == '1') {
     updateAvailable = true;
   }
 
@@ -91,7 +91,7 @@ void OffroadAlert::refresh() {
   } else {
     vlayout->addSpacing(60);
 
-    for (auto alert : alerts){
+    for (auto alert : alerts) {
       QLabel *l = new QLabel(alert.text);
       l->setWordWrap(true);
       l->setMargin(60);
@@ -122,7 +122,7 @@ void OffroadAlert::refresh() {
   QObject::connect(hide_btn, SIGNAL(released()), this, SIGNAL(closeAlerts()));
 }
 
-void OffroadAlert::parse_alerts(){
+void OffroadAlert::parse_alerts() {
   alerts.clear();
   // We launch in selfdrive/ui
   QFile inFile("../controls/lib/alerts_offroad.json");
@@ -139,7 +139,7 @@ void OffroadAlert::parse_alerts(){
   for (const QString& key : json.keys()) {
     std::vector<char> bytes = Params().read_db_bytes(key.toStdString().c_str());
 
-    if (bytes.size()){
+    if (bytes.size()) {
       QJsonDocument doc_par = QJsonDocument::fromJson(QByteArray(bytes.data(), bytes.size()));
       QJsonObject obj = doc_par.object();
       Alert alert = {obj.value("text").toString(), obj.value("severity").toInt()};
