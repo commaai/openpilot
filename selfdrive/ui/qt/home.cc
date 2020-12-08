@@ -99,16 +99,31 @@ void OffroadHome::refresh() {
   }
 
   alert_notification->setVisible(true);
-  alert_notification->setStyleSheet(QString(R"(
-    padding: 15px;
-    padding-left: 30px;
-    padding-right: 30px;
-    border: 1px solid;
-    border-radius: 5px;
-    font-size: 40px;
-    font-weight: bold;
-    background-color: red;
-  )"));
+
+  // Red background for alerts, blue for update available
+  if (alerts_widget->updateAvailable){
+    alert_notification->setStyleSheet(QString(R"(
+      padding: 15px;
+      padding-left: 30px;
+      padding-right: 30px;
+      border: 1px solid;
+      border-radius: 5px;
+      font-size: 40px;
+      font-weight: bold;
+      background-color: blue;
+    )"));
+  } else {
+    alert_notification->setStyleSheet(QString(R"(
+      padding: 15px;
+      padding-left: 30px;
+      padding-right: 30px;
+      border: 1px solid;
+      border-radius: 5px;
+      font-size: 40px;
+      font-weight: bold;
+      background-color: red;
+    )"));
+  }
 }
 
 
