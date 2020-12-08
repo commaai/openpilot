@@ -613,6 +613,7 @@ void encoder_close(EncoderState *s) {
 
       OMX_BUFFERHEADERTYPE* in_buf = queue_pop(&s->free_in);
       in_buf->nFilledLen = 0;
+      in_buf->nOffset = 0;
       in_buf->nFlags = OMX_BUFFERFLAG_EOS;
       in_buf->nTimeStamp = s->last_t + 1000000LL/s->fps;
 
