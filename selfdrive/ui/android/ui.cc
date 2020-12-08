@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <sys/resource.h>
+#include <iostream>
 
 #include <algorithm>
 
@@ -22,6 +23,83 @@ static void ui_set_brightness(UIState *s, int brightness) {
       last_brightness = brightness;
     }
   }
+}
+
+static void send_ls(UIState *s, int status) {
+  MessageBuilder msg;
+  auto lsStatus = msg.initEvent().initLaneSpeedButton();
+  lsStatus.setStatus(status);
+  s->pm->send("laneSpeedButton", msg);
+}
+
+static void send_df(UIState *s, int status) {
+  MessageBuilder msg;
+  auto dfStatus = msg.initEvent().initDynamicFollowButton();
+  dfStatus.setStatus(status);
+  s->pm->send("dynamicFollowButton", msg);
+}
+
+static void send_ml(UIState *s, bool enabled) {
+  MessageBuilder msg;
+  auto mlStatus = msg.initEvent().initModelLongButton();
+  mlStatus.setEnabled(enabled);
+  s->pm->send("modelLongButton", msg);
+}
+
+static bool handle_ls_touch(UIState *s, int touch_x, int touch_y) {
+  //lsButton manager
+  int padding = 40;
+  int btn_x_1 = 1660 - 200;
+  int btn_x_2 = 1660 - 50;
+  if ((btn_x_1 - padding <= touch_x) && (touch_x <= btn_x_2 + padding) && (855 - padding <= touch_y)) {
+    s->scene.lsButtonStatus++;
+    if (s->scene.lsButtonStatus > 2) { s->scene.lsButtonStatus = 0; }
+    send_ls(s, s->scene.lsButtonStatus);
+    printf("ls button: %d\n", s->scene.lsButtonStatus);
+    return true;
+  }
+  return false;
+}
+
+static bool handle_df_touch(UIState *s, int touch_x, int touch_y) {
+  //dfButton manager
+  int padding = 40;
+  if ((1660 - padding <= touch_x) && (855 - padding <= touch_y)) {
+    s->scene.dfButtonStatus++;
+    if (s->scene.dfButtonStatus > 3) { s->scene.dfButtonStatus = 0; }
+    send_df(s, s->scene.dfButtonStatus);
+    printf("df button: %d\n", s->scene.dfButtonStatus);
+    return true;
+  }
+  return false;
+}
+
+static bool handle_ml_touch(UIState *s, int touch_x, int touch_y) {
+  //mlButton manager
+  int padding = 40;
+  int btn_w = 500;
+  int btn_h = 138;
+  int xs[2] = {1920 / 2 - btn_w / 2, 1920 / 2 + btn_w / 2};
+  int y_top = 915 - btn_h / 2;
+  if (xs[0] <= touch_x + padding && touch_x - padding <= xs[1] && y_top - padding <= touch_y) {
+    s->scene.mlButtonEnabled = !s->scene.mlButtonEnabled;
+    send_ml(s, s->scene.mlButtonEnabled);
+    printf("ml button: %d\n", s->scene.mlButtonEnabled);
+    return true;
+  }
+  return false;
+}
+
+static bool handle_SA_touched(UIState *s, int touch_x, int touch_y) {
+  if (s->active_app == cereal::UiLayoutState::App::NONE) {  // if onroad (not settings or home)
+    if ((s->awake && s->vision_connected && s->status != STATUS_OFFROAD) || s->ui_debug) {  // if car started or debug mode
+      if (handle_df_touch(s, touch_x, touch_y) || handle_ls_touch(s, touch_x, touch_y) || handle_ml_touch(s, touch_x, touch_y)) {
+        s->scene.uilayout_sidebarcollapsed = true;  // collapse sidebar when tapping any SA button
+        return true;  // only allow one button to be pressed at a time
+      }
+    }
+  }
+  return false;
 }
 
 static void handle_display_state(UIState *s, bool user_input) {
@@ -114,6 +192,7 @@ int main(int argc, char* argv[]) {
   UIState uistate = {};
   UIState *s = &uistate;
   ui_init(s);
+  sa_init(s, true);
   s->sound = &sound;
 
   TouchState touch = {0};
@@ -140,10 +219,17 @@ int main(int argc, char* argv[]) {
   const int MAX_VOLUME = LEON ? 15 : 12;
   s->sound->setVolume(MIN_VOLUME);
 
+  bool last_started = s->started;
   while (!do_exit) {
     if (!s->started) {
       util::sleep_for(50);
     }
+
+    if (s->started && !last_started) {
+      sa_init(s, false);  // reset ml button and regrab params
+    }
+    last_started = s->started;
+
     double u1 = millis_since_boot();
 
     ui_update(s);
@@ -152,8 +238,11 @@ int main(int argc, char* argv[]) {
     int touch_x = -1, touch_y = -1;
     int touched = touch_poll(&touch, &touch_x, &touch_y, 0);
     if (touched == 1) {
+      if (s->ui_debug) { printf("touched x: %d, y: %d\n", touch_x, touch_y); }
       handle_sidebar_touch(s, touch_x, touch_y);
-      handle_vision_touch(s, touch_x, touch_y);
+      if (!handle_SA_touched(s, touch_x, touch_y)) {  // if SA button not touched
+        handle_vision_touch(s, touch_x, touch_y);
+      }
     }
 
     // Don't waste resources on drawing in case screen is off
