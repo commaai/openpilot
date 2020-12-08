@@ -90,8 +90,10 @@ void update_sockets(UIState *s) {
     return;
   }
 
-  s->last_frame = s->vipc_client->recv();
-  if (s->last_frame == nullptr && errno == EINTR){
+  VisionBuf * buf = s->vipc_client->recv();
+  if (buf != nullptr){
+    s->last_frame = buf;
+  } else if (errno == EINTR){
     LOGE("Got interrupt while receiving frame");
     raise(SIGINT);
   }
