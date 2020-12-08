@@ -619,17 +619,17 @@ int main(int argc, char** argv) {
   pthread_mutex_init(&s.rotate_lock, NULL);
 #ifndef DISABLE_ENCODER
   // rear camera
-  std::thread encoder_thread_handle(encoder_thread, &s.rotate_state[LOG_CAMERA_ID_FCAMERA], false, LOG_CAMERA_ID_FCAMERA);
+  std::thread encoder_thread_handle(encoder_thread, &s.rotate_state[LOG_CAMERA_ID_FCAMERA], LOG_CAMERA_ID_FCAMERA);
   s.rotate_state[LOG_CAMERA_ID_FCAMERA].enabled = true;
   // front camera
   std::thread front_encoder_thread_handle;
   if (record_front) {
-    front_encoder_thread_handle = std::thread(encoder_thread, &s.rotate_state[LOG_CAMERA_ID_DCAMERA], false, LOG_CAMERA_ID_DCAMERA);
+    front_encoder_thread_handle = std::thread(encoder_thread, &s.rotate_state[LOG_CAMERA_ID_DCAMERA], LOG_CAMERA_ID_DCAMERA);
     s.rotate_state[LOG_CAMERA_ID_DCAMERA].enabled = true;
   }
   #ifdef QCOM2
   // wide camera
-  std::thread wide_encoder_thread_handle(encoder_thread, &s.rotate_state[LOG_CAMERA_ID_ECAMERA], false, LOG_CAMERA_ID_ECAMERA);
+  std::thread wide_encoder_thread_handle(encoder_thread, &s.rotate_state[LOG_CAMERA_ID_ECAMERA], LOG_CAMERA_ID_ECAMERA);
   s.rotate_state[LOG_CAMERA_ID_ECAMERA].enabled = true;
   #endif
 #endif
