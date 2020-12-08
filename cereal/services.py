@@ -57,6 +57,13 @@ service_list = {
   "modelV2": Service(8077, True, 20., 20),
   "managerState": Service(8078, True, 2., 1),
 
+  "dynamicFollowData": Service(8079, False, 20.),
+  "dynamicFollowButton": Service(8081, False, 0.),  # 8080 is reverved
+  "laneSpeed": Service(8082, False, 0.),
+  "laneSpeedButton": Service(8083, False, 0.),
+  "dynamicCameraOffset": Service(8084, False, 0.),
+  "modelLongButton": Service(8085, False, 0.),
+
   "testModel": Service(8040, False, 0.),
   "testLiveLocation": Service(8045, False, 0.),
   "testJoystick": Service(8056, False, 0.),

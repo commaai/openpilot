@@ -415,6 +415,7 @@ struct CarParams {
   communityFeature @46: Bool;  # true if a community maintained feature is detected
   fingerprintSource @49: FingerprintSource;
   networkLocation @50 :NetworkLocation;  # Where Panda/C2 is integrated into the car's CAN network
+  hasZss @51: Bool;  # true if ZSS is detected
 
   struct LateralParams {
     torqueBP @0 :List(Int32);
@@ -426,7 +427,10 @@ struct CarParams {
     kpV @1 :List(Float32);
     kiBP @2 :List(Float32);
     kiV @3 :List(Float32);
-    kf @4 :Float32;
+    kdBP @4 :List(Float32) = [0.];
+    kdV @5 :List(Float32) = [0.];
+    kf @6 :Float32;
+    newKfTuned @7 :Bool;
   }
 
   struct LongitudinalPIDTuning {
