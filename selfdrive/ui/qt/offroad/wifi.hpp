@@ -18,7 +18,7 @@ public:
   explicit WifiUI(QWidget *parent = 0, int page_length = 5);
 
 private:
-  WifiManager* wifi;
+  WifiManager* wifi = nullptr;
   const int networks_per_page;
 
   QStackedWidget *swidget;

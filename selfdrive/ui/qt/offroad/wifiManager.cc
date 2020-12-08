@@ -61,16 +61,19 @@ WifiManager::WifiManager() {
   qDBusRegisterMetaType<IpConfig>();
   connecting_to_network = "";
   adapter = get_adapter();
-  has_adapter = adapter != "";
-  if (has_adapter) {
-    QDBusInterface nm(nm_service, adapter, device_iface, bus);
-    bus.connect(nm_service, adapter, device_iface, "StateChanged", this, SLOT(change(unsigned int, unsigned int, unsigned int)));
-    
-    QDBusInterface device_props(nm_service, adapter, props_iface, bus);
-    QDBusMessage response = device_props.call("Get", device_iface, "State");
-    raw_adapter_state = get_response<uint>(response);
-    change(raw_adapter_state, 0, 0);
+
+  bool has_adapter = adapter != "";
+  if (!has_adapter){
+    throw std::runtime_error("Error connecting to panda");
   }
+
+  QDBusInterface nm(nm_service, adapter, device_iface, bus);
+  bus.connect(nm_service, adapter, device_iface, "StateChanged", this, SLOT(change(unsigned int, unsigned int, unsigned int)));
+
+  QDBusInterface device_props(nm_service, adapter, props_iface, bus);
+  QDBusMessage response = device_props.call("Get", device_iface, "State");
+  raw_adapter_state = get_response<uint>(response);
+  change(raw_adapter_state, 0, 0);
 
   // Compute tethering ssid as "Weedle" + first 4 characters of a dongle id
   tethering_ssid = "weedle";
@@ -81,8 +84,6 @@ WifiManager::WifiManager() {
 }
 
 void WifiManager::refreshNetworks() {
-  if (!has_adapter) return;
-
   bus = QDBusConnection::systemBus();
   seen_networks.clear();
   seen_ssids.clear();
@@ -142,7 +143,7 @@ SecurityType WifiManager::getSecurityType(QString path) {
 
   // obtained by looking at flags of networks in the office as reported by an Android phone
   const int supports_wpa = NM_802_11_AP_SEC_PAIR_WEP40 | NM_802_11_AP_SEC_PAIR_WEP104 | NM_802_11_AP_SEC_GROUP_WEP40 | NM_802_11_AP_SEC_GROUP_WEP104 | NM_802_11_AP_SEC_KEY_MGMT_PSK;
-  
+
   if (sflag == 0) {
     return SecurityType::OPEN;
   } else if ((sflag & NM_802_11_AP_FLAGS_PRIVACY) && (wpa_props & supports_wpa) && !(wpa_props & NM_802_11_AP_SEC_KEY_MGMT_802_1X)) {
@@ -249,8 +250,6 @@ void WifiManager::clear_connections(QString ssid) {
 }
 
 void WifiManager::request_scan() {
-  if (!has_adapter) return;
-
   QDBusInterface nm(nm_service, adapter, wireless_device_iface, bus);
   nm.call("RequestScan",  QVariantMap());
 }
@@ -326,7 +325,7 @@ void WifiManager::disconnect() {
   }
 }
 
-//Functions for tethering 
+//Functions for tethering
 
 void WifiManager::enableTethering() {
   disconnect();
