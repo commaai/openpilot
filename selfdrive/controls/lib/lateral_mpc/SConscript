@@ -22,8 +22,8 @@ interface_dir = Dir('lib_mpc_export')
 SConscript(['#phonelibs/qpoases/SConscript'], variant_dir='lib_qp', exports=['interface_dir'])
 
 env.SharedLibrary('mpc', mpc_files, LIBS=['m', 'qpoases'], LIBPATH=['lib_qp'], CPPPATH=cpp_path)
-# if arch != "aarch64":
-#     acado_libs = [File("#phonelibs/acado/x64/lib/libacado_toolkit.a"),
-#                   File("#phonelibs/acado/x64/lib/libacado_casadi.a"),
-#                   File("#phonelibs/acado/x64/lib/libacado_csparse.a")]
-#     env.Program('generator', 'generator.cpp', LIBS=acado_libs, CPPPATH=cpp_path)
+if arch != "aarch64":
+    acado_libs = [File("#phonelibs/acado/x64/lib/libacado_toolkit.a"),
+                  File("#phonelibs/acado/x64/lib/libacado_casadi.a"),
+                  File("#phonelibs/acado/x64/lib/libacado_csparse.a")]
+    env.Program('generator', 'generator.cpp', LIBS=acado_libs, CPPPATH=cpp_path)
