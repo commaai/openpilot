@@ -11,6 +11,7 @@
 #include <libavformat/avformat.h>
 
 #include "common/cqueue.h"
+#include "visionipc.h"
 
 #ifdef __cplusplus
 extern "C" {
