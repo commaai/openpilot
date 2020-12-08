@@ -5,13 +5,12 @@ if SHARED:
 else:
   fxn = env.Library
 
-common_libs = ['params.cc', 'swaglog.cc', 'util.c', 'gpio.cc', 'i2c.cc']
+common_libs = ['params.cc', 'swaglog.cc', 'cqueue.c', 'util.c', 'gpio.cc', 'i2c.cc']
 
 _common = fxn('common', common_libs, LIBS="json11")
 
 files = [
   'clutil.cc',
-  'cqueue.c',
   'glutil.c',
   'visionimg.cc',
 ]
