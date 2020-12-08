@@ -54,12 +54,12 @@ int main( )
   Function h;
 
   // Distance errors
-  h << poly_d - yy;
+  h << (poly_d - yy);
   h << lr_prob * c_left_lane;
   h << lr_prob * c_right_lane;
 
   // Heading error
-  h << (v_ref + 1.0 ) * (angle_d - psi);
+  h <<  .1* (v_ref + 1.0 ) * (angle_d - psi);
 
   // Angular rate error
   h << (v_ref + 1.0 ) * t;
