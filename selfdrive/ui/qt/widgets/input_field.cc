@@ -44,18 +44,18 @@ void InputField::emitEmpty() {
 }
 
 void InputField::getText(QString s) {
-  if(!QString::compare(s,"⌫")){
+  if (!QString::compare(s,"⌫")) {
     line->backspace();
   }
 
-  if(!QString::compare(s,"⏎")){
+  if (!QString::compare(s,"⏎")) {
     emitText(line->text());
     line->setText("");
   }
 
   QVector<QString> control_buttons {"⇧", "↑", "ABC", "⏎", "#+=", "⌫", "123"};
-  for(QString c : control_buttons){
-    if(!QString::compare(s, c)){
+  for(QString c : control_buttons) {
+    if (!QString::compare(s, c)) {
       return;
     }
   }

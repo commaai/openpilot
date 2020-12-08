@@ -25,7 +25,7 @@ std::string getenv_default(const char* env_var, const char * suffix, const char*
   const char* env_val = getenv(env_var);
   if (env_val != NULL){
     return std::string(env_val) + std::string(suffix);
-  } else{
+  } else {
     return std::string(default_val);
   }
 }
