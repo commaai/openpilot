@@ -78,6 +78,10 @@ int main(int argc, char** argv) {
   int spinner_comma_img = nvgCreateImageMem(vg, 0, (unsigned char*)_binary_img_spinner_comma_png_start, _binary_img_spinner_comma_png_end - _binary_img_spinner_comma_png_start);
   assert(spinner_comma_img >= 0);
 
+  double DT_SPIN = 1 / 50.;  // how quickly spinner draws
+  double color_hue = 108;  // start at green
+  double hue_rate = 10;  // start at 10 * DT_SPIN
+  double max_hue_rate = 300;
   for (int cnt = 0; ; cnt++) {
     // Check stdin for new text
     if (stdin_input_available()){
@@ -139,6 +143,9 @@ int main(int argc, char** argv) {
     nvgFill(vg);
 
     if (draw_progress){
+      color_hue += hue_rate * DT_SPIN;  // update hue and hue rate (gradually speed up)
+      hue_rate += (hue_rate > max_hue_rate) ? 0 : (6 * DT_SPIN);  // clip to max
+
       // draw progress bar
       int progress_width = 1000;
       int progress_x = fb_w/2-progress_width/2;
@@ -158,7 +165,7 @@ int main(int argc, char** argv) {
       paint = nvgBoxGradient(
           vg, progress_x, progress_y,
           bar_pos+1.5f, progress_height-1, 3, 4,
-          nvgRGB(245, 245, 245), nvgRGB(105, 105, 105));
+          nvgHSLA((color_hue + 30) / 360., .80, .57, 255), nvgHSLA((color_hue + 30) / 360., .80, .57, 255));
 
       nvgBeginPath(vg);
       nvgRoundedRect(
@@ -166,6 +173,11 @@ int main(int argc, char** argv) {
           bar_pos, progress_height-2, 12);
       nvgFillPaint(vg, paint);
       nvgFill(vg);
+
+      nvgFillColor(vg, nvgHSLA(color_hue / 360., .80, .57, 255));
+      nvgTextAlign(vg, NVG_ALIGN_CENTER | NVG_ALIGN_TOP);
+      nvgFontSize(vg, 94.0f);
+      nvgText(vg, fb_w/2, (fb_h*4/5), "Loading Stock Additions...", NULL);
     } else {
       // message
       nvgTextAlign(vg, NVG_ALIGN_CENTER | NVG_ALIGN_TOP);
