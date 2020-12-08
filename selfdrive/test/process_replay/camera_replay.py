@@ -22,10 +22,17 @@ from selfdrive.test.openpilotci import BASE_URL, get_url
 from selfdrive.test.process_replay.compare_logs import compare_logs, save_log
 from selfdrive.test.process_replay.test_processes import format_diff
 from selfdrive.version import get_git_commit
+from common.transformations.camera import get_view_frame_from_road_frame
 
 TEST_ROUTE = "99c94dc769b5d96e|2019-08-03--14-19-59"
 
-def camera_replay(lr, fr, desire=None):
+def replace_calib(msg, calib):
+  msg = msg.as_builder()
+  if calib is not None:
+    msg.liveCalibration.extrinsicMatrix = get_view_frame_from_road_frame(*calib, 1.22).flatten().tolist()
+  return msg
+
+def camera_replay(lr, fr, desire=None, calib=None):
 
   spinner = Spinner()
 
@@ -47,13 +54,13 @@ def camera_replay(lr, fr, desire=None):
 
     cal = [msg for msg in lr if msg.which() == "liveCalibration"]
     for msg in cal[:5]:
-      pm.send(msg.which(), msg.as_builder())
+      pm.send(msg.which(), replace_calib(msg, calib))
 
     log_msgs = []
     frame_idx = 0
     for msg in tqdm(lr):
       if msg.which() == "liveCalibration":
-        pm.send(msg.which(), msg.as_builder())
+        pm.send(msg.which(), replace_calib(msg, calib))
       elif msg.which() == "frame":
         if desire is not None:
           for i in desire[frame_idx].nonzero()[0]:

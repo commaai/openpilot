@@ -12,11 +12,12 @@ if __name__ == "__main__":
   lr = LogReader(os.path.expanduser('~/rlog.bz2'))
   fr = FrameReader(os.path.expanduser('~/fcamera.hevc'))
   desire = np.load(os.path.expanduser('~/desire.npy'))
-  
+  calib = np.load(os.path.expanduser('~/calib.npy'))
+
   try:
-    msgs = camera_replay(list(lr), fr, desire=desire)
+    msgs = camera_replay(list(lr), fr, desire=desire, calib=calib)
   finally:
-    cache_path = cache_path_for_file_path(os.path.expanduser('~/fcamera.hecv'))
+    cache_path = cache_path_for_file_path(os.path.expanduser('~/fcamera.hevc'))
     if os.path.isfile(cache_path):
       os.remove(cache_path)
 
