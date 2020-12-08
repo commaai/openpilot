@@ -21,7 +21,12 @@ void clearLayout(QLayout* layout) {
 }
 
 WifiUI::WifiUI(QWidget *parent, int page_length) : QWidget(parent), networks_per_page(page_length) {
-  wifi = new WifiManager;
+  try {
+    wifi = new WifiManager;
+  } catch (std::exception &e) {
+    return;
+  }
+
   QObject::connect(wifi, SIGNAL(wrongPassword(QString)), this, SLOT(wrongPassword(QString)));
 
   QVBoxLayout * top_layout = new QVBoxLayout;
@@ -33,7 +38,7 @@ WifiUI::WifiUI(QWidget *parent, int page_length) : QWidget(parent), networks_per
   QVBoxLayout* networkLayout = new QVBoxLayout;
   QHBoxLayout *tethering_field = new QHBoxLayout;
   tethering_field->addWidget(new QLabel("Enable Tethering"));
-  
+
   Toggle* toggle_switch = new Toggle(this);
   toggle_switch->setFixedSize(150, 100);
   tethering_field->addWidget(toggle_switch);

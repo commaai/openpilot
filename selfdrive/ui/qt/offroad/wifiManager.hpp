@@ -30,7 +30,6 @@ class WifiManager : public QWidget {
 public:
   explicit WifiManager();
 
-  bool has_adapter;
   void request_scan();
   QVector<Network> seen_networks;
 
@@ -39,7 +38,7 @@ public:
   void connect(Network ssid, QString password);
   void connect(Network ssid, QString username, QString password);
   // Tethering functions
-  
+
   void enableTethering();
   void disableTethering();
   bool tetheringEnabled();
