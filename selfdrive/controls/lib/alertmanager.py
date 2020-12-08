@@ -2,6 +2,7 @@ import os
 import copy
 import json
 from typing import List, Optional
+from selfdrive.controls.lib.events import EVENTS, ET
 
 from cereal import car, log
 from common.basedir import BASEDIR
@@ -52,6 +53,27 @@ class AlertManager:
         cloudlog.event('alert_add', alert_type=added_alert.alert_type, enabled=enabled)
 
       self.activealerts.append(added_alert)
+
+  def SA_set_frame(self, frame):
+    self.SA_frame = frame
+
+  def SA_set_enabled(self, enabled):
+    self.SA_enabled = enabled
+
+  def SA_add(self, alert_name, extra_text_1='', extra_text_2=''):
+    alert = EVENTS[alert_name][ET.PERMANENT]  # assume permanent (to display in all states)
+    added_alert = copy.copy(alert)
+    added_alert.start_time = self.SA_frame * DT_CTRL
+    added_alert.alert_text_1 += extra_text_1
+    added_alert.alert_text_2 += extra_text_2
+    added_alert.alert_type = f"{alert_name}/{ET.PERMANENT}"  # fixes alerts being silent
+    added_alert.event_type = ET.PERMANENT
+
+    # if new alert is higher priority, log it
+    if not len(self.activealerts) or added_alert.alert_priority > self.activealerts[0].alert_priority:
+      cloudlog.event('alert_add', alert_type=added_alert.alert_type, enabled=self.SA_enabled)
+
+    self.activealerts.append(added_alert)
 
   def process_alerts(self, frame: int, clear_event_type=None) -> None:
     cur_time = frame * DT_CTRL
