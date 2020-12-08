@@ -110,8 +110,6 @@ LogCameraInfo cameras_logged[LOG_CAMERA_ID_MAX] = {
 
 #define LOG_ROOT "/data/media/0/realdata"
 
-#define RAW_CLIP_LENGTH 100 // 5 seconds at 20fps
-#define RAW_CLIP_FREQUENCY (randrange(61, 8*60)) // once every ~4 minutes
 
 namespace {
 
