@@ -15,6 +15,7 @@ enum class ConnectedType{
 };
 
 typedef QMap<QString, QMap<QString, QVariant>> Connection;
+typedef QVector<QMap<QString, QVariant>> IpConfig;
 
 struct Network {
   QString path;
@@ -29,7 +30,6 @@ class WifiManager : public QWidget {
 public:
   explicit WifiManager();
 
-  bool has_adapter;
   void request_scan();
   QVector<Network> seen_networks;
 
@@ -37,6 +37,11 @@ public:
   void connect(Network ssid);
   void connect(Network ssid, QString password);
   void connect(Network ssid, QString username, QString password);
+  // Tethering functions
+
+  void enableTethering();
+  void disableTethering();
+  bool tetheringEnabled();
 
 private:
   QVector<QByteArray> seen_ssids;
@@ -44,6 +49,7 @@ private:
   QDBusConnection bus = QDBusConnection::systemBus();
   unsigned int raw_adapter_state;//Connection status https://developer.gnome.org/NetworkManager/1.26/nm-dbus-types.html#NMDeviceState
   QString connecting_to_network;
+  QString tethering_ssid;
 
   QString get_adapter();
   QList<Network> get_networks();
@@ -56,6 +62,7 @@ private:
   QByteArray get_property(QString network_path, QString property);
   unsigned int get_ap_strength(QString network_path);
   SecurityType getSecurityType(QString ssid);
+  void disconnect();
 
 private slots:
   void change(unsigned int new_state, unsigned int previous_state, unsigned int change_reason);

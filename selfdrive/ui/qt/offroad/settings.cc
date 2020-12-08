@@ -24,13 +24,13 @@ ParamsToggle::ParamsToggle(QString param, QString title, QString description, QS
 
   // Parameter image
   hlayout->addSpacing(25);
-  if (icon_path.length()){
+  if (icon_path.length()) {
     QPixmap pix(icon_path);
     QLabel *icon = new QLabel();
     icon->setPixmap(pix.scaledToWidth(100, Qt::SmoothTransformation));
     icon->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
     hlayout->addWidget(icon);
-  } else{
+  } else {
     hlayout->addSpacing(100);
   }
   hlayout->addSpacing(25);
@@ -50,7 +50,7 @@ ParamsToggle::ParamsToggle(QString param, QString title, QString description, QS
   hlayout->addSpacing(20);
 
   setLayout(hlayout);
-  if(Params().read_db_bool(param.toStdString().c_str())){
+  if (Params().read_db_bool(param.toStdString().c_str())) {
     toggle_switch->togglePosition();
   }
 
@@ -66,7 +66,7 @@ ParamsToggle::ParamsToggle(QString param, QString title, QString description, QS
   QObject::connect(toggle_switch, SIGNAL(stateChanged(int)), this, SLOT(checkboxClicked(int)));
 }
 
-void ParamsToggle::checkboxClicked(int state){
+void ParamsToggle::checkboxClicked(int state) {
   char value = state ? '1': '0';
   Params().write_db_value(param.toStdString().c_str(), &value, 1);
 }
