@@ -532,11 +532,9 @@ static void ui_draw_background(UIState *s) {
 
 void ui_draw(UIState *s) {
   s->scene.viz_rect = Rect{bdr_s, bdr_s, s->fb_w - 2 * bdr_s, s->fb_h - 2 * bdr_s};
-  s->scene.ui_viz_ro = 0;
   if (!s->scene.uilayout_sidebarcollapsed) {
-    s->scene.viz_rect.x = sbr_w + bdr_s;
-    s->scene.viz_rect.w = s->fb_w - s->scene.viz_rect.x - bdr_s;
-    s->scene.ui_viz_ro = -(sbr_w - 6 * bdr_s);
+    s->scene.viz_rect.x += sbr_w;
+    s->scene.viz_rect.w -= sbr_w;
   }
 
   const bool draw_vision = s->started && s->active_app == cereal::UiLayoutState::App::NONE &&

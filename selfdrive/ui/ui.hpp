@@ -98,7 +98,6 @@ typedef struct UIScene {
   bool uilayout_sidebarcollapsed;
   // responsive layout
   Rect viz_rect;
-  int ui_viz_ro;
 
   std::string alert_text1;
   std::string alert_text2;
