@@ -76,9 +76,9 @@ extern "C"
 /** Number of differential derivative variables. */
 #define ACADO_NXD 0
 /** Number of references/measurements per node on the first N nodes. */
-#define ACADO_NY 5
+#define ACADO_NY 3
 /** Number of references/measurements on the last (N + 1)st node. */
-#define ACADO_NYN 4
+#define ACADO_NYN 2
 /** Total number of QP optimization variables. */
 #define ACADO_QP_NV 24
 /** Number of Runge-Kutta stages per integration step. */
@@ -120,23 +120,23 @@ real_t u[ 20 ];
  */
 real_t od[ 357 ];
 
-/** Column vector of size: 100
+/** Column vector of size: 60
  * 
- *  Matrix containing 20 reference/measurement vectors of size 5 for first 20 nodes.
+ *  Matrix containing 20 reference/measurement vectors of size 3 for first 20 nodes.
  */
-real_t y[ 100 ];
+real_t y[ 60 ];
 
-/** Column vector of size: 4
+/** Column vector of size: 2
  * 
  *  Reference/measurement vector for the 21. node.
  */
-real_t yN[ 4 ];
+real_t yN[ 2 ];
 
-/** Matrix of size: 100 x 5 (row major format) */
-real_t W[ 500 ];
+/** Matrix of size: 60 x 3 (row major format) */
+real_t W[ 180 ];
 
-/** Matrix of size: 4 x 4 (row major format) */
-real_t WN[ 16 ];
+/** Matrix of size: 2 x 2 (row major format) */
+real_t WN[ 4 ];
 
 /** Column vector of size: 4
  * 
@@ -172,11 +172,11 @@ real_t state[ 42 ];
 /** Column vector of size: 80 */
 real_t d[ 80 ];
 
-/** Column vector of size: 100 */
-real_t Dy[ 100 ];
+/** Column vector of size: 60 */
+real_t Dy[ 60 ];
 
-/** Column vector of size: 4 */
-real_t DyN[ 4 ];
+/** Column vector of size: 2 */
+real_t DyN[ 2 ];
 
 /** Matrix of size: 80 x 4 (row major format) */
 real_t evGx[ 320 ];
@@ -184,26 +184,26 @@ real_t evGx[ 320 ];
 /** Column vector of size: 80 */
 real_t evGu[ 80 ];
 
-/** Column vector of size: 11 */
-real_t objAuxVar[ 11 ];
+/** Column vector of size: 3 */
+real_t objAuxVar[ 3 ];
 
 /** Row vector of size: 22 */
 real_t objValueIn[ 22 ];
 
-/** Row vector of size: 30 */
-real_t objValueOut[ 30 ];
+/** Row vector of size: 18 */
+real_t objValueOut[ 18 ];
 
 /** Matrix of size: 80 x 4 (row major format) */
 real_t Q1[ 320 ];
 
-/** Matrix of size: 80 x 5 (row major format) */
-real_t Q2[ 400 ];
+/** Matrix of size: 80 x 3 (row major format) */
+real_t Q2[ 240 ];
 
 /** Column vector of size: 20 */
 real_t R1[ 20 ];
 
-/** Matrix of size: 20 x 5 (row major format) */
-real_t R2[ 100 ];
+/** Matrix of size: 20 x 3 (row major format) */
+real_t R2[ 60 ];
 
 /** Column vector of size: 80 */
 real_t S1[ 80 ];
@@ -211,8 +211,8 @@ real_t S1[ 80 ];
 /** Matrix of size: 4 x 4 (row major format) */
 real_t QN1[ 16 ];
 
-/** Matrix of size: 4 x 4 (row major format) */
-real_t QN2[ 16 ];
+/** Matrix of size: 4 x 2 (row major format) */
+real_t QN2[ 8 ];
 
 /** Column vector of size: 4 */
 real_t Dx0[ 4 ];

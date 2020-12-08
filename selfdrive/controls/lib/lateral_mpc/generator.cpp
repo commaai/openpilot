@@ -43,20 +43,11 @@ int main( )
 
   auto angle_d = atan(3*d_poly_r0*xx*xx + 2*d_poly_r1*xx + d_poly_r2);
 
-  // When the lane is not visible, use an estimate of its position
-  auto weighted_left_lane = l_prob * poly_l + (1 - l_prob) * (poly_d + lane_width/2.0);
-  auto weighted_right_lane = r_prob * poly_r + (1 - r_prob) * (poly_d - lane_width/2.0);
-
-  auto c_left_lane = exp(-(weighted_left_lane - yy));
-  auto c_right_lane = exp(weighted_right_lane - yy);
-
   // Running cost
   Function h;
 
   // Distance errors
-  h << (poly_d - yy);
-  h << lr_prob * c_left_lane;
-  h << lr_prob * c_right_lane;
+  h << 3*(poly_d - yy);
 
   // Heading error
   h <<  .1* (v_ref + 1.0 ) * (angle_d - psi);
@@ -64,7 +55,7 @@ int main( )
   // Angular rate error
   h << (v_ref + 1.0 ) * t;
 
-  BMatrix Q(5,5); Q.setAll(true);
+  BMatrix Q(3,3); Q.setAll(true);
   // Q(0,0) = 1.0;
   // Q(1,1) = 1.0;
   // Q(2,2) = 1.0;
@@ -75,14 +66,12 @@ int main( )
   Function hN;
 
   // Distance errors
-  hN << poly_d - yy;
-  hN << l_prob * c_left_lane;
-  hN << r_prob * c_right_lane;
+  hN << 3*(poly_d - yy);
 
   // Heading errors
-  hN << (2.0 * v_ref + 1.0 ) * (angle_d - psi);
+  hN << .1 * (2.0 * v_ref + 1.0 ) * (angle_d - psi);
 
-  BMatrix QN(4,4); QN.setAll(true);
+  BMatrix QN(2,2); QN.setAll(true);
   // QN(0,0) = 1.0;
   // QN(1,1) = 1.0;
   // QN(2,2) = 1.0;
