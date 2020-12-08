@@ -11,6 +11,7 @@ _common = fxn('common', common_libs, LIBS="json11")
 
 files = [
   'clutil.cc',
+  'cqueue.c',
   'glutil.c',
   'visionimg.cc',
 ]
