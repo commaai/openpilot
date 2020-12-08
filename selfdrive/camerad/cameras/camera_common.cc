@@ -185,9 +185,13 @@ bool CameraBuf::acquire() {
   yuv_metas[cur_yuv_idx] = frame_data;
   rgb_to_yuv_queue(&rgb_to_yuv_state, q, cur_rgb_buf->buf_cl, cur_yuv_buf->buf_cl);
 
-  // TODO: send metadata
-  vipc_server->send(cur_rgb_buf);
-  vipc_server->send(cur_yuv_buf);
+  VIPCBufExtra extra = {
+                        frame_data.frame_id,
+                        frame_data.timestamp_sof,
+                        frame_data.timestamp_eof,
+  };
+  vipc_server->send(cur_rgb_buf, &extra);
+  vipc_server->send(cur_yuv_buf, &extra);
 
   if (release_callback){
     release_callback((void*)camera_state, buf_idx);
