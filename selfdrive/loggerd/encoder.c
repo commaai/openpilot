@@ -395,6 +395,9 @@ static void handle_out_buf(EncoderState *s, OMX_BUFFERHEADERTYPE *out_buf) {
     }
     s->codec_config_len = out_buf->nFilledLen;
     memcpy(s->codec_config, buf_data, out_buf->nFilledLen);
+#ifdef QCOM2
+    out_buf->nTimeStamp = 0;
+#endif
   }
 
   if (s->of) {
@@ -556,9 +559,6 @@ void encoder_open(EncoderState *s, const char* path) {
     avformat_alloc_output_context2(&s->ofmt_ctx, NULL, NULL, s->vid_path);
     assert(s->ofmt_ctx);
 
-#ifdef QCOM2
-    s->ofmt_ctx->oformat->flags = AVFMT_TS_NONSTRICT;
-#endif
     s->out_stream = avformat_new_stream(s->ofmt_ctx, NULL);
     assert(s->out_stream);
 
