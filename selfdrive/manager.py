@@ -11,6 +11,7 @@ import subprocess
 import textwrap
 import time
 import traceback
+from common.op_params import opParams
 
 from multiprocessing import Process
 from typing import Dict
@@ -31,6 +32,7 @@ TOTAL_SCONS_NODES = 1225
 MAX_BUILD_PROGRESS = 70
 WEBCAM = os.getenv("WEBCAM") is not None
 PREBUILT = os.path.exists(os.path.join(BASEDIR, 'prebuilt'))
+KILL_UPDATED = opParams().get('update_behavior').lower().strip() == 'off' or os.path.exists('/data/no_ota_updates')
 
 
 def unblock_stdout():
@@ -177,6 +179,7 @@ managed_processes = {
   "dmonitoringmodeld": ("selfdrive/modeld", ["./dmonitoringmodeld"]),
   "modeld": ("selfdrive/modeld", ["./modeld"]),
   "rtshield": "selfdrive.rtshield",
+  "lanespeedd": "selfdrive.controls.lib.lane_speed",
 }
 
 daemon_processes = {
@@ -208,7 +211,7 @@ persistent_processes = [
 
 if not PC:
   persistent_processes += [
-    'updated',
+    # 'updated',
     'tombstoned',
   ]
 
@@ -216,6 +219,8 @@ if EON:
   persistent_processes += [
     'sensord',
   ]
+  if not KILL_UPDATED:
+    persistent_processes.append('updated')
 
 if TICI:
   managed_processes["timezoned"] = "selfdrive.timezoned"
@@ -234,6 +239,7 @@ car_started_processes = [
   'locationd',
   'clocksd',
   'logcatd',
+  'lanespeedd',
 ]
 
 driver_view_processes = [
@@ -468,7 +474,8 @@ def manager_thread():
     if msg.deviceState.freeSpacePercent < 5:
       logger_dead = True
 
-    if msg.deviceState.started:
+    run_all = False
+    if msg.deviceState.started or run_all:
       for p in car_started_processes:
         if p == "loggerd" and logger_dead:
           kill_managed_process(p)

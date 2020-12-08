@@ -57,7 +57,11 @@ commit = get_git_commit()
 if (origin is not None) and (branch is not None):
   try:
     comma_remote = origin.startswith('git@github.com:commaai') or origin.startswith('https://github.com/commaai')
-    tested_branch = get_git_branch() in ['devel', 'release2-staging', 'dashcam-staging', 'release2', 'dashcam']
+    smiskol_remote = origin.startswith('git@github.com:shanesmiskol') or origin.startswith('https://github.com/shanesmiskol')
+
+    valid_branches = ['devel', 'release2-staging', 'dashcam-staging', 'release2', 'dashcam',
+                      'shanesmiskol_stock_additions', 'stock_additions']
+    tested_branch = get_git_branch().lower() in valid_branches
 
     dirty = False
 

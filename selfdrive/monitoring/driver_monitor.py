@@ -5,6 +5,7 @@ from common.numpy_fast import interp
 from common.realtime import DT_DMON
 from common.filter_simple import FirstOrderFilter
 from common.stat_live import RunningStatFilter
+from common.is_shane import is_shane
 
 EventName = car.CarEvent.EventName
 
@@ -14,7 +15,7 @@ EventName = car.CarEvent.EventName
 #  We recommend that you do not change these numbers from the defaults.
 # ******************************************************************************************
 
-_AWARENESS_TIME = 35.  # passive wheel touch total timeout
+_AWARENESS_TIME = 35. if not is_shane else 70.  # passive wheel touch total timeout (35 seconds for everyone!)
 _AWARENESS_PRE_TIME_TILL_TERMINAL = 12.
 _AWARENESS_PROMPT_TIME_TILL_TERMINAL = 6.
 _DISTRACTED_TIME = 11.

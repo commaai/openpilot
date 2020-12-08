@@ -6,6 +6,8 @@ import requests
 import threading
 import time
 import traceback
+import subprocess
+import re
 
 from cereal import log
 import cereal.messaging as messaging
@@ -14,6 +16,7 @@ from common.params import Params
 from selfdrive.loggerd.xattr_cache import getxattr, setxattr
 from selfdrive.loggerd.config import ROOT
 from selfdrive.swaglog import cloudlog
+from common.op_params import opParams
 
 NetworkType = log.DeviceState.NetworkType
 UPLOAD_ATTR_NAME = 'user.upload'
@@ -22,6 +25,7 @@ UPLOAD_ATTR_VALUE = b'1'
 allow_sleep = bool(os.getenv("UPLOADER_SLEEP", "1"))
 force_wifi = os.getenv("FORCEWIFI") is not None
 fake_upload = os.getenv("FAKEUPLOAD") is not None
+upload_on_hotspot = opParams().get('upload_on_hotspot')
 
 
 def get_directory_sort(d):
@@ -45,6 +49,18 @@ def clear_locks(root):
           os.unlink(os.path.join(path, fname))
     except OSError:
       cloudlog.exception("clear_locks failed")
+
+
+def is_on_hotspot():
+  try:
+    result = subprocess.check_output(["ifconfig", "wlan0"], stderr=subprocess.STDOUT, encoding='utf8')
+    result = re.findall(r"inet addr:((\d+\.){3}\d+)", result)[0][0]
+    is_android = result.startswith('192.168.43.')
+    is_ios = result.startswith('172.20.10.')
+    is_entune = result.startswith('10.0.2.')
+    return (is_android or is_ios or is_entune)
+  except Exception:
+    return False
 
 
 class Uploader():
@@ -208,7 +224,11 @@ def uploader_fn(exit_event):
     offroad = params.get("IsOffroad") == b'1'
     allow_raw_upload = params.get("IsUploadRawEnabled") != b"0"
 
-    d = uploader.next_file_to_upload(with_raw=allow_raw_upload and on_wifi and offroad)
+    d = None
+    on_hotspot = is_on_hotspot()
+    if (on_hotspot and upload_on_hotspot) or not on_hotspot:
+      d = uploader.next_file_to_upload(with_raw=allow_raw_upload and on_wifi and offroad)
+
     if d is None:  # Nothing to upload
       if allow_sleep:
         time.sleep(60 if offroad else 5)
