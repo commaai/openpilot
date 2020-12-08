@@ -445,6 +445,11 @@ static void handle_out_buf(EncoderState *s, OMX_BUFFERHEADERTYPE *out_buf) {
   }
 
   // give omx back the buffer
+#ifdef QCOM2
+  if (out_buf->nFlags & OMX_BUFFERFLAG_EOS) {
+    out_buf->nTimeStamp = 0;
+  }
+#endif
   err = OMX_FillThisBuffer(s->handle, out_buf);
   assert(err == OMX_ErrorNone);
 }
