@@ -352,8 +352,8 @@ void fill_model(cereal::ModelData::Builder &framed, const ModelDataRaw &net_outp
     }
   }
   fill_path(framed.initPath(), best_plan, 1.0, valid_len, valid_len_idx, 0);
-  fill_path(framed.initLeftLane(), net_outputs.lane_lines, net_outputs.lane_lines_prob[1], valid_len, valid_len_idx, 1);
-  fill_path(framed.initRightLane(), net_outputs.lane_lines, net_outputs.lane_lines_prob[2], valid_len, valid_len_idx, 2);
+  fill_path(framed.initLeftLane(), net_outputs.lane_lines, sigmoid(net_outputs.lane_lines_prob[1]), valid_len, valid_len_idx, 1);
+  fill_path(framed.initRightLane(), net_outputs.lane_lines, sigmoid(net_outputs.lane_lines_prob[2]), valid_len, valid_len_idx, 2);
 
   fill_lead(framed.initLead(), net_outputs.lead, net_outputs.lead_prob, 0);
   fill_lead(framed.initLeadFuture(), net_outputs.lead, net_outputs.lead_prob, 1);
