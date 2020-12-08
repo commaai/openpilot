@@ -584,7 +584,9 @@ void encoder_open(EncoderState *s, const char* path) {
     s->of = fopen(s->vid_path, "wb");
     assert(s->of);
     if (s->codec_config_len > 0) {
+#ifndef QCOM2
       fwrite(s->codec_config, s->codec_config_len, 1, s->of);
+#endif
     }
   }
 
