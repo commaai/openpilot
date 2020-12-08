@@ -52,7 +52,7 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
 #else
   const int full_width_tici = 1928;
   const int full_height_tici = 1208;
-  const int adapt_width_tici = 808;
+  const int adapt_width_tici = 636;
 
   const int cropped_height = adapt_width_tici / 1.33;
   const int cropped_width = cropped_height / 2;
