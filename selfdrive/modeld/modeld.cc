@@ -144,7 +144,13 @@ int main(int argc, char **argv) {
     while (!do_exit) {
       VIPCBufExtra extra;
       VisionBuf *buf = vipc_client.recv(&extra);
-
+      if (buf == nullptr){
+        if (errno == EINTR){
+          do_exit = true;
+          break;
+        }
+        continue;
+      }
 
       pthread_mutex_lock(&transform_lock);
       mat3 model_transform = cur_transform;

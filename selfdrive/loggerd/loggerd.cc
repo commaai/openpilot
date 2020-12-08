@@ -267,6 +267,13 @@ void encoder_thread(RotateState *rotate_state, int cam_idx) {
     while (!do_exit) {
       VIPCBufExtra extra;
       VisionBuf* buf = vipc_client.recv(&extra);
+      if (buf == nullptr){
+        if (errno == EINTR){
+          do_exit = true;
+          break;
+        }
+        continue;
+      }
 
       //uint64_t current_time = nanos_since_boot();
       //uint64_t diff = current_time - extra.timestamp_eof;
