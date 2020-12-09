@@ -129,7 +129,9 @@ CameraBuf::~CameraBuf() {
   for (int i = 0; i < YUV_COUNT; i++) {
     visionbuf_free(&yuv_ion[i]);
   }
-  CL_CHECK(clReleaseKernel(krnl_debayer));
+  if (krnl_debayer) {
+    CL_CHECK(clReleaseKernel(krnl_debayer));
+  }
   CL_CHECK(clReleaseCommandQueue(q));
 }
 
