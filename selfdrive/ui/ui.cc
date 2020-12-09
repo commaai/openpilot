@@ -280,7 +280,9 @@ void ui_update(UIState *s) {
       s->scene.alert_text2 = "Controls Unresponsive";
       s->scene.alert_size = cereal::ControlsState::AlertSize::FULL;
       s->status = STATUS_ALERT;
-    } else if (((s->sm)->rcv_frame("frame") > s->started_frame &&
+    }
+
+    if (((s->sm)->rcv_frame("frame") > s->started_frame &&
                 ((s->sm)->frame - (s->sm)->rcv_frame("frame")) > 5*UI_FREQ) ||
                ((s->sm)->frame - (s->sm)->rcv_frame("frame")) > 15*UI_FREQ) {
       // controls is fine, but rear camera is lagging or died
