@@ -6,7 +6,9 @@
 const int controlHorizon = 50;
 
 using namespace std;
-
+#include <iostream>
+#include <filesystem>
+namespace fs = std::filesystem;
 int main( )
 {
   USING_NAMESPACE_ACADO
@@ -119,7 +121,14 @@ int main( )
   mpc.set( GENERATE_MATLAB_INTERFACE, NO );
   mpc.set( GENERATE_SIMULINK_INTERFACE, NO );
 
-  if (mpc.exportCode( "lib_mpc_export" ) != SUCCESSFUL_RETURN)
+  std::cout << "Current path is " << fs::current_path() << '\n';
+  std::cout << "Current path is " << fs::current_path() << '\n';
+  std::cout << "Current path is " << fs::current_path() << '\n';
+
+  fs::path p1 = fs::current_path();
+  p1 /= "lib_mpc_export";
+
+  if (mpc.exportCode(p1) != SUCCESSFUL_RETURN)
     exit( EXIT_FAILURE );
 
   mpc.printDimensionsQP( );
