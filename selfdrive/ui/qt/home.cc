@@ -101,29 +101,20 @@ void OffroadHome::refresh() {
   alert_notification->setVisible(true);
 
   // Red background for alerts, blue for update available
+  QString style = QString(R"(
+    padding: 15px;
+    padding-left: 30px;
+    padding-right: 30px;
+    border: 1px solid;
+    border-radius: 5px;
+    font-size: 40px;
+    font-weight: bold;
+    background-color: red;
+  )");
   if (alerts_widget->updateAvailable){
-    alert_notification->setStyleSheet(QString(R"(
-      padding: 15px;
-      padding-left: 30px;
-      padding-right: 30px;
-      border: 1px solid;
-      border-radius: 5px;
-      font-size: 40px;
-      font-weight: bold;
-      background-color: blue;
-    )"));
-  } else {
-    alert_notification->setStyleSheet(QString(R"(
-      padding: 15px;
-      padding-left: 30px;
-      padding-right: 30px;
-      border: 1px solid;
-      border-radius: 5px;
-      font-size: 40px;
-      font-weight: bold;
-      background-color: red;
-    )"));
+    style.replace("red", "blue");
   }
+  alert_notification->setStyleSheet(style);
 }
 
 
