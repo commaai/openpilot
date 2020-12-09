@@ -19,7 +19,7 @@ NetworkType = log.ThermalData.NetworkType
 NetworkStrength = log.ThermalData.NetworkStrength
 
 # https://developer.gnome.org/ModemManager/unstable/ModemManager-Flags-and-Enumerations.html#MMModemAccessTechnology
-MM_MODEM_ACCESS_TECHNOLOGY_EDGE = 1 << 4
+MM_MODEM_ACCESS_TECHNOLOGY_UMTS = 1 << 5
 MM_MODEM_ACCESS_TECHNOLOGY_LTE = 1 << 14
 
 
@@ -53,7 +53,7 @@ class Tici(HardwareBase):
       access_t = modem.Get(MM_MODEM, 'AccessTechnologies', dbus_interface=DBUS_PROPS)
       if access_t >= MM_MODEM_ACCESS_TECHNOLOGY_LTE:
         return NetworkType.cell4G
-      elif access_t >= MM_MODEM_ACCESS_TECHNOLOGY_EDGE:
+      elif access_t >= MM_MODEM_ACCESS_TECHNOLOGY_UMTS:
         return NetworkType.cell3G
       else:
         return NetworkType.cell2G
