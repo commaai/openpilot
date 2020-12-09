@@ -22,6 +22,7 @@ typedef struct DMonitoringResult {
   float left_blink_prob;
   float right_blink_prob;
   float sg_prob;
+  float dsp_execution_time;
 } DMonitoringResult;
 
 typedef struct DMonitoringModelState {

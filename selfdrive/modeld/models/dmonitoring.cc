@@ -160,7 +160,9 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
   //fwrite(net_input_buf, MODEL_HEIGHT*MODEL_WIDTH*3/2, sizeof(float), dump_yuv_file2);
   //fclose(dump_yuv_file2);
 
+  double t1 = millis_since_boot();
   s->m->execute(net_input_buf, yuv_buf_len);
+  double t2 = millis_since_boot();
 
   DMonitoringResult ret = {0};
   memcpy(&ret.face_orientation, &s->output[0], sizeof ret.face_orientation);
@@ -178,6 +180,7 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
   ret.face_orientation_meta[2] = softplus(ret.face_orientation_meta[2]);
   ret.face_position_meta[0] = softplus(ret.face_position_meta[0]);
   ret.face_position_meta[1] = softplus(ret.face_position_meta[1]);
+  ret.dsp_execution_time = (t2 - t1) / 1000.;
   return ret;
 }
 
@@ -187,6 +190,7 @@ void dmonitoring_publish(PubMaster &pm, uint32_t frame_id, const DMonitoringResu
   auto framed = msg.initEvent().initDriverState();
   framed.setFrameId(frame_id);
   framed.setModelExecutionTime(execution_time);
+  framed.setDspExecutionTime(res.dsp_execution_time);
 
   framed.setFaceOrientation(res.face_orientation);
   framed.setFaceOrientationStd(res.face_orientation_meta);
