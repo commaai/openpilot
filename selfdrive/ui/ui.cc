@@ -291,6 +291,7 @@ void ui_update(UIState *s) {
       s->scene.alert_text2 = "Contact Support";
       s->scene.alert_size = cereal::ControlsState::AlertSize::FULL;
       s->status = STATUS_DISENGAGED;
+      s->sound->stop();
       ui_draw_vision_alert(s, s->scene.alert_size, s->status,
                            s->scene.alert_text1.c_str(), s->scene.alert_text2.c_str());
     }
