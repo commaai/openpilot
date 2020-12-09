@@ -10,10 +10,11 @@ os.environ['CI'] = "1"
 if ANDROID:
   os.environ['QCOM_REPLAY'] = "1"
 
+from common.spinner import Spinner
 from common.timeout import Timeout
 import selfdrive.manager as manager
 
-from common.spinner import Spinner
+from cereal import log
 import cereal.messaging as messaging
 from tools.lib.framereader import FrameReader
 from tools.lib.logreader import LogReader
@@ -21,14 +22,21 @@ from selfdrive.test.openpilotci import BASE_URL, get_url
 from selfdrive.test.process_replay.compare_logs import compare_logs, save_log
 from selfdrive.test.process_replay.test_processes import format_diff
 from selfdrive.version import get_git_commit
+from common.transformations.camera import get_view_frame_from_road_frame
 
 TEST_ROUTE = "99c94dc769b5d96e|2019-08-03--14-19-59"
 
-def camera_replay(lr, fr):
+def replace_calib(msg, calib):
+  msg = msg.as_builder()
+  if calib is not None:
+    msg.liveCalibration.extrinsicMatrix = get_view_frame_from_road_frame(*calib, 1.22).flatten().tolist()
+  return msg
+
+def camera_replay(lr, fr, desire=None, calib=None):
 
   spinner = Spinner()
 
-  pm = messaging.PubMaster(['frame', 'liveCalibration'])
+  pm = messaging.PubMaster(['frame', 'liveCalibration', 'pathPlan'])
   sm = messaging.SubMaster(['model'])
 
   # TODO: add dmonitoringmodeld
@@ -42,18 +50,26 @@ def camera_replay(lr, fr):
     time.sleep(5)
     print("procs started")
 
+    desires_by_index = {v:k for k,v in log.PathPlan.Desire.schema.enumerants.items()}
+
     cal = [msg for msg in lr if msg.which() == "liveCalibration"]
     for msg in cal[:5]:
-      pm.send(msg.which(), msg.as_builder())
+      pm.send(msg.which(), replace_calib(msg, calib))
 
     log_msgs = []
     frame_idx = 0
     for msg in tqdm(lr):
-      if msg.which() == "liveCalibrationd":
-        pm.send(msg.which(), msg.as_builder())
+      if msg.which() == "liveCalibration":
+        pm.send(msg.which(), replace_calib(msg, calib))
       elif msg.which() == "frame":
+        if desire is not None:
+          for i in desire[frame_idx].nonzero()[0]:
+            dat = messaging.new_message('pathPlan')
+            dat.pathPlan.desire = desires_by_index[i]
+            pm.send('pathPlan', dat)
+
         f = msg.as_builder()
-        img = fr.get(frame_idx, pix_fmt="rgb24")[0][:, ::, -1]
+        img = fr.get(frame_idx, pix_fmt="rgb24")[0][:,:,::-1]
         f.frame.image = img.flatten().tobytes()
         frame_idx += 1
 
@@ -79,6 +95,9 @@ if __name__ == "__main__":
 
   update = "--update" in sys.argv
 
+  replay_dir = os.path.dirname(os.path.abspath(__file__))
+  ref_commit_fn = os.path.join(replay_dir, "model_replay_ref_commit")
+
   lr = LogReader(get_url(TEST_ROUTE, 0))
   fr = FrameReader(get_url(TEST_ROUTE, 0, log_type="fcamera"))
 
@@ -86,7 +105,7 @@ if __name__ == "__main__":
 
   failed = False
   if not update:
-    ref_commit = open("model_replay_ref_commit").read().strip()
+    ref_commit = open(ref_commit_fn).read().strip()
     log_fn = "%s_%s_%s.bz2" % (TEST_ROUTE, "model", ref_commit)
     cmp_log = LogReader(BASE_URL + log_fn)
     results: Any = {TEST_ROUTE: {}}
@@ -105,7 +124,13 @@ if __name__ == "__main__":
     new_commit = get_git_commit()
     log_fn = "%s_%s_%s.bz2" % (TEST_ROUTE, "model", new_commit)
     save_log(log_fn, log_msgs)
-    upload_file(log_fn, os.path.basename(log_fn))
+    try:
+      upload_file(log_fn, os.path.basename(log_fn))
+    except Exception as e:
+      print("failed to upload", e)
+
+    with open(ref_commit_fn, 'w') as f:
+      f.write(str(new_commit))
 
     print("\n\nNew ref commit: ", new_commit)
 
