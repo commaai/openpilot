@@ -64,7 +64,7 @@ Supported Cars
 
 | Make      | Model (US Market Reference)   | Supported Package | ACC              | No ACC accel below | No ALC below      |
 | ----------| ------------------------------| ------------------| -----------------| -------------------| ------------------|
-| Acura     | ILX 2016-18                   | AcuraWatch Plus   | openpilot        | 25mph<sup>1</sup>  | 25mph             |
+| Acura     | ILX 2016-19                   | AcuraWatch Plus   | openpilot        | 25mph<sup>1</sup>  | 25mph             |
 | Acura     | RDX 2016-18                   | AcuraWatch Plus   | openpilot        | 25mph<sup>1</sup>  | 12mph             |
 | Acura     | RDX 2020                      | All               | Stock            | 0mph               | 3mph              |
 | Honda     | Accord 2018-20                | All               | Stock            | 0mph               | 3mph              |
