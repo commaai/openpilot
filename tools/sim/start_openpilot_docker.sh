@@ -4,10 +4,11 @@
 xhost +local:root
 #docker pull commaai/openpilot-sim:latest
 
-docker run --net=host\
+docker run --net=host \
   --name openpilot_client \
   --rm \
   -it \
+  -p 2000:2000 \
   --gpus all \
   --device=/dev/dri/  \
   -v /tmp/.X11-unix:/tmp/.X11-unix \
