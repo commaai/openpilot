@@ -173,7 +173,6 @@ typedef struct UIState {
   // vision state
   bool vision_connected;
   VisionStream stream;
-  bool camera_unresponsive;
 
   // graphics
   GLuint frame_program;

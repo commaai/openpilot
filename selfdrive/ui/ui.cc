@@ -263,7 +263,6 @@ void ui_update(UIState *s) {
   }
 
   // Handle controls/fcamera timeout
-  s->camera_unresponsive = false;
   if (s->started && !s->scene.frontview && ((s->sm)->frame - s->started_frame) > 5*UI_FREQ) {
     if ((s->sm)->rcv_frame("controlsState") < s->started_frame) {
       // car is started, but controlsState hasn't been seen at all
@@ -285,11 +284,12 @@ void ui_update(UIState *s) {
                 ((s->sm)->frame - (s->sm)->rcv_frame("frame")) > 5*UI_FREQ) ||
                ((s->sm)->frame - (s->sm)->rcv_frame("frame")) > 15*UI_FREQ) {
       // controls is fine, but rear camera is lagging or died
-      s->camera_unresponsive = true;
       s->scene.alert_text1 = "Camera Malfunction";
       s->scene.alert_text2 = "Contact Support";
       s->scene.alert_size = cereal::ControlsState::AlertSize::FULL;
       s->status = STATUS_DISENGAGED;
+      ui_draw_vision_alert(s, s->scene.alert_size, s->status,
+                           s->scene.alert_text1.c_str(), s->scene.alert_text2.c_str());
     }
   }
 
