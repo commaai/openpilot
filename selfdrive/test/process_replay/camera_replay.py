@@ -113,7 +113,7 @@ if __name__ == "__main__":
     cmp_log = LogReader(BASE_URL + log_fn)
 
     ignore = ['logMonoTime', 'valid', 'model.frameDropPerc', 'model.modelExecutionTime',
-              'modelV2.frameDropPerc', 'model.modelExecutionTime']
+              'modelV2.frameDropPerc', 'modelV2.modelExecutionTime']
     results: Any = {TEST_ROUTE: {}}
     results[TEST_ROUTE]["modeld"] = compare_logs(cmp_log, log_msgs, ignore_fields=ignore)
     diff1, diff2, failed = format_diff(results, ref_commit)
