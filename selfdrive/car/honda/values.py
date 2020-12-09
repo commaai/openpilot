@@ -969,6 +969,20 @@ FW_VERSIONS = {
       b'78109-THX-C220\x00\x00',
     ],
   },
+  CAR.ACURA_ILX: {
+    (Ecu.gateway, 0x18daeff1, None): [
+      b'38897-TX6-A010\x00\x00',
+    ],
+    (Ecu.fwdRadar, 0x18dab0f1, None): [
+      b'36161-TX6-A030\x00\x00',
+    ],
+    (Ecu.srs, 0x18da53f1, None): [
+      b'77959-TX6-C210\x00\x00',
+    ],
+    (Ecu.combinationMeter, 0x18da60f1, None): [
+      b'78109-T3R-A120\x00\x00',
+    ],
+  },  
 }
 
 DBC = {
