@@ -35,6 +35,7 @@ def replace_calib(msg, calib):
 def camera_replay(lr, fr, desire=None, calib=None):
 
   spinner = Spinner()
+  spinner.update("starting model replay")
 
   pm = messaging.PubMaster(['frame', 'liveCalibration', 'pathPlan'])
   sm = messaging.SubMaster(['model', 'modelV2'])
@@ -77,7 +78,7 @@ def camera_replay(lr, fr, desire=None, calib=None):
         pm.send(msg.which(), f)
         with Timeout(seconds=15):
           log_msgs.append(messaging.recv_one(sm.sock['model']))
-          log_msgs.append(messaging.recv_one_or_none(sm.sock['modelV2']))
+          log_msgs.append(messaging.recv_one(sm.sock['modelV2']))
 
         spinner.update("modeld replay %d/%d" % (frame_idx, fr.frame_count))
 

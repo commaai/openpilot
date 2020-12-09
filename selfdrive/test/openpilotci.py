@@ -16,7 +16,7 @@ def upload_file(path, name):
 
   sas_token = None
   if os.path.isfile(TOKEN_PATH):
-    sas_token = open(TOKEN_PATH).read().strip
+    sas_token = open(TOKEN_PATH).read().strip()
 
   if sas_token is None:
     sas_token = subprocess.check_output("az storage container generate-sas --account-name commadataci --name openpilotci --https-only --permissions lrw \
