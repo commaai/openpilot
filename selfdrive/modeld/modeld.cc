@@ -114,10 +114,8 @@ int main(int argc, char **argv) {
   PubMaster pm({"modelV2", "model", "cameraOdometry"});
   SubMaster sm({"pathPlan", "frame"});
 
-  cl_device_type device_type = CL_DEVICE_TYPE_DEFAULT;
-
   // cl init
-  cl_device_id device_id = cl_get_device_id(device_type);
+  cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
   cl_context context = CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id, NULL, NULL, &err));
   cl_command_queue q = CL_CHECK_ERR(clCreateCommandQueue(context, device_id, 0, &err));
 
