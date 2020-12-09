@@ -442,6 +442,12 @@ static void handle_out_buf(EncoderState *s, OMX_BUFFERHEADERTYPE *out_buf) {
   }
 
   // give omx back the buffer
+#ifdef QCOM2
+  if ((out_buf->nFlags & OMX_BUFFERFLAG_EOS) ||
+      (out_buf->nFlags & OMX_BUFFERFLAG_CODECCONFIG)) {
+    out_buf->nTimeStamp = 0;
+  }
+#endif
   err = OMX_FillThisBuffer(s->handle, out_buf);
   assert(err == OMX_ErrorNone);
 }
@@ -513,6 +519,7 @@ int encoder_encode_frame(EncoderState *s,
   in_buf->nFlags = OMX_BUFFERFLAG_ENDOFFRAME;
   in_buf->nOffset = 0;
   in_buf->nTimeStamp = extra->timestamp_eof/1000LL;  // OMX_TICKS, in microseconds
+  s->last_t = in_buf->nTimeStamp;
 
   err = OMX_EmptyThisBuffer(s->handle, in_buf);
   assert(err == OMX_ErrorNone);
@@ -555,9 +562,6 @@ void encoder_open(EncoderState *s, const char* path) {
     avformat_alloc_output_context2(&s->ofmt_ctx, NULL, NULL, s->vid_path);
     assert(s->ofmt_ctx);
 
-#ifdef QCOM2
-    s->ofmt_ctx->oformat->flags = AVFMT_TS_NONSTRICT;
-#endif
     s->out_stream = avformat_new_stream(s->ofmt_ctx, NULL);
     assert(s->out_stream);
 
@@ -583,7 +587,9 @@ void encoder_open(EncoderState *s, const char* path) {
     s->of = fopen(s->vid_path, "wb");
     assert(s->of);
     if (s->codec_config_len > 0) {
+#ifndef QCOM2
       fwrite(s->codec_config, s->codec_config_len, 1, s->of);
+#endif
     }
   }
 
@@ -612,7 +618,7 @@ void encoder_close(EncoderState *s) {
       in_buf->nFilledLen = 0;
       in_buf->nOffset = 0;
       in_buf->nFlags = OMX_BUFFERFLAG_EOS;
-      in_buf->nTimeStamp = 0;
+      in_buf->nTimeStamp = s->last_t + 1000000LL/s->fps;
 
       err = OMX_EmptyThisBuffer(s->handle, in_buf);
       assert(err == OMX_ErrorNone);
