@@ -1,3 +1,4 @@
+
 Import('env', 'arch')
 
 cpp_path = [
@@ -10,6 +11,26 @@ cpp_path = [
     "lib_mpc_export"
 
 ]
+acado_libs = [File("#phonelibs/acado/x64/lib/libacado_toolkit.a"),
+              File("#phonelibs/acado/x64/lib/libacado_casadi.a"),
+              File("#phonelibs/acado/x64/lib/libacado_csparse.a")]
+env.Program('generator', 'generator.cpp', LIBS=acado_libs, CPPPATH=cpp_path)
+if arch == "aarch64":
+    acado_libs = [File("#phonelibs/acado/x64/lib/libacado_toolkit.a"),
+                  File("#phonelibs/acado/x64/lib/libacado_casadi.a"),
+                  File("#phonelibs/acado/x64/lib/libacado_csparse.a")]
+    env.Program('generator', 'generator.cpp', LIBS=acado_libs, CPPPATH=cpp_path)
+    to_build= [[['acado_common.h'], 'generator', 'lib_mpc_export']]
+    for targets, command, generated_folder in to_build:
+        target_files = File(targets)
+        command_file = File(command)
+
+        #env.Command(target_files,
+        #            [command_file],
+        #            [command_file.get_abspath(), Move('/home/batman/openpilot/lib_mpc_export',
+        #                                              '/home/batman/openpilot/selfdrive/controls/lib/lateral_mpc/lib_mpc_export')])
+
+        #env.SharedLibrary(f'{generated_folder}/' + command, target_files[0])
 
 mpc_files = [
     "lateral_mpc.c",
@@ -22,8 +43,3 @@ interface_dir = Dir('lib_mpc_export')
 SConscript(['#phonelibs/qpoases/SConscript'], variant_dir='lib_qp', exports=['interface_dir'])
 
 env.SharedLibrary('mpc', mpc_files, LIBS=['m', 'qpoases'], LIBPATH=['lib_qp'], CPPPATH=cpp_path)
-if arch != "aarch64":
-    acado_libs = [File("#phonelibs/acado/x64/lib/libacado_toolkit.a"),
-                  File("#phonelibs/acado/x64/lib/libacado_casadi.a"),
-                  File("#phonelibs/acado/x64/lib/libacado_csparse.a")]
-    env.Program('generator', 'generator.cpp', LIBS=acado_libs, CPPPATH=cpp_path)
