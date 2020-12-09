@@ -111,8 +111,11 @@ if __name__ == "__main__":
     ref_commit = open(ref_commit_fn).read().strip()
     log_fn = "%s_%s_%s.bz2" % (TEST_ROUTE, "model", ref_commit)
     cmp_log = LogReader(BASE_URL + log_fn)
+
+    ignore = ['logMonoTime', 'valid', 'model.frameDropPerc', 'model.modelExecutionTime',
+              'modelV2.frameDropPerc', 'model.modelExecutionTime']
     results: Any = {TEST_ROUTE: {}}
-    results[TEST_ROUTE]["modeld"] = compare_logs(cmp_log, log_msgs, ignore_fields=['logMonoTime', 'valid', 'model.frameDropPerc', 'model.modelExecutionTime'])
+    results[TEST_ROUTE]["modeld"] = compare_logs(cmp_log, log_msgs, ignore_fields=ignore)
     diff1, diff2, failed = format_diff(results, ref_commit)
 
     print(diff1)
