@@ -95,6 +95,9 @@ if __name__ == "__main__":
 
   update = "--update" in sys.argv
 
+  replay_dir = os.path.dirname(os.path.abspath(__file__))
+  ref_commit_fn = os.path.join(replay_dir, "model_replay_ref_commit")
+
   lr = LogReader(get_url(TEST_ROUTE, 0))
   fr = FrameReader(get_url(TEST_ROUTE, 0, log_type="fcamera"))
 
@@ -102,7 +105,7 @@ if __name__ == "__main__":
 
   failed = False
   if not update:
-    ref_commit = open("model_replay_ref_commit").read().strip()
+    ref_commit = open(ref_commit_fn).read().strip()
     log_fn = "%s_%s_%s.bz2" % (TEST_ROUTE, "model", ref_commit)
     cmp_log = LogReader(BASE_URL + log_fn)
     results: Any = {TEST_ROUTE: {}}
@@ -121,7 +124,13 @@ if __name__ == "__main__":
     new_commit = get_git_commit()
     log_fn = "%s_%s_%s.bz2" % (TEST_ROUTE, "model", new_commit)
     save_log(log_fn, log_msgs)
-    upload_file(log_fn, os.path.basename(log_fn))
+    try:
+      upload_file(log_fn, os.path.basename(log_fn))
+    except Exception as e:
+      print("failed to upload", e)
+
+    with open(ref_commit_fn, 'w') as f:
+      f.write(str(new_commit))
 
     print("\n\nNew ref commit: ", new_commit)
 
