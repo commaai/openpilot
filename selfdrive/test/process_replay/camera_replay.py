@@ -37,7 +37,7 @@ def camera_replay(lr, fr, desire=None, calib=None):
   spinner = Spinner()
 
   pm = messaging.PubMaster(['frame', 'liveCalibration', 'pathPlan'])
-  sm = messaging.SubMaster(['model'])
+  sm = messaging.SubMaster(['model', 'modelV2'])
 
   # TODO: add dmonitoringmodeld
   print("preparing procs")
@@ -48,6 +48,7 @@ def camera_replay(lr, fr, desire=None, calib=None):
     manager.start_managed_process("camerad")
     manager.start_managed_process("modeld")
     time.sleep(5)
+    sm.update(1000)
     print("procs started")
 
     desires_by_index = {v:k for k,v in log.PathPlan.Desire.schema.enumerants.items()}
@@ -76,6 +77,7 @@ def camera_replay(lr, fr, desire=None, calib=None):
         pm.send(msg.which(), f)
         with Timeout(seconds=15):
           log_msgs.append(messaging.recv_one(sm.sock['model']))
+          log_msgs.append(messaging.recv_one_or_none(sm.sock['modelV2']))
 
         spinner.update("modeld replay %d/%d" % (frame_idx, fr.frame_count))
 
