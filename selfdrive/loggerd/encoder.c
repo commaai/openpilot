@@ -395,6 +395,9 @@ static void handle_out_buf(EncoderState *s, OMX_BUFFERHEADERTYPE *out_buf) {
     }
     s->codec_config_len = out_buf->nFilledLen;
     memcpy(s->codec_config, buf_data, out_buf->nFilledLen);
+#ifdef QCOM2
+    out_buf->nTimeStamp = 0;
+#endif
   }
 
   if (s->of) {
@@ -443,8 +446,7 @@ static void handle_out_buf(EncoderState *s, OMX_BUFFERHEADERTYPE *out_buf) {
 
   // give omx back the buffer
 #ifdef QCOM2
-  if ((out_buf->nFlags & OMX_BUFFERFLAG_EOS) ||
-      (out_buf->nFlags & OMX_BUFFERFLAG_CODECCONFIG)) {
+  if (out_buf->nFlags & OMX_BUFFERFLAG_EOS) {
     out_buf->nTimeStamp = 0;
   }
 #endif
