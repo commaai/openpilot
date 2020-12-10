@@ -24,6 +24,7 @@ std::string get_platform_info(cl_platform_id platform, cl_platform_info param_na
 }
 
 void cl_print_info(cl_platform_id platform, cl_device_id device) {
+  
   std::cout << "vendor: " << get_platform_info(platform, CL_PLATFORM_VENDOR) << std::endl
             << "platform version: " << get_platform_info(platform, CL_PLATFORM_VERSION) << std::endl
             << "profile: " << get_platform_info(platform, CL_PLATFORM_PROFILE) << std::endl
@@ -61,7 +62,7 @@ void cl_print_build_errors(cl_program program, cl_device_id device) {
 
   std::unique_ptr<char[]> log = std::make_unique<char[]>(log_size + 1);
   clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_LOG, log_size + 1, &log[0], NULL);
-  printf("build failed; status=%d, log:\n%s\n", status, &log[0]);
+  std::cout << "build failed; status=" << status << ", log:" << std::endl << &log[0] << std::endl; 
 }
 
 }  // namespace
@@ -74,7 +75,7 @@ cl_device_id cl_get_device_id(cl_device_type device_type) {
 
   for (size_t i = 0; i < num_platforms; i++) {
     std::string platform_name = get_platform_info(platform_ids[i], CL_PLATFORM_NAME);
-    printf("platform[%zu] CL_PLATFORM_NAME: %s\n", i, platform_name.c_str());
+    std::cout << "platform[" << i << "] CL_PLATFORM_NAME: " << platform_name << std::endl;
 
     cl_uint num_devices;
     int err = clGetDeviceIDs(platform_ids[i], device_type, 0, NULL, &num_devices);
@@ -87,7 +88,7 @@ cl_device_id cl_get_device_id(cl_device_type device_type) {
     cl_print_info(platform_ids[i], device_id);
     return device_id;
   }
-  printf("No valid openCL platform found\n");
+  std::cout << "No valid openCL platform found" << std::endl;
   assert(0);
   return nullptr;
 }
