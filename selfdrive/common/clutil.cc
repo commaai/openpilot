@@ -51,7 +51,7 @@ void cl_print_build_errors(cl_program program, cl_device_id device) {
   size_t log_size;
   clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_LOG, 0, NULL, &log_size);
   std::unique_ptr<char[]> log = std::make_unique<char[]>(log_size + 1);
-  clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_LOG, log_size + 1, &log[0], NULL);
+  clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_LOG, log_size, &log[0], NULL);
 
   std::cout << "build failed; status=" << status << ", log:" << std::endl << &log[0] << std::endl; 
 }
