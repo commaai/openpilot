@@ -12,7 +12,7 @@ _visionipc = fxn('visionipc', ['visionipc.c', 'ipc.c'])
 
 files = [
   'buffering.c',
-  'clutil.c',
+  'clutil.cc',
   'efd.c',
   'glutil.c',
   'visionimg.cc',

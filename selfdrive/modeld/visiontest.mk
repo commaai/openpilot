@@ -50,7 +50,7 @@ all: visiontest
 libvisiontest_inputs := visiontest.c \
                         transforms/transform.cc \
                         transforms/loadyuv.c \
-                        ../common/clutil.c \
+                        ../common/clutil.cc \
                         $(BASEDIR)/selfdrive/common/util.c \
                         $(CEREAL_OBJS)
 
