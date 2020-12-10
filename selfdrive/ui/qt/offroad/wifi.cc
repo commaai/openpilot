@@ -24,6 +24,12 @@ WifiUI::WifiUI(QWidget *parent, int page_length) : QWidget(parent), networks_per
   try {
     wifi = new WifiManager;
   } catch (std::exception &e) {
+    QLabel* warning = new QLabel("Network manager is inactive!");
+    warning->setStyleSheet(R"(font-size: 65px;)");
+
+    QVBoxLayout* warning_layout = new QVBoxLayout;
+    warning_layout->addWidget(warning, 0, Qt::AlignCenter);
+    setLayout(warning_layout);
     return;
   }
 
