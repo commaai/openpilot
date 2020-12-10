@@ -1,35 +1,20 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include <assert.h>
 #include <string.h>
-#include <unistd.h>
+#include <assert.h>
 #include <inttypes.h>
 #include <sys/stat.h>
 #include <memory>
 #include <vector>
+#include "util.h"
 #include "utilpp.h"
-#ifdef __APPLE__
-#include <OpenCL/cl.h>
-#else
-#include <CL/cl.h>
-#endif
-
-#include "common/util.h"
-
 #include "clutil.h"
-
 #ifdef CLU_NO_SRC
 #include "clcache_bins.h"
 #else
 #endif
 
-#define CL_IDX_CACHE_FILE "/tmp/clcache/index.cli"
-
 void clu_init(void) {
 #ifndef CLU_NO_SRC
   mkdir("/tmp/clcache", 0777);
-  unlink(CL_IDX_CACHE_FILE);
 #endif
 }
 namespace {
@@ -142,12 +127,6 @@ std::vector<uint8_t> get_program_binary(cl_program prg) {
   return binary_buf;
 }
 
-void add_index(uint64_t index_hash, uint64_t src_hash) {
-  FILE* f = fopen(CL_IDX_CACHE_FILE, "a");
-  assert(f);
-  fprintf(f, "%016" PRIx64 " %016" PRIx64 "\n", index_hash, src_hash);
-  fclose(f);
-}
 #endif
 }  // namespace
 
@@ -185,7 +164,7 @@ cl_device_id cl_get_device_id(cl_device_type device_type) {
   return device_id;
 }
 
-cl_program cl_index_program_from_string(cl_context ctx, cl_device_id device_id,
+cl_program cl_program_from_string(cl_context ctx, cl_device_id device_id,
                                         const char* src, const char* args,
                                         const char* file, int line, const char* function) {
   cl_platform_id platform;
@@ -214,15 +193,14 @@ cl_program cl_index_program_from_string(cl_context ctx, cl_device_id device_id,
     char cache_path[1024];
     snprintf(cache_path, sizeof(cache_path), "/tmp/clcache/%016" PRIx64 ".clb", hash);
     write_file(cache_path, binary_buf.data(), binary_buf.size());
-
 #endif
   }
   return prg;
 }
 
-cl_program cl_index_program_from_file(cl_context ctx, cl_device_id device_id, const char* path, const char* args, const char* file, int line, const char* function) {
+cl_program cl_program_from_file(cl_context ctx, cl_device_id device_id, const char* path, const char* args, const char* file, int line, const char* function) {
   std::string src_buf = util::read_file(path);
-  return cl_index_program_from_string(ctx, device_id, &src_buf[0], args, file, line, function);
+  return cl_program_from_string(ctx, device_id, &src_buf[0], args, file, line, function);
 }
 
 /*
