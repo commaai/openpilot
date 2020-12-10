@@ -69,7 +69,7 @@ class LanePlanner:
     self.r_lane_change_prob = 0.
 
   def parse_model(self, md):
-    path_xyz = np.column_stack([md.position.x, md.position.y, md.postion.z])
+    path_xyz = np.column_stack([md.position.x, md.position.y, md.position.z])
     path_xyz_stds = np.column_stack([md.position.xStd, md.position.yStd, md.postion.zStd])
     path_xyz = clean_path_for_polyfit(path_xyz)
     # mpc only goes till 2.5s anyway
