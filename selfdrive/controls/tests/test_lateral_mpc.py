@@ -31,8 +31,6 @@ def run_mpc(v_ref=30., x_init=0., y_init=0., psi_init=0., delta_init=0.,
 
   curvature_factor = VM.curvature_factor(v_ref)
 
-  l_poly = libmpc_py.ffi.new("double[4]", list(map(float, p_l)))
-  r_poly = libmpc_py.ffi.new("double[4]", list(map(float, p_r)))
   d_poly = libmpc_py.ffi.new("double[4]", list(map(float, d_poly)))
 
   cur_state = libmpc_py.ffi.new("state_t *")
@@ -43,8 +41,8 @@ def run_mpc(v_ref=30., x_init=0., y_init=0., psi_init=0., delta_init=0.,
 
   # converge in no more than 20 iterations
   for _ in range(20):
-    libmpc.run_mpc(cur_state, mpc_solution, l_poly, r_poly, d_poly, l_prob, r_prob,
-                   curvature_factor, v_ref, lane_width)
+    libmpc.run_mpc(cur_state, mpc_solution, d_poly,
+                   curvature_factor, v_ref)
 
   return mpc_solution
 
