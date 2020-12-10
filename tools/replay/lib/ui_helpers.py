@@ -10,8 +10,6 @@ from common.transformations.camera import (eon_f_frame_size, eon_f_focal_length,
                                            tici_f_frame_size, tici_f_focal_length)
 from selfdrive.config import RADAR_TO_CAMERA
 from selfdrive.config import UIParams as UP
-from selfdrive.controls.lib.lane_planner import (compute_path_pinv,
-                                                 model_polyfit)
 from tools.lib.lazy_property import lazy_property
 
 RED = (255, 0, 0)
@@ -23,7 +21,6 @@ WHITE = (255, 255, 255)
 
 _PATH_X = np.arange(192.)
 _PATH_XD = np.arange(192.)
-_PATH_PINV = compute_path_pinv(50)
 
 _FULL_FRAME_SIZE = {
 }
@@ -247,10 +244,7 @@ class ModelPoly(object):
       self.valid = False
       return
 
-    if len(model_path.poly):
-      self.poly = np.array(model_path.poly)
-    else:
-      self.poly = model_polyfit(model_path.points, _PATH_PINV)
+    self.poly = np.array(model_path.poly)
 
     self.prob = model_path.prob
     self.std = model_path.std
