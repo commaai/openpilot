@@ -37,6 +37,8 @@ WifiUI::WifiUI(QWidget *parent, int page_length) : QWidget(parent), networks_per
   wifi_widget = new QWidget;
   QVBoxLayout* networkLayout = new QVBoxLayout;
   QHBoxLayout *tethering_field = new QHBoxLayout;
+  tethering_field->addSpacing(50);
+
   ipv4 = new QLabel("");
   tethering_field->addWidget(ipv4);
   tethering_field->addWidget(new QLabel("Enable Tethering"));
@@ -94,11 +96,7 @@ void WifiUI::refresh() {
 
   wifi->request_scan();
   wifi->refreshNetworks();
-  if (wifi->ipv4_adress != ""){
-    ipv4->setText("ip: " + wifi->ipv4_adress);
-  } else {
-    ipv4->setText(wifi->ipv4_adress);
-  }
+  ipv4->setText(wifi->ipv4_adress);
   clearLayout(vlayout);
 
   connectButtons = new QButtonGroup(this);
