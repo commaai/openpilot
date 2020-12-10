@@ -30,23 +30,12 @@ extern "C" {
 void clu_init(void);
 
 cl_device_id cl_get_device_id(cl_device_type device_type);
-void cl_print_info(cl_platform_id platform, cl_device_id device);
-
 cl_program cl_index_program_from_string(cl_context ctx, cl_device_id device_id,
                                         const char* src, const char* args,
                                         const char* file, int line, const char* function);
 cl_program cl_index_program_from_file(cl_context ctx, cl_device_id device_id, const char* path, const char* args,
                                       const char* file, int line, const char* function);
-
 const char* cl_get_error_string(int err);
-
-static inline int cl_check_error(int err) {
-  if (err != 0) {
-    fprintf(stderr, "%s\n", cl_get_error_string(err));
-    exit(1);
-  }
-  return err;
-}
 
 #define CLU_LOAD_FROM_STRING(ctx, device_id, src, args) \
   cl_index_program_from_string(ctx, device_id, src, args, __FILE__, __LINE__, __func__);

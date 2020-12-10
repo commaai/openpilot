@@ -32,41 +32,10 @@ void clu_init(void) {
   unlink(CL_IDX_CACHE_FILE);
 #endif
 }
+namespace {
+// helper functions
 
-cl_device_id cl_get_device_id(cl_device_type device_type) {
-  bool opencl_platform_found = false;
-  cl_device_id device_id = NULL;
-
-  cl_uint num_platforms = 0;
-  CL_CHECK(clGetPlatformIDs(0, NULL, &num_platforms));
-  std::unique_ptr<cl_platform_id[]> platform_ids = std::make_unique<cl_platform_id[]>(num_platforms);
-  CL_CHECK(clGetPlatformIDs(num_platforms, &platform_ids[0], NULL));
-
-  char cBuffer[1024];
-  for (size_t i = 0; i < num_platforms; i++) {
-    CL_CHECK(clGetPlatformInfo(platform_ids[i], CL_PLATFORM_NAME, sizeof(cBuffer), &cBuffer, NULL));
-    printf("platform[%zu] CL_PLATFORM_NAME: %s\n", i, cBuffer);
-
-    cl_uint num_devices;
-    int err = clGetDeviceIDs(platform_ids[i], device_type, 0, NULL, &num_devices);
-    if (err != 0 || !num_devices) {
-      continue;
-    }
-    // Get first device
-    CL_CHECK(clGetDeviceIDs(platform_ids[i], device_type, 1, &device_id, NULL));
-    cl_print_info(platform_ids[i], device_id);
-    opencl_platform_found = true;
-    break;
-  }
-
-  if (!opencl_platform_found) {
-    printf("No valid openCL platform found\n");
-    assert(opencl_platform_found);
-  }
-  return device_id;
-}
-
-static std::string get_version_string(cl_platform_id platform) {
+std::string get_version_string(cl_platform_id platform) {
   size_t size = 0;
   CL_CHECK(clGetPlatformInfo(platform, CL_PLATFORM_VERSION, 0, NULL, &size));
   std::string version;
@@ -103,34 +72,34 @@ void cl_print_info(cl_platform_id platform, cl_device_id device) {
   cl_device_type type;
   clGetDeviceInfo(device, CL_DEVICE_TYPE, sizeof(type), &type, NULL);
   printf("type = 0x%04x = ", (unsigned int)type);
-  switch(type) {
-  case CL_DEVICE_TYPE_CPU:
-    printf("CL_DEVICE_TYPE_CPU\n");
-    break;
-  case CL_DEVICE_TYPE_GPU:
-    printf("CL_DEVICE_TYPE_GPU\n");
-    break;
-  case CL_DEVICE_TYPE_ACCELERATOR:
-    printf("CL_DEVICE_TYPE_ACCELERATOR\n");
-    break;
-  default:
-    printf("Other...\n" );
-    break;
+  switch (type) {
+    case CL_DEVICE_TYPE_CPU:
+      printf("CL_DEVICE_TYPE_CPU\n");
+      break;
+    case CL_DEVICE_TYPE_GPU:
+      printf("CL_DEVICE_TYPE_GPU\n");
+      break;
+    case CL_DEVICE_TYPE_ACCELERATOR:
+      printf("CL_DEVICE_TYPE_ACCELERATOR\n");
+      break;
+    default:
+      printf("Other...\n");
+      break;
   }
 }
 
 void cl_print_build_errors(cl_program program, cl_device_id device) {
   cl_build_status status;
   clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_STATUS,
-          sizeof(cl_build_status), &status, NULL);
+                        sizeof(cl_build_status), &status, NULL);
 
   size_t log_size;
   clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_LOG, 0, NULL, &log_size);
 
-  char* log = (char *)calloc(log_size+1, 1);
+  char* log = (char*)calloc(log_size + 1, 1);
   assert(log);
 
-  clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_LOG, log_size+1, log, NULL);
+  clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_LOG, log_size + 1, log, NULL);
 
   printf("build failed; status=%d, log:\n%s\n", status, log);
 
@@ -138,12 +107,12 @@ void cl_print_build_errors(cl_program program, cl_device_id device) {
 }
 
 #ifndef CLU_NO_CACHE
-static cl_program cached_program_from_hash(cl_context ctx, cl_device_id device_id, uint64_t hash) {
+cl_program cached_program_from_hash(cl_context ctx, cl_device_id device_id, uint64_t hash) {
   char cache_path[1024];
   snprintf(cache_path, sizeof(cache_path), "/tmp/clcache/%016" PRIx64 ".clb", hash);
 
   size_t bin_size;
-  uint8_t *bin = (uint8_t *)read_file(cache_path, &bin_size);
+  uint8_t* bin = (uint8_t*)read_file(cache_path, &bin_size);
   if (!bin) {
     return NULL;
   }
@@ -156,7 +125,7 @@ static cl_program cached_program_from_hash(cl_context ctx, cl_device_id device_i
   return prg;
 }
 
-static std::vector<uint8_t> get_program_binary(cl_program prg) {
+std::vector<uint8_t> get_program_binary(cl_program prg) {
   cl_uint num_devices;
   CL_CHECK(clGetProgramInfo(prg, CL_PROGRAM_NUM_DEVICES, sizeof(num_devices), &num_devices, NULL));
   assert(num_devices == 1);
@@ -166,20 +135,55 @@ static std::vector<uint8_t> get_program_binary(cl_program prg) {
   assert(binary_size > 0);
 
   std::vector<uint8_t> binary_buf(binary_size);
-  uint8_t* bufs[1] = { &binary_buf[0], };
-
+  uint8_t* bufs[1] = {
+      &binary_buf[0],
+  };
   CL_CHECK(clGetProgramInfo(prg, CL_PROGRAM_BINARIES, sizeof(bufs), &bufs, NULL));
-
   return binary_buf;
 }
 
-static void add_index(uint64_t index_hash, uint64_t src_hash) {
-  FILE *f = fopen(CL_IDX_CACHE_FILE, "a");
+void add_index(uint64_t index_hash, uint64_t src_hash) {
+  FILE* f = fopen(CL_IDX_CACHE_FILE, "a");
   assert(f);
   fprintf(f, "%016" PRIx64 " %016" PRIx64 "\n", index_hash, src_hash);
   fclose(f);
 }
 #endif
+}  // namespace
+
+
+cl_device_id cl_get_device_id(cl_device_type device_type) {
+  bool opencl_platform_found = false;
+  cl_device_id device_id = NULL;
+
+  cl_uint num_platforms = 0;
+  CL_CHECK(clGetPlatformIDs(0, NULL, &num_platforms));
+  std::unique_ptr<cl_platform_id[]> platform_ids = std::make_unique<cl_platform_id[]>(num_platforms);
+  CL_CHECK(clGetPlatformIDs(num_platforms, &platform_ids[0], NULL));
+
+  char cBuffer[1024];
+  for (size_t i = 0; i < num_platforms; i++) {
+    CL_CHECK(clGetPlatformInfo(platform_ids[i], CL_PLATFORM_NAME, sizeof(cBuffer), &cBuffer, NULL));
+    printf("platform[%zu] CL_PLATFORM_NAME: %s\n", i, cBuffer);
+
+    cl_uint num_devices;
+    int err = clGetDeviceIDs(platform_ids[i], device_type, 0, NULL, &num_devices);
+    if (err != 0 || !num_devices) {
+      continue;
+    }
+    // Get first device
+    CL_CHECK(clGetDeviceIDs(platform_ids[i], device_type, 1, &device_id, NULL));
+    cl_print_info(platform_ids[i], device_id);
+    opencl_platform_found = true;
+    break;
+  }
+
+  if (!opencl_platform_found) {
+    printf("No valid openCL platform found\n");
+    assert(opencl_platform_found);
+  }
+  return device_id;
+}
 
 cl_program cl_index_program_from_string(cl_context ctx, cl_device_id device_id,
                                         const char* src, const char* args,
@@ -218,7 +222,7 @@ cl_program cl_index_program_from_string(cl_context ctx, cl_device_id device_id,
 
 cl_program cl_index_program_from_file(cl_context ctx, cl_device_id device_id, const char* path, const char* args, const char* file, int line, const char* function) {
   std::string src_buf = util::read_file(path);
-  return cl_index_program_from_string(ctx, device_id, &src_buf[0], args, file ,line ,function);
+  return cl_index_program_from_string(ctx, device_id, &src_buf[0], args, file, line, function);
 }
 
 /*
