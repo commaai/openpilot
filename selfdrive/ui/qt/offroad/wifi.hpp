@@ -31,6 +31,7 @@ private:
   QString text;
   QButtonGroup *connectButtons;
   bool tetheringEnabled;
+  QLabel* ipv4;
 
   void connectToNetwork(Network n);
   QString getStringFromUser();
