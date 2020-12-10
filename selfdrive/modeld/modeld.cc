@@ -115,10 +115,12 @@ int main(int argc, char **argv) {
   SubMaster sm({"pathPlan", "frame"});
 
   // cl init
-  CLContext ctx = cl_init_context(CL_DEVICE_TYPE_DEFAULT);
+  cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
+  cl_context context = CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id, NULL, NULL, &err));
+
   // init the models
   ModelState model;
-  model_init(&model, &ctx);
+  model_init(&model, device_id, context);
   LOGW("models loaded, modeld starting");
 
   // loop
@@ -140,7 +142,7 @@ int main(int argc, char **argv) {
     float frames_dropped = 0;
 
     // one frame in memory
-    VisionBuf yuv_ion = visionbuf_allocate_cl(&ctx, buf_info.buf_len);
+    VisionBuf yuv_ion = visionbuf_allocate_cl(buf_info.buf_len, device_id, context);
 
     uint32_t frame_id = 0, last_vipc_frame_id = 0;
     double last = 0;
@@ -212,7 +214,7 @@ int main(int argc, char **argv) {
   LOG("joining live_thread");
   err = pthread_join(live_thread_handle, NULL);
   assert(err == 0);
-  cl_free_context(&ctx);
+  CL_CHECK(clReleaseContext(context));
   pthread_mutex_destroy(&transform_lock);
   return 0;
 }

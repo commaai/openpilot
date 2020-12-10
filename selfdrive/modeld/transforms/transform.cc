@@ -1,18 +1,20 @@
 #include <string.h>
 #include <assert.h>
 
+#include "clutil.h"
+
 #include "transform.h"
 
-void transform_init(Transform* s, CLContext *ctx) {
+void transform_init(Transform* s, cl_context ctx, cl_device_id device_id) {
   memset(s, 0, sizeof(*s));
 
-  cl_program prg = cl_program_from_file(ctx, "transforms/transform.cl", "");
+  cl_program prg = cl_program_from_file(ctx, device_id, "transforms/transform.cl", "");
   s->krnl = CL_CHECK_ERR(clCreateKernel(prg, "warpPerspective", &err));
   // done with this
   CL_CHECK(clReleaseProgram(prg));
 
-  s->m_y_cl = CL_CHECK_ERR(clCreateBuffer(ctx->context, CL_MEM_READ_WRITE, 3*3*sizeof(float), NULL, &err));
-  s->m_uv_cl = CL_CHECK_ERR(clCreateBuffer(ctx->context, CL_MEM_READ_WRITE, 3*3*sizeof(float), NULL, &err));
+  s->m_y_cl = CL_CHECK_ERR(clCreateBuffer(ctx, CL_MEM_READ_WRITE, 3*3*sizeof(float), NULL, &err));
+  s->m_uv_cl = CL_CHECK_ERR(clCreateBuffer(ctx, CL_MEM_READ_WRITE, 3*3*sizeof(float), NULL, &err));
 }
 
 void transform_destroy(Transform* s) {

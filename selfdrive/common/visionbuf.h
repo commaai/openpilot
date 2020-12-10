@@ -1,6 +1,11 @@
 #pragma once
 
-#include "clutil.h"
+#define CL_USE_DEPRECATED_OPENCL_1_2_APIS
+#ifdef __APPLE__
+#include <OpenCL/cl.h>
+#else
+#include <CL/cl.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -13,7 +18,8 @@ typedef struct VisionBuf {
   int handle;
   int fd;
 
-  CLContext *ctx;
+  cl_context ctx;
+  cl_device_id device_id;
   cl_mem buf_cl;
   cl_command_queue copy_q;
 } VisionBuf;
@@ -22,7 +28,7 @@ typedef struct VisionBuf {
 #define VISIONBUF_SYNC_TO_DEVICE 1
 
 VisionBuf visionbuf_allocate(size_t len);
-VisionBuf visionbuf_allocate_cl(CLContext *ctx, size_t len);
+VisionBuf visionbuf_allocate_cl(size_t len, cl_device_id device_id, cl_context ctx);
 void visionbuf_sync(const VisionBuf* buf, int dir);
 void visionbuf_free(const VisionBuf* buf);
 

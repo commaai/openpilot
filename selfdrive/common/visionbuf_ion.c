@@ -10,6 +10,7 @@
 #include <unistd.h>
 #include <linux/ion.h>
 #include <CL/cl_ext.h>
+#include "common/clutil.h"
 #include <msm_ion.h>
 
 #include "visionbuf.h"
@@ -70,7 +71,7 @@ VisionBuf visionbuf_allocate(size_t len) {
   };
 }
 
-VisionBuf visionbuf_allocate_cl(CLContext *ctx, size_t len) {
+VisionBuf visionbuf_allocate_cl(size_t len, cl_device_id device_id, cl_context ctx) {
   VisionBuf buf = visionbuf_allocate(len);
 
   assert(((uintptr_t)buf.addr % DEVICE_PAGE_SIZE_CL) == 0);
@@ -81,7 +82,7 @@ VisionBuf visionbuf_allocate_cl(CLContext *ctx, size_t len) {
   ion_cl.ion_filedesc = buf.fd;
   ion_cl.ion_hostptr = buf.addr;
 
-  buf.buf_cl = CL_CHECK_ERR(clCreateBuffer(ctx->context,
+  buf.buf_cl = CL_CHECK_ERR(clCreateBuffer(ctx,
                               CL_MEM_USE_HOST_PTR | CL_MEM_EXT_HOST_PTR_QCOM,
                               buf.len, &ion_cl, &err));
   return buf;

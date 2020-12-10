@@ -1,9 +1,16 @@
-#pragma once
+#ifndef TRANSFORM_H
+#define TRANSFORM_H
 
 #include <inttypes.h>
 #include <stdbool.h>
 
-#include "clutil.h"
+#define CL_USE_DEPRECATED_OPENCL_1_2_APIS
+#ifdef __APPLE__
+#include <OpenCL/cl.h>
+#else
+#include <CL/cl.h>
+#endif
+
 #include "common/mat.h"
 
 #ifdef __cplusplus
@@ -15,7 +22,7 @@ typedef struct {
   cl_mem m_y_cl, m_uv_cl;
 } Transform;
 
-void transform_init(Transform* s, CLContext *ctx);
+void transform_init(Transform* s, cl_context ctx, cl_device_id device_id);
 
 void transform_destroy(Transform* transform);
 
@@ -28,3 +35,5 @@ void transform_queue(Transform* s, cl_command_queue q,
 #ifdef __cplusplus
 }
 #endif
+
+#endif  // TRANSFORM_H

@@ -7,7 +7,6 @@
 
 #include "common/mat.h"
 #include "common/util.h"
-#include "clutil.h"
 #include "common/modeldata.h"
 
 #include "commonmodel.h"
@@ -48,7 +47,7 @@ typedef struct ModelState {
 #endif
 } ModelState;
 
-void model_init(ModelState* s, CLContext *ctx);
+void model_init(ModelState* s, cl_device_id device_id, cl_context context);
 ModelDataRaw model_eval_frame(ModelState* s, cl_mem yuv_cl, int width, int height,
                            const mat3 &transform, float *desire_in);
 void model_free(ModelState* s);

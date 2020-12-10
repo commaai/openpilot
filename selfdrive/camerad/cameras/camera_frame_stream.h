@@ -2,7 +2,13 @@
 
 #include <stdbool.h>
 
-#include "clutil.h"
+#define CL_USE_DEPRECATED_OPENCL_1_2_APIS
+#ifdef __APPLE__
+#include <OpenCL/cl.h>
+#else
+#include <CL/cl.h>
+#endif
+
 #include "camera_common.h"
 
 #define FRAME_BUF_COUNT 16
@@ -30,7 +36,7 @@ typedef struct MultiCameraState {
   PubMaster *pm;
 } MultiCameraState;
 
-void cameras_init(MultiCameraState *s, CLContext *ctx);
+void cameras_init(MultiCameraState *s, cl_device_id device_id, cl_context ctx);
 void cameras_open(MultiCameraState *s);
 void cameras_run(MultiCameraState *s);
 void cameras_close(MultiCameraState *s);

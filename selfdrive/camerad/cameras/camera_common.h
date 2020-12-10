@@ -122,7 +122,7 @@ public:
 
   CameraBuf() = default;
   ~CameraBuf();
-  void init(CLContext *ctx, CameraState *s, int frame_cnt,
+  void init(cl_device_id device_id, cl_context context, CameraState *s, int frame_cnt,
             const char *name = "frame", release_cb relase_callback = nullptr);
   bool acquire();
   void release();

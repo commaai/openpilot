@@ -5,21 +5,22 @@
 #include "common/mat.h"
 #include "common/timing.h"
 
-void frame_init(ModelFrame* frame, CLContext *ctx, int width, int height) {
-  transform_init(&frame->transform, ctx);
+void frame_init(ModelFrame* frame, int width, int height,
+                      cl_device_id device_id, cl_context context) {
+  transform_init(&frame->transform, context, device_id);
   frame->transformed_width = width;
   frame->transformed_height = height;
 
-  frame->transformed_y_cl = CL_CHECK_ERR(clCreateBuffer(ctx->context, CL_MEM_READ_WRITE,
+  frame->transformed_y_cl = CL_CHECK_ERR(clCreateBuffer(context, CL_MEM_READ_WRITE,
                                            (size_t)frame->transformed_width*frame->transformed_height, NULL, &err));
-  frame->transformed_u_cl = CL_CHECK_ERR(clCreateBuffer(ctx->context, CL_MEM_READ_WRITE,
+  frame->transformed_u_cl = CL_CHECK_ERR(clCreateBuffer(context, CL_MEM_READ_WRITE,
                                            (size_t)(frame->transformed_width/2)*(frame->transformed_height/2), NULL, &err));
-  frame->transformed_v_cl = CL_CHECK_ERR(clCreateBuffer(ctx->context, CL_MEM_READ_WRITE,
+  frame->transformed_v_cl = CL_CHECK_ERR(clCreateBuffer(context, CL_MEM_READ_WRITE,
                                            (size_t)(frame->transformed_width/2)*(frame->transformed_height/2), NULL, &err));
   frame->net_input_size = ((width*height*3)/2)*sizeof(float);
-  frame->net_input = CL_CHECK_ERR(clCreateBuffer(ctx->context, CL_MEM_READ_WRITE,
+  frame->net_input = CL_CHECK_ERR(clCreateBuffer(context, CL_MEM_READ_WRITE,
                                 frame->net_input_size, (void*)NULL, &err));
-  loadyuv_init(&frame->loadyuv, ctx, frame->transformed_width, frame->transformed_height);
+  loadyuv_init(&frame->loadyuv, context, device_id, frame->transformed_width, frame->transformed_height);
 }
 
 float *frame_prepare(ModelFrame* frame, cl_command_queue q,
