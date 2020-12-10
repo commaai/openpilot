@@ -23,11 +23,7 @@ int main( )
 
   OnlineData curvature_factor;
   OnlineData v_ref; // m/s
-  OnlineData l_poly_r0, l_poly_r1, l_poly_r2, l_poly_r3;
-  OnlineData r_poly_r0, r_poly_r1, r_poly_r2, r_poly_r3;
   OnlineData d_poly_r0, d_poly_r1, d_poly_r2, d_poly_r3;
-  OnlineData l_prob, r_prob;
-  OnlineData lane_width;
 
   Control t;
 
@@ -37,47 +33,29 @@ int main( )
   f << dot(psi) == v_ref * delta * curvature_factor;
   f << dot(delta) == t;
 
-  auto lr_prob = l_prob + r_prob - l_prob * r_prob;
-
-  auto poly_l = l_poly_r0*(xx*xx*xx) + l_poly_r1*(xx*xx) + l_poly_r2*xx + l_poly_r3;
-  auto poly_r = r_poly_r0*(xx*xx*xx) + r_poly_r1*(xx*xx) + r_poly_r2*xx + r_poly_r3;
   auto poly_d = d_poly_r0*(xx*xx*xx) + d_poly_r1*(xx*xx) + d_poly_r2*xx + d_poly_r3;
-
-  auto angle_d = atan(3*d_poly_r0*xx*xx + 2*d_poly_r1*xx + d_poly_r2);
 
   // Running cost
   Function h;
 
   // Distance errors
-  h << 3*(poly_d - yy);
-
-  // Heading error
-  h <<  .1* (v_ref + 1.0 ) * (angle_d - psi);
+  h << (poly_d - yy);
 
   // Angular rate error
   h << (v_ref + 1.0 ) * t;
 
-  BMatrix Q(3,3); Q.setAll(true);
+  BMatrix Q(2,2); Q.setAll(true);
   // Q(0,0) = 1.0;
   // Q(1,1) = 1.0;
-  // Q(2,2) = 1.0;
-  // Q(3,3) = 1.0;
-  // Q(4,4) = 2.0;
 
   // Terminal cost
   Function hN;
 
   // Distance errors
-  hN << 3*(poly_d - yy);
+  hN << (poly_d - yy);
 
-  // Heading errors
-  hN << .1 * (2.0 * v_ref + 1.0 ) * (angle_d - psi);
-
-  BMatrix QN(2,2); QN.setAll(true);
+  BMatrix QN(1,1); QN.setAll(true);
   // QN(0,0) = 1.0;
-  // QN(1,1) = 1.0;
-  // QN(2,2) = 1.0;
-  // QN(3,3) = 1.0;
 
   // Non uniform time grid
   // First 5 timesteps are 0.05, after that it's 0.15
@@ -103,7 +81,7 @@ int main( )
   ocp.subjectTo( deg2rad(-90) <= psi <= deg2rad(90));
   // more than absolute max steer angle
   ocp.subjectTo( deg2rad(-50) <= delta <= deg2rad(50));
-  ocp.setNOD(17);
+  ocp.setNOD(6);
 
   OCPexport mpc(ocp);
   mpc.set( HESSIAN_APPROXIMATION, GAUSS_NEWTON );
