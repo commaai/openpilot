@@ -1,5 +1,4 @@
-#ifndef CLUTIL_H
-#define CLUTIL_H
+#pragma once
 
 #include <stdint.h>
 #include <stdio.h>
@@ -33,15 +32,6 @@ void clu_init(void);
 cl_device_id cl_get_device_id(cl_device_type device_type);
 cl_program cl_create_program_from_file(cl_context ctx, const char* path);
 void cl_print_info(cl_platform_id platform, cl_device_id device);
-void cl_print_build_errors(cl_program program, cl_device_id device);
-void cl_print_build_errors(cl_program program, cl_device_id device);
-
-cl_program cl_cached_program_from_hash(cl_context ctx, cl_device_id device_id, uint64_t hash);
-cl_program cl_cached_program_from_string(cl_context ctx, cl_device_id device_id,
-                                         const char* src, const char* args,
-                                         uint64_t *out_hash);
-cl_program cl_cached_program_from_file(cl_context ctx, cl_device_id device_id, const char* path, const char* args,
-                                       uint64_t *out_hash);
 
 cl_program cl_program_from_index(cl_context ctx, cl_device_id device_id, uint64_t index_hash);
 
@@ -96,6 +86,4 @@ static inline int cl_check_error(int err) {
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif
