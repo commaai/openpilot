@@ -76,8 +76,6 @@ parameterized = "*"
 torch = "*"
 torchsummary = "*"
 blosc = "==1.9.2"
-albumentations = "*"
-segmentation-models-pytorch = "*"
 
 [packages]
 atomicwrites = "*"
