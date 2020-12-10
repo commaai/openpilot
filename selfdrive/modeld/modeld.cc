@@ -117,11 +117,10 @@ int main(int argc, char **argv) {
   // cl init
   cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
   cl_context context = CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id, NULL, NULL, &err));
-  cl_command_queue q = CL_CHECK_ERR(clCreateCommandQueue(context, device_id, 0, &err));
 
   // init the models
   ModelState model;
-  model_init(&model, device_id, context, true);
+  model_init(&model, device_id, context);
   LOGW("models loaded, modeld starting");
 
   // loop
@@ -185,8 +184,8 @@ int main(int argc, char **argv) {
         visionbuf_sync(&yuv_ion, VISIONBUF_SYNC_TO_DEVICE);
 
         ModelDataRaw model_buf =
-            model_eval_frame(&model, q, yuv_ion.buf_cl, buf_info.width, buf_info.height,
-                             model_transform, NULL, vec_desire);
+            model_eval_frame(&model, yuv_ion.buf_cl, buf_info.width, buf_info.height,
+                             model_transform, vec_desire);
         mt2 = millis_since_boot();
         float model_execution_time = (mt2 - mt1) / 1000.0;
 
@@ -196,10 +195,9 @@ int main(int argc, char **argv) {
         if (run_count < 10) frames_dropped = 0;  // let frame drops warm up
         float frame_drop_ratio = frames_dropped / (1 + frames_dropped);
 
-        const float* raw_pred_ptr = send_raw_pred ? (const float *)model.output : nullptr;
-        model_publish(pm, extra.frame_id, frame_id,  vipc_dropped_frames, frame_drop_ratio, model_buf, raw_pred_ptr, extra.timestamp_eof, model_execution_time);
-        model_publish_v2(pm, extra.frame_id, frame_id,  vipc_dropped_frames, frame_drop_ratio, model_buf, raw_pred_ptr, extra.timestamp_eof, model_execution_time);
-        posenet_publish(pm, extra.frame_id, frame_id, vipc_dropped_frames, frame_drop_ratio, model_buf, extra.timestamp_eof);
+        const float *raw_pred_ptr = send_raw_pred ? &model.output[0] : nullptr;
+        model_publish(pm, extra.frame_id, frame_id, frame_drop_ratio, model_buf, raw_pred_ptr, extra.timestamp_eof, model_execution_time);
+        posenet_publish(pm, extra.frame_id, vipc_dropped_frames, model_buf, extra.timestamp_eof);
 
         LOGD("model process: %.2fms, from last %.2fms, vipc_frame_id %zu, frame_id, %zu, frame_drop %.3f", mt2-mt1, mt1-last, extra.frame_id, frame_id, frame_drop_ratio);
         last = mt1;
@@ -217,8 +215,6 @@ int main(int argc, char **argv) {
   err = pthread_join(live_thread_handle, NULL);
   assert(err == 0);
   CL_CHECK(clReleaseContext(context));
-  CL_CHECK(clReleaseCommandQueue(q));
-
   pthread_mutex_destroy(&transform_lock);
   return 0;
 }
