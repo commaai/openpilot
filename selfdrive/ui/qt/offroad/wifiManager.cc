@@ -88,7 +88,7 @@ void WifiManager::refreshNetworks() {
   bus = QDBusConnection::systemBus();
   seen_networks.clear();
   seen_ssids.clear();
-  ipv4_adress = get_ipv4_adress();
+  ipv4_address = get_ipv4_address();
   for (Network &network : get_networks()) {
     if (seen_ssids.count(network.ssid)) {
       continue;
@@ -98,7 +98,7 @@ void WifiManager::refreshNetworks() {
   }
 }
 
-QString WifiManager::get_ipv4_adress(){
+QString WifiManager::get_ipv4_address(){
   if (raw_adapter_state != state_connected){
     return "";
   }
@@ -374,10 +374,10 @@ void WifiManager::enableTethering() {
   connection["802-11-wireless-security"]["psk"] = "swagswagcomma";
 
   connection["ipv4"]["method"] = "shared";
-  QMap<QString,QVariant> adress1;
-  adress1["address"] = "192.168.43.1";
-  adress1["prefix"] = 24u;
-  connection["ipv4"]["address-data"] = QVariant::fromValue(IpConfig() << adress1);
+  QMap<QString,QVariant> address;
+  address["address"] = "192.168.43.1";
+  address["prefix"] = 24u;
+  connection["ipv4"]["address-data"] = QVariant::fromValue(IpConfig() << address);
   connection["ipv4"]["gateway"] = "192.168.43.1";
   connection["ipv6"]["method"] = "ignore";
 

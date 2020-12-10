@@ -96,7 +96,7 @@ void WifiUI::refresh() {
 
   wifi->request_scan();
   wifi->refreshNetworks();
-  ipv4->setText(wifi->ipv4_adress);
+  ipv4->setText(wifi->ipv4_address);
   clearLayout(vlayout);
 
   connectButtons = new QButtonGroup(this);
