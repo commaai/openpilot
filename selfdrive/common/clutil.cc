@@ -66,15 +66,7 @@ cl_device_id cl_get_device_id(cl_device_type device_type) {
   return device_id;
 }
 
-cl_program cl_create_program_from_file(cl_context ctx, const char* path) {
-  char* src_buf = (char *)read_file(path, NULL);
-  assert(src_buf);
-  cl_program ret = CL_CHECK_ERR(clCreateProgramWithSource(ctx, 1, (const char**)&src_buf, NULL, &err));
-  free(src_buf);
-  return ret;
-}
-
-std::string get_version_string(cl_platform_id platform) {
+static std::string get_version_string(cl_platform_id platform) {
   size_t size = 0;
   CL_CHECK(clGetPlatformInfo(platform, CL_PLATFORM_VERSION, 0, NULL, &size));
   std::string version;
@@ -145,7 +137,8 @@ void cl_print_build_errors(cl_program program, cl_device_id device) {
   free(log);
 }
 
-cl_program cl_cached_program_from_hash(cl_context ctx, cl_device_id device_id, uint64_t hash) {
+#ifndef CLU_NO_CACHE
+static cl_program cached_program_from_hash(cl_context ctx, cl_device_id device_id, uint64_t hash) {
   char cache_path[1024];
   snprintf(cache_path, sizeof(cache_path), "/tmp/clcache/%016" PRIx64 ".clb", hash);
 
@@ -163,7 +156,6 @@ cl_program cl_cached_program_from_hash(cl_context ctx, cl_device_id device_id, u
   return prg;
 }
 
-#ifndef CLU_NO_CACHE
 static std::vector<uint8_t> get_program_binary(cl_program prg) {
   cl_uint num_devices;
   CL_CHECK(clGetProgramInfo(prg, CL_PROGRAM_NUM_DEVICES, sizeof(num_devices), &num_devices, NULL));
@@ -180,22 +172,28 @@ static std::vector<uint8_t> get_program_binary(cl_program prg) {
 
   return binary_buf;
 }
+
+static void add_index(uint64_t index_hash, uint64_t src_hash) {
+  FILE *f = fopen(CL_IDX_CACHE_FILE, "a");
+  assert(f);
+  fprintf(f, "%016" PRIx64 " %016" PRIx64 "\n", index_hash, src_hash);
+  fclose(f);
+}
 #endif
 
-cl_program cl_cached_program_from_string(cl_context ctx, cl_device_id device_id,
-                                         const char* src, const char* args,
-                                         uint64_t *out_hash) {
+cl_program cl_index_program_from_string(cl_context ctx, cl_device_id device_id,
+                                        const char* src, const char* args,
+                                        const char* file, int line, const char* function) {
   cl_platform_id platform;
   CL_CHECK(clGetDeviceInfo(device_id, CL_DEVICE_PLATFORM, sizeof(platform), &platform, NULL));
 
   std::string platform_version = get_version_string(platform);
 
-  std::string hash_buf = util::string_format("%s%c%s%c%s", platform_version.c_str(), 1, src, 1, args);
-  size_t hash = std::hash<std::string>{}(hash_buf);
-
   cl_program prg = NULL;
 #ifndef CLU_NO_CACHE
-  prg = cl_cached_program_from_hash(ctx, device_id, hash);
+  std::string hash_buf = util::string_format("%s%c%s%c%s", platform_version.c_str(), 1, src, 1, args);
+  size_t hash = std::hash<std::string>{}(hash_buf);
+  prg = cached_program_from_hash(ctx, device_id, hash);
 #endif
   if (prg == NULL) {
     prg = CL_CHECK_ERR(clCreateProgramWithSource(ctx, 1, (const char**)&src, NULL, &err));
@@ -211,53 +209,16 @@ cl_program cl_cached_program_from_string(cl_context ctx, cl_device_id device_id,
     std::vector<uint8_t> binary_buf = get_program_binary(prg);
     char cache_path[1024];
     snprintf(cache_path, sizeof(cache_path), "/tmp/clcache/%016" PRIx64 ".clb", hash);
-    FILE* of = fopen(cache_path, "wb");
-    assert(of);
-    fwrite(binary_buf.data(), 1, binary_buf.size(), of);
-    fclose(of);
+    write_file(cache_path, binary_buf.data(), binary_buf.size());
+
 #endif
   }
-
-  if (out_hash) *out_hash = hash;
   return prg;
 }
 
-cl_program cl_cached_program_from_file(cl_context ctx, cl_device_id device_id, const char* path, const char* args,
-                                       uint64_t *out_hash) {
+cl_program cl_index_program_from_file(cl_context ctx, cl_device_id device_id, const char* path, const char* args, const char* file, int line, const char* function) {
   std::string src_buf = util::read_file(path);
-  cl_program ret = cl_cached_program_from_string(ctx, device_id, &src_buf[0], args, out_hash);
-  return ret;
-}
-
-#ifndef CLU_NO_CACHE
-static void add_index(uint64_t index_hash, uint64_t src_hash) {
-  FILE *f = fopen(CL_IDX_CACHE_FILE, "a");
-  assert(f);
-  fprintf(f, "%016" PRIx64 " %016" PRIx64 "\n", index_hash, src_hash);
-  fclose(f);
-}
-#endif
-
-cl_program cl_index_program_from_string(cl_context ctx, cl_device_id device_id,
-                                        const char* src, const char* args,
-                                        const char* file, int line, const char* function) {
-  size_t src_hash = 0;
-  cl_program ret = cl_cached_program_from_string(ctx, device_id, src, args, &src_hash);
-#ifndef CLU_NO_CACHE
-  std::string str = util::string_format("%s%d%s%s", file, line, function, args);
-  add_index(std::hash<std::string>{}(str), src_hash);
-#endif
-  return ret;
-}
-
-cl_program cl_index_program_from_file(cl_context ctx, cl_device_id device_id, const char* path, const char* args) {
-  uint64_t src_hash = 0;
-  cl_program ret = cl_cached_program_from_file(ctx, device_id, path, args, &src_hash);
-#ifndef CLU_NO_CACHE
-  std::string str = util::string_format("%s%s", path, args);
-  add_index(std::hash<std::string>{}(str), src_hash);
-#endif
-  return ret;
+  return cl_index_program_from_string(ctx, device_id, &src_buf[0], args, file ,line ,function);
 }
 
 /*
