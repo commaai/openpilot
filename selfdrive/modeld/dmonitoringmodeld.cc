@@ -34,7 +34,9 @@ int main(int argc, char **argv) {
   DMonitoringModelState dmonitoringmodel;
   dmonitoring_init(&dmonitoringmodel);
 
-  auto vipc_client = VisionIpcClient("camerad", VISION_STREAM_YUV_FRONT, true, false);
+  VisionIpcClient vipc_client = VisionIpcClient("camerad", VISION_STREAM_YUV_FRONT, true, false);
+  vipc_client.connect();
+
   while (!do_exit) {
     LOGW("connected with buffer size: %d", vipc_client.buffers[0].len);
 
