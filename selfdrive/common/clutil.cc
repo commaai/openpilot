@@ -94,10 +94,9 @@ cl_device_id cl_get_device_id(cl_device_type device_type) {
 }
 
 cl_program cl_program_from_file(cl_context ctx, cl_device_id device_id, const char* path, const char* args) {
-  char* src = (char*)read_file(path, nullptr);
-  assert(src != nullptr);
-  cl_program prg = CL_CHECK_ERR(clCreateProgramWithSource(ctx, 1, (const char**)&src, NULL, &err));
-  free(src);
+  std::string src = util::read_file(path);
+  assert(src.length() > 0);
+  cl_program prg = CL_CHECK_ERR(clCreateProgramWithSource(ctx, 1, (const char*[]){&src[0]}, NULL, &err));
   if (int err = clBuildProgram(prg, 1, &device_id, args, NULL, NULL); err != 0) {
     cl_print_build_errors(prg, device_id);
     assert(0);
