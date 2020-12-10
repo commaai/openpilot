@@ -19,16 +19,9 @@
 
 #include "clutil.h"
 
-typedef struct CLUProgramIndex {
-  uint64_t index_hash;
-  const uint8_t* bin_data;
-  const uint8_t* bin_end;
-} CLUProgramIndex;
-
 #ifdef CLU_NO_SRC
 #include "clcache_bins.h"
 #else
-static const CLUProgramIndex clu_index[] = {};
 #endif
 
 #define CL_IDX_CACHE_FILE "/tmp/clcache/index.cli"
@@ -152,31 +145,6 @@ void cl_print_build_errors(cl_program program, cl_device_id device) {
   free(log);
 }
 
-uint64_t clu_index_hash(const char* s) {
-  size_t sl = strlen(s);
-  assert(sl < 128);
-  uint64_t x = 0;
-  for (int i=127; i>=0; i--) {
-    x *= 65599ULL;
-    x += (uint8_t)s[i<sl ? sl-1-i : sl];
-  }
-  return x ^ (x >> 32);
-}
-
-uint64_t clu_fnv_hash(const uint8_t *data, size_t len) {
-  /* 64 bit Fowler/Noll/Vo FNV-1a hash code */
-  uint64_t hval = 0xcbf29ce484222325ULL;
-  const uint8_t *dp = data;
-  const uint8_t *de = data + len;
-  while (dp < de) {
-    hval ^= (uint64_t) *dp++;
-    hval += (hval << 1) + (hval << 4) + (hval << 5) +
-        (hval << 7) + (hval << 8) + (hval << 40);
-  }
-
-  return hval;
-}
-
 cl_program cl_cached_program_from_hash(cl_context ctx, cl_device_id device_id, uint64_t hash) {
   char cache_path[1024];
   snprintf(cache_path, sizeof(cache_path), "/tmp/clcache/%016" PRIx64 ".clb", hash);
@@ -223,7 +191,7 @@ cl_program cl_cached_program_from_string(cl_context ctx, cl_device_id device_id,
   std::string platform_version = get_version_string(platform);
 
   std::string hash_buf = util::string_format("%s%c%s%c%s", platform_version.c_str(), 1, src, 1, args);
-  uint64_t hash = clu_fnv_hash((uint8_t*)&hash_buf[0], hash_buf.length());
+  size_t hash = std::hash<std::string>{}(hash_buf);
 
   cl_program prg = NULL;
 #ifndef CLU_NO_CACHE
@@ -270,44 +238,24 @@ static void add_index(uint64_t index_hash, uint64_t src_hash) {
 }
 #endif
 
-cl_program cl_program_from_index(cl_context ctx, cl_device_id device_id, uint64_t index_hash) {
-  int i;
-  for (i=0; i<ARRAYSIZE(clu_index); i++) {
-    if (clu_index[i].index_hash == index_hash) {
-      break;
-    }
-  }
-  if (i >= ARRAYSIZE(clu_index)) {
-    assert(false);
-  }
-
-  size_t bin_size = clu_index[i].bin_end - clu_index[i].bin_data;
-  const uint8_t *bin_data = clu_index[i].bin_data;
-
-  cl_program prg = CL_CHECK_ERR(clCreateProgramWithBinary(ctx, 1, &device_id, &bin_size, (const uint8_t**)&bin_data, NULL, &err));
-
-  CL_CHECK(clBuildProgram(prg, 1, &device_id, NULL, NULL, NULL));
-
-  return prg;
-}
-
 cl_program cl_index_program_from_string(cl_context ctx, cl_device_id device_id,
                                         const char* src, const char* args,
-                                        uint64_t index_hash) {
-  uint64_t src_hash = 0;
+                                        const char* file, int line, const char* function) {
+  size_t src_hash = 0;
   cl_program ret = cl_cached_program_from_string(ctx, device_id, src, args, &src_hash);
 #ifndef CLU_NO_CACHE
-  add_index(index_hash, src_hash);
+  std::string str = util::string_format("%s%d%s%s", file, line, function, args);
+  add_index(std::hash<std::string>{}(str), src_hash);
 #endif
   return ret;
 }
 
-cl_program cl_index_program_from_file(cl_context ctx, cl_device_id device_id, const char* path, const char* args,
-                                      uint64_t index_hash) {
+cl_program cl_index_program_from_file(cl_context ctx, cl_device_id device_id, const char* path, const char* args) {
   uint64_t src_hash = 0;
   cl_program ret = cl_cached_program_from_file(ctx, device_id, path, args, &src_hash);
 #ifndef CLU_NO_CACHE
-  add_index(index_hash, src_hash);
+  std::string str = util::string_format("%s%s", path, args);
+  add_index(std::hash<std::string>{}(str), src_hash);
 #endif
   return ret;
 }
