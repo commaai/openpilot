@@ -541,7 +541,7 @@ void ui_draw(UIState *s) {
   }
 
   const bool draw_vision = s->started && s->active_app == cereal::UiLayoutState::App::NONE &&
-                           s->status != STATUS_OFFROAD && s->vision_connected;
+                           s->status != STATUS_OFFROAD && s->vipc_client->connected;
 
   // GL drawing functions
   ui_draw_background(s);

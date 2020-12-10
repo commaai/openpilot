@@ -144,7 +144,6 @@ typedef struct {
 
 typedef struct UIState {
   VisionIpcClient * vipc_client;
-  bool vision_connected;
   VisionBuf * last_frame;
 
   // framebuffer

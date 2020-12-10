@@ -74,10 +74,9 @@ void ui_init(UIState *s) {
 
   ui_nvg_init(s);
 
-  s->vision_connected = true;
   s->last_frame = nullptr;
   s->vipc_client = new VisionIpcClient("camerad", VISION_STREAM_RGB_BACK, true, false);
-  ui_init_vision(s);
+
 }
 
 
@@ -88,14 +87,6 @@ void update_sockets(UIState *s) {
 
   if (sm.update(0) == 0){
     return;
-  }
-
-  VisionBuf * buf = s->vipc_client->recv();
-  if (buf != nullptr){
-    s->last_frame = buf;
-  } else if (errno == EINTR){
-    LOGE("Got interrupt while receiving frame");
-    raise(SIGINT);
   }
 
   if (s->started && sm.updated("controlsState")) {
@@ -222,10 +213,29 @@ void update_sockets(UIState *s) {
   s->started = scene.thermal.getStarted() || scene.frontview;
 }
 
-void ui_update(UIState *s) {
+void ui_update_vision(UIState *s) {
+  if (!s->vipc_client->connected && s->started) {
+    // Connect is blocking, but since we're started we assume this will always succeed
+    s->vipc_client->connect();
+    ui_init_vision(s);
+  }
 
+  if (s->vipc_client->connected){
+    VisionBuf * buf = s->vipc_client->recv();
+    if (buf != nullptr){
+      s->last_frame = buf;
+    } else if (errno == EINTR){
+      LOGE("Got interrupt while receiving frame");
+      raise(SIGINT);
+    }
+  }
+}
+
+void ui_update(UIState *s) {
   update_sockets(s);
-  // ui_update_vision(s);
+  ui_update_vision(s);
+
+
 
   // Handle onroad/offroad transition
   if (!s->started && s->status != STATUS_OFFROAD) {
