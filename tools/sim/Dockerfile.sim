@@ -16,7 +16,7 @@ RUN apt-get update && apt-get install -y \
   && rm -rf /var/lib/apt/lists/*
 
 
-FROM basesys as intelstuff
+FROM basesys as inteldeps
 
 # Intel OpenCL driver
 ARG INTEL_DRIVER=opencl_runtime_16.1.1_x64_ubuntu_6.4.0.25.tgz
@@ -33,50 +33,34 @@ RUN echo INTEL_DRIVER is $INTEL_DRIVER; \
     echo /opt/intel/*/lib64/libintelocl.so > /etc/OpenCL/vendors/intel.icd; \
     rm -rf /tmp/opencl-driver-intel;
 
-# Open[GL,CL] for gpu
-ENV NVIDIA_DRIVER_CAPABILITIES ${NVIDIA_DRIVER_CAPABILITIES},display
-# RUN apt-get update && apt-get install -y --no-install-recommends \
-#       mesa-utils \
-#       ocl-icd-libopencl1 \
-#     && rm -rf /var/lib/apt/lists/*
-# RUN mkdir -p /etc/OpenCL/vendors && \
-#     echo "libnvidia-opencl.so.1" > /etc/OpenCL/vendors/nvidia.icd
 ENV NVIDIA_VISIBLE_DEVICES all
 ENV NVIDIA_DRIVER_CAPABILITIES compute,utility,display
 
 RUN dbus-uuidgen > /etc/machine-id
 
-FROM intelstuff as cudainstall
 #CUDA 10.2 and CUDNN8 Stuff
-#Should look for the .run CUDA installer, maybe less error prone within docker and less garbage
-COPY ./tools/sim/nvstuff /tmp/nvstuff
+FROM inteldeps as cudainstall
+COPY ./tools/sim/assets /tmp/assets
 
 RUN apt update && apt install -y wget gnupg
-RUN cd /tmp/nvstuff && \
+RUN cd /tmp/assets && \
     wget -q https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/cuda-ubuntu1804.pin && \
     mv cuda-ubuntu1804.pin /etc/apt/preferences.d/cuda-repository-pin-600 && \
-    # wget https://developer.download.nvidia.com/compute/cuda/10.2/Prod/local_installers/cuda-repo-ubuntu1804-10-2-local-10.2.89-440.33.01_1.0-1_amd64.deb && \
     dpkg -i cuda-repo-ubuntu1804-10-2-local-10.2.89-440.33.01_1.0-1_amd64.deb && \
     apt-key add /var/cuda-repo-10-2-local-10.2.89-440.33.01/7fa2af80.pub && \
     apt-get update && \
-    apt-get -y --no-install-recommends  install cuda
+    apt-get -y --no-install-recommends install cuda
 
-
-#should place cudnn8 libs in /tmp/cudnn8pkgs, dunno if nvidia terms allows redist within docker
-#otherwise could use some nvidia provided docker image with cudnn8 and build from there
-# COPY /tmp/cudnn8pkgs $HOME/cudnn8pkgs
-RUN dpkg -i /tmp/nvstuff/libcudnn8* ; \
-    rm -rf /tmp/nvstuff
-
+RUN dpkg -i /tmp/assets/libcudnn8* && \
+    rm -rf /var/lib/apt/lists/*
 
 FROM cudainstall as opsetup
 
-RUN pip install onnxruntime-gpu
+RUN cd /tmp/assets ; \
+    pip install onnxruntime-gpu
 
 # CARLA python api
-COPY ./tools/sim/carla-0.9.7-py3.5-linux-x86_64.egg /tmp
-RUN easy_install /tmp/carla-0.9.7-py3.5-linux-x86_64.egg || true \
-    rm /tmp/carla-0.9.7-py3.5-linux-x86_64.egg
+RUN easy_install /tmp/assets/carla-0.9.7-py3.5-linux-x86_64.egg || true
 
 # get same tmux config used on NEOS for debugging
 RUN cd $HOME && \

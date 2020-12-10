@@ -19,7 +19,8 @@ docker pull carlasim/carla:0.9.7
 #docker run -it --net=host --gpus all carlasim/carla:0.9.7 ./CarlaUE4.sh -quality-level=High
 
 docker run --name openpilot_carla \
-  --privileged --rm \
+  --privileged \
+  --rm \
   -e SDL_VIDEODRIVER=x11 \
   -e DISPLAY=$DISPLAY \
   -v /tmp/.X11-unix:/tmp/.X11-unix \

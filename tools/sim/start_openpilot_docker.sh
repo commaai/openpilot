@@ -4,8 +4,8 @@
 xhost +local:root
 #docker pull commaai/openpilot-sim:latest
 
-docker run --net=host \
-  --name openpilot_client \
+docker run --name openpilot_client \
+  --net=host \
   --rm \
   -it \
   -p 2000:2000 \
