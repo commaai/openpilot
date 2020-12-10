@@ -1,14 +1,9 @@
-#ifndef LOADYUV_H
-#define LOADYUV_H
+#pragma once
 
 #include <inttypes.h>
 #include <stdbool.h>
 
-#ifdef __APPLE__
-#include <OpenCL/cl.h>
-#else
-#include <CL/cl.h>
-#endif
+#include "clutil.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -19,7 +14,7 @@ typedef struct {
   cl_kernel loadys_krnl, loaduv_krnl;
 } LoadYUVState;
 
-void loadyuv_init(LoadYUVState* s, cl_context ctx, cl_device_id device_id, int width, int height);
+void loadyuv_init(LoadYUVState* s, CLContext *ctx, int width, int height);
 
 void loadyuv_destroy(LoadYUVState* s);
 
@@ -30,5 +25,3 @@ void loadyuv_queue(LoadYUVState* s, cl_command_queue q,
 #ifdef __cplusplus
 }
 #endif
-
-#endif  // LOADYUV_H

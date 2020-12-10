@@ -28,8 +28,6 @@
 
 #include <libyuv.h>
 
-#include <CL/cl.h>
-
 #include "clutil.h"
 #include "rgb_to_yuv.h"
 
@@ -39,12 +37,6 @@ static inline double millis_since_boot() {
   clock_gettime(CLOCK_BOOTTIME, &t);
   return t.tv_sec * 1000.0 + t.tv_nsec * 1e-6;
 }
-
-void cl_init(cl_device_id &device_id, cl_context &context) {
-  device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
-  context = CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id, NULL, NULL, &err));
-}
-
 
 bool compare_results(uint8_t *a, uint8_t *b, int len, int stride, int width, int height, uint8_t *rgb) {
   int min_diff = 0., max_diff = 0., max_e = 0.;
@@ -101,13 +93,11 @@ bool compare_results(uint8_t *a, uint8_t *b, int len, int stride, int width, int
 int main(int argc, char** argv) {
   srand(1337);
 
-  cl_device_id device_id;
-  cl_context context;
-  cl_init(device_id, context)	;
+  CLContext ctx = cl_init_context(CL_DEVICE_TYPE_DEFAULT);
 
   int err;
   const cl_queue_properties props[] = {0}; //CL_QUEUE_PRIORITY_KHR, CL_QUEUE_PRIORITY_HIGH_KHR, 0};
-  cl_command_queue q = clCreateCommandQueueWithProperties(context, device_id, props, &err);
+  cl_command_queue q = clCreateCommandQueueWithProperties(ctx.context, ctx.device_id, props, &err);
   if(err != 0) {
     std::cout << "clCreateCommandQueueWithProperties error: " << err << std::endl;
   }
@@ -132,16 +122,16 @@ int main(int argc, char** argv) {
 
 
   RGBToYUVState rgb_to_yuv_state;
-  rgb_to_yuv_init(&rgb_to_yuv_state, context, device_id, width, height, width * 3);
+  rgb_to_yuv_init(&rgb_to_yuv_state, &ctx, width, height, width * 3);
 
   int frame_yuv_buf_size = width * height * 3 / 2;
-  cl_mem yuv_cl = CL_CHECK_ERR(clCreateBuffer(context, CL_MEM_READ_WRITE, frame_yuv_buf_size, (void*)NULL, &err));
+  cl_mem yuv_cl = CL_CHECK_ERR(clCreateBuffer(ctx.context, CL_MEM_READ_WRITE, frame_yuv_buf_size, (void*)NULL, &err));
   uint8_t *frame_yuv_buf = new uint8_t[frame_yuv_buf_size];
   uint8_t *frame_yuv_ptr_y = frame_yuv_buf;
   uint8_t *frame_yuv_ptr_u = frame_yuv_buf + (width * height);
   uint8_t *frame_yuv_ptr_v = frame_yuv_ptr_u + ((width/2) * (height/2));
 
-  cl_mem rgb_cl = CL_CHECK_ERR(clCreateBuffer(context, CL_MEM_READ_WRITE, width * height * 3, (void*)NULL, &err));
+  cl_mem rgb_cl = CL_CHECK_ERR(clCreateBuffer(ctx.context, CL_MEM_READ_WRITE, width * height * 3, (void*)NULL, &err));
   int mismatched = 0;
   int counter = 0;
   srand (time(NULL));
@@ -182,7 +172,7 @@ int main(int argc, char** argv) {
 
   delete[] frame_yuv_buf;
   rgb_to_yuv_destroy(&rgb_to_yuv_state);
-  clReleaseContext(context);
+  cl_free_context(&ctx)
   delete[] rgb_frame;
 
   if (mismatched == 0)

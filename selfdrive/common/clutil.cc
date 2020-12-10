@@ -103,13 +103,25 @@ cl_device_id cl_get_device_id(cl_device_type device_type) {
   return nullptr;
 }
 
-cl_program cl_program_from_file(cl_context ctx, cl_device_id device_id, const char* path, const char* args) {
+CLContext cl_init_context(cl_device_type device_type) {
+  cl_device_id device_id = cl_get_device_id(device_type);
+  cl_context ctx = CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id, NULL, NULL, &err));
+  return CLContext{.device_id = device_id, .context = ctx};
+}
+
+void cl_free_context(CLContext *ctx) {
+  clReleaseContext(ctx->context);
+  ctx->context = nullptr;
+  ctx->device_id = nullptr;
+}
+
+cl_program cl_program_from_file(CLContext *ctx, const char* path, const char* args) {
   char* src = (char*)read_file(path, nullptr);
   assert(src != nullptr);
-  cl_program prg = CL_CHECK_ERR(clCreateProgramWithSource(ctx, 1, (const char**)&src, NULL, &err));
+  cl_program prg = CL_CHECK_ERR(clCreateProgramWithSource(ctx->context, 1, (const char**)&src, NULL, &err));
   free(src);
-  if (int err = clBuildProgram(prg, 1, &device_id, args, NULL, NULL); err != 0) {
-    cl_print_build_errors(prg, device_id);
+  if (int err = clBuildProgram(prg, 1, &ctx->device_id, args, NULL, NULL); err != 0) {
+    cl_print_build_errors(prg, ctx->device_id);
     assert(0);
   }
   return prg;

@@ -301,11 +301,11 @@ void* visionserver_thread(void* arg) {
   return NULL;
 }
 
-void party(cl_device_id device_id, cl_context context) {
+void party(CLContext *ctx) {
   VisionState state = {};
   VisionState *s = &state;
   
-  cameras_init(&s->cameras, device_id, context);
+  cameras_init(&s->cameras, ctx);
   cameras_open(&s->cameras);
 
   std::thread server_thread(visionserver_thread, s);
@@ -330,10 +330,7 @@ int main(int argc, char *argv[]) {
   signal(SIGINT, (sighandler_t)set_do_exit);
   signal(SIGTERM, (sighandler_t)set_do_exit);
 
-  cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
-  cl_context context = CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id, NULL, NULL, &err));
-
-  party(device_id, context);
-
-  CL_CHECK(clReleaseContext(context));
+  CLContext ctx = cl_init_context(CL_DEVICE_TYPE_DEFAULT);
+  party(&ctx);
+  cl_free_context(&ctx);
 }

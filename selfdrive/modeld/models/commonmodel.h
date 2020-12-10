@@ -1,11 +1,5 @@
 #pragma once
-#define CL_USE_DEPRECATED_OPENCL_1_2_APIS
-#ifdef __APPLE__
-#include <OpenCL/cl.h>
-#else
-#include <CL/cl.h>
-#endif
-
+#include "clutil.h"
 #include <float.h>
 #include <stdlib.h>
 #include "common/mat.h"
@@ -27,8 +21,7 @@ typedef struct ModelFrame {
   size_t net_input_size;
 } ModelFrame;
 
-void frame_init(ModelFrame* frame, int width, int height,
-                      cl_device_id device_id, cl_context context);
+void frame_init(ModelFrame* frame, CLContext *ctx, int width, int height);
 float *frame_prepare(ModelFrame* frame, cl_command_queue q,
                            cl_mem yuv_cl, int width, int height,
                            const mat3 &transform);

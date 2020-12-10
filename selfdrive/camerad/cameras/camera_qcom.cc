@@ -100,7 +100,7 @@ static void camera_release_buffer(void* cookie, int buf_idx) {
 
 static void camera_init(CameraState *s, int camera_id, int camera_num,
                         uint32_t pixel_clock, uint32_t line_length_pclk,
-                        unsigned int max_gain, unsigned int fps, cl_device_id device_id, cl_context ctx) {
+                        unsigned int max_gain, unsigned int fps, CLContext *ctx) {
   s->camera_num = camera_num;
   s->camera_id = camera_id;
 
@@ -115,7 +115,7 @@ static void camera_init(CameraState *s, int camera_id, int camera_num,
 
   s->self_recover = 0;
 
-  s->buf.init(device_id, ctx, s, FRAME_BUF_COUNT, "frame", camera_release_buffer);
+  s->buf.init(ctx, s, FRAME_BUF_COUNT, "frame", camera_release_buffer);
 
   pthread_mutex_init(&s->frame_info_lock, NULL);
 }
@@ -251,7 +251,7 @@ cl_program build_conv_program(cl_device_id device_id, cl_context context, int im
   return cl_program_from_file(context, device_id, "imgproc/conv.cl", args);
 }
 
-void cameras_init(MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
+void cameras_init(MultiCameraState *s, CLContext *ctx) {
   char project_name[1024] = {0};
   property_get("ro.boot.project_name", project_name, "");
 
@@ -295,23 +295,23 @@ void cameras_init(MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
 #else
               /*fps*/ 20,
 #endif
-              device_id, ctx);
+              ctx);
   s->rear.apply_exposure = imx298_apply_exposure;
 
   if (s->device == DEVICE_OP3T) {
     camera_init(&s->front, CAMERA_ID_S5K3P8SP, 1,
                 /*pixel_clock=*/560000000, /*line_length_pclk=*/5120,
-                /*max_gain=*/510, 10, device_id, ctx);
+                /*max_gain=*/510, 10, ctx);
     s->front.apply_exposure = imx179_s5k3p8sp_apply_exposure;
   } else if (s->device == DEVICE_LP3) {
     camera_init(&s->front, CAMERA_ID_OV8865, 1,
                 /*pixel_clock=*/72000000, /*line_length_pclk=*/1602,
-                /*max_gain=*/510, 10, device_id, ctx);
+                /*max_gain=*/510, 10, ctx);
     s->front.apply_exposure = ov8865_apply_exposure;
   } else {
     camera_init(&s->front, CAMERA_ID_IMX179, 1,
                 /*pixel_clock=*/251200000, /*line_length_pclk=*/3440,
-                /*max_gain=*/224, 20, device_id, ctx);
+                /*max_gain=*/224, 20, ctx);
     s->front.apply_exposure = imx179_s5k3p8sp_apply_exposure;
   }
 

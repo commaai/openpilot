@@ -44,7 +44,7 @@ void visionimg_compute_aligned_width_and_height(int width, int height, int *alig
 #endif
 }
 
-VisionImg visionimg_alloc_rgb24(cl_device_id device_id, cl_context ctx, int width, int height, VisionBuf *out_buf) {
+VisionImg visionimg_alloc_rgb24(CLContext *ctx, int width, int height, VisionBuf *out_buf) {
   assert(out_buf != nullptr);
   int aligned_w = 0, aligned_h = 0;
   visionimg_compute_aligned_width_and_height(width, height, &aligned_w, &aligned_h);
@@ -52,7 +52,7 @@ VisionImg visionimg_alloc_rgb24(cl_device_id device_id, cl_context ctx, int widt
   int stride = aligned_w * 3;
   size_t size = (size_t) aligned_w * aligned_h * 3;
 
-  *out_buf = visionbuf_allocate_cl(size, device_id, ctx);
+  *out_buf = visionbuf_allocate_cl(ctx, size);
 
   return (VisionImg){
     .fd = out_buf->fd,

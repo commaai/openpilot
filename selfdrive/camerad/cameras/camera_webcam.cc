@@ -35,14 +35,14 @@ void camera_close(CameraState *s) {
   s->buf.stop();
 }
 
-void camera_init(CameraState *s, int camera_id, unsigned int fps, cl_device_id device_id, cl_context ctx) {
+void camera_init(CameraState *s, int camera_id, unsigned int fps, CLContext *ctx) {
   assert(camera_id < ARRAYSIZE(cameras_supported));
   s->ci = cameras_supported[camera_id];
   assert(s->ci.frame_width != 0);
 
   s->fps = fps;
 
-  s->buf.init(device_id, ctx, s, FRAME_BUF_COUNT, "frame");
+  s->buf.init(ctx, s, FRAME_BUF_COUNT, "frame");
 }
 
 static void* rear_thread(void *arg) {
@@ -217,16 +217,16 @@ CameraInfo cameras_supported[CAMERA_ID_MAX] = {
   },
 };
 
-void cameras_init(MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
+void cameras_init(MultiCameraState *s, CLContext *ctx) {
 
-  camera_init(&s->rear, CAMERA_ID_LGC920, 20, device_id, ctx);
+  camera_init(&s->rear, CAMERA_ID_LGC920, 20, ctx);
   s->rear.transform = (mat3){{
     1.0, 0.0, 0.0,
     0.0, 1.0, 0.0,
     0.0, 0.0, 1.0,
   }};
 
-  camera_init(&s->front, CAMERA_ID_LGC615, 10, device_id, ctx);
+  camera_init(&s->front, CAMERA_ID_LGC615, 10, ctx);
   s->front.transform = (mat3){{
     1.0, 0.0, 0.0,
     0.0, 1.0, 0.0,

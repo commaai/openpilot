@@ -7,14 +7,6 @@
 #include <unistd.h>
 #include <sys/mman.h>
 #include <sys/types.h>
-#include "common/clutil.h"
-
-#define CL_USE_DEPRECATED_OPENCL_1_2_APIS
-#ifdef __APPLE__
-#include <OpenCL/cl.h>
-#else
-#include <CL/cl.h>
-#endif
 
 int offset = 0;
 void *malloc_with_fd(size_t len, int *fd) {
@@ -46,7 +38,7 @@ VisionBuf visionbuf_allocate(size_t len) {
   };
 }
 
-VisionBuf visionbuf_allocate_cl(size_t len, cl_device_id device_id, cl_context ctx) {
+VisionBuf visionbuf_allocate_cl(CLContext *ctx, size_t len) {
 #if __OPENCL_VERSION__ >= 200
   void* host_ptr =
       clSVMAlloc(ctx, CL_MEM_READ_WRITE | CL_MEM_SVM_FINE_GRAIN_BUFFER, len, 0);
@@ -55,14 +47,14 @@ VisionBuf visionbuf_allocate_cl(size_t len, cl_device_id device_id, cl_context c
   int fd;
   void* host_ptr = malloc_with_fd(len, &fd);
 
-  cl_command_queue q = CL_CHECK_ERR(clCreateCommandQueue(ctx, device_id, 0, &err));
+  cl_command_queue q = CL_CHECK_ERR(clCreateCommandQueue(ctx->context, ctx->device_id, 0, &err));
 #endif
 
-  cl_mem mem = CL_CHECK_ERR(clCreateBuffer(ctx, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, len, host_ptr, &err));
+  cl_mem mem = CL_CHECK_ERR(clCreateBuffer(ctx->context, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, len, host_ptr, &err));
 
   return (VisionBuf){
       .len = len, .addr = host_ptr, .handle = 0, .fd = fd,
-      .device_id = device_id, .ctx = ctx, .buf_cl = mem,
+      .ctx = ctx, .buf_cl = mem,
 
 #if __OPENCL_VERSION__ < 200
       .copy_q = q,
@@ -91,7 +83,7 @@ void visionbuf_free(const VisionBuf* buf) {
   } else {
     CL_CHECK(clReleaseMemObject(buf->buf_cl));
 #if __OPENCL_VERSION__ >= 200
-    clSVMFree(buf->ctx, buf->addr);
+    clSVMFree(buf->ctx->context, buf->addr);
 #else
     CL_CHECK(clReleaseCommandQueue(buf->copy_q));
     munmap(buf->addr, buf->len);

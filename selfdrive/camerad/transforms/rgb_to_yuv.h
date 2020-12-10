@@ -1,14 +1,9 @@
-#ifndef RGB_TO_YUV_H
-#define RGB_TO_YUV_H
+#pragma once
 
 #include <inttypes.h>
 #include <stdbool.h>
 
-#ifdef __APPLE__
-#include <OpenCL/cl.h>
-#else
-#include <CL/cl.h>
-#endif
+#include "clutil.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -19,7 +14,7 @@ typedef struct {
   cl_kernel rgb_to_yuv_krnl;
 } RGBToYUVState;
 
-void rgb_to_yuv_init(RGBToYUVState* s, cl_context ctx, cl_device_id device_id, int width, int height, int rgb_stride);
+void rgb_to_yuv_init(RGBToYUVState* s, CLContext *ctx, int width, int height, int rgb_stride);
 
 void rgb_to_yuv_destroy(RGBToYUVState* s);
 
@@ -28,5 +23,3 @@ void rgb_to_yuv_queue(RGBToYUVState* s, cl_command_queue q, cl_mem rgb_cl, cl_me
 #ifdef __cplusplus
 }
 #endif
-
-#endif  // RGB_TO_YUV_H

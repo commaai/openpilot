@@ -30,7 +30,7 @@ const int env_ymin = getenv("YMIN") ? atoi(getenv("YMIN")) : 0;
 const int env_ymax = getenv("YMAX") ? atoi(getenv("YMAX")) : -1;
 const int env_scale = getenv("SCALE") ? atoi(getenv("SCALE")) : 1;
 
-static cl_program build_debayer_program(cl_device_id device_id, cl_context context, const CameraInfo *ci, const CameraBuf *b) {
+static cl_program build_debayer_program(CLContext *ctx, const CameraInfo *ci, const CameraBuf *b) {
   char args[4096];
   snprintf(args, sizeof(args),
            "-cl-fast-relaxed-math -cl-denorms-are-zero "
@@ -41,13 +41,13 @@ static cl_program build_debayer_program(cl_device_id device_id, cl_context conte
            b->rgb_width, b->rgb_height, b->rgb_stride,
            ci->bayer_flip, ci->hdr);
 #ifdef QCOM2
-  return cl_program_from_file(context, device_id, "cameras/real_debayer.cl", args);
+  return cl_program_from_file(ctx, "cameras/real_debayer.cl", args);
 #else
-  return cl_program_from_file(context, device_id, "cameras/debayer.cl", args);
+  return cl_program_from_file(ctx, "cameras/debayer.cl", args);
 #endif
 }
 
-void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s, int frame_cnt,
+void CameraBuf::init(CLContext *ctx, CameraState *s, int frame_cnt,
                      const char *name, release_cb relase_callback) {
   const CameraInfo *ci = &s->ci;
   camera_state = s;
@@ -57,7 +57,7 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
   camera_bufs = std::make_unique<VisionBuf[]>(frame_buf_count);
   camera_bufs_metadata = std::make_unique<FrameMetadata[]>(frame_buf_count);
   for (int i = 0; i < frame_buf_count; i++) {
-    camera_bufs[i] = visionbuf_allocate_cl(frame_size, device_id, context);
+    camera_bufs[i] = visionbuf_allocate_cl(ctx, frame_size);
   }
 
   rgb_width = ci->frame_width;
@@ -80,7 +80,7 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
   }
 
   for (int i = 0; i < UI_BUF_COUNT; i++) {
-    VisionImg img = visionimg_alloc_rgb24(device_id, context, rgb_width, rgb_height, &rgb_bufs[i]);
+    VisionImg img = visionimg_alloc_rgb24(ctx, rgb_width, rgb_height, &rgb_bufs[i]);
     if (i == 0) {
       rgb_stride = img.stride;
     }
@@ -97,25 +97,25 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
   yuv_buf_size = rgb_width * rgb_height * 3 / 2;
 
   for (int i = 0; i < YUV_COUNT; i++) {
-    yuv_ion[i] = visionbuf_allocate_cl(yuv_buf_size, device_id, context);
+    yuv_ion[i] = visionbuf_allocate_cl(ctx, yuv_buf_size);
     yuv_bufs[i].y = (uint8_t *)yuv_ion[i].addr;
     yuv_bufs[i].u = yuv_bufs[i].y + (yuv_width * yuv_height);
     yuv_bufs[i].v = yuv_bufs[i].u + (yuv_width / 2 * yuv_height / 2);
   }
 
   if (ci->bayer) {
-    cl_program prg_debayer = build_debayer_program(device_id, context, ci, this);
+    cl_program prg_debayer = build_debayer_program(ctx, ci, this);
     krnl_debayer = CL_CHECK_ERR(clCreateKernel(prg_debayer, "debayer10", &err));
     CL_CHECK(clReleaseProgram(prg_debayer));
   }
 
-  rgb_to_yuv_init(&rgb_to_yuv_state, context, device_id, yuv_width, yuv_height, rgb_stride);
+  rgb_to_yuv_init(&rgb_to_yuv_state, ctx, yuv_width, yuv_height, rgb_stride);
 
 #ifdef __APPLE__
-  q = CL_CHECK_ERR(clCreateCommandQueue(context, device_id, 0, &err));
+  q = CL_CHECK_ERR(clCreateCommandQueue(ctx->context, ctx->device_id, 0, &err));
 #else
   const cl_queue_properties props[] = {0};  //CL_QUEUE_PRIORITY_KHR, CL_QUEUE_PRIORITY_HIGH_KHR, 0};
-  q = CL_CHECK_ERR(clCreateCommandQueueWithProperties(context, device_id, props, &err));
+  q = CL_CHECK_ERR(clCreateCommandQueueWithProperties(ctx->context, ctx->device_id, props, &err));
 #endif
 }
 

@@ -8,7 +8,6 @@
 #include "common/timing.h"
 #include "common/params.h"
 #include "driving.h"
-#include "clutil.h"
 
 constexpr int MODEL_WIDTH = 512;
 constexpr int MODEL_HEIGHT = 256;
@@ -52,8 +51,8 @@ Eigen::Matrix<float, MODEL_PATH_DISTANCE, POLYFIT_DEGREE - 1> vander;
 float X_IDXS[TRAJECTORY_SIZE];
 float T_IDXS[TRAJECTORY_SIZE];
 
-void model_init(ModelState* s, cl_device_id device_id, cl_context context) {
-  frame_init(&s->frame, MODEL_WIDTH, MODEL_HEIGHT, device_id, context);
+void model_init(ModelState* s, CLContext *ctx) {
+  frame_init(&s->frame, ctx, MODEL_WIDTH, MODEL_HEIGHT);
   s->input_frames = std::make_unique<float[]>(MODEL_FRAME_SIZE * 2);
 
   constexpr int output_size = OUTPUT_SIZE + TEMPORAL_SIZE;
@@ -83,7 +82,7 @@ void model_init(ModelState* s, cl_device_id device_id, cl_context context) {
     }
   }
 
-  s->q = CL_CHECK_ERR(clCreateCommandQueue(context, device_id, 0, &err));
+  s->q = CL_CHECK_ERR(clCreateCommandQueue(ctx->context, ctx->device_id, 0, &err));
 }
 
 ModelDataRaw model_eval_frame(ModelState* s, cl_mem yuv_cl, int width, int height,

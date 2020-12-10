@@ -555,7 +555,7 @@ void enqueue_req_multi(struct CameraState *s, int start, int n, bool dp) {
 
 // ******************* camera *******************
 
-static void camera_init(CameraState *s, int camera_id, int camera_num, unsigned int fps, cl_device_id device_id, cl_context ctx) {
+static void camera_init(CameraState *s, int camera_id, int camera_num, unsigned int fps, CLContext *ctx) {
   LOGD("camera init %d", camera_num);
 
   assert(camera_id < ARRAYSIZE(cameras_supported));
@@ -586,7 +586,7 @@ static void camera_init(CameraState *s, int camera_id, int camera_num, unsigned 
   s->debayer_cl_localWorkSize[0] = DEBAYER_LOCAL_WORKSIZE;
   s->debayer_cl_localWorkSize[1] = DEBAYER_LOCAL_WORKSIZE;
 
-  s->buf.init(device_id, ctx, s, FRAME_BUF_COUNT, "frame");
+  s->buf.init(ctx, s, FRAME_BUF_COUNT, "frame");
 }
 
 // TODO: refactor this to somewhere nicer, perhaps use in camera_qcom as well
@@ -809,12 +809,12 @@ static void camera_open(CameraState *s) {
   enqueue_req_multi(s, 1, FRAME_BUF_COUNT, 0);
 }
 
-void cameras_init(MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
-  camera_init(&s->rear, CAMERA_ID_AR0231, 1, 20, device_id, ctx); // swap left/right
+void cameras_init(MultiCameraState *s, CLContext *ctx) {
+  camera_init(&s->rear, CAMERA_ID_AR0231, 1, 20, ctx); // swap left/right
   printf("rear initted \n");
-  camera_init(&s->wide, CAMERA_ID_AR0231, 0, 20, device_id, ctx);
+  camera_init(&s->wide, CAMERA_ID_AR0231, 0, 20, ctx);
   printf("wide initted \n");
-  camera_init(&s->front, CAMERA_ID_AR0231, 2, 20, device_id, ctx);
+  camera_init(&s->front, CAMERA_ID_AR0231, 2, 20, ctx);
   printf("front initted \n");
 
   s->sm = new SubMaster({"driverState"});
