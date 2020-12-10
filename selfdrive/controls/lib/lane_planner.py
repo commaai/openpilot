@@ -72,6 +72,11 @@ class LanePlanner:
     self.l_poly = np.zeros(4)
     self.r_poly = np.zeros(4)
     path_xyz = np.column_stack([md.position.x, md.position.y, md.position.z])
+
+    # NED to ENU
+    path_xyz[:,1] *= -1
+    path_xyz[:,2] *= -1
+
     path_xyz_stds = np.column_stack([md.position.xStd, md.position.yStd, md.position.zStd])
     path_xyz = clean_path_for_polyfit(path_xyz)
     # mpc only goes till 2.5s anyway
