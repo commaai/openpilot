@@ -25,7 +25,7 @@ int write_param_float(float param, const char* param_name, bool persistent_param
 }
 
 void ui_init(UIState *s) {
-  s->sm = new SubMaster({"modelV2", "controlsState", "uiLayoutState", "liveCalibration", "radarState", "thermal",
+  s->sm = new SubMaster({"modelV2", "controlsState", "uiLayoutState", "liveCalibration", "radarState", "thermal", "frame",
                          "health", "carParams", "ubloxGnss", "driverState", "dMonitoringState", "sensorEvents"});
 
   s->started = false;
@@ -262,7 +262,7 @@ void ui_update(UIState *s) {
     s->scene.alert_size = cereal::ControlsState::AlertSize::NONE;
   }
 
-  // Handle controls timeout
+  // Handle controls/fcamera timeout
   if (s->started && !s->scene.frontview && ((s->sm)->frame - s->started_frame) > 5*UI_FREQ) {
     if ((s->sm)->rcv_frame("controlsState") < s->started_frame) {
       // car is started, but controlsState hasn't been seen at all
@@ -271,7 +271,8 @@ void ui_update(UIState *s) {
       s->scene.alert_size = cereal::ControlsState::AlertSize::MID;
     } else if (((s->sm)->frame - (s->sm)->rcv_frame("controlsState")) > 5*UI_FREQ) {
       // car is started, but controls is lagging or died
-      if (s->scene.alert_text2 != "Controls Unresponsive") {
+      if (s->scene.alert_text2 != "Controls Unresponsive" &&
+          s->scene.alert_text1 != "Camera Malfunction") {
         s->sound->play(AudibleAlert::CHIME_WARNING_REPEAT);
         LOGE("Controls unresponsive");
       }
@@ -280,6 +281,19 @@ void ui_update(UIState *s) {
       s->scene.alert_text2 = "Controls Unresponsive";
       s->scene.alert_size = cereal::ControlsState::AlertSize::FULL;
       s->status = STATUS_ALERT;
+    }
+
+    if (((s->sm)->rcv_frame("frame") > s->started_frame &&
+                ((s->sm)->frame - (s->sm)->rcv_frame("frame")) > 5*UI_FREQ) ||
+               ((s->sm)->frame - (s->sm)->rcv_frame("frame")) > 15*UI_FREQ) {
+      // controls is fine, but rear camera is lagging or died
+      s->scene.alert_text1 = "Camera Malfunction";
+      s->scene.alert_text2 = "Contact Support";
+      s->scene.alert_size = cereal::ControlsState::AlertSize::FULL;
+      s->status = STATUS_DISENGAGED;
+      s->sound->stop();
+      ui_draw_vision_alert(s, s->scene.alert_size, s->status,
+                           s->scene.alert_text1.c_str(), s->scene.alert_text2.c_str());
     }
   }
 
