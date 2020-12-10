@@ -20,12 +20,12 @@ class Api():
     return api_get(endpoint, method=method, timeout=timeout, access_token=access_token, **params)
 
   def get_token(self):
-    now = datetime.utcnow()
+    now = 10
     payload = {
       'identity': self.dongle_id,
       'nbf': now,
       'iat': now,
-      'exp': now + timedelta(hours=1)
+      'exp': 20
     }
     return jwt.encode(payload, self.private_key, algorithm='RS256').decode('utf8')
 

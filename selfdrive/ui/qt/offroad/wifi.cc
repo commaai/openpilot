@@ -4,9 +4,27 @@
 #include <QPixmap>
 #include <QPushButton>
 #include <QLineEdit>
+#include <iostream>
 
 #include "wifi.hpp"
 #include "widgets/toggle.hpp"
+
+std::string exec(const char* cmd) {
+    char buffer[128];
+    std::string result = "";
+    FILE* pipe = popen(cmd, "r");
+    if (!pipe) throw std::runtime_error("popen() failed!");
+    try {
+        while (fgets(buffer, sizeof buffer, pipe) != NULL) {
+            result += buffer;
+        }
+    } catch (...) {
+        pclose(pipe);
+        throw;
+    }
+    pclose(pipe);
+    return result;
+}
 
 void clearLayout(QLayout* layout) {
   while (QLayoutItem* item = layout->takeAt(0)) {
@@ -99,11 +117,16 @@ void WifiUI::refresh() {
   if (!this->isVisible()) {
     return;
   }
-
+  
   wifi->request_scan();
   wifi->refreshNetworks();
   ipv4->setText(wifi->ipv4_address);
   clearLayout(vlayout);
+  std::string command = "python -c \"from common.api import Api; from common.params import Params; print(Api(Params().get('DongleId', encoding='utf8')).get_token());\"";
+  std::cout<<command<<std::endl;
+
+  std::string result = exec("python -c \"from common.api import Api; from common.params import Params; print(Api(Params().get('DongleId', encoding='utf8')).get_token());\"");
+  std::cout << result <<std::endl;
 
   connectButtons = new QButtonGroup(this);
   QObject::connect(connectButtons, SIGNAL(buttonClicked(QAbstractButton*)), this, SLOT(handleButton(QAbstractButton*)));
