@@ -340,6 +340,10 @@ class CarInterface(CarInterfaceBase):
         # while in standstill, send a user alert
         events.add(EventName.manualRestart)
 
+    if ret.vEgo < 0.001 and self.CS.pcm_acc_status == 7:
+      # alert user when the car is about to disengage adaptive cruise
+      events.add(EventName.standstillTimer)
+
     ret.events = events.to_msg()
 
     self.CS.out = ret.as_reader()

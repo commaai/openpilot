@@ -410,6 +410,14 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       Priority.LOW, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
   },
 
+  EventName.standstillTimer: {
+    ET.WARNING: Alert(
+      "STOPPED FOR TOO LONG",
+      "Resumption Or Disengagement Required",
+      AlertStatus.userPrompt, AlertSize.mid,
+      Priority.MID, VisualAlert.none, AudibleAlert.none, 0., 0., .2, creation_delay=150),
+  },
+
   EventName.belowSteerSpeed: {
     ET.WARNING: below_steer_speed_alert,
   },
