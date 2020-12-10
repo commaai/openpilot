@@ -18,7 +18,7 @@ public:
   explicit WifiUI(QWidget *parent = 0, int page_length = 5);
 
 private:
-  WifiManager* wifi = nullptr;
+  WifiManager *wifi = nullptr;
   const int networks_per_page;
 
   QStackedWidget *swidget;
@@ -31,6 +31,7 @@ private:
   QString text;
   QButtonGroup *connectButtons;
   bool tetheringEnabled;
+  QLabel *ipv4;
 
   void connectToNetwork(Network n);
   QString getStringFromUser();
