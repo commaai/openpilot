@@ -10,8 +10,6 @@
 #include "util.h"
 #include "utilpp.h"
 
-#define CL_ERR_TO_STR(err) case err: return #err
-
 namespace {  // helper functions
 
 template <typename Func, typename Id, typename Name>
@@ -91,6 +89,7 @@ cl_program cl_program_from_file(cl_context ctx, cl_device_id device_id, const ch
 }
 
 // Given a cl code and return a string represenation
+#define CL_ERR_TO_STR(err) case err: return #err
 const char* cl_get_error_string(int err) {
   switch (err) {
     CL_ERR_TO_STR(CL_SUCCESS);
@@ -151,10 +150,10 @@ const char* cl_get_error_string(int err) {
     CL_ERR_TO_STR(CL_INVALID_COMPILER_OPTIONS);
     CL_ERR_TO_STR(CL_INVALID_LINKER_OPTIONS);
     CL_ERR_TO_STR(CL_INVALID_DEVICE_PARTITION_COUNT);
-    CL_ERR_TO_STR(CL_INVALID_PIPE_SIZE);
-    CL_ERR_TO_STR(CL_INVALID_DEVICE_QUEUE);
-    CL_ERR_TO_STR(CL_INVALID_SPEC_ID);
-    CL_ERR_TO_STR(CL_MAX_SIZE_RESTRICTION_EXCEEDED);
+    case -69: return "CL_INVALID_PIPE_SIZE";
+    case -70: return "CL_INVALID_DEVICE_QUEUE";
+    case -71: return "CL_INVALID_SPEC_ID";
+    case -72: return "CL_MAX_SIZE_RESTRICTION_EXCEEDED";
     case -1002: return "CL_INVALID_D3D10_DEVICE_KHR";
     case -1003: return "CL_INVALID_D3D10_RESOURCE_KHR";
     case -1004: return "CL_D3D10_RESOURCE_ALREADY_ACQUIRED_KHR";
