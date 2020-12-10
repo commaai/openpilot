@@ -32,6 +32,7 @@ public:
 
   void request_scan();
   QVector<Network> seen_networks;
+  QString ipv4_address;
 
   void refreshNetworks();
   void connect(Network ssid);
@@ -52,6 +53,7 @@ private:
   QString tethering_ssid;
 
   QString get_adapter();
+  QString get_ipv4_address();
   QList<Network> get_networks();
   void connect(QByteArray ssid, QString username, QString password, SecurityType security_type);
   QString get_active_ap();

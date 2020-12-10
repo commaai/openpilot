@@ -32,6 +32,7 @@ QString device_iface           = "org.freedesktop.NetworkManager.Device";
 QString wireless_device_iface  = "org.freedesktop.NetworkManager.Device.Wireless";
 QString ap_iface               = "org.freedesktop.NetworkManager.AccessPoint";
 QString connection_iface       = "org.freedesktop.NetworkManager.Connection.Active";
+QString ipv4config_iface       = "org.freedesktop.NetworkManager.IP4Config";
 
 QString nm_service             = "org.freedesktop.NetworkManager";
 
@@ -87,7 +88,7 @@ void WifiManager::refreshNetworks() {
   bus = QDBusConnection::systemBus();
   seen_networks.clear();
   seen_ssids.clear();
-
+  ipv4_address = get_ipv4_address();
   for (Network &network : get_networks()) {
     if (seen_ssids.count(network.ssid)) {
       continue;
@@ -95,6 +96,32 @@ void WifiManager::refreshNetworks() {
     seen_ssids.push_back(network.ssid);
     seen_networks.push_back(network);
   }
+}
+
+QString WifiManager::get_ipv4_address(){
+  if (raw_adapter_state != state_connected){
+    return "";
+  }
+  QVector<QDBusObjectPath> conns = get_active_connections();
+  for (auto p : conns){
+    QString active_connection = p.path();
+    QDBusInterface nm(nm_service, active_connection, props_iface, bus);
+    QDBusObjectPath pth = get_response<QDBusObjectPath>(nm.call("Get", connection_iface, "Ip4Config"));
+    QString ip4config = pth.path();
+
+    QDBusInterface nm2(nm_service, ip4config, props_iface, bus);
+    const QDBusArgument &arr = get_response<QDBusArgument>(nm2.call("Get", ipv4config_iface, "AddressData"));
+    QMap<QString, QVariant> pth2;
+    arr.beginArray();
+    while (!arr.atEnd()){
+      arr >> pth2;
+      QString ipv4 = pth2.value("address").value<QString>();
+      arr.endArray();
+      return ipv4;
+    }
+    arr.endArray();
+  }
+  return "";
 }
 
 QList<Network> WifiManager::get_networks() {
@@ -207,7 +234,7 @@ void WifiManager::deactivate_connections(QString ssid) {
 QVector<QDBusObjectPath> WifiManager::get_active_connections() {
   QDBusInterface nm(nm_service, nm_path, props_iface, bus);
   QDBusMessage response = nm.call("Get", nm_iface, "ActiveConnections");
-  QDBusArgument arr = get_response<QDBusArgument>(response);
+  const QDBusArgument &arr = get_response<QDBusArgument>(response);
   QVector<QDBusObjectPath> conns;
 
   QDBusObjectPath path;
@@ -216,6 +243,7 @@ QVector<QDBusObjectPath> WifiManager::get_active_connections() {
     arr >> path;
     conns.push_back(path);
   }
+  arr.endArray();
   return conns;
 }
 
@@ -346,10 +374,10 @@ void WifiManager::enableTethering() {
   connection["802-11-wireless-security"]["psk"] = "swagswagcomma";
 
   connection["ipv4"]["method"] = "shared";
-  QMap<QString,QVariant> adress1;
-  adress1["address"] = "192.168.43.1";
-  adress1["prefix"] = 24u;
-  connection["ipv4"]["address-data"] = QVariant::fromValue(IpConfig() << adress1);
+  QMap<QString,QVariant> address;
+  address["address"] = "192.168.43.1";
+  address["prefix"] = 24u;
+  connection["ipv4"]["address-data"] = QVariant::fromValue(IpConfig() << address);
   connection["ipv4"]["gateway"] = "192.168.43.1";
   connection["ipv6"]["method"] = "ignore";
 
