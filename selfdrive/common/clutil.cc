@@ -74,14 +74,10 @@ cl_device_id cl_get_device_id(cl_device_type device_type) {
   CL_CHECK(clGetPlatformIDs(num_platforms, &platform_ids[0], NULL));
 
   for (size_t i = 0; i < num_platforms; i++) {
-    std::string platform_name = get_platform_info(platform_ids[i], CL_PLATFORM_NAME);
-    std::cout << "platform[" << i << "] CL_PLATFORM_NAME: " << platform_name << std::endl;
-
-    cl_uint num_devices;
-    int err = clGetDeviceIDs(platform_ids[i], device_type, 0, NULL, &num_devices);
-    if (err != 0 || !num_devices) {
+    std::cout << "platform[" << i << "] CL_PLATFORM_NAME: " << get_platform_info(platform_ids[i], CL_PLATFORM_NAME) << std::endl;
+    if (cl_uint devices; clGetDeviceIDs(platform_ids[i], device_type, 0, NULL, &devices) != 0 || !devices) 
       continue;
-    }
+
     // Get first device
     cl_device_id device_id = NULL;
     CL_CHECK(clGetDeviceIDs(platform_ids[i], device_type, 1, &device_id, NULL));
