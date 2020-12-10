@@ -42,9 +42,15 @@ int main(int argc, char **argv) {
 
     double last = 0;
     while (!do_exit) {
-      VisionBuf *buf = vipc_client.recv();
-      // TODO receive extra data
       VIPCBufExtra extra = {0};
+      VisionBuf *buf = vipc_client.recv(&extra);
+      if (buf == nullptr){
+        if (errno == EINTR){
+          do_exit = true;
+          break;
+        }
+        continue;
+      }
 
       double t1 = millis_since_boot();
       DMonitoringResult res = dmonitoring_eval_frame(&dmonitoringmodel, buf->addr, buf->width, buf->height);
