@@ -589,35 +589,41 @@ static void camera_init(CameraState *s, int camera_id, int camera_num, unsigned 
   s->buf.init(device_id, ctx, s, FRAME_BUF_COUNT, "frame");
 }
 
+// TODO: refactor this to somewhere nicer, perhaps use in camera_qcom as well
+static int open_v4l_by_name_and_index(const char name[], int index, int flags) {
+  char nbuf[0x100];
+  int v4l_index = 0;
+  int cnt_index = index;
+  while (1) {
+    snprintf(nbuf, sizeof(nbuf), "/sys/class/video4linux/v4l-subdev%d/name", v4l_index);
+    FILE *f = fopen(nbuf, "rb");
+    if (f == NULL) return -1;
+    int len = fread(nbuf, 1, sizeof(nbuf), f);
+    fclose(f);
+
+    // name ends with '\n', remove it
+    if (len < 1) return -1;
+    nbuf[len-1] = '\0';
+
+    if (strcmp(nbuf, name) == 0) {
+      if (cnt_index == 0) {
+        snprintf(nbuf, sizeof(nbuf), "/dev/v4l-subdev%d", v4l_index);
+        LOGD("open %s for %s index %d", nbuf, name, index);
+        return open(nbuf, flags);
+      }
+      cnt_index--;
+    }
+    v4l_index++;
+  }
+}
+
 static void camera_open(CameraState *s) {
   int ret;
-  // /dev/v4l-subdev10 is sensor, 11, 12, 13 are the other sensors
-  switch (s->camera_num) {
-    case 0:
-      s->sensor_fd = open("/dev/v4l-subdev10", O_RDWR | O_NONBLOCK);
-      break;
-    case 1:
-      s->sensor_fd = open("/dev/v4l-subdev11", O_RDWR | O_NONBLOCK);
-      break;
-    case 2:
-      s->sensor_fd = open("/dev/v4l-subdev12", O_RDWR | O_NONBLOCK);
-      break;
-  }
+  s->sensor_fd = open_v4l_by_name_and_index("cam-sensor-driver", s->camera_num, O_RDWR | O_NONBLOCK);
   assert(s->sensor_fd >= 0);
   LOGD("opened sensor");
 
-  // also at /dev/v4l-subdev3, 4, 5, 6
-  switch (s->camera_num) {
-    case 0:
-      s->csiphy_fd = open("/dev/v4l-subdev3", O_RDWR | O_NONBLOCK);
-      break;
-    case 1:
-      s->csiphy_fd = open("/dev/v4l-subdev4", O_RDWR | O_NONBLOCK);
-      break;
-    case 2:
-      s->csiphy_fd = open("/dev/v4l-subdev5", O_RDWR | O_NONBLOCK);
-      break;
-  }
+  s->csiphy_fd = open_v4l_by_name_and_index("cam-csiphy-driver", s->camera_num, O_RDWR | O_NONBLOCK);
   assert(s->csiphy_fd >= 0);
   LOGD("opened csiphy");
 
