@@ -11,7 +11,7 @@ cpp_path = [
     "lib_mpc_export"
 
 ]
-if arch != "aarch64":
+if False and arch != "aarch64":
     acado_libs = [File("#phonelibs/acado/x64/lib/libacado_toolkit.a"),
                   File("#phonelibs/acado/x64/lib/libacado_casadi.a"),
                   File("#phonelibs/acado/x64/lib/libacado_csparse.a")]
