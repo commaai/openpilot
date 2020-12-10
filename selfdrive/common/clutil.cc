@@ -1,5 +1,4 @@
 #include "clutil.h"
-
 #include <assert.h>
 #include <inttypes.h>
 #include <string.h>
@@ -20,8 +19,8 @@ std::string get_info(Func get_info_func, Id id, Name param_name) {
   CL_CHECK(get_info_func(id, param_name, size, &info[0], NULL));
   return info;
 }
-std::string get_platform_info(cl_platform_id id, cl_platform_info name) { return get_info(&clGetPlatformInfo, id, name); }
-std::string get_device_info(cl_device_id id, cl_device_info name) { return get_info(&clGetDeviceInfo, id, name); }
+inline std::string get_platform_info(cl_platform_id id, cl_platform_info name) { return get_info(&clGetPlatformInfo, id, name); }
+inline std::string get_device_info(cl_device_id id, cl_device_info name) { return get_info(&clGetDeviceInfo, id, name); }
 
 void cl_print_info(cl_platform_id platform, cl_device_id device) {
   size_t work_group_size = 0;
@@ -50,10 +49,10 @@ void cl_print_build_errors(cl_program program, cl_device_id device) {
   clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_STATUS, sizeof(status), &status, NULL);
   size_t log_size;
   clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_LOG, 0, NULL, &log_size);
-  std::unique_ptr<char[]> log = std::make_unique<char[]>(log_size + 1);
+  std::string log(log_size, '\0');
   clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_LOG, log_size, &log[0], NULL);
 
-  std::cout << "build failed; status=" << status << ", log:" << std::endl << &log[0] << std::endl; 
+  std::cout << "build failed; status=" << status << ", log:" << std::endl << log << std::endl; 
 }
 
 }  // namespace
@@ -184,4 +183,3 @@ const char* cl_get_error_string(int err) {
     default: return "CL_UNKNOWN_ERROR";
   }
 }
-
