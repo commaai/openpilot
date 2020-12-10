@@ -3,22 +3,49 @@ import numpy as np
 from cereal import log
 
 CAMERA_OFFSET = 0.06  # m from center car to camera
-
-
-def compute_path_pinv(length=50):
-  deg = 3
-  x = np.arange(length*1.0)
-  X = np.vstack(tuple(x**n for n in range(deg, -1, -1))).T
-  pinv = np.linalg.pinv(X)
-  return pinv
-
-
-def model_polyfit(points, path_pinv):
-  return np.dot(path_pinv, [float(x) for x in points])
+NORM_THRESHOLD = 2  # 60 degrees
 
 
 def eval_poly(poly, x):
   return poly[3] + poly[2]*x + poly[1]*x**2 + poly[0]*x**3
+
+
+def monotonic_increasing_around_idx(now_idx, x):
+  monotonic = np.ones(x.shape, dtype=np.bool)
+  x_diff = np.diff(x, prepend=x[0])
+  neg_grad_idxs_before = np.where(x_diff[:now_idx] < 0)[0]
+  neg_grad_idxs_after = np.where(x_diff[now_idx:] < 0)[0] + now_idx
+  if len(neg_grad_idxs_before) > 0:
+    monotonic[:neg_grad_idxs_before[-1]] = False
+  if len(neg_grad_idxs_after) > 0:
+    monotonic[neg_grad_idxs_after[0]:] = False
+  return monotonic
+
+
+def monotonic_increasing_around_t(t, line_t, x):
+  assert len(line_t) == len(x)
+  now_idx = np.argmin(abs(line_t - t))
+  return monotonic_increasing_around_idx(now_idx, x)
+
+
+def clean_path_for_polyfit(path_xyz):
+  valid = np.isfinite(path_xyz).all(axis=1)
+  path_xyz = path_xyz[valid]
+  if sum(valid) == 0:
+    return path_xyz
+  monotonic = monotonic_increasing_around_idx(0, path_xyz[:,0])
+  path_xyz = path_xyz[monotonic]
+  clip_cnt = 0
+  idx = 1
+  while idx < len(path_xyz) and (clip_cnt < 2 or idx < 5):
+    x_diff = path_xyz[idx,0] - path_xyz[idx - 1,0]
+    mini = path_xyz[idx-1,1] - NORM_THRESHOLD*x_diff
+    maxi = path_xyz[idx-1,1] + NORM_THRESHOLD*x_diff
+    if not mini <= path_xyz[idx,1] <= maxi:
+      clip_cnt += 1
+    path_xyz[idx,1] = np.clip(path_xyz[idx,1], mini, maxi)
+    idx += 1
+  return path_xyz[:idx]
 
 
 class LanePlanner:
@@ -41,22 +68,23 @@ class LanePlanner:
     self.l_lane_change_prob = 0.
     self.r_lane_change_prob = 0.
 
-    self._path_pinv = compute_path_pinv()
-    self.x_points = np.arange(50)
-
   def parse_model(self, md):
-    if len(md.leftLane.poly):
-      self.l_poly = np.array(md.leftLane.poly)
-      self.l_std = float(md.leftLane.std)
-      self.r_poly = np.array(md.rightLane.poly)
-      self.r_std = float(md.rightLane.std)
-      self.p_poly = np.array(md.path.poly)
+    self.p_poly = np.array(md.path.poly)
+    path_xyz = np.column_stack([md.position.x, md.position.y, md.postion.z])
+    path_xyz_stds = np.column_stack([md.position.xStd, md.position.yStd, md.postion.zStd])
+    path_xyz = clean_path_for_polyfit(path_xyz)
+    # mpc only goes till 2.5s anyway
+    path_xyz = path_xyz[:16]
+
+    if len(path_xyz) > 5 and path_xyz[-1,0] > 1:
+      #TODO hacky use exact same code as runtime
+      weights = 1/path_xyz_stds[:len(path_xyz),1]
+      weights[0] = 1e3
+      self.p_poly = np.polyfit(path_xyz[:,0], path_xyz[:,1], 3, w=weights)
     else:
-      self.l_poly = model_polyfit(md.leftLane.points, self._path_pinv)  # left line
-      self.r_poly = model_polyfit(md.rightLane.points, self._path_pinv)  # right line
-      self.p_poly = model_polyfit(md.path.points, self._path_pinv)  # predicted path
-    self.l_prob = md.leftLane.prob  # left line prob
-    self.r_prob = md.rightLane.prob  # right line prob
+      self.p_poly = np.zeros((4,))
+    self.l_prob = 0.0
+    self.r_prob = 0.0
 
     if len(md.meta.desireState):
       self.l_lane_change_prob = md.meta.desireState[log.PathPlan.Desire.laneChangeLeft]
