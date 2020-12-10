@@ -20,30 +20,28 @@ void clu_init(void) {
 namespace {
 // helper functions
 
-std::string get_version_string(cl_platform_id platform) {
+std::string get_platform_info(cl_platform_id platform, cl_platform_info param_name) {
   size_t size = 0;
-  CL_CHECK(clGetPlatformInfo(platform, CL_PLATFORM_VERSION, 0, NULL, &size));
-  std::string version;
-  version.resize(size, '\0');
-  CL_CHECK(clGetPlatformInfo(platform, CL_PLATFORM_VERSION, size, &version[0], NULL));
-  return version;
+  CL_CHECK(clGetPlatformInfo(platform, param_name, 0, NULL, &size));
+  std::string ret;
+  ret.resize(size, '\0');
+  CL_CHECK(clGetPlatformInfo(platform, CL_PLATFORM_VERSION, size, &ret[0], NULL));
+  return ret;
 }
-
 void cl_print_info(cl_platform_id platform, cl_device_id device) {
-  char str[4096];
+  std::string info = get_platform_info(platform, CL_PLATFORM_VENDOR);
+  printf("vendor: '%s'\n", info.c_str());
 
-  clGetPlatformInfo(platform, CL_PLATFORM_VENDOR, sizeof(str), str, NULL);
-  printf("vendor: '%s'\n", str);
+  info = get_platform_info(platform, CL_PLATFORM_VERSION);
+  printf("platform version: '%s'\n", info.c_str());
 
-  std::string version = get_version_string(platform);
-  printf("platform version: '%s'\n", version.c_str());
+  info = get_platform_info(platform, CL_PLATFORM_PROFILE);
+  printf("profile: '%s'\n", info.c_str());
 
-  clGetPlatformInfo(platform, CL_PLATFORM_PROFILE, sizeof(str), str, NULL);
-  printf("profile: '%s'\n", str);
+  info = get_platform_info(platform, CL_PLATFORM_EXTENSIONS);
+  printf("extensions: '%s'\n", info.c_str());
 
-  clGetPlatformInfo(platform, CL_PLATFORM_EXTENSIONS, sizeof(str), str, NULL);
-  printf("extensions: '%s'\n", str);
-
+  char str[4096] = {};
   clGetDeviceInfo(device, CL_DEVICE_NAME, sizeof(str), str, NULL);
   printf("name: '%s'\n", str);
 
@@ -81,14 +79,9 @@ void cl_print_build_errors(cl_program program, cl_device_id device) {
   size_t log_size;
   clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_LOG, 0, NULL, &log_size);
 
-  char* log = (char*)calloc(log_size + 1, 1);
-  assert(log);
-
-  clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_LOG, log_size + 1, log, NULL);
-
+  std::unique_ptr<char[]> log = std::make_unique<char[]>(log_size + 1);
+  clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_LOG, log_size + 1, &log[0], NULL);
   printf("build failed; status=%d, log:\n%s\n", status, log);
-
-  free(log);
 }
 
 #ifndef CLU_NO_CACHE
@@ -98,9 +91,7 @@ cl_program cached_program_from_hash(cl_context ctx, cl_device_id device_id, uint
 
   size_t bin_size;
   uint8_t* bin = (uint8_t*)read_file(cache_path, &bin_size);
-  if (!bin) {
-    return NULL;
-  }
+  if (!bin) return NULL;
 
   cl_program prg = CL_CHECK_ERR(clCreateProgramWithBinary(ctx, 1, &device_id, &bin_size, (const uint8_t**)&bin, NULL, &err));
 
@@ -120,9 +111,7 @@ std::vector<uint8_t> get_program_binary(cl_program prg) {
   assert(binary_size > 0);
 
   std::vector<uint8_t> binary_buf(binary_size);
-  uint8_t* bufs[1] = {
-      &binary_buf[0],
-  };
+  uint8_t* bufs[] = {&binary_buf[0]};
   CL_CHECK(clGetProgramInfo(prg, CL_PROGRAM_BINARIES, sizeof(bufs), &bufs, NULL));
   return binary_buf;
 }
@@ -142,8 +131,8 @@ cl_device_id cl_get_device_id(cl_device_type device_type) {
 
   char cBuffer[1024];
   for (size_t i = 0; i < num_platforms; i++) {
-    CL_CHECK(clGetPlatformInfo(platform_ids[i], CL_PLATFORM_NAME, sizeof(cBuffer), &cBuffer, NULL));
-    printf("platform[%zu] CL_PLATFORM_NAME: %s\n", i, cBuffer);
+    std::string platform_name = get_platform_info(platform_ids[i], CL_PLATFORM_NAME);
+    printf("platform[%zu] CL_PLATFORM_NAME: %s\n", i, platform_name.c_str());
 
     cl_uint num_devices;
     int err = clGetDeviceIDs(platform_ids[i], device_type, 0, NULL, &num_devices);
@@ -167,13 +156,12 @@ cl_device_id cl_get_device_id(cl_device_type device_type) {
 cl_program cl_program_from_string(cl_context ctx, cl_device_id device_id,
                                         const char* src, const char* args,
                                         const char* file, int line, const char* function) {
-  cl_platform_id platform;
-  CL_CHECK(clGetDeviceInfo(device_id, CL_DEVICE_PLATFORM, sizeof(platform), &platform, NULL));
-
-  std::string platform_version = get_version_string(platform);
-
   cl_program prg = NULL;
 #ifndef CLU_NO_CACHE
+  cl_platform_id platform;
+  CL_CHECK(clGetDeviceInfo(device_id, CL_DEVICE_PLATFORM, sizeof(platform), &platform, NULL));
+  std::string platform_version = get_platform_info(platform, CL_PLATFORM_VERSION);
+
   std::string hash_buf = util::string_format("%s%c%s%c%s", platform_version.c_str(), 1, src, 1, args);
   size_t hash = std::hash<std::string>{}(hash_buf);
   prg = cached_program_from_hash(ctx, device_id, hash);
