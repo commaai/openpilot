@@ -12,54 +12,47 @@
 
 namespace {  // helper functions
 
-std::string get_platform_info(cl_platform_id platform, cl_platform_info param_name) {
+template <typename Func, typename Id, typename Name>
+std::string get_info(Func get_info_func, Id id, Name param_name) {
   size_t size = 0;
-  CL_CHECK(clGetPlatformInfo(platform, param_name, 0, NULL, &size));
-  std::string ret;
-  ret.resize(size, '\0');
-  CL_CHECK(clGetPlatformInfo(platform, param_name, size, &ret[0], NULL));
-  return ret;
+  CL_CHECK(get_info_func(id, param_name, 0, NULL, &size));
+  std::string info(size, '\0');
+  CL_CHECK(get_info_func(id, param_name, size, &info[0], NULL));
+  return info;
 }
+std::string get_platform_info(cl_platform_id id, cl_platform_info name) { return get_info(&clGetPlatformInfo, id, name); }
+std::string get_device_info(cl_device_id id, cl_device_info name) { return get_info(&clGetDeviceInfo, id, name); }
 
 void cl_print_info(cl_platform_id platform, cl_device_id device) {
-  
-  std::cout << "vendor: " << get_platform_info(platform, CL_PLATFORM_VENDOR) << std::endl
-            << "platform version: " << get_platform_info(platform, CL_PLATFORM_VERSION) << std::endl
-            << "profile: " << get_platform_info(platform, CL_PLATFORM_PROFILE) << std::endl
-            << "extensions: " << get_platform_info(platform, CL_PLATFORM_EXTENSIONS) << std::endl;
-
-  char str[4096] = {};
-  clGetDeviceInfo(device, CL_DEVICE_NAME, sizeof(str), str, NULL);
-  std::cout << "name :" << str << std::endl;
-
-  clGetDeviceInfo(device, CL_DEVICE_VERSION, sizeof(str), str, NULL);
-  std::cout << "device version :" << str << std::endl;
-
-  size_t sz = 0;
-  clGetDeviceInfo(device, CL_DEVICE_MAX_WORK_GROUP_SIZE, sizeof(sz), &sz, NULL);
-  std::cout << "max work group size :" << sz << std::endl;
-
-  cl_device_type type = 0;
-  clGetDeviceInfo(device, CL_DEVICE_TYPE, sizeof(type), &type, NULL);
+  size_t work_group_size = 0;
+  cl_device_type device_type = 0;
+  clGetDeviceInfo(device, CL_DEVICE_MAX_WORK_GROUP_SIZE, sizeof(work_group_size), &work_group_size, NULL);
+  clGetDeviceInfo(device, CL_DEVICE_TYPE, sizeof(device_type), &device_type, NULL);
   const char *type_str = "Other...";
-  switch (type) {
+  switch (device_type) {
     case CL_DEVICE_TYPE_CPU: type_str ="CL_DEVICE_TYPE_CPU"; break;
     case CL_DEVICE_TYPE_GPU: type_str = "CL_DEVICE_TYPE_GPU"; break;
     case CL_DEVICE_TYPE_ACCELERATOR: type_str = "CL_DEVICE_TYPE_ACCELERATOR"; break;
   }
-  std::cout << "type = " << std::hex << std::showbase << type << " = " << type_str << std::endl;
+
+  std::cout << "vendor: " << get_platform_info(platform, CL_PLATFORM_VENDOR) << std::endl
+            << "platform version: " << get_platform_info(platform, CL_PLATFORM_VERSION) << std::endl
+            << "profile: " << get_platform_info(platform, CL_PLATFORM_PROFILE) << std::endl
+            << "extensions: " << get_platform_info(platform, CL_PLATFORM_EXTENSIONS) << std::endl
+            << "name :" << get_device_info(device, CL_DEVICE_NAME) << std::endl
+            << "device version :" << get_device_info(device, CL_DEVICE_VERSION) << std::endl
+            << "max work group size :" << work_group_size << std::endl
+            << "type = " << std::hex << std::showbase << device_type << " = " << type_str << std::endl;
 }
 
 void cl_print_build_errors(cl_program program, cl_device_id device) {
   cl_build_status status;
-  clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_STATUS,
-                        sizeof(cl_build_status), &status, NULL);
-
+  clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_STATUS, sizeof(status), &status, NULL);
   size_t log_size;
   clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_LOG, 0, NULL, &log_size);
-
   std::unique_ptr<char[]> log = std::make_unique<char[]>(log_size + 1);
   clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_LOG, log_size + 1, &log[0], NULL);
+
   std::cout << "build failed; status=" << status << ", log:" << std::endl << &log[0] << std::endl; 
 }
 
@@ -71,16 +64,13 @@ cl_device_id cl_get_device_id(cl_device_type device_type) {
   std::unique_ptr<cl_platform_id[]> platform_ids = std::make_unique<cl_platform_id[]>(num_platforms);
   CL_CHECK(clGetPlatformIDs(num_platforms, &platform_ids[0], NULL));
 
-  for (size_t i = 0; i < num_platforms; i++) {
+  for (size_t i = 0; i < num_platforms; ++i) {
     std::cout << "platform[" << i << "] CL_PLATFORM_NAME: " << get_platform_info(platform_ids[i], CL_PLATFORM_NAME) << std::endl;
-    if (cl_uint devices; clGetDeviceIDs(platform_ids[i], device_type, 0, NULL, &devices) != 0 || !devices) 
-      continue;
-
     // Get first device
-    cl_device_id device_id = NULL;
-    CL_CHECK(clGetDeviceIDs(platform_ids[i], device_type, 1, &device_id, NULL));
-    cl_print_info(platform_ids[i], device_id);
-    return device_id;
+    if (cl_device_id device_id = NULL; clGetDeviceIDs(platform_ids[i], device_type, 1, &device_id, NULL) == 0 && device_id) {
+      cl_print_info(platform_ids[i], device_id);
+      return device_id;
+    }
   }
   std::cout << "No valid openCL platform found" << std::endl;
   assert(0);
