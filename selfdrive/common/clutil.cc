@@ -1,23 +1,14 @@
+#include "clutil.h"
+
 #include <assert.h>
-#include <string.h>
 #include <inttypes.h>
+#include <string.h>
 #include <sys/stat.h>
 #include <memory>
 #include <vector>
-#include "common/util.h"
+#include "util.h"
 #include "utilpp.h"
-#include "clutil.h"
-#ifdef CLU_NO_SRC
-#include "clcache_bins.h"
-#else
-#endif
-
-void clu_init(void) {
-#ifndef CLU_NO_SRC
-  mkdir("/tmp/clcache", 0777);
-#endif
-}
-namespace { // helper functions
+namespace {  // helper functions
 
 std::string get_platform_info(cl_platform_id platform, cl_platform_info param_name) {
   size_t size = 0;
@@ -27,6 +18,7 @@ std::string get_platform_info(cl_platform_id platform, cl_platform_info param_na
   CL_CHECK(clGetPlatformInfo(platform, param_name, size, &ret[0], NULL));
   return ret;
 }
+
 void cl_print_info(cl_platform_id platform, cl_device_id device) {
   std::string info = get_platform_info(platform, CL_PLATFORM_VENDOR);
   printf("vendor: '%s'\n", info.c_str());
@@ -47,33 +39,33 @@ void cl_print_info(cl_platform_id platform, cl_device_id device) {
   clGetDeviceInfo(device, CL_DEVICE_VERSION, sizeof(str), str, NULL);
   printf("device version: '%s'\n", str);
 
-  size_t sz;
+  size_t sz = 0;
   clGetDeviceInfo(device, CL_DEVICE_MAX_WORK_GROUP_SIZE, sizeof(sz), &sz, NULL);
   printf("max work group size: %zu\n", sz);
 
-  cl_device_type type;
+  cl_device_type type = 0;
   clGetDeviceInfo(device, CL_DEVICE_TYPE, sizeof(type), &type, NULL);
   printf("type = 0x%04x = ", (unsigned int)type);
-  switch(type) {
-  case CL_DEVICE_TYPE_CPU:
-    printf("CL_DEVICE_TYPE_CPU\n");
-    break;
-  case CL_DEVICE_TYPE_GPU:
-    printf("CL_DEVICE_TYPE_GPU\n");
-    break;
-  case CL_DEVICE_TYPE_ACCELERATOR:
-    printf("CL_DEVICE_TYPE_ACCELERATOR\n");
-    break;
-  default:
-    printf("Other...\n" );
-    break;
+  switch (type) {
+    case CL_DEVICE_TYPE_CPU:
+      printf("CL_DEVICE_TYPE_CPU\n");
+      break;
+    case CL_DEVICE_TYPE_GPU:
+      printf("CL_DEVICE_TYPE_GPU\n");
+      break;
+    case CL_DEVICE_TYPE_ACCELERATOR:
+      printf("CL_DEVICE_TYPE_ACCELERATOR\n");
+      break;
+    default:
+      printf("Other...\n");
+      break;
   }
 }
 
 void cl_print_build_errors(cl_program program, cl_device_id device) {
   cl_build_status status;
   clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_STATUS,
-          sizeof(cl_build_status), &status, NULL);
+                        sizeof(cl_build_status), &status, NULL);
 
   size_t log_size;
   clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_LOG, 0, NULL, &log_size);
@@ -83,45 +75,6 @@ void cl_print_build_errors(cl_program program, cl_device_id device) {
   printf("build failed; status=%d, log:\n%s\n", status, &log[0]);
 }
 
-#ifndef CLU_NO_CACHE
-cl_program load_cached_program(cl_context ctx, cl_device_id device_id, std::string cache_file) {
-  size_t bin_size;
-  uint8_t* bin = (uint8_t*)read_file(cache_file.c_str(), &bin_size);
-  if (!bin) return NULL;
-
-  cl_program prg = CL_CHECK_ERR(clCreateProgramWithBinary(ctx, 1, &device_id, &bin_size, (const uint8_t**)&bin, NULL, &err));
-  free(bin);
-
-  CL_CHECK(clBuildProgram(prg, 1, &device_id, NULL, NULL, NULL));
-  return prg;
-}
-
-std::vector<uint8_t> get_program_binary(cl_program prg) {
-  cl_uint num_devices = 0;
-  CL_CHECK(clGetProgramInfo(prg, CL_PROGRAM_NUM_DEVICES, sizeof(num_devices), &num_devices, NULL));
-  assert(num_devices == 1);
-
-  size_t binary_size = 0;
-  CL_CHECK(clGetProgramInfo(prg, CL_PROGRAM_BINARY_SIZES, sizeof(binary_size), &binary_size, NULL));
-  assert(binary_size > 0);
-
-  std::vector<uint8_t> binary_buf(binary_size);
-  uint8_t* bufs[] = {&binary_buf[0]};
-  CL_CHECK(clGetProgramInfo(prg, CL_PROGRAM_BINARIES, sizeof(bufs), &bufs, NULL));
-  return binary_buf;
-}
-
-std::string get_cached_path(cl_device_id device_id, const char* src, const char* args,
-                            const char* file, int line, const char* function) {
-  cl_platform_id platform;
-  CL_CHECK(clGetDeviceInfo(device_id, CL_DEVICE_PLATFORM, sizeof(platform), &platform, NULL));
-  std::string platform_version = get_platform_info(platform, CL_PLATFORM_VERSION);
-
-  std::string hash_buf = util::string_format("%s%s%d%s%s", platform_version.c_str(), file, line, function, src, args);
-  const size_t hash = std::hash<std::string>{}(hash_buf);
-  return util::string_format("/tmp/clcache/%016" PRIx64 ".clb", hash);
-}
-#endif
 }  // namespace
 
 cl_device_id cl_get_device_id(cl_device_type device_type) {
@@ -145,41 +98,21 @@ cl_device_id cl_get_device_id(cl_device_type device_type) {
     cl_print_info(platform_ids[i], device_id);
     return device_id;
   }
-
   printf("No valid openCL platform found\n");
   assert(0);
   return nullptr;
 }
 
-cl_program cl_program_from_string(cl_context ctx, cl_device_id device_id, const char* src, const char* args,
-                                  const char* file, int line, const char* function) {
-  cl_program prg = NULL;
-#ifndef CLU_NO_CACHE
-  std::string cache_path = get_cached_path(device_id, src, args, file, line, function);
-  prg = load_cached_program(ctx, device_id, cache_path);
-#endif
-  if (prg == NULL) {
-    prg = CL_CHECK_ERR(clCreateProgramWithSource(ctx, 1, (const char**)&src, NULL, &err));
-
-    int err = clBuildProgram(prg, 1, &device_id, args, NULL, NULL);
-    if (err != 0) {
-      cl_print_build_errors(prg, device_id);
-    }
-    assert(err == 0);
-
-#ifndef CLU_NO_CACHE
-    // write program binary to cache
-    std::vector<uint8_t> binary_buf = get_program_binary(prg);
-    write_file(cache_path.c_str(), binary_buf.data(), binary_buf.size());
-#endif
+cl_program cl_program_from_file(cl_context ctx, cl_device_id device_id, const char* path, const char* args) {
+  char* src = (char*)read_file(path, nullptr);
+  assert(src != nullptr);
+  cl_program prg = CL_CHECK_ERR(clCreateProgramWithSource(ctx, 1, (const char**)&src, NULL, &err));
+  free(src);
+  if (int err = clBuildProgram(prg, 1, &device_id, args, NULL, NULL); err != 0) {
+    cl_print_build_errors(prg, device_id);
+    assert(0);
   }
   return prg;
-}
-
-cl_program cl_program_from_file(cl_context ctx, cl_device_id device_id, const char* path, const char* args,
-                                const char* file, int line, const char* function) {
-  std::string src_buf = util::read_file(path);
-  return cl_program_from_string(ctx, device_id, &src_buf[0], args, file, line, function);
 }
 
 // Given a cl code and return a string represenation
