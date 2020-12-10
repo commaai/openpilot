@@ -50,10 +50,10 @@ def clean_path_for_polyfit(path_xyz):
 
 class LanePlanner:
   def __init__(self):
-    self.l_poly = [0., 0., 0., 0.]
-    self.r_poly = [0., 0., 0., 0.]
-    self.p_poly = [0., 0., 0., 0.]
-    self.d_poly = [0., 0., 0., 0.]
+    self.l_poly = np.zeros(4)
+    self.r_poly = np.zeros(4)
+    self.d_poly = np.zeros(4)
+    self.p_poly = np.zeros(4)
 
     self.lane_width_estimate = 3.7
     self.lane_width_certainty = 1.0
@@ -69,15 +69,19 @@ class LanePlanner:
     self.r_lane_change_prob = 0.
 
   def parse_model(self, md):
+    self.l_poly = np.zeros(4)
+    self.r_poly = np.zeros(4)
     path_xyz = np.column_stack([md.position.x, md.position.y, md.position.z])
-    path_xyz_stds = np.column_stack([md.position.xStd, md.position.yStd, md.postion.zStd])
+    path_xyz_stds = np.column_stack([md.position.xStd, md.position.yStd, md.position.zStd])
     path_xyz = clean_path_for_polyfit(path_xyz)
     # mpc only goes till 2.5s anyway
     path_xyz = path_xyz[:16]
 
     if len(path_xyz) > 5 and path_xyz[-1,0] > 1:
-      #TODO hacky use exact same code as runtime
-      weights = 1/path_xyz_stds[:len(path_xyz),1]
+      if len(path_xyz) == len(path_xyz_stds):
+        weights = 1/path_xyz_stds[:len(path_xyz),1]
+      else:
+        weights = 1/np.arange(1, 1+ len(path_xyz))
       weights[0] = 1e3
       self.p_poly = np.polyfit(path_xyz[:,0], path_xyz[:,1], 3, w=weights)
     else:
