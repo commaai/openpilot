@@ -82,7 +82,7 @@ libvisiontest.so: $(libvisiontest_inputs)
 	$(CC) -std=gnu11 -shared -fPIC -O2 -g \
 		-Werror=implicit-function-declaration -Werror=incompatible-pointer-types \
 		-Werror=int-conversion -Wno-pointer-to-int-cast \
-		-I. -DCLU_NO_CACHE \
+		-I. \
 		$^ -o $($@_TMP) \
 		-I$(PHONELIBS)/opencl/include \
 		-I$(BASEDIR)/selfdrive/common \
