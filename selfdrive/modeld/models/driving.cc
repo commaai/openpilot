@@ -210,13 +210,6 @@ void fill_lead_v2(cereal::ModelDataV2::LeadDataV2::Builder lead, const float *le
   const float *data = get_lead_data(lead_data, t_offset);
   lead.setProb(sigmoid(prob[t_offset]));
   lead.setT(t);
-  const float *data = get_lead_data(lead_data, t);
-  float xyva[LEAD_MHP_VALS], xyva_stds[LEAD_MHP_VALS];
-  for (int i = 0; i < LEAD_MHP_VALS; i++) {
-    xyva[i] = data[LEAD_MHP_VALS + i];
-    xyva_stds[i] = exp(data[LEAD_MHP_VALS + i]);
-  }
-  lead.setT(t);
   float xyva_arr[LEAD_MHP_VALS];
   float xyva_stds_arr[LEAD_MHP_VALS];
   for (int i=0; i<LEAD_MHP_VALS; i++) {
@@ -227,17 +220,6 @@ void fill_lead_v2(cereal::ModelDataV2::LeadDataV2::Builder lead, const float *le
   lead.setXyvaStd(xyva_stds_arr);
 }
 
-
-static const float *get_lead_data(const float *lead, int t_offset) {
-  const float *data = &lead[0];
-  for (int i = 1; i < LEAD_MHP_N; ++i) {
-    const float *cur = &lead[i * LEAD_MHP_GROUP_SIZE + t_offset - LEAD_MHP_SELECTION];
-    if (*cur > *data) {
-      data = cur;
-    }
-  }
-  return data;
-}
 
 void fill_lead(cereal::ModelData::LeadData::Builder lead, const float *lead_data, const float *prob, int t_offset) {
   const float *data = get_lead_data(lead_data, t_offset);
