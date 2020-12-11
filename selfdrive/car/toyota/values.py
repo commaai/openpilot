@@ -732,6 +732,7 @@ FW_VERSIONS = {
   CAR.HIGHLANDERH_TSS2: {
     (Ecu.eps, 0x7a1, None): [
       b'8965B48241\x00\x00\x00\x00\x00\x00',
+      b'8965B48310\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.esp, 0x7b0, None): [
       b'\x01F15264872300\x00\x00\x00\x00',
@@ -739,12 +740,15 @@ FW_VERSIONS = {
     ],
     (Ecu.engine, 0x700, None): [
       b'\x02896630E66000\x00\x00\x00\x00897CF4801001\x00\x00\x00\x00',
+      b'\x02896630EB3000\x00\x00\x00\x00897CF4801001\x00\x00\x00\x00',
     ],
     (Ecu.fwdRadar, 0x750, 0xf): [
       b'\x018821F3301400\x00\x00\x00\x00',
+      b'\x018821F6201200\x00\x00\x00\x00',
     ],
     (Ecu.fwdCamera, 0x750, 0x6d): [
       b'\x028646F0E02100\x00\x00\x00\x008646G2601200\x00\x00\x00\x00',
+      b'\x028646F4803000\x00\x00\x00\x008646G5301200\x00\x00\x00\x00',
     ],
   },
   CAR.LEXUS_IS: {
