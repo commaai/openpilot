@@ -14,7 +14,8 @@
 #include <EGL/egl.h>
 #define EGL_EGLEXT_PROTOTYPES
 #include <EGL/eglext.h>
-#else
+
+#else // ifdef QCOM
 
 #ifdef __APPLE__
 #include <OpenGL/gl3.h>
@@ -22,7 +23,7 @@
 #include <GLES3/gl3.h>
 #endif
 
-#endif
+#endif // ifdef QCOM
 
 #include "common/util.h"
 #include "common/visionimg.h"
@@ -81,7 +82,7 @@ void visionimg_destroy_gl(EGLImageKHR khr, void *ph) {
   delete (private_handle_t*)ph;
 }
 
-#else
+#else // ifdef QCOM
 
 GLuint visionimg_to_gl(const VisionImg *img, EGLImageKHR *pkhr, void **pph) {
   unsigned int texture;
@@ -96,4 +97,4 @@ GLuint visionimg_to_gl(const VisionImg *img, EGLImageKHR *pkhr, void **pph) {
 void visionimg_destroy_gl(EGLImageKHR khr, void *ph) {
   // empty
 }
-#endif
+#endif // ifdef QCOM
