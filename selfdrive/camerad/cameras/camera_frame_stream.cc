@@ -119,7 +119,10 @@ void cameras_close(MultiCameraState *s) {
 
 // called by processing_thread
 void camera_process_rear(MultiCameraState *s, CameraState *c, int cnt) {
-  // empty
+  if (cnt % 100 == 3) {
+    const CameraBuf *b = &c->buf;
+    create_thumbnail(s, c, (uint8_t*)b->cur_rgb_buf->addr);
+  }
 }
 
 void cameras_run(MultiCameraState *s) {
