@@ -15,10 +15,10 @@ class WifiUI : public QWidget {
 
 public:
   int page;
-  explicit WifiUI(QWidget *parent = 0, int page_length = 5);
+  explicit WifiUI(QWidget *parent = 0, int page_length = 6);
 
 private:
-  WifiManager *wifi = nullptr;
+  WifiManager* wifi;
   const int networks_per_page;
 
   QStackedWidget *swidget;
@@ -30,15 +30,12 @@ private:
   QTimer *timer;
   QString text;
   QButtonGroup *connectButtons;
-  bool tetheringEnabled;
-  QLabel *ipv4;
 
   void connectToNetwork(Network n);
   QString getStringFromUser();
 
 private slots:
   void handleButton(QAbstractButton* m_button);
-  void toggleTethering(int enable);
   void refresh();
   void receiveText(QString text);
   void wrongPassword(QString ssid);
