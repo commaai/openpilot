@@ -362,6 +362,7 @@ selfdrive/ui/android/*.hpp
 
 selfdrive/camerad/SConscript
 selfdrive/camerad/main.cc
+selfdrive/camerad/clpriority.c
 
 selfdrive/camerad/snapshot/*
 selfdrive/camerad/include/*
