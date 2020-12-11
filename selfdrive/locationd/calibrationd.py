@@ -80,7 +80,7 @@ class Calibrator():
         rpy_init = list(msg.liveCalibration.rpyCalib)
         valid_blocks = msg.liveCalibration.validBlocks
       except (ValueError, capnp.lib.capnp.KjException):
-        # TODO: remove this when offroad can read capnp
+        # TODO: remove this after next release
         calibration_params = json.loads(calibration_params)
         rpy_init = calibration_params["calib_radians"]
         valid_blocks = calibration_params['valid_blocks']
@@ -134,10 +134,7 @@ class Calibrator():
 
     write_this_cycle = (self.idx == 0) and (self.block_idx % (INPUTS_WANTED//5) == 5)
     if self.param_put and write_this_cycle:
-      # TODO: change to raw bytes when offroad can read capnp
-      cal_params = {"calib_radians": list(self.rpy),
-                    "valid_blocks": int(self.valid_blocks)}
-      put_nonblocking("CalibrationParams", json.dumps(cal_params).encode('utf8'))
+      put_nonblocking("CalibrationParams", self.get_msg().to_bytes())
 
   def handle_v_ego(self, v_ego):
     self.v_ego = v_ego
