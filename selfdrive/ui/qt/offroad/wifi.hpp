@@ -5,6 +5,7 @@
 #include <QVBoxLayout>
 #include <QStackedWidget>
 #include <QTimer>
+#include <QNetworkReply>
 
 #include "wifiManager.hpp"
 #include "widgets/input_field.hpp"
@@ -33,6 +34,7 @@ private:
   bool tetheringEnabled;
   QLabel *ipv4;
 
+  void replyFinished(QNetworkReply *l);
   void connectToNetwork(Network n);
   QString getStringFromUser();
 

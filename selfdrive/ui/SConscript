@@ -15,6 +15,7 @@ if arch in ["x86_64", "Darwin", "larch64"]:
       QT_BASE + "include/QtCore",
       QT_BASE + "include/QtDBus",
       QT_BASE + "include/QtMultimedia",
+      QT_BASE + "include/QtNetwork",
     ]
     qt_env["LINKFLAGS"] += ["-F" + QT_BASE + "lib"]
   else:
@@ -26,6 +27,7 @@ if arch in ["x86_64", "Darwin", "larch64"]:
       f"/usr/include/{real_arch}-linux-gnu/qt5/QtCore",
       f"/usr/include/{real_arch}-linux-gnu/qt5/QtDBus",
       f"/usr/include/{real_arch}-linux-gnu/qt5/QtMultimedia",
+      f"/usr/include/{real_arch}-linux-gnu/qt5/QtNetwork",
       f"/usr/include/{real_arch}-linux-gnu/qt5/QtGui/5.5.1/QtGui",
       f"/usr/include/{real_arch}-linux-gnu/qt5/QtGui/5.12.8/QtGui",
     ]
@@ -59,7 +61,7 @@ if qt_env is None:
 else:
   qt_libs = ["pthread"]
 
-  qt_modules = ["Widgets", "Gui", "Core", "DBus", "Multimedia"]
+  qt_modules = ["Widgets", "Gui", "Core", "DBus", "Multimedia", "Network"]
 
   if arch == "larch64":
     qt_libs += ["GLESv2", "wayland-client"]

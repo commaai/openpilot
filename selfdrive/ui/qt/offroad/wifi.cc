@@ -4,7 +4,8 @@
 #include <QPixmap>
 #include <QPushButton>
 #include <QLineEdit>
-#include <iostream>
+#include <QNetworkAccessManager>
+#include <QNetworkRequest>
 
 #include "wifi.hpp"
 #include "widgets/toggle.hpp"
@@ -113,6 +114,11 @@ WifiUI::WifiUI(QWidget *parent, int page_length) : QWidget(parent), networks_per
   page = 0;
 }
 
+void WifiUI::replyFinished(QNetworkReply *l){
+  QString answer = l->readAll();
+  qDebug() << answer;
+}
+
 void WifiUI::refresh() {
   if (!this->isVisible()) {
     return;
@@ -122,11 +128,22 @@ void WifiUI::refresh() {
   wifi->refreshNetworks();
   ipv4->setText(wifi->ipv4_address);
   clearLayout(vlayout);
-  std::string command = "python -c \"from common.api import Api; from common.params import Params; print(Api(Params().get('DongleId', encoding='utf8')).get_token());\"";
-  std::cout<<command<<std::endl;
 
-  std::string result = exec("python -c \"from common.api import Api; from common.params import Params; print(Api(Params().get('DongleId', encoding='utf8')).get_token());\"");
-  std::cout << result <<std::endl;
+
+  std::string result = exec("python -c \"from common.api import Api; from common.params import Params; print(Api(Params().get('DongleId', encoding='utf8')).get_token());\" 2>/dev/null");
+  result = result.substr(0, result.size()-1);
+
+  QString auth_token = QString::fromStdString(result);
+
+  QNetworkAccessManager *manager = new QNetworkAccessManager(this);
+  connect(manager, &QNetworkAccessManager::finished, this, &WifiUI::replyFinished);
+
+  QNetworkRequest request;
+  request.setUrl(QUrl("https://api.commadotai.com/v1.1/devices/98c094b8e85be189/stats"));
+  request.setRawHeader("Authorization", ("JWT "+auth_token).toUtf8());
+
+  manager->get(request);
+
 
   connectButtons = new QButtonGroup(this);
   QObject::connect(connectButtons, SIGNAL(buttonClicked(QAbstractButton*)), this, SLOT(handleButton(QAbstractButton*)));
