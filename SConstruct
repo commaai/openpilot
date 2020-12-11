@@ -130,7 +130,7 @@ env = Environment(
     "-O2",
     "-Wunused",
     "-Wno-unknown-warning-option",
-    "-Wno-error=deprecated-declarations",
+    "-Wno-deprecated",
     "-Wno-register",
     "-Wno-inconsistent-missing-override",
     "-Wno-c99-designator",
