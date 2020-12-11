@@ -317,7 +317,7 @@ def main():
 
   # TODO: enable this before 0.8.1 release
   #leon = "letv" in open("/proc/cmdline").read()
-  #if ANDROID and not LEON:
+  #if ANDROID and not leon:
   #  raise RuntimeError("updates are disabled due to device deprecation")
 
   if ANDROID and os.geteuid() != 0:
