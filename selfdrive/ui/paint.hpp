@@ -2,7 +2,7 @@
 #include "ui.hpp"
 
 
-void ui_draw_vision_alert(UIState *s, cereal::ControlsState::AlertSize va_size, int va_color,
+void ui_draw_vision_alert(UIState *s, cereal::ControlsState::AlertSize va_size, UIStatus va_color,
                           const char* va_text1, const char* va_text2);
 void ui_draw(UIState *s);
 void ui_draw_image(NVGcontext *vg, float x, float y, float w, float h, int image, float alpha);

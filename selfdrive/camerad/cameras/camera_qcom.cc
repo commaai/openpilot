@@ -248,7 +248,7 @@ cl_program build_conv_program(cl_device_id device_id, cl_context context, int im
           "-DFILTER_SIZE=%d -DHALF_FILTER_SIZE=%d -DTWICE_HALF_FILTER_SIZE=%d -DHALF_FILTER_SIZE_IMAGE_W=%d",
           image_w, image_h, 1,
           filter_size, filter_size/2, (filter_size/2)*2, (filter_size/2)*image_w);
-  return CLU_LOAD_FROM_FILE(context, device_id, "imgproc/conv.cl", args);
+  return cl_program_from_file(context, device_id, "imgproc/conv.cl", args);
 }
 
 void cameras_init(MultiCameraState *s, cl_device_id device_id, cl_context ctx) {

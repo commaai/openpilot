@@ -41,9 +41,9 @@ static cl_program build_debayer_program(cl_device_id device_id, cl_context conte
            b->rgb_width, b->rgb_height, b->rgb_stride,
            ci->bayer_flip, ci->hdr);
 #ifdef QCOM2
-  return CLU_LOAD_FROM_FILE(context, device_id, "cameras/real_debayer.cl", args);
+  return cl_program_from_file(context, device_id, "cameras/real_debayer.cl", args);
 #else
-  return CLU_LOAD_FROM_FILE(context, device_id, "cameras/debayer.cl", args);
+  return cl_program_from_file(context, device_id, "cameras/debayer.cl", args);
 #endif
 }
 
@@ -129,7 +129,11 @@ CameraBuf::~CameraBuf() {
   for (int i = 0; i < YUV_COUNT; i++) {
     visionbuf_free(&yuv_ion[i]);
   }
-  CL_CHECK(clReleaseKernel(krnl_debayer));
+  rgb_to_yuv_destroy(&rgb_to_yuv_state);
+
+  if (krnl_debayer) {
+    CL_CHECK(clReleaseKernel(krnl_debayer));
+  }
   CL_CHECK(clReleaseCommandQueue(q));
 }
 
@@ -292,8 +296,9 @@ void create_thumbnail(MultiCameraState *s, CameraState *c, uint8_t *bgr_ptr) {
     row_pointer[0] = row;
     jpeg_write_scanlines(&cinfo, row_pointer, 1);
   }
-  free(row);
   jpeg_finish_compress(&cinfo);
+  jpeg_destroy_compress(&cinfo);
+  free(row);
 
   MessageBuilder msg;
   auto thumbnaild = msg.initEvent().initThumbnail();
@@ -304,6 +309,7 @@ void create_thumbnail(MultiCameraState *s, CameraState *c, uint8_t *bgr_ptr) {
   if (s->pm != NULL) {
     s->pm->send("thumbnail", msg);
   }
+  free(thumbnail_buffer);
 }
 
 void set_exposure_target(CameraState *c, const uint8_t *pix_ptr, int x_start, int x_end, int x_skip, int y_start, int y_end, int y_skip) {
@@ -379,7 +385,7 @@ void common_camera_process_front(SubMaster *sm, PubMaster *pm, CameraState *c, i
       if (state.getFaceProb() > 0.4) {
         auto face_position = state.getFacePosition();
         int x_offset = rhd_front ? 0 : b->rgb_width - (0.5 * b->rgb_height);
-        x_offset += (face_position[0] + 0.5) * (0.5 * b->rgb_height);
+        x_offset += (face_position[0] * (rhd_front ? -1.0 : 1.0) + 0.5) * (0.5 * b->rgb_height);
         const int y_offset = (face_position[1] + 0.5) * b->rgb_height;
 
         x_min = std::max(0, x_offset - 72);

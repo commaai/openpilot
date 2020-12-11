@@ -101,7 +101,6 @@ bool compare_results(uint8_t *a, uint8_t *b, int len, int stride, int width, int
 int main(int argc, char** argv) {
   srand(1337);
 
-  clu_init();
   cl_device_id device_id;
   cl_context context;
   cl_init(device_id, context)	;

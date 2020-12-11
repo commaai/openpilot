@@ -76,10 +76,10 @@ QWidget * Setup::network_setup() {
 
   WifiUI *wifi = new WifiUI(this, 6);
   main_layout->addWidget(wifi);
-  QObject::connect(wifi, &WifiUI::openKeyboard, this, [=](){
+  QObject::connect(wifi, &WifiUI::openKeyboard, this, [=]() {
     this->continue_btn->setVisible(false);
   });
-  QObject::connect(wifi, &WifiUI::closeKeyboard, this, [=](){
+  QObject::connect(wifi, &WifiUI::closeKeyboard, this, [=]() {
     this->continue_btn->setVisible(true);
   });
 
