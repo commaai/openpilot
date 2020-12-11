@@ -103,7 +103,7 @@ inline void sleep_for(const int milliseconds) {
 
 inline bool file_exists (std::string_view fn) {
   struct stat st = {};
-  return stat(&fn[0], &st) == 0;
+  return stat(fn, &st) == 0;
 }
 
 inline bool file_exists(const std::string& fn) {

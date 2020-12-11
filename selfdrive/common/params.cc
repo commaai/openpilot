@@ -27,8 +27,8 @@ void params_sig_handler(int signal) {
   params_do_exit = 1;
 }
 
-static int fsync_dir(std::string_view path){
-  if (unique_fd fd = open(path.data(), O_RDONLY, 0755); fd != -1)
+static int fsync_dir(const char *path){
+  if (unique_fd fd = open(path, O_RDONLY, 0755); fd != -1)
     return fsync(fd);
   return -1;
 }
@@ -56,18 +56,18 @@ static int mkdir_p(std::string path) {
 
 static bool ensure_dir_exists(std::string path) {
   // TODO: replace by std::filesystem::create_directories
-  return util::file_exists(path) ? true : mkdir_p(path.c_str()) == 0;
+  return util::file_exists(path.c_str()) ? true : mkdir_p(path) == 0;
 }
 
-static bool ensure_symlink(std::string_view path) {
+static bool ensure_symlink(const char *path) {
   if (util::file_exists(path)) {
     // Ensure permissions are correct in case we didn't create the symlink
-    return chmod(&path[0], 0777) == 0;
+    return chmod(path, 0777) == 0;
   }
 
   // Create temp folder
   char tmp_path[FILENAME_MAX] = {};
-  snprintf(tmp_path, sizeof(tmp_path), "%s/.tmp_XXXXXX", path.data());
+  snprintf(tmp_path, sizeof(tmp_path), "%s/.tmp_XXXXXX", path);
   char* tmp_dir = mkdtemp(tmp_path);
   if (tmp_dir == NULL) return false;
 
@@ -77,25 +77,25 @@ static bool ensure_symlink(std::string_view path) {
          // Symlink it to temp link
          symlink(tmp_dir, link_path) == 0 &&
          // Move symlink to <params>/d
-         rename(link_path, &path[0]) == 0;
+         rename(link_path, path) == 0;
 }
 
-static std::optional<std::string> read_file_string(std::string_view key_path) {
-  unique_fd f = open(key_path.data(), O_RDONLY);
+static std::optional<std::string> read_file_string(std::string key_path) {
+  unique_fd f = open(key_path.c_str(), O_RDONLY);
   if (f == -1) return std::nullopt;
 
   if (long size = lseek(f, 0, SEEK_END); size > 0) {
     lseek(f, 0, SEEK_SET);
-    if (std::string value(size, '\0'); read(f, &value[0], size) == size)
+    if (std::string value(size, '\0'); read(f, value.data(), size) == size)
       return value;
   }
   return std::nullopt;
 }
 
 Params::Params(bool persistent_param) : params_path(persistent_param ? persistent_params_path : default_params_path) {}
-Params::Params(std::string_view path) : params_path(path) {}
+Params::Params(std::string path) : params_path(path) {}
 
-bool Params::put(std::string_view key, const char *value, size_t size) {
+bool Params::put(const char *key, const char *value, size_t size) {
   // Information about safely and atomically writing a file: https://lwn.net/Articles/457667/
   // 1) Create temp file
   // 2) Write data to temp file
@@ -144,12 +144,12 @@ bool Params::delete_value(std::string key) {
 
   if (flock(lock_fd, LOCK_EX) == -1) return false;
 
-  const std::string path = key_path(&key[0]);
-  return !util::file_exists(path) ||
-         (remove(&path[0]) == 0 && fsync_dir(params_path + "/d") == 0);
+  const std::string path = key_path(key);
+  return !util::file_exists(path.c_str()) ||
+         (remove(path.c_str()) == 0 && fsync_dir((params_path + "/d").c_str()) == 0);
 }
 
-std::optional<std::string> Params::read_value(std::string_view key, bool block) {
+std::optional<std::string> Params::read_value(const char *key, bool block) {
   if (!block) {
     return read_file_string(key_path(key));
   }
