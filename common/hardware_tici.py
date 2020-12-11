@@ -41,7 +41,6 @@ class Tici(HardwareBase):
     subprocess.check_output(["sudo", "reboot"])
 
   def get_network_type(self):
-    # conns = self.nm.Get(NM, 'ActiveConnections', dbus_interface=DBUS_PROPS)
     primary_connection = self.nm.Get(NM, 'PrimaryConnection', dbus_interface=DBUS_PROPS)
     primary_connection = self.bus.get_object(NM, primary_connection)
     tp = primary_connection.Get(NM_CON_ACT, 'Type', dbus_interface=DBUS_PROPS)
@@ -82,13 +81,12 @@ class Tici(HardwareBase):
         'data_connected': False
       }
     else:
-      # TODO: strings or ints?
       sim = self.bus.get_object(MM, sim_path)
       return {
         'sim_id': str(sim.Get(MM_SIM, 'SimIdentifier', dbus_interface=DBUS_PROPS)),
         'mcc_mnc': str(sim.Get(MM_SIM, 'OperatorIdentifier', dbus_interface=DBUS_PROPS)),
-        'network_type': ["Unknown"], # TODO
-        'sim_state': ["ABSENT"], # TODO
+        'network_type': ["Unknown"],
+        'sim_state': ["READY"],
         'data_connected': modem.Get(MM_MODEM, 'State', dbus_interface=DBUS_PROPS) == MM_MODEM_STATE_CONNECTED,
       }
 
@@ -155,11 +153,3 @@ class Tici(HardwareBase):
 
   def get_current_power_draw(self):
     return (self.read_param_file("/sys/class/hwmon/hwmon1/power1_input", int) / 1e6)
-
-if __name__ == "__main__":
-  h = Tici()
-  print(h.get_network_type())
-  print(h.get_sim_info())
-  print(h.get_imei(0))
-  print(h.get_network_strength(NetworkType.wifi))
-  print(h.get_network_strength(NetworkType.cell3G))
