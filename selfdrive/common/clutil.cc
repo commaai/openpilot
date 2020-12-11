@@ -16,7 +16,7 @@ std::string get_info(Func get_info_func, Id id, Name param_name) {
   size_t size = 0;
   CL_CHECK(get_info_func(id, param_name, 0, NULL, &size));
   std::string info(size, '\0');
-  CL_CHECK(get_info_func(id, param_name, size, &info[0], NULL));
+  CL_CHECK(get_info_func(id, param_name, size, info.data(), NULL));
   return info;
 }
 inline std::string get_platform_info(cl_platform_id id, cl_platform_info name) { return get_info(&clGetPlatformInfo, id, name); }
@@ -41,7 +41,7 @@ void cl_print_info(cl_platform_id platform, cl_device_id device) {
             << "name :" << get_device_info(device, CL_DEVICE_NAME) << std::endl
             << "device version :" << get_device_info(device, CL_DEVICE_VERSION) << std::endl
             << "max work group size :" << work_group_size << std::endl
-            << "type = " << std::hex << std::showbase << device_type << " = " << type_str << std::endl;
+            << "type = " << device_type << " = " << type_str << std::endl;
 }
 
 void cl_print_build_errors(cl_program program, cl_device_id device) {
@@ -79,7 +79,7 @@ cl_device_id cl_get_device_id(cl_device_type device_type) {
 cl_program cl_program_from_file(cl_context ctx, cl_device_id device_id, const char* path, const char* args) {
   std::string src = util::read_file(path);
   assert(src.length() > 0);
-  cl_program prg = CL_CHECK_ERR(clCreateProgramWithSource(ctx, 1, (const char*[]){&src[0]}, NULL, &err));
+  cl_program prg = CL_CHECK_ERR(clCreateProgramWithSource(ctx, 1, (const char*[]){src.c_str()}, NULL, &err));
   if (int err = clBuildProgram(prg, 1, &device_id, args, NULL, NULL); err != 0) {
     cl_print_build_errors(prg, device_id);
     assert(0);
