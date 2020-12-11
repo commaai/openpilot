@@ -129,6 +129,8 @@ CameraBuf::~CameraBuf() {
   for (int i = 0; i < YUV_COUNT; i++) {
     visionbuf_free(&yuv_ion[i]);
   }
+  rgb_to_yuv_destroy(&rgb_to_yuv_state);
+
   if (krnl_debayer) {
     CL_CHECK(clReleaseKernel(krnl_debayer));
   }
