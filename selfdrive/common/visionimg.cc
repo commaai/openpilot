@@ -30,7 +30,7 @@
 #ifdef QCOM
 using namespace android;
 
-EGLClientBuffer visionimg_to_egl(const VisionImg *img, void **pph) {
+static EGLClientBuffer visionimg_to_egl(const VisionImg *img, void **pph) {
   assert((img->size % img->stride) == 0);
   assert((img->stride % img->bpp) == 0);
 
