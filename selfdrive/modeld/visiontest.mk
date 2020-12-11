@@ -50,7 +50,7 @@ all: visiontest
 libvisiontest_inputs := visiontest.c \
                         transforms/transform.cc \
                         transforms/loadyuv.c \
-                        ../common/clutil.c \
+                        ../common/clutil.cc \
                         $(BASEDIR)/selfdrive/common/util.c \
                         $(CEREAL_OBJS)
 
@@ -82,7 +82,7 @@ libvisiontest.so: $(libvisiontest_inputs)
 	$(CC) -std=gnu11 -shared -fPIC -O2 -g \
 		-Werror=implicit-function-declaration -Werror=incompatible-pointer-types \
 		-Werror=int-conversion -Wno-pointer-to-int-cast \
-		-I. -DCLU_NO_CACHE \
+		-I. \
 		$^ -o $($@_TMP) \
 		-I$(PHONELIBS)/opencl/include \
 		-I$(BASEDIR)/selfdrive/common \
