@@ -296,6 +296,7 @@ void create_thumbnail(MultiCameraState *s, CameraState *c, uint8_t *bgr_ptr) {
   }
   free(row);
   jpeg_finish_compress(&cinfo);
+  jpeg_destroy_compress(&cinfo);
 
   MessageBuilder msg;
   auto thumbnaild = msg.initEvent().initThumbnail();
