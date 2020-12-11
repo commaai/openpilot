@@ -75,7 +75,7 @@ void ui_init(UIState *s) {
   ui_nvg_init(s);
 
   s->last_frame = nullptr;
-  s->vipc_client = new VisionIpcClient("camerad", VISION_STREAM_RGB_BACK, true, false);
+  s->vipc_client = new VisionIpcClient("camerad", VISION_STREAM_RGB_BACK, true);
 
 }
 

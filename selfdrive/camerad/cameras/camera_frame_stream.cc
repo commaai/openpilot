@@ -64,6 +64,8 @@ void run_frame_stream(MultiCameraState *s) {
     rear_camera->buf.queue(buf_idx);
     buf_idx = (buf_idx + 1) % FRAME_BUF_COUNT;
   }
+
+  delete s->sm;
 }
 
 }  // namespace

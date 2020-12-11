@@ -34,7 +34,7 @@ int main(int argc, char **argv) {
   DMonitoringModelState dmonitoringmodel;
   dmonitoring_init(&dmonitoringmodel);
 
-  VisionIpcClient vipc_client = VisionIpcClient("camerad", VISION_STREAM_YUV_FRONT, true, false);
+  VisionIpcClient vipc_client = VisionIpcClient("camerad", VISION_STREAM_YUV_FRONT, true);
   vipc_client.connect();
 
   while (!do_exit) {
