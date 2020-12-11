@@ -49,6 +49,8 @@ struct InitData {
     neo @1;
     chffrAndroid @2;
     chffrIos @3;
+    tici @4;
+    pc @5;
   }
 
   struct AndroidBuildInfo {
@@ -1952,6 +1954,7 @@ struct OrbKeyFrame {
 struct DriverState {
   frameId @0 :UInt32;
   modelExecutionTime @14 :Float32;
+  dspExecutionTime @16 :Float32;
   rawPred @15 :Data;
 
   descriptorDEPRECATED @1 :List(Float32);

@@ -41,9 +41,8 @@ static inline double millis_since_boot() {
 }
 
 void cl_init(cl_device_id &device_id, cl_context &context) {
-  int err;
   device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
-  context = clCreateContext(NULL, 1, &device_id, NULL, NULL, &err);
+  context = CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id, NULL, NULL, &err));
 }
 
 
@@ -102,7 +101,6 @@ bool compare_results(uint8_t *a, uint8_t *b, int len, int stride, int width, int
 int main(int argc, char** argv) {
   srand(1337);
 
-  clu_init();
   cl_device_id device_id;
   cl_context context;
   cl_init(device_id, context)	;
@@ -137,13 +135,13 @@ int main(int argc, char** argv) {
   rgb_to_yuv_init(&rgb_to_yuv_state, context, device_id, width, height, width * 3);
 
   int frame_yuv_buf_size = width * height * 3 / 2;
-  cl_mem yuv_cl = clCreateBuffer(context, CL_MEM_READ_WRITE, frame_yuv_buf_size, (void*)NULL, &err);
+  cl_mem yuv_cl = CL_CHECK_ERR(clCreateBuffer(context, CL_MEM_READ_WRITE, frame_yuv_buf_size, (void*)NULL, &err));
   uint8_t *frame_yuv_buf = new uint8_t[frame_yuv_buf_size];
   uint8_t *frame_yuv_ptr_y = frame_yuv_buf;
   uint8_t *frame_yuv_ptr_u = frame_yuv_buf + (width * height);
   uint8_t *frame_yuv_ptr_v = frame_yuv_ptr_u + ((width/2) * (height/2));
 
-  cl_mem rgb_cl = clCreateBuffer(context, CL_MEM_READ_WRITE, width * height * 3, (void*)NULL, &err);
+  cl_mem rgb_cl = CL_CHECK_ERR(clCreateBuffer(context, CL_MEM_READ_WRITE, width * height * 3, (void*)NULL, &err));
   int mismatched = 0;
   int counter = 0;
   srand (time(NULL));

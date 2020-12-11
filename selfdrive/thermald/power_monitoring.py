@@ -6,7 +6,7 @@ from statistics import mean
 from cereal import log
 from common.realtime import sec_since_boot
 from common.params import Params, put_nonblocking
-from common.hardware import TICI
+from common.hardware import HARDWARE
 from selfdrive.swaglog import cloudlog
 
 CAR_VOLTAGE_LOW_PASS_K = 0.091 # LPF gain for 5s tau (dt/tau / (dt/tau + 1))
@@ -18,48 +18,6 @@ CAR_CHARGING_RATE_W = 45
 
 VBATT_PAUSE_CHARGING = 11.0
 MAX_TIME_OFFROAD_S = 30*3600
-
-# Parameters
-def get_battery_capacity():
-  return _read_param("/sys/class/power_supply/battery/capacity", int)
-
-
-def get_battery_status():
-  # This does not correspond with actual charging or not.
-  # If a USB cable is plugged in, it responds with 'Charging', even when charging is disabled
-  return _read_param("/sys/class/power_supply/battery/status", lambda x: x.strip(), '')
-
-
-def get_battery_current():
-  return _read_param("/sys/class/power_supply/battery/current_now", int)
-
-
-def get_battery_voltage():
-  return _read_param("/sys/class/power_supply/battery/voltage_now", int)
-
-
-def get_usb_present():
-  return _read_param("/sys/class/power_supply/usb/present", lambda x: bool(int(x)), False)
-
-
-def get_battery_charging():
-  # This does correspond with actually charging
-  return _read_param("/sys/class/power_supply/battery/charge_type", lambda x: x.strip() != "N/A", True)
-
-
-def set_battery_charging(on):
-  with open('/sys/class/power_supply/battery/charging_enabled', 'w') as f:
-    f.write(f"{1 if on else 0}\n")
-
-
-# Helpers
-def _read_param(path, parser, default=0):
-  try:
-    with open(path) as f:
-      return parser(f.read())
-  except Exception:
-    return default
-
 
 class PowerMonitoring:
   def __init__(self):
@@ -121,14 +79,13 @@ class PowerMonitoring:
         # No ignition, we integrate the offroad power used by the device
         is_uno = health.health.hwType == log.HealthData.HwType.uno
         # Get current power draw somehow
-        current_power = 0
-        if TICI:
-          with open("/sys/class/hwmon/hwmon1/power1_input") as f:
-            current_power = int(f.read()) / 1e6
-        elif get_battery_status() == 'Discharging':
+        current_power = HARDWARE.get_current_power_draw()
+        if current_power is not None:
+          pass
+        elif HARDWARE.get_battery_status() == 'Discharging':
           # If the battery is discharging, we can use this measurement
           # On C2: this is low by about 10-15%, probably mostly due to UNO draw not being factored in
-          current_power = ((get_battery_voltage() / 1000000) * (get_battery_current() / 1000000))
+          current_power = ((HARDWARE.get_battery_voltage() / 1000000) * (HARDWARE.get_battery_current() / 1000000))
         elif (self.next_pulsed_measurement_time is not None) and (self.next_pulsed_measurement_time <= now):
           # TODO: Figure out why this is off by a factor of 3/4???
           FUDGE_FACTOR = 1.33
@@ -136,22 +93,22 @@ class PowerMonitoring:
           # Turn off charging for about 10 sec in a thread that does not get killed on SIGINT, and perform measurement here to avoid blocking thermal
           def perform_pulse_measurement(now):
             try:
-              set_battery_charging(False)
+              HARDWARE.set_battery_charging(False)
               time.sleep(5)
 
               # Measure for a few sec to get a good average
               voltages = []
               currents = []
               for _ in range(6):
-                voltages.append(get_battery_voltage())
-                currents.append(get_battery_current())
+                voltages.append(HARDWARE.get_battery_voltage())
+                currents.append(HARDWARE.get_battery_current())
                 time.sleep(1)
               current_power = ((mean(voltages) / 1000000) * (mean(currents) / 1000000))
 
               self._perform_integration(now, current_power * FUDGE_FACTOR)
 
               # Enable charging again
-              set_battery_charging(True)
+              HARDWARE.set_battery_charging(True)
             except Exception:
               cloudlog.exception("Pulsed power measurement failed")
 
@@ -222,6 +179,6 @@ class PowerMonitoring:
     should_shutdown = False
     # Wait until we have shut down charging before powering down
     should_shutdown |= (not panda_charging and self.should_disable_charging(health, offroad_timestamp))
-    should_shutdown |= ((get_battery_capacity() < BATT_PERC_OFF) and (not get_battery_charging()) and ((now - offroad_timestamp) > 60))
+    should_shutdown |= ((HARDWARE.get_battery_capacity() < BATT_PERC_OFF) and (not HARDWARE.get_battery_charging()) and ((now - offroad_timestamp) > 60))
     should_shutdown &= started_seen
     return should_shutdown

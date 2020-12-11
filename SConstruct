@@ -1,5 +1,3 @@
-import Cython
-import distutils
 import os
 import shutil
 import subprocess
@@ -18,10 +16,6 @@ AddOption('--test',
 AddOption('--asan',
           action='store_true',
           help='turn on ASAN')
-
-# Rebuild cython extensions if python, distutils, or cython change
-cython_dependencies = [Value(v) for v in (sys.version, distutils.__version__, Cython.__version__)]
-Export('cython_dependencies')
 
 real_arch = arch = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()
 if platform.system() == "Darwin":
@@ -188,9 +182,10 @@ env = Environment(
   CXXFLAGS=["-std=c++1z"] + cxxflags,
   LIBPATH=libpath + [
     "#cereal",
+    "#phonelibs",
+    "#opendbc/can",
     "#selfdrive/boardd",
     "#selfdrive/common",
-    "#phonelibs",
   ],
   CYTHONCFILESUFFIX=".cpp",
   tools=["default", "cython"]

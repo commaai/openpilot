@@ -164,16 +164,19 @@ FW_VERSIONS = {
       b'\xf1\x00DN8_ SCC FHCUP      1.00 1.01 99110-L1000         ',
       b'\xf1\x00DN8_ SCC FHCUP      1.00 1.00 99110-L0000         ',
       b'\xf1\x00DN8_ SCC F-CU-      1.00 1.00 99110-L0000         ',
+      b'\xf1\x00DN8_ SCC F-CUP      1.00 1.00 99110-L0000         ',
     ],
     (Ecu.esp, 0x7d1, None): [
       b'\xf1\x00DN ESC \x01 102\x19\x04\x13 58910-L1300\xf1\xa01.02',
       b'\xf1\x00DN ESC \x06 104\x19\x08\x01 58910-L0100',
       b'\xf1\x8758910-L0100\xf1\x00DN ESC \x06 104\x19\x08\x01 58910-L0100\xf1\xa01.04',
+      b'\xf1\x8758910-L0100\xf1\x00DN ESC \x07 104\x19\x08\x01 58910-L0100\xf1\xa01.04',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'HM6M2_0a0_BD0',
       b'\xf1\x87391162M003\xf1\xa0000F',
       b'\xf1\x87391162M003\xf1\xa00240',
+      b'HM6M1_0a0_F00',
     ],
     (Ecu.eps, 0x7d4, None): [
       b'\xf1\x8756310-L1010\xf1\x00DN8 MDPS C 1.00 1.03 56310-L1010 4DNDC103\xf1\xa01.03',
@@ -188,6 +191,7 @@ FW_VERSIONS = {
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x00HT6TA260BLHT6TA800A1TDN8C20KS4\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'\xf1\x00bcsh8p54  U903\x00\x00\x00\x00\x00\x00SDN8T16NB0z{\xd4v',
+      b'\xf1\x00HT6WA250BLHT6WA910A1SDN8G25NB1\x00\x00\x00\x00\x00\x00\x96\xa1\xf1\x92',
     ],
   },
   CAR.SANTA_FE: {

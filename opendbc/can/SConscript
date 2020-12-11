@@ -1,4 +1,4 @@
-Import('env', 'cereal', 'cython_dependencies')
+Import('env', 'envCython', 'cereal')
 
 import os
 from opendbc.can.process_dbc import process
@@ -13,10 +13,10 @@ for x in sorted(os.listdir('../')):
     dbc = env.Command(out_fn, in_fn, compile_dbc)
     dbcs.append(dbc)
 
-
 libdbc = env.SharedLibrary('libdbc', ["dbc.cc", "parser.cc", "packer.cc", "common.cc"]+dbcs, LIBS=["capnp", "kj"])
 
 # Build packer and parser
-env.Command(['packer_pyx.so', 'packer_pyx.cpp', 'parser_pyx.so', 'parser_pyx.cpp'],
-            cython_dependencies + [libdbc, cereal, 'common_pyx_setup.py', 'common.pxd', 'packer_pyx.pyx', 'parser_pyx.pyx', 'packer.cc', 'parser.cc'],
-            "cd opendbc/can && python3 common_pyx_setup.py build_ext --inplace")
+lenv = envCython.Clone()
+lenv["LINKFLAGS"] += [libdbc[0].get_labspath()]
+lenv.Program('parser_pyx.so', 'parser_pyx.pyx')
+lenv.Program('packer_pyx.so', 'packer_pyx.pyx')
