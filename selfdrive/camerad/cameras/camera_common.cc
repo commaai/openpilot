@@ -381,7 +381,7 @@ void common_camera_process_front(SubMaster *sm, PubMaster *pm, CameraState *c, i
       if (state.getFaceProb() > 0.4) {
         auto face_position = state.getFacePosition();
         int x_offset = rhd_front ? 0 : b->rgb_width - (0.5 * b->rgb_height);
-        x_offset += (face_position[0] + 0.5) * (0.5 * b->rgb_height);
+        x_offset += (face_position[0] * (rhd_front ? -1.0 : 1.0) + 0.5) * (0.5 * b->rgb_height);
         const int y_offset = (face_position[1] + 0.5) * b->rgb_height;
 
         x_min = std::max(0, x_offset - 72);
