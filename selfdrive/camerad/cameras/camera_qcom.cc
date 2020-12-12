@@ -2063,6 +2063,7 @@ void camera_process_front(MultiCameraState *s, CameraState *c, int cnt) {
 void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
   const CameraBuf *b = &c->buf;
 
+  const uint8_t *rgb_addr = (uint8_t*)b->cur_rgb_buf->addr;
   // sharpness scores
   const int roi_id = cnt % ARRAYSIZE(s->lapres);  // rolling roi
   const int roi_x_offset = roi_id % (ROI_X_MAX - ROI_X_MIN + 1);
@@ -2072,7 +2073,7 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
   const size_t height = b->rgb_height / NUM_SEGMENTS_Y;
   for (int r = 0; r < height; r++) {
     memcpy(s->rgb_roi_buf.get() + r * width * 3,
-           (uint8_t *)b->cur_rgb_buf->addr + (ROI_Y_MIN + roi_y_offset) * height * FULL_STRIDE_X * 3 +
+           rgb_addr + (ROI_Y_MIN + roi_y_offset) * height * FULL_STRIDE_X * 3 +
                (ROI_X_MIN + roi_x_offset) * width * 3 + r * FULL_STRIDE_X * 3,
            width * 3);
   }
@@ -2124,7 +2125,7 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
     auto framed = msg.initEvent().initFrame();
     fill_frame_data(framed, b->cur_frame_data, cnt);
     if (env_send_rear) {
-      fill_frame_image(framed, (uint8_t*)b->cur_rgb_buf->addr, b->rgb_width, b->rgb_height, b->rgb_stride);
+      fill_frame_image(framed, rgb_addr, b->rgb_width, b->rgb_height, b->rgb_stride);
     }
     framed.setFocusVal(s->rear.focus);
     framed.setFocusConf(s->rear.confidence);
@@ -2135,7 +2136,7 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
   }
 
   if (cnt % 100 == 3) {
-    create_thumbnail(s, c, (uint8_t*)b->cur_rgb_buf->addr);
+    create_thumbnail(s, c, rgb_addr);
   }
 
   if (cnt % 3 == 0) {
