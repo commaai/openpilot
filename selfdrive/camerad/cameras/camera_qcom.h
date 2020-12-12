@@ -82,13 +82,7 @@ typedef struct CameraState {
   FrameMetadata frame_metadata[METADATA_BUF_COUNT];
   int frame_metadata_idx;
   float cur_exposure_frac;
-  float cur_gain_frac;
-  int cur_gain;
-  int cur_frame_length;
-  int cur_integ_lines;
-
-  std::atomic<float> digital_gain;
-
+  
   StreamState ss[3];
 
   uint64_t last_t;
@@ -98,21 +92,30 @@ typedef struct CameraState {
   int16_t focus[NUM_FOCUS];
   uint8_t confidence[NUM_FOCUS];
 
-  std::atomic<float> focus_err;
-
   uint16_t cur_step_pos;
-  uint16_t cur_lens_pos;
   uint64_t last_sag_ts;
-  std::atomic<float> last_sag_acc_z;
-  std::atomic<float> lens_true_pos;
-
-  std::atomic<int> self_recover; // af recovery counter, neg is patience, pos is active
-
+  
   int fps;
 
   mat3 transform;
-
   CameraBuf buf;
+
+  // The following variables are accessed from multiple threads.
+
+  // protected by mutex
+  int cur_frame_length;
+  float cur_gain_frac;
+  int cur_gain;
+  int cur_integ_lines;
+
+  // protected by atomic
+  std::atomic<uint16_t> cur_lens_pos;
+  std::atomic<float> digital_gain;
+  std::atomic<float> focus_err;
+  std::atomic<float> last_sag_acc_z;
+  std::atomic<float> lens_true_pos;
+  std::atomic<int> self_recover;  // af recovery counter, neg is patience, pos is active
+
 } CameraState;
 
 
