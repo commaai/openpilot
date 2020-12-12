@@ -2101,16 +2101,14 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
   int self_recover = c->self_recover.load();
   if (self_recover < 2 && (lens_true_pos < dac_down + 1 || lens_true_pos > dac_up - 1) && is_blur(&s->lapres[0])) {
     // truly stuck, needs help
-    self_recover -= 1;
-    if (self_recover < -FOCUS_RECOVER_PATIENCE) {
+    if (--self_recover < -FOCUS_RECOVER_PATIENCE) {
       LOGD("rear camera bad state detected. attempting recovery from %.1f, recover state is %d", lens_true_pos, self_recover);
       // parity determined by which end is stuck at           
       self_recover = FOCUS_RECOVER_STEPS + (lens_true_pos < dac_m ? 1 : 0); 
     }
   } else if (self_recover < 2 && (lens_true_pos < (dac_m - dac_3sig) || lens_true_pos > (dac_m + dac_3sig))) {
     // in suboptimal position with high prob, but may still recover by itself
-    self_recover -= 1;
-    if (self_recover < -(FOCUS_RECOVER_PATIENCE * 3)) {
+    if (--self_recover < -(FOCUS_RECOVER_PATIENCE * 3)) {
       self_recover = FOCUS_RECOVER_STEPS / 2 + (lens_true_pos < dac_m ? 1 : 0);
     }
   } else if (self_recover < 0) {
