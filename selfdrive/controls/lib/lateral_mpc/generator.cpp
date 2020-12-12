@@ -35,6 +35,7 @@ int main( )
 
   auto poly_d = d_poly_r0*(xx*xx*xx) + d_poly_r1*(xx*xx) + d_poly_r2*xx + d_poly_r3;
   auto poly_dpsi = dpsi_poly_r0*(xx*xx*xx) + dpsi_poly_r1*(xx*xx) + dpsi_poly_r2*xx + dpsi_poly_r3;
+  auto poly_ddpsi = 3*dpsi_poly_r0*(xx*xx) + 2*dpsi_poly_r1*(xx) + dpsi_poly_r2;
 
   // Running cost
   Function h;
@@ -46,7 +47,7 @@ int main( )
   h << (poly_dpsi - dpsi);
   
   // Angular rate error
-  h << ddpsi;
+  h << (poly_ddpsi - ddpsi);
 
   BMatrix Q(3,3); Q.setAll(true);
   // Q(0,0) = 1.0;
