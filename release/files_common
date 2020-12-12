@@ -374,7 +374,7 @@ selfdrive/camerad/cameras/camera_qcom.h
 selfdrive/camerad/cameras/debayer.cl
 selfdrive/camerad/cameras/sensor_i2c.h
 
-selfdrive/camerad/transforms/rgb_to_yuv.c
+selfdrive/camerad/transforms/rgb_to_yuv.cc
 selfdrive/camerad/transforms/rgb_to_yuv.h
 selfdrive/camerad/transforms/rgb_to_yuv.cl
 selfdrive/camerad/transforms/rgb_to_yuv_test.cc
