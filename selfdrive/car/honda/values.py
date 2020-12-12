@@ -421,7 +421,6 @@ FW_VERSIONS = {
     (Ecu.gateway, 0x18daeff1, None): [
       b'38897-TBA-A010\x00\x00',
       b'38897-TBA-A020\x00\x00',
-      b'38897-TBA-A020\x00\x00',
     ],
   },
   CAR.CIVIC_BOSCH: {
