@@ -398,7 +398,8 @@ selfdrive/modeld/models/driving.h
 selfdrive/modeld/models/dmonitoring.cc
 selfdrive/modeld/models/dmonitoring.h
 
-selfdrive/modeld/transforms/loadyuv.[c,h]
+selfdrive/modeld/transforms/loadyuv.cc
+selfdrive/modeld/transforms/loadyuv.h
 selfdrive/modeld/transforms/loadyuv.cl
 selfdrive/modeld/transforms/transform.cc
 selfdrive/modeld/transforms/transform.h
