@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import random
 import unittest
-from itertools import product
 from parameterized import parameterized
 
 from cereal import car
@@ -17,7 +16,7 @@ ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
 class TestFwFingerprint(unittest.TestCase):
   def assertFingerprints(self, candidates, expected):
     candidates = list(candidates)
-    self.assertEqual(len(candidates), 1)
+    self.assertEqual(len(candidates), 1, f"got more than one candidate: {candidates}")
     self.assertEqual(candidates[0], expected)
 
   def test_rav4_tss2(self):
@@ -46,23 +45,6 @@ class TestFwFingerprint(unittest.TestCase):
     ]
 
     self.assertFingerprints(match_fw_to_car(CP.carFw), TOYOTA.RAV4_TSS2)
-
-  @parameterized.expand([(k, v) for k, v in FW_VERSIONS.items()])
-  def test_fw_fingerprint_all(self, car_model, ecus):
-    # TODO: this is too slow, so don't run for now
-    return
-
-    ecu_fw_lists = []  # pylint: disable=W0101
-    for ecu, fw_versions in ecus.items():
-      ecu_name, addr, sub_addr = ecu
-      ecu_fw_lists.append([])
-      for fw in fw_versions:
-        ecu_fw_lists[-1].append({"ecu": ecu_name, "fwVersion": fw, "address": addr,
-                                 "subAddress": 0 if sub_addr is None else sub_addr})
-    CP = car.CarParams.new_message()
-    for car_fw in product(*ecu_fw_lists):
-      CP.carFw = car_fw
-      self.assertFingerprints(match_fw_to_car(CP.carFw), car_model)
 
   @parameterized.expand([(k, v) for k, v in FW_VERSIONS.items()])
   def test_fw_fingerprint(self, car_model, ecus):
