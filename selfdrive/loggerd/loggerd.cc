@@ -753,6 +753,7 @@ int main(int argc, char** argv) {
 #endif
 
   logger_close(&s.logger);
+  LOGW("logger closed");
 
   for (auto s : socks){
     delete s;
