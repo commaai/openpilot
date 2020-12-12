@@ -145,7 +145,7 @@ typedef struct MultiCameraState {
   SubMaster *sm_front;
   SubMaster *sm_rear;
   PubMaster *pm;
-
+  JpegThumbnail thumbnail;
 } MultiCameraState;
 
 void cameras_init(MultiCameraState *s, cl_device_id device_id, cl_context ctx);
