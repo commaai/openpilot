@@ -195,13 +195,11 @@ bool CameraBuf::acquire() {
   // keep another reference around till were done processing
   pool_acquire(&yuv_pool, cur_yuv_idx);
   pool_push(&yuv_pool, cur_yuv_idx);
-
-  tbuffer_dispatch(&ui_tb, cur_rgb_idx);
-
   return true;
 }
 
 void CameraBuf::release() {
+  tbuffer_dispatch(&ui_tb, cur_rgb_idx);
   pool_release(&yuv_pool, cur_yuv_idx);
 }
 
