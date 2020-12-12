@@ -351,12 +351,6 @@ void cameras_init(MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
       rgb_width/NUM_SEGMENTS_X * rgb_height/NUM_SEGMENTS_Y * sizeof(int16_t), NULL, &err));
   s->rgb_conv_filter_cl = CL_CHECK_ERR(clCreateBuffer(ctx, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
       9 * sizeof(int16_t), (void*)&lapl_conv_krnl, &err));
-  s->conv_cl_localMemSize = ( CONV_LOCAL_WORKSIZE + 2 * (3 / 2) ) * ( CONV_LOCAL_WORKSIZE + 2 * (3 / 2) );
-  s->conv_cl_localMemSize *= 3 * sizeof(uint8_t);
-  s->conv_cl_globalWorkSize[0] = rgb_width/NUM_SEGMENTS_X;
-  s->conv_cl_globalWorkSize[1] = rgb_height/NUM_SEGMENTS_Y;
-  s->conv_cl_localWorkSize[0] = CONV_LOCAL_WORKSIZE;
-  s->conv_cl_localWorkSize[1] = CONV_LOCAL_WORKSIZE;
 
   for (int i=0; i<ARRAYSIZE(s->lapres); i++) {s->lapres[i] = 16160;}
 }
@@ -2102,14 +2096,15 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
     memcpy(rgb_roi_buf.get() + r * width * 3, rgb_addr_offset + r * FULL_STRIDE_X * 3, width * 3);
   }
 
+  constexpr int conv_cl_localMemSize = (CONV_LOCAL_WORKSIZE + 2 * (3 / 2)) * (CONV_LOCAL_WORKSIZE + 2 * (3 / 2)) * (3 * sizeof(uint8_t));
   CL_CHECK(clEnqueueWriteBuffer(b->q, s->rgb_conv_roi_cl, true, 0, width * height * 3 * sizeof(uint8_t), rgb_roi_buf.get(), 0, 0, 0));
   CL_CHECK(clSetKernelArg(s->krnl_rgb_laplacian, 0, sizeof(cl_mem), (void *)&s->rgb_conv_roi_cl));
   CL_CHECK(clSetKernelArg(s->krnl_rgb_laplacian, 1, sizeof(cl_mem), (void *)&s->rgb_conv_result_cl));
   CL_CHECK(clSetKernelArg(s->krnl_rgb_laplacian, 2, sizeof(cl_mem), (void *)&s->rgb_conv_filter_cl));
-  CL_CHECK(clSetKernelArg(s->krnl_rgb_laplacian, 3, s->conv_cl_localMemSize, 0));
+  CL_CHECK(clSetKernelArg(s->krnl_rgb_laplacian, 3, conv_cl_localMemSize, 0));
   cl_event conv_event;
   CL_CHECK(clEnqueueNDRangeKernel(b->q, s->krnl_rgb_laplacian, 2, NULL,
-                                  s->conv_cl_globalWorkSize, s->conv_cl_localWorkSize, 0, 0, &conv_event));
+                                  (size_t[]){width, height}, (size_t[]){CONV_LOCAL_WORKSIZE, CONV_LOCAL_WORKSIZE}, 0, 0, &conv_event));
   clWaitForEvents(1, &conv_event);
   CL_CHECK(clReleaseEvent(conv_event));
 
