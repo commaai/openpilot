@@ -2080,8 +2080,8 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
   const int y_offset = ROI_Y_MIN + roi_id / (ROI_X_MAX - ROI_X_MIN + 1);
 
   const uint8_t *rgb_addr_offset = rgb_addr + y_offset * height * FULL_STRIDE_X * 3 + x_offset * width * 3;
-  for (int r = 0; r < height; ++r) {
-    memcpy(rgb_roi_buf.get() + r * width * 3, rgb_addr_offset + r * FULL_STRIDE_X * 3, width * 3);
+  for (int i = 0; i < height; ++i) {
+    memcpy(rgb_roi_buf.get() + i * width * 3, rgb_addr_offset + i * FULL_STRIDE_X * 3, width * 3);
   }
 
   constexpr int conv_cl_localMemSize = (CONV_LOCAL_WORKSIZE + 2 * (3 / 2)) * (CONV_LOCAL_WORKSIZE + 2 * (3 / 2)) * (3 * sizeof(uint8_t));
@@ -2145,8 +2145,7 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
   }
 
   if (cnt % 3 == 0) {
-    const int x = 290, y = 322;
-    const int width = 560, height = 314;
+    const int x = 290, y = 322, width = 560, height = 314;
     const int skip = 1;
     set_exposure_target(c, (const uint8_t *)b->yuv_bufs[b->cur_yuv_idx].y, x, x + width, skip, y, y + height, skip);
   }
