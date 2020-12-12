@@ -6,7 +6,6 @@
 #include <algorithm>
 
 #include "common/util.h"
-#include "common/utilpp.h"
 #include "common/params.h"
 #include "common/touch.h"
 #include "common/swaglog.h"

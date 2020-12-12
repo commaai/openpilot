@@ -30,7 +30,6 @@
 
 #include "common/framebuffer.h"
 #include "common/touch.h"
-#include "common/utilpp.h"
 
 #define USER_AGENT "NEOSUpdater-0.2"
 

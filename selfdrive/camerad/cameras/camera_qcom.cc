@@ -105,7 +105,7 @@ static void camera_init(CameraState *s, int camera_id, int camera_num,
   s->camera_num = camera_num;
   s->camera_id = camera_id;
 
-  assert(camera_id < ARRAYSIZE(cameras_supported));
+  assert(camera_id < std::size(cameras_supported));
   s->ci = cameras_supported[camera_id];
   assert(s->ci.frame_width != 0);
 
@@ -172,7 +172,7 @@ static int imx298_apply_exposure(CameraState *s, int gain, int integ_lines, int 
     {0x104,0x0,0},
   };
 
-  err = sensor_write_regs(s, reg_array, ARRAYSIZE(reg_array), MSM_CAMERA_I2C_BYTE_DATA);
+  err = sensor_write_regs(s, reg_array, std::size(reg_array), MSM_CAMERA_I2C_BYTE_DATA);
   if (err != 0) {
     LOGE("apply_exposure err %d", err);
   }
@@ -186,7 +186,7 @@ static int ov8865_apply_exposure(CameraState *s, int gain, int integ_lines, int 
   // get bitmaps from iso
   static const int gains[] = {0, 100, 200, 400, 800};
   int i;
-  for (i = 1; i < ARRAYSIZE(gains); i++) {
+  for (i = 1; i < std::size(gains); i++) {
     if (gain >= gains[i - 1] && gain < gains[i])
       break;
   }
@@ -211,7 +211,7 @@ static int ov8865_apply_exposure(CameraState *s, int gain, int integ_lines, int 
 
     //{0x104,0x0,0},
   };
-  err = sensor_write_regs(s, reg_array, ARRAYSIZE(reg_array), MSM_CAMERA_I2C_BYTE_DATA);
+  err = sensor_write_regs(s, reg_array, std::size(reg_array), MSM_CAMERA_I2C_BYTE_DATA);
   if (err != 0) {
     LOGE("apply_exposure err %d", err);
   }
@@ -234,7 +234,7 @@ static int imx179_s5k3p8sp_apply_exposure(CameraState *s, int gain, int integ_li
 
     {0x104,0x0,0},
   };
-  err = sensor_write_regs(s, reg_array, ARRAYSIZE(reg_array), MSM_CAMERA_I2C_BYTE_DATA);
+  err = sensor_write_regs(s, reg_array, std::size(reg_array), MSM_CAMERA_I2C_BYTE_DATA);
   if (err != 0) {
     LOGE("apply_exposure err %d", err);
   }
@@ -513,8 +513,8 @@ static void imx298_ois_calibration(int ois_fd, uint8_t* eeprom) {
 
 
   struct msm_ois_cfg_data cfg = {0};
-  struct msm_camera_i2c_seq_reg_array ois_reg_settings[ARRAYSIZE(ois_registers)] = {{0}};
-  for (int i=0; i<ARRAYSIZE(ois_registers); i++) {
+  struct msm_camera_i2c_seq_reg_array ois_reg_settings[std::size(ois_registers)] = {{0}};
+  for (int i=0; i<std::size(ois_registers); i++) {
     ois_reg_settings[i].reg_addr = ois_registers[i][0];
     ois_reg_settings[i].reg_data[0] = ois_registers[i][1] & 0xff;
     ois_reg_settings[i].reg_data[1] = (ois_registers[i][1] >> 8) & 0xff;
@@ -522,7 +522,7 @@ static void imx298_ois_calibration(int ois_fd, uint8_t* eeprom) {
   }
   struct msm_camera_i2c_seq_reg_setting ois_reg_setting = {
     .reg_setting = &ois_reg_settings[0],
-    .size = ARRAYSIZE(ois_reg_settings),
+    .size = std::size(ois_reg_settings),
     .addr_type = MSM_CAMERA_I2C_WORD_ADDR,
     .delay = 0,
   };
@@ -1209,7 +1209,7 @@ static void camera_open(CameraState *s, bool rear) {
   // SENSOR: stop stream
   struct msm_camera_i2c_reg_setting stop_settings = {
     .reg_setting = stop_reg_array,
-    .size = ARRAYSIZE(stop_reg_array),
+    .size = std::size(stop_reg_array),
     .addr_type = MSM_CAMERA_I2C_WORD_ADDR,
     .data_type = MSM_CAMERA_I2C_BYTE_DATA,
     .delay = 0
@@ -1229,13 +1229,13 @@ static void camera_open(CameraState *s, bool rear) {
 
   // SENSOR: send i2c configuration
   if (s->camera_id == CAMERA_ID_IMX298) {
-    err = sensor_write_regs(s, init_array_imx298, ARRAYSIZE(init_array_imx298), MSM_CAMERA_I2C_BYTE_DATA);
+    err = sensor_write_regs(s, init_array_imx298, std::size(init_array_imx298), MSM_CAMERA_I2C_BYTE_DATA);
   } else if  (s->camera_id == CAMERA_ID_S5K3P8SP) {
-    err = sensor_write_regs(s, init_array_s5k3p8sp, ARRAYSIZE(init_array_s5k3p8sp), MSM_CAMERA_I2C_WORD_DATA);
+    err = sensor_write_regs(s, init_array_s5k3p8sp, std::size(init_array_s5k3p8sp), MSM_CAMERA_I2C_WORD_DATA);
   } else if (s->camera_id == CAMERA_ID_IMX179) {
-    err = sensor_write_regs(s, init_array_imx179, ARRAYSIZE(init_array_imx179), MSM_CAMERA_I2C_BYTE_DATA);
+    err = sensor_write_regs(s, init_array_imx179, std::size(init_array_imx179), MSM_CAMERA_I2C_BYTE_DATA);
   } else if (s->camera_id == CAMERA_ID_OV8865) {
-    err = sensor_write_regs(s, init_array_ov8865, ARRAYSIZE(init_array_ov8865), MSM_CAMERA_I2C_BYTE_DATA);
+    err = sensor_write_regs(s, init_array_ov8865, std::size(init_array_ov8865), MSM_CAMERA_I2C_BYTE_DATA);
   } else {
     assert(false);
   }
@@ -1441,7 +1441,7 @@ static void camera_open(CameraState *s, bool rear) {
   }
 
   if (s->camera_id == CAMERA_ID_IMX298) {
-    err = sensor_write_regs(s, mode_setting_array_imx298, ARRAYSIZE(mode_setting_array_imx298), MSM_CAMERA_I2C_BYTE_DATA);
+    err = sensor_write_regs(s, mode_setting_array_imx298, std::size(mode_setting_array_imx298), MSM_CAMERA_I2C_BYTE_DATA);
     LOG("sensor setup: %d", err);
   }
 
@@ -1624,7 +1624,7 @@ static void rear_start(CameraState *s) {
 
   set_exposure(s, 1.0, 1.0);
 
-  err = sensor_write_regs(s, start_reg_array, ARRAYSIZE(start_reg_array), MSM_CAMERA_I2C_BYTE_DATA);
+  err = sensor_write_regs(s, start_reg_array, std::size(start_reg_array), MSM_CAMERA_I2C_BYTE_DATA);
   LOG("sensor start regs: %d", err);
 
   // focus on infinity assuming phone is perpendicular
@@ -1825,7 +1825,7 @@ static void front_start(CameraState *s) {
 
   set_exposure(s, 1.0, 1.0);
 
-  err = sensor_write_regs(s, start_reg_array, ARRAYSIZE(start_reg_array), MSM_CAMERA_I2C_BYTE_DATA);
+  err = sensor_write_regs(s, start_reg_array, std::size(start_reg_array), MSM_CAMERA_I2C_BYTE_DATA);
   LOG("sensor start regs: %d", err);
 }
 

@@ -194,7 +194,8 @@ selfdrive/common/visionbuf_cl.c
 selfdrive/common/ipc.[c,h]
 selfdrive/common/swaglog.h
 selfdrive/common/swaglog.cc
-selfdrive/common/util.[c,h]
+selfdrive/common/util.cc
+selfdrive/common/util.h
 selfdrive/common/efd.[c,h]
 selfdrive/common/cqueue.[c,h]
 selfdrive/common/clutil.cc
@@ -206,7 +207,6 @@ selfdrive/common/mutex.h
 selfdrive/common/modeldata.h
 selfdrive/common/mat.h
 selfdrive/common/timing.h
-selfdrive/common/utilpp.h
 
 selfdrive/common/visionbuf.h
 selfdrive/common/visionbuf_ion.c

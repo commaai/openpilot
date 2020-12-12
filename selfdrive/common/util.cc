@@ -1,3 +1,4 @@
+#include "util.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -5,7 +6,9 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
-
+#include <sstream>
+#include <fstream>
+#include <memory>
 #ifdef __linux__
 #include <sys/prctl.h>
 #include <sys/syscall.h>
@@ -87,4 +90,41 @@ int set_core_affinity(int core) {
 #else
   return -1;
 #endif
+}
+
+std::string util::read_file(std::string fn) {
+  std::ifstream t(fn);
+  std::stringstream buffer;
+  buffer << t.rdbuf();
+  return buffer.str();
+}
+
+std::string util::tohex(const uint8_t* buf, size_t buf_size) {
+  std::unique_ptr<char[]> hexbuf(new char[buf_size * 2 + 1]);
+  for (size_t i = 0; i < buf_size; i++) {
+    sprintf(&hexbuf[i * 2], "%02x", buf[i]);
+  }
+  hexbuf[buf_size * 2] = 0;
+  return std::string(hexbuf.get(), hexbuf.get() + buf_size * 2);
+}
+
+std::string util::base_name(std::string const& path) {
+  size_t pos = path.find_last_of("/");
+  if (pos == std::string::npos) return path;
+  return path.substr(pos + 1);
+}
+
+std::string util::dir_name(std::string const& path) {
+  size_t pos = path.find_last_of("/");
+  if (pos == std::string::npos) return "";
+  return path.substr(0, pos);
+}
+std::string util::readlink(std::string path) {
+  char buff[4096];
+  ssize_t len = ::readlink(path.c_str(), buff, sizeof(buff) - 1);
+  if (len != -1) {
+    buff[len] = '\0';
+    return std::string(buff);
+  }
+  return "";
 }

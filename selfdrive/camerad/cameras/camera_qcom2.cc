@@ -556,7 +556,7 @@ void enqueue_req_multi(struct CameraState *s, int start, int n, bool dp) {
 static void camera_init(CameraState *s, int camera_id, int camera_num, unsigned int fps, cl_device_id device_id, cl_context ctx) {
   LOGD("camera init %d", camera_num);
 
-  assert(camera_id < ARRAYSIZE(cameras_supported));
+  assert(camera_id < std::size(cameras_supported));
   s->ci = cameras_supported[camera_id];
   assert(s->ci.frame_width != 0);
 

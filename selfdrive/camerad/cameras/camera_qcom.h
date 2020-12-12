@@ -15,7 +15,6 @@
 #include "common/mat.h"
 #include "common/visionbuf.h"
 #include "common/buffering.h"
-#include "common/utilpp.h"
 
 #include "camera_common.h"
 

@@ -241,7 +241,7 @@ void* visionserver_thread(void* arg) {
     polls[0].fd = sock;
     polls[0].events = POLLIN;
 
-    int ret = poll(polls, ARRAYSIZE(polls), 1000);
+    int ret = poll(polls, std::size(polls), 1000);
     if (ret < 0) {
       if (errno == EINTR || errno == EAGAIN) continue;
       LOGE("poll failed (%d - %d)", ret, errno);

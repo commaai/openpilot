@@ -36,7 +36,7 @@ void camera_close(CameraState *s) {
 }
 
 void camera_init(CameraState *s, int camera_id, unsigned int fps, cl_device_id device_id, cl_context ctx) {
-  assert(camera_id < ARRAYSIZE(cameras_supported));
+  assert(camera_id < std::size(cameras_supported));
   s->ci = cameras_supported[camera_id];
   assert(s->ci.frame_width != 0);
 
