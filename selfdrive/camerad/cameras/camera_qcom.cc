@@ -2066,12 +2066,12 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
   const uint8_t *rgb_addr = (uint8_t*)b->cur_rgb_buf->addr;
   // sharpness scores
   const int roi_id = cnt % ARRAYSIZE(s->lapres);  // rolling roi
-  const int roi_x_offset = roi_id % (ROI_X_MAX - ROI_X_MIN + 1);
-  const int roi_y_offset = roi_id / (ROI_X_MAX - ROI_X_MIN + 1);
+  const int x_offset = ROI_X_MIN + roi_id % (ROI_X_MAX - ROI_X_MIN + 1);
+  const int y_offset = ROI_Y_MIN + roi_id / (ROI_X_MAX - ROI_X_MIN + 1);
 
   const size_t width = b->rgb_width / NUM_SEGMENTS_X;
   const size_t height = b->rgb_height / NUM_SEGMENTS_Y;
-  const uint8_t *rgb_addr_offset = rgb_addr + (ROI_Y_MIN + roi_y_offset) * height * FULL_STRIDE_X * 3 + (ROI_X_MIN + roi_x_offset) * width * 3;
+  const uint8_t *rgb_addr_offset = rgb_addr + y_offset * height * FULL_STRIDE_X * 3 + x_offset * width * 3;
   for (int r = 0; r < height; ++r) {
     memcpy(s->rgb_roi_buf.get() + r * width * 3, rgb_addr_offset + r * FULL_STRIDE_X * 3, width * 3);
   }
