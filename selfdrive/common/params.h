@@ -1,4 +1,5 @@
 #pragma once
+
 #include <map>
 #include <string>
 #include <sstream>
@@ -31,7 +32,7 @@ public:
     return std::nullopt;
   }
   bool getBool(const char *param_name, bool block = false) {
-    return get<bool>(param_name).value_or(false);
+    return get<bool>(param_name, block).value_or(false);
   }
 
   bool put(const char *key, const char *value, size_t value_size);
