@@ -2060,28 +2060,16 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
   // cache rgb roi and write to cl
 
   // gz compensation
-  s->sm_rear->update(0);
-  if (s->sm_rear->updated("sensorEvents")) {
-    float vals[3] = {0.0};
-    bool got_accel = false;
-    auto sensor_events = (*(s->sm_rear))["sensorEvents"].getSensorEvents();
-    for (auto sensor_event : sensor_events) {
+  if (uint64_t ts = nanos_since_boot();
+      (ts - s->rear.last_sag_ts) > 10000000 && s->sm_rear->update(0) > 0 && s->sm_rear->updated("sensorEvents")) {
+    for (auto sensor_event : (*(s->sm_rear))["sensorEvents"].getSensorEvents()) {
       if (sensor_event.which() == cereal::SensorEventData::ACCELERATION) {
-        auto v = sensor_event.getAcceleration().getV();
-        if (v.size() < 3) {
-          continue;
+        if (auto v = sensor_event.getAcceleration().getV(); v.size >= 3) {
+          s->rear.last_sag_ts = ts;
+          s->rear.last_sag_acc_z = -v[2];
         }
-        for (int j = 0; j < 3; j++) {
-          vals[j] = v[j];
-        }
-        got_accel = true;
         break;
       }
-    }
-    uint64_t ts = nanos_since_boot();
-    if (got_accel && ts - s->rear.last_sag_ts > 10000000) { // 10 ms
-      s->rear.last_sag_ts = ts;
-      s->rear.last_sag_acc_z = -vals[2];
     }
   }
 
