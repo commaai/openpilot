@@ -9,15 +9,15 @@ libmpc_fn = os.path.join(mpc_dir, "libmpc"+suffix())
 ffi = FFI()
 ffi.cdef("""
 typedef struct {
-    double x, y, psi, delta, t;
+    double x, y, psi, dpsi, ddpsi;
 } state_t;
 
 typedef struct {
     double x[21];
     double y[21];
     double psi[21];
-    double delta[21];
-    double rate[20];
+    double dpsi[21];
+    double ddpsi[20];
     double cost;
 } log_t;
 

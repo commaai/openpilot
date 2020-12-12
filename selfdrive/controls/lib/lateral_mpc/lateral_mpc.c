@@ -17,7 +17,7 @@ ACADOvariables acadoVariables;
 ACADOworkspace acadoWorkspace;
 
 typedef struct {
-  double x, y, psi, delta, t;
+  double x, y, psi, dpsi, ddpsi;
 } state_t;
 
 
@@ -25,8 +25,8 @@ typedef struct {
   double x[N+1];
   double y[N+1];
   double psi[N+1];
-  double delta[N+1];
-  double rate[N];
+  double dpsi[N+1];
+  double ddpsi[N];
   double cost;
 } log_t;
 
@@ -84,7 +84,7 @@ int run_mpc(state_t * x0, log_t * solution, double d_poly[4],
   acadoVariables.x0[0] = x0->x;
   acadoVariables.x0[1] = x0->y;
   acadoVariables.x0[2] = x0->psi;
-  acadoVariables.x0[3] = x0->delta;
+  acadoVariables.x0[3] = x0->dpsi;
 
 
   acado_preparationStep();
@@ -97,9 +97,9 @@ int run_mpc(state_t * x0, log_t * solution, double d_poly[4],
     solution->x[i] = acadoVariables.x[i*NX];
     solution->y[i] = acadoVariables.x[i*NX+1];
     solution->psi[i] = acadoVariables.x[i*NX+2];
-    solution->delta[i] = acadoVariables.x[i*NX+3];
+    solution->dpsi[i] = acadoVariables.x[i*NX+3];
     if (i < N){
-      solution->rate[i] = acadoVariables.u[i];
+      solution->ddpsi[i] = acadoVariables.u[i];
     }
   }
   solution->cost = acado_getObjective();

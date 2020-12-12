@@ -19,19 +19,19 @@ int main( )
   DifferentialState xx; // x position
   DifferentialState yy; // y position
   DifferentialState psi; // vehicle heading
-  DifferentialState delta;
+  DifferentialState dpsi;
 
   OnlineData curvature_factor;
   OnlineData v_ref; // m/s
   OnlineData d_poly_r0, d_poly_r1, d_poly_r2, d_poly_r3;
 
-  Control t;
+  Control ddpsi;
 
   // Equations of motion
   f << dot(xx) == v_ref * cos(psi);
   f << dot(yy) == v_ref * sin(psi);
-  f << dot(psi) == v_ref * delta * curvature_factor;
-  f << dot(delta) == t;
+  f << dot(psi) == dpsi;
+  f << dot(dpsi) == ddpsi;
 
   auto poly_d = d_poly_r0*(xx*xx*xx) + d_poly_r1*(xx*xx) + d_poly_r2*xx + d_poly_r3;
 
@@ -42,7 +42,7 @@ int main( )
   h << (poly_d - yy);
 
   // Angular rate error
-  h << (v_ref + 1.0 ) * t;
+  h << ddpsi;
 
   BMatrix Q(2,2); Q.setAll(true);
   // Q(0,0) = 1.0;
@@ -80,7 +80,7 @@ int main( )
   // car can't go backward to avoid "circles"
   ocp.subjectTo( deg2rad(-90) <= psi <= deg2rad(90));
   // more than absolute max steer angle
-  ocp.subjectTo( deg2rad(-50) <= delta <= deg2rad(50));
+  ocp.subjectTo( deg2rad(-50) <= ddpsi <= deg2rad(50));
   ocp.setNOD(6);
 
   OCPexport mpc(ocp);

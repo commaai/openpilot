@@ -187,8 +187,8 @@ real_t evGu[ 80 ];
 /** Row vector of size: 11 */
 real_t objValueIn[ 11 ];
 
-/** Row vector of size: 12 */
-real_t objValueOut[ 12 ];
+/** Row vector of size: 10 */
+real_t objValueOut[ 10 ];
 
 /** Matrix of size: 80 x 4 (row major format) */
 real_t Q1[ 320 ];
@@ -238,8 +238,8 @@ real_t H10[ 80 ];
 /** Matrix of size: 24 x 24 (row major format) */
 real_t H[ 576 ];
 
-/** Matrix of size: 40 x 24 (row major format) */
-real_t A[ 960 ];
+/** Matrix of size: 20 x 24 (row major format) */
+real_t A[ 480 ];
 
 /** Column vector of size: 24 */
 real_t g[ 24 ];
@@ -250,17 +250,17 @@ real_t lb[ 24 ];
 /** Column vector of size: 24 */
 real_t ub[ 24 ];
 
-/** Column vector of size: 40 */
-real_t lbA[ 40 ];
+/** Column vector of size: 20 */
+real_t lbA[ 20 ];
 
-/** Column vector of size: 40 */
-real_t ubA[ 40 ];
+/** Column vector of size: 20 */
+real_t ubA[ 20 ];
 
 /** Column vector of size: 24 */
 real_t x[ 24 ];
 
-/** Column vector of size: 64 */
-real_t y[ 64 ];
+/** Column vector of size: 44 */
+real_t y[ 44 ];
 
 
 } ACADOworkspace;
