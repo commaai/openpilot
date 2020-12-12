@@ -2045,35 +2045,14 @@ static void* ops_thread(void* arg) {
   return NULL;
 }
 
-void camera_process_front(MultiCameraState *s, CameraState *c, int cnt) {
-  common_camera_process_front(s->sm_front, s->pm, c, cnt);
-}
-
-// called by processing_thread
-void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
+static void update_lapmap(MultiCameraState *s, const CameraBuf *b) {
   const CameraBuf *b = &c->buf;
+  const uint8_t *rgb_addr = (uint8_t *)b->cur_rgb_buf->addr;
   const size_t width = b->rgb_width / NUM_SEGMENTS_X;
   const size_t height = b->rgb_height / NUM_SEGMENTS_Y;
   static std::unique_ptr<uint8_t[]> rgb_roi_buf = std::make_unique<uint8_t[]>(width * height * 3);
   static std::unique_ptr<int16_t[]> conv_result = std::make_unique<int16_t[]>(width * height);
 
-  // cache rgb roi and write to cl
-
-  // gz compensation
-  if (uint64_t ts = nanos_since_boot();
-      (ts - s->rear.last_sag_ts) > 10000000 && s->sm_rear->update(0) > 0 && s->sm_rear->updated("sensorEvents")) {
-    for (auto sensor_event : (*(s->sm_rear))["sensorEvents"].getSensorEvents()) {
-      if (sensor_event.which() == cereal::SensorEventData::ACCELERATION) {
-        if (auto v = sensor_event.getAcceleration().getV(); v.size >= 3) {
-          s->rear.last_sag_ts = ts;
-          s->rear.last_sag_acc_z = -v[2];
-        }
-        break;
-      }
-    }
-  }
-
-  const uint8_t *rgb_addr = (uint8_t*)b->cur_rgb_buf->addr;
   // sharpness scores
   const int roi_id = cnt % ARRAYSIZE(s->lapres);  // rolling roi
   const int x_offset = ROI_X_MIN + roi_id % (ROI_X_MAX - ROI_X_MIN + 1);
@@ -2100,20 +2079,21 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
                                width * height * sizeof(int16_t), conv_result.get(), 0, 0, 0));
 
   get_lapmap_one(conv_result.get(), &s->lapres[roi_id], width, height);
+}
 
-  // setup self recover
+static void setup_self_recover(CameraState *c, uint16_t *lapres) {
   const int dac_down = c->device == DEVICE_LP3 ? LP3_AF_DAC_DOWN : OP3T_AF_DAC_DOWN;
   const int dac_up = c->device == DEVICE_LP3 ? LP3_AF_DAC_UP : OP3T_AF_DAC_UP;
   const int dac_m = c->device == DEVICE_LP3 ? LP3_AF_DAC_M : OP3T_AF_DAC_M;
   const int dac_3sig = c->device == DEVICE_LP3 ? LP3_AF_DAC_3SIG : OP3T_AF_DAC_3SIG;
   const float lens_true_pos = c->lens_true_pos.load();
   int self_recover = c->self_recover.load();
-  if (self_recover < 2 && (lens_true_pos < dac_down + 1 || lens_true_pos > dac_up - 1) && is_blur(&s->lapres[0])) {
+  if (self_recover < 2 && (lens_true_pos < (dac_down + 1) || lens_true_pos > (dac_up - 1)) && is_blur(lapres)) {
     // truly stuck, needs help
     if (--self_recover < -FOCUS_RECOVER_PATIENCE) {
       LOGD("rear camera bad state detected. attempting recovery from %.1f, recover state is %d", lens_true_pos, self_recover);
-      // parity determined by which end is stuck at           
-      self_recover = FOCUS_RECOVER_STEPS + (lens_true_pos < dac_m ? 1 : 0); 
+      // parity determined by which end is stuck at
+      self_recover = FOCUS_RECOVER_STEPS + (lens_true_pos < dac_m ? 1 : 0);
     }
   } else if (self_recover < 2 && (lens_true_pos < (dac_m - dac_3sig) || lens_true_pos > (dac_m + dac_3sig))) {
     // in suboptimal position with high prob, but may still recover by itself
@@ -2124,24 +2104,47 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
     self_recover += 1;  // reset if fine
   }
   c->self_recover.store(self_recover);
+}
 
-  {
-    MessageBuilder msg;
-    auto framed = msg.initEvent().initFrame();
-    fill_frame_data(framed, b->cur_frame_data, cnt);
-    if (env_send_rear) {
-      fill_frame_image(framed, rgb_addr, b->rgb_width, b->rgb_height, b->rgb_stride);
+void camera_process_front(MultiCameraState *s, CameraState *c, int cnt) {
+  common_camera_process_front(s->sm_front, s->pm, c, cnt);
+}
+
+// called by processing_thread
+void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
+  // gz compensation
+  if (uint64_t ts = nanos_since_boot();
+      (ts - s->rear.last_sag_ts) > 10000000 && s->sm_rear->update(0) > 0 && s->sm_rear->updated("sensorEvents")) {
+    for (auto sensor_event : (*(s->sm_rear))["sensorEvents"].getSensorEvents()) {
+      if (sensor_event.which() == cereal::SensorEventData::ACCELERATION) {
+        if (auto v = sensor_event.getAcceleration().getV(); v.size >= 3) {
+          s->rear.last_sag_ts = ts;
+          s->rear.last_sag_acc_z = -v[2];
+        }
+        break;
+      }
     }
-    framed.setFocusVal(s->rear.focus);
-    framed.setFocusConf(s->rear.confidence);
-    framed.setSharpnessScore(s->lapres);
-    framed.setRecoverState(self_recover);
-    framed.setTransform(b->yuv_transform.v);
-    s->pm->send("frame", msg);
   }
 
+  const CameraBuf *b = &c->buf;
+  update_lapmap(s, b);
+  setup_self_recover(c, &s->lapres[0]);
+
+  MessageBuilder msg;
+  auto framed = msg.initEvent().initFrame();
+  fill_frame_data(framed, b->cur_frame_data, cnt);
+  if (env_send_rear) {
+    fill_frame_image(framed, b->cur_rgb_buf->add, b->rgb_width, b->rgb_height, b->rgb_stride);
+  }
+  framed.setFocusVal(s->rear.focus);
+  framed.setFocusConf(s->rear.confidence);
+  framed.setSharpnessScore(s->lapres);
+  framed.setRecoverState(self_recover);
+  framed.setTransform(b->yuv_transform.v);
+  s->pm->send("frame", msg);
+
   if (cnt % 100 == 3) {
-    create_thumbnail(s, c, rgb_addr);
+    create_thumbnail(s, c, b->cur_rgb_buf->add);
   }
 
   if (cnt % 3 == 0) {
