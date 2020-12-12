@@ -359,10 +359,6 @@ void cameras_init(MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
   s->conv_cl_localWorkSize[1] = CONV_LOCAL_WORKSIZE;
 
   for (int i=0; i<ARRAYSIZE(s->lapres); i++) {s->lapres[i] = 16160;}
-
-  const size_t size = (rgb_width/NUM_SEGMENTS_X)*(rgb_height/NUM_SEGMENTS_Y);
-  s->rgb_roi_buf = std::make_unique<uint8_t[]>(size*3);
-  s->conv_result = std::make_unique<int16_t[]>(size);
 }
 
 static void set_exposure(CameraState *s, float exposure_frac, float gain_frac) {
@@ -2062,6 +2058,38 @@ void camera_process_front(MultiCameraState *s, CameraState *c, int cnt) {
 // called by processing_thread
 void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
   const CameraBuf *b = &c->buf;
+  const size_t width = b->rgb_width / NUM_SEGMENTS_X;
+  const size_t height = b->rgb_height / NUM_SEGMENTS_Y;
+  static std::unique_ptr<uint8_t[]> rgb_roi_buf = std::make_unique<uint8_t[]>(width * height * 3);
+  static std::unique_ptr<int16_t[]> conv_result = std::make_unique<int16_t[]>(width * height);
+
+  // cache rgb roi and write to cl
+
+  // gz compensation
+  s->sm_rear->update(0);
+  if (s->sm_rear->updated("sensorEvents")) {
+    float vals[3] = {0.0};
+    bool got_accel = false;
+    auto sensor_events = (*(s->sm_rear))["sensorEvents"].getSensorEvents();
+    for (auto sensor_event : sensor_events) {
+      if (sensor_event.which() == cereal::SensorEventData::ACCELERATION) {
+        auto v = sensor_event.getAcceleration().getV();
+        if (v.size() < 3) {
+          continue;
+        }
+        for (int j = 0; j < 3; j++) {
+          vals[j] = v[j];
+        }
+        got_accel = true;
+        break;
+      }
+    }
+    uint64_t ts = nanos_since_boot();
+    if (got_accel && ts - s->rear.last_sag_ts > 10000000) { // 10 ms
+      s->rear.last_sag_ts = ts;
+      s->rear.last_sag_acc_z = -vals[2];
+    }
+  }
 
   const uint8_t *rgb_addr = (uint8_t*)b->cur_rgb_buf->addr;
   // sharpness scores
@@ -2069,14 +2097,12 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
   const int x_offset = ROI_X_MIN + roi_id % (ROI_X_MAX - ROI_X_MIN + 1);
   const int y_offset = ROI_Y_MIN + roi_id / (ROI_X_MAX - ROI_X_MIN + 1);
 
-  const size_t width = b->rgb_width / NUM_SEGMENTS_X;
-  const size_t height = b->rgb_height / NUM_SEGMENTS_Y;
   const uint8_t *rgb_addr_offset = rgb_addr + y_offset * height * FULL_STRIDE_X * 3 + x_offset * width * 3;
   for (int r = 0; r < height; ++r) {
-    memcpy(s->rgb_roi_buf.get() + r * width * 3, rgb_addr_offset + r * FULL_STRIDE_X * 3, width * 3);
+    memcpy(rgb_roi_buf.get() + r * width * 3, rgb_addr_offset + r * FULL_STRIDE_X * 3, width * 3);
   }
 
-  CL_CHECK(clEnqueueWriteBuffer(b->q, s->rgb_conv_roi_cl, true, 0, width * height * 3 * sizeof(uint8_t), s->rgb_roi_buf.get(), 0, 0, 0));
+  CL_CHECK(clEnqueueWriteBuffer(b->q, s->rgb_conv_roi_cl, true, 0, width * height * 3 * sizeof(uint8_t), rgb_roi_buf.get(), 0, 0, 0));
   CL_CHECK(clSetKernelArg(s->krnl_rgb_laplacian, 0, sizeof(cl_mem), (void *)&s->rgb_conv_roi_cl));
   CL_CHECK(clSetKernelArg(s->krnl_rgb_laplacian, 1, sizeof(cl_mem), (void *)&s->rgb_conv_result_cl));
   CL_CHECK(clSetKernelArg(s->krnl_rgb_laplacian, 2, sizeof(cl_mem), (void *)&s->rgb_conv_filter_cl));
@@ -2088,9 +2114,9 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
   CL_CHECK(clReleaseEvent(conv_event));
 
   CL_CHECK(clEnqueueReadBuffer(b->q, s->rgb_conv_result_cl, true, 0,
-                               width * height * sizeof(int16_t), s->conv_result.get(), 0, 0, 0));
+                               width * height * sizeof(int16_t), conv_result.get(), 0, 0, 0));
 
-  get_lapmap_one(s->conv_result.get(), &s->lapres[roi_id], width, height);
+  get_lapmap_one(conv_result.get(), &s->lapres[roi_id], width, height);
 
   // setup self recover
   const int dac_down = c->device == DEVICE_LP3 ? LP3_AF_DAC_DOWN : OP3T_AF_DAC_DOWN;
