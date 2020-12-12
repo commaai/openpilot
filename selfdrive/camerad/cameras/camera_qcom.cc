@@ -2071,11 +2071,9 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
 
   const size_t width = b->rgb_width / NUM_SEGMENTS_X;
   const size_t height = b->rgb_height / NUM_SEGMENTS_Y;
-  for (int r = 0; r < height; r++) {
-    memcpy(s->rgb_roi_buf.get() + r * width * 3,
-           rgb_addr + (ROI_Y_MIN + roi_y_offset) * height * FULL_STRIDE_X * 3 +
-               (ROI_X_MIN + roi_x_offset) * width * 3 + r * FULL_STRIDE_X * 3,
-           width * 3);
+  const size_t offset = (ROI_Y_MIN + roi_y_offset) * height * FULL_STRIDE_X * 3 + (ROI_X_MIN + roi_x_offset) * width * 3;
+  for (int r = 0; r < height; ++r) {
+    memcpy(s->rgb_roi_buf.get() + r * width * 3, rgb_addr + offset + r * FULL_STRIDE_X * 3, width * 3);
   }
 
   CL_CHECK(clEnqueueWriteBuffer(b->q, s->rgb_conv_roi_cl, true, 0, width * height * 3 * sizeof(uint8_t), s->rgb_roi_buf.get(), 0, 0, 0));
