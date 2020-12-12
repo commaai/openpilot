@@ -2099,7 +2099,7 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
   const int dac_3sig = c->device == DEVICE_LP3 ? LP3_AF_DAC_3SIG : OP3T_AF_DAC_3SIG;
   const float lens_true_pos = c->lens_true_pos.load();
   int self_recover = c->self_recover.load();
-  if (self_recover < 2 && is_blur(&s->lapres[0]) && (lens_true_pos < dac_down + 1 || lens_true_pos > dac_up - 1)) {
+  if (self_recover < 2 && (lens_true_pos < dac_down + 1 || lens_true_pos > dac_up - 1) && is_blur(&s->lapres[0])) {
     // truly stuck, needs help
     self_recover -= 1;
     if (self_recover < -FOCUS_RECOVER_PATIENCE) {
