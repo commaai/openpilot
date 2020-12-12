@@ -67,7 +67,7 @@ function two_init {
 
   # give GPU threads RT priority
   for pid in $(pgrep "kgsl"); do
-    chrt -f -p 51 $pid
+    chrt -f -p 52 $pid
   done
 
   # Check for NEOS update

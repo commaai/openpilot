@@ -272,14 +272,14 @@ void camera_process_rear(MultiCameraState *s, CameraState *c, int cnt) {
 
 void cameras_run(MultiCameraState *s) {
   std::vector<std::thread> threads;
-  threads.push_back(start_process_thread(s, "processing", &s->rear, 51, camera_process_rear));
-  threads.push_back(start_process_thread(s, "frontview", &s->front, 51, camera_process_front));
-  
+  threads.push_back(start_process_thread(s, "processing", &s->rear, camera_process_rear));
+  threads.push_back(start_process_thread(s, "frontview", &s->front, camera_process_front));
+
   std::thread t_rear = std::thread(rear_thread, &s->rear);
   set_thread_name("webcam_thread");
   front_thread(&s->front);
   t_rear.join();
   cameras_close(s);
-  
+
   for (auto &t : threads) t.join();
 }

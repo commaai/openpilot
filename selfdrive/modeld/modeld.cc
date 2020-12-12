@@ -91,7 +91,7 @@ void* live_thread(void *arg) {
 
 int main(int argc, char **argv) {
   int err;
-  set_realtime_priority(51);
+  set_realtime_priority(54);
 
 #ifdef QCOM
   set_core_affinity(2);

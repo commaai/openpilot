@@ -21,9 +21,14 @@ else:
 
 
 class Priority:
-  MIN_REALTIME = 52 # highest android process priority is 51
-  CTRL_LOW = MIN_REALTIME
-  CTRL_HIGH = MIN_REALTIME + 1
+  # CORE 2
+  # - modeld = 55
+  # - camerad = 54
+  CTRL_LOW = 51 # plannerd & radard
+
+  # CORE 3
+  # - boardd = 55
+  CTRL_HIGH = 53
 
 
 def set_realtime_priority(level):
