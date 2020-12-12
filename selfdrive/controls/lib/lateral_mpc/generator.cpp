@@ -21,9 +21,9 @@ int main( )
   DifferentialState psi; // vehicle heading
   DifferentialState dpsi;
 
-  OnlineData curvature_factor;
   OnlineData v_ref; // m/s
   OnlineData d_poly_r0, d_poly_r1, d_poly_r2, d_poly_r3;
+  OnlineData dpsi_poly_r0, dpsi_poly_r1, dpsi_poly_r2, dpsi_poly_r3;
 
   Control ddpsi;
 
@@ -34,6 +34,7 @@ int main( )
   f << dot(dpsi) == ddpsi;
 
   auto poly_d = d_poly_r0*(xx*xx*xx) + d_poly_r1*(xx*xx) + d_poly_r2*xx + d_poly_r3;
+  auto poly_dpsi = dpsi_poly_r0*(xx*xx*xx) + dpsi_poly_r1*(xx*xx) + dpsi_poly_r2*xx + dpsi_poly_r3;
 
   // Running cost
   Function h;
@@ -41,12 +42,16 @@ int main( )
   // Distance errors
   h << (poly_d - yy);
 
+  // Yaw rate trajectory error
+  h << (poly_dpsi - ddpsi);
+  
   // Angular rate error
   h << ddpsi;
 
-  BMatrix Q(2,2); Q.setAll(true);
+  BMatrix Q(3,3); Q.setAll(true);
   // Q(0,0) = 1.0;
   // Q(1,1) = 1.0;
+  // Q(2,2) = 1.0;
 
   // Terminal cost
   Function hN;
@@ -81,7 +86,7 @@ int main( )
   ocp.subjectTo( deg2rad(-90) <= psi <= deg2rad(90));
   // more than absolute max steer angle
   ocp.subjectTo( deg2rad(-50) <= ddpsi <= deg2rad(50));
-  ocp.setNOD(6);
+  ocp.setNOD(9);
 
   OCPexport mpc(ocp);
   mpc.set( HESSIAN_APPROXIMATION, GAUSS_NEWTON );

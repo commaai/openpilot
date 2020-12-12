@@ -21,11 +21,10 @@ typedef struct {
     double cost;
 } log_t;
 
-void init(double pathCost, double steerRateCost);
-void init_weights(double pathCost, double steerRateCost);
+void init(double pathCost, double yawRateCost, double steerRateCost);
+void init_weights(double pathCost, double yawRateCost, double steerRateCost);
 int run_mpc(state_t * x0, log_t * solution,
-             double d_poly[4],
-             double curvature_factor, double v_ref );
+             double d_poly[4], double dpsi_poly[4], double v_ref );
 """)
 
 libmpc = ffi.dlopen(libmpc_fn)

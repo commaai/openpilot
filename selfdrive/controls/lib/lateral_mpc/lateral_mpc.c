@@ -30,7 +30,7 @@ typedef struct {
   double cost;
 } log_t;
 
-void init_weights(double pathCost, double steerRateCost){
+void init_weights(double pathCost, double yawRateCost, double steerRateCost){
   int    i;
   const int STEP_MULTIPLIER = 3;
 
@@ -41,12 +41,13 @@ void init_weights(double pathCost, double steerRateCost){
     }
     // Setup diagonal entries
     acadoVariables.W[NY*NY*i + (NY+1)*0] = pathCost * f;
-    acadoVariables.W[NY*NY*i + (NY+1)*1] = steerRateCost * f;
+    acadoVariables.W[NY*NY*i + (NY+1)*1] = yawRateCost * f;
+    acadoVariables.W[NY*NY*i + (NY+1)*2] = steerRateCost * f;
   }
   acadoVariables.WN[(NYN+1)*0] = pathCost * STEP_MULTIPLIER;
 }
 
-void init(double pathCost, double steerRateCost){
+void init(double pathCost, double yawRateCost, double steerRateCost){
   acado_initializeSolver();
   int    i;
 
@@ -61,23 +62,26 @@ void init(double pathCost, double steerRateCost){
   /* MPC: initialize the current state feedback. */
   for (i = 0; i < NX; ++i) acadoVariables.x0[ i ] = 0.0;
 
-  init_weights(pathCost, steerRateCost);
+  init_weights(pathCost, yawRateCost, steerRateCost);
 }
 
 int run_mpc(state_t * x0, log_t * solution, double d_poly[4],
-             double curvature_factor, double v_ref){
+             double dpsi_poly[4], double v_ref){
 
   int    i;
 
   for (i = 0; i <= NOD * N; i+= NOD){
-    acadoVariables.od[i] = curvature_factor;
-    acadoVariables.od[i+1] = v_ref;
+    acadoVariables.od[i+0] = v_ref;
 
+    acadoVariables.od[i+1] = d_poly[0];
+    acadoVariables.od[i+2] = d_poly[1];
+    acadoVariables.od[i+3] = d_poly[2];
+    acadoVariables.od[i+4] = d_poly[3];
 
-    acadoVariables.od[i+2] = d_poly[0];
-    acadoVariables.od[i+3] = d_poly[1];
-    acadoVariables.od[i+4] = d_poly[2];
-    acadoVariables.od[i+5] = d_poly[3];
+    acadoVariables.od[i+5] = dpsi_poly[0];
+    acadoVariables.od[i+6] = dpsi_poly[1];
+    acadoVariables.od[i+7] = dpsi_poly[2];
+    acadoVariables.od[i+8] = dpsi_poly[3];
 
   }
 
