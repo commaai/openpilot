@@ -2111,7 +2111,7 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
   // setup self recover
   const float lens_true_pos = s->rear.lens_true_pos;
   std::atomic<int>& self_recover = s->rear.self_recover;
-  if (is_blur(&s->lapres[0]) &&
+  if (is_blur(&s->lapres[0], std::size(s->lapres)) &&
       (lens_true_pos < (s->rear.device == DEVICE_LP3 ? LP3_AF_DAC_DOWN : OP3T_AF_DAC_DOWN) + 1 ||
        lens_true_pos > (s->rear.device == DEVICE_LP3 ? LP3_AF_DAC_UP : OP3T_AF_DAC_UP) - 1) &&
       self_recover < 2) {
