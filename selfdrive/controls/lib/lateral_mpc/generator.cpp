@@ -43,7 +43,7 @@ int main( )
   h << (poly_d - yy);
 
   // Yaw rate trajectory error
-  h << (poly_dpsi - ddpsi);
+  h << (poly_dpsi - dpsi);
   
   // Angular rate error
   h << ddpsi;

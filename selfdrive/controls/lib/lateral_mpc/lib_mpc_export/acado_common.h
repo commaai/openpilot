@@ -202,6 +202,9 @@ real_t R1[ 20 ];
 /** Matrix of size: 20 x 3 (row major format) */
 real_t R2[ 60 ];
 
+/** Column vector of size: 80 */
+real_t S1[ 80 ];
+
 /** Matrix of size: 4 x 4 (row major format) */
 real_t QN1[ 16 ];
 

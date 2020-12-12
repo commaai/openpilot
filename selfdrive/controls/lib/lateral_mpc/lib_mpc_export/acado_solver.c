@@ -93,7 +93,7 @@ const real_t* od = in + 5;
 
 /* Compute outputs: */
 out[0] = (((((od[1]*((xd[0]*xd[0])*xd[0]))+(od[2]*(xd[0]*xd[0])))+(od[3]*xd[0]))+od[4])-xd[1]);
-out[1] = (((((od[5]*((xd[0]*xd[0])*xd[0]))+(od[6]*(xd[0]*xd[0])))+(od[7]*xd[0]))+od[8])-u[0]);
+out[1] = (((((od[5]*((xd[0]*xd[0])*xd[0]))+(od[6]*(xd[0]*xd[0])))+(od[7]*xd[0]))+od[8])-xd[3]);
 out[2] = u[0];
 out[3] = (((od[1]*(((xd[0]+xd[0])*xd[0])+(xd[0]*xd[0])))+(od[2]*(xd[0]+xd[0])))+od[3]);
 out[4] = ((real_t)(0.0000000000000000e+00)-(real_t)(1.0000000000000000e+00));
@@ -102,7 +102,7 @@ out[6] = (real_t)(0.0000000000000000e+00);
 out[7] = (((od[5]*(((xd[0]+xd[0])*xd[0])+(xd[0]*xd[0])))+(od[6]*(xd[0]+xd[0])))+od[7]);
 out[8] = (real_t)(0.0000000000000000e+00);
 out[9] = (real_t)(0.0000000000000000e+00);
-out[10] = (real_t)(0.0000000000000000e+00);
+out[10] = ((real_t)(0.0000000000000000e+00)-(real_t)(1.0000000000000000e+00));
 out[11] = (real_t)(0.0000000000000000e+00);
 out[12] = (real_t)(0.0000000000000000e+00);
 out[13] = (real_t)(0.0000000000000000e+00);
@@ -156,10 +156,10 @@ tmpQ1[15] = + tmpQ2[9]*tmpFx[3] + tmpQ2[10]*tmpFx[7] + tmpQ2[11]*tmpFx[11];
 
 void acado_setObjR1R2( real_t* const tmpObjS, real_t* const tmpR1, real_t* const tmpR2 )
 {
-tmpR2[0] = + (real_t)-1.0000000000000000e+00*tmpObjS[3] +tmpObjS[6];
-tmpR2[1] = + (real_t)-1.0000000000000000e+00*tmpObjS[4] +tmpObjS[7];
-tmpR2[2] = + (real_t)-1.0000000000000000e+00*tmpObjS[5] +tmpObjS[8];
-tmpR1[0] = + tmpR2[1]*(real_t)-1.0000000000000000e+00 + tmpR2[2];
+tmpR2[0] = +tmpObjS[6];
+tmpR2[1] = +tmpObjS[7];
+tmpR2[2] = +tmpObjS[8];
+tmpR1[0] = + tmpR2[2];
 }
 
 void acado_setObjQN1QN2( real_t* const tmpFx, real_t* const tmpObjSEndTerm, real_t* const tmpQN1, real_t* const tmpQN2 )
