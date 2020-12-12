@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <cmath>
 // calculate score based on laplacians in one area
-void get_lapmap_one(int16_t *lap, uint16_t *res, int x_pitch, int y_pitch) {
+void get_lapmap_one(const int16_t *lap, uint16_t *res, int x_pitch, int y_pitch) {
   const int size = x_pitch * y_pitch;
   // avg and max of roi
   int16_t max = 0;
