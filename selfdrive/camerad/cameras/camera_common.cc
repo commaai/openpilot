@@ -392,7 +392,7 @@ JpegThumbnail::~JpegThumbnail() {
   free(thumb_);
 }
 
-std::tuple<const uint8_t *, u_long> JpegThumbnail::Generate(uint8_t *bgr_ptr, int width, int height, int stride) {
+std::tuple<const uint8_t *, size_t> JpegThumbnail::Generate(uint8_t *bgr_ptr, int width, int height, int stride) {
   cinfo.image_width = width / 4;
   cinfo.image_height = height / 4;
   if (row_.size() < width / 4 * 3) {
