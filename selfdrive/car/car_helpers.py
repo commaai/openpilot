@@ -1,6 +1,7 @@
 import os
 from common.params import Params
 from common.basedir import BASEDIR
+from common.hardware import ANDROID
 from selfdrive.version import comma_remote, tested_branch
 from selfdrive.car.fingerprints import eliminate_incompatible_cars, all_known_cars
 from selfdrive.car.vin import get_vin, VIN_UNKNOWN
@@ -23,6 +24,8 @@ def get_startup_event(car_recognized, controller_available):
     event = EventName.startupNoCar
   elif car_recognized and not controller_available:
     event = EventName.startupNoControl
+  elif ANDROID and "letv" not in open("/proc/cmdline").read():
+    event = EventName.startupOneplus
   return event
 
 
