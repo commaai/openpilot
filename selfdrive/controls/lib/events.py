@@ -257,7 +257,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
 
   EventName.startupOneplus: {
     ET.PERMANENT: Alert(
-      "WARNING: Original EON is deprecated",
+      "WARNING: Original EON deprecated",
       "Upgrade to comma two",
       AlertStatus.userPrompt, AlertSize.mid,
       Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 15.),
