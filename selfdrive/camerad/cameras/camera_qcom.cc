@@ -1789,18 +1789,17 @@ static void parse_autofocus(CameraState *s, uint8_t *d) {
   s->focus_err = max_focus*1.0;
 }
 
-static float get_accel_z(SubMaster *sm) {
-  static float last_accel_z = 0.0;
+static std::optional<float> get_accel_z(SubMaster *sm) {
   if (sm->update(0) > 0) {
     for (auto event : (*sm)["sensorEvents"].getSensorEvents()) {
       if (event.which() == cereal::SensorEventData::ACCELERATION) {
         if (auto v = event.getAcceleration().getV(); v.size() >= 3) 
-          last_accel_z = -v[2];
+          return -v[2];
         break;
       }
     }
   }
-  return last_accel_z;
+  return std::nullopt;
 }
 
 static void do_autofocus(CameraState *s, SubMaster *sm) {
@@ -1808,8 +1807,6 @@ static void do_autofocus(CameraState *s, SubMaster *sm) {
   const int dac_up = s->device == DEVICE_LP3? LP3_AF_DAC_UP:OP3T_AF_DAC_UP;
   const int dac_down = s->device == DEVICE_LP3? LP3_AF_DAC_DOWN:OP3T_AF_DAC_DOWN;
 
-  s->last_sag_acc_z = get_accel_z(sm);
-  const float sag = (s->last_sag_acc_z/9.8) * 128;
   float lens_true_pos = s->lens_true_pos.load();
   if (!isnan(s->focus_err)) {
     // learn lens_true_pos
@@ -1817,6 +1814,10 @@ static void do_autofocus(CameraState *s, SubMaster *sm) {
     lens_true_pos -= s->focus_err*focus_kp;
   }
 
+  if (auto accel_z = get_accel_z(sm)) {
+    s->last_sag_acc_z = *accel_z;
+  }
+  const float sag = (s->last_sag_acc_z / 9.8) * 128;
   // stay off the walls
   lens_true_pos = std::clamp(lens_true_pos, float(dac_down), float(dac_up));
   int target = std::clamp(lens_true_pos - sag, float(dac_down), float(dac_up));
