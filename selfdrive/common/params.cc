@@ -59,25 +59,24 @@ static bool ensure_dir_exists(std::string path) {
   return util::file_exists(path.c_str()) ? true : mkdir_p(path) == 0;
 }
 
-static bool ensure_symlink(const char *path) {
-  if (util::file_exists(path)) {
+static bool ensure_symlink(std::string param_path, const char *key_parent_path) {
+  if (util::file_exists(key_parent_path)) {
     // Ensure permissions are correct in case we didn't create the symlink
-    return chmod(path, 0777) == 0;
+    return chmod(key_parent_path, 0777) == 0;
   }
 
   // Create temp folder
-  char tmp_path[FILENAME_MAX] = {};
-  snprintf(tmp_path, sizeof(tmp_path), "%s/.tmp_XXXXXX", path);
-  char* tmp_dir = mkdtemp(tmp_path);
+  std::string tmp_path = param_path + "/.tmp_XXXXXX";
+  char* tmp_dir = mkdtemp((char*)tmp_path.c_str());
   if (tmp_dir == NULL) return false;
 
   char link_path[FILENAME_MAX] = {};
-  snprintf(link_path, sizeof(link_path), "%s/.link", tmp_dir);
+  snprintf(link_path, sizeof(link_path), "%s.link", tmp_dir);
   return chmod(tmp_dir, 0777) == 0 &&
          // Symlink it to temp link
          symlink(tmp_dir, link_path) == 0 &&
          // Move symlink to <params>/d
-         rename(link_path, path) == 0;
+         rename(link_path, key_parent_path) == 0;
 }
 
 static std::optional<std::string> read_file_string(std::string key_path) {
@@ -106,7 +105,7 @@ bool Params::put(const char *key, const char *value, size_t size) {
   // Make sure params path exists and see if the symlink exists, otherwise create it
   char key_parent_path[FILENAME_MAX] = {};
   snprintf(key_parent_path, sizeof(key_parent_path), "%s/d", params_path.c_str());
-  if (!ensure_dir_exists(params_path) || !ensure_symlink(key_parent_path)) {
+  if (!ensure_dir_exists(params_path) || !ensure_symlink(params_path, key_parent_path)) {
     return false;
   }
 
