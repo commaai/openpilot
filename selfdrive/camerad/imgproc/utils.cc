@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <cmath>
 // calculate score based on laplacians in one area
-void get_lapmap_one(const int16_t *lap, uint16_t *res, int x_pitch, int y_pitch) {
+uint16_t get_lapmap_one(const int16_t *lap, int x_pitch, int y_pitch) {
   const int size = x_pitch * y_pitch;
   // avg and max of roi
   int16_t max = 0;
@@ -23,7 +23,7 @@ void get_lapmap_one(const int16_t *lap, uint16_t *res, int x_pitch, int y_pitch)
   }
 
   const float fvar = (float)var / size;
-  *res = std::min(5 * fvar + max, (float)65535);
+  return std::min(5 * fvar + max, (float)65535);
 }
 
 bool is_blur(const uint16_t *lapmap, const size_t size) {
