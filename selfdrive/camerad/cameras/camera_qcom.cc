@@ -2045,9 +2045,7 @@ static void* ops_thread(void* arg) {
   return NULL;
 }
 
-static void update_lapmap(MultiCameraState *s, const CameraBuf *b) {
-  const CameraBuf *b = &c->buf;
-  const uint8_t *rgb_addr = (uint8_t *)b->cur_rgb_buf->addr;
+static void update_lapmap(MultiCameraState *s, const CameraBuf *b, const int cnt) {
   const size_t width = b->rgb_width / NUM_SEGMENTS_X;
   const size_t height = b->rgb_height / NUM_SEGMENTS_Y;
   static std::unique_ptr<uint8_t[]> rgb_roi_buf = std::make_unique<uint8_t[]>(width * height * 3);
@@ -2058,7 +2056,7 @@ static void update_lapmap(MultiCameraState *s, const CameraBuf *b) {
   const int x_offset = ROI_X_MIN + roi_id % (ROI_X_MAX - ROI_X_MIN + 1);
   const int y_offset = ROI_Y_MIN + roi_id / (ROI_X_MAX - ROI_X_MIN + 1);
 
-  const uint8_t *rgb_addr_offset = rgb_addr + y_offset * height * FULL_STRIDE_X * 3 + x_offset * width * 3;
+  const uint8_t *rgb_addr_offset = (uint8_t *)b->cur_rgb_buf->addr + y_offset * height * FULL_STRIDE_X * 3 + x_offset * width * 3;
   for (int i = 0; i < height; ++i) {
     memcpy(rgb_roi_buf.get() + i * width * 3, rgb_addr_offset + i * FULL_STRIDE_X * 3, width * 3);
   }
@@ -2086,6 +2084,7 @@ static void setup_self_recover(CameraState *c, uint16_t *lapres) {
   const int dac_up = c->device == DEVICE_LP3 ? LP3_AF_DAC_UP : OP3T_AF_DAC_UP;
   const int dac_m = c->device == DEVICE_LP3 ? LP3_AF_DAC_M : OP3T_AF_DAC_M;
   const int dac_3sig = c->device == DEVICE_LP3 ? LP3_AF_DAC_3SIG : OP3T_AF_DAC_3SIG;
+
   const float lens_true_pos = c->lens_true_pos.load();
   int self_recover = c->self_recover.load();
   if (self_recover < 2 && (lens_true_pos < (dac_down + 1) || lens_true_pos > (dac_up - 1)) && is_blur(lapres)) {
@@ -2117,7 +2116,7 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
       (ts - s->rear.last_sag_ts) > 10000000 && s->sm_rear->update(0) > 0 && s->sm_rear->updated("sensorEvents")) {
     for (auto sensor_event : (*(s->sm_rear))["sensorEvents"].getSensorEvents()) {
       if (sensor_event.which() == cereal::SensorEventData::ACCELERATION) {
-        if (auto v = sensor_event.getAcceleration().getV(); v.size >= 3) {
+        if (auto v = sensor_event.getAcceleration().getV(); v.size() >= 3) {
           s->rear.last_sag_ts = ts;
           s->rear.last_sag_acc_z = -v[2];
         }
@@ -2127,24 +2126,24 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
   }
 
   const CameraBuf *b = &c->buf;
-  update_lapmap(s, b);
+  update_lapmap(s, b, cnt);
   setup_self_recover(c, &s->lapres[0]);
 
   MessageBuilder msg;
   auto framed = msg.initEvent().initFrame();
   fill_frame_data(framed, b->cur_frame_data, cnt);
   if (env_send_rear) {
-    fill_frame_image(framed, b->cur_rgb_buf->add, b->rgb_width, b->rgb_height, b->rgb_stride);
+    fill_frame_image(framed, (uint8_t *)b->cur_rgb_buf->addr, b->rgb_width, b->rgb_height, b->rgb_stride);
   }
   framed.setFocusVal(s->rear.focus);
   framed.setFocusConf(s->rear.confidence);
+  framed.setRecoverState(s->rear.self_recover);
   framed.setSharpnessScore(s->lapres);
-  framed.setRecoverState(self_recover);
   framed.setTransform(b->yuv_transform.v);
   s->pm->send("frame", msg);
 
   if (cnt % 100 == 3) {
-    create_thumbnail(s, c, b->cur_rgb_buf->add);
+    create_thumbnail(s, c, (uint8_t *)b->cur_rgb_buf->addr);
   }
 
   if (cnt % 3 == 0) {
