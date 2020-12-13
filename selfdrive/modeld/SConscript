@@ -8,7 +8,7 @@ TEST_THNEED = False
 common_src = [
   "models/commonmodel.cc",
   "runners/snpemodel.cc",
-  "transforms/loadyuv.c",
+  "transforms/loadyuv.cc",
   "transforms/transform.cc"
 ]
 
