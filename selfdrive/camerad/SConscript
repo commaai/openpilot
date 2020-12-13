@@ -34,7 +34,7 @@ env.SharedLibrary('snapshot/visionipc',
 env.Program('camerad', [
     'main.cc',
     'cameras/camera_common.cc',
-    'transforms/rgb_to_yuv.c',
+    'transforms/rgb_to_yuv.cc',
     'imgproc/utils.cc',
     cameras,
   ], LIBS=libs)
