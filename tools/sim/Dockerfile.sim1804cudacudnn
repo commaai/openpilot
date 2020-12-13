@@ -1,0 +1,150 @@
+FROM nvidia/cuda:10.2-cudnn8-runtime-ubuntu18.04 as opbase1804cudacudnn
+ENV PYTHONUNBUFFERED 1
+
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    autoconf \
+    build-essential \
+    bzip2 \
+    ca-certificates \
+    capnproto \
+    libcapnp-dev \
+    clang \
+    cmake \
+    cppcheck \
+    curl \
+    ffmpeg \
+    git \
+    iputils-ping \
+    libarchive-dev \
+    libbz2-dev \
+    libcurl4-openssl-dev \
+    libeigen3-dev \
+    libffi-dev \
+    libglew-dev \
+    libgles2-mesa-dev \
+    libglib2.0-0 \
+    liblzma-dev \
+    libomp-dev \
+    libopencv-dev \
+    libssl-dev \
+    libsqlite3-dev \
+    libsystemd-dev \
+    libusb-1.0-0-dev \
+    libzmq3-dev \
+    locales \
+    ocl-icd-libopencl1 \
+    ocl-icd-opencl-dev \
+    opencl-headers \
+    python-dev \
+    qt5-default \
+    qtmultimedia5-dev \
+    sudo \
+    valgrind \
+    wget \
+  && rm -rf /var/lib/apt/lists/*
+
+RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && locale-gen
+ENV LANG en_US.UTF-8
+ENV LANGUAGE en_US:en
+ENV LC_ALL en_US.UTF-8
+
+RUN curl -L https://github.com/pyenv/pyenv-installer/raw/master/bin/pyenv-installer | bash
+ENV PATH="/root/.pyenv/bin:/root/.pyenv/shims:${PATH}"
+
+COPY Pipfile Pipfile.lock /tmp/
+RUN pyenv install 3.8.2 && \
+    pyenv global 3.8.2 && \
+    pyenv rehash && \
+    pip install --no-cache-dir --upgrade pip==20.1.1 && \
+    pip install --no-cache-dir pipenv==2020.8.13 && \
+    cd /tmp && \
+    pipenv install --system --deploy --dev --clear && \
+    pip uninstall -y pipenv
+
+FROM opbase1804cudacudnn as simbase
+
+RUN apt-get update && apt-get install -y \
+    apt-utils \
+    unzip \
+    tar \
+    curl \
+    xz-utils \
+    # beignet-opencl-icd \
+    # libglvnd-dev \
+    # alien \
+    dbus \
+    gcc-arm-none-eabi \
+    tmux \
+    vim \
+  && rm -rf /var/lib/apt/lists/*
+
+
+# FROM basesys as inteldeps
+
+# # Intel OpenCL driver
+# ARG INTEL_DRIVER=opencl_runtime_16.1.1_x64_ubuntu_6.4.0.25.tgz
+# ARG INTEL_DRIVER_URL=http://registrationcenter-download.intel.com/akdlm/irc_nas/9019
+# RUN mkdir -p /tmp/opencl-driver-intel
+# WORKDIR /tmp/opencl-driver-intel
+# RUN echo INTEL_DRIVER is $INTEL_DRIVER; \
+#     curl -O $INTEL_DRIVER_URL/$INTEL_DRIVER; \
+#     tar -xzf $INTEL_DRIVER; \
+#     for i in $(basename $INTEL_DRIVER .tgz)/rpm/*.rpm; do alien --to-deb $i; done; \
+#     dpkg -i *.deb; \
+#     rm -rf $INTEL_DRIVER $(basename $INTEL_DRIVER .tgz) *.deb; \
+#     mkdir -p /etc/OpenCL/vendors; \
+#     echo /opt/intel/*/lib64/libintelocl.so > /etc/OpenCL/vendors/intel.icd; \
+#     rm -rf /tmp/opencl-driver-intel;
+
+ENV NVIDIA_VISIBLE_DEVICES all
+ENV NVIDIA_DRIVER_CAPABILITIES compute,utility,display
+
+RUN dbus-uuidgen > /etc/machine-id
+
+#CUDA 10.2 and CUDNN8 Stuff
+# FROM inteldeps as cudainstall
+COPY ./tools/sim/assets /tmp/assets
+
+# RUN apt update && apt install -y wget gnupg
+# RUN cd /tmp/assets && \
+#     wget -q https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/cuda-ubuntu1804.pin && \
+#     mv cuda-ubuntu1804.pin /etc/apt/preferences.d/cuda-repository-pin-600 && \
+#     dpkg -i cuda-repo-ubuntu1804-10-2-local-10.2.89-440.33.01_1.0-1_amd64.deb && \
+#     apt-key add /var/cuda-repo-10-2-local-10.2.89-440.33.01/7fa2af80.pub && \
+#     apt-get update && \
+#     apt-get -y --no-install-recommends install cuda
+
+# RUN dpkg -i /tmp/assets/libcudnn8* && \
+#     rm -rf /var/lib/apt/lists/*
+
+# FROM cudainstall as opsetup
+
+RUN pip install onnxruntime-gpu
+
+# CARLA python api
+#download and extract carla python package here
+RUN easy_install /tmp/assets/carla-0.9.7-py3.5-linux-x86_64.egg || true
+
+# get same tmux config used on NEOS for debugging
+RUN cd $HOME && \
+    wget https://raw.githubusercontent.com/commaai/eon-neos-builder/master/devices/eon/home/.tmux.conf
+
+ENV PYTHONPATH $HOME/openpilot:${PYTHONPATH}
+RUN mkdir -p $HOME/openpilot
+
+COPY SConstruct $HOME/openpilot/
+
+COPY ./phonelibs $HOME/openpilot/phonelibs
+COPY ./site_scons $HOME/openpilot/site_scons
+COPY ./rednose $HOME/openpilot/rednose
+COPY ./common $HOME/openpilot/common
+COPY ./models $HOME/openpilot/models
+COPY ./opendbc $HOME/openpilot/opendbc
+COPY ./cereal $HOME/openpilot/cereal
+COPY ./panda $HOME/openpilot/panda
+COPY ./selfdrive $HOME/openpilot/selfdrive
+COPY ./tools $HOME/openpilot/tools
+
+WORKDIR $HOME/openpilot
+RUN scons -j$(nproc)
