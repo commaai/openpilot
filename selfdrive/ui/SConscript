@@ -74,20 +74,21 @@ else:
 
   qt_env.Library("qt_widgets",
                  ["qt/qt_window.cc", "qt/qt_sound.cc", "qt/widgets/keyboard.cc", "qt/widgets/input_field.cc",
-                  "qt/offroad/wifi.cc", "qt/offroad/wifiManager.cc", "qt/widgets/toggle.cc", "qt/widgets/offroad_alerts.cc"],
+                  "qt/offroad/wifi.cc", "qt/offroad/wifiManager.cc", "qt/widgets/toggle.cc"],
                  LIBS=qt_libs)
   qt_libs.append("qt_widgets")
 
-  qt_src = ["qt/ui.cc", "qt/window.cc", "qt/home.cc", "qt/offroad/settings.cc", "qt/offroad/onboarding.cc"] + src
+  qt_src = ["qt/ui.cc", "qt/window.cc", "qt/home.cc", "qt/offroad/settings.cc", "qt/offroad/onboarding.cc", "qt/widgets/offroad_alerts.cc"] + src
   qt_env.Program("_ui", qt_src, LIBS=qt_libs + libs)
 
   # spinner and text window
   qt_env.Program("qt/text", ["qt/text.cc"], LIBS=qt_libs + libs)
   qt_env.Program("qt/spinner", ["qt/spinner.cc"], LIBS=qt_libs + libs)
 
-  # setup and installer
+  # build setup, factory resetter, and installer
   if "BUILD_SETUP" in os.environ:
-    qt_env.Program("qt/setup/setup", ["qt/setup/setup.cc"], LIBS=qt_libs + ['curl'])
+    qt_env.Program("qt/setup/reset", ["qt/setup/reset.cc"], LIBS=qt_libs)
+    qt_env.Program("qt/setup/setup", ["qt/setup/setup.cc"], LIBS=qt_libs + ['curl', 'common'])
 
     installers = [
       ("openpilot", "master"),
