@@ -5,7 +5,7 @@ import time
 from raven import Client
 from raven.transport.http import HTTPTransport
 
-from selfdrive.version import version, dirty
+from selfdrive.version import version, origin, branch, dirty
 from selfdrive.swaglog import cloudlog
 
 MAX_SIZE = 100000 * 10  # Normal size is 40-100k, allow up to 1M
@@ -73,8 +73,14 @@ def report_tombstone(fn, client):
 
 def main():
   initial_tombstones = set(get_tombstones())
+
+  tags = {
+    'dirty': dirty,
+    'origin': origin,
+    'branch': branch
+  }
   client = Client('https://d3b175702f62402c91ade04d1c547e68:b20d68c813c74f63a7cdf9c4039d8f56@sentry.io/157615',
-                  install_sys_hook=False, transport=HTTPTransport, release=version, tags={'dirty': dirty}, string_max_length=10000)
+                  install_sys_hook=False, transport=HTTPTransport, release=version, tags=tags, string_max_length=10000)
 
   client.user_context({'id': os.environ.get('DONGLE_ID')})
   while True:
