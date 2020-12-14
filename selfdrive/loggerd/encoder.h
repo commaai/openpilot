@@ -53,8 +53,6 @@ typedef struct EncoderState {
   int num_out_bufs;
   OMX_BUFFERHEADERTYPE** out_buf_headers;
 
-  uint64_t last_t;
-
   Queue free_in;
   Queue done_out;
 

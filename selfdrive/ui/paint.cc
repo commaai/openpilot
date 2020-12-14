@@ -153,7 +153,7 @@ static void update_track_data(UIState *s, const cereal::ModelDataV2::XYZTData::R
   const float off = 0.5;
   int max_idx = 0;
   float lead_d;
-  if (s->sm->updated("radarState")) {
+  if(s->sm->updated("radarState")) {
     lead_d = scene->lead_data[0].getDRel()*2.;
   } else {
     lead_d = MAX_DRAW_DISTANCE;
@@ -233,7 +233,7 @@ static void ui_draw_vision_lane_lines(UIState *s) {
   // paint lanelines
   line_vertices_data *pvd_ll = &s->lane_line_vertices[0];
   for (int ll_idx = 0; ll_idx < 4; ll_idx++) {
-    if (s->sm->updated("modelV2")) {
+    if(s->sm->updated("modelV2")) {
       update_line_data(s, scene->model.getLaneLines()[ll_idx], 0.025*scene->model.getLaneLineProbs()[ll_idx], pvd_ll + ll_idx, scene->max_distance);
     }
     NVGcolor color = nvgRGBAf(1.0, 1.0, 1.0, scene->lane_line_probs[ll_idx]);
@@ -243,7 +243,7 @@ static void ui_draw_vision_lane_lines(UIState *s) {
   // paint road edges
   line_vertices_data *pvd_re = &s->road_edge_vertices[0];
   for (int re_idx = 0; re_idx < 2; re_idx++) {
-    if (s->sm->updated("modelV2")) {
+    if(s->sm->updated("modelV2")) {
       update_line_data(s, scene->model.getRoadEdges()[re_idx], 0.025, pvd_re + re_idx, scene->max_distance);
     }
     NVGcolor color = nvgRGBAf(1.0, 0.0, 0.0, std::clamp<float>(1.0-scene->road_edge_stds[re_idx], 0.0, 1.0));
@@ -251,7 +251,7 @@ static void ui_draw_vision_lane_lines(UIState *s) {
   }
 
   // paint path
-  if (s->sm->updated("modelV2")) {
+  if(s->sm->updated("modelV2")) {
     update_track_data(s, scene->model.getPosition(), &s->track_vertices);
   }
   ui_draw_track(s, &s->track_vertices);
@@ -535,9 +535,11 @@ static void ui_draw_background(UIState *s) {
 
 void ui_draw(UIState *s) {
   s->scene.viz_rect = Rect{bdr_s, bdr_s, s->fb_w - 2 * bdr_s, s->fb_h - 2 * bdr_s};
+  s->scene.ui_viz_ro = 0;
   if (!s->scene.uilayout_sidebarcollapsed) {
-    s->scene.viz_rect.x += sbr_w;
-    s->scene.viz_rect.w -= sbr_w;
+    s->scene.viz_rect.x = sbr_w + bdr_s;
+    s->scene.viz_rect.w = s->fb_w - s->scene.viz_rect.x - bdr_s;
+    s->scene.ui_viz_ro = -(sbr_w - 6 * bdr_s);
   }
 
   const bool draw_vision = s->started && s->active_app == cereal::UiLayoutState::App::NONE &&
