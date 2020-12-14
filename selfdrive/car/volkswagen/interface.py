@@ -131,14 +131,14 @@ class CarInterface(CarInterfaceBase):
     self.cp_cam.update_strings(can_strings)
 
     ret = self.CS.update(self.cp, self.cp_cam, self.cp_acc, self.CP.transmissionType)
-    ret.canValid = self.cp.can_valid  # FIXME: Restore cp_cam valid check after proper LKAS camera detect
+    ret.canValid = True # self.cp.can_valid  # FIXME: Restore cp_cam valid check after proper LKAS camera detect
     ret.steeringRateLimited = self.CC.steer_rate_limited if self.CC is not None else False
 
     # TODO: add a field for this to carState, car interface code shouldn't write params
     # Update the device metric configuration to match the car at first startup,
     # or if there's been a change.
     if self.CS.displayMetricUnits != self.displayMetricUnitsPrev:
-      put_nonblocking("IsMetric", "1" if self.CS.displayMetricUnits else "0")
+      put_nonblocking("IsMetric", "0" if self.CS.displayMetricUnits else "0")
 
     # Check for and process state-change events (button press or release) from
     # the turn stalk switch or ACC steering wheel/control stalk buttons.
