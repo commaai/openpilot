@@ -157,9 +157,8 @@ bool Params::read_all(std::map<std::string, std::string> &params) {
   if (d == nullptr) return false;
 
   while (struct dirent *de = readdir(d)) {
-    if (isalnum(de->d_name[0])) {
+    if (isalnum(de->d_name[0]))
       params[de->d_name] = read_file_string(key_file(de->d_name)).value_or("");
-    }
   }
   closedir(d);
   return true;

@@ -72,9 +72,9 @@ void safety_setter_thread() {
     };
 
     if (std::string vin = Params().get("CarVin");
-        vin.size() > 0) {
+        vin.length() > 0) {
       // sanity check VIN format
-      assert(vin.size() == 17);
+      assert(vin.length() == 17);
       LOGW("got CarVin %s", vin.c_str());
       break;
     }

@@ -76,7 +76,7 @@ ParamsToggle::ParamsToggle(QString param, QString title, QString description, QS
   hlayout->addSpacing(20);
 
   setLayout(hlayout);
-  if(Params().getBool(param.toStdString().c_str())){
+  if(Params().getBool(param.toStdString())){
     toggle_switch->togglePosition();
   }
 
@@ -84,7 +84,7 @@ ParamsToggle::ParamsToggle(QString param, QString title, QString description, QS
 }
 
 void ParamsToggle::checkboxClicked(int state) {
-  Params().put(param.toStdString().c_str(), (bool)state);
+  Params().put(param.toStdString(), (bool)state);
 }
 
 QWidget * toggles_panel() {
