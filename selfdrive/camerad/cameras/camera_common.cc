@@ -1,4 +1,5 @@
 #include <thread>
+#include <chrono>
 #include <stdio.h>
 #include <signal.h>
 #include <assert.h>
@@ -125,14 +126,8 @@ CameraBuf::~CameraBuf() {
 bool CameraBuf::acquire() {
   std::unique_lock<std::mutex> lk(frame_queue_mutex);
 
-  // TODO: also check for should_exit
-  // wait will first check if the list is not empty
-  frame_queue_cv.wait(lk, [this]{ return !frame_queue.empty(); });
-
-  // This can happen if should exit was set
-  if (frame_queue.empty()){
-    return false;
-  }
+  bool got_frame = frame_queue_cv.wait_for(lk, std::chrono::milliseconds(100), [this]{ return !frame_queue.empty(); });
+  if (!got_frame) return false;
 
   const int buf_idx = frame_queue.front();
   frame_queue.pop();
