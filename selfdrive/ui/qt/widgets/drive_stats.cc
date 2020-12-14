@@ -10,6 +10,7 @@
 #include <QNetworkRequest>
 
 #include "drive_stats.hpp"
+#include "common/params.h"
 
 std::string exec(const char* cmd) {
     char buffer[128];
@@ -36,6 +37,7 @@ QWidget *widget(QLayout *l){
 void DriveStats::replyFinished(QNetworkReply *l){
   QString answer = l->readAll();
   answer.chop(1);
+  // qDebug()<<answer;
   QJsonDocument doc = QJsonDocument::fromJson(answer.toUtf8());
   if (doc.isNull()) {
     qDebug() << "Parse failed";
@@ -69,21 +71,26 @@ void DriveStats::replyFinished(QNetworkReply *l){
   all_hours_layout->addWidget(new QLabel("HOURS"));
   gl->addWidget(widget(all_hours_layout), 0, 2);
 
+  auto lineA = new QFrame;
+  lineA->setFrameShape(QFrame::HLine);
+  lineA->setFrameShadow(QFrame::Sunken);
+  gl->addWidget(lineA, 1, 0, 1, 3);
+
 
   QVBoxLayout *week_drives_layout = new QVBoxLayout;
   week_drives_layout->addWidget(new QLabel(QString("%1").arg(week_routes)));
   week_drives_layout->addWidget(new QLabel("DRIVES"));
-  gl->addWidget(widget(week_drives_layout), 1, 0);
+  gl->addWidget(widget(week_drives_layout), 2, 0);
 
   QVBoxLayout *week_distance_layout = new QVBoxLayout;
   week_distance_layout->addWidget(new QLabel(QString("%1").arg(week_distance)));
   week_distance_layout->addWidget(new QLabel("MILES"));
-  gl->addWidget(widget(week_distance_layout), 1, 1);
+  gl->addWidget(widget(week_distance_layout), 2, 1);
 
   QVBoxLayout *week_hours_layout = new QVBoxLayout;
   week_hours_layout->addWidget(new QLabel(QString("%1").arg(week_minutes/60)));
   week_hours_layout->addWidget(new QLabel("HOURS"));
-  gl->addWidget(widget(week_hours_layout), 1, 2);
+  gl->addWidget(widget(week_hours_layout), 2, 2);
 
 
   f->setLayout(gl);
@@ -109,16 +116,15 @@ DriveStats::DriveStats(QWidget *parent) : QWidget(parent){
   
 
   std::string result = exec("python -c \"from common.api import Api; from common.params import Params; print(Api(Params().get('DongleId', encoding='utf8')).get_token());\" 2>/dev/null");
-  result = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJpZGVudGl0eSI6Ijk4YzA5NGI4ZTg1YmUxODkiLCJuYmYiOjE2MDc5NjkwMTksImlhdCI6MTYwNzk2OTAxOSwiZXhwIjoxNjA3OTcyNjE5fQ.kbF6rC6HXLWCHQX_nsceJXO-GTlqBPXCX64VZt5uQ3HZ-09UV9T7sZSwpRnPJLWuDdD2B22uxxYfoTx3DxwrteSjkpz9TMu0CAJ-v3oMFhwK8DBZHj2vVWlVIU9roazEg1LD16iKQxxkxdI_1wxd0jTVBYZwctQi5Bih41vwfGdg8p9tK5ZMQzxBLHRw9pBFUmJGXM_fWcCUKU77Fy8GakTYI6_wKPZd1lO65-s19e68gVGjLc3yNfw0C9TcsE67Jct75NdLWPjG5A_k19TxVcLHYcqaMlUbvT5btuJu35uzqZAOr_DnaUG2LPPcisY-_bFD-axHCdV7ZR6OGUlL6Q";
 
   QString auth_token = QString::fromStdString(result);
-
   // qDebug()<<auth_token;
   QNetworkAccessManager *manager = new QNetworkAccessManager(this);
   connect(manager, &QNetworkAccessManager::finished, this, &DriveStats::replyFinished);
 
   QNetworkRequest request;
-  request.setUrl(QUrl("https://api.commadotai.com/v1.1/devices/98c094b8e85be189/stats"));
+  QString dongleId = QString::fromStdString(Params().get("DongleId"));
+  request.setUrl(QUrl("https://api.commadotai.com/v1.1/devices/" + dongleId + "/stats"));
   request.setRawHeader("Authorization", ("JWT "+auth_token).toUtf8());
 
   manager->get(request);
