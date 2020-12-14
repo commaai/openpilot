@@ -10,12 +10,14 @@
 #include "utilpp.h"
 >>>>>>> rebase master
 
+namespace {
+
 #if defined(QCOM) || defined(QCOM2)
 const std::string default_params_path = "/data/params";
 const std::string persistent_params_path = "/persist/comma/params";
 #else
-static std::string getenv_default(const char* env_var, const char * suffix, const char* default_val) {
-  const char* env_val = getenv(env_var); 
+static std::string getenv_default(const char *env_var, const char *suffix, const char *default_val) {
+  const char *env_val = getenv(env_var);
   return env_val != nullptr ? std::string(env_val) + suffix : default_val;
 }
 const std::string default_params_path = getenv_default("HOME", "/.comma/params", "/data/params");
@@ -27,19 +29,19 @@ void params_sig_handler(int signal) {
   params_do_exit = 1;
 }
 
-static int fsync_dir(const char *path){
+int fsync_dir(const char *path) {
   if (unique_fd fd = open(path, O_RDONLY, 0755); fd != -1)
     return fsync(fd);
   return -1;
 }
 
-static int mkdir_p(std::string path) {
-  char * _path = (char *)path.c_str();
+int mkdir_p(std::string path) {
+  char *_path = (char *)path.c_str();
 
   mode_t prev_mask = umask(0);
   for (char *p = _path + 1; *p; p++) {
     if (*p == '/') {
-      *p = '\0'; // Temporarily truncate
+      *p = '\0';  // Temporarily truncate
       if (mkdir(_path, 0777) != 0) {
         if (errno != EEXIST) return -1;
       }
@@ -54,12 +56,12 @@ static int mkdir_p(std::string path) {
   return 0;
 }
 
-static bool ensure_dir_exists(std::string path) {
+bool ensure_dir_exists(std::string path) {
   // TODO: replace by std::filesystem::create_directories
   return util::file_exists(path.c_str()) ? true : mkdir_p(path) == 0;
 }
 
-static bool ensure_symlink(std::string param_path, const char *key_parent_path) {
+bool ensure_symlink(std::string param_path, const char *key_parent_path) {
   if (util::file_exists(key_parent_path)) {
     // Ensure permissions are correct in case we didn't create the symlink
     return chmod(key_parent_path, 0777) == 0;
@@ -67,7 +69,7 @@ static bool ensure_symlink(std::string param_path, const char *key_parent_path) 
 
   // Create temp folder
   std::string tmp_path = param_path + "/.tmp_XXXXXX";
-  char* tmp_dir = mkdtemp((char*)tmp_path.c_str());
+  char *tmp_dir = mkdtemp((char *)tmp_path.c_str());
   if (tmp_dir == NULL) return false;
 
   char link_path[FILENAME_MAX] = {};
@@ -79,7 +81,7 @@ static bool ensure_symlink(std::string param_path, const char *key_parent_path) 
          rename(link_path, key_parent_path) == 0;
 }
 
-static std::optional<std::string> read_file_string(std::string key_path) {
+std::optional<std::string> read_file_string(std::string key_path) {
   unique_fd f = open(key_path.c_str(), O_RDONLY);
   if (f == -1) return std::nullopt;
 
@@ -90,6 +92,7 @@ static std::optional<std::string> read_file_string(std::string key_path) {
   }
   return std::nullopt;
 }
+}  // namespace
 
 Params::Params(bool persistent_param) : params_path(persistent_param ? persistent_params_path : default_params_path) {}
 Params::Params(std::string path) : params_path(path) {}
