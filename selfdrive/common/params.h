@@ -31,8 +31,8 @@ public:
     }
     return std::nullopt;
   }
-  inline bool getBool(const char *param_name, bool block = false) {
-    return get<bool>(param_name, block).value_or(false);
+  inline bool getBool(std::string param_name, bool block = false) {
+    return get<bool>(param_name.c_str(), block).value_or(false);
   }
 
   bool put(const char *key, const char *value, size_t value_size);
