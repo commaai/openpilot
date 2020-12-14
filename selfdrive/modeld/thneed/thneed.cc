@@ -2,9 +2,7 @@
 #include <sys/mman.h>
 #include <dlfcn.h>
 #include <map>
-#include <set>
 #include <string>
-#include <bzlib.h>
 #include <string.h>
 #include <errno.h>
 #include "thneed.h"
