@@ -36,7 +36,6 @@ QWidget *widget(QLayout *l){
 void DriveStats::replyFinished(QNetworkReply *l){
   QString answer = l->readAll();
   answer.chop(1);
-  // qDebug().noquote() << answer;
   QJsonDocument doc = QJsonDocument::fromJson(answer.toUtf8());
   if (doc.isNull()) {
     qDebug() << "Parse failed";
@@ -53,49 +52,51 @@ void DriveStats::replyFinished(QNetworkReply *l){
   auto week_minutes = week["minutes"].toDouble();
   auto week_routes = week["routes"].toDouble();
 
-  QVBoxLayout *vlayout = new QVBoxLayout;
-    QHBoxLayout *hlayout_all = new QHBoxLayout;
-        QVBoxLayout *all_drives_layout = new QVBoxLayout;
-        all_drives_layout->addWidget(new QLabel(QString("%1").arg(all_routes)));
-        all_drives_layout->addWidget(new QLabel("DRIVES"));
-    hlayout_all->addWidget(widget(all_drives_layout));
-        QVBoxLayout *all_distance_layout = new QVBoxLayout;
-        all_distance_layout->addWidget(new QLabel(QString("%1").arg(all_distance)));
-        all_distance_layout->addWidget(new QLabel("MILES"));
-    hlayout_all->addWidget(widget(all_distance_layout));
-        QVBoxLayout *all_hours_layout = new QVBoxLayout;
-        all_hours_layout->addWidget(new QLabel(QString("%1").arg(all_minutes/60)));
-        all_hours_layout->addWidget(new QLabel("HOURS"));
-    hlayout_all->addWidget(widget(all_hours_layout));
-    vlayout->addWidget(widget(hlayout_all));
+  QGridLayout *gl = new QGridLayout();
 
-    QHBoxLayout *hlayout_week = new QHBoxLayout;
-        QVBoxLayout *week_drives_layout = new QVBoxLayout;
-        week_drives_layout->addWidget(new QLabel(QString("%1").arg(week_routes)));
-        week_drives_layout->addWidget(new QLabel("DRIVES"));
-    hlayout_week->addWidget(widget(week_drives_layout));
-        QVBoxLayout *week_distance_layout = new QVBoxLayout;
-        week_distance_layout->addWidget(new QLabel(QString("%1").arg(week_distance)));
-        week_distance_layout->addWidget(new QLabel("MILES"));
-    hlayout_week->addWidget(widget(week_distance_layout));
-        QVBoxLayout *week_hours_layout = new QVBoxLayout;
-        week_hours_layout->addWidget(new QLabel(QString("%1").arg(week_minutes/60)));
-        week_hours_layout->addWidget(new QLabel("HOURS"));
-    hlayout_week->addWidget(widget(week_hours_layout));
-    vlayout->addWidget(widget(hlayout_week));
+  QVBoxLayout *all_drives_layout = new QVBoxLayout;
+  all_drives_layout->addWidget(new QLabel(QString("%1").arg(all_routes)));
+  all_drives_layout->addWidget(new QLabel("DRIVES"));
+  gl->addWidget(widget(all_drives_layout), 0, 0);
 
-  f->setLayout(vlayout);
+  QVBoxLayout *all_distance_layout = new QVBoxLayout;
+  all_distance_layout->addWidget(new QLabel(QString("%1").arg(all_distance)));
+  all_distance_layout->addWidget(new QLabel("MILES"));
+  gl->addWidget(widget(all_distance_layout), 0, 1);
+
+  QVBoxLayout *all_hours_layout = new QVBoxLayout;
+  all_hours_layout->addWidget(new QLabel(QString("%1").arg(all_minutes/60)));
+  all_hours_layout->addWidget(new QLabel("HOURS"));
+  gl->addWidget(widget(all_hours_layout), 0, 2);
+
+
+  QVBoxLayout *week_drives_layout = new QVBoxLayout;
+  week_drives_layout->addWidget(new QLabel(QString("%1").arg(week_routes)));
+  week_drives_layout->addWidget(new QLabel("DRIVES"));
+  gl->addWidget(widget(week_drives_layout), 1, 0);
+
+  QVBoxLayout *week_distance_layout = new QVBoxLayout;
+  week_distance_layout->addWidget(new QLabel(QString("%1").arg(week_distance)));
+  week_distance_layout->addWidget(new QLabel("MILES"));
+  gl->addWidget(widget(week_distance_layout), 1, 1);
+
+  QVBoxLayout *week_hours_layout = new QVBoxLayout;
+  week_hours_layout->addWidget(new QLabel(QString("%1").arg(week_minutes/60)));
+  week_hours_layout->addWidget(new QLabel("HOURS"));
+  gl->addWidget(widget(week_hours_layout), 1, 2);
+
+
+  f->setLayout(gl);
   f->setStyleSheet(R"(
-    QFrame{
+    QFrame {
       border-radius: 20px;
       border: 2px solid white;
-    };
-    QVBoxLayout{
-      background-color: #114365;
-    };
+    }
     QLabel{
-      color: white;
-    };
+      border-radius: 20px;
+      border: 0px solid red;
+    }
+    background-color: #114365;
     font-size: 50px;
   )");
   
@@ -108,7 +109,7 @@ DriveStats::DriveStats(QWidget *parent) : QWidget(parent){
   
 
   std::string result = exec("python -c \"from common.api import Api; from common.params import Params; print(Api(Params().get('DongleId', encoding='utf8')).get_token());\" 2>/dev/null");
-  result = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJpZGVudGl0eSI6Ijk4YzA5NGI4ZTg1YmUxODkiLCJuYmYiOjE2MDc5NjExMzgsImlhdCI6MTYwNzk2MTEzOCwiZXhwIjoxNjA3OTY0NzM4fQ.Z_AEBqSpSXYeYiVAHU5IJyN9tE3WsphYn1yP1o8MtCKjLYeLuo-wPdPEMRu8vZsVIkBRu-IbYfWaxp4SCaXMThazuJWPerbxZpGYyC1bYZg4uaEhANEFVwVNDb2YJRku4B5YBmeWoc6-o4JsCTuQn3OdqQkt9dBMonZCa-BVZgy-IqnQ4JAKPUO_TJK0HV-45d0bfhMCK-Oi5gP8gxJefRS3q-2TjyNVjIP4n3EJNLwsgytVqPIr42FTI6Qiq9S7kFMOnqaGEI1ZYaPrYI7hTobHa3dtwcawBeppFhdi79l62qbIzORuH9n8guJaQTOpRkFCyN4uQyNBApuURpzYjg";
+  result = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJpZGVudGl0eSI6Ijk4YzA5NGI4ZTg1YmUxODkiLCJuYmYiOjE2MDc5NjkwMTksImlhdCI6MTYwNzk2OTAxOSwiZXhwIjoxNjA3OTcyNjE5fQ.kbF6rC6HXLWCHQX_nsceJXO-GTlqBPXCX64VZt5uQ3HZ-09UV9T7sZSwpRnPJLWuDdD2B22uxxYfoTx3DxwrteSjkpz9TMu0CAJ-v3oMFhwK8DBZHj2vVWlVIU9roazEg1LD16iKQxxkxdI_1wxd0jTVBYZwctQi5Bih41vwfGdg8p9tK5ZMQzxBLHRw9pBFUmJGXM_fWcCUKU77Fy8GakTYI6_wKPZd1lO65-s19e68gVGjLc3yNfw0C9TcsE67Jct75NdLWPjG5A_k19TxVcLHYcqaMlUbvT5btuJu35uzqZAOr_DnaUG2LPPcisY-_bFD-axHCdV7ZR6OGUlL6Q";
 
   QString auth_token = QString::fromStdString(result);
 
