@@ -22,8 +22,8 @@ public:
     return read_value(key.c_str(), block).value_or("");
   }
   template <class T>
-  std::optional<T> get(const char *param_name, bool block = false) {
-    if (auto data = read_value(param_name, block)) {
+  std::optional<T> get(std::string param_name, bool block = false) {
+    if (auto data = read_value(param_name.c_str(), block)) {
       std::istringstream iss(*data);
       T value{};
       iss >> value;
@@ -32,7 +32,7 @@ public:
     return std::nullopt;
   }
   inline bool getBool(std::string param_name, bool block = false) {
-    return get<bool>(param_name.c_str(), block).value_or(false);
+    return get<bool>(param_name, block).value_or(false);
   }
 
   bool put(const char *key, const char *value, size_t value_size);
