@@ -80,9 +80,8 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
   float db_s = 1.0;
 #endif
 
-  // TODO create aligned RGB buffers
   vipc_server->create_buffers(rgb_type, UI_BUF_COUNT, true, rgb_width, rgb_height);
-  rgb_stride = rgb_width * 3;
+  rgb_stride = vipc_server->get_buffer(rgb_type)->stride;
 
   if (ci->bayer) {
     yuv_transform = transform_scale_buffer(s->transform, db_s);
