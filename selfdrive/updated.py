@@ -315,6 +315,11 @@ def main():
   if params.get("DisableUpdates") == b"1":
     raise RuntimeError("updates are disabled by the DisableUpdates param")
 
+  # TODO: enable this before 0.8.1 release
+  #leon = "letv" in open("/proc/cmdline").read()
+  #if ANDROID and not leon:
+  #  raise RuntimeError("updates are disabled due to device deprecation")
+
   if ANDROID and os.geteuid() != 0:
     raise RuntimeError("updated must be launched as root!")
 

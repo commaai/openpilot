@@ -131,7 +131,9 @@ void visionbuf_sync(const VisionBuf* buf, int dir) {
 }
 
 void visionbuf_free(const VisionBuf* buf) {
-  CL_CHECK(clReleaseMemObject(buf->buf_cl));
+  if (buf->buf_cl) {
+    CL_CHECK(clReleaseMemObject(buf->buf_cl));
+  }
   munmap(buf->addr, buf->mmap_len);
   close(buf->fd);
   struct ion_handle_data handle_data = {
