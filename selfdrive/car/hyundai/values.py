@@ -278,11 +278,6 @@ FW_VERSIONS = {
     (Ecu.eps, 0x7D4, None): [b'\xf1\x00OS  MDPS C 1.00 1.04 56310K4050\x00 4OEDC104', ],
     (Ecu.fwdRadar, 0x7D0, None): [b'\xf1\x00OSev SCC F-CUP      1.00 1.01 99110-K4000         \xf1\xa01.01', ],
   },
-  CAR.IONIQ_EV_2020: {
-    (Ecu.fwdCamera, 0x7C4, None): [b'\xf1\x00AEE MFC  AT EUR RHD 1.00 1.01 95740-G2600 190819', ],
-    (Ecu.eps, 0x7D4, None): [b'\xf1\x00AE  MDPS C 1.00 1.01 56310/G7560 4APEC101', ],
-    (Ecu.fwdRadar, 0x7D0, None): [b'\xf1\x00AEev SCC F-CUP      1.00 1.00 99110-G7200', ],
-  },
   CAR.KIA_NIRO_EV: {
     (Ecu.fwdRadar, 0x7D0, None): [
       b'\xf1\x00DEev SCC F-CUP      1.00 1.03 96400-Q4100         \xf1\xa01.03',
