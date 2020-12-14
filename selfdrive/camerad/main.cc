@@ -319,6 +319,10 @@ void party(cl_device_id device_id, cl_context context) {
   server_thread.join();
 }
 
+#if defined(QCOM) || defined(QCOM2)
+#include "CL/cl_ext_qcom.h"
+#endif
+
 int main(int argc, char *argv[]) {
   set_realtime_priority(51);
 #if defined(QCOM)
@@ -331,7 +335,13 @@ int main(int argc, char *argv[]) {
   signal(SIGTERM, (sighandler_t)set_do_exit);
 
   cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
+
+#if defined(QCOM) || defined(QCOM2)
+  const cl_context_properties props[] = {CL_CONTEXT_PRIORITY_HINT_QCOM, CL_PRIORITY_HINT_HIGH_QCOM, 0};
+  cl_context context = CL_CHECK_ERR(clCreateContext(props, 1, &device_id, NULL, NULL, &err));
+#else
   cl_context context = CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id, NULL, NULL, &err));
+#endif
 
   party(device_id, context);
 
