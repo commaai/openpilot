@@ -2,12 +2,12 @@ Import('env', 'arch', 'cereal', 'messaging', 'common', 'visionipc', 'gpucommon')
 
 src = ['loggerd.cc', 'logger.cc']
 libs = ['zmq', 'capnp', 'kj', 'z',
-  'avformat', 'avcodec', 'swscale', 'avutil', 'gsl', 'CB',
-  'yuv', 'bz2', 'OpenCL', common, cereal, messaging, visionipc, gpucommon]
+  'avformat', 'avcodec', 'swscale', 'avutil',
+  'yuv', 'bz2', 'OpenCL', common, cereal, messaging, visionipc]
 
 if arch in ["aarch64", "larch64"]:
   src += ['encoder.c']
-  libs += ['OmxVenc', 'OmxCore']
+  libs += ['OmxVenc', 'OmxCore', 'gsl', 'CB'] + gpucommon
   if arch == "aarch64":
     libs += ['cutils']
   else:
