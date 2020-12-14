@@ -291,7 +291,7 @@ void encoder_init(EncoderState *s, const char* filename, int width, int height, 
       // setup HEVC
     #ifndef QCOM2
       OMX_VIDEO_PARAM_HEVCTYPE hecv_type = {0};
-      OMX_INDEXTYPE index_type = OMX_IndexParamVideoHevc;
+      OMX_INDEXTYPE index_type = (OMX_INDEXTYPE) OMX_IndexParamVideoHevc;
     #else
       OMX_VIDEO_PARAM_PROFILELEVELTYPE hecv_type = {0};
       OMX_INDEXTYPE index_type = OMX_IndexParamVideoProfileLevelCurrent;
