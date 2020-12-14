@@ -67,8 +67,8 @@ class CachedCommand {
     void disassemble(int cmd_index);
   private:
     struct kgsl_gpu_command cache;
-    struct kgsl_command_object *cmds;
-    struct kgsl_command_object *objs;
+    unique_ptr<kgsl_command_object[]> cmds;
+    unique_ptr<kgsl_command_object[]> objs;
     Thneed *thneed;
     vector<shared_ptr<CLQueuedKernel> > kq;
 };

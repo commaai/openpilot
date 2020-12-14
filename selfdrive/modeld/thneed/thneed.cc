@@ -145,9 +145,9 @@ CachedCommand::CachedCommand(Thneed *lthneed, struct kgsl_gpu_command *cmd) {
   memcpy(&cache, cmd, sizeof(cache));
 
   if (cmd->numcmds > 0) {
-    cmds = (struct kgsl_command_object *)malloc(sizeof(struct kgsl_command_object)*cmd->numcmds);
-    memcpy(cmds, (void *)cmd->cmdlist, sizeof(struct kgsl_command_object)*cmd->numcmds);
-    cache.cmdlist = (uint64_t)cmds;
+    cmds = make_unique<struct kgsl_command_object[]>(cmd->numcmds);
+    memcpy(cmds.get(), (void *)cmd->cmdlist, sizeof(struct kgsl_command_object)*cmd->numcmds);
+    cache.cmdlist = (uint64_t)cmds.get();
     for (int i = 0; i < cmd->numcmds; i++) {
       void *nn = thneed->ram->alloc(cmds[i].size);
       memcpy(nn, (void*)cmds[i].gpuaddr, cmds[i].size);
@@ -156,9 +156,9 @@ CachedCommand::CachedCommand(Thneed *lthneed, struct kgsl_gpu_command *cmd) {
   }
 
   if (cmd->numobjs > 0) {
-    objs = (struct kgsl_command_object *)malloc(sizeof(struct kgsl_command_object)*cmd->numobjs);
-    memcpy(objs, (void *)cmd->objlist, sizeof(struct kgsl_command_object)*cmd->numobjs);
-    cache.objlist = (uint64_t)objs;
+    objs = make_unique<struct kgsl_command_object[]>(cmd->numobjs);
+    memcpy(objs.get(), (void *)cmd->objlist, sizeof(struct kgsl_command_object)*cmd->numobjs);
+    cache.objlist = (uint64_t)objs.get();
     for (int i = 0; i < cmd->numobjs; i++) {
       void *nn = thneed->ram->alloc(objs[i].size);
       memset(nn, 0, objs[i].size);
