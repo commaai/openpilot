@@ -5,7 +5,6 @@
 #include <QVBoxLayout>
 #include <QStackedWidget>
 #include <QTimer>
-#include <QNetworkReply>
 
 #include "wifiManager.hpp"
 #include "widgets/input_field.hpp"
