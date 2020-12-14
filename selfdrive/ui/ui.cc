@@ -235,14 +235,13 @@ void ui_update(UIState *s) {
   update_sockets(s);
   ui_update_vision(s);
 
-
-
   // Handle onroad/offroad transition
   if (!s->started && s->status != STATUS_OFFROAD) {
     s->status = STATUS_OFFROAD;
     s->active_app = cereal::UiLayoutState::App::HOME;
     s->scene.uilayout_sidebarcollapsed = false;
     s->sound->stop();
+    s->vipc_client->connected = false;
   } else if (s->started && s->status == STATUS_OFFROAD) {
     s->status = STATUS_DISENGAGED;
     s->started_frame = s->sm->frame;
