@@ -22,7 +22,7 @@ extern "C"{
 // TODO: this is also hardcoded in common/transformations/camera.py
 // TODO: choose based on frame input size
 #ifdef QCOM2
-const float y_offset = 0.0;
+const float y_offset = 200.0;
 const float zoom = 1.1;
 const mat3 intrinsic_matrix = (mat3){{
   2648.0, 0.0, 1928.0/2,
@@ -733,7 +733,7 @@ void ui_nvg_init(UIState *s) {
 
   const mat4 frame_transform = {{
     zx, 0.0, 0.0, 0.0,
-    0.0, zy, 0.0, -y_offset / s->video_rect.h * zy,
+    0.0, zy, 0.0, -y_offset / s->video_rect.h * 2,
     0.0, 0.0, 1.0, 0.0,
     0.0, 0.0, 0.0, 1.0,
   }};
