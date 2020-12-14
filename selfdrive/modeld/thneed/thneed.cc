@@ -36,6 +36,8 @@ void hexdump(uint32_t *d, int len) {
   printf("\n");
 }
 
+// *********** ioctl interceptor ***********
+
 extern "C" {
 
 int (*my_ioctl)(int filedes, unsigned long request, void *argp) = NULL;
@@ -113,6 +115,8 @@ int ioctl(int filedes, unsigned long request, void *argp) {
 
 }
 
+// *********** GPUMalloc ***********
+
 GPUMalloc::GPUMalloc(int size, int fd) {
   struct kgsl_gpuobj_alloc alloc;
   memset(&alloc, 0, sizeof(alloc));
@@ -137,6 +141,8 @@ void *GPUMalloc::alloc(int size) {
   base += (size+0xff) & (~0xFF);
   return ret;
 }
+
+// *********** CachedCommand, at the ioctl layer ***********
 
 CachedCommand::CachedCommand(Thneed *lthneed, struct kgsl_gpu_command *cmd) {
   thneed = lthneed;
@@ -202,6 +208,8 @@ void CachedCommand::exec(bool wait) {
 
   assert(ret == 0);
 }
+
+// *********** Thneed ***********
 
 Thneed::Thneed(bool do_clinit) {
   if (do_clinit) clinit();
@@ -328,8 +336,6 @@ cl_int Thneed::clexec() {
 }
 
 // *********** OpenCL interceptor ***********
-
-// TODO: with a different way of getting the input and output buffers, we don't have to intercept CL at all
 
 cl_int thneed_clSetKernelArg(cl_kernel kernel, cl_uint arg_index, size_t arg_size, const void *arg_value) {
   g_args_size[make_pair(kernel, arg_index)] = arg_size;
