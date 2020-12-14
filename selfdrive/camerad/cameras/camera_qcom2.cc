@@ -287,7 +287,7 @@ void sensors_init(int video0_fd, int sensor_fd, int camera_num) {
   power->count = 1;
   power->cmd_type = CAMERA_SENSOR_CMD_TYPE_PWR_UP;
   power->power_settings[0].power_seq_type = 0;
-  power->power_settings[0].config_val_low = 28000000; //Hz
+  power->power_settings[0].config_val_low = 24000000; //Hz
   power = (struct cam_cmd_power *)((char*)power + (sizeof(struct cam_cmd_power) + (power->count-1)*sizeof(struct cam_power_settings)));
 
   unconditional_wait = (struct cam_cmd_unconditional_wait *)power;
