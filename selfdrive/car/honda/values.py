@@ -358,6 +358,7 @@ FW_VERSIONS = {
       b'37805-5BA-L930\x00\x00',
       b'37805-5BA-L940\x00\x00',
       b'37805-5BA-L960\x00\x00',
+      b'37805-5AG-Q710\x00\x00',
     ],
     (Ecu.transmission, 0x18da1ef1, None): [
       b'28101-5CG-A040\x00\x00',
@@ -369,23 +370,27 @@ FW_VERSIONS = {
       b'28101-5DJ-A040\x00\x00',
       b'28101-5DJ-A060\x00\x00',
       b'28101-5DJ-A510\x00\x00',
+      b'28101-5CG-A320\x00\x00',
     ],
     (Ecu.vsa, 0x18da28f1, None): [
       b'57114-TBA-A540\x00\x00',
       b'57114-TBA-A550\x00\x00',
       b'57114-TBA-A560\x00\x00',
       b'57114-TBA-A570\x00\x00',
+      b'57114-TEA-Q220\x00\x00',
     ],
     (Ecu.eps, 0x18da30f1, None): [
       b'39990-TBA,A030\x00\x00',
       b'39990-TBA-A030\x00\x00',
       b'39990-TBG-A030\x00\x00',
       b'39990-TEG-A010\x00\x00',
+      b'39990-TEA-T020\x00\x00',
     ],
     (Ecu.srs, 0x18da53f1, None): [
       b'77959-TBA-A030\x00\x00',
       b'77959-TBA-A040\x00\x00',
       b'77959-TBG-A030\x00\x00',
+      b'77959-TEA-Q820\x00\x00',
     ],
     (Ecu.combinationMeter, 0x18da60f1, None): [
       b'78109-TBA-A510\x00\x00',
@@ -401,6 +406,7 @@ FW_VERSIONS = {
       b'78109-TBC-C530\x00\x00',
       b'78109-TBH-A530\x00\x00',
       b'78109-TEG-A310\x00\x00',
+      b'78109-TED-Q510\x00\x00',
     ],
     (Ecu.fwdCamera, 0x18dab0f1, None): [
       b'36161-TBA-A020\x00\x00',
@@ -410,6 +416,7 @@ FW_VERSIONS = {
       b'36161-TBC-A030\x00\x00',
       b'36161-TEG-A010\x00\x00',
       b'36161-TEG-A020\x00\x00',
+      b'36161-TED-Q320\x00\x00',
     ],
     (Ecu.gateway, 0x18daeff1, None): [
       b'38897-TBA-A010\x00\x00',
