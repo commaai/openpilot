@@ -245,7 +245,8 @@ QWidget * developer_panel() {
     {"Panda Firmware", params.get("PandaFirmwareHex")},
   };
 
-  if (std::string os_version = util::read_file("/VERSION"); os_version.size()) {
+  if (std::string os_version = util::read_file("/VERSION");
+      os_version.length() > 0) {
     labels.push_back({"OS Version", "AGNOS " + os_version});
   }
 
