@@ -34,7 +34,6 @@ private:
   bool tetheringEnabled;
   QLabel *ipv4;
 
-  void replyFinished(QNetworkReply *l);
   void connectToNetwork(Network n);
   QString getStringFromUser();
 

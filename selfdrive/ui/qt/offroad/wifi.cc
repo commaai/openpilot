@@ -4,28 +4,9 @@
 #include <QPixmap>
 #include <QPushButton>
 #include <QLineEdit>
-#include <QNetworkAccessManager>
-#include <QNetworkRequest>
 
 #include "wifi.hpp"
 #include "widgets/toggle.hpp"
-
-std::string exec(const char* cmd) {
-    char buffer[128];
-    std::string result = "";
-    FILE* pipe = popen(cmd, "r");
-    if (!pipe) throw std::runtime_error("popen() failed!");
-    try {
-        while (fgets(buffer, sizeof buffer, pipe) != NULL) {
-            result += buffer;
-        }
-    } catch (...) {
-        pclose(pipe);
-        throw;
-    }
-    pclose(pipe);
-    return result;
-}
 
 void clearLayout(QLayout* layout) {
   while (QLayoutItem* item = layout->takeAt(0)) {
@@ -114,20 +95,6 @@ WifiUI::WifiUI(QWidget *parent, int page_length) : QWidget(parent), networks_per
   page = 0;
 }
 
-void WifiUI::replyFinished(QNetworkReply *l){
-  QString answer = l->readAll();
-  qDebug() << answer;
-  // QJsonDocument doc = QJsonDocument::fromJson(answer.toUtf8());
-  // if (doc.isNull()) {
-  //   qDebug() << "Parse failed";
-  // }
-
-  // QJsonObject json = doc.object();
-  // for (const QString& key : json.keys()) {
-  //   qDebug()<<key;
-  // }
-}
-
 void WifiUI::refresh() {
   if (!this->isVisible()) {
     return;
@@ -137,22 +104,6 @@ void WifiUI::refresh() {
   wifi->refreshNetworks();
   ipv4->setText(wifi->ipv4_address);
   clearLayout(vlayout);
-
-
-  std::string result = exec("python -c \"from common.api import Api; from common.params import Params; print(Api(Params().get('DongleId', encoding='utf8')).get_token());\" 2>/dev/null");
-  result = result.substr(0, result.size());
-
-  QString auth_token = QString::fromStdString(result);
-  qDebug()<<auth_token;
-  QNetworkAccessManager *manager = new QNetworkAccessManager(this);
-  connect(manager, &QNetworkAccessManager::finished, this, &WifiUI::replyFinished);
-
-  QNetworkRequest request;
-  request.setUrl(QUrl("https://api.commadotai.com/v1.1/devices/98c094b8e85be189/stats"));
-  request.setRawHeader("Authorization", ("JWT "+auth_token).toUtf8());
-
-  manager->get(request);
-
 
   connectButtons = new QButtonGroup(this);
   QObject::connect(connectButtons, SIGNAL(buttonClicked(QAbstractButton*)), this, SLOT(handleButton(QAbstractButton*)));
