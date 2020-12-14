@@ -2,13 +2,14 @@
 #include <sys/mman.h>
 #include <dlfcn.h>
 #include <map>
+#include <set>
 #include <string>
+#include <bzlib.h>
 #include <string.h>
 #include <errno.h>
 #include "thneed.h"
 
 //#define SAVE_KERNELS
-//#define SAVE_LOG
 
 //#define RUN_DISASSEMBLER
 //#define RUN_OPTIMIZER
@@ -17,6 +18,7 @@ Thneed *g_thneed = NULL;
 int g_fd = -1;
 map<pair<cl_kernel, int>, string> g_args;
 map<pair<cl_kernel, int>, int> g_args_size;
+map<cl_program, string> g_program_source;
 
 static inline uint64_t nanos_since_boot() {
   struct timespec t;
@@ -63,10 +65,10 @@ int ioctl(int filedes, unsigned long request, void *argp) {
         thneed->cmds.push_back(unique_ptr<CachedCommand>(new CachedCommand(thneed, cmd)));
       }
       if (thneed->record & THNEED_DEBUG) {
-        printf("IOCTL_KGSL_GPU_COMMAND(%2zu): flags: 0x%lx    context_id: %u  timestamp: %u\n",
+        printf("IOCTL_KGSL_GPU_COMMAND(%2zu): flags: 0x%lx    context_id: %u  timestamp: %u  numcmds: %d  numobjs: %d\n",
             thneed->cmds.size(),
             cmd->flags,
-            cmd->context_id, cmd->timestamp);
+            cmd->context_id, cmd->timestamp, cmd->numcmds, cmd->numobjs);
       }
     } else if (request == IOCTL_KGSL_GPUOBJ_SYNC) {
       struct kgsl_gpuobj_sync *cmd = (struct kgsl_gpuobj_sync *)argp;
@@ -138,27 +140,30 @@ void *GPUMalloc::alloc(int size) {
 
 CachedCommand::CachedCommand(Thneed *lthneed, struct kgsl_gpu_command *cmd) {
   thneed = lthneed;
-  assert(cmd->numcmds == 2);
-  assert(cmd->numobjs == 1);
   assert(cmd->numsyncs == 0);
 
-  memcpy(cmds, (void *)cmd->cmdlist, sizeof(struct kgsl_command_object)*cmd->numcmds);
-  memcpy(objs, (void *)cmd->objlist, sizeof(struct kgsl_command_object)*cmd->numobjs);
-
   memcpy(&cache, cmd, sizeof(cache));
-  cache.cmdlist = (uint64_t)cmds;
-  cache.objlist = (uint64_t)objs;
 
-  for (int i = 0; i < cmd->numcmds; i++) {
-    void *nn = thneed->ram->alloc(cmds[i].size);
-    memcpy(nn, (void*)cmds[i].gpuaddr, cmds[i].size);
-    cmds[i].gpuaddr = (uint64_t)nn;
+  if (cmd->numcmds > 0) {
+    cmds = (struct kgsl_command_object *)malloc(sizeof(struct kgsl_command_object)*cmd->numcmds);
+    memcpy(cmds, (void *)cmd->cmdlist, sizeof(struct kgsl_command_object)*cmd->numcmds);
+    cache.cmdlist = (uint64_t)cmds;
+    for (int i = 0; i < cmd->numcmds; i++) {
+      void *nn = thneed->ram->alloc(cmds[i].size);
+      memcpy(nn, (void*)cmds[i].gpuaddr, cmds[i].size);
+      cmds[i].gpuaddr = (uint64_t)nn;
+    }
   }
 
-  for (int i = 0; i < cmd->numobjs; i++) {
-    void *nn = thneed->ram->alloc(objs[i].size);
-    memset(nn, 0, objs[i].size);
-    objs[i].gpuaddr = (uint64_t)nn;
+  if (cmd->numobjs > 0) {
+    objs = (struct kgsl_command_object *)malloc(sizeof(struct kgsl_command_object)*cmd->numobjs);
+    memcpy(objs, (void *)cmd->objlist, sizeof(struct kgsl_command_object)*cmd->numobjs);
+    cache.objlist = (uint64_t)objs;
+    for (int i = 0; i < cmd->numobjs; i++) {
+      void *nn = thneed->ram->alloc(objs[i].size);
+      memset(nn, 0, objs[i].size);
+      objs[i].gpuaddr = (uint64_t)nn;
+    }
   }
 
   kq = thneed->ckq;
@@ -189,14 +194,17 @@ void CachedCommand::exec(bool wait) {
       it->debug_print(false);
     }
     #ifdef RUN_DISASSEMBLER
-      disassemble();
+      // assuming 2 commands
+      disassemble(0);
+      disassemble(1);
     #endif
   }
 
   assert(ret == 0);
 }
 
-Thneed::Thneed() {
+Thneed::Thneed(bool do_clinit) {
+  if (do_clinit) clinit();
   assert(g_fd != -1);
   fd = g_fd;
   ram = make_unique<GPUMalloc>(0x40000, fd);
@@ -210,26 +218,17 @@ void Thneed::stop() {
 }
 
 void Thneed::execute(float **finputs, float *foutput, bool slow) {
+  int ret;
   uint64_t tb, te;
   if (record & THNEED_DEBUG) tb = nanos_since_boot();
-
-  #ifdef SAVE_LOG
-    char fn[0x100];
-    snprintf(fn, sizeof(fn), "/tmp/thneed_log_%d", timestamp);
-    FILE *f = fopen(fn, "wb");
-  #endif
 
   // ****** copy inputs
   for (int idx = 0; idx < inputs.size(); ++idx) {
     size_t sz;
     clGetMemObjectInfo(inputs[idx], CL_MEM_SIZE, sizeof(sz), &sz, NULL);
 
-    #ifdef SAVE_LOG
-      fwrite(&sz, 1, sizeof(sz), f);
-      fwrite(finputs[idx], 1, sz, f);
-    #endif
-
     if (record & THNEED_DEBUG) printf("copying %lu -- %p -> %p\n", sz, finputs[idx], inputs[idx]);
+    // TODO: This shouldn't have to block
     clEnqueueWriteBuffer(command_queue, inputs[idx], CL_TRUE, 0, sz, finputs[idx], 0, NULL, NULL);
   }
 
@@ -247,7 +246,7 @@ void Thneed::execute(float **finputs, float *foutput, bool slow) {
   prop.type = KGSL_PROP_PWR_CONSTRAINT;
   prop.value = (void*)&constraint;
   prop.sizebytes = sizeof(constraint);
-  int ret = ioctl(fd, IOCTL_KGSL_SETPROPERTY, &prop);
+  ret = ioctl(fd, IOCTL_KGSL_SETPROPERTY, &prop);
   assert(ret == 0);
 
   // ****** run commands
@@ -271,16 +270,14 @@ void Thneed::execute(float **finputs, float *foutput, bool slow) {
   }
 
   // ****** copy outputs
-  size_t sz;
-  clGetMemObjectInfo(output, CL_MEM_SIZE, sizeof(sz), &sz, NULL);
-  if (record & THNEED_DEBUG) printf("copying %lu for output %p -> %p\n", sz, output, foutput);
-  clEnqueueReadBuffer(command_queue, output, CL_TRUE, 0, sz, foutput, 0, NULL, NULL);
-
-  #ifdef SAVE_LOG
-    fwrite(&sz, 1, sizeof(sz), f);
-    fwrite(foutput, 1, sz, f);
-    fclose(f);
-  #endif
+  if (output != NULL) {
+    size_t sz;
+    clGetMemObjectInfo(output, CL_MEM_SIZE, sizeof(sz), &sz, NULL);
+    if (record & THNEED_DEBUG) printf("copying %lu for output %p -> %p\n", sz, output, foutput);
+    clEnqueueReadBuffer(command_queue, output, CL_TRUE, 0, sz, foutput, 0, NULL, NULL);
+  } else {
+    printf("CAUTION: model output is NULL, does it have no outputs?\n");
+  }
 
   // ****** unset power constraint
   constraint.type = KGSL_CONSTRAINT_NONE;
@@ -296,24 +293,55 @@ void Thneed::execute(float **finputs, float *foutput, bool slow) {
   }
 }
 
+void Thneed::clinit() {
+  cl_int err;
+
+  cl_platform_id platform_id[2];
+  cl_uint num_devices;
+  cl_uint num_platforms;
+
+  err = clGetPlatformIDs(sizeof(platform_id)/sizeof(cl_platform_id), platform_id, &num_platforms);
+  assert(err == 0);
+
+  err = clGetDeviceIDs(platform_id[0], CL_DEVICE_TYPE_DEFAULT, 1, &device_id, &num_devices);
+  assert(err == 0);
+
+  context = clCreateContext(NULL, 1, &device_id, NULL, NULL, &err);
+  assert(err == 0);
+
+  //cl_command_queue_properties props[3] = {CL_QUEUE_PROPERTIES, CL_QUEUE_PROFILING_ENABLE, 0};
+  cl_command_queue_properties props[3] = {CL_QUEUE_PROPERTIES, 0,  0};
+  command_queue = clCreateCommandQueueWithProperties(context, device_id, props, &err);
+  assert(err == 0);
+
+  printf("Thneed::clinit done\n");
+}
+
+cl_int Thneed::clexec() {
+  printf("Thneed::clexec: running %lu queued kernels\n", kq.size());
+  for (auto &k : kq) {
+    if (record & THNEED_RECORD) ckq.push_back(k);
+    cl_int ret = k->exec();
+    assert(ret == CL_SUCCESS);
+  }
+  return clFinish(command_queue);
+}
+
 // *********** OpenCL interceptor ***********
 
 // TODO: with a different way of getting the input and output buffers, we don't have to intercept CL at all
 
-cl_int (*my_clSetKernelArg)(cl_kernel kernel, cl_uint arg_index, size_t arg_size, const void *arg_value) = NULL;
 cl_int thneed_clSetKernelArg(cl_kernel kernel, cl_uint arg_index, size_t arg_size, const void *arg_value) {
-  if (my_clSetKernelArg == NULL) my_clSetKernelArg = reinterpret_cast<decltype(my_clSetKernelArg)>(dlsym(RTLD_NEXT, "REAL_clSetKernelArg"));
   g_args_size[make_pair(kernel, arg_index)] = arg_size;
   if (arg_value != NULL) {
     g_args[make_pair(kernel, arg_index)] = string((char*)arg_value, arg_size);
   } else {
     g_args[make_pair(kernel, arg_index)] = string("");
   }
-  cl_int ret = my_clSetKernelArg(kernel, arg_index, arg_size, arg_value);
+  cl_int ret = clSetKernelArg(kernel, arg_index, arg_size, arg_value);
   return ret;
 }
 
-cl_int (*my_clEnqueueNDRangeKernel)(cl_command_queue, cl_kernel, cl_uint, const size_t *, const size_t *, const size_t *, cl_uint, const cl_event *, cl_event *) = NULL;
 cl_int thneed_clEnqueueNDRangeKernel(cl_command_queue command_queue,
   cl_kernel kernel,
   cl_uint work_dim,
@@ -324,7 +352,6 @@ cl_int thneed_clEnqueueNDRangeKernel(cl_command_queue command_queue,
   const cl_event *event_wait_list,
   cl_event *event) {
 
-  if (my_clEnqueueNDRangeKernel == NULL) my_clEnqueueNDRangeKernel = reinterpret_cast<decltype(my_clEnqueueNDRangeKernel)>(dlsym(RTLD_NEXT, "REAL_clEnqueueNDRangeKernel"));
   Thneed *thneed = g_thneed;
 
   // SNPE doesn't use these
@@ -334,14 +361,17 @@ cl_int thneed_clEnqueueNDRangeKernel(cl_command_queue command_queue,
 
   cl_int ret = 0;
   if (thneed != NULL && thneed->record & THNEED_RECORD) {
-    thneed->command_queue = command_queue;
-    clGetKernelInfo(kernel, CL_KERNEL_CONTEXT, sizeof(thneed->context), &thneed->context, NULL);
+    if (thneed->context == NULL) {
+      thneed->command_queue = command_queue;
+      clGetKernelInfo(kernel, CL_KERNEL_CONTEXT, sizeof(thneed->context), &thneed->context, NULL);
+      clGetContextInfo(thneed->context, CL_CONTEXT_DEVICES, sizeof(thneed->device_id), &thneed->device_id, NULL);
+    }
 
     // if we are recording, we don't actually enqueue the kernel
     thneed->kq.push_back(unique_ptr<CLQueuedKernel>(new CLQueuedKernel(thneed, kernel, work_dim, global_work_size, local_work_size)));
     *event = NULL;
   } else {
-    ret = my_clEnqueueNDRangeKernel(command_queue, kernel, work_dim,
+    ret = clEnqueueNDRangeKernel(command_queue, kernel, work_dim,
       global_work_offset, global_work_size, local_work_size,
       num_events_in_wait_list, event_wait_list, event);
   }
@@ -349,61 +379,25 @@ cl_int thneed_clEnqueueNDRangeKernel(cl_command_queue command_queue,
   return ret;
 }
 
-cl_int (*my_clFinish)(cl_command_queue) = NULL;
 cl_int thneed_clFinish(cl_command_queue command_queue) {
-  if (my_clFinish == NULL) my_clFinish = reinterpret_cast<decltype(my_clFinish)>(dlsym(RTLD_NEXT, "REAL_clFinish"));
   Thneed *thneed = g_thneed;
 
   if (thneed != NULL && thneed->record & THNEED_RECORD) {
-    bool recreate_kernel = false;
     #ifdef RUN_OPTIMIZER
       thneed->optimize();
-      recreate_kernel = true;
     #endif
-    printf("clFinish: running %lu queued kernels\n", thneed->kq.size());
-    for (auto &k : thneed->kq) {
-      thneed->ckq.push_back(k);
-      k->exec(recreate_kernel);
-    }
-    thneed->kq.clear();
+    return thneed->clexec();
+  } else {
+    return clFinish(command_queue);
   }
-
-  return my_clFinish(command_queue);
 }
 
-#ifdef SAVE_KERNELS
-map<cl_program, string> program_source;
-
-cl_program (*my_clCreateProgramWithSource)(cl_context context, cl_uint count, const char **strings, const size_t *lengths, cl_int *errcode_ret) = NULL;
 cl_program thneed_clCreateProgramWithSource(cl_context context, cl_uint count, const char **strings, const size_t *lengths, cl_int *errcode_ret) {
-  if (my_clCreateProgramWithSource == NULL) my_clCreateProgramWithSource = reinterpret_cast<decltype(my_clCreateProgramWithSource)>(dlsym(RTLD_NEXT, "REAL_clCreateProgramWithSource"));
   assert(count == 1);
-  size_t my_lengths[1];
-  my_lengths[0] = lengths[0];
-
-  char fn[0x100];
-  snprintf(fn, sizeof(fn), "/tmp/program_%zu.cl", strlen(strings[0]));
-  FILE *f = fopen(fn, "wb");
-  fprintf(f, "%s", strings[0]);
-  fclose(f);
-
-  char tmp[0x10000];
-  memset(tmp, 0, sizeof(tmp));
-  snprintf(fn, sizeof(fn), "/tmp/patched_%zu.cl", strlen(strings[0]));
-  FILE *g = fopen(fn, "rb");
-  if (g != NULL) {
-    printf("LOADING PATCHED PROGRAM %s\n", fn);
-    fread(tmp, 1, sizeof(tmp), g);
-    fclose(g);
-    strings[0] = tmp;
-    my_lengths[0] = strlen(tmp);
-  }
-
-  cl_program ret = my_clCreateProgramWithSource(context, count, strings, my_lengths, errcode_ret);
-  program_source[ret] = strings[0];
+  cl_program ret = clCreateProgramWithSource(context, count, strings, lengths, errcode_ret);
+  g_program_source[ret] = strings[0];
   return ret;
 }
-#endif
 
 void *dlsym(void *handle, const char *symbol) {
   // TODO: Find dlsym in a better way. Currently this is hand looked up in libdl.so
@@ -422,10 +416,8 @@ void *dlsym(void *handle, const char *symbol) {
     return (void*)thneed_clEnqueueNDRangeKernel;
   } else if (strcmp("clSetKernelArg", symbol) == 0) {
     return (void*)thneed_clSetKernelArg;
-#ifdef SAVE_KERNELS
   } else if (strcmp("clCreateProgramWithSource", symbol) == 0) {
     return (void*)thneed_clCreateProgramWithSource;
-#endif
   } else {
     return my_dlsym(handle, symbol);
   }
@@ -473,11 +465,16 @@ int CLQueuedKernel::get_arg_num(const char *search_arg_name) {
   assert(false);
 }
 
-int CLQueuedKernel::exec(bool recreate_kernel) {
-  if (recreate_kernel) {
-    // create a new exec kernel, don't use the passed in one
+cl_int CLQueuedKernel::exec() {
+  if (kernel == NULL) {
     kernel = clCreateKernel(program, name.c_str(), NULL);
+    arg_names.clear();
+
     for (int j = 0; j < num_args; j++) {
+      char arg_name[0x100];
+      clGetKernelArgInfo(kernel, j, CL_KERNEL_ARG_NAME, sizeof(arg_name), arg_name, NULL);
+      arg_names.push_back(string(arg_name));
+
       cl_int ret;
       if (args[j].size() != 0) {
         assert(args[j].size() == args_size[j]);
@@ -490,13 +487,15 @@ int CLQueuedKernel::exec(bool recreate_kernel) {
   }
 
   // save the global inputs/outputs
-  for (int i = 0; i < num_args; i++) {
-    if (name == "zero_pad_image_float" && arg_names[i] == "input") {
-      thneed->inputs.push_back(*(cl_mem*)(args[i].data()));
-    }
+  if (thneed->record & THNEED_RECORD) {
+    for (int i = 0; i < num_args; i++) {
+      if (name == "zero_pad_image_float" && arg_names[i] == "input") {
+        thneed->inputs.push_back(*(cl_mem*)(args[i].data()));
+      }
 
-    if (name == "image2d_to_buffer_float" && arg_names[i] == "output") {
-      thneed->output = *(cl_mem*)(args[i].data());
+      if (name == "image2d_to_buffer_float" && arg_names[i] == "output") {
+        thneed->output = *(cl_mem*)(args[i].data());
+      }
     }
   }
 
@@ -504,10 +503,8 @@ int CLQueuedKernel::exec(bool recreate_kernel) {
     debug_print(thneed->record & THNEED_VERBOSE_DEBUG);
   }
 
-  int ret = my_clEnqueueNDRangeKernel(thneed->command_queue,
+  return clEnqueueNDRangeKernel(thneed->command_queue,
     kernel, work_dim, NULL, global_work_size, local_work_size, 0, NULL, NULL);
-
-  return ret;
 }
 
 void CLQueuedKernel::debug_print(bool verbose) {
@@ -529,7 +526,9 @@ void CLQueuedKernel::debug_print(bool verbose) {
       printf("  %s %s", arg_type, arg_names[i].c_str());
       void *arg_value = (void*)arg.data();
       int arg_size = arg.size();
-      if (arg_size == 1) {
+      if (arg_size == 0) {
+        printf(" (size) %d", args_size[i]);
+      } else if (arg_size == 1) {
         printf(" = %d", *((char*)arg_value));
       } else if (arg_size == 2) {
         printf(" = %d", *((short*)arg_value));
