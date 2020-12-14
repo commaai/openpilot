@@ -12,6 +12,9 @@
 #include "home.hpp"
 #include "util.h"
 
+// TODO: this is defined in python too
+const char *LATEST_TERMS_VERSION = "2";
+const char *LATEST_TRAINING_VERSION = "0.2.0";
 
 void TrainingGuide::mouseReleaseEvent(QMouseEvent *e) {
   int leftOffset = (geometry().width()-1620)/2;
@@ -79,7 +82,7 @@ QWidget* OnboardingWindow::terms_screen() {
   accept_btn->setEnabled(false);
   buttons->addWidget(accept_btn);
   QObject::connect(accept_btn, &QPushButton::released, [=]() {
-    Params().write_db_value("HasAcceptedTerms", current_terms_version);
+    Params().put("HasAcceptedTerms", LATEST_TERMS_VERSION);
     updateActiveScreen();
   });
 
@@ -120,6 +123,28 @@ QWidget* OnboardingWindow::terms_screen() {
     }
   )");
 
+  return widget;
+}
+
+QWidget * OnboardingWindow::training_screen() {
+
+  QVBoxLayout *main_layout = new QVBoxLayout();
+  main_layout->setMargin(100);
+  main_layout->setSpacing(30);
+
+  main_layout->addWidget(title_label("Training Guide"));
+
+  main_layout->addWidget(new QLabel(), 1); // just a spacer
+
+  QPushButton *btn = new QPushButton("Continue");
+  main_layout->addWidget(btn);
+  QObject::connect(btn, &QPushButton::released, [=]() {
+    Params().put("CompletedTrainingVersion", LATEST_TRAINING_VERSION);
+    updateActiveScreen();
+  });
+
+  QWidget *widget = new QWidget;
+  widget->setLayout(main_layout);
   return widget;
 }
 

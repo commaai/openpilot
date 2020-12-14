@@ -5,6 +5,14 @@
 #include <QStackedLayout>
 #include <QTextEdit>
 #include <QMouseEvent>
+#include <QPointF>
+#include <QPushButton>
+
+#ifndef QCOM
+#include <QtWebEngine>
+#include <QWebEngineView>
+#include <QWebEngineSettings>
+#endif
 
 class TrainingGuide : public QFrame {
   Q_OBJECT
@@ -27,6 +35,8 @@ signals:
   void completedTraining();
 };
 
+=======
+>>>>>>> better put : use if constexpr
 class OnboardingWindow : public QStackedWidget {
   Q_OBJECT
 

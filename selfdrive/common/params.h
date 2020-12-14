@@ -36,12 +36,15 @@ public:
   }
 
   bool put(const char *key, const char *value, size_t value_size);
-  inline bool put(std::string key, std::string dat) {
-    return put(key.c_str(), dat.c_str(), dat.length());
-  }
   template <class T>
-  bool put(const char *param_name, const T value) {
-    std::string v = std::to_string(value);
-    return put(param_name, v.c_str(), v.length());
+  bool put(std::string param_name, T val) {
+    if constexpr (std::is_same<T, const char *>::value) {
+      return put(param_name.c_str(), val, strlen(val));
+    } else if constexpr (std::is_same<T, std::string>::value) {
+      return put(param_name.c_str(), val.c_str(), val.length());
+    } else {
+      std::string v = std::to_string(val);
+      return put(param_name.c_str(), v.c_str(), v.length());
+    }
   }
 };
