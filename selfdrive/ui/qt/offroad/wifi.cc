@@ -117,6 +117,15 @@ WifiUI::WifiUI(QWidget *parent, int page_length) : QWidget(parent), networks_per
 void WifiUI::replyFinished(QNetworkReply *l){
   QString answer = l->readAll();
   qDebug() << answer;
+  // QJsonDocument doc = QJsonDocument::fromJson(answer.toUtf8());
+  // if (doc.isNull()) {
+  //   qDebug() << "Parse failed";
+  // }
+
+  // QJsonObject json = doc.object();
+  // for (const QString& key : json.keys()) {
+  //   qDebug()<<key;
+  // }
 }
 
 void WifiUI::refresh() {
@@ -131,10 +140,10 @@ void WifiUI::refresh() {
 
 
   std::string result = exec("python -c \"from common.api import Api; from common.params import Params; print(Api(Params().get('DongleId', encoding='utf8')).get_token());\" 2>/dev/null");
-  result = result.substr(0, result.size()-1);
+  result = result.substr(0, result.size());
 
   QString auth_token = QString::fromStdString(result);
-
+  qDebug()<<auth_token;
   QNetworkAccessManager *manager = new QNetworkAccessManager(this);
   connect(manager, &QNetworkAccessManager::finished, this, &WifiUI::replyFinished);
 
