@@ -41,7 +41,7 @@ const mat3 intrinsic_matrix = (mat3){{
 
 // Projects a point in car to space to the corresponding point in full frame
 // image space.
-bool car_space_to_full_frame(const UIState *s, float in_x, float in_y, float in_z, float *out_x, float *out_y) {
+bool car_space_to_full_frame(const UIState *s, float in_x, float in_y, float in_z, float *out_x, float *out_y, float margin=0.0) {
   const vec4 car_space_projective = (vec4){{in_x, in_y, in_z, 1.}};
   // We'll call the car space point p.
   // First project into normalized image coordinates with the extrinsics matrix.
@@ -55,7 +55,7 @@ bool car_space_to_full_frame(const UIState *s, float in_x, float in_y, float in_
   *out_x = KEp.v[0] / KEp.v[2];
   *out_y = KEp.v[1] / KEp.v[2];
 
-  return *out_x >= 0 && *out_x <= s->fb_w && *out_y >= 0 && *out_y <= s->fb_h;
+  return *out_x >= -margin && *out_x <= s->fb_w + margin && *out_y >= -margin && *out_y <= s->fb_h + margin;
 }
 
 
@@ -163,12 +163,13 @@ static void update_track_data(UIState *s, const cereal::ModelDataV2::XYZTData::R
 
 
   vertex_data *v = &pvd->v[0];
+  const float margin = 500.0f;
   for (int i = 0; line.getX()[i] <= path_length and i < TRAJECTORY_SIZE; i++) {
-    v += car_space_to_full_frame(s, line.getX()[i], -line.getY()[i] - off, -line.getZ()[i], &v->x, &v->y);
+    v += car_space_to_full_frame(s, line.getX()[i], -line.getY()[i] - off, -line.getZ()[i], &v->x, &v->y, margin);
     max_idx = i;
   }
   for (int i = max_idx; i >= 0; i--) {
-    v += car_space_to_full_frame(s, line.getX()[i], -line.getY()[i] + off, -line.getZ()[i], &v->x, &v->y);
+    v += car_space_to_full_frame(s, line.getX()[i], -line.getY()[i] + off, -line.getZ()[i], &v->x, &v->y, margin);
   }
   pvd->cnt = v - pvd->v;
 }
@@ -214,12 +215,13 @@ static void update_line_data(UIState *s, const cereal::ModelDataV2::XYZTData::Re
   // TODO check that this doesn't overflow max vertex buffer
   int max_idx;
   vertex_data *v = &pvd->v[0];
+  const float margin = 500.0f;
   for (int i = 0; ((i < TRAJECTORY_SIZE) and (line.getX()[i] < fmax(MIN_DRAW_DISTANCE, max_distance))); i++) {
-    v += car_space_to_full_frame(s, line.getX()[i], -line.getY()[i] - off, -line.getZ()[i] + 1.22, &v->x, &v->y);
+    v += car_space_to_full_frame(s, line.getX()[i], -line.getY()[i] - off, -line.getZ()[i] + 1.22, &v->x, &v->y, margin);
     max_idx = i;
   }
   for (int i = max_idx - 1; i > 0; i--) {
-    v += car_space_to_full_frame(s, line.getX()[i], -line.getY()[i] + off, -line.getZ()[i] + 1.22, &v->x, &v->y);
+    v += car_space_to_full_frame(s, line.getX()[i], -line.getY()[i] + off, -line.getZ()[i] + 1.22, &v->x, &v->y, margin);
   }
   pvd->cnt = v - pvd->v;
 }
@@ -227,6 +229,7 @@ static void update_line_data(UIState *s, const cereal::ModelDataV2::XYZTData::Re
 
 static void ui_draw_vision_lane_lines(UIState *s) {
   const UIScene *scene = &s->scene;
+
   // paint lanelines
   line_vertices_data *pvd_ll = &s->lane_line_vertices[0];
   for (int ll_idx = 0; ll_idx < 4; ll_idx++) {
