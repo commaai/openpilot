@@ -17,6 +17,19 @@ def run_at_command(cmd, timeout=0.1):
 
 
 class Tici(HardwareBase):
+  def __init__(self):
+    # TODO: remove when dbus is installed everywhere
+    try:
+      import dbus  # pylint: disable=import-error
+    except ImportError:
+      return
+
+    self.bus = dbus.SystemBus()
+    self.nm = self.bus.get_object(NM, '/org/freedesktop/NetworkManager')
+    self.mm = self.bus.get_object(MM, '/org/freedesktop/ModemManager1')
+
+
+class Tici(HardwareBase):
   def get_sound_card_online(self):
     return True
 
