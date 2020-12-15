@@ -285,7 +285,8 @@ void ui_update(UIState *s) {
 
     const uint64_t frame_pkt = (s->sm)->rcv_frame("frame");
     const uint64_t frame_delayed = (s->sm)->frame - frame_pkt;
-    if ((frame_pkt > s->started_frame && frame_delayed > 5 * UI_FREQ) || frame_delayed > 35 * UI_FREQ) {
+    const uint64_t since_started = (s->sm)->frame - s->started_frame;
+    if ((frame_pkt > s->started_frame || since_started > 15*UI_FREQ) && frame_delayed > 5*UI_FREQ) {
       // controls is fine, but rear camera is lagging or died
       s->scene.alert_text1 = "Camera Malfunction";
       s->scene.alert_text2 = "Contact Support";
