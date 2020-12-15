@@ -2085,19 +2085,20 @@ static void setup_self_recover(CameraState *c, const uint16_t *lapres, size_t la
   const int dac_m = c->device == DEVICE_LP3 ? LP3_AF_DAC_M : OP3T_AF_DAC_M;
   const int dac_3sig = c->device == DEVICE_LP3 ? LP3_AF_DAC_3SIG : OP3T_AF_DAC_3SIG;
 
-  const float lens_true_pos = c->lens_true_pos.load();
+  const float lens_pos = c->lens_true_pos.load();
   int self_recover = c->self_recover.load();
-  if (self_recover < 2 && (lens_true_pos < (dac_down + 1) || lens_true_pos > (dac_up - 1)) && is_blur(lapres, lapres_size)) {
+  if (self_recover < 2 && (lens_pos < (dac_down + 1) || lens_pos > (dac_up - 1)) &&
+      is_blur(lapres, lapres_size)) {
     // truly stuck, needs help
     if (--self_recover < -FOCUS_RECOVER_PATIENCE) {
-      LOGD("rear camera bad state detected. attempting recovery from %.1f, recover state is %d", lens_true_pos, self_recover);
+      LOGD("rear camera bad state detected. attempting recovery from %.1f, recover state is %d", lens_pos, self_recover);
       // parity determined by which end is stuck at
-      self_recover = FOCUS_RECOVER_STEPS + (lens_true_pos < dac_m ? 1 : 0);
+      self_recover = FOCUS_RECOVER_STEPS + (lens_pos < dac_m ? 1 : 0);
     }
-  } else if (self_recover < 2 && (lens_true_pos < (dac_m - dac_3sig) || lens_true_pos > (dac_m + dac_3sig))) {
+  } else if (self_recover < 2 && (lens_pos < (dac_m - dac_3sig) || lens_pos > (dac_m + dac_3sig))) {
     // in suboptimal position with high prob, but may still recover by itself
     if (--self_recover < -(FOCUS_RECOVER_PATIENCE * 3)) {
-      self_recover = FOCUS_RECOVER_STEPS / 2 + (lens_true_pos < dac_m ? 1 : 0);
+      self_recover = FOCUS_RECOVER_STEPS / 2 + (lens_pos < dac_m ? 1 : 0);
     }
   } else if (self_recover < 0) {
     self_recover += 1;  // reset if fine
