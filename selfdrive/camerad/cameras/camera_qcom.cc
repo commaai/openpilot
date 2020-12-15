@@ -352,7 +352,7 @@ void cameras_init(MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
   s->rgb_conv_filter_cl = CL_CHECK_ERR(clCreateBuffer(ctx, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
       9 * sizeof(int16_t), (void*)&lapl_conv_krnl, &err));
 
-  for (int i=0; i<ARRAYSIZE(s->lapres); i++) {s->lapres[i] = 16160;}
+  std::fill_n(s->lapres, std::size(s->lapres), 16160);
 }
 
 static void set_exposure(CameraState *s, float exposure_frac, float gain_frac) {
