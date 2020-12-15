@@ -7,11 +7,12 @@
 
 #include "qt_window.hpp"
 
+#define USERDATA "/dev/disk/by-partlabel/userdata"
+
 
 void do_reset() {
-  // format userdata
-
-  // reboot
+  std::system("sudo umount " USERDATA);
+  std::system("yes | sudo mkfs.ext4 " USERDATA);
   std::system("sudo reboot");
 }
 
@@ -23,7 +24,6 @@ int main(int argc, char *argv[]) {
   QVBoxLayout *layout = new QVBoxLayout();
   layout->setContentsMargins(125, 125, 125, 125);
 
-  // TODO: make this scroll
   QLabel *title = new QLabel("System Reset");
   title->setStyleSheet(R"(
     font-size: 100px;
@@ -33,6 +33,7 @@ int main(int argc, char *argv[]) {
 
   QLabel *body = new QLabel("Factory reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.");
   body->setWordWrap(true);
+  body->setAlignment(Qt::AlignCenter);
   body->setStyleSheet(R"(
     font-size: 65px;
   )");
@@ -42,13 +43,20 @@ int main(int argc, char *argv[]) {
 
   QPushButton *cancel_btn = new QPushButton("Cancel");
   btn_layout->addWidget(cancel_btn, 0, Qt::AlignLeft);
-  QObject::connect(cancel_btn, &QPushButton::released, [=]() {  });
+  QObject::connect(cancel_btn, SIGNAL(released()), &a, SLOT(quit()));
 
   QPushButton *confirm_btn  = new QPushButton("Confirm");
   btn_layout->addWidget(confirm_btn, 0, Qt::AlignRight);
+  QObject::connect(confirm_btn, &QPushButton::released, [=]() {
+    QString confirm_txt = "Are you sure you want to reset your device?";
+    if (body->text() != confirm_txt) {
+     body->setText(confirm_txt);
+    } else {
 #ifdef __aarch64__
-  QObject::connect(confirm_btn, &QPushButton::released, [=]() { do_reset(); });
+      do_reset();
 #endif
+    }
+  });
 
   layout->addLayout(btn_layout);
 
@@ -62,7 +70,7 @@ int main(int argc, char *argv[]) {
       padding: 50px;
       padding-right: 100px;
       padding-left: 100px;
-      border: 2px solid white;
+      border: 7px solid white;
       border-radius: 20px;
       font-size: 50px;
     }
