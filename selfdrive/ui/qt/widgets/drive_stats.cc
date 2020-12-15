@@ -11,23 +11,11 @@
 #include <QJsonObject>
 #include <QNetworkAccessManager>
 #include <QNetworkRequest>
-#include <QSslKey>
 #include <QCryptographicHash>
 
-// TODO: Which ones do we need?
-#include <openssl/rand.h>
 #include <openssl/rsa.h>
-#include <openssl/engine.h>
-#include <openssl/sha.h>
-
-#include <openssl/hmac.h>
-#include <openssl/evp.h>
 #include <openssl/bio.h>
 #include <openssl/pem.h>
-#include <openssl/buffer.h>
-#include <openssl/err.h>
-#include <openssl/x509.h>
-
 
 #include "drive_stats.hpp"
 #include "common/params.h"
@@ -35,7 +23,6 @@
 double MILE_TO_KM = 1.60934;
 
 
-// TODO: create C++ API library
 #if defined(QCOM) || defined(QCOM2)
 const std::string private_key_path = "/persist/comma/id_rsa";
 #else
