@@ -333,7 +333,6 @@ void cameras_init(MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
   s->front.device = s->device;
 
   s->sm_front = new SubMaster({"driverState"});
-  s->sm_rear = new SubMaster({"sensorEvents"});
   s->pm = new PubMaster({"frame", "frontFrame", "thumbnail"});
 
   const int rgb_width = s->rear.buf.rgb_width;
@@ -1790,26 +1789,39 @@ static void parse_autofocus(CameraState *s, uint8_t *d) {
   s->focus_err = max_focus*1.0;
 }
 
-static void do_autofocus(CameraState *s) {
+static std::optional<float> get_accel_z(SubMaster *sm) {
+  if (sm->update(0) > 0) {
+    for (auto event : (*sm)["sensorEvents"].getSensorEvents()) {
+      if (event.which() == cereal::SensorEventData::ACCELERATION) {
+        if (auto v = event.getAcceleration().getV(); v.size() >= 3) 
+          return -v[2];
+        break;
+      }
+    }
+  }
+  return std::nullopt;
+}
+
+static void do_autofocus(CameraState *s, SubMaster *sm) {
   // params for focus PI controller
-  const float focus_kp = 0.005;
-
-  float err = s->focus_err;
-  float sag = (s->last_sag_acc_z/9.8) * 128;
-
   const int dac_up = s->device == DEVICE_LP3? LP3_AF_DAC_UP:OP3T_AF_DAC_UP;
   const int dac_down = s->device == DEVICE_LP3? LP3_AF_DAC_DOWN:OP3T_AF_DAC_DOWN;
 
-  float lens_true_pos = s->lens_true_pos;
-  if (!isnan(err))  {
+  float lens_true_pos = s->lens_true_pos.load();
+  if (!isnan(s->focus_err)) {
     // learn lens_true_pos
-    lens_true_pos -= err*focus_kp;
+    const float focus_kp = 0.005;
+    lens_true_pos -= s->focus_err*focus_kp;
   }
 
+  if (auto accel_z = get_accel_z(sm)) {
+    s->last_sag_acc_z = *accel_z;
+  }
+  const float sag = (s->last_sag_acc_z / 9.8) * 128;
   // stay off the walls
   lens_true_pos = std::clamp(lens_true_pos, float(dac_down), float(dac_up));
   int target = std::clamp(lens_true_pos - sag, float(dac_down), float(dac_up));
-  s->lens_true_pos = lens_true_pos;
+  s->lens_true_pos.store(lens_true_pos);
 
   /*char debug[4096];
   char *pdebug = debug;
@@ -2022,12 +2034,12 @@ static void* ops_thread(void* arg) {
   CameraExpInfo front_op;
 
   set_thread_name("camera_settings");
-
+  SubMaster sm({"sensorEvents"});
   while(!do_exit) {
     rear_op = rear_exp.load();
     if (rear_op.op_id != rear_op_id_last) {
       do_autoexposure(&s->rear, rear_op.grey_frac);
-      do_autofocus(&s->rear);
+      do_autofocus(&s->rear, &sm);
       rear_op_id_last = rear_op.op_id;
     }
 
@@ -2050,36 +2062,9 @@ void camera_process_front(MultiCameraState *s, CameraState *c, int cnt) {
 // called by processing_thread
 void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
   const CameraBuf *b = &c->buf;
-  // cache rgb roi and write to cl
-
-  // gz compensation
-  s->sm_rear->update(0);
-  if (s->sm_rear->updated("sensorEvents")) {
-    float vals[3] = {0.0};
-    bool got_accel = false;
-    auto sensor_events = (*(s->sm_rear))["sensorEvents"].getSensorEvents();
-    for (auto sensor_event : sensor_events) {
-      if (sensor_event.which() == cereal::SensorEventData::ACCELERATION) {
-        auto v = sensor_event.getAcceleration().getV();
-        if (v.size() < 3) {
-          continue;
-        }
-        for (int j = 0; j < 3; j++) {
-          vals[j] = v[j];
-        }
-        got_accel = true;
-        break;
-      }
-    }
-    uint64_t ts = nanos_since_boot();
-    if (got_accel && ts - s->rear.last_sag_ts > 10000000) { // 10 ms
-      s->rear.last_sag_ts = ts;
-      s->rear.last_sag_acc_z = -vals[2];
-    }
-  }
 
   // sharpness scores
-  int roi_id = cnt % ARRAYSIZE(s->lapres);  // rolling roi
+  const int roi_id = cnt % ARRAYSIZE(s->lapres);  // rolling roi
   int roi_x_offset = roi_id % (ROI_X_MAX-ROI_X_MIN+1);
   int roi_y_offset = roi_id / (ROI_X_MAX-ROI_X_MIN+1);
 
@@ -2293,6 +2278,5 @@ void cameras_close(MultiCameraState *s) {
   CL_CHECK(clReleaseKernel(s->krnl_rgb_laplacian));
   CL_CHECK(clReleaseProgram(s->prg_rgb_laplacian));
   delete s->sm_front;
-  delete s->sm_rear;
   delete s->pm;
 }
