@@ -25,8 +25,6 @@
 
 #include "sensor2_i2c.h"
 
-#define DEBAYER_LOCAL_WORKSIZE 16
-
 #define FRAME_WIDTH  1928
 #define FRAME_HEIGHT 1208
 //#define FRAME_STRIDE 1936 // for 8 bit output
@@ -579,12 +577,6 @@ static void camera_init(CameraState *s, int camera_id, int camera_num, unsigned 
   s->request_id_last = 0;
   s->skipped = true;
   s->ef_filtered = 1.0;
-
-  s->debayer_cl_localMemSize = (DEBAYER_LOCAL_WORKSIZE + 2 * (3 / 2)) * (DEBAYER_LOCAL_WORKSIZE + 2 * (3 / 2)) * sizeof(float);
-  s->debayer_cl_globalWorkSize[0] = s->ci.frame_width;
-  s->debayer_cl_globalWorkSize[1] = s->ci.frame_height;
-  s->debayer_cl_localWorkSize[0] = DEBAYER_LOCAL_WORKSIZE;
-  s->debayer_cl_localWorkSize[1] = DEBAYER_LOCAL_WORKSIZE;
 
   s->buf.init(device_id, ctx, s, FRAME_BUF_COUNT, "frame");
 }

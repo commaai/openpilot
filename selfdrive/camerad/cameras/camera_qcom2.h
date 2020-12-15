@@ -62,10 +62,6 @@ typedef struct CameraState {
   int idx_offset;
   bool skipped;
 
-  int debayer_cl_localMemSize;
-  size_t debayer_cl_globalWorkSize[2];
-  size_t debayer_cl_localWorkSize[2];
-
   struct cam_req_mgr_session_info req_mgr_session_info;
 
   CameraBuf buf;
