@@ -94,10 +94,10 @@ QWidget *widget(QLayout *l){
 void DriveStats::replyFinished(QNetworkReply *l){
   QString answer = l->readAll();
   answer.chop(1);
-  qDebug()<<answer;
+
   QJsonDocument doc = QJsonDocument::fromJson(answer.toUtf8());
   if (doc.isNull()) {
-    qDebug() << "Parse failed";
+    qDebug() << "JSON Parse failed";
   }
   QString IsMetric = QString::fromStdString(Params().get("IsMetric"));
   bool metric = (IsMetric =="1");
