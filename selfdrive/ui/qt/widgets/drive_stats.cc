@@ -127,7 +127,7 @@ void DriveStats::replyFinished(QNetworkReply *l){
 
   QVBoxLayout *all_distance_layout = new QVBoxLayout;
   all_distance_layout->addWidget(new QLabel(bold(QString("%1").arg(all_distance))), 1, Qt::AlignCenter);
-  all_distance_layout->addWidget(new QLabel(metric ? "KILOMETERS" : "MILES"),1, Qt::AlignCenter);
+  all_distance_layout->addWidget(new QLabel(metric ? "KM" : "MILES"),1, Qt::AlignCenter);
   gl->addWidget(widget(all_distance_layout), 1, 1, 3, 1);
 
   QVBoxLayout *all_hours_layout = new QVBoxLayout;
@@ -153,7 +153,7 @@ void DriveStats::replyFinished(QNetworkReply *l){
 
   QVBoxLayout *week_distance_layout = new QVBoxLayout;
   week_distance_layout->addWidget(new QLabel(bold(QString("%1").arg(week_distance))), 1, Qt::AlignCenter);
-  week_distance_layout->addWidget(new QLabel(metric ? "KILOMETERS" : "MILES"),1, Qt::AlignCenter);
+  week_distance_layout->addWidget(new QLabel(metric ? "KM" : "MILES"),1, Qt::AlignCenter);
   gl->addWidget(widget(week_distance_layout), 7, 1, 3, 1);
 
   QVBoxLayout *week_hours_layout = new QVBoxLayout;
