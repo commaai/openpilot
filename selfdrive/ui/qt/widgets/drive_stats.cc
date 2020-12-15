@@ -71,10 +71,21 @@ QByteArray rsa_sign(QByteArray data){
 }
 
 QString create_jwt(void){
-  auto header = QString("{\"typ\":\"JWT\",\"alg\":\"RS256\"}");
-  auto payload = QString("{\"identity\":\"8acc054ecd9c97b2\",\"nbf\":1608042239,\"iat\":1608042239,\"exp\":1608045839}");
+  QJsonObject header;
+  header.insert("alg", "RS256");
+  header.insert("typ", "JWT");
 
-  QString jwt = header.toUtf8().toBase64() + '.' + payload.toUtf8().toBase64();
+  auto t = QDateTime::currentSecsSinceEpoch();
+  QJsonObject payload;
+  payload.insert("identity", QString::fromStdString(Params().get("DongleId")));
+  payload.insert("nbf", t);
+  payload.insert("iat", t);
+  payload.insert("exp", t + 3600);
+
+  QString jwt =
+    QJsonDocument(header).toJson(QJsonDocument::Compact).toBase64() +
+    '.' +
+    QJsonDocument(payload).toJson(QJsonDocument::Compact).toBase64();
 
   auto hash = QCryptographicHash::hash(jwt.toUtf8(), QCryptographicHash::Sha256);
   auto sig = rsa_sign(hash);
@@ -188,7 +199,6 @@ DriveStats::DriveStats(QWidget *parent) : QWidget(parent){
   setLayout(v);
 
   QString token = create_jwt();
-  qDebug() << create_jwt();
 
   QNetworkAccessManager *manager = new QNetworkAccessManager(this);
   connect(manager, &QNetworkAccessManager::finished, this, &DriveStats::replyFinished);
