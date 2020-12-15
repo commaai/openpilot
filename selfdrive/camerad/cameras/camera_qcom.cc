@@ -335,20 +335,20 @@ void cameras_init(MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
   s->sm_front = new SubMaster({"driverState"});
   s->pm = new PubMaster({"frame", "frontFrame", "thumbnail"});
 
-  const int rgb_width = s->rear.buf.rgb_width;
-  const int rgb_height = s->rear.buf.rgb_height;
   for (int i = 0; i < FRAME_BUF_COUNT; i++) {
     // TODO: make lengths correct
     s->focus_bufs[i] = visionbuf_allocate(0xb80);
     s->stats_bufs[i] = visionbuf_allocate(0xb80);
   }
-  s->prg_rgb_laplacian = build_conv_program(device_id, ctx, rgb_width/NUM_SEGMENTS_X, rgb_height/NUM_SEGMENTS_Y, 3);
+  const int width = s->rear.buf.rgb_width/NUM_SEGMENTS_X;
+  const int height = s->rear.buf.rgb_height/NUM_SEGMENTS_Y;
+  s->prg_rgb_laplacian = build_conv_program(device_id, ctx, width, height, 3);
   s->krnl_rgb_laplacian = CL_CHECK_ERR(clCreateKernel(s->prg_rgb_laplacian, "rgb2gray_conv2d", &err));
   // TODO: Removed CL_MEM_SVM_FINE_GRAIN_BUFFER, confirm it doesn't matter
   s->rgb_conv_roi_cl = CL_CHECK_ERR(clCreateBuffer(ctx, CL_MEM_READ_WRITE,
-      rgb_width/NUM_SEGMENTS_X * rgb_height/NUM_SEGMENTS_Y * 3 * sizeof(uint8_t), NULL, &err));
+      width * height * 3 * sizeof(uint8_t), NULL, &err));
   s->rgb_conv_result_cl = CL_CHECK_ERR(clCreateBuffer(ctx, CL_MEM_READ_WRITE,
-      rgb_width/NUM_SEGMENTS_X * rgb_height/NUM_SEGMENTS_Y * sizeof(int16_t), NULL, &err));
+      width * height * sizeof(int16_t), NULL, &err));
   s->rgb_conv_filter_cl = CL_CHECK_ERR(clCreateBuffer(ctx, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
       9 * sizeof(int16_t), (void*)&lapl_conv_krnl, &err));
 
