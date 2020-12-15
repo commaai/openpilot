@@ -59,7 +59,7 @@ if qt_env is None:
     LINKFLAGS=linkflags,
     LIBS=libs)
 else:
-  qt_libs = ["pthread"]
+  qt_libs = ["pthread", "ssl", "crypto"]
 
   qt_modules = ["Widgets", "Gui", "Core", "DBus", "Multimedia", "Network"]
 
