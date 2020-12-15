@@ -63,8 +63,8 @@ QByteArray rsa_sign(QByteArray data){
   assert(ret == 1);
   assert(sig_len == sig.size());
 
-  free(mem);
-  free(rsa_private);
+  BIO_free(mem);
+  RSA_free(rsa_private);
 
   return sig;
 }
