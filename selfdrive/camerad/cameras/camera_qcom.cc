@@ -2052,7 +2052,7 @@ static void update_lapmap(MultiCameraState *s, const CameraBuf *b, const int cnt
   static std::unique_ptr<int16_t[]> conv_result = std::make_unique<int16_t[]>(width * height);
 
   // sharpness scores
-  const int roi_id = cnt % ARRAYSIZE(s->lapres);  // rolling roi
+  const int roi_id = cnt % std::size(s->lapres);  // rolling roi
   const int x_offset = ROI_X_MIN + roi_id % (ROI_X_MAX - ROI_X_MIN + 1);
   const int y_offset = ROI_Y_MIN + roi_id / (ROI_Y_MAX - ROI_Y_MIN + 1);
 
