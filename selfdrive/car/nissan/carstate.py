@@ -14,6 +14,9 @@ class CarState(CarStateBase):
     super().__init__(CP)
     can_define = CANDefine(DBC[CP.carFingerprint]['pt'])
 
+    self.lkas_hud_msg = None
+    self.lkas_hud_info_msg = None
+
     self.steeringTorqueSamples = deque(TORQUE_SAMPLES*[0], TORQUE_SAMPLES)
     self.shifter_values = can_define.dv["GEARBOX"]["GEAR_SHIFTER"]
 
@@ -107,11 +110,7 @@ class CarState(CarStateBase):
     if self.CP.carFingerprint == CAR.LEAF:
       self.cancel_msg = copy.copy(cp.vl["CANCEL_MSG"])
 
-    if self.CP.carFingerprint == CAR.ALTIMA:
-      # Altima does not support LKAS HUD
-      self.lkas_hud_msg = None
-      self.lkas_hud_info_msg = None
-    else:
+    if self.CP.carFingerprint != CAR.ALTIMA:
       self.lkas_hud_msg = copy.copy(cp_adas.vl["PROPILOT_HUD"])
       self.lkas_hud_info_msg = copy.copy(cp_adas.vl["PROPILOT_HUD_INFO_MSG"])
 
@@ -176,7 +175,9 @@ class CarState(CarStateBase):
       ]
 
       checks += [
-        ("GAS_PEDAL", 50),
+        ("GAS_PEDAL", 100),
+        ("CRUISE_THROTTLE", 50),
+        ("HUD", 25),
       ]
 
     elif CP.carFingerprint == CAR.LEAF:
@@ -206,7 +207,9 @@ class CarState(CarStateBase):
         ("SET_SPEED", "PROPILOT_HUD", 0),
       ]
       checks += [
-        ("CRUISE_STATE", 50),
+        ("CRUISE_STATE", 10),
+        ("LKAS_SETTINGS", 10),
+        ("PROPILOT_HUD", 50),
       ]
       return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 1)
 
@@ -231,11 +234,12 @@ class CarState(CarStateBase):
         ("SET_0x80", "LKAS", 0),
         ("COUNTER", "LKAS", 0),
         ("LKA_ACTIVE", "LKAS", 0),
-        ("LKAS_ENABLED", "LKAS_SETTINGS", 0),
 
         ("CRUISE_ON", "PRO_PILOT", 0),
       ]
-      checks = []
+      checks = [
+        ("PRO_PILOT", 100),
+      ]
     else:
       signals = [
         # sig_name, sig_address, default
