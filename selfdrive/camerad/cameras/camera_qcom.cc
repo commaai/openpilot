@@ -2076,10 +2076,10 @@ static void update_lapmap(MultiCameraState *s, const CameraBuf *b, const int cnt
   CL_CHECK(clEnqueueReadBuffer(b->q, s->rgb_conv_result_cl, true, 0,
                                width * height * sizeof(int16_t), conv_result.get(), 0, 0, 0));
 
-  get_lapmap_one(conv_result.get(), &s->lapres[roi_id], width, height);
+  s->lapres[roi_id] = get_lapmap_one(conv_result.get(), width, height);
 }
 
-static void setup_self_recover(CameraState *c, uint16_t *lapres) {
+static void setup_self_recover(CameraState *c, const uint16_t *lapres, size_t lapres_size) {
   const int dac_down = c->device == DEVICE_LP3 ? LP3_AF_DAC_DOWN : OP3T_AF_DAC_DOWN;
   const int dac_up = c->device == DEVICE_LP3 ? LP3_AF_DAC_UP : OP3T_AF_DAC_UP;
   const int dac_m = c->device == DEVICE_LP3 ? LP3_AF_DAC_M : OP3T_AF_DAC_M;
@@ -2087,7 +2087,7 @@ static void setup_self_recover(CameraState *c, uint16_t *lapres) {
 
   const float lens_true_pos = c->lens_true_pos.load();
   int self_recover = c->self_recover.load();
-  if (self_recover < 2 && (lens_true_pos < (dac_down + 1) || lens_true_pos > (dac_up - 1)) && is_blur(lapres)) {
+  if (self_recover < 2 && (lens_true_pos < (dac_down + 1) || lens_true_pos > (dac_up - 1)) && is_blur(lapres, lapres_size)) {
     // truly stuck, needs help
     if (--self_recover < -FOCUS_RECOVER_PATIENCE) {
       LOGD("rear camera bad state detected. attempting recovery from %.1f, recover state is %d", lens_true_pos, self_recover);
@@ -2111,23 +2111,9 @@ void camera_process_front(MultiCameraState *s, CameraState *c, int cnt) {
 
 // called by processing_thread
 void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
-  // gz compensation
-  if (uint64_t ts = nanos_since_boot();
-      (ts - s->rear.last_sag_ts) > 10000000 && s->sm_rear->update(0) > 0 && s->sm_rear->updated("sensorEvents")) {
-    for (auto sensor_event : (*(s->sm_rear))["sensorEvents"].getSensorEvents()) {
-      if (sensor_event.which() == cereal::SensorEventData::ACCELERATION) {
-        if (auto v = sensor_event.getAcceleration().getV(); v.size() >= 3) {
-          s->rear.last_sag_ts = ts;
-          s->rear.last_sag_acc_z = -v[2];
-        }
-        break;
-      }
-    }
-  }
-
   const CameraBuf *b = &c->buf;
   update_lapmap(s, b, cnt);
-  setup_self_recover(c, &s->lapres[0]);
+  setup_self_recover(c, &s->lapres[0], std::size(s->lapres));
 
   MessageBuilder msg;
   auto framed = msg.initEvent().initFrame();
