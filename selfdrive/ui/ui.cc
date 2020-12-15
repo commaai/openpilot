@@ -283,17 +283,15 @@ void ui_update(UIState *s) {
       s->status = STATUS_ALERT;
     }
 
-    if (((s->sm)->rcv_frame("frame") > s->started_frame &&
-                ((s->sm)->frame - (s->sm)->rcv_frame("frame")) > 5*UI_FREQ) ||
-               ((s->sm)->frame - (s->sm)->rcv_frame("frame")) > 35*UI_FREQ) {
+    const uint64_t frame_pkt = (s->sm)->rcv_frame("frame");
+    const uint64_t frame_delayed = (s->sm)->frame - frame_pkt;
+    if ((frame_pkt > s->started_frame && frame_delayed > 5 * UI_FREQ) || frame_delayed > 35 * UI_FREQ) {
       // controls is fine, but rear camera is lagging or died
       s->scene.alert_text1 = "Camera Malfunction";
       s->scene.alert_text2 = "Contact Support";
       s->scene.alert_size = cereal::ControlsState::AlertSize::FULL;
       s->status = STATUS_DISENGAGED;
       s->sound->stop();
-      ui_draw_vision_alert(s, s->scene.alert_size, s->status,
-                           s->scene.alert_text1.c_str(), s->scene.alert_text2.c_str());
     }
   }
 
