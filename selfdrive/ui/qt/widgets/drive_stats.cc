@@ -70,17 +70,17 @@ QByteArray rsa_sign(QByteArray data){
   return sig;
 }
 
-QString create_jwt(void){
+QString create_jwt(QString dongle_id, int expiry=3600){
   QJsonObject header;
   header.insert("alg", "RS256");
   header.insert("typ", "JWT");
 
   auto t = QDateTime::currentSecsSinceEpoch();
   QJsonObject payload;
-  payload.insert("identity", QString::fromStdString(Params().get("DongleId")));
+  payload.insert("identity", dongle_id);
   payload.insert("nbf", t);
   payload.insert("iat", t);
-  payload.insert("exp", t + 3600);
+  payload.insert("exp", t + expiry);
 
   QString jwt =
     QJsonDocument(header).toJson(QJsonDocument::Compact).toBase64() +
@@ -198,14 +198,14 @@ DriveStats::DriveStats(QWidget *parent) : QWidget(parent){
   v->addWidget(f);
   setLayout(v);
 
-  QString token = create_jwt();
+  QString dongle_id = QString::fromStdString(Params().get("DongleId"));
+  QString token = create_jwt(dongle_id);
 
   QNetworkAccessManager *manager = new QNetworkAccessManager(this);
   connect(manager, &QNetworkAccessManager::finished, this, &DriveStats::replyFinished);
 
   QNetworkRequest request;
-  QString dongleId = QString::fromStdString(Params().get("DongleId"));
-  request.setUrl(QUrl("https://api.commadotai.com/v1.1/devices/" + dongleId + "/stats"));
+  request.setUrl(QUrl("https://api.commadotai.com/v1.1/devices/" + dongle_id + "/stats"));
   request.setRawHeader("Authorization", ("JWT "+token).toUtf8());
 
   manager->get(request);
