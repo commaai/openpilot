@@ -29,7 +29,9 @@ std::string exec(const char* cmd) {
     pclose(pipe);
     return result;
 }
-
+QString bold(QString s){
+  return "<b>" + s + "</b>";
+}
 QWidget *widget(QLayout *l){
   QWidget *q = new QWidget();
   q->setLayout(l);
@@ -60,49 +62,49 @@ void DriveStats::replyFinished(QNetworkReply *l){
 
   QGridLayout *gl = new QGridLayout();
 
-  QLabel *past_week = new QLabel("PAST WEEK");
+  QLabel *past_week = new QLabel(bold("PAST WEEK"));
   gl->addWidget(past_week, 0, 0, 1, 3);
 
   QVBoxLayout *all_drives_layout = new QVBoxLayout;
-  all_drives_layout->addWidget(new QLabel(QString("%1").arg(all_routes)));
-  all_drives_layout->addWidget(new QLabel("DRIVES"));
-  gl->addWidget(widget(all_drives_layout), 1, 0);
+  all_drives_layout->addWidget(new QLabel(bold(QString("%1").arg(all_routes))), 1, Qt::AlignCenter);
+  all_drives_layout->addWidget(new QLabel("DRIVES"),1, Qt::AlignCenter);
+  gl->addWidget(widget(all_drives_layout), 1, 0, 3, 1);
 
   QVBoxLayout *all_distance_layout = new QVBoxLayout;
-  all_distance_layout->addWidget(new QLabel(QString("%1").arg(all_distance)));
-  all_distance_layout->addWidget(new QLabel(metric ? "KILOMETERS" : "MILES"));
-  gl->addWidget(widget(all_distance_layout), 1, 1);
+  all_distance_layout->addWidget(new QLabel(bold(QString("%1").arg(all_distance))), 1, Qt::AlignCenter);
+  all_distance_layout->addWidget(new QLabel(metric ? "KILOMETERS" : "MILES"),1, Qt::AlignCenter);
+  gl->addWidget(widget(all_distance_layout), 1, 1, 3, 1);
 
   QVBoxLayout *all_hours_layout = new QVBoxLayout;
-  all_hours_layout->addWidget(new QLabel(QString("%1").arg(all_minutes/60)));
-  all_hours_layout->addWidget(new QLabel("HOURS"));
-  gl->addWidget(widget(all_hours_layout), 1, 2);
+  all_hours_layout->addWidget(new QLabel(bold(QString("%1").arg(all_minutes/60))), 1, Qt::AlignCenter);
+  all_hours_layout->addWidget(new QLabel("HOURS"),1, Qt::AlignCenter);
+  gl->addWidget(widget(all_hours_layout), 1, 2, 3, 1);
 
   QFrame *lineA = new QFrame;
   lineA->setFrameShape(QFrame::HLine);
   lineA->setFrameShadow(QFrame::Sunken);
   lineA->setProperty("class", "line");
-  gl->addWidget(lineA, 2, 0, 1, 3);
+  gl->addWidget(lineA, 5, 0, 1, 3);
 
 
-  QLabel *all_time = new QLabel("ALL TIME");
-  gl->addWidget(all_time, 3, 0, 1, 3);
+  QLabel *all_time = new QLabel(bold("ALL TIME"));
+  gl->addWidget(all_time, 6, 0, 1, 3);
 
 
   QVBoxLayout *week_drives_layout = new QVBoxLayout;
-  week_drives_layout->addWidget(new QLabel(QString("%1").arg(week_routes)));
-  week_drives_layout->addWidget(new QLabel("DRIVES"));
-  gl->addWidget(widget(week_drives_layout), 4, 0);
+  week_drives_layout->addWidget(new QLabel(bold(QString("%1").arg(week_routes))), 1, Qt::AlignCenter);
+  week_drives_layout->addWidget(new QLabel("DRIVES"),1, Qt::AlignCenter);
+  gl->addWidget(widget(week_drives_layout), 7, 0, 3, 1);
 
   QVBoxLayout *week_distance_layout = new QVBoxLayout;
-  week_distance_layout->addWidget(new QLabel(QString("%1").arg(week_distance)));
-  week_distance_layout->addWidget(new QLabel(metric ? "KILOMETERS" : "MILES"));
-  gl->addWidget(widget(week_distance_layout), 4, 1);
+  week_distance_layout->addWidget(new QLabel(bold(QString("%1").arg(week_distance))), 1, Qt::AlignCenter);
+  week_distance_layout->addWidget(new QLabel(metric ? "KILOMETERS" : "MILES"),1, Qt::AlignCenter);
+  gl->addWidget(widget(week_distance_layout), 7, 1, 3, 1);
 
   QVBoxLayout *week_hours_layout = new QVBoxLayout;
-  week_hours_layout->addWidget(new QLabel(QString("%1").arg(week_minutes/60)));
-  week_hours_layout->addWidget(new QLabel("HOURS"));
-  gl->addWidget(widget(week_hours_layout), 4, 2);
+  week_hours_layout->addWidget(new QLabel(bold(QString("%1").arg(week_minutes/60))), 1, Qt::AlignCenter);
+  week_hours_layout->addWidget(new QLabel("HOURS"),1, Qt::AlignCenter);
+  gl->addWidget(widget(week_hours_layout), 7, 2, 3, 1);
 
 
   f->setLayout(gl);
@@ -113,12 +115,11 @@ void DriveStats::replyFinished(QNetworkReply *l){
     [class="outside"]{
       border-radius: 20px;
       border: 2px solid white;
-      padding: 30px;
+      padding: 10px;
     }
     QLabel{
-      background-color: #114365;
-      font-size: 50px;
-      margin: 10px;
+      font-size: 70px;
+      font-weight: 200;
     }
   )");
   
