@@ -288,22 +288,26 @@ void encoder_init(EncoderState *s, const char* filename, int width, int height, 
   assert(err == OMX_ErrorNone);
 
   if (h265) {
-    #ifndef QCOM2
       // setup HEVC
+    #ifndef QCOM2
       OMX_VIDEO_PARAM_HEVCTYPE hecv_type = {0};
+      OMX_INDEXTYPE index_type = (OMX_INDEXTYPE) OMX_IndexParamVideoHevc;
+    #else
+      OMX_VIDEO_PARAM_PROFILELEVELTYPE hecv_type = {0};
+      OMX_INDEXTYPE index_type = OMX_IndexParamVideoProfileLevelCurrent;
+    #endif
       hecv_type.nSize = sizeof(hecv_type);
       hecv_type.nPortIndex = (OMX_U32) PORT_INDEX_OUT;
-      err = OMX_GetParameter(s->handle, (OMX_INDEXTYPE)OMX_IndexParamVideoHevc,
+      err = OMX_GetParameter(s->handle, index_type,
                              (OMX_PTR) &hecv_type);
       assert(err == OMX_ErrorNone);
 
       hecv_type.eProfile = OMX_VIDEO_HEVCProfileMain;
       hecv_type.eLevel = OMX_VIDEO_HEVCHighTierLevel5;
 
-      err = OMX_SetParameter(s->handle, (OMX_INDEXTYPE)OMX_IndexParamVideoHevc,
+      err = OMX_SetParameter(s->handle, index_type,
                              (OMX_PTR) &hecv_type);
       assert(err == OMX_ErrorNone);
-    #endif
   } else {
     // setup h264
     OMX_VIDEO_PARAM_AVCTYPE avc = { 0 };
