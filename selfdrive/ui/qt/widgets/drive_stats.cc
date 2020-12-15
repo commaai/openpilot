@@ -44,7 +44,8 @@ const std::string private_key_path = util::getenv_default("HOME", "/.comma/persi
 
 QByteArray rsa_sign(QByteArray data){
   auto file = QFile(private_key_path.c_str());
-  assert(file.open(QIODevice::ReadOnly));
+  bool r = file.open(QIODevice::ReadOnly);
+  assert(r);
 
   auto key = file.readAll();
 
