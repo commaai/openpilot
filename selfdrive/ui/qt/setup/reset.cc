@@ -50,8 +50,11 @@ int main(int argc, char *argv[]) {
   QObject::connect(confirm_btn, &QPushButton::released, [=]() {
     QString confirm_txt = "Are you sure you want to reset your device?";
     if (body->text() != confirm_txt) {
-     body->setText(confirm_txt);
+      body->setText(confirm_txt);
     } else {
+      body->setText("Resetting device...");
+      cancel_btn->hide();
+      confirm_btn->hide();
 #ifdef __aarch64__
       do_reset();
 #endif
