@@ -2054,7 +2054,7 @@ static void update_lapmap(MultiCameraState *s, const CameraBuf *b, const int cnt
   // sharpness scores
   const int roi_id = cnt % ARRAYSIZE(s->lapres);  // rolling roi
   const int x_offset = ROI_X_MIN + roi_id % (ROI_X_MAX - ROI_X_MIN + 1);
-  const int y_offset = ROI_Y_MIN + roi_id / (ROI_X_MAX - ROI_X_MIN + 1);
+  const int y_offset = ROI_Y_MIN + roi_id / (ROI_Y_MAX - ROI_Y_MIN + 1);
 
   const uint8_t *rgb_addr_offset = (uint8_t *)b->cur_rgb_buf->addr + y_offset * height * FULL_STRIDE_X * 3 + x_offset * width * 3;
   for (int i = 0; i < height; ++i) {
