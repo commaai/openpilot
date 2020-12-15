@@ -91,6 +91,7 @@ QWidget *widget(QLayout *l){
   q->setLayout(l);
   return q;
 }
+
 void DriveStats::replyFinished(QNetworkReply *l){
   QString answer = l->readAll();
   answer.chop(1);
@@ -135,6 +136,7 @@ void DriveStats::replyFinished(QNetworkReply *l){
   gl->addWidget(widget(all_hours_layout), 1, 2, 3, 1);
 
   QFrame *lineA = new QFrame;
+
   lineA->setFrameShape(QFrame::HLine);
   lineA->setFrameShadow(QFrame::Sunken);
   lineA->setProperty("class", "line");
