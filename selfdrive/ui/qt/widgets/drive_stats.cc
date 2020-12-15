@@ -116,8 +116,8 @@ void DriveStats::replyFinished(QNetworkReply *l){
 
   QGridLayout *gl = new QGridLayout();
 
-  QLabel *past_week = new QLabel(bold("PAST WEEK"));
-  gl->addWidget(past_week, 0, 0, 1, 3);
+  QLabel *all_time = new QLabel(bold("ALL TIME"));
+  gl->addWidget(all_time, 0, 0, 1, 3);
 
   QVBoxLayout *all_drives_layout = new QVBoxLayout;
   all_drives_layout->addWidget(new QLabel(bold(QString("%1").arg(all_routes))), 1, Qt::AlignCenter);
@@ -140,10 +140,8 @@ void DriveStats::replyFinished(QNetworkReply *l){
   lineA->setProperty("class", "line");
   gl->addWidget(lineA, 5, 0, 1, 3);
 
-
-  QLabel *all_time = new QLabel(bold("ALL TIME"));
-  gl->addWidget(all_time, 6, 0, 1, 3);
-
+  QLabel *past_week = new QLabel(bold("PAST WEEK"));
+  gl->addWidget(past_week, 6, 0, 1, 3);
 
   QVBoxLayout *week_drives_layout = new QVBoxLayout;
   week_drives_layout->addWidget(new QLabel(bold(QString("%1").arg(week_routes))), 1, Qt::AlignCenter);
