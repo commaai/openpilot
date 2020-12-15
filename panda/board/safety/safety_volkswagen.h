@@ -363,7 +363,7 @@ static int volkswagen_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
     switch (bus_num) {
       case 0:
         // Forward all traffic from the Extended CAN onward
-        bus_fwd = 2;
+        bus_fwd = -1;
         break;
       case 2:
         if ((addr == volkswagen_torque_msg) || (addr == volkswagen_lane_msg)) {
