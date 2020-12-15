@@ -319,7 +319,7 @@ void party(cl_device_id device_id, cl_context context) {
   server_thread.join();
 }
 
-#if defined(QCOM) || defined(QCOM2)
+#ifdef QCOM
 #include "CL/cl_ext_qcom.h"
 #endif
 
@@ -336,7 +336,8 @@ int main(int argc, char *argv[]) {
 
   cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
 
-#if defined(QCOM) || defined(QCOM2)
+   // TODO: do this for QCOM2 too
+#if defined(QCOM)
   const cl_context_properties props[] = {CL_CONTEXT_PRIORITY_HINT_QCOM, CL_PRIORITY_HINT_HIGH_QCOM, 0};
   cl_context context = CL_CHECK_ERR(clCreateContext(props, 1, &device_id, NULL, NULL, &err));
 #else
