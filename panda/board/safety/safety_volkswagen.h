@@ -6,10 +6,6 @@ const int VOLKSWAGEN_MAX_RATE_UP = 10;              // 5.0 Nm/s RoC limit (EPS r
 const int VOLKSWAGEN_MAX_RATE_DOWN = 10;            // 5.0 Nm/s RoC limit (EPS rack has own soft-limit of 5.0 Nm/s)
 const int VOLKSWAGEN_DRIVER_TORQUE_ALLOWANCE = 80;
 const int VOLKSWAGEN_DRIVER_TORQUE_FACTOR = 3;
-const int VOLKSWAGEN_GAS_INTERCEPTOR_THRSLD = 475;  // ratio between offset and gain from dbc file
-#define VOLKSWAGEN_GET_INTERCEPTOR(msg) (((GET_BYTE((msg), 0) << 8) + GET_BYTE((msg), 1) + (GET_BYTE((msg), 2) << 8) + GET_BYTE((msg), 3)) / 2) // avg between 2 tracks
-
-
 
 // Safety-relevant CAN messages for the Volkswagen MQB platform
 #define MSG_ESP_19      0x0B2   // RX from ABS, for wheel speeds
@@ -37,10 +33,6 @@ const int VOLKSWAGEN_MQB_RX_CHECKS_LEN = sizeof(volkswagen_mqb_rx_checks) / size
 // Safety-relevant CAN messages for the Volkswagen PQ35/PQ46/NMS platforms
 #define MSG_LENKHILFE_3 0x0D0   // RX from EPS, for steering angle and driver steering torque
 #define MSG_HCA_1       0x0D2   // TX by OP, Heading Control Assist steering torque
-#define MSG_MOB_1       0x284   // TX by OP, Braking Control
-#define MSG_GAS_COMMAND 0x200   // TX by OP, Gas Control
-#define MSG_GAS_SENSOR  0x201   // RX from Pedal
-#define MSG_AWV_1       0x366   // TX by OP, ACC LED
 #define MSG_MOTOR_2     0x288   // RX from ECU, for CC state and brake switch state
 #define MSG_MOTOR_3     0x380   // RX from ECU, for driver throttle input
 #define MSG_GRA_NEU     0x38A   // TX by OP, ACC control buttons for cancel/resume
@@ -48,7 +40,7 @@ const int VOLKSWAGEN_MQB_RX_CHECKS_LEN = sizeof(volkswagen_mqb_rx_checks) / size
 #define MSG_LDW_1       0x5BE   // TX by OP, Lane line recognition and text alerts
 
 // Transmit of GRA_Neu is allowed on bus 0 and 2 to keep compatibility with gateway and camera integration
-const CanMsg VOLKSWAGEN_PQ_TX_MSGS[] = {{MSG_HCA_1, 0, 5}, {MSG_GRA_NEU, 0, 4}, {MSG_GRA_NEU, 1, 4}, {MSG_GRA_NEU, 2, 4}, {MSG_LDW_1, 0, 8}, {MSG_MOB_1, 1, 6}, {MSG_GAS_COMMAND, 2, 6}, {MSG_AWV_1, 0, 5}};
+const CanMsg VOLKSWAGEN_PQ_TX_MSGS[] = {{MSG_HCA_1, 0, 5}, {MSG_GRA_NEU, 0, 4}, {MSG_GRA_NEU, 2, 4}, {MSG_LDW_1, 0, 8}};
 const int VOLKSWAGEN_PQ_TX_MSGS_LEN = sizeof(VOLKSWAGEN_PQ_TX_MSGS) / sizeof(VOLKSWAGEN_PQ_TX_MSGS[0]);
 
 AddrCheckStruct volkswagen_pq_rx_checks[] = {
@@ -202,13 +194,13 @@ static int volkswagen_pq_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   bool valid = addr_safety_check(to_push, volkswagen_pq_rx_checks, VOLKSWAGEN_PQ_RX_CHECKS_LEN,
                                 volkswagen_get_checksum, volkswagen_pq_compute_checksum, volkswagen_pq_get_counter);
 
-  if (valid) {
+  if (valid && (GET_BUS(to_push) == 0)) {
     int addr = GET_ADDR(to_push);
 
     // Update in-motion state by sampling front wheel speeds
     // Signal: Bremse_3.Radgeschw__VL_4_1 (front left)
     // Signal: Bremse_3.Radgeschw__VR_4_1 (front right)
-    if ((addr == MSG_BREMSE_3) && (GET_BUS(to_push) == 0)) {
+    if (addr == MSG_BREMSE_3) {
       int wheel_speed_fl = (GET_BYTE(to_push, 0) | (GET_BYTE(to_push, 1) << 8)) >> 1;
       int wheel_speed_fr = (GET_BYTE(to_push, 2) | (GET_BYTE(to_push, 3) << 8)) >> 1;
       // Check for average front speed in excess of 0.3m/s, 1.08km/h
@@ -219,7 +211,7 @@ static int volkswagen_pq_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     // Update driver input torque samples
     // Signal: Lenkhilfe_3.LH3_LM (absolute torque)
     // Signal: Lenkhilfe_3.LH3_LMSign (direction)
-    if ((addr == MSG_LENKHILFE_3) && (GET_BUS(to_push) == 0)) {
+    if (addr == MSG_LENKHILFE_3) {
       int torque_driver_new = GET_BYTE(to_push, 2) | ((GET_BYTE(to_push, 3) & 0x3) << 8);
       int sign = (GET_BYTE(to_push, 3) & 0x4) >> 2;
       if (sign == 1) {
@@ -228,36 +220,24 @@ static int volkswagen_pq_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
       update_sample(&torque_driver, torque_driver_new);
     }
 
-    // Exit controls on rising edge of interceptor gas press
-    if ((addr == MSG_GAS_SENSOR) && (GET_BUS(to_push) == 2)) {
-      gas_interceptor_detected = 1;
-      controls_allowed = 1;
-      int gas_interceptor = VOLKSWAGEN_GET_INTERCEPTOR(to_push);
-      if ((gas_interceptor > VOLKSWAGEN_GAS_INTERCEPTOR_THRSLD) &&
-          (gas_interceptor_prev <= VOLKSWAGEN_GAS_INTERCEPTOR_THRSLD)) {
-        controls_allowed = 0;
-      }
-      gas_interceptor_prev = gas_interceptor;
-    }
-
     // Update ACC status from ECU for controls-allowed state
     // Signal: Motor_2.GRA_Status
-    if ((addr == MSG_MOTOR_2) && !gas_interceptor_detected && (GET_BUS(to_push) == 0)) {
+    if (addr == MSG_MOTOR_2) {
       int acc_status = (GET_BYTE(to_push, 2) & 0xC0) >> 6;
       controls_allowed = ((acc_status == 1) || (acc_status == 2)) ? 1 : 0;
     }
 
     // Signal: Motor_3.Fahrpedal_Rohsignal
-    if ((addr == MSG_MOTOR_3) && !gas_interceptor_detected && (GET_BUS(to_push) == 0)) {
+    if (addr == MSG_MOTOR_3) {
       gas_pressed = (GET_BYTE(to_push, 2));
     }
 
     // Signal: Motor_2.Bremslichtschalter
-    if ((addr == MSG_MOTOR_2) && (GET_BUS(to_push) == 0)) {
+    if (addr == MSG_MOTOR_2) {
       brake_pressed = (GET_BYTE(to_push, 2) & 0x1);
     }
 
-    generic_rx_checks(((addr == MSG_HCA_1) && (GET_BUS(to_push) == 0)));
+    generic_rx_checks((addr == MSG_HCA_1));
   }
   return valid;
 }
