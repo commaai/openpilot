@@ -31,7 +31,7 @@ int main(int argc, char *argv[]) {
   )");
   layout->addWidget(title, 0, Qt::AlignTop);
 
-  QLabel *body = new QLabel("Factory reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.");
+  QLabel *body = new QLabel("System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.");
   body->setWordWrap(true);
   body->setAlignment(Qt::AlignCenter);
   body->setStyleSheet(R"(
