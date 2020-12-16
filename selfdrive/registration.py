@@ -23,10 +23,13 @@ def register():
   params.put("GitRemote", get_git_remote(default=""))
   params.put("SubscriberInfo", HARDWARE.get_subscriber_info())
 
+  needs_registration = False
+
   # create a key for auth
   # your private key is kept on your device persist partition and never sent to our servers
   # do not erase your persist partition
   if not os.path.isfile(PERSIST+"/comma/id_rsa.pub"):
+    needs_registration = True
     cloudlog.warning("generating your personal RSA key")
     mkdirs_exists_ok(PERSIST+"/comma")
     assert os.system("openssl genrsa -out "+PERSIST+"/comma/id_rsa.tmp 2048") == 0
@@ -39,31 +42,29 @@ def register():
   os.chmod(PERSIST+'/comma/id_rsa', 0o744)
 
   dongle_id = params.get("DongleId", encoding='utf8')
-  public_key = open(PERSIST+"/comma/id_rsa.pub").read()
+  needs_registration = needs_registration or dongle_id is None
 
-  # create registration token
-  # in the future, this key will make JWTs directly
-  private_key = open(PERSIST+"/comma/id_rsa").read()
+  if needs_registration:
+    # late import
+    import jwt
+    public_key = open(PERSIST+"/comma/id_rsa.pub").read()
 
-  # late import
-  import jwt
-  register_token = jwt.encode({'register': True, 'exp': datetime.utcnow() + timedelta(hours=1)}, private_key, algorithm='RS256')
+    # create registration token
+    # in the future, this key will make JWTs directly
+    private_key = open(PERSIST+"/comma/id_rsa").read()
+    register_token = jwt.encode({'register': True, 'exp': datetime.utcnow() + timedelta(hours=1)}, private_key, algorithm='RS256')
 
-  try:
-    cloudlog.info("getting pilotauth")
-    resp = api_get("v2/pilotauth/", method='POST', timeout=15,
-                   imei=HARDWARE.get_imei(0), imei2=HARDWARE.get_imei(1), serial=HARDWARE.get_serial(), public_key=public_key, register_token=register_token)
-    dongleauth = json.loads(resp.text)
-    dongle_id = dongleauth["dongle_id"]
+    try:
+      cloudlog.info("getting pilotauth")
+      resp = api_get("v2/pilotauth/", method='POST', timeout=15,
+                    imei=HARDWARE.get_imei(0), imei2=HARDWARE.get_imei(1), serial=HARDWARE.get_serial(), public_key=public_key, register_token=register_token)
+      dongleauth = json.loads(resp.text)
+      dongle_id = dongleauth["dongle_id"]
+      params.put("DongleId", dongle_id)
+    except Exception:
+      cloudlog.exception("failed to authenticate")
 
-    params.put("DongleId", dongle_id)
-    return dongle_id
-  except Exception:
-    cloudlog.exception("failed to authenticate")
-    if dongle_id is not None:
-      return dongle_id
-    else:
-      return None
+  return dongle_id
 
 if __name__ == "__main__":
   print(register())
