@@ -330,10 +330,7 @@ def handle_agnos_update(wait_helper):
       os.sync()
       out.write(partition['hash'].lower().encode())
 
-  # TODO: this should be done at the same time as the openpilot swap
-  # run(["abctl", "--set_active", target_slot_number])
-
-  cloudlog.info("AGNOS ready on slot f{target_slot}")
+  cloudlog.info(f"AGNOS ready on slot f{target_slot}")
 
 
 def handle_neos_update(wait_helper: WaitTimeHelper) -> None:
