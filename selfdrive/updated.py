@@ -324,11 +324,11 @@ def handle_agnos_update(wait_helper):
         while not downloader.eof:
           out.write(downloader.read(1024 * 1024))
 
-    if downloader.sha256.hexdigest().lower() != partition['hash'].lower():
-      raise Exception("Uncompressed hash mismatch")
+      if downloader.sha256.hexdigest().lower() != partition['hash'].lower():
+        raise Exception("Uncompressed hash mismatch")
 
-    os.sync()
-    out.write(partition['hash'].lower().encode())
+      os.sync()
+      out.write(partition['hash'].lower().encode())
 
   # TODO: this should be done at the same time as the openpilot swap
   # run(["abctl", "--set_active", target_slot_number])
