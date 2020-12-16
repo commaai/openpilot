@@ -48,11 +48,9 @@ def register():
   needs_registration = needs_registration or dongle_id is None
 
   if needs_registration:
-    public_key = open(PERSIST+"/comma/id_rsa.pub").read()
-
-    # create registration token
-    # in the future, this key will make JWTs directly
+    # Create registration token, in the future, this key will make JWTs directly
     private_key = open(PERSIST+"/comma/id_rsa").read()
+    public_key = open(PERSIST+"/comma/id_rsa.pub").read()
     register_token = jwt.encode({'register': True, 'exp': datetime.utcnow() + timedelta(hours=1)}, private_key, algorithm='RS256')
 
     # Block until we get the imei
