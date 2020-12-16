@@ -1,4 +1,5 @@
 import os
+import time
 import json
 
 from datetime import datetime, timedelta
@@ -54,10 +55,21 @@ def register():
     private_key = open(PERSIST+"/comma/id_rsa").read()
     register_token = jwt.encode({'register': True, 'exp': datetime.utcnow() + timedelta(hours=1)}, private_key, algorithm='RS256')
 
+    # Block until we get the imei
+    imei1 = None
+    imei2 = None
+    while imei1 is None and imei2 is None:
+      try:
+        imei1 = HARDWARE.get_imei(0)
+        imei2 = HARDWARE.get_imei(1)
+      except Exception:
+        cloudlog.exception("Error getting imei, trying again...")
+        time.sleep(1)
+
     try:
       cloudlog.info("getting pilotauth")
       resp = api_get("v2/pilotauth/", method='POST', timeout=15,
-                    imei=HARDWARE.get_imei(0), imei2=HARDWARE.get_imei(1), serial=HARDWARE.get_serial(), public_key=public_key, register_token=register_token)
+                    imei=imei1, imei2=imei2, serial=HARDWARE.get_serial(), public_key=public_key, register_token=register_token)
       dongleauth = json.loads(resp.text)
       dongle_id = dongleauth["dongle_id"]
       params.put("DongleId", dongle_id)
