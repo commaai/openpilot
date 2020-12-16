@@ -118,7 +118,7 @@ class Tici(HardwareBase):
 
     # ModemManager takes about 30 seconds to initialize.
     # If we need the IMEI on startup we have to use AT commands
-    except (ModemNotReadyException, dbus.exceptions.DBusException):
+    except Exception:
       for _ in range(10):
         try:
           imei = run_at_command(b"AT+CGSN")
