@@ -328,7 +328,7 @@ def handle_agnos_update(wait_helper):
         raise Exception("Uncompressed hash mismatch")
 
       os.sync()
-      out.write(partition['hash'].lower().encode())
+      out.write(partition['hash_raw'].lower().encode())
 
   cloudlog.info(f"AGNOS ready on slot f{target_slot}")
 
