@@ -93,6 +93,7 @@ else:
     ]
     cflags += ["-DGL_SILENCE_DEPRECATION"]
     cxxflags += ["-DGL_SILENCE_DEPRECATION"]
+    cpppath += ["/usr/local/opt/openssl/include"] # Homebrew ssl includes
   else:
     libpath = [
       "#phonelibs/snpe/x86_64-linux-clang",
