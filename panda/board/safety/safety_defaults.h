@@ -34,10 +34,10 @@ static int default_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
   if(!board_has_relay()) {
     switch (bus_num) {
       case 0:
-        bus_fwd = 2;
+        bus_fwd = -1;
         break;
       case 2:
-        bus_fwd = 0;
+        bus_fwd = -1;
         break;
       default:
         bus_fwd = -1;
