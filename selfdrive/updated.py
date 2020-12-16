@@ -295,7 +295,8 @@ def handle_agnos_update(wait_helper):
 
   cloudlog.info(f"Beginning background installation for AGNOS {updated_version}")
 
-  update = json.load(open(os.path.join(BASEDIR, "installer/updater/update_agnos.json")))
+  manifest_path = os.path.join(OVERLAY_MERGED, "installer/updater/updater/update_agnos.json")
+  update = json.load(open(manifest_path))
 
   current_slot = subprocess.check_output(["abctl", "--boot_slot"], encoding='utf-8').strip()
   target_slot = "_b" if current_slot == "_a" else "_a"
@@ -329,7 +330,7 @@ def handle_agnos_update(wait_helper):
   # TODO: this should be done at the same time as the openpilot swap
   # run(["abctl", "--set_active", target_slot_number])
 
-  cloudlog.info("AGNOS ready on slot {target_slot}")
+  cloudlog.info("AGNOS ready on slot f{target_slot}")
 
 
 def handle_neos_update(wait_helper: WaitTimeHelper) -> None:
