@@ -25,11 +25,7 @@ MM_MODEM_ACCESS_TECHNOLOGY_LTE = 1 << 14
 
 class Tici(HardwareBase):
   def __init__(self):
-    # TODO: remove when dbus is installed everywhere
-    try:
-      import dbus  # pylint: disable=import-error
-    except ImportError:
-      return
+    import dbus  # pylint: disable=import-error
 
     self.bus = dbus.SystemBus()
     self.nm = self.bus.get_object(NM, '/org/freedesktop/NetworkManager')

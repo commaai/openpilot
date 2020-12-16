@@ -69,10 +69,7 @@ def clear_locks(root):
       cloudlog.exception("clear_locks failed")
 
 def is_on_wifi():
-  try:
-    return HARDWARE.get_network_type() == NetworkType.wifi
-  except Exception:
-    return False
+  return HARDWARE.get_network_type() == NetworkType.wifi
 
 class Uploader():
   def __init__(self, dongle_id, root):
