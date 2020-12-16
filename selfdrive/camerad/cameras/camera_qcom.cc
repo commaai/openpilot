@@ -335,34 +335,24 @@ void cameras_init(MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
   s->sm_front = new SubMaster({"driverState"});
   s->pm = new PubMaster({"frame", "frontFrame", "thumbnail"});
 
-  const int rgb_width = s->rear.buf.rgb_width;
-  const int rgb_height = s->rear.buf.rgb_height;
   for (int i = 0; i < FRAME_BUF_COUNT; i++) {
     // TODO: make lengths correct
     s->focus_bufs[i] = visionbuf_allocate(0xb80);
     s->stats_bufs[i] = visionbuf_allocate(0xb80);
   }
-  s->prg_rgb_laplacian = build_conv_program(device_id, ctx, rgb_width/NUM_SEGMENTS_X, rgb_height/NUM_SEGMENTS_Y, 3);
+  const int width = s->rear.buf.rgb_width/NUM_SEGMENTS_X;
+  const int height = s->rear.buf.rgb_height/NUM_SEGMENTS_Y;
+  s->prg_rgb_laplacian = build_conv_program(device_id, ctx, width, height, 3);
   s->krnl_rgb_laplacian = CL_CHECK_ERR(clCreateKernel(s->prg_rgb_laplacian, "rgb2gray_conv2d", &err));
   // TODO: Removed CL_MEM_SVM_FINE_GRAIN_BUFFER, confirm it doesn't matter
   s->rgb_conv_roi_cl = CL_CHECK_ERR(clCreateBuffer(ctx, CL_MEM_READ_WRITE,
-      rgb_width/NUM_SEGMENTS_X * rgb_height/NUM_SEGMENTS_Y * 3 * sizeof(uint8_t), NULL, &err));
+      width * height * 3 * sizeof(uint8_t), NULL, &err));
   s->rgb_conv_result_cl = CL_CHECK_ERR(clCreateBuffer(ctx, CL_MEM_READ_WRITE,
-      rgb_width/NUM_SEGMENTS_X * rgb_height/NUM_SEGMENTS_Y * sizeof(int16_t), NULL, &err));
+      width * height * sizeof(int16_t), NULL, &err));
   s->rgb_conv_filter_cl = CL_CHECK_ERR(clCreateBuffer(ctx, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
       9 * sizeof(int16_t), (void*)&lapl_conv_krnl, &err));
-  s->conv_cl_localMemSize = ( CONV_LOCAL_WORKSIZE + 2 * (3 / 2) ) * ( CONV_LOCAL_WORKSIZE + 2 * (3 / 2) );
-  s->conv_cl_localMemSize *= 3 * sizeof(uint8_t);
-  s->conv_cl_globalWorkSize[0] = rgb_width/NUM_SEGMENTS_X;
-  s->conv_cl_globalWorkSize[1] = rgb_height/NUM_SEGMENTS_Y;
-  s->conv_cl_localWorkSize[0] = CONV_LOCAL_WORKSIZE;
-  s->conv_cl_localWorkSize[1] = CONV_LOCAL_WORKSIZE;
 
-  for (int i=0; i<ARRAYSIZE(s->lapres); i++) {s->lapres[i] = 16160;}
-
-  const size_t size = (rgb_width/NUM_SEGMENTS_X)*(rgb_height/NUM_SEGMENTS_Y);
-  s->rgb_roi_buf = std::make_unique<uint8_t[]>(size*3);
-  s->conv_result = std::make_unique<int16_t[]>(size);
+  std::fill_n(s->lapres, std::size(s->lapres), 16160);
 }
 
 static void set_exposure(CameraState *s, float exposure_frac, float gain_frac) {
@@ -2055,6 +2045,66 @@ static void* ops_thread(void* arg) {
   return NULL;
 }
 
+static void update_lapmap(MultiCameraState *s, const CameraBuf *b, const int cnt) {
+  const size_t width = b->rgb_width / NUM_SEGMENTS_X;
+  const size_t height = b->rgb_height / NUM_SEGMENTS_Y;
+  static std::unique_ptr<uint8_t[]> rgb_roi_buf = std::make_unique<uint8_t[]>(width * height * 3);
+  static std::unique_ptr<int16_t[]> conv_result = std::make_unique<int16_t[]>(width * height);
+
+  // sharpness scores
+  const int roi_id = cnt % std::size(s->lapres);  // rolling roi
+  const int x_offset = ROI_X_MIN + roi_id % (ROI_X_MAX - ROI_X_MIN + 1);
+  const int y_offset = ROI_Y_MIN + roi_id / (ROI_X_MAX - ROI_X_MIN + 1);
+
+  const uint8_t *rgb_addr_offset = (uint8_t *)b->cur_rgb_buf->addr + y_offset * height * FULL_STRIDE_X * 3 + x_offset * width * 3;
+  for (int i = 0; i < height; ++i) {
+    memcpy(rgb_roi_buf.get() + i * width * 3, rgb_addr_offset + i * FULL_STRIDE_X * 3, width * 3);
+  }
+
+  constexpr int conv_cl_localMemSize = (CONV_LOCAL_WORKSIZE + 2 * (3 / 2)) * (CONV_LOCAL_WORKSIZE + 2 * (3 / 2)) * (3 * sizeof(uint8_t));
+  CL_CHECK(clEnqueueWriteBuffer(b->q, s->rgb_conv_roi_cl, true, 0, width * height * 3 * sizeof(uint8_t), rgb_roi_buf.get(), 0, 0, 0));
+  CL_CHECK(clSetKernelArg(s->krnl_rgb_laplacian, 0, sizeof(cl_mem), (void *)&s->rgb_conv_roi_cl));
+  CL_CHECK(clSetKernelArg(s->krnl_rgb_laplacian, 1, sizeof(cl_mem), (void *)&s->rgb_conv_result_cl));
+  CL_CHECK(clSetKernelArg(s->krnl_rgb_laplacian, 2, sizeof(cl_mem), (void *)&s->rgb_conv_filter_cl));
+  CL_CHECK(clSetKernelArg(s->krnl_rgb_laplacian, 3, conv_cl_localMemSize, 0));
+  cl_event conv_event;
+  CL_CHECK(clEnqueueNDRangeKernel(b->q, s->krnl_rgb_laplacian, 2, NULL,
+                                  (size_t[]){width, height}, (size_t[]){CONV_LOCAL_WORKSIZE, CONV_LOCAL_WORKSIZE}, 0, 0, &conv_event));
+  clWaitForEvents(1, &conv_event);
+  CL_CHECK(clReleaseEvent(conv_event));
+
+  CL_CHECK(clEnqueueReadBuffer(b->q, s->rgb_conv_result_cl, true, 0,
+                               width * height * sizeof(int16_t), conv_result.get(), 0, 0, 0));
+
+  s->lapres[roi_id] = get_lapmap_one(conv_result.get(), width, height);
+}
+
+static void setup_self_recover(CameraState *c, const uint16_t *lapres, size_t lapres_size) {
+  const int dac_down = c->device == DEVICE_LP3 ? LP3_AF_DAC_DOWN : OP3T_AF_DAC_DOWN;
+  const int dac_up = c->device == DEVICE_LP3 ? LP3_AF_DAC_UP : OP3T_AF_DAC_UP;
+  const int dac_m = c->device == DEVICE_LP3 ? LP3_AF_DAC_M : OP3T_AF_DAC_M;
+  const int dac_3sig = c->device == DEVICE_LP3 ? LP3_AF_DAC_3SIG : OP3T_AF_DAC_3SIG;
+
+  const float lens_true_pos = c->lens_true_pos.load();
+  int self_recover = c->self_recover.load();
+  if (self_recover < 2 && (lens_true_pos < (dac_down + 1) || lens_true_pos > (dac_up - 1)) && is_blur(lapres, lapres_size)) {
+    // truly stuck, needs help
+    if (--self_recover < -FOCUS_RECOVER_PATIENCE) {
+      LOGD("rear camera bad state detected. attempting recovery from %.1f, recover state is %d", lens_true_pos, self_recover);
+      // parity determined by which end is stuck at
+      self_recover = FOCUS_RECOVER_STEPS + (lens_true_pos < dac_m ? 1 : 0);
+    }
+  } else if (self_recover < 2 && (lens_true_pos < (dac_m - dac_3sig) || lens_true_pos > (dac_m + dac_3sig))) {
+    // in suboptimal position with high prob, but may still recover by itself
+    if (--self_recover < -(FOCUS_RECOVER_PATIENCE * 3)) {
+      self_recover = FOCUS_RECOVER_STEPS / 2 + (lens_true_pos < dac_m ? 1 : 0);
+    }
+  } else if (self_recover < 0) {
+    self_recover += 1;  // reset if fine
+  }
+  c->self_recover.store(self_recover);
+}
+
 void camera_process_front(MultiCameraState *s, CameraState *c, int cnt) {
   common_camera_process_front(s->sm_front, s->pm, c, cnt);
 }
@@ -2062,89 +2112,30 @@ void camera_process_front(MultiCameraState *s, CameraState *c, int cnt) {
 // called by processing_thread
 void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
   const CameraBuf *b = &c->buf;
+  update_lapmap(s, b, cnt);
+  setup_self_recover(c, &s->lapres[0], std::size(s->lapres));
 
-  // sharpness scores
-  const int roi_id = cnt % ARRAYSIZE(s->lapres);  // rolling roi
-  int roi_x_offset = roi_id % (ROI_X_MAX-ROI_X_MIN+1);
-  int roi_y_offset = roi_id / (ROI_X_MAX-ROI_X_MIN+1);
-
-  for (int r=0;r<(b->rgb_height/NUM_SEGMENTS_Y);r++) {
-    memcpy(s->rgb_roi_buf.get() + r * (b->rgb_width/NUM_SEGMENTS_X) * 3,
-            (uint8_t *) b->cur_rgb_buf->addr + \
-              (ROI_Y_MIN + roi_y_offset) * b->rgb_height/NUM_SEGMENTS_Y * FULL_STRIDE_X * 3 + \
-              (ROI_X_MIN + roi_x_offset) * b->rgb_width/NUM_SEGMENTS_X * 3 + r * FULL_STRIDE_X * 3,
-            b->rgb_width/NUM_SEGMENTS_X * 3);
+  MessageBuilder msg;
+  auto framed = msg.initEvent().initFrame();
+  fill_frame_data(framed, b->cur_frame_data, cnt);
+  if (env_send_rear) {
+    fill_frame_image(framed, (uint8_t *)b->cur_rgb_buf->addr, b->rgb_width, b->rgb_height, b->rgb_stride);
   }
-
-  CL_CHECK(clEnqueueWriteBuffer(b->q, s->rgb_conv_roi_cl, true, 0,
-                              b->rgb_width / NUM_SEGMENTS_X * b->rgb_height / NUM_SEGMENTS_Y * 3 * sizeof(uint8_t), s->rgb_roi_buf.get(), 0, 0, 0));
-  CL_CHECK(clSetKernelArg(s->krnl_rgb_laplacian, 0, sizeof(cl_mem), (void *)&s->rgb_conv_roi_cl));
-  CL_CHECK(clSetKernelArg(s->krnl_rgb_laplacian, 1, sizeof(cl_mem), (void *)&s->rgb_conv_result_cl));
-  CL_CHECK(clSetKernelArg(s->krnl_rgb_laplacian, 2, sizeof(cl_mem), (void *)&s->rgb_conv_filter_cl));
-  CL_CHECK(clSetKernelArg(s->krnl_rgb_laplacian, 3, s->conv_cl_localMemSize, 0));
-  cl_event conv_event;
-  CL_CHECK(clEnqueueNDRangeKernel(b->q, s->krnl_rgb_laplacian, 2, NULL,
-                                s->conv_cl_globalWorkSize, s->conv_cl_localWorkSize, 0, 0, &conv_event));
-  clWaitForEvents(1, &conv_event);
-  CL_CHECK(clReleaseEvent(conv_event));
-
-  CL_CHECK(clEnqueueReadBuffer(b->q, s->rgb_conv_result_cl, true, 0,
-                             b->rgb_width / NUM_SEGMENTS_X * b->rgb_height / NUM_SEGMENTS_Y * sizeof(int16_t), s->conv_result.get(), 0, 0, 0));
-
-  s->lapres[roi_id] = get_lapmap_one(s->conv_result.get(), b->rgb_width / NUM_SEGMENTS_X, b->rgb_height / NUM_SEGMENTS_Y);
-
-  // setup self recover
-  const float lens_true_pos = s->rear.lens_true_pos;
-  std::atomic<int>& self_recover = s->rear.self_recover;
-  if (is_blur(&s->lapres[0], std::size(s->lapres)) &&
-      (lens_true_pos < (s->rear.device == DEVICE_LP3 ? LP3_AF_DAC_DOWN : OP3T_AF_DAC_DOWN) + 1 ||
-       lens_true_pos > (s->rear.device == DEVICE_LP3 ? LP3_AF_DAC_UP : OP3T_AF_DAC_UP) - 1) &&
-      self_recover < 2) {
-    // truly stuck, needs help
-    self_recover -= 1;
-    if (self_recover < -FOCUS_RECOVER_PATIENCE) {
-      LOGD("rear camera bad state detected. attempting recovery from %.1f, recover state is %d",
-           lens_true_pos, self_recover.load());
-      self_recover = FOCUS_RECOVER_STEPS + ((lens_true_pos < (s->rear.device == DEVICE_LP3 ? LP3_AF_DAC_M : OP3T_AF_DAC_M)) ? 1 : 0);  // parity determined by which end is stuck at
-    }
-  } else if ((lens_true_pos < (s->rear.device == DEVICE_LP3 ? LP3_AF_DAC_M - LP3_AF_DAC_3SIG : OP3T_AF_DAC_M - OP3T_AF_DAC_3SIG) ||
-              lens_true_pos > (s->rear.device == DEVICE_LP3 ? LP3_AF_DAC_M + LP3_AF_DAC_3SIG : OP3T_AF_DAC_M + OP3T_AF_DAC_3SIG)) &&
-             self_recover < 2) {
-    // in suboptimal position with high prob, but may still recover by itself
-    self_recover -= 1;
-    if (self_recover < -(FOCUS_RECOVER_PATIENCE * 3)) {
-      self_recover = FOCUS_RECOVER_STEPS / 2 + ((lens_true_pos < (s->rear.device == DEVICE_LP3 ? LP3_AF_DAC_M : OP3T_AF_DAC_M)) ? 1 : 0);
-    }
-  } else if (self_recover < 0) {
-    self_recover += 1;  // reset if fine
-  }
-
-  {
-    MessageBuilder msg;
-    auto framed = msg.initEvent().initFrame();
-    fill_frame_data(framed, b->cur_frame_data, cnt);
-    if (env_send_rear) {
-      fill_frame_image(framed, (uint8_t*)b->cur_rgb_buf->addr, b->rgb_width, b->rgb_height, b->rgb_stride);
-    }
-    framed.setFocusVal(s->rear.focus);
-    framed.setFocusConf(s->rear.confidence);
-    framed.setSharpnessScore(s->lapres);
-    framed.setRecoverState(self_recover);
-    framed.setTransform(b->yuv_transform.v);
-    s->pm->send("frame", msg);
-  }
+  framed.setFocusVal(s->rear.focus);
+  framed.setFocusConf(s->rear.confidence);
+  framed.setRecoverState(s->rear.self_recover);
+  framed.setSharpnessScore(s->lapres);
+  framed.setTransform(b->yuv_transform.v);
+  s->pm->send("frame", msg);
 
   if (cnt % 100 == 3) {
-    create_thumbnail(s, c, (uint8_t*)b->cur_rgb_buf->addr);
+    create_thumbnail(s, c, (uint8_t *)b->cur_rgb_buf->addr);
   }
 
-  const int exposure_x = 290;
-  const int exposure_y = 322;
-  const int exposure_width = 560;
-  const int exposure_height = 314;
-  const int skip = 1;
   if (cnt % 3 == 0) {
-    set_exposure_target(c, (const uint8_t *)b->yuv_bufs[b->cur_yuv_idx].y, exposure_x, exposure_x + exposure_width, skip, exposure_y, exposure_y + exposure_height, skip);
+    const int x = 290, y = 322, width = 560, height = 314;
+    const int skip = 1;
+    set_exposure_target(c, (const uint8_t *)b->yuv_bufs[b->cur_yuv_idx].y, x, x + width, skip, y, y + height, skip);
   }
 }
 
