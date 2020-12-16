@@ -25,9 +25,6 @@ NetworkStrength = log.ThermalData.NetworkStrength
 MM_MODEM_ACCESS_TECHNOLOGY_UMTS = 1 << 5
 MM_MODEM_ACCESS_TECHNOLOGY_LTE = 1 << 14
 
-class ModemNotReadyException(Exception):
-  pass
-
 def run_at_command(cmd, timeout=0.1):
   with serial.Serial("/dev/ttyUSB2", timeout=timeout) as ser:
     ser.write(cmd + b"\r\n")
@@ -74,10 +71,6 @@ class Tici(HardwareBase):
   def get_modem(self):
     objects = self.mm.GetManagedObjects(dbus_interface="org.freedesktop.DBus.ObjectManager")
     paths = list(objects.keys())
-
-    if not paths:
-      raise ModemNotReadyException
-
     return self.bus.get_object(MM, paths[0])
 
   def get_wlan(self):
