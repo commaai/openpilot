@@ -131,13 +131,6 @@ typedef struct MultiCameraState {
   cl_program prg_rgb_laplacian;
   cl_kernel krnl_rgb_laplacian;
 
-  std::unique_ptr<uint8_t[]> rgb_roi_buf;
-  std::unique_ptr<int16_t[]> conv_result;
-
-  int conv_cl_localMemSize;
-  size_t conv_cl_globalWorkSize[2];
-  size_t conv_cl_localWorkSize[2];
-
   CameraState rear;
   CameraState front;
 

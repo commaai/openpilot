@@ -445,24 +445,22 @@ static void ui_draw_vision_footer(UIState *s) {
   ui_draw_vision_face(s);
 }
 
-void ui_draw_vision_alert(UIState *s, cereal::ControlsState::AlertSize va_size, UIStatus va_color,
-                          const char* va_text1, const char* va_text2) {
+static void ui_draw_vision_alert(UIState *s) {
   static std::map<cereal::ControlsState::AlertSize, const int> alert_size_map = {
       {cereal::ControlsState::AlertSize::NONE, 0},
       {cereal::ControlsState::AlertSize::SMALL, 241},
       {cereal::ControlsState::AlertSize::MID, 390},
       {cereal::ControlsState::AlertSize::FULL, s->fb_h}};
-
   const UIScene *scene = &s->scene;
-  bool longAlert1 = strlen(va_text1) > 15;
+  bool longAlert1 = scene->alert_text1.length() > 15;
 
-  NVGcolor color = bg_colors[va_color];
+  NVGcolor color = bg_colors[s->status];
   color.a *= s->alert_blinking_alpha;
-  int alr_s = alert_size_map[va_size];
+  int alr_s = alert_size_map[scene->alert_size];
 
   const int alr_x = scene->viz_rect.x - bdr_s;
   const int alr_w = scene->viz_rect.w + (bdr_s*2);
-  const int alr_h = alr_s+(va_size==cereal::ControlsState::AlertSize::NONE?0:bdr_s);
+  const int alr_h = alr_s+(scene->alert_size==cereal::ControlsState::AlertSize::NONE?0:bdr_s);
   const int alr_y = s->fb_h-alr_h;
 
   ui_draw_rect(s->vg, alr_x, alr_y, alr_w, alr_h, color);
@@ -474,20 +472,20 @@ void ui_draw_vision_alert(UIState *s, cereal::ControlsState::AlertSize va_size, 
   nvgFillColor(s->vg, COLOR_WHITE);
   nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
 
-  if (va_size == cereal::ControlsState::AlertSize::SMALL) {
-    ui_draw_text(s->vg, alr_x+alr_w/2, alr_y+alr_h/2+15, va_text1, 40*2.5, COLOR_WHITE, s->font_sans_semibold);
-  } else if (va_size == cereal::ControlsState::AlertSize::MID) {
-    ui_draw_text(s->vg, alr_x+alr_w/2, alr_y+alr_h/2-45, va_text1, 48*2.5, COLOR_WHITE, s->font_sans_bold);
-    ui_draw_text(s->vg, alr_x+alr_w/2, alr_y+alr_h/2+75, va_text2, 36*2.5, COLOR_WHITE, s->font_sans_regular);
-  } else if (va_size == cereal::ControlsState::AlertSize::FULL) {
+  if (scene->alert_size == cereal::ControlsState::AlertSize::SMALL) {
+    ui_draw_text(s->vg, alr_x+alr_w/2, alr_y+alr_h/2+15, scene->alert_text1.c_str(), 40*2.5, COLOR_WHITE, s->font_sans_semibold);
+  } else if (scene->alert_size == cereal::ControlsState::AlertSize::MID) {
+    ui_draw_text(s->vg, alr_x+alr_w/2, alr_y+alr_h/2-45, scene->alert_text1.c_str(), 48*2.5, COLOR_WHITE, s->font_sans_bold);
+    ui_draw_text(s->vg, alr_x+alr_w/2, alr_y+alr_h/2+75, scene->alert_text2.c_str(), 36*2.5, COLOR_WHITE, s->font_sans_regular);
+  } else if (scene->alert_size == cereal::ControlsState::AlertSize::FULL) {
     nvgFontSize(s->vg, (longAlert1?72:96)*2.5);
     nvgFontFaceId(s->vg, s->font_sans_bold);
     nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
-    nvgTextBox(s->vg, alr_x, alr_y+(longAlert1?360:420), alr_w-60, va_text1, NULL);
+    nvgTextBox(s->vg, alr_x, alr_y+(longAlert1?360:420), alr_w-60, scene->alert_text1.c_str(), NULL);
     nvgFontSize(s->vg, 48*2.5);
     nvgFontFaceId(s->vg,  s->font_sans_regular);
     nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BOTTOM);
-    nvgTextBox(s->vg, alr_x, alr_h-(longAlert1?300:360), alr_w-60, va_text2, NULL);
+    nvgTextBox(s->vg, alr_x, alr_h-(longAlert1?300:360), alr_w-60, scene->alert_text2.c_str(), NULL);
   }
 }
 
@@ -507,23 +505,18 @@ static void ui_draw_vision_frame(UIState *s) {
 
 static void ui_draw_vision(UIState *s) {
   const UIScene *scene = &s->scene;
-
-  // Draw augmented elements
-  if (!scene->frontview && scene->world_objects_visible) {
-    ui_draw_world(s);
-  }
-  // Set Speed, Current Speed, Status/Events
   if (!scene->frontview) {
+    // Draw augmented elements
+    if (scene->world_objects_visible) {
+      ui_draw_world(s);
+    }
+    // Set Speed, Current Speed, Status/Events
     ui_draw_vision_header(s);
+    if (scene->alert_size == cereal::ControlsState::AlertSize::NONE) {
+      ui_draw_vision_footer(s);
+    }
   } else {
     ui_draw_driver_view(s);
-  }
-
-  if (scene->alert_size != cereal::ControlsState::AlertSize::NONE) {
-    ui_draw_vision_alert(s, scene->alert_size, s->status,
-                         scene->alert_text1.c_str(), scene->alert_text2.c_str());
-  } else if (!scene->frontview) {
-    ui_draw_vision_footer(s);
   }
 }
 
@@ -540,12 +533,12 @@ void ui_draw(UIState *s) {
     s->scene.viz_rect.w -= sbr_w;
   }
 
-  const bool draw_vision = s->started && s->active_app == cereal::UiLayoutState::App::NONE &&
-                           s->status != STATUS_OFFROAD && s->vision_connected;
+  const bool draw_vision = s->started && s->status != STATUS_OFFROAD &&
+                           s->active_app == cereal::UiLayoutState::App::NONE;
 
   // GL drawing functions
   ui_draw_background(s);
-  if (draw_vision) {
+  if (draw_vision && s->vision_connected) {
     ui_draw_vision_frame(s);
   }
   glEnable(GL_BLEND);
@@ -555,8 +548,12 @@ void ui_draw(UIState *s) {
   // NVG drawing functions - should be no GL inside NVG frame
   nvgBeginFrame(s->vg, s->fb_w, s->fb_h, 1.0f);
   ui_draw_sidebar(s);
-  if (draw_vision) {
+  if (draw_vision && s->vision_connected) {
     ui_draw_vision(s);
+  }
+
+  if (draw_vision && s->scene.alert_size != cereal::ControlsState::AlertSize::NONE) {
+    ui_draw_vision_alert(s);
   }
   nvgEndFrame(s->vg);
   glDisable(GL_BLEND);
