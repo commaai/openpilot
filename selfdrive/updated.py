@@ -327,6 +327,7 @@ def handle_agnos_update(wait_helper):
     if downloader.sha256.hexdigest().lower() != partition['hash'].lower():
       raise Exception("Uncompressed hash mismatch")
 
+    os.sync()
     out.write(str(partition['hash'].lower()))
 
   # TODO: this should be done at the same time as the openpilot swap
