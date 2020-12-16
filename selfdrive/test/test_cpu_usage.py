@@ -66,6 +66,7 @@ def test_cpu_usage():
 
   # start manager
   os.environ['SKIP_FW_QUERY'] = "1"
+  os.environ['FINGERPRINT'] = "TOYOTA COROLLA TSS2 2019"
   manager_path = os.path.join(BASEDIR, "selfdrive/manager.py")
   manager_proc = subprocess.Popen(["python", manager_path])
   try:
