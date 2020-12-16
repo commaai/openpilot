@@ -2,6 +2,8 @@ import os
 import time
 import json
 
+import jwt
+
 from datetime import datetime, timedelta
 from common.api import api_get
 from common.params import Params
@@ -46,8 +48,6 @@ def register():
   needs_registration = needs_registration or dongle_id is None
 
   if needs_registration:
-    # late import
-    import jwt
     public_key = open(PERSIST+"/comma/id_rsa.pub").read()
 
     # create registration token
