@@ -10,6 +10,8 @@
 #include "driving.h"
 #include "clutil.h"
 
+#include "common/mat.h"
+
 constexpr int MODEL_WIDTH = 512;
 constexpr int MODEL_HEIGHT = 256;
 constexpr int MODEL_FRAME_SIZE = MODEL_WIDTH * MODEL_HEIGHT * 3 / 2;
@@ -45,6 +47,51 @@ constexpr int OUTPUT_SIZE =  POSE_IDX + POSE_SIZE;
 #else
   constexpr int TEMPORAL_SIZE = 0;
 #endif
+
+static void frame_init(ModelFrame* frame, int width, int height,
+                      cl_device_id device_id, cl_context context) {
+  transform_init(&frame->transform, context, device_id);
+  frame->transformed_width = width;
+  frame->transformed_height = height;
+
+  frame->transformed_y_cl = CL_CHECK_ERR(clCreateBuffer(context, CL_MEM_READ_WRITE,
+                                           (size_t)frame->transformed_width*frame->transformed_height, NULL, &err));
+  frame->transformed_u_cl = CL_CHECK_ERR(clCreateBuffer(context, CL_MEM_READ_WRITE,
+                                           (size_t)(frame->transformed_width/2)*(frame->transformed_height/2), NULL, &err));
+  frame->transformed_v_cl = CL_CHECK_ERR(clCreateBuffer(context, CL_MEM_READ_WRITE,
+                                           (size_t)(frame->transformed_width/2)*(frame->transformed_height/2), NULL, &err));
+  frame->net_input_size = ((width*height*3)/2)*sizeof(float);
+  frame->net_input = CL_CHECK_ERR(clCreateBuffer(context, CL_MEM_READ_WRITE,
+                                frame->net_input_size, (void*)NULL, &err));
+  loadyuv_init(&frame->loadyuv, context, device_id, frame->transformed_width, frame->transformed_height);
+}
+
+static float *frame_prepare(ModelFrame* frame, cl_command_queue q,
+                            cl_mem yuv_cl, int width, int height,
+                            const mat3 &transform) {
+  transform_queue(&frame->transform, q,
+                  yuv_cl, width, height,
+                  frame->transformed_y_cl, frame->transformed_u_cl, frame->transformed_v_cl,
+                  frame->transformed_width, frame->transformed_height,
+                  transform);
+  loadyuv_queue(&frame->loadyuv, q,
+                frame->transformed_y_cl, frame->transformed_u_cl, frame->transformed_v_cl,
+                frame->net_input);
+  float *net_input_buf = (float *)CL_CHECK_ERR(clEnqueueMapBuffer(q, frame->net_input, CL_TRUE,
+                                            CL_MAP_READ, 0, frame->net_input_size,
+                                            0, NULL, NULL, &err));
+  clFinish(q);
+  return net_input_buf;
+}
+
+static void frame_free(ModelFrame* frame) {
+  transform_destroy(&frame->transform);
+  loadyuv_destroy(&frame->loadyuv);
+  CL_CHECK(clReleaseMemObject(frame->net_input));
+  CL_CHECK(clReleaseMemObject(frame->transformed_v_cl));
+  CL_CHECK(clReleaseMemObject(frame->transformed_u_cl));
+  CL_CHECK(clReleaseMemObject(frame->transformed_y_cl));
+}
 
 // #define DUMP_YUV
 
@@ -410,3 +457,4 @@ void posenet_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_droppe
 
   pm.send("cameraOdometry", msg);
 }
+

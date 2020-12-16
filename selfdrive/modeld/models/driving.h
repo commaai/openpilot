@@ -9,6 +9,9 @@
 #include "common/util.h"
 #include "common/modeldata.h"
 
+#include "transforms/transform.h"
+#include "transforms/loadyuv.h"
+
 #include "commonmodel.h"
 #include "runners/run.h"
 
@@ -31,6 +34,14 @@ struct ModelDataRaw {
     float *pose;
   };
 
+typedef struct ModelFrame {
+  Transform transform;
+  int transformed_width, transformed_height;
+  cl_mem transformed_y_cl, transformed_u_cl, transformed_v_cl;
+  LoadYUVState loadyuv;
+  cl_mem net_input;
+  size_t net_input_size;
+} ModelFrame;
 
 typedef struct ModelState {
   ModelFrame frame;
