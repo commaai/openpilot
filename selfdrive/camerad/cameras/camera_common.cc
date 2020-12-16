@@ -53,7 +53,7 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
   camera_state = s;
   frame_buf_count = frame_cnt;
   frame_size = ci->frame_height * ci->frame_stride;
- 
+
   camera_bufs = std::make_unique<VisionBuf[]>(frame_buf_count);
   camera_bufs_metadata = std::make_unique<FrameMetadata[]>(frame_buf_count);
   for (int i = 0; i < frame_buf_count; i++) {
@@ -351,10 +351,8 @@ void set_exposure_target(CameraState *c, const uint8_t *pix_ptr, int x_start, in
 extern volatile sig_atomic_t do_exit;
 
 void *processing_thread(MultiCameraState *cameras, const char *tname,
-                        CameraState *cs, int priority, process_thread_cb callback) {
+                          CameraState *cs, process_thread_cb callback) {
   set_thread_name(tname);
-  int err = set_realtime_priority(priority);
-  LOG("%s start! setpriority returns %d", tname, err);
 
   for (int cnt = 0; !do_exit; cnt++) {
     if (!cs->buf.acquire()) continue;
@@ -367,8 +365,8 @@ void *processing_thread(MultiCameraState *cameras, const char *tname,
 }
 
 std::thread start_process_thread(MultiCameraState *cameras, const char *tname,
-                                 CameraState *cs, int priority, process_thread_cb callback) {
-  return std::thread(processing_thread, cameras, tname, cs, priority, callback);
+                                 CameraState *cs, process_thread_cb callback) {
+  return std::thread(processing_thread, cameras, tname, cs, callback);
 }
 
 void common_camera_process_front(SubMaster *sm, PubMaster *pm, CameraState *c, int cnt) {
