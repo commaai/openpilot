@@ -111,40 +111,52 @@ function two_init {
 }
 
 function tici_init {
-
   # set success flag for current boot slot
   sudo abctl --set_success
 
+  # Check if AGNOS update is required
+  if [ $(< /VERSION) != "$REQUIRED_NEOS_VERSION" ]; then
+    # Get number of slot to switch to
+    CUR_SLOT=$(abctl --boot_slot)
+    if [[ "$CUR_SLOT" == "_a" ]]; then
+      OTHER_SLOT="_b"
+      OTHER_SLOT_NUMBER="1"
+    else
+      OTHER_SLOT="_b"
+      OTHER_SLOT_NUMBER="0"
+    fi
+    echo "Cur slot $CUR_SLOT, target $OTHER_SLOT"
 
-  # TODO: Check if update is needed
-  MANIFEST="$DIR/installer/updater/update_agnos.json"
 
-  SYSTEM_HASH_EXPECTED=$(jq "nth(0).hash_raw" $MANIFEST)
-  SYSTEM_SIZE=$(jq "nth(0).size" $MANIFEST)
-  BOOT_HASH_EXPECTED=$(jq "nth(1).hash_raw" $MANIFEST)
-  BOOT_SIZE=$(jq "nth(1).size" $MANIFEST)
+    # Get expected hashes from manifest
+    # TODO: don't rely on ordering, find by name
+    MANIFEST="$DIR/installer/updater/update_agnos.json"
+    SYSTEM_HASH_EXPECTED=$(jq -r "nth(0).hash_raw" $MANIFEST)
+    SYSTEM_SIZE=$(jq -r "nth(0).size" $MANIFEST)
+    BOOT_HASH_EXPECTED=$(jq -r "nth(1).hash_raw" $MANIFEST)
+    BOOT_SIZE=$(jq -r "nth(1).size" $MANIFEST)
+    echo "Expected hashes:"
+    echo "System: $SYSTEM_HASH_EXPECTED"
+    echo "Boot: $BOOT_HASH_EXPECTED"
 
-  CUR_SLOT=$(abctl --boot_slot)
-  if [[ "$CUR_SLOT" == "_a" ]]; then
-    OTHER_SLOT="_b"
-  else
-    OTHER_SLOT="_b"
+    # Read hashes from alternate partitions, should already be flashed by updated
+    SYSTEM_HASH=$(dd if="/dev/disk/by-partlabel/system$OTHER_SLOT" bs=1 skip="$SYSTEM_SIZE" count=64 2>/dev/null)
+    BOOT_HASH=$(dd if="/dev/disk/by-partlabel/boot$OTHER_SLOT" bs=1 skip="$BOOT_SIZE" count=64 2>/dev/null)
+    echo "Found hashes:"
+    echo "System: $SYSTEM_HASH"
+    echo "Boot: $BOOT_HASH"
+
+    if [[ "$YSTEM_HASH" == "$SYTEM_HASH_EXPECTED" && "$BOOT_HASH" == "$BOOT_HASH_EXPECTED" ]]; then
+      echo "Swapping active slot to $OTHER_SLOT_NUMBER"
+      abctl --set_active "$OTHER_SLOT_NUMBER"
+
+      sleep 1
+      sudo reboot
+    else
+      echo "Hash mismatch, downloading agnos"
+      # TODO: call updated.py with a flag to force an AGNOS download right now
+    fi
   fi
-
-  echo "Cur slot $CUR_SLOT, target $OTHER_SLOT"
-
-  echo "Expected hashes:"
-  echo "System: $SYSTEM_HASH_EXPECTED"
-  echo "Boot: $BOOT_HASH_EXPECTED"
-
-  SYSTEM_HASH=$(dd if="/dev/disk/by-partlabel/system_$OTHER_SLOT" bs=1 skip=$SYSTEM_SIZE count=64 2>/dev/null)
-  BOOT_HASH=$(dd if="/dev/disk/by-partlabel/boot_$OTHER_SLOT" bs=1 skip=$BOOT_SIZE count=64 2>/dev/null)
-
-  echo "Found hashes:"
-  echo "System: $SYSTEM_HASH"
-  echo "Boot: $BOOT_HASH"
-
-  # TODO: compare hashes and swap
 }
 
 function launch {
