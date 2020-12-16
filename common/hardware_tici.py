@@ -1,6 +1,9 @@
+import subprocess
+
+import serial
+
 from common.hardware_base import HardwareBase
 from cereal import log
-import subprocess
 
 NM = 'org.freedesktop.NetworkManager'
 NM_CON_ACT = NM + '.Connection.Active'
@@ -21,6 +24,15 @@ NetworkStrength = log.ThermalData.NetworkStrength
 # https://developer.gnome.org/ModemManager/unstable/ModemManager-Flags-and-Enumerations.html#MMModemAccessTechnology
 MM_MODEM_ACCESS_TECHNOLOGY_UMTS = 1 << 5
 MM_MODEM_ACCESS_TECHNOLOGY_LTE = 1 << 14
+
+class ModemNotReadyException(Exception):
+  pass
+
+def run_at_command(cmd, timeout=0.1):
+  with serial.Serial("/dev/ttyUSB2", timeout=timeout) as ser:
+    ser.write(cmd + b"\r\n")
+    ser.readline()  # Modem echos request
+    return ser.readline().decode().rstrip()
 
 
 class Tici(HardwareBase):
@@ -61,8 +73,12 @@ class Tici(HardwareBase):
 
   def get_modem(self):
     objects = self.mm.GetManagedObjects(dbus_interface="org.freedesktop.DBus.ObjectManager")
-    modem_path = list(objects.keys())[0]
-    return self.bus.get_object(MM, modem_path)
+    paths = list(objects.keys())
+
+    if not paths:
+      raise ModemNotReadyException
+
+    return self.bus.get_object(MM, paths[0])
 
   def get_wlan(self):
     wlan_path = self.nm.GetDeviceByIpIface('wlan0', dbus_interface=NM)
@@ -97,7 +113,22 @@ class Tici(HardwareBase):
     if slot != 0:
       return ""
 
-    return str(self.get_modem().Get(MM_MODEM, 'EquipmentIdentifier', dbus_interface=DBUS_PROPS))
+    try:
+      return str(self.get_modem().Get(MM_MODEM, 'EquipmentIdentifier', dbus_interface=DBUS_PROPS))
+
+    # ModemManager takes about 30 seconds to initialize.
+    # If we need the IMEI on startup we have to use AT commands
+    except (ModemNotReadyException, dbus.exceptions.DBusException):
+      for _ in range(10):
+        try:
+          imei = run_at_command(b"AT+CGSN")
+          if len(imei) == 15:
+            return imei
+        except serial.SerialException:
+          pass
+
+    raise RuntimeError("Error getting IMEI")
+
 
   def parse_strength(self, percentage):
       if percentage < 25:
