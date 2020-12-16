@@ -24,8 +24,10 @@ pthread_mutex_t transform_lock;
 
 void* live_thread(void *arg) {
   set_thread_name("live");
+  set_realtime_priority(50);
 
   SubMaster sm({"liveCalibration"});
+
   /*
      import numpy as np
      from common.transformations.model import medmodel_frame_from_road_frame
@@ -60,7 +62,7 @@ void* live_thread(void *arg) {
   }}, db_s);
 
   while (!do_exit) {
-    if (sm.update(10) > 0){
+    if (sm.update(100) > 0){
 
       auto extrinsic_matrix = sm["liveCalibration"].getLiveCalibration().getExtrinsicMatrix();
       Eigen::Matrix<float, 3, 4> extrinsic_matrix_eigen;
@@ -91,7 +93,7 @@ void* live_thread(void *arg) {
 
 int main(int argc, char **argv) {
   int err;
-  set_realtime_priority(51);
+  set_realtime_priority(54);
 
 #ifdef QCOM
   set_core_affinity(2);

@@ -304,14 +304,14 @@ void* visionserver_thread(void* arg) {
 void party(cl_device_id device_id, cl_context context) {
   VisionState state = {};
   VisionState *s = &state;
-  
+
   cameras_init(&s->cameras, device_id, context);
   cameras_open(&s->cameras);
 
   std::thread server_thread(visionserver_thread, s);
-  
+
   // priority for cameras
-  int err = set_realtime_priority(51);
+  int err = set_realtime_priority(53);
   LOG("setpriority returns %d", err);
 
   cameras_run(&s->cameras);
@@ -324,7 +324,7 @@ void party(cl_device_id device_id, cl_context context) {
 #endif
 
 int main(int argc, char *argv[]) {
-  set_realtime_priority(51);
+  set_realtime_priority(53);
 #if defined(QCOM)
   set_core_affinity(2);
 #elif defined(QCOM2)

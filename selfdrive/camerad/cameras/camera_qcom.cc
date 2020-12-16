@@ -2147,8 +2147,8 @@ void cameras_run(MultiCameraState *s) {
                        ops_thread, s);
   assert(err == 0);
   std::vector<std::thread> threads;
-  threads.push_back(start_process_thread(s, "processing", &s->rear, 51, camera_process_frame));
-  threads.push_back(start_process_thread(s, "frontview", &s->front, 51, camera_process_front));
+  threads.push_back(start_process_thread(s, "processing", &s->rear, camera_process_frame));
+  threads.push_back(start_process_thread(s, "frontview", &s->front, camera_process_front));
 
   CameraState* cameras[2] = {&s->rear, &s->front};
 

@@ -69,6 +69,11 @@ function two_init {
   done
   echo 2 > /proc/irq/193/smp_affinity_list # GPU
 
+  # give GPU threads RT priority
+  for pid in $(pgrep "kgsl"); do
+    chrt -f -p 52 $pid
+  done
+
   # Check for NEOS update
   if [ $(< /VERSION) != "$REQUIRED_NEOS_VERSION" ]; then
     if [ -f "$DIR/scripts/continue.sh" ]; then

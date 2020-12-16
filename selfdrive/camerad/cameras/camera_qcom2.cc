@@ -1161,9 +1161,9 @@ void cameras_run(MultiCameraState *s) {
                        ae_thread, s);
   assert(err == 0);
   std::vector<std::thread> threads;
-  threads.push_back(start_process_thread(s, "processing", &s->rear, 51, camera_process_frame));
-  threads.push_back(start_process_thread(s, "frontview", &s->front, 51, camera_process_front));
-  threads.push_back(start_process_thread(s, "wideview", &s->wide, 51, camera_process_frame));
+  threads.push_back(start_process_thread(s, "processing", &s->rear, camera_process_frame));
+  threads.push_back(start_process_thread(s, "frontview", &s->front, camera_process_front));
+  threads.push_back(start_process_thread(s, "wideview", &s->wide, camera_process_frame));
 
   // start devices
   LOG("-- Starting devices");
