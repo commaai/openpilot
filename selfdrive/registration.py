@@ -54,12 +54,10 @@ def register():
     register_token = jwt.encode({'register': True, 'exp': datetime.utcnow() + timedelta(hours=1)}, private_key, algorithm='RS256')
 
     # Block until we get the imei
-    imei1 = None
-    imei2 = None
+    imei1, imei2 = None, None
     while imei1 is None and imei2 is None:
       try:
-        imei1 = HARDWARE.get_imei(0)
-        imei2 = HARDWARE.get_imei(1)
+        imei1, imei2 = HARDWARE.get_imei(0), HARDWARE.get_imei(1)
       except Exception:
         cloudlog.exception("Error getting imei, trying again...")
         time.sleep(1)
