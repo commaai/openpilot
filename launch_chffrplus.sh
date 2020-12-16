@@ -115,7 +115,7 @@ function tici_init {
   sudo abctl --set_success
 
   # Check if AGNOS update is required
-  if [ $(< /VERSION) != "$REQUIRED_NEOS_VERSION" ]; then
+  if [ $(< /VERSION) != "$AGNOS_VERSION" ]; then
     # Get number of slot to switch to
     CUR_SLOT=$(abctl --boot_slot)
     if [[ "$CUR_SLOT" == "_a" ]]; then
