@@ -222,6 +222,11 @@ def getSimInfo():
 
 
 @dispatcher.add_method
+def getNetworkType():
+  return HARDWARE.get_network_type()
+
+
+@dispatcher.add_method
 def takeSnapshot():
   from selfdrive.camerad.snapshot.snapshot import snapshot, jpeg_write
   ret = snapshot()
