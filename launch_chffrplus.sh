@@ -115,6 +115,36 @@ function tici_init {
   # set success flag for current boot slot
   sudo abctl --set_success
 
+
+  # TODO: Check if update is needed
+  MANIFEST="$DIR/installer/updater/update_agnos.json"
+
+  SYSTEM_HASH_EXPECTED=$(jq "nth(0).hash_raw" $MANIFEST)
+  SYSTEM_SIZE=$(jq "nth(0).size" $MANIFEST)
+  BOOT_HASH_EXPECTED=$(jq "nth(1).hash_raw" $MANIFEST)
+  BOOT_SIZE=$(jq "nth(1).size" $MANIFEST)
+
+  CUR_SLOT=$(abctl --boot_slot)
+  if [[ "$CUR_SLOT" == "_a" ]]; then
+    OTHER_SLOT="_b"
+  else
+    OTHER_SLOT="_b"
+  fi
+
+  echo "Cur slot $CUR_SLOT, target $OTHER_SLOT"
+
+  echo "Expected hashes:"
+  echo "System: $SYSTEM_HASH_EXPECTED"
+  echo "Boot: $BOOT_HASH_EXPECTED"
+
+  SYSTEM_HASH=$(dd if="/dev/disk/by-partlabel/system_$OTHER_SLOT" bs=1 skip=$SYSTEM_SIZE count=64 2>/dev/null)
+  BOOT_HASH=$(dd if="/dev/disk/by-partlabel/boot_$OTHER_SLOT" bs=1 skip=$BOOT_SIZE count=64 2>/dev/null)
+
+  echo "Found hashes:"
+  echo "System: $SYSTEM_HASH"
+  echo "Boot: $BOOT_HASH"
+
+  # TODO: compare hashes and swap
 }
 
 function launch {
