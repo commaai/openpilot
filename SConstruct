@@ -89,6 +89,7 @@ else:
       "#cereal",
       "#selfdrive/common",
       "/usr/local/lib",
+      "/usr/local/opt/openssl/lib/openssl",
       "/System/Library/Frameworks/OpenGL.framework/Libraries",
     ]
     cflags += ["-DGL_SILENCE_DEPRECATION"]
