@@ -193,19 +193,11 @@ if GetOption('test'):
 
 if os.environ.get('SCONS_CACHE'):
   cache_dir = '/tmp/scons_cache'
-
-  if os.getenv('CI'):
-    branch = os.getenv('GIT_BRANCH')
-
-    if QCOM_REPLAY:
-      cache_dir = '/tmp/scons_cache_qcom_replay'
-    elif branch is not None and branch != 'master':
-      cache_dir_branch = '/tmp/scons_cache_' + branch
-      if not os.path.isdir(cache_dir_branch) and os.path.isdir(cache_dir):
-        shutil.copytree(cache_dir, cache_dir_branch)
-      cache_dir = cache_dir_branch
-  elif TICI:
+  if TICI:
     cache_dir = '/data/scons_cache'
+
+  if QCOM_REPLAY:
+    cache_dir = '/tmp/scons_cache_qcom_replay'
 
   CacheDir(cache_dir)
 
