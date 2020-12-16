@@ -301,8 +301,10 @@ def handle_agnos_update(wait_helper):
   target_slot = "_b" if current_slot == "_a" else "_a"
   target_slot_number = "0" if target_slot == "_a" else "1"
 
+  cloudlog.info(f"Current slot {current_slot}, target slot {target_slot}")
+
   # set target slot as unbootable
-  #os.system(f"abctl --set_unbootable {target_slot_number}")
+  os.system(f"abctl --set_unbootable {target_slot_number}")
 
   for partition in update:
     cloudlog.info(f"Downloading and writing {partition['name']}")
@@ -325,9 +327,9 @@ def handle_agnos_update(wait_helper):
       raise Exception("Uncompressed hash mismatch")
 
   # TODO: this should be done at the same time as the openpilot swap
-  run(["abctl", "--set_active", target_slot_number])
+  # run(["abctl", "--set_active", target_slot_number])
 
-  cloudlog.info("AGNOS update successful")
+  cloudlog.info("AGNOS ready on slot {target_slot}")
 
 
 def handle_neos_update(wait_helper: WaitTimeHelper) -> None:
