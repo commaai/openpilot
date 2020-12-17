@@ -37,7 +37,6 @@ common/stat_live.py
 common/spinner.py
 common/text_window.py
 common/cython_hacks.py
-common/apk.py
 common/SConscript
 
 common/kalman/.gitignore
@@ -273,6 +272,7 @@ selfdrive/controls/lib/longitudinal_mpc_model/longitudinal_mpc.c
 selfdrive/hardware/__init__.py
 selfdrive/hardware/base.py
 selfdrive/hardware/eon/__init__.py
+selfdrive/hardware/eon/apk.py
 selfdrive/hardware/eon/hardware.py
 selfdrive/hardware/tici/__init__.py
 selfdrive/hardware/tici/hardware.py

@@ -157,7 +157,7 @@ from selfdrive.registration import register
 from selfdrive.version import version, dirty
 from selfdrive.loggerd.config import ROOT
 from selfdrive.launcher import launcher
-from common.apk import update_apks, pm_apply_packages, start_offroad
+from selfdrive.hardware.eon.apk import update_apks, pm_apply_packages, start_offroad
 
 ThermalStatus = cereal.log.ThermalData.ThermalStatus
 
@@ -534,13 +534,6 @@ def uninstall():
   HARDWARE.reboot(reason="recovery")
 
 def main():
-  if EON:
-    # the flippening!
-    os.system('LD_LIBRARY_PATH="" content insert --uri content://settings/system --bind name:s:user_rotation --bind value:i:1')
-
-    # disable bluetooth
-    os.system('service call bluetooth_manager 8')
-
   params = Params()
   params.manager_start()
 
