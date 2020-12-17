@@ -317,7 +317,7 @@ def prepare_managed_process(p):
     try:
       subprocess.check_call(["scons", "u", "-j4", "."], cwd=os.path.join(BASEDIR, proc[0]))
     except subprocess.CalledProcessError:
-      # make clean if the build failed
+      # clean and retry if the build failed
       cloudlog.warning("building %s failed, cleaning and retrying" % (proc, ))
       subprocess.check_call(["scons", "-u", "-c", "."], cwd=os.path.join(BASEDIR, proc[0]))
       subprocess.check_call(["scons", "-u", "-j4", "."], cwd=os.path.join(BASEDIR, proc[0]))
@@ -386,7 +386,7 @@ def send_managed_process_signal(name, sig):
 
 # ****************** run loop ******************
 
-def manager_init(should_register=True):
+def manager_init():
   # Create folders needed for msgq
   try:
     os.mkdir("/dev/shm")
@@ -395,20 +395,14 @@ def manager_init(should_register=True):
   except PermissionError:
     print("WARNING: failed to make /dev/shm")
 
-  if should_register:
-    reg_res = register()
-    if reg_res:
-      dongle_id = reg_res
-    else:
-      raise Exception("server registration failed")
-  else:
-    dongle_id = "c"*16
-
   # set dongle id
-  cloudlog.info("dongle id is " + dongle_id)
+  reg_res = register()
+  if reg_res:
+    dongle_id = reg_res
+  else:
+    raise Exception("server registration failed")
   os.environ['DONGLE_ID'] = dongle_id
 
-  cloudlog.info("dirty is %d" % dirty)
   if not dirty:
     os.environ['CLEAN'] = '1'
 
@@ -511,8 +505,8 @@ def manager_prepare(spinner=None):
   total = 100.0 if PREBUILT else 30.0
 
   for i, p in enumerate(managed_processes):
-    if spinner is not None:
-      spinner.update("%d" % ((100.0 - total) + total * (i + 1) / len(managed_processes),))
+    perc = (100.0 - total) + total * (i + 1) / len(managed_processes)
+    spinner.update(str(int(perc)))
     prepare_managed_process(p)
 
 def main():
