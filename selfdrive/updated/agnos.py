@@ -144,5 +144,5 @@ if __name__ == "__main__":
   spinner.update("Updating AGNOS")
   time.sleep(5)
 
-  logging.basicConfig(level=logging.DEBUG)
+  logging.basicConfig(level=logging.INFO)
   flash_agnos_update(sys.argv[1], logging, spinner)
