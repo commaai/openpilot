@@ -410,12 +410,3 @@ def main():
 
 if __name__ == "__main__":
   main()
-
-  # import tqdm
-  # f = StreamingDecompressor("https://commadist.azureedge.net/agnosupdate-staging/system-a0f8281af24d43673dbd1175e1dbbac908512fe0587c3d9b1c9455bdd8994e2a.img.xz")
-  # sha256 = hashlib.sha256()
-
-  # for chunk in tqdm.tqdm(unsparsify(f)):
-  #   sha256.update(chunk)
-  # print(sha256.hexdigest().lower())
-  # print(f.sha256.hexdigest().lower())
