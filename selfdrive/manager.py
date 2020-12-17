@@ -499,7 +499,7 @@ def manager_thread():
     if params.get("DoUninstall", encoding='utf8') == "1":
       break
 
-def manager_prepare(spinner=None):
+def manager_prepare():
   # build all processes
   os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
@@ -546,7 +546,7 @@ def main():
   if EON:
     update_apks()
   manager_init()
-  manager_prepare(spinner)
+  manager_prepare()
   spinner.close()
 
   if os.getenv("PREPAREONLY") is not None:
