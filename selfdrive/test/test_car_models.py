@@ -217,6 +217,10 @@ routes = {
     'carFingerprint': HYUNDAI.PALISADE,
     'enableCamera': True,
   },
+  "2c5cf2dd6102e5da|2020-12-17--16-06-44": {
+    'carFingerprint': HYUNDAI.IONIQ_EV_2020,
+    'enableCamera': True,
+  },
   "610ebb9faaad6b43|2020-06-13--15-28-36": {
     'carFingerprint': HYUNDAI.IONIQ_EV_LTD,
     'enableCamera': True,
