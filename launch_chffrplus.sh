@@ -150,7 +150,7 @@ function tici_init {
       sudo reboot
     else
       echo "Hash mismatch, downloading agnos"
-      if $DIR/selfdrive/updated/agnos.py $MANIFEST; then
+      if $DIR/selfdrive/hardware/tici/agnos.py $MANIFEST; then
         echo "Download done, swapping active slot to $OTHER_SLOT_NUMBER"
         abctl --set_active "$OTHER_SLOT_NUMBER"
       fi

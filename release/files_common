@@ -75,11 +75,8 @@ selfdrive/swaglog.py
 selfdrive/logmessaged.py
 selfdrive/tombstoned.py
 selfdrive/pandad.py
+selfdrive/updated.py
 selfdrive/rtshield.py
-
-selfdrive/updated/__init__.py
-selfdrive/updated/agnos.py
-selfdrive/updated/updated.py
 
 selfdrive/athena/__init__.py
 selfdrive/athena/athenad.py
@@ -280,6 +277,7 @@ selfdrive/hardware/eon/hardware.py
 selfdrive/hardware/tici/__init__.py
 selfdrive/hardware/tici/hardware.py
 selfdrive/hardware/tici/pins.py
+selfdrive/hardware/tici/agnos.py
 selfdrive/hardware/pc/__init__.py
 selfdrive/hardware/pc/hardware.py
 
