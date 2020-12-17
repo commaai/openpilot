@@ -122,7 +122,7 @@ function tici_init {
       OTHER_SLOT="_b"
       OTHER_SLOT_NUMBER="1"
     else
-      OTHER_SLOT="_b"
+      OTHER_SLOT="_a"
       OTHER_SLOT_NUMBER="0"
     fi
     echo "Cur slot $CUR_SLOT, target $OTHER_SLOT"
