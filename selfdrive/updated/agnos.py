@@ -139,6 +139,7 @@ if __name__ == "__main__":
 
   if len(sys.argv) != 2:
     print("Usage: ./agnos.py <manifest.json>")
+    exit(1)
 
   spinner = Spinner()
   spinner.update("Updating AGNOS")
