@@ -307,13 +307,13 @@ def start_daemon_process(name):
 
   params.put(pid_param, str(proc.pid))
 
-def prepare_managed_process(p):
+def prepare_managed_process(p, build=False):
   proc = managed_processes[p]
   if isinstance(proc, str):
     # import this python
     cloudlog.info("preimporting %s" % proc)
     importlib.import_module(proc)
-  elif os.path.isfile(os.path.join(BASEDIR, proc[0], "Makefile")):
+  elif os.path.isfile(os.path.join(BASEDIR, proc[0], "SConscript")) and build:
     # build this process
     cloudlog.info("building %s" % (proc,))
     try:
