@@ -14,7 +14,7 @@ from selfdrive.swaglog import cloudlog, add_logentries_handler
 
 
 from common.basedir import BASEDIR
-from common.hardware import HARDWARE, ANDROID, PC
+from selfdrive.hardware import HARDWARE, EON, PC
 WEBCAM = os.getenv("WEBCAM") is not None
 sys.path.append(os.path.join(BASEDIR, "pyextra"))
 os.environ['BASEDIR'] = BASEDIR
@@ -30,7 +30,7 @@ except FileExistsError:
 except PermissionError:
   print("WARNING: failed to make /dev/shm")
 
-if ANDROID:
+if EON:
   os.chmod("/dev/shm", 0o777)
 
 def unblock_stdout():
@@ -157,7 +157,7 @@ from selfdrive.registration import register
 from selfdrive.version import version, dirty
 from selfdrive.loggerd.config import ROOT
 from selfdrive.launcher import launcher
-from common.apk import update_apks, pm_apply_packages, start_offroad
+from selfdrive.hardware.eon.apk import update_apks, pm_apply_packages, start_offroad
 
 ThermalStatus = cereal.log.ThermalData.ThermalStatus
 
@@ -258,7 +258,7 @@ if not PC:
     'dmonitoringmodeld',
   ]
 
-if ANDROID:
+if EON:
   car_started_processes += [
     'gpsd',
     'rtshield',
@@ -385,7 +385,7 @@ def kill_managed_process(name):
 def cleanup_all_processes(signal, frame):
   cloudlog.info("caught ctrl-c %s %s" % (signal, frame))
 
-  if ANDROID:
+  if EON:
     pm_apply_packages('disable')
 
   for name in list(running.keys()):
@@ -433,7 +433,7 @@ def manager_init(should_register=True):
     pass
 
   # ensure shared libraries are readable by apks
-  if ANDROID:
+  if EON:
     os.chmod(BASEDIR, 0o755)
     os.chmod(os.path.join(BASEDIR, "cereal"), 0o755)
     os.chmod(os.path.join(BASEDIR, "cereal", "libmessaging_shared.so"), 0o755)
@@ -459,7 +459,7 @@ def manager_thread():
     start_managed_process(p)
 
   # start offroad
-  if ANDROID:
+  if EON:
     pm_apply_packages('enable')
     start_offroad()
 
@@ -534,13 +534,6 @@ def uninstall():
   HARDWARE.reboot(reason="recovery")
 
 def main():
-  if ANDROID:
-    # the flippening!
-    os.system('LD_LIBRARY_PATH="" content insert --uri content://settings/system --bind name:s:user_rotation --bind value:i:1')
-
-    # disable bluetooth
-    os.system('service call bluetooth_manager 8')
-
   params = Params()
   params.manager_start()
 
@@ -572,7 +565,7 @@ def main():
   if params.get("Passive") is None:
     raise Exception("Passive must be set to continue")
 
-  if ANDROID:
+  if EON:
     update_apks()
   manager_init()
   manager_prepare(spinner)

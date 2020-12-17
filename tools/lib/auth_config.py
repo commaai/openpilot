@@ -1,7 +1,7 @@
 import json
 import os
-from common.hardware import PC
 from common.file_helpers import mkdirs_exists_ok
+from selfdrive.hardware import PC
 
 
 class MissingAuthConfigError(Exception):

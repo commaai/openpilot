@@ -6,7 +6,7 @@ import struct
 import subprocess
 
 from cereal import log
-from common.hardware_base import HardwareBase
+from selfdrive.hardware.base import HardwareBase
 
 NetworkType = log.ThermalData.NetworkType
 NetworkStrength = log.ThermalData.NetworkStrength

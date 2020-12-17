@@ -3,9 +3,10 @@
 import os
 import time
 
-from common.hardware import TICI
-from common.gpio import GPIO_HUB_RST_N, GPIO_STM_BOOT0, GPIO_STM_RST_N, gpio_init, gpio_set
 from panda import BASEDIR, Panda, PandaDFU, build_st
+from common.gpio import gpio_init, gpio_set
+from selfdrive.hardware import TICI
+from selfdrive.hardware.tici.pins import GPIO_HUB_RST_N, GPIO_STM_BOOT0, GPIO_STM_RST_N
 from selfdrive.swaglog import cloudlog
 
 def is_legacy_panda_reset():
