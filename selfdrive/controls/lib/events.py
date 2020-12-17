@@ -211,8 +211,6 @@ def wrong_car_mode_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: boo
 EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, bool], Alert]]]] = {
   # ********** events with no alerts **********
 
-  EventName.commIssueWarning: {},
-
   # ********** events only containing alerts displayed in all states **********
 
   EventName.debugAlert: {
