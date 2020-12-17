@@ -129,7 +129,7 @@ def flash_agnos_update(manifest_path, cloudlog, spinner=None):
       os.sync()
       out.write(partition['hash_raw'].lower().encode())
 
-  cloudlog.info(f"AGNOS ready on slot f{target_slot}")
+  cloudlog.info(f"AGNOS ready on slot {target_slot}")
 
 
 if __name__ == "__main__":
