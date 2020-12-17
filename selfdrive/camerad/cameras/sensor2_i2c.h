@@ -267,7 +267,7 @@ struct i2c_random_wr_payload init_array_ar0231[] = {
   {0x302A, 0x0006}, // VT_PIX_CLK_DIV
   {0x302C, 0x0001}, // VT_SYS_CLK_DIV
   {0x302E, 0x0002}, // PRE_PLL_CLK_DIV
-  {0x3030, 0x0028}, // PLL_MULTIPLIER
+  {0x3030, 0x002C}, // PLL_MULTIPLIER
   {0x3036, 0x000A}, // OP_WORD_CLK_DIV
   {0x3038, 0x0001}, // OP_SYS_CLK_DIV
   {0x30B0, 0x0800}, // DIGITAL_TEST
