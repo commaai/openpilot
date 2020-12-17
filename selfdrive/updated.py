@@ -312,6 +312,13 @@ def handle_agnos_update(wait_helper):
 
     downloader = StreamingDecompressor(partition['url'])
     with open(f"/dev/disk/by-partlabel/{partition['name']}{target_slot}", 'wb') as out:
+      # Clear hash before flashing
+      out.seek(partition['size'])
+      out.write(b"\x00" * 64)
+      out.seek(0)
+      os.sync()
+
+      # Flash partition
       if partition['sparse']:
         raw_hash = hashlib.sha256()
         for chunk in unsparsify(downloader):
@@ -327,6 +334,7 @@ def handle_agnos_update(wait_helper):
       if downloader.sha256.hexdigest().lower() != partition['hash'].lower():
         raise Exception("Uncompressed hash mismatch")
 
+      # Write hash after successfull flash
       os.sync()
       out.write(partition['hash_raw'].lower().encode())
 
