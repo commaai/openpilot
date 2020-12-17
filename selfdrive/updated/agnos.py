@@ -135,9 +135,13 @@ def flash_agnos_update(manifest_path, cloudlog, spinner=None):
 if __name__ == "__main__":
   import logging
   import time
+  import sys
+
+  if len(sys.argv) != 2:
+    print("Usage: ./agnos.py <manifest.json>")
 
   spinner = Spinner()
   spinner.update("Updating AGNOS")
   time.sleep(5)
 
-  flash_agnos_update(logging, spinner)
+  flash_agnos_update(sys.argv[1], logging, spinner)
