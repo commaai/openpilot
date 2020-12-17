@@ -5,6 +5,8 @@ import time
 from typing import Any
 from tqdm import tqdm
 
+os.environ['QCOM_REPLAY'] = '1'
+
 from common.spinner import Spinner
 from common.timeout import Timeout
 import selfdrive.manager as manager
