@@ -22,16 +22,6 @@ os.environ['BASEDIR'] = BASEDIR
 TOTAL_SCONS_NODES = 1040
 prebuilt = os.path.exists(os.path.join(BASEDIR, 'prebuilt'))
 
-# Create folders needed for msgq
-try:
-  os.mkdir("/dev/shm")
-except FileExistsError:
-  pass
-except PermissionError:
-  print("WARNING: failed to make /dev/shm")
-
-if EON:
-  os.chmod("/dev/shm", 0o777)
 
 def unblock_stdout():
   # get a non-blocking stdout
@@ -333,12 +323,12 @@ def prepare_managed_process(p):
     # build this process
     cloudlog.info("building %s" % (proc,))
     try:
-      subprocess.check_call(["make", "-j4"], cwd=os.path.join(BASEDIR, proc[0]))
+      subprocess.check_call(["scons", "u", "-j4", "."], cwd=os.path.join(BASEDIR, proc[0]))
     except subprocess.CalledProcessError:
       # make clean if the build failed
-      cloudlog.warning("building %s failed, make clean" % (proc, ))
-      subprocess.check_call(["make", "clean"], cwd=os.path.join(BASEDIR, proc[0]))
-      subprocess.check_call(["make", "-j4"], cwd=os.path.join(BASEDIR, proc[0]))
+      cloudlog.warning("building %s failed, cleaning and retrying" % (proc, ))
+      subprocess.check_call(["scons", "-u", "-c", "."], cwd=os.path.join(BASEDIR, proc[0]))
+      subprocess.check_call(["scons", "-u", "-j4", "."], cwd=os.path.join(BASEDIR, proc[0]))
 
 
 def join_process(process, timeout):
@@ -405,6 +395,14 @@ def send_managed_process_signal(name, sig):
 # ****************** run loop ******************
 
 def manager_init(should_register=True):
+  # Create folders needed for msgq
+  try:
+    os.mkdir("/dev/shm")
+  except FileExistsError:
+    pass
+  except PermissionError:
+    print("WARNING: failed to make /dev/shm")
+
   if should_register:
     reg_res = register()
     if reg_res:
@@ -435,6 +433,7 @@ def manager_init(should_register=True):
   # ensure shared libraries are readable by apks
   if EON:
     os.chmod(BASEDIR, 0o755)
+    os.chmod("/dev/shm", 0o777)
     os.chmod(os.path.join(BASEDIR, "cereal"), 0o755)
     os.chmod(os.path.join(BASEDIR, "cereal", "libmessaging_shared.so"), 0o755)
 
@@ -558,7 +557,7 @@ def main():
     if params.get(k) is None:
       params.put(k, v)
 
-  # is this chffrplus?
+  # is this dashcam?
   if os.getenv("PASSIVE") is not None:
     params.put("Passive", str(int(os.getenv("PASSIVE"))))
 
