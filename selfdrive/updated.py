@@ -334,6 +334,9 @@ def handle_agnos_update(wait_helper):
       if downloader.sha256.hexdigest().lower() != partition['hash'].lower():
         raise Exception("Uncompressed hash mismatch")
 
+      if out.tell() != partition['size']:
+        raise Exception("Uncompressed size mismatch")
+
       # Write hash after successfull flash
       os.sync()
       out.write(partition['hash_raw'].lower().encode())
