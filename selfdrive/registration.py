@@ -65,15 +65,18 @@ def register(spinner=None):
         cloudlog.exception("Error getting imei, trying again...")
         time.sleep(1)
 
-    try:
-      cloudlog.info("getting pilotauth")
-      resp = api_get("v2/pilotauth/", method='POST', timeout=15,
-                     imei=imei1, imei2=imei2, serial=HARDWARE.get_serial(), public_key=public_key, register_token=register_token)
-      dongleauth = json.loads(resp.text)
-      dongle_id = dongleauth["dongle_id"]
-      params.put("DongleId", dongle_id)
-    except Exception:
-      cloudlog.exception("failed to authenticate")
+    while True:
+      try:
+        cloudlog.info("getting pilotauth")
+        resp = api_get("v2/pilotauth/", method='POST', timeout=15,
+                       imei=imei1, imei2=imei2, serial=HARDWARE.get_serial(), public_key=public_key, register_token=register_token)
+        dongleauth = json.loads(resp.text)
+        dongle_id = dongleauth["dongle_id"]
+        params.put("DongleId", dongle_id)
+        break
+      except Exception:
+        cloudlog.exception("failed to authenticate")
+        time.sleep(1)
 
   return dongle_id
 
