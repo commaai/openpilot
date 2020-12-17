@@ -18,10 +18,6 @@ apk/ai.comma*.apk
 
 common/.gitignore
 common/__init__.py
-common/hardware.py
-common/hardware_android.py
-common/hardware_tici.py
-common/hardware_base.py
 common/gpio.py
 common/realtime.py
 common/clock.pyx
@@ -41,7 +37,6 @@ common/stat_live.py
 common/spinner.py
 common/text_window.py
 common/cython_hacks.py
-common/apk.py
 common/SConscript
 
 common/kalman/.gitignore
@@ -273,6 +268,17 @@ selfdrive/controls/lib/longitudinal_mpc_model/__init__.py
 selfdrive/controls/lib/longitudinal_mpc_model/generator.cpp
 selfdrive/controls/lib/longitudinal_mpc_model/libmpc_py.py
 selfdrive/controls/lib/longitudinal_mpc_model/longitudinal_mpc.c
+
+selfdrive/hardware/__init__.py
+selfdrive/hardware/base.py
+selfdrive/hardware/eon/__init__.py
+selfdrive/hardware/eon/apk.py
+selfdrive/hardware/eon/hardware.py
+selfdrive/hardware/tici/__init__.py
+selfdrive/hardware/tici/hardware.py
+selfdrive/hardware/tici/pins.py
+selfdrive/hardware/pc/__init__.py
+selfdrive/hardware/pc/hardware.py
 
 selfdrive/locationd/__init__.py
 selfdrive/locationd/.gitignore
