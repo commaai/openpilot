@@ -17,6 +17,14 @@ class HardwareBase:
       return default
 
   @abstractmethod
+  def reboot(self, reason=None):
+    pass
+
+  @abstractmethod
+  def uninstall(self):
+    pass
+
+  @abstractmethod
   def get_sound_card_online(self):
     pass
 
@@ -30,10 +38,6 @@ class HardwareBase:
 
   @abstractmethod
   def get_subscriber_info(self):
-    pass
-
-  @abstractmethod
-  def reboot(self, reason=None):
     pass
 
   @abstractmethod

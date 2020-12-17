@@ -585,7 +585,8 @@ def main():
     cleanup_all_processes(None, None)
 
   if params.get("DoUninstall", encoding='utf8') == "1":
-    uninstall()
+    cloudlog.warning("uninstalling")
+    HARDWARE.uninstall()
 
 
 if __name__ == "__main__":

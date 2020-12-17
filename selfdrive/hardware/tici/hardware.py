@@ -35,11 +35,15 @@ class Tici(HardwareBase):
   def get_sound_card_online(self):
     return True
 
-  def get_serial(self):
-    return self.get_cmdline()['androidboot.serialno']
-
   def reboot(self, reason=None):
     subprocess.check_output(["sudo", "reboot"])
+
+  def uninstall(self):
+    # TODO: implement uninstall. reboot to factory reset?
+    pass
+
+  def get_serial(self):
+    return self.get_cmdline()['androidboot.serialno']
 
   def get_network_type(self):
     primary_connection = self.nm.Get(NM, 'PrimaryConnection', dbus_interface=DBUS_PROPS)
