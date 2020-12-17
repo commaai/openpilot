@@ -1,6 +1,7 @@
-from common.hardware_base import HardwareBase
-from cereal import log
 import subprocess
+
+from cereal import log
+from selfdrive.hardware.base import HardwareBase
 
 NM = 'org.freedesktop.NetworkManager'
 NM_CON_ACT = NM + '.Connection.Active'

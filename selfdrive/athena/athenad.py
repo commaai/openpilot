@@ -20,11 +20,11 @@ from websocket import ABNF, WebSocketTimeoutException, create_connection
 
 import cereal.messaging as messaging
 from cereal.services import service_list
-from common.hardware import HARDWARE
 from common.api import Api
 from common.basedir import PERSIST
 from common.params import Params
 from common.realtime import sec_since_boot
+from selfdrive.hardware import HARDWARE
 from selfdrive.loggerd.config import ROOT
 from selfdrive.swaglog import cloudlog
 
