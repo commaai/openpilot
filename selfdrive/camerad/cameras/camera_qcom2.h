@@ -18,6 +18,7 @@
 
 #define EF_LOWPASS_K 0.35
 
+#define DEBAYER_LOCAL_WORKSIZE 16
 
 typedef struct CameraState {
   CameraInfo ci;
@@ -61,10 +62,6 @@ typedef struct CameraState {
   int frame_id_last;
   int idx_offset;
   bool skipped;
-
-  int debayer_cl_localMemSize;
-  size_t debayer_cl_globalWorkSize[2];
-  size_t debayer_cl_localWorkSize[2];
 
   struct cam_req_mgr_session_info req_mgr_session_info;
 
