@@ -73,7 +73,7 @@ spinner.update("0")
 if __name__ != "__main__":
   spinner.close()
 
-if not PREBUILT:
+def build():
   for retry in [True, False]:
     # run scons
     env = os.environ.copy()
@@ -81,7 +81,7 @@ if not PREBUILT:
     env['SCONS_CACHE'] = "1"
 
     nproc = os.cpu_count()
-    j_flag = "" if nproc is None else "-j%d" % (nproc - 1)
+    j_flag = "" if nproc is None else f"-j{nproc - 1}"
     scons = subprocess.Popen(["scons", j_flag], cwd=BASEDIR, env=env, stderr=subprocess.PIPE)
 
     compile_output = []
@@ -137,6 +137,9 @@ if not PREBUILT:
         exit(1)
     else:
       break
+
+if __name__ == "__main__" and not PREBUILT:
+  build()
 
 import cereal.messaging as messaging
 
@@ -249,7 +252,6 @@ if EON:
 
 def register_managed_process(name, desc, car_started=False):
   global managed_processes, car_started_processes, persistent_processes
-  print("registering %s" % name)
   managed_processes[name] = desc
   if car_started:
     car_started_processes.append(name)
