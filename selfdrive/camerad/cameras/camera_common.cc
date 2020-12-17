@@ -160,10 +160,12 @@ bool CameraBuf::acquire() {
     CL_CHECK(clSetKernelArg(krnl_debayer, 0, sizeof(cl_mem), &camrabuf_cl));
     CL_CHECK(clSetKernelArg(krnl_debayer, 1, sizeof(cl_mem), &cur_rgb_buf->buf_cl));
 #ifdef QCOM2
-    CL_CHECK(clSetKernelArg(krnl_debayer, 2, camera_state->debayer_cl_localMemSize, 0));
-    CL_CHECK(clEnqueueNDRangeKernel(q, krnl_debayer, 2, NULL,
-                                  camera_state->debayer_cl_globalWorkSize, camera_state->debayer_cl_localWorkSize,
-                                  0, 0, &debayer_event));
+    constexpr int localMemSize = (DEBAYER_LOCAL_WORKSIZE + 2 * (3 / 2)) * (DEBAYER_LOCAL_WORKSIZE + 2 * (3 / 2)) * sizeof(float);
+    const size_t globalWorkSize[] = {size_t(camera_state->ci.frame_width), size_t(camera_state->ci.frame_height)};
+    const size_t localWorkSize[] = {DEBAYER_LOCAL_WORKSIZE, DEBAYER_LOCAL_WORKSIZE};
+    CL_CHECK(clSetKernelArg(krnl_debayer, 2, localMemSize, 0));
+    CL_CHECK(clEnqueueNDRangeKernel(q, krnl_debayer, 2, NULL, globalWorkSize, localWorkSize,
+                                    0, 0, &debayer_event));
 #else
     float digital_gain = camera_state->digital_gain;
     if ((int)digital_gain == 0) {
@@ -172,7 +174,7 @@ bool CameraBuf::acquire() {
     CL_CHECK(clSetKernelArg(krnl_debayer, 2, sizeof(float), &digital_gain));
     const size_t debayer_work_size = rgb_height;  // doesn't divide evenly, is this okay?
     CL_CHECK(clEnqueueNDRangeKernel(q, krnl_debayer, 1, NULL,
-                                  &debayer_work_size, NULL, 0, 0, &debayer_event));
+                                    &debayer_work_size, NULL, 0, 0, &debayer_event));
 #endif
   } else {
     assert(cur_rgb_buf->len >= frame_size);
