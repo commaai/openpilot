@@ -38,8 +38,7 @@ def unblock_stdout():
     signal.signal(signal.SIGINT, lambda signum, frame: os.kill(child_pid, signal.SIGINT))
     signal.signal(signal.SIGTERM, lambda signum, frame: os.kill(child_pid, signal.SIGTERM))
 
-    fcntl.fcntl(sys.stdout, fcntl.F_SETFL,
-       fcntl.fcntl(sys.stdout, fcntl.F_GETFL) | os.O_NONBLOCK)
+    fcntl.fcntl(sys.stdout, fcntl.F_SETFL, fcntl.fcntl(sys.stdout, fcntl.F_GETFL) | os.O_NONBLOCK)
 
     while True:
       try:
@@ -487,6 +486,7 @@ def manager_thread():
 
       # trigger an update after going offroad
       if started_prev:
+        os.sync()
         send_managed_process_signal("updated", signal.SIGHUP)
 
     started_prev = msg.thermal.started
