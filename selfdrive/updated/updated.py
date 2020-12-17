@@ -23,9 +23,6 @@
 # disable this service.
 
 import os
-import json
-import lzma
-import hashlib
 import datetime
 import subprocess
 import psutil
@@ -34,8 +31,6 @@ import signal
 import fcntl
 import time
 import threading
-import requests
-import struct
 from pathlib import Path
 from typing import List, Tuple, Optional
 
@@ -44,6 +39,7 @@ from common.params import Params
 from selfdrive.hardware import EON, TICI, HARDWARE
 from selfdrive.swaglog import cloudlog
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
+from selfdrive.updated.agnos import flash_agnos_update
 
 LOCK_FILE = os.getenv("UPDATER_LOCK_FILE", "/tmp/safe_staging_overlay.lock")
 STAGING_ROOT = os.getenv("UPDATER_STAGING_ROOT", "/data/safe_staging")
@@ -218,72 +214,6 @@ def finalize_update() -> None:
   cloudlog.info("done finalizing overlay")
 
 
-class StreamingDecompressor:
-  def __init__(self, url):
-    self.buf = b""
-
-    self.req = requests.get(url, stream=True, headers={'Accept-Encoding': None})
-    self.it = self.req.iter_content(chunk_size=1024 * 1024)
-    self.decompressor = lzma.LZMADecompressor(format=lzma.FORMAT_AUTO)
-    self.eof = False
-    self.sha256 = hashlib.sha256()
-
-  def read(self, length):
-    while len(self.buf) < length:
-      self.req.raise_for_status()
-
-      try:
-        compressed = next(self.it)
-      except StopIteration:
-        self.eof = True
-        break
-      out = self.decompressor.decompress(compressed)
-      self.buf += out
-
-    result = self.buf[:length]
-    self.buf = self.buf[length:]
-
-    self.sha256.update(result)
-    return result
-
-
-def unsparsify(f):
-  magic = struct.unpack("I", f.read(4))[0]
-  assert(magic == 0xed26ff3a)
-
-  # Version
-  major = struct.unpack("H", f.read(2))[0]
-  minor = struct.unpack("H", f.read(2))[0]
-  assert(major == 1 and minor == 0)
-
-  # Header sizes
-  _ = struct.unpack("H", f.read(2))[0]
-  _ = struct.unpack("H", f.read(2))[0]
-
-  block_sz = struct.unpack("I", f.read(4))[0]
-  _ = struct.unpack("I", f.read(4))[0]
-  num_chunks = struct.unpack("I", f.read(4))[0]
-  _ = struct.unpack("I", f.read(4))[0]
-
-  for _ in range(num_chunks):
-    chunk_type = struct.unpack("H", f.read(2))[0]
-    _ = struct.unpack("H", f.read(2))[0]
-    out_blocks = struct.unpack("I", f.read(4))[0]
-    _ = struct.unpack("I", f.read(4))[0]
-
-    if chunk_type == 0xcac1:  # Raw
-      # TODO: yield in smaller chunks. Yielding only block_sz is too slow. Largest observed data chunk is 252 MB.
-      yield f.read(out_blocks * block_sz)
-    elif chunk_type == 0xcac2:  # Fill
-      filler = f.read(4) * (block_sz // 4)
-      for _ in range(out_blocks):
-        yield filler
-    elif chunk_type == 0xcac3:  # Don't care
-      yield b""
-    else:
-      raise Exception("Unhandled sparse chunk type")
-
-
 def handle_agnos_update(wait_helper):
   cur_version = HARDWARE.get_os_version()
   updated_version = run(["bash", "-c", r"unset AGNOS_VERSION && source launch_env.sh && \
@@ -296,52 +226,7 @@ def handle_agnos_update(wait_helper):
   cloudlog.info(f"Beginning background installation for AGNOS {updated_version}")
 
   manifest_path = os.path.join(OVERLAY_MERGED, "installer/updater/update_agnos.json")
-  update = json.load(open(manifest_path))
-
-  current_slot = subprocess.check_output(["abctl", "--boot_slot"], encoding='utf-8').strip()
-  target_slot = "_b" if current_slot == "_a" else "_a"
-  target_slot_number = "0" if target_slot == "_a" else "1"
-
-  cloudlog.info(f"Current slot {current_slot}, target slot {target_slot}")
-
-  # set target slot as unbootable
-  os.system(f"abctl --set_unbootable {target_slot_number}")
-
-  for partition in update:
-    cloudlog.info(f"Downloading and writing {partition['name']}")
-
-    downloader = StreamingDecompressor(partition['url'])
-    with open(f"/dev/disk/by-partlabel/{partition['name']}{target_slot}", 'wb') as out:
-      # Clear hash before flashing
-      out.seek(partition['size'])
-      out.write(b"\x00" * 64)
-      out.seek(0)
-      os.sync()
-
-      # Flash partition
-      if partition['sparse']:
-        raw_hash = hashlib.sha256()
-        for chunk in unsparsify(downloader):
-          raw_hash.update(chunk)
-          out.write(chunk)
-
-        if raw_hash.hexdigest().lower() != partition['hash_raw'].lower():
-          raise Exception(f"Unsparse hash mismatch '{raw_hash.hexdigest().lower()}'")
-      else:
-        while not downloader.eof:
-          out.write(downloader.read(1024 * 1024))
-
-      if downloader.sha256.hexdigest().lower() != partition['hash'].lower():
-        raise Exception("Uncompressed hash mismatch")
-
-      if out.tell() != partition['size']:
-        raise Exception("Uncompressed size mismatch")
-
-      # Write hash after successfull flash
-      os.sync()
-      out.write(partition['hash_raw'].lower().encode())
-
-  cloudlog.info(f"AGNOS ready on slot f{target_slot}")
+  flash_agnos_update(manifest_path, cloudlog)
 
 
 def handle_neos_update(wait_helper: WaitTimeHelper) -> None:

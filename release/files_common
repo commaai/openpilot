@@ -78,6 +78,7 @@ selfdrive/pandad.py
 selfdrive/rtshield.py
 
 selfdrive/updated/__init__.py
+selfdrive/updated/agnos.py
 selfdrive/updated/updated.py
 
 selfdrive/athena/__init__.py

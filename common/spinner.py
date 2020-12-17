@@ -24,6 +24,9 @@ class Spinner():
       except BrokenPipeError:
         pass
 
+  def update_progress(self, cur, total):
+    self.update(str(int(100 * cur / total)))
+
   def close(self):
     if self.spinner_proc is not None:
       try:
