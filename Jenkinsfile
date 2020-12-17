@@ -124,7 +124,7 @@ pipeline {
                 stage('Replay Tests') {
                   steps {
                     phone_steps("eon2", [
-                      ["camerad/modeld replay", "cd selfdrive/test/process_replay && ./camera_replay.py"],
+                      ["camerad/modeld replay", "QCOM_REPLAY=1 scons -j4 && cd selfdrive/test/process_replay && ./camera_replay.py"],
                     ])
                   }
                 }
@@ -132,7 +132,7 @@ pipeline {
                 stage('HW + Unit Tests') {
                   steps {
                     phone_steps("eon", [
-                      ["build cereal", "SCONS_CACHE=1 scons -j4 cereal/"],
+                      ["build", "SCONS_CACHE=1 scons -j4"],
                       ["test sounds", "nosetests -s selfdrive/test/test_sounds.py"],
                       ["test boardd loopback", "nosetests -s selfdrive/boardd/tests/test_boardd_loopback.py"],
                       ["test loggerd", "CI=1 python selfdrive/loggerd/tests/test_loggerd.py"],

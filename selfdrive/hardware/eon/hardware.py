@@ -98,6 +98,12 @@ class Android(HardwareBase):
       "i32", "1"  # wait
     ])
 
+  def uninstall(self):
+    with open('/cache/recovery/command', 'w') as f:
+      f.write('--wipe_data\n')
+    # IPowerManager.reboot(confirm=false, reason="recovery", wait=true)
+    self.reboot(reason="recovery")
+
   def get_sim_info(self):
     # Used for athena
     # TODO: build using methods from this class
