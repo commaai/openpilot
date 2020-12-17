@@ -204,16 +204,16 @@ function launch {
     fi
   fi
 
+  # handle pythonpath
+  ln -sfn $(pwd) /data/pythonpath
+  export PYTHONPATH="$PWD"
+
   # hardware specific init
   if [ -f /EON ]; then
     two_init
   elif [ -f /TICI ]; then
     tici_init
   fi
-
-  # handle pythonpath
-  ln -sfn $(pwd) /data/pythonpath
-  export PYTHONPATH="$PWD"
 
   # write tmux scrollback to a file
   tmux capture-pane -pq -S-1000 > /tmp/launch_log
