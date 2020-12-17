@@ -142,7 +142,7 @@ function tici_init {
     echo "System: $SYSTEM_HASH"
     echo "Boot: $BOOT_HASH"
 
-    if [[ "$YSTEM_HASH" == "$SYTEM_HASH_EXPECTED" && "$BOOT_HASH" == "$BOOT_HASH_EXPECTED" ]]; then
+    if [[ "$SYSTEM_HASH" == "$SYSTEM_HASH_EXPECTED" && "$BOOT_HASH" == "$BOOT_HASH_EXPECTED" ]]; then
       echo "Swapping active slot to $OTHER_SLOT_NUMBER"
       abctl --set_active "$OTHER_SLOT_NUMBER"
 
