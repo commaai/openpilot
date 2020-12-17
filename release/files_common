@@ -75,8 +75,10 @@ selfdrive/swaglog.py
 selfdrive/logmessaged.py
 selfdrive/tombstoned.py
 selfdrive/pandad.py
-selfdrive/updated.py
 selfdrive/rtshield.py
+
+selfdrive/updated/__init__.py
+selfdrive/updated/updated.py
 
 selfdrive/athena/__init__.py
 selfdrive/athena/athenad.py
