@@ -1,26 +1,32 @@
 #!/usr/bin/env python3
+import datetime
+import importlib
 import os
-import time
 import sys
 import fcntl
 import errno
 import signal
 import shutil
 import subprocess
-import datetime
 import textwrap
-from typing import Dict, List
-from selfdrive.swaglog import cloudlog, add_logentries_handler
+import time
+import traceback
 
+from multiprocessing import Process
+from typing import Dict, List
 
 from common.basedir import BASEDIR
+from common.spinner import Spinner
+from common.text_window import TextWindow
 from selfdrive.hardware import HARDWARE, EON, PC
-WEBCAM = os.getenv("WEBCAM") is not None
-sys.path.append(os.path.join(BASEDIR, "pyextra"))
+from selfdrive.swaglog import cloudlog, add_logentries_handler
+
 os.environ['BASEDIR'] = BASEDIR
+sys.path.append(os.path.join(BASEDIR, "pyextra"))
 
 TOTAL_SCONS_NODES = 1040
-prebuilt = os.path.exists(os.path.join(BASEDIR, 'prebuilt'))
+WEBCAM = os.getenv("WEBCAM") is not None
+PREBUILT = os.path.exists(os.path.join(BASEDIR, 'prebuilt'))
 
 
 def unblock_stdout():
@@ -60,12 +66,6 @@ def unblock_stdout():
 if __name__ == "__main__":
   unblock_stdout()
 
-from common.spinner import Spinner
-from common.text_window import TextWindow
-
-import importlib
-import traceback
-from multiprocessing import Process
 
 # Run scons
 spinner = Spinner()
@@ -73,7 +73,7 @@ spinner.update("0")
 if __name__ != "__main__":
   spinner.close()
 
-if not prebuilt:
+if not PREBUILT:
   for retry in [True, False]:
     # run scons
     env = os.environ.copy()
@@ -138,7 +138,6 @@ if not prebuilt:
     else:
       break
 
-import cereal
 import cereal.messaging as messaging
 
 from common.params import Params
@@ -149,7 +148,6 @@ from selfdrive.loggerd.config import ROOT
 from selfdrive.launcher import launcher
 from selfdrive.hardware.eon.apk import update_apks, pm_apply_packages, start_offroad
 
-ThermalStatus = cereal.log.ThermalData.ThermalStatus
 
 # comment out anything you don't want to run
 managed_processes = {
@@ -235,13 +233,7 @@ driver_view_processes = [
   'dmonitoringmodeld'
 ]
 
-if WEBCAM:
-  car_started_processes += [
-    'dmonitoringd',
-    'dmonitoringmodeld',
-  ]
-
-if not PC:
+if not PC or WEBCAM:
   car_started_processes += [
     'ubloxd',
     'dmonitoringd',
@@ -438,16 +430,12 @@ def manager_init(should_register=True):
     os.chmod(os.path.join(BASEDIR, "cereal", "libmessaging_shared.so"), 0o755)
 
 def manager_thread():
-  # now loop
-  thermal_sock = messaging.sub_sock('thermal')
 
   cloudlog.info("manager start")
   cloudlog.info({"environ": os.environ})
 
   # save boot log
   subprocess.call(["./loggerd", "--bootlog"], cwd=os.path.join(BASEDIR, "selfdrive/loggerd"))
-
-  params = Params()
 
   # start daemon processes
   for p in daemon_processes:
@@ -471,6 +459,8 @@ def manager_thread():
 
   started_prev = False
   logger_dead = False
+  params = Params()
+  thermal_sock = messaging.sub_sock('thermal')
 
   while 1:
     msg = messaging.recv_sock(thermal_sock, wait=True)
@@ -518,19 +508,12 @@ def manager_prepare(spinner=None):
   os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
   # Spinner has to start from 70 here
-  total = 100.0 if prebuilt else 30.0
+  total = 100.0 if PREBUILT else 30.0
 
   for i, p in enumerate(managed_processes):
     if spinner is not None:
       spinner.update("%d" % ((100.0 - total) + total * (i + 1) / len(managed_processes),))
     prepare_managed_process(p)
-
-def uninstall():
-  cloudlog.warning("uninstalling")
-  with open('/cache/recovery/command', 'w') as f:
-    f.write('--wipe_data\n')
-  # IPowerManager.reboot(confirm=false, reason="recovery", wait=true)
-  HARDWARE.reboot(reason="recovery")
 
 def main():
   params = Params()
@@ -598,7 +581,7 @@ if __name__ == "__main__":
 
     # Show last 3 lines of traceback
     error = traceback.format_exc(-3)
-    error = "Manager failed to start\n \n" + error
+    error = "Manager failed to start\n\n" + error
     spinner.close()
     with TextWindow(error) as t:
       t.wait_for_exit()
