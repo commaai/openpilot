@@ -8,11 +8,6 @@ source "$BASEDIR/launch_env.sh"
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 
-function tici_init {
-  sudo su -c 'echo "performance" > /sys/class/devfreq/soc:qcom,memlat-cpu0/governor'
-  sudo su -c 'echo "performance" > /sys/class/devfreq/soc:qcom,memlat-cpu4/governor'
-}
-
 function two_init {
   # Wifi scan
   wpa_cli IFNAME=wlan0 SCAN
@@ -111,6 +106,9 @@ function two_init {
 }
 
 function tici_init {
+  sudo su -c 'echo "performance" > /sys/class/devfreq/soc:qcom,memlat-cpu0/governor'
+  sudo su -c 'echo "performance" > /sys/class/devfreq/soc:qcom,memlat-cpu4/governor'
+
   # set success flag for current boot slot
   sudo abctl --set_success
 
@@ -127,14 +125,12 @@ function tici_init {
     fi
     echo "Cur slot $CUR_SLOT, target $OTHER_SLOT"
 
-
     # Get expected hashes from manifest
-    # TODO: don't rely on ordering, find by name
     MANIFEST="$DIR/installer/updater/update_agnos.json"
-    SYSTEM_HASH_EXPECTED=$(jq -r "nth(0).hash_raw" $MANIFEST)
-    SYSTEM_SIZE=$(jq -r "nth(0).size" $MANIFEST)
-    BOOT_HASH_EXPECTED=$(jq -r "nth(1).hash_raw" $MANIFEST)
-    BOOT_SIZE=$(jq -r "nth(1).size" $MANIFEST)
+    SYSTEM_HASH_EXPECTED=$(jq -r ".[] | select(.name == \"system\") | .hash_raw" $MANIFEST)
+    SYSTEM_SIZE=$(jq -r ".[] | select(.name == \"system\") | .size" $MANIFEST)
+    BOOT_HASH_EXPECTED=$(jq -r ".[] | select(.name == \"boot\") | .hash_raw" $MANIFEST)
+    BOOT_SIZE=$(jq -r ".[] | select(.name == \"boot\") | .size" $MANIFEST)
     echo "Expected hashes:"
     echo "System: $SYSTEM_HASH_EXPECTED"
     echo "Boot: $BOOT_HASH_EXPECTED"
