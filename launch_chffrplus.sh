@@ -150,7 +150,11 @@ function tici_init {
       sudo reboot
     else
       echo "Hash mismatch, downloading agnos"
-      # TODO: call updated.py with a flag to force an AGNOS download right now
+      $DIR/selfdrive/updated/agnos.py $MANIFEST
+
+      abctl --set_active "$OTHER_SLOT_NUMBER"
+      sleep 1
+      sudo reboot
     fi
   fi
 }
