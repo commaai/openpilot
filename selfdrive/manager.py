@@ -72,7 +72,7 @@ if __name__ == "__main__":
 
 # Run scons
 spinner = Spinner()
-spinner.update("0")
+spinner.update_progress(0, 100)
 if __name__ != "__main__":
   spinner.close()
 
@@ -99,7 +99,7 @@ def build():
         prefix = b'progress: '
         if line.startswith(prefix):
           i = int(line[len(prefix):])
-          spinner.update(str(int((MAX_BUILD_PROGRESS * min(1., i / TOTAL_SCONS_NODES)))))
+          spinner.update_progress(MAX_BUILD_PROGRESS * min(1., i / TOTAL_SCONS_NODES), 100.)
         elif len(line):
           compile_output.append(line)
           print(line.decode('utf8', 'replace'))
@@ -508,7 +508,7 @@ def manager_prepare():
 
   for i, p in enumerate(managed_processes):
     perc = (100.0 - total) + total * (i + 1) / len(managed_processes)
-    spinner.update(str(int(perc)))
+    spinner.update_progress(perc, 100.)
     prepare_managed_process(p)
 
 def main():
