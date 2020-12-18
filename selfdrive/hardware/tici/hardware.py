@@ -32,6 +32,10 @@ class Tici(HardwareBase):
     self.nm = self.bus.get_object(NM, '/org/freedesktop/NetworkManager')
     self.mm = self.bus.get_object(MM, '/org/freedesktop/ModemManager1')
 
+  def get_os_version(self):
+    with open("/VERSION") as f:
+      return f.read().strip()
+
   def get_sound_card_online(self):
     return True
 

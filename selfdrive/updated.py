@@ -36,14 +36,14 @@ from typing import List, Tuple, Optional
 
 from common.basedir import BASEDIR
 from common.params import Params
-from selfdrive.hardware import EON, TICI
+from selfdrive.hardware import EON, TICI, HARDWARE
 from selfdrive.swaglog import cloudlog
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
+from selfdrive.hardware.tici.agnos import flash_agnos_update
 
 LOCK_FILE = os.getenv("UPDATER_LOCK_FILE", "/tmp/safe_staging_overlay.lock")
 STAGING_ROOT = os.getenv("UPDATER_STAGING_ROOT", "/data/safe_staging")
 
-NEOS_VERSION = os.getenv("UPDATER_NEOS_VERSION", "/VERSION")
 NEOSUPDATE_DIR = os.getenv("UPDATER_NEOSUPDATE_DIR", "/data/neoupdate")
 
 OVERLAY_UPPER = os.path.join(STAGING_ROOT, "upper")
@@ -214,10 +214,23 @@ def finalize_update() -> None:
   cloudlog.info("done finalizing overlay")
 
 
-def handle_neos_update(wait_helper: WaitTimeHelper) -> None:
-  with open(NEOS_VERSION, "r") as f:
-    cur_neos = f.read().strip()
+def handle_agnos_update(wait_helper):
+  cur_version = HARDWARE.get_os_version()
+  updated_version = run(["bash", "-c", r"unset AGNOS_VERSION && source launch_env.sh && \
+                          echo -n $AGNOS_VERSION"], OVERLAY_MERGED).strip()
 
+  cloudlog.info(f"AGNOS version check: {cur_version} vs {updated_version}")
+  if cur_version == updated_version:
+    return
+
+  cloudlog.info(f"Beginning background installation for AGNOS {updated_version}")
+
+  manifest_path = os.path.join(OVERLAY_MERGED, "installer/updater/update_agnos.json")
+  flash_agnos_update(manifest_path, cloudlog)
+
+
+def handle_neos_update(wait_helper: WaitTimeHelper) -> None:
+  cur_neos = HARDWARE.get_os_version()
   updated_neos = run(["bash", "-c", r"unset REQUIRED_NEOS_VERSION && source launch_env.sh && \
                        echo -n $REQUIRED_NEOS_VERSION"], OVERLAY_MERGED).strip()
 
@@ -294,6 +307,8 @@ def fetch_update(wait_helper: WaitTimeHelper) -> bool:
 
       if EON:
         handle_neos_update(wait_helper)
+      elif TICI:
+        handle_agnos_update(wait_helper)
 
     # Create the finalized, ready-to-swap update
     finalize_update()
@@ -391,6 +406,7 @@ def main():
     wait_helper.sleep(60)
 
   dismount_overlay()
+
 
 if __name__ == "__main__":
   main()

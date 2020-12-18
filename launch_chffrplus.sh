@@ -8,11 +8,6 @@ source "$BASEDIR/launch_env.sh"
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 
-function tici_init {
-  sudo su -c 'echo "performance" > /sys/class/devfreq/soc:qcom,memlat-cpu0/governor'
-  sudo su -c 'echo "performance" > /sys/class/devfreq/soc:qcom,memlat-cpu4/governor'
-}
-
 function two_init {
   # Wifi scan
   wpa_cli IFNAME=wlan0 SCAN
@@ -110,6 +105,62 @@ function two_init {
   fi
 }
 
+function tici_init {
+  sudo su -c 'echo "performance" > /sys/class/devfreq/soc:qcom,memlat-cpu0/governor'
+  sudo su -c 'echo "performance" > /sys/class/devfreq/soc:qcom,memlat-cpu4/governor'
+
+  # set success flag for current boot slot
+  sudo abctl --set_success
+
+  # Check if AGNOS update is required
+  if [ $(< /VERSION) != "$AGNOS_VERSION" ]; then
+    # Get number of slot to switch to
+    CUR_SLOT=$(abctl --boot_slot)
+    if [[ "$CUR_SLOT" == "_a" ]]; then
+      OTHER_SLOT="_b"
+      OTHER_SLOT_NUMBER="1"
+    else
+      OTHER_SLOT="_a"
+      OTHER_SLOT_NUMBER="0"
+    fi
+    echo "Cur slot $CUR_SLOT, target $OTHER_SLOT"
+
+    # Get expected hashes from manifest
+    MANIFEST="$DIR/installer/updater/update_agnos.json"
+    SYSTEM_HASH_EXPECTED=$(jq -r ".[] | select(.name == \"system\") | .hash_raw" $MANIFEST)
+    SYSTEM_SIZE=$(jq -r ".[] | select(.name == \"system\") | .size" $MANIFEST)
+    BOOT_HASH_EXPECTED=$(jq -r ".[] | select(.name == \"boot\") | .hash_raw" $MANIFEST)
+    BOOT_SIZE=$(jq -r ".[] | select(.name == \"boot\") | .size" $MANIFEST)
+    echo "Expected hashes:"
+    echo "System: $SYSTEM_HASH_EXPECTED"
+    echo "Boot: $BOOT_HASH_EXPECTED"
+
+    # Read hashes from alternate partitions, should already be flashed by updated
+    SYSTEM_HASH=$(dd if="/dev/disk/by-partlabel/system$OTHER_SLOT" bs=1 skip="$SYSTEM_SIZE" count=64 2>/dev/null)
+    BOOT_HASH=$(dd if="/dev/disk/by-partlabel/boot$OTHER_SLOT" bs=1 skip="$BOOT_SIZE" count=64 2>/dev/null)
+    echo "Found hashes:"
+    echo "System: $SYSTEM_HASH"
+    echo "Boot: $BOOT_HASH"
+
+    if [[ "$SYSTEM_HASH" == "$SYSTEM_HASH_EXPECTED" && "$BOOT_HASH" == "$BOOT_HASH_EXPECTED" ]]; then
+      echo "Swapping active slot to $OTHER_SLOT_NUMBER"
+      abctl --set_active "$OTHER_SLOT_NUMBER"
+
+      sleep 1
+      sudo reboot
+    else
+      echo "Hash mismatch, downloading agnos"
+      if $DIR/selfdrive/hardware/tici/agnos.py $MANIFEST; then
+        echo "Download done, swapping active slot to $OTHER_SLOT_NUMBER"
+        abctl --set_active "$OTHER_SLOT_NUMBER"
+      fi
+
+      sleep 1
+      sudo reboot
+    fi
+  fi
+}
+
 function launch {
   # Remove orphaned git lock if it exists on boot
   [ -f "$DIR/.git/index.lock" ] && rm -f $DIR/.git/index.lock
@@ -153,16 +204,16 @@ function launch {
     fi
   fi
 
-  # comma two init
+  # handle pythonpath
+  ln -sfn $(pwd) /data/pythonpath
+  export PYTHONPATH="$PWD"
+
+  # hardware specific init
   if [ -f /EON ]; then
     two_init
   elif [ -f /TICI ]; then
     tici_init
   fi
-
-  # handle pythonpath
-  ln -sfn $(pwd) /data/pythonpath
-  export PYTHONPATH="$PWD"
 
   # write tmux scrollback to a file
   tmux capture-pane -pq -S-1000 > /tmp/launch_log
