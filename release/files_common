@@ -277,6 +277,7 @@ selfdrive/hardware/eon/hardware.py
 selfdrive/hardware/tici/__init__.py
 selfdrive/hardware/tici/hardware.py
 selfdrive/hardware/tici/pins.py
+selfdrive/hardware/tici/agnos.py
 selfdrive/hardware/pc/__init__.py
 selfdrive/hardware/pc/hardware.py
 
