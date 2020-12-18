@@ -16,6 +16,7 @@
 #include "home.hpp"
 #include "paint.hpp"
 #include "qt_window.hpp"
+#include "widgets/drive_stats.hpp"
 
 #define BACKLIGHT_DT 0.25
 #define BACKLIGHT_TS 2.00
@@ -44,9 +45,8 @@ OffroadHome::OffroadHome(QWidget *parent) : QWidget(parent) {
   QObject::connect(alert_notification, SIGNAL(released()), this, SLOT(openAlerts()));
   main_layout->addWidget(alert_notification, 0, Qt::AlignTop | Qt::AlignRight);
 
-  // center
-  QLabel *drive = new QLabel("Drive me");
-  drive->setStyleSheet(R"(font-size: 175px;)");
+  DriveStats *drive = new DriveStats;
+  drive->setFixedSize(1000,800);
   center_layout->addWidget(drive);
 
   alerts_widget = new OffroadAlert();

@@ -99,7 +99,7 @@ void WifiUI::refresh() {
   if (!this->isVisible()) {
     return;
   }
-
+  
   wifi->request_scan();
   wifi->refreshNetworks();
   ipv4->setText(wifi->ipv4_address);
