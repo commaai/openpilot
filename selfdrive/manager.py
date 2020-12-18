@@ -398,7 +398,7 @@ def manager_init():
     print("WARNING: failed to make /dev/shm")
 
   # set dongle id
-  reg_res = register()
+  reg_res = register(spinner)
   if reg_res:
     dongle_id = reg_res
   else:
