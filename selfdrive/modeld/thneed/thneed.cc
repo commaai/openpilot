@@ -215,9 +215,10 @@ Thneed::Thneed(bool do_clinit) {
   fd = g_fd;
   ram = make_unique<GPUMalloc>(0x40000, fd);
   record = THNEED_RECORD;
-  if (getenv("THNEED_DEBUG")) {
-    record |= THNEED_DEBUG;
-  }
+  char *thneed_debug_env = getenv("THNEED_DEBUG");
+  int debuglevel = (thneed_debug_env == NULL) ? 0 : atoi(thneed_debug_env);
+  if (debuglevel >= 1) record |= THNEED_DEBUG;
+  if (debuglevel >= 2) record |= THNEED_VERBOSE_DEBUG;
   timestamp = -1;
   g_thneed = this;
 }
