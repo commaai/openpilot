@@ -291,11 +291,8 @@ kj::Array<capnp::word> UbloxMsgParser::gen_nav_data() {
     }
     if(map.size() == 5) {
       EphemerisData ephem_data(msg->svid, map);
-      capnp::MallocMessageBuilder msg_builder;
-      cereal::Event::Builder event = msg_builder.initRoot<cereal::Event>();
-      event.setLogMonoTime(nanos_since_boot());
-      auto gnss = event.initUbloxGnss();
-      auto eph = gnss.initEphemeris();
+      MessageBuilder msg_builder;
+      auto eph = msg_builder.initEvent().initUbloxGnss().initEphemeris();
       eph.setSvId(ephem_data.svId);
       eph.setToc(ephem_data.toc);
       eph.setGpsWeek(ephem_data.gpsWeek);
