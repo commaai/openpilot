@@ -50,21 +50,24 @@ class Tici(HardwareBase):
     return self.get_cmdline()['androidboot.serialno']
 
   def get_network_type(self):
-    primary_connection = self.nm.Get(NM, 'PrimaryConnection', dbus_interface=DBUS_PROPS)
-    primary_connection = self.bus.get_object(NM, primary_connection)
-    tp = primary_connection.Get(NM_CON_ACT, 'Type', dbus_interface=DBUS_PROPS)
+    try:
+      primary_connection = self.nm.Get(NM, 'PrimaryConnection', dbus_interface=DBUS_PROPS)
+      primary_connection = self.bus.get_object(NM, primary_connection)
+      tp = primary_connection.Get(NM_CON_ACT, 'Type', dbus_interface=DBUS_PROPS)
 
-    if tp in ['802-3-ethernet', '802-11-wireless']:
-      return NetworkType.wifi
-    elif tp in ['gsm']:
-      modem = self.get_modem()
-      access_t = modem.Get(MM_MODEM, 'AccessTechnologies', dbus_interface=DBUS_PROPS)
-      if access_t >= MM_MODEM_ACCESS_TECHNOLOGY_LTE:
-        return NetworkType.cell4G
-      elif access_t >= MM_MODEM_ACCESS_TECHNOLOGY_UMTS:
-        return NetworkType.cell3G
-      else:
-        return NetworkType.cell2G
+      if tp in ['802-3-ethernet', '802-11-wireless']:
+        return NetworkType.wifi
+      elif tp in ['gsm']:
+        modem = self.get_modem()
+        access_t = modem.Get(MM_MODEM, 'AccessTechnologies', dbus_interface=DBUS_PROPS)
+        if access_t >= MM_MODEM_ACCESS_TECHNOLOGY_LTE:
+          return NetworkType.cell4G
+        elif access_t >= MM_MODEM_ACCESS_TECHNOLOGY_UMTS:
+          return NetworkType.cell3G
+        else:
+          return NetworkType.cell2G
+    except Exception:
+      pass
 
     return NetworkType.none
 
@@ -121,19 +124,22 @@ class Tici(HardwareBase):
   def get_network_strength(self, network_type):
     network_strength = NetworkStrength.unknown
 
-    if network_type == NetworkType.none:
-      pass
-    elif network_type == NetworkType.wifi:
-      wlan = self.get_wlan()
-      active_ap_path = wlan.Get(NM_DEV_WL, 'ActiveAccessPoint', dbus_interface=DBUS_PROPS)
-      if active_ap_path != "/":
-        active_ap = self.bus.get_object(NM, active_ap_path)
-        strength = int(active_ap.Get(NM_AP, 'Strength', dbus_interface=DBUS_PROPS))
+    try:
+      if network_type == NetworkType.none:
+        pass
+      elif network_type == NetworkType.wifi:
+        wlan = self.get_wlan()
+        active_ap_path = wlan.Get(NM_DEV_WL, 'ActiveAccessPoint', dbus_interface=DBUS_PROPS)
+        if active_ap_path != "/":
+          active_ap = self.bus.get_object(NM, active_ap_path)
+          strength = int(active_ap.Get(NM_AP, 'Strength', dbus_interface=DBUS_PROPS))
+          network_strength = self.parse_strength(strength)
+      else:  # Cellular
+        modem = self.get_modem()
+        strength = int(modem.Get(MM_MODEM, 'SignalQuality', dbus_interface=DBUS_PROPS)[0])
         network_strength = self.parse_strength(strength)
-    else: # Cellular
-      modem = self.get_modem()
-      strength = int(modem.Get(MM_MODEM, 'SignalQuality', dbus_interface=DBUS_PROPS)[0])
-      network_strength = self.parse_strength(strength)
+    except Exception:
+      pass
 
     return network_strength
 
