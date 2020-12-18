@@ -1,3 +1,6 @@
+Version 0.8.2 (2021-XX-XX)
+========================
+
 Version 0.8.1 (2020-12-21)
 ========================
  * Original EON is deprecated, upgrade to comma two
