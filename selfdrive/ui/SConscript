@@ -15,6 +15,7 @@ if arch in ["x86_64", "Darwin", "larch64"]:
       QT_BASE + "include/QtCore",
       QT_BASE + "include/QtDBus",
       QT_BASE + "include/QtMultimedia",
+      QT_BASE + "include/QtNetwork",
     ]
     qt_env["LINKFLAGS"] += ["-F" + QT_BASE + "lib"]
   else:
@@ -26,6 +27,7 @@ if arch in ["x86_64", "Darwin", "larch64"]:
       f"/usr/include/{real_arch}-linux-gnu/qt5/QtCore",
       f"/usr/include/{real_arch}-linux-gnu/qt5/QtDBus",
       f"/usr/include/{real_arch}-linux-gnu/qt5/QtMultimedia",
+      f"/usr/include/{real_arch}-linux-gnu/qt5/QtNetwork",
       f"/usr/include/{real_arch}-linux-gnu/qt5/QtGui/5.5.1/QtGui",
       f"/usr/include/{real_arch}-linux-gnu/qt5/QtGui/5.12.8/QtGui",
     ]
@@ -57,9 +59,9 @@ if qt_env is None:
     LINKFLAGS=linkflags,
     LIBS=libs)
 else:
-  qt_libs = ["pthread"]
+  qt_libs = ["pthread", "ssl", "crypto"]
 
-  qt_modules = ["Widgets", "Gui", "Core", "DBus", "Multimedia"]
+  qt_modules = ["Widgets", "Gui", "Core", "DBus", "Multimedia", "Network"]
 
   if arch == "larch64":
     qt_libs += ["GLESv2", "wayland-client"]
@@ -72,13 +74,13 @@ else:
     qt_libs += [f"Qt5{m}" for m in qt_modules]
 
 
-  qt_env.Library("qt_widgets",
-                 ["qt/qt_window.cc", "qt/qt_sound.cc", "qt/widgets/keyboard.cc", "qt/widgets/input_field.cc",
-                  "qt/offroad/wifi.cc", "qt/offroad/wifiManager.cc", "qt/widgets/toggle.cc"],
+  widgets = qt_env.Library("qt_widgets",
+                 ["qt/qt_window.cc", "qt/qt_sound.cc", "qt/widgets/keyboard.cc", "qt/widgets/input_field.cc", "qt/widgets/drive_stats.cc",
+                  "qt/offroad/wifi.cc", "qt/offroad/wifiManager.cc", "qt/widgets/toggle.cc", "qt/widgets/offroad_alerts.cc"],
                  LIBS=qt_libs)
-  qt_libs.append("qt_widgets")
+  qt_libs.append(widgets)
 
-  qt_src = ["qt/ui.cc", "qt/window.cc", "qt/home.cc", "qt/offroad/settings.cc", "qt/offroad/onboarding.cc", "qt/widgets/offroad_alerts.cc"] + src
+  qt_src = ["qt/ui.cc", "qt/window.cc", "qt/home.cc", "qt/offroad/settings.cc", "qt/offroad/onboarding.cc"] + src
   qt_env.Program("_ui", qt_src, LIBS=qt_libs + libs)
 
   # spinner and text window

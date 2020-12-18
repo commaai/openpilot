@@ -21,19 +21,10 @@
 #include "common/utilpp.h"
 
 
-std::string getenv_default(const char* env_var, const char * suffix, const char* default_val) {
-  const char* env_val = getenv(env_var);
-  if (env_val != NULL){
-    return std::string(env_val) + std::string(suffix);
-  } else {
-    return std::string(default_val);
-  }
-}
-
 #if defined(QCOM) || defined(QCOM2)
 const std::string default_params_path = "/data/params";
 #else
-const std::string default_params_path = getenv_default("HOME", "/.comma/params", "/data/params");
+const std::string default_params_path = util::getenv_default("HOME", "/.comma/params", "/data/params");
 #endif
 
 #if defined(QCOM) || defined(QCOM2)
