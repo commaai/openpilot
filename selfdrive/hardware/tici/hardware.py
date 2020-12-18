@@ -1,3 +1,4 @@
+import os
 import subprocess
 
 from cereal import log
@@ -39,7 +40,7 @@ class Tici(HardwareBase):
       return f.read().strip()
 
   def get_sound_card_online(self):
-    return True
+    return os.system("pulseaudio --check") == 0
 
   def reboot(self, reason=None):
     subprocess.check_output(["sudo", "reboot"])
