@@ -89,12 +89,12 @@ else:
       "#cereal",
       "#selfdrive/common",
       "/usr/local/lib",
-      "/usr/local/opt/openssl/lib/openssl",
+      "/usr/local/opt/openssl/lib",
       "/System/Library/Frameworks/OpenGL.framework/Libraries",
     ]
     cflags += ["-DGL_SILENCE_DEPRECATION"]
     cxxflags += ["-DGL_SILENCE_DEPRECATION"]
-    cpppath += ["/usr/local/opt/openssl/include"] # Homebrew ssl includes
+    cpppath += ["/usr/local/opt/openssl/include"]
   else:
     libpath = [
       "#phonelibs/snpe/x86_64-linux-clang",
@@ -298,4 +298,3 @@ if arch != "Darwin":
 
 if arch == "x86_64":
   SConscript(['tools/lib/index_log/SConscript'])
-
