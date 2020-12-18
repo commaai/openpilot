@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import sys
 import subprocess
-from common.basedir import BASEDIR
 from azure.storage.blob import BlockBlobService
 
 from selfdrive.test.test_car_models import routes as test_car_models_routes
@@ -32,7 +31,7 @@ def sync_to_ci_public(route):
   for (source_account, source_bucket), source_key in zip(SOURCES, SOURCE_KEYS):
     print(f"Trying {source_account}/{source_bucket}")
     cmd = [
-      f"{BASEDIR}/external/bin/azcopy",
+      "azcopy",
       "copy",
       "https://{}.blob.core.windows.net/{}/{}/?{}".format(source_account, source_bucket, key_prefix, source_key),
       "https://{}.blob.core.windows.net/{}/{}/?{}".format(_DATA_ACCOUNT_CI, "openpilotci", dongle_id, DEST_KEY),
