@@ -18,13 +18,17 @@ from typing import Dict, List
 from common.basedir import BASEDIR
 from common.spinner import Spinner
 from common.text_window import TextWindow
+import selfdrive.crash as crash
 from selfdrive.hardware import HARDWARE, EON, PC
+from selfdrive.hardware.eon.apk import update_apks, pm_apply_packages, start_offroad
 from selfdrive.swaglog import cloudlog, add_logentries_handler
+from selfdrive.version import version, dirty
 
 os.environ['BASEDIR'] = BASEDIR
 sys.path.append(os.path.join(BASEDIR, "pyextra"))
 
 TOTAL_SCONS_NODES = 1040
+MAX_BUILD_PROGRESS = 70
 WEBCAM = os.getenv("WEBCAM") is not None
 PREBUILT = os.path.exists(os.path.join(BASEDIR, 'prebuilt'))
 
@@ -61,26 +65,24 @@ def unblock_stdout():
     exit_status = os.wait()[1] >> 8
     os._exit(exit_status)
 
-
 if __name__ == "__main__":
   unblock_stdout()
 
 
-# Run scons
+# Start spinner
 spinner = Spinner()
-spinner.update("0")
+spinner.update_progress(0, 100)
 if __name__ != "__main__":
   spinner.close()
 
 def build():
-  for retry in [True, False]:
-    # run scons
-    env = os.environ.copy()
-    env['SCONS_PROGRESS'] = "1"
-    env['SCONS_CACHE'] = "1"
+  env = os.environ.copy()
+  env['SCONS_PROGRESS'] = "1"
+  env['SCONS_CACHE'] = "1"
+  nproc = os.cpu_count()
+  j_flag = "" if nproc is None else f"-j{nproc - 1}"
 
-    nproc = os.cpu_count()
-    j_flag = "" if nproc is None else f"-j{nproc - 1}"
+  for retry in [True, False]:
     scons = subprocess.Popen(["scons", j_flag], cwd=BASEDIR, env=env, stderr=subprocess.PIPE)
 
     compile_output = []
@@ -88,7 +90,7 @@ def build():
     # Read progress from stderr and update spinner
     while scons.poll() is None:
       try:
-        line = scons.stderr.readline()  # type: ignore
+        line = scons.stderr.readline()
         if line is None:
           continue
         line = line.rstrip()
@@ -96,7 +98,7 @@ def build():
         prefix = b'progress: '
         if line.startswith(prefix):
           i = int(line[len(prefix):])
-          spinner.update("%d" % (70.0 * (i / TOTAL_SCONS_NODES)))
+          spinner.update_progress(MAX_BUILD_PROGRESS * min(1., i / TOTAL_SCONS_NODES), 100.)
         elif len(line):
           compile_output.append(line)
           print(line.decode('utf8', 'replace'))
@@ -105,7 +107,7 @@ def build():
 
     if scons.returncode != 0:
       # Read remaining output
-      r = scons.stderr.read().split(b'\n')   # type: ignore
+      r = scons.stderr.read().split(b'\n')
       compile_output += r
 
       if retry:
@@ -143,12 +145,9 @@ if __name__ == "__main__" and not PREBUILT:
 import cereal.messaging as messaging
 
 from common.params import Params
-import selfdrive.crash as crash
 from selfdrive.registration import register
-from selfdrive.version import version, dirty
 from selfdrive.loggerd.config import ROOT
 from selfdrive.launcher import launcher
-from selfdrive.hardware.eon.apk import update_apks, pm_apply_packages, start_offroad
 
 
 # comment out anything you don't want to run
@@ -504,12 +503,11 @@ def manager_prepare():
   # build all processes
   os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-  # Spinner has to start from 70 here
-  total = 100.0 if PREBUILT else 30.0
+  total = 100.0 - (0 if PREBUILT else MAX_BUILD_PROGRESS)
 
   for i, p in enumerate(managed_processes):
     perc = (100.0 - total) + total * (i + 1) / len(managed_processes)
-    spinner.update(str(int(perc)))
+    spinner.update_progress(perc, 100.)
     prepare_managed_process(p)
 
 def main():

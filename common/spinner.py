@@ -16,7 +16,7 @@ class Spinner():
   def __enter__(self):
     return self
 
-  def update(self, spinner_text):
+  def update(self, spinner_text: str):
     if self.spinner_proc is not None:
       self.spinner_proc.stdin.write(spinner_text.encode('utf8') + b"\n")
       try:
@@ -24,7 +24,7 @@ class Spinner():
       except BrokenPipeError:
         pass
 
-  def update_progress(self, cur, total):
+  def update_progress(self, cur: int, total: int):
     self.update(str(int(100 * cur / total)))
 
   def close(self):
