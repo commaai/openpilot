@@ -92,6 +92,13 @@ QWidget *widget(QLayout *l){
   return q;
 }
 
+QWidget *build_stat(QString name, int stat){
+  QVBoxLayout *layout = new QVBoxLayout;
+  layout->addWidget(new QLabel(bold(QString("%1").arg(stat))), 1, Qt::AlignCenter);
+  layout->addWidget(new QLabel(name),1, Qt::AlignCenter);
+  return widget(layout);
+}
+
 void DriveStats::replyFinished(QNetworkReply *l){
   QString answer = l->readAll();
   answer.chop(1);
@@ -107,58 +114,25 @@ void DriveStats::replyFinished(QNetworkReply *l){
   auto all = json["all"].toObject();
   auto week = json["week"].toObject();
 
-
-  int all_distance = all["distance"].toDouble()*(metric ? MILE_TO_KM : 1);
-  int all_minutes = all["minutes"].toDouble();
-  int all_routes = all["routes"].toDouble();
-  int week_distance = week["distance"].toDouble()*(metric ? MILE_TO_KM : 1);
-  int week_minutes = week["minutes"].toDouble();
-  int week_routes = week["routes"].toDouble();
-
   QGridLayout *gl = new QGridLayout();
 
-  QLabel *all_time = new QLabel(bold("ALL TIME"));
-  gl->addWidget(all_time, 0, 0, 1, 3);
-
-  QVBoxLayout *all_drives_layout = new QVBoxLayout;
-  all_drives_layout->addWidget(new QLabel(bold(QString("%1").arg(all_routes))), 1, Qt::AlignCenter);
-  all_drives_layout->addWidget(new QLabel("DRIVES"),1, Qt::AlignCenter);
-  gl->addWidget(widget(all_drives_layout), 1, 0, 3, 1);
-
-  QVBoxLayout *all_distance_layout = new QVBoxLayout;
-  all_distance_layout->addWidget(new QLabel(bold(QString("%1").arg(all_distance))), 1, Qt::AlignCenter);
-  all_distance_layout->addWidget(new QLabel(metric ? "KM" : "MILES"),1, Qt::AlignCenter);
-  gl->addWidget(widget(all_distance_layout), 1, 1, 3, 1);
-
-  QVBoxLayout *all_hours_layout = new QVBoxLayout;
-  all_hours_layout->addWidget(new QLabel(bold(QString("%1").arg(all_minutes/60))), 1, Qt::AlignCenter);
-  all_hours_layout->addWidget(new QLabel("HOURS"),1, Qt::AlignCenter);
-  gl->addWidget(widget(all_hours_layout), 1, 2, 3, 1);
+  int all_distance = all["distance"].toDouble()*(metric ? MILE_TO_KM : 1);
+  gl->addWidget(new QLabel(bold("ALL TIME")), 0, 0, 1, 3);
+  gl->addWidget(build_stat("DRIVES", all["routes"].toDouble()), 1, 0, 3, 1);
+  gl->addWidget(build_stat(metric ? "KM" : "MILES", all_distance), 1, 1, 3, 1);
+  gl->addWidget(build_stat("HOURS", all["minutes"].toDouble() / 60), 1, 2, 3, 1);
 
   QFrame *lineA = new QFrame;
-
   lineA->setFrameShape(QFrame::HLine);
   lineA->setFrameShadow(QFrame::Sunken);
   lineA->setProperty("class", "line");
   gl->addWidget(lineA, 5, 0, 1, 3);
 
-  QLabel *past_week = new QLabel(bold("PAST WEEK"));
-  gl->addWidget(past_week, 6, 0, 1, 3);
-
-  QVBoxLayout *week_drives_layout = new QVBoxLayout;
-  week_drives_layout->addWidget(new QLabel(bold(QString("%1").arg(week_routes))), 1, Qt::AlignCenter);
-  week_drives_layout->addWidget(new QLabel("DRIVES"),1, Qt::AlignCenter);
-  gl->addWidget(widget(week_drives_layout), 7, 0, 3, 1);
-
-  QVBoxLayout *week_distance_layout = new QVBoxLayout;
-  week_distance_layout->addWidget(new QLabel(bold(QString("%1").arg(week_distance))), 1, Qt::AlignCenter);
-  week_distance_layout->addWidget(new QLabel(metric ? "KM" : "MILES"),1, Qt::AlignCenter);
-  gl->addWidget(widget(week_distance_layout), 7, 1, 3, 1);
-
-  QVBoxLayout *week_hours_layout = new QVBoxLayout;
-  week_hours_layout->addWidget(new QLabel(bold(QString("%1").arg(week_minutes/60))), 1, Qt::AlignCenter);
-  week_hours_layout->addWidget(new QLabel("HOURS"),1, Qt::AlignCenter);
-  gl->addWidget(widget(week_hours_layout), 7, 2, 3, 1);
+  int week_distance = week["distance"].toDouble()*(metric ? MILE_TO_KM : 1);
+  gl->addWidget(new QLabel(bold("PAST WEEK")), 6, 0, 1, 3);
+  gl->addWidget(build_stat("DRIVES", week["routes"].toDouble()), 7, 0, 3, 1);
+  gl->addWidget(build_stat(metric ? "KM" : "MILES", week_distance), 7, 1, 3, 1);
+  gl->addWidget(build_stat("HOURS", week["minutes"].toDouble() / 60), 7, 2, 3, 1);
 
 
   f->setLayout(gl);
