@@ -1,0 +1,17 @@
+---
+InheritParentConfig: true
+Checks: '
+bugprone-*,
+performance-*,
+clang-analyzer-*,
+misc-*,
+-misc-unused-parameters,
+modernize-*,
+-modernize-avoid-c-arrays,
+-modernize-deprecated-headers,
+-modernize-use-auto,
+-modernize-use-nullptr,
+-modernize-use-trailing-return-type,
+'
+CheckOptions:
+...
