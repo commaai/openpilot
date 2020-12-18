@@ -153,6 +153,6 @@ def generate_orient_error_jac(K):
 
 
 if __name__ == "__main__":
-  # TODO: get K from argparse
+  K = int(sys.argv[1].split("_")[-1])
   generated_dir = sys.argv[2]
-  FeatureHandler.generate_code(generated_dir)
+  FeatureHandler.generate_code(generated_dir, K=K)

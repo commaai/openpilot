@@ -1,6 +1,7 @@
 gen
 node_modules
 package-lock.json
+*.tmp
 *.pyc
 __pycache__
 .*.swp

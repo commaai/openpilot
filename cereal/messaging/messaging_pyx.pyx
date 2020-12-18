@@ -7,11 +7,11 @@ from libcpp cimport bool
 from libc cimport errno
 
 
-from messaging cimport Context as cppContext
-from messaging cimport SubSocket as cppSubSocket
-from messaging cimport PubSocket as cppPubSocket
-from messaging cimport Poller as cppPoller
-from messaging cimport Message as cppMessage
+from .messaging cimport Context as cppContext
+from .messaging cimport SubSocket as cppSubSocket
+from .messaging cimport PubSocket as cppPubSocket
+from .messaging cimport Poller as cppPoller
+from .messaging cimport Message as cppMessage
 
 
 class MessagingError(Exception):
@@ -59,12 +59,12 @@ cdef class Poller:
     cdef int t = timeout
 
     with nogil:
-        result = self.poller.poll(t)
+      result = self.poller.poll(t)
 
     for s in result:
-        socket = SubSocket()
-        socket.setPtr(s)
-        sockets.append(socket)
+      socket = SubSocket()
+      socket.setPtr(s)
+      sockets.append(socket)
 
     return sockets
 

@@ -8,8 +8,8 @@ from libcpp.string cimport string
 from libcpp cimport bool
 from posix.dlfcn cimport dlopen, dlsym, RTLD_LAZY
 
-from common cimport CANPacker as cpp_CANPacker
-from common cimport dbc_lookup, SignalPackValue, DBC
+from .common cimport CANPacker as cpp_CANPacker
+from .common cimport dbc_lookup, SignalPackValue, DBC
 
 
 cdef class CANPacker:
@@ -22,8 +22,8 @@ cdef class CANPacker:
   def __init__(self, dbc_name):
     self.dbc = dbc_lookup(dbc_name)
     if not self.dbc:
-      raise RuntimeError("Can't lookup" + dbc_name)
-      
+      raise RuntimeError(f"Can't lookup {dbc_name}")
+
     self.packer = new cpp_CANPacker(dbc_name)
     num_msgs = self.dbc[0].num_msgs
     for i in range(num_msgs):

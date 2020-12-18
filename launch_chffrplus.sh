@@ -14,7 +14,12 @@ function tici_init {
 }
 
 function two_init {
-  # Restrict Android and other system processes to the first two cores
+  # Wifi scan
+  wpa_cli IFNAME=wlan0 SCAN
+
+  # *** shield cores 2-3 ***
+
+  # android gets two cores
   echo 0-1 > /dev/cpuset/background/cpus
   echo 0-1 > /dev/cpuset/system-background/cpus
   echo 0-1 > /dev/cpuset/foreground/cpus
@@ -24,7 +29,12 @@ function two_init {
   # openpilot gets all the cores
   echo 0-3 > /dev/cpuset/app/cpus
 
-  # set up governors
+  # mask off 2-3 from RPS and XPS - Receive/Transmit Packet Steering
+  echo 3 | tee  /sys/class/net/*/queues/*/rps_cpus
+  echo 3 | tee  /sys/class/net/*/queues/*/xps_cpus
+
+  # *** set up governors ***
+
   # +50mW offroad, +500mW onroad for 30% more RAM bandwidth
   echo "performance" > /sys/class/devfreq/soc:qcom,cpubw/governor
   echo 1056000 > /sys/class/devfreq/soc:qcom,m4m/max_freq
@@ -40,6 +50,8 @@ function two_init {
   # /sys/class/devfreq/soc:qcom,mincpubw is the only one left at "powersave"
   # it seems to gain nothing but a wasted 500mW
 
+  # *** set up IRQ affinities ***
+
   # Collect RIL and other possibly long-running I/O interrupts onto CPU 1
   echo 1 > /proc/irq/78/smp_affinity_list # qcom,smd-modem (LTE radio)
   echo 1 > /proc/irq/33/smp_affinity_list # ufshcd (flash storage)
@@ -49,6 +61,24 @@ function two_init {
   # USB traffic needs realtime handling on cpu 3
   [ -d "/proc/irq/733" ] && echo 3 > /proc/irq/733/smp_affinity_list # USB for LeEco
   [ -d "/proc/irq/736" ] && echo 3 > /proc/irq/736/smp_affinity_list # USB for OP3T
+
+  # GPU and camera get cpu 2
+  CAM_IRQS="177 178 179 180 181 182 183 184 185 186 192"
+  for irq in $CAM_IRQS; do
+    echo 2 > /proc/irq/$irq/smp_affinity_list
+  done
+  echo 2 > /proc/irq/193/smp_affinity_list # GPU
+
+  # give GPU threads RT priority
+  for pid in $(pgrep "kgsl"); do
+    chrt -f -p 52 $pid
+  done
+
+  # the flippening!
+  LD_LIBRARY_PATH="" content insert --uri content://settings/system --bind name:s:user_rotation --bind value:i:1
+
+  # disable bluetooth
+  service call bluetooth_manager 8
 
   # Check for NEOS update
   if [ $(< /VERSION) != "$REQUIRED_NEOS_VERSION" ]; then
@@ -81,9 +111,6 @@ function two_init {
 }
 
 function launch {
-  # Wifi scan
-  wpa_cli IFNAME=wlan0 SCAN
-
   # Remove orphaned git lock if it exists on boot
   [ -f "$DIR/.git/index.lock" ] && rm -f $DIR/.git/index.lock
 
@@ -129,9 +156,7 @@ function launch {
   # comma two init
   if [ -f /EON ]; then
     two_init
-  fi
-
-  if [ -f /TICI ]; then
+  elif [ -f /TICI ]; then
     tici_init
   fi
 

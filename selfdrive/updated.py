@@ -34,9 +34,9 @@ import threading
 from pathlib import Path
 from typing import List, Tuple, Optional
 
-from common.hardware import ANDROID, TICI
 from common.basedir import BASEDIR
 from common.params import Params
+from selfdrive.hardware import EON, TICI
 from selfdrive.swaglog import cloudlog
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
 
@@ -210,11 +210,6 @@ def finalize_update() -> None:
     shutil.rmtree(FINALIZED)
   shutil.copytree(OVERLAY_MERGED, FINALIZED, symlinks=True)
 
-  # Log git repo corruption
-  fsck = run(["git", "fsck", "--no-progress"], FINALIZED).rstrip()
-  if len(fsck):
-    cloudlog.error(f"found git corruption, git fsck:\n{fsck}")
-
   set_consistent_flag(True)
   cloudlog.info("done finalizing overlay")
 
@@ -297,7 +292,7 @@ def fetch_update(wait_helper: WaitTimeHelper) -> bool:
       ]
       cloudlog.info("git reset success: %s", '\n'.join(r))
 
-      if ANDROID:
+      if EON:
         handle_neos_update(wait_helper)
 
     # Create the finalized, ready-to-swap update
@@ -315,7 +310,11 @@ def main():
   if params.get("DisableUpdates") == b"1":
     raise RuntimeError("updates are disabled by the DisableUpdates param")
 
-  if ANDROID and os.geteuid() != 0:
+  # TODO: remove this after next release
+  if EON and "letv" not in open("/proc/cmdline").read():
+    raise RuntimeError("updates are disabled due to device deprecation")
+
+  if EON and os.geteuid() != 0:
     raise RuntimeError("updated must be launched as root!")
 
   # Set low io priority

@@ -4,7 +4,7 @@ from selfdrive.car import apply_toyota_steer_torque_limits, create_gas_command, 
 from selfdrive.car.toyota.toyotacan import create_steer_command, create_ui_command, \
                                            create_accel_command, create_acc_cancel_command, \
                                            create_fcw_command
-from selfdrive.car.toyota.values import Ecu, CAR, STATIC_MSGS, SteerLimitParams
+from selfdrive.car.toyota.values import Ecu, CAR, STATIC_MSGS, NO_STOP_TIMER_CAR, SteerLimitParams
 from opendbc.can.packer import CANPacker
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
@@ -38,7 +38,6 @@ class CarController():
     self.last_standstill = False
     self.standstill_req = False
 
-    self.last_fault_frame = -200
     self.steer_rate_limited = False
 
     self.fake_ecus = set()
@@ -73,12 +72,8 @@ class CarController():
     apply_steer = apply_toyota_steer_torque_limits(new_steer, self.last_steer, CS.out.steeringTorqueEps, SteerLimitParams)
     self.steer_rate_limited = new_steer != apply_steer
 
-    # only cut torque when steer state is a known fault
-    if CS.steer_state in [9, 25]:
-      self.last_fault_frame = frame
-
-    # Cut steering for 2s after fault
-    if not enabled or (frame - self.last_fault_frame < 200):
+    # Cut steering while we're in a known fault state (2s)
+    if not enabled or CS.steer_state in [9, 25]:
       apply_steer = 0
       apply_steer_req = 0
     else:
@@ -89,7 +84,7 @@ class CarController():
       pcm_cancel_cmd = 1
 
     # on entering standstill, send standstill request
-    if CS.out.standstill and not self.last_standstill:
+    if CS.out.standstill and not self.last_standstill and CS.CP.carFingerprint not in NO_STOP_TIMER_CAR:
       self.standstill_req = True
     if CS.pcm_acc_status != 8:
       # pcm entered standstill or it's disabled

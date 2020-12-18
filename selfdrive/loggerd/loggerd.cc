@@ -15,6 +15,7 @@
 #include <string>
 #include <iostream>
 #include <fstream>
+#include <fstream>
 #include <streambuf>
 #include <thread>
 #include <mutex>
@@ -46,7 +47,6 @@
 
 #ifndef DISABLE_ENCODER
 #include "encoder.h"
-#include "raw_logger.h"
 #endif
 
 #define MAIN_BITRATE 5000000
@@ -110,8 +110,6 @@ LogCameraInfo cameras_logged[LOG_CAMERA_ID_MAX] = {
 
 #define LOG_ROOT "/data/media/0/realdata"
 
-#define RAW_CLIP_LENGTH 100 // 5 seconds at 20fps
-#define RAW_CLIP_FREQUENCY (randrange(61, 8*60)) // once every ~4 minutes
 
 namespace {
 
@@ -127,6 +125,11 @@ double randrange(double a, double b) {
 volatile sig_atomic_t do_exit = 0;
 static void set_do_exit(int sig) {
   do_exit = 1;
+}
+
+static bool file_exists (const std::string& fn) {
+  std::ifstream f(fn);
+  return f.good();
 }
 
 class RotateState {
@@ -196,7 +199,7 @@ struct LoggerdState {
 LoggerdState s;
 
 #ifndef DISABLE_ENCODER
-void encoder_thread(RotateState *rotate_state, bool raw_clips, int cam_idx) {
+void encoder_thread(RotateState *rotate_state, int cam_idx) {
 
   switch (cam_idx) {
     case LOG_CAMERA_ID_DCAMERA: {
@@ -266,15 +269,6 @@ void encoder_thread(RotateState *rotate_state, bool raw_clips, int cam_idx) {
       encoder_inited = true;
     }
 
-    // dont log a raw clip in the first minute
-    double rawlogger_start_time = seconds_since_boot()+RAW_CLIP_FREQUENCY;
-    int rawlogger_clip_cnt = 0;
-    RawLogger *rawlogger = NULL;
-
-    if (raw_clips) {
-      rawlogger = new RawLogger("prcamera", buf_info.width, buf_info.height, MAIN_FPS);
-    }
-
     while (!do_exit) {
       VIPCBufExtra extra;
       VIPCBuf* buf = visionstream_get(&stream, &extra);
@@ -310,9 +304,6 @@ void encoder_thread(RotateState *rotate_state, bool raw_clips, int cam_idx) {
           s.rotate_seq_id = (my_idx + 1) % s.num_encoder;
           if (has_encoder_alt) {
             encoder_rotate(&encoder_alt, s.segment_path, s.rotate_segment);
-          }
-          if (raw_clips) {
-            rawlogger->Rotate(s.segment_path, s.rotate_segment);
           }
           encoder_segment = s.rotate_segment;
           if (lh) {
@@ -393,55 +384,12 @@ void encoder_thread(RotateState *rotate_state, bool raw_clips, int cam_idx) {
         }
       }
 
-      if (raw_clips) {
-        double ts = seconds_since_boot();
-        if (ts > rawlogger_start_time) {
-          // encode raw if in clip
-          int out_segment = -1;
-          int out_id = rawlogger->LogFrame(cnt, y, u, v, &out_segment);
-
-          if (rawlogger_clip_cnt == 0) {
-            LOG("starting raw clip in seg %d", out_segment);
-          }
-
-          // publish encode index
-          MessageBuilder msg;
-          auto eidx = msg.initEvent().initEncodeIdx();
-          eidx.setFrameId(extra.frame_id);
-          eidx.setType(cereal::EncodeIndex::Type::FULL_LOSSLESS_CLIP);
-          eidx.setEncodeId(cnt);
-          eidx.setSegmentNum(out_segment);
-          eidx.setSegmentId(out_id);
-
-          auto bytes = msg.toBytes();
-          if (lh) {
-            lh_log(lh, bytes.begin(), bytes.size(), false);
-          }
-
-          // close rawlogger if clip ended
-          rawlogger_clip_cnt++;
-          if (rawlogger_clip_cnt >= RAW_CLIP_LENGTH) {
-            rawlogger->Close();
-
-            rawlogger_clip_cnt = 0;
-            rawlogger_start_time = ts+RAW_CLIP_FREQUENCY;
-
-            LOG("ending raw clip in seg %d, next in %.1f sec", out_segment, rawlogger_start_time-ts);
-          }
-        }
-      }
-
       cnt++;
     }
 
     if (lh) {
       lh_close(lh);
       lh = NULL;
-    }
-
-    if (raw_clips) {
-      rawlogger->Close();
-      delete rawlogger;
     }
 
     visionstream_destroy(&stream);
@@ -474,7 +422,14 @@ kj::Array<capnp::word> gen_init_data() {
   MessageBuilder msg;
   auto init = msg.initEvent().initInitData();
 
-  init.setDeviceType(cereal::InitData::DeviceType::NEO);
+  if (file_exists("/EON"))
+    init.setDeviceType(cereal::InitData::DeviceType::NEO);
+  else if (file_exists("/TICI")) {
+    init.setDeviceType(cereal::InitData::DeviceType::TICI);
+  } else {
+    init.setDeviceType(cereal::InitData::DeviceType::PC);
+  }
+
   init.setVersion(capnp::Text::Reader(COMMA_VERSION));
 
   std::ifstream cmdline_stream("/proc/cmdline");
@@ -662,17 +617,17 @@ int main(int argc, char** argv) {
   pthread_mutex_init(&s.rotate_lock, NULL);
 #ifndef DISABLE_ENCODER
   // rear camera
-  std::thread encoder_thread_handle(encoder_thread, &s.rotate_state[LOG_CAMERA_ID_FCAMERA], false, LOG_CAMERA_ID_FCAMERA);
+  std::thread encoder_thread_handle(encoder_thread, &s.rotate_state[LOG_CAMERA_ID_FCAMERA], LOG_CAMERA_ID_FCAMERA);
   s.rotate_state[LOG_CAMERA_ID_FCAMERA].enabled = true;
   // front camera
   std::thread front_encoder_thread_handle;
   if (record_front) {
-    front_encoder_thread_handle = std::thread(encoder_thread, &s.rotate_state[LOG_CAMERA_ID_DCAMERA], false, LOG_CAMERA_ID_DCAMERA);
+    front_encoder_thread_handle = std::thread(encoder_thread, &s.rotate_state[LOG_CAMERA_ID_DCAMERA], LOG_CAMERA_ID_DCAMERA);
     s.rotate_state[LOG_CAMERA_ID_DCAMERA].enabled = true;
   }
   #ifdef QCOM2
   // wide camera
-  std::thread wide_encoder_thread_handle(encoder_thread, &s.rotate_state[LOG_CAMERA_ID_ECAMERA], false, LOG_CAMERA_ID_ECAMERA);
+  std::thread wide_encoder_thread_handle(encoder_thread, &s.rotate_state[LOG_CAMERA_ID_ECAMERA], LOG_CAMERA_ID_ECAMERA);
   s.rotate_state[LOG_CAMERA_ID_ECAMERA].enabled = true;
   #endif
 #endif
@@ -798,6 +753,7 @@ int main(int argc, char** argv) {
 #endif
 
   logger_close(&s.logger);
+  LOGW("logger closed");
 
   for (auto s : socks){
     delete s;

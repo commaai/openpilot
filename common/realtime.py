@@ -4,21 +4,31 @@ import os
 import time
 import multiprocessing
 
-from common.hardware import PC
 from common.clock import sec_since_boot  # pylint: disable=no-name-in-module, import-error
+from selfdrive.hardware import PC, TICI
 
 
 # time step for each process
 DT_CTRL = 0.01  # controlsd
 DT_MDL = 0.05  # model
-DT_DMON = 0.1  # driver monitoring
 DT_TRML = 0.5  # thermald and manager
+
+# driver monitoring
+if TICI:
+  DT_DMON = 0.05
+else:
+  DT_DMON = 0.1
 
 
 class Priority:
-  MIN_REALTIME = 52 # highest android process priority is 51
-  CTRL_LOW = MIN_REALTIME
-  CTRL_HIGH = MIN_REALTIME + 1
+  # CORE 2
+  # - modeld = 55
+  # - camerad = 54
+  CTRL_LOW = 51 # plannerd & radard
+
+  # CORE 3
+  # - boardd = 55
+  CTRL_HIGH = 53
 
 
 def set_realtime_priority(level):

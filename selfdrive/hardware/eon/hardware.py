@@ -6,7 +6,7 @@ import struct
 import subprocess
 
 from cereal import log
-from common.hardware_base import HardwareBase
+from selfdrive.hardware.base import HardwareBase
 
 NetworkType = log.ThermalData.NetworkType
 NetworkStrength = log.ThermalData.NetworkStrength
@@ -97,6 +97,12 @@ class Android(HardwareBase):
       *reason_args,
       "i32", "1"  # wait
     ])
+
+  def uninstall(self):
+    with open('/cache/recovery/command', 'w') as f:
+      f.write('--wipe_data\n')
+    # IPowerManager.reboot(confirm=false, reason="recovery", wait=true)
+    self.reboot(reason="recovery")
 
   def get_sim_info(self):
     # Used for athena
@@ -300,3 +306,32 @@ class Android(HardwareBase):
           network_strength = max(network_strength, ns)
 
       return network_strength
+
+  def get_battery_capacity(self):
+    return self.read_param_file("/sys/class/power_supply/battery/capacity", int, 100)
+
+  def get_battery_status(self):
+    # This does not correspond with actual charging or not.
+    # If a USB cable is plugged in, it responds with 'Charging', even when charging is disabled
+    return self.read_param_file("/sys/class/power_supply/battery/status", lambda x: x.strip(), '')
+
+  def get_battery_current(self):
+    return self.read_param_file("/sys/class/power_supply/battery/current_now", int)
+
+  def get_battery_voltage(self):
+    return self.read_param_file("/sys/class/power_supply/battery/voltage_now", int)
+
+  def get_battery_charging(self):
+    # This does correspond with actually charging
+    return self.read_param_file("/sys/class/power_supply/battery/charge_type", lambda x: x.strip() != "N/A", True)
+
+  def set_battery_charging(self, on):
+    with open('/sys/class/power_supply/battery/charging_enabled', 'w') as f:
+      f.write(f"{1 if on else 0}\n")
+
+  def get_usb_present(self):
+    return self.read_param_file("/sys/class/power_supply/usb/present", lambda x: bool(int(x)), False)
+
+  def get_current_power_draw(self):
+    # We don't have a good direct way to measure this on android
+    return None

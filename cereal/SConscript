@@ -1,4 +1,4 @@
-Import('env', 'arch', 'zmq', 'cython_dependencies')
+Import('env', 'envCython', 'arch', 'zmq')
 
 import shutil
 
@@ -55,11 +55,7 @@ Depends('messaging/bridge.cc', services_h)
 # different target?
 #env.Program('messaging/demo', ['messaging/demo.cc'], LIBS=[messaging_lib, 'zmq'])
 
-
-env.Command(['messaging/messaging_pyx.so', 'messaging/messaging_pyx.cpp'],
-            cython_dependencies + [messaging_lib, 'messaging/messaging_pyx_setup.py', 'messaging/messaging_pyx.pyx', 'messaging/messaging.pxd'],
-            "cd " + messaging_dir.path + " && python3 messaging_pyx_setup.py build_ext --inplace")
-
+envCython.Program('messaging/messaging_pyx.so', 'messaging/messaging_pyx.pyx', LIBS=envCython["LIBS"]+[messaging_lib, "zmq"])
 
 if GetOption('test'):
   env.Program('messaging/test_runner', ['messaging/test_runner.cc', 'messaging/msgq_tests.cc'], LIBS=[messaging_lib])

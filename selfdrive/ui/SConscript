@@ -31,7 +31,7 @@ if arch in ["x86_64", "Darwin", "larch64"]:
     ]
 
   qt_env.Tool('qt')
-  qt_env['CPPPATH'] += qt_dirs
+  qt_env['CPPPATH'] += qt_dirs + ["#selfdrive/ui/qt/"]
   qt_flags = [
     "-D_REENTRANT",
     "-DQT_NO_DEBUG",
@@ -40,7 +40,7 @@ if arch in ["x86_64", "Darwin", "larch64"]:
     "-DQT_CORE_LIB"
   ]
   qt_env['CXXFLAGS'] += qt_flags
-
+  qt_env['LIBPATH'] += ['#selfdrive/ui']
 
 
 src = ['ui.cc', 'paint.cc', 'sidebar.cc', '#phonelibs/nanovg/nanovg.c']
@@ -71,14 +71,31 @@ else:
   else:
     qt_libs += [f"Qt5{m}" for m in qt_modules]
 
-  qt_src = ["qt/ui.cc", "qt/window.cc", "qt/qt_sound.cc", "qt//offroad/keyboard.cc", "qt/offroad/input_field.cc", "qt/offroad/settings.cc", "qt/offroad/onboarding.cc", "qt/offroad/wifi.cc", "qt/offroad/wifiManager.cc"] + src
+
+  qt_env.Library("qt_widgets",
+                 ["qt/qt_window.cc", "qt/qt_sound.cc", "qt/widgets/keyboard.cc", "qt/widgets/input_field.cc",
+                  "qt/offroad/wifi.cc", "qt/offroad/wifiManager.cc", "qt/widgets/toggle.cc"],
+                 LIBS=qt_libs)
+  qt_libs.append("qt_widgets")
+
+  qt_src = ["qt/ui.cc", "qt/window.cc", "qt/home.cc", "qt/offroad/settings.cc", "qt/offroad/onboarding.cc", "qt/widgets/offroad_alerts.cc"] + src
   qt_env.Program("_ui", qt_src, LIBS=qt_libs + libs)
 
   # spinner and text window
   qt_env.Program("qt/text", ["qt/text.cc"], LIBS=qt_libs + libs)
   qt_env.Program("qt/spinner", ["qt/spinner.cc"], LIBS=qt_libs + libs)
 
-  # setup and installer
+  # build setup, factory resetter, and installer
   if "BUILD_SETUP" in os.environ:
-    qt_env.Program("qt/setup/setup", ["qt/setup/setup.cc"], LIBS=qt_libs + libs + ['curl'])
-    qt_env.Program("qt/setup/installer", ["qt/setup/installer.cc"], LIBS=qt_libs + libs)
+    qt_env.Program("qt/setup/reset", ["qt/setup/reset.cc"], LIBS=qt_libs)
+    qt_env.Program("qt/setup/setup", ["qt/setup/setup.cc"], LIBS=qt_libs + ['curl', 'common'])
+
+    installers = [
+      ("openpilot", "master"),
+      ("openpilot_test", "master"),
+      #("dashcam", "dashcam"),
+      #("dashcam_test", "dashcam"),
+    ]
+    for name, branch in installers:
+      flags = qt_env["CXXFLAGS"] + [f"-D{branch}"]
+      qt_env.Program(f"qt/setup/installer_{name}", ["qt/setup/installer.cc"], LIBS=qt_libs, CXXFLAGS=flags)

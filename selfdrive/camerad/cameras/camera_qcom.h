@@ -102,8 +102,7 @@ typedef struct CameraState {
 
   uint16_t cur_step_pos;
   uint16_t cur_lens_pos;
-  uint64_t last_sag_ts;
-  float last_sag_acc_z;
+  std::atomic<float> last_sag_acc_z;
   std::atomic<float> lens_true_pos;
 
   std::atomic<int> self_recover; // af recovery counter, neg is patience, pos is active
@@ -132,18 +131,10 @@ typedef struct MultiCameraState {
   cl_program prg_rgb_laplacian;
   cl_kernel krnl_rgb_laplacian;
 
-  std::unique_ptr<uint8_t[]> rgb_roi_buf;
-  std::unique_ptr<int16_t[]> conv_result;
-
-  int conv_cl_localMemSize;
-  size_t conv_cl_globalWorkSize[2];
-  size_t conv_cl_localWorkSize[2];
-
   CameraState rear;
   CameraState front;
 
   SubMaster *sm_front;
-  SubMaster *sm_rear;
   PubMaster *pm;
 
 } MultiCameraState;

@@ -7,35 +7,38 @@
 
 #include "keyboard.hpp"
 
-KeyboardLayout::KeyboardLayout(QWidget* parent, std::vector<QVector<QString>> layout) : QWidget(parent) {
+const int DEFAULT_WIDTH = 1;
+const int SPACEBAR_WIDTH = 3;
+
+KeyboardLayout::KeyboardLayout(QWidget *parent, std::vector<QVector<QString>> layout) : QWidget(parent) {
   QVBoxLayout* vlayout = new QVBoxLayout;
   QButtonGroup* btn_group = new QButtonGroup(this);
 
   QObject::connect(btn_group, SIGNAL(buttonClicked(QAbstractButton*)), parent, SLOT(handleButton(QAbstractButton*)));
 
   int i = 0;
-  for(auto s : layout){
+  for (auto s : layout) {
     QHBoxLayout *hlayout = new QHBoxLayout;
 
-    if (i == 1){
-      hlayout->addSpacing(50);
+    if (i == 1) {
+      hlayout->addSpacing(90);
     }
 
-    for(QString p : s){
+    for (QString p : s) {
       QPushButton* btn = new QPushButton(p);
-      btn->setFixedHeight(100);
-
-      if (p == QString("  ")){
-        btn->setFixedWidth(1024);
+      btn->setFixedHeight(120);
+      btn_group->addButton(btn);
+      hlayout->addSpacing(10);
+      if (p == QString("  ")) {
+        hlayout->addWidget(btn, SPACEBAR_WIDTH);
+      } else {
+        hlayout->addWidget(btn, DEFAULT_WIDTH);
       }
 
-      btn_group->addButton(btn);
-      hlayout->addSpacing(5);
-      hlayout->addWidget(btn);
     }
 
-    if (i == 1){
-      hlayout->addSpacing(50);
+    if (i == 1) {
+      hlayout->addSpacing(90);
     }
 
     vlayout->addLayout(hlayout);
@@ -88,7 +91,10 @@ Keyboard::Keyboard(QWidget *parent) : QWidget(parent) {
   main_layout->setCurrentIndex(0);
 
   setStyleSheet(R"(
-    QPushButton { font-size: 40px }
+    QPushButton {
+      padding: 0;
+      font-size: 50px;
+    }
     * {
       background-color: #99777777;
     }
@@ -96,24 +102,24 @@ Keyboard::Keyboard(QWidget *parent) : QWidget(parent) {
 }
 
 
-void Keyboard::handleButton(QAbstractButton* m_button){
+void Keyboard::handleButton(QAbstractButton* m_button) {
   QString id = m_button->text();
-  if(!QString::compare(m_button->text(),"↑")||!QString::compare(m_button->text(),"ABC")){
+  if (!QString::compare(m_button->text(), "↑") || !QString::compare(m_button->text(), "ABC")) {
     main_layout->setCurrentIndex(0);
   }
-   if(!QString::compare(m_button->text(),"⇧")){
+  if (!QString::compare(m_button->text(), "⇧")) {
     main_layout->setCurrentIndex(1);
   }
-  if(!QString::compare(m_button->text(),"123")){
+  if (!QString::compare(m_button->text(), "123")) {
     main_layout->setCurrentIndex(2);
   }
-  if(!QString::compare(m_button->text(),"#+=")){
+  if (!QString::compare(m_button->text(), "#+=")) {
     main_layout->setCurrentIndex(3);
   }
-  if(!QString::compare(m_button->text(),"⏎")){
+  if (!QString::compare(m_button->text(), "⏎")) {
     main_layout->setCurrentIndex(0);
   }
-  if("A" <= id && id <= "Z"){
+  if ("A" <= id && id <= "Z") {
     main_layout->setCurrentIndex(0);
   }
   emit emitButton(m_button->text());

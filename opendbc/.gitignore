@@ -1,6 +1,7 @@
 .mypy_cache/
 *.pyc
 *.os
+*.o
 *.tmp
 *.dylib
 .*.swp

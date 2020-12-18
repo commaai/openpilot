@@ -5,12 +5,13 @@ libs = ['zmq', 'capnp', 'kj', 'z',
   'avformat', 'avcodec', 'swscale', 'avutil',
   'yuv', 'bz2', common, cereal, messaging, visionipc]
 
-if arch == "aarch64":
-  src += ['encoder.c', 'raw_logger.cc']
-  libs += ['OmxVenc', 'OmxCore', 'cutils']
-elif arch == "larch64":
-  src += ['encoder.c', 'raw_logger.cc']
-  libs += ['OmxVenc', 'OmxCore', 'pthread']
+if arch in ["aarch64", "larch64"]:
+  src += ['encoder.c']
+  libs += ['OmxVenc', 'OmxCore']
+  if arch == "aarch64":
+    libs += ['cutils']
+  else:
+    libs += ['pthread']
 else:
   libs += ['pthread']
 

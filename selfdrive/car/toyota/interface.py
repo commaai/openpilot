@@ -8,6 +8,7 @@ from selfdrive.car.interfaces import CarInterfaceBase
 
 EventName = car.CarEvent.EventName
 
+
 class CarInterface(CarInterfaceBase):
   @staticmethod
   def compute_gb(accel, speed):
@@ -121,7 +122,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.723], [0.0428]]
       ret.lateralTuning.pid.kf = 0.00006
 
-    elif candidate in [CAR.CAMRY, CAR.CAMRYH]:
+    elif candidate in [CAR.CAMRY, CAR.CAMRYH, CAR.CAMRY_TSS2]:
       stop_and_go = True
       ret.safetyParam = 73
       ret.wheelbase = 2.82448
@@ -195,6 +196,7 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate in [CAR.COROLLA_TSS2, CAR.COROLLAH_TSS2]:
       stop_and_go = True
+      ret.minSpeedCan = 0.375
       ret.safetyParam = 73
       ret.wheelbase = 2.63906
       ret.steerRatio = 13.9
@@ -256,7 +258,7 @@ class CarInterface(CarInterfaceBase):
     elif candidate == CAR.PRIUS_TSS2:
       stop_and_go = True
       ret.safetyParam = 73
-      ret.wheelbase = 2.70002 #from toyota online sepc.
+      ret.wheelbase = 2.70002  # from toyota online sepc.
       ret.steerRatio = 13.4   # True steerRation from older prius
       tire_stiffness_factor = 0.6371   # hand-tune
       ret.mass = 3115. * CV.LB_TO_KG + STD_CARGO_KG

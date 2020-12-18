@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <sys/mman.h>
 #include <sys/types.h>
+#include "common/clutil.h"
 
 #define CL_USE_DEPRECATED_OPENCL_1_2_APIS
 #ifdef __APPLE__
@@ -46,8 +47,6 @@ VisionBuf visionbuf_allocate(size_t len) {
 }
 
 VisionBuf visionbuf_allocate_cl(size_t len, cl_device_id device_id, cl_context ctx) {
-  int err;
-
 #if __OPENCL_VERSION__ >= 200
   void* host_ptr =
       clSVMAlloc(ctx, CL_MEM_READ_WRITE | CL_MEM_SVM_FINE_GRAIN_BUFFER, len, 0);
@@ -56,12 +55,10 @@ VisionBuf visionbuf_allocate_cl(size_t len, cl_device_id device_id, cl_context c
   int fd;
   void* host_ptr = malloc_with_fd(len, &fd);
 
-  cl_command_queue q = clCreateCommandQueue(ctx, device_id, 0, &err);
-  assert(err == 0);
+  cl_command_queue q = CL_CHECK_ERR(clCreateCommandQueue(ctx, device_id, 0, &err));
 #endif
 
-  cl_mem mem = clCreateBuffer(ctx, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, len, host_ptr, &err);
-  assert(err == 0);
+  cl_mem mem = CL_CHECK_ERR(clCreateBuffer(ctx, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, len, host_ptr, &err));
 
   return (VisionBuf){
       .len = len, .addr = host_ptr, .handle = 0, .fd = fd,
@@ -75,16 +72,14 @@ VisionBuf visionbuf_allocate_cl(size_t len, cl_device_id device_id, cl_context c
 }
 
 void visionbuf_sync(const VisionBuf* buf, int dir) {
-  int err = 0;
   if (!buf->buf_cl) return;
 
 #if __OPENCL_VERSION__ < 200
   if (dir == VISIONBUF_SYNC_FROM_DEVICE) {
-    err = clEnqueueReadBuffer(buf->copy_q, buf->buf_cl, CL_FALSE, 0, buf->len, buf->addr, 0, NULL, NULL);
+    CL_CHECK(clEnqueueReadBuffer(buf->copy_q, buf->buf_cl, CL_FALSE, 0, buf->len, buf->addr, 0, NULL, NULL));
   } else {
-    err = clEnqueueWriteBuffer(buf->copy_q, buf->buf_cl, CL_FALSE, 0, buf->len, buf->addr, 0, NULL, NULL);
+    CL_CHECK(clEnqueueWriteBuffer(buf->copy_q, buf->buf_cl, CL_FALSE, 0, buf->len, buf->addr, 0, NULL, NULL));
   }
-  assert(err == 0);
   clFinish(buf->copy_q);
 #endif
 }
@@ -94,12 +89,11 @@ void visionbuf_free(const VisionBuf* buf) {
     munmap(buf->addr, buf->len);
     close(buf->fd);
   } else {
-    int err = clReleaseMemObject(buf->buf_cl);
-    assert(err == 0);
+    CL_CHECK(clReleaseMemObject(buf->buf_cl));
 #if __OPENCL_VERSION__ >= 200
     clSVMFree(buf->ctx, buf->addr);
 #else
-    clReleaseCommandQueue(buf->copy_q);
+    CL_CHECK(clReleaseCommandQueue(buf->copy_q));
     munmap(buf->addr, buf->len);
     close(buf->fd);
 #endif
