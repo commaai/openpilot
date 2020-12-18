@@ -65,12 +65,11 @@ def unblock_stdout():
     exit_status = os.wait()[1] >> 8
     os._exit(exit_status)
 
-
 if __name__ == "__main__":
   unblock_stdout()
 
 
-# Run scons
+# Start spinner
 spinner = Spinner()
 spinner.update_progress(0, 100)
 if __name__ != "__main__":
