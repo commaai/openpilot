@@ -215,6 +215,9 @@ Thneed::Thneed(bool do_clinit) {
   fd = g_fd;
   ram = make_unique<GPUMalloc>(0x40000, fd);
   record = THNEED_RECORD;
+  if (getenv("THNEED_DEBUG")) {
+    record |= THNEED_DEBUG;
+  }
   timestamp = -1;
   g_thneed = this;
 }
