@@ -16,6 +16,8 @@ MM_SIM = MM + ".Sim"
 
 MM_MODEM_STATE_CONNECTED = 11
 
+TIMEOUT = 10
+
 NetworkType = log.ThermalData.NetworkType
 NetworkStrength = log.ThermalData.NetworkStrength
 
@@ -51,15 +53,15 @@ class Tici(HardwareBase):
 
   def get_network_type(self):
     try:
-      primary_connection = self.nm.Get(NM, 'PrimaryConnection', dbus_interface=DBUS_PROPS)
+      primary_connection = self.nm.Get(NM, 'PrimaryConnection', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
       primary_connection = self.bus.get_object(NM, primary_connection)
-      tp = primary_connection.Get(NM_CON_ACT, 'Type', dbus_interface=DBUS_PROPS)
+      tp = primary_connection.Get(NM_CON_ACT, 'Type', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
 
       if tp in ['802-3-ethernet', '802-11-wireless']:
         return NetworkType.wifi
       elif tp in ['gsm']:
         modem = self.get_modem()
-        access_t = modem.Get(MM_MODEM, 'AccessTechnologies', dbus_interface=DBUS_PROPS)
+        access_t = modem.Get(MM_MODEM, 'AccessTechnologies', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
         if access_t >= MM_MODEM_ACCESS_TECHNOLOGY_LTE:
           return NetworkType.cell4G
         elif access_t >= MM_MODEM_ACCESS_TECHNOLOGY_UMTS:
@@ -72,17 +74,17 @@ class Tici(HardwareBase):
     return NetworkType.none
 
   def get_modem(self):
-    objects = self.mm.GetManagedObjects(dbus_interface="org.freedesktop.DBus.ObjectManager")
+    objects = self.mm.GetManagedObjects(dbus_interface="org.freedesktop.DBus.ObjectManager", timeout=TIMEOUT)
     modem_path = list(objects.keys())[0]
     return self.bus.get_object(MM, modem_path)
 
   def get_wlan(self):
-    wlan_path = self.nm.GetDeviceByIpIface('wlan0', dbus_interface=NM)
+    wlan_path = self.nm.GetDeviceByIpIface('wlan0', dbus_interface=NM, timeout=TIMEOUT)
     return self.bus.get_object(NM, wlan_path)
 
   def get_sim_info(self):
     modem = self.get_modem()
-    sim_path = modem.Get(MM_MODEM, 'Sim', dbus_interface=DBUS_PROPS)
+    sim_path = modem.Get(MM_MODEM, 'Sim', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
 
     if sim_path == "/":
       return {
@@ -95,11 +97,11 @@ class Tici(HardwareBase):
     else:
       sim = self.bus.get_object(MM, sim_path)
       return {
-        'sim_id': str(sim.Get(MM_SIM, 'SimIdentifier', dbus_interface=DBUS_PROPS)),
-        'mcc_mnc': str(sim.Get(MM_SIM, 'OperatorIdentifier', dbus_interface=DBUS_PROPS)),
+        'sim_id': str(sim.Get(MM_SIM, 'SimIdentifier', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)),
+        'mcc_mnc': str(sim.Get(MM_SIM, 'OperatorIdentifier', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)),
         'network_type': ["Unknown"],
         'sim_state': ["READY"],
-        'data_connected': modem.Get(MM_MODEM, 'State', dbus_interface=DBUS_PROPS) == MM_MODEM_STATE_CONNECTED,
+        'data_connected': modem.Get(MM_MODEM, 'State', dbus_interface=DBUS_PROPS, timeout=TIMEOUT) == MM_MODEM_STATE_CONNECTED,
       }
 
   def get_subscriber_info(self):
@@ -109,7 +111,7 @@ class Tici(HardwareBase):
     if slot != 0:
       return ""
 
-    return str(self.get_modem().Get(MM_MODEM, 'EquipmentIdentifier', dbus_interface=DBUS_PROPS))
+    return str(self.get_modem().Get(MM_MODEM, 'EquipmentIdentifier', dbus_interface=DBUS_PROPS, timeout=TIMEOUT))
 
   def parse_strength(self, percentage):
       if percentage < 25:
@@ -129,14 +131,14 @@ class Tici(HardwareBase):
         pass
       elif network_type == NetworkType.wifi:
         wlan = self.get_wlan()
-        active_ap_path = wlan.Get(NM_DEV_WL, 'ActiveAccessPoint', dbus_interface=DBUS_PROPS)
+        active_ap_path = wlan.Get(NM_DEV_WL, 'ActiveAccessPoint', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
         if active_ap_path != "/":
           active_ap = self.bus.get_object(NM, active_ap_path)
-          strength = int(active_ap.Get(NM_AP, 'Strength', dbus_interface=DBUS_PROPS))
+          strength = int(active_ap.Get(NM_AP, 'Strength', dbus_interface=DBUS_PROPS, timeout=TIMEOUT))
           network_strength = self.parse_strength(strength)
       else:  # Cellular
         modem = self.get_modem()
-        strength = int(modem.Get(MM_MODEM, 'SignalQuality', dbus_interface=DBUS_PROPS)[0])
+        strength = int(modem.Get(MM_MODEM, 'SignalQuality', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)[0])
         network_strength = self.parse_strength(strength)
     except Exception:
       pass
