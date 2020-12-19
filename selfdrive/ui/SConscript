@@ -44,6 +44,17 @@ if arch in ["x86_64", "Darwin", "larch64"]:
   qt_env['CXXFLAGS'] += qt_flags
   qt_env['LIBPATH'] += ['#selfdrive/ui']
 
+  if GetOption("clazy"):
+    checks = [
+      "level0",
+      "level1",
+      "no-range-loop",
+      "no-non-pod-global-static",
+    ]
+    qt_env['CXX'] = 'clazy'
+    qt_env['ENV']['CLAZY_IGNORE_DIRS'] = qt_dirs[0]
+    qt_env['ENV']['CLAZY_CHECKS'] = ','.join(checks)
+
 
 src = ['ui.cc', 'paint.cc', 'sidebar.cc', '#phonelibs/nanovg/nanovg.c']
 libs = [common, 'zmq', 'capnp', 'kj', 'm', cereal, messaging, gpucommon, visionipc]
