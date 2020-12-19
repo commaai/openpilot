@@ -1,11 +1,12 @@
-# flake8: noqa
-
+#!/usr/bin/env python3
 import unittest
 import numpy as np
+
+import cereal.messaging as messaging
 from cereal import car
 from common.realtime import DT_DMON
 from selfdrive.controls.lib.events import Events
-from selfdrive.monitoring.driver_monitor import DriverStatus, MAX_TERMINAL_ALERTS, \
+from selfdrive.monitoring.driver_monitor import DriverStatus, \
                                   _AWARENESS_TIME, _AWARENESS_PRE_TIME_TILL_TERMINAL, \
                                   _AWARENESS_PROMPT_TIME_TILL_TERMINAL, _DISTRACTED_TIME, \
                                   _DISTRACTED_PRE_TIME_TILL_TERMINAL, _DISTRACTED_PROMPT_TIME_TILL_TERMINAL, \
@@ -20,39 +21,31 @@ _INVISIBLE_SECONDS_TO_ORANGE = _AWARENESS_TIME - _AWARENESS_PROMPT_TIME_TILL_TER
 _INVISIBLE_SECONDS_TO_RED = _AWARENESS_TIME + 1
 _UNCERTAIN_SECONDS_TO_GREEN = _HI_STD_TIMEOUT + 0.5
 
-class fake_DM_msg():
-  def __init__(self, is_face_detected, is_distracted=False, is_model_uncertain=False):
-    self.faceOrientation = [0., 0., 0.]
-    self.facePosition = [0., 0.]
-    self.faceProb = 1. * is_face_detected
-    self.leftEyeProb = 1.
-    self.rightEyeProb = 1.
-    self.leftBlinkProb = 1. * is_distracted
-    self.rightBlinkProb = 1. * is_distracted
-    self.faceOrientationStd = [1.*is_model_uncertain, 1.*is_model_uncertain, 1.*is_model_uncertain]
-    self.facePositionStd = [1.*is_model_uncertain, 1.*is_model_uncertain]
-    self.sgProb = 0.
-
+def make_msg(face_detected, distracted=False, model_uncertain=False):
+  ds = messaging.new_message("driverState").driverState
+  ds.faceOrientation = [0., 0., 0.]
+  ds.facePosition = [0., 0.]
+  ds.faceProb = 1. * face_detected
+  ds.leftEyeProb = 1.
+  ds.rightEyeProb = 1.
+  ds.leftBlinkProb = 1. * distracted
+  ds.rightBlinkProb = 1. * distracted
+  ds.faceOrientationStd = [1.*model_uncertain, 1.*model_uncertain, 1.*model_uncertain]
+  ds.facePositionStd = [1.*model_uncertain, 1.*model_uncertain]
+  ds.sgProb = 0.
+  return ds
 
 # driver state from neural net, 10Hz
-msg_NO_FACE_DETECTED = fake_DM_msg(is_face_detected=False)
-msg_ATTENTIVE = fake_DM_msg(is_face_detected=True)
-msg_DISTRACTED = fake_DM_msg(is_face_detected=True, is_distracted=True)
-msg_ATTENTIVE_UNCERTAIN = fake_DM_msg(is_face_detected=True, is_model_uncertain=True)
-msg_DISTRACTED_UNCERTAIN = fake_DM_msg(is_face_detected=True, is_distracted=True, is_model_uncertain=True)
-msg_DISTRACTED_BUT_SOMEHOW_UNCERTAIN = fake_DM_msg(is_face_detected=True, is_distracted=True, is_model_uncertain=_POSESTD_THRESHOLD*1.5)
+msg_NO_FACE_DETECTED = make_msg(False)
+msg_ATTENTIVE = make_msg(True)
+msg_DISTRACTED = make_msg(True, distracted=True)
+msg_ATTENTIVE_UNCERTAIN = make_msg(True, model_uncertain=True)
+msg_DISTRACTED_UNCERTAIN = make_msg(True, distracted=True, model_uncertain=True)
+msg_DISTRACTED_BUT_SOMEHOW_UNCERTAIN = make_msg(True, distracted=True, model_uncertain=_POSESTD_THRESHOLD*1.5)
 
 # driver interaction with car
 car_interaction_DETECTED = True
 car_interaction_NOT_DETECTED = False
-
-# openpilot state
-openpilot_ENGAGED = True
-openpilot_NOT_ENGAGED = False
-
-# car standstill state
-car_STANDSTILL = True
-car_NOT_STANDSTILL = False
 
 # some common state vectors
 always_no_face = [msg_NO_FACE_DETECTED] * int(_TEST_TIMESPAN/DT_DMON)
@@ -222,5 +215,4 @@ class TestMonitoring(unittest.TestCase):
     self.assertEqual(events_output[int((_DISTRACTED_TIME*2.5)/DT_DMON)].names[0], EventName.promptDriverDistracted)  # set_timer blocked
 
 if __name__ == "__main__":
-  print('MAX_TERMINAL_ALERTS', MAX_TERMINAL_ALERTS)
   unittest.main()
