@@ -1278,6 +1278,7 @@ FW_VERSIONS = {
   },
   CAR.LEXUS_RX_TSS2: {
     (Ecu.engine, 0x700, None): [
+      b'\x01896630EC9000\x00\x00\x00\x00',
       b'\x01896634D12000\x00\x00\x00\x00',
       b'\x01896630EB0000\x00\x00\x00\x00',
       b'\x01896630EA9000\x00\x00\x00\x00',
