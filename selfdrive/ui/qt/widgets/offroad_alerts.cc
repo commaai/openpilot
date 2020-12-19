@@ -91,7 +91,7 @@ void OffroadAlert::refresh() {
   } else {
     vlayout->addSpacing(60);
 
-    for (auto alert : alerts) {
+    for (const auto &alert : alerts) {
       QLabel *l = new QLabel(alert.text);
       l->setWordWrap(true);
       l->setMargin(60);
@@ -136,7 +136,7 @@ void OffroadAlert::parse_alerts() {
   }
 
   QJsonObject json = doc.object();
-  for (const QString& key : json.keys()) {
+  for (const QString &key : json.keys()) {
     std::vector<char> bytes = Params().read_db_bytes(key.toStdString().c_str());
 
     if (bytes.size()) {

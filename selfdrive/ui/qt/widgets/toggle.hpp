@@ -3,7 +3,7 @@
 
 class Toggle : public QAbstractButton {
   Q_OBJECT
-  Q_PROPERTY(int offset_circle READ offset_circle WRITE set_offset_circle)
+  Q_PROPERTY(int offset_circle READ offset_circle WRITE set_offset_circle CONSTANT)
 
 public:
   Toggle(QWidget* parent = nullptr);

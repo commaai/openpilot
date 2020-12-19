@@ -103,7 +103,7 @@ QString WifiManager::get_ipv4_address(){
     return "";
   }
   QVector<QDBusObjectPath> conns = get_active_connections();
-  for (auto p : conns){
+  for (auto &p : conns){
     QString active_connection = p.path();
     QDBusInterface nm(nm_service, active_connection, props_iface, bus);
     QDBusObjectPath pth = get_response<QDBusObjectPath>(nm.call("Get", connection_iface, "Ip4Config"));
@@ -261,14 +261,13 @@ void WifiManager::clear_connections(QString ssid) {
 
     const QDBusArgument &dbusArg = response.arguments().at(0).value<QDBusArgument>();
 
-    QMap<QString,QMap<QString,QVariant> > map;
+    QMap<QString, QMap<QString,QVariant>> map;
     dbusArg >> map;
-    for (QString outer_key : map.keys()) {
-      QMap<QString,QVariant> innerMap = map.value(outer_key);
-      for (QString inner_key : innerMap.keys()) {
-        if (inner_key == "ssid") {
-          QString value = innerMap.value(inner_key).value<QString>();
-          if (value == ssid) {
+    for (auto &inner : map) {
+      for (auto &val : inner) {
+        QString key = inner.key(val);
+        if (key == "ssid") {
+          if (val == ssid) {
             nm2.call("Delete");
           }
         }
