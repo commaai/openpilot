@@ -26,9 +26,7 @@ OffroadHome::OffroadHome(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout();
   main_layout->setContentsMargins(sbr_w + 50, 50, 50, 50);
 
-  center_layout = new QStackedLayout();
-
-  // header
+  // top header
   QHBoxLayout *header_layout = new QHBoxLayout();
 
   date = new QLabel();
@@ -45,8 +43,12 @@ OffroadHome::OffroadHome(QWidget *parent) : QWidget(parent) {
   QObject::connect(alert_notification, SIGNAL(released()), this, SLOT(openAlerts()));
   main_layout->addWidget(alert_notification, 0, Qt::AlignTop | Qt::AlignRight);
 
+  // main content
+  main_layout->addSpacing(100);
+  center_layout = new QStackedLayout();
+
   DriveStats *drive = new DriveStats;
-  drive->setFixedSize(1000,800);
+  drive->setFixedSize(1000, 800);
   center_layout->addWidget(drive);
 
   alerts_widget = new OffroadAlert();

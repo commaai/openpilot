@@ -1,11 +1,11 @@
 #include "ui.hpp"
+
 #include <assert.h>
 #include <map>
 #include <cmath>
 #include <iostream>
 #include "common/util.h"
 #include <algorithm>
-
 
 #define NANOVG_GLES3_IMPLEMENTATION
 #include "nanovg_gl.h"
@@ -225,7 +225,6 @@ static void update_line_data(UIState *s, const cereal::ModelDataV2::XYZTData::Re
   }
   pvd->cnt = v - pvd->v;
 }
-
 
 static void ui_draw_vision_lane_lines(UIState *s) {
   const UIScene *scene = &s->scene;
