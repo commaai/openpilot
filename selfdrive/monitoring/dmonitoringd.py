@@ -14,8 +14,7 @@ def dmonitoringd_thread(sm=None, pm=None):
   if sm is None:
     sm = messaging.SubMaster(['driverState', 'liveCalibration', 'carState', 'controlsState', 'model'], poll=['driverState'])
 
-  driver_status = DriverStatus()
-  driver_status.is_rhd_region = Params().get("IsRHD") == b"1"
+  driver_status = DriverStatus(rhd=Params().get("IsRHD") == b"1")
 
   offroad = Params().get("IsOffroad") == b"1"
 

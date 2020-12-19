@@ -53,6 +53,7 @@ always_distracted = [msg_DISTRACTED] * int(_TEST_TIMESPAN/DT_DMON)
 always_true = [True] * int(_TEST_TIMESPAN/DT_DMON)
 always_false = [False] * int(_TEST_TIMESPAN/DT_DMON)
 
+# TODO: this only tests DriverStatus
 class TestMonitoring(unittest.TestCase):
   def _run_seq(self, msgs, interaction, engaged, standstill):
     DS = DriverStatus()

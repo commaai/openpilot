@@ -100,7 +100,8 @@ class DriverBlink():
     self.cfactor = 1.
 
 class DriverStatus():
-  def __init__(self):
+  def __init__(self, rhd=False):
+    self.is_rhd_region = rhd
     self.pose = DriverPose()
     self.pose_calibrated = self.pose.pitch_offseter.filtered_stat.n > _POSE_OFFSET_MIN_COUNT and \
                             self.pose.yaw_offseter.filtered_stat.n > _POSE_OFFSET_MIN_COUNT
@@ -118,9 +119,6 @@ class DriverStatus():
     self.hi_stds = 0
     self.hi_std_alert_enabled = True
     self.threshold_prompt = _DISTRACTED_PROMPT_TIME_TILL_TERMINAL / _DISTRACTED_TIME
-
-    self.is_rhd_region = False
-    self.is_rhd_region_checked = False
 
     self._set_timers(active_monitoring=True)
 
