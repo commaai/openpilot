@@ -1,20 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <signal.h>
 #include <unistd.h>
-#include <sched.h>
-#include <sys/time.h>
-#include <sys/cdefs.h>
-#include <sys/types.h>
-#include <assert.h>
 #include <math.h>
 #include <ctime>
 #include <chrono>
-#include <algorithm>
 
-#include "common/params.h"
 #include "common/swaglog.h"
-#include "common/timing.h"
 
 #include "ublox_msg.h"
 
@@ -173,8 +164,7 @@ inline bool UbloxMsgParser::valid_cheksum() {
 
 inline bool UbloxMsgParser::valid() {
   return bytes_in_parse_buf >= UBLOX_HEADER_SIZE + UBLOX_CHECKSUM_SIZE &&
-    needed_bytes() == 0 &&
-    valid_cheksum();
+         needed_bytes() == 0 && valid_cheksum();
 }
 
 inline bool UbloxMsgParser::valid_so_far() {
@@ -186,8 +176,9 @@ inline bool UbloxMsgParser::valid_so_far() {
     //LOGD("PREAMBLE2 invalid, %02X.", msg_parse_buf[1]);
     return false;
   }
-  if(needed_bytes() == 0 && !valid())
+  if(needed_bytes() == 0 && !valid()) {
     return false;
+  }
   return true;
 }
 
@@ -221,7 +212,7 @@ kj::Array<capnp::word> UbloxMsgParser::gen_solution() {
 }
 
 inline bool bit_to_bool(uint8_t val, int shifts) {
-  return (val & (1 << shifts)) ? true : false;
+  return (bool)(val & (1 << shifts));
 }
 
 kj::Array<capnp::word> UbloxMsgParser::gen_raw() {

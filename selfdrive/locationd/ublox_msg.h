@@ -68,6 +68,7 @@ typedef struct __attribute__((packed)) {
   int8_t trkStat;
   int8_t reserved3;
 } rxm_raw_msg_extra;
+
 // RXM_SFRBX
 typedef struct __attribute__((packed)) {
   int8_t gnssId;
