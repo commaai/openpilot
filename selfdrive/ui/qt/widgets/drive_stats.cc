@@ -2,10 +2,8 @@
 
 #include <QFile>
 #include <QDebug>
-#include <QHBoxLayout>
+#include <QVBoxLayout>
 #include <QLabel>
-#include <QPixmap>
-#include <QPushButton>
 #include <QLineEdit>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -134,25 +132,24 @@ void DriveStats::replyFinished(QNetworkReply *l){
   gl->addWidget(build_stat(metric ? "KM" : "MILES", week_distance), 7, 1, 3, 1);
   gl->addWidget(build_stat("HOURS", week["minutes"].toDouble() / 60), 7, 2, 3, 1);
 
-
   f->setLayout(gl);
   f->setStyleSheet(R"(
-    [class="line"]{
+    [class="line"] {
       border: 2px solid white;
     }
-    [class="outside"]{
+    [class="outside"] {
       border-radius: 20px;
       border: 2px solid white;
       padding: 10px;
     }
-    QLabel{
+    QLabel {
       font-size: 70px;
       font-weight: 200;
     }
   )");
 
 }
-DriveStats::DriveStats(QWidget *parent) : QWidget(parent){
+DriveStats::DriveStats(QWidget *parent) : QWidget(parent) {
   f = new QFrame;
   f->setProperty("class", "outside");
   QVBoxLayout *v = new QVBoxLayout;
