@@ -2,6 +2,8 @@
 InheritParentConfig: true
 Checks: '
 bugprone-*,
+-bugprone-integer-division,
+-bugprone-narrowing-conversions,
 performance-*,
 clang-analyzer-*,
 misc-*,
@@ -10,6 +12,7 @@ modernize-*,
 -modernize-avoid-c-arrays,
 -modernize-deprecated-headers,
 -modernize-use-auto,
+-modernize-use-using,
 -modernize-use-nullptr,
 -modernize-use-trailing-return-type,
 '

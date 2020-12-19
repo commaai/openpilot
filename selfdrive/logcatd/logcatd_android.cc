@@ -27,7 +27,7 @@ int main() {
   assert(kernel_logger);
   PubMaster pm({"androidLog"});
 
-  while (1) {
+  while (true) {
     log_msg log_msg;
     err = android_logger_list_read(logger_list, &log_msg);
     if (err <= 0) {
