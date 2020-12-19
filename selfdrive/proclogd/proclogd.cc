@@ -36,7 +36,7 @@ int main() {
 
   std::unordered_map<pid_t, ProcCache> proc_cache;
 
-  while (1) {
+  while (true) {
 
     MessageBuilder msg;
     auto procLog = msg.initEvent().initProcLog();

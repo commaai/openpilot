@@ -123,10 +123,10 @@ CameraBuf::~CameraBuf() {
   for (int i = 0; i < frame_buf_count; i++) {
     visionbuf_free(&camera_bufs[i]);
   }
-  for (int i = 0; i < UI_BUF_COUNT; i++) {
+  for (auto & rgb_buf : rgb_bufs) {
     visionbuf_free(&rgb_bufs[i]);
   }
-  for (int i = 0; i < YUV_COUNT; i++) {
+  for (auto & i : yuv_ion) {
     visionbuf_free(&yuv_ion[i]);
   }
   rgb_to_yuv_destroy(&rgb_to_yuv_state);

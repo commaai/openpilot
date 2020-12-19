@@ -36,14 +36,14 @@ void Pigeon::init() {
   LOGW("panda GPS start");
 
   // power off pigeon
-  set_power(0);
+  set_power(false);
   usleep(100*1000);
 
   // 9600 baud at init
   set_baud(9600);
 
   // power on pigeon
-  set_power(1);
+  set_power(true);
   usleep(500*1000);
 
   // baud rate upping
