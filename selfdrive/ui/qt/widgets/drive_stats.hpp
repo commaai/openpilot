@@ -1,10 +1,7 @@
 #pragma once
 
+#include <QFrame>
 #include <QWidget>
-#include <QButtonGroup>
-#include <QVBoxLayout>
-#include <QStackedWidget>
-#include <QTimer>
 #include <QNetworkReply>
 
 
