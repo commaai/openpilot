@@ -103,7 +103,7 @@ QString WifiManager::get_ipv4_address(){
     return "";
   }
   QVector<QDBusObjectPath> conns = get_active_connections();
-  for (auto p : conns){
+  for (auto &p : conns){
     QString active_connection = p.path();
     QDBusInterface nm(nm_service, active_connection, props_iface, bus);
     QDBusObjectPath pth = get_response<QDBusObjectPath>(nm.call("Get", connection_iface, "Ip4Config"));
