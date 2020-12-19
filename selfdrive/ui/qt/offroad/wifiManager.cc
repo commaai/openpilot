@@ -261,14 +261,13 @@ void WifiManager::clear_connections(QString ssid) {
 
     const QDBusArgument &dbusArg = response.arguments().at(0).value<QDBusArgument>();
 
-    QMap<QString,QMap<QString,QVariant> > map;
+    QMap<QString, QMap<QString,QVariant>> map;
     dbusArg >> map;
-    for (QString outer_key : map.keys()) {
-      QMap<QString,QVariant> innerMap = map.value(outer_key);
-      for (QString inner_key : innerMap.keys()) {
-        if (inner_key == "ssid") {
-          QString value = innerMap.value(inner_key).value<QString>();
-          if (value == ssid) {
+    for (auto &inner : map) {
+      for (auto &val : inner) {
+        QString key = inner.key(val);
+        if (key == "ssid") {
+          if (val == ssid) {
             nm2.call("Delete");
           }
         }
