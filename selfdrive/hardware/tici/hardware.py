@@ -1,5 +1,6 @@
 import os
 import subprocess
+from pathlib import Path
 
 from cereal import log
 from selfdrive.hardware.base import HardwareBase
@@ -46,8 +47,9 @@ class Tici(HardwareBase):
     subprocess.check_output(["sudo", "reboot"])
 
   def uninstall(self):
-    # TODO: implement uninstall. reboot to factory reset?
-    pass
+    Path("/data/__system_reset__").touch()
+    os.sync()
+    self.reboot()
 
   def get_serial(self):
     return self.get_cmdline()['androidboot.serialno']
