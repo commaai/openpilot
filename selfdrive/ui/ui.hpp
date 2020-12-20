@@ -102,6 +102,7 @@ typedef struct UIScene {
   std::string alert_text1;
   std::string alert_text2;
   std::string alert_type;
+  float alert_blinking_rate;
   cereal::ControlsState::AlertSize alert_size;
 
   cereal::HealthData::HwType hwType;
@@ -194,9 +195,6 @@ typedef struct UIState {
   bool longitudinal_control;
   uint64_t last_athena_ping;
   uint64_t started_frame;
-
-  bool alert_blinked;
-  float alert_blinking_alpha;
 
   track_vertices_data track_vertices;
   line_vertices_data lane_line_vertices[4];
