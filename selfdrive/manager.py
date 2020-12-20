@@ -179,6 +179,7 @@ managed_processes = {
   "dmonitoringmodeld": ("selfdrive/modeld", ["./dmonitoringmodeld"]),
   "modeld": ("selfdrive/modeld", ["./modeld"]),
   "rtshield": "selfdrive.rtshield",
+  "speedlimitd": "selfdrive.locationd.speedlimitd",
 }
 
 daemon_processes = {
@@ -226,6 +227,7 @@ car_started_processes = [
   'proclogd',
   'locationd',
   'clocksd',
+  'speedlimitd',
 ]
 
 driver_view_processes = [

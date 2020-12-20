@@ -299,6 +299,8 @@ selfdrive/locationd/models/constants.py
 
 selfdrive/locationd/calibrationd.py
 
+selfdrive/locationd/speedlimitd.py
+
 selfdrive/logcatd/SConscript
 selfdrive/logcatd/logcatd_android.cc
 selfdrive/logcatd/logcatd_systemd.cc

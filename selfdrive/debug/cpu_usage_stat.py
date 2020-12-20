@@ -34,7 +34,7 @@ monitored_proc_names = [
   'controlsd', 'locationd', 'loggerd','plannerd',
   'ubloxd', 'thermald', 'uploader', 'deleter', 'radard', 'logmessaged', 'tombstoned',
   'logcatd', 'proclogd', 'boardd', 'pandad', './ui', 'ui', 'calibrationd', 'params_learner', 'modeld', 'dmonitoringd',
-  'dmonitoringmodeld', 'camerad', 'sensord', 'updated', 'gpsd', 'athena', 'locationd', 'paramsd',
+  'dmonitoringmodeld', 'camerad', 'sensord', 'updated', 'gpsd', 'athena', 'locationd', 'paramsd', 'speedlimitd',
 
   'ai.comma.plus.offroad',
 
