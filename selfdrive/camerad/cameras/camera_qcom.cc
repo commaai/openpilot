@@ -1783,9 +1783,11 @@ void cameras_run(MultiCameraState *s) {
   err = pthread_join(ops_thread_handle, NULL);
   assert(err == 0);
 
-  cameras_close(s);
+  for (auto &t : threads) {
+    t.join();
+  }
 
-  for (auto &t : threads) t.join();
+  cameras_close(s);
 }
 
 void cameras_close(MultiCameraState *s) {

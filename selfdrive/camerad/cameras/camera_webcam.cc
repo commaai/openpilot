@@ -272,7 +272,9 @@ void cameras_run(MultiCameraState *s) {
   set_thread_name("webcam_thread");
   front_thread(&s->front);
   t_rear.join();
-  cameras_close(s);
+  for (auto &t : threads) {
+    t.join();
+  }
 
-  for (auto &t : threads) t.join();
+  cameras_close(s);
 }
