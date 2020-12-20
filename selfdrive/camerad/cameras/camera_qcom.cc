@@ -1491,8 +1491,6 @@ void cameras_open(MultiCameraState *s) {
 
 
 static void camera_close(CameraState *s) {
-  s->buf.stop();
-
   // ISP: STOP_STREAM
   s->stream_cfg.cmd = STOP_STREAM;
   int err = ioctl(s->isp_fd, VIDIOC_MSM_ISP_CFG_STREAM, &s->stream_cfg);
@@ -1779,6 +1777,9 @@ void cameras_run(MultiCameraState *s) {
   }
 
   LOG(" ************** STOPPING **************");
+  // stop CameraBuf to wakeup CameraBuf::acquire
+  s->rear.buf.stop();
+  s->front.buf.stop();
 
   err = pthread_join(ops_thread_handle, NULL);
   assert(err == 0);

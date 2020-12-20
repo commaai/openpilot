@@ -903,7 +903,6 @@ static void camera_close(CameraState *s) {
 
   ret = cam_control(s->video0_fd, CAM_REQ_MGR_DESTROY_SESSION, &s->req_mgr_session_info, sizeof(s->req_mgr_session_info));
   LOGD("destroyed session: %d", ret);
-  s->buf.stop();
 }
 
 static void cameras_close(MultiCameraState *s) {
@@ -1193,6 +1192,10 @@ void cameras_run(MultiCameraState *s) {
   }
 
   LOG(" ************** STOPPING **************");
+  // stop CameraBuf to wakeup CameraBuf::acquire
+  s->rear.buf.stop();
+  s->wide.buf.stop();
+  s->front.buf.stop();
 
   err = pthread_join(ae_thread_handle, NULL);
   assert(err == 0);

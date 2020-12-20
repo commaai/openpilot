@@ -25,7 +25,7 @@ void camera_open(CameraState *s, bool rear) {
 }
 
 void camera_close(CameraState *s) {
-  s->buf.stop();
+  // empty
 }
 
 void camera_init(VisionIpcServer * v, CameraState *s, int camera_id, unsigned int fps, cl_device_id device_id, cl_context ctx, VisionStreamType rgb_type, VisionStreamType yuv_type) {
@@ -118,6 +118,10 @@ void cameras_run(MultiCameraState *s) {
   set_thread_name("frame_streaming");
   run_frame_stream(s);
 
+  s->front.buf.stop();
+  s->rear.buf.stop();
+
   t.join();
+
   cameras_close(s);
 }
