@@ -89,18 +89,7 @@ CameraInfo cameras_supported[CAMERA_ID_MAX] = {
 
 void cameras_init(MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
   camera_init(&s->rear, CAMERA_ID_IMX298, 20, device_id, ctx);
-  s->rear.transform = (mat3){{
-    1.0,  0.0, 0.0,
-    0.0, 1.0, 0.0,
-    0.0,  0.0, 1.0,
-  }};
-
   camera_init(&s->front, CAMERA_ID_OV8865, 10, device_id, ctx);
-  s->front.transform = (mat3){{
-    1.0,  0.0, 0.0,
-    0.0, 1.0, 0.0,
-    0.0,  0.0, 1.0,
-  }};
 }
 
 void camera_autoexposure(CameraState *s, float grey_frac) {}

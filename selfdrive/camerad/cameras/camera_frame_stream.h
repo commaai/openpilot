@@ -21,8 +21,6 @@ typedef struct CameraState {
   float digital_gain;
   float cur_gain_frac;
 
-  mat3 transform;
-
   CameraBuf buf;
 } CameraState;
 

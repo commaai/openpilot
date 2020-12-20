@@ -72,12 +72,12 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
 #else
   float db_s = 1.0;
 #endif
-
-  if (ci->bayer) {
-    yuv_transform = transform_scale_buffer(s->transform, db_s);
-  } else {
-    yuv_transform = s->transform;
-  }
+  const mat3 transform = (mat3){{
+    1.0, 0.0, 0.0,
+    0.0, 1.0, 0.0,
+    0.0, 0.0, 1.0
+  }};
+  yuv_transform = ci->bayer ? transform_scale_buffer(transform, db_s) : transform;
 
   for (int i = 0; i < UI_BUF_COUNT; i++) {
     VisionImg img = visionimg_alloc_rgb24(device_id, context, rgb_width, rgb_height, &rgb_bufs[i]);
