@@ -114,6 +114,7 @@ typedef struct UIScene {
   std::string alert_text1;
   std::string alert_text2;
   std::string alert_type;
+  float alert_blinking_rate;
   cereal::ControlsState::AlertSize alert_size;
 
   cereal::HealthData::HwType hwType;

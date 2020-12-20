@@ -356,6 +356,23 @@ static void ui_draw_vision_footer(UIState *s) {
   ui_draw_vision_face(s);
 }
 
+static float get_alert_alpha(float blinking_rate) {
+  static int blinked = 1;
+  static float alpha = 1.0;
+  if (blinking_rate > 0.) {
+    alpha += (0.05 * blinking_rate) * blinked;
+    if (alpha > 1.0) {
+      blinked = -1;
+    } else if (alpha < 0.25) {
+      blinked = 1;
+    }
+  } else {
+    alpha = 1.0;
+    blinked = 1;
+  }
+  return alpha;
+}
+
 static void ui_draw_vision_alert(UIState *s) {
   static std::map<cereal::ControlsState::AlertSize, const int> alert_size_map = {
       {cereal::ControlsState::AlertSize::SMALL, 241},
@@ -365,7 +382,7 @@ static void ui_draw_vision_alert(UIState *s) {
   bool longAlert1 = scene->alert_text1.length() > 15;
 
   NVGcolor color = bg_colors[s->status];
-  color.a *= s->alert_blinking_alpha;
+  color.a *= get_alert_alpha(scene->alert_blinking_rate);
   int alr_s = alert_size_map[scene->alert_size];
 
   const int alr_x = scene->viz_rect.x - bdr_s;
