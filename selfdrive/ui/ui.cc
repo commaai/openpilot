@@ -75,6 +75,24 @@ static void ui_init_vision(UIState *s) {
   assert(glGetError() == GL_NO_ERROR);
 }
 
+static int safe_poll(int fd, const double timeout) {
+  pollfd fds[1] = {{.fd = fd, .events = POLLIN}};
+  double poll_timeout = timeout;
+  const double tm_start = millis_since_boot();  
+  while (true) {
+    const int ret = poll(fds, 1, poll_timeout);
+    if (ret != -1 || errno != EINTR)
+      return ret;
+
+    // recalculate the timeout
+    poll_timeout = timeout - (millis_since_boot() - tm_start);
+    if (poll_timeout < 0) {
+      // fake timeout error
+      return 0;
+    }
+  }
+}
+
 void ui_update_vision(UIState *s) {
 
   if (!s->vision_connected && s->started) {
@@ -86,25 +104,15 @@ void ui_update_vision(UIState *s) {
     }
   }
 
-  if (s->vision_connected) {
-    if (!s->started) goto destroy;
+  if (!s->vision_connected) return;
 
-    // poll for a new frame
-    struct pollfd fds[1] = {{
-      .fd = s->stream.ipc_fd,
-      .events = POLLOUT,
-    }};
-    int ret = poll(fds, 1, 100);
-    if (ret > 0) {
-      if (!visionstream_get(&s->stream, nullptr)) goto destroy;
-    }
+  // poll for a new frame
+  int err = !s->started ? -1 : safe_poll(s->stream.ipc_fd, 1000 / UI_FREQ);
+  // err is 0 if poll timeout.
+  if (err < 0 || (err > 0 && !visionstream_get(&s->stream, nullptr))) {
+    visionstream_destroy(&s->stream);
+    s->vision_connected = false;
   }
-
-  return;
-
-destroy:
-  visionstream_destroy(&s->stream);
-  s->vision_connected = false;
 }
 
 void update_sockets(UIState *s) {
