@@ -203,11 +203,15 @@ QWidget * device_panel() {
 
   QPushButton *uninstall_btn = new QPushButton("Uninstall openpilot");
   device_layout->addWidget(uninstall_btn);
+<<<<<<< HEAD
   QObject::connect(uninstall_btn, &QPushButton::released, [=]() {
     if (ConfirmationDialog::confirm("Are you sure you want to uninstall?")) {
       Params().write_db_value("DoUninstall", "1");
     }
   });
+=======
+  QObject::connect(uninstall_btn, &QPushButton::released, [=]() { Params().put("DoUninstall", "1"); });
+>>>>>>> rebase master,fix build error
 
   QWidget *widget = new QWidget;
   widget->setLayout(device_layout);
