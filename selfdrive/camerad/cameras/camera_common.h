@@ -4,7 +4,10 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <memory>
+#include <mutex>
 #include <thread>
+#include <condition_variable>
+#include "common/buffering.h"
 #include "common/mat.h"
 #include "common/swaglog.h"
 #include "common/queue.h"
@@ -77,15 +80,24 @@ typedef struct FrameMetadata {
   float gain_frac;
 } FrameMetadata;
 
-typedef struct CameraExpInfo {
-  int op_id;
-  float grey_frac;
-} CameraExpInfo;
-
 extern CameraInfo cameras_supported[CAMERA_ID_MAX];
 
 struct MultiCameraState;
 struct CameraState;
+
+class CameraExpInfo {
+public:
+  CameraExpInfo() = default;
+  void set(CameraState *s, float grey_frac);
+  std::optional<std::tuple<CameraState *, float>> load();
+  void stop();
+ private:
+  bool do_stop = false;
+  float grey_frac = 0.;
+  CameraState *camera_state = nullptr;
+  std::mutex mutex;
+  std::condition_variable cv;
+};
 
 class CameraBuf {
 private:

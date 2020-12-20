@@ -288,9 +288,9 @@ static void publish_thumbnail(PubMaster *pm, const CameraBuf *b) {
   free(thumbnail_buffer);
 }
 
-void set_exposure_target(CameraState *c, const uint8_t *pix_ptr, int x_start, int x_end, int x_skip, int y_start, int y_end, int y_skip) {
+float get_exposure_target(const CameraState *c, int x_start, int x_end, int x_skip, int y_start, int y_end, int y_skip) {
   const CameraBuf *b = &c->buf;
-
+  const uint8_t *pix_ptr = (const uint8_t *)b->yuv_bufs[b->cur_yuv_idx].y;
   uint32_t lum_binning[256] = {0};
   for (int y = y_start; y < y_end; y += y_skip) {
     for (int x = x_start; x < x_end; x += x_skip) {
@@ -321,7 +321,7 @@ void set_exposure_target(CameraState *c, const uint8_t *pix_ptr, int x_start, in
     }
   }
   lum_med = lum_med_alt>lum_med?lum_med_alt:lum_med;
-  camera_autoexposure(c, lum_med / 256.0);
+  return lum_med / 256.0;
 }
 
 extern ExitHandler do_exit;
@@ -409,7 +409,7 @@ void common_process_driver_camera(SubMaster *sm, PubMaster *pm, CameraState *c, 
 #endif
     }
 
-    set_exposure_target(c, (const uint8_t *)b->cur_yuv_buf->y, x_min, x_max, 2, y_min, y_max, skip);
+    exp_info.set(c, get_exposure_target(c, x_min, x_max, 2, y_min, y_max, skip));
   }
 
   MessageBuilder msg;
@@ -420,4 +420,30 @@ void common_process_driver_camera(SubMaster *sm, PubMaster *pm, CameraState *c, 
     framed.setImage(get_frame_image(b));
   }
   pm->send("driverCameraState", msg);
+}
+
+void CameraExpInfo::set(CameraState *s, float grey_frac) {
+  {
+    std::unique_lock lock(mutex);
+    camera_state = s;
+    this->grey_frac = grey_frac;
+  }
+  cv.notify_one();
+}
+
+std::optional<std::tuple<CameraState *, float>> CameraExpInfo::load() {
+  std::unique_lock lock(mutex);
+  cv.wait(lock, [&] { return camera_state != nullptr || do_stop; });
+  if (do_stop) return std::nullopt;
+
+  CameraState *tmp_cs = camera_state;
+  camera_state = nullptr;
+  return std::make_tuple(tmp_cs, grey_frac);
+}
+
+void CameraExpInfo::stop() {
+  std::unique_lock lock(mutex);
+  camera_state = nullptr;
+  do_stop = true;
+  cv.notify_one();
 }

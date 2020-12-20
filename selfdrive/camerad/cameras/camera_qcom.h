@@ -132,7 +132,7 @@ typedef struct MultiCameraState {
 
   SubMaster *sm;
   PubMaster *pm;
-
+  CameraExpInfo exposure_info;
 } MultiCameraState;
 
 void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_id, cl_context ctx);
@@ -140,6 +140,5 @@ void cameras_open(MultiCameraState *s);
 void cameras_run(MultiCameraState *s);
 void cameras_close(MultiCameraState *s);
 
-void camera_autoexposure(CameraState *s, float grey_frac);
 void actuator_move(CameraState *s, uint16_t target);
 int sensor_write_regs(CameraState *s, struct msm_camera_i2c_reg_array* arr, size_t size, int data_type);

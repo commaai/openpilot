@@ -31,10 +31,13 @@
 
 extern ExitHandler do_exit;
 
+<<<<<<< HEAD
 // global var for AE/AF ops
 std::atomic<CameraExpInfo> road_cam_exp{{0}};
 std::atomic<CameraExpInfo> driver_cam_exp{{0}};
 
+=======
+>>>>>>> refactor exposure
 CameraInfo cameras_supported[CAMERA_ID_MAX] = {
   [CAMERA_ID_IMX298] = {
     .frame_width = 2328,
@@ -1396,20 +1399,6 @@ static void do_autofocus(CameraState *s, SubMaster *sm) {
   actuator_move(s, target);
 }
 
-void camera_autoexposure(CameraState *s, float grey_frac) {
-  if (s->camera_num == 0) {
-    CameraExpInfo tmp = road_cam_exp.load();
-    tmp.op_id++;
-    tmp.grey_frac = grey_frac;
-    road_cam_exp.store(tmp);
-  } else {
-    CameraExpInfo tmp = driver_cam_exp.load();
-    tmp.op_id++;
-    tmp.grey_frac = grey_frac;
-    driver_cam_exp.store(tmp);
-  }
-}
-
 static void driver_camera_start(CameraState *s) {
   set_exposure(s, 1.0, 1.0);
   int err = sensor_write_regs(s, start_reg_array, ARRAYSIZE(start_reg_array), MSM_CAMERA_I2C_BYTE_DATA);
@@ -1558,29 +1547,14 @@ static FrameMetadata get_frame_metadata(CameraState *s, uint32_t frame_id) {
 }
 
 static void ops_thread(MultiCameraState *s) {
-  int last_road_cam_op_id = 0;
-  int last_driver_cam_op_id = 0;
-
-  CameraExpInfo road_cam_op;
-  CameraExpInfo driver_cam_op;
-
   set_thread_name("camera_settings");
   SubMaster sm({"sensorEvents"});
-  while(!do_exit) {
-    road_cam_op = road_cam_exp.load();
-    if (road_cam_op.op_id != last_road_cam_op_id) {
-      do_autoexposure(&s->road_cam, road_cam_op.grey_frac);
-      do_autofocus(&s->road_cam, &sm);
-      last_road_cam_op_id = road_cam_op.op_id;
+  while(auto v = s->exposure_info.load()) {
+    auto [c, grey_frac] = *v;
+    do_autoexposure(c, grey_frac);
+    if (c == &s->rear) {
+      do_autofocus(&s->rear, &sm);
     }
-
-    driver_cam_op = driver_cam_exp.load();
-    if (driver_cam_op.op_id != last_driver_cam_op_id) {
-      do_autoexposure(&s->driver_cam, driver_cam_op.grey_frac);
-      last_driver_cam_op_id = driver_cam_op.op_id;
-    }
-
-    util::sleep_for(50);
   }
 }
 
@@ -1645,7 +1619,7 @@ static void setup_self_recover(CameraState *c, const uint16_t *lapres, size_t la
 }
 
 void process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) {
-  common_process_driver_camera(s->sm, s->pm, c, cnt);
+  common_process_driver_camera(s->sm, s->pm, s->exposure_info, cnt);
 }
 
 // called by processing_thread
@@ -1668,9 +1642,9 @@ void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
   s->pm->send("roadCameraState", msg);
 
   if (cnt % 3 == 0) {
-    const int x = 290, y = 322, width = 560, height = 314;
+    const int x = 290, y = 322, w = 560, h = 314;
     const int skip = 1;
-    set_exposure_target(c, (const uint8_t *)b->cur_yuv_buf->y, x, x + width, skip, y, y + height, skip);
+    s->exposure_info.set(c, get_exposure_target(c, x, x + w, skip, y, y + h, skip));
   }
 }
 
