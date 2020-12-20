@@ -96,15 +96,12 @@ typedef struct CameraState {
   CameraBuf buf;
 
   // The following variables are accessed from multiple threads.
-
+  
   std::mutex parse_autofocus_lock;
-  // protected by parse_autofocus_lock
   int16_t focus[NUM_FOCUS];
   uint8_t confidence[NUM_FOCUS];
 
-
   std::mutex frame_info_lock;
-  // protected by frame_info_lock
   FrameMetadata frame_metadata[METADATA_BUF_COUNT];
   int cur_frame_length;
   float cur_gain_frac;
@@ -114,10 +111,10 @@ typedef struct CameraState {
   // protected by std::atomic
   std::atomic<uint16_t> cur_lens_pos;
   std::atomic<float> digital_gain;
-  std::atomic<float> focus_err;
   std::atomic<float> last_sag_acc_z;
   std::atomic<float> lens_true_pos;
   std::atomic<int> self_recover; // af recovery counter, neg is patience, pos is active
+  std::atomic<float> focus_err;
 } CameraState;
 
 
