@@ -5,6 +5,7 @@
 #include <pthread.h>
 #include <memory>
 #include <atomic>
+#include <mutex>
 #include "messaging.hpp"
 
 #include "msmb_isp.h"
@@ -78,16 +79,8 @@ typedef struct CameraState {
 
   // uint32_t camera_bufs_ids[FRAME_BUF_COUNT];
 
-  pthread_mutex_t frame_info_lock;
-  FrameMetadata frame_metadata[METADATA_BUF_COUNT];
   int frame_metadata_idx;
   float cur_exposure_frac;
-  float cur_gain_frac;
-  int cur_gain;
-  int cur_frame_length;
-  int cur_integ_lines;
-
-  std::atomic<float> digital_gain;
 
   StreamState ss[3];
 
@@ -95,21 +88,36 @@ typedef struct CameraState {
 
   camera_apply_exposure_func apply_exposure;
 
+  uint16_t cur_step_pos;
+
+  int fps;
+  mat3 transform;
+
+  CameraBuf buf;
+
+  // The following variables are accessed from multiple threads.
+
+  std::mutex parse_autofocus_lock;
+  // protected by parse_autofocus_lock
   int16_t focus[NUM_FOCUS];
   uint8_t confidence[NUM_FOCUS];
 
-  float focus_err;
 
-  uint16_t cur_step_pos;
-  uint16_t cur_lens_pos;
+  std::mutex frame_info_lock;
+  // protected by frame_info_lock
+  FrameMetadata frame_metadata[METADATA_BUF_COUNT];
+  int cur_frame_length;
+  float cur_gain_frac;
+  int cur_gain;
+  int cur_integ_lines;
+
+  // protected by std::atomic
+  std::atomic<uint16_t> cur_lens_pos;
+  std::atomic<float> digital_gain;
+  std::atomic<float> focus_err;
   std::atomic<float> last_sag_acc_z;
   std::atomic<float> lens_true_pos;
-
   std::atomic<int> self_recover; // af recovery counter, neg is patience, pos is active
-
-  int fps;
-
-  CameraBuf buf;
 } CameraState;
 
 

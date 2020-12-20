@@ -116,8 +116,6 @@ static void camera_init(CameraState *s, int camera_id, int camera_num,
   s->self_recover = 0;
 
   s->buf.init(device_id, ctx, s, FRAME_BUF_COUNT, "frame", camera_release_buffer);
-
-  pthread_mutex_init(&s->frame_info_lock, NULL);
 }
 
 
@@ -383,19 +381,17 @@ static void set_exposure(CameraState *s, float exposure_frac, float gain_frac) {
     }
 
     if (err == 0) {
-      pthread_mutex_lock(&s->frame_info_lock);
+      std::unique_lock lock(s->frame_info_lock);
       s->cur_gain = gain;
       s->cur_integ_lines = integ_lines;
       s->cur_frame_length = frame_length;
-      pthread_mutex_unlock(&s->frame_info_lock);
     }
   }
 
   if (err == 0) {
     s->cur_exposure_frac = exposure_frac;
-    pthread_mutex_lock(&s->frame_info_lock);
+    std::unique_lock lock(s->frame_info_lock);
     s->cur_gain_frac = gain_frac;
-    pthread_mutex_unlock(&s->frame_info_lock);
   }
 
   //LOGD("set exposure: %f %f - %d", exposure_frac, gain_frac, err);
@@ -421,9 +417,10 @@ static void do_autoexposure(CameraState *s, float grey_frac) {
     } else if (cur_gain_frac * exposure_factor <= gain_frac_max && cur_gain_frac * exposure_factor >= gain_frac_min) {
       cur_gain_frac *= exposure_factor;
     }
-    pthread_mutex_lock(&s->frame_info_lock);
-    s->cur_gain_frac = cur_gain_frac;
-    pthread_mutex_unlock(&s->frame_info_lock);
+    {
+      std::unique_lock lock(s->frame_info_lock);
+      s->cur_gain_frac = cur_gain_frac;
+    }
 
     set_exposure(s, s->cur_exposure_frac, cur_gain_frac);
 
@@ -1683,7 +1680,7 @@ static void rear_start(CameraState *s) {
 
   actuator_move(s, s->cur_lens_pos);
 
-  LOG("init lens pos: %d", s->cur_lens_pos);
+  LOG("init lens pos: %d", s->cur_lens_pos.load());
 }
 
 void actuator_move(CameraState *s, uint16_t target) {
@@ -1726,20 +1723,22 @@ static void parse_autofocus(CameraState *s, uint8_t *d) {
   for (int i = 0; i < 0x10; i++) {
     printf("%2.2X ", d[i]);
   }*/
-
-  for (int i = 0; i < NUM_FOCUS; i++) {
-    int doff = i*5+5;
-    s->confidence[i] = d[doff];
-    // this should just be a 10-bit signed int instead of 11
-    // TODO: write it in a nicer way
-    int16_t focus_t = (d[doff+1] << 3) | (d[doff+2] >> 5);
-    if (focus_t >= 1024) focus_t = -(2048-focus_t);
-    s->focus[i] = focus_t;
-    //printf("%x->%d ", d[doff], focus_t);
-    if (s->confidence[i] > 0x20) {
-      good_count++;
-      max_focus = std::max(max_focus, s->focus[i]);
-      avg_focus += s->focus[i];
+  {
+    std::unique_lock lock(s->parse_autofocus_lock);
+    for (int i = 0; i < NUM_FOCUS; i++) {
+      int doff = i*5+5;
+      s->confidence[i] = d[doff];
+      // this should just be a 10-bit signed int instead of 11
+      // TODO: write it in a nicer way
+      int16_t focus_t = (d[doff+1] << 3) | (d[doff+2] >> 5);
+      if (focus_t >= 1024) focus_t = -(2048-focus_t);
+      s->focus[i] = focus_t;
+      //printf("%x->%d ", d[doff], focus_t);
+      if (s->confidence[i] > 0x20) {
+        good_count++;
+        max_focus = std::max(max_focus, s->focus[i]);
+        avg_focus += s->focus[i];
+      }
     }
   }
   // self recover override
@@ -1985,15 +1984,12 @@ const char* get_isp_event_name(unsigned int type) {
 }
 
 static FrameMetadata get_frame_metadata(CameraState *s, uint32_t frame_id) {
-  pthread_mutex_lock(&s->frame_info_lock);
+  std::unique_lock lock(s->frame_info_lock);
   for (int i=0; i<METADATA_BUF_COUNT; i++) {
     if (s->frame_metadata[i].frame_id == frame_id) {
-      pthread_mutex_unlock(&s->frame_info_lock);
       return s->frame_metadata[i];
     }
   }
-  pthread_mutex_unlock(&s->frame_info_lock);
-
   // should never happen
   return (FrameMetadata){
     .frame_id = (uint32_t)-1,
@@ -2107,9 +2103,12 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
   if (env_send_rear) {
     fill_frame_image(framed, (uint8_t *)b->cur_rgb_buf->addr, b->rgb_width, b->rgb_height, b->rgb_stride);
   }
-  framed.setFocusVal(s->rear.focus);
-  framed.setFocusConf(s->rear.confidence);
-  framed.setRecoverState(s->rear.self_recover);
+  {
+    std::unique_lock lock(c->parse_autofocus_lock);
+    framed.setFocusVal(c->focus);
+    framed.setFocusConf(c->confidence);
+  }
+  framed.setRecoverState(c->self_recover);
   framed.setSharpnessScore(s->lapres);
   framed.setTransform(b->yuv_transform.v);
   s->pm->send("frame", msg);
@@ -2207,21 +2206,22 @@ void cameras_run(MultiCameraState *s) {
         // printf("ISP_EVENT_EOF delta %f\n", (t-last_t)/1e6);
         c->last_t = t;
 
-        pthread_mutex_lock(&c->frame_info_lock);
-        c->frame_metadata[c->frame_metadata_idx] = (FrameMetadata){
-          .frame_id = isp_event_data->frame_id,
-          .timestamp_eof = timestamp,
-          .frame_length = (unsigned int)c->cur_frame_length,
-          .integ_lines = (unsigned int)c->cur_integ_lines,
-          .global_gain = (unsigned int)c->cur_gain,
-          .lens_pos = c->cur_lens_pos,
-          .lens_sag = c->last_sag_acc_z,
-          .lens_err = c->focus_err,
-          .lens_true_pos = c->lens_true_pos,
-          .gain_frac = c->cur_gain_frac,
-        };
-        c->frame_metadata_idx = (c->frame_metadata_idx+1)%METADATA_BUF_COUNT;
-        pthread_mutex_unlock(&c->frame_info_lock);
+        {
+          std::unique_lock lock(c->frame_info_lock);
+          c->frame_metadata[c->frame_metadata_idx] = (FrameMetadata){
+              .frame_id = isp_event_data->frame_id,
+              .timestamp_eof = timestamp,
+              .frame_length = (unsigned int)c->cur_frame_length,
+              .integ_lines = (unsigned int)c->cur_integ_lines,
+              .global_gain = (unsigned int)c->cur_gain,
+              .lens_pos = c->cur_lens_pos,
+              .lens_sag = c->last_sag_acc_z,
+              .lens_err = c->focus_err,
+              .lens_true_pos = c->lens_true_pos,
+              .gain_frac = c->cur_gain_frac,
+          };
+          c->frame_metadata_idx = (c->frame_metadata_idx + 1) % METADATA_BUF_COUNT;
+        }
 
         break;
       case ISP_EVENT_ERROR:
