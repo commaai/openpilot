@@ -4,6 +4,7 @@
 #include <QFrame>
 #include <QTimer>
 #include <QPushButton>
+#include <QButtonGroup>
 #include <QStackedLayout>
 
 #include "wifi.hpp"
@@ -40,6 +41,7 @@ private:
   QPushButton *sidebar_alert_widget;
   QWidget *sidebar_widget;
   std::map<QString, QWidget *> panels;
+  QButtonGroup *nav_btns;
   QStackedLayout *panel_layout;
 
 public slots:
