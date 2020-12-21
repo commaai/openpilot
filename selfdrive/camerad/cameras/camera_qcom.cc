@@ -315,20 +315,6 @@ void cameras_init(MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
     s->front.apply_exposure = imx179_s5k3p8sp_apply_exposure;
   }
 
-  // assume the device is upside-down (not anymore)
-  s->rear.transform = (mat3){{
-     1.0,  0.0, 0.0,
-     0.0,  1.0, 0.0,
-     0.0,  0.0, 1.0,
-  }};
-
-  // probably wrong
-  s->front.transform = (mat3){{
-     1.0,  0.0, 0.0,
-     0.0,  1.0, 0.0,
-     0.0,  0.0, 1.0,
-  }};
-
   s->rear.device = s->device;
   s->front.device = s->device;
 

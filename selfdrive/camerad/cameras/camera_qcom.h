@@ -109,8 +109,6 @@ typedef struct CameraState {
 
   int fps;
 
-  mat3 transform;
-
   CameraBuf buf;
 } CameraState;
 
