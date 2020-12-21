@@ -164,7 +164,7 @@ static void update_track_data(UIState *s, const cereal::ModelDataV2::XYZTData::R
 
   vertex_data *v = &pvd->v[0];
   const float margin = 500.0f;
-  for (int i = 0; line.getX()[i] <= path_length and i < TRAJECTORY_SIZE; i++) {
+  for (int i = 0; i < TRAJECTORY_SIZE and line.getX()[i] <= path_length; i++) {
     v += car_space_to_full_frame(s, line.getX()[i], -line.getY()[i] - off, -line.getZ()[i], &v->x, &v->y, margin);
     max_idx = i;
   }
