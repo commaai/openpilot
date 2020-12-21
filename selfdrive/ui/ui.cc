@@ -158,11 +158,6 @@ void update_sockets(UIState *s) {
       }
     }
   }
-  if (sm.updated("radarState")) {
-    auto data = sm["radarState"].getRadarState();
-    scene.lead_data[0] = data.getLeadOne();
-    scene.lead_data[1] = data.getLeadTwo();
-  }
   if (sm.updated("liveCalibration")) {
     scene.world_objects_visible = true;
     auto extrinsicl = sm["liveCalibration"].getLiveCalibration().getExtrinsicMatrix();
@@ -170,23 +165,30 @@ void update_sockets(UIState *s) {
       scene.extrinsic_matrix.v[i] = extrinsicl[i];
     }
   }
-  if (sm.updated("modelV2")) {
-    scene.model = sm["modelV2"].getModelV2();
-    scene.max_distance = fmin(scene.model.getPosition().getX()[TRAJECTORY_SIZE - 1], MAX_DRAW_DISTANCE);
-    for (int ll_idx = 0; ll_idx < 4; ll_idx++) {
-      if (scene.model.getLaneLineProbs().size() > ll_idx) {
-        scene.lane_line_probs[ll_idx] = scene.model.getLaneLineProbs()[ll_idx];
-      } else {
-        scene.lane_line_probs[ll_idx] = 0.0;
+  if (scene.world_objects_visible) { 
+    if (sm.updated("modelV2")) {
+      scene.model = sm["modelV2"].getModelV2();
+      scene.max_distance = fmin(scene.model.getPosition().getX()[TRAJECTORY_SIZE - 1], MAX_DRAW_DISTANCE);
+      for (int ll_idx = 0; ll_idx < 4; ll_idx++) {
+        if (scene.model.getLaneLineProbs().size() > ll_idx) {
+          scene.lane_line_probs[ll_idx] = scene.model.getLaneLineProbs()[ll_idx];
+        } else {
+          scene.lane_line_probs[ll_idx] = 0.0;
+        }
+      }
+
+      for (int re_idx = 0; re_idx < 2; re_idx++) {
+        if (scene.model.getRoadEdgeStds().size() > re_idx) {
+          scene.road_edge_stds[re_idx] = scene.model.getRoadEdgeStds()[re_idx];
+        } else {
+          scene.road_edge_stds[re_idx] = 1.0;
+        }
       }
     }
-
-    for (int re_idx = 0; re_idx < 2; re_idx++) {
-      if (scene.model.getRoadEdgeStds().size() > re_idx) {
-        scene.road_edge_stds[re_idx] = scene.model.getRoadEdgeStds()[re_idx];
-      } else {
-        scene.road_edge_stds[re_idx] = 1.0;
-      }
+    if (sm.updated("radarState")) {
+      auto data = sm["radarState"].getRadarState();
+      scene.lead_data[0] = data.getLeadOne();
+      scene.lead_data[1] = data.getLeadTwo();
     }
   }
   if (sm.updated("uiLayoutState")) {
@@ -194,13 +196,15 @@ void update_sockets(UIState *s) {
     s->active_app = data.getActiveApp();
     scene.uilayout_sidebarcollapsed = data.getSidebarCollapsed();
   }
-  if (sm.updated("thermal")) {
-    scene.thermal = sm["thermal"].getThermal();
-  }
-  if (sm.updated("ubloxGnss")) {
-    auto data = sm["ubloxGnss"].getUbloxGnss();
-    if (data.which() == cereal::UbloxGnss::MEASUREMENT_REPORT) {
-      scene.satelliteCount = data.getMeasurementReport().getNumMeas();
+  if (!scene.uilayout_sidebarcollapsed) {
+    if (sm.updated("thermal")) {
+      scene.thermal = sm["thermal"].getThermal();
+    }
+    if (sm.updated("ubloxGnss")) {
+      auto data = sm["ubloxGnss"].getUbloxGnss();
+      if (data.which() == cereal::UbloxGnss::MEASUREMENT_REPORT) {
+        scene.satelliteCount = data.getMeasurementReport().getNumMeas();
+      }
     }
   }
   if (sm.updated("health")) {
@@ -213,15 +217,15 @@ void update_sockets(UIState *s) {
   if (sm.updated("carParams")) {
     s->longitudinal_control = sm["carParams"].getCarParams().getOpenpilotLongitudinalControl();
   }
-  if (sm.updated("driverState")) {
-    scene.driver_state = sm["driverState"].getDriverState();
-  }
   if (sm.updated("dMonitoringState")) {
     scene.dmonitoring_state = sm["dMonitoringState"].getDMonitoringState();
     scene.is_rhd = scene.dmonitoring_state.getIsRHD();
     scene.frontview = scene.dmonitoring_state.getIsPreview();
-  } else if ((sm.frame - sm.rcv_frame("dMonitoringState")) > UI_FREQ/2) {
+  } else if (scene.frontview && (sm.frame - sm.rcv_frame("dMonitoringState")) > UI_FREQ/2) {
     scene.frontview = false;
+  }
+  if (scene.frontview && sm.updated("driverState")) {
+    scene.driver_state = sm["driverState"].getDriverState();
   }
   if (sm.updated("sensorEvents")) {
     for (auto sensor : sm["sensorEvents"].getSensorEvents()) {
