@@ -7,9 +7,10 @@ import requests
 import cereal.messaging as messaging
 from common.basedir import PERSIST
 from selfdrive.config import Conversions as CV
+from selfdrive.swaglog import cloudlog
 
 MAPBOX_ACCESS_TOKEN_PATH = PERSIST + '/mapbox/access_token'
-# permissions that match comma api rsa private key
+# to make token permissions the same as comma api rsa private key
 # os.chmod(PERSIST + '/mapbox/', 0o755)
 # os.chmod(PERSIST + '/mapbox/access_token', 0o744)
 
@@ -22,10 +23,11 @@ def get_mapbox_access_token():
 
 
 def try_fetch_speed_limit(gps_entries):
+  json = None
   try:
     access_token = get_mapbox_access_token()
     if access_token == None:
-      print("Mapbox access token not found:", MAPBOX_ACCESS_TOKEN_PATH)
+      cloudlog.info("Mapbox access token not found:", MAPBOX_ACCESS_TOKEN_PATH)
       return None
     data = {
       'coordinates': ';'.join(f"{x.longitude},{x.latitude}" for x in gps_entries),
@@ -37,6 +39,7 @@ def try_fetch_speed_limit(gps_entries):
     # print(data)
     response = requests.post('https://api.mapbox.com/matching/v5/mapbox/driving?access_token=' + access_token, data=data)
     json = response.json()
+    # print(json)
 
     for maxspeed in json['matchings'][-1]['legs'][-1]['annotation']['maxspeed']:
       if 'unknown' in maxspeed:
@@ -45,9 +48,8 @@ def try_fetch_speed_limit(gps_entries):
         return maxspeed['speed']
       elif maxspeed['unit'] == 'mph':
         return maxspeed['speed'] * CV.MPH_TO_KPH
-  except Exception: # as e:
-    # print('Unable to retrieve speed limit from %s:' % json, e)
-    pass
+  except Exception as e:
+    cloudlog.info('Unable to retrieve speed limit from %s:' % json, e)
 
   return None
 
