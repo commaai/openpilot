@@ -301,4 +301,5 @@ if arch != "Darwin":
   SConscript(['selfdrive/logcatd/SConscript'])
 
 if arch == "x86_64":
+  SConscript(['tools/nui/SConscript'])
   SConscript(['tools/lib/index_log/SConscript'])
