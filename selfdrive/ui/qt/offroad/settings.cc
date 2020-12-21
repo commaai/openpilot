@@ -226,30 +226,36 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
   QPushButton *close_button = new QPushButton("X");
   close_button->setStyleSheet(R"(
     QPushButton {
-      padding: 50px;
       font-weight: bold;
-      font-size: 110px;
+      font-size: 70px;
+      border 1px grey solid;
+      border-radius: 75px;
+      background-color: grey;
+      max-width: 150px;
+      max-height: 150px;
+      min-width: 150px;
+      min-height: 150px;
     }
   )");
-  sidebar_layout->addWidget(close_button);
+  sidebar_layout->addSpacing(45);
+  sidebar_layout->addWidget(close_button, 0, Qt::AlignHCenter);
   QObject::connect(close_button, SIGNAL(released()), this, SIGNAL(closeSettings()));
 
   // setup panels
   panels = {
-    {"developer", developer_panel()},
-    {"device", device_panel()},
-    {"network", network_panel(this)},
-    {"toggles", toggles_panel()},
+    {"Developer", developer_panel()},
+    {"Device", device_panel()},
+    {"Network", network_panel(this)},
+    {"Toggles", toggles_panel()},
   };
 
+  sidebar_layout->addSpacing(60);
   nav_btns = new QButtonGroup();
   for (auto &panel : panels) {
     QPushButton *btn = new QPushButton(panel.first);
     btn->setCheckable(true);
     btn->setStyleSheet(R"(
       QPushButton {
-        padding-top: 35px;
-        padding-bottom: 35px;
         border: none;
         background: none;
         font-size: 55px;
@@ -261,7 +267,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
     )");
 
     nav_btns->addButton(btn);
-    sidebar_layout->addWidget(btn, 0, Qt::AlignRight);
+    sidebar_layout->addWidget(btn, 0, Qt::AlignRight | Qt::AlignTop);
     panel_layout->addWidget(panel.second);
     QObject::connect(btn, SIGNAL(released()), this, SLOT(setActivePanel()));
   }
@@ -269,7 +275,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
 
   QHBoxLayout *settings_layout = new QHBoxLayout();
   settings_layout->setMargin(0);
-  settings_layout->addSpacing(45);
+  settings_layout->addSpacing(70);
 
   sidebar_widget = new QWidget;
   sidebar_widget->setLayout(sidebar_layout);
@@ -284,6 +290,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
     * {
       color: white;
       font-size: 50px;
+      background-color: black;
     }
   )");
 }
