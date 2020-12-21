@@ -6,13 +6,14 @@ def clip(x, lo, hi):
 
 def interp(x, xp, fp):
   N = len(xp)
+  T = len(fp)
 
   def get_interp(xv):
     hi = 0
     while hi < N and xv > xp[hi]:
       hi += 1
     low = hi - 1
-    return fp[-1] if hi == N and xv > xp[low] else (
+    return fp[-1] if hi >= T or (hi == N and xv > xp[low]) or (N < T and xv == xp[-1]) else (
       fp[0] if hi == 0 else
       (xv - xp[low]) * (fp[hi] - fp[low]) / (xp[hi] - xp[low]) + fp[low])
 
