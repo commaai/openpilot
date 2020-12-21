@@ -562,12 +562,6 @@ static void camera_init(CameraState *s, int camera_id, int camera_num, unsigned 
 
   s->camera_num = camera_num;
 
-  s->transform = (mat3){{
-    1.0, 0.0, 0.0,
-    0.0, 1.0, 0.0,
-    0.0, 0.0, 1.0,
-  }};
-
   s->dc_gain_enabled = false;
   s->analog_gain = 0x5;
   s->analog_gain_frac = sensor_analog_gains[s->analog_gain];
