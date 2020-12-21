@@ -211,6 +211,8 @@ def wrong_car_mode_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: boo
 EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, bool], Alert]]]] = {
   # ********** events with no alerts **********
 
+  EventName.internetConnectivityNeeded: {},
+
   # ********** events only containing alerts displayed in all states **********
 
   EventName.debugAlert: {
@@ -741,13 +743,6 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       "Slow down to engage",
       AlertStatus.normal, AlertSize.mid,
       Priority.LOW, VisualAlert.none, AudibleAlert.chimeError, .4, 2., 3.),
-  },
-
-  # TODO: this is unclear, update check only happens offroad
-  EventName.internetConnectivityNeeded: {
-    ET.PERMANENT: NormalPermanentAlert("Connect to Internet", "An Update Check Is Required to Engage"),
-    ET.NO_ENTRY: NoEntryAlert("Connect to Internet",
-                              audible_alert=AudibleAlert.chimeDisengage),
   },
 
   EventName.lowSpeedLockout: {

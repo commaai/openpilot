@@ -70,11 +70,9 @@ class Controls:
     params = Params()
     self.is_metric = params.get("IsMetric", encoding='utf8') == "1"
     self.is_ldw_enabled = params.get("IsLdwEnabled", encoding='utf8') == "1"
-    internet_needed = (params.get("Offroad_ConnectivityNeeded", encoding='utf8') is not None) and (params.get("DisableUpdates") != b"1")
     community_feature_toggle = params.get("CommunityFeaturesToggle", encoding='utf8') == "1"
     openpilot_enabled_toggle = params.get("OpenpilotEnabledToggle", encoding='utf8') == "1"
-    passive = params.get("Passive", encoding='utf8') == "1" or \
-              internet_needed or not openpilot_enabled_toggle
+    passive = params.get("Passive", encoding='utf8') == "1" or not openpilot_enabled_toggle
 
     # detect sound card presence and ensure successful init
     sounds_available = HARDWARE.get_sound_card_online()
@@ -133,8 +131,6 @@ class Controls:
 
     if not sounds_available:
       self.events.add(EventName.soundsUnavailable, static=True)
-    if internet_needed:
-      self.events.add(EventName.internetConnectivityNeeded, static=True)
     if community_feature_disallowed:
       self.events.add(EventName.communityFeatureDisallowed, static=True)
     if not car_recognized:
