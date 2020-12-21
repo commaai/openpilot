@@ -60,6 +60,7 @@ fi
 # install pyenv
 if ! command -v "pyenv" > /dev/null 2>&1; then
   curl -L https://github.com/pyenv/pyenv-installer/raw/master/bin/pyenv-installer | bash
+  git clone https://github.com/pyenv/pyenv-virtualenv.git $(pyenv root)/plugins/pyenv-virtualenv
 fi
 
 # install bashrc
