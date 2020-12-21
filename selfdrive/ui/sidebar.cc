@@ -4,7 +4,6 @@
 #include <map>
 
 #include "paint.hpp"
-#include "sidebar.hpp"
 
 static void ui_draw_sidebar_background(UIState *s) {
   ui_draw_rect(s->vg, 0, 0, sbr_w, s->fb_h, COLOR_BLACK_ALPHA(85));

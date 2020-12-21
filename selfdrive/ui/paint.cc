@@ -16,7 +16,6 @@ extern "C"{
 }
 
 #include "paint.hpp"
-#include "sidebar.hpp"
 
 
 // TODO: this is also hardcoded in common/transformations/camera.py
