@@ -239,6 +239,7 @@ void update_sockets(UIState *s) {
 
 static void ui_read_params(UIState *s) {
   static uint64_t frame = 0;
+
   if (frame % (5*UI_FREQ) == 0) {
     read_param(&s->is_metric, "IsMetric");
   } else if (frame % (6*UI_FREQ) == 0) {
