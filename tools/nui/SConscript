@@ -1,54 +1,13 @@
-import os
-Import('env', 'arch', 'real_arch', 'common', 'messaging', 'gpucommon', 'visionipc', 'cereal')
+Import('qt_env', 'common', 'messaging', 'gpucommon', 'visionipc', 'cereal')
 
-qt_env = env.Clone()
+qt_env['CPPPATH'] += ["#tools/clib"]
+qt_env['CXXFLAGS'] += ["-Wno-deprecated-declarations"]
 
-if arch == "Darwin":
-  qt_env['QTDIR'] = "/usr/local/opt/qt"
-  QT_BASE = "/usr/local/opt/qt/"
-  qt_dirs = [
-    QT_BASE + "include/",
-    QT_BASE + "include/QtWidgets",
-    QT_BASE + "include/QtGui",
-    QT_BASE + "include/QtCore",
-    QT_BASE + "include/QtDBus",
-    QT_BASE + "include/QtMultimedia",
-    QT_BASE + "include/QtNetwork",
-  ]
-  qt_env["LINKFLAGS"] += ["-F" + QT_BASE + "lib"]
-else:
-  qt_env['QTDIR'] = "/usr"
-  qt_dirs = [
-    f"/usr/include/{real_arch}-linux-gnu/qt5",
-    f"/usr/include/{real_arch}-linux-gnu/qt5/QtWidgets",
-    f"/usr/include/{real_arch}-linux-gnu/qt5/QtGui",
-    f"/usr/include/{real_arch}-linux-gnu/qt5/QtCore",
-    f"/usr/include/{real_arch}-linux-gnu/qt5/QtDBus",
-    f"/usr/include/{real_arch}-linux-gnu/qt5/QtMultimedia",
-    f"/usr/include/{real_arch}-linux-gnu/qt5/QtNetwork",
-    f"/usr/include/{real_arch}-linux-gnu/qt5/QtGui/5.5.1/QtGui",
-    f"/usr/include/{real_arch}-linux-gnu/qt5/QtGui/5.12.8/QtGui",
-  ]
+libs = qt_env['LIBS'] + ['pthread', 'capnp', 'kj', 'zmq', messaging, 'avutil', 'avcodec', 'avformat', 'swscale', 'bz2']
 
-qt_env.Tool('qt')
-qt_env['CPPPATH'] += qt_dirs + ["#tools/clib"]
-qt_flags = [
-  "-D_REENTRANT",
-  "-DQT_NO_DEBUG",
-  "-DQT_WIDGETS_LIB",
-  "-DQT_GUI_LIB",
-  "-DQT_CORE_LIB",
-  "-Wno-deprecated-declarations", # TODO: fix this
-]
-qt_env['CXXFLAGS'] += qt_flags
-qt_env['LIBPATH'] += ['#selfdrive/ui']
-
-src = ['main.cpp', 'Unlogger.cpp', 'FileReader.cpp', '../clib/FrameReader.cpp']
-libs = [common, 'zmq', 'capnp', 'kj', 'm', cereal, messaging, gpucommon, visionipc]
-
-qt_libs = ["pthread", "ssl", "crypto", "GL"]
 qt_modules = ["Widgets", "Gui", "Core", "DBus", "Multimedia", "Network"]
-qt_libs += [f"Qt5{m}" for m in qt_modules]
+qt_libs = [f"Qt5{m}" for m in qt_modules]
 
-qt_env.Program("_nui", src, LIBS=qt_libs + ['capnp', 'kj', 'zmq', messaging, 'avutil', 'avcodec', 'avformat', 'swscale', 'bz2'])
-
+qt_env.Program("_nui",
+               ['main.cpp', 'Unlogger.cpp', 'FileReader.cpp', '../clib/FrameReader.cpp'],
+               LIBS=libs)
