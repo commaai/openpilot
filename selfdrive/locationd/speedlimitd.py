@@ -26,7 +26,7 @@ def try_fetch_speed_limit(gps_entries):
   json = None
   try:
     access_token = get_mapbox_access_token()
-    if access_token == None:
+    if access_token is None:
       cloudlog.info("Mapbox access token not found:", MAPBOX_ACCESS_TOKEN_PATH)
       return None
     data = {
@@ -37,7 +37,7 @@ def try_fetch_speed_limit(gps_entries):
       'tidy': 'true',
     }
     # print(data)
-    response = requests.post('https://api.mapbox.com/matching/v5/mapbox/driving?access_token=' + access_token, data=data)
+    response = requests.post('https://api.mapbox.com/matching/v5/mapbox/driving?access_token=' + access_token, data=data, timeout=10)
     json = response.json()
     # print(json)
 
@@ -83,7 +83,7 @@ def main(sm=None, pm=None):
       if len(gps_entries) > 2: # min allowed coordinates in an api call
         speed_limit = try_fetch_speed_limit(gps_entries)
         # print('SPEED LIMIT', speed_limit)
-        if speed_limit != None:
+        if speed_limit is not None:
           msg.liveMapData.speedLimitValid = True
           msg.liveMapData.speedLimit = speed_limit
         else:
