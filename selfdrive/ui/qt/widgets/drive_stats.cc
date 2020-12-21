@@ -1,3 +1,4 @@
+#include <cassert>
 #include <iostream>
 
 #include <QFile>
