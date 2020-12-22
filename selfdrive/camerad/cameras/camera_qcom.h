@@ -91,8 +91,6 @@ typedef struct CameraState {
   uint16_t cur_step_pos;
 
   int fps;
-  mat3 transform;
-
   CameraBuf buf;
 
   // The following variables are accessed from multiple threads.
