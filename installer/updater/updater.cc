@@ -465,7 +465,7 @@ struct Updater {
       while(battery_cap < min_battery_cap) {
         battery_cap = battery_capacity();
         battery_cap_text = std::to_string(battery_cap);
-        usleep(1000000);
+        util::sleep_for(1000);
       }
       set_running();
     }
@@ -483,7 +483,7 @@ struct Updater {
       while(battery_cap < min_battery_cap) {
         battery_cap = battery_capacity();
         battery_cap_text = std::to_string(battery_cap);
-        usleep(1000000);
+        util::sleep_for(1000);
       }
       set_running();
     }
@@ -756,7 +756,7 @@ struct Updater {
       assert(glGetError() == GL_NO_ERROR);
 
       // no simple way to do 30fps vsync with surfaceflinger...
-      usleep(30000);
+      util::sleep_for(30);
     }
 
     if (update_thread_handle.joinable()) {

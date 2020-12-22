@@ -242,7 +242,7 @@ void encoder_thread(RotateState *rotate_state, int cam_idx) {
     int err = visionstream_init(&stream, cameras_logged[cam_idx].stream_type, false, &buf_info);
     if (err != 0) {
       LOGD("visionstream connect fail");
-      usleep(100000);
+      util::sleep_for(100);
       continue;
     }
 

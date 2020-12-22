@@ -291,7 +291,7 @@ int Params::read_db_value_blocking(const char* key, char** value, size_t* value_
     if (result == 0) {
       break;
     } else {
-      usleep(100000); // 0.1 s
+      util::sleep_for(100); // 0.1 s
     }
   }
 

@@ -13,6 +13,7 @@
 #include <atomic>
 
 #include "common/util.h"
+#include "common/utilpp.h"
 #include "common/swaglog.h"
 #include "camera_qcom2.h"
 
@@ -1087,7 +1088,7 @@ static void* ae_thread(void* arg) {
       }
     }
 
-    usleep(50000);
+    util::sleep_for(50);
   }
 
   return NULL;
