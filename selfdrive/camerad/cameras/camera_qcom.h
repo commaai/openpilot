@@ -98,7 +98,7 @@ typedef struct CameraState {
   int16_t focus[NUM_FOCUS];
   uint8_t confidence[NUM_FOCUS];
 
-  float focus_err;
+  std::atomic<float> focus_err;
 
   uint16_t cur_step_pos;
   uint16_t cur_lens_pos;
