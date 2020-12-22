@@ -104,7 +104,10 @@ class UnloggerWorker(object):
         # Frame exists, make sure we have a framereader.
         # load the frame readers as needed
         s1 = time.time()
-        img = self._frame_reader.get(frame_id, pix_fmt="rgb24")
+        try:
+          img = self._frame_reader.get(frame_id, pix_fmt="rgb24")
+        except Exception:
+          pass
         fr_time = time.time() - s1
         if fr_time > 0.05:
           print("FRAME(%d) LAG -- %.2f ms" % (frame_id, fr_time*1000.0))
@@ -380,6 +383,10 @@ def get_arg_parser():
     "--bind-early", action="store_true", default=False,
     help="Bind early to avoid dropping messages.")
 
+  parser.add_argument(
+    "--start-time", type=float, default=0.,
+    help="Seek to this absolute time (in seconds) upon starting playback.")
+
   return parser
 
 def main(argv):
@@ -401,7 +408,7 @@ def main(argv):
     else:
       route_start_time = 0
     command_sock.send_pyobj(
-      SetRoute(args.route_name, 0, args.data_dir))
+      SetRoute(args.route_name, args.start_time, args.data_dir))
   else:
     print("waiting for external command...")
     route_start_time = 0

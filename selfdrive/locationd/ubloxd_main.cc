@@ -3,7 +3,6 @@
 #include <string.h>
 #include <signal.h>
 #include <unistd.h>
-#include <sched.h>
 #include <errno.h>
 #include <sys/time.h>
 #include <sys/cdefs.h>

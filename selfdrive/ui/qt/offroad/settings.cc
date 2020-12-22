@@ -213,12 +213,12 @@ QWidget * network_panel(QWidget * parent) {
 
 
 void SettingsWindow::setActivePanel() {
-  QPushButton *btn = qobject_cast<QPushButton*>(sender());
+  auto *btn = qobject_cast<QPushButton *>(nav_btns->checkedButton());
   panel_layout->setCurrentWidget(panels[btn->text()]);
 }
 
 SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
-  // sidebar
+  // two main layouts
   QVBoxLayout *sidebar_layout = new QVBoxLayout();
   panel_layout = new QStackedLayout();
 
@@ -228,7 +228,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
     QPushButton {
       padding: 50px;
       font-weight: bold;
-      font-size: 100px;
+      font-size: 110px;
     }
   )");
   sidebar_layout->addWidget(close_button);
@@ -242,26 +242,33 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
     {"toggles", toggles_panel()},
   };
 
+  nav_btns = new QButtonGroup();
   for (auto &panel : panels) {
     QPushButton *btn = new QPushButton(panel.first);
+    btn->setCheckable(true);
     btn->setStyleSheet(R"(
       QPushButton {
         padding-top: 35px;
         padding-bottom: 35px;
-        font-size: 60px;
-        text-align: right;
         border: none;
         background: none;
+        font-size: 55px;
+      }
+      QPushButton:checked {
+        font-size: 50px;
         font-weight: bold;
       }
     )");
 
-    sidebar_layout->addWidget(btn);
+    nav_btns->addButton(btn);
+    sidebar_layout->addWidget(btn, 0, Qt::AlignRight);
     panel_layout->addWidget(panel.second);
     QObject::connect(btn, SIGNAL(released()), this, SLOT(setActivePanel()));
   }
+  qobject_cast<QPushButton *>(nav_btns->buttons()[0])->setChecked(true);
 
   QHBoxLayout *settings_layout = new QHBoxLayout();
+  settings_layout->setMargin(0);
   settings_layout->addSpacing(45);
 
   sidebar_widget = new QWidget;

@@ -1,5 +1,4 @@
-#ifndef UNLOGGER_HPP
-#define UNLOGGER_HPP
+#pragma once
 
 #include <QThread>
 #include <QReadWriteLock>
@@ -31,6 +30,4 @@ Q_OBJECT
     uint64_t seek_request = 0;
     bool paused = false;
 };
-
-#endif
 

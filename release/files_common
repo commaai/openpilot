@@ -286,7 +286,6 @@ selfdrive/locationd/.gitignore
 selfdrive/locationd/SConscript
 selfdrive/locationd/ubloxd.cc
 selfdrive/locationd/ubloxd_main.cc
-selfdrive/locationd/ubloxd_test.cc
 selfdrive/locationd/ublox_msg.cc
 selfdrive/locationd/ublox_msg.h
 

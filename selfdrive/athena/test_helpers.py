@@ -101,11 +101,12 @@ def with_http_server(func):
                   'HandlerClass': HTTPRequestHandler,
                   'bind': host})
     p.start()
-    now = time.time()
+    start = time.monotonic()
     port = None
     while 1:
-      if time.time() - now > 5:
+      if time.monotonic() - start > 10:
         raise Exception('HTTP Server did not start')
+
       try:
         port = port_queue.get(timeout=0.1)
         requests.put(f'http://{host}:{port}/qlog.bz2', data='')
