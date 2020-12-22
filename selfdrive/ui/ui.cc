@@ -238,7 +238,7 @@ void update_sockets(UIState *s) {
 }
 
 static void ui_read_params(UIState *s) {
-  static uint64_t frame = 0;
+  const uint64_t frame = s->sm->frame;
 
   if (frame % (5*UI_FREQ) == 0) {
     read_param(&s->is_metric, "IsMetric");
@@ -253,8 +253,6 @@ static void ui_read_params(UIState *s) {
       s->scene.athenaStatus = NET_ERROR;
     }
   }
-
-  ++frame;
 }
 
 void ui_update(UIState *s) {
