@@ -214,7 +214,7 @@ static const std::map<std::string, UIScene::Alert> ui_alerts = {
     AudibleAlert::NONE}},
 };
 
-static void ui_handle_alert(UIState *s) {
+static void update_alert(UIState *s) {
   if (!s->started || s->scene.frontview) return;
 
   UIScene::Alert &alert = s->scene.alert;
@@ -306,5 +306,5 @@ void ui_update(UIState *s) {
     s->scene.alert.size = cereal::ControlsState::AlertSize::NONE;
   }
 
-  ui_handle_alert(s);  
+  update_alert(s);  
 }
