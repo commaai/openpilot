@@ -29,7 +29,6 @@ void ui_init(UIState *s) {
   s->started = false;
   s->status = STATUS_OFFROAD;
   s->scene.satelliteCount = -1;
-  read_param(&s->is_metric, "IsMetric");
 
   s->fb = framebuffer_init("ui", 0, true, &s->fb_w, &s->fb_h);
   assert(s->fb);
@@ -238,8 +237,26 @@ void update_sockets(UIState *s) {
   s->started = scene.thermal.getStarted() || scene.frontview;
 }
 
-void ui_update(UIState *s) {
+static void ui_read_params(UIState *s) {
+  const uint64_t frame = s->sm->frame;
 
+  if (frame % (5*UI_FREQ) == 0) {
+    read_param(&s->is_metric, "IsMetric");
+  } else if (frame % (6*UI_FREQ) == 0) {
+    uint64_t last_athena_ping = 0;
+    int param_read = read_param(&last_athena_ping, "LastAthenaPingTime");
+    if (param_read != 0) { // Failed to read param
+      s->scene.athenaStatus = NET_DISCONNECTED;
+    } else if (nanos_since_boot() - last_athena_ping < 70e9) {
+      s->scene.athenaStatus = NET_CONNECTED;
+    } else {
+      s->scene.athenaStatus = NET_ERROR;
+    }
+  }
+}
+
+void ui_update(UIState *s) {
+  ui_read_params(s);
   update_sockets(s);
   ui_update_vision(s);
 
@@ -291,20 +308,6 @@ void ui_update(UIState *s) {
       s->scene.alert_size = cereal::ControlsState::AlertSize::FULL;
       s->status = STATUS_DISENGAGED;
       s->sound->stop();
-    }
-  }
-
-  // Read params
-  if ((s->sm)->frame % (5*UI_FREQ) == 0) {
-    read_param(&s->is_metric, "IsMetric");
-  } else if ((s->sm)->frame % (6*UI_FREQ) == 0) {
-    int param_read = read_param(&s->last_athena_ping, "LastAthenaPingTime");
-    if (param_read != 0) { // Failed to read param
-      s->scene.athenaStatus = NET_DISCONNECTED;
-    } else if (nanos_since_boot() - s->last_athena_ping < 70e9) {
-      s->scene.athenaStatus = NET_CONNECTED;
-    } else {
-      s->scene.athenaStatus = NET_ERROR;
     }
   }
 }
