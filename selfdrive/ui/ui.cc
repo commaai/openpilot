@@ -219,12 +219,12 @@ static void update_alert(UIState *s) {
 
   UIScene::Alert &alert = s->scene.alert;
   const std::string prev_alert_type = alert.type;
-  const auto &cs = s->scene.controls_state;
 
   const uint64_t frame = s->sm->frame;
   const uint64_t cs_frame = s->sm->rcv_frame("controlsState");
 
   if (cs_frame == frame) {
+    const auto &cs = s->scene.controls_state;
     alert = {.type = cs.getAlertType(),
              .text1 = cs.getAlertText1(),
              .text2 = cs.getAlertText2(),
@@ -259,28 +259,32 @@ static void update_alert(UIState *s) {
       s->sound->play(alert.sound);
     }
   }
-  if (alert.status == cereal::ControlsState::AlertStatus::USER_PROMPT) {
-    s->status = STATUS_WARNING;
-  } else if (alert.status == cereal::ControlsState::AlertStatus::CRITICAL) {
-    s->status = STATUS_ALERT;
-  } else {
-    s->status = cs.getEnabled() ? STATUS_ENGAGED : STATUS_DISENGAGED;
-  }
 }
 
-void ui_update_vision(UIState *s) {
-  if (!s->vipc_client->connected && s->started) {
-    s->vipc_client = s->scene.frontview ? s->vipc_client_front : s->vipc_client_rear;
+static void update_status(UIState *s) {
+  if (!s->started && s->status != STATUS_OFFROAD) {
+    // Handle offroad transition
+    s->status = STATUS_OFFROAD;
+    s->active_app = cereal::UiLayoutState::App::HOME;
+    s->scene.sidebar_collapsed = false;
+    s->sound->stop();
+    s->vipc_client->connected = false;
+  } else if (s->started && s->status == STATUS_OFFROAD) {
+    // Handle onroad transition
+    s->status = STATUS_DISENGAGED;
+    s->started_frame = s->sm->frame;
 
-    if (s->vipc_client->connect(false)){
-      ui_init_vision(s);
-    }
-  }
-
-  if (s->vipc_client->connected){
-    VisionBuf * buf = s->vipc_client->recv();
-    if (buf != nullptr){
-      s->last_frame = buf;
+    s->active_app = cereal::UiLayoutState::App::NONE;
+    s->scene.uilayout_sidebarcollapsed = true;
+    s->scene.alert.size = cereal::ControlsState::AlertSize::NONE;
+  } else {
+    // handle alert status
+    if (s->scene.alert.status == cereal::ControlsState::AlertStatus::USER_PROMPT) {
+      s->status = STATUS_WARNING;
+    } else if (s->scene.alert.status == cereal::ControlsState::AlertStatus::CRITICAL) {
+      s->status = STATUS_ALERT;
+    } else {
+      s->status = s->scene.controls_state.getEnabled() ? STATUS_ENGAGED : STATUS_DISENGAGED;
     }
   }
 }
@@ -288,23 +292,8 @@ void ui_update_vision(UIState *s) {
 void ui_update(UIState *s) {
   ui_read_params(s);
   update_sockets(s);
+  update_alert(s);
+  update_status(s);
+
   ui_update_vision(s);
-
-  // Handle onroad/offroad transition
-  if (!s->started && s->status != STATUS_OFFROAD) {
-    s->status = STATUS_OFFROAD;
-    s->active_app = cereal::UiLayoutState::App::HOME;
-    s->scene.sidebar_collapsed = false;
-    s->sound->stop();
-    s->vipc_client->connected = false;
-  } else if (s->started && s->status == STATUS_OFFROAD) {
-    s->status = STATUS_DISENGAGED;
-    s->started_frame = s->sm->frame;
-
-    s->active_app = cereal::UiLayoutState::App::NONE;
-    s->scene.uilayout_sidebarcollapsed = true;
-    s->scene.alert.size = cereal::ControlsState::AlertSize::NONE;
-  }
-
-  update_alert(s);  
 }
