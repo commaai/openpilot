@@ -278,7 +278,7 @@ static void update_status(UIState *s) {
     s->scene.uilayout_sidebarcollapsed = true;
     s->scene.alert.size = cereal::ControlsState::AlertSize::NONE;
   } else {
-    // handle alert status
+    // Handle alert status
     if (s->scene.alert.status == cereal::ControlsState::AlertStatus::USER_PROMPT) {
       s->status = STATUS_WARNING;
     } else if (s->scene.alert.status == cereal::ControlsState::AlertStatus::CRITICAL) {
