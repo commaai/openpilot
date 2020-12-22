@@ -4,8 +4,6 @@
 #include <sys/resource.h>
 
 #include <algorithm>
-#include <thread>
-#include <chrono>
 
 #include "common/util.h"
 #include "common/utilpp.h"
@@ -150,7 +148,7 @@ int main(int argc, char* argv[]) {
 
   while (!do_exit) {
     if (!s->started) {
-      std::this_thread::sleep_for(std::chrono::milliseconds(50));
+      util::sleep_for(50);
     }
     double u1 = millis_since_boot();
 
