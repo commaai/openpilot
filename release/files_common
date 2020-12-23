@@ -372,6 +372,8 @@ selfdrive/camerad/cameras/camera_qcom.cc
 selfdrive/camerad/cameras/camera_qcom.h
 selfdrive/camerad/cameras/camera_qcom2.cc
 selfdrive/camerad/cameras/camera_qcom2.h
+selfdrive/camerad/cameras/camera_qcom_focus.cc
+selfdrive/camerad/cameras/camera_qcom_focus.h
 selfdrive/camerad/cameras/debayer.cl
 selfdrive/camerad/cameras/sensor_i2c.h
 selfdrive/camerad/cameras/sensor2_i2c.h

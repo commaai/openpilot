@@ -7,7 +7,7 @@ if arch == "aarch64":
   if QCOM_REPLAY:
     cameras = ['cameras/camera_frame_stream.cc']
   else:
-    cameras = ['cameras/camera_qcom.cc']
+    cameras = ['cameras/camera_qcom.cc', 'cameras/camera_qcom_focus.cc']
 elif arch == "larch64":
   libs += ['atomic']
   cameras = ['cameras/camera_qcom2.cc']

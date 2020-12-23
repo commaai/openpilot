@@ -110,9 +110,7 @@ static void camera_init(VisionIpcServer *v, CameraState *s, int camera_id, int c
   s->max_gain = max_gain;
   s->fps = fps;
 
-  s->self_recover = 0;
-
-  s->buf.init(device_id, ctx, s, v, FRAME_BUF_COUNT, rgb_type, yuv_type, camera_release_buffer);
+  s->buf.init(device_id, ctx, s, FRAME_BUF_COUNT, "frame", camera_release_buffer);
 
   pthread_mutex_init(&s->frame_info_lock, NULL);
 }
@@ -430,88 +428,6 @@ static void do_autoexposure(CameraState *s, float grey_frac) {
   }
 }
 
-static uint8_t* get_eeprom(int eeprom_fd, size_t *out_len) {
-  msm_eeprom_cfg_data cfg = {.cfgtype = CFG_EEPROM_GET_CAL_DATA};
-  int err = ioctl(eeprom_fd, VIDIOC_MSM_EEPROM_CFG, &cfg);
-  assert(err >= 0);
-
-  uint32_t num_bytes = cfg.cfg.get_data.num_bytes;
-  assert(num_bytes > 100);
-
-  uint8_t* buffer = (uint8_t*)malloc(num_bytes);
-  assert(buffer);
-  memset(buffer, 0, num_bytes);
-
-  cfg.cfgtype = CFG_EEPROM_READ_CAL_DATA;
-  cfg.cfg.read_data.num_bytes = num_bytes;
-  cfg.cfg.read_data.dbuffer = buffer;
-  err = ioctl(eeprom_fd, VIDIOC_MSM_EEPROM_CFG, &cfg);
-  assert(err >= 0);
-
-  *out_len = num_bytes;
-  return buffer;
-}
-
-static void imx298_ois_calibration(int ois_fd, uint8_t* eeprom) {
-  const int ois_registers[][2] = {
-    // == SET_FADJ_PARAM() == (factory adjustment)
-
-    // Set Hall Current DAC
-    {0x8230, *(uint16_t*)(eeprom+0x102)}, //_P_30_ADC_CH0 (CURDAT)
-
-    // Set Hall     PreAmp Offset
-    {0x8231, *(uint16_t*)(eeprom+0x104)}, //_P_31_ADC_CH1 (HALOFS_X)
-    {0x8232, *(uint16_t*)(eeprom+0x106)}, //_P_32_ADC_CH2 (HALOFS_Y)
-
-    // Set Hall-X/Y PostAmp Offset
-    {0x841e, *(uint16_t*)(eeprom+0x108)}, //_M_X_H_ofs
-    {0x849e, *(uint16_t*)(eeprom+0x10a)}, //_M_Y_H_ofs
-
-    // Set Residual Offset
-    {0x8239, *(uint16_t*)(eeprom+0x10c)}, //_P_39_Ch3_VAL_1 (PSTXOF)
-    {0x823b, *(uint16_t*)(eeprom+0x10e)}, //_P_3B_Ch3_VAL_3 (PSTYOF)
-
-    // DIGITAL GYRO OFFSET
-    {0x8406, *(uint16_t*)(eeprom+0x110)}, //_M_Kgx00
-    {0x8486, *(uint16_t*)(eeprom+0x112)}, //_M_Kgy00
-    {0x846a, *(uint16_t*)(eeprom+0x120)}, //_M_TMP_X_
-    {0x846b, *(uint16_t*)(eeprom+0x122)}, //_M_TMP_Y_
-
-    // HALLSENSE
-    // Set Hall Gain
-    {0x8446, *(uint16_t*)(eeprom+0x114)}, //_M_KgxHG
-    {0x84c6, *(uint16_t*)(eeprom+0x116)}, //_M_KgyHG
-    // Set Cross Talk Canceller
-    {0x8470, *(uint16_t*)(eeprom+0x124)}, //_M_KgxH0
-    {0x8472, *(uint16_t*)(eeprom+0x126)}, //_M_KgyH0
-
-    // LOOPGAIN
-    {0x840f, *(uint16_t*)(eeprom+0x118)}, //_M_KgxG
-    {0x848f, *(uint16_t*)(eeprom+0x11a)}, //_M_KgyG
-
-    // Position Servo ON ( OIS OFF )
-    {0x847f, 0x0c0c}, //_M_EQCTL
-  };
-
-
-  struct msm_camera_i2c_seq_reg_array ois_reg_settings[ARRAYSIZE(ois_registers)] = {{0}};
-  for (int i=0; i<ARRAYSIZE(ois_registers); i++) {
-    ois_reg_settings[i].reg_addr = ois_registers[i][0];
-    ois_reg_settings[i].reg_data[0] = ois_registers[i][1] & 0xff;
-    ois_reg_settings[i].reg_data[1] = (ois_registers[i][1] >> 8) & 0xff;
-    ois_reg_settings[i].reg_data_size = 2;
-  }
-  struct msm_camera_i2c_seq_reg_setting ois_reg_setting = {
-    .reg_setting = &ois_reg_settings[0],
-    .size = ARRAYSIZE(ois_reg_settings),
-    .addr_type = MSM_CAMERA_I2C_WORD_ADDR,
-    .delay = 0,
-  };
-  msm_ois_cfg_data cfg = {.cfgtype = CFG_OIS_I2C_WRITE_SEQ_TABLE, .cfg.settings = &ois_reg_setting};
-  int err = ioctl(ois_fd, VIDIOC_MSM_OIS_CFG, &cfg);
-  LOG("ois reg calibration: %d", err);
-}
-
 static void sensors_init(MultiCameraState *s) {
   int err;
 
@@ -736,9 +652,6 @@ static void camera_open(CameraState *s, bool rear) {
   struct csid_cfg_data csid_cfg_data = {};
   struct v4l2_event_subscription sub = {};
 
-  struct msm_actuator_cfg_data actuator_cfg_data = {};
-  struct msm_ois_cfg_data ois_cfg_data = {};
-
   // open devices
   const char *sensor_dev;
   if (rear) {
@@ -757,16 +670,7 @@ static void camera_open(CameraState *s, bool rear) {
       s->isp_fd = open("/dev/v4l-subdev14", O_RDWR | O_NONBLOCK);
     }
     assert(s->isp_fd >= 0);
-    s->eeprom_fd = open("/dev/v4l-subdev8", O_RDWR | O_NONBLOCK);
-    assert(s->eeprom_fd >= 0);
-
-    s->actuator_fd = open("/dev/v4l-subdev7", O_RDWR | O_NONBLOCK);
-    assert(s->actuator_fd >= 0);
-
-    if (s->device != DEVICE_LP3) {
-      s->ois_fd = open("/dev/v4l-subdev10", O_RDWR | O_NONBLOCK);
-      assert(s->ois_fd >= 0);
-    }
+   
   } else {
     s->csid_fd = open("/dev/v4l-subdev5", O_RDWR | O_NONBLOCK);
     assert(s->csid_fd >= 0);
@@ -783,8 +687,6 @@ static void camera_open(CameraState *s, bool rear) {
       s->isp_fd = open("/dev/v4l-subdev15", O_RDWR | O_NONBLOCK);
     }
     assert(s->isp_fd >= 0);
-    s->eeprom_fd = open("/dev/v4l-subdev9", O_RDWR | O_NONBLOCK);
-    assert(s->eeprom_fd >= 0);
   }
 
   // wait for sensor device
@@ -815,19 +717,6 @@ static void camera_open(CameraState *s, bool rear) {
   struct sensorb_cfg_data sensorb_cfg_data = {.cfgtype = CFG_POWER_DOWN};
   err = ioctl(s->sensor_fd, VIDIOC_MSM_SENSOR_CFG, &sensorb_cfg_data);
   LOG("sensor power down: %d", err);
-
-  if (rear && s->device != DEVICE_LP3) {
-    // ois powerdown
-    ois_cfg_data.cfgtype = CFG_OIS_POWERDOWN;
-    err = ioctl(s->ois_fd, VIDIOC_MSM_OIS_CFG, &ois_cfg_data);
-    LOG("ois powerdown: %d", err);
-  }
-
-  // actuator powerdown
-  actuator_cfg_data.cfgtype = CFG_ACTUATOR_POWERDOWN;
-  err = ioctl(s->actuator_fd, VIDIOC_MSM_ACTUATOR_CFG, &actuator_cfg_data);
-  LOG("actuator powerdown: %d", err);
-
   // reset isp
   // struct msm_vfe_axi_halt_cmd halt_cmd = {
   //   .stop_camif = 1,
@@ -852,8 +741,6 @@ static void camera_open(CameraState *s, bool rear) {
 
   // **** GO GO GO ****
   LOG("******************** GO GO GO ************************");
-
-  s->eeprom = get_eeprom(s->eeprom_fd, &s->eeprom_size);
 
   // printf("eeprom:\n");
   // for (int i=0; i<s->eeprom_size; i++) {
@@ -904,155 +791,6 @@ static void camera_open(CameraState *s, bool rear) {
     assert(false);
   }
   LOG("sensor init i2c: %d", err);
-
-  if (rear) {
-    // init the actuator
-    actuator_cfg_data.cfgtype = CFG_ACTUATOR_POWERUP;
-    err = ioctl(s->actuator_fd, VIDIOC_MSM_ACTUATOR_CFG, &actuator_cfg_data);
-    LOG("actuator powerup: %d", err);
-
-    actuator_cfg_data.cfgtype = CFG_ACTUATOR_INIT;
-    err = ioctl(s->actuator_fd, VIDIOC_MSM_ACTUATOR_CFG, &actuator_cfg_data);
-    LOG("actuator init: %d", err);
-
-
-    // no OIS in LP3
-    if (s->device != DEVICE_LP3) {
-      // see sony_imx298_eeprom_format_afdata in libmmcamera_sony_imx298_eeprom.so
-      const float far_margin = -0.28;
-      uint16_t macro_dac = *(uint16_t*)(s->eeprom + 0x24);
-      s->infinity_dac = *(uint16_t*)(s->eeprom + 0x26);
-      LOG("macro_dac: %d infinity_dac: %d", macro_dac, s->infinity_dac);
-
-      int dac_range = macro_dac - s->infinity_dac;
-      s->infinity_dac += far_margin * dac_range;
-
-      LOG(" -> macro_dac: %d infinity_dac: %d", macro_dac, s->infinity_dac);
-
-      struct msm_actuator_reg_params_t actuator_reg_params[] = {
-        {.reg_write_type = MSM_ACTUATOR_WRITE_DAC, .reg_addr = 240, .data_type = 10, .addr_type = 4},
-        {.reg_write_type = MSM_ACTUATOR_WRITE_DAC, .reg_addr = 241, .data_type = 10, .addr_type = 4},
-        {.reg_write_type = MSM_ACTUATOR_WRITE_DAC, .reg_addr = 242, .data_type = 10, .addr_type = 4},
-        {.reg_write_type = MSM_ACTUATOR_WRITE_DAC, .reg_addr = 243, .data_type = 10, .addr_type = 4},
-      };
-
-      //...
-      struct reg_settings_t actuator_init_settings[1] = {0};
-
-      struct region_params_t region_params[] = {
-        {.step_bound = {512, 0,}, .code_per_step = 118, .qvalue = 128}
-      };
-
-      actuator_cfg_data.cfgtype = CFG_SET_ACTUATOR_INFO;
-      actuator_cfg_data.cfg.set_info = (struct msm_actuator_set_info_t){
-        .actuator_params = {
-          .act_type = ACTUATOR_VCM,
-          .reg_tbl_size = 4,
-          .data_size = 10,
-          .init_setting_size = 0,
-          .i2c_freq_mode = I2C_CUSTOM_MODE,
-          .i2c_addr = 28,
-          .i2c_addr_type = MSM_ACTUATOR_BYTE_ADDR,
-          .i2c_data_type = MSM_ACTUATOR_BYTE_DATA,
-          .reg_tbl_params = &actuator_reg_params[0],
-          .init_settings = &actuator_init_settings[0],
-          .park_lens = {
-            .damping_step = 1023,
-            .damping_delay = 15000,
-            .hw_params = 58404,
-            .max_step = 20,
-          }
-        },
-        .af_tuning_params =   {
-          .initial_code = (int16_t)s->infinity_dac,
-          .pwd_step = 0,
-          .region_size = 1,
-          .total_steps = 512,
-          .region_params = &region_params[0],
-        },
-      };
-      err = ioctl(s->actuator_fd, VIDIOC_MSM_ACTUATOR_CFG, &actuator_cfg_data);
-      LOG("actuator set info: %d", err);
-
-      // power up ois
-      ois_cfg_data.cfgtype = CFG_OIS_POWERUP;
-      err = ioctl(s->ois_fd, VIDIOC_MSM_OIS_CFG, &ois_cfg_data);
-      LOG("ois powerup: %d", err);
-
-      ois_cfg_data.cfgtype = CFG_OIS_INIT;
-      err = ioctl(s->ois_fd, VIDIOC_MSM_OIS_CFG, &ois_cfg_data);
-      LOG("ois init: %d", err);
-
-      ois_cfg_data.cfgtype = CFG_OIS_CONTROL;
-      ois_cfg_data.cfg.set_info.ois_params = (struct msm_ois_params_t){
-        // .data_size = 26312,
-        .setting_size = 120,
-        .i2c_addr = 28,
-        .i2c_freq_mode = I2C_CUSTOM_MODE,
-        // .i2c_addr_type = wtf
-        // .i2c_data_type = wtf
-        .settings = &ois_init_settings[0],
-      };
-      err = ioctl(s->ois_fd, VIDIOC_MSM_OIS_CFG, &ois_cfg_data);
-      LOG("ois init settings: %d", err);
-    } else {
-      // leeco actuator (DW9800W H-Bridge Driver IC)
-      // from sniff
-      s->infinity_dac = 364;
-
-      struct msm_actuator_reg_params_t actuator_reg_params[] = {
-        {
-          .reg_write_type = MSM_ACTUATOR_WRITE_DAC,
-          // MSB here at address 3
-          .reg_addr = 3,
-          .data_type = 9,
-          .addr_type = 4,
-        },
-      };
-
-      struct reg_settings_t actuator_init_settings[] = {
-        { .reg_addr=2, .addr_type=MSM_ACTUATOR_BYTE_ADDR, .reg_data=1, .data_type = MSM_ACTUATOR_BYTE_DATA, .i2c_operation = MSM_ACT_WRITE, .delay = 0 },   // PD = power down
-        { .reg_addr=2, .addr_type=MSM_ACTUATOR_BYTE_ADDR, .reg_data=0, .data_type = MSM_ACTUATOR_BYTE_DATA, .i2c_operation = MSM_ACT_WRITE, .delay = 2 },   // 0 = power up
-        { .reg_addr=2, .addr_type=MSM_ACTUATOR_BYTE_ADDR, .reg_data=2, .data_type = MSM_ACTUATOR_BYTE_DATA, .i2c_operation = MSM_ACT_WRITE, .delay = 2 },   // RING = SAC mode
-        { .reg_addr=6, .addr_type=MSM_ACTUATOR_BYTE_ADDR, .reg_data=64, .data_type = MSM_ACTUATOR_BYTE_DATA, .i2c_operation = MSM_ACT_WRITE, .delay = 0 },  // 0x40 = SAC3 mode
-        { .reg_addr=7, .addr_type=MSM_ACTUATOR_BYTE_ADDR, .reg_data=113, .data_type = MSM_ACTUATOR_BYTE_DATA, .i2c_operation = MSM_ACT_WRITE, .delay = 0 },
-        // 0x71 = DIV1 | DIV0 | SACT0 -- Tvib x 1/4 (quarter)
-        // SAC Tvib = 6.3 ms + 0.1 ms = 6.4 ms / 4 = 1.6 ms
-        // LSC 1-step = 252 + 1*4 = 256 ms / 4 = 64 ms
-      };
-
-      struct region_params_t region_params[] = {
-        {.step_bound = {238, 0,}, .code_per_step = 235, .qvalue = 128}
-      };
-
-      actuator_cfg_data.cfgtype = CFG_SET_ACTUATOR_INFO;
-      actuator_cfg_data.cfg.set_info = (struct msm_actuator_set_info_t){
-        .actuator_params = {
-          .act_type = ACTUATOR_BIVCM,
-          .reg_tbl_size = 1,
-          .data_size = 10,
-          .init_setting_size = 5,
-          .i2c_freq_mode = I2C_STANDARD_MODE,
-          .i2c_addr = 24,
-          .i2c_addr_type = MSM_ACTUATOR_BYTE_ADDR,
-          .i2c_data_type = MSM_ACTUATOR_WORD_DATA,
-          .reg_tbl_params = &actuator_reg_params[0],
-          .init_settings = &actuator_init_settings[0],
-          .park_lens = {.damping_step = 1023, .damping_delay = 14000, .hw_params = 11, .max_step = 20},
-        },
-        .af_tuning_params = {
-          .initial_code = (int16_t)s->infinity_dac,
-          .pwd_step = 0,
-          .region_size = 1,
-          .total_steps = 238,
-          .region_params = &region_params[0],
-        },
-      };
-
-      err = ioctl(s->actuator_fd, VIDIOC_MSM_ACTUATOR_CFG, &actuator_cfg_data);
-      LOG("actuator set info: %d", err);
-    }
-  }
 
   if (s->camera_id == CAMERA_ID_IMX298) {
     err = sensor_write_regs(s, mode_setting_array_imx298, ARRAYSIZE(mode_setting_array_imx298), MSM_CAMERA_I2C_BYTE_DATA);
@@ -1105,6 +843,7 @@ static void camera_open(CameraState *s, bool rear) {
   err = ioctl(s->isp_fd, VIDIOC_MSM_ISP_SMMU_ATTACH, &smmu_attach_cmd);
   LOG("isp smmu attach: %d", err);
 
+  s->auto_focus.init(s->device);
   // ******************* STREAM RAW *****************************
 
   // configure QMET input
@@ -1204,13 +943,6 @@ static void camera_open(CameraState *s, bool rear) {
   LOG("isp start stream: %d", err);
 }
 
-
-static struct damping_params_t actuator_ringing_params = {
-  .damping_step = 1023,
-  .damping_delay = 15000,
-  .hw_params = 0x0000e422,
-};
-
 static void rear_start(CameraState *s) {
   struct msm_actuator_cfg_data actuator_cfg_data = {0};
 
@@ -1219,181 +951,7 @@ static void rear_start(CameraState *s) {
   int err = sensor_write_regs(s, start_reg_array, ARRAYSIZE(start_reg_array), MSM_CAMERA_I2C_BYTE_DATA);
   LOG("sensor start regs: %d", err);
 
-  // focus on infinity assuming phone is perpendicular
-  int inf_step;
-
-  if (s->device != DEVICE_LP3) {
-    imx298_ois_calibration(s->ois_fd, s->eeprom);
-    inf_step = 332 - s->infinity_dac;
-
-    // initial guess
-    s->lens_true_pos = 300;
-  } else {
-    // default is OP3, this is for LeEco
-    actuator_ringing_params.damping_step = 1023;
-    actuator_ringing_params.damping_delay = 20000;
-    actuator_ringing_params.hw_params = 13;
-
-    inf_step = 512 - s->infinity_dac;
-
-    // initial guess
-    s->lens_true_pos = 400;
-  }
-
-  // reset lens position
-  memset(&actuator_cfg_data, 0, sizeof(actuator_cfg_data));
-  actuator_cfg_data.cfgtype = CFG_SET_POSITION;
-  actuator_cfg_data.cfg.setpos = (struct msm_actuator_set_position_t){
-    .number_of_steps = 1,
-    .hw_params = (uint32_t)((s->device != DEVICE_LP3) ? 0x0000e424 : 7),
-    .pos = {s->infinity_dac, 0},
-    .delay = {0,}
-  };
-  err = ioctl(s->actuator_fd, VIDIOC_MSM_ACTUATOR_CFG, &actuator_cfg_data);
-  LOG("actuator set pos: %d", err);
-
-  // TODO: confirm this isn't needed
-  /*memset(&actuator_cfg_data, 0, sizeof(actuator_cfg_data));
-  actuator_cfg_data.cfgtype = CFG_MOVE_FOCUS;
-  actuator_cfg_data.cfg.move = (struct msm_actuator_move_params_t){
-    .dir = 0,
-    .sign_dir = 1,
-    .dest_step_pos = inf_step,
-    .num_steps = inf_step,
-    .curr_lens_pos = 0,
-    .ringing_params = &actuator_ringing_params,
-  };
-  err = ioctl(s->actuator_fd, VIDIOC_MSM_ACTUATOR_CFG, &actuator_cfg_data); // should be ~332 at startup ?
-  LOG("init actuator move focus: %d", err);*/
-  //actuator_cfg_data.cfg.move.curr_lens_pos;
-
-  s->cur_lens_pos = 0;
-  s->cur_step_pos = inf_step;
-
-  actuator_move(s, s->cur_lens_pos);
-
-  LOG("init lens pos: %d", s->cur_lens_pos);
-}
-
-void actuator_move(CameraState *s, uint16_t target) {
-  int step = target - s->cur_lens_pos;
-  // LP3 moves only on even positions. TODO: use proper sensor params
-  if (s->device == DEVICE_LP3) {
-    step /= 2;
-  }
-
-  int dest_step_pos = s->cur_step_pos + step;
-  dest_step_pos = std::clamp(dest_step_pos, 0, 255);
-
-  struct msm_actuator_cfg_data actuator_cfg_data = {0};
-  actuator_cfg_data.cfgtype = CFG_MOVE_FOCUS;
-  actuator_cfg_data.cfg.move = (struct msm_actuator_move_params_t){
-    .dir = (int8_t)((step > 0) ? 0 : 1),
-    .sign_dir = (int8_t)((step > 0) ? 1 : -1),
-    .dest_step_pos = (int16_t)dest_step_pos,
-    .num_steps = abs(step),
-    .curr_lens_pos = s->cur_lens_pos,
-    .ringing_params = &actuator_ringing_params,
-  };
-  int err = ioctl(s->actuator_fd, VIDIOC_MSM_ACTUATOR_CFG, &actuator_cfg_data);
-  LOG("actuator move focus: %d", err);
-
-  s->cur_step_pos = dest_step_pos;
-  s->cur_lens_pos = actuator_cfg_data.cfg.move.curr_lens_pos;
-
-  //LOGD("step %d   target: %d  lens pos: %d", dest_step_pos, target, s->cur_lens_pos);
-}
-
-static void parse_autofocus(CameraState *s, uint8_t *d) {
-  int good_count = 0;
-  int16_t max_focus = -32767;
-  int avg_focus = 0;
-
-  /*printf("FOCUS: ");
-  for (int i = 0; i < 0x10; i++) {
-    printf("%2.2X ", d[i]);
-  }*/
-
-  for (int i = 0; i < NUM_FOCUS; i++) {
-    int doff = i*5+5;
-    s->confidence[i] = d[doff];
-    // this should just be a 10-bit signed int instead of 11
-    // TODO: write it in a nicer way
-    int16_t focus_t = (d[doff+1] << 3) | (d[doff+2] >> 5);
-    if (focus_t >= 1024) focus_t = -(2048-focus_t);
-    s->focus[i] = focus_t;
-    //printf("%x->%d ", d[doff], focus_t);
-    if (s->confidence[i] > 0x20) {
-      good_count++;
-      max_focus = std::max(max_focus, s->focus[i]);
-      avg_focus += s->focus[i];
-    }
-  }
-  // self recover override
-  if (s->self_recover > 1) {
-    s->focus_err = 200 * ((s->self_recover % 2 == 0) ? 1:-1); // far for even numbers, close for odd
-    s->self_recover -= 2;
-    return;
-  }
-
-  if (good_count < 4) {
-    s->focus_err = nan("");
-    return;
-  }
-
-  avg_focus /= good_count;
-
-  // outlier rejection
-  if (abs(avg_focus - max_focus) > 200) {
-    s->focus_err = nan("");
-    return;
-  }
-
-  s->focus_err = max_focus*1.0;
-}
-
-static std::optional<float> get_accel_z(SubMaster *sm) {
-  if (sm->update(0) > 0) {
-    for (auto event : (*sm)["sensorEvents"].getSensorEvents()) {
-      if (event.which() == cereal::SensorEventData::ACCELERATION) {
-        if (auto v = event.getAcceleration().getV(); v.size() >= 3)
-          return -v[2];
-        break;
-      }
-    }
-  }
-  return std::nullopt;
-}
-
-static void do_autofocus(CameraState *s, SubMaster *sm) {
-  // params for focus PI controller
-  const int dac_up = s->device == DEVICE_LP3? LP3_AF_DAC_UP:OP3T_AF_DAC_UP;
-  const int dac_down = s->device == DEVICE_LP3? LP3_AF_DAC_DOWN:OP3T_AF_DAC_DOWN;
-
-  float lens_true_pos = s->lens_true_pos.load();
-  if (!isnan(s->focus_err)) {
-    // learn lens_true_pos
-    const float focus_kp = 0.005;
-    lens_true_pos -= s->focus_err*focus_kp;
-  }
-
-  if (auto accel_z = get_accel_z(sm)) {
-    s->last_sag_acc_z = *accel_z;
-  }
-  const float sag = (s->last_sag_acc_z / 9.8) * 128;
-  // stay off the walls
-  lens_true_pos = std::clamp(lens_true_pos, float(dac_down), float(dac_up));
-  int target = std::clamp(lens_true_pos - sag, float(dac_down), float(dac_up));
-  s->lens_true_pos.store(lens_true_pos);
-
-  /*char debug[4096];
-  char *pdebug = debug;
-  pdebug += sprintf(pdebug, "focus ");
-  for (int i = 0; i < NUM_FOCUS; i++) pdebug += sprintf(pdebug, "%2x(%4d) ", s->confidence[i], s->focus[i]);
-  pdebug += sprintf(pdebug, "  err: %7.2f  offset: %6.2f sag: %6.2f lens_true_pos: %6.2f  cur_lens_pos: %4d->%4d", err * focus_kp, offset, sag, s->lens_true_pos, s->cur_lens_pos, target);
-  LOGD(debug);*/
-
-  actuator_move(s, target);
+  s->auto_focus.start();
 }
 
 void camera_autoexposure(CameraState *s, float grey_frac) {
@@ -1509,8 +1067,6 @@ static void camera_close(CameraState *s) {
       LOG("isp release stream: %d", err);
     }
   }
-
-  free(s->eeprom);
 }
 
 
@@ -1570,7 +1126,8 @@ static void ops_thread(MultiCameraState *s) {
     rear_op = rear_exp.load();
     if (rear_op.op_id != rear_op_id_last) {
       do_autoexposure(&s->rear, rear_op.grey_frac);
-      do_autofocus(&s->rear, &sm);
+      float accel_z = 0.;
+      s->rear.auto_focus.do_focus(get_accel_z(&sm, &accel_z) ? &accel_z : nullptr);
       rear_op_id_last = rear_op.op_id;
     }
 
@@ -1618,32 +1175,6 @@ static void update_lapmap(MultiCameraState *s, const CameraBuf *b, const int cnt
   s->lapres[roi_id] = get_lapmap_one(conv_result.get(), width, height);
 }
 
-static void setup_self_recover(CameraState *c, const uint16_t *lapres, size_t lapres_size) {
-  const int dac_down = c->device == DEVICE_LP3 ? LP3_AF_DAC_DOWN : OP3T_AF_DAC_DOWN;
-  const int dac_up = c->device == DEVICE_LP3 ? LP3_AF_DAC_UP : OP3T_AF_DAC_UP;
-  const int dac_m = c->device == DEVICE_LP3 ? LP3_AF_DAC_M : OP3T_AF_DAC_M;
-  const int dac_3sig = c->device == DEVICE_LP3 ? LP3_AF_DAC_3SIG : OP3T_AF_DAC_3SIG;
-
-  const float lens_true_pos = c->lens_true_pos.load();
-  int self_recover = c->self_recover.load();
-  if (self_recover < 2 && (lens_true_pos < (dac_down + 1) || lens_true_pos > (dac_up - 1)) && is_blur(lapres, lapres_size)) {
-    // truly stuck, needs help
-    if (--self_recover < -FOCUS_RECOVER_PATIENCE) {
-      LOGD("rear camera bad state detected. attempting recovery from %.1f, recover state is %d", lens_true_pos, self_recover);
-      // parity determined by which end is stuck at
-      self_recover = FOCUS_RECOVER_STEPS + (lens_true_pos < dac_m ? 1 : 0);
-    }
-  } else if (self_recover < 2 && (lens_true_pos < (dac_m - dac_3sig) || lens_true_pos > (dac_m + dac_3sig))) {
-    // in suboptimal position with high prob, but may still recover by itself
-    if (--self_recover < -(FOCUS_RECOVER_PATIENCE * 3)) {
-      self_recover = FOCUS_RECOVER_STEPS / 2 + (lens_true_pos < dac_m ? 1 : 0);
-    }
-  } else if (self_recover < 0) {
-    self_recover += 1;  // reset if fine
-  }
-  c->self_recover.store(self_recover);
-}
-
 void camera_process_front(MultiCameraState *s, CameraState *c, int cnt) {
   common_camera_process_front(s->sm_front, s->pm, c, cnt);
 }
@@ -1652,7 +1183,7 @@ void camera_process_front(MultiCameraState *s, CameraState *c, int cnt) {
 void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
   const CameraBuf *b = &c->buf;
   update_lapmap(s, b, cnt);
-  setup_self_recover(c, &s->lapres[0], std::size(s->lapres));
+  c->auto_focus.setup_self_recover(s->lapres, std::size(s->lapres));
 
   MessageBuilder msg;
   auto framed = msg.initEvent().initFrame();
@@ -1660,11 +1191,9 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
   if (env_send_rear) {
     framed.setImage(get_frame_image(b));
   }
-  framed.setFocusVal(s->rear.focus);
-  framed.setFocusConf(s->rear.confidence);
-  framed.setRecoverState(s->rear.self_recover);
   framed.setSharpnessScore(s->lapres);
   framed.setTransform(b->yuv_transform.v);
+  c->auto_focus.fill(framed);
   s->pm->send("frame", msg);
 
   if (cnt % 3 == 0) {
@@ -1734,35 +1263,34 @@ void cameras_run(MultiCameraState *s) {
           c->buf.camera_bufs_metadata[buf_idx] = get_frame_metadata(c, isp_event_data->frame_id);
           c->buf.queue(buf_idx);
         } else {
-          uint8_t *d = (uint8_t*)(c->ss[buffer].bufs[buf_idx].addr);
+          StreamState &ss = c->ss[buffer];
           if (buffer == 1) {
-            parse_autofocus(c, d);
+            s->rear.auto_focus.parse((uint8_t*)ss.bufs[buf_idx].addr);
           }
-          c->ss[buffer].qbuf_info[buf_idx].dirty_buf = 1;
-          ioctl(c->isp_fd, VIDIOC_MSM_ISP_ENQUEUE_BUF, &c->ss[buffer].qbuf_info[buf_idx]);
+          ss.qbuf_info[buf_idx].dirty_buf = 1;
+          ioctl(c->isp_fd, VIDIOC_MSM_ISP_ENQUEUE_BUF, &ss.qbuf_info[buf_idx]);
         }
         break;
-      case ISP_EVENT_EOF:
+      case ISP_EVENT_EOF: {
         // printf("ISP_EVENT_EOF delta %f\n", (t-last_t)/1e6);
         c->last_t = t;
 
         pthread_mutex_lock(&c->frame_info_lock);
-        c->frame_metadata[c->frame_metadata_idx] = (FrameMetadata){
+        FrameMetadata &fd = c->frame_metadata[c->frame_metadata_idx];
+        fd = (FrameMetadata){
           .frame_id = isp_event_data->frame_id,
           .timestamp_eof = timestamp,
           .frame_length = (unsigned int)c->cur_frame_length,
           .integ_lines = (unsigned int)c->cur_integ_lines,
           .global_gain = (unsigned int)c->cur_gain,
-          .lens_pos = c->cur_lens_pos,
-          .lens_sag = c->last_sag_acc_z,
-          .lens_err = c->focus_err,
-          .lens_true_pos = c->lens_true_pos,
           .gain_frac = c->cur_gain_frac,
         };
-        c->frame_metadata_idx = (c->frame_metadata_idx+1)%METADATA_BUF_COUNT;
+        c->auto_focus.fill(fd);
+        c->frame_metadata_idx = (c->frame_metadata_idx + 1) % METADATA_BUF_COUNT;
         pthread_mutex_unlock(&c->frame_info_lock);
 
         break;
+      }
       case ISP_EVENT_ERROR:
         LOGE("ISP_EVENT_ERROR! err type: 0x%08x", isp_event_data->u.error_info.err_type);
         break;

@@ -5,6 +5,7 @@
 #include <pthread.h>
 #include <memory>
 #include <atomic>
+#include <mutex>
 #include "messaging.hpp"
 
 #include "msmb_isp.h"
@@ -18,6 +19,7 @@
 #include "common/util.h"
 
 #include "camera_common.h"
+#include "camera_qcom_focus.h"
 
 #define FRAME_BUF_COUNT 4
 #define METADATA_BUF_COUNT 4
@@ -25,20 +27,6 @@
 #define DEVICE_OP3 0
 #define DEVICE_OP3T 1
 #define DEVICE_LP3 2
-
-#define NUM_FOCUS 8
-
-#define LP3_AF_DAC_DOWN 366
-#define LP3_AF_DAC_UP 634
-#define LP3_AF_DAC_M 440
-#define LP3_AF_DAC_3SIG 52
-#define OP3T_AF_DAC_DOWN 224
-#define OP3T_AF_DAC_UP 456
-#define OP3T_AF_DAC_M 300
-#define OP3T_AF_DAC_3SIG 96
-
-#define FOCUS_RECOVER_PATIENCE 50 // 2.5 seconds of complete blur
-#define FOCUS_RECOVER_STEPS 240 // 6 seconds
 
 typedef struct CameraState CameraState;
 
@@ -66,16 +54,7 @@ typedef struct CameraState {
   unique_fd csiphy_fd;
   unique_fd sensor_fd;
   unique_fd isp_fd;
-  unique_fd eeprom_fd;
-  // rear only
-  unique_fd ois_fd, actuator_fd;
-  uint16_t infinity_dac;
-
   struct msm_vfe_axi_stream_cfg_cmd stream_cfg;
-
-  size_t eeprom_size;
-  uint8_t *eeprom;
-
   // uint32_t camera_bufs_ids[FRAME_BUF_COUNT];
 
   pthread_mutex_t frame_info_lock;
@@ -95,21 +74,11 @@ typedef struct CameraState {
 
   camera_apply_exposure_func apply_exposure;
 
-  int16_t focus[NUM_FOCUS];
-  uint8_t confidence[NUM_FOCUS];
-
-  std::atomic<float> focus_err;
-
-  uint16_t cur_step_pos;
-  uint16_t cur_lens_pos;
-  std::atomic<float> last_sag_acc_z;
-  std::atomic<float> lens_true_pos;
-
-  std::atomic<int> self_recover; // af recovery counter, neg is patience, pos is active
-
   int fps;
-
   CameraBuf buf;
+
+  // for rear only
+  AutoFocus auto_focus;
 } CameraState;
 
 
