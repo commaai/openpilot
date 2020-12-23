@@ -23,6 +23,9 @@ class CarController():
     self.es_lkas_cnt = -1
     self.fake_button_prev = 0
     self.steer_rate_limited = False
+    self.throttle_cnt = -1
+    self.sng_resume_acc = False
+    self.sng_throttle_tap_cnt = 0
 
     self.params = CarControllerParams()
     self.packer = CANPacker(DBC[CP.carFingerprint]['pt'])
@@ -52,6 +55,27 @@ class CarController():
 
       self.apply_steer_last = apply_steer
 
+
+    #PRE-GLOBAL STOP AND GO
+    #Activate ACC Resumt with throttle tap by switching on WIPERS (for testing only)
+    if CS.wiper_activated:
+      self.sng_resume_acc = True
+
+    throttle_cmd = -1 #normally, just forward throttle msg from ECU
+    if self.sng_resume_acc:
+      #Send Maximum <THROTTLE_TAP_LIMIT> to get car out of HOLD
+      if self.sng_throttle_tap_cnt < 5:
+        throttle_cmd = 5
+        self.sng_throttle_tap_cnt += 1
+      else:
+        self.sng_throttle_tap_cnt = -1
+        self.sng_resume_acc = False
+
+    #-------------Send throttle message-------------
+    if self.throttle_cnt != CS.throttle_msg["Counter"]:
+      can_sends.append(subarucan.create_preglobal_throttle_control(self.packer, CS.throttle_msg, throttle_cmd))
+      self.throttle_cnt = CS.throttle_msg["Counter"]
+    #------------------------------------------------  
 
     # *** alerts and pcm cancel ***
 

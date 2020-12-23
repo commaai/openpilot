@@ -44,6 +44,17 @@ def subaru_preglobal_checksum(packer, values, addr):
   dat = packer.make_can_msg(addr, 0, values)[2]
   return (sum(dat[:7])) % 256
 
+def create_preglobal_throttle_control(packer, throttle_msg, throttle_cmd):
+
+  values = copy.copy(throttle_msg)
+
+  if throttle_cmd != -1 and throttle_cmd <= 10:
+    values["Throttle_Pedal"] = throttle_cmd
+
+  #values["Checksum"] = subaru_preglobal_checksum(packer, values, "Throttle")
+
+  return packer.make_can_msg("Throttle", 2, values)  
+
 def create_preglobal_steering_control(packer, apply_steer, frame, steer_step):
 
   idx = (frame / steer_step) % 8
