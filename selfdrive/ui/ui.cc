@@ -219,7 +219,7 @@ void update_sockets(UIState *s) {
     scene.dmonitoring_state = sm["dMonitoringState"].getDMonitoringState();
     scene.is_rhd = scene.dmonitoring_state.getIsRHD();
     scene.frontview = scene.dmonitoring_state.getIsPreview();
-  } else if ((sm.frame - sm.rcv_frame("dMonitoringState")) > UI_FREQ/2) {
+  } else if (scene.frontview && (sm.frame - sm.rcv_frame("dMonitoringState")) > UI_FREQ/2) {
     scene.frontview = false;
   }
   if (sm.updated("sensorEvents")) {
