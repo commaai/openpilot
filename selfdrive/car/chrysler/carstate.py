@@ -49,6 +49,8 @@ class CarState(CarStateBase):
     ret.cruiseState.enabled = cp.vl["ACC_2"]['ACC_STATUS_2'] == 7  # ACC is green.
     ret.cruiseState.available = ret.cruiseState.enabled  # FIXME: for now same as enabled
     ret.cruiseState.speed = cp.vl["DASHBOARD"]['ACC_SPEED_CONFIG_KPH'] * CV.KPH_TO_MS
+    #ACC_STATUS_2 is a three bit msg, 1 in non-ACC, 3 when ACC enabled (white icon), 7 when ACC in use (green icon), find out if there are more
+    ret.cruiseState.nonAdaptive = cp.vl["ACC_2"]['ACC_STATUS_2'] in [1]
 
     ret.steeringTorque = cp.vl["EPS_STATUS"]["TORQUE_DRIVER"]
     ret.steeringTorqueEps = cp.vl["EPS_STATUS"]["TORQUE_MOTOR"]
