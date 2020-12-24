@@ -20,7 +20,6 @@ void setMainWindow(QWidget *w) {
   w->setStyleSheet(R"(
     QWidget {
       font-family: Inter;
-      background-color: black;
     }
   )");
 

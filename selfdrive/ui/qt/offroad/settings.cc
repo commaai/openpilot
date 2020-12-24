@@ -49,7 +49,7 @@ ParamsToggle::ParamsToggle(QString param, QString title, QString description, QS
   if (Params().read_db_bool(param.toStdString().c_str())) {
     toggle->togglePosition();
   }
-  
+
   setLayout(layout);
 }
 
@@ -209,7 +209,7 @@ void SettingsWindow::setActivePanel() {
   panel_layout->setCurrentWidget(panels[btn->text()]);
 }
 
-SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
+SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   // setup two main layouts
   QVBoxLayout *sidebar_layout = new QVBoxLayout();
   sidebar_layout->setMargin(0);
@@ -293,6 +293,9 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
     * {
       color: white;
       font-size: 50px;
+    }
+    SettingsWindow {
+      background-color: black;
     }
   )");
 }
