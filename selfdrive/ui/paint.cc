@@ -362,7 +362,7 @@ static NVGcolor get_alert_color(UIStatus status, float blink_rate) {
   if (blink_rate > 0.) {
     if (alpha < 0.25 || alpha > 1.0) blink = -blink;
     color.a *= (alpha += blink * blink_rate);
-  }
+  } else { alpha = 1.0; }
   return color;
 }
 
