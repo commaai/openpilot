@@ -263,6 +263,11 @@ class CarState(CarStateBase):
         ("LKAS_Right_Line_Green", "ES_LKAS_State", 0),
         ("LKAS_Alert", "ES_LKAS_State", 0),
         ("Signal3", "ES_LKAS_State", 0),
+
+        #---------Subaru STOP AND GO---------
+        #Add signal Cruise_State to determine if car is in HOLD state
+        ("Cruise_State", "ES_DashStatus", 0),
+        #------------------------------------
       ]
 
       checks = [
