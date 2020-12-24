@@ -21,9 +21,12 @@
 
 ParamsToggle::ParamsToggle(QString param, QString title, QString description, QString icon_path, QWidget *parent): QFrame(parent) , param(param) {
   QHBoxLayout *hlayout = new QHBoxLayout;
+  hlayout->setSpacing(50);
+  hlayout->setContentsMargins(50, 0, 50, 0);
+
+  // TODO: show descriptions on tap
 
   // Parameter image
-  hlayout->addSpacing(25);
   if (icon_path.length()) {
     QPixmap pix(icon_path);
     QLabel *icon = new QLabel();
@@ -33,21 +36,17 @@ ParamsToggle::ParamsToggle(QString param, QString title, QString description, QS
   } else {
     hlayout->addSpacing(100);
   }
-  hlayout->addSpacing(25);
 
   // Name of the parameter
   QLabel *label = new QLabel(title);
   label->setWordWrap(true);
+  hlayout->addWidget(label);
 
   // toggle switch
-  Toggle* toggle_switch = new Toggle(this);
+  Toggle *toggle_switch = new Toggle(this);
   toggle_switch->setFixedSize(150, 100);
-
-  // TODO: show descriptions on tap
-  hlayout->addWidget(label);
-  hlayout->addSpacing(50);
   hlayout->addWidget(toggle_switch);
-  hlayout->addSpacing(20);
+  QObject::connect(toggle_switch, SIGNAL(stateChanged(int)), this, SLOT(checkboxClicked(int)));
 
   setLayout(hlayout);
   if (Params().read_db_bool(param.toStdString().c_str())) {
@@ -55,15 +54,10 @@ ParamsToggle::ParamsToggle(QString param, QString title, QString description, QS
   }
 
   setStyleSheet(R"(
-    QLabel {
+    * {
       font-size: 50px;
     }
-    * {
-      background-color: #114265;
-    }
   )");
-
-  QObject::connect(toggle_switch, SIGNAL(stateChanged(int)), this, SLOT(checkboxClicked(int)));
 }
 
 void ParamsToggle::checkboxClicked(int state) {
@@ -72,7 +66,6 @@ void ParamsToggle::checkboxClicked(int state) {
 }
 
 QWidget * toggles_panel() {
-
   QVBoxLayout *toggles_list = new QVBoxLayout();
   toggles_list->setSpacing(25);
 
@@ -220,11 +213,12 @@ void SettingsWindow::setActivePanel() {
 SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
   // two main layouts
   QVBoxLayout *sidebar_layout = new QVBoxLayout();
+  sidebar_layout->setMargin(0);
   panel_layout = new QStackedLayout();
 
   // close button
-  QPushButton *close_button = new QPushButton("X");
-  close_button->setStyleSheet(R"(
+  QPushButton *close_btn = new QPushButton("X");
+  close_btn->setStyleSheet(R"(
     QPushButton {
       font-weight: bold;
       font-size: 55px;
@@ -233,10 +227,10 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
       background-color: grey;
     }
   )");
-  close_button->setFixedSize(120, 120);
+  close_btn->setFixedSize(120, 120);
   sidebar_layout->addSpacing(45);
-  sidebar_layout->addWidget(close_button, 0, Qt::AlignHCenter);
-  QObject::connect(close_button, SIGNAL(released()), this, SIGNAL(closeSettings()));
+  sidebar_layout->addWidget(close_btn, 0, Qt::AlignHCenter);
+  QObject::connect(close_btn, SIGNAL(released()), this, SIGNAL(closeSettings()));
 
   // setup panels
   panels = {
@@ -253,14 +247,16 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
     btn->setCheckable(true);
     btn->setStyleSheet(R"(
       QPushButton {
-        padding-top: 25px;
-        padding-bottom: 25px;
+        color: grey;
         border: none;
         background: none;
-        font-size: 55px;
+        font-size: 65px;
+        font-weight: bold;
+        padding-top: 35px;
+        padding-bottom: 35px;
       }
       QPushButton:checked {
-        font-weight: bold;
+        color: white;
       }
     )");
 
@@ -273,16 +269,27 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
   sidebar_layout->addStretch();
 
   QHBoxLayout *settings_layout = new QHBoxLayout();
-  settings_layout->setMargin(0);
-  settings_layout->addSpacing(70);
+  settings_layout->setContentsMargins(100, 35, 50, 35);
 
   sidebar_widget = new QWidget;
   sidebar_widget->setLayout(sidebar_layout);
   settings_layout->addWidget(sidebar_widget);
 
-  settings_layout->addSpacing(45);
-  settings_layout->addLayout(panel_layout);
-  settings_layout->addSpacing(45);
+  settings_layout->addStretch();
+
+  QFrame *panel_frame = new QFrame;
+  panel_frame->setLayout(panel_layout);
+  panel_frame->setStyleSheet(R"(
+    QFrame {
+      border-radius: 30px;
+      background-color: #292929;
+    }
+    * {
+      background-color: none;
+    }
+  )");
+
+  settings_layout->addWidget(panel_frame, 0, Qt::AlignLeft);
 
   setLayout(settings_layout);
   setStyleSheet(R"(
