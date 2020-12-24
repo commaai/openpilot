@@ -244,7 +244,8 @@ static void ui_read_params(UIState *s) {
     read_param(&s->is_metric, "IsMetric");
   } else if (frame % (6*UI_FREQ) == 0) {
     s->scene.athenaStatus = NET_DISCONNECTED;
-    if (uint64_t last_ping; read_param(&last_ping, "LastAthenaPingTime") == 0) {
+    uint64_t last_ping = 0;
+    if (read_param(&last_ping, "LastAthenaPingTime") == 0) {
       s->scene.athenaStatus = nanos_since_boot() - last_ping < 70e9 ? NET_CONNECTED : NET_ERROR;
     }
   }
