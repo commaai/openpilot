@@ -22,8 +22,6 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   QObject::connect(onboardingWindow, SIGNAL(onboardingDone()), this, SLOT(closeSettings()));
   onboardingWindow->updateActiveScreen();
 
-  openSettings();
-
   setStyleSheet(R"(
     * {
       color: white;
