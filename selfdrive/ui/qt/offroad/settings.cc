@@ -227,16 +227,13 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
   close_button->setStyleSheet(R"(
     QPushButton {
       font-weight: bold;
-      font-size: 70px;
+      font-size: 55px;
       border 1px grey solid;
-      border-radius: 75px;
+      border-radius: 60px;
       background-color: grey;
-      max-width: 150px;
-      max-height: 150px;
-      min-width: 150px;
-      min-height: 150px;
     }
   )");
+  close_button->setFixedSize(120, 120);
   sidebar_layout->addSpacing(45);
   sidebar_layout->addWidget(close_button, 0, Qt::AlignHCenter);
   QObject::connect(close_button, SIGNAL(released()), this, SIGNAL(closeSettings()));
@@ -249,19 +246,20 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
     {"Toggles", toggles_panel()},
   };
 
-  sidebar_layout->addSpacing(60);
+  sidebar_layout->addSpacing(45);
   nav_btns = new QButtonGroup();
   for (auto &panel : panels) {
     QPushButton *btn = new QPushButton(panel.first);
     btn->setCheckable(true);
     btn->setStyleSheet(R"(
       QPushButton {
+        padding-top: 25px;
+        padding-bottom: 25px;
         border: none;
         background: none;
         font-size: 55px;
       }
       QPushButton:checked {
-        font-size: 50px;
         font-weight: bold;
       }
     )");
@@ -272,6 +270,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
     QObject::connect(btn, SIGNAL(released()), this, SLOT(setActivePanel()));
   }
   qobject_cast<QPushButton *>(nav_btns->buttons()[0])->setChecked(true);
+  sidebar_layout->addStretch();
 
   QHBoxLayout *settings_layout = new QHBoxLayout();
   settings_layout->setMargin(0);
