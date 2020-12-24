@@ -28,7 +28,7 @@ public slots:
 
 // *** settings window ***
 
-class SettingsWindow : public QWidget {
+class SettingsWindow : public QFrame {
   Q_OBJECT
 
 public:

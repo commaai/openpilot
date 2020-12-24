@@ -21,9 +21,10 @@ void Toggle::paintEvent(QPaintEvent *e) {
   // Draw toggle background left
   p.setBrush(QColor(0x33ab4c));
   p.drawRoundedRect(QRect(0, _y_rect, _x_circle + _radius, _height_rect), _height_rect/2, _height_rect/2);
+
   // Draw toggle background right
-  p.setBrush(QColor(0x0a1a26));
-  p.drawRoundedRect(QRect(_x_circle - _radius, _y_rect, width() -(_x_circle - _radius), _height_rect), _height_rect/2, _height_rect/2);
+  p.setBrush(QColor(0x393939));
+  p.drawRoundedRect(QRect(_x_circle - _radius, _y_rect, width() - (_x_circle - _radius), _height_rect), _height_rect/2, _height_rect/2);
 
   // Draw toggle circle
   p.setBrush(QColor(0xfafafa));
