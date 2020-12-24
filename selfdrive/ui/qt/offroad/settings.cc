@@ -20,44 +20,37 @@
 
 
 ParamsToggle::ParamsToggle(QString param, QString title, QString description, QString icon_path, QWidget *parent): QFrame(parent) , param(param) {
-  QHBoxLayout *hlayout = new QHBoxLayout;
-  hlayout->setSpacing(50);
-  hlayout->setContentsMargins(50, 0, 50, 0);
-
-  // TODO: show descriptions on tap
+  QHBoxLayout *layout = new QHBoxLayout;
+  layout->setSpacing(50);
 
   // Parameter image
   if (icon_path.length()) {
     QPixmap pix(icon_path);
     QLabel *icon = new QLabel();
-    icon->setPixmap(pix.scaledToWidth(100, Qt::SmoothTransformation));
+    icon->setPixmap(pix.scaledToWidth(80, Qt::SmoothTransformation));
     icon->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
-    hlayout->addWidget(icon);
+    layout->addWidget(icon);
   } else {
-    hlayout->addSpacing(100);
+    layout->addSpacing(80);
   }
 
   // Name of the parameter
   QLabel *label = new QLabel(title);
-  label->setWordWrap(true);
-  hlayout->addWidget(label);
+  label->setStyleSheet(R"(font-size: 50px;)");
+  layout->addWidget(label);
 
   // toggle switch
-  Toggle *toggle_switch = new Toggle(this);
-  toggle_switch->setFixedSize(150, 100);
-  hlayout->addWidget(toggle_switch);
-  QObject::connect(toggle_switch, SIGNAL(stateChanged(int)), this, SLOT(checkboxClicked(int)));
+  Toggle *toggle = new Toggle(this);
+  toggle->setFixedSize(150, 100);
+  layout->addWidget(toggle);
+  QObject::connect(toggle, SIGNAL(stateChanged(int)), this, SLOT(checkboxClicked(int)));
 
-  setLayout(hlayout);
+  // set initial state from param
   if (Params().read_db_bool(param.toStdString().c_str())) {
-    toggle_switch->togglePosition();
+    toggle->togglePosition();
   }
-
-  setStyleSheet(R"(
-    * {
-      font-size: 50px;
-    }
-  )");
+  
+  setLayout(layout);
 }
 
 void ParamsToggle::checkboxClicked(int state) {
@@ -67,6 +60,7 @@ void ParamsToggle::checkboxClicked(int state) {
 
 QWidget * toggles_panel() {
   QVBoxLayout *toggles_list = new QVBoxLayout();
+  toggles_list->setMargin(50);
   toggles_list->setSpacing(25);
 
   toggles_list->addWidget(new ParamsToggle("OpenpilotEnabledToggle",
@@ -113,6 +107,7 @@ QWidget * toggles_panel() {
 QWidget * device_panel() {
 
   QVBoxLayout *device_layout = new QVBoxLayout;
+  device_layout->setMargin(100);
   device_layout->setSpacing(50);
 
   Params params = Params();
@@ -157,7 +152,10 @@ QWidget * device_panel() {
   widget->setLayout(device_layout);
   widget->setStyleSheet(R"(
     QPushButton {
-      padding: 60px;
+      padding: 0;
+      height: 120px;
+      border-radius: 15px;
+      background-color: #393939;
     }
   )");
   return widget;
@@ -165,6 +163,7 @@ QWidget * device_panel() {
 
 QWidget * developer_panel() {
   QVBoxLayout *main_layout = new QVBoxLayout;
+  main_layout->setMargin(100);
 
   // TODO: enable SSH toggle and github keys
 
@@ -211,7 +210,7 @@ void SettingsWindow::setActivePanel() {
 }
 
 SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
-  // two main layouts
+  // setup two main layouts
   QVBoxLayout *sidebar_layout = new QVBoxLayout();
   sidebar_layout->setMargin(0);
   panel_layout = new QStackedLayout();
@@ -219,15 +218,13 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
   // close button
   QPushButton *close_btn = new QPushButton("X");
   close_btn->setStyleSheet(R"(
-    QPushButton {
-      font-weight: bold;
-      font-size: 55px;
-      border 1px grey solid;
-      border-radius: 60px;
-      background-color: grey;
-    }
+    font-size: 65px;
+    font-weight: bold;
+    border 1px grey solid;
+    border-radius: 75px;
+    background-color: #393939;
   )");
-  close_btn->setFixedSize(120, 120);
+  close_btn->setFixedSize(150, 150);
   sidebar_layout->addSpacing(45);
   sidebar_layout->addWidget(close_btn, 0, Qt::AlignHCenter);
   QObject::connect(close_btn, SIGNAL(released()), this, SIGNAL(closeSettings()));
@@ -268,14 +265,15 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
   qobject_cast<QPushButton *>(nav_btns->buttons()[0])->setChecked(true);
   sidebar_layout->addStretch();
 
+  // main settings layout, sidebar + main panel
   QHBoxLayout *settings_layout = new QHBoxLayout();
-  settings_layout->setContentsMargins(100, 35, 50, 35);
+  settings_layout->setContentsMargins(150, 50, 150, 50);
 
   sidebar_widget = new QWidget;
   sidebar_widget->setLayout(sidebar_layout);
   settings_layout->addWidget(sidebar_widget);
 
-  settings_layout->addStretch();
+  settings_layout->addSpacing(25);
 
   QFrame *panel_frame = new QFrame;
   panel_frame->setLayout(panel_layout);
@@ -288,15 +286,13 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
       background-color: none;
     }
   )");
-
-  settings_layout->addWidget(panel_frame, 0, Qt::AlignLeft);
+  settings_layout->addWidget(panel_frame, 1, Qt::AlignRight);
 
   setLayout(settings_layout);
   setStyleSheet(R"(
     * {
       color: white;
       font-size: 50px;
-      background-color: black;
     }
   )");
 }
