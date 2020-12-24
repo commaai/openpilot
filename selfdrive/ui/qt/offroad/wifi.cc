@@ -147,13 +147,11 @@ void WifiUI::refresh() {
         QPushButton {
           padding: 0;
           font-size: 50px;
+          border-radius: 10px;
           background-color: #114265;
         }
         QPushButton:disabled {
           background-color: #323C43;
-        }
-        * {
-          background-color: #114265;
         }
       )");
       countWidgets++;
@@ -191,9 +189,6 @@ void WifiUI::refresh() {
     }
     QPushButton:disabled {
       background-color: #323C43;
-    }
-    * {
-      background-color: #114265;
     }
   )");
   vlayout->addWidget(w);
