@@ -17,11 +17,7 @@ void setMainWindow(QWidget *w) {
   w->show();
 
   QFontDatabase::addApplicationFont("../assets/fonts/inter.ttf");
-  w->setStyleSheet(R"(
-    QWidget {
-      font-family: Inter;
-    }
-  )");
+  QApplication::setFont(QFont("Inter"));
 
 #ifdef QCOM2
   QPlatformNativeInterface *native = QGuiApplication::platformNativeInterface();

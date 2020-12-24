@@ -21,6 +21,12 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   main_layout->setCurrentWidget(onboardingWindow);
   QObject::connect(onboardingWindow, SIGNAL(onboardingDone()), this, SLOT(closeSettings()));
   onboardingWindow->updateActiveScreen();
+
+  setStyleSheet(R"(
+    * {
+      font-family: Inter;
+    }
+  )");
 }
 
 void MainWindow::openSettings() {
