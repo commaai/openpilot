@@ -44,7 +44,7 @@ OffroadHome::OffroadHome(QWidget *parent) : QWidget(parent) {
   main_layout->addWidget(alert_notification, 0, Qt::AlignTop | Qt::AlignRight);
 
   // main content
-  main_layout->addSpacing(100);
+  main_layout->addSpacing(25);
   center_layout = new QStackedLayout();
 
   DriveStats *drive = new DriveStats;

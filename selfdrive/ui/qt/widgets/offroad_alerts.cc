@@ -1,6 +1,7 @@
-#include <QLabel>
 #include <QFile>
+#include <QLabel>
 #include <QPushButton>
+#include <QVBoxLayout>
 #include <QJsonObject>
 #include <QJsonDocument>
 #include <QDebug>
@@ -10,31 +11,57 @@
 #include "common/params.h"
 
 
-void cleanLayout(QLayout* layout) {
-  while (QLayoutItem* item = layout->takeAt(0)) {
-    if (QWidget* widget = item->widget()) {
-      widget->deleteLater();
-    }
-    if (QLayout* childLayout = item->layout()) {
-      cleanLayout(childLayout);
-    }
-    delete item;
+void cleanStackedWidget(QStackedWidget* swidget) {
+  while(swidget->count() > 0) {
+    QWidget *w = swidget->widget(0);
+    swidget->removeWidget(w);
+    w->deleteLater();
   }
 }
 
-QString vectorToQString(std::vector<char> v) {
-  return QString::fromStdString(std::string(v.begin(), v.end()));
-}
-
 OffroadAlert::OffroadAlert(QWidget* parent) {
-  vlayout = new QVBoxLayout;
+  QVBoxLayout *main_layout = new QVBoxLayout();
+  main_layout->setMargin(25);
+
+  // build alert widgets
+  alerts_stack = new QStackedWidget();
+  main_layout->addWidget(alerts_stack, 1);
+
+  // bottom footer
+  // TODO: add page indicator
+  QVBoxLayout *footer_layout = new QVBoxLayout();
+
+  main_layout->addLayout(footer_layout);
+
+  QPushButton *dismiss_btn = new QPushButton("Dismiss");
+  dismiss_btn->setFixedSize(453, 125);
+  footer_layout->addWidget(dismiss_btn, 0, Qt::AlignLeft);
+  QObject::connect(dismiss_btn, SIGNAL(released()), this, SIGNAL(closeAlerts()));
+  
   refresh();
-  setLayout(vlayout);
+
+  setLayout(main_layout);
+  setStyleSheet(R"(
+    * {
+      color: white;
+    }
+    QFrame {
+      border-radius: 30px;
+      background-color: #393939;
+    }
+    QPushButton {
+      color: black;
+      font-size: 40px;
+      font-weight: 600;
+      border-radius: 20px;
+      background-color: white;
+    }
+  )");
 }
 
 void OffroadAlert::refresh() {
-  cleanLayout(vlayout);
   parse_alerts();
+  cleanStackedWidget(alerts_stack);
 
   updateAvailable = false;
   std::vector<char> bytes = Params().read_db_bytes("UpdateAvailable");
@@ -42,53 +69,12 @@ void OffroadAlert::refresh() {
     updateAvailable = true;
   }
 
-  if (updateAvailable) {
-    // If there is an update available, don't show alerts
-    alerts.clear();
-
-    QFrame *f = new QFrame();
-
-    QVBoxLayout *update_layout = new QVBoxLayout;
-    update_layout->setMargin(10);
-    update_layout->setSpacing(20);
-
-    QLabel *title = new QLabel("Update available");
-    title->setStyleSheet(R"(
-      font-size: 55px;
-      font-weight: bold;
-    )");
-    update_layout->addWidget(title, 0, Qt::AlignTop);
-
-    QString release_notes = QString::fromStdString(Params().get("ReleaseNotes"));
-    QLabel *notes_label = new QLabel(release_notes);
-    notes_label->setStyleSheet(R"(font-size: 40px;)");
-    notes_label->setWordWrap(true);
-    update_layout->addWidget(notes_label, 1, Qt::AlignTop);
-
-    QPushButton *update_button = new QPushButton("Reboot and Update");
-    update_layout->addWidget(update_button);
+  /*
 #ifdef __aarch64__
     QObject::connect(update_button, &QPushButton::released, [=]() {std::system("sudo reboot");});
 #endif
-
-    f->setLayout(update_layout);
-    f->setStyleSheet(R"(
-      .QFrame{
-        border-radius: 20px;
-        border: 2px solid white;
-        background-color: #114267;
-      }
-      QPushButton {
-        padding: 20px;
-        font-size: 35px;
-        color: white;
-        background-color: blue;
-      }
-    )");
-
-    vlayout->addWidget(f);
-    vlayout->addSpacing(60);
-  } else {
+   
+   else {
     vlayout->addSpacing(60);
 
     for (const auto &alert : alerts) {
@@ -110,21 +96,36 @@ void OffroadAlert::refresh() {
       vlayout->addSpacing(20);
     }
   }
+  */
 
-  QPushButton *hide_btn = new QPushButton(updateAvailable ? "Later" : "Hide alerts");
-  hide_btn->setStyleSheet(R"(
-    padding: 20px;
-    font-size: 35px;
-    color: white;
-    background-color: blue;
-  )");
-  vlayout->addWidget(hide_btn);
-  QObject::connect(hide_btn, SIGNAL(released()), this, SIGNAL(closeAlerts()));
+  if (updateAvailable) {
+    QVBoxLayout *update_layout = new QVBoxLayout();
+
+    QLabel *title = new QLabel("Update Available");
+    title->setStyleSheet(R"(
+      font-size: 72px;
+      font-weight: 700;
+    )");
+    update_layout->addWidget(title, 0, Qt::AlignLeft | Qt::AlignTop);
+
+    QString release_notes = QString::fromStdString(Params().get("ReleaseNotes"));
+    QLabel *body = new QLabel(release_notes);
+    body->setStyleSheet(R"(
+      font-size: 48px;
+      font-weight: 600;
+    )");
+    update_layout->addWidget(body, 1, Qt::AlignLeft | Qt::AlignTop);
+
+    QWidget *w = new QWidget();
+    w->setLayout(update_layout);
+    alerts_stack->addWidget(w);
+  }
 }
 
 void OffroadAlert::parse_alerts() {
   alerts.clear();
-  // We launch in selfdrive/ui
+
+  // TODO: only read this once
   QFile inFile("../controls/lib/alerts_offroad.json");
   inFile.open(QIODevice::ReadOnly | QIODevice::Text);
   QByteArray data = inFile.readAll();
