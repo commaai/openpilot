@@ -92,8 +92,8 @@ void OffroadAlert::refresh() {
       l->setStyleSheet(style);
 
       layout->addWidget(l, 0, Qt::AlignTop);
-      layout->addSpacing(20);
     }
+    layout->setSpacing(20);
   }
 
   QWidget *w = new QWidget();
