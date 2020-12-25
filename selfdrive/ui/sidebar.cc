@@ -7,7 +7,12 @@
 #include "sidebar.hpp"
 
 static void ui_draw_sidebar_background(UIState *s) {
-  ui_draw_rect(s->vg, 0, 0, sbr_w, s->fb_h, COLOR_BLACK_ALPHA(85));
+#ifdef QCOM
+  const NVGcolor color = COLOR_BLACK_ALPHA(85);
+#else
+  const NVGcolor color = nvgRGBA(0x39, 0x39, 0x39, 0xff);
+#endif
+  ui_draw_rect(s->vg, 0, 0, sbr_w, s->fb_h, color);
 }
 
 static void ui_draw_sidebar_settings_button(UIState *s) {

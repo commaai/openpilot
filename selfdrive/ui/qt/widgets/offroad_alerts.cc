@@ -88,7 +88,7 @@ void OffroadAlert::refresh() {
         font-size: 48px;
         font-weight: 600;
       )";
-      style.append("background-color: " + QString(alert.severity ? "#971b1c" : "#114267"));
+      style.append("background-color: " + QString(alert.severity ? "#E22C2C" : "#292929"));
       l->setStyleSheet(style);
 
       layout->addWidget(l, 0, Qt::AlignTop);

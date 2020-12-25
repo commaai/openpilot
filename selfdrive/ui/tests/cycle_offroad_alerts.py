@@ -18,10 +18,9 @@ if __name__ == "__main__":
   while True:
     print("setting alert update")
     params.put("UpdateAvailable", "1")
-    with open(os.path.join(BASEDIR, "RELEASES.md"), "rb") as f:
-      r = f.read()
-    r = r[:r.find(b'\n\n')]  # Slice latest release notes
-    params.put("ReleaseNotes", r + b"\n")
+    r = open(os.path.join(BASEDIR, "RELEASES.md"), "r").read()
+    r = r[:r.find('\n\n')]  # Slice latest release notes
+    params.put("ReleaseNotes", r + "\n")
 
     time.sleep(t)
     params.put("UpdateAvailable", "0")
