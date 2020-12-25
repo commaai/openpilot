@@ -64,7 +64,7 @@ QWidget * toggles_panel() {
   toggles_list->setSpacing(25);
 
   toggles_list->addWidget(new ParamsToggle("OpenpilotEnabledToggle",
-                                            "Enable Openpilot",
+                                            "Enable openpilot",
                                             "Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off.",
                                             "../assets/offroad/icon_openpilot.png"
                                               ));
