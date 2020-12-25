@@ -41,6 +41,41 @@ static inline auto get_yuv_buf(std::vector<uint8_t> &buf, const int width, int h
   return std::make_tuple(y, u, v);
 }
 
+static void fill_net_input_buffer(DMonitoringModelState* s, uint8_t *resized_buf_rot, const int rot_width, const int rot_height) {
+  constexpr int size = MODEL_WIDTH / 2 * MODEL_HEIGHT / 2;
+  float *net_buf = get_buffer(s->net_input_buf, size * 6); // Y|u|v -> y|y|y|y|u|v
+  // one shot conversion, O(n) anyway
+  // yuvframe2tensor, normalize
+  for (int c = 0; c < MODEL_WIDTH / 2; ++c) {
+    float *buf = net_buf + c * MODEL_HEIGHT / 2;
+    for (int r = 0; r < MODEL_HEIGHT / 2; ++r) {
+      // Y_ul, Y_dl, Y_ur, Y_dr
+      const uint8_t *rot_buf = resized_buf_rot + (2 * r) + (2 * c * rot_height);
+      buf[r + 0 * size] = input_lambda(rot_buf[0]);
+      buf[r + 1 * size] = input_lambda(rot_buf[1]);
+      buf[r + 2 * size] = input_lambda(rot_buf[rot_height]);
+      buf[r + 3 * size] = input_lambda(rot_buf[1 + rot_height]);
+
+      // U, V
+      const uint8_t *rot_buf_u = resized_buf_rot + r + (rot_width * rot_height) + (c * rot_height / 2);
+      buf[r + 4 * size] = input_lambda(rot_buf_u[0]);
+      buf[r + 5 * size] = input_lambda(rot_buf_u[(rot_width / 2) * (rot_height / 2)]);
+    }
+  }
+  //printf("preprocess completed. %d \n", yuv_buf_len);
+  //FILE *dump_yuv_file = fopen("/tmp/rawdump.yuv", "wb");
+  //fwrite(raw_buf, height*width*3/2, sizeof(uint8_t), dump_yuv_file);
+  //fclose(dump_yuv_file);
+
+  // *** testing ***
+  // idat = np.frombuffer(open("/tmp/inputdump.yuv", "rb").read(), np.float32).reshape(6, 160, 320)
+  // imshow(cv2.cvtColor(tensor_to_frames(idat[None]/0.0078125+128)[0], cv2.COLOR_YUV2RGB_I420))
+
+  //FILE *dump_yuv_file2 = fopen("/tmp/inputdump.yuv", "wb");
+  //fwrite(net_input_buf, MODEL_HEIGHT*MODEL_WIDTH*3/2, sizeof(float), dump_yuv_file2);
+  //fclose(dump_yuv_file2);
+}
+
 DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_buf, int width, int height) {
   uint8_t *raw_buf = (uint8_t*) stream_buf;
   uint8_t *raw_y_buf = raw_buf;
@@ -67,8 +102,8 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
   const int crop_y_offset = 0;
 #endif
 
-  int resized_width = MODEL_WIDTH;
-  int resized_height = MODEL_HEIGHT;
+  const int resized_width = MODEL_WIDTH;
+  const int resized_height = MODEL_HEIGHT;
 
   auto [cropped_y_buf, cropped_u_buf, cropped_v_buf] = get_yuv_buf(s->cropped_buf, cropped_width, cropped_height);
   if (!s->is_rhd) {
@@ -119,42 +154,10 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
                      // negative height causes a vertical flip to match previous
                      resized_width, -resized_height, libyuv::kRotate90);
 
-  int yuv_buf_len = (MODEL_WIDTH/2) * (MODEL_HEIGHT/2) * 6; // Y|u|v -> y|y|y|y|u|v
-  float *net_input_buf = get_buffer(s->net_input_buf, yuv_buf_len);
-  // one shot conversion, O(n) anyway
-  // yuvframe2tensor, normalize
-  for (int c = 0; c < MODEL_WIDTH/2; c++) {
-    for (int r = 0; r < MODEL_HEIGHT/2; r++) {
-      // Y_ul
-      net_input_buf[(c*MODEL_HEIGHT/2) + r + (0*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = input_lambda(resized_buf_rot[(2*r) + (2*c)*resized_height]);
-      // Y_dl
-      net_input_buf[(c*MODEL_HEIGHT/2) + r + (1*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = input_lambda(resized_buf_rot[(2*r+1) + (2*c)*resized_height]);
-      // Y_ur
-      net_input_buf[(c*MODEL_HEIGHT/2) + r + (2*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = input_lambda(resized_buf_rot[(2*r) + (2*c+1)*resized_height]);
-      // Y_dr
-      net_input_buf[(c*MODEL_HEIGHT/2) + r + (3*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = input_lambda(resized_buf_rot[(2*r+1) + (2*c+1)*resized_height]);
-      // U
-      net_input_buf[(c*MODEL_HEIGHT/2) + r + (4*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = input_lambda(resized_buf_rot[(resized_width*resized_height) + r + (c*resized_height/2)]);
-      // V
-      net_input_buf[(c*MODEL_HEIGHT/2) + r + (5*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = input_lambda(resized_buf_rot[(resized_width*resized_height) + ((resized_width/2)*(resized_height/2)) + r + (c*resized_height/2)]);
-    }
-  }
-
-  //printf("preprocess completed. %d \n", yuv_buf_len);
-  //FILE *dump_yuv_file = fopen("/tmp/rawdump.yuv", "wb");
-  //fwrite(raw_buf, height*width*3/2, sizeof(uint8_t), dump_yuv_file);
-  //fclose(dump_yuv_file);
-
-  // *** testing ***
-  // idat = np.frombuffer(open("/tmp/inputdump.yuv", "rb").read(), np.float32).reshape(6, 160, 320)
-  // imshow(cv2.cvtColor(tensor_to_frames(idat[None]/0.0078125+128)[0], cv2.COLOR_YUV2RGB_I420))
-
-  //FILE *dump_yuv_file2 = fopen("/tmp/inputdump.yuv", "wb");
-  //fwrite(net_input_buf, MODEL_HEIGHT*MODEL_WIDTH*3/2, sizeof(float), dump_yuv_file2);
-  //fclose(dump_yuv_file2);
-
+  fill_net_input_buffer(s, resized_buf_rot, resized_width, resized_height);
+  
   double t1 = millis_since_boot();
-  s->m->execute(net_input_buf, yuv_buf_len);
+  s->m->execute(s->net_input_buf.data(), s->net_input_buf.size());
   double t2 = millis_since_boot();
 
   DMonitoringResult ret = {0};
