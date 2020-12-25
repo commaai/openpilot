@@ -288,11 +288,9 @@ static void ui_draw_vision_face(UIState *s) {
 static void ui_draw_driver_view(UIState *s) {
   s->scene.sidebar_collapsed = true;
   const bool is_rhd = s->scene.is_rhd;
-  const int width = 3 * s->scene.viz_rect.w / 4;
-  const Rect rect = {.x = s->scene.viz_rect.x + (s->scene.viz_rect.w - width) / 2,
-                     .y = s->scene.viz_rect.y,
-                     .w = width,
-                     .h = s->scene.viz_rect.h};
+  const Rect &viz_rect = s->scene.viz_rect; 
+  const int width = 3 * viz_rect.w / 4;
+  const Rect rect = {viz_rect.centerX() - width / 2, viz_rect.y, width, viz_rect.h};  // x, y, w, h
   const Rect valid_rect = {is_rhd ? rect.right() - rect.h / 2 : rect.x, rect.y, rect.h / 2, rect.h};
 
   // blackout
@@ -306,8 +304,7 @@ static void ui_draw_driver_view(UIState *s) {
   const bool face_detected = s->scene.dmonitoring_state.getFaceDetected();
   if (face_detected) {
     auto fxy_list = s->scene.driver_state.getFacePosition();
-    float face_x = fxy_list[0];
-    float face_y = fxy_list[1];
+    auto [face_x, face_y] = (float[]){fxy_list[0], fxy_list[1]};
     float fbox_x = valid_rect.centerX() + (is_rhd ? face_x : -face_x) * valid_rect.w;
     float fbox_y = valid_rect.centerY() + face_y * valid_rect.h;
 
@@ -322,8 +319,7 @@ static void ui_draw_driver_view(UIState *s) {
   // draw face icon
   const int face_size = 85;
   const int icon_x = is_rhd ? rect.right() - face_size - bdr_s * 2 : rect.x + face_size + bdr_s * 2;
-  const int icon_y = (rect.bottom() - face_size - (bdr_s * 2.5));
-  ui_draw_circle_image(s->vg, icon_x, icon_y, face_size, s->img_face, face_detected);
+  ui_draw_circle_image(s->vg, icon_x, rect.bottom() - face_size - bdr_s * 2.5, face_size, s->img_face, face_detected);
 }
 
 static void ui_draw_vision_header(UIState *s) {
