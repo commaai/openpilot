@@ -13,7 +13,7 @@ import time
 import traceback
 
 from multiprocessing import Process
-from typing import Dict, List
+from typing import Dict
 
 from common.basedir import BASEDIR
 from common.spinner import Spinner
@@ -192,9 +192,6 @@ def get_running():
 # due to qualcomm kernel bugs SIGKILLing camerad sometimes causes page table corruption
 unkillable_processes = ['camerad']
 
-# processes to end with SIGINT instead of SIGTERM
-interrupt_processes: List[str] = []
-
 # processes to end with SIGKILL instead of SIGTERM
 kill_processes = ['sensord']
 
@@ -337,9 +334,7 @@ def kill_managed_process(name):
   cloudlog.info("killing %s" % name)
 
   if running[name].exitcode is None:
-    if name in interrupt_processes:
-      os.kill(running[name].pid, signal.SIGINT)
-    elif name in kill_processes:
+    if name in kill_processes:
       os.kill(running[name].pid, signal.SIGKILL)
     else:
       running[name].terminate()
@@ -361,8 +356,10 @@ def kill_managed_process(name):
         os.kill(running[name].pid, signal.SIGKILL)
         running[name].join()
 
-  cloudlog.info("%s is dead with %d" % (name, running[name].exitcode))
+  ret = running[name].exitcode
+  cloudlog.info(f"{name} is dead with {ret}")
   del running[name]
+  return ret
 
 
 def cleanup_all_processes(signal, frame):

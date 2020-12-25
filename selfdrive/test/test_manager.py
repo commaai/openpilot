@@ -1,62 +1,59 @@
 # flake8: noqa
-import os
-os.environ['FAKEUPLOAD'] = "1"
-
-from common.params import Params
-from common.realtime import sec_since_boot
-from selfdrive.manager import manager_init, manager_prepare, start_daemon_process
-from selfdrive.test.helpers import phone_only, with_processes, set_params_enabled
 import json
+import os
 import requests
 import signal
 import subprocess
 import time
+import unittest
+
+os.environ['FAKEUPLOAD'] = "1"
+
+from common.params import Params
+from common.realtime import sec_since_boot
+import selfdrive.manager as manager
+from selfdrive.test.helpers import with_processes
 
 
-# must run first
-@phone_only
-def test_manager_prepare():
-  set_params_enabled()
-  manager_init()
-  manager_prepare()
+MAX_STARTUP_TIME = 15
+ALL_PROCESSES = manager.persistent_processes + manager.car_started_processes
 
-@phone_only
-@with_processes(['loggerd', 'logmessaged', 'tombstoned', 'proclogd', 'logcatd'])
-def test_logging():
-  print("LOGGING IS SET UP")
-  time.sleep(1.0)
+class TestManager(unittest.TestCase):
 
-@phone_only
-@with_processes(['camerad', 'modeld', 'dmonitoringmodeld'])
-def test_visiond():
-  print("VISIOND IS SET UP")
-  time.sleep(5.0)
+  def setUp(self):
+    os.environ['PASSIVE'] = '0'
 
-@phone_only
-@with_processes(['sensord'])
-def test_sensord():
-  print("SENSORS ARE SET UP")
-  time.sleep(1.0)
+  def tearDown(self):
+    manager.cleanup_all_processes(None, None)
 
-@phone_only
-@with_processes(['ui'])
-def test_ui():
-  print("RUNNING UI")
-  time.sleep(1.0)
+  def test_manager_prepare(self):
+    os.environ['PREPAREONLY'] = '1'
+    manager.main()
 
-# will have one thing to upload if loggerd ran
-# TODO: assert it actually uploaded
-@phone_only
-@with_processes(['uploader'])
-def test_uploader():
-  print("UPLOADER")
-  time.sleep(10.0)
+  def test_startup_time(self):
+    for _ in range(10):
+      start = time.monotonic()
+      os.environ['PREPAREONLY'] = '1'
+      manager.main()
+      t = time.monotonic() - start
+      assert t < MAX_STARTUP_TIME, f"startup took {t}s, expected <{MAX_STARTUP_TIME}s"
+ 
+  def test_clean_exit(self):
+    for p in ALL_PROCESSES:
+      manager.prepare_managed_process(p)
+      manager.start_managed_process(p)
+    
+    time.sleep(10)
+    
+    for p in ALL_PROCESSES:
+      exit_code = manager.kill_managed_process(p)
+      assert exit_code == 0, f"{p} died with {exit_code}"
 
-@phone_only
+
 def test_athena():
   print("ATHENA")
   start = sec_since_boot()
-  start_daemon_process("manage_athenad")
+  manager.start_daemon_process("manage_athenad")
   params = Params()
   manage_athenad_pid = params.get("AthenadPid")
   assert manage_athenad_pid is not None
@@ -170,9 +167,6 @@ def test_athena():
     except (OSError, TypeError):
       pass
 
-# TODO: re-enable when jenkins test has /data/pythonpath -> /data/openpilot
-# @phone_only
-# @with_apks()
-# def test_apks():
-#   print("APKS")
-#   time.sleep(14.0)
+
+if __name__ == "__main__":
+  unittest.main()
