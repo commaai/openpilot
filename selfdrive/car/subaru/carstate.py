@@ -75,7 +75,7 @@ class CarState(CarStateBase):
       #@LetsDuDiss 26 Dec 2020: Add signals to aid Subaru STOP AND GO on Preglobal
       self.car_follow = cp_cam.vl["ES_DashStatus"]['Car_Follow'] == 1
       self.close_distance = cp_cam.vl["ES_CruiseThrottle"]['Close_Distance']
-      self.cruise_on = cp_cam.vl["ES_DashStatus"]['Cruise_On'] == 1
+      self.cruise_activated = cp_cam.vl["ES_CruiseThrottle"]['Cruise_Activated'] == 1
     else:
       ret.steerWarning = cp.vl["Steering_Torque"]['Steer_Warning'] == 1
       ret.cruiseState.nonAdaptive = cp_cam.vl["ES_DashStatus"]['Conventional_Cruise'] == 1
