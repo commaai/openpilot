@@ -1,0 +1,572 @@
+VERSION ""
+
+
+NS_ : 
+    NS_DESC_
+    CM_
+    BA_DEF_
+    BA_
+    VAL_
+    CAT_DEF_
+    CAT_
+    FILTER
+    BA_DEF_DEF_
+    EV_DATA_
+    ENVVAR_DATA_
+    SGTYPE_
+    SGTYPE_VAL_
+    BA_DEF_SGTYPE_
+    BA_SGTYPE_
+    SIG_TYPE_REF_
+    VAL_TABLE_
+    SIG_GROUP_
+    SIG_VALTYPE_
+    SIGTYPE_VALTYPE_
+    BO_TX_BU_
+    BA_DEF_REL_
+    BA_REL_
+    BA_DEF_DEF_REL_
+    BU_SG_REL_
+    BU_EV_REL_
+    BU_BO_REL_
+    SG_MUL_VAL_
+
+BS_:
+
+BU_: XXX
+
+BO_ 76 RCMStatusMessage2_FD1: 8 GWM
+ SG_ FirstRowBuckleMid : 28|2@0+ (1,0) [0|3] "SED"  IPMA_ADAS
+ SG_ SecondRowBucklePsngr : 23|2@0+ (1,0) [0|3] "SED" Vector__XXX
+ SG_ SecondRowBuckleMid : 9|2@0+ (1,0) [0|3] "SED" Vector__XXX
+ SG_ SecondRowBuckleDriver : 11|2@0+ (1,0) [0|3] "SED" Vector__XXX
+ SG_ FirstRowBuckleDriver : 15|2@0+ (1,0) [0|3] "SED"  CMR_DSMC,ABS_ESC,IPMA_ADAS,ECM_Diesel,PCM,PCM_HEV,TCM_DSL
+ SG_ RILReq : 7|2@0+ (1,0) [0|3] "SED" Vector__XXX
+ SG_ FirstRowBucklePsngr : 13|2@0+ (1,0) [0|3] "SED"  IPMA_ADAS
+ SG_ RstrnImpactEvntStatus : 3|3@0+ (1,0) [0|7] "SED"  CMR_DSMC,SOBDMC_HPCM_FD1,ABS_ESC,IPMA_ADAS,ECM_Diesel,PCM,PCM_HEV,TCM_DSL
+ SG_ PsngrFrntDetct_D_Actl : 5|2@0+ (1,0) [0|3] "SED" Vector__XXX
+ SG_ EDRTriggerEvntSync : 29|1@0+ (1,0) [0|1] "SED"  IPMA_ADAS
+ SG_ PassRstrnInd_Req : 31|2@0+ (1,0) [0|3] "SED" Vector__XXX
+
+BO_ 130 EPAS_INFO: 8 PSCM
+ SG_ DrvSteActv_B_Stat : 10|1@0+ (1,0) [0|1] "SED"  GWM,ABS_ESC
+ SG_ DrvSte_Tq_Actl : 47|8@0+ (0.0625,-8) [-8|7.8125] "Nm"  GWM,ABS_ESC
+ SG_ SteMdule_D_Stat : 55|3@0+ (1,0) [0|7] "SED"  GWM
+ SG_ SteMdule_U_Meas : 39|8@0+ (0.05,6) [6|18.7] "Volts"  GWM
+ SG_ SteMdule_I_Est : 21|12@0+ (0.05,-64) [-64|140.7] "Amps"  GWM
+ SG_ EPAS_Failure : 9|2@0+ (1,0) [0|3] "SED"  IPMA_ADAS,GWM
+ SG_ SteeringColumnTorque : 7|8@0+ (0.0625,-8) [-8|7.8125] "Nm"  GWM,IPMA_ADAS,ABS_ESC
+ SG_ SAPPAngleControlStat6 : 15|1@0+ (1,0) [0|1] "SED"  GWM,IPMA_ADAS
+ SG_ SAPPAngleControlStat5 : 14|1@0+ (1,0) [0|1] "SED"  GWM,IPMA_ADAS
+ SG_ SAPPAngleControlStat4 : 13|1@0+ (1,0) [0|1] "SED"  GWM,IPMA_ADAS
+ SG_ SAPPAngleControlStat3 : 12|1@0+ (1,0) [0|1] "SED"  GWM,IPMA_ADAS
+ SG_ SAPPAngleControlStat2 : 11|1@0+ (1,0) [0|1] "SED"  GWM,IPMA_ADAS
+ SG_ SAPPAngleControlStat1 : 23|2@0+ (1,0) [0|3] "SED"  GWM,IPMA_ADAS
+
+BO_ 118 Steering_Wheel_Data_CG1: 8 XXX
+ SG_ SteWhlRelInit_An_Sns : 6|15@0+ (0.1,-1600.0) [0|0] "deg" XXX
+ SG_ SteWhlRelCalib_An_Sns : 23|15@0+ (0.1,-1600.0) [0|0] "deg" XXX
+ SG_ SteWhlRelInit2_An_Sns : 55|16@0+ (0.1,-3200.0) [0|0] "deg" XXX
+ SG_ SteWhlAn_No_Cs : 39|8@0+ (1,0) [0|0] "" XXX
+ SG_ SteWhlAn_No_Cnt : 47|4@0+ (1,0) [0|0] "Counts" XXX
+
+BO_ 131 Steering_Buttons: 8 GWM
+ SG_ Right_Turn_Light : 5|1@0+ (1,0) [0|0] "SED"  IPMA_ADAS,PSCM
+ SG_ Left_Turn_Light : 4|1@0+ (1,0) [0|0] "SED"  IPMA_ADAS,PSCM
+ SG_ Dist_Decr : 12|1@0+ (1,0) [0|1] "SED"  IPMA_ADAS
+ SG_ Dist_Incr : 11|1@0+ (1,0) [0|1] "SED"  IPMA_ADAS
+ SG_ Cancel : 8|1@0+ (1,0) [0|1] "SED"  ECM_Diesel,IPMA_ADAS,PCM,PCM_HEV
+ SG_ Resume : 29|1@0+ (1,0) [0|1] "SED"  ABS_ESC,ECM_Diesel,IPMA_ADAS,PCM,PCM_HEV
+ SG_ Set : 28|1@0+ (1,0) [0|1] "SED"  ABS_ESC,ECM_Diesel,IPMA_ADAS,PCM,PCM_HEV
+ SG_ Main : 38|1@0+ (1,0) [0|1] "SED"  ECM_Diesel,IPMA_ADAS,PCM,PCM_HEV
+ 
+BO_ 145 Yaw_Data: 8 GWM
+ SG_ VehYawWActl_D_Qf : 53|2@0+ (1,0) [0|3] "SED"  VDM,IPMA_ADAS,ABS_ESC
+ SG_ VehRolWActl_D_Qf : 55|2@0+ (1,0) [0|3] "SED"  VDM,IPMA_ADAS,ABS_ESC
+ SG_ VehYaw_W_Actl : 39|8@0+ (1,0) [0|255] "Unitless"  IPMA_ADAS,ABS_ESC
+ SG_ VehRollYaw_No_Cnt : 47|8@0+ (1,0) [0|255] "Unitless"  VDM,IPMA_ADAS,ABS_ESC
+ SG_ VehRol_W_Actl : 23|16@0+ (0.0002,-6.5) [-6.5|6.6066] "rad/s"  VDM,ABS_ESC,PSCM,IPMA_ADAS
+ SG_ VehPtch_W_Actl : 7|16@0+ (0.0002,-6.5) [-6.5|6.6066] "rad/s"  VDM,ABS_ESC,IPMA_ADAS
+
+BO_ 146 Accel_Data: 8 GWM
+ SG_ VehVertAActl_D_Qf : 38|2@0+ (1,0) [0|0] "" XXX
+ SG_ VehLongAActl_D_Qf : 22|2@0+ (1,0) [0|0] "" XXX
+ SG_ VehLatAActl_D_Qf : 6|2@0+ (1,0) [0|0] "" XXX
+ SG_ VehVert_A_Actl : 36|13@0+ (0.01,-40) [-40|41.89] "m/s^2"  VDM,TCCM,IPMA_ADAS,ABS_ESC,ECM_Diesel
+ SG_ VehLong_A_Actl : 20|13@0+ (0.01,-40) [-40|41.89] "m/s^2"  VDM,TCCM,ABS_ESC,ECM_Diesel,IPMA_ADAS
+ SG_ VehLat_A_Actl : 4|13@0+ (0.01,-40) [-40|41.89] "m/s^2"  VDM,TCCM,ABS_ESC,ECM_Diesel,IPMA_ADAS
+ SG_ VehLatLongVertA_No_Cs : 55|8@0+ (1,0) [0|255] "Unitless"  TCCM,IPMA_ADAS,ABS_ESC
+ SG_ VehLatLongVert_No_Cnt : 63|8@0+ (1,0) [0|255] "Unitless"  VDM,TCCM,IPMA_ADAS,ABS_ESC
+
+BO_ 357 Cruise_Status: 8 XXX
+ SG_ Brake_Drv_Appl : 5|1@0+ (1,0) [0|0] "" XXX
+ SG_ Cruise_State : 11|4@0+ (1,0) [0|0] "" XXX
+ SG_ Set_Speed : 23|8@0+ (1,0) [0|0] "" XXX
+ 
+BO_ 390 ACCDATA: 8 IPMA_ADAS
+ SG_ AccBrkPulse_B_Rq : 36|1@0+ (1,0) [0|1] "SED"  ABS_ESC,GWM
+ SG_ AccAutoResum_D_Rq : 7|2@0+ (1,0) [0|3] "SED"  PCM_HEV,PCM,ECM_Diesel
+ SG_ AccBrkTot_A_Rq : 4|13@0+ (0.0039,-20) [-20|11.9449] "m/s^2"  GWM,ABS_ESC
+ SG_ AccPrpl_A_Pred : 17|10@0+ (0.01,-5) [-5|5.23] "m/s^2"  GWM,ECM_Diesel,PCM,PCM_HEV
+ SG_ AccVeh_V_Trg : 32|9@0+ (0.5,0) [0|255.5] "kph"  GWM,ECM_Diesel,PCM,PCM_HEV,TCM_DSL
+ SG_ AccBrkPrkEl_B_Rq : 38|1@0+ (1,0) [0|1] "SED"  GWM,ABS_ESC
+ SG_ Cmbb_B_Enbl : 50|1@0+ (1,0) [0|1] "SED"  GWM
+ SG_ CmbbOvrrd_B_RqDrv : 51|1@0+ (1,0) [0|1] "SED"  GWM
+ SG_ CmbbDeny_B_Actl : 37|1@0+ (1,0) [0|1] "SED"  GWM,ABS_ESC
+ SG_ CmbbEngTqMn_B_Rq : 52|1@0+ (1,0) [0|1] "SED"  ECM_Diesel,PCM,PCM_HEV,GWM
+ SG_ AccPrpl_A_Rq : 49|10@0+ (0.01,-5) [-5|5.23] "m/s^2"  GWM,ECM_Diesel,PCM,PCM_HEV
+ SG_ AccDeny_B_Rq : 53|1@0+ (1,0) [0|1] "SED"  GWM,ECM_Diesel,PCM,PCM_HEV
+ SG_ AccResumEnbl_B_Rq : 33|1@0+ (1,0) [0|1] "SED"  GWM,ECM_Diesel,PCM,PCM_HEV
+ SG_ AccCancl_B_Rq : 39|1@0+ (1,0) [0|1] "SED"  GWM,ABS_ESC,ECM_Diesel,PCM,PCM_HEV
+ SG_ AccBrkPrchg_B_Rq : 54|1@0+ (1,0) [0|1] "SED"  GWM,ABS_ESC
+ SG_ AccBrkDecel_B_Rq : 55|1@0+ (1,0) [0|1] "SED"  GWM,ABS_ESC
+ SG_ AccStopStat_B_Rq : 34|1@0+ (1,0) [0|1] "SED"  GWM,ECM_Diesel,PCM,PCM_HEV,ABS_ESC
+
+BO_ 391 ACCDATA_2: 8 IPMA_ADAS
+ SG_ CmbbBrkDecel_No_Cnt : 47|4@0+ (1,0) [0|15] "Unitless"  GWM,ABS_ESC
+ SG_ HudDsplyIntns_No_Actl : 31|8@0+ (0.5,0) [0|100] "%"  GWM
+ SG_ HudBlk3_B_Rq : 37|1@0+ (1,0) [0|1] "SED"  GWM
+ SG_ HudBlk2_B_Rq : 51|1@0+ (1,0) [0|1] "SED"  GWM
+ SG_ HudBlk1_B_Rq : 50|1@0+ (1,0) [0|1] "SED"  GWM
+ SG_ HudFlashRate_D_Actl : 53|2@0+ (1,0) [0|3] "SED"  GWM
+ SG_ CmbbBrkDecel_No_Cs : 7|8@0+ (1,0) [0|255] "Unitless"  GWM,ABS_ESC
+ SG_ CmbbBrkDecel_A_Rq : 12|13@0+ (0.0039,-20) [-20|11.9449] "m/s^2"  ABS_ESC,GWM
+ SG_ CmbbBrkPrchg_D_Rq : 55|2@0+ (1,0) [0|3] "SED"  ABS_ESC,GWM
+ SG_ CmbbBrkDecel_B_Rq : 15|1@0+ (1,0) [0|1] "SED"  ABS_ESC,GWM
+ SG_ CmbbBaSens_D_Rq : 14|2@0+ (1,0) [0|3] "SED"  ABS_ESC,GWM
+
+BO_ 394 ACCDATA_3: 8 IPMA_ADAS
+ SG_ HaDsply_No_Cs : 63|8@0+ (1,0) [0|255] "Unitless"  GWM
+ SG_ HaDsply_No_Cnt : 4|4@0+ (1,0) [0|15] "Unitless"  GWM
+ SG_ AccStopStat_D_Dsply : 41|2@0+ (1,0) [0|3] "SED"  GWM
+ SG_ AccTrgDist2_D_Dsply : 27|4@0+ (1,0) [0|15] "SED"  GWM
+ SG_ AccStopRes_B_Dsply : 54|1@0+ (1,0) [0|1] "SED"  GWM
+ SG_ TjaWarn_D_Rq : 50|3@0+ (1,0) [0|7] "SED"  GWM
+ SG_ Tja_D_Stat : 44|3@0+ (1,0) [0|7] "SED"  GWM
+ SG_ TjaMsgTxt_D_Dsply : 53|3@0+ (1,0) [0|7] "SED"  GWM
+ SG_ IaccLamp_D_Rq : 46|2@0+ (1,0) [0|3] "SED"  GWM
+ SG_ AccMsgTxt_D2_Rq : 31|4@0+ (1,0) [0|15] "SED"  GWM
+ SG_ FcwDeny_B_Dsply : 10|1@0+ (1,0) [0|1] "SED"  GWM
+ SG_ FcwMemStat_B_Actl : 13|1@0+ (1,0) [0|1] "SED"  GWM
+ SG_ AccTGap_B_Dsply : 35|1@0+ (1,0) [0|1] "SED"  GWM
+ SG_ CadsAlignIncplt_B_Actl : 11|1@0+ (1,0) [0|1] "SED"  GWM
+ SG_ AccFllwMde_B_Dsply : 17|1@0+ (1,0) [0|1] "SED"  GWM
+ SG_ CadsRadrBlck_B_Actl : 22|1@0+ (1,0) [0|1] "SED"  GWM
+ SG_ CmbbPostEvnt_B_Dsply : 15|1@0+ (1,0) [0|1] "SED"  GWM
+ SG_ AccStopMde_B_Dsply : 0|1@0+ (1,0) [0|1] "SED"  GWM
+ SG_ FcwMemSens_D_Actl : 20|2@0+ (1,0) [0|3] "SED"  GWM
+ SG_ FcwMsgTxt_D_Rq : 7|3@0+ (1,0) [0|7] "SED"  GWM
+ SG_ AccWarn_D_Dsply : 39|2@0+ (1,0) [0|3] "SED"  GWM
+ SG_ FcwVisblWarn_B_Rq : 47|1@0+ (1,0) [0|1] "SED"  GWM
+ SG_ FcwAudioWarn_B_Rq : 8|1@0+ (1,0) [0|1] "SED"  GWM
+ SG_ AccTGap_D_Dsply : 34|3@0+ (1,0) [0|7] "SED"  GWM
+ SG_ AccMemEnbl_B_RqDrv : 36|1@0+ (1,0) [0|1] "SED"  GWM
+ SG_ FdaMem_B_Stat : 37|1@0+ (1,0) [0|1] "SED"  GWM
+
+BO_ 516 EngineData_14: 8 XXX
+ SG_ ApedPosScal_Pc_Actl : 1|10@0+ (0.1,0) [0|0] "%" XXX
+
+BO_ 531 DesiredTorqBrk: 8 ABS_ESC
+ SG_ VehStop_D_Stat : 28|2@0+ (1,0) [0|3] "SED"  IPMA_ADAS,GWM
+ SG_ TracCtlPtActv_B_Actl : 31|1@0+ (1,0) [0|1] "SED"  VDM,IPMA_ADAS,TCCM,ECM_Diesel,PCM,PCM_HEV,TCM_DSL,GWM
+ SG_ LscmbbMntr_B_Err : 17|1@0+ (1,0) [0|1] "SED"  GWM
+ SG_ LscmbbBrkDis_B_Actl : 19|1@0+ (1,0) [0|1] "SED"  GWM
+ SG_ LscmbbDeny_B_ActlBrk : 18|1@0+ (1,0) [0|1] "SED"  GWM
+ SG_ PrkBrkYwLamp_D_Rq : 38|2@0+ (1,0) [0|3] "SED"  GWM
+ SG_ PrkBrkRedLamp_D_Rq : 30|2@0+ (1,0) [0|3] "SED"  GWM
+ SG_ LscmbbBrkDecel_B_Actl : 20|1@0+ (1,0) [0|1] "SED"  GWM
+ SG_ AbsActv_B_Actl : 45|1@0+ (1,0) [0|1] "SED"  VDM,SOBDMC_HPCM_FD1,IPMA_ADAS,ECM_Diesel,PCM,PCM_HEV,TCM_DSL,PSCM,GWM
+ SG_ StabCtlBrkActv_B_Actl : 23|1@0+ (1,0) [0|1] "SED"  VDM,IPMA_ADAS,PCM,PCM_HEV,TCM_DSL,PSCM,TCCM,ECM_Diesel,GWM
+ SG_ CmbbBrkPrchg_B_Actl : 59|1@0+ (1,0) [0|1] "SED"  IPMA_ADAS,GWM
+ SG_ CmbbBrkDecel_B_Actl : 58|1@0+ (1,0) [0|1] "SED"  CMR_DSMC,IPMA_ADAS,GWM
+ SG_ CmbbBaSensInc_B_Actl : 57|1@0+ (1,0) [0|1] "SED"  IPMA_ADAS,GWM
+ SG_ AccBrkWarm_B_Actl : 63|1@0+ (1,0) [0|1] "SED"  IPMA_ADAS,GWM
+ SG_ AccBrkTotTqMn_B_Actl : 62|1@0+ (1,0) [0|1] "SED"  IPMA_ADAS,GWM
+ SG_ AccBrkPrchgActv_B_Actl : 61|1@0+ (1,0) [0|1] "SED"  IPMA_ADAS,GWM
+ SG_ AccBrkDis_B_Actl : 44|1@0+ (1,0) [0|1] "SED"  IPMA_ADAS,GWM
+ SG_ AccBrkDeny_B_Actl : 42|1@0+ (1,0) [0|1] "SED"  IPMA_ADAS,ECM_Diesel,PCM,PCM_HEV,GWM
+ SG_ AccBrkActv_B_Actl : 43|1@0+ (1,0) [0|1] "SED"  IPMA_ADAS,ECM_Diesel,GWM
+ SG_ PrplDrgCtlActv_B_Actl : 46|1@0+ (1,0) [0|1] "SED"  ECM_Diesel,PCM,PCM_HEV,TCM_DSL,GWM
+ SG_ PrplWhlTot_Tq_RqMx : 7|16@0+ (4,-131072) [-131072|131068] "Nm"  ECM_Diesel,PCM,PCM_HEV,TCCM,GWM
+ SG_ LscmbbBaSensInc_B_Actl : 21|1@0+ (1,0) [0|1] "SED"  GWM
+ SG_ CmbbBrkDis_B_Actl : 56|1@0+ (1,0) [0|1] "SED"  IPMA_ADAS,PSCM,GWM
+ SG_ CmbbDeny_B_ActlBrk : 60|1@0+ (1,0) [0|1] "SED"  IPMA_ADAS,PSCM,ECM_Diesel,PCM,PCM_HEV,GWM
+ SG_ CcDis_B_Cmd : 47|1@0+ (1,0) [0|1] "SED"  PCM,PCM_HEV,GWM
+ SG_ VehLongOvrGnd_A_Est : 41|10@0+ (0.035,-17.9) [-17.9|17.835] "m/s^2"  VDM,IPMA_ADAS,TCCM,GWM
+ SG_ LscmbBrkPrchg_B_Actl : 16|1@0+ (1,0) [0|1] "SED"  GWM
+ SG_ AccStopActv_B_ActlBrk : 22|1@0+ (1,0) [0|1] "SED"  IPMA_ADAS,ECM_Diesel,PCM,PCM_HEV,GWM
+ SG_ AccDis_B_ActlEpb : 32|1@0+ (1,0) [0|1] "SED"  IPMA_ADAS,GWM
+ SG_ PrkBrkMsgTxt_D_Rq : 36|4@0+ (1,0) [0|15] "SED"  GWM
+ SG_ PrkBrkStatus : 26|3@0+ (1,0) [0|7] "SED"  IPMA_ADAS,ECM_Diesel,PCM,PCM_HEV,TCM_DSL,GWM
+
+BO_ 532 DesiredTorqBrk_2: 8 ABS_ESC
+ SG_ RgenTqFalt_B_Actl : 59|1@0+ (1,0) [0|1] "SED"  GWM,PCM_HEV
+ SG_ RgenBrkDynoMde_B_Actl : 58|1@0+ (1,0) [0|1] "SED"  GWM,PCM_HEV
+ SG_ PrplWhlTqRqMn_No_Cs : 55|8@0+ (1,0) [0|255] "Unitless"  GWM,ECM_Diesel,PCM,PCM_HEV
+ SG_ PrplWhlTot_Tq_RqMn : 7|16@0+ (4,-131072) [-131072|131068] "Nm"  GWM,ECM_Diesel,PCM,PCM_HEV
+ SG_ PrplWhlTqRqMn_No_Cnt : 63|4@0+ (1,0) [0|15] "Unitless"  GWM,ECM_Diesel,PCM,PCM_HEV
+ 
+
+BO_ 535 WheelSpeed: 8 ABS_ESC
+ SG_ WhlRr_W_Meas : 54|15@0+ (0.01,0) [0|327.65] "rad/s"  VDM,IPMA_ADAS,GWM,ECM_Diesel,PCM,PCM_HEV,PSCM,TCCM,TCM_DSL
+ SG_ WhlRl_W_Meas : 38|15@0+ (0.01,0) [0|327.65] "rad/s"  VDM,IPMA_ADAS,GWM,ECM_Diesel,PCM,PCM_HEV,PSCM,TCCM,TCM_DSL
+ SG_ WhlFr_W_Meas : 22|15@0+ (0.01,0) [0|327.65] "rad/s"  VDM,IPMA_ADAS,GWM,ECM_Diesel,PCM,PCM_HEV,PSCM,TCCM,TCM_DSL
+ SG_ WhlFl_W_Meas : 6|15@0+ (0.01,0) [0|327.65] "rad/s"  VDM,IPMA_ADAS,GWM,ECM_Diesel,PCM,PCM_HEV,PSCM,TCCM,TCM_DSL
+
+BO_ 534 WheelData: 8 ABS_ESC
+ SG_ BrkObdData_No_Actl : 63|8@0+ (1,0) [0|255] "unitless"  SOBDMC_HPCM_FD1,GWM
+ SG_ BrkObdIndex_No_Actl : 53|6@0+ (1,0) [0|63] "unitless"  SOBDMC_HPCM_FD1,GWM
+ SG_ WhlRotatRr_No_Cnt : 23|8@0+ (1,0) [0|255] "Unitless"  IPMA_ADAS,GWM,PSCM
+ SG_ WhlDirRr_D_Actl : 33|2@0+ (1,0) [0|3] "SED"  IPMA_ADAS,GWM,ECM_Diesel,PCM_HEV,PSCM
+ SG_ WhlDirRl_D_Actl : 39|2@0+ (1,0) [0|3] "SED"  IPMA_ADAS,GWM,PSCM,ECM_Diesel,PCM_HEV
+ SG_ WhlDirFr_D_Actl : 37|2@0+ (1,0) [0|3] "SED"  IPMA_ADAS,GWM,ECM_Diesel,PCM_HEV,PSCM
+ SG_ WhlDirFl_D_Actl : 35|2@0+ (1,0) [0|3] "SED"  IPMA_ADAS,GWM,ECM_Diesel,PCM_HEV,PSCM
+ SG_ WhlRotatRl_No_Cnt : 31|8@0+ (1,0) [0|255] "Unitless"  IPMA_ADAS,GWM,PSCM
+ SG_ WhlRotatFr_No_Cnt : 7|8@0+ (1,0) [0|255] "Unitless"  IPMA_ADAS,GWM,PSCM
+ SG_ WhlRotatFl_No_Cnt : 15|8@0+ (1,0) [0|255] "Unitless"  IPMA_ADAS,GWM,PSCM
+ SG_ WHEEL_ROLLING_TIMESTAMP : 47|8@0+ (1,0) [0|0] "" XXX
+ 
+BO_ 560 TransGearData: 8 TCM_DSL
+ SG_ GearLvrPos_D_Actl : 12|4@0+ (1,0) [0|15] "SED"  VDM,IPMA_ADAS,GWM,ABS_ESC,PSCM,TCCM,ECM_Diesel
+
+BO_ 934 Side_Detect_L_Stat: 8 IPMA_ADAS
+ SG_ CtaAlrtLeft2_D_Stat : 30|3@0+ (1,0) [0|7] "SED"  GWM
+ SG_ CtaBrkLeftMsgTxt_B_Rq : 42|1@0+ (1,0) [0|1] "SED"  GWM
+ SG_ CtaLeftBrkDecel_B_Rq : 7|1@0+ (1,0) [0|1] "SED"  GWM,ABS_ESC
+ SG_ CtaLeftBrkEnbl_B_Rq : 31|1@0+ (1,0) [0|1] "SED"  GWM,ABS_ESC
+ SG_ Side_Detect_L_Illum : 39|8@0+ (1,0) [0|255] "Percent"  GWM
+ SG_ BttLeft_D_Stat : 45|3@0+ (1,0) [0|7] "SED"  GWM
+ SG_ BttLeft_D_RqDrv : 47|2@0+ (1,0) [0|3] "SED"  GWM
+ SG_ CtaSnsLeft_D_Stat : 25|2@0+ (1,0) [0|3] "SED"  GWM
+ SG_ SodDetctLeft_D_Stat : 23|3@0+ (1,0) [0|7] "SED"  GWM
+ SG_ CtaLeft_D_Stat : 18|3@0+ (1,0) [0|7] "SED"  GWM
+ SG_ CtaAlrtLeft_D_Stat : 8|1@0+ (1,0) [0|1] "SED"  GWM
+ SG_ SodLeft_D_Stat : 15|3@0+ (1,0) [0|7] "SED"  GWM
+ SG_ SodSnsLeft_D_Stat : 12|2@0+ (1,0) [0|3] "SED"  GWM
+ SG_ SodAlrtLeft_D_Stat : 10|2@0+ (1,0) [0|3] "SED"  GWM
+ SG_ SodWarnLeft_Prd_Rq : 6|7@0+ (1,0) [0|127] "millisecond"  GWM
+
+BO_ 935 Side_Detect_R_Stat: 8 IPMA_ADAS
+ SG_ SodRight_D_Stat : 15|3@0+ (1,0) [0|7] "SED"  GWM
+ SG_ CtaAlrtRight2_D_Stat : 30|3@0+ (1,0) [0|7] "SED"  GWM
+ SG_ BttRight_D_Stat : 45|3@0+ (1,0) [0|7] "SED"  GWM
+ SG_ BttRight_D_RqDrv : 47|2@0+ (1,0) [0|3] "SED"  GWM
+ SG_ CtaBrkRightMsgTxt_B_Rq : 42|1@0+ (1,0) [0|1] "SED"  GWM
+ SG_ CtaRightBrkEnbl_B_Rq : 31|1@0+ (1,0) [0|1] "SED"  GWM,ABS_ESC
+ SG_ CtaRightBrkDecel_B_Rq : 7|1@0+ (1,0) [0|1] "SED"  GWM,ABS_ESC
+ SG_ Side_Detect_R_Illum : 39|8@0+ (1,0) [0|255] "Percent"  GWM
+ SG_ CtaSnsRight_D_Stat : 25|2@0+ (1,0) [0|3] "SED"  GWM
+ SG_ CtaAlrtRight_D_Stat : 8|1@0+ (1,0) [0|1] "SED"  GWM
+ SG_ CtaRight_D_Stat : 18|3@0+ (1,0) [0|7] "SED"  GWM
+ SG_ SodSnsRight_D_Stat : 12|2@0+ (1,0) [0|3] "SED"  GWM
+ SG_ SodAlrtRight_D_Stat : 10|2@0+ (1,0) [0|3] "SED"  GWM
+ SG_ SodDetctRight_D_Stat : 23|3@0+ (1,0) [0|7] "SED"  GWM
+ SG_ SodWarnRight_Prd_Rq : 6|7@0+ (1,0) [0|127] "millisecond"  GWM
+ 
+BO_ 936 ParkAid_Data: 8 IPMA_ADAS
+ SG_ ApaButtnPrssd_B_Stat : 58|1@0+ (1,0) [0|1] "SED"  PSCM
+ SG_ SAPPStatusCoding : 7|8@0+ (1,0) [0|255] "unitless"  GWM
+ SG_ ApaSys_D_Stat : 61|3@0+ (1,0) [0|7] "SED"  PSCM,GWM,ECM_Diesel,PCM,PCM_HEV
+ SG_ ApaSteWhl_D_RqDrv : 63|2@0+ (1,0) [0|3] "SED"  GWM
+ SG_ ApaSteScanMde_D_Stat : 49|2@0+ (1,0) [0|3] "SED"  GWM
+ SG_ ApaSelSapp_D_Stat : 51|2@0+ (1,0) [0|3] "SED"  GWM
+ SG_ ApaSelPpa_D_Stat : 53|2@0+ (1,0) [0|3] "SED"  GWM
+ SG_ ApaSelPoa_D_Stat : 55|2@0+ (1,0) [0|3] "SED"  GWM
+ SG_ ApaScan_D_Stat : 41|2@0+ (1,0) [0|3] "SED"  GWM
+ SG_ ApaLongCtl_D_RqDrv : 44|3@0+ (1,0) [0|7] "SED"  GWM
+ SG_ ApaGearShif_D_RqDrv : 47|3@0+ (1,0) [0|7] "SED"  GWM
+ SG_ ApaActvSide2_D_Stat : 33|2@0+ (1,0) [0|3] "SED"  GWM
+ SG_ ApaAcsy_D_RqDrv : 36|3@0+ (1,0) [0|7] "SED"  GWM
+ SG_ ApaTrgtDist_D_Stat : 11|4@0+ (1,0) [0|15] "SED"  GWM
+ SG_ ApaMsgTxt_D_Rq : 15|4@0+ (1,0) [0|15] "SED"  GWM
+ SG_ ApaChime_D_Rq : 39|3@0+ (1,0) [0|7] "SED"  GWM
+ SG_ EPASExtAngleStatReq : 23|1@0+ (1,0) [0|1] "SED"  PSCM,GWM,ABS_ESC
+ SG_ ExtSteeringAngleReq2 : 22|15@0+ (0.1,-1000) [-1000|2276.5] "Degrees"  GWM,PSCM
+
+BO_ 947 Doors: 8 XXX
+ SG_ Door_FL_Open : 61|1@0+ (1,0) [0|0] "" XXX
+ SG_ Door_FR_Open : 60|1@0+ (1,0) [0|0] "" XXX
+ SG_ Door_RL_Open : 48|1@0+ (1,0) [0|0] "" XXX
+ SG_ Door_RR_Open : 49|1@0+ (1,0) [0|0] "" XXX
+
+BO_ 963 BCM_to_HS_Body: 8 XXX
+ SG_ Brake_Lights : 8|1@0+ (1,0) [0|0] "" XXX
+
+BO_ 970 Lane_Keep_Assist_Control: 8 IPMA_ADAS
+ SG_ Lkas_Action : 7|3@0+ (1,0) [0|7] "SED"  PSCM
+ SG_ Lkas_Alert : 3|4@0+ (1,0) [0|15] "" XXX
+ SG_ Lane_Curvature : 15|12@0+ (5E-006,-0.01024) [-0.01024|0.01023] "1/m"  PSCM
+ SG_ Steer_Angle_Req : 19|12@0+ (0.05,-102.4) [-102.4|102.3] "mrad"  PSCM
+ SG_ LkaDrvOvrrd_D_Rq : 38|2@0+ (1,0) [0|3] "SED"  PSCM
+ SG_ LdwActvStats_D_Req : 4|3@0+ (1,0) [0|7] "SED"  PSCM
+ SG_ LdwActvIntns_D_Req : 1|2@0+ (1,0) [0|3] "SED"  PSCM
+ SG_ LaRampType_B_Req : 39|1@0+ (1,0) [0|1] "SED"  PSCM
+
+BO_ 972 Lane_Keep_Assist_Status: 8 PSCM
+ SG_ LatCtlSte_D_Stat : 18|3@0+ (1,0) [0|7] "SED"  IPMA_ADAS,GWM
+ SG_ LatCtlLim_D_Stat : 33|2@0+ (1,0) [0|3] "SED"  IPMA_ADAS,GWM
+ SG_ LatCtlCpblty_D_Stat : 39|2@0+ (1,0) [0|3] "SED"  IPMA_ADAS,GWM
+ SG_ LatCtlCpbltyDStat_No_Cnt : 37|4@0+ (1,0) [0|15] "Unitless"  IPMA_ADAS,GWM
+ SG_ LatCtlCpbltyDStat_No_Cs : 47|8@0+ (1,0) [0|255] "Unitless"  IPMA_ADAS,GWM
+ SG_ TrlrAn_An_TrgtCalc : 31|8@0+ (1,-128) [-128|127] "degrees"  IPMA_ADAS
+ SG_ LsmcBrkDecelEnbl_D_Rq : 1|2@0+ (1,0) [0|3] "SED"  ABS_ESC
+ SG_ TjaHandsOnCnfdnc_B_Est : 3|1@0+ (1,0) [0|1] "SED"  IPMA_ADAS
+ SG_ LaHandsOff_B_Actl : 7|1@0+ (1,0) [0|1] "SED"  IPMA_ADAS,GWM
+ SG_ LaActDeny_B_Actl : 6|1@0+ (1,0) [0|1] "SED"  IPMA_ADAS,GWM
+ SG_ LaActAvail_D_Actl : 5|2@0+ (1,0) [0|3] "SED"  IPMA_ADAS,GWM
+ SG_ LsmcBrk_Tq_Rq : 15|13@0+ (4,0) [0|32764] "Nm"  ABS_ESC
+
+BO_ 984 Lane_Keep_Assist_Ui: 8 IPMA_ADAS
+ SG_ FeatConfigIpmaActl : 7|16@0+ (1,0) [0|65535] "Undefined"  GWM
+ SG_ FeatNoIpmaActl : 23|16@0+ (1,0) [0|65535] "Number"  GWM
+ SG_ PersIndexIpma_D_Actl : 39|3@0+ (1,0) [0|7] "SED"  GWM
+ SG_ AhbcRampingV_D_Rq : 57|2@0+ (1,0) [0|3] "SED"  GWM
+ SG_ Lines_Hud : 55|5@0+ (1,0) [0|31] "SED"  GWM
+ SG_ LaDenyStats_B_Dsply : 32|1@0+ (1,0) [0|1] "SED"  GWM
+ SG_ Hands_Warning_W_Chime : 50|2@0+ (1,0) [0|3] "SED"  GWM
+ SG_ CamraDefog_B_Req : 36|1@0+ (1,0) [0|1] "SED"  GWM
+ SG_ CamraStats_D_Dsply : 35|2@0+ (1,0) [0|3] "SED"  GWM
+ SG_ DasAlrtLvl_D_Dsply : 42|3@0+ (1,0) [0|7] "SED"  GWM
+ SG_ DasStats_D_Dsply : 47|2@0+ (1,0) [0|3] "SED"  GWM
+ SG_ DasWarn_D_Dsply : 44|2@0+ (1,0) [0|3] "SED"  GWM
+ SG_ AhbHiBeam_D_Rq : 59|2@0+ (1,0) [0|3] "SED"  GWM
+ SG_ Hands_Warning : 49|1@0+ (1,0) [0|1] "SED"  GWM
+ SG_ Set_Me_X30 : 63|8@0+ (1,0) [0|255] "SED"  GWM
+
+BO_ 985 IPMA_Data2: 8 IPMA_ADAS
+ SG_ LdwChime_B_Rq : 34|1@0+ (1,0) [0|1] "SED"  GWM
+ SG_ TsrRegionTxt_D_Stat : 47|5@0+ (1,0) [0|31] "SED"  GWM
+ SG_ SblmPedCrossScnr_B_Stat : 33|1@0+ (1,0) [0|1] "SED"  GWM
+ SG_ LongCtrlEnbl_D_Rq : 42|3@0+ (1,0) [0|7] "SED"  ECM_Diesel,PCM,PCM_HEV,GWM
+ SG_ SblmRndAbtScnr_B_Stat : 9|1@0+ (1,0) [0|1] "SED"  GWM
+ SG_ DasAlrtInfo_D_Dsply : 13|2@0+ (1,0) [0|3] "SED"  GWM
+ SG_ IaccVLim_D_Rq : 23|8@0+ (1,0) [0|255] "SED"  ECM_Diesel,GWM
+ SG_ IaccVLimUnit_D_Rq : 11|2@0+ (1,0) [0|3] "SED"  ECM_Diesel,GWM
+ SG_ IsaVLim_D_Rq : 7|8@0+ (1,0) [0|255] "SED"  ECM_Diesel,GWM
+ SG_ SblmStopScnr_B_Stat : 8|1@0+ (1,0) [0|1] "SED"  GWM
+ SG_ SblmYieldScnr_B_Stat : 31|1@0+ (1,0) [0|1] "SED"  GWM
+ SG_ IsaVLimUnit_D_Rq : 15|2@0+ (1,0) [0|3] "SED"  ECM_Diesel,GWM
+ SG_ AdbDividedRoad_B_Stat : 30|1@0+ (1,0) [0|1] "SED"  GWM
+ SG_ LcwaMsgTxt_D_Stat : 37|2@0+ (1,0) [0|3] "SED"  GWM
+ SG_ AdbDrvSide_B_Stat : 35|1@0+ (1,0) [0|1] "SED"  GWM
+ 
+BO_ 1045 BrakeSysFeatures: 8 ABS_ESC
+ SG_ BrkFluidLvl_D_Stat : 17|2@0+ (1,0) [0|3] "SED"  GWM
+ 
+
+CM_ SG_ 970 Lkas_Action "only vals 4, 5, 8, 9 seem to work. 4 and 5 are a bit smoother" ;
+
+VAL_ 76 FirstRowBuckleMid 3 "Unknown" 2 "Unbelted" 1 "Belted" 0 "Faulty" ;
+VAL_ 76 SecondRowBucklePsngr 3 "Unknown" 2 "Unbelted" 1 "Belted" 0 "Faulty" ;
+VAL_ 76 SecondRowBuckleMid 3 "Unknown" 2 "Unbelted" 1 "Belted" 0 "Faulty" ;
+VAL_ 76 SecondRowBuckleDriver 3 "Unknown" 2 "Unbelted" 1 "Belted" 0 "Faulty" ;
+VAL_ 76 FirstRowBuckleDriver 3 "Unknown" 2 "Unbelted" 1 "Belted" 0 "Faulty" ;
+VAL_ 76 RILReq 3 "Not_Used" 2 "Plant_Mode" 1 "On" 0 "Off" ;
+VAL_ 76 FirstRowBucklePsngr 3 "Unknown" 2 "Unbelted" 1 "Belted" 0 "Faulty" ;
+VAL_ 76 RstrnImpactEvntStatus 7 "Invalid" 6 "Not_Used_4" 5 "Threshold_2_Exceeded" 4 "Not_Used_3" 3 "Threshold_1_Exceeded" 2 "Not_Used_2" 1 "Not_Used_1" 0 "Normal" ;
+VAL_ 76 PsngrFrntDetct_D_Actl 3 "Unknown" 2 "Empty" 0 "Faulty" 1 "Occupied" ;
+VAL_ 76 EDRTriggerEvntSync 1 "Threshold_Exceeded" 0 "Normal" ;
+VAL_ 76 PassRstrnInd_Req 3 "ABOnNotIllum_OffNotIllum" 2 "AirbagOnNot_Illum_OffIllum" 1 "AirbagOn_Illum_OffNotIllum" 0 "AirbagOn_Illum_Off_Illum" ;
+VAL_ 130 TrlrHitchLamp_D_Rqst 1 "On" 0 "Off" ;
+VAL_ 130 VehVTrlrAid_B_Rq 1 "Request" 0 "NoRequest" ;
+VAL_ 130 DrvSteActv_B_Stat 1 "Active" 0 "Inactive" ;
+VAL_ 130 DrvSte_Tq_Actl 255 "Invalid" 254 "Unknown" ;
+VAL_ 130 SteMdule_D_Stat 7 "NotUsed" 6 "EPAS_Failure3" 5 "EPAS_Failure2" 4 "System_Failure" 3 "EPAS_Shutdown" 2 "Normal_Op_Full_Assist" 1 "Normal_Op_Limited_Assist" 0 "EPAS_Initialization" ;
+VAL_ 130 SteMdule_U_Meas 255 "Invalid" ;
+VAL_ 130 SteMdule_I_Est 4095 "Invalid" ;
+VAL_ 130 EPAS_Failure 3 "SERVICE_POWER_STEERING_NOW" 2 "SERVICE_POWER_STEERING" 1 "POWER_STRG_ASSIST_FAULT" 0 "EPAS_OK_NO_MESSAGE" ;
+VAL_ 130 SteeringColumnTorque 255 "Invalid" 254 "Unknown" ;
+VAL_ 130 SAPPAngleControlStat6 1 "RequestedAngleNotReached" 0 "RequestedAngleCanBeReached" ;
+VAL_ 130 SAPPAngleControlStat5 1 "StrgColTorqueExceed_EAROn" 0 "ExternalSigContentOKforEAC" ;
+VAL_ 130 SAPPAngleControlStat4 1 "SpeedLimitExceededEAROn" 0 "ExternalSigContentOKforEAC" ;
+VAL_ 130 SAPPAngleControlStat3 1 "EARactiveNoReverseEngage" 0 "ExternalSigContentOKforEAC" ;
+VAL_ 130 SAPPAngleControlStat2 1 "Rel_ExtSteeringAngleReqx" 0 "NoRel_ExtSteeringAngleReqx" ;
+VAL_ 130 SAPPAngleControlStat1 3 "Fault" 2 "Active" 1 "Open" 0 "Closed" ;
+VAL_ 131 TurnLghtSwtch_D_Stat 3 "Unused_Treat_As_Off" 2 "Right" 1 "Left" 0 "Off" ;
+VAL_ 131 Dist_Decr 1 "Button_Pressed" 0 "Button_Not_Pressed" ;
+VAL_ 131 Dist_Incr 1 "Button_Pressed" 0 "Button_Not_Pressed" ;
+VAL_ 131 Cancel 1 "Button_Pressed" 0 "Button_Not_Pressed" ;
+VAL_ 131 Resume 1 "Button_Pressed" 0 "Button_Not_Pressed" ;
+VAL_ 131 Set 1 "Button_Pressed" 0 "Button_Not_Pressed" ;
+VAL_ 131 Main 1 "Button_Pressed" 0 "Button_Not_Pressed" ;
+VAL_ 145 VehYawWActl_D_Qf 3 "OK" 2 "Not_Within_Specifications" 1 "No_Data_Exists" 0 "Faulty" ;
+VAL_ 145 VehRolWActl_D_Qf 3 "OK" 2 "Not_Within_Specifications" 1 "No_Data_Exists" 0 "Faulty" ;
+VAL_ 145 VehPtch_W_Actll 65535 "Faulty" 65534 "NoDataExists" ;
+VAL_ 145 VehRol_W_Actl 65535 "Faulty" 65534 "NoDataExists" ;
+VAL_ 146 Vert_A_Actl 8191 "Faulty" 8190 "NoDataExists" ;
+VAL_ 146 Long_A_Actl 8191 "Faulty" 8190 "NoDataExists" ;
+VAL_ 146 Lat_A_Actl 8191 "Faulty" 8190 "NoDataExists" ;
+VAL_ 146 VehVertAActl_D_Qf 3 "OK" 2 "Not_Within_Specifications" 1 "No_Data_Exists" 0 "Faulty" ;
+VAL_ 146 VehLongAActl_D_Qf 3 "OK" 2 "Not_Within_Specifications" 1 "No_Data_Exists" 0 "Faulty" ;
+VAL_ 146 VehLatAActl_D_Qf 3 "OK" 2 "Not_Within_Specifications" 1 "No_Data_Exists" 0 "Faulty" ;
+VAL_ 357 Cruise_State 4 "active" 3 "standby" 0 "off" ;
+VAL_ 390 AccBrkPulse_B_Rq 1 "True" 0 "False" ;
+VAL_ 390 AccAutoResum_D_Rq 3 "NotUsed" 2 "Active" 1 "Pending" 0 "Off" ;
+VAL_ 390 AccBrkPrkEl_B_Rq 1 "Yes" 0 "No" ;
+VAL_ 390 Cmbb_B_Enbl 1 "Yes" 0 "No" ;
+VAL_ 390 CmbbOvrrd_B_RqDrv 1 "Yes" 0 "No" ;
+VAL_ 390 CmbbDeny_B_Actl 1 "Yes" 0 "No" ;
+VAL_ 390 CmbbEngTqMn_B_Rq 1 "Yes" 0 "No" ;
+VAL_ 390 AccDeny_B_Rq 1 "Yes" 0 "No" ;
+VAL_ 390 AccResumEnbl_B_Rq 1 "Yes" 0 "No" ;
+VAL_ 390 AccCancl_B_Rq 1 "Yes" 0 "No" ;
+VAL_ 390 AccBrkPrchg_B_Rq 1 "Yes" 0 "No" ;
+VAL_ 390 AccBrkDecel_B_Rq 1 "Active" 0 "Inactive" ;
+VAL_ 390 AccStopStat_B_Rq 1 "Yes" 0 "No" ;
+VAL_ 391 HudBlk3_B_Rq 1 "Yes" 0 "No" ;
+VAL_ 391 HudBlk2_B_Rq 1 "Yes" 0 "No" ;
+VAL_ 391 HudBlk1_B_Rq 1 "Yes" 0 "No" ;
+VAL_ 391 HudFlashRate_D_Actl 3 "Unused" 2 "Flash_4Hz_50Prct_DutyCycle" 1 "On" 0 "Off" ;
+VAL_ 391 CmbbBrkPrchg_D_Rq 3 "Undefined" 2 "Level_2_PreCharge_Request" 1 "Level_1_PreCharge_Request" 0 "No_PreCharge_Request" ;
+VAL_ 391 CmbbBrkDecel_B_Rq 1 "Yes" 0 "No" ;
+VAL_ 391 CmbbBaSens_D_Rq 3 "Level_3" 2 "Level_2" 1 "Level_1" 0 "Normal" ;
+VAL_ 394 AccStopStat_D_Dsply 3 "PressResume" 2 "Stopped" 1 "ResumeReady" 0 "NoDisplay" ;
+VAL_ 394 AccTrgDist2_D_Dsply 15 "DIST_ACTIVE_13_Farthest" 14 "DIST_ACTIVE_12" 13 "DIST_ACTIVE_11" 12 "DIST_ACTIVE_10" 11 "DIST_ACTIVE_9" 10 "DIST_ACTIVE_8" 9 "DIST_ACTIVE_7" 8 "DIST_ACTIVE_6" 7 "DIST_ACTIVE_5" 6 "DIST_ACTIVE_4" 5 "DIST_ACTIVE_3" 4 "DIST_ACTIVE_2" 3 "DIST_ACTIVE_1_Closest" 2 "DIST_ACTIVE_No_Target" 1 "DIST_STANDBY" 0 "DIST_OFF" ;
+VAL_ 394 AccStopRes_B_Dsply 1 "Yes" 0 "No" ;
+VAL_ 394 TjaWarn_D_Rq 7 "NotUsed_4" 6 "NotUsed_3" 5 "NotUsed_2" 4 "NotUsed_1" 3 "HardTakeOverLevel2" 2 "HardTakeOverLevel1" 1 "TrafficJamAssistCancel" 0 "NoWarning" ;
+VAL_ 394 Tja_D_Stat 7 "NotUsed_1" 6 "ActiveWarningRight" 5 "ActiveWarningLeft" 4 "ActiveInterventionRight" 3 "ActiveInterventionLeft" 2 "Active" 1 "Standby" 0 "Off" ;
+VAL_ 394 TjaMsgTxt_D_Dsply 7 "NotUsed_4" 6 "NotUsed_3" 5 "NotUsed_2" 4 "NotUsed_1" 3 "TurnOnAdaptCruiseControl" 2 "TrafficJamAssistSelected" 1 "TrafficJamAssistUnavailabl" 0 "NoMessage" ;
+VAL_ 394 IaccLamp_D_Rq 3 "NotUsed_2" 2 "NotUsed_1" 1 "DisplayIaccIcon" 0 "DoNotDisplayIaccIcon" ;
+VAL_ 394 AccMsgTxt_D2_Rq 15 "NotUsed_1" 14 "NCC_Enabled_Warning" 13 "IACC_TJA_Selected" 12 "ACC_TJA_Selected" 11 "IACC_Selected" 10 "Press_Brake_To_Hold" 9 "Only_Following_In_Low_Spd" 8 "TJA_Unavailable" 7 "Shift_Down" 6 "IACC_Unavailable" 5 "ACC_Selected" 4 "ACC_Overridden" 3 "Brake_Capacity_Warning" 2 "ACC_Cancelled" 1 "ACC_Unavailable" 0 "No_Text" ;
+VAL_ 394 FcwDeny_B_Dsply 1 "Yes" 0 "No" ;
+VAL_ 394 FcwMemStat_B_Actl 1 "On" 0 "Off" ;
+VAL_ 394 AccTGap_B_Dsply 1 "Yes" 0 "No" ;
+VAL_ 394 CadsAlignIncplt_B_Actl 1 "Yes" 0 "No" ;
+VAL_ 394 AccFllwMde_B_Dsply 1 "Yes" 0 "No" ;
+VAL_ 394 CadsRadrBlck_B_Actl 1 "Yes" 0 "No" ;
+VAL_ 394 CmbbPostEvnt_B_Dsply 1 "Yes" 0 "No" ;
+VAL_ 394 AccStopMde_B_Dsply 1 "Yes" 0 "No" ;
+VAL_ 394 FcwMemSens_D_Actl 3 "FCW_Sensitivity_3" 2 "FCW_Sensitivity_2" 1 "FCW_Sensitivity_1" 0 "Not_Used" ;
+VAL_ 394 FcwMsgTxt_D_Rq 7 "Undefined_3" 6 "Undefined_2" 5 "Low_Visibility" 4 "Unavailable_DueTo_LowSpeed" 3 "Available" 2 "Unavailable" 1 "Off" 0 "No_Text" ;
+VAL_ 394 AccWarn_D_Dsply 3 "BrakeReleaseWarn_In_StopMd" 2 "Brake_Capacity_Warning" 1 "Cancel_Warning" 0 "No_Warning" ;
+VAL_ 394 FcwVisblWarn_B_Rq 1 "On" 0 "Off" ;
+VAL_ 394 FcwAudioWarn_B_Rq 1 "On" 0 "Off" ;
+VAL_ 394 AccTGap_D_Dsply 7 "Undefined_2" 6 "Undefined_1" 5 "Time_Gap_5" 4 "Time_Gap_4" 3 "Time_Gap_3" 2 "Time_Gap_2" 1 "Time_Gap_1" 0 "Not_Used" ;
+VAL_ 394 AccMemEnbl_B_RqDrv 1 "Adaptive_Cruise" 0 "Normal_Cruise" ;
+VAL_ 394 FdaMem_B_Stat 1 "On" 0 "Off" ;
+VAL_ 531 VehStop_D_Stat 3 "Faulty" 2 "NoDataExists" 1 "Yes" 0 "No" ;
+VAL_ 531 TracCtlPtActv_B_Actl 1 "Active" 0 "Inactive" ;
+VAL_ 531 LscmbbMntr_B_Err 1 "DisplayMessage" 0 "NoMessage" ;
+VAL_ 531 LscmbbBrkDis_B_Actl 1 "Yes" 0 "No" ;
+VAL_ 531 LscmbbDeny_B_ActlBrk 1 "Yes" 0 "No" ;
+VAL_ 531 PrkBrkYwLamp_D_Rq 3 "Fast_Flash" 2 "Slow_Flash" 1 "On" 0 "Off" ;
+VAL_ 531 PrkBrkRedLamp_D_Rq 3 "Fast_Flash" 2 "Slow_Flash" 1 "On" 0 "Off" ;
+VAL_ 531 LscmbbBrkDecel_B_Actl 1 "Yes" 0 "No" ;
+VAL_ 531 AbsActv_B_Actl 1 "Yes" 0 "No" ;
+VAL_ 531 StabCtlBrkActv_B_Actl 1 "Yes" 0 "No" ;
+VAL_ 531 CmbbBrkPrchg_B_Actl 1 "Yes" 0 "No" ;
+VAL_ 531 CmbbBrkDecel_B_Actl 1 "Yes" 0 "No" ;
+VAL_ 531 CmbbBaSensInc_B_Actl 1 "Yes" 0 "No" ;
+VAL_ 531 AccBrkWarm_B_Actl 1 "Yes" 0 "No" ;
+VAL_ 531 AccBrkTotTqMn_B_Actl 1 "Yes" 0 "No" ;
+VAL_ 531 AccBrkPrchgActv_B_Actl 1 "Yes" 0 "No" ;
+VAL_ 531 AccBrkDis_B_Actl 1 "Yes" 0 "No" ;
+VAL_ 531 AccBrkDeny_B_Actl 1 "Yes" 0 "No" ;
+VAL_ 531 AccBrkActv_B_Actl 1 "Yes" 0 "No" ;
+VAL_ 531 PrplDrgCtlActv_B_Actl 1 "Active" 0 "Inactive" ;
+VAL_ 531 LscmbbBaSensInc_B_Actl 1 "Yes" 0 "No" ;
+VAL_ 531 CmbbBrkDis_B_Actl 1 "Yes" 0 "No" ;
+VAL_ 531 CmbbDeny_B_ActlBrk 1 "Yes" 0 "No" ;
+VAL_ 531 CcDis_B_Cmd 1 "Yes" 0 "No" ;
+VAL_ 531 VehLongOvrGnd_A_Est 1023 "Fault" 1022 "Unknown" ;
+VAL_ 531 LscmbBrkPrchg_B_Actl 1 "Active" 0 "Inactive" ;
+VAL_ 531 AccStopActv_B_ActlBrk 1 "Yes" 0 "No" ;
+VAL_ 531 AccDis_B_ActlEpb 1 "Yes" 0 "No" ;
+VAL_ 531 PrkBrkMsgTxt_D_Rq 15 "Message15" 14 "Message14" 13 "Message13" 12 "Message12" 11 "Message11" 10 "Message10" 9 "Message9" 8 "Message8" 7 "Message7" 6 "Message6" 5 "Message5" 4 "Message4" 3 "Message3" 2 "Message2" 1 "Message1" 0 "No_Message" ;
+VAL_ 531 PrkBrkStatus 7 "GeneralFault_MaintenceMode" 6 "ECD_by_Brake_ECU_Active" 5 "EPB_Limphome_Active" 4 "Rear_Caliper_Open" 3 "RWU_By_EPB_Active" 2 "Rear_Caliper_Transition" 1 "Rear_Caliper_Closed" 0 "Not_Supported" ;
+VAL_ 532 RgenTqFalt_B_Actl 1 "Fault" 0 "No_Fault" ;
+VAL_ 532 RgenBrkDynoMde_B_Actl 1 "TwoWheelDyno" 0 "NormalOperation" ;
+VAL_ 534 WhlDirRr_D_Actl 3 "Faulty" 2 "NoDataExists" 1 "Backward" 0 "Forward" ;
+VAL_ 534 WhlDirRl_D_Actl 3 "Faulty" 2 "NoDataExists" 1 "Backward" 0 "Forward" ;
+VAL_ 534 WhlDirFr_D_Actl 3 "Faulty" 2 "NoDataExists" 1 "Backward" 0 "Forward" ;
+VAL_ 534 WhlDirFl_D_Actl 3 "Faulty" 2 "NoDataExists" 1 "Backward" 0 "Forward" ;
+VAL_ 535 WhlRr_W_Meas 32767 "Fault" 32766 "Unknown" ;
+VAL_ 535 WhlRl_W_Meas 32767 "Fault" 32766 "Unknown" ;
+VAL_ 535 WhlFr_W_Meas 32767 "Fault" 32766 "Unknown" ;
+VAL_ 535 WhlFl_W_Meas 32767 "Fault" 32766 "Unknown" ;
+VAL_ 560 GearLvrPos_D_Actl 15 "Fault" 14 "Unknown_Position" 13 "Undefined_Treat_as__Fault" 12 "Undefined_Treat_as_Fault" 11 "sixth" 10 "fifth" 9 "fourth" 8 "third" 7 "second" 6 "first" 5 "Low" 4 "Sport_DriveSport" 3 "Drive" 2 "Neutral" 1 "Reverse" 0 "Park" ;
+VAL_ 934 CtaAlrtLeft2_D_Stat 7 "NotUsed3" 6 "NotUsed2" 5 "NotUsed1" 4 "AlertZone4" 3 "AlertZone3" 2 "AlertZone2" 1 "AlertZone1" 0 "Off" ;
+VAL_ 934 CtaBrkLeftMsgTxt_B_Rq 1 "Enable" 0 "Disable" ;
+VAL_ 934 CtaLeftBrkDecel_B_Rq 1 "Enable" 0 "Disable" ;
+VAL_ 934 CtaLeftBrkEnbl_B_Rq 1 "Enable" 0 "Disable" ;
+VAL_ 934 BttLeft_D_Stat 7 "NotUsed" 6 "Disabled" 5 "Off" 4 "OffTemp" 3 "NotConnected" 2 "Pending" 1 "Connected" 0 "NotDetermined" ;
+VAL_ 934 BttLeft_D_RqDrv 3 "NotUsed" 2 "Request" 1 "NoRequest" 0 "Null" ;
+VAL_ 934 CtaSnsLeft_D_Stat 3 "Invalid" 2 "System_Failure" 1 "Blocked" 0 "Clear" ;
+VAL_ 934 SodDetctLeft_D_Stat 4 "Sensor_Blocked" 3 "Sensor_Fault" 2 "Flash_On" 1 "Alert_On" 0 "AlertOff_FlashOff_SensrClr" ;
+VAL_ 934 CtaLeft_D_Stat 7 "NotUsed_3" 6 "NotUsed_2" 5 "NotUsed_1" 4 "Invalid" 3 "Disabled" 2 "On" 1 "Trailer_Tow_Off" 0 "Off" ;
+VAL_ 934 CtaAlrtLeft_D_Stat 1 "On" 0 "Off" ;
+VAL_ 934 SodLeft_D_Stat 7 "NotUsed_3" 6 "NotUsed_2" 5 "NotUsed_1" 4 "Invalid" 3 "Disabled" 2 "On" 1 "Trailer_Tow_Off" 0 "Off" ;
+VAL_ 934 SodSnsLeft_D_Stat 3 "Second_Warning_Audio" 2 "System_Failure" 1 
+VAL_ 935 SodRight_D_Stat 7 "NotUsed_3" 6 "NotUsed_2" 5 "NotUsed_1" 4 "Invalid" 3 "Disabled" 2 "On" 1 "Trailer_Tow_Off" 0 "Off" ;
+VAL_ 935 CtaAlrtRight2_D_Stat 7 "NotUsed3" 6 "NotUsed2" 5 "NotUsed1" 4 "AlertZone4" 3 "AlertZone3" 2 "AlertZone2" 1 "AlertZone1" 0 "Off" ;
+VAL_ 935 BttRight_D_Stat 7 "NotUsed" 6 "Disabled" 5 "Off" 4 "OffTemp" 3 "NotConnected" 2 "Pending" 1 "Connected" 0 "NotDetermined" ;
+VAL_ 935 BttRight_D_RqDrv 3 "NotUsed" 2 "Request" 1 "NoRequest" 0 "Null" ;
+VAL_ 935 CtaBrkRightMsgTxt_B_Rq 1 "Enable" 0 "Disable" ;
+VAL_ 935 CtaRightBrkEnbl_B_Rq 1 "Enable" 0 "Disable" ;
+VAL_ 935 CtaRightBrkDecel_B_Rq 1 "Enable" 0 "Disable" ;
+VAL_ 935 CtaSnsRight_D_Stat 3 "Invalid" 2 "System_Failure" 1 "Blocked" 0 "Clear" ;
+VAL_ 935 CtaAlrtRight_D_Stat 1 "On" 0 "Off" ;
+VAL_ 935 CtaRight_D_Stat 7 "NotUsed_3" 6 "NotUsed_2" 5 "NotUsed_1" 4 "Invalid" 3 "Disabled" 2 "On" 1 "Trailer_Tow_Off" 0 "Off" ;
+VAL_ 935 SodSnsRight_D_Stat 3 "Second_Warning_Audio" 2 "System_Failure" 1 "Blocked" 0 "Clear" ;
+VAL_ 935 SodAlrtRight_D_Stat 3 "Bulb_Proveout" 2 "Flash" 1 "On" 0 "Off" ;
+VAL_ 935 SodDetctRight_D_Stat 4 "Sensor_Blocked" 3 "Sensor_Fault" 2 "Flash_On" 1 "Alert_On" 0 "AlertOff_FlashOff_SensrClr" ;
+VAL_ 936 ApaButtnPrssd_B_Stat 1 "Pressed" 0 "Not_Pressed" ;
+VAL_ 936 ApaSys_D_Stat 7 "Faulty" 6 "Finished" 5 "NotAccessible" 4 "ApaCancelled" 3 "Overspeed" 2 "On" 1 "Off" 0 "Null" ;
+VAL_ 936 ApaSteWhl_D_RqDrv 3 "TakeControl" 2 "RemoveHands" 1 "NoRequest" 0 "Null" ;
+VAL_ 936 ApaSteScanMde_D_Stat 3 "Steering" 2 "Scanning" 1 "NotScanning" 0 "Null" ;
+VAL_ 936 ApaSelSapp_D_Stat 3 "NotConfigured" 2 "NotSelectable" 1 "Selectable" 0 "Null" ;
+VAL_ 936 ApaSelPpa_D_Stat 3 "NotConfigured" 2 "NotSelectable" 1 "Selectable" 0 "Null" ;
+VAL_ 936 ApaSelPoa_D_Stat 3 "NotConfigured" 2 "NotSelectable" 1 "Selectable" 0 "Null" ;
+VAL_ 936 ApaScan_D_Stat 3 "ParkSlotReady" 2 "ParkSlotFound" 1 "NoParkSlot" 0 "Null" ;
+VAL_ 936 ApaLongCtl_D_RqDrv 7 "NotUsed3" 6 "NotUsed2" 5 "ReleaseBrake" 4 "DriveBackward" 3 "DriveForward" 2 "Stop" 1 "NoRequest" 0 "Null" ;
+VAL_ 936 ApaGearShif_D_RqDrv 7 "NotUSed2" 6 "NotUsed1" 5 "ShiftToP" 4 "ShiftToN" 3 "ShiftToD" 2 "ShiftToR" 1 "NoRequest" 0 "Null" ;
+VAL_ 936 ApaActvSide2_D_Stat 3 "NoSide" 2 "Right" 1 "Left" 0 "Null" ;
+VAL_ 936 ApaAcsy_D_RqDrv 7 "CloseDoor" 6 "SelectSideRight" 5 "SelectSideLeft" 4 "CheckForObject" 3 "PressApaButton" 2 "SelectSide" 1 "NoRequest" 0 "Null" ;
+VAL_ 936 ApaTrgtDist_D_Stat 15 "Step15" 14 "Step14" 13 "Step13" 12 "Step12" 11 "Step11" 10 "Step10" 9 "Step9" 8 "Step8" 7 "Step7" 6 "Step6" 5 "Step5" 4 "Step4" 3 "Step3" 2 "Step2" 1 "Step1" 0 "Off" ;
+VAL_ 936 ApaChime_D_Rq 7 "NotUsed2" 6 "NotUsed1" 5 "Warning_Chime" 4 "Finish_Chime" 3 "Stop_Now_Chime" 2 "Spot_Ready_Chime" 1 "Spot_Found_Chime" 0 "No_Chime" ;
+VAL_ 936 EPASExtAngleStatReq 1 "Request" 0 "NoRequest" ;
+VAL_ 936 ExtSteeringAngleReq2 32767 "Invalid" 32766 "Unknown" ;
+VAL_ 970 LkaDrvOvrrd_D_Rq 3 "Level_3" 2 "Level_2" 1 "Level_1" 0 "Level_0" ;
+VAL_ 970 Lkas_Action 7 "NotUsed" 6 "LkaIncrIntervRight" 5 "LkaSupprRight" 4 "LkaStandIntervRight" 3 "LkaSupprLeft" 2 "LkaStandIntervLeft" 1 "LkaIncrIntervLeft" 0 "LkaNoInterv" ;
+CM_ VAL_ 970 Lkas_Alert 15 "no_alert" 3 "high_intensity" 2 "mid_intensity" 1 "low_intensity" ;
+VAL_ 970 Steer_angle_Req 4095 "Fault" ;
+VAL_ 970 LaRampType_B_Req 1 "Quick" 0 "Smooth" ;
+VAL_ 970 Lkas_Curvature 4095 "Fault" ;
+VAL_ 970 LdwActvStats_D_Req 7 "LDW_Suppress_Right_Left" 6 "Not_Used2" 5 "LDW_Suppress_Right" 4 "LDW_Warning_Right" 3 "LDW_Suppress_Left" 2 "LDW_Warning_Left" 1 "LDW_DemoVibration" 0 "LDW_Idle" ;
+VAL_ 970 LdwActvIntns_D_Req 3 "High" 2 "Medium" 1 "Low" 0 "None" ;
+VAL_ 970 Lkas_Alert 15 "no_alert" 3 "high_intensity" 2 "mid_intensity" 1 "low_intensity" ;
+VAL_ 972 LatCtlSte_D_Stat 7 "NotUsed3" 6 "NotUsed2" 5 "NotUsed1" 4 "Denied" 3 "RampOut" 2 "ContLatControlInProgress" 1 "Available" 0 "Unavailable" ;
+VAL_ 972 LatCtlLim_D_Stat 3 "LimitWithDriverActive" 2 "LimitReached" 1 "LimitClose" 0 "LimitNotReached" ;
+VAL_ 972 LatCtlCpblty_D_Stat 3 "Faulty" 2 "ExtendedModeAvailable" 1 "LimitedModeAvailable" 0 "NoModeAvailable" ;
+VAL_ 972 LsmcBrkDecelEnbl_D_Rq 3 "NotUsed2" 2 "NotUsed1" 1 "On" 0 "Off" ;
+VAL_ 972 TjaHandsOnCnfdnc_B_Est 1 "High_Confidence" 0 "Low_Confidence" ;
+VAL_ 972 LaHandsOff_B_Actl 1 "Hands_Off" 0 "Hands_On" ;
+VAL_ 972 LaActDeny_B_Actl 1 "LA_Denied" 0 "LA_Not_Denied" ;
+VAL_ 972 LaActAvail_D_Actl 3 "LKA_LCA_LDW_Avail" 2 "LCA_LKA_Avail_LDW_Suppress" 1 "LCA_LKA_Suppress_LDW_Avail" 0
+VAL_ 984 PersIndexIpma_D_Actl 7 "Unused_3" 6 "Unused_2" 5 "Unused_1" 4 "Vehicle" 3 "PERS_4" 2 "PERS_3" 1 "PERS_2" 0 "PERS_1" ;
+VAL_ 984 AhbcRampingV_D_Rq 3 "Slow" 2 "Medium" 1 "Fast" 0 "Immediately" ;
+VAL_ 984 Lines_Hud 31 "Unused7" 30 "LA_Off" 29 "Unused5" 28 "Unused4" 27 "Unused3" 26 "Unused2" 25 "Unused1" 24 "InerveneLeft_InterveneRght" 23 "WarnLeft_InterveneRight" 22 "SuppressLeft_InterveneRght" 21 "AvailLeft_InterveneRhtt" 20 "NoLeft_InterveneRight" 19 "InterveneLeft_WarnRight" 18 "WarnLeft_WarnRight" 17 "SuppressLeft_WarnRight" 16 "AvailableLeft_WarnRight" 15 "NoLeft_WarnRight" 14 "InterveneLeft_SuppressRght" 13 "WarnLeft_SuppressRight" 12 "SuppressLeft_SuppressRight" 11 "AvailLeft_SuppressRight" 10 "NoLeft_SuppressRight" 9 "InterveneLeft_AvailRight" 8 "WarnLeft_AvailRight" 7 "SuppressLeft_AvailRight" 6 "AvailableLeft_AvailRight" 5 "NoLeft_AvailableRight" 4 "InterveneLeft_NoRight" 3 "WarnLeft_NoRight" 2 "SuppressLeft_NoRight" 1 "AvailableLeft_NoRight" 0 "NoLeft_NoRight" ;
+VAL_ 984 LaDenyStats_B_Dsply 1 "Unavailable" 0 "Available" ;
+VAL_ 984 Hands_Warning_W_Chime 3 "Suppressed" 2 "Level2" 1 "Level1" 0 "HandsOn" ;
+VAL_ 984 CamraDefog_B_Req 1 "On" 0 "Off" ;
+VAL_ 984 CamraStats_D_Dsply 3 "FrtCam_TempUnavailOther" 2 "FrtCam_TempUnavailVisibile" 1 "Front_Camera_Service_Reqd" 0 "Front_Camera_OK" ;
+VAL_ 984 DasAlrtLvl_D_Dsply 5 "Alertness_Level_5" 4 "Alertness_Level_4" 3 "Alertness_Level_3" 2 "Alertness_Level_2" 1 "Alertness_Level_1" 0 "Undefined" ;
+VAL_ 984 DasStats_D_Dsply 3 "Available" 2 "Unavailable_Other" 1 "Feedback_due_to_Speed" 0 "Off" ;
+VAL_ 984 DasWarn_D_Dsply 3 "Undefined" 2 "Warning_Level_2" 1 "Warning_Level_1" 0 "No_Warning" ;
+VAL_ 984 AhbHiBeam_D_Rq 3 "NotUsed" 2 "HighBeamRecommended" 1 "LowBeamRecommended" 0 "DeactivatedUnavailable" ; "LCA_LKA_LDW_Suppress" ;
+VAL_ 985 LdwChime_B_Rq 1 "On" 0 "Off" ;
+VAL_ 985 TsrRegionTxt_D_Stat 31 "Faulty" 30 "NotUsed_8" 29 "NotUsed_7" 28 "NotUsed_6" 27 "NotUsed_5" 26 "NotUsed_4" 25 "NotUsed_3" 24 "NotUsed_2" 23 "NotUsed_1" 22 "Region_22" 21 "Region_21" 20 "Region_20" 19 "Region_19" 18 "Region_18" 17 "Region_17" 16 "Region_16" 15 "Region_15" 14 "Region_14" 13 "Region_13" 12 "Region_12" 11 "Region_11" 10 "Region_10" 9 "Region_09" 8 "Region_08" 7 "Region_07" 6 "Region_06" 5 "Region_05" 4 "Region_04" 3 "Region_03" 2 "Region_02" 1 "Region_01" 0 "NotDetermined" ;
+VAL_ 985 SblmPedCrossScnr_B_Stat 1 "Yes" 0 "No" ;
+VAL_ 985 LongCtrlEnbl_D_Rq 7 "NotUsed_4" 6 "NotUsed_3" 5 "NotUsed_2" 4 "NotUsed_1" 3 "RemoteParking" 2 "Autohitch" 1 "AutomaticParking" 0 "None" ;
+VAL_ 985 SblmRndAbtScnr_B_Stat 1 "Yes" 0 "No" ;
+VAL_ 985 DasAlrtInfo_D_Dsply 3 "NotUsed" 2 "On" 1 "Off" 0 "Null" ;
+VAL_ 985 IaccVLim_D_Rq 252 "NotUsed_2" 250 "LimitSpeed_250" 240 "LimitSpeed_240" 230 "LimitSpeed_230" 220 "LimitSpeed_220" 210 "LimitSpeed_210" 200 "LimitSpeed_200" 190 "LimitSpeed_190" 150 "LimitSpeed_150" 140 "LimitSpeed_140" 130 "LimitSpeed_130" 120 "LimitSpeed_120" 110 "LimitSpeed_110" 100 "LimitSpeed_100" 90 "LimitSpeed_90" 80 "LimitSpeed_80" 70 "LimitSpeed_70" 60 "LimitSpeed_60" 50 "LimitSpeed_50" 40 "LimitSpeed_40" 30 "LimitSpeed_30" 20 "LimtSpeed_20" 251 "NotUsed_1" 255 "Faulty" 254 "NoDataExists" 253 "NotUsed_3" 180 "LimitSpeed_180" 179 "LimitSpeed_179" 178 "LimitSpeed_178" 177 "LimitSpeed_177" 176 "LimitSpeed_176" 175 "LimitSpeed_175" 174 "LimitSpeed_174" 173 "LimitSpeed_173" 172 "LimitSpeed_172" 171 "LimitSpeed_171" 170 "LimitSpeed_170" 169 "LimitSpeed_169" 168 "LimitSpeed_168" 167 "LimitSpeed_167" 166 "LimitSpeed_166" 165 "LimitSpeed_165" 164 "LimitSpeed_164" 163 "LimitSpeed_163" 162 "LimitSpeed_162" 161 "LimitSpeed_161" 160 "LimitSpeed_160" 15 "LimitSpeed_15" 14 "LimitSpeed_14" 13 "LimitSpeed_13" 12 "LimitSpeed_12" 11 "LimitSpeed_11" 10 "LimitSpeed_10" 9 "LimitSpeed_9" 8 "LimitSpeed_8" 7 "LimitSpeed_7" 6 "LimitSpeed_6" 5 "LimitSpeed_5" 4 "LimitSpeed_4" 3 "LimitSpeed_3" 2 "LimitSpeed_2" 1 "LimitSpeed_1" 0 "LimitSpeed_0" ;
+VAL_ 985 IaccVLimUnit_D_Rq 3 "NoDataExists" 2 "Mph" 1 "Kph" 0 "Null" ;
+VAL_ 985 IsaVLim_D_Rq 252 "NotUsed_2" 250 "LimitSpeed_250" 240 "LimitSpeed_240" 230 "LimitSpeed_230" 220 "LimitSpeed_220" 210 "LimitSpeed_210" 200 "LimitSpeed_200" 190 "LimitSpeed_190" 150 "LimitSpeed_150" 140 "LimitSpeed_140" 130 "LimitSpeed_130" 120 "LimitSpeed_120" 110 "LimitSpeed_110" 100 "LimitSpeed_100" 90 "LimitSpeed_90" 80 "LimitSpeed_80" 70 "LimitSpeed_70" 60 "LimitSpeed_60" 50 "LimitSpeed_50" 40 "LimitSpeed_40" 30 "LimitSpeed_30" 20 "LimtSpeed_20" 251 "NotUsed_1" 255 "Faulty" 254 "NoDataExists" 253 "NotUsed_3" 180 "LimitSpeed_180" 179 "LimitSpeed_179" 178 "LimitSpeed_178" 177 "LimitSpeed_177" 176 "LimitSpeed_176" 175 "LimitSpeed_175" 174 "LimitSpeed_174" 173 "LimitSpeed_173" 172 "LimitSpeed_172" 171 "LimitSpeed_171" 170 "LimitSpeed_170" 169 "LimitSpeed_169" 168 "LimitSpeed_168" 167 "LimitSpeed_167" 166 "LimitSpeed_166" 165 "LimitSpeed_165" 164 "LimitSpeed_164" 163 "LimitSpeed_163" 162 "LimitSpeed_162" 161 "LimitSpeed_161" 160 "LimitSpeed_160" 15 "LimitSpeed_15" 14 "LimitSpeed_14" 13 "LimitSpeed_13" 12 "LimitSpeed_12" 11 "LimitSpeed_11" 10 "LimitSpeed_10" 9 "LimitSpeed_9" 8 "LimitSpeed_8" 7 "LimitSpeed_7" 6 "LimitSpeed_6" 5 "LimitSpeed_5" 4 "LimitSpeed_4" 3 "LimitSpeed_3" 2 "LimitSpeed_2" 1 "LimitSpeed_1" 0 "LimitSpeed_0" ;
+VAL_ 985 SblmStopScnr_B_Stat 1 "Yes" 0 "No" ;
+VAL_ 985 SblmYieldScnr_B_Stat 1 "Yes" 0 "No" ;
+VAL_ 985 IsaVLimUnit_D_Rq 3 "NoDataExists" 2 "Mph" 1 "Kph" 0 "Null" ;
+VAL_ 985 AdbDividedRoad_B_Stat 1 "Yes" 0 "No" ;
+VAL_ 985 LcwaMsgTxt_D_Stat 3 "SodXFaulty" 2 "SodXBlocked" 1 "TrailerConnected" 0 "NoMessage" ;
+VAL_ 985 AdbDrvSide_B_Stat 1 "Left_Hand_Traffic" 0 "Right_Hand_Traffic" ;
+VAL_ 1045 BrkFluidLvl_D_Stat 3 "Invalid" 2 "Unknown" 1 "Low" 0 "OK" ;

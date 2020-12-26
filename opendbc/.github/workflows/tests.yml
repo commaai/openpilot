@@ -1,0 +1,39 @@
+name: Tests
+
+on: [push, pull_request]
+
+env:
+  RUN: docker run --shm-size 1G --rm opendbc /bin/sh -c
+  BUILD: |
+      docker pull $(grep -ioP '(?<=^from)\s+\S+' Dockerfile) || true
+      docker pull docker.io/commaai/opendbc:latest || true
+      docker build --cache-from docker.io/commaai/opendbc:latest -t opendbc -f Dockerfile .
+
+jobs:
+  test:
+    runs-on: ubuntu-16.04
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build Docker image
+        run: eval "$BUILD"
+      - name: Static analysis
+        run: |
+          docker run opendbc bash -c "cd opendbc && git init && git add -A && pre-commit run --all"
+      - name: Unit tests
+        run: |
+          docker run opendbc bash -c "python -m unittest discover opendbc"
+      - name: Python linter
+        run: |
+          docker run opendbc bash -c "cd opendbc/can/tests/linter_python; PYTHONPATH=/ ./flake8_opendbc.sh"
+          docker run opendbc bash -c "cd opendbc/can/tests/linter_python; PYTHONPATH=/ ./pylint_opendbc.sh"
+      - name: Generator test
+        run: |
+          docker run opendbc bash -c "cd opendbc/can/tests/; PYTHONPATH=/ ./test_generator.sh"
+      - name: Push to dockerhub
+        if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/opendbc'
+        run: |
+          docker login -u wmelching -p ${{ secrets.COMMA_DOCKERHUB_TOKEN}}
+          docker tag opendbc docker.io/commaai/opendbc:latest
+          docker push docker.io/commaai/opendbc:latest
+
