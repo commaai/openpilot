@@ -1,6 +1,3 @@
-[submodule "opendbc"]
-	path = opendbc
-	url = ../../jyoung8607/opendbc.git
 [submodule "laika_repo"]
 	path = laika_repo
 	url = ../../commaai/laika.git
