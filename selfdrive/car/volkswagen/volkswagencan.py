@@ -61,6 +61,17 @@ def create_mqb_acc_buttons_control(packer, bus, buttonStatesToSend, CS, idx):
 #                                                                         #
 # ----------------------------------------------------------------------- #
 
+def create_pq_awv_control(packer, bus, idx, led_orange, led_green):
+  values = {
+    "AWV_2_Fehler" : 1 if led_orange else 0,
+    "AWV_2_Status" : 1 if led_green else 0,
+    "AWV_Zaehler": idx,
+  }
+
+  dat = packer.make_can_msg("mAWV", bus, values)[2]
+  values["AWV_Checksumme"] = dat[1] ^ dat[2] ^ dat[3] ^ dat[4]
+  return packer.make_can_msg("mAWV", bus, values)
+
 def create_pq_steering_control(packer, bus, apply_steer, idx, lkas_enabled):
   values = {
     "HCA_Zaehler": idx,
