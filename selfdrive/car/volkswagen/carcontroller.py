@@ -29,8 +29,12 @@ class CarController():
     self.graMsgSentCount = 0
     self.graMsgStartFramePrev = 0
     self.graMsgBusCounterPrev = 0
-    self.mobPreEnable = False
     self.create_awv_control = volkswagencan.create_pq_awv_control
+
+    self.mobPreEnable = False
+    self.mobEnabled = False
+    self.ACCSlowDown = False
+    self.ACCSpeedUp = False
 
     self.steer_rate_limited = False
 
@@ -42,6 +46,49 @@ class CarController():
     # Send CAN commands.
     can_sends = []
     
+    
+    # --------------------------------------------------------------------------
+    #                                                                         #
+    # Prepare PQ_MOB for sending the braking message                          #
+    #                                                                         #
+    #                                                                         #
+    # --------------------------------------------------------------------------
+    if frame % P.MOB_STEP == 0:
+      mobEnabled = self.mobEnabled
+      mobPreEnable = self.mobPreEnable
+      # TODO make sure we use the full 8190 when calculating braking.
+      apply_brake = actuators.brake * 2100
+
+      CS.brake_warning = False
+      if enabled:
+        if (apply_brake < 40):
+          apply_brake = 0
+          self.ACCSlowDown = True
+        if apply_brake > 0:
+          if not mobEnabled:
+            mobEnabled = True
+            apply_brake = 0
+            self.ACCSlowDown = True
+          elif not mobPreEnable:
+            mobPreEnable = True
+            apply_brake = 0
+            self.ACCSlowDown = True
+          elif apply_brake > 2099:
+            apply_brake = 2100
+            CS.brake_warning = True
+            self.ACCSlowDown = True
+        else:
+          mobPreEnable = False
+          mobEnabled = False
+      else:
+        apply_brake = 0
+        mobPreEnable = False
+        mobEnabled = False
+
+      idx = (frame / P.MOB_STEP) % 16
+      self.mobPreEnable = mobPreEnable
+      self.mobEnabled = mobEnabled
+      can_sends.append(self.create_braking_control(self.packer_pt, CANBUS.pt, apply_brake, idx, mobEnabled, mobPreEnable))
     # --------------------------------------------------------------------------
     #                                                                         #
     # acc led stuff                                                           #
