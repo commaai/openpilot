@@ -16,8 +16,6 @@
 #include "ui.hpp"
 #include "paint.hpp"
 
-extern volatile sig_atomic_t do_exit;
-
 int write_param_float(float param, const char* param_name, bool persistent_param) {
   char s[16];
   int size = snprintf(s, sizeof(s), "%f", param);
@@ -25,13 +23,12 @@ int write_param_float(float param, const char* param_name, bool persistent_param
 }
 
 void ui_init(UIState *s) {
-  s->sm = new SubMaster({"modelV2", "controlsState", "uiLayoutState", "liveCalibration", "radarState", "thermal",
+  s->sm = new SubMaster({"modelV2", "controlsState", "uiLayoutState", "liveCalibration", "radarState", "thermal", "frame",
                          "health", "carParams", "ubloxGnss", "driverState", "dMonitoringState", "sensorEvents"});
 
   s->started = false;
   s->status = STATUS_OFFROAD;
   s->scene.satelliteCount = -1;
-  read_param(&s->is_metric, "IsMetric");
 
   s->fb = framebuffer_init("ui", 0, true, &s->fb_w, &s->fb_h);
   assert(s->fb);
@@ -138,7 +135,7 @@ void update_sockets(UIState *s) {
       s->status = STATUS_WARNING;
     } else if (alertStatus == cereal::ControlsState::AlertStatus::CRITICAL) {
       s->status = STATUS_ALERT;
-    } else{
+    } else {
       s->status = scene.controls_state.getEnabled() ? STATUS_ENGAGED : STATUS_DISENGAGED;
     }
 
@@ -222,7 +219,7 @@ void update_sockets(UIState *s) {
     scene.dmonitoring_state = sm["dMonitoringState"].getDMonitoringState();
     scene.is_rhd = scene.dmonitoring_state.getIsRHD();
     scene.frontview = scene.dmonitoring_state.getIsPreview();
-  } else if ((sm.frame - sm.rcv_frame("dMonitoringState")) > UI_FREQ/2) {
+  } else if (scene.frontview && (sm.frame - sm.rcv_frame("dMonitoringState")) > UI_FREQ/2) {
     scene.frontview = false;
   }
   if (sm.updated("sensorEvents")) {
@@ -240,8 +237,22 @@ void update_sockets(UIState *s) {
   s->started = scene.thermal.getStarted() || scene.frontview;
 }
 
-void ui_update(UIState *s) {
+static void ui_read_params(UIState *s) {
+  const uint64_t frame = s->sm->frame;
 
+  if (frame % (5*UI_FREQ) == 0) {
+    read_param(&s->is_metric, "IsMetric");
+  } else if (frame % (6*UI_FREQ) == 0) {
+    s->scene.athenaStatus = NET_DISCONNECTED;
+    uint64_t last_ping = 0;
+    if (read_param(&last_ping, "LastAthenaPingTime") == 0) {
+      s->scene.athenaStatus = nanos_since_boot() - last_ping < 70e9 ? NET_CONNECTED : NET_ERROR;
+    }
+  }
+}
+
+void ui_update(UIState *s) {
+  ui_read_params(s);
   update_sockets(s);
   ui_update_vision(s);
 
@@ -262,8 +273,8 @@ void ui_update(UIState *s) {
     s->scene.alert_size = cereal::ControlsState::AlertSize::NONE;
   }
 
-  // Handle controls timeout
-  if (s->started && !s->scene.frontview && ((s->sm)->frame - s->started_frame) > 5*UI_FREQ) {
+  // Handle controls/fcamera timeout
+  if (s->started && !s->scene.frontview && ((s->sm)->frame - s->started_frame) > 10*UI_FREQ) {
     if ((s->sm)->rcv_frame("controlsState") < s->started_frame) {
       // car is started, but controlsState hasn't been seen at all
       s->scene.alert_text1 = "openpilot Unavailable";
@@ -271,7 +282,8 @@ void ui_update(UIState *s) {
       s->scene.alert_size = cereal::ControlsState::AlertSize::MID;
     } else if (((s->sm)->frame - (s->sm)->rcv_frame("controlsState")) > 5*UI_FREQ) {
       // car is started, but controls is lagging or died
-      if (s->scene.alert_text2 != "Controls Unresponsive") {
+      if (s->scene.alert_text2 != "Controls Unresponsive" &&
+          s->scene.alert_text1 != "Camera Malfunction") {
         s->sound->play(AudibleAlert::CHIME_WARNING_REPEAT);
         LOGE("Controls unresponsive");
       }
@@ -281,19 +293,17 @@ void ui_update(UIState *s) {
       s->scene.alert_size = cereal::ControlsState::AlertSize::FULL;
       s->status = STATUS_ALERT;
     }
-  }
 
-  // Read params
-  if ((s->sm)->frame % (5*UI_FREQ) == 0) {
-    read_param(&s->is_metric, "IsMetric");
-  } else if ((s->sm)->frame % (6*UI_FREQ) == 0) {
-    int param_read = read_param(&s->last_athena_ping, "LastAthenaPingTime");
-    if (param_read != 0) { // Failed to read param
-      s->scene.athenaStatus = NET_DISCONNECTED;
-    } else if (nanos_since_boot() - s->last_athena_ping < 70e9) {
-      s->scene.athenaStatus = NET_CONNECTED;
-    } else {
-      s->scene.athenaStatus = NET_ERROR;
+    const uint64_t frame_pkt = (s->sm)->rcv_frame("frame");
+    const uint64_t frame_delayed = (s->sm)->frame - frame_pkt;
+    const uint64_t since_started = (s->sm)->frame - s->started_frame;
+    if ((frame_pkt > s->started_frame || since_started > 15*UI_FREQ) && frame_delayed > 5*UI_FREQ) {
+      // controls is fine, but rear camera is lagging or died
+      s->scene.alert_text1 = "Camera Malfunction";
+      s->scene.alert_text2 = "Contact Support";
+      s->scene.alert_size = cereal::ControlsState::AlertSize::FULL;
+      s->status = STATUS_DISENGAGED;
+      s->sound->stop();
     }
   }
 }

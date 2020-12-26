@@ -19,14 +19,15 @@ void Toggle::paintEvent(QPaintEvent *e) {
   p.setRenderHint(QPainter::Antialiasing, true);
 
   // Draw toggle background left
-  p.setBrush(QColor("#33ab4c"));
+  p.setBrush(QColor(0x33ab4c));
   p.drawRoundedRect(QRect(0, _y_rect, _x_circle + _radius, _height_rect), _height_rect/2, _height_rect/2);
+
   // Draw toggle background right
-  p.setBrush(QColor("#0a1a26"));
-  p.drawRoundedRect(QRect(_x_circle - _radius, _y_rect, width() -(_x_circle - _radius), _height_rect), _height_rect/2, _height_rect/2);
+  p.setBrush(QColor(0x393939));
+  p.drawRoundedRect(QRect(_x_circle - _radius, _y_rect, width() - (_x_circle - _radius), _height_rect), _height_rect/2, _height_rect/2);
 
   // Draw toggle circle
-  p.setBrush(QColor("#fafafa"));
+  p.setBrush(QColor(0xfafafa));
   p.drawEllipse(QRectF(_x_circle - _radius, _y_circle - _radius, 2 * _radius, 2 * _radius));
 }
 

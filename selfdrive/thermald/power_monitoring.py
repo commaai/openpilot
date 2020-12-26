@@ -4,9 +4,9 @@ import time
 from statistics import mean
 
 from cereal import log
-from common.realtime import sec_since_boot
 from common.params import Params, put_nonblocking
-from common.hardware import HARDWARE
+from common.realtime import sec_since_boot
+from selfdrive.hardware import HARDWARE
 from selfdrive.swaglog import cloudlog
 
 CAR_VOLTAGE_LOW_PASS_K = 0.091 # LPF gain for 5s tau (dt/tau / (dt/tau + 1))

@@ -16,6 +16,7 @@
 #include "home.hpp"
 #include "paint.hpp"
 #include "qt_window.hpp"
+#include "widgets/drive_stats.hpp"
 
 #define BACKLIGHT_DT 0.25
 #define BACKLIGHT_TS 2.00
@@ -25,9 +26,7 @@ OffroadHome::OffroadHome(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout();
   main_layout->setContentsMargins(sbr_w + 50, 50, 50, 50);
 
-  center_layout = new QStackedLayout();
-
-  // header
+  // top header
   QHBoxLayout *header_layout = new QHBoxLayout();
 
   date = new QLabel();
@@ -44,9 +43,12 @@ OffroadHome::OffroadHome(QWidget *parent) : QWidget(parent) {
   QObject::connect(alert_notification, SIGNAL(released()), this, SLOT(openAlerts()));
   main_layout->addWidget(alert_notification, 0, Qt::AlignTop | Qt::AlignRight);
 
-  // center
-  QLabel *drive = new QLabel("Drive me");
-  drive->setStyleSheet(R"(font-size: 175px;)");
+  // main content
+  main_layout->addSpacing(25);
+  center_layout = new QStackedLayout();
+
+  DriveStats *drive = new DriveStats;
+  drive->setFixedSize(1000, 800);
   center_layout->addWidget(drive);
 
   alerts_widget = new OffroadAlert();
@@ -85,12 +87,12 @@ void OffroadHome::refresh() {
   // update alerts
 
   alerts_widget->refresh();
-  if (!alerts_widget->alerts.size() && !alerts_widget->updateAvailable){
+  if (!alerts_widget->alerts.size() && !alerts_widget->updateAvailable) {
     alert_notification->setVisible(false);
     return;
   }
 
-  if (alerts_widget->updateAvailable){
+  if (alerts_widget->updateAvailable) {
     // There is a new release
     alert_notification->setText("UPDATE");
   } else {
@@ -99,7 +101,9 @@ void OffroadHome::refresh() {
   }
 
   alert_notification->setVisible(true);
-  alert_notification->setStyleSheet(QString(R"(
+
+  // Red background for alerts, blue for update available
+  QString style = QString(R"(
     padding: 15px;
     padding-left: 30px;
     padding-right: 30px;
@@ -108,7 +112,11 @@ void OffroadHome::refresh() {
     font-size: 40px;
     font-weight: bold;
     background-color: red;
-  )"));
+  )");
+  if (alerts_widget->updateAvailable){
+    style.replace("red", "blue");
+  }
+  alert_notification->setStyleSheet(style);
 }
 
 
@@ -148,7 +156,7 @@ void HomeWindow::mousePressEvent(QMouseEvent *e) {
   }
 
   // Vision click
-  if (ui_state->started && (e->x() >= ui_state->scene.viz_rect.x - bdr_s)){
+  if (ui_state->started && (e->x() >= ui_state->scene.viz_rect.x - bdr_s)) {
     ui_state->scene.uilayout_sidebarcollapsed = !ui_state->scene.uilayout_sidebarcollapsed;
   }
 }
@@ -161,14 +169,14 @@ static void handle_display_state(UIState *s, int dt, bool user_input) {
   if (user_input || s->ignition || s->started) {
     s->awake = true;
     awake_timeout = 30*UI_FREQ;
-  } else if (awake_timeout == 0){
+  } else if (awake_timeout == 0) {
     s->awake = false;
   }
 }
 
-static void set_backlight(int brightness){
+static void set_backlight(int brightness) {
   std::ofstream brightness_control("/sys/class/backlight/panel0-backlight/brightness");
-  if (brightness_control.is_open()){
+  if (brightness_control.is_open()) {
     brightness_control << brightness << "\n";
     brightness_control.close();
   }
@@ -184,7 +192,7 @@ GLWindow::GLWindow(QWidget *parent) : QOpenGLWidget(parent) {
 
   int result = read_param(&brightness_b, "BRIGHTNESS_B", true);
   result += read_param(&brightness_m, "BRIGHTNESS_M", true);
-  if(result != 0) {
+  if (result != 0) {
     brightness_b = 200.0;
     brightness_m = 10.0;
   }
@@ -215,7 +223,7 @@ void GLWindow::initializeGL() {
   backlight_timer->start(BACKLIGHT_DT * 100);
 }
 
-void GLWindow::backlightUpdate(){
+void GLWindow::backlightUpdate() {
   // Update brightness
   float k = (BACKLIGHT_DT / BACKLIGHT_TS) / (1.0f + BACKLIGHT_DT / BACKLIGHT_TS);
 
@@ -223,7 +231,7 @@ void GLWindow::backlightUpdate(){
   smooth_brightness = clipped_brightness * k + smooth_brightness * (1.0f - k);
   int brightness = smooth_brightness;
 
-  if (!ui_state->awake){
+  if (!ui_state->awake) {
     brightness = 0;
   }
 
@@ -231,7 +239,7 @@ void GLWindow::backlightUpdate(){
 }
 
 void GLWindow::timerUpdate() {
-  if (ui_state->started != onroad){
+  if (ui_state->started != onroad) {
     onroad = ui_state->started;
     emit offroadTransition(!onroad);
 #ifdef QCOM2
@@ -255,9 +263,9 @@ void GLWindow::paintGL() {
   ui_draw(ui_state);
 }
 
-void GLWindow::wake(){
+void GLWindow::wake() {
   // UI state might not be initialized yet
-  if (ui_state != nullptr){
+  if (ui_state != nullptr) {
     handle_display_state(ui_state, 1, true);
   }
 }

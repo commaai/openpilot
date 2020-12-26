@@ -217,6 +217,10 @@ routes = {
     'carFingerprint': HYUNDAI.PALISADE,
     'enableCamera': True,
   },
+  "2c5cf2dd6102e5da|2020-12-17--16-06-44": {
+    'carFingerprint': HYUNDAI.IONIQ_EV_2020,
+    'enableCamera': True,
+  },
   "610ebb9faaad6b43|2020-06-13--15-28-36": {
     'carFingerprint': HYUNDAI.IONIQ_EV_LTD,
     'enableCamera': True,
@@ -248,6 +252,12 @@ routes = {
   },
   "6cdecc4728d4af37|2020-02-23--15-44-18": {
     'carFingerprint': TOYOTA.CAMRY,
+    'enableCamera': True,
+    'enableDsu': False,
+    'fingerprintSource': 'fixed',
+  },
+  "3456ad0cd7281b24|2020-12-13--17-45-56": {
+    'carFingerprint': TOYOTA.CAMRY_TSS2,
     'enableCamera': True,
     'enableDsu': False,
     'fingerprintSource': 'fixed',

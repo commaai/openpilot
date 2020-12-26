@@ -89,18 +89,7 @@ CameraInfo cameras_supported[CAMERA_ID_MAX] = {
 
 void cameras_init(MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
   camera_init(&s->rear, CAMERA_ID_IMX298, 20, device_id, ctx);
-  s->rear.transform = (mat3){{
-    1.0,  0.0, 0.0,
-    0.0, 1.0, 0.0,
-    0.0,  0.0, 1.0,
-  }};
-
   camera_init(&s->front, CAMERA_ID_OV8865, 10, device_id, ctx);
-  s->front.transform = (mat3){{
-    1.0,  0.0, 0.0,
-    0.0, 1.0, 0.0,
-    0.0,  0.0, 1.0,
-  }};
 }
 
 void camera_autoexposure(CameraState *s, float grey_frac) {}
@@ -119,11 +108,14 @@ void cameras_close(MultiCameraState *s) {
 
 // called by processing_thread
 void camera_process_rear(MultiCameraState *s, CameraState *c, int cnt) {
-  // empty
+  if (cnt % 100 == 3) {
+    const CameraBuf *b = &c->buf;
+    create_thumbnail(s, c, (uint8_t*)b->cur_rgb_buf->addr);
+  }
 }
 
 void cameras_run(MultiCameraState *s) {
-  std::thread t = start_process_thread(s, "processing", &s->rear, 51, camera_process_rear);
+  std::thread t = start_process_thread(s, "processing", &s->rear, camera_process_rear);
   set_thread_name("frame_streaming");
   run_frame_stream(s);
   cameras_close(s);

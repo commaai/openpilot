@@ -41,9 +41,9 @@ static cl_program build_debayer_program(cl_device_id device_id, cl_context conte
            b->rgb_width, b->rgb_height, b->rgb_stride,
            ci->bayer_flip, ci->hdr);
 #ifdef QCOM2
-  return CLU_LOAD_FROM_FILE(context, device_id, "cameras/real_debayer.cl", args);
+  return cl_program_from_file(context, device_id, "cameras/real_debayer.cl", args);
 #else
-  return CLU_LOAD_FROM_FILE(context, device_id, "cameras/debayer.cl", args);
+  return cl_program_from_file(context, device_id, "cameras/debayer.cl", args);
 #endif
 }
 
@@ -53,7 +53,7 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
   camera_state = s;
   frame_buf_count = frame_cnt;
   frame_size = ci->frame_height * ci->frame_stride;
- 
+
   camera_bufs = std::make_unique<VisionBuf[]>(frame_buf_count);
   camera_bufs_metadata = std::make_unique<FrameMetadata[]>(frame_buf_count);
   for (int i = 0; i < frame_buf_count; i++) {
@@ -72,12 +72,12 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
 #else
   float db_s = 1.0;
 #endif
-
-  if (ci->bayer) {
-    yuv_transform = transform_scale_buffer(s->transform, db_s);
-  } else {
-    yuv_transform = s->transform;
-  }
+  const mat3 transform = (mat3){{
+    1.0, 0.0, 0.0,
+    0.0, 1.0, 0.0,
+    0.0, 0.0, 1.0
+  }};
+  yuv_transform = ci->bayer ? transform_scale_buffer(transform, db_s) : transform;
 
   for (int i = 0; i < UI_BUF_COUNT; i++) {
     VisionImg img = visionimg_alloc_rgb24(device_id, context, rgb_width, rgb_height, &rgb_bufs[i]);
@@ -129,7 +129,11 @@ CameraBuf::~CameraBuf() {
   for (int i = 0; i < YUV_COUNT; i++) {
     visionbuf_free(&yuv_ion[i]);
   }
-  CL_CHECK(clReleaseKernel(krnl_debayer));
+  rgb_to_yuv_destroy(&rgb_to_yuv_state);
+
+  if (krnl_debayer) {
+    CL_CHECK(clReleaseKernel(krnl_debayer));
+  }
   CL_CHECK(clReleaseCommandQueue(q));
 }
 
@@ -156,10 +160,12 @@ bool CameraBuf::acquire() {
     CL_CHECK(clSetKernelArg(krnl_debayer, 0, sizeof(cl_mem), &camrabuf_cl));
     CL_CHECK(clSetKernelArg(krnl_debayer, 1, sizeof(cl_mem), &cur_rgb_buf->buf_cl));
 #ifdef QCOM2
-    CL_CHECK(clSetKernelArg(krnl_debayer, 2, camera_state->debayer_cl_localMemSize, 0));
-    CL_CHECK(clEnqueueNDRangeKernel(q, krnl_debayer, 2, NULL,
-                                  camera_state->debayer_cl_globalWorkSize, camera_state->debayer_cl_localWorkSize,
-                                  0, 0, &debayer_event));
+    constexpr int localMemSize = (DEBAYER_LOCAL_WORKSIZE + 2 * (3 / 2)) * (DEBAYER_LOCAL_WORKSIZE + 2 * (3 / 2)) * sizeof(float);
+    const size_t globalWorkSize[] = {size_t(camera_state->ci.frame_width), size_t(camera_state->ci.frame_height)};
+    const size_t localWorkSize[] = {DEBAYER_LOCAL_WORKSIZE, DEBAYER_LOCAL_WORKSIZE};
+    CL_CHECK(clSetKernelArg(krnl_debayer, 2, localMemSize, 0));
+    CL_CHECK(clEnqueueNDRangeKernel(q, krnl_debayer, 2, NULL, globalWorkSize, localWorkSize,
+                                    0, 0, &debayer_event));
 #else
     float digital_gain = camera_state->digital_gain;
     if ((int)digital_gain == 0) {
@@ -168,7 +174,7 @@ bool CameraBuf::acquire() {
     CL_CHECK(clSetKernelArg(krnl_debayer, 2, sizeof(float), &digital_gain));
     const size_t debayer_work_size = rgb_height;  // doesn't divide evenly, is this okay?
     CL_CHECK(clEnqueueNDRangeKernel(q, krnl_debayer, 1, NULL,
-                                  &debayer_work_size, NULL, 0, 0, &debayer_event));
+                                    &debayer_work_size, NULL, 0, 0, &debayer_event));
 #endif
   } else {
     assert(cur_rgb_buf->len >= frame_size);
@@ -192,12 +198,11 @@ bool CameraBuf::acquire() {
   pool_acquire(&yuv_pool, cur_yuv_idx);
   pool_push(&yuv_pool, cur_yuv_idx);
 
-  tbuffer_dispatch(&ui_tb, cur_rgb_idx);
-
   return true;
 }
 
 void CameraBuf::release() {
+  tbuffer_dispatch(&ui_tb, cur_rgb_idx);
   pool_release(&yuv_pool, cur_yuv_idx);
 }
 
@@ -292,8 +297,9 @@ void create_thumbnail(MultiCameraState *s, CameraState *c, uint8_t *bgr_ptr) {
     row_pointer[0] = row;
     jpeg_write_scanlines(&cinfo, row_pointer, 1);
   }
-  free(row);
   jpeg_finish_compress(&cinfo);
+  jpeg_destroy_compress(&cinfo);
+  free(row);
 
   MessageBuilder msg;
   auto thumbnaild = msg.initEvent().initThumbnail();
@@ -304,6 +310,7 @@ void create_thumbnail(MultiCameraState *s, CameraState *c, uint8_t *bgr_ptr) {
   if (s->pm != NULL) {
     s->pm->send("thumbnail", msg);
   }
+  free(thumbnail_buffer);
 }
 
 void set_exposure_target(CameraState *c, const uint8_t *pix_ptr, int x_start, int x_end, int x_skip, int y_start, int y_end, int y_skip) {
@@ -345,10 +352,8 @@ void set_exposure_target(CameraState *c, const uint8_t *pix_ptr, int x_start, in
 extern volatile sig_atomic_t do_exit;
 
 void *processing_thread(MultiCameraState *cameras, const char *tname,
-                        CameraState *cs, int priority, process_thread_cb callback) {
+                          CameraState *cs, process_thread_cb callback) {
   set_thread_name(tname);
-  int err = set_realtime_priority(priority);
-  LOG("%s start! setpriority returns %d", tname, err);
 
   for (int cnt = 0; !do_exit; cnt++) {
     if (!cs->buf.acquire()) continue;
@@ -361,8 +366,8 @@ void *processing_thread(MultiCameraState *cameras, const char *tname,
 }
 
 std::thread start_process_thread(MultiCameraState *cameras, const char *tname,
-                                 CameraState *cs, int priority, process_thread_cb callback) {
-  return std::thread(processing_thread, cameras, tname, cs, priority, callback);
+                                 CameraState *cs, process_thread_cb callback) {
+  return std::thread(processing_thread, cameras, tname, cs, callback);
 }
 
 void common_camera_process_front(SubMaster *sm, PubMaster *pm, CameraState *c, int cnt) {
@@ -379,7 +384,7 @@ void common_camera_process_front(SubMaster *sm, PubMaster *pm, CameraState *c, i
       if (state.getFaceProb() > 0.4) {
         auto face_position = state.getFacePosition();
         int x_offset = rhd_front ? 0 : b->rgb_width - (0.5 * b->rgb_height);
-        x_offset += (face_position[0] + 0.5) * (0.5 * b->rgb_height);
+        x_offset += (face_position[0] * (rhd_front ? -1.0 : 1.0) + 0.5) * (0.5 * b->rgb_height);
         const int y_offset = (face_position[1] + 0.5) * b->rgb_height;
 
         x_min = std::max(0, x_offset - 72);

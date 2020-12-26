@@ -11,11 +11,11 @@ from smbus2 import SMBus
 import cereal.messaging as messaging
 from cereal import log
 from common.filter_simple import FirstOrderFilter
-from common.hardware import EON, HARDWARE, TICI
 from common.numpy_fast import clip, interp
 from common.params import Params
 from common.realtime import DT_TRML, sec_since_boot
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
+from selfdrive.hardware import EON, HARDWARE, TICI
 from selfdrive.loggerd.config import get_available_percent
 from selfdrive.pandad import get_expected_signature
 from selfdrive.swaglog import cloudlog
@@ -341,6 +341,7 @@ def thermald_thread():
       set_offroad_alert_if_changed("Offroad_ConnectivityNeeded", False)
       set_offroad_alert_if_changed("Offroad_ConnectivityNeededPrompt", False)
 
+    startup_conditions["up_to_date"] = params.get("Offroad_ConnectivityNeeded") is None or params.get("DisableUpdates") == b"1"
     startup_conditions["not_uninstalling"] = not params.get("DoUninstall") == b"1"
     startup_conditions["accepted_terms"] = params.get("HasAcceptedTerms") == terms_version
 

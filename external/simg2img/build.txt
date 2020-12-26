@@ -1,3 +1,0 @@
-git clone https://github.com/anestisb/android-simg2img
-cd android-simg2img
-make

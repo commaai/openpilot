@@ -14,18 +14,13 @@ def dmonitoringd_thread(sm=None, pm=None):
   if sm is None:
     sm = messaging.SubMaster(['driverState', 'liveCalibration', 'carState', 'controlsState', 'model'], poll=['driverState'])
 
-  driver_status = DriverStatus()
-  driver_status.is_rhd_region = Params().get("IsRHD") == b"1"
+  driver_status = DriverStatus(rhd=Params().get("IsRHD") == b"1")
 
   offroad = Params().get("IsOffroad") == b"1"
 
   sm['liveCalibration'].calStatus = Calibration.INVALID
   sm['liveCalibration'].rpyCalib = [0, 0, 0]
-  sm['carState'].vEgo = 0.
-  sm['carState'].cruiseState.speed = 0.
   sm['carState'].buttonEvents = []
-  sm['carState'].steeringPressed = False
-  sm['carState'].gasPressed = False
   sm['carState'].standstill = True
 
   v_cruise_last = 0

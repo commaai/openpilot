@@ -25,8 +25,6 @@
 
 #include "sensor2_i2c.h"
 
-#define DEBAYER_LOCAL_WORKSIZE 16
-
 #define FRAME_WIDTH  1928
 #define FRAME_HEIGHT 1208
 //#define FRAME_STRIDE 1936 // for 8 bit output
@@ -564,12 +562,6 @@ static void camera_init(CameraState *s, int camera_id, int camera_num, unsigned 
 
   s->camera_num = camera_num;
 
-  s->transform = (mat3){{
-    1.0, 0.0, 0.0,
-    0.0, 1.0, 0.0,
-    0.0, 0.0, 1.0,
-  }};
-
   s->dc_gain_enabled = false;
   s->analog_gain = 0x5;
   s->analog_gain_frac = sensor_analog_gains[s->analog_gain];
@@ -580,44 +572,44 @@ static void camera_init(CameraState *s, int camera_id, int camera_num, unsigned 
   s->skipped = true;
   s->ef_filtered = 1.0;
 
-  s->debayer_cl_localMemSize = (DEBAYER_LOCAL_WORKSIZE + 2 * (3 / 2)) * (DEBAYER_LOCAL_WORKSIZE + 2 * (3 / 2)) * sizeof(float);
-  s->debayer_cl_globalWorkSize[0] = s->ci.frame_width;
-  s->debayer_cl_globalWorkSize[1] = s->ci.frame_height;
-  s->debayer_cl_localWorkSize[0] = DEBAYER_LOCAL_WORKSIZE;
-  s->debayer_cl_localWorkSize[1] = DEBAYER_LOCAL_WORKSIZE;
-
   s->buf.init(device_id, ctx, s, FRAME_BUF_COUNT, "frame");
+}
+
+// TODO: refactor this to somewhere nicer, perhaps use in camera_qcom as well
+static int open_v4l_by_name_and_index(const char name[], int index, int flags) {
+  char nbuf[0x100];
+  int v4l_index = 0;
+  int cnt_index = index;
+  while (1) {
+    snprintf(nbuf, sizeof(nbuf), "/sys/class/video4linux/v4l-subdev%d/name", v4l_index);
+    FILE *f = fopen(nbuf, "rb");
+    if (f == NULL) return -1;
+    int len = fread(nbuf, 1, sizeof(nbuf), f);
+    fclose(f);
+
+    // name ends with '\n', remove it
+    if (len < 1) return -1;
+    nbuf[len-1] = '\0';
+
+    if (strcmp(nbuf, name) == 0) {
+      if (cnt_index == 0) {
+        snprintf(nbuf, sizeof(nbuf), "/dev/v4l-subdev%d", v4l_index);
+        LOGD("open %s for %s index %d", nbuf, name, index);
+        return open(nbuf, flags);
+      }
+      cnt_index--;
+    }
+    v4l_index++;
+  }
 }
 
 static void camera_open(CameraState *s) {
   int ret;
-  // /dev/v4l-subdev10 is sensor, 11, 12, 13 are the other sensors
-  switch (s->camera_num) {
-    case 0:
-      s->sensor_fd = open("/dev/v4l-subdev10", O_RDWR | O_NONBLOCK);
-      break;
-    case 1:
-      s->sensor_fd = open("/dev/v4l-subdev11", O_RDWR | O_NONBLOCK);
-      break;
-    case 2:
-      s->sensor_fd = open("/dev/v4l-subdev12", O_RDWR | O_NONBLOCK);
-      break;
-  }
+  s->sensor_fd = open_v4l_by_name_and_index("cam-sensor-driver", s->camera_num, O_RDWR | O_NONBLOCK);
   assert(s->sensor_fd >= 0);
   LOGD("opened sensor");
 
-  // also at /dev/v4l-subdev3, 4, 5, 6
-  switch (s->camera_num) {
-    case 0:
-      s->csiphy_fd = open("/dev/v4l-subdev3", O_RDWR | O_NONBLOCK);
-      break;
-    case 1:
-      s->csiphy_fd = open("/dev/v4l-subdev4", O_RDWR | O_NONBLOCK);
-      break;
-    case 2:
-      s->csiphy_fd = open("/dev/v4l-subdev5", O_RDWR | O_NONBLOCK);
-      break;
-  }
+  s->csiphy_fd = open_v4l_by_name_and_index("cam-csiphy-driver", s->camera_num, O_RDWR | O_NONBLOCK);
   assert(s->csiphy_fd >= 0);
   LOGD("opened csiphy");
 
@@ -1155,9 +1147,9 @@ void cameras_run(MultiCameraState *s) {
                        ae_thread, s);
   assert(err == 0);
   std::vector<std::thread> threads;
-  threads.push_back(start_process_thread(s, "processing", &s->rear, 51, camera_process_frame));
-  threads.push_back(start_process_thread(s, "frontview", &s->front, 51, camera_process_front));
-  threads.push_back(start_process_thread(s, "wideview", &s->wide, 51, camera_process_frame));
+  threads.push_back(start_process_thread(s, "processing", &s->rear, camera_process_frame));
+  threads.push_back(start_process_thread(s, "frontview", &s->front, camera_process_front));
+  threads.push_back(start_process_thread(s, "wideview", &s->wide, camera_process_frame));
 
   // start devices
   LOG("-- Starting devices");

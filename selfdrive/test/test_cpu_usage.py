@@ -6,7 +6,6 @@ import subprocess
 
 import cereal.messaging as messaging
 from common.basedir import BASEDIR
-from common.params import Params
 from selfdrive.test.helpers import set_params_enabled
 
 def cputime_total(ct):
@@ -66,20 +65,23 @@ def test_cpu_usage():
   cpu_ok = False
 
   # start manager
+  os.environ['SKIP_FW_QUERY'] = "1"
+  os.environ['FINGERPRINT'] = "TOYOTA COROLLA TSS2 2019"
   manager_path = os.path.join(BASEDIR, "selfdrive/manager.py")
   manager_proc = subprocess.Popen(["python", manager_path])
   try:
     proc_sock = messaging.sub_sock('procLog', conflate=True, timeout=2000)
+    cs_sock = messaging.sub_sock('controlsState', conflate=True)
 
     # wait until everything's started
     start_time = time.monotonic()
-    while time.monotonic() - start_time < 210:
-      if Params().get("CarParams") is not None:
+    while time.monotonic() - start_time < 240:
+      msg = messaging.recv_sock(cs_sock, wait=True)
+      if msg is not None:
         break
-      time.sleep(2)
 
     # take first sample
-    time.sleep(5)
+    time.sleep(15)
     first_proc = messaging.recv_sock(proc_sock, wait=True)
     if first_proc is None:
       raise Exception("\n\nTEST FAILED: progLog recv timed out\n\n")
@@ -97,7 +99,6 @@ def test_cpu_usage():
 
 if __name__ == "__main__":
   set_params_enabled()
-  Params().delete("CarParams")
 
   passed = False
   try:

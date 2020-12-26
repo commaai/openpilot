@@ -17,7 +17,7 @@ QLabel * title_label(QString text) {
 QWidget * OnboardingWindow::terms_screen() {
 
   QGridLayout *main_layout = new QGridLayout();
-  main_layout->setMargin(30);
+  main_layout->setMargin(100);
   main_layout->setSpacing(30);
 
   main_layout->addWidget(title_label("Review Terms"), 0, 0, 1, -1);
@@ -58,7 +58,7 @@ QWidget * OnboardingWindow::terms_screen() {
 QWidget * OnboardingWindow::training_screen() {
 
   QVBoxLayout *main_layout = new QVBoxLayout();
-  main_layout->setMargin(30);
+  main_layout->setMargin(100);
   main_layout->setSpacing(30);
 
   main_layout->addWidget(title_label("Training Guide"));
@@ -107,6 +107,9 @@ OnboardingWindow::OnboardingWindow(QWidget *parent) {
       background-color: #292929;
     }
   )");
+
+  // TODO: remove this after training guide is done
+  Params().write_db_value("CompletedTrainingVersion", LATEST_TRAINING_VERSION);
 
   updateActiveScreen();
 }

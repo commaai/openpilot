@@ -1,7 +1,7 @@
 import numpy as np
 
 import common.transformations.orientation as orient
-from common.hardware import TICI
+from selfdrive.hardware import TICI
 
 ## -- hardcoded hardware params --
 eon_f_focal_length = 910.0

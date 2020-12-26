@@ -10,6 +10,10 @@ if [ -z "$REQUIRED_NEOS_VERSION" ]; then
   export REQUIRED_NEOS_VERSION="15-1"
 fi
 
+if [ -z "$AGNOS_VERSION" ]; then
+  export AGNOS_VERSION="0.1"
+fi
+
 if [ -z "$PASSIVE" ]; then
   export PASSIVE="1"
 fi
