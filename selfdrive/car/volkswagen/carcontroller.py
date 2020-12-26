@@ -41,20 +41,20 @@ class CarController():
     # Send CAN commands.
     can_sends = []
     
-      # --------------------------------------------------------------------------
-      #                                                                         #
-      # acc led stuff                                                           #
-      #                                                                         #
-      #                                                                         #
-      # --------------------------------------------------------------------------
-      if frame % P.AWV_STEP == 0:
-        green_led = 1 if enabled else 0
-        orange_led = 1 if self.mobPreEnable and self.mobEnabled else 0
+    # --------------------------------------------------------------------------
+    #                                                                         #
+    # acc led stuff                                                           #
+    #                                                                         #
+    #                                                                         #
+    # --------------------------------------------------------------------------
+    if frame % P.AWV_STEP == 0:
+      green_led = 1 if enabled else 0
+      orange_led = 1 if self.mobPreEnable and self.mobEnabled else 0
 
-        idx = (frame / P.MOB_STEP) % 16
+      idx = (frame / P.MOB_STEP) % 16
 
-        can_sends.append(
-          self.create_awv_control(self.packer_pt, CANBUS.pt, idx, orange_led, green_led))
+      can_sends.append(
+        self.create_awv_control(self.packer_pt, CANBUS.pt, idx, orange_led, green_led))
     #--------------------------------------------------------------------------
     #                                                                         #
     # Prepare HCA_01 Heading Control Assist messages with steering torque.    #
