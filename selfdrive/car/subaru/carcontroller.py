@@ -23,7 +23,7 @@ class CarControllerParams():
     self.ES_CLOSE_DISTANCE_SETTLE_TIME = 250000000  #(250ms) time taken (in nanoseconds) for ES's Close_Distance signal to settle (taking care of noise after stopping)
 
     #SUBARU STOP AND GO - Pre-Global
-    self.SNG_DISTANCE_THRESHOLD_PREGLOBAL = 0.7 #SnG trigger when lead car distance > 0.7m
+    self.SNG_DISTANCE_THRESHOLD_PREGLOBAL = 3 #SnG trigger when lead car distance > 3m
     self.SNG_DISTANCE_LIMIT_PREGLOBAL = 4 #SnG only trigger if close distance is less than 4
 
 class CarController():
@@ -78,8 +78,14 @@ class CarController():
     #---------------------------------------------STOP AND GO---------------------------------------------------
     if CS.CP.carFingerprint in PREGLOBAL_CARS:
       #PRE-GLOBAL STOP AND GO
-      #Activate ACC Resumt with throttle tap by switching on WIPERS (for testing only)
-      if CS.wiper_activated:
+      #Activate ACC Resume with throttle tap
+      if (enabled
+          and CS.car_follow                                                    #Must have lead car
+          and CS.close_distance > self.params.SNG_DISTANCE_THRESHOLD_PREGLOBAL #Distance with lead car > 3m (this is due to Preglobal ES's unreliable Close Distance signal)
+          and CS.close_distance < 4.5                                          #For safety, SnG will not operate if Close Distance reads more than 4.5m (Pre-global ES's unreliability, sometimes Close Distance shows max-5m when there is a stationary object ahead)
+          and CS.close_distance > self.prev_close_distance                     #Distance with lead car is increasing
+          and CS.cruise_on                                                     #Must have Cruise engaged
+         ):
         self.sng_resume_acc = True
 
       throttle_cmd = -1 #normally, just forward throttle msg from ECU
@@ -91,6 +97,8 @@ class CarController():
         else:
           self.sng_throttle_tap_cnt = -1
           self.sng_resume_acc = False
+
+      self.prev_close_distance = CS.close_distance
 
       #Send throttle message
       if self.throttle_cnt != CS.throttle_msg["Counter"]:

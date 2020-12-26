@@ -70,7 +70,12 @@ class CarState(CarStateBase):
       self.ready = not cp_cam.vl["ES_DashStatus"]["Not_Ready_Startup"]
       self.es_accel_msg = copy.copy(cp_cam.vl["ES_CruiseThrottle"])
       self.throttle_msg = copy.copy(cp.vl["Throttle"])
-      self.wiper_activated = cp.vl["Stalk"]["Wiper"] == 1
+
+      #self.wiper_activated = cp.vl["Stalk"]["Wiper"] == 1
+      #@LetsDuDiss 26 Dec 2020: Add signals to aid Subaru STOP AND GO on Preglobal
+      self.car_follow = cp_cam.vl["ES_DashStatus"]['Car_Follow'] == 1
+      self.close_distance = cp_cam.vl["ES_CruiseThrottle"]['Close_Distance']
+      self.cruise_on = cp_cam.vl["ES_DashStatus"]['Cruise_On'] == 1
     else:
       ret.steerWarning = cp.vl["Steering_Torque"]['Steer_Warning'] == 1
       ret.cruiseState.nonAdaptive = cp_cam.vl["ES_DashStatus"]['Conventional_Cruise'] == 1
@@ -197,8 +202,11 @@ class CarState(CarStateBase):
   def get_cam_can_parser(CP):
     if CP.carFingerprint in PREGLOBAL_CARS:
       signals = [
+        #@LetsDuDiss 26 Dec 2020: Add signals to aid Subaru STOP AND GO on Preglobal
         ("Cruise_Set_Speed", "ES_DashStatus", 0),
+        ("Car_Follow", "ES_DashStatus", 0),
         ("Not_Ready_Startup", "ES_DashStatus", 0),
+        ("Cruise_On", "ES_DashStatus", 0),
 
         ("Throttle_Cruise", "ES_CruiseThrottle", 0),
         ("Signal1", "ES_CruiseThrottle", 0),
@@ -208,7 +216,7 @@ class CarState(CarStateBase):
         ("DistanceSwap", "ES_CruiseThrottle", 0),
         ("Standstill", "ES_CruiseThrottle", 0),
         ("Signal3", "ES_CruiseThrottle", 0),
-        ("CloseDistance", "ES_CruiseThrottle", 0),
+        ("Close_Distance", "ES_CruiseThrottle", 0),
         ("Signal4", "ES_CruiseThrottle", 0),
         ("Standstill_2", "ES_CruiseThrottle", 0),
         ("ES_Error", "ES_CruiseThrottle", 0),
