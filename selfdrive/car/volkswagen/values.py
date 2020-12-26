@@ -6,6 +6,7 @@ class CarControllerParams:
   MQB_LDW_STEP = 10              # LDW message frequency 10Hz on MQB
   PQ_LDW_STEP = 5                # LDW message frequency 20Hz on PQ35/PQ46/NMS
   GRA_ACC_STEP = 3               # GRA_ACC_01 message frequency 33Hz
+  MOB_STEP = 2                   # PQ_MOB message frequency 50Hz
   AWV_STEP = 2                   # ACC LED Control
 
   GRA_VBP_STEP = 100             # Send ACC virtual button presses once a second
