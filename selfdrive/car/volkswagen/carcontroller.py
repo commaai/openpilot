@@ -29,6 +29,7 @@ class CarController():
     self.graMsgSentCount = 0
     self.graMsgStartFramePrev = 0
     self.graMsgBusCounterPrev = 0
+    self.mobPreEnable = False
     self.create_awv_control = volkswagencan.create_pq_awv_control
 
     self.steer_rate_limited = False
