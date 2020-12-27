@@ -23,10 +23,9 @@
 
 #include "sensors/light_sensor.hpp"
 
-volatile sig_atomic_t do_exit = 0;
-
 #define I2C_BUS_IMU 1
 
+volatile sig_atomic_t do_exit = 0;
 
 void set_do_exit(int sig) {
   do_exit = 1;
