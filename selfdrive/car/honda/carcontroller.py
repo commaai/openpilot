@@ -36,21 +36,19 @@ def actuator_hystereses(brake, braking, brake_steady, v_ego, car_fingerprint):
   return brake, braking, brake_steady
 
 
-def brake_pump_hysteresis(apply_brake, apply_brake_last, last_pump_ts, ts):
-  pump_on = False
-
-  # reset pump timer if:
-  # - there is an increment in brake request
-  # - we are applying steady state brakes and we haven't been running the pump
-  #   for more than 20s (to prevent pressure bleeding)
-  if apply_brake > apply_brake_last or (ts - last_pump_ts > 20. and apply_brake > 0):
-    last_pump_ts = ts
-
-  # once the pump is on, run it for at least 0.2s
-  if ts - last_pump_ts < 0.2 and apply_brake > 0:
+def brake_pump_hysteresis(apply_brake, apply_brake_last, last_pump_on_state, ts):
+  if (apply_brake > apply_brake_last):
     pump_on = True
 
-  return pump_on, last_pump_ts
+  if (apply_brake == apply_brake_last):
+    pump_on = last_pump_on_state
+
+  if (apply_brake < apply_brake_last):
+    pump_on = False
+
+  last_pump_on_state = pump_on
+
+  return pump_on, last_pump_on_state
 
 
 def process_hud_alert(hud_alert):
@@ -90,7 +88,7 @@ class CarController():
     self.brake_steady = 0.
     self.brake_last = 0.
     self.apply_brake_last = 0
-    self.last_pump_ts = 0.
+    self.last_pump_on_state = False
     self.packer = CANPacker(dbc_name)
     self.new_radar_config = False
 
@@ -172,7 +170,11 @@ class CarController():
         else:
           apply_gas = clip(actuators.gas, 0., 1.)
           apply_brake = int(clip(self.brake_last * P.BRAKE_MAX, 0, P.BRAKE_MAX - 1))
-          pump_on, self.last_pump_ts = brake_pump_hysteresis(apply_brake, self.apply_brake_last, self.last_pump_ts, ts)
+          pump_on, self.last_pump_on_state = brake_pump_hysteresis(apply_brake, self.apply_brake_last, self.last_pump_on_state, ts)
+
+          if CS.CP.enableGasInterceptor:
+            pcm_cancel_cmd = False
+
           can_sends.append(hondacan.create_brake_command(self.packer, apply_brake, pump_on,
             pcm_override, pcm_cancel_cmd, hud.fcw, idx, CS.CP.carFingerprint, CS.stock_brake))
           self.apply_brake_last = apply_brake
