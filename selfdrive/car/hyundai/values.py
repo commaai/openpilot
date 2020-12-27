@@ -160,6 +160,17 @@ FINGERPRINTS = {
 IGNORED_FINGERPRINTS = [CAR.VELOSTER, CAR.GENESIS_G70, CAR.KONA]
 
 FW_VERSIONS = {
+  CAR.IONIQ_EV_LTD: {
+    (Ecu.fwdRadar, 0x7d0, None): [
+      b'\xf1\x00AEev SCC F-CUP      1.00 1.00 96400-G7000         ',
+    ],
+    (Ecu.eps, 0x7d4, None): [
+      b'\xf1\x00AE  MDPS C 1.00 1.02 56310G7300\x00 4AEEC102',
+    ],
+    (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00AEE MFC  AT EUR LHD 1.00 1.00 95740-G7200 160418',
+    ],
+  },
   CAR.SONATA: {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00DN8_ SCC FHCUP      1.00 1.01 99110-L1000         ',
