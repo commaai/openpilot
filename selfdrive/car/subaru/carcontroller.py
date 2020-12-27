@@ -84,7 +84,6 @@ class CarController():
           and CS.close_distance > self.params.SNG_DISTANCE_THRESHOLD_PREGLOBAL #Distance with lead car > 3m (this is due to Preglobal ES's unreliable Close Distance signal)
           and CS.close_distance < 4.5                                          #For safety, SnG will not operate if Close Distance reads more than 4.5m (Pre-global ES's unreliability, sometimes Close Distance shows max-5m when there is a stationary object ahead)
           and CS.close_distance > self.prev_close_distance                     #Distance with lead car is increasing
-          and CS.cruise_activated                                                     #Must have Cruise engaged
          ):
         self.sng_resume_acc = True
 
