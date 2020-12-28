@@ -28,7 +28,7 @@ openpilot tools and the following setup steps are developed and tested on Ubuntu
 
 Setup
 ============
-1. Run `ubuntu_setup.sh` or `mac_setup.sh`, make sure everything completed correctly
+1. Run `ubuntu_setup.sh` or `mac_setup.sh`, and make sure that everything completed correctly
 
 2. Compile openpilot by running ```scons``` in the openpilot directory
    or alternatively run ```./openpilot_build.sh``` (uses a pre-configured docker container)
