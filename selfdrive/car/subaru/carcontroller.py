@@ -79,11 +79,12 @@ class CarController():
     if CS.CP.carFingerprint in PREGLOBAL_CARS:
       #PRE-GLOBAL STOP AND GO
       #Activate ACC Resume with throttle tap
-      if (enabled
+      if (enabled                                                              #Cruise must be activated
           and CS.car_follow                                                    #Must have lead car
           and CS.close_distance > self.params.SNG_DISTANCE_THRESHOLD_PREGLOBAL #Distance with lead car > 3m (this is due to Preglobal ES's unreliable Close Distance signal)
           and CS.close_distance < 4.5                                          #For safety, SnG will not operate if Close Distance reads more than 4.5m (Pre-global ES's unreliability, sometimes Close Distance shows max-5m when there is a stationary object ahead)
           and CS.close_distance > self.prev_close_distance                     #Distance with lead car is increasing
+          and CS.out.standstill                                                #Must be standing still
          ):
         self.sng_resume_acc = True
 
