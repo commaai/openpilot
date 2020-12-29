@@ -1,10 +1,11 @@
+#include <unistd.h>
+#include <dirent.h>
+
 #include <cstdio>
 #include <cstdlib>
 #include <climits>
 #include <cassert>
-
-#include <unistd.h>
-#include <dirent.h>
+#include <csignal>
 #include <memory>
 #include <utility>
 #include <sstream>
@@ -18,7 +19,14 @@
 #include "common/timing.h"
 #include "common/utilpp.h"
 
+
+volatile sig_atomic_t do_exit = 0;
+
 namespace {
+
+static void set_do_exit(int sig) {
+  do_exit = 1;
+}
 
 struct ProcCache {
   std::string name;
@@ -29,6 +37,9 @@ struct ProcCache {
 }
 
 int main() {
+  signal(SIGINT, (sighandler_t)set_do_exit);
+  signal(SIGTERM, (sighandler_t)set_do_exit);
+
   PubMaster publisher({"procLog"});
 
   double jiffy = sysconf(_SC_CLK_TCK);
@@ -36,7 +47,7 @@ int main() {
 
   std::unordered_map<pid_t, ProcCache> proc_cache;
 
-  while (1) {
+  while (!do_exit) {
 
     MessageBuilder msg;
     auto procLog = msg.initEvent().initProcLog();
