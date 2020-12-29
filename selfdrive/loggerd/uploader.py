@@ -8,9 +8,9 @@ import time
 import traceback
 
 from cereal import log
+import cereal.messaging as messaging
 from common.api import Api
 from common.params import Params
-#from selfdrive.hardware import HARDWARE
 from selfdrive.loggerd.xattr_cache import getxattr, setxattr
 from selfdrive.loggerd.config import ROOT
 from selfdrive.swaglog import cloudlog
@@ -44,9 +44,6 @@ def clear_locks(root):
     except OSError:
       cloudlog.exception("clear_locks failed")
 
-def is_on_wifi():
-  return False
-  #return HARDWARE.get_network_type() == NetworkType.wifi
 
 class Uploader():
   def __init__(self, dongle_id, root):
@@ -198,17 +195,15 @@ def uploader_fn(exit_event):
     cloudlog.info("uploader missing dongle_id")
     raise Exception("uploader can't start without dongle id")
 
+  sm = messaging.SubMaster(['thermal'])
   uploader = Uploader(dongle_id, ROOT)
 
   backoff = 0.1
-  counter = 0
-  on_wifi = False
   while not exit_event.is_set():
+    sm.update(0)
+    on_wifi = sm['thermal'].networkType == NetworkType.wifi
     offroad = params.get("IsOffroad") == b'1'
-    allow_raw_upload = (params.get("IsUploadRawEnabled") != b"0") and offroad
-    if offroad and counter % 12 == 0:
-      on_wifi = is_on_wifi()
-    counter += 1
+    allow_raw_upload = params.get("IsUploadRawEnabled") != b"0"
 
     d = uploader.next_file_to_upload(with_raw=allow_raw_upload and on_wifi and offroad)
     if d is None:  # Nothing to upload
