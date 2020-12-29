@@ -24,7 +24,6 @@ class TestManager(unittest.TestCase):
     os.environ['PASSIVE'] = '0'
 
   def tearDown(self):
-    print("\n\n\nCLEANING UP *****************************")
     manager.cleanup_all_processes(None, None)
 
   def test_manager_prepare(self):
@@ -38,7 +37,8 @@ class TestManager(unittest.TestCase):
       manager.main()
       t = time.monotonic() - start
       assert t < MAX_STARTUP_TIME, f"startup took {t}s, expected <{MAX_STARTUP_TIME}s"
- 
+
+  # ensure all processes exit cleanly
   def test_clean_exit(self):
     manager.manager_prepare()
     for p in ALL_PROCESSES:
@@ -51,8 +51,12 @@ class TestManager(unittest.TestCase):
       if not EON and (p == 'ui'or p == 'loggerd'):
         # TODO: make Qt UI exit gracefully and fix OMX encoder exiting
         continue
+
       # TODO: interrupted blocking read exits with 1 in cereal. use a more unique return code
-      assert exit_code in [0, 1], f"{p} died with {exit_code}"
+      exit_codes = [0, 1]
+      if p in manager.kill_processes:
+        exit_codes = [-signal.SIGKILL]
+      assert exit_code in exit_codes, f"{p} died with {exit_code}"
 
 
 def test_athena():

@@ -19,6 +19,7 @@ NetworkType = log.ThermalData.NetworkType
 UPLOAD_ATTR_NAME = 'user.upload'
 UPLOAD_ATTR_VALUE = b'1'
 
+force_wifi = os.getenv("FORCEWIFI") is not None
 fake_upload = os.getenv("FAKEUPLOAD") is not None
 
 
@@ -201,7 +202,7 @@ def uploader_fn(exit_event):
   backoff = 0.1
   while not exit_event.is_set():
     sm.update(0)
-    on_wifi = sm['thermal'].networkType == NetworkType.wifi
+    on_wifi = force_wifi or sm['thermal'].networkType == NetworkType.wifi
     offroad = params.get("IsOffroad") == b'1'
     allow_raw_upload = params.get("IsUploadRawEnabled") != b"0"
 
