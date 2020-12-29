@@ -70,7 +70,7 @@ def mpc_vwr_thread(addr="127.0.0.1"):
       l_poly = np.array(md.model.leftLane.poly)
       r_poly = np.array(md.model.rightLane.poly)
 
-      p_path_y = np.polyval(p_poly, path_x)
+      p_path_y = np.polyval(p_poly, path_x)  # lgtm[py/multiple-definition]
       l_path_y = np.polyval(r_poly, path_x)
       r_path_y = np.polyval(l_poly, path_x)
 
