@@ -95,6 +95,7 @@ class CarState(CarStateBase):
       ("COUNTER", "EPS_STATUS", -1),
       ("TRACTION_OFF", "TRACTION_BUTTON", 0),
       ("SEATBELT_DRIVER_UNLATCHED", "SEATBELT_STATUS", 0),
+      ("CRUISE_STATE", "DASHBOARD", 0),
     ]
 
     checks = [
