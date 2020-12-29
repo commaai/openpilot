@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-import ctypes
-import inspect
 import json
 import os
 import random
@@ -12,7 +10,7 @@ import traceback
 from cereal import log
 from common.api import Api
 from common.params import Params
-from selfdrive.hardware import HARDWARE
+#from selfdrive.hardware import HARDWARE
 from selfdrive.loggerd.xattr_cache import getxattr, setxattr
 from selfdrive.loggerd.config import ROOT
 from selfdrive.swaglog import cloudlog
@@ -23,28 +21,6 @@ UPLOAD_ATTR_VALUE = b'1'
 
 fake_upload = os.getenv("FAKEUPLOAD") is not None
 
-
-def raise_on_thread(t, exctype):
-  '''Raises an exception in the threads with id tid'''
-  for ctid, tobj in threading._active.items():
-    if tobj is t:
-      tid = ctid
-      break
-  else:
-    raise Exception("Could not find thread")
-
-  if not inspect.isclass(exctype):
-    raise TypeError("Only types can be raised (not instances)")
-
-  res = ctypes.pythonapi.PyThreadState_SetAsyncExc(ctypes.c_long(tid),
-                                                   ctypes.py_object(exctype))
-  if res == 0:
-    raise ValueError("invalid thread id")
-  elif res != 1:
-    # "if it returns a number greater than one, you're in trouble,
-    # and you should call it again with exc=NULL to revert the effect"
-    ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, 0)
-    raise SystemError("PyThreadState_SetAsyncExc failed")
 
 def get_directory_sort(d):
   return list(map(lambda s: s.rjust(10, '0'), d.rsplit('--', 1)))
@@ -69,7 +45,8 @@ def clear_locks(root):
       cloudlog.exception("clear_locks failed")
 
 def is_on_wifi():
-  return HARDWARE.get_network_type() == NetworkType.wifi
+  return False
+  #return HARDWARE.get_network_type() == NetworkType.wifi
 
 class Uploader():
   def __init__(self, dongle_id, root):
