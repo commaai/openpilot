@@ -34,7 +34,7 @@ def api_get(endpoint, method='GET', timeout=None, access_token=None, **params):
 
   headers = {}
   if access_token is not None:
-    headers['Authorization'] = "JWT "+access_token
+    headers['Authorization'] = "JWT " + access_token
 
   headers['User-Agent'] = "openpilot-" + version
 
