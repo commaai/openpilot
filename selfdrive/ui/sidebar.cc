@@ -48,7 +48,7 @@ static void ui_draw_sidebar_battery_icon(UIState *s) {
 
   int battery_img = s->scene.thermal.getBatteryStatus() == "Charging" ? s->img_battery_charging : s->img_battery;
 
-  ui_draw_rect(s->vg, battery_img_x + 6, battery_img_y + 5,
+  ui_fill_rect(s->vg, battery_img_x + 6, battery_img_y + 5,
                ((battery_img_w - 19) * (s->scene.thermal.getBatteryPercent() * 0.01)), battery_img_h - 11, COLOR_WHITE);
 
   ui_draw_image(s->vg, battery_img_x, battery_img_y, battery_img_w, battery_img_h, battery_img, 1.0f);
@@ -90,7 +90,7 @@ static void ui_draw_sidebar_metric(UIState *s, const char* label_str, const char
   }
 
   ui_draw_rect(s->vg, metric_x, metric_y, metric_w, metric_h,
-               severity > 0 ? COLOR_WHITE : COLOR_WHITE_ALPHA(85), 20, 2);
+               severity > 0 ? COLOR_WHITE : COLOR_WHITE_ALPHA(85), 2, 20);
 
   nvgBeginPath(s->vg);
   nvgRoundedRectVarying(s->vg, metric_x + 6, metric_y + 6, 18, metric_h - 12, 25, 0, 0, 25);

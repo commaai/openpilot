@@ -309,11 +309,10 @@ static void ui_draw_vision_maxspeed(UIState *s) {
   viz_maxspeed_xo = 0;
 
   // Draw Background
-  ui_draw_rect(s->vg, viz_maxspeed_x, viz_maxspeed_y, viz_maxspeed_w, viz_maxspeed_h, COLOR_BLACK_ALPHA(100), 30);
+  ui_fill_rect(s->vg, viz_maxspeed_x, viz_maxspeed_y, viz_maxspeed_w, viz_maxspeed_h, COLOR_BLACK_ALPHA(100), 30);
 
   // Draw Border
-  NVGcolor color = COLOR_WHITE_ALPHA(100);
-  ui_draw_rect(s->vg, viz_maxspeed_x, viz_maxspeed_y, viz_maxspeed_w, viz_maxspeed_h, color, 20, 10);
+  ui_draw_rect(s->vg, viz_maxspeed_x, viz_maxspeed_y, viz_maxspeed_w, viz_maxspeed_h, COLOR_WHITE_ALPHA(100), 10, 20);
 
   nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
   const int text_x = viz_maxspeed_x + (viz_maxspeed_xo / 2) + (viz_maxspeed_w / 2);
@@ -390,12 +389,12 @@ static void ui_draw_driver_view(UIState *s) {
                                         box_y,
                                         scene->is_rhd ? (valid_frame_w - box_h / 2) : (valid_frame_x + box_h / 2), box_y,
                                         COLOR_BLACK, COLOR_BLACK_ALPHA(0));
-  ui_draw_rect(s->vg, scene->is_rhd ? valid_frame_x : (valid_frame_x + box_h / 2), box_y, valid_frame_w - box_h / 2, box_h, gradient);
-  ui_draw_rect(s->vg, scene->is_rhd ? valid_frame_x : valid_frame_x + box_h / 2, box_y, valid_frame_w - box_h / 2, box_h, COLOR_BLACK_ALPHA(144));
+  ui_fill_rect(s->vg, scene->is_rhd ? valid_frame_x : (valid_frame_x + box_h / 2), box_y, valid_frame_w - box_h / 2, box_h, gradient);
+  ui_fill_rect(s->vg, scene->is_rhd ? valid_frame_x : valid_frame_x + box_h / 2, box_y, valid_frame_w - box_h / 2, box_h, COLOR_BLACK_ALPHA(144));
 
   // borders
-  ui_draw_rect(s->vg, frame_x, box_y, valid_frame_x - frame_x, box_h, nvgRGBA(23, 51, 73, 255));
-  ui_draw_rect(s->vg, valid_frame_x + valid_frame_w, box_y, frame_w - valid_frame_w - (valid_frame_x - frame_x), box_h, nvgRGBA(23, 51, 73, 255));
+  ui_fill_rect(s->vg, frame_x, box_y, valid_frame_x - frame_x, box_h, nvgRGBA(23, 51, 73, 255));
+  ui_fill_rect(s->vg, valid_frame_x + valid_frame_w, box_y, frame_w - valid_frame_w - (valid_frame_x - frame_x), box_h, nvgRGBA(23, 51, 73, 255));
 
   // draw face box
   if (scene->dmonitoring_state.getFaceDetected()) {
@@ -413,9 +412,9 @@ static void ui_draw_driver_view(UIState *s) {
     if (std::abs(face_x) <= 0.35 && std::abs(face_y) <= 0.4) {
       ui_draw_rect(s->vg, fbox_x, fbox_y, 0.6 * box_h / 2, 0.6 * box_h / 2,
                    nvgRGBAf(1.0, 1.0, 1.0, 0.8 - ((std::abs(face_x) > std::abs(face_y) ? std::abs(face_x) : std::abs(face_y))) * 0.6 / 0.375),
-                   35, 10);
+                   10, 35);
     } else {
-      ui_draw_rect(s->vg, fbox_x, fbox_y, 0.6 * box_h / 2, 0.6 * box_h / 2, nvgRGBAf(1.0, 1.0, 1.0, 0.2), 35, 10);
+      ui_draw_rect(s->vg, fbox_x, fbox_y, 0.6 * box_h / 2, 0.6 * box_h / 2, nvgRGBAf(1.0, 1.0, 1.0, 0.2), 10, 35);
     }
   }
 
@@ -433,7 +432,7 @@ static void ui_draw_vision_header(UIState *s) {
                         viz_rect.x, viz_rect.y+header_h,
                         nvgRGBAf(0,0,0,0.45), nvgRGBAf(0,0,0,0));
 
-  ui_draw_rect(s->vg, viz_rect.x, viz_rect.y, viz_rect.w, header_h, gradient);
+  ui_fill_rect(s->vg, viz_rect.x, viz_rect.y, viz_rect.w, header_h, gradient);
 
   ui_draw_vision_maxspeed(s);
   ui_draw_vision_speed(s);
@@ -462,11 +461,11 @@ static void ui_draw_vision_alert(UIState *s) {
   const int alr_h = alr_s+(scene->alert_size==cereal::ControlsState::AlertSize::NONE?0:bdr_s);
   const int alr_y = s->fb_h-alr_h;
 
-  ui_draw_rect(s->vg, alr_x, alr_y, alr_w, alr_h, color);
+  ui_fill_rect(s->vg, alr_x, alr_y, alr_w, alr_h, color);
 
   NVGpaint gradient = nvgLinearGradient(s->vg, alr_x, alr_y, alr_x, alr_y+alr_h,
                                         nvgRGBAf(0.0,0.0,0.0,0.05), nvgRGBAf(0.0,0.0,0.0,0.35));
-  ui_draw_rect(s->vg, alr_x, alr_y, alr_w, alr_h, gradient);
+  ui_fill_rect(s->vg, alr_x, alr_y, alr_w, alr_h, gradient);
 
   nvgFillColor(s->vg, COLOR_WHITE);
   nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
@@ -566,24 +565,12 @@ void ui_draw_image(NVGcontext *vg, float x, float y, float w, float h, int image
   nvgFill(vg);
 }
 
-void ui_draw_rect(NVGcontext *vg, float x, float y, float w, float h, NVGcolor color, float r, int width) {
+void ui_draw_rect(NVGcontext *vg, float x, float y, float w, float h, NVGcolor color, int width, float r) {
   nvgBeginPath(vg);
   r > 0 ? nvgRoundedRect(vg, x, y, w, h, r) : nvgRect(vg, x, y, w, h);
-  if (width) {
-    nvgStrokeColor(vg, color);
-    nvgStrokeWidth(vg, width);
-    nvgStroke(vg);
-  } else {
-    nvgFillColor(vg, color);
-    nvgFill(vg);
-  }
-}
-
-void ui_draw_rect(NVGcontext *vg, float x, float y, float w, float h, NVGpaint &paint, float r){
-  nvgBeginPath(vg);
-  r > 0? nvgRoundedRect(vg, x, y, w, h, r) : nvgRect(vg, x, y, w, h);
-  nvgFillPaint(vg, paint);
-  nvgFill(vg);
+  nvgStrokeColor(vg, color);
+  nvgStrokeWidth(vg, width);
+  nvgStroke(vg);
 }
 
 static const char frame_vertex_shader[] =
