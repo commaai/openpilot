@@ -13,7 +13,6 @@
 volatile sig_atomic_t do_exit = 0;
 
 static void set_do_exit(int sig) {
-  printf("caught signal %d\n", sig);
   do_exit = 1;
 }
 

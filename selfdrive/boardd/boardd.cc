@@ -39,11 +39,15 @@
 
 Panda * panda = NULL;
 std::atomic<bool> safety_setter_thread_running(false);
-volatile sig_atomic_t do_exit = 0;
 bool spoofing_started = false;
 bool fake_send = false;
 bool connected_once = false;
 bool ignition = false;
+
+volatile sig_atomic_t do_exit = 0;
+static void set_do_exit(int sig) {
+  do_exit = 1;
+}
 
 struct tm get_time(){
   time_t rawtime;
@@ -278,7 +282,7 @@ void can_health_thread() {
   Params params = Params();
 
   // Broadcast empty health message when panda is not yet connected
-  while (!panda){
+  while (!do_exit && !panda) {
     MessageBuilder msg;
     auto healthData  = msg.initEvent().initHealth();
 
@@ -520,6 +524,10 @@ int main() {
   LOG("set priority returns %d", err);
   err = set_core_affinity(3);
   LOG("set affinity returns %d", err);
+
+  // setup signal handlers
+  signal(SIGINT, (sighandler_t)set_do_exit);
+  signal(SIGTERM, (sighandler_t)set_do_exit);
 
   // check the environment
   if (getenv("STARTED")) {
