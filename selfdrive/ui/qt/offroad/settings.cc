@@ -218,15 +218,15 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   // close button
   QPushButton *close_btn = new QPushButton("X");
   close_btn->setStyleSheet(R"(
-    font-size: 65px;
+    font-size: 90px;
     font-weight: bold;
     border 1px grey solid;
-    border-radius: 75px;
-    background-color: #393939;
+    border-radius: 7px;
+    background-color: #292929;
   )");
-  close_btn->setFixedSize(150, 150);
+  close_btn->setFixedSize(200, 180);
   sidebar_layout->addSpacing(45);
-  sidebar_layout->addWidget(close_btn, 0, Qt::AlignHCenter);
+  sidebar_layout->addWidget(close_btn, 0, Qt::AlignLeft);
   QObject::connect(close_btn, SIGNAL(released()), this, SIGNAL(closeSettings()));
 
   // setup panels
