@@ -1,62 +1,23 @@
-# flake8: noqa
-import os
-os.environ['FAKEUPLOAD'] = "1"
-
-from common.params import Params
-from common.realtime import sec_since_boot
-from selfdrive.manager import manager_init, manager_prepare, start_daemon_process
-from selfdrive.test.helpers import phone_only, with_processes, set_params_enabled
+#!/usr/bin/env python3
 import json
+import os
 import requests
 import signal
 import subprocess
 import time
 
+os.environ['FAKEUPLOAD'] = "1"
 
-# must run first
-@phone_only
-def test_manager_prepare():
-  set_params_enabled()
-  manager_init()
-  manager_prepare()
+from common.params import Params
+from common.realtime import sec_since_boot
+import selfdrive.manager as manager
+from selfdrive.test.helpers import with_processes
 
-@phone_only
-@with_processes(['loggerd', 'logmessaged', 'tombstoned', 'proclogd', 'logcatd'])
-def test_logging():
-  print("LOGGING IS SET UP")
-  time.sleep(1.0)
 
-@phone_only
-@with_processes(['camerad', 'modeld', 'dmonitoringmodeld'])
-def test_visiond():
-  print("VISIOND IS SET UP")
-  time.sleep(5.0)
-
-@phone_only
-@with_processes(['sensord'])
-def test_sensord():
-  print("SENSORS ARE SET UP")
-  time.sleep(1.0)
-
-@phone_only
-@with_processes(['ui'])
-def test_ui():
-  print("RUNNING UI")
-  time.sleep(1.0)
-
-# will have one thing to upload if loggerd ran
-# TODO: assert it actually uploaded
-@phone_only
-@with_processes(['uploader'])
-def test_uploader():
-  print("UPLOADER")
-  time.sleep(10.0)
-
-@phone_only
 def test_athena():
   print("ATHENA")
   start = sec_since_boot()
-  start_daemon_process("manage_athenad")
+  manager.start_daemon_process("manage_athenad")
   params = Params()
   manage_athenad_pid = params.get("AthenadPid")
   assert manage_athenad_pid is not None
@@ -170,9 +131,4 @@ def test_athena():
     except (OSError, TypeError):
       pass
 
-# TODO: re-enable when jenkins test has /data/pythonpath -> /data/openpilot
-# @phone_only
-# @with_apks()
-# def test_apks():
-#   print("APKS")
-#   time.sleep(14.0)
+
