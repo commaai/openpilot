@@ -111,6 +111,7 @@ pipeline {
                   }
                   steps {
                     phone_steps("eon", [
+                      ["build", "SCONS_CACHE=1 scons -j4"],
                       ["test athena", "nosetests -s selfdrive/athena/tests/test_athenad_old.py"],
                       ["build devel", "cd release && CI_PUSH=${env.CI_PUSH} ./build_devel.sh"],
                       ["test manager", "python selfdrive/test/test_manager.py"],
