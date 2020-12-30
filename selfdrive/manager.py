@@ -13,7 +13,7 @@ import time
 import traceback
 
 from multiprocessing import Process
-from typing import Dict, List
+from typing import Dict
 
 from common.basedir import BASEDIR
 from common.spinner import Spinner
@@ -192,13 +192,15 @@ def get_running():
 # due to qualcomm kernel bugs SIGKILLing camerad sometimes causes page table corruption
 unkillable_processes = ['camerad']
 
-# processes to end with SIGINT instead of SIGTERM
-interrupt_processes: List[str] = []
-
 # processes to end with SIGKILL instead of SIGTERM
-kill_processes = ['sensord']
+kill_processes = []
+if EON:
+  kill_processes += [
+    'sensord',
+  ]
 
 persistent_processes = [
+  'pandad',
   'thermald',
   'logmessaged',
   'ui',
@@ -331,22 +333,21 @@ def join_process(process, timeout):
     time.sleep(0.001)
 
 
-def kill_managed_process(name):
+def kill_managed_process(name, retry=True):
   if name not in running or name not in managed_processes:
     return
-  cloudlog.info("killing %s" % name)
+  cloudlog.info(f"killing {name}")
 
   if running[name].exitcode is None:
-    if name in interrupt_processes:
-      os.kill(running[name].pid, signal.SIGINT)
-    elif name in kill_processes:
-      os.kill(running[name].pid, signal.SIGKILL)
-    else:
-      running[name].terminate()
+    sig = signal.SIGKILL if name in kill_processes else signal.SIGINT
+    os.kill(running[name].pid, sig)
 
     join_process(running[name], 5)
 
     if running[name].exitcode is None:
+      if not retry:
+        raise Exception(f"{name} failed to die")
+
       if name in unkillable_processes:
         cloudlog.critical("unkillable process %s failed to exit! rebooting in 15 if it doesn't die" % name)
         join_process(running[name], 15)
@@ -361,8 +362,10 @@ def kill_managed_process(name):
         os.kill(running[name].pid, signal.SIGKILL)
         running[name].join()
 
-  cloudlog.info("%s is dead with %d" % (name, running[name].exitcode))
+  ret = running[name].exitcode
+  cloudlog.info(f"{name} is dead with {ret}")
   del running[name]
+  return ret
 
 
 def cleanup_all_processes(signal, frame):
@@ -445,8 +448,8 @@ def manager_thread():
     pm_apply_packages('enable')
     start_offroad()
 
-  if os.getenv("NOBOARD") is None:
-    start_managed_process("pandad")
+  if os.getenv("NOBOARD") is not None:
+    del managed_processes["pandad"]
 
   if os.getenv("BLOCK") is not None:
     for k in os.getenv("BLOCK").split(","):

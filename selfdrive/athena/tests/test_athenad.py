@@ -16,7 +16,7 @@ from websocket._exceptions import WebSocketConnectionClosedException
 
 from selfdrive.athena import athenad
 from selfdrive.athena.athenad import dispatcher
-from selfdrive.athena.test_helpers import MockWebsocket, MockParams, MockApi, EchoSocket, with_http_server
+from selfdrive.athena.tests.helpers import MockWebsocket, MockParams, MockApi, EchoSocket, with_http_server
 from cereal import messaging
 
 class TestAthenadMethods(unittest.TestCase):

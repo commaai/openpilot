@@ -3,7 +3,8 @@
 import os
 import time
 
-from panda import BASEDIR, Panda, PandaDFU, build_st
+from panda import BASEDIR as PANDA_BASEDIR, Panda, PandaDFU, build_st
+from common.basedir import BASEDIR
 from common.gpio import gpio_init, gpio_set
 from selfdrive.hardware import TICI
 from selfdrive.hardware.tici.pins import GPIO_HUB_RST_N, GPIO_STM_BOOT0, GPIO_STM_RST_N
@@ -28,7 +29,7 @@ def set_panda_power(power=True):
 
 
 def get_firmware_fn():
-  signed_fn = os.path.join(BASEDIR, "board", "obj", "panda.bin.signed")
+  signed_fn = os.path.join(PANDA_BASEDIR, "board", "obj", "panda.bin.signed")
   if os.path.exists(signed_fn):
     cloudlog.info("Using prebuilt signed firmware")
     return signed_fn
@@ -36,7 +37,7 @@ def get_firmware_fn():
     cloudlog.info("Building panda firmware")
     fn = "obj/panda.bin"
     build_st(fn, clean=False)
-    return os.path.join(BASEDIR, "board", fn)
+    return os.path.join(PANDA_BASEDIR, "board", fn)
 
 
 def get_expected_signature(fw_fn=None):
@@ -115,7 +116,7 @@ def main():
   set_panda_power()
   update_panda()
 
-  os.chdir("boardd")
+  os.chdir(os.path.join(BASEDIR, "selfdrive/boardd"))
   os.execvp("./boardd", ["./boardd"])
 
 

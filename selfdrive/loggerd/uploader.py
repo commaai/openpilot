@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-import ctypes
-import inspect
 import json
 import os
 import random
@@ -10,9 +8,9 @@ import time
 import traceback
 
 from cereal import log
+import cereal.messaging as messaging
 from common.api import Api
 from common.params import Params
-from selfdrive.hardware import HARDWARE
 from selfdrive.loggerd.xattr_cache import getxattr, setxattr
 from selfdrive.loggerd.config import ROOT
 from selfdrive.swaglog import cloudlog
@@ -21,30 +19,9 @@ NetworkType = log.ThermalData.NetworkType
 UPLOAD_ATTR_NAME = 'user.upload'
 UPLOAD_ATTR_VALUE = b'1'
 
+force_wifi = os.getenv("FORCEWIFI") is not None
 fake_upload = os.getenv("FAKEUPLOAD") is not None
 
-
-def raise_on_thread(t, exctype):
-  '''Raises an exception in the threads with id tid'''
-  for ctid, tobj in threading._active.items():
-    if tobj is t:
-      tid = ctid
-      break
-  else:
-    raise Exception("Could not find thread")
-
-  if not inspect.isclass(exctype):
-    raise TypeError("Only types can be raised (not instances)")
-
-  res = ctypes.pythonapi.PyThreadState_SetAsyncExc(ctypes.c_long(tid),
-                                                   ctypes.py_object(exctype))
-  if res == 0:
-    raise ValueError("invalid thread id")
-  elif res != 1:
-    # "if it returns a number greater than one, you're in trouble,
-    # and you should call it again with exc=NULL to revert the effect"
-    ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, 0)
-    raise SystemError("PyThreadState_SetAsyncExc failed")
 
 def get_directory_sort(d):
   return list(map(lambda s: s.rjust(10, '0'), d.rsplit('--', 1)))
@@ -68,8 +45,6 @@ def clear_locks(root):
     except OSError:
       cloudlog.exception("clear_locks failed")
 
-def is_on_wifi():
-  return HARDWARE.get_network_type() == NetworkType.wifi
 
 class Uploader():
   def __init__(self, dongle_id, root):
@@ -221,17 +196,15 @@ def uploader_fn(exit_event):
     cloudlog.info("uploader missing dongle_id")
     raise Exception("uploader can't start without dongle id")
 
+  sm = messaging.SubMaster(['thermal'])
   uploader = Uploader(dongle_id, ROOT)
 
   backoff = 0.1
-  counter = 0
-  on_wifi = False
   while not exit_event.is_set():
+    sm.update(0)
+    on_wifi = force_wifi or sm['thermal'].networkType == NetworkType.wifi
     offroad = params.get("IsOffroad") == b'1'
-    allow_raw_upload = (params.get("IsUploadRawEnabled") != b"0") and offroad
-    if offroad and counter % 12 == 0:
-      on_wifi = is_on_wifi()
-    counter += 1
+    allow_raw_upload = params.get("IsUploadRawEnabled") != b"0"
 
     d = uploader.next_file_to_upload(with_raw=allow_raw_upload and on_wifi and offroad)
     if d is None:  # Nothing to upload
