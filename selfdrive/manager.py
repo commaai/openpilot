@@ -213,6 +213,10 @@ if not PC:
     'updated',
     'logcatd',
     'tombstoned',
+  ]
+
+if EON:
+  persistent_processes += [
     'sensord',
   ]
 
@@ -248,7 +252,10 @@ if EON:
     'gpsd',
     'rtshield',
   ]
-
+else:
+   car_started_processes += [
+    'sensord',
+  ]
 
 def register_managed_process(name, desc, car_started=False):
   global managed_processes, car_started_processes, persistent_processes
