@@ -84,6 +84,12 @@ int run_mpc(state_t * x0, log_t * solution, double d_poly[4],
     acadoVariables.od[i+8] = dpsi_poly[3];
 
   }
+  for (i = 0; i <= NY * N; i+= NY){
+    acadoVariables.y[i] = 0.0;
+    acadoVariables.y[i + 1] = 0;
+    acadoVariables.y[i + 2] = 0;
+  }
+  acadoVariables.yN[0] = 0.0;
 
   acadoVariables.x0[0] = x0->x;
   acadoVariables.x0[1] = x0->y;
