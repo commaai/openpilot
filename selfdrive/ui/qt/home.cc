@@ -220,7 +220,7 @@ void GLWindow::initializeGL() {
   wake();
 
   timer->start(0);
-  backlight_timer->start(BACKLIGHT_DT * 100);
+  backlight_timer->start(BACKLIGHT_DT * 1000);
 }
 
 void GLWindow::backlightUpdate() {
