@@ -5,12 +5,6 @@
 #include <sys/resource.h>
 #include <sys/time.h>
 
-#include <cassert>
-#include <chrono>
-
-#include "messaging.hpp"
-#include "common/timing.h"
-
 // Apple doesn't have timerfd
 #ifdef __APPLE__
 #include <thread>
@@ -18,6 +12,12 @@
 #include <sys/timerfd.h>
 #endif
 
+#include <cassert>
+#include <chrono>
+
+#include "messaging.hpp"
+#include "common/timing.h"
+#include "common/util.h"
 
 volatile sig_atomic_t do_exit = 0;
 static void set_do_exit(int sig) {
