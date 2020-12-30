@@ -399,13 +399,14 @@ void encoder_thread(RotateState *rotate_state, int cam_idx) {
     LOG("encoder destroy");
     encoder_close(&encoder);
     encoder_destroy(&encoder);
+
+    if (has_encoder_alt) {
+      LOG("encoder alt destroy");
+      encoder_close(&encoder_alt);
+      encoder_destroy(&encoder_alt);
+    }
   }
 
-  if (has_encoder_alt) {
-    LOG("encoder alt destroy");
-    encoder_close(&encoder_alt);
-    encoder_destroy(&encoder_alt);
-  }
 }
 #endif
 
@@ -611,11 +612,13 @@ int main(int argc, char** argv) {
     logger_init(&s.logger, "rlog", bytes.begin(), bytes.size(), true);
   }
 
+  // init encoders
   s.rotate_seq_id = 0;
   s.should_close = 0;
   s.finish_close = 0;
   s.num_encoder = 0;
   pthread_mutex_init(&s.rotate_lock, NULL);
+
 #ifndef DISABLE_ENCODER
   // rear camera
   std::thread encoder_thread_handle(encoder_thread, &s.rotate_state[LOG_CAMERA_ID_FCAMERA], LOG_CAMERA_ID_FCAMERA);
@@ -641,11 +644,11 @@ int main(int argc, char** argv) {
   double last_rotate_tms = millis_since_boot();
   double last_camera_seen_tms = millis_since_boot();
   while (!do_exit) {
-   for (auto sock : poller->poll(100 * 1000)) {
-     Message * last_msg = nullptr;
-      while (true) {
+    for (auto sock : poller->poll(100 * 1000)) {
+      Message * last_msg = nullptr;
+      while (!do_exit) {
         Message * msg = sock->receive(true);
-        if (msg == NULL){
+        if (!msg){
           break;
         }
         delete last_msg;
@@ -741,13 +744,16 @@ int main(int argc, char** argv) {
 
   LOGW("joining threads");
   for (int cid=0;cid<=MAX_CAM_IDX;cid++) { s.rotate_state[cid].cancelWait(); }
+  printf("canceled\n");
 
 #ifndef DISABLE_ENCODER
 #ifdef QCOM2
   wide_encoder_thread_handle.join();
+  printf("joining wide\n");
 #endif
   if (record_front) {
     front_encoder_thread_handle.join();
+    printf("joined front\n");
   }
   encoder_thread_handle.join();
   LOGW("encoder joined");
