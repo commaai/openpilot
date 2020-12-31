@@ -37,11 +37,6 @@ jobs:
 
         # need this to build on x86
         cp -pR --parents phonelibs/libyuv phonelibs/snpe selfdrive/modeld/runners $STRIPPED_DIR
-
-        # need these so docker copy won't fail
-        cp Pipfile Pipfile.lock .pylintrc .pre-commit-config.yaml $STRIPPED_DIR
-        cd $STRIPPED_DIR
-        mkdir laika laika_repo tools
     - name: Build Docker image
       run: eval "$BUILD"
     - name: Build openpilot and run checks
@@ -94,7 +89,7 @@ jobs:
     - name: Build openpilot
       run: docker run --shm-size 1G --rm $DOCKER_REGISTRY/$IMAGE_NAME /bin/sh -c "cd /tmp/openpilot && USE_WEBCAM=1 scons -j$(nproc)"
     - name: Push to container registry
-      #if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
+      if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
       run: |
         $DOCKER_LOGIN
         docker push $DOCKER_REGISTRY/$IMAGE_NAME:latest
@@ -103,8 +98,8 @@ jobs:
     name: docker push
     runs-on: ubuntu-20.04
     timeout-minutes: 50
-    #if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
-    #needs: static_analysis # hack to ensure slow tests run first since this and static_analysis are fast
+    if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
+    needs: static_analysis # hack to ensure slow tests run first since this and static_analysis are fast
     steps:
     - uses: actions/checkout@v2
       with:
@@ -120,8 +115,8 @@ jobs:
     name: docker push prebuilt
     runs-on: ubuntu-20.04
     timeout-minutes: 50
-    #if: github.event_name == 'status' && github.repository == 'commaai/openpilot'
-    #needs: [static_analysis, unit_tests, process_replay, test_longitudinal, test_car_models]
+    if: github.event_name == 'status' && github.repository == 'commaai/openpilot'
+    needs: [static_analysis, unit_tests, process_replay, test_longitudinal, test_car_models]
     env:
       IMAGE_NAME: openpilot-prebuilt
     steps:
@@ -224,8 +219,8 @@ jobs:
     - name: Run replay
       run: |
         ${{ env.RUN }} "cd /tmp/openpilot && \
-                                       scons -j$(nproc) && \
-                                       FILEREADER_CACHE=1 CI=1 coverage run selfdrive/test/process_replay/test_processes.py"
+                        scons -j$(nproc) && \
+                        FILEREADER_CACHE=1 CI=1 coverage run selfdrive/test/process_replay/test_processes.py"
     - name: Upload coverage to Codecov
       run: bash <(curl -s https://codecov.io/bash) -v -F process_replay
     - name: Print diff

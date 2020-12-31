@@ -346,7 +346,7 @@ def python_replay_process(cfg, lr):
         os.environ['FINGERPRINT'] = msg.carParams.carFingerprint
       break
 
-  manager.prepare_managed_process(cfg.proc_name)
+  manager.prepare_managed_process(cfg.proc_name, build=True)
   mod = importlib.import_module(manager.managed_processes[cfg.proc_name])
   thread = threading.Thread(target=mod.main, args=args)
   thread.daemon = True
