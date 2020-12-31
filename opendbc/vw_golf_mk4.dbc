@@ -1149,6 +1149,28 @@ BO_ 1470 LDW_1: 8 XXX
  SG_ XX_LDW_Maybe_Warning : 16|1@0+ (1,0) [0|1] "" XXX
  SG_ XX_DLCORTLC1 : 24|8@1+ (1,0) [0|255] "" XXX
  SG_ XX_DLCORTLC2 : 32|8@1+ (1,0) [0|255] "" XXX
+ 
+BO_ 870 mAWV: 5 ACC
+ SG_ AWV_2_Gurtstraffer : 39|1@1+ (1,0) [0|1] ""  Bremsbooster
+ SG_ AWV_Infoton : 38|1@1+ (1,0) [0|1] ""  Gateway_Kbi_VW_A,Bremsbooster
+ SG_ AWV_2_Warnsymbol : 37|1@1+ (1,0) [0|1] ""  Gateway_Kbi_VW_A,Bremsbooster
+ SG_ AWV_2_Warnton : 36|1@1+ (1,0) [0|1] ""  Gateway_Kbi_VW_A,Bremsbooster
+ SG_ AWV_2_Ruckprofil : 33|3@1+ (1,0) [0|7] ""  Bremsbooster
+ SG_ AWV_2_Freigabe : 32|1@1+ (1,0) [0|1] ""  Bremsbooster
+ SG_ AWV_2_Umfeldwarn : 31|1@1+ (1,0) [0|1] ""  Bremsbooster
+ SG_ AWV_2_SU_Lampe : 30|1@1+ (1,0) [0|1] ""  Bremsbooster
+ SG_ AWV_2_SU_Gong : 29|1@1+ (1,0) [0|1] ""  Bremsbooster
+ SG_ AWV_2_SU_Bremsruck : 28|1@1+ (1,0) [0|1] ""  Bremsbooster
+ SG_ AWV_2_SU_Warnzeit : 26|2@1+ (1,0) [0|3] ""  Bremsbooster
+ SG_ AWV_2_Fehler : 25|1@1+ (1,0) [0|1] ""  Gateway_Kbi_VW_A,Bremsbooster
+ SG_ AWV_2_Status : 24|1@1+ (1,0) [0|1] ""  Gateway_Kbi_VW_A,Bremsbooster
+ SG_ AWV_res_20 : 20|4@1+ (1,0) [0|0] ""  Bremsbooster
+ SG_ AWV_1_Parameter : 18|2@1+ (1,0) [0|3] ""  Bremsbooster
+ SG_ AWV_1_Prefill : 17|1@1+ (1,0) [0|1] ""  Bremsbooster
+ SG_ AWV_1_Freigabe : 16|1@1+ (1,0) [0|1] ""  Bremsbooster
+ SG_ AWV_Text : 12|4@1+ (1,0) [0|15] ""  Gateway_Kbi_VW_A,Bremsbooster
+ SG_ AWV_Zaehler : 8|4@1+ (1,0) [0|15] ""  Bremsbooster
+ SG_ AWV_Checksumme : 0|8@1+ (1,0) [0|255] ""  Bremsbooster
 
 BO_ 428 mBremse_8: 8 XXX
  SG_ BR8_Checksumme : 0|8@1+ (1,0) [0|255] "" XXX
