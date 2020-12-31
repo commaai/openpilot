@@ -94,7 +94,7 @@ jobs:
     - name: Build openpilot
       run: docker run --shm-size 1G --rm $IMAGE_NAME /bin/sh -c "cd /tmp/openpilot && USE_WEBCAM=1 scons -j$(nproc)"
     - name: Push to container registry
-      if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
+      #if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
       run: |
         $DOCKER_LOGIN
         docker push $REGISTRY_BASE/$IMAGE_NAME:latest
@@ -103,7 +103,7 @@ jobs:
     name: docker push
     runs-on: ubuntu-20.04
     timeout-minutes: 50
-    if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
+    #if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
     needs: static_analysis # hack to ensure slow tests run first since this and static_analysis are fast
     steps:
     - uses: actions/checkout@v2
@@ -132,7 +132,7 @@ jobs:
       run: |
         eval "$BUILD"
         docker pull $REGISTRY_BASE/$IMAGE_NAME:latest || true
-        docker build --cache-from $REGISTRY_BASE/$IMAGE_NAME:latest -t $IMAGE_NAME:latest -f Dockerfile.openpilot .
+        docker build --cache-from $REGISTRY_BASE/$IMAGE_NAME:latest -t $REGISTRY_BASE/$IMAGE_NAME:latest -f Dockerfile.openpilot .
     - name: Push to container registry
       run: |
         $DOCKER_LOGIN
@@ -164,8 +164,7 @@ jobs:
       id: dependency-cache
       uses: actions/cache@v2
       with:
-        path: |
-          /tmp/comma_download_cache
+        path: /tmp/comma_download_cache
         key: ${{ hashFiles('.github/workflows/test.yaml', 'selfdrive/test/test_valgrind_replay.py') }}
     - name: Build Docker image
       run: eval "$BUILD"
@@ -219,8 +218,7 @@ jobs:
       id: dependency-cache
       uses: actions/cache@v2
       with:
-        path: |
-          /tmp/comma_download_cache
+        path: /tmp/comma_download_cache
         key: ${{ hashFiles('.github/workflows/test.yaml', 'selfdrive/test/process_replay/test_processes.py') }}
     - name: Build Docker image
       run: eval "$BUILD"
@@ -277,8 +275,7 @@ jobs:
       id: dependency-cache
       uses: actions/cache@v2
       with:
-        path: |
-          /tmp/comma_download_cache
+        path: /tmp/comma_download_cache
         key: ${{ hashFiles('.github/workflows/test.yaml', 'selfdrive/test/test_car_models.py') }}
     - name: Build Docker image
       run: eval "$BUILD"
