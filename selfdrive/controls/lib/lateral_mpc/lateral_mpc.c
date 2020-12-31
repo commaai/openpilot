@@ -47,7 +47,7 @@ void init(double pathCost, double yawRateCost, double steerRateCost){
 
   /* Initialize the states and controls. */
   for (i = 0; i < NX * (N + 1); ++i)  acadoVariables.x[ i ] = 0.0;
-  for (i = 0; i < NU * N; ++i)  acadoVariables.u[ i ] = 0.1 ;
+  for (i = 0; i < NU * N; ++i)  acadoVariables.u[ i ] = 0.0 ;
 
   /* Initialize the measurements/reference. */
   for (i = 0; i < NY * N; ++i)  acadoVariables.y[ i ] = 0.0;
