@@ -89,101 +89,112 @@ void acado_evaluateLSQ(const real_t* in, real_t* out)
 {
 const real_t* xd = in;
 const real_t* u = in + 4;
-const real_t* od = in + 5;
 
 /* Compute outputs: */
-out[0] = (((((od[1]*((xd[0]*xd[0])*xd[0]))+(od[2]*(xd[0]*xd[0])))+(od[3]*xd[0]))+od[4])-xd[1]);
-out[1] = (((((od[5]*((xd[0]*xd[0])*xd[0]))+(od[6]*(xd[0]*xd[0])))+(od[7]*xd[0]))+od[8])-xd[3]);
-out[2] = ((((((real_t)(3.0000000000000000e+00)*od[5])*(xd[0]*xd[0]))+(((real_t)(2.0000000000000000e+00)*od[6])*xd[0]))+od[7])-u[0]);
-out[3] = (((od[1]*(((xd[0]+xd[0])*xd[0])+(xd[0]*xd[0])))+(od[2]*(xd[0]+xd[0])))+od[3]);
-out[4] = ((real_t)(0.0000000000000000e+00)-(real_t)(1.0000000000000000e+00));
-out[5] = (real_t)(0.0000000000000000e+00);
-out[6] = (real_t)(0.0000000000000000e+00);
-out[7] = (((od[5]*(((xd[0]+xd[0])*xd[0])+(xd[0]*xd[0])))+(od[6]*(xd[0]+xd[0])))+od[7]);
-out[8] = (real_t)(0.0000000000000000e+00);
-out[9] = (real_t)(0.0000000000000000e+00);
-out[10] = ((real_t)(0.0000000000000000e+00)-(real_t)(1.0000000000000000e+00));
-out[11] = ((((real_t)(3.0000000000000000e+00)*od[5])*(xd[0]+xd[0]))+((real_t)(2.0000000000000000e+00)*od[6]));
-out[12] = (real_t)(0.0000000000000000e+00);
-out[13] = (real_t)(0.0000000000000000e+00);
-out[14] = (real_t)(0.0000000000000000e+00);
+out[0] = xd[1];
+out[1] = xd[3];
+out[2] = u[0];
 }
 
 void acado_evaluateLSQEndTerm(const real_t* in, real_t* out)
 {
 const real_t* xd = in;
-const real_t* od = in + 4;
 
 /* Compute outputs: */
-out[0] = (((((od[1]*((xd[0]*xd[0])*xd[0]))+(od[2]*(xd[0]*xd[0])))+(od[3]*xd[0]))+od[4])-xd[1]);
-out[1] = (((od[1]*(((xd[0]+xd[0])*xd[0])+(xd[0]*xd[0])))+(od[2]*(xd[0]+xd[0])))+od[3]);
-out[2] = ((real_t)(0.0000000000000000e+00)-(real_t)(1.0000000000000000e+00));
-out[3] = (real_t)(0.0000000000000000e+00);
-out[4] = (real_t)(0.0000000000000000e+00);
+out[0] = xd[1];
 }
 
-void acado_setObjQ1Q2( real_t* const tmpFx, real_t* const tmpObjS, real_t* const tmpQ1, real_t* const tmpQ2 )
+void acado_setObjQ1Q2( real_t* const tmpObjS, real_t* const tmpQ1, real_t* const tmpQ2 )
 {
-tmpQ2[0] = + tmpFx[0]*tmpObjS[0] + tmpFx[4]*tmpObjS[3] + tmpFx[8]*tmpObjS[6];
-tmpQ2[1] = + tmpFx[0]*tmpObjS[1] + tmpFx[4]*tmpObjS[4] + tmpFx[8]*tmpObjS[7];
-tmpQ2[2] = + tmpFx[0]*tmpObjS[2] + tmpFx[4]*tmpObjS[5] + tmpFx[8]*tmpObjS[8];
-tmpQ2[3] = + tmpFx[1]*tmpObjS[0] + tmpFx[5]*tmpObjS[3] + tmpFx[9]*tmpObjS[6];
-tmpQ2[4] = + tmpFx[1]*tmpObjS[1] + tmpFx[5]*tmpObjS[4] + tmpFx[9]*tmpObjS[7];
-tmpQ2[5] = + tmpFx[1]*tmpObjS[2] + tmpFx[5]*tmpObjS[5] + tmpFx[9]*tmpObjS[8];
-tmpQ2[6] = + tmpFx[2]*tmpObjS[0] + tmpFx[6]*tmpObjS[3] + tmpFx[10]*tmpObjS[6];
-tmpQ2[7] = + tmpFx[2]*tmpObjS[1] + tmpFx[6]*tmpObjS[4] + tmpFx[10]*tmpObjS[7];
-tmpQ2[8] = + tmpFx[2]*tmpObjS[2] + tmpFx[6]*tmpObjS[5] + tmpFx[10]*tmpObjS[8];
-tmpQ2[9] = + tmpFx[3]*tmpObjS[0] + tmpFx[7]*tmpObjS[3] + tmpFx[11]*tmpObjS[6];
-tmpQ2[10] = + tmpFx[3]*tmpObjS[1] + tmpFx[7]*tmpObjS[4] + tmpFx[11]*tmpObjS[7];
-tmpQ2[11] = + tmpFx[3]*tmpObjS[2] + tmpFx[7]*tmpObjS[5] + tmpFx[11]*tmpObjS[8];
-tmpQ1[0] = + tmpQ2[0]*tmpFx[0] + tmpQ2[1]*tmpFx[4] + tmpQ2[2]*tmpFx[8];
-tmpQ1[1] = + tmpQ2[0]*tmpFx[1] + tmpQ2[1]*tmpFx[5] + tmpQ2[2]*tmpFx[9];
-tmpQ1[2] = + tmpQ2[0]*tmpFx[2] + tmpQ2[1]*tmpFx[6] + tmpQ2[2]*tmpFx[10];
-tmpQ1[3] = + tmpQ2[0]*tmpFx[3] + tmpQ2[1]*tmpFx[7] + tmpQ2[2]*tmpFx[11];
-tmpQ1[4] = + tmpQ2[3]*tmpFx[0] + tmpQ2[4]*tmpFx[4] + tmpQ2[5]*tmpFx[8];
-tmpQ1[5] = + tmpQ2[3]*tmpFx[1] + tmpQ2[4]*tmpFx[5] + tmpQ2[5]*tmpFx[9];
-tmpQ1[6] = + tmpQ2[3]*tmpFx[2] + tmpQ2[4]*tmpFx[6] + tmpQ2[5]*tmpFx[10];
-tmpQ1[7] = + tmpQ2[3]*tmpFx[3] + tmpQ2[4]*tmpFx[7] + tmpQ2[5]*tmpFx[11];
-tmpQ1[8] = + tmpQ2[6]*tmpFx[0] + tmpQ2[7]*tmpFx[4] + tmpQ2[8]*tmpFx[8];
-tmpQ1[9] = + tmpQ2[6]*tmpFx[1] + tmpQ2[7]*tmpFx[5] + tmpQ2[8]*tmpFx[9];
-tmpQ1[10] = + tmpQ2[6]*tmpFx[2] + tmpQ2[7]*tmpFx[6] + tmpQ2[8]*tmpFx[10];
-tmpQ1[11] = + tmpQ2[6]*tmpFx[3] + tmpQ2[7]*tmpFx[7] + tmpQ2[8]*tmpFx[11];
-tmpQ1[12] = + tmpQ2[9]*tmpFx[0] + tmpQ2[10]*tmpFx[4] + tmpQ2[11]*tmpFx[8];
-tmpQ1[13] = + tmpQ2[9]*tmpFx[1] + tmpQ2[10]*tmpFx[5] + tmpQ2[11]*tmpFx[9];
-tmpQ1[14] = + tmpQ2[9]*tmpFx[2] + tmpQ2[10]*tmpFx[6] + tmpQ2[11]*tmpFx[10];
-tmpQ1[15] = + tmpQ2[9]*tmpFx[3] + tmpQ2[10]*tmpFx[7] + tmpQ2[11]*tmpFx[11];
+tmpQ2[0] = 0.0;
+;
+tmpQ2[1] = 0.0;
+;
+tmpQ2[2] = 0.0;
+;
+tmpQ2[3] = +tmpObjS[0];
+tmpQ2[4] = +tmpObjS[1];
+tmpQ2[5] = +tmpObjS[2];
+tmpQ2[6] = 0.0;
+;
+tmpQ2[7] = 0.0;
+;
+tmpQ2[8] = 0.0;
+;
+tmpQ2[9] = +tmpObjS[3];
+tmpQ2[10] = +tmpObjS[4];
+tmpQ2[11] = +tmpObjS[5];
+tmpQ1[0] = 0.0;
+;
+tmpQ1[1] = + tmpQ2[0];
+tmpQ1[2] = 0.0;
+;
+tmpQ1[3] = + tmpQ2[1];
+tmpQ1[4] = 0.0;
+;
+tmpQ1[5] = + tmpQ2[3];
+tmpQ1[6] = 0.0;
+;
+tmpQ1[7] = + tmpQ2[4];
+tmpQ1[8] = 0.0;
+;
+tmpQ1[9] = + tmpQ2[6];
+tmpQ1[10] = 0.0;
+;
+tmpQ1[11] = + tmpQ2[7];
+tmpQ1[12] = 0.0;
+;
+tmpQ1[13] = + tmpQ2[9];
+tmpQ1[14] = 0.0;
+;
+tmpQ1[15] = + tmpQ2[10];
 }
 
 void acado_setObjR1R2( real_t* const tmpObjS, real_t* const tmpR1, real_t* const tmpR2 )
 {
-tmpR2[0] = + (real_t)-1.0000000000000000e+00*tmpObjS[6];
-tmpR2[1] = + (real_t)-1.0000000000000000e+00*tmpObjS[7];
-tmpR2[2] = + (real_t)-1.0000000000000000e+00*tmpObjS[8];
-tmpR1[0] = + tmpR2[2]*(real_t)-1.0000000000000000e+00;
+tmpR2[0] = +tmpObjS[6];
+tmpR2[1] = +tmpObjS[7];
+tmpR2[2] = +tmpObjS[8];
+tmpR1[0] = + tmpR2[2];
 }
 
-void acado_setObjQN1QN2( real_t* const tmpFx, real_t* const tmpObjSEndTerm, real_t* const tmpQN1, real_t* const tmpQN2 )
+void acado_setObjQN1QN2( real_t* const tmpObjSEndTerm, real_t* const tmpQN1, real_t* const tmpQN2 )
 {
-tmpQN2[0] = + tmpFx[0]*tmpObjSEndTerm[0];
-tmpQN2[1] = + tmpFx[1]*tmpObjSEndTerm[0];
-tmpQN2[2] = + tmpFx[2]*tmpObjSEndTerm[0];
-tmpQN2[3] = + tmpFx[3]*tmpObjSEndTerm[0];
-tmpQN1[0] = + tmpQN2[0]*tmpFx[0];
-tmpQN1[1] = + tmpQN2[0]*tmpFx[1];
-tmpQN1[2] = + tmpQN2[0]*tmpFx[2];
-tmpQN1[3] = + tmpQN2[0]*tmpFx[3];
-tmpQN1[4] = + tmpQN2[1]*tmpFx[0];
-tmpQN1[5] = + tmpQN2[1]*tmpFx[1];
-tmpQN1[6] = + tmpQN2[1]*tmpFx[2];
-tmpQN1[7] = + tmpQN2[1]*tmpFx[3];
-tmpQN1[8] = + tmpQN2[2]*tmpFx[0];
-tmpQN1[9] = + tmpQN2[2]*tmpFx[1];
-tmpQN1[10] = + tmpQN2[2]*tmpFx[2];
-tmpQN1[11] = + tmpQN2[2]*tmpFx[3];
-tmpQN1[12] = + tmpQN2[3]*tmpFx[0];
-tmpQN1[13] = + tmpQN2[3]*tmpFx[1];
-tmpQN1[14] = + tmpQN2[3]*tmpFx[2];
-tmpQN1[15] = + tmpQN2[3]*tmpFx[3];
+tmpQN2[0] = 0.0;
+;
+tmpQN2[1] = +tmpObjSEndTerm[0];
+tmpQN2[2] = 0.0;
+;
+tmpQN2[3] = 0.0;
+;
+tmpQN1[0] = 0.0;
+;
+tmpQN1[1] = + tmpQN2[0];
+tmpQN1[2] = 0.0;
+;
+tmpQN1[3] = 0.0;
+;
+tmpQN1[4] = 0.0;
+;
+tmpQN1[5] = + tmpQN2[1];
+tmpQN1[6] = 0.0;
+;
+tmpQN1[7] = 0.0;
+;
+tmpQN1[8] = 0.0;
+;
+tmpQN1[9] = + tmpQN2[2];
+tmpQN1[10] = 0.0;
+;
+tmpQN1[11] = 0.0;
+;
+tmpQN1[12] = 0.0;
+;
+tmpQN1[13] = + tmpQN2[3];
+tmpQN1[14] = 0.0;
+;
+tmpQN1[15] = 0.0;
+;
 }
 
 void acado_evaluateObjective(  )
@@ -211,7 +222,7 @@ acadoWorkspace.Dy[runObj * 3] = acadoWorkspace.objValueOut[0];
 acadoWorkspace.Dy[runObj * 3 + 1] = acadoWorkspace.objValueOut[1];
 acadoWorkspace.Dy[runObj * 3 + 2] = acadoWorkspace.objValueOut[2];
 
-acado_setObjQ1Q2( &(acadoWorkspace.objValueOut[ 3 ]), &(acadoVariables.W[ runObj * 9 ]), &(acadoWorkspace.Q1[ runObj * 16 ]), &(acadoWorkspace.Q2[ runObj * 12 ]) );
+acado_setObjQ1Q2( &(acadoVariables.W[ runObj * 9 ]), &(acadoWorkspace.Q1[ runObj * 16 ]), &(acadoWorkspace.Q2[ runObj * 12 ]) );
 
 acado_setObjR1R2( &(acadoVariables.W[ runObj * 9 ]), &(acadoWorkspace.R1[ runObj ]), &(acadoWorkspace.R2[ runObj * 3 ]) );
 
@@ -233,7 +244,7 @@ acado_evaluateLSQEndTerm( acadoWorkspace.objValueIn, acadoWorkspace.objValueOut 
 
 acadoWorkspace.DyN[0] = acadoWorkspace.objValueOut[0];
 
-acado_setObjQN1QN2( &(acadoWorkspace.objValueOut[ 1 ]), acadoVariables.WN, acadoWorkspace.QN1, acadoWorkspace.QN2 );
+acado_setObjQN1QN2( acadoVariables.WN, acadoWorkspace.QN1, acadoWorkspace.QN2 );
 
 }
 

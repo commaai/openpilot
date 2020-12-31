@@ -26,33 +26,28 @@ int main( )
   DifferentialState psi; // vehicle heading
   DifferentialState dpsi;
 
-  OnlineData v_ref; // m/s
-  OnlineData d_poly_r0, d_poly_r1, d_poly_r2, d_poly_r3;
-  OnlineData dpsi_poly_r0, dpsi_poly_r1, dpsi_poly_r2, dpsi_poly_r3;
-
+  OnlineData v_poly_r0, v_poly_r1, v_poly_r2, v_poly_r3;
   Control ddpsi;
+  auto v_poly = v_poly_r0*(xx*xx*xx) + v_poly_r1*(xx*xx) + v_poly_r2*xx + v_poly_r3;
 
   // Equations of motion
-  f << dot(xx) == v_ref * cos(psi);
-  f << dot(yy) == v_ref * sin(psi);
+  f << dot(xx) == v_poly * cos(psi);
+  f << dot(yy) == v_poly * sin(psi);
   f << dot(psi) == dpsi;
   f << dot(dpsi) == ddpsi;
 
-  auto poly_d = d_poly_r0*(xx*xx*xx) + d_poly_r1*(xx*xx) + d_poly_r2*xx + d_poly_r3;
-  auto poly_dpsi = dpsi_poly_r0*(xx*xx*xx) + dpsi_poly_r1*(xx*xx) + dpsi_poly_r2*xx + dpsi_poly_r3;
-  auto poly_ddpsi = 3*dpsi_poly_r0*(xx*xx) + 2*dpsi_poly_r1*(xx) + dpsi_poly_r2;
 
   // Running cost
   Function h;
 
   // Distance errors
-  h << (poly_d - yy);
+  h << yy;
 
   // Yaw rate trajectory error
-  h << (poly_dpsi - dpsi);
+  h << dpsi;
   
   // Angular rate error
-  h << (poly_ddpsi - ddpsi);
+  h << ddpsi;
 
   BMatrix Q(3,3); Q.setAll(true);
   // Q(0,0) = 1.0;
@@ -63,7 +58,7 @@ int main( )
   Function hN;
 
   // Distance errors
-  hN << (poly_d - yy);
+  hN << yy;
 
   BMatrix QN(1,1); QN.setAll(true);
   // QN(0,0) = 1.0;

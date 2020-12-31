@@ -59,31 +59,24 @@ void init(double pathCost, double yawRateCost, double steerRateCost){
   init_weights(pathCost, yawRateCost, steerRateCost);
 }
 
-int run_mpc(state_t * x0, log_t * solution, double d_poly[4],
-             double dpsi_poly[4], double v_ref){
+int run_mpc(state_t * x0, log_t * solution, double v_poly[4],
+             double target_y[N+1], double target_dpsi[N+1],
+             double target_ddpsi[N+1]){
 
   int    i;
 
   for (i = 0; i <= NOD * N; i+= NOD){
-    acadoVariables.od[i+0] = v_ref;
-
-    acadoVariables.od[i+1] = d_poly[0];
-    acadoVariables.od[i+2] = d_poly[1];
-    acadoVariables.od[i+3] = d_poly[2];
-    acadoVariables.od[i+4] = d_poly[3];
-
-    acadoVariables.od[i+5] = dpsi_poly[0];
-    acadoVariables.od[i+6] = dpsi_poly[1];
-    acadoVariables.od[i+7] = dpsi_poly[2];
-    acadoVariables.od[i+8] = dpsi_poly[3];
-
+    acadoVariables.od[i+0] = v_poly[0];
+    acadoVariables.od[i+1] = v_poly[1];
+    acadoVariables.od[i+2] = v_poly[2];
+    acadoVariables.od[i+3] = v_poly[3];
   }
-  for (i = 0; i <= NY * N; i+= NY){
-    acadoVariables.y[i] = 0.0;
-    acadoVariables.y[i + 1] = 0;
-    acadoVariables.y[i + 2] = 0;
+  for (i = 0; i < N; i+= 1){
+    acadoVariables.y[NY*i + 0] = target_y[i];
+    acadoVariables.y[NY*i + 1] = target_dpsi[i];
+    acadoVariables.y[NY*i + 2] = target_ddpsi[i];
   }
-  acadoVariables.yN[0] = 0.0;
+  acadoVariables.yN[0] = target_y[N];
 
   acadoVariables.x0[0] = x0->x;
   acadoVariables.x0[1] = x0->y;
