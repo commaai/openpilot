@@ -492,6 +492,14 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       AlertStatus.normal, AlertSize.mid,
       Priority.LOW, VisualAlert.steerRequired, AudibleAlert.none, 1., 2., 3.),
   },
+  
+  EventName.pqTimebombTERMINAL: {
+    ET.WARNING: Alert(
+      "TIMEBOMB IMMINENT",
+      "Grab wheel now!",
+      AlertStatus.critical, AlertSize.full,
+      Priority.HIGH, VisualAlert.steerRequired, AudibleAlert.chimeWarningRepeat, .1, .1, .1),
+  },
 
   EventName.fanMalfunction: {
     ET.PERMANENT: Alert(
