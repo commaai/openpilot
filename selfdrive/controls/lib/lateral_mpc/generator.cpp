@@ -76,7 +76,7 @@ int main( )
   ocp.subjectTo( deg2rad(-50) <= dpsi <= deg2rad(50));
   ocp.subjectTo(deg2rad(-10) <= ddpsi/(v_poly + 1e-6) <= deg2rad(10));
   ocp.subjectTo(deg2rad(-10) <= dpsi/(v_poly + 1e-6) <= deg2rad(10));
-  ocp.setNOD(9);
+  ocp.setNOD(4);
 
   OCPexport mpc(ocp);
   mpc.set( HESSIAN_APPROXIMATION, GAUSS_NEWTON );
