@@ -1,0 +1,40 @@
+repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: master
+    hooks:
+    -   id: check-ast
+    -   id: check-yaml
+-   repo: https://github.com/pre-commit/mirrors-mypy
+    rev: master
+    hooks:
+    -   id: mypy
+-   repo: https://github.com/PyCQA/flake8
+    rev: master
+    hooks:
+    -   id: flake8
+        args:
+        - --select=F,E112,E113,E304,E501,E502,E701,E702,E703,E71,E72,E731,W191,W6
+        - --max-line-length=240
+        - --statistics
+-   repo: local
+    hooks:
+    -   id: pylint
+        name: pylint
+        entry: pylint
+        language: system
+        types: [python]
+        args:
+        - --disable=C,R,W0613,W0511,W0212,W0201,W0311,W0106,W0603,W0621,W0703,E1136
+-   repo: local
+    hooks:
+    -   id: cppcheck
+        name: cppcheck
+        entry: cppcheck
+        language: system
+        types: [c++]
+        exclude: '^(messaging/msgq_tests.cc|messaging/test_runner.cc|messaging/catch2/)'
+        args:
+        - --error-exitcode=1
+        - --force
+        - --quiet
+        - -j4
