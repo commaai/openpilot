@@ -72,9 +72,18 @@ class LanePlanner:
   def parse_model(self, md):
     self.l_poly = np.zeros(4)
     self.r_poly = np.zeros(4)
-    path_xyz = np.column_stack([md.position.x, md.position.y, md.position.z])
-    rot_rate_xyz = np.column_stack([md.orientationRate.x, md.orientationRate.y, md.orientationRate.z])
+    self.path_xyz = np.column_stack([md.position.x, md.position.y, md.position.z])
+    self.rot_rate_xyz = np.column_stack([md.orientationRate.x, md.orientationRate.y, md.orientationRate.z])
+    valid_len = np.sum(np.isfinite(self.path_xyz).all(axis=1))
+    if valid_len >= 16:
+      self.path_xyz = self.path_xyz[:16]
+      self.rot_rate_xyz = self.rot_rate_xyz[:16]
+    else:
+      self.path_xyz = np.zeros((16, 3))
+      self.rot_rate_xyz = np.zeros((16, 3))
 
+    path_xyz = self.path_xyz
+    rot_rate_xyz = self.rot_rate_xyz
     path_xyz_stds = np.column_stack([md.position.xStd, md.position.yStd, md.position.zStd])
     rot_rate_xyz_stds = np.column_stack([md.orientationRate.xStd, md.orientationRate.yStd, md.orientationRate.zStd])
     path_xyz = clean_path_for_polyfit(path_xyz)

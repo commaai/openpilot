@@ -11,6 +11,13 @@ from common.params import Params
 import cereal.messaging as messaging
 from cereal import log
 
+
+def index_function(idx, max_val=192):
+  return (max_val/1024)*(idx**2)
+
+IDX_N = 33
+T_IDXS = np.array([index_function(idx, max_val=10.0) for idx in range(IDX_N)], dtype=np.float64)
+
 LaneChangeState = log.PathPlan.LaneChangeState
 LaneChangeDirection = log.PathPlan.LaneChangeDirection
 
@@ -168,24 +175,30 @@ class PathPlanner():
     # account for actuation delay
     self.cur_state = calc_states_after_delay(self.cur_state, v_ego, angle_steers - angle_offset, curvature_factor, VM.sR, CP.steerActuatorDelay)
 
-    v_ego_mpc = max(v_ego, 5.0)  # avoid mpc roughness due to low speed
     # minus signs for ENU
-    dpsi_poly_list = list(-np.array(self.LP.dpsi_poly))
-    p_poly_list = list(-np.array(self.LP.p_poly))
+    v_poly = np.zeros(4)
+    v_poly[-1] = v_ego
+    v_poly_list = list(v_poly)
+
+    y_pt_list = list(-np.array(self.LP.path_xyz[:,1]))
+    dpsi_pt_list = list(-np.array(self.LP.rot_rate_xyz[:,2]))
+    ddpsi_pt_list = list(-np.zeros_like(self.LP.rot_rate_xyz[:,2]))
     self.libmpc.run_mpc(self.cur_state, self.mpc_solution,
-                        p_poly_list,
-                        dpsi_poly_list,
-                        v_ego_mpc)
+                        v_poly_list,
+                        y_pt_list,
+                        dpsi_pt_list,
+                        ddpsi_pt_list)
 
     # reset to current steer angle if not active or overriding
     if active:
-      delta_desired = self.mpc_solution[0].dpsi[1] / (v_ego_mpc * curvature_factor)
-      rate_desired = math.degrees(self.mpc_solution[0].ddpsi[0] * VM.sR / (v_ego_mpc * curvature_factor))
+      dpsi_desired_next = np.interp(DT_MDL, T_IDXS[:16], list(self.mpc_solution[0].dpsi))
+      delta_desired = dpsi_desired_next / (v_ego * curvature_factor)
+      rate_desired = math.degrees(self.mpc_solution[0].ddpsi[0] * VM.sR / (v_ego * curvature_factor))
     else:
       delta_desired = math.radians(angle_steers - angle_offset) / VM.sR
       rate_desired = 0.0
 
-    self.cur_state[0].dpsi = delta_desired * (v_ego_mpc * curvature_factor)
+    self.cur_state[0].dpsi = delta_desired * (v_ego * curvature_factor)
 
     self.angle_steers_des_mpc = float(math.degrees(delta_desired * VM.sR) + angle_offset)
 
