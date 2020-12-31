@@ -123,7 +123,7 @@ jobs:
     #if: github.event_name == 'status' && github.repository == 'commaai/openpilot'
     #needs: [static_analysis, unit_tests, process_replay, test_longitudinal, test_car_models]
     env:
-      IMAGE_NAME: openpilot_prebuilt
+      IMAGE_NAME: openpilot-prebuilt
     steps:
     - uses: actions/checkout@v2
       with:
