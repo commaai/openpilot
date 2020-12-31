@@ -6,18 +6,17 @@ on:
   pull_request:
 
 env:
-  RUN: docker run --shm-size 1G --rm tmppilot /bin/sh -c
-  PERSIST_WITH_CACHE: docker run --shm-size 1G -v /tmp/comma_download_cache:/tmp/comma_download_cache  --name tmppilot tmppilot /bin/sh -c
-  PERSIST: docker run --shm-size 1G --name tmppilot tmppilot /bin/sh -c
-  CI_RUN: docker run -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID --rm tmppilotci /bin/bash -c
-  UNIT_TEST: coverage run --append -m unittest discover
-  BUILD: |
-      docker pull $(grep -ioP '(?<=^from)\s+\S+' Dockerfile.openpilot_base) || true
-      docker pull docker.io/commaai/openpilot-base:latest || true
-      docker build --cache-from docker.io/commaai/openpilot-base:latest -t commaai/openpilot-base:latest -f Dockerfile.openpilot_base .
+  BASE_IMAGE: openpilot-base
+  DOCKER_REGISTRY: ghcr.io/commaai
 
-      docker pull docker.io/commaai/openpilotci:latest || true
-      docker build --cache-from docker.io/commaai/openpilotci:latest -t tmppilot -f Dockerfile.openpilotci .
+  DOCKER_LOGIN: docker login ghcr.io -u adeebshihadeh -p ${{ secrets.CONTAINER_TOKEN }}
+  BUILD: |
+      docker pull $(grep -iohP '(?<=^from)\s+\S+' Dockerfile.openpilot_base) || true
+      docker pull $DOCKER_REGISTRY/$BASE_IMAGE:latest || true
+      docker build --cache-from $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $BASE_IMAGE:latest -f Dockerfile.openpilot_base .
+
+  RUN: docker run --shm-size 1G -v $PWD:/tmp/openpilot -e PYTHONPATH=/tmp/openpilot -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v /tmp/comma_download_cache:/tmp/comma_download_cache $BASE_IMAGE /bin/sh -c
+  UNIT_TEST: coverage run --append -m unittest discover
 
 jobs:
   build_release:
@@ -25,32 +24,27 @@ jobs:
     runs-on: ubuntu-20.04
     timeout-minutes: 50
     env:
-      TEST_DIR: tmppilot
+      STRIPPED_DIR: tmppilot
     steps:
     - uses: actions/checkout@v2
       with:
         submodules: true
     - name: Strip non-release files
       run: |
-        mkdir $TEST_DIR
-        cp -pR --parents $(cat release/files_common) $TEST_DIR
-        cp Dockerfile.openpilot_base Dockerfile.openpilotci $TEST_DIR
+        mkdir $STRIPPED_DIR
+        cp -pR --parents $(cat release/files_common) $STRIPPED_DIR
+        cp Dockerfile.openpilot_base $STRIPPED_DIR
 
         # need this to build on x86
-        cp -pR --parents phonelibs/libyuv phonelibs/snpe \
-                          external/bin selfdrive/modeld/runners $TEST_DIR
-
-        # need these so docker copy won't fail
-        cp Pipfile Pipfile.lock .pylintrc .pre-commit-config.yaml $TEST_DIR
-        cd $TEST_DIR
-        mkdir laika laika_repo tools
+        cp -pR --parents phonelibs/libyuv phonelibs/snpe selfdrive/modeld/runners $STRIPPED_DIR
     - name: Build Docker image
-      run: cd $TEST_DIR && eval "$BUILD"
-    - name: Build openpilot and run quick check
+      run: eval "$BUILD"
+    - name: Build openpilot and run checks
       run: |
-          $RUN "cd /tmp/openpilot && \
-                scons -j$(nproc) && \
-                $UNIT_TEST selfdrive/car"
+          cd $STRIPPED_DIR
+          ${{ env.RUN }} "cd /tmp/openpilot && \
+                          scons -j$(nproc) && \
+                          python -m unittest discover selfdrive/car"
 
   build_mac:
     name: build macos
@@ -81,22 +75,24 @@ jobs:
     name: build webcam
     runs-on: ubuntu-20.04
     timeout-minutes: 90
+    env:
+      IMAGE_NAME: openpilotwebcamci
     steps:
     - uses: actions/checkout@v2
       with:
         submodules: true
     - name: Build Docker image
       run: |
-        docker pull docker.io/commaai/openpilotwebcamci:latest
-        docker build --cache-from docker.io/commaai/openpilotwebcamci:latest -t tmppilotwebcam -f tools/webcam/Dockerfile .
+        eval "$BUILD"
+        docker pull $DOCKER_REGISTRY/$IMAGE_NAME:latest || true
+        docker build --cache-from $DOCKER_REGISTRY/$IMAGE_NAME:latest -t $DOCKER_REGISTRY/$IMAGE_NAME:latest -f tools/webcam/Dockerfile .
     - name: Build openpilot
-      run: docker run --shm-size 1G --rm tmppilotwebcam /bin/sh -c "cd /tmp/openpilot && USE_WEBCAM=1 scons -j$(nproc)"
-    - name: Push to dockerhub
+      run: docker run --shm-size 1G --rm $DOCKER_REGISTRY/$IMAGE_NAME /bin/sh -c "cd /tmp/openpilot && USE_WEBCAM=1 scons -j$(nproc)"
+    - name: Push to container registry
       if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
       run: |
-          docker login -u wmelching -p ${{ secrets.COMMA_DOCKERHUB_TOKEN}}
-          docker tag tmppilotwebcam docker.io/commaai/openpilotwebcamci:latest
-          docker push docker.io/commaai/openpilotwebcamci:latest
+        $DOCKER_LOGIN
+        docker push $DOCKER_REGISTRY/$IMAGE_NAME:latest
 
   docker_push:
     name: docker push
@@ -105,18 +101,15 @@ jobs:
     if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
     needs: static_analysis # hack to ensure slow tests run first since this and static_analysis are fast
     steps:
-      - uses: actions/checkout@v2
-        with:
-          submodules: true
-      - name: Build Docker image
-        run: eval "$BUILD"
-      - name: Push to dockerhub
-        run: |
-          docker login -u wmelching -p ${{ secrets.COMMA_DOCKERHUB_TOKEN}}
-          docker tag commaai/openpilot-base:latest docker.io/commaai/openpilot-base:latest
-          docker push docker.io/commaai/openpilot-base:latest
-          docker tag tmppilot docker.io/commaai/openpilotci:latest
-          docker push docker.io/commaai/openpilotci:latest
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Build Docker image
+      run: eval "$BUILD"
+    - name: Push to container registry
+      run: |
+        $DOCKER_LOGIN
+        docker push $DOCKER_REGISTRY/$BASE_IMAGE:latest
 
   docker_push_prebuilt:
     name: docker push prebuilt
@@ -124,188 +117,168 @@ jobs:
     timeout-minutes: 50
     if: github.event_name == 'status' && github.repository == 'commaai/openpilot'
     needs: [static_analysis, unit_tests, process_replay, test_longitudinal, test_car_models]
+    env:
+      IMAGE_NAME: openpilot-prebuilt
     steps:
-      - uses: actions/checkout@v2
-        with:
-          submodules: true
-      - name: Build Docker image
-        run: echo "RUN cd /tmp/openpilot && scons -c && scons -j\$(nproc)" >> Dockerfile.openpilotci && eval "$BUILD"
-      - name: Push to dockerhub
-        run: |
-          docker login -u wmelching -p ${{ secrets.COMMA_DOCKERHUB_TOKEN}}
-          docker tag tmppilot docker.io/commaai/openpilot:latest
-          docker push docker.io/commaai/openpilot:latest
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Build Docker image
+      run: |
+        eval "$BUILD"
+        docker pull $DOCKER_REGISTRY/$IMAGE_NAME:latest || true
+        docker build --cache-from $DOCKER_REGISTRY/$IMAGE_NAME:latest -t $DOCKER_REGISTRY/$IMAGE_NAME:latest -f Dockerfile.openpilot .
+    - name: Push to container registry
+      run: |
+        $DOCKER_LOGIN
+        docker push $DOCKER_REGISTRY/$IMAGE_NAME:latest
 
   static_analysis:
     name: static analysis
     runs-on: ubuntu-20.04
     timeout-minutes: 50
     steps:
-      - uses: actions/checkout@v2
-        with:
-          submodules: true
-      - name: Build Docker image
-        run: eval "$BUILD"
-      - name: pre-commit
-        run: $RUN "cd /tmp/openpilot/ && git init && git add -A && pre-commit run --all"
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Build Docker image
+      run: eval "$BUILD"
+    - name: pre-commit
+      run: ${{ env.RUN }} "cd /tmp/openpilot/ && git init && git add -A && pre-commit run --all"
 
   valgrind:
     name: valgrind
     runs-on: ubuntu-20.04
     timeout-minutes: 50
     steps:
-      - uses: actions/checkout@v2
-        with:
-          submodules: true
-      - name: Cache dependencies
-        id: dependency-cache
-        uses: actions/cache@v2
-        with:
-          path: |
-            /tmp/comma_download_cache
-          key: ${{ hashFiles('.github/workflows/test.yaml', 'selfdrive/test/test_valgrind_replay.py') }}
-      - name: Build Docker image
-        run: eval "$BUILD"
-      - name: Run valgrind
-        run: |
-          $PERSIST_WITH_CACHE "cd /tmp/openpilot && \
-                    scons -j$(nproc) && \
-                    FILEREADER_CACHE=1 python selfdrive/test/test_valgrind_replay.py"
-      - name: Print logs
-        if: always()
-        run: |
-          docker cp tmppilot:/tmp/openpilot/selfdrive/test/valgrind_logs.txt valgrind_logs.txt
-          cat valgrind_logs.txt
-      - uses: actions/upload-artifact@v2
-        if: always()
-        continue-on-error: true
-        with:
-          name: valgrind_logs.txt
-          path: valgrind_logs.txt
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Cache dependencies
+      id: dependency-cache
+      uses: actions/cache@v2
+      with:
+        path: /tmp/comma_download_cache
+        key: ${{ hashFiles('.github/workflows/test.yaml', 'selfdrive/test/test_valgrind_replay.py') }}
+    - name: Build Docker image
+      run: eval "$BUILD"
+    - name: Run valgrind
+      run: |
+        ${{ env.RUN }} "cd /tmp/openpilot && \
+                        scons -j$(nproc) && \
+                        FILEREADER_CACHE=1 python selfdrive/test/test_valgrind_replay.py"
+    - name: Print logs
+      if: always()
+      run: cat selfdrive/test/valgrind_logs.txt
 
   unit_tests:
     name: unit tests
     runs-on: ubuntu-20.04
     timeout-minutes: 50
     steps:
-      - uses: actions/checkout@v2
-        with:
-          submodules: true
-      - name: Build Docker image
-        run: eval "$BUILD"
-      - name: Run unit tests
-        run: |
-          $PERSIST "cd /tmp/openpilot && \
-                    scons -j$(nproc) && \
-                    coverage run selfdrive/test/test_fingerprints.py && \
-                    $UNIT_TEST common && \
-                    $UNIT_TEST opendbc/can && \
-                    $UNIT_TEST selfdrive/boardd && \
-                    $UNIT_TEST selfdrive/controls && \
-                    $UNIT_TEST selfdrive/monitoring && \
-                    $UNIT_TEST selfdrive/loggerd && \
-                    $UNIT_TEST selfdrive/car && \
-                    $UNIT_TEST selfdrive/locationd && \
-                    $UNIT_TEST selfdrive/athena && \
-                    $UNIT_TEST selfdrive/thermald && \
-                    $UNIT_TEST tools/lib/tests"
-      - name: Upload coverage to Codecov
-        run: |
-          docker commit tmppilot tmppilotci
-          $CI_RUN "cd /tmp/openpilot && bash <(curl -s https://codecov.io/bash) -v -F unit_tests"
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Build Docker image
+      run: eval "$BUILD"
+    - name: Run unit tests
+      run: |
+        ${{ env.RUN }} "cd /tmp/openpilot && \
+                        scons -j$(nproc) && \
+                        coverage run selfdrive/test/test_fingerprints.py && \
+                        $UNIT_TEST common && \
+                        $UNIT_TEST opendbc/can && \
+                        $UNIT_TEST selfdrive/boardd && \
+                        $UNIT_TEST selfdrive/controls && \
+                        $UNIT_TEST selfdrive/monitoring && \
+                        $UNIT_TEST selfdrive/loggerd && \
+                        $UNIT_TEST selfdrive/car && \
+                        $UNIT_TEST selfdrive/locationd && \
+                        $UNIT_TEST selfdrive/athena && \
+                        $UNIT_TEST selfdrive/thermald && \
+                        $UNIT_TEST tools/lib/tests"
+    - name: Upload coverage to Codecov
+      run: bash <(curl -s https://codecov.io/bash) -v -F unit_tests
 
   process_replay:
     name: process replay
     runs-on: ubuntu-20.04
     timeout-minutes: 50
     steps:
-      - uses: actions/checkout@v2
-        with:
-          submodules: true
-      - name: Cache dependencies
-        id: dependency-cache
-        uses: actions/cache@v2
-        with:
-          path: |
-            /tmp/comma_download_cache
-          key: ${{ hashFiles('.github/workflows/test.yaml', 'selfdrive/test/process_replay/test_processes.py') }}
-      - name: Build Docker image
-        run: eval "$BUILD"
-      - name: Run replay
-        run: |
-          $PERSIST_WITH_CACHE  "cd /tmp/openpilot && \
-          scons -j$(nproc) && \
-          FILEREADER_CACHE=1 CI=1 coverage run selfdrive/test/process_replay/test_processes.py"
-      - name: Upload coverage to Codecov
-        run: |
-          docker commit tmppilot tmppilotci
-          $CI_RUN "cd /tmp/openpilot && bash <(curl -s https://codecov.io/bash) -v -F process_replay"
-      - name: Print diff
-        if: always()
-        run: |
-          docker cp tmppilot:/tmp/openpilot/selfdrive/test/process_replay/diff.txt diff.txt
-          cat diff.txt
-      - uses: actions/upload-artifact@v2
-        if: always()
-        continue-on-error: true
-        with:
-          name: process_replay_diff.txt
-          path: diff.txt
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Cache dependencies
+      id: dependency-cache
+      uses: actions/cache@v2
+      with:
+        path: /tmp/comma_download_cache
+        key: ${{ hashFiles('.github/workflows/test.yaml', 'selfdrive/test/process_replay/test_processes.py') }}
+    - name: Build Docker image
+      run: eval "$BUILD"
+    - name: Run replay
+      run: |
+        ${{ env.RUN }} "cd /tmp/openpilot && \
+                        scons -j$(nproc) && \
+                        FILEREADER_CACHE=1 CI=1 coverage run selfdrive/test/process_replay/test_processes.py"
+    - name: Upload coverage to Codecov
+      run: bash <(curl -s https://codecov.io/bash) -v -F process_replay
+    - name: Print diff
+      if: always()
+      run: cat selfdrive/test/process_replay/diff.txt
+    - uses: actions/upload-artifact@v2
+      if: always()
+      continue-on-error: true
+      with:
+        name: process_replay_diff.txt
+        path: selfdrive/test/process_replay/diff.txt
 
   test_longitudinal:
     name: longitudinal
     runs-on: ubuntu-20.04
     timeout-minutes: 50
     steps:
-      - uses: actions/checkout@v2
-        with:
-          submodules: true
-      - name: Build Docker image
-        run: eval "$BUILD"
-      - name: Test longitudinal
-        run: |
-          $PERSIST "mkdir -p /tmp/openpilot/selfdrive/test/out && \
-                    cd /tmp/openpilot/ && \
-                    scons -j$(nproc) && \
-                    cd selfdrive/test/longitudinal_maneuvers && \
-                    OPTEST=1 ./test_longitudinal.py"
-      - name: Copy artifacts
-        if: always()
-        run: |
-          mkdir out
-          docker cp tmppilot:/tmp/openpilot/selfdrive/test/longitudinal_maneuvers/out/longitudinal/ out/
-      - uses: actions/upload-artifact@v2
-        if: always()
-        continue-on-error: true
-        with:
-          name: longitudinal
-          path: out
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Build Docker image
+      run: eval "$BUILD"
+    - name: Test longitudinal
+      run: |
+        ${{ env.RUN }} "mkdir -p /tmp/openpilot/selfdrive/test/out && \
+                        cd /tmp/openpilot/ && \
+                        scons -j$(nproc) && \
+                        cd selfdrive/test/longitudinal_maneuvers && \
+                        ./test_longitudinal.py"
+    - uses: actions/upload-artifact@v2
+      if: always()
+      continue-on-error: true
+      with:
+        name: longitudinal
+        path: selfdrive/test/longitudinal_maneuvers/out/longitudinal/
 
   test_car_models:
-    name: test car models
+    name: car models
     runs-on: ubuntu-20.04
     timeout-minutes: 50
     steps:
-      - uses: actions/checkout@v2
-        with:
-          submodules: true
-      - name: Cache dependencies
-        id: dependency-cache
-        uses: actions/cache@v2
-        with:
-          path: |
-            /tmp/comma_download_cache
-          key: ${{ hashFiles('.github/workflows/test.yaml', 'selfdrive/test/test_car_models.py') }}
-      - name: Build Docker image
-        run: eval "$BUILD"
-      - name: Test car models
-        run: |
-          $PERSIST_WITH_CACHE "cd /tmp/openpilot && \
-                    scons -j$(nproc) && \
-                    FILEREADER_CACHE=1 coverage run --parallel-mode -m nose --processes=4 --process-timeout=60 \
-                                 selfdrive/test/test_models.py && \
-                    coverage combine"
-      - name: Upload coverage to Codecov
-        run: |
-          docker commit tmppilot tmppilotci
-          $CI_RUN "cd /tmp/openpilot && bash <(curl -s https://codecov.io/bash) -v -F test_car_models"
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Cache dependencies
+      id: dependency-cache
+      uses: actions/cache@v2
+      with:
+        path: /tmp/comma_download_cache
+        key: ${{ hashFiles('.github/workflows/test.yaml', 'selfdrive/test/test_car_models.py') }}
+    - name: Build Docker image
+      run: eval "$BUILD"
+    - name: Test car models
+      run: |
+        ${{ env.RUN }} "cd /tmp/openpilot && \
+                        scons -j$(nproc) && \
+                        FILEREADER_CACHE=1 coverage run --parallel-mode -m nose --processes=4 --process-timeout=60 \
+                                           selfdrive/test/test_models.py && \
+                        coverage combine"
+    - name: Upload coverage to Codecov
+      run: bash <(curl -s https://codecov.io/bash) -v -F test_car_models
