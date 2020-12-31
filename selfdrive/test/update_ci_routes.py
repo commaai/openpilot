@@ -37,7 +37,7 @@ def sync_to_ci_public(route):
       "https://{}.blob.core.windows.net/{}/{}/?{}".format(_DATA_ACCOUNT_CI, "openpilotci", dongle_id, DEST_KEY),
       "--recursive=true",
       "--overwrite=false",
-      "--exclude=*/dcamera.hevc",
+      "--exclude-pattern=*/dcamera.hevc",
     ]
 
     try:
