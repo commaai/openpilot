@@ -23,32 +23,30 @@ jobs:
     runs-on: ubuntu-20.04
     timeout-minutes: 50
     env:
-      TEST_DIR: tmppilot
+      STRIPPED_DIR: tmppilot
     steps:
     - uses: actions/checkout@v2
       with:
         submodules: true
     - name: Strip non-release files
       run: |
-        mkdir $TEST_DIR
-        cp -pR --parents $(cat release/files_common) $TEST_DIR
-        cp Dockerfile.openpilot_base $TEST_DIR
+        mkdir $STRIPPED_DIR
+        cp -pR --parents $(cat release/files_common) $STRIPPED_DIR
+        cp Dockerfile.openpilot_base $STRIPPED_DIR
 
         # need this to build on x86
-        cp -pR --parents phonelibs/libyuv phonelibs/snpe \
-                          external/bin selfdrive/modeld/runners $TEST_DIR
+        cp -pR --parents phonelibs/libyuv phonelibs/snpe selfdrive/modeld/runners $STRIPPED_DIR
 
         # need these so docker copy won't fail
-        cp Pipfile Pipfile.lock .pylintrc .pre-commit-config.yaml $TEST_DIR
-        cd $TEST_DIR
+        cp Pipfile Pipfile.lock .pylintrc .pre-commit-config.yaml $STRIPPED_DIR
+        cd $STRIPPED_DIR
         mkdir laika laika_repo tools
     - name: Build Docker image
       run: eval "$BUILD"
-    - name: Build openpilot and run quick check
+    - name: Build openpilot and run checks
       run: |
-          cd $TEST_DIR
+          cd $STRIPPED_DIR
           ${{ env.RUN }} "cd /tmp/openpilot && \
-                          ls * && \
                           scons -j$(nproc) && \
                           python -m unittest discover selfdrive/car"
 
@@ -95,7 +93,7 @@ jobs:
     - name: Build openpilot
       run: docker run --shm-size 1G --rm $IMAGE_NAME /bin/sh -c "cd /tmp/openpilot && USE_WEBCAM=1 scons -j$(nproc)"
     - name: Push to container registry
-      if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
+      #if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
       run: |
         $DOCKER_LOGIN
         docker push $REGISTRY_BASE/$IMAGE_NAME:latest
@@ -104,8 +102,8 @@ jobs:
     name: docker push
     runs-on: ubuntu-20.04
     timeout-minutes: 50
-    if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
-    needs: static_analysis # hack to ensure slow tests run first since this and static_analysis are fast
+    #if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
+    #needs: static_analysis # hack to ensure slow tests run first since this and static_analysis are fast
     steps:
     - uses: actions/checkout@v2
       with:
