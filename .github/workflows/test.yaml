@@ -43,13 +43,14 @@ jobs:
         cd $TEST_DIR
         mkdir laika laika_repo tools
     - name: Build Docker image
-      run: cd $TEST_DIR && eval "$BUILD"
+      run: eval "$BUILD"
     - name: Build openpilot and run quick check
       run: |
+          cd $TEST_DIR
           ${{ env.RUN }} "cd /tmp/openpilot && \
                           ls * && \
                           scons -j$(nproc) && \
-                          $UNIT_TEST selfdrive/car"
+                          python -m unittest discover selfdrive/car"
 
   build_mac:
     name: build macos
@@ -94,7 +95,7 @@ jobs:
     - name: Build openpilot
       run: docker run --shm-size 1G --rm $IMAGE_NAME /bin/sh -c "cd /tmp/openpilot && USE_WEBCAM=1 scons -j$(nproc)"
     - name: Push to container registry
-      #if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
+      if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
       run: |
         $DOCKER_LOGIN
         docker push $REGISTRY_BASE/$IMAGE_NAME:latest
@@ -103,7 +104,7 @@ jobs:
     name: docker push
     runs-on: ubuntu-20.04
     timeout-minutes: 50
-    #if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
+    if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
     needs: static_analysis # hack to ensure slow tests run first since this and static_analysis are fast
     steps:
     - uses: actions/checkout@v2
@@ -121,7 +122,7 @@ jobs:
     runs-on: ubuntu-20.04
     timeout-minutes: 50
     #if: github.event_name == 'status' && github.repository == 'commaai/openpilot'
-    #needs: [static_analysis, unit_tests, process_replay, test_longitudinal, test_car_models]
+    needs: [static_analysis, unit_tests, process_replay, test_longitudinal, test_car_models]
     env:
       IMAGE_NAME: openpilot_prebuilt
     steps:
