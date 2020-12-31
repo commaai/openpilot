@@ -76,6 +76,7 @@ class UploaderTestCase(unittest.TestCase):
     uploader.Params = MockParams
     uploader.fake_upload = True
     uploader.force_wifi = True
+    uploader.allow_sleep = False
     self.seg_num = random.randint(1, 300)
     self.seg_format = "2019-04-18--12-52-54--{}"
     self.seg_format2 = "2019-05-18--11-22-33--{}"
