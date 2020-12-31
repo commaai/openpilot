@@ -24,7 +24,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
       libtbb-dev \
     && rm -rf /var/lib/apt/lists/* && \
 
-    mkdkir /tmp/opencv_build && \
+    mkdir /tmp/opencv_build && \
     cd /tmp/opencv_build && \
 
     wget https://github.com/opencv/opencv/archive/${OPENCV_VERSION}.tar.gz && \
