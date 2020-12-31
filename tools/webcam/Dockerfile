@@ -22,7 +22,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
       libv4l-dev \
       libxine2-dev \
       libtbb-dev \
-    rm -rf /var/lib/apt/lists/* && \
+    && rm -rf /var/lib/apt/lists/* && \
 
     mkdkir /tmp/opencv_build && \
     cd /tmp/opencv_build && \
