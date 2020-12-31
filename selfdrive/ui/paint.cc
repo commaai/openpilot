@@ -146,38 +146,6 @@ static void ui_draw_line(UIState *s, const vertex_data *v, const int cnt, NVGcol
   nvgFill(s->vg);
 }
 
-static void update_track_data(UIState *s, const cereal::ModelDataV2::XYZTData::Reader &line, track_vertices_data *pvd) {
-  const UIScene *scene = &s->scene;
-  const float off = 0.5;
-  int max_idx = -1;
-  float lead_d;
-  if (s->sm->updated("radarState")) {
-    lead_d = scene->lead_data[0].getDRel()*2.;
-  } else {
-    lead_d = MAX_DRAW_DISTANCE;
-  }
-  float path_length = (lead_d>0.)?lead_d-fmin(lead_d*0.35, 10.):MAX_DRAW_DISTANCE;
-  path_length = fmin(path_length, scene->max_distance);
-
-
-  vertex_data *v = &pvd->v[0];
-  const float margin = 500.0f;
-  for (int i = 0; i < TRAJECTORY_SIZE and line.getX()[i] <= path_length; i++) {
-    v += car_space_to_full_frame(s, line.getX()[i], -line.getY()[i] - off, -line.getZ()[i], &v->x, &v->y, margin);
-    max_idx = i;
-  }
-  for (int i = max_idx; i >= 0; i--) {
-    v += car_space_to_full_frame(s, line.getX()[i], -line.getY()[i] + off, -line.getZ()[i], &v->x, &v->y, margin);
-  }
-  pvd->cnt = v - pvd->v;
-}
-
-static void ui_draw_track(UIState *s, track_vertices_data *pvd) {
-  NVGpaint track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h * .4,
-                                        COLOR_WHITE, COLOR_WHITE_ALPHA(0));
-  ui_draw_line(s, &pvd->v[0], pvd->cnt, nullptr, &track_bg);
-}
-
 static void draw_frame(UIState *s) {
   mat4 *out_mat;
   if (s->scene.frontview) {
@@ -209,49 +177,55 @@ static void draw_frame(UIState *s) {
   glBindVertexArray(0);
 }
 
-static void update_line_data(UIState *s, const cereal::ModelDataV2::XYZTData::Reader &line, float off, line_vertices_data *pvd, float max_distance) {
-  // TODO check that this doesn't overflow max vertex buffer
+template <class T>
+static void update_line_data(const UIState *s, const cereal::ModelDataV2::XYZTData::Reader &line,
+                             float y_off, float z_off, T *pvd, float max_distance) {
+  const auto line_x = line.getX(), line_y = line.getY(), line_z = line.getZ();
   int max_idx = -1;
   vertex_data *v = &pvd->v[0];
   const float margin = 500.0f;
   for (int i = 0; ((i < TRAJECTORY_SIZE) and (line.getX()[i] < fmax(MIN_DRAW_DISTANCE, max_distance))); i++) {
-    v += car_space_to_full_frame(s, line.getX()[i], -line.getY()[i] - off, -line.getZ()[i] + 1.22, &v->x, &v->y, margin);
+    v += car_space_to_full_frame(s, line_x[i], -line_y[i] - y_off, -line_z[i] + z_off, &v->x, &v->y, margin);
     max_idx = i;
   }
   for (int i = max_idx; i >= 0; i--) {
-    v += car_space_to_full_frame(s, line.getX()[i], -line.getY()[i] + off, -line.getZ()[i] + 1.22, &v->x, &v->y, margin);
+    v += car_space_to_full_frame(s, line_x[i], -line_y[i] + y_off, -line_z[i] + z_off, &v->x, &v->y, margin);
   }
   pvd->cnt = v - pvd->v;
+  assert(pvd->cnt < std::size(pvd->v));
 }
 
 static void ui_draw_vision_lane_lines(UIState *s) {
   const UIScene *scene = &s->scene;
-
+  const bool model_updated = s->sm->updated("modelV2");
   // paint lanelines
-  line_vertices_data *pvd_ll = &s->lane_line_vertices[0];
-  for (int ll_idx = 0; ll_idx < 4; ll_idx++) {
-    if (s->sm->updated("modelV2")) {
-      update_line_data(s, scene->model.getLaneLines()[ll_idx], 0.025*scene->model.getLaneLineProbs()[ll_idx], pvd_ll + ll_idx, scene->max_distance);
+  for (int i = 0; i < std::size(s->lane_line_vertices); i++) {
+    if (model_updated) {
+      update_line_data(s, scene->model.getLaneLines()[i], 0.025*scene->lane_line_probs[i], 1.22, &s->lane_line_vertices[i], scene->max_distance);
     }
-    NVGcolor color = nvgRGBAf(1.0, 1.0, 1.0, scene->lane_line_probs[ll_idx]);
-    ui_draw_line(s, (pvd_ll + ll_idx)->v, (pvd_ll + ll_idx)->cnt, &color, nullptr);
+    NVGcolor color = nvgRGBAf(1.0, 1.0, 1.0, scene->lane_line_probs[i]);
+    ui_draw_line(s, s->lane_line_vertices[i].v, s->lane_line_vertices[i].cnt, &color, nullptr);
   }
 
   // paint road edges
-  line_vertices_data *pvd_re = &s->road_edge_vertices[0];
-  for (int re_idx = 0; re_idx < 2; re_idx++) {
-    if (s->sm->updated("modelV2")) {
-      update_line_data(s, scene->model.getRoadEdges()[re_idx], 0.025, pvd_re + re_idx, scene->max_distance);
+  for (int i = 0; i < std::size(s->road_edge_vertices); i++) {
+    if (model_updated) {
+      update_line_data(s, scene->model.getRoadEdges()[i], 0.025, 1.22, &s->road_edge_vertices[i], scene->max_distance);
     }
-    NVGcolor color = nvgRGBAf(1.0, 0.0, 0.0, std::clamp<float>(1.0-scene->road_edge_stds[re_idx], 0.0, 1.0));
-    ui_draw_line(s, (pvd_re + re_idx)->v, (pvd_re + re_idx)->cnt, &color, nullptr);
+    NVGcolor color = nvgRGBAf(1.0, 0.0, 0.0, std::clamp<float>(1.0-scene->road_edge_stds[i], 0.0, 1.0));
+    ui_draw_line(s, s->road_edge_vertices[i].v, s->road_edge_vertices[i].cnt, &color, nullptr);
   }
 
   // paint path
-  if (s->sm->updated("modelV2")) {
-    update_track_data(s, scene->model.getPosition(), &s->track_vertices);
+  if (model_updated) {
+    const float lead_d = s->sm->updated("radarState") ? scene->lead_data[0].getDRel() * 2. : MAX_DRAW_DISTANCE;
+    float path_length = (lead_d > 0.) ? lead_d - fmin(lead_d * 0.35, 10.) : MAX_DRAW_DISTANCE;
+    path_length = fmin(path_length, scene->max_distance);
+    update_line_data(s, scene->model.getPosition(), 0.5, 0, &s->track_vertices, path_length);
   }
-  ui_draw_track(s, &s->track_vertices);
+  NVGpaint track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h * .4,
+                                        COLOR_WHITE, COLOR_WHITE_ALPHA(0));
+  ui_draw_line(s, s->track_vertices.v, s->track_vertices.cnt, nullptr, &track_bg);
 }
 
 // Draw all world space objects.
