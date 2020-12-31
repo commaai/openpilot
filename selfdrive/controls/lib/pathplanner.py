@@ -72,7 +72,7 @@ class PathPlanner():
 
   def setup_mpc(self):
     self.libmpc = libmpc_py.libmpc
-    self.libmpc.init(MPC_COST_LAT.PATH, 1.0, 1.0)
+    self.libmpc.init(MPC_COST_LAT.PATH, .0, .1)
 
     self.mpc_solution = libmpc_py.ffi.new("log_t *")
     self.cur_state = libmpc_py.ffi.new("state_t *")
@@ -206,7 +206,7 @@ class PathPlanner():
     mpc_nans = any(math.isnan(x) for x in self.mpc_solution[0].dpsi)
     t = sec_since_boot()
     if mpc_nans:
-      self.libmpc.init(MPC_COST_LAT.PATH, 1.0, 1.0)
+      self.libmpc.init(MPC_COST_LAT.PATH, .0, .1)
       self.cur_state[0].delta = math.radians(angle_steers - angle_offset) / VM.sR
 
       if t > self.last_cloudlog_t + 5.0:
