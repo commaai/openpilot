@@ -7,12 +7,13 @@ on:
 
 env:
   BASE_IMAGE: openpilot-base
-  REGISTRY_BASE: ghcr.io/commaai/openpilot
+  DOCKER_REGISTRY: ghcr.io/commaai/
+
   DOCKER_LOGIN: docker login ghcr.io -u adeebshihadeh -p ${{ secrets.CONTAINER_TOKEN }}
   BUILD: |
       docker pull $(grep -iohP '(?<=^from)\s+\S+' Dockerfile.openpilot_base) || true
-      docker pull $REGISTRY_BASE/$BASE_IMAGE:latest || true
-      docker build --cache-from $REGISTRY_BASE/$BASE_IMAGE:latest -t $BASE_IMAGE:latest -f Dockerfile.openpilot_base .
+      docker pull $DOCKER_REGISTRY/$BASE_IMAGE:latest || true
+      docker build --cache-from $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $BASE_IMAGE:latest -f Dockerfile.openpilot_base .
 
   RUN: docker run --shm-size 1G -v $PWD:/tmp/openpilot -e PYTHONPATH=/tmp/openpilot -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v /tmp/comma_download_cache:/tmp/comma_download_cache $BASE_IMAGE /bin/sh -c
   UNIT_TEST: coverage run --append -m unittest discover
@@ -88,15 +89,15 @@ jobs:
     - name: Build Docker image
       run: |
         eval "$BUILD"
-        docker pull $REGISTRY_BASE/$IMAGE_NAME:latest || true
-        docker build --cache-from $REGISTRY_BASE/$IMAGE_NAME:latest -t $IMAGE_NAME:latest -f tools/webcam/Dockerfile .
+        docker pull $DOCKER_REGISTRY/$IMAGE_NAME:latest || true
+        docker build --cache-from $DOCKER_REGISTRY/$IMAGE_NAME:latest -t $DOCKER_REGISTRY/$IMAGE_NAME:latest -f tools/webcam/Dockerfile .
     - name: Build openpilot
-      run: docker run --shm-size 1G --rm $IMAGE_NAME /bin/sh -c "cd /tmp/openpilot && USE_WEBCAM=1 scons -j$(nproc)"
+      run: docker run --shm-size 1G --rm $DOCKER_REGISTRY/$IMAGE_NAME /bin/sh -c "cd /tmp/openpilot && USE_WEBCAM=1 scons -j$(nproc)"
     - name: Push to container registry
       #if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
       run: |
         $DOCKER_LOGIN
-        docker push $REGISTRY_BASE/$IMAGE_NAME:latest
+        docker push $DOCKER_REGISTRY/$IMAGE_NAME:latest
 
   docker_push:
     name: docker push
@@ -113,14 +114,14 @@ jobs:
     - name: Push to container registry
       run: |
         $DOCKER_LOGIN
-        docker push $REGISTRY_BASE/$BASE_IMAGE:latest
+        docker push $DOCKER_REGISTRY/$BASE_IMAGE:latest
 
   docker_push_prebuilt:
     name: docker push prebuilt
     runs-on: ubuntu-20.04
     timeout-minutes: 50
     #if: github.event_name == 'status' && github.repository == 'commaai/openpilot'
-    needs: [static_analysis, unit_tests, process_replay, test_longitudinal, test_car_models]
+    #needs: [static_analysis, unit_tests, process_replay, test_longitudinal, test_car_models]
     env:
       IMAGE_NAME: openpilot_prebuilt
     steps:
@@ -130,13 +131,12 @@ jobs:
     - name: Build Docker image
       run: |
         eval "$BUILD"
-        docker pull $REGISTRY_BASE/$IMAGE_NAME:latest || true
-        docker build --cache-from $REGISTRY_BASE/$IMAGE_NAME:latest -t $REGISTRY_BASE/$IMAGE_NAME:latest -f Dockerfile.openpilot .
+        docker pull $DOCKER_REGISTRY/$IMAGE_NAME:latest || true
+        docker build --cache-from $DOCKER_REGISTRY/$IMAGE_NAME:latest -t $DOCKER_REGISTRY/$IMAGE_NAME:latest -f Dockerfile.openpilot .
     - name: Push to container registry
       run: |
         $DOCKER_LOGIN
-        docker image ls
-        docker push $REGISTRY_BASE/$IMAGE_NAME:latest
+        docker push $DOCKER_REGISTRY/$IMAGE_NAME:latest
 
   static_analysis:
     name: static analysis
