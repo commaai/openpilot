@@ -40,7 +40,7 @@ int acado_solve( void )
 {
 	acado_nWSR = QPOASES_NWSRMAX;
 
-	QProblem qp(19, 15);
+	QProblem qp(19, 45);
 	
 	returnValue retVal = qp.init(acadoWorkspace.H, acadoWorkspace.g, acadoWorkspace.A, acadoWorkspace.lb, acadoWorkspace.ub, acadoWorkspace.lbA, acadoWorkspace.ubA, acado_nWSR, acadoWorkspace.y);
 

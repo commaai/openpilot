@@ -31,8 +31,8 @@ int main( )
   auto v_poly = v_poly_r0*(xx*xx*xx) + v_poly_r1*(xx*xx) + v_poly_r2*xx + v_poly_r3;
 
   // Equations of motion
-  f << dot(xx) == v_poly * cos(psi);
-  f << dot(yy) == v_poly * sin(psi);
+  f << dot(xx) == v_poly * cos(psi);// - sin(psi) * 2 * dpsi;
+  f << dot(yy) == v_poly * sin(psi);// + cos(psi) * 2 * dpsi;
   f << dot(psi) == dpsi;
   f << dot(dpsi) == ddpsi;
 
@@ -71,10 +71,11 @@ int main( )
   ocp.minimizeLSQ(Q, h);
   ocp.minimizeLSQEndTerm(QN, hN);
 
-  // car can't go backward to avoid "circles"
-  ocp.subjectTo( deg2rad(-90) <= psi <= deg2rad(90));
   // more than absolute max steer angle
   ocp.subjectTo( deg2rad(-50) <= ddpsi <= deg2rad(50));
+  ocp.subjectTo( deg2rad(-50) <= dpsi <= deg2rad(50));
+  ocp.subjectTo(deg2rad(-10) <= ddpsi/(v_poly + 1e-6) <= deg2rad(10));
+  ocp.subjectTo(deg2rad(-10) <= dpsi/(v_poly + 1e-6) <= deg2rad(10));
   ocp.setNOD(9);
 
   OCPexport mpc(ocp);
