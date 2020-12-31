@@ -14,10 +14,7 @@ env:
       docker pull $REGISTRY_BASE/$BASE_IMAGE:latest || true
       docker build --cache-from $REGISTRY_BASE/$BASE_IMAGE:latest -t $BASE_IMAGE:latest -f Dockerfile.openpilot_base .
 
-  RUN: docker run --shm-size 1G -v $PWD:/tmp/openpilot -e "PYTHONPATH=/tmp/openpilot" -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID --rm $BASE_IMAGE /bin/sh -c
-  PERSIST_WITH_CACHE: docker run --shm-size 1G -v $PWD:/tmp/openpilot -e PYTHONPATH=/tmp/openpilot -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v /tmp/comma_download_cache:/tmp/comma_download_cache --name tmppilot $BASE_IMAGE /bin/sh -c
-  PERSIST: docker run --shm-size 1G -v $PWD:/tmp/openpilot -e PYTHONPATH=/tmp/openpilot -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID --name tmppilot $BASE_IMAGE /bin/sh -c
-  CI_RUN: docker run --shm-size 1G -v $PWD:/tmp/openpilot -e PYTHONPATH=/tmp/openpilot -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID --rm tmppilotci /bin/bash -c
+  RUN: docker run --shm-size 1G -v $PWD:/tmp/openpilot -e PYTHONPATH=/tmp/openpilot -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v /tmp/comma_download_cache:/tmp/comma_download_cache $BASE_IMAGE /bin/sh -c
   UNIT_TEST: coverage run --append -m unittest discover
 
 jobs:
@@ -50,7 +47,7 @@ jobs:
     - name: Build openpilot and run quick check
       run: |
           ${{ env.RUN }} "cd /tmp/openpilot && \
-                          ls && \
+                          ls * && \
                           scons -j$(nproc) && \
                           $UNIT_TEST selfdrive/car"
 
@@ -139,6 +136,7 @@ jobs:
     - name: Push to container registry
       run: |
         $DOCKER_LOGIN
+        docker image ls
         docker push $REGISTRY_BASE/$IMAGE_NAME:latest
 
   static_analysis:
@@ -173,9 +171,9 @@ jobs:
       run: eval "$BUILD"
     - name: Run valgrind
       run: |
-        ${{ env.PERSIST_WITH_CACHE }} "cd /tmp/openpilot && \
-                                       scons -j$(nproc) && \
-                                       FILEREADER_CACHE=1 python selfdrive/test/test_valgrind_replay.py"
+        ${{ env.RUN }} "cd /tmp/openpilot && \
+                        scons -j$(nproc) && \
+                        FILEREADER_CACHE=1 python selfdrive/test/test_valgrind_replay.py"
     - name: Print logs
       if: always()
       run: cat selfdrive/test/valgrind_logs.txt
@@ -192,20 +190,20 @@ jobs:
       run: eval "$BUILD"
     - name: Run unit tests
       run: |
-        ${{ env.PERSIST }} "cd /tmp/openpilot && \
-                            scons -j$(nproc) && \
-                            coverage run selfdrive/test/test_fingerprints.py && \
-                            $UNIT_TEST common && \
-                            $UNIT_TEST opendbc/can && \
-                            $UNIT_TEST selfdrive/boardd && \
-                            $UNIT_TEST selfdrive/controls && \
-                            $UNIT_TEST selfdrive/monitoring && \
-                            $UNIT_TEST selfdrive/loggerd && \
-                            $UNIT_TEST selfdrive/car && \
-                            $UNIT_TEST selfdrive/locationd && \
-                            $UNIT_TEST selfdrive/athena && \
-                            $UNIT_TEST selfdrive/thermald && \
-                            $UNIT_TEST tools/lib/tests"
+        ${{ env.RUN }} "cd /tmp/openpilot && \
+                        scons -j$(nproc) && \
+                        coverage run selfdrive/test/test_fingerprints.py && \
+                        $UNIT_TEST common && \
+                        $UNIT_TEST opendbc/can && \
+                        $UNIT_TEST selfdrive/boardd && \
+                        $UNIT_TEST selfdrive/controls && \
+                        $UNIT_TEST selfdrive/monitoring && \
+                        $UNIT_TEST selfdrive/loggerd && \
+                        $UNIT_TEST selfdrive/car && \
+                        $UNIT_TEST selfdrive/locationd && \
+                        $UNIT_TEST selfdrive/athena && \
+                        $UNIT_TEST selfdrive/thermald && \
+                        $UNIT_TEST tools/lib/tests"
     - name: Upload coverage to Codecov
       run: bash <(curl -s https://codecov.io/bash) -v -F unit_tests
 
@@ -228,7 +226,7 @@ jobs:
       run: eval "$BUILD"
     - name: Run replay
       run: |
-        ${{ env.PERSIST_WITH_CACHE }} "cd /tmp/openpilot && \
+        ${{ env.RUN }} "cd /tmp/openpilot && \
                                        scons -j$(nproc) && \
                                        FILEREADER_CACHE=1 CI=1 coverage run selfdrive/test/process_replay/test_processes.py"
     - name: Upload coverage to Codecov
@@ -255,11 +253,11 @@ jobs:
       run: eval "$BUILD"
     - name: Test longitudinal
       run: |
-        ${{ env.PERSIST }} "mkdir -p /tmp/openpilot/selfdrive/test/out && \
-                            cd /tmp/openpilot/ && \
-                            scons -j$(nproc) && \
-                            cd selfdrive/test/longitudinal_maneuvers && \
-                            ./test_longitudinal.py"
+        ${{ env.RUN }} "mkdir -p /tmp/openpilot/selfdrive/test/out && \
+                        cd /tmp/openpilot/ && \
+                        scons -j$(nproc) && \
+                        cd selfdrive/test/longitudinal_maneuvers && \
+                        ./test_longitudinal.py"
     - uses: actions/upload-artifact@v2
       if: always()
       continue-on-error: true
@@ -268,7 +266,7 @@ jobs:
         path: selfdrive/test/longitudinal_maneuvers/out/longitudinal/
 
   test_car_models:
-    name: test car models
+    name: car models
     runs-on: ubuntu-20.04
     timeout-minutes: 50
     steps:
@@ -286,10 +284,10 @@ jobs:
       run: eval "$BUILD"
     - name: Test car models
       run: |
-        ${{ env.PERSIST_WITH_CACHE }} "cd /tmp/openpilot && \
-                                       scons -j$(nproc) && \
-                                       FILEREADER_CACHE=1 coverage run --parallel-mode -m nose --processes=4 --process-timeout=60 \
-                                                    selfdrive/test/test_models.py && \
-                                       coverage combine"
+        ${{ env.RUN }} "cd /tmp/openpilot && \
+                        scons -j$(nproc) && \
+                        FILEREADER_CACHE=1 coverage run --parallel-mode -m nose --processes=4 --process-timeout=60 \
+                                           selfdrive/test/test_models.py && \
+                        coverage combine"
     - name: Upload coverage to Codecov
       run: bash <(curl -s https://codecov.io/bash) -v -F test_car_models
