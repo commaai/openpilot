@@ -83,18 +83,8 @@ void ui_update_vision(UIState *s) {
     }
   }
 
-  if (s->vision_connected) {
-    if (!s->started) goto destroy;
-
-    // poll for a new frame
-    struct pollfd fds[1] = {{
-      .fd = s->stream.ipc_fd,
-      .events = POLLOUT,
-    }};
-    int ret = poll(fds, 1, 100);
-    if (ret > 0) {
-      if (!visionstream_get(&s->stream, nullptr)) goto destroy;
-    }
+  if (s->vision_connected && (!s->started || !visionstream_get(&s->stream, nullptr))) {
+    goto destroy;
   }
 
   return;
