@@ -7,17 +7,19 @@ mpc_dir = os.path.dirname(os.path.abspath(__file__))
 libmpc_fn = os.path.join(mpc_dir, "libmpc"+suffix())
 
 ffi = FFI()
+# FIXME THESES SIZES HAVE TO MATCH GENERATOR.CPP
+# FAILS SILENTLY IF MISMATCHED
 ffi.cdef("""
 typedef struct {
     double x, y, psi, dpsi, ddpsi;
 } state_t;
 
 typedef struct {
-    double x[21];
-    double y[21];
-    double psi[21];
-    double dpsi[21];
-    double ddpsi[20];
+    double x[16];
+    double y[16];
+    double psi[16];
+    double dpsi[16];
+    double ddpsi[15];
     double cost;
 } log_t;
 

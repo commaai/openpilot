@@ -32,19 +32,13 @@ typedef struct {
 
 void init_weights(double pathCost, double yawRateCost, double steerRateCost){
   int    i;
-  const int STEP_MULTIPLIER = 3;
-
   for (i = 0; i < N; i++) {
-    int f = 1;
-    if (i > 4){
-      f = STEP_MULTIPLIER;
-    }
     // Setup diagonal entries
-    acadoVariables.W[NY*NY*i + (NY+1)*0] = pathCost * f;
-    acadoVariables.W[NY*NY*i + (NY+1)*1] = yawRateCost * f;
-    acadoVariables.W[NY*NY*i + (NY+1)*2] = steerRateCost * f;
+    acadoVariables.W[NY*NY*i + (NY+1)*0] = pathCost;
+    acadoVariables.W[NY*NY*i + (NY+1)*1] = yawRateCost;
+    acadoVariables.W[NY*NY*i + (NY+1)*2] = steerRateCost;
   }
-  acadoVariables.WN[(NYN+1)*0] = pathCost * STEP_MULTIPLIER;
+  acadoVariables.WN[(NYN+1)*0] = pathCost;
 }
 
 void init(double pathCost, double yawRateCost, double steerRateCost){
@@ -53,7 +47,7 @@ void init(double pathCost, double yawRateCost, double steerRateCost){
 
   /* Initialize the states and controls. */
   for (i = 0; i < NX * (N + 1); ++i)  acadoVariables.x[ i ] = 0.0;
-  for (i = 0; i < NU * N; ++i)  acadoVariables.u[ i ] = 0.1;
+  for (i = 0; i < NU * N; ++i)  acadoVariables.u[ i ] = 0.1 ;
 
   /* Initialize the measurements/reference. */
   for (i = 0; i < NY * N; ++i)  acadoVariables.y[ i ] = 0.0;
