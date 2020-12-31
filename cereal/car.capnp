@@ -119,6 +119,7 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     pqTimebombWarn @92;
     pqTimebombBypassing @93;
     pqTimebombBypassed @94;
+    pqTimebombTERMINAL @95;
   }
 }
 
