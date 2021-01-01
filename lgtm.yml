@@ -7,10 +7,12 @@ path_classifiers:
 extraction:
   cpp:
     after_prepare:
-      - "pip3 install jinja2 pyyaml cython pycapnp numpy sympy tqdm cffi logentries zmq"
-      - "export PATH=$PWD/external/bin:$PATH"
+    - "pip3 install --upgrade --user pkgconfig cython setuptools wheel"
+    - "pip3 install --upgrade --user jinja2 pyyaml cython pycapnp numpy sympy tqdm\
+      \ cffi logentries zmq scons"
+    - "export PATH=/opt/work/.local/bin:$PATH"
     index:
-      build_command: "python3 $(which scons)"
+      build_command: "scons"
   javascript:
     index:
       filters:
