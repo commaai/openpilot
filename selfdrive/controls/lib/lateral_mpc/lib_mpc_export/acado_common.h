@@ -78,7 +78,7 @@ extern "C"
 /** Number of references/measurements per node on the first N nodes. */
 #define ACADO_NY 4
 /** Number of references/measurements on the last (N + 1)st node. */
-#define ACADO_NYN 2
+#define ACADO_NYN 1
 /** Total number of QP optimization variables. */
 #define ACADO_QP_NV 19
 /** Number of Runge-Kutta stages per integration step. */
@@ -126,17 +126,17 @@ real_t od[ 64 ];
  */
 real_t y[ 60 ];
 
-/** Column vector of size: 2
+/** Column vector of size: 1
  * 
  *  Reference/measurement vector for the 16. node.
  */
-real_t yN[ 2 ];
+real_t yN[ 1 ];
 
 /** Matrix of size: 60 x 4 (row major format) */
 real_t W[ 240 ];
 
-/** Matrix of size: 2 x 2 (row major format) */
-real_t WN[ 4 ];
+/** Column vector of size: 1 */
+real_t WN[ 1 ];
 
 /** Column vector of size: 4
  * 
@@ -175,8 +175,8 @@ real_t d[ 60 ];
 /** Column vector of size: 60 */
 real_t Dy[ 60 ];
 
-/** Column vector of size: 2 */
-real_t DyN[ 2 ];
+/** Column vector of size: 1 */
+real_t DyN[ 1 ];
 
 /** Matrix of size: 60 x 4 (row major format) */
 real_t evGx[ 240 ];
@@ -208,8 +208,8 @@ real_t S1[ 60 ];
 /** Matrix of size: 4 x 4 (row major format) */
 real_t QN1[ 16 ];
 
-/** Matrix of size: 4 x 2 (row major format) */
-real_t QN2[ 8 ];
+/** Column vector of size: 4 */
+real_t QN2[ 4 ];
 
 /** Column vector of size: 30 */
 real_t conAuxVar[ 30 ];

@@ -62,11 +62,8 @@ int main( )
 
   // Distance errors
   hN << yy;
-
-  // Heading error
-  hN << psi;
   
-  BMatrix QN(2,2); QN.setAll(true);
+  BMatrix QN(1,1); QN.setAll(true);
   // QN(0,0) = 1.0;
 
 

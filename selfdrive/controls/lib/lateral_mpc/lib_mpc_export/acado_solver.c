@@ -98,7 +98,6 @@ const real_t* xd = in;
 
 /* Compute outputs: */
 out[0] = xd[1];
-out[1] = xd[2];
 }
 
 void acado_setObjQ1Q2( real_t* const tmpObjS, real_t* const tmpQ1, real_t* const tmpQ2 )
@@ -158,38 +157,37 @@ void acado_setObjQN1QN2( real_t* const tmpObjSEndTerm, real_t* const tmpQN1, rea
 {
 tmpQN2[0] = 0.0;
 ;
-tmpQN2[1] = 0.0;
+tmpQN2[1] = +tmpObjSEndTerm[0];
+tmpQN2[2] = 0.0;
 ;
-tmpQN2[2] = +tmpObjSEndTerm[0];
-tmpQN2[3] = +tmpObjSEndTerm[1];
-tmpQN2[4] = +tmpObjSEndTerm[2];
-tmpQN2[5] = +tmpObjSEndTerm[3];
-tmpQN2[6] = 0.0;
-;
-tmpQN2[7] = 0.0;
+tmpQN2[3] = 0.0;
 ;
 tmpQN1[0] = 0.0;
 ;
 tmpQN1[1] = + tmpQN2[0];
-tmpQN1[2] = + tmpQN2[1];
+tmpQN1[2] = 0.0;
+;
 tmpQN1[3] = 0.0;
 ;
 tmpQN1[4] = 0.0;
 ;
-tmpQN1[5] = + tmpQN2[2];
-tmpQN1[6] = + tmpQN2[3];
+tmpQN1[5] = + tmpQN2[1];
+tmpQN1[6] = 0.0;
+;
 tmpQN1[7] = 0.0;
 ;
 tmpQN1[8] = 0.0;
 ;
-tmpQN1[9] = + tmpQN2[4];
-tmpQN1[10] = + tmpQN2[5];
+tmpQN1[9] = + tmpQN2[2];
+tmpQN1[10] = 0.0;
+;
 tmpQN1[11] = 0.0;
 ;
 tmpQN1[12] = 0.0;
 ;
-tmpQN1[13] = + tmpQN2[6];
-tmpQN1[14] = + tmpQN2[7];
+tmpQN1[13] = + tmpQN2[3];
+tmpQN1[14] = 0.0;
+;
 tmpQN1[15] = 0.0;
 ;
 }
@@ -231,7 +229,6 @@ acadoWorkspace.objValueIn[7] = acadoVariables.od[63];
 acado_evaluateLSQEndTerm( acadoWorkspace.objValueIn, acadoWorkspace.objValueOut );
 
 acadoWorkspace.DyN[0] = acadoWorkspace.objValueOut[0];
-acadoWorkspace.DyN[1] = acadoWorkspace.objValueOut[1];
 
 acado_setObjQN1QN2( acadoVariables.WN, acadoWorkspace.QN1, acadoWorkspace.QN2 );
 
@@ -2703,7 +2700,6 @@ acadoWorkspace.Dy[57] -= acadoVariables.y[57];
 acadoWorkspace.Dy[58] -= acadoVariables.y[58];
 acadoWorkspace.Dy[59] -= acadoVariables.y[59];
 acadoWorkspace.DyN[0] -= acadoVariables.yN[0];
-acadoWorkspace.DyN[1] -= acadoVariables.yN[1];
 
 acado_multRDy( acadoWorkspace.R2, acadoWorkspace.Dy, &(acadoWorkspace.g[ 4 ]) );
 acado_multRDy( &(acadoWorkspace.R2[ 4 ]), &(acadoWorkspace.Dy[ 4 ]), &(acadoWorkspace.g[ 5 ]) );
@@ -2737,10 +2733,10 @@ acado_multQDy( &(acadoWorkspace.Q2[ 192 ]), &(acadoWorkspace.Dy[ 48 ]), &(acadoW
 acado_multQDy( &(acadoWorkspace.Q2[ 208 ]), &(acadoWorkspace.Dy[ 52 ]), &(acadoWorkspace.QDy[ 52 ]) );
 acado_multQDy( &(acadoWorkspace.Q2[ 224 ]), &(acadoWorkspace.Dy[ 56 ]), &(acadoWorkspace.QDy[ 56 ]) );
 
-acadoWorkspace.QDy[60] = + acadoWorkspace.QN2[0]*acadoWorkspace.DyN[0] + acadoWorkspace.QN2[1]*acadoWorkspace.DyN[1];
-acadoWorkspace.QDy[61] = + acadoWorkspace.QN2[2]*acadoWorkspace.DyN[0] + acadoWorkspace.QN2[3]*acadoWorkspace.DyN[1];
-acadoWorkspace.QDy[62] = + acadoWorkspace.QN2[4]*acadoWorkspace.DyN[0] + acadoWorkspace.QN2[5]*acadoWorkspace.DyN[1];
-acadoWorkspace.QDy[63] = + acadoWorkspace.QN2[6]*acadoWorkspace.DyN[0] + acadoWorkspace.QN2[7]*acadoWorkspace.DyN[1];
+acadoWorkspace.QDy[60] = + acadoWorkspace.QN2[0]*acadoWorkspace.DyN[0];
+acadoWorkspace.QDy[61] = + acadoWorkspace.QN2[1]*acadoWorkspace.DyN[0];
+acadoWorkspace.QDy[62] = + acadoWorkspace.QN2[2]*acadoWorkspace.DyN[0];
+acadoWorkspace.QDy[63] = + acadoWorkspace.QN2[3]*acadoWorkspace.DyN[0];
 
 acadoWorkspace.QDy[4] += acadoWorkspace.Qd[0];
 acadoWorkspace.QDy[5] += acadoWorkspace.Qd[1];
@@ -3347,8 +3343,8 @@ int lRun1;
 /** Row vector of size: 4 */
 real_t tmpDy[ 4 ];
 
-/** Row vector of size: 2 */
-real_t tmpDyN[ 2 ];
+/** Column vector of size: 1 */
+real_t tmpDyN[ 1 ];
 
 for (lRun1 = 0; lRun1 < 15; ++lRun1)
 {
@@ -3378,7 +3374,6 @@ acadoWorkspace.objValueIn[6] = acadoVariables.od[62];
 acadoWorkspace.objValueIn[7] = acadoVariables.od[63];
 acado_evaluateLSQEndTerm( acadoWorkspace.objValueIn, acadoWorkspace.objValueOut );
 acadoWorkspace.DyN[0] = acadoWorkspace.objValueOut[0] - acadoVariables.yN[0];
-acadoWorkspace.DyN[1] = acadoWorkspace.objValueOut[1] - acadoVariables.yN[1];
 objVal = 0.0000000000000000e+00;
 for (lRun1 = 0; lRun1 < 15; ++lRun1)
 {
@@ -3389,9 +3384,8 @@ tmpDy[3] = + acadoWorkspace.Dy[lRun1 * 4]*acadoVariables.W[lRun1 * 16 + 3] + aca
 objVal += + acadoWorkspace.Dy[lRun1 * 4]*tmpDy[0] + acadoWorkspace.Dy[lRun1 * 4 + 1]*tmpDy[1] + acadoWorkspace.Dy[lRun1 * 4 + 2]*tmpDy[2] + acadoWorkspace.Dy[lRun1 * 4 + 3]*tmpDy[3];
 }
 
-tmpDyN[0] = + acadoWorkspace.DyN[0]*acadoVariables.WN[0] + acadoWorkspace.DyN[1]*acadoVariables.WN[2];
-tmpDyN[1] = + acadoWorkspace.DyN[0]*acadoVariables.WN[1] + acadoWorkspace.DyN[1]*acadoVariables.WN[3];
-objVal += + acadoWorkspace.DyN[0]*tmpDyN[0] + acadoWorkspace.DyN[1]*tmpDyN[1];
+tmpDyN[0] = + acadoWorkspace.DyN[0]*acadoVariables.WN[0];
+objVal += + acadoWorkspace.DyN[0]*tmpDyN[0];
 
 objVal *= 0.5;
 return objVal;

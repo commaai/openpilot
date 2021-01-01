@@ -47,7 +47,6 @@ void init_weights(double pathCost, double headingCost, double yawRateCost, doubl
     acadoVariables.W[NY*NY*i + (NY+1)*3] = mult * steerRateCost;
   }
   acadoVariables.WN[(NYN+1)*0] = pathCost;
-  acadoVariables.WN[(NYN+1)*1] = headingCost;
 }
 
 void init(double pathCost, double headingCost, double yawRateCost, double steerRateCost){
