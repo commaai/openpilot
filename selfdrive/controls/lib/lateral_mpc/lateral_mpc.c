@@ -20,6 +20,12 @@ typedef struct {
   double x, y, psi, dpsi, ddpsi;
 } state_t;
 
+const int N_steps = 15;
+double T_IDXS[N_steps + 2] = {0.0, 0.00976562, 0.0390625 , 0.08789062, 0.15625,
+                     0.24414062, 0.3515625 , 0.47851562, 0.625     , 0.79101562,
+                     0.9765625 , 1.18164062, 1.40625   , 1.65039062, 1.9140625 ,
+                     2.19726562, 2.5};
+
 
 typedef struct {
   double x[N+1];
@@ -30,18 +36,21 @@ typedef struct {
   double cost;
 } log_t;
 
-void init_weights(double pathCost, double yawRateCost, double steerRateCost){
+void init_weights(double pathCost, double headingCost, double yawRateCost, double steerRateCost){
   int    i;
   for (i = 0; i < N; i++) {
+    double mult = T_IDXS[i+1] - T_IDXS[i];
     // Setup diagonal entries
-    acadoVariables.W[NY*NY*i + (NY+1)*0] = pathCost;
-    acadoVariables.W[NY*NY*i + (NY+1)*1] = yawRateCost;
-    acadoVariables.W[NY*NY*i + (NY+1)*2] = steerRateCost;
+    acadoVariables.W[NY*NY*i + (NY+1)*0] = mult * pathCost;
+    acadoVariables.W[NY*NY*i + (NY+1)*1] = mult * headingCost;
+    acadoVariables.W[NY*NY*i + (NY+1)*2] = mult * yawRateCost;
+    acadoVariables.W[NY*NY*i + (NY+1)*3] = mult * steerRateCost;
   }
   acadoVariables.WN[(NYN+1)*0] = pathCost;
+  acadoVariables.WN[(NYN+1)*1] = headingCost;
 }
 
-void init(double pathCost, double yawRateCost, double steerRateCost){
+void init(double pathCost, double headingCost, double yawRateCost, double steerRateCost){
   acado_initializeSolver();
   int    i;
 
@@ -56,12 +65,12 @@ void init(double pathCost, double yawRateCost, double steerRateCost){
   /* MPC: initialize the current state feedback. */
   for (i = 0; i < NX; ++i) acadoVariables.x0[ i ] = 0.0;
 
-  init_weights(pathCost, yawRateCost, steerRateCost);
+  init_weights(pathCost, headingCost, yawRateCost, steerRateCost);
 }
 
 int run_mpc(state_t * x0, log_t * solution, double v_poly[4],
-             double target_y[N+1], double target_dpsi[N+1],
-             double target_ddpsi[N+1]){
+             double target_y[N+1], double target_psi[N+1],
+             double target_dpsi[N+1]){
 
   int    i;
 
@@ -73,8 +82,9 @@ int run_mpc(state_t * x0, log_t * solution, double v_poly[4],
   }
   for (i = 0; i < N; i+= 1){
     acadoVariables.y[NY*i + 0] = target_y[i];
-    acadoVariables.y[NY*i + 1] = target_dpsi[i];
-    acadoVariables.y[NY*i + 2] = target_ddpsi[i];
+    acadoVariables.y[NY*i + 1] = target_psi[i];
+    acadoVariables.y[NY*i + 2] = target_dpsi[i];
+    acadoVariables.y[NY*i + 3] = 0.0;
   }
   acadoVariables.yN[0] = target_y[N];
 

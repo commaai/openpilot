@@ -3,8 +3,8 @@
 #define PI 3.1415926536
 #define deg2rad(d) (d/180.0*PI)
 
-const int N_steps = 16;
-double T_IDXS[N_steps] = {0.00976562, 0.0390625 , 0.08789062, 0.15625,
+const int N_steps = 15;
+double T_IDXS[N_steps + 2] = {0.0, 0.00976562, 0.0390625 , 0.08789062, 0.15625,
                      0.24414062, 0.3515625 , 0.47851562, 0.625     , 0.79101562,
                      0.9765625 , 1.18164062, 1.40625   , 1.65039062, 1.9140625 ,
                      2.19726562, 2.5};
@@ -43,13 +43,16 @@ int main( )
   // Distance errors
   h << yy;
 
+  // Heading trajectory error
+  h << psi;
+  
   // Yaw rate trajectory error
   h << dpsi;
   
   // Angular rate error
   h << ddpsi;
 
-  BMatrix Q(3,3); Q.setAll(true);
+  BMatrix Q(4,4); Q.setAll(true);
   // Q(0,0) = 1.0;
   // Q(1,1) = 1.0;
   // Q(2,2) = 1.0;
@@ -60,11 +63,14 @@ int main( )
   // Distance errors
   hN << yy;
 
-  BMatrix QN(1,1); QN.setAll(true);
+  // Heading error
+  hN << psi;
+  
+  BMatrix QN(2,2); QN.setAll(true);
   // QN(0,0) = 1.0;
 
 
-  Grid times(N_steps, T_IDXS);
+  Grid times(N_steps + 1, &T_IDXS[1]);
   OCP ocp(times);
   ocp.subjectTo(f);
 

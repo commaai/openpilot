@@ -76,9 +76,9 @@ extern "C"
 /** Number of differential derivative variables. */
 #define ACADO_NXD 0
 /** Number of references/measurements per node on the first N nodes. */
-#define ACADO_NY 3
+#define ACADO_NY 4
 /** Number of references/measurements on the last (N + 1)st node. */
-#define ACADO_NYN 1
+#define ACADO_NYN 2
 /** Total number of QP optimization variables. */
 #define ACADO_QP_NV 19
 /** Number of Runge-Kutta stages per integration step. */
@@ -120,23 +120,23 @@ real_t u[ 15 ];
  */
 real_t od[ 64 ];
 
-/** Column vector of size: 45
+/** Column vector of size: 60
  * 
- *  Matrix containing 15 reference/measurement vectors of size 3 for first 15 nodes.
+ *  Matrix containing 15 reference/measurement vectors of size 4 for first 15 nodes.
  */
-real_t y[ 45 ];
+real_t y[ 60 ];
 
-/** Column vector of size: 1
+/** Column vector of size: 2
  * 
  *  Reference/measurement vector for the 16. node.
  */
-real_t yN[ 1 ];
+real_t yN[ 2 ];
 
-/** Matrix of size: 45 x 3 (row major format) */
-real_t W[ 135 ];
+/** Matrix of size: 60 x 4 (row major format) */
+real_t W[ 240 ];
 
-/** Column vector of size: 1 */
-real_t WN[ 1 ];
+/** Matrix of size: 2 x 2 (row major format) */
+real_t WN[ 4 ];
 
 /** Column vector of size: 4
  * 
@@ -172,11 +172,11 @@ real_t state[ 29 ];
 /** Column vector of size: 60 */
 real_t d[ 60 ];
 
-/** Column vector of size: 45 */
-real_t Dy[ 45 ];
+/** Column vector of size: 60 */
+real_t Dy[ 60 ];
 
-/** Column vector of size: 1 */
-real_t DyN[ 1 ];
+/** Column vector of size: 2 */
+real_t DyN[ 2 ];
 
 /** Matrix of size: 60 x 4 (row major format) */
 real_t evGx[ 240 ];
@@ -187,20 +187,20 @@ real_t evGu[ 60 ];
 /** Row vector of size: 9 */
 real_t objValueIn[ 9 ];
 
-/** Row vector of size: 3 */
-real_t objValueOut[ 3 ];
+/** Row vector of size: 4 */
+real_t objValueOut[ 4 ];
 
 /** Matrix of size: 60 x 4 (row major format) */
 real_t Q1[ 240 ];
 
-/** Matrix of size: 60 x 3 (row major format) */
-real_t Q2[ 180 ];
+/** Matrix of size: 60 x 4 (row major format) */
+real_t Q2[ 240 ];
 
 /** Column vector of size: 15 */
 real_t R1[ 15 ];
 
-/** Matrix of size: 15 x 3 (row major format) */
-real_t R2[ 45 ];
+/** Matrix of size: 15 x 4 (row major format) */
+real_t R2[ 60 ];
 
 /** Column vector of size: 60 */
 real_t S1[ 60 ];
@@ -208,8 +208,8 @@ real_t S1[ 60 ];
 /** Matrix of size: 4 x 4 (row major format) */
 real_t QN1[ 16 ];
 
-/** Column vector of size: 4 */
-real_t QN2[ 4 ];
+/** Matrix of size: 4 x 2 (row major format) */
+real_t QN2[ 8 ];
 
 /** Column vector of size: 30 */
 real_t conAuxVar[ 30 ];
