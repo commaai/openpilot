@@ -36,7 +36,7 @@ typedef struct {
   double cost;
 } log_t;
 
-void init_weights(double pathCost, double headingCost, double yawRateCost, double steerRateCost){
+void set_weights(double pathCost, double headingCost, double yawRateCost, double steerRateCost){
   int    i;
   for (i = 0; i < N; i++) {
     double mult = T_IDXS[i+1] - T_IDXS[i];
@@ -64,7 +64,7 @@ void init(double pathCost, double headingCost, double yawRateCost, double steerR
   /* MPC: initialize the current state feedback. */
   for (i = 0; i < NX; ++i) acadoVariables.x0[ i ] = 0.0;
 
-  init_weights(pathCost, headingCost, yawRateCost, steerRateCost);
+  set_weights(pathCost, headingCost, yawRateCost, steerRateCost);
 }
 
 int run_mpc(state_t * x0, log_t * solution, double v_poly[4],
