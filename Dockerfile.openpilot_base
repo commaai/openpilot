@@ -60,4 +60,5 @@ RUN pyenv install 3.8.2 && \
     pip install --no-cache-dir pipenv==2020.8.13 && \
     cd /tmp && \
     pipenv install --system --deploy --dev --clear && \
+    pip uninstall torch tensorflow -y && \
     pip uninstall -y pipenv

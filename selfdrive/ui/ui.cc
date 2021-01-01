@@ -219,7 +219,7 @@ void update_sockets(UIState *s) {
     scene.dmonitoring_state = sm["dMonitoringState"].getDMonitoringState();
     scene.is_rhd = scene.dmonitoring_state.getIsRHD();
     scene.frontview = scene.dmonitoring_state.getIsPreview();
-  } else if ((sm.frame - sm.rcv_frame("dMonitoringState")) > UI_FREQ/2) {
+  } else if (scene.frontview && (sm.frame - sm.rcv_frame("dMonitoringState")) > UI_FREQ/2) {
     scene.frontview = false;
   }
   if (sm.updated("sensorEvents")) {
@@ -243,14 +243,10 @@ static void ui_read_params(UIState *s) {
   if (frame % (5*UI_FREQ) == 0) {
     read_param(&s->is_metric, "IsMetric");
   } else if (frame % (6*UI_FREQ) == 0) {
-    uint64_t last_athena_ping = 0;
-    int param_read = read_param(&last_athena_ping, "LastAthenaPingTime");
-    if (param_read != 0) { // Failed to read param
-      s->scene.athenaStatus = NET_DISCONNECTED;
-    } else if (nanos_since_boot() - last_athena_ping < 70e9) {
-      s->scene.athenaStatus = NET_CONNECTED;
-    } else {
-      s->scene.athenaStatus = NET_ERROR;
+    s->scene.athenaStatus = NET_DISCONNECTED;
+    uint64_t last_ping = 0;
+    if (read_param(&last_ping, "LastAthenaPingTime") == 0) {
+      s->scene.athenaStatus = nanos_since_boot() - last_ping < 70e9 ? NET_CONNECTED : NET_ERROR;
     }
   }
 }

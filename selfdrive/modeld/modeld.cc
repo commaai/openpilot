@@ -11,8 +11,8 @@
 
 #include "models/driving.h"
 #include "messaging.hpp"
-volatile sig_atomic_t do_exit = 0;
 
+volatile sig_atomic_t do_exit = 0;
 static void set_do_exit(int sig) {
   do_exit = 1;
 }

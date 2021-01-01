@@ -5,7 +5,6 @@
 #include <QDebug>
 #include <QVBoxLayout>
 #include <QLabel>
-#include <QLineEdit>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QNetworkAccessManager>
@@ -19,7 +18,9 @@
 #include "drive_stats.hpp"
 #include "common/params.h"
 #include "common/utilpp.h"
-double MILE_TO_KM = 1.60934;
+
+
+constexpr double MILE_TO_KM = 1.60934;
 
 
 #if defined(QCOM) || defined(QCOM2)
@@ -28,7 +29,8 @@ const std::string private_key_path = "/persist/comma/id_rsa";
 const std::string private_key_path = util::getenv_default("HOME", "/.comma/persist/comma/id_rsa", "/persist/comma/id_rsa");
 #endif
 
-QByteArray rsa_sign(QByteArray data){
+
+QByteArray rsa_sign(QByteArray data) {
   auto file = QFile(private_key_path.c_str());
   bool r = file.open(QIODevice::ReadOnly);
   assert(r);
@@ -56,7 +58,7 @@ QByteArray rsa_sign(QByteArray data){
   return sig;
 }
 
-QString create_jwt(QString dongle_id, int expiry=3600){
+QString create_jwt(QString dongle_id, int expiry=3600) {
   QJsonObject header;
   header.insert("alg", "RS256");
   header.insert("typ", "JWT");
@@ -81,24 +83,27 @@ QString create_jwt(QString dongle_id, int expiry=3600){
   return jwt;
 }
 
-QString bold(QString s) {
-  return "<b>" + s + "</b>";
-}
-
-QWidget *widget(QLayout *l){
-  QWidget *q = new QWidget();
-  q->setLayout(l);
-  return q;
-}
-
-QWidget *build_stat(QString name, int stat){
+QLayout *build_stat(QString name, int stat) {
   QVBoxLayout *layout = new QVBoxLayout;
-  layout->addWidget(new QLabel(bold(QString("%1").arg(stat))), 1, Qt::AlignCenter);
-  layout->addWidget(new QLabel(name),1, Qt::AlignCenter);
-  return widget(layout);
+
+  QLabel *metric = new QLabel(QString("%1").arg(stat));
+  metric->setStyleSheet(R"(
+    font-size: 72px;
+    font-weight: 700;
+  )");
+  layout->addWidget(metric, 0, Qt::AlignLeft);
+  
+  QLabel *label = new QLabel(name);
+  label->setStyleSheet(R"(
+    font-size: 32px;
+    font-weight: 600;
+  )");
+  layout->addWidget(label, 0, Qt::AlignLeft);
+  
+  return layout;
 }
 
-void DriveStats::replyFinished(QNetworkReply *l){
+void DriveStats::replyFinished(QNetworkReply *l) {
   QString answer = l->readAll();
   answer.chop(1);
 
@@ -116,47 +121,27 @@ void DriveStats::replyFinished(QNetworkReply *l){
   QGridLayout *gl = new QGridLayout();
 
   int all_distance = all["distance"].toDouble()*(metric ? MILE_TO_KM : 1);
-  gl->addWidget(new QLabel(bold("ALL TIME")), 0, 0, 1, 3);
-  gl->addWidget(build_stat("DRIVES", all["routes"].toDouble()), 1, 0, 3, 1);
-  gl->addWidget(build_stat(metric ? "KM" : "MILES", all_distance), 1, 1, 3, 1);
-  gl->addWidget(build_stat("HOURS", all["minutes"].toDouble() / 60), 1, 2, 3, 1);
-
-  QFrame *lineA = new QFrame;
-  lineA->setFrameShape(QFrame::HLine);
-  lineA->setFrameShadow(QFrame::Sunken);
-  lineA->setProperty("class", "line");
-  gl->addWidget(lineA, 5, 0, 1, 3);
+  gl->addWidget(new QLabel("ALL TIME"), 0, 0, 1, 3);
+  gl->addLayout(build_stat("DRIVES", all["routes"].toDouble()), 1, 0, 3, 1);
+  gl->addLayout(build_stat(metric ? "KM" : "MILES", all_distance), 1, 1, 3, 1);
+  gl->addLayout(build_stat("HOURS", all["minutes"].toDouble() / 60), 1, 2, 3, 1);
 
   int week_distance = week["distance"].toDouble()*(metric ? MILE_TO_KM : 1);
-  gl->addWidget(new QLabel(bold("PAST WEEK")), 6, 0, 1, 3);
-  gl->addWidget(build_stat("DRIVES", week["routes"].toDouble()), 7, 0, 3, 1);
-  gl->addWidget(build_stat(metric ? "KM" : "MILES", week_distance), 7, 1, 3, 1);
-  gl->addWidget(build_stat("HOURS", week["minutes"].toDouble() / 60), 7, 2, 3, 1);
+  gl->addWidget(new QLabel("PAST WEEK"), 6, 0, 1, 3);
+  gl->addLayout(build_stat("DRIVES", week["routes"].toDouble()), 7, 0, 3, 1);
+  gl->addLayout(build_stat(metric ? "KM" : "MILES", week_distance), 7, 1, 3, 1);
+  gl->addLayout(build_stat("HOURS", week["minutes"].toDouble() / 60), 7, 2, 3, 1);
 
-  f->setLayout(gl);
-  f->setStyleSheet(R"(
-    [class="line"] {
-      border: 2px solid white;
-    }
-    [class="outside"] {
-      border-radius: 20px;
-      border: 2px solid white;
-      padding: 10px;
-    }
+  setLayout(gl);
+  setStyleSheet(R"(
     QLabel {
-      font-size: 70px;
-      font-weight: 200;
+      font-size: 48px;
+      font-weight: 600;
     }
   )");
-
 }
-DriveStats::DriveStats(QWidget *parent) : QWidget(parent) {
-  f = new QFrame;
-  f->setProperty("class", "outside");
-  QVBoxLayout *v = new QVBoxLayout;
-  v->addWidget(f);
-  setLayout(v);
 
+DriveStats::DriveStats(QWidget *parent) : QWidget(parent) {
   QString dongle_id = QString::fromStdString(Params().get("DongleId"));
   QString token = create_jwt(dongle_id);
 

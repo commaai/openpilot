@@ -1,4 +1,6 @@
 #include <string>
+
+#include <QFontDatabase>
 #include <QApplication>
 
 #ifdef QCOM2
@@ -13,6 +15,9 @@ void setMainWindow(QWidget *w) {
   float scale = getenv("SCALE") != NULL ? std::stof(getenv("SCALE")) : 1.0;
   w->setFixedSize(vwp_w*scale, vwp_h*scale);
   w->show();
+
+  QFontDatabase::addApplicationFont("../assets/fonts/inter.ttf");
+  QApplication::setFont(QFont("Inter"));
 
 #ifdef QCOM2
   QPlatformNativeInterface *native = QGuiApplication::platformNativeInterface();

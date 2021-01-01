@@ -73,10 +73,7 @@ static void draw_chevron(UIState *s, float x_in, float y_in, float sz,
     return;
   }
 
-  sz *= 30;
-  sz /= (x_in / 3 + 30);
-  if (sz > 30) sz = 30;
-  if (sz < 15) sz = 15;
+  sz = std::clamp((sz * 30) / (x_in / 3 + 30), 15.0f, 30.0f);
 
   // glow
   float g_xo = sz/5;

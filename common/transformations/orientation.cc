@@ -39,7 +39,7 @@ Eigen::Matrix3d quat2rot(Eigen::Quaterniond quat){
   return quat.toRotationMatrix();
 }
 
-Eigen::Quaterniond rot2quat(Eigen::Matrix3d rot){
+Eigen::Quaterniond rot2quat(const Eigen::Matrix3d &rot){
   return ensure_unique(Eigen::Quaterniond(rot));
 }
 
@@ -47,7 +47,7 @@ Eigen::Matrix3d euler2rot(Eigen::Vector3d euler){
   return quat2rot(euler2quat(euler));
 }
 
-Eigen::Vector3d rot2euler(Eigen::Matrix3d rot){
+Eigen::Vector3d rot2euler(const Eigen::Matrix3d &rot){
   return quat2euler(rot2quat(rot));
 }
 
