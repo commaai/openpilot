@@ -175,11 +175,12 @@ class PathPlanner():
     # account for actuation delay
     self.cur_state = calc_states_after_delay(self.cur_state, v_ego, angle_steers - angle_offset, curvature_factor, VM.sR, CP.steerActuatorDelay)
 
-    # minus signs for ENU
+    # TODO use poly to describe changing v_ego
     v_poly = np.zeros(4)
     v_poly[-1] = v_ego
     v_poly_list = list(v_poly)
 
+    # minus signs for ENU
     y_pt_list = list(-np.array(self.LP.path_xyz[:,1]))
     dpsi_pt_list = list(-np.array(self.LP.rot_rate_xyz[:,2]))
     ddpsi_pt_list = list(-np.zeros_like(self.LP.rot_rate_xyz[:,2]))
@@ -190,6 +191,7 @@ class PathPlanner():
                         ddpsi_pt_list)
 
     # reset to current steer angle if not active or overriding
+    # TODO get rid of these bad namining conventions with radians and degrees
     if active:
       dpsi_desired_next = np.interp(DT_MDL, T_IDXS[:16], list(self.mpc_solution[0].dpsi))
       delta_desired = dpsi_desired_next / (v_ego * curvature_factor)
