@@ -72,7 +72,7 @@ class PathPlanner():
 
   def setup_mpc(self):
     self.libmpc = libmpc_py.libmpc
-    self.libmpc.init(MPC_COST_LAT.PATH, .0, .1)
+    self.libmpc.init(.0, .0, .0, .0)
 
     self.mpc_solution = libmpc_py.ffi.new("log_t *")
     self.cur_state = libmpc_py.ffi.new("state_t *")
@@ -182,13 +182,14 @@ class PathPlanner():
 
     # minus signs for ENU
     y_pt_list = list(-np.array(self.LP.path_xyz[:,1]))
+    psi_pt_list = list(-np.array(self.LP.orient_xyz[:,2]))
     dpsi_pt_list = list(-np.array(self.LP.rot_rate_xyz[:,2]))
-    ddpsi_pt_list = list(-np.zeros_like(self.LP.rot_rate_xyz[:,2]))
+    self.libmpc.set_weights(MPC_COST_LAT.PATH, v_ego * MPC_COST_LAT.HEADING, 0.0, CP.steerRateCost * curvature_factor)
     self.libmpc.run_mpc(self.cur_state, self.mpc_solution,
                         v_poly_list,
                         y_pt_list,
-                        dpsi_pt_list,
-                        ddpsi_pt_list)
+                        psi_pt_list,
+                        dpsi_pt_list)
 
     # reset to current steer angle if not active or overriding
     # TODO get rid of these bad namining conventions with radians and degrees
@@ -208,7 +209,7 @@ class PathPlanner():
     mpc_nans = any(math.isnan(x) for x in self.mpc_solution[0].dpsi)
     t = sec_since_boot()
     if mpc_nans:
-      self.libmpc.init(MPC_COST_LAT.PATH, .0, .1)
+      self.libmpc.init(.0, .0, .0, .0)
       self.cur_state[0].delta = math.radians(angle_steers - angle_offset) / VM.sR
 
       if t > self.last_cloudlog_t + 5.0:
