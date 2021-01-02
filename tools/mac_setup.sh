@@ -9,7 +9,7 @@ fi
 # (du -shc /usr/local/Homebrew/Library/* | sort -h) || true
 # (du -shc /usr/local/Cellar/* | sort -h) || true
 # (du -shc /usr/local/Caskroom/* | sort -h) || true
-(du -shc ~/Library/Caches/Homebrew/downloads/* | sort -h) || true
+# (du -shc ~/Library/Caches/Homebrew/downloads/* | sort -h) || true
 
 before=$(ls ~/Library/Caches/Homebrew/downloads)
 
@@ -23,7 +23,7 @@ if [[ $(command -v ffmpeg) != "" ]]; then
   echo "Cache worked!"
 fi
 
-brew install zeromq
+brew install ffmpeg
 #  capnp \
             #  coreutils \
             #  eigen \
@@ -41,16 +41,17 @@ brew install zeromq
 # (du -shc /usr/local/Homebrew/Library/* | sort -h) || true
 # (du -shc /usr/local/Cellar/* | sort -h) || true
 # (du -shc /usr/local/Caskroom/* | sort -h) || true
-(du -shc ~/Library/Caches/Homebrew/downloads/* | sort -h) || true
+# (du -shc ~/Library/Caches/Homebrew/downloads/* | sort -h) || true
 after=$(ls ~/Library/Caches/Homebrew/downloads)
 
 echo "NEW FILES"
 comm -13 <(echo "$before") <(echo "$after")
+echo "\n\n"
 
 echo "Removing previously existing files that don't need caching"
 comm -12 <(echo "$before") <(echo "$after") | while read file; do
-  ls -l "~/Library/Caches/Homebrew/downloads/$file" || true
-  rm "~/Library/Caches/Homebrew/downloads/$file" || true
+  echo "Removing ~/Library/Caches/Homebrew/downloads/$file"
+  rm ~/Library/Caches/Homebrew/downloads/"$file"
 done
 
 if [[ $(command -v ffmpeg) != "" ]]; then
