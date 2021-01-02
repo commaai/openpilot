@@ -63,9 +63,9 @@ jobs:
           ~/.pyenv
           ~/Library/Caches/pip
           ~/Library/Caches/pipenv
-          ~/Library/Caches/Homebrew
           /usr/local/Cellar
-        key: ${{ hashFiles('tools/mac_setup.sh') }}
+        # key: ${{ hashFiles('tools/mac_setup.sh') }}
+        key: asdfasdf1
     - name: Determine pre-existing Homebrew packages
       if: steps.cache.outputs.cache-hit != 'true'
       run: |
