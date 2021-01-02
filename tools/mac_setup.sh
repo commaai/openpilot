@@ -6,18 +6,25 @@ if [[ $(command -v brew) == "" ]]; then
   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
 fi
 
-(du -shc /usr/local/Homebrew/Library/* | sort -h) || true
-(du -shc /usr/local/Cellar/* | sort -h) || true
-(du -shc /usr/local/Caskroom/* | sort -h) || true
+# (du -shc /usr/local/Homebrew/Library/* | sort -h) || true
+# (du -shc /usr/local/Cellar/* | sort -h) || true
+# (du -shc /usr/local/Caskroom/* | sort -h) || true
 (du -shc ~/Library/Caches/Homebrew/downloads/* | sort -h) || true
+
+before=$(ls ~/Library/Caches/Homebrew/downloads)
 
 # rm -rf /usr/local/Homebrew/*
 # find /usr/local/Homebrew \! -regex ".+\.git.+" -delete
-rm -rf /usr/local/Cellar/*
-rm -rf /usr/local/Caskroom/*
-rm -rf ~/Library/Caches/Homebrew/*
+# rm -rf /usr/local/Cellar/*
+# rm -rf /usr/local/Caskroom/*
+# rm -rf ~/Library/Caches/Homebrew/*
 
-brew install capnp \
+if [[ $(command -v ffmpeg) != "" ]]; then
+  echo "Cache worked!"
+fi
+
+brew install zeromq
+#  capnp \
             #  coreutils \
             #  eigen \
             #  ffmpeg \
@@ -31,10 +38,20 @@ brew install capnp \
             #  qt5 \
             #  zeromq
 
-(du -shc /usr/local/Homebrew/* | sort -h) || true
-(du -shc /usr/local/Cellar/* | sort -h) || true
-(du -shc /usr/local/Caskroom/* | sort -h) || true
+# (du -shc /usr/local/Homebrew/Library/* | sort -h) || true
+# (du -shc /usr/local/Cellar/* | sort -h) || true
+# (du -shc /usr/local/Caskroom/* | sort -h) || true
 (du -shc ~/Library/Caches/Homebrew/downloads/* | sort -h) || true
+after=$(ls ~/Library/Caches/Homebrew/downloads)
+
+echo "NEW FILES"
+new=$(comm -13 <(echo $before) <(echo $after))
+echo $new
+diff <(echo $before) <(echo $after)
+
+if [[ $(command -v ffmpeg) != "" ]]; then
+  echo "ffmpeg exists"
+fi
 
 # if [[ $SHELL == "/bin/zsh" ]]; then
 #   RC_FILE="$HOME/.zshrc"
