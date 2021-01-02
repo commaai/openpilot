@@ -13,8 +13,8 @@ fi
 
 
 brew install ffmpeg \
- capnp \
-             coreutils \
+#  capnp \
+            #  coreutils \
             #  eigen \
             #  ffmpeg \
             #  glfw \

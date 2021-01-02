@@ -72,7 +72,7 @@ jobs:
           /usr/local/Cellar
           ~/github_cache_entries.txt
         # key: ${{ hashFiles('tools/mac_setup.sh') }}
-        key: asdfasdf5
+        key: asdfasdf7
     - name: Brew link restored dependencies
       if: steps.dependency-cache.outputs.cache-hit == 'true'
       run: |
@@ -87,17 +87,14 @@ jobs:
       if: steps.dependency-cache.outputs.cache-hit != 'true'
       run: |
         new_cellar=$(ls /usr/local/Cellar)
-
         comm -12 <(echo "$EXISTING_CELLAR") <(echo "$new_cellar") | while read dir; do
-          if [[ "$line" != "zstd" ]]; then # need to keep zstd for caching step to work
+          if [[ $dir != "zstd" ]]; then # caching step needs zstd
             echo "Removing /usr/local/Cellar/$dir"
             rm -rf "/usr/local/Cellar/$dir"
           fi
         done
-
-        echo "NEW PACKAGES"
+        echo "Newly installed packages:"
         comm -13 <(echo "$EXISTING_CELLAR") <(echo "$new_cellar") | tee ~/github_cache_entries.txt
-
         (du -shc /usr/local/Cellar/* | sort -h) || true
 
   build_webcam:
