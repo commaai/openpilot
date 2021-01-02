@@ -93,6 +93,7 @@ pipeline {
         }
         */
 
+        /*
         stage('On-device Tests') {
           agent {
             docker {
@@ -155,6 +156,7 @@ pipeline {
           }
 
         }
+        */
 
       }
     }
