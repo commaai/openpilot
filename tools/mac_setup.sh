@@ -6,6 +6,17 @@ if [[ $(command -v brew) == "" ]]; then
   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
 fi
 
+(du -shc /usr/local/Homebrew/Library/* | sort -h) || true
+(du -shc /usr/local/Cellar/* | sort -h) || true
+(du -shc /usr/local/Caskroom/* | sort -h) || true
+(du -shc ~/Library/Caches/Homebrew/downloads/* | sort -h) || true
+
+# rm -rf /usr/local/Homebrew/*
+# find /usr/local/Homebrew \! -regex ".+\.git.+" -delete
+rm -rf /usr/local/Cellar/*
+rm -rf /usr/local/Caskroom/*
+rm -rf ~/Library/Caches/Homebrew/*
+
 brew install capnp \
             #  coreutils \
             #  eigen \
@@ -20,8 +31,10 @@ brew install capnp \
             #  qt5 \
             #  zeromq
 
-find /usr/local/Homebrew -type d
-find ~/Library/Caches/Homebrew -type d
+(du -shc /usr/local/Homebrew/* | sort -h) || true
+(du -shc /usr/local/Cellar/* | sort -h) || true
+(du -shc /usr/local/Caskroom/* | sort -h) || true
+(du -shc ~/Library/Caches/Homebrew/downloads/* | sort -h) || true
 
 # if [[ $SHELL == "/bin/zsh" ]]; then
 #   RC_FILE="$HOME/.zshrc"
