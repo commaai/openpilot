@@ -21,7 +21,6 @@ env:
 jobs:
   build_release:
     name: build release
-    if: ${{ false }}
     runs-on: ubuntu-20.04
     timeout-minutes: 50
     env:
@@ -71,13 +70,13 @@ jobs:
           ~/Library/Caches/pipenv
           /usr/local/Cellar
           ~/github_brew_cache_entries.txt
-        key: deps-${{ hashFiles('tools/mac_setup.sh') }}
-        restore-keys: deps-
+        key: macos-deps-${{ hashFiles('tools/mac_setup.sh') }}
+        restore-keys: macos-deps-
     - name: Brew link restored dependencies
       if: steps.dependency-cache.outputs.cache-hit == 'true'
       run: |
         while read package; do
-          brew link "$package"
+          brew link --force "$package" # `--force` for keg-only packages
         done < ~/github_brew_cache_entries.txt
     - name: Install dependencies
       run: ./tools/mac_setup.sh
@@ -94,15 +93,14 @@ jobs:
           fi
         done
 
-        echo "\n\nNewly installed packages:"
-        comm -13 <(echo "$EXISTING_CELLAR") <(echo "$new_cellar") | tee ~/github_cache_entries.txt
+        printf "\n\nNewly installed packages:\n"
+        comm -13 <(echo "$EXISTING_CELLAR") <(echo "$new_cellar") | tee ~/github_brew_cache_entries.txt
 
-        echo "\n\nThe following will be cached:"
+        printf "\n\nThe following will be cached:\n"
         (du -shc /usr/local/Cellar/* | sort -h) || true
 
   build_webcam:
     name: build webcam
-    if: ${{ false }}
     runs-on: ubuntu-20.04
     timeout-minutes: 90
     env:
@@ -165,7 +163,6 @@ jobs:
 
   static_analysis:
     name: static analysis
-    if: ${{ false }}
     runs-on: ubuntu-20.04
     timeout-minutes: 50
     steps:
@@ -179,7 +176,6 @@ jobs:
 
   valgrind:
     name: valgrind
-    if: ${{ false }}
     runs-on: ubuntu-20.04
     timeout-minutes: 50
     steps:
@@ -205,7 +201,6 @@ jobs:
 
   unit_tests:
     name: unit tests
-    if: ${{ false }}
     runs-on: ubuntu-20.04
     timeout-minutes: 50
     steps:
@@ -235,7 +230,6 @@ jobs:
 
   process_replay:
     name: process replay
-    if: ${{ false }}
     runs-on: ubuntu-20.04
     timeout-minutes: 50
     steps:
@@ -269,7 +263,6 @@ jobs:
 
   test_longitudinal:
     name: longitudinal
-    if: ${{ false }}
     runs-on: ubuntu-20.04
     timeout-minutes: 50
     steps:
@@ -294,7 +287,6 @@ jobs:
 
   test_car_models:
     name: car models
-    if: ${{ false }}
     runs-on: ubuntu-20.04
     timeout-minutes: 50
     steps:
