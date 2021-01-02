@@ -11,7 +11,8 @@ fi
 # (du -shc /usr/local/Caskroom/* | sort -h) || true
 # (du -shc ~/Library/Caches/Homebrew/downloads/* | sort -h) || true
 
-before=$(ls ~/Library/Caches/Homebrew/downloads)
+before_downloads=$(ls ~/Library/Caches/Homebrew/downloads)
+before_cellar=$(ls /usr/local/Cellar)
 
 # rm -rf /usr/local/Homebrew/*
 # find /usr/local/Homebrew \! -regex ".+\.git.+" -delete
@@ -42,17 +43,22 @@ brew install ffmpeg
 # (du -shc /usr/local/Cellar/* | sort -h) || true
 # (du -shc /usr/local/Caskroom/* | sort -h) || true
 # (du -shc ~/Library/Caches/Homebrew/downloads/* | sort -h) || true
-after=$(ls ~/Library/Caches/Homebrew/downloads)
-
-echo "NEW FILES"
-comm -13 <(echo "$before") <(echo "$after")
-echo "\n\n"
+after_downloads=$(ls ~/Library/Caches/Homebrew/downloads)
+after_cellar=$(ls /usr/local/Cellar)
 
 echo "Removing previously existing files that don't need caching"
-comm -12 <(echo "$before") <(echo "$after") | while read file; do
+comm -12 <(echo "$before_downloads") <(echo "$after_downloads") | while read file; do
   echo "Removing ~/Library/Caches/Homebrew/downloads/$file"
   rm ~/Library/Caches/Homebrew/downloads/"$file"
 done
+
+comm -12 <(echo "$before_cellar") <(echo "$after_cellar") | while read file; do
+  echo "Removing /usr/local/Cellar/$file"
+  rm /usr/local/Cellar/"$file"
+done
+
+(du -shc ~/Library/Caches/Homebrew/downloads/* | sort -h) || true
+(du -shc /usr/local/Cellar/* | sort -h) || true
 
 if [[ $(command -v ffmpeg) != "" ]]; then
   echo "ffmpeg exists"
