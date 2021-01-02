@@ -21,6 +21,7 @@ env:
 jobs:
   build_release:
     name: build release
+    if: ${{ false }}
     runs-on: ubuntu-20.04
     timeout-minutes: 50
     env:
@@ -73,6 +74,7 @@ jobs:
 
   build_webcam:
     name: build webcam
+    if: ${{ false }}
     runs-on: ubuntu-20.04
     timeout-minutes: 90
     env:
@@ -135,6 +137,7 @@ jobs:
 
   static_analysis:
     name: static analysis
+    if: ${{ false }}
     runs-on: ubuntu-20.04
     timeout-minutes: 50
     steps:
@@ -148,6 +151,7 @@ jobs:
 
   valgrind:
     name: valgrind
+    if: ${{ false }}
     runs-on: ubuntu-20.04
     timeout-minutes: 50
     steps:
@@ -173,6 +177,7 @@ jobs:
 
   unit_tests:
     name: unit tests
+    if: ${{ false }}
     runs-on: ubuntu-20.04
     timeout-minutes: 50
     steps:
@@ -202,6 +207,7 @@ jobs:
 
   process_replay:
     name: process replay
+    if: ${{ false }}
     runs-on: ubuntu-20.04
     timeout-minutes: 50
     steps:
@@ -235,6 +241,7 @@ jobs:
 
   test_longitudinal:
     name: longitudinal
+    if: ${{ false }}
     runs-on: ubuntu-20.04
     timeout-minutes: 50
     steps:
@@ -259,6 +266,7 @@ jobs:
 
   test_car_models:
     name: car models
+    if: ${{ false }}
     runs-on: ubuntu-20.04
     timeout-minutes: 50
     steps:
