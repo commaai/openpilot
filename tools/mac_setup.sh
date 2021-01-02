@@ -12,8 +12,8 @@ if [[ $(command -v ffmpeg) != "" ]]; then
 fi
 
 
-brew install ffmpeg
-#  capnp \
+brew install ffmpeg \
+ capnp \
             #  coreutils \
             #  eigen \
             #  ffmpeg \
