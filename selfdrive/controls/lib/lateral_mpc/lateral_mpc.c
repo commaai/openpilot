@@ -39,7 +39,7 @@ typedef struct {
 void set_weights(double pathCost, double headingCost, double yawRateCost, double steerRateCost){
   int    i;
   for (i = 0; i < N; i++) {
-    double mult = T_IDXS[i+1] - T_IDXS[i];
+    double mult = 20* (T_IDXS[i+1] - T_IDXS[i]);
     // Setup diagonal entries
     acadoVariables.W[NY*NY*i + (NY+1)*0] = mult * pathCost;
     acadoVariables.W[NY*NY*i + (NY+1)*1] = mult * headingCost;
