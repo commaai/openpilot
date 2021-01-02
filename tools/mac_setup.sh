@@ -11,7 +11,7 @@ fi
 # (du -shc /usr/local/Caskroom/* | sort -h) || true
 (du -shc ~/Library/Caches/Homebrew/downloads/* | sort -h) || true
 
-before=$(ls -1 ~/Library/Caches/Homebrew/downloads)
+before=$(ls ~/Library/Caches/Homebrew/downloads)
 
 # rm -rf /usr/local/Homebrew/*
 # find /usr/local/Homebrew \! -regex ".+\.git.+" -delete
@@ -42,12 +42,12 @@ brew install zeromq
 # (du -shc /usr/local/Cellar/* | sort -h) || true
 # (du -shc /usr/local/Caskroom/* | sort -h) || true
 (du -shc ~/Library/Caches/Homebrew/downloads/* | sort -h) || true
-after=$(ls -1 ~/Library/Caches/Homebrew/downloads)
+after=$(ls ~/Library/Caches/Homebrew/downloads)
 
 echo "NEW FILES"
-new=$(comm -13 <(echo $before) <(echo $after))
-echo $new
-diff <(echo $before) <(echo $after)
+new=$(comm -13 <(echo "$before") <(echo "$after"))
+echo "$new"
+diff <(echo "$before") <(echo "$after")
 
 if [[ $(command -v ffmpeg) != "" ]]; then
   echo "ffmpeg exists"
