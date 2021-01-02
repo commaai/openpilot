@@ -13,7 +13,7 @@ fi
 
 
 brew install ffmpeg \
-#  capnp \
+ capnp \
             #  coreutils \
             #  eigen \
             #  ffmpeg \
