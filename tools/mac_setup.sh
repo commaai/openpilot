@@ -45,9 +45,13 @@ brew install zeromq
 after=$(ls ~/Library/Caches/Homebrew/downloads)
 
 echo "NEW FILES"
-new=$(comm -13 <(echo "$before") <(echo "$after"))
-echo "$new"
-diff <(echo "$before") <(echo "$after")
+comm -13 <(echo "$before") <(echo "$after")
+
+echo "Removing previously existing files that don't need caching"
+comm -12 <(echo "$before") <(echo "$after") | while read file; do
+  ls -l "~/Library/Caches/Homebrew/downloads/$file" || true
+  rm "~/Library/Caches/Homebrew/downloads/$file" || true
+done
 
 if [[ $(command -v ffmpeg) != "" ]]; then
   echo "ffmpeg exists"
