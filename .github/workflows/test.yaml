@@ -62,7 +62,7 @@ jobs:
           ~/.pyenv
           ~/Library/Caches/pip
           ~/Library/Caches/pipenv
-          ~/Library/Caches/Homebrew
+          /usr/local
         key: ${{ hashFiles('tools/mac_setup.sh') }}
     - name: Install dependencies
       run: ./tools/mac_setup.sh
