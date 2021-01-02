@@ -63,9 +63,9 @@ jobs:
           ~/.pyenv
           ~/Library/Caches/pip
           ~/Library/Caches/pipenv
-          ~/Library/Caches/Homebrew
+          /usr/local/Cellar
         # key: ${{ hashFiles('tools/mac_setup.sh') }}
-        key: asdfasdf2
+        key: asdfasdf4
     - name: Determine pre-existing Homebrew packages
       if: steps.cache.outputs.cache-hit != 'true'
       run: |
@@ -92,8 +92,11 @@ jobs:
         done
 
         comm -12 <(echo "$EXISTING_CELLAR") <(echo "$new_cellar") | while read dir; do
-          echo "Removing /usr/local/Cellar/$dir"
-          rm -rf "/usr/local/Cellar/$dir"
+          # need to keep zstd for caching to work
+          if [ $line != "zstd" ]; then
+            echo "Removing /usr/local/Cellar/$dir"
+            rm -rf "/usr/local/Cellar/$dir"
+          fi
         done
 
         echo "NEW PACKAGES"
