@@ -99,7 +99,7 @@ jobs:
         echo "NEW PACKAGES"
         comm -13 <(echo "$EXISTING_CELLAR") <(echo "$new_cellar")
 
-        (du -shc ~/Library/Caches/Homebrew/downloads/* | sort -h) || true
+        (du -shc ~/Library/Caches/Homebrew/* | sort -h) || true
         (du -shc /usr/local/Cellar/* | sort -h) || true
 
   build_webcam:
