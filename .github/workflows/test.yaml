@@ -67,11 +67,8 @@ jobs:
         # key: ${{ hashFiles('tools/mac_setup.sh') }}
         key: asdfasdf4
     - name: Determine pre-existing Homebrew packages
-      if: steps.cache.outputs.cache-hit != 'true'
+      if: steps.dependency-cache.outputs.cache-hit != 'true'
       run: |
-        echo 'EXISTING_DOWNLOADS<<EOF' >> $GITHUB_ENV
-        ls -1 ~/Library/Caches/Homebrew/downloads >> $GITHUB_ENV
-        echo 'EOF' >> $GITHUB_ENV
         echo 'EXISTING_CELLAR<<EOF' >> $GITHUB_ENV
         ls -1 /usr/local/Cellar >> $GITHUB_ENV
         echo 'EOF' >> $GITHUB_ENV
@@ -80,16 +77,9 @@ jobs:
     # - name: Build openpilot
     #   run: eval "$(pyenv init -)" && scons -j$(nproc)
     - name: Remove pre-existing Homebrew packages for caching
-      if: steps.cache.outputs.cache-hit != 'true'
+      if: steps.dependency-cache.outputs.cache-hit != 'true'
       run: |
-        new_downloads=$(ls ~/Library/Caches/Homebrew/downloads)
         new_cellar=$(ls /usr/local/Cellar)
-
-        echo "Removing previously existing files that don't need caching"
-        comm -12 <(echo "$EXISTING_DOWNLOADS") <(echo "$new_downloads") | while read file; do
-          echo "Removing ~/Library/Caches/Homebrew/downloads/$file"
-          rm ~/Library/Caches/Homebrew/downloads/"$file"
-        done
 
         comm -12 <(echo "$EXISTING_CELLAR") <(echo "$new_cellar") | while read dir; do
           # need to keep zstd for caching to work
@@ -102,7 +92,6 @@ jobs:
         echo "NEW PACKAGES"
         comm -13 <(echo "$EXISTING_CELLAR") <(echo "$new_cellar")
 
-        (du -shc ~/Library/Caches/Homebrew/* | sort -h) || true
         (du -shc /usr/local/Cellar/* | sort -h) || true
 
   build_webcam:
