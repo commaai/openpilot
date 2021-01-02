@@ -11,10 +11,10 @@ if [[ $(command -v ffmpeg) != "" ]]; then
   ffmpeg -version
 fi
 
-brew link ffmpeg || brew install ffmpeg
-brew link capnp || brew install capnp
-brew link coreutils || brew install coreutils
-            #  coreutils \
+
+brew install ffmpeg \
+ capnp \
+             coreutils \
             #  eigen \
             #  ffmpeg \
             #  glfw \

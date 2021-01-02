@@ -55,6 +55,12 @@ jobs:
     - uses: actions/checkout@v2
       with:
         submodules: true
+    - name: Determine pre-existing Homebrew packages
+      if: steps.dependency-cache.outputs.cache-hit != 'true'
+      run: |
+        echo 'EXISTING_CELLAR<<EOF' >> $GITHUB_ENV
+        ls -1 /usr/local/Cellar >> $GITHUB_ENV
+        echo 'EOF' >> $GITHUB_ENV
     - name: Cache dependencies
       id: dependency-cache
       uses: actions/cache@v2
@@ -64,14 +70,15 @@ jobs:
           ~/Library/Caches/pip
           ~/Library/Caches/pipenv
           /usr/local/Cellar
+          ~/github_cache_entries.txt
         # key: ${{ hashFiles('tools/mac_setup.sh') }}
         key: asdfasdf5
-    - name: Determine pre-existing Homebrew packages
-      if: steps.dependency-cache.outputs.cache-hit != 'true'
+    - name: Brew link restored dependencies
+      if: steps.dependency-cache.outputs.cache-hit == 'true'
       run: |
-        echo 'EXISTING_CELLAR<<EOF' >> $GITHUB_ENV
-        ls -1 /usr/local/Cellar >> $GITHUB_ENV
-        echo 'EOF' >> $GITHUB_ENV
+        while read package; do
+          brew link "$package"
+        done < ~/github_cache_entries.txt
     - name: Install dependencies
       run: ./tools/mac_setup.sh
     # - name: Build openpilot
@@ -89,7 +96,7 @@ jobs:
         done
 
         echo "NEW PACKAGES"
-        comm -13 <(echo "$EXISTING_CELLAR") <(echo "$new_cellar")
+        comm -13 <(echo "$EXISTING_CELLAR") <(echo "$new_cellar") | tee ~/github_cache_entries.txt
 
         (du -shc /usr/local/Cellar/* | sort -h) || true
 
