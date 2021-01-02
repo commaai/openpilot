@@ -11,7 +11,6 @@ if [[ $(command -v ffmpeg) != "" ]]; then
   ffmpeg -version
 fi
 
-
 brew install ffmpeg \
  capnp \
             #  coreutils \
