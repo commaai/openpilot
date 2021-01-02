@@ -6,11 +6,6 @@ if [[ $(command -v brew) == "" ]]; then
   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
 fi
 
-if [[ $(command -v ffmpeg) != "" ]]; then
-  ffmpeg -version
-  echo "Cache worked!"
-fi
-
 brew install capnp \
              coreutils \
              eigen \
@@ -24,11 +19,6 @@ brew install capnp \
              pyenv \
              qt5 \
              zeromq
-
-if [[ $(command -v ffmpeg) != "" ]]; then
-  echo "ffmpeg exists"
-  ffmpeg -version
-fi
 
 if [[ $SHELL == "/bin/zsh" ]]; then
   RC_FILE="$HOME/.zshrc"
