@@ -6,22 +6,9 @@ if [[ $(command -v brew) == "" ]]; then
   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
 fi
 
-# (du -shc /usr/local/Homebrew/Library/* | sort -h) || true
-# (du -shc /usr/local/Cellar/* | sort -h) || true
-# (du -shc /usr/local/Caskroom/* | sort -h) || true
-# (du -shc ~/Library/Caches/Homebrew/downloads/* | sort -h) || true
-
-before_downloads=$(ls ~/Library/Caches/Homebrew/downloads)
-before_cellar=$(ls /usr/local/Cellar)
-
-# rm -rf /usr/local/Homebrew/*
-# find /usr/local/Homebrew \! -regex ".+\.git.+" -delete
-# rm -rf /usr/local/Cellar/*
-# rm -rf /usr/local/Caskroom/*
-# rm -rf ~/Library/Caches/Homebrew/*
-
 if [[ $(command -v ffmpeg) != "" ]]; then
   echo "Cache worked!"
+  ffmpeg -version
 fi
 
 brew install ffmpeg
@@ -39,29 +26,9 @@ brew install ffmpeg
             #  qt5 \
             #  zeromq
 
-# (du -shc /usr/local/Homebrew/Library/* | sort -h) || true
-# (du -shc /usr/local/Cellar/* | sort -h) || true
-# (du -shc /usr/local/Caskroom/* | sort -h) || true
-# (du -shc ~/Library/Caches/Homebrew/downloads/* | sort -h) || true
-after_downloads=$(ls ~/Library/Caches/Homebrew/downloads)
-after_cellar=$(ls /usr/local/Cellar)
-
-echo "Removing previously existing files that don't need caching"
-comm -12 <(echo "$before_downloads") <(echo "$after_downloads") | while read file; do
-  echo "Removing ~/Library/Caches/Homebrew/downloads/$file"
-  rm ~/Library/Caches/Homebrew/downloads/"$file"
-done
-
-comm -12 <(echo "$before_cellar") <(echo "$after_cellar") | while read file; do
-  echo "Removing /usr/local/Cellar/$file"
-  rm /usr/local/Cellar/"$file"
-done
-
-(du -shc ~/Library/Caches/Homebrew/downloads/* | sort -h) || true
-(du -shc /usr/local/Cellar/* | sort -h) || true
-
 if [[ $(command -v ffmpeg) != "" ]]; then
   echo "ffmpeg exists"
+  ffmpeg -version
 fi
 
 # if [[ $SHELL == "/bin/zsh" ]]; then
