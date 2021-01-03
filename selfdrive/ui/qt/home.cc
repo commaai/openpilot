@@ -151,13 +151,13 @@ void HomeWindow::mousePressEvent(QMouseEvent *e) {
   glWindow->wake();
 
   // Settings button click
-  if (!ui_state->scene.uilayout_sidebarcollapsed && settings_btn.ptInRect(e->x(), e->y())) {
+  if (!ui_state->scene.sidebar_collapsed && settings_btn.ptInRect(e->x(), e->y())) {
     emit openSettings();
   }
 
   // Vision click
   if (ui_state->started && (e->x() >= ui_state->scene.viz_rect.x - bdr_s)) {
-    ui_state->scene.uilayout_sidebarcollapsed = !ui_state->scene.uilayout_sidebarcollapsed;
+    ui_state->scene.sidebar_collapsed = !ui_state->scene.sidebar_collapsed;
   }
 }
 
