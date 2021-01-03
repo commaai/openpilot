@@ -73,10 +73,7 @@ static void draw_chevron(UIState *s, float x_in, float y_in, float sz,
     return;
   }
 
-  sz *= 30;
-  sz /= (x_in / 3 + 30);
-  if (sz > 30) sz = 30;
-  if (sz < 15) sz = 15;
+  sz = std::clamp((sz * 30) / (x_in / 3 + 30), 15.0f, 30.0f);
 
   // glow
   float g_xo = sz/5;
@@ -375,7 +372,7 @@ static void ui_draw_vision_face(UIState *s) {
 
 static void ui_draw_driver_view(UIState *s) {
   const UIScene *scene = &s->scene;
-  s->scene.uilayout_sidebarcollapsed = true;
+  s->scene.sidebar_collapsed = true;
   const Rect &viz_rect = s->scene.viz_rect;
   const int ff_xoffset = 32;
   const int frame_x = viz_rect.x;
@@ -527,7 +524,7 @@ static void ui_draw_background(UIState *s) {
 
 void ui_draw(UIState *s) {
   s->scene.viz_rect = Rect{bdr_s, bdr_s, s->fb_w - 2 * bdr_s, s->fb_h - 2 * bdr_s};
-  if (!s->scene.uilayout_sidebarcollapsed) {
+  if (!s->scene.sidebar_collapsed) {
     s->scene.viz_rect.x += sbr_w;
     s->scene.viz_rect.w -= sbr_w;
   }

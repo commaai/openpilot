@@ -5,11 +5,13 @@ import time
 from raven import Client
 from raven.transport.http import HTTPTransport
 
-from selfdrive.version import version, origin, branch, dirty
+from selfdrive.hardware import TICI
 from selfdrive.swaglog import cloudlog
+from selfdrive.version import version, origin, branch, dirty
 
 MAX_SIZE = 100000 * 10  # Normal size is 40-100k, allow up to 1M
-
+if TICI:
+  MAX_SIZE = MAX_SIZE * 10  # Allow larger size for tici
 
 def get_tombstones():
   """Returns list of (filename, ctime) for all tombstones in /data/tombstones
