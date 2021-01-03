@@ -18,7 +18,7 @@ from selfdrive.controls.lib.vehicle_model import VehicleModel
 import cereal.messaging as messaging
 from tools.replay.lib.ui_helpers import (_BB_TO_FULL_FRAME, _FULL_FRAME_SIZE, _INTRINSICS,
                                          BLACK, BLUE, GREEN,
-                                         YELLOW, RED,
+                                         YELLOW, RED, WHITE,
                                          CalibrationTransformsForWarpMatrix,
                                          draw_lead_car, draw_lead_on, draw_mpc,
                                          extract_model_data,
@@ -44,6 +44,10 @@ def ui_thread(addr, frame_address):
   pygame.init()
   pygame.font.init()
   assert pygame_modules_have_loaded()
+
+  disp_info = pygame.display.Info()
+  max_width, max_height = disp_info.current_w, disp_info.current_h
+  HOR = True if max_height < 960 + 300 else HOR
 
   if HOR:
     size = (640+384+640, 960)
@@ -234,8 +238,8 @@ def ui_thread(addr, frame_address):
     SPACING = 25
 
     lines = [
-      info_font.render("ENABLED", True, GREEN if sm['controlsState'].enabled else BLACK),
-      info_font.render("BRAKE LIGHTS", True, RED if sm['carState'].brakeLights else BLACK),
+      info_font.render("ENABLED", True, GREEN if sm['controlsState'].enabled else WHITE),
+      info_font.render("BRAKE LIGHTS", True, RED if sm['carState'].brakeLights else WHITE),
       info_font.render("SPEED: " + str(round(sm['carState'].vEgo, 1)) + " m/s", True, YELLOW),
       info_font.render("LONG CONTROL STATE: " + str(sm['controlsState'].longControlState), True, YELLOW),
       info_font.render("LONG MPC SOURCE: " + str(sm['plan'].longitudinalPlanSource), True, YELLOW),
