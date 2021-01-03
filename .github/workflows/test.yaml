@@ -54,6 +54,12 @@ jobs:
     - uses: actions/checkout@v2
       with:
         submodules: true
+    - name: Determine pre-existing Homebrew packages
+      if: steps.dependency-cache.outputs.cache-hit != 'true'
+      run: |
+        echo 'EXISTING_CELLAR<<EOF' >> $GITHUB_ENV
+        ls -1 /usr/local/Cellar >> $GITHUB_ENV
+        echo 'EOF' >> $GITHUB_ENV
     - name: Cache dependencies
       id: dependency-cache
       uses: actions/cache@v2
@@ -62,14 +68,36 @@ jobs:
           ~/.pyenv
           ~/Library/Caches/pip
           ~/Library/Caches/pipenv
-          ~/Library/Caches/Homebrew
-        key: ${{ hashFiles('tools/mac_setup.sh') }}
+          /usr/local/Cellar
+          ~/github_brew_cache_entries.txt
+        key: macos-deps-${{ hashFiles('tools/mac_setup.sh') }}
+        restore-keys: macos-deps-
+    - name: Brew link restored dependencies
+      if: steps.dependency-cache.outputs.cache-hit == 'true'
+      run: |
+        while read package; do
+          brew link --force "$package" # `--force` for keg-only packages
+        done < ~/github_brew_cache_entries.txt
     - name: Install dependencies
       run: ./tools/mac_setup.sh
     - name: Build openpilot
       run: eval "$(pyenv init -)" && scons -j$(nproc)
-    - name: Brew cleanup
-      run: brew cleanup || true # keeps our cache small
+    - name: Remove pre-existing Homebrew packages for caching
+      if: steps.dependency-cache.outputs.cache-hit != 'true'
+      run: |
+        new_cellar=$(ls -1 /usr/local/Cellar)
+        comm -12 <(echo "$EXISTING_CELLAR") <(echo "$new_cellar") | while read dir; do
+          if [[ $dir != "zstd" ]]; then # caching step needs zstd
+            echo "Removing /usr/local/Cellar/$dir"
+            rm -rf "/usr/local/Cellar/$dir"
+          fi
+        done
+
+        printf "\n\nNewly installed packages:\n"
+        comm -13 <(echo "$EXISTING_CELLAR") <(echo "$new_cellar") | tee ~/github_brew_cache_entries.txt
+
+        printf "\n\nThe following will be cached:\n"
+        (du -shc /usr/local/Cellar/* | sort -h) || true
 
   build_webcam:
     name: build webcam
