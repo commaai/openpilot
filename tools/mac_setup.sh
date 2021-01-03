@@ -15,7 +15,7 @@ brew install capnp \
              libusb \
              libtool \
              llvm \
-	     openssl \
+             openssl \
              pyenv \
              qt5 \
              zeromq
