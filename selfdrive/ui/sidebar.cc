@@ -159,7 +159,7 @@ static void ui_draw_sidebar_connectivity(UIState *s) {
 }
 
 void ui_draw_sidebar(UIState *s) {
-  if (s->scene.uilayout_sidebarcollapsed) {
+  if (s->scene.sidebar_collapsed) {
     return;
   }
   ui_draw_sidebar_background(s);
