@@ -5,6 +5,7 @@
 #include <cassert>
 #include <sys/resource.h>
 
+#include "common/utilpp.h"
 #include "common/visionbuf.h"
 #include "common/visionipc.h"
 #include "common/swaglog.h"
@@ -42,7 +43,7 @@ int main(int argc, char **argv) {
     err = visionstream_init(&stream, VISION_STREAM_YUV_FRONT, true, &buf_info);
     if (err) {
       printf("visionstream connect fail\n");
-      usleep(100000);
+      util::sleep_for(100);
       continue;
     }
     LOGW("connected with buffer size: %d", buf_info.buf_len);
