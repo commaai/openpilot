@@ -50,7 +50,7 @@ static void* rear_thread(void *arg) {
   int err;
 
   set_thread_name("webcam_rear_thread");
-  CameraState* s = (CameraState*)arg;
+  CameraState *s = (CameraState*)arg;
 
   cv::VideoCapture cap_rear(1); // road
   cap_rear.set(cv::CAP_PROP_FRAME_WIDTH, 853);
@@ -79,8 +79,7 @@ static void* rear_thread(void *arg) {
   }
 
   uint32_t frame_id = 0;
-  TBuffer* tb = &s->buf.camera_tb;
-
+  size_t buf_idx = 0;
   while (!do_exit) {
     cv::Mat frame_mat;
     cv::Mat transformed_mat;
@@ -95,13 +94,13 @@ static void* rear_thread(void *arg) {
 
     int transformed_size = transformed_mat.total() * transformed_mat.elemSize();
 
-    const int buf_idx = tbuffer_select(tb);
     s->buf.camera_bufs_metadata[buf_idx] = {
       .frame_id = frame_id,
     };
 
     cl_command_queue q = s->buf.camera_bufs[buf_idx].copy_q;
     cl_mem yuv_cl = s->buf.camera_bufs[buf_idx].buf_cl;
+
     cl_event map_event;
     void *yuv_buf = (void *)CL_CHECK_ERR(clEnqueueMapBuffer(q, yuv_cl, CL_TRUE,
                                                 CL_MAP_WRITE, 0, transformed_size,
@@ -113,11 +112,15 @@ static void* rear_thread(void *arg) {
     CL_CHECK(clEnqueueUnmapMemObject(q, yuv_cl, yuv_buf, 0, NULL, &map_event));
     clWaitForEvents(1, &map_event);
     clReleaseEvent(map_event);
-    tbuffer_dispatch(tb, buf_idx);
+
+    s->buf.queue(buf_idx);
 
     frame_id += 1;
     frame_mat.release();
     transformed_mat.release();
+
+
+    buf_idx = (buf_idx + 1) % FRAME_BUF_COUNT;
   }
 
   cap_rear.release();
@@ -152,7 +155,7 @@ void front_thread(CameraState *s) {
   }
 
   uint32_t frame_id = 0;
-  TBuffer* tb = &s->buf.camera_tb;
+  size_t buf_idx = 0;
 
   while (!do_exit) {
     cv::Mat frame_mat;
@@ -168,7 +171,6 @@ void front_thread(CameraState *s) {
 
     int transformed_size = transformed_mat.total() * transformed_mat.elemSize();
 
-    const int buf_idx = tbuffer_select(tb);
     s->buf.camera_bufs_metadata[buf_idx] = {
       .frame_id = frame_id,
     };
@@ -186,11 +188,14 @@ void front_thread(CameraState *s) {
     CL_CHECK(clEnqueueUnmapMemObject(q, yuv_cl, yuv_buf, 0, NULL, &map_event));
     clWaitForEvents(1, &map_event);
     clReleaseEvent(map_event);
-    tbuffer_dispatch(tb, buf_idx);
+
+    s->buf.queue(buf_idx);
 
     frame_id += 1;
     frame_mat.release();
     transformed_mat.release();
+
+    buf_idx = (buf_idx + 1) % FRAME_BUF_COUNT;
   }
 
   cap_front.release();
