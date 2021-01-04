@@ -36,7 +36,8 @@ int main(int argc, char *argv[]) {
 
     // Wait for new message if we didn't receive anything
     if (r == 0){
-      sd_journal_wait(journal, 1000 * 1000);
+      r = sd_journal_wait(journal, 1000 * 1000);
+      assert (r >= 0);
       continue; // Try again
     }
 
