@@ -290,11 +290,7 @@ FINGERPRINTS = {
 
 # Don't use theses fingerprints for fingerprinting, they are still needed for ECU detection
 IGNORED_FINGERPRINTS = [CAR.RAV4H_TSS2, CAR.HIGHLANDERH_TSS2, CAR.LEXUS_RXH_TSS2, CAR.PRIUS_TSS2,
-<<<<<<< HEAD
-                        CAR.LEXUS_NX, CAR.CAMRY_TSS2, CAR.CAMRYH_TSS2]
-=======
-                        CAR.LEXUS_NX, CAR.CAMRY_TSS2, CAR.LEXUS_ESH]
->>>>>>> upstream/master
+                        CAR.LEXUS_NX, CAR.CAMRY_TSS2, CAR.CAMRYH_TSS2, CAR.LEXUS_ESH]
 
 FW_VERSIONS = {
   CAR.AVALON: {
