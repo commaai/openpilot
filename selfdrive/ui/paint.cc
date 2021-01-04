@@ -112,13 +112,13 @@ static void ui_draw_circle_image(NVGcontext *vg, int x, int y, int size, int ima
   ui_draw_circle_image(vg, x, y, size, image, nvgRGBA(0, 0, 0, (255 * bg_alpha)), img_alpha);
 }
 
-static void draw_lead(UIState *s, const cereal::RadarState::LeadData::Reader &lead){
+static void draw_lead(UIState *s, const UIScene::LeadData &lead){
   // Draw lead car indicator
   float fillAlpha = 0;
   float speedBuff = 10.;
   float leadBuff = 40.;
-  float d_rel = lead.getDRel();
-  float v_rel = lead.getVRel();
+  float d_rel = lead.d_rel;
+  float v_rel = lead.v_rel;
   if (d_rel < leadBuff) {
     fillAlpha = 255*(1.0-(d_rel/leadBuff));
     if (v_rel < 0) {
@@ -126,7 +126,7 @@ static void draw_lead(UIState *s, const cereal::RadarState::LeadData::Reader &le
     }
     fillAlpha = (int)(fmin(fillAlpha, 255));
   }
-  draw_chevron(s, d_rel, lead.getYRel(), 25, nvgRGBA(201, 34, 49, fillAlpha), COLOR_YELLOW);
+  draw_chevron(s, d_rel, lead.y_rel, 25, nvgRGBA(201, 34, 49, fillAlpha), COLOR_YELLOW);
 }
 
 static void ui_draw_line(UIState *s, const vertex_data *v, const int cnt, NVGcolor *color, NVGpaint *paint) {
@@ -152,7 +152,7 @@ static void update_track_data(UIState *s, const cereal::ModelDataV2::XYZTData::R
   int max_idx = -1;
   float lead_d;
   if (s->sm->updated("radarState")) {
-    lead_d = scene->lead_data[0].getDRel()*2.;
+    lead_d = scene->lead[0].d_rel*2.;
   } else {
     lead_d = MAX_DRAW_DISTANCE;
   }
@@ -278,11 +278,11 @@ static void ui_draw_world(UIState *s) {
 
   // Draw lead indicators if openpilot is handling longitudinal
   if (scene->longitudinal_control) {
-    if (scene->lead_data[0].getStatus()) {
-      draw_lead(s, scene->lead_data[0]);
+    if (scene->lead[0].status) {
+      draw_lead(s, scene->lead[0]);
     }
-    if (scene->lead_data[1].getStatus() && (std::abs(scene->lead_data[0].getDRel() - scene->lead_data[1].getDRel()) > 3.0)) {
-      draw_lead(s, scene->lead_data[1]);
+    if (scene->lead[1].status && (std::abs(scene->lead[0].d_rel - scene->lead[1].d_rel) > 3.0)) {
+      draw_lead(s, scene->lead[1]);
     }
   }
   nvgRestore(s->vg);

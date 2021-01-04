@@ -140,7 +140,12 @@ typedef struct UIScene {
   int16_t battery_percent;
   float ambient;
 
-  cereal::RadarState::LeadData::Reader lead_data[2];
+  // radarState
+  struct LeadData{
+    bool status;
+    float d_rel, v_rel, y_rel;
+  } lead[2] = {};
+
   cereal::DMonitoringState::Reader dmonitoring_state;
 
   // modelV2

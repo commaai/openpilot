@@ -104,6 +104,13 @@ destroy:
   s->vision_connected = false;
 }
 
+static void update_lead(const cereal::RadarState::LeadData::Reader &lead, UIScene::LeadData &lead_data) {
+  lead_data = {.status = lead.getStatus(),
+               .d_rel = lead.getDRel(),
+               .v_rel = lead.getVRel(),
+               .y_rel = lead.getYRel()};
+}
+
 void update_sockets(UIState *s) {
 
   UIScene &scene = s->scene;
@@ -163,9 +170,9 @@ void update_sockets(UIState *s) {
     }
   }
   if (sm.updated("radarState")) {
-    auto data = sm["radarState"].getRadarState();
-    scene.lead_data[0] = data.getLeadOne();
-    scene.lead_data[1] = data.getLeadTwo();
+    const auto radar_state = sm["radarState"].getRadarState();
+    update_lead(radar_state.getLeadOne(), scene.lead[0]);
+    update_lead(radar_state.getLeadTwo(), scene.lead[1]);
   }
   if (sm.updated("liveCalibration")) {
     s->world_objects_visible = true;
