@@ -242,10 +242,6 @@ void encoder_thread(int cam_idx) {
       VIPCBufExtra extra;
       VisionBuf* buf = vipc_client.recv(&extra);
       if (buf == nullptr){
-        if (errno == EINTR){
-          do_exit = true;
-          break;
-        }
         continue;
       }
 

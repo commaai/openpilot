@@ -267,9 +267,6 @@ void ui_update_vision(UIState *s) {
     VisionBuf * buf = s->vipc_client->recv();
     if (buf != nullptr){
       s->last_frame = buf;
-    } else if (errno == EINTR){
-      LOGE("Got interrupt while receiving frame");
-      raise(SIGINT);
     }
   }
 }
