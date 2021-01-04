@@ -138,7 +138,7 @@ std::optional<std::string> Params::read_value(const char *key, bool block) {
 
   std::optional<std::string> ret = std::nullopt;
   while (!params_do_exit) {
-    if (ret = read_value(key); ret) {
+    if (ret = read_file_string(key); ret) {
       break;
     }
     util::sleep_for(100); // 0.1 s

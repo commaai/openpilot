@@ -67,12 +67,6 @@ void OffroadAlert::refresh() {
 
   const bool updateAvailable = Params().getBool("UpdateAvailable");
 
-  if (updateAvailable) {
-    // If there is an update available, don't show alerts
-    alerts.clear();
-
-  reboot_btn->setVisible(updateAvailable);
-
   QVBoxLayout *layout = new QVBoxLayout;
 
   if (updateAvailable) {

@@ -69,22 +69,16 @@ ParamsToggle::ParamsToggle(QString param, QString title, QString description, QS
   layout->addWidget(toggle);
   QObject::connect(toggle, SIGNAL(stateChanged(int)), this, SLOT(checkboxClicked(int)));
 
-  // TODO: show descriptions on tap
-  hlayout->addWidget(label);
-  hlayout->addSpacing(50);
-  hlayout->addWidget(toggle_switch);
-  hlayout->addSpacing(20);
-
-  setLayout(hlayout);
-  if(Params().getBool(param.toStdString())){
-    toggle_switch->togglePosition();
+  // set initial state from param
+  if (Params().getBool(param.toStdString())) {
+    toggle->togglePosition();
   }
 
   setLayout(layout);
 }
 
 void ParamsToggle::checkboxClicked(int state) {
-  Params().put(param.toStdString(), (bool)state);
+  Params().put(param.toStdString().c_str(), (bool)state);
 }
 
 QWidget * toggles_panel() {
@@ -249,8 +243,7 @@ QWidget * developer_panel() {
     {"Panda Firmware", params.get("PandaFirmwareHex")},
   };
 
-  if (std::string os_version = util::read_file("/VERSION");
-      os_version.length() > 0) {
+  if (std::string os_version = util::read_file("/VERSION"); os_version.size()) {
     labels.push_back({"OS Version", "AGNOS " + os_version});
   }
 
