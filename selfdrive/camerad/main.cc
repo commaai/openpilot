@@ -23,15 +23,12 @@
 #include "common/params.h"
 #include "common/swaglog.h"
 #include "common/util.h"
+#include "common/utilpp.h"
 #include "common/visionipc.h"
 
 #define MAX_CLIENTS 6
 
-volatile sig_atomic_t do_exit = 0;
-
-static void set_do_exit(int sig) {
-  do_exit = 1;
-}
+SignalState signal_state;
 
 struct VisionState;
 
@@ -109,7 +106,7 @@ void* visionserver_client_thread(void* arg) {
       LOGE("poll failed (%d - %d)", ret, errno);
       break;
     }
-    if (do_exit) break;
+    if (signal_state.do_exit) break;
     if (polls[0].revents) {
       VisionPacket p;
       err = vipc_recv(fd, &p);
@@ -240,7 +237,7 @@ void* visionserver_thread(void* arg) {
   set_thread_name("visionserver");
 
   int sock = ipc_bind(VIPC_SOCKET_PATH);
-  while (!do_exit) {
+  while (!signal_state.do_exit) {
     struct pollfd polls[1] = {{0}};
     polls[0].fd = sock;
     polls[0].events = POLLIN;
@@ -251,7 +248,7 @@ void* visionserver_thread(void* arg) {
       LOGE("poll failed (%d - %d)", ret, errno);
       break;
     }
-    if (do_exit) break;
+    if (signal_state.do_exit) break;
     if (!polls[0].revents) {
       continue;
     }
@@ -330,9 +327,6 @@ int main(int argc, char *argv[]) {
 #elif defined(QCOM2)
   set_core_affinity(6);
 #endif
-
-  signal(SIGINT, (sighandler_t)set_do_exit);
-  signal(SIGTERM, (sighandler_t)set_do_exit);
 
   cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
 

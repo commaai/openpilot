@@ -17,18 +17,10 @@
 #endif
 
 
-volatile sig_atomic_t do_exit = 0;
-
-static void set_do_exit(int sig) {
-  do_exit = 1;
-}
-
 int main(int argc, char **argv) {
   int err;
   setpriority(PRIO_PROCESS, 0, -15);
-
-  signal(SIGINT, (sighandler_t)set_do_exit);
-  signal(SIGTERM, (sighandler_t)set_do_exit);
+  SignalState sig_state;
 
   PubMaster pm({"driverState"});
 
@@ -38,7 +30,7 @@ int main(int argc, char **argv) {
 
   // loop
   VisionStream stream;
-  while (!do_exit) {
+  while (!sig_state.do_exit) {
     VisionStreamBufs buf_info;
     err = visionstream_init(&stream, VISION_STREAM_YUV_FRONT, true, &buf_info);
     if (err) {
@@ -49,7 +41,7 @@ int main(int argc, char **argv) {
     LOGW("connected with buffer size: %d", buf_info.buf_len);
 
     double last = 0;
-    while (!do_exit) {
+    while (!sig_state.do_exit) {
       VIPCBuf *buf;
       VIPCBufExtra extra;
       buf = visionstream_get(&stream, &extra);

@@ -9,6 +9,7 @@
 #include "messaging.hpp"
 
 #include "common/util.h"
+#include "common/utilpp.h"
 #include "common/timing.h"
 #include "common/swaglog.h"
 #include "buffering.h"
@@ -17,7 +18,7 @@ extern "C" {
 #include <libavcodec/avcodec.h>
 }
 
-extern volatile sig_atomic_t do_exit;
+extern SignalState signal_state;
 
 #define FRAME_WIDTH 1164
 #define FRAME_HEIGHT 874
@@ -45,7 +46,7 @@ void run_frame_stream(MultiCameraState *s) {
   CameraState *const rear_camera = &s->rear;
   auto *tb = &rear_camera->buf.camera_tb;
 
-  while (!do_exit) {
+  while (!signal_state.do_exit) {
     if (s->sm->update(1000) == 0) continue;
 
     auto frame = (*(s->sm))["frame"].getFrame();

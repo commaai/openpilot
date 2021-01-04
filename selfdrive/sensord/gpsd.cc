@@ -18,9 +18,8 @@
 
 #include "messaging.hpp"
 #include "common/timing.h"
+#include "common/utilpp.h"
 #include "common/swaglog.h"
-
-volatile sig_atomic_t do_exit = 0;
 
 namespace {
 
@@ -28,10 +27,6 @@ PubMaster *pm;
 
 const GpsInterface* gGpsInterface = NULL;
 const AGpsInterface* gAGpsInterface = NULL;
-
-void set_do_exit(int sig) {
-  do_exit = 1;
-}
 
 void nmea_callback(GpsUtcTime timestamp, const char* nmea, int length) {
 
@@ -148,13 +143,10 @@ void gps_destroy() {
 
 int main() {
   setpriority(PRIO_PROCESS, 0, -13);
-
-  signal(SIGINT, (sighandler_t)set_do_exit);
-  signal(SIGTERM, (sighandler_t)set_do_exit);
-
+  SignalState sig_state;
   gps_init();
 
-  while(!do_exit) pause();
+  while(!sig_state.do_exit) pause();
 
   gps_destroy();
 

@@ -22,6 +22,7 @@
 #include "common/params.h"
 #include "common/swaglog.h"
 #include "common/util.h"
+#include "common/utilpp.h"
 #include "imgproc/utils.h"
 
 const int env_xmin = getenv("XMIN") ? atoi(getenv("XMIN")) : 0;
@@ -349,13 +350,13 @@ void set_exposure_target(CameraState *c, const uint8_t *pix_ptr, int x_start, in
   camera_autoexposure(c, lum_med / 256.0);
 }
 
-extern volatile sig_atomic_t do_exit;
+extern SignalState signal_state;
 
 void *processing_thread(MultiCameraState *cameras, const char *tname,
                           CameraState *cs, process_thread_cb callback) {
   set_thread_name(tname);
 
-  for (int cnt = 0; !do_exit; cnt++) {
+  for (int cnt = 0; !signal_state.do_exit; cnt++) {
     if (!cs->buf.acquire()) continue;
 
     callback(cameras, cs, cnt);

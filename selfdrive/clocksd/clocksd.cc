@@ -18,12 +18,7 @@
 #include "messaging.hpp"
 #include "common/timing.h"
 #include "common/util.h"
-
-volatile sig_atomic_t do_exit = 0;
-static void set_do_exit(int sig) {
-  do_exit = 1;
-}
-
+#include "common/utilpp.h"
 
 #ifdef QCOM
 namespace {
@@ -37,10 +32,7 @@ namespace {
 
 int main() {
   setpriority(PRIO_PROCESS, 0, -13);
-
-  signal(SIGINT, (sighandler_t)set_do_exit);
-  signal(SIGTERM, (sighandler_t)set_do_exit);
-
+  SignalState signal;
   PubMaster pm({"clocks"});
 
 #ifndef __APPLE__
@@ -57,11 +49,11 @@ int main() {
   assert(err == 0);
 
   uint64_t expirations = 0;
-  while (!do_exit && (err = read(timerfd, &expirations, sizeof(expirations)))) {
+  while (!signal.do_exit && (err = read(timerfd, &expirations, sizeof(expirations)))) {
     if (err < 0) break;
 #else
   // Just run at 1Hz on apple
-  while (!do_exit){
+  while (!signal.do_exit){
     std::this_thread::sleep_for(std::chrono::seconds(1));
 #endif
 

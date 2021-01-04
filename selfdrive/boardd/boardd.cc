@@ -38,17 +38,14 @@
 #define SATURATE_IL 1600
 #define NIBBLE_TO_HEX(n) ((n) < 10 ? (n) + '0' : ((n) - 10) + 'a')
 
+SignalState signal_state;
+
 Panda * panda = NULL;
 std::atomic<bool> safety_setter_thread_running(false);
 bool spoofing_started = false;
 bool fake_send = false;
 bool connected_once = false;
 bool ignition = false;
-
-volatile sig_atomic_t do_exit = 0;
-static void set_do_exit(int sig) {
-  do_exit = 1;
-}
 
 struct tm get_time(){
   time_t rawtime;
@@ -215,12 +212,12 @@ void can_send_thread() {
   subscriber->setTimeout(100);
 
   // run as fast as messages come in
-  while (!do_exit && panda->connected) {
+  while (!signal_state.do_exit && panda->connected) {
     Message * msg = subscriber->receive();
 
     if (!msg){
       if (errno == EINTR) {
-        do_exit = true;
+        signal_state.do_exit = true;
       }
       continue;
     }
@@ -255,7 +252,7 @@ void can_recv_thread() {
   const uint64_t dt = 10000000ULL;
   uint64_t next_frame_time = nanos_since_boot() + dt;
 
-  while (!do_exit && panda->connected) {
+  while (!signal_state.do_exit && panda->connected) {
     can_recv(pm);
 
     uint64_t cur_time = nanos_since_boot();
@@ -282,7 +279,7 @@ void can_health_thread() {
   Params params = Params();
 
   // Broadcast empty health message when panda is not yet connected
-  while (!do_exit && !panda) {
+  while (!signal_state.do_exit && !panda) {
     MessageBuilder msg;
     auto healthData  = msg.initEvent().initHealth();
 
@@ -292,7 +289,7 @@ void can_health_thread() {
   }
 
   // run at 2hz
-  while (!do_exit && panda->connected) {
+  while (!signal_state.do_exit && panda->connected) {
     MessageBuilder msg;
     auto healthData = msg.initEvent().initHealth();
 
@@ -405,7 +402,7 @@ void hardware_control_thread() {
 #endif
   unsigned int cnt = 0;
 
-  while (!do_exit && panda->connected) {
+  while (!signal_state.do_exit && panda->connected) {
     cnt++;
     sm.update(1000); // TODO: what happens if EINTR is sent while in sm.update?
 
@@ -486,7 +483,7 @@ void pigeon_thread() {
   Pigeon * pigeon = Pigeon::connect(panda);
 #endif
 
-  while (!do_exit && panda->connected) {
+  while (!signal_state.do_exit && panda->connected) {
     std::string recv = pigeon->receive();
     if (recv.length() > 0) {
       if (recv[0] == (char)0x00){
@@ -525,10 +522,6 @@ int main() {
   err = set_core_affinity(3);
   LOG("set affinity returns %d", err);
 
-  // setup signal handlers
-  signal(SIGINT, (sighandler_t)set_do_exit);
-  signal(SIGTERM, (sighandler_t)set_do_exit);
-
   // check the environment
   if (getenv("STARTED")) {
     spoofing_started = true;
@@ -540,7 +533,7 @@ int main() {
 
   panda_set_power(true);
 
-  while (!do_exit){
+  while (!signal_state.do_exit){
     std::vector<std::thread> threads;
     threads.push_back(std::thread(can_health_thread));
 

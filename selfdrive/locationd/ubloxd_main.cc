@@ -14,23 +14,17 @@
 
 #include "messaging.hpp"
 #include "common/util.h"
+#include "common/utilpp.h"
 #include "common/params.h"
 #include "common/swaglog.h"
 #include "common/timing.h"
 
 #include "ublox_msg.h"
 
-volatile sig_atomic_t do_exit = 0; // Flag for process exit on signal
-
-void set_do_exit(int sig) {
-  do_exit = 1;
-}
-
 using namespace ublox;
 int ubloxd_main(poll_ubloxraw_msg_func poll_func, send_gps_event_func send_func) {
   LOGW("starting ubloxd");
-  signal(SIGINT, (sighandler_t) set_do_exit);
-  signal(SIGTERM, (sighandler_t) set_do_exit);
+  SignalState signal;
 
   UbloxMsgParser parser;
 
@@ -41,11 +35,11 @@ int ubloxd_main(poll_ubloxraw_msg_func poll_func, send_gps_event_func send_func)
 
   PubMaster pm({"ubloxGnss", "gpsLocationExternal"});
 
-  while (!do_exit) {
+  while (!signal.do_exit) {
     Message * msg = subscriber->receive();
     if (!msg){
       if (errno == EINTR) {
-        do_exit = true;
+        signal.do_exit = true;
       }
       continue;
     }
@@ -60,7 +54,7 @@ int ubloxd_main(poll_ubloxraw_msg_func poll_func, send_gps_event_func send_func)
     const uint8_t *data = ubloxRaw.begin();
     size_t len = ubloxRaw.size();
     size_t bytes_consumed = 0;
-    while(bytes_consumed < len && !do_exit) {
+    while(bytes_consumed < len && !signal.do_exit) {
       size_t bytes_consumed_this_time = 0U;
       if(parser.add_data(data + bytes_consumed, (uint32_t)(len - bytes_consumed), bytes_consumed_this_time)) {
         // New message available

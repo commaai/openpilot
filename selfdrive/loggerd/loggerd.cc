@@ -120,13 +120,8 @@ double randrange(double a, double b) {
   return dist(gen);
 }
 
-
-volatile sig_atomic_t do_exit = 0;
-static void set_do_exit(int sig) {
-  do_exit = 1;
-}
-
-static bool file_exists(const std::string& fn) {
+SignalState sig_state;
+static bool file_exists (const std::string& fn) {
   std::ifstream f(fn);
   return f.good();
 }
@@ -144,7 +139,7 @@ public:
     std::unique_lock<std::mutex> lk(fid_lock);
     while (stream_frame_id > log_frame_id           //if the log camera is older, wait for it to catch up.
            && (stream_frame_id - log_frame_id) < 8  // but if its too old then there probably was a discontinuity (visiond restarted)
-           && !do_exit) {
+           && !sig_state.do_exit) {
       cv.wait(lk);
     }
   }
@@ -219,7 +214,7 @@ void encoder_thread(int cam_idx) {
 
   LoggerHandle *lh = NULL;
 
-  while (!do_exit) {
+  while (!sig_state.do_exit) {
     VisionStreamBufs buf_info;
     int err = visionstream_init(&stream, cam_info.stream_type, false, &buf_info);
     if (err != 0) {
@@ -245,7 +240,7 @@ void encoder_thread(int cam_idx) {
       }
     }
 
-    while (!do_exit) {
+    while (!sig_state.do_exit) {
       VIPCBufExtra extra;
       VIPCBuf* buf = visionstream_get(&stream, &extra);
       if (buf == NULL) {
@@ -266,7 +261,7 @@ void encoder_thread(int cam_idx) {
         // wait if camera pkt id is older than stream
         rotate_state.waitLogThread();
 
-        if (do_exit) break;
+        if (sig_state.do_exit) break;
 
         // rotate the encoder if the logger is on a newer segment
         if (rotate_state.should_rotate) {
@@ -293,7 +288,7 @@ void encoder_thread(int cam_idx) {
           s.should_close += 1;
           pthread_mutex_unlock(&s.rotate_lock);
 
-          while(s.should_close > 0 && s.should_close < s.num_encoder && !do_exit) { usleep(1000); }
+          while(s.should_close > 0 && s.should_close < s.num_encoder && !sig_state.do_exit) { usleep(1000); }
 
           pthread_mutex_lock(&s.rotate_lock);
           s.should_close = s.should_close == s.num_encoder ? 1 - s.num_encoder : s.should_close + 1;
@@ -308,7 +303,7 @@ void encoder_thread(int cam_idx) {
           s.finish_close += 1;
           pthread_mutex_unlock(&s.rotate_lock);
 
-          while(s.finish_close > 0 && s.finish_close < s.num_encoder && !do_exit) { usleep(1000); }
+          while(s.finish_close > 0 && s.finish_close < s.num_encoder && !sig_state.do_exit) { usleep(1000); }
           s.finish_close = 0;
 
           rotate_state.finish_rotate();
@@ -541,9 +536,12 @@ int main(int argc, char** argv) {
 
   clear_locks();
 
-  signal(SIGINT, (sighandler_t)set_do_exit);
-  signal(SIGTERM, (sighandler_t)set_do_exit);
+  s.ctx = Context::create();
+  Poller * poller = Poller::create();
 
+  // subscribe to all services
+
+  std::vector<SubSocket*> socks;
 
   typedef struct QlogState {
     int counter, freq;
@@ -609,7 +607,7 @@ int main(int argc, char** argv) {
   while (!do_exit) {
     for (auto sock : poller->poll(100 * 1000)) {
       Message * last_msg = nullptr;
-      while (!do_exit) {
+      while (true) {
         Message * msg = sock->receive(true);
         if (!msg){
           break;

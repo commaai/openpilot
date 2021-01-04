@@ -2,9 +2,10 @@
 
 #include <cstdio>
 #include <unistd.h>
-
+#include <csignal>
 #include <string>
 #include <memory>
+#include <atomic>
 #include <sstream>
 #include <fstream>
 #include <thread>
@@ -75,6 +76,16 @@ inline void sleep_for(const int milliseconds) {
   std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
 }
 }
+
+class SignalState {
+public:
+  SignalState() {
+    std::signal(SIGINT, (sighandler_t)set_do_exit);
+    std::signal(SIGTERM, (sighandler_t)set_do_exit);
+  };
+  static void set_do_exit(int sig) { do_exit = true; }
+  inline static std::atomic<bool> do_exit = false;
+};
 
 struct unique_fd {
   unique_fd(int fd = -1) : fd_(fd) {}

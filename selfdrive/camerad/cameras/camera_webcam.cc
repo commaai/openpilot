@@ -7,6 +7,7 @@
 #include <pthread.h>
 
 #include "common/util.h"
+#include "common/utilpp.h"
 #include "common/timing.h"
 #include "common/clutil.h"
 #include "common/swaglog.h"
@@ -20,7 +21,7 @@
 #pragma clang diagnostic pop
 
 
-extern volatile sig_atomic_t do_exit;
+extern SignalState sig_state;
 
 #define FRAME_WIDTH  1164
 #define FRAME_HEIGHT 874
@@ -80,7 +81,7 @@ static void* rear_thread(void *arg) {
   uint32_t frame_id = 0;
   TBuffer* tb = &s->buf.camera_tb;
 
-  while (!do_exit) {
+  while (!sig_state.do_exit) {
     cv::Mat frame_mat;
     cv::Mat transformed_mat;
 
@@ -153,7 +154,7 @@ void front_thread(CameraState *s) {
   uint32_t frame_id = 0;
   TBuffer* tb = &s->buf.camera_tb;
 
-  while (!do_exit) {
+  while (!sig_state.do_exit) {
     cv::Mat frame_mat;
     cv::Mat transformed_mat;
 
