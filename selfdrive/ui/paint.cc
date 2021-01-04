@@ -356,14 +356,13 @@ static void ui_draw_vision_footer(UIState *s) {
   ui_draw_vision_face(s);
 }
 
-static NVGcolor get_alert_color(UIStatus status, float blink_rate) {
+static float get_alert_alpha(float blink_rate) {
   static float blink = 0.05, alpha = 1.0;
-  NVGcolor color = bg_colors[status];
   if (blink_rate > 0.) {
     if (alpha < 0.25 || alpha > 1.0) blink = -blink;
-    color.a *= (alpha += blink * blink_rate);
+    alpha += blink * blink_rate;
   } else { alpha = 1.0; }
-  return color;
+  return alpha;
 }
 
 static void ui_draw_vision_alert(UIState *s) {
@@ -374,13 +373,16 @@ static void ui_draw_vision_alert(UIState *s) {
   const UIScene *scene = &s->scene;
   bool longAlert1 = scene->alert_text1.length() > 15;
 
+  NVGcolor color = bg_colors[s->status];
+  color.a *= get_alert_alpha(scene->alert_blinking_rate);
   int alr_s = alert_size_map[scene->alert_size];
+
   const int alr_x = scene->viz_rect.x - bdr_s;
   const int alr_w = scene->viz_rect.w + (bdr_s * 2);
   const int alr_h = alr_s + bdr_s;
   const int alr_y = s->fb_h - alr_h;
 
-  ui_draw_rect(s->vg, alr_x, alr_y, alr_w, alr_h, get_alert_color(s->status, scene->alert_blinking_rate));
+  ui_draw_rect(s->vg, alr_x, alr_y, alr_w, alr_h, color);
 
   NVGpaint gradient = nvgLinearGradient(s->vg, alr_x, alr_y, alr_x, alr_y+alr_h,
                                         nvgRGBAf(0.0,0.0,0.0,0.05), nvgRGBAf(0.0,0.0,0.0,0.35));
