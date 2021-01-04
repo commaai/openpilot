@@ -3,8 +3,8 @@
 #define PI 3.1415926536
 #define deg2rad(d) (d/180.0*PI)
 
-const int N_steps = 15;
-double T_IDXS[N_steps + 2] = {0.0, 0.00976562, 0.0390625 , 0.08789062, 0.15625,
+const int N_steps = 16;
+double T_IDXS[N_steps + 1] = {0.0, 0.00976562, 0.0390625 , 0.08789062, 0.15625,
                      0.24414062, 0.3515625 , 0.47851562, 0.625     , 0.79101562,
                      0.9765625 , 1.18164062, 1.40625   , 1.65039062, 1.9140625 ,
                      2.19726562, 2.5};
@@ -69,7 +69,7 @@ int main( )
   // QN(0,0) = 1.0;
 
 
-  Grid times(N_steps + 1, &T_IDXS[1]);
+  Grid times(N_steps + 1, T_IDXS);
   OCP ocp(times);
   ocp.subjectTo(f);
 
@@ -89,7 +89,7 @@ int main( )
   mpc.set( HESSIAN_APPROXIMATION, GAUSS_NEWTON );
   mpc.set( DISCRETIZATION_TYPE, MULTIPLE_SHOOTING );
   mpc.set( INTEGRATOR_TYPE, INT_RK4 );
-  mpc.set( NUM_INTEGRATOR_STEPS, 120);
+  mpc.set( NUM_INTEGRATOR_STEPS, 2000);
   mpc.set( MAX_NUM_QP_ITERATIONS, 500);
   mpc.set( CG_USE_VARIABLE_WEIGHTING_MATRIX, YES);
 
