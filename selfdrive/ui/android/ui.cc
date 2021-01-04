@@ -148,7 +148,7 @@ int main(int argc, char* argv[]) {
 
   while (!do_exit) {
     if (!s->started) {
-      usleep(50 * 1000);
+      util::sleep_for(50);
     }
     double u1 = millis_since_boot();
 
