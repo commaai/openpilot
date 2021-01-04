@@ -42,7 +42,6 @@ void camera_init(VisionIpcServer * v, CameraState *s, int camera_id, unsigned in
 
   s->fps = fps;
 
-  s->buf.init(device_id, ctx, s, FRAME_BUF_COUNT, "frame");
   s->buf.init(device_id, ctx, s, v, FRAME_BUF_COUNT, rgb_type, yuv_type);
 }
 
@@ -260,7 +259,7 @@ void camera_process_rear(MultiCameraState *s, CameraState *c, int cnt) {
   MessageBuilder msg;
   auto framed = msg.initEvent().initFrame();
   fill_frame_data(framed, b->cur_frame_data, cnt);
-  framed.setImage(kj::arrayPtr((const uint8_t *)b->yuv_ion[b->cur_yuv_idx].addr, b->yuv_buf_size));
+  framed.setImage(kj::arrayPtr((const uint8_t *)b->cur_yuv_buf->addr, b->cur_yuv_buf->len));
   framed.setTransform(b->yuv_transform.v);
   s->pm->send("frame", msg);
 }
