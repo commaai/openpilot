@@ -148,7 +148,7 @@ static void ui_draw_line(UIState *s, const vertex_data *v, const int cnt, NVGcol
 static void update_track_data(UIState *s, const cereal::ModelDataV2::XYZTData::Reader &line, track_vertices_data *pvd) {
   const UIScene *scene = &s->scene;
   const float off = 0.5;
-  int max_idx = 0;
+  int max_idx = -1;
   float lead_d;
   if (s->sm->updated("radarState")) {
     lead_d = scene->lead_data[0].getDRel()*2.;
@@ -210,14 +210,14 @@ static void draw_frame(UIState *s) {
 
 static void update_line_data(UIState *s, const cereal::ModelDataV2::XYZTData::Reader &line, float off, line_vertices_data *pvd, float max_distance) {
   // TODO check that this doesn't overflow max vertex buffer
-  int max_idx;
+  int max_idx = -1;
   vertex_data *v = &pvd->v[0];
   const float margin = 500.0f;
   for (int i = 0; ((i < TRAJECTORY_SIZE) and (line.getX()[i] < fmax(MIN_DRAW_DISTANCE, max_distance))); i++) {
     v += car_space_to_full_frame(s, line.getX()[i], -line.getY()[i] - off, -line.getZ()[i] + 1.22, &v->x, &v->y, margin);
     max_idx = i;
   }
-  for (int i = max_idx - 1; i > 0; i--) {
+  for (int i = max_idx; i >= 0; i--) {
     v += car_space_to_full_frame(s, line.getX()[i], -line.getY()[i] + off, -line.getZ()[i] + 1.22, &v->x, &v->y, margin);
   }
   pvd->cnt = v - pvd->v;
