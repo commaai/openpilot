@@ -238,8 +238,8 @@ def ui_thread(addr, frame_address):
     SPACING = 25
 
     lines = [
-      info_font.render("ENABLED", True, GREEN if sm['controlsState'].enabled else WHITE),
-      info_font.render("BRAKE LIGHTS", True, RED if sm['carState'].brakeLights else WHITE),
+      info_font.render("ENABLED", True, GREEN if sm['controlsState'].enabled else BLACK),
+      info_font.render("BRAKE LIGHTS", True, RED if sm['carState'].brakeLights else BLACK),
       info_font.render("SPEED: " + str(round(sm['carState'].vEgo, 1)) + " m/s", True, YELLOW),
       info_font.render("LONG CONTROL STATE: " + str(sm['controlsState'].longControlState), True, YELLOW),
       info_font.render("LONG MPC SOURCE: " + str(sm['plan'].longitudinalPlanSource), True, YELLOW),
