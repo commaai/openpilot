@@ -39,15 +39,15 @@ typedef struct {
 void set_weights(double pathCost, double headingCost, double yawRateCost, double steerRateCost){
   int    i;
   for (i = 0; i < N; i++) {
-    double mult = 20* (T_IDXS[i+1] - T_IDXS[i]);
+    double mult = (T_IDXS[i+1] - T_IDXS[i]);
     // Setup diagonal entries
     acadoVariables.W[NY*NY*i + (NY+1)*0] = mult * pathCost;
     acadoVariables.W[NY*NY*i + (NY+1)*1] = mult * headingCost;
     acadoVariables.W[NY*NY*i + (NY+1)*2] = mult * yawRateCost;
     acadoVariables.W[NY*NY*i + (NY+1)*3] = mult * steerRateCost;
   }
-  acadoVariables.WN[(NYN+1)*0] = 3*pathCost;
-  acadoVariables.WN[(NYN+1)*1] = 3*headingCost;
+  acadoVariables.WN[(NYN+1)*0] = pathCost;
+  acadoVariables.WN[(NYN+1)*1] = headingCost;
 }
 
 void init(double pathCost, double headingCost, double yawRateCost, double steerRateCost){
