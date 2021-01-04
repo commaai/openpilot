@@ -29,6 +29,8 @@ from tools.replay.lib.ui_helpers import (_BB_TO_FULL_FRAME, _FULL_FRAME_SIZE, _I
 
 os.environ['BASEDIR'] = BASEDIR
 
+ANGLE_SCALE = 5.0
+
 def ui_thread(addr, frame_address):
   # TODO: Detect car from replay and use that to select carparams
   CP = ToyotaInterface.get_params("TOYOTA PRIUS 2017")
@@ -46,7 +48,6 @@ def ui_thread(addr, frame_address):
 
   hor_mode = os.getenv("HORIZONTAL") is not None
   hor_mode = True if max_height < 960+300 else hor_mode
-  angle_scale = 5.0
 
   if hor_mode:
     size = (640+384+640, 960)
@@ -101,7 +102,7 @@ def ui_thread(addr, frame_address):
   plot_arr = np.zeros((100, len(name_to_arr_idx.values())))
 
   plot_xlims = [(0, plot_arr.shape[0]), (0, plot_arr.shape[0]), (0, plot_arr.shape[0]), (0, plot_arr.shape[0])]
-  plot_ylims = [(-0.1, 1.1), (-angle_scale, angle_scale), (0., 75.), (-3.0, 2.0)]
+  plot_ylims = [(-0.1, 1.1), (-ANGLE_SCALE, ANGLE_SCALE), (0., 75.), (-3.0, 2.0)]
   plot_names = [["gas", "computer_gas", "user_brake", "computer_brake", "accel_override"],
                 ["angle_steers", "angle_steers_des", "angle_steers_k", "steer_torque"],
                 ["v_ego", "v_override", "v_pid", "v_cruise"],
@@ -170,7 +171,7 @@ def ui_thread(addr, frame_address):
     plot_arr[-1, name_to_arr_idx['gas']] = sm['carState'].gas
     plot_arr[-1, name_to_arr_idx['computer_gas']] = sm['carControl'].actuators.gas
     plot_arr[-1, name_to_arr_idx['user_brake']] = sm['carState'].brake
-    plot_arr[-1, name_to_arr_idx['steer_torque']] = sm['carControl'].actuators.steer * angle_scale
+    plot_arr[-1, name_to_arr_idx['steer_torque']] = sm['carControl'].actuators.steer * ANGLE_SCALE
     plot_arr[-1, name_to_arr_idx['computer_brake']] = sm['carControl'].actuators.brake
     plot_arr[-1, name_to_arr_idx['v_ego']] = sm['controlsState'].vEgo
     plot_arr[-1, name_to_arr_idx['v_pid']] = sm['controlsState'].vPid
