@@ -70,8 +70,8 @@ jobs:
           ~/Library/Caches/pipenv
           /usr/local/Cellar
           ~/github_brew_cache_entries.txt
-        key: macos-deps-${{ hashFiles('tools/mac_setup.sh') }}
-        restore-keys: macos-deps-
+        key: macos-cache-${{ hashFiles('tools/mac_setup.sh') }}
+        restore-keys: macos-cache-
     - name: Brew link restored dependencies
       if: steps.dependency-cache.outputs.cache-hit == 'true'
       run: |
@@ -92,6 +92,7 @@ jobs:
             rm -rf "$pkg"
           fi
         done
+        comm -13 <(echo "$EXISTING_CELLAR") <(echo "$new_cellar") | tee ~/github_brew_cache_entries.txt
 
   build_webcam:
     name: build webcam
