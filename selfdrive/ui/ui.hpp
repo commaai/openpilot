@@ -91,45 +91,6 @@ typedef struct {
   float z[TRAJECTORY_SIZE];
 } line;
 
-
-typedef struct UIScene {
-
-  mat4 extrinsic_matrix;      // Last row is 0 so we can use mat4.
-  bool world_objects_visible;
-
-  bool is_rhd;
-  bool frontview;
-  bool sidebar_collapsed;
-  // responsive layout
-  Rect viz_rect;
-
-  std::string alert_text1;
-  std::string alert_text2;
-  std::string alert_type;
-  cereal::ControlsState::AlertSize alert_size;
-
-  cereal::HealthData::HwType hwType;
-  int satelliteCount;
-  NetStatus athenaStatus;
-
-  cereal::ThermalData::Reader thermal;
-  cereal::RadarState::LeadData::Reader lead_data[2];
-  cereal::ControlsState::Reader controls_state;
-  cereal::DriverState::Reader driver_state;
-  cereal::DMonitoringState::Reader dmonitoring_state;
-  cereal::ModelDataV2::Reader model;
-  line path;
-  line outer_left_lane_line;
-  line left_lane_line;
-  line right_lane_line;
-  line outer_right_lane_line;
-  line left_road_edge;
-  line right_road_edge;
-  float max_distance;
-  float lane_line_probs[4];
-  float road_edge_stds[2];
-} UIScene;
-
 typedef struct {
   float x, y;
 } vertex_data;
@@ -144,6 +105,57 @@ typedef struct {
   int cnt;
 } track_vertices_data;
 
+typedef struct UIScene {
+  UIStatus status;
+  bool started = false, is_rhd = false, frontview = false, longitudinal_control = false;
+
+  mat4 extrinsic_matrix;      // Last row is 0 so we can use mat4.
+
+  
+
+  // alert
+  std::string alert_text1;
+  std::string alert_text2;
+  std::string alert_type;
+  cereal::ControlsState::AlertSize alert_size;
+  bool alert_blinked;
+  float alert_blinking_alpha;
+
+  bool ignition;
+  cereal::HealthData::HwType hwType;
+  int satelliteCount;
+  NetStatus athenaStatus;
+
+  cereal::ThermalData::Reader thermal;
+  cereal::RadarState::LeadData::Reader lead_data[2];
+  cereal::ControlsState::Reader controls_state;
+  cereal::DriverState::Reader driver_state;
+  cereal::DMonitoringState::Reader dmonitoring_state;
+
+  // modelV2
+  cereal::ModelDataV2::Reader model;
+  line path;
+  line outer_left_lane_line;
+  line left_lane_line;
+  line right_lane_line;
+  line outer_right_lane_line;
+  line left_road_edge;
+  line right_road_edge;
+  float max_distance;
+  float lane_line_probs[4];
+  float road_edge_stds[2];
+  track_vertices_data track_vertices;
+  line_vertices_data lane_line_vertices[4];
+  line_vertices_data road_edge_vertices[2];
+
+  
+
+  // sensors
+  float light_sensor = 0, accel_sensor = 0, gyro_sensor = 0;
+
+  // paramaters
+  bool is_metric = false;
+} UIScene;
 
 typedef struct UIState {
   // framebuffer
@@ -169,7 +181,6 @@ typedef struct UIState {
   SubMaster *sm;
 
   Sound *sound;
-  UIStatus status;
   UIScene scene;
   cereal::UiLayoutState::App active_app;
 
@@ -190,22 +201,12 @@ typedef struct UIState {
 
   // device state
   bool awake;
-  float light_sensor, accel_sensor, gyro_sensor;
-
-  bool started;
-  bool ignition;
-  bool is_metric;
-  bool longitudinal_control;
+  
   uint64_t started_frame;
 
-  bool alert_blinked;
-  float alert_blinking_alpha;
+  Rect video_rect, viz_rect;
 
-  track_vertices_data track_vertices;
-  line_vertices_data lane_line_vertices[4];
-  line_vertices_data road_edge_vertices[2];
-
-  Rect video_rect;
+  bool sidebar_collapsed, world_objects_visible;
 } UIState;
 
 void ui_init(UIState *s);

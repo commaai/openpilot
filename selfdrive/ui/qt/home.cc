@@ -151,13 +151,13 @@ void HomeWindow::mousePressEvent(QMouseEvent *e) {
   glWindow->wake();
 
   // Settings button click
-  if (!ui_state->scene.sidebar_collapsed && settings_btn.ptInRect(e->x(), e->y())) {
+  if (!ui_state->sidebar_collapsed && settings_btn.ptInRect(e->x(), e->y())) {
     emit openSettings();
   }
 
   // Vision click
-  if (ui_state->started && (e->x() >= ui_state->scene.viz_rect.x - bdr_s)) {
-    ui_state->scene.sidebar_collapsed = !ui_state->scene.sidebar_collapsed;
+  if (ui_state->scene.started && (e->x() >= ui_state->viz_rect.x - bdr_s)) {
+    ui_state->sidebar_collapsed = !ui_state->sidebar_collapsed;
   }
 }
 
@@ -166,7 +166,7 @@ static void handle_display_state(UIState *s, int dt, bool user_input) {
   static int awake_timeout = 0;
   awake_timeout = std::max(awake_timeout-dt, 0);
 
-  if (user_input || s->ignition || s->started) {
+  if (user_input || s->scene.ignition || s->scene.started) {
     s->awake = true;
     awake_timeout = 30*UI_FREQ;
   } else if (awake_timeout == 0) {
@@ -227,7 +227,7 @@ void GLWindow::backlightUpdate() {
   // Update brightness
   float k = (BACKLIGHT_DT / BACKLIGHT_TS) / (1.0f + BACKLIGHT_DT / BACKLIGHT_TS);
 
-  float clipped_brightness = std::min(1023.0f, (ui_state->light_sensor*brightness_m) + brightness_b);
+  float clipped_brightness = std::min(1023.0f, (ui_state->scene.light_sensor*brightness_m) + brightness_b);
   smooth_brightness = clipped_brightness * k + smooth_brightness * (1.0f - k);
   int brightness = smooth_brightness;
 
@@ -239,8 +239,8 @@ void GLWindow::backlightUpdate() {
 }
 
 void GLWindow::timerUpdate() {
-  if (ui_state->started != onroad) {
-    onroad = ui_state->started;
+  if (ui_state->scene.started != onroad) {
+    onroad = ui_state->scene.started;
     emit offroadTransition(!onroad);
 #ifdef QCOM2
     timer->setInterval(onroad ? 0 : 1000);

@@ -127,7 +127,7 @@ static void ui_draw_sidebar_panda_metric(UIState *s) {
   if (s->scene.hwType == cereal::HealthData::HwType::UNKNOWN) {
     panda_severity = 2;
     panda_message = "NO\nVEHICLE";
-  } else if (s->started) {
+  } else if (s->scene.started) {
     if (s->scene.satelliteCount < 6) {
       panda_severity = 1;
       panda_message = "VEHICLE\nNO GPS";
@@ -150,7 +150,7 @@ static void ui_draw_sidebar_connectivity(UIState *s) {
 }
 
 void ui_draw_sidebar(UIState *s) {
-  if (s->scene.sidebar_collapsed) {
+  if (s->sidebar_collapsed) {
     return;
   }
   ui_draw_sidebar_background(s);

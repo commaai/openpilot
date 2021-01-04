@@ -26,8 +26,8 @@ void ui_init(UIState *s) {
   s->sm = new SubMaster({"modelV2", "controlsState", "uiLayoutState", "liveCalibration", "radarState", "thermal", "frame",
                          "health", "carParams", "ubloxGnss", "driverState", "dMonitoringState", "sensorEvents"});
 
-  s->started = false;
-  s->status = STATUS_OFFROAD;
+  s->scene.started = false;
+  s->scene.status = STATUS_OFFROAD;
   s->scene.satelliteCount = -1;
 
   s->fb = framebuffer_init("ui", 0, true, &s->fb_w, &s->fb_h);
@@ -38,7 +38,7 @@ void ui_init(UIState *s) {
 
 static void ui_init_vision(UIState *s) {
   // Invisible until we receive a calibration message.
-  s->scene.world_objects_visible = false;
+  s->world_objects_visible = false;
 
   for (int i = 0; i < UI_BUF_COUNT; i++) {
     if (s->khr[i] != 0) {
@@ -74,7 +74,7 @@ static void ui_init_vision(UIState *s) {
 
 void ui_update_vision(UIState *s) {
 
-  if (!s->vision_connected && s->started) {
+  if (!s->vision_connected && s->scene.started) {
     const VisionStreamType type = s->scene.frontview ? VISION_STREAM_RGB_FRONT : VISION_STREAM_RGB_BACK;
     int err = visionstream_init(&s->stream, type, true, nullptr);
     if (err == 0) {
@@ -84,7 +84,7 @@ void ui_update_vision(UIState *s) {
   }
 
   if (s->vision_connected) {
-    if (!s->started) goto destroy;
+    if (!s->scene.started) goto destroy;
 
     // poll for a new frame
     struct pollfd fds[1] = {{
@@ -113,7 +113,7 @@ void update_sockets(UIState *s) {
     return;
   }
 
-  if (s->started && sm.updated("controlsState")) {
+  if (scene.started && sm.updated("controlsState")) {
     auto event = sm["controlsState"];
     scene.controls_state = event.getControlsState();
 
@@ -132,27 +132,27 @@ void update_sockets(UIState *s) {
     scene.alert_type = scene.controls_state.getAlertType();
     auto alertStatus = scene.controls_state.getAlertStatus();
     if (alertStatus == cereal::ControlsState::AlertStatus::USER_PROMPT) {
-      s->status = STATUS_WARNING;
+      scene.status = STATUS_WARNING;
     } else if (alertStatus == cereal::ControlsState::AlertStatus::CRITICAL) {
-      s->status = STATUS_ALERT;
+      scene.status = STATUS_ALERT;
     } else {
-      s->status = scene.controls_state.getEnabled() ? STATUS_ENGAGED : STATUS_DISENGAGED;
+      scene.status = scene.controls_state.getEnabled() ? STATUS_ENGAGED : STATUS_DISENGAGED;
     }
 
     float alert_blinkingrate = scene.controls_state.getAlertBlinkingRate();
     if (alert_blinkingrate > 0.) {
-      if (s->alert_blinked) {
-        if (s->alert_blinking_alpha > 0.0 && s->alert_blinking_alpha < 1.0) {
-          s->alert_blinking_alpha += (0.05*alert_blinkingrate);
+      if (scene.alert_blinked) {
+        if (scene.alert_blinking_alpha > 0.0 && scene.alert_blinking_alpha < 1.0) {
+          scene.alert_blinking_alpha += (0.05*alert_blinkingrate);
         } else {
-          s->alert_blinked = false;
+          scene.alert_blinked = false;
         }
       } else {
-        if (s->alert_blinking_alpha > 0.25) {
-          s->alert_blinking_alpha -= (0.05*alert_blinkingrate);
+        if (scene.alert_blinking_alpha > 0.25) {
+          scene.alert_blinking_alpha -= (0.05*alert_blinkingrate);
         } else {
-          s->alert_blinking_alpha += 0.25;
-          s->alert_blinked = true;
+          scene.alert_blinking_alpha += 0.25;
+          scene.alert_blinked = true;
         }
       }
     }
@@ -163,7 +163,7 @@ void update_sockets(UIState *s) {
     scene.lead_data[1] = data.getLeadTwo();
   }
   if (sm.updated("liveCalibration")) {
-    scene.world_objects_visible = true;
+    s->world_objects_visible = true;
     auto extrinsicl = sm["liveCalibration"].getLiveCalibration().getExtrinsicMatrix();
     for (int i = 0; i < 3 * 4; i++) {
       scene.extrinsic_matrix.v[i] = extrinsicl[i];
@@ -191,7 +191,7 @@ void update_sockets(UIState *s) {
   if (sm.updated("uiLayoutState")) {
     auto data = sm["uiLayoutState"].getUiLayoutState();
     s->active_app = data.getActiveApp();
-    scene.sidebar_collapsed = data.getSidebarCollapsed();
+    s->sidebar_collapsed = data.getSidebarCollapsed();
   }
   if (sm.updated("thermal")) {
     scene.thermal = sm["thermal"].getThermal();
@@ -205,12 +205,12 @@ void update_sockets(UIState *s) {
   if (sm.updated("health")) {
     auto health = sm["health"].getHealth();
     scene.hwType = health.getHwType();
-    s->ignition = health.getIgnitionLine() || health.getIgnitionCan();
+    scene.ignition = health.getIgnitionLine() || health.getIgnitionCan();
   } else if ((s->sm->frame - s->sm->rcv_frame("health")) > 5*UI_FREQ) {
     scene.hwType = cereal::HealthData::HwType::UNKNOWN;
   }
   if (sm.updated("carParams")) {
-    s->longitudinal_control = sm["carParams"].getCarParams().getOpenpilotLongitudinalControl();
+    scene.longitudinal_control = sm["carParams"].getCarParams().getOpenpilotLongitudinalControl();
   }
   if (sm.updated("driverState")) {
     scene.driver_state = sm["driverState"].getDriverState();
@@ -225,28 +225,29 @@ void update_sockets(UIState *s) {
   if (sm.updated("sensorEvents")) {
     for (auto sensor : sm["sensorEvents"].getSensorEvents()) {
       if (sensor.which() == cereal::SensorEventData::LIGHT) {
-        s->light_sensor = sensor.getLight();
-      } else if (!s->started && sensor.which() == cereal::SensorEventData::ACCELERATION) {
-        s->accel_sensor = sensor.getAcceleration().getV()[2];
-      } else if (!s->started && sensor.which() == cereal::SensorEventData::GYRO_UNCALIBRATED) {
-        s->gyro_sensor = sensor.getGyroUncalibrated().getV()[1];
+        scene.light_sensor = sensor.getLight();
+      } else if (!scene.started && sensor.which() == cereal::SensorEventData::ACCELERATION) {
+        scene.accel_sensor = sensor.getAcceleration().getV()[2];
+      } else if (!scene.started && sensor.which() == cereal::SensorEventData::GYRO_UNCALIBRATED) {
+        scene.gyro_sensor = sensor.getGyroUncalibrated().getV()[1];
       }
     }
   }
 
-  s->started = scene.thermal.getStarted() || scene.frontview;
+  scene.started = scene.thermal.getStarted() || scene.frontview;
 }
 
 static void ui_read_params(UIState *s) {
   const uint64_t frame = s->sm->frame;
+  UIScene &scene = s->scene;
 
   if (frame % (5*UI_FREQ) == 0) {
-    read_param(&s->is_metric, "IsMetric");
+    read_param(&scene.is_metric, "IsMetric");
   } else if (frame % (6*UI_FREQ) == 0) {
-    s->scene.athenaStatus = NET_DISCONNECTED;
+    scene.athenaStatus = NET_DISCONNECTED;
     uint64_t last_ping = 0;
     if (read_param(&last_ping, "LastAthenaPingTime") == 0) {
-      s->scene.athenaStatus = nanos_since_boot() - last_ping < 70e9 ? NET_CONNECTED : NET_ERROR;
+      scene.athenaStatus = nanos_since_boot() - last_ping < 70e9 ? NET_CONNECTED : NET_ERROR;
     }
   }
 }
@@ -256,42 +257,43 @@ void ui_update(UIState *s) {
   update_sockets(s);
   ui_update_vision(s);
 
+  UIScene &scene = s->scene;
   // Handle onroad/offroad transition
-  if (!s->started && s->status != STATUS_OFFROAD) {
-    s->status = STATUS_OFFROAD;
+  if (!scene.started && scene.status != STATUS_OFFROAD) {
+    scene.status = STATUS_OFFROAD;
     s->active_app = cereal::UiLayoutState::App::HOME;
-    s->scene.sidebar_collapsed = false;
+    s->sidebar_collapsed = false;
     s->sound->stop();
-  } else if (s->started && s->status == STATUS_OFFROAD) {
-    s->status = STATUS_DISENGAGED;
+  } else if (scene.started && scene.status == STATUS_OFFROAD) {
+    scene.status = STATUS_DISENGAGED;
     s->started_frame = s->sm->frame;
 
     s->active_app = cereal::UiLayoutState::App::NONE;
-    s->scene.sidebar_collapsed = true;
-    s->alert_blinked = false;
-    s->alert_blinking_alpha = 1.0;
-    s->scene.alert_size = cereal::ControlsState::AlertSize::NONE;
+    s->sidebar_collapsed = true;
+    scene.alert_blinked = false;
+    scene.alert_blinking_alpha = 1.0;
+    scene.alert_size = cereal::ControlsState::AlertSize::NONE;
   }
 
   // Handle controls/fcamera timeout
-  if (s->started && !s->scene.frontview && ((s->sm)->frame - s->started_frame) > 10*UI_FREQ) {
+  if (scene.started && !scene.frontview && ((s->sm)->frame - s->started_frame) > 10*UI_FREQ) {
     if ((s->sm)->rcv_frame("controlsState") < s->started_frame) {
       // car is started, but controlsState hasn't been seen at all
-      s->scene.alert_text1 = "openpilot Unavailable";
-      s->scene.alert_text2 = "Waiting for controls to start";
-      s->scene.alert_size = cereal::ControlsState::AlertSize::MID;
+      scene.alert_text1 = "openpilot Unavailable";
+      scene.alert_text2 = "Waiting for controls to start";
+      scene.alert_size = cereal::ControlsState::AlertSize::MID;
     } else if (((s->sm)->frame - (s->sm)->rcv_frame("controlsState")) > 5*UI_FREQ) {
       // car is started, but controls is lagging or died
-      if (s->scene.alert_text2 != "Controls Unresponsive" &&
-          s->scene.alert_text1 != "Camera Malfunction") {
+      if (scene.alert_text2 != "Controls Unresponsive" &&
+          scene.alert_text1 != "Camera Malfunction") {
         s->sound->play(AudibleAlert::CHIME_WARNING_REPEAT);
         LOGE("Controls unresponsive");
       }
 
-      s->scene.alert_text1 = "TAKE CONTROL IMMEDIATELY";
-      s->scene.alert_text2 = "Controls Unresponsive";
-      s->scene.alert_size = cereal::ControlsState::AlertSize::FULL;
-      s->status = STATUS_ALERT;
+      scene.alert_text1 = "TAKE CONTROL IMMEDIATELY";
+      scene.alert_text2 = "Controls Unresponsive";
+      scene.alert_size = cereal::ControlsState::AlertSize::FULL;
+      scene.status = STATUS_ALERT;
     }
 
     const uint64_t frame_pkt = (s->sm)->rcv_frame("frame");
@@ -299,10 +301,10 @@ void ui_update(UIState *s) {
     const uint64_t since_started = (s->sm)->frame - s->started_frame;
     if ((frame_pkt > s->started_frame || since_started > 15*UI_FREQ) && frame_delayed > 5*UI_FREQ) {
       // controls is fine, but rear camera is lagging or died
-      s->scene.alert_text1 = "Camera Malfunction";
-      s->scene.alert_text2 = "Contact Support";
-      s->scene.alert_size = cereal::ControlsState::AlertSize::FULL;
-      s->status = STATUS_DISENGAGED;
+      scene.alert_text1 = "Camera Malfunction";
+      scene.alert_text2 = "Contact Support";
+      scene.alert_size = cereal::ControlsState::AlertSize::FULL;
+      scene.status = STATUS_DISENGAGED;
       s->sound->stop();
     }
   }

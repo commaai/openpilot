@@ -225,10 +225,10 @@ static void update_line_data(UIState *s, const cereal::ModelDataV2::XYZTData::Re
 }
 
 static void ui_draw_vision_lane_lines(UIState *s) {
-  const UIScene *scene = &s->scene;
+  UIScene *scene = &s->scene;
 
   // paint lanelines
-  line_vertices_data *pvd_ll = &s->lane_line_vertices[0];
+  line_vertices_data *pvd_ll = &scene->lane_line_vertices[0];
   for (int ll_idx = 0; ll_idx < 4; ll_idx++) {
     if (s->sm->updated("modelV2")) {
       update_line_data(s, scene->model.getLaneLines()[ll_idx], 0.025*scene->model.getLaneLineProbs()[ll_idx], pvd_ll + ll_idx, scene->max_distance);
@@ -238,7 +238,7 @@ static void ui_draw_vision_lane_lines(UIState *s) {
   }
 
   // paint road edges
-  line_vertices_data *pvd_re = &s->road_edge_vertices[0];
+  line_vertices_data *pvd_re = &scene->road_edge_vertices[0];
   for (int re_idx = 0; re_idx < 2; re_idx++) {
     if (s->sm->updated("modelV2")) {
       update_line_data(s, scene->model.getRoadEdges()[re_idx], 0.025, pvd_re + re_idx, scene->max_distance);
@@ -249,9 +249,9 @@ static void ui_draw_vision_lane_lines(UIState *s) {
 
   // paint path
   if (s->sm->updated("modelV2")) {
-    update_track_data(s, scene->model.getPosition(), &s->track_vertices);
+    update_track_data(s, scene->model.getPosition(), &scene->track_vertices);
   }
-  ui_draw_track(s, &s->track_vertices);
+  ui_draw_track(s, &scene->track_vertices);
 }
 
 // Draw all world space objects.
@@ -261,7 +261,7 @@ static void ui_draw_world(UIState *s) {
   nvgSave(s->vg);
 
   // Don't draw on top of sidebar
-  nvgScissor(s->vg, scene->viz_rect.x, scene->viz_rect.y, scene->viz_rect.w, scene->viz_rect.h);
+  nvgScissor(s->vg, s->viz_rect.x, s->viz_rect.y, s->viz_rect.w, s->viz_rect.h);
 
   // Apply transformation such that video pixel coordinates match video
   // 1) Put (0, 0) in the middle of the video
@@ -277,7 +277,7 @@ static void ui_draw_world(UIState *s) {
   ui_draw_vision_lane_lines(s);
 
   // Draw lead indicators if openpilot is handling longitudinal
-  if (s->longitudinal_control) {
+  if (scene->longitudinal_control) {
     if (scene->lead_data[0].getStatus()) {
       draw_lead(s, scene->lead_data[0]);
     }
@@ -318,8 +318,8 @@ static void ui_draw_vision_speed(UIState *s) {
 
 static void ui_draw_vision_event(UIState *s) {
   const int viz_event_w = 220;
-  const int viz_event_x = s->scene.viz_rect.right() - (viz_event_w + bdr_s*2);
-  const int viz_event_y = s->scene.viz_rect.y + (bdr_s*1.5);
+  const int viz_event_x = s->viz_rect.right() - (viz_event_w + bdr_s*2);
+  const int viz_event_y = s->viz_rect.y + (bdr_s*1.5);
   if (s->scene.controls_state.getDecelForModel() && s->scene.controls_state.getEnabled()) {
     // draw winding road sign
     const int img_turn_size = 160*1.5;
@@ -330,7 +330,7 @@ static void ui_draw_vision_event(UIState *s) {
     const int bg_wheel_size = 96;
     const int bg_wheel_x = viz_event_x + (viz_event_w-bg_wheel_size);
     const int bg_wheel_y = viz_event_y + (bg_wheel_size/2);
-    const NVGcolor color = bg_colors[s->status];
+    const NVGcolor color = bg_colors[s->scene.status];
 
     ui_draw_circle_image(s->vg, bg_wheel_x, bg_wheel_y, bg_wheel_size, s->img_wheel, color, 1.0f, bg_wheel_y - 25);
   }
@@ -338,15 +338,15 @@ static void ui_draw_vision_event(UIState *s) {
 
 static void ui_draw_vision_face(UIState *s) {
   const int face_size = 96;
-  const int face_x = (s->scene.viz_rect.x + face_size + (bdr_s * 2));
-  const int face_y = (s->scene.viz_rect.bottom() - footer_h + ((footer_h - face_size) / 2));
+  const int face_x = (s->viz_rect.x + face_size + (bdr_s * 2));
+  const int face_y = (s->viz_rect.bottom() - footer_h + ((footer_h - face_size) / 2));
   ui_draw_circle_image(s->vg, face_x, face_y, face_size, s->img_face, s->scene.dmonitoring_state.getFaceDetected());
 }
 
 static void ui_draw_driver_view(UIState *s) {
   const UIScene *scene = &s->scene;
-  s->scene.sidebar_collapsed = true;
-  const Rect &viz_rect = s->scene.viz_rect;
+  s->sidebar_collapsed = true;
+  const Rect &viz_rect = s->viz_rect;
   const int ff_xoffset = 32;
   const int frame_x = viz_rect.x;
   const int frame_w = viz_rect.w;
@@ -397,13 +397,12 @@ static void ui_draw_driver_view(UIState *s) {
 }
 
 static void ui_draw_vision_header(UIState *s) {
-  const Rect &viz_rect = s->scene.viz_rect;
-  NVGpaint gradient = nvgLinearGradient(s->vg, viz_rect.x,
-                        viz_rect.y+(header_h-(header_h/2.5)),
-                        viz_rect.x, viz_rect.y+header_h,
+  NVGpaint gradient = nvgLinearGradient(s->vg, s->viz_rect.x,
+                        s->viz_rect.y+(header_h-(header_h/2.5)),
+                        s->viz_rect.x, s->viz_rect.y+header_h,
                         nvgRGBAf(0,0,0,0.45), nvgRGBAf(0,0,0,0));
 
-  ui_draw_rect(s->vg, viz_rect.x, viz_rect.y, viz_rect.w, header_h, gradient);
+  ui_draw_rect(s->vg, s->viz_rect.x, s->viz_rect.y, s->viz_rect.w, header_h, gradient);
 
   ui_draw_vision_maxspeed(s);
   ui_draw_vision_speed(s);
@@ -422,8 +421,8 @@ static void ui_draw_vision_alert(UIState *s) {
   const UIScene *scene = &s->scene;
   bool longAlert1 = scene->alert_text1.length() > 15;
 
-  NVGcolor color = bg_colors[s->status];
-  color.a *= s->alert_blinking_alpha;
+  NVGcolor color = bg_colors[scene->status];
+  color.a *= scene->alert_blinking_alpha;
   int alr_s = alert_size_map[scene->alert_size];
 
   const int alr_x = scene->viz_rect.x - bdr_s;
@@ -458,13 +457,10 @@ static void ui_draw_vision_alert(UIState *s) {
 }
 
 static void ui_draw_vision_frame(UIState *s) {
-  const UIScene *scene = &s->scene;
-  const Rect &viz_rect = scene->viz_rect;
-
   // Draw video frames
   glEnable(GL_SCISSOR_TEST);
   glViewport(s->video_rect.x, s->video_rect.y, s->video_rect.w, s->video_rect.h);
-  glScissor(viz_rect.x, viz_rect.y, viz_rect.w, viz_rect.h);
+  glScissor(s->viz_rect.x, s->viz_rect.y, s->viz_rect.w, s->viz_rect.h);
   draw_frame(s);
   glDisable(GL_SCISSOR_TEST);
 
@@ -475,7 +471,7 @@ static void ui_draw_vision(UIState *s) {
   const UIScene *scene = &s->scene;
   if (!scene->frontview) {
     // Draw augmented elements
-    if (scene->world_objects_visible) {
+    if (s->world_objects_visible) {
       ui_draw_world(s);
     }
     // Set Speed, Current Speed, Status/Events
@@ -489,19 +485,19 @@ static void ui_draw_vision(UIState *s) {
 }
 
 static void ui_draw_background(UIState *s) {
-  const NVGcolor color = bg_colors[s->status];
+  const NVGcolor color = bg_colors[s->scene.status];
   glClearColor(color.r, color.g, color.b, 1.0);
   glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 }
 
 void ui_draw(UIState *s) {
-  s->scene.viz_rect = Rect{bdr_s, bdr_s, s->fb_w - 2 * bdr_s, s->fb_h - 2 * bdr_s};
-  if (!s->scene.sidebar_collapsed) {
-    s->scene.viz_rect.x += sbr_w;
-    s->scene.viz_rect.w -= sbr_w;
+  s->viz_rect = Rect{bdr_s, bdr_s, s->fb_w - 2 * bdr_s, s->fb_h - 2 * bdr_s};
+  if (!s->sidebar_collapsed) {
+    s->viz_rect.x += sbr_w;
+    s->viz_rect.w -= sbr_w;
   }
 
-  const bool draw_vision = s->started && s->status != STATUS_OFFROAD &&
+  const bool draw_vision = s->scene.started && s->scene.status != STATUS_OFFROAD &&
                            s->active_app == cereal::UiLayoutState::App::NONE;
 
   // GL drawing functions
