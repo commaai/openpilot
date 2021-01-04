@@ -24,17 +24,19 @@ int main( )
   DifferentialState xx; // x position
   DifferentialState yy; // y position
   DifferentialState psi; // vehicle heading
-  DifferentialState dpsi;
+  DifferentialState delta;
 
-  OnlineData v_poly_r0, v_poly_r1, v_poly_r2, v_poly_r3;
-  Control ddpsi;
-  auto v_poly = v_poly_r0*(xx*xx*xx) + v_poly_r1*(xx*xx) + v_poly_r2*xx + v_poly_r3;
+  OnlineData v_ego;
+  OnlineData curvature_factor;
+  Control rate;
+  //OnlineData v_poly_r0, v_poly_r1, v_poly_r2, v_poly_r3;
+  //auto v_poly = v_poly_r0*(xx*xx*xx) + v_poly_r1*(xx*xx) + v_poly_r2*xx + v_poly_r3;
 
   // Equations of motion
-  f << dot(xx) == v_poly * cos(psi);// - sin(psi) * 2 * dpsi;
-  f << dot(yy) == v_poly * sin(psi);// + cos(psi) * 2 * dpsi;
-  f << dot(psi) == dpsi;
-  f << dot(dpsi) == ddpsi;
+  f << dot(xx) == v_ego * cos(psi);// - sin(psi) * 2 * dpsi;
+  f << dot(yy) == v_ego * sin(psi);// + cos(psi) * 2 * dpsi;
+  f << dot(psi) == v_ego * delta * curvature_factor;
+  f << dot(delta) == rate;
 
 
   // Running cost
@@ -44,13 +46,13 @@ int main( )
   h << yy;
 
   // Heading trajectory error
-  h << psi;
+  h << (v_ego + 1) * psi;
   
   // Yaw rate trajectory error
-  h << dpsi;
+  h << delta;
   
   // Angular rate error
-  h << ddpsi;
+  h << (v_ego + 1) * rate;
 
   BMatrix Q(4,4); Q.setAll(true);
   // Q(0,0) = 1.0;
@@ -79,7 +81,9 @@ int main( )
   //ocp.subjectTo( deg2rad(-50) <= dpsi <= deg2rad(50));
   //ocp.subjectTo(deg2rad(-10) <= ddpsi/(v_poly + 1e-6) <= deg2rad(10));
   //ocp.subjectTo(deg2rad(-10) <= dpsi/(v_poly + 1e-6) <= deg2rad(10));
-  ocp.setNOD(4);
+  ocp.subjectTo( deg2rad(-90) <= psi <= deg2rad(90));
+  ocp.subjectTo( deg2rad(-50) <= delta <= deg2rad(50));
+  ocp.setNOD(2);
 
   OCPexport mpc(ocp);
   mpc.set( HESSIAN_APPROXIMATION, GAUSS_NEWTON );

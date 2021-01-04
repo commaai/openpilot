@@ -17,7 +17,7 @@ ACADOvariables acadoVariables;
 ACADOworkspace acadoWorkspace;
 
 typedef struct {
-  double x, y, psi, dpsi, ddpsi;
+  double x, y, psi, delta, rate;
 } state_t;
 
 const int N_steps = 15;
@@ -31,8 +31,8 @@ typedef struct {
   double x[N+1];
   double y[N+1];
   double psi[N+1];
-  double dpsi[N+1];
-  double ddpsi[N];
+  double delta[N+1];
+  double rate[N];
   double cost;
 } log_t;
 
@@ -47,6 +47,7 @@ void set_weights(double pathCost, double headingCost, double yawRateCost, double
     acadoVariables.W[NY*NY*i + (NY+1)*3] = mult * steerRateCost;
   }
   acadoVariables.WN[(NYN+1)*0] = 3*pathCost;
+  acadoVariables.WN[(NYN+1)*1] = 3*headingCost;
 }
 
 void init(double pathCost, double headingCost, double yawRateCost, double steerRateCost){
@@ -67,30 +68,29 @@ void init(double pathCost, double headingCost, double yawRateCost, double steerR
   set_weights(pathCost, headingCost, yawRateCost, steerRateCost);
 }
 
-int run_mpc(state_t * x0, log_t * solution, double v_poly[4],
+int run_mpc(state_t * x0, log_t * solution, double v_ego,
              double target_y[N+1], double target_psi[N+1],
-             double target_dpsi[N+1]){
+             double target_dpsi[N+1], double curvature_factor){
 
   int    i;
 
   for (i = 0; i <= NOD * N; i+= NOD){
-    acadoVariables.od[i+0] = v_poly[0];
-    acadoVariables.od[i+1] = v_poly[1];
-    acadoVariables.od[i+2] = v_poly[2];
-    acadoVariables.od[i+3] = v_poly[3];
+    acadoVariables.od[i+0] = v_ego;
+    acadoVariables.od[i+1] = curvature_factor;
   }
   for (i = 0; i < N; i+= 1){
     acadoVariables.y[NY*i + 0] = target_y[i];
-    acadoVariables.y[NY*i + 1] = target_psi[i];
+    acadoVariables.y[NY*i + 1] = (v_ego + 1) * target_psi[i];
     acadoVariables.y[NY*i + 2] = target_dpsi[i];
     acadoVariables.y[NY*i + 3] = 0.0;
   }
   acadoVariables.yN[0] = target_y[N];
+  acadoVariables.yN[1] = (v_ego + 1) * target_psi[N];
 
   acadoVariables.x0[0] = x0->x;
   acadoVariables.x0[1] = x0->y;
   acadoVariables.x0[2] = x0->psi;
-  acadoVariables.x0[3] = x0->dpsi;
+  acadoVariables.x0[3] = x0->delta;
 
 
   acado_preparationStep();
@@ -103,9 +103,9 @@ int run_mpc(state_t * x0, log_t * solution, double v_poly[4],
     solution->x[i] = acadoVariables.x[i*NX];
     solution->y[i] = acadoVariables.x[i*NX+1];
     solution->psi[i] = acadoVariables.x[i*NX+2];
-    solution->dpsi[i] = acadoVariables.x[i*NX+3];
+    solution->delta[i] = acadoVariables.x[i*NX+3];
     if (i < N){
-      solution->ddpsi[i] = acadoVariables.u[i];
+      solution->rate[i] = acadoVariables.u[i];
     }
   }
   solution->cost = acado_getObjective();
