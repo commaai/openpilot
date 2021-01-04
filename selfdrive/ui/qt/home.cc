@@ -111,10 +111,10 @@ void OffroadHome::refresh() {
     border-radius: 5px;
     font-size: 40px;
     font-weight: bold;
-    background-color: red;
+    background-color: #E22C2C;
   )");
   if (alerts_widget->updateAvailable){
-    style.replace("red", "blue");
+    style.replace("#E22C2C", "#364DEF");
   }
   alert_notification->setStyleSheet(style);
 }
