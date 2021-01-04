@@ -26,7 +26,7 @@ else:
 
   if arch == "Darwin":
     # fix OpenCL
-    del libs[qt_libs.index('OpenCL')]
+    del qt_libs[qt_libs.index('OpenCL')]
     qt_env['FRAMEWORKS'] += ['OpenCL']
 
   qt_src = ["qt/ui.cc", "qt/window.cc", "qt/home.cc", "qt/offroad/settings.cc", "qt/offroad/onboarding.cc"] + src
