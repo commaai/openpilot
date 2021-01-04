@@ -31,11 +31,12 @@ if arch == "aarch64" and TICI:
 USE_WEBCAM = os.getenv("USE_WEBCAM") is not None
 QCOM_REPLAY = arch == "aarch64" and os.getenv("QCOM_REPLAY") is not None
 
+lenv = {
+  "PATH": os.environ['PATH'],
+}
+
 if arch == "aarch64" or arch == "larch64":
-  lenv = {
-    "LD_LIBRARY_PATH": '/data/data/com.termux/files/usr/lib',
-    "PATH": os.environ['PATH'],
-  }
+  lenv["LD_LIBRARY_PATH"] = '/data/data/com.termux/files/usr/lib'
 
   if arch == "aarch64":
     # android
@@ -78,13 +79,7 @@ if arch == "aarch64" or arch == "larch64":
 else:
   cflags = []
   cxxflags = []
-
-  lenv = {
-    "PATH": "#external/bin:" + os.environ['PATH'],
-  }
-  cpppath = [
-    "#external/tensorflow/include",
-  ]
+  cpppath = []
 
   if arch == "Darwin":
     libpath = [
@@ -102,7 +97,6 @@ else:
     libpath = [
       "#phonelibs/snpe/x86_64-linux-clang",
       "#phonelibs/libyuv/x64/lib",
-      "#external/tensorflow/lib",
       "#cereal",
       "#selfdrive/common",
       "/usr/lib",
@@ -111,7 +105,6 @@ else:
 
   rpath = [
     "phonelibs/snpe/x86_64-linux-clang",
-    "external/tensorflow/lib",
     "cereal",
     "selfdrive/common"
   ]
@@ -168,8 +161,8 @@ env = Environment(
     "#selfdrive/modeld",
     "#selfdrive/sensord",
     "#selfdrive/ui",
-    "#cereal/messaging",
     "#cereal",
+    "#cereal/messaging",
     "#opendbc/can",
   ],
 
