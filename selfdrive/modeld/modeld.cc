@@ -8,6 +8,7 @@
 #include "common/visionipc.h"
 #include "common/swaglog.h"
 #include "common/clutil.h"
+#include "common/utilpp.h"
 
 #include "models/driving.h"
 #include "messaging.hpp"
@@ -132,7 +133,7 @@ int main(int argc, char **argv) {
     err = visionstream_init(&stream, VISION_STREAM_YUV, true, &buf_info);
     if (err) {
       LOGW("visionstream connect failed");
-      usleep(100000);
+      util::sleep_for(100);
       continue;
     }
     LOGW("connected with buffer size: %d", buf_info.buf_len);

@@ -22,6 +22,7 @@
 #include "cereal/gen/cpp/car.capnp.h"
 
 #include "common/util.h"
+#include "common/utilpp.h"
 #include "common/params.h"
 #include "common/swaglog.h"
 #include "common/timing.h"
@@ -85,7 +86,7 @@ void safety_setter_thread() {
       LOGW("got CarVin %s", str_vin.c_str());
       break;
     }
-    usleep(100*1000);
+    util::sleep_for(100);
   }
 
   // VIN query done, stop listening to OBDII
@@ -101,7 +102,7 @@ void safety_setter_thread() {
 
     params = Params().read_db_bytes("CarParams");
     if (params.size() > 0) break;
-    usleep(100*1000);
+    util::sleep_for(100);
   }
   LOGW("got %d bytes CarParams", params.size());
 
@@ -193,7 +194,7 @@ bool usb_connect() {
 // must be called before threads or with mutex
 void usb_retry_connect() {
   LOGW("attempting to connect");
-  while (!usb_connect()) { usleep(100*1000); }
+  while (!usb_connect()) { util::sleep_for(100); }
   LOGW("connected to board");
 }
 
@@ -260,8 +261,7 @@ void can_recv_thread() {
     uint64_t cur_time = nanos_since_boot();
     int64_t remaining = next_frame_time - cur_time;
     if (remaining > 0){
-      useconds_t sleep = remaining / 1000;
-      usleep(sleep);
+      std::this_thread::sleep_for(std::chrono::nanoseconds(remaining));
     } else {
       if (ignition){
         LOGW("missed cycles (%d) %lld", (int)-1*remaining/dt, remaining);
@@ -288,7 +288,7 @@ void can_health_thread() {
 
     healthData.setHwType(cereal::HealthData::HwType::UNKNOWN);
     pm.send("health", msg);
-    usleep(500*1000);
+    util::sleep_for(500);
   }
 
   // run at 2hz
@@ -388,7 +388,7 @@ void can_health_thread() {
     }
     pm.send("health", msg);
     panda->send_heartbeat();
-    usleep(500*1000);
+    util::sleep_for(500);
   }
 }
 
@@ -508,7 +508,7 @@ void pigeon_thread() {
     ignition_last = ignition;
 
     // 10ms - 100 Hz
-    usleep(10*1000);
+    util::sleep_for(10);
   }
 
   delete pigeon;
