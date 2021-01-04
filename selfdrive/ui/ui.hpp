@@ -86,12 +86,6 @@ static std::map<UIStatus, NVGcolor> bg_colors = {
 };
 
 typedef struct {
-  float x[TRAJECTORY_SIZE];
-  float y[TRAJECTORY_SIZE];
-  float z[TRAJECTORY_SIZE];
-} line;
-
-typedef struct {
   float x, y;
 } vertex_data;
 
@@ -150,13 +144,6 @@ typedef struct UIScene {
 
   // modelV2
   cereal::ModelDataV2::Reader model;
-  line path;
-  line outer_left_lane_line;
-  line left_lane_line;
-  line right_lane_line;
-  line outer_right_lane_line;
-  line left_road_edge;
-  line right_road_edge;
   float max_distance;
   float lane_line_probs[4];
   float road_edge_stds[2];
