@@ -184,7 +184,6 @@ typedef struct UIState {
 
   Sound *sound;
   UIScene scene;
-  cereal::UiLayoutState::App active_app;
 
   // vision state
   bool vision_connected;
@@ -206,6 +205,9 @@ typedef struct UIState {
 
   uint64_t started_frame;
   Rect video_rect, viz_rect;
+
+  // accessed from ui & state thread
+  cereal::UiLayoutState::App active_app;
   bool sidebar_collapsed, world_objects_visible;
 } UIState;
 
