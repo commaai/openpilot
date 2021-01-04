@@ -156,12 +156,12 @@ static void draw_frame(UIState *s) {
   }
   glActiveTexture(GL_TEXTURE0);
 
-  if (s->stream.last_idx >= 0) {
-    glBindTexture(GL_TEXTURE_2D, s->frame_texs[s->stream.last_idx]);
+  if (s->last_frame) {
+    glBindTexture(GL_TEXTURE_2D, s->frame_texs[s->last_frame->idx]);
 #ifndef QCOM
     // this is handled in ion on QCOM
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, s->stream.bufs_info.width, s->stream.bufs_info.height,
-                 0, GL_RGB, GL_UNSIGNED_BYTE, s->priv_hnds[s->stream.last_idx]);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, s->last_frame->width, s->last_frame->height,
+                 0, GL_RGB, GL_UNSIGNED_BYTE, s->priv_hnds[s->last_frame->idx]);
 #endif
   }
 
@@ -444,11 +444,11 @@ void ui_draw(UIState *s) {
   }
 
   const bool draw_vision = s->started && s->status != STATUS_OFFROAD &&
-                           s->active_app == cereal::UiLayoutState::App::NONE;
+    s->active_app == cereal::UiLayoutState::App::NONE && s->vipc_client->connected;
 
   // GL drawing functions
   ui_draw_background(s);
-  if (draw_vision && s->vision_connected) {
+  if (draw_vision) {
     ui_draw_vision_frame(s);
   }
   glEnable(GL_BLEND);
@@ -458,7 +458,7 @@ void ui_draw(UIState *s) {
   // NVG drawing functions - should be no GL inside NVG frame
   nvgBeginFrame(s->vg, s->fb_w, s->fb_h, 1.0f);
   ui_draw_sidebar(s);
-  if (draw_vision && s->vision_connected) {
+  if (draw_vision) {
     ui_draw_vision(s);
   }
 

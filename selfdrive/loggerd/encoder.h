@@ -7,6 +7,9 @@
 #include <pthread.h>
 #include <OMX_Component.h>
 
+#include "common/cqueue.h"
+#include "visionipc.h"
+
 extern "C" {
   #include <libavformat/avformat.h>
 }
@@ -68,7 +71,7 @@ void encoder_init(EncoderState *s, const char* filename, int width, int height, 
 int encoder_encode_frame(EncoderState *s,
                          const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
                          int in_width, int in_height,
-                         int *frame_segment, VIPCBufExtra *extra);
+                         int *frame_segment, struct VIPCBufExtra *extra);
 void encoder_open(EncoderState *s, const char* path);
 void encoder_rotate(EncoderState *s, const char* new_path, int new_segment);
 void encoder_close(EncoderState *s);
