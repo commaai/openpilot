@@ -17,8 +17,7 @@ from selfdrive.config import UIParams as UP
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 import cereal.messaging as messaging
 from tools.replay.lib.ui_helpers import (_BB_TO_FULL_FRAME, _FULL_FRAME_SIZE, _INTRINSICS,
-                                         BLACK, BLUE, GREEN,
-                                         YELLOW, RED,
+                                         BLACK, BLUE, GREEN, YELLOW, RED,
                                          CalibrationTransformsForWarpMatrix,
                                          draw_lead_car, draw_lead_on, draw_mpc,
                                          extract_model_data,
@@ -30,8 +29,6 @@ from tools.replay.lib.ui_helpers import (_BB_TO_FULL_FRAME, _FULL_FRAME_SIZE, _I
 os.environ['BASEDIR'] = BASEDIR
 
 ANGLE_SCALE = 5.0
-HOR = os.getenv("HORIZONTAL") is not None
-
 
 def ui_thread(addr, frame_address):
   # TODO: Detect car from replay and use that to select carparams
@@ -45,7 +42,13 @@ def ui_thread(addr, frame_address):
   pygame.font.init()
   assert pygame_modules_have_loaded()
 
-  if HOR:
+  disp_info = pygame.display.Info()
+  max_height = disp_info.current_h
+
+  hor_mode = os.getenv("HORIZONTAL") is not None
+  hor_mode = True if max_height < 960+300 else hor_mode
+
+  if hor_mode:
     size = (640+384+640, 960)
     write_x = 5
     write_y = 680
@@ -220,7 +223,7 @@ def ui_thread(addr, frame_address):
       pygame.draw.polygon(screen, BLUE, tuple(map(tuple, cpw)), 1)
       pygame.draw.circle(screen, BLUE, list(map(int, map(round, vanishing_pointw[0]))), 2)
 
-    if HOR:
+    if hor_mode:
       screen.blit(draw_plots(plot_arr), (640+384, 0))
     else:
       screen.blit(draw_plots(plot_arr), (0, 600))
