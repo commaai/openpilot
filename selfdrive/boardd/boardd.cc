@@ -261,8 +261,7 @@ void can_recv_thread() {
     uint64_t cur_time = nanos_since_boot();
     int64_t remaining = next_frame_time - cur_time;
     if (remaining > 0){
-      int sleep = remaining / 1000;
-      std::this_thread::sleep_for(std::chrono::microseconds(sleep));
+      std::this_thread::sleep_for(std::chrono::nanoseconds(remaining));
     } else {
       if (ignition){
         LOGW("missed cycles (%d) %lld", (int)-1*remaining/dt, remaining);
