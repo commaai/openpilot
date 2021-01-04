@@ -132,7 +132,14 @@ typedef struct UIScene {
   float face_position[2] = {};
   bool face_detected = false;
 
-  cereal::ThermalData::Reader thermal;
+  // thermal
+  cereal::ThermalData::ThermalStatus thermal_status;
+  cereal::ThermalData::NetworkType network_type;
+  cereal::ThermalData::NetworkStrength network_strength;
+  std::string battery_status;
+  int16_t battery_percent;
+  float ambient;
+
   cereal::RadarState::LeadData::Reader lead_data[2];
   cereal::DMonitoringState::Reader dmonitoring_state;
 

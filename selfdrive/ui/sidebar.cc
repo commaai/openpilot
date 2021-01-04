@@ -56,7 +56,7 @@ static void ui_draw_sidebar_network_type(UIState *s) {
   const int network_x = 50;
   const int network_y = 273;
   const int network_w = 100;
-  const char *network_type = network_type_map[s->scene.thermal.getNetworkType()];
+  const char *network_type = network_type_map[s->scene.network_type];
   nvgFillColor(s->vg, COLOR_WHITE);
   nvgFontSize(s->vg, 48);
   nvgFontFaceId(s->vg, s->font_sans_regular);
@@ -115,8 +115,8 @@ static void ui_draw_sidebar_temp_metric(UIState *s) {
       {cereal::ThermalData::ThermalStatus::YELLOW, 1},
       {cereal::ThermalData::ThermalStatus::RED, 2},
       {cereal::ThermalData::ThermalStatus::DANGER, 3}};
-  std::string temp_val = std::to_string((int)s->scene.thermal.getAmbient()) + "°C";
-  ui_draw_sidebar_metric(s, "TEMP", temp_val.c_str(), temp_severity_map[s->scene.thermal.getThermalStatus()], 0, NULL);
+  std::string temp_val = std::to_string((int)s->scene.ambient) + "°C";
+  ui_draw_sidebar_metric(s, "TEMP", temp_val.c_str(), temp_severity_map[s->scene.thermal_status], 0, NULL);
 }
 
 static void ui_draw_sidebar_panda_metric(UIState *s) {

@@ -199,7 +199,13 @@ void update_sockets(UIState *s) {
     s->sidebar_collapsed = data.getSidebarCollapsed();
   }
   if (sm.updated("thermal")) {
-    scene.thermal = sm["thermal"].getThermal();
+    const auto thermal = sm["thermal"].getThermal();
+    scene.network_type = thermal.getNetworkType();
+    scene.network_strength = thermal.getNetworkStrength();
+    scene.battery_status = thermal.getBatteryStatus();
+    scene.battery_percent = thermal.getBatteryPercent();
+    scene.ambient = thermal.getAmbient();
+    scene.thermal_status = thermal.getThermalStatus();
   }
   if (sm.updated("ubloxGnss")) {
     auto data = sm["ubloxGnss"].getUbloxGnss();
@@ -242,7 +248,7 @@ void update_sockets(UIState *s) {
     }
   }
 
-  scene.started = scene.thermal.getStarted() || scene.frontview;
+  scene.started =  sm["thermal"].getThermal().getStarted() || scene.frontview;
 }
 
 static void ui_read_params(UIState *s) {
