@@ -583,8 +583,10 @@ int main(int argc, char** argv) {
 
   std::vector<SubSocket*> socks;
 
-  std::map<SubSocket*, int> qlog_counter;
-  std::map<SubSocket*, int> qlog_freqs;
+  typedef struct QlogState {
+    int counter, freq;
+  } QlogState;
+  std::map<SubSocket*, QlogState> qlog_states;
 
   for (const auto& it : services) {
     std::string name = it.name;
@@ -598,9 +600,8 @@ int main(int argc, char** argv) {
       for (int cid=0;cid<=MAX_CAM_IDX;cid++) {
         if (name == cameras_logged[cid].frame_packet_name) { s.rotate_state[cid].fpkt_sock = sock; }
       }
-
-      qlog_counter[sock] = (it.decimation == -1) ? -1 : 0;
-      qlog_freqs[sock] = it.decimation;
+      qlog_states[sock] = {.counter = (it.decimation == -1) ? -1 : 0,
+                           .freq = it.decimation};
     }
   }
 
@@ -650,12 +651,12 @@ int main(int argc, char** argv) {
         delete last_msg;
         last_msg = msg;
 
-        logger_log(&s.logger, (uint8_t*)msg->getData(), msg->getSize(), qlog_counter[sock] == 0);
+        QlogState& qs = qlog_states[sock];
+        logger_log(&s.logger, (uint8_t*)msg->getData(), msg->getSize(), qs.counter == 0);
 
-        if (qlog_counter[sock] != -1) {
+        if (qs.counter != -1) {
           //printf("%p: %d/%d\n", socks[i], qlog_counter[socks[i]], qlog_freqs[socks[i]]);
-          qlog_counter[sock]++;
-          qlog_counter[sock] %= qlog_freqs[sock];
+          qs.counter = (qs.counter + 1) % qs.freq;
         }
         bytes_count += msg->getSize();
         msg_count++;
