@@ -320,7 +320,7 @@ static void ui_draw_vision_event(UIState *s) {
   const int viz_event_w = 220;
   const int viz_event_x = s->viz_rect.right() - (viz_event_w + bdr_s*2);
   const int viz_event_y = s->viz_rect.y + (bdr_s*1.5);
-  if (s->scene.controls_state.getDecelForModel() && s->scene.controls_state.getEnabled()) {
+  if (s->scene.decel_for_model && s->scene.controls_enabled) {
     // draw winding road sign
     const int img_turn_size = 160*1.5;
     const Rect rect = {viz_event_x - (img_turn_size / 4), viz_event_y + bdr_s - 25, img_turn_size, img_turn_size};

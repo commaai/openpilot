@@ -115,31 +115,36 @@ void update_sockets(UIState *s) {
 
   if (scene.started && sm.updated("controlsState")) {
     auto event = sm["controlsState"];
-    scene.controls_state = event.getControlsState();
+    const auto cs = event.getControlsState();
+    scene.v_cruise = cs.getVCruise();
+    scene.v_ego = cs.getVEgo();
+    scene.decel_for_model = cs.getDecelForModel();
+    scene.controls_enabled = cs.getEnabled();
+    scene.engageable = cs.getEngageable();
 
     // TODO: the alert stuff shouldn't be handled here
-    auto alert_sound = scene.controls_state.getAlertSound();
-    if (scene.alert_type.compare(scene.controls_state.getAlertType()) != 0) {
+    auto alert_sound = cs.getAlertSound();
+    if (scene.alert_type.compare(cs.getAlertType()) != 0) {
       if (alert_sound == AudibleAlert::NONE) {
         s->sound->stop();
       } else {
         s->sound->play(alert_sound);
       }
     }
-    scene.alert_text1 = scene.controls_state.getAlertText1();
-    scene.alert_text2 = scene.controls_state.getAlertText2();
-    scene.alert_size = scene.controls_state.getAlertSize();
-    scene.alert_type = scene.controls_state.getAlertType();
-    auto alertStatus = scene.controls_state.getAlertStatus();
+    scene.alert_text1 = cs.getAlertText1();
+    scene.alert_text2 = cs.getAlertText2();
+    scene.alert_size = cs.getAlertSize();
+    scene.alert_type = cs.getAlertType();
+    auto alertStatus = cs.getAlertStatus();
     if (alertStatus == cereal::ControlsState::AlertStatus::USER_PROMPT) {
       scene.status = STATUS_WARNING;
     } else if (alertStatus == cereal::ControlsState::AlertStatus::CRITICAL) {
       scene.status = STATUS_ALERT;
     } else {
-      scene.status = scene.controls_state.getEnabled() ? STATUS_ENGAGED : STATUS_DISENGAGED;
+      scene.status = cs.getEnabled() ? STATUS_ENGAGED : STATUS_DISENGAGED;
     }
 
-    float alert_blinkingrate = scene.controls_state.getAlertBlinkingRate();
+    float alert_blinkingrate = cs.getAlertBlinkingRate();
     if (alert_blinkingrate > 0.) {
       if (scene.alert_blinked) {
         if (scene.alert_blinking_alpha > 0.0 && scene.alert_blinking_alpha < 1.0) {

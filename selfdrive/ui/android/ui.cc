@@ -169,7 +169,7 @@ int main(int argc, char* argv[]) {
     }
 
     // up one notch every 5 m/s
-    s->sound->setVolume(fmin(MAX_VOLUME, MIN_VOLUME + s->scene.controls_state.getVEgo() / 5));
+    s->sound->setVolume(fmin(MAX_VOLUME, MIN_VOLUME + s->scene.v_ego / 5));
 
     // set brightness
     float clipped_brightness = fmin(512, (s->scene.light_sensor*brightness_m) + brightness_b);

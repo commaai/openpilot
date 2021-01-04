@@ -111,8 +111,6 @@ typedef struct UIScene {
 
   mat4 extrinsic_matrix;      // Last row is 0 so we can use mat4.
 
-  
-
   // alert
   std::string alert_text1;
   std::string alert_text2;
@@ -121,6 +119,10 @@ typedef struct UIScene {
   bool alert_blinked;
   float alert_blinking_alpha;
 
+  // controlsState
+  float v_cruise = 0., v_ego = 0.;
+  bool controls_enabled = false, engageable = false, decel_for_model = false;
+
   bool ignition;
   cereal::HealthData::HwType hwType;
   int satelliteCount;
@@ -128,7 +130,6 @@ typedef struct UIScene {
 
   cereal::ThermalData::Reader thermal;
   cereal::RadarState::LeadData::Reader lead_data[2];
-  cereal::ControlsState::Reader controls_state;
   cereal::DriverState::Reader driver_state;
   cereal::DMonitoringState::Reader dmonitoring_state;
 
