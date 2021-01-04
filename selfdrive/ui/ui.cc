@@ -236,10 +236,10 @@ void update_sockets(UIState *s) {
     scene.face_position[1] = fact_position[1];
   }
   if (sm.updated("dMonitoringState")) {
-    scene.dmonitoring_state = sm["dMonitoringState"].getDMonitoringState();
-    scene.is_rhd = scene.dmonitoring_state.getIsRHD();
-    scene.frontview = scene.dmonitoring_state.getIsPreview();
-    scene.face_detected = scene.dmonitoring_state.getFaceDetected();
+    const auto dm_state = sm["dMonitoringState"].getDMonitoringState();
+    scene.is_rhd = dm_state.getIsRHD();
+    scene.frontview = dm_state.getIsPreview();
+    scene.face_detected = dm_state.getFaceDetected();
   } else if (scene.frontview && (sm.frame - sm.rcv_frame("dMonitoringState")) > UI_FREQ/2) {
     scene.frontview = false;
   }

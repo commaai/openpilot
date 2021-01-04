@@ -107,14 +107,12 @@ typedef struct {
 
 typedef struct UIScene {
   UIStatus status;
-  bool started = false, is_rhd = false, frontview = false, longitudinal_control = false;
+  bool started = false, longitudinal_control = false;
 
   mat4 extrinsic_matrix;      // Last row is 0 so we can use mat4.
 
   // alert
-  std::string alert_text1;
-  std::string alert_text2;
-  std::string alert_type;
+  std::string alert_type, alert_text1, alert_text2;
   cereal::ControlsState::AlertSize alert_size;
   bool alert_blinked;
   float alert_blinking_alpha;
@@ -123,14 +121,18 @@ typedef struct UIScene {
   float v_cruise = 0., v_ego = 0.;
   bool controls_enabled = false, engageable = false, decel_for_model = false;
 
-  bool ignition;
-  cereal::HealthData::HwType hwType;
+  // ubloxGnss
   int satelliteCount;
-  NetStatus athenaStatus;
+
+  // health
+  bool ignition = false;
+  cereal::HealthData::HwType hwType = cereal::HealthData::HwType::UNKNOWN;
 
   // driverState
   float face_position[2] = {};
-  bool face_detected = false;
+
+  // dMonitoringState
+  bool is_rhd = false, frontview = false, face_detected = false;
 
   // thermal
   cereal::ThermalData::ThermalStatus thermal_status;
@@ -145,8 +147,6 @@ typedef struct UIScene {
     bool status;
     float d_rel, v_rel, y_rel;
   } lead[2] = {};
-
-  cereal::DMonitoringState::Reader dmonitoring_state;
 
   // modelV2
   cereal::ModelDataV2::Reader model;
@@ -164,13 +164,12 @@ typedef struct UIScene {
   line_vertices_data lane_line_vertices[4];
   line_vertices_data road_edge_vertices[2];
 
-  
-
   // sensors
   float light_sensor = 0, accel_sensor = 0, gyro_sensor = 0;
 
   // paramaters
   bool is_metric = false;
+  NetStatus athenaStatus;
 } UIScene;
 
 typedef struct UIState {
