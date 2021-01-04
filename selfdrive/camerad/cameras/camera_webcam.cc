@@ -35,7 +35,7 @@ void camera_close(CameraState *s) {
   s->buf.stop();
 }
 
-void camera_init(CameraState *s, int camera_id, unsigned int fps, cl_device_id device_id, cl_context ctx) {
+void camera_init(VisionIpcServer * v, CameraState *s, int camera_id, unsigned int fps, cl_device_id device_id, cl_context ctx, VisionStreamType rgb_type, VisionStreamType yuv_type) {
   assert(camera_id < ARRAYSIZE(cameras_supported));
   s->ci = cameras_supported[camera_id];
   assert(s->ci.frame_width != 0);
@@ -43,6 +43,7 @@ void camera_init(CameraState *s, int camera_id, unsigned int fps, cl_device_id d
   s->fps = fps;
 
   s->buf.init(device_id, ctx, s, FRAME_BUF_COUNT, "frame");
+  s->buf.init(device_id, ctx, s, v, FRAME_BUF_COUNT, rgb_type, yuv_type);
 }
 
 static void* rear_thread(void *arg) {
@@ -217,10 +218,11 @@ CameraInfo cameras_supported[CAMERA_ID_MAX] = {
   },
 };
 
-void cameras_init(MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
-
-  camera_init(&s->rear, CAMERA_ID_LGC920, 20, device_id, ctx);
-  camera_init(&s->front, CAMERA_ID_LGC615, 10, device_id, ctx);
+void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
+  camera_init(v, &s->rear, CAMERA_ID_LGC920, 20, device_id, ctx,
+              VISION_STREAM_RGB_BACK, VISION_STREAM_YUV_BACK);
+  camera_init(v, &s->front, CAMERA_ID_LGC615, 10, device_id, ctx,
+              VISION_STREAM_RGB_FRONT, VISION_STREAM_YUV_FRONT);
   s->pm = new PubMaster({"frame", "frontFrame"});
 }
 
