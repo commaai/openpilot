@@ -203,11 +203,9 @@ typedef struct UIState {
 
   // device state
   bool awake;
-  
+
   uint64_t started_frame;
-
   Rect video_rect, viz_rect;
-
   bool sidebar_collapsed, world_objects_visible;
 } UIState;
 
