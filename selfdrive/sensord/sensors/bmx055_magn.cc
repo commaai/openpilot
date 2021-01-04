@@ -3,6 +3,7 @@
 #include <unistd.h>
 
 #include "common/swaglog.h"
+#include "common/utilpp.h"
 
 #include "bmx055_magn.hpp"
 
@@ -37,7 +38,7 @@ int BMX055_Magn::init(){
     LOGE("Enabling power failed: %d", ret);
     goto fail;
   }
-  usleep(5 * 1000); // wait until the chip is powered on
+  util::sleep_for(5); // wait until the chip is powered on
 
   // read chip ID
   ret = read_register(BMX055_MAGN_I2C_REG_ID, buffer, 1);

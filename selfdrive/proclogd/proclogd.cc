@@ -235,7 +235,7 @@ int main() {
 
     publisher.send("procLog", msg);
 
-    usleep(2000000); // 2 secs
+    util::sleep_for(2000); // 2 secs
   }
 
   return 0;

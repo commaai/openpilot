@@ -13,6 +13,7 @@
 #include <atomic>
 
 #include "common/util.h"
+#include "common/utilpp.h"
 #include "common/swaglog.h"
 #include "camera_qcom2.h"
 
@@ -1087,7 +1088,7 @@ static void* ae_thread(void* arg) {
       }
     }
 
-    usleep(50000);
+    util::sleep_for(50);
   }
 
   return NULL;
@@ -1167,7 +1168,7 @@ void cameras_run(MultiCameraState *s) {
     fds[0].events = POLLPRI;
 
     int ret = poll(fds, ARRAYSIZE(fds), 1000);
-    if (ret <= 0) {
+    if (ret < 0) {
       if (errno == EINTR || errno == EAGAIN) continue;
       LOGE("poll failed (%d - %d)", ret, errno);
       break;

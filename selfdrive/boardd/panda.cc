@@ -6,7 +6,7 @@
 
 #include "common/swaglog.h"
 #include "common/gpio.h"
-
+#include "common/utilpp.h"
 #include "panda.h"
 
 #ifdef QCOM2
@@ -30,7 +30,7 @@ void panda_set_power(bool power){
   err += gpio_set(GPIO_STM_RST_N, is_legacy ? false : true);
   err += gpio_set(GPIO_STM_BOOT0, false);
 
-  usleep(100*1000); // 100 ms
+  util::sleep_for(100); // 100 ms
 
   err += gpio_set(GPIO_STM_RST_N, is_legacy ? power : (!power));
   assert(err == 0);
