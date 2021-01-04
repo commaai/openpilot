@@ -128,9 +128,12 @@ typedef struct UIScene {
   int satelliteCount;
   NetStatus athenaStatus;
 
+  // driverState
+  float face_position[2] = {};
+  bool face_detected = false;
+
   cereal::ThermalData::Reader thermal;
   cereal::RadarState::LeadData::Reader lead_data[2];
-  cereal::DriverState::Reader driver_state;
   cereal::DMonitoringState::Reader dmonitoring_state;
 
   // modelV2

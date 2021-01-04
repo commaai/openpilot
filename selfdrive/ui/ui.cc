@@ -218,12 +218,15 @@ void update_sockets(UIState *s) {
     scene.longitudinal_control = sm["carParams"].getCarParams().getOpenpilotLongitudinalControl();
   }
   if (sm.updated("driverState")) {
-    scene.driver_state = sm["driverState"].getDriverState();
+    const auto fact_position = sm["driverState"].getDriverState().getFacePosition();
+    scene.face_position[0] = fact_position[0];
+    scene.face_position[1] = fact_position[1];
   }
   if (sm.updated("dMonitoringState")) {
     scene.dmonitoring_state = sm["dMonitoringState"].getDMonitoringState();
     scene.is_rhd = scene.dmonitoring_state.getIsRHD();
     scene.frontview = scene.dmonitoring_state.getIsPreview();
+    scene.face_detected = scene.dmonitoring_state.getFaceDetected();
   } else if (scene.frontview && (sm.frame - sm.rcv_frame("dMonitoringState")) > UI_FREQ/2) {
     scene.frontview = false;
   }
