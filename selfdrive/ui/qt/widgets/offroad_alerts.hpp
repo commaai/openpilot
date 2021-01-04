@@ -2,6 +2,7 @@
 
 #include <QFrame>
 #include <QStackedWidget>
+#include <QPushButton>
 
 struct Alert {
   QString text;
@@ -18,6 +19,7 @@ public:
 
 private:
   QStackedWidget *alerts_stack;
+  QPushButton *reboot_btn;
   void parse_alerts();
 
 signals:
