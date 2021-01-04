@@ -38,6 +38,5 @@ pyenv global 3.8.2
 pyenv rehash
 eval "$(pyenv init -)"
 
-
 pip install pipenv==2020.8.13
 pipenv install --system --deploy
