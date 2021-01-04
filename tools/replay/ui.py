@@ -17,8 +17,7 @@ from selfdrive.config import UIParams as UP
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 import cereal.messaging as messaging
 from tools.replay.lib.ui_helpers import (_BB_TO_FULL_FRAME, _FULL_FRAME_SIZE, _INTRINSICS,
-                                         BLACK, BLUE, GREEN,
-                                         YELLOW, RED, WHITE,
+                                         BLACK, BLUE, GREEN, YELLOW, RED,
                                          CalibrationTransformsForWarpMatrix,
                                          draw_lead_car, draw_lead_on, draw_mpc,
                                          extract_model_data,
