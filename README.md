@@ -77,17 +77,18 @@ Supported Cars
 | Honda     | CR-V Hybrid 2017-2019         | Honda Sensing     | Stock            | 0mph               | 12mph             |
 | Honda     | Fit 2018-19                   | Honda Sensing     | openpilot        | 25mph<sup>1</sup>  | 12mph             |
 | Honda     | HR-V 2019-20                  | Honda Sensing     | openpilot        | 25mph<sup>1</sup>  | 12mph             |
-| Honda     | Insight 2019-20               | All               | Stock            | 0mph               | 3mph              |
+| Honda     | Insight 2019-21               | All               | Stock            | 0mph               | 3mph              |
 | Honda     | Inspire 2018                  | All               | Stock            | 0mph               | 3mph              |
 | Honda     | Odyssey 2018-20               | Honda Sensing     | openpilot        | 25mph<sup>1</sup>  | 0mph              |
 | Honda     | Passport 2019                 | All               | openpilot        | 25mph<sup>1</sup>  | 12mph             |
 | Honda     | Pilot 2016-19                 | Honda Sensing     | openpilot        | 25mph<sup>1</sup>  | 12mph             |
 | Honda     | Ridgeline 2017-20             | Honda Sensing     | openpilot        | 25mph<sup>1</sup>  | 12mph             |
-| Hyundai   | Palisade 2020                 | All               | Stock            | 0mph               | 0mph              |
+| Hyundai   | Palisade 2020-21              | All               | Stock            | 0mph               | 0mph              |
 | Hyundai   | Sonata 2020-21                | All               | Stock            | 0mph               | 0mph              |
 | Lexus     | CT Hybrid 2017-18             | LSS               | Stock<sup>3</sup>| 0mph               | 0mph              |
 | Lexus     | ES 2019-20                    | All               | openpilot        | 0mph               | 0mph              |
 | Lexus     | ES Hybrid 2019                | All               | openpilot        | 0mph               | 0mph              |
+| Lexus     | ES Hybrid 2018                | LSS               | Stock<sup>3</sup>| 0mph               | 0mph              |
 | Lexus     | IS 2017-2019                  | All               | Stock            | 22mph              | 0mph              |
 | Lexus     | IS Hybrid 2017                | All               | Stock            | 0mph               | 0mph              |
 | Lexus     | NX 2018                       | All               | Stock<sup>3</sup>| 0mph               | 0mph              |
@@ -100,6 +101,7 @@ Supported Cars
 | Toyota    | Camry 2018-20                 | All               | Stock            | 0mph<sup>4</sup>   | 0mph              |
 | Toyota    | Camry 2021                    | All               | openpilot        | 0mph               | 0mph              |
 | Toyota    | Camry Hybrid 2018-20          | All               | Stock            | 0mph<sup>4</sup>   | 0mph              |
+| Toyota    | Camry Hybrid 2021             | All               | openpilot        | 0mph               | 0mph              |
 | Toyota    | C-HR 2017-19                  | All               | Stock            | 0mph               | 0mph              |
 | Toyota    | C-HR Hybrid 2017-19           | All               | Stock            | 0mph               | 0mph              |
 | Toyota    | Corolla 2017-19               | All               | Stock<sup>3</sup>| 20mph<sup>1</sup>  | 0mph              |
@@ -263,7 +265,7 @@ By using openpilot, you agree to [our Privacy Policy](https://my.comma.ai/privac
 Safety and Testing
 ----
 
-* openpilot observes ISO26262 guidelines, see [SAFETY.md](SAFETY.md) for more detail.
+* openpilot observes ISO26262 guidelines, see [SAFETY.md](SAFETY.md) for more details.
 * openpilot has software in the loop [tests](.github/workflows/test.yaml) that run on every commit.
 * The safety model code lives in panda and is written in C, see [code rigor](https://github.com/commaai/panda#code-rigor) for more details.
 * panda has software in the loop [safety tests](https://github.com/commaai/panda/tree/master/tests/safety).

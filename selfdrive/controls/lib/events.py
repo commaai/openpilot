@@ -743,13 +743,6 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       Priority.LOW, VisualAlert.none, AudibleAlert.chimeError, .4, 2., 3.),
   },
 
-  # TODO: this is unclear, update check only happens offroad
-  EventName.internetConnectivityNeeded: {
-    ET.PERMANENT: NormalPermanentAlert("Connect to Internet", "An Update Check Is Required to Engage"),
-    ET.NO_ENTRY: NoEntryAlert("Connect to Internet",
-                              audible_alert=AudibleAlert.chimeDisengage),
-  },
-
   EventName.lowSpeedLockout: {
     ET.PERMANENT: Alert(
       "Cruise Fault: Restart the car to engage",

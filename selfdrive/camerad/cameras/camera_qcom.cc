@@ -21,6 +21,7 @@
 #include "msm_cam_sensor.h"
 
 #include "common/util.h"
+#include "common/utilpp.h"
 #include "common/timing.h"
 #include "common/swaglog.h"
 #include "common/params.h"
@@ -314,20 +315,6 @@ void cameras_init(MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
                 /*max_gain=*/224, 20, device_id, ctx);
     s->front.apply_exposure = imx179_s5k3p8sp_apply_exposure;
   }
-
-  // assume the device is upside-down (not anymore)
-  s->rear.transform = (mat3){{
-     1.0,  0.0, 0.0,
-     0.0,  1.0, 0.0,
-     0.0,  0.0, 1.0,
-  }};
-
-  // probably wrong
-  s->front.transform = (mat3){{
-     1.0,  0.0, 0.0,
-     0.0,  1.0, 0.0,
-     0.0,  0.0, 1.0,
-  }};
 
   s->rear.device = s->device;
   s->front.device = s->device;
@@ -2035,7 +2022,7 @@ static void* ops_thread(void* arg) {
       front_op_id_last = front_op.op_id;
     }
 
-    usleep(50000);
+    util::sleep_for(50);
   }
 
   return NULL;
@@ -2158,7 +2145,7 @@ void cameras_run(MultiCameraState *s) {
     fds[1].events = POLLPRI;
 
     int ret = poll(fds, ARRAYSIZE(fds), 1000);
-    if (ret <= 0) {
+    if (ret < 0) {
       if (errno == EINTR || errno == EAGAIN) continue;
       LOGE("poll failed (%d - %d)", ret, errno);
       break;

@@ -24,8 +24,7 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
 
   setStyleSheet(R"(
     * {
-      color: white;
-      background-color: #072339;
+      font-family: Inter;
     }
   )");
 }

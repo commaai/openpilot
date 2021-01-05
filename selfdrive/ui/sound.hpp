@@ -18,6 +18,7 @@ static std::map<AudibleAlert, std::pair<const char *, int>> sound_map {
 
 class Sound {
 public:
+  virtual ~Sound() {}
   virtual bool play(AudibleAlert alert) = 0;
   virtual void stop() = 0;
   virtual void setVolume(int volume) = 0;

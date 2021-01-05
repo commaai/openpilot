@@ -1,14 +1,15 @@
 #pragma once
 
-#include <QWidget>
-#include <QVBoxLayout>
+#include <QFrame>
+#include <QStackedWidget>
+#include <QPushButton>
 
 struct Alert {
   QString text;
   int severity;
 };
 
-class OffroadAlert : public QWidget {
+class OffroadAlert : public QFrame {
   Q_OBJECT
 
 public:
@@ -17,8 +18,8 @@ public:
   bool updateAvailable;
 
 private:
-  QVBoxLayout *vlayout;
-
+  QStackedWidget *alerts_stack;
+  QPushButton *reboot_btn;
   void parse_alerts();
 
 signals:

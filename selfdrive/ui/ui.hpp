@@ -74,7 +74,11 @@ typedef enum UIStatus {
 } UIStatus;
 
 static std::map<UIStatus, NVGcolor> bg_colors = {
+#ifdef QCOM
   {STATUS_OFFROAD, nvgRGBA(0x07, 0x23, 0x39, 0xf1)},
+#else
+  {STATUS_OFFROAD, nvgRGBA(0x0, 0x0, 0x0, 0xff)},
+#endif
   {STATUS_DISENGAGED, nvgRGBA(0x17, 0x33, 0x49, 0xc8)},
   {STATUS_ENGAGED, nvgRGBA(0x17, 0x86, 0x44, 0xf1)},
   {STATUS_WARNING, nvgRGBA(0xDA, 0x6F, 0x25, 0xf1)},
@@ -95,7 +99,7 @@ typedef struct UIScene {
 
   bool is_rhd;
   bool frontview;
-  bool uilayout_sidebarcollapsed;
+  bool sidebar_collapsed;
   // responsive layout
   Rect viz_rect;
 
@@ -192,7 +196,6 @@ typedef struct UIState {
   bool ignition;
   bool is_metric;
   bool longitudinal_control;
-  uint64_t last_athena_ping;
   uint64_t started_frame;
 
   bool alert_blinked;

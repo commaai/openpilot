@@ -1,20 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <signal.h>
 #include <unistd.h>
-#include <sched.h>
-#include <sys/time.h>
-#include <sys/cdefs.h>
-#include <sys/types.h>
-#include <assert.h>
 #include <math.h>
 #include <ctime>
 #include <chrono>
-#include <algorithm>
 
-#include "common/params.h"
 #include "common/swaglog.h"
-#include "common/timing.h"
 
 #include "ublox_msg.h"
 
@@ -173,8 +164,7 @@ inline bool UbloxMsgParser::valid_cheksum() {
 
 inline bool UbloxMsgParser::valid() {
   return bytes_in_parse_buf >= UBLOX_HEADER_SIZE + UBLOX_CHECKSUM_SIZE &&
-    needed_bytes() == 0 &&
-    valid_cheksum();
+         needed_bytes() == 0 && valid_cheksum();
 }
 
 inline bool UbloxMsgParser::valid_so_far() {
@@ -186,8 +176,9 @@ inline bool UbloxMsgParser::valid_so_far() {
     //LOGD("PREAMBLE2 invalid, %02X.", msg_parse_buf[1]);
     return false;
   }
-  if(needed_bytes() == 0 && !valid())
+  if(needed_bytes() == 0 && !valid()) {
     return false;
+  }
   return true;
 }
 
@@ -221,7 +212,7 @@ kj::Array<capnp::word> UbloxMsgParser::gen_solution() {
 }
 
 inline bool bit_to_bool(uint8_t val, int shifts) {
-  return (val & (1 << shifts)) ? true : false;
+  return (bool)(val & (1 << shifts));
 }
 
 kj::Array<capnp::word> UbloxMsgParser::gen_raw() {
@@ -282,13 +273,15 @@ kj::Array<capnp::word> UbloxMsgParser::gen_nav_data() {
     for(int i = 0; i < msg->numWords;i++)
       words.push_back(measurements[i].dwrd);
 
-    if(subframeId == 1) {
-      nav_frame_buffer[msg->gnssId][msg->svid] = subframes_map();
-      nav_frame_buffer[msg->gnssId][msg->svid][subframeId] = words;
-    } else if(nav_frame_buffer[msg->gnssId][msg->svid].find(subframeId-1) != nav_frame_buffer[msg->gnssId][msg->svid].end())
-      nav_frame_buffer[msg->gnssId][msg->svid][subframeId] = words;
-    if(nav_frame_buffer[msg->gnssId][msg->svid].size() == 5) {
-      EphemerisData ephem_data(msg->svid, nav_frame_buffer[msg->gnssId][msg->svid]);
+    subframes_map &map = nav_frame_buffer[msg->gnssId][msg->svid];
+    if (subframeId == 1) {
+      map = subframes_map();
+      map[subframeId] = words;
+    } else if (map.find(subframeId-1) != map.end()) {
+      map[subframeId] = words;
+    }
+    if(map.size() == 5) {
+      EphemerisData ephem_data(msg->svid, map);
       MessageBuilder msg_builder;
       auto eph = msg_builder.initEvent().initUbloxGnss().initEphemeris();
       eph.setSvId(ephem_data.svId);

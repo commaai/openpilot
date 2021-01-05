@@ -16,8 +16,6 @@
 #include "ui.hpp"
 #include "paint.hpp"
 
-extern volatile sig_atomic_t do_exit;
-
 int write_param_float(float param, const char* param_name, bool persistent_param) {
   char s[16];
   int size = snprintf(s, sizeof(s), "%f", param);
@@ -31,7 +29,6 @@ void ui_init(UIState *s) {
   s->started = false;
   s->status = STATUS_OFFROAD;
   s->scene.satelliteCount = -1;
-  read_param(&s->is_metric, "IsMetric");
 
   s->fb = framebuffer_init("ui", 0, true, &s->fb_w, &s->fb_h);
   assert(s->fb);
@@ -194,7 +191,7 @@ void update_sockets(UIState *s) {
   if (sm.updated("uiLayoutState")) {
     auto data = sm["uiLayoutState"].getUiLayoutState();
     s->active_app = data.getActiveApp();
-    scene.uilayout_sidebarcollapsed = data.getSidebarCollapsed();
+    scene.sidebar_collapsed = data.getSidebarCollapsed();
   }
   if (sm.updated("thermal")) {
     scene.thermal = sm["thermal"].getThermal();
@@ -222,7 +219,7 @@ void update_sockets(UIState *s) {
     scene.dmonitoring_state = sm["dMonitoringState"].getDMonitoringState();
     scene.is_rhd = scene.dmonitoring_state.getIsRHD();
     scene.frontview = scene.dmonitoring_state.getIsPreview();
-  } else if ((sm.frame - sm.rcv_frame("dMonitoringState")) > UI_FREQ/2) {
+  } else if (scene.frontview && (sm.frame - sm.rcv_frame("dMonitoringState")) > UI_FREQ/2) {
     scene.frontview = false;
   }
   if (sm.updated("sensorEvents")) {
@@ -240,8 +237,22 @@ void update_sockets(UIState *s) {
   s->started = scene.thermal.getStarted() || scene.frontview;
 }
 
-void ui_update(UIState *s) {
+static void ui_read_params(UIState *s) {
+  const uint64_t frame = s->sm->frame;
 
+  if (frame % (5*UI_FREQ) == 0) {
+    read_param(&s->is_metric, "IsMetric");
+  } else if (frame % (6*UI_FREQ) == 0) {
+    s->scene.athenaStatus = NET_DISCONNECTED;
+    uint64_t last_ping = 0;
+    if (read_param(&last_ping, "LastAthenaPingTime") == 0) {
+      s->scene.athenaStatus = nanos_since_boot() - last_ping < 70e9 ? NET_CONNECTED : NET_ERROR;
+    }
+  }
+}
+
+void ui_update(UIState *s) {
+  ui_read_params(s);
   update_sockets(s);
   ui_update_vision(s);
 
@@ -249,14 +260,14 @@ void ui_update(UIState *s) {
   if (!s->started && s->status != STATUS_OFFROAD) {
     s->status = STATUS_OFFROAD;
     s->active_app = cereal::UiLayoutState::App::HOME;
-    s->scene.uilayout_sidebarcollapsed = false;
+    s->scene.sidebar_collapsed = false;
     s->sound->stop();
   } else if (s->started && s->status == STATUS_OFFROAD) {
     s->status = STATUS_DISENGAGED;
     s->started_frame = s->sm->frame;
 
     s->active_app = cereal::UiLayoutState::App::NONE;
-    s->scene.uilayout_sidebarcollapsed = true;
+    s->scene.sidebar_collapsed = true;
     s->alert_blinked = false;
     s->alert_blinking_alpha = 1.0;
     s->scene.alert_size = cereal::ControlsState::AlertSize::NONE;
@@ -293,20 +304,6 @@ void ui_update(UIState *s) {
       s->scene.alert_size = cereal::ControlsState::AlertSize::FULL;
       s->status = STATUS_DISENGAGED;
       s->sound->stop();
-    }
-  }
-
-  // Read params
-  if ((s->sm)->frame % (5*UI_FREQ) == 0) {
-    read_param(&s->is_metric, "IsMetric");
-  } else if ((s->sm)->frame % (6*UI_FREQ) == 0) {
-    int param_read = read_param(&s->last_athena_ping, "LastAthenaPingTime");
-    if (param_read != 0) { // Failed to read param
-      s->scene.athenaStatus = NET_DISCONNECTED;
-    } else if (nanos_since_boot() - s->last_athena_ping < 70e9) {
-      s->scene.athenaStatus = NET_CONNECTED;
-    } else {
-      s->scene.athenaStatus = NET_ERROR;
     }
   }
 }

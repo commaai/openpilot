@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import os
-os.environ['OLD_CAN'] = '1'
 os.environ['NOCRASH'] = '1'
 
 import unittest
@@ -11,14 +10,8 @@ from selfdrive.config import Conversions as CV
 from selfdrive.car.honda.values import CruiseButtons as CB
 from selfdrive.test.longitudinal_maneuvers.maneuver import Maneuver
 import selfdrive.manager as manager
+from common.file_helpers import mkdirs_exists_ok
 from common.params import Params
-
-
-def create_dir(path):
-  try:
-    os.makedirs(path)
-  except OSError:
-    pass
 
 
 def check_no_collision(log):
@@ -317,7 +310,7 @@ def setup_output():
         view_html += "<td><img class='maneuver_graph' src='%s'/></td>" % (os.path.join("maneuver" + str(i + 1).zfill(2), c), )
       view_html += "</tr>"
 
-    create_dir(output_dir)
+    mkdirs_exists_ok(output_dir)
     with open(os.path.join(output_dir, "index.html"), "w") as f:
       f.write(view_html)
 

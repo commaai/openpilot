@@ -1,6 +1,5 @@
 #pragma once
 
-#include <QFrame>
 #include <QWidget>
 #include <QNetworkReply>
 
@@ -12,6 +11,5 @@ public:
   explicit DriveStats(QWidget *parent = 0);
 
 private:
-  QFrame *f;
   void replyFinished(QNetworkReply *l);
 };

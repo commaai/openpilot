@@ -44,7 +44,7 @@ OffroadHome::OffroadHome(QWidget *parent) : QWidget(parent) {
   main_layout->addWidget(alert_notification, 0, Qt::AlignTop | Qt::AlignRight);
 
   // main content
-  main_layout->addSpacing(100);
+  main_layout->addSpacing(25);
   center_layout = new QStackedLayout();
 
   DriveStats *drive = new DriveStats;
@@ -111,10 +111,10 @@ void OffroadHome::refresh() {
     border-radius: 5px;
     font-size: 40px;
     font-weight: bold;
-    background-color: red;
+    background-color: #E22C2C;
   )");
   if (alerts_widget->updateAvailable){
-    style.replace("red", "blue");
+    style.replace("#E22C2C", "#364DEF");
   }
   alert_notification->setStyleSheet(style);
 }
@@ -151,13 +151,13 @@ void HomeWindow::mousePressEvent(QMouseEvent *e) {
   glWindow->wake();
 
   // Settings button click
-  if (!ui_state->scene.uilayout_sidebarcollapsed && settings_btn.ptInRect(e->x(), e->y())) {
+  if (!ui_state->scene.sidebar_collapsed && settings_btn.ptInRect(e->x(), e->y())) {
     emit openSettings();
   }
 
   // Vision click
   if (ui_state->started && (e->x() >= ui_state->scene.viz_rect.x - bdr_s)) {
-    ui_state->scene.uilayout_sidebarcollapsed = !ui_state->scene.uilayout_sidebarcollapsed;
+    ui_state->scene.sidebar_collapsed = !ui_state->scene.sidebar_collapsed;
   }
 }
 
@@ -220,7 +220,7 @@ void GLWindow::initializeGL() {
   wake();
 
   timer->start(0);
-  backlight_timer->start(BACKLIGHT_DT * 100);
+  backlight_timer->start(BACKLIGHT_DT * 1000);
 }
 
 void GLWindow::backlightUpdate() {

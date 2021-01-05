@@ -1,9 +1,0 @@
-https://github.com/brendangregg/FlameGraph @ v1.0
-
-phone:
-git clone git@github.com:uber/pyflame.git
-cd pyflame
-git apply < ../fix-aarch64.patch
-./autogen.sh
-./configure
-make

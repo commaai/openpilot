@@ -1,59 +1,5 @@
 import os
-Import('env', 'arch', 'real_arch', 'common', 'messaging', 'gpucommon', 'visionipc', 'cereal')
-
-qt_env = None
-if arch in ["x86_64", "Darwin", "larch64"]:
-  qt_env = env.Clone()
-
-  if arch == "Darwin":
-    qt_env['QTDIR'] = "/usr/local/opt/qt"
-    QT_BASE = "/usr/local/opt/qt/"
-    qt_dirs = [
-      QT_BASE + "include/",
-      QT_BASE + "include/QtWidgets",
-      QT_BASE + "include/QtGui",
-      QT_BASE + "include/QtCore",
-      QT_BASE + "include/QtDBus",
-      QT_BASE + "include/QtMultimedia",
-      QT_BASE + "include/QtNetwork",
-    ]
-    qt_env["LINKFLAGS"] += ["-F" + QT_BASE + "lib"]
-  else:
-    qt_env['QTDIR'] = "/usr"
-    qt_dirs = [
-      f"/usr/include/{real_arch}-linux-gnu/qt5",
-      f"/usr/include/{real_arch}-linux-gnu/qt5/QtWidgets",
-      f"/usr/include/{real_arch}-linux-gnu/qt5/QtGui",
-      f"/usr/include/{real_arch}-linux-gnu/qt5/QtCore",
-      f"/usr/include/{real_arch}-linux-gnu/qt5/QtDBus",
-      f"/usr/include/{real_arch}-linux-gnu/qt5/QtMultimedia",
-      f"/usr/include/{real_arch}-linux-gnu/qt5/QtNetwork",
-      f"/usr/include/{real_arch}-linux-gnu/qt5/QtGui/5.5.1/QtGui",
-      f"/usr/include/{real_arch}-linux-gnu/qt5/QtGui/5.12.8/QtGui",
-    ]
-
-  qt_env.Tool('qt')
-  qt_env['CPPPATH'] += qt_dirs + ["#selfdrive/ui/qt/"]
-  qt_flags = [
-    "-D_REENTRANT",
-    "-DQT_NO_DEBUG",
-    "-DQT_WIDGETS_LIB",
-    "-DQT_GUI_LIB",
-    "-DQT_CORE_LIB"
-  ]
-  qt_env['CXXFLAGS'] += qt_flags
-  qt_env['LIBPATH'] += ['#selfdrive/ui']
-
-  if GetOption("clazy"):
-    checks = [
-      "level0",
-      "level1",
-      "no-range-loop",
-      "no-non-pod-global-static",
-    ]
-    qt_env['CXX'] = 'clazy'
-    qt_env['ENV']['CLAZY_IGNORE_DIRS'] = qt_dirs[0]
-    qt_env['ENV']['CLAZY_CHECKS'] = ','.join(checks)
+Import('env', 'qt_env', 'arch', 'common', 'messaging', 'gpucommon', 'visionipc', 'cereal')
 
 
 src = ['ui.cc', 'paint.cc', 'sidebar.cc', '#phonelibs/nanovg/nanovg.c']
@@ -70,20 +16,7 @@ if qt_env is None:
     LINKFLAGS=linkflags,
     LIBS=libs)
 else:
-  qt_libs = ["pthread", "ssl", "crypto"]
-
-  qt_modules = ["Widgets", "Gui", "Core", "DBus", "Multimedia", "Network"]
-
-  if arch == "larch64":
-    qt_libs += ["GLESv2", "wayland-client"]
-  elif arch != "Darwin":
-    qt_libs += ["GL"]
-
-  if arch == "Darwin":
-    qt_env["FRAMEWORKS"] += [f"Qt{m}" for m in qt_modules] + ["OpenGL"]
-  else:
-    qt_libs += [f"Qt5{m}" for m in qt_modules]
-
+  qt_libs = qt_env["LIBS"] + libs + ["pthread", "ssl", "crypto"]
 
   widgets = qt_env.Library("qt_widgets",
                  ["qt/qt_window.cc", "qt/qt_sound.cc", "qt/widgets/keyboard.cc", "qt/widgets/input_field.cc", "qt/widgets/drive_stats.cc",
@@ -92,11 +25,11 @@ else:
   qt_libs.append(widgets)
 
   qt_src = ["qt/ui.cc", "qt/window.cc", "qt/home.cc", "qt/offroad/settings.cc", "qt/offroad/onboarding.cc"] + src
-  qt_env.Program("_ui", qt_src, LIBS=qt_libs + libs)
+  qt_env.Program("_ui", qt_src, LIBS=qt_libs)
 
   # spinner and text window
-  qt_env.Program("qt/text", ["qt/text.cc"], LIBS=qt_libs + libs)
-  qt_env.Program("qt/spinner", ["qt/spinner.cc"], LIBS=qt_libs + libs)
+  qt_env.Program("qt/text", ["qt/text.cc"], LIBS=qt_libs)
+  qt_env.Program("qt/spinner", ["qt/spinner.cc"], LIBS=qt_libs)
 
   # build setup, factory resetter, and installer
   if "BUILD_SETUP" in os.environ:
@@ -111,4 +44,4 @@ else:
     ]
     for name, branch in installers:
       flags = qt_env["CXXFLAGS"] + [f"-D{branch}"]
-      qt_env.Program(f"qt/setup/installer_{name}", ["qt/setup/installer.cc"], LIBS=qt_libs, CXXFLAGS=flags)
+      qt_env.Program(f"qt/setup/installer_{name}", ["qt/setup/installer.cc"], LIBS=qt_libs)
