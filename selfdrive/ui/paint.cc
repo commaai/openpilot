@@ -357,12 +357,9 @@ static void ui_draw_vision_footer(UIState *s) {
 }
 
 static float get_alert_alpha(float blink_rate) {
-  static float blink = 0.05, alpha = 1.0;
-  if (blink_rate > 0.) {
-    if (alpha < 0.25 || alpha > 1.0) blink = -blink;
-    alpha += blink * blink_rate;
-  } else { alpha = 1.0; }
-  return alpha;
+  static uint64_t frame = 0;
+  if (blink_rate == 0.) frame = 0;
+  return blink_rate > 0. ? (0.375 * sin((frame++ / (float)UI_FREQ) * 2 * M_PI * blink_rate + M_PI_2) + 0.625) : 1.0;
 }
 
 static void ui_draw_vision_alert(UIState *s) {
