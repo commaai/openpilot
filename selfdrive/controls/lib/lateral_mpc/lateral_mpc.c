@@ -39,15 +39,15 @@ typedef struct {
 void set_weights(double pathCost, double headingCost, double yawRateCost, double steerRateCost){
   int    i;
   for (i = 0; i < N; i++) {
-    double mult = (T_IDXS[i+1] - T_IDXS[i]);
+    double mult = 20 * (T_IDXS[i+1] - T_IDXS[i]);
     // Setup diagonal entries
     acadoVariables.W[NY*NY*i + (NY+1)*0] = mult * pathCost;
     acadoVariables.W[NY*NY*i + (NY+1)*1] = mult * headingCost;
     acadoVariables.W[NY*NY*i + (NY+1)*2] = mult * yawRateCost;
     acadoVariables.W[NY*NY*i + (NY+1)*3] = mult * steerRateCost;
   }
-  acadoVariables.WN[(NYN+1)*0] = pathCost;
-  acadoVariables.WN[(NYN+1)*1] = headingCost;
+  acadoVariables.WN[(NYN+1)*0] = 3*pathCost;
+  acadoVariables.WN[(NYN+1)*1] = 3*headingCost;
 }
 
 void init(double pathCost, double headingCost, double yawRateCost, double steerRateCost){
@@ -85,7 +85,7 @@ int run_mpc(state_t * x0, log_t * solution, double v_ego,
     acadoVariables.y[NY*i + 3] = 0.0;
   }
   acadoVariables.yN[0] = target_y[N];
-  acadoVariables.yN[1] = (v_ego + 1) * target_psi[N];
+  acadoVariables.yN[1] = (2*v_ego + 1) * target_psi[N];
 
   acadoVariables.x0[0] = x0->x;
   acadoVariables.x0[1] = x0->y;

@@ -49,7 +49,7 @@ int main( )
   h << (v_ego + 1) * psi;
   
   // Yaw rate trajectory error
-  h << delta;
+  h << 0*delta;
   
   // Angular rate error
   h << (v_ego + 1) * rate;
@@ -65,7 +65,10 @@ int main( )
   // Distance errors
   hN << yy;
   
-  BMatrix QN(1,1); QN.setAll(true);
+  // Heading trajectory error
+  hN << (2*v_ego + 1) * psi;
+  
+  BMatrix QN(2,2); QN.setAll(true);
   // QN(0,0) = 1.0;
 
 
@@ -90,7 +93,7 @@ int main( )
   mpc.set( DISCRETIZATION_TYPE, MULTIPLE_SHOOTING );
   mpc.set( INTEGRATOR_TYPE, INT_RK4 );
   mpc.set( NUM_INTEGRATOR_STEPS, 2000);
-  mpc.set( MAX_NUM_QP_ITERATIONS, 500);
+  mpc.set( MAX_NUM_QP_ITERATIONS, 5000);
   mpc.set( CG_USE_VARIABLE_WEIGHTING_MATRIX, YES);
 
   mpc.set( SPARSE_QP_SOLUTION, CONDENSING );
