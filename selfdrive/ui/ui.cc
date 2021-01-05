@@ -270,15 +270,17 @@ static void update_vision(UIState *s) {
   }
 }
 
-void ui_update(UIState *s) {
-  update_params(s);
-  update_sockets(s);
-  update_alert(s);
-  s->started = s->scene.thermal.getStarted() || s->scene.frontview;
-  update_vision(s);
+static void update_status(UIState *s) {
+  if (s->started && s->sm->updated("controlsState")) {
+    switch (s->scene.controls_state.getAlertStatus()) {
+      case cereal::ControlsState::AlertStatus::USER_PROMPT: s->status = STATUS_WARNING; break;
+      case cereal::ControlsState::AlertStatus::CRITICAL:  s->status = STATUS_ALERT; break;
+      default: s->status = s->scene.controls_state.getEnabled() ? STATUS_ENGAGED : STATUS_DISENGAGED; break;
+    }
+  }
 
   // Handle onroad/offroad transition
-  if (!s->started && s->status != STATUS_OFFROAD) {
+ if (!s->started && s->status != STATUS_OFFROAD) {
     s->status = STATUS_OFFROAD;
     s->active_app = cereal::UiLayoutState::App::HOME;
     s->scene.sidebar_collapsed = false;
@@ -292,4 +294,12 @@ void ui_update(UIState *s) {
     s->scene.sidebar_collapsed = true;
     s->scene.alert_size = cereal::ControlsState::AlertSize::NONE;
   }
+}
+
+void ui_update(UIState *s) {
+  update_params(s);
+  update_sockets(s);
+  update_alert(s);
+  s->started = s->scene.thermal.getStarted() || s->scene.frontview;
+  update_vision(s);
 }
