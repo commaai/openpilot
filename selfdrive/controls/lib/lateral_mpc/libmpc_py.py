@@ -11,13 +11,14 @@ ffi.cdef("""
 typedef struct {
     double x, y, psi, delta, t;
 } state_t;
+int N = 16;
 
 typedef struct {
-    double x[17];
-    double y[17];
-    double psi[17];
-    double delta[17];
-    double rate[16];
+    double x[N+1];
+    double y[N+1];
+    double psi[N+1];
+    double delta[N+1];
+    double rate[N];
     double cost;
 } log_t;
 
