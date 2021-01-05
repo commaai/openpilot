@@ -10,6 +10,9 @@
 #include <fstream>
 #include <thread>
 #include <chrono>
+#ifndef sighandler_t
+typedef void (*sighandler_t)(int sig);
+#endif
 
 namespace util {
 

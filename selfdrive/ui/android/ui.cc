@@ -15,7 +15,7 @@
 #include "paint.hpp"
 #include "android/sl_sound.hpp"
 
-SignateState sig_state;
+SignalState sig_state;
 static void ui_set_brightness(UIState *s, int brightness) {
   static int last_brightness = -1;
   if (last_brightness != brightness && (s->awake || brightness == 0)) {
