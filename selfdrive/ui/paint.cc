@@ -426,9 +426,9 @@ static void ui_draw_vision_alert(UIState *s) {
   int alr_s = alert_size_map[scene->alert_size];
 
   const int alr_x = scene->viz_rect.x - bdr_s;
-  const int alr_w = scene->viz_rect.w + (bdr_s*2);
-  const int alr_h = alr_s+(scene->alert_size==cereal::ControlsState::AlertSize::NONE?0:bdr_s);
-  const int alr_y = s->fb_h-alr_h;
+  const int alr_w = scene->viz_rect.w + (bdr_s * 2);
+  const int alr_h = alr_s + bdr_s;
+  const int alr_y = s->fb_h - alr_h;
 
   ui_draw_rect(s->vg, alr_x, alr_y, alr_w, alr_h, color);
 
