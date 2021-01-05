@@ -56,7 +56,7 @@ void init(double pathCost, double laneCost, double headingCost, double steerRate
 
   /* Initialize the states and controls. */
   for (i = 0; i < NX * (N + 1); ++i)  acadoVariables.x[ i ] = 0.0;
-  for (i = 0; i < NU * N; ++i)  acadoVariables.u[ i ] = 0.1;
+  for (i = 0; i < NU * N; ++i)  acadoVariables.u[ i ] = 0.0;
 
   /* Initialize the measurements/reference. */
   for (i = 0; i < NY * N; ++i)  acadoVariables.y[ i ] = 0.0;
@@ -83,15 +83,20 @@ int run_mpc(state_t * x0, log_t * solution,
     acadoVariables.od[i+3] = d_poly[1];
     acadoVariables.od[i+4] = d_poly[2];
     acadoVariables.od[i+5] = d_poly[3];
+    
+    acadoVariables.od[i+6] = v_poly[0];
+    acadoVariables.od[i+7] = v_poly[1];
+    acadoVariables.od[i+8] = v_poly[2];
+    acadoVariables.od[i+9] = v_poly[3];
 
   }
   for (i = 0; i < N; i+= 1){
     acadoVariables.y[NY*i + 0] = target_y[i];
-    acadoVariables.y[NY*i + 1] = 0.0;
+    acadoVariables.y[NY*i + 1] = (v_ref + 1.0) * target_psi[i];
     acadoVariables.y[NY*i + 2] = 0.0;
   }
   acadoVariables.yN[0] = target_y[N];
-  acadoVariables.yN[1] = 0.0;
+  acadoVariables.yN[1] = (2.0 * v_ref + 1.0) * target_psi[N];
 
   acadoVariables.x0[0] = x0->x;
   acadoVariables.x0[1] = x0->y;

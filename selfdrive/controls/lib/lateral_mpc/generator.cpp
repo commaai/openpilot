@@ -25,17 +25,19 @@ int main( )
   OnlineData curvature_factor;
   OnlineData v_ref; // m/s
   OnlineData d_poly_r0, d_poly_r1, d_poly_r2, d_poly_r3;
+  OnlineData v_poly_r0, v_poly_r1, v_poly_r2, v_poly_r3;
 
   Control t;
-
-  // Equations of motion
-  f << dot(xx) == v_ref * cos(psi);
-  f << dot(yy) == v_ref * sin(psi);
-  f << dot(psi) == v_ref * delta * curvature_factor;
-  f << dot(delta) == t;
-
+  
+  auto poly_v = v_poly_r0*(xx*xx*xx) + v_poly_r1*(xx*xx) + v_poly_r2*xx + v_poly_r3;
   auto poly_d = d_poly_r0*(xx*xx*xx) + d_poly_r1*(xx*xx) + d_poly_r2*xx + d_poly_r3;
   auto angle_d = atan(3*d_poly_r0*xx*xx + 2*d_poly_r1*xx + d_poly_r2);
+
+  // Equations of motion
+  f << dot(xx) == poly_v * cos(psi);
+  f << dot(yy) == poly_v * sin(psi);
+  f << dot(psi) == poly_v * delta * curvature_factor;
+  f << dot(delta) == t;
 
   // Running cost
   Function h;
@@ -44,7 +46,7 @@ int main( )
   h << yy;
 
   // Heading error
-  h << (v_ref + 1.0 ) * (angle_d - psi);
+  h << (v_ref + 1.0 ) * psi;
 
   // Angular rate error
   h << (v_ref + 1.0 ) * t;
@@ -63,7 +65,7 @@ int main( )
   hN << yy;
 
   // Heading errors
-  hN << (2.0 * v_ref + 1.0 ) * (angle_d - psi);
+  hN << (2.0 * v_ref + 1.0 ) * psi;
 
   BMatrix QN(2,2); QN.setAll(true);
   // QN(0,0) = 1.0;
@@ -82,7 +84,7 @@ int main( )
   ocp.subjectTo( deg2rad(-90) <= psi <= deg2rad(90));
   // more than absolute max steer angle
   ocp.subjectTo( deg2rad(-50) <= delta <= deg2rad(50));
-  ocp.setNOD(6);
+  ocp.setNOD(10);
 
   OCPexport mpc(ocp);
   mpc.set( HESSIAN_APPROXIMATION, GAUSS_NEWTON );
