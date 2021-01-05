@@ -12,7 +12,7 @@ static void draw_background(UIState *s) {
 #else
   const NVGcolor color = nvgRGBA(0x39, 0x39, 0x39, 0xff);
 #endif
-  ui_draw_rect(s->vg, 0, 0, sbr_w, s->fb_h, color);
+  ui_draw_rect(s->vg, {0, 0, sbr_w, s->fb_h}, color);
 }
 
 static void draw_settings_button(UIState *s) {
@@ -32,16 +32,15 @@ static void draw_network_strength(UIState *s) {
       {cereal::ThermalData::NetworkStrength::MODERATE, 3},
       {cereal::ThermalData::NetworkStrength::GOOD, 4},
       {cereal::ThermalData::NetworkStrength::GREAT, 5}};
-  const Rect rect = {58, 196, 176, 27};
   const int img_idx = s->scene.thermal.getNetworkType() == cereal::ThermalData::NetworkType::NONE ? 0 : network_strength_map[s->scene.thermal.getNetworkStrength()];
-  ui_draw_image(s->vg, rect, s->img_network[img_idx], 1.0f);
+  ui_draw_image(s->vg, {58, 196, 176, 27}, s->img_network[img_idx], 1.0f);
 }
 
 static void draw_battery_icon(UIState *s) {
   int battery_img = s->scene.thermal.getBatteryStatus() == "Charging" ? s->img_battery_charging : s->img_battery;
   const Rect rect = {160, 255, 76, 36};
-  ui_draw_rect(s->vg, rect.x + 6, rect.y + 5,
-               ((rect.w - 19) * (s->scene.thermal.getBatteryPercent() * 0.01)), rect.h - 11, COLOR_WHITE);
+  ui_draw_rect(s->vg, {rect.x + 6, rect.y + 5,
+              int((rect.w - 19) * s->scene.thermal.getBatteryPercent() * 0.01), rect.h - 11}, COLOR_WHITE);
   ui_draw_image(s->vg, rect, battery_img, 1.0f);
 }
 
@@ -80,7 +79,7 @@ static void draw_metric(UIState *s, const char *label_str, const char *value_str
     status_color = COLOR_RED;
   }
 
-  ui_draw_rect(s->vg, metric_x, metric_y, metric_w, metric_h,
+  ui_draw_rect(s->vg, {metric_x, metric_y, metric_w, metric_h},
                severity > 0 ? COLOR_WHITE : COLOR_WHITE_ALPHA(85), 20, 2);
 
   nvgBeginPath(s->vg);
