@@ -199,29 +199,12 @@ LoggerdState s;
 
 #ifndef DISABLE_ENCODER
 void encoder_thread(int cam_idx) {
+  assert(cam_idx < LOG_CAMERA_ID_MAX-1);
 
-  switch (cam_idx) {
-    case LOG_CAMERA_ID_DCAMERA: {
-      LOGW("recording front camera");
-      set_thread_name("FrontCameraEncoder");
-      break;
-    }
-    case LOG_CAMERA_ID_FCAMERA: {
-      set_thread_name("RearCameraEncoder");
-      break;
-    }
-    case LOG_CAMERA_ID_ECAMERA: {
-      set_thread_name("WideCameraEncoder");
-      break;
-    }
-    default: {
-      LOGE("unexpected camera index provided");
-      assert(false);
-    }
-  }
+  LogCameraInfo &cam_info = cameras_logged[cam_idx];
+  set_thread_name(cam_info.filename);
 
   VisionStream stream;
-  LogCameraInfo cam_info = cameras_logged[cam_idx]; 
   RotateState &rotate_state = s.rotate_state[cam_idx];
   rotate_state.enabled = true;
 
@@ -249,14 +232,14 @@ void encoder_thread(int cam_idx) {
       LOGD("encoder init %dx%d", buf_info.width, buf_info.height);
 
       // main encoder
-      encoders.push_back({});
+      encoders.push_back(EncoderState());
       encoder_init(&encoders[0], cam_info.filename, buf_info.width, buf_info.height,
                    cam_info.fps, cam_info.bitrate, cam_info.is_h265, cam_info.downscale);
 
       // qcamera encoder
-      if (false && cam_info.has_qcamera) {
-        LogCameraInfo qcam_info = cameras_logged[LOG_CAMERA_ID_QCAMERA];
-        encoders.push_back({});
+      if (cam_info.has_qcamera) {
+        LogCameraInfo &qcam_info = cameras_logged[LOG_CAMERA_ID_QCAMERA];
+        encoders.push_back(EncoderState());
         encoder_init(&encoders[1], qcam_info.filename, qcam_info.frame_width, qcam_info.frame_height,
                      qcam_info.fps, qcam_info.bitrate, qcam_info.is_h265, qcam_info.downscale);
       }

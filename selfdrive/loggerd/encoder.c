@@ -650,8 +650,8 @@ void encoder_close(EncoderState *s) {
       fclose(s->of);
     }
     unlink(s->lock_path);
+    s->open = false;
   }
-  s->open = false;
 
   pthread_mutex_unlock(&s->lock);
 }
