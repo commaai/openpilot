@@ -120,7 +120,7 @@ int main( )
   mpc.set( GENERATE_MATLAB_INTERFACE, NO );
   mpc.set( GENERATE_SIMULINK_INTERFACE, NO );
 
-  if (mpc.exportCode( "lib_mpc_export" ) != SUCCESSFUL_RETURN)
+  if (mpc.exportCode( "selfdrive/controls/lib/lateral_mpc/lib_mpc_export" ) != SUCCESSFUL_RETURN)
     exit( EXIT_FAILURE );
 
   mpc.printDimensionsQP( );
