@@ -16,6 +16,7 @@ extern "C" {
 }
 
 #include "common/swaglog.h"
+#include "common/util.h"
 
 #include "raw_logger.h"
 

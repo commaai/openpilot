@@ -4,7 +4,7 @@
 #include <cassert>
 #include <sys/resource.h>
 
-#include "common/utilpp.h"
+#include "common/util.h"
 #include "common/visionbuf.h"
 #include "common/visionipc.h"
 #include "common/swaglog.h"
