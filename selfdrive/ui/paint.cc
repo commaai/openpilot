@@ -423,36 +423,35 @@ static void ui_draw_vision_alert(UIState *s) {
 
   NVGcolor color = bg_colors[s->status];
   color.a *= s->alert_blinking_alpha;
-  int alr_s = alert_size_map[scene->alert_size];
+  const int alr_h = alert_size_map[scene->alert_size] + bdr_s;
+  const Rect r = {.x = scene->viz_rect.x - bdr_s,
+                  .y = s->fb_h - alr_h,
+                  .w = scene->viz_rect.w + (bdr_s * 2),
+                  .h = alr_h};
 
-  const int alr_x = scene->viz_rect.x - bdr_s;
-  const int alr_w = scene->viz_rect.w + (bdr_s * 2);
-  const int alr_h = alr_s + bdr_s;
-  const int alr_y = s->fb_h - alr_h;
+  ui_draw_rect(s->vg, r.x, r.y, r.w, r.h, color);
 
-  ui_draw_rect(s->vg, alr_x, alr_y, alr_w, alr_h, color);
-
-  NVGpaint gradient = nvgLinearGradient(s->vg, alr_x, alr_y, alr_x, alr_y+alr_h,
+  NVGpaint gradient = nvgLinearGradient(s->vg, r.x, r.y, r.x, r.bottom(),
                                         nvgRGBAf(0.0,0.0,0.0,0.05), nvgRGBAf(0.0,0.0,0.0,0.35));
-  ui_draw_rect(s->vg, alr_x, alr_y, alr_w, alr_h, gradient);
+  ui_draw_rect(s->vg, r.x, r.y, r.w, r.h, gradient);
 
   nvgFillColor(s->vg, COLOR_WHITE);
   nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
 
   if (scene->alert_size == cereal::ControlsState::AlertSize::SMALL) {
-    ui_draw_text(s->vg, alr_x+alr_w/2, alr_y+alr_h/2+15, scene->alert_text1.c_str(), 40*2.5, COLOR_WHITE, s->font_sans_semibold);
+    ui_draw_text(s->vg, r.centerX(), r.centerY() + 15, scene->alert_text1.c_str(), 40*2.5, COLOR_WHITE, s->font_sans_semibold);
   } else if (scene->alert_size == cereal::ControlsState::AlertSize::MID) {
-    ui_draw_text(s->vg, alr_x+alr_w/2, alr_y+alr_h/2-45, scene->alert_text1.c_str(), 48*2.5, COLOR_WHITE, s->font_sans_bold);
-    ui_draw_text(s->vg, alr_x+alr_w/2, alr_y+alr_h/2+75, scene->alert_text2.c_str(), 36*2.5, COLOR_WHITE, s->font_sans_regular);
+    ui_draw_text(s->vg, r.centerX(), r.centerY() - 45, scene->alert_text1.c_str(), 48*2.5, COLOR_WHITE, s->font_sans_bold);
+    ui_draw_text(s->vg, r.centerX(), r.centerY() + 75, scene->alert_text2.c_str(), 36*2.5, COLOR_WHITE, s->font_sans_regular);
   } else if (scene->alert_size == cereal::ControlsState::AlertSize::FULL) {
     nvgFontSize(s->vg, (longAlert1?72:96)*2.5);
     nvgFontFaceId(s->vg, s->font_sans_bold);
     nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
-    nvgTextBox(s->vg, alr_x, alr_y+(longAlert1?360:420), alr_w-60, scene->alert_text1.c_str(), NULL);
+    nvgTextBox(s->vg, r.x, r.y+(longAlert1?360:420), r.w-60, scene->alert_text1.c_str(), NULL);
     nvgFontSize(s->vg, 48*2.5);
     nvgFontFaceId(s->vg,  s->font_sans_regular);
     nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BOTTOM);
-    nvgTextBox(s->vg, alr_x, alr_h-(longAlert1?300:360), alr_w-60, scene->alert_text2.c_str(), NULL);
+    nvgTextBox(s->vg, r.x, r.h-(longAlert1?300:360), r.w-60, scene->alert_text2.c_str(), NULL);
   }
 }
 
