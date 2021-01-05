@@ -18,6 +18,7 @@ def jpeg_write(fn, dat):
   img = Image.fromarray(dat)
   img.save(fn, "JPEG")
 
+
 def extract_image(dat, frame_sizes):
   img = np.frombuffer(dat, dtype=np.uint8)
   w, h = frame_sizes[len(img) // 3]
@@ -25,6 +26,20 @@ def extract_image(dat, frame_sizes):
   g = img[1::3].reshape(h, w)
   r = img[2::3].reshape(h, w)
   return np.dstack([r, g, b])
+
+
+def get_snapshots():
+  frame_sizes = [eon_f_frame_size, eon_d_frame_size, leon_d_frame_size, tici_f_frame_size]
+  frame_sizes = {w * h: (w, h) for (w, h) in frame_sizes}
+
+  sm = messaging.SubMaster(["frame", "frontFrame"])
+  while min(sm.logMonoTime.values()) == 0:
+    sm.update()
+
+  rear = extract_image(sm['frame'].image, frame_sizes)
+  front = extract_image(sm['frontFrame'].image, frame_sizes)
+  return rear, front
+
 
 def snapshot():
   params = Params()
@@ -53,9 +68,7 @@ def snapshot():
       env=env)
   time.sleep(3.0)
 
-  sm = messaging.SubMaster(["frame", "frontFrame"])
-  while min(sm.logMonoTime.values()) == 0:
-    sm.update()
+  rear, front = get_snapshots()
 
   proc.send_signal(signal.SIGINT)
   proc.communicate()
@@ -63,10 +76,8 @@ def snapshot():
   params.put("IsTakingSnapshot", "0")
   set_offroad_alert("Offroad_IsTakingSnapshot", False)
 
-  frame_sizes = [eon_f_frame_size, eon_d_frame_size, leon_d_frame_size, tici_f_frame_size]
-  frame_sizes = {w * h: (w, h) for (w, h) in frame_sizes}
-  rear = extract_image(sm['frame'].image, frame_sizes)
-  front = extract_image(sm['frontFrame'].image, frame_sizes) if front_camera_allowed else None
+  if not front_camera_allowed:
+    front = None
 
   return rear, front
 
