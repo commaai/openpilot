@@ -2,7 +2,7 @@ from cereal import car
 from common.numpy_fast import clip, interp
 from selfdrive.car.nissan import nissancan
 from opendbc.can.packer import CANPacker
-from selfdrive.car.nissan.values import CAR, STEER_THRESHOLD, SteerLimitParams
+from selfdrive.car.nissan.values import CAR, CarControllerParams
 
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
@@ -36,22 +36,22 @@ class CarController():
     if enabled:
       # # windup slower
       if self.last_angle * apply_angle > 0. and abs(apply_angle) > abs(self.last_angle):
-        angle_rate_lim = interp(CS.out.vEgo, SteerLimitParams.ANGLE_DELTA_BP, SteerLimitParams.ANGLE_DELTA_V)
+        angle_rate_lim = interp(CS.out.vEgo, CarControllerParams.ANGLE_DELTA_BP, CarControllerParams.ANGLE_DELTA_V)
       else:
-        angle_rate_lim = interp(CS.out.vEgo, SteerLimitParams.ANGLE_DELTA_BP, SteerLimitParams.ANGLE_DELTA_VU)
+        angle_rate_lim = interp(CS.out.vEgo, CarControllerParams.ANGLE_DELTA_BP, CarControllerParams.ANGLE_DELTA_VU)
 
       apply_angle = clip(apply_angle, self.last_angle - angle_rate_lim, self.last_angle + angle_rate_lim)
 
       # Max torque from driver before EPS will give up and not apply torque
       if not bool(CS.out.steeringPressed):
-        self.lkas_max_torque = SteerLimitParams.LKAS_MAX_TORQUE
+        self.lkas_max_torque = CarControllerParams.LKAS_MAX_TORQUE
       else:
         # Scale max torque based on how much torque the driver is applying to the wheel
         self.lkas_max_torque = max(
           # Scale max torque down to half LKAX_MAX_TORQUE as a minimum
-          SteerLimitParams.LKAS_MAX_TORQUE * 0.5,
+          CarControllerParams.LKAS_MAX_TORQUE * 0.5,
           # Start scaling torque at STEER_THRESHOLD
-          SteerLimitParams.LKAS_MAX_TORQUE - 0.6 * max(0, abs(CS.out.steeringTorque) - STEER_THRESHOLD)
+          CarControllerParams.LKAS_MAX_TORQUE - 0.6 * max(0, abs(CS.out.steeringTorque) - CarControllerParams.STEER_THRESHOLD)
         )
 
     else:
