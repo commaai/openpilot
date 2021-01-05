@@ -24,11 +24,7 @@ int main( )
 
   OnlineData curvature_factor;
   OnlineData v_ref; // m/s
-  OnlineData l_poly_r0, l_poly_r1, l_poly_r2, l_poly_r3;
-  OnlineData r_poly_r0, r_poly_r1, r_poly_r2, r_poly_r3;
   OnlineData d_poly_r0, d_poly_r1, d_poly_r2, d_poly_r3;
-  OnlineData l_prob, r_prob;
-  OnlineData lane_width;
 
   Control t;
 
@@ -38,28 +34,14 @@ int main( )
   f << dot(psi) == v_ref * delta * curvature_factor;
   f << dot(delta) == t;
 
-  auto lr_prob = l_prob + r_prob - l_prob * r_prob;
-
-  auto poly_l = l_poly_r0*(xx*xx*xx) + l_poly_r1*(xx*xx) + l_poly_r2*xx + l_poly_r3;
-  auto poly_r = r_poly_r0*(xx*xx*xx) + r_poly_r1*(xx*xx) + r_poly_r2*xx + r_poly_r3;
   auto poly_d = d_poly_r0*(xx*xx*xx) + d_poly_r1*(xx*xx) + d_poly_r2*xx + d_poly_r3;
-
   auto angle_d = atan(3*d_poly_r0*xx*xx + 2*d_poly_r1*xx + d_poly_r2);
-
-  // When the lane is not visible, use an estimate of its position
-  auto weighted_left_lane = l_prob * poly_l + (1 - l_prob) * (poly_d + lane_width/2.0);
-  auto weighted_right_lane = r_prob * poly_r + (1 - r_prob) * (poly_d - lane_width/2.0);
-
-  auto c_left_lane = exp(-(weighted_left_lane - yy));
-  auto c_right_lane = exp(weighted_right_lane - yy);
 
   // Running cost
   Function h;
 
   // Distance errors
   h << yy;
-  h << lr_prob * c_left_lane;
-  h << lr_prob * c_right_lane;
 
   // Heading error
   h << (v_ref + 1.0 ) * (angle_d - psi);
@@ -67,7 +49,7 @@ int main( )
   // Angular rate error
   h << (v_ref + 1.0 ) * t;
 
-  BMatrix Q(5,5); Q.setAll(true);
+  BMatrix Q(3,3); Q.setAll(true);
   // Q(0,0) = 1.0;
   // Q(1,1) = 1.0;
   // Q(2,2) = 1.0;
@@ -79,13 +61,11 @@ int main( )
 
   // Distance errors
   hN << yy;
-  hN << l_prob * c_left_lane;
-  hN << r_prob * c_right_lane;
 
   // Heading errors
   hN << (2.0 * v_ref + 1.0 ) * (angle_d - psi);
 
-  BMatrix QN(4,4); QN.setAll(true);
+  BMatrix QN(2,2); QN.setAll(true);
   // QN(0,0) = 1.0;
   // QN(1,1) = 1.0;
   // QN(2,2) = 1.0;
@@ -102,7 +82,7 @@ int main( )
   ocp.subjectTo( deg2rad(-90) <= psi <= deg2rad(90));
   // more than absolute max steer angle
   ocp.subjectTo( deg2rad(-50) <= delta <= deg2rad(50));
-  ocp.setNOD(17);
+  ocp.setNOD(6);
 
   OCPexport mpc(ocp);
   mpc.set( HESSIAN_APPROXIMATION, GAUSS_NEWTON );
