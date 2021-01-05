@@ -195,38 +195,48 @@ static void update_line_data(const UIState *s, const cereal::ModelDataV2::XYZTDa
   assert(pvd->cnt < std::size(pvd->v));
 }
 
-static void ui_draw_vision_lane_lines(UIState *s) {
+static void update_model(UIState *s) {
   const UIScene *scene = &s->scene;
-  const bool model_updated = s->sm->updated("modelV2");
-  // paint lanelines
+  // update lane lines
   const auto lane_lines = scene->model.getLaneLines();
   const auto lane_line_probs = scene->model.getLaneLineProbs();
   for (int i = 0; i < std::size(s->lane_line_vertices); i++) {
-    if (model_updated) {
-      update_line_data(s, lane_lines[i], 0.025 * lane_line_probs[i], 1.22, &s->lane_line_vertices[i], scene->max_distance);
-    }
+    update_line_data(s, lane_lines[i], 0.025 * lane_line_probs[i], 1.22, &s->lane_line_vertices[i], scene->max_distance);
+  }
+
+  // update road edges
+  const auto road_edges = scene->model.getRoadEdges();
+  for (int i = 0; i < std::size(s->road_edge_vertices); i++) {
+    update_line_data(s, road_edges[i], 0.025, 1.22, &s->road_edge_vertices[i], scene->max_distance);
+  }
+
+  // update path
+  const float lead_d = s->sm->updated("radarState") ? scene->lead_data[0].getDRel() * 2. : MAX_DRAW_DISTANCE;
+  float path_length = (lead_d > 0.) ? lead_d - fmin(lead_d * 0.35, 10.) : MAX_DRAW_DISTANCE;
+  path_length = fmin(path_length, scene->max_distance);
+  update_line_data(s, scene->model.getPosition(), 0.5, 0, &s->track_vertices, path_length);
+}
+
+static void ui_draw_vision_lane_lines(UIState *s) {
+  const UIScene *scene = &s->scene;
+  if (s->sm->updated("modelV2")) {
+    update_model(s);
+  }
+  // paint lanelines
+  const auto lane_line_probs = scene->model.getLaneLineProbs();
+  for (int i = 0; i < std::size(s->lane_line_vertices); i++) {
     NVGcolor color = nvgRGBAf(1.0, 1.0, 1.0, lane_line_probs[i]);
     ui_draw_line(s, s->lane_line_vertices[i].v, s->lane_line_vertices[i].cnt, &color, nullptr);
   }
 
   // paint road edges
-  const auto road_edges = scene->model.getRoadEdges();
   const auto road_edge_stds = scene->model.getRoadEdgeStds();
   for (int i = 0; i < std::size(s->road_edge_vertices); i++) {
-    if (model_updated) {
-      update_line_data(s, road_edges[i], 0.025, 1.22, &s->road_edge_vertices[i], scene->max_distance);
-    }
     NVGcolor color = nvgRGBAf(1.0, 0.0, 0.0, std::clamp<float>(1.0 - road_edge_stds[i], 0.0, 1.0));
     ui_draw_line(s, s->road_edge_vertices[i].v, s->road_edge_vertices[i].cnt, &color, nullptr);
   }
 
   // paint path
-  if (model_updated) {
-    const float lead_d = s->sm->updated("radarState") ? scene->lead_data[0].getDRel() * 2. : MAX_DRAW_DISTANCE;
-    float path_length = (lead_d > 0.) ? lead_d - fmin(lead_d * 0.35, 10.) : MAX_DRAW_DISTANCE;
-    path_length = fmin(path_length, scene->max_distance);
-    update_line_data(s, scene->model.getPosition(), 0.5, 0, &s->track_vertices, path_length);
-  }
   NVGpaint track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h * .4,
                                         COLOR_WHITE, COLOR_WHITE_ALPHA(0));
   ui_draw_line(s, s->track_vertices.v, s->track_vertices.cnt, nullptr, &track_bg);
