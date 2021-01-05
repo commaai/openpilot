@@ -177,69 +177,24 @@ static void draw_frame(UIState *s) {
   glBindVertexArray(0);
 }
 
-template <class T>
-static void update_line_data(const UIState *s, const cereal::ModelDataV2::XYZTData::Reader &line,
-                             float y_off, float z_off, T *pvd, float max_distance) {
-  const auto line_x = line.getX(), line_y = line.getY(), line_z = line.getZ();
-  int max_idx = -1;
-  vertex_data *v = &pvd->v[0];
-  const float margin = 500.0f;
-  for (int i = 0; ((i < TRAJECTORY_SIZE) and (line_x[i] < fmax(MIN_DRAW_DISTANCE, max_distance))); i++) {
-    v += car_space_to_full_frame(s, line_x[i], -line_y[i] - y_off, -line_z[i] + z_off, &v->x, &v->y, margin);
-    max_idx = i;
-  }
-  for (int i = max_idx; i >= 0; i--) {
-    v += car_space_to_full_frame(s, line_x[i], -line_y[i] + y_off, -line_z[i] + z_off, &v->x, &v->y, margin);
-  }
-  pvd->cnt = v - pvd->v;
-  assert(pvd->cnt < std::size(pvd->v));
-}
-
-static void update_model(UIState *s) {
-  const UIScene *scene = &s->scene;
-  // update lane lines
-  const auto lane_lines = scene->model.getLaneLines();
-  const auto lane_line_probs = scene->model.getLaneLineProbs();
-  for (int i = 0; i < std::size(s->lane_line_vertices); i++) {
-    update_line_data(s, lane_lines[i], 0.025 * lane_line_probs[i], 1.22, &s->lane_line_vertices[i], scene->max_distance);
-  }
-
-  // update road edges
-  const auto road_edges = scene->model.getRoadEdges();
-  for (int i = 0; i < std::size(s->road_edge_vertices); i++) {
-    update_line_data(s, road_edges[i], 0.025, 1.22, &s->road_edge_vertices[i], scene->max_distance);
-  }
-
-  // update path
-  const float lead_d = s->sm->updated("radarState") ? scene->lead_data[0].getDRel() * 2. : MAX_DRAW_DISTANCE;
-  float path_length = (lead_d > 0.) ? lead_d - fmin(lead_d * 0.35, 10.) : MAX_DRAW_DISTANCE;
-  path_length = fmin(path_length, scene->max_distance);
-  update_line_data(s, scene->model.getPosition(), 0.5, 0, &s->track_vertices, path_length);
-}
-
 static void ui_draw_vision_lane_lines(UIState *s) {
-  const UIScene *scene = &s->scene;
-  if (s->sm->updated("modelV2")) {
-    update_model(s);
-  }
+  const UIScene &scene = s->scene;
   // paint lanelines
-  const auto lane_line_probs = scene->model.getLaneLineProbs();
-  for (int i = 0; i < std::size(s->lane_line_vertices); i++) {
-    NVGcolor color = nvgRGBAf(1.0, 1.0, 1.0, lane_line_probs[i]);
-    ui_draw_line(s, s->lane_line_vertices[i].v, s->lane_line_vertices[i].cnt, &color, nullptr);
+  for (int i = 0; i < std::size(scene.lane_line_vertices); i++) {
+    NVGcolor color = nvgRGBAf(1.0, 1.0, 1.0, scene.lane_line_probs[i]);
+    ui_draw_line(s, scene.lane_line_vertices[i].v, scene.lane_line_vertices[i].cnt, &color, nullptr);
   }
 
   // paint road edges
-  const auto road_edge_stds = scene->model.getRoadEdgeStds();
-  for (int i = 0; i < std::size(s->road_edge_vertices); i++) {
-    NVGcolor color = nvgRGBAf(1.0, 0.0, 0.0, std::clamp<float>(1.0 - road_edge_stds[i], 0.0, 1.0));
-    ui_draw_line(s, s->road_edge_vertices[i].v, s->road_edge_vertices[i].cnt, &color, nullptr);
+  for (int i = 0; i < std::size(scene.road_edge_vertices); i++) {
+    NVGcolor color = nvgRGBAf(1.0, 0.0, 0.0, std::clamp<float>(1.0 - scene.road_edge_stds[i], 0.0, 1.0));
+    ui_draw_line(s, scene.road_edge_vertices[i].v, scene.road_edge_vertices[i].cnt, &color, nullptr);
   }
 
   // paint path
   NVGpaint track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h * .4,
                                         COLOR_WHITE, COLOR_WHITE_ALPHA(0));
-  ui_draw_line(s, s->track_vertices.v, s->track_vertices.cnt, nullptr, &track_bg);
+  ui_draw_line(s, scene.track_vertices.v, scene.track_vertices.cnt, nullptr, &track_bg);
 }
 
 // Draw all world space objects.
