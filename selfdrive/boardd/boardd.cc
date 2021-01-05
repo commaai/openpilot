@@ -72,7 +72,7 @@ void safety_setter_thread() {
   panda->set_safety_model(cereal::CarParams::SafetyModel::ELM327);
 
   // switch to SILENT when CarVin param is read
-  while (1) {
+  while (true) {
     if (do_exit || !panda->connected){
       safety_setter_thread_running = false;
       return;
@@ -94,7 +94,7 @@ void safety_setter_thread() {
 
   std::vector<char> params;
   LOGW("waiting for params to set safety model");
-  while (1) {
+  while (true) {
     if (do_exit || !panda->connected){
       safety_setter_thread_running = false;
       return;

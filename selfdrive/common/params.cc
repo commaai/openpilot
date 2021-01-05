@@ -257,7 +257,7 @@ std::string Params::get(std::string key, bool block){
   size_t size;
   int r;
 
-  if (block){
+  if (block) {
     r = read_db_value_blocking((const char*)key.c_str(), &value, &size);
   } else {
     r = read_db_value((const char*)key.c_str(), &value, &size);
