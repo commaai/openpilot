@@ -13,11 +13,11 @@ typedef struct {
 } state_t;
 
 typedef struct {
-    double x[21];
-    double y[21];
-    double psi[21];
-    double delta[21];
-    double rate[20];
+    double x[17];
+    double y[17];
+    double psi[17];
+    double delta[17];
+    double rate[16];
     double cost;
 } log_t;
 

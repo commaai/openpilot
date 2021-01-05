@@ -20,6 +20,11 @@ typedef struct {
   double x, y, psi, delta, t;
 } state_t;
 
+const int N_steps = 16;
+double T_IDXS[N_steps + 1] = {0.0, 0.00976562, 0.0390625 , 0.08789062, 0.15625,
+                     0.24414062, 0.3515625 , 0.47851562, 0.625     , 0.79101562,
+                     0.9765625 , 1.18164062, 1.40625   , 1.65039062, 1.9140625 ,
+                     2.19726562, 2.5};
 
 typedef struct {
   double x[N+1];
@@ -35,10 +40,7 @@ void init_weights(double pathCost, double laneCost, double headingCost, double s
   const int STEP_MULTIPLIER = 3;
 
   for (i = 0; i < N; i++) {
-    int f = 1;
-    if (i > 4){
-      f = STEP_MULTIPLIER;
-    }
+    double f = 20 * (T_IDXS[i+1] - T_IDXS[i]);
     // Setup diagonal entries
     acadoVariables.W[NY*NY*i + (NY+1)*0] = pathCost * f;
     acadoVariables.W[NY*NY*i + (NY+1)*1] = laneCost * f;

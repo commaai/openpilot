@@ -1,3 +1,4 @@
+
 Import('env', 'arch')
 
 cpp_path = [
@@ -16,6 +17,30 @@ generated_c = [
     'lib_mpc_export/acado_integrator.c',
     'lib_mpc_export/acado_solver.c',
 ]
+if arch != "aarch64":
+    acado_libs = [File("#phonelibs/acado/x64/lib/libacado_toolkit.a"),
+                  File("#phonelibs/acado/x64/lib/libacado_casadi.a"),
+                  File("#phonelibs/acado/x64/lib/libacado_csparse.a")]
+    env.Program('generator', 'generator.cpp', LIBS=acado_libs, CPPPATH=cpp_path)
+    acado_libs = [File("#phonelibs/acado/x64/lib/libacado_toolkit.a"),
+                  File("#phonelibs/acado/x64/lib/libacado_casadi.a"),
+                  File("#phonelibs/acado/x64/lib/libacado_csparse.a")]
+    env.Program('generator', 'generator.cpp', LIBS=acado_libs, CPPPATH=cpp_path)
+    
+    targets = ['lib_mpc_export/acado_common.h',
+               'lib_mpc_export/acado_auxiliary_functions.h',
+               'lib_mpc_export/acado_auxiliary_functions.c',
+               'lib_mpc_export/acado_qpoases_interface.hpp',
+               'lib_mpc_export/acado_qpoases_interface.cpp',
+               'lib_mpc_export/acado_integrator.c']
+    command = 'generator'
+       
+    target_files = File(targets)
+    command_file = File(command)
+
+    env.Command(target_files,
+                [command_file],
+                command_file.get_abspath())
 
 generated_h = [
     'lib_mpc_export/acado_common.h',
