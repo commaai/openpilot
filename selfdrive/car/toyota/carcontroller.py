@@ -4,7 +4,7 @@ from selfdrive.car import apply_toyota_steer_torque_limits, create_gas_command, 
 from selfdrive.car.toyota.toyotacan import create_steer_command, create_ui_command, \
                                            create_accel_command, create_acc_cancel_command, \
                                            create_fcw_command
-from selfdrive.car.toyota.values import Ecu, CAR, STATIC_MSGS, NO_STOP_TIMER_CAR, SteerLimitParams, AccelParams
+from selfdrive.car.toyota.values import Ecu, CAR, STATIC_MSGS, NO_STOP_TIMER_CAR, CarControllerParams
 from opendbc.can.packer import CANPacker
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
@@ -16,10 +16,10 @@ def accel_hysteresis(accel, accel_steady, enabled):
   if not enabled:
     # send 0 when disabled, otherwise acc faults
     accel_steady = 0.
-  elif accel > accel_steady + AccelParams.ACCEL_HYST_GAP:
-    accel_steady = accel - AccelParams.ACCEL_HYST_GAP
-  elif accel < accel_steady - AccelParams.ACCEL_HYST_GAP:
-    accel_steady = accel + AccelParams.ACCEL_HYST_GAP
+  elif accel > accel_steady + CarControllerParams.ACCEL_HYST_GAP:
+    accel_steady = accel - CarControllerParams.ACCEL_HYST_GAP
+  elif accel < accel_steady - CarControllerParams.ACCEL_HYST_GAP:
+    accel_steady = accel + CarControllerParams.ACCEL_HYST_GAP
   accel = accel_steady
 
   return accel, accel_steady
@@ -60,11 +60,11 @@ class CarController():
       apply_accel = actuators.gas - actuators.brake
 
     apply_accel, self.accel_steady = accel_hysteresis(apply_accel, self.accel_steady, enabled)
-    apply_accel = clip(apply_accel * AccelParams.ACCEL_SCALE, AccelParams.ACCEL_MIN, AccelParams.ACCEL_MAX)
+    apply_accel = clip(apply_accel * CarControllerParams.ACCEL_SCALE, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
 
     # steer torque
-    new_steer = int(round(actuators.steer * SteerLimitParams.STEER_MAX))
-    apply_steer = apply_toyota_steer_torque_limits(new_steer, self.last_steer, CS.out.steeringTorqueEps, SteerLimitParams)
+    new_steer = int(round(actuators.steer * CarControllerParams.STEER_MAX))
+    apply_steer = apply_toyota_steer_torque_limits(new_steer, self.last_steer, CS.out.steeringTorqueEps, CarControllerParams)
     self.steer_rate_limited = new_steer != apply_steer
 
     # Cut steering while we're in a known fault state (2s)
