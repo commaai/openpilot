@@ -4,6 +4,12 @@ from selfdrive.car import dbc_dict
 from cereal import car
 Ecu = car.CarParams.Ecu
 
+class AccelParams:
+  ACCEL_HYST_GAP = 0.02  # don't change accel command for small oscilalitons within this value
+  ACCEL_MAX = 1.5  # 1.5 m/s2
+  ACCEL_MIN = -3.0  # 3   m/s2
+  ACCEL_SCALE = max(ACCEL_MAX, -ACCEL_MIN)
+
 # Steer torque limits
 class SteerLimitParams:
   STEER_MAX = 1500
@@ -484,7 +490,7 @@ FW_VERSIONS = {
     (Ecu.fwdCamera, 0x750, 109): [
       b'\x028646F3305200\x00\x00\x00\x008646G5301200\x00\x00\x00\x00',
     ],
-  },  
+  },
   CAR.CHR: {
     (Ecu.engine, 0x700, None): [
       b'\x01896631017100\x00\x00\x00\x00',
