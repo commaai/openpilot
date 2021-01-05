@@ -619,20 +619,16 @@ int main(int argc, char** argv) {
   s.num_encoder = 0;
   pthread_mutex_init(&s.rotate_lock, NULL);
 
+  std::vector<std::thread> encoder_threads;
 #ifndef DISABLE_ENCODER
-  // rear camera
-  std::thread encoder_thread_handle(encoder_thread, &s.rotate_state[LOG_CAMERA_ID_FCAMERA], LOG_CAMERA_ID_FCAMERA);
-  s.rotate_state[LOG_CAMERA_ID_FCAMERA].enabled = true;
-  // front camera
-  std::thread front_encoder_thread_handle;
+  encoder_threads.push_back(std::thread(encoder_thread, LOG_CAMERA_ID_FCAMERA));
+
   if (record_front) {
-    front_encoder_thread_handle = std::thread(encoder_thread, &s.rotate_state[LOG_CAMERA_ID_DCAMERA], LOG_CAMERA_ID_DCAMERA);
-    s.rotate_state[LOG_CAMERA_ID_DCAMERA].enabled = true;
+    encoder_threads.push_back(std::thread(encoder_thread, &s.rotate_state[LOG_CAMERA_ID_DCAMERA], LOG_CAMERA_ID_DCAMERA));
   }
+
   #ifdef QCOM2
-  // wide camera
-  std::thread wide_encoder_thread_handle(encoder_thread, &s.rotate_state[LOG_CAMERA_ID_ECAMERA], LOG_CAMERA_ID_ECAMERA);
-  s.rotate_state[LOG_CAMERA_ID_ECAMERA].enabled = true;
+  encoder_threads.push_back(std::thread(encoder_thread, LOG_CAMERA_ID_ECAMERA));
   #endif
 #endif
 
@@ -742,28 +738,21 @@ int main(int argc, char** argv) {
     }
   }
 
-  LOGW("joining threads");
-  for (int cid=0;cid<=MAX_CAM_IDX;cid++) { s.rotate_state[cid].cancelWait(); }
-  printf("canceled\n");
-
-#ifndef DISABLE_ENCODER
-#ifdef QCOM2
-  wide_encoder_thread_handle.join();
-  printf("joining wide\n");
-#endif
-  if (record_front) {
-    front_encoder_thread_handle.join();
-    printf("joined front\n");
+  LOGW("joining encoder threads");
+  for (int cid=0; cid<=MAX_CAM_IDX; cid++) {
+    s.rotate_state[cid].cancelWait();
   }
-  encoder_thread_handle.join();
-  LOGW("encoder joined");
-#endif
+
+  for(auto &t : encoder_threads) {
+    t.join();
+  }
+  LOGW("encoders joined");
 
   logger_close(&s.logger);
   LOGW("logger closed");
 
-  for (auto s : socks){
-    delete s;
+  for (auto sock : socks){
+    delete sock;
   }
 
   delete poller;
