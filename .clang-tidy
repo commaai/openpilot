@@ -1,5 +1,4 @@
 ---
-InheritParentConfig: true
 Checks: '
 bugprone-*,
 -bugprone-integer-division,
