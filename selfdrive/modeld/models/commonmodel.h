@@ -20,8 +20,8 @@ float sigmoid(float input);
 
 typedef struct ModelFrame {
   Transform transform;
-  int transformed_width, transformed_height;
-  cl_mem transformed_y_cl, transformed_u_cl, transformed_v_cl;
+  int width, height;
+  cl_mem y_cl, u_cl, v_cl;
   LoadYUVState loadyuv;
   cl_mem net_input;
   size_t net_input_size;
