@@ -28,10 +28,6 @@ else:
     env = env.Clone()
     env['FRAMEWORKS'] = ['OpenCL', 'OpenGL']
 
-# TODO: fix snapshot.py
-# env.SharedLibrary('snapshot/visionipc',
-#   ["#selfdrive/common/visionipc.c", "#selfdrive/common/ipc.c"])
-
 env.Program('camerad', [
     'main.cc',
     'cameras/camera_common.cc',
