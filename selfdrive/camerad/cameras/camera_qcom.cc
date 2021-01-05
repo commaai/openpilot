@@ -1936,7 +1936,7 @@ static void camera_close(CameraState *s) {
   err = ioctl(s->isp_fd, VIDIOC_MSM_ISP_CFG_STREAM, &s->stream_cfg);
   LOG("isp stop stream: %d", err);
 
-  for (auto & i : s->ss) {
+  for (int i = 0; i < 3; i++) {
     StreamState *ss = &s->ss[i];
     if (ss->stream_req.axi_stream_handle != 0) {
       err = ioctl(s->isp_fd, VIDIOC_MSM_ISP_RELEASE_BUF, &ss->buf_request);
