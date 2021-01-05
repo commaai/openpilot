@@ -3,10 +3,14 @@ import os
 import signal
 import subprocess
 import time
+
+import numpy as np
 from PIL import Image
+
+import cereal.messaging as messaging
 from common.basedir import BASEDIR
 from common.params import Params
-from selfdrive.camerad.snapshot.visionipc import VisionIPC
+from common.transformations.camera import eon_f_frame_size, eon_d_frame_size, leon_d_frame_size, tici_f_frame_size
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
 
 
@@ -14,6 +18,13 @@ def jpeg_write(fn, dat):
   img = Image.fromarray(dat)
   img.save(fn, "JPEG")
 
+def extract_image(dat, frame_sizes):
+  img = np.frombuffer(dat, dtype=np.uint8)
+  w, h = frame_sizes[len(img) // 3]
+  b = img[::3].reshape(h, w)
+  g = img[1::3].reshape(h, w)
+  r = img[2::3].reshape(h, w)
+  return np.dstack([r, g, b])
 
 def snapshot():
   params = Params()
@@ -34,35 +45,30 @@ def snapshot():
     params.delete("Offroad_IsTakingSnapshot")
     return None
 
-  proc = subprocess.Popen(os.path.join(BASEDIR, "selfdrive/camerad/camerad"), cwd=os.path.join(BASEDIR, "selfdrive/camerad"))
+  env = os.environ.copy()
+  env["SEND_REAR"] = "1"
+  env["SEND_FRONT"] = "1"
+  proc = subprocess.Popen(os.path.join(BASEDIR, "selfdrive/camerad/camerad"),
+      cwd=os.path.join(BASEDIR, "selfdrive/camerad"),
+      env=env)
   time.sleep(3.0)
 
-  ret = None
-  start_time = time.time()
-  while time.time() - start_time < 5.0:
-    try:
-      ipc = VisionIPC()
-      pic = ipc.get()
-      del ipc
-
-      if front_camera_allowed:
-        ipc_front = VisionIPC(front=True)
-        fpic = ipc_front.get()
-        del ipc_front
-      else:
-        fpic = None
-
-      ret = pic, fpic
-      break
-    except Exception:
-      time.sleep(1)
+  sm = messaging.SubMaster(["frame", "frontFrame"])
+  while min(sm.logMonoTime.values()) == 0:
+    sm.update()
 
   proc.send_signal(signal.SIGINT)
   proc.communicate()
 
   params.put("IsTakingSnapshot", "0")
   set_offroad_alert("Offroad_IsTakingSnapshot", False)
-  return ret
+
+  frame_sizes = [eon_f_frame_size, eon_d_frame_size, leon_d_frame_size, tici_f_frame_size]
+  frame_sizes = {w * h: (w, h) for (w, h) in frame_sizes}
+  rear = extract_image(sm['frame'].image, frame_sizes)
+  front = extract_image(sm['frontFrame'].image, frame_sizes) if front_camera_allowed else None
+
+  return rear, front
 
 
 if __name__ == "__main__":
