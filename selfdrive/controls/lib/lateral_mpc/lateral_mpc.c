@@ -37,7 +37,7 @@ typedef struct {
 
 void init_weights(double pathCost, double laneCost, double headingCost, double steerRateCost){
   int    i;
-  const int STEP_MULTIPLIER = 3;
+  const int STEP_MULTIPLIER = 0.0;
 
   for (i = 0; i < N; i++) {
     double f = 20 * (T_IDXS[i+1] - T_IDXS[i]);
@@ -73,7 +73,7 @@ void init(double pathCost, double laneCost, double headingCost, double steerRate
 }
 
 int run_mpc(state_t * x0, log_t * solution,
-             double l_poly[4], double r_poly[4], double d_poly[4],
+             double l_poly[4], double r_poly[4], double d_poly[4], double v_poly[4],
              double l_prob, double r_prob, double curvature_factor, double v_ref, double lane_width,
              double target_y[N+1], double target_psi[N+1]){
 
@@ -105,7 +105,7 @@ int run_mpc(state_t * x0, log_t * solution,
 
   }
   for (i = 0; i < N; i+= 1){
-    acadoVariables.y[NY*i + 0] = 0.0;
+    acadoVariables.y[NY*i + 0] = target_y[i];
     acadoVariables.y[NY*i + 1] = 0.0;
     acadoVariables.y[NY*i + 2] = 0.0;
     acadoVariables.y[NY*i + 3] = 0.0;

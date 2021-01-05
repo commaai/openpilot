@@ -57,7 +57,7 @@ int main( )
   Function h;
 
   // Distance errors
-  h << poly_d - yy;
+  h << yy;
   h << lr_prob * c_left_lane;
   h << lr_prob * c_right_lane;
 
@@ -78,7 +78,7 @@ int main( )
   Function hN;
 
   // Distance errors
-  hN << poly_d - yy;
+  hN << yy;
   hN << l_prob * c_left_lane;
   hN << r_prob * c_right_lane;
 
@@ -108,8 +108,8 @@ int main( )
   mpc.set( HESSIAN_APPROXIMATION, GAUSS_NEWTON );
   mpc.set( DISCRETIZATION_TYPE, MULTIPLE_SHOOTING );
   mpc.set( INTEGRATOR_TYPE, INT_RK4 );
-  mpc.set( NUM_INTEGRATOR_STEPS, 2000);
-  mpc.set( MAX_NUM_QP_ITERATIONS, 500);
+  mpc.set( NUM_INTEGRATOR_STEPS, 2500);
+  mpc.set( MAX_NUM_QP_ITERATIONS, 1000);
   mpc.set( CG_USE_VARIABLE_WEIGHTING_MATRIX, YES);
 
   mpc.set( SPARSE_QP_SOLUTION, CONDENSING );

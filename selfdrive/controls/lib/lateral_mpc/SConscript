@@ -25,10 +25,11 @@ if arch != "aarch64":
       "-O2",
       "-Wunused",
       "-Wno-unknown-warning-option",
-      "-Wno-deprecated-register",
+      "-Wno-deprecated",
       "-Wno-register",
       "-Wno-inconsistent-missing-override",
       "-Wno-c99-designator",
+      "-Wno-error=deprecated-declarations",
       "-Wno-reorder-init-list"])
     acado_libs = [File("#phonelibs/acado/x64/lib/libacado_toolkit.a"),
                   File("#phonelibs/acado/x64/lib/libacado_casadi.a"),
