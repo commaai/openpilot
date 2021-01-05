@@ -17,15 +17,27 @@ generated_c = [
     'lib_mpc_export/acado_integrator.c',
     'lib_mpc_export/acado_solver.c',
 ]
+
 if arch != "aarch64":
+    env2 = env.Clone(CCFLAGS=[
+      "-g",
+      "-fPIC",
+      "-O2",
+      "-Wunused",
+      "-Wno-unknown-warning-option",
+      "-Wno-deprecated-register",
+      "-Wno-register",
+      "-Wno-inconsistent-missing-override",
+      "-Wno-c99-designator",
+      "-Wno-reorder-init-list"])
     acado_libs = [File("#phonelibs/acado/x64/lib/libacado_toolkit.a"),
                   File("#phonelibs/acado/x64/lib/libacado_casadi.a"),
                   File("#phonelibs/acado/x64/lib/libacado_csparse.a")]
-    env.Program('generator', 'generator.cpp', LIBS=acado_libs, CPPPATH=cpp_path)
+    env2.Program('generator', 'generator.cpp', LIBS=acado_libs, CPPPATH=cpp_path)
     acado_libs = [File("#phonelibs/acado/x64/lib/libacado_toolkit.a"),
                   File("#phonelibs/acado/x64/lib/libacado_casadi.a"),
                   File("#phonelibs/acado/x64/lib/libacado_csparse.a")]
-    env.Program('generator', 'generator.cpp', LIBS=acado_libs, CPPPATH=cpp_path)
+    env2.Program('generator', 'generator.cpp', LIBS=acado_libs, CPPPATH=cpp_path)
     
     targets = ['lib_mpc_export/acado_common.h',
                'lib_mpc_export/acado_auxiliary_functions.h',
@@ -38,7 +50,7 @@ if arch != "aarch64":
     target_files = File(targets)
     command_file = File(command)
 
-    env.Command(target_files,
+    env2.Command(target_files,
                 [command_file],
                 command_file.get_abspath())
 
