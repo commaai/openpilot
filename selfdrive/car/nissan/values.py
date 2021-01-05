@@ -4,6 +4,13 @@ from selfdrive.car import dbc_dict
 
 STEER_THRESHOLD = 1.0
 
+# Steer angle limits
+class SteerLimitParams:
+  ANGLE_DELTA_BP = [0., 5., 15.]
+  ANGLE_DELTA_V = [5., .8, .15]     # windup limit
+  ANGLE_DELTA_VU = [5., 3.5, 0.4]   # unwind limit
+  LKAS_MAX_TORQUE = 1               # A value of 1 is easy to overpower
+
 class CAR:
   XTRAIL = "NISSAN X-TRAIL 2017"
   LEAF = "NISSAN LEAF 2018"
