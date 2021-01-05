@@ -64,8 +64,8 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
   camera_bufs_metadata = std::make_unique<FrameMetadata[]>(frame_buf_count);
 
   for (int i = 0; i < frame_buf_count; i++) {
-    camera_bufs[i] = visionbuf_allocate(frame_size);
-    visionbuf_init_cl(&camera_bufs[i], device_id, context);
+    camera_bufs[i].allocate(frame_size);
+    camera_bufs[i].init_cl(device_id, context);
   }
 
   rgb_width = ci->frame_width;
@@ -110,7 +110,7 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
 
 CameraBuf::~CameraBuf() {
   for (int i = 0; i < frame_buf_count; i++) {
-    visionbuf_free(&camera_bufs[i]);
+    camera_bufs[i].free();
   }
 
   rgb_to_yuv_destroy(&rgb_to_yuv_state);
