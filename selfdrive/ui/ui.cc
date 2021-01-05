@@ -161,46 +161,6 @@ void update_sockets(UIState *s) {
   if (s->started && sm.updated("controlsState")) {
     auto event = sm["controlsState"];
     scene.controls_state = event.getControlsState();
-
-    // TODO: the alert stuff shouldn't be handled here
-    auto alert_sound = scene.controls_state.getAlertSound();
-    if (scene.alert_type.compare(scene.controls_state.getAlertType()) != 0) {
-      if (alert_sound == AudibleAlert::NONE) {
-        s->sound->stop();
-      } else {
-        s->sound->play(alert_sound);
-      }
-    }
-    scene.alert_text1 = scene.controls_state.getAlertText1();
-    scene.alert_text2 = scene.controls_state.getAlertText2();
-    scene.alert_size = scene.controls_state.getAlertSize();
-    scene.alert_type = scene.controls_state.getAlertType();
-    auto alertStatus = scene.controls_state.getAlertStatus();
-    if (alertStatus == cereal::ControlsState::AlertStatus::USER_PROMPT) {
-      s->status = STATUS_WARNING;
-    } else if (alertStatus == cereal::ControlsState::AlertStatus::CRITICAL) {
-      s->status = STATUS_ALERT;
-    } else {
-      s->status = scene.controls_state.getEnabled() ? STATUS_ENGAGED : STATUS_DISENGAGED;
-    }
-
-    float alert_blinkingrate = scene.controls_state.getAlertBlinkingRate();
-    if (alert_blinkingrate > 0.) {
-      if (s->alert_blinked) {
-        if (s->alert_blinking_alpha > 0.0 && s->alert_blinking_alpha < 1.0) {
-          s->alert_blinking_alpha += (0.05*alert_blinkingrate);
-        } else {
-          s->alert_blinked = false;
-        }
-      } else {
-        if (s->alert_blinking_alpha > 0.25) {
-          s->alert_blinking_alpha -= (0.05*alert_blinkingrate);
-        } else {
-          s->alert_blinking_alpha += 0.25;
-          s->alert_blinked = true;
-        }
-      }
-    }
   }
   if (sm.updated("radarState")) {
     auto data = sm["radarState"].getRadarState();
@@ -280,9 +240,92 @@ static void ui_read_params(UIState *s) {
   }
 }
 
+void update_alert(UIState *s) {
+  if (!s->started || s->scene.frontview) return;
+
+  UIScene &scene = s->scene;
+  const uint64_t cs_frame = s->sm->rcv_frame("controlsState");
+
+  if (cs_frame == s->sm->frame) {
+    auto alert_sound = scene.controls_state.getAlertSound();
+    if (scene.alert_type.compare(scene.controls_state.getAlertType()) != 0) {
+      if (alert_sound == AudibleAlert::NONE) {
+        s->sound->stop();
+      } else {
+        s->sound->play(alert_sound);
+      }
+    }
+    scene.alert_text1 = scene.controls_state.getAlertText1();
+    scene.alert_text2 = scene.controls_state.getAlertText2();
+    scene.alert_size = scene.controls_state.getAlertSize();
+    scene.alert_type = scene.controls_state.getAlertType();
+    auto alertStatus = scene.controls_state.getAlertStatus();
+    if (alertStatus == cereal::ControlsState::AlertStatus::USER_PROMPT) {
+      s->status = STATUS_WARNING;
+    } else if (alertStatus == cereal::ControlsState::AlertStatus::CRITICAL) {
+      s->status = STATUS_ALERT;
+    } else {
+      s->status = scene.controls_state.getEnabled() ? STATUS_ENGAGED : STATUS_DISENGAGED;
+    }
+
+    float alert_blinkingrate = scene.controls_state.getAlertBlinkingRate();
+    if (alert_blinkingrate > 0.) {
+      if (s->alert_blinked) {
+        if (s->alert_blinking_alpha > 0.0 && s->alert_blinking_alpha < 1.0) {
+          s->alert_blinking_alpha += (0.05 * alert_blinkingrate);
+        } else {
+          s->alert_blinked = false;
+        }
+      } else {
+        if (s->alert_blinking_alpha > 0.25) {
+          s->alert_blinking_alpha -= (0.05 * alert_blinkingrate);
+        } else {
+          s->alert_blinking_alpha += 0.25;
+          s->alert_blinked = true;
+        }
+      }
+    }
+  }
+
+  // Handle controls/fcamera timeout
+  const uint64_t since_started = s->sm->frame - s->started_frame;
+  if (since_started > 10*UI_FREQ) {
+    if (cs_frame < s->started_frame) {
+      // car is started, but controlsState hasn't been seen at all
+      s->scene.alert_text1 = "openpilot Unavailable";
+      s->scene.alert_text2 = "Waiting for controls to start";
+      s->scene.alert_size = cereal::ControlsState::AlertSize::MID;
+    } else if ((s->sm->frame - cs_frame) > 5*UI_FREQ) {
+      // car is started, but controls is lagging or died
+      if (s->scene.alert_text2 != "Controls Unresponsive" &&
+          s->scene.alert_text1 != "Camera Malfunction") {
+        s->sound->play(AudibleAlert::CHIME_WARNING_REPEAT);
+        LOGE("Controls unresponsive");
+      }
+
+      s->scene.alert_text1 = "TAKE CONTROL IMMEDIATELY";
+      s->scene.alert_text2 = "Controls Unresponsive";
+      s->scene.alert_size = cereal::ControlsState::AlertSize::FULL;
+      s->status = STATUS_ALERT;
+    }
+
+    const uint64_t frame_pkt = (s->sm)->rcv_frame("frame");
+    const uint64_t frame_delayed = (s->sm)->frame - frame_pkt;
+    if ((frame_pkt > s->started_frame || since_started > 15*UI_FREQ) && frame_delayed > 5*UI_FREQ) {
+      // controls is fine, but rear camera is lagging or died
+      s->scene.alert_text1 = "Camera Malfunction";
+      s->scene.alert_text2 = "Contact Support";
+      s->scene.alert_size = cereal::ControlsState::AlertSize::FULL;
+      s->status = STATUS_DISENGAGED;
+      s->sound->stop();
+    }
+  }
+}
+
 void ui_update(UIState *s) {
   ui_read_params(s);
   update_sockets(s);
+  update_alert(s);
   ui_update_vision(s);
 
   // Handle onroad/offroad transition
@@ -300,39 +343,5 @@ void ui_update(UIState *s) {
     s->alert_blinked = false;
     s->alert_blinking_alpha = 1.0;
     s->scene.alert_size = cereal::ControlsState::AlertSize::NONE;
-  }
-
-  // Handle controls/fcamera timeout
-  if (s->started && !s->scene.frontview && ((s->sm)->frame - s->started_frame) > 10*UI_FREQ) {
-    if ((s->sm)->rcv_frame("controlsState") < s->started_frame) {
-      // car is started, but controlsState hasn't been seen at all
-      s->scene.alert_text1 = "openpilot Unavailable";
-      s->scene.alert_text2 = "Waiting for controls to start";
-      s->scene.alert_size = cereal::ControlsState::AlertSize::MID;
-    } else if (((s->sm)->frame - (s->sm)->rcv_frame("controlsState")) > 5*UI_FREQ) {
-      // car is started, but controls is lagging or died
-      if (s->scene.alert_text2 != "Controls Unresponsive" &&
-          s->scene.alert_text1 != "Camera Malfunction") {
-        s->sound->play(AudibleAlert::CHIME_WARNING_REPEAT);
-        LOGE("Controls unresponsive");
-      }
-
-      s->scene.alert_text1 = "TAKE CONTROL IMMEDIATELY";
-      s->scene.alert_text2 = "Controls Unresponsive";
-      s->scene.alert_size = cereal::ControlsState::AlertSize::FULL;
-      s->status = STATUS_ALERT;
-    }
-
-    const uint64_t frame_pkt = (s->sm)->rcv_frame("frame");
-    const uint64_t frame_delayed = (s->sm)->frame - frame_pkt;
-    const uint64_t since_started = (s->sm)->frame - s->started_frame;
-    if ((frame_pkt > s->started_frame || since_started > 15*UI_FREQ) && frame_delayed > 5*UI_FREQ) {
-      // controls is fine, but rear camera is lagging or died
-      s->scene.alert_text1 = "Camera Malfunction";
-      s->scene.alert_text2 = "Contact Support";
-      s->scene.alert_size = cereal::ControlsState::AlertSize::FULL;
-      s->status = STATUS_DISENGAGED;
-      s->sound->stop();
-    }
   }
 }
