@@ -4,7 +4,7 @@ from selfdrive.car import dbc_dict
 from cereal import car
 Ecu = car.CarParams.Ecu
 
-class SteerLimitParams:
+class CarControllerParams:
   STEER_MAX = 2047              # max_steer 4095
   STEER_STEP = 2                # how often we update the steer cmd
   STEER_DELTA_UP = 50           # torque increase per refresh, 0.8s to max
