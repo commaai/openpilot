@@ -329,8 +329,8 @@ void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_i
 
   for (int i = 0; i < FRAME_BUF_COUNT; i++) {
     // TODO: make lengths correct
-    s->focus_bufs[i] = visionbuf_allocate(0xb80);
-    s->stats_bufs[i] = visionbuf_allocate(0xb80);
+    s->focus_bufs[i].allocate(0xb80);
+    s->stats_bufs[i].allocate(0xb80);
   }
   const int width = s->rear.buf.rgb_width/NUM_SEGMENTS_X;
   const int height = s->rear.buf.rgb_height/NUM_SEGMENTS_Y;
@@ -2247,8 +2247,8 @@ void cameras_close(MultiCameraState *s) {
   camera_close(&s->rear);
   camera_close(&s->front);
   for (int i = 0; i < FRAME_BUF_COUNT; i++) {
-    visionbuf_free(&s->focus_bufs[i]);
-    visionbuf_free(&s->stats_bufs[i]);
+    s->focus_bufs[i].free();
+    s->stats_bufs[i].free();
   }
   CL_CHECK(clReleaseMemObject(s->rgb_conv_roi_cl));
   CL_CHECK(clReleaseMemObject(s->rgb_conv_result_cl));
