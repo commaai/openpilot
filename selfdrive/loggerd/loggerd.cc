@@ -756,8 +756,8 @@ int main(int argc, char** argv) {
   logger_close(&s.logger);
   LOGW("logger closed");
 
-  for (auto s : socks){
-    delete s;
+  for (auto sock : socks){
+    delete sock;
   }
 
   delete poller;
