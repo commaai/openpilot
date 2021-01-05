@@ -15,7 +15,6 @@
 #include <string>
 #include <iostream>
 #include <fstream>
-#include <fstream>
 #include <streambuf>
 #include <thread>
 #include <mutex>
@@ -220,11 +219,11 @@ void encoder_thread(int cam_idx) {
       assert(false);
     }
   }
-  
-  RotateState &rotate_state = s.rotate_state[cam_idx];
-  rotate_state.enabled = true;
 
   VisionStream stream;
+  LogCameraInfo cam_info = cameras_logged[cam_idx]; 
+  RotateState &rotate_state = s.rotate_state[cam_idx];
+  rotate_state.enabled = true;
 
   std::vector<EncoderState> encoders;
 
@@ -239,7 +238,7 @@ void encoder_thread(int cam_idx) {
 
   while (!do_exit) {
     VisionStreamBufs buf_info;
-    int err = visionstream_init(&stream, cameras_logged[cam_idx].stream_type, false, &buf_info);
+    int err = visionstream_init(&stream, cam_info.stream_type, false, &buf_info);
     if (err != 0) {
       LOGD("visionstream connect fail");
       util::sleep_for(100);
@@ -251,26 +250,15 @@ void encoder_thread(int cam_idx) {
 
       // main encoder
       encoders.push_back({});
-      encoder_init(&encoders[0],
-                   cameras_logged[cam_idx].filename,
-                   buf_info.width,
-                   buf_info.height,
-                   cameras_logged[cam_idx].fps,
-                   cameras_logged[cam_idx].bitrate,
-                   cameras_logged[cam_idx].is_h265,
-                   cameras_logged[cam_idx].downscale);
+      encoder_init(&encoders[0], cam_info.filename, buf_info.width, buf_info.height,
+                   cam_info.fps, cam_info.bitrate, cam_info.is_h265, cam_info.downscale);
 
       // qcamera encoder
-      if (cameras_logged[cam_idx].has_qcamera) {
+      if (false && cam_info.has_qcamera) {
+        LogCameraInfo qcam_info = cameras_logged[LOG_CAMERA_ID_QCAMERA];
         encoders.push_back({});
-        encoder_init(&encoders[1],
-                     cameras_logged[LOG_CAMERA_ID_QCAMERA].filename,
-                     cameras_logged[LOG_CAMERA_ID_QCAMERA].frame_width,
-                     cameras_logged[LOG_CAMERA_ID_QCAMERA].frame_height,
-                     cameras_logged[LOG_CAMERA_ID_QCAMERA].fps,
-                     cameras_logged[LOG_CAMERA_ID_QCAMERA].bitrate,
-                     cameras_logged[LOG_CAMERA_ID_QCAMERA].is_h265,
-                     cameras_logged[LOG_CAMERA_ID_QCAMERA].downscale);
+        encoder_init(&encoders[1], qcam_info.filename, qcam_info.frame_width, qcam_info.frame_height,
+                     qcam_info.fps, qcam_info.bitrate, qcam_info.is_h265, qcam_info.downscale);
       }
     }
 
@@ -574,18 +562,17 @@ int main(int argc, char** argv) {
   signal(SIGINT, (sighandler_t)set_do_exit);
   signal(SIGTERM, (sighandler_t)set_do_exit);
 
-  s.ctx = Context::create();
-  Poller * poller = Poller::create();
-
-  // subscribe to all services
-
-  std::vector<SubSocket*> socks;
 
   typedef struct QlogState {
     int counter, freq;
   } QlogState;
   std::map<SubSocket*, QlogState> qlog_states;
 
+  // setup messaging
+  std::vector<SubSocket*> socks;
+
+  s.ctx = Context::create();
+  Poller * poller = Poller::create();
   for (const auto& it : services) {
     std::string name = it.name;
 
@@ -603,6 +590,7 @@ int main(int argc, char** argv) {
     }
   }
 
+  // init logger
   {
     auto words = gen_init_data();
     auto bytes = words.asBytes();
@@ -735,24 +723,17 @@ int main(int argc, char** argv) {
     }
   }
 
-  LOGW("joining encoder threads");
-  for (int cid=0; cid<=MAX_CAM_IDX; cid++) {
-    s.rotate_state[cid].cancelWait();
-  }
+  LOGW("closing encoders");
+  for (auto &r : s.rotate_state) r.cancelWait();
+  for (auto &t : encoder_threads) t.join();
 
-  for(auto &t : encoder_threads) {
-    t.join();
-  }
-  LOGW("encoders joined");
-
+  LOGW("closing logger");
   logger_close(&s.logger);
-  LOGW("logger closed");
 
-  for (auto sock : socks){
-    delete sock;
-  }
-
+  // messaging cleanup
+  for (auto sock : socks) delete sock;
   delete poller;
   delete s.ctx;
+
   return 0;
 }
