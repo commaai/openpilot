@@ -187,9 +187,6 @@ typedef struct UIState {
   bool longitudinal_control;
   uint64_t started_frame;
 
-  bool alert_blinked;
-  float alert_blinking_alpha;
-
   Rect video_rect;
 } UIState;
 
