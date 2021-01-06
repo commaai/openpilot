@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
-#include <signal.h>
 #include <unistd.h>
 #include <assert.h>
 #include <sys/time.h>

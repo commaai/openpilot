@@ -3,7 +3,6 @@
 #include <cstdint>
 #include <cassert>
 #include <unistd.h>
-#include <signal.h>
 #include <errno.h>
 #include <poll.h>
 #include <string.h>

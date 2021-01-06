@@ -3,7 +3,6 @@
 #include <unistd.h>
 #include <cassert>
 #include <string.h>
-#include <signal.h>
 
 #include <libyuv.h>
 #include "messaging.hpp"

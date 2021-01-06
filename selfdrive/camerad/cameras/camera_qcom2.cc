@@ -3,7 +3,6 @@
 #include <string.h>
 #include <errno.h>
 #include <unistd.h>
-#include <signal.h>
 #include <assert.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
