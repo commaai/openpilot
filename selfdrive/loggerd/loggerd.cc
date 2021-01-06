@@ -3,7 +3,6 @@
 #include <cstdint>
 #include <cassert>
 #include <unistd.h>
-#include <signal.h>
 #include <errno.h>
 #include <poll.h>
 #include <string.h>
@@ -120,11 +119,7 @@ double randrange(double a, double b) {
   return dist(gen);
 }
 
-
-volatile sig_atomic_t do_exit = 0;
-static void set_do_exit(int sig) {
-  do_exit = 1;
-}
+ExitHandler do_exit;
 
 static bool file_exists(const std::string& fn) {
   std::ifstream f(fn);
@@ -540,10 +535,6 @@ int main(int argc, char** argv) {
 #endif
 
   clear_locks();
-
-  signal(SIGINT, (sighandler_t)set_do_exit);
-  signal(SIGTERM, (sighandler_t)set_do_exit);
-
 
   typedef struct QlogState {
     int counter, freq;

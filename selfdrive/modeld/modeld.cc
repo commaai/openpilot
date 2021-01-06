@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <signal.h>
 #include <unistd.h>
 #include <eigen3/Eigen/Dense>
 
@@ -13,11 +12,7 @@
 #include "models/driving.h"
 #include "messaging.hpp"
 
-volatile sig_atomic_t do_exit = 0;
-static void set_do_exit(int sig) {
-  do_exit = 1;
-}
-
+ExitHandler do_exit;
 // globals
 bool run_model;
 mat3 cur_transform;
@@ -102,9 +97,6 @@ int main(int argc, char **argv) {
   // CPU usage is much lower when pinned to a single big core
   set_core_affinity(4);
 #endif
-
-  signal(SIGINT, (sighandler_t)set_do_exit);
-  signal(SIGTERM, (sighandler_t)set_do_exit);
 
   pthread_mutex_init(&transform_lock, NULL);
 

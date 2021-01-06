@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <stdint.h>
-#include <signal.h>
 #include <unistd.h>
 #include <sys/resource.h>
 #include <sys/time.h>
@@ -18,12 +17,9 @@
 #include "messaging.hpp"
 #include "common/timing.h"
 #include "common/util.h"
+#include "common/utilpp.h"
 
-volatile sig_atomic_t do_exit = 0;
-static void set_do_exit(int sig) {
-  do_exit = 1;
-}
-
+ExitHandler do_exit;
 
 #ifdef QCOM
 namespace {
@@ -37,10 +33,6 @@ namespace {
 
 int main() {
   setpriority(PRIO_PROCESS, 0, -13);
-
-  signal(SIGINT, (sighandler_t)set_do_exit);
-  signal(SIGTERM, (sighandler_t)set_do_exit);
-
   PubMaster pm({"clocks"});
 
 #ifndef __APPLE__

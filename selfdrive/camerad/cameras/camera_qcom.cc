@@ -34,7 +34,7 @@
 #include "camera_qcom.h"
 
 
-extern volatile sig_atomic_t do_exit;
+extern ExitHandler do_exit;
 
 // global var for AE/AF ops
 std::atomic<CameraExpInfo> rear_exp{{0}};

@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <signal.h>
 #include <cassert>
 #include <sys/resource.h>
 
@@ -17,18 +16,11 @@
 #endif
 
 
-volatile sig_atomic_t do_exit = 0;
-
-static void set_do_exit(int sig) {
-  do_exit = 1;
-}
+ExitHandler do_exit;
 
 int main(int argc, char **argv) {
   int err;
   setpriority(PRIO_PROCESS, 0, -15);
-
-  signal(SIGINT, (sighandler_t)set_do_exit);
-  signal(SIGTERM, (sighandler_t)set_do_exit);
 
   PubMaster pm({"driverState"});
 

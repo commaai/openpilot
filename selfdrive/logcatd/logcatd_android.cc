@@ -11,19 +11,12 @@
 #include <log/logprint.h>
 
 #include "common/timing.h"
+#include "common/utilpp.h"
 #include "messaging.hpp"
 
-volatile sig_atomic_t do_exit = 0;
-static void set_do_exit(int sig) {
-  do_exit = 1;
-}
-
+ExitHandler do_exit;
 int main() {
   int err;
-
-  // setup signal handlers
-  signal(SIGINT, (sighandler_t)set_do_exit);
-  signal(SIGTERM, (sighandler_t)set_do_exit);
 
   struct logger_list *logger_list = android_logger_list_alloc(ANDROID_LOG_RDONLY | ANDROID_LOG_NONBLOCK, 0, 0);
   assert(logger_list);

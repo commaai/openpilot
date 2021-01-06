@@ -3,10 +3,10 @@
 #include <unistd.h>
 #include <assert.h>
 #include <string.h>
-#include <signal.h>
 #include <pthread.h>
 
 #include "common/util.h"
+#include "common/utilpp.h"
 #include "common/timing.h"
 #include "common/clutil.h"
 #include "common/swaglog.h"
@@ -20,7 +20,7 @@
 #pragma clang diagnostic pop
 
 
-extern volatile sig_atomic_t do_exit;
+extern ExitHandler do_exit;
 
 #define FRAME_WIDTH  1164
 #define FRAME_HEIGHT 874
