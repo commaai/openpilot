@@ -211,7 +211,6 @@ persistent_processes = [
 if not PC:
   persistent_processes += [
     'updated',
-    'logcatd',
     'tombstoned',
   ]
 
@@ -232,6 +231,7 @@ car_started_processes = [
   'proclogd',
   'locationd',
   'clocksd',
+  'logcatd',
 ]
 
 driver_view_processes = [
