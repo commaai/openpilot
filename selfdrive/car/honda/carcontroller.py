@@ -5,7 +5,7 @@ from selfdrive.controls.lib.drive_helpers import rate_limit
 from common.numpy_fast import clip, interp
 from selfdrive.car import create_gas_command
 from selfdrive.car.honda import hondacan
-from selfdrive.car.honda.values import CruiseButtons, CAR, VISUAL_HUD, HONDA_BOSCH
+from selfdrive.car.honda.values import CruiseButtons, CAR, VISUAL_HUD, HONDA_BOSCH, CarControllerParams
 from opendbc.can.packer import CANPacker
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
@@ -74,15 +74,6 @@ HUDData = namedtuple("HUDData",
                      ["pcm_accel", "v_cruise",  "car",
                      "lanes", "fcw", "acc_alert", "steer_required"])
 
-class CarControllerParams():
-  def __init__(self, CP):
-      self.BRAKE_MAX = 1024//4
-      self.STEER_MAX = CP.lateralParams.torqueBP[-1]
-      # mirror of list (assuming first item is zero) for interp of signed request values
-      assert(CP.lateralParams.torqueBP[0] == 0)
-      assert(CP.lateralParams.torqueBP[0] == 0)
-      self.STEER_LOOKUP_BP = [v * -1 for v in CP.lateralParams.torqueBP][1:][::-1] + list(CP.lateralParams.torqueBP)
-      self.STEER_LOOKUP_V = [v * -1 for v in CP.lateralParams.torqueV][1:][::-1] + list(CP.lateralParams.torqueV)
 
 class CarController():
   def __init__(self, dbc_name, CP, VM):
