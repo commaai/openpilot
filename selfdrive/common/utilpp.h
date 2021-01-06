@@ -88,8 +88,8 @@ public:
     std::signal(SIGTERM, (sighandler_t)set_do_exit);
   };
   inline operator bool() { return do_exit; }
-  inline ExitHandler& operator=(bool exit) {
-    do_exit = exit;
+  inline ExitHandler& operator=(bool v) {
+    do_exit = v;
     return *this;
   }
 private:
