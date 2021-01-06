@@ -2,6 +2,7 @@
 
 #include <QWidget>
 #include <QNetworkReply>
+#include <QLabel>
 
 
 class PairingQRWidget : public QWidget {
@@ -10,6 +11,7 @@ class PairingQRWidget : public QWidget {
 public:
   explicit PairingQRWidget(QWidget *parent = 0);
 
-// private:
-//   void replyFinished(QNetworkReply *l);
+private:
+  QLabel *qrCode;
+  void updateQrCode(QString text);
 };
