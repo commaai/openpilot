@@ -9,6 +9,7 @@ import unittest
 from pathlib import Path
 from tqdm import trange
 
+from cereal import log
 from common.basedir import BASEDIR
 from common.timeout import Timeout
 #from selfdrive.test.helpers import with_processes
@@ -22,24 +23,27 @@ class TestLoggerd(unittest.TestCase):
       if path.is_dir():
         return path
     return None
-  
-  def test_bootlog(self):
-    launch_log = ''.join([str(random.choice(string.printable)) for _ in range(100)])
-    with open("/tmp/launch_log", "w") as f:
-      f.write(launch_log)
 
-    # generate bootlog
+  def _gen_bootlog(self):
     with Timeout(5):
       out = subprocess.check_output(["./loggerd", "--bootlog"], cwd=os.path.join(BASEDIR, "selfdrive/loggerd"), encoding='utf-8')
 
     # check existence
     d = self._get_log_dir(out) 
-    bootlog_path = Path(os.path.join(d, "bootlog.bz2"))
-    assert bootlog_path.is_file(), "failed to create bootlog file"
-    
-    # check msgs
+    path = Path(os.path.join(d, "bootlog.bz2"))
+    assert path.is_file(), "failed to create bootlog file"
+    return path
+
+  def test_bootlog(self):
+    # generate bootlog with fake launch log
+    launch_log = ''.join([str(random.choice(string.printable)) for _ in range(100)])
+    with open("/tmp/launch_log", "w") as f:
+      f.write(launch_log)
+
+    bootlog_path = self._gen_bootlog()
     lr = list(LogReader(str(bootlog_path)))
-    assert len(lr) == 4 # boot + initData + 2x sentinel
+
+    # check msgs
     bootlog_msgs = [m for m in lr if m.which() == 'boot']
     assert len(bootlog_msgs) == 1
 
@@ -55,5 +59,28 @@ class TestLoggerd(unittest.TestCase):
         val = open(path).read("rb")
       assert getattr(boot, field) == val
 
+  # TODO: check real segment in addition to bootlog
+  def test_init_data_sentinel(self):
+    bootlog_path = self._gen_bootlog()
+    lr = list(LogReader(str(bootlog_path)))
+
+    # check msgs
+    assert len(lr) == 4 # boot + initData + 2x sentinel
+    
+    # check initData
+    msg = lr.pop(0)
+    assert msg.which() == 'initData'
+
+    # check first sentinel
+    sentinel = lr.pop(0).sentinel
+    assert sentinel.type == log.Sentinel.SentinelType.startOfRoute
+
+    # throw away boot
+    lr.pop(0)
+
+    # check last sentinel
+    sentinel = lr.pop(0).sentinel
+    assert sentinel.type == log.Sentinel.SentinelType.endOfRoute
+ 
 if __name__ == "__main__":
   unittest.main()
