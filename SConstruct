@@ -150,7 +150,6 @@ env = Environment(
     "#phonelibs/libyuv/include",
     "#phonelibs/openmax/include",
     "#phonelibs/json11",
-    "#phonelibs/QrCode",
     "#phonelibs/curl/include",
     "#phonelibs/libgralloc/include",
     "#phonelibs/android_frameworks_native/include",
@@ -183,7 +182,6 @@ env = Environment(
   LIBPATH=libpath + [
     "#cereal",
     "#phonelibs",
-    "#phonelibs/QrCode",
     "#opendbc/can",
     "#selfdrive/boardd",
     "#selfdrive/common",
@@ -251,7 +249,7 @@ if arch in ["x86_64", "Darwin", "larch64"]:
 
   qt_modules = ["Widgets", "Gui", "Core", "DBus", "Multimedia", "Network"]
 
-  qt_libs = ['QrCode']
+  qt_libs = []
   if arch == "Darwin":
     qt_env['QTDIR'] = "/usr/local/opt/qt"
     QT_BASE = "/usr/local/opt/qt/"
@@ -286,7 +284,7 @@ if arch in ["x86_64", "Darwin", "larch64"]:
     "-DQT_CORE_LIB"
   ]
   qt_env['CXXFLAGS'] += qt_flags
-  qt_env['LIBPATH'] += ['#selfdrive/ui', "#phonelibs/QrCode"]
+  qt_env['LIBPATH'] += ['#selfdrive/ui']
   qt_env['LIBS'] = qt_libs
 
   if GetOption("clazy"):
@@ -322,7 +320,7 @@ Import('_common', '_visionipc', '_gpucommon', '_gpu_libs')
 if SHARED:
   common, visionipc, gpucommon = abspath(common), abspath(visionipc), abspath(gpucommon)
 else:
-  common = [_common, 'json11', 'QrCode']
+  common = [_common, 'json11']
   visionipc = _visionipc
   gpucommon = [_gpucommon] + _gpu_libs
 

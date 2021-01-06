@@ -60,24 +60,22 @@ QByteArray rsa_sign2(QByteArray data) {
 QString create_jwt(int expiry=3600) {
   QJsonObject header;
   header.insert("alg", "RS256");
-  header.insert("typ", "JWT");
 
   auto t = QDateTime::currentSecsSinceEpoch();
   QJsonObject payload;
   payload.insert("nbf", t);
   payload.insert("iat", t);
   payload.insert("exp", t + expiry);
-  payload.insert("pair", "true");
+  payload.insert("pair", true);
 
   QString jwt =
-    QJsonDocument(header).toJson(QJsonDocument::Compact).toBase64() +
+    QJsonDocument(header).toJson(QJsonDocument::Compact).toBase64(QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals) +
     '.' +
-    QJsonDocument(payload).toJson(QJsonDocument::Compact).toBase64();
-
+    QJsonDocument(payload).toJson(QJsonDocument::Compact).toBase64(QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals);
   auto hash = QCryptographicHash::hash(jwt.toUtf8(), QCryptographicHash::Sha256);
   auto sig = rsa_sign2(hash);
 
-  jwt += '.' + sig.toBase64();
+  jwt += '.' + sig.toBase64(QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals);
 
   return jwt;
 }
@@ -85,7 +83,7 @@ QString create_jwt(int expiry=3600) {
 
 PairingQRWidget::PairingQRWidget(QWidget *parent) : QWidget(parent) {
   qrCode = new QLabel;
-  qrCode->setFixedSize(500, 500);
+  qrCode->setFixedSize(700, 700);
   qrCode->setScaledContents(true);
   QVBoxLayout *v = new QVBoxLayout;
   v->addWidget(qrCode);
