@@ -48,9 +48,10 @@ bool car_space_to_full_frame(const UIState *s, float in_x, float in_y, float in_
   const vec3 KEp = matvecmul3(intrinsic_matrix, Ep);
 
   // Project.
-  out->x = KEp.v[0] / KEp.v[2];
-  out->y = KEp.v[1] / KEp.v[2];
+  float x = KEp.v[0] / KEp.v[2];
+  float y = KEp.v[1] / KEp.v[2];
 
+  nvgTransformPoint(&out->x, &out->y, s->car_space_transform, x, y);
   return out->x >= 0 && out->x <= s->fb_w && out->y >= 0 && out->y <= s->fb_h;
 }
 
@@ -64,12 +65,13 @@ static void ui_draw_text(NVGcontext *vg, float x, float y, const char* string, f
 
 static void draw_chevron(UIState *s, float x_in, float y_in, float sz,
                           NVGcolor fillColor, NVGcolor glowColor) {
-  vertex_data out;
+  vertex_data out = {};
   car_space_to_full_frame(s, x_in, y_in, 0.0, &out);
 
   auto [x, y] = out;
   sz = std::clamp((sz * 30) / (x_in / 3 + 30), 15.0f, 30.0f);
   y = std::min(s->scene.viz_rect.bottom() - sz / 2,  y);
+  x = std::clamp(x, 0.f, s->scene.viz_rect.right() - sz / 2);
 
   // glow
   float g_xo = sz/5;
