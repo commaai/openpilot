@@ -150,12 +150,9 @@ static void update_track_data(UIState *s, const cereal::ModelDataV2::XYZTData::R
   const UIScene *scene = &s->scene;
   const float off = 0.5;
   int max_idx = -1;
-  float lead_d;
-  if (s->sm->updated("radarState")) {
-    lead_d = scene->lead_data[0].getDRel()*2.;
-  } else {
-    lead_d = MAX_DRAW_DISTANCE;
-  }
+  const auto lead = scene->lead_data[0];
+  float lead_d = lead.getStatus() ? lead.getDRel()*2. : MAX_DRAW_DISTANCE;
+
   float path_length = (lead_d>0.)?lead_d-fmin(lead_d*0.35, 10.):MAX_DRAW_DISTANCE;
   path_length = fmin(path_length, scene->max_distance);
 
