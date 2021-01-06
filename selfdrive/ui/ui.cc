@@ -96,10 +96,28 @@ static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
   }
 
   // update path
-  const float lead_d = scene.lead_data[0].getStatus() ? scene.lead_data[0].getDRel() * 2. : MAX_DRAW_DISTANCE;
+  const float lead_d = scene.lead[0].status ? scene.lead[0].d_rel * 2. : MAX_DRAW_DISTANCE;
   float path_length = (lead_d > 0.) ? lead_d - fmin(lead_d * 0.35, 10.) : MAX_DRAW_DISTANCE;
   path_length = fmin(path_length, max_distance);
   update_line_data(s, model.getPosition(), 0.5, 0, &scene.track_vertices, path_length);
+}
+
+static void update_lead(const UIState *s, const cereal::RadarState::LeadData::Reader &lead,
+                        const cereal::ModelDataV2::XYZTData::Reader &line, UIScene::LeadData &lead_data) {
+  lead_data = {.status = lead.getStatus(),
+               .d_rel = lead.getDRel(),
+               .v_rel = lead.getVRel(),
+               .y_rel = lead.getYRel()};
+
+  if (float z = 0.; lead_data.status) {
+    const float path_length = fmin(lead_data.d_rel, MAX_DRAW_DISTANCE);
+    const auto line_x = line.getX(), line_z = line.getZ();
+    for (int i = 0; i < TRAJECTORY_SIZE && line_x[i] < path_length; ++i) {
+      z = line_z[i];
+    }
+    const float margin = 500.0f;
+    car_space_to_full_frame(s, lead_data.d_rel, lead_data.y_rel, z, &lead_data.vd.x, &lead_data.vd.y, margin);
+  }
 }
 
 static void update_sockets(UIState *s) {
@@ -139,9 +157,10 @@ static void update_sockets(UIState *s) {
     }
   }
   if (sm.updated("radarState")) {
-    auto data = sm["radarState"].getRadarState();
-    scene.lead_data[0] = data.getLeadOne();
-    scene.lead_data[1] = data.getLeadTwo();
+    const auto radar_state = sm["radarState"].getRadarState();
+    const auto line = sm["modelV2"].getModelV2().getPosition();
+    update_lead(s, radar_state.getLeadOne(), line, scene.lead[0]);
+    update_lead(s, radar_state.getLeadTwo(), line, scene.lead[1]);
   }
   if (sm.updated("liveCalibration")) {
     scene.world_objects_visible = true;

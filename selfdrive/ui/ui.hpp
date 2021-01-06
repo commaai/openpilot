@@ -125,7 +125,6 @@ typedef struct UIScene {
   NetStatus athenaStatus;
 
   cereal::ThermalData::Reader thermal;
-  cereal::RadarState::LeadData::Reader lead_data[2];
   cereal::ControlsState::Reader controls_state;
   cereal::DriverState::Reader driver_state;
   cereal::DMonitoringState::Reader dmonitoring_state;
@@ -136,6 +135,13 @@ typedef struct UIScene {
   track_vertices_data track_vertices;
   line_vertices_data lane_line_vertices[4];
   line_vertices_data road_edge_vertices[2];
+
+  // radarState
+  struct LeadData{
+    bool status;
+    float d_rel, v_rel, y_rel;
+    vertex_data vd;
+  } lead[2] = {};
 } UIScene;
 
 typedef struct UIState {

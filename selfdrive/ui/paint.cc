@@ -63,13 +63,8 @@ static void ui_draw_text(NVGcontext *vg, float x, float y, const char* string, f
   nvgText(vg, x, y, string, NULL);
 }
 
-static void draw_chevron(UIState *s, float x_in, float y_in, float sz,
+static void draw_chevron(UIState *s, float x, float y, const float sz,
                           NVGcolor fillColor, NVGcolor glowColor) {
-  vertex_data out = {};
-  car_space_to_full_frame(s, x_in, y_in, 0.0, &out);
-
-  auto [x, y] = out;
-  sz = std::clamp((sz * 30) / (x_in / 3 + 30), 15.0f, 30.0f) * zoom;
   y = std::fmin(s->scene.viz_rect.bottom() - sz * .6,  y);
   x = std::clamp(x, 0.f, s->scene.viz_rect.right() - sz / 2);
 
@@ -109,21 +104,20 @@ static void ui_draw_circle_image(NVGcontext *vg, int x, int y, int size, int ima
   ui_draw_circle_image(vg, x, y, size, image, nvgRGBA(0, 0, 0, (255 * bg_alpha)), img_alpha);
 }
 
-static void draw_lead(UIState *s, const cereal::RadarState::LeadData::Reader &lead){
+static void draw_lead(UIState *s, const UIScene::LeadData &lead) {
   // Draw lead car indicator
   float fillAlpha = 0;
   float speedBuff = 10.;
   float leadBuff = 40.;
-  float d_rel = lead.getDRel();
-  float v_rel = lead.getVRel();
-  if (d_rel < leadBuff) {
-    fillAlpha = 255*(1.0-(d_rel/leadBuff));
-    if (v_rel < 0) {
-      fillAlpha += 255*(-1*(v_rel/speedBuff));
+  if (lead.d_rel < leadBuff) {
+    fillAlpha = 255*(1.0-(lead.d_rel/leadBuff));
+    if (lead.v_rel < 0) {
+      fillAlpha += 255*(-1*(lead.v_rel/speedBuff));
     }
     fillAlpha = (int)(fmin(fillAlpha, 255));
   }
-  draw_chevron(s, d_rel, lead.getYRel(), 25, nvgRGBA(201, 34, 49, fillAlpha), COLOR_YELLOW);
+  int sz = std::clamp((25 * 30) / (lead.d_rel / 3 + 30), 15.f, 30.f) * zoom;
+  draw_chevron(s, lead.vd.x, lead.vd.y, sz, nvgRGBA(201, 34, 49, fillAlpha), COLOR_YELLOW);
 }
 
 static void ui_draw_line(UIState *s, const vertex_data *v, const int cnt, NVGcolor *color, NVGpaint *paint) {
@@ -205,11 +199,11 @@ static void ui_draw_world(UIState *s) {
 
   // Draw lead indicators if openpilot is handling longitudinal
   if (s->longitudinal_control) {
-    if (scene->lead_data[0].getStatus()) {
-      draw_lead(s, scene->lead_data[0]);
+    if (scene->lead[0].status) {
+      draw_lead(s, scene->lead[0]);
     }
-    if (scene->lead_data[1].getStatus() && (std::abs(scene->lead_data[0].getDRel() - scene->lead_data[1].getDRel()) > 3.0)) {
-      draw_lead(s, scene->lead_data[1]);
+    if (scene->lead[1].status && (std::abs(scene->lead[0].d_rel - scene->lead[1].d_rel) > 3.0)) {
+      draw_lead(s, scene->lead[1]);
     }
   }
   nvgResetScissor(s->vg);
