@@ -201,7 +201,6 @@ void encoder_thread(int cam_idx) {
 
   VisionStream stream;
   RotateState &rotate_state = s.rotate_state[cam_idx];
-  rotate_state.enabled = true;
 
   std::vector<EncoderState*> encoders;
 
@@ -580,13 +579,16 @@ int main(int argc, char** argv) {
   std::vector<std::thread> encoder_threads;
 #ifndef DISABLE_ENCODER
   encoder_threads.push_back(std::thread(encoder_thread, LOG_CAMERA_ID_FCAMERA));
+  s.rotate_state[LOG_CAMERA_ID_FCAMERA].enabled = true;
 
   if (record_front) {
     encoder_threads.push_back(std::thread(encoder_thread, LOG_CAMERA_ID_DCAMERA));
+    s.rotate_state[LOG_CAMERA_ID_DCAMERA].enabled = true;
   }
 
 #ifdef QCOM2
   encoder_threads.push_back(std::thread(encoder_thread, LOG_CAMERA_ID_ECAMERA));
+  s.rotate_state[LOG_CAMERA_ID_ECAMERA].enabled = true;
 #endif
 #endif
 
