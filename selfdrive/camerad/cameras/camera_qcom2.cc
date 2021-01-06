@@ -3,7 +3,6 @@
 #include <string.h>
 #include <errno.h>
 #include <unistd.h>
-#include <signal.h>
 #include <assert.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
@@ -32,7 +31,7 @@
 #define FRAME_STRIDE 2416  // for 10 bit output
 
 
-extern volatile sig_atomic_t do_exit;
+extern ExitHandler do_exit;
 
 // global var for AE ops
 std::atomic<CameraExpInfo> cam_exp[3] = {{{0}}};

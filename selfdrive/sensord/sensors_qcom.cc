@@ -2,7 +2,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <signal.h>
 #include <unistd.h>
 #include <assert.h>
 #include <sys/time.h>
@@ -19,6 +18,7 @@
 
 #include "messaging.hpp"
 #include "common/timing.h"
+#include "common/utilpp.h"
 #include "common/swaglog.h"
 
 // ACCELEROMETER_UNCALIBRATED is only in Android O
@@ -32,14 +32,10 @@
 #define SENSOR_PROXIMITY 6
 #define SENSOR_LIGHT 7
 
-volatile sig_atomic_t do_exit = 0;
+ExitHandler do_exit;
 volatile sig_atomic_t re_init_sensors = 0;
 
 namespace {
-
-void set_do_exit(int sig) {
-  do_exit = 1;
-}
 
 void sigpipe_handler(int sig) {
   LOGE("SIGPIPE received");
@@ -224,8 +220,6 @@ void sensor_loop() {
 
 int main(int argc, char *argv[]) {
   setpriority(PRIO_PROCESS, 0, -13);
-  signal(SIGINT, (sighandler_t)set_do_exit);
-  signal(SIGTERM, (sighandler_t)set_do_exit);
   signal(SIGPIPE, (sighandler_t)sigpipe_handler);
 
   sensor_loop();

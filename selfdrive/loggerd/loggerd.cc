@@ -3,7 +3,6 @@
 #include <cstdint>
 #include <cassert>
 #include <unistd.h>
-#include <signal.h>
 #include <errno.h>
 #include <poll.h>
 #include <string.h>
@@ -120,11 +119,7 @@ double randrange(double a, double b) {
   return dist(gen);
 }
 
-
-volatile sig_atomic_t do_exit = 0;
-static void set_do_exit(int sig) {
-  do_exit = 1;
-}
+ExitHandler do_exit;
 
 static bool file_exists(const std::string& fn) {
   std::ifstream f(fn);
@@ -206,7 +201,6 @@ void encoder_thread(int cam_idx) {
 
   VisionStream stream;
   RotateState &rotate_state = s.rotate_state[cam_idx];
-  rotate_state.enabled = true;
 
   std::vector<EncoderState*> encoders;
 
@@ -541,10 +535,6 @@ int main(int argc, char** argv) {
 
   clear_locks();
 
-  signal(SIGINT, (sighandler_t)set_do_exit);
-  signal(SIGTERM, (sighandler_t)set_do_exit);
-
-
   typedef struct QlogState {
     int counter, freq;
   } QlogState;
@@ -589,13 +579,16 @@ int main(int argc, char** argv) {
   std::vector<std::thread> encoder_threads;
 #ifndef DISABLE_ENCODER
   encoder_threads.push_back(std::thread(encoder_thread, LOG_CAMERA_ID_FCAMERA));
+  s.rotate_state[LOG_CAMERA_ID_FCAMERA].enabled = true;
 
   if (record_front) {
     encoder_threads.push_back(std::thread(encoder_thread, LOG_CAMERA_ID_DCAMERA));
+    s.rotate_state[LOG_CAMERA_ID_DCAMERA].enabled = true;
   }
 
 #ifdef QCOM2
   encoder_threads.push_back(std::thread(encoder_thread, LOG_CAMERA_ID_ECAMERA));
+  s.rotate_state[LOG_CAMERA_ID_ECAMERA].enabled = true;
 #endif
 #endif
 

@@ -2,7 +2,7 @@ from cereal import car
 from common.realtime import DT_CTRL
 from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.hyundai.hyundaican import create_lkas11, create_clu11, create_lfa_mfa
-from selfdrive.car.hyundai.values import Buttons, SteerLimitParams, CAR
+from selfdrive.car.hyundai.values import Buttons, CarControllerParams, CAR
 from opendbc.can.packer import CANPacker
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
@@ -34,7 +34,7 @@ def process_hud_alert(enabled, fingerprint, visual_alert, left_lane,
 
 class CarController():
   def __init__(self, dbc_name, CP, VM):
-    self.p = SteerLimitParams(CP)
+    self.p = CarControllerParams(CP)
     self.packer = CANPacker(dbc_name)
 
     self.apply_steer_last = 0
@@ -76,7 +76,8 @@ class CarController():
     elif CS.out.cruiseState.standstill:
       # send resume at a max freq of 10Hz
       if (frame - self.last_resume_frame)*DT_CTRL > 0.1:
-        can_sends.extend([create_clu11(self.packer, frame, CS.clu11, Buttons.RES_ACCEL)] * 20)
+        # send 25 messages at a time to increases the likelihood of resume being accepted
+        can_sends.extend([create_clu11(self.packer, frame, CS.clu11, Buttons.RES_ACCEL)] * 25)
         self.last_resume_frame = frame
 
     # 20 Hz LFA MFA message
