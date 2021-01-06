@@ -115,8 +115,7 @@ static void update_lead(const UIState *s, const cereal::RadarState::LeadData::Re
     for (int i = 0; i < TRAJECTORY_SIZE && line_x[i] < path_length; ++i) {
       z = line_z[i];
     }
-    const float margin = 500.0f;
-    car_space_to_full_frame(s, lead_data.d_rel, lead_data.y_rel, z, &lead_data.vd.x, &lead_data.vd.y, margin);
+    car_space_to_full_frame(s, lead_data.d_rel, lead_data.y_rel, z, &lead_data.vd.x, &lead_data.vd.y, 500.0f);
   }
 }
 
