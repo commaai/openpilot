@@ -197,8 +197,6 @@ static void ui_draw_vision_lane_lines(UIState *s) {
 static void ui_draw_world(UIState *s) {
   const UIScene *scene = &s->scene;
 
-  nvgSave(s->vg);
-
   // Don't draw on top of sidebar
   nvgScissor(s->vg, scene->viz_rect.x, scene->viz_rect.y, scene->viz_rect.w, scene->viz_rect.h);
 
@@ -214,7 +212,7 @@ static void ui_draw_world(UIState *s) {
       draw_lead(s, scene->lead_data[1]);
     }
   }
-  nvgRestore(s->vg);
+  nvgResetScissor(s->vg);
 }
 
 static void ui_draw_vision_maxspeed(UIState *s) {
