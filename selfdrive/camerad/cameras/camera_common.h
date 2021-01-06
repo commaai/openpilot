@@ -112,6 +112,7 @@ public:
 
   VisionBuf *cur_rgb_buf;
   VisionBuf *cur_yuv_buf;
+  int cur_buf_idx;
 
   std::mutex frame_queue_mutex;
   std::condition_variable frame_queue_cv;

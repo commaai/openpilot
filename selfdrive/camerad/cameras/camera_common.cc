@@ -127,11 +127,11 @@ bool CameraBuf::acquire() {
   bool got_frame = frame_queue_cv.wait_for(lk, std::chrono::milliseconds(100), [this]{ return !frame_queue.empty(); });
   if (!got_frame) return false;
 
-  const int buf_idx = frame_queue.front();
+  cur_buf_idx = frame_queue.front();
   frame_queue.pop();
   lk.unlock();
 
-  const FrameMetadata &frame_data = camera_bufs_metadata[buf_idx];
+  const FrameMetadata &frame_data = camera_bufs_metadata[cur_buf_idx];
   if (frame_data.frame_id == -1) {
     LOGE("no frame data? wtf");
     return false;
@@ -143,7 +143,7 @@ bool CameraBuf::acquire() {
   cur_rgb_idx = cur_rgb_buf->idx;
 
   cl_event debayer_event;
-  cl_mem camrabuf_cl = camera_bufs[buf_idx].buf_cl;
+  cl_mem camrabuf_cl = camera_bufs[cur_buf_idx].buf_cl;
   if (camera_state->ci.bayer) {
     CL_CHECK(clSetKernelArg(krnl_debayer, 0, sizeof(cl_mem), &camrabuf_cl));
     CL_CHECK(clSetKernelArg(krnl_debayer, 1, sizeof(cl_mem), &cur_rgb_buf->buf_cl));
@@ -187,14 +187,13 @@ bool CameraBuf::acquire() {
   vipc_server->send(cur_rgb_buf, &extra);
   vipc_server->send(cur_yuv_buf, &extra);
 
-  if (release_callback){
-    release_callback((void*)camera_state, buf_idx);
-  }
-
   return true;
 }
 
 void CameraBuf::release() {
+  if (release_callback){
+    release_callback((void*)camera_state, cur_buf_idx);
+  }
 }
 
 void CameraBuf::stop() {
