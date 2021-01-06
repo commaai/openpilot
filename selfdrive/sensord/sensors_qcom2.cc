@@ -1,5 +1,4 @@
 #include <vector>
-#include <csignal>
 #include <chrono>
 #include <thread>
 #include <sys/resource.h>

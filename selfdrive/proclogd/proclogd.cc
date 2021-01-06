@@ -5,7 +5,6 @@
 #include <cstdlib>
 #include <climits>
 #include <cassert>
-#include <csignal>
 #include <memory>
 #include <utility>
 #include <sstream>
