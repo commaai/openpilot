@@ -15,7 +15,7 @@
 #include "paint.hpp"
 #include "android/sl_sound.hpp"
 
-SignalState sig_state;
+ExitHandler do_exit;
 static void ui_set_brightness(UIState *s, int brightness) {
   static int last_brightness = -1;
   if (last_brightness != brightness && (s->awake || brightness == 0)) {
@@ -141,7 +141,7 @@ int main(int argc, char* argv[]) {
   const int MAX_VOLUME = LEON ? 15 : 12;
   s->sound->setVolume(MIN_VOLUME);
 
-  while (!sig_state.do_exit) {
+  while (!do_exit) {
     if (!s->started) {
       util::sleep_for(50);
     }

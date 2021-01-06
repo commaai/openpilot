@@ -20,6 +20,8 @@
 #include "common/util.h"
 #include "common/utilpp.h"
 
+ExitHandler do_exit;
+
 #ifdef QCOM
 namespace {
   int64_t arm_cntpct() {
@@ -32,7 +34,6 @@ namespace {
 
 int main() {
   setpriority(PRIO_PROCESS, 0, -13);
-  SignalState signal;
   PubMaster pm({"clocks"});
 
 #ifndef __APPLE__
@@ -49,11 +50,11 @@ int main() {
   assert(err == 0);
 
   uint64_t expirations = 0;
-  while (!signal.do_exit && (err = read(timerfd, &expirations, sizeof(expirations)))) {
+  while (!do_exit && (err = read(timerfd, &expirations, sizeof(expirations)))) {
     if (err < 0) break;
 #else
   // Just run at 1Hz on apple
-  while (!signal.do_exit){
+  while (!do_exit){
     std::this_thread::sleep_for(std::chrono::seconds(1));
 #endif
 

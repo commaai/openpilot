@@ -28,7 +28,7 @@
 
 #define MAX_CLIENTS 6
 
-SignalState signal_state;
+ExitHandler do_exit;
 
 struct VisionState;
 
@@ -106,7 +106,7 @@ void* visionserver_client_thread(void* arg) {
       LOGE("poll failed (%d - %d)", ret, errno);
       break;
     }
-    if (signal_state.do_exit) break;
+    if (do_exit) break;
     if (polls[0].revents) {
       VisionPacket p;
       err = vipc_recv(fd, &p);
@@ -237,7 +237,7 @@ void* visionserver_thread(void* arg) {
   set_thread_name("visionserver");
 
   int sock = ipc_bind(VIPC_SOCKET_PATH);
-  while (!signal_state.do_exit) {
+  while (!do_exit) {
     struct pollfd polls[1] = {{0}};
     polls[0].fd = sock;
     polls[0].events = POLLIN;
@@ -248,7 +248,7 @@ void* visionserver_thread(void* arg) {
       LOGE("poll failed (%d - %d)", ret, errno);
       break;
     }
-    if (signal_state.do_exit) break;
+    if (do_exit) break;
     if (!polls[0].revents) {
       continue;
     }

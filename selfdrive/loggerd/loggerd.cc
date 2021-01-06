@@ -120,7 +120,8 @@ double randrange(double a, double b) {
   return dist(gen);
 }
 
-SignalState sig_state;
+ExitHandler do_exit;
+
 static bool file_exists (const std::string& fn) {
   std::ifstream f(fn);
   return f.good();
@@ -139,7 +140,7 @@ public:
     std::unique_lock<std::mutex> lk(fid_lock);
     while (stream_frame_id > log_frame_id           //if the log camera is older, wait for it to catch up.
            && (stream_frame_id - log_frame_id) < 8  // but if its too old then there probably was a discontinuity (visiond restarted)
-           && !sig_state.do_exit) {
+           && !do_exit) {
       cv.wait(lk);
     }
   }
@@ -214,7 +215,7 @@ void encoder_thread(int cam_idx) {
 
   LoggerHandle *lh = NULL;
 
-  while (!sig_state.do_exit) {
+  while (!do_exit) {
     VisionStreamBufs buf_info;
     int err = visionstream_init(&stream, cam_info.stream_type, false, &buf_info);
     if (err != 0) {
@@ -240,7 +241,7 @@ void encoder_thread(int cam_idx) {
       }
     }
 
-    while (!sig_state.do_exit) {
+    while (!do_exit) {
       VIPCBufExtra extra;
       VIPCBuf* buf = visionstream_get(&stream, &extra);
       if (buf == NULL) {
@@ -261,7 +262,7 @@ void encoder_thread(int cam_idx) {
         // wait if camera pkt id is older than stream
         rotate_state.waitLogThread();
 
-        if (sig_state.do_exit) break;
+        if (do_exit) break;
 
         // rotate the encoder if the logger is on a newer segment
         if (rotate_state.should_rotate) {
@@ -288,7 +289,7 @@ void encoder_thread(int cam_idx) {
           s.should_close += 1;
           pthread_mutex_unlock(&s.rotate_lock);
 
-          while(s.should_close > 0 && s.should_close < s.num_encoder && !sig_state.do_exit) { usleep(1000); }
+          while(s.should_close > 0 && s.should_close < s.num_encoder && !do_exit) { usleep(1000); }
 
           pthread_mutex_lock(&s.rotate_lock);
           s.should_close = s.should_close == s.num_encoder ? 1 - s.num_encoder : s.should_close + 1;
@@ -303,7 +304,7 @@ void encoder_thread(int cam_idx) {
           s.finish_close += 1;
           pthread_mutex_unlock(&s.rotate_lock);
 
-          while(s.finish_close > 0 && s.finish_close < s.num_encoder && !sig_state.do_exit) { usleep(1000); }
+          while(s.finish_close > 0 && s.finish_close < s.num_encoder && !do_exit) { usleep(1000); }
           s.finish_close = 0;
 
           rotate_state.finish_rotate();

@@ -350,13 +350,13 @@ void set_exposure_target(CameraState *c, const uint8_t *pix_ptr, int x_start, in
   camera_autoexposure(c, lum_med / 256.0);
 }
 
-extern SignalState signal_state;
+extern ExitHandler do_exit;
 
 void *processing_thread(MultiCameraState *cameras, const char *tname,
                           CameraState *cs, process_thread_cb callback) {
   set_thread_name(tname);
 
-  for (int cnt = 0; !signal_state.do_exit; cnt++) {
+  for (int cnt = 0; !do_exit; cnt++) {
     if (!cs->buf.acquire()) continue;
 
     callback(cameras, cs, cnt);

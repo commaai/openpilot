@@ -21,7 +21,7 @@
 #pragma clang diagnostic pop
 
 
-extern SignalState sig_state;
+extern ExitHandler do_exit;
 
 #define FRAME_WIDTH  1164
 #define FRAME_HEIGHT 874
@@ -81,7 +81,7 @@ static void* rear_thread(void *arg) {
   uint32_t frame_id = 0;
   TBuffer* tb = &s->buf.camera_tb;
 
-  while (!sig_state.do_exit) {
+  while (!do_exit) {
     cv::Mat frame_mat;
     cv::Mat transformed_mat;
 
@@ -154,7 +154,7 @@ void front_thread(CameraState *s) {
   uint32_t frame_id = 0;
   TBuffer* tb = &s->buf.camera_tb;
 
-  while (!sig_state.do_exit) {
+  while (!do_exit) {
     cv::Mat frame_mat;
     cv::Mat transformed_mat;
 

@@ -21,6 +21,8 @@
 #include "common/utilpp.h"
 #include "common/swaglog.h"
 
+ExitHandler do_exit
+
 namespace {
 
 PubMaster *pm;
@@ -143,10 +145,10 @@ void gps_destroy() {
 
 int main() {
   setpriority(PRIO_PROCESS, 0, -13);
-  SignalState sig_state;
+
   gps_init();
 
-  while(!sig_state.do_exit) pause();
+  while(!do_exit) pause();
 
   gps_destroy();
 

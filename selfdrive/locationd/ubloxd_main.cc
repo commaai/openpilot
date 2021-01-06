@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <signal.h>
 #include <unistd.h>
 #include <errno.h>
 #include <sys/time.h>
@@ -21,10 +20,10 @@
 
 #include "ublox_msg.h"
 
+ExitHandler do_exit;
 using namespace ublox;
 int ubloxd_main(poll_ubloxraw_msg_func poll_func, send_gps_event_func send_func) {
   LOGW("starting ubloxd");
-  SignalState signal;
 
   UbloxMsgParser parser;
 
@@ -35,11 +34,11 @@ int ubloxd_main(poll_ubloxraw_msg_func poll_func, send_gps_event_func send_func)
 
   PubMaster pm({"ubloxGnss", "gpsLocationExternal"});
 
-  while (!signal.do_exit) {
+  while (!do_exit) {
     Message * msg = subscriber->receive();
     if (!msg){
       if (errno == EINTR) {
-        signal.do_exit = true;
+        do_exit = true;
       }
       continue;
     }
@@ -54,7 +53,7 @@ int ubloxd_main(poll_ubloxraw_msg_func poll_func, send_gps_event_func send_func)
     const uint8_t *data = ubloxRaw.begin();
     size_t len = ubloxRaw.size();
     size_t bytes_consumed = 0;
-    while(bytes_consumed < len && !signal.do_exit) {
+    while(bytes_consumed < len && !do_exit) {
       size_t bytes_consumed_this_time = 0U;
       if(parser.add_data(data + bytes_consumed, (uint32_t)(len - bytes_consumed), bytes_consumed_this_time)) {
         // New message available

@@ -32,7 +32,7 @@
 #define FRAME_STRIDE 2416  // for 10 bit output
 
 
-extern SignalState sig_state;
+extern ExitHandler do_exit;
 
 // global var for AE ops
 std::atomic<CameraExpInfo> cam_exp[3] = {{{0}}};
@@ -1079,7 +1079,7 @@ static void* ae_thread(void* arg) {
 
   set_thread_name("camera_settings");
 
-  while(!sig_state.do_exit) {
+  while(!do_exit) {
     for (int i=0;i<3;i++) {
       cam_op[i] = cam_exp[i].load();
       if (cam_op[i].op_id != op_id_last[i]) {
@@ -1161,7 +1161,7 @@ void cameras_run(MultiCameraState *s) {
 
   // poll events
   LOG("-- Dequeueing Video events");
-  while (!sig_state.do_exit) {
+  while (!do_exit) {
     struct pollfd fds[1] = {{0}};
 
     fds[0].fd = s->video0_fd;

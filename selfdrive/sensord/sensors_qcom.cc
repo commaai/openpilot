@@ -33,9 +33,9 @@
 #define SENSOR_PROXIMITY 6
 #define SENSOR_LIGHT 7
 
+ExitHandler do_exit;
 volatile sig_atomic_t re_init_sensors = 0;
 
-SignalState sig_state;
 namespace {
 
 void sigpipe_handler(int sig) {
@@ -49,7 +49,7 @@ void sensor_loop() {
   uint64_t frame = 0;
   bool low_power_mode = false;
 
-  while (!sig_state.do_exit) {
+  while (!do_exit) {
     SubMaster sm({"thermal"});
     PubMaster pm({"sensorEvents"});
 
@@ -110,7 +110,7 @@ void sensor_loop() {
     static const size_t numEvents = 16;
     sensors_event_t buffer[numEvents];
 
-    while (!sig_state.do_exit) {
+    while (!do_exit) {
       int n = device->poll(device, buffer, numEvents);
       if (n == 0) continue;
       if (n < 0) {

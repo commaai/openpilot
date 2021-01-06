@@ -17,10 +17,11 @@
 #endif
 
 
+ExitHandler do_exit;
+
 int main(int argc, char **argv) {
   int err;
   setpriority(PRIO_PROCESS, 0, -15);
-  SignalState sig_state;
 
   PubMaster pm({"driverState"});
 
@@ -30,7 +31,7 @@ int main(int argc, char **argv) {
 
   // loop
   VisionStream stream;
-  while (!sig_state.do_exit) {
+  while (!do_exit) {
     VisionStreamBufs buf_info;
     err = visionstream_init(&stream, VISION_STREAM_YUV_FRONT, true, &buf_info);
     if (err) {
@@ -41,7 +42,7 @@ int main(int argc, char **argv) {
     LOGW("connected with buffer size: %d", buf_info.buf_len);
 
     double last = 0;
-    while (!sig_state.do_exit) {
+    while (!do_exit) {
       VIPCBuf *buf;
       VIPCBufExtra extra;
       buf = visionstream_get(&stream, &extra);

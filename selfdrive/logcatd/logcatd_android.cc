@@ -14,9 +14,9 @@
 #include "common/utilpp.h"
 #include "messaging.hpp"
 
+ExitHandler do_exit;
 int main() {
   int err;
-  SignalState signal;
 
   struct logger_list *logger_list = android_logger_list_alloc(ANDROID_LOG_RDONLY | ANDROID_LOG_NONBLOCK, 0, 0);
   assert(logger_list);
@@ -32,7 +32,7 @@ int main() {
   assert(kernel_logger);
   PubMaster pm({"androidLog"});
 
-  while (!signal.do_exit) {
+  while (!do_exit) {
     log_msg log_msg;
     err = android_logger_list_read(logger_list, &log_msg);
 

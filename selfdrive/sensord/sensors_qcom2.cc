@@ -26,7 +26,7 @@
 
 #define I2C_BUS_IMU 1
 
-SignalState sig_state;
+ExitHandler do_exit;
 
 int sensor_loop() {
   I2CBus *i2c_bus_imu;
@@ -73,7 +73,7 @@ int sensor_loop() {
 
   PubMaster pm({"sensorEvents"});
 
-  while (!sig_state.do_exit){
+  while (!do_exit){
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
     const int num_events = sensors.size();

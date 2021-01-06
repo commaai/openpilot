@@ -34,7 +34,7 @@
 #include "camera_qcom.h"
 
 
-extern SignalState sig_state;
+extern ExitHandler do_exit;
 
 // global var for AE/AF ops
 std::atomic<CameraExpInfo> rear_exp{{0}};
@@ -2008,7 +2008,7 @@ static void* ops_thread(void* arg) {
 
   set_thread_name("camera_settings");
   SubMaster sm({"sensorEvents"});
-  while(!sig_state.do_exit) {
+  while(!do_exit) {
     rear_op = rear_exp.load();
     if (rear_op.op_id != rear_op_id_last) {
       do_autoexposure(&s->rear, rear_op.grey_frac);
@@ -2135,7 +2135,7 @@ void cameras_run(MultiCameraState *s) {
 
   CameraState* cameras[2] = {&s->rear, &s->front};
 
-  while (!sig_state.do_exit) {
+  while (!do_exit) {
     struct pollfd fds[2] = {{0}};
 
     fds[0].fd = cameras[0]->isp_fd;

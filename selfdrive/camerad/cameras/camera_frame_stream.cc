@@ -18,7 +18,7 @@ extern "C" {
 #include <libavcodec/avcodec.h>
 }
 
-extern SignalState signal_state;
+extern ExitHandler do_exit;
 
 #define FRAME_WIDTH 1164
 #define FRAME_HEIGHT 874
@@ -46,7 +46,7 @@ void run_frame_stream(MultiCameraState *s) {
   CameraState *const rear_camera = &s->rear;
   auto *tb = &rear_camera->buf.camera_tb;
 
-  while (!signal_state.do_exit) {
+  while (!do_exit) {
     if (s->sm->update(1000) == 0) continue;
 
     auto frame = (*(s->sm))["frame"].getFrame();

@@ -11,9 +11,9 @@
 #include "common/utilpp.h"
 #include "messaging.hpp"
 
+ExitHandler do_exit;
 int main(int argc, char *argv[]) {
 
-  SignalState signal_state;
   PubMaster pm({"androidLog"});
 
   sd_journal *journal;
@@ -22,7 +22,7 @@ int main(int argc, char *argv[]) {
   assert(sd_journal_seek_tail(journal) >= 0);
 
   int r;
-  while (!signal_state.do_exit) {
+  while (!do_exit) {
     r = sd_journal_next(journal);
     assert(r >= 0);
 

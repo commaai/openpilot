@@ -10,6 +10,7 @@
 #include <fstream>
 #include <thread>
 #include <chrono>
+
 #ifndef sighandler_t
 typedef void (*sighandler_t)(int sig);
 #endif
@@ -80,12 +81,18 @@ inline void sleep_for(const int milliseconds) {
 }
 }
 
-class SignalState {
+class ExitHandler {
 public:
-  SignalState() {
+  ExitHandler() {
     std::signal(SIGINT, (sighandler_t)set_do_exit);
     std::signal(SIGTERM, (sighandler_t)set_do_exit);
   };
+  inline operator bool() { return do_exit; }
+  inline ExitHandler& operator=(bool exit) {
+    do_exit = exit;
+    return *this;
+  }
+private:
   static void set_do_exit(int sig) { do_exit = true; }
   inline static std::atomic<bool> do_exit = false;
 };

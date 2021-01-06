@@ -20,6 +20,8 @@
 #include "common/util.h"
 #include "common/utilpp.h"
 
+ExitHandler do_exit;
+
 namespace {
 struct ProcCache {
   std::string name;
@@ -30,7 +32,6 @@ struct ProcCache {
 }
 
 int main() {
-  SignalState sig_state;
   PubMaster publisher({"procLog"});
 
   double jiffy = sysconf(_SC_CLK_TCK);
@@ -38,7 +39,7 @@ int main() {
 
   std::unordered_map<pid_t, ProcCache> proc_cache;
 
-  while (!sig_state.do_exit) {
+  while (!do_exit) {
 
     MessageBuilder msg;
     auto procLog = msg.initEvent().initProcLog();

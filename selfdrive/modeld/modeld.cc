@@ -13,7 +13,7 @@
 #include "models/driving.h"
 #include "messaging.hpp"
 
-SignalState sig_state;
+ExitHandler do_exit;
 // globals
 bool run_model;
 mat3 cur_transform;
@@ -58,7 +58,7 @@ void* live_thread(void *arg) {
     0.0, 0.0, 1.0,
   }}, db_s);
 
-  while (!sig_state.do_exit) {
+  while (!do_exit) {
     if (sm.update(100) > 0){
 
       auto extrinsic_matrix = sm["liveCalibration"].getLiveCalibration().getExtrinsicMatrix();
@@ -121,7 +121,7 @@ int main(int argc, char **argv) {
 
   // loop
   VisionStream stream;
-  while (!sig_state.do_exit) {
+  while (!do_exit) {
     VisionStreamBufs buf_info;
     err = visionstream_init(&stream, VISION_STREAM_YUV, true, &buf_info);
     if (err) {
@@ -144,7 +144,7 @@ int main(int argc, char **argv) {
     double last = 0;
     int desire = -1;
     uint32_t run_count = 0;
-    while (!sig_state.do_exit) {
+    while (!do_exit) {
       VIPCBuf *buf;
       VIPCBufExtra extra;
       buf = visionstream_get(&stream, &extra);
