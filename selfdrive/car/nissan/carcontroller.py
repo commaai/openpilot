@@ -2,13 +2,8 @@ from cereal import car
 from common.numpy_fast import clip, interp
 from selfdrive.car.nissan import nissancan
 from opendbc.can.packer import CANPacker
-from selfdrive.car.nissan.values import CAR, STEER_THRESHOLD
+from selfdrive.car.nissan.values import CAR, CarControllerParams
 
-# Steer angle limits
-ANGLE_DELTA_BP = [0., 5., 15.]
-ANGLE_DELTA_V = [5., .8, .15]     # windup limit
-ANGLE_DELTA_VU = [5., 3.5, 0.4]   # unwind limit
-LKAS_MAX_TORQUE = 1               # A value of 1 is easy to overpower
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
@@ -41,22 +36,22 @@ class CarController():
     if enabled:
       # # windup slower
       if self.last_angle * apply_angle > 0. and abs(apply_angle) > abs(self.last_angle):
-        angle_rate_lim = interp(CS.out.vEgo, ANGLE_DELTA_BP, ANGLE_DELTA_V)
+        angle_rate_lim = interp(CS.out.vEgo, CarControllerParams.ANGLE_DELTA_BP, CarControllerParams.ANGLE_DELTA_V)
       else:
-        angle_rate_lim = interp(CS.out.vEgo, ANGLE_DELTA_BP, ANGLE_DELTA_VU)
+        angle_rate_lim = interp(CS.out.vEgo, CarControllerParams.ANGLE_DELTA_BP, CarControllerParams.ANGLE_DELTA_VU)
 
       apply_angle = clip(apply_angle, self.last_angle - angle_rate_lim, self.last_angle + angle_rate_lim)
 
       # Max torque from driver before EPS will give up and not apply torque
       if not bool(CS.out.steeringPressed):
-        self.lkas_max_torque = LKAS_MAX_TORQUE
+        self.lkas_max_torque = CarControllerParams.LKAS_MAX_TORQUE
       else:
         # Scale max torque based on how much torque the driver is applying to the wheel
         self.lkas_max_torque = max(
           # Scale max torque down to half LKAX_MAX_TORQUE as a minimum
-          LKAS_MAX_TORQUE * 0.5,
+          CarControllerParams.LKAS_MAX_TORQUE * 0.5,
           # Start scaling torque at STEER_THRESHOLD
-          LKAS_MAX_TORQUE - 0.6 * max(0, abs(CS.out.steeringTorque) - STEER_THRESHOLD)
+          CarControllerParams.LKAS_MAX_TORQUE - 0.6 * max(0, abs(CS.out.steeringTorque) - CarControllerParams.STEER_THRESHOLD)
         )
 
     else:

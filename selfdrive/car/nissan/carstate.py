@@ -5,7 +5,7 @@ from opendbc.can.can_define import CANDefine
 from selfdrive.car.interfaces import CarStateBase
 from selfdrive.config import Conversions as CV
 from opendbc.can.parser import CANParser
-from selfdrive.car.nissan.values import CAR, DBC, STEER_THRESHOLD
+from selfdrive.car.nissan.values import CAR, DBC, CarControllerParams
 
 TORQUE_SAMPLES = 12
 
@@ -65,7 +65,7 @@ class CarState(CarStateBase):
     ret.steeringTorque = cp.vl["STEER_TORQUE_SENSOR"]["STEER_TORQUE_DRIVER"]
     self.steeringTorqueSamples.append(ret.steeringTorque)
     # Filtering driver torque to prevent steeringPressed false positives
-    ret.steeringPressed = bool(abs(sum(self.steeringTorqueSamples) / TORQUE_SAMPLES) > STEER_THRESHOLD)
+    ret.steeringPressed = bool(abs(sum(self.steeringTorqueSamples) / TORQUE_SAMPLES) > CarControllerParams.STEER_THRESHOLD)
 
     ret.steeringAngle = cp.vl["STEER_ANGLE_SENSOR"]["STEER_ANGLE"]
 
