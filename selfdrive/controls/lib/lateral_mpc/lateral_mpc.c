@@ -63,7 +63,7 @@ void init(double pathCost, double headingCost, double steerRateCost){
 }
 
 int run_mpc(state_t * x0, log_t * solution, double v_poly[4],
-             double curvature_factor, double target_y[N+1], double target_psi[N+1]){
+             double curvature_factor, double rotation_radius, double target_y[N+1], double target_psi[N+1]){
 
   int    i;
 
@@ -74,6 +74,8 @@ int run_mpc(state_t * x0, log_t * solution, double v_poly[4],
     acadoVariables.od[i+2] = v_poly[1];
     acadoVariables.od[i+3] = v_poly[2];
     acadoVariables.od[i+4] = v_poly[3];
+    
+    acadoVariables.od[i+5] = rotation_radius;
 
   }
   for (i = 0; i < N; i+= 1){

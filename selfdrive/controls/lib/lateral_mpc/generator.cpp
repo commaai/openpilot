@@ -21,14 +21,15 @@ int main( )
 
   OnlineData curvature_factor;
   OnlineData v_poly_r0, v_poly_r1, v_poly_r2, v_poly_r3;
+  OnlineData rotation_radius;
 
   Control t;
   
   auto poly_v = v_poly_r0*(xx*xx*xx) + v_poly_r1*(xx*xx) + v_poly_r2*xx + v_poly_r3;
 
   // Equations of motion
-  f << dot(xx) == poly_v * cos(psi);
-  f << dot(yy) == poly_v * sin(psi);
+  f << dot(xx) == poly_v * cos(psi) - rotation_radius * sin(psi) * (poly_v * delta *curvature_factor);
+  f << dot(yy) == poly_v * sin(psi) + rotation_radius * cos(psi) * (poly_v * delta *curvature_factor);
   f << dot(psi) == poly_v * delta * curvature_factor;
   f << dot(delta) == t;
 
@@ -79,7 +80,7 @@ int main( )
   ocp.subjectTo( deg2rad(-90) <= psi <= deg2rad(90));
   // more than absolute max steer angle
   ocp.subjectTo( deg2rad(-50) <= delta <= deg2rad(50));
-  ocp.setNOD(5);
+  ocp.setNOD(6);
 
   OCPexport mpc(ocp);
   mpc.set( HESSIAN_APPROXIMATION, GAUSS_NEWTON );

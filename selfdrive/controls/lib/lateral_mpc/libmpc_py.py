@@ -25,7 +25,7 @@ typedef struct {
 void init(double pathCost, double headingCost, double steerRateCost);
 void init_weights(double pathCost, double headingCost, double steerRateCost);
 int run_mpc(state_t * x0, log_t * solution,
-             double v_poly[4], double curvature_factor,
+             double v_poly[4], double curvature_factor, double rotation_radius,
              double target_y[N+1], double target_psi[N+1]);
 """)
 
