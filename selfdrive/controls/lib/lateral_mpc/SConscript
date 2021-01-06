@@ -2,6 +2,7 @@
 Import('env', 'arch')
 
 cpp_path = [
+    "#selfdrive",
     "#phonelibs/acado/include",
     "#phonelibs/acado/include/acado",
     "#phonelibs/qpoases/INCLUDE",
@@ -31,10 +32,6 @@ if arch != "aarch64":
       "-Wno-c99-designator",
       "-Wno-error=deprecated-declarations",
       "-Wno-reorder-init-list"])
-    acado_libs = [File("#phonelibs/acado/x64/lib/libacado_toolkit.a"),
-                  File("#phonelibs/acado/x64/lib/libacado_casadi.a"),
-                  File("#phonelibs/acado/x64/lib/libacado_csparse.a")]
-    env2.Program('generator', 'generator.cpp', LIBS=acado_libs, CPPPATH=cpp_path)
     acado_libs = [File("#phonelibs/acado/x64/lib/libacado_toolkit.a"),
                   File("#phonelibs/acado/x64/lib/libacado_casadi.a"),
                   File("#phonelibs/acado/x64/lib/libacado_csparse.a")]

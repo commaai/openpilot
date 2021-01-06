@@ -1,13 +1,10 @@
 #include <acado_code_generation.hpp>
+#include "common/modeldata.h"
 
 #define PI 3.1415926536
 #define deg2rad(d) (d/180.0*PI)
 
 const int N_steps = 16;
-double T_IDXS[N_steps + 1] = {0.0, 0.00976562, 0.0390625 , 0.08789062, 0.15625,
-                     0.24414062, 0.3515625 , 0.47851562, 0.625     , 0.79101562,
-                     0.9765625 , 1.18164062, 1.40625   , 1.65039062, 1.9140625 ,
-                     2.19726562, 2.5};
 using namespace std;
 
 int main( )
@@ -69,7 +66,9 @@ int main( )
   // QN(2,2) = 1.0;
   // QN(3,3) = 1.0;
 
-  Grid times(N_steps + 1, T_IDXS);
+  double T_IDXS_ARR[N_steps + 1];
+  memcpy(T_IDXS_ARR, T_IDXS, (N_steps + 1) * sizeof(double));
+  Grid times(N_steps + 1, T_IDXS_ARR);
   OCP ocp(times);
   ocp.subjectTo(f);
 

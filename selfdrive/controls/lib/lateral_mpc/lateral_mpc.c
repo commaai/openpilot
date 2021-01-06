@@ -1,6 +1,6 @@
 #include "acado_common.h"
 #include "acado_auxiliary_functions.h"
-
+#include "common/modeldata.h"
 #include <stdio.h>
 
 #define NX          ACADO_NX  /* Number of differential state variables.  */
@@ -19,12 +19,6 @@ ACADOworkspace acadoWorkspace;
 typedef struct {
   double x, y, psi, delta, t;
 } state_t;
-
-const int N_steps = 16;
-double T_IDXS[N_steps + 1] = {0.0, 0.00976562, 0.0390625 , 0.08789062, 0.15625,
-                     0.24414062, 0.3515625 , 0.47851562, 0.625     , 0.79101562,
-                     0.9765625 , 1.18164062, 1.40625   , 1.65039062, 1.9140625 ,
-                     2.19726562, 2.5};
 
 typedef struct {
   double x[N+1];
