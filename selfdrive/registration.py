@@ -64,6 +64,7 @@ def register(spinner=None):
       except Exception:
         cloudlog.exception("Error getting imei, trying again...")
         time.sleep(1)
+    params.put("IMEI", imei1)
 
     while True:
       try:
@@ -73,6 +74,7 @@ def register(spinner=None):
         dongleauth = json.loads(resp.text)
         dongle_id = dongleauth["dongle_id"]
         params.put("DongleId", dongle_id)
+        params.put("HardwareSerial", HARDWARE.get_serial())
         break
       except Exception:
         cloudlog.exception("failed to authenticate")
