@@ -179,7 +179,7 @@ bool CameraBuf::acquire() {
   yuv_metas[cur_yuv_idx] = frame_data;
   rgb_to_yuv_queue(&rgb_to_yuv_state, q, cur_rgb_buf->buf_cl, cur_yuv_buf->buf_cl);
 
-  VIPCBufExtra extra = {
+  VisionIpcBufExtra extra = {
                         frame_data.frame_id,
                         frame_data.timestamp_sof,
                         frame_data.timestamp_eof,

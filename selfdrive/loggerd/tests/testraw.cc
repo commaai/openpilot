@@ -28,7 +28,7 @@ int main() {
   vidlogger.Open("o1");
 
   for (int cnt=0; cnt<200; cnt++) {
-    VIPCBufExtra extra;
+    VisionIpcBufExtra extra;
     VIPSBuf* buf = visionstream_get(&stream, &extra);
     if (buf == NULL) {
       printf("visionstream get failed\n");

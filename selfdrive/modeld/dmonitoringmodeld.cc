@@ -35,7 +35,7 @@ int main(int argc, char **argv) {
 
     double last = 0;
     while (!do_exit) {
-      VIPCBufExtra extra = {0};
+      VisionIpcBufExtra extra = {0};
       VisionBuf *buf = vipc_client.recv(&extra);
       if (buf == nullptr){
         continue;

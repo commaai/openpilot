@@ -457,7 +457,7 @@ static void handle_out_buf(EncoderState *s, OMX_BUFFERHEADERTYPE *out_buf) {
 int encoder_encode_frame(EncoderState *s,
                          const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
                          int in_width, int in_height,
-                         int *frame_segment, VIPCBufExtra *extra) {
+                         int *frame_segment, VisionIpcBufExtra *extra) {
   int err;
   pthread_mutex_lock(&s->lock);
 

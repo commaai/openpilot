@@ -239,7 +239,7 @@ void encoder_thread(int cam_idx) {
     }
 
     while (!do_exit) {
-      VIPCBufExtra extra;
+      VisionIpcBufExtra extra;
       VisionBuf* buf = vipc_client.recv(&extra);
       if (buf == nullptr){
         continue;

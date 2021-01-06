@@ -138,7 +138,7 @@ int main(int argc, char **argv) {
     uint32_t run_count = 0;
 
     while (!do_exit) {
-      VIPCBufExtra extra;
+      VisionIpcBufExtra extra;
       VisionBuf *buf = vipc_client.recv(&extra);
       if (buf == nullptr){
         continue;
