@@ -86,11 +86,18 @@ static std::map<UIStatus, NVGcolor> bg_colors = {
 };
 
 typedef struct {
-  float x[TRAJECTORY_SIZE];
-  float y[TRAJECTORY_SIZE];
-  float z[TRAJECTORY_SIZE];
-} line;
+  float x, y;
+} vertex_data;
 
+typedef struct {
+  vertex_data v[MODEL_PATH_MAX_VERTICES_CNT];
+  int cnt;
+} line_vertices_data;
+
+typedef struct {
+  vertex_data v[TRACK_POINTS_MAX_CNT];
+  int cnt;
+} track_vertices_data;
 
 typedef struct UIScene {
 
@@ -117,33 +124,14 @@ typedef struct UIScene {
   cereal::ControlsState::Reader controls_state;
   cereal::DriverState::Reader driver_state;
   cereal::DMonitoringState::Reader dmonitoring_state;
-  cereal::ModelDataV2::Reader model;
-  line path;
-  line outer_left_lane_line;
-  line left_lane_line;
-  line right_lane_line;
-  line outer_right_lane_line;
-  line left_road_edge;
-  line right_road_edge;
-  float max_distance;
+
+  // modelV2
   float lane_line_probs[4];
   float road_edge_stds[2];
+  track_vertices_data track_vertices;
+  line_vertices_data lane_line_vertices[4];
+  line_vertices_data road_edge_vertices[2];
 } UIScene;
-
-typedef struct {
-  float x, y;
-} vertex_data;
-
-typedef struct {
-  vertex_data v[MODEL_PATH_MAX_VERTICES_CNT];
-  int cnt;
-} line_vertices_data;
-
-typedef struct {
-  vertex_data v[TRACK_POINTS_MAX_CNT];
-  int cnt;
-} track_vertices_data;
-
 
 typedef struct UIState {
   // framebuffer
@@ -200,10 +188,6 @@ typedef struct UIState {
 
   bool alert_blinked;
   float alert_blinking_alpha;
-
-  track_vertices_data track_vertices;
-  line_vertices_data lane_line_vertices[4];
-  line_vertices_data road_edge_vertices[2];
 
   Rect video_rect;
 } UIState;

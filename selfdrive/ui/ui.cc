@@ -16,6 +16,7 @@
 #include "ui.hpp"
 #include "paint.hpp"
 
+
 int write_param_float(float param, const char* param_name, bool persistent_param) {
   char s[16];
   int size = snprintf(s, sizeof(s), "%f", param);
@@ -104,6 +105,50 @@ destroy:
   s->vision_connected = false;
 }
 
+template <class T>
+static void update_line_data(const UIState *s, const cereal::ModelDataV2::XYZTData::Reader &line,
+                             float y_off, float z_off, T *pvd, float max_distance) {
+  const auto line_x = line.getX(), line_y = line.getY(), line_z = line.getZ();
+  int max_idx = -1;
+  vertex_data *v = &pvd->v[0];
+  const float margin = 500.0f;
+  for (int i = 0; ((i < TRAJECTORY_SIZE) and (line_x[i] < fmax(MIN_DRAW_DISTANCE, max_distance))); i++) {
+    v += car_space_to_full_frame(s, line_x[i], -line_y[i] - y_off, -line_z[i] + z_off, &v->x, &v->y, margin);
+    max_idx = i;
+  }
+  for (int i = max_idx; i >= 0; i--) {
+    v += car_space_to_full_frame(s, line_x[i], -line_y[i] + y_off, -line_z[i] + z_off, &v->x, &v->y, margin);
+  }
+  pvd->cnt = v - pvd->v;
+  assert(pvd->cnt < std::size(pvd->v));
+}
+
+static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
+  UIScene &scene = s->scene;
+  const float max_distance = fmin(model.getPosition().getX()[TRAJECTORY_SIZE - 1], MAX_DRAW_DISTANCE);
+  // update lane lines
+  const auto lane_lines = model.getLaneLines();
+  const auto lane_line_probs = model.getLaneLineProbs();
+  for (int i = 0; i < std::size(scene.lane_line_vertices); i++) {
+    scene.lane_line_probs[i] = lane_line_probs[i];
+    update_line_data(s, lane_lines[i], 0.025 * scene.lane_line_probs[i], 1.22, &scene.lane_line_vertices[i], max_distance);
+  }
+
+  // update road edges
+  const auto road_edges = model.getRoadEdges();
+  const auto road_edge_stds = model.getRoadEdgeStds();
+  for (int i = 0; i < std::size(scene.road_edge_vertices); i++) {
+    scene.road_edge_stds[i] = road_edge_stds[i];
+    update_line_data(s, road_edges[i], 0.025, 1.22, &scene.road_edge_vertices[i], max_distance);
+  }
+
+  // update path
+  const float lead_d = scene.lead_data[0].getStatus() ? scene.lead_data[0].getDRel() * 2. : MAX_DRAW_DISTANCE;
+  float path_length = (lead_d > 0.) ? lead_d - fmin(lead_d * 0.35, 10.) : MAX_DRAW_DISTANCE;
+  path_length = fmin(path_length, max_distance);
+  update_line_data(s, model.getPosition(), 0.5, 0, &scene.track_vertices, path_length);
+}
+
 void update_sockets(UIState *s) {
 
   UIScene &scene = s->scene;
@@ -170,23 +215,7 @@ void update_sockets(UIState *s) {
     }
   }
   if (sm.updated("modelV2")) {
-    scene.model = sm["modelV2"].getModelV2();
-    scene.max_distance = fmin(scene.model.getPosition().getX()[TRAJECTORY_SIZE - 1], MAX_DRAW_DISTANCE);
-    for (int ll_idx = 0; ll_idx < 4; ll_idx++) {
-      if (scene.model.getLaneLineProbs().size() > ll_idx) {
-        scene.lane_line_probs[ll_idx] = scene.model.getLaneLineProbs()[ll_idx];
-      } else {
-        scene.lane_line_probs[ll_idx] = 0.0;
-      }
-    }
-
-    for (int re_idx = 0; re_idx < 2; re_idx++) {
-      if (scene.model.getRoadEdgeStds().size() > re_idx) {
-        scene.road_edge_stds[re_idx] = scene.model.getRoadEdgeStds()[re_idx];
-      } else {
-        scene.road_edge_stds[re_idx] = 1.0;
-      }
-    }
+    update_model(s, sm["modelV2"].getModelV2());
   }
   if (sm.updated("uiLayoutState")) {
     auto data = sm["uiLayoutState"].getUiLayoutState();
