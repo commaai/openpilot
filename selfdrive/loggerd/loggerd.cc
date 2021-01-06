@@ -121,7 +121,7 @@ double randrange(double a, double b) {
 
 ExitHandler do_exit;
 
-static bool file_exists (const std::string& fn) {
+static bool file_exists(const std::string& fn) {
   std::ifstream f(fn);
   return f.good();
 }
@@ -536,13 +536,6 @@ int main(int argc, char** argv) {
 
   clear_locks();
 
-  s.ctx = Context::create();
-  Poller * poller = Poller::create();
-
-  // subscribe to all services
-
-  std::vector<SubSocket*> socks;
-
   typedef struct QlogState {
     int counter, freq;
   } QlogState;
@@ -607,7 +600,7 @@ int main(int argc, char** argv) {
   while (!do_exit) {
     for (auto sock : poller->poll(100 * 1000)) {
       Message * last_msg = nullptr;
-      while (true) {
+      while (!do_exit) {
         Message * msg = sock->receive(true);
         if (!msg){
           break;

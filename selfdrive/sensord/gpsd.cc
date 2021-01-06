@@ -20,7 +20,7 @@
 #include "common/utilpp.h"
 #include "common/swaglog.h"
 
-ExitHandler do_exit
+ExitHandler do_exit;
 
 namespace {
 
