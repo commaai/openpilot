@@ -21,6 +21,7 @@
 #include "common/params.h"
 #include "common/swaglog.h"
 #include "common/util.h"
+#include "common/utilpp.h"
 #include "visionipc_server.h"
 
 ExitHandler do_exit;
