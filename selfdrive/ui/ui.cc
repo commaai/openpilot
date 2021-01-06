@@ -113,11 +113,11 @@ static void update_line_data(const UIState *s, const cereal::ModelDataV2::XYZTDa
   vertex_data *v = &pvd->v[0];
   const float margin = 500.0f;
   for (int i = 0; ((i < TRAJECTORY_SIZE) and (line_x[i] < fmax(MIN_DRAW_DISTANCE, max_distance))); i++) {
-    v += car_space_to_full_frame(s, line_x[i], -line_y[i] - y_off, -line_z[i] + z_off, &v->x, &v->y, margin);
+    v += car_space_to_full_frame(s, line_x[i], -line_y[i] - y_off, -line_z[i] + z_off, v, margin);
     max_idx = i;
   }
   for (int i = max_idx; i >= 0; i--) {
-    v += car_space_to_full_frame(s, line_x[i], -line_y[i] + y_off, -line_z[i] + z_off, &v->x, &v->y, margin);
+    v += car_space_to_full_frame(s, line_x[i], -line_y[i] + y_off, -line_z[i] + z_off, v, margin);
   }
   pvd->cnt = v - pvd->v;
   assert(pvd->cnt < std::size(pvd->v));
