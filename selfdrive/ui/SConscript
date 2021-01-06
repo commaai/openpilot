@@ -3,8 +3,7 @@ Import('env', 'qt_env', 'arch', 'common', 'messaging', 'gpucommon', 'visionipc',
 
 
 src = ['ui.cc', 'paint.cc', 'sidebar.cc', '#phonelibs/nanovg/nanovg.c']
-libs = [common, 'zmq', 'capnp', 'kj', 'm', cereal, messaging, gpucommon, visionipc]
-
+libs = [common, 'zmq', 'capnp', 'kj', 'm', cereal, messaging, gpucommon, visionipc, 'QrCode']
 
 if qt_env is None:
   libs += ['EGL', 'GLESv3', 'gnustl_shared', 'log', 'utils', 'gui', 'hardware',
@@ -16,11 +15,11 @@ if qt_env is None:
     LINKFLAGS=linkflags,
     LIBS=libs)
 else:
-  qt_libs = qt_env["LIBS"] + libs + ["pthread", "ssl", "crypto"]
+  qt_libs = qt_env["LIBS"] + libs + ["pthread", "ssl", "crypto", 'QrCode']
 
   widgets = qt_env.Library("qt_widgets",
                  ["qt/qt_window.cc", "qt/qt_sound.cc", "qt/widgets/keyboard.cc", "qt/widgets/input_field.cc", "qt/widgets/drive_stats.cc",
-                  "qt/offroad/wifi.cc", "qt/offroad/wifiManager.cc", "qt/widgets/toggle.cc", "qt/widgets/offroad_alerts.cc"],
+                  "qt/offroad/wifi.cc", "qt/offroad/wifiManager.cc", "qt/widgets/toggle.cc", "qt/widgets/offroad_alerts.cc", "qt/widgets/pairing_qr.cc"],
                  LIBS=qt_libs)
   qt_libs.append(widgets)
 
