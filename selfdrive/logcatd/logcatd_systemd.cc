@@ -6,9 +6,8 @@
 
 #include "json11.hpp"
 #include <systemd/sd-journal.h>
-
+#include "common/util.h"
 #include "common/timing.h"
-#include "common/utilpp.h"
 #include "messaging.hpp"
 
 ExitHandler do_exit;

@@ -17,7 +17,6 @@
 
 #include "messaging.hpp"
 #include "common/timing.h"
-#include "common/utilpp.h"
 #include "common/swaglog.h"
 
 ExitHandler do_exit;

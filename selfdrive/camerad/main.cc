@@ -22,7 +22,6 @@
 #include "common/params.h"
 #include "common/swaglog.h"
 #include "common/util.h"
-#include "common/utilpp.h"
 #include "common/visionipc.h"
 
 #define MAX_CLIENTS 6

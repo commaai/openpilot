@@ -11,7 +11,6 @@
 #include <log/logprint.h>
 
 #include "common/timing.h"
-#include "common/utilpp.h"
 #include "messaging.hpp"
 
 ExitHandler do_exit;

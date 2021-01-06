@@ -5,8 +5,8 @@
 
 #include "messaging.hpp"
 #include "common/i2c.h"
+#include "common/util.h"
 #include "common/timing.h"
-#include "common/utilpp.h"
 #include "common/swaglog.h"
 
 #include "sensors/sensor.hpp"
