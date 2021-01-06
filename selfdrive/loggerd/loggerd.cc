@@ -204,7 +204,6 @@ void encoder_thread(int cam_idx) {
 
   std::vector<EncoderState*> encoders;
 
-  int encoder_segment = -1;
   int cnt = 0;
   pthread_mutex_lock(&s.rotate_lock);
   int my_idx = s.num_encoder;
@@ -252,8 +251,8 @@ void encoder_thread(int cam_idx) {
       //double msdiff = (double) diff / 1000000.0;
       // printf("logger latency to tsEof: %f\n", msdiff);
 
-      { // all the rotation stuff
-
+      // all the rotation stuff
+      {
         pthread_mutex_lock(&s.rotate_lock);
         pthread_mutex_unlock(&s.rotate_lock);
 
@@ -268,8 +267,11 @@ void encoder_thread(int cam_idx) {
             rotate_state.last_rotate_frame_id = extra.frame_id - 1;
             rotate_state.initialized = true;
           }
-          
-          while (s.rotate_seq_id != my_idx && !do_exit) { usleep(1000); }
+
+          // poll for our turn
+          while (s.rotate_seq_id != my_idx && !do_exit) {
+            usleep(1000);
+          }
 
           LOGW("camera %d rotate encoder to %s.", cam_idx, s.segment_path);
           for (auto &e : encoders) {
@@ -277,7 +279,6 @@ void encoder_thread(int cam_idx) {
           }
 
           s.rotate_seq_id = (my_idx + 1) % s.num_encoder;
-          encoder_segment = s.rotate_segment;
           if (lh) {
             lh_close(lh);
           }
@@ -287,7 +288,7 @@ void encoder_thread(int cam_idx) {
           s.should_close += 1;
           pthread_mutex_unlock(&s.rotate_lock);
 
-          while(s.should_close > 0 && s.should_close < s.num_encoder && !do_exit) { usleep(1000); }
+          while(s.should_close > 0 && s.should_close < s.num_encoder && !do_exit) usleep(1000);
 
           pthread_mutex_lock(&s.rotate_lock);
           s.should_close = s.should_close == s.num_encoder ? 1 - s.num_encoder : s.should_close + 1;
@@ -302,7 +303,8 @@ void encoder_thread(int cam_idx) {
           s.finish_close += 1;
           pthread_mutex_unlock(&s.rotate_lock);
 
-          while(s.finish_close > 0 && s.finish_close < s.num_encoder && !do_exit) { usleep(1000); }
+          // wait for all to finish
+          while(s.finish_close > 0 && s.finish_close < s.num_encoder && !do_exit) usleep(1000);
           s.finish_close = 0;
 
           rotate_state.finish_rotate();
@@ -338,7 +340,7 @@ void encoder_thread(int cam_idx) {
   #ifdef QCOM2
         eidx.setType(cereal::EncodeIndex::Type::FULL_H_E_V_C);
   #else
-        eidx.setType(cam_idx == LOG_CAMERA_ID_DCAMERA ? cereal::EncodeIndex::Type::FRONT:cereal::EncodeIndex::Type::FULL_H_E_V_C);
+        eidx.setType(cam_idx == LOG_CAMERA_ID_DCAMERA ? cereal::EncodeIndex::Type::FRONT : cereal::EncodeIndex::Type::FULL_H_E_V_C);
   #endif
 
         eidx.setEncodeId(cnt);
@@ -672,28 +674,33 @@ int main(int argc, char** argv) {
         }
       } else {
         new_segment &= tms - last_rotate_tms > segment_length * 1000;
-        if (new_segment) { LOGW("no camera packet seen. auto rotated"); }
+        if (new_segment) {
+          LOGW("no camera packet seen. auto rotated");
+        }
       }
     } else if (s.logger.part == -1) {
       // always starts first segment immediately
       new_segment = true;
     }
 
+    // rotate to new segment
     if (new_segment) {
       pthread_mutex_lock(&s.rotate_lock);
       last_rotate_tms = millis_since_boot();
 
       err = logger_next(&s.logger, LOG_ROOT, s.segment_path, sizeof(s.segment_path), &s.rotate_segment);
       assert(err == 0);
-      if (s.logger.part == 0) { LOGW("logging to %s", s.segment_path); }
+      if (s.logger.part == 0) {
+        LOGW("logging to %s", s.segment_path);
+      }
       LOGW("rotated to %s", s.segment_path);
 
-      // rotate the encoders
+      // rotate encoders
       for (auto &r : s.rotate_state) r.rotate();
       pthread_mutex_unlock(&s.rotate_lock);
     }
 
-    if ((msg_count%1000) == 0) {
+    if ((msg_count % 1000) == 0) {
       double ts = seconds_since_boot();
       LOGD("%lu messages, %.2f msg/sec, %.2f KB/sec", msg_count, msg_count*1.0/(ts-start_ts), bytes_count*0.001/(ts-start_ts));
     }
