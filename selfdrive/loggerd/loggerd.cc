@@ -208,7 +208,7 @@ void encoder_thread(int cam_idx) {
   RotateState &rotate_state = s.rotate_state[cam_idx];
   rotate_state.enabled = true;
 
-  std::vector<EncoderState> encoders;
+  std::vector<EncoderState*> encoders;
 
   int encoder_segment = -1;
   int cnt = 0;
@@ -232,15 +232,15 @@ void encoder_thread(int cam_idx) {
       LOGD("encoder init %dx%d", buf_info.width, buf_info.height);
 
       // main encoder
-      encoders.push_back(EncoderState());
-      encoder_init(&encoders[0], cam_info.filename, buf_info.width, buf_info.height,
+      encoders.push_back(new EncoderState());
+      encoder_init(encoders[0], cam_info.filename, buf_info.width, buf_info.height,
                    cam_info.fps, cam_info.bitrate, cam_info.is_h265, cam_info.downscale);
 
       // qcamera encoder
       if (cam_info.has_qcamera) {
         LogCameraInfo &qcam_info = cameras_logged[LOG_CAMERA_ID_QCAMERA];
-        encoders.push_back(EncoderState());
-        encoder_init(&encoders[1], qcam_info.filename, qcam_info.frame_width, qcam_info.frame_height,
+        encoders.push_back(new EncoderState());
+        encoder_init(encoders[1], qcam_info.filename, qcam_info.frame_width, qcam_info.frame_height,
                      qcam_info.fps, qcam_info.bitrate, qcam_info.is_h265, qcam_info.downscale);
       }
     }
@@ -279,7 +279,7 @@ void encoder_thread(int cam_idx) {
 
           LOGW("camera %d rotate encoder to %s.", cam_idx, s.segment_path);
           for (auto &e : encoders) {
-            encoder_rotate(&e, s.segment_path, s.rotate_segment);
+            encoder_rotate(e, s.segment_path, s.rotate_segment);
           }
 
           s.rotate_seq_id = (my_idx + 1) % s.num_encoder;
@@ -299,10 +299,10 @@ void encoder_thread(int cam_idx) {
           s.should_close = s.should_close == s.num_encoder ? 1 - s.num_encoder : s.should_close + 1;
          
           for (auto &e : encoders) {
-            encoder_close(&e);
-            encoder_open(&e, e.next_path);
-            e.segment = e.next_segment;
-            e.rotating = false;
+            encoder_close(e);
+            encoder_open(e, e->next_path);
+            e->segment = e->next_segment;
+            e->rotating = false;
           }
 
           s.finish_close += 1;
@@ -323,14 +323,12 @@ void encoder_thread(int cam_idx) {
       {
         // encode hevc
         int out_segment = -1;
-        int out_id = encoder_encode_frame(&encoders[0],
-                                          y, u, v,
+        int out_id = encoder_encode_frame(encoders[0], y, u, v,
                                           buf_info.width, buf_info.height,
                                           &out_segment, &extra);
         if (encoders.size() > 1) {
           int out_segment_alt = -1;
-          encoder_encode_frame(&encoders[1],
-                               y, u, v,
+          encoder_encode_frame(encoders[1], y, u, v,
                                buf_info.width, buf_info.height,
                                &out_segment_alt, &extra);
         }
@@ -372,8 +370,9 @@ void encoder_thread(int cam_idx) {
 
   LOG("encoder destroy");
   for(auto &e : encoders) {
-    encoder_close(&e);
-    encoder_destroy(&e);
+    encoder_close(e);
+    encoder_destroy(e);
+    delete e;
   }
 }
 #endif
