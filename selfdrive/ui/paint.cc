@@ -289,11 +289,11 @@ static void ui_draw_world(UIState *s) {
 }
 
 static void ui_draw_vision_maxspeed(UIState *s) {
-  float maxspeed = s->scene.controls_state.getVCruise();
+  float maxspeed = s->scene.v_cruise;
   const bool is_cruise_set = maxspeed != 0 && maxspeed != SET_SPEED_NA;
-  if (is_cruise_set && !s->is_metric) { maxspeed *= 0.6225; }
+  if (is_cruise_set && !s->scene.is_metric) { maxspeed *= 0.6225; }
 
-  auto [x, y, w, h] = std::tuple(s->scene.viz_rect.x + (bdr_s * 2), s->scene.viz_rect.y + (bdr_s * 1.5), 184, 202);
+  auto [x, y, w, h] = std::tuple(s->viz_rect.x + (bdr_s * 2), s->viz_rect.y + (bdr_s * 1.5), 184, 202);
 
   ui_draw_rect(s->vg, x, y, w, h, COLOR_BLACK_ALPHA(100), 30);
   ui_draw_rect(s->vg, x, y, w, h, COLOR_WHITE_ALPHA(100), 20, 10);
@@ -309,11 +309,11 @@ static void ui_draw_vision_maxspeed(UIState *s) {
 }
 
 static void ui_draw_vision_speed(UIState *s) {
-  const float speed = s->scene.controls_state.getVEgo() * (s->is_metric ? 3.6 : 2.2369363);
+  const float speed = s->scene.v_ego * (s->scene.is_metric ? 3.6 : 2.2369363);
   const std::string speed_str = std::to_string((int)std::nearbyint(speed));
   nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
-  ui_draw_text(s->vg, s->scene.viz_rect.centerX(), 240, speed_str.c_str(), 96 * 2.5, COLOR_WHITE, s->font_sans_bold);
-  ui_draw_text(s->vg, s->scene.viz_rect.centerX(), 320, s->is_metric ? "km/h" : "mph", 36 * 2.5, COLOR_WHITE_ALPHA(200), s->font_sans_regular);
+  ui_draw_text(s->vg, s->viz_rect.centerX(), 240, speed_str.c_str(), 96 * 2.5, COLOR_WHITE, s->font_sans_bold);
+  ui_draw_text(s->vg, s->viz_rect.centerX(), 320, s->scene.is_metric ? "km/h" : "mph", 36 * 2.5, COLOR_WHITE_ALPHA(200), s->font_sans_regular);
 }
 
 static void ui_draw_vision_event(UIState *s) {
@@ -325,7 +325,7 @@ static void ui_draw_vision_event(UIState *s) {
     const int img_turn_size = 160*1.5;
     const Rect rect = {viz_event_x - (img_turn_size / 4), viz_event_y + bdr_s - 25, img_turn_size, img_turn_size};
     ui_draw_image(s->vg, rect, s->img_turn, 1.0f);
-  } else if (s->scene.controls_state.getEngageable()) {
+  } else if (s->scene.engageable) {
     // draw steering wheel
     const int bg_wheel_size = 96;
     const int bg_wheel_x = viz_event_x + (viz_event_w-bg_wheel_size);
@@ -424,8 +424,8 @@ static void ui_draw_vision_alert(UIState *s) {
   color.a *= scene->alert_blinking_alpha;
   int alr_s = alert_size_map[scene->alert_size];
 
-  const int alr_x = scene->viz_rect.x - bdr_s;
-  const int alr_w = scene->viz_rect.w + (bdr_s * 2);
+  const int alr_x = s->viz_rect.x - bdr_s;
+  const int alr_w = s->viz_rect.w + (bdr_s * 2);
   const int alr_h = alr_s + bdr_s;
   const int alr_y = s->fb_h - alr_h;
 

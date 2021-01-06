@@ -33,15 +33,15 @@ static void ui_draw_sidebar_network_strength(UIState *s) {
       {cereal::ThermalData::NetworkStrength::GOOD, 4},
       {cereal::ThermalData::NetworkStrength::GREAT, 5}};
   const Rect rect = {58, 196, 176, 27};
-  const int img_idx = s->scene.thermal.getNetworkType() == cereal::ThermalData::NetworkType::NONE ? 0 : network_strength_map[s->scene.thermal.getNetworkStrength()];
+  const int img_idx = s->scene.network_type == cereal::ThermalData::NetworkType::NONE ? 0 : network_strength_map[s->scene.network_strength];
   ui_draw_image(s->vg, rect, s->img_network[img_idx], 1.0f);
 }
 
 static void ui_draw_sidebar_battery_icon(UIState *s) {
-  int battery_img = s->scene.thermal.getBatteryStatus() == "Charging" ? s->img_battery_charging : s->img_battery;
+  int battery_img = s->scene.battery_status == "Charging" ? s->img_battery_charging : s->img_battery;
   const Rect rect = {160, 255, 76, 36};
   ui_draw_rect(s->vg, rect.x + 6, rect.y + 5,
-               ((rect.w - 19) * (s->scene.thermal.getBatteryPercent() * 0.01)), rect.h - 11, COLOR_WHITE);
+               ((rect.w - 19) * (s->scene.battery_percent * 0.01)), rect.h - 11, COLOR_WHITE);
   ui_draw_image(s->vg, rect, battery_img, 1.0f);
 }
 
