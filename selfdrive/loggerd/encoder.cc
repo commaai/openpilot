@@ -17,8 +17,6 @@
 
 #include <libyuv.h>
 
-//#include <android/log.h>
-
 #include <msm_media_info.h>
 
 #include "common/mutex.h"
@@ -27,9 +25,12 @@
 #include "encoder.h"
 
 
-//#define ALOG(...) __android_log_print(ANDROID_LOG_VERBOSE, "omxapp", ##__VA_ARGS__)
-
 // encoder: lossey codec using hardware hevc
+
+
+
+// ***** OMX callback functions *****
+
 static void wait_for_state(EncoderState *s, OMX_STATETYPE state) {
   pthread_mutex_lock(&s->state_lock);
   while (s->state != state) {
@@ -40,14 +41,14 @@ static void wait_for_state(EncoderState *s, OMX_STATETYPE state) {
 
 static OMX_ERRORTYPE event_handler(OMX_HANDLETYPE component, OMX_PTR app_data, OMX_EVENTTYPE event,
                                    OMX_U32 data1, OMX_U32 data2, OMX_PTR event_data) {
-  EncoderState *s = app_data;
+  EncoderState *s = (EncoderState*)app_data;
 
   switch (event) {
   case OMX_EventCmdComplete:
     assert(data1 == OMX_CommandStateSet);
     LOG("set state event 0x%x", data2);
     pthread_mutex_lock(&s->state_lock);
-    s->state = data2;
+    s->state = (OMX_STATETYPE)data2;
     pthread_cond_broadcast(&s->state_cv);
     pthread_mutex_unlock(&s->state_lock);
     break;
@@ -66,7 +67,7 @@ static OMX_ERRORTYPE event_handler(OMX_HANDLETYPE component, OMX_PTR app_data, O
 
 static OMX_ERRORTYPE empty_buffer_done(OMX_HANDLETYPE component, OMX_PTR app_data,
                                        OMX_BUFFERHEADERTYPE *buffer) {
-  EncoderState *s = app_data;
+  EncoderState *s = (EncoderState*)app_data;
 
   // printf("empty_buffer_done\n");
 
@@ -78,7 +79,7 @@ static OMX_ERRORTYPE empty_buffer_done(OMX_HANDLETYPE component, OMX_PTR app_dat
 
 static OMX_ERRORTYPE fill_buffer_done(OMX_HANDLETYPE component, OMX_PTR app_data,
                                       OMX_BUFFERHEADERTYPE *buffer) {
-  EncoderState *s = app_data;
+  EncoderState *s = (EncoderState*)app_data;
 
   // printf("fill_buffer_done\n");
 
@@ -166,6 +167,9 @@ static const char* omx_color_fomat_name(uint32_t format) {
   }
 }
 
+
+// ***** encoder functions *****
+
 void encoder_init(EncoderState *s, const char* filename, int width, int height, int fps, int bitrate, bool h265, bool downscale) {
   int err;
 
@@ -182,9 +186,9 @@ void encoder_init(EncoderState *s, const char* filename, int width, int height, 
 
   if (downscale) {
     s->downscale = true;
-    s->y_ptr2 = malloc(s->width*s->height);
-    s->u_ptr2 = malloc(s->width*s->height/4);
-    s->v_ptr2 = malloc(s->width*s->height/4);
+    s->y_ptr2 = (uint8_t *)malloc(s->width*s->height);
+    s->u_ptr2 = (uint8_t *)malloc(s->width*s->height/4);
+    s->v_ptr2 = (uint8_t *)malloc(s->width*s->height/4);
   }
 
   s->segment = -1;
@@ -355,14 +359,14 @@ void encoder_init(EncoderState *s, const char* filename, int width, int height, 
   err = OMX_SendCommand(s->handle, OMX_CommandStateSet, OMX_StateIdle, NULL);
   assert(err == OMX_ErrorNone);
 
-  s->in_buf_headers = calloc(s->num_in_bufs, sizeof(OMX_BUFFERHEADERTYPE*));
+  s->in_buf_headers = (OMX_BUFFERHEADERTYPE **)calloc(s->num_in_bufs, sizeof(OMX_BUFFERHEADERTYPE*));
   for (int i=0; i<s->num_in_bufs; i++) {
     err = OMX_AllocateBuffer(s->handle, &s->in_buf_headers[i], PORT_INDEX_IN, s,
                              in_port.nBufferSize);
     assert(err == OMX_ErrorNone);
   }
 
-  s->out_buf_headers = calloc(s->num_out_bufs, sizeof(OMX_BUFFERHEADERTYPE*));
+  s->out_buf_headers = (OMX_BUFFERHEADERTYPE **)calloc(s->num_out_bufs, sizeof(OMX_BUFFERHEADERTYPE*));
   for (int i=0; i<s->num_out_bufs; i++) {
     err = OMX_AllocateBuffer(s->handle, &s->out_buf_headers[i], PORT_INDEX_OUT, s,
                              out_port.nBufferSize);
@@ -395,7 +399,7 @@ static void handle_out_buf(EncoderState *s, OMX_BUFFERHEADERTYPE *out_buf) {
 
   if (out_buf->nFlags & OMX_BUFFERFLAG_CODECCONFIG) {
     if (s->codec_config_len < out_buf->nFilledLen) {
-      s->codec_config = realloc(s->codec_config, out_buf->nFilledLen);
+      s->codec_config = (uint8_t *)realloc(s->codec_config, out_buf->nFilledLen);
     }
     s->codec_config_len = out_buf->nFilledLen;
     memcpy(s->codec_config, buf_data, out_buf->nFilledLen);
@@ -412,7 +416,7 @@ static void handle_out_buf(EncoderState *s, OMX_BUFFERHEADERTYPE *out_buf) {
   if (s->remuxing) {
     if (!s->wrote_codec_config && s->codec_config_len > 0) {
       if (s->codec_ctx->extradata_size < s->codec_config_len) {
-        s->codec_ctx->extradata = realloc(s->codec_ctx->extradata, s->codec_config_len + AV_INPUT_BUFFER_PADDING_SIZE);
+        s->codec_ctx->extradata = (uint8_t *)realloc(s->codec_ctx->extradata, s->codec_config_len + AV_INPUT_BUFFER_PADDING_SIZE);
       }
       s->codec_ctx->extradata_size = s->codec_config_len;
       memcpy(s->codec_ctx->extradata, s->codec_config, s->codec_config_len);
@@ -434,7 +438,9 @@ static void handle_out_buf(EncoderState *s, OMX_BUFFERHEADERTYPE *out_buf) {
       av_init_packet(&pkt);
       pkt.data = buf_data;
       pkt.size = out_buf->nFilledLen;
-      pkt.pts = pkt.dts = av_rescale_q_rnd(out_buf->nTimeStamp, in_timebase, s->ofmt_ctx->streams[0]->time_base, AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX);
+
+      enum AVRounding rnd = static_cast<enum AVRounding>(AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX);
+      pkt.pts = pkt.dts = av_rescale_q_rnd(out_buf->nTimeStamp, in_timebase, s->ofmt_ctx->streams[0]->time_base, rnd);
       pkt.duration = av_rescale_q(50*1000, in_timebase, s->ofmt_ctx->streams[0]->time_base);
 
       if (out_buf->nFlags & OMX_BUFFERFLAG_SYNCFRAME) {
@@ -478,7 +484,7 @@ int encoder_encode_frame(EncoderState *s,
   // this sometimes freezes... put it outside the encoder lock so we can still trigger rotates...
   // THIS IS A REALLY BAD IDEA, but apparently the race has to happen 30 times to trigger this
   //pthread_mutex_unlock(&s->lock);
-  OMX_BUFFERHEADERTYPE* in_buf = queue_pop(&s->free_in);
+  OMX_BUFFERHEADERTYPE* in_buf = (OMX_BUFFERHEADERTYPE *)queue_pop(&s->free_in);
   //pthread_mutex_lock(&s->lock);
 
   // if (s->rotating) {
@@ -507,12 +513,12 @@ int encoder_encode_frame(EncoderState *s,
               s->u_ptr2, s->width/2,
               s->v_ptr2, s->width/2,
               s->width, s->height,
-              kFilterNone);
+              libyuv::kFilterNone);
     y_ptr = s->y_ptr2;
     u_ptr = s->u_ptr2;
     v_ptr = s->v_ptr2;
   }
-  err = I420ToNV12(y_ptr, s->width,
+  err = libyuv::I420ToNV12(y_ptr, s->width,
                    u_ptr, s->width/2,
                    v_ptr, s->width/2,
                    in_y_ptr, in_y_stride,
@@ -532,7 +538,7 @@ int encoder_encode_frame(EncoderState *s,
 
   // pump output
   while (true) {
-    OMX_BUFFERHEADERTYPE *out_buf = queue_try_pop(&s->done_out);
+    OMX_BUFFERHEADERTYPE *out_buf = (OMX_BUFFERHEADERTYPE *)queue_try_pop(&s->done_out);
     if (!out_buf) {
       break;
     }
@@ -620,7 +626,7 @@ void encoder_close(EncoderState *s) {
     if (s->dirty) {
       // drain output only if there could be frames in the encoder
 
-      OMX_BUFFERHEADERTYPE* in_buf = queue_pop(&s->free_in);
+      OMX_BUFFERHEADERTYPE* in_buf = (OMX_BUFFERHEADERTYPE *)queue_pop(&s->free_in);
       in_buf->nFilledLen = 0;
       in_buf->nOffset = 0;
       in_buf->nFlags = OMX_BUFFERFLAG_EOS;
@@ -630,7 +636,7 @@ void encoder_close(EncoderState *s) {
       assert(err == OMX_ErrorNone);
 
       while (true) {
-        OMX_BUFFERHEADERTYPE *out_buf = queue_pop(&s->done_out);
+        OMX_BUFFERHEADERTYPE *out_buf = (OMX_BUFFERHEADERTYPE *)queue_pop(&s->done_out);
 
         handle_out_buf(s, out_buf);
 
@@ -650,8 +656,8 @@ void encoder_close(EncoderState *s) {
       fclose(s->of);
     }
     unlink(s->lock_path);
-    s->open = false;
   }
+  s->open = false;
 
   pthread_mutex_unlock(&s->lock);
 }

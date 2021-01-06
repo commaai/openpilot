@@ -1,23 +1,20 @@
-#ifndef ENCODER_H
-#define ENCODER_H
+#pragma once
 
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
 
 #include <pthread.h>
-
 #include <OMX_Component.h>
-#include <libavformat/avformat.h>
+
+extern "C" {
+  #include <libavformat/avformat.h>
+}
 
 #include "common/cqueue.h"
-#include "common/visionipc.h"
+#include "visionipc.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-typedef struct EncoderState {
+struct EncoderState {
   pthread_mutex_t lock;
   int width, height, fps;
   const char* path;
@@ -65,7 +62,7 @@ typedef struct EncoderState {
 
   bool downscale;
   uint8_t *y_ptr2, *u_ptr2, *v_ptr2;
-} EncoderState;
+};
 
 void encoder_init(EncoderState *s, const char* filename, int width, int height, int fps, int bitrate, bool h265, bool downscale);
 int encoder_encode_frame(EncoderState *s,
@@ -76,9 +73,3 @@ void encoder_open(EncoderState *s, const char* path);
 void encoder_rotate(EncoderState *s, const char* new_path, int new_segment);
 void encoder_close(EncoderState *s);
 void encoder_destroy(EncoderState *s);
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif
