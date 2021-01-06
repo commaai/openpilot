@@ -576,6 +576,7 @@ int main(int argc, char** argv) {
   s.num_encoder = 0;
   pthread_mutex_init(&s.rotate_lock, NULL);
 
+  // TODO: create these threads dynamically on frame packet presence
   std::vector<std::thread> encoder_threads;
 #ifndef DISABLE_ENCODER
   encoder_threads.push_back(std::thread(encoder_thread, LOG_CAMERA_ID_FCAMERA));
@@ -653,7 +654,6 @@ int main(int argc, char** argv) {
       }
     }
 
-    double ts = seconds_since_boot();
     double tms = millis_since_boot();
 
     bool new_segment = false;
@@ -661,11 +661,11 @@ int main(int argc, char** argv) {
     if (s.logger.part > -1) {
       new_segment = true;
       if (tms - last_camera_seen_tms <= NO_CAMERA_PATIENCE && s.num_encoder > 0) {
-        for (int cid=0;cid<=MAX_CAM_IDX;cid++) {
+        for (auto &r : s.rotate_state) {
           // this *should* be redundant on tici since all camera frames are synced
-          new_segment &= (((s.rotate_state[cid].stream_frame_id >= s.rotate_state[cid].last_rotate_frame_id + segment_length * MAIN_FPS) &&
-                           (!s.rotate_state[cid].should_rotate) && (s.rotate_state[cid].initialized)) ||
-                          (!s.rotate_state[cid].enabled));
+          new_segment &= (((r.stream_frame_id >= r.last_rotate_frame_id + segment_length * MAIN_FPS) &&
+                          (!r.should_rotate) && (r.initialized)) ||
+                          (!r.enabled));
 #ifndef QCOM2
           break; // only look at fcamera frame id if not QCOM2
 #endif
@@ -689,11 +689,12 @@ int main(int argc, char** argv) {
       LOGW("rotated to %s", s.segment_path);
 
       // rotate the encoders
-      for (int cid=0;cid<=MAX_CAM_IDX;cid++) { s.rotate_state[cid].rotate(); }
+      for (auto &r : s.rotate_state) r.rotate();
       pthread_mutex_unlock(&s.rotate_lock);
     }
 
     if ((msg_count%1000) == 0) {
+      double ts = seconds_since_boot();
       LOGD("%lu messages, %.2f msg/sec, %.2f KB/sec", msg_count, msg_count*1.0/(ts-start_ts), bytes_count*0.001/(ts-start_ts));
     }
   }

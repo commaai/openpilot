@@ -67,24 +67,17 @@ static OMX_ERRORTYPE event_handler(OMX_HANDLETYPE component, OMX_PTR app_data, O
 
 static OMX_ERRORTYPE empty_buffer_done(OMX_HANDLETYPE component, OMX_PTR app_data,
                                        OMX_BUFFERHEADERTYPE *buffer) {
-  EncoderState *s = (EncoderState*)app_data;
-
   // printf("empty_buffer_done\n");
-
+  EncoderState *s = (EncoderState*)app_data;
   queue_push(&s->free_in, (void*)buffer);
-
   return OMX_ErrorNone;
 }
 
-
 static OMX_ERRORTYPE fill_buffer_done(OMX_HANDLETYPE component, OMX_PTR app_data,
                                       OMX_BUFFERHEADERTYPE *buffer) {
-  EncoderState *s = (EncoderState*)app_data;
-
   // printf("fill_buffer_done\n");
-
+  EncoderState *s = (EncoderState*)app_data;
   queue_push(&s->done_out, (void*)buffer);
-
   return OMX_ErrorNone;
 }
 
@@ -245,9 +238,6 @@ void encoder_init(EncoderState *s, const char* filename, int width, int height, 
                          (OMX_PTR) &in_port);
   assert(err == OMX_ErrorNone);
   s->num_in_bufs = in_port.nBufferCountActual;
-
-  // printf("in width: %d, stride: %d\n",
-  //   in_port.format.video.nFrameWidth, in_port.format.video.nStride);
 
   // setup output port
 
@@ -717,19 +707,6 @@ void encoder_destroy(EncoderState *s) {
 }
 
 #if 0
-
-// cd one/selfdrive/visiond
-// clang
-//   -fPIC -pie
-//   -std=gnu11 -O2 -g
-//   -o encoder
-//   -I ~/one/selfdrive
-//   -I ~/one/phonelibs/openmax/include
-//   -I ~/one/phonelibs/libyuv/include
-//   -lOmxVenc -lOmxCore -llog
-//   encoder.c
-//   buffering.c
-//   -L ~/one/phonelibs/libyuv/lib -l:libyuv.a
 
 int main() {
   int err;
