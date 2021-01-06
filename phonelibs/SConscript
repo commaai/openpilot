@@ -1,7 +1,4 @@
-Import('env', 'qt_env')
+Import('env')
 
 env.Library('json11', ['json11/json11.cpp'])
 env.Append(CPPPATH=[Dir('json11')])
-
-# qt_env.SharedLibrary('QrCode', ['QrCode/QrCode.cpp'])
-# qt_env.Append(CPPPATH=[Dir('QrCode')])

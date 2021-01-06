@@ -109,7 +109,6 @@ else:
 
   rpath = [
     "phonelibs/snpe/x86_64-linux-clang",
-    "phonelibs",
     "cereal",
     "selfdrive/common"
   ]
