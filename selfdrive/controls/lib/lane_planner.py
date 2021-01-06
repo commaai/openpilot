@@ -9,9 +9,6 @@ CAMERA_OFFSET = 0.06  # m from center car to camera
 class LanePlanner:
   def __init__(self):
     self.path_xyz = np.zeros((33,3))
-    self.vel_xyz = np.zeros((33,3))
-    self.orient_xyz = np.zeros((33,3))
-    self.rot_rate_xyz = np.zeros((33,3))
 
     self.lll_xyz = np.zeros((33,3))
     self.rll_xyz = np.zeros((33,3))
@@ -30,10 +27,9 @@ class LanePlanner:
 
 
   def parse_model(self, md):
-    self.path_xyz = np.column_stack([md.position.x, md.position.y, md.position.z])
-    self.vel_xyz = np.column_stack([md.velocity.x, md.velocity.y, md.velocity.z])
-    self.orient_xyz = np.column_stack([md.orientation.x, md.orientation.y, md.orientation.z])
-    self.rot_rate_xyz = np.column_stack([md.orientationRate.x, md.orientationRate.y, md.orientationRate.z])
+
+    self.lane_t = (np.array(md.laneLines[1].t) + np.array(md.laneLines[1].t))/2
+    #self.path_xyz = deep_interp_np(lane_t, np.array(md.position.t), np.column_stack([md.position.x, md.position.y, md.position.z]))
 
     self.lll_xyz = np.column_stack([md.laneLines[1].x, md.laneLines[1].y, md.laneLines[1].z])
     self.rll_xyz = np.column_stack([md.laneLines[2].x, md.laneLines[2].y, md.laneLines[2].z])
@@ -58,7 +54,7 @@ class LanePlanner:
     x_pts = (self.lll_xyz[:,0] + self.rll_xyz[:,0])/2
     prob_mods = []
     for t_check in [0.0, 1.5, 3.0]:
-      width_at_t = np.interp(t_check * (v_ego + 7), x_pts, width_pts)
+      width_at_t = interp(t_check * (v_ego + 7), x_pts, width_pts)
       prob_mods.append(interp(width_at_t, [4.0, 5.0], [1.0, 0.0]))
     mod = min(prob_mods)
     l_prob *= mod
