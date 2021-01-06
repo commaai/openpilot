@@ -8,19 +8,11 @@
 #include <systemd/sd-journal.h>
 
 #include "common/timing.h"
+#include "common/utilpp.h"
 #include "messaging.hpp"
 
-volatile sig_atomic_t do_exit = 0;
-
-static void set_do_exit(int sig) {
-  do_exit = 1;
-}
-
+ExitHandler do_exit;
 int main(int argc, char *argv[]) {
-
-  // setup signal handlers
-  signal(SIGINT, (sighandler_t)set_do_exit);
-  signal(SIGTERM, (sighandler_t)set_do_exit);
 
   PubMaster pm({"androidLog"});
 

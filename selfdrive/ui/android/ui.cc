@@ -15,11 +15,7 @@
 #include "paint.hpp"
 #include "android/sl_sound.hpp"
 
-volatile sig_atomic_t do_exit = 0;
-static void set_do_exit(int sig) {
-  do_exit = 1;
-}
-
+ExitHandler do_exit;
 static void ui_set_brightness(UIState *s, int brightness) {
   static int last_brightness = -1;
   if (last_brightness != brightness && (s->awake || brightness == 0)) {
@@ -114,7 +110,6 @@ static void update_offroad_layout_state(UIState *s, PubMaster *pm) {
 
 int main(int argc, char* argv[]) {
   setpriority(PRIO_PROCESS, 0, -14);
-  signal(SIGINT, (sighandler_t)set_do_exit);
   SLSound sound;
 
   UIState uistate = {};
