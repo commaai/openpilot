@@ -65,10 +65,11 @@ static void ui_draw_text(NVGcontext *vg, float x, float y, const char* string, f
 static void draw_chevron(UIState *s, float x_in, float y_in, float sz,
                           NVGcolor fillColor, NVGcolor glowColor) {
   vertex_data out;
-  if (!car_space_to_full_frame(s, x_in, y_in, 0.0, &out)) return;
+  car_space_to_full_frame(s, x_in, y_in, 0.0, &out);
 
   auto [x, y] = out;
   sz = std::clamp((sz * 30) / (x_in / 3 + 30), 15.0f, 30.0f);
+  y = std::min(s->scene.viz_rect.bottom() - sz / 2,  y);
 
   // glow
   float g_xo = sz/5;
