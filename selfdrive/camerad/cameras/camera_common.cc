@@ -124,7 +124,7 @@ CameraBuf::~CameraBuf() {
 bool CameraBuf::acquire() {
   std::unique_lock<std::mutex> lk(frame_queue_mutex);
 
-  bool got_frame = frame_queue_cv.wait_for(lk, std::chrono::milliseconds(100), [this]{ return !frame_queue.empty(); });
+  bool got_frame = frame_queue_cv.wait_for(lk, std::chrono::milliseconds(1), [this]{ return !frame_queue.empty(); });
   if (!got_frame) return false;
 
   cur_buf_idx = frame_queue.front();
