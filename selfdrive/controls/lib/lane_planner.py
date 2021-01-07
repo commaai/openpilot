@@ -1,6 +1,7 @@
 from common.numpy_fast import interp
 import numpy as np
 from cereal import log
+from xx.uncommon.numpy_helpers import deep_interp_np
 
 CAMERA_OFFSET = 0.06  # m from center car to camera
 
@@ -27,9 +28,9 @@ class LanePlanner:
 
 
   def parse_model(self, md):
-
     self.lane_t = (np.array(md.laneLines[1].t) + np.array(md.laneLines[1].t))/2
-    #self.path_xyz = deep_interp_np(lane_t, np.array(md.position.t), np.column_stack([md.position.x, md.position.y, md.position.z]))
+    self.path_t = np.array(md.position.t)
+    self.path_xyz = np.column_stack([md.position.x, md.position.y, md.position.z])
 
     self.lll_xyz = np.column_stack([md.laneLines[1].x, md.laneLines[1].y, md.laneLines[1].z])
     self.rll_xyz = np.column_stack([md.laneLines[2].x, md.laneLines[2].y, md.laneLines[2].z])
@@ -82,4 +83,5 @@ class LanePlanner:
 
     lr_prob = l_prob + r_prob - l_prob * r_prob
     lane_path_xyz = (l_prob * path_from_left_lane + r_prob * path_from_right_lane) / (l_prob + r_prob + 0.0001)
-    self.d_path_xyz = lr_prob * lane_path_xyz + (1.0 - lr_prob) * self.path_xyz
+    path_xyz_interp = deep_interp_np(self.lane_t, self.path_t, self.path_xyz)
+    self.d_path_xyz = lr_prob * lane_path_xyz + (1.0 - lr_prob) * path_xyz_interp
