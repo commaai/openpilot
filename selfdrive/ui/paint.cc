@@ -315,7 +315,7 @@ static void ui_draw_driver_view(UIState *s) {
     const float face_x = fxy_list[0];
     const float face_y = fxy_list[1];
     float fbox_x;
-    float fbox_y = box_y + (face_y + 0.5) * box_h - 0.5 * 0.6 * box_h / 2;;
+    float fbox_y = box_y + (face_y + 0.5) * box_h - 0.5 * 0.6 * box_h / 2;
     if (!scene->is_rhd) {
       fbox_x = valid_frame_x + (1 - (face_x + 0.5)) * (box_h / 2) - 0.5 * 0.6 * box_h / 2;
     } else {
