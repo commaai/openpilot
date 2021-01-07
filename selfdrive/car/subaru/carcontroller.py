@@ -2,6 +2,7 @@ from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.subaru import subarucan
 from selfdrive.car.subaru.values import DBC, PREGLOBAL_CARS
 from opendbc.can.packer import CANPacker
+import time
 
 
 class CarControllerParams():
@@ -14,6 +15,16 @@ class CarControllerParams():
     self.STEER_DRIVER_MULTIPLIER = 10  # weight driver torque heavily
     self.STEER_DRIVER_FACTOR = 1       # from dbc
 
+    #SUBARU STOP AND GO - Global
+    self.SNG_DISTANCE_LIMIT = 120      # distance trigger value limit for stop and go (0-255)
+    self.SNG_DISTANCE_DEADBAND = 10     # deadband for SNG lead car refence distance to cater for Close_Distance sensor noises
+    self.THROTTLE_TAP_LIMIT = 5        # send a maximum of 5 throttle tap messages (trial and error)
+    self.THROTTLE_TAP_LEVEL = 5        # send a throttle message with value of 5 (trial and error)
+    self.SNG_DISTANCE_THRESHOLD = 150 
+
+    #SUBARU STOP AND GO - Pre-Global
+    self.SNG_DISTANCE_THRESHOLD_PREGLOBAL = 3 #SnG trigger when lead car distance > 3m
+    self.SNG_DISTANCE_LIMIT_PREGLOBAL = 4 #SnG only trigger if close distance is less than 4
 
 class CarController():
   def __init__(self, dbc_name, CP, VM):
@@ -23,9 +34,21 @@ class CarController():
     self.es_lkas_cnt = -1
     self.fake_button_prev = 0
     self.steer_rate_limited = False
+    self.throttle_cnt = -1
 
     self.params = CarControllerParams()
     self.packer = CANPacker(DBC[CP.carFingerprint]['pt'])
+
+    #SUBARU STOP AND GO flags and vars
+    self.prev_cruise_state = -1
+    self.cruise_state_change_time = -1
+    self.sng_throttle_tap_cnt = 0
+    self.sng_resume_acc = False
+    self.sng_has_recorded_distance = False
+    self.sng_distance_threshold = self.params.SNG_DISTANCE_LIMIT
+
+    #SUBARU STOP AND GO - Pre-Global only
+    self.prev_close_distance = -1
 
   def update(self, enabled, CS, frame, actuators, pcm_cancel_cmd, visual_alert, left_line, right_line):
 
@@ -52,6 +75,77 @@ class CarController():
 
       self.apply_steer_last = apply_steer
 
+    #---------------------------------------------STOP AND GO---------------------------------------------------
+    if CS.CP.carFingerprint in PREGLOBAL_CARS:
+      #PRE-GLOBAL STOP AND GO
+      #Activate ACC Resume with throttle tap
+      if (enabled                                                              #Cruise must be activated
+          and CS.car_follow                                                    #Must have lead car
+          and CS.close_distance > self.params.SNG_DISTANCE_THRESHOLD_PREGLOBAL #Distance with lead car > 3m (this is due to Preglobal ES's unreliable Close Distance signal)
+          and CS.close_distance < 4.5                                          #For safety, SnG will not operate if Close Distance reads more than 4.5m (Pre-global ES's unreliability, sometimes Close Distance shows max-5m when there is a stationary object ahead)
+          and CS.close_distance > self.prev_close_distance                     #Distance with lead car is increasing
+          and CS.out.standstill                                                #Must be standing still
+         ):
+        self.sng_resume_acc = True
+
+      throttle_cmd = -1 #normally, just forward throttle msg from ECU
+      if self.sng_resume_acc:
+        #Send Maximum <THROTTLE_TAP_LIMIT> to get car out of HOLD
+        if self.sng_throttle_tap_cnt < 5:
+          throttle_cmd = 5
+          self.sng_throttle_tap_cnt += 1
+        else:
+          self.sng_throttle_tap_cnt = -1
+          self.sng_resume_acc = False
+
+      #Send throttle message
+      if self.throttle_cnt != CS.throttle_msg["Counter"]:
+        can_sends.append(subarucan.create_preglobal_throttle_control(self.packer, CS.throttle_msg, throttle_cmd))
+        self.throttle_cnt = CS.throttle_msg["Counter"]
+    else:
+      #GLOBAL STOP AND GO
+      #Car can only be in HOLD state (3) if it is standing still
+      # => if not in HOLD state car has to be moving or driver has taken action
+      if CS.cruise_state != 3:
+        self.sng_throttle_tap_cnt = 0           #Reset throttle tap message count when car starts moving
+        self.sng_resume_acc = False             #Cancel throttle tap when car starts moving
+
+      #Trigger THROTTLE TAP when in hold and close_distance increases > SNG distance threshold (with deadband)
+      #false positives caused by pedestrians/cyclists crossing the street in front of car
+      self.sng_resume_acc = False
+      if (enabled
+          and CS.cruise_state == 3 #cruise state == 3 => ACC HOLD state
+          and CS.close_distance > self.params.SNG_DISTANCE_THRESHOLD #lead car distance is within SnG operating range
+          and CS.close_distance < 255
+          and CS.close_distance > self.prev_close_distance                     #Distance with lead car is increasing
+          and CS.car_follow == 1):
+        self.sng_resume_acc = True
+
+      #Send a throttle tap to resume ACC
+      throttle_cmd = -1 #normally, just forward throttle msg from ECU
+      if self.sng_resume_acc:
+        #Send Maximum <THROTTLE_TAP_LIMIT> to get car out of HOLD
+        if self.sng_throttle_tap_cnt < self.params.THROTTLE_TAP_LIMIT:
+          throttle_cmd = self.params.THROTTLE_TAP_LEVEL
+          self.sng_throttle_tap_cnt += 1
+        else:
+          self.sng_throttle_tap_cnt = -1
+          self.sng_resume_acc = False
+      #TODO: Send cruise throttle to get car up to speed. There is a 2-3 seconds delay after
+      # throttle tap is sent and car start moving. EDIT: This is standard with Toyota OP's SnG
+      #pseudo: !!!WARNING!!! Dangerous, proceed with CARE
+      #if sng_resume_acc is True && has been 1 second since sng_resume_acc turns to True && current ES_Throttle < 2000
+      #    send ES_Throttle = 2000
+
+      #Update prev values
+      self.prev_close_distance = CS.close_distance
+      self.prev_cruise_state = CS.cruise_state
+
+      #Send throttle message
+      if self.throttle_cnt != CS.throttle_msg["Counter"]:
+        can_sends.append(subarucan.create_throttle(self.packer, CS.throttle_msg, throttle_cmd))
+        self.throttle_cnt = CS.throttle_msg["Counter"] 
+    #--------------------------------------------------------------------------------------------------------------
 
     # *** alerts and pcm cancel ***
 

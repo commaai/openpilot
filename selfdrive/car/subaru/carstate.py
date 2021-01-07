@@ -69,11 +69,25 @@ class CarState(CarStateBase):
       self.button = cp_cam.vl["ES_CruiseThrottle"]["Cruise_Button"]
       self.ready = not cp_cam.vl["ES_DashStatus"]["Not_Ready_Startup"]
       self.es_accel_msg = copy.copy(cp_cam.vl["ES_CruiseThrottle"])
+      self.throttle_msg = copy.copy(cp.vl["Throttle"])
+
+      #self.wiper_activated = cp.vl["Stalk"]["Wiper"] == 1
+      #@LetsDuDiss 26 Dec 2020: Add signals to aid Subaru STOP AND GO on Preglobal
+      self.car_follow = cp_cam.vl["ES_DashStatus"]['Car_Follow'] == 1
+      self.close_distance = cp_cam.vl["ES_CruiseThrottle"]['Close_Distance']
     else:
       ret.steerWarning = cp.vl["Steering_Torque"]['Steer_Warning'] == 1
       ret.cruiseState.nonAdaptive = cp_cam.vl["ES_DashStatus"]['Conventional_Cruise'] == 1
       self.es_distance_msg = copy.copy(cp_cam.vl["ES_Distance"])
+
       self.es_lkas_msg = copy.copy(cp_cam.vl["ES_LKAS_State"])
+
+      #@LetsDuDiss 19 Dec 2020: Make a copy of Throttle message to allow us to send a throttle tap to ES to get out of HOLD state
+      self.throttle_msg = copy.copy(cp.vl["Throttle"])
+      #Subaru STOP AND GO: ES States required to determine when to send throttle tap to get out of HOLD state
+      self.close_distance = cp_cam.vl["ES_Distance"]['Close_Distance']
+      self.car_follow = cp_cam.vl["ES_Distance"]['Car_Follow']
+      self.cruise_state = cp_cam.vl["ES_DashStatus"]['Cruise_State']
 
     return ret
 
@@ -88,6 +102,7 @@ class CarState(CarStateBase):
       ("Cruise_Activated", "CruiseControl", 0),
       ("Brake_Pedal", "Brake_Pedal", 0),
       ("Throttle_Pedal", "Throttle", 0),
+
       ("LEFT_BLINKER", "Dashlights", 0),
       ("RIGHT_BLINKER", "Dashlights", 0),
       ("SEATBELT_FL", "Dashlights", 0),
@@ -117,6 +132,43 @@ class CarState(CarStateBase):
       ("Transmission", 100),
       ("Steering_Torque", 50),
     ]
+
+    #SUBARU STOP AND GO
+    #@LetsDuDiss 19 Dec 2020: Added signal Labels and default values for Throttle message, this will allow us
+    #to keep ES happy when we block Throttle message from ECU and send our own Throttle message to ES
+    #Checksum and Counter are required te be parsed here with default value to keep ES happy
+    if CP.carFingerprint in PREGLOBAL_CARS:
+      #Pre-Global Platform Throttle Message
+      signals += [
+        ("Counter", "Throttle", 0),
+        ("NEW_SIGNAL_1", "Throttle", 0),
+        ("Not_Full_Throttle","Throttle", 0),
+        ("NEW_SIGNAL_2", "Throttle", 0),
+        ("Engine_RPM","Throttle",0),
+        ("Off_Throttle", "Throttle",0),
+        ("NEW_SIGNAL_3", "Throttle",0),
+        ("Throttle_Cruise","Throttle",0),
+        ("Throttle_Combo", "Throttle", 0),
+        ("Throttle_Body", "Throttle", 0),
+        ("Off_Throttle_2","Throttle", 0),
+        ("NEW_SIGNAL_4", "Throttle", 0),
+
+        ("Wiper", "Stalk", 0),
+      ]
+    else:
+      #Global Platform Throttle Message
+      signals += [
+        ("Checksum", "Throttle", 0),
+        ("Counter", "Throttle", 0),
+        ("SPARE_SIGNAL_1", "Throttle", 0),
+        ("Engine_RPM", "Throttle", 0),
+        ("SPARE_SIGNAL_2", "Throttle", 0),
+        ("Throttle_Pedal", "Throttle", 0),
+        ("Throttle_Cruise", "Throttle", 0),
+        ("Throttle_Combo", "Throttle", 0),
+        ("Signal1", "Throttle", 0),
+        ("Off_Accel", "Throttle", 0),
+      ]
 
     if CP.carFingerprint not in PREGLOBAL_CARS:
       signals += [
@@ -149,26 +201,30 @@ class CarState(CarStateBase):
   def get_cam_can_parser(CP):
     if CP.carFingerprint in PREGLOBAL_CARS:
       signals = [
+        #@LetsDuDiss 26 Dec 2020: Add signals to aid Subaru STOP AND GO on Preglobal
         ("Cruise_Set_Speed", "ES_DashStatus", 0),
+        ("Car_Follow", "ES_DashStatus", 0),
         ("Not_Ready_Startup", "ES_DashStatus", 0),
+        ("Cruise_On", "ES_DashStatus", 0),
 
         ("Throttle_Cruise", "ES_CruiseThrottle", 0),
         ("Signal1", "ES_CruiseThrottle", 0),
         ("Cruise_Activated", "ES_CruiseThrottle", 0),
         ("Signal2", "ES_CruiseThrottle", 0),
         ("Brake_On", "ES_CruiseThrottle", 0),
-        ("DistanceSwap", "ES_CruiseThrottle", 0),
+        ("Distance_Swap", "ES_CruiseThrottle", 0),
         ("Standstill", "ES_CruiseThrottle", 0),
         ("Signal3", "ES_CruiseThrottle", 0),
-        ("CloseDistance", "ES_CruiseThrottle", 0),
+        ("Close_Distance", "ES_CruiseThrottle", 0),
         ("Signal4", "ES_CruiseThrottle", 0),
         ("Standstill_2", "ES_CruiseThrottle", 0),
-        ("ES_Error", "ES_CruiseThrottle", 0),
+        ("Cruise_Fault", "ES_CruiseThrottle", 0),
         ("Signal5", "ES_CruiseThrottle", 0),
         ("Counter", "ES_CruiseThrottle", 0),
         ("Signal6", "ES_CruiseThrottle", 0),
         ("Cruise_Button", "ES_CruiseThrottle", 0),
         ("Signal7", "ES_CruiseThrottle", 0),
+        ("Checksum", "ES_CruiseThrottle", 0),
       ]
 
       checks = [
@@ -215,6 +271,11 @@ class CarState(CarStateBase):
         ("LKAS_Right_Line_Green", "ES_LKAS_State", 0),
         ("LKAS_Alert", "ES_LKAS_State", 0),
         ("Signal3", "ES_LKAS_State", 0),
+
+        #---------Subaru STOP AND GO---------
+        #Add signal Cruise_State to determine if car is in HOLD state
+        ("Cruise_State", "ES_DashStatus", 0),
+        #------------------------------------
       ]
 
       checks = [
