@@ -119,7 +119,14 @@ int main(int argc, char **argv) {
   LOGW("models loaded, modeld starting");
 
   VisionIpcClient vipc_client = VisionIpcClient("camerad", VISION_STREAM_YUV_BACK, true, device_id, context);
-  vipc_client.connect();
+
+  while (!do_exit){
+    if (!vipc_client.connect(false)){
+      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+      continue;
+    }
+    break;
+  }
 
   // loop
   while (!do_exit) {

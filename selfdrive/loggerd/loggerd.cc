@@ -214,9 +214,12 @@ void encoder_thread(int cam_idx) {
   int cnt = 0;
   LoggerHandle *lh = NULL;
 
+  VisionIpcClient vipc_client = VisionIpcClient("camerad", cam_info.stream_type, false);
   while (!do_exit) {
-    VisionIpcClient vipc_client = VisionIpcClient("camerad", cam_info.stream_type, false);
-    vipc_client.connect();
+    if (!vipc_client.connect(false)){
+      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+      continue;
+    }
 
     VisionBuf buf_info = vipc_client.buffers[0];
 
