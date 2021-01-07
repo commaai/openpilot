@@ -19,8 +19,6 @@ def main():
     dat = b''.join(sock.recv_multipart())
     dat = dat.decode('utf8')
 
-    # print "RECV", repr(dat)
-
     levelnum = ord(dat[0])
     dat = dat[1:]
 
