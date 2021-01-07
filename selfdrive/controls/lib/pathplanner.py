@@ -4,7 +4,7 @@ import numpy as np
 from common.realtime import sec_since_boot, DT_MDL
 from selfdrive.swaglog import cloudlog
 from selfdrive.controls.lib.lateral_mpc import libmpc_py
-from selfdrive.controls.lib.drive_helpers import MPC_COST_LAT
+from selfdrive.controls.lib.drive_helpers import MPC_COST_LAT, MPC_N, CAR_ROTATION_RADIUS
 from selfdrive.controls.lib.lane_planner import LanePlanner
 from selfdrive.config import Conversions as CV
 from common.params import Params
@@ -18,7 +18,6 @@ LOG_MPC = os.environ.get('LOG_MPC', False)
 
 LANE_CHANGE_SPEED_MIN = 45 * CV.MPH_TO_MS
 LANE_CHANGE_TIME_MAX = 10.
-MPC_N = 16
 
 DESIRES = {
   LaneChangeDirection.none: {
@@ -183,7 +182,7 @@ class PathPlanner():
     self.libmpc.run_mpc(self.cur_state, self.mpc_solution,
                         list(v_poly),
                         curvature_factor,
-                        1.5,
+                        CAR_ROTATION_RADIUS,
                         list(-y_pts),
                         list(-heading_pts))
 
