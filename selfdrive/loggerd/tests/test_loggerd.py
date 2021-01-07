@@ -13,11 +13,13 @@ import cereal.messaging as messaging
 from cereal.services import service_list
 from common.basedir import BASEDIR
 from common.timeout import Timeout
+from common.params import Params
 import selfdrive.manager as manager
 from selfdrive.loggerd.config import ROOT
+from selfdrive.version import version as VERSION
 from tools.lib.logreader import LogReader
 
-SentinelType =log.Sentinel.SentinelType
+SentinelType = log.Sentinel.SentinelType
 
 CEREAL_SERVICES = [f for f in log.Event.schema.union_fields if f in service_list
                    and service_list[f].should_log and "encode" not in f.lower()]
@@ -55,6 +57,36 @@ class TestLoggerd(unittest.TestCase):
 
     end_type = SentinelType.endOfRoute if route else SentinelType.endOfSegment
     assert msgs[-1].sentinel.type == end_type
+
+  def test_init_data_values(self):
+    os.environ["CLEAN"] = random.choice(["0", "1"])
+    os.environ["DONGLE_ID"] = ''.join(random.choice(string.printable) for n in range(random.randint(1, 100)))
+
+    fake_params = [
+      ("GitCommit", "gitCommit", "commit"),
+      ("GitBranch", "gitBranch", "branch"),
+      ("GitRemote", "gitRemote", "remote"),
+    ]
+    params = Params()
+    for k, _, v in fake_params:
+      params.put(k, v)
+
+    lr = list(LogReader(str(self._gen_bootlog())))
+    initData = lr[0].initData
+
+    assert initData.dirty != bool(os.environ["CLEAN"])
+    assert initData.dongleId == os.environ["DONGLE_ID"]
+    assert initData.version == VERSION
+
+    if os.path.isfile("/proc/cmdline"):
+      with open("/proc/cmdline") as f:
+        assert list(initData.kernelArgs) == f.read().strip().split(" ")
+
+      with open("/proc/version") as f:
+        assert initData.kernelVersion == f.read()
+
+    for _, k, v in fake_params:
+      assert getattr(initData, k) == v
 
   def test_bootlog(self):
     # generate bootlog with fake launch log
