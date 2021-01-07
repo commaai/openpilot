@@ -25,6 +25,10 @@ AddOption('--compile_db',
           action='store_true',
           help='build clang compilation database')
 
+AddOption('--mpc-generate',
+          action='store_true',
+          help='regenerates the mpc sources')
+
 real_arch = arch = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()
 if platform.system() == "Darwin":
   arch = "Darwin"
