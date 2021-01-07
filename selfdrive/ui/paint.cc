@@ -300,11 +300,14 @@ static void ui_draw_driver_view(UIState *s) {
                                         COLOR_BLACK_ALPHA(is_rhd ? 255 : 0), COLOR_BLACK_ALPHA(is_rhd ? 0 : 255));
   ui_draw_rect(s->vg, blackout_x, rect.y, blackout_w, rect.h, gradient);
   ui_draw_rect(s->vg, blackout_x, rect.y, blackout_w, rect.h, COLOR_BLACK_ALPHA(144));
+  // border
+  ui_draw_rect(s->vg, rect.x, rect.y, rect.w, rect.h, bg_colors[STATUS_OFFROAD], 0, 1);
 
   const bool face_detected = s->scene.dmonitoring_state.getFaceDetected();
   if (face_detected) {
     auto fxy_list = s->scene.driver_state.getFacePosition();
-    auto [face_x, face_y] = (float[]){fxy_list[0], fxy_list[1]};
+    float face_x = fxy_list[0];
+    float face_y = fxy_list[1];
     float fbox_x = valid_rect.centerX() + (is_rhd ? face_x : -face_x) * valid_rect.w;
     float fbox_y = valid_rect.centerY() + face_y * valid_rect.h;
 
@@ -319,7 +322,8 @@ static void ui_draw_driver_view(UIState *s) {
   // draw face icon
   const int face_size = 85;
   const int icon_x = is_rhd ? rect.right() - face_size - bdr_s * 2 : rect.x + face_size + bdr_s * 2;
-  ui_draw_circle_image(s->vg, icon_x, rect.bottom() - face_size - bdr_s * 2.5, face_size, s->img_face, face_detected);
+  const int icon_y = rect.bottom() - face_size - bdr_s * 2.5;
+  ui_draw_circle_image(s->vg, icon_x, icon_y, face_size, s->img_face, face_detected);
 }
 
 static void ui_draw_vision_header(UIState *s) {
