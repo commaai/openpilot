@@ -7,11 +7,11 @@
 *.ipynb filter=nbstripout -diff
 external/ffmpeg/bin/ffmpeg_cuda filter=lfs diff=lfs merge=lfs -text
 models/segnet.keras filter=lfs diff=lfs merge=lfs -text
-phonelibs/acado/x64/lib/libacado_toolkit.a filter=lfs diff=lfs merge=lfs -text
-phonelibs/acado/x64/lib/libacado_toolkit_s.so.1.2.2beta filter=lfs diff=lfs merge=lfs -text
-phonelibs/acado/x64/lib/libacado_casadi.a filter=lfs diff=lfs merge=lfs -text
-phonelibs/acado/x64/lib/libacado_csparse.a filter=lfs diff=lfs merge=lfs -text
-phonelibs/acado/x64/lib/libacado_qpoases.a filter=lfs diff=lfs merge=lfs -text
+phonelibs/acado/x86_64/lib/libacado_toolkit.a filter=lfs diff=lfs merge=lfs -text
+phonelibs/acado/x86_64/lib/libacado_toolkit_s.so.1.2.2beta filter=lfs diff=lfs merge=lfs -text
+phonelibs/acado/x86_64/lib/libacado_casadi.a filter=lfs diff=lfs merge=lfs -text
+phonelibs/acado/x86_64/lib/libacado_csparse.a filter=lfs diff=lfs merge=lfs -text
+phonelibs/acado/x86_64/lib/libacado_qpoases.a filter=lfs diff=lfs merge=lfs -text
 phonelibs/acado/aarch64/lib/libacado_toolkit.a filter=lfs diff=lfs merge=lfs -text
 phonelibs/acado/aarch64/lib/libacado_toolkit_s.so.1.2.2beta filter=lfs diff=lfs merge=lfs -text
 phonelibs/acado/aarch64/lib/libacado_casadi.a filter=lfs diff=lfs merge=lfs -text
