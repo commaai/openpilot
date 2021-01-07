@@ -292,7 +292,7 @@ void encoder_thread(int cam_idx) {
 
           pthread_mutex_lock(&s.rotate_lock);
           s.should_close = s.should_close == s.num_encoder ? 1 - s.num_encoder : s.should_close + 1;
-         
+
           for (auto &e : encoders) {
             encoder_close(e);
             encoder_open(e, e->next_path);
@@ -515,11 +515,8 @@ static void bootlog() {
 }
 
 int main(int argc, char** argv) {
-  int err;
 
-#ifdef QCOM
   setpriority(PRIO_PROCESS, 0, -12);
-#endif
 
   if (argc > 1 && strcmp(argv[1], "--bootlog") == 0) {
     bootlog();
@@ -530,6 +527,7 @@ int main(int argc, char** argv) {
   if (getenv("LOGGERD_TEST")) {
     segment_length = atoi(getenv("LOGGERD_SEGMENT_LENGTH"));
   }
+
   bool record_front = true;
 #ifndef QCOM2
   record_front = Params().read_db_bool("RecordFront");
@@ -603,28 +601,28 @@ int main(int argc, char** argv) {
   double last_rotate_tms = millis_since_boot();
   double last_camera_seen_tms = millis_since_boot();
   while (!do_exit) {
+    // poll for new messages on all sockets
     for (auto sock : poller->poll(1000)) {
-      Message * last_msg = nullptr;
+
+      // drain socket
+      Message * msg = nullptr;
       while (!do_exit) {
-        Message * msg = sock->receive(true);
+        msg = sock->receive(true);
         if (!msg){
           break;
         }
-        delete last_msg;
-        last_msg = msg;
 
         QlogState& qs = qlog_states[sock];
         logger_log(&s.logger, (uint8_t*)msg->getData(), msg->getSize(), qs.counter == 0);
-
         if (qs.counter != -1) {
-          //printf("%p: %d/%d\n", socks[i], qlog_counter[socks[i]], qlog_freqs[socks[i]]);
           qs.counter = (qs.counter + 1) % qs.freq;
         }
+
         bytes_count += msg->getSize();
         msg_count++;
       }
 
-      if (last_msg) {
+      if (msg) {
         int fpkt_id = -1;
         for (int cid=0;cid<=MAX_CAM_IDX;cid++) {
           if (sock == s.rotate_state[cid].fpkt_sock) {fpkt_id=cid; break;}
@@ -632,8 +630,8 @@ int main(int argc, char** argv) {
         if (fpkt_id>=0) {
           // track camera frames to sync to encoder
           // only process last frame
-          const uint8_t* data = (uint8_t*)last_msg->getData();
-          const size_t len = last_msg->getSize();
+          const uint8_t* data = (uint8_t*)msg->getData();
+          const size_t len = msg->getSize();
           const size_t size = len / sizeof(capnp::word) + 1;
           if (buf.size() < size) {
             buf = kj::heapArray<capnp::word>(size);
@@ -652,8 +650,8 @@ int main(int argc, char** argv) {
           }
           last_camera_seen_tms = millis_since_boot();
         }
-        delete last_msg;
       }
+      delete msg;
     }
 
     double tms = millis_since_boot();
@@ -688,7 +686,7 @@ int main(int argc, char** argv) {
       pthread_mutex_lock(&s.rotate_lock);
       last_rotate_tms = millis_since_boot();
 
-      err = logger_next(&s.logger, LOG_ROOT, s.segment_path, sizeof(s.segment_path), &s.rotate_segment);
+      int err = logger_next(&s.logger, LOG_ROOT, s.segment_path, sizeof(s.segment_path), &s.rotate_segment);
       assert(err == 0);
       if (s.logger.part == 0) {
         LOGW("logging to %s", s.segment_path);
