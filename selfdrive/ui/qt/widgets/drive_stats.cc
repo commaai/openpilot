@@ -87,11 +87,7 @@ DriveStats::DriveStats(QWidget *parent) : QWidget(parent) {
   QString dongle_id = QString::fromStdString(Params().get("DongleId"));
 
   QVector<QPair<QString, QJsonValue>> payloads;
-  auto t = QDateTime::currentSecsSinceEpoch();
   payloads.push_back(qMakePair(QString("identity"), dongle_id));
-  payloads.push_back(qMakePair(QString("nbf"), t));
-  payloads.push_back(qMakePair(QString("iat"), t));
-  payloads.push_back(qMakePair(QString("exp"), t + 3600));
   QString token = CommaApi::create_jwt(payloads);
 
   QNetworkAccessManager *manager = new QNetworkAccessManager(this);

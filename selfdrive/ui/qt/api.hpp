@@ -15,5 +15,5 @@
 class CommaApi{
 public:
   static QByteArray rsa_sign(QByteArray data);
-  static QString create_jwt(QVector<QPair<QString, QJsonValue>> payloads);
+  static QString create_jwt(QVector<QPair<QString, QJsonValue>> payloads, int expiry = 3600);
 };

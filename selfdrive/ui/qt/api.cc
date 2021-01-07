@@ -2,6 +2,7 @@
 #include <QFile>
 #include <QJsonObject>
 #include <QJsonDocument>
+#include <QDateTime>
 
 #include "api.hpp"
 
@@ -39,14 +40,19 @@ QByteArray CommaApi::rsa_sign(QByteArray data) {
   return sig;
 }
 
-QString CommaApi::create_jwt(QVector<QPair<QString, QJsonValue>> payloads) {
+QString CommaApi::create_jwt(QVector<QPair<QString, QJsonValue>> payloads, int expiry) {
   QJsonObject header;
   header.insert("alg", "RS256");
 
   QJsonObject payload;
+  auto t = QDateTime::currentSecsSinceEpoch();
+  payload.insert("nbf", t);
+  payload.insert("iat", t);
+  payload.insert("exp", t + expiry);
   for(auto load : payloads){
     payload.insert(load.first, load.second);
   }
+
   QString jwt =
     QJsonDocument(header).toJson(QJsonDocument::Compact).toBase64(QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals) +
     '.' +

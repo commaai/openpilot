@@ -35,14 +35,11 @@ PairingQRWidget::PairingQRWidget(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *v = new QVBoxLayout;
   v->addWidget(qrCode);
   this->setLayout(v);
+
   QString IMEI = QString::fromStdString(Params().get("IMEI"));
   QString serial = QString::fromStdString(Params().get("HardwareSerial"));
 
   QVector<QPair<QString, QJsonValue>> payloads;
-  auto t = QDateTime::currentSecsSinceEpoch();
-  payloads.push_back(qMakePair(QString("nbf"), t));
-  payloads.push_back(qMakePair(QString("iat"), t));
-  payloads.push_back(qMakePair(QString("exp"), t + 3600));
   payloads.push_back(qMakePair(QString("pair"), true));
   QString pairToken = CommaApi::create_jwt(payloads);
   
