@@ -250,6 +250,11 @@ routes = {
     'enableCamera': False,
     'enableDsu': False,
   },
+  "399f98d4e88eb662|2021-01-07--01-54-08": {
+    'carFingerprint': TOYOTA.AVALON_2021,
+    'enableCamera': False,
+    'enableDsu': False,
+  },
   "6cdecc4728d4af37|2020-02-23--15-44-18": {
     'carFingerprint': TOYOTA.CAMRY,
     'enableCamera': True,
