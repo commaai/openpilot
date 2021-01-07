@@ -458,7 +458,7 @@ kj::Array<capnp::word> gen_init_data() {
     for (auto& kv : params_map) {
       auto lentry = lparams[i];
       lentry.setKey(kv.first);
-      lentry.setValue(kv.second);
+      lentry.setValue(capnp::Data::Reader((const kj::byte*)kv.second.data(), kv.second.size()));
       i++;
     }
   }
