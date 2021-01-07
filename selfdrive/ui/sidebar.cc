@@ -21,7 +21,7 @@ static void ui_draw_sidebar_settings_button(UIState *s) {
 }
 
 static void ui_draw_sidebar_home_button(UIState *s) {
-  const float alpha = s->active_app == cereal::UiLayoutState::App::HOME ? 1.0f : 0.65f;;
+  const float alpha = s->active_app == cereal::UiLayoutState::App::HOME ? 1.0f : 0.65f;
   ui_draw_image(s->vg, home_btn, s->img_button_home, alpha);
 }
 
