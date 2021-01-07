@@ -11,10 +11,7 @@
 #include <QLabel>
 #include <QCryptographicHash>
 #include <QFile>
-
-#include <openssl/rsa.h>
-#include <openssl/bio.h>
-#include <openssl/pem.h>
+#include <QDateTime>
 
 #include "pairing_qr.hpp"
 #include "common/params.h"
@@ -30,29 +27,6 @@ const std::string private_key_path = "/persist/comma/id_rsa";
 const std::string private_key_path = util::getenv_default("HOME", "/.comma/persist/comma/id_rsa", "/persist/comma/id_rsa");
 #endif
 
-QString create_jwt(int expiry=3600) {
-  QJsonObject header;
-  header.insert("alg", "RS256");
-
-  auto t = QDateTime::currentSecsSinceEpoch();
-  QJsonObject payload;
-  payload.insert("nbf", t);
-  payload.insert("iat", t);
-  payload.insert("exp", t + expiry);
-  payload.insert("pair", true);
-
-  QString jwt =
-    QJsonDocument(header).toJson(QJsonDocument::Compact).toBase64(QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals) +
-    '.' +
-    QJsonDocument(payload).toJson(QJsonDocument::Compact).toBase64(QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals);
-  auto hash = QCryptographicHash::hash(jwt.toUtf8(), QCryptographicHash::Sha256);
-  auto sig = CommaApi::rsa_sign2(hash);
-
-  jwt += '.' + sig.toBase64(QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals);
-
-  return jwt;
-}
-
 
 PairingQRWidget::PairingQRWidget(QWidget *parent) : QWidget(parent) {
   qrCode = new QLabel;
@@ -63,7 +37,15 @@ PairingQRWidget::PairingQRWidget(QWidget *parent) : QWidget(parent) {
   this->setLayout(v);
   QString IMEI = QString::fromStdString(Params().get("IMEI"));
   QString serial = QString::fromStdString(Params().get("HardwareSerial"));
-  QString pairToken = create_jwt();
+
+  QVector<QPair<QString, QJsonValue>> payloads;
+  auto t = QDateTime::currentSecsSinceEpoch();
+  payloads.push_back(qMakePair(QString("nbf"), t));
+  payloads.push_back(qMakePair(QString("iat"), t));
+  payloads.push_back(qMakePair(QString("exp"), t + 3600));
+  payloads.push_back(qMakePair(QString("pair"), true));
+  QString pairToken = CommaApi::create_jwt(payloads);
+  
   QString qrString = IMEI + "--" + serial + "--" + pairToken;
   qDebug() << qrString;
   this->updateQrCode(qrString);

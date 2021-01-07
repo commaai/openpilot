@@ -9,16 +9,11 @@
 #include <QJsonObject>
 #include <QNetworkAccessManager>
 #include <QNetworkRequest>
-#include <QCryptographicHash>
-
-#include <openssl/rsa.h>
-#include <openssl/bio.h>
-#include <openssl/pem.h>
 
 #include "drive_stats.hpp"
 #include "common/params.h"
 #include "common/utilpp.h"
-#include "../api.hpp"
+#include "api.hpp"
 
 constexpr double MILE_TO_KM = 1.60934;
 
@@ -29,31 +24,6 @@ const std::string private_key_path = "/persist/comma/id_rsa";
 const std::string private_key_path = util::getenv_default("HOME", "/.comma/persist/comma/id_rsa", "/persist/comma/id_rsa");
 #endif
 
-
-QString create_jwt(QString dongle_id, int expiry=3600) {
-  QJsonObject header;
-  header.insert("alg", "RS256");
-  header.insert("typ", "JWT");
-
-  auto t = QDateTime::currentSecsSinceEpoch();
-  QJsonObject payload;
-  payload.insert("identity", dongle_id);
-  payload.insert("nbf", t);
-  payload.insert("iat", t);
-  payload.insert("exp", t + expiry);
-
-  QString jwt =
-    QJsonDocument(header).toJson(QJsonDocument::Compact).toBase64() +
-    '.' +
-    QJsonDocument(payload).toJson(QJsonDocument::Compact).toBase64();
-
-  auto hash = QCryptographicHash::hash(jwt.toUtf8(), QCryptographicHash::Sha256);
-  auto sig = CommaApi::rsa_sign(hash);
-
-  jwt += '.' + sig.toBase64();
-
-  return jwt;
-}
 
 QLayout *build_stat(QString name, int stat) {
   QVBoxLayout *layout = new QVBoxLayout;
@@ -115,7 +85,14 @@ void DriveStats::replyFinished(QNetworkReply *l) {
 
 DriveStats::DriveStats(QWidget *parent) : QWidget(parent) {
   QString dongle_id = QString::fromStdString(Params().get("DongleId"));
-  QString token = create_jwt(dongle_id);
+
+  QVector<QPair<QString, QJsonValue>> payloads;
+  auto t = QDateTime::currentSecsSinceEpoch();
+  payloads.push_back(qMakePair(QString("identity"), dongle_id));
+  payloads.push_back(qMakePair(QString("nbf"), t));
+  payloads.push_back(qMakePair(QString("iat"), t));
+  payloads.push_back(qMakePair(QString("exp"), t + 3600));
+  QString token = CommaApi::create_jwt(payloads);
 
   QNetworkAccessManager *manager = new QNetworkAccessManager(this);
   connect(manager, &QNetworkAccessManager::finished, this, &DriveStats::replyFinished);

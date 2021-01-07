@@ -1,5 +1,7 @@
 #include <QWidget>
 #include <QFile>
+#include <QJsonObject>
+#include <QJsonDocument>
 
 #include "api.hpp"
 
@@ -37,3 +39,22 @@ QByteArray CommaApi::rsa_sign(QByteArray data) {
   return sig;
 }
 
+QString CommaApi::create_jwt(QVector<QPair<QString, QJsonValue>> payloads) {
+  QJsonObject header;
+  header.insert("alg", "RS256");
+
+  QJsonObject payload;
+  for(auto load : payloads){
+    payload.insert(load.first, load.second);
+  }
+  QString jwt =
+    QJsonDocument(header).toJson(QJsonDocument::Compact).toBase64(QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals) +
+    '.' +
+    QJsonDocument(payload).toJson(QJsonDocument::Compact).toBase64(QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals);
+  auto hash = QCryptographicHash::hash(jwt.toUtf8(), QCryptographicHash::Sha256);
+  auto sig = rsa_sign(hash);
+
+  jwt += '.' + sig.toBase64(QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals);
+
+  return jwt;
+}
