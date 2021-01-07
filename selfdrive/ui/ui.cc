@@ -258,9 +258,9 @@ static void ui_read_params(UIState *s) {
 
 void ui_update_vision(UIState *s) {
   if (!s->vipc_client->connected && s->started) {
-    // Connect is blocking, but since we're started we assume this will always succeed
-    s->vipc_client->connect();
-    ui_init_vision(s);
+    if (s->vipc_client->connect(false)){
+      ui_init_vision(s);
+    }
   }
 
   if (s->vipc_client->connected){
