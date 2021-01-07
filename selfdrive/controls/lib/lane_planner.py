@@ -34,10 +34,10 @@ class LanePlanner:
 
     self.lll_xyz = np.column_stack([md.laneLines[1].x, md.laneLines[1].y, md.laneLines[1].z])
     self.rll_xyz = np.column_stack([md.laneLines[2].x, md.laneLines[2].y, md.laneLines[2].z])
-    self.lll_prob = md.laneLinesProbs[1]
-    self.rll_prob = md.laneLinesProbs[2]
-    self.lll_std = md.laneLinesStds[1]
-    self.rll_std = md.laneLinesStds[2]
+    self.lll_prob = md.laneLineProbs[1]
+    self.rll_prob = md.laneLineProbs[2]
+    self.lll_std = md.laneLineStds[1]
+    self.rll_std = md.laneLineStds[2]
 
     if len(md.meta.desireState):
       self.l_lane_change_prob = md.meta.desireState[log.PathPlan.Desire.laneChangeLeft]
