@@ -96,12 +96,9 @@ class TestLoggerd(unittest.TestCase):
                random.sample(no_qlog_services, random.randint(2, 10))
 
     pm = messaging.PubMaster(services)
-    time.sleep(3)
 
-    # TODO: loggerd shouldn't require the encoders for the main logging thread
-    manager.start_managed_process("camerad")
-    services = [s for s in services if s not in ("frame", "frontFrame", "wideFrame", "thumbnail")]
-
+    # sleep enough for the first poll to time out
+    # TOOD: fix loggerd bug dropping the msgs from the first poll
     manager.start_managed_process("loggerd")
     time.sleep(2)
 
@@ -116,9 +113,8 @@ class TestLoggerd(unittest.TestCase):
         sent_msgs[s].append(m)
       time.sleep(0.01)
 
-    time.sleep(5)
+    time.sleep(1)
     manager.kill_managed_process("loggerd")
-    manager.kill_managed_process("camerad")
 
     qlog_path = os.path.join(self._get_latest_log_dir(), "qlog.bz2")
     lr = list(LogReader(qlog_path))
@@ -138,24 +134,18 @@ class TestLoggerd(unittest.TestCase):
         # check services with no specific decimation aren't in qlog
         assert recv_cnt == 0, f"got {recv_cnt} {s} msgs in qlog"
       else:
-        print("checking", s)
         # check logged message count matches decimation
         expected_cnt = len(msgs) // service_list[s].decimation
-        print(expected_cnt, recv_cnt)
-        #assert recv_cnt == expected_cnt, f"expected {expected_cnt} msgs for {s}, got {recv_cnt}"
+        assert recv_cnt == expected_cnt, f"expected {expected_cnt} msgs for {s}, got {recv_cnt}"
 
   def test_rlog(self):
     services = random.sample(CEREAL_SERVICES, random.randint(5, 10))
     pm = messaging.PubMaster(services)
 
-    time.sleep(2)
+    # sleep enough for the first poll to time out
+    # TOOD: fix loggerd bug dropping the msgs from the first poll
     manager.start_managed_process("loggerd")
-
-    # TODO: loggerd shouldn't require the encoders for the main logging thread
-    manager.start_managed_process("camerad")
-    services = [s for s in services if s not in ("frame", "frontFrame", "wideFrame", "thumbnail")]
-
-    time.sleep(1)
+    time.sleep(2)
 
     sent_msgs = defaultdict(list)
     for _ in range(random.randint(2, 10) * 100):
@@ -170,24 +160,19 @@ class TestLoggerd(unittest.TestCase):
 
     time.sleep(1)
     manager.kill_managed_process("loggerd")
-    manager.kill_managed_process("camerad")
-    
+
     lr = list(LogReader(os.path.join(self._get_latest_log_dir(), "rlog.bz2")))
 
     # check initData and sentinel
     self._check_init_data(lr)
     self._check_sentinel(lr, True)
 
-    recv_msgs = defaultdict(list)
+    # check all messages were logged and in order
+    lr = lr[2:-1] # slice off initData and both sentinels
     for m in lr:
-      recv_msgs[m.which()].append(m)
-
-    for s, msgs in sent_msgs.items():
-      recv_cnt = len(recv_msgs[s])
-
-      expected_cnt = len(msgs)
-      print(s, expected_cnt, recv_cnt)
-      print(msgs[0].to_bytes() == recv_msgs[s][0].as_builder().to_bytes(), msgs[-1].to_bytes() == recv_msgs[s][-1].as_builder().to_bytes())
+      sent = sent_msgs[m.which()].pop(0)
+      sent.clear_write_flag()
+      assert sent.to_bytes() == m.as_builder().to_bytes()
 
 
 if __name__ == "__main__":
