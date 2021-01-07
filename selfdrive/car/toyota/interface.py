@@ -210,7 +210,7 @@ class CarInterface(CarInterfaceBase):
       stop_and_go = True
       ret.minSpeedCan = 0.375
       ret.safetyParam = 73
-      ret.wheelbase = 2.63906
+      ret.wheelbase = 2.67  # Average between 2.70 for sedan and 2.64 for hatchback
       ret.steerRatio = 13.9
       tire_stiffness_factor = 0.444  # not optimized yet
       ret.mass = 3060. * CV.LB_TO_KG + STD_CARGO_KG
