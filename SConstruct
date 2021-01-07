@@ -27,7 +27,7 @@ AddOption('--compile_db',
 
 AddOption('--mpc-generate',
           action='store_true',
-          help='builds the mpc sources')
+          help='regenerates the mpc sources')
 
 real_arch = arch = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()
 if platform.system() == "Darwin":
