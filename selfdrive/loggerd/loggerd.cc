@@ -600,7 +600,7 @@ int main(int argc, char** argv) {
   double last_rotate_tms = millis_since_boot();
   double last_camera_seen_tms = millis_since_boot();
   while (!do_exit) {
-    for (auto sock : poller->poll(100 * 1000)) {
+    for (auto sock : poller->poll(1000)) {
       Message * last_msg = nullptr;
       while (!do_exit) {
         Message * msg = sock->receive(true);
