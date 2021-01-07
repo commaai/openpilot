@@ -5,6 +5,7 @@
 #include <QDateTime>
 
 #include "api.hpp"
+#include "common/utilpp.h"
 
 #if defined(QCOM) || defined(QCOM2)
 const std::string private_key_path = "/persist/comma/id_rsa";
