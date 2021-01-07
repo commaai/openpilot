@@ -1,7 +1,7 @@
 from common.numpy_fast import interp
 import numpy as np
 from cereal import log
-from xx.uncommon.numpy_helpers import deep_interp_np
+from common.numpy_helpers import deep_interp_np
 
 CAMERA_OFFSET = 0.06  # m from center car to camera
 
