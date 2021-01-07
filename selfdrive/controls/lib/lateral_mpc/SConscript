@@ -18,40 +18,6 @@ generated_c = [
     'lib_mpc_export/acado_solver.c',
 ]
 
-if arch != "aarch64":
-    env2 = env.Clone(CCFLAGS=[
-      "-g",
-      "-fPIC",
-      "-O2",
-      "-Wunused",
-      "-Wno-unknown-warning-option",
-      "-Wno-deprecated",
-      "-Wno-overloaded-shift-op-parentheses"
-    ]
-
-    acado_libs = [
-      File("#phonelibs/acado/x64/lib/libacado_toolkit.a"),
-      File("#phonelibs/acado/x64/lib/libacado_casadi.a"),
-      File("#phonelibs/acado/x64/lib/libacado_csparse.a")
-    ]
-    env2.Program('generator', 'generator.cpp', LIBS=acado_libs, CPPPATH=cpp_path)
-
-    targets = [
-      'lib_mpc_export/acado_common.h',
-      'lib_mpc_export/acado_auxiliary_functions.h',
-      'lib_mpc_export/acado_auxiliary_functions.c',
-      'lib_mpc_export/acado_qpoases_interface.hpp',
-      'lib_mpc_export/acado_qpoases_interface.cpp',
-      'lib_mpc_export/acado_integrator.c'
-    ]
-
-    target_files = File(targets)
-    command_file = File('generator')
-
-    env2.Command(target_files,
-                 [command_file],
-                 command_file.get_abspath())
-
 generated_h = [
     'lib_mpc_export/acado_common.h',
     'lib_mpc_export/acado_auxiliary_functions.h',
