@@ -138,8 +138,7 @@ typedef struct UIScene {
 
   // radarState
   struct LeadData{
-    bool status;
-    float d_rel, v_rel, y_rel;
+    cereal::RadarState::LeadData::Reader data;
     vertex_data vd;
   } lead[2] = {};
 } UIScene;

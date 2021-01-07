@@ -109,14 +109,16 @@ static void draw_lead(UIState *s, const UIScene::LeadData &lead) {
   float fillAlpha = 0;
   float speedBuff = 10.;
   float leadBuff = 40.;
-  if (lead.d_rel < leadBuff) {
-    fillAlpha = 255*(1.0-(lead.d_rel/leadBuff));
-    if (lead.v_rel < 0) {
-      fillAlpha += 255*(-1*(lead.v_rel/speedBuff));
+  float d_rel = lead.data.getDRel();
+  float v_rel = lead.data.getVRel();
+  if (d_rel < leadBuff) {
+    fillAlpha = 255*(1.0-(d_rel/leadBuff));
+    if (v_rel < 0) {
+      fillAlpha += 255*(-1*(v_rel/speedBuff));
     }
     fillAlpha = (int)(fmin(fillAlpha, 255));
   }
-  int sz = std::clamp((25 * 30) / (lead.d_rel / 3 + 30), 15.f, 30.f) * zoom;
+  int sz = std::clamp((25 * 30) / (d_rel / 3 + 30), 15.f, 30.f) * zoom;
   draw_chevron(s, lead.vd.x, lead.vd.y, sz, nvgRGBA(201, 34, 49, fillAlpha), COLOR_YELLOW);
 }
 
@@ -199,10 +201,10 @@ static void ui_draw_world(UIState *s) {
 
   // Draw lead indicators if openpilot is handling longitudinal
   if (s->longitudinal_control) {
-    if (scene->lead[0].status) {
+    if (scene->lead[0].data.getStatus()) {
       draw_lead(s, scene->lead[0]);
     }
-    if (scene->lead[1].status && (std::abs(scene->lead[0].d_rel - scene->lead[1].d_rel) > 3.0)) {
+    if (scene->lead[1].data.getStatus() && (std::abs(scene->lead[0].data.getDRel() - scene->lead[1].data.getDRel()) > 3.0)) {
       draw_lead(s, scene->lead[1]);
     }
   }

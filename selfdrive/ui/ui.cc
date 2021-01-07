@@ -96,7 +96,7 @@ static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
   }
 
   // update path
-  const float lead_d = scene.lead[0].status ? scene.lead[0].d_rel * 2. : MAX_DRAW_DISTANCE;
+  const float lead_d = scene.lead[0].data.getStatus() ? scene.lead[0].data.getDRel() * 2. : MAX_DRAW_DISTANCE;
   float path_length = (lead_d > 0.) ? lead_d - fmin(lead_d * 0.35, 10.) : MAX_DRAW_DISTANCE;
   path_length = fmin(path_length, max_distance);
   update_line_data(s, model.getPosition(), 0.5, 0, &scene.track_vertices, path_length);
@@ -104,18 +104,14 @@ static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
 
 static void update_lead(const UIState *s, const cereal::RadarState::LeadData::Reader &lead,
                         const cereal::ModelDataV2::XYZTData::Reader &line, UIScene::LeadData &lead_data) {
-  lead_data = {.status = lead.getStatus(),
-               .d_rel = lead.getDRel(),
-               .v_rel = lead.getVRel(),
-               .y_rel = lead.getYRel()};
-
-  if (float z = 0.; lead_data.status) {
-    const float path_length = fmin(lead_data.d_rel, MAX_DRAW_DISTANCE);
+  lead_data = {.data = lead};
+  if (float z = 0.; lead.getStatus()) {
+    const float path_length = fmin(lead.getDRel(), MAX_DRAW_DISTANCE);
     const auto line_x = line.getX(), line_z = line.getZ();
     for (int i = 0; i < TRAJECTORY_SIZE && line_x[i] < path_length; ++i) {
       z = line_z[i];
     }
-    car_space_to_full_frame(s, lead_data.d_rel, lead_data.y_rel, z, &lead_data.vd.x, &lead_data.vd.y, 500.0f);
+    car_space_to_full_frame(s, lead.getDRel(), lead.getYRel(), z, &lead_data.vd, 500.0f);
   }
 }
 
