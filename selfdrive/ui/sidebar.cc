@@ -6,7 +6,7 @@
 #include "paint.hpp"
 #include "sidebar.hpp"
 
-static void ui_draw_sidebar_background(UIState *s) {
+static void draw_background(UIState *s) {
 #ifdef QCOM
   const NVGcolor color = COLOR_BLACK_ALPHA(85);
 #else
@@ -15,17 +15,17 @@ static void ui_draw_sidebar_background(UIState *s) {
   ui_draw_rect(s->vg, 0, 0, sbr_w, s->fb_h, color);
 }
 
-static void ui_draw_sidebar_settings_button(UIState *s) {
+static void draw_settings_button(UIState *s) {
   const float alpha = s->active_app == cereal::UiLayoutState::App::SETTINGS ? 1.0f : 0.65f;
   ui_draw_image(s->vg, settings_btn, s->img_button_settings, alpha);
 }
 
-static void ui_draw_sidebar_home_button(UIState *s) {
+static void draw_home_button(UIState *s) {
   const float alpha = s->active_app == cereal::UiLayoutState::App::HOME ? 1.0f : 0.65f;
   ui_draw_image(s->vg, home_btn, s->img_button_home, alpha);
 }
 
-static void ui_draw_sidebar_network_strength(UIState *s) {
+static void draw_network_strength(UIState *s) {
   static std::map<cereal::ThermalData::NetworkStrength, int> network_strength_map = {
       {cereal::ThermalData::NetworkStrength::UNKNOWN, 1},
       {cereal::ThermalData::NetworkStrength::POOR, 2},
@@ -37,7 +37,7 @@ static void ui_draw_sidebar_network_strength(UIState *s) {
   ui_draw_image(s->vg, rect, s->img_network[img_idx], 1.0f);
 }
 
-static void ui_draw_sidebar_battery_icon(UIState *s) {
+static void draw_battery_icon(UIState *s) {
   int battery_img = s->scene.thermal.getBatteryStatus() == "Charging" ? s->img_battery_charging : s->img_battery;
   const Rect rect = {160, 255, 76, 36};
   ui_draw_rect(s->vg, rect.x + 6, rect.y + 5,
@@ -45,7 +45,7 @@ static void ui_draw_sidebar_battery_icon(UIState *s) {
   ui_draw_image(s->vg, rect, battery_img, 1.0f);
 }
 
-static void ui_draw_sidebar_network_type(UIState *s) {
+static void draw_network_type(UIState *s) {
   static std::map<cereal::ThermalData::NetworkType, const char *> network_type_map = {
       {cereal::ThermalData::NetworkType::NONE, "--"},
       {cereal::ThermalData::NetworkType::WIFI, "WiFi"},
@@ -64,7 +64,7 @@ static void ui_draw_sidebar_network_type(UIState *s) {
   nvgTextBox(s->vg, network_x, network_y, network_w, network_type ? network_type : "--", NULL);
 }
 
-static void ui_draw_sidebar_metric(UIState *s, const char* label_str, const char* value_str, const int severity, const int y_offset, const char* message_str) {
+static void draw_metric(UIState *s, const char *label_str, const char *value_str, const int severity, const int y_offset, const char *message_str) {
   const int metric_x = 30;
   const int metric_y = 338 + y_offset;
   const int metric_w = 240;
@@ -109,17 +109,17 @@ static void ui_draw_sidebar_metric(UIState *s, const char* label_str, const char
   }
 }
 
-static void ui_draw_sidebar_temp_metric(UIState *s) {
+static void draw_temp_metric(UIState *s) {
   static std::map<cereal::ThermalData::ThermalStatus, const int> temp_severity_map = {
       {cereal::ThermalData::ThermalStatus::GREEN, 0},
       {cereal::ThermalData::ThermalStatus::YELLOW, 1},
       {cereal::ThermalData::ThermalStatus::RED, 2},
       {cereal::ThermalData::ThermalStatus::DANGER, 3}};
   std::string temp_val = std::to_string((int)s->scene.thermal.getAmbient()) + "°C";
-  ui_draw_sidebar_metric(s, "TEMP", temp_val.c_str(), temp_severity_map[s->scene.thermal.getThermalStatus()], 0, NULL);
+  draw_metric(s, "TEMP", temp_val.c_str(), temp_severity_map[s->scene.thermal.getThermalStatus()], 0, NULL);
 }
 
-static void ui_draw_sidebar_panda_metric(UIState *s) {
+static void draw_panda_metric(UIState *s) {
   const int panda_y_offset = 32 + 148;
 
   int panda_severity = 0;
@@ -136,30 +136,30 @@ static void ui_draw_sidebar_panda_metric(UIState *s) {
       panda_message = "VEHICLE\nGOOD GPS";
     }
   }
-  ui_draw_sidebar_metric(s, NULL, NULL, panda_severity, panda_y_offset, panda_message.c_str());
+  draw_metric(s, NULL, NULL, panda_severity, panda_y_offset, panda_message.c_str());
 }
 
-static void ui_draw_sidebar_connectivity(UIState *s) {
+static void draw_connectivity(UIState *s) {
   static std::map<NetStatus, std::pair<const char *, int>> connectivity_map = {
-    {NET_ERROR, {"CONNECT\nERROR", 2}},
-    {NET_CONNECTED, {"CONNECT\nONLINE", 0}},
-    {NET_DISCONNECTED, {"CONNECT\nOFFLINE", 1}},
+      {NET_ERROR, {"CONNECT\nERROR", 2}},
+      {NET_CONNECTED, {"CONNECT\nONLINE", 0}},
+      {NET_DISCONNECTED, {"CONNECT\nOFFLINE", 1}},
   };
   auto net_params = connectivity_map[s->scene.athenaStatus];
-  ui_draw_sidebar_metric(s, NULL, NULL, net_params.second, 180+158, net_params.first);
+  draw_metric(s, NULL, NULL, net_params.second, 180 + 158, net_params.first);
 }
 
 void ui_draw_sidebar(UIState *s) {
   if (s->scene.sidebar_collapsed) {
     return;
   }
-  ui_draw_sidebar_background(s);
-  ui_draw_sidebar_settings_button(s);
-  ui_draw_sidebar_home_button(s);
-  ui_draw_sidebar_network_strength(s);
-  ui_draw_sidebar_battery_icon(s);
-  ui_draw_sidebar_network_type(s);
-  ui_draw_sidebar_temp_metric(s);
-  ui_draw_sidebar_panda_metric(s);
-  ui_draw_sidebar_connectivity(s);
+  draw_background(s);
+  draw_settings_button(s);
+  draw_home_button(s);
+  draw_network_strength(s);
+  draw_battery_icon(s);
+  draw_network_type(s);
+  draw_temp_metric(s);
+  draw_panda_metric(s);
+  draw_connectivity(s);
 }
