@@ -413,6 +413,8 @@ selfdrive/modeld/thneed/include/*
 
 selfdrive/modeld/runners/snpemodel.cc
 selfdrive/modeld/runners/snpemodel.h
+selfdrive/modeld/runners/thneedmodel.cc
+selfdrive/modeld/runners/thneedmodel.h
 selfdrive/modeld/runners/runmodel.h
 selfdrive/modeld/runners/run.h
 
