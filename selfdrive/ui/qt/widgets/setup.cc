@@ -21,10 +21,9 @@ const std::string private_key_path = "/persist/comma/id_rsa";
 const std::string private_key_path = util::getenv_default("HOME", "/.comma/persist/comma/id_rsa", "/persist/comma/id_rsa");
 #endif
 
-// TODO-less fuzzy QR-COE
+
 PairingQRWidget::PairingQRWidget(QWidget *parent) : QWidget(parent) {
   qrCode = new QLabel;
-  qrCode->setFixedSize(500, 500);
   qrCode->setScaledContents(true);
   QVBoxLayout *v = new QVBoxLayout;
   v->addWidget(qrCode);
@@ -60,6 +59,8 @@ void PairingQRWidget::updateQrCode(QString text) {
     }
   }
   qrCode->setPixmap( QPixmap::fromImage(im.scaled(256,256,Qt::KeepAspectRatio,Qt::FastTransformation),Qt::MonoOnly) );
+  int approx500 = (500/(sz+2))*(sz+2);
+  qrCode->setFixedSize(approx500, approx500);
 }
 
 
@@ -86,13 +87,12 @@ PrimeUserWidget::PrimeUserWidget(QWidget *parent) : QWidget(parent){
 
   points = new QLabel("Waiting for comma points");
   mainLayout->addWidget(points);
-  
-  
 
   setLayout(mainLayout);
   QTimer *timer = new QTimer(this);
   QObject::connect(timer, SIGNAL(timeout()), this, SLOT(refresh()));
-  timer->start(2000);
+  timer->start(60000);
+  refresh();
 }
 
 void PrimeUserWidget::refresh(){
@@ -129,7 +129,6 @@ void PrimeUserWidget::replyFinished(QNetworkReply *l) {
   l->deleteLater();
 }
 
-
 PrimeAdWidget::PrimeAdWidget(QWidget *parent) : QWidget(parent){
   QVBoxLayout *vlayout = new QVBoxLayout();
 
@@ -152,6 +151,7 @@ PrimeAdWidget::PrimeAdWidget(QWidget *parent) : QWidget(parent){
   )");
   feature1->setWordWrap(true);
   vlayout->addWidget(feature1);
+
   vlayout->addSpacing(10);
 
   QLabel *feature2 = new QLabel("✓ 14 DAYS OF STORAGE");
@@ -160,6 +160,7 @@ PrimeAdWidget::PrimeAdWidget(QWidget *parent) : QWidget(parent){
   )");
   feature2->setWordWrap(true);
   vlayout->addWidget(feature2);
+
   vlayout->addSpacing(10);
 
   QLabel *feature3 = new QLabel("✓ DEVELOPER PERKS");
@@ -224,7 +225,7 @@ SetupWidget::SetupWidget(QWidget *parent) : QWidget(parent){
 
   QTimer *timer = new QTimer(this);
   QObject::connect(timer, SIGNAL(timeout()), this, SLOT(refresh()));
-  timer->start(2000);
+  timer->start(5000);
 }
 
 void SetupWidget::refresh(){
