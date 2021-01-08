@@ -7,9 +7,9 @@ libs = ['zmq', 'capnp', 'kj', 'z',
 
 if arch in ["aarch64", "larch64"]:
   src += ['encoder.cc']
-  libs += ['OmxVenc', 'OmxCore', 'gsl', 'CB'] + gpucommon
+  libs += ['OmxCore', 'gsl', 'CB'] + gpucommon
   if arch == "aarch64":
-    libs += ['cutils']
+    libs += ['OmxVenc', 'cutils']
   else:
     libs += ['pthread']
 else:

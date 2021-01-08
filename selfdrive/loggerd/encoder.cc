@@ -588,11 +588,11 @@ void encoder_open(EncoderState *s, const char* path) {
   } else {
     s->of = fopen(s->vid_path, "wb");
     assert(s->of);
-    if (s->codec_config_len > 0) {
 #ifndef QCOM2
+    if (s->codec_config_len > 0) {
       fwrite(s->codec_config, s->codec_config_len, 1, s->of);
-#endif
     }
+#endif
   }
 
   // create camera lock file
@@ -698,6 +698,11 @@ void encoder_destroy(EncoderState *s) {
 
   err = OMX_FreeHandle(s->handle);
   assert(err == OMX_ErrorNone);
+
+  while (queue_try_pop(&s->free_in)); 
+  while (queue_try_pop(&s->done_out)); 
+
+  free(s->codec_config);
 
   if (s->downscale) {
     free(s->y_ptr2);
