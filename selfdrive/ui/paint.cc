@@ -358,8 +358,7 @@ static void ui_draw_vision_footer(UIState *s) {
 }
 
 static float get_alert_alpha(float blink_rate) {
-  const float tm = millis_since_boot() / 1000;
-  return blink_rate > 0. ? (0.375 * sin(tm * 2 * M_PI * blink_rate) + 0.625) : 1.0;
+  return 0.375 * cos((millis_since_boot() / 1000) * 2 * M_PI * blink_rate) + 0.625;
 }
 
 static void ui_draw_vision_alert(UIState *s) {
