@@ -4,12 +4,10 @@
 #include <cassert>
 #include <unistd.h>
 #include <errno.h>
-#include <poll.h>
 #include <string.h>
 #include <inttypes.h>
-#include <libyuv.h>
-#include <sys/resource.h>
 #include <pthread.h>
+#include <sys/resource.h>
 
 #include <string>
 #include <iostream>
@@ -46,15 +44,14 @@
 #include "encoder.h"
 #endif
 
-#define MAIN_BITRATE 5000000
-#define QCAM_BITRATE 128000
-#define MAIN_FPS 20
+constexpr int MAIN_BITRATE = 5000000;
+constexpr int MAIN_FPS = 20;
 #ifndef QCOM2
-#define MAX_CAM_IDX LOG_CAMERA_ID_DCAMERA
-#define DCAM_BITRATE 2500000
+constexpr int MAX_CAM_IDX = LOG_CAMERA_ID_DCAMERA;
+constexpr int DCAM_BITRATE = 2500000;
 #else
-#define MAX_CAM_IDX LOG_CAMERA_ID_ECAMERA
-#define DCAM_BITRATE MAIN_BITRATE
+constexpr int MAX_CAM_IDX = LOG_CAMERA_ID_ECAMERA;
+constexpr int DCAM_BITRATE = MAIN_BITRATE;
 #endif
 
 #define NO_CAMERA_PATIENCE 500 // fall back to time-based rotation if all cameras are dead
@@ -93,7 +90,7 @@ LogCameraInfo cameras_logged[LOG_CAMERA_ID_MAX] = {
   [LOG_CAMERA_ID_QCAMERA] = {
     .filename = "qcamera.ts",
     .fps = MAIN_FPS,
-    .bitrate = QCAM_BITRATE,
+    .bitrate = 128000,
     .is_h265 = false,
     .downscale = true,
 #ifndef QCOM2
@@ -207,12 +204,13 @@ void encoder_thread(int cam_idx) {
 
   std::vector<EncoderState*> encoders;
 
-  int cnt = 0;
   pthread_mutex_lock(&s.rotate_lock);
   int my_idx = s.num_encoder;
   s.num_encoder += 1;
+  rotate_state.enabled = true;
   pthread_mutex_unlock(&s.rotate_lock);
 
+  int cnt = 0;
   LoggerHandle *lh = NULL;
 
   while (!do_exit) {
@@ -224,6 +222,7 @@ void encoder_thread(int cam_idx) {
       continue;
     }
 
+    // init encoders
     if (encoders.empty()) {
       LOGD("encoder init %dx%d", buf_info.width, buf_info.height);
 
@@ -431,10 +430,7 @@ kj::Array<capnp::word> gen_init_data() {
   if (dongle_id) {
     init.setDongleId(std::string(dongle_id));
   }
-
-  if (!getenv("CLEAN")) {
-    init.setDirty(true);
-  }
+  init.setDirty(!getenv("CLEAN"));
 
   // log params
   Params params = Params();
@@ -570,16 +566,13 @@ int main(int argc, char** argv) {
   std::vector<std::thread> encoder_threads;
 #ifndef DISABLE_ENCODER
   encoder_threads.push_back(std::thread(encoder_thread, LOG_CAMERA_ID_FCAMERA));
-  s.rotate_state[LOG_CAMERA_ID_FCAMERA].enabled = true;
 
   if (record_front) {
     encoder_threads.push_back(std::thread(encoder_thread, LOG_CAMERA_ID_DCAMERA));
-    s.rotate_state[LOG_CAMERA_ID_DCAMERA].enabled = true;
   }
 
 #ifdef QCOM2
   encoder_threads.push_back(std::thread(encoder_thread, LOG_CAMERA_ID_ECAMERA));
-  s.rotate_state[LOG_CAMERA_ID_ECAMERA].enabled = true;
 #endif
 #endif
 
@@ -591,12 +584,14 @@ int main(int argc, char** argv) {
   double last_rotate_tms = millis_since_boot();
   double last_camera_seen_tms = millis_since_boot();
   while (!do_exit) {
+    // TODO: fix msgs from the first poll getting dropped
     // poll for new messages on all sockets
     for (auto sock : poller->poll(1000)) {
 
       // drain socket
       Message * msg = nullptr;
       while (!do_exit) {
+        delete msg;
         msg = sock->receive(true);
         if (!msg){
           break;
@@ -614,10 +609,10 @@ int main(int argc, char** argv) {
 
       if (msg) {
         int fpkt_id = -1;
-        for (int cid=0;cid<=MAX_CAM_IDX;cid++) {
+        for (int cid = 0; cid <=MAX_CAM_IDX; cid++) {
           if (sock == s.rotate_state[cid].fpkt_sock) {fpkt_id=cid; break;}
         }
-        if (fpkt_id>=0) {
+        if (fpkt_id >= 0) {
           // track camera frames to sync to encoder
           // only process last frame
           const uint8_t* data = (uint8_t*)msg->getData();
@@ -644,12 +639,10 @@ int main(int argc, char** argv) {
       delete msg;
     }
 
-    double tms = millis_since_boot();
-
-    bool new_segment = false;
-
+    bool new_segment = s.logger.part == -1;
     if (s.logger.part > -1) {
       new_segment = true;
+      double tms = millis_since_boot();
       if (tms - last_camera_seen_tms <= NO_CAMERA_PATIENCE && s.num_encoder > 0) {
         for (auto &r : s.rotate_state) {
           // this *should* be redundant on tici since all camera frames are synced
@@ -666,9 +659,6 @@ int main(int argc, char** argv) {
           LOGW("no camera packet seen. auto rotated");
         }
       }
-    } else if (s.logger.part == -1) {
-      // always starts first segment immediately
-      new_segment = true;
     }
 
     // rotate to new segment
