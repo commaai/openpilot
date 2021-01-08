@@ -271,7 +271,7 @@ void encoder_thread(int cam_idx) {
           }
 
           // poll for our turn
-          while (s.rotate_seq_id != my_idx && !do_exit) sleep_for(10);
+          while (s.rotate_seq_id != my_idx && !do_exit) util::sleep_for(10);
 
           LOGW("camera %d rotate encoder to %s.", cam_idx, s.segment_path);
           for (auto &e : encoders) {
@@ -288,7 +288,7 @@ void encoder_thread(int cam_idx) {
           s.should_close += 1;
           pthread_mutex_unlock(&s.rotate_lock);
 
-          while(s.should_close > 0 && s.should_close < s.num_encoder && !do_exit) sleep_for(10);
+          while(s.should_close > 0 && s.should_close < s.num_encoder && !do_exit) util::sleep_for(10);
 
           pthread_mutex_lock(&s.rotate_lock);
           s.should_close = s.should_close == s.num_encoder ? 1 - s.num_encoder : s.should_close + 1;
@@ -304,7 +304,7 @@ void encoder_thread(int cam_idx) {
           pthread_mutex_unlock(&s.rotate_lock);
 
           // wait for all to finish
-          while(s.finish_close > 0 && s.finish_close < s.num_encoder && !do_exit) sleep_for(10);
+          while(s.finish_close > 0 && s.finish_close < s.num_encoder && !do_exit) util::sleep_for(10);
           s.finish_close = 0;
 
           rotate_state.finish_rotate();
