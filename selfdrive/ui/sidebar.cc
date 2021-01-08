@@ -12,7 +12,7 @@ static void draw_background(UIState *s) {
 #else
   const NVGcolor color = nvgRGBA(0x39, 0x39, 0x39, 0xff);
 #endif
-  ui_draw_rect(s->vg, {0, 0, sbr_w, s->fb_h}, color);
+  ui_fill_rect(s->vg, {0, 0, sbr_w, s->fb_h}, color);
 }
 
 static void draw_settings_button(UIState *s) {
@@ -39,7 +39,7 @@ static void draw_network_strength(UIState *s) {
 static void draw_battery_icon(UIState *s) {
   int battery_img = s->scene.thermal.getBatteryStatus() == "Charging" ? s->img_battery_charging : s->img_battery;
   const Rect rect = {160, 255, 76, 36};
-  ui_draw_rect(s->vg, {rect.x + 6, rect.y + 5,
+  ui_fill_rect(s->vg, {rect.x + 6, rect.y + 5,
               int((rect.w - 19) * s->scene.thermal.getBatteryPercent() * 0.01), rect.h - 11}, COLOR_WHITE);
   ui_draw_image(s->vg, rect, battery_img, 1.0f);
 }
@@ -80,7 +80,7 @@ static void draw_metric(UIState *s, const char *label_str, const char *value_str
   }
 
   ui_draw_rect(s->vg, {metric_x, metric_y, metric_w, metric_h},
-               severity > 0 ? COLOR_WHITE : COLOR_WHITE_ALPHA(85), 20, 2);
+               severity > 0 ? COLOR_WHITE : COLOR_WHITE_ALPHA(85), 2, 20.);
 
   nvgBeginPath(s->vg);
   nvgRoundedRectVarying(s->vg, metric_x + 6, metric_y + 6, 18, metric_h - 12, 25, 0, 0, 25);

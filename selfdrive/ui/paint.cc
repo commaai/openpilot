@@ -233,8 +233,8 @@ static void ui_draw_vision_maxspeed(UIState *s) {
 
   const Rect rect = {s->scene.viz_rect.x + (bdr_s * 2), int(s->scene.viz_rect.y + (bdr_s * 1.5)), 184, 202};
 
-  ui_draw_rect(s->vg, rect, COLOR_BLACK_ALPHA(100), 30);
-  ui_draw_rect(s->vg, rect, COLOR_WHITE_ALPHA(100), 20, 10);
+  ui_fill_rect(s->vg, rect, COLOR_BLACK_ALPHA(100), 20.);
+  ui_draw_rect(s->vg, rect, COLOR_WHITE_ALPHA(100), 10, 20.);
 
   nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
   ui_draw_text(s->vg, rect.centerX(), 148, "MAX", 26 * 2.5, COLOR_WHITE_ALPHA(is_cruise_set ? 200 : 100), s->font_sans_regular);
@@ -329,7 +329,7 @@ static void ui_draw_vision_header(UIState *s) {
                         viz_rect.x, viz_rect.y+header_h,
                         nvgRGBAf(0,0,0,0.45), nvgRGBAf(0,0,0,0));
 
-  ui_draw_rect(s->vg, {viz_rect.x, viz_rect.y, viz_rect.w, header_h}, gradient);
+  ui_fill_rect(s->vg, {viz_rect.x, viz_rect.y, viz_rect.w, header_h}, gradient);
 
   ui_draw_vision_maxspeed(s);
   ui_draw_vision_speed(s);
@@ -360,11 +360,9 @@ static void ui_draw_vision_alert(UIState *s) {
                   .w = scene->viz_rect.w + (bdr_s * 2),
                   .h = alr_h};
 
-  ui_draw_rect(s->vg, rect, color);
-
-  NVGpaint gradient = nvgLinearGradient(s->vg, rect.x, rect.y, rect.x, rect.bottom(),
-                                        nvgRGBAf(0.0,0.0,0.0,0.05), nvgRGBAf(0.0,0.0,0.0,0.35));
-  ui_draw_rect(s->vg, rect, gradient);
+  ui_fill_rect(s->vg, rect, color);
+  ui_fill_rect(s->vg, rect, nvgLinearGradient(s->vg, rect.x, rect.y, rect.x, rect.bottom(), 
+                                            nvgRGBAf(0.0, 0.0, 0.0, 0.05), nvgRGBAf(0.0, 0.0, 0.0, 0.35)));
 
   nvgFillColor(s->vg, COLOR_WHITE);
   nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
@@ -465,24 +463,25 @@ void ui_draw_image(NVGcontext *vg, const Rect &r, int image, float alpha){
   nvgFill(vg);
 }
 
-void ui_draw_rect(NVGcontext *vg, const Rect &r, NVGcolor color, float radius, int width) {
+void ui_draw_rect(NVGcontext *vg, const Rect &r, NVGcolor color, int width, float radius) {
   nvgBeginPath(vg);
   radius > 0 ? nvgRoundedRect(vg, r.x, r.y, r.w, r.h, radius) : nvgRect(vg, r.x, r.y, r.w, r.h);
-  if (width) {
-    nvgStrokeColor(vg, color);
-    nvgStrokeWidth(vg, width);
-    nvgStroke(vg);
-  } else {
-    nvgFillColor(vg, color);
-    nvgFill(vg);
-  }
+  nvgStrokeColor(vg, color);
+  nvgStrokeWidth(vg, width);
+  nvgStroke(vg);
 }
 
-void ui_draw_rect(NVGcontext *vg, const Rect &r, NVGpaint &paint, float radius){
+static inline void fill_rect(NVGcontext *vg, const Rect &r, const NVGcolor *color, const NVGpaint *paint, float radius) {
   nvgBeginPath(vg);
   radius > 0? nvgRoundedRect(vg, r.x, r.y, r.w, r.h, radius) : nvgRect(vg, r.x, r.y, r.w, r.h);
-  nvgFillPaint(vg, paint);
+  color ? nvgFillColor(vg, *color) : nvgFillPaint(vg, *paint);
   nvgFill(vg);
+}
+void ui_fill_rect(NVGcontext *vg, const Rect &r, const NVGcolor &color, float radius) {
+  fill_rect(vg, r, &color, nullptr, radius);
+}
+void ui_fill_rect(NVGcontext *vg, const Rect &r, const NVGpaint &paint, float radius){
+  fill_rect(vg, r, nullptr, &paint, radius);
 }
 
 static const char frame_vertex_shader[] =
