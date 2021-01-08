@@ -15,11 +15,7 @@
 #include "paint.hpp"
 #include "android/sl_sound.hpp"
 
-volatile sig_atomic_t do_exit = 0;
-static void set_do_exit(int sig) {
-  do_exit = 1;
-}
-
+ExitHandler do_exit;
 static void ui_set_brightness(UIState *s, int brightness) {
   static int last_brightness = -1;
   if (last_brightness != brightness && (s->awake || brightness == 0)) {
@@ -70,7 +66,7 @@ static void handle_vision_touch(UIState *s, int touch_x, int touch_y) {
   if (s->started && (touch_x >= s->scene.viz_rect.x - bdr_s)
       && (s->active_app != cereal::UiLayoutState::App::SETTINGS)) {
     if (!s->scene.frontview) {
-      s->scene.uilayout_sidebarcollapsed = !s->scene.uilayout_sidebarcollapsed;
+      s->scene.sidebar_collapsed = !s->scene.sidebar_collapsed;
     } else {
       Params().write_db_value("IsDriverViewEnabled", "0", 1);
     }
@@ -78,13 +74,13 @@ static void handle_vision_touch(UIState *s, int touch_x, int touch_y) {
 }
 
 static void handle_sidebar_touch(UIState *s, int touch_x, int touch_y) {
-  if (!s->scene.uilayout_sidebarcollapsed && touch_x <= sbr_w) {
+  if (!s->scene.sidebar_collapsed && touch_x <= sbr_w) {
     if (settings_btn.ptInRect(touch_x, touch_y)) {
       s->active_app = cereal::UiLayoutState::App::SETTINGS;
     } else if (home_btn.ptInRect(touch_x, touch_y)) {
       if (s->started) {
         s->active_app = cereal::UiLayoutState::App::NONE;
-        s->scene.uilayout_sidebarcollapsed = true;
+        s->scene.sidebar_collapsed = true;
       } else {
         s->active_app = cereal::UiLayoutState::App::HOME;
       }
@@ -99,14 +95,14 @@ static void update_offroad_layout_state(UIState *s, PubMaster *pm) {
   if (timeout > 0) {
     timeout--;
   }
-  if (prev_collapsed != s->scene.uilayout_sidebarcollapsed || prev_app != s->active_app || timeout == 0) {
+  if (prev_collapsed != s->scene.sidebar_collapsed || prev_app != s->active_app || timeout == 0) {
     MessageBuilder msg;
     auto layout = msg.initEvent().initUiLayoutState();
     layout.setActiveApp(s->active_app);
-    layout.setSidebarCollapsed(s->scene.uilayout_sidebarcollapsed);
+    layout.setSidebarCollapsed(s->scene.sidebar_collapsed);
     pm->send("offroadLayout", msg);
-    LOGD("setting active app to %d with sidebar %d", (int)s->active_app, s->scene.uilayout_sidebarcollapsed);
-    prev_collapsed = s->scene.uilayout_sidebarcollapsed;
+    LOGD("setting active app to %d with sidebar %d", (int)s->active_app, s->scene.sidebar_collapsed);
+    prev_collapsed = s->scene.sidebar_collapsed;
     prev_app = s->active_app;
     timeout = 2 * UI_FREQ;
   }
@@ -114,7 +110,6 @@ static void update_offroad_layout_state(UIState *s, PubMaster *pm) {
 
 int main(int argc, char* argv[]) {
   setpriority(PRIO_PROCESS, 0, -14);
-  signal(SIGINT, (sighandler_t)set_do_exit);
   SLSound sound;
 
   UIState uistate = {};
@@ -148,7 +143,7 @@ int main(int argc, char* argv[]) {
 
   while (!do_exit) {
     if (!s->started) {
-      usleep(50 * 1000);
+      util::sleep_for(50);
     }
     double u1 = millis_since_boot();
 

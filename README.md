@@ -88,6 +88,7 @@ Supported Cars
 | Lexus     | CT Hybrid 2017-18             | LSS               | Stock<sup>3</sup>| 0mph               | 0mph              |
 | Lexus     | ES 2019-20                    | All               | openpilot        | 0mph               | 0mph              |
 | Lexus     | ES Hybrid 2019                | All               | openpilot        | 0mph               | 0mph              |
+| Lexus     | ES Hybrid 2018                | LSS               | Stock<sup>3</sup>| 0mph               | 0mph              |
 | Lexus     | IS 2017-2019                  | All               | Stock            | 22mph              | 0mph              |
 | Lexus     | IS Hybrid 2017                | All               | Stock            | 0mph               | 0mph              |
 | Lexus     | NX 2018                       | All               | Stock<sup>3</sup>| 0mph               | 0mph              |
@@ -100,6 +101,7 @@ Supported Cars
 | Toyota    | Camry 2018-20                 | All               | Stock            | 0mph<sup>4</sup>   | 0mph              |
 | Toyota    | Camry 2021                    | All               | openpilot        | 0mph               | 0mph              |
 | Toyota    | Camry Hybrid 2018-20          | All               | Stock            | 0mph<sup>4</sup>   | 0mph              |
+| Toyota    | Camry Hybrid 2021             | All               | openpilot        | 0mph               | 0mph              |
 | Toyota    | C-HR 2017-19                  | All               | Stock            | 0mph               | 0mph              |
 | Toyota    | C-HR Hybrid 2017-19           | All               | Stock            | 0mph               | 0mph              |
 | Toyota    | Corolla 2017-19               | All               | Stock<sup>3</sup>| 20mph<sup>1</sup>  | 0mph              |

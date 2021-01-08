@@ -162,6 +162,10 @@ def init_plots(arr, name_to_arr_idx, plot_xlims, plot_ylims, plot_names, plot_co
       plot_select.append(i)
     axs[i].set_title(", ".join("%s (%s)" % (nm, cl)
                                for (nm, cl) in zip(pl_list, plot_colors[i])), fontsize=10)
+    axs[i].tick_params(axis="x", colors="white")
+    axs[i].tick_params(axis="y", colors="white")
+    axs[i].title.set_color("white")
+
     if i < len(plot_ylims) - 1:
       axs[i].set_xticks([])
 

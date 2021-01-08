@@ -39,7 +39,7 @@ class TestCarInterfaces(unittest.TestCase):
       elif tuning == 'lqr':
         self.assertTrue(len(car_params.lateralTuning.lqr.a))
       elif tuning == 'indi':
-        self.assertGreater(car_params.lateralTuning.indi.outerLoopGain, 1e-3)
+        self.assertTrue(len(car_params.lateralTuning.indi.outerLoopGainV))
 
       # Run car interface
       CC = car.CarControl.new_message()

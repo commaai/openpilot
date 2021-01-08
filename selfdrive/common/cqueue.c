@@ -4,6 +4,8 @@
 
 #include "cqueue.h"
 
+// TODO: replace by C++ queue and CV. See camerad
+
 void queue_init(Queue *q) {
   memset(q, 0, sizeof(*q));
   TAILQ_INIT(&q->q);

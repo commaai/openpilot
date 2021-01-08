@@ -166,6 +166,9 @@ Setup::Setup(QWidget *parent) {
   addWidget(downloading());
 
   setStyleSheet(R"(
+    * {
+      font-family: Inter;
+    }
     QWidget {
       color: white;
       background-color: black;

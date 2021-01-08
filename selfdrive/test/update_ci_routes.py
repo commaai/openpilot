@@ -33,7 +33,7 @@ def sync_to_ci_public(route):
       "azcopy",
       "copy",
       "https://{}.blob.core.windows.net/{}/{}?{}".format(source_account, source_bucket, key_prefix, source_key),
-      "https://{}.blob.core.windows.net/{}/{}".format(_DATA_ACCOUNT_CI, "openpilotci", dongle_id),
+      "https://{}.blob.core.windows.net/{}/{}?{}".format(_DATA_ACCOUNT_CI, "openpilotci", dongle_id, DEST_KEY),
       "--recursive=true",
       "--overwrite=false",
       "--exclude-pattern=*/dcamera.hevc",

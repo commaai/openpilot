@@ -21,6 +21,14 @@ AddOption('--clazy',
           action='store_true',
           help='build with clazy')
 
+AddOption('--compile_db',
+          action='store_true',
+          help='build clang compilation database')
+
+AddOption('--mpc-generate',
+          action='store_true',
+          help='regenerates the mpc sources')
+
 real_arch = arch = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()
 if platform.system() == "Darwin":
   arch = "Darwin"
@@ -31,11 +39,12 @@ if arch == "aarch64" and TICI:
 USE_WEBCAM = os.getenv("USE_WEBCAM") is not None
 QCOM_REPLAY = arch == "aarch64" and os.getenv("QCOM_REPLAY") is not None
 
+lenv = {
+  "PATH": os.environ['PATH'],
+}
+
 if arch == "aarch64" or arch == "larch64":
-  lenv = {
-    "LD_LIBRARY_PATH": '/data/data/com.termux/files/usr/lib',
-    "PATH": os.environ['PATH'],
-  }
+  lenv["LD_LIBRARY_PATH"] = '/data/data/com.termux/files/usr/lib'
 
   if arch == "aarch64":
     # android
@@ -78,13 +87,7 @@ if arch == "aarch64" or arch == "larch64":
 else:
   cflags = []
   cxxflags = []
-
-  lenv = {
-    "PATH": "#external/bin:" + os.environ['PATH'],
-  }
-  cpppath = [
-    "#external/tensorflow/include",
-  ]
+  cpppath = []
 
   if arch == "Darwin":
     libpath = [
@@ -102,7 +105,6 @@ else:
     libpath = [
       "#phonelibs/snpe/x86_64-linux-clang",
       "#phonelibs/libyuv/x64/lib",
-      "#external/tensorflow/lib",
       "#cereal",
       "#selfdrive/common",
       "/usr/lib",
@@ -111,7 +113,6 @@ else:
 
   rpath = [
     "phonelibs/snpe/x86_64-linux-clang",
-    "external/tensorflow/lib",
     "cereal",
     "selfdrive/common"
   ]
@@ -168,8 +169,9 @@ env = Environment(
     "#selfdrive/modeld",
     "#selfdrive/sensord",
     "#selfdrive/ui",
-    "#cereal/messaging",
     "#cereal",
+    "#cereal/messaging",
+    "#cereal/visionipc",
     "#opendbc/can",
   ],
 
@@ -193,7 +195,7 @@ env = Environment(
   tools=["default", "cython", "compilation_db"],
 )
 
-if GetOption('test'):
+if GetOption('compile_db'):
   env.CompilationDatabase('compile_commands.json')
 
 if os.environ.get('SCONS_CACHE'):
@@ -314,19 +316,20 @@ if SHARED:
 else:
   cereal = [File('#cereal/libcereal.a')]
   messaging = [File('#cereal/libmessaging.a')]
+  visionipc = [File('#cereal/libvisionipc.a')]
+
 Export('cereal', 'messaging')
 
 SConscript(['selfdrive/common/SConscript'])
-Import('_common', '_visionipc', '_gpucommon', '_gpu_libs')
+Import('_common', '_gpucommon', '_gpu_libs')
 
 if SHARED:
-  common, visionipc, gpucommon = abspath(common), abspath(visionipc), abspath(gpucommon)
+  common, gpucommon = abspath(common), abspath(gpucommon)
 else:
   common = [_common, 'json11']
-  visionipc = _visionipc
   gpucommon = [_gpucommon] + _gpu_libs
 
-Export('common', 'visionipc', 'gpucommon')
+Export('common', 'gpucommon', 'visionipc')
 
 
 # Build openpilot

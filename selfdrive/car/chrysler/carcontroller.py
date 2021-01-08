@@ -1,7 +1,7 @@
 from selfdrive.car import apply_toyota_steer_torque_limits
 from selfdrive.car.chrysler.chryslercan import create_lkas_hud, create_lkas_command, \
                                                create_wheel_buttons
-from selfdrive.car.chrysler.values import CAR, SteerLimitParams
+from selfdrive.car.chrysler.values import CAR, CarControllerParams
 from opendbc.can.packer import CANPacker
 
 class CarController():
@@ -24,9 +24,9 @@ class CarController():
 
     # *** compute control surfaces ***
     # steer torque
-    new_steer = actuators.steer * SteerLimitParams.STEER_MAX
+    new_steer = actuators.steer * CarControllerParams.STEER_MAX
     apply_steer = apply_toyota_steer_torque_limits(new_steer, self.apply_steer_last,
-                                                   CS.out.steeringTorqueEps, SteerLimitParams)
+                                                   CS.out.steeringTorqueEps, CarControllerParams)
     self.steer_rate_limited = new_steer != apply_steer
 
     moving_fast = CS.out.vEgo > CS.CP.minSteerSpeed  # for status message

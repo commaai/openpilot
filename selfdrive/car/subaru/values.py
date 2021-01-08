@@ -4,6 +4,15 @@ from selfdrive.car import dbc_dict
 from cereal import car
 Ecu = car.CarParams.Ecu
 
+class CarControllerParams:
+  STEER_MAX = 2047              # max_steer 4095
+  STEER_STEP = 2                # how often we update the steer cmd
+  STEER_DELTA_UP = 50           # torque increase per refresh, 0.8s to max
+  STEER_DELTA_DOWN = 70         # torque decrease per refresh
+  STEER_DRIVER_ALLOWANCE = 60   # allowed driver torque before start limiting
+  STEER_DRIVER_MULTIPLIER = 10  # weight driver torque heavily
+  STEER_DRIVER_FACTOR = 1       # from dbc
+
 class CAR:
   ASCENT = "SUBARU ASCENT LIMITED 2019"
   IMPREZA = "SUBARU IMPREZA LIMITED 2019"

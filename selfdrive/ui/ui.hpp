@@ -19,12 +19,13 @@
 #include "nanovg.h"
 
 #include "common/mat.h"
-#include "common/visionipc.h"
 #include "common/visionimg.h"
 #include "common/framebuffer.h"
 #include "common/modeldata.h"
 #include "common/params.h"
 #include "sound.hpp"
+#include "visionipc.h"
+#include "visionipc_client.h"
 
 #define COLOR_BLACK nvgRGBA(0, 0, 0, 255)
 #define COLOR_BLACK_ALPHA(x) nvgRGBA(0, 0, 0, x)
@@ -38,6 +39,7 @@
 typedef struct Rect {
   int x, y, w, h;
   int centerX() const { return x + w / 2; }
+  int centerY() const { return y + h / 2; }
   int right() const { return x + w; }
   int bottom() const { return y + h; }
   bool ptInRect(int px, int py) const {
@@ -86,51 +88,6 @@ static std::map<UIStatus, NVGcolor> bg_colors = {
 };
 
 typedef struct {
-  float x[TRAJECTORY_SIZE];
-  float y[TRAJECTORY_SIZE];
-  float z[TRAJECTORY_SIZE];
-} line;
-
-
-typedef struct UIScene {
-
-  mat4 extrinsic_matrix;      // Last row is 0 so we can use mat4.
-  bool world_objects_visible;
-
-  bool is_rhd;
-  bool frontview;
-  bool uilayout_sidebarcollapsed;
-  // responsive layout
-  Rect viz_rect;
-
-  std::string alert_text1;
-  std::string alert_text2;
-  std::string alert_type;
-  cereal::ControlsState::AlertSize alert_size;
-
-  cereal::HealthData::HwType hwType;
-  int satelliteCount;
-  NetStatus athenaStatus;
-
-  cereal::ThermalData::Reader thermal;
-  cereal::RadarState::LeadData::Reader lead_data[2];
-  cereal::ControlsState::Reader controls_state;
-  cereal::DriverState::Reader driver_state;
-  cereal::DMonitoringState::Reader dmonitoring_state;
-  cereal::ModelDataV2::Reader model;
-  line path;
-  line outer_left_lane_line;
-  line left_lane_line;
-  line right_lane_line;
-  line outer_right_lane_line;
-  line left_road_edge;
-  line right_road_edge;
-  float max_distance;
-  float lane_line_probs[4];
-  float road_edge_stds[2];
-} UIScene;
-
-typedef struct {
   float x, y;
 } vertex_data;
 
@@ -144,8 +101,45 @@ typedef struct {
   int cnt;
 } track_vertices_data;
 
+typedef struct UIScene {
+
+  mat4 extrinsic_matrix;      // Last row is 0 so we can use mat4.
+  bool world_objects_visible;
+
+  bool is_rhd;
+  bool frontview;
+  bool sidebar_collapsed;
+  // responsive layout
+  Rect viz_rect;
+
+  std::string alert_text1;
+  std::string alert_text2;
+  std::string alert_type;
+  float alert_blinking_rate;
+  cereal::ControlsState::AlertSize alert_size;
+
+  cereal::HealthData::HwType hwType;
+  int satelliteCount;
+  NetStatus athenaStatus;
+
+  cereal::ThermalData::Reader thermal;
+  cereal::RadarState::LeadData::Reader lead_data[2];
+  cereal::ControlsState::Reader controls_state;
+  cereal::DriverState::Reader driver_state;
+  cereal::DMonitoringState::Reader dmonitoring_state;
+
+  // modelV2
+  float lane_line_probs[4];
+  float road_edge_stds[2];
+  track_vertices_data track_vertices;
+  line_vertices_data lane_line_vertices[4];
+  line_vertices_data road_edge_vertices[2];
+} UIScene;
 
 typedef struct UIState {
+  VisionIpcClient * vipc_client;
+  VisionBuf * last_frame;
+
   // framebuffer
   FramebufferState *fb;
   int fb_w, fb_h;
@@ -173,10 +167,6 @@ typedef struct UIState {
   UIScene scene;
   cereal::UiLayoutState::App active_app;
 
-  // vision state
-  bool vision_connected;
-  VisionStream stream;
-
   // graphics
   GLuint frame_program;
   GLuint frame_texs[UI_BUF_COUNT];
@@ -197,13 +187,6 @@ typedef struct UIState {
   bool is_metric;
   bool longitudinal_control;
   uint64_t started_frame;
-
-  bool alert_blinked;
-  float alert_blinking_alpha;
-
-  track_vertices_data track_vertices;
-  line_vertices_data lane_line_vertices[4];
-  line_vertices_data road_edge_vertices[2];
 
   Rect video_rect;
 } UIState;

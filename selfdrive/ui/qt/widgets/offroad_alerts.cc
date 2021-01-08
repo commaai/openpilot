@@ -1,7 +1,7 @@
 #include <QFile>
 #include <QLabel>
-#include <QPushButton>
 #include <QVBoxLayout>
+#include <QHBoxLayout>
 #include <QJsonObject>
 #include <QJsonDocument>
 #include <QDebug>
@@ -26,14 +26,23 @@ OffroadAlert::OffroadAlert(QWidget* parent) {
   main_layout->addWidget(alerts_stack, 1);
 
   // bottom footer
-  QVBoxLayout *footer_layout = new QVBoxLayout();
+  QHBoxLayout *footer_layout = new QHBoxLayout();
   main_layout->addLayout(footer_layout);
 
   QPushButton *dismiss_btn = new QPushButton("Dismiss");
   dismiss_btn->setFixedSize(453, 125);
   footer_layout->addWidget(dismiss_btn, 0, Qt::AlignLeft);
+
+  reboot_btn = new QPushButton("Reboot and Update");
+  reboot_btn->setFixedSize(453, 125);
+  reboot_btn->setVisible(false);
+  footer_layout->addWidget(reboot_btn, 0, Qt::AlignRight);
+
   QObject::connect(dismiss_btn, SIGNAL(released()), this, SIGNAL(closeAlerts()));
-  
+#ifdef __aarch64__
+  QObject::connect(reboot_btn, &QPushButton::released, [=]() {std::system("sudo reboot");});
+#endif
+
   setLayout(main_layout);
   setStyleSheet(R"(
     * {
@@ -59,6 +68,8 @@ void OffroadAlert::refresh() {
 
   std::vector<char> bytes = Params().read_db_bytes("UpdateAvailable");
   updateAvailable = bytes.size() && bytes[0] == '1';
+
+  reboot_btn->setVisible(updateAvailable);
 
   QVBoxLayout *layout = new QVBoxLayout;
 

@@ -12,9 +12,9 @@
 #include "msmb_camera.h"
 #include "msm_cam_sensor.h"
 
+#include "visionbuf.h"
+
 #include "common/mat.h"
-#include "common/visionbuf.h"
-#include "common/buffering.h"
 #include "common/utilpp.h"
 
 #include "camera_common.h"
@@ -98,7 +98,7 @@ typedef struct CameraState {
   int16_t focus[NUM_FOCUS];
   uint8_t confidence[NUM_FOCUS];
 
-  float focus_err;
+  std::atomic<float> focus_err;
 
   uint16_t cur_step_pos;
   uint16_t cur_lens_pos;
@@ -137,7 +137,7 @@ typedef struct MultiCameraState {
 
 } MultiCameraState;
 
-void cameras_init(MultiCameraState *s, cl_device_id device_id, cl_context ctx);
+void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_id, cl_context ctx);
 void cameras_open(MultiCameraState *s);
 void cameras_run(MultiCameraState *s);
 void cameras_close(MultiCameraState *s);

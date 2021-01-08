@@ -8,11 +8,14 @@
 #include "qt_window.hpp"
 
 #define USERDATA "/dev/disk/by-partlabel/userdata"
+#define NVME "/dev/nvme0n1"
 
 
 void do_reset() {
   std::system("sudo umount " USERDATA);
   std::system("yes | sudo mkfs.ext4 " USERDATA);
+  std::system("sudo umount " NVME);
+  std::system("yes | sudo mkfs.ext4 " NVME);
   std::system("sudo reboot");
 }
 
@@ -26,17 +29,15 @@ int main(int argc, char *argv[]) {
 
   QLabel *title = new QLabel("System Reset");
   title->setStyleSheet(R"(
+    font-weight: 500;
     font-size: 100px;
-    font-weight: bold;
   )");
   layout->addWidget(title, 0, Qt::AlignTop);
 
   QLabel *body = new QLabel("System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.");
   body->setWordWrap(true);
   body->setAlignment(Qt::AlignCenter);
-  body->setStyleSheet(R"(
-    font-size: 65px;
-  )");
+  body->setStyleSheet("font-size: 65px;");
   layout->addWidget(body, 1, Qt::AlignCenter);
 
   QHBoxLayout *btn_layout = new QHBoxLayout();
@@ -48,13 +49,14 @@ int main(int argc, char *argv[]) {
   QPushButton *confirm_btn  = new QPushButton("Confirm");
   btn_layout->addWidget(confirm_btn, 0, Qt::AlignRight);
   QObject::connect(confirm_btn, &QPushButton::released, [=]() {
-    QString confirm_txt = "Are you sure you want to reset your device?";
+    const QString confirm_txt = "Are you sure you want to reset your device?";
     if (body->text() != confirm_txt) {
       body->setText(confirm_txt);
     } else {
       body->setText("Resetting device...");
       cancel_btn->hide();
       confirm_btn->hide();
+      QCoreApplication::processEvents(QEventLoop::AllEvents, 1000);
 #ifdef __aarch64__
       do_reset();
 #endif

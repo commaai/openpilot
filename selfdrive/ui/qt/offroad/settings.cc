@@ -221,10 +221,10 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
     font-size: 90px;
     font-weight: bold;
     border 1px grey solid;
-    border-radius: 7px;
+    border-radius: 100px;
     background-color: #292929;
   )");
-  close_btn->setFixedSize(200, 180);
+  close_btn->setFixedSize(200, 200);
   sidebar_layout->addSpacing(45);
   sidebar_layout->addWidget(close_btn, 0, Qt::AlignLeft);
   QObject::connect(close_btn, SIGNAL(released()), this, SIGNAL(closeSettings()));

@@ -1,6 +1,7 @@
 #include <cassert>
 
 #ifdef QCOM
+
 #include <system/graphics.h>
 #include <ui/GraphicBuffer.h>
 #include <ui/PixelFormat.h>
@@ -14,60 +15,23 @@
 #define EGL_EGLEXT_PROTOTYPES
 #include <EGL/eglext.h>
 
+#else // ifdef QCOM
+
+#ifdef __APPLE__
+#include <OpenGL/gl3.h>
+#else
+#include <GLES3/gl3.h>
 #endif
 
-#include "common/util.h"
-#include "common/visionbuf.h"
+#endif // ifdef QCOM
 
+#include "common/util.h"
 #include "common/visionimg.h"
 
 #ifdef QCOM
-
 using namespace android;
 
-// from libadreno_utils.so
-extern "C" void compute_aligned_width_and_height(int width,
-                                      int height,
-                                      int bpp,
-                                      int tile_mode,
-                                      int raster_mode,
-                                      int padding_threshold,
-                                      int *aligned_w,
-                                      int *aligned_h);
-#endif
-
-void visionimg_compute_aligned_width_and_height(int width, int height, int *aligned_w, int *aligned_h) {
-#if defined(QCOM) && !defined(QCOM_REPLAY)
-  compute_aligned_width_and_height(ALIGN(width, 32), ALIGN(height, 32), 3, 0, 0, 512, aligned_w, aligned_h);
-#else
-  *aligned_w = width; *aligned_h = height;
-#endif
-}
-
-VisionImg visionimg_alloc_rgb24(cl_device_id device_id, cl_context ctx, int width, int height, VisionBuf *out_buf) {
-  assert(out_buf != nullptr);
-  int aligned_w = 0, aligned_h = 0;
-  visionimg_compute_aligned_width_and_height(width, height, &aligned_w, &aligned_h);
-
-  int stride = aligned_w * 3;
-  size_t size = (size_t) aligned_w * aligned_h * 3;
-
-  *out_buf = visionbuf_allocate_cl(size, device_id, ctx);
-
-  return (VisionImg){
-    .fd = out_buf->fd,
-    .format = VISIONIMG_FORMAT_RGB24,
-    .width = width,
-    .height = height,
-    .stride = stride,
-    .size = size,
-    .bpp = 3,
-  };
-}
-
-#ifdef QCOM
-
-EGLClientBuffer visionimg_to_egl(const VisionImg *img, void **pph) {
+static EGLClientBuffer visionimg_to_egl(const VisionImg *img, void **pph) {
   assert((img->size % img->stride) == 0);
   assert((img->stride % img->bpp) == 0);
 
@@ -118,4 +82,19 @@ void visionimg_destroy_gl(EGLImageKHR khr, void *ph) {
   delete (private_handle_t*)ph;
 }
 
-#endif
+#else // ifdef QCOM
+
+GLuint visionimg_to_gl(const VisionImg *img, EGLImageKHR *pkhr, void **pph) {
+  unsigned int texture;
+  glGenTextures(1, &texture);
+  glBindTexture(GL_TEXTURE_2D, texture);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, img->width, img->height, 0, GL_RGB, GL_UNSIGNED_BYTE, *pph);
+  glGenerateMipmap(GL_TEXTURE_2D);
+  *pkhr = (EGLImageKHR)1; // not NULL
+  return texture;
+}
+
+void visionimg_destroy_gl(EGLImageKHR khr, void *ph) {
+  // empty
+}
+#endif // ifdef QCOM
