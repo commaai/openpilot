@@ -307,7 +307,8 @@ selfdrive/proclogd/SConscript
 selfdrive/proclogd/proclogd.cc
 
 selfdrive/loggerd/SConscript
-selfdrive/loggerd/encoder.[c,h]
+selfdrive/loggerd/encoder.h
+selfdrive/loggerd/encoder.cc
 selfdrive/loggerd/frame_logger.h
 selfdrive/loggerd/logger.cc
 selfdrive/loggerd/logger.h

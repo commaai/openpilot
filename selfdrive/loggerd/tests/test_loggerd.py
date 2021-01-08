@@ -49,14 +49,14 @@ class TestLoggerd(unittest.TestCase):
 
   def _check_init_data(self, msgs):
     msg = msgs[0]
-    assert msg.which() == 'initData'
+    self.assertEqual(msg.which(), 'initData')
 
   def _check_sentinel(self, msgs, route):
     start_type = SentinelType.startOfRoute if route else SentinelType.startOfSegment
-    assert msgs[1].sentinel.type == start_type
+    self.assertTrue(msgs[1].sentinel.type == start_type)
 
     end_type = SentinelType.endOfRoute if route else SentinelType.endOfSegment
-    assert msgs[-1].sentinel.type == end_type
+    self.assertTrue(msgs[-1].sentinel.type == end_type)
 
   def test_init_data_values(self):
     os.environ["CLEAN"] = random.choice(["0", "1"])
@@ -74,19 +74,19 @@ class TestLoggerd(unittest.TestCase):
     lr = list(LogReader(str(self._gen_bootlog())))
     initData = lr[0].initData
 
-    assert initData.dirty != bool(os.environ["CLEAN"])
-    assert initData.dongleId == os.environ["DONGLE_ID"]
-    assert initData.version == VERSION
+    self.assertTrue(initData.dirty != bool(os.environ["CLEAN"]))
+    self.assertEqual(initData.dongleId, os.environ["DONGLE_ID"])
+    self.assertEqual(initData.version, VERSION)
 
     if os.path.isfile("/proc/cmdline"):
       with open("/proc/cmdline") as f:
-        assert list(initData.kernelArgs) == f.read().strip().split(" ")
+        self.assertEqual(list(initData.kernelArgs), f.read().strip().split(" "))
 
       with open("/proc/version") as f:
-        assert initData.kernelVersion == f.read()
+        self.assertEqual(initData.kernelVersion, f.read())
 
     for _, k, v in fake_params:
-      assert getattr(initData, k) == v
+      self.assertEqual(getattr(initData, k), v)
 
   def test_bootlog(self):
     # generate bootlog with fake launch log
@@ -118,7 +118,7 @@ class TestLoggerd(unittest.TestCase):
       val = b""
       if path.is_file():
         val = open(path, "rb").read()
-      assert getattr(boot, field) == val
+      self.assertEqual(getattr(boot, field), val)
 
   def test_qlog(self):
     qlog_services = [s for s in CEREAL_SERVICES if service_list[s].decimation is not None]
@@ -164,11 +164,11 @@ class TestLoggerd(unittest.TestCase):
 
       if s in no_qlog_services:
         # check services with no specific decimation aren't in qlog
-        assert recv_cnt == 0, f"got {recv_cnt} {s} msgs in qlog"
+        self.assertEqual(recv_cnt, 0, f"got {recv_cnt} {s} msgs in qlog")
       else:
         # check logged message count matches decimation
         expected_cnt = len(msgs) // service_list[s].decimation
-        assert recv_cnt == expected_cnt, f"expected {expected_cnt} msgs for {s}, got {recv_cnt}"
+        self.assertEqual(recv_cnt, expected_cnt, f"expected {expected_cnt} msgs for {s}, got {recv_cnt}")
 
   def test_rlog(self):
     services = random.sample(CEREAL_SERVICES, random.randint(5, 10))
@@ -204,7 +204,7 @@ class TestLoggerd(unittest.TestCase):
     for m in lr:
       sent = sent_msgs[m.which()].pop(0)
       sent.clear_write_flag()
-      assert sent.to_bytes() == m.as_builder().to_bytes()
+      self.assertEqual(sent.to_bytes(), m.as_builder().to_bytes())
 
 
 if __name__ == "__main__":
