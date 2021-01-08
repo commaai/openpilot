@@ -186,9 +186,8 @@ class PathPlanner():
                         list(-y_pts),
                         list(-heading_pts))
 
-
-    next_delta = np.interp(DT_MDL, T_IDXS[:MPC_N], list(self.mpc_solution.delta))
-    next_rate = np.interp(DT_MDL, T_IDXS[1:MPC_N], list(self.mpc_solution.rate))
+    next_delta = np.interp(DT_MDL, T_IDXS[:MPC_N+1], list(self.mpc_solution.delta))
+    next_rate = np.interp(DT_MDL, T_IDXS[:MPC_N], list(self.mpc_solution.rate))
     # reset to current steer angle if not active or overriding
     if active:
       delta_desired = next_delta
