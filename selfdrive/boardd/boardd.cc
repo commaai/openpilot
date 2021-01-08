@@ -354,7 +354,7 @@ void can_health_thread() {
 
 #ifdef QCOM2
     healthData.setVoltage(std::stoi(util::read_file("/sys/class/hwmon/hwmon1/in1_input")));
-    healthData.setCurrent(std::stoi(util::read_file("/sys/class/hwmon/hwmon1/power1_input")));
+    healthData.setCurrent(std::stoi(util::read_file("/sys/class/hwmon/hwmon1/curr1_input")));
 #else
     healthData.setVoltage(health.voltage);
     healthData.setCurrent(health.current);

@@ -20,9 +20,6 @@ with patch("common.realtime.sec_since_boot", new=mock_sec_since_boot):
     from selfdrive.thermald.power_monitoring import PowerMonitoring, CAR_BATTERY_CAPACITY_uWh, \
                                                     CAR_CHARGING_RATE_W, VBATT_PAUSE_CHARGING
 
-def actual_current_to_panda_current(actual_current):
-  return max(int(((3.3 - (actual_current * 8.25)) * 4096) / 3.3), 0)
-
 TEST_DURATION_S = 50
 ALL_PANDA_TYPES = [(hw_type,) for hw_type in [log.HealthData.HwType.whitePanda,
                                               log.HealthData.HwType.greyPanda,
@@ -40,11 +37,10 @@ class TestPowerMonitoring(unittest.TestCase):
     params.delete("CarBatteryCapacity")
     params.delete("DisablePowerDown")
 
-  def mock_health(self, ignition, hw_type, car_voltage=12, current=0):
+  def mock_health(self, ignition, hw_type, car_voltage=12):
     health = messaging.new_message('health')
     health.health.hwType = hw_type
     health.health.voltage = car_voltage * 1e3
-    health.health.current = actual_current_to_panda_current(current)
     health.health.ignitionLine = ignition
     health.health.ignitionCan = False
     return health
