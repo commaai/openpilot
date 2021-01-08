@@ -19,7 +19,7 @@ else:
 
   widgets = qt_env.Library("qt_widgets",
                  ["qt/qt_window.cc", "qt/qt_sound.cc", "qt/widgets/keyboard.cc", "qt/widgets/input_field.cc", "qt/widgets/drive_stats.cc",
-                  "qt/offroad/wifi.cc", "qt/offroad/wifiManager.cc", "qt/widgets/toggle.cc", "qt/widgets/offroad_alerts.cc", "qt/widgets/pairing_qr.cc", "qt/widgets/QrCode.cc"],
+                  "qt/offroad/wifi.cc", "qt/offroad/wifiManager.cc", "qt/widgets/toggle.cc", "qt/widgets/offroad_alerts.cc", "qt/widgets/setup.cc", "qt/widgets/QrCode.cc"],
                  LIBS=qt_libs)
   qt_libs.append(widgets)
 

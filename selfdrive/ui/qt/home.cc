@@ -17,7 +17,7 @@
 #include "paint.hpp"
 #include "qt_window.hpp"
 #include "widgets/drive_stats.hpp"
-#include "widgets/pairing_qr.hpp"
+#include "widgets/setup.hpp"
 
 #define BACKLIGHT_DT 0.25
 #define BACKLIGHT_TS 2.00
@@ -54,8 +54,9 @@ OffroadHome::OffroadHome(QWidget *parent) : QWidget(parent) {
   drive->setFixedSize(1000, 800);
   statsAndSetup->addWidget(drive);
 
-  PairingQRWidget* pairingQr = new PairingQRWidget;
-  statsAndSetup->addWidget(pairingQr);
+  SetupWidget *setup = new SetupWidget;
+  // setup->setFixedSize(800, 800);
+  statsAndSetup->addWidget(setup);
   
   QWidget* statsAndSetupWidget = new QWidget();
   statsAndSetupWidget->setLayout(statsAndSetup);

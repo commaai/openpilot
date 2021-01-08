@@ -5,6 +5,7 @@
 #include <QDateTime>
 
 #include "api.hpp"
+#include "common/params.h"
 #include "common/utilpp.h"
 
 #if defined(QCOM) || defined(QCOM2)
@@ -46,10 +47,15 @@ QString CommaApi::create_jwt(QVector<QPair<QString, QJsonValue>> payloads, int e
   header.insert("alg", "RS256");
 
   QJsonObject payload;
+
+  QString dongle_id = QString::fromStdString(Params().get("DongleId"));
+  payload.insert("identity", dongle_id);
+  
   auto t = QDateTime::currentSecsSinceEpoch();
   payload.insert("nbf", t);
   payload.insert("iat", t);
   payload.insert("exp", t + expiry);
+
   for(auto load : payloads){
     payload.insert(load.first, load.second);
   }
@@ -64,4 +70,7 @@ QString CommaApi::create_jwt(QVector<QPair<QString, QJsonValue>> payloads, int e
   jwt += '.' + sig.toBase64(QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals);
 
   return jwt;
+}
+QString CommaApi::create_jwt() {
+  return create_jwt(*(new QVector<QPair<QString, QJsonValue>>()));
 }
