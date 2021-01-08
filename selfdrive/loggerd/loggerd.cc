@@ -105,11 +105,11 @@ LogCameraInfo cameras_logged[LOG_CAMERA_ID_MAX] = {
 };
 
 
+namespace {
+
 constexpr int SEGMENT_LENGTH = 60;
 const char* LOG_ROOT = "/data/media/0/realdata";
 
-
-namespace {
 
 double randrange(double a, double b) __attribute__((unused));
 double randrange(double a, double b) {
@@ -137,14 +137,16 @@ public:
 
   void waitLogThread() {
     std::unique_lock<std::mutex> lk(fid_lock);
-    while (stream_frame_id > log_frame_id           //if the log camera is older, wait for it to catch up.
+    while (stream_frame_id > log_frame_id           // if the log camera is older, wait for it to catch up.
            && (stream_frame_id - log_frame_id) < 8  // but if its too old then there probably was a discontinuity (visiond restarted)
            && !do_exit) {
       cv.wait(lk);
     }
   }
 
-  void cancelWait() { cv.notify_one(); }
+  void cancelWait() {
+    cv.notify_one();
+  }
 
   void setStreamFrameId(uint32_t frame_id) {
     fid_lock.lock();
@@ -161,10 +163,11 @@ public:
   }
 
   void rotate() {
-    if (!enabled) { return; }
-    std::unique_lock<std::mutex> lk(fid_lock);
-    should_rotate = true;
-    last_rotate_frame_id = stream_frame_id;
+    if (enabled) {
+      std::unique_lock<std::mutex> lk(fid_lock);
+      should_rotate = true;
+      last_rotate_frame_id = stream_frame_id;
+    }
   }
 
   void finish_rotate() {
@@ -386,9 +389,9 @@ kj::Array<capnp::word> gen_init_data() {
   MessageBuilder msg;
   auto init = msg.initEvent().initInitData();
 
-  if (file_exists("/EON"))
+  if (file_exists("/EON")) {
     init.setDeviceType(cereal::InitData::DeviceType::NEO);
-  else if (file_exists("/TICI")) {
+  } else if (file_exists("/TICI")) {
     init.setDeviceType(cereal::InitData::DeviceType::TICI);
   } else {
     init.setDeviceType(cereal::InitData::DeviceType::PC);
@@ -429,30 +432,17 @@ kj::Array<capnp::word> gen_init_data() {
     init.setDongleId(std::string(dongle_id));
   }
 
-  const char* clean = getenv("CLEAN");
-  if (!clean) {
+  if (!getenv("CLEAN")) {
     init.setDirty(true);
   }
+
+  // log params
   Params params = Params();
-
-  std::vector<char> git_commit = params.read_db_bytes("GitCommit");
-  if (git_commit.size() > 0) {
-    init.setGitCommit(capnp::Text::Reader(git_commit.data(), git_commit.size()));
-  }
-
-  std::vector<char> git_branch = params.read_db_bytes("GitBranch");
-  if (git_branch.size() > 0) {
-    init.setGitBranch(capnp::Text::Reader(git_branch.data(), git_branch.size()));
-  }
-
-  std::vector<char> git_remote = params.read_db_bytes("GitRemote");
-  if (git_remote.size() > 0) {
-    init.setGitRemote(capnp::Text::Reader(git_remote.data(), git_remote.size()));
-  }
-
+  init.setGitCommit(params.get("GitCommit"));
+  init.setGitBranch(params.get("GitBranch"));
+  init.setGitRemote(params.get("GitRemote"));
   init.setPassive(params.read_db_bool("Passive"));
   {
-    // log params
     std::map<std::string, std::string> params_map;
     params.read_db_all(&params_map);
     auto lparams = init.initParams().initEntries(params_map.size());
