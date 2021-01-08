@@ -30,10 +30,15 @@ void dmonitoring_init(DMonitoringModelState* s) {
 
 template <class T>
 static inline T *get_buffer(std::vector<T> &buf, const size_t size) {
-  if (buf.size() < size) {
-    buf.resize(size);
-  }
+  if (buf.size() < size) buf.resize(size);
   return buf.data();
+}
+
+static inline auto get_yuv_buf(std::vector<uint8_t> &buf, const int width, int height) {
+  uint8_t *y = get_buffer(buf, width * height * 3 / 2);
+  uint8_t *u = y + width * height;
+  uint8_t *v = u + (width /2) * (height / 2);
+  return std::make_tuple(y, u, v);
 }
 
 DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_buf, int width, int height) {
@@ -65,10 +70,7 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
   int resized_width = MODEL_WIDTH;
   int resized_height = MODEL_HEIGHT;
 
-  uint8_t *cropped_y_buf = get_buffer(s->cropped_buf, cropped_width*cropped_height*3/2);
-  uint8_t *cropped_u_buf = cropped_y_buf + (cropped_width * cropped_height);
-  uint8_t *cropped_v_buf = cropped_u_buf + ((cropped_width/2) * (cropped_height/2));
-
+  auto [cropped_y_buf, cropped_u_buf, cropped_v_buf] = get_yuv_buf(s->cropped_buf, cropped_width, cropped_height);
   if (!s->is_rhd) {
     for (int r = 0; r < cropped_height/2; r++) {
       memcpy(cropped_y_buf + 2*r*cropped_width, raw_y_buf + (2*r + global_y_offset + crop_y_offset)*width + global_x_offset + crop_x_offset, cropped_width);
@@ -77,9 +79,7 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
       memcpy(cropped_v_buf + r*cropped_width/2, raw_v_buf + (r + (global_y_offset + crop_y_offset)/2)*width/2 + (global_x_offset + crop_x_offset)/2, cropped_width/2);
     }
   } else {
-    uint8_t *premirror_cropped_y_buf = get_buffer(s->premirror_cropped_buf, cropped_width*cropped_height*3/2);
-    uint8_t *premirror_cropped_u_buf = premirror_cropped_y_buf + (cropped_width * cropped_height);
-    uint8_t *premirror_cropped_v_buf = premirror_cropped_u_buf + ((cropped_width/2) * (cropped_height/2));
+    auto [premirror_cropped_y_buf, premirror_cropped_u_buf, premirror_cropped_v_buf] = get_yuv_buf(s->premirror_cropped_buf, cropped_width, cropped_height);
     for (int r = 0; r < cropped_height/2; r++) {
       memcpy(premirror_cropped_y_buf + (2*r)*cropped_width, raw_y_buf + (2*r + global_y_offset + crop_y_offset)*width + global_x_offset, cropped_width);
       memcpy(premirror_cropped_y_buf + (2*r+1)*cropped_width, raw_y_buf + (2*r + global_y_offset + crop_y_offset + 1)*width + global_x_offset, cropped_width);
@@ -95,11 +95,7 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
                        cropped_width, cropped_height);
   }
 
-  uint8_t *resized_buf = get_buffer(s->resized_buf, resized_width*resized_height*3/2);
-  uint8_t *resized_y_buf = resized_buf;
-  uint8_t *resized_u_buf = resized_y_buf + (resized_width * resized_height);
-  uint8_t *resized_v_buf = resized_u_buf + ((resized_width/2) * (resized_height/2));
-
+  auto [resized_y_buf, resized_u_buf, resized_v_buf] = get_yuv_buf(s->resized_buf, resized_width, resized_height);
   libyuv::FilterMode mode = libyuv::FilterModeEnum::kFilterBilinear;
   libyuv::I420Scale(cropped_y_buf, cropped_width,
                     cropped_u_buf, cropped_width/2,
@@ -112,11 +108,8 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
                     mode);
 
   // prerotate to be cache aware
-  uint8_t *resized_buf_rot = get_buffer(s->resized_buf_rot, resized_width*resized_height*3/2);
+  auto [resized_buf_rot, resized_u_buf_rot, resized_v_buf_rot] = get_yuv_buf(s->resized_buf_rot, resized_width, resized_height);
   uint8_t *resized_y_buf_rot = resized_buf_rot;
-  uint8_t *resized_u_buf_rot = resized_y_buf_rot + (resized_width * resized_height);
-  uint8_t *resized_v_buf_rot = resized_u_buf_rot + ((resized_width/2) * (resized_height/2));
-
   libyuv::I420Rotate(resized_y_buf, resized_width,
                      resized_u_buf, resized_width/2,
                      resized_v_buf, resized_width/2,
