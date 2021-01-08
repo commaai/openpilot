@@ -48,11 +48,13 @@ else:
 
 common = lenv.Object(common_src)
 
+# build thneed model
 if arch == "aarch64" or arch == "larch64":
-  lenv.Program('thneed/compile', [
-      "thneed/compile.cc"
-    ]+common, LIBS=libs)
-  # LD_LIBRARY_PATH="/data/pythonpath/phonelibs/snpe/aarch64:$LD_LIBRARY_PATH" selfdrive/modeld/thneed/compile
+  compiler = lenv.Program('thneed/compile', ["thneed/compile.cc" ]+common, LIBS=libs)
+  cmd = f"cd {Dir('.').get_abspath()} && {compiler[0].get_abspath()}"
+  snpe_path = "/data/pythonpath/phonelibs/snpe/"+arch
+  cenv = Environment(ENV = {'LD_LIBRARY_PATH' : snpe_path+":"+lenv["ENV"]["LD_LIBRARY_PATH"]})
+  cenv.Command("../../models/supercombo.thneed", ["../../models/supercombo.dlc", compiler], cmd)
 
 lenv.Program('_dmonitoringmodeld', [
     "dmonitoringmodeld.cc",
