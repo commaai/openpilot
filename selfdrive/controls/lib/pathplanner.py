@@ -169,8 +169,8 @@ class PathPlanner():
       self.LP.l_prob *= self.lane_change_ll_prob
       self.LP.r_prob *= self.lane_change_ll_prob
     self.LP.update_d_path(v_ego)
-    y_pts = np.interp(v_ego * T_IDXS[:MPC_N], np.linalg.norm(self.LP.d_path_xyz, axis=1), self.LP.d_path_xyz[:,1])
-    heading_pts = np.interp(v_ego * T_IDXS[:MPC_N], np.linalg.norm(path_xyz, axis=1), orient_xyz[:,2])
+    y_pts = np.interp(v_ego * T_IDXS[:MPC_N+1], np.linalg.norm(self.LP.d_path_xyz, axis=1), self.LP.d_path_xyz[:,1])
+    heading_pts = np.interp(v_ego * T_IDXS[:MPC_N+1], np.linalg.norm(path_xyz, axis=1), orient_xyz[:,2])
 
     # account for actuation delay
     self.cur_state = calc_states_after_delay(self.cur_state, v_ego, angle_steers - angle_offset, curvature_factor, VM.sR, CP.steerActuatorDelay)
@@ -178,6 +178,9 @@ class PathPlanner():
     v_ego_mpc = max(v_ego, 5.0)  # avoid mpc roughness due to low speed
     v_poly = [0, 0, 0, 0]
     v_poly[3] = v_ego_mpc
+    assert len(v_poly) == 4
+    assert len(y_pts) == MPC_N + 1
+    assert len(heading_pts) == MPC_N + 1
     # TODO negative sign, still run mpc in ENU
     self.libmpc.run_mpc(self.cur_state, self.mpc_solution,
                         list(v_poly),
@@ -185,7 +188,6 @@ class PathPlanner():
                         CAR_ROTATION_RADIUS,
                         list(-y_pts),
                         list(-heading_pts))
-
     next_delta = np.interp(DT_MDL, T_IDXS[:MPC_N+1], list(self.mpc_solution.delta))
     next_rate = np.interp(DT_MDL, T_IDXS[:MPC_N], list(self.mpc_solution.rate))
     # reset to current steer angle if not active or overriding
