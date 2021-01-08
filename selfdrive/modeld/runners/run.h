@@ -4,6 +4,10 @@
 #include "runmodel.h"
 #include "snpemodel.h"
 
+#if defined(QCOM) || defined(QCOM2)
+  #include "thneedmodel.h"
+#endif
+
 #ifdef QCOM
   #define DefaultRunModel SNPEModel
 #else

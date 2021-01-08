@@ -12,7 +12,7 @@ common_src = [
 
 thneed_src = [
   "thneed/thneed.cc",
-  "thneed/serialize.cc"
+  "thneed/serialize.cc",
   "runners/thneedmodel.cc",
 ]
 
@@ -47,6 +47,12 @@ else:
     del common_src[common_src.index('runners/snpemodel.cc')]
 
 common = lenv.Object(common_src)
+
+if arch == "aarch64" or arch == "larch64":
+  lenv.Program('thneed/compile', [
+      "thneed/compile.cc"
+    ]+common, LIBS=libs)
+  # LD_LIBRARY_PATH="/data/pythonpath/phonelibs/snpe/aarch64:$LD_LIBRARY_PATH" selfdrive/modeld/thneed/compile
 
 lenv.Program('_dmonitoringmodeld', [
     "dmonitoringmodeld.cc",

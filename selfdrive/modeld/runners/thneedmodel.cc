@@ -1,5 +1,7 @@
+#include "thneedmodel.h"
+
 ThneedModel::ThneedModel(const char *path, float *loutput, size_t loutput_size, int runtime) {
-  thneed = Thneed(true);
+  thneed = new Thneed(true);
   thneed->load(path);
 
   output = loutput;
