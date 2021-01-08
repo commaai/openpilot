@@ -6,10 +6,11 @@
 #define DESIRE_LEN 8
 #define TRAFFIC_CONVENTION_LEN 2
 
+// TODO: This should probably use SNPE directly.
 int main(int argc, char* argv[]) {
   #define OUTPUT_SIZE 0x10000
   float *output = (float*)calloc(OUTPUT_SIZE, sizeof(float));
-  SNPEModel mdl("/data/openpilot/models/supercombo.dlc", output, 0, USE_GPU_RUNTIME);
+  SNPEModel mdl(argv[1], output, 0, USE_GPU_RUNTIME);
 
   float state[TEMPORAL_SIZE] = {0};
   float desire[DESIRE_LEN] = {0};
@@ -26,7 +27,7 @@ int main(int argc, char* argv[]) {
   mdl.execute(input, 0);
 
   // save model
-  mdl.thneed->save("/data/openpilot/models/supercombo.thneed");
+  mdl.thneed->save(argv[2]);
   return 0;
 }
 
