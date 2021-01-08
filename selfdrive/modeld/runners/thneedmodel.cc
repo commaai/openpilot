@@ -2,7 +2,12 @@
 
 ThneedModel::ThneedModel(const char *path, float *loutput, size_t loutput_size, int runtime) {
   thneed = new Thneed(true);
+  thneed->record = 0;
   thneed->load(path);
+  thneed->clexec();
+  thneed->record = THNEED_RECORD;
+  thneed->clexec();
+  thneed->stop();
 
   output = loutput;
   output_size = loutput_size;
