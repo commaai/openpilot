@@ -186,20 +186,23 @@ class PathPlanner():
                         list(-y_pts),
                         list(-heading_pts))
 
+
+    next_delta = np.interp(DT_MDL, T_IDXS[:MPC_N], list(self.mpc_solution.delta))
+    next_rate = np.interp(DT_MDL, T_IDXS[1:MPC_N], list(self.mpc_solution.rate))
     # reset to current steer angle if not active or overriding
     if active:
-      delta_desired = self.mpc_solution[0].delta[1]
-      rate_desired = math.degrees(self.mpc_solution[0].rate[0] * VM.sR)
+      delta_desired = next_delta
+      rate_desired = math.degrees(next_rate * VM.sR)
     else:
       delta_desired = math.radians(angle_steers - angle_offset) / VM.sR
       rate_desired = 0.0
 
-    self.cur_state[0].delta = delta_desired
+    self.cur_state.delta = next_delta
 
     self.angle_steers_des_mpc = float(math.degrees(delta_desired * VM.sR) + angle_offset)
 
     #  Check for infeasable MPC solution
-    mpc_nans = any(math.isnan(x) for x in self.mpc_solution[0].delta)
+    mpc_nans = any(math.isnan(x) for x in self.mpc_solution.delta)
     t = sec_since_boot()
     if mpc_nans:
       self.libmpc.init(MPC_COST_LAT.PATH, MPC_COST_LAT.HEADING, CP.steerRateCost)
