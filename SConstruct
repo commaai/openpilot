@@ -38,6 +38,7 @@ if arch == "aarch64" and TICI:
 
 USE_WEBCAM = os.getenv("USE_WEBCAM") is not None
 QCOM_REPLAY = arch == "aarch64" and os.getenv("QCOM_REPLAY") is not None
+QCOM_QT = arch == "aarch64" and os.getenv("QCOM_QT") is not None
 
 lenv = {
   "PATH": os.environ['PATH'],
@@ -248,10 +249,13 @@ Export('envCython')
 
 # Qt build environment
 qt_env = None
-if arch in ["x86_64", "Darwin", "larch64"]:
+if arch in ["x86_64", "Darwin", "larch64"] or QCOM_QT:
   qt_env = env.Clone()
 
-  qt_modules = ["Widgets", "Gui", "Core", "DBus", "Multimedia", "Network"]
+  if QCOM_QT:
+    qt_modules = ["Widgets", "Gui", "Core", "Multimedia", "Network"]
+  else:
+    qt_modules = ["Widgets", "Gui", "Core", "DBus", "Multimedia", "Network"]
 
   qt_libs = []
   if arch == "Darwin":
@@ -263,6 +267,18 @@ if arch in ["x86_64", "Darwin", "larch64"]:
     qt_dirs += [f"{QT_BASE}include/Qt{m}" for m in qt_modules]
     qt_env["LINKFLAGS"] += ["-F" + QT_BASE + "lib"]
     qt_env["FRAMEWORKS"] += [f"Qt{m}" for m in qt_modules] + ["OpenGL"]
+
+  elif arch == "aarch64":
+    qt_env['QTDIR'] = "/system/comma/usr"
+    qt_dirs = [
+      f"/system/comma/usr/include/qt",
+      f"/system/comma/usr/include/qt/QtGui/5.13.2/QtGui",
+    ]
+    qt_dirs += [f"/system/comma/usr/include/qt/Qt{m}" for m in qt_modules]
+
+    qt_libs = [f"Qt5{m}" for m in qt_modules]
+    qt_libs += ['EGL', 'GLESv3', 'c++_shared']
+
   else:
     qt_env['QTDIR'] = "/usr"
     qt_dirs = [
@@ -306,7 +322,7 @@ Export('qt_env')
 
 # still needed for apks
 zmq = 'zmq'
-Export('env', 'arch', 'real_arch', 'zmq', 'SHARED', 'USE_WEBCAM', 'QCOM_REPLAY')
+Export('env', 'arch', 'real_arch', 'zmq', 'SHARED', 'USE_WEBCAM', 'QCOM_REPLAY', 'QCOM_QT')
 
 # cereal and messaging are shared with the system
 SConscript(['cereal/SConscript'])

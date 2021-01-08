@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from SConstruct import QCOM_QT
 import datetime
 import importlib
 import os
@@ -378,7 +379,7 @@ def kill_managed_process(name, retry=True):
 def cleanup_all_processes(signal, frame):
   cloudlog.info("caught ctrl-c %s %s" % (signal, frame))
 
-  if EON:
+  if EON and not QCOM_QT:
     pm_apply_packages('disable')
 
   for name in list(running.keys()):
@@ -451,7 +452,7 @@ def manager_thread():
     start_managed_process(p)
 
   # start offroad
-  if EON:
+  if EON and not QCOM_QT:
     pm_apply_packages('enable')
     start_offroad()
 
@@ -552,7 +553,7 @@ def main():
   if params.get("Passive") is None:
     raise Exception("Passive must be set to continue")
 
-  if EON:
+  if EON and not QCOM_QT:
     update_apks()
   manager_init()
   manager_prepare()

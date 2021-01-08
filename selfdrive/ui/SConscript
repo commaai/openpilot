@@ -1,5 +1,5 @@
 import os
-Import('env', 'qt_env', 'arch', 'common', 'messaging', 'gpucommon', 'visionipc', 'cereal')
+Import('env', 'qt_env', 'arch', 'common', 'messaging', 'gpucommon', 'visionipc', 'cereal', 'QCOM_QT')
 
 
 src = ['ui.cc', 'paint.cc', 'sidebar.cc', '#phonelibs/nanovg/nanovg.c']
@@ -16,7 +16,10 @@ if qt_env is None:
     LINKFLAGS=linkflags,
     LIBS=libs)
 else:
-  qt_libs = qt_env["LIBS"] + libs + ["pthread", "ssl", "crypto"]
+  if arch == "aarch64":
+    qt_libs = qt_env["LIBS"] + libs + ['log', 'utils', 'gui', 'hardware', 'ui', 'CB', 'gsl', 'adreno_utils', 'OpenSLES', 'cutils', 'uuid', 'OpenCL']
+  else:
+    qt_libs = qt_env["LIBS"] + libs + ["pthread", "ssl", "crypto"]
 
   widgets = qt_env.Library("qt_widgets",
                  ["qt/qt_window.cc", "qt/qt_sound.cc", "qt/widgets/keyboard.cc", "qt/widgets/input_field.cc", "qt/widgets/drive_stats.cc",
