@@ -273,9 +273,15 @@ static void update_vision(UIState *s) {
 static void update_status(UIState *s) {
   if (s->started && s->sm->updated("controlsState")) {
     switch (s->scene.controls_state.getAlertStatus()) {
-      case cereal::ControlsState::AlertStatus::USER_PROMPT: s->status = STATUS_WARNING; break;
-      case cereal::ControlsState::AlertStatus::CRITICAL:  s->status = STATUS_ALERT; break;
-      default: s->status = s->scene.controls_state.getEnabled() ? STATUS_ENGAGED : STATUS_DISENGAGED; break;
+      case cereal::ControlsState::AlertStatus::USER_PROMPT:
+        s->status = STATUS_WARNING;
+        break;
+      case cereal::ControlsState::AlertStatus::CRITICAL:
+        s->status = STATUS_ALERT;
+        break;
+      default:
+        s->status = s->scene.controls_state.getEnabled() ? STATUS_ENGAGED : STATUS_DISENGAGED;
+        break;
     }
   }
 
