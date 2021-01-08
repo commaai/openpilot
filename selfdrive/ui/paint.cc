@@ -286,56 +286,44 @@ static void ui_draw_vision_face(UIState *s) {
 }
 
 static void ui_draw_driver_view(UIState *s) {
-  const UIScene *scene = &s->scene;
   s->scene.sidebar_collapsed = true;
-  const Rect &viz_rect = s->scene.viz_rect;
-  const int ff_xoffset = 32;
-  const int frame_x = viz_rect.x;
-  const int frame_w = viz_rect.w;
-  const int valid_frame_w = 4 * viz_rect.h / 3;
-  const int box_y = viz_rect.y;
-  const int box_h  = viz_rect.h;
-  const int valid_frame_x = frame_x + (frame_w - valid_frame_w) / 2 + ff_xoffset;
+  const bool is_rhd = s->scene.is_rhd;
+  const Rect &viz_rect = s->scene.viz_rect; 
+  const int width = 3 * viz_rect.w / 4;
+  const Rect rect = {viz_rect.centerX() - width / 2, viz_rect.y, width, viz_rect.h};  // x, y, w, h
+  const Rect valid_rect = {is_rhd ? rect.right() - rect.h / 2 : rect.x, rect.y, rect.h / 2, rect.h};
 
   // blackout
-  NVGpaint gradient = nvgLinearGradient(s->vg, scene->is_rhd ? valid_frame_x : (valid_frame_x + valid_frame_w),
-                                        box_y,
-                                        scene->is_rhd ? (valid_frame_w - box_h / 2) : (valid_frame_x + box_h / 2), box_y,
-                                        COLOR_BLACK, COLOR_BLACK_ALPHA(0));
-  ui_draw_rect(s->vg, scene->is_rhd ? valid_frame_x : (valid_frame_x + box_h / 2), box_y, valid_frame_w - box_h / 2, box_h, gradient);
-  ui_draw_rect(s->vg, scene->is_rhd ? valid_frame_x : valid_frame_x + box_h / 2, box_y, valid_frame_w - box_h / 2, box_h, COLOR_BLACK_ALPHA(144));
+  const int blackout_x = is_rhd ? rect.x : valid_rect.right();
+  const int blackout_w = rect.w - valid_rect.w;
+  NVGpaint gradient = nvgLinearGradient(s->vg, blackout_x, rect.y, blackout_x + blackout_w, rect.y,
+                                        COLOR_BLACK_ALPHA(is_rhd ? 255 : 0), COLOR_BLACK_ALPHA(is_rhd ? 0 : 255));
+  ui_draw_rect(s->vg, blackout_x, rect.y, blackout_w, rect.h, gradient);
+  ui_draw_rect(s->vg, blackout_x, rect.y, blackout_w, rect.h, COLOR_BLACK_ALPHA(144));
+  // border
+  ui_draw_rect(s->vg, rect.x, rect.y, rect.w, rect.h, bg_colors[STATUS_OFFROAD], 0, 1);
 
-  // borders
-  ui_draw_rect(s->vg, frame_x, box_y, valid_frame_x - frame_x, box_h, nvgRGBA(23, 51, 73, 255));
-  ui_draw_rect(s->vg, valid_frame_x + valid_frame_w, box_y, frame_w - valid_frame_w - (valid_frame_x - frame_x), box_h, nvgRGBA(23, 51, 73, 255));
+  const bool face_detected = s->scene.dmonitoring_state.getFaceDetected();
+  if (face_detected) {
+    auto fxy_list = s->scene.driver_state.getFacePosition();
+    float face_x = fxy_list[0];
+    float face_y = fxy_list[1];
+    float fbox_x = valid_rect.centerX() + (is_rhd ? face_x : -face_x) * valid_rect.w;
+    float fbox_y = valid_rect.centerY() + face_y * valid_rect.h;
 
-  // draw face box
-  if (scene->dmonitoring_state.getFaceDetected()) {
-    auto fxy_list = scene->driver_state.getFacePosition();
-    const float face_x = fxy_list[0];
-    const float face_y = fxy_list[1];
-    float fbox_x;
-    float fbox_y = box_y + (face_y + 0.5) * box_h - 0.5 * 0.6 * box_h / 2;
-    if (!scene->is_rhd) {
-      fbox_x = valid_frame_x + (1 - (face_x + 0.5)) * (box_h / 2) - 0.5 * 0.6 * box_h / 2;
-    } else {
-      fbox_x = valid_frame_x + valid_frame_w - box_h / 2 + (face_x + 0.5) * (box_h / 2) - 0.5 * 0.6 * box_h / 2;
-    }
+    float alpha = 0.2;
+    if (face_x = std::abs(face_x), face_y = std::abs(face_y); face_x <= 0.35 && face_y <= 0.4)
+      alpha = 0.8 - (face_x > face_y ? face_x : face_y) * 0.6 / 0.375;
 
-    if (std::abs(face_x) <= 0.35 && std::abs(face_y) <= 0.4) {
-      ui_draw_rect(s->vg, fbox_x, fbox_y, 0.6 * box_h / 2, 0.6 * box_h / 2,
-                   nvgRGBAf(1.0, 1.0, 1.0, 0.8 - ((std::abs(face_x) > std::abs(face_y) ? std::abs(face_x) : std::abs(face_y))) * 0.6 / 0.375),
-                   35, 10);
-    } else {
-      ui_draw_rect(s->vg, fbox_x, fbox_y, 0.6 * box_h / 2, 0.6 * box_h / 2, nvgRGBAf(1.0, 1.0, 1.0, 0.2), 35, 10);
-    }
+    const float box_size = 0.6 * rect.h / 2;
+    ui_draw_rect(s->vg, fbox_x - box_size / 2, fbox_y - box_size / 2, box_size, box_size, nvgRGBAf(1.0, 1.0, 1.0, alpha), 35, 10);
   }
 
   // draw face icon
   const int face_size = 85;
-  const int x = (valid_frame_x + face_size + (bdr_s * 2)) + (scene->is_rhd ? valid_frame_w - box_h / 2:0);
-  const int y = (box_y + box_h - face_size - bdr_s - (bdr_s * 1.5));
-  ui_draw_circle_image(s->vg, x, y, face_size, s->img_face, scene->dmonitoring_state.getFaceDetected());
+  const int icon_x = is_rhd ? rect.right() - face_size - bdr_s * 2 : rect.x + face_size + bdr_s * 2;
+  const int icon_y = rect.bottom() - face_size - bdr_s * 2.5;
+  ui_draw_circle_image(s->vg, icon_x, icon_y, face_size, s->img_face, face_detected);
 }
 
 static void ui_draw_vision_header(UIState *s) {
