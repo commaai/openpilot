@@ -1115,11 +1115,6 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
   }
   s->pm->send(c == &s->rear ? "frame" : "wideFrame", msg);
 
-  if (c == &s->rear && cnt % 100 == 3) {
-    // this takes 10ms???
-    create_thumbnail(s, c, (uint8_t*)b->cur_rgb_buf->addr);
-  }
-
   if (cnt % 3 == 0) {
     int exposure_x;
     int exposure_y;

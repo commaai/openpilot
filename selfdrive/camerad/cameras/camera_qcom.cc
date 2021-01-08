@@ -1674,10 +1674,6 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
   framed.setTransform(b->yuv_transform.v);
   s->pm->send("frame", msg);
 
-  if (cnt % 100 == 3) {
-    create_thumbnail(s, c, (uint8_t *)b->cur_rgb_buf->addr);
-  }
-
   if (cnt % 3 == 0) {
     const int x = 290, y = 322, width = 560, height = 314;
     const int skip = 1;

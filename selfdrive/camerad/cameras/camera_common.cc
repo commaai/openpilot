@@ -243,9 +243,7 @@ void fill_frame_image(cereal::FrameData::Builder &framed, uint8_t *dat, int w, i
   }
 }
 
-void create_thumbnail(MultiCameraState *s, CameraState *c, uint8_t *bgr_ptr) {
-  const CameraBuf *b = &c->buf;
-
+static void create_thumbnail(MultiCameraState *s, const CameraBuf *b) {
   uint8_t* thumbnail_buffer = NULL;
   unsigned long thumbnail_len = 0;
 
@@ -273,6 +271,7 @@ void create_thumbnail(MultiCameraState *s, CameraState *c, uint8_t *bgr_ptr) {
 #endif
 
   JSAMPROW row_pointer[1];
+  const uint8_t *bgr_ptr = (const uint8_t *)b->cur_rgb_buf->addr;
   for (int ii = 0; ii < b->rgb_height/4; ii+=1) {
     for (int j = 0; j < b->rgb_width*3; j+=12) {
       for (int k = 0; k < 3; k++) {
@@ -355,6 +354,10 @@ void *processing_thread(MultiCameraState *cameras, const char *tname,
 
     callback(cameras, cs, cnt);
 
+    if (cs == &(cameras->rear) && cnt % 100 == 3) {
+      // this takes 10ms???
+      create_thumbnail(cameras, &(cs->buf));
+    }
     cs->buf.release();
   }
   return NULL;
