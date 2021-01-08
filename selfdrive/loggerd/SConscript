@@ -1,18 +1,23 @@
-Import('env', 'arch', 'cereal', 'messaging', 'common', 'visionipc')
+Import('env', 'arch', 'cereal', 'messaging', 'common', 'visionipc', 'gpucommon')
 
 src = ['loggerd.cc', 'logger.cc']
 libs = ['zmq', 'capnp', 'kj', 'z',
         'avformat', 'avcodec', 'swscale', 'avutil',
-        'yuv', 'bz2', common, cereal, messaging, visionipc]
+        'yuv', 'bz2', 'OpenCL', common, cereal, messaging, visionipc]
 
 if arch in ["aarch64", "larch64"]:
   src += ['encoder.cc']
-  libs += ['OmxVenc', 'OmxCore']
+  libs += ['OmxVenc', 'OmxCore', 'gsl', 'CB'] + gpucommon
   if arch == "aarch64":
     libs += ['cutils']
   else:
     libs += ['pthread']
 else:
   libs += ['pthread']
+
+if arch == "Darwin":
+  # fix OpenCL
+  del libs[libs.index('OpenCL')]
+  env['FRAMEWORKS'] = ['OpenCL']
 
 env.Program(src, LIBS=libs)

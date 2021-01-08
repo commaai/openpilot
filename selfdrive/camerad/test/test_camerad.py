@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import os
 import random
 import time
 import unittest
@@ -7,7 +8,7 @@ import numpy as np
 
 import cereal.messaging as messaging
 from selfdrive.test.helpers import with_processes
-from selfdrive.camerad.snapshot.visionipc import VisionIPC
+from selfdrive.camerad.snapshot.snapshot import get_snapshots
 
 # only tests for EON and TICI
 from selfdrive.hardware import EON, TICI
@@ -32,24 +33,8 @@ class TestCamerad(unittest.TestCase):
     if not (EON or TICI):
       raise unittest.SkipTest
 
-  def _get_snapshots(self):
-    ret = None
-    start_time = time.time()
-    while time.time() - start_time < 5.0:
-      try:
-        ipc = VisionIPC()
-        pic = ipc.get()
-        del ipc
-
-        ipc_front = VisionIPC(front=True) # need to add another for tici
-        fpic = ipc_front.get()
-        del ipc_front
-
-        ret = pic, fpic
-        break
-      except Exception:
-        time.sleep(1)
-    return ret
+    assert "SEND_REAR" in os.environ
+    assert "SEND_FRONT" in os.environ
 
   def _numpy_bgr2gray(self, im):
     ret = np.clip(im[:,:,0] * 0.114 + im[:,:,1] * 0.587 + im[:,:,2] * 0.299, 0, 255).astype(np.uint8)
@@ -95,14 +80,14 @@ class TestCamerad(unittest.TestCase):
     if EON:
       # run checks similar to prov
       time.sleep(15) # wait for startup and AF
-      pic, fpic = self._get_snapshots()
+      pic, fpic = get_snapshots()
       self.assertTrue(self._is_really_sharp(pic))
       self.assertTrue(self._is_exposure_okay(pic))
       self.assertTrue(self._is_exposure_okay(fpic))
 
       time.sleep(30)
       # check again for consistency
-      pic, fpic = self._get_snapshots()
+      pic, fpic = get_snapshots()
       self.assertTrue(self._is_really_sharp(pic))
       self.assertTrue(self._is_exposure_okay(pic))
       self.assertTrue(self._is_exposure_okay(fpic))

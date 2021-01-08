@@ -3,7 +3,7 @@ Import('env', 'qt_env', 'arch', 'common', 'messaging', 'gpucommon', 'visionipc',
 
 
 src = ['ui.cc', 'paint.cc', 'sidebar.cc', '#phonelibs/nanovg/nanovg.c']
-libs = [common, 'zmq', 'capnp', 'kj', 'm', cereal, messaging, gpucommon, visionipc]
+libs = [common, 'zmq', 'capnp', 'kj', 'm', 'OpenCL', cereal, messaging, gpucommon, visionipc]
 
 
 if qt_env is None:
@@ -23,6 +23,11 @@ else:
                   "qt/offroad/wifi.cc", "qt/offroad/wifiManager.cc", "qt/widgets/toggle.cc", "qt/widgets/offroad_alerts.cc"],
                  LIBS=qt_libs)
   qt_libs.append(widgets)
+
+  if arch == "Darwin":
+    # fix OpenCL
+    del qt_libs[qt_libs.index('OpenCL')]
+    qt_env['FRAMEWORKS'] += ['OpenCL']
 
   qt_src = ["qt/ui.cc", "qt/window.cc", "qt/home.cc", "qt/offroad/settings.cc", "qt/offroad/onboarding.cc"] + src
   qt_env.Program("_ui", qt_src, LIBS=qt_libs)

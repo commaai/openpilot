@@ -501,8 +501,8 @@ void enqueue_buffer(struct CameraState *s, int i, bool dp) {
     // LOGD("fence wait: %d %d", ret, sync_wait.sync_obj);
 
     s->buf.camera_bufs_metadata[i].timestamp_eof = (uint64_t)nanos_since_boot(); // set true eof
-    if (dp) tbuffer_dispatch(&s->buf.camera_tb, i);
- 
+    if (dp) s->buf.queue(i);
+
     // destroy old output fence
     struct cam_sync_info sync_destroy = {0};
     strcpy(sync_destroy.name, "NodeOutputPortFence");
@@ -535,11 +535,11 @@ void enqueue_buffer(struct CameraState *s, int i, bool dp) {
   ret = cam_control(s->video0_fd, CAM_REQ_MGR_MAP_BUF, &mem_mgr_map_cmd, sizeof(mem_mgr_map_cmd));
   // LOGD("map buf req: (fd: %d) 0x%x %d", s->bufs[i].fd, mem_mgr_map_cmd.out.buf_handle, ret);
   s->buf_handle[i] = mem_mgr_map_cmd.out.buf_handle;
-  
+
   // poke sensor
   sensors_poke(s, request_id);
   // LOGD("Poked sensor");
-  
+
   // push the buffer
   config_isp(s, s->buf_handle[i], s->sync_objs[i], request_id, s->buf0_handle, 65632*(i+1));
 }
@@ -553,7 +553,7 @@ void enqueue_req_multi(struct CameraState *s, int start, int n, bool dp) {
 
 // ******************* camera *******************
 
-static void camera_init(CameraState *s, int camera_id, int camera_num, unsigned int fps, cl_device_id device_id, cl_context ctx) {
+static void camera_init(VisionIpcServer * v, CameraState *s, int camera_id, int camera_num, unsigned int fps, cl_device_id device_id, cl_context ctx, VisionStreamType rgb_type, VisionStreamType yuv_type) {
   LOGD("camera init %d", camera_num);
 
   assert(camera_id < ARRAYSIZE(cameras_supported));
@@ -572,7 +572,7 @@ static void camera_init(CameraState *s, int camera_id, int camera_num, unsigned 
   s->skipped = true;
   s->ef_filtered = 1.0;
 
-  s->buf.init(device_id, ctx, s, FRAME_BUF_COUNT, "frame");
+  s->buf.init(device_id, ctx, s, v, FRAME_BUF_COUNT, rgb_type, yuv_type);
 }
 
 // TODO: refactor this to somewhere nicer, perhaps use in camera_qcom as well
@@ -712,7 +712,7 @@ static void camera_open(CameraState *s) {
   acquire_dev_cmd.resource_hdl = (uint64_t)&csiphy_acquire_dev_info;
 
   ret = cam_control(s->csiphy_fd, CAM_ACQUIRE_DEV, &acquire_dev_cmd, sizeof(acquire_dev_cmd));
-  
+
   LOGD("acquire csiphy dev: %d", ret);
   s->csiphy_dev_handle = acquire_dev_cmd.dev_handle;
 
@@ -795,12 +795,15 @@ static void camera_open(CameraState *s) {
   enqueue_req_multi(s, 1, FRAME_BUF_COUNT, 0);
 }
 
-void cameras_init(MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
-  camera_init(&s->rear, CAMERA_ID_AR0231, 1, 20, device_id, ctx); // swap left/right
+void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
+  camera_init(v, &s->rear, CAMERA_ID_AR0231, 1, 20, device_id, ctx,
+              VISION_STREAM_RGB_BACK, VISION_STREAM_YUV_BACK); // swap left/right
   printf("rear initted \n");
-  camera_init(&s->wide, CAMERA_ID_AR0231, 0, 20, device_id, ctx);
+  camera_init(v, &s->wide, CAMERA_ID_AR0231, 0, 20, device_id, ctx,
+              VISION_STREAM_RGB_WIDE, VISION_STREAM_YUV_WIDE);
   printf("wide initted \n");
-  camera_init(&s->front, CAMERA_ID_AR0231, 2, 20, device_id, ctx);
+  camera_init(v, &s->front, CAMERA_ID_AR0231, 2, 20, device_id, ctx,
+              VISION_STREAM_RGB_FRONT, VISION_STREAM_YUV_FRONT);
   printf("front initted \n");
 
   s->sm = new SubMaster({"driverState"});
@@ -852,7 +855,7 @@ void cameras_open(MultiCameraState *s) {
   sub.id = 2; // should use boot time for sof
   ret = ioctl(s->video0_fd, VIDIOC_SUBSCRIBE_EVENT, &sub);
   printf("req mgr subscribe: %d\n", ret);
-  
+
   camera_open(&s->rear);
   printf("rear opened \n");
   camera_open(&s->wide);
@@ -1134,7 +1137,7 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
       exposure_height = 524;
     }
     int skip = 2;
-    set_exposure_target(c, (const uint8_t *)b->yuv_bufs[b->cur_yuv_idx].y, exposure_x, exposure_x + exposure_width, skip, exposure_y, exposure_y + exposure_height, skip);
+    set_exposure_target(c, (const uint8_t *)b->cur_yuv_buf->y, exposure_x, exposure_x + exposure_width, skip, exposure_y, exposure_y + exposure_height, skip);
   }
 }
 
@@ -1201,6 +1204,6 @@ void cameras_run(MultiCameraState *s) {
   assert(err == 0);
 
   cameras_close(s);
-  
+
   for (auto &t : threads) t.join();
 }

@@ -28,13 +28,15 @@
 #include "common/timing.h"
 #include "common/params.h"
 #include "common/swaglog.h"
-#include "common/visionipc.h"
 #include "common/utilpp.h"
 #include "common/util.h"
 #include "camerad/cameras/camera_common.h"
 #include "logger.h"
 #include "messaging.hpp"
 #include "services.h"
+
+#include "visionipc.h"
+#include "visionipc_client.h"
 
 #if !(defined(QCOM) || defined(QCOM2))
 #define DISABLE_ENCODER // TODO: loggerd for PC
@@ -58,7 +60,7 @@ constexpr int DCAM_BITRATE = MAIN_BITRATE;
 
 LogCameraInfo cameras_logged[LOG_CAMERA_ID_MAX] = {
   [LOG_CAMERA_ID_FCAMERA] = {
-    .stream_type = VISION_STREAM_YUV,
+    .stream_type = VISION_STREAM_YUV_BACK,
     .filename = "fcamera.hevc",
     .frame_packet_name = "frame",
     .fps = MAIN_FPS,
@@ -200,7 +202,6 @@ void encoder_thread(int cam_idx) {
   LogCameraInfo &cam_info = cameras_logged[cam_idx];
   set_thread_name(cam_info.filename);
 
-  VisionStream stream;
   RotateState &rotate_state = s.rotate_state[cam_idx];
 
   std::vector<EncoderState*> encoders;
@@ -213,14 +214,14 @@ void encoder_thread(int cam_idx) {
   int cnt = 0;
   LoggerHandle *lh = NULL;
 
+  VisionIpcClient vipc_client = VisionIpcClient("camerad", cam_info.stream_type, false);
   while (!do_exit) {
-    VisionStreamBufs buf_info;
-    int err = visionstream_init(&stream, cam_info.stream_type, false, &buf_info);
-    if (err != 0) {
-      LOGD("visionstream connect fail");
-      util::sleep_for(100);
+    if (!vipc_client.connect(false)){
+      std::this_thread::sleep_for(std::chrono::milliseconds(100));
       continue;
     }
+
+    VisionBuf buf_info = vipc_client.buffers[0];
 
     // init encoders
     if (encoders.empty()) {
@@ -241,11 +242,10 @@ void encoder_thread(int cam_idx) {
     }
 
     while (!do_exit) {
-      VIPCBufExtra extra;
-      VIPCBuf* buf = visionstream_get(&stream, &extra);
-      if (buf == NULL) {
-        LOG("visionstream get failed");
-        break;
+      VisionIpcBufExtra extra;
+      VisionBuf* buf = vipc_client.recv(&extra);
+      if (buf == nullptr){
+        continue;
       }
 
       //uint64_t current_time = nanos_since_boot();
@@ -313,19 +313,18 @@ void encoder_thread(int cam_idx) {
 
       rotate_state.setStreamFrameId(extra.frame_id);
 
-      uint8_t *y = (uint8_t*)buf->addr;
-      uint8_t *u = y + (buf_info.width*buf_info.height);
-      uint8_t *v = u + (buf_info.width/2)*(buf_info.height/2);
       {
         // encode hevc
         int out_segment = -1;
-        int out_id = encoder_encode_frame(encoders[0], y, u, v,
-                                          buf_info.width, buf_info.height,
+        int out_id = encoder_encode_frame(encoders[0],
+                                          buf->y, buf->u, buf->v,
+                                          buf->width, buf->height,
                                           &out_segment, &extra);
         if (encoders.size() > 1) {
           int out_segment_alt = -1;
-          encoder_encode_frame(encoders[1], y, u, v,
-                               buf_info.width, buf_info.height,
+          encoder_encode_frame(encoders[1],
+                               buf->y, buf->u, buf->v,
+                               buf->width, buf->height,
                                &out_segment_alt, &extra);
         }
 
@@ -361,7 +360,6 @@ void encoder_thread(int cam_idx) {
       lh = NULL;
     }
 
-    visionstream_destroy(&stream);
   }
 
   LOG("encoder destroy");

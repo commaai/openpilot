@@ -11,7 +11,6 @@
 #include "common/utilpp.h"
 #include "common/timing.h"
 #include "common/swaglog.h"
-#include "buffering.h"
 
 extern "C" {
 #include <libavcodec/avcodec.h>
@@ -30,27 +29,26 @@ void camera_close(CameraState *s) {
   s->buf.stop();
 }
 
-void camera_init(CameraState *s, int camera_id, unsigned int fps, cl_device_id device_id, cl_context ctx) {
+void camera_init(VisionIpcServer * v, CameraState *s, int camera_id, unsigned int fps, cl_device_id device_id, cl_context ctx, VisionStreamType rgb_type, VisionStreamType yuv_type) {
   assert(camera_id < ARRAYSIZE(cameras_supported));
   s->ci = cameras_supported[camera_id];
   assert(s->ci.frame_width != 0);
 
   s->fps = fps;
-  s->buf.init(device_id, ctx, s, FRAME_BUF_COUNT, "camera");
+  s->buf.init(device_id, ctx, s, v, FRAME_BUF_COUNT, rgb_type, yuv_type);
 }
 
 void run_frame_stream(MultiCameraState *s) {
   s->sm = new SubMaster({"frame"});
 
   CameraState *const rear_camera = &s->rear;
-  auto *tb = &rear_camera->buf.camera_tb;
 
+
+  size_t buf_idx = 0;
   while (!do_exit) {
     if (s->sm->update(1000) == 0) continue;
 
     auto frame = (*(s->sm))["frame"].getFrame();
-
-    const int buf_idx = tbuffer_select(tb);
     rear_camera->buf.camera_bufs_metadata[buf_idx] = {
       .frame_id = frame.getFrameId(),
       .timestamp_eof = frame.getTimestampEof(),
@@ -63,8 +61,11 @@ void run_frame_stream(MultiCameraState *s) {
     cl_mem yuv_cl = rear_camera->buf.camera_bufs[buf_idx].buf_cl;
 
     clEnqueueWriteBuffer(q, yuv_cl, CL_TRUE, 0, frame.getImage().size(), frame.getImage().begin(), 0, NULL, NULL);
-    tbuffer_dispatch(tb, buf_idx);
+    rear_camera->buf.queue(buf_idx);
+    buf_idx = (buf_idx + 1) % FRAME_BUF_COUNT;
   }
+
+  delete s->sm;
 }
 
 }  // namespace
@@ -87,9 +88,11 @@ CameraInfo cameras_supported[CAMERA_ID_MAX] = {
   },
 };
 
-void cameras_init(MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
-  camera_init(&s->rear, CAMERA_ID_IMX298, 20, device_id, ctx);
-  camera_init(&s->front, CAMERA_ID_OV8865, 10, device_id, ctx);
+void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
+  camera_init(v, &s->rear, CAMERA_ID_IMX298, 20, device_id, ctx,
+              VISION_STREAM_RGB_BACK, VISION_STREAM_YUV_BACK);
+  camera_init(v, &s->front, CAMERA_ID_OV8865, 10, device_id, ctx,
+              VISION_STREAM_RGB_FRONT, VISION_STREAM_YUV_FRONT);
 }
 
 void camera_autoexposure(CameraState *s, float grey_frac) {}

@@ -5,15 +5,12 @@ if SHARED:
 else:
   fxn = env.Library
 
-common_libs = ['params.cc', 'swaglog.cc', 'util.c', 'cqueue.c', 'gpio.cc', 'i2c.cc']
+common_libs = ['params.cc', 'swaglog.cc', 'cqueue.c', 'util.c', 'gpio.cc', 'i2c.cc']
 
 _common = fxn('common', common_libs, LIBS="json11")
-_visionipc = fxn('visionipc', ['visionipc.c', 'ipc.c'])
 
 files = [
-  'buffering.c',
   'clutil.cc',
-  'efd.c',
   'glutil.c',
   'visionimg.cc',
 ]
@@ -23,21 +20,9 @@ if arch == "aarch64":
     'framebuffer.cc',
     'touch.c',
   ]
-  if QCOM_REPLAY:
-    files += ['visionbuf_cl.c']
-  else:
-    files += ['visionbuf_ion.c']
   _gpu_libs = ['gui', 'adreno_utils']
-elif arch == "larch64":
-  files += [
-    'visionbuf_ion.c',
-  ]
-  _gpu_libs = ['GL']
 else:
-  files += [
-    'visionbuf_cl.c',
-  ]
   _gpu_libs = ["GL"]
 
 _gpucommon = fxn('gpucommon', files, LIBS=_gpu_libs)
-Export('_common', '_visionipc', '_gpucommon', '_gpu_libs')
+Export('_common', '_gpucommon', '_gpu_libs')

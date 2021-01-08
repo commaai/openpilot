@@ -12,9 +12,9 @@
 #include "msmb_camera.h"
 #include "msm_cam_sensor.h"
 
+#include "visionbuf.h"
+
 #include "common/mat.h"
-#include "common/visionbuf.h"
-#include "common/buffering.h"
 #include "common/utilpp.h"
 
 #include "camera_common.h"
@@ -137,7 +137,7 @@ typedef struct MultiCameraState {
 
 } MultiCameraState;
 
-void cameras_init(MultiCameraState *s, cl_device_id device_id, cl_context ctx);
+void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_id, cl_context ctx);
 void cameras_open(MultiCameraState *s);
 void cameras_run(MultiCameraState *s);
 void cameras_close(MultiCameraState *s);
