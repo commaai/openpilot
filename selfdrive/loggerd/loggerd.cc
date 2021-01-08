@@ -183,11 +183,12 @@ struct LoggerdState {
   char segment_path[4096];
   int rotate_segment;
   pthread_mutex_t rotate_lock;
+
+  // video encders
   int num_encoder;
   std::atomic<int> rotate_seq_id;
   std::atomic<int> should_close;
   std::atomic<int> finish_close;
-
   RotateState rotate_state[LOG_CAMERA_ID_MAX-1];
 };
 LoggerdState s;
@@ -270,9 +271,7 @@ void encoder_thread(int cam_idx) {
           }
 
           // poll for our turn
-          while (s.rotate_seq_id != my_idx && !do_exit) {
-            usleep(1000);
-          }
+          while (s.rotate_seq_id != my_idx && !do_exit) sleep_for(10);
 
           LOGW("camera %d rotate encoder to %s.", cam_idx, s.segment_path);
           for (auto &e : encoders) {
@@ -289,7 +288,7 @@ void encoder_thread(int cam_idx) {
           s.should_close += 1;
           pthread_mutex_unlock(&s.rotate_lock);
 
-          while(s.should_close > 0 && s.should_close < s.num_encoder && !do_exit) usleep(1000);
+          while(s.should_close > 0 && s.should_close < s.num_encoder && !do_exit) sleep_for(10);
 
           pthread_mutex_lock(&s.rotate_lock);
           s.should_close = s.should_close == s.num_encoder ? 1 - s.num_encoder : s.should_close + 1;
@@ -305,7 +304,7 @@ void encoder_thread(int cam_idx) {
           pthread_mutex_unlock(&s.rotate_lock);
 
           // wait for all to finish
-          while(s.finish_close > 0 && s.finish_close < s.num_encoder && !do_exit) usleep(1000);
+          while(s.finish_close > 0 && s.finish_close < s.num_encoder && !do_exit) sleep_for(10);
           s.finish_close = 0;
 
           rotate_state.finish_rotate();
@@ -591,13 +590,14 @@ int main(int argc, char** argv) {
     for (auto sock : poller->poll(1000)) {
 
       // drain socket
-      Message * msg = nullptr;
+      Message * last_msg = nullptr;
       while (!do_exit) {
-        delete msg;
-        msg = sock->receive(true);
+        Message * msg = sock->receive(true);
         if (!msg){
           break;
         }
+        delete last_msg;
+        last_msg = msg;
 
         QlogState& qs = qlog_states[sock];
         logger_log(&s.logger, (uint8_t*)msg->getData(), msg->getSize(), qs.counter == 0);
@@ -609,7 +609,7 @@ int main(int argc, char** argv) {
         msg_count++;
       }
 
-      if (msg) {
+      if (last_msg) {
         int fpkt_id = -1;
         for (int cid = 0; cid <=MAX_CAM_IDX; cid++) {
           if (sock == s.rotate_state[cid].fpkt_sock) {fpkt_id=cid; break;}
@@ -617,8 +617,8 @@ int main(int argc, char** argv) {
         if (fpkt_id >= 0) {
           // track camera frames to sync to encoder
           // only process last frame
-          const uint8_t* data = (uint8_t*)msg->getData();
-          const size_t len = msg->getSize();
+          const uint8_t* data = (uint8_t*)last_msg->getData();
+          const size_t len = last_msg->getSize();
           const size_t size = len / sizeof(capnp::word) + 1;
           if (buf.size() < size) {
             buf = kj::heapArray<capnp::word>(size);
@@ -638,14 +638,14 @@ int main(int argc, char** argv) {
           last_camera_seen_tms = millis_since_boot();
         }
       }
-      delete msg;
+      delete last_msg;
     }
 
     bool new_segment = s.logger.part == -1;
     if (s.logger.part > -1) {
-      new_segment = true;
       double tms = millis_since_boot();
       if (tms - last_camera_seen_tms <= NO_CAMERA_PATIENCE && s.num_encoder > 0) {
+        new_segment = true;
         for (auto &r : s.rotate_state) {
           // this *should* be redundant on tici since all camera frames are synced
           new_segment &= (((r.stream_frame_id >= r.last_rotate_frame_id + segment_length * MAIN_FPS) &&
@@ -656,8 +656,8 @@ int main(int argc, char** argv) {
 #endif
         }
       } else {
-        new_segment &= tms - last_rotate_tms > segment_length * 1000;
-        if (new_segment) {
+        if (tms - last_rotate_tms > segment_length * 1000) {
+          new_segment = true;
           LOGW("no camera packet seen. auto rotated");
         }
       }
