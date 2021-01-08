@@ -292,25 +292,25 @@ static void ui_draw_driver_view(UIState *s) {
   const int blackout_w = rect.w - valid_rect.w;
   NVGpaint gradient = nvgLinearGradient(s->vg, blackout_x, rect.y, blackout_x + blackout_w, rect.y,
                                         COLOR_BLACK_ALPHA(is_rhd ? 255 : 0), COLOR_BLACK_ALPHA(is_rhd ? 0 : 255));
-  ui_draw_rect(s->vg, blackout_x, rect.y, blackout_w, rect.h, gradient);
-  ui_draw_rect(s->vg, blackout_x, rect.y, blackout_w, rect.h, COLOR_BLACK_ALPHA(144));
+  ui_fill_rect(s->vg, {blackout_x, rect.y, blackout_w, rect.h}, gradient);
+  ui_fill_rect(s->vg, {blackout_x, rect.y, blackout_w, rect.h}, COLOR_BLACK_ALPHA(144));
   // border
-  ui_draw_rect(s->vg, rect.x, rect.y, rect.w, rect.h, bg_colors[STATUS_OFFROAD], 0, 1);
+  ui_draw_rect(s->vg, rect, bg_colors[STATUS_OFFROAD], 1);
 
   const bool face_detected = s->scene.dmonitoring_state.getFaceDetected();
   if (face_detected) {
     auto fxy_list = s->scene.driver_state.getFacePosition();
     float face_x = fxy_list[0];
     float face_y = fxy_list[1];
-    float fbox_x = valid_rect.centerX() + (is_rhd ? face_x : -face_x) * valid_rect.w;
-    float fbox_y = valid_rect.centerY() + face_y * valid_rect.h;
+    int fbox_x = valid_rect.centerX() + (is_rhd ? face_x : -face_x) * valid_rect.w;
+    int fbox_y = valid_rect.centerY() + face_y * valid_rect.h;
 
     float alpha = 0.2;
     if (face_x = std::abs(face_x), face_y = std::abs(face_y); face_x <= 0.35 && face_y <= 0.4)
       alpha = 0.8 - (face_x > face_y ? face_x : face_y) * 0.6 / 0.375;
 
-    const float box_size = 0.6 * rect.h / 2;
-    ui_draw_rect(s->vg, fbox_x - box_size / 2, fbox_y - box_size / 2, box_size, box_size, nvgRGBAf(1.0, 1.0, 1.0, alpha), 35, 10);
+    const int box_size = 0.6 * rect.h / 2;
+    ui_draw_rect(s->vg, {fbox_x - box_size / 2, fbox_y - box_size / 2, box_size, box_size}, nvgRGBAf(1.0, 1.0, 1.0, alpha), 10, 35.);
   }
 
   // draw face icon
