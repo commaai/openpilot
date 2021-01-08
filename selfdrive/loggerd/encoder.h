@@ -14,6 +14,9 @@ extern "C" {
 #include "common/cqueue.h"
 #include "visionipc.h"
 
+// encoder: lossey codec using hardware hevc
+
+
 struct EncoderState {
   pthread_mutex_t lock;
   int width, height, fps;
