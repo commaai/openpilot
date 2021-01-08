@@ -10,7 +10,9 @@
 #include <QLabel>
 #include <QPixmap>
 
+#ifndef QCOM
 #include "wifi.hpp"
+#endif
 #include "settings.hpp"
 #include "widgets/toggle.hpp"
 #include "widgets/offroad_alerts.hpp"
@@ -196,13 +198,14 @@ QWidget * developer_panel() {
   return widget;
 }
 
+#ifndef QCOM
 QWidget * network_panel(QWidget * parent) {
   WifiUI *w = new WifiUI();
   QObject::connect(w, SIGNAL(openKeyboard()), parent, SLOT(closeSidebar()));
   QObject::connect(w, SIGNAL(closeKeyboard()), parent, SLOT(openSidebar()));
   return w;
 }
-
+#endif
 
 void SettingsWindow::setActivePanel() {
   auto *btn = qobject_cast<QPushButton *>(nav_btns->checkedButton());
@@ -233,7 +236,9 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   panels = {
     {"Developer", developer_panel()},
     {"Device", device_panel()},
+#ifndef QCOM
     {"Network", network_panel(this)},
+#endif
     {"Toggles", toggles_panel()},
   };
 
