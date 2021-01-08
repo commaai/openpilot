@@ -64,11 +64,6 @@ static void draw_network_type(UIState *s) {
 }
 
 static void draw_metric(UIState *s, const char *label_str, const char *value_str, const int severity, const int y_offset, const char *message_str) {
-  const int metric_x = 30;
-  const int metric_y = 338 + y_offset;
-  const int metric_w = 240;
-  const int metric_h = message_str ? strchr(message_str, '\n') ? 124 : 100 : 148;
-
   NVGcolor status_color;
 
   if (severity == 0) {
@@ -79,11 +74,11 @@ static void draw_metric(UIState *s, const char *label_str, const char *value_str
     status_color = COLOR_RED;
   }
 
-  ui_draw_rect(s->vg, {metric_x, metric_y, metric_w, metric_h},
-               severity > 0 ? COLOR_WHITE : COLOR_WHITE_ALPHA(85), 2, 20.);
+  const Rect rect = {30, 338 + y_offset, 240, message_str ? strchr(message_str, '\n') ? 124 : 100 : 148};
+  ui_draw_rect(s->vg, rect, severity > 0 ? COLOR_WHITE : COLOR_WHITE_ALPHA(85), 2, 20.);
 
   nvgBeginPath(s->vg);
-  nvgRoundedRectVarying(s->vg, metric_x + 6, metric_y + 6, 18, metric_h - 12, 25, 0, 0, 25);
+  nvgRoundedRectVarying(s->vg, rect.x + 6, rect.y + 6, 18, rect.h - 12, 25, 0, 0, 25);
   nvgFillColor(s->vg, status_color);
   nvgFill(s->vg);
 
@@ -92,19 +87,19 @@ static void draw_metric(UIState *s, const char *label_str, const char *value_str
     nvgFontSize(s->vg, 78);
     nvgFontFaceId(s->vg, s->font_sans_bold);
     nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_MIDDLE);
-    nvgTextBox(s->vg, metric_x + 50, metric_y + 50, metric_w - 60, value_str, NULL);
+    nvgTextBox(s->vg, rect.x + 50, rect.y + 50, rect.w - 60, value_str, NULL);
 
     nvgFillColor(s->vg, COLOR_WHITE);
     nvgFontSize(s->vg, 48);
     nvgFontFaceId(s->vg, s->font_sans_regular);
     nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_MIDDLE);
-    nvgTextBox(s->vg, metric_x + 50, metric_y + 50 + 66, metric_w - 60, label_str, NULL);
+    nvgTextBox(s->vg, rect.x + 50, rect.y + 50 + 66, rect.w - 60, label_str, NULL);
   } else {
     nvgFillColor(s->vg, COLOR_WHITE);
     nvgFontSize(s->vg, 48);
     nvgFontFaceId(s->vg, s->font_sans_bold);
     nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
-    nvgTextBox(s->vg, metric_x + 35, metric_y + (strchr(message_str, '\n') ? 40 : 50), metric_w - 50, message_str, NULL);
+    nvgTextBox(s->vg, rect.x + 35, rect.y + (strchr(message_str, '\n') ? 40 : 50), rect.w - 50, message_str, NULL);
   }
 }
 

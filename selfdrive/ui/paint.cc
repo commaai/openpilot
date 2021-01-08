@@ -97,8 +97,7 @@ static void ui_draw_circle_image(NVGcontext *vg, int x, int y, int size, int ima
   nvgCircle(vg, x, y + (bdr_s * 1.5), size);
   nvgFillColor(vg, color);
   nvgFill(vg);
-  const Rect rect = {x - (img_size / 2), img_y ? img_y : y - (size / 4), img_size, img_size};
-  ui_draw_image(vg, rect, image, img_alpha);
+  ui_draw_image(vg, {x - (img_size / 2), img_y ? img_y : y - (size / 4), img_size, img_size}, image, img_alpha);
 }
 
 static void ui_draw_circle_image(NVGcontext *vg, int x, int y, int size, int image, bool active) {
@@ -232,7 +231,6 @@ static void ui_draw_vision_maxspeed(UIState *s) {
   if (is_cruise_set && !s->is_metric) { maxspeed *= 0.6225; }
 
   const Rect rect = {s->scene.viz_rect.x + (bdr_s * 2), int(s->scene.viz_rect.y + (bdr_s * 1.5)), 184, 202};
-
   ui_fill_rect(s->vg, rect, COLOR_BLACK_ALPHA(100), 20.);
   ui_draw_rect(s->vg, rect, COLOR_WHITE_ALPHA(100), 10, 20.);
 
