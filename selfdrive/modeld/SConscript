@@ -10,14 +10,20 @@ common_src = [
   "transforms/transform.cc"
 ]
 
+thneed_src = [
+  "thneed/thneed.cc",
+  "thneed/serialize.cc"
+  "runners/thneedmodel.cc",
+]
+
 if arch == "aarch64":
   libs += ['gsl', 'CB', 'gnustl_shared']
-  common_src += ["thneed/thneed.cc"]
+  common_src += thneed_src
   lenv['CFLAGS'].append("-DUSE_THNEED")
   lenv['CXXFLAGS'].append("-DUSE_THNEED")
 elif arch == "larch64":
   libs += ['gsl', 'CB', 'pthread', 'dl']
-  common_src += ["thneed/thneed.cc"]
+  common_src += thneed_src
   lenv['CFLAGS'].append("-DUSE_THNEED")
   lenv['CXXFLAGS'].append("-DUSE_THNEED")
 else:
