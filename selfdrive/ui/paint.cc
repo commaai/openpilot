@@ -5,6 +5,7 @@
 #include <cmath>
 #include <iostream>
 #include "common/util.h"
+#include "common/timing.h"
 #include <algorithm>
 
 #define NANOVG_GLES3_IMPLEMENTATION
@@ -344,6 +345,10 @@ static void ui_draw_vision_footer(UIState *s) {
   ui_draw_vision_face(s);
 }
 
+static float get_alert_alpha(float blink_rate) {
+  return 0.375 * cos((millis_since_boot() / 1000) * 2 * M_PI * blink_rate) + 0.625;
+}
+
 static void ui_draw_vision_alert(UIState *s) {
   static std::map<cereal::ControlsState::AlertSize, const int> alert_size_map = {
       {cereal::ControlsState::AlertSize::SMALL, 241},
@@ -353,7 +358,7 @@ static void ui_draw_vision_alert(UIState *s) {
   bool longAlert1 = scene->alert_text1.length() > 15;
 
   NVGcolor color = bg_colors[s->status];
-  color.a *= s->alert_blinking_alpha;
+  color.a *= get_alert_alpha(scene->alert_blinking_rate);
   int alr_s = alert_size_map[scene->alert_size];
 
   const int alr_x = scene->viz_rect.x - bdr_s;
