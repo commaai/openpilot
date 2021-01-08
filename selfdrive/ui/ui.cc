@@ -151,6 +151,7 @@ void update_sockets(UIState *s) {
     scene.alert_text2 = scene.controls_state.getAlertText2();
     scene.alert_size = scene.controls_state.getAlertSize();
     scene.alert_type = scene.controls_state.getAlertType();
+    scene.alert_blinking_rate = scene.controls_state.getAlertBlinkingRate();
     auto alertStatus = scene.controls_state.getAlertStatus();
     if (alertStatus == cereal::ControlsState::AlertStatus::USER_PROMPT) {
       s->status = STATUS_WARNING;
@@ -158,24 +159,6 @@ void update_sockets(UIState *s) {
       s->status = STATUS_ALERT;
     } else {
       s->status = scene.controls_state.getEnabled() ? STATUS_ENGAGED : STATUS_DISENGAGED;
-    }
-
-    float alert_blinkingrate = scene.controls_state.getAlertBlinkingRate();
-    if (alert_blinkingrate > 0.) {
-      if (s->alert_blinked) {
-        if (s->alert_blinking_alpha > 0.0 && s->alert_blinking_alpha < 1.0) {
-          s->alert_blinking_alpha += (0.05*alert_blinkingrate);
-        } else {
-          s->alert_blinked = false;
-        }
-      } else {
-        if (s->alert_blinking_alpha > 0.25) {
-          s->alert_blinking_alpha -= (0.05*alert_blinkingrate);
-        } else {
-          s->alert_blinking_alpha += 0.25;
-          s->alert_blinked = true;
-        }
-      }
     }
   }
   if (sm.updated("radarState")) {
@@ -289,8 +272,6 @@ void ui_update(UIState *s) {
 
     s->active_app = cereal::UiLayoutState::App::NONE;
     s->scene.sidebar_collapsed = true;
-    s->alert_blinked = false;
-    s->alert_blinking_alpha = 1.0;
     s->scene.alert_size = cereal::ControlsState::AlertSize::NONE;
   }
 
