@@ -16,17 +16,12 @@
 #include <OMX_QCOMExtns.h>
 
 #include <libyuv.h>
-
 #include <msm_media_info.h>
 
 #include "common/mutex.h"
 #include "common/swaglog.h"
 
 #include "encoder.h"
-
-
-// encoder: lossey codec using hardware hevc
-
 
 
 // ***** OMX callback functions *****
@@ -282,26 +277,26 @@ void encoder_init(EncoderState *s, const char* filename, int width, int height, 
   assert(err == OMX_ErrorNone);
 
   if (h265) {
-      // setup HEVC
-    #ifndef QCOM2
-      OMX_VIDEO_PARAM_HEVCTYPE hecv_type = {0};
-      OMX_INDEXTYPE index_type = (OMX_INDEXTYPE) OMX_IndexParamVideoHevc;
-    #else
-      OMX_VIDEO_PARAM_PROFILELEVELTYPE hecv_type = {0};
-      OMX_INDEXTYPE index_type = OMX_IndexParamVideoProfileLevelCurrent;
-    #endif
-      hecv_type.nSize = sizeof(hecv_type);
-      hecv_type.nPortIndex = (OMX_U32) PORT_INDEX_OUT;
-      err = OMX_GetParameter(s->handle, index_type,
-                             (OMX_PTR) &hecv_type);
-      assert(err == OMX_ErrorNone);
+    // setup HEVC
+  #ifndef QCOM2
+    OMX_VIDEO_PARAM_HEVCTYPE hecv_type = {0};
+    OMX_INDEXTYPE index_type = (OMX_INDEXTYPE) OMX_IndexParamVideoHevc;
+  #else
+    OMX_VIDEO_PARAM_PROFILELEVELTYPE hecv_type = {0};
+    OMX_INDEXTYPE index_type = OMX_IndexParamVideoProfileLevelCurrent;
+  #endif
+    hecv_type.nSize = sizeof(hecv_type);
+    hecv_type.nPortIndex = (OMX_U32) PORT_INDEX_OUT;
+    err = OMX_GetParameter(s->handle, index_type,
+                           (OMX_PTR) &hecv_type);
+    assert(err == OMX_ErrorNone);
 
-      hecv_type.eProfile = OMX_VIDEO_HEVCProfileMain;
-      hecv_type.eLevel = OMX_VIDEO_HEVCHighTierLevel5;
+    hecv_type.eProfile = OMX_VIDEO_HEVCProfileMain;
+    hecv_type.eLevel = OMX_VIDEO_HEVCHighTierLevel5;
 
-      err = OMX_SetParameter(s->handle, index_type,
-                             (OMX_PTR) &hecv_type);
-      assert(err == OMX_ErrorNone);
+    err = OMX_SetParameter(s->handle, index_type,
+                           (OMX_PTR) &hecv_type);
+    assert(err == OMX_ErrorNone);
   } else {
     // setup h264
     OMX_VIDEO_PARAM_AVCTYPE avc = { 0 };
@@ -702,7 +697,9 @@ void encoder_destroy(EncoderState *s) {
   while (queue_try_pop(&s->free_in)); 
   while (queue_try_pop(&s->done_out)); 
 
-  free(s->codec_config);
+  if (s->codec_config) {
+    free(s->codec_config);
+  }
 
   if (s->downscale) {
     free(s->y_ptr2);
