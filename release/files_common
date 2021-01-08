@@ -407,6 +407,8 @@ selfdrive/modeld/transforms/transform.h
 selfdrive/modeld/transforms/transform.cl
 
 selfdrive/modeld/thneed/thneed.*
+selfdrive/modeld/thneed/serialize.cc
+selfdrive/modeld/thneed/compile.cc
 selfdrive/modeld/thneed/include/*
 
 selfdrive/modeld/runners/snpemodel.cc
