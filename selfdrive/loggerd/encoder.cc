@@ -279,23 +279,23 @@ void encoder_init(EncoderState *s, const char* filename, int width, int height, 
   if (h265) {
     // setup HEVC
   #ifndef QCOM2
-    OMX_VIDEO_PARAM_HEVCTYPE hecv_type = {0};
+    OMX_VIDEO_PARAM_HEVCTYPE hevc_type = {0};
     OMX_INDEXTYPE index_type = (OMX_INDEXTYPE) OMX_IndexParamVideoHevc;
   #else
-    OMX_VIDEO_PARAM_PROFILELEVELTYPE hecv_type = {0};
+    OMX_VIDEO_PARAM_PROFILELEVELTYPE hevc_type = {0};
     OMX_INDEXTYPE index_type = OMX_IndexParamVideoProfileLevelCurrent;
   #endif
-    hecv_type.nSize = sizeof(hecv_type);
-    hecv_type.nPortIndex = (OMX_U32) PORT_INDEX_OUT;
+    hevc_type.nSize = sizeof(hevc_type);
+    hevc_type.nPortIndex = (OMX_U32) PORT_INDEX_OUT;
     err = OMX_GetParameter(s->handle, index_type,
-                           (OMX_PTR) &hecv_type);
+                           (OMX_PTR) &hevc_type);
     assert(err == OMX_ErrorNone);
 
-    hecv_type.eProfile = OMX_VIDEO_HEVCProfileMain;
-    hecv_type.eLevel = OMX_VIDEO_HEVCHighTierLevel5;
+    hevc_type.eProfile = OMX_VIDEO_HEVCProfileMain;
+    hevc_type.eLevel = OMX_VIDEO_HEVCHighTierLevel5;
 
     err = OMX_SetParameter(s->handle, index_type,
-                           (OMX_PTR) &hecv_type);
+                           (OMX_PTR) &hevc_type);
     assert(err == OMX_ErrorNone);
   } else {
     // setup h264
