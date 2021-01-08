@@ -237,7 +237,7 @@ static void update_status(UIState *s) {
   }
 
   // Handle onroad/offroad transition
- if (!s->started && s->status != STATUS_OFFROAD) {
+  if (!s->started && s->status != STATUS_OFFROAD) {
     s->status = STATUS_OFFROAD;
     s->active_app = cereal::UiLayoutState::App::HOME;
     s->scene.sidebar_collapsed = false;
