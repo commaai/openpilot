@@ -1,4 +1,5 @@
 #include <thread>
+#include <chrono>
 #include <stdio.h>
 #include <assert.h>
 #include <unistd.h>
@@ -47,17 +48,24 @@ static cl_program build_debayer_program(cl_device_id device_id, cl_context conte
 #endif
 }
 
-void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s, int frame_cnt,
-                     const char *name, release_cb relase_callback) {
+void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s, VisionIpcServer * v, int frame_cnt, VisionStreamType rgb_type, VisionStreamType yuv_type, release_cb release_callback) {
+  vipc_server = v;
+  this->rgb_type = rgb_type;
+  this->yuv_type = yuv_type;
+  this->release_callback = release_callback;
+
   const CameraInfo *ci = &s->ci;
   camera_state = s;
   frame_buf_count = frame_cnt;
-  frame_size = ci->frame_height * ci->frame_stride;
 
+  // RAW frame
+  frame_size = ci->frame_height * ci->frame_stride;
   camera_bufs = std::make_unique<VisionBuf[]>(frame_buf_count);
   camera_bufs_metadata = std::make_unique<FrameMetadata[]>(frame_buf_count);
+
   for (int i = 0; i < frame_buf_count; i++) {
-    camera_bufs[i] = visionbuf_allocate_cl(frame_size, device_id, context);
+    camera_bufs[i].allocate(frame_size);
+    camera_bufs[i].init_cl(device_id, context);
   }
 
   rgb_width = ci->frame_width;
@@ -79,29 +87,10 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
   }};
   yuv_transform = ci->bayer ? transform_scale_buffer(transform, db_s) : transform;
 
-  for (int i = 0; i < UI_BUF_COUNT; i++) {
-    VisionImg img = visionimg_alloc_rgb24(device_id, context, rgb_width, rgb_height, &rgb_bufs[i]);
-    if (i == 0) {
-      rgb_stride = img.stride;
-    }
-  }
-  tbuffer_init(&ui_tb, UI_BUF_COUNT, name);
-  tbuffer_init2(&camera_tb, frame_buf_count, "frame", relase_callback, s);
+  vipc_server->create_buffers(rgb_type, UI_BUF_COUNT, true, rgb_width, rgb_height);
+  rgb_stride = vipc_server->get_buffer(rgb_type)->stride;
 
-  // yuv back for recording and orbd
-  pool_init(&yuv_pool, YUV_COUNT);
-  yuv_tb = pool_get_tbuffer(&yuv_pool);
-
-  yuv_width = rgb_width;
-  yuv_height = rgb_height;
-  yuv_buf_size = rgb_width * rgb_height * 3 / 2;
-
-  for (int i = 0; i < YUV_COUNT; i++) {
-    yuv_ion[i] = visionbuf_allocate_cl(yuv_buf_size, device_id, context);
-    yuv_bufs[i].y = (uint8_t *)yuv_ion[i].addr;
-    yuv_bufs[i].u = yuv_bufs[i].y + (yuv_width * yuv_height);
-    yuv_bufs[i].v = yuv_bufs[i].u + (yuv_width / 2 * yuv_height / 2);
-  }
+  vipc_server->create_buffers(yuv_type, YUV_COUNT, false, rgb_width, rgb_height);
 
   if (ci->bayer) {
     cl_program prg_debayer = build_debayer_program(device_id, context, ci, this);
@@ -109,7 +98,7 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
     CL_CHECK(clReleaseProgram(prg_debayer));
   }
 
-  rgb_to_yuv_init(&rgb_to_yuv_state, context, device_id, yuv_width, yuv_height, rgb_stride);
+  rgb_to_yuv_init(&rgb_to_yuv_state, context, device_id, rgb_width, rgb_height, rgb_stride);
 
 #ifdef __APPLE__
   q = CL_CHECK_ERR(clCreateCommandQueue(context, device_id, 0, &err));
@@ -121,14 +110,9 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
 
 CameraBuf::~CameraBuf() {
   for (int i = 0; i < frame_buf_count; i++) {
-    visionbuf_free(&camera_bufs[i]);
+    camera_bufs[i].free();
   }
-  for (auto &buf : rgb_bufs) {
-    visionbuf_free(&buf);
-  }
-  for (auto &buf : yuv_ion) {
-    visionbuf_free(&buf);
-  }
+
   rgb_to_yuv_destroy(&rgb_to_yuv_state);
 
   if (krnl_debayer) {
@@ -138,24 +122,28 @@ CameraBuf::~CameraBuf() {
 }
 
 bool CameraBuf::acquire() {
-  const int buf_idx = tbuffer_acquire(&camera_tb);
-  if (buf_idx < 0) {
-    return false;
-  }
-  const FrameMetadata &frame_data = camera_bufs_metadata[buf_idx];
+  std::unique_lock<std::mutex> lk(frame_queue_mutex);
+
+  bool got_frame = frame_queue_cv.wait_for(lk, std::chrono::milliseconds(1), [this]{ return !frame_queue.empty(); });
+  if (!got_frame) return false;
+
+  cur_buf_idx = frame_queue.front();
+  frame_queue.pop();
+  lk.unlock();
+
+  const FrameMetadata &frame_data = camera_bufs_metadata[cur_buf_idx];
   if (frame_data.frame_id == -1) {
     LOGE("no frame data? wtf");
-    tbuffer_release(&camera_tb, buf_idx);
     return false;
   }
 
   cur_frame_data = frame_data;
 
-  cur_rgb_idx = tbuffer_select(&ui_tb);
-  cur_rgb_buf = &rgb_bufs[cur_rgb_idx];
+  cur_rgb_buf = vipc_server->get_buffer(rgb_type);
+  cur_rgb_idx = cur_rgb_buf->idx;
 
   cl_event debayer_event;
-  cl_mem camrabuf_cl = camera_bufs[buf_idx].buf_cl;
+  cl_mem camrabuf_cl = camera_bufs[cur_buf_idx].buf_cl;
   if (camera_state->ci.bayer) {
     CL_CHECK(clSetKernelArg(krnl_debayer, 0, sizeof(cl_mem), &camrabuf_cl));
     CL_CHECK(clSetKernelArg(krnl_debayer, 1, sizeof(cl_mem), &cur_rgb_buf->buf_cl));
@@ -186,30 +174,37 @@ bool CameraBuf::acquire() {
   clWaitForEvents(1, &debayer_event);
   CL_CHECK(clReleaseEvent(debayer_event));
 
-  tbuffer_release(&camera_tb, buf_idx);
-  visionbuf_sync(cur_rgb_buf, VISIONBUF_SYNC_FROM_DEVICE);
-
-  cur_yuv_idx = pool_select(&yuv_pool);
+  cur_yuv_buf = vipc_server->get_buffer(yuv_type);
+  cur_yuv_idx = cur_yuv_buf->idx;
   yuv_metas[cur_yuv_idx] = frame_data;
-  rgb_to_yuv_queue(&rgb_to_yuv_state, q, cur_rgb_buf->buf_cl, yuv_ion[cur_yuv_idx].buf_cl);
-  visionbuf_sync(&yuv_ion[cur_yuv_idx], VISIONBUF_SYNC_FROM_DEVICE);
+  rgb_to_yuv_queue(&rgb_to_yuv_state, q, cur_rgb_buf->buf_cl, cur_yuv_buf->buf_cl);
 
-  // keep another reference around till were done processing
-  pool_acquire(&yuv_pool, cur_yuv_idx);
-  pool_push(&yuv_pool, cur_yuv_idx);
+  VisionIpcBufExtra extra = {
+                        frame_data.frame_id,
+                        frame_data.timestamp_sof,
+                        frame_data.timestamp_eof,
+  };
+  vipc_server->send(cur_rgb_buf, &extra);
+  vipc_server->send(cur_yuv_buf, &extra);
 
   return true;
 }
 
 void CameraBuf::release() {
-  tbuffer_dispatch(&ui_tb, cur_rgb_idx);
-  pool_release(&yuv_pool, cur_yuv_idx);
+  if (release_callback){
+    release_callback((void*)camera_state, cur_buf_idx);
+  }
 }
 
 void CameraBuf::stop() {
-  tbuffer_stop(&ui_tb);
-  tbuffer_stop(&camera_tb);
-  pool_stop(&yuv_pool);
+}
+
+void CameraBuf::queue(size_t buf_idx){
+  {
+    std::lock_guard<std::mutex> lk(frame_queue_mutex);
+    frame_queue.push(buf_idx);
+  }
+  frame_queue_cv.notify_one();
 }
 
 // common functions
@@ -319,7 +314,7 @@ void set_exposure_target(CameraState *c, const uint8_t *pix_ptr, int x_start, in
   uint32_t lum_binning[256] = {0};
   for (int y = y_start; y < y_end; y += y_skip) {
     for (int x = x_start; x < x_end; x += x_skip) {
-      uint8_t lum = pix_ptr[(y * b->yuv_width) + x];
+      uint8_t lum = pix_ptr[(y * b->rgb_width) + x];
       lum_binning[lum]++;
     }
   }
@@ -412,7 +407,7 @@ void common_camera_process_front(SubMaster *sm, PubMaster *pm, CameraState *c, i
     y_max = 1148;
     skip = 4;
 #endif
-    set_exposure_target(c, (const uint8_t *)b->yuv_bufs[b->cur_yuv_idx].y, x_min, x_max, 2, y_min, y_max, skip);
+    set_exposure_target(c, (const uint8_t *)b->cur_yuv_buf->y, x_min, x_max, 2, y_min, y_max, skip);
   }
 
   MessageBuilder msg;

@@ -184,18 +184,13 @@ selfdrive/debug/*.py
 selfdrive/common/SConscript
 selfdrive/common/version.h
 
-selfdrive/common/buffering.[c,h]
 selfdrive/common/framebuffer.h
 selfdrive/common/framebuffer.cc
 selfdrive/common/glutil.[c,h]
 selfdrive/common/touch.[c,h]
-selfdrive/common/visionipc.[c,h]
-selfdrive/common/visionbuf_cl.c
-selfdrive/common/ipc.[c,h]
 selfdrive/common/swaglog.h
 selfdrive/common/swaglog.cc
 selfdrive/common/util.[c,h]
-selfdrive/common/efd.[c,h]
 selfdrive/common/cqueue.[c,h]
 selfdrive/common/clutil.cc
 selfdrive/common/clutil.h
@@ -208,8 +203,6 @@ selfdrive/common/mat.h
 selfdrive/common/timing.h
 selfdrive/common/utilpp.h
 
-selfdrive/common/visionbuf.h
-selfdrive/common/visionbuf_ion.c
 selfdrive/common/visionimg.cc
 selfdrive/common/visionimg.h
 
@@ -307,8 +300,8 @@ selfdrive/proclogd/SConscript
 selfdrive/proclogd/proclogd.cc
 
 selfdrive/loggerd/SConscript
-selfdrive/loggerd/encoder.h
 selfdrive/loggerd/encoder.cc
+selfdrive/loggerd/encoder.h
 selfdrive/loggerd/frame_logger.h
 selfdrive/loggerd/logger.cc
 selfdrive/loggerd/logger.h
@@ -488,6 +481,8 @@ cereal/messaging/messaging_pyx.pyx
 cereal/messaging/msgq.cc
 cereal/messaging/msgq.hpp
 cereal/messaging/socketmaster.cc
+cereal/visionipc/*.cc
+cereal/visionipc/*.h
 
 panda/.gitignore
 panda/__init__.py

@@ -34,7 +34,7 @@ typedef struct MultiCameraState {
   PubMaster *pm;
 } MultiCameraState;
 
-void cameras_init(MultiCameraState *s, cl_device_id device_id, cl_context ctx);
+void cameras_init(VisionIpcServer * v, MultiCameraState *s, cl_device_id device_id, cl_context ctx);
 void cameras_open(MultiCameraState *s);
 void cameras_run(MultiCameraState *s);
 void cameras_close(MultiCameraState *s);

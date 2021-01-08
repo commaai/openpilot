@@ -23,41 +23,29 @@ int write_param_float(float param, const char* param_name, bool persistent_param
   return Params(persistent_param).write_db_value(param_name, s, size < sizeof(s) ? size : sizeof(s));
 }
 
-void ui_init(UIState *s) {
-  s->sm = new SubMaster({"modelV2", "controlsState", "uiLayoutState", "liveCalibration", "radarState", "thermal", "frame",
-                         "health", "carParams", "ubloxGnss", "driverState", "dMonitoringState", "sensorEvents"});
-
-  s->started = false;
-  s->status = STATUS_OFFROAD;
-  s->scene.satelliteCount = -1;
-
-  s->fb = framebuffer_init("ui", 0, true, &s->fb_w, &s->fb_h);
-  assert(s->fb);
-
-  ui_nvg_init(s);
-}
 
 static void ui_init_vision(UIState *s) {
   // Invisible until we receive a calibration message.
   s->scene.world_objects_visible = false;
 
-  for (int i = 0; i < UI_BUF_COUNT; i++) {
+  for (int i = 0; i < s->vipc_client->num_buffers; i++) {
     if (s->khr[i] != 0) {
       visionimg_destroy_gl(s->khr[i], s->priv_hnds[i]);
       glDeleteTextures(1, &s->frame_texs[i]);
     }
+    VisionBuf * buf = &s->vipc_client->buffers[i];
 
     VisionImg img = {
-      .fd = s->stream.bufs[i].fd,
+      .fd = buf->fd,
       .format = VISIONIMG_FORMAT_RGB24,
-      .width = s->stream.bufs_info.width,
-      .height = s->stream.bufs_info.height,
-      .stride = s->stream.bufs_info.stride,
+      .width = (int)buf->width,
+      .height = (int)buf->height,
+      .stride = (int)buf->stride,
       .bpp = 3,
-      .size = s->stream.bufs_info.buf_len,
+      .size = buf->len,
     };
 #ifndef QCOM
-    s->priv_hnds[i] = s->stream.bufs[i].addr;
+    s->priv_hnds[i] = buf->addr;
 #endif
     s->frame_texs[i] = visionimg_to_gl(&img, &s->khr[i], &s->priv_hnds[i]);
 
@@ -73,36 +61,24 @@ static void ui_init_vision(UIState *s) {
   assert(glGetError() == GL_NO_ERROR);
 }
 
-void ui_update_vision(UIState *s) {
 
-  if (!s->vision_connected && s->started) {
-    const VisionStreamType type = s->scene.frontview ? VISION_STREAM_RGB_FRONT : VISION_STREAM_RGB_BACK;
-    int err = visionstream_init(&s->stream, type, true, nullptr);
-    if (err == 0) {
-      ui_init_vision(s);
-      s->vision_connected = true;
-    }
-  }
+void ui_init(UIState *s) {
+  s->sm = new SubMaster({"modelV2", "controlsState", "uiLayoutState", "liveCalibration", "radarState", "thermal", "frame",
+                         "health", "carParams", "ubloxGnss", "driverState", "dMonitoringState", "sensorEvents"});
 
-  if (s->vision_connected) {
-    if (!s->started) goto destroy;
+  s->started = false;
+  s->status = STATUS_OFFROAD;
+  s->scene.satelliteCount = -1;
+  read_param(&s->is_metric, "IsMetric");
 
-    // poll for a new frame
-    struct pollfd fds[1] = {{
-      .fd = s->stream.ipc_fd,
-      .events = POLLOUT,
-    }};
-    int ret = poll(fds, 1, 100);
-    if (ret > 0) {
-      if (!visionstream_get(&s->stream, nullptr)) goto destroy;
-    }
-  }
+  s->fb = framebuffer_init("ui", 0, true, &s->fb_w, &s->fb_h);
+  assert(s->fb);
 
-  return;
+  ui_nvg_init(s);
 
-destroy:
-  visionstream_destroy(&s->stream);
-  s->vision_connected = false;
+  s->last_frame = nullptr;
+  s->vipc_client = new VisionIpcClient("camerad", VISION_STREAM_RGB_BACK, true);
+
 }
 
 template <class T>
@@ -280,6 +256,21 @@ static void ui_read_params(UIState *s) {
   }
 }
 
+void ui_update_vision(UIState *s) {
+  if (!s->vipc_client->connected && s->started) {
+    if (s->vipc_client->connect(false)){
+      ui_init_vision(s);
+    }
+  }
+
+  if (s->vipc_client->connected){
+    VisionBuf * buf = s->vipc_client->recv();
+    if (buf != nullptr){
+      s->last_frame = buf;
+    }
+  }
+}
+
 void ui_update(UIState *s) {
   ui_read_params(s);
   update_sockets(s);
@@ -291,6 +282,7 @@ void ui_update(UIState *s) {
     s->active_app = cereal::UiLayoutState::App::HOME;
     s->scene.sidebar_collapsed = false;
     s->sound->stop();
+    s->vipc_client->connected = false;
   } else if (s->started && s->status == STATUS_OFFROAD) {
     s->status = STATUS_DISENGAGED;
     s->started_frame = s->sm->frame;
