@@ -207,7 +207,6 @@ void encoder_thread(int cam_idx) {
   pthread_mutex_lock(&s.rotate_lock);
   int my_idx = s.num_encoder;
   s.num_encoder += 1;
-  rotate_state.enabled = true;
   pthread_mutex_unlock(&s.rotate_lock);
 
   int cnt = 0;
@@ -566,13 +565,16 @@ int main(int argc, char** argv) {
   std::vector<std::thread> encoder_threads;
 #ifndef DISABLE_ENCODER
   encoder_threads.push_back(std::thread(encoder_thread, LOG_CAMERA_ID_FCAMERA));
+  s.rotate_state[LOG_CAMERA_ID_FCAMERA].enabled = true;
 
   if (record_front) {
     encoder_threads.push_back(std::thread(encoder_thread, LOG_CAMERA_ID_DCAMERA));
+    s.rotate_state[LOG_CAMERA_ID_DCAMERA].enabled = true;
   }
 
 #ifdef QCOM2
   encoder_threads.push_back(std::thread(encoder_thread, LOG_CAMERA_ID_ECAMERA));
+  s.rotate_state[LOG_CAMERA_ID_ECAMERA].enabled = true;
 #endif
 #endif
 
