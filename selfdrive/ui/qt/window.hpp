@@ -2,6 +2,7 @@
 
 #include <QWidget>
 #include <QStackedLayout>
+#include <QEvent>
 
 #include "offroad/settings.hpp"
 #include "offroad/onboarding.hpp"
