@@ -7,7 +7,6 @@
 #include <mutex>
 #include <thread>
 #include <condition_variable>
-#include "common/buffering.h"
 #include "common/mat.h"
 #include "common/swaglog.h"
 #include "common/queue.h"
