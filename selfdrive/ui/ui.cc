@@ -58,7 +58,7 @@ void ui_init(UIState *s) {
   s->vipc_client = s->vipc_client_rear;
 }
 
-static int get_path_length_idx(const cereal::ModelDataV2::XYZTData::Reader &line, float path_height) {
+static int get_path_length_idx(const cereal::ModelDataV2::XYZTData::Reader &line, const float path_height) {
   const auto line_x = line.getX();
   int max_idx = 0;
   for (int i = 0; i < TRAJECTORY_SIZE && line_x[i] < path_height; ++i) {

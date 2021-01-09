@@ -110,11 +110,10 @@ static void draw_lead(UIState *s, const UIScene::LeadData &lead) {
   float speedBuff = 10.;
   float leadBuff = 40.;
   if (lead.d_rel < leadBuff) {
-    fillAlpha = 255*(1.0-(lead.d_rel/leadBuff));
+    fillAlpha = 255 * (1.0 - (lead.d_rel / leadBuff));
     if (lead.v_rel < 0) {
-      fillAlpha += 255*(-1*(lead.v_rel/speedBuff));
+      fillAlpha = std::min(fillAlpha + 255 * (std::abs(lead.v_rel) / speedBuff), 255.0f);
     }
-    fillAlpha = (int)(fmin(fillAlpha, 255));
   }
   int sz = std::clamp((25 * 30) / (d_rel / 3 + 30), 15.f, 30.f) * zoom;
   draw_chevron(s, lead.vd.x, lead.vd.y, sz, nvgRGBA(201, 34, 49, fillAlpha), COLOR_YELLOW);
