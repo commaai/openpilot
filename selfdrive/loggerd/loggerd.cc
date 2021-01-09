@@ -249,24 +249,23 @@ void encoder_thread(int cam_idx) {
 
         // rotate the encoder if the logger is on a newer segment
         if (rotate_state.should_rotate) {
+          LOGW("camera %d rotate encoder to %s", cam_idx, s.segment_path);
+
           if (!rotate_state.initialized) {
             rotate_state.last_rotate_frame_id = extra.frame_id - 1;
             rotate_state.initialized = true;
           }
 
-          LOGW("camera %d rotate encoder to %s", cam_idx, s.segment_path);
           if (lh) {
             lh_close(lh);
           }
           lh = logger_get_handle(&s.logger);
 
           pthread_mutex_lock(&s.rotate_lock);
-          printf("rotating\n");
           for (auto &e : encoders) {
             encoder_close(e);
             encoder_open(e, s.segment_path, s.rotate_segment);
           }
-          printf("rotate done\n");
           pthread_mutex_unlock(&s.rotate_lock);
           rotate_state.finish_rotate();
         }
