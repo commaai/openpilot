@@ -6,7 +6,141 @@ using namespace json11;
 
 extern map<cl_program, string> g_program_source;
 
-Json Thneed::to_json(bool save_binaries) {
+void Thneed::load(const char *filename) {
+  printf("Thneed::load: loading from %s\n", filename);
+
+  FILE *f = fopen(filename, "rb");
+  fseek(f, 0L, SEEK_END);
+  int sz = ftell(f);
+  fseek(f, 0L, SEEK_SET);
+  char *buf = (char*)malloc(sz);
+  fread(buf, 1, sz, f);
+  fclose(f);
+
+  int jsz = *(int *)buf;
+  string jj(buf+4, jsz);
+  string err;
+  Json jdat = Json::parse(jj, err);
+
+  map<cl_mem, cl_mem> real_mem;
+  real_mem[NULL] = NULL;
+
+  int ptr = 4+jsz;
+  for (auto &obj : jdat["objects"].array_items()) {
+    auto mobj = obj.object_items();
+    int sz = mobj["size"].int_value();
+    cl_mem clbuf = NULL;
+
+    if (mobj["buffer_id"].string_value().size() > 0) {
+      // image buffer must already be allocated
+      clbuf = real_mem[*(cl_mem*)(mobj["buffer_id"].string_value().data())];
+    } else {
+      clbuf = clCreateBuffer(context, CL_MEM_READ_WRITE, sz, NULL, NULL);
+    }
+    assert(clbuf != NULL);
+
+    if (mobj["needs_load"].bool_value()) {
+      //printf("loading %p %d @ 0x%X\n", clbuf, sz, ptr);
+      cl_int ret = clEnqueueWriteBuffer(command_queue, clbuf, CL_FALSE, 0, sz, &buf[ptr], 0, NULL, NULL);
+      assert(ret == CL_SUCCESS);
+      ptr += sz;
+    }
+
+    if (mobj["arg_type"] == "image2d_t" || mobj["arg_type"] == "image1d_t") {
+      cl_image_desc desc = {0};
+      desc.image_type = (mobj["arg_type"] == "image2d_t") ? CL_MEM_OBJECT_IMAGE2D : CL_MEM_OBJECT_IMAGE1D_BUFFER;
+      desc.image_width = mobj["width"].int_value();
+      desc.image_height = mobj["height"].int_value();
+      desc.image_row_pitch = mobj["row_pitch"].int_value();
+      desc.buffer = clbuf;
+
+      cl_image_format format;
+      format.image_channel_order = CL_RGBA;
+      format.image_channel_data_type = CL_HALF_FLOAT;
+
+      clbuf = clCreateImage(context, CL_MEM_READ_WRITE, &format, &desc, NULL, NULL);
+      assert(clbuf != NULL);
+    }
+
+    real_mem[*(cl_mem*)(mobj["id"].string_value().data())] = clbuf;
+  }
+
+  map<string, cl_program> g_programs;
+  for (auto &obj : jdat["programs"].object_items()) {
+    const char *srcs[1];
+    srcs[0] = (const char *)obj.second.string_value().c_str();
+    size_t length = obj.second.string_value().size();
+
+    if (record & THNEED_DEBUG) printf("building %s with size %zu\n", obj.first.c_str(), length);
+
+    cl_program program = clCreateProgramWithSource(context, 1, srcs, &length, NULL);
+    int err = clBuildProgram(program, 1, &device_id, "", NULL, NULL);
+    if (err != 0) {
+      printf("got err %d\n", err);
+      size_t length;
+      char buffer[2048];
+      clGetProgramBuildInfo(program, device_id, CL_PROGRAM_BUILD_LOG, sizeof(buffer), buffer, &length);
+      buffer[length] = '\0';
+      printf("%s\n", buffer);
+    }
+    assert(err == 0);
+
+    g_programs[obj.first] = program;
+  }
+
+  for (auto &obj : jdat["binaries"].array_items()) {
+    string name = obj["name"].string_value();
+    size_t length = obj["length"].int_value();
+    const unsigned char *srcs[1];
+    srcs[0] = (const unsigned char *)&buf[ptr];
+    ptr += length;
+
+    if (record & THNEED_DEBUG) printf("binary %s with size %zu\n", name.c_str(), length);
+
+    cl_int err;
+    cl_program program = clCreateProgramWithBinary(context, 1, &device_id, &length, srcs, NULL, &err);
+    assert(program != NULL && err == CL_SUCCESS);
+    err = clBuildProgram(program, 1, &device_id, "", NULL, NULL);
+    assert(err == CL_SUCCESS);
+
+    g_programs[name] = program;
+  }
+
+  for (auto &obj : jdat["kernels"].array_items()) {
+    auto gws = obj["global_work_size"];
+    auto lws = obj["local_work_size"];
+    auto kk = shared_ptr<CLQueuedKernel>(new CLQueuedKernel(this));
+
+    kk->name = obj["name"].string_value();
+    kk->program = g_programs[kk->name];
+    kk->work_dim = obj["work_dim"].int_value();
+    for (int i = 0; i < kk->work_dim; i++) {
+      kk->global_work_size[i] = gws[i].int_value();
+      kk->local_work_size[i] = lws[i].int_value();
+    }
+    kk->num_args = obj["num_args"].int_value();
+    for (int i = 0; i < kk->num_args; i++) {
+      string arg = obj["args"].array_items()[i].string_value();
+      int arg_size = obj["args_size"].array_items()[i].int_value();
+      kk->args_size.push_back(arg_size);
+      if (arg_size == 8) {
+        cl_mem val = *(cl_mem*)(arg.data());
+        val = real_mem[val];
+        kk->args.push_back(string((char*)&val, sizeof(val)));
+      } else {
+        kk->args.push_back(arg);
+      }
+    }
+    kq.push_back(kk);
+  }
+
+  free(buf);
+  clFinish(command_queue);
+}
+
+void Thneed::save(const char *filename, bool save_binaries) {
+  printf("Thneed::save: saving to %s\n", filename);
+
   // get kernels
   std::vector<Json> kernels;
   std::set<string> saved_objects;
@@ -93,152 +227,8 @@ Json Thneed::to_json(bool save_binaries) {
     }
   }
 
-  return Json::object({
-    {"kernels", kernels},
-    {"objects", objects},
-    {"programs", programs},
-    {"binaries", binaries},
-  });
-}
-
-void Thneed::load(const char *filename) {
-  printf("Thneed::load: loading from %s\n", filename);
-
-  FILE *f = fopen(filename, "rb");
-  fseek(f, 0L, SEEK_END);
-  int sz = ftell(f);
-  fseek(f, 0L, SEEK_SET);
-  char *buf = (char*)malloc(sz);
-  fread(buf, 1, sz, f);
-  fclose(f);
-
-  int jsz = *(int *)buf;
-  string jj(buf+4, jsz);
-  string err;
-  Json jdat = Json::parse(jj, err);
-
-  map<cl_mem, cl_mem> real_mem;
-  real_mem[NULL] = NULL;
-
-  int ptr = 4+jsz;
-  for (auto &obj : jdat["objects"].array_items()) {
-    auto mobj = obj.object_items();
-    int sz = mobj["size"].int_value();
-    cl_mem clbuf = NULL;
-
-    if (mobj["buffer_id"].string_value().size() > 0) {
-      // image buffer must already be allocated
-      clbuf = real_mem[*(cl_mem*)(mobj["buffer_id"].string_value().data())];
-    } else {
-      clbuf = clCreateBuffer(context, CL_MEM_READ_WRITE, sz, NULL, NULL);
-    }
-    assert(clbuf != NULL);
-
-    if (mobj["needs_load"].bool_value()) {
-      //printf("loading %p %d @ 0x%X\n", clbuf, sz, ptr);
-      cl_int ret = clEnqueueWriteBuffer(command_queue, clbuf, CL_FALSE, 0, sz, &buf[ptr], 0, NULL, NULL);
-      assert(ret == CL_SUCCESS);
-      ptr += sz;
-    }
-
-    if (mobj["arg_type"] == "image2d_t" || mobj["arg_type"] == "image1d_t") {
-      cl_image_desc desc = {0};
-      desc.image_type = (mobj["arg_type"] == "image2d_t") ? CL_MEM_OBJECT_IMAGE2D : CL_MEM_OBJECT_IMAGE1D_BUFFER;
-      desc.image_width = mobj["width"].int_value();
-      desc.image_height = mobj["height"].int_value();
-      desc.image_row_pitch = mobj["row_pitch"].int_value();
-      desc.buffer = clbuf;
-
-      cl_image_format format;
-      format.image_channel_order = CL_RGBA;
-      format.image_channel_data_type = CL_HALF_FLOAT;
-
-      clbuf = clCreateImage(context, CL_MEM_READ_WRITE, &format, &desc, NULL, NULL);
-      assert(clbuf != NULL);
-    }
-
-    real_mem[*(cl_mem*)(mobj["id"].string_value().data())] = clbuf;
-  }
-
-  free(buf);
-  clFinish(command_queue);
-
-  map<string, cl_program> g_programs;
-  for (auto &obj : jdat["programs"].object_items()) {
-    const char *srcs[1];
-    srcs[0] = (const char *)obj.second.string_value().c_str();
-    size_t length = obj.second.string_value().size();
-
-    if (record & THNEED_DEBUG) printf("building %s with size %zu\n", obj.first.c_str(), length);
-
-    cl_program program = clCreateProgramWithSource(context, 1, srcs, &length, NULL);
-    int err = clBuildProgram(program, 1, &device_id, "", NULL, NULL);
-    if (err != 0) {
-      printf("got err %d\n", err);
-      size_t length;
-      char buffer[2048];
-      clGetProgramBuildInfo(program, device_id, CL_PROGRAM_BUILD_LOG, sizeof(buffer), buffer, &length);
-      buffer[length] = '\0';
-      printf("%s\n", buffer);
-    }
-    assert(err == 0);
-
-    g_programs[obj.first] = program;
-  }
-
-  for (auto &obj : jdat["binaries"].object_items()) {
-    const unsigned char *srcs[1];
-    srcs[0] = (const unsigned char *)obj.second.string_value().c_str();
-    size_t length = obj.second.string_value().size();
-
-    if (record & THNEED_DEBUG) printf("binary %s with size %zu\n", obj.first.c_str(), length);
-
-    cl_int err;
-    cl_program program = clCreateProgramWithBinary(context, 1, &device_id, &length, srcs, NULL, &err);
-    assert(program != NULL && err == CL_SUCCESS);
-    err = clBuildProgram(program, 1, &device_id, "", NULL, NULL);
-    assert(err == CL_SUCCESS);
-
-    g_programs[obj.first] = program;
-  }
-
-  for (auto &obj : jdat["kernels"].array_items()) {
-    auto gws = obj["global_work_size"];
-    auto lws = obj["local_work_size"];
-    auto kk = shared_ptr<CLQueuedKernel>(new CLQueuedKernel(this));
-
-    kk->name = obj["name"].string_value();
-    kk->program = g_programs[kk->name];
-    kk->work_dim = obj["work_dim"].int_value();
-    for (int i = 0; i < kk->work_dim; i++) {
-      kk->global_work_size[i] = gws[i].int_value();
-      kk->local_work_size[i] = lws[i].int_value();
-    }
-    kk->num_args = obj["num_args"].int_value();
-    for (int i = 0; i < kk->num_args; i++) {
-      string arg = obj["args"].array_items()[i].string_value();
-      int arg_size = obj["args_size"].array_items()[i].int_value();
-      kk->args_size.push_back(arg_size);
-      if (arg_size == 8) {
-        cl_mem val = *(cl_mem*)(arg.data());
-        val = real_mem[val];
-        kk->args.push_back(string((char*)&val, sizeof(val)));
-      } else {
-        kk->args.push_back(arg);
-      }
-    }
-    kq.push_back(kk);
-  }
-
-}
-
-void Thneed::save(const char *filename, bool save_binaries) {
-  printf("Thneed::save: saving to %s\n", filename);
-
-  Json jdat = to_json(save_binaries);
-
   vector<string> saved_buffers;
-  for (auto &obj : jdat["objects"].array_items()) {
+  for (auto &obj : objects) {
     auto mobj = obj.object_items();
     cl_mem val = *(cl_mem*)(mobj["id"].string_value().data());
     int sz = mobj["size"].int_value();
@@ -264,6 +254,19 @@ void Thneed::save(const char *filename, bool save_binaries) {
       free(buf);
     }
   }
+
+  std::vector<Json> jbinaries;
+  for (auto &obj : binaries) {
+    jbinaries.push_back(Json::object({{"name", obj.first}, {"length", (int)obj.second.size()}}));
+    saved_buffers.push_back(obj.second);
+  }
+
+  Json jdat = Json::object({
+    {"kernels", kernels},
+    {"objects", objects},
+    {"programs", programs},
+    {"binaries", jbinaries},
+  });
 
   string str = jdat.dump();
   int jsz = str.length();

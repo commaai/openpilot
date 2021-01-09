@@ -108,6 +108,5 @@ class Thneed {
     void save(const char *filename, bool save_binaries=false);
   private:
     void clinit();
-    json11::Json to_json(bool save_binaries);
 };
 
