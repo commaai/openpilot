@@ -354,11 +354,11 @@ static void ui_draw_vision_alert(UIState *s) {
   const bool longAlert1 = alert.text1.length() > 15;
 
   NVGcolor color = bg_colors[s->status];
-  color.a *= get_alert_alpha(scene->alert_blinking_rate);
-  int alr_s = alert_size_map[scene->alert_size];
+  color.a *= get_alert_alpha(alert.blinking_rate);
+  int alr_s = alert_size_map[alert.size];
 
-  const int alr_x = scene->viz_rect.x - bdr_s;
-  const int alr_w = scene->viz_rect.w + (bdr_s * 2);
+  const int alr_x = s->scene.viz_rect.x - bdr_s;
+  const int alr_w = s->scene.viz_rect.w + (bdr_s * 2);
   const int alr_h = alr_s + bdr_s;
   const int alr_y = s->fb_h - alr_h;
 

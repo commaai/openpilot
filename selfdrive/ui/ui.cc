@@ -196,6 +196,22 @@ static void ui_read_params(UIState *s) {
   }
 }
 
+void ui_update_vision(UIState *s) {
+  if (!s->vipc_client->connected && s->started) {
+    if (s->vipc_client->connect(false)){
+      ui_init_vision(s);
+    }
+  }
+
+  if (s->vipc_client->connected){
+    VisionBuf * buf = s->vipc_client->recv();
+    if (buf != nullptr){
+      s->last_frame = buf;
+    }
+  }
+}
+
+
 static const std::map<std::string, UIScene::Alert> ui_alerts = {
   {"ControlsUnseen",
     {"ControlsUnseen", "openpilot Unavailable", "Waiting for controls to start",
@@ -275,7 +291,7 @@ static void update_status(UIState *s) {
     s->started_frame = s->sm->frame;
 
     s->active_app = cereal::UiLayoutState::App::NONE;
-    s->scene.uilayout_sidebarcollapsed = true;
+    s->scene.sidebar_collapsed = true;
     s->scene.alert.size = cereal::ControlsState::AlertSize::NONE;
   } else {
     // Handle alert status

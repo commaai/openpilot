@@ -114,14 +114,6 @@ typedef struct UIScene {
   // responsive layout
   Rect viz_rect;
 
-<<<<<<< HEAD
-  std::string alert_text1;
-  std::string alert_text2;
-  std::string alert_type;
-  float alert_blinking_rate;
-  cereal::ControlsState::AlertSize alert_size;
-
-=======
   struct Alert {
     std::string type, text1, text2;
     cereal::ControlsState::AlertSize size;
@@ -130,7 +122,6 @@ typedef struct UIScene {
     float blinking_rate = 0.;
   } alert;
  
->>>>>>> add struct Alert
   cereal::HealthData::HwType hwType;
   int satelliteCount;
   NetStatus athenaStatus;
@@ -199,13 +190,6 @@ typedef struct UIState {
   bool longitudinal_control;
   uint64_t started_frame;
 
-<<<<<<< HEAD
-=======
-  track_vertices_data track_vertices;
-  line_vertices_data lane_line_vertices[4];
-  line_vertices_data road_edge_vertices[2];
-
->>>>>>> add struct Alert
   Rect video_rect;
 } UIState;
 
