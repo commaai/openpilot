@@ -41,6 +41,20 @@ static inline auto get_yuv_buf(std::vector<uint8_t> &buf, const int width, int h
   return std::make_tuple(y, u, v);
 }
 
+static void crop_yuv(const uint8_t *raw_y, const int width, const int height, const int crop_x, const int crop_y,
+          const int crop_width, const int crop_height, uint8_t *out_y, uint8_t *out_u, uint8_t *out_v) {
+  const uint8_t *raw_u = raw_y + (width * height);
+  const uint8_t *raw_v = raw_u + ((width / 2) * (height / 2));
+  const int offset_y = crop_x + crop_y * width;
+  const int offset_u = crop_x / 2 + (crop_y / 2) * (width / 2);
+  for (int i = 0; i < crop_height / 2; ++i) {
+    memcpy(out_y + i * crop_width, raw_y + offset_y + i * width, crop_width);
+    memcpy(out_y + (i + 1) * crop_width, raw_y + offset_y + (i + 1) * width, crop_width);
+    memcpy(out_u + i * crop_width / 2, raw_u + offset_u + i * width / 2, crop_width / 2);
+    memcpy(out_v + i * crop_width / 2, raw_v + offset_u + i * width / 2, crop_width / 2);
+  }
+}
+
 DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState *s, const uint8_t *raw_buf, const int width, const int height) {
 #ifndef QCOM2
   const int cropped_width = height/2;

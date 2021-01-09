@@ -48,7 +48,7 @@ int main(int argc, char **argv) {
       }
 
       double t1 = millis_since_boot();
-      DMonitoringResult res = dmonitoring_eval_frame(&dmonitoringmodel, buf->addr, buf->width, buf->height);
+      DMonitoringResult res = dmonitoring_eval_frame(&dmonitoringmodel, (const uint8_t*)buf->addr, buf->width, buf->height);
       double t2 = millis_since_boot();
 
       // send dm packet
