@@ -351,7 +351,6 @@ static void ui_draw_vision_alert(UIState *s) {
       {cereal::ControlsState::AlertSize::FULL, s->fb_h}};
 
   const UIScene::Alert &alert = s->scene.alert;
-  const bool longAlert1 = alert.text1.length() > 15;
 
   NVGcolor color = bg_colors[s->status];
   color.a *= get_alert_alpha(alert.blinking_rate);
@@ -377,6 +376,7 @@ static void ui_draw_vision_alert(UIState *s) {
     ui_draw_text(s->vg, alr_x+alr_w/2, alr_y+alr_h/2-45, alert.text1.c_str(), 48*2.5, COLOR_WHITE, s->font_sans_bold);
     ui_draw_text(s->vg, alr_x+alr_w/2, alr_y+alr_h/2+75, alert.text2.c_str(), 36*2.5, COLOR_WHITE, s->font_sans_regular);
   } else if (alert.size == cereal::ControlsState::AlertSize::FULL) {
+    const bool longAlert1 = alert.text1.length() > 15;
     nvgFontSize(s->vg, (longAlert1?72:96)*2.5);
     nvgFontFaceId(s->vg, s->font_sans_bold);
     nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
