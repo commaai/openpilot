@@ -27,7 +27,7 @@ int main(int argc, char* argv[]) {
   mdl.execute(input, 0);
 
   // save model
-  mdl.thneed->save(argv[2]);
+  mdl.thneed->save(argv[2], true);
   return 0;
 }
 

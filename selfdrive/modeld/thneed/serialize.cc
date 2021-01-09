@@ -6,12 +6,13 @@ using namespace json11;
 
 extern map<cl_program, string> g_program_source;
 
-Json Thneed::to_json() {
+Json Thneed::to_json(bool save_binaries) {
   // get kernels
   std::vector<Json> kernels;
   std::set<string> saved_objects;
   std::vector<Json> objects;
   std::map<string, string> programs;
+  std::map<string, string> binaries;
 
   for (auto &k : kq) {
     kernels.push_back(k->to_json());
@@ -74,22 +75,34 @@ Json Thneed::to_json() {
       i++;
     }
 
-    programs[k->name] = g_program_source[k->program];
+    if (save_binaries) {
+      int err;
+      size_t binary_size = 0;
+      err = clGetProgramInfo(k->program, CL_PROGRAM_BINARY_SIZES, sizeof(binary_size), &binary_size, NULL);
+      assert(err == 0);
+      assert(binary_size > 0);
+      string sv(binary_size, '\x00');
+
+      uint8_t* bufs[1] = { (uint8_t*)sv.data(), };
+      err = clGetProgramInfo(k->program, CL_PROGRAM_BINARIES, sizeof(bufs), &bufs, NULL);
+      assert(err == 0);
+
+      binaries[k->name] = sv;
+    } else {
+      programs[k->name] = g_program_source[k->program];
+    }
   }
 
   return Json::object({
     {"kernels", kernels},
     {"objects", objects},
     {"programs", programs},
+    {"binaries", binaries},
   });
 }
 
 void Thneed::load(const char *filename) {
   printf("Thneed::load: loading from %s\n", filename);
-
-  // don't record while loading
-  int last_record = record;
-  record = 0;
 
   FILE *f = fopen(filename, "rb");
   fseek(f, 0L, SEEK_END);
@@ -152,11 +165,11 @@ void Thneed::load(const char *filename) {
 
   map<string, cl_program> g_programs;
   for (auto &obj : jdat["programs"].object_items()) {
-    if (record & THNEED_DEBUG) printf("building %s\n", obj.first.c_str());
-
     const char *srcs[1];
     srcs[0] = (const char *)obj.second.string_value().c_str();
     size_t length = obj.second.string_value().size();
+
+    if (record & THNEED_DEBUG) printf("building %s with size %zu\n", obj.first.c_str(), length);
 
     cl_program program = clCreateProgramWithSource(context, 1, srcs, &length, NULL);
     int err = clBuildProgram(program, 1, &device_id, "", NULL, NULL);
@@ -169,6 +182,22 @@ void Thneed::load(const char *filename) {
       printf("%s\n", buffer);
     }
     assert(err == 0);
+
+    g_programs[obj.first] = program;
+  }
+
+  for (auto &obj : jdat["binaries"].object_items()) {
+    const unsigned char *srcs[1];
+    srcs[0] = (const unsigned char *)obj.second.string_value().c_str();
+    size_t length = obj.second.string_value().size();
+
+    if (record & THNEED_DEBUG) printf("binary %s with size %zu\n", obj.first.c_str(), length);
+
+    cl_int err;
+    cl_program program = clCreateProgramWithBinary(context, 1, &device_id, &length, srcs, NULL, &err);
+    assert(program != NULL && err == CL_SUCCESS);
+    err = clBuildProgram(program, 1, &device_id, "", NULL, NULL);
+    assert(err == CL_SUCCESS);
 
     g_programs[obj.first] = program;
   }
@@ -201,14 +230,12 @@ void Thneed::load(const char *filename) {
     kq.push_back(kk);
   }
 
-  // restore recording
-  record = last_record;
 }
 
-void Thneed::save(const char *filename) {
+void Thneed::save(const char *filename, bool save_binaries) {
   printf("Thneed::save: saving to %s\n", filename);
 
-  Json jdat = to_json();
+  Json jdat = to_json(save_binaries);
 
   vector<string> saved_buffers;
   for (auto &obj : jdat["objects"].array_items()) {
