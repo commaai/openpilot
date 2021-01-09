@@ -187,9 +187,7 @@ struct LoggerdState {
 
   // video encders
   int num_encoder;
-  std::atomic<int> rotate_seq_id;
-  std::atomic<int> should_close;
-  std::atomic<int> finish_close;
+  std::atomic<int> rotate_idx;
   RotateState rotate_state[LOG_CAMERA_ID_MAX-1];
 };
 LoggerdState s;
@@ -199,21 +197,19 @@ void encoder_thread(int cam_idx) {
   assert(cam_idx < LOG_CAMERA_ID_MAX-1);
 
   LogCameraInfo &cam_info = cameras_logged[cam_idx];
-  set_thread_name(cam_info.filename);
-
   RotateState &rotate_state = s.rotate_state[cam_idx];
 
-  std::vector<EncoderState*> encoders;
+  set_thread_name(cam_info.filename);
 
   pthread_mutex_lock(&s.rotate_lock);
-  int my_idx = s.num_encoder;
   s.num_encoder += 1;
   pthread_mutex_unlock(&s.rotate_lock);
 
   int cnt = 0;
   LoggerHandle *lh = NULL;
-
+  std::vector<EncoderState*> encoders;
   VisionIpcClient vipc_client = VisionIpcClient("camerad", cam_info.stream_type, false);
+
   while (!do_exit) {
     if (!vipc_client.connect(false)){
       util::sleep_for(100);
@@ -269,49 +265,28 @@ void encoder_thread(int cam_idx) {
             rotate_state.initialized = true;
           }
 
-          // poll for our turn
-          while (s.rotate_seq_id != my_idx && !do_exit) util::sleep_for(10);
-
-          LOGW("camera %d rotate encoder to %s.", cam_idx, s.segment_path);
-          for (auto &e : encoders) {
-            encoder_rotate(e, s.rotate_segment);
-          }
-
-          s.rotate_seq_id = (my_idx + 1) % s.num_encoder;
+          LOGW("camera %d rotate encoder to %s", cam_idx, s.segment_path);
           if (lh) {
             lh_close(lh);
           }
           lh = logger_get_handle(&s.logger);
 
           pthread_mutex_lock(&s.rotate_lock);
-          s.should_close += 1;
-          pthread_mutex_unlock(&s.rotate_lock);
-
-          while(s.should_close > 0 && s.should_close < s.num_encoder && !do_exit) util::sleep_for(10);
-
-          pthread_mutex_lock(&s.rotate_lock);
-          s.should_close = s.should_close == s.num_encoder ? 1 - s.num_encoder : s.should_close + 1;
-
+          printf("rotating\n");
           for (auto &e : encoders) {
             encoder_close(e);
-            encoder_open(e, s.segment_path);
+            encoder_open(e, s.segment_path, s.rotate_segment);
           }
-
-          s.finish_close += 1;
+          printf("rotate done\n");
           pthread_mutex_unlock(&s.rotate_lock);
-
-          // wait for all to finish
-          while(s.finish_close > 0 && s.finish_close < s.num_encoder && !do_exit) util::sleep_for(10);
-          s.finish_close = 0;
-
           rotate_state.finish_rotate();
         }
       }
 
       rotate_state.setStreamFrameId(extra.frame_id);
 
+      // encode a frame
       {
-        // encode hevc
         int out_segment = -1;
         int out_id = encoder_encode_frame(encoders[0],
                                           buf->y, buf->u, buf->v,
@@ -356,7 +331,6 @@ void encoder_thread(int cam_idx) {
       lh_close(lh);
       lh = NULL;
     }
-
   }
 
   LOG("encoder destroy");
@@ -549,9 +523,6 @@ int main(int argc, char** argv) {
   }
 
   // init encoders
-  s.rotate_seq_id = 0;
-  s.should_close = 0;
-  s.finish_close = 0;
   s.num_encoder = 0;
   pthread_mutex_init(&s.rotate_lock, NULL);
 

@@ -537,11 +537,12 @@ int encoder_encode_frame(EncoderState *s,
   return ret;
 }
 
-void encoder_open(EncoderState *s, const char* path) {
+void encoder_open(EncoderState *s, const char* path, int segment) {
   int err;
 
   pthread_mutex_lock(&s->lock);
 
+  s->segment = segment;
   snprintf(s->vid_path, sizeof(s->vid_path), "%s/%s", path, s->filename);
   LOGD("encoder_open %s remuxing:%d", s->vid_path, s->remuxing);
 
@@ -634,12 +635,6 @@ void encoder_close(EncoderState *s) {
   }
   s->open = false;
 
-  pthread_mutex_unlock(&s->lock);
-}
-
-void encoder_rotate(EncoderState *s, int new_segment) {
-  pthread_mutex_lock(&s->lock);
-  s->segment = new_segment;
   pthread_mutex_unlock(&s->lock);
 }
 
