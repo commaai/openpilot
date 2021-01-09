@@ -27,7 +27,8 @@ int main(int argc, char* argv[]) {
   mdl.execute(input, 0);
 
   // save model
-  mdl.thneed->save(argv[2], true);
+  bool save_binaries = (argc > 3) && (strcmp(argv[3], "--binary") == 0);
+  mdl.thneed->save(argv[2], save_binaries);
   return 0;
 }
 
