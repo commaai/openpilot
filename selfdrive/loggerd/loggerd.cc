@@ -184,10 +184,6 @@ struct LoggerdState {
   char segment_path[4096];
   int rotate_segment;
   pthread_mutex_t rotate_lock;
-
-  // video encders
-  int num_encoder;
-  std::atomic<int> rotate_idx;
   RotateState rotate_state[LOG_CAMERA_ID_MAX-1];
 };
 LoggerdState s;
@@ -200,10 +196,6 @@ void encoder_thread(int cam_idx) {
   RotateState &rotate_state = s.rotate_state[cam_idx];
 
   set_thread_name(cam_info.filename);
-
-  pthread_mutex_lock(&s.rotate_lock);
-  s.num_encoder += 1;
-  pthread_mutex_unlock(&s.rotate_lock);
 
   int cnt = 0;
   LoggerHandle *lh = NULL;
@@ -243,10 +235,7 @@ void encoder_thread(int cam_idx) {
         continue;
       }
 
-      //uint64_t current_time = nanos_since_boot();
-      //uint64_t diff = current_time - extra.timestamp_eof;
-      //double msdiff = (double) diff / 1000000.0;
-      // printf("logger latency to tsEof: %f\n", msdiff);
+      //printf("logger latency to tsEof: %f\n", (double)(nanos_since_boot() - extra.timestamp_eof) / 1000000.0);
 
       // all the rotation stuff
       {
@@ -523,7 +512,6 @@ int main(int argc, char** argv) {
   }
 
   // init encoders
-  s.num_encoder = 0;
   pthread_mutex_init(&s.rotate_lock, NULL);
 
   // TODO: create these threads dynamically on frame packet presence
@@ -610,7 +598,7 @@ int main(int argc, char** argv) {
     bool new_segment = s.logger.part == -1;
     if (s.logger.part > -1) {
       double tms = millis_since_boot();
-      if (tms - last_camera_seen_tms <= NO_CAMERA_PATIENCE && s.num_encoder > 0) {
+      if (tms - last_camera_seen_tms <= NO_CAMERA_PATIENCE && encoder_threads.size() > 0) {
         new_segment = true;
         for (auto &r : s.rotate_state) {
           // this *should* be redundant on tici since all camera frames are synced
