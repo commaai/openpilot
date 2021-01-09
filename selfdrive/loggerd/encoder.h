@@ -28,12 +28,6 @@ struct EncoderState {
   int counter;
   int segment;
 
-  bool rotating;
-  bool closing;
-  bool opening;
-  char next_path[1024];
-  int next_segment;
-
   const char* filename;
   FILE *of;
 
@@ -73,6 +67,6 @@ int encoder_encode_frame(EncoderState *s,
                          int in_width, int in_height,
                          int *frame_segment, VisionIpcBufExtra *extra);
 void encoder_open(EncoderState *s, const char* path);
-void encoder_rotate(EncoderState *s, const char* new_path, int new_segment);
+void encoder_rotate(EncoderState *s, int new_segment);
 void encoder_close(EncoderState *s);
 void encoder_destroy(EncoderState *s);

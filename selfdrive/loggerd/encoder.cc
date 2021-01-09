@@ -456,11 +456,6 @@ int encoder_encode_frame(EncoderState *s,
   int err;
   pthread_mutex_lock(&s->lock);
 
-  if (s->opening) {
-    encoder_open(s, s->next_path);
-    s->opening = false;
-  }
-
   if (!s->open) {
     pthread_mutex_unlock(&s->lock);
     return -1;
@@ -536,11 +531,6 @@ int encoder_encode_frame(EncoderState *s,
 
   if (frame_segment) {
     *frame_segment = s->segment;
-  }
-
-  if (s->closing) {
-    encoder_close(s);
-    s->closing = false;
   }
 
   pthread_mutex_unlock(&s->lock);
@@ -647,20 +637,9 @@ void encoder_close(EncoderState *s) {
   pthread_mutex_unlock(&s->lock);
 }
 
-void encoder_rotate(EncoderState *s, const char* new_path, int new_segment) {
+void encoder_rotate(EncoderState *s, int new_segment) {
   pthread_mutex_lock(&s->lock);
-  snprintf(s->next_path, sizeof(s->next_path), "%s", new_path);
-  s->next_segment = new_segment;
-  if (s->open) {
-    if (s->next_segment == -1) {
-      s->closing = true;
-    } else {
-      s->rotating = true;
-    }
-  } else {
-    s->segment = s->next_segment;
-    s->opening = true;
-  }
+  s->segment = new_segment;
   pthread_mutex_unlock(&s->lock);
 }
 

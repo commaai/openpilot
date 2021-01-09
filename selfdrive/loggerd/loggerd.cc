@@ -274,7 +274,7 @@ void encoder_thread(int cam_idx) {
 
           LOGW("camera %d rotate encoder to %s.", cam_idx, s.segment_path);
           for (auto &e : encoders) {
-            encoder_rotate(e, s.segment_path, s.rotate_segment);
+            encoder_rotate(e, s.rotate_segment);
           }
 
           s.rotate_seq_id = (my_idx + 1) % s.num_encoder;
@@ -294,9 +294,7 @@ void encoder_thread(int cam_idx) {
 
           for (auto &e : encoders) {
             encoder_close(e);
-            encoder_open(e, e->next_path);
-            e->segment = e->next_segment;
-            e->rotating = false;
+            encoder_open(e, s.segment_path);
           }
 
           s.finish_close += 1;
