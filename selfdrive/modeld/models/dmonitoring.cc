@@ -41,12 +41,7 @@ static inline auto get_yuv_buf(std::vector<uint8_t> &buf, const int width, int h
   return std::make_tuple(y, u, v);
 }
 
-DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_buf, int width, int height) {
-  uint8_t *raw_buf = (uint8_t*) stream_buf;
-  uint8_t *raw_y_buf = raw_buf;
-  uint8_t *raw_u_buf = raw_y_buf + (width * height);
-  uint8_t *raw_v_buf = raw_u_buf + ((width/2) * (height/2));
-
+DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState *s, const uint8_t *raw_buf, const int width, const int height) {
 #ifndef QCOM2
   const int cropped_width = height/2;
   const int cropped_height = height;
@@ -72,20 +67,14 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
 
   auto [cropped_y_buf, cropped_u_buf, cropped_v_buf] = get_yuv_buf(s->cropped_buf, cropped_width, cropped_height);
   if (!s->is_rhd) {
-    for (int r = 0; r < cropped_height/2; r++) {
-      memcpy(cropped_y_buf + 2*r*cropped_width, raw_y_buf + (2*r + global_y_offset + crop_y_offset)*width + global_x_offset + crop_x_offset, cropped_width);
-      memcpy(cropped_y_buf + (2*r+1)*cropped_width, raw_y_buf + (2*r + global_y_offset + crop_y_offset + 1)*width + global_x_offset + crop_x_offset, cropped_width);
-      memcpy(cropped_u_buf + r*(cropped_width/2), raw_u_buf + (r + (global_y_offset + crop_y_offset)/2)*width/2 + (global_x_offset + crop_x_offset)/2, cropped_width/2);
-      memcpy(cropped_v_buf + r*(cropped_width/2), raw_v_buf + (r + (global_y_offset + crop_y_offset)/2)*width/2 + (global_x_offset + crop_x_offset)/2, cropped_width/2);
-    }
+    crop_yuv(raw_buf, width, height, global_x_offset + crop_x_offset, global_y_offset + crop_y_offset,
+         cropped_width, cropped_height, cropped_y_buf, cropped_u_buf, cropped_v_buf);
   } else {
-    auto [premirror_cropped_y_buf, premirror_cropped_u_buf, premirror_cropped_v_buf] = get_yuv_buf(s->premirror_cropped_buf, cropped_width, cropped_height);
-    for (int r = 0; r < cropped_height/2; r++) {
-      memcpy(premirror_cropped_y_buf + (2*r)*cropped_width, raw_y_buf + (2*r + global_y_offset + crop_y_offset)*width + global_x_offset, cropped_width);
-      memcpy(premirror_cropped_y_buf + (2*r+1)*cropped_width, raw_y_buf + (2*r + global_y_offset + crop_y_offset + 1)*width + global_x_offset, cropped_width);
-      memcpy(premirror_cropped_u_buf + r*(cropped_width/2), raw_u_buf + (r + (global_y_offset + crop_y_offset)/2)*width/2 + global_x_offset/2, cropped_width/2);
-      memcpy(premirror_cropped_v_buf + r*(cropped_width/2), raw_v_buf + (r + (global_y_offset + crop_y_offset)/2)*width/2 + global_x_offset/2, cropped_width/2);
-    }
+    uint8_t *premirror_cropped_y_buf = get_buffer(s->premirror_cropped_buf, cropped_width*cropped_height*3/2);
+    uint8_t *premirror_cropped_u_buf = premirror_cropped_y_buf + (cropped_width * cropped_height);
+    uint8_t *premirror_cropped_v_buf = premirror_cropped_u_buf + ((cropped_width/2) * (cropped_height/2));
+    crop_yuv(raw_buf, width, height, global_x_offset, global_y_offset + crop_y_offset,
+         cropped_width, cropped_height, premirror_cropped_y_buf, premirror_cropped_u_buf, premirror_cropped_v_buf);
     libyuv::I420Mirror(premirror_cropped_y_buf, cropped_width,
                        premirror_cropped_u_buf, cropped_width/2,
                        premirror_cropped_v_buf, cropped_width/2,
