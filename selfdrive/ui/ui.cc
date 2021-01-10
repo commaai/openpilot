@@ -113,7 +113,7 @@ static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
   int max_idx =  TRAJECTORY_SIZE - 1;
   if (scene.lead_data[0].getStatus()) {
     const float lead_d = scene.lead_data[0].getDRel() * 2.;
-    const float path_length = fmin(lead_d - fmin(lead_d * 0.35, 10.), MIN_DRAW_DISTANCE);
+    const float path_length = fmax((lead_d - fmin(lead_d * 0.35, 10.)), MIN_DRAW_DISTANCE);
     max_idx = get_path_length_idx(model.getPosition(), path_length);
   }
   update_line_data(s, model.getPosition(), 0.5, 1.22, &scene.track_vertices, max_idx);
