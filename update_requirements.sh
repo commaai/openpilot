@@ -34,8 +34,8 @@ function installing-system-requirements() {
             pacman -Syu --noconfirm iptables curl bc jq sed
         fi
         curl https://pyenv.run | bash
-        echo "export PYENV_ROOT=""$HOME":/.pyenv"" >> ~/.bashrc
-        echo "export PATH=""$PYENV_ROOT":/"$PYENV_ROOT"/shims/"$PATH""" >> ~/.bashrc
+        echo "export PYENV_ROOT=""$HOME":/.pyenv"" >>~/.bashrc
+        echo "export PATH=""$PYENV_ROOT":/"$PYENV_ROOT"/shims/"$PATH""" >>~/.bashrc
         exec "$SHELL"
     fi
 }
@@ -56,10 +56,14 @@ function install-pyenv() {
 install-pyenv
 
 function pip-stuff() {
-    pip install --upgrade pip
-    pipenv install --dev --deploy --system
-    pyenv rehash
-    pre-commit install
+    if [ -x "$(command -v pip)" ]; then
+        pip install --upgrade pip
+    elif [ -x "$(command -v pipenv)" ]; then
+        pipenv install --dev --deploy --system
+    elif [ -x "$(command -v pyenv)" ]; then
+        pyenv rehash
+        pre-commit install
+    fi
 }
 
 pip-stuff
