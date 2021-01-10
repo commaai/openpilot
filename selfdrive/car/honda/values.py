@@ -6,6 +6,16 @@ from selfdrive.car import dbc_dict
 Ecu = car.CarParams.Ecu
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
+class CarControllerParams():
+  def __init__(self, CP):
+      self.BRAKE_MAX = 1024//4
+      self.STEER_MAX = CP.lateralParams.torqueBP[-1]
+      # mirror of list (assuming first item is zero) for interp of signed request values
+      assert(CP.lateralParams.torqueBP[0] == 0)
+      assert(CP.lateralParams.torqueBP[0] == 0)
+      self.STEER_LOOKUP_BP = [v * -1 for v in CP.lateralParams.torqueBP][1:][::-1] + list(CP.lateralParams.torqueBP)
+      self.STEER_LOOKUP_V = [v * -1 for v in CP.lateralParams.torqueV][1:][::-1] + list(CP.lateralParams.torqueV)
+
 # Car button codes
 class CruiseButtons:
   RES_ACCEL = 4
@@ -441,7 +451,8 @@ FW_VERSIONS = {
       b'37805-5AN-AK20\x00\x00',
       b'37805-5AN-AR20\x00\x00',
       b'37805-5AN-CH20\x00\x00',
-      b'37805-5AN-L840\x00\x00',     
+      b'37805-5AN-E630\x00\x00',
+      b'37805-5AN-L840\x00\x00',
       b'37805-5AN-L940\x00\x00',
       b'37805-5AN-LF20\x00\x00',
       b'37805-5AN-LH20\x00\x00',
@@ -471,6 +482,7 @@ FW_VERSIONS = {
       b'28101-5CK-C130\x00\x00',
       b'28101-5CK-C140\x00\x00',
       b'28101-5CK-C150\x00\x00',
+      b'28101-5CK-G210\x00\x00',
       b'28101-5DJ-A610\x00\x00',
       b'28101-5DJ-A710\x00\x00',
       b'28101-5DV-E330\x00\x00',
@@ -491,6 +503,7 @@ FW_VERSIONS = {
       b'39990-TEZ-T020\x00\x00',
       b'39990-TGG-A020\x00\x00',
       b'39990-TGG-A120\x00\x00',
+      b'39990-TGN-E120\x00\x00',
       b'39990-TGL-E130\x00\x00',
     ],
     (Ecu.srs, 0x18da53f1, None): [
@@ -519,6 +532,7 @@ FW_VERSIONS = {
       b'78109-TGG-C220\x00\x00',
       b'78109-TGL-G120\x00\x00',
       b'78109-TGL-G130\x00\x00',
+      b'78109-TGG-G410\x00\x00',
     ],
     (Ecu.fwdRadar, 0x18dab0f1, None): [
       b'36802-TBA-A150\x00\x00',
@@ -526,6 +540,7 @@ FW_VERSIONS = {
       b'36802-TGG-A050\x00\x00',
       b'36802-TGG-A060\x00\x00',
       b'36802-TGG-A130\x00\x00',
+      b'36802-TGG-G040\x00\x00',
       b'36802-TGL-G040\x00\x00',
     ],
     (Ecu.fwdCamera, 0x18dab5f1, None): [
@@ -535,6 +550,7 @@ FW_VERSIONS = {
       b'36161-TGG-A060\x00\x00',
       b'36161-TGG-A080\x00\x00',
       b'36161-TGG-A120\x00\x00',
+      b'36161-TGG-G050\x00\x00',
       b'36161-TGL-G050\x00\x00',
       b'36161-TGL-G070\x00\x00',
     ],
@@ -1020,7 +1036,7 @@ FW_VERSIONS = {
     (Ecu.combinationMeter, 0x18da60f1, None): [
       b'78109-T3R-A120\x00\x00',
     ],
-  },  
+  },
 }
 
 DBC = {

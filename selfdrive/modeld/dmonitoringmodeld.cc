@@ -4,10 +4,10 @@
 #include <cassert>
 #include <sys/resource.h>
 
-#include "common/utilpp.h"
-#include "common/visionbuf.h"
-#include "common/visionipc.h"
+#include "visionbuf.h"
+#include "visionipc_client.h"
 #include "common/swaglog.h"
+#include "common/utilpp.h"
 
 #include "models/dmonitoring.h"
 
@@ -19,7 +19,6 @@
 ExitHandler do_exit;
 
 int main(int argc, char **argv) {
-  int err;
   setpriority(PRIO_PROCESS, 0, -15);
 
   PubMaster pm({"driverState"});
@@ -28,30 +27,28 @@ int main(int argc, char **argv) {
   DMonitoringModelState dmonitoringmodel;
   dmonitoring_init(&dmonitoringmodel);
 
-  // loop
-  VisionStream stream;
-  while (!do_exit) {
-    VisionStreamBufs buf_info;
-    err = visionstream_init(&stream, VISION_STREAM_YUV_FRONT, true, &buf_info);
-    if (err) {
-      printf("visionstream connect fail\n");
-      util::sleep_for(100);
+  VisionIpcClient vipc_client = VisionIpcClient("camerad", VISION_STREAM_YUV_FRONT, true);
+  while (!do_exit){
+    if (!vipc_client.connect(false)){
+      std::this_thread::sleep_for(std::chrono::milliseconds(100));
       continue;
     }
-    LOGW("connected with buffer size: %d", buf_info.buf_len);
+    break;
+  }
+
+  while (!do_exit) {
+    LOGW("connected with buffer size: %d", vipc_client.buffers[0].len);
 
     double last = 0;
     while (!do_exit) {
-      VIPCBuf *buf;
-      VIPCBufExtra extra;
-      buf = visionstream_get(&stream, &extra);
-      if (buf == NULL) {
-        printf("visionstream get failed\n");
-        break;
+      VisionIpcBufExtra extra = {0};
+      VisionBuf *buf = vipc_client.recv(&extra);
+      if (buf == nullptr){
+        continue;
       }
 
       double t1 = millis_since_boot();
-      DMonitoringResult res = dmonitoring_eval_frame(&dmonitoringmodel, buf->addr, buf_info.width, buf_info.height);
+      DMonitoringResult res = dmonitoring_eval_frame(&dmonitoringmodel, buf->addr, buf->width, buf->height);
       double t2 = millis_since_boot();
 
       // send dm packet
@@ -61,7 +58,6 @@ int main(int argc, char **argv) {
       LOGD("dmonitoring process: %.2fms, from last %.2fms", t2-t1, t1-last);
       last = t1;
     }
-    visionstream_destroy(&stream);
   }
 
   dmonitoring_free(&dmonitoringmodel);

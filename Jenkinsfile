@@ -114,7 +114,7 @@ pipeline {
                       ["build", "SCONS_CACHE=1 scons -j4"],
                       ["test athena", "nosetests -s selfdrive/athena/tests/test_athenad_old.py"],
                       ["test manager", "python selfdrive/test/test_manager.py"],
-                      //["test cpu usage", "cd selfdrive/test/ && ./test_cpu_usage.py"],
+                      ["test cpu usage", "cd selfdrive/test/ && ./test_cpu_usage.py"],
                       ["build devel", "cd release && CI_PUSH=${env.CI_PUSH} ./build_devel.sh"],
                       ["test car interfaces", "cd selfdrive/car/tests/ && ./test_car_interfaces.py"],
                       ["test spinner build", "cd selfdrive/ui/spinner && make clean && make"],
@@ -138,7 +138,8 @@ pipeline {
                       ["test sounds", "nosetests -s selfdrive/test/test_sounds.py"],
                       ["test boardd loopback", "nosetests -s selfdrive/boardd/tests/test_boardd_loopback.py"],
                       ["test loggerd", "CI=1 python selfdrive/loggerd/tests/test_loggerd.py"],
-                      //["test camerad", "CI=1 python selfdrive/camerad/test/test_camerad.py"], // wait for shelf refactor
+                      ["test encoder", "CI=1 python selfdrive/loggerd/tests/test_encoder.py"],
+                      //["test camerad", "CI=1 SEND_REAR=1 SEND_FRONT=1 python selfdrive/camerad/test/test_camerad.py"], // wait for shelf refactor
                       //["test updater", "python installer/updater/test_updater.py"],
                     ])
                   }

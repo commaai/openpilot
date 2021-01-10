@@ -25,6 +25,10 @@ AddOption('--compile_db',
           action='store_true',
           help='build clang compilation database')
 
+AddOption('--mpc-generate',
+          action='store_true',
+          help='regenerates the mpc sources')
+
 real_arch = arch = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()
 if platform.system() == "Darwin":
   arch = "Darwin"
@@ -167,6 +171,7 @@ env = Environment(
     "#selfdrive/ui",
     "#cereal",
     "#cereal/messaging",
+    "#cereal/visionipc",
     "#opendbc/can",
   ],
 
@@ -311,19 +316,20 @@ if SHARED:
 else:
   cereal = [File('#cereal/libcereal.a')]
   messaging = [File('#cereal/libmessaging.a')]
+  visionipc = [File('#cereal/libvisionipc.a')]
+
 Export('cereal', 'messaging')
 
 SConscript(['selfdrive/common/SConscript'])
-Import('_common', '_visionipc', '_gpucommon', '_gpu_libs')
+Import('_common', '_gpucommon', '_gpu_libs')
 
 if SHARED:
-  common, visionipc, gpucommon = abspath(common), abspath(visionipc), abspath(gpucommon)
+  common, gpucommon = abspath(common), abspath(gpucommon)
 else:
   common = [_common, 'json11']
-  visionipc = _visionipc
   gpucommon = [_gpucommon] + _gpu_libs
 
-Export('common', 'visionipc', 'gpucommon')
+Export('common', 'gpucommon', 'visionipc')
 
 
 # Build openpilot
