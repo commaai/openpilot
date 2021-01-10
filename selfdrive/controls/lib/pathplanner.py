@@ -176,7 +176,7 @@ class PathPlanner():
     self.cur_state = calc_states_after_delay(self.cur_state, v_ego, angle_steers - angle_offset, curvature_factor, VM.sR, CP.steerActuatorDelay)
 
     v_ego_mpc = max(v_ego, 5.0)  # avoid mpc roughness due to low speed
-    v_poly = [0, 0, 0, 0]
+    v_poly = np.zeros(4)
     v_poly[3] = v_ego_mpc
     assert len(v_poly) == 4
     assert len(y_pts) == MPC_N + 1
