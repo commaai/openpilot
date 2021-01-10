@@ -69,8 +69,8 @@ static void draw_chevron(UIState *s, float x_in, float y_in, float sz,
   car_space_to_full_frame(s, x_in, y_in, 0.0, &out);
 
   auto [x, y] = out;
-  sz = std::clamp((sz * 30) / (x_in / 3 + 30), 15.0f, 30.0f);
-  y = std::min(s->scene.viz_rect.bottom() - sz / 2,  y);
+  sz = std::clamp((sz * 30) / (x_in / 3 + 30), 15.0f, 30.0f) * zoom;
+  y = std::min(s->scene.viz_rect.bottom() - sz * .6,  y);
   x = std::clamp(x, 0.f, s->scene.viz_rect.right() - sz / 2);
 
   // glow
@@ -198,7 +198,6 @@ static void ui_draw_vision_lane_lines(UIState *s) {
 // Draw all world space objects.
 static void ui_draw_world(UIState *s) {
   const UIScene *scene = &s->scene;
-
   // Don't draw on top of sidebar
   nvgScissor(s->vg, scene->viz_rect.x, scene->viz_rect.y, scene->viz_rect.w, scene->viz_rect.h);
 
