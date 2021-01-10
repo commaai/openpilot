@@ -8,7 +8,7 @@
 #include <systemd/sd-journal.h>
 
 #include "common/timing.h"
-#include "common/utilpp.h"
+#include "common/util.h"
 #include "messaging.hpp"
 
 ExitHandler do_exit;

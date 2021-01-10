@@ -17,7 +17,6 @@
 #include "messaging.hpp"
 #include "common/timing.h"
 #include "common/util.h"
-#include "common/utilpp.h"
 
 ExitHandler do_exit;
 

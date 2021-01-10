@@ -59,6 +59,6 @@ int main(int argc, const char* argv[]) {
 }
 
 // BUILD:
-// $ gcc -I$HOME/one selfdrive/common/test_params.c selfdrive/common/params.c selfdrive/common/util.c -o ./test_params
+// $ gcc -I$HOME/one selfdrive/common/test_params.c selfdrive/common/params.c selfdrive/common/util.cc -o ./test_params
 // $ seq 0 100000 | xargs -P20 -I{} ./test_params write /data/params DongleId {} && sleep 0.1 &
 // $ while ./test_params read /data/params DongleId; do sleep 0.05; done
