@@ -4,7 +4,7 @@ from libcpp cimport bool
 cdef extern from "selfdrive/common/params.cc":
   pass
 
-cdef extern from "selfdrive/common/util.c":
+cdef extern from "selfdrive/common/util.cc":
   pass
 
 cdef extern from "selfdrive/common/params.h":

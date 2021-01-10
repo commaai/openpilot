@@ -18,7 +18,6 @@
 #include <string.h>
 
 #include "common/util.h"
-#include "common/utilpp.h"
 
 
 #if defined(QCOM) || defined(QCOM2)

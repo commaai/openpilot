@@ -6,7 +6,6 @@
 #include <pthread.h>
 
 #include "common/util.h"
-#include "common/utilpp.h"
 #include "common/timing.h"
 #include "common/clutil.h"
 #include "common/swaglog.h"

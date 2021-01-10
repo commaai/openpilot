@@ -6,7 +6,7 @@
 
 #include "common/visionipc.h"
 #include "common/timing.h"
-#include "common/utilpp.h"
+#include "common/util.h"
 #include "RawLogger.h"
 
 int main() {
