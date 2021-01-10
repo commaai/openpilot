@@ -144,33 +144,17 @@ PrimeAdWidget::PrimeAdWidget(QWidget *parent) : QWidget(parent){
   vlayout->addWidget(description);
 
   vlayout->addSpacing(50);
-
-  QLabel *feature1 = new QLabel("✓ REMOTE ACCESS");
-  feature1->setStyleSheet(R"(
-    font-size: 50px;
-  )");
-  feature1->setWordWrap(true);
-  vlayout->addWidget(feature1);
-
-  vlayout->addSpacing(10);
-
-  QLabel *feature2 = new QLabel("✓ 14 DAYS OF STORAGE");
-  feature2->setStyleSheet(R"(
-    font-size: 50px;
-  )");
-  feature2->setWordWrap(true);
-  vlayout->addWidget(feature2);
-
-  vlayout->addSpacing(10);
-
-  QLabel *feature3 = new QLabel("✓ DEVELOPER PERKS");
-  feature3->setStyleSheet(R"(
-    font-size: 50px;
-  )");
-  feature3->setWordWrap(true);
-  vlayout->addWidget(feature3);
-
-
+  
+  QVector<QString> features = {"✓ REMOTE ACCESS", "✓ 14 DAYS OF STORAGE", "✓ DEVELOPER PERKS"};
+  for (auto featureContent : features){
+    QLabel *feature = new QLabel(featureContent);
+    feature->setStyleSheet(R"(
+      font-size: 50px;
+    )");
+    
+    vlayout->addWidget(feature);
+    vlayout->addSpacing(10);
+  }
 
   setLayout(vlayout);
 }
