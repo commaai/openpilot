@@ -58,8 +58,9 @@ void PairingQRWidget::updateQrCode(QString text) {
       im.setPixel(x+1,y+1,qr.getModule(x, y) ? black : white );
     }
   }
-  qrCode->setPixmap( QPixmap::fromImage(im.scaled(256,256,Qt::KeepAspectRatio,Qt::FastTransformation),Qt::MonoOnly) );
+
   int approx500 = (500/(sz+2))*(sz+2);
+  qrCode->setPixmap( QPixmap::fromImage(im.scaled(approx500, approx500 ,Qt::KeepAspectRatio, Qt::FastTransformation), Qt::MonoOnly) );
   qrCode->setFixedSize(approx500, approx500);
 }
 
@@ -149,11 +150,11 @@ PrimeAdWidget::PrimeAdWidget(QWidget *parent) : QWidget(parent){
   for (auto featureContent : features){
     QLabel *feature = new QLabel(featureContent);
     feature->setStyleSheet(R"(
-      font-size: 50px;
+      font-size: 40px;
     )");
-    
+
     vlayout->addWidget(feature);
-    vlayout->addSpacing(10);
+    vlayout->addSpacing(15);
   }
 
   setLayout(vlayout);
