@@ -70,7 +70,7 @@ static void draw_chevron(UIState *s, float x_in, float y_in, float sz,
 
   auto [x, y] = out;
   sz = std::clamp((sz * 30) / (x_in / 3 + 30), 15.0f, 30.0f) * zoom;
-  y = std::min(s->scene.viz_rect.bottom() - sz * .6,  y);
+  y = std::fmin(s->scene.viz_rect.bottom() - sz * .6,  y);
   x = std::clamp(x, 0.f, s->scene.viz_rect.right() - sz / 2);
 
   // glow
@@ -636,9 +636,4 @@ void ui_nvg_init(UIState *s) {
 
   nvgCurrentTransform(s->vg, s->car_space_transform);
   nvgResetTransform(s->vg);
-
-  for(int i = 0; i < UI_BUF_COUNT; i++) {
-    s->khr[i] = 0;
-    s->priv_hnds[i] = NULL;
-  }
 }
