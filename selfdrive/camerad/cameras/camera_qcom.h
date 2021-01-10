@@ -15,7 +15,7 @@
 #include "visionbuf.h"
 
 #include "common/mat.h"
-#include "common/utilpp.h"
+#include "common/util.h"
 
 #include "camera_common.h"
 
