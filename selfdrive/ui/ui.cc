@@ -2,12 +2,8 @@
 #include <cmath>
 #include <stdlib.h>
 #include <stdbool.h>
-#include <signal.h>
 #include <unistd.h>
 #include <assert.h>
-#include <math.h>
-#include <poll.h>
-#include <sys/mman.h>
 
 #include "common/util.h"
 #include "common/swaglog.h"
