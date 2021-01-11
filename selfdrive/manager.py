@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from SConstruct import QCOM_QT
 import datetime
 import importlib
 import os
@@ -31,6 +30,7 @@ sys.path.append(os.path.join(BASEDIR, "pyextra"))
 TOTAL_SCONS_NODES = 1040
 MAX_BUILD_PROGRESS = 70
 WEBCAM = os.getenv("WEBCAM") is not None
+QCOM_QT = os.getenv("QCOM_QT") is not None
 PREBUILT = os.path.exists(os.path.join(BASEDIR, 'prebuilt'))
 
 
