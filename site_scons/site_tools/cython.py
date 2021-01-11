@@ -23,6 +23,7 @@ def pyx_scan(node, env, path, arg=None):
   # cdef extern from <file>
   files += cdef_import_re.findall(contents)
 
+  # Handle relative imports
   cur_dir = str(node.get_dir())
   files = [cur_dir + f if f.startswith('/') else f for f in files]
 
