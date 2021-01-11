@@ -5,6 +5,8 @@
 #include <QDateTime>
 #include <QString>
 #include <QDebug>
+#include <QNetworkReply>
+#include <QNetworkRequest>
 
 #include "api.hpp"
 #include "common/params.h"
@@ -80,4 +82,12 @@ QString CommaApi::create_jwt(QVector<QPair<QString, QJsonValue>> payloads, int e
 }
 QString CommaApi::create_jwt() {
   return create_jwt(*(new QVector<QPair<QString, QJsonValue>>()));
+}
+
+QNetworkReply* CommaApi::get(QNetworkRequest request){
+  if (networkAccessManager == NULL){
+    networkAccessManager = new QNetworkAccessManager();
+  }
+  // qDebug()<<"Moving request"<<request.url();
+  return networkAccessManager->get(request);
 }

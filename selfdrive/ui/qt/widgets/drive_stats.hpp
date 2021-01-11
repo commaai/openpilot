@@ -12,6 +12,7 @@ public:
   explicit DriveStats(QWidget *parent = 0);
 
 private:
+  QNetworkReply *reply;
   QStackedLayout *slayout;
-  void replyFinished(QNetworkReply *l);
+  void replyFinished();
 };

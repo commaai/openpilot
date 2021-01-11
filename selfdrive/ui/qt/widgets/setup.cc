@@ -92,30 +92,33 @@ PrimeUserWidget::PrimeUserWidget(QWidget *parent) : QWidget(parent){
   setLayout(mainLayout);
   QTimer *timer = new QTimer(this);
   QObject::connect(timer, SIGNAL(timeout()), this, SLOT(refresh()));
-  timer->start(100);
+  timer->start(1000);
   refresh();
 }
 
 void PrimeUserWidget::refresh(){
   QString token = CommaApi::create_jwt();
 
-  QNetworkAccessManager *manager = new QNetworkAccessManager(this);
-  connect(manager, &QNetworkAccessManager::finished, this, &PrimeUserWidget::replyFinished);
-
   QString dongle_id = QString::fromStdString(Params().get("DongleId"));
   QNetworkRequest request;
   request.setUrl(QUrl("https://api.commadotai.com/v1/devices/" + dongle_id + "/owner"));
   request.setRawHeader("Authorization", ("JWT "+token).toUtf8());
-  manager->get(request);
+  if(reply == NULL){
+    reply = CommaApi::get(request);
+    connect(reply, &QNetworkReply::finished, this, &PrimeUserWidget::replyFinished);
+  }else{
+    qDebug()<<"Too many requests, previous request was not yet removed";
+  }
 }
 
-void PrimeUserWidget::replyFinished(QNetworkReply *reply) {
+void PrimeUserWidget::replyFinished() {
   QString answer = reply->readAll();
   
   QJsonDocument doc = QJsonDocument::fromJson(answer.toUtf8());
   if (doc.isNull()) {
     qDebug() << "JSON Parse failed on getting username and points";
     reply->deleteLater();
+    reply = NULL;
     return;
   }
   QJsonObject json = doc.object();
@@ -128,6 +131,7 @@ void PrimeUserWidget::replyFinished(QNetworkReply *reply) {
   username->setText(username_str);
   points->setText(points_str);
   reply->deleteLater();
+  reply = NULL;
 }
 
 PrimeAdWidget::PrimeAdWidget(QWidget *parent) : QWidget(parent){
@@ -205,29 +209,32 @@ SetupWidget::SetupWidget(QWidget *parent) : QWidget(parent){
 
   QTimer *timer = new QTimer(this);
   QObject::connect(timer, SIGNAL(timeout()), this, SLOT(refresh()));
-  timer->start(100);
+  timer->start(1000);
 }
 
 void SetupWidget::refresh(){
   QString token = CommaApi::create_jwt();
 
-  QNetworkAccessManager *manager = new QNetworkAccessManager(this);
-  connect(manager, &QNetworkAccessManager::finished, this, &SetupWidget::replyFinished);
-
   QString dongle_id = QString::fromStdString(Params().get("DongleId"));
   QNetworkRequest request;
   request.setUrl(QUrl("https://api.commadotai.com/v1.1/devices/" + dongle_id + "/"));
   request.setRawHeader("Authorization", ("JWT "+token).toUtf8());
-  manager->get(request);
+  if(reply == NULL){
+    reply = CommaApi::get(request);
+    connect(reply, &QNetworkReply::finished, this, &SetupWidget::replyFinished);
+  }else{
+    qDebug()<<"Too many requests, previous request was not yet removed";
+  }
 }
 
-void SetupWidget::replyFinished(QNetworkReply *reply) {
+void SetupWidget::replyFinished() {
   QString answer = reply->readAll();
 
   QJsonDocument doc = QJsonDocument::fromJson(answer.toUtf8());
   if (doc.isNull()) {
     qDebug() << "JSON Parse failed on getting pairing and prime status";
     reply->deleteLater();
+    reply = NULL;
     return;
   }
   if(mainLayout->currentIndex() == 0){// If we are still on the blank widget
@@ -249,4 +256,5 @@ void SetupWidget::replyFinished(QNetworkReply *reply) {
     mainLayout->setCurrentIndex(3);
   }
   reply->deleteLater();
+  reply = NULL;// Make room for new reply
 }

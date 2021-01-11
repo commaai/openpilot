@@ -8,7 +8,6 @@
 #include <QStackedLayout>
 #include <QJsonDocument>
 #include <QJsonObject>
-#include <QNetworkAccessManager>
 #include <QNetworkRequest>
 
 #include "drive_stats.hpp"
@@ -46,7 +45,7 @@ QLayout *build_stat(QString name, int stat) {
   return layout;
 }
 
-void DriveStats::replyFinished(QNetworkReply *reply) {
+void DriveStats::replyFinished() {
   QString answer = reply->readAll();
   answer.chop(1);
 
@@ -54,6 +53,7 @@ void DriveStats::replyFinished(QNetworkReply *reply) {
   if (doc.isNull()) {
     qDebug() << "JSON Parse failed on getting past drives statistics";
     reply->deleteLater();
+    reply = NULL;
     return;
   }
 
@@ -85,6 +85,7 @@ void DriveStats::replyFinished(QNetworkReply *reply) {
   slayout->setCurrentIndex(1);
 
   reply->deleteLater();
+  reply = NULL;
 }
 
 DriveStats::DriveStats(QWidget *parent) : QWidget(parent) {
@@ -94,14 +95,15 @@ DriveStats::DriveStats(QWidget *parent) : QWidget(parent) {
   payloads.push_back(qMakePair(QString("identity"), dongle_id));
   QString token = CommaApi::create_jwt(payloads);
 
-  QNetworkAccessManager *manager = new QNetworkAccessManager(this);
-  connect(manager, &QNetworkAccessManager::finished, this, &DriveStats::replyFinished);
-
   QNetworkRequest request;
   request.setUrl(QUrl("https://api.commadotai.com/v1.1/devices/" + dongle_id + "/stats"));
   request.setRawHeader("Authorization", ("JWT "+token).toUtf8());
-
-  manager->get(request);
+  if(reply == NULL){
+    reply = CommaApi::get(request);
+    connect(reply, &QNetworkReply::finished, this, &DriveStats::replyFinished);
+  }else{
+    qDebug()<<"Too many requests, previous request was not yet removed";
+  }
 
   slayout = new QStackedLayout;
 

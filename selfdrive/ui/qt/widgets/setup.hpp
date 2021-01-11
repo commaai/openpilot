@@ -26,7 +26,8 @@ private:
   QVBoxLayout *mainLayout;
   QLabel *username;
   QLabel *points;
-  void replyFinished(QNetworkReply *l);
+  QNetworkReply *reply;
+  void replyFinished();
 
 private slots:
   void refresh();
@@ -48,7 +49,8 @@ public:
 
 private:
   QStackedLayout *mainLayout;
-  void replyFinished(QNetworkReply *l);
+  QNetworkReply* reply;
+  void replyFinished();
 
 private slots:
   void refresh();
