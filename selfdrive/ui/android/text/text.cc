@@ -67,7 +67,7 @@ assert(font >= 0);
     float y = 150;
 
     // Copy text
-    char * text = malloc(MAX_TEXT_SIZE);
+    char * text = (char *)malloc(MAX_TEXT_SIZE);
     strncpy(text, argv[1], MAX_TEXT_SIZE);
 
     float lineh;
