@@ -170,6 +170,9 @@ SetupWidget::SetupWidget(QWidget *parent) : QWidget(parent){
 
   mainLayout = new QStackedLayout;
   
+  QWidget *blankWidget = new QWidget;
+  mainLayout->addWidget(blankWidget);
+
   QVBoxLayout *qrLayout = new QVBoxLayout;
   
   QLabel *qrLabel = new QLabel("Pair with Comma Connect app!");
@@ -190,8 +193,6 @@ SetupWidget::SetupWidget(QWidget *parent) : QWidget(parent){
   PrimeUserWidget *primeUserWidget = new PrimeUserWidget();
   mainLayout->addWidget(primeUserWidget);
 
-  mainLayout->setCurrentIndex(1);
-
   background->setLayout(mainLayout);
   background->setStyleSheet(R"(
     .QFrame {
@@ -201,12 +202,6 @@ SetupWidget::SetupWidget(QWidget *parent) : QWidget(parent){
   )");
   backgroundLayout->addWidget(background);
   setLayout(backgroundLayout);
-
-  setStyleSheet(R"(
-    font-size: 90px;
-    font-weight: bold;
-    background-color: #292929;
-  )");
 
   QTimer *timer = new QTimer(this);
   QObject::connect(timer, SIGNAL(timeout()), this, SLOT(refresh()));
@@ -235,17 +230,24 @@ void SetupWidget::replyFinished(QNetworkReply *reply) {
     reply->deleteLater();
     return;
   }
-
+  if(mainLayout->currentIndex() == 0){// If we are still on the blank widget
+    setStyleSheet(R"(
+      font-size: 90px;
+      font-weight: bold;
+      background-color: #292929;
+    )");
+  }
+  qDebug()<<doc;
   QJsonObject json = doc.object();
   bool is_paired = json["is_paired"].toBool();
   bool is_prime = json["prime"].toBool();
 
   if (!is_paired) {
-    mainLayout->setCurrentIndex(0);
-  }else if (is_paired && !is_prime) {
     mainLayout->setCurrentIndex(1);
-  }else if (is_paired && is_prime) {
+  }else if (is_paired && !is_prime) {
     mainLayout->setCurrentIndex(2);
+  }else if (is_paired && is_prime) {
+    mainLayout->setCurrentIndex(3);
   }
   reply->deleteLater();
 }
