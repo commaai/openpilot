@@ -167,8 +167,8 @@ static void draw_frame(UIState *s) {
   }
 
   glUseProgram(s->gl_shader->prog);
-  glUniform1i(s->gl_shader->texture_loc, 0);
-  glUniformMatrix4fv(s->gl_shader->transform_loc, 1, GL_TRUE, out_mat->v);
+  glUniform1i(s->gl_shader->getUniformLocation("uTexture"), 0);
+  glUniformMatrix4fv(s->gl_shader->getUniformLocation("uTransform"), 1, GL_TRUE, out_mat->v);
 
   assert(glGetError() == GL_NO_ERROR);
   glEnableVertexAttribArray(0);

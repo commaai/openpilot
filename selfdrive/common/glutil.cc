@@ -46,12 +46,18 @@ GLShader::GLShader(const char *vert_src, const char *frag_src) {
     }
     assert(0);
   }
-  texture_loc = glGetUniformLocation(prog, "uTexture");
-  transform_loc = glGetUniformLocation(prog, "uTransform");
 }
 
 GLShader::~GLShader() {
   glDeleteProgram(prog);
   glDeleteShader(frag);
   glDeleteShader(vert);
+}
+
+GLuint GLShader::getUniformLocation(const char *name) {
+  auto it = uniform_loc_map.find(name);
+  if (it == uniform_loc_map.end()) {
+    it = uniform_loc_map.insert(it, {name, glGetUniformLocation(prog, name)});
+  }
+  return it->second;
 }
