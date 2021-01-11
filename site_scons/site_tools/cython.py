@@ -4,19 +4,31 @@ from SCons.Action import Action
 from SCons.Scanner import Scanner
 
 pyx_from_import_re = re.compile(r'^from\s+(\S+)\s+cimport', re.M)
-pyx_import_re = re.compile(r'^import\s+(\S+)', re.M)
+pyx_import_re = re.compile(r'^cimport\s+(\S+)', re.M)
 cdef_import_re = re.compile(r'^cdef extern from\s+.(\S+).:', re.M)
 
 
 def pyx_scan(node, env, path, arg=None):
   contents = node.get_text_contents()
+
+  # from <module> cimport ...
   matches = pyx_from_import_re.findall(contents)
+  # cimport <module>
   matches += pyx_import_re.findall(contents)
 
-  matches = [m.replace('.', '/') + '.pxd' for m in matches]
-  matches += cdef_import_re.findall(contents)
-  matches = [m for m in matches if env.File(m).exists()]
-  return env.File(matches)
+  # Modules can be either .pxd or .pyx files
+  files = [m.replace('.', '/') + '.pxd' for m in matches]
+  files += [m.replace('.', '/') + '.pyx' for m in matches]
+
+  # cdef extern from <file>
+  files += cdef_import_re.findall(contents)
+
+  cur_dir = str(node.get_dir())
+  files = [cur_dir + f if f.startswith('/') else f for f in files]
+
+  # Filter out non-existing files (probably system imports)
+  files = [f for f in files if env.File(f).exists()]
+  return env.File(files)
 
 
 pyxscanner = Scanner(function=pyx_scan, skeys=['.pyx', '.pxd'], recursive=True)
