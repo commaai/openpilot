@@ -12,7 +12,6 @@
 #include <atomic>
 
 #include "common/util.h"
-#include "common/utilpp.h"
 #include "common/swaglog.h"
 #include "camera_qcom2.h"
 

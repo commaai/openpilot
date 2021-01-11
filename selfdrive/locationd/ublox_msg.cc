@@ -338,7 +338,7 @@ kj::Array<capnp::word> UbloxMsgParser::gen_mon_hw() {
 bool UbloxMsgParser::add_data(const uint8_t *incoming_data, uint32_t incoming_data_len, size_t &bytes_consumed) {
   int needed = needed_bytes();
   if(needed > 0) {
-    bytes_consumed = min((size_t)needed, incoming_data_len );
+    bytes_consumed = std::min((uint32_t)needed, incoming_data_len );
     // Add data to buffer
     memcpy(msg_parse_buf + bytes_in_parse_buf, incoming_data, bytes_consumed);
     bytes_in_parse_buf += bytes_consumed;

@@ -8,7 +8,6 @@
 #include <stdlib.h>
 #include <stdexcept>
 #include "common/util.h"
-#include "common/utilpp.h"
 #include "common/swaglog.h"
 #include <cassert>
 

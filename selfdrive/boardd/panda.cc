@@ -6,7 +6,7 @@
 
 #include "common/swaglog.h"
 #include "common/gpio.h"
-#include "common/utilpp.h"
+#include "common/util.h"
 #include "panda.h"
 
 #ifdef QCOM2
