@@ -25,7 +25,6 @@
 
 #endif // ifdef QCOM
 
-#include "common/util.h"
 #include "common/visionimg.h"
 
 #ifdef QCOM
