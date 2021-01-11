@@ -902,6 +902,7 @@ FW_VERSIONS = {
     (Ecu.programmedFuelInjection, 0x18da10f1, None): [
       b'37805-5YF-A230\x00\x00',
       b'37805-5YF-A420\x00\x00',
+      b'37805-5YF-A430\x00\x00',
     ],
     (Ecu.vsa, 0x18da28f1, None): [
       b'57114-TJB-A040\x00\x00',
