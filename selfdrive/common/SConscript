@@ -18,7 +18,7 @@ files = [
 if arch == "aarch64":
   files += [
     'framebuffer.cc',
-    'touch.c',
+    'touch.cc',
   ]
   _gpu_libs = ['gui', 'adreno_utils']
 else:

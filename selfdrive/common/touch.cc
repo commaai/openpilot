@@ -46,17 +46,21 @@ static int find_dev() {
   return ret;
 }
 
-void touch_init(TouchState *s) {
-  s->fd = find_dev();
-  assert(s->fd >= 0);
+TouchState::TouchState() {
+  fd = find_dev();
+  assert(fd >= 0);
 }
 
-int touch_poll(TouchState *s, int* out_x, int* out_y, int timeout) {
+TouchState::~TouchState() {
+  close(fd);
+}
+
+bool TouchState::poll(int* out_x, int* out_y, int timeout) {
   assert(out_x && out_y);
   bool up = false;
   while (true) {
     struct pollfd polls[] = {{
-      .fd = s->fd,
+      .fd = fd,
       .events = POLLIN,
     }};
     int err = poll(polls, 1, timeout);
@@ -76,9 +80,9 @@ int touch_poll(TouchState *s, int* out_x, int* out_y, int timeout) {
     switch (event.type) {
     case EV_ABS:
       if (event.code == ABS_MT_POSITION_X) {
-        s->last_x = event.value;
+        last_x = event.value;
       } else if (event.code == ABS_MT_POSITION_Y) {
-        s->last_y = event.value;
+        last_y = event.value;
       } else if (event.code == ABS_MT_TRACKING_ID && event.value != -1) {
         up = true;
       }
@@ -89,8 +93,8 @@ int touch_poll(TouchState *s, int* out_x, int* out_y, int timeout) {
   }
   if (up) {
     // adjust for flippening
-    *out_x = s->last_y;
-    *out_y = 1080 - s->last_x;
+    *out_x = last_y;
+    *out_y = 1080 - last_x;
   }
   return up;
 }

@@ -116,8 +116,7 @@ int main(int argc, char* argv[]) {
   ui_init(s);
   s->sound = &sound;
 
-  TouchState touch = {0};
-  touch_init(&touch);
+  TouchState touch;
   handle_display_state(s, true);
 
   PubMaster *pm = new PubMaster({"offroadLayout"});
@@ -150,8 +149,7 @@ int main(int argc, char* argv[]) {
 
     // poll for touch events
     int touch_x = -1, touch_y = -1;
-    int touched = touch_poll(&touch, &touch_x, &touch_y, 0);
-    if (touched == 1) {
+    if (touch.poll(&touch_x, &touch_y, 0)) {
       handle_sidebar_touch(s, touch_x, touch_y);
       handle_vision_touch(s, touch_x, touch_y);
     }

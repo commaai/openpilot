@@ -225,8 +225,6 @@ struct Updater {
   CURL *curl = NULL;
 
   void ui_init() {
-    touch_init(&touch);
-
     fb = framebuffer_init("updater", 0x00001000, false,
                           &fb_w, &fb_h);
     assert(fb);
@@ -708,8 +706,8 @@ struct Updater {
 
     if (state == ERROR || state == CONFIRMATION) {
       int touch_x = -1, touch_y = -1;
-      int res = touch_poll(&touch, &touch_x, &touch_y, 0);
-      if (res == 1 && !is_settings_active()) {
+      bool res = touch.poll(&touch_x, &touch_y, 0);
+      if (res && !is_settings_active()) {
         if (touch_x >= b_x && touch_x < b_x+b_w && touch_y >= b_y && touch_y < b_y+b_h) {
           if (state == CONFIRMATION) {
             state = RUNNING;
