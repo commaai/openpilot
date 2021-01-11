@@ -109,13 +109,13 @@ void PrimeUserWidget::refresh(){
   manager->get(request);
 }
 
-void PrimeUserWidget::replyFinished(QNetworkReply *l) {
-  QString answer = l->readAll();
+void PrimeUserWidget::replyFinished(QNetworkReply *reply) {
+  QString answer = reply->readAll();
   
   QJsonDocument doc = QJsonDocument::fromJson(answer.toUtf8());
   if (doc.isNull()) {
     qDebug() << "JSON Parse failed on prime user";
-    l->deleteLater();
+    reply->deleteLater();
     return;
   }
   QJsonObject json = doc.object();
@@ -127,7 +127,7 @@ void PrimeUserWidget::replyFinished(QNetworkReply *l) {
 
   username->setText(username_str);
   points->setText(points_str);
-  l->deleteLater();
+  reply->deleteLater();
 }
 
 PrimeAdWidget::PrimeAdWidget(QWidget *parent) : QWidget(parent){
@@ -226,13 +226,13 @@ void SetupWidget::refresh(){
   manager->get(request);
 }
 
-void SetupWidget::replyFinished(QNetworkReply *l) {
-  QString answer = l->readAll();
+void SetupWidget::replyFinished(QNetworkReply *reply) {
+  QString answer = reply->readAll();
 
   QJsonDocument doc = QJsonDocument::fromJson(answer.toUtf8());
   if (doc.isNull()) {
     qDebug() << "JSON Parse failed";
-    l->deleteLater();
+    reply->deleteLater();
     return;
   }
 
@@ -247,5 +247,5 @@ void SetupWidget::replyFinished(QNetworkReply *l) {
   }else if (is_paired && is_prime) {
     mainLayout->setCurrentIndex(2);
   }
-  l->deleteLater();
+  reply->deleteLater();
 }

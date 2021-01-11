@@ -45,8 +45,8 @@ QLayout *build_stat(QString name, int stat) {
   return layout;
 }
 
-void DriveStats::replyFinished(QNetworkReply *l) {
-  QString answer = l->readAll();
+void DriveStats::replyFinished(QNetworkReply *reply) {
+  QString answer = reply->readAll();
   answer.chop(1);
 
   QJsonDocument doc = QJsonDocument::fromJson(answer.toUtf8());
@@ -81,6 +81,8 @@ void DriveStats::replyFinished(QNetworkReply *l) {
       font-weight: 600;
     }
   )");
+
+  reply->deleteLater();
 }
 
 DriveStats::DriveStats(QWidget *parent) : QWidget(parent) {
