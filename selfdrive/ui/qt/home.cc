@@ -126,6 +126,9 @@ HomeWindow::HomeWindow(QWidget *parent) : QWidget(parent) {
 
   // onroad UI
   glWindow = new GLWindow(this);
+  glWindow->setAttribute(Qt::WA_NativeWindow);
+  glWindow->setAttribute(Qt::WA_PaintOnScreen);
+  glWindow->setAttribute(Qt::WA_NoSystemBackground);
   layout->addWidget(glWindow, 0, 0);
 
   // draw offroad UI on top of onroad UI
@@ -182,8 +185,7 @@ static void set_backlight(int brightness) {
   }
 }
 
-
-GLWindow::GLWindow(QWidget *parent) : QOpenGLWidget(parent) {
+GLWindow::GLWindow(QWidget *parent) : QWidget(parent) {
   timer = new QTimer(this);
   QObject::connect(timer, SIGNAL(timeout()), this, SLOT(timerUpdate()));
 
@@ -199,17 +201,9 @@ GLWindow::GLWindow(QWidget *parent) : QOpenGLWidget(parent) {
   smooth_brightness = 512;
 }
 
-GLWindow::~GLWindow() {
-  makeCurrent();
-  doneCurrent();
-}
-
-void GLWindow::initializeGL() {
-  initializeOpenGLFunctions();
-  std::cout << "OpenGL version: " << glGetString(GL_VERSION) << std::endl;
-  std::cout << "OpenGL vendor: " << glGetString(GL_VENDOR) << std::endl;
-  std::cout << "OpenGL renderer: " << glGetString(GL_RENDERER) << std::endl;
-  std::cout << "OpenGL language version: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
+void GLWindow::initialize() {
+  if (initialized)
+    return;
 
   ui_state = new UIState();
   ui_state->sound = &sound;
@@ -218,9 +212,44 @@ void GLWindow::initializeGL() {
   ui_init(ui_state);
 
   wake();
+  qWarning("first update");
+  ui_update(ui_state);
 
   timer->start(0);
   backlight_timer->start(BACKLIGHT_DT * 1000);
+
+  initialized = true;
+}
+
+void GLWindow::render() {
+  if (!initialized)
+    return;
+
+  ui_draw(ui_state);
+  qWarning("drawn");
+  framebuffer_swap(ui_state->fb);
+  qWarning("swapped");
+}
+
+void GLWindow::paintEvent(QPaintEvent *e) {
+  Q_UNUSED(e);
+  if (!initialized)
+    return;
+  
+  if (updatesEnabled())
+    render();
+}
+
+bool GLWindow::event(QEvent *e) {
+  switch (e->type()) {
+    case QEvent::Show:
+      if (!initialized)
+        initialize();
+      break;
+    default:
+      break;
+  }
+  return QWidget::event(e);
 }
 
 void GLWindow::backlightUpdate() {
@@ -251,16 +280,10 @@ void GLWindow::timerUpdate() {
   int dt = timer->interval() == 0 ? 1 : 20;
   handle_display_state(ui_state, dt, false);
 
+  qWarning("updating");
   ui_update(ui_state);
+  qWarning("repaint");
   repaint();
-}
-
-void GLWindow::resizeGL(int w, int h) {
-  std::cout << "resize " << w << "x" << h << std::endl;
-}
-
-void GLWindow::paintGL() {
-  ui_draw(ui_state);
 }
 
 void GLWindow::wake() {
@@ -268,10 +291,4 @@ void GLWindow::wake() {
   if (ui_state != nullptr) {
     handle_display_state(ui_state, 1, true);
   }
-}
-
-
-FramebufferState* framebuffer_init(const char* name, int32_t layer, int alpha,
-                                   int *out_w, int *out_h) {
-  return (FramebufferState*)1; // not null
 }

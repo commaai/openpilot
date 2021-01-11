@@ -16,24 +16,27 @@
 
 
 // container window for onroad NVG UI
-class GLWindow : public QOpenGLWidget, protected QOpenGLFunctions {
+class GLWindow : public QWidget {
   Q_OBJECT
 
 public:
-  using QOpenGLWidget::QOpenGLWidget;
   explicit GLWindow(QWidget *parent = 0);
   void wake();
-  ~GLWindow();
+  ~GLWindow() = default;
 
   UIState *ui_state = nullptr;
+
+  void initialize();
+  void render();
 
 signals:
   void offroadTransition(bool offroad);
 
 protected:
-  void initializeGL() override;
-  void resizeGL(int w, int h) override;
-  void paintGL() override;
+  QPaintEngine *paintEngine() const override { return nullptr; }
+
+  void paintEvent(QPaintEvent *e) override;
+  bool event(QEvent *e) override;
 
 private:
   QTimer *timer;
@@ -41,6 +44,7 @@ private:
 
   QtSound sound;
 
+  bool initialized = false;
   bool onroad = true;
 
   // TODO: this shouldn't be here
