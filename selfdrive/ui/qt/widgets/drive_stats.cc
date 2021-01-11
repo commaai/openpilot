@@ -5,6 +5,7 @@
 #include <QDebug>
 #include <QVBoxLayout>
 #include <QLabel>
+#include <QStackedLayout>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QNetworkAccessManager>
@@ -51,8 +52,11 @@ void DriveStats::replyFinished(QNetworkReply *reply) {
 
   QJsonDocument doc = QJsonDocument::fromJson(answer.toUtf8());
   if (doc.isNull()) {
-    qDebug() << "JSON Parse failed";
+    qDebug() << "JSON Parse failed on getting past drives statistics";
+    reply->deleteLater();
+    return;
   }
+  qDebug()<<doc;
   QString IsMetric = QString::fromStdString(Params().get("IsMetric"));
   bool metric = (IsMetric =="1");
 
@@ -74,13 +78,11 @@ void DriveStats::replyFinished(QNetworkReply *reply) {
   gl->addLayout(build_stat(metric ? "KM" : "MILES", week_distance), 7, 1, 3, 1);
   gl->addLayout(build_stat("HOURS", week["minutes"].toDouble() / 60), 7, 2, 3, 1);
 
-  setLayout(gl);
-  setStyleSheet(R"(
-    QLabel {
-      font-size: 48px;
-      font-weight: 600;
-    }
-  )");
+  QWidget *q = new QWidget;
+  q->setLayout(gl);
+
+  slayout->addWidget(q);
+  slayout->setCurrentIndex(1);
 
   reply->deleteLater();
 }
@@ -100,4 +102,16 @@ DriveStats::DriveStats(QWidget *parent) : QWidget(parent) {
   request.setRawHeader("Authorization", ("JWT "+token).toUtf8());
 
   manager->get(request);
+
+  slayout = new QStackedLayout;
+
+  slayout->addWidget(new QLabel("No network connection"));
+  
+  setLayout(slayout);
+  setStyleSheet(R"(
+    QLabel {
+      font-size: 48px;
+      font-weight: 600;
+    }
+  )");
 }

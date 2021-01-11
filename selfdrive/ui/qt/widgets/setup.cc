@@ -114,7 +114,7 @@ void PrimeUserWidget::replyFinished(QNetworkReply *reply) {
   
   QJsonDocument doc = QJsonDocument::fromJson(answer.toUtf8());
   if (doc.isNull()) {
-    qDebug() << "JSON Parse failed on prime user";
+    qDebug() << "JSON Parse failed on getting username and points";
     reply->deleteLater();
     return;
   }
@@ -226,7 +226,7 @@ void SetupWidget::replyFinished(QNetworkReply *reply) {
 
   QJsonDocument doc = QJsonDocument::fromJson(answer.toUtf8());
   if (doc.isNull()) {
-    qDebug() << "JSON Parse failed";
+    qDebug() << "JSON Parse failed on getting pairing and prime status";
     reply->deleteLater();
     return;
   }
@@ -237,7 +237,6 @@ void SetupWidget::replyFinished(QNetworkReply *reply) {
       background-color: #292929;
     )");
   }
-  qDebug()<<doc;
   QJsonObject json = doc.object();
   bool is_paired = json["is_paired"].toBool();
   bool is_prime = json["prime"].toBool();
