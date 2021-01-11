@@ -138,6 +138,8 @@ typedef struct UIScene {
 
 typedef struct UIState {
   VisionIpcClient * vipc_client;
+  VisionIpcClient * vipc_client_front;
+  VisionIpcClient * vipc_client_rear;
   VisionBuf * last_frame;
 
   // framebuffer
