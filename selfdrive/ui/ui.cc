@@ -24,8 +24,7 @@ static void ui_init_vision(UIState *s) {
   s->scene.world_objects_visible = false;
 
   for (int i = 0; i < s->vipc_client->num_buffers; i++) {
-    const VisionBuf *buf = &s->vipc_client->buffers[i];
-    s->texture[i].reset(new EGLImageTexture(buf));
+    s->texture[i].reset(new EGLImageTexture(&s->vipc_client->buffers[i]));
 
     glBindTexture(GL_TEXTURE_2D, s->texture[i]->frame_tex);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);

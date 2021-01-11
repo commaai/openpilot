@@ -1,33 +1,13 @@
 #include <cassert>
+#include "common/visionimg.h"
 
 #ifdef QCOM
-
 #include <system/graphics.h>
 #include <ui/GraphicBuffer.h>
 #include <ui/PixelFormat.h>
 #include <gralloc_priv.h>
-
-#include <GLES3/gl3.h>
 #define GL_GLEXT_PROTOTYPES
 #include <GLES2/gl2ext.h>
-
-#include <EGL/egl.h>
-#define EGL_EGLEXT_PROTOTYPES
-#include <EGL/eglext.h>
-
-#else // ifdef QCOM
-
-#ifdef __APPLE__
-#include <OpenGL/gl3.h>
-#else
-#include <GLES3/gl3.h>
-#endif
-
-#endif // ifdef QCOM
-
-#include "common/visionimg.h"
-
-#ifdef QCOM
 using namespace android;
 
 EGLImageTexture::EGLImageTexture(const VisionBuf *buf) {
@@ -35,7 +15,7 @@ EGLImageTexture::EGLImageTexture(const VisionBuf *buf) {
   assert((buf->len % buf->stride) == 0);
   assert((buf->stride % bpp) == 0);
 
-  const int format =HAL_PIXEL_FORMAT_RGB_888;
+  const int format = HAL_PIXEL_FORMAT_RGB_888;
   private_handle = new private_handle_t(buf->fd, buf->len,
                              private_handle_t::PRIV_FLAGS_USES_ION|private_handle_t::PRIV_FLAGS_FRAMEBUFFER,
                              0, format,
@@ -78,5 +58,4 @@ EGLImageTexture::EGLImageTexture(const VisionBuf *buf) {
 EGLImageTexture::~EGLImageTexture() {
   glDeleteTextures(1, &frame_tex);
 }
-
 #endif // ifdef QCOM
