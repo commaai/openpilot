@@ -30,7 +30,7 @@ int main(int argc, char **argv) {
   VisionIpcClient vipc_client = VisionIpcClient("camerad", VISION_STREAM_YUV_FRONT, true);
   while (!do_exit){
     if (!vipc_client.connect(false)){
-      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+      util::sleep_for(100);
       continue;
     }
     break;
