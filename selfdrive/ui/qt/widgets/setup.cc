@@ -66,7 +66,7 @@ void PairingQRWidget::updateQrCode(QString text) {
 }
 
 
-PrimeUserWidget::PrimeUserWidget(QWidget *parent) : QWidget(parent){
+PrimeUserWidget::PrimeUserWidget(QWidget *parent) : QWidget(parent) {
   api = new CommaApi(this);
 
   mainLayout = new QVBoxLayout;
@@ -97,7 +97,7 @@ PrimeUserWidget::PrimeUserWidget(QWidget *parent) : QWidget(parent){
   timer->start(6 * seconds);
 }
 
-void PrimeUserWidget::refresh(){
+void PrimeUserWidget::refresh() {
   if (!this->isVisible()) {
     return;
   }
@@ -138,7 +138,7 @@ void PrimeUserWidget::replyFinished() {
   reply = NULL;
 }
 
-PrimeAdWidget::PrimeAdWidget(QWidget *parent) : QWidget(parent){
+PrimeAdWidget::PrimeAdWidget(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *vlayout = new QVBoxLayout();
 
   QLabel *upgradeNow = new QLabel("Upgrade now");
@@ -169,7 +169,7 @@ PrimeAdWidget::PrimeAdWidget(QWidget *parent) : QWidget(parent){
 }
 
 
-SetupWidget::SetupWidget(QWidget *parent) : QWidget(parent){
+SetupWidget::SetupWidget(QWidget *parent) : QWidget(parent) {
   api = new CommaApi(this);
 
   QVBoxLayout *backgroundLayout = new QVBoxLayout;
@@ -218,7 +218,7 @@ SetupWidget::SetupWidget(QWidget *parent) : QWidget(parent){
   timer->start(5 * seconds);
 }
 
-void SetupWidget::refresh(){
+void SetupWidget::refresh() {
   QString token = api->create_jwt();
   //TO-DO also don't do anything if the screen is off 
   if (!this->isVisible()) {
@@ -259,9 +259,9 @@ void SetupWidget::replyFinished() {
 
   if (!is_paired) {
     mainLayout->setCurrentIndex(1);
-  }else if (is_paired && !is_prime) {
+  } else if (is_paired && !is_prime) {
     mainLayout->setCurrentIndex(2);
-  }else if (is_paired && is_prime) {
+  } else if (is_paired && is_prime) {
     mainLayout->setCurrentIndex(3);
   }
   reply->deleteLater();

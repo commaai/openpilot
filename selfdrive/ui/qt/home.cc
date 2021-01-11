@@ -124,7 +124,7 @@ void OffroadHome::refresh() {
     font-weight: bold;
     background-color: #E22C2C;
   )");
-  if (alerts_widget->updateAvailable){
+  if (alerts_widget->updateAvailable) {
     style.replace("#E22C2C", "#364DEF");
   }
   alert_notification->setStyleSheet(style);
