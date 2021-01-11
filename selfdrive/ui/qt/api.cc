@@ -10,7 +10,7 @@
 
 #include "api.hpp"
 #include "common/params.h"
-#include "common/utilpp.h"
+#include "common/util.h"
 
 #if defined(QCOM) || defined(QCOM2)
 const std::string private_key_path = "/persist/comma/id_rsa";

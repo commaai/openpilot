@@ -9,7 +9,7 @@
 
 #include "setup.hpp"
 #include "common/params.h"
-#include "common/utilpp.h"
+#include "common/util.h"
 #include "QrCode.hpp"
 #include "api.hpp"
 
