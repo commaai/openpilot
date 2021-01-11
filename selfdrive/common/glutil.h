@@ -6,6 +6,7 @@
   #include <GLES3/gl3.h>
 #endif
 #include <map>
+
 class GLShader {
 public:
   GLShader(const char *vert_src, const char *frag_src);
