@@ -166,9 +166,9 @@ static void draw_frame(UIState *s) {
 #endif
   }
 
-  glUseProgram(s->frame_program);
-  glUniform1i(s->frame_texture_loc, 0);
-  glUniformMatrix4fv(s->frame_transform_loc, 1, GL_TRUE, out_mat->v);
+  glUseProgram(s->gl_shader->prog);
+  glUniform1i(s->gl_shader->texture_loc, 0);
+  glUniformMatrix4fv(s->gl_shader->transform_loc, 1, GL_TRUE, out_mat->v);
 
   assert(glGetError() == GL_NO_ERROR);
   glEnableVertexAttribArray(0);
@@ -575,14 +575,9 @@ void ui_nvg_init(UIState *s) {
   }
 
   // init gl
-  s->frame_program = load_program(frame_vertex_shader, frame_fragment_shader);
-  assert(s->frame_program);
-
-  s->frame_pos_loc = glGetAttribLocation(s->frame_program, "aPosition");
-  s->frame_texcoord_loc = glGetAttribLocation(s->frame_program, "aTexCoord");
-
-  s->frame_texture_loc = glGetUniformLocation(s->frame_program, "uTexture");
-  s->frame_transform_loc = glGetUniformLocation(s->frame_program, "uTransform");
+  s->gl_shader = std::make_unique<GLShader>(frame_vertex_shader, frame_fragment_shader);
+  GLint frame_pos_loc = glGetAttribLocation(s->gl_shader->prog, "aPosition");
+  GLint frame_texcoord_loc = glGetAttribLocation(s->gl_shader->prog, "aTexCoord");
 
   glViewport(0, 0, s->fb_w, s->fb_h);
 
@@ -617,11 +612,11 @@ void ui_nvg_init(UIState *s) {
     glGenBuffers(1, &s->frame_vbo[i]);
     glBindBuffer(GL_ARRAY_BUFFER, s->frame_vbo[i]);
     glBufferData(GL_ARRAY_BUFFER, sizeof(frame_coords), frame_coords, GL_STATIC_DRAW);
-    glEnableVertexAttribArray(s->frame_pos_loc);
-    glVertexAttribPointer(s->frame_pos_loc, 2, GL_FLOAT, GL_FALSE,
+    glEnableVertexAttribArray(frame_pos_loc);
+    glVertexAttribPointer(frame_pos_loc, 2, GL_FLOAT, GL_FALSE,
                           sizeof(frame_coords[0]), (const void *)0);
-    glEnableVertexAttribArray(s->frame_texcoord_loc);
-    glVertexAttribPointer(s->frame_texcoord_loc, 2, GL_FLOAT, GL_FALSE,
+    glEnableVertexAttribArray(frame_texcoord_loc);
+    glVertexAttribPointer(frame_texcoord_loc, 2, GL_FLOAT, GL_FALSE,
                           sizeof(frame_coords[0]), (const void *)(sizeof(float) * 2));
     glGenBuffers(1, &s->frame_ibo[i]);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, s->frame_ibo[i]);
