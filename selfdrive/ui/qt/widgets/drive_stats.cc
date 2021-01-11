@@ -12,9 +12,8 @@
 
 #include "drive_stats.hpp"
 #include "common/params.h"
-#include "common/utilpp.h"
 #include "api.hpp"
-
+#include "common/util.h"
 constexpr double MILE_TO_KM = 1.60934;
 
 
@@ -87,7 +86,7 @@ void DriveStats::replyFinished() {
   reply->deleteLater();
   reply = NULL;
 }
-
+//TO-DO refresh every once in a while
 DriveStats::DriveStats(QWidget *parent) : QWidget(parent) {
   api = new CommaApi(this);
 
