@@ -72,8 +72,9 @@ void ui_init(UIState *s) {
   ui_nvg_init(s);
 
   s->last_frame = nullptr;
-  s->vipc_client = new VisionIpcClient("camerad", VISION_STREAM_RGB_BACK, true);
-
+  s->vipc_client_rear = new VisionIpcClient("camerad", VISION_STREAM_RGB_BACK, true);
+  s->vipc_client_front = new VisionIpcClient("camerad", VISION_STREAM_RGB_FRONT, true);
+  s->vipc_client = s->vipc_client_rear;
 }
 
 template <class T>
@@ -236,6 +237,8 @@ static void ui_read_params(UIState *s) {
 
 void ui_update_vision(UIState *s) {
   if (!s->vipc_client->connected && s->started) {
+    s->vipc_client = s->scene.frontview ? s->vipc_client_front : s->vipc_client_rear;
+
     if (s->vipc_client->connect(false)){
       ui_init_vision(s);
     }
