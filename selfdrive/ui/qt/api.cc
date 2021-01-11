@@ -17,6 +17,9 @@ const std::string private_key_path = "/persist/comma/id_rsa";
 #else
 const std::string private_key_path = util::getenv_default("HOME", "/.comma/persist/comma/id_rsa", "/persist/comma/id_rsa");
 #endif
+CommaApi::CommaApi(QWidget* parent){
+  networkAccessManager = new QNetworkAccessManager(parent);
+}
 
 QByteArray CommaApi::rsa_sign(QByteArray data) {
   auto file = QFile(private_key_path.c_str());
@@ -85,9 +88,5 @@ QString CommaApi::create_jwt() {
 }
 
 QNetworkReply* CommaApi::get(QNetworkRequest request){
-  if (networkAccessManager == NULL){
-    networkAccessManager = new QNetworkAccessManager();
-  }
-  // qDebug()<<"Moving request"<<request.url();
   return networkAccessManager->get(request);
 }

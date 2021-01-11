@@ -5,6 +5,7 @@
 #include <QLabel>
 #include <QStackedLayout>
 
+#include "api.hpp"
 
 class PairingQRWidget : public QWidget {
   Q_OBJECT
@@ -27,6 +28,7 @@ private:
   QLabel *username;
   QLabel *points;
   QNetworkReply *reply;
+  CommaApi* api;
   void replyFinished();
 
 private slots:
@@ -50,6 +52,7 @@ public:
 private:
   QStackedLayout *mainLayout;
   QNetworkReply* reply;
+  CommaApi* api;
   void replyFinished();
 
 private slots:

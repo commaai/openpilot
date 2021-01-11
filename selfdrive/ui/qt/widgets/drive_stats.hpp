@@ -4,6 +4,7 @@
 #include <QNetworkReply>
 #include <QStackedLayout>
 
+#include "api.hpp"
 
 class DriveStats : public QWidget {
   Q_OBJECT
@@ -14,5 +15,6 @@ public:
 private:
   QNetworkReply *reply;
   QStackedLayout *slayout;
+  CommaApi* api;
   void replyFinished();
 };

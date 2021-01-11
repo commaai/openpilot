@@ -23,6 +23,7 @@ const std::string private_key_path = util::getenv_default("HOME", "/.comma/persi
 
 
 PairingQRWidget::PairingQRWidget(QWidget *parent) : QWidget(parent) {
+  CommaApi *api = new CommaApi(this);
   qrCode = new QLabel;
   qrCode->setScaledContents(true);
   QVBoxLayout *v = new QVBoxLayout;
@@ -34,7 +35,7 @@ PairingQRWidget::PairingQRWidget(QWidget *parent) : QWidget(parent) {
 
   QVector<QPair<QString, QJsonValue>> payloads;
   payloads.push_back(qMakePair(QString("pair"), true));
-  QString pairToken = CommaApi::create_jwt(payloads);
+  QString pairToken = api->create_jwt(payloads);
   
   QString qrString = IMEI + "--" + serial + "--" + pairToken;
   this->updateQrCode(qrString);
@@ -66,8 +67,9 @@ void PairingQRWidget::updateQrCode(QString text) {
 
 
 PrimeUserWidget::PrimeUserWidget(QWidget *parent) : QWidget(parent){
-  mainLayout = new QVBoxLayout;
+  api = new CommaApi(this);
 
+  mainLayout = new QVBoxLayout;
   QLabel *commaPrime = new QLabel("COMMA PRIME");
   commaPrime->setStyleSheet(R"(
     font-size: 60px;
@@ -97,14 +99,14 @@ PrimeUserWidget::PrimeUserWidget(QWidget *parent) : QWidget(parent){
 }
 
 void PrimeUserWidget::refresh(){
-  QString token = CommaApi::create_jwt();
+  QString token = api->create_jwt();
 
   QString dongle_id = QString::fromStdString(Params().get("DongleId"));
   QNetworkRequest request;
   request.setUrl(QUrl("https://api.commadotai.com/v1/devices/" + dongle_id + "/owner"));
   request.setRawHeader("Authorization", ("JWT "+token).toUtf8());
   if(reply == NULL){
-    reply = CommaApi::get(request);
+    reply = api->get(request);
     connect(reply, &QNetworkReply::finished, this, &PrimeUserWidget::replyFinished);
   }else{
     qDebug()<<"Too many requests, previous request was not yet removed";
@@ -166,6 +168,8 @@ PrimeAdWidget::PrimeAdWidget(QWidget *parent) : QWidget(parent){
 
 
 SetupWidget::SetupWidget(QWidget *parent) : QWidget(parent){
+  api = new CommaApi(this);
+
   QVBoxLayout *backgroundLayout = new QVBoxLayout;
 
   backgroundLayout->addSpacing(100);
@@ -213,14 +217,14 @@ SetupWidget::SetupWidget(QWidget *parent) : QWidget(parent){
 }
 
 void SetupWidget::refresh(){
-  QString token = CommaApi::create_jwt();
+  QString token = api->create_jwt();
 
   QString dongle_id = QString::fromStdString(Params().get("DongleId"));
   QNetworkRequest request;
   request.setUrl(QUrl("https://api.commadotai.com/v1.1/devices/" + dongle_id + "/"));
   request.setRawHeader("Authorization", ("JWT "+token).toUtf8());
   if(reply == NULL){
-    reply = CommaApi::get(request);
+    reply = api->get(request);
     connect(reply, &QNetworkReply::finished, this, &SetupWidget::replyFinished);
   }else{
     qDebug()<<"Too many requests, previous request was not yet removed";

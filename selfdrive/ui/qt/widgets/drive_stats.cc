@@ -89,17 +89,19 @@ void DriveStats::replyFinished() {
 }
 
 DriveStats::DriveStats(QWidget *parent) : QWidget(parent) {
+  api = new CommaApi(this);
+
   QString dongle_id = QString::fromStdString(Params().get("DongleId"));
 
   QVector<QPair<QString, QJsonValue>> payloads;
   payloads.push_back(qMakePair(QString("identity"), dongle_id));
-  QString token = CommaApi::create_jwt(payloads);
+  QString token = api->create_jwt(payloads);
 
   QNetworkRequest request;
   request.setUrl(QUrl("https://api.commadotai.com/v1.1/devices/" + dongle_id + "/stats"));
   request.setRawHeader("Authorization", ("JWT "+token).toUtf8());
   if(reply == NULL){
-    reply = CommaApi::get(request);
+    reply = api->get(request);
     connect(reply, &QNetworkReply::finished, this, &DriveStats::replyFinished);
   }else{
     qDebug()<<"Too many requests, previous request was not yet removed";
