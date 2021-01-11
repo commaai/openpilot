@@ -3,8 +3,6 @@
 #include <stdint.h>
 #include "messaging.hpp"
 
-#define min(x, y) ((x) <= (y) ? (x) : (y))
-
 // NAV_PVT
 typedef struct __attribute__((packed)) {
   uint32_t iTOW;
