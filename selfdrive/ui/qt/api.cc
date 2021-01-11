@@ -3,6 +3,8 @@
 #include <QJsonObject>
 #include <QJsonDocument>
 #include <QDateTime>
+#include <QString>
+#include <QDebug>
 
 #include "api.hpp"
 #include "common/params.h"
@@ -16,10 +18,15 @@ const std::string private_key_path = util::getenv_default("HOME", "/.comma/persi
 
 QByteArray CommaApi::rsa_sign(QByteArray data) {
   auto file = QFile(private_key_path.c_str());
-  bool r = file.open(QIODevice::ReadOnly);
-  assert(r);
+  if (!file.open(QIODevice::ReadOnly)) {
+    qDebug() << file.errorString();
+    assert(false);
+  }
 
   auto key = file.readAll();
+
+  file.close();
+  file.deleteLater();
 
   BIO *mem = BIO_new_mem_buf(key.data(), key.size());
   assert(mem);
@@ -38,7 +45,7 @@ QByteArray CommaApi::rsa_sign(QByteArray data) {
 
   BIO_free(mem);
   RSA_free(rsa_private);
-
+  
   return sig;
 }
 

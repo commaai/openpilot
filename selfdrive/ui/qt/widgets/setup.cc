@@ -92,7 +92,7 @@ PrimeUserWidget::PrimeUserWidget(QWidget *parent) : QWidget(parent){
   setLayout(mainLayout);
   QTimer *timer = new QTimer(this);
   QObject::connect(timer, SIGNAL(timeout()), this, SLOT(refresh()));
-  timer->start(60000);
+  timer->start(100);
   refresh();
 }
 
@@ -205,7 +205,7 @@ SetupWidget::SetupWidget(QWidget *parent) : QWidget(parent){
 
   QTimer *timer = new QTimer(this);
   QObject::connect(timer, SIGNAL(timeout()), this, SLOT(refresh()));
-  timer->start(5000);
+  timer->start(100);
 }
 
 void SetupWidget::refresh(){

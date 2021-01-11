@@ -56,7 +56,7 @@ void DriveStats::replyFinished(QNetworkReply *reply) {
     reply->deleteLater();
     return;
   }
-  qDebug()<<doc;
+
   QString IsMetric = QString::fromStdString(Params().get("IsMetric"));
   bool metric = (IsMetric =="1");
 
