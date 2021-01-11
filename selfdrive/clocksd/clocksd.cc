@@ -53,7 +53,7 @@ int main() {
 #else
   // Just run at 1Hz on apple
   while (!do_exit){
-    std::this_thread::sleep_for(std::chrono::seconds(1));
+    util::sleep_for(1000);
 #endif
 
     uint64_t boottime = nanos_since_boot();
