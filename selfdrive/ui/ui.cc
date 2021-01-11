@@ -24,27 +24,9 @@ static void ui_init_vision(UIState *s) {
   s->scene.world_objects_visible = false;
 
   for (int i = 0; i < s->vipc_client->num_buffers; i++) {
-    if (s->khr[i] != 0) {
-      visionimg_destroy_gl(s->khr[i], s->priv_hnds[i]);
-      glDeleteTextures(1, &s->frame_texs[i]);
-    }
-    VisionBuf * buf = &s->vipc_client->buffers[i];
+    s->texture[i].reset(new EGLImageTexture(&s->vipc_client->buffers[i]));
 
-    VisionImg img = {
-      .fd = buf->fd,
-      .format = VISIONIMG_FORMAT_RGB24,
-      .width = (int)buf->width,
-      .height = (int)buf->height,
-      .stride = (int)buf->stride,
-      .bpp = 3,
-      .size = buf->len,
-    };
-#ifndef QCOM
-    s->priv_hnds[i] = buf->addr;
-#endif
-    s->frame_texs[i] = visionimg_to_gl(&img, &s->khr[i], &s->priv_hnds[i]);
-
-    glBindTexture(GL_TEXTURE_2D, s->frame_texs[i]);
+    glBindTexture(GL_TEXTURE_2D, s->texture[i]->frame_tex);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
