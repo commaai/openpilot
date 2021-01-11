@@ -56,11 +56,11 @@ void PairingQRWidget::updateQrCode(QString text) {
   }
   for (int y = 0; y < sz; y++) {
     for (int x = 0; x < sz; x++) {
-      im.setPixel(x+1,y+1,qr.getModule(x, y) ? black : white );
+      im.setPixel(x+1, y+1, qr.getModule(x, y) ? black : white );
     }
   }
 
-  int approx500 = (500/(sz+2))*(sz+2);
+  int approx500 = (500 / (sz + 2)) * (sz + 2);
   qrCode->setPixmap( QPixmap::fromImage(im.scaled(approx500, approx500 ,Qt::KeepAspectRatio, Qt::FastTransformation), Qt::MonoOnly) );
   qrCode->setFixedSize(approx500, approx500);
 }
@@ -98,7 +98,7 @@ PrimeUserWidget::PrimeUserWidget(QWidget *parent) : QWidget(parent){
 }
 
 void PrimeUserWidget::refresh(){
-  if(!this->isVisible()){
+  if (!this->isVisible()) {
     return;
   }
   QString token = api->create_jwt();
@@ -107,10 +107,10 @@ void PrimeUserWidget::refresh(){
   QNetworkRequest request;
   request.setUrl(QUrl("https://api.commadotai.com/v1/devices/" + dongle_id + "/owner"));
   request.setRawHeader("Authorization", ("JWT "+token).toUtf8());
-  if(reply == NULL){
+  if (reply == NULL) {
     reply = api->get(request);
     connect(reply, &QNetworkReply::finished, this, &PrimeUserWidget::replyFinished);
-  }else{
+  } else {
     qDebug()<<"Too many requests, previous request was not yet removed";
   }
 }
@@ -155,7 +155,7 @@ PrimeAdWidget::PrimeAdWidget(QWidget *parent) : QWidget(parent){
   vlayout->addSpacing(50);
   
   QVector<QString> features = {"✓ REMOTE ACCESS", "✓ 14 DAYS OF STORAGE", "✓ DEVELOPER PERKS"};
-  for (auto featureContent : features){
+  for (auto featureContent : features) {
     QLabel *feature = new QLabel(featureContent);
     feature->setStyleSheet(R"(
       font-size: 40px;
@@ -221,17 +221,17 @@ SetupWidget::SetupWidget(QWidget *parent) : QWidget(parent){
 void SetupWidget::refresh(){
   QString token = api->create_jwt();
   //TO-DO also don't do anything if the screen is off 
-  if(!this->isVisible()){
+  if (!this->isVisible()) {
     return;
   }
   QString dongle_id = QString::fromStdString(Params().get("DongleId"));
   QNetworkRequest request;
   request.setUrl(QUrl("https://api.commadotai.com/v1.1/devices/" + dongle_id + "/"));
   request.setRawHeader("Authorization", ("JWT "+token).toUtf8());
-  if(reply == NULL){
+  if (reply == NULL) {
     reply = api->get(request);
     connect(reply, &QNetworkReply::finished, this, &SetupWidget::replyFinished);
-  }else{
+  } else {
     qDebug()<<"Too many requests, previous request was not yet removed";
   }
 }
@@ -246,7 +246,7 @@ void SetupWidget::replyFinished() {
     reply = NULL;
     return;
   }
-  if(mainLayout->currentIndex() == 0){// If we are still on the blank widget
+  if (mainLayout->currentIndex() == 0) {// If we are still on the blank widget
     setStyleSheet(R"(
       font-size: 90px;
       font-weight: bold;
