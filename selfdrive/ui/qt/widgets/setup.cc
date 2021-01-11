@@ -12,6 +12,7 @@
 #include "common/util.h"
 #include "QrCode.hpp"
 #include "api.hpp"
+#include "home.hpp"
 
 using qrcodegen::QrCode;
 
@@ -98,7 +99,7 @@ PrimeUserWidget::PrimeUserWidget(QWidget *parent) : QWidget(parent) {
 }
 
 void PrimeUserWidget::refresh() {
-  if (!this->isVisible()) {
+  if (!GLWindow::ui_state->awake) {
     return;
   }
   QString token = api->create_jwt();
@@ -220,8 +221,7 @@ SetupWidget::SetupWidget(QWidget *parent) : QWidget(parent) {
 
 void SetupWidget::refresh() {
   QString token = api->create_jwt();
-  //TO-DO also don't do anything if the screen is off 
-  if (!this->isVisible()) {
+  if (!GLWindow::ui_state->awake) {
     return;
   }
   QString dongle_id = QString::fromStdString(Params().get("DongleId"));

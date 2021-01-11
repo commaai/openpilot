@@ -25,7 +25,7 @@ public:
   void wake();
   ~GLWindow();
 
-  UIState *ui_state = nullptr;
+  inline static UIState *ui_state = nullptr;
 
 signals:
   void offroadTransition(bool offroad);
