@@ -23,6 +23,7 @@ class CarInterface(CarInterfaceBase):
 
     ret.steerActuatorDelay = 0.12  # Default delay, Prius has larger delay
     ret.steerLimitTimer = 0.4
+    ret.steerRateCost = 1.
 
     # Default longitudinal tune
     ret.longitudinalTuning.deadzoneBP = [0., 9.]
@@ -209,13 +210,22 @@ class CarInterface(CarInterfaceBase):
     elif candidate in [CAR.COROLLA_TSS2, CAR.COROLLAH_TSS2]:
       stop_and_go = True
       ret.minSpeedCan = 0.375
-      ret.safetyParam = 73
+      ret.safetyParam = 53
       ret.wheelbase = 2.67  # Average between 2.70 for sedan and 2.64 for hatchback
-      ret.steerRatio = 13.9
-      tire_stiffness_factor = 0.444  # not optimized yet
+      ret.steerRatio = 15.33
+      tire_stiffness_factor = 0.996  # not optimized yet
       ret.mass = 3060. * CV.LB_TO_KG + STD_CARGO_KG
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.1]]
-      ret.lateralTuning.pid.kf = 0.00007818594
+      ret.lateralTuning.init('indi')
+      ret.lateralTuning.indi.innerLoopGainBP = [18, 22, 26]
+      ret.lateralTuning.indi.innerLoopGainV = [5, 12, 15]
+      ret.lateralTuning.indi.outerLoopGainBP = [18, 22, 26]
+      ret.lateralTuning.indi.outerLoopGainV = [4, 11, 14.99]
+      ret.lateralTuning.indi.timeConstantBP = [18, 22, 26]
+      ret.lateralTuning.indi.timeConstantV = [2, 4, 5.5]
+      ret.lateralTuning.indi.actuatorEffectivenessBP = [18, 22, 26]
+      ret.lateralTuning.indi.actuatorEffectivenessV = [5, 12, 15]
+      ret.steerActuatorDelay = 0.45
+      ret.steerRateCost = 0.5
 
     elif candidate in [CAR.LEXUS_ES_TSS2, CAR.LEXUS_ESH_TSS2]:
       stop_and_go = True
@@ -286,8 +296,7 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 3115. * CV.LB_TO_KG + STD_CARGO_KG
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.35], [0.15]]
       ret.lateralTuning.pid.kf = 0.00007818594
-
-    ret.steerRateCost = 1.
+      
     ret.centerToFront = ret.wheelbase * 0.44
 
     # TODO: get actual value, for now starting with reasonable value for
