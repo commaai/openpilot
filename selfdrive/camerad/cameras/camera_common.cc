@@ -22,7 +22,6 @@
 #include "common/params.h"
 #include "common/swaglog.h"
 #include "common/util.h"
-#include "common/utilpp.h"
 #include "imgproc/utils.h"
 
 const int env_xmin = getenv("XMIN") ? atoi(getenv("XMIN")) : 0;
