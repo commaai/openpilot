@@ -21,7 +21,7 @@ const std::string private_key_path = "/persist/comma/id_rsa";
 const std::string private_key_path = util::getenv_default("HOME", "/.comma/persist/comma/id_rsa", "/persist/comma/id_rsa");
 #endif
 
-
+const int seconds = 1000;
 PairingQRWidget::PairingQRWidget(QWidget *parent) : QWidget(parent) {
   CommaApi *api = new CommaApi(this);
   qrCode = new QLabel;
@@ -76,7 +76,7 @@ PrimeUserWidget::PrimeUserWidget(QWidget *parent) : QWidget(parent){
   )");
   mainLayout->addWidget(commaPrime);
 
-  username = new QLabel("Waiting for username");
+  username = new QLabel("");
   mainLayout->addWidget(username);
 
   mainLayout->addSpacing(200);
@@ -88,17 +88,19 @@ PrimeUserWidget::PrimeUserWidget(QWidget *parent) : QWidget(parent){
   )");
   mainLayout->addWidget(commaPoints);
 
-  points = new QLabel("Waiting for comma points");
+  points = new QLabel("");
   mainLayout->addWidget(points);
 
   setLayout(mainLayout);
   QTimer *timer = new QTimer(this);
   QObject::connect(timer, SIGNAL(timeout()), this, SLOT(refresh()));
-  timer->start(1000);
-  refresh();
+  timer->start(6 * seconds);
 }
 
 void PrimeUserWidget::refresh(){
+  if(!this->isVisible()){
+    return;
+  }
   QString token = api->create_jwt();
 
   QString dongle_id = QString::fromStdString(Params().get("DongleId"));
@@ -213,12 +215,15 @@ SetupWidget::SetupWidget(QWidget *parent) : QWidget(parent){
 
   QTimer *timer = new QTimer(this);
   QObject::connect(timer, SIGNAL(timeout()), this, SLOT(refresh()));
-  timer->start(1000);
+  timer->start(5 * seconds);
 }
 
 void SetupWidget::refresh(){
   QString token = api->create_jwt();
-
+  //TO-DO also don't do anything if the screen is off 
+  if(!this->isVisible()){
+    return;
+  }
   QString dongle_id = QString::fromStdString(Params().get("DongleId"));
   QNetworkRequest request;
   request.setUrl(QUrl("https://api.commadotai.com/v1.1/devices/" + dongle_id + "/"));
