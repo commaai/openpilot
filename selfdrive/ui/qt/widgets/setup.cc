@@ -27,7 +27,7 @@ PairingQRWidget::PairingQRWidget(QWidget* parent) : QWidget(parent) {
   qrCode = new QLabel;
   qrCode->setScaledContents(true);
   QVBoxLayout* v = new QVBoxLayout;
-  v->addWidget(qrCode);
+  v->addWidget(qrCode, 0, Qt::AlignCenter);
   setLayout(v);
 
   QString IMEI = QString::fromStdString(Params().get("IMEI"));
@@ -185,7 +185,7 @@ SetupWidget::SetupWidget(QWidget* parent) : QWidget(parent) {
 
   QLabel* qrLabel = new QLabel("Pair with Comma Connect app!");
   qrLabel->setStyleSheet(R"(
-    font-size: 50px;
+    font-size: 45px;
   )");
   qrLayout->addWidget(qrLabel);
 
