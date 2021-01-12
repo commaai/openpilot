@@ -1,9 +1,5 @@
 #pragma once
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef struct FramebufferState FramebufferState;
 
 FramebufferState* framebuffer_init(
@@ -39,7 +35,3 @@ enum {
      * functionality. */
     HWC_POWER_MODE_DOZE_SUSPEND  = 3,
 };
-
-#ifdef __cplusplus
-}
-#endif

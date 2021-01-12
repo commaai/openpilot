@@ -32,22 +32,22 @@ struct FramebufferState {
     EGLContext context;
 };
 
-extern "C" void framebuffer_swap(FramebufferState *s) {
+void framebuffer_swap(FramebufferState *s) {
   eglSwapBuffers(s->display, s->surface);
   assert(glGetError() == GL_NO_ERROR);
 }
 
-extern "C" bool set_brightness(int brightness) {
+bool set_brightness(int brightness) {
   char bright[64];
   snprintf(bright, sizeof(bright), "%d", brightness);
   return 0 == write_file("/sys/class/leds/lcd-backlight/brightness", bright, strlen(bright));
 }
 
-extern "C" void framebuffer_set_power(FramebufferState *s, int mode) {
+void framebuffer_set_power(FramebufferState *s, int mode) {
   SurfaceComposerClient::setDisplayPowerMode(s->dtoken, mode);
 }
 
-extern "C" FramebufferState* framebuffer_init(
+FramebufferState* framebuffer_init(
     const char* name, int32_t layer, int alpha,
     int *out_w, int *out_h) {
   status_t status;

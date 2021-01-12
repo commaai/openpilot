@@ -349,7 +349,7 @@ selfdrive/ui/android/spinner/spinner.c
 
 selfdrive/ui/android/text/Makefile
 selfdrive/ui/android/text/text
-selfdrive/ui/android/text/text.c
+selfdrive/ui/android/text/text.cc
 
 selfdrive/ui/qt/*.cc
 selfdrive/ui/qt/*.hpp
