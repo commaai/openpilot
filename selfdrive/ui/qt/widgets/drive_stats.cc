@@ -9,15 +9,18 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QNetworkRequest>
+#include <QTimer>
 
 #include "drive_stats.hpp"
 #include "common/params.h"
 #include "api.hpp"
 #include "common/util.h"
+#include "home.hpp"
 
 
-constexpr double MILE_TO_KM = 1.60934;
+const double MILE_TO_KM = 1.60934;
 
+const int seconds = 1000;
 
 #if defined(QCOM) || defined(QCOM2)
 const std::string private_key_path = "/persist/comma/id_rsa";
@@ -44,6 +47,26 @@ QLayout *build_stat(QString name, int stat) {
   layout->addWidget(label, 0, Qt::AlignLeft);
   
   return layout;
+}
+
+void DriveStats::refresh(){
+  if (!GLWindow::ui_state.awake) {
+    return;
+  }
+  QString dongle_id = QString::fromStdString(Params().get("DongleId"));
+
+  QString token = api->create_jwt();
+ 
+  QNetworkRequest request;
+  request.setUrl(QUrl("https://api.commadotai.com/v1.1/devices/" + dongle_id + "/stats"));
+  request.setRawHeader("Authorization", ("JWT "+token).toUtf8());
+  if(reply == NULL){
+    reply = api->get(request);
+    connect(reply, &QNetworkReply::finished, this, &DriveStats::replyFinished);
+  }else{
+    qDebug()<<"Too many requests, previous request was not yet removed";
+  }
+
 }
 
 void DriveStats::replyFinished() {
@@ -83,30 +106,14 @@ void DriveStats::replyFinished() {
   q->setLayout(gl);
 
   slayout->addWidget(q);
-  slayout->setCurrentIndex(1);
+  slayout->setCurrentWidget(q);
 
   reply->deleteLater();
   reply = NULL;
 }
-//TO-DO refresh every once in a while
+
 DriveStats::DriveStats(QWidget *parent) : QWidget(parent) {
   api = new CommaApi(this);
-
-  QString dongle_id = QString::fromStdString(Params().get("DongleId"));
-
-  QVector<QPair<QString, QJsonValue>> payloads;
-  payloads.push_back(qMakePair(QString("identity"), dongle_id));
-  QString token = api->create_jwt(payloads);
-
-  QNetworkRequest request;
-  request.setUrl(QUrl("https://api.commadotai.com/v1.1/devices/" + dongle_id + "/stats"));
-  request.setRawHeader("Authorization", ("JWT "+token).toUtf8());
-  if(reply == NULL){
-    reply = api->get(request);
-    connect(reply, &QNetworkReply::finished, this, &DriveStats::replyFinished);
-  }else{
-    qDebug()<<"Too many requests, previous request was not yet removed";
-  }
 
   slayout = new QStackedLayout;
 
@@ -119,4 +126,8 @@ DriveStats::DriveStats(QWidget *parent) : QWidget(parent) {
       font-weight: 600;
     }
   )");
+  QTimer *timer = new QTimer(this);
+  QObject::connect(timer, SIGNAL(timeout()), this, SLOT(refresh()));
+  timer->start(5 * seconds);
+  refresh();
 }

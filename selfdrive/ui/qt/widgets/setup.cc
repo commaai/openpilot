@@ -220,10 +220,10 @@ SetupWidget::SetupWidget(QWidget *parent) : QWidget(parent) {
 }
 
 void SetupWidget::refresh() {
-  QString token = api->create_jwt();
   if (!GLWindow::ui_state.awake) {
     return;
   }
+  QString token = api->create_jwt();
   QString dongle_id = QString::fromStdString(Params().get("DongleId"));
   QNetworkRequest request;
   request.setUrl(QUrl("https://api.commadotai.com/v1.1/devices/" + dongle_id + "/"));

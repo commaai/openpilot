@@ -17,4 +17,7 @@ private:
   QStackedLayout *slayout;
   CommaApi* api;
   void replyFinished();
+
+private slots:
+  void refresh();
 };
