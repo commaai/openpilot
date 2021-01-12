@@ -27,20 +27,7 @@ if arch == "aarch64":
     'framebuffer.cc',
     'touch.c',
   ]
-<<<<<<< HEAD
   _gpu_libs = ['gui', 'adreno_utils']
-=======
-  if QCOM_REPLAY:
-    files += ['visionbuf_cl.c']
-  else:
-    files += ['visionbuf_ion.c']
-  _gpu_libs = ['gui', 'adreno_utils', 'common']
-elif arch == "larch64":
-  files += [
-    'visionbuf_ion.c',
-  ]
-  _gpu_libs = ['GL']
->>>>>>> rebase master
 else:
   _gpu_libs = ["GL"]
 

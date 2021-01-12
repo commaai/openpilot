@@ -4,7 +4,7 @@
 #include <cassert>
 #include <unistd.h>
 #include <errno.h>
-#include <poll.h>
+#include <string.h>
 #include <inttypes.h>
 #include <pthread.h>
 #include <sys/resource.h>
@@ -369,7 +369,7 @@ int main(int argc, char** argv) {
   s.rotate_state[LOG_CAMERA_ID_FCAMERA].enabled = true;
 
 #if defined(QCOM) || defined(QCOM2)
-  bool record_front = Params().read_db_bool("RecordFront");
+  bool record_front = Params().getBool("RecordFront");
   if (record_front) {
     encoder_threads.push_back(std::thread(encoder_thread, LOG_CAMERA_ID_DCAMERA));
     s.rotate_state[LOG_CAMERA_ID_DCAMERA].enabled = true;

@@ -67,6 +67,8 @@ void OffroadAlert::refresh() {
 
   const bool updateAvailable = Params().getBool("UpdateAvailable");
 
+  reboot_btn->setVisible(updateAvailable);
+
   QVBoxLayout *layout = new QVBoxLayout;
 
   if (updateAvailable) {
@@ -119,10 +121,10 @@ void OffroadAlert::parse_alerts() {
   }
 
   QJsonObject json = doc.object();
-  for (const QString& key : json.keys()) {
+  for (const QString &key : json.keys()) {
     std::string bytes = Params().get(key.toStdString());
     
-    if (bytes.size()){
+    if (bytes.size()) {
       QJsonDocument doc_par = QJsonDocument::fromJson(QByteArray(bytes.data(), bytes.length()));
       QJsonObject obj = doc_par.object();
       Alert alert = {obj.value("text").toString(), obj.value("severity").toInt()};
