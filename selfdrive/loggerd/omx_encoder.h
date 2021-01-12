@@ -11,11 +11,12 @@ extern "C" {
   #include <libavformat/avformat.h>
 }
 
+#include "encoder.h"
 #include "common/cqueue.h"
 #include "visionipc.h"
 
 // OmxEncoder, lossey codec using hardware hevc
-class OmxEncoder {
+class OmxEncoder : public VideoEncoder {
 public:
   OmxEncoder(const char* filename, int width, int height, int fps, int bitrate, bool h265, bool downscale);
   ~OmxEncoder();
