@@ -32,7 +32,11 @@ PairingQRWidget::PairingQRWidget(QWidget* parent) : QWidget(parent) {
 
   QString IMEI = QString::fromStdString(Params().get("IMEI"));
   QString serial = QString::fromStdString(Params().get("HardwareSerial"));
-
+  
+  if (std::min(IMEI.length(), serial.length()) <= 5) {
+    qrCode->setText("Contact support");
+    return;
+  }
   QVector<QPair<QString, QJsonValue>> payloads;
   payloads.push_back(qMakePair(QString("pair"), true));
   QString pairToken = api->create_jwt(payloads);
@@ -167,6 +171,8 @@ PrimeAdWidget::PrimeAdWidget(QWidget* parent) : QWidget(parent) {
   setLayout(vlayout);
 }
 
+
+
 SetupWidget::SetupWidget(QWidget* parent) : QWidget(parent) {
   api = new CommaApi(this);
 
@@ -180,6 +186,9 @@ SetupWidget::SetupWidget(QWidget* parent) : QWidget(parent) {
 
   QWidget* blankWidget = new QWidget;
   mainLayout->addWidget(blankWidget);
+
+  // QWidget* finishRegistration = new QWidget;
+
 
   QVBoxLayout* qrLayout = new QVBoxLayout;
 
