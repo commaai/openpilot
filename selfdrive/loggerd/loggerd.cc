@@ -491,13 +491,10 @@ int main(int argc, char** argv) {
     poller->registerSocket(sock);
     socks.push_back(sock);
 
-    for (auto &r : s.rotate_state) {
-      if (it.name == cameras_logged[cid].frame_packet_name) {
-        r.fpkt_sock = sock;
-      }
+    for (int cid=0;cid<=MAX_CAM_IDX;cid++) {
+      if (it.name == cameras_logged[cid].frame_packet_name) { s.rotate_state[cid].fpkt_sock = sock; }
     }
-    qlog_states[sock] = {.counter = (it.decimation == -1) ? -1 : 0,
-                         .freq = it.decimation};
+    qlog_states[sock] = {.counter = 0, .freq = it.decimation};
   }
 
   // init logger
@@ -551,7 +548,7 @@ int main(int argc, char** argv) {
 
         QlogState& qs = qlog_states[sock];
         logger_log(&s.logger, (uint8_t*)msg->getData(), msg->getSize(), qs.counter == 0);
-        if (qs.counter != -1) {
+        if (qs.freq != -1) {
           qs.counter = (qs.counter + 1) % qs.freq;
         }
 
