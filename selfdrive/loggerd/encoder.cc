@@ -456,11 +456,6 @@ int encoder_encode_frame(EncoderState *s,
   int err;
   pthread_mutex_lock(&s->lock);
 
-  if (s->opening) {
-    encoder_open(s, s->next_path);
-    s->opening = false;
-  }
-
   if (!s->open) {
     pthread_mutex_unlock(&s->lock);
     return -1;
@@ -538,20 +533,16 @@ int encoder_encode_frame(EncoderState *s,
     *frame_segment = s->segment;
   }
 
-  if (s->closing) {
-    encoder_close(s);
-    s->closing = false;
-  }
-
   pthread_mutex_unlock(&s->lock);
   return ret;
 }
 
-void encoder_open(EncoderState *s, const char* path) {
+void encoder_open(EncoderState *s, const char* path, int segment) {
   int err;
 
   pthread_mutex_lock(&s->lock);
 
+  s->segment = segment;
   snprintf(s->vid_path, sizeof(s->vid_path), "%s/%s", path, s->filename);
   LOGD("encoder_open %s remuxing:%d", s->vid_path, s->remuxing);
 
@@ -647,23 +638,6 @@ void encoder_close(EncoderState *s) {
   pthread_mutex_unlock(&s->lock);
 }
 
-void encoder_rotate(EncoderState *s, const char* new_path, int new_segment) {
-  pthread_mutex_lock(&s->lock);
-  snprintf(s->next_path, sizeof(s->next_path), "%s", new_path);
-  s->next_segment = new_segment;
-  if (s->open) {
-    if (s->next_segment == -1) {
-      s->closing = true;
-    } else {
-      s->rotating = true;
-    }
-  } else {
-    s->segment = s->next_segment;
-    s->opening = true;
-  }
-  pthread_mutex_unlock(&s->lock);
-}
-
 void encoder_destroy(EncoderState *s) {
   int err;
 
@@ -707,89 +681,3 @@ void encoder_destroy(EncoderState *s) {
     free(s->v_ptr2);
   }
 }
-
-#if 0
-
-int main() {
-  int err;
-
-  EncoderState state;
-  EncoderState *s = &state;
-  memset(s, 0, sizeof(*s));
-
-  int w = 1164;
-  int h = 874;
-
-  encoder_init(s, w, h, 20);
-  printf("inited\n");
-
-  encoder_open(s, "/sdcard/t1");
-
-  // uint8_t *tmpy = malloc(640*480);
-  // uint8_t *tmpu = malloc((640/2)*(480/2));
-  // uint8_t *tmpv = malloc((640/2)*(480/2));
-
-  // memset(tmpy, 0, 640*480);
-  // // memset(tmpu, 0xff, (640/2)*(480/2));
-  // memset(tmpv, 0, (640/2)*(480/2));
-
-// #if 0
-  // FILE *infile = fopen("/sdcard/camera_t2.yuv", "rb");
-  uint8_t *inbuf = malloc(w*h*3/2);
-  memset(inbuf, 0, w*h*3/2);
-
-  for (int i=0; i<20*3+5; i++) {
-
-    // fread(inbuf, w*h*3/2, 1, infile);
-
-    uint8_t *tmpy = inbuf;
-    uint8_t *tmpu = inbuf + w*h;
-    uint8_t *tmpv = inbuf + w*h + (w/2)*(h/2);
-
-    for (int y=0; y<h/2; y++) {
-      for (int x=0; x<w/2; x++) {
-        tmpu[y * (w/2) + x] = (i ^ y ^ x);
-      }
-    }
-
-    encoder_encode_frame(s, 20000*i, tmpy, tmpu, tmpv);
-  }
-// #endif
-
-  // while(1);
-
-  printf("done\n");
-
-  // encoder_close(s);
-
-  // printf("restart\n");
-  // fclose(s->of);
-  // s->of = fopen("/sdcard/tmpout2.hevc", "wb");
-  // if (s->codec_config) {
-  //   fwrite(s->codec_config, s->codec_config_len, 1, s->of);
-  // }
-  // encoder_open(s, "/sdcard/t1");
-
-  encoder_rotate(s, "/sdcard/t2");
-
-  for (int i=0; i<20*3+5; i++) {
-
-    // fread(inbuf, w*h*3/2, 1, infile);
-
-    uint8_t *tmpy = inbuf;
-    uint8_t *tmpu = inbuf + w*h;
-    uint8_t *tmpv = inbuf + w*h + (w/2)*(h/2);
-
-    for (int y=0; y<h/2; y++) {
-      for (int x=0; x<w/2; x++) {
-        tmpu[y * (w/2) + x] = (i ^ y ^ x);
-      }
-    }
-
-    encoder_encode_frame(s, 20000*i, tmpy, tmpu, tmpv);
-  }
-  encoder_close(s);
-
-  return 0;
-}
-#endif
