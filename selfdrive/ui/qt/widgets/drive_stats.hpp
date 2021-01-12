@@ -13,11 +13,8 @@ public:
   explicit DriveStats(QWidget* parent = 0);
 
 private:
-  QNetworkReply* reply;
   QStackedLayout* slayout;
-  CommaApi* api;
-  void replyFinished();
 
 private slots:
-  void refresh();
+  void parseResponse(QString response);
 };

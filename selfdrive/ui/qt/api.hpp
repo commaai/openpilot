@@ -13,7 +13,7 @@
 #include <openssl/pem.h>
 #include <openssl/rsa.h>
 
-class CommaApi : public QWidget {
+class CommaApi : public QObject {
   Q_OBJECT
 public:
   explicit CommaApi(QWidget* parent);
@@ -24,4 +24,27 @@ public:
 
 private:
   QNetworkAccessManager* networkAccessManager;
+};
+
+/**
+ * Makes repeated requests to the request endpoint. 
+ */
+class RequestRepeater : public QObject {
+  Q_OBJECT
+public:
+  explicit RequestRepeater(QWidget* parent, QString requestURL, int period = 10, QVector<QPair<QString, QJsonValue>> payloads = *(new QVector<QPair<QString, QJsonValue>>()));
+  bool disableWithScreen = true;
+  bool active = true;
+
+private:
+  QNetworkAccessManager* networkAccessManager;
+  QNetworkReply* reply = NULL;
+  CommaApi* api;
+  void sendRequest(QString requestURL, QVector<QPair<QString, QJsonValue>> payloads);
+
+private slots:
+  void replyFinished();
+
+signals:
+  void receivedResponse(QString response);
 };

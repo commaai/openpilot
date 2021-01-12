@@ -7,8 +7,10 @@
 #include <QNetworkRequest>
 #include <QString>
 #include <QWidget>
+#include <QTimer>
 
 #include "api.hpp"
+#include "home.hpp"
 #include "common/params.h"
 #include "common/util.h"
 
@@ -89,4 +91,43 @@ QString CommaApi::create_jwt() {
 
 QNetworkReply* CommaApi::get(QNetworkRequest request) {
   return networkAccessManager->get(request);
+}
+
+const int seconds = 1000;
+RequestRepeater::RequestRepeater(QWidget* parent, QString requestURL, int period, QVector<QPair<QString, QJsonValue>> payloads){
+  networkAccessManager = new QNetworkAccessManager(parent);
+  QTimer* timer = new QTimer(this);
+  QObject::connect(timer, &QTimer::timeout, [=](){sendRequest(requestURL, payloads);});
+  timer->start(period * seconds);
+  qDebug()<<"Starting timer";
+  api = new CommaApi(parent);
+}
+
+void RequestRepeater::sendRequest(QString requestURL, QVector<QPair<QString, QJsonValue>> payloads){
+  // if (!active || (!GLWindow::ui_state.awake && disableWithScreen)) {
+  //   qDebug()<<"No power usage";
+  //   return;
+  // }
+  QString token = api->create_jwt(payloads);
+
+  QNetworkRequest request;
+  request.setUrl(QUrl(requestURL));
+  request.setRawHeader("Authorization", ("JWT " + token).toUtf8());
+  if (reply == NULL) {
+    reply = networkAccessManager->get(request);
+    connect(reply, &QNetworkReply::finished, this, &RequestRepeater::replyFinished);
+  } else {
+    qDebug() << "Too many requests to endpoint" << requestURL;
+  }
+}
+
+void RequestRepeater::replyFinished(){
+  if(reply->error() == QNetworkReply::NoError){
+    emit receivedResponse(reply->readAll());
+  }
+  else{
+    qDebug() << reply->errorString();
+  }
+  reply->deleteLater();
+  reply = NULL;
 }

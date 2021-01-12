@@ -67,7 +67,7 @@ void PairingQRWidget::updateQrCode(QString text) {
       im.setPixel(x + 1, y + 1, qr.getModule(x, y) ? black : white);
     }
   }
-
+  // Integer division to prevent anti-aliasing
   int approx500 = (500 / (sz + 2)) * (sz + 2);
   qrCode->setPixmap(QPixmap::fromImage(im.scaled(approx500, approx500, Qt::KeepAspectRatio, Qt::FastTransformation), Qt::MonoOnly));
   qrCode->setFixedSize(approx500, approx500);

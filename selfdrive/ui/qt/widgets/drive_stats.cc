@@ -19,8 +19,6 @@
 
 const double MILE_TO_KM = 1.60934;
 
-const int seconds = 1000;
-
 #if defined(QCOM) || defined(QCOM2)
 const std::string private_key_path = "/persist/comma/id_rsa";
 #else
@@ -47,34 +45,12 @@ QLayout* build_stat(QString name, int stat) {
   return layout;
 }
 
-void DriveStats::refresh() {
-  if (!GLWindow::ui_state.awake) {
-    return;
-  }
-  QString dongle_id = QString::fromStdString(Params().get("DongleId"));
+void DriveStats::parseResponse(QString response) {
+  response.chop(1);
 
-  QString token = api->create_jwt();
-
-  QNetworkRequest request;
-  request.setUrl(QUrl("https://api.commadotai.com/v1.1/devices/" + dongle_id + "/stats"));
-  request.setRawHeader("Authorization", ("JWT " + token).toUtf8());
-  if (reply == NULL) {
-    reply = api->get(request);
-    connect(reply, &QNetworkReply::finished, this, &DriveStats::replyFinished);
-  } else {
-    qDebug() << "Too many requests, previous request was not yet removed";
-  }
-}
-
-void DriveStats::replyFinished() {
-  QString answer = reply->readAll();
-  answer.chop(1);
-
-  QJsonDocument doc = QJsonDocument::fromJson(answer.toUtf8());
+  QJsonDocument doc = QJsonDocument::fromJson(response.toUtf8());
   if (doc.isNull()) {
     qDebug() << "JSON Parse failed on getting past drives statistics";
-    reply->deleteLater();
-    reply = NULL;
     return;
   }
 
@@ -105,13 +81,9 @@ void DriveStats::replyFinished() {
   slayout->addWidget(q);
   slayout->setCurrentWidget(q);
 
-  reply->deleteLater();
-  reply = NULL;
 }
 
 DriveStats::DriveStats(QWidget* parent) : QWidget(parent) {
-  api = new CommaApi(this);
-
   slayout = new QStackedLayout;
 
   slayout->addWidget(new QLabel("No network connection"));
@@ -123,8 +95,10 @@ DriveStats::DriveStats(QWidget* parent) : QWidget(parent) {
       font-weight: 600;
     }
   )");
-  QTimer* timer = new QTimer(this);
-  QObject::connect(timer, SIGNAL(timeout()), this, SLOT(refresh()));
-  timer->start(5 * seconds);
-  refresh();
+
+  QString dongleId = QString::fromStdString(Params().get("DongleId"));
+  QString url = "https://api.commadotai.com/v1.1/devices/" + dongleId + "/stats";
+  RequestRepeater* repeater = new RequestRepeater(this, url);
+  QObject::connect(repeater, SIGNAL(receivedResponse(QString)), this, SLOT(parseResponse(QString)));
+  
 }
