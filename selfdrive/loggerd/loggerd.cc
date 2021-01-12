@@ -472,31 +472,32 @@ int main(int argc, char** argv) {
 
   clear_locks();
 
+  // setup messaging
   typedef struct QlogState {
     int counter, freq;
   } QlogState;
   std::map<SubSocket*, QlogState> qlog_states;
 
-  // setup messaging
-  std::vector<SubSocket*> socks;
-
   s.ctx = Context::create();
   Poller * poller = Poller::create();
+  std::vector<SubSocket*> socks;
+
+  // subscribe to all socks
   for (const auto& it : services) {
-    std::string name = it.name;
+    if (!it.should_log) continue;
 
-    if (it.should_log) {
-      SubSocket * sock = SubSocket::create(s.ctx, name);
-      assert(sock != NULL);
-      poller->registerSocket(sock);
-      socks.push_back(sock);
+    SubSocket * sock = SubSocket::create(s.ctx, it.name);
+    assert(sock != NULL);
+    poller->registerSocket(sock);
+    socks.push_back(sock);
 
-      for (int cid=0;cid<=MAX_CAM_IDX;cid++) {
-        if (name == cameras_logged[cid].frame_packet_name) { s.rotate_state[cid].fpkt_sock = sock; }
+    for (auto &r : s.rotate_state) {
+      if (it.name == cameras_logged[cid].frame_packet_name) {
+        r.fpkt_sock = sock;
       }
-      qlog_states[sock] = {.counter = (it.decimation == -1) ? -1 : 0,
-                           .freq = it.decimation};
     }
+    qlog_states[sock] = {.counter = (it.decimation == -1) ? -1 : 0,
+                         .freq = it.decimation};
   }
 
   // init logger
