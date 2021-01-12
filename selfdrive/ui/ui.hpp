@@ -24,6 +24,7 @@
 #include "common/framebuffer.h"
 #include "common/modeldata.h"
 #include "common/params.h"
+#include "common/glutil.h"
 #include "sound.hpp"
 #include "visionipc.h"
 #include "visionipc_client.h"
@@ -171,11 +172,9 @@ typedef struct UIState {
   cereal::UiLayoutState::App active_app;
 
   // graphics
-  GLuint frame_program;
+  std::unique_ptr<GLShader> gl_shader;
   std::unique_ptr<EGLImageTexture> texture[UI_BUF_COUNT];
 
-  GLint frame_pos_loc, frame_texcoord_loc;
-  GLint frame_texture_loc, frame_transform_loc;
   GLuint frame_vao[2], frame_vbo[2], frame_ibo[2];
   mat4 rear_frame_mat, front_frame_mat;
 
