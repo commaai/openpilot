@@ -6,7 +6,7 @@ libs = ['zmq', 'capnp', 'kj', 'z',
         'yuv', 'bz2', 'OpenCL', common, cereal, messaging, visionipc]
 
 if arch in ["aarch64", "larch64"]:
-  src += ['encoder.cc']
+  src += ['omx_encoder.cc']
   libs += ['OmxCore', 'gsl', 'CB'] + gpucommon
   if arch == "aarch64":
     libs += ['OmxVenc', 'cutils']

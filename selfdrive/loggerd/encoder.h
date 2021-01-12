@@ -1,71 +1,18 @@
 #pragma once
 
-#include <stdio.h>
-#include <stdint.h>
-#include <stdbool.h>
+#include <cstdint>
 
-#include <pthread.h>
-#include <OMX_Component.h>
+#include <string>
+#include <mutex>
 
-extern "C" {
-  #include <libavformat/avformat.h>
-}
-
-#include "common/cqueue.h"
 #include "visionipc.h"
 
-// encoder: lossey codec using hardware hevc
-
-
-struct EncoderState {
-  pthread_mutex_t lock;
-  int width, height, fps;
-  const char* path;
-  char vid_path[1024];
-  char lock_path[1024];
-  bool open;
-  bool dirty;
-  int counter;
-  int segment;
-
-  const char* filename;
-  FILE *of;
-
-  size_t codec_config_len;
-  uint8_t *codec_config;
-  bool wrote_codec_config;
-
-  pthread_mutex_t state_lock;
-  pthread_cond_t state_cv;
-  OMX_STATETYPE state;
-
-  OMX_HANDLETYPE handle;
-
-  int num_in_bufs;
-  OMX_BUFFERHEADERTYPE** in_buf_headers;
-
-  int num_out_bufs;
-  OMX_BUFFERHEADERTYPE** out_buf_headers;
-
-  uint64_t last_t;
-
-  Queue free_in;
-  Queue done_out;
-
-  AVFormatContext *ofmt_ctx;
-  AVCodecContext *codec_ctx;
-  AVStream *out_stream;
-  bool remuxing;
-
-  bool downscale;
-  uint8_t *y_ptr2, *u_ptr2, *v_ptr2;
+class VideoEncoder {
+public:
+  virtual ~VideoEncoder() {}
+  virtual int encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
+                   int in_width, int in_height,
+                   int *frame_segment, VisionIpcBufExtra *extra) = 0;
+  virtual void encoder_open(const char* path, int segment) = 0;
+  virtual void encoder_close() = 0;
 };
-
-void encoder_init(EncoderState *s, const char* filename, int width, int height, int fps, int bitrate, bool h265, bool downscale);
-int encoder_encode_frame(EncoderState *s,
-                         const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
-                         int in_width, int in_height,
-                         int *frame_segment, VisionIpcBufExtra *extra);
-void encoder_open(EncoderState *s, const char* path, int segment);
-void encoder_close(EncoderState *s);
-void encoder_destroy(EncoderState *s);

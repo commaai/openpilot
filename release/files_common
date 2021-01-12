@@ -300,9 +300,9 @@ selfdrive/proclogd/SConscript
 selfdrive/proclogd/proclogd.cc
 
 selfdrive/loggerd/SConscript
-selfdrive/loggerd/encoder.cc
 selfdrive/loggerd/encoder.h
-selfdrive/loggerd/frame_logger.h
+selfdrive/loggerd/omx_encoder.cc
+selfdrive/loggerd/omx_encoder.h
 selfdrive/loggerd/logger.cc
 selfdrive/loggerd/logger.h
 selfdrive/loggerd/loggerd.cc

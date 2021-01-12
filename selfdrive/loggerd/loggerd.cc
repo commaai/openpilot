@@ -41,8 +41,9 @@
 #define DISABLE_ENCODER // TODO: loggerd for PC
 #endif
 
-#ifndef DISABLE_ENCODER
 #include "encoder.h"
+#ifndef DISABLE_ENCODER
+#include "omx_encoder.h"
 #endif
 
 constexpr int MAIN_BITRATE = 5000000;
@@ -199,7 +200,7 @@ void encoder_thread(int cam_idx) {
 
   int cnt = 0;
   LoggerHandle *lh = NULL;
-  std::vector<EncoderState*> encoders;
+  std::vector<VideoEncoder *> encoders;
   VisionIpcClient vipc_client = VisionIpcClient("camerad", cam_info.stream_type, false);
 
   while (!do_exit) {
@@ -215,16 +216,15 @@ void encoder_thread(int cam_idx) {
       LOGD("encoder init %dx%d", buf_info.width, buf_info.height);
 
       // main encoder
-      encoders.push_back(new EncoderState());
-      encoder_init(encoders[0], cam_info.filename, buf_info.width, buf_info.height,
-                   cam_info.fps, cam_info.bitrate, cam_info.is_h265, cam_info.downscale);
+      encoders.push_back(new OmxEncoder(cam_info.filename, buf_info.width, buf_info.height,
+                                        cam_info.fps, cam_info.bitrate, cam_info.is_h265, cam_info.downscale));
 
       // qcamera encoder
       if (cam_info.has_qcamera) {
         LogCameraInfo &qcam_info = cameras_logged[LOG_CAMERA_ID_QCAMERA];
-        encoders.push_back(new EncoderState());
-        encoder_init(encoders[1], qcam_info.filename, qcam_info.frame_width, qcam_info.frame_height,
-                     qcam_info.fps, qcam_info.bitrate, qcam_info.is_h265, qcam_info.downscale);
+        encoders.push_back(new OmxEncoder(qcam_info.filename,
+                                          qcam_info.frame_width, qcam_info.frame_height,
+                                          qcam_info.fps, qcam_info.bitrate, qcam_info.is_h265, qcam_info.downscale));
       }
     }
 
@@ -263,8 +263,8 @@ void encoder_thread(int cam_idx) {
 
           pthread_mutex_lock(&s.rotate_lock);
           for (auto &e : encoders) {
-            encoder_close(e);
-            encoder_open(e, s.segment_path, s.rotate_segment);
+            e->encoder_close();
+            e->encoder_open(s.segment_path, s.rotate_segment);
           }
           pthread_mutex_unlock(&s.rotate_lock);
           rotate_state.finish_rotate();
@@ -276,16 +276,14 @@ void encoder_thread(int cam_idx) {
       // encode a frame
       {
         int out_segment = -1;
-        int out_id = encoder_encode_frame(encoders[0],
-                                          buf->y, buf->u, buf->v,
-                                          buf->width, buf->height,
-                                          &out_segment, &extra);
+        int out_id = encoders[0]->encode_frame(buf->y, buf->u, buf->v,
+                                               buf->width, buf->height,
+                                               &out_segment, &extra);
         if (encoders.size() > 1) {
           int out_segment_alt = -1;
-          encoder_encode_frame(encoders[1],
-                               buf->y, buf->u, buf->v,
-                               buf->width, buf->height,
-                               &out_segment_alt, &extra);
+          encoders[1]->encode_frame(buf->y, buf->u, buf->v,
+                                    buf->width, buf->height,
+                                    &out_segment_alt, &extra);
         }
 
         // publish encode index
@@ -301,7 +299,6 @@ void encoder_thread(int cam_idx) {
   #else
         eidx.setType(cam_idx == LOG_CAMERA_ID_DCAMERA ? cereal::EncodeIndex::Type::FRONT : cereal::EncodeIndex::Type::FULL_H_E_V_C);
   #endif
-
         eidx.setEncodeId(cnt);
         eidx.setSegmentNum(out_segment);
         eidx.setSegmentId(out_id);
@@ -323,8 +320,7 @@ void encoder_thread(int cam_idx) {
 
   LOG("encoder destroy");
   for(auto &e : encoders) {
-    encoder_close(e);
-    encoder_destroy(e);
+    e->encoder_close();
     delete e;
   }
 }
