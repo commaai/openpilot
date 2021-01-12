@@ -1,21 +1,20 @@
-#ifndef COMMON_GLUTIL_H
-#define COMMON_GLUTIL_H
+#pragma once
 
 #ifdef __APPLE__
   #include <OpenGL/gl3.h>
 #else
   #include <GLES3/gl3.h>
 #endif
+#include <map>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+class GLShader {
+public:
+  GLShader(const char *vert_src, const char *frag_src);
+  ~GLShader();
+  GLuint getUniformLocation(const char * name);
+  GLuint prog = 0;
 
-GLuint load_shader(GLenum shaderType, const char *src);
-GLuint load_program(const char *vert_src, const char *frag_src);
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif
+private:
+  GLuint vert = 0, frag = 0;
+  std::map<const char*, GLint> uniform_loc_map;
+};
