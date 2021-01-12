@@ -28,6 +28,11 @@ def register(spinner=None):
 
   needs_registration = False
 
+  IMEI = params.get("IMEI", encoding='utf8')
+  HardwareSerial = params.get("HardwareSerial", encoding='utf8')
+  
+  if None in [IMEI, HardwareSerial]:
+    needs_registration = True
   # create a key for auth
   # your private key is kept on your device persist partition and never sent to our servers
   # do not erase your persist partition
