@@ -37,13 +37,13 @@
 #include "visionipc.h"
 #include "visionipc_client.h"
 
-#if !(defined(QCOM) || defined(QCOM2))
-#define DISABLE_ENCODER // TODO: loggerd for PC
-#endif
-
 #include "encoder.h"
-#ifndef DISABLE_ENCODER
+#if defined(QCOM) || defined(QCOM2)
 #include "omx_encoder.h"
+#define Encoder OmxEncoder
+#else
+#include "raw_logger.h"
+#define Encoder RawLogger
 #endif
 
 constexpr int MAIN_BITRATE = 5000000;
@@ -189,7 +189,6 @@ struct LoggerdState {
 };
 LoggerdState s;
 
-#ifndef DISABLE_ENCODER
 void encoder_thread(int cam_idx) {
   assert(cam_idx < LOG_CAMERA_ID_MAX-1);
 
@@ -200,7 +199,7 @@ void encoder_thread(int cam_idx) {
 
   int cnt = 0;
   LoggerHandle *lh = NULL;
-  std::vector<VideoEncoder *> encoders;
+  std::vector<Encoder *> encoders;
   VisionIpcClient vipc_client = VisionIpcClient("camerad", cam_info.stream_type, false);
 
   while (!do_exit) {
@@ -209,22 +208,21 @@ void encoder_thread(int cam_idx) {
       continue;
     }
 
-    VisionBuf buf_info = vipc_client.buffers[0];
-
     // init encoders
     if (encoders.empty()) {
+      VisionBuf buf_info = vipc_client.buffers[0];
       LOGD("encoder init %dx%d", buf_info.width, buf_info.height);
 
       // main encoder
-      encoders.push_back(new OmxEncoder(cam_info.filename, buf_info.width, buf_info.height,
-                                        cam_info.fps, cam_info.bitrate, cam_info.is_h265, cam_info.downscale));
+      encoders.push_back(new Encoder(cam_info.filename, buf_info.width, buf_info.height,
+                                     cam_info.fps, cam_info.bitrate, cam_info.is_h265, cam_info.downscale));
 
       // qcamera encoder
       if (cam_info.has_qcamera) {
         LogCameraInfo &qcam_info = cameras_logged[LOG_CAMERA_ID_QCAMERA];
-        encoders.push_back(new OmxEncoder(qcam_info.filename,
-                                          qcam_info.frame_width, qcam_info.frame_height,
-                                          qcam_info.fps, qcam_info.bitrate, qcam_info.is_h265, qcam_info.downscale));
+        encoders.push_back(new Encoder(qcam_info.filename,
+                                       qcam_info.frame_width, qcam_info.frame_height,
+                                       qcam_info.fps, qcam_info.bitrate, qcam_info.is_h265, qcam_info.downscale));
       }
     }
 
@@ -324,7 +322,6 @@ void encoder_thread(int cam_idx) {
     delete e;
   }
 }
-#endif
 
 }
 
@@ -511,10 +508,10 @@ int main(int argc, char** argv) {
 
   // TODO: create these threads dynamically on frame packet presence
   std::vector<std::thread> encoder_threads;
-#ifndef DISABLE_ENCODER
   encoder_threads.push_back(std::thread(encoder_thread, LOG_CAMERA_ID_FCAMERA));
   s.rotate_state[LOG_CAMERA_ID_FCAMERA].enabled = true;
 
+#if defined(QCOM) || defined(QCOM2)
   if (record_front) {
     encoder_threads.push_back(std::thread(encoder_thread, LOG_CAMERA_ID_DCAMERA));
     s.rotate_state[LOG_CAMERA_ID_DCAMERA].enabled = true;
