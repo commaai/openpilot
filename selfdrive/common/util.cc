@@ -45,7 +45,7 @@ void* read_file(const char* path, size_t* out_len) {
   return buf;
 }
 
-int write_file(const char* path, const void* data, size_t size) {
+extern "C" int write_file(const char* path, const void* data, size_t size) {
   int fd = open(path, O_WRONLY);
   if (fd == -1) {
     return -1;
