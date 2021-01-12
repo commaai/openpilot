@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
+import re
 import os
 import time
+import subprocess
 
 from raven import Client
 from raven.transport.http import HTTPTransport
@@ -11,7 +13,17 @@ from selfdrive.version import version, origin, branch, dirty
 
 MAX_SIZE = 100000 * 10  # Normal size is 40-100k, allow up to 1M
 if TICI:
-  MAX_SIZE = MAX_SIZE * 10  # Allow larger size for tici
+  MAX_SIZE = MAX_SIZE * 100  # Allow larger size for tici
+
+
+def get_apport_stacktrace(fn):
+  try:
+    return subprocess.check_output(f'apport-retrace -s <(cat <(echo "Package: openpilot") "{fn}")', shell=True, encoding='utf8', timeout=30)
+  except subprocess.CalledProcessError:
+    return "Error getting stacktrace"
+  except subprocess.TimeoutExpired:
+    return "Timeout getting stacktrace"
+
 
 def get_tombstones():
   """Returns list of (filename, ctime) for all tombstones in /data/tombstones
@@ -30,7 +42,7 @@ def get_tombstones():
   return files
 
 
-def report_tombstone(fn, client):
+def report_tombstone_android(fn, client):
   f_size = os.path.getsize(fn)
   if f_size > MAX_SIZE:
     cloudlog.error(f"Tombstone {fn} too big, {f_size}. Skipping...")
@@ -39,28 +51,17 @@ def report_tombstone(fn, client):
   with open(fn, encoding='ISO-8859-1') as f:
     contents = f.read()
 
-  # Get summary for sentry title
-  if fn.endswith(".crash"):
-    lines = contents.split('\n')
-    message = lines[6]
+  message = " ".join(contents.split('\n')[5:7])
 
-    status_idx = contents.find('ProcStatus')
-    if status_idx >= 0:
-      lines = contents[status_idx:].split('\n')
-      message += " " + lines[1]
-  else:
-    message = " ".join(contents.split('\n')[5:7])
+  # Cut off pid/tid, since that varies per run
+  name_idx = message.find('name')
+  if name_idx >= 0:
+    message = message[name_idx:]
 
-    # Cut off pid/tid, since that varies per run
-    name_idx = message.find('name')
-    if name_idx >= 0:
-      message = message[name_idx:]
-
-    # Cut off fault addr
-    fault_idx = message.find(', fault addr')
-    if fault_idx >= 0:
-      message = message[:fault_idx]
-
+  # Cut off fault addr
+  fault_idx = message.find(', fault addr')
+  if fault_idx >= 0:
+    message = message[:fault_idx]
 
   cloudlog.error({'tombstone': message})
   client.captureMessage(
@@ -71,6 +72,48 @@ def report_tombstone(fn, client):
       'tombstone': contents
     },
   )
+
+
+def report_tombstone_apport(fn, client):
+  f_size = os.path.getsize(fn)
+  if f_size > MAX_SIZE:
+    cloudlog.error(f"Tombstone {fn} too big, {f_size}. Skipping...")
+    return
+
+  include_in_messge = ["ProblemType", "ExecutablePath", "Signal"]
+  message = ""  # One line description of the crash
+  contents = ""  # Full file contents without coredump
+
+  with open(fn) as f:
+    for line in f:
+      if "CoreDump" in line:
+        break
+
+      contents += line
+      if any([x in line for x in include_in_messge]):
+        message += line.strip() + " "
+
+  # Get stacktrace using gdb
+  stacktrace = get_apport_stacktrace(fn)
+  contents += stacktrace + "\n" + contents
+
+  # Get function and line of crash, but remove function arguments as they are not static
+  crash_function = stacktrace.split('\n')[1][3:]
+  crash_function = re.sub(r'\(.*?\)', '', crash_function)
+
+  message = message + " " + crash_function
+
+  cloudlog.error({'tombstone': message})
+  client.captureMessage(
+    message=message,
+    sdk={'name': 'tombstoned', 'version': '0'},
+    extra={
+      'tombstone_fn': fn,
+      'tombstone': contents
+    },
+  )
+
+  # TODO: move file to /data/media to be uploaded
 
 
 def main():
@@ -91,7 +134,10 @@ def main():
     for fn, _ in (now_tombstones - initial_tombstones):
       try:
         cloudlog.info(f"reporting new tombstone {fn}")
-        report_tombstone(fn, client)
+        if fn.endswith(".crash"):
+          report_tombstone_apport(fn, client)
+        else:
+          report_tombstone_android(fn, client)
       except Exception:
         cloudlog.exception(f"Error reporting tombstone {fn}")
 
