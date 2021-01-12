@@ -41,6 +41,7 @@
 #define DISABLE_ENCODER // TODO: loggerd for PC
 #endif
 
+#include "encoder.h"
 #ifndef DISABLE_ENCODER
 #include "omx_encoder.h"
 #endif
@@ -199,7 +200,7 @@ void encoder_thread(int cam_idx) {
 
   int cnt = 0;
   LoggerHandle *lh = NULL;
-  std::vector<OmxEncoder *> encoders;
+  std::vector<VideoEncoder *> encoders;
   VisionIpcClient vipc_client = VisionIpcClient("camerad", cam_info.stream_type, false);
 
   while (!do_exit) {
