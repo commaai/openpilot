@@ -56,7 +56,7 @@ OffroadHome::OffroadHome(QWidget *parent) : QWidget(parent) {
 
   SetupWidget *setup = new SetupWidget;
   statsAndSetup->addWidget(setup);
-  
+
   QWidget* statsAndSetupWidget = new QWidget();
   statsAndSetupWidget->setLayout(statsAndSetup);
 
@@ -157,7 +157,7 @@ void HomeWindow::setVisibility(bool offroad) {
 }
 
 void HomeWindow::mousePressEvent(QMouseEvent *e) {
-  UIState *ui_state = glWindow->ui_state;
+  UIState *ui_state = &glWindow->ui_state;
 
   glWindow->wake();
 
@@ -222,11 +222,10 @@ void GLWindow::initializeGL() {
   std::cout << "OpenGL renderer: " << glGetString(GL_RENDERER) << std::endl;
   std::cout << "OpenGL language version: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
 
-  ui_state = new UIState();
-  ui_state->sound = &sound;
-  ui_state->fb_w = vwp_w;
-  ui_state->fb_h = vwp_h;
-  ui_init(ui_state);
+  ui_state.sound = &sound;
+  ui_state.fb_w = vwp_w;
+  ui_state.fb_h = vwp_h;
+  ui_init(&ui_state);
 
   wake();
 
@@ -238,11 +237,11 @@ void GLWindow::backlightUpdate() {
   // Update brightness
   float k = (BACKLIGHT_DT / BACKLIGHT_TS) / (1.0f + BACKLIGHT_DT / BACKLIGHT_TS);
 
-  float clipped_brightness = std::min(1023.0f, (ui_state->light_sensor*brightness_m) + brightness_b);
+  float clipped_brightness = std::min(1023.0f, (ui_state.light_sensor*brightness_m) + brightness_b);
   smooth_brightness = clipped_brightness * k + smooth_brightness * (1.0f - k);
   int brightness = smooth_brightness;
 
-  if (!ui_state->awake) {
+  if (!ui_state.awake) {
     brightness = 0;
   }
 
@@ -250,8 +249,8 @@ void GLWindow::backlightUpdate() {
 }
 
 void GLWindow::timerUpdate() {
-  if (ui_state->started != onroad) {
-    onroad = ui_state->started;
+  if (ui_state.started != onroad) {
+    onroad = ui_state.started;
     emit offroadTransition(!onroad);
 #ifdef QCOM2
     timer->setInterval(onroad ? 0 : 1000);
@@ -260,9 +259,9 @@ void GLWindow::timerUpdate() {
 
   // Fix awake timeout if running 1 Hz when offroad
   int dt = timer->interval() == 0 ? 1 : 20;
-  handle_display_state(ui_state, dt, false);
+  handle_display_state(&ui_state, dt, false);
 
-  ui_update(ui_state);
+  ui_update(&ui_state);
   repaint();
 }
 
@@ -271,14 +270,11 @@ void GLWindow::resizeGL(int w, int h) {
 }
 
 void GLWindow::paintGL() {
-  ui_draw(ui_state);
+  ui_draw(&ui_state);
 }
 
 void GLWindow::wake() {
-  // UI state might not be initialized yet
-  if (ui_state != nullptr) {
-    handle_display_state(ui_state, 1, true);
-  }
+  handle_display_state(&ui_state, 1, true);
 }
 
 

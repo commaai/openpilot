@@ -37,7 +37,7 @@ PairingQRWidget::PairingQRWidget(QWidget *parent) : QWidget(parent) {
   QVector<QPair<QString, QJsonValue>> payloads;
   payloads.push_back(qMakePair(QString("pair"), true));
   QString pairToken = api->create_jwt(payloads);
-  
+
   QString qrString = IMEI + "--" + serial + "--" + pairToken;
   this->updateQrCode(qrString);
 }
@@ -81,7 +81,7 @@ PrimeUserWidget::PrimeUserWidget(QWidget *parent) : QWidget(parent) {
   mainLayout->addWidget(username);
 
   mainLayout->addSpacing(200);
-  
+
   QLabel *commaPoints = new QLabel("COMMA POINTS");
   commaPoints->setStyleSheet(R"(
     font-size: 60px;
@@ -99,7 +99,7 @@ PrimeUserWidget::PrimeUserWidget(QWidget *parent) : QWidget(parent) {
 }
 
 void PrimeUserWidget::refresh() {
-  if (!GLWindow::ui_state->awake) {
+  if (!GLWindow::ui_state.awake) {
     return;
   }
   QString token = api->create_jwt();
@@ -144,7 +144,7 @@ PrimeAdWidget::PrimeAdWidget(QWidget *parent) : QWidget(parent) {
 
   QLabel *upgradeNow = new QLabel("Upgrade now");
   vlayout->addWidget(upgradeNow);
-  
+
   QLabel *description = new QLabel("Become a comma prime member in the comma app and get premium features!");
   description->setStyleSheet(R"(
     font-size: 50px;
@@ -154,7 +154,7 @@ PrimeAdWidget::PrimeAdWidget(QWidget *parent) : QWidget(parent) {
   vlayout->addWidget(description);
 
   vlayout->addSpacing(50);
-  
+
   QVector<QString> features = {"✓ REMOTE ACCESS", "✓ 14 DAYS OF STORAGE", "✓ DEVELOPER PERKS"};
   for (auto featureContent : features) {
     QLabel *feature = new QLabel(featureContent);
@@ -180,18 +180,18 @@ SetupWidget::SetupWidget(QWidget *parent) : QWidget(parent) {
   QFrame *background = new QFrame;
 
   mainLayout = new QStackedLayout;
-  
+
   QWidget *blankWidget = new QWidget;
   mainLayout->addWidget(blankWidget);
 
   QVBoxLayout *qrLayout = new QVBoxLayout;
-  
+
   QLabel *qrLabel = new QLabel("Pair with Comma Connect app!");
   qrLabel->setStyleSheet(R"(
     font-size: 50px;
   )");
   qrLayout->addWidget(qrLabel);
-  
+
   qrLayout->addWidget(new PairingQRWidget);
 
   QWidget *q = new QWidget;
@@ -221,7 +221,7 @@ SetupWidget::SetupWidget(QWidget *parent) : QWidget(parent) {
 
 void SetupWidget::refresh() {
   QString token = api->create_jwt();
-  if (!GLWindow::ui_state->awake) {
+  if (!GLWindow::ui_state.awake) {
     return;
   }
   QString dongle_id = QString::fromStdString(Params().get("DongleId"));

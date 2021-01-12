@@ -25,7 +25,7 @@ public:
   void wake();
   ~GLWindow();
 
-  inline static UIState *ui_state = nullptr;
+  inline static UIState ui_state = {0};
 
 signals:
   void offroadTransition(bool offroad);
@@ -70,7 +70,7 @@ private:
   QPushButton *alert_notification;
 
 public slots:
-  void closeAlerts();	
+  void closeAlerts();
   void openAlerts();
   void refresh();
 };
@@ -96,4 +96,3 @@ private:
 private slots:
   void setVisibility(bool offroad);
 };
-
