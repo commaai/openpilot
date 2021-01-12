@@ -903,7 +903,6 @@ static void camera_close(CameraState *s) {
 
   ret = cam_control(s->video0_fd, CAM_REQ_MGR_DESTROY_SESSION, &s->req_mgr_session_info, sizeof(s->req_mgr_session_info));
   LOGD("destroyed session: %d", ret);
-  s->buf.stop();
 }
 
 static void cameras_close(MultiCameraState *s) {
@@ -1197,7 +1196,7 @@ void cameras_run(MultiCameraState *s) {
   err = pthread_join(ae_thread_handle, NULL);
   assert(err == 0);
 
-  cameras_close(s);
-
   for (auto &t : threads) t.join();
+
+  cameras_close(s);
 }
