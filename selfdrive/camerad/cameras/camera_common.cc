@@ -58,7 +58,7 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
   frame_buf_count = frame_cnt;
 
   // RAW frame
-  frame_size = ci->frame_height * ci->frame_stride;
+  const int frame_size = ci->frame_height * ci->frame_stride;
   camera_bufs = std::make_unique<VisionBuf[]>(frame_buf_count);
   camera_bufs_metadata = std::make_unique<FrameMetadata[]>(frame_buf_count);
 
@@ -139,7 +139,6 @@ bool CameraBuf::acquire() {
   cur_frame_data = frame_data;
 
   cur_rgb_buf = vipc_server->get_buffer(rgb_type);
-  cur_rgb_idx = cur_rgb_buf->idx;
 
   cl_event debayer_event;
   cl_mem camrabuf_cl = camera_bufs[cur_buf_idx].buf_cl;
@@ -164,7 +163,6 @@ bool CameraBuf::acquire() {
                                     &debayer_work_size, NULL, 0, 0, &debayer_event));
 #endif
   } else {
-    assert(cur_rgb_buf->len >= frame_size);
     assert(rgb_stride == camera_state->ci.frame_stride);
     CL_CHECK(clEnqueueCopyBuffer(q, camrabuf_cl, cur_rgb_buf->buf_cl, 0, 0,
                                cur_rgb_buf->len, 0, 0, &debayer_event));
@@ -174,8 +172,7 @@ bool CameraBuf::acquire() {
   CL_CHECK(clReleaseEvent(debayer_event));
 
   cur_yuv_buf = vipc_server->get_buffer(yuv_type);
-  cur_yuv_idx = cur_yuv_buf->idx;
-  yuv_metas[cur_yuv_idx] = frame_data;
+  yuv_metas[cur_yuv_buf->idx] = frame_data;
   rgb_to_yuv_queue(&rgb_to_yuv_state, q, cur_rgb_buf->buf_cl, cur_yuv_buf->buf_cl);
 
   VisionIpcBufExtra extra = {
