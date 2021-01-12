@@ -32,9 +32,13 @@ PairingQRWidget::PairingQRWidget(QWidget* parent) : QWidget(parent) {
 
   QString IMEI = QString::fromStdString(Params().get("IMEI"));
   QString serial = QString::fromStdString(Params().get("HardwareSerial"));
-  
+
   if (std::min(IMEI.length(), serial.length()) <= 5) {
-    qrCode->setText("Contact support");
+    qrCode->setText("Error getting serial: contact support");
+    qrCode->setWordWrap(true);
+    qrCode->setStyleSheet(R"(
+      font-size: 60px;
+    )");
     return;
   }
   QVector<QPair<QString, QJsonValue>> payloads;
@@ -187,14 +191,34 @@ SetupWidget::SetupWidget(QWidget* parent) : QWidget(parent) {
   QWidget* blankWidget = new QWidget;
   mainLayout->addWidget(blankWidget);
 
-  // QWidget* finishRegistration = new QWidget;
+  QWidget* finishRegistration = new QWidget;
 
+  QVBoxLayout* finishRegistationLayout = new QVBoxLayout;
+  finishRegistationLayout->addSpacing(50);
+  QPushButton* finishButton = new QPushButton("Finish registration");
+  finishButton->setFixedHeight(200);
+  finishButton->setStyleSheet(R"(
+    font-size: 60px;
+  )");
+  QObject::connect(finishButton, SIGNAL(released()), this, SLOT(showQrCode()));
+  finishRegistationLayout->addWidget(finishButton);
+    
+  QLabel* registrationDescription = new QLabel("Pair your comma account with comma connect");
+  registrationDescription->setStyleSheet(R"(
+    font-size: 50px;
+  )");
+
+  registrationDescription->setWordWrap(true);
+  finishRegistationLayout->addWidget(registrationDescription);
+
+  finishRegistration->setLayout(finishRegistationLayout);
+  mainLayout->addWidget(finishRegistration);
 
   QVBoxLayout* qrLayout = new QVBoxLayout;
 
   QLabel* qrLabel = new QLabel("Pair with Comma Connect app!");
   qrLabel->setStyleSheet(R"(
-    font-size: 45px;
+    font-size: 40px;
   )");
   qrLayout->addWidget(qrLabel);
 
@@ -225,6 +249,10 @@ SetupWidget::SetupWidget(QWidget* parent) : QWidget(parent) {
   timer->start(5 * seconds);
 }
 
+void SetupWidget::showQrCode(){
+  showQr = true;
+  mainLayout->setCurrentIndex(2);
+}
 void SetupWidget::refresh() {
   if (!GLWindow::ui_state.awake) {
     return;
@@ -264,11 +292,13 @@ void SetupWidget::replyFinished() {
   bool is_prime = json["prime"].toBool();
 
   if (!is_paired) {
-    mainLayout->setCurrentIndex(1);
+    mainLayout->setCurrentIndex(1 + showQr);
   } else if (is_paired && !is_prime) {
-    mainLayout->setCurrentIndex(2);
-  } else if (is_paired && is_prime) {
+    showQr = false;
     mainLayout->setCurrentIndex(3);
+  } else if (is_paired && is_prime) {
+    showQr = false;
+    mainLayout->setCurrentIndex(4);
   }
   reply->deleteLater();
   reply = NULL; // Make room for new reply

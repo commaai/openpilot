@@ -52,7 +52,9 @@ private:
   QNetworkReply* reply;
   CommaApi* api;
   void replyFinished();
+  bool showQr = false;
 
 private slots:
   void refresh();
+  void showQrCode();
 };
