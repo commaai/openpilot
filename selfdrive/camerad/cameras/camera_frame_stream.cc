@@ -2,20 +2,16 @@
 
 #include <unistd.h>
 #include <cassert>
-#include <string.h>
 
-#include <libyuv.h>
+#include <capnp/dynamic.h>
+
 #include "messaging.hpp"
-
 #include "common/util.h"
-#include "common/timing.h"
-#include "common/swaglog.h"
-
-
-extern ExitHandler do_exit;
 
 #define FRAME_WIDTH 1164
 #define FRAME_HEIGHT 874
+
+extern ExitHandler do_exit;
 
 namespace {
 
@@ -28,26 +24,28 @@ void camera_init(VisionIpcServer * v, CameraState *s, int camera_id, unsigned in
   s->buf.init(device_id, ctx, s, v, FRAME_BUF_COUNT, rgb_type, yuv_type);
 }
 
-void run_frame_stream(CameraState &camera) {
-  SubMaster sm({"frame"});
+void run_frame_stream(CameraState &camera, const char* frame_pkt) {
+  SubMaster sm({frame_pkt});
 
   size_t buf_idx = 0;
   while (!do_exit) {
     if (sm.update(1000) == 0) continue;
 
-    auto frame = sm["frame"].getFrame();
+    auto msg = static_cast<capnp::DynamicStruct::Reader>(sm[frame_pkt]);
+    auto frame = msg.get(frame_pkt).as<capnp::DynamicStruct>();
     camera.buf.camera_bufs_metadata[buf_idx] = {
-      .frame_id = frame.getFrameId(),
-      .timestamp_eof = frame.getTimestampEof(),
-      .frame_length = static_cast<unsigned>(frame.getFrameLength()),
-      .integ_lines = static_cast<unsigned>(frame.getIntegLines()),
-      .global_gain = static_cast<unsigned>(frame.getGlobalGain()),
+      .frame_id = frame.get("frameId").as<uint32_t>(),
+      .timestamp_eof = frame.get("timestampEof").as<uint64_t>(),
+      .frame_length = frame.get("frameLength").as<unsigned>(),
+      .integ_lines = frame.get("integLines").as<unsigned>(),
+      .global_gain = frame.get("globalGain").as<unsigned>(),
     };
 
     cl_command_queue q = camera.buf.camera_bufs[buf_idx].copy_q;
     cl_mem yuv_cl = camera.buf.camera_bufs[buf_idx].buf_cl;
 
-    clEnqueueWriteBuffer(q, yuv_cl, CL_TRUE, 0, frame.getImage().size(), frame.getImage().begin(), 0, NULL, NULL);
+    auto image = frame.get("image").as<capnp::Data>();
+    clEnqueueWriteBuffer(q, yuv_cl, CL_TRUE, 0, image.size(), image.begin(), 0, NULL, NULL);
     camera.buf.queue(buf_idx);
     buf_idx = (buf_idx + 1) % FRAME_BUF_COUNT;
   }
@@ -89,7 +87,6 @@ void camera_process_rear(MultiCameraState *s, CameraState *c, int cnt) {}
 void cameras_run(MultiCameraState *s) {
   std::thread t = start_process_thread(s, "processing", &s->rear, camera_process_rear);
   set_thread_name("frame_streaming");
-  run_frame_stream(s->rear);
+  run_frame_stream(s->rear, "frame");
   t.join();
-  cameras_close(s);
 }
