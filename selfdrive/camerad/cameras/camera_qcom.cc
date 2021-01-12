@@ -1777,16 +1777,11 @@ void cameras_run(MultiCameraState *s) {
   }
 
   LOG(" ************** STOPPING **************");
-  // stop CameraBuf to wakeup CameraBuf::acquire
-  s->rear.buf.stop();
-  s->front.buf.stop();
 
   err = pthread_join(ops_thread_handle, NULL);
   assert(err == 0);
 
-  for (auto &t : threads) {
-    t.join();
-  }
+  for (auto &t : threads) t.join();
 
   cameras_close(s);
 }
