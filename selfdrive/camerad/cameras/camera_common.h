@@ -134,7 +134,7 @@ public:
 typedef void (*process_thread_cb)(MultiCameraState *s, CameraState *c, int cnt);
 
 void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &frame_data, uint32_t cnt);
-void fill_frame_image(cereal::FrameData::Builder &framed, uint8_t *dat, int w, int h, int stride);
+void fill_frame_image(cereal::FrameData::Builder &framed, const CameraBuf *b);
 void set_exposure_target(CameraState *c, const uint8_t *pix_ptr, int x_start, int x_end, int x_skip, int y_start, int y_end, int y_skip);
 std::thread start_process_thread(MultiCameraState *cameras, const char *tname,
                                     CameraState *cs, process_thread_cb callback);
