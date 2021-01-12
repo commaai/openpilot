@@ -107,8 +107,11 @@ LogCameraInfo cameras_logged[LOG_CAMERA_ID_MAX] = {
 namespace {
 
 constexpr int SEGMENT_LENGTH = 60;
-const char* LOG_ROOT = "/data/media/0/realdata";
-
+#if defined(QCOM) || defined(QCOM2)
+std::string LOG_ROOT = "/data/media/0/realdata";
+#else
+std::string LOG_ROOT = util::getenv_default("HOME", "/.comma/media/0/realdata", "/data/media/0/realdata");
+#endif
 
 double randrange(double a, double b) __attribute__((unused));
 double randrange(double a, double b) {
@@ -410,7 +413,7 @@ static int clear_locks_fn(const char* fpath, const struct stat *sb, int tyupefla
 }
 
 static void clear_locks() {
-  ftw(LOG_ROOT, clear_locks_fn, 16);
+  ftw(LOG_ROOT.c_str(), clear_locks_fn, 16);
 }
 
 static void bootlog() {
@@ -422,7 +425,7 @@ static void bootlog() {
     logger_init(&s.logger, "bootlog", bytes.begin(), bytes.size(), false);
   }
 
-  err = logger_next(&s.logger, LOG_ROOT, s.segment_path, sizeof(s.segment_path), &s.rotate_segment);
+  err = logger_next(&s.logger, LOG_ROOT.c_str(), s.segment_path, sizeof(s.segment_path), &s.rotate_segment);
   assert(err == 0);
   LOGW("bootlog to %s", s.segment_path);
 
@@ -614,7 +617,7 @@ int main(int argc, char** argv) {
       pthread_mutex_lock(&s.rotate_lock);
       last_rotate_tms = millis_since_boot();
 
-      int err = logger_next(&s.logger, LOG_ROOT, s.segment_path, sizeof(s.segment_path), &s.rotate_segment);
+      int err = logger_next(&s.logger, LOG_ROOT.c_str(), s.segment_path, sizeof(s.segment_path), &s.rotate_segment);
       assert(err == 0);
       if (s.logger.part == 0) {
         LOGW("logging to %s", s.segment_path);
