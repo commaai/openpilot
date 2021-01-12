@@ -195,9 +195,6 @@ void CameraBuf::release() {
   }
 }
 
-void CameraBuf::stop() {
-}
-
 void CameraBuf::queue(size_t buf_idx){
   {
     std::lock_guard<std::mutex> lk(frame_queue_mutex);
