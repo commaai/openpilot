@@ -184,12 +184,6 @@ struct LoggerdState {
   char segment_path[4096];
   int rotate_segment;
   pthread_mutex_t rotate_lock;
-
-  // video encders
-  int num_encoder;
-  std::atomic<int> rotate_seq_id;
-  std::atomic<int> should_close;
-  std::atomic<int> finish_close;
   RotateState rotate_state[LOG_CAMERA_ID_MAX-1];
 };
 LoggerdState s;
@@ -199,21 +193,15 @@ void encoder_thread(int cam_idx) {
   assert(cam_idx < LOG_CAMERA_ID_MAX-1);
 
   LogCameraInfo &cam_info = cameras_logged[cam_idx];
-  set_thread_name(cam_info.filename);
-
   RotateState &rotate_state = s.rotate_state[cam_idx];
 
-  std::vector<EncoderState*> encoders;
-
-  pthread_mutex_lock(&s.rotate_lock);
-  int my_idx = s.num_encoder;
-  s.num_encoder += 1;
-  pthread_mutex_unlock(&s.rotate_lock);
+  set_thread_name(cam_info.filename);
 
   int cnt = 0;
   LoggerHandle *lh = NULL;
-
+  std::vector<EncoderState*> encoders;
   VisionIpcClient vipc_client = VisionIpcClient("camerad", cam_info.stream_type, false);
+
   while (!do_exit) {
     if (!vipc_client.connect(false)){
       util::sleep_for(100);
@@ -247,10 +235,7 @@ void encoder_thread(int cam_idx) {
         continue;
       }
 
-      //uint64_t current_time = nanos_since_boot();
-      //uint64_t diff = current_time - extra.timestamp_eof;
-      //double msdiff = (double) diff / 1000000.0;
-      // printf("logger latency to tsEof: %f\n", msdiff);
+      //printf("logger latency to tsEof: %f\n", (double)(nanos_since_boot() - extra.timestamp_eof) / 1000000.0);
 
       // all the rotation stuff
       {
@@ -264,56 +249,32 @@ void encoder_thread(int cam_idx) {
 
         // rotate the encoder if the logger is on a newer segment
         if (rotate_state.should_rotate) {
+          LOGW("camera %d rotate encoder to %s", cam_idx, s.segment_path);
+
           if (!rotate_state.initialized) {
             rotate_state.last_rotate_frame_id = extra.frame_id - 1;
             rotate_state.initialized = true;
           }
 
-          // poll for our turn
-          while (s.rotate_seq_id != my_idx && !do_exit) util::sleep_for(10);
-
-          LOGW("camera %d rotate encoder to %s.", cam_idx, s.segment_path);
-          for (auto &e : encoders) {
-            encoder_rotate(e, s.segment_path, s.rotate_segment);
-          }
-
-          s.rotate_seq_id = (my_idx + 1) % s.num_encoder;
           if (lh) {
             lh_close(lh);
           }
           lh = logger_get_handle(&s.logger);
 
           pthread_mutex_lock(&s.rotate_lock);
-          s.should_close += 1;
-          pthread_mutex_unlock(&s.rotate_lock);
-
-          while(s.should_close > 0 && s.should_close < s.num_encoder && !do_exit) util::sleep_for(10);
-
-          pthread_mutex_lock(&s.rotate_lock);
-          s.should_close = s.should_close == s.num_encoder ? 1 - s.num_encoder : s.should_close + 1;
-
           for (auto &e : encoders) {
             encoder_close(e);
-            encoder_open(e, e->next_path);
-            e->segment = e->next_segment;
-            e->rotating = false;
+            encoder_open(e, s.segment_path, s.rotate_segment);
           }
-
-          s.finish_close += 1;
           pthread_mutex_unlock(&s.rotate_lock);
-
-          // wait for all to finish
-          while(s.finish_close > 0 && s.finish_close < s.num_encoder && !do_exit) util::sleep_for(10);
-          s.finish_close = 0;
-
           rotate_state.finish_rotate();
         }
       }
 
       rotate_state.setStreamFrameId(extra.frame_id);
 
+      // encode a frame
       {
-        // encode hevc
         int out_segment = -1;
         int out_id = encoder_encode_frame(encoders[0],
                                           buf->y, buf->u, buf->v,
@@ -358,7 +319,6 @@ void encoder_thread(int cam_idx) {
       lh_close(lh);
       lh = NULL;
     }
-
   }
 
   LOG("encoder destroy");
@@ -551,10 +511,6 @@ int main(int argc, char** argv) {
   }
 
   // init encoders
-  s.rotate_seq_id = 0;
-  s.should_close = 0;
-  s.finish_close = 0;
-  s.num_encoder = 0;
   pthread_mutex_init(&s.rotate_lock, NULL);
 
   // TODO: create these threads dynamically on frame packet presence
@@ -641,7 +597,7 @@ int main(int argc, char** argv) {
     bool new_segment = s.logger.part == -1;
     if (s.logger.part > -1) {
       double tms = millis_since_boot();
-      if (tms - last_camera_seen_tms <= NO_CAMERA_PATIENCE && s.num_encoder > 0) {
+      if (tms - last_camera_seen_tms <= NO_CAMERA_PATIENCE && encoder_threads.size() > 0) {
         new_segment = true;
         for (auto &r : s.rotate_state) {
           // this *should* be redundant on tici since all camera frames are synced
