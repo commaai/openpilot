@@ -44,6 +44,7 @@ installing-system-requirements
 
 function install-pyenv() {
   if [ "$DISTRO" == "ubuntu" ] && [ "$DISTRO_VERSION" == "20.04" ]; then
+    export MAKEFLAGS="-j$(nproc)"
     cd "$(dirname "${BASH_SOURCE[0]}")" || exit
     PYENV_PYTHON_VERSION=$(cat .python-version)
     if ! [ -x "$(pyenv prefix "${PYENV_PYTHON_VERSION}")" ]; then
