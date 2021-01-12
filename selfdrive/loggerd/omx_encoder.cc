@@ -181,13 +181,8 @@ OmxEncoder::OmxEncoder(const char* filename, int width, int height, int fps, int
     this->v_ptr2 = (uint8_t *)malloc(this->width*this->height/4);
   }
 
-  if (h265) {
-    err = OMX_GetHandle(&this->handle, (OMX_STRING)"OMX.qcom.video.encoder.hevc",
-                        this, &omx_callbacks);
-  } else {
-    err = OMX_GetHandle(&this->handle, (OMX_STRING)"OMX.qcom.video.encoder.avc",
-                        this, &omx_callbacks);
-  }
+  auto component = (OMX_STRING)(h265 ? "OMX.qcom.video.encoder.hevc" : "OMX.qcom.video.encoder.avc");
+  err = OMX_GetHandle(&this->handle, component, this, &omx_callbacks);
   if (err != OMX_ErrorNone) {
     LOGE("error getting codec: %x", err);
   }

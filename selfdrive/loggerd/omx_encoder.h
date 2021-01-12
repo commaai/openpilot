@@ -25,6 +25,7 @@ public:
   void encoder_open(const char* path, int segment);
   void encoder_close();
 
+  // OMX callbacks
   static OMX_ERRORTYPE event_handler(OMX_HANDLETYPE component, OMX_PTR app_data, OMX_EVENTTYPE event,
                                      OMX_U32 data1, OMX_U32 data2, OMX_PTR event_data);
   static OMX_ERRORTYPE empty_buffer_done(OMX_HANDLETYPE component, OMX_PTR app_data,
@@ -33,7 +34,6 @@ public:
                                         OMX_BUFFERHEADERTYPE *buffer);
 
 private:
-  // OMX callbacks
   void wait_for_state(OMX_STATETYPE state);
   static void handle_out_buf(OmxEncoder *e, OMX_BUFFERHEADERTYPE *out_buf);
 
