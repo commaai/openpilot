@@ -20,7 +20,6 @@
 #include "msm_cam_sensor.h"
 
 #include "common/util.h"
-#include "common/utilpp.h"
 #include "common/timing.h"
 #include "common/swaglog.h"
 #include "common/params.h"

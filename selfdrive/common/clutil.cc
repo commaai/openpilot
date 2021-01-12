@@ -7,7 +7,6 @@
 #include <iostream>
 #include <vector>
 #include "util.h"
-#include "utilpp.h"
 
 namespace {  // helper functions
 
