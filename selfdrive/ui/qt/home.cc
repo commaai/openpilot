@@ -1,15 +1,15 @@
 #include <cmath>
-#include <iostream>
 #include <fstream>
+#include <iostream>
 #include <thread>
 
-#include <QWidget>
-#include <QMouseEvent>
-#include <QHBoxLayout>
-#include <QVBoxLayout>
-#include <QStackedLayout>
-#include <QLayout>
 #include <QDateTime>
+#include <QHBoxLayout>
+#include <QLayout>
+#include <QMouseEvent>
+#include <QStackedLayout>
+#include <QVBoxLayout>
+#include <QWidget>
 
 #include "common/params.h"
 
@@ -22,19 +22,18 @@
 #define BACKLIGHT_DT 0.25
 #define BACKLIGHT_TS 2.00
 
-
-OffroadHome::OffroadHome(QWidget *parent) : QWidget(parent) {
-  QVBoxLayout *main_layout = new QVBoxLayout();
+OffroadHome::OffroadHome(QWidget* parent) : QWidget(parent) {
+  QVBoxLayout* main_layout = new QVBoxLayout();
   main_layout->setContentsMargins(sbr_w + 50, 50, 50, 50);
 
   // top header
-  QHBoxLayout *header_layout = new QHBoxLayout();
+  QHBoxLayout* header_layout = new QHBoxLayout();
 
   date = new QLabel();
   date->setStyleSheet(R"(font-size: 55px;)");
   header_layout->addWidget(date, 0, Qt::AlignTop | Qt::AlignLeft);
 
-  QLabel *version = new QLabel(QString::fromStdString("openpilot v" + Params().get("Version")));
+  QLabel* version = new QLabel(QString::fromStdString("openpilot v" + Params().get("Version")));
   version->setStyleSheet(R"(font-size: 45px;)");
   header_layout->addWidget(version, 0, Qt::AlignTop | Qt::AlignRight);
 
@@ -50,11 +49,11 @@ OffroadHome::OffroadHome(QWidget *parent) : QWidget(parent) {
 
   QHBoxLayout* statsAndSetup = new QHBoxLayout();
 
-  DriveStats *drive = new DriveStats;
+  DriveStats* drive = new DriveStats;
   drive->setFixedSize(1000, 800);
   statsAndSetup->addWidget(drive);
 
-  SetupWidget *setup = new SetupWidget;
+  SetupWidget* setup = new SetupWidget;
   statsAndSetup->addWidget(setup);
 
   QWidget* statsAndSetupWidget = new QWidget();
@@ -130,8 +129,7 @@ void OffroadHome::refresh() {
   alert_notification->setStyleSheet(style);
 }
 
-
-HomeWindow::HomeWindow(QWidget *parent) : QWidget(parent) {
+HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
   layout = new QGridLayout;
   layout->setMargin(0);
 
@@ -156,8 +154,8 @@ void HomeWindow::setVisibility(bool offroad) {
   home->setVisible(offroad);
 }
 
-void HomeWindow::mousePressEvent(QMouseEvent *e) {
-  UIState *ui_state = &glWindow->ui_state;
+void HomeWindow::mousePressEvent(QMouseEvent* e) {
+  UIState* ui_state = &glWindow->ui_state;
 
   glWindow->wake();
 
@@ -172,14 +170,13 @@ void HomeWindow::mousePressEvent(QMouseEvent *e) {
   }
 }
 
-
-static void handle_display_state(UIState *s, int dt, bool user_input) {
+static void handle_display_state(UIState* s, int dt, bool user_input) {
   static int awake_timeout = 0;
-  awake_timeout = std::max(awake_timeout-dt, 0);
+  awake_timeout = std::max(awake_timeout - dt, 0);
 
   if (user_input || s->ignition || s->started) {
     s->awake = true;
-    awake_timeout = 30*UI_FREQ;
+    awake_timeout = 30 * UI_FREQ;
   } else if (awake_timeout == 0) {
     s->awake = false;
   }
@@ -193,8 +190,7 @@ static void set_backlight(int brightness) {
   }
 }
 
-
-GLWindow::GLWindow(QWidget *parent) : QOpenGLWidget(parent) {
+GLWindow::GLWindow(QWidget* parent) : QOpenGLWidget(parent) {
   timer = new QTimer(this);
   QObject::connect(timer, SIGNAL(timeout()), this, SLOT(timerUpdate()));
 
@@ -237,7 +233,7 @@ void GLWindow::backlightUpdate() {
   // Update brightness
   float k = (BACKLIGHT_DT / BACKLIGHT_TS) / (1.0f + BACKLIGHT_DT / BACKLIGHT_TS);
 
-  float clipped_brightness = std::min(1023.0f, (ui_state.light_sensor*brightness_m) + brightness_b);
+  float clipped_brightness = std::min(1023.0f, (ui_state.light_sensor * brightness_m) + brightness_b);
   smooth_brightness = clipped_brightness * k + smooth_brightness * (1.0f - k);
   int brightness = smooth_brightness;
 
@@ -277,8 +273,7 @@ void GLWindow::wake() {
   handle_display_state(&ui_state, 1, true);
 }
 
-
 FramebufferState* framebuffer_init(const char* name, int32_t layer, int alpha,
-                                   int *out_w, int *out_h) {
+                                   int* out_w, int* out_h) {
   return (FramebufferState*)1; // not null
 }

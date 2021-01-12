@@ -1,12 +1,12 @@
-#include <QWidget>
-#include <QFile>
-#include <QJsonObject>
-#include <QJsonDocument>
 #include <QDateTime>
-#include <QString>
 #include <QDebug>
+#include <QFile>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QNetworkReply>
 #include <QNetworkRequest>
+#include <QString>
+#include <QWidget>
 
 #include "api.hpp"
 #include "common/params.h"
@@ -17,7 +17,7 @@ const std::string private_key_path = "/persist/comma/id_rsa";
 #else
 const std::string private_key_path = util::getenv_default("HOME", "/.comma/persist/comma/id_rsa", "/persist/comma/id_rsa");
 #endif
-CommaApi::CommaApi(QWidget* parent){
+CommaApi::CommaApi(QWidget* parent) {
   networkAccessManager = new QNetworkAccessManager(parent);
 }
 
@@ -33,10 +33,10 @@ QByteArray CommaApi::rsa_sign(QByteArray data) {
   file.close();
   file.deleteLater();
 
-  BIO *mem = BIO_new_mem_buf(key.data(), key.size());
+  BIO* mem = BIO_new_mem_buf(key.data(), key.size());
   assert(mem);
 
-  RSA *rsa_private = PEM_read_bio_RSAPrivateKey(mem, NULL, NULL, NULL);
+  RSA* rsa_private = PEM_read_bio_RSAPrivateKey(mem, NULL, NULL, NULL);
   assert(rsa_private);
 
   auto sig = QByteArray();
@@ -50,7 +50,7 @@ QByteArray CommaApi::rsa_sign(QByteArray data) {
 
   BIO_free(mem);
   RSA_free(rsa_private);
-  
+
   return sig;
 }
 
@@ -62,20 +62,20 @@ QString CommaApi::create_jwt(QVector<QPair<QString, QJsonValue>> payloads, int e
 
   QString dongle_id = QString::fromStdString(Params().get("DongleId"));
   payload.insert("identity", dongle_id);
-  
+
   auto t = QDateTime::currentSecsSinceEpoch();
   payload.insert("nbf", t);
   payload.insert("iat", t);
   payload.insert("exp", t + expiry);
 
-  for(auto load : payloads){
+  for (auto load : payloads) {
     payload.insert(load.first, load.second);
   }
 
   QString jwt =
-    QJsonDocument(header).toJson(QJsonDocument::Compact).toBase64(QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals) +
-    '.' +
-    QJsonDocument(payload).toJson(QJsonDocument::Compact).toBase64(QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals);
+      QJsonDocument(header).toJson(QJsonDocument::Compact).toBase64(QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals) +
+      '.' +
+      QJsonDocument(payload).toJson(QJsonDocument::Compact).toBase64(QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals);
   auto hash = QCryptographicHash::hash(jwt.toUtf8(), QCryptographicHash::Sha256);
   auto sig = rsa_sign(hash);
 
@@ -87,6 +87,6 @@ QString CommaApi::create_jwt() {
   return create_jwt(*(new QVector<QPair<QString, QJsonValue>>()));
 }
 
-QNetworkReply* CommaApi::get(QNetworkRequest request){
+QNetworkReply* CommaApi::get(QNetworkRequest request) {
   return networkAccessManager->get(request);
 }

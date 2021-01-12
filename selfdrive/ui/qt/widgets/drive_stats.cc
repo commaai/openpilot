@@ -1,22 +1,21 @@
 #include <cassert>
 #include <iostream>
 
-#include <QFile>
 #include <QDebug>
-#include <QVBoxLayout>
-#include <QLabel>
-#include <QStackedLayout>
+#include <QFile>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QLabel>
 #include <QNetworkRequest>
+#include <QStackedLayout>
 #include <QTimer>
+#include <QVBoxLayout>
 
-#include "drive_stats.hpp"
-#include "common/params.h"
 #include "api.hpp"
+#include "common/params.h"
 #include "common/util.h"
+#include "drive_stats.hpp"
 #include "home.hpp"
-
 
 const double MILE_TO_KM = 1.60934;
 
@@ -28,45 +27,43 @@ const std::string private_key_path = "/persist/comma/id_rsa";
 const std::string private_key_path = util::getenv_default("HOME", "/.comma/persist/comma/id_rsa", "/persist/comma/id_rsa");
 #endif
 
+QLayout* build_stat(QString name, int stat) {
+  QVBoxLayout* layout = new QVBoxLayout;
 
-QLayout *build_stat(QString name, int stat) {
-  QVBoxLayout *layout = new QVBoxLayout;
-
-  QLabel *metric = new QLabel(QString("%1").arg(stat));
+  QLabel* metric = new QLabel(QString("%1").arg(stat));
   metric->setStyleSheet(R"(
     font-size: 72px;
     font-weight: 700;
   )");
   layout->addWidget(metric, 0, Qt::AlignLeft);
-  
-  QLabel *label = new QLabel(name);
+
+  QLabel* label = new QLabel(name);
   label->setStyleSheet(R"(
     font-size: 32px;
     font-weight: 600;
   )");
   layout->addWidget(label, 0, Qt::AlignLeft);
-  
+
   return layout;
 }
 
-void DriveStats::refresh(){
+void DriveStats::refresh() {
   if (!GLWindow::ui_state.awake) {
     return;
   }
   QString dongle_id = QString::fromStdString(Params().get("DongleId"));
 
   QString token = api->create_jwt();
- 
+
   QNetworkRequest request;
   request.setUrl(QUrl("https://api.commadotai.com/v1.1/devices/" + dongle_id + "/stats"));
-  request.setRawHeader("Authorization", ("JWT "+token).toUtf8());
-  if(reply == NULL){
+  request.setRawHeader("Authorization", ("JWT " + token).toUtf8());
+  if (reply == NULL) {
     reply = api->get(request);
     connect(reply, &QNetworkReply::finished, this, &DriveStats::replyFinished);
-  }else{
-    qDebug()<<"Too many requests, previous request was not yet removed";
+  } else {
+    qDebug() << "Too many requests, previous request was not yet removed";
   }
-
 }
 
 void DriveStats::replyFinished() {
@@ -82,13 +79,13 @@ void DriveStats::replyFinished() {
   }
 
   QString IsMetric = QString::fromStdString(Params().get("IsMetric"));
-  bool metric = (IsMetric =="1");
+  bool metric = (IsMetric == "1");
 
   QJsonObject json = doc.object();
   auto all = json["all"].toObject();
   auto week = json["week"].toObject();
 
-  QGridLayout *gl = new QGridLayout();
+  QGridLayout* gl = new QGridLayout();
 
   int all_distance = all["distance"].toDouble() * (metric ? MILE_TO_KM : 1);
   gl->addWidget(new QLabel("ALL TIME"), 0, 0, 1, 3);
@@ -102,7 +99,7 @@ void DriveStats::replyFinished() {
   gl->addLayout(build_stat(metric ? "KM" : "MILES", week_distance), 7, 1, 3, 1);
   gl->addLayout(build_stat("HOURS", week["minutes"].toDouble() / 60), 7, 2, 3, 1);
 
-  QWidget *q = new QWidget;
+  QWidget* q = new QWidget;
   q->setLayout(gl);
 
   slayout->addWidget(q);
@@ -112,13 +109,13 @@ void DriveStats::replyFinished() {
   reply = NULL;
 }
 
-DriveStats::DriveStats(QWidget *parent) : QWidget(parent) {
+DriveStats::DriveStats(QWidget* parent) : QWidget(parent) {
   api = new CommaApi(this);
 
   slayout = new QStackedLayout;
 
   slayout->addWidget(new QLabel("No network connection"));
-  
+
   setLayout(slayout);
   setStyleSheet(R"(
     QLabel {
@@ -126,7 +123,7 @@ DriveStats::DriveStats(QWidget *parent) : QWidget(parent) {
       font-weight: 600;
     }
   )");
-  QTimer *timer = new QTimer(this);
+  QTimer* timer = new QTimer(this);
   QObject::connect(timer, SIGNAL(timeout()), this, SLOT(refresh()));
   timer->start(5 * seconds);
   refresh();
