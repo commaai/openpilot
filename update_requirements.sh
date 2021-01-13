@@ -42,6 +42,7 @@ function installing-system-requirements() {
 # Run the function and check for requirements
 installing-system-requirements
 
+# Install pyenv
 function install-pyenv() {
   if [ "$DISTRO" == "ubuntu" ] && [ "$DISTRO_VERSION" == "20.04" ]; then
     export MAKEFLAGS="-j$(nproc)"
@@ -57,8 +58,10 @@ function install-pyenv() {
   fi
 }
 
+# Install pyenv
 install-pyenv
 
+# Update Pip
 function pip-stuff() {
   if [ "$DISTRO" == "ubuntu" ] && [ "$DISTRO_VERSION" == "20.04" ]; then
     if [ -x "$(command -v pip)" ]; then
@@ -74,4 +77,5 @@ function pip-stuff() {
   fi
 }
 
+# Update Pip, && pipenv
 pip-stuff
