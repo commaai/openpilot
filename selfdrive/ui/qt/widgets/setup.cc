@@ -27,7 +27,14 @@ PairingQRWidget::PairingQRWidget(QWidget* parent) : QWidget(parent) {
   QVBoxLayout* v = new QVBoxLayout;
   v->addWidget(qrCode, 0, Qt::AlignCenter);
   setLayout(v);
+  
+  QTimer timer; 
+  timer.start(30 * 60 * 1000);
+  connect(&timer, SIGNAL(timeout()), this, SLOT(refresh()));
+  refresh(); // Not waiting half an hour for the first refresh
+}
 
+void PairingQRWidget::refresh(){
   QString IMEI = QString::fromStdString(Params().get("IMEI"));
   QString serial = QString::fromStdString(Params().get("HardwareSerial"));
 
