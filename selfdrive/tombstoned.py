@@ -17,6 +17,18 @@ if TICI:
   MAX_SIZE = MAX_SIZE * 100  # Allow larger size for tici since files contain coredump
 
 
+def sentry_report(client, fn, message, contents):
+  cloudlog.error({'tombstone': message})
+  client.captureMessage(
+    message=message,
+    sdk={'name': 'tombstoned', 'version': '0'},
+    extra={
+      'tombstone_fn': fn,
+      'tombstone': contents
+    },
+  )
+
+
 def get_apport_stacktrace(fn):
   try:
     cmd = f'apport-retrace -s <(cat <(echo "Package: openpilot") "{fn}")'
@@ -65,15 +77,7 @@ def report_tombstone_android(fn, client):
   if fault_idx >= 0:
     message = message[:fault_idx]
 
-  cloudlog.error({'tombstone': message})
-  client.captureMessage(
-    message=message,
-    sdk={'name': 'tombstoned', 'version': '0'},
-    extra={
-      'tombstone_fn': fn,
-      'tombstone': contents
-    },
-  )
+  sentry_report(client, fn, message, contents)
 
 
 def report_tombstone_apport(fn, client):
@@ -134,16 +138,7 @@ def report_tombstone_apport(fn, client):
 
   contents = stacktrace + "\n\n" + contents
   message = message + " - " + crash_function
-
-  cloudlog.error({'tombstone': message})
-  client.captureMessage(
-    message=message,
-    sdk={'name': 'tombstoned', 'version': '0'},
-    extra={
-      'tombstone_fn': fn,
-      'tombstone': contents
-    },
-  )
+  sentry_report(client, fn, message, contents)
 
   # TODO: move file to /data/media to be uploaded
 
