@@ -87,13 +87,12 @@ QString CommaApi::create_jwt() {
 }
 
 
-const int seconds = 1000;
-RequestRepeater::RequestRepeater(QWidget* parent, QString requestURL, int period, QVector<QPair<QString, QJsonValue>> payloads, bool disableWithScreen1){
-  disableWithScreen = disableWithScreen1;
+RequestRepeater::RequestRepeater(QWidget* parent, QString requestURL, int period_seconds, QVector<QPair<QString, QJsonValue>> payloads, bool disableWithScreen)
+  : disableWithScreen(disableWithScreen) {
   networkAccessManager = new QNetworkAccessManager(parent);
   QTimer* timer = new QTimer(this);
   QObject::connect(timer, &QTimer::timeout, [=](){sendRequest(requestURL, payloads);});
-  timer->start(period * seconds);
+  timer->start(period_seconds * 1000);
 }
 
 void RequestRepeater::sendRequest(QString requestURL, QVector<QPair<QString, QJsonValue>> payloads){
@@ -116,9 +115,7 @@ void RequestRepeater::sendRequest(QString requestURL, QVector<QPair<QString, QJs
 void RequestRepeater::replyFinished(){
   if(reply->error() == QNetworkReply::NoError){
     emit receivedResponse(reply->readAll());
-  }
-  else{
-    // qDebug() << reply->errorString();
+  } else {
     emit failedResponse(reply->errorString());
   }
   reply->deleteLater();
