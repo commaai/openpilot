@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import signal
 import re
 import os
 import time
@@ -13,12 +14,13 @@ from selfdrive.version import version, origin, branch, dirty
 
 MAX_SIZE = 100000 * 10  # Normal size is 40-100k, allow up to 1M
 if TICI:
-  MAX_SIZE = MAX_SIZE * 100  # Allow larger size for tici
+  MAX_SIZE = MAX_SIZE * 100  # Allow larger size for tici since files contain coredump
 
 
 def get_apport_stacktrace(fn):
   try:
-    return subprocess.check_output(f'apport-retrace -s <(cat <(echo "Package: openpilot") "{fn}")', shell=True, encoding='utf8', timeout=30)
+    cmd = f'apport-retrace -s <(cat <(echo "Package: openpilot") "{fn}")'
+    return subprocess.check_output(cmd, shell=True, encoding='utf8', timeout=30, executable='/bin/bash')  # pylint: disable=unexpected-keyword-arg
   except subprocess.CalledProcessError:
     return "Error getting stacktrace"
   except subprocess.TimeoutExpired:
@@ -80,28 +82,58 @@ def report_tombstone_apport(fn, client):
     cloudlog.error(f"Tombstone {fn} too big, {f_size}. Skipping...")
     return
 
-  include_in_messge = ["ProblemType", "ExecutablePath", "Signal"]
   message = ""  # One line description of the crash
   contents = ""  # Full file contents without coredump
+
+  proc_maps = False
 
   with open(fn) as f:
     for line in f:
       if "CoreDump" in line:
         break
+      elif "ProcMaps" in line:
+        proc_maps = True
+      elif "ProcStatus" in line:
+        proc_maps = False
 
-      contents += line
-      if any([x in line for x in include_in_messge]):
-        message += line.strip() + " "
+      if not proc_maps:
+        contents += line
 
-  # Get stacktrace using gdb
+      if "ExecutablePath" in line:
+        path = line.strip().split(': ')[-1]
+        path = path.replace('/data/openpilot/', '')
+        message += path
+      elif "Signal" in line:
+        message += " - " + line.strip()
+
+        try:
+          sig_num = int(line.strip().split(': ')[-1])
+          message += " (" + signal.Signals(sig_num).name + ")"  # pylint: disable=no-member
+        except ValueError:
+          pass
+
   stacktrace = get_apport_stacktrace(fn)
-  contents += stacktrace + "\n" + contents
+  stacktrace_s = stacktrace.split('\n')
+  if len(stacktrace_s) > 2:
+    found = False
 
-  # Get function and line of crash, but remove function arguments as they are not static
-  crash_function = stacktrace.split('\n')[1][3:]
-  crash_function = re.sub(r'\(.*?\)', '', crash_function)
+    # Try to find first entry in openpilot, fall back to first line
+    for line in stacktrace_s:
+      if "at selfdrive/" in line:
+          crash_function = line
+          found = True
+          break
 
-  message = message + " " + crash_function
+    if not found:
+      crash_function = stacktrace_s[1]
+
+    # Remove arguments that can contain pointers to make sentry one-liner unique
+    crash_function = re.sub(r'\(.*?\)', '', crash_function)
+  else:
+    crash_function = "No stacktrace"
+
+  contents = stacktrace + "\n\n" + contents
+  message = message + " - " + crash_function
 
   cloudlog.error({'tombstone': message})
   client.captureMessage(
