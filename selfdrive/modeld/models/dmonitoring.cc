@@ -95,7 +95,8 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
                        cropped_width, cropped_height);
   }
 
-  auto [resized_y_buf, resized_u_buf, resized_v_buf] = get_yuv_buf(s->resized_buf, resized_width, resized_height);
+  auto [resized_buf, resized_u_buf, resized_v_buf] = get_yuv_buf(s->resized_buf, resized_width, resized_height);
+  uint8_t *resized_y_buf = resized_buf;
   libyuv::FilterMode mode = libyuv::FilterModeEnum::kFilterBilinear;
   libyuv::I420Scale(cropped_y_buf, cropped_width,
                     cropped_u_buf, cropped_width/2,
@@ -107,18 +108,6 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
                     resized_width, resized_height,
                     mode);
 
-  // prerotate to be cache aware
-  auto [resized_buf_rot, resized_u_buf_rot, resized_v_buf_rot] = get_yuv_buf(s->resized_buf_rot, resized_width, resized_height);
-  uint8_t *resized_y_buf_rot = resized_buf_rot;
-  libyuv::I420Rotate(resized_y_buf, resized_width,
-                     resized_u_buf, resized_width/2,
-                     resized_v_buf, resized_width/2,
-                     resized_y_buf_rot, resized_height,
-                     resized_u_buf_rot, resized_height/2,
-                     resized_v_buf_rot, resized_height/2,
-                     // negative height causes a vertical flip to match previous
-                     resized_width, -resized_height, libyuv::kRotate90);
-
   int yuv_buf_len = (MODEL_WIDTH/2) * (MODEL_HEIGHT/2) * 6; // Y|u|v -> y|y|y|y|u|v
   float *net_input_buf = get_buffer(s->net_input_buf, yuv_buf_len);
   // one shot conversion, O(n) anyway
@@ -126,17 +115,17 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
   for (int c = 0; c < MODEL_WIDTH/2; c++) {
     for (int r = 0; r < MODEL_HEIGHT/2; r++) {
       // Y_ul
-      net_input_buf[(c*MODEL_HEIGHT/2) + r + (0*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = input_lambda(resized_buf_rot[(2*r) + (2*c)*resized_height]);
+      net_input_buf[(c*MODEL_HEIGHT/2) + r + (0*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = input_lambda(resized_buf[(2*r) + (2*c)*resized_height]);
       // Y_dl
-      net_input_buf[(c*MODEL_HEIGHT/2) + r + (1*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = input_lambda(resized_buf_rot[(2*r+1) + (2*c)*resized_height]);
+      net_input_buf[(c*MODEL_HEIGHT/2) + r + (1*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = input_lambda(resized_buf[(2*r+1) + (2*c)*resized_height]);
       // Y_ur
-      net_input_buf[(c*MODEL_HEIGHT/2) + r + (2*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = input_lambda(resized_buf_rot[(2*r) + (2*c+1)*resized_height]);
+      net_input_buf[(c*MODEL_HEIGHT/2) + r + (2*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = input_lambda(resized_buf[(2*r) + (2*c+1)*resized_height]);
       // Y_dr
-      net_input_buf[(c*MODEL_HEIGHT/2) + r + (3*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = input_lambda(resized_buf_rot[(2*r+1) + (2*c+1)*resized_height]);
+      net_input_buf[(c*MODEL_HEIGHT/2) + r + (3*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = input_lambda(resized_buf[(2*r+1) + (2*c+1)*resized_height]);
       // U
-      net_input_buf[(c*MODEL_HEIGHT/2) + r + (4*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = input_lambda(resized_buf_rot[(resized_width*resized_height) + r + (c*resized_height/2)]);
+      net_input_buf[(c*MODEL_HEIGHT/2) + r + (4*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = input_lambda(resized_buf[(resized_width*resized_height) + r + (c*resized_height/2)]);
       // V
-      net_input_buf[(c*MODEL_HEIGHT/2) + r + (5*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = input_lambda(resized_buf_rot[(resized_width*resized_height) + ((resized_width/2)*(resized_height/2)) + r + (c*resized_height/2)]);
+      net_input_buf[(c*MODEL_HEIGHT/2) + r + (5*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = input_lambda(resized_buf[(resized_width*resized_height) + ((resized_width/2)*(resized_height/2)) + r + (c*resized_height/2)]);
     }
   }
 
