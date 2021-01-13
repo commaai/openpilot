@@ -110,7 +110,7 @@ pipeline {
                     CI_PUSH = "${env.BRANCH_NAME == 'master' ? 'master-ci' : ' '}"
                   }
                   steps {
-                    phone_steps("eon", [
+                    phone_steps("eon-build", [
                       ["build", "SCONS_CACHE=1 scons -j4"],
                       ["test athena", "nosetests -s selfdrive/athena/tests/test_athenad_old.py"],
                       ["test manager", "python selfdrive/test/test_manager.py"],
