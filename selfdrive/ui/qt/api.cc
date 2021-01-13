@@ -24,8 +24,8 @@ const std::string private_key_path = util::getenv_default("HOME", "/.comma/persi
 QByteArray CommaApi::rsa_sign(QByteArray data) {
   auto file = QFile(private_key_path.c_str());
   if (!file.open(QIODevice::ReadOnly)) {
-    qDebug() << file.errorString();
-    assert(false);
+    qDebug() << "No RSA private key found, please run manager.py or registration.py";
+    return QByteArray();
   }
 
   auto key = file.readAll();
