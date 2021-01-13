@@ -31,13 +31,13 @@ class CarInterface(CarInterfaceBase):
     ret.longitudinalTuning.kiBP = [0., 35.]
     ret.longitudinalTuning.kpV = [3.6, 2.4, 1.5]
     ret.longitudinalTuning.kiV = [0.54, 0.36]
+    stop_and_go = True
 
     if candidate not in [CAR.PRIUS, CAR.RAV4, CAR.RAV4H]:  # These cars use LQR/INDI
       ret.lateralTuning.init('pid')
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
 
     if candidate == CAR.PRIUS:
-      stop_and_go = True
       ret.safetyParam = 66  # see conversion factor for STEER_TORQUE_EPS in dbc file
       ret.wheelbase = 2.70
       ret.steerRatio = 15.74   # unknown end-to-end spec
@@ -85,7 +85,6 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kf = 0.00003   # full torque for 20 deg at 80mph means 0.00007818594
 
     elif candidate == CAR.LEXUS_RX:
-      stop_and_go = True
       ret.safetyParam = 73
       ret.wheelbase = 2.79
       ret.steerRatio = 14.8
@@ -95,7 +94,6 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kf = 0.00006
 
     elif candidate == CAR.LEXUS_RXH:
-      stop_and_go = True
       ret.safetyParam = 73
       ret.wheelbase = 2.79
       ret.steerRatio = 16.  # 14.8 is spec end-to-end
@@ -105,7 +103,6 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
 
     elif candidate == CAR.LEXUS_RX_TSS2:
-      stop_and_go = True
       ret.safetyParam = 73
       ret.wheelbase = 2.79
       ret.steerRatio = 14.8
@@ -115,7 +112,6 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kf = 0.00007818594
 
     elif candidate == CAR.LEXUS_RXH_TSS2:
-      stop_and_go = True
       ret.safetyParam = 73
       ret.wheelbase = 2.79
       ret.steerRatio = 16.0  # 14.8 is spec end-to-end
@@ -125,7 +121,6 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kf = 0.00007818594
 
     elif candidate in [CAR.CHR, CAR.CHRH]:
-      stop_and_go = True
       ret.safetyParam = 73
       ret.wheelbase = 2.63906
       ret.steerRatio = 13.6
@@ -135,7 +130,6 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kf = 0.00006
 
     elif candidate in [CAR.CAMRY, CAR.CAMRYH, CAR.CAMRY_TSS2, CAR.CAMRYH_TSS2]:
-      stop_and_go = True
       ret.safetyParam = 73
       ret.wheelbase = 2.82448
       ret.steerRatio = 13.7
@@ -145,7 +139,6 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kf = 0.00006
 
     elif candidate in [CAR.HIGHLANDER_TSS2, CAR.HIGHLANDERH_TSS2]:
-      stop_and_go = True
       ret.safetyParam = 73
       ret.wheelbase = 2.84988  # 112.2 in = 2.84988 m
       ret.steerRatio = 16.0
@@ -155,7 +148,6 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kf = 0.00012  # community tuning
 
     elif candidate in [CAR.HIGHLANDER, CAR.HIGHLANDERH]:
-      stop_and_go = True
       ret.safetyParam = 73
       ret.wheelbase = 2.78
       ret.steerRatio = 16.0
@@ -175,7 +167,6 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kf = 0.00006
 
     elif candidate == CAR.RAV4_TSS2:
-      stop_and_go = True
       ret.safetyParam = 73
       ret.wheelbase = 2.68986
       ret.steerRatio = 14.3
@@ -191,7 +182,6 @@ class CarInterface(CarInterfaceBase):
           break
 
     elif candidate == CAR.RAV4H_TSS2:
-      stop_and_go = True
       ret.safetyParam = 73
       ret.wheelbase = 2.68986
       ret.steerRatio = 14.3
@@ -207,7 +197,6 @@ class CarInterface(CarInterfaceBase):
           break
 
     elif candidate in [CAR.COROLLA_TSS2, CAR.COROLLAH_TSS2]:
-      stop_and_go = True
       ret.minSpeedCan = 0.375
       ret.safetyParam = 73
       ret.wheelbase = 2.67  # Average between 2.70 for sedan and 2.64 for hatchback
@@ -218,7 +207,6 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kf = 0.00007818594
 
     elif candidate in [CAR.LEXUS_ES_TSS2, CAR.LEXUS_ESH_TSS2]:
-      stop_and_go = True
       ret.safetyParam = 73
       ret.wheelbase = 2.8702
       ret.steerRatio = 16.0  # not optimized
@@ -228,7 +216,6 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kf = 0.00007818594
 
     elif candidate == CAR.LEXUS_ESH:
-      stop_and_go = True
       ret.safetyParam = 73
       ret.wheelbase = 2.8190
       ret.steerRatio = 16.06
@@ -238,7 +225,6 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kf = 0.00007818594
 
     elif candidate == CAR.SIENNA:
-      stop_and_go = True
       ret.safetyParam = 73
       ret.wheelbase = 3.03
       ret.steerRatio = 15.5
@@ -258,7 +244,6 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kf = 0.00006
 
     elif candidate == CAR.LEXUS_CTH:
-      stop_and_go = True
       ret.safetyParam = 100
       ret.wheelbase = 2.60
       ret.steerRatio = 18.6
@@ -268,7 +253,6 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kf = 0.00007
 
     elif candidate in [CAR.LEXUS_NXH, CAR.LEXUS_NX]:
-      stop_and_go = True
       ret.safetyParam = 73
       ret.wheelbase = 2.66
       ret.steerRatio = 14.7
@@ -278,7 +262,6 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kf = 0.00006
 
     elif candidate == CAR.PRIUS_TSS2:
-      stop_and_go = True
       ret.safetyParam = 73
       ret.wheelbase = 2.70002  # from toyota online sepc.
       ret.steerRatio = 13.4   # True steerRation from older prius
