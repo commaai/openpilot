@@ -39,9 +39,6 @@ private:
   QNetworkReply* reply = NULL;
   void sendRequest(QString requestURL, QVector<QPair<QString, QJsonValue>> payloads);
 
-private slots:
-  void replyFinished();
-
 signals:
   void receivedResponse(QString response);
   void failedResponse(QString errorString);
