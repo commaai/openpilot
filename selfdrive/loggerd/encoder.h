@@ -2,9 +2,6 @@
 
 #include <cstdint>
 
-#include <string>
-#include <mutex>
-
 #include "visionipc.h"
 
 class VideoEncoder {
