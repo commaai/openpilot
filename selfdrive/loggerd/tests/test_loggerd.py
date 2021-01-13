@@ -15,8 +15,9 @@ from common.basedir import BASEDIR
 from common.timeout import Timeout
 from common.params import Params
 import selfdrive.manager as manager
-from selfdrive.hardware import PC
+from selfdrive.hardware import TICI, PC
 from selfdrive.loggerd.config import ROOT
+from selfdrive.test.helpers import with_processes
 from selfdrive.version import version as VERSION
 from tools.lib.logreader import LogReader
 
@@ -94,6 +95,31 @@ class TestLoggerd(unittest.TestCase):
 
     for _, k, v in fake_params:
       self.assertEqual(getattr(initData, k), v)
+
+  # TODO: this shouldn't need camerad
+  @with_processes(['camerad'])
+  def test_rotation(self):
+    os.environ["LOGGERD_TEST"] = "1"
+    Params().put("RecordFront", "1")
+    expected_files = {"rlog.bz2", "qlog.bz2", "qcamera.ts", "fcamera.hevc", "dcamera.hevc"}
+    if TICI:
+      expected_files.add("ecamera.hevc")
+
+    for _ in range(5):
+      num_segs = random.randint(1, 10)
+      length = random.randint(2, 5)
+      os.environ["LOGGERD_SEGMENT_LENGTH"] = str(length)
+
+      manager.start_managed_process("loggerd")
+      time.sleep(num_segs * length)
+      manager.kill_managed_process("loggerd")
+
+      route_path = str(self._get_latest_log_dir()).rsplit("--", 1)[0]
+      for n in range(num_segs):
+        p = Path(f"{route_path}--{n}")
+        logged = set([f.name for f in p.iterdir() if f.is_file()])
+        diff = logged ^ expected_files
+        self.assertEqual(len(diff), 0)
 
   def test_bootlog(self):
     # generate bootlog with fake launch log
