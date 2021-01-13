@@ -13,6 +13,7 @@ if arch in ["aarch64", "larch64"]:
   else:
     libs += ['pthread']
 else:
+  src += ['raw_logger.cc']
   libs += ['pthread']
 
 if arch == "Darwin":

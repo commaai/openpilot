@@ -15,7 +15,7 @@ from common.basedir import BASEDIR
 from common.timeout import Timeout
 from common.params import Params
 import selfdrive.manager as manager
-from selfdrive.hardware import TICI
+from selfdrive.hardware import TICI, PC
 from selfdrive.loggerd.config import ROOT
 from selfdrive.test.helpers import with_processes
 from selfdrive.version import version as VERSION
@@ -27,6 +27,12 @@ CEREAL_SERVICES = [f for f in log.Event.schema.union_fields if f in service_list
                    and service_list[f].should_log and "encode" not in f.lower()]
 
 class TestLoggerd(unittest.TestCase):
+
+  # TODO: all tests should work on PC
+  @classmethod
+  def setUpClass(cls):
+    if PC:
+      raise unittest.SkipTest
 
   def _get_latest_log_dir(self):
     log_dirs = sorted(Path(ROOT).iterdir(), key=lambda f: f.stat().st_mtime)
@@ -44,7 +50,7 @@ class TestLoggerd(unittest.TestCase):
       out = subprocess.check_output(["./loggerd", "--bootlog"], cwd=os.path.join(BASEDIR, "selfdrive/loggerd"), encoding='utf-8')
 
     # check existence
-    d = self._get_log_dir(out) 
+    d = self._get_log_dir(out)
     path = Path(os.path.join(d, "bootlog.bz2"))
     assert path.is_file(), "failed to create bootlog file"
     return path
