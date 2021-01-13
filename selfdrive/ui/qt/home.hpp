@@ -38,8 +38,6 @@ private:
   QTimer* timer;
   QTimer* backlight_timer;
 
-  QtSound sound;
-
   bool onroad = true;
   double prev_draw_t = 0;
 

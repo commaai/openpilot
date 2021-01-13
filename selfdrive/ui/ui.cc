@@ -49,12 +49,15 @@ void ui_init(UIState *s) {
 
   s->fb = std::make_unique<FrameBuffer>("ui", 0, true, &s->fb_w, &s->fb_h);
 
-  ui_nvg_init(s);
+  last_frame = nullptr;
+  vipc_client_rear = new VisionIpcClient("camerad", VISION_STREAM_RGB_BACK, true);
+  vipc_client_front = new VisionIpcClient("camerad", VISION_STREAM_RGB_FRONT, true);
+  vipc_client = vipc_client_rear;
+}
 
-  s->last_frame = nullptr;
-  s->vipc_client_rear = new VisionIpcClient("camerad", VISION_STREAM_RGB_BACK, true);
-  s->vipc_client_front = new VisionIpcClient("camerad", VISION_STREAM_RGB_FRONT, true);
-  s->vipc_client = s->vipc_client_rear;
+UIState::~UIState() {
+  delete sound;
+  delete sm;
 }
 
 static int get_path_length_idx(const cereal::ModelDataV2::XYZTData::Reader &line, const float path_height) {

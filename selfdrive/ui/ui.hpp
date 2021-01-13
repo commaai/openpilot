@@ -133,7 +133,10 @@ typedef struct UIScene {
   vertex_data lead_vertices[2];
 } UIScene;
 
-typedef struct UIState {
+class UIState {
+public:
+  UIState(Sound *sound);
+  ~UIState();
   VisionIpcClient * vipc_client;
   VisionIpcClient * vipc_client_front;
   VisionIpcClient * vipc_client_rear;
@@ -176,9 +179,8 @@ typedef struct UIState {
   bool sidebar_collapsed;
   Rect video_rect, viz_rect;
   float car_space_transform[6];
-} UIState;
+};
 
-void ui_init(UIState *s);
 void ui_update(UIState *s);
 
 int write_param_float(float param, const char* param_name, bool persistent_param = false);

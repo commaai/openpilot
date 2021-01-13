@@ -220,8 +220,7 @@ void GLWindow::initializeGL() {
   std::cout << "OpenGL renderer: " << glGetString(GL_RENDERER) << std::endl;
   std::cout << "OpenGL language version: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
 
-  ui_state.sound = &sound;
-  ui_init(&ui_state);
+  ui_state = new UIState(new QtSound());
 
   wake();
 

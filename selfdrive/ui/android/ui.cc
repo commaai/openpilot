@@ -109,12 +109,7 @@ static void update_offroad_layout_state(UIState *s, PubMaster *pm) {
 
 int main(int argc, char* argv[]) {
   setpriority(PRIO_PROCESS, 0, -14);
-  SLSound sound;
-
-  UIState uistate = {};
-  UIState *s = &uistate;
-  ui_init(s);
-  s->sound = &sound;
+  UIState *s = new UIState(new SLSound());
 
   TouchState touch = {0};
   touch_init(&touch);
@@ -182,7 +177,7 @@ int main(int argc, char* argv[]) {
   }
 
   handle_display_state(s, true);
-  delete s->sm;
   delete pm;
+  delete s;
   return 0;
 }
