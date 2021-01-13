@@ -27,7 +27,7 @@ if EON:
     "dcamera": 770920,
     "qcamera": 38533,
   }
-elif TICI:
+else:
   CAMERAS = {f"{c}camera": FULL_SIZE if c!="q" else 38533 for c in ["f", "e", "d", "q"]}
 
 ALL_CAMERA_COMBINATIONS = [(cameras,) for cameras in [CAMERAS, {k:CAMERAS[k] for k in CAMERAS if k!='dcamera'}]]
