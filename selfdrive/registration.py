@@ -30,7 +30,7 @@ def register(spinner=None):
 
   IMEI = params.get("IMEI", encoding='utf8')
   HardwareSerial = params.get("HardwareSerial", encoding='utf8')
-  
+
   if None in [IMEI, HardwareSerial]:
     needs_registration = True
   # create a key for auth
@@ -69,17 +69,19 @@ def register(spinner=None):
       except Exception:
         cloudlog.exception("Error getting imei, trying again...")
         time.sleep(1)
+
+    serial = HARDWARE.get_serial()
     params.put("IMEI", imei1)
+    params.put("HardwareSerial", serial)
 
     while True:
       try:
         cloudlog.info("getting pilotauth")
         resp = api_get("v2/pilotauth/", method='POST', timeout=15,
-                       imei=imei1, imei2=imei2, serial=HARDWARE.get_serial(), public_key=public_key, register_token=register_token)
+                       imei=imei1, imei2=imei2, serial=serial, public_key=public_key, register_token=register_token)
         dongleauth = json.loads(resp.text)
         dongle_id = dongleauth["dongle_id"]
         params.put("DongleId", dongle_id)
-        params.put("HardwareSerial", HARDWARE.get_serial())
         break
       except Exception:
         cloudlog.exception("failed to authenticate")
