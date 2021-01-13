@@ -59,7 +59,7 @@ QLayout* build_stat(QString name, int stat) {
 
 void DriveStats::parseError(QString response) {
   clearLayouts(vlayout);
-  vlayout->addWidget(new QLabel("No connection"));
+  vlayout->addWidget(new QLabel("No internet connection"));
 }
 
 void DriveStats::parseResponse(QString response) {
