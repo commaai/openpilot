@@ -26,13 +26,11 @@ def register(spinner=None):
   params.put("GitRemote", get_git_remote(default=""))
   params.put("SubscriberInfo", HARDWARE.get_subscriber_info())
 
-  needs_registration = False
-
   IMEI = params.get("IMEI", encoding='utf8')
   HardwareSerial = params.get("HardwareSerial", encoding='utf8')
 
-  if None in [IMEI, HardwareSerial]:
-    needs_registration = True
+  needs_registration = (None in [IMEI, HardwareSerial])
+
   # create a key for auth
   # your private key is kept on your device persist partition and never sent to our servers
   # do not erase your persist partition
