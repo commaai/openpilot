@@ -57,13 +57,13 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
 #else
   const int full_width_tici = 1928;
   const int full_height_tici = 1208;
-  const int adapt_width_tici = 636;
+  const int adapt_width_tici = 668;
 
   const int cropped_height = adapt_width_tici / 1.33;
   const int cropped_width = cropped_height / 2;
   const int global_x_offset = full_width_tici / 2 - adapt_width_tici / 2;
   const int global_y_offset = full_height_tici / 2 - cropped_height / 2;
-  const int crop_x_offset = adapt_width_tici - cropped_width;
+  const int crop_x_offset = adapt_width_tici - cropped_width + 32;
   const int crop_y_offset = 0;
 #endif
 
