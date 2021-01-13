@@ -491,8 +491,10 @@ int main(int argc, char** argv) {
     poller->registerSocket(sock);
     socks.push_back(sock);
 
-    for (int cid=0;cid<=MAX_CAM_IDX;cid++) {
-      if (it.name == cameras_logged[cid].frame_packet_name) { s.rotate_state[cid].fpkt_sock = sock; }
+    for (int cid=0; cid<=MAX_CAM_IDX; cid++) {
+      if (std::string(it.name) == cameras_logged[cid].frame_packet_name) {
+        s.rotate_state[cid].fpkt_sock = sock;
+      }
     }
     qlog_states[sock] = {.counter = 0, .freq = it.decimation};
   }
@@ -559,7 +561,10 @@ int main(int argc, char** argv) {
       if (last_msg) {
         int fpkt_id = -1;
         for (int cid = 0; cid <=MAX_CAM_IDX; cid++) {
-          if (sock == s.rotate_state[cid].fpkt_sock) {fpkt_id=cid; break;}
+          if (sock == s.rotate_state[cid].fpkt_sock) {
+            fpkt_id=cid;
+            break;
+          }
         }
         if (fpkt_id >= 0) {
           // track camera frames to sync to encoder
