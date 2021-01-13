@@ -51,6 +51,7 @@ private:
   bool showQr = false;
 
 private slots:
+  void parseError(QString response);
   void replyFinished(QString response);
   void showQrCode();
 };

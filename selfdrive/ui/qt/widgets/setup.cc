@@ -22,7 +22,6 @@ const std::string private_key_path = util::getenv_default("HOME", "/.comma/persi
 #endif
 
 PairingQRWidget::PairingQRWidget(QWidget* parent) : QWidget(parent) {
-  CommaApi* api = new CommaApi(this);
   qrCode = new QLabel;
   qrCode->setScaledContents(true);
   QVBoxLayout* v = new QVBoxLayout;
@@ -42,7 +41,7 @@ PairingQRWidget::PairingQRWidget(QWidget* parent) : QWidget(parent) {
   }
   QVector<QPair<QString, QJsonValue>> payloads;
   payloads.push_back(qMakePair(QString("pair"), true));
-  QString pairToken = api->create_jwt(payloads);
+  QString pairToken = CommaApi::create_jwt(payloads);
 
   QString qrString = IMEI + "--" + serial + "--" + pairToken;
   this->updateQrCode(qrString);
@@ -73,8 +72,6 @@ void PairingQRWidget::updateQrCode(QString text) {
 }
 
 PrimeUserWidget::PrimeUserWidget(QWidget* parent) : QWidget(parent) {
-  api = new CommaApi(this);
-
   mainLayout = new QVBoxLayout;
   QLabel* commaPrime = new QLabel("COMMA PRIME");
   commaPrime->setStyleSheet(R"(
@@ -155,8 +152,6 @@ PrimeAdWidget::PrimeAdWidget(QWidget* parent) : QWidget(parent) {
 
 
 SetupWidget::SetupWidget(QWidget* parent) : QWidget(parent) {
-  api = new CommaApi(this);
-
   QVBoxLayout* backgroundLayout = new QVBoxLayout;
 
   backgroundLayout->addSpacing(100);
@@ -226,9 +221,18 @@ SetupWidget::SetupWidget(QWidget* parent) : QWidget(parent) {
   RequestRepeater* repeater = new RequestRepeater(this, url, 5);
 
   QObject::connect(repeater, SIGNAL(receivedResponse(QString)), this, SLOT(replyFinished(QString)));
+  QObject::connect(repeater, SIGNAL(failedResponse(QString)), this, SLOT(parseError(QString)));
 
 }
 
+void SetupWidget::parseError(QString response) {
+  showQr = false;
+  mainLayout->setCurrentIndex(0);
+  setStyleSheet(R"(
+    font-size: 90px;
+    background-color: #000000;
+  )");
+}
 void SetupWidget::showQrCode(){
   showQr = true;
   mainLayout->setCurrentIndex(2);

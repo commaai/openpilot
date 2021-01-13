@@ -57,6 +57,11 @@ QLayout* build_stat(QString name, int stat) {
   return layout;
 }
 
+void DriveStats::parseError(QString response) {
+  clearLayouts(vlayout);
+  vlayout->addWidget(new QLabel("No connection"));
+}
+
 void DriveStats::parseResponse(QString response) {
   response.chop(1);
   clearLayouts(vlayout);
@@ -95,9 +100,7 @@ void DriveStats::parseResponse(QString response) {
 
 DriveStats::DriveStats(QWidget* parent) : QWidget(parent) {
   vlayout = new QVBoxLayout;
-
   vlayout->addWidget(new QLabel("Downloading driving statistics"));
-
   setLayout(vlayout);
   setStyleSheet(R"(
     QLabel {
@@ -110,5 +113,6 @@ DriveStats::DriveStats(QWidget* parent) : QWidget(parent) {
   QString url = "https://api.commadotai.com/v1.1/devices/" + dongleId + "/stats";
   RequestRepeater* repeater = new RequestRepeater(this, url);
   QObject::connect(repeater, SIGNAL(receivedResponse(QString)), this, SLOT(parseResponse(QString)));
+  QObject::connect(repeater, SIGNAL(failedResponse(QString)), this, SLOT(parseError(QString)));
   
 }

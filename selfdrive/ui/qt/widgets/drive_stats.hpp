@@ -16,5 +16,6 @@ private:
   QVBoxLayout* vlayout;
 
 private slots:
+  void parseError(QString response);
   void parseResponse(QString response);
 };

@@ -19,9 +19,6 @@ const std::string private_key_path = "/persist/comma/id_rsa";
 #else
 const std::string private_key_path = util::getenv_default("HOME", "/.comma/persist/comma/id_rsa", "/persist/comma/id_rsa");
 #endif
-CommaApi::CommaApi(QWidget* parent) {
-  networkAccessManager = new QNetworkAccessManager(parent);
-}
 
 QByteArray CommaApi::rsa_sign(QByteArray data) {
   auto file = QFile(private_key_path.c_str());
@@ -89,9 +86,6 @@ QString CommaApi::create_jwt() {
   return create_jwt(*(new QVector<QPair<QString, QJsonValue>>()));
 }
 
-QNetworkReply* CommaApi::get(QNetworkRequest request) {
-  return networkAccessManager->get(request);
-}
 
 const int seconds = 1000;
 RequestRepeater::RequestRepeater(QWidget* parent, QString requestURL, int period, QVector<QPair<QString, QJsonValue>> payloads, bool disableWithScreen1){
@@ -100,15 +94,13 @@ RequestRepeater::RequestRepeater(QWidget* parent, QString requestURL, int period
   QTimer* timer = new QTimer(this);
   QObject::connect(timer, &QTimer::timeout, [=](){sendRequest(requestURL, payloads);});
   timer->start(period * seconds);
-  api = new CommaApi(parent);
 }
 
 void RequestRepeater::sendRequest(QString requestURL, QVector<QPair<QString, QJsonValue>> payloads){
   if (!active || (!GLWindow::ui_state.awake && disableWithScreen)) {
-    qDebug()<<"Low power usage mode";
     return;
   }
-  QString token = api->create_jwt(payloads);
+  QString token = CommaApi::create_jwt(payloads);
 
   QNetworkRequest request;
   request.setUrl(QUrl(requestURL));
@@ -126,7 +118,7 @@ void RequestRepeater::replyFinished(){
     emit receivedResponse(reply->readAll());
   }
   else{
-    qDebug() << reply->errorString();
+    // qDebug() << reply->errorString();
     emit failedResponse(reply->errorString());
   }
   reply->deleteLater();

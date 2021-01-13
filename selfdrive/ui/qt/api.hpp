@@ -16,11 +16,9 @@
 class CommaApi : public QObject {
   Q_OBJECT
 public:
-  explicit CommaApi(QWidget* parent);
-  QByteArray rsa_sign(QByteArray data);
-  QString create_jwt(QVector<QPair<QString, QJsonValue>> payloads, int expiry = 3600);
-  QString create_jwt();
-  QNetworkReply* get(QNetworkRequest request);
+  static QByteArray rsa_sign(QByteArray data);
+  static QString create_jwt(QVector<QPair<QString, QJsonValue>> payloads, int expiry = 3600);
+  static QString create_jwt();
 
 private:
   QNetworkAccessManager* networkAccessManager;
@@ -39,7 +37,6 @@ private:
   bool disableWithScreen;
   QNetworkAccessManager* networkAccessManager;
   QNetworkReply* reply = NULL;
-  CommaApi* api;
   void sendRequest(QString requestURL, QVector<QPair<QString, QJsonValue>> payloads);
 
 private slots:
