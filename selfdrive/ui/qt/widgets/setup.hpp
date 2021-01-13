@@ -27,12 +27,10 @@ private:
   QVBoxLayout* mainLayout;
   QLabel* username;
   QLabel* points;
-  QNetworkReply* reply;
   CommaApi* api;
-  void replyFinished();
 
 private slots:
-  void refresh();
+  void replyFinished(QString response);
 };
 
 class PrimeAdWidget : public QWidget {
@@ -49,12 +47,10 @@ public:
 
 private:
   QStackedLayout* mainLayout;
-  QNetworkReply* reply;
   CommaApi* api;
-  void replyFinished();
   bool showQr = false;
 
 private slots:
-  void refresh();
+  void replyFinished(QString response);
   void showQrCode();
 };

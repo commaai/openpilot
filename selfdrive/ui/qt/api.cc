@@ -94,20 +94,20 @@ QNetworkReply* CommaApi::get(QNetworkRequest request) {
 }
 
 const int seconds = 1000;
-RequestRepeater::RequestRepeater(QWidget* parent, QString requestURL, int period, QVector<QPair<QString, QJsonValue>> payloads){
+RequestRepeater::RequestRepeater(QWidget* parent, QString requestURL, int period, QVector<QPair<QString, QJsonValue>> payloads, bool disableWithScreen1){
+  disableWithScreen = disableWithScreen1;
   networkAccessManager = new QNetworkAccessManager(parent);
   QTimer* timer = new QTimer(this);
   QObject::connect(timer, &QTimer::timeout, [=](){sendRequest(requestURL, payloads);});
   timer->start(period * seconds);
-  qDebug()<<"Starting timer";
   api = new CommaApi(parent);
 }
 
 void RequestRepeater::sendRequest(QString requestURL, QVector<QPair<QString, QJsonValue>> payloads){
-  // if (!active || (!GLWindow::ui_state.awake && disableWithScreen)) {
-  //   qDebug()<<"No power usage";
-  //   return;
-  // }
+  if (!active || (!GLWindow::ui_state.awake && disableWithScreen)) {
+    qDebug()<<"Low power usage mode";
+    return;
+  }
   QString token = api->create_jwt(payloads);
 
   QNetworkRequest request;
@@ -127,6 +127,7 @@ void RequestRepeater::replyFinished(){
   }
   else{
     qDebug() << reply->errorString();
+    emit failedResponse(reply->errorString());
   }
   reply->deleteLater();
   reply = NULL;

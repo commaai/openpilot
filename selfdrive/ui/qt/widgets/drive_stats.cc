@@ -25,6 +25,18 @@ const std::string private_key_path = "/persist/comma/id_rsa";
 const std::string private_key_path = util::getenv_default("HOME", "/.comma/persist/comma/id_rsa", "/persist/comma/id_rsa");
 #endif
 
+void clearLayouts(QLayout* layout) {
+  while (QLayoutItem* item = layout->takeAt(0)) {
+    if (QWidget* widget = item->widget()) {
+      widget->deleteLater();
+    }
+    if (QLayout* childLayout = item->layout()) {
+      clearLayouts(childLayout);
+    }
+    delete item;
+  }
+}
+
 QLayout* build_stat(QString name, int stat) {
   QVBoxLayout* layout = new QVBoxLayout;
 
@@ -47,7 +59,7 @@ QLayout* build_stat(QString name, int stat) {
 
 void DriveStats::parseResponse(QString response) {
   response.chop(1);
-
+  clearLayouts(vlayout);
   QJsonDocument doc = QJsonDocument::fromJson(response.toUtf8());
   if (doc.isNull()) {
     qDebug() << "JSON Parse failed on getting past drives statistics";
@@ -78,17 +90,15 @@ void DriveStats::parseResponse(QString response) {
   QWidget* q = new QWidget;
   q->setLayout(gl);
 
-  slayout->addWidget(q);
-  slayout->setCurrentWidget(q);
-
+  vlayout->addWidget(q);
 }
 
 DriveStats::DriveStats(QWidget* parent) : QWidget(parent) {
-  slayout = new QStackedLayout;
+  vlayout = new QVBoxLayout;
 
-  slayout->addWidget(new QLabel("No network connection"));
+  vlayout->addWidget(new QLabel("Downloading driving statistics"));
 
-  setLayout(slayout);
+  setLayout(vlayout);
   setStyleSheet(R"(
     QLabel {
       font-size: 48px;

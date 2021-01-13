@@ -32,11 +32,11 @@ private:
 class RequestRepeater : public QObject {
   Q_OBJECT
 public:
-  explicit RequestRepeater(QWidget* parent, QString requestURL, int period = 10, QVector<QPair<QString, QJsonValue>> payloads = *(new QVector<QPair<QString, QJsonValue>>()));
-  bool disableWithScreen = true;
+  explicit RequestRepeater(QWidget* parent, QString requestURL, int period = 10, QVector<QPair<QString, QJsonValue>> payloads = *(new QVector<QPair<QString, QJsonValue>>()), bool disableWithScreen1 = true);
   bool active = true;
 
 private:
+  bool disableWithScreen;
   QNetworkAccessManager* networkAccessManager;
   QNetworkReply* reply = NULL;
   CommaApi* api;
@@ -47,4 +47,5 @@ private slots:
 
 signals:
   void receivedResponse(QString response);
+  void failedResponse(QString errorString);
 };

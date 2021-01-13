@@ -21,7 +21,6 @@ const std::string private_key_path = "/persist/comma/id_rsa";
 const std::string private_key_path = util::getenv_default("HOME", "/.comma/persist/comma/id_rsa", "/persist/comma/id_rsa");
 #endif
 
-const int seconds = 1000;
 PairingQRWidget::PairingQRWidget(QWidget* parent) : QWidget(parent) {
   CommaApi* api = new CommaApi(this);
   qrCode = new QLabel;
@@ -99,37 +98,17 @@ PrimeUserWidget::PrimeUserWidget(QWidget* parent) : QWidget(parent) {
   mainLayout->addWidget(points);
 
   setLayout(mainLayout);
-  QTimer* timer = new QTimer(this);
-  QObject::connect(timer, SIGNAL(timeout()), this, SLOT(refresh()));
-  timer->start(6 * seconds);
+  QString dongleId = QString::fromStdString(Params().get("DongleId"));
+  QString url = "https://api.commadotai.com/v1/devices/" + dongleId + "/owner";
+  RequestRepeater* repeater = new RequestRepeater(this, url, 6);
+
+  QObject::connect(repeater, SIGNAL(receivedResponse(QString)), this, SLOT(replyFinished(QString)));
 }
 
-void PrimeUserWidget::refresh() {
-  if (!GLWindow::ui_state.awake) {
-    return;
-  }
-  QString token = api->create_jwt();
-
-  QString dongle_id = QString::fromStdString(Params().get("DongleId"));
-  QNetworkRequest request;
-  request.setUrl(QUrl("https://api.commadotai.com/v1/devices/" + dongle_id + "/owner"));
-  request.setRawHeader("Authorization", ("JWT " + token).toUtf8());
-  if (reply == NULL) {
-    reply = api->get(request);
-    connect(reply, &QNetworkReply::finished, this, &PrimeUserWidget::replyFinished);
-  } else {
-    qDebug() << "Too many requests, previous request was not yet removed";
-  }
-}
-
-void PrimeUserWidget::replyFinished() {
-  QString answer = reply->readAll();
-
-  QJsonDocument doc = QJsonDocument::fromJson(answer.toUtf8());
+void PrimeUserWidget::replyFinished(QString response) {
+  QJsonDocument doc = QJsonDocument::fromJson(response.toUtf8());
   if (doc.isNull()) {
     qDebug() << "JSON Parse failed on getting username and points";
-    reply->deleteLater();
-    reply = NULL;
     return;
   }
   QJsonObject json = doc.object();
@@ -141,8 +120,6 @@ void PrimeUserWidget::replyFinished() {
 
   username->setText(username_str);
   points->setText(points_str);
-  reply->deleteLater();
-  reply = NULL;
 }
 
 PrimeAdWidget::PrimeAdWidget(QWidget* parent) : QWidget(parent) {
@@ -244,40 +221,22 @@ SetupWidget::SetupWidget(QWidget* parent) : QWidget(parent) {
   backgroundLayout->addWidget(background);
   setLayout(backgroundLayout);
 
-  QTimer* timer = new QTimer(this);
-  QObject::connect(timer, SIGNAL(timeout()), this, SLOT(refresh()));
-  timer->start(5 * seconds);
+  QString dongleId = QString::fromStdString(Params().get("DongleId"));
+  QString url = "https://api.commadotai.com/v1.1/devices/" + dongleId + "/";
+  RequestRepeater* repeater = new RequestRepeater(this, url, 5);
+
+  QObject::connect(repeater, SIGNAL(receivedResponse(QString)), this, SLOT(replyFinished(QString)));
+
 }
 
 void SetupWidget::showQrCode(){
   showQr = true;
   mainLayout->setCurrentIndex(2);
 }
-void SetupWidget::refresh() {
-  if (!GLWindow::ui_state.awake) {
-    return;
-  }
-  QString token = api->create_jwt();
-  QString dongle_id = QString::fromStdString(Params().get("DongleId"));
-  QNetworkRequest request;
-  request.setUrl(QUrl("https://api.commadotai.com/v1.1/devices/" + dongle_id + "/"));
-  request.setRawHeader("Authorization", ("JWT " + token).toUtf8());
-  if (reply == NULL) {
-    reply = api->get(request);
-    connect(reply, &QNetworkReply::finished, this, &SetupWidget::replyFinished);
-  } else {
-    qDebug() << "Too many requests, previous request was not yet removed";
-  }
-}
-
-void SetupWidget::replyFinished() {
-  QString answer = reply->readAll();
-
-  QJsonDocument doc = QJsonDocument::fromJson(answer.toUtf8());
+void SetupWidget::replyFinished(QString response) {
+  QJsonDocument doc = QJsonDocument::fromJson(response.toUtf8());
   if (doc.isNull()) {
     qDebug() << "JSON Parse failed on getting pairing and prime status";
-    reply->deleteLater();
-    reply = NULL;
     return;
   }
   if (mainLayout->currentIndex() == 0) { // If we are still on the blank widget
@@ -300,6 +259,4 @@ void SetupWidget::replyFinished() {
     showQr = false;
     mainLayout->setCurrentIndex(4);
   }
-  reply->deleteLater();
-  reply = NULL; // Make room for new reply
 }

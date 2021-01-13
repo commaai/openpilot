@@ -1,7 +1,7 @@
 #pragma once
 
 #include <QNetworkReply>
-#include <QStackedLayout>
+#include <QVBoxLayout>
 #include <QWidget>
 
 #include "api.hpp"
@@ -13,7 +13,7 @@ public:
   explicit DriveStats(QWidget* parent = 0);
 
 private:
-  QStackedLayout* slayout;
+  QVBoxLayout* vlayout;
 
 private slots:
   void parseResponse(QString response);
