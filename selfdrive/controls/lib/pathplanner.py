@@ -41,13 +41,6 @@ DESIRES = {
 }
 
 
-def calc_states_after_delay(states, v_ego, steer_angle, curvature_factor, steer_ratio, delay):
-  states[0].x = v_ego * delay
-  states[0].psi = v_ego * curvature_factor * math.radians(steer_angle) / steer_ratio * delay
-  states[0].y = states[0].x * math.sin(states[0].psi / 2)
-  return states
-
-
 class PathPlanner():
   def __init__(self, CP):
     self.LP = LanePlanner()
@@ -172,8 +165,11 @@ class PathPlanner():
     y_pts = np.interp(v_ego * T_IDXS[:MPC_N+1], np.linalg.norm(self.LP.d_path_xyz, axis=1), self.LP.d_path_xyz[:,1])
     heading_pts = np.interp(v_ego * T_IDXS[:MPC_N+1], np.linalg.norm(path_xyz, axis=1), orient_xyz[:,2])
 
-    # account for actuation delay
-    self.cur_state = calc_states_after_delay(self.cur_state, v_ego, angle_steers - angle_offset, curvature_factor, VM.sR, CP.steerActuatorDelay)
+    # init state
+    self.cur_state.x = 0.0
+    self.cur_state.y = 0.0
+    self.cur_state.psi = 0.0
+    self.cur_state.delta = math.radians(angle_steers - angle_offset) / VM.sR
 
     v_ego_mpc = max(v_ego, 5.0)  # avoid mpc roughness due to low speed
     v_poly = np.zeros(4)
@@ -181,15 +177,19 @@ class PathPlanner():
     assert len(v_poly) == 4
     assert len(y_pts) == MPC_N + 1
     assert len(heading_pts) == MPC_N + 1
-    # TODO negative sign, still run mpc in ENU
+    # TODO negative sign, still run mpc in ENU, make NED
     self.libmpc.run_mpc(self.cur_state, self.mpc_solution,
                         list(v_poly),
                         curvature_factor,
                         CAR_ROTATION_RADIUS,
                         list(-y_pts),
                         list(-heading_pts))
-    next_delta = np.interp(DT_MDL, T_IDXS[:MPC_N+1], list(self.mpc_solution.delta))
-    next_rate = list(self.mpc_solution.rate)[0]
+
+    # TODO this needs more thought
+    delay = CP.steerActuatorDelay
+    next_delta = np.interp(DT_MDL + delay, T_IDXS[:MPC_N+1], list(self.mpc_solution.delta))
+    next_rate = np.interp(delay, T_IDXS[:MPC_N], list(self.mpc_solution.rate))
+
     # reset to current steer angle if not active or overriding
     if active:
       delta_desired = next_delta
@@ -197,8 +197,6 @@ class PathPlanner():
     else:
       delta_desired = math.radians(angle_steers - angle_offset) / VM.sR
       rate_desired = 0.0
-
-    self.cur_state.delta = next_delta
 
     self.angle_steers_des_mpc = float(math.degrees(delta_desired * VM.sR) + angle_offset)
 
