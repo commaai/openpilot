@@ -4,17 +4,23 @@ import re
 import os
 import time
 import subprocess
+import datetime
 
 from raven import Client
 from raven.transport.http import HTTPTransport
 
 from selfdrive.hardware import TICI
 from selfdrive.swaglog import cloudlog
-from selfdrive.version import version, origin, branch, dirty
+from selfdrive.version import version, origin, branch, dirty, commit
 
 MAX_SIZE = 100000 * 10  # Normal size is 40-100k, allow up to 1M
 if TICI:
   MAX_SIZE = MAX_SIZE * 100  # Allow larger size for tici since files contain coredump
+
+
+def safe_fn(s):
+  extra = ['_']
+  return "".join(c for c in s if c.isalnum() or c in extra).rstrip()
 
 
 def sentry_report(client, fn, message, contents):
@@ -140,11 +146,22 @@ def report_tombstone_apport(fn, client):
   message = message + " - " + crash_function
   sentry_report(client, fn, message, contents)
 
+  # Copy crashlog to upload folder
+  clean_path = path.replace('/', '_')
+  date = datetime.datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
+
+  clean_function = crash_function
+  for c in ['/', ' ', ':', '.']:
+    clean_function = clean_function.replace(c, '_')
+  new_fn = f"{date}--{version}--{commit[:8]}--{safe_fn(clean_path)}--{safe_fn(clean_function)}.crash"
+  print(new_fn)
+
   # TODO: move file to /data/media to be uploaded
 
 
 def main():
   initial_tombstones = set(get_tombstones())
+  initial_tombstones = set()
 
   tags = {
     'dirty': dirty,
