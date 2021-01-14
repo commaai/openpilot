@@ -183,7 +183,6 @@ class PathPlanner():
     assert len(y_pts) == MPC_N + 1
     assert len(heading_pts) == MPC_N + 1
     # TODO negative sign, still run mpc in ENU, make NED
-    print('running MPC')
     self.libmpc.run_mpc(self.cur_state, self.mpc_solution,
                         list(v_poly),
                         curvature_factor,
