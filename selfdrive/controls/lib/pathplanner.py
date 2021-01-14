@@ -2,6 +2,7 @@ import os
 import math
 import numpy as np
 from common.realtime import sec_since_boot, DT_MDL
+from common.numpy_fast import interp
 from selfdrive.swaglog import cloudlog
 from selfdrive.controls.lib.lateral_mpc import libmpc_py
 from selfdrive.controls.lib.drive_helpers import MPC_COST_LAT, MPC_N, CAR_ROTATION_RADIUS
@@ -58,7 +59,7 @@ class PathPlanner():
     self.prev_one_blinker = False
 
     self.path_xyz = np.zeros((TRAJECTORY_SIZE,3))
-    self.orient_xyz = np.zeros((TRAJECTORY_SIZE,3))
+    self.plan_yaw = np.zeros((TRAJECTORY_SIZE,))
     self.t_idxs = np.zeros((TRAJECTORY_SIZE,))
 
   def setup_mpc(self):
@@ -97,9 +98,9 @@ class PathPlanner():
     md = sm['modelV2']
     self.LP.parse_model(sm['modelV2'])
     if len(md.position.x) == TRAJECTORY_SIZE and len(md.orientation.x) == TRAJECTORY_SIZE:
-      self.t_idxs = np.array(md.position.t)
       self.path_xyz = np.column_stack([md.position.x, md.position.y, md.position.z])
-      self.orient_xyz = np.column_stack([md.orientation.x, md.orientation.y, md.orientation.z])
+      self.t_idxs = list(md.position.t)
+      self.plan_yaw = list(md.orientation.z)
 
     # Lane change logic
     one_blinker = sm['carState'].leftBlinker != sm['carState'].rightBlinker
@@ -167,33 +168,33 @@ class PathPlanner():
       self.LP.lll_prob *= self.lane_change_ll_prob
       self.LP.rll_prob *= self.lane_change_ll_prob
     self.LP.update_d_path(v_ego)
-    y_pts = np.interp(v_ego * self.t_idxs[:MPC_N+1], np.linalg.norm(self.LP.d_path_xyz, axis=1), self.LP.d_path_xyz[:,1])
-    heading_pts = np.interp(v_ego * self.t_idxs[:MPC_N+1], np.linalg.norm(self.path_xyz, axis=1), self.orient_xyz[:,2])
+    y_pts = np.interp(self.t_idxs[:MPC_N+1], np.linalg.norm(self.LP.d_path_xyz, axis=1)/v_ego, self.LP.d_path_xyz[:,1])
+    heading_pts = np.interp(self.t_idxs[:MPC_N+1], np.linalg.norm(self.path_xyz, axis=1)/v_ego, self.plan_yaw)
 
     # init state
     self.cur_state.x = 0.0
     self.cur_state.y = 0.0
     self.cur_state.psi = 0.0
-    self.cur_state.delta = math.radians(angle_steers - angle_offset) / VM.sR
+    # TODO negative sign, still run mpc in ENU, make NED
+    self.cur_state.delta = -math.radians(angle_steers - angle_offset) / VM.sR
 
     v_ego_mpc = max(v_ego, 5.0)  # avoid mpc roughness due to low speed
-    v_poly = np.zeros(4)
-    v_poly[3] = v_ego_mpc
+    v_poly = [0.0, 0.0, 0.0, v_ego_mpc]
     assert len(v_poly) == 4
     assert len(y_pts) == MPC_N + 1
     assert len(heading_pts) == MPC_N + 1
-    # TODO negative sign, still run mpc in ENU, make NED
     self.libmpc.run_mpc(self.cur_state, self.mpc_solution,
-                        list(v_poly),
+                        v_poly,
                         curvature_factor,
                         CAR_ROTATION_RADIUS,
-                        list(-y_pts),
-                        list(-heading_pts))
+                        list(y_pts),
+                        list(heading_pts))
 
     # TODO this needs more thought, use .2s extra for now to estimate other delays
     delay = CP.steerActuatorDelay + .2
-    next_delta = np.interp(DT_MDL + delay, self.t_idxs[:MPC_N+1], list(self.mpc_solution.delta))
-    next_rate = np.interp(delay, self.t_idxs[:MPC_N], list(self.mpc_solution.rate))
+    # TODO negative sign, still run mpc in ENU, make NED
+    next_delta = -interp(DT_MDL + delay, self.t_idxs[:MPC_N+1], self.mpc_solution.delta)
+    next_rate = -interp(delay, self.t_idxs[:MPC_N], self.mpc_solution.rate)
 
     # reset to current steer angle if not active or overriding
     if active:
@@ -221,7 +222,6 @@ class PathPlanner():
     else:
       self.solution_invalid_cnt = 0
     plan_solution_valid = self.solution_invalid_cnt < 2
-
     plan_send = messaging.new_message('pathPlan')
     plan_send.valid = sm.all_alive_and_valid(service_list=['carState', 'controlsState', 'liveParameters', 'modelV2'])
     plan_send.pathPlan.laneWidth = float(self.LP.lane_width)
