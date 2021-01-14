@@ -52,7 +52,8 @@ bool car_space_to_full_frame(const UIState *s, float in_x, float in_y, float in_
   float y = KEp.v[1] / KEp.v[2];
 
   nvgTransformPoint(&out->x, &out->y, s->car_space_transform, x, y);
-  return out->x >= 0 && out->x <= s->fb_w && out->y >= 0 && out->y <= s->fb_h;
+  const float margin = 500.0;
+  return out->x >= -margin && out->x <= s->fb_w + margin && out->y >= -margin && out->y <= s->fb_h + margin;
 }
 
 
