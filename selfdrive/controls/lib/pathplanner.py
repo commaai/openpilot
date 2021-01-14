@@ -191,8 +191,8 @@ class PathPlanner():
                         list(-y_pts),
                         list(-heading_pts))
 
-    # TODO this needs more thought
-    delay = CP.steerActuatorDelay
+    # TODO this needs more thought, use .2s extra for now to estimate other delays
+    delay = CP.steerActuatorDelay + .2
     next_delta = np.interp(DT_MDL + delay, self.t_idxs[:MPC_N+1], list(self.mpc_solution.delta))
     next_rate = np.interp(delay, self.t_idxs[:MPC_N], list(self.mpc_solution.rate))
 
