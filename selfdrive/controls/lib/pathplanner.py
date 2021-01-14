@@ -167,8 +167,8 @@ class PathPlanner():
     if desire == log.PathPlan.Desire.laneChangeRight or desire == log.PathPlan.Desire.laneChangeLeft:
       self.LP.lll_prob *= self.lane_change_ll_prob
       self.LP.rll_prob *= self.lane_change_ll_prob
-    self.LP.update_d_path(v_ego)
-    y_pts = np.interp(self.t_idxs[:MPC_N+1], np.linalg.norm(self.LP.d_path_xyz, axis=1)/v_ego, self.LP.d_path_xyz[:,1])
+    d_path_xyz = self.LP.get_d_path(v_ego, self.t_idxs, self.path_xyz)
+    y_pts = np.interp(self.t_idxs[:MPC_N+1], np.linalg.norm(d_path_xyz, axis=1)/v_ego, d_path_xyz[:,1])
     heading_pts = np.interp(self.t_idxs[:MPC_N+1], np.linalg.norm(self.path_xyz, axis=1)/v_ego, self.plan_yaw)
 
     # init state
