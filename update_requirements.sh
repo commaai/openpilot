@@ -26,16 +26,16 @@ dist-check
 
 # Pre-Checks
 function installing-system-requirements() {
-  if { ! [ -x "$(command -v pyenv)" ] || ! [ -x "$(command -v make)" ] || ! [ -x "$(command -v curl)" ] || ! [ -x "$(command -v wget)" ]; }; then
-    if [ "$DISTRO" == "ubuntu" ] && [ "$DISTRO_VERSION" == "20.04" ]; then
+  if [ "$DISTRO" == "ubuntu" ] && [ "$DISTRO_VERSION" == "20.04" ]; then
+    if { ! [ -x "$(command -v pyenv)" ] || ! [ -x "$(command -v make)" ] || ! [ -x "$(command -v curl)" ] || ! [ -x "$(command -v wget)" ]; }; then
       apt-get update && apt-get install --no-install-recommends make build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev wget curl llvm libncurses5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev -y
       curl https://pyenv.run | bash
       echo "export PYENV_ROOT=""$HOME":/.pyenv"" >>~/.bashrc
       echo "export PATH=""$PYENV_ROOT":/"$PYENV_ROOT"/shims/"$PATH""" >>~/.bashrc
       exec "$SHELL"
-    else
-      exit
     fi
+  else
+    exit
   fi
 }
 
