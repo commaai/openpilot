@@ -170,9 +170,9 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
   }
 }
 
-static void handle_display_state(UIState* s, int dt, bool user_input) {
-  static int awake_timeout = 0;
-  awake_timeout = std::max(awake_timeout - dt, 0);
+static void handle_display_state(UIState* s, bool user_input) {
+  static int awake_timeout = 0; // Somehow this only gets called on program start
+  awake_timeout = std::max(awake_timeout - 1, 0);
 
   if (user_input || s->ignition || s->started) {
     s->awake = true;
@@ -192,6 +192,7 @@ static void set_backlight(int brightness) {
 
 GLWindow::GLWindow(QWidget* parent) : QOpenGLWidget(parent) {
   timer = new QTimer(this);
+  timer->start(1000 / UI_FREQ);
   QObject::connect(timer, SIGNAL(timeout()), this, SLOT(timerUpdate()));
 
   backlight_timer = new QTimer(this);
@@ -225,7 +226,6 @@ void GLWindow::initializeGL() {
 
   wake();
 
-  timer->start(0);
   backlight_timer->start(BACKLIGHT_DT * 1000);
 }
 
@@ -248,14 +248,9 @@ void GLWindow::timerUpdate() {
   if (ui_state.started != onroad) {
     onroad = ui_state.started;
     emit offroadTransition(!onroad);
-#ifdef QCOM2
-    timer->setInterval(onroad ? 0 : 1000);
-#endif
   }
 
-  // Fix awake timeout if running 1 Hz when offroad
-  int dt = timer->interval() == 0 ? 1 : 20;
-  handle_display_state(&ui_state, dt, false);
+  handle_display_state(&ui_state, false);
 
   ui_update(&ui_state);
   repaint();
@@ -266,11 +261,14 @@ void GLWindow::resizeGL(int w, int h) {
 }
 
 void GLWindow::paintGL() {
-  ui_draw(&ui_state);
+  if(GLWindow::ui_state.awake){
+    ui_draw(&ui_state);
+  }
+
 }
 
 void GLWindow::wake() {
-  handle_display_state(&ui_state, 1, true);
+  handle_display_state(&ui_state, true);
 }
 
 FramebufferState* framebuffer_init(const char* name, int32_t layer, int alpha,
