@@ -53,7 +53,8 @@ class Controls:
     self.sm = sm
     if self.sm is None:
       self.sm = messaging.SubMaster(['thermal', 'health', 'model', 'liveCalibration', 'frontFrame',
-                                     'dMonitoringState', 'plan', 'pathPlan', 'liveLocationKalman'])
+                                     'dMonitoringState', 'plan', 'pathPlan', 'liveLocationKalman',
+                                     'ubloxRaw'])
 
     self.can_sock = can_sock
     if can_sock is None:
@@ -210,7 +211,9 @@ class Controls:
     if not self.sm['liveLocationKalman'].sensorsOK and not NOSENSOR:
       if self.sm.frame > 5 / DT_CTRL:  # Give locationd some time to receive all the inputs
         self.events.add(EventName.sensorDataInvalid)
-    if not self.sm['liveLocationKalman'].gpsOK and (self.distance_traveled > 1000):
+    if not self.sm.alive['ubloxRaw'] and (self.sm.frame > 10. / DT_CTRL) and not SIMULATION:
+      self.events.add(EventName.gpsMalfunction)
+    elif not self.sm['liveLocationKalman'].gpsOK and (self.distance_traveled > 1000):
       # Not show in first 1 km to allow for driving out of garage. This event shows after 5 minutes
       if not (SIMULATION or NOSENSOR):  # TODO: send GPS in carla
         self.events.add(EventName.noGps)
