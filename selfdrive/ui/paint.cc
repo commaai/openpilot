@@ -37,7 +37,7 @@ const mat3 intrinsic_matrix = (mat3){{
 
 // Projects a point in car to space to the corresponding point in full frame
 // image space.
-bool car_space_to_full_frame(const UIState *s, float in_x, float in_y, float in_z, vertex_data *out) {
+bool car_space_to_full_frame(const UIState *s, float in_x, float in_y, float in_z, vertex_data *out, float margin) {
   const vec4 car_space_projective = (vec4){{in_x, in_y, in_z, 1.}};
   // We'll call the car space point p.
   // First project into normalized image coordinates with the extrinsics matrix.
@@ -52,7 +52,6 @@ bool car_space_to_full_frame(const UIState *s, float in_x, float in_y, float in_
   float y = KEp.v[1] / KEp.v[2];
 
   nvgTransformPoint(&out->x, &out->y, s->car_space_transform, x, y);
-  const float margin = 500.0;
   return out->x >= -margin && out->x <= s->fb_w + margin && out->y >= -margin && out->y <= s->fb_h + margin;
 }
 
