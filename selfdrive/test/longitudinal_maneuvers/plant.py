@@ -114,7 +114,6 @@ class Plant():
       Plant.logcan = messaging.pub_sock('can')
       Plant.sendcan = messaging.sub_sock('sendcan')
       Plant.model = messaging.pub_sock('model')
-      Plant.modelV2 = messaging.pub_sock('modelV2')
       Plant.front_frame = messaging.pub_sock('frontFrame')
       Plant.live_params = messaging.pub_sock('liveParameters')
       Plant.live_location_kalman = messaging.pub_sock('liveLocationKalman')
@@ -394,7 +393,6 @@ class Plant():
     # note that this is worst case for MPC, since model will delay long mpc by one time step
     if publish_model and self.frame % 5 == 0:
       md = messaging.new_message('model')
-      mdV2 = messaging.new_message('modelV2')
       cal = messaging.new_message('liveCalibration')
       md.model.frameId = 0
       for x in [md.model.path, md.model.leftLane, md.model.rightLane]:
@@ -426,7 +424,6 @@ class Plant():
       cal.liveCalibration.rpyCalib = [0.] * 3
       # fake values?
       Plant.model.send(md.to_bytes())
-      Plant.modelV2.send(mdV2.to_bytes())
       Plant.cal.send(cal.to_bytes())
       for s in Plant.pm.sock.keys():
         try:
