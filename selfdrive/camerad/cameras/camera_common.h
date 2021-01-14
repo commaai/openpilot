@@ -102,12 +102,10 @@ public:
   mat3 yuv_transform;
 
   FrameMetadata yuv_metas[YUV_COUNT];
-  size_t yuv_buf_size;
 
   VisionStreamType rgb_type, yuv_type;
   int rgb_width, rgb_height, rgb_stride;
 
-  int cur_yuv_idx, cur_rgb_idx;
   FrameMetadata cur_frame_data;
 
   VisionBuf *cur_rgb_buf;
@@ -122,7 +120,6 @@ public:
   std::unique_ptr<FrameMetadata[]> camera_bufs_metadata;
 
   int frame_buf_count;
-  int frame_size;
 
   release_cb release_callback;
 
