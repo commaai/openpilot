@@ -5,7 +5,7 @@ from common.realtime import sec_since_boot, DT_MDL
 from selfdrive.swaglog import cloudlog
 from selfdrive.controls.lib.lateral_mpc import libmpc_py
 from selfdrive.controls.lib.drive_helpers import MPC_COST_LAT, MPC_N, CAR_ROTATION_RADIUS
-from selfdrive.controls.lib.lane_planner import LanePlanner
+from selfdrive.controls.lib.lane_planner import LanePlanner, TRAJECTORY_SIZE
 from selfdrive.config import Conversions as CV
 from common.params import Params
 import cereal.messaging as messaging
@@ -57,6 +57,10 @@ class PathPlanner():
     self.lane_change_ll_prob = 1.0
     self.prev_one_blinker = False
 
+    self.path_xyz = np.zeros((TRAJECTORY_SIZE,3))
+    self.orient_xyz = np.zeros((TRAJECTORY_SIZE,3))
+    self.t_idxs = np.zeros((TRAJECTORY_SIZE,))
+
   def setup_mpc(self):
     self.libmpc = libmpc_py.libmpc
     self.libmpc.init(MPC_COST_LAT.PATH, MPC_COST_LAT.HEADING, self.steer_rate_cost)
@@ -92,9 +96,10 @@ class PathPlanner():
 
     md = sm['modelV2']
     self.LP.parse_model(sm['modelV2'])
-    T_IDXS = np.array(md.position.t)
-    path_xyz = np.column_stack([md.position.x, md.position.y, md.position.z])
-    orient_xyz = np.column_stack([md.orientation.x, md.orientation.y, md.orientation.z])
+    if len(md.position.x) == TRAJECTORY_SIZE and len(md.orientation.x) == TRAJECTORY_SIZE:
+      self.t_idxs = np.array(md.position.t)
+      self.path_xyz = np.column_stack([md.position.x, md.position.y, md.position.z])
+      self.orient_xyz = np.column_stack([md.orientation.x, md.orientation.y, md.orientation.z])
 
     # Lane change logic
     one_blinker = sm['carState'].leftBlinker != sm['carState'].rightBlinker
@@ -159,11 +164,11 @@ class PathPlanner():
 
     # Turn off lanes during lane change
     if desire == log.PathPlan.Desire.laneChangeRight or desire == log.PathPlan.Desire.laneChangeLeft:
-      self.LP.l_prob *= self.lane_change_ll_prob
-      self.LP.r_prob *= self.lane_change_ll_prob
+      self.LP.lll_prob *= self.lane_change_ll_prob
+      self.LP.rll_prob *= self.lane_change_ll_prob
     self.LP.update_d_path(v_ego)
-    y_pts = np.interp(v_ego * T_IDXS[:MPC_N+1], np.linalg.norm(self.LP.d_path_xyz, axis=1), self.LP.d_path_xyz[:,1])
-    heading_pts = np.interp(v_ego * T_IDXS[:MPC_N+1], np.linalg.norm(path_xyz, axis=1), orient_xyz[:,2])
+    y_pts = np.interp(v_ego * self.t_idxs[:MPC_N+1], np.linalg.norm(self.LP.d_path_xyz, axis=1), self.LP.d_path_xyz[:,1])
+    heading_pts = np.interp(v_ego * self.t_idxs[:MPC_N+1], np.linalg.norm(self.path_xyz, axis=1), self.orient_xyz[:,2])
 
     # init state
     self.cur_state.x = 0.0
@@ -187,8 +192,8 @@ class PathPlanner():
 
     # TODO this needs more thought
     delay = CP.steerActuatorDelay
-    next_delta = np.interp(DT_MDL + delay, T_IDXS[:MPC_N+1], list(self.mpc_solution.delta))
-    next_rate = np.interp(delay, T_IDXS[:MPC_N], list(self.mpc_solution.rate))
+    next_delta = np.interp(DT_MDL + delay, self.t_idxs[:MPC_N+1], list(self.mpc_solution.delta))
+    next_rate = np.interp(delay, self.t_idxs[:MPC_N], list(self.mpc_solution.rate))
 
     # reset to current steer angle if not active or overriding
     if active:
@@ -223,8 +228,8 @@ class PathPlanner():
     plan_send.pathPlan.dPoly = [0,0,0,0]
     plan_send.pathPlan.lPoly = [0,0,0,0]
     plan_send.pathPlan.rPoly = [0,0,0,0]
-    plan_send.pathPlan.lProb = float(self.LP.l_prob)
-    plan_send.pathPlan.rProb = float(self.LP.r_prob)
+    plan_send.pathPlan.lProb = float(self.LP.lll_prob)
+    plan_send.pathPlan.rProb = float(self.LP.rll_prob)
 
     plan_send.pathPlan.angleSteers = float(self.angle_steers_des_mpc)
     plan_send.pathPlan.rateSteers = float(rate_desired)

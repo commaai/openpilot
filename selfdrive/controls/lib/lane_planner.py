@@ -4,40 +4,44 @@ from cereal import log
 from common.numpy_helpers import deep_interp_np
 
 CAMERA_OFFSET = 0.06  # m from center car to camera
+TRAJECTORY_SIZE = 33
 
 
 
 class LanePlanner:
   def __init__(self):
-    self.path_xyz = np.zeros((33,3))
+    self.path_t = np.zeros((TRAJECTORY_SIZE,))
+    self.path_xyz = np.zeros((TRAJECTORY_SIZE,3))
 
-    self.lll_xyz = np.zeros((33,3))
-    self.rll_xyz = np.zeros((33,3))
+    self.lane_t = np.zeros((TRAJECTORY_SIZE,))
+    self.lll_xyz = np.zeros((TRAJECTORY_SIZE,3))
+    self.rll_xyz = np.zeros((TRAJECTORY_SIZE,3))
     self.lane_width_estimate = 3.7
     self.lane_width_certainty = 1.0
     self.lane_width = 3.7
 
-    self.l_prob = 0.
-    self.r_prob = 0.
+    self.lll_prob = 0.
+    self.rll_prob = 0.
 
-    self.l_std = 0.
-    self.r_std = 0.
+    self.lll_std = 0.
+    self.rll_std = 0.
 
     self.l_lane_change_prob = 0.
     self.r_lane_change_prob = 0.
 
 
   def parse_model(self, md):
-    self.lane_t = (np.array(md.laneLines[1].t) + np.array(md.laneLines[1].t))/2
-    self.path_t = np.array(md.position.t)
-    self.path_xyz = np.column_stack([md.position.x, md.position.y, md.position.z])
+    if len(md.laneLines) == 4 and len(md.laneLines[0].t) == TRAJECTORY_SIZE:
+      self.lane_t = (np.array(md.laneLines[1].t) + np.array(md.laneLines[1].t))/2
+      self.path_t = np.array(md.position.t)
+      self.path_xyz = np.column_stack([md.position.x, md.position.y, md.position.z])
 
-    self.lll_xyz = np.column_stack([md.laneLines[1].x, md.laneLines[1].y, md.laneLines[1].z])
-    self.rll_xyz = np.column_stack([md.laneLines[2].x, md.laneLines[2].y, md.laneLines[2].z])
-    self.lll_prob = md.laneLineProbs[1]
-    self.rll_prob = md.laneLineProbs[2]
-    self.lll_std = md.laneLineStds[1]
-    self.rll_std = md.laneLineStds[2]
+      self.lll_xyz = np.column_stack([md.laneLines[1].x, md.laneLines[1].y, md.laneLines[1].z])
+      self.rll_xyz = np.column_stack([md.laneLines[2].x, md.laneLines[2].y, md.laneLines[2].z])
+      self.lll_prob = md.laneLineProbs[1]
+      self.rll_prob = md.laneLineProbs[2]
+      self.lll_std = md.laneLineStds[1]
+      self.rll_std = md.laneLineStds[2]
 
     if len(md.meta.desireState):
       self.l_lane_change_prob = md.meta.desireState[log.PathPlan.Desire.laneChangeLeft]
@@ -62,8 +66,8 @@ class LanePlanner:
     r_prob *= mod
 
     # Reduce reliance on uncertain lanelines
-    l_std_mod = interp(self.l_std, [.15, .3], [1.0, 0.0])
-    r_std_mod = interp(self.r_std, [.15, .3], [1.0, 0.0])
+    l_std_mod = interp(self.lll_std, [.15, .3], [1.0, 0.0])
+    r_std_mod = interp(self.rll_std, [.15, .3], [1.0, 0.0])
     l_prob *= l_std_mod
     r_prob *= r_std_mod
 
