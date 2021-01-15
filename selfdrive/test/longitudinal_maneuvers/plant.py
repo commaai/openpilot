@@ -8,7 +8,7 @@ import numpy as np
 
 from opendbc import DBC_PATH
 
-from cereal import car
+from cereal import car, log
 from common.realtime import Ratekeeper
 from selfdrive.config import Conversions as CV
 import cereal.messaging as messaging
@@ -405,9 +405,11 @@ class Plant():
         v_rel = 0.
         prob = 0.0
 
-      md.modelV2.lead.xyva = [float(d_rel), 0.0, float(v_rel, 0.0)]
-      md.modelV2.lead.xyvaStd = [1.0, 1.0, 1.0, 1.0]
-      md.modelV2.lead.prob = prob
+      lead = log.ModelDataV2.LeadDataV2.new_message()
+      lead.xyva = [float(d_rel), 0.0, float(v_rel), 0.0]
+      lead.xyvaStd = [1.0, 1.0, 1.0, 1.0]
+      lead.prob = prob
+      md.modelV2.leads = [lead, lead]
 
       cal.liveCalibration.calStatus = 1
       cal.liveCalibration.calPerc = 100
