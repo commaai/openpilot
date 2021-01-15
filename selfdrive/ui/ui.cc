@@ -161,7 +161,7 @@ void update_sockets(UIState *s) {
   if (sm.updated("thermal")) {
     scene.thermal = sm["thermal"].getThermal();
   }
-  if (sm.updated("ubloxGnss")) {
+  if (!scene.sidebar_collapsed && sm.updated("ubloxGnss")) {
     auto data = sm["ubloxGnss"].getUbloxGnss();
     if (data.which() == cereal::UbloxGnss::MEASUREMENT_REPORT) {
       scene.satelliteCount = data.getMeasurementReport().getNumMeas();
