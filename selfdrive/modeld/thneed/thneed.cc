@@ -223,7 +223,7 @@ void Thneed::stop() {
   record = 0;
 }
 
-void Thneed::execute(float **finputs, float *foutput, bool slow) {
+void Thneed::execute(float **finputs, float *foutput, bool slow, bool withcl) {
   int ret;
   uint64_t tb, te;
   if (record & THNEED_DEBUG) tb = nanos_since_boot();
@@ -238,41 +238,28 @@ void Thneed::execute(float **finputs, float *foutput, bool slow) {
     clEnqueueWriteBuffer(command_queue, inputs[idx], CL_TRUE, 0, sz, finputs[idx], 0, NULL, NULL);
   }
 
-  // ****** set power constraint
-  struct kgsl_device_constraint_pwrlevel pwrlevel;
-  pwrlevel.level = KGSL_CONSTRAINT_PWR_MAX;
+  if (withcl) {
+    clexec();
+  } else {
+    // ****** run commands
+    int i = 0;
+    for (auto &it : cmds) {
+      ++i;
+      if (record & THNEED_DEBUG) printf("run %2d @ %7lu us: ", i, (nanos_since_boot()-tb)/1000);
+      it->exec((i == cmds.size()) || slow);
+    }
 
-  struct kgsl_device_constraint constraint;
-  constraint.type = KGSL_CONSTRAINT_PWRLEVEL;
-  constraint.context_id = context_id;
-  constraint.data = (void*)&pwrlevel;
-  constraint.size = sizeof(pwrlevel);
+    // ****** sync objects
+    for (auto &it : syncobjs) {
+      struct kgsl_gpuobj_sync cmd;
 
-  struct kgsl_device_getproperty prop;
-  prop.type = KGSL_PROP_PWR_CONSTRAINT;
-  prop.value = (void*)&constraint;
-  prop.sizebytes = sizeof(constraint);
-  ret = ioctl(fd, IOCTL_KGSL_SETPROPERTY, &prop);
-  assert(ret == 0);
+      cmd.objs = (uint64_t)it.data();
+      cmd.obj_len = it.length();
+      cmd.count = it.length() / sizeof(struct kgsl_gpuobj_sync_obj);
 
-  // ****** run commands
-  int i = 0;
-  for (auto &it : cmds) {
-    ++i;
-    if (record & THNEED_DEBUG) printf("run %2d @ %7lu us: ", i, (nanos_since_boot()-tb)/1000);
-    it->exec((i == cmds.size()) || slow);
-  }
-
-  // ****** sync objects
-  for (auto &it : syncobjs) {
-    struct kgsl_gpuobj_sync cmd;
-
-    cmd.objs = (uint64_t)it.data();
-    cmd.obj_len = it.length();
-    cmd.count = it.length() / sizeof(struct kgsl_gpuobj_sync_obj);
-
-    ret = ioctl(fd, IOCTL_KGSL_GPUOBJ_SYNC, &cmd);
-    assert(ret == 0);
+      ret = ioctl(fd, IOCTL_KGSL_GPUOBJ_SYNC, &cmd);
+      assert(ret == 0);
+    }
   }
 
   // ****** copy outputs
@@ -284,14 +271,6 @@ void Thneed::execute(float **finputs, float *foutput, bool slow) {
   } else {
     printf("CAUTION: model output is NULL, does it have no outputs?\n");
   }
-
-  // ****** unset power constraint
-  constraint.type = KGSL_CONSTRAINT_NONE;
-  constraint.data = NULL;
-  constraint.size = 0;
-
-  ret = ioctl(fd, IOCTL_KGSL_SETPROPERTY, &prop);
-  assert(ret == 0);
 
   if (record & THNEED_DEBUG) {
     te = nanos_since_boot();
