@@ -1,21 +1,25 @@
 #!/usr/bin/env python3
-import signal
-import re
-import os
-import time
-import subprocess
 import datetime
+import os
+import re
+import shutil
+import signal
+import subprocess
+import time
 
 from raven import Client
 from raven.transport.http import HTTPTransport
 
+from common.file_helpers import mkdirs_exists_ok
 from selfdrive.hardware import TICI
+from selfdrive.loggerd.config import ROOT
 from selfdrive.swaglog import cloudlog
-from selfdrive.version import version, origin, branch, dirty, commit
+from selfdrive.version import branch, commit, dirty, origin, version
 
 MAX_SIZE = 100000 * 10  # Normal size is 40-100k, allow up to 1M
 if TICI:
   MAX_SIZE = MAX_SIZE * 100  # Allow larger size for tici since files contain coredump
+MAX_TOMBSTONE_FN_LEN = 85
 
 
 def safe_fn(s):
@@ -94,6 +98,7 @@ def report_tombstone_apport(fn, client):
 
   message = ""  # One line description of the crash
   contents = ""  # Full file contents without coredump
+  path = "" # File path relative to openpilot directory
 
   proc_maps = False
 
@@ -124,6 +129,8 @@ def report_tombstone_apport(fn, client):
 
   stacktrace = get_apport_stacktrace(fn)
   stacktrace_s = stacktrace.split('\n')
+  crash_function = "No stacktrace"
+
   if len(stacktrace_s) > 2:
     found = False
 
@@ -139,8 +146,6 @@ def report_tombstone_apport(fn, client):
 
     # Remove arguments that can contain pointers to make sentry one-liner unique
     crash_function = re.sub(r'\(.*?\)', '', crash_function)
-  else:
-    crash_function = "No stacktrace"
 
   contents = stacktrace + "\n\n" + contents
   message = message + " - " + crash_function
@@ -150,13 +155,14 @@ def report_tombstone_apport(fn, client):
   clean_path = path.replace('/', '_')
   date = datetime.datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
 
-  clean_function = crash_function
-  for c in ['/', ' ', ':', '.']:
-    clean_function = clean_function.replace(c, '_')
-  new_fn = f"{date}--{version}--{commit[:8]}--{safe_fn(clean_path)}--{safe_fn(clean_function)}.crash"
+  new_fn = f"{date}_{commit[:8]}_{safe_fn(clean_path)}"[:MAX_TOMBSTONE_FN_LEN]
   print(new_fn)
 
-  # TODO: move file to /data/media to be uploaded
+  crashlog_dir = os.path.join(ROOT, "crash")
+  mkdirs_exists_ok(crashlog_dir)
+
+  # Use shutil move since files can be on different disks
+  shutil.move(fn, os.path.join(crashlog_dir, new_fn))
 
 
 def main():
