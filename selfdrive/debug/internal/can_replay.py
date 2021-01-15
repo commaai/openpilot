@@ -12,9 +12,9 @@ from tools.lib.logreader import LogReader
 
 from panda import Panda
 try:
-  from panda_jungle import PandaJungle
+  from panda_jungle import PandaJungle  # pylint: disable=import-error
 except Exception:
-  PandaJungle = None # type: ignore
+  PandaJungle = None  # type: ignore
 
 
 ROUTE = "77611a1fac303767/2020-03-24--09-50-38"
