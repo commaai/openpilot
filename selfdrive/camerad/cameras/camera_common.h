@@ -1,7 +1,4 @@
 #pragma once
-#include <queue>
-#include <mutex>
-#include <condition_variable>
 
 #include <stdlib.h>
 #include <stdbool.h>
