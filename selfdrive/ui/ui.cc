@@ -102,7 +102,7 @@ static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
   update_line_data(s, model.getPosition(), 0.5, 0, &scene.track_vertices, path_length);
 }
 
-void update_sockets(UIState *s) {
+static void update_sockets(UIState *s) {
 
   UIScene &scene = s->scene;
   SubMaster &sm = *(s->sm);
@@ -202,7 +202,7 @@ void update_sockets(UIState *s) {
   s->started = scene.thermal.getStarted() || scene.frontview;
 }
 
-static void ui_read_params(UIState *s) {
+static void update_params(UIState *s) {
   const uint64_t frame = s->sm->frame;
 
   if (frame % (5*UI_FREQ) == 0) {
@@ -216,7 +216,7 @@ static void ui_read_params(UIState *s) {
   }
 }
 
-void ui_update_vision(UIState *s) {
+static void update_vision(UIState *s) {
   if (!s->vipc_client->connected && s->started) {
     s->vipc_client = s->scene.frontview ? s->vipc_client_front : s->vipc_client_rear;
 
@@ -234,9 +234,9 @@ void ui_update_vision(UIState *s) {
 }
 
 void ui_update(UIState *s) {
-  ui_read_params(s);
+  update_params(s);
   update_sockets(s);
-  ui_update_vision(s);
+  update_vision(s);
 
   // Handle onroad/offroad transition
   if (!s->started && s->status != STATUS_OFFROAD) {
