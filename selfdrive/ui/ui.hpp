@@ -119,7 +119,7 @@ typedef struct UIScene {
     cereal::ControlsState::AlertSize size;
     cereal::ControlsState::AlertStatus status;
     AudibleAlert sound;
-    float blinking_rate = 0.;
+    float blinking_rate;
   } alert;
  
   cereal::HealthData::HwType hwType;

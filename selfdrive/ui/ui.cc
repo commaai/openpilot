@@ -194,6 +194,8 @@ static void ui_read_params(UIState *s) {
 
 void ui_update_vision(UIState *s) {
   if (!s->vipc_client->connected && s->started) {
+    s->vipc_client = s->scene.frontview ? s->vipc_client_front : s->vipc_client_rear;
+
     if (s->vipc_client->connect(false)){
       ui_init_vision(s);
     }
@@ -219,11 +221,6 @@ static const std::map<std::string, UIScene::Alert> ui_alerts = {
     cereal::ControlsState::AlertSize::FULL,
     cereal::ControlsState::AlertStatus::CRITICAL,
     AudibleAlert::CHIME_WARNING_REPEAT}},
-  {"CameraMalfunction",
-    {"CameraMalfunction", "Camera Malfunction", "Contact Support",
-    cereal::ControlsState::AlertSize::FULL,
-    cereal::ControlsState::AlertStatus::NORMAL,
-    AudibleAlert::NONE}},
 };
 
 static void update_alert(UIState *s) {
@@ -255,12 +252,6 @@ static void update_alert(UIState *s) {
     } else if ((frame - cs_frame) > 5 * UI_FREQ) {
       // car is started, but controls is lagging or died
       alert = ui_alerts.at("ControlsUnresponsive");
-    }
-    const uint64_t frame_pkt = s->sm->rcv_frame("frame");
-    if ((frame_pkt > s->started_frame || since_started > 15 * UI_FREQ) &&
-        (frame - frame_pkt) > 5 * UI_FREQ) {
-      // controls is fine, but rear camera is lagging or died
-      alert = ui_alerts.at("CameraMalfunction");
     }
   }
 
