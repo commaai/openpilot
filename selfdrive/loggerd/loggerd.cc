@@ -465,11 +465,6 @@ int main(int argc, char** argv) {
     segment_length = atoi(getenv("LOGGERD_SEGMENT_LENGTH"));
   }
 
-  bool record_front = true;
-#ifndef QCOM2
-  record_front = Params().read_db_bool("RecordFront");
-#endif
-
   clear_locks();
 
   // setup messaging
@@ -515,6 +510,7 @@ int main(int argc, char** argv) {
   s.rotate_state[LOG_CAMERA_ID_FCAMERA].enabled = true;
 
 #if defined(QCOM) || defined(QCOM2)
+  bool record_front = Params().read_db_bool("RecordFront");
   if (record_front) {
     encoder_threads.push_back(std::thread(encoder_thread, LOG_CAMERA_ID_DCAMERA));
     s.rotate_state[LOG_CAMERA_ID_DCAMERA].enabled = true;
