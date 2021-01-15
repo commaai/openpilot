@@ -98,7 +98,7 @@ def report_tombstone_apport(fn, client):
 
   message = ""  # One line description of the crash
   contents = ""  # Full file contents without coredump
-  path = "" # File path relative to openpilot directory
+  path = ""  # File path relative to openpilot directory
 
   proc_maps = False
 
