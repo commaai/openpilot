@@ -70,9 +70,9 @@ QString CommaApi::create_jwt() {
   return create_jwt(*(new QVector<QPair<QString, QJsonValue>>()));
 }
 
-QString time(){
-  return QDateTime::currentDateTime().toString("mm:ss,z");
-}
+// QString time(){
+//   return QDateTime::currentDateTime().toString("mm:ss,z");
+// }
 
 RequestRepeater::RequestRepeater(QWidget* parent, QString requestURL, int period_seconds, QVector<QPair<QString, QJsonValue>> payloads, bool disableWithScreen)
   : disableWithScreen(disableWithScreen) {
@@ -101,12 +101,12 @@ void RequestRepeater::sendRequest(QString requestURL, QVector<QPair<QString, QJs
   request.setRawHeader("Authorization", ("JWT " + token).toUtf8());
   reply = networkAccessManager->get(request);
   networkTimer->start();
-  qDebug()<<time()<<"Starting timer with id"<<callId;
+  // qDebug()<<time()<<"Starting timer with id"<<callId;
   connect(reply, SIGNAL(finished()), this, SLOT(requestFinished()));
 }
 
 void RequestRepeater::requestTimeout(){
-  qDebug()<<time()<<"Request"<<callId<<"timed out";
+  // qDebug()<<time()<<"Request"<<callId<<"timed out";
   aborted = true;
   reply->abort();
 }
@@ -116,16 +116,16 @@ void RequestRepeater::requestFinished(){
   if(!aborted){
     networkTimer->stop();
     QString response = reply->readAll();
-    qDebug()<<time()<<"Request"<<callId<<"got errror, response"<<reply->errorString()<<"---"<<response.left(30);
+    // qDebug()<<time()<<"Request"<<callId<<"got errror, response"<<reply->errorString()<<"---"<<response.left(30);
     if (reply->error() == QNetworkReply::NoError) {
-      qDebug()<<time()<<"Request"<<callId<<"accepted";
+      // qDebug()<<time()<<"Request"<<callId<<"accepted";
       emit receivedResponse(response);
     } else {
       qDebug()<<time()<<reply->errorString();
       emit failedResponse(reply->errorString());
     }
   }else{
-    qDebug()<<time()<<"Response"<<callId<<"not read, detected an abort";
+    // qDebug()<<time()<<"Response"<<callId<<"not read, detected an abort";
     emit failedResponse("Custom Openpilot network timeout");
   }
   reply->deleteLater();
