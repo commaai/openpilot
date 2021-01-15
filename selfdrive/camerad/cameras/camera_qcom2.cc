@@ -1114,7 +1114,7 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
   s->pm->send(c == &s->rear ? "frame" : "wideFrame", msg);
 
   if (cnt % 3 == 0) {
-    const auto [x, y, w, h] = c == &s->wide ? std::tuple(96, 250, 1734, 524) : std::tuple(96, 160, 1734, 986);
+    const auto [x, y, w, h] = (c == &s->wide) ? std::tuple(96, 250, 1734, 524) : std::tuple(96, 160, 1734, 986);
     const int skip = 2;
     set_exposure_target(c, (const uint8_t *)b->cur_yuv_buf->y, x, x + w, skip, y, y + h, skip);
   }
