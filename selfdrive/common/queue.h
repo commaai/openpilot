@@ -1,21 +1,20 @@
 #pragma once
-#include <condition_variable>
-#include <mutex>
 #include <queue>
+#include <mutex>
+#include <condition_variable>
 
 template <class T>
 class SafeQueue {
 public:
   SafeQueue() = default;
-
-  void push(const T& v) {
+  ~SafeQueue() {}
+  void push(T v) {
     {
       std::unique_lock lk(m);
       q.push(v);
     }
     cv.notify_one();
   }
-
   T pop() {
     std::unique_lock lk(m);
     cv.wait(lk, [this] { return !q.empty(); });
@@ -23,12 +22,10 @@ public:
     q.pop();
     return v;
   }
-
-  bool try_pop(T& v, int timeout_ms = 0) {
+  bool try_pop(T& v) {
     std::unique_lock lk(m);
-    if (!cv.wait_for(lk, std::chrono::milliseconds(timeout_ms), [this] { return !q.empty(); })) {
-      return false;
-    }
+    if (q.empty()) return false;
+
     v = q.front();
     q.pop();
     return true;
