@@ -121,14 +121,14 @@ CameraBuf::~CameraBuf() {
 }
 
 bool CameraBuf::acquire() {
-  std::unique_lock<std::mutex> lk(frame_queue_mutex);
+  {
+    std::unique_lock<std::mutex> lk(frame_queue_mutex);
+    bool got_frame = frame_queue_cv.wait_for(lk, std::chrono::milliseconds(1), [this]{ return !frame_queue.empty(); });
+    if (!got_frame) return false;
 
-  bool got_frame = frame_queue_cv.wait_for(lk, std::chrono::milliseconds(1), [this]{ return !frame_queue.empty(); });
-  if (!got_frame) return false;
-
-  cur_buf_idx = frame_queue.front();
-  frame_queue.pop();
-  lk.unlock();
+    cur_buf_idx = frame_queue.front();
+    frame_queue.pop();
+  }
 
   const FrameMetadata &frame_data = camera_bufs_metadata[cur_buf_idx];
   if (frame_data.frame_id == -1) {
