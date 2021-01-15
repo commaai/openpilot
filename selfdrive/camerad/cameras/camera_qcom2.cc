@@ -1111,23 +1111,9 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
   s->pm->send(c == &s->rear ? "frame" : "wideFrame", msg);
 
   if (cnt % 3 == 0) {
-    int exposure_x;
-    int exposure_y;
-    int exposure_width;
-    int exposure_height;
-    if (c == &s->rear) {
-      exposure_x = 96;
-      exposure_y = 160;
-      exposure_width = 1734;
-      exposure_height = 986;
-    } else { // c == &s->wide
-      exposure_x = 96;
-      exposure_y = 250;
-      exposure_width = 1734;
-      exposure_height = 524;
-    }
-    int skip = 2;
-    set_exposure_target(c, (const uint8_t *)b->cur_yuv_buf->y, exposure_x, exposure_x + exposure_width, skip, exposure_y, exposure_y + exposure_height, skip);
+    const auto [x, y, w, h] = (c == &s->wide) ? std::tuple(96, 250, 1734, 524) : std::tuple(96, 160, 1734, 986);
+    const int skip = 2;
+    set_exposure_target(c, (const uint8_t *)b->cur_yuv_buf->y, x, x + w, skip, y, y + h, skip);
   }
 }
 
