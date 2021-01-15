@@ -431,8 +431,9 @@ void ui_draw(UIState *s) {
     s->scene.viz_rect.w -= sbr_w;
   }
 
-  const bool draw_vision = s->started && s->status != STATUS_OFFROAD &&
-    s->active_app == cereal::UiLayoutState::App::NONE && s->vipc_client->connected;
+  const bool draw_alerts = s->started && s->status != STATUS_OFFROAD &&
+                           s->active_app == cereal::UiLayoutState::App::NONE;
+  const bool draw_vision = draw_alerts && s->vipc_client->connected;
 
   // GL drawing functions
   ui_draw_background(s);
@@ -450,7 +451,7 @@ void ui_draw(UIState *s) {
     ui_draw_vision(s);
   }
 
-  if (draw_vision && s->scene.alert_size != cereal::ControlsState::AlertSize::NONE) {
+  if (draw_alerts && s->scene.alert_size != cereal::ControlsState::AlertSize::NONE) {
     ui_draw_vision_alert(s);
   }
   nvgEndFrame(s->vg);
