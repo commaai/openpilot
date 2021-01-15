@@ -9,7 +9,8 @@ TRAJECTORY_SIZE = 33
 
 class LanePlanner:
   def __init__(self):
-    self.lane_t = np.zeros((TRAJECTORY_SIZE,))
+    self.ll_t = np.zeros((TRAJECTORY_SIZE,))
+    self.ll_x = np.zeros((TRAJECTORY_SIZE,))
     self.lll_y = np.zeros((TRAJECTORY_SIZE,))
     self.rll_y = np.zeros((TRAJECTORY_SIZE,))
     self.lane_width_estimate = 3.7
