@@ -231,7 +231,7 @@ static void ui_draw_vision_maxspeed(UIState *s) {
   if (is_cruise_set && !s->is_metric) { maxspeed *= 0.6225; }
 
   const Rect rect = {s->scene.viz_rect.x + (bdr_s * 2), int(s->scene.viz_rect.y + (bdr_s * 1.5)), 184, 202};
-  ui_fill_rect(s->vg, rect, COLOR_BLACK_ALPHA(100), 20.);
+  ui_fill_rect(s->vg, rect, COLOR_BLACK_ALPHA(100), 30.);
   ui_draw_rect(s->vg, rect, COLOR_WHITE_ALPHA(100), 10, 20.);
 
   nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
@@ -472,7 +472,8 @@ void ui_draw_rect(NVGcontext *vg, const Rect &r, NVGcolor color, int width, floa
 static inline void fill_rect(NVGcontext *vg, const Rect &r, const NVGcolor *color, const NVGpaint *paint, float radius) {
   nvgBeginPath(vg);
   radius > 0? nvgRoundedRect(vg, r.x, r.y, r.w, r.h, radius) : nvgRect(vg, r.x, r.y, r.w, r.h);
-  color ? nvgFillColor(vg, *color) : nvgFillPaint(vg, *paint);
+  if (color) nvgFillColor(vg, *color);
+  if (paint) nvgFillPaint(vg, *paint);
   nvgFill(vg);
 }
 void ui_fill_rect(NVGcontext *vg, const Rect &r, const NVGcolor &color, float radius) {
