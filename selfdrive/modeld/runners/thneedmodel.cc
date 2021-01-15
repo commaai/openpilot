@@ -27,7 +27,7 @@ void ThneedModel::addDesire(float *state, int state_size) {
 
 void ThneedModel::execute(float *net_input_buf, int buf_size) {
   float *inputs[4] = {recurrent, trafficConvention, desire, net_input_buf};
-  if (!recorded) {
+  /*if (!recorded) {
     thneed->record = THNEED_RECORD;
     thneed->copy_inputs(inputs);
     thneed->clexec();
@@ -37,6 +37,10 @@ void ThneedModel::execute(float *net_input_buf, int buf_size) {
     recorded = true;
   } else {
     thneed->execute(inputs, output);
-  }
+  }*/
+
+  thneed->copy_inputs(inputs);
+  thneed->clexec();
+  thneed->copy_output(output);
 }
 
