@@ -1113,6 +1113,19 @@ static FrameMetadata get_frame_metadata(CameraState *s, uint32_t frame_id) {
   };
 }
 
+static std::optional<float> get_accel_z(SubMaster *sm) {
+  if (sm->update(0) > 0) {
+    for (auto event : (*sm)["sensorEvents"].getSensorEvents()) {
+      if (event.which() == cereal::SensorEventData::ACCELERATION) {
+        if (auto v = event.getAcceleration().getV(); v.size() >= 3)
+          return -v[2];
+        break;
+      }
+    }
+  }
+  return std::nullopt;
+}
+
 static void ops_thread(MultiCameraState *s) {
   int rear_op_id_last = 0;
   int front_op_id_last = 0;
