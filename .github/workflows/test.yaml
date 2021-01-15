@@ -138,8 +138,8 @@ jobs:
     name: docker push prebuilt
     runs-on: ubuntu-20.04
     timeout-minutes: 50
-    #if: github.event_name == 'status' && github.repository == 'commaai/openpilot'
-    #needs: [static_analysis, unit_tests, process_replay, test_longitudinal, test_car_models]
+    if: github.event_name == 'status' && github.repository == 'commaai/openpilot'
+    needs: [static_analysis, unit_tests, process_replay, test_longitudinal, test_car_models]
     env:
       IMAGE_NAME: openpilot-prebuilt
     steps:
