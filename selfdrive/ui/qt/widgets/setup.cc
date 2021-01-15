@@ -177,7 +177,10 @@ SetupWidget::SetupWidget(QWidget* parent) : QWidget(parent) {
   QPushButton* finishButton = new QPushButton("Finish registration", this);
   finishButton->setFixedHeight(200);
   finishButton->setStyleSheet(R"(
+    border-radius: 30px;
     font-size: 60px;
+    font-weight: bold;
+    background: #787878;
   )");
   QObject::connect(finishButton, SIGNAL(released()), this, SLOT(showQrCode()));
   finishRegistationLayout->addWidget(finishButton);
