@@ -6,6 +6,7 @@ import shutil
 import signal
 import subprocess
 import time
+import glob
 
 from raven import Client
 from raven.transport.http import HTTPTransport
@@ -20,6 +21,9 @@ MAX_SIZE = 100000 * 10  # Normal size is 40-100k, allow up to 1M
 if TICI:
   MAX_SIZE = MAX_SIZE * 100  # Allow larger size for tici since files contain coredump
 MAX_TOMBSTONE_FN_LEN = 85
+
+TOMBSTONE_DIR = "/data/tombstones/"
+APPORT_DIR = "/var/crash/"
 
 
 def safe_fn(s):
@@ -38,6 +42,13 @@ def sentry_report(client, fn, message, contents):
     },
   )
 
+def clear_apport_folder():
+  for f in glob.glob(APPORT_DIR + '*'):
+    try:
+      os.remove(f)
+    except Exception:
+      pass
+
 
 def get_apport_stacktrace(fn):
   try:
@@ -53,7 +64,7 @@ def get_tombstones():
   """Returns list of (filename, ctime) for all tombstones in /data/tombstones
   and apport crashlogs in /var/crash"""
   files = []
-  for folder in ["/data/tombstones/", "/var/crash/"]:
+  for folder in [TOMBSTONE_DIR, APPORT_DIR]:
     if os.path.exists(folder):
       with os.scandir(folder) as d:
 
@@ -156,18 +167,18 @@ def report_tombstone_apport(fn, client):
   date = datetime.datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
 
   new_fn = f"{date}_{commit[:8]}_{safe_fn(clean_path)}"[:MAX_TOMBSTONE_FN_LEN]
-  print(new_fn)
 
   crashlog_dir = os.path.join(ROOT, "crash")
   mkdirs_exists_ok(crashlog_dir)
 
-  # Use shutil move since files can be on different disks
-  shutil.move(fn, os.path.join(crashlog_dir, new_fn))
+  # Files could be on different filesystems, copy, then delete
+  shutil.copy(fn, os.path.join(crashlog_dir, new_fn))
+  os.remove(fn)
 
 
 def main():
+  clear_apport_folder()  # Clear apport folder on start, otherwise duplicate crashes won't register
   initial_tombstones = set(get_tombstones())
-  initial_tombstones = set()
 
   tags = {
     'dirty': dirty,
