@@ -233,7 +233,7 @@ CONFIGS = [
     proc_name="radard",
     pub_sub={
       "can": ["radarState", "liveTracks"],
-      "liveParameters":  [], "controlsState":  [], "model":  [],
+      "liveParameters":  [], "controlsState":  [], "modelV2":  [],
     },
     ignore=["logMonoTime", "valid", "radarState.cumLagMs"],
     init_callback=get_car_params,
