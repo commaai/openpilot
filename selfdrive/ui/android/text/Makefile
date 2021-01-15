@@ -44,17 +44,6 @@ opensans_regular.o: ../../../assets/fonts/opensans_regular.ttf
 	@echo "[ bin2o ] $@"
 	cd '$(dir $<)' && ld -r -b binary '$(notdir $<)' -o '$(abspath $@)'
 
-%.o: %.c
-	mkdir -p $(@D)
-	@echo "[ CC ] $@"
-	$(CC) $(CPPFLAGS) $(CFLAGS) \
-          -I../../.. \
-          -I$(PHONELIBS)/android_frameworks_native/include \
-          -I$(PHONELIBS)/android_system_core/include \
-          -I$(PHONELIBS)/android_hardware_libhardware/include \
-          $(NANOVG_FLAGS) \
-          -c -o '$@' '$<'
-
 %.o: %.cc
 	mkdir -p $(@D)
 	@echo "[ CXX ] $@"
