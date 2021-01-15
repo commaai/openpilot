@@ -21,8 +21,9 @@
 #define COLOR_WHITE nvgRGBA(255, 255, 255, 255)
 #define MAX_TEXT_SIZE 2048
 
-extern const unsigned char _binary_opensans_regular_ttf_start[];
-extern const unsigned char _binary_opensans_regular_ttf_end[];
+extern const uint8_t bin_opensans_regular[] asm("_binary_opensans_regular_ttf_start");
+extern const uint8_t *bin_opensans_regular_end asm("_binary_opensans_regular_ttf_end");
+
 
 int main(int argc, char** argv) {
   int err;
@@ -36,8 +37,8 @@ int main(int argc, char** argv) {
   NVGcontext *vg = nvgCreateGLES3(NVG_ANTIALIAS | NVG_STENCIL_STROKES);
   assert(vg);
 
-  int font = nvgCreateFontMem(vg, "regular", (unsigned char*)_binary_opensans_regular_ttf_start, _binary_opensans_regular_ttf_end-_binary_opensans_regular_ttf_start, 0);
-assert(font >= 0);
+  int font = nvgCreateFontMem(vg, "regular", (unsigned char*)bin_opensans_regular, (bin_opensans_regular_end - bin_opensans_regular), 0);
+  assert(font >= 0);
 
   // Awake
   framebuffer_set_power(fb, HWC_POWER_MODE_NORMAL);
@@ -67,7 +68,7 @@ assert(font >= 0);
     float y = 150;
 
     // Copy text
-    char * text = malloc(MAX_TEXT_SIZE);
+    char * text = (char *)malloc(MAX_TEXT_SIZE);
     strncpy(text, argv[1], MAX_TEXT_SIZE);
 
     float lineh;
