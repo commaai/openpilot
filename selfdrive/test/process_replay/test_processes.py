@@ -159,7 +159,7 @@ if __name__ == "__main__":
          (not procs_whitelisted and cfg.proc_name in args.blacklist_procs):
         continue
       # TODO remove this hack
-      if cfg.proc_name == 'plannerd' and car_brand in ["GM", "SUBARU", "VOLKSWAGEN", "NISSAN"]:
+      if cfg.proc_name in ['radard', 'plannerd'] and car_brand in ["GM", "SUBARU", "VOLKSWAGEN", "NISSAN"]:
         continue
 
       cmp_log_fn = os.path.join(process_replay_dir, "%s_%s_%s.bz2" % (segment, cfg.proc_name, ref_commit))
