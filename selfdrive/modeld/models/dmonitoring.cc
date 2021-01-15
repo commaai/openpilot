@@ -64,7 +64,7 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
   const int global_x_offset = full_width_tici / 2 - adapt_width_tici / 2;
   const int global_y_offset = full_height_tici / 2 - cropped_height / 2;
   const int crop_x_offset = adapt_width_tici - cropped_width + 32;
-  const int crop_y_offset = 0;
+  const int crop_y_offset = -196;
 #endif
 
   int resized_width = MODEL_WIDTH;
