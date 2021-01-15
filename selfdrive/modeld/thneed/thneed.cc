@@ -220,6 +220,7 @@ Thneed::Thneed(bool do_clinit) {
 }
 
 void Thneed::stop() {
+  printf("Thneed::stop: recorded %lu commands and %lu syncs\n", cmds.size(), syncobjs.size());
   record = 0;
 }
 
