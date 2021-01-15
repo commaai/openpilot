@@ -175,8 +175,10 @@ typedef struct UIState {
   std::unique_ptr<GLShader> gl_shader;
   std::unique_ptr<EGLImageTexture> texture[UI_BUF_COUNT];
 
-  GLuint frame_vao[2], frame_vbo[2], frame_ibo[2];
-  mat4 rear_frame_mat, front_frame_mat;
+  struct Frame{
+    GLuint vao, vbo, ibo;
+    mat4 mat;
+  } frame[2]; // 0 is rear, 1 is front;
 
   // device state
   bool awake;

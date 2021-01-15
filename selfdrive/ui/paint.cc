@@ -144,14 +144,10 @@ static void ui_draw_line(UIState *s, const vertex_data *v, const int cnt, NVGcol
 }
 
 static void draw_frame(UIState *s) {
-  mat4 *out_mat;
-  if (s->scene.frontview) {
-    glBindVertexArray(s->frame_vao[1]);
-    out_mat = &s->front_frame_mat;
-  } else {
-    glBindVertexArray(s->frame_vao[0]);
-    out_mat = &s->rear_frame_mat;
-  }
+  const int idx = s->scene.frontview ? 1 : 0;
+  glBindVertexArray(s->frame[idx].vao);
+  mat4 *out_mat = &s->frame[idx].mat;
+
   glActiveTexture(GL_TEXTURE0);
 
   if (s->last_frame) {
@@ -510,7 +506,7 @@ static const mat4 device_transform = {{
 }};
 
 // frame from 4/3 to 16/9 display
-static const mat4 full_to_wide_frame_transform = {{
+static const mat4 front_frame_transform = {{
   .75,  0.0, 0.0, 0.0,
   0.0,  1.0, 0.0, 0.0,
   0.0,  0.0, 1.0, 0.0,
@@ -568,6 +564,16 @@ void ui_nvg_init(UIState *s) {
 
   assert(glGetError() == GL_NO_ERROR);
 
+  s->video_rect = Rect{bdr_s, bdr_s, s->fb_w - 2 * bdr_s, s->fb_h - 2 * bdr_s};
+  float zx = zoom * 2 * intrinsic_matrix.v[2] / s->video_rect.w;
+  float zy = zoom * 2 * intrinsic_matrix.v[5] / s->video_rect.h;
+  const mat4 rear_frame_transform = {{
+    zx, 0.0, 0.0, 0.0,
+    0.0, zy, 0.0, -y_offset / s->video_rect.h * 2,
+    0.0, 0.0, 1.0, 0.0,
+    0.0, 0.0, 0.0, 1.0,
+  }};
+
   for(int i = 0; i < 2; i++) {
     float x1, x2, y1, y2;
     if (i == 1) {
@@ -590,10 +596,10 @@ void ui_nvg_init(UIState *s) {
       { 1.0, -1.0, x1, y1}, //br
     };
 
-    glGenVertexArrays(1, &s->frame_vao[i]);
-    glBindVertexArray(s->frame_vao[i]);
-    glGenBuffers(1, &s->frame_vbo[i]);
-    glBindBuffer(GL_ARRAY_BUFFER, s->frame_vbo[i]);
+    glGenVertexArrays(1, &s->frame[i].vao);
+    glBindVertexArray(s->frame[i].vao);
+    glGenBuffers(1, &s->frame[i].vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, s->frame[i].vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(frame_coords), frame_coords, GL_STATIC_DRAW);
     glEnableVertexAttribArray(frame_pos_loc);
     glVertexAttribPointer(frame_pos_loc, 2, GL_FLOAT, GL_FALSE,
@@ -601,26 +607,14 @@ void ui_nvg_init(UIState *s) {
     glEnableVertexAttribArray(frame_texcoord_loc);
     glVertexAttribPointer(frame_texcoord_loc, 2, GL_FLOAT, GL_FALSE,
                           sizeof(frame_coords[0]), (const void *)(sizeof(float) * 2));
-    glGenBuffers(1, &s->frame_ibo[i]);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, s->frame_ibo[i]);
+    glGenBuffers(1, &s->frame[i].ibo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, s->frame[i].ibo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(frame_indicies), frame_indicies, GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER,0);
     glBindVertexArray(0);
+
+    s->frame[i].mat = matmul(device_transform, i == 0 ? rear_frame_transform : front_frame_transform);
   }
-
-  s->video_rect = Rect{bdr_s, bdr_s, s->fb_w - 2 * bdr_s, s->fb_h - 2 * bdr_s};
-  float zx = zoom * 2 * intrinsic_matrix.v[2] / s->video_rect.w;
-  float zy = zoom * 2 * intrinsic_matrix.v[5] / s->video_rect.h;
-
-  const mat4 frame_transform = {{
-    zx, 0.0, 0.0, 0.0,
-    0.0, zy, 0.0, -y_offset / s->video_rect.h * 2,
-    0.0, 0.0, 1.0, 0.0,
-    0.0, 0.0, 0.0, 1.0,
-  }};
-
-  s->front_frame_mat = matmul(device_transform, full_to_wide_frame_transform);
-  s->rear_frame_mat = matmul(device_transform, frame_transform);
 
   // Apply transformation such that video pixel coordinates match video
   // 1) Put (0, 0) in the middle of the video
