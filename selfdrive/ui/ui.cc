@@ -103,8 +103,8 @@ static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
 
   // update path
   int max_idx =  TRAJECTORY_SIZE - 1;
-  if (scene.lead_data[0].getStatus()) {
-    const float lead_d = scene.lead_data[0].getDRel() * 2.;
+  if (scene.lead[0].status) {
+    const float lead_d = scene.lead[0].d_rel * 2.;
     const float path_length = fmin(lead_d - fmin(lead_d * 0.35, 10.), MIN_DRAW_DISTANCE);
     max_idx = get_path_length_idx(model.getPosition(), path_length);
   }
@@ -124,7 +124,7 @@ static void update_lead(const UIState *s, const cereal::RadarState::LeadData::Re
     for (int i = 0; i < TRAJECTORY_SIZE && line_x[i] < path_length; ++i) {
       z = line_z[i];
     }
-    car_space_to_full_frame(s, lead_data.d_rel, lead_data.y_rel, z, &lead_data.vd.x, &lead_data.vd.y, 500.0f);
+    car_space_to_full_frame(s, lead_data.d_rel, lead_data.y_rel, z, &lead_data.vd);
   }
 }
 
