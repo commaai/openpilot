@@ -10,6 +10,7 @@
 #include <thread>
 #include "common/mat.h"
 #include "common/swaglog.h"
+#include "common/queue.h"
 #include "visionbuf.h"
 #include "common/visionimg.h"
 #include "imgproc/utils.h"
@@ -103,9 +104,7 @@ private:
   
   int cur_buf_idx;
 
-  std::mutex frame_queue_mutex;
-  std::condition_variable frame_queue_cv;
-  std::queue<size_t> frame_queue;
+  SafeQueue<int> safe_queue;
 
   int frame_buf_count;
   release_cb release_callback;

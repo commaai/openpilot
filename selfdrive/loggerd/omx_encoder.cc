@@ -75,7 +75,7 @@ OMX_ERRORTYPE OmxEncoder::empty_buffer_done(OMX_HANDLETYPE component, OMX_PTR ap
                                                    OMX_BUFFERHEADERTYPE *buffer) {
   // printf("empty_buffer_done\n");
   OmxEncoder *e = (OmxEncoder*)app_data;
-  queue_push(&e->free_in, (void*)buffer);
+  e->free_in.push(buffer);
   return OMX_ErrorNone;
 }
 
@@ -83,7 +83,7 @@ OMX_ERRORTYPE OmxEncoder::fill_buffer_done(OMX_HANDLETYPE component, OMX_PTR app
                                                   OMX_BUFFERHEADERTYPE *buffer) {
   // printf("fill_buffer_done\n");
   OmxEncoder *e = (OmxEncoder*)app_data;
-  queue_push(&e->done_out, (void*)buffer);
+  e->done_out.push(buffer);
   return OMX_ErrorNone;
 }
 
@@ -169,9 +169,6 @@ OmxEncoder::OmxEncoder(const char* filename, int width, int height, int fps, int
   this->height = height;
   this->fps = fps;
   this->remuxing = !h265;
-
-  queue_init(&this->free_in);
-  queue_init(&this->done_out);
 
   mutex_init_reentrant(&this->lock);
   pthread_mutex_init(&this->state_lock, NULL);
@@ -418,7 +415,7 @@ int OmxEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const u
   // this sometimes freezes... put it outside the encoder lock so we can still trigger rotates...
   // THIS IS A REALLY BAD IDEA, but apparently the race has to happen 30 times to trigger this
   //pthread_mutex_unlock(&this->lock);
-  OMX_BUFFERHEADERTYPE* in_buf = (OMX_BUFFERHEADERTYPE *)queue_pop(&this->free_in);
+  OMX_BUFFERHEADERTYPE* in_buf = this->free_in.pop();
   //pthread_mutex_lock(&this->lock);
 
   int ret = this->counter;
@@ -465,8 +462,8 @@ int OmxEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const u
 
   // pump output
   while (true) {
-    OMX_BUFFERHEADERTYPE *out_buf = (OMX_BUFFERHEADERTYPE *)queue_try_pop(&this->done_out);
-    if (!out_buf) {
+    OMX_BUFFERHEADERTYPE *out_buf;
+    if (!this->done_out.try_pop(out_buf)) {
       break;
     }
     handle_out_buf(this, out_buf);
@@ -547,7 +544,7 @@ void OmxEncoder::encoder_close() {
     if (this->dirty) {
       // drain output only if there could be frames in the encoder
 
-      OMX_BUFFERHEADERTYPE* in_buf = (OMX_BUFFERHEADERTYPE *)queue_pop(&this->free_in);
+      OMX_BUFFERHEADERTYPE* in_buf = this->free_in.pop();
       in_buf->nFilledLen = 0;
       in_buf->nOffset = 0;
       in_buf->nFlags = OMX_BUFFERFLAG_EOS;
@@ -556,7 +553,7 @@ void OmxEncoder::encoder_close() {
       OMX_CHECK(OMX_EmptyThisBuffer(this->handle, in_buf));
 
       while (true) {
-        OMX_BUFFERHEADERTYPE *out_buf = (OMX_BUFFERHEADERTYPE *)queue_pop(&this->done_out);
+        OMX_BUFFERHEADERTYPE *out_buf = this->done_out.pop();
 
         handle_out_buf(this, out_buf);
 
@@ -604,8 +601,9 @@ OmxEncoder::~OmxEncoder() {
 
   OMX_CHECK(OMX_FreeHandle(this->handle));
 
-  while (queue_try_pop(&this->free_in)); 
-  while (queue_try_pop(&this->done_out)); 
+  OMX_BUFFERHEADERTYPE *out_buf;
+  while (this->free_in.try_pop(out_buf)); 
+  while (this->done_out.try_pop(out_buf)); 
 
   if (this->codec_config) {
     free(this->codec_config);

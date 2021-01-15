@@ -121,14 +121,7 @@ CameraBuf::~CameraBuf() {
 }
 
 bool CameraBuf::acquire() {
-  {
-    std::unique_lock<std::mutex> lk(frame_queue_mutex);
-    bool got_frame = frame_queue_cv.wait_for(lk, std::chrono::milliseconds(1), [this]{ return !frame_queue.empty(); });
-    if (!got_frame) return false;
-
-    cur_buf_idx = frame_queue.front();
-    frame_queue.pop();
-  }
+  if (!safe_queue.try_pop(cur_buf_idx)) return false;
 
   const FrameMetadata &frame_data = camera_bufs_metadata[cur_buf_idx];
   if (frame_data.frame_id == -1) {
@@ -193,12 +186,8 @@ void CameraBuf::release() {
   }
 }
 
-void CameraBuf::queue(size_t buf_idx){
-  {
-    std::lock_guard<std::mutex> lk(frame_queue_mutex);
-    frame_queue.push(buf_idx);
-  }
-  frame_queue_cv.notify_one();
+void CameraBuf::queue(size_t buf_idx) {
+  safe_queue.push(buf_idx);
 }
 
 // common functions
@@ -342,7 +331,10 @@ void *processing_thread(MultiCameraState *cameras, const char *tname,
   set_thread_name(tname);
 
   for (int cnt = 0; !do_exit; cnt++) {
-    if (!cs->buf.acquire()) continue;
+    if (!cs->buf.acquire()) {
+      util::sleep_for(1);
+      continue;
+    }
 
     callback(cameras, cs, cnt);
 
