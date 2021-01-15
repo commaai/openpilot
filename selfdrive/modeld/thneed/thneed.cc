@@ -7,8 +7,6 @@
 #include <errno.h>
 #include "thneed.h"
 
-//#define SAVE_KERNELS
-
 //#define RUN_DISASSEMBLER
 //#define RUN_OPTIMIZER
 
@@ -133,10 +131,11 @@ GPUMalloc::~GPUMalloc() {
 }
 
 void *GPUMalloc::alloc(int size) {
-  if (size > remaining) return NULL;
-  remaining -= size;
   void *ret = (void*)base;
-  base += (size+0xff) & (~0xFF);
+  size = (size+0xff) & (~0xFF);
+  assert(size <= remaining);
+  remaining -= size;
+  base += size;
   return ret;
 }
 
@@ -213,7 +212,7 @@ Thneed::Thneed(bool do_clinit) {
   if (do_clinit) clinit();
   assert(g_fd != -1);
   fd = g_fd;
-  ram = make_unique<GPUMalloc>(0x40000, fd);
+  ram = make_unique<GPUMalloc>(0x80000, fd);
   record = THNEED_RECORD;
   timestamp = -1;
   g_thneed = this;
@@ -221,15 +220,29 @@ Thneed::Thneed(bool do_clinit) {
 
 void Thneed::stop() {
   printf("Thneed::stop: recorded %lu commands and %lu syncs\n", cmds.size(), syncobjs.size());
+  find_inputs_outputs();
   record = 0;
 }
 
-void Thneed::execute(float **finputs, float *foutput, bool slow) {
-  int ret;
-  uint64_t tb, te;
-  if (record & THNEED_DEBUG) tb = nanos_since_boot();
+void Thneed::find_inputs_outputs() {
+  inputs.clear();
+  output = NULL;
 
-  // ****** copy inputs
+  // save the global inputs/outputs
+  for (auto &k : kq) {
+    for (int i = 0; i < k->num_args; i++) {
+      if (k->name == "zero_pad_image_float" && k->arg_names[i] == "input") {
+        inputs.push_back(*(cl_mem*)(k->args[i].data()));
+      }
+
+      if (k->name == "image2d_to_buffer_float" && k->arg_names[i] == "output") {
+        output = *(cl_mem*)(k->args[i].data());
+      }
+    }
+  }
+}
+
+void Thneed::copy_inputs(float **finputs) {
   for (int idx = 0; idx < inputs.size(); ++idx) {
     size_t sz;
     clGetMemObjectInfo(inputs[idx], CL_MEM_SIZE, sizeof(sz), &sz, NULL);
@@ -238,8 +251,28 @@ void Thneed::execute(float **finputs, float *foutput, bool slow) {
     // TODO: This shouldn't have to block
     clEnqueueWriteBuffer(command_queue, inputs[idx], CL_TRUE, 0, sz, finputs[idx], 0, NULL, NULL);
   }
+}
+
+void Thneed::copy_output(float *foutput) {
+  if (output != NULL) {
+    size_t sz;
+    clGetMemObjectInfo(output, CL_MEM_SIZE, sizeof(sz), &sz, NULL);
+    if (record & THNEED_DEBUG) printf("copying %lu for output %p -> %p\n", sz, output, foutput);
+    clEnqueueReadBuffer(command_queue, output, CL_TRUE, 0, sz, foutput, 0, NULL, NULL);
+  } else {
+    printf("CAUTION: model output is NULL, does it have no outputs?\n");
+  }
+}
+
+void Thneed::execute(float **finputs, float *foutput, bool slow) {
+  uint64_t tb, te;
+  if (record & THNEED_DEBUG) tb = nanos_since_boot();
+
+  // ****** copy inputs
+  copy_inputs(finputs);
 
   // ****** set power constraint
+  int ret;
   struct kgsl_device_constraint_pwrlevel pwrlevel;
   pwrlevel.level = KGSL_CONSTRAINT_PWR_MAX;
 
@@ -277,14 +310,7 @@ void Thneed::execute(float **finputs, float *foutput, bool slow) {
   }
 
   // ****** copy outputs
-  if (output != NULL) {
-    size_t sz;
-    clGetMemObjectInfo(output, CL_MEM_SIZE, sizeof(sz), &sz, NULL);
-    if (record & THNEED_DEBUG) printf("copying %lu for output %p -> %p\n", sz, output, foutput);
-    clEnqueueReadBuffer(command_queue, output, CL_TRUE, 0, sz, foutput, 0, NULL, NULL);
-  } else {
-    printf("CAUTION: model output is NULL, does it have no outputs?\n");
-  }
+  copy_output(foutput);
 
   // ****** unset power constraint
   constraint.type = KGSL_CONSTRAINT_NONE;
@@ -454,6 +480,9 @@ CLQueuedKernel::CLQueuedKernel(Thneed *lthneed,
     char arg_name[0x100];
     clGetKernelArgInfo(kernel, i, CL_KERNEL_ARG_NAME, sizeof(arg_name), arg_name, NULL);
     arg_names.push_back(string(arg_name));
+    clGetKernelArgInfo(kernel, i, CL_KERNEL_ARG_TYPE_NAME, sizeof(arg_name), arg_name, NULL);
+    arg_types.push_back(string(arg_name));
+
     args.push_back(g_args[make_pair(kernel, i)]);
     args_size.push_back(g_args_size[make_pair(kernel, i)]);
   }
@@ -474,11 +503,14 @@ cl_int CLQueuedKernel::exec() {
   if (kernel == NULL) {
     kernel = clCreateKernel(program, name.c_str(), NULL);
     arg_names.clear();
+    arg_types.clear();
 
     for (int j = 0; j < num_args; j++) {
       char arg_name[0x100];
       clGetKernelArgInfo(kernel, j, CL_KERNEL_ARG_NAME, sizeof(arg_name), arg_name, NULL);
       arg_names.push_back(string(arg_name));
+      clGetKernelArgInfo(kernel, j, CL_KERNEL_ARG_TYPE_NAME, sizeof(arg_name), arg_name, NULL);
+      arg_types.push_back(string(arg_name));
 
       cl_int ret;
       if (args[j].size() != 0) {
@@ -488,19 +520,6 @@ cl_int CLQueuedKernel::exec() {
         ret = thneed_clSetKernelArg(kernel, j, args_size[j], NULL);
       }
       assert(ret == CL_SUCCESS);
-    }
-  }
-
-  // save the global inputs/outputs
-  if (thneed->record & THNEED_RECORD) {
-    for (int i = 0; i < num_args; i++) {
-      if (name == "zero_pad_image_float" && arg_names[i] == "input") {
-        thneed->inputs.push_back(*(cl_mem*)(args[i].data()));
-      }
-
-      if (name == "image2d_to_buffer_float" && arg_names[i] == "output") {
-        thneed->output = *(cl_mem*)(args[i].data());
-      }
     }
   }
 
@@ -525,10 +544,8 @@ void CLQueuedKernel::debug_print(bool verbose) {
 
   if (verbose) {
     for (int i = 0; i < num_args; i++) {
-      char arg_type[0x100];
-      clGetKernelArgInfo(kernel, i, CL_KERNEL_ARG_TYPE_NAME, sizeof(arg_type), arg_type, NULL);
       string arg = args[i];
-      printf("  %s %s", arg_type, arg_names[i].c_str());
+      printf("  %s %s", arg_types[i].c_str(), arg_names[i].c_str());
       void *arg_value = (void*)arg.data();
       int arg_size = arg.size();
       if (arg_size == 0) {
@@ -538,7 +555,7 @@ void CLQueuedKernel::debug_print(bool verbose) {
       } else if (arg_size == 2) {
         printf(" = %d", *((short*)arg_value));
       } else if (arg_size == 4) {
-        if (strcmp(arg_type, "float") == 0) {
+        if (arg_types[i] == "float") {
           printf(" = %f", *((float*)arg_value));
         } else {
           printf(" = %d", *((int*)arg_value));
@@ -547,7 +564,7 @@ void CLQueuedKernel::debug_print(bool verbose) {
         cl_mem val = (cl_mem)(*((uintptr_t*)arg_value));
         printf(" = %p", val);
         if (val != NULL) {
-          if (strcmp("image2d_t", arg_type) == 0 || strcmp("image1d_t", arg_type) == 0) {
+          if (arg_types[i] == "image2d_t" || arg_types[i] == "image1d_t") {
             cl_image_format format;
             size_t width, height, depth, array_size, row_pitch, slice_pitch;
             cl_mem buf;

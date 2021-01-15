@@ -34,17 +34,17 @@ void Thneed::load(const char *filename) {
     if (mobj["buffer_id"].string_value().size() > 0) {
       // image buffer must already be allocated
       clbuf = real_mem[*(cl_mem*)(mobj["buffer_id"].string_value().data())];
+      assert(mobj["needs_load"].bool_value() == false);
     } else {
-      clbuf = clCreateBuffer(context, CL_MEM_READ_WRITE, sz, NULL, NULL);
+      if (mobj["needs_load"].bool_value()) {
+        //printf("loading %p %d @ 0x%X\n", clbuf, sz, ptr);
+        clbuf = clCreateBuffer(context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_WRITE, sz, &buf[ptr], NULL);
+        ptr += sz;
+      } else {
+        clbuf = clCreateBuffer(context, CL_MEM_READ_WRITE, sz, NULL, NULL);
+      }
     }
     assert(clbuf != NULL);
-
-    if (mobj["needs_load"].bool_value()) {
-      //printf("loading %p %d @ 0x%X\n", clbuf, sz, ptr);
-      cl_int ret = clEnqueueWriteBuffer(command_queue, clbuf, CL_FALSE, 0, sz, &buf[ptr], 0, NULL, NULL);
-      assert(ret == CL_SUCCESS);
-      ptr += sz;
-    }
 
     if (mobj["arg_type"] == "image2d_t" || mobj["arg_type"] == "image1d_t") {
       cl_image_desc desc = {0};
@@ -159,34 +159,18 @@ void Thneed::save(const char *filename, bool save_binaries) {
           saved_objects.insert(a);
           cl_mem val = *(cl_mem*)(a.data());
           if (val != NULL) {
-            char _arg_type[0x100];
-            clGetKernelArgInfo(k->kernel, i, CL_KERNEL_ARG_TYPE_NAME, sizeof(_arg_type), _arg_type, NULL);
-            string arg_type(_arg_type);
+            bool needs_load = k->arg_names[i] == "weights" || k->arg_names[i] == "biases";
 
             auto jj = Json::object({
               {"id", a},
-              {"arg_type", arg_type},
-              {"needs_load", k->arg_names[i] == "weights" || k->arg_names[i] == "biases"},
+              {"arg_type", k->arg_types[i]},
             });
 
-            if (arg_type == "image2d_t" || arg_type == "image1d_t") {
+            if (k->arg_types[i] == "image2d_t" || k->arg_types[i] == "image1d_t") {
               cl_mem buf;
               clGetImageInfo(val, CL_IMAGE_BUFFER, sizeof(buf), &buf, NULL);
               string aa = string((char *)&buf, sizeof(buf));
               jj["buffer_id"] = aa;
-
-              if (saved_objects.find(aa) == saved_objects.end()) {
-                saved_objects.insert(aa);
-                size_t sz;
-                clGetMemObjectInfo(buf, CL_MEM_SIZE, sizeof(sz), &sz, NULL);
-                // save the buffer
-                objects.push_back(Json::object({
-                  {"id", aa},
-                  {"arg_type", "<image buffer>"},
-                  {"needs_load", false},
-                  {"size", (int)sz}
-                }));
-              }
 
               size_t width, height, row_pitch;
               clGetImageInfo(val, CL_IMAGE_WIDTH, sizeof(width), &width, NULL);
@@ -196,10 +180,26 @@ void Thneed::save(const char *filename, bool save_binaries) {
               jj["height"] = (int)height;
               jj["row_pitch"] = (int)row_pitch;
               jj["size"] = (int)(height * row_pitch);
+              jj["needs_load"] = false;
+
+              if (saved_objects.find(aa) == saved_objects.end()) {
+                saved_objects.insert(aa);
+                size_t sz;
+                clGetMemObjectInfo(buf, CL_MEM_SIZE, sizeof(sz), &sz, NULL);
+                // save the buffer
+                objects.push_back(Json::object({
+                  {"id", aa},
+                  {"arg_type", "<image buffer>"},
+                  {"needs_load", needs_load},
+                  {"size", (int)sz}
+                }));
+                if (needs_load) assert(sz == height * row_pitch);
+              }
             } else {
               size_t sz = 0;
               clGetMemObjectInfo(val, CL_MEM_SIZE, sizeof(sz), &sz, NULL);
               jj["size"] = (int)sz;
+              jj["needs_load"] = needs_load;
             }
 
             objects.push_back(jj);
@@ -235,11 +235,7 @@ void Thneed::save(const char *filename, bool save_binaries) {
     if (mobj["needs_load"].bool_value()) {
       char *buf = (char *)malloc(sz);
       if (mobj["arg_type"] == "image2d_t" || mobj["arg_type"] == "image1d_t") {
-        cl_mem ival = NULL;
-        clGetImageInfo(val, CL_IMAGE_BUFFER, sizeof(ival), &ival, NULL);
-        assert(ival != NULL);
-        cl_int ret = clEnqueueReadBuffer(command_queue, ival, CL_TRUE, 0, sz, buf, 0, NULL, NULL);
-        assert(ret == CL_SUCCESS);
+        assert(false);
       } else {
         // buffers alloced with CL_MEM_HOST_WRITE_ONLY, hence this hack
         //hexdump((uint32_t*)val, 0x100);

@@ -48,6 +48,7 @@ class CLQueuedKernel {
     string name;
     cl_uint num_args;
     vector<string> arg_names;
+    vector<string> arg_types;
     vector<string> args;
     vector<int> args_size;
     cl_kernel kernel = NULL;
@@ -56,6 +57,8 @@ class CLQueuedKernel {
     cl_uint work_dim;
     size_t global_work_size[3] = {0};
     size_t local_work_size[3] = {0};
+
+    string saved_output;
   private:
     Thneed *thneed;
 };
@@ -97,6 +100,9 @@ class Thneed {
     int fd;
 
     // all CL kernels
+    void find_inputs_outputs();
+    void copy_inputs(float **finputs);
+    void copy_output(float *foutput);
     cl_int clexec();
     vector<shared_ptr<CLQueuedKernel> > kq;
 
