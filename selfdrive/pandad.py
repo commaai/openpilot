@@ -10,9 +10,6 @@ from selfdrive.hardware import TICI
 from selfdrive.hardware.tici.pins import GPIO_HUB_RST_N, GPIO_STM_BOOT0, GPIO_STM_RST_N
 from selfdrive.swaglog import cloudlog
 
-def is_legacy_panda_reset():
-  return os.path.isfile("/persist/LEGACY_PANDA_RESET")
-
 def set_panda_power(power=True):
   if not TICI:
     return
@@ -20,12 +17,12 @@ def set_panda_power(power=True):
   gpio_init(GPIO_STM_RST_N, True)
   gpio_init(GPIO_STM_BOOT0, True)
 
-  gpio_set(GPIO_STM_RST_N, False if is_legacy_panda_reset() else True)
+  gpio_set(GPIO_STM_RST_N, True)
   gpio_set(GPIO_HUB_RST_N, True)
 
   time.sleep(0.1)
 
-  gpio_set(GPIO_STM_RST_N, power if is_legacy_panda_reset() else (not power))
+  gpio_set(GPIO_STM_RST_N, not power)
 
 
 def get_firmware_fn():
