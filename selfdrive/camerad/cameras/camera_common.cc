@@ -58,7 +58,7 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
   frame_buf_count = frame_cnt;
 
   // RAW frame
-  frame_size = ci->frame_height * ci->frame_stride;
+  const int frame_size = ci->frame_height * ci->frame_stride;
   camera_bufs = std::make_unique<VisionBuf[]>(frame_buf_count);
   camera_bufs_metadata = std::make_unique<FrameMetadata[]>(frame_buf_count);
 
@@ -121,14 +121,14 @@ CameraBuf::~CameraBuf() {
 }
 
 bool CameraBuf::acquire() {
-  std::unique_lock<std::mutex> lk(frame_queue_mutex);
+  {
+    std::unique_lock<std::mutex> lk(frame_queue_mutex);
+    bool got_frame = frame_queue_cv.wait_for(lk, std::chrono::milliseconds(1), [this]{ return !frame_queue.empty(); });
+    if (!got_frame) return false;
 
-  bool got_frame = frame_queue_cv.wait_for(lk, std::chrono::milliseconds(1), [this]{ return !frame_queue.empty(); });
-  if (!got_frame) return false;
-
-  cur_buf_idx = frame_queue.front();
-  frame_queue.pop();
-  lk.unlock();
+    cur_buf_idx = frame_queue.front();
+    frame_queue.pop();
+  }
 
   const FrameMetadata &frame_data = camera_bufs_metadata[cur_buf_idx];
   if (frame_data.frame_id == -1) {
@@ -139,7 +139,6 @@ bool CameraBuf::acquire() {
   cur_frame_data = frame_data;
 
   cur_rgb_buf = vipc_server->get_buffer(rgb_type);
-  cur_rgb_idx = cur_rgb_buf->idx;
 
   cl_event debayer_event;
   cl_mem camrabuf_cl = camera_bufs[cur_buf_idx].buf_cl;
@@ -164,7 +163,6 @@ bool CameraBuf::acquire() {
                                     &debayer_work_size, NULL, 0, 0, &debayer_event));
 #endif
   } else {
-    assert(cur_rgb_buf->len >= frame_size);
     assert(rgb_stride == camera_state->ci.frame_stride);
     CL_CHECK(clEnqueueCopyBuffer(q, camrabuf_cl, cur_rgb_buf->buf_cl, 0, 0,
                                cur_rgb_buf->len, 0, 0, &debayer_event));
@@ -174,8 +172,7 @@ bool CameraBuf::acquire() {
   CL_CHECK(clReleaseEvent(debayer_event));
 
   cur_yuv_buf = vipc_server->get_buffer(yuv_type);
-  cur_yuv_idx = cur_yuv_buf->idx;
-  yuv_metas[cur_yuv_idx] = frame_data;
+  yuv_metas[cur_yuv_buf->idx] = frame_data;
   rgb_to_yuv_queue(&rgb_to_yuv_state, q, cur_rgb_buf->buf_cl, cur_yuv_buf->buf_cl);
 
   VisionIpcBufExtra extra = {
@@ -193,9 +190,6 @@ void CameraBuf::release() {
   if (release_callback){
     release_callback((void*)camera_state, cur_buf_idx);
   }
-}
-
-void CameraBuf::stop() {
 }
 
 void CameraBuf::queue(size_t buf_idx){
@@ -221,25 +215,25 @@ void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &fr
   framed.setGainFrac(frame_data.gain_frac);
 }
 
-void fill_frame_image(cereal::FrameData::Builder &framed, uint8_t *dat, int w, int h, int stride) {
-  if (dat != nullptr) {
-    int scale = env_scale;
-    int x_min = env_xmin; int y_min = env_ymin; int x_max = w-1; int y_max = h-1;
-    if (env_xmax != -1) x_max = env_xmax;
-    if (env_ymax != -1) y_max = env_ymax;
-    int new_width = (x_max - x_min + 1) / scale;
-    int new_height = (y_max - y_min + 1) / scale;
-    uint8_t *resized_dat = new uint8_t[new_width*new_height*3];
+void fill_frame_image(cereal::FrameData::Builder &framed, const CameraBuf *b) {
+  assert(b->cur_rgb_buf);
+  const uint8_t *dat = (const uint8_t *)b->cur_rgb_buf->addr;
+  int scale = env_scale;
+  int x_min = env_xmin; int y_min = env_ymin; int x_max = b->rgb_width-1; int y_max = b->rgb_height-1;
+  if (env_xmax != -1) x_max = env_xmax;
+  if (env_ymax != -1) y_max = env_ymax;
+  int new_width = (x_max - x_min + 1) / scale;
+  int new_height = (y_max - y_min + 1) / scale;
+  uint8_t *resized_dat = new uint8_t[new_width*new_height*3];
 
-    int goff = x_min*3 + y_min*stride;
-    for (int r=0;r<new_height;r++) {
-      for (int c=0;c<new_width;c++) {
-        memcpy(&resized_dat[(r*new_width+c)*3], &dat[goff+r*stride*scale+c*3*scale], 3*sizeof(uint8_t));
-      }
+  int goff = x_min*3 + y_min*b->rgb_stride;
+  for (int r=0;r<new_height;r++) {
+    for (int c=0;c<new_width;c++) {
+      memcpy(&resized_dat[(r*new_width+c)*3], &dat[goff+r*b->rgb_stride*scale+c*3*scale], 3*sizeof(uint8_t));
     }
-    framed.setImage(kj::arrayPtr((const uint8_t*)resized_dat, new_width*new_height*3));
-    delete[] resized_dat;
   }
+  framed.setImage(kj::arrayPtr((const uint8_t*)resized_dat, new_width*new_height*3));
+  delete[] resized_dat;
 }
 
 static void create_thumbnail(MultiCameraState *s, const CameraBuf *b) {
@@ -417,7 +411,7 @@ void common_camera_process_front(SubMaster *sm, PubMaster *pm, CameraState *c, i
   framed.setFrameType(cereal::FrameData::FrameType::FRONT);
   fill_frame_data(framed, b->cur_frame_data, cnt);
   if (env_send_front) {
-    fill_frame_image(framed, (uint8_t*)b->cur_rgb_buf->addr, b->rgb_width, b->rgb_height, b->rgb_stride);
+    fill_frame_image(framed, b);
   }
   pm->send("frontFrame", msg);
 }

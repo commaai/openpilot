@@ -11,11 +11,6 @@
 #define NANOVG_GLES3_IMPLEMENTATION
 #include "nanovg_gl.h"
 #include "nanovg_gl_utils.h"
-
-extern "C"{
-#include "common/glutil.h"
-}
-
 #include "paint.hpp"
 #include "sidebar.hpp"
 
@@ -53,9 +48,10 @@ bool car_space_to_full_frame(const UIState *s, float in_x, float in_y, float in_
   const vec3 KEp = matvecmul3(intrinsic_matrix, Ep);
 
   // Project.
-  out->x = KEp.v[0] / KEp.v[2];
-  out->y = KEp.v[1] / KEp.v[2];
+  float x = KEp.v[0] / KEp.v[2];
+  float y = KEp.v[1] / KEp.v[2];
 
+  nvgTransformPoint(&out->x, &out->y, s->car_space_transform, x, y);
   return out->x >= -margin && out->x <= s->fb_w + margin && out->y >= -margin && out->y <= s->fb_h + margin;
 }
 
@@ -69,11 +65,13 @@ static void ui_draw_text(NVGcontext *vg, float x, float y, const char* string, f
 
 static void draw_chevron(UIState *s, float x_in, float y_in, float sz,
                           NVGcolor fillColor, NVGcolor glowColor) {
-  vertex_data out;
-  if (!car_space_to_full_frame(s, x_in, y_in, 0.0, &out)) return;
+  vertex_data out = {};
+  car_space_to_full_frame(s, x_in, y_in, 0.0, &out);
 
   auto [x, y] = out;
-  sz = std::clamp((sz * 30) / (x_in / 3 + 30), 15.0f, 30.0f);
+  sz = std::clamp((sz * 30) / (x_in / 3 + 30), 15.0f, 30.0f) * zoom;
+  y = std::fmin(s->scene.viz_rect.bottom() - sz * .6,  y);
+  x = std::clamp(x, 0.f, s->scene.viz_rect.right() - sz / 2);
 
   // glow
   float g_xo = sz/5;
@@ -102,8 +100,7 @@ static void ui_draw_circle_image(NVGcontext *vg, int x, int y, int size, int ima
   nvgCircle(vg, x, y + (bdr_s * 1.5), size);
   nvgFillColor(vg, color);
   nvgFill(vg);
-  const Rect rect = {x - (img_size / 2), img_y ? img_y : y - (size / 4), img_size, img_size};
-  ui_draw_image(vg, rect, image, img_alpha);
+  ui_draw_image(vg, {x - (img_size / 2), img_y ? img_y : y - (size / 4), img_size, img_size}, image, img_alpha);
 }
 
 static void ui_draw_circle_image(NVGcontext *vg, int x, int y, int size, int image, bool active) {
@@ -166,9 +163,9 @@ static void draw_frame(UIState *s) {
 #endif
   }
 
-  glUseProgram(s->frame_program);
-  glUniform1i(s->frame_texture_loc, 0);
-  glUniformMatrix4fv(s->frame_transform_loc, 1, GL_TRUE, out_mat->v);
+  glUseProgram(s->gl_shader->prog);
+  glUniform1i(s->gl_shader->getUniformLocation("uTexture"), 0);
+  glUniformMatrix4fv(s->gl_shader->getUniformLocation("uTransform"), 1, GL_TRUE, out_mat->v);
 
   assert(glGetError() == GL_NO_ERROR);
   glEnableVertexAttribArray(0);
@@ -200,21 +197,8 @@ static void ui_draw_vision_lane_lines(UIState *s) {
 // Draw all world space objects.
 static void ui_draw_world(UIState *s) {
   const UIScene *scene = &s->scene;
-
-  nvgSave(s->vg);
-
   // Don't draw on top of sidebar
   nvgScissor(s->vg, scene->viz_rect.x, scene->viz_rect.y, scene->viz_rect.w, scene->viz_rect.h);
-
-  // Apply transformation such that video pixel coordinates match video
-  // 1) Put (0, 0) in the middle of the video
-  nvgTranslate(s->vg, s->video_rect.x + s->video_rect.w / 2, s->video_rect.y + s->video_rect.h / 2 + y_offset);
-
-  // 2) Apply same scaling as video
-  nvgScale(s->vg, zoom, zoom);
-
-  // 3) Put (0, 0) in top left corner of video
-  nvgTranslate(s->vg, -intrinsic_matrix.v[2], -intrinsic_matrix.v[5]);
 
   // Draw lane edges and vision/mpc tracks
   ui_draw_vision_lane_lines(s);
@@ -228,7 +212,7 @@ static void ui_draw_world(UIState *s) {
       draw_lead(s, scene->lead_data[1]);
     }
   }
-  nvgRestore(s->vg);
+  nvgResetScissor(s->vg);
 }
 
 static void ui_draw_vision_maxspeed(UIState *s) {
@@ -236,18 +220,17 @@ static void ui_draw_vision_maxspeed(UIState *s) {
   const bool is_cruise_set = maxspeed != 0 && maxspeed != SET_SPEED_NA;
   if (is_cruise_set && !s->is_metric) { maxspeed *= 0.6225; }
 
-  auto [x, y, w, h] = std::tuple(s->scene.viz_rect.x + (bdr_s * 2), s->scene.viz_rect.y + (bdr_s * 1.5), 184, 202);
-
-  ui_draw_rect(s->vg, x, y, w, h, COLOR_BLACK_ALPHA(100), 30);
-  ui_draw_rect(s->vg, x, y, w, h, COLOR_WHITE_ALPHA(100), 20, 10);
+  const Rect rect = {s->scene.viz_rect.x + (bdr_s * 2), int(s->scene.viz_rect.y + (bdr_s * 1.5)), 184, 202};
+  ui_fill_rect(s->vg, rect, COLOR_BLACK_ALPHA(100), 30.);
+  ui_draw_rect(s->vg, rect, COLOR_WHITE_ALPHA(100), 10, 20.);
 
   nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
-  ui_draw_text(s->vg, x + w / 2, 148, "MAX", 26 * 2.5, COLOR_WHITE_ALPHA(is_cruise_set ? 200 : 100), s->font_sans_regular);
+  ui_draw_text(s->vg, rect.centerX(), 148, "MAX", 26 * 2.5, COLOR_WHITE_ALPHA(is_cruise_set ? 200 : 100), s->font_sans_regular);
   if (is_cruise_set) {
     const std::string maxspeed_str = std::to_string((int)std::nearbyint(maxspeed));
-    ui_draw_text(s->vg, x + w / 2, 242, maxspeed_str.c_str(), 48 * 2.5, COLOR_WHITE, s->font_sans_bold);
+    ui_draw_text(s->vg, rect.centerX(), 242, maxspeed_str.c_str(), 48 * 2.5, COLOR_WHITE, s->font_sans_bold);
   } else {
-    ui_draw_text(s->vg, x + w / 2, 242, "N/A", 42 * 2.5, COLOR_WHITE_ALPHA(100), s->font_sans_semibold);
+    ui_draw_text(s->vg, rect.centerX(), 242, "N/A", 42 * 2.5, COLOR_WHITE_ALPHA(100), s->font_sans_semibold);
   }
 }
 
@@ -299,25 +282,25 @@ static void ui_draw_driver_view(UIState *s) {
   const int blackout_w = rect.w - valid_rect.w;
   NVGpaint gradient = nvgLinearGradient(s->vg, blackout_x, rect.y, blackout_x + blackout_w, rect.y,
                                         COLOR_BLACK_ALPHA(is_rhd ? 255 : 0), COLOR_BLACK_ALPHA(is_rhd ? 0 : 255));
-  ui_draw_rect(s->vg, blackout_x, rect.y, blackout_w, rect.h, gradient);
-  ui_draw_rect(s->vg, blackout_x, rect.y, blackout_w, rect.h, COLOR_BLACK_ALPHA(144));
+  ui_fill_rect(s->vg, {blackout_x, rect.y, blackout_w, rect.h}, gradient);
+  ui_fill_rect(s->vg, {blackout_x, rect.y, blackout_w, rect.h}, COLOR_BLACK_ALPHA(144));
   // border
-  ui_draw_rect(s->vg, rect.x, rect.y, rect.w, rect.h, bg_colors[STATUS_OFFROAD], 0, 1);
+  ui_draw_rect(s->vg, rect, bg_colors[STATUS_OFFROAD], 1);
 
   const bool face_detected = s->scene.dmonitoring_state.getFaceDetected();
   if (face_detected) {
     auto fxy_list = s->scene.driver_state.getFacePosition();
     float face_x = fxy_list[0];
     float face_y = fxy_list[1];
-    float fbox_x = valid_rect.centerX() + (is_rhd ? face_x : -face_x) * valid_rect.w;
-    float fbox_y = valid_rect.centerY() + face_y * valid_rect.h;
+    int fbox_x = valid_rect.centerX() + (is_rhd ? face_x : -face_x) * valid_rect.w;
+    int fbox_y = valid_rect.centerY() + face_y * valid_rect.h;
 
     float alpha = 0.2;
     if (face_x = std::abs(face_x), face_y = std::abs(face_y); face_x <= 0.35 && face_y <= 0.4)
       alpha = 0.8 - (face_x > face_y ? face_x : face_y) * 0.6 / 0.375;
 
-    const float box_size = 0.6 * rect.h / 2;
-    ui_draw_rect(s->vg, fbox_x - box_size / 2, fbox_y - box_size / 2, box_size, box_size, nvgRGBAf(1.0, 1.0, 1.0, alpha), 35, 10);
+    const int box_size = 0.6 * rect.h / 2;
+    ui_draw_rect(s->vg, {fbox_x - box_size / 2, fbox_y - box_size / 2, box_size, box_size}, nvgRGBAf(1.0, 1.0, 1.0, alpha), 10, 35.);
   }
 
   // draw face icon
@@ -334,7 +317,7 @@ static void ui_draw_vision_header(UIState *s) {
                         viz_rect.x, viz_rect.y+header_h,
                         nvgRGBAf(0,0,0,0.45), nvgRGBAf(0,0,0,0));
 
-  ui_draw_rect(s->vg, viz_rect.x, viz_rect.y, viz_rect.w, header_h, gradient);
+  ui_fill_rect(s->vg, {viz_rect.x, viz_rect.y, viz_rect.w, header_h}, gradient);
 
   ui_draw_vision_maxspeed(s);
   ui_draw_vision_speed(s);
@@ -359,36 +342,33 @@ static void ui_draw_vision_alert(UIState *s) {
 
   NVGcolor color = bg_colors[s->status];
   color.a *= get_alert_alpha(scene->alert_blinking_rate);
-  int alr_s = alert_size_map[scene->alert_size];
+  const int alr_h = alert_size_map[scene->alert_size] + bdr_s;
+  const Rect rect = {.x = scene->viz_rect.x - bdr_s,
+                  .y = s->fb_h - alr_h,
+                  .w = scene->viz_rect.w + (bdr_s * 2),
+                  .h = alr_h};
 
-  const int alr_x = scene->viz_rect.x - bdr_s;
-  const int alr_w = scene->viz_rect.w + (bdr_s * 2);
-  const int alr_h = alr_s + bdr_s;
-  const int alr_y = s->fb_h - alr_h;
-
-  ui_draw_rect(s->vg, alr_x, alr_y, alr_w, alr_h, color);
-
-  NVGpaint gradient = nvgLinearGradient(s->vg, alr_x, alr_y, alr_x, alr_y+alr_h,
-                                        nvgRGBAf(0.0,0.0,0.0,0.05), nvgRGBAf(0.0,0.0,0.0,0.35));
-  ui_draw_rect(s->vg, alr_x, alr_y, alr_w, alr_h, gradient);
+  ui_fill_rect(s->vg, rect, color);
+  ui_fill_rect(s->vg, rect, nvgLinearGradient(s->vg, rect.x, rect.y, rect.x, rect.bottom(), 
+                                            nvgRGBAf(0.0, 0.0, 0.0, 0.05), nvgRGBAf(0.0, 0.0, 0.0, 0.35)));
 
   nvgFillColor(s->vg, COLOR_WHITE);
   nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
 
   if (scene->alert_size == cereal::ControlsState::AlertSize::SMALL) {
-    ui_draw_text(s->vg, alr_x+alr_w/2, alr_y+alr_h/2+15, scene->alert_text1.c_str(), 40*2.5, COLOR_WHITE, s->font_sans_semibold);
+    ui_draw_text(s->vg, rect.centerX(), rect.centerY() + 15, scene->alert_text1.c_str(), 40*2.5, COLOR_WHITE, s->font_sans_semibold);
   } else if (scene->alert_size == cereal::ControlsState::AlertSize::MID) {
-    ui_draw_text(s->vg, alr_x+alr_w/2, alr_y+alr_h/2-45, scene->alert_text1.c_str(), 48*2.5, COLOR_WHITE, s->font_sans_bold);
-    ui_draw_text(s->vg, alr_x+alr_w/2, alr_y+alr_h/2+75, scene->alert_text2.c_str(), 36*2.5, COLOR_WHITE, s->font_sans_regular);
+    ui_draw_text(s->vg, rect.centerX(), rect.centerY() - 45, scene->alert_text1.c_str(), 48*2.5, COLOR_WHITE, s->font_sans_bold);
+    ui_draw_text(s->vg, rect.centerX(), rect.centerY() + 75, scene->alert_text2.c_str(), 36*2.5, COLOR_WHITE, s->font_sans_regular);
   } else if (scene->alert_size == cereal::ControlsState::AlertSize::FULL) {
     nvgFontSize(s->vg, (longAlert1?72:96)*2.5);
     nvgFontFaceId(s->vg, s->font_sans_bold);
     nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
-    nvgTextBox(s->vg, alr_x, alr_y+(longAlert1?360:420), alr_w-60, scene->alert_text1.c_str(), NULL);
+    nvgTextBox(s->vg, rect.x, rect.y+(longAlert1?360:420), rect.w-60, scene->alert_text1.c_str(), NULL);
     nvgFontSize(s->vg, 48*2.5);
     nvgFontFaceId(s->vg,  s->font_sans_regular);
     nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BOTTOM);
-    nvgTextBox(s->vg, alr_x, alr_h-(longAlert1?300:360), alr_w-60, scene->alert_text2.c_str(), NULL);
+    nvgTextBox(s->vg, rect.x, rect.h-(longAlert1?300:360), rect.w-60, scene->alert_text2.c_str(), NULL);
   }
 }
 
@@ -436,8 +416,9 @@ void ui_draw(UIState *s) {
     s->scene.viz_rect.w -= sbr_w;
   }
 
-  const bool draw_vision = s->started && s->status != STATUS_OFFROAD &&
-    s->active_app == cereal::UiLayoutState::App::NONE && s->vipc_client->connected;
+  const bool draw_alerts = s->started && s->status != STATUS_OFFROAD &&
+                           s->active_app == cereal::UiLayoutState::App::NONE;
+  const bool draw_vision = draw_alerts && s->vipc_client->connected;
 
   // GL drawing functions
   ui_draw_background(s);
@@ -455,7 +436,7 @@ void ui_draw(UIState *s) {
     ui_draw_vision(s);
   }
 
-  if (draw_vision && s->scene.alert_size != cereal::ControlsState::AlertSize::NONE) {
+  if (draw_alerts && s->scene.alert_size != cereal::ControlsState::AlertSize::NONE) {
     ui_draw_vision_alert(s);
   }
   nvgEndFrame(s->vg);
@@ -470,24 +451,26 @@ void ui_draw_image(NVGcontext *vg, const Rect &r, int image, float alpha){
   nvgFill(vg);
 }
 
-void ui_draw_rect(NVGcontext *vg, float x, float y, float w, float h, NVGcolor color, float r, int width) {
+void ui_draw_rect(NVGcontext *vg, const Rect &r, NVGcolor color, int width, float radius) {
   nvgBeginPath(vg);
-  r > 0 ? nvgRoundedRect(vg, x, y, w, h, r) : nvgRect(vg, x, y, w, h);
-  if (width) {
-    nvgStrokeColor(vg, color);
-    nvgStrokeWidth(vg, width);
-    nvgStroke(vg);
-  } else {
-    nvgFillColor(vg, color);
-    nvgFill(vg);
-  }
+  radius > 0 ? nvgRoundedRect(vg, r.x, r.y, r.w, r.h, radius) : nvgRect(vg, r.x, r.y, r.w, r.h);
+  nvgStrokeColor(vg, color);
+  nvgStrokeWidth(vg, width);
+  nvgStroke(vg);
 }
 
-void ui_draw_rect(NVGcontext *vg, float x, float y, float w, float h, NVGpaint &paint, float r){
+static inline void fill_rect(NVGcontext *vg, const Rect &r, const NVGcolor *color, const NVGpaint *paint, float radius) {
   nvgBeginPath(vg);
-  r > 0? nvgRoundedRect(vg, x, y, w, h, r) : nvgRect(vg, x, y, w, h);
-  nvgFillPaint(vg, paint);
+  radius > 0? nvgRoundedRect(vg, r.x, r.y, r.w, r.h, radius) : nvgRect(vg, r.x, r.y, r.w, r.h);
+  if (color) nvgFillColor(vg, *color);
+  if (paint) nvgFillPaint(vg, *paint);
   nvgFill(vg);
+}
+void ui_fill_rect(NVGcontext *vg, const Rect &r, const NVGcolor &color, float radius) {
+  fill_rect(vg, r, &color, nullptr, radius);
+}
+void ui_fill_rect(NVGcontext *vg, const Rect &r, const NVGpaint &paint, float radius){
+  fill_rect(vg, r, nullptr, &paint, radius);
 }
 
 static const char frame_vertex_shader[] =
@@ -575,14 +558,9 @@ void ui_nvg_init(UIState *s) {
   }
 
   // init gl
-  s->frame_program = load_program(frame_vertex_shader, frame_fragment_shader);
-  assert(s->frame_program);
-
-  s->frame_pos_loc = glGetAttribLocation(s->frame_program, "aPosition");
-  s->frame_texcoord_loc = glGetAttribLocation(s->frame_program, "aTexCoord");
-
-  s->frame_texture_loc = glGetUniformLocation(s->frame_program, "uTexture");
-  s->frame_transform_loc = glGetUniformLocation(s->frame_program, "uTransform");
+  s->gl_shader = std::make_unique<GLShader>(frame_vertex_shader, frame_fragment_shader);
+  GLint frame_pos_loc = glGetAttribLocation(s->gl_shader->prog, "aPosition");
+  GLint frame_texcoord_loc = glGetAttribLocation(s->gl_shader->prog, "aTexCoord");
 
   glViewport(0, 0, s->fb_w, s->fb_h);
 
@@ -617,11 +595,11 @@ void ui_nvg_init(UIState *s) {
     glGenBuffers(1, &s->frame_vbo[i]);
     glBindBuffer(GL_ARRAY_BUFFER, s->frame_vbo[i]);
     glBufferData(GL_ARRAY_BUFFER, sizeof(frame_coords), frame_coords, GL_STATIC_DRAW);
-    glEnableVertexAttribArray(s->frame_pos_loc);
-    glVertexAttribPointer(s->frame_pos_loc, 2, GL_FLOAT, GL_FALSE,
+    glEnableVertexAttribArray(frame_pos_loc);
+    glVertexAttribPointer(frame_pos_loc, 2, GL_FLOAT, GL_FALSE,
                           sizeof(frame_coords[0]), (const void *)0);
-    glEnableVertexAttribArray(s->frame_texcoord_loc);
-    glVertexAttribPointer(s->frame_texcoord_loc, 2, GL_FLOAT, GL_FALSE,
+    glEnableVertexAttribArray(frame_texcoord_loc);
+    glVertexAttribPointer(frame_texcoord_loc, 2, GL_FLOAT, GL_FALSE,
                           sizeof(frame_coords[0]), (const void *)(sizeof(float) * 2));
     glGenBuffers(1, &s->frame_ibo[i]);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, s->frame_ibo[i]);
@@ -643,4 +621,17 @@ void ui_nvg_init(UIState *s) {
 
   s->front_frame_mat = matmul(device_transform, full_to_wide_frame_transform);
   s->rear_frame_mat = matmul(device_transform, frame_transform);
+
+  // Apply transformation such that video pixel coordinates match video
+  // 1) Put (0, 0) in the middle of the video
+  nvgTranslate(s->vg, s->video_rect.x + s->video_rect.w / 2, s->video_rect.y + s->video_rect.h / 2 + y_offset);
+
+  // 2) Apply same scaling as video
+  nvgScale(s->vg, zoom, zoom);
+
+  // 3) Put (0, 0) in top left corner of video
+  nvgTranslate(s->vg, -intrinsic_matrix.v[2], -intrinsic_matrix.v[5]);
+
+  nvgCurrentTransform(s->vg, s->car_space_transform);
+  nvgResetTransform(s->vg);
 }

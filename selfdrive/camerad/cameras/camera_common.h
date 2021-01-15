@@ -102,12 +102,10 @@ public:
   mat3 yuv_transform;
 
   FrameMetadata yuv_metas[YUV_COUNT];
-  size_t yuv_buf_size;
 
   VisionStreamType rgb_type, yuv_type;
   int rgb_width, rgb_height, rgb_stride;
 
-  int cur_yuv_idx, cur_rgb_idx;
   FrameMetadata cur_frame_data;
 
   VisionBuf *cur_rgb_buf;
@@ -122,7 +120,6 @@ public:
   std::unique_ptr<FrameMetadata[]> camera_bufs_metadata;
 
   int frame_buf_count;
-  int frame_size;
 
   release_cb release_callback;
 
@@ -131,14 +128,13 @@ public:
   void init(cl_device_id device_id, cl_context context, CameraState *s, VisionIpcServer * v, int frame_cnt, VisionStreamType rgb_type, VisionStreamType yuv_type, release_cb release_callback=nullptr);
   bool acquire();
   void release();
-  void stop();
   void queue(size_t buf_idx);
 };
 
 typedef void (*process_thread_cb)(MultiCameraState *s, CameraState *c, int cnt);
 
 void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &frame_data, uint32_t cnt);
-void fill_frame_image(cereal::FrameData::Builder &framed, uint8_t *dat, int w, int h, int stride);
+void fill_frame_image(cereal::FrameData::Builder &framed, const CameraBuf *b);
 void set_exposure_target(CameraState *c, const uint8_t *pix_ptr, int x_start, int x_end, int x_skip, int y_start, int y_end, int y_skip);
 std::thread start_process_thread(MultiCameraState *cameras, const char *tname,
                                     CameraState *cs, process_thread_cb callback);

@@ -219,10 +219,9 @@ void GLWindow::initializeGL() {
   std::cout << "OpenGL renderer: " << glGetString(GL_RENDERER) << std::endl;
   std::cout << "OpenGL language version: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
 
-  ui_state.sound = &sound;
-  ui_state.fb_w = vwp_w;
-  ui_state.fb_h = vwp_h;
-  ui_init(&ui_state);
+  ui_state = new UIState();
+  ui_state->sound = &sound;
+  ui_init(ui_state);
 
   wake();
 
@@ -272,6 +271,8 @@ void GLWindow::wake() {
 }
 
 FramebufferState* framebuffer_init(const char* name, int32_t layer, int alpha,
-                                   int* out_w, int* out_h) {
+                                   int *out_w, int *out_h) {
+  *out_w = vwp_w;
+  *out_h = vwp_h;
   return (FramebufferState*)1; // not null
 }

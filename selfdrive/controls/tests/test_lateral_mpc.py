@@ -3,48 +3,36 @@ import numpy as np
 from selfdrive.car.honda.interface import CarInterface
 from selfdrive.controls.lib.lateral_mpc import libmpc_py
 from selfdrive.controls.lib.vehicle_model import VehicleModel
+from selfdrive.controls.lib.drive_helpers import MPC_N, CAR_ROTATION_RADIUS
 
 
 def run_mpc(v_ref=30., x_init=0., y_init=0., psi_init=0., delta_init=0.,
-            l_prob=1., r_prob=1., p_prob=1.,
-            poly_l=np.array([0., 0., 0., 1.8]), poly_r=np.array([0., 0., 0., -1.8]), poly_p=np.array([0., 0., 0., 0.]),
             lane_width=3.6, poly_shift=0.):
 
   libmpc = libmpc_py.libmpc
-  libmpc.init(1.0, 3.0, 1.0, 1.0)
+  libmpc.init(1.0, 1.0, 1.0)
 
   mpc_solution = libmpc_py.ffi.new("log_t *")
 
-  p_l = poly_l.copy()
-  p_l[3] += poly_shift
-
-  p_r = poly_r.copy()
-  p_r[3] += poly_shift
-
-  p_p = poly_p.copy()
-  p_p[3] += poly_shift
-
-  d_poly = p_p
+  y_pts = poly_shift * np.ones(MPC_N + 1)
+  heading_pts = np.zeros(MPC_N + 1)
 
   CP = CarInterface.get_params("HONDA CIVIC 2016 TOURING")
   VM = VehicleModel(CP)
 
   curvature_factor = VM.curvature_factor(v_ref)
 
-  l_poly = libmpc_py.ffi.new("double[4]", list(map(float, p_l)))
-  r_poly = libmpc_py.ffi.new("double[4]", list(map(float, p_r)))
-  d_poly = libmpc_py.ffi.new("double[4]", list(map(float, d_poly)))
-
   cur_state = libmpc_py.ffi.new("state_t *")
-  cur_state[0].x = x_init
-  cur_state[0].y = y_init
-  cur_state[0].psi = psi_init
-  cur_state[0].delta = delta_init
+  cur_state.x = x_init
+  cur_state.y = y_init
+  cur_state.psi = psi_init
+  cur_state.delta = delta_init
 
   # converge in no more than 20 iterations
   for _ in range(20):
-    libmpc.run_mpc(cur_state, mpc_solution, l_poly, r_poly, d_poly, l_prob, r_prob,
-                   curvature_factor, v_ref, lane_width)
+    libmpc.run_mpc(cur_state, mpc_solution, [0,0,0,v_ref],
+                   curvature_factor, CAR_ROTATION_RADIUS,
+                   list(y_pts), list(heading_pts))
 
   return mpc_solution
 
@@ -98,13 +86,6 @@ class TestLateralMpc(unittest.TestCase):
     sol = []
     for psi_init in [-0.1, 0.1]:
       sol.append(run_mpc(psi_init=psi_init))
-    self._assert_simmetry(sol)
-
-  def test_prob_symmetry(self):
-    sol = []
-    lane_width = 3.
-    for r_prob in [0., 1.]:
-      sol.append(run_mpc(r_prob=r_prob, l_prob=1.-r_prob, lane_width=lane_width))
     self._assert_simmetry(sol)
 
   def test_y_shift_vs_poly_shift(self):

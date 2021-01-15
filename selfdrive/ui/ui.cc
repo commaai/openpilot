@@ -46,7 +46,6 @@ void ui_init(UIState *s) {
   s->started = false;
   s->status = STATUS_OFFROAD;
   s->scene.satelliteCount = -1;
-  read_param(&s->is_metric, "IsMetric");
 
   s->fb = framebuffer_init("ui", 0, true, &s->fb_w, &s->fb_h);
   assert(s->fb);
@@ -103,7 +102,7 @@ static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
   update_line_data(s, model.getPosition(), 0.5, 0, &scene.track_vertices, path_length);
 }
 
-void update_sockets(UIState *s) {
+static void update_sockets(UIState *s) {
 
   UIScene &scene = s->scene;
   SubMaster &sm = *(s->sm);
@@ -203,7 +202,7 @@ void update_sockets(UIState *s) {
   s->started = scene.thermal.getStarted() || scene.frontview;
 }
 
-static void ui_read_params(UIState *s) {
+static void update_params(UIState *s) {
   const uint64_t frame = s->sm->frame;
 
   if (frame % (5*UI_FREQ) == 0) {
@@ -217,7 +216,7 @@ static void ui_read_params(UIState *s) {
   }
 }
 
-void ui_update_vision(UIState *s) {
+static void update_vision(UIState *s) {
   if (!s->vipc_client->connected && s->started) {
     s->vipc_client = s->scene.frontview ? s->vipc_client_front : s->vipc_client_rear;
 
@@ -235,9 +234,9 @@ void ui_update_vision(UIState *s) {
 }
 
 void ui_update(UIState *s) {
-  ui_read_params(s);
+  update_params(s);
   update_sockets(s);
-  ui_update_vision(s);
+  update_vision(s);
 
   // Handle onroad/offroad transition
   if (!s->started && s->status != STATUS_OFFROAD) {
@@ -255,7 +254,7 @@ void ui_update(UIState *s) {
     s->scene.alert_size = cereal::ControlsState::AlertSize::NONE;
   }
 
-  // Handle controls/fcamera timeout
+  // Handle controls timeout
   if (s->started && !s->scene.frontview && ((s->sm)->frame - s->started_frame) > 10*UI_FREQ) {
     if ((s->sm)->rcv_frame("controlsState") < s->started_frame) {
       // car is started, but controlsState hasn't been seen at all
@@ -264,8 +263,7 @@ void ui_update(UIState *s) {
       s->scene.alert_size = cereal::ControlsState::AlertSize::MID;
     } else if (((s->sm)->frame - (s->sm)->rcv_frame("controlsState")) > 5*UI_FREQ) {
       // car is started, but controls is lagging or died
-      if (s->scene.alert_text2 != "Controls Unresponsive" &&
-          s->scene.alert_text1 != "Camera Malfunction") {
+      if (s->scene.alert_text2 != "Controls Unresponsive") {
         s->sound->play(AudibleAlert::CHIME_WARNING_REPEAT);
         LOGE("Controls unresponsive");
       }
@@ -274,18 +272,6 @@ void ui_update(UIState *s) {
       s->scene.alert_text2 = "Controls Unresponsive";
       s->scene.alert_size = cereal::ControlsState::AlertSize::FULL;
       s->status = STATUS_ALERT;
-    }
-
-    const uint64_t frame_pkt = (s->sm)->rcv_frame("frame");
-    const uint64_t frame_delayed = (s->sm)->frame - frame_pkt;
-    const uint64_t since_started = (s->sm)->frame - s->started_frame;
-    if ((frame_pkt > s->started_frame || since_started > 15*UI_FREQ) && frame_delayed > 5*UI_FREQ) {
-      // controls is fine, but rear camera is lagging or died
-      s->scene.alert_text1 = "Camera Malfunction";
-      s->scene.alert_text2 = "Contact Support";
-      s->scene.alert_size = cereal::ControlsState::AlertSize::FULL;
-      s->status = STATUS_DISENGAGED;
-      s->sound->stop();
     }
   }
 }

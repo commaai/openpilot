@@ -17,6 +17,10 @@ AddOption('--asan',
           action='store_true',
           help='turn on ASAN')
 
+AddOption('--ubsan',
+          action='store_true',
+          help='turn on UBSan')
+
 AddOption('--clazy',
           action='store_true',
           help='build with clazy')
@@ -121,11 +125,14 @@ else:
   rpath = [os.path.join(os.getcwd(), x) for x in rpath]
 
 if GetOption('asan'):
-  ccflags_asan = ["-fsanitize=address", "-fno-omit-frame-pointer"]
-  ldflags_asan = ["-fsanitize=address"]
+  ccflags = ["-fsanitize=address", "-fno-omit-frame-pointer"]
+  ldflags = ["-fsanitize=address"]
+elif GetOption('ubsan'):
+  ccflags = ["-fsanitize=undefined"]
+  ldflags = ["-fsanitize=undefined"]
 else:
-  ccflags_asan = []
-  ldflags_asan = []
+  ccflags = []
+  ldflags = []
 
 # change pythonpath to this
 lenv["PYTHONPATH"] = Dir("#").path
@@ -144,7 +151,7 @@ env = Environment(
     "-Wno-inconsistent-missing-override",
     "-Wno-c99-designator",
     "-Wno-reorder-init-list",
-  ] + cflags + ccflags_asan,
+  ] + cflags + ccflags,
 
   CPPPATH=cpppath + [
     "#",
@@ -177,7 +184,7 @@ env = Environment(
 
   CC='clang',
   CXX='clang++',
-  LINKFLAGS=ldflags_asan,
+  LINKFLAGS=ldflags,
 
   RPATH=rpath,
 
