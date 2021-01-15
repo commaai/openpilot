@@ -215,25 +215,25 @@ void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &fr
   framed.setGainFrac(frame_data.gain_frac);
 }
 
-void fill_frame_image(cereal::FrameData::Builder &framed, uint8_t *dat, int w, int h, int stride) {
-  if (dat != nullptr) {
-    int scale = env_scale;
-    int x_min = env_xmin; int y_min = env_ymin; int x_max = w-1; int y_max = h-1;
-    if (env_xmax != -1) x_max = env_xmax;
-    if (env_ymax != -1) y_max = env_ymax;
-    int new_width = (x_max - x_min + 1) / scale;
-    int new_height = (y_max - y_min + 1) / scale;
-    uint8_t *resized_dat = new uint8_t[new_width*new_height*3];
+void fill_frame_image(cereal::FrameData::Builder &framed, const CameraBuf *b) {
+  assert(b->cur_rgb_buf);
+  const uint8_t *dat = (const uint8_t *)b->cur_rgb_buf->addr;
+  int scale = env_scale;
+  int x_min = env_xmin; int y_min = env_ymin; int x_max = b->rgb_width-1; int y_max = b->rgb_height-1;
+  if (env_xmax != -1) x_max = env_xmax;
+  if (env_ymax != -1) y_max = env_ymax;
+  int new_width = (x_max - x_min + 1) / scale;
+  int new_height = (y_max - y_min + 1) / scale;
+  uint8_t *resized_dat = new uint8_t[new_width*new_height*3];
 
-    int goff = x_min*3 + y_min*stride;
-    for (int r=0;r<new_height;r++) {
-      for (int c=0;c<new_width;c++) {
-        memcpy(&resized_dat[(r*new_width+c)*3], &dat[goff+r*stride*scale+c*3*scale], 3*sizeof(uint8_t));
-      }
+  int goff = x_min*3 + y_min*b->rgb_stride;
+  for (int r=0;r<new_height;r++) {
+    for (int c=0;c<new_width;c++) {
+      memcpy(&resized_dat[(r*new_width+c)*3], &dat[goff+r*b->rgb_stride*scale+c*3*scale], 3*sizeof(uint8_t));
     }
-    framed.setImage(kj::arrayPtr((const uint8_t*)resized_dat, new_width*new_height*3));
-    delete[] resized_dat;
   }
+  framed.setImage(kj::arrayPtr((const uint8_t*)resized_dat, new_width*new_height*3));
+  delete[] resized_dat;
 }
 
 static void create_thumbnail(MultiCameraState *s, const CameraBuf *b) {
@@ -411,7 +411,7 @@ void common_camera_process_front(SubMaster *sm, PubMaster *pm, CameraState *c, i
   framed.setFrameType(cereal::FrameData::FrameType::FRONT);
   fill_frame_data(framed, b->cur_frame_data, cnt);
   if (env_send_front) {
-    fill_frame_image(framed, (uint8_t*)b->cur_rgb_buf->addr, b->rgb_width, b->rgb_height, b->rgb_stride);
+    fill_frame_image(framed, b);
   }
   pm->send("frontFrame", msg);
 }
