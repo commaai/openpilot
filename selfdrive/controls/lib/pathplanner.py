@@ -1,10 +1,12 @@
 import os
 import math
+import numpy as np
 from common.realtime import sec_since_boot, DT_MDL
+from common.numpy_fast import interp
 from selfdrive.swaglog import cloudlog
 from selfdrive.controls.lib.lateral_mpc import libmpc_py
-from selfdrive.controls.lib.drive_helpers import MPC_COST_LAT
-from selfdrive.controls.lib.lane_planner import LanePlanner
+from selfdrive.controls.lib.drive_helpers import MPC_COST_LAT, MPC_N, CAR_ROTATION_RADIUS
+from selfdrive.controls.lib.lane_planner import LanePlanner, TRAJECTORY_SIZE
 from selfdrive.config import Conversions as CV
 from common.params import Params
 import cereal.messaging as messaging
@@ -40,13 +42,6 @@ DESIRES = {
 }
 
 
-def calc_states_after_delay(states, v_ego, steer_angle, curvature_factor, steer_ratio, delay):
-  states[0].x = v_ego * delay
-  states[0].psi = v_ego * curvature_factor * math.radians(steer_angle) / steer_ratio * delay
-  states[0].y = states[0].x * math.sin(states[0].psi / 2)
-  return states
-
-
 class PathPlanner():
   def __init__(self, CP):
     self.LP = LanePlanner()
@@ -63,9 +58,13 @@ class PathPlanner():
     self.lane_change_ll_prob = 1.0
     self.prev_one_blinker = False
 
+    self.path_xyz = np.zeros((TRAJECTORY_SIZE,3))
+    self.plan_yaw = np.zeros((TRAJECTORY_SIZE,))
+    self.t_idxs = np.zeros((TRAJECTORY_SIZE,))
+
   def setup_mpc(self):
     self.libmpc = libmpc_py.libmpc
-    self.libmpc.init(MPC_COST_LAT.PATH, MPC_COST_LAT.LANE, MPC_COST_LAT.HEADING, self.steer_rate_cost)
+    self.libmpc.init(MPC_COST_LAT.PATH, MPC_COST_LAT.HEADING, self.steer_rate_cost)
 
     self.mpc_solution = libmpc_py.ffi.new("log_t *")
     self.cur_state = libmpc_py.ffi.new("state_t *")
@@ -96,7 +95,12 @@ class PathPlanner():
 
     curvature_factor = VM.curvature_factor(v_ego)
 
-    self.LP.parse_model(sm['model'])
+    md = sm['modelV2']
+    self.LP.parse_model(sm['modelV2'])
+    if len(md.position.x) == TRAJECTORY_SIZE and len(md.orientation.x) == TRAJECTORY_SIZE:
+      self.path_xyz = np.column_stack([md.position.x, md.position.y, md.position.z])
+      self.t_idxs = list(md.position.t)
+      self.plan_yaw = list(md.orientation.z)
 
     # Lane change logic
     one_blinker = sm['carState'].leftBlinker != sm['carState'].rightBlinker
@@ -161,35 +165,52 @@ class PathPlanner():
 
     # Turn off lanes during lane change
     if desire == log.PathPlan.Desire.laneChangeRight or desire == log.PathPlan.Desire.laneChangeLeft:
-      self.LP.l_prob *= self.lane_change_ll_prob
-      self.LP.r_prob *= self.lane_change_ll_prob
-    self.LP.update_d_poly(v_ego)
+      self.LP.lll_prob *= self.lane_change_ll_prob
+      self.LP.rll_prob *= self.lane_change_ll_prob
+    d_path_xyz = self.LP.get_d_path(v_ego, self.t_idxs, self.path_xyz)
+    y_pts = np.interp(self.t_idxs[:MPC_N+1], np.linalg.norm(d_path_xyz, axis=1)/v_ego, d_path_xyz[:,1])
+    heading_pts = np.interp(self.t_idxs[:MPC_N+1], np.linalg.norm(self.path_xyz, axis=1)/v_ego, self.plan_yaw)
 
-    # account for actuation delay
-    self.cur_state = calc_states_after_delay(self.cur_state, v_ego, angle_steers - angle_offset, curvature_factor, VM.sR, CP.steerActuatorDelay)
+    # init state
+    self.cur_state.x = 0.0
+    self.cur_state.y = 0.0
+    self.cur_state.psi = 0.0
+    # TODO negative sign, still run mpc in ENU, make NED
+    self.cur_state.delta = -math.radians(angle_steers - angle_offset) / VM.sR
 
     v_ego_mpc = max(v_ego, 5.0)  # avoid mpc roughness due to low speed
+    v_poly = [0.0, 0.0, 0.0, v_ego_mpc]
+    assert len(v_poly) == 4
+    assert len(y_pts) == MPC_N + 1
+    assert len(heading_pts) == MPC_N + 1
     self.libmpc.run_mpc(self.cur_state, self.mpc_solution,
-                        list(self.LP.l_poly), list(self.LP.r_poly), list(self.LP.d_poly),
-                        self.LP.l_prob, self.LP.r_prob, curvature_factor, v_ego_mpc, self.LP.lane_width)
+                        v_poly,
+                        curvature_factor,
+                        CAR_ROTATION_RADIUS,
+                        list(y_pts),
+                        list(heading_pts))
+
+    # TODO this needs more thought, use .2s extra for now to estimate other delays
+    delay = CP.steerActuatorDelay + .2
+    # TODO negative sign, still run mpc in ENU, make NED
+    next_delta = -interp(DT_MDL + delay, self.t_idxs[:MPC_N+1], self.mpc_solution.delta)
+    next_rate = -interp(delay, self.t_idxs[:MPC_N], self.mpc_solution.rate)
 
     # reset to current steer angle if not active or overriding
     if active:
-      delta_desired = self.mpc_solution[0].delta[1]
-      rate_desired = math.degrees(self.mpc_solution[0].rate[0] * VM.sR)
+      delta_desired = next_delta
+      rate_desired = math.degrees(next_rate * VM.sR)
     else:
       delta_desired = math.radians(angle_steers - angle_offset) / VM.sR
       rate_desired = 0.0
 
-    self.cur_state[0].delta = delta_desired
-
     self.angle_steers_des_mpc = float(math.degrees(delta_desired * VM.sR) + angle_offset)
 
     #  Check for infeasable MPC solution
-    mpc_nans = any(math.isnan(x) for x in self.mpc_solution[0].delta)
+    mpc_nans = any(math.isnan(x) for x in self.mpc_solution.delta)
     t = sec_since_boot()
     if mpc_nans:
-      self.libmpc.init(MPC_COST_LAT.PATH, MPC_COST_LAT.LANE, MPC_COST_LAT.HEADING, CP.steerRateCost)
+      self.libmpc.init(MPC_COST_LAT.PATH, MPC_COST_LAT.HEADING, CP.steerRateCost)
       self.cur_state[0].delta = math.radians(angle_steers - angle_offset) / VM.sR
 
       if t > self.last_cloudlog_t + 5.0:
@@ -201,15 +222,14 @@ class PathPlanner():
     else:
       self.solution_invalid_cnt = 0
     plan_solution_valid = self.solution_invalid_cnt < 2
-
     plan_send = messaging.new_message('pathPlan')
-    plan_send.valid = sm.all_alive_and_valid(service_list=['carState', 'controlsState', 'liveParameters', 'model'])
+    plan_send.valid = sm.all_alive_and_valid(service_list=['carState', 'controlsState', 'liveParameters', 'modelV2'])
     plan_send.pathPlan.laneWidth = float(self.LP.lane_width)
-    plan_send.pathPlan.dPoly = [float(x) for x in self.LP.d_poly]
-    plan_send.pathPlan.lPoly = [float(x) for x in self.LP.l_poly]
-    plan_send.pathPlan.lProb = float(self.LP.l_prob)
-    plan_send.pathPlan.rPoly = [float(x) for x in self.LP.r_poly]
-    plan_send.pathPlan.rProb = float(self.LP.r_prob)
+    plan_send.pathPlan.dPoly = [0,0,0,0]
+    plan_send.pathPlan.lPoly = [0,0,0,0]
+    plan_send.pathPlan.rPoly = [0,0,0,0]
+    plan_send.pathPlan.lProb = float(self.LP.lll_prob)
+    plan_send.pathPlan.rProb = float(self.LP.rll_prob)
 
     plan_send.pathPlan.angleSteers = float(self.angle_steers_des_mpc)
     plan_send.pathPlan.rateSteers = float(rate_desired)

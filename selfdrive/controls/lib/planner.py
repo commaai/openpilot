@@ -186,7 +186,7 @@ class Planner():
 
     plan_send.valid = sm.all_alive_and_valid(service_list=['carState', 'controlsState', 'radarState'])
 
-    plan_send.plan.mdMonoTime = sm.logMonoTime['model']
+    plan_send.plan.mdMonoTime = sm.logMonoTime['modelV2']
     plan_send.plan.radarStateMonoTime = sm.logMonoTime['radarState']
 
     # longitudal plan

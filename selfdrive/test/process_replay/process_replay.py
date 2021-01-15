@@ -243,7 +243,7 @@ CONFIGS = [
   ProcessConfig(
     proc_name="plannerd",
     pub_sub={
-      "model": ["pathPlan"], "radarState": ["plan"],
+      "modelV2": ["pathPlan"], "radarState": ["plan"],
       "carState": [], "controlsState": [], "liveParameters": [],
     },
     ignore=["logMonoTime", "valid", "plan.processingDelay"],

@@ -2,11 +2,11 @@
 # type: ignore
 import matplotlib.pyplot as plt
 from selfdrive.controls.lib.lateral_mpc import libmpc_py
-from selfdrive.controls.lib.drive_helpers import MPC_COST_LAT
+from selfdrive.controls.lib.drive_helpers import MPC_COST_LAT, MPC_N, CAR_ROTATION_RADIUS
 import math
 
 libmpc = libmpc_py.libmpc
-libmpc.init(MPC_COST_LAT.PATH, MPC_COST_LAT.LANE, MPC_COST_LAT.HEADING, 1.)
+libmpc.init(MPC_COST_LAT.PATH, MPC_COST_LAT.HEADING, 1.)
 
 cur_state = libmpc_py.ffi.new("state_t *")
 cur_state[0].x = 0.0
@@ -24,30 +24,15 @@ times = []
 curvature_factor = 0.3
 v_ref = 1.0 * 20.12  # 45 mph
 
-LANE_WIDTH = 3.7
-p = [0.0, 0.0, 0.0, 0.0]
-p_l = p[:]
-p_l[3] += LANE_WIDTH / 2.0
-
-p_r = p[:]
-p_r[3] -= LANE_WIDTH / 2.0
-
-l_poly = libmpc_py.ffi.new("double[4]", p_l)
-r_poly = libmpc_py.ffi.new("double[4]", p_r)
-p_poly = libmpc_py.ffi.new("double[4]", p)
-
-l_prob = 1.0
-r_prob = 1.0
-p_prob = 1.0
-
 for i in range(1):
   cur_state[0].delta = math.radians(510. / 13.)
-  libmpc.run_mpc(cur_state, mpc_solution, l_poly, r_poly, p_poly, l_prob, r_prob,
-                 curvature_factor, v_ref, LANE_WIDTH)
+  libmpc.run_mpc(cur_state, mpc_solution, [0,0,0,v_ref],
+                 curvature_factor, CAR_ROTATION_RADIUS,
+                 [0.0]*MPC_N, [0.0]*MPC_N)
 
 timesi = []
 ct = 0
-for i in range(21):
+for i in range(MPC_N + 1):
   timesi.append(ct)
   if i <= 4:
     ct += 0.05
