@@ -151,7 +151,7 @@ void fill_lead_v2(cereal::ModelDataV2::LeadDataV2::Builder lead, const float *le
   float xyva_arr[LEAD_MHP_VALS];
   float xyva_stds_arr[LEAD_MHP_VALS];
   for (int i=0; i<LEAD_MHP_VALS; i++) {
-    xyva_arr[i] = data[LEAD_MHP_VALS + i];
+    xyva_arr[i] = data[i];
     xyva_stds_arr[i] = exp(data[LEAD_MHP_VALS + i]);
   }
   lead.setXyva(xyva_arr);
