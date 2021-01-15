@@ -16,6 +16,7 @@ public:
 private:
   QLabel* qrCode;
   void updateQrCode(QString text);
+
 private slots:
   void refresh();
 };

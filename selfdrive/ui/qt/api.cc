@@ -105,32 +105,26 @@ void RequestRepeater::sendRequest(QString requestURL, QVector<QPair<QString, QJs
   QNetworkRequest request;
   request.setUrl(QUrl(requestURL));
   request.setRawHeader("Authorization", ("JWT " + token).toUtf8());
-  if (reply == NULL) {
-    reply = networkAccessManager->get(request);
-    QTimer timer;    
-    timer.setSingleShot(true);
-    timer.start(5000); // Set timeout
+  QNetworkReply* reply = networkAccessManager->get(request);
+  QTimer networkTimer;
+  networkTimer.setSingleShot(true);
+  networkTimer.start(25000); // Set timeout
 
-    QEventLoop loop;
-    connect(&timer, SIGNAL(timeout()), &loop, SLOT(quit()));
-    connect(reply, SIGNAL(finished()), &loop, SLOT(quit()));
-    loop.exec();
-
-    if (timer.isActive()) {
-      timer.stop();
-      if(reply->error() == QNetworkReply::NoError){
-        emit receivedResponse(reply->readAll());
-      } else {
-        emit failedResponse(reply->errorString());
-      }
+  QEventLoop* loop = new QEventLoop(this);
+  connect(&networkTimer, SIGNAL(timeout()), loop, SLOT(quit()));
+  connect(reply, SIGNAL(finished()), loop, SLOT(quit()));
+  loop->exec();
+  loop->deleteLater();
+  if (networkTimer.isActive()) {
+    networkTimer.stop();
+    if(reply->error() == QNetworkReply::NoError){
+      emit receivedResponse(reply->readAll());
     } else {
-      emit failedResponse("Custom Openpilot network timeout");
-      disconnect(reply, SIGNAL(finished()), &loop, SLOT(quit()));
-      reply->abort();
+      emit failedResponse(reply->errorString());
     }
-    reply->deleteLater();
-    reply = NULL;
   } else {
-    qDebug() << "Too many requests to endpoint" << requestURL;
+    emit failedResponse("Custom Openpilot network timeout");
+    reply->abort();
   }
+  reply->deleteLater();
 }
