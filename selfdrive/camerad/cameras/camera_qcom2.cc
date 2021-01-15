@@ -1070,8 +1070,7 @@ void camera_autoexposure(CameraState *s, float grey_frac) {
   cam_exp[s->camera_num].store(tmp);
 }
 
-static void* ae_thread(void* arg) {
-  MultiCameraState *s = (MultiCameraState*)arg;
+static void ae_thread(MultiCameraState *s) {
   CameraState *c_handles[3] = {&s->wide, &s->rear, &s->front};
 
   int op_id_last[3] = {0};
@@ -1090,8 +1089,6 @@ static void* ae_thread(void* arg) {
 
     util::sleep_for(50);
   }
-
-  return NULL;
 }
 
 void camera_process_front(MultiCameraState *s, CameraState *c, int cnt) {
@@ -1135,14 +1132,9 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
 }
 
 void cameras_run(MultiCameraState *s) {
-  int err;
-  // start threads
   LOG("-- Starting threads");
-  pthread_t ae_thread_handle;
-  err = pthread_create(&ae_thread_handle, NULL,
-                       ae_thread, s);
-  assert(err == 0);
   std::vector<std::thread> threads;
+  threads.push_back(std::thread(ae_thread, s));
   threads.push_back(start_process_thread(s, "processing", &s->rear, camera_process_frame));
   threads.push_back(start_process_thread(s, "frontview", &s->front, camera_process_front));
   threads.push_back(start_process_thread(s, "wideview", &s->wide, camera_process_frame));
@@ -1192,9 +1184,6 @@ void cameras_run(MultiCameraState *s) {
   }
 
   LOG(" ************** STOPPING **************");
-
-  err = pthread_join(ae_thread_handle, NULL);
-  assert(err == 0);
 
   for (auto &t : threads) t.join();
 
