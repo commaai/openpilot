@@ -48,9 +48,10 @@ bool car_space_to_full_frame(const UIState *s, float in_x, float in_y, float in_
   const vec3 KEp = matvecmul3(intrinsic_matrix, Ep);
 
   // Project.
-  out->x = KEp.v[0] / KEp.v[2];
-  out->y = KEp.v[1] / KEp.v[2];
+  float x = KEp.v[0] / KEp.v[2];
+  float y = KEp.v[1] / KEp.v[2];
 
+  nvgTransformPoint(&out->x, &out->y, s->car_space_transform, x, y);
   return out->x >= -margin && out->x <= s->fb_w + margin && out->y >= -margin && out->y <= s->fb_h + margin;
 }
 
@@ -64,11 +65,13 @@ static void ui_draw_text(NVGcontext *vg, float x, float y, const char* string, f
 
 static void draw_chevron(UIState *s, float x_in, float y_in, float sz,
                           NVGcolor fillColor, NVGcolor glowColor) {
-  vertex_data out;
-  if (!car_space_to_full_frame(s, x_in, y_in, 0.0, &out)) return;
+  vertex_data out = {};
+  car_space_to_full_frame(s, x_in, y_in, 0.0, &out);
 
   auto [x, y] = out;
-  sz = std::clamp((sz * 30) / (x_in / 3 + 30), 15.0f, 30.0f);
+  sz = std::clamp((sz * 30) / (x_in / 3 + 30), 15.0f, 30.0f) * zoom;
+  y = std::fmin(s->scene.viz_rect.bottom() - sz * .6,  y);
+  x = std::clamp(x, 0.f, s->scene.viz_rect.right() - sz / 2);
 
   // glow
   float g_xo = sz/5;
@@ -194,21 +197,8 @@ static void ui_draw_vision_lane_lines(UIState *s) {
 // Draw all world space objects.
 static void ui_draw_world(UIState *s) {
   const UIScene *scene = &s->scene;
-
-  nvgSave(s->vg);
-
   // Don't draw on top of sidebar
   nvgScissor(s->vg, scene->viz_rect.x, scene->viz_rect.y, scene->viz_rect.w, scene->viz_rect.h);
-
-  // Apply transformation such that video pixel coordinates match video
-  // 1) Put (0, 0) in the middle of the video
-  nvgTranslate(s->vg, s->video_rect.x + s->video_rect.w / 2, s->video_rect.y + s->video_rect.h / 2 + y_offset);
-
-  // 2) Apply same scaling as video
-  nvgScale(s->vg, zoom, zoom);
-
-  // 3) Put (0, 0) in top left corner of video
-  nvgTranslate(s->vg, -intrinsic_matrix.v[2], -intrinsic_matrix.v[5]);
 
   // Draw lane edges and vision/mpc tracks
   ui_draw_vision_lane_lines(s);
@@ -222,7 +212,7 @@ static void ui_draw_world(UIState *s) {
       draw_lead(s, scene->lead_data[1]);
     }
   }
-  nvgRestore(s->vg);
+  nvgResetScissor(s->vg);
 }
 
 static void ui_draw_vision_maxspeed(UIState *s) {
@@ -631,4 +621,17 @@ void ui_nvg_init(UIState *s) {
 
   s->front_frame_mat = matmul(device_transform, full_to_wide_frame_transform);
   s->rear_frame_mat = matmul(device_transform, frame_transform);
+
+  // Apply transformation such that video pixel coordinates match video
+  // 1) Put (0, 0) in the middle of the video
+  nvgTranslate(s->vg, s->video_rect.x + s->video_rect.w / 2, s->video_rect.y + s->video_rect.h / 2 + y_offset);
+
+  // 2) Apply same scaling as video
+  nvgScale(s->vg, zoom, zoom);
+
+  // 3) Put (0, 0) in top left corner of video
+  nvgTranslate(s->vg, -intrinsic_matrix.v[2], -intrinsic_matrix.v[5]);
+
+  nvgCurrentTransform(s->vg, s->car_space_transform);
+  nvgResetTransform(s->vg);
 }

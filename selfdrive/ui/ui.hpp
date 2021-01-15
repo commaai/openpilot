@@ -189,6 +189,7 @@ typedef struct UIState {
   uint64_t started_frame;
 
   Rect video_rect;
+  float car_space_transform[6];
 } UIState;
 
 void ui_init(UIState *s);
