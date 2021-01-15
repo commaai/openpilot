@@ -1103,7 +1103,7 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
   auto framed = c == &s->rear ? msg.initEvent().initFrame() : msg.initEvent().initWideFrame();
   fill_frame_data(framed, b->cur_frame_data, cnt);
   if ((c == &s->rear && env_send_rear) || (c == &s->wide && env_send_wide)) {
-    fill_frame_image(framed, (uint8_t*)b->cur_rgb_buf->addr, b->rgb_width, b->rgb_height, b->rgb_stride);
+    fill_frame_image(framed, b);
   }
   if (c == &s->rear) {
     framed.setTransform(b->yuv_transform.v);
