@@ -60,7 +60,7 @@ class PathPlanner():
 
     self.path_xyz = np.zeros((TRAJECTORY_SIZE,3))
     self.plan_yaw = np.zeros((TRAJECTORY_SIZE,))
-    self.t_idxs = np.zeros((TRAJECTORY_SIZE,))
+    self.t_idxs = np.arange(TRAJECTORY_SIZE)
 
   def setup_mpc(self):
     self.libmpc = libmpc_py.libmpc
