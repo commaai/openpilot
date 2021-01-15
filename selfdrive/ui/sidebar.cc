@@ -33,7 +33,7 @@ static void draw_network_strength(UIState *s) {
       {cereal::ThermalData::NetworkStrength::GOOD, 4},
       {cereal::ThermalData::NetworkStrength::GREAT, 5}};
   const int img_idx = s->scene.thermal.getNetworkType() == cereal::ThermalData::NetworkType::NONE ? 0 : network_strength_map[s->scene.thermal.getNetworkStrength()];
-  ui_draw_image(s->vg, {58, 196, 176, 27}, util::string_format("network_%d", img_idx), 1.0f);
+  ui_draw_image(s, {58, 196, 176, 27}, util::string_format("network_%d", img_idx).c_str(), 1.0f);
 }
 
 static void draw_battery_icon(UIState *s) {
@@ -58,7 +58,7 @@ static void draw_network_type(UIState *s) {
   const char *network_type = network_type_map[s->scene.thermal.getNetworkType()];
   nvgFillColor(s->vg, COLOR_WHITE);
   nvgFontSize(s->vg, 48);
-  nvgFontFaceId(s->vg, s->fonts.at("sans-regular"));
+  nvgFontFace(s->vg, "sans-regular");
   nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
   nvgTextBox(s->vg, network_x, network_y, network_w, network_type ? network_type : "--", NULL);
 }
@@ -85,19 +85,19 @@ static void draw_metric(UIState *s, const char *label_str, const char *value_str
   if (!message_str) {
     nvgFillColor(s->vg, COLOR_WHITE);
     nvgFontSize(s->vg, 78);
-    nvgFontFaceId(s->vg, s->fonts.at("sans-bold"));
+    nvgFontFace(s->vg, "sans-bold");
     nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_MIDDLE);
     nvgTextBox(s->vg, rect.x + 50, rect.y + 50, rect.w - 60, value_str, NULL);
 
     nvgFillColor(s->vg, COLOR_WHITE);
     nvgFontSize(s->vg, 48);
-    nvgFontFaceId(s->vg, s->fonts.at("sans-regular"));
+    nvgFontFace(s->vg, "sans-regular");
     nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_MIDDLE);
     nvgTextBox(s->vg, rect.x + 50, rect.y + 50 + 66, rect.w - 60, label_str, NULL);
   } else {
     nvgFillColor(s->vg, COLOR_WHITE);
     nvgFontSize(s->vg, 48);
-    nvgFontFaceId(s->vg, s->fonts.at("sans-bold"));
+    nvgFontFace(s->vg, "sans-bold");
     nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
     nvgTextBox(s->vg, rect.x + 35, rect.y + (strchr(message_str, '\n') ? 40 : 50), rect.w - 50, message_str, NULL);
   }

@@ -56,11 +56,11 @@ bool car_space_to_full_frame(const UIState *s, float in_x, float in_y, float in_
 }
 
 
-static void ui_draw_text(NVGcontext *vg, float x, float y, const char* string, float size, NVGcolor color, int font){
-  nvgFontFaceId(vg, font);
-  nvgFontSize(vg, size);
-  nvgFillColor(vg, color);
-  nvgText(vg, x, y, string, NULL);
+static void ui_draw_text(const UIState *s, float x, float y, const char* string, float size, NVGcolor color, const char *font_name){
+  nvgFontFace(s->vg, font_name);
+  nvgFontSize(s->vg, size);
+  nvgFillColor(s->vg, color);
+  nvgText(s->vg, x, y, string, NULL);
 }
 
 static void draw_chevron(UIState *s, float x_in, float y_in, float sz,
@@ -94,16 +94,16 @@ static void draw_chevron(UIState *s, float x_in, float y_in, float sz,
   nvgFill(s->vg);
 }
 
-static void ui_draw_circle_image(const UIState *s, int x, int y, int size, const std::string &image, NVGcolor color, float img_alpha, int img_y = 0) {
+static void ui_draw_circle_image(const UIState *s, int x, int y, int size, const char *image, NVGcolor color, float img_alpha, int img_y = 0) {
   const int img_size = size * 1.5;
   nvgBeginPath(s->vg);
   nvgCircle(s->vg, x, y + (bdr_s * 1.5), size);
   nvgFillColor(s->vg, color);
   nvgFill(s->vg);
   ui_draw_image(s, {x - (img_size / 2), img_y ? img_y : y - (size / 4), img_size, img_size}, image, img_alpha);
->>>>>>> use std::map for fonts&images
+}
 
-static void ui_draw_circle_image(const UIState *s, int x, int y, int size, const std::string &image, bool active) {
+static void ui_draw_circle_image(const UIState *s, int x, int y, int size, const char *image, bool active) {
   float bg_alpha = active ? 0.3f : 0.1f;
   float img_alpha = active ? 1.0f : 0.15f;
   ui_draw_circle_image(s, x, y, size, image, nvgRGBA(0, 0, 0, (255 * bg_alpha)), img_alpha);
@@ -225,12 +225,12 @@ static void ui_draw_vision_maxspeed(UIState *s) {
   ui_draw_rect(s->vg, rect, COLOR_WHITE_ALPHA(100), 10, 20.);
 
   nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
-  ui_draw_text(s->vg, rect.centerX(), 148, "MAX", 26 * 2.5, COLOR_WHITE_ALPHA(is_cruise_set ? 200 : 100), s->font_sans_regular);
+  ui_draw_text(s, rect.centerX(), 148, "MAX", 26 * 2.5, COLOR_WHITE_ALPHA(is_cruise_set ? 200 : 100), "sans-regular");
   if (is_cruise_set) {
     const std::string maxspeed_str = std::to_string((int)std::nearbyint(maxspeed));
-    ui_draw_text(s->vg, rect.centerX(), 242, maxspeed_str.c_str(), 48 * 2.5, COLOR_WHITE, s->fonts.at("sans-bold"));
+    ui_draw_text(s, rect.centerX(), 242, maxspeed_str.c_str(), 48 * 2.5, COLOR_WHITE, "sans-bold");
   } else {
-    ui_draw_text(s->vg, rect.centerX(), 242, "N/A", 42 * 2.5, COLOR_WHITE_ALPHA(100), s->fonts.at("sans-semibold"));
+    ui_draw_text(s, rect.centerX(), 242, "N/A", 42 * 2.5, COLOR_WHITE_ALPHA(100), "sans-semibold");
   }
 }
 
@@ -238,8 +238,8 @@ static void ui_draw_vision_speed(UIState *s) {
   const float speed = std::max(0.0, s->scene.controls_state.getVEgo() * (s->is_metric ? 3.6 : 2.2369363));
   const std::string speed_str = std::to_string((int)std::nearbyint(speed));
   nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
-  ui_draw_text(s->vg, s->scene.viz_rect.centerX(), 240, speed_str.c_str(), 96 * 2.5, COLOR_WHITE, s->fonts.at("sans-bold"));
-  ui_draw_text(s->vg, s->scene.viz_rect.centerX(), 320, s->is_metric ? "km/h" : "mph", 36 * 2.5, COLOR_WHITE_ALPHA(200), s->fonts.at("sans-regular"));
+  ui_draw_text(s, s->scene.viz_rect.centerX(), 240, speed_str.c_str(), 96 * 2.5, COLOR_WHITE, "sans-bold");
+  ui_draw_text(s, s->scene.viz_rect.centerX(), 320, s->is_metric ? "km/h" : "mph", 36 * 2.5, COLOR_WHITE_ALPHA(200), "sans-regular");
 }
 
 static void ui_draw_vision_event(UIState *s) {
@@ -356,17 +356,17 @@ static void ui_draw_vision_alert(UIState *s) {
   nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
 
   if (scene->alert_size == cereal::ControlsState::AlertSize::SMALL) {
-    ui_draw_text(s->vg, rect.centerX(), rect.centerY() + 15, scene->alert_text1.c_str(), 40*2.5, COLOR_WHITE, s->fonts.at("sans-semibold"));
+    ui_draw_text(s, rect.centerX(), rect.centerY() + 15, scene->alert_text1.c_str(), 40*2.5, COLOR_WHITE, "sans-semibold");
   } else if (scene->alert_size == cereal::ControlsState::AlertSize::MID) {
-    ui_draw_text(s->vg, rect.centerX(), rect.centerY() - 45, scene->alert_text1.c_str(), 48*2.5, COLOR_WHITE, s->fonts.at("sans-bold"));
-    ui_draw_text(s->vg, rect.centerX(), rect.centerY() + 75, scene->alert_text2.c_str(), 36*2.5, COLOR_WHITE, s->fonts.at("sans-regular"));
+    ui_draw_text(s, rect.centerX(), rect.centerY() - 45, scene->alert_text1.c_str(), 48*2.5, COLOR_WHITE, "sans-bold");
+    ui_draw_text(s, rect.centerX(), rect.centerY() + 75, scene->alert_text2.c_str(), 36*2.5, COLOR_WHITE, "sans-regular");
   } else if (scene->alert_size == cereal::ControlsState::AlertSize::FULL) {
     nvgFontSize(s->vg, (longAlert1?72:96)*2.5);
-    nvgFontFaceId(s->vg, s->fonts.at("sans-bold"));
+    nvgFontFace(s->vg, "sans-bold");
     nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
     nvgTextBox(s->vg, rect.x, rect.y+(longAlert1?360:420), rect.w-60, scene->alert_text1.c_str(), NULL);
     nvgFontSize(s->vg, 48*2.5);
-    nvgFontFaceId(s->vg,  s->fonts.at("sans-regular"));
+    nvgFontFace(s->vg,  "sans-regular");
     nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BOTTOM);
     nvgTextBox(s->vg, rect.x, rect.h-(longAlert1?300:360), rect.w-60, scene->alert_text2.c_str(), NULL);
   }
@@ -443,7 +443,7 @@ void ui_draw(UIState *s) {
   glDisable(GL_BLEND);
 }
 
-void ui_draw_image(const UIState *s, const Rect &r, const std::string &name, float alpha){
+void ui_draw_image(const UIState *s, const Rect &r, const char *name, float alpha){
   nvgBeginPath(s->vg);
   NVGpaint imgPaint = nvgImagePattern(s->vg, r.x, r.y, r.w, r.h, 0, s->images.at(name), alpha);
   nvgRect(s->vg, r.x, r.y, r.w, r.h);
@@ -527,6 +527,7 @@ void ui_nvg_init(UIState *s) {
 #endif
   assert(s->vg);
 
+  // init fonts
   std::pair<const char *, const char *> fonts[] = {
       {"sans-regular", "../assets/fonts/opensans_regular.ttf"},
       {"sans-semibold", "../assets/fonts/opensans_semibold.ttf"},
@@ -535,9 +536,9 @@ void ui_nvg_init(UIState *s) {
   for (auto [name, file] : fonts) {
     int font_id = nvgCreateFont(s->vg, name, file);
     assert(font_id >= 0);
-    s->fonts[name] = font_id;
   }
 
+  // init images
   std::vector<std::pair<const char *, const char *>> images = {
       {"wheel", "../assets/img_chffr_wheel.png"},
       {"trafficSign_turn", "../assets/img_trafficSign_turn.png"},

@@ -138,6 +138,9 @@ typedef struct UIScene {
   line_vertices_data road_edge_vertices[2];
 } UIScene;
 
+struct cmp_str {
+  bool operator()(char const *a, char const *b) const { return strcmp(a, b) < 0; }
+};
 typedef struct UIState {
   VisionIpcClient * vipc_client;
   VisionIpcClient * vipc_client_front;
@@ -151,9 +154,8 @@ typedef struct UIState {
   // NVG
   NVGcontext *vg;
 
-  // fonts and images
-  std::map<std::string, int> images;
-  std::map<std::string, int> fonts;
+  // images
+  std::map<const char *, int, cmp_str> images;
 
   SubMaster *sm;
 
