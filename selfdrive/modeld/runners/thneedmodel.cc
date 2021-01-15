@@ -33,6 +33,8 @@ void ThneedModel::execute(float *net_input_buf, int buf_size) {
     thneed->clexec();
     thneed->copy_output(output);
     thneed->stop();
+
+    recorded = true;
   } else {
     thneed->execute(inputs, output);
   }

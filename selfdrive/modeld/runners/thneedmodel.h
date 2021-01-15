@@ -18,6 +18,7 @@ public:
   void execute(float *net_input_buf, int buf_size);
 private:
   Thneed *thneed = NULL;
+  bool recorded;
 
   float *output;
 
