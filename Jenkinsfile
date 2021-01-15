@@ -114,7 +114,7 @@ pipeline {
                       ["build", "SCONS_CACHE=1 scons -j4"],
                       ["test athena", "nosetests -s selfdrive/athena/tests/test_athenad_old.py"],
                       ["test manager", "python selfdrive/test/test_manager.py"],
-                      //["test cpu usage", "cd selfdrive/test/ && ./test_cpu_usage.py"],
+                      ["test cpu usage", "cd selfdrive/test/ && ./test_cpu_usage.py"],
                       ["build devel", "cd release && CI_PUSH=${env.CI_PUSH} ./build_devel.sh"],
                       ["test car interfaces", "cd selfdrive/car/tests/ && ./test_car_interfaces.py"],
                       ["test spinner build", "cd selfdrive/ui/spinner && make clean && make"],
