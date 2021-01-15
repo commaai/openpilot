@@ -11,14 +11,11 @@ ThneedModel::ThneedModel(const char *path, float *loutput, size_t loutput_size, 
   thneed->stop();
 
   output = loutput;
-  output_size = loutput_size;
-
   assert(runtime==USE_GPU_RUNTIME);
 }
 
 void ThneedModel::addRecurrent(float *state, int state_size) {
   recurrent = state;
-  recurrent_size = state_size;
 }
 
 void ThneedModel::addTrafficConvention(float *state, int state_size) {

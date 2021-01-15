@@ -20,11 +20,9 @@ private:
   Thneed *thneed = NULL;
 
   float *output;
-  size_t output_size;
 
   // recurrent and desire
   float *recurrent;
-  size_t recurrent_size;
   float *trafficConvention;
   float *desire;
 };
