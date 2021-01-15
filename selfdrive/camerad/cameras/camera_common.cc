@@ -216,6 +216,7 @@ void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &fr
 }
 
 void fill_frame_image(cereal::FrameData::Builder &framed, const CameraBuf *b) {
+  assert(b->cur_rgb_buf);
   const uint8_t *dat = (const uint8_t *)b->cur_rgb_buf->addr;
   int scale = env_scale;
   int x_min = env_xmin; int y_min = env_ymin; int x_max = b->rgb_width-1; int y_max = b->rgb_height-1;
