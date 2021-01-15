@@ -360,7 +360,7 @@ void AutoFocus::actuator_move(uint16_t target, bool in_lock) {
   // LOGW("step %d   target: %d  lens pos: %d time:%f", dest_step_pos, target, cur_lens_pos_, millis_since_boot() - t1);
 }
 
-void AutoFocus::do_focus(float *accel_z) {
+void AutoFocus::do_focus(std::optional<float> accel_z) {
   // params for focus PI controller
   const int dac_up = device_ == DEVICE_LP3? LP3_AF_DAC_UP:OP3T_AF_DAC_UP;
   const int dac_down = device_ == DEVICE_LP3? LP3_AF_DAC_DOWN:OP3T_AF_DAC_DOWN;

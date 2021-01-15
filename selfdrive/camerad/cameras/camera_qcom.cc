@@ -110,7 +110,7 @@ static void camera_init(VisionIpcServer *v, CameraState *s, int camera_id, int c
   s->max_gain = max_gain;
   s->fps = fps;
 
-  s->buf.init(device_id, ctx, s, FRAME_BUF_COUNT, "frame", camera_release_buffer);
+  s->buf.init(device_id, ctx, s, v, FRAME_BUF_COUNT, rgb_type, yuv_type, camera_release_buffer);
 
   pthread_mutex_init(&s->frame_info_lock, NULL);
 }
@@ -944,8 +944,6 @@ static void camera_open(CameraState *s, bool rear) {
 }
 
 static void rear_start(CameraState *s) {
-  struct msm_actuator_cfg_data actuator_cfg_data = {0};
-
   set_exposure(s, 1.0, 1.0);
 
   int err = sensor_write_regs(s, start_reg_array, ARRAYSIZE(start_reg_array), MSM_CAMERA_I2C_BYTE_DATA);
@@ -1139,8 +1137,7 @@ static void ops_thread(MultiCameraState *s) {
     rear_op = rear_exp.load();
     if (rear_op.op_id != rear_op_id_last) {
       do_autoexposure(&s->rear, rear_op.grey_frac);
-      float accel_z = 0.;
-      s->rear.auto_focus.do_focus(get_accel_z(&sm, &accel_z) ? &accel_z : nullptr);
+      s->rear.auto_focus.do_focus(get_accel_z(&sm));
       rear_op_id_last = rear_op.op_id;
     }
 

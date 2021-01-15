@@ -6,7 +6,7 @@
 
 #include <mutex>
 
-#include "common/utilpp.h"
+#include "common/util.h"
 #include "imgproc/utils.h"
 #include "msm_cam_sensor.h"
 #include "cereal/gen/cpp/log.capnp.h"
@@ -19,7 +19,7 @@ public:
   AutoFocus() = default;
   void init(const int device);
   void start();
-  void do_focus(float *accel_z);
+  void do_focus(std::optional<float> accel_z);
   void parse(const uint8_t *d);
   void setup_self_recover(const uint16_t lapres[], const size_t lapres_size);
   void fill(cereal::FrameData::Builder fd);
