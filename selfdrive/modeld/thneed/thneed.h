@@ -77,7 +77,7 @@ class Thneed {
   public:
     Thneed(bool do_clinit=false);
     void stop();
-    void execute(float **finputs, float *foutput, bool slow=false, bool withcl=false);
+    void execute(float **finputs, float *foutput, bool slow=false);
     int optimize();
 
     vector<cl_mem> inputs;

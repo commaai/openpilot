@@ -6,8 +6,10 @@ ThneedModel::ThneedModel(const char *path, float *loutput, size_t loutput_size, 
   thneed->record = 0;
   thneed->load(path);
   thneed->clexec();
+  thneed->record = THNEED_RECORD;
+  thneed->clexec();
+  thneed->stop();
 
-  recorded = false;
   output = loutput;
   assert(runtime==USE_GPU_RUNTIME);
 }
@@ -26,15 +28,6 @@ void ThneedModel::addDesire(float *state, int state_size) {
 
 void ThneedModel::execute(float *net_input_buf, int buf_size) {
   float *inputs[4] = {recurrent, trafficConvention, desire, net_input_buf};
-
-  if (!recorded) {
-    thneed->record = THNEED_RECORD;
-    thneed->execute(inputs, output, false, true);
-    thneed->stop();
-
-    recorded = true;
-  } else {
-    thneed->execute(inputs, output);
-  }
+  thneed->execute(inputs, output);
 }
 
