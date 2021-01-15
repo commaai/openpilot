@@ -84,9 +84,7 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState *s, const uint8_t
     crop_yuv(raw_buf, width, height, global_x_offset + crop_x_offset, global_y_offset + crop_y_offset,
          cropped_width, cropped_height, cropped_y_buf, cropped_u_buf, cropped_v_buf);
   } else {
-    uint8_t *premirror_cropped_y_buf = get_buffer(s->premirror_cropped_buf, cropped_width*cropped_height*3/2);
-    uint8_t *premirror_cropped_u_buf = premirror_cropped_y_buf + (cropped_width * cropped_height);
-    uint8_t *premirror_cropped_v_buf = premirror_cropped_u_buf + ((cropped_width/2) * (cropped_height/2));
+    auto [premirror_cropped_y_buf, premirror_cropped_u_buf, premirror_cropped_v_buf] = get_yuv_buf(s->premirror_cropped_buf, cropped_width, cropped_height);
     crop_yuv(raw_buf, width, height, global_x_offset, global_y_offset + crop_y_offset,
          cropped_width, cropped_height, premirror_cropped_y_buf, premirror_cropped_u_buf, premirror_cropped_v_buf);
     libyuv::I420Mirror(premirror_cropped_y_buf, cropped_width,
