@@ -110,10 +110,12 @@ class Plant():
     self.rate = rate
 
     if not Plant.messaging_initialized:
-      Plant.pm = messaging.PubMaster(['frame', 'frontFrame', 'ubloxRaw'])
+
+      Plant.pm = messaging.PubMaster(['frame', 'frontFrame', 'ubloxRaw', 'modelV2'])
       Plant.logcan = messaging.pub_sock('can')
       Plant.sendcan = messaging.sub_sock('sendcan')
       Plant.model = messaging.pub_sock('model')
+      Plant.front_frame = messaging.pub_sock('frontFrame')
       Plant.live_params = messaging.pub_sock('liveParameters')
       Plant.live_location_kalman = messaging.pub_sock('liveLocationKalman')
       Plant.health = messaging.pub_sock('health')

@@ -10,6 +10,11 @@
 #include "driving.h"
 #include "clutil.h"
 
+constexpr int MODEL_PATH_DISTANCE = 192;
+constexpr int POLYFIT_DEGREE = 4;
+constexpr int DESIRE_PRED_SIZE = 32;
+constexpr int OTHER_META_SIZE = 4;
+
 constexpr int MODEL_WIDTH = 512;
 constexpr int MODEL_HEIGHT = 256;
 constexpr int MODEL_FRAME_SIZE = MODEL_WIDTH * MODEL_HEIGHT * 3 / 2;
@@ -28,8 +33,6 @@ constexpr int LEAD_MHP_GROUP_SIZE = (2*LEAD_MHP_VALS + LEAD_MHP_SELECTION);
 constexpr int POSE_SIZE = 12;
 
 constexpr int MIN_VALID_LEN = 10;
-constexpr int TRAJECTORY_TIME = 10;
-constexpr float TRAJECTORY_DISTANCE = 192.0;
 constexpr int PLAN_IDX = 0;
 constexpr int LL_IDX = PLAN_IDX + PLAN_MHP_N*PLAN_MHP_GROUP_SIZE;
 constexpr int LL_PROB_IDX = LL_IDX + 4*2*2*33;
@@ -49,8 +52,6 @@ constexpr int OUTPUT_SIZE =  POSE_IDX + POSE_SIZE;
 // #define DUMP_YUV
 
 Eigen::Matrix<float, MODEL_PATH_DISTANCE, POLYFIT_DEGREE - 1> vander;
-float X_IDXS[TRAJECTORY_SIZE];
-float T_IDXS[TRAJECTORY_SIZE];
 
 void model_init(ModelState* s, cl_device_id device_id, cl_context context) {
   frame_init(&s->frame, MODEL_WIDTH, MODEL_HEIGHT, device_id, context);
@@ -77,8 +78,6 @@ void model_init(ModelState* s, cl_device_id device_id, cl_context context) {
   // Build Vandermonde matrix
   for(int i = 0; i < TRAJECTORY_SIZE; i++) {
     for(int j = 0; j < POLYFIT_DEGREE - 1; j++) {
-      X_IDXS[i] = (TRAJECTORY_DISTANCE/1024.0) * (pow(i,2));
-      T_IDXS[i] = (TRAJECTORY_TIME/1024.0) * (pow(i,2));
       vander(i, j) = pow(X_IDXS[i], POLYFIT_DEGREE-j-1);
     }
   }
