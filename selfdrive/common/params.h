@@ -12,31 +12,31 @@ private:
   const std::string key_file(std::string key) const { return params_path + "/d/" + key; }
 public:
   Params(bool persistent_param = false);
-  Params(std::string path);
-  bool delete_value(std::string key);
+  Params(const std::string &path);
+  bool delete_value(const std::string &key);
   bool read_all(std::map<std::string, std::string> &params);
-  std::string get(std::string key, bool block = false);
-  inline bool getBool(std::string param_name, bool block = false) {
+  std::string get(const std::string &key, bool block = false);
+  inline bool getBool(const std::string &param_name, bool block = false) {
     return get<bool>(param_name, block).value_or(false);
   }
-  bool put(const char *key, const char *value, size_t value_size);
+  bool put(const std::string &key, const char *value, size_t value_size);
 
   template <class T>
-  std::optional<T> get(std::string param_name, bool block = false) {
+  std::optional<T> get(const std::string &param_name, bool block = false) {
     std::istringstream iss(get(param_name.c_str(), block));
     T value{};
     iss >> value;
     return iss.fail() ? std::nullopt : std::optional(value);
   }
   template <class T>
-  bool put(std::string param_name, T val) {
+  bool put(const std::string &param_name, T val) {
     if constexpr (std::is_same<T, const char *>::value) {
-      return put(param_name.c_str(), val, strlen(val));
+      return put(param_name, val, strlen(val));
     } else if constexpr (std::is_same<T, std::string>::value) {
-      return put(param_name.c_str(), val.c_str(), val.length());
+      return put(param_name, val.c_str(), val.length());
     } else {
       std::string v = std::to_string(val);
-      return put(param_name.c_str(), v.c_str(), v.length());
+      return put(param_name, v.c_str(), v.length());
     }
   }
 };

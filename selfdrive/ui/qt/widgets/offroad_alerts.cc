@@ -123,9 +123,8 @@ void OffroadAlert::parse_alerts() {
   QJsonObject json = doc.object();
   for (const QString &key : json.keys()) {
     std::string bytes = Params().get(key.toStdString());
-    
     if (bytes.size()) {
-      QJsonDocument doc_par = QJsonDocument::fromJson(QByteArray(bytes.data(), bytes.length()));
+      QJsonDocument doc_par = QJsonDocument::fromJson(QByteArray(bytes.data(), bytes.size()));
       QJsonObject obj = doc_par.object();
       Alert alert = {obj.value("text").toString(), obj.value("severity").toInt()};
       alerts.push_back(alert);

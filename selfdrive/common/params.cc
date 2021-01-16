@@ -67,7 +67,7 @@ bool ensure_symlink(const std::string &param_path, const std::string &key_path) 
 
 }  // namespace
 
-Params::Params(std::string path) : params_path(path) {}
+Params::Params(const std::string &path) : params_path(path) {}
 Params::Params(bool persistent_param) {
 #if defined(QCOM) || defined(QCOM2)
   params_path = !persistent_param ? "/data/params" : "/persist/comma/params";
@@ -76,7 +76,7 @@ Params::Params(bool persistent_param) {
 #endif
 }
 
-bool Params::put(const char *key, const char *value, size_t size) {
+bool Params::put(const std::string &key, const char *value, size_t size) {
   // Information about safely and atomically writing a file: https://lwn.net/Articles/457667/
   // 1) Create temp file
   // 2) Write data to temp file
@@ -102,7 +102,7 @@ bool Params::put(const char *key, const char *value, size_t size) {
       ret = flock(lock_fd, LOCK_EX) == 0 &&
             fchmod(tmp_fd, 0666) == 0 &&
             fsync(tmp_fd) == 0 &&
-            rename(tmp_path, key_file(key).c_str()) == 0 &&
+            rename(tmp_path, key_file(key.c_str()).c_str()) == 0 &&
             fsync_dir(path) == 0;
     }
   }
@@ -114,7 +114,7 @@ bool Params::put(const char *key, const char *value, size_t size) {
   return ret;
 }
 
-std::string Params::get(std::string key, bool block) {
+std::string Params::get(const std::string &key, bool block) {
   if (!block) return util::read_file(key_file(key));
 
   // blocking read until successful
@@ -150,7 +150,7 @@ bool Params::read_all(std::map<std::string, std::string> &params) {
   return true;
 }
 
-bool Params::delete_value(std::string key) {
+bool Params::delete_value(const std::string &key) {
   unique_fd lock_fd = open(lock_path().c_str(), O_CREAT, 0775);
   if (lock_fd == -1 || flock(lock_fd, LOCK_EX) == -1) return false;
 
