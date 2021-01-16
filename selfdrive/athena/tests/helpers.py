@@ -78,25 +78,20 @@ class HTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
     self.end_headers()
 
 
-def http_server(port, **kwargs):
-  while 1:
-    try:
-      http.server.test(**kwargs, port=port)
-    except OSError as e:
-      if e.errno == 98:
-        continue
-
-
 def with_http_server(func):
   @wraps(func)
   def inner(*args, **kwargs):
-    host = '127.0.0.1'
-    port = random.randrange(40000, 50000)
-    p = Process(target=http_server,
-                args=(port,),
-                kwargs={'HandlerClass': HTTPRequestHandler, 'bind': host})
-    p.start()
-    with Timeout(10, 'HTTP Server did not start'):
+    with Timeout(2, 'HTTP Server did not start'):
+      p = None
+      host = '127.0.0.1'
+      while p is None or p.exitcode is not None:
+        port = random.randrange(40000, 50000)
+        p = Process(target=http.server.test,
+                    kwargs={'port': port, 'HandlerClass': HTTPRequestHandler, 'bind': host})
+        p.start()
+        time.sleep(0.1)
+
+    with Timeout(2):
       while True:
         try:
           requests.put(f'http://{host}:{port}/qlog.bz2', data='')
