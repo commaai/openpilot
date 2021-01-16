@@ -138,9 +138,6 @@ typedef struct UIScene {
   line_vertices_data road_edge_vertices[2];
 } UIScene;
 
-struct cmp_str {
-  bool operator()(char const *a, char const *b) const { return strcmp(a, b) < 0; }
-};
 typedef struct UIState {
   VisionIpcClient * vipc_client;
   VisionIpcClient * vipc_client_front;
