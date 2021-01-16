@@ -261,21 +261,18 @@ void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id, flo
                    const ModelDataRaw &net_outputs, const float *raw_pred, uint64_t timestamp_eof,
                    float model_execution_time) {
   const uint32_t frame_age = (frame_id > vipc_frame_id) ? (frame_id - vipc_frame_id) : 0;
-  auto do_publish = [&](auto init_model_func, const char *pub_name) {
-    MessageBuilder msg;
-    auto framed = (msg.initEvent().*(init_model_func))();
-    framed.setFrameId(vipc_frame_id);
-    framed.setFrameAge(frame_age);
-    framed.setFrameDropPerc(frame_drop * 100);
-    framed.setTimestampEof(timestamp_eof);
-    framed.setModelExecutionTime(model_execution_time);
-    if (send_raw_pred) {
-      framed.setRawPred(kj::arrayPtr((const uint8_t *)raw_pred, (OUTPUT_SIZE + TEMPORAL_SIZE) * sizeof(float)));
-    }
-    fill_model(framed, net_outputs);
-    pm.send(pub_name, msg);
-  };
-  do_publish(&cereal::Event::Builder::initModelV2, "modelV2");
+  MessageBuilder msg;
+  auto framed = (msg.initEvent().*(&cereal::Event::Builder::initModelV2))();
+  framed.setFrameId(vipc_frame_id);
+  framed.setFrameAge(frame_age);
+  framed.setFrameDropPerc(frame_drop * 100);
+  framed.setTimestampEof(timestamp_eof);
+  framed.setModelExecutionTime(model_execution_time);
+  if (send_raw_pred) {
+    framed.setRawPred(kj::arrayPtr((const uint8_t *)raw_pred, (OUTPUT_SIZE + TEMPORAL_SIZE) * sizeof(float)));
+  }
+  fill_model(framed, net_outputs);
+  pm.send("ModelV2", msg);
 }
 
 void posenet_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_dropped_frames,
