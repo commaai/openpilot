@@ -555,9 +555,8 @@ void ui_nvg_init(UIState *s) {
       {"network_5", "../assets/images/network_5.png"},
   };
   for (auto [name, file] : images) {
-    int img_id = nvgCreateImage(s->vg, file, 1);
-    assert(img_id != 0);
-    s->images[name] = img_id;
+    s->images[name] = nvgCreateImage(s->vg, file, 1);
+    assert(s->images[name] != 0);
   }
 
   // init gl
