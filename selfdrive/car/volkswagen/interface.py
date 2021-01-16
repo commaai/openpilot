@@ -27,8 +27,8 @@ class CarInterface(CarInterfaceBase):
     return float(accel) / 4.0
 
   @staticmethod
-  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None):
-    ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
+  def get_params(candidate, fingerprint=gen_empty_fingerprint(), has_relay=False, car_fw=None):
+    ret = CarInterfaceBase.get_std_params(candidate, fingerprint, has_relay)
 
     ret.enableCamera = True  # Stock camera detection doesn't apply to VW
     ret.carName = "volkswagen"

@@ -63,10 +63,12 @@ class Controls:
       self.can_sock = messaging.sub_sock('can', timeout=can_timeout)
 
     # wait for one health and one CAN packet
+    hw_type = messaging.recv_one(self.sm.sock['health']).health.hwType
+    has_relay = hw_type in [HwType.blackPanda, HwType.uno, HwType.dos]
     print("Waiting for CAN messages...")
     get_one_can(self.can_sock)
 
-    self.CI, self.CP = get_car(self.can_sock, self.pm.sock['sendcan'])
+    self.CI, self.CP = get_car(self.can_sock, self.pm.sock['sendcan'], has_relay)
 
     # read params
     params = Params()
@@ -129,7 +131,7 @@ class Controls:
     self.sm['dMonitoringState'].awarenessStatus = 1.
     self.sm['dMonitoringState'].faceDetected = False
 
-    self.startup_event = get_startup_event(car_recognized, controller_available)
+    self.startup_event = get_startup_event(car_recognized, controller_available, hw_type)
 
     if not sounds_available:
       self.events.add(EventName.soundsUnavailable, static=True)
@@ -137,8 +139,13 @@ class Controls:
       self.events.add(EventName.communityFeatureDisallowed, static=True)
     if not car_recognized:
       self.events.add(EventName.carUnrecognized, static=True)
+<<<<<<< HEAD
     #if hw_type == HwType.whitePanda:
     #  self.events.add(EventName.whitePandaUnsupported, static=True)
+=======
+    if hw_type == HwType.whitePanda:
+      self.events.add(EventName.whitePandaUnsupportedDEPRECATED, static=True)
+>>>>>>> 6c579cd6... Revert "grey panda is unsupported"
 
     # controlsd is driven by can recv, expected at 100Hz
     self.rk = Ratekeeper(100, print_delay_threshold=None)
