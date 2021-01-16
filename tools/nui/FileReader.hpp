@@ -1,5 +1,4 @@
-#ifndef FILEREADER_HPP
-#define FILEREADER_HPP
+#pragma once
 
 #include <QString>
 #include <QNetworkAccessManager>
@@ -20,7 +19,8 @@
 #include "channel.hpp"
 
 class FileReader : public QObject {
-Q_OBJECT
+  Q_OBJECT
+
 public:
   FileReader(const QString& file_);
   void startRequest(const QUrl &url);
@@ -28,10 +28,13 @@ public:
   virtual void readyRead();
   void httpFinished();
   virtual void done() {};
+
 public slots:
   void process();
+
 protected:
   QNetworkReply *reply;
+
 private:
   QNetworkAccessManager *qnam;
   QElapsedTimer timer;
@@ -44,9 +47,12 @@ class LogReader : public FileReader {
 Q_OBJECT
 public:
   LogReader(const QString& file, Events *, QReadWriteLock* events_lock_, QMap<int, QPair<int, int> > *eidx_);
+  ~LogReader();
+
   void readyRead();
   void done() { is_done = true; };
   bool is_done = false;
+
 private:
   bz_stream bStream;
 
@@ -63,6 +69,3 @@ private:
   QReadWriteLock* events_lock;
   QMap<int, QPair<int, int> > *eidx;
 };
-
-#endif
-
