@@ -185,6 +185,8 @@ def startLocalProxy(global_end_event, remote_ws_uri, local_port):
 
     ssock, csock = socket.socketpair()
     local_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    print("ssock", ssock)
+    print("csock", csock)
     local_sock.connect(('127.0.0.1', local_port))
     local_sock.setblocking(0)
 
@@ -279,6 +281,8 @@ def ws_proxy_send(ws, local_sock, signal_sock, end_event):
     except Exception:
       cloudlog.exception("athenad.ws_proxy_send.exception")
       end_event.set()
+
+  signal_sock.close()
 
 
 def ws_recv(ws, end_event):
