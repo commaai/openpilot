@@ -232,7 +232,7 @@ void fill_frame_image(cereal::FrameData::Builder &framed, const CameraBuf *b) {
       memcpy(&resized_dat[(r*new_width+c)*3], &dat[goff+r*b->rgb_stride*scale+c*3*scale], 3*sizeof(uint8_t));
     }
   }
-  framed.setImage(kj::arrayPtr((const uint8_t*)resized_dat, new_width*new_height*3));
+  framed.setImage(kj::arrayPtr((const uint8_t*)resized_dat, (size_t)new_width*new_height*3));
   delete[] resized_dat;
 }
 

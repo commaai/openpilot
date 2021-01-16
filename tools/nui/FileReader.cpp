@@ -74,6 +74,10 @@ LogReader::LogReader(const QString& file, Events *events_, QReadWriteLock* event
   });
 }
 
+LogReader::~LogReader() {
+  delete parser;
+}
+
 void LogReader::mergeEvents(int dled) {
   auto amsg = kj::arrayPtr((const capnp::word*)(raw.data() + event_offset), (dled-event_offset)/sizeof(capnp::word));
   Events events_local;
