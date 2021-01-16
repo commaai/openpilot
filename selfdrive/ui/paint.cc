@@ -199,7 +199,7 @@ static void ui_draw_world(UIState *s) {
   ui_draw_vision_lane_lines(s);
 
   // Draw lead indicators if openpilot is handling longitudinal
-  if (s->longitudinal_control) {
+  if (s->scene.longitudinal_control) {
     if (scene->lead_data[0].getStatus()) {
       draw_lead(s, 0);
     }
@@ -214,7 +214,7 @@ static void ui_draw_vision_maxspeed(UIState *s) {
   const int SET_SPEED_NA = 255;
   float maxspeed = s->scene.controls_state.getVCruise();
   const bool is_cruise_set = maxspeed != 0 && maxspeed != SET_SPEED_NA;
-  if (is_cruise_set && !s->is_metric) { maxspeed *= 0.6225; }
+  if (is_cruise_set && !s->scene.is_metric) { maxspeed *= 0.6225; }
 
   const Rect rect = {s->viz_rect.x + (bdr_s * 2), int(s->viz_rect.y + (bdr_s * 1.5)), 184, 202};
   ui_fill_rect(s->vg, rect, COLOR_BLACK_ALPHA(100), 30.);

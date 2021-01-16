@@ -167,7 +167,7 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
   }
 
   // Vision click
-  if (ui_state->started && (e->x() >= ui_state->viz_rect.x - bdr_s)) {
+  if (ui_state->scene.started && (e->x() >= ui_state->viz_rect.x - bdr_s)) {
     ui_state->sidebar_collapsed = !ui_state->sidebar_collapsed;
   }
 }
@@ -176,7 +176,7 @@ static void handle_display_state(UIState* s, bool user_input) {
   static int awake_timeout = 0; // Somehow this only gets called on program start
   awake_timeout = std::max(awake_timeout - 1, 0);
 
-  if (user_input || s->ignition || s->started) {
+  if (user_input || s->scene.ignition || s->scene.started) {
     s->awake = true;
     awake_timeout = 30 * UI_FREQ;
   } else if (awake_timeout == 0) {

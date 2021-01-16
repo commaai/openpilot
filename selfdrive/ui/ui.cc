@@ -44,7 +44,6 @@ void ui_init(UIState *s) {
   s->sm = new SubMaster({"modelV2", "controlsState", "uiLayoutState", "liveCalibration", "radarState", "deviceState", "roadCameraState", "liveLocationKalman",
                          "pandaState", "carParams", "driverState", "driverMonitoringState", "sensorEvents", "carState", "ubloxGnss"});
 
-  s->started = false;
   s->status = STATUS_OFFROAD;
 
   s->fb = std::make_unique<FrameBuffer>("ui", 0, true, &s->fb_w, &s->fb_h);
@@ -181,7 +180,7 @@ static void update_sockets(UIState *s) {
     scene.gpsOK = sm["liveLocationKalman"].getLiveLocationKalman().getGpsOK();
   }
   if (sm.updated("carParams")) {
-    s->longitudinal_control = sm["carParams"].getCarParams().getOpenpilotLongitudinalControl();
+    scene.longitudinal_control = sm["carParams"].getCarParams().getOpenpilotLongitudinalControl();
   }
   if (sm.updated("driverState")) {
     scene.driver_state = sm["driverState"].getDriverState();
@@ -197,11 +196,11 @@ static void update_sockets(UIState *s) {
   if (sm.updated("sensorEvents")) {
     for (auto sensor : sm["sensorEvents"].getSensorEvents()) {
       if (sensor.which() == cereal::SensorEventData::LIGHT) {
-        s->light_sensor = sensor.getLight();
-      } else if (!s->started && sensor.which() == cereal::SensorEventData::ACCELERATION) {
-        s->accel_sensor = sensor.getAcceleration().getV()[2];
-      } else if (!s->started && sensor.which() == cereal::SensorEventData::GYRO_UNCALIBRATED) {
-        s->gyro_sensor = sensor.getGyroUncalibrated().getV()[1];
+        scene.light_sensor = sensor.getLight();
+      } else if (!scene.started && sensor.which() == cereal::SensorEventData::ACCELERATION) {
+        scene.accel_sensor = sensor.getAcceleration().getV()[2];
+      } else if (!scene.started && sensor.which() == cereal::SensorEventData::GYRO_UNCALIBRATED) {
+        scene.gyro_sensor = sensor.getGyroUncalibrated().getV()[1];
       }
     }
   }
@@ -253,7 +252,7 @@ static void update_params(UIState *s) {
   const uint64_t frame = s->sm->frame;
 
   if (frame % (5*UI_FREQ) == 0) {
-    read_param(&s->is_metric, "IsMetric");
+    read_param(&s->scene.is_metric, "IsMetric");
   } else if (frame % (6*UI_FREQ) == 0) {
     s->scene.athenaStatus = NET_DISCONNECTED;
     uint64_t last_ping = 0;
