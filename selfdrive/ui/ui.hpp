@@ -154,7 +154,7 @@ public:
 
   SubMaster *sm;
 
-  Sound *sound;
+  std::unique_ptr<Sound> sound;
   UIStatus status;
   UIScene scene;
   cereal::UiLayoutState::App active_app;

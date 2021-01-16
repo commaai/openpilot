@@ -56,7 +56,6 @@ void ui_init(UIState *s) {
 }
 
 UIState::~UIState() {
-  delete sound;
   delete sm;
 }
 
