@@ -2,7 +2,6 @@
 #include <dirent.h>
 #include <sys/file.h>
 #include <csignal>
-#include <string.h>
 #include "common/util.h"
 
 namespace {
@@ -65,6 +64,7 @@ bool ensure_symlink(const std::string &param_path, const std::string &key_path) 
            rename(link_path, key_path.c_str()) == 0;
   }
 }
+
 }  // namespace
 
 Params::Params(std::string path) : params_path(path) {}
@@ -115,9 +115,7 @@ bool Params::put(const char *key, const char *value, size_t size) {
 }
 
 std::string Params::get(std::string key, bool block) {
-  if (!block) {
-    return util::read_file(key_file(key));
-  }
+  if (!block) return util::read_file(key_file(key));
 
   // blocking read until successful
   params_do_exit = 0;
@@ -157,6 +155,5 @@ bool Params::delete_value(std::string key) {
   if (lock_fd == -1 || flock(lock_fd, LOCK_EX) == -1) return false;
 
   const std::string path = key_file(key);
-  return !util::file_exists(path.c_str()) ||
-         (remove(path.c_str()) == 0 && fsync_dir(key_path()) == 0);
+  return !util::file_exists(path.c_str()) || (remove(path.c_str()) == 0 && fsync_dir(key_path()) == 0);
 }
