@@ -280,6 +280,8 @@ def ws_proxy_send(ws, local_sock, signal_sock, end_event):
       cloudlog.exception("athenad.ws_proxy_send.exception")
       end_event.set()
 
+  signal_sock.close()
+
 
 def ws_recv(ws, end_event):
   while not end_event.is_set():
