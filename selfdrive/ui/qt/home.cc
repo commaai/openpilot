@@ -272,6 +272,6 @@ void GLWindow::wake() {
 FramebufferState* framebuffer_init(const char* name, int32_t layer, int alpha,
                                    int *out_w, int *out_h) {
   *out_w = vwp_w;
-  *out_h = vwp_h;                                   
+  *out_h = vwp_h;
   return (FramebufferState*)1; // not null
 }
