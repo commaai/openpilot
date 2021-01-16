@@ -22,10 +22,11 @@ public:
     q.pop();
     return v;
   }
-  bool try_pop(T& v) {
+  bool try_pop(T& v, int timeout_ms = 0) {
     std::unique_lock lk(m);
-    if (q.empty()) return false;
-
+    if (!cv.wait_for(lk, std::chrono::milliseconds(timeout_ms), [this] { return !q.empty(); })) {
+      return false;
+    }
     v = q.front();
     q.pop();
     return true;

@@ -331,10 +331,7 @@ void *processing_thread(MultiCameraState *cameras, const char *tname,
   set_thread_name(tname);
 
   for (int cnt = 0; !do_exit; cnt++) {
-    if (!cs->buf.acquire()) {
-      util::sleep_for(1);
-      continue;
-    }
+    if (!cs->buf.acquire()) continue;
 
     callback(cameras, cs, cnt);
 
