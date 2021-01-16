@@ -262,7 +262,7 @@ void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id, flo
                    float model_execution_time) {
   const uint32_t frame_age = (frame_id > vipc_frame_id) ? (frame_id - vipc_frame_id) : 0;
   MessageBuilder msg;
-  auto framed = (msg.initEvent().*(&cereal::Event::Builder::initModelV2))();
+  auto framed = msg.initEvent().initModelV2();
   framed.setFrameId(vipc_frame_id);
   framed.setFrameAge(frame_age);
   framed.setFrameDropPerc(frame_drop * 100);
@@ -272,7 +272,7 @@ void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id, flo
     framed.setRawPred(kj::arrayPtr((const uint8_t *)raw_pred, (OUTPUT_SIZE + TEMPORAL_SIZE) * sizeof(float)));
   }
   fill_model(framed, net_outputs);
-  pm.send("ModelV2", msg);
+  pm.send("modelV2", msg);
 }
 
 void posenet_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_dropped_frames,
