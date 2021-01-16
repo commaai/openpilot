@@ -97,9 +97,7 @@ def with_http_server(func):
     host = '127.0.0.1'
     p = Process(target=http_server,
                 args=(port_queue,),
-                kwargs={
-                  'HandlerClass': HTTPRequestHandler,
-                  'bind': host})
+                kwargs={'HandlerClass': HTTPRequestHandler, 'bind': host})
     p.start()
     start = time.monotonic()
     port = None
