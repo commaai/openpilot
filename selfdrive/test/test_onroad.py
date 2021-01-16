@@ -1,16 +1,20 @@
 #!/usr/bin/env python3
 import os
 import time
-import sys
 import subprocess
+import unittest
+from pathlib import Path
 
 import cereal.messaging as messaging
 from common.basedir import BASEDIR
+from selfdrive.loggerd.config import ROOT
 from selfdrive.test.helpers import set_params_enabled
+
+
+# ***** test helpers *****
 
 def cputime_total(ct):
   return ct.cpuUser + ct.cpuSystem + ct.cpuChildrenUser + ct.cpuChildrenSystem
-
 
 def print_cpu_usage(first_proc, last_proc):
   procs = [
@@ -61,48 +65,49 @@ def print_cpu_usage(first_proc, last_proc):
   print(result)
   return r
 
+
+class TestOnroad(unittest.TestCase):
+
+  @classmethod
+  def setUpClass(cls):
+    os.environ['SKIP_FW_QUERY'] = "1"
+    os.environ['FINGERPRINT'] = "TOYOTA COROLLA TSS2 2019"
+    set_params_enabled()
+
+    # start manager and run openpilot 2 minutes
+    try:
+      manager_path = os.path.join(BASEDIR, "selfdrive/manager.py")
+      proc = subprocess.Popen(["python", manager_path])
+      time.sleep(25)
+    finally:
+      proc.terminate()
+      if proc.wait(20) is None:
+        proc.kill()
+
+    log_dirs = sorted(Path(ROOT).iterdir(), key=lambda f: f.stat().st_mtime)
+    latest = log_dirs[-1]
+    print(latest)
+
+  def test_cpu_usage(self):
+    pass
+
+
+"""
 def test_cpu_usage():
-  cpu_ok = False
-
-  # start manager
-  os.environ['SKIP_FW_QUERY'] = "1"
-  os.environ['FINGERPRINT'] = "TOYOTA COROLLA TSS2 2019"
-  manager_path = os.path.join(BASEDIR, "selfdrive/manager.py")
-  manager_proc = subprocess.Popen(["python", manager_path])
   try:
-    proc_sock = messaging.sub_sock('procLog', conflate=True, timeout=2000)
-    cs_sock = messaging.sub_sock('controlsState')
-
-    # wait until everything's started
-    msg = None
-    start_time = time.monotonic()
-    while msg is None and time.monotonic() - start_time < 240:
-      msg = messaging.recv_sock(cs_sock)
-
     # take first sample
     time.sleep(15)
+    print("getting first procLog sample")
     first_proc = messaging.recv_sock(proc_sock, wait=True)
     if first_proc is None:
       raise Exception("\n\nTEST FAILED: progLog recv timed out\n\n")
 
     # run for a minute and get last sample
     time.sleep(60)
+    print("getting second procLog sample")
     last_proc = messaging.recv_sock(proc_sock, wait=True)
     cpu_ok = print_cpu_usage(first_proc, last_proc)
-  finally:
-    manager_proc.terminate()
-    ret = manager_proc.wait(20)
-    if ret is None:
-      manager_proc.kill()
-  return cpu_ok
+"""
 
 if __name__ == "__main__":
-  set_params_enabled()
-
-  passed = False
-  try:
-    passed = test_cpu_usage()
-  except Exception as e:
-    print("\n\n\n", "TEST FAILED:", str(e), "\n\n\n")
-  finally:
-    sys.exit(int(not passed))
+  unittest.main()
