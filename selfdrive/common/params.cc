@@ -126,7 +126,7 @@ std::string Params::get(std::string key, bool block) {
 
   std::string value;
   while (!params_do_exit) {
-    if (value = util::read_file(key); value.size() > 0) {
+    if (value = util::read_file(key_file(key)); value.size() > 0) {
       break;
     }
     util::sleep_for(100);  // 0.1 s
