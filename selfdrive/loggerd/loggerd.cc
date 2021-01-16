@@ -258,7 +258,7 @@ void encoder_thread(int cam_idx) {
           }
 
           if (lh) {
-            lh_close(lh);
+            lh->close();
           }
           lh = logger_get_handle(&s.logger);
 
@@ -306,7 +306,7 @@ void encoder_thread(int cam_idx) {
 
         if (lh) {
           auto bytes = msg.toBytes();
-          lh_log(lh, bytes.begin(), bytes.size(), false);
+          lh->write(bytes.begin(), bytes.size(), false);
         }
       }
 
@@ -314,7 +314,7 @@ void encoder_thread(int cam_idx) {
     }
 
     if (lh) {
-      lh_close(lh);
+      lh->close();
       lh = NULL;
     }
   }
