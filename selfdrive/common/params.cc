@@ -65,18 +65,6 @@ bool ensure_symlink(const std::string &param_path, const std::string &key_path) 
            rename(link_path, key_path.c_str()) == 0;
   }
 }
-
-std::optional<std::string> read_file_string(const std::string &file) {
-  unique_fd f = open(file.c_str(), O_RDONLY);
-  if (f == -1) return std::nullopt;
-
-  if (long size = lseek(f, 0, SEEK_END); size > 0) {
-    lseek(f, 0, SEEK_SET);
-    if (std::string value(size, '\0'); read(f, value.data(), size) == size)
-      return value;
-  }
-  return std::nullopt;
-}
 }  // namespace
 
 Params::Params(std::string path) : params_path(path) {}
@@ -126,9 +114,9 @@ bool Params::put(const char *key, const char *value, size_t size) {
   return ret;
 }
 
-std::optional<std::string> Params::read_value(const char *key, bool block) {
+std::string Params::get(std::string key, bool block) {
   if (!block) {
-    return read_file_string(key_file(key));
+    return util::read_file(key_file(key));
   }
 
   // blocking read until successful
@@ -136,17 +124,17 @@ std::optional<std::string> Params::read_value(const char *key, bool block) {
   void (*prev_handler_sigint)(int) = std::signal(SIGINT, params_sig_handler);
   void (*prev_handler_sigterm)(int) = std::signal(SIGTERM, params_sig_handler);
 
-  std::optional<std::string> ret = std::nullopt;
+  std::string value;
   while (!params_do_exit) {
-    if (ret = read_file_string(key); ret) {
+    if (value = util::read_file(key); value.size() > 0) {
       break;
     }
-    util::sleep_for(100); // 0.1 s
+    util::sleep_for(100);  // 0.1 s
   }
 
   std::signal(SIGINT, prev_handler_sigint);
   std::signal(SIGTERM, prev_handler_sigterm);
-  return ret;
+  return value;
 }
 
 bool Params::read_all(std::map<std::string, std::string> &params) {
@@ -158,7 +146,7 @@ bool Params::read_all(std::map<std::string, std::string> &params) {
 
   while (struct dirent *de = readdir(d)) {
     if (isalnum(de->d_name[0]))
-      params[de->d_name] = read_file_string(key_file(de->d_name)).value_or("");
+      params[de->d_name] = get(key_file(de->d_name));
   }
   closedir(d);
   return true;

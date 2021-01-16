@@ -10,7 +10,7 @@ private:
   const std::string lock_path() const { return params_path + "/.lock"; }
   const std::string key_path() const { return params_path + "/d"; }
   const std::string key_file(std::string key) const { return params_path + "/d/" + key; }
-  std::optional<std::string> read_value(const char *key, bool block);
+  // std::string read_value(const char *key, bool block);
 public:
   Params(bool persistent_param = false);
   Params(std::string path);
@@ -18,23 +18,18 @@ public:
   bool delete_value(std::string key);
   bool read_all(std::map<std::string, std::string> &params);
 
-  inline std::string get(std::string key, bool block = false) {
-    return read_value(key.c_str(), block).value_or("");
-  }
+  std::string get(std::string key, bool block = false);
   template <class T>
   std::optional<T> get(std::string param_name, bool block = false) {
-    if (auto data = read_value(param_name.c_str(), block)) {
-      std::istringstream iss(*data);
-      T value{};
-      iss >> value;
-      if (!iss.fail()) return value;
-    }
-    return std::nullopt;
+    std::istringstream iss(get(param_name.c_str(), block));
+    T value{};
+    iss >> value;
+    return iss.fail() ? std::nullopt : std::optional(value);
   }
   inline bool getBool(std::string param_name, bool block = false) {
     return get<bool>(param_name, block).value_or(false);
   }
-
+  
   bool put(const char *key, const char *value, size_t value_size);
   template <class T>
   bool put(std::string param_name, T val) {
