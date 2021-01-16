@@ -151,18 +151,8 @@ typedef struct UIState {
   // NVG
   NVGcontext *vg;
 
-  // fonts and images
-  int font_sans_regular;
-  int font_sans_semibold;
-  int font_sans_bold;
-  int img_wheel;
-  int img_turn;
-  int img_face;
-  int img_button_settings;
-  int img_button_home;
-  int img_battery;
-  int img_battery_charging;
-  int img_network[6];
+  // images
+  std::map<std::string, int> images;
 
   SubMaster *sm;
 
