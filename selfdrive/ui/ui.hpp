@@ -155,7 +155,7 @@ typedef struct UIState {
   NVGcontext *vg;
 
   // images
-  std::map<const char *, int, cmp_str> images;
+  std::map<std::string, int> images;
 
   SubMaster *sm;
 
