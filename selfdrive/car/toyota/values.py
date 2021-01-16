@@ -298,23 +298,34 @@ IGNORED_FINGERPRINTS = [CAR.RAV4H_TSS2, CAR.HIGHLANDERH_TSS2, CAR.LEXUS_RXH_TSS2
 
 FW_VERSIONS = {
   CAR.AVALON: {
-    (Ecu.esp, 0x7b0, None): [b'F152607060\x00\x00\x00\x00\x00\x00'],
+    (Ecu.esp, 0x7b0, None): [
+      b'F152607110\x00\x00\x00\x00\x00\x00',
+      b'F152607180\x00\x00\x00\x00\x00\x00',
+    ],
     (Ecu.dsu, 0x791, None): [
       b'881510705200\x00\x00\x00\x00',
       b'881510701300\x00\x00\x00\x00',
+      b'881510703200\x00\x00\x00\x00',
     ],
-    (Ecu.eps, 0x7a1, None): [b'8965B41051\x00\x00\x00\x00\x00\x00'],
+    (Ecu.eps, 0x7a1, None): [
+      b'8965B41090\x00\x00\x00\x00\x00\x00',
+    ],
     (Ecu.engine, 0x7e0, None): [
       b'\x0230721100\x00\x00\x00\x00\x00\x00\x00\x00A0C01000\x00\x00\x00\x00\x00\x00\x00\x00',
       b'\x0230721200\x00\x00\x00\x00\x00\x00\x00\x00A0C01000\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
+    (Ecu.engine, 0x700, None): [
+      b'\x01896630738000\x00\x00\x00\x00',
+    ],
     (Ecu.fwdRadar, 0x750, 0xf): [
       b'8821F4702000\x00\x00\x00\x00',
       b'8821F4702100\x00\x00\x00\x00',
+      b'8821F4702300\x00\x00\x00\x00',
     ],
     (Ecu.fwdCamera, 0x750, 0x6d): [
       b'8646F0701100\x00\x00\x00\x00',
       b'8646F0703000\x00\x00\x00\x00',
+      b'8646F0702100\x00\x00\x00\x00',
     ],
   },
   CAR.CAMRY: {
