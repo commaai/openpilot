@@ -171,13 +171,6 @@ class PathPlanner():
     y_pts = np.interp(self.t_idxs[:MPC_N+1], np.linalg.norm(d_path_xyz, axis=1)/v_ego, d_path_xyz[:,1])
     heading_pts = np.interp(self.t_idxs[:MPC_N+1], np.linalg.norm(self.path_xyz, axis=1)/v_ego, self.plan_yaw)
 
-    # init state
-    self.cur_state.x = 0.0
-    self.cur_state.y = 0.0
-    self.cur_state.psi = 0.0
-    # TODO negative sign, still run mpc in ENU, make NED
-    self.cur_state.delta = -math.radians(angle_steers - angle_offset) / VM.sR
-
     v_ego_mpc = max(v_ego, 5.0)  # avoid mpc roughness due to low speed
     v_poly = [0.0, 0.0, 0.0, v_ego_mpc]
     assert len(v_poly) == 4
@@ -189,6 +182,11 @@ class PathPlanner():
                         CAR_ROTATION_RADIUS,
                         list(y_pts),
                         list(heading_pts))
+    # init state for next
+    self.cur_state.x = 0.0
+    self.cur_state.y = 0.0
+    self.cur_state.psi = 0.0
+    self.cur_state.delta = interp(DT_MDL, self.t_idxs[:MPC_N+1], self.mpc_solution.delta)
 
     # TODO this needs more thought, use .2s extra for now to estimate other delays
     delay = CP.steerActuatorDelay + .2
