@@ -1,6 +1,4 @@
 import http.server
-import multiprocessing
-import queue
 import random
 import requests
 import socket
@@ -8,6 +6,7 @@ import time
 from functools import wraps
 from multiprocessing import Process
 
+from common.timeout import Timeout
 
 class EchoSocket():
   def __init__(self, port):
@@ -79,11 +78,9 @@ class HTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
     self.end_headers()
 
 
-def http_server(port_queue, **kwargs):
+def http_server(port, **kwargs):
   while 1:
     try:
-      port = random.randrange(40000, 50000)
-      port_queue.put(port)
       http.server.test(**kwargs, port=port)
     except OSError as e:
       if e.errno == 98:
@@ -93,24 +90,19 @@ def http_server(port_queue, **kwargs):
 def with_http_server(func):
   @wraps(func)
   def inner(*args, **kwargs):
-    port_queue = multiprocessing.Queue()
     host = '127.0.0.1'
+    port = random.randrange(40000, 50000)
     p = Process(target=http_server,
-                args=(port_queue,),
+                args=(port,),
                 kwargs={'HandlerClass': HTTPRequestHandler, 'bind': host})
     p.start()
-    start = time.monotonic()
-    port = None
-    while 1:
-      if time.monotonic() - start > 10:
-        raise Exception('HTTP Server did not start')
-
-      try:
-        port = port_queue.get(timeout=0.1)
-        requests.put(f'http://{host}:{port}/qlog.bz2', data='')
-        break
-      except (requests.exceptions.ConnectionError, queue.Empty):
-        time.sleep(0.1)
+    with Timeout(10, 'HTTP Server did not start'):
+      while True:
+        try:
+          requests.put(f'http://{host}:{port}/qlog.bz2', data='')
+          break
+        except requests.exceptions.ConnectionError:
+          time.sleep(0.1)
 
     try:
       return func(*args, f'http://{host}:{port}', **kwargs)
