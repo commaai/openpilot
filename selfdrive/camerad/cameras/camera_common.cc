@@ -121,7 +121,7 @@ CameraBuf::~CameraBuf() {
 }
 
 bool CameraBuf::acquire() {
-  if (!safe_queue.try_pop(cur_buf_idx)) return false;
+  if (!safe_queue.try_pop(cur_buf_idx, 20)) return false;
 
   const FrameMetadata &frame_data = camera_bufs_metadata[cur_buf_idx];
   if (frame_data.frame_id == -1) {
@@ -331,10 +331,7 @@ void *processing_thread(MultiCameraState *cameras, const char *tname,
   set_thread_name(tname);
 
   for (int cnt = 0; !do_exit; cnt++) {
-    if (!cs->buf.acquire()) {
-      util::sleep_for(1);
-      continue;
-    }
+    if (!cs->buf.acquire()) continue;
 
     callback(cameras, cs, cnt);
 

@@ -19,6 +19,7 @@
 #include <msm_media_info.h>
 
 #include "common/mutex.h"
+#include "common/util.h"
 #include "common/swaglog.h"
 
 #include "omx_encoder.h"
@@ -28,6 +29,8 @@
   do {                           \
     assert(OMX_ErrorNone == _expr); \
   } while (0)
+
+extern ExitHandler do_exit;
 
 // ***** OMX callback functions *****
 
@@ -415,7 +418,14 @@ int OmxEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const u
   // this sometimes freezes... put it outside the encoder lock so we can still trigger rotates...
   // THIS IS A REALLY BAD IDEA, but apparently the race has to happen 30 times to trigger this
   //pthread_mutex_unlock(&this->lock);
-  OMX_BUFFERHEADERTYPE* in_buf = this->free_in.pop();
+  OMX_BUFFERHEADERTYPE* in_buf = nullptr;
+  while (!this->free_in.try_pop(in_buf, 20)) {
+    if (do_exit) {
+      pthread_mutex_unlock(&this->lock);
+      return -1;
+    }
+  }
+
   //pthread_mutex_lock(&this->lock);
 
   int ret = this->counter;

@@ -270,12 +270,17 @@ void encoder_thread(int cam_idx) {
         int out_segment = -1;
         int out_id = encoders[0]->encode_frame(buf->y, buf->u, buf->v,
                                                buf->width, buf->height,
-                                               &out_segment, extra.timestamp_eof);
+                                               &out_segment, &extra);
+        if (out_id == -1) {
+          continue;
+        }
         if (encoders.size() > 1) {
           int out_segment_alt = -1;
-          encoders[1]->encode_frame(buf->y, buf->u, buf->v,
-                                    buf->width, buf->height,
-                                    &out_segment_alt, extra.timestamp_eof);
+          if (-1 == encoders[1]->encode_frame(buf->y, buf->u, buf->v,
+                                              buf->width, buf->height,
+                                              &out_segment_alt, &extra)) {
+            continue;
+          }
         }
 
         // publish encode index
