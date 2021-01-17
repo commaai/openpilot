@@ -111,14 +111,7 @@ static LoggerHandle* logger_open(LoggerState *s, const char* root_path) {
   }
 
   if (s->init_data) {
-    BZ2_bzWrite(&bzerror, h->bz_file, s->init_data, s->init_data_len);
-    if (bzerror != BZ_OK) goto fail;
-
-    if (s->has_qlog) {
-      // init data goes in the qlog too
-      BZ2_bzWrite(&bzerror, h->bz_qlog, s->init_data, s->init_data_len);
-      if (bzerror != BZ_OK) goto fail;
-    }
+    lh_log(h, s->init_data, s->init_data_len, s->has_qlog);
   }
   return h;
 fail:
