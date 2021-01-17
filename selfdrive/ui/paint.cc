@@ -103,6 +103,8 @@ static void ui_draw_circle_image(const UIState *s, int x, int y, int size, const
 static void draw_lead(UIState *s, int idx){
   // Draw lead car indicator
   const auto &lead = s->scene.lead_data[idx];
+  auto [x, y] = s->scene.lead_vertices[idx];
+
   float fillAlpha = 0;
   float speedBuff = 10.;
   float leadBuff = 40.;
@@ -115,10 +117,10 @@ static void draw_lead(UIState *s, int idx){
     }
     fillAlpha = (int)(fmin(fillAlpha, 255));
   }
+
   float sz = std::clamp((25 * 30) / (d_rel / 3 + 30), 15.0f, 30.0f) * zoom;
-  auto [x, y] = s->scene.lead_vertices[idx];
-  y = std::fmin(s->scene.viz_rect.bottom() - sz * .6,  y);
   x = std::clamp(x, 0.f, s->scene.viz_rect.right() - sz / 2);
+  y = std::fmin(s->scene.viz_rect.bottom() - sz * .6,  y);
   draw_chevron(s, x, y, sz, nvgRGBA(201, 34, 49, fillAlpha), COLOR_YELLOW);
 }
 
