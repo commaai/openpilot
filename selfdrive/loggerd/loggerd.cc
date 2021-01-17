@@ -533,14 +533,34 @@ LoggerdState::~LoggerdState() {
   delete ctx;
 }
 
-void LoggerdState::run() {
-  uint64_t msg_count = 0;
-  uint64_t bytes_count = 0;
-  kj::Array<capnp::word> buf = kj::heapArray<capnp::word>(1024);
+static int get_frame_id(Message *m, int fpkt_id) {
+  static kj::Array<capnp::word> buf = kj::heapArray<capnp::word>(1024);
+  // track camera frames to sync to encoder
+  // only process last frame
+  if (const size_t buf_size = m->getSize() / sizeof(capnp::word) + 1;
+      buf.size() < buf_size) {
+    buf = kj::heapArray<capnp::word>(buf_size);
+  }
+  memcpy(buf.begin(), (uint8_t *)m->getData(), m->getSize());
 
+  capnp::FlatArrayMessageReader cmsg(buf);
+  cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
+  if (fpkt_id == LOG_CAMERA_ID_FCAMERA) {
+    return event.getFrame().getFrameId();
+  } else if (fpkt_id == LOG_CAMERA_ID_DCAMERA) {
+    return event.getFrontFrame().getFrameId();
+  } else if (fpkt_id == LOG_CAMERA_ID_ECAMERA) {
+    return event.getWideFrame().getFrameId();
+  }
+  assert(0);
+}
+
+void LoggerdState::run() {
+  uint64_t msg_count = 0, bytes_count = 0;
   double start_ts = seconds_since_boot();
   double last_rotate_tms, last_camera_seen_tms;
   last_rotate_tms = last_camera_seen_tms = millis_since_boot();
+
   while (!do_exit) {
     // TODO: fix msgs from the first poll getting dropped
     // poll for new messages on all sockets
@@ -570,6 +590,8 @@ void LoggerdState::run() {
       }
 
       if (last_msg) {
+        // track camera frames to sync to encoder
+        // only process last frame
         int fpkt_id = -1;
         for (int cid = 0; cid <=MAX_CAM_IDX; cid++) {
           if (sock == rotate_state[cid].fpkt_sock) {
@@ -578,26 +600,7 @@ void LoggerdState::run() {
           }
         }
         if (fpkt_id >= 0) {
-          // track camera frames to sync to encoder
-          // only process last frame
-          const uint8_t* data = (uint8_t*)last_msg->getData();
-          const size_t len = last_msg->getSize();
-          const size_t size = len / sizeof(capnp::word) + 1;
-          if (buf.size() < size) {
-            buf = kj::heapArray<capnp::word>(size);
-          }
-          memcpy(buf.begin(), data, len);
-
-          capnp::FlatArrayMessageReader cmsg(buf);
-          cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
-
-          if (fpkt_id == LOG_CAMERA_ID_FCAMERA) {
-            rotate_state[fpkt_id].setLogFrameId(event.getFrame().getFrameId());
-          } else if (fpkt_id == LOG_CAMERA_ID_DCAMERA) {
-            rotate_state[fpkt_id].setLogFrameId(event.getFrontFrame().getFrameId());
-          } else if (fpkt_id == LOG_CAMERA_ID_ECAMERA) {
-            rotate_state[fpkt_id].setLogFrameId(event.getWideFrame().getFrameId());
-          }
+          rotate_state[fpkt_id].setLogFrameId(get_frame_id(last_msg, fpkt_id));
           last_camera_seen_tms = millis_since_boot();
         }
       }
@@ -633,7 +636,7 @@ void LoggerdState::run() {
 
       int err = logger_next(&logger, LOG_ROOT.c_str(), segment_path, sizeof(segment_path), &rotate_segment);
       assert(err == 0);
-      LOGW((s.logger.part == 0) ? "logging to %s" : "rotated to %s", s.segment_path);
+      LOGW((logger.part == 0) ? "logging to %s" : "rotated to %s", segment_path);
 
       // rotate encoders
       for (auto &r : rotate_state) r.rotate();
