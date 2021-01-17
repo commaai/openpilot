@@ -538,8 +538,6 @@ void OmxEncoder::encoder_open(const char* path, int segment) {
 }
 
 void OmxEncoder::encoder_close() {
-  int err;
-
   std::unique_lock lk (this->lock);
 
   if (this->is_open) {
