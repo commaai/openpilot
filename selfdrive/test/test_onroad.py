@@ -14,7 +14,7 @@ from tools.lib.logreader import LogReader
 
 PROCS = [
   ("selfdrive.controls.controlsd", 47.0),
-  ("./loggerd", 42.0),
+  ("./loggerd", 45.0),
   ("selfdrive.locationd.locationd", 35.0),
   ("selfdrive.controls.plannerd", 20.0),
   ("selfdrive.locationd.paramsd", 12.0),
