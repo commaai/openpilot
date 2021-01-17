@@ -159,6 +159,7 @@ void Modeld::run() {
   double last = 0;
 
   PubMaster pm({"modelV2", "model", "cameraOdometry"});
+
   while (!do_exit) {
     VisionIpcBufExtra extra;
     VisionBuf *buf = vipc_client->recv(&extra);
