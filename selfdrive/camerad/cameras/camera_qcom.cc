@@ -1734,12 +1734,12 @@ void cameras_run(MultiCameraState *s) {
           c->buf.camera_bufs_metadata[buf_idx] = get_frame_metadata(c, isp_event_data->frame_id);
           c->buf.queue(buf_idx);
         } else {
-          uint8_t *d = (uint8_t*)(c->ss[buffer].bufs[buf_idx].addr);
+          auto &ss = c->ss[buffer];
           if (buffer == 1) {
-            parse_autofocus(c, d);
+            parse_autofocus(c, (uint8_t*)(ss.bufs[buf_idx].addr));
           }
-          c->ss[buffer].qbuf_info[buf_idx].dirty_buf = 1;
-          ioctl(c->isp_fd, VIDIOC_MSM_ISP_ENQUEUE_BUF, &c->ss[buffer].qbuf_info[buf_idx]);
+          ss.qbuf_info[buf_idx].dirty_buf = 1;
+          ioctl(c->isp_fd, VIDIOC_MSM_ISP_ENQUEUE_BUF, &ss.qbuf_info[buf_idx]);
         }
         break;
       case ISP_EVENT_EOF:
