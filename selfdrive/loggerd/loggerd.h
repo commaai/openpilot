@@ -132,7 +132,7 @@ public:
   LoggerState logger;
   char segment_path[4096];
   int rotate_segment;
-  pthread_mutex_t rotate_lock;
+  std::mutex rotate_lock;
   RotateState rotate_state[LOG_CAMERA_ID_MAX-1];
 
   LoggerdState();

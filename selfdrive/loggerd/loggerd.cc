@@ -55,11 +55,9 @@ std::string LOG_ROOT = util::getenv_default("HOME", "/.comma/media/0/realdata", 
 double randrange(double a, double b) __attribute__((unused));
 double randrange(double a, double b) {
   static std::mt19937 gen(millis_since_boot());
-
   std::uniform_real_distribution<> dist(a, b);
   return dist(gen);
 }
-
 
 static bool file_exists(const std::string& fn) {
   std::ifstream f(fn);
@@ -114,8 +112,8 @@ void encoder_thread(LoggerdState *s, int cam_idx) {
 
       // all the rotation stuff
       {
-        pthread_mutex_lock(&s->rotate_lock);
-        pthread_mutex_unlock(&s->rotate_lock);
+        s->rotate_lock.lock();
+        s->rotate_lock.unlock();
 
         // wait if camera pkt id is older than stream
         rotate_state.waitLogThread();
@@ -136,12 +134,13 @@ void encoder_thread(LoggerdState *s, int cam_idx) {
           }
           lh = logger_get_handle(&s->logger);
 
-          pthread_mutex_lock(&s->rotate_lock);
-          for (auto &e : encoders) {
-            e->encoder_close();
-            e->encoder_open(s->segment_path, s->rotate_segment);
+          {
+            std::unique_lock lk(s->rotate_lock);
+            for (auto &e : encoders) {
+              e->encoder_close();
+              e->encoder_open(s->segment_path, s->rotate_segment);
+            }
           }
-          pthread_mutex_unlock(&s->rotate_lock);
           rotate_state.finish_rotate();
         }
       }
@@ -361,8 +360,6 @@ LoggerdState::LoggerdState() {
   }
 
   // init encoders
-  pthread_mutex_init(&rotate_lock, NULL);
-
   // TODO: create these threads dynamically on frame packet presence
   encoder_threads.push_back(std::thread(encoder_thread, this, LOG_CAMERA_ID_FCAMERA));
   rotate_state[LOG_CAMERA_ID_FCAMERA].enabled = true;
@@ -442,7 +439,7 @@ void LoggerdState::rotate() {
 
   // rotate to new segment
   if (new_segment) {
-    pthread_mutex_lock(&rotate_lock);
+    std::unique_lock lk(rotate_lock);
     last_rotate_tms = millis_since_boot();
 
     int err = logger_next(&logger, LOG_ROOT.c_str(), segment_path, sizeof(segment_path), &rotate_segment);
@@ -451,7 +448,6 @@ void LoggerdState::rotate() {
 
     // rotate encoders
     for (auto &r : rotate_state) r.rotate();
-    pthread_mutex_unlock(&rotate_lock);
   }
 }
 
