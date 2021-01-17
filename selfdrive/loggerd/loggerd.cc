@@ -551,7 +551,10 @@ int main(int argc, char** argv) {
         }
 
         bytes_count += msg->getSize();
-        msg_count++;
+        if ((++msg_count % 1000) == 0) {
+          double ts = seconds_since_boot();
+          LOGD("%lu messages, %.2f msg/sec, %.2f KB/sec", msg_count, msg_count * 1.0 / (ts - start_ts), bytes_count * 0.001 / (ts - start_ts));
+        }
       }
 
       if (last_msg) {
@@ -623,11 +626,6 @@ int main(int argc, char** argv) {
       // rotate encoders
       for (auto &r : s.rotate_state) r.rotate();
       pthread_mutex_unlock(&s.rotate_lock);
-    }
-
-    if ((msg_count % 1000) == 0) {
-      double ts = seconds_since_boot();
-      LOGD("%lu messages, %.2f msg/sec, %.2f KB/sec", msg_count, msg_count*1.0/(ts-start_ts), bytes_count*0.001/(ts-start_ts));
     }
   }
 
