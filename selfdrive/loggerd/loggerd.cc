@@ -618,10 +618,7 @@ int main(int argc, char** argv) {
 
       int err = logger_next(&s.logger, LOG_ROOT.c_str(), s.segment_path, sizeof(s.segment_path), &s.rotate_segment);
       assert(err == 0);
-      if (s.logger.part == 0) {
-        LOGW("logging to %s", s.segment_path);
-      }
-      LOGW("rotated to %s", s.segment_path);
+      LOGW((s.logger.part == 0) ? "logging to %s" : "rotated to %s", s.segment_path);
 
       // rotate encoders
       for (auto &r : s.rotate_state) r.rotate();
