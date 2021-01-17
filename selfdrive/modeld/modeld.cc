@@ -2,7 +2,8 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <eigen3/Eigen/Dense>
-
+#include <mutex>
+#include <thread>
 #include "visionbuf.h"
 #include "visionipc_client.h"
 #include "common/swaglog.h"
@@ -13,17 +14,38 @@
 #include "messaging.hpp"
 
 ExitHandler do_exit;
-// globals
-bool run_model;
-mat3 cur_transform;
-pthread_mutex_t transform_lock;
 
-void* live_thread(void *arg) {
+class Modeld {
+ public:
+  struct LiveData {
+    int desire;
+    uint32_t frame_id;
+    mat3 transform;
+  };
+
+  Modeld();
+  ~Modeld();
+  void run();
+  void live_thread();
+
+  Modeld::LiveData get_live_data() {
+    std::unique_lock lk(mutex);
+    return _d;
+  }
+
+  std::thread thread;
+  cl_context cl_ctx = nullptr;
+  ModelState model;
+  std::atomic<bool> run_model;
+  std::unique_ptr<VisionIpcClient> vipc_client;
+  std::mutex mutex;
+  // updated by live_thread
+  LiveData _d = {};
+};
+
+void Modeld::live_thread() {
   set_thread_name("live");
   set_realtime_priority(50);
-
-  SubMaster sm({"liveCalibration"});
-
   /*
      import numpy as np
      from common.transformations.model import medmodel_frame_from_road_frame
@@ -57,12 +79,14 @@ void* live_thread(void *arg) {
     0.0, 0.0, 1.0,
   }}, db_s);
 
+  SubMaster sm({"liveCalibration", "pathPlan", "frame"});
   while (!do_exit) {
-    if (sm.update(100) > 0){
+    if (!sm.update(100)) continue;
 
+    if (sm.updated("liveCalibration")) {
       auto extrinsic_matrix = sm["liveCalibration"].getLiveCalibration().getExtrinsicMatrix();
       Eigen::Matrix<float, 3, 4> extrinsic_matrix_eigen;
-      for (int i = 0; i < 4*3; i++){
+      for (int i = 0; i < 4 * 3; i++) {
         extrinsic_matrix_eigen(i / 4, i % 4) = extrinsic_matrix[i];
       }
 
@@ -74,135 +98,110 @@ void* live_thread(void *arg) {
 
       auto warp_matrix = camera_frame_from_ground * ground_from_medmodel_frame;
       mat3 transform = {};
-      for (int i=0; i<3*3; i++) {
+      for (int i = 0; i < 3 * 3; i++) {
         transform.v[i] = warp_matrix(i / 3, i % 3);
       }
       mat3 model_transform = matmul3(yuv_transform, transform);
-      pthread_mutex_lock(&transform_lock);
-      cur_transform = model_transform;
+
       run_model = true;
-      pthread_mutex_unlock(&transform_lock);
+      std::unique_lock lk(mutex);
+      _d.transform = model_transform;
+    }
+    if (sm.updated("pathPlan")) {
+      // TODO: path planner timeout?
+      std::unique_lock lk(mutex);
+      _d.desire = ((int)sm["pathPlan"].getPathPlan().getDesire());
+    }
+    if (sm.updated("frame")) {
+      std::unique_lock lk(mutex);
+      _d.frame_id = sm["frame"].getFrame().getFrameId();
     }
   }
-  return NULL;
+}
+
+Modeld::Modeld() {
+  thread = std::thread(&Modeld::live_thread, this);
+
+  // cl init
+  cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
+  cl_ctx = CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id, NULL, NULL, &err));
+
+  // init the models
+  model_init(&model, device_id, cl_ctx);
+  LOGW("models loaded, modeld starting");
+
+  vipc_client = std::make_unique<VisionIpcClient>("camerad", VISION_STREAM_YUV_BACK, true, device_id, cl_ctx);
+  while (!do_exit && !vipc_client->connect(false)) {
+    util::sleep_for(100);
+  }
+
+  VisionBuf *b = &vipc_client->buffers[0];
+  LOGW("connected with buffer size: %d (%d x %d)", b->len, b->width, b->height);
+
+  // wait liveCalibration
+  while (!run_model && !do_exit) util::sleep_for(10);
+}
+
+Modeld::~Modeld() {
+  model_free(&model);
+  thread.join();
+  CL_CHECK(clReleaseContext(cl_ctx));
+}
+
+void Modeld::run() {
+  // setup filter to track dropped frames
+  const float dt = 1. / MODEL_FREQ;
+  const float ts = 10.0;  // filter time constant (s)
+  const float frame_filter_k = (dt / ts) / (1. + dt / ts);
+  float frames_dropped = 0;
+
+  uint32_t run_count = 0, last_vipc_frame_id = 0;
+  double last = 0;
+
+  PubMaster pm({"modelV2", "model", "cameraOdometry"});
+  while (!do_exit) {
+    VisionIpcBufExtra extra;
+    VisionBuf *buf = vipc_client->recv(&extra);
+    if (buf == nullptr) continue;
+
+    Modeld::LiveData data = get_live_data();
+
+    float vec_desire[DESIRE_LEN] = {0};
+    if (data.desire >= 0 && data.desire < DESIRE_LEN) {
+      vec_desire[data.desire] = 1.0;
+    }
+
+    const double mt1 = millis_since_boot();
+    ModelDataRaw model_buf = model_eval_frame(&model, buf->buf_cl, buf->width, buf->height,
+                                              data.transform, vec_desire);
+    const double mt2 = millis_since_boot();
+    const float model_execution_time = (mt2 - mt1) / 1000.0;
+
+    // tracked dropped frames
+    uint32_t vipc_dropped_frames = extra.frame_id - last_vipc_frame_id - 1;
+    frames_dropped = (1. - frame_filter_k) * frames_dropped + frame_filter_k * (float)std::min(vipc_dropped_frames, 10U);
+    if (++run_count < 10) frames_dropped = 0;  // let frame drops warm up
+    float frame_drop_ratio = frames_dropped / (1 + frames_dropped);
+
+    const float *raw_pred_ptr = send_raw_pred ? &model.output[0] : nullptr;
+    model_publish(pm, extra.frame_id, data.frame_id, frame_drop_ratio, model_buf, raw_pred_ptr, extra.timestamp_eof, model_execution_time);
+    posenet_publish(pm, extra.frame_id, vipc_dropped_frames, model_buf, extra.timestamp_eof);
+
+    LOGD("model process: %.2fms, from last %.2fms, vipc_frame_id %u, frame_id, %u, frame_drop %.3f", mt2 - mt1, mt1 - last, extra.frame_id, data.frame_id, frame_drop_ratio);
+    last = mt1;
+    last_vipc_frame_id = extra.frame_id;
+  }
 }
 
 int main(int argc, char **argv) {
-  int err;
   set_realtime_priority(54);
-
 #ifdef QCOM
   set_core_affinity(2);
 #elif QCOM2
   // CPU usage is much lower when pinned to a single big core
   set_core_affinity(4);
 #endif
-
-  pthread_mutex_init(&transform_lock, NULL);
-
-  // start calibration thread
-  pthread_t live_thread_handle;
-  err = pthread_create(&live_thread_handle, NULL, live_thread, NULL);
-  assert(err == 0);
-
-  // messaging
-  PubMaster pm({"modelV2", "model", "cameraOdometry"});
-  SubMaster sm({"pathPlan", "frame"});
-
-  // cl init
-  cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
-  cl_context context = CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id, NULL, NULL, &err));
-
-  // init the models
-  ModelState model;
-  model_init(&model, device_id, context);
-  LOGW("models loaded, modeld starting");
-
-  VisionIpcClient vipc_client = VisionIpcClient("camerad", VISION_STREAM_YUV_BACK, true, device_id, context);
-
-  while (!do_exit){
-    if (!vipc_client.connect(false)){
-      util::sleep_for(100);
-      continue;
-    }
-    break;
-  }
-
-  // loop
-  while (!do_exit) {
-    VisionBuf *b = &vipc_client.buffers[0];
-    LOGW("connected with buffer size: %d (%d x %d)", b->len, b->width, b->height);
-
-    // setup filter to track dropped frames
-    const float dt = 1. / MODEL_FREQ;
-    const float ts = 10.0;  // filter time constant (s)
-    const float frame_filter_k = (dt / ts) / (1. + dt / ts);
-    float frames_dropped = 0;
-
-    uint32_t frame_id = 0, last_vipc_frame_id = 0;
-    double last = 0;
-    int desire = -1;
-    uint32_t run_count = 0;
-
-    while (!do_exit) {
-      VisionIpcBufExtra extra;
-      VisionBuf *buf = vipc_client.recv(&extra);
-      if (buf == nullptr){
-        continue;
-      }
-
-      pthread_mutex_lock(&transform_lock);
-      mat3 model_transform = cur_transform;
-      const bool run_model_this_iter = run_model;
-      pthread_mutex_unlock(&transform_lock);
-
-      if (sm.update(0) > 0){
-        // TODO: path planner timeout?
-        desire = ((int)sm["pathPlan"].getPathPlan().getDesire());
-        frame_id = sm["frame"].getFrame().getFrameId();
-      }
-
-      double mt1 = 0, mt2 = 0;
-      if (run_model_this_iter) {
-        run_count++;
-
-        float vec_desire[DESIRE_LEN] = {0};
-        if (desire >= 0 && desire < DESIRE_LEN) {
-          vec_desire[desire] = 1.0;
-        }
-
-        mt1 = millis_since_boot();
-
-        ModelDataRaw model_buf =
-            model_eval_frame(&model, buf->buf_cl, buf->width, buf->height,
-                             model_transform, vec_desire);
-        mt2 = millis_since_boot();
-        float model_execution_time = (mt2 - mt1) / 1000.0;
-
-        // tracked dropped frames
-        uint32_t vipc_dropped_frames = extra.frame_id - last_vipc_frame_id - 1;
-        frames_dropped = (1. - frame_filter_k) * frames_dropped + frame_filter_k * (float)std::min(vipc_dropped_frames, 10U);
-        if (run_count < 10) frames_dropped = 0;  // let frame drops warm up
-        float frame_drop_ratio = frames_dropped / (1 + frames_dropped);
-
-        const float *raw_pred_ptr = send_raw_pred ? &model.output[0] : nullptr;
-        model_publish(pm, extra.frame_id, frame_id, frame_drop_ratio, model_buf, raw_pred_ptr, extra.timestamp_eof, model_execution_time);
-        posenet_publish(pm, extra.frame_id, vipc_dropped_frames, model_buf, extra.timestamp_eof);
-
-        LOGD("model process: %.2fms, from last %.2fms, vipc_frame_id %u, frame_id, %u, frame_drop %.3f", mt2-mt1, mt1-last, extra.frame_id, frame_id, frame_drop_ratio);
-        last = mt1;
-        last_vipc_frame_id = extra.frame_id;
-      }
-
-    }
-  }
-
-  model_free(&model);
-
-  LOG("joining live_thread");
-  err = pthread_join(live_thread_handle, NULL);
-  assert(err == 0);
-  CL_CHECK(clReleaseContext(context));
-  pthread_mutex_destroy(&transform_lock);
+  Modeld modeld;
+  modeld.run();
   return 0;
 }
