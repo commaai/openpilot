@@ -12,6 +12,30 @@ from selfdrive.loggerd.config import ROOT
 from selfdrive.test.helpers import set_params_enabled
 from tools.lib.logreader import LogReader
 
+PROCS = [
+  ("selfdrive.controls.controlsd", 47.0),
+  ("./loggerd", 42.0),
+  ("selfdrive.locationd.locationd", 35.0),
+  ("selfdrive.controls.plannerd", 20.0),
+  ("selfdrive.locationd.paramsd", 12.0),
+  ("./_modeld", 7.12),
+  ("./camerad", 7.07),
+  ("./_sensord", 6.17),
+  ("./_ui", 5.82),
+  ("selfdrive.controls.radard", 5.67),
+  ("./boardd", 3.63),
+  ("./_dmonitoringmodeld", 2.67),
+  ("selfdrive.logmessaged", 1.7),
+  ("selfdrive.thermald.thermald", 2.41),
+  ("selfdrive.locationd.calibrationd", 2.0),
+  ("selfdrive.monitoring.dmonitoringd", 1.90),
+  ("./proclogd", 1.54),
+  ("./_gpsd", 0.09),
+  ("./clocksd", 0.02),
+  ("./ubloxd", 0.02),
+  ("selfdrive.tombstoned", 0),
+  ("./logcatd", 0),
+]
 
 # ***** test helpers *****
 
@@ -19,37 +43,14 @@ def cputime_total(ct):
   return ct.cpuUser + ct.cpuSystem + ct.cpuChildrenUser + ct.cpuChildrenSystem
 
 def check_cpu_usage(first_proc, last_proc):
-  procs = [
-    ("selfdrive.controls.controlsd", 47.0),
-    ("./loggerd", 42.0),
-    ("selfdrive.locationd.locationd", 35.0),
-    ("selfdrive.controls.plannerd", 20.0),
-    ("selfdrive.locationd.paramsd", 12.0),
-    ("./_modeld", 7.12),
-    ("./camerad", 7.07),
-    ("./_sensord", 6.17),
-    ("./_ui", 5.82),
-    ("selfdrive.controls.radard", 5.67),
-    ("./boardd", 3.63),
-    ("./_dmonitoringmodeld", 2.67),
-    ("selfdrive.logmessaged", 1.7),
-    ("selfdrive.thermald.thermald", 2.41),
-    ("selfdrive.locationd.calibrationd", 2.0),
-    ("selfdrive.monitoring.dmonitoringd", 1.90),
-    ("./proclogd", 1.54),
-    ("./_gpsd", 0.09),
-    ("./clocksd", 0.02),
-    ("./ubloxd", 0.02),
-    ("selfdrive.tombstoned", 0),
-    ("./logcatd", 0),
-  ]
-
-  r = True
-  dt = (last_proc.logMonoTime - first_proc.logMonoTime) / 1e9
   result =  "------------------------------------------------\n"
   result += "------------------ CPU Usage -------------------\n"
   result += "------------------------------------------------\n"
-  for proc_name, normal_cpu_usage in procs:
+
+  r = True
+  dt = (last_proc.logMonoTime - first_proc.logMonoTime) / 1e9
+  for proc_name, normal_cpu_usage in PROCS:
+    first, last = None, None
     try:
       first = [p for p in first_proc.procLog.procs if proc_name in p.cmdline][0]
       last = [p for p in last_proc.procLog.procs if proc_name in p.cmdline][0]
@@ -63,7 +64,7 @@ def check_cpu_usage(first_proc, last_proc):
         r = False
       result += f"{proc_name.ljust(35)}  {cpu_usage:.2f}%\n"
     except IndexError:
-      result += f"{proc_name.ljust(35)}  NO METRICS FOUND\n"
+      result += f"{proc_name.ljust(35)}  NO METRICS FOUND {first=} {last=}\n"
       r = False
   result += "------------------------------------------------\n"
   print(result)
@@ -97,12 +98,14 @@ class TestOnroad(unittest.TestCase):
         proc.kill()
 
     new_segments = set(Path(ROOT).iterdir()) - initial_segments
-    cls.segments = [p for p in new_segments if len(list(p.iterdir())) > 1]
-    cls.lrs = [list(LogReader(os.path.join(str(s), "rlog.bz2"))) for s in cls.segments]
+
+    segments = [p for p in new_segments if len(list(p.iterdir())) > 1]
+    cls.segment = [s for s in segments if str(s).endswith("--0")][0]
+    cls.lr = list(LogReader(os.path.join(str(cls.segment), "rlog.bz2")))
 
   def test_cpu_usage(self):
-    proclogs = [m for m in self.lrs[0] if m.which() == 'procLog']
-    cpu_ok = check_cpu_usage(proclogs[5], proclogs[-1])
+    proclogs = [m for m in self.lr if m.which() == 'procLog']
+    cpu_ok = check_cpu_usage(proclogs[5], proclogs[-3])
     self.assertTrue(cpu_ok)
 
 if __name__ == "__main__":
