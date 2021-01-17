@@ -1,19 +1,15 @@
-#ifndef LOGGER_H
-#define LOGGER_H
+#pragma
 
 #include <stdio.h>
 #include <stdint.h>
 #include <pthread.h>
 #include <bzlib.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include <mutex>
 
 #define LOGGER_MAX_HANDLES 16
 
 typedef struct LoggerHandle {
-  pthread_mutex_t lock;
+  std::mutex lock;
   int refcnt;
   char segment_path[4096];
   char log_path[4096];
@@ -51,9 +47,3 @@ void logger_log(LoggerState *s, uint8_t* data, size_t data_size, bool in_qlog);
 
 void lh_log(LoggerHandle* h, uint8_t* data, size_t data_size, bool in_qlog);
 void lh_close(LoggerHandle* h);
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif
