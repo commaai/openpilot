@@ -535,21 +535,24 @@ int main(int argc, char** argv) {
     for (auto sock : poller->poll(1000)) {
 
       // drain socket
-      std::unique_ptr<Message> msg;
+      std::unique_ptr<Message> last_msg;
       while (!do_exit) {
-        msg.reset(sock->receive(true));
+        Message * msg = sock->receive(true);
         if (!msg) break;
         
+        last_msg.reset(msg);
+
         QlogState& qs = qlog_states[sock];
         logger_log(&s.logger, (uint8_t*)msg->getData(), msg->getSize(), qs.counter == 0 && qs.freq != -1);
         if (qs.freq != -1) {
           qs.counter = (qs.counter + 1) % qs.freq;
         }
+
         bytes_count += msg->getSize();
         msg_count++;
       }
 
-      if (msg) {
+      if (last_msg) {
         int fpkt_id = -1;
         for (int cid = 0; cid <=MAX_CAM_IDX; cid++) {
           if (sock == s.rotate_state[cid].fpkt_sock) {
@@ -560,8 +563,8 @@ int main(int argc, char** argv) {
         if (fpkt_id >= 0) {
           // track camera frames to sync to encoder
           // only process last frame
-          const uint8_t* data = (uint8_t*)msg->getData();
-          const size_t len = msg->getSize();
+          const uint8_t* data = (uint8_t*)last_msg->getData();
+          const size_t len = last_msg->getSize();
           const size_t size = len / sizeof(capnp::word) + 1;
           if (buf.size() < size) {
             buf = kj::heapArray<capnp::word>(size);
