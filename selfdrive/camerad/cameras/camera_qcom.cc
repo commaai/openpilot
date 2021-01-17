@@ -1718,7 +1718,6 @@ void cameras_run(MultiCameraState *s) {
         }
 
       } else if (ev.type == ISP_EVENT_EOF) {
-        // printf("ISP_EVENT_EOF delta %f\n", (t-last_t)/1e6);
         const uint64_t timestamp = (isp_event_data->mono_timestamp.tv_sec * 1000000000ULL + isp_event_data->mono_timestamp.tv_usec * 1000);
         pthread_mutex_lock(&c->frame_info_lock);
         c->frame_metadata[c->frame_metadata_idx] = (FrameMetadata){
