@@ -5,17 +5,11 @@
 #include <cassert>
 #include <unistd.h>
 #include <errno.h>
-#include <string.h>
 #include <inttypes.h>
-#include <pthread.h>
 #include <sys/resource.h>
 
-#include <string>
 #include <iostream>
 #include <fstream>
-#include <streambuf>
-#include <thread>
-#include <mutex>
 #include <condition_variable>
 #include <atomic>
 #include <random>
@@ -324,6 +318,8 @@ static void bootlog() {
   logger_close(&logger);
 }
 
+// LoggerState
+
 LoggerdState::LoggerdState() {
   segment_length = SEGMENT_LENGTH;
   if (getenv("LOGGERD_TEST")) {
@@ -450,24 +446,20 @@ void LoggerdState::rotate() {
 
 std::unique_ptr<Message> LoggerdState::log(SubSocket *sock, SocketState& ss) {
   static uint64_t msg_count = 0, bytes_count = 0;
-  double start_ts = seconds_since_boot();
+  static double start_ts = seconds_since_boot();
   std::unique_ptr<Message> last_msg;
-  while (!do_exit) {
-    Message *msg = sock->receive(true);
-    if (!msg) break;
-
-    last_msg.reset(msg);
-
+  Message *msg = nullptr;
+  while (!do_exit && (msg = sock->receive(true))) {
     logger_log(&logger, (uint8_t *)msg->getData(), msg->getSize(), ss.counter == 0 && ss.freq != -1);
     if (ss.freq != -1) {
       ss.counter = (ss.counter + 1) % ss.freq;
     }
-
     bytes_count += msg->getSize();
     if ((++msg_count % 1000) == 0) {
       double ts = seconds_since_boot();
       LOGD("%lu messages, %.2f msg/sec, %.2f KB/sec", msg_count, msg_count * 1.0 / (ts - start_ts), bytes_count * 0.001 / (ts - start_ts));
     }
+    last_msg.reset(msg);
   }
   return last_msg;
 }
