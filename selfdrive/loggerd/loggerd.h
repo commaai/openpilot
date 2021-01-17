@@ -118,16 +118,16 @@ private:
   std::condition_variable cv;
 };
 
-typedef struct QlogState {
-  int counter, freq;
-} QlogState;
+typedef struct SocketState {
+  int counter, freq, fpkt_id;
+} SocketState;
+
 class LoggerdState {
 public:
   Context *ctx;
   Poller *poller;
   int segment_length;
-  std::vector<SubSocket *> socks;
-  std::map<SubSocket *, QlogState> qlog_states;
+  std::map<SubSocket*, SocketState> socket_states;
   std::vector<std::thread> encoder_threads;
   LoggerState logger;
   char segment_path[4096];
@@ -142,5 +142,5 @@ public:
 private:
   double last_rotate_tms, last_camera_seen_tms;
   void rotate();
-  std::unique_ptr<Message> log(SubSocket *socket);
+  std::unique_ptr<Message> log(SubSocket *socket, SocketState& ss);
 };
