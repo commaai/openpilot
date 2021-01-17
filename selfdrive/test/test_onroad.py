@@ -23,8 +23,8 @@ def check_cpu_usage(first_proc, last_proc):
     ("selfdrive.controls.controlsd", 47.0),
     ("./loggerd", 42.0),
     ("selfdrive.locationd.locationd", 35.0),
-    ("selfdrive.locationd.paramsd", 12.0),
     ("selfdrive.controls.plannerd", 20.0),
+    ("selfdrive.locationd.paramsd", 12.0),
     ("./_modeld", 7.12),
     ("./camerad", 7.07),
     ("./_sensord", 6.17),
@@ -46,7 +46,9 @@ def check_cpu_usage(first_proc, last_proc):
 
   r = True
   dt = (last_proc.logMonoTime - first_proc.logMonoTime) / 1e9
-  result = "------------------------------------------------\n"
+  result =  "------------------------------------------------\n"
+  result += "------------------ CPU Usage -------------------\n"
+  result += "------------------------------------------------\n"
   for proc_name, normal_cpu_usage in procs:
     try:
       first = [p for p in first_proc.procLog.procs if proc_name in p.cmdline][0]
