@@ -80,6 +80,7 @@ void Modeld::live_thread() {
   }}, db_s);
 
   SubMaster sm({"liveCalibration", "pathPlan", "frame"});
+
   while (!do_exit) {
     if (!sm.update(100)) continue;
 
