@@ -7,8 +7,10 @@ from pathlib import Path
 
 import cereal.messaging as messaging
 from common.basedir import BASEDIR
+from common.timeout import Timeout
 from selfdrive.loggerd.config import ROOT
 from selfdrive.test.helpers import set_params_enabled
+from tools.lib.logreader import LogReader
 
 
 # ***** test helpers *****
@@ -16,7 +18,7 @@ from selfdrive.test.helpers import set_params_enabled
 def cputime_total(ct):
   return ct.cpuUser + ct.cpuSystem + ct.cpuChildrenUser + ct.cpuChildrenSystem
 
-def print_cpu_usage(first_proc, last_proc):
+def check_cpu_usage(first_proc, last_proc):
   procs = [
     ("selfdrive.controls.controlsd", 47.0),
     ("./loggerd", 42.0),
@@ -74,40 +76,32 @@ class TestOnroad(unittest.TestCase):
     os.environ['FINGERPRINT'] = "TOYOTA COROLLA TSS2 2019"
     set_params_enabled()
 
-    # start manager and run openpilot 2 minutes
+    initial_segments = set(Path(ROOT).iterdir())
+
+    # start manager and run openpilot for a minute
     try:
       manager_path = os.path.join(BASEDIR, "selfdrive/manager.py")
       proc = subprocess.Popen(["python", manager_path])
-      time.sleep(25)
+
+      sm = messaging.SubMaster(['carState'])
+      with Timeout(60, "controls didn't start"):
+        while not sm.updated['carState']:
+          sm.update(1000)
+
+      time.sleep(60)
     finally:
       proc.terminate()
       if proc.wait(20) is None:
         proc.kill()
 
-    log_dirs = sorted(Path(ROOT).iterdir(), key=lambda f: f.stat().st_mtime)
-    latest = log_dirs[-1]
-    print(latest)
+    new_segments = set(Path(ROOT).iterdir()) - initial_segments
+    cls.segments = [p for p in new_segments if len(list(p.iterdir())) > 1]
+    cls.lrs = [list(LogReader(os.path.join(str(s), "rlog.bz2"))) for s in cls.segments]
 
   def test_cpu_usage(self):
-    pass
-
-
-"""
-def test_cpu_usage():
-  try:
-    # take first sample
-    time.sleep(15)
-    print("getting first procLog sample")
-    first_proc = messaging.recv_sock(proc_sock, wait=True)
-    if first_proc is None:
-      raise Exception("\n\nTEST FAILED: progLog recv timed out\n\n")
-
-    # run for a minute and get last sample
-    time.sleep(60)
-    print("getting second procLog sample")
-    last_proc = messaging.recv_sock(proc_sock, wait=True)
-    cpu_ok = print_cpu_usage(first_proc, last_proc)
-"""
+    proclogs = [m for m in self.lrs[0] if m.which() == 'procLog']
+    cpu_ok = check_cpu_usage(proclogs[5], proclogs[-1])
+    self.assertTrue(cpu_ok)
 
 if __name__ == "__main__":
   unittest.main()
