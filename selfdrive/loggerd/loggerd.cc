@@ -206,6 +206,7 @@ public:
 private:
   double last_rotate_tms, last_camera_seen_tms;
   void rotate();
+  std::unique_ptr<Message> log(SubSocket *socket);
 };
 
 void encoder_thread(LoggerdState *s, int cam_idx) {
@@ -597,39 +598,39 @@ void LoggerdState::rotate() {
   }
 }
 
-void LoggerdState::run() {
-  uint64_t msg_count = 0, bytes_count = 0;
+std::unique_ptr<Message> LoggerdState::log(SubSocket *sock) {
+  static uint64_t msg_count = 0, bytes_count = 0;
   double start_ts = seconds_since_boot();
+  std::unique_ptr<Message> last_msg;
+  while (!do_exit) {
+    Message *msg = sock->receive(true);
+    if (!msg) break;
+
+    last_msg.reset(msg);
+
+    QlogState &qs = qlog_states[sock];
+    logger_log(&logger, (uint8_t *)msg->getData(), msg->getSize(), qs.counter == 0 && qs.freq != -1);
+    if (qs.freq != -1) {
+      qs.counter = (qs.counter + 1) % qs.freq;
+    }
+
+    bytes_count += msg->getSize();
+    if ((++msg_count % 1000) == 0) {
+      double ts = seconds_since_boot();
+      LOGD("%lu messages, %.2f msg/sec, %.2f KB/sec", msg_count, msg_count * 1.0 / (ts - start_ts), bytes_count * 0.001 / (ts - start_ts));
+    }
+  }
+  return last_msg;
+}
+
+void LoggerdState::run() {
   last_rotate_tms = last_camera_seen_tms = millis_since_boot();
 
   while (!do_exit) {
     // TODO: fix msgs from the first poll getting dropped
     // poll for new messages on all sockets
     for (auto sock : poller->poll(1000)) {
-
-      // drain socket
-      Message * last_msg = nullptr;
-      while (!do_exit) {
-        Message * msg = sock->receive(true);
-        if (!msg){
-          break;
-        }
-        delete last_msg;
-        last_msg = msg;
-
-        QlogState& qs = qlog_states[sock];
-        logger_log(&logger, (uint8_t*)msg->getData(), msg->getSize(), qs.counter == 0 && qs.freq != -1);
-        if (qs.freq != -1) {
-          qs.counter = (qs.counter + 1) % qs.freq;
-        }
-
-        bytes_count += msg->getSize();
-        if ((++msg_count % 1000) == 0) {
-          double ts = seconds_since_boot();
-          LOGD("%lu messages, %.2f msg/sec, %.2f KB/sec", msg_count, msg_count * 1.0 / (ts - start_ts), bytes_count * 0.001 / (ts - start_ts));
-        }
-      }
-
+      std::unique_ptr<Message> last_msg = log(sock);
       if (last_msg) {
         // track camera frames to sync to encoder
         // only process last frame
@@ -641,11 +642,10 @@ void LoggerdState::run() {
           }
         }
         if (fpkt_id >= 0) {
-          rotate_state[fpkt_id].setLogFrameId(get_frame_id(last_msg, fpkt_id));
+          rotate_state[fpkt_id].setLogFrameId(get_frame_id(last_msg.get(), fpkt_id));
           last_camera_seen_tms = millis_since_boot();
         }
       }
-      delete last_msg;
     }
     rotate();
   }
