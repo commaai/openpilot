@@ -182,21 +182,33 @@ private:
   std::condition_variable cv;
 };
 
-struct LoggerdState {
+typedef struct QlogState {
+  int counter, freq;
+} QlogState;
+class LoggerdState {
+public:
   Context *ctx;
+  Poller *poller;
+  int segment_length;
+  std::vector<SubSocket *> socks;
+  std::map<SubSocket *, QlogState> qlog_states;
+  std::vector<std::thread> encoder_threads;
   LoggerState logger;
   char segment_path[4096];
   int rotate_segment;
   pthread_mutex_t rotate_lock;
   RotateState rotate_state[LOG_CAMERA_ID_MAX-1];
-};
-LoggerdState s;
 
-void encoder_thread(int cam_idx) {
+  LoggerdState();
+  ~LoggerdState();
+  void run();
+};
+
+void encoder_thread(LoggerdState *s, int cam_idx) {
   assert(cam_idx < LOG_CAMERA_ID_MAX-1);
 
   LogCameraInfo &cam_info = cameras_logged[cam_idx];
-  RotateState &rotate_state = s.rotate_state[cam_idx];
+  RotateState &rotate_state = s->rotate_state[cam_idx];
 
   set_thread_name(cam_info.filename);
 
@@ -240,8 +252,8 @@ void encoder_thread(int cam_idx) {
 
       // all the rotation stuff
       {
-        pthread_mutex_lock(&s.rotate_lock);
-        pthread_mutex_unlock(&s.rotate_lock);
+        pthread_mutex_lock(&s->rotate_lock);
+        pthread_mutex_unlock(&s->rotate_lock);
 
         // wait if camera pkt id is older than stream
         rotate_state.waitLogThread();
@@ -250,7 +262,7 @@ void encoder_thread(int cam_idx) {
 
         // rotate the encoder if the logger is on a newer segment
         if (rotate_state.should_rotate) {
-          LOGW("camera %d rotate encoder to %s", cam_idx, s.segment_path);
+          LOGW("camera %d rotate encoder to %s", cam_idx, s->segment_path);
 
           if (!rotate_state.initialized) {
             rotate_state.last_rotate_frame_id = extra.frame_id - 1;
@@ -260,14 +272,14 @@ void encoder_thread(int cam_idx) {
           if (lh) {
             lh_close(lh);
           }
-          lh = logger_get_handle(&s.logger);
+          lh = logger_get_handle(&s->logger);
 
-          pthread_mutex_lock(&s.rotate_lock);
+          pthread_mutex_lock(&s->rotate_lock);
           for (auto &e : encoders) {
             e->encoder_close();
-            e->encoder_open(s.segment_path, s.rotate_segment);
+            e->encoder_open(s->segment_path, s->rotate_segment);
           }
-          pthread_mutex_unlock(&s.rotate_lock);
+          pthread_mutex_unlock(&s->rotate_lock);
           rotate_state.finish_rotate();
         }
       }
@@ -418,16 +430,16 @@ static void clear_locks() {
 
 static void bootlog() {
   int err;
-
+  LoggerState logger;
   {
     auto words = gen_init_data();
     auto bytes = words.asBytes();
-    logger_init(&s.logger, "bootlog", bytes.begin(), bytes.size(), false);
+    logger_init(&logger, "bootlog", bytes.begin(), bytes.size(), false);
   }
-
-  err = logger_next(&s.logger, LOG_ROOT.c_str(), s.segment_path, sizeof(s.segment_path), &s.rotate_segment);
+  char segment_path[4096];
+  err = logger_next(&logger, LOG_ROOT.c_str(), segment_path, sizeof(segment_path), nullptr);
   assert(err == 0);
-  LOGW("bootlog to %s", s.segment_path);
+  LOGW("bootlog to %s", segment_path);
 
   {
     MessageBuilder msg;
@@ -445,22 +457,14 @@ static void bootlog() {
     boot.setLaunchLog(capnp::Text::Reader(launchLog.data(), launchLog.size()));
 
     auto bytes = msg.toBytes();
-    logger_log(&s.logger, bytes.begin(), bytes.size(), false);
+    logger_log(&logger, bytes.begin(), bytes.size(), false);
   }
 
-  logger_close(&s.logger);
+  logger_close(&logger);
 }
 
-int main(int argc, char** argv) {
-
-  setpriority(PRIO_PROCESS, 0, -12);
-
-  if (argc > 1 && strcmp(argv[1], "--bootlog") == 0) {
-    bootlog();
-    return 0;
-  }
-
-  int segment_length = SEGMENT_LENGTH;
+LoggerdState::LoggerdState() {
+  segment_length = SEGMENT_LENGTH;
   if (getenv("LOGGERD_TEST")) {
     segment_length = atoi(getenv("LOGGERD_SEGMENT_LENGTH"));
   }
@@ -468,27 +472,20 @@ int main(int argc, char** argv) {
   clear_locks();
 
   // setup messaging
-  typedef struct QlogState {
-    int counter, freq;
-  } QlogState;
-  std::map<SubSocket*, QlogState> qlog_states;
-
-  s.ctx = Context::create();
-  Poller * poller = Poller::create();
-  std::vector<SubSocket*> socks;
-
+  ctx = Context::create();
+  poller = Poller::create();
   // subscribe to all socks
-  for (const auto& it : services) {
+  for (const auto &it : services) {
     if (!it.should_log) continue;
 
-    SubSocket * sock = SubSocket::create(s.ctx, it.name);
+    SubSocket *sock = SubSocket::create(ctx, it.name);
     assert(sock != NULL);
     poller->registerSocket(sock);
     socks.push_back(sock);
 
-    for (int cid=0; cid<=MAX_CAM_IDX; cid++) {
+    for (int cid = 0; cid <= MAX_CAM_IDX; cid++) {
       if (std::string(it.name) == cameras_logged[cid].frame_packet_name) {
-        s.rotate_state[cid].fpkt_sock = sock;
+        rotate_state[cid].fpkt_sock = sock;
       }
     }
     qlog_states[sock] = {.counter = 0, .freq = it.decimation};
@@ -498,37 +495,52 @@ int main(int argc, char** argv) {
   {
     auto words = gen_init_data();
     auto bytes = words.asBytes();
-    logger_init(&s.logger, "rlog", bytes.begin(), bytes.size(), true);
+    logger_init(&logger, "rlog", bytes.begin(), bytes.size(), true);
   }
 
   // init encoders
-  pthread_mutex_init(&s.rotate_lock, NULL);
+  pthread_mutex_init(&rotate_lock, NULL);
 
   // TODO: create these threads dynamically on frame packet presence
-  std::vector<std::thread> encoder_threads;
-  encoder_threads.push_back(std::thread(encoder_thread, LOG_CAMERA_ID_FCAMERA));
-  s.rotate_state[LOG_CAMERA_ID_FCAMERA].enabled = true;
+  encoder_threads.push_back(std::thread(encoder_thread, this, LOG_CAMERA_ID_FCAMERA));
+  rotate_state[LOG_CAMERA_ID_FCAMERA].enabled = true;
 
 #if defined(QCOM) || defined(QCOM2)
   bool record_front = Params().read_db_bool("RecordFront");
   if (record_front) {
-    encoder_threads.push_back(std::thread(encoder_thread, LOG_CAMERA_ID_DCAMERA));
-    s.rotate_state[LOG_CAMERA_ID_DCAMERA].enabled = true;
+    encoder_threads.push_back(std::thread(encoder_thread, this, LOG_CAMERA_ID_DCAMERA));
+    rotate_state[LOG_CAMERA_ID_DCAMERA].enabled = true;
   }
 
 #ifdef QCOM2
-  encoder_threads.push_back(std::thread(encoder_thread, LOG_CAMERA_ID_ECAMERA));
-  s.rotate_state[LOG_CAMERA_ID_ECAMERA].enabled = true;
+  encoder_threads.push_back(std::thread(encoder_thread, this, LOG_CAMERA_ID_ECAMERA));
+  rotate_state[LOG_CAMERA_ID_ECAMERA].enabled = true;
 #endif
 #endif
+}
 
+LoggerdState::~LoggerdState() {
+  LOGW("closing encoders");
+  for (auto &r : rotate_state) r.cancelWait();
+  for (auto &t : encoder_threads) t.join();
+
+  LOGW("closing logger");
+  logger_close(&logger);
+
+  // messaging cleanup
+  for (auto sock : socks) delete sock;
+  delete poller;
+  delete ctx;
+}
+
+void LoggerdState::run() {
   uint64_t msg_count = 0;
   uint64_t bytes_count = 0;
   kj::Array<capnp::word> buf = kj::heapArray<capnp::word>(1024);
 
   double start_ts = seconds_since_boot();
-  double last_rotate_tms = millis_since_boot();
-  double last_camera_seen_tms = millis_since_boot();
+  double last_rotate_tms, last_camera_seen_tms;
+  last_rotate_tms = last_camera_seen_tms = millis_since_boot();
   while (!do_exit) {
     // TODO: fix msgs from the first poll getting dropped
     // poll for new messages on all sockets
@@ -545,7 +557,7 @@ int main(int argc, char** argv) {
         last_msg = msg;
 
         QlogState& qs = qlog_states[sock];
-        logger_log(&s.logger, (uint8_t*)msg->getData(), msg->getSize(), qs.counter == 0 && qs.freq != -1);
+        logger_log(&logger, (uint8_t*)msg->getData(), msg->getSize(), qs.counter == 0 && qs.freq != -1);
         if (qs.freq != -1) {
           qs.counter = (qs.counter + 1) % qs.freq;
         }
@@ -560,7 +572,7 @@ int main(int argc, char** argv) {
       if (last_msg) {
         int fpkt_id = -1;
         for (int cid = 0; cid <=MAX_CAM_IDX; cid++) {
-          if (sock == s.rotate_state[cid].fpkt_sock) {
+          if (sock == rotate_state[cid].fpkt_sock) {
             fpkt_id=cid;
             break;
           }
@@ -580,11 +592,11 @@ int main(int argc, char** argv) {
           cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
 
           if (fpkt_id == LOG_CAMERA_ID_FCAMERA) {
-            s.rotate_state[fpkt_id].setLogFrameId(event.getFrame().getFrameId());
+            rotate_state[fpkt_id].setLogFrameId(event.getFrame().getFrameId());
           } else if (fpkt_id == LOG_CAMERA_ID_DCAMERA) {
-            s.rotate_state[fpkt_id].setLogFrameId(event.getFrontFrame().getFrameId());
+            rotate_state[fpkt_id].setLogFrameId(event.getFrontFrame().getFrameId());
           } else if (fpkt_id == LOG_CAMERA_ID_ECAMERA) {
-            s.rotate_state[fpkt_id].setLogFrameId(event.getWideFrame().getFrameId());
+            rotate_state[fpkt_id].setLogFrameId(event.getWideFrame().getFrameId());
           }
           last_camera_seen_tms = millis_since_boot();
         }
@@ -592,12 +604,12 @@ int main(int argc, char** argv) {
       delete last_msg;
     }
 
-    bool new_segment = s.logger.part == -1;
-    if (s.logger.part > -1) {
+    bool new_segment = logger.part == -1;
+    if (logger.part > -1) {
       double tms = millis_since_boot();
       if (tms - last_camera_seen_tms <= NO_CAMERA_PATIENCE && encoder_threads.size() > 0) {
         new_segment = true;
-        for (auto &r : s.rotate_state) {
+        for (auto &r : rotate_state) {
           // this *should* be redundant on tici since all camera frames are synced
           new_segment &= (((r.stream_frame_id >= r.last_rotate_frame_id + segment_length * MAIN_FPS) &&
                           (!r.should_rotate) && (r.initialized)) ||
@@ -616,30 +628,31 @@ int main(int argc, char** argv) {
 
     // rotate to new segment
     if (new_segment) {
-      pthread_mutex_lock(&s.rotate_lock);
+      pthread_mutex_lock(&rotate_lock);
       last_rotate_tms = millis_since_boot();
 
-      int err = logger_next(&s.logger, LOG_ROOT.c_str(), s.segment_path, sizeof(s.segment_path), &s.rotate_segment);
+      int err = logger_next(&logger, LOG_ROOT.c_str(), segment_path, sizeof(segment_path), &rotate_segment);
       assert(err == 0);
       LOGW((s.logger.part == 0) ? "logging to %s" : "rotated to %s", s.segment_path);
 
       // rotate encoders
-      for (auto &r : s.rotate_state) r.rotate();
-      pthread_mutex_unlock(&s.rotate_lock);
+      for (auto &r : rotate_state) r.rotate();
+      pthread_mutex_unlock(&rotate_lock);
     }
   }
+}
 
-  LOGW("closing encoders");
-  for (auto &r : s.rotate_state) r.cancelWait();
-  for (auto &t : encoder_threads) t.join();
+int main(int argc, char** argv) {
 
-  LOGW("closing logger");
-  logger_close(&s.logger);
+  setpriority(PRIO_PROCESS, 0, -12);
 
-  // messaging cleanup
-  for (auto sock : socks) delete sock;
-  delete poller;
-  delete s.ctx;
+  if (argc > 1 && strcmp(argv[1], "--bootlog") == 0) {
+    bootlog();
+    return 0;
+  }
+
+  LoggerdState loggerd;
+  loggerd.run();
 
   return 0;
 }
