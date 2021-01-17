@@ -212,7 +212,7 @@ OmxEncoder::OmxEncoder(const char* filename, int width, int height, int fps, int
 
   OMX_CHECK(OMX_SetParameter(this->handle, OMX_IndexParamPortDefinition, (OMX_PTR) &in_port));
   OMX_CHECK(OMX_GetParameter(this->handle, OMX_IndexParamPortDefinition, (OMX_PTR) &in_port));
-  this->num_in_bufs = in_port.nBufferCountActual;
+  this->in_buf_headers.resize(in_port.nBufferCountActual);
 
   // setup output port
 
@@ -234,7 +234,7 @@ OmxEncoder::OmxEncoder(const char* filename, int width, int height, int fps, int
   OMX_CHECK(OMX_SetParameter(this->handle, OMX_IndexParamPortDefinition, (OMX_PTR) &out_port));
 
   OMX_CHECK(OMX_GetParameter(this->handle, OMX_IndexParamPortDefinition, (OMX_PTR) &out_port));
-  this->num_out_bufs = out_port.nBufferCountActual;
+  this->out_buf_headers.resize(out_port.nBufferCountActual);
 
   OMX_VIDEO_PARAM_BITRATETYPE bitrate_type = {0};
   bitrate_type.nSize = sizeof(bitrate_type);
@@ -306,15 +306,13 @@ OmxEncoder::OmxEncoder(const char* filename, int width, int height, int fps, int
 
   OMX_CHECK(OMX_SendCommand(this->handle, OMX_CommandStateSet, OMX_StateIdle, NULL));
 
-  this->in_buf_headers = (OMX_BUFFERHEADERTYPE **)calloc(this->num_in_bufs, sizeof(OMX_BUFFERHEADERTYPE*));
-  for (int i=0; i<this->num_in_bufs; i++) {
-    OMX_CHECK(OMX_AllocateBuffer(this->handle, &this->in_buf_headers[i], PORT_INDEX_IN, this,
+  for (auto &buf : this->in_buf_headers) {
+    OMX_CHECK(OMX_AllocateBuffer(this->handle, &buf, PORT_INDEX_IN, this,
                              in_port.nBufferSize));
   }
 
-  this->out_buf_headers = (OMX_BUFFERHEADERTYPE **)calloc(this->num_out_bufs, sizeof(OMX_BUFFERHEADERTYPE*));
-  for (int i=0; i<this->num_out_bufs; i++) {
-    OMX_CHECK(OMX_AllocateBuffer(this->handle, &this->out_buf_headers[i], PORT_INDEX_OUT, this,
+  for (auto &buf : this->out_buf_headers) {
+    OMX_CHECK(OMX_AllocateBuffer(this->handle, &buf, PORT_INDEX_OUT, this,
                              out_port.nBufferSize));
   }
 
@@ -325,14 +323,14 @@ OmxEncoder::OmxEncoder(const char* filename, int width, int height, int fps, int
   wait_for_state(OMX_StateExecuting);
 
   // give omx all the output buffers
-  for (int i = 0; i < this->num_out_bufs; i++) {
+  for (auto &buf : this->out_buf_headers) {
     // printf("fill %p\n", this->out_buf_headers[i]);
-    OMX_CHECK(OMX_FillThisBuffer(this->handle, this->out_buf_headers[i]));
+    OMX_CHECK(OMX_FillThisBuffer(this->handle, buf));
   }
 
   // fill the input free queue
-  for (int i = 0; i < this->num_in_bufs; i++) {
-    queue_push(&this->free_in, (void*)this->in_buf_headers[i]);
+  for (auto &buf : this->in_buf_headers) {
+    queue_push(&this->free_in, (void*)buf);
   }
 }
 
@@ -593,15 +591,13 @@ OmxEncoder::~OmxEncoder() {
 
   OMX_CHECK(OMX_SendCommand(this->handle, OMX_CommandStateSet, OMX_StateLoaded, NULL));
 
-  for (int i=0; i<this->num_in_bufs; i++) {
-    OMX_CHECK(OMX_FreeBuffer(this->handle, PORT_INDEX_IN, this->in_buf_headers[i]));
+  for (auto &buf : this->in_buf_headers) {
+    OMX_CHECK(OMX_FreeBuffer(this->handle, PORT_INDEX_IN, buf));
   }
-  free(this->in_buf_headers);
 
-  for (int i=0; i<this->num_out_bufs; i++) {
-    OMX_CHECK(OMX_FreeBuffer(this->handle, PORT_INDEX_OUT, this->out_buf_headers[i]));
+  for (auto &buf : this->out_buf_headers) {
+    OMX_CHECK(OMX_FreeBuffer(this->handle, PORT_INDEX_OUT, buf));
   }
-  free(this->out_buf_headers);
 
   wait_for_state(OMX_StateLoaded);
 
