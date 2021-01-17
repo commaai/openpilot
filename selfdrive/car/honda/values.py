@@ -192,7 +192,7 @@ FW_VERSIONS = {
       b'57114-TVA-C060\x00\x00',
     ],
     (Ecu.eps, 0x18da30f1, None): [
-      b'39990-TVA,A150\x00\x00',
+      b'39990-TVA,A150\x00\x00', # modified firmware
       b'39990-TVA-A150\x00\x00',
       b'39990-TVA-A160\x00\x00',
       b'39990-TVA-X030\x00\x00',
@@ -390,7 +390,7 @@ FW_VERSIONS = {
       b'57114-TEA-Q220\x00\x00',
     ],
     (Ecu.eps, 0x18da30f1, None): [
-      b'39990-TBA,A030\x00\x00',
+      b'39990-TBA,A030\x00\x00', # modified firmware
       b'39990-TBA-A030\x00\x00',
       b'39990-TBG-A030\x00\x00',
       b'39990-TEG-A010\x00\x00',
@@ -618,7 +618,7 @@ FW_VERSIONS = {
       b'57114-TMC-Z050\x00\x00',
     ],
     (Ecu.eps, 0x18da30f1, None): [
-      b'39990-TLA,A040\x00\x00',
+      b'39990-TLA,A040\x00\x00', # modified firmware
       b'39990-TLA-A040\x00\x00',
       b'39990-TLA-A110\x00\x00',
       b'39990-TLA-A220\x00\x00',
