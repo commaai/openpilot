@@ -43,14 +43,9 @@ static int mkpath(char* file_path) {
   return 0;
 }
 
-void logger_init(LoggerState *s, const char* log_name, const uint8_t* init_data, size_t init_data_len, bool has_qlog) {
-  memset(s, 0, sizeof(*s));
-  if (init_data) {
-    s->init_data = (uint8_t*)malloc(init_data_len);
-    assert(s->init_data);
-    memcpy(s->init_data, init_data, init_data_len);
-    s->init_data_len = init_data_len;
-  }
+
+void logger_init(LoggerState* s, const char* log_name, kj::Array<capnp::word>&& init_data, bool has_qlog) {
+  s->init_data = std::move(init_data);
 
   umask(0);
 
@@ -94,6 +89,8 @@ static LoggerHandle* logger_open(LoggerState *s, const char* root_path) {
   if (lock_file == NULL) return NULL;
   fclose(lock_file);
 
+  auto init_data = s->init_data.asBytes();
+  int bzerror;
   h->log_file = fopen(h->log_path, "wb");
   if (h->log_file == NULL) goto fail;
 
@@ -102,7 +99,6 @@ static LoggerHandle* logger_open(LoggerState *s, const char* root_path) {
     if (h->qlog_file == NULL) goto fail;
   }
 
-  int bzerror;
   h->bz_file = BZ2_bzWriteOpen(&bzerror, h->log_file, 9, 0, 30);
   if (bzerror != BZ_OK) goto fail;
 
@@ -111,13 +107,13 @@ static LoggerHandle* logger_open(LoggerState *s, const char* root_path) {
     if (bzerror != BZ_OK) goto fail;
   }
 
-  if (s->init_data) {
-    BZ2_bzWrite(&bzerror, h->bz_file, s->init_data, s->init_data_len);
+  if (init_data.size() > 0) {
+    BZ2_bzWrite(&bzerror, h->bz_file, init_data.begin(), init_data.size());
     if (bzerror != BZ_OK) goto fail;
 
     if (s->has_qlog) {
       // init data goes in the qlog too
-      BZ2_bzWrite(&bzerror, h->bz_qlog, s->init_data, s->init_data_len);
+      BZ2_bzWrite(&bzerror, h->bz_qlog, init_data.begin(), init_data.size());
       if (bzerror != BZ_OK) goto fail;
     }
   }
@@ -203,7 +199,6 @@ void logger_close(LoggerState *s) {
   log_sentinel(s, cereal::Sentinel::SentinelType::END_OF_ROUTE);
 
   pthread_mutex_lock(&s->lock);
-  free(s->init_data);
   if (s->cur_handle) {
     lh_close(s->cur_handle);
   }

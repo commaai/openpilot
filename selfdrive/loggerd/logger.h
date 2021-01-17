@@ -1,14 +1,10 @@
-#ifndef LOGGER_H
-#define LOGGER_H
+#pragma once
 
 #include <stdio.h>
 #include <stdint.h>
 #include <pthread.h>
 #include <bzlib.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include "messaging.hpp"
 
 #define LOGGER_MAX_HANDLES 16
 
@@ -29,8 +25,7 @@ typedef struct LoggerHandle {
 typedef struct LoggerState {
   pthread_mutex_t lock;
 
-  uint8_t* init_data;
-  size_t init_data_len;
+  kj::Array<capnp::word> init_data;
 
   int part;
   char route_name[64];
@@ -41,7 +36,7 @@ typedef struct LoggerState {
   LoggerHandle* cur_handle;
 } LoggerState;
 
-void logger_init(LoggerState *s, const char* log_name, const uint8_t* init_data, size_t init_data_len, bool has_qlog);
+void logger_init(LoggerState* s, const char* log_name, kj::Array<capnp::word>&& init_data, bool has_qlog);
 int logger_next(LoggerState *s, const char* root_path,
                             char* out_segment_path, size_t out_segment_path_len,
                             int* out_part);
@@ -51,9 +46,3 @@ void logger_log(LoggerState *s, uint8_t* data, size_t data_size, bool in_qlog);
 
 void lh_log(LoggerHandle* h, uint8_t* data, size_t data_size, bool in_qlog);
 void lh_close(LoggerHandle* h);
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif

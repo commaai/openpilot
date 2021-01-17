@@ -417,15 +417,8 @@ static void clear_locks() {
 }
 
 static void bootlog() {
-  int err;
-
-  {
-    auto words = gen_init_data();
-    auto bytes = words.asBytes();
-    logger_init(&s.logger, "bootlog", bytes.begin(), bytes.size(), false);
-  }
-
-  err = logger_next(&s.logger, LOG_ROOT.c_str(), s.segment_path, sizeof(s.segment_path), &s.rotate_segment);
+  logger_init(&s.logger, "bootlog", gen_init_data(), false);
+  int err = logger_next(&s.logger, LOG_ROOT.c_str(), s.segment_path, sizeof(s.segment_path), &s.rotate_segment);
   assert(err == 0);
   LOGW("bootlog to %s", s.segment_path);
 
@@ -495,11 +488,7 @@ int main(int argc, char** argv) {
   }
 
   // init logger
-  {
-    auto words = gen_init_data();
-    auto bytes = words.asBytes();
-    logger_init(&s.logger, "rlog", bytes.begin(), bytes.size(), true);
-  }
+  logger_init(&s.logger, "rlog", gen_init_data(), true);
 
   // init encoders
   pthread_mutex_init(&s.rotate_lock, NULL);
