@@ -395,8 +395,6 @@ LoggerdState::~LoggerdState() {
 
 static int get_frame_id(Message *m, int fpkt_id) {
   static kj::Array<capnp::word> buf = kj::heapArray<capnp::word>(1024);
-  // track camera frames to sync to encoder
-  // only process last frame
   if (const size_t buf_size = m->getSize() / sizeof(capnp::word) + 1;
       buf.size() < buf_size) {
     buf = kj::heapArray<capnp::word>(buf_size);
@@ -430,11 +428,9 @@ void LoggerdState::rotate() {
         break;  // only look at fcamera frame id if not QCOM2
 #endif
       }
-    } else {
-      if (tms - last_rotate_tms > segment_length * 1000) {
-        new_segment = true;
-        LOGW("no camera packet seen. auto rotated");
-      }
+    } else if (tms - last_rotate_tms > segment_length * 1000) {
+      new_segment = true;
+      LOGW("no camera packet seen. auto rotated");
     }
   }
 
