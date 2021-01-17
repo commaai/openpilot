@@ -46,8 +46,7 @@ void ui_init(UIState *s) {
   s->started = false;
   s->status = STATUS_OFFROAD;
 
-  s->fb = framebuffer_init("ui", 0, true, &s->fb_w, &s->fb_h);
-  assert(s->fb);
+  s->fb = std::make_unique<FrameBuffer>("ui", 0, true, &s->fb_w, &s->fb_h);
 
   ui_nvg_init(s);
 
