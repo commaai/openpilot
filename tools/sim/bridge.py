@@ -89,7 +89,8 @@ def health_function():
     dat.health = {
       'ignitionLine': True,
       'hwType': "blackPanda",
-      'controlsAllowed': True
+      'controlsAllowed': True,
+      'safetyModel': 'hondaNidec'
     }
     pm.send('health', dat)
     time.sleep(0.5)
