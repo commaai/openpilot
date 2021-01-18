@@ -58,6 +58,7 @@ class Uploader():
     self.last_resp = None
     self.last_exc = None
 
+    self.immediate_folders = ["crash/"]
     self.immediate_priority = {"qlog.bz2": 0, "qcamera.ts": 1}
     self.high_priority = {"rlog.bz2": 0, "fcamera.hevc": 1, "dcamera.hevc": 2, "ecamera.hevc": 3}
 
@@ -98,7 +99,7 @@ class Uploader():
 
     # try to upload qlog files first
     for name, key, fn in upload_files:
-      if name in self.immediate_priority:
+      if name in self.immediate_priority or any(f in fn for f in self.immediate_folders):
         return (key, fn)
 
     if with_raw:
