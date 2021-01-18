@@ -275,17 +275,12 @@ void encoder_thread(int cam_idx) {
       rotate_state.setStreamFrameId(extra.frame_id);
 
       // encode a frame
-      {
+      for (int i = 0; i < encoders.size(); ++i) {
         int out_segment = -1;
-        int out_id = encoders[0]->encode_frame(buf->y, buf->u, buf->v,
+        int out_id = encoders[i]->encode_frame(buf->y, buf->u, buf->v,
                                                buf->width, buf->height,
                                                &out_segment, &extra);
-        if (encoders.size() > 1) {
-          int out_segment_alt = -1;
-          encoders[1]->encode_frame(buf->y, buf->u, buf->v,
-                                    buf->width, buf->height,
-                                    &out_segment_alt, &extra);
-        }
+        if (i > 0 || !lh) continue;
 
         // publish encode index
         MessageBuilder msg;
@@ -303,11 +298,8 @@ void encoder_thread(int cam_idx) {
         eidx.setEncodeId(cnt);
         eidx.setSegmentNum(out_segment);
         eidx.setSegmentId(out_id);
-
-        if (lh) {
-          auto bytes = msg.toBytes();
-          lh_log(lh, bytes.begin(), bytes.size(), false);
-        }
+        auto bytes = msg.toBytes();
+        lh_log(lh, bytes.begin(), bytes.size(), false);
       }
 
       cnt++;
