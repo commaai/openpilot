@@ -120,7 +120,7 @@ static void draw_panda_metric(UIState *s) {
   std::string panda_message = "VEHICLE\nONLINE";
   if (s->scene.hwType == cereal::HealthData::HwType::UNKNOWN) {
     panda_severity = 2;
-    panda_message = "NO\nVEHICLE";
+    panda_message = "NO\nPANDA";
   } else if (s->started) {
     if (s->scene.satelliteCount < 6) {
       panda_severity = 1;
