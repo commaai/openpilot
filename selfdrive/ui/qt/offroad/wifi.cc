@@ -20,6 +20,11 @@ void clearLayout(QLayout* layout) {
     delete item;
   }
 }
+QWidget layoutToWidget(QLayout* l, QWidget* parent = 0){
+  QWidget* q = new QWidget(parent);
+  q->setLayout(l);
+  return q;
+}
 
 Networking::Networking(QWidget* parent){
   try {
@@ -44,10 +49,14 @@ Networking::Networking(QWidget* parent){
   connect(inputField, SIGNAL(cancel()), this, SLOT(abortTextInput()));
   s->addWidget(inputField);
 
-
+  QVBoxLayout* vlayout = new QVBoxLayout(this);
+  QPushButton* advancdSettings = new QPushButton("Advanced network settings");
+  vlayout->addWidget(advancdSettings);
   wifiWidget = new WifiUI(this, 5, wifi);
-  s->addWidget(wifiWidget);
   connect(wifiWidget, SIGNAL(connectToNetwork(Network)), this, SLOT(connectToNetwork(Network)));
+  vlayout->addWidget(wifiWidget);
+
+  s->add(layoutToWidget(vlayout, this));
 
   s->setCurrentIndex(1);
 
@@ -80,6 +89,7 @@ void Networking::connectToNetwork(Network n) {
     selectedNetwork = n;
   }
 }
+
 void Networking::abortTextInput(){
   qDebug()<<"User stopped providing text, aborting connecting";
   state = NetworkingState::IDLE;
