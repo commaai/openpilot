@@ -18,7 +18,7 @@ brew install capnp \
              openssl \
              pyenv \
              qt5 \
-             zeromq
+             zeromq || true
 
 if [[ $SHELL == "/bin/zsh" ]]; then
   RC_FILE="$HOME/.zshrc"
