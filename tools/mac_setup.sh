@@ -20,6 +20,7 @@ brew install capnp \
              qt5 \
              zeromq
 
+
 if [[ $SHELL == "/bin/zsh" ]]; then
   RC_FILE="$HOME/.zshrc"
 elif [[ $SHELL == "/bin/bash" ]]; then
