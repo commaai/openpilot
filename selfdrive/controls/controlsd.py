@@ -55,6 +55,8 @@ class Controls:
       self.sm = messaging.SubMaster(['thermal', 'health', 'model', 'liveCalibration', 'ubloxRaw',
                                      'dMonitoringState', 'plan', 'pathPlan', 'liveLocationKalman',
                                      'frame', 'frontFrame'])
+      if SIMULATION:
+        self.sm.ignore_alive = ['ubloxRaw','frontFrame']
 
     self.can_sock = can_sock
     if can_sock is None:
@@ -201,12 +203,11 @@ class Controls:
     if (self.sm['health'].safetyModel != self.CP.safetyModel and self.sm.frame > 2 / DT_CTRL) or \
       self.mismatch_counter >= 200:
       self.events.add(EventName.controlsMismatch)
-    if not SIMULATION:
-      if not self.sm.alive['plan'] and self.sm.alive['pathPlan']:
-        # only plan not being received: radar not communicating
-        self.events.add(EventName.radarCommIssue)
-      elif not self.sm.all_alive_and_valid():
-        self.events.add(EventName.commIssue)
+    if not self.sm.alive['plan'] and self.sm.alive['pathPlan']:
+      # only plan not being received: radar not communicating
+      self.events.add(EventName.radarCommIssue)
+    elif not self.sm.all_alive_and_valid():
+      self.events.add(EventName.commIssue)
     if not self.sm['pathPlan'].mpcSolutionValid:
       self.events.add(EventName.plannerError)
     if not self.sm['liveLocationKalman'].sensorsOK and not NOSENSOR:
