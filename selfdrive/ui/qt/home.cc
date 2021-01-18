@@ -207,13 +207,9 @@ void GLWindow::initialize() {
 
   ui_state = new UIState();
   ui_state->sound = &sound;
-  ui_state->fb_w = vwp_w;
-  ui_state->fb_h = vwp_h;
   ui_init(ui_state);
 
   wake();
-  qWarning("first update");
-  ui_update(ui_state);
 
   timer->start(0);
   backlight_timer->start(BACKLIGHT_DT * 1000);
@@ -226,9 +222,7 @@ void GLWindow::render() {
     return;
 
   ui_draw(ui_state);
-  qWarning("drawn");
   framebuffer_swap(ui_state->fb);
-  qWarning("swapped");
 }
 
 void GLWindow::paintEvent(QPaintEvent *e) {
@@ -280,9 +274,7 @@ void GLWindow::timerUpdate() {
   int dt = timer->interval() == 0 ? 1 : 20;
   handle_display_state(ui_state, dt, false);
 
-  qWarning("updating");
   ui_update(ui_state);
-  qWarning("repaint");
   repaint();
 }
 
