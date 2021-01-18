@@ -38,7 +38,6 @@ void party(cl_device_id device_id, cl_context context) {
   int err = set_realtime_priority(53);
   LOG("setpriority returns %d", err);
 
-
   cameras_run(&cameras);
 }
 
@@ -47,7 +46,6 @@ void party(cl_device_id device_id, cl_context context) {
 #endif
 
 int main(int argc, char *argv[]) {
-  set_realtime_priority(53);
 #if defined(QCOM)
   set_core_affinity(2);
 #elif defined(QCOM2)
