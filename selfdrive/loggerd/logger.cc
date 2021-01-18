@@ -1,17 +1,5 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <stdbool.h>
-#include <string.h>
 #include <assert.h>
-#include <time.h>
-#include <errno.h>
-#include <unistd.h>
 #include <sys/stat.h>
-
-#include <iostream>
-#include <fstream>
-#include <streambuf>
 #ifdef QCOM
 #include <cutils/properties.h>
 #endif
@@ -19,7 +7,6 @@
 #include "common/swaglog.h"
 #include "common/params.h"
 #include "common/version.h"
-#include "messaging.hpp"
 #include "logger.h"
 
 
@@ -127,157 +114,61 @@ std::string logger_get_route_name() {
   return route_name;
 }
 
-void log_init_data(LoggerState *s) {
-  auto bytes = s->init_data.asBytes();
-  logger_log(s, bytes.begin(), bytes.size(), s->has_qlog);
-}
 
-
-static void log_sentinel(LoggerState *s, cereal::Sentinel::SentinelType type) {
+static void log_sentinel(LoggerHandle *h, SentinelType type) {
   MessageBuilder msg;
-  auto sen = msg.initEvent().initSentinel();
-  sen.setType(type);
-  auto bytes = msg.toBytes();
-
-  logger_log(s, bytes.begin(), bytes.size(), true);
+  msg.initEvent().initSentinel().setType(type);
+  h->write(msg.toBytes(), true);
 }
 
-// ***** logging functions *****
+// LoggerState
 
-void logger_init(LoggerState *s, const char* log_name, bool has_qlog) {
+LoggerState::LoggerState(const std::string& log_root) : part(-1) {
   umask(0);
-
-  pthread_mutex_init(&s->lock, NULL);
-
-  s->part = -1;
-  s->has_qlog = has_qlog;
-  s->route_name = logger_get_route_name();
-  snprintf(s->log_name, sizeof(s->log_name), "%s", log_name);
-  s->init_data = logger_build_init_data();
+  init_data = logger_build_init_data();
+  route_path = log_root + "/" + logger_get_route_name();
 }
 
-static LoggerHandle* logger_open(LoggerState *s, const char* root_path) {
-  int err;
+std::shared_ptr<LoggerHandle> LoggerState::next() {
+  SentinelType sentinel_type = cur_handle ? SentinelType::START_OF_SEGMENT : SentinelType::START_OF_ROUTE;
+  cur_handle = std::make_shared<LoggerHandle>(route_path, ++part);
 
-  LoggerHandle *h = NULL;
-  for (int i=0; i<LOGGER_MAX_HANDLES; i++) {
-    if (s->handles[i].refcnt == 0) {
-      h = &s->handles[i];
-      break;
-    }
-  }
-  assert(h);
+  // log init data
+  cur_handle->write(init_data.asBytes(), true);
 
-  snprintf(h->segment_path, sizeof(h->segment_path),
-          "%s/%s--%d", root_path, s->route_name.c_str(), s->part);
+  log_sentinel(cur_handle.get(), sentinel_type);
+  return cur_handle;
+}
 
-  snprintf(h->log_path, sizeof(h->log_path), "%s/%s.bz2", h->segment_path, s->log_name);
-  snprintf(h->qlog_path, sizeof(h->qlog_path), "%s/qlog.bz2", h->segment_path);
-  snprintf(h->lock_path, sizeof(h->lock_path), "%s.lock", h->log_path);
+LoggerState::~LoggerState() {
+  if (cur_handle) log_sentinel(cur_handle.get(), SentinelType::END_OF_SEGMENT);
+}
 
-  err = logger_mkpath(h->log_path);
-  if (err) return NULL;
+// LoggerHandle
 
-  FILE* lock_file = fopen(h->lock_path, "wb");
-  if (lock_file == NULL) return NULL;
+LoggerHandle::LoggerHandle(const std::string& route_path, int part) : part(part) {
+  segment_path = util::string_format("%s--%d", route_path.c_str(), part);
+  const std::string log_path = segment_path + "/rlog.bz2";
+  const std::string qlog_path = segment_path + "/qlog.bz2";
+
+  lock_path = log_path + ".lock";
+  int err = logger_mkpath((char*)log_path.c_str());
+  assert(err == 0);
+
+  FILE* lock_file = fopen(lock_path.c_str(), "wb");
+  assert(lock_file != nullptr);
   fclose(lock_file);
 
-  h->log = std::make_unique<BZFile>(h->log_path);
-  if (s->has_qlog) {
-    h->q_log = std::make_unique<BZFile>(h->qlog_path);
-  }
-
-  pthread_mutex_init(&h->lock, NULL);
-  h->refcnt++;
-  return h;
+  log = std::make_unique<BZFile>(log_path);
+  qlog = std::make_unique<BZFile>(qlog_path);
 }
 
-int logger_next(LoggerState *s, const char* root_path,
-                            char* out_segment_path, size_t out_segment_path_len,
-                            int* out_part) {
-  bool is_start_of_route = !s->cur_handle;
-  if (!is_start_of_route) log_sentinel(s, cereal::Sentinel::SentinelType::END_OF_SEGMENT);
-
-  pthread_mutex_lock(&s->lock);
-  s->part++;
-
-  LoggerHandle* next_h = logger_open(s, root_path);
-  if (!next_h) {
-    pthread_mutex_unlock(&s->lock);
-    return -1;
-  }
-
-  if (s->cur_handle) {
-    lh_close(s->cur_handle);
-  }
-  s->cur_handle = next_h;
-
-  if (out_segment_path) {
-    snprintf(out_segment_path, out_segment_path_len, "%s", next_h->segment_path);
-  }
-  if (out_part) {
-    *out_part = s->part;
-  }
-
-  pthread_mutex_unlock(&s->lock);
-
-  // write beggining of log metadata
-  log_init_data(s);
-  log_sentinel(s, is_start_of_route ? cereal::Sentinel::SentinelType::START_OF_ROUTE : cereal::Sentinel::SentinelType::START_OF_SEGMENT);
-  return 0;
+void LoggerHandle::write(uint8_t* data, size_t data_size, bool in_qlog) {
+  std::lock_guard lk(lock);
+  log->write(data, data_size);
+  if (in_qlog) qlog->write(data, data_size);
 }
 
-LoggerHandle* logger_get_handle(LoggerState *s) {
-  pthread_mutex_lock(&s->lock);
-  LoggerHandle* h = s->cur_handle;
-  if (h) {
-    pthread_mutex_lock(&h->lock);
-    h->refcnt++;
-    pthread_mutex_unlock(&h->lock);
-  }
-  pthread_mutex_unlock(&s->lock);
-  return h;
-}
-
-void logger_log(LoggerState *s, uint8_t* data, size_t data_size, bool in_qlog) {
-  pthread_mutex_lock(&s->lock);
-  if (s->cur_handle) {
-    lh_log(s->cur_handle, data, data_size, in_qlog);
-  }
-  pthread_mutex_unlock(&s->lock);
-}
-
-void logger_close(LoggerState *s) {
-  log_sentinel(s, cereal::Sentinel::SentinelType::END_OF_ROUTE);
-
-  pthread_mutex_lock(&s->lock);
-  if (s->cur_handle) {
-    lh_close(s->cur_handle);
-  }
-  pthread_mutex_unlock(&s->lock);
-}
-
-void lh_log(LoggerHandle* h, uint8_t* data, size_t data_size, bool in_qlog) {
-  pthread_mutex_lock(&h->lock);
-  assert(h->refcnt > 0);
-  h->log->write(data, data_size);
-  if (in_qlog && h->q_log) {
-    h->q_log->write(data, data_size);
-  }
-  pthread_mutex_unlock(&h->lock);
-}
-
-void lh_close(LoggerHandle* h) {
-  pthread_mutex_lock(&h->lock);
-  assert(h->refcnt > 0);
-  h->refcnt--;
-  if (h->refcnt == 0) {
-    h->log.reset(nullptr);
-    h->q_log.reset(nullptr);
-    unlink(h->lock_path);
-    pthread_mutex_unlock(&h->lock);
-    pthread_mutex_destroy(&h->lock);
-    return;
-  }
-  pthread_mutex_unlock(&h->lock);
+LoggerHandle::~LoggerHandle() {
+  unlink(lock_path.c_str());
 }

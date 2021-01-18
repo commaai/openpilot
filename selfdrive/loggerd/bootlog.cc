@@ -30,7 +30,7 @@ int main(int argc, char** argv) {
   int r = logger_mkpath((char*)path.c_str());
   assert(r == 0);
 
-  BZFile bz_file(path.c_str());
+  BZFile bz_file(path);
 
   // Write initdata
   bz_file.write(logger_build_init_data().asBytes());
