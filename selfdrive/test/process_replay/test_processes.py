@@ -18,7 +18,7 @@ segments = [
   ("HONDA", "0982d79ebb0de295|2021-01-08--10-13-10--6"),      # HONDA.CIVIC (NIDEC)
   ("HONDA", "a8e8bf6a3864361b|2021-01-04--03-01-18--2"),      # HONDA.ACCORD (BOSCH)
   ("CHRYSLER", "52d86230ee29aa84|2021-01-10--17-16-34--30"),  # CHRYSLER.PACIFICA
-  ("SUBARU", "4d70bc5e608678be|2021-01-15--17-02-04--5"),     # SUBARU.NOTE
+  ("SUBARU", "4d70bc5e608678be|2021-01-15--17-02-04--5"),     # SUBARU.IMPREZA
   ("GM", "ae3ed0eb20960a20|2021-01-15--15-04-06--8"),         # GM.VOLT
 
   # TODO: update this route
