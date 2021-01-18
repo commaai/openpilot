@@ -23,45 +23,45 @@
 #define BACKLIGHT_TS 2.00
 
 OffroadHome::OffroadHome(QWidget* parent) : QWidget(parent) {
-  QVBoxLayout* main_layout = new QVBoxLayout();
+  QVBoxLayout* main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(sbr_w + 50, 50, 50, 50);
 
   // top header
-  QHBoxLayout* header_layout = new QHBoxLayout();
+  QHBoxLayout* header_layout = new QHBoxLayout(this);
 
-  date = new QLabel();
+  date = new QLabel(this);
   date->setStyleSheet(R"(font-size: 55px;)");
   header_layout->addWidget(date, 0, Qt::AlignTop | Qt::AlignLeft);
 
-  QLabel* version = new QLabel(QString::fromStdString("openpilot v" + Params().get("Version")));
+  QLabel* version = new QLabel(QString::fromStdString("openpilot v" + Params().get("Version")), this);
   version->setStyleSheet(R"(font-size: 45px;)");
   header_layout->addWidget(version, 0, Qt::AlignTop | Qt::AlignRight);
 
   main_layout->addLayout(header_layout);
 
-  alert_notification = new QPushButton();
+  alert_notification = new QPushButton(this);
   QObject::connect(alert_notification, SIGNAL(released()), this, SLOT(openAlerts()));
   main_layout->addWidget(alert_notification, 0, Qt::AlignTop | Qt::AlignRight);
 
   // main content
   main_layout->addSpacing(25);
-  center_layout = new QStackedLayout();
+  center_layout = new QStackedLayout(this);
 
-  QHBoxLayout* statsAndSetup = new QHBoxLayout();
+  QHBoxLayout* statsAndSetup = new QHBoxLayout(this);
 
-  DriveStats* drive = new DriveStats;
+  DriveStats* drive = new DriveStats(this);
   drive->setFixedSize(1000, 800);
   statsAndSetup->addWidget(drive);
 
-  SetupWidget* setup = new SetupWidget;
+  SetupWidget* setup = new SetupWidget(this);
   statsAndSetup->addWidget(setup);
 
-  QWidget* statsAndSetupWidget = new QWidget();
+  QWidget* statsAndSetupWidget = new QWidget(this);
   statsAndSetupWidget->setLayout(statsAndSetup);
 
   center_layout->addWidget(statsAndSetupWidget);
 
-  alerts_widget = new OffroadAlert();
+  alerts_widget = new OffroadAlert(this);
   QObject::connect(alerts_widget, SIGNAL(closeAlerts()), this, SLOT(closeAlerts()));
   center_layout->addWidget(alerts_widget);
   center_layout->setAlignment(alerts_widget, Qt::AlignCenter);
@@ -130,7 +130,7 @@ void OffroadHome::refresh() {
 }
 
 HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
-  layout = new QGridLayout;
+  layout = new QGridLayout(this);
   layout->setMargin(0);
 
   // onroad UI
@@ -138,7 +138,7 @@ HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
   layout->addWidget(glWindow, 0, 0);
 
   // draw offroad UI on top of onroad UI
-  home = new OffroadHome();
+  home = new OffroadHome(this);
   layout->addWidget(home, 0, 0);
   QObject::connect(glWindow, SIGNAL(offroadTransition(bool)), this, SLOT(setVisibility(bool)));
   QObject::connect(this, SIGNAL(openSettings()), home, SLOT(refresh()));

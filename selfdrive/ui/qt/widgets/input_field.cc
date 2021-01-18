@@ -2,8 +2,9 @@
 
 #include "input_field.hpp"
 
+
 InputField::InputField(QWidget *parent, int minTextLength): QWidget(parent), minTextLength(minTextLength) {
-  layout = new QGridLayout();
+  layout = new QGridLayout(this);
   layout->setSpacing(30);
 
   label = new QLabel(this);
@@ -11,14 +12,14 @@ InputField::InputField(QWidget *parent, int minTextLength): QWidget(parent), min
   layout->addWidget(label, 0, 0, Qt::AlignVCenter | Qt::AlignLeft);
   layout->setColumnStretch(0, 1);
 
-  QPushButton* cancel = new QPushButton("Cancel");
+  QPushButton* cancel = new QPushButton("Cancel", this);
   cancel->setFixedSize(300, 150);
   cancel->setStyleSheet(R"(padding: 0;)");
   layout->addWidget(cancel, 0, 1, Qt::AlignVCenter | Qt::AlignRight);
   QObject::connect(cancel, SIGNAL(released()), this, SLOT(emitEmpty()));
 
   // text box
-  line = new QLineEdit();
+  line = new QLineEdit(this);
   line->setStyleSheet(R"(
     color: black;
     background-color: white;

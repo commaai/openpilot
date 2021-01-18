@@ -22,9 +22,9 @@ const std::string private_key_path = util::getenv_default("HOME", "/.comma/persi
 #endif
 
 PairingQRWidget::PairingQRWidget(QWidget* parent) : QWidget(parent) {
-  qrCode = new QLabel;
+  qrCode = new QLabel(this);
   qrCode->setScaledContents(true);
-  QVBoxLayout* v = new QVBoxLayout;
+  QVBoxLayout* v = new QVBoxLayout(this);
   v->addWidget(qrCode, 0, Qt::AlignCenter);
   setLayout(v);
 
@@ -185,7 +185,7 @@ SetupWidget::SetupWidget(QWidget* parent) : QWidget(parent) {
   QObject::connect(finishButton, SIGNAL(released()), this, SLOT(showQrCode()));
   finishRegistationLayout->addWidget(finishButton);
 
-  QLabel* registrationDescription = new QLabel("Pair your device with comma connect app", this);
+  QLabel* registrationDescription = new QLabel("Pair your comma account with comma connect", this);
   registrationDescription->setStyleSheet(R"(
     font-size: 50px;
   )");
