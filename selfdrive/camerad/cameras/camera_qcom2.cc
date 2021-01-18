@@ -1100,15 +1100,22 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
   const CameraBuf *b = &c->buf;
 
   MessageBuilder msg;
-  auto framed = c == &s->rear ? msg.initEvent().initFrame() : msg.initEvent().initWideFrame();
-  fill_frame_data(framed, b->cur_frame_data);
-  if ((c == &s->rear && env_send_rear) || (c == &s->wide && env_send_wide)) {
-    framed.setImage(get_frame_image(b));
-  }
   if (c == &s->rear) {
+    auto framed = msg.initEvent().initFrame();
+    fill_frame_data(framed, b->cur_frame_data, cnt);  
     framed.setTransform(b->yuv_transform.v);
+    s->pm->send("frame", msg);
+    if (env_send_rear) {
+      fill_frame_image(framed, b);  
+    }
+  } else {
+    auto framed = msg.initEvent().initWideFrame();
+    fill_frame_data(framed, b->cur_frame_data, cnt);  
+    s->pm->send("wideFrame", msg);
+    if (env_send_wide) {
+      fill_frame_image(framed, b);  
+    }
   }
-  s->pm->send(c == &s->rear ? "frame" : "wideFrame", msg);
 
   if (cnt % 3 == 0) {
     const auto [x, y, w, h] = (c == &s->wide) ? std::tuple(96, 250, 1734, 524) : std::tuple(96, 160, 1734, 986);
