@@ -126,12 +126,12 @@ class LoggerdState {
 public:
   Context *ctx;
   Poller *poller;
-  int segment_length = 0;
+  int segment_length;
   std::map<SubSocket*, SocketState> socket_states;
   std::vector<std::thread> encoder_threads;
   LoggerState logger;
-  char segment_path[4096] = {};
-  int rotate_segment = -1;
+  char segment_path[4096];
+  int rotate_segment;
   std::mutex rotate_lock;
   RotateState rotate_state[LOG_CAMERA_ID_MAX-1];
 
@@ -140,7 +140,7 @@ public:
   void run();
 
 private:
-  double last_rotate_tms = 0, last_camera_seen_tms = 0;
+  double last_rotate_tms, last_camera_seen_tms;
   void rotate();
   std::unique_ptr<Message> log(SubSocket *socket, SocketState& ss);
 };

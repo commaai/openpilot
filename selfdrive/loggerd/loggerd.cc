@@ -465,8 +465,10 @@ std::unique_ptr<Message> LoggerdState::log(SubSocket *sock, SocketState& ss) {
 }
 
 void LoggerdState::run() {
+  last_rotate_tms = last_camera_seen_tms = millis_since_boot();
+
   while (!do_exit) {
-    rotate();
+    // TODO: fix msgs from the first poll getting dropped
     // poll for new messages on all sockets
     for (auto sock : poller->poll(1000)) {
       SocketState& ss = socket_states[sock];
@@ -478,6 +480,7 @@ void LoggerdState::run() {
         last_camera_seen_tms = millis_since_boot();
       }
     }
+    rotate();
   }
 }
 
