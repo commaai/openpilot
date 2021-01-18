@@ -1,4 +1,5 @@
 venv/
+.clang-format
 .DS_Store
 .tags
 .ipynb_checkpoints
