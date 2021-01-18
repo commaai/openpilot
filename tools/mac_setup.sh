@@ -6,19 +6,19 @@ if [[ $(command -v brew) == "" ]]; then
   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
 fi
 
-brew install capnp \
-             coreutils \
-             eigen \
-             ffmpeg \
-             glfw \
-             libarchive \
-             libusb \
-             libtool \
-             llvm \
-             openssl \
-             pyenv \
-             qt5 \
-             zeromq
+brew install capnp@0.8.0 \
+             coreutils@8.32 \
+             eigen@3.3.9 \
+             ffmpeg@4.3.1_4 \
+             glfw@3.3.2 \
+             libarchive@3.5.1_1 \
+             libusb@1.0.24 \
+             libtool@2.4.6_2 \
+             llvm@11.0.0_1 \
+             openssl@1.1 \
+             pyenv@1.2.22 \
+             qt@5.15.2 \
+             zeromq@4.3.3_1
 
 if [[ $SHELL == "/bin/zsh" ]]; then
   RC_FILE="$HOME/.zshrc"
