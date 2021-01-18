@@ -330,7 +330,7 @@ OmxEncoder::OmxEncoder(const char* filename, int width, int height, int fps, int
 
   // fill the input free queue
   for (auto &buf : this->in_buf_headers) {
-    queue_push(&this->free_in, (void*)buf);
+    this->free_in.push(buf);
   }
 }
 
