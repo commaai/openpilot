@@ -71,7 +71,6 @@ jobs:
           /usr/local/Cellar
           ~/github_brew_cache_entries.txt
         key: macos-cache-${{ hashFiles('tools/mac_setup.sh') }}
-        restore-keys: macos-cache-
     - name: Brew link restored dependencies
       if: steps.dependency-cache.outputs.cache-hit == 'true'
       run: |
