@@ -52,11 +52,10 @@ class Controls:
 
     self.sm = sm
     if self.sm is None:
+      ignore = ['ubloxRaw', 'frontFrame'] if SIMULATION else None
       self.sm = messaging.SubMaster(['thermal', 'health', 'model', 'liveCalibration', 'ubloxRaw',
                                      'dMonitoringState', 'plan', 'pathPlan', 'liveLocationKalman',
-                                     'frame', 'frontFrame'])
-      if SIMULATION:
-        self.sm.ignore_alive = ['ubloxRaw','frontFrame']
+                                     'frame', 'frontFrame'], ignore_alive=ignore)
 
     self.can_sock = can_sock
     if can_sock is None:
