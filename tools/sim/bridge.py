@@ -61,7 +61,7 @@ def cam_callback(image):
 
   dat = messaging.new_message('frame')
   dat.frame = {
-    "frameId": image.frame_number,
+    "frameId": image.frame,
     "image": img.tostring(),
     "transform": [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
   }
