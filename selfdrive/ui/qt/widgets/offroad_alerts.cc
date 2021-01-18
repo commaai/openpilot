@@ -10,7 +10,7 @@
 #include "common/params.h"
 
 
-void cleanStackedWidget(QStackedWidget* swidget) {
+static void cleanStackedWidget(QStackedWidget* swidget) {
   while(swidget->count() > 0) {
     QWidget *w = swidget->widget(0);
     swidget->removeWidget(w);
@@ -18,22 +18,22 @@ void cleanStackedWidget(QStackedWidget* swidget) {
   }
 }
 
-OffroadAlert::OffroadAlert(QWidget* parent) {
-  QVBoxLayout *main_layout = new QVBoxLayout();
+OffroadAlert::OffroadAlert(QWidget* parent) : QFrame(parent) {
+  QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setMargin(25);
 
-  alerts_stack = new QStackedWidget();
+  alerts_stack = new QStackedWidget(this);
   main_layout->addWidget(alerts_stack, 1);
 
   // bottom footer
-  QHBoxLayout *footer_layout = new QHBoxLayout();
+  QHBoxLayout *footer_layout = new QHBoxLayout(this);
   main_layout->addLayout(footer_layout);
 
-  QPushButton *dismiss_btn = new QPushButton("Dismiss");
+  QPushButton *dismiss_btn = new QPushButton("Dismiss", this);
   dismiss_btn->setFixedSize(453, 125);
   footer_layout->addWidget(dismiss_btn, 0, Qt::AlignLeft);
 
-  reboot_btn = new QPushButton("Reboot and Update");
+  reboot_btn = new QPushButton("Reboot and Update", this);
   reboot_btn->setFixedSize(453, 125);
   reboot_btn->setVisible(false);
   footer_layout->addWidget(reboot_btn, 0, Qt::AlignRight);
@@ -71,10 +71,10 @@ void OffroadAlert::refresh() {
 
   reboot_btn->setVisible(updateAvailable);
 
-  QVBoxLayout *layout = new QVBoxLayout;
+  QVBoxLayout *layout = new QVBoxLayout(this);
 
   if (updateAvailable) {
-    QLabel *title = new QLabel("Update Available");
+    QLabel *title = new QLabel("Update Available", this);
     title->setStyleSheet(R"(
       font-size: 72px;
       font-weight: 700;
@@ -82,7 +82,7 @@ void OffroadAlert::refresh() {
     layout->addWidget(title, 0, Qt::AlignLeft | Qt::AlignTop);
 
     QString release_notes = QString::fromStdString(Params().get("ReleaseNotes"));
-    QLabel *body = new QLabel(release_notes);
+    QLabel *body = new QLabel(release_notes, this);
     body->setStyleSheet(R"(
       font-size: 48px;
       font-weight: 600;
@@ -91,7 +91,7 @@ void OffroadAlert::refresh() {
   } else {
     // TODO: paginate the alerts
     for (const auto &alert : alerts) {
-      QLabel *l = new QLabel(alert.text);
+      QLabel *l = new QLabel(alert.text, this);
       l->setWordWrap(true);
       l->setMargin(60);
 
@@ -107,7 +107,7 @@ void OffroadAlert::refresh() {
     layout->setSpacing(20);
   }
 
-  QWidget *w = new QWidget();
+  QWidget *w = new QWidget(this);
   w->setLayout(layout);
   alerts_stack->addWidget(w);
 }

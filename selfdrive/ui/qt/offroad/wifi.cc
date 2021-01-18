@@ -8,7 +8,7 @@
 #include "wifi.hpp"
 #include "widgets/toggle.hpp"
 
-void clearLayout(QLayout* layout) {
+static void clearLayout(QLayout* layout) {
   while (QLayoutItem* item = layout->takeAt(0)) {
     if (QWidget* widget = item->widget()) {
       widget->deleteLater();
@@ -24,10 +24,10 @@ WifiUI::WifiUI(QWidget *parent, int page_length) : QWidget(parent), networks_per
   try {
     wifi = new WifiManager;
   } catch (std::exception &e) {
-    QLabel* warning = new QLabel("Network manager is inactive!");
+    QLabel* warning = new QLabel("Network manager is inactive!", this);
     warning->setStyleSheet(R"(font-size: 65px;)");
 
-    QVBoxLayout* warning_layout = new QVBoxLayout;
+    QVBoxLayout* warning_layout = new QVBoxLayout(this);
     warning_layout->addWidget(warning, 0, Qt::AlignCenter);
     setLayout(warning_layout);
     return;
@@ -35,19 +35,19 @@ WifiUI::WifiUI(QWidget *parent, int page_length) : QWidget(parent), networks_per
 
   QObject::connect(wifi, SIGNAL(wrongPassword(QString)), this, SLOT(wrongPassword(QString)));
 
-  QVBoxLayout * top_layout = new QVBoxLayout;
+  QVBoxLayout * top_layout = new QVBoxLayout(this);
   top_layout->setSpacing(0);
-  swidget = new QStackedWidget;
+  swidget = new QStackedWidget(this);
 
   // Networks page
-  wifi_widget = new QWidget;
-  QVBoxLayout* networkLayout = new QVBoxLayout;
-  QHBoxLayout *tethering_field = new QHBoxLayout;
+  wifi_widget = new QWidget(this);
+  QVBoxLayout* networkLayout = new QVBoxLayout(this);
+  QHBoxLayout *tethering_field = new QHBoxLayout(this);
   tethering_field->addSpacing(50);
 
-  ipv4 = new QLabel("");
+  ipv4 = new QLabel("", this);
   tethering_field->addWidget(ipv4);
-  tethering_field->addWidget(new QLabel("Enable Tethering"));
+  tethering_field->addWidget(new QLabel("Enable Tethering", this));
 
   Toggle* toggle_switch = new Toggle(this);
   toggle_switch->setFixedSize(150, 100);
@@ -57,21 +57,21 @@ WifiUI::WifiUI(QWidget *parent, int page_length) : QWidget(parent), networks_per
   }
   QObject::connect(toggle_switch, SIGNAL(stateChanged(int)), this, SLOT(toggleTethering(int)));
 
-  QWidget* tetheringWidget = new QWidget;
+  QWidget* tetheringWidget = new QWidget(this);
   tetheringWidget->setLayout(tethering_field);
   tetheringWidget->setFixedHeight(150);
   networkLayout->addWidget(tetheringWidget);
 
-  vlayout = new QVBoxLayout;
+  vlayout = new QVBoxLayout(this);
   wifi_widget->setLayout(vlayout);
   networkLayout->addWidget(wifi_widget);
 
-  QWidget* networkWidget = new QWidget;
+  QWidget* networkWidget = new QWidget(this);
   networkWidget->setLayout(networkLayout);
   swidget->addWidget(networkWidget);
 
   // Keyboard page
-  input_field = new InputField();
+  input_field = new InputField(this);
   QObject::connect(input_field, SIGNAL(emitText(QString)), this, SLOT(receiveText(QString)));
   swidget->addWidget(input_field);
   swidget->setCurrentIndex(0);
@@ -85,7 +85,7 @@ WifiUI::WifiUI(QWidget *parent, int page_length) : QWidget(parent), networks_per
   timer->start(2000);
 
   // Scan on startup
-  QLabel *scanning = new QLabel("Scanning for networks");
+  QLabel *scanning = new QLabel("Scanning for networks", this);
   scanning->setStyleSheet(R"(font-size: 65px;)");
   vlayout->addWidget(scanning, 0, Qt::AlignCenter);
   vlayout->setSpacing(25);
@@ -112,23 +112,23 @@ void WifiUI::refresh() {
   int countWidgets = 0;
   int button_height = static_cast<int>(this->height() / (networks_per_page + 1) * 0.6);
   for (Network &network : wifi->seen_networks) {
-    QHBoxLayout *hlayout = new QHBoxLayout;
+    QHBoxLayout *hlayout = new QHBoxLayout(this);
     if (page * networks_per_page <= i && i < (page + 1) * networks_per_page) {
       // SSID
       hlayout->addSpacing(50);
-      hlayout->addWidget(new QLabel(QString::fromUtf8(network.ssid)));
+      hlayout->addWidget(new QLabel(QString::fromUtf8(network.ssid), this));
 
       // strength indicator
       unsigned int strength_scale = network.strength / 17;
       QPixmap pix("../assets/images/network_" + QString::number(strength_scale) + ".png");
-      QLabel *icon = new QLabel();
+      QLabel *icon = new QLabel(this);
       icon->setPixmap(pix.scaledToWidth(100, Qt::SmoothTransformation));
       icon->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
       hlayout->addWidget(icon);
       hlayout->addSpacing(20);
 
       // connect button
-      QPushButton* btn = new QPushButton(network.connected == ConnectedType::CONNECTED ? "Connected" : (network.connected == ConnectedType::CONNECTING ? "Connecting" : "Connect"));
+      QPushButton* btn = new QPushButton(network.connected == ConnectedType::CONNECTED ? "Connected" : (network.connected == ConnectedType::CONNECTING ? "Connecting" : "Connect"), this);
       btn->setFixedWidth(300);
       btn->setFixedHeight(button_height);
       btn->setDisabled(network.connected == ConnectedType::CONNECTED || network.connected == ConnectedType::CONNECTING || network.security_type == SecurityType::UNSUPPORTED);
@@ -137,7 +137,7 @@ void WifiUI::refresh() {
 
       connectButtons->addButton(btn, i);
 
-      QWidget * w = new QWidget;
+      QWidget * w = new QWidget(this);
       w->setLayout(hlayout);
       vlayout->addWidget(w);
       w->setStyleSheet(R"(
@@ -161,15 +161,15 @@ void WifiUI::refresh() {
 
   // Pad vlayout to prevert oversized network widgets in case of low visible network count
   for (int i = countWidgets; i < networks_per_page; i++) {
-    QWidget *w = new QWidget;
+    QWidget *w = new QWidget(this);
     vlayout->addWidget(w);
   }
 
   QHBoxLayout *prev_next_buttons = new QHBoxLayout;
-  QPushButton* prev = new QPushButton("Previous");
+  QPushButton* prev = new QPushButton("Previous", this);
   prev->setEnabled(page);
   prev->setFixedHeight(button_height);
-  QPushButton* next = new QPushButton("Next");
+  QPushButton* next = new QPushButton("Next", this);
   next->setFixedHeight(button_height);
 
   // If there are more visible networks then we can show, enable going to next page
@@ -180,7 +180,7 @@ void WifiUI::refresh() {
   prev_next_buttons->addWidget(prev);
   prev_next_buttons->addWidget(next);
 
-  QWidget *w = new QWidget;
+  QWidget *w = new QWidget(this);
   w->setLayout(prev_next_buttons);
   w->setStyleSheet(R"(
     QPushButton {

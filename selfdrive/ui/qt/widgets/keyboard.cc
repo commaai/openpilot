@@ -11,14 +11,14 @@ const int DEFAULT_WIDTH = 1;
 const int SPACEBAR_WIDTH = 3;
 
 KeyboardLayout::KeyboardLayout(QWidget *parent, std::vector<QVector<QString>> layout) : QWidget(parent) {
-  QVBoxLayout* vlayout = new QVBoxLayout;
+  QVBoxLayout* vlayout = new QVBoxLayout(this);
   QButtonGroup* btn_group = new QButtonGroup(this);
 
   QObject::connect(btn_group, SIGNAL(buttonClicked(QAbstractButton*)), parent, SLOT(handleButton(QAbstractButton*)));
 
   int i = 0;
   for (auto s : layout) {
-    QHBoxLayout *hlayout = new QHBoxLayout;
+    QHBoxLayout *hlayout = new QHBoxLayout(this);
 
     if (i == 1) {
       hlayout->addSpacing(90);
@@ -49,7 +49,7 @@ KeyboardLayout::KeyboardLayout(QWidget *parent, std::vector<QVector<QString>> la
 }
 
 Keyboard::Keyboard(QWidget *parent) : QWidget(parent) {
-  main_layout = new QStackedLayout;
+  main_layout = new QStackedLayout(this);
 
   // lowercase
   std::vector<QVector<QString>> lowercase = {

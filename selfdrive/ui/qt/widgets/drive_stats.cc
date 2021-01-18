@@ -25,7 +25,8 @@ const std::string private_key_path = "/persist/comma/id_rsa";
 const std::string private_key_path = util::getenv_default("HOME", "/.comma/persist/comma/id_rsa", "/persist/comma/id_rsa");
 #endif
 
-void clearLayouts(QLayout* layout) {
+// TODO: function is also in offroad/wifi.cc. Put in library file
+static void clearLayouts(QLayout* layout) {
   while (QLayoutItem* item = layout->takeAt(0)) {
     if (QWidget* widget = item->widget()) {
       widget->deleteLater();
@@ -37,17 +38,17 @@ void clearLayouts(QLayout* layout) {
   }
 }
 
-QLayout* build_stat(QString name, int stat) {
-  QVBoxLayout* layout = new QVBoxLayout;
+static QLayout* build_stat(QString name, int stat, QWidget * parent=nullptr) {
+  QVBoxLayout* layout = new QVBoxLayout(parent);
 
-  QLabel* metric = new QLabel(QString("%1").arg(stat));
+  QLabel* metric = new QLabel(QString("%1").arg(stat), parent);
   metric->setStyleSheet(R"(
     font-size: 72px;
     font-weight: 700;
   )");
   layout->addWidget(metric, 0, Qt::AlignLeft);
 
-  QLabel* label = new QLabel(name);
+  QLabel* label = new QLabel(name, parent);
   label->setStyleSheet(R"(
     font-size: 32px;
     font-weight: 600;
@@ -59,7 +60,7 @@ QLayout* build_stat(QString name, int stat) {
 
 void DriveStats::parseError(QString response) {
   clearLayouts(vlayout);
-  vlayout->addWidget(new QLabel("No internet connection"));
+  vlayout->addWidget(new QLabel("No internet connection", this));
 }
 
 void DriveStats::parseResponse(QString response) {
@@ -78,21 +79,21 @@ void DriveStats::parseResponse(QString response) {
   auto all = json["all"].toObject();
   auto week = json["week"].toObject();
 
-  QGridLayout* gl = new QGridLayout();
+  QGridLayout* gl = new QGridLayout(this);
 
   int all_distance = all["distance"].toDouble() * (metric ? MILE_TO_KM : 1);
-  gl->addWidget(new QLabel("ALL TIME"), 0, 0, 1, 3);
-  gl->addLayout(build_stat("DRIVES", all["routes"].toDouble()), 1, 0, 3, 1);
-  gl->addLayout(build_stat(metric ? "KM" : "MILES", all_distance), 1, 1, 3, 1);
-  gl->addLayout(build_stat("HOURS", all["minutes"].toDouble() / 60), 1, 2, 3, 1);
+  gl->addWidget(new QLabel("ALL TIME", this), 0, 0, 1, 3);
+  gl->addLayout(build_stat("DRIVES", all["routes"].toDouble(), this), 1, 0, 3, 1);
+  gl->addLayout(build_stat(metric ? "KM" : "MILES", all_distance, this), 1, 1, 3, 1);
+  gl->addLayout(build_stat("HOURS", all["minutes"].toDouble() / 60, this), 1, 2, 3, 1);
 
   int week_distance = week["distance"].toDouble() * (metric ? MILE_TO_KM : 1);
-  gl->addWidget(new QLabel("PAST WEEK"), 6, 0, 1, 3);
-  gl->addLayout(build_stat("DRIVES", week["routes"].toDouble()), 7, 0, 3, 1);
-  gl->addLayout(build_stat(metric ? "KM" : "MILES", week_distance), 7, 1, 3, 1);
-  gl->addLayout(build_stat("HOURS", week["minutes"].toDouble() / 60), 7, 2, 3, 1);
+  gl->addWidget(new QLabel("PAST WEEK", this), 6, 0, 1, 3);
+  gl->addLayout(build_stat("DRIVES", week["routes"].toDouble(), this), 7, 0, 3, 1);
+  gl->addLayout(build_stat(metric ? "KM" : "MILES", week_distance, this), 7, 1, 3, 1);
+  gl->addLayout(build_stat("HOURS", week["minutes"].toDouble() / 60, this), 7, 2, 3, 1);
 
-  QWidget* q = new QWidget;
+  QWidget* q = new QWidget(this);
   q->setLayout(gl);
 
   vlayout->addWidget(q);
