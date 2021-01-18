@@ -20,17 +20,16 @@ int main( )
   DifferentialState delta;
 
   OnlineData curvature_factor;
-  OnlineData v_poly_r0, v_poly_r1, v_poly_r2, v_poly_r3;
+  OnlineData v_ego;
   OnlineData rotation_radius;
 
   Control t;
   
-  auto poly_v = v_poly_r0*(xx*xx*xx) + v_poly_r1*(xx*xx) + v_poly_r2*xx + v_poly_r3;
 
   // Equations of motion
-  f << dot(xx) == poly_v * cos(psi) - rotation_radius * sin(psi) * (poly_v * delta *curvature_factor);
-  f << dot(yy) == poly_v * sin(psi) + rotation_radius * cos(psi) * (poly_v * delta *curvature_factor);
-  f << dot(psi) == poly_v * delta * curvature_factor;
+  f << dot(xx) == v_ego * cos(psi) - rotation_radius * sin(psi) * (v_ego * delta *curvature_factor);
+  f << dot(yy) == v_ego * sin(psi) + rotation_radius * cos(psi) * (v_ego * delta *curvature_factor);
+  f << dot(psi) == v_ego * delta * curvature_factor;
   f << dot(delta) == t;
 
   // Running cost
@@ -40,10 +39,10 @@ int main( )
   h << yy;
 
   // Heading error
-  h << (v_poly_r3 + 1.0 ) * psi;
+  h << (v_ego + 1.0 ) * psi;
 
   // Angular rate error
-  h << (v_poly_r3 + 1.0 ) * t;
+  h << (v_ego + 1.0 ) * t;
 
   BMatrix Q(3,3); Q.setAll(true);
   // Q(0,0) = 1.0;
@@ -59,7 +58,7 @@ int main( )
   hN << yy;
 
   // Heading errors
-  hN << (2.0 * v_poly_r3 + 1.0 ) * psi;
+  hN << (2.0 * v_ego + 1.0 ) * psi;
 
   BMatrix QN(2,2); QN.setAll(true);
   // QN(0,0) = 1.0;
@@ -80,7 +79,7 @@ int main( )
   ocp.subjectTo( deg2rad(-90) <= psi <= deg2rad(90));
   // more than absolute max steer angle
   ocp.subjectTo( deg2rad(-50) <= delta <= deg2rad(50));
-  ocp.setNOD(6);
+  ocp.setNOD(3);
 
   OCPexport mpc(ocp);
   mpc.set( HESSIAN_APPROXIMATION, GAUSS_NEWTON );
