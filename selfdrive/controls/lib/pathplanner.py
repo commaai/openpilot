@@ -96,7 +96,7 @@ class PathPlanner():
     self.LP.parse_model(sm['modelV2'])
     if len(md.position.x) == TRAJECTORY_SIZE and len(md.orientation.x) == TRAJECTORY_SIZE:
       self.path_xyz = np.column_stack([md.position.x, md.position.y, md.position.z])
-      self.t_idxs = list(md.position.t)
+      self.t_idxs = np.array(md.position.t)
       self.plan_yaw = list(md.orientation.z)
 
     # Lane change logic
@@ -197,7 +197,7 @@ class PathPlanner():
       desired_tire_angle_rate = 0.0
 
     # negative sign, controls uses different convention
-    self.desired_steering_wheel_angle_deg = -float(math.degrees(tire_angle_desired * VM.sR) + steering_wheel_angle_offset_deg)
+    self.desired_steering_wheel_angle_deg = -float(math.degrees(tire_angle_desired * VM.sR)) + steering_wheel_angle_offset_deg
     self.desired_steering_wheel_angle_rate_deg = -float(math.degrees(desired_tire_angle_rate * VM.sR))
 
     #  Check for infeasable MPC solution

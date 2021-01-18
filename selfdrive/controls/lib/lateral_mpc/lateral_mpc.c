@@ -17,15 +17,15 @@ ACADOvariables acadoVariables;
 ACADOworkspace acadoWorkspace;
 
 typedef struct {
-  double x, y, psi, delta, t;
+  double x, y, psi, tire_angle, tire_angle_rate;
 } state_t;
 
 typedef struct {
   double x[N+1];
   double y[N+1];
   double psi[N+1];
-  double delta[N+1];
-  double rate[N];
+  double tire_angle[N+1];
+  double tire_angle_rate[N];
   double cost;
 } log_t;
 
@@ -83,7 +83,7 @@ int run_mpc(state_t * x0, log_t * solution, double v_ego,
   acadoVariables.x0[0] = x0->x;
   acadoVariables.x0[1] = x0->y;
   acadoVariables.x0[2] = x0->psi;
-  acadoVariables.x0[3] = x0->delta;
+  acadoVariables.x0[3] = x0->tire_angle;
 
 
   acado_preparationStep();
@@ -96,9 +96,9 @@ int run_mpc(state_t * x0, log_t * solution, double v_ego,
     solution->x[i] = acadoVariables.x[i*NX];
     solution->y[i] = acadoVariables.x[i*NX+1];
     solution->psi[i] = acadoVariables.x[i*NX+2];
-    solution->delta[i] = acadoVariables.x[i*NX+3];
+    solution->tire_angle[i] = acadoVariables.x[i*NX+3];
     if (i < N){
-      solution->rate[i] = acadoVariables.u[i];
+      solution->tire_angle_rate[i] = acadoVariables.u[i];
     }
   }
   solution->cost = acado_getObjective();
