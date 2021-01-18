@@ -15,38 +15,60 @@ class WifiUI : public QWidget {
 
 public:
   int page;
-  explicit WifiUI(QWidget *parent = 0, int page_length = 5);
+  explicit WifiUI(QWidget *parent = 0, int page_length = 5, WifiManager* wifi = 0);
 
 private:
   WifiManager *wifi = nullptr;
-  const int networks_per_page;
-
-  QStackedWidget *swidget;
+  int networks_per_page;
   QVBoxLayout *vlayout;
-  QWidget *wifi_widget;
 
-  InputField *input_field;
-  QEventLoop loop;
-  QTimer *timer;
-  QString text;
   QButtonGroup *connectButtons;
   bool tetheringEnabled;
-  QLabel *ipv4;
-
-  void connectToNetwork(Network n);
-  QString getStringFromUser();
-
-private slots:
-  void handleButton(QAbstractButton* m_button);
-  void toggleTethering(int enable);
-  void refresh();
-  void receiveText(QString text);
-  void wrongPassword(QString ssid);
-
-  void prevPage();
-  void nextPage();
 
 signals:
   void openKeyboard();
   void closeKeyboard();
+  void connectToNetwork(Network n);
+
+public slots:
+  void handleButton(QAbstractButton* m_button);
+  void refresh();
+
+  void prevPage();
+  void nextPage();
 };
+
+enum class NetworkingState {
+  IDLE,
+  CONNECTING_TO_WIFI_NETWORK,
+};
+class Networking : public QWidget {
+  Q_OBJECT
+
+public:
+  explicit Networking(QWidget* parent = 0);
+
+private:
+  QStackedLayout* s;// keyboard, wifiScreen, advanced
+  
+  NetworkingState state;
+  Network selectedNetwork;
+
+  WifiUI* wifiWidget;
+  WifiManager* wifi = nullptr;
+  InputField* inputField;
+
+signals:
+  void openKeyboard();
+  void closeKeyboard();
+
+private slots:
+  void connectToNetwork(Network n);
+  void refresh();
+  void receiveText(QString text);
+  void abortTextInput();
+  void wrongPassword(QString ssid);
+  void successfulConnection(QString ssid);
+};
+
+

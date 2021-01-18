@@ -197,7 +197,7 @@ QWidget * developer_panel() {
 }
 
 QWidget * network_panel(QWidget * parent) {
-  WifiUI *w = new WifiUI();
+  Networking *w = new Networking();
   QObject::connect(w, SIGNAL(openKeyboard()), parent, SLOT(closeSidebar()));
   QObject::connect(w, SIGNAL(closeKeyboard()), parent, SLOT(openSidebar()));
   return w;
@@ -301,9 +301,9 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
 }
 
 void SettingsWindow::closeSidebar() {
-  sidebar_widget->setVisible(false);
+  sidebar_widget->setFixedWidth(0);
 }
 
 void SettingsWindow::openSidebar() {
-  sidebar_widget->setVisible(true);
+  sidebar_widget->setFixedWidth(300);
 }

@@ -39,8 +39,8 @@ void InputField::setPromptText(QString text) {
 }
 
 void InputField::emitEmpty() {
-  emitText("");
   line->setText("");
+  emit cancel();
 }
 
 void InputField::getText(QString s) {

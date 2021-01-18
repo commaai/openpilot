@@ -22,9 +22,10 @@ private:
   QGridLayout *layout;
 
 public slots:
-  void emitEmpty();
   void getText(QString s);
+  void emitEmpty();
 
 signals:
+  void cancel();
   void emitText(QString s);
 };

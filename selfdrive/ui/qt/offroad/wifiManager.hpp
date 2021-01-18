@@ -28,7 +28,7 @@ struct Network {
 class WifiManager : public QWidget {
   Q_OBJECT
 public:
-  explicit WifiManager();
+  explicit WifiManager(QWidget* parent);
 
   void request_scan();
   QVector<Network> seen_networks;
@@ -38,8 +38,9 @@ public:
   void connect(Network ssid);
   void connect(Network ssid, QString password);
   void connect(Network ssid, QString username, QString password);
-  // Tethering functions
+  void disconnect();
 
+  // Tethering functions
   void enableTethering();
   void disableTethering();
   bool tetheringEnabled();
@@ -64,11 +65,11 @@ private:
   QByteArray get_property(QString network_path, QString property);
   unsigned int get_ap_strength(QString network_path);
   SecurityType getSecurityType(QString ssid);
-  void disconnect();
 
 private slots:
   void change(unsigned int new_state, unsigned int previous_state, unsigned int change_reason);
 signals:
   void wrongPassword(QString ssid);
+  void successfulConnection(QString ssid);
   void refresh();
 };

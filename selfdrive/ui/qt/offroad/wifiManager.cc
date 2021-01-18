@@ -57,7 +57,7 @@ bool compare_by_strength(const Network &a, const Network &b) {
 }
 
 
-WifiManager::WifiManager() {
+WifiManager::WifiManager(QWidget* parent) {
   qDBusRegisterMetaType<Connection>();
   qDBusRegisterMetaType<IpConfig>();
   connecting_to_network = "";
@@ -226,7 +226,7 @@ void WifiManager::deactivate_connections(QString ssid) {
     QString Ssid = get_property(pth.path(), "Ssid");
     if (Ssid == ssid) {
       QDBusInterface nm2(nm_service, nm_path, nm_iface, bus);
-      nm2.call("DeactivateConnection", QVariant::fromValue(active_connection_raw));
+      nm2.call("DeactivateConnection", QVariant::fromValue(active_connection_raw));// TODO change to disconnect
     }
   }
 }
@@ -336,16 +336,17 @@ QString WifiManager::get_adapter() {
   return adapter_path;
 }
 
-void WifiManager::change(unsigned int new_state,unsigned int previous_state,unsigned int change_reason) {
+void WifiManager::change(unsigned int new_state, unsigned int previous_state, unsigned int change_reason) {
   raw_adapter_state = new_state;
   if (new_state == state_need_auth && change_reason == reason_wrong_password) {
     emit wrongPassword(connecting_to_network);
   } else if (new_state == state_connected) {
+    emit successfulConnection(connecting_to_network);
     connecting_to_network = "";
   }
 }
 
-void WifiManager::disconnect() {
+void WifiManager::disconnect() {// TODO just from the device
   QString active_ap = get_active_ap();
   if (active_ap!="" && active_ap!="/") {
     deactivate_connections(get_property(active_ap, "Ssid"));
