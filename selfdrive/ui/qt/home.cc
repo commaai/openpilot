@@ -168,7 +168,7 @@ static void handle_display_state(UIState *s, int dt, bool user_input) {
 
   if (user_input || s->ignition || s->started) {
     s->awake = true;
-    awake_timeout = 30*UI_FREQ;
+    awake_timeout = 90*UI_FREQ;
   } else if (awake_timeout == 0) {
     s->awake = false;
   }

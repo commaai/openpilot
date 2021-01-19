@@ -72,14 +72,18 @@ private slots:
   void successfulConnection(QString ssid);
 };
 
+
 class AdvancedNetworking : public QWidget {
   Q_OBJECT
 public:
-  explicit AdvancedNetworking(QWidget* parent = 0);
+  explicit AdvancedNetworking(QWidget* parent = 0, WifiManager* wifi = 0);
 
 private:
   QStackedLayout* s;
   InputField* inputField;
+
+
+  WifiManager* wifi = nullptr;
 
 signals:
   void openKeyboard();
@@ -89,4 +93,5 @@ signals:
 private slots:
   void receiveText(QString text);
   void abortTextInput();
+  void toggleTethering(int enable);
 };

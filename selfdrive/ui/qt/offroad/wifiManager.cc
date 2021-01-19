@@ -362,6 +362,7 @@ void WifiManager::enableTethering() {
   connection["connection"]["uuid"] = QUuid::createUuid().toString().remove('{').remove('}');
   connection["connection"]["type"] = "802-11-wireless";
   connection["connection"]["interface-name"] = "wlan0";
+  // connection["connection"]["autoconnect"] = false;
 
   connection["802-11-wireless"]["band"] = "bg";
   connection["802-11-wireless"]["mode"] = "ap";

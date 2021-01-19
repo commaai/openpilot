@@ -21,7 +21,7 @@ void clearLayout(QLayout* layout) {
   }
 }
 
-QWidget* layoutToWidget(QLayout* l, QWidget* parent = 0){
+QWidget* layoutToWidget(QLayout* l, QWidget* parent){
   QWidget* q = new QWidget(parent);
   q->setLayout(l);
   return q;
@@ -53,7 +53,7 @@ Networking::Networking(QWidget* parent){
 
   QVBoxLayout* vlayout = new QVBoxLayout(this);
   QPushButton* advancedSettings = new QPushButton("Advanced");
-  advancedSettings->setStyleSheet(R"(background-color: #114265; margin-right: 30px)");
+  advancedSettings->setStyleSheet(R"(margin-right: 30px)");
   advancedSettings->setFixedSize(300, 100);
   connect(advancedSettings, &QPushButton::released, [=](){s->setCurrentIndex(2);});
   vlayout->addSpacing(10);
@@ -66,7 +66,7 @@ Networking::Networking(QWidget* parent){
 
   s->addWidget(layoutToWidget(vlayout, this));
 
-  AdvancedNetworking* an = new AdvancedNetworking(this);
+  AdvancedNetworking* an = new AdvancedNetworking(this, wifi);
   connect(an, &AdvancedNetworking::backPress, [=](){s->setCurrentIndex(1);});
   s->addWidget(an);
 
@@ -78,6 +78,15 @@ Networking::Networking(QWidget* parent){
   QObject::connect(timer, SIGNAL(timeout()), this, SLOT(refresh()));
   timer->start(2000);
   state = NetworkingState::IDLE;
+  
+  setStyleSheet(R"(
+    QPushButton {
+      background-color: #393939;
+    }
+    QPushButton:disabled {
+      background-color: #000000;
+    }
+  )");
 }
 
 void Networking::refresh(){
@@ -161,7 +170,7 @@ void Networking::successfulConnection(QString ssid) {
 
 //=====================================================================================================================================================//
 
-AdvancedNetworking::AdvancedNetworking(QWidget* parent){
+AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWidget(parent), wifi(wifi){
   s = new QStackedLayout(this);// inputField and settings
   inputField = new InputField();
   connect(inputField, SIGNAL(emitText(QString)), this, SLOT(receiveText(QString)));
@@ -170,22 +179,72 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent){
 
   QVBoxLayout* vlayout = new QVBoxLayout(this);
   
+  //Back button
   QPushButton* back = new QPushButton("BACK");
   connect(back, &QPushButton::released, [=](){emit backPress();});
   vlayout->addWidget(back, 0, Qt::AlignLeft);
 
-  QWidget* settingsWidget = layoutToWidget(vlayout);
-  settingsWidget->setStyleSheet(R"(
-    QPushButton {
-      padding: 0;
-      background-color: #114265;
-    }
-    QPushButton:disabled {
-      background-color: #323C43;
-    }
-  )");
+  //Enable tethering layout
+  QHBoxLayout* tetheringToggleLayout = new QHBoxLayout(this);
+  tetheringToggleLayout->addWidget(new QLabel("Enable tethering", this));
+  Toggle* toggle_switch = new Toggle(this);
+  toggle_switch->setFixedSize(150, 100);
+  tetheringToggleLayout->addWidget(toggle_switch);
+  if (wifi->tetheringEnabled()) {
+    toggle_switch->togglePosition();
+  }
+  QObject::connect(toggle_switch, SIGNAL(stateChanged(int)), this, SLOT(toggleTethering(int)));
+  vlayout->addWidget(layoutToWidget(tetheringToggleLayout, this));
+
+  //Change tethering password
+  QHBoxLayout *tetheringPassword = new QHBoxLayout(this);
+  tetheringPassword->addWidget(new QLabel("Edit tethering password", this));
+  QPushButton* editPasswordButton = new QPushButton("EDIT", this);
+  tetheringPassword->addWidget(editPasswordButton);
+  vlayout->addWidget(layoutToWidget(tetheringPassword, this));
+
+  //IP adress
+  QHBoxLayout* IPlayout = new QHBoxLayout(this);
+  IPlayout->addWidget(new QLabel("IP address: "));
+  IPlayout->addWidget(new QLabel(wifi->ipv4_address));
+  vlayout->addWidget(layoutToWidget(IPlayout, this));
+
+  //Enable SSH
+  QHBoxLayout* enableSSHLayout = new QHBoxLayout(this);
+  enableSSHLayout->addWidget(new QLabel("Enable SSH", this));
+  Toggle* toggle_switch_SSH = new Toggle(this);
+  toggle_switch_SSH->setFixedSize(150, 100);
+  enableSSHLayout->addWidget(toggle_switch_SSH);
+  vlayout->addWidget(layoutToWidget(enableSSHLayout, this));
+
+  //Authorized SSH keys
+  QHBoxLayout* authSSHLayout = new QHBoxLayout(this);
+  authSSHLayout->addWidget(new QLabel("Authorized SSH keys", this));
+  QPushButton* editAuthSSHButton = new QPushButton("EDIT", this);
+  authSSHLayout->addWidget(editAuthSSHButton);
+  vlayout->addWidget(layoutToWidget(authSSHLayout, this));
+
+  //Disconnect or delete connections
+  QHBoxLayout* dangerZone = new QHBoxLayout(this);
+  QPushButton* disconnect = new QPushButton("Disconnect from WiFi", this);
+  dangerZone->addWidget(disconnect);
+  QPushButton* deleteAll = new QPushButton("DELETE ALL NETWORKS", this);
+  dangerZone->addWidget(deleteAll);
+  vlayout->addWidget(layoutToWidget(dangerZone, this));
+
+  //vlayout to widget and stylesheet
+  QWidget* settingsWidget = layoutToWidget(vlayout, this);
   s->addWidget(settingsWidget);
   s->setCurrentIndex(1);
+  setLayout(s);
+}
+
+void AdvancedNetworking::toggleTethering(int enable) {
+  if (enable) {
+    wifi->enableTethering();
+  } else {
+    wifi->disableTethering();
+  }
 }
 
 void AdvancedNetworking::receiveText(QString text){
@@ -194,6 +253,7 @@ void AdvancedNetworking::receiveText(QString text){
 void AdvancedNetworking::abortTextInput(){
   qDebug()<<"User aborted text input";
 }
+
 //=====================================================================================================================================================//
 
 WifiUI::WifiUI(QWidget *parent, int page_length, WifiManager* wifi) : QWidget(parent), networks_per_page(page_length), wifi(wifi) {
@@ -207,7 +267,7 @@ WifiUI::WifiUI(QWidget *parent, int page_length, WifiManager* wifi) : QWidget(pa
   vlayout->setSpacing(25);
 
   page = 0;
-  refresh();  
+  refresh();
 }
 // TODO check it looks nice with tethering
 void WifiUI::refresh() {
@@ -250,20 +310,6 @@ void WifiUI::refresh() {
       QWidget * w = new QWidget;
       w->setLayout(hlayout);
       vlayout->addWidget(w);
-      w->setStyleSheet(R"(
-        QLabel {
-          font-size: 50px;
-        }
-        QPushButton {
-          padding: 0;
-          font-size: 50px;
-          border-radius: 10px;
-          background-color: #114265;
-        }
-        QPushButton:disabled {
-          background-color: #323C43;
-        }
-      )");
       countWidgets++;
     }
     i++;
@@ -293,15 +339,6 @@ void WifiUI::refresh() {
 
   QWidget *w = new QWidget;
   w->setLayout(prev_next_buttons);
-  w->setStyleSheet(R"(
-    QPushButton {
-      padding: 0;
-      background-color: #114265;
-    }
-    QPushButton:disabled {
-      background-color: #323C43;
-    }
-  )");
   vlayout->addWidget(w);
 }
 
