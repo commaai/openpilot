@@ -10,7 +10,6 @@
 #include <sys/resource.h>
 
 #include <string>
-
 #include <thread>
 #include <mutex>
 #include <condition_variable>
@@ -18,6 +17,7 @@
 #include <random>
 
 #include <ftw.h>
+
 #include "common/timing.h"
 #include "common/params.h"
 #include "common/swaglog.h"
@@ -100,14 +100,6 @@ LogCameraInfo cameras_logged[LOG_CAMERA_ID_MAX] = {
 namespace {
 
 constexpr int SEGMENT_LENGTH = 60;
-
-double randrange(double a, double b) __attribute__((unused));
-double randrange(double a, double b) {
-  static std::mt19937 gen(millis_since_boot());
-
-  std::uniform_real_distribution<> dist(a, b);
-  return dist(gen);
-}
 
 ExitHandler do_exit;
 

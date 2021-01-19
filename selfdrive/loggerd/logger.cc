@@ -6,7 +6,6 @@
 #include <assert.h>
 #include <time.h>
 #include <errno.h>
-
 #include <unistd.h>
 #include <sys/stat.h>
 
@@ -18,13 +17,16 @@
 #ifdef QCOM
 #include <cutils/properties.h>
 #endif
-#include "messaging.hpp"
 
 #include "common/swaglog.h"
 #include "common/params.h"
 #include "common/util.h"
 #include "common/version.h"
+#include "messaging.hpp"
 #include "logger.h"
+
+
+// ***** logging helpers *****
 
 void append_property(const char* key, const char* value, void *cookie) {
   std::vector<std::pair<std::string, std::string> > *properties =
@@ -32,6 +34,24 @@ void append_property(const char* key, const char* value, void *cookie) {
 
   properties->push_back(std::make_pair(std::string(key), std::string(value)));
 }
+
+static int mkpath(char* file_path) {
+  assert(file_path && *file_path);
+  char* p;
+  for (p=strchr(file_path+1, '/'); p; p=strchr(p+1, '/')) {
+    *p = '\0';
+    if (mkdir(file_path, 0777)==-1) {
+      if (errno != EEXIST) {
+        *p = '/';
+        return -1;
+      }
+    }
+    *p = '/';
+  }
+  return 0;
+}
+
+// ***** log metadata *****
 
 void log_init_data(LoggerState *s) {
   MessageBuilder msg;
@@ -114,25 +134,11 @@ static void log_sentinel(LoggerState *s, cereal::Sentinel::SentinelType type) {
   logger_log(s, bytes.begin(), bytes.size(), true);
 }
 
-static int mkpath(char* file_path) {
-  assert(file_path && *file_path);
-  char* p;
-  for (p=strchr(file_path+1, '/'); p; p=strchr(p+1, '/')) {
-    *p = '\0';
-    if (mkdir(file_path, 0777)==-1) {
-      if (errno != EEXIST) {
-        *p = '/';
-        return -1;
-      }
-    }
-    *p = '/';
-  }
-  return 0;
-}
+// ***** logging functions *****
 
 void logger_init(LoggerState *s, const char* log_name, bool has_qlog) {
   memset(s, 0, sizeof(*s));
- 
+
   umask(0);
 
   pthread_mutex_init(&s->lock, NULL);
@@ -191,11 +197,11 @@ static LoggerHandle* logger_open(LoggerState *s, const char* root_path) {
     h->bz_qlog = BZ2_bzWriteOpen(&bzerror, h->qlog_file, 9, 0, 30);
     if (bzerror != BZ_OK) goto fail;
   }
-  
+
   pthread_mutex_init(&h->lock, NULL);
   h->refcnt++;
-  log_init_data(s);
   return h;
+
 fail:
   LOGE("logger failed to open files");
   if (h->bz_file) {
@@ -246,6 +252,8 @@ int logger_next(LoggerState *s, const char* root_path,
 
   pthread_mutex_unlock(&s->lock);
 
+  // write beggining of log metadata
+  log_init_data(s);
   log_sentinel(s, is_start_of_route ? cereal::Sentinel::SentinelType::START_OF_ROUTE : cereal::Sentinel::SentinelType::START_OF_SEGMENT);
   return 0;
 }
