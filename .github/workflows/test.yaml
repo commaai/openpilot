@@ -77,6 +77,8 @@ jobs:
         while read pkg; do
           brew link --force "$pkg" # `--force` for keg-only packages
         done < ~/github_brew_cache_entries.txt
+    - name: Update brew packages  # because if cached version is old, install will fail
+      run: brew update
     - name: Install dependencies
       run: ./tools/mac_setup.sh
     - name: Build openpilot
