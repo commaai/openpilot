@@ -87,8 +87,8 @@ Supported Cars
 | Hyundai   | Sonata 2020-21                | All               | Stock            | 0mph               | 0mph              |
 | Lexus     | CT Hybrid 2017-18             | LSS               | Stock<sup>3</sup>| 0mph               | 0mph              |
 | Lexus     | ES 2019-20                    | All               | openpilot        | 0mph               | 0mph              |
-| Lexus     | ES Hybrid 2019                | All               | openpilot        | 0mph               | 0mph              |
 | Lexus     | ES Hybrid 2018                | LSS               | Stock<sup>3</sup>| 0mph               | 0mph              |
+| Lexus     | ES Hybrid 2019                | All               | openpilot        | 0mph               | 0mph              |
 | Lexus     | IS 2017-2019                  | All               | Stock            | 22mph              | 0mph              |
 | Lexus     | IS Hybrid 2017                | All               | Stock            | 0mph               | 0mph              |
 | Lexus     | NX 2018                       | All               | Stock<sup>3</sup>| 0mph               | 0mph              |
