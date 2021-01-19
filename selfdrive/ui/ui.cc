@@ -182,8 +182,7 @@ static void update_alert(UIState *s) {
   if (!s->started || s->scene.frontview) return;
 
   UIScene &scene = s->scene;
-  const uint64_t cs_frame = s->sm->rcv_frame("controlsState");
-  if (cs_frame == s->sm->frame) {
+  if (s->sm.updated("controlsState")) {
     auto alert_sound = scene.controls_state.getAlertSound();
     if (scene.alert_type.compare(scene.controls_state.getAlertType()) != 0) {
       if (alert_sound == AudibleAlert::NONE) {
@@ -209,6 +208,7 @@ static void update_alert(UIState *s) {
 
   // Handle controls timeout
   if ((s->sm->frame - s->started_frame) > 10 * UI_FREQ) {
+    const uint64_t cs_frame = s->sm->rcv_frame("controlsState");
     if (cs_frame < s->started_frame) {
       // car is started, but controlsState hasn't been seen at all
       s->scene.alert_text1 = "openpilot Unavailable";
