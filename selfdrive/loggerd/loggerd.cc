@@ -28,11 +28,9 @@
 #if defined(QCOM) || defined(QCOM2)
 #include "omx_encoder.h"
 #define Encoder OmxEncoder
-const std::string LOG_ROOT = "/data/media/0/realdata";
 #else
 #include "raw_logger.h"
 #define Encoder RawLogger
-const std::string LOG_ROOT = util::getenv_default("HOME", "/.comma/media/0/realdata", "/data/media/0/realdata");
 #endif
 
 namespace {
