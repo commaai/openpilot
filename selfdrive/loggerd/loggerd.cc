@@ -329,26 +329,19 @@ int main(int argc, char** argv) {
     s.encoders_waiting = 0;
   }
   s.cv.notify_all();
+
+  for (auto &[sock, qs] : qlog_states) delete sock;
+  delete poller;
   
   for (auto &t : encoder_threads) t.join();
 
   LOGW("closing logger");
   logger_close(&s.logger);
 
-  if (do_exit.power_failure){
-    LOGE("power failure");
-    sync();
-  }
-
-  // messaging cleanup
-  for (auto &[sock, qs] : qlog_states) delete sock;
-
   for (auto &es : s.encoder_states) {
     delete es->frame_sock;
     delete es;
   }
-
-  delete poller;
   delete s.ctx;
   return 0;
 }
