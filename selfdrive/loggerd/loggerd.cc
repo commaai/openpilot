@@ -217,15 +217,13 @@ void encoder_thread(int cam_idx) {
       LOGD("encoder init %dx%d", buf_info.width, buf_info.height);
 
       // main encoder
-      encoders.push_back(new Encoder(cam_info.filename, buf_info.width, buf_info.height,
-                                     cam_info.fps, cam_info.bitrate, cam_info.is_h265, cam_info.downscale));
+      cam_info.frame_width = buf_info.width;
+      cam_info.frame_height = buf_info.height;
+      encoders.push_back(new Encoder(cam_info));
 
       // qcamera encoder
       if (cam_info.has_qcamera) {
-        LogCameraInfo &qcam_info = cameras_logged[LOG_CAMERA_ID_QCAMERA];
-        encoders.push_back(new Encoder(qcam_info.filename,
-                                       qcam_info.frame_width, qcam_info.frame_height,
-                                       qcam_info.fps, qcam_info.bitrate, qcam_info.is_h265, qcam_info.downscale));
+        encoders.push_back(new Encoder(cameras_logged[LOG_CAMERA_ID_QCAMERA]));
       }
     }
 

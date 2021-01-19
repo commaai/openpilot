@@ -14,12 +14,13 @@ extern "C" {
 
 #include "encoder.h"
 #include "common/cqueue.h"
+#include "camerad/cameras/camera_common.h"
 #include "visionipc.h"
 
 // OmxEncoder, lossey codec using hardware hevc
 class OmxEncoder : public VideoEncoder {
 public:
-  OmxEncoder(const char* filename, int width, int height, int fps, int bitrate, bool h265, bool downscale);
+  OmxEncoder(const LogCameraInfo& ci);
   ~OmxEncoder();
   int encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
                    int in_width, int in_height,

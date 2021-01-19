@@ -20,10 +20,9 @@ extern "C" {
 
 #include "raw_logger.h"
 
-RawLogger::RawLogger(const char* filename, int width, int height, int fps,
-                     int bitrate, bool h265, bool downscale)
-  : filename(filename),
-    fps(fps) {
+RawLogger::RawLogger(const LogCameraInfo& ci)
+  : filename(ci.filename),
+    fps(ci.fps) {
 
   int err = 0;
 
@@ -34,8 +33,8 @@ RawLogger::RawLogger(const char* filename, int width, int height, int fps,
 
   codec_ctx = avcodec_alloc_context3(codec);
   assert(codec_ctx);
-  codec_ctx->width = width;
-  codec_ctx->height = height;
+  codec_ctx->width = ci.frame_width;
+  codec_ctx->height = ci.frame_height;
   codec_ctx->pix_fmt = AV_PIX_FMT_YUV420P;
 
   // codec_ctx->thread_count = 2;
@@ -51,11 +50,11 @@ RawLogger::RawLogger(const char* filename, int width, int height, int fps,
   frame = av_frame_alloc();
   assert(frame);
   frame->format = codec_ctx->pix_fmt;
-  frame->width = width;
-  frame->height = height;
-  frame->linesize[0] = width;
-  frame->linesize[1] = width/2;
-  frame->linesize[2] = width/2;
+  frame->width = ci.frame_width;
+  frame->height = ci.frame_height;
+  frame->linesize[0] = ci.frame_width;
+  frame->linesize[1] = ci.frame_width/2;
+  frame->linesize[2] = ci.frame_width/2;
 }
 
 RawLogger::~RawLogger() {

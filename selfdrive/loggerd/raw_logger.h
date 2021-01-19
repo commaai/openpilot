@@ -16,11 +16,11 @@ extern "C" {
 }
 
 #include "encoder.h"
+#include "camerad/cameras/camera_common.h"
 
 class RawLogger : public VideoEncoder {
 public:
-  RawLogger(const char* filename, int width, int height, int fps,
-            int bitrate, bool h265, bool downscale);
+  RawLogger(const LogCameraInfo& ci);
   ~RawLogger();
   int encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
                    int in_width, int in_height,

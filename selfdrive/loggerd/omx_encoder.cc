@@ -163,13 +163,9 @@ static const char* omx_color_fomat_name(uint32_t format) {
 
 // ***** encoder functions *****
 
-OmxEncoder::OmxEncoder(const char* filename, int width, int height, int fps, int bitrate, bool h265, bool downscale) {
-  this->filename = filename;
-  this->width = width;
-  this->height = height;
-  this->fps = fps;
-  this->remuxing = !h265;
-
+OmxEncoder::OmxEncoder(const LogCameraInfo &ci)
+    : filename(ci.filename), width(ci.frame_width), height(ci.frame_height),
+     fps(ci.fps), remuxing(!ci.is_h265), downscale(ci.downscale) {
   queue_init(&this->free_in);
   queue_init(&this->done_out);
 
@@ -177,14 +173,13 @@ OmxEncoder::OmxEncoder(const char* filename, int width, int height, int fps, int
   pthread_mutex_init(&this->state_lock, NULL);
   pthread_cond_init(&this->state_cv, NULL);
 
-  this->downscale = downscale;
   if (this->downscale) {
     this->y_ptr2 = (uint8_t *)malloc(this->width*this->height);
     this->u_ptr2 = (uint8_t *)malloc(this->width*this->height/4);
     this->v_ptr2 = (uint8_t *)malloc(this->width*this->height/4);
   }
 
-  auto component = (OMX_STRING)(h265 ? "OMX.qcom.video.encoder.hevc" : "OMX.qcom.video.encoder.avc");
+  auto component = (OMX_STRING)(ci.is_h265 ? "OMX.qcom.video.encoder.hevc" : "OMX.qcom.video.encoder.avc");
   int err = OMX_GetHandle(&this->handle, component, this, &omx_callbacks);
   if (err != OMX_ErrorNone) {
     LOGE("error getting codec: %x", err);
@@ -223,8 +218,8 @@ OmxEncoder::OmxEncoder(const char* filename, int width, int height, int fps, int
   out_port.format.video.nFrameWidth = this->width;
   out_port.format.video.nFrameHeight = this->height;
   out_port.format.video.xFramerate = 0;
-  out_port.format.video.nBitrate = bitrate;
-  if (h265) {
+  out_port.format.video.nBitrate = ci.bitrate;
+  if (ci.is_h265) {
     out_port.format.video.eCompressionFormat = OMX_VIDEO_CodingHEVC;
   } else {
     out_port.format.video.eCompressionFormat = OMX_VIDEO_CodingAVC;
@@ -241,11 +236,11 @@ OmxEncoder::OmxEncoder(const char* filename, int width, int height, int fps, int
   bitrate_type.nPortIndex = (OMX_U32) PORT_INDEX_OUT;
   OMX_CHECK(OMX_GetParameter(this->handle, OMX_IndexParamVideoBitrate, (OMX_PTR) &bitrate_type));
   bitrate_type.eControlRate = OMX_Video_ControlRateVariable;
-  bitrate_type.nTargetBitrate = bitrate;
+  bitrate_type.nTargetBitrate = ci.bitrate;
 
   OMX_CHECK(OMX_SetParameter(this->handle, OMX_IndexParamVideoBitrate, (OMX_PTR) &bitrate_type));
 
-  if (h265) {
+  if (ci.is_h265) {
     // setup HEVC
   #ifndef QCOM2
     OMX_VIDEO_PARAM_HEVCTYPE hevc_type = {0};
