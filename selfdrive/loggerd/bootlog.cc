@@ -1,5 +1,4 @@
 #include <assert.h>
-
 #include <string>
 
 #include "common/swaglog.h"
