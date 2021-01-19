@@ -136,7 +136,7 @@ void encoder_thread(EncoderState *es) {
   set_thread_name(es->ci.filename);
 
   uint32_t total_frame_cnt = 0, segment_frame_cnt = 0;
-  LoggerHandle *lh = nullptr;
+  LoggerHandle *lh = NULL;
   std::vector<Encoder *> encoders;
   int encoder_segment = -1;
   std::string segment_path;
