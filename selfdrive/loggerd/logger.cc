@@ -12,11 +12,98 @@
 
 #include <pthread.h>
 #include <bzlib.h>
+#include <iostream>
+#include <fstream>
+#include <streambuf>
+#ifdef QCOM
+#include <cutils/properties.h>
+#endif
 #include "messaging.hpp"
 
 #include "common/swaglog.h"
-
+#include "common/params.h"
+#include "common/util.h"
+#include "common/version.h"
 #include "logger.h"
+
+void append_property(const char* key, const char* value, void *cookie) {
+  std::vector<std::pair<std::string, std::string> > *properties =
+    (std::vector<std::pair<std::string, std::string> > *)cookie;
+
+  properties->push_back(std::make_pair(std::string(key), std::string(value)));
+}
+
+void log_init_data(LoggerState *s) {
+  MessageBuilder msg;
+  auto init = msg.initEvent().initInitData();
+
+  if (util::file_exists("/EON")) {
+    init.setDeviceType(cereal::InitData::DeviceType::NEO);
+  } else if (util::file_exists("/TICI")) {
+    init.setDeviceType(cereal::InitData::DeviceType::TICI);
+  } else {
+    init.setDeviceType(cereal::InitData::DeviceType::PC);
+  }
+
+  init.setVersion(capnp::Text::Reader(COMMA_VERSION));
+
+  std::ifstream cmdline_stream("/proc/cmdline");
+  std::vector<std::string> kernel_args;
+  std::string buf;
+  while (cmdline_stream >> buf) {
+    kernel_args.push_back(buf);
+  }
+
+  auto lkernel_args = init.initKernelArgs(kernel_args.size());
+  for (int i=0; i<kernel_args.size(); i++) {
+    lkernel_args.set(i, kernel_args[i]);
+  }
+
+  init.setKernelVersion(util::read_file("/proc/version"));
+
+#ifdef QCOM
+  {
+    std::vector<std::pair<std::string, std::string> > properties;
+    property_list(append_property, (void*)&properties);
+
+    auto lentries = init.initAndroidProperties().initEntries(properties.size());
+    for (int i=0; i<properties.size(); i++) {
+      auto lentry = lentries[i];
+      lentry.setKey(properties[i].first);
+      lentry.setValue(properties[i].second);
+    }
+  }
+#endif
+
+  const char* dongle_id = getenv("DONGLE_ID");
+  if (dongle_id) {
+    init.setDongleId(std::string(dongle_id));
+  }
+  init.setDirty(!getenv("CLEAN"));
+
+  // log params
+  Params params = Params();
+  init.setGitCommit(params.get("GitCommit"));
+  init.setGitBranch(params.get("GitBranch"));
+  init.setGitRemote(params.get("GitRemote"));
+  init.setPassive(params.read_db_bool("Passive"));
+  {
+    std::map<std::string, std::string> params_map;
+    params.read_db_all(&params_map);
+    auto lparams = init.initParams().initEntries(params_map.size());
+    int i = 0;
+    for (auto& kv : params_map) {
+      auto lentry = lparams[i];
+      lentry.setKey(kv.first);
+      lentry.setValue(kv.second);
+      i++;
+    }
+  }
+
+  auto bytes = msg.toBytes();
+  logger_log(s, bytes.begin(), bytes.size(), s->has_qlog);
+}
+
 
 static void log_sentinel(LoggerState *s, cereal::Sentinel::SentinelType type) {
   MessageBuilder msg;
@@ -43,15 +130,9 @@ static int mkpath(char* file_path) {
   return 0;
 }
 
-void logger_init(LoggerState *s, const char* log_name, const uint8_t* init_data, size_t init_data_len, bool has_qlog) {
+void logger_init(LoggerState *s, const char* log_name, bool has_qlog) {
   memset(s, 0, sizeof(*s));
-  if (init_data) {
-    s->init_data = (uint8_t*)malloc(init_data_len);
-    assert(s->init_data);
-    memcpy(s->init_data, init_data, init_data_len);
-    s->init_data_len = init_data_len;
-  }
-
+ 
   umask(0);
 
   pthread_mutex_init(&s->lock, NULL);
@@ -110,20 +191,10 @@ static LoggerHandle* logger_open(LoggerState *s, const char* root_path) {
     h->bz_qlog = BZ2_bzWriteOpen(&bzerror, h->qlog_file, 9, 0, 30);
     if (bzerror != BZ_OK) goto fail;
   }
-
-  if (s->init_data) {
-    BZ2_bzWrite(&bzerror, h->bz_file, s->init_data, s->init_data_len);
-    if (bzerror != BZ_OK) goto fail;
-
-    if (s->has_qlog) {
-      // init data goes in the qlog too
-      BZ2_bzWrite(&bzerror, h->bz_qlog, s->init_data, s->init_data_len);
-      if (bzerror != BZ_OK) goto fail;
-    }
-  }
-
+  
   pthread_mutex_init(&h->lock, NULL);
   h->refcnt++;
+  log_init_data(s);
   return h;
 fail:
   LOGE("logger failed to open files");
@@ -203,7 +274,6 @@ void logger_close(LoggerState *s) {
   log_sentinel(s, cereal::Sentinel::SentinelType::END_OF_ROUTE);
 
   pthread_mutex_lock(&s->lock);
-  free(s->init_data);
   if (s->cur_handle) {
     lh_close(s->cur_handle);
   }
