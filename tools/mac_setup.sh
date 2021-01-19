@@ -1,25 +1,26 @@
 #!/bin/bash -e
 
-# Install brew if required.
+# Install brew if required
 if [[ $(command -v brew) == "" ]]; then
   echo "Installing Hombrew"
   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
 fi
 
-brew install capnp \
-             coreutils \
-             eigen \
-             ffmpeg \
-             glfw \
-             libarchive \
-             libusb \
-             libtool \
-             llvm \
-             openssl \
-             pyenv \
-             qt5 \
-             zeromq
-
+brew bundle --file=- <<-EOS
+brew "capnp"
+brew "coreutils"
+brew "eigen"
+brew "ffmpeg"
+brew "glfw"
+brew "libarchive"
+brew "libusb"
+brew "libtool"
+brew "llvm"
+brew "openssl"
+brew "pyenv"
+brew "qt5"
+brew "zeromq"
+EOS
 
 if [[ $SHELL == "/bin/zsh" ]]; then
   RC_FILE="$HOME/.zshrc"
