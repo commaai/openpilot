@@ -33,18 +33,13 @@ void append_property(const char* key, const char* value, void *cookie) {
   properties->push_back(std::make_pair(std::string(key), std::string(value)));
 }
 
-static bool file_exists(const std::string& fn) {
-  std::ifstream f(fn);
-  return f.good();
-}
-
 kj::Array<capnp::word> gen_init_data() {
   MessageBuilder msg;
   auto init = msg.initEvent().initInitData();
 
-  if (file_exists("/EON")) {
+  if (util::file_exists("/EON")) {
     init.setDeviceType(cereal::InitData::DeviceType::NEO);
-  } else if (file_exists("/TICI")) {
+  } else if (util::file_exists("/TICI")) {
     init.setDeviceType(cereal::InitData::DeviceType::TICI);
   } else {
     init.setDeviceType(cereal::InitData::DeviceType::PC);
