@@ -219,11 +219,10 @@ class PathPlanner():
     plan_send = messaging.new_message('pathPlan')
     plan_send.valid = sm.all_alive_and_valid(service_list=['carState', 'controlsState', 'liveParameters', 'modelV2'])
     plan_send.pathPlan.laneWidth = float(self.LP.lane_width)
-    plan_send.pathPlan.dPoly = [0,0,0,0]
-    plan_send.pathPlan.lPoly = [0,0,0,0]
-    plan_send.pathPlan.rPoly = [0,0,0,0]
+    plan_send.pathPlan.dPathPoints = [float(x) for x in y_pts]
     plan_send.pathPlan.lProb = float(self.LP.lll_prob)
     plan_send.pathPlan.rProb = float(self.LP.rll_prob)
+    plan_send.pathPlan.dProb = float(self.LP.d_prob)
 
     plan_send.pathPlan.angleSteers = float(self.desired_steering_wheel_angle_deg)
     plan_send.pathPlan.rateSteers = float(self.desired_steering_wheel_angle_rate_deg)
