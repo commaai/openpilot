@@ -29,11 +29,6 @@
 
 #define UI_BUF_COUNT 4
 #define YUV_COUNT 40
-#define LOG_CAMERA_ID_FCAMERA 0
-#define LOG_CAMERA_ID_DCAMERA 1
-#define LOG_CAMERA_ID_ECAMERA 2
-#define LOG_CAMERA_ID_QCAMERA 3
-#define LOG_CAMERA_ID_MAX 4
 
 #define HLC_THRESH 222
 #define HLC_A 80
@@ -53,7 +48,13 @@ typedef struct CameraInfo {
   bool hdr;
 } CameraInfo;
 
+enum LogCameraId {
+  F_CAMERA,
+  D_CAMERA,
+  E_CAMERA
+};
 typedef struct LogCameraInfo {
+  LogCameraId id;
   const char* filename;
   const char* frame_packet_name;
   const char* encode_idx_name;
