@@ -61,7 +61,7 @@ def cam_callback(image):
 
   dat = messaging.new_message('frame')
   dat.frame = {
-    "frameId": frame_id, # TODO: can we get frame ID from the CARLA camera?
+    "frameId": image.frame,
     "image": img.tostring(),
     "transform": [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
   }
@@ -89,7 +89,8 @@ def health_function():
     dat.health = {
       'ignitionLine': True,
       'hwType': "blackPanda",
-      'controlsAllowed': True
+      'controlsAllowed': True,
+      'safetyModel': 'hondaNidec'
     }
     pm.send('health', dat)
     time.sleep(0.5)
