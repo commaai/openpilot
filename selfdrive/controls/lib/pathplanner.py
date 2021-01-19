@@ -64,7 +64,7 @@ class PathPlanner():
 
   def setup_mpc(self):
     self.libmpc = libmpc_py.libmpc
-    self.libmpc.init(MPC_COST_LAT.PATH, MPC_COST_LAT.HEADING, self.steer_rate_cost)
+    self.libmpc.init(2*MPC_COST_LAT.PATH, MPC_COST_LAT.HEADING, self.steer_rate_cost)
 
     self.mpc_solution = libmpc_py.ffi.new("log_t *")
     self.cur_state = libmpc_py.ffi.new("state_t *")
@@ -185,7 +185,7 @@ class PathPlanner():
 
     # TODO this needs more thought, use .2s extra for now to estimate other delays
     delay = CP.steerActuatorDelay + .2
-    next_tire_angle = interp(DT_MDL + delay, self.t_idxs[:MPC_N+1], self.mpc_solution.tire_angle)
+    next_tire_angle = interp(delay, self.t_idxs[:MPC_N+1], self.mpc_solution.tire_angle)
     next_tire_angle_rate = interp(delay, self.t_idxs[:MPC_N], self.mpc_solution.tire_angle_rate)
 
     # reset to current steer angle if not active or overriding
@@ -204,7 +204,7 @@ class PathPlanner():
     mpc_nans = any(math.isnan(x) for x in self.mpc_solution.tire_angle)
     t = sec_since_boot()
     if mpc_nans:
-      self.libmpc.init(MPC_COST_LAT.PATH, MPC_COST_LAT.HEADING, CP.steerRateCost)
+      self.libmpc.init(2*MPC_COST_LAT.PATH, MPC_COST_LAT.HEADING, CP.steerRateCost)
       self.cur_state.tire_angle = measured_tire_angle
 
       if t > self.last_cloudlog_t + 5.0:
