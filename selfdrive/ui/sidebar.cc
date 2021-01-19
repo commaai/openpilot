@@ -121,14 +121,6 @@ static void draw_panda_metric(UIState *s) {
   if (s->scene.hwType == cereal::HealthData::HwType::UNKNOWN) {
     panda_severity = 2;
     panda_message = "NO\nPANDA";
-  } else if (s->started) {
-    if (s->scene.satelliteCount < 6) {
-      panda_severity = 1;
-      panda_message = "VEHICLE\nNO GPS";
-    } else {
-      panda_severity = 0;
-      panda_message = "VEHICLE\nGOOD GPS";
-    }
   }
   draw_metric(s, NULL, NULL, panda_severity, panda_y_offset, panda_message.c_str());
 }
