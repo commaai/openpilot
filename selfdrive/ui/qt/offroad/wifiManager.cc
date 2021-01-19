@@ -96,6 +96,38 @@ void WifiManager::refreshNetworks() {
     seen_ssids.push_back(network.ssid);
     seen_networks.push_back(network);
   }
+  //Print all network configs... somehow
+  QString devicePath = get_adapter();
+  qDebug()<<devicePath;
+  QDBusInterface nm(nm_service, nm_settings_path, nm_settings_iface, bus);
+  QDBusMessage response = nm.call("ListConnections");
+  QVariant first =  response.arguments().at(0);
+  const QDBusArgument &args = first.value<QDBusArgument>();
+  args.beginArray();
+  while (!args.atEnd()) {
+    QDBusObjectPath path;
+    args >> path;
+    qDebug()<<path.path();
+    // QDBusInterface nm2(nm_service, path.path(), nm_settings_conn_iface, bus);
+    // QDBusMessage response = nm2.call("GetSettings");
+
+    // const QDBusArgument &dbusArg = response.arguments().at(0).value<QDBusArgument>();
+
+    // QMap<QString, QMap<QString,QVariant>> map;
+    // dbusArg >> map;
+    // for (auto &inner : map) {
+    //   for (auto &val : inner) {
+    //     QString key = inner.key(val);
+    //     if (key == "ssid") {
+    //       if (val == ssid) {
+    //         nm2.call("Delete");
+    //       }
+    //     }
+    //   }
+    // }
+  }
+
+
 }
 
 QString WifiManager::get_ipv4_address(){
@@ -256,6 +288,7 @@ void WifiManager::clear_connections(QString ssid) {
   while (!args.atEnd()) {
     QDBusObjectPath path;
     args >> path;
+    qDebug()<<path.path();
     QDBusInterface nm2(nm_service, path.path(), nm_settings_conn_iface, bus);
     QDBusMessage response = nm2.call("GetSettings");
 
@@ -346,7 +379,7 @@ void WifiManager::change(unsigned int new_state, unsigned int previous_state, un
   }
 }
 
-void WifiManager::disconnect() {// TODO just from the device
+void WifiManager::disconnect() {
   QString active_ap = get_active_ap();
   if (active_ap!="" && active_ap!="/") {
     deactivate_connections(get_property(active_ap, "Ssid"));
@@ -354,9 +387,44 @@ void WifiManager::disconnect() {// TODO just from the device
 }
 
 //Functions for tethering
+bool WifiManager::activate_tethering_connection(){
+  QString devicePath = get_adapter();
 
+  QDBusInterface nm(nm_service, nm_settings_path, nm_settings_iface, bus);
+  QDBusMessage response = nm.call("ListConnections");
+  QVariant first =  response.arguments().at(0);
+  const QDBusArgument &args = first.value<QDBusArgument>();
+  args.beginArray();
+  while (!args.atEnd()) {
+    QDBusObjectPath path;
+    args >> path;
+
+    QDBusInterface nm2(nm_service, path.path(), nm_settings_conn_iface, bus);
+    QDBusMessage response = nm2.call("GetSettings");
+    const QDBusArgument &dbusArg = response.arguments().at(0).value<QDBusArgument>();
+
+    QMap<QString, QMap<QString,QVariant>> map;
+    dbusArg >> map;
+    for (auto &inner : map) {
+      for (auto &val : inner) {
+        QString key = inner.key(val);
+        if (key == "ssid") {
+          if (val == "Hotspot") {
+            QDBusInterface nm3(nm_service, nm_path, nm_iface, bus);
+            nm3.call("ActivateConnection", QVariant::fromValue(path), QVariant::fromValue(devicePath));// TODO change to disconnect
+            return true;
+          }
+        }
+      }
+    }
+  }
+  return false;
+}
 void WifiManager::enableTethering() {
   disconnect();
+  if(activate_tethering_connection()){
+    return;
+  }
   Connection connection;
   connection["connection"]["id"] = "Hotspot";
   connection["connection"]["uuid"] = QUuid::createUuid().toString().remove('{').remove('}');

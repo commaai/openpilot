@@ -45,6 +45,8 @@ public:
   void disableTethering();
   bool tetheringEnabled();
 
+  bool activate_tethering_connection();
+
 private:
   QVector<QByteArray> seen_ssids;
   QString adapter;//Path to network manager wifi-device
