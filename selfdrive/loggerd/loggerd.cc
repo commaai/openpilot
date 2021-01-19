@@ -197,7 +197,6 @@ void encoder_thread(EncoderState *es) {
         if (should_rotate) {
           encoder_segment = s.rotate_segment;
           segment_path = s.segment_path;
-          segment_frame_cnt = 0;
         }
       }
       if (should_rotate) {
@@ -210,6 +209,7 @@ void encoder_thread(EncoderState *es) {
           e->encoder_close();
           e->encoder_open(segment_path.c_str());
         }
+        segment_frame_cnt = 0;
       }
 
       // log frame socket
