@@ -2,31 +2,18 @@
 
 #include <unistd.h>
 #include <cassert>
-#include <string.h>
 
-#include <libyuv.h>
+#include <capnp/dynamic.h>
+
 #include "messaging.hpp"
-
 #include "common/util.h"
-#include "common/timing.h"
-#include "common/swaglog.h"
-
-extern "C" {
-#include <libavcodec/avcodec.h>
-}
-
-extern ExitHandler do_exit;
 
 #define FRAME_WIDTH 1164
 #define FRAME_HEIGHT 874
 
-namespace {
-void camera_open(CameraState *s, bool rear) {
-}
+extern ExitHandler do_exit;
 
-void camera_close(CameraState *s) {
-  // empty
-}
+namespace {
 
 void camera_init(VisionIpcServer * v, CameraState *s, int camera_id, unsigned int fps, cl_device_id device_id, cl_context ctx, VisionStreamType rgb_type, VisionStreamType yuv_type) {
   assert(camera_id < ARRAYSIZE(cameras_supported));
@@ -37,38 +24,36 @@ void camera_init(VisionIpcServer * v, CameraState *s, int camera_id, unsigned in
   s->buf.init(device_id, ctx, s, v, FRAME_BUF_COUNT, rgb_type, yuv_type);
 }
 
-void run_frame_stream(MultiCameraState *s) {
-  s->sm = new SubMaster({"frame"});
-
-  CameraState *const rear_camera = &s->rear;
-
+void run_frame_stream(CameraState &camera, const char* frame_pkt) {
+  SubMaster sm({frame_pkt});
 
   size_t buf_idx = 0;
   while (!do_exit) {
-    if (s->sm->update(1000) == 0) continue;
+    if (sm.update(1000) == 0) continue;
 
-    auto frame = (*(s->sm))["frame"].getFrame();
-    rear_camera->buf.camera_bufs_metadata[buf_idx] = {
-      .frame_id = frame.getFrameId(),
-      .timestamp_eof = frame.getTimestampEof(),
-      .frame_length = static_cast<unsigned>(frame.getFrameLength()),
-      .integ_lines = static_cast<unsigned>(frame.getIntegLines()),
-      .global_gain = static_cast<unsigned>(frame.getGlobalGain()),
+    auto msg = static_cast<capnp::DynamicStruct::Reader>(sm[frame_pkt]);
+    auto frame = msg.get(frame_pkt).as<capnp::DynamicStruct>();
+    camera.buf.camera_bufs_metadata[buf_idx] = {
+      .frame_id = frame.get("frameId").as<uint32_t>(),
+      .timestamp_eof = frame.get("timestampEof").as<uint64_t>(),
+      .frame_length = frame.get("frameLength").as<unsigned>(),
+      .integ_lines = frame.get("integLines").as<unsigned>(),
+      .global_gain = frame.get("globalGain").as<unsigned>(),
     };
 
-    cl_command_queue q = rear_camera->buf.camera_bufs[buf_idx].copy_q;
-    cl_mem yuv_cl = rear_camera->buf.camera_bufs[buf_idx].buf_cl;
+    cl_command_queue q = camera.buf.camera_bufs[buf_idx].copy_q;
+    cl_mem yuv_cl = camera.buf.camera_bufs[buf_idx].buf_cl;
 
-    clEnqueueWriteBuffer(q, yuv_cl, CL_TRUE, 0, frame.getImage().size(), frame.getImage().begin(), 0, NULL, NULL);
-    rear_camera->buf.queue(buf_idx);
+    auto image = frame.get("image").as<capnp::Data>();
+    clEnqueueWriteBuffer(q, yuv_cl, CL_TRUE, 0, image.size(), image.begin(), 0, NULL, NULL);
+    camera.buf.queue(buf_idx);
     buf_idx = (buf_idx + 1) % FRAME_BUF_COUNT;
   }
-
-  delete s->sm;
 }
 
 }  // namespace
 
+// TODO: make this more generic
 CameraInfo cameras_supported[CAMERA_ID_MAX] = {
   [CAMERA_ID_IMX298] = {
     .frame_width = FRAME_WIDTH,
@@ -94,29 +79,14 @@ void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_i
               VISION_STREAM_RGB_FRONT, VISION_STREAM_YUV_FRONT);
 }
 
+void cameras_open(MultiCameraState *s) {}
+void cameras_close(MultiCameraState *s) {}
 void camera_autoexposure(CameraState *s, float grey_frac) {}
-
-void cameras_open(MultiCameraState *s) {
-  // LOG("*** open front ***");
-  camera_open(&s->front, false);
-
-  // LOG("*** open rear ***");
-  camera_open(&s->rear, true);
-}
-
-void cameras_close(MultiCameraState *s) {
-  camera_close(&s->rear);
-}
-
-// called by processing_thread
-void camera_process_rear(MultiCameraState *s, CameraState *c, int cnt) {
-  // empty
-}
+void camera_process_rear(MultiCameraState *s, CameraState *c, int cnt) {}
 
 void cameras_run(MultiCameraState *s) {
   std::thread t = start_process_thread(s, "processing", &s->rear, camera_process_rear);
   set_thread_name("frame_streaming");
-  run_frame_stream(s);
+  run_frame_stream(s->rear, "frame");
   t.join();
-  cameras_close(s);
 }
