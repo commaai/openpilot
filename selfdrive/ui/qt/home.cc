@@ -251,6 +251,10 @@ void GLWindow::timerUpdate() {
   if (ui_state.started != onroad) {
     onroad = ui_state.started;
     emit offroadTransition(!onroad);
+
+    // Change timeout to 0 when onroad, this will call timerUpdate continously.
+    // This puts visionIPC in charge of update frequency, reducing video latency
+    timer->start(onroad ? 0 : 1000 / UI_FREQ);
   }
 
   handle_display_state(&ui_state, false);
