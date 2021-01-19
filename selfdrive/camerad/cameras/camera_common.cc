@@ -339,7 +339,7 @@ void set_exposure_target(CameraState *c, const uint8_t *pix_ptr, int x_start, in
 extern ExitHandler do_exit;
 
 void *processing_thread(MultiCameraState *cameras, const char *tname,
-                          CameraState *cs, process_thread_cb callback) {
+                        CameraState *cs, process_thread_cb callback) {
   set_thread_name(tname);
 
   for (int cnt = 0; !do_exit; cnt++) {

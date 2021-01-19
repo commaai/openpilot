@@ -135,5 +135,5 @@ void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &fr
 void fill_frame_image(cereal::FrameData::Builder &framed, const CameraBuf *b);
 void set_exposure_target(CameraState *c, const uint8_t *pix_ptr, int x_start, int x_end, int x_skip, int y_start, int y_end, int y_skip);
 std::thread start_process_thread(MultiCameraState *cameras, const char *tname,
-                                    CameraState *cs, process_thread_cb callback);
+                                 CameraState *cs, process_thread_cb callback);
 void common_camera_process_front(SubMaster *sm, PubMaster *pm, CameraState *c, int cnt);
