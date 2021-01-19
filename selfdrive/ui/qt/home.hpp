@@ -1,19 +1,18 @@
 #pragma once
 
+#include <QGridLayout>
 #include <QLabel>
+#include <QOpenGLFunctions>
+#include <QOpenGLWidget>
+#include <QPushButton>
+#include <QStackedLayout>
+#include <QStackedWidget>
 #include <QTimer>
 #include <QWidget>
-#include <QGridLayout>
-#include <QStackedWidget>
-#include <QStackedLayout>
-#include <QOpenGLWidget>
-#include <QOpenGLFunctions>
-#include <QPushButton>
 
 #include "qt_sound.hpp"
-#include "widgets/offroad_alerts.hpp"
 #include "ui/ui.hpp"
-
+#include "widgets/offroad_alerts.hpp"
 
 // container window for onroad NVG UI
 class GLWindow : public QOpenGLWidget, protected QOpenGLFunctions {
@@ -21,11 +20,11 @@ class GLWindow : public QOpenGLWidget, protected QOpenGLFunctions {
 
 public:
   using QOpenGLWidget::QOpenGLWidget;
-  explicit GLWindow(QWidget *parent = 0);
+  explicit GLWindow(QWidget* parent = 0);
   void wake();
   ~GLWindow();
 
-  UIState *ui_state = nullptr;
+  inline static UIState ui_state = {0};
 
 signals:
   void offroadTransition(bool offroad);
@@ -36,8 +35,8 @@ protected:
   void paintGL() override;
 
 private:
-  QTimer *timer;
-  QTimer *backlight_timer;
+  QTimer* timer;
+  QTimer* backlight_timer;
 
   QtSound sound;
 
@@ -58,42 +57,40 @@ class OffroadHome : public QWidget {
   Q_OBJECT
 
 public:
-  explicit OffroadHome(QWidget *parent = 0);
+  explicit OffroadHome(QWidget* parent = 0);
 
 private:
-  QTimer *timer;
+  QTimer* timer;
 
   // offroad home screen widgets
-  QLabel *date;
-  QStackedLayout *center_layout;
-  OffroadAlert *alerts_widget;
-  QPushButton *alert_notification;
+  QLabel* date;
+  QStackedLayout* center_layout;
+  OffroadAlert* alerts_widget;
+  QPushButton* alert_notification;
 
 public slots:
-  void closeAlerts();	
+  void closeAlerts();
   void openAlerts();
   void refresh();
 };
-
 
 class HomeWindow : public QWidget {
   Q_OBJECT
 
 public:
-  explicit HomeWindow(QWidget *parent = 0);
-  GLWindow *glWindow;
+  explicit HomeWindow(QWidget* parent = 0);
+  GLWindow* glWindow;
 
 signals:
   void openSettings();
 
 protected:
-  void mousePressEvent(QMouseEvent *e) override;
+  void mousePressEvent(QMouseEvent* e) override;
 
 private:
-  QGridLayout *layout;
-  OffroadHome *home;
+  QGridLayout* layout;
+  OffroadHome* home;
 
 private slots:
   void setVisibility(bool offroad);
 };
-

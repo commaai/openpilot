@@ -1557,9 +1557,7 @@ static FrameMetadata get_frame_metadata(CameraState *s, uint32_t frame_id) {
   };
 }
 
-static void* ops_thread(void* arg) {
-  MultiCameraState *s = (MultiCameraState*)arg;
-
+static void ops_thread(MultiCameraState *s) {
   int rear_op_id_last = 0;
   int front_op_id_last = 0;
 
@@ -1584,8 +1582,6 @@ static void* ops_thread(void* arg) {
 
     util::sleep_for(50);
   }
-
-  return NULL;
 }
 
 static void update_lapmap(MultiCameraState *s, const CameraBuf *b, const int cnt) {
@@ -1662,7 +1658,7 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
   auto framed = msg.initEvent().initFrame();
   fill_frame_data(framed, b->cur_frame_data, cnt);
   if (env_send_rear) {
-    fill_frame_image(framed, (uint8_t *)b->cur_rgb_buf->addr, b->rgb_width, b->rgb_height, b->rgb_stride);
+    fill_frame_image(framed, b);
   }
   framed.setFocusVal(s->rear.focus);
   framed.setFocusConf(s->rear.confidence);
@@ -1679,10 +1675,8 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
 }
 
 void cameras_run(MultiCameraState *s) {
-  pthread_t ops_thread_handle;
-  int err = pthread_create(&ops_thread_handle, NULL, ops_thread, s);
-  assert(err == 0);
   std::vector<std::thread> threads;
+  threads.push_back(std::thread(ops_thread, s));
   threads.push_back(start_process_thread(s, "processing", &s->rear, camera_process_frame));
   threads.push_back(start_process_thread(s, "frontview", &s->front, camera_process_front));
 
@@ -1777,9 +1771,6 @@ void cameras_run(MultiCameraState *s) {
   }
 
   LOG(" ************** STOPPING **************");
-
-  err = pthread_join(ops_thread_handle, NULL);
-  assert(err == 0);
 
   for (auto &t : threads) t.join();
 

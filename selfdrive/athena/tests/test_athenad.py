@@ -64,10 +64,8 @@ class TestAthenadMethods(unittest.TestCase):
 
     try:
       item = athenad.UploadItem(path=fn, url="http://localhost:1238", headers={}, created_at=int(time.time()*1000), id='')
-      try:
+      with self.assertRaises(requests.exceptions.ConnectionError):
         athenad._do_upload(item)
-      except requests.exceptions.ConnectionError:
-        pass
 
       item = athenad.UploadItem(path=fn, url=f"{host}/qlog.bz2", headers={}, created_at=int(time.time()*1000), id='')
       resp = athenad._do_upload(item)

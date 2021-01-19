@@ -33,6 +33,12 @@ AddOption('--mpc-generate',
           action='store_true',
           help='regenerates the mpc sources')
 
+AddOption('--external-sconscript',
+          action='store',
+          metavar='FILE',
+          dest='external_sconscript',
+          help='add an external SConscript to the build')
+
 real_arch = arch = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()
 if platform.system() == "Darwin":
   arch = "Darwin"
@@ -375,3 +381,7 @@ if arch != "Darwin":
 if real_arch == "x86_64":
   SConscript(['tools/nui/SConscript'])
   SConscript(['tools/lib/index_log/SConscript'])
+
+external_sconscript = GetOption('external_sconscript')
+if external_sconscript:
+  SConscript([external_sconscript])

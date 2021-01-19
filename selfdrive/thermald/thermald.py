@@ -276,7 +276,6 @@ def thermald_thread():
     # If device is offroad we want to cool down before going onroad
     # since going onroad increases load and can make temps go over 107
     # We only do this if there is a relay that prevents the car from faulting
-    thermal_status = ThermalStatus.green # default to good condition
     is_offroad_for_5_min = (started_ts is None) and ((not started_seen) or (off_ts is None) or (sec_since_boot() - off_ts > 60 * 5))
     if max_cpu_temp > 107. or bat_temp >= 63. or (is_offroad_for_5_min and max_cpu_temp > 70.0):
       # onroad not allowed
@@ -293,6 +292,8 @@ def thermald_thread():
     elif max_cpu_temp > 75.0:
       # hysteresis between uploader not allowed and all good
       thermal_status = clip(thermal_status, ThermalStatus.green, ThermalStatus.yellow)
+    else:
+      thermal_status = ThermalStatus.green  # default to good condition
 
     # **** starting logic ****
 

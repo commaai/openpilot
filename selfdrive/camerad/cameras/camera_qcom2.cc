@@ -1070,8 +1070,7 @@ void camera_autoexposure(CameraState *s, float grey_frac) {
   cam_exp[s->camera_num].store(tmp);
 }
 
-static void* ae_thread(void* arg) {
-  MultiCameraState *s = (MultiCameraState*)arg;
+static void ae_thread(MultiCameraState *s) {
   CameraState *c_handles[3] = {&s->wide, &s->rear, &s->front};
 
   int op_id_last[3] = {0};
@@ -1090,8 +1089,6 @@ static void* ae_thread(void* arg) {
 
     util::sleep_for(50);
   }
-
-  return NULL;
 }
 
 void camera_process_front(MultiCameraState *s, CameraState *c, int cnt) {
@@ -1106,7 +1103,7 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
   auto framed = c == &s->rear ? msg.initEvent().initFrame() : msg.initEvent().initWideFrame();
   fill_frame_data(framed, b->cur_frame_data, cnt);
   if ((c == &s->rear && env_send_rear) || (c == &s->wide && env_send_wide)) {
-    fill_frame_image(framed, (uint8_t*)b->cur_rgb_buf->addr, b->rgb_width, b->rgb_height, b->rgb_stride);
+    fill_frame_image(framed, b);
   }
   if (c == &s->rear) {
     framed.setTransform(b->yuv_transform.v);
@@ -1114,35 +1111,16 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
   s->pm->send(c == &s->rear ? "frame" : "wideFrame", msg);
 
   if (cnt % 3 == 0) {
-    int exposure_x;
-    int exposure_y;
-    int exposure_width;
-    int exposure_height;
-    if (c == &s->rear) {
-      exposure_x = 96;
-      exposure_y = 160;
-      exposure_width = 1734;
-      exposure_height = 986;
-    } else { // c == &s->wide
-      exposure_x = 96;
-      exposure_y = 250;
-      exposure_width = 1734;
-      exposure_height = 524;
-    }
-    int skip = 2;
-    set_exposure_target(c, (const uint8_t *)b->cur_yuv_buf->y, exposure_x, exposure_x + exposure_width, skip, exposure_y, exposure_y + exposure_height, skip);
+    const auto [x, y, w, h] = (c == &s->wide) ? std::tuple(96, 250, 1734, 524) : std::tuple(96, 160, 1734, 986);
+    const int skip = 2;
+    set_exposure_target(c, (const uint8_t *)b->cur_yuv_buf->y, x, x + w, skip, y, y + h, skip);
   }
 }
 
 void cameras_run(MultiCameraState *s) {
-  int err;
-  // start threads
   LOG("-- Starting threads");
-  pthread_t ae_thread_handle;
-  err = pthread_create(&ae_thread_handle, NULL,
-                       ae_thread, s);
-  assert(err == 0);
   std::vector<std::thread> threads;
+  threads.push_back(std::thread(ae_thread, s));
   threads.push_back(start_process_thread(s, "processing", &s->rear, camera_process_frame));
   threads.push_back(start_process_thread(s, "frontview", &s->front, camera_process_front));
   threads.push_back(start_process_thread(s, "wideview", &s->wide, camera_process_frame));
@@ -1192,9 +1170,6 @@ void cameras_run(MultiCameraState *s) {
   }
 
   LOG(" ************** STOPPING **************");
-
-  err = pthread_join(ae_thread_handle, NULL);
-  assert(err == 0);
 
   for (auto &t : threads) t.join();
 

@@ -151,18 +151,8 @@ typedef struct UIState {
   // NVG
   NVGcontext *vg;
 
-  // fonts and images
-  int font_sans_regular;
-  int font_sans_semibold;
-  int font_sans_bold;
-  int img_wheel;
-  int img_turn;
-  int img_face;
-  int img_button_settings;
-  int img_button_home;
-  int img_battery;
-  int img_battery_charging;
-  int img_network[6];
+  // images
+  std::map<std::string, int> images;
 
   SubMaster *sm;
 
@@ -189,6 +179,7 @@ typedef struct UIState {
   uint64_t started_frame;
 
   Rect video_rect;
+  float car_space_transform[6];
 } UIState;
 
 void ui_init(UIState *s);

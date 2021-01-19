@@ -1,6 +1,7 @@
 Import('env', 'arch')
 
 cpp_path = [
+    "#selfdrive",
     "#phonelibs/acado/include",
     "#phonelibs/acado/include/acado",
     "#phonelibs/qpoases/INCLUDE",

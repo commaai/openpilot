@@ -2,7 +2,7 @@
 #include <string.h>
 #include <math.h>
 #include <map>
-
+#include "common/util.h"
 #include "paint.hpp"
 #include "sidebar.hpp"
 
@@ -12,17 +12,17 @@ static void draw_background(UIState *s) {
 #else
   const NVGcolor color = nvgRGBA(0x39, 0x39, 0x39, 0xff);
 #endif
-  ui_draw_rect(s->vg, 0, 0, sbr_w, s->fb_h, color);
+  ui_fill_rect(s->vg, {0, 0, sbr_w, s->fb_h}, color);
 }
 
 static void draw_settings_button(UIState *s) {
   const float alpha = s->active_app == cereal::UiLayoutState::App::SETTINGS ? 1.0f : 0.65f;
-  ui_draw_image(s->vg, settings_btn, s->img_button_settings, alpha);
+  ui_draw_image(s, settings_btn, "button_settings", alpha);
 }
 
 static void draw_home_button(UIState *s) {
   const float alpha = s->active_app == cereal::UiLayoutState::App::HOME ? 1.0f : 0.65f;
-  ui_draw_image(s->vg, home_btn, s->img_button_home, alpha);
+  ui_draw_image(s, home_btn, "button_home", alpha);
 }
 
 static void draw_network_strength(UIState *s) {
@@ -32,17 +32,16 @@ static void draw_network_strength(UIState *s) {
       {cereal::ThermalData::NetworkStrength::MODERATE, 3},
       {cereal::ThermalData::NetworkStrength::GOOD, 4},
       {cereal::ThermalData::NetworkStrength::GREAT, 5}};
-  const Rect rect = {58, 196, 176, 27};
   const int img_idx = s->scene.thermal.getNetworkType() == cereal::ThermalData::NetworkType::NONE ? 0 : network_strength_map[s->scene.thermal.getNetworkStrength()];
-  ui_draw_image(s->vg, rect, s->img_network[img_idx], 1.0f);
+  ui_draw_image(s, {58, 196, 176, 27}, util::string_format("network_%d", img_idx).c_str(), 1.0f);
 }
 
 static void draw_battery_icon(UIState *s) {
-  int battery_img = s->scene.thermal.getBatteryStatus() == "Charging" ? s->img_battery_charging : s->img_battery;
+  const char *battery_img = s->scene.thermal.getBatteryStatus() == "Charging" ? "battery_charging" : "battery";
   const Rect rect = {160, 255, 76, 36};
-  ui_draw_rect(s->vg, rect.x + 6, rect.y + 5,
-               ((rect.w - 19) * (s->scene.thermal.getBatteryPercent() * 0.01)), rect.h - 11, COLOR_WHITE);
-  ui_draw_image(s->vg, rect, battery_img, 1.0f);
+  ui_fill_rect(s->vg, {rect.x + 6, rect.y + 5,
+              int((rect.w - 19) * s->scene.thermal.getBatteryPercent() * 0.01), rect.h - 11}, COLOR_WHITE);
+  ui_draw_image(s, rect, battery_img, 1.0f);
 }
 
 static void draw_network_type(UIState *s) {
@@ -59,17 +58,12 @@ static void draw_network_type(UIState *s) {
   const char *network_type = network_type_map[s->scene.thermal.getNetworkType()];
   nvgFillColor(s->vg, COLOR_WHITE);
   nvgFontSize(s->vg, 48);
-  nvgFontFaceId(s->vg, s->font_sans_regular);
+  nvgFontFace(s->vg, "sans-regular");
   nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
   nvgTextBox(s->vg, network_x, network_y, network_w, network_type ? network_type : "--", NULL);
 }
 
 static void draw_metric(UIState *s, const char *label_str, const char *value_str, const int severity, const int y_offset, const char *message_str) {
-  const int metric_x = 30;
-  const int metric_y = 338 + y_offset;
-  const int metric_w = 240;
-  const int metric_h = message_str ? strchr(message_str, '\n') ? 124 : 100 : 148;
-
   NVGcolor status_color;
 
   if (severity == 0) {
@@ -80,32 +74,32 @@ static void draw_metric(UIState *s, const char *label_str, const char *value_str
     status_color = COLOR_RED;
   }
 
-  ui_draw_rect(s->vg, metric_x, metric_y, metric_w, metric_h,
-               severity > 0 ? COLOR_WHITE : COLOR_WHITE_ALPHA(85), 20, 2);
+  const Rect rect = {30, 338 + y_offset, 240, message_str ? strchr(message_str, '\n') ? 124 : 100 : 148};
+  ui_draw_rect(s->vg, rect, severity > 0 ? COLOR_WHITE : COLOR_WHITE_ALPHA(85), 2, 20.);
 
   nvgBeginPath(s->vg);
-  nvgRoundedRectVarying(s->vg, metric_x + 6, metric_y + 6, 18, metric_h - 12, 25, 0, 0, 25);
+  nvgRoundedRectVarying(s->vg, rect.x + 6, rect.y + 6, 18, rect.h - 12, 25, 0, 0, 25);
   nvgFillColor(s->vg, status_color);
   nvgFill(s->vg);
 
   if (!message_str) {
     nvgFillColor(s->vg, COLOR_WHITE);
     nvgFontSize(s->vg, 78);
-    nvgFontFaceId(s->vg, s->font_sans_bold);
+    nvgFontFace(s->vg, "sans-bold");
     nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_MIDDLE);
-    nvgTextBox(s->vg, metric_x + 50, metric_y + 50, metric_w - 60, value_str, NULL);
+    nvgTextBox(s->vg, rect.x + 50, rect.y + 50, rect.w - 60, value_str, NULL);
 
     nvgFillColor(s->vg, COLOR_WHITE);
     nvgFontSize(s->vg, 48);
-    nvgFontFaceId(s->vg, s->font_sans_regular);
+    nvgFontFace(s->vg, "sans-regular");
     nvgTextAlign(s->vg, NVG_ALIGN_LEFT | NVG_ALIGN_MIDDLE);
-    nvgTextBox(s->vg, metric_x + 50, metric_y + 50 + 66, metric_w - 60, label_str, NULL);
+    nvgTextBox(s->vg, rect.x + 50, rect.y + 50 + 66, rect.w - 60, label_str, NULL);
   } else {
     nvgFillColor(s->vg, COLOR_WHITE);
     nvgFontSize(s->vg, 48);
-    nvgFontFaceId(s->vg, s->font_sans_bold);
+    nvgFontFace(s->vg, "sans-bold");
     nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
-    nvgTextBox(s->vg, metric_x + 35, metric_y + (strchr(message_str, '\n') ? 40 : 50), metric_w - 50, message_str, NULL);
+    nvgTextBox(s->vg, rect.x + 35, rect.y + (strchr(message_str, '\n') ? 40 : 50), rect.w - 50, message_str, NULL);
   }
 }
 
@@ -126,7 +120,7 @@ static void draw_panda_metric(UIState *s) {
   std::string panda_message = "VEHICLE\nONLINE";
   if (s->scene.hwType == cereal::HealthData::HwType::UNKNOWN) {
     panda_severity = 2;
-    panda_message = "NO\nVEHICLE";
+    panda_message = "NO\nPANDA";
   } else if (s->started) {
     if (s->scene.satelliteCount < 6) {
       panda_severity = 1;

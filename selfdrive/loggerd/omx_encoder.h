@@ -5,6 +5,7 @@
 #include <stdbool.h>
 
 #include <pthread.h>
+#include <vector>
 #include <OMX_Component.h>
 
 extern "C" {
@@ -60,11 +61,8 @@ private:
 
   OMX_HANDLETYPE handle;
 
-  int num_in_bufs;
-  OMX_BUFFERHEADERTYPE** in_buf_headers;
-
-  int num_out_bufs;
-  OMX_BUFFERHEADERTYPE** out_buf_headers;
+  std::vector<OMX_BUFFERHEADERTYPE *> in_buf_headers;
+  std::vector<OMX_BUFFERHEADERTYPE *> out_buf_headers;
 
   uint64_t last_t;
 

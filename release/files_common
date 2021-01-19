@@ -307,6 +307,7 @@ selfdrive/loggerd/omx_encoder.h
 selfdrive/loggerd/logger.cc
 selfdrive/loggerd/logger.h
 selfdrive/loggerd/loggerd.cc
+selfdrive/loggerd/bootlog.cc
 selfdrive/loggerd/raw_logger.cc
 selfdrive/loggerd/raw_logger.h
 selfdrive/loggerd/include/msm_media_info.h
@@ -333,7 +334,6 @@ selfdrive/thermald/power_monitoring.py
 selfdrive/test/__init__.py
 selfdrive/test/helpers.py
 selfdrive/test/setup_device_ci.sh
-selfdrive/test/test_cpu_usage.py
 selfdrive/test/test_fingerprints.py
 selfdrive/test/test_manager.py
 
@@ -349,7 +349,7 @@ selfdrive/ui/android/spinner/spinner.c
 
 selfdrive/ui/android/text/Makefile
 selfdrive/ui/android/text/text
-selfdrive/ui/android/text/text.c
+selfdrive/ui/android/text/text.cc
 
 selfdrive/ui/qt/*.cc
 selfdrive/ui/qt/*.hpp

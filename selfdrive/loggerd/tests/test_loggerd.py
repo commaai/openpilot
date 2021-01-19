@@ -47,7 +47,7 @@ class TestLoggerd(unittest.TestCase):
 
   def _gen_bootlog(self):
     with Timeout(5):
-      out = subprocess.check_output(["./loggerd", "--bootlog"], cwd=os.path.join(BASEDIR, "selfdrive/loggerd"), encoding='utf-8')
+      out = subprocess.check_output("./bootlog", cwd=os.path.join(BASEDIR, "selfdrive/loggerd"), encoding='utf-8')
 
     # check existence
     d = self._get_log_dir(out)
