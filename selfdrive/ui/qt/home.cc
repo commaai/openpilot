@@ -126,6 +126,7 @@ HomeWindow::HomeWindow(QWidget *parent) : QWidget(parent) {
 
   // onroad UI
   glWindow = new GLWindow(this);
+  glWindow->setUpdatesEnabled(false);
   glWindow->setAttribute(Qt::WA_NativeWindow);
   glWindow->setAttribute(Qt::WA_PaintOnScreen);
   glWindow->setAttribute(Qt::WA_NoSystemBackground);
