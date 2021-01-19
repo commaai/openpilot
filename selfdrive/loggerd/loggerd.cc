@@ -475,7 +475,6 @@ int main(int argc, char** argv) {
 
   s.ctx = Context::create();
   Poller * poller = Poller::create();
-  std::vector<SubSocket*> socks;
 
   // subscribe to all socks
   for (const auto& it : services) {
@@ -484,7 +483,6 @@ int main(int argc, char** argv) {
     SubSocket * sock = SubSocket::create(s.ctx, it.name);
     assert(sock != NULL);
     poller->registerSocket(sock);
-    socks.push_back(sock);
 
     for (int cid=0; cid<=MAX_CAM_IDX; cid++) {
       if (std::string(it.name) == cameras_logged[cid].frame_packet_name) {
@@ -637,7 +635,7 @@ int main(int argc, char** argv) {
   logger_close(&s.logger);
 
   // messaging cleanup
-  for (auto sock : socks) delete sock;
+  for (auto &sock : qlog_states) delete sock.first;
   delete poller;
   delete s.ctx;
 
