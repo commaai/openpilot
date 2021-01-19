@@ -101,7 +101,7 @@ void log_init_data(LoggerState *s) {
   }
 
   auto bytes = msg.toBytes();
-  logger_log(s, bytes.begin(), bytes.size(), true);
+  logger_log(s, bytes.begin(), bytes.size(), s->has_qlog);
 }
 
 
