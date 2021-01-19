@@ -42,6 +42,7 @@ enum class NetworkingState {
   IDLE,
   CONNECTING_TO_WIFI_NETWORK,
 };
+
 class Networking : public QWidget {
   Q_OBJECT
 
@@ -71,4 +72,21 @@ private slots:
   void successfulConnection(QString ssid);
 };
 
+class AdvancedNetworking : public QWidget {
+  Q_OBJECT
+public:
+  explicit AdvancedNetworking(QWidget* parent = 0);
 
+private:
+  QStackedLayout* s;
+  InputField* inputField;
+
+signals:
+  void openKeyboard();
+  void closeKeyboard();
+  void backPress();
+
+private slots:
+  void receiveText(QString text);
+  void abortTextInput();
+};

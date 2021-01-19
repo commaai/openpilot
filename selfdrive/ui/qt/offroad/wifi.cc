@@ -20,11 +20,13 @@ void clearLayout(QLayout* layout) {
     delete item;
   }
 }
-QWidget layoutToWidget(QLayout* l, QWidget* parent = 0){
+
+QWidget* layoutToWidget(QLayout* l, QWidget* parent = 0){
   QWidget* q = new QWidget(parent);
   q->setLayout(l);
   return q;
 }
+//==================================================================================================================================================///
 
 Networking::Networking(QWidget* parent){
   try {
@@ -50,15 +52,26 @@ Networking::Networking(QWidget* parent){
   s->addWidget(inputField);
 
   QVBoxLayout* vlayout = new QVBoxLayout(this);
-  QPushButton* advancdSettings = new QPushButton("Advanced network settings");
-  vlayout->addWidget(advancdSettings);
+  QPushButton* advancedSettings = new QPushButton("Advanced");
+  advancedSettings->setStyleSheet(R"(background-color: #114265; margin-right: 30px)");
+  advancedSettings->setFixedSize(300, 100);
+  connect(advancedSettings, &QPushButton::released, [=](){s->setCurrentIndex(2);});
+  vlayout->addSpacing(10);
+  vlayout->addWidget(advancedSettings, 0, Qt::AlignRight);
+  vlayout->addSpacing(10);
+
   wifiWidget = new WifiUI(this, 5, wifi);
   connect(wifiWidget, SIGNAL(connectToNetwork(Network)), this, SLOT(connectToNetwork(Network)));
-  vlayout->addWidget(wifiWidget);
+  vlayout->addWidget(wifiWidget, 1);
 
-  s->add(layoutToWidget(vlayout, this));
+  s->addWidget(layoutToWidget(vlayout, this));
+
+  AdvancedNetworking* an = new AdvancedNetworking(this);
+  connect(an, &AdvancedNetworking::backPress, [=](){s->setCurrentIndex(1);});
+  s->addWidget(an);
 
   s->setCurrentIndex(1);
+
 
   // Update network status
   QTimer* timer = new QTimer(this);
@@ -146,7 +159,41 @@ void Networking::successfulConnection(QString ssid) {
   qDebug()<<"Network we just connected to doesn't seem to exist...";
 }
 
+//=====================================================================================================================================================//
 
+AdvancedNetworking::AdvancedNetworking(QWidget* parent){
+  s = new QStackedLayout(this);// inputField and settings
+  inputField = new InputField();
+  connect(inputField, SIGNAL(emitText(QString)), this, SLOT(receiveText(QString)));
+  connect(inputField, SIGNAL(cancel()), this, SLOT(abortTextInput()));
+  s->addWidget(inputField);
+
+  QVBoxLayout* vlayout = new QVBoxLayout(this);
+  
+  QPushButton* back = new QPushButton("BACK");
+  connect(back, &QPushButton::released, [=](){emit backPress();});
+  vlayout->addWidget(back, 0, Qt::AlignLeft);
+
+  QWidget* settingsWidget = layoutToWidget(vlayout);
+  settingsWidget->setStyleSheet(R"(
+    QPushButton {
+      padding: 0;
+      background-color: #114265;
+    }
+    QPushButton:disabled {
+      background-color: #323C43;
+    }
+  )");
+  s->addWidget(settingsWidget);
+  s->setCurrentIndex(1);
+}
+
+void AdvancedNetworking::receiveText(QString text){
+  qDebug()<<"Advanced text:"<<text;
+}
+void AdvancedNetworking::abortTextInput(){
+  qDebug()<<"User aborted text input";
+}
 //=====================================================================================================================================================//
 
 WifiUI::WifiUI(QWidget *parent, int page_length, WifiManager* wifi) : QWidget(parent), networks_per_page(page_length), wifi(wifi) {
@@ -162,7 +209,7 @@ WifiUI::WifiUI(QWidget *parent, int page_length, WifiManager* wifi) : QWidget(pa
   page = 0;
   refresh();  
 }
-
+// TODO check it looks nice with tethering
 void WifiUI::refresh() {
   wifi->request_scan();
   wifi->refreshNetworks();
