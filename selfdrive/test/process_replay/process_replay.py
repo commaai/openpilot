@@ -342,7 +342,9 @@ def python_replay_process(cfg, lr):
   for msg in lr:
     if msg.which() == 'carParams':
       # TODO: get a stock VW route
-      if "Generic Volkswagen" not in msg.carParams.carFingerprint:
+      if "Generic Volkswagen" in msg.carParams.carFingerprint:
+        os.environ['FINGERPRINT'] = "VOLKSWAGEN GOLF"
+      else:
         os.environ['FINGERPRINT'] = msg.carParams.carFingerprint
       break
 

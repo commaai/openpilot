@@ -12,24 +12,22 @@ from tools.lib.logreader import LogReader
 INJECT_MODEL = 0
 
 segments = [
-  ("HYUNDAI", "02c45f73a2e5c6e9|2021-01-01--19-08-22--1"),    # HYUNDAI.SONATA
-  ("TOYOTA", "0982d79ebb0de295|2021-01-04--17-13-21--13"),    # TOYOTA.PRIUS (INDI)
-  ("TOYOTA", "0982d79ebb0de295|2021-01-03--20-03-36--6"),     # TOYOTA.RAV4  (LQR)
-  ("HONDA", "0982d79ebb0de295|2021-01-08--10-13-10--6"),      # HONDA.CIVIC (NIDEC)
-  ("HONDA", "a8e8bf6a3864361b|2021-01-04--03-01-18--2"),      # HONDA.ACCORD (BOSCH)
-  ("CHRYSLER", "52d86230ee29aa84|2021-01-10--17-16-34--30"),  # CHRYSLER.PACIFICA
-  ("SUBARU", "4d70bc5e608678be|2021-01-15--17-02-04--5"),     # SUBARU.IMPREZA
-  ("GM", "ae3ed0eb20960a20|2021-01-15--15-04-06--8"),         # GM.VOLT
-
-  # TODO: update this route
-  ("VOLKSWAGEN", "76b83eb0245de90e|2020-03-05--19-16-05--3"), # VW.GOLF
-  ("NISSAN", "fbbfa6af821552b9|2020-03-03--08-09-43--0"),     # NISSAN.XTRAIL
+  ("HYUNDAI", "02c45f73a2e5c6e9|2021-01-01--19-08-22--1"),     # HYUNDAI.SONATA
+  ("TOYOTA", "0982d79ebb0de295|2021-01-04--17-13-21--13"),     # TOYOTA.PRIUS (INDI)
+  ("TOYOTA", "0982d79ebb0de295|2021-01-03--20-03-36--6"),      # TOYOTA.RAV4  (LQR)
+  ("HONDA", "0982d79ebb0de295|2021-01-08--10-13-10--6"),       # HONDA.CIVIC (NIDEC)
+  ("HONDA", "a8e8bf6a3864361b|2021-01-04--03-01-18--2"),       # HONDA.ACCORD (BOSCH)
+  ("CHRYSLER", "52d86230ee29aa84|2021-01-10--17-16-34--30"),   # CHRYSLER.PACIFICA
+  ("SUBARU", "4d70bc5e608678be|2021-01-15--17-02-04--5"),      # SUBARU.IMPREZA
+  ("GM", "ae3ed0eb20960a20|2021-01-15--15-04-06--8"),          # GM.VOLT
+  ("NISSAN", "e4d79cf6b8b19a0d|2021-01-17--14-48-08--7"),      # NISSAN.XTRAIL
+  ("VOLKSWAGEN", "18105fc8427a07e1|2021-01-18--21-24-08--12"), # VW.GOLF
 
   # Enable when port is tested and dascamOnly is no longer set
   #("MAZDA", "32a319f057902bb3|2020-04-27--15-18-58--2"),      # MAZDA.CX5
 ]
 
-# ford doesn't need to be tested until a full port is done
+# dashcamOnly makes don't need to be tested until a full port is done
 excluded_interfaces = ["mock", "ford", "mazda"]
 
 BASE_URL = "https://commadataci.blob.core.windows.net/openpilotci/"
