@@ -12,11 +12,101 @@
 
 #include <pthread.h>
 #include <bzlib.h>
+#include <iostream>
+#include <fstream>
+#include <streambuf>
+#ifdef QCOM
+#include <cutils/properties.h>
+#endif
 #include "messaging.hpp"
 
 #include "common/swaglog.h"
-
+#include "common/params.h"
+#include "common/util.h"
+#include "common/version.h"
 #include "logger.h"
+
+void append_property(const char* key, const char* value, void *cookie) {
+  std::vector<std::pair<std::string, std::string> > *properties =
+    (std::vector<std::pair<std::string, std::string> > *)cookie;
+
+  properties->push_back(std::make_pair(std::string(key), std::string(value)));
+}
+
+static bool file_exists(const std::string& fn) {
+  std::ifstream f(fn);
+  return f.good();
+}
+
+kj::Array<capnp::word> gen_init_data() {
+  MessageBuilder msg;
+  auto init = msg.initEvent().initInitData();
+
+  if (file_exists("/EON")) {
+    init.setDeviceType(cereal::InitData::DeviceType::NEO);
+  } else if (file_exists("/TICI")) {
+    init.setDeviceType(cereal::InitData::DeviceType::TICI);
+  } else {
+    init.setDeviceType(cereal::InitData::DeviceType::PC);
+  }
+
+  init.setVersion(capnp::Text::Reader(COMMA_VERSION));
+
+  std::ifstream cmdline_stream("/proc/cmdline");
+  std::vector<std::string> kernel_args;
+  std::string buf;
+  while (cmdline_stream >> buf) {
+    kernel_args.push_back(buf);
+  }
+
+  auto lkernel_args = init.initKernelArgs(kernel_args.size());
+  for (int i=0; i<kernel_args.size(); i++) {
+    lkernel_args.set(i, kernel_args[i]);
+  }
+
+  init.setKernelVersion(util::read_file("/proc/version"));
+
+#ifdef QCOM
+  {
+    std::vector<std::pair<std::string, std::string> > properties;
+    property_list(append_property, (void*)&properties);
+
+    auto lentries = init.initAndroidProperties().initEntries(properties.size());
+    for (int i=0; i<properties.size(); i++) {
+      auto lentry = lentries[i];
+      lentry.setKey(properties[i].first);
+      lentry.setValue(properties[i].second);
+    }
+  }
+#endif
+
+  const char* dongle_id = getenv("DONGLE_ID");
+  if (dongle_id) {
+    init.setDongleId(std::string(dongle_id));
+  }
+  init.setDirty(!getenv("CLEAN"));
+
+  // log params
+  Params params = Params();
+  init.setGitCommit(params.get("GitCommit"));
+  init.setGitBranch(params.get("GitBranch"));
+  init.setGitRemote(params.get("GitRemote"));
+  init.setPassive(params.read_db_bool("Passive"));
+  {
+    std::map<std::string, std::string> params_map;
+    params.read_db_all(&params_map);
+    auto lparams = init.initParams().initEntries(params_map.size());
+    int i = 0;
+    for (auto& kv : params_map) {
+      auto lentry = lparams[i];
+      lentry.setKey(kv.first);
+      lentry.setValue(kv.second);
+      i++;
+    }
+  }
+  return capnp::messageToFlatArray(msg);
+}
+
 
 static void log_sentinel(LoggerState *s, cereal::Sentinel::SentinelType type) {
   MessageBuilder msg;
