@@ -27,7 +27,7 @@ PairingQRWidget::PairingQRWidget(QWidget* parent) : QWidget(parent) {
   QVBoxLayout* v = new QVBoxLayout;
   v->addWidget(qrCode, 0, Qt::AlignCenter);
   setLayout(v);
-  
+
   QTimer* timer = new QTimer(this);
   timer->start(30 * 1000);// HaLf a minute
   connect(timer, SIGNAL(timeout()), this, SLOT(refresh()));
@@ -184,8 +184,8 @@ SetupWidget::SetupWidget(QWidget* parent) : QWidget(parent) {
   )");
   QObject::connect(finishButton, SIGNAL(released()), this, SLOT(showQrCode()));
   finishRegistationLayout->addWidget(finishButton);
-    
-  QLabel* registrationDescription = new QLabel("Pair your comma account with comma connect", this);
+
+  QLabel* registrationDescription = new QLabel("Pair your device with comma connect app", this);
   registrationDescription->setStyleSheet(R"(
     font-size: 50px;
   )");
