@@ -4,6 +4,8 @@ if [ -z "$BASEDIR" ]; then
   BASEDIR="/data/openpilot"
 fi
 
+unset REQUIRED_NEOS_VERSION
+unset AGNOS_VERSION
 source "$BASEDIR/launch_env.sh"
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
