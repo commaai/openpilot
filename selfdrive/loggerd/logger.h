@@ -1,5 +1,4 @@
-#ifndef LOGGER_H
-#define LOGGER_H
+#pragma once
 
 #include <stdio.h>
 #include <stdint.h>
@@ -7,13 +6,11 @@
 #include <bzlib.h>
 #include <kj/array.h>
 #include <capnp/serialize.h>
+
 #if defined(QCOM) || defined(QCOM2)
 const std::string LOG_ROOT = "/data/media/0/realdata";
 #else
 const std::string LOG_ROOT = util::getenv_default("HOME", "/.comma/media/0/realdata", "/data/media/0/realdata");
-#endif
-#ifdef __cplusplus
-extern "C" {
 #endif
 
 #define LOGGER_MAX_HANDLES 16
@@ -53,7 +50,3 @@ void logger_log(LoggerState *s, uint8_t* data, size_t data_size, bool in_qlog);
 
 void lh_log(LoggerHandle* h, uint8_t* data, size_t data_size, bool in_qlog);
 void lh_close(LoggerHandle* h);
-#ifdef __cplusplus
-}
-#endif
-#endif
