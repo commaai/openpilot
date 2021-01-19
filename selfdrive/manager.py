@@ -421,12 +421,6 @@ def manager_init():
   crash.bind_user(id=dongle_id)
   crash.bind_extra(version=version, dirty=dirty, is_eon=True)
 
-  os.umask(0)
-  try:
-    os.mkdir(ROOT, 0o777)
-  except OSError:
-    pass
-
   # ensure shared libraries are readable by apks
   if EON:
     os.chmod(BASEDIR, 0o755)
