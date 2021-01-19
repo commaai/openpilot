@@ -146,7 +146,6 @@ import cereal.messaging as messaging
 
 from common.params import Params
 from selfdrive.registration import register
-from selfdrive.loggerd.config import ROOT
 from selfdrive.launcher import launcher
 
 
