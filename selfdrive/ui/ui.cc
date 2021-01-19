@@ -182,7 +182,7 @@ static void update_alert(UIState *s) {
   if (!s->started || s->scene.frontview) return;
 
   UIScene &scene = s->scene;
-  if (s->sm.updated("controlsState")) {
+  if (s->sm->updated("controlsState")) {
     auto alert_sound = scene.controls_state.getAlertSound();
     if (scene.alert_type.compare(scene.controls_state.getAlertType()) != 0) {
       if (alert_sound == AudibleAlert::NONE) {
