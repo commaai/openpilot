@@ -275,7 +275,10 @@ FW_VERSIONS = {
       b'\xf1\x81640J0051\x00\x00\x00\x00\x00\x00\x00\x00',
       b'\xf1\x81640K0051\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
-    (Ecu.eps, 0x7d4, None): [b'\xf1\x00LX2 MDPS C 1.00 1.03 56310-S8020 4LXDC103',],
+    (Ecu.eps, 0x7d4, None): [
+      b'\xf1\x00LX2 MDPS C 1,00 1,03 56310-S8020 4LXDC103', # modified firmware
+      b'\xf1\x00LX2 MDPS C 1.00 1.03 56310-S8020 4LXDC103',
+    ],
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00LX2 MFC  AT USA LHD 1.00 1.03 99211-S8100 190125',
       b'\xf1\x00LX2 MFC  AT USA LHD 1.00 1.05 99211-S8100 190909',
