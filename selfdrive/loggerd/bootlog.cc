@@ -8,11 +8,7 @@
 
 int main(int argc, char** argv) {
   LoggerState logger;
-  {
-    auto words = gen_init_data();
-    auto bytes = words.asBytes();
-    logger_init(&logger, "bootlog", bytes.begin(), bytes.size(), false);
-  }
+  logger_init(&logger, "bootlog", false);
 
   char segment_path[4096];
   int err = logger_next(&logger, LOG_ROOT.c_str(), segment_path, sizeof(segment_path), nullptr);

@@ -362,11 +362,7 @@ int main(int argc, char** argv) {
   }
 
   // init logger
-  {
-    auto words = gen_init_data();
-    auto bytes = words.asBytes();
-    logger_init(&s.logger, "rlog", bytes.begin(), bytes.size(), true);
-  }
+  logger_init(&s.logger, "rlog", true);
 
   // init encoders
   pthread_mutex_init(&s.rotate_lock, NULL);

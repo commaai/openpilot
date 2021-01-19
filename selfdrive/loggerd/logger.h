@@ -34,10 +34,6 @@ typedef struct LoggerHandle {
 
 typedef struct LoggerState {
   pthread_mutex_t lock;
-
-  uint8_t* init_data;
-  size_t init_data_len;
-
   int part;
   char route_name[64];
   char log_name[64];
@@ -47,7 +43,7 @@ typedef struct LoggerState {
   LoggerHandle* cur_handle;
 } LoggerState;
 
-void logger_init(LoggerState *s, const char* log_name, const uint8_t* init_data, size_t init_data_len, bool has_qlog);
+void logger_init(LoggerState *s, const char* log_name, bool has_qlog);
 int logger_next(LoggerState *s, const char* root_path,
                             char* out_segment_path, size_t out_segment_path_len,
                             int* out_part);
@@ -60,5 +56,4 @@ void lh_close(LoggerHandle* h);
 #ifdef __cplusplus
 }
 #endif
-kj::Array<capnp::word> gen_init_data();
 #endif

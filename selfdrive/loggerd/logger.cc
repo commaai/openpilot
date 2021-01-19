@@ -33,7 +33,7 @@ void append_property(const char* key, const char* value, void *cookie) {
   properties->push_back(std::make_pair(std::string(key), std::string(value)));
 }
 
-kj::Array<capnp::word> gen_init_data() {
+void log_init_data(LoggerState *s) {
   MessageBuilder msg;
   auto init = msg.initEvent().initInitData();
 
@@ -99,7 +99,9 @@ kj::Array<capnp::word> gen_init_data() {
       i++;
     }
   }
-  return capnp::messageToFlatArray(msg);
+
+  auto bytes = msg.toBytes();
+  logger_log(s, bytes.begin(), bytes.size(), true);
 }
 
 
@@ -128,15 +130,9 @@ static int mkpath(char* file_path) {
   return 0;
 }
 
-void logger_init(LoggerState *s, const char* log_name, const uint8_t* init_data, size_t init_data_len, bool has_qlog) {
+void logger_init(LoggerState *s, const char* log_name, bool has_qlog) {
   memset(s, 0, sizeof(*s));
-  if (init_data) {
-    s->init_data = (uint8_t*)malloc(init_data_len);
-    assert(s->init_data);
-    memcpy(s->init_data, init_data, init_data_len);
-    s->init_data_len = init_data_len;
-  }
-
+ 
   umask(0);
 
   pthread_mutex_init(&s->lock, NULL);
@@ -195,20 +191,10 @@ static LoggerHandle* logger_open(LoggerState *s, const char* root_path) {
     h->bz_qlog = BZ2_bzWriteOpen(&bzerror, h->qlog_file, 9, 0, 30);
     if (bzerror != BZ_OK) goto fail;
   }
-
-  if (s->init_data) {
-    BZ2_bzWrite(&bzerror, h->bz_file, s->init_data, s->init_data_len);
-    if (bzerror != BZ_OK) goto fail;
-
-    if (s->has_qlog) {
-      // init data goes in the qlog too
-      BZ2_bzWrite(&bzerror, h->bz_qlog, s->init_data, s->init_data_len);
-      if (bzerror != BZ_OK) goto fail;
-    }
-  }
-
+  
   pthread_mutex_init(&h->lock, NULL);
   h->refcnt++;
+  log_init_data(s);
   return h;
 fail:
   LOGE("logger failed to open files");
@@ -288,7 +274,6 @@ void logger_close(LoggerState *s) {
   log_sentinel(s, cereal::Sentinel::SentinelType::END_OF_ROUTE);
 
   pthread_mutex_lock(&s->lock);
-  free(s->init_data);
   if (s->cur_handle) {
     lh_close(s->cur_handle);
   }
