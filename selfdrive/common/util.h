@@ -96,6 +96,12 @@ inline std::string getenv_default(const char* env_var, const char * suffix, cons
 inline void sleep_for(const int milliseconds) {
   std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
 }
+
+inline bool file_exists(const std::string& fn) {
+  std::ifstream f(fn);
+  return f.good();
+}
+
 }
 
 class ExitHandler {
