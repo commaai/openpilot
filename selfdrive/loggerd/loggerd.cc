@@ -107,6 +107,7 @@ LogCameraInfo cameras_logged[LOG_CAMERA_ID_MAX] = {
 namespace {
 
 constexpr int SEGMENT_LENGTH = 60;
+const int segment_length = getenv("LOGGERD_TEST") ? atoi(getenv("LOGGERD_SEGMENT_LENGTH")) : SEGMENT_LENGTH;
 #if defined(QCOM) || defined(QCOM2)
 std::string LOG_ROOT = "/data/media/0/realdata";
 #else
@@ -188,6 +189,9 @@ struct LoggerdState {
   char segment_path[4096];
   int rotate_segment;
   pthread_mutex_t rotate_lock;
+  double last_rotate_tms;
+  double last_camera_seen_tms;
+  std::vector<std::thread> encoder_threads;
   RotateState rotate_state[LOG_CAMERA_ID_MAX-1];
 };
 LoggerdState s;
@@ -451,6 +455,44 @@ static void bootlog() {
   logger_close(&s.logger);
 }
 
+void loggerd_rotate() {
+  bool new_segment = s.logger.part == -1;
+  if (s.logger.part > -1) {
+    double tms = millis_since_boot();
+    if (tms - s.last_camera_seen_tms <= NO_CAMERA_PATIENCE && s.encoder_threads.size() > 0) {
+      new_segment = true;
+      for (auto &r : s.rotate_state) {
+        // this *should* be redundant on tici since all camera frames are synced
+        new_segment &= (((r.stream_frame_id >= r.last_rotate_frame_id + segment_length * MAIN_FPS) &&
+                         (!r.should_rotate) && (r.initialized)) ||
+                        (!r.enabled));
+#ifndef QCOM2
+        break;  // only look at fcamera frame id if not QCOM2
+#endif
+      }
+    } else {
+      if (tms - s.last_rotate_tms > segment_length * 1000) {
+        new_segment = true;
+        LOGW("no camera packet seen. auto rotated");
+      }
+    }
+  }
+
+  // rotate to new segment
+  if (new_segment) {
+    pthread_mutex_lock(&s.rotate_lock);
+    s.last_rotate_tms = millis_since_boot();
+
+    int err = logger_next(&s.logger, LOG_ROOT.c_str(), s.segment_path, sizeof(s.segment_path), &s.rotate_segment);
+    assert(err == 0);
+    LOGW((s.logger.part == 0) ? "logging to %s" : "rotated to %s", s.segment_path);
+
+    // rotate encoders
+    for (auto &r : s.rotate_state) r.rotate();
+    pthread_mutex_unlock(&s.rotate_lock);
+  }
+}
+
 int main(int argc, char** argv) {
 
   setpriority(PRIO_PROCESS, 0, -12);
@@ -458,11 +500,6 @@ int main(int argc, char** argv) {
   if (argc > 1 && strcmp(argv[1], "--bootlog") == 0) {
     bootlog();
     return 0;
-  }
-
-  int segment_length = SEGMENT_LENGTH;
-  if (getenv("LOGGERD_TEST")) {
-    segment_length = atoi(getenv("LOGGERD_SEGMENT_LENGTH"));
   }
 
   clear_locks();
@@ -505,19 +542,18 @@ int main(int argc, char** argv) {
   pthread_mutex_init(&s.rotate_lock, NULL);
 
   // TODO: create these threads dynamically on frame packet presence
-  std::vector<std::thread> encoder_threads;
-  encoder_threads.push_back(std::thread(encoder_thread, LOG_CAMERA_ID_FCAMERA));
+  s.encoder_threads.push_back(std::thread(encoder_thread, LOG_CAMERA_ID_FCAMERA));
   s.rotate_state[LOG_CAMERA_ID_FCAMERA].enabled = true;
 
 #if defined(QCOM) || defined(QCOM2)
   bool record_front = Params().read_db_bool("RecordFront");
   if (record_front) {
-    encoder_threads.push_back(std::thread(encoder_thread, LOG_CAMERA_ID_DCAMERA));
+    s.encoder_threads.push_back(std::thread(encoder_thread, LOG_CAMERA_ID_DCAMERA));
     s.rotate_state[LOG_CAMERA_ID_DCAMERA].enabled = true;
   }
 
 #ifdef QCOM2
-  encoder_threads.push_back(std::thread(encoder_thread, LOG_CAMERA_ID_ECAMERA));
+  s.encoder_threads.push_back(std::thread(encoder_thread, LOG_CAMERA_ID_ECAMERA));
   s.rotate_state[LOG_CAMERA_ID_ECAMERA].enabled = true;
 #endif
 #endif
@@ -527,10 +563,11 @@ int main(int argc, char** argv) {
   kj::Array<capnp::word> buf = kj::heapArray<capnp::word>(1024);
 
   double start_ts = seconds_since_boot();
-  double last_rotate_tms = millis_since_boot();
-  double last_camera_seen_tms = millis_since_boot();
+  s.last_rotate_tms = millis_since_boot();
+  s.last_camera_seen_tms = millis_since_boot();
   while (!do_exit) {
-    // TODO: fix msgs from the first poll getting dropped
+    loggerd_rotate();
+
     // poll for new messages on all sockets
     for (auto sock : poller->poll(1000)) {
 
@@ -586,52 +623,16 @@ int main(int argc, char** argv) {
           } else if (fpkt_id == LOG_CAMERA_ID_ECAMERA) {
             s.rotate_state[fpkt_id].setLogFrameId(event.getWideFrame().getFrameId());
           }
-          last_camera_seen_tms = millis_since_boot();
+          s.last_camera_seen_tms = millis_since_boot();
         }
       }
       delete last_msg;
-    }
-
-    bool new_segment = s.logger.part == -1;
-    if (s.logger.part > -1) {
-      double tms = millis_since_boot();
-      if (tms - last_camera_seen_tms <= NO_CAMERA_PATIENCE && encoder_threads.size() > 0) {
-        new_segment = true;
-        for (auto &r : s.rotate_state) {
-          // this *should* be redundant on tici since all camera frames are synced
-          new_segment &= (((r.stream_frame_id >= r.last_rotate_frame_id + segment_length * MAIN_FPS) &&
-                          (!r.should_rotate) && (r.initialized)) ||
-                          (!r.enabled));
-#ifndef QCOM2
-          break; // only look at fcamera frame id if not QCOM2
-#endif
-        }
-      } else {
-        if (tms - last_rotate_tms > segment_length * 1000) {
-          new_segment = true;
-          LOGW("no camera packet seen. auto rotated");
-        }
-      }
-    }
-
-    // rotate to new segment
-    if (new_segment) {
-      pthread_mutex_lock(&s.rotate_lock);
-      last_rotate_tms = millis_since_boot();
-
-      int err = logger_next(&s.logger, LOG_ROOT.c_str(), s.segment_path, sizeof(s.segment_path), &s.rotate_segment);
-      assert(err == 0);
-      LOGW((s.logger.part == 0) ? "logging to %s" : "rotated to %s", s.segment_path);
-
-      // rotate encoders
-      for (auto &r : s.rotate_state) r.rotate();
-      pthread_mutex_unlock(&s.rotate_lock);
     }
   }
 
   LOGW("closing encoders");
   for (auto &r : s.rotate_state) r.cancelWait();
-  for (auto &t : encoder_threads) t.join();
+  for (auto &t : s.encoder_threads) t.join();
 
   LOGW("closing logger");
   logger_close(&s.logger);
