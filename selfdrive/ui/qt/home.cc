@@ -192,7 +192,6 @@ static void set_backlight(int brightness) {
 
 GLWindow::GLWindow(QWidget* parent) : QOpenGLWidget(parent) {
   timer = new QTimer(this);
-  timer->start(1000 / UI_FREQ);
   QObject::connect(timer, SIGNAL(timeout()), this, SLOT(timerUpdate()));
 
   backlight_timer = new QTimer(this);
@@ -224,6 +223,7 @@ void GLWindow::initializeGL() {
 
   wake();
 
+  timer->start(1000 / UI_FREQ);
   backlight_timer->start(BACKLIGHT_DT * 1000);
 }
 
