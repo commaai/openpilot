@@ -190,8 +190,10 @@ void encoder_thread(EncoderState *es) {
           // encoder need rotate
           should_rotate = true;
           s.encoders_waiting++;
-          s.cv.wait(lk, [&] { return s.encoders_waiting == 0; });
+          s.cv.wait(lk, [&] { return s.encoders_waiting == 0 || do_exit; });
         }
+        if (do_exit) break;
+
         if (should_rotate) {
           encoder_segment = s.rotate_segment;
           segment_path = s.segment_path;
@@ -199,8 +201,6 @@ void encoder_thread(EncoderState *es) {
         }
       }
       if (should_rotate) {
-        if (do_exit) break;
-
         LOGW("camera %d rotate encoder to %s", es->ci.id, segment_path.c_str());
         if (lh) {
           lh_close(lh);
@@ -322,10 +322,6 @@ int main(int argc, char** argv) {
   }
 
   LOGW("closing encoders");
-  {
-    std::unique_lock lk(s.rotate_lock);
-    s.encoders_waiting = 0;
-  }
   s.cv.notify_all();
 
   for (auto &[sock, qs] : qlog_states) delete sock;
