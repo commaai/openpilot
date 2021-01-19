@@ -97,17 +97,17 @@ void WifiManager::refreshNetworks() {
     seen_networks.push_back(network);
   }
   //Print all network configs... somehow
-  QString devicePath = get_adapter();
-  qDebug()<<devicePath;
-  QDBusInterface nm(nm_service, nm_settings_path, nm_settings_iface, bus);
-  QDBusMessage response = nm.call("ListConnections");
-  QVariant first =  response.arguments().at(0);
-  const QDBusArgument &args = first.value<QDBusArgument>();
-  args.beginArray();
-  while (!args.atEnd()) {
-    QDBusObjectPath path;
-    args >> path;
-    qDebug()<<path.path();
+  // QString devicePath = get_adapter();
+  // qDebug()<<devicePath;
+  // QDBusInterface nm(nm_service, nm_settings_path, nm_settings_iface, bus);
+  // QDBusMessage response = nm.call("ListConnections");
+  // QVariant first =  response.arguments().at(0);
+  // const QDBusArgument &args = first.value<QDBusArgument>();
+  // args.beginArray();
+  // while (!args.atEnd()) {
+  //   QDBusObjectPath path;
+  //   args >> path;
+  //   qDebug()<<path.path();
     // QDBusInterface nm2(nm_service, path.path(), nm_settings_conn_iface, bus);
     // QDBusMessage response = nm2.call("GetSettings");
 
@@ -125,7 +125,7 @@ void WifiManager::refreshNetworks() {
     //     }
     //   }
     // }
-  }
+  // }
 
 
 }
@@ -409,9 +409,10 @@ bool WifiManager::activate_tethering_connection(){
       for (auto &val : inner) {
         QString key = inner.key(val);
         if (key == "ssid") {
-          if (val == "Hotspot") {
+          if (val == tethering_ssid.toUtf8()) {
             QDBusInterface nm3(nm_service, nm_path, nm_iface, bus);
-            nm3.call("ActivateConnection", QVariant::fromValue(path), QVariant::fromValue(devicePath));// TODO change to disconnect
+            nm3.call("ActivateConnection", QVariant::fromValue(path), QVariant::fromValue(QDBusObjectPath(devicePath)), QVariant::fromValue(QDBusObjectPath("/")));
+            qDebug()<<"Activating hotspot connection"<<path.path( )<<devicePath;
             return true;
           }
         }
@@ -456,7 +457,7 @@ void WifiManager::enableTethering() {
 }
 
 void WifiManager::disableTethering() {
-  clear_connections(tethering_ssid);
+  deactivate_connections(tethering_ssid.toUtf8());
 }
 
 bool WifiManager::tetheringEnabled() {
