@@ -19,6 +19,7 @@ class LanePlanner:
 
     self.lll_prob = 0.
     self.rll_prob = 0.
+    self.d_prob = 0.
 
     self.lll_std = 0.
     self.rll_std = 0.
@@ -75,8 +76,8 @@ class LanePlanner:
     path_from_left_lane = self.lll_y + clipped_lane_width / 2.0
     path_from_right_lane = self.rll_y - clipped_lane_width / 2.0
 
-    lr_prob = l_prob + r_prob - l_prob * r_prob
+    self.d_prob = l_prob + r_prob - l_prob * r_prob
     lane_path_y = (l_prob * path_from_left_lane + r_prob * path_from_right_lane) / (l_prob + r_prob + 0.0001)
     lane_path_y_interp = np.interp(path_t, self.ll_t, lane_path_y)
-    path_xyz[:,1] = lr_prob * lane_path_y_interp + (1.0 - lr_prob) * path_xyz[:,1]
+    path_xyz[:,1] = self.d_prob * lane_path_y_interp + (1.0 - self.d_prob) * path_xyz[:,1]
     return path_xyz
