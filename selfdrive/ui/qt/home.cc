@@ -243,6 +243,11 @@ void GLWindow::backlightUpdate() {
 }
 
 void GLWindow::timerUpdate() {
+  // Connecting to visionIPC requires opengl to be current
+  if (!ui_state.vipc_client->connected){
+    makeCurrent();
+  }
+
   if (ui_state.started != onroad) {
     onroad = ui_state.started;
     emit offroadTransition(!onroad);
@@ -262,7 +267,6 @@ void GLWindow::paintGL() {
   if(GLWindow::ui_state.awake){
     ui_draw(&ui_state);
   }
-
 }
 
 void GLWindow::wake() {
