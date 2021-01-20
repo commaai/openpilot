@@ -101,14 +101,13 @@ public:
   : ci(ci), frame_sock(sock), qlog_state(qs), need_waiting(need_waiting) {
   }
   LogCameraInfo ci;
-  SubSocket *frame_sock;
+  std::unique_ptr<SubSocket> frame_sock;
   QlogState qlog_state;
   const bool need_waiting;
 };
 
 struct LoggerdState {
-  Context *ctx;
-  LoggerState logger = {};
+  LoggerState logger;
   char segment_path[4096];
   int rotate_segment;
   double last_rotate_tms;
@@ -117,7 +116,7 @@ struct LoggerdState {
   int encoders_max_waiting = 0;
   std::mutex rotate_lock;
   std::condition_variable cv;
-  std::vector<EncoderState *> encoder_states;
+  std::vector<std::unique_ptr<EncoderState>> encoder_states;
 };
 LoggerdState s;
 
@@ -202,7 +201,7 @@ void encoder_thread(EncoderState *es) {
       }
 
       // log frame socket
-      drain_socket(lh, es->frame_sock, es->qlog_state);
+      drain_socket(lh, es->frame_sock.get(), es->qlog_state);
       // encode frame
       for (int i = 0; i < encoders.size() && !do_exit; ++i) {
         int out_id = encoders[i]->encode_frame(buf->y, buf->u, buf->v, buf->width, buf->height, extra.timestamp_eof);
@@ -263,14 +262,14 @@ int main(int argc, char** argv) {
 
   // setup messaging
   std::map<SubSocket*, QlogState> qlog_states;
-  s.ctx = Context::create();
-  Poller * poller = Poller::create();
+  std::unique_ptr<Context> ctx(Context::create());
+  std::unique_ptr<Poller> poller(Poller::create());
   const bool record_front = Params().read_db_bool("RecordFront");
   // subscribe to all socks
   for (const auto& it : services) {
     if (!it.should_log) continue;
 
-    SubSocket * sock = SubSocket::create(s.ctx, it.name);
+    SubSocket * sock = SubSocket::create(ctx.get(), it.name);
     assert(sock != NULL);
     QlogState qs = {.counter = 0, .freq = it.decimation};
 
@@ -279,7 +278,7 @@ int main(int argc, char** argv) {
       if (strcmp(it.name, ci.frame_packet_name) == 0) {
         if (ci.id != D_CAMERA || record_front) {
           bool need_waiting = (ci.id != D_CAMERA || IS_QCOM2);
-          s.encoder_states.push_back(new EncoderState(ci, sock, qs, need_waiting));
+          s.encoder_states.push_back(std::make_unique<EncoderState>(ci, sock, qs, need_waiting));
         }
         break;
       }
@@ -297,7 +296,7 @@ int main(int argc, char** argv) {
   std::vector<std::thread> encoder_threads;
   for (auto &es : s.encoder_states) {
     s.encoders_max_waiting += es->need_waiting;
-    encoder_threads.push_back(std::thread(encoder_thread, es));
+    encoder_threads.push_back(std::thread(encoder_thread, es.get()));
   }
   // poll for new messages on all sockets
   while (!do_exit) {
@@ -310,15 +309,9 @@ int main(int argc, char** argv) {
   LOGW("closing encoders");
   s.cv.notify_all();
   for (auto &[sock, qs] : qlog_states) delete sock;
-  delete poller;
   for (auto &t : encoder_threads) t.join();
 
   LOGW("closing logger");
   logger_close(&s.logger);
-  for (auto &es : s.encoder_states) {
-    delete es->frame_sock;
-    delete es;
-  }
-  delete s.ctx;
   return 0;
 }
