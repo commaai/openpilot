@@ -112,9 +112,11 @@ struct LoggerdState {
 LoggerdState s;
 
 void drain_socket(LoggerHandle *lh, SubSocket *sock, QlogState &qs) {
+  if (!lh) return;
+
   Message *msg = nullptr;
   while (!do_exit && (msg = sock->receive(true))) {
-    logger_log(&s.logger, (uint8_t *)msg->getData(), msg->getSize(), qs.counter == 0 && qs.freq != -1);
+    lh_log(lh, (uint8_t *)msg->getData(), msg->getSize(), qs.counter == 0 && qs.freq != -1);
     if (qs.freq != -1) {
       qs.counter = (qs.counter + 1) % qs.freq;
     }
@@ -142,15 +144,12 @@ void encoder_thread(EncoderState *es) {
     if (encoders.empty()) {
       VisionBuf buf_info = vipc_client.buffers[0];
       LOGD("encoder init %dx%d", buf_info.width, buf_info.height);
-
       // main encoder
       encoders.push_back(new Encoder(es->ci.filename, buf_info.width, buf_info.height,
                                      es->ci.fps, es->ci.bitrate, es->ci.is_h265, es->ci.downscale));
-
       // qcamera encoder
       if (es->ci.has_qcamera) {
-        encoders.push_back(new Encoder(qcam_info.filename,
-                                       qcam_info.frame_width, qcam_info.frame_height,
+        encoders.push_back(new Encoder(qcam_info.filename, qcam_info.frame_width, qcam_info.frame_height,
                                        qcam_info.fps, qcam_info.bitrate, qcam_info.is_h265, qcam_info.downscale));
       }
     }
