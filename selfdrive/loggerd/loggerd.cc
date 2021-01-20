@@ -7,7 +7,7 @@
 #include <condition_variable>
 #include <atomic>
 #include <ftw.h>
-
+#include <algorithm>
 #include "common/timing.h"
 #include "common/params.h"
 #include "common/swaglog.h"
@@ -273,18 +273,13 @@ int main(int argc, char** argv) {
     assert(sock != NULL);
     QlogState qs = {.counter = 0, .freq = it.decimation};
 
-    EncoderState *encoder_state = nullptr;
-    for (const auto &ci : cameras_logged) {
-      if (strcmp(it.name, ci.frame_packet_name) == 0) {
-        if (ci.id != D_CAMERA || record_front) {
-          bool need_waiting = (ci.id != D_CAMERA || IS_QCOM2);
-          s.encoder_states.push_back(std::make_unique<EncoderState>(ci, sock, qs, need_waiting));
-        }
-        break;
-      }
+    auto cam = std::find_if(std::begin(cameras_logged), std::end(cameras_logged),
+                           [&](LogCameraInfo &ci) { return strcmp(it.name, ci.frame_packet_name) == 0 && (ci.id != D_CAMERA || record_front); });
+    if (cam != std::end(cameras_logged)) {
+      bool need_waiting = (IS_QCOM2 || cam->id != D_CAMERA);
+      s.encoder_states.push_back(std::make_unique<EncoderState>(*cam, sock, qs, need_waiting));
+      continue;
     }
-    if (encoder_state) continue;
-
     poller->registerSocket(sock);
     qlog_states[sock] = qs;
   }
