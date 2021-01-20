@@ -115,7 +115,7 @@ if not prebuilt:
 
     if scons.returncode != 0:
       # Read remaining output
-      r = scons.stderr.read().split(b'\n')   # type: ignore
+      r = scons.stderr.read().split(b'\n')
       compile_output += r
 
       if retry:
@@ -125,7 +125,8 @@ if not prebuilt:
             print("....%d" % i)
             time.sleep(1)
           subprocess.check_call(["scons", "-c"], cwd=BASEDIR, env=env)
-          shutil.rmtree("/tmp/scons_cache")
+          shutil.rmtree("/tmp/scons_cache", ignore_errors=True)
+          shutil.rmtree("/data/scons_cache", ignore_errors=True)
         else:
           print("scons build failed after retry")
           sys.exit(1)
@@ -138,11 +139,10 @@ if not prebuilt:
         cloudlog.error("scons build failed\n" + error_s)
 
         # Show TextWindow
-        no_ui = __name__ != "__main__" or not ANDROID
+        spinner.close()
         error_s = "\n \n".join(["\n".join(textwrap.wrap(e, 65)) for e in errors])
-        with TextWindow("openpilot failed to build\n \n" + error_s, noop=no_ui) as t:
+        with TextWindow("openpilot failed to build\n \n" + error_s) as t:
           t.wait_for_exit()
-
         exit(1)
     else:
       break
