@@ -1,11 +1,6 @@
 #include <cassert>
 #include <sys/resource.h>
 
-#include <string>
-#include <thread>
-#include <mutex>
-#include <condition_variable>
-#include <atomic>
 #include <ftw.h>
 #include <algorithm>
 #include "common/timing.h"
@@ -53,8 +48,7 @@ LogCameraInfo cameras_logged[] = {
     .bitrate = MAIN_BITRATE,
     .is_h265 = true,
     .downscale = false,
-    .has_qcamera = true
-  },
+    .has_qcamera = true},
   {.id = D_CAMERA,
     .stream_type = VISION_STREAM_YUV_FRONT,
     .filename = "dcamera.hevc",
@@ -63,8 +57,7 @@ LogCameraInfo cameras_logged[] = {
     .bitrate = IS_QCOM2 ? MAIN_BITRATE : 2500000,
     .is_h265 = true,
     .downscale = false,
-    .has_qcamera = false
-  },
+    .has_qcamera = false},
 #ifdef QCOM2
   {.id = E_CAMERA,
     .stream_type = VISION_STREAM_YUV_WIDE,
@@ -74,8 +67,7 @@ LogCameraInfo cameras_logged[] = {
     .bitrate = MAIN_BITRATE,
     .is_h265 = true,
     .downscale = false,
-    .has_qcamera = false
-  },
+    .has_qcamera = false},
 #endif
 };
 const LogCameraInfo qcam_info = {
@@ -95,11 +87,10 @@ typedef struct QlogState {
   int counter, freq;
 } QlogState;
 
-class EncoderState{
+class EncoderState {
 public:
-  EncoderState(const LogCameraInfo &ci, SubSocket* sock, const QlogState& qs, bool need_waiting) 
-  : ci(ci), frame_sock(sock), qlog_state(qs), need_waiting(need_waiting) {
-  }
+  EncoderState(const LogCameraInfo &ci, SubSocket *sock, const QlogState &qs, bool need_waiting)
+      : ci(ci), frame_sock(sock), qlog_state(qs), need_waiting(need_waiting) {}
   LogCameraInfo ci;
   std::unique_ptr<SubSocket> frame_sock;
   QlogState qlog_state;
@@ -109,12 +100,12 @@ public:
 struct LoggerdState {
   LoggerState logger;
   char segment_path[4096];
+  int encoders_max_waiting = 0;
   int rotate_segment;
   double last_rotate_tms;
+  std::mutex rotate_lock;
   std::atomic<double> last_camera_seen_tms;
   std::atomic<int> encoders_waiting;
-  int encoders_max_waiting = 0;
-  std::mutex rotate_lock;
   std::condition_variable cv;
   std::vector<std::unique_ptr<EncoderState>> encoder_states;
 };
@@ -253,6 +244,32 @@ void clear_locks() {
   ftw(LOG_ROOT.c_str(), clear_locks_fn, 16);
 }
 
+void loggerd_logger_next() {
+  s.last_rotate_tms = millis_since_boot();
+  assert(0 == logger_next(&s.logger, LOG_ROOT.c_str(), s.segment_path, sizeof(s.segment_path), &s.rotate_segment));
+  LOGW((s.rotate_segment == 0) ? "logging to %s" : "rotated to %s", s.segment_path);
+}
+
+void loggerd_rotate() {
+  bool new_segment = s.encoders_waiting >= s.encoders_max_waiting;
+  if (!new_segment) {
+    const double tms = millis_since_boot();
+    if (((tms - s.last_rotate_tms) >= SEGMENT_LENGTH * 1000) && (tms - s.last_camera_seen_tms) >= NO_CAMERA_PATIENCE ) {
+      new_segment = true;
+      LOGW("no camera packet seen. auto rotated");
+    }
+  }
+  // rotate to new segment
+  if (new_segment && !do_exit) {
+    {
+      std::unique_lock lk(s.rotate_lock);
+      loggerd_logger_next();
+      s.encoders_waiting = 0;
+    }
+    s.cv.notify_all();
+  }
+}
+
 } // namespace
 
 int main(int argc, char** argv) {
@@ -273,8 +290,9 @@ int main(int argc, char** argv) {
     assert(sock != NULL);
     QlogState qs = {.counter = 0, .freq = it.decimation};
 
-    auto cam = std::find_if(std::begin(cameras_logged), std::end(cameras_logged),
-                           [&](LogCameraInfo &ci) { return strcmp(it.name, ci.frame_packet_name) == 0 && (ci.id != D_CAMERA || record_front); });
+    auto cam = std::find_if(std::begin(cameras_logged), std::end(cameras_logged), [&](LogCameraInfo &ci) {
+      return strcmp(it.name, ci.frame_packet_name) == 0 && (ci.id != D_CAMERA || record_front);
+    });
     if (cam != std::end(cameras_logged)) {
       bool need_waiting = (IS_QCOM2 || cam->id != D_CAMERA);
       s.encoder_states.push_back(std::make_unique<EncoderState>(*cam, sock, qs, need_waiting));
