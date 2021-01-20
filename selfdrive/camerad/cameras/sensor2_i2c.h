@@ -267,7 +267,7 @@ struct i2c_random_wr_payload init_array_ar0231[] = {
   {0x302A, 0x0006}, // VT_PIX_CLK_DIV
   {0x302C, 0x0001}, // VT_SYS_CLK_DIV
   {0x302E, 0x0002}, // PRE_PLL_CLK_DIV
-  {0x3030, 0x002C}, // PLL_MULTIPLIER
+  {0x3030, 0x0028}, // PLL_MULTIPLIER
   {0x3036, 0x000A}, // OP_WORD_CLK_DIV
   {0x3038, 0x0001}, // OP_SYS_CLK_DIV
   {0x30B0, 0x0800}, // DIGITAL_TEST
@@ -314,8 +314,8 @@ struct i2c_random_wr_payload init_array_ar0231[] = {
   {0x340A, 0xE6}, // E6 // 0000 1110 0110
   {0x340C, 0x802}, // 2 // 0000 0000 0010
 
-  // FPS = 88e6 / 0x09C4 / 0x06E0 = 20
-  {0x300C, 0x09B4}, // LINE_LENGTH_PCK_ 9B4
+  // Readout timing
+  {0x300C, 0x074B}, // LINE_LENGTH_PCK: min for 3-exposure HDR
   {0x300A, 0x06EB}, // FRAME_LENGTH_LINES_ 6EB
   {0x3042, 0x0000}, // EXTRA_DELAY
 
