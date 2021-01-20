@@ -79,13 +79,16 @@ Networking::Networking(QWidget* parent){
   
   setStyleSheet(R"(
     QPushButton {
-      margin: 5px;
-      padding: 5px;
+      margin: 0px;
+      padding: 15px;
+      border-radius: 25px;
       color: #dddddd;
       background-color: #444444;
     }
     QPushButton:disabled {
-      background-color: #181818;
+      padding: 20px;
+      color: #777777;
+      background-color: #222222;
     }
   )");
 }
@@ -158,23 +161,23 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
     toggle_switch->togglePosition();
   }
   QObject::connect(toggle_switch, SIGNAL(stateChanged(int)), this, SLOT(toggleTethering(int)));
-  vlayout->addWidget(layoutToWidget(tetheringToggleLayout, this));
+  vlayout->addWidget(layoutToWidget(tetheringToggleLayout, this), 0);
 
   //Change tethering password
   QHBoxLayout *tetheringPassword = new QHBoxLayout(this);
-  tetheringPassword->addWidget(new QLabel("Edit tethering password", this));
+  tetheringPassword->addWidget(new QLabel("Edit tethering password", this), 1);
   editPasswordButton = new QPushButton("EDIT", this);
   connect(editPasswordButton, &QPushButton::released, [=](){s->setCurrentIndex(0);});
-  tetheringPassword->addWidget(editPasswordButton);
-  vlayout->addWidget(layoutToWidget(tetheringPassword, this));
+  tetheringPassword->addWidget(editPasswordButton, 1, Qt::AlignRight);
+  vlayout->addWidget(layoutToWidget(tetheringPassword, this), 0);
 
   //IP adress
   QHBoxLayout* IPlayout = new QHBoxLayout(this);
-  IPlayout->addWidget(new QLabel("IP address: "));
+  IPlayout->addWidget(new QLabel("IP address: "), 0);
   ipLabel = new QLabel(wifi->ipv4_address);
-  IPlayout->addWidget(ipLabel);
-  vlayout->addWidget(layoutToWidget(IPlayout, this));
-
+  IPlayout->addWidget(ipLabel, 0, Qt::AlignRight);
+  vlayout->addWidget(layoutToWidget(IPlayout, this), 0);
+  vlayout->addSpacing(500);
   // //Enable SSH
   // QHBoxLayout* enableSSHLayout = new QHBoxLayout(this);
   // enableSSHLayout->addWidget(new QLabel("Enable SSH", this));

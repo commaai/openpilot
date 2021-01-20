@@ -346,6 +346,7 @@ void WifiManager::disconnect() {
     deactivate_connections(get_property(active_ap, "Ssid"));
   }
 }
+
 QVector<QDBusObjectPath> WifiManager::list_connections(){
   QVector<QDBusObjectPath> connections;
   QDBusInterface nm(nm_service, nm_settings_path, nm_settings_iface, bus);
