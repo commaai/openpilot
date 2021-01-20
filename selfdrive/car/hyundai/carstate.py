@@ -37,9 +37,14 @@ class CarState(CarStateBase):
     ret.steerWarning = cp.vl["MDPS12"]['CF_Mdps_ToiUnavail'] != 0
 
     # cruise state
-    ret.cruiseState.available = True
-    ret.cruiseState.enabled = cp.vl["SCC12"]['ACCMode'] != 0
-    ret.cruiseState.standstill = cp.vl["SCC11"]['SCCInfoDisplay'] == 4.
+    if self.CP.openpilotLongitudinalControl:
+      ret.cruiseState.available = cp.vl["TCS13"]['ACCEnable'] == 0
+      ret.cruiseState.enabled = cp.vl["TCS13"]['ACC_REQ'] == 1
+      ret.cruiseState.standstill = cp.vl["TCS13"]['StandStill'] == 1
+    else:
+      ret.cruiseState.available = cp.vl["SCC11"]['MainMode_ACC'] == 1
+      ret.cruiseState.enabled = cp.vl["SCC12"]['ACCMode'] != 0
+      ret.cruiseState.standstill = cp.vl["SCC11"]['SCCInfoDisplay'] == 4.
 
     if ret.cruiseState.enabled:
       speed_conv = CV.MPH_TO_MS if cp.vl["CLU11"]["CF_Clu_SPEED_UNIT"] else CV.KPH_TO_MS
@@ -127,9 +132,13 @@ class CarState(CarStateBase):
     # save the entire LKAS11 and CLU11
     self.lkas11 = copy.copy(cp_cam.vl["LKAS11"])
     self.clu11 = copy.copy(cp.vl["CLU11"])
-    self.park_brake = cp.vl["CGW1"]['CF_Gway_ParkBrakeSw']
+    self.park_brake = cp.vl["TCS13"]['PBRAKE_ACT'] == 1
     self.steer_state = cp.vl["MDPS12"]['CF_Mdps_ToiActive']  # 0 NOT ACTIVE, 1 ACTIVE
     self.lead_distance = cp.vl["SCC11"]['ACC_ObjDist']
+    self.brake_hold = cp.vl["TCS15"]['AVH_LAMP'] == 2 # 0 OFF, 1 ERROR, 2 ACTIVE, 3 READY
+    self.brake_error = cp.vl["TCS13"]['ACCEnable'] != 0 # 0 ACC CONTROL ENABLED, 1-3 ACC CONTROL DISABLED
+    self.prev_cruise_buttons = self.cruise_buttons
+    self.cruise_buttons = cp.vl["CLU11"]["CF_Clu_CruiseSwState"]
 
     return ret
 
@@ -171,10 +180,14 @@ class CarState(CarStateBase):
       ("CF_Clu_AliveCnt1", "CLU11", 0),
 
       ("ACCEnable", "TCS13", 0),
+      ("ACC_REQ", "TCS13", 0),
       ("BrakeLight", "TCS13", 0),
       ("DriverBraking", "TCS13", 0),
+      ("StandStill", "TCS13", 0),
+      ("PBRAKE_ACT", "TCS13", 0),
 
       ("ESC_Off_Step", "TCS15", 0),
+      ("AVH_LAMP", "TCS15", 0),
 
       ("CF_Lvr_GearInf", "LVR11", 0),        # Transmission Gear (0 = N or P, 1-8 = Fwd, 14 = Rev)
 
@@ -205,9 +218,13 @@ class CarState(CarStateBase):
       ("CGW4", 5),
       ("WHL_SPD11", 50),
       ("SAS11", 100),
-      ("SCC11", 50),
-      ("SCC12", 50),
     ]
+
+    if not CP.openpilotLongitudinalControl:
+      checks += [
+        ("SCC11", 50),
+        ("SCC12", 50),
+      ]
 
     if CP.carFingerprint in FEATURES["use_bsm"]:
       signals += [
@@ -266,7 +283,8 @@ class CarState(CarStateBase):
         ("FCA_CmdAct", "FCA11", 0),
         ("CF_VSM_Warn", "FCA11", 0),
       ]
-      checks += [("FCA11", 50)]
+      if not CP.openpilotLongitudinalControl:
+        checks += [("FCA11", 50)]
     else:
       signals += [
         ("AEB_CmdAct", "SCC12", 0),
