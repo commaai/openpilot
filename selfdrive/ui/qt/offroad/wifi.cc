@@ -61,13 +61,13 @@ Networking::Networking(QWidget* parent){
   vlayout->addWidget(advancedSettings, 0, Qt::AlignRight);
   vlayout->addSpacing(10);
 
-  wifiWidget = new WifiUI(this, 5, wifi);
+  wifiWidget = new WifiUI(0, 5, wifi);
   connect(wifiWidget, SIGNAL(connectToNetwork(Network)), this, SLOT(connectToNetwork(Network)));
   vlayout->addWidget(wifiWidget, 1);
 
   s->addWidget(layoutToWidget(vlayout, this));
 
-  AdvancedNetworking* an = new AdvancedNetworking(this, wifi);
+  an = new AdvancedNetworking(this, wifi);
   connect(an, &AdvancedNetworking::backPress, [=](){s->setCurrentIndex(1);});
   s->addWidget(an);
 
@@ -80,6 +80,7 @@ Networking::Networking(QWidget* parent){
   
   setStyleSheet(R"(
     QPushButton {
+      font-size: 50px;
       margin: 0px;
       padding: 15px;
       border-radius: 25px;
@@ -136,6 +137,11 @@ void Networking::successfulConnection(QString ssid) {
   //Maybe we will want to do something here in the future.
 }
 
+void Networking::sidebarChange(){
+  s->setCurrentIndex(1);
+  an->s->setCurrentIndex(1);
+}
+
 QFrame* hline(QWidget* parent = 0){
   QFrame* line = new QFrame(parent);
   line->setFrameShape(QFrame::StyledPanel);
@@ -158,10 +164,10 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   //Back button
   QHBoxLayout* backLayout = new QHBoxLayout(this);
   QPushButton* back = new QPushButton("BACK");
+  back->setFixedWidth(500);
   connect(back, &QPushButton::released, [=](){emit backPress();});
   backLayout->addWidget(back, 0, Qt::AlignLeft);
   vlayout->addWidget(layoutToWidget(backLayout, this), 0, Qt::AlignLeft);
-  vlayout->addWidget(hline(this), 0);
 
   //Enable tethering layout
   QHBoxLayout* tetheringToggleLayout = new QHBoxLayout(this);
@@ -169,6 +175,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   Toggle* toggle_switch = new Toggle(this);
   toggle_switch->setFixedSize(150, 100);
   tetheringToggleLayout->addWidget(toggle_switch);
+  tetheringToggleLayout->addSpacing(40);
   if (wifi->tetheringEnabled()) {
     toggle_switch->togglePosition();
   }
@@ -180,6 +187,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   QHBoxLayout *tetheringPassword = new QHBoxLayout(this);
   tetheringPassword->addWidget(new QLabel("Edit tethering password", this), 1);
   editPasswordButton = new QPushButton("EDIT", this);
+  editPasswordButton->setFixedWidth(500);
   connect(editPasswordButton, &QPushButton::released, [=](){s->setCurrentIndex(0);});
   tetheringPassword->addWidget(editPasswordButton, 1, Qt::AlignRight);
   vlayout->addWidget(layoutToWidget(tetheringPassword, this), 0);
@@ -189,6 +197,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   QHBoxLayout* IPlayout = new QHBoxLayout(this);
   IPlayout->addWidget(new QLabel("IP address: "), 0);
   ipLabel = new QLabel(wifi->ipv4_address);
+  ipLabel->setStyleSheet("color: #aaaaaa");
   IPlayout->addWidget(ipLabel, 0, Qt::AlignRight);
   vlayout->addWidget(layoutToWidget(IPlayout, this), 0); 
   vlayout->addWidget(hline(this), 0);
@@ -219,7 +228,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
 
   //vlayout to widget
   QWidget* settingsWidget = layoutToWidget(vlayout, this);
-  settingsWidget->setStyleSheet("margin-left: 40px; margin-right: 80px;");
+  settingsWidget->setStyleSheet("margin-left: 40px; margin-right: 40px;");
   s->addWidget(settingsWidget);
   s->setCurrentIndex(1);
   setLayout(s);
@@ -255,7 +264,7 @@ void AdvancedNetworking::abortTextInput(){
 // WifiUI functions
 
 WifiUI::WifiUI(QWidget *parent, int page_length, WifiManager* wifi) : QWidget(parent), networks_per_page(page_length), wifi(wifi) {
-  vlayout = new QVBoxLayout(this);
+  vlayout = new QVBoxLayout;
   setLayout(vlayout);
 
   // Scan on startup
@@ -308,7 +317,10 @@ void WifiUI::refresh() {
       QWidget * w = new QWidget;
       w->setLayout(hlayout);
       vlayout->addWidget(w);
-      vlayout->addWidget(hline(this));
+      // Don't add the last line
+      if (page * networks_per_page <= i+1 && i+1 < (page + 1) * networks_per_page) {
+        vlayout->addWidget(hline(this));
+      }
       countWidgets++;
     }
     i++;
@@ -320,13 +332,13 @@ void WifiUI::refresh() {
     vlayout->addWidget(w);
   }
 
-  QHBoxLayout *prev_next_buttons = new QHBoxLayout(this);
+  QHBoxLayout *prev_next_buttons = new QHBoxLayout;//Adding constructor exposes the qt bug
   QPushButton* prev = new QPushButton("Previous");
   prev->setEnabled(page);
-  prev->setFixedSize(300, button_height);
+  prev->setFixedSize(400, button_height);
   
   QPushButton* next = new QPushButton("Next");
-  next->setFixedSize(300, button_height);
+  next->setFixedSize(400, button_height);
 
   // If there are more visible networks then we can show, enable going to next page
   next->setEnabled(wifi->seen_networks.size() > (page + 1) * networks_per_page);
