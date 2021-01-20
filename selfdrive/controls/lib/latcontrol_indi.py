@@ -40,7 +40,6 @@ class LatControlINDI():
     self._G = (CP.lateralTuning.indi.actuatorEffectivenessBP, CP.lateralTuning.indi.actuatorEffectivenessV)
     self._outer_loop_gain = (CP.lateralTuning.indi.outerLoopGainBP, CP.lateralTuning.indi.outerLoopGainV)
     self._inner_loop_gain = (CP.lateralTuning.indi.innerLoopGainBP, CP.lateralTuning.indi.innerLoopGainV)
-    self.alpha = 1. - DT_CTRL / (self.RC + DT_CTRL)
 
     self.sat_count_rate = 1.0 * DT_CTRL
     self.sat_limit = CP.steerLimitTimer
@@ -104,6 +103,7 @@ class LatControlINDI():
       rate_des = math.radians(self.rate_steers_des)
 
       # Expected actuator value
+      self.alpha = 1. - DT_CTRL / (self.RC + DT_CTRL)
       self.delayed_output = self.delayed_output * self.alpha + self.output_steer * (1. - self.alpha)
 
       # Compute acceleration error
