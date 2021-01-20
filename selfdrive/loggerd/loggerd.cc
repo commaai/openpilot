@@ -104,25 +104,27 @@ LogCameraInfo cameras_logged[LOG_CAMERA_ID_MAX] = {
   },
 };
 
+namespace {
+
+constexpr int SEGMENT_LENGTH = 60;
+
+ExitHandler do_exit;
+
+typedef struct QlogState {
+  int counter, freq;
+} QlogState;
+
 class RotateState {
 public:
   SubSocket* fpkt_sock;
-  uint32_t stream_frame_id, log_frame_id, last_rotate_frame_id;
+  QlogState qlog_state;
+  uint32_t stream_frame_id, last_rotate_frame_id;
   bool enabled, should_rotate, initialized;
   std::atomic<bool> rotating;
   std::atomic<int> cur_seg;
 
-  RotateState() : fpkt_sock(nullptr), stream_frame_id(0), log_frame_id(0),
+  RotateState() : fpkt_sock(nullptr), stream_frame_id(0),
                   last_rotate_frame_id(UINT32_MAX), enabled(false), should_rotate(false), initialized(false), rotating(false), cur_seg(-1) {};
-
-  void waitLogThread() {
-    std::unique_lock<std::mutex> lk(fid_lock);
-    while (stream_frame_id > log_frame_id           // if the log camera is older, wait for it to catch up.
-           && (stream_frame_id - log_frame_id) < 8  // but if its too old then there probably was a discontinuity (visiond restarted)
-           && !do_exit) {
-      cv.wait(lk);
-    }
-  }
 
   void cancelWait() {
     cv.notify_one();
@@ -131,13 +133,6 @@ public:
   void setStreamFrameId(uint32_t frame_id) {
     fid_lock.lock();
     stream_frame_id = frame_id;
-    fid_lock.unlock();
-    cv.notify_one();
-  }
-
-  void setLogFrameId(uint32_t frame_id) {
-    fid_lock.lock();
-    log_frame_id = frame_id;
     fid_lock.unlock();
     cv.notify_one();
   }
@@ -169,6 +164,21 @@ struct LoggerdState {
   RotateState rotate_state[LOG_CAMERA_ID_MAX-1];
 };
 LoggerdState s;
+
+void drain_socket(LoggerHandle *lh, SubSocket *sock, QlogState &qs) {
+  if (!lh) return;
+
+  while (!do_exit) {
+    Message *msg = sock->receive(true);
+    if (!msg) break;
+
+    lh_log(lh, (uint8_t *)msg->getData(), msg->getSize(), qs.counter == 0 && qs.freq != -1);
+    if (qs.freq != -1) {
+      qs.counter = (qs.counter + 1) % qs.freq;
+    }
+    delete msg;
+  }
+}
 
 void encoder_thread(int cam_idx) {
   assert(cam_idx < LOG_CAMERA_ID_MAX-1);
@@ -221,11 +231,6 @@ void encoder_thread(int cam_idx) {
         pthread_mutex_lock(&s.rotate_lock);
         pthread_mutex_unlock(&s.rotate_lock);
 
-        // wait if camera pkt id is older than stream
-        rotate_state.waitLogThread();
-
-        if (do_exit) break;
-
         // rotate the encoder if the logger is on a newer segment
         if (rotate_state.should_rotate) {
           LOGW("camera %d rotate encoder to %s", cam_idx, s.segment_path);
@@ -266,6 +271,8 @@ void encoder_thread(int cam_idx) {
 
       rotate_state.setStreamFrameId(extra.frame_id);
 
+      // log frame socket
+      drain_socket(lh, rotate_state.fpkt_sock, rotate_state.qlog_state);
       // encode a frame
       for (int i = 0; i < encoders.size(); ++i) {
         int out_id = encoders[i]->encode_frame(buf->y, buf->u, buf->v,
@@ -331,9 +338,6 @@ int main(int argc, char** argv) {
   clear_locks();
 
   // setup messaging
-  typedef struct QlogState {
-    int counter, freq;
-  } QlogState;
   std::map<SubSocket*, QlogState> qlog_states;
 
   s.ctx = Context::create();
@@ -346,15 +350,21 @@ int main(int argc, char** argv) {
 
     SubSocket * sock = SubSocket::create(s.ctx, it.name);
     assert(sock != NULL);
-    poller->registerSocket(sock);
     socks.push_back(sock);
-
+    QlogState qs = {.counter = 0, .freq = it.decimation};
+    bool is_frame_sock = false;
     for (int cid=0; cid<=MAX_CAM_IDX; cid++) {
       if (std::string(it.name) == cameras_logged[cid].frame_packet_name) {
         s.rotate_state[cid].fpkt_sock = sock;
+        s.rotate_state[cid].qlog_state = qs;
+        is_frame_sock = true;
+        break;
       }
     }
-    qlog_states[sock] = {.counter = 0, .freq = it.decimation};
+    if (is_frame_sock) continue;
+
+    poller->registerSocket(sock);
+    qlog_states[sock] = qs;
   }
 
   // init logger
@@ -381,17 +391,21 @@ int main(int argc, char** argv) {
 #endif
 #endif
 
+<<<<<<< HEAD
   uint64_t msg_count = 0;
   uint64_t bytes_count = 0;
   AlignedBuffer aligned_buf;
 
   double start_ts = seconds_since_boot();
+=======
+>>>>>>> log frame message in encoder
   double last_rotate_tms = millis_since_boot();
   double last_camera_seen_tms = millis_since_boot();
   while (!do_exit) {
     // TODO: fix msgs from the first poll getting dropped
     // poll for new messages on all sockets
     for (auto sock : poller->poll(1000)) {
+<<<<<<< HEAD
 
       // drain socket
       Message * last_msg = nullptr;
@@ -441,6 +455,9 @@ int main(int argc, char** argv) {
         }
       }
       delete last_msg;
+=======
+      drain_socket(s.logger.cur_handle, sock, qlog_states[sock]);
+>>>>>>> log frame message in encoder
     }
 
     bool new_segment = s.logger.part == -1;
