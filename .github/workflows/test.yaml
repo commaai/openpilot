@@ -1,4 +1,4 @@
-name: openpilot tests
+name: tests
 on:
   push:
     branches-ignore:
@@ -132,28 +132,6 @@ jobs:
       run: |
         $DOCKER_LOGIN
         docker push $DOCKER_REGISTRY/$BASE_IMAGE:latest
-
-  docker_push_prebuilt:
-    name: docker push prebuilt
-    runs-on: ubuntu-20.04
-    timeout-minutes: 50
-    if: github.event_name == 'status' && github.repository == 'commaai/openpilot'
-    needs: [static_analysis, unit_tests, process_replay, test_longitudinal, test_car_models]
-    env:
-      IMAGE_NAME: openpilot-prebuilt
-    steps:
-    - uses: actions/checkout@v2
-      with:
-        submodules: true
-    - name: Build Docker image
-      run: |
-        eval "$BUILD"
-        docker pull $DOCKER_REGISTRY/$IMAGE_NAME:latest || true
-        docker build --cache-from $DOCKER_REGISTRY/$IMAGE_NAME:latest -t $DOCKER_REGISTRY/$IMAGE_NAME:latest -f Dockerfile.openpilot .
-    - name: Push to container registry
-      run: |
-        $DOCKER_LOGIN
-        docker push $DOCKER_REGISTRY/$IMAGE_NAME:latest
 
   static_analysis:
     name: static analysis
