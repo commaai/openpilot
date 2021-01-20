@@ -241,7 +241,7 @@ Thneed::Thneed(bool do_clinit) {
 }
 
 void Thneed::stop() {
-  printf("Thneed::stop: recorded %lu commands and %lu syncs\n", cmds.size(), syncobjs.size());
+  printf("Thneed::stop: recorded %lu commands\n", cmds.size());
   find_inputs_outputs();
   record = 0;
 }

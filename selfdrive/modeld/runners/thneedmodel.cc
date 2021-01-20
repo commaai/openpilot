@@ -10,7 +10,6 @@ ThneedModel::ThneedModel(const char *path, float *loutput, size_t loutput_size, 
 
   recorded = false;
   output = loutput;
-  assert(runtime==USE_GPU_RUNTIME);
 }
 
 void ThneedModel::addRecurrent(float *state, int state_size) {

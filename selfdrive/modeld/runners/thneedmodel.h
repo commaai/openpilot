@@ -1,12 +1,6 @@
-#ifndef THNEEDMODEL_H
-#define THNEEDMODEL_H
+#pragma once
 
 #include "runmodel.h"
-
-#define USE_CPU_RUNTIME 0
-#define USE_GPU_RUNTIME 1
-#define USE_DSP_RUNTIME 2
-
 #include "thneed/thneed.h"
 
 class ThneedModel : public RunModel {
@@ -27,6 +21,4 @@ private:
   float *trafficConvention;
   float *desire;
 };
-
-#endif
 

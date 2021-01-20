@@ -57,8 +57,6 @@ class CLQueuedKernel {
     cl_uint work_dim;
     size_t global_work_size[3] = {0};
     size_t local_work_size[3] = {0};
-
-    string saved_output;
   private:
     Thneed *thneed;
 };
@@ -113,7 +111,6 @@ class Thneed {
     int timestamp;
     unique_ptr<GPUMalloc> ram;
     vector<unique_ptr<CachedIoctl> > cmds;
-    vector<string> syncobjs;
     int fd;
 
     // all CL kernels
