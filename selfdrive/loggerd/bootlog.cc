@@ -7,7 +7,7 @@
 #include "messaging.hpp"
 
 int main(int argc, char** argv) {
-  LoggerState logger;
+  LoggerState logger = {};
   logger_init(&logger, "bootlog", false);
 
   char segment_path[4096];

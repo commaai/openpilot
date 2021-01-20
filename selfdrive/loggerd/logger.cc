@@ -136,7 +136,6 @@ static void log_sentinel(LoggerState *s, cereal::Sentinel::SentinelType type) {
 // ***** logging functions *****
 
 void logger_init(LoggerState *s, const char* log_name, bool has_qlog) {
-  memset(s, 0, sizeof(*s));
 
   umask(0);
 
