@@ -249,14 +249,7 @@ QVector<QDBusObjectPath> WifiManager::get_active_connections() {
 }
 
 void WifiManager::clear_connections(QString ssid) {
-  QDBusInterface nm(nm_service, nm_settings_path, nm_settings_iface, bus);
-  QDBusMessage response = nm.call("ListConnections");
-  QVariant first =  response.arguments().at(0);
-  const QDBusArgument &args = first.value<QDBusArgument>();
-  args.beginArray();
-  while (!args.atEnd()) {
-    QDBusObjectPath path;
-    args >> path;
+  for(QDBusObjectPath path : list_connections()){
     QDBusInterface nm2(nm_service, path.path(), nm_settings_conn_iface, bus);
     QDBusMessage response = nm2.call("GetSettings");
 
@@ -353,11 +346,8 @@ void WifiManager::disconnect() {
     deactivate_connections(get_property(active_ap, "Ssid"));
   }
 }
-
-//Functions for tethering
-bool WifiManager::activate_tethering_connection(){
-  QString devicePath = get_adapter();
-
+QVector<QDBusObjectPath> WifiManager::list_connections(){
+  QVector<QDBusObjectPath> connections;
   QDBusInterface nm(nm_service, nm_settings_path, nm_settings_iface, bus);
   QDBusMessage response = nm.call("ListConnections");
   QVariant first =  response.arguments().at(0);
@@ -366,7 +356,15 @@ bool WifiManager::activate_tethering_connection(){
   while (!args.atEnd()) {
     QDBusObjectPath path;
     args >> path;
+    connections.push_back(path);
+  }
+  return connections;
+}
+//Functions for tethering
+bool WifiManager::activate_tethering_connection(){
+  QString devicePath = get_adapter();
 
+  for(QDBusObjectPath path : list_connections()){
     QDBusInterface nm2(nm_service, path.path(), nm_settings_conn_iface, bus);
     QDBusMessage response = nm2.call("GetSettings");
     const QDBusArgument &dbusArg = response.arguments().at(0).value<QDBusArgument>();
@@ -400,7 +398,7 @@ void WifiManager::enableTethering() {
   connection["connection"]["uuid"] = QUuid::createUuid().toString().remove('{').remove('}');
   connection["connection"]["type"] = "802-11-wireless";
   connection["connection"]["interface-name"] = "wlan0";
-  // connection["connection"]["autoconnect"] = false;
+  connection["connection"]["autoconnect"] = false;
 
   connection["802-11-wireless"]["band"] = "bg";
   connection["802-11-wireless"]["mode"] = "ap";
@@ -422,7 +420,7 @@ void WifiManager::enableTethering() {
 
   QDBusInterface nm_settings(nm_service, nm_settings_path, nm_settings_iface, bus);
   nm_settings.call("AddConnection", QVariant::fromValue(connection));
-
+  activate_tethering_connection();
 }
 
 void WifiManager::disableTethering() {

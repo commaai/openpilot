@@ -69,6 +69,7 @@ private:
   QByteArray get_property(QString network_path, QString property);
   unsigned int get_ap_strength(QString network_path);
   SecurityType getSecurityType(QString ssid);
+  QVector<QDBusObjectPath> list_connections();
 
 private slots:
   void change(unsigned int new_state, unsigned int previous_state, unsigned int change_reason);
