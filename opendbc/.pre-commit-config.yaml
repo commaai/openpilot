@@ -14,8 +14,10 @@ repos:
     rev: master
     hooks:
     -   id: flake8
+        exclude: 'site_scons/'
         args:
-        - --ignore=E111,E114,E121,E124,E302,E501,E741
+        - --select=F,E112,E113,E304,E501,E502,E701,E702,E703,E71,E72,E731,W191,W6
+        - --max-line-length=240
         - --statistics
 -   repo: local
     hooks:
@@ -24,6 +26,7 @@ repos:
         entry: pylint
         language: system
         types: [python]
+        exclude: 'site_scons/'
         args:
         - --disable=C,R,W0613,W0511,W0212,W0201,W0311,W0106,W0603,W0621,W0703,E1136
 -   repo: local
@@ -36,6 +39,7 @@ repos:
         exclude: 'can/dbc_template.cc'
         args:
         - --error-exitcode=1
+        - --language=c++
         - --force
         - --quiet
         - -j4

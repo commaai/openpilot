@@ -7,7 +7,7 @@ nose
 parameterized
 requests
 flake8==3.7.9
-cffi==1.11.4
+cffi==1.14.3
 crcmod
 pre-commit==2.4.0
 pylint==2.5.2

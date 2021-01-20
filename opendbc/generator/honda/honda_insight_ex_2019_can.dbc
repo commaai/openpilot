@@ -1,4 +1,4 @@
-CM_ "IMPORT _bosch_2018.dbc"
+CM_ "IMPORT _bosch_2018.dbc";
 
 BO_ 304 GAS_PEDAL_2: 8 PCM
  SG_ ENGINE_TORQUE_ESTIMATE : 7|16@0- (1,0) [-1000|1000] "Nm" EON

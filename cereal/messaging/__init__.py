@@ -193,8 +193,8 @@ class SubMaster():
     for s in self.data:
       # arbitrary small number to avoid float comparison. If freq is 0, we can skip the check
       if self.freq[s] > 1e-5:
-        # alive if delay is within 10x the expected frequency
-        self.alive[s] = (cur_time - self.rcv_time[s]) < (10. / self.freq[s])
+        # alive if delay is within 5x the expected frequency
+        self.alive[s] = (cur_time - self.rcv_time[s]) < (5. / self.freq[s])
       else:
         self.alive[s] = True
 

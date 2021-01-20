@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
-
 import unittest
 
+import cereal.messaging as messaging
 from opendbc.can.parser import CANParser
 from opendbc.can.packer import CANPacker
-import cereal.messaging as messaging
-
 
 # Python implementation so we don't have to depend on boardd
 def can_list_to_can_capnp(can_msgs, msgtype='can'):
@@ -70,7 +68,6 @@ class TestCanParserPacker(unittest.TestCase):
       ("LKAS_Output", "ES_LKAS", 0),
       ("LKAS_Request", "ES_LKAS", 0),
       ("SET_1", "ES_LKAS", 0),
-
     ]
 
     checks = []

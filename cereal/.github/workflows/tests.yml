@@ -13,7 +13,7 @@ env:
 jobs:
   build:
     name: build
-    runs-on: ubuntu-16.04
+    runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v2
     - name: Build docker image
@@ -27,18 +27,29 @@ jobs:
 
   unit_tests:
     name: unit tests
-    runs-on: ubuntu-16.04
+    runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v2
     - name: Build docker image
       run: eval "$BUILD"
     - name: Unit Tests
       run: |
-        $RUN "scons --test --asan -j$(nproc) && messaging/test_runner"
+        $RUN "scons --test --asan -j$(nproc) && messaging/test_runner && visionipc/test_runner"
+
+  unit_tests_zmq:
+    name: unit tests zmq
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build docker image
+      run: eval "$BUILD"
+    - name: Unit Tests
+      run: |
+        $RUN "scons --test --asan -j$(nproc) && ZMQ=1 messaging/test_runner && ZMQ=1 visionipc/test_runner"
 
   test_zmq:
     name: zmq
-    runs-on: ubuntu-16.04
+    runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v2
     - name: Build docker image
@@ -52,7 +63,7 @@ jobs:
 
   test_msgq:
     name: msgq
-    runs-on: ubuntu-16.04
+    runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v2
     - name: Build docker image
@@ -66,7 +77,7 @@ jobs:
 
   static_analysis:
     name: static analysis
-    runs-on: ubuntu-16.04
+    runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v2
     - name: Build docker image

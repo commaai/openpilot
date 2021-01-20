@@ -1,4 +1,4 @@
-CM_ "IMPORT _subaru_global.dbc"
+CM_ "IMPORT _subaru_global.dbc";
 
 BO_ 39 Cruise_Status_2: 8 XXX
  SG_ Cruise_Activated : 37|1@0+ (1,0) [0|1] "" XXX

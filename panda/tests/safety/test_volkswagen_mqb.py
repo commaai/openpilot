@@ -6,7 +6,7 @@ from panda.tests.safety import libpandasafety_py
 import panda.tests.safety.common as common
 from panda.tests.safety.common import CANPackerPanda, MAX_WRONG_COUNTERS
 
-MAX_RATE_UP = 10
+MAX_RATE_UP = 4
 MAX_RATE_DOWN = 10
 MAX_STEER = 300
 MAX_RT_DELTA = 75

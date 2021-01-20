@@ -1,21 +1,22 @@
-import Cython
-import distutils
 import os
+import platform
 import subprocess
-import sys
+import sysconfig
 
 zmq = 'zmq'
-arch = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()
 
-# Rebuild cython extensions if python, distutils, or cython change
-cython_dependencies = [Value(v) for v in (sys.version, distutils.__version__, Cython.__version__)]
-Export('cython_dependencies')
+arch = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()
+if platform.system() == "Darwin":
+  arch = "Darwin"
 
 cereal_dir = Dir('.')
+messaging_dir = Dir('./messaging')
 
 cpppath = [
-    cereal_dir,
-    '/usr/lib/include',
+  cereal_dir,
+  messaging_dir,
+  '/usr/lib/include',
+  sysconfig.get_paths()['include'],
 ]
 
 AddOption('--test',
@@ -44,10 +45,27 @@ env = Environment(
   LINKFLAGS=ldflags_asan,
 
   CFLAGS="-std=gnu11",
-  CXXFLAGS="-std=c++14",
+  CXXFLAGS="-std=c++1z",
   CPPPATH=cpppath,
+  CYTHONCFILESUFFIX=".cpp",
+  tools=["default", "cython"]
 )
 
+QCOM_REPLAY = False
+Export('env', 'zmq', 'arch', 'QCOM_REPLAY')
 
-Export('env', 'zmq', 'arch')
+
+envCython = env.Clone(LIBS=[])
+envCython["CCFLAGS"] += ["-Wno-#warnings", "-Wno-deprecated-declarations"]
+if arch == "Darwin":
+  envCython["LINKFLAGS"] = ["-bundle", "-undefined", "dynamic_lookup"]
+elif arch == "aarch64":
+  envCython["LINKFLAGS"] = ["-shared"]
+  envCython["LIBS"] = [os.path.basename(python_path)]
+else:
+  envCython["LINKFLAGS"] = ["-pthread", "-shared"]
+
+Export('envCython')
+
+
 SConscript(['SConscript'])

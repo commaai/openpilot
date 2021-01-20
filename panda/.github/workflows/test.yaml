@@ -12,7 +12,7 @@ env:
 jobs:
   docker_push:
     name: docker push
-    runs-on: ubuntu-16.04
+    runs-on: ubuntu-20.04
     timeout-minutes: 45
     if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/panda'
     steps:
@@ -28,7 +28,7 @@ jobs:
 
   build:
     name: build
-    runs-on: ubuntu-16.04
+    runs-on: ubuntu-20.04
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v2
@@ -47,7 +47,7 @@ jobs:
 
   safety:
     name: safety
-    runs-on: ubuntu-16.04
+    runs-on: ubuntu-20.04
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v2
@@ -63,7 +63,7 @@ jobs:
 
   safety_replay:
     name: safety replay
-    runs-on: ubuntu-16.04
+    runs-on: ubuntu-20.04
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v2
@@ -74,7 +74,7 @@ jobs:
 
   misra:
     name: misra c2012
-    runs-on: ubuntu-16.04
+    runs-on: ubuntu-20.04
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v2
@@ -97,7 +97,7 @@ jobs:
 
   python_linter:
     name: python linter
-    runs-on: ubuntu-16.04
+    runs-on: ubuntu-20.04
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v2

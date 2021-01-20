@@ -300,6 +300,7 @@ BO_ 501 DASHBOARD: 8 XXX
  SG_ ACC_DISTANCE_CONFIG_1 : 1|2@0+ (1,0) [0|3] "" XXX
  SG_ ACC_DISTANCE_CONFIG_2 : 41|2@0+ (1,0) [0|3] "" XXX
  SG_ SPEED_DIGITAL : 63|8@0+ (1,0) [0|255] "mph" XXX
+ SG_ CRUISE_STATE : 38|3@0+ (1,0) [0|7] "" XXX
 
 BO_ 639 NEW_MSG_27f: 8 XXX
  SG_ INCREASING : 47|8@0+ (1,0) [0|255] "" XXX
@@ -425,9 +426,11 @@ CM_ SG_ 500 ACC_STATUS_1 "2 briefly (9 packets) when ACC goes to green, 1 help w
 CM_ SG_ 500 BRAKE_MAYBE "2046 in non-ACC and non-decel. Signal on deceleration. 818 for already stopped break.";
 CM_ SG_ 500 ACC_STATUS_2 "set to 1 in non-ACC, 3 when ACC enabled (white icon), and 7 when ACC in use (green icon)";
 CM_ SG_ 500 BRAKE_BOOL_1 "set to 1 when ACC decel. 0 on non-ACC and accel.";
+CM_ SG_ 501 CRUISE_STATE "may just be an icon, but seems to indicate different cruise modes: ACC and Non-ACC and engaged state for both.";
 CM_ SG_ 625 SPEED "zero on non-acc drives";
 CM_ SG_ 625 ACCEL_PERHAPS "set to 7767 on non-ACC drives. ACC drive 40k is constant speed, 42k is accelerating";
 CM_ SG_ 268 BRAKE_PERHAPS "triggers only on ACC braking";
 CM_ SG_ 384 NEW_SIGNAL_1 "set in ACC gas driving. not set in electric human. not sure about gas human driving.";
+VAL_ 501 CRUISE_STATE 0 "Off" 1 "CC On" 2 "CC Engaged" 3 "ACC On" 4 "ACC Engaged";
 VAL_ 746 PRNDL 5 "L" 4 "D" 3 "N" 2 "R" 1 "P" ;
 VAL_ 792 TURN_SIGNALS 2 "Right" 1 "Left" ;

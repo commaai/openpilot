@@ -1,7 +1,5 @@
 # MSGQ: A lock free single producer multi consumer message queue
 
-[![Build Status](https://dev.azure.com/commaai/default/_apis/build/status/commaai.msgq?branchName=master)](https://dev.azure.com/commaai/default/_build/latest?definitionId=21&branchName=master)
-
 ## What is MSGQ?
 MSGQ is a system to pass messages from a single producer to multiple consumers. All the consumers need to be able to receive all the messages. It is designed to be a high performance replacement for ZMQ-like SUB/PUB patterns. It uses a ring buffer in shared memory to efficiently read and write data. Each read requires a copy. Writing can be done without a copy, as long as the size of the data is known in advance.
 

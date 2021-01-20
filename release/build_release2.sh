@@ -36,7 +36,9 @@ else
   git checkout --orphan release2-staging
 fi
 
-VERSION=$(cat selfdrive/common/version.h | awk -F\" '{print $2}')
+VERSION=$(cat selfdrive/common/version.h | awk -F[\"-]  '{print $2}')
+echo "#define COMMA_VERSION \"$VERSION-release\"" > selfdrive/common/version.h
+
 git commit -m "openpilot v$VERSION"
 
 # Build signed panda firmware
@@ -55,7 +57,7 @@ export PYTHONPATH="/data/openpilot:/data/openpilot/pyextra"
 SCONS_CACHE=1 scons -j3
 
 # Run tests
-nosetests -s selfdrive/test/test_openpilot.py
+python selfdrive/test/test_manager.py
 selfdrive/car/tests/test_car_interfaces.py
 
 # Cleanup

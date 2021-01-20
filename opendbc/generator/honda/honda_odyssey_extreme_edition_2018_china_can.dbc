@@ -1,5 +1,5 @@
-CM_ "IMPORT _honda_2017.dbc"
-CM_ "IMPORT _comma.dbc"
+CM_ "IMPORT _honda_2017.dbc";
+CM_ "IMPORT _comma.dbc";
 
 BO_ 316 GAS_PEDAL: 8 PCM
  SG_ CAR_GAS : 39|8@0+ (1,0) [0|255] "" EON

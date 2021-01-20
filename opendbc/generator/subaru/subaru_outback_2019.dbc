@@ -1,4 +1,4 @@
-CM_ "IMPORT _subaru_preglobal_2015.dbc"
+CM_ "IMPORT _subaru_preglobal_2015.dbc";
 
 BO_ 358 ES_DashStatus: 8 XXX
  SG_ Not_Ready_Startup : 0|3@1+ (1,0) [0|7] "" XXX

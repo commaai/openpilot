@@ -56,7 +56,12 @@ void uno_set_gps_load_switch(bool enabled) {
 }
 
 void uno_set_bootkick(bool enabled){
-  set_gpio_output(GPIOB, 14, !enabled);
+  if(enabled){
+    set_gpio_output(GPIOB, 14, false);
+  } else {
+    // We want the pin to be floating, not forced high!
+    set_gpio_mode(GPIOB, 14, MODE_INPUT);
+  }
 }
 
 void uno_bootkick(void) {
@@ -72,11 +77,9 @@ void uno_set_usb_power_mode(uint8_t mode) {
   bool valid = false;
   switch (mode) {
     case USB_POWER_CLIENT:
-      uno_set_phone_power(false);
       valid = true;
       break;
     case USB_POWER_CDP:
-      uno_set_phone_power(true);
       uno_bootkick();
       valid = true;
       break;

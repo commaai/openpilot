@@ -21,8 +21,6 @@
 
 #include <stdio.h>
 
-#include "services.h"
-
 #include "msgq.hpp"
 
 void sigusr2_handler(int signal) {
@@ -83,20 +81,9 @@ void msgq_wait_for_subscriber(msgq_queue_t *q){
   return;
 }
 
-bool service_exists(std::string path){
-  for (const auto& it : services) {
-    if (it.name == path) {
-      return true;
-    }
-  }
-  return false;
-}
 
 int msgq_new_queue(msgq_queue_t * q, const char * path, size_t size){
   assert(size < 0xFFFFFFFF); // Buffer must be smaller than 2^32 bytes
-  if (!service_exists(std::string(path))){
-    std::cout << "Warning, " << std::string(path) << " is not in service list." << std::endl;
-  }
   std::signal(SIGUSR2, sigusr2_handler);
 
   const char * prefix = "/dev/shm/";

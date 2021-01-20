@@ -5,10 +5,10 @@ BO_ 359 STEERING_IPAS_COMMA: 8 IPAS
  SG_ SET_ME_X00 : 31|8@0+ (1,0) [0|255] "" XXX
  SG_ DIRECTION_CMD : 38|2@0+ (1,0) [0|3] "" XXX
  SG_ SET_ME_X40 : 47|8@0+ (1,0) [0|255] "" XXX
- SG_ SET_ME_X00 : 55|8@0+ (1,0) [0|255] "" XXX
+ SG_ SET_ME_X00_1 : 55|8@0+ (1,0) [0|255] "" XXX
  SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
 
-CM BO_ STEERING_IPAS_COMMA "Copy of msg 614 so we can do angle control while the Park Assist ECU is connected (Panda spoofs 614 with 359 on connector J70). Note that addresses 0x266 and 0x167 are checksum-invariant";
+CM_ "BO_ STEERING_IPAS_COMMA: Copy of msg 614 so we can do angle control while the Park Assist ECU is connected (Panda spoofs 614 with 359 on connector J70). Note that addresses 0x266 and 0x167 are checksum-invariant";
 
  BO_ 512 GAS_COMMAND: 6 EON
   SG_ GAS_COMMAND : 7|16@0+ (0.159375,-75.555) [0|1] "" INTERCEPTOR
@@ -25,3 +25,8 @@ CM BO_ STEERING_IPAS_COMMA "Copy of msg 614 so we can do angle control while the
   SG_ CHECKSUM_PEDAL : 47|8@0+ (1,0) [0|255] "" EON
 
  VAL_ 513 STATE 5 "FAULT_TIMEOUT" 4 "FAULT_STARTUP" 3 "FAULT_SCE" 2 "FAULT_SEND" 1 "FAULT_BAD_CHECKSUM" 0 "NO_FAULT" ;
+
+BO_ 35 SECONDARY_STEER_ANGLE: 8 XXX
+ SG_ ZORRO_STEER : 7|24@0- (0.004901594652,0) [-500|500] "" XXX
+
+CM_ "BO_ SECONDARY_STEER_ANGLE: ZSS is a high-precision steering angle sensor that can replace the lower resolution sensor in most TSS1 Toyotas. Learn more: https://github.com/commaai/openpilot/wiki/Toyota-Lexus#zorro-steering-sensor-zss";

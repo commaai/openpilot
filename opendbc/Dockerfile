@@ -1,5 +1,6 @@
-FROM ubuntu:16.04
+FROM ubuntu:20.04
 
+ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y --no-install-recommends \
     autoconf \
     build-essential \
@@ -30,8 +31,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 RUN curl -L https://github.com/pyenv/pyenv-installer/raw/master/bin/pyenv-installer | bash
 ENV PATH="/root/.pyenv/bin:/root/.pyenv/shims:${PATH}"
-RUN pyenv install 3.7.3
-RUN pyenv global 3.7.3
+RUN pyenv install 3.8.2
+RUN pyenv global 3.8.2
 RUN pyenv rehash
 
 COPY requirements.txt /tmp/
@@ -45,6 +46,7 @@ WORKDIR /project
 RUN git clone https://github.com/commaai/cereal.git /project/cereal
 
 COPY SConstruct .
+COPY ./site_scons /project/site_scons
 COPY . /project/opendbc
 
 RUN rm -rf /project/opendbc/.git

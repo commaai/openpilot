@@ -1,15 +1,42 @@
-Version 0.7.9 + VW 1.6 (2020-10-18)
+Version 0.8.2 (2021-XX-XX)
 ========================
- * (VW Community) Restore AVRT and de-deprecate White Panda (experimental)
- * (VW Community) Use raw steering angle signal (experimental)
- * (VW Community) Adjust torque rate controls to match stock Volkswagen behavior
- * (VW Community) Lane Change Assist radar input for auto lane-change blocking
- * (VW Community) FCW/AEB detection support (experimental)
- * (VW Community) Several additional MQB vehicles added to fingerprint
- * (VW Community) Manual config support for "unsafe" gas pedal mode
- * (VW Community) Manual config support for C2/BP integrations at the CAN gateway
- * (VW Community) Fix bug with steering angle-change-rate signal handling
- * (VW Community) Major overhaul of MQB CAN database (DBC)
+ * Lexus ES Hybrid 2018 support thanks to TheInventorMan!
+ * Toyota Camry Hybrid 2021 support thanks to alancyau!
+
+Version 0.8.1 (2020-12-21)
+========================
+ * Original EON is deprecated, upgrade to comma two
+ * Better model performance in heavy rain
+ * Better lane positioning in turns
+ * Fixed bug where model would cut turns on empty roads at night
+ * Fixed issue where some Toyotas would not completely stop thanks to briskspirit!
+ * Toyota Camry 2021 with TSS2.5 support
+ * Hyundai Ioniq Electric 2020 support thanks to baldwalker!
+
+Version 0.8.0 (2020-11-30)
+========================
+ * New driving model: fully 3D and improved cut-in detection
+ * UI draws 2 road edges, 4 lanelines and paths in 3D
+ * Major fixes to cut-in detection for openpilot longitudinal
+ * Grey panda is no longer supported, upgrade to comma two or black panda
+ * Lexus NX 2018 support thanks to matt12eagles!
+ * Kia Niro EV 2020 support thanks to nickn17!
+ * Toyota Prius 2021 support thanks to rav4kumar!
+ * Improved lane positioning with uncertain lanelines, wide lanes and exits
+ * Improved lateral control for Prius and Subaru
+
+Version 0.7.10 (2020-10-29)
+========================
+ * Grey panda is deprecated, upgrade to comma two or black panda
+ * NEOS update: update to Python 3.8.2 and lower CPU frequency
+ * Improved thermals due to reduced CPU frequency
+ * Update SNPE to 1.41.0
+ * Reduced offroad power consumption
+ * Various system stability improvements
+ * Acura RDX 2020 support thanks to csouers!
+
+Version 0.7.9 (2020-10-09)
+========================
  * Improved car battery power management
  * Improved updater robustness
  * Improved realtime performance
@@ -58,17 +85,8 @@ Version 0.7.5 (2020-05-13)
  * Added support for many Hyundai, Kia, Genesis models thanks to xx979xx!
  * Improved lateral tuning for 2020 Toyota Rav 4 (hybrid)
 
-Version 0.7.4 + VW 1.3 (2020-04-17)
+Version 0.7.4 (2020-03-20)
 ========================
- * (VW Community) Hotfix for SEAT Ateca missing CAN messages
- * (VW Community) Hotfix for manual trans users
- * (VW Community) Hotfix to add missing CAN messages from VW Touran
- * (VW Community) Hotfix to add missing CAN messages from high-trim Skoda Superb
- * (VW Community) Network position auto-detect, no more R242 vs J533 branch!
- * (VW Community) Trans type auto-detect, no more regular vs manual/e-Golf branch!
- * (VW Community) Now fully in-sync with Comma upstream safety at full torque!
- * (VW Community) Improved ISO24242 compliance in Panda code
- * (VW Community) Fix for virtual Panda relay code breaking BP/C2 cars with real relays
  * New driving model: improved lane changes and lead car detection
  * Improved driver monitoring model: improve eye detection
  * Improved calibration stability
@@ -85,18 +103,8 @@ Version 0.7.3 (2020-02-21)
  * Speed up ECU firmware query
  * Fix bug where manager would sometimes hang after shutting down the car
 
-Version 0.7.2 + VW 1.2.1 (2020-03-05)
+Version 0.7.2 (2020-02-07)
 ========================
- * (VW Community) Hotfix for "no comms between process" on cars without factory LKAS
- * (VW Community) Hotfix for occasional steering fault messages after engaging
-
-Version 0.7.2 + VW 1.2 (2020-02-08)
-========================
- * (VW Community) Updated MQB tuning parameters for less ping-pong and better banked road handling
- * (VW Community) Updated CC button handling for 2019 vehicles with overloaded Set/Resume semantics
- * (VW Community) First steps toward improving auto-resume from stop, more to come
- * (VW Community) New fingerprint messages in support of the 2019 Jetta
- * (VW Community) Additional Panda safety CRC and counter validation
  * ECU firmware version based fingerprinting for Honda & Toyota
  * New driving model: improved path prediction during turns and lane changes and better lead speed tracking
  * Improve driver monitoring under extreme lighting and add low accuracy alert
@@ -113,11 +121,8 @@ Version 0.7.1 (2020-01-20)
  * More robust updater thanks to jyoung8607! Requires NEOS update
  * Improve low speed ACC tuning
 
-Version 0.7 + VW 1.1 (2020-01-01)
+Version 0.7 (2019-12-13)
 ========================
- * (VW Community) Enabled Comma's unofficial Lane Change Assist feature!
- * (VW Community) Advanced Virtual Relay Technology!
- * (VW Community) Closer alignment with Comma recommended safety parameters
  * Move to SCons build system!
  * Add Lane Departure Warning (LDW) for all supported vehicles!
  * NEOS update: increase wifi speed thanks to jyoung8607!

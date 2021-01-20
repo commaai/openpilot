@@ -1961,10 +1961,10 @@ BO_ 2158813184 ODIIndication_IPC_LS: 8 XXX
 
 BO_ 2150277120 GPS_Geographical_Position_LS: 8 XXX
  SG_ PsngSysLatGroup : 6|31@0+ (1,0) [0|0] ""  XXX
- SG_ PsngSysLat : 5|30@0- (1,0) [-536870912|536870911] "ms arc"  XXX
+ SG_ PsngSysLat : 5|30@0- (1,0) [-536870912|536870911] "mas"  XXX
  SG_ PsngSysLatV : 6|1@0+ (1,0) [0|1] ""  XXX
  SG_ PsngSysLongGroup : 39|32@0+ (1,0) [0|0] ""  XXX
- SG_ PsngSysLong : 38|31@0- (1,0) [-1073741824|1073741823] "ms arc"  XXX
+ SG_ PsngSysLong : 38|31@0- (1,0) [-1073741824|1073741823] "mas"  XXX
  SG_ PsngSysLongV : 39|1@0+ (1,0) [0|1] ""  XXX
 
 BO_ 2150285312 GPS_Elevation_and_Heading_LS: 8 XXX
@@ -2024,7 +2024,7 @@ BO_ 2149990400 HS_Indications_Fast_LS: 8 XXX
  SG_ MotStBltFldIO : 35|1@0+ (1,0) [0|1] ""  XXX
  SG_ MotStBltUnblIO : 36|1@0+ (1,0) [0|1] ""  XXX
  SG_ TrnsfrCsRngShfSpdLmt : 47|8@0+ (1,0) [0|255] "km / h"  XXX
- SG_ InstFuelConsmpRate : 51|12@0+ (0.025,0) [0|102.375] "ltrs/hr"  XXX
+ SG_ InstFuelConsmpRate : 51|12@0+ (0.025,0) [0|102.375] "liters/hr"  XXX
  SG_ SecAxlOperMod : 55|4@0+ (1,0) [0|15] ""  XXX
 
 BO_ 2155380736 HS_Indications_SuperSlow_LS: 6 XXX

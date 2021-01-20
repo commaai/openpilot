@@ -98,7 +98,7 @@ BO_ 614 STEERING_IPAS: 8 IPAS
  SG_ STATE : 7|4@0+ (1,0) [0|15] "" XXX
  SG_ ANGLE : 3|12@0- (1,0) [0|16777215] "" XXX
  SG_ SET_ME_X10 : 23|8@0+ (1,0) [0|255] "" XXX
- SG_ SET_ME_X00 : 55|8@0+ (1,0) [0|255] "" XXX
+ SG_ SET_ME_X00_1 : 55|8@0+ (1,0) [0|255] "" XXX
  SG_ DIRECTION_CMD : 38|2@0+ (1,0) [0|3] "" XXX
  SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
 
@@ -174,6 +174,7 @@ CM_ SG_ 36 ACCEL_Y "unit is tbd";
 CM_ SG_ 36 STEERING_TORQUE "does not seem the steer torque, tbd";
 CM_ SG_ 36 YAW_RATE "verify";
 CM_ SG_ 466 ACCEL_NET "net acceleration produced by the system, given ACCEL_CMD, road grade and other factors";
+CM_ SG_ 466 CRUISE_STATE "Active state is 8, if standstill is requested will switch to state 11(3 sec timer), after timer is elapsed will switch into state 7(standstill). If plus button was pressed - status 9, minus button pressed - status 10";
 CM_ SG_ 550 BRAKE_PRESSURE "seems prop to pedal force";
 CM_ SG_ 550 BRAKE_POSITION "seems proportional to pedal displacement, unclear the max value of 0x1c8";
 CM_ SG_ 560 BRAKE_LIGHTS "double check";
@@ -188,7 +189,7 @@ CM_ SG_ 467 SET_SPEED "43 kph are shown as 28mph, so conversion isn't perfect";
 CM_ SG_ 921 UI_SET_SPEED "set speed shown in UI with user set unit";
 CM_ SG_ 1042 SET_ME_1 "unclear what this is, nut it's always 1 in drive traces";
 VAL_ 295 GEAR 0 "P" 1 "R" 2 "N" 3 "D" 4 "B" ;
-VAL_ 466 CRUISE_STATE 8 "active" 7 "standstill" 1 "off" ;
+VAL_ 466 CRUISE_STATE 11 "timer_3sec" 10 "setspeeddown" 9 "setspeedup" 8 "active" 7 "standstill" 1 "off" 0 "off";
 VAL_ 610 STATE 5 "override" 3 "enabled" 1 "disabled" ;
 VAL_ 610 LKA_STATE 50 "temporary_fault" ;
 VAL_ 614 STATE 3 "enabled" 1 "disabled" ;

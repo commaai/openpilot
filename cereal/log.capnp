@@ -49,6 +49,8 @@ struct InitData {
     neo @1;
     chffrAndroid @2;
     chffrIos @3;
+    tici @4;
+    pc @5;
   }
 
   struct AndroidBuildInfo {
@@ -571,7 +573,7 @@ struct ControlsState @0x97ff69c53601abf1 {
 
   enum AlertStatus {
     normal @0;       # low priority alert for user's convenience
-    userPrompt @1;   # mid piority alert that might require user intervention
+    userPrompt @1;   # mid priority alert that might require user intervention
     critical @2;     # high priority alert that needs immediate user intervention
   }
 
@@ -628,6 +630,9 @@ struct ModelData {
   frameAge @12 :UInt32;
   frameDropPerc @13 :Float32;
   timestampEof @9 :UInt64;
+  modelExecutionTime @14 :Float32;
+  gpuExecutionTime @16 :Float32;
+  rawPred @15 :Data;
 
   path @1 :PathData;
   leftLane @2 :PathData;
@@ -694,6 +699,9 @@ struct ModelDataV2 {
   frameAge @1 :UInt32;
   frameDropPerc @2 :Float32;
   timestampEof @3 :UInt64;
+  modelExecutionTime @15 :Float32;
+  gpuExecutionTime @17 :Float32;
+  rawPred @16 :Data;
 
   position @4 :XYZTData;
   orientation @5 :XYZTData;
@@ -701,7 +709,9 @@ struct ModelDataV2 {
   orientationRate @7 :XYZTData;
   laneLines @8 :List(XYZTData);
   laneLineProbs @9 :List(Float32);
+  laneLineStds @13 :List(Float32);
   roadEdges @10 :List(XYZTData);
+  roadEdgeStds @14 :List(Float32);
   leads @11 :List(LeadDataV2);
 
   meta @12 :MetaData;
@@ -754,6 +764,8 @@ struct EncodeIndex {
   segmentId @4 :UInt32;
   # index into camera file in segment in encode order
   segmentIdEncode @5 :UInt32;
+  timestampSof @6 :UInt64;
+  timestampEof @7 :UInt64;
 
   enum Type {
     bigBoxLossless @0;   # rcamera.mkv
@@ -844,14 +856,16 @@ struct Plan {
 
 struct PathPlan {
   laneWidth @0 :Float32;
-
-  dPoly @1 :List(Float32);
-  cPoly @2 :List(Float32);
-  cProb @3 :Float32;
-  lPoly @4 :List(Float32);
   lProb @5 :Float32;
-  rPoly @6 :List(Float32);
   rProb @7 :Float32;
+  dPathPoints @20 :List(Float32);
+  dProb @21 :Float32;
+
+  cProbDEPRECATED @3 :Float32;
+  dPolyDEPRECATED @1 :List(Float32);
+  cPolyDEPRECATED @2 :List(Float32);
+  lPolyDEPRECATED @4 :List(Float32);
+  rPolyDEPRECATED @6 :List(Float32);
 
   angleSteers @8 :Float32; # deg
   rateSteers @13 :Float32; # deg/s
@@ -1943,6 +1957,10 @@ struct OrbKeyFrame {
 
 struct DriverState {
   frameId @0 :UInt32;
+  modelExecutionTime @14 :Float32;
+  dspExecutionTime @16 :Float32;
+  rawPred @15 :Data;
+
   descriptorDEPRECATED @1 :List(Float32);
   stdDEPRECATED @2 :Float32;
   faceOrientation @3 :List(Float32);
@@ -1975,6 +1993,7 @@ struct DMonitoringState {
   isLowStd @13 :Bool;
   hiStdCount @14 :UInt32;
   isPreview @15 :Bool;
+  isActiveMode @16 :Bool;
 
   rhdCheckedDEPRECATED @5 :Bool;
 }
@@ -1983,6 +2002,7 @@ struct Boot {
   wallTimeNanos @0 :UInt64;
   lastKmsg @1 :Data;
   lastPmsg @2 :Data;
+  launchLog @3 :Text;
 }
 
 struct LiveParametersData {
@@ -2118,11 +2138,13 @@ struct Event {
     thumbnail @66: Thumbnail;
     carEvents @68: List(Car.CarEvent);
     carParams @69: Car.CarParams;
-    frontFrame @70: FrameData;
+    frontFrame @70: FrameData; # driver facing camera
     dMonitoringState @71: DMonitoringState;
     liveLocationKalman @72 :LiveLocationKalman;
     sentinel @73 :Sentinel;
     wideFrame @74: FrameData;
     modelV2 @75 :ModelDataV2;
+    frontEncodeIdx @76 :EncodeIndex; # driver facing camera
+    wideEncodeIdx @77 :EncodeIndex;
   }
 }

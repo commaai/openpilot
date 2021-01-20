@@ -1,4 +1,4 @@
-CM_ "IMPORT _subaru_global.dbc"
+CM_ "IMPORT _subaru_global.dbc";
 
 BO_ 72 Transmission: 8 XXX
  SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" XXX
