@@ -225,6 +225,8 @@ void GLWindow::initializeGL() {
 
   timer->start(1000 / UI_FREQ);
   backlight_timer->start(BACKLIGHT_DT * 1000);
+
+  QObject::connect(this, SIGNAL(frameSwapped()), this, SLOT(update()));
 }
 
 void GLWindow::backlightUpdate() {
@@ -260,7 +262,6 @@ void GLWindow::timerUpdate() {
   handle_display_state(&ui_state, false);
 
   ui_update(&ui_state);
-  repaint();
 }
 
 void GLWindow::resizeGL(int w, int h) {
