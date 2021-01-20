@@ -81,10 +81,11 @@ Networking::Networking(QWidget* parent){
     QPushButton {
       margin: 5px;
       padding: 5px;
-      background-color: #393939;
+      color: #dddddd;
+      background-color: #444444;
     }
     QPushButton:disabled {
-      background-color: #000000;
+      background-color: #181818;
     }
   )");
 }
@@ -174,30 +175,30 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   IPlayout->addWidget(ipLabel);
   vlayout->addWidget(layoutToWidget(IPlayout, this));
 
-  //Enable SSH
-  QHBoxLayout* enableSSHLayout = new QHBoxLayout(this);
-  enableSSHLayout->addWidget(new QLabel("Enable SSH", this));
-  Toggle* toggle_switch_SSH = new Toggle(this);
-  toggle_switch_SSH->setFixedSize(150, 100);
-  enableSSHLayout->addWidget(toggle_switch_SSH);
-  vlayout->addWidget(layoutToWidget(enableSSHLayout, this));
+  // //Enable SSH
+  // QHBoxLayout* enableSSHLayout = new QHBoxLayout(this);
+  // enableSSHLayout->addWidget(new QLabel("Enable SSH", this));
+  // Toggle* toggle_switch_SSH = new Toggle(this);
+  // toggle_switch_SSH->setFixedSize(150, 100);
+  // enableSSHLayout->addWidget(toggle_switch_SSH);
+  // vlayout->addWidget(layoutToWidget(enableSSHLayout, this));
 
-  //Authorized SSH keys
-  QHBoxLayout* authSSHLayout = new QHBoxLayout(this);
-  authSSHLayout->addWidget(new QLabel("Authorized SSH keys", this));
-  QPushButton* editAuthSSHButton = new QPushButton("EDIT", this);
-  authSSHLayout->addWidget(editAuthSSHButton);
-  vlayout->addWidget(layoutToWidget(authSSHLayout, this));
+  // //Authorized SSH keys
+  // QHBoxLayout* authSSHLayout = new QHBoxLayout(this);
+  // authSSHLayout->addWidget(new QLabel("Authorized SSH keys", this));
+  // QPushButton* editAuthSSHButton = new QPushButton("EDIT", this);
+  // authSSHLayout->addWidget(editAuthSSHButton);
+  // vlayout->addWidget(layoutToWidget(authSSHLayout, this));
 
-  //Disconnect or delete connections
-  QHBoxLayout* dangerZone = new QHBoxLayout(this);
-  QPushButton* disconnect = new QPushButton("Disconnect from WiFi", this);
-  dangerZone->addWidget(disconnect);
-  QPushButton* deleteAll = new QPushButton("DELETE ALL NETWORKS", this);
-  dangerZone->addWidget(deleteAll);
-  vlayout->addWidget(layoutToWidget(dangerZone, this));
+  // //Disconnect or delete connections
+  // QHBoxLayout* dangerZone = new QHBoxLayout(this);
+  // QPushButton* disconnect = new QPushButton("Disconnect from WiFi", this);
+  // dangerZone->addWidget(disconnect);
+  // QPushButton* deleteAll = new QPushButton("DELETE ALL NETWORKS", this);
+  // dangerZone->addWidget(deleteAll);
+  // vlayout->addWidget(layoutToWidget(dangerZone, this));
 
-  //vlayout to widget and stylesheet
+  //vlayout to widget
   QWidget* settingsWidget = layoutToWidget(vlayout, this);
   s->addWidget(settingsWidget);
   s->setCurrentIndex(1);
@@ -246,7 +247,7 @@ WifiUI::WifiUI(QWidget *parent, int page_length, WifiManager* wifi) : QWidget(pa
   page = 0;
   refresh();
 }
-// TODO check it looks nice with tethering
+
 void WifiUI::refresh() {
   wifi->request_scan();
   wifi->refreshNetworks();
