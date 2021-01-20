@@ -53,7 +53,7 @@ static int mkpath(char* file_path) {
 
 // ***** log metadata *****
 
-void log_init_data(LoggerState *s) {
+kj::Array<capnp::word> get_init_data() {
   MessageBuilder msg;
   auto init = msg.initEvent().initInitData();
 
@@ -120,8 +120,7 @@ void log_init_data(LoggerState *s) {
     }
   }
 
-  auto bytes = msg.toBytes();
-  logger_log(s, bytes.begin(), bytes.size(), s->has_qlog);
+  return capnp::messageToFlatArray(msg);
 }
 
 
@@ -153,6 +152,8 @@ void logger_init(LoggerState *s, const char* log_name, bool has_qlog) {
   strftime(s->route_name, sizeof(s->route_name),
            "%Y-%m-%d--%H-%M-%S", &timeinfo);
   snprintf(s->log_name, sizeof(s->log_name), "%s", log_name);
+
+  s->init_data = get_init_data();
 }
 
 static LoggerHandle* logger_open(LoggerState *s, const char* root_path) {
@@ -253,7 +254,8 @@ int logger_next(LoggerState *s, const char* root_path,
   pthread_mutex_unlock(&s->lock);
 
   // write beggining of log metadata
-  log_init_data(s);
+  auto bytes = s->init_data.asBytes();
+  logger_log(s, bytes.begin(), bytes.size(), s->has_qlog);
   log_sentinel(s, is_start_of_route ? cereal::Sentinel::SentinelType::START_OF_ROUTE : cereal::Sentinel::SentinelType::START_OF_SEGMENT);
   return 0;
 }
