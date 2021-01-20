@@ -158,9 +158,6 @@ if __name__ == "__main__":
       if (procs_whitelisted and cfg.proc_name not in args.whitelist_procs) or \
          (not procs_whitelisted and cfg.proc_name in args.blacklist_procs):
         continue
-      # TODO remove this hack
-      if cfg.proc_name == 'plannerd' and car_brand in ["GM", "SUBARU", "VOLKSWAGEN", "NISSAN"]:
-        continue
 
       cmp_log_fn = os.path.join(process_replay_dir, "%s_%s_%s.bz2" % (segment, cfg.proc_name, ref_commit))
       results[segment][cfg.proc_name] = test_process(cfg, lr, cmp_log_fn, args.ignore_fields, args.ignore_msgs)
