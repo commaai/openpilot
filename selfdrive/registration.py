@@ -26,7 +26,10 @@ def register(spinner=None):
   params.put("GitRemote", get_git_remote(default=""))
   params.put("SubscriberInfo", HARDWARE.get_subscriber_info())
 
-  needs_registration = False
+  IMEI = params.get("IMEI", encoding='utf8')
+  HardwareSerial = params.get("HardwareSerial", encoding='utf8')
+
+  needs_registration = (None in [IMEI, HardwareSerial])
 
   # create a key for auth
   # your private key is kept on your device persist partition and never sent to our servers
@@ -65,11 +68,15 @@ def register(spinner=None):
         cloudlog.exception("Error getting imei, trying again...")
         time.sleep(1)
 
+    serial = HARDWARE.get_serial()
+    params.put("IMEI", imei1)
+    params.put("HardwareSerial", serial)
+
     while True:
       try:
         cloudlog.info("getting pilotauth")
         resp = api_get("v2/pilotauth/", method='POST', timeout=15,
-                       imei=imei1, imei2=imei2, serial=HARDWARE.get_serial(), public_key=public_key, register_token=register_token)
+                       imei=imei1, imei2=imei2, serial=serial, public_key=public_key, register_token=register_token)
         dongleauth = json.loads(resp.text)
         dongle_id = dongleauth["dongle_id"]
         params.put("DongleId", dongle_id)

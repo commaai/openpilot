@@ -37,12 +37,12 @@ def laplacian_cdf(x, mu, b):
 
 def match_vision_to_cluster(v_ego, lead, clusters):
   # match vision point to best statistical cluster match
-  offset_vision_dist = lead.dist - RADAR_TO_CAMERA
+  offset_vision_dist = lead.xyva[0] - RADAR_TO_CAMERA
 
   def prob(c):
-    prob_d = laplacian_cdf(c.dRel, offset_vision_dist, lead.std)
-    prob_y = laplacian_cdf(c.yRel, lead.relY, lead.relYStd)
-    prob_v = laplacian_cdf(c.vRel, lead.relVel, lead.relVelStd)
+    prob_d = laplacian_cdf(c.dRel, offset_vision_dist, lead.xyvaStd[0])
+    prob_y = laplacian_cdf(c.yRel, -lead.xyva[1], lead.xyvaStd[1])
+    prob_v = laplacian_cdf(c.vRel, lead.xyva[2], lead.xyvaStd[2])
 
     # This is isn't exactly right, but good heuristic
     return prob_d * prob_y * prob_v
@@ -52,7 +52,7 @@ def match_vision_to_cluster(v_ego, lead, clusters):
   # if no 'sane' match is found return -1
   # stationary radar points can be false positives
   dist_sane = abs(cluster.dRel - offset_vision_dist) < max([(offset_vision_dist)*.25, 5.0])
-  vel_sane = (abs(cluster.vRel - lead.relVel) < 10) or (v_ego + cluster.vRel > 3)
+  vel_sane = (abs(cluster.vRel - lead.xyva[2]) < 10) or (v_ego + cluster.vRel > 3)
   if dist_sane and vel_sane:
     return cluster
   else:
@@ -103,7 +103,7 @@ class RadarD():
     if sm.updated['controlsState']:
       self.v_ego = sm['controlsState'].vEgo
       self.v_ego_hist.append(self.v_ego)
-    if sm.updated['model']:
+    if sm.updated['modelV2']:
       self.ready = True
 
     ar_pts = {}
@@ -159,14 +159,15 @@ class RadarD():
     dat = messaging.new_message('radarState')
     dat.valid = sm.all_alive_and_valid()
     radarState = dat.radarState
-    radarState.mdMonoTime = sm.logMonoTime['model']
+    radarState.mdMonoTime = sm.logMonoTime['modelV2']
     radarState.canMonoTimes = list(rr.canMonoTimes)
     radarState.radarErrors = list(rr.errors)
     radarState.controlsStateMonoTime = sm.logMonoTime['controlsState']
 
     if enable_lead:
-      radarState.leadOne = get_lead(self.v_ego, self.ready, clusters, sm['model'].lead, low_speed_override=True)
-      radarState.leadTwo = get_lead(self.v_ego, self.ready, clusters, sm['model'].leadFuture, low_speed_override=False)
+      if len(sm['modelV2'].leads) > 1:
+        radarState.leadOne = get_lead(self.v_ego, self.ready, clusters, sm['modelV2'].leads[0], low_speed_override=True)
+        radarState.leadTwo = get_lead(self.v_ego, self.ready, clusters, sm['modelV2'].leads[1], low_speed_override=False)
     return dat
 
 
@@ -187,7 +188,7 @@ def radard_thread(sm=None, pm=None, can_sock=None):
   if can_sock is None:
     can_sock = messaging.sub_sock('can')
   if sm is None:
-    sm = messaging.SubMaster(['model', 'controlsState'])
+    sm = messaging.SubMaster(['modelV2', 'controlsState'])
   if pm is None:
     pm = messaging.PubMaster(['radarState', 'liveTracks'])
 

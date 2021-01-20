@@ -91,37 +91,35 @@ struct MultiCameraState;
 struct CameraState;
 
 class CameraBuf {
-public:
+private:
   VisionIpcServer *vipc_server;
   CameraState *camera_state;
   cl_kernel krnl_debayer;
-  cl_command_queue q;
 
   RGBToYUVState rgb_to_yuv_state;
 
-  mat3 yuv_transform;
-
   FrameMetadata yuv_metas[YUV_COUNT];
-
   VisionStreamType rgb_type, yuv_type;
-  int rgb_width, rgb_height, rgb_stride;
-
-  FrameMetadata cur_frame_data;
-
-  VisionBuf *cur_rgb_buf;
-  VisionBuf *cur_yuv_buf;
+  
   int cur_buf_idx;
 
   std::mutex frame_queue_mutex;
   std::condition_variable frame_queue_cv;
   std::queue<size_t> frame_queue;
 
+  int frame_buf_count;
+  release_cb release_callback;
+
+public:
+  cl_command_queue q;
+  FrameMetadata cur_frame_data;
+  VisionBuf *cur_rgb_buf;
+  VisionBuf *cur_yuv_buf;
   std::unique_ptr<VisionBuf[]> camera_bufs;
   std::unique_ptr<FrameMetadata[]> camera_bufs_metadata;
-
-  int frame_buf_count;
-
-  release_cb release_callback;
+  int rgb_width, rgb_height, rgb_stride;
+  
+  mat3 yuv_transform;
 
   CameraBuf() = default;
   ~CameraBuf();
@@ -137,5 +135,5 @@ void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &fr
 void fill_frame_image(cereal::FrameData::Builder &framed, const CameraBuf *b);
 void set_exposure_target(CameraState *c, const uint8_t *pix_ptr, int x_start, int x_end, int x_skip, int y_start, int y_end, int y_skip);
 std::thread start_process_thread(MultiCameraState *cameras, const char *tname,
-                                    CameraState *cs, process_thread_cb callback);
+                                 CameraState *cs, process_thread_cb callback);
 void common_camera_process_front(SubMaster *sm, PubMaster *pm, CameraState *c, int cnt);

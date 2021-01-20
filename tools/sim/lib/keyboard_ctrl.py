@@ -44,6 +44,14 @@ def keyboard_poll_thread(q):
       q.put(str("cruise_down"))
     if c == '3':
       q.put(str("cruise_cancel"))
+    if c == 'w':
+      q.put(str("throttle_%f" % 1.0))
+    if c == 'a':
+      q.put(str("steer_%f" % 0.15))
+    if c == 's':
+      q.put(str("brake_%f" % 1.0))
+    if c == 'd':
+      q.put(str("steer_%f" % -0.15))
     if c == 'q':
       exit(0)
 

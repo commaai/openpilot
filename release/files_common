@@ -307,6 +307,7 @@ selfdrive/loggerd/omx_encoder.h
 selfdrive/loggerd/logger.cc
 selfdrive/loggerd/logger.h
 selfdrive/loggerd/loggerd.cc
+selfdrive/loggerd/bootlog.cc
 selfdrive/loggerd/raw_logger.cc
 selfdrive/loggerd/raw_logger.h
 selfdrive/loggerd/include/msm_media_info.h
@@ -406,10 +407,14 @@ selfdrive/modeld/transforms/transform.h
 selfdrive/modeld/transforms/transform.cl
 
 selfdrive/modeld/thneed/thneed.*
+selfdrive/modeld/thneed/serialize.cc
+selfdrive/modeld/thneed/compile.cc
 selfdrive/modeld/thneed/include/*
 
 selfdrive/modeld/runners/snpemodel.cc
 selfdrive/modeld/runners/snpemodel.h
+selfdrive/modeld/runners/thneedmodel.cc
+selfdrive/modeld/runners/thneedmodel.h
 selfdrive/modeld/runners/runmodel.h
 selfdrive/modeld/runners/run.h
 

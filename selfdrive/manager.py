@@ -146,7 +146,6 @@ import cereal.messaging as messaging
 
 from common.params import Params
 from selfdrive.registration import register
-from selfdrive.loggerd.config import ROOT
 from selfdrive.launcher import launcher
 
 
@@ -421,12 +420,6 @@ def manager_init():
   crash.bind_user(id=dongle_id)
   crash.bind_extra(version=version, dirty=dirty, is_eon=True)
 
-  os.umask(0)
-  try:
-    os.mkdir(ROOT, 0o777)
-  except OSError:
-    pass
-
   # ensure shared libraries are readable by apks
   if EON:
     os.chmod(BASEDIR, 0o755)
@@ -440,7 +433,7 @@ def manager_thread():
   cloudlog.info({"environ": os.environ})
 
   # save boot log
-  subprocess.call(["./loggerd", "--bootlog"], cwd=os.path.join(BASEDIR, "selfdrive/loggerd"))
+  subprocess.call("./bootlog", cwd=os.path.join(BASEDIR, "selfdrive/loggerd"))
 
   # start daemon processes
   for p in daemon_processes:

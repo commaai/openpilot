@@ -10,10 +10,6 @@
 #include <CL/cl.h>
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #define CL_CHECK(_expr)          \
   do {                           \
     assert(CL_SUCCESS == _expr); \
@@ -30,7 +26,3 @@ extern "C" {
 cl_device_id cl_get_device_id(cl_device_type device_type);
 cl_program cl_program_from_file(cl_context ctx, cl_device_id device_id, const char* path, const char* args);
 const char* cl_get_error_string(int err);
-
-#ifdef __cplusplus
-}
-#endif

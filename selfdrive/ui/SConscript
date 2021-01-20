@@ -5,7 +5,6 @@ Import('env', 'qt_env', 'arch', 'common', 'messaging', 'gpucommon', 'visionipc',
 src = ['ui.cc', 'paint.cc', 'sidebar.cc', '#phonelibs/nanovg/nanovg.c']
 libs = [common, 'zmq', 'capnp', 'kj', 'm', 'OpenCL', cereal, messaging, gpucommon, visionipc]
 
-
 if qt_env is None:
   libs += ['EGL', 'GLESv3', 'gnustl_shared', 'log', 'utils', 'gui', 'hardware',
            'ui', 'CB', 'gsl', 'adreno_utils', 'OpenSLES', 'cutils', 'uuid', 'OpenCL']
@@ -20,16 +19,18 @@ else:
 
   widgets = qt_env.Library("qt_widgets",
                  ["qt/qt_window.cc", "qt/qt_sound.cc", "qt/widgets/keyboard.cc", "qt/widgets/input_field.cc", "qt/widgets/drive_stats.cc",
-                  "qt/offroad/wifi.cc", "qt/offroad/wifiManager.cc", "qt/widgets/toggle.cc", "qt/widgets/offroad_alerts.cc"],
+                  "qt/offroad/wifi.cc", "qt/offroad/wifiManager.cc", "qt/widgets/toggle.cc", "qt/widgets/offroad_alerts.cc", "qt/widgets/setup.cc", "qt/widgets/QrCode.cc"],
                  LIBS=qt_libs)
   qt_libs.append(widgets)
+
 
   if arch == "Darwin":
     # fix OpenCL
     del qt_libs[qt_libs.index('OpenCL')]
     qt_env['FRAMEWORKS'] += ['OpenCL']
 
-  qt_src = ["qt/ui.cc", "qt/window.cc", "qt/home.cc", "qt/offroad/settings.cc", "qt/offroad/onboarding.cc"] + src
+  qt_src = ["qt/ui.cc", "qt/window.cc", "qt/home.cc", "qt/api.cc", "qt/offroad/settings.cc", "qt/offroad/onboarding.cc"] + src
+
   qt_env.Program("_ui", qt_src, LIBS=qt_libs)
 
   # spinner and text window
