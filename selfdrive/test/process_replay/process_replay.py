@@ -222,7 +222,7 @@ CONFIGS = [
     pub_sub={
       "can": ["controlsState", "carState", "carControl", "sendcan", "carEvents", "carParams"],
       "thermal": [], "health": [], "liveCalibration": [], "dMonitoringState": [], "plan": [], "pathPlan": [], "gpsLocation": [], "liveLocationKalman": [],
-      "model": [], "frontFrame": [], "frame": [], "ubloxRaw": [],
+      "modelV2": [], "frontFrame": [], "frame": [], "ubloxRaw": [],
     },
     ignore=["logMonoTime", "valid", "controlsState.startMonoTime", "controlsState.cumLagMs"],
     init_callback=fingerprint,
@@ -233,7 +233,7 @@ CONFIGS = [
     proc_name="radard",
     pub_sub={
       "can": ["radarState", "liveTracks"],
-      "liveParameters":  [], "controlsState":  [], "model":  [],
+      "liveParameters":  [], "controlsState":  [], "modelV2":  [],
     },
     ignore=["logMonoTime", "valid", "radarState.cumLagMs"],
     init_callback=get_car_params,
@@ -266,7 +266,7 @@ CONFIGS = [
     proc_name="dmonitoringd",
     pub_sub={
       "driverState": ["dMonitoringState"],
-      "liveCalibration": [], "carState": [], "model": [], "controlsState": [],
+      "liveCalibration": [], "carState": [], "modelV2": [], "controlsState": [],
     },
     ignore=["logMonoTime", "valid"],
     init_callback=get_car_params,

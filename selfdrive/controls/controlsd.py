@@ -53,7 +53,7 @@ class Controls:
     self.sm = sm
     if self.sm is None:
       ignore = ['ubloxRaw', 'frontFrame'] if SIMULATION else None
-      self.sm = messaging.SubMaster(['thermal', 'health', 'model', 'liveCalibration', 'ubloxRaw',
+      self.sm = messaging.SubMaster(['thermal', 'health', 'modelV2', 'liveCalibration', 'ubloxRaw',
                                      'dMonitoringState', 'plan', 'pathPlan', 'liveLocationKalman',
                                      'frame', 'frontFrame'], ignore_alive=ignore)
 
@@ -237,7 +237,7 @@ class Controls:
           self.events.add(EventName.noGps)
       if not self.sm.all_alive(['frame', 'frontFrame']) and (self.sm.frame > 5 / DT_CTRL):
         self.events.add(EventName.cameraMalfunction)
-      if self.sm['model'].frameDropPerc > 20:
+      if self.sm['modelV2'].frameDropPerc > 20:
         self.events.add(EventName.modeldLagging)
 
     # Only allow engagement with brake pressed when stopped behind another stopped car
@@ -433,12 +433,12 @@ class Controls:
     ldw_allowed = self.is_ldw_enabled and CS.vEgo > LDW_MIN_SPEED and not recent_blinker \
                     and not self.active and self.sm['liveCalibration'].calStatus == Calibration.CALIBRATED
 
-    meta = self.sm['model'].meta
+    meta = self.sm['modelV2'].meta
     if len(meta.desirePrediction) and ldw_allowed:
       l_lane_change_prob = meta.desirePrediction[Desire.laneChangeLeft - 1]
       r_lane_change_prob = meta.desirePrediction[Desire.laneChangeRight - 1]
-      l_lane_close = left_lane_visible and (self.sm['model'].leftLane.poly[3] < (1.08 - CAMERA_OFFSET))
-      r_lane_close = right_lane_visible and (self.sm['model'].rightLane.poly[3] > -(1.08 + CAMERA_OFFSET))
+      l_lane_close = left_lane_visible and (self.sm['modelV2'].laneLines[1].y[0] > -(1.08 + CAMERA_OFFSET))
+      r_lane_close = right_lane_visible and (self.sm['modelV2'].laneLines[2].y[0] < (1.08 - CAMERA_OFFSET))
 
       CC.hudControl.leftLaneDepart = bool(l_lane_change_prob > LANE_DEPARTURE_THRESHOLD and l_lane_close)
       CC.hudControl.rightLaneDepart = bool(r_lane_change_prob > LANE_DEPARTURE_THRESHOLD and r_lane_close)
