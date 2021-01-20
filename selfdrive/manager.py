@@ -397,6 +397,8 @@ def send_managed_process_signal(name, sig):
 # ****************** run loop ******************
 
 def manager_init():
+  os.umask(0)  # Make sure we can create files with 777 permissions
+
   # Create folders needed for msgq
   try:
     os.mkdir("/dev/shm")
