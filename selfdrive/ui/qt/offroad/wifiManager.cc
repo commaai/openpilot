@@ -191,7 +191,7 @@ void WifiManager::connect(Network n, QString password) {
 
 void WifiManager::connect(Network n, QString username, QString password) {
   connecting_to_network = n.ssid;
-  disconnect();
+  // disconnect();
   clear_connections(n.ssid); //Clear all connections that may already exist to the network we are connecting
   connect(n.ssid, username, password, n.security_type);
 }
@@ -217,6 +217,7 @@ void WifiManager::connect(QByteArray ssid, QString username, QString password, S
 
   QDBusInterface nm_settings(nm_service, nm_settings_path, nm_settings_iface, bus);
   nm_settings.call("AddConnection", QVariant::fromValue(connection));
+  activate_wifi_connection(QString(ssid));
 }
 
 void WifiManager::deactivate_connections(QString ssid) {
@@ -361,6 +362,31 @@ QVector<QDBusObjectPath> WifiManager::list_connections(){
   }
   return connections;
 }
+bool WifiManager::activate_wifi_connection(QString ssid){
+  QString devicePath = get_adapter();
+
+  for(QDBusObjectPath path : list_connections()){
+    QDBusInterface nm2(nm_service, path.path(), nm_settings_conn_iface, bus);
+    QDBusMessage response = nm2.call("GetSettings");
+    const QDBusArgument &dbusArg = response.arguments().at(0).value<QDBusArgument>();
+
+    QMap<QString, QMap<QString,QVariant>> map;
+    dbusArg >> map;
+    for (auto &inner : map) {
+      for (auto &val : inner) {
+        QString key = inner.key(val);
+        if (key == "ssid") {
+          if (val == ssid) {
+            QDBusInterface nm3(nm_service, nm_path, nm_iface, bus);
+            nm3.call("ActivateConnection", QVariant::fromValue(path), QVariant::fromValue(QDBusObjectPath(devicePath)), QVariant::fromValue(QDBusObjectPath("/")));
+            return true;
+          }
+        }
+      }
+    }
+  }
+  return false;
+}
 //Functions for tethering
 bool WifiManager::activate_tethering_connection(){
   QString devicePath = get_adapter();
@@ -387,13 +413,7 @@ bool WifiManager::activate_tethering_connection(){
   }
   return false;
 }
-
-void WifiManager::enableTethering() {
-  disconnect();
-  if(activate_tethering_connection()){
-    return;
-  }
-
+void WifiManager::addTetheringConnection(){
   Connection connection;
   connection["connection"]["id"] = "Hotspot";
   connection["connection"]["uuid"] = QUuid::createUuid().toString().remove('{').remove('}');
@@ -421,6 +441,13 @@ void WifiManager::enableTethering() {
 
   QDBusInterface nm_settings(nm_service, nm_settings_path, nm_settings_iface, bus);
   nm_settings.call("AddConnection", QVariant::fromValue(connection));
+}
+
+void WifiManager::enableTethering() {
+  if(activate_tethering_connection()){
+    return;
+  }
+  addTetheringConnection();
   activate_tethering_connection();
 }
 
@@ -436,4 +463,5 @@ bool WifiManager::tetheringEnabled() {
 void WifiManager::changeTetheringPassword(QString newPassword){
   tetheringPassword = newPassword;
   clear_connections(tethering_ssid.toUtf8());
+  addTetheringConnection();
 }

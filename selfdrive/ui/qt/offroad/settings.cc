@@ -261,6 +261,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
     sidebar_layout->addWidget(btn, 0, Qt::AlignRight | Qt::AlignTop);
     panel_layout->addWidget(panel.second);
     QObject::connect(btn, SIGNAL(released()), this, SLOT(setActivePanel()));
+    
   }
   qobject_cast<QPushButton *>(nav_btns->buttons()[0])->setChecked(true);
   sidebar_layout->addStretch();

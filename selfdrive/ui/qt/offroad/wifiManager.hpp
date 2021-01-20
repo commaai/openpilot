@@ -46,6 +46,8 @@ public:
   bool tetheringEnabled();
 
   bool activate_tethering_connection();
+  void addTetheringConnection();
+  bool activate_wifi_connection(QString ssid);
   void changeTetheringPassword(QString newPassword);
 
 private:
