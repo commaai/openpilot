@@ -1,4 +1,4 @@
-name: openpilot tests
+name: prebuilt
 on:
   schedule:
     - cron: '0 * * * *'
