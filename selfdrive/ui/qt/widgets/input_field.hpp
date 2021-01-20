@@ -12,8 +12,9 @@ class InputField : public QWidget {
   Q_OBJECT
 
 public:
-  explicit InputField(QWidget* parent = 0);
+  explicit InputField(QWidget* parent = 0, int minTextLength = 0);
   void setPromptText(QString text);
+  int minTextLength;
 
 private:
   QLineEdit *line;

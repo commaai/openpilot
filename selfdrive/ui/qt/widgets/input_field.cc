@@ -2,7 +2,7 @@
 
 #include "input_field.hpp"
 
-InputField::InputField(QWidget *parent): QWidget(parent) {
+InputField::InputField(QWidget *parent, int minTextLength): QWidget(parent), minTextLength(minTextLength) {
   layout = new QGridLayout();
   layout->setSpacing(30);
 
@@ -49,6 +49,10 @@ void InputField::getText(QString s) {
   }
 
   if (!QString::compare(s,"⏎")) {
+    if(line->text().length()<minTextLength){
+      setPromptText("Need at least "+QString::number(minTextLength)+" characters!");
+      return;
+    }
     emitText(line->text());
     line->setText("");
   }

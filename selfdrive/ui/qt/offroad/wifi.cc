@@ -46,7 +46,7 @@ Networking::Networking(QWidget* parent){
 
   s = new QStackedLayout(this);
 
-  inputField = new InputField();
+  inputField = new InputField(this, 8);
   connect(inputField, SIGNAL(emitText(QString)), this, SLOT(receiveText(QString)));
   connect(inputField, SIGNAL(cancel()), this, SLOT(abortTextInput()));
   s->addWidget(inputField);
@@ -133,7 +133,7 @@ void Networking::successfulConnection(QString ssid) {
 
 AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWidget(parent), wifi(wifi){
   s = new QStackedLayout(this);// inputField and settings
-  inputField = new InputField();
+  inputField = new InputField(this, 8);
   connect(inputField, SIGNAL(emitText(QString)), this, SLOT(receiveText(QString)));
   connect(inputField, SIGNAL(cancel()), this, SLOT(abortTextInput()));
   s->addWidget(inputField);
