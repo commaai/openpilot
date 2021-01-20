@@ -79,6 +79,8 @@ Networking::Networking(QWidget* parent){
   
   setStyleSheet(R"(
     QPushButton {
+      margin: 10px;
+      padding: 10px;
       background-color: #393939;
     }
     QPushButton:disabled {
@@ -92,7 +94,6 @@ void Networking::refresh(){
 }
 
 void Networking::connectToNetwork(Network n) {
-  wifi->disconnect();
   if (n.security_type == SecurityType::OPEN) {
     wifi->connect(n);
   } else if (n.security_type == SecurityType::WPA) {
@@ -107,6 +108,7 @@ void Networking::abortTextInput(){
 }
 
 void Networking::receiveText(QString text) {
+  wifi->disconnect();
   wifi->connect(selectedNetwork, text);
   s->setCurrentIndex(1);
 }
