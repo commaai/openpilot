@@ -79,8 +79,8 @@ Networking::Networking(QWidget* parent){
   
   setStyleSheet(R"(
     QPushButton {
-      margin: 10px;
-      padding: 10px;
+      margin: 5px;
+      padding: 5px;
       background-color: #393939;
     }
     QPushButton:disabled {
