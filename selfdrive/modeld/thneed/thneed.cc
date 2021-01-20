@@ -7,8 +7,6 @@
 #include <errno.h>
 #include "thneed.h"
 
-//#define SAVE_KERNELS
-
 //#define RUN_DISASSEMBLER
 //#define RUN_OPTIMIZER
 
@@ -83,7 +81,8 @@ int ioctl(int filedes, unsigned long request, void *argp) {
       }
 
       if (thneed->record & THNEED_RECORD) {
-        thneed->syncobjs.push_back(string((char *)objs, sizeof(struct kgsl_gpuobj_sync_obj)*cmd->count));
+        thneed->cmds.push_back(unique_ptr<CachedSync>(new
+              CachedSync(thneed, string((char *)objs, sizeof(struct kgsl_gpuobj_sync_obj)*cmd->count))));
       }
     } else if (request == IOCTL_KGSL_DEVICE_WAITTIMESTAMP_CTXTID) {
       struct kgsl_device_waittimestamp_ctxtid *cmd = (struct kgsl_device_waittimestamp_ctxtid *)argp;
@@ -102,6 +101,14 @@ int ioctl(int filedes, unsigned long request, void *argp) {
             hexdump((uint32_t *)constraint->data, constraint->size);
           }
         }
+      }
+    } else if (request == IOCTL_KGSL_DRAWCTXT_CREATE || request == IOCTL_KGSL_DRAWCTXT_DESTROY) {
+      // this happens
+    } else if (request == IOCTL_KGSL_GPUOBJ_ALLOC || request == IOCTL_KGSL_GPUOBJ_FREE) {
+      // this happens
+    } else {
+      if (thneed->record & THNEED_DEBUG) {
+        printf("other ioctl %lx\n", request);
       }
     }
   }
@@ -133,11 +140,25 @@ GPUMalloc::~GPUMalloc() {
 }
 
 void *GPUMalloc::alloc(int size) {
-  if (size > remaining) return NULL;
-  remaining -= size;
   void *ret = (void*)base;
-  base += (size+0xff) & (~0xFF);
+  size = (size+0xff) & (~0xFF);
+  assert(size <= remaining);
+  remaining -= size;
+  base += size;
   return ret;
+}
+
+// *********** CachedSync, at the ioctl layer ***********
+
+void CachedSync::exec() {
+  struct kgsl_gpuobj_sync cmd;
+
+  cmd.objs = (uint64_t)data.data();
+  cmd.obj_len = data.length();
+  cmd.count = data.length() / sizeof(struct kgsl_gpuobj_sync_obj);
+
+  int ret = ioctl(thneed->fd, IOCTL_KGSL_GPUOBJ_SYNC, &cmd);
+  assert(ret == 0);
 }
 
 // *********** CachedCommand, at the ioctl layer ***********
@@ -174,24 +195,11 @@ CachedCommand::CachedCommand(Thneed *lthneed, struct kgsl_gpu_command *cmd) {
   thneed->ckq.clear();
 }
 
-void CachedCommand::exec(bool wait) {
+void CachedCommand::exec() {
   cache.timestamp = ++thneed->timestamp;
   int ret = ioctl(thneed->fd, IOCTL_KGSL_GPU_COMMAND, &cache);
 
-  if (wait) {
-    struct kgsl_device_waittimestamp_ctxtid wait;
-    wait.context_id = cache.context_id;
-    wait.timestamp = cache.timestamp;
-    wait.timeout = -1;
-
-    uint64_t tb = nanos_since_boot();
-    int wret = ioctl(thneed->fd, IOCTL_KGSL_DEVICE_WAITTIMESTAMP_CTXTID, &wait);
-    uint64_t te = nanos_since_boot();
-
-    if (thneed->record & THNEED_DEBUG) printf("exec %d wait %d after %lu us\n", ret, wret, (te-tb)/1000);
-  } else {
-    if (thneed->record & THNEED_DEBUG) printf("CachedCommand::exec got %d\n", ret);
-  }
+  if (thneed->record & THNEED_DEBUG) printf("CachedCommand::exec got %d\n", ret);
 
   if (thneed->record & THNEED_VERBOSE_DEBUG) {
     for (auto &it : kq) {
@@ -213,32 +221,85 @@ Thneed::Thneed(bool do_clinit) {
   if (do_clinit) clinit();
   assert(g_fd != -1);
   fd = g_fd;
-  ram = make_unique<GPUMalloc>(0x40000, fd);
+  ram = make_unique<GPUMalloc>(0x80000, fd);
   record = THNEED_RECORD;
   timestamp = -1;
   g_thneed = this;
 }
 
 void Thneed::stop() {
+  find_inputs_outputs();
+  printf("Thneed::stop: recorded %lu commands\n", cmds.size());
   record = 0;
 }
 
+void Thneed::find_inputs_outputs() {
+  cl_int err;
+  if (inputs.size() > 0) return;
+
+  // save the global inputs/outputs
+  for (auto &k : kq) {
+    for (int i = 0; i < k->num_args; i++) {
+      if (k->name == "zero_pad_image_float" && k->arg_names[i] == "input") {
+        cl_mem aa = *(cl_mem*)(k->args[i].data());
+
+        size_t sz;
+        clGetMemObjectInfo(aa, CL_MEM_SIZE, sizeof(sz), &sz, NULL);
+        input_sizes.push_back(sz);
+
+        void *ret = clEnqueueMapBuffer(command_queue, aa, CL_TRUE, CL_MAP_WRITE, 0, sz, 0, NULL, NULL, &err);
+        assert(err == CL_SUCCESS);
+        inputs.push_back(ret);
+      }
+
+      if (k->name == "image2d_to_buffer_float" && k->arg_names[i] == "output") {
+        output = *(cl_mem*)(k->args[i].data());
+      }
+    }
+  }
+}
+
+void Thneed::copy_inputs(float **finputs) {
+  //cl_int ret;
+  for (int idx = 0; idx < inputs.size(); ++idx) {
+    if (record & THNEED_DEBUG) printf("copying %lu -- %p -> %p\n", input_sizes[idx], finputs[idx], inputs[idx]);
+    memcpy(inputs[idx], finputs[idx], input_sizes[idx]);
+  }
+}
+
+void Thneed::copy_output(float *foutput) {
+  if (output != NULL) {
+    size_t sz;
+    clGetMemObjectInfo(output, CL_MEM_SIZE, sizeof(sz), &sz, NULL);
+    if (record & THNEED_DEBUG) printf("copying %lu for output %p -> %p\n", sz, output, foutput);
+    clEnqueueReadBuffer(command_queue, output, CL_TRUE, 0, sz, foutput, 0, NULL, NULL);
+  } else {
+    printf("CAUTION: model output is NULL, does it have no outputs?\n");
+  }
+}
+
+void Thneed::wait() {
+  struct kgsl_device_waittimestamp_ctxtid wait;
+  wait.context_id = context_id;
+  wait.timestamp = timestamp;
+  wait.timeout = -1;
+
+  uint64_t tb = nanos_since_boot();
+  int wret = ioctl(fd, IOCTL_KGSL_DEVICE_WAITTIMESTAMP_CTXTID, &wait);
+  uint64_t te = nanos_since_boot();
+
+  if (record & THNEED_DEBUG) printf("wait %d after %lu us\n", wret, (te-tb)/1000);
+}
+
 void Thneed::execute(float **finputs, float *foutput, bool slow) {
-  int ret;
   uint64_t tb, te;
   if (record & THNEED_DEBUG) tb = nanos_since_boot();
 
   // ****** copy inputs
-  for (int idx = 0; idx < inputs.size(); ++idx) {
-    size_t sz;
-    clGetMemObjectInfo(inputs[idx], CL_MEM_SIZE, sizeof(sz), &sz, NULL);
-
-    if (record & THNEED_DEBUG) printf("copying %lu -- %p -> %p\n", sz, finputs[idx], inputs[idx]);
-    // TODO: This shouldn't have to block
-    clEnqueueWriteBuffer(command_queue, inputs[idx], CL_TRUE, 0, sz, finputs[idx], 0, NULL, NULL);
-  }
+  copy_inputs(finputs);
 
   // ****** set power constraint
+  int ret;
   struct kgsl_device_constraint_pwrlevel pwrlevel;
   pwrlevel.level = KGSL_CONSTRAINT_PWR_MAX;
 
@@ -260,30 +321,12 @@ void Thneed::execute(float **finputs, float *foutput, bool slow) {
   for (auto &it : cmds) {
     ++i;
     if (record & THNEED_DEBUG) printf("run %2d @ %7lu us: ", i, (nanos_since_boot()-tb)/1000);
-    it->exec((i == cmds.size()) || slow);
-  }
-
-  // ****** sync objects
-  for (auto &it : syncobjs) {
-    struct kgsl_gpuobj_sync cmd;
-
-    cmd.objs = (uint64_t)it.data();
-    cmd.obj_len = it.length();
-    cmd.count = it.length() / sizeof(struct kgsl_gpuobj_sync_obj);
-
-    ret = ioctl(fd, IOCTL_KGSL_GPUOBJ_SYNC, &cmd);
-    assert(ret == 0);
+    it->exec();
+    if ((i == cmds.size()) || slow) wait();
   }
 
   // ****** copy outputs
-  if (output != NULL) {
-    size_t sz;
-    clGetMemObjectInfo(output, CL_MEM_SIZE, sizeof(sz), &sz, NULL);
-    if (record & THNEED_DEBUG) printf("copying %lu for output %p -> %p\n", sz, output, foutput);
-    clEnqueueReadBuffer(command_queue, output, CL_TRUE, 0, sz, foutput, 0, NULL, NULL);
-  } else {
-    printf("CAUTION: model output is NULL, does it have no outputs?\n");
-  }
+  copy_output(foutput);
 
   // ****** unset power constraint
   constraint.type = KGSL_CONSTRAINT_NONE;
@@ -316,7 +359,7 @@ void Thneed::clinit() {
   assert(err == 0);
 
   //cl_command_queue_properties props[3] = {CL_QUEUE_PROPERTIES, CL_QUEUE_PROFILING_ENABLE, 0};
-  cl_command_queue_properties props[3] = {CL_QUEUE_PROPERTIES, 0,  0};
+  cl_command_queue_properties props[3] = {CL_QUEUE_PROPERTIES, 0, 0};
   command_queue = clCreateCommandQueueWithProperties(context, device_id, props, &err);
   assert(err == 0);
 
@@ -453,6 +496,9 @@ CLQueuedKernel::CLQueuedKernel(Thneed *lthneed,
     char arg_name[0x100];
     clGetKernelArgInfo(kernel, i, CL_KERNEL_ARG_NAME, sizeof(arg_name), arg_name, NULL);
     arg_names.push_back(string(arg_name));
+    clGetKernelArgInfo(kernel, i, CL_KERNEL_ARG_TYPE_NAME, sizeof(arg_name), arg_name, NULL);
+    arg_types.push_back(string(arg_name));
+
     args.push_back(g_args[make_pair(kernel, i)]);
     args_size.push_back(g_args_size[make_pair(kernel, i)]);
   }
@@ -473,11 +519,14 @@ cl_int CLQueuedKernel::exec() {
   if (kernel == NULL) {
     kernel = clCreateKernel(program, name.c_str(), NULL);
     arg_names.clear();
+    arg_types.clear();
 
     for (int j = 0; j < num_args; j++) {
       char arg_name[0x100];
       clGetKernelArgInfo(kernel, j, CL_KERNEL_ARG_NAME, sizeof(arg_name), arg_name, NULL);
       arg_names.push_back(string(arg_name));
+      clGetKernelArgInfo(kernel, j, CL_KERNEL_ARG_TYPE_NAME, sizeof(arg_name), arg_name, NULL);
+      arg_types.push_back(string(arg_name));
 
       cl_int ret;
       if (args[j].size() != 0) {
@@ -487,19 +536,6 @@ cl_int CLQueuedKernel::exec() {
         ret = thneed_clSetKernelArg(kernel, j, args_size[j], NULL);
       }
       assert(ret == CL_SUCCESS);
-    }
-  }
-
-  // save the global inputs/outputs
-  if (thneed->record & THNEED_RECORD) {
-    for (int i = 0; i < num_args; i++) {
-      if (name == "zero_pad_image_float" && arg_names[i] == "input") {
-        thneed->inputs.push_back(*(cl_mem*)(args[i].data()));
-      }
-
-      if (name == "image2d_to_buffer_float" && arg_names[i] == "output") {
-        thneed->output = *(cl_mem*)(args[i].data());
-      }
     }
   }
 
@@ -524,10 +560,8 @@ void CLQueuedKernel::debug_print(bool verbose) {
 
   if (verbose) {
     for (int i = 0; i < num_args; i++) {
-      char arg_type[0x100];
-      clGetKernelArgInfo(kernel, i, CL_KERNEL_ARG_TYPE_NAME, sizeof(arg_type), arg_type, NULL);
       string arg = args[i];
-      printf("  %s %s", arg_type, arg_names[i].c_str());
+      printf("  %s %s", arg_types[i].c_str(), arg_names[i].c_str());
       void *arg_value = (void*)arg.data();
       int arg_size = arg.size();
       if (arg_size == 0) {
@@ -537,7 +571,7 @@ void CLQueuedKernel::debug_print(bool verbose) {
       } else if (arg_size == 2) {
         printf(" = %d", *((short*)arg_value));
       } else if (arg_size == 4) {
-        if (strcmp(arg_type, "float") == 0) {
+        if (arg_types[i] == "float") {
           printf(" = %f", *((float*)arg_value));
         } else {
           printf(" = %d", *((int*)arg_value));
@@ -546,7 +580,7 @@ void CLQueuedKernel::debug_print(bool verbose) {
         cl_mem val = (cl_mem)(*((uintptr_t*)arg_value));
         printf(" = %p", val);
         if (val != NULL) {
-          if (strcmp("image2d_t", arg_type) == 0 || strcmp("image1d_t", arg_type) == 0) {
+          if (arg_types[i] == "image2d_t" || arg_types[i] == "image1d_t") {
             cl_image_format format;
             size_t width, height, depth, array_size, row_pitch, slice_pitch;
             cl_mem buf;
