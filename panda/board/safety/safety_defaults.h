@@ -48,15 +48,15 @@ static int default_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
   return bus_fwd;
 }
 
-static int no_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
-  // Volkswagen community port: Not actually for Volkswagen!
-  // GM needs an actual no-forwarding hook to pass regression tests because
-  // their non-ASCM port doesn't actually use forwarding of its own. Easier
-  // to change GM to this, than change all other users of default.
-  UNUSED(to_fwd);
-  UNUSED(bus_num);
-  return -1;
-}
+//static int no_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
+//  // Volkswagen community port: Not actually for Volkswagen!
+//  // GM needs an actual no-forwarding hook to pass regression tests because
+//  // their non-ASCM port doesn't actually use forwarding of its own. Easier
+//  // to change GM to this, than change all other users of default.
+//  UNUSED(to_fwd);
+//  UNUSED(bus_num);
+//  return -1;
+//}
 
 const safety_hooks nooutput_hooks = {
   // Volkswagen community port:
