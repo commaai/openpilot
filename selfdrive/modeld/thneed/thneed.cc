@@ -150,7 +150,7 @@ void *GPUMalloc::alloc(int size) {
 
 // *********** CachedSync, at the ioctl layer ***********
 
-void CachedSync::exec(bool wait) {
+void CachedSync::exec() {
   struct kgsl_gpuobj_sync cmd;
 
   cmd.objs = (uint64_t)data.data();
@@ -195,24 +195,11 @@ CachedCommand::CachedCommand(Thneed *lthneed, struct kgsl_gpu_command *cmd) {
   thneed->ckq.clear();
 }
 
-void CachedCommand::exec(bool wait) {
+void CachedCommand::exec() {
   cache.timestamp = ++thneed->timestamp;
   int ret = ioctl(thneed->fd, IOCTL_KGSL_GPU_COMMAND, &cache);
 
-  if (wait) {
-    struct kgsl_device_waittimestamp_ctxtid wait;
-    wait.context_id = cache.context_id;
-    wait.timestamp = cache.timestamp;
-    wait.timeout = -1;
-
-    uint64_t tb = nanos_since_boot();
-    int wret = ioctl(thneed->fd, IOCTL_KGSL_DEVICE_WAITTIMESTAMP_CTXTID, &wait);
-    uint64_t te = nanos_since_boot();
-
-    if (thneed->record & THNEED_DEBUG) printf("exec %d wait %d after %lu us\n", ret, wret, (te-tb)/1000);
-  } else {
-    if (thneed->record & THNEED_DEBUG) printf("CachedCommand::exec got %d\n", ret);
-  }
+  if (thneed->record & THNEED_DEBUG) printf("CachedCommand::exec got %d\n", ret);
 
   if (thneed->record & THNEED_VERBOSE_DEBUG) {
     for (auto &it : kq) {
@@ -241,8 +228,8 @@ Thneed::Thneed(bool do_clinit) {
 }
 
 void Thneed::stop() {
-  printf("Thneed::stop: recorded %lu commands\n", cmds.size());
   find_inputs_outputs();
+  printf("Thneed::stop: recorded %lu commands\n", cmds.size());
   record = 0;
 }
 
@@ -266,14 +253,7 @@ void Thneed::find_inputs_outputs() {
       }
 
       if (k->name == "image2d_to_buffer_float" && k->arg_names[i] == "output") {
-        cl_mem aa = *(cl_mem*)(k->args[i].data());
-
-        size_t sz;
-        clGetMemObjectInfo(aa, CL_MEM_SIZE, sizeof(sz), &sz, NULL);
-        output_size = sz;
-
-        output = clEnqueueMapBuffer(command_queue, aa, CL_TRUE, CL_MAP_READ, 0, sz, 0, NULL, NULL, &err);
-        assert(err == CL_SUCCESS);
+        output = *(cl_mem*)(k->args[i].data());
       }
     }
   }
@@ -289,10 +269,26 @@ void Thneed::copy_inputs(float **finputs) {
 
 void Thneed::copy_output(float *foutput) {
   if (output != NULL) {
-    memcpy(foutput, output, output_size);
+    size_t sz;
+    clGetMemObjectInfo(output, CL_MEM_SIZE, sizeof(sz), &sz, NULL);
+    if (record & THNEED_DEBUG) printf("copying %lu for output %p -> %p\n", sz, output, foutput);
+    clEnqueueReadBuffer(command_queue, output, CL_TRUE, 0, sz, foutput, 0, NULL, NULL);
   } else {
     printf("CAUTION: model output is NULL, does it have no outputs?\n");
   }
+}
+
+void Thneed::wait() {
+  struct kgsl_device_waittimestamp_ctxtid wait;
+  wait.context_id = context_id;
+  wait.timestamp = timestamp;
+  wait.timeout = -1;
+
+  uint64_t tb = nanos_since_boot();
+  int wret = ioctl(fd, IOCTL_KGSL_DEVICE_WAITTIMESTAMP_CTXTID, &wait);
+  uint64_t te = nanos_since_boot();
+
+  if (record & THNEED_DEBUG) printf("wait %d after %lu us\n", wret, (te-tb)/1000);
 }
 
 void Thneed::execute(float **finputs, float *foutput, bool slow) {
@@ -325,7 +321,8 @@ void Thneed::execute(float **finputs, float *foutput, bool slow) {
   for (auto &it : cmds) {
     ++i;
     if (record & THNEED_DEBUG) printf("run %2d @ %7lu us: ", i, (nanos_since_boot()-tb)/1000);
-    it->exec((i == cmds.size()) || slow);
+    it->exec();
+    if ((i == cmds.size()) || slow) wait();
   }
 
   // ****** copy outputs

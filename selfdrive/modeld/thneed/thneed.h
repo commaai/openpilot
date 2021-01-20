@@ -63,13 +63,13 @@ class CLQueuedKernel {
 
 class CachedIoctl {
   public:
-    virtual void exec(bool wait) {}
+    virtual void exec() {}
 };
 
 class CachedSync: public CachedIoctl {
   public:
     CachedSync(Thneed *lthneed, string ldata) { thneed = lthneed; data = ldata; }
-    void exec(bool wait);
+    void exec();
   private:
     Thneed *thneed;
     string data;
@@ -78,7 +78,7 @@ class CachedSync: public CachedIoctl {
 class CachedCommand: public CachedIoctl {
   public:
     CachedCommand(Thneed *lthneed, struct kgsl_gpu_command *cmd);
-    void exec(bool wait);
+    void exec();
   private:
     void disassemble(int cmd_index);
     struct kgsl_gpu_command cache;
@@ -93,13 +93,12 @@ class Thneed {
     Thneed(bool do_clinit=false);
     void stop();
     void execute(float **finputs, float *foutput, bool slow=false);
+    void wait();
     int optimize();
 
     vector<void *> inputs;
     vector<size_t> input_sizes;
-
-    void *output = NULL;
-    size_t output_size;
+    cl_mem output = NULL;
 
     cl_context context = NULL;
     cl_command_queue command_queue;
