@@ -15,7 +15,7 @@
 #include <condition_variable>
 #include <atomic>
 #include <random>
-
+#include <future>
 #include <ftw.h>
 
 #include "common/timing.h"
@@ -311,7 +311,7 @@ static int clear_locks_fn(const char* fpath, const struct stat *sb, int tyupefla
   return 0;
 }
 
-static void clear_locks() {
+ void clear_locks() {
   ftw(LOG_ROOT.c_str(), clear_locks_fn, 16);
 }
 
@@ -324,7 +324,7 @@ int main(int argc, char** argv) {
     segment_length = atoi(getenv("LOGGERD_SEGMENT_LENGTH"));
   }
 
-  clear_locks();
+  auto async_clear = std::async(std::launch::async, clear_locks);
 
   // setup messaging
   typedef struct QlogState {
@@ -471,6 +471,7 @@ int main(int argc, char** argv) {
 
     // rotate to new segment
     if (new_segment) {
+      async_clear.wait();
       pthread_mutex_lock(&s.rotate_lock);
       last_rotate_tms = millis_since_boot();
 
