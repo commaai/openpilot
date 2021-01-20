@@ -96,37 +96,6 @@ void WifiManager::refreshNetworks() {
     seen_ssids.push_back(network.ssid);
     seen_networks.push_back(network);
   }
-  //Print all network configs... somehow
-  // QString devicePath = get_adapter();
-  // qDebug()<<devicePath;
-  // QDBusInterface nm(nm_service, nm_settings_path, nm_settings_iface, bus);
-  // QDBusMessage response = nm.call("ListConnections");
-  // QVariant first =  response.arguments().at(0);
-  // const QDBusArgument &args = first.value<QDBusArgument>();
-  // args.beginArray();
-  // while (!args.atEnd()) {
-  //   QDBusObjectPath path;
-  //   args >> path;
-  //   qDebug()<<path.path();
-    // QDBusInterface nm2(nm_service, path.path(), nm_settings_conn_iface, bus);
-    // QDBusMessage response = nm2.call("GetSettings");
-
-    // const QDBusArgument &dbusArg = response.arguments().at(0).value<QDBusArgument>();
-
-    // QMap<QString, QMap<QString,QVariant>> map;
-    // dbusArg >> map;
-    // for (auto &inner : map) {
-    //   for (auto &val : inner) {
-    //     QString key = inner.key(val);
-    //     if (key == "ssid") {
-    //       if (val == ssid) {
-    //         nm2.call("Delete");
-    //       }
-    //     }
-    //   }
-    // }
-  // }
-
 
 }
 
@@ -288,7 +257,6 @@ void WifiManager::clear_connections(QString ssid) {
   while (!args.atEnd()) {
     QDBusObjectPath path;
     args >> path;
-    qDebug()<<path.path();
     QDBusInterface nm2(nm_service, path.path(), nm_settings_conn_iface, bus);
     QDBusMessage response = nm2.call("GetSettings");
 
@@ -412,7 +380,6 @@ bool WifiManager::activate_tethering_connection(){
           if (val == tethering_ssid.toUtf8()) {
             QDBusInterface nm3(nm_service, nm_path, nm_iface, bus);
             nm3.call("ActivateConnection", QVariant::fromValue(path), QVariant::fromValue(QDBusObjectPath(devicePath)), QVariant::fromValue(QDBusObjectPath("/")));
-            qDebug()<<"Activating hotspot connection"<<path.path( )<<devicePath;
             return true;
           }
         }
@@ -421,11 +388,13 @@ bool WifiManager::activate_tethering_connection(){
   }
   return false;
 }
+
 void WifiManager::enableTethering() {
   disconnect();
   if(activate_tethering_connection()){
     return;
   }
+
   Connection connection;
   connection["connection"]["id"] = "Hotspot";
   connection["connection"]["uuid"] = QUuid::createUuid().toString().remove('{').remove('}');
@@ -441,7 +410,7 @@ void WifiManager::enableTethering() {
   connection["802-11-wireless-security"]["key-mgmt"] = "wpa-psk";
   connection["802-11-wireless-security"]["pairwise"] = QStringList("ccmp");
   connection["802-11-wireless-security"]["proto"] = QStringList("rsn");
-  connection["802-11-wireless-security"]["psk"] = "swagswagcomma";
+  connection["802-11-wireless-security"]["psk"] = tetheringPassword;
 
   connection["ipv4"]["method"] = "shared";
   QMap<QString,QVariant> address;
@@ -463,4 +432,9 @@ void WifiManager::disableTethering() {
 bool WifiManager::tetheringEnabled() {
   QString active_ap = get_active_ap();
   return get_property(active_ap, "Ssid") == tethering_ssid;
+}
+
+void WifiManager::changeTetheringPassword(QString newPassword){
+  tetheringPassword = newPassword;
+  clear_connections(tethering_ssid.toUtf8());
 }

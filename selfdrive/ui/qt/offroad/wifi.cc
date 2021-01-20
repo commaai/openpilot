@@ -72,12 +72,10 @@ Networking::Networking(QWidget* parent){
 
   s->setCurrentIndex(1);
 
-
   // Update network status
   QTimer* timer = new QTimer(this);
   QObject::connect(timer, SIGNAL(timeout()), this, SLOT(refresh()));
   timer->start(2000);
-  state = NetworkingState::IDLE;
   
   setStyleSheet(R"(
     QPushButton {
@@ -90,57 +88,34 @@ Networking::Networking(QWidget* parent){
 }
 
 void Networking::refresh(){
-  if(s->currentIndex() == 0 && state == NetworkingState::IDLE){
-    qDebug()<<"Running text input on idle state. That shouldn't be possible";
-  }
   wifiWidget->refresh();
 }
 
 void Networking::connectToNetwork(Network n) {
-  qDebug()<<"Connecting to network"<<n.ssid;
-  if(state == NetworkingState::CONNECTING_TO_WIFI_NETWORK){
-    qDebug()<<"Killing existing connection";
-    wifi->disconnect();
-  }
+  wifi->disconnect();
   if (n.security_type == SecurityType::OPEN) {
     wifi->connect(n);
   } else if (n.security_type == SecurityType::WPA) {
     inputField->setPromptText("Enter password for \"" + n.ssid + "\"");
     s->setCurrentIndex(0);
-    state = NetworkingState::CONNECTING_TO_WIFI_NETWORK;
     selectedNetwork = n;
   }
 }
 
 void Networking::abortTextInput(){
-  qDebug()<<"User stopped providing text, aborting connecting";
-  state = NetworkingState::IDLE;
   s->setCurrentIndex(1);
 }
 
 void Networking::receiveText(QString text) {
-  qDebug()<<"got text"<<text;
-  if(state != NetworkingState::CONNECTING_TO_WIFI_NETWORK){
-    qDebug()<<"Logic error. Recevied some text while not connecting:"<<text;
-    return;
-  }
-  if(text.size()<8){
-    qDebug()<<"Password was too short";
-    state = NetworkingState::IDLE;
-    s->setCurrentIndex(1);
-    return;
-  }
   wifi->connect(selectedNetwork, text);
   s->setCurrentIndex(1);
 }
 
 void Networking::wrongPassword(QString ssid) {
-  qDebug()<<"Wrong password for"<<ssid;
-  if(state != NetworkingState::CONNECTING_TO_WIFI_NETWORK){
-    qDebug()<<"Logic error, got wrong password while not connecing. Wrong password for"<<ssid;
+  if(s->currentIndex()==0){
+    qDebug()<<"Wrong password, but we are already trying a new network";
     return;
   }
-
   for (Network n : wifi->seen_networks) {
     if (n.ssid == ssid) {
       inputField->setPromptText("Wrong password for \"" + n.ssid +"\"");
@@ -148,24 +123,10 @@ void Networking::wrongPassword(QString ssid) {
       return;
     }
   }
-  qDebug()<<"Network we just provided the wrong password to doesn't seem to exist...";
-
 }
 
 void Networking::successfulConnection(QString ssid) {
-  qDebug()<<"Success for"<<ssid;
-  if(state != NetworkingState::CONNECTING_TO_WIFI_NETWORK){
-    qDebug()<<"Logic error, got successfulConnection while not connecing. Success for"<<ssid;
-    return;
-  }
-
-  for (Network n : wifi->seen_networks) {
-    if (n.ssid == ssid) {
-      state = NetworkingState::IDLE;
-      return;
-    }
-  }
-  qDebug()<<"Network we just connected to doesn't seem to exist...";
+  //Maybe we will want to do something here in the future.
 }
 
 //=====================================================================================================================================================//
@@ -199,14 +160,16 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   //Change tethering password
   QHBoxLayout *tetheringPassword = new QHBoxLayout(this);
   tetheringPassword->addWidget(new QLabel("Edit tethering password", this));
-  QPushButton* editPasswordButton = new QPushButton("EDIT", this);
+  editPasswordButton = new QPushButton("EDIT", this);
+  connect(editPasswordButton, &QPushButton::released, [=](){s->setCurrentIndex(0);});
   tetheringPassword->addWidget(editPasswordButton);
   vlayout->addWidget(layoutToWidget(tetheringPassword, this));
 
   //IP adress
   QHBoxLayout* IPlayout = new QHBoxLayout(this);
   IPlayout->addWidget(new QLabel("IP address: "));
-  IPlayout->addWidget(new QLabel(wifi->ipv4_address));
+  ipLabel = new QLabel(wifi->ipv4_address);
+  IPlayout->addWidget(ipLabel);
   vlayout->addWidget(layoutToWidget(IPlayout, this));
 
   //Enable SSH
@@ -237,6 +200,15 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   s->addWidget(settingsWidget);
   s->setCurrentIndex(1);
   setLayout(s);
+
+  // Update network status
+  QTimer* timer = new QTimer(this);
+  QObject::connect(timer, SIGNAL(timeout()), this, SLOT(refresh()));
+  timer->start(5000);
+}
+
+void AdvancedNetworking::refresh(){
+  ipLabel->setText(wifi->ipv4_address);
 }
 
 void AdvancedNetworking::toggleTethering(int enable) {
@@ -245,13 +217,16 @@ void AdvancedNetworking::toggleTethering(int enable) {
   } else {
     wifi->disableTethering();
   }
+  editPasswordButton->setEnabled(!enable);
 }
 
 void AdvancedNetworking::receiveText(QString text){
-  qDebug()<<"Advanced text:"<<text;
+  wifi->changeTetheringPassword(text);
+  s->setCurrentIndex(1);
 }
+
 void AdvancedNetworking::abortTextInput(){
-  qDebug()<<"User aborted text input";
+  s->setCurrentIndex(1);
 }
 
 //=====================================================================================================================================================//

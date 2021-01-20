@@ -4,6 +4,7 @@
 #include <QButtonGroup>
 #include <QVBoxLayout>
 #include <QStackedWidget>
+#include <QPushButton>
 #include <QTimer>
 
 #include "wifiManager.hpp"
@@ -38,11 +39,6 @@ public slots:
   void nextPage();
 };
 
-enum class NetworkingState {
-  IDLE,
-  CONNECTING_TO_WIFI_NETWORK,
-};
-
 class Networking : public QWidget {
   Q_OBJECT
 
@@ -52,7 +48,6 @@ public:
 private:
   QStackedLayout* s;// keyboard, wifiScreen, advanced
   
-  NetworkingState state;
   Network selectedNetwork;
 
   WifiUI* wifiWidget;
@@ -81,6 +76,8 @@ public:
 private:
   QStackedLayout* s;
   InputField* inputField;
+  QLabel* ipLabel;
+  QPushButton* editPasswordButton;
 
 
   WifiManager* wifi = nullptr;
@@ -94,4 +91,5 @@ private slots:
   void receiveText(QString text);
   void abortTextInput();
   void toggleTethering(int enable);
+  void refresh();
 };
