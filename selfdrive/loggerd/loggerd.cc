@@ -352,6 +352,7 @@ int main(int argc, char** argv) {
     assert(sock != NULL);
     socks.push_back(sock);
     QlogState qs = {.counter = 0, .freq = it.decimation};
+
     bool is_frame_sock = false;
     for (int cid=0; cid<=MAX_CAM_IDX; cid++) {
       if (std::string(it.name) == cameras_logged[cid].frame_packet_name) {
