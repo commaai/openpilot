@@ -1,5 +1,6 @@
 #include <iostream>
 #include <cassert>
+#include <csignal>
 #include <string>
 #include <map>
 
@@ -7,9 +8,12 @@
 #include <systemd/sd-journal.h>
 
 #include "common/timing.h"
+#include "common/util.h"
 #include "messaging.hpp"
 
+ExitHandler do_exit;
 int main(int argc, char *argv[]) {
+
   PubMaster pm({"androidLog"});
 
   sd_journal *journal;
@@ -18,21 +22,15 @@ int main(int argc, char *argv[]) {
   assert(sd_journal_seek_tail(journal) >= 0);
 
   int r;
-  while (true) {
+  while (!do_exit) {
     r = sd_journal_next(journal);
     assert(r >= 0);
 
     // Wait for new message if we didn't receive anything
     if (r == 0){
-      do {
-        r = sd_journal_wait(journal, (uint64_t)-1);
-        assert(r >= 0);
-      } while (r == SD_JOURNAL_NOP);
-
-      r = sd_journal_next(journal);
-      assert(r >= 0);
-
-      if (r == 0) continue; // Try again if we still didn't get anything
+      r = sd_journal_wait(journal, 1000 * 1000);
+      assert (r >= 0);
+      continue; // Try again
     }
 
     uint64_t timestamp = 0;

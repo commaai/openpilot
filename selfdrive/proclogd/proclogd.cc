@@ -1,10 +1,10 @@
+#include <unistd.h>
+#include <dirent.h>
+
 #include <cstdio>
 #include <cstdlib>
 #include <climits>
 #include <cassert>
-
-#include <unistd.h>
-#include <dirent.h>
 #include <memory>
 #include <utility>
 #include <sstream>
@@ -16,10 +16,11 @@
 #include "messaging.hpp"
 
 #include "common/timing.h"
-#include "common/utilpp.h"
+#include "common/util.h"
+
+ExitHandler do_exit;
 
 namespace {
-
 struct ProcCache {
   std::string name;
   std::vector<std::string> cmdline;
@@ -36,7 +37,7 @@ int main() {
 
   std::unordered_map<pid_t, ProcCache> proc_cache;
 
-  while (1) {
+  while (!do_exit) {
 
     MessageBuilder msg;
     auto procLog = msg.initEvent().initProcLog();
@@ -223,7 +224,7 @@ int main() {
 
     publisher.send("procLog", msg);
 
-    usleep(2000000); // 2 secs
+    util::sleep_for(2000); // 2 secs
   }
 
   return 0;

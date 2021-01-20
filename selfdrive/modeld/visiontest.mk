@@ -20,7 +20,7 @@ WARN_FLAGS = -Werror=implicit-function-declaration \
              -Werror=format-extra-args
 
 CFLAGS = -std=gnu11 -g -fPIC $(OPT_FLAGS) $(WARN_FLAGS)
-CXXFLAGS = -std=c++14 -fPIC $(OPT_FLAGS) $(WARN_FLAGS)
+CXXFLAGS = -std=c++1z -fPIC $(OPT_FLAGS) $(WARN_FLAGS)
 
 EIGEN_FLAGS = -I$(PHONELIBS)/eigen
 
@@ -30,7 +30,6 @@ OPENCV_LIBS = -lopencv_video -lopencv_core -lopencv_imgproc
 
 ifeq ($(UNAME_S),Darwin)
   VT_LDFLAGS += $(PHONELIBS)/capnp-c/mac/lib/libcapnp_c.a \
-                 $(PHONELIBS)/zmq/mac/lib/libczmq.a \
                  $(PHONELIBS)/zmq/mac/lib/libzmq.a \
                 -framework OpenCL
 
@@ -41,7 +40,7 @@ else
   VT_LDFLAGS += $(CEREAL_LIBS) \
 								-L/system/vendor/lib64 \
                 -L$(BASEDIR)/external/zmq/lib/ \
-								-l:libczmq.a -l:libzmq.a \
+								-l:libzmq.a \
                 -lOpenCL
 endif
 
@@ -49,9 +48,9 @@ endif
 all: visiontest
 
 libvisiontest_inputs := visiontest.c \
-                        transforms/transform.c \
-                        transforms/loadyuv.c \
-                        ../common/clutil.c \
+                        transforms/transform.cc \
+                        transforms/loadyuv.cc \
+                        ../common/clutil.cc \
                         $(BASEDIR)/selfdrive/common/util.c \
                         $(CEREAL_OBJS)
 
@@ -83,7 +82,7 @@ libvisiontest.so: $(libvisiontest_inputs)
 	$(CC) -std=gnu11 -shared -fPIC -O2 -g \
 		-Werror=implicit-function-declaration -Werror=incompatible-pointer-types \
 		-Werror=int-conversion -Wno-pointer-to-int-cast \
-		-I. -DCLU_NO_CACHE \
+		-I. \
 		$^ -o $($@_TMP) \
 		-I$(PHONELIBS)/opencl/include \
 		-I$(BASEDIR)/selfdrive/common \

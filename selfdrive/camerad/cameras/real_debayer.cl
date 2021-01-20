@@ -57,7 +57,7 @@ __kernel void debayer10(const __global uchar * in,
   cached[localOffset] = to_normal(raw_val);
 
   // edges
-  if (x_global < 1 || x_global > RGB_WIDTH - 2 || y_global < 1 || y_global > RGB_WIDTH - 2) {
+  if (x_global < 1 || x_global > RGB_WIDTH - 2 || y_global < 1 || y_global > RGB_HEIGHT - 2) {
     barrier(CLK_LOCAL_MEM_FENCE);
     return;
   } else {

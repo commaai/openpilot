@@ -18,11 +18,7 @@ def mock_sec_since_boot():
 with patch("common.realtime.sec_since_boot", new=mock_sec_since_boot):
   with patch("common.params.put_nonblocking", new=params.put):
     from selfdrive.thermald.power_monitoring import PowerMonitoring, CAR_BATTERY_CAPACITY_uWh, \
-                                                    PANDA_OUTPUT_VOLTAGE, CAR_CHARGING_RATE_W, \
-                                                    VBATT_PAUSE_CHARGING
-
-def actual_current_to_panda_current(actual_current):
-  return max(int(((3.3 - (actual_current * 8.25)) * 4096) / 3.3), 0)
+                                                    CAR_CHARGING_RATE_W, VBATT_PAUSE_CHARGING
 
 TEST_DURATION_S = 50
 ALL_PANDA_TYPES = [(hw_type,) for hw_type in [log.HealthData.HwType.whitePanda,
@@ -41,11 +37,10 @@ class TestPowerMonitoring(unittest.TestCase):
     params.delete("CarBatteryCapacity")
     params.delete("DisablePowerDown")
 
-  def mock_health(self, ignition, hw_type, car_voltage=12, current=0):
+  def mock_health(self, ignition, hw_type, car_voltage=12):
     health = messaging.new_message('health')
     health.health.hwType = hw_type
     health.health.voltage = car_voltage * 1e3
-    health.health.current = actual_current_to_panda_current(current)
     health.health.ignitionLine = ignition
     health.health.ignitionCan = False
     return health
@@ -66,23 +61,13 @@ class TestPowerMonitoring(unittest.TestCase):
       pm.calculate(self.mock_health(True, hw_type))
     self.assertEqual(pm.get_power_used(), 0)
 
-  # Test to see that it integrates with white/grey panda while charging
-  @parameterized.expand([(log.HealthData.HwType.whitePanda,), (log.HealthData.HwType.greyPanda,)])
-  def test_offroad_integration_white(self, hw_type):
-    with pm_patch("get_battery_voltage", 4e6), pm_patch("get_battery_current", 1e5), pm_patch("get_battery_status", "Charging"):
-      pm = PowerMonitoring()
-      for _ in range(TEST_DURATION_S + 1):
-        pm.calculate(self.mock_health(False, hw_type, current=0.1))
-      expected_power_usage = ((TEST_DURATION_S/3600) * (0.1 * PANDA_OUTPUT_VOLTAGE) * 1e6)
-      self.assertLess(abs(pm.get_power_used() - expected_power_usage), 10)
-
   # Test to see that it integrates with discharging battery
   @parameterized.expand(ALL_PANDA_TYPES)
   def test_offroad_integration_discharging(self, hw_type):
     BATT_VOLTAGE = 4
     BATT_CURRENT = 1
-    with pm_patch("get_battery_voltage", BATT_VOLTAGE * 1e6), pm_patch("get_battery_current", BATT_CURRENT * 1e6), \
-    pm_patch("get_battery_status", "Discharging"):
+    with pm_patch("HARDWARE.get_battery_voltage", BATT_VOLTAGE * 1e6), pm_patch("HARDWARE.get_battery_current", BATT_CURRENT * 1e6), \
+    pm_patch("HARDWARE.get_battery_status", "Discharging"), pm_patch("HARDWARE.get_current_power_draw", None):
       pm = PowerMonitoring()
       for _ in range(TEST_DURATION_S + 1):
         pm.calculate(self.mock_health(False, hw_type))
@@ -94,8 +79,8 @@ class TestPowerMonitoring(unittest.TestCase):
   def test_car_battery_integration_onroad(self, hw_type):
     BATT_VOLTAGE = 4
     BATT_CURRENT = 1
-    with pm_patch("get_battery_voltage", BATT_VOLTAGE * 1e6), pm_patch("get_battery_current", BATT_CURRENT * 1e6), \
-    pm_patch("get_battery_status", "Discharging"):
+    with pm_patch("HARDWARE.get_battery_voltage", BATT_VOLTAGE * 1e6), pm_patch("HARDWARE.get_battery_current", BATT_CURRENT * 1e6), \
+    pm_patch("HARDWARE.get_battery_status", "Discharging"), pm_patch("HARDWARE.get_current_power_draw", None):
       pm = PowerMonitoring()
       pm.car_battery_capacity_uWh = 0
       for _ in range(TEST_DURATION_S + 1):
@@ -108,8 +93,8 @@ class TestPowerMonitoring(unittest.TestCase):
   def test_car_battery_integration_upper_limit(self, hw_type):
     BATT_VOLTAGE = 4
     BATT_CURRENT = 1
-    with pm_patch("get_battery_voltage", BATT_VOLTAGE * 1e6), pm_patch("get_battery_current", BATT_CURRENT * 1e6), \
-    pm_patch("get_battery_status", "Discharging"):
+    with pm_patch("HARDWARE.get_battery_voltage", BATT_VOLTAGE * 1e6), pm_patch("HARDWARE.get_battery_current", BATT_CURRENT * 1e6), \
+    pm_patch("HARDWARE.get_battery_status", "Discharging"), pm_patch("HARDWARE.get_current_power_draw", None):
       pm = PowerMonitoring()
       pm.car_battery_capacity_uWh = CAR_BATTERY_CAPACITY_uWh - 1000
       for _ in range(TEST_DURATION_S + 1):
@@ -122,8 +107,8 @@ class TestPowerMonitoring(unittest.TestCase):
   def test_car_battery_integration_offroad(self, hw_type):
     BATT_VOLTAGE = 4
     BATT_CURRENT = 1
-    with pm_patch("get_battery_voltage", BATT_VOLTAGE * 1e6), pm_patch("get_battery_current", BATT_CURRENT * 1e6), \
-    pm_patch("get_battery_status", "Discharging"):
+    with pm_patch("HARDWARE.get_battery_voltage", BATT_VOLTAGE * 1e6), pm_patch("HARDWARE.get_battery_current", BATT_CURRENT * 1e6), \
+    pm_patch("HARDWARE.get_battery_status", "Discharging"), pm_patch("HARDWARE.get_current_power_draw", None):
       pm = PowerMonitoring()
       pm.car_battery_capacity_uWh = CAR_BATTERY_CAPACITY_uWh
       for _ in range(TEST_DURATION_S + 1):
@@ -136,8 +121,8 @@ class TestPowerMonitoring(unittest.TestCase):
   def test_car_battery_integration_lower_limit(self, hw_type):
     BATT_VOLTAGE = 4
     BATT_CURRENT = 1
-    with pm_patch("get_battery_voltage", BATT_VOLTAGE * 1e6), pm_patch("get_battery_current", BATT_CURRENT * 1e6), \
-    pm_patch("get_battery_status", "Discharging"):
+    with pm_patch("HARDWARE.get_battery_voltage", BATT_VOLTAGE * 1e6), pm_patch("HARDWARE.get_battery_current", BATT_CURRENT * 1e6), \
+    pm_patch("HARDWARE.get_battery_status", "Discharging"), pm_patch("HARDWARE.get_current_power_draw", None):
       pm = PowerMonitoring()
       pm.car_battery_capacity_uWh = 1000
       for _ in range(TEST_DURATION_S + 1):
@@ -152,8 +137,9 @@ class TestPowerMonitoring(unittest.TestCase):
     BATT_VOLTAGE = 4
     BATT_CURRENT = 0 # To stop shutting down for other reasons
     MOCKED_MAX_OFFROAD_TIME = 3600
-    with pm_patch("get_battery_voltage", BATT_VOLTAGE * 1e6), pm_patch("get_battery_current", BATT_CURRENT * 1e6), \
-    pm_patch("get_battery_status", "Discharging"), pm_patch("MAX_TIME_OFFROAD_S", MOCKED_MAX_OFFROAD_TIME, constant=True):
+    with pm_patch("HARDWARE.get_battery_voltage", BATT_VOLTAGE * 1e6), pm_patch("HARDWARE.get_battery_current", BATT_CURRENT * 1e6), \
+    pm_patch("HARDWARE.get_battery_status", "Discharging"), pm_patch("MAX_TIME_OFFROAD_S", MOCKED_MAX_OFFROAD_TIME, constant=True), \
+    pm_patch("HARDWARE.get_current_power_draw", None):
       pm = PowerMonitoring()
       pm.car_battery_capacity_uWh = CAR_BATTERY_CAPACITY_uWh
       start_time = ssb
@@ -171,8 +157,8 @@ class TestPowerMonitoring(unittest.TestCase):
     BATT_VOLTAGE = 4
     BATT_CURRENT = 0 # To stop shutting down for other reasons
     TEST_TIME = 100
-    with pm_patch("get_battery_voltage", BATT_VOLTAGE * 1e6), pm_patch("get_battery_current", BATT_CURRENT * 1e6), \
-    pm_patch("get_battery_status", "Discharging"):
+    with pm_patch("HARDWARE.get_battery_voltage", BATT_VOLTAGE * 1e6), pm_patch("HARDWARE.get_battery_current", BATT_CURRENT * 1e6), \
+    pm_patch("HARDWARE.get_battery_status", "Discharging"), pm_patch("HARDWARE.get_current_power_draw", None):
       pm = PowerMonitoring()
       pm.car_battery_capacity_uWh = CAR_BATTERY_CAPACITY_uWh
       health = self.mock_health(False, hw_type, car_voltage=(VBATT_PAUSE_CHARGING - 1))
@@ -189,8 +175,8 @@ class TestPowerMonitoring(unittest.TestCase):
     BATT_CURRENT = 0 # To stop shutting down for other reasons
     TEST_TIME = 100
     params.put("DisablePowerDown", b"1")
-    with pm_patch("get_battery_voltage", BATT_VOLTAGE * 1e6), pm_patch("get_battery_current", BATT_CURRENT * 1e6), \
-    pm_patch("get_battery_status", "Discharging"):
+    with pm_patch("HARDWARE.get_battery_voltage", BATT_VOLTAGE * 1e6), pm_patch("HARDWARE.get_battery_current", BATT_CURRENT * 1e6), \
+    pm_patch("HARDWARE.get_battery_status", "Discharging"), pm_patch("HARDWARE.get_current_power_draw", None):
       pm = PowerMonitoring()
       pm.car_battery_capacity_uWh = CAR_BATTERY_CAPACITY_uWh
       health = self.mock_health(False, log.HealthData.HwType.uno, car_voltage=(VBATT_PAUSE_CHARGING - 1))
@@ -206,8 +192,8 @@ class TestPowerMonitoring(unittest.TestCase):
     BATT_VOLTAGE = 4
     BATT_CURRENT = 0 # To stop shutting down for other reasons
     TEST_TIME = 100
-    with pm_patch("get_battery_voltage", BATT_VOLTAGE * 1e6), pm_patch("get_battery_current", BATT_CURRENT * 1e6), \
-    pm_patch("get_battery_status", "Discharging"):
+    with pm_patch("HARDWARE.get_battery_voltage", BATT_VOLTAGE * 1e6), pm_patch("HARDWARE.get_battery_current", BATT_CURRENT * 1e6), \
+    pm_patch("HARDWARE.get_battery_status", "Discharging"), pm_patch("HARDWARE.get_current_power_draw", None):
       pm = PowerMonitoring()
       pm.car_battery_capacity_uWh = CAR_BATTERY_CAPACITY_uWh
       health = self.mock_health(True, log.HealthData.HwType.uno, car_voltage=(VBATT_PAUSE_CHARGING - 1))

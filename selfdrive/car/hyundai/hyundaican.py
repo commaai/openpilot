@@ -15,11 +15,9 @@ def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
   values["CF_Lkas_LdwsRHWarning"] = right_lane_depart
   values["CR_Lkas_StrToqReq"] = apply_steer
   values["CF_Lkas_ActToi"] = steer_req
-  values["CF_Lkas_ToiFlt"] = 0
   values["CF_Lkas_MsgCount"] = frame % 0x10
-  values["CF_Lkas_Chksum"] = 0
 
-  if car_fingerprint in [CAR.SONATA, CAR.PALISADE]:
+  if car_fingerprint in [CAR.SONATA, CAR.PALISADE, CAR.KIA_NIRO_EV, CAR.SANTA_FE, CAR.IONIQ_EV_2020]:
     values["CF_Lkas_LdwsActivemode"] = int(left_lane) + (int(right_lane) << 1)
     values["CF_Lkas_LdwsOpt_USM"] = 2
 
@@ -69,21 +67,11 @@ def create_clu11(packer, frame, clu11, button):
   return packer.make_can_msg("CLU11", 0, values)
 
 
-def create_lfa_mfa(packer, frame, enabled):
+def create_lfahda_mfc(packer, enabled, hda_set_speed=0):
   values = {
-    "ACTIVE": enabled,
+    "LFA_Icon_State": 2 if enabled else 0,
+    "HDA_Active": 1 if hda_set_speed else 0,
+    "HDA_Icon_State": 2 if hda_set_speed else 0,
+    "HDA_VSetReq": hda_set_speed,
   }
-
-  # ACTIVE 1 = Green steering wheel icon
-
-  # LFA_USM 2 & 3 = LFA cancelled, fast loud beeping
-  # LFA_USM 0 & 1 = No mesage
-
-  # LFA_SysWarning 1 = "Switching to HDA", short beep
-  # LFA_SysWarning 2 = "Switching to Smart Cruise control", short beep
-  # LFA_SysWarning 3 =  LFA error
-
-  # ACTIVE2: nothing
-  # HDA_USM: nothing
-
   return packer.make_can_msg("LFAHDA_MFC", 0, values)

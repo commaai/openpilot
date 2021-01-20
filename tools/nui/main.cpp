@@ -161,7 +161,6 @@ void Window::paintEvent(QPaintEvent *event) {
   timer.start();
 
   uint64_t t0 = events.begin().key();
-  uint64_t t1 = (events.end()-1).key();
 
   //p.drawRect(0, 0, 600, 100);
 

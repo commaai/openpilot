@@ -17,8 +17,7 @@ from selfdrive.config import UIParams as UP
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 import cereal.messaging as messaging
 from tools.replay.lib.ui_helpers import (_BB_TO_FULL_FRAME, _FULL_FRAME_SIZE, _INTRINSICS,
-                                         BLACK, BLUE, GREEN,
-                                         YELLOW, RED,
+                                         BLACK, BLUE, GREEN, YELLOW, RED,
                                          CalibrationTransformsForWarpMatrix,
                                          draw_lead_car, draw_lead_on, draw_mpc,
                                          extract_model_data,
@@ -30,8 +29,6 @@ from tools.replay.lib.ui_helpers import (_BB_TO_FULL_FRAME, _FULL_FRAME_SIZE, _I
 os.environ['BASEDIR'] = BASEDIR
 
 ANGLE_SCALE = 5.0
-HOR = os.getenv("HORIZONTAL") is not None
-
 
 def ui_thread(addr, frame_address):
   # TODO: Detect car from replay and use that to select carparams
@@ -45,7 +42,13 @@ def ui_thread(addr, frame_address):
   pygame.font.init()
   assert pygame_modules_have_loaded()
 
-  if HOR:
+  disp_info = pygame.display.Info()
+  max_height = disp_info.current_h
+
+  hor_mode = os.getenv("HORIZONTAL") is not None
+  hor_mode = True if max_height < 960+300 else hor_mode
+
+  if hor_mode:
     size = (640+384+640, 960)
     write_x = 5
     write_y = 680
@@ -125,9 +128,6 @@ def ui_thread(addr, frame_address):
     fpkt = messaging.recv_one(frame)
     rgb_img_raw = fpkt.frame.image
 
-    if fpkt.frame.transform:
-      img_transform = np.array(fpkt.frame.transform).reshape(3, 3)
-
     num_px = len(rgb_img_raw) // 3
     if rgb_img_raw and num_px in _FULL_FRAME_SIZE.keys():
       FULL_FRAME_SIZE = _FULL_FRAME_SIZE[num_px]
@@ -184,7 +184,7 @@ def ui_thread(addr, frame_address):
     if len(sm['model'].path.poly) > 0:
       model_data = extract_model_data(sm['model'])
       plot_model(model_data, VM, sm['controlsState'].vEgo, sm['controlsState'].curvature, imgw, calibration,
-                  top_down, np.array(sm['pathPlan'].dPoly))
+                  top_down, np.array(sm['pathPlan'].dPolyDEPRECATED))
 
     # MPC
     if sm.updated['liveMpc']:
@@ -196,7 +196,7 @@ def ui_thread(addr, frame_address):
     if sm.updated['liveCalibration'] and num_px:
       extrinsic_matrix = np.asarray(sm['liveCalibration'].extrinsicMatrix).reshape(3, 4)
       ke = intrinsic_matrix.dot(extrinsic_matrix)
-      warp_matrix = get_camera_frame_from_model_frame(ke)
+      warp_matrix = get_camera_frame_from_model_frame(ke, camera_fl=intrinsic_matrix[0][0])
       calibration = CalibrationTransformsForWarpMatrix(num_px, warp_matrix, intrinsic_matrix, extrinsic_matrix)
 
     # draw red pt for lead car in the main img
@@ -223,7 +223,7 @@ def ui_thread(addr, frame_address):
       pygame.draw.polygon(screen, BLUE, tuple(map(tuple, cpw)), 1)
       pygame.draw.circle(screen, BLUE, list(map(int, map(round, vanishing_pointw[0]))), 2)
 
-    if HOR:
+    if hor_mode:
       screen.blit(draw_plots(plot_arr), (640+384, 0))
     else:
       screen.blit(draw_plots(plot_arr), (0, 600))

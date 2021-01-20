@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <pthread.h>
-#include <czmq.h>
+#include <memory>
 #include <atomic>
 #include "messaging.hpp"
 
@@ -12,10 +12,10 @@
 #include "msmb_camera.h"
 #include "msm_cam_sensor.h"
 
+#include "visionbuf.h"
+
 #include "common/mat.h"
-#include "common/visionbuf.h"
-#include "common/buffering.h"
-#include "common/utilpp.h"
+#include "common/util.h"
 
 #include "camera_common.h"
 
@@ -40,10 +40,6 @@
 #define FOCUS_RECOVER_PATIENCE 50 // 2.5 seconds of complete blur
 #define FOCUS_RECOVER_STEPS 240 // 6 seconds
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef struct CameraState CameraState;
 
 typedef int (*camera_apply_exposure_func)(CameraState *s, int gain, int integ_lines, int frame_length);
@@ -59,12 +55,8 @@ typedef struct CameraState {
   int camera_num;
   int camera_id;
   CameraInfo ci;
-  int frame_size;
 
   int device;
-
-  void* ops_sock_handle;
-  zsock_t * ops_sock;
 
   uint32_t pixel_clock;
   uint32_t line_length_pclk;
@@ -85,8 +77,6 @@ typedef struct CameraState {
   uint8_t *eeprom;
 
   // uint32_t camera_bufs_ids[FRAME_BUF_COUNT];
-  FrameMetadata camera_bufs_metadata[FRAME_BUF_COUNT];
-  TBuffer camera_tb;
 
   pthread_mutex_t frame_info_lock;
   FrameMetadata frame_metadata[METADATA_BUF_COUNT];
@@ -108,19 +98,18 @@ typedef struct CameraState {
   int16_t focus[NUM_FOCUS];
   uint8_t confidence[NUM_FOCUS];
 
-  float focus_err;
+  std::atomic<float> focus_err;
 
   uint16_t cur_step_pos;
   uint16_t cur_lens_pos;
-  uint64_t last_sag_ts;
-  float last_sag_acc_z;
+  std::atomic<float> last_sag_acc_z;
   std::atomic<float> lens_true_pos;
 
   std::atomic<int> self_recover; // af recovery counter, neg is patience, pos is active
 
   int fps;
 
-  mat3 transform;
+  CameraBuf buf;
 } CameraState;
 
 
@@ -131,19 +120,28 @@ typedef struct MultiCameraState {
   unique_fd msmcfg_fd;
   unique_fd v4l_fd;
 
+  cl_mem rgb_conv_roi_cl, rgb_conv_result_cl, rgb_conv_filter_cl;
+  uint16_t lapres[(ROI_X_MAX-ROI_X_MIN+1)*(ROI_Y_MAX-ROI_Y_MIN+1)];
+
+  VisionBuf focus_bufs[FRAME_BUF_COUNT];
+  VisionBuf stats_bufs[FRAME_BUF_COUNT];
+
+  cl_program prg_rgb_laplacian;
+  cl_kernel krnl_rgb_laplacian;
+
   CameraState rear;
   CameraState front;
+
+  SubMaster *sm_front;
+  PubMaster *pm;
+
 } MultiCameraState;
 
-void cameras_init(MultiCameraState *s);
-void cameras_open(MultiCameraState *s, VisionBuf *camera_bufs_rear, VisionBuf *camera_bufs_focus, VisionBuf *camera_bufs_stats, VisionBuf *camera_bufs_front);
+void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_id, cl_context ctx);
+void cameras_open(MultiCameraState *s);
 void cameras_run(MultiCameraState *s);
 void cameras_close(MultiCameraState *s);
 
 void camera_autoexposure(CameraState *s, float grey_frac);
 void actuator_move(CameraState *s, uint16_t target);
 int sensor_write_regs(CameraState *s, struct msm_camera_i2c_reg_array* arr, size_t size, int data_type);
-
-#ifdef __cplusplus
-}  // extern "C"
-#endif

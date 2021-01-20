@@ -2,79 +2,58 @@
 
 #include <unistd.h>
 #include <cassert>
-#include <string.h>
-#include <signal.h>
 
-#include <libyuv.h>
+#include <capnp/dynamic.h>
+
 #include "messaging.hpp"
-
 #include "common/util.h"
-#include "common/timing.h"
-#include "common/swaglog.h"
-#include "buffering.h"
-
-extern "C" {
-#include <libavcodec/avcodec.h>
-}
-
-extern volatile sig_atomic_t do_exit;
 
 #define FRAME_WIDTH 1164
 #define FRAME_HEIGHT 874
 
+extern ExitHandler do_exit;
+
 namespace {
-void camera_open(CameraState *s, VisionBuf *camera_bufs, bool rear) {
-  assert(camera_bufs);
-  s->camera_bufs = camera_bufs;
-}
 
-void camera_close(CameraState *s) {
-  tbuffer_stop(&s->camera_tb);
-}
-
-void camera_release_buffer(void *cookie, int buf_idx) {}
-
-void camera_init(CameraState *s, int camera_id, unsigned int fps) {
+void camera_init(VisionIpcServer * v, CameraState *s, int camera_id, unsigned int fps, cl_device_id device_id, cl_context ctx, VisionStreamType rgb_type, VisionStreamType yuv_type) {
   assert(camera_id < ARRAYSIZE(cameras_supported));
   s->ci = cameras_supported[camera_id];
   assert(s->ci.frame_width != 0);
 
-  s->frame_size = s->ci.frame_height * s->ci.frame_stride;
   s->fps = fps;
-
-  tbuffer_init2(&s->camera_tb, FRAME_BUF_COUNT, "frame", camera_release_buffer, s);
+  s->buf.init(device_id, ctx, s, v, FRAME_BUF_COUNT, rgb_type, yuv_type);
 }
 
-void run_frame_stream(MultiCameraState *s) {
-  SubMaster sm({"frame"});
+void run_frame_stream(CameraState &camera, const char* frame_pkt) {
+  SubMaster sm({frame_pkt});
 
-  CameraState *const rear_camera = &s->rear;
-  auto *tb = &rear_camera->camera_tb;
-
+  size_t buf_idx = 0;
   while (!do_exit) {
     if (sm.update(1000) == 0) continue;
 
-    auto frame = sm["frame"].getFrame();
-
-    const int buf_idx = tbuffer_select(tb);
-    rear_camera->camera_bufs_metadata[buf_idx] = {
-      .frame_id = frame.getFrameId(),
-      .timestamp_eof = frame.getTimestampEof(),
-      .frame_length = static_cast<unsigned>(frame.getFrameLength()),
-      .integ_lines = static_cast<unsigned>(frame.getIntegLines()),
-      .global_gain = static_cast<unsigned>(frame.getGlobalGain()),
+    auto msg = static_cast<capnp::DynamicStruct::Reader>(sm[frame_pkt]);
+    auto frame = msg.get(frame_pkt).as<capnp::DynamicStruct>();
+    camera.buf.camera_bufs_metadata[buf_idx] = {
+      .frame_id = frame.get("frameId").as<uint32_t>(),
+      .timestamp_eof = frame.get("timestampEof").as<uint64_t>(),
+      .frame_length = frame.get("frameLength").as<unsigned>(),
+      .integ_lines = frame.get("integLines").as<unsigned>(),
+      .global_gain = frame.get("globalGain").as<unsigned>(),
     };
 
-    cl_command_queue q = rear_camera->camera_bufs[buf_idx].copy_q;
-    cl_mem yuv_cl = rear_camera->camera_bufs[buf_idx].buf_cl;
+    cl_command_queue q = camera.buf.camera_bufs[buf_idx].copy_q;
+    cl_mem yuv_cl = camera.buf.camera_bufs[buf_idx].buf_cl;
 
-    clEnqueueWriteBuffer(q, yuv_cl, CL_TRUE, 0, frame.getImage().size(), frame.getImage().begin(), 0, NULL, NULL);
-    tbuffer_dispatch(tb, buf_idx);
+    auto image = frame.get("image").as<capnp::Data>();
+    clEnqueueWriteBuffer(q, yuv_cl, CL_TRUE, 0, image.size(), image.begin(), 0, NULL, NULL);
+    camera.buf.queue(buf_idx);
+    buf_idx = (buf_idx + 1) % FRAME_BUF_COUNT;
   }
 }
 
 }  // namespace
 
+// TODO: make this more generic
 CameraInfo cameras_supported[CAMERA_ID_MAX] = {
   [CAMERA_ID_IMX298] = {
     .frame_width = FRAME_WIDTH,
@@ -93,43 +72,21 @@ CameraInfo cameras_supported[CAMERA_ID_MAX] = {
   },
 };
 
-void cameras_init(MultiCameraState *s) {
-  camera_init(&s->rear, CAMERA_ID_IMX298, 20);
-  s->rear.transform = (mat3){{
-    1.0,  0.0, 0.0,
-    0.0, 1.0, 0.0,
-    0.0,  0.0, 1.0,
-  }};
-
-  camera_init(&s->front, CAMERA_ID_OV8865, 10);
-  s->front.transform = (mat3){{
-    1.0,  0.0, 0.0,
-    0.0, 1.0, 0.0,
-    0.0,  0.0, 1.0,
-  }};
+void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
+  camera_init(v, &s->rear, CAMERA_ID_IMX298, 20, device_id, ctx,
+              VISION_STREAM_RGB_BACK, VISION_STREAM_YUV_BACK);
+  camera_init(v, &s->front, CAMERA_ID_OV8865, 10, device_id, ctx,
+              VISION_STREAM_RGB_FRONT, VISION_STREAM_YUV_FRONT);
 }
 
+void cameras_open(MultiCameraState *s) {}
+void cameras_close(MultiCameraState *s) {}
 void camera_autoexposure(CameraState *s, float grey_frac) {}
-
-void cameras_open(MultiCameraState *s, VisionBuf *camera_bufs_rear,
-                  VisionBuf *camera_bufs_focus, VisionBuf *camera_bufs_stats,
-                  VisionBuf *camera_bufs_front) {
-  assert(camera_bufs_rear);
-  assert(camera_bufs_front);
-
-  // LOG("*** open front ***");
-  camera_open(&s->front, camera_bufs_front, false);
-
-  // LOG("*** open rear ***");
-  camera_open(&s->rear, camera_bufs_rear, true);
-}
-
-void cameras_close(MultiCameraState *s) {
-  camera_close(&s->rear);
-}
+void camera_process_rear(MultiCameraState *s, CameraState *c, int cnt) {}
 
 void cameras_run(MultiCameraState *s) {
+  std::thread t = start_process_thread(s, "processing", &s->rear, camera_process_rear);
   set_thread_name("frame_streaming");
-  run_frame_stream(s);
-  cameras_close(s);
+  run_frame_stream(s->rear, "frame");
+  t.join();
 }

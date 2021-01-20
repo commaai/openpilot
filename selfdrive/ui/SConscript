@@ -1,30 +1,53 @@
+import os
 Import('env', 'qt_env', 'arch', 'common', 'messaging', 'gpucommon', 'visionipc', 'cereal')
 
-src = ['ui.cc', 'paint.cc', 'sidebar.cc', '#phonelibs/nanovg/nanovg.c']
-libs = [common, 'zmq', 'czmq', 'capnp', 'kj', 'm', cereal, messaging, gpucommon, visionipc]
 
+src = ['ui.cc', 'paint.cc', 'sidebar.cc', '#phonelibs/nanovg/nanovg.c']
+libs = [common, 'zmq', 'capnp', 'kj', 'm', 'OpenCL', cereal, messaging, gpucommon, visionipc]
 
 if qt_env is None:
-  libs += ['EGL', 'GLESv3', 'gnustl_shared', 'log', 'utils', 'gui', 'hardware', 'ui', 'CB', 'gsl', 'adreno_utils', 'OpenSLES', 'cutils', 'uuid', 'OpenCL']
+  libs += ['EGL', 'GLESv3', 'gnustl_shared', 'log', 'utils', 'gui', 'hardware',
+           'ui', 'CB', 'gsl', 'adreno_utils', 'OpenSLES', 'cutils', 'uuid', 'OpenCL']
   linkflags = ['-Wl,-rpath=/system/lib64,-rpath=/system/comma/usr/lib']
 
   src += ["android/ui.cc", "android/sl_sound.cc"]
   env.Program('_ui', src,
     LINKFLAGS=linkflags,
     LIBS=libs)
-
 else:
-  qt_libs = ["pthread"]
+  qt_libs = qt_env["LIBS"] + libs + ["pthread", "ssl", "crypto"]
+
+  widgets = qt_env.Library("qt_widgets",
+                 ["qt/qt_window.cc", "qt/qt_sound.cc", "qt/widgets/keyboard.cc", "qt/widgets/input_field.cc", "qt/widgets/drive_stats.cc",
+                  "qt/offroad/wifi.cc", "qt/offroad/wifiManager.cc", "qt/widgets/toggle.cc", "qt/widgets/offroad_alerts.cc", "qt/widgets/setup.cc", "qt/widgets/QrCode.cc"],
+                 LIBS=qt_libs)
+  qt_libs.append(widgets)
+
 
   if arch == "Darwin":
-    qt_env["FRAMEWORKS"] += ["QtWidgets", "QtGui", "QtCore", "QtDBus", "QtMultimedia"]
-  else:
-    qt_libs += ["Qt5Widgets", "Qt5Gui", "Qt5Core", "Qt5DBus", "Qt5Multimedia"]
+    # fix OpenCL
+    del qt_libs[qt_libs.index('OpenCL')]
+    qt_env['FRAMEWORKS'] += ['OpenCL']
 
-  if arch == "larch64":
-    qt_libs += ["GLESv2", "wayland-client"]
-  else:
-    qt_libs += ["GL"]
+  qt_src = ["qt/ui.cc", "qt/window.cc", "qt/home.cc", "qt/api.cc", "qt/offroad/settings.cc", "qt/offroad/onboarding.cc"] + src
 
-  qt_src = ["qt/ui.cc", "qt/window.cc", "qt/settings.cc", "qt/qt_sound.cc"] + src
-  qt_env.Program("_ui", qt_src, LIBS=qt_libs + libs)
+  qt_env.Program("_ui", qt_src, LIBS=qt_libs)
+
+  # spinner and text window
+  qt_env.Program("qt/text", ["qt/text.cc"], LIBS=qt_libs)
+  qt_env.Program("qt/spinner", ["qt/spinner.cc"], LIBS=qt_libs)
+
+  # build setup, factory resetter, and installer
+  if "BUILD_SETUP" in os.environ:
+    qt_env.Program("qt/setup/reset", ["qt/setup/reset.cc"], LIBS=qt_libs)
+    qt_env.Program("qt/setup/setup", ["qt/setup/setup.cc"], LIBS=qt_libs + ['curl', 'common'])
+
+    installers = [
+      ("openpilot", "master"),
+      ("openpilot_test", "master"),
+      #("dashcam", "dashcam"),
+      #("dashcam_test", "dashcam"),
+    ]
+    for name, branch in installers:
+      flags = qt_env["CXXFLAGS"] + [f"-D{branch}"]
+      qt_env.Program(f"qt/setup/installer_{name}", ["qt/setup/installer.cc"], LIBS=qt_libs)

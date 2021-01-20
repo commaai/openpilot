@@ -16,15 +16,14 @@ extern "C" {
 }
 
 #include "common/swaglog.h"
-#include "common/utilpp.h"
+#include "common/util.h"
 
 #include "raw_logger.h"
 
-RawLogger::RawLogger(const std::string &afilename, int awidth, int aheight, int afps)
-  : filename(afilename),
-    width(awidth),
-    height(aheight),
-    fps(afps) {
+RawLogger::RawLogger(const char* filename, int width, int height, int fps,
+                     int bitrate, bool h265, bool downscale)
+  : filename(filename),
+    fps(fps) {
 
   int err = 0;
 
@@ -65,15 +64,16 @@ RawLogger::~RawLogger() {
   av_free(codec_ctx);
 }
 
-void RawLogger::Open(const std::string &path) {
+void RawLogger::encoder_open(const char* path, int segment) {
   int err = 0;
 
   std::lock_guard<std::recursive_mutex> guard(lock);
 
-  vid_path = util::string_format("%s/%s.mkv", path.c_str(), filename.c_str());
+  this->segment = segment;
+  vid_path = util::string_format("%s/%s.mkv", path, filename);
 
   // create camera lock file
-  lock_path = util::string_format("%s/%s.lock", path.c_str(), filename.c_str());
+  lock_path = util::string_format("%s/%s.lock", path, filename);
 
   LOG("open %s\n", lock_path.c_str());
 
@@ -105,7 +105,7 @@ void RawLogger::Open(const std::string &path) {
   counter = 0;
 }
 
-void RawLogger::Close() {
+void RawLogger::encoder_close() {
   int err = 0;
 
   std::lock_guard<std::recursive_mutex> guard(lock);
@@ -127,7 +127,9 @@ void RawLogger::Close() {
   is_open = false;
 }
 
-int RawLogger::ProcessFrame(uint64_t ts, const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr) {
+int RawLogger::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
+                            int in_width, int in_height,
+                            int *frame_segment, VisionIpcBufExtra *extra) {
   int err = 0;
 
   AVPacket pkt;
@@ -138,7 +140,7 @@ int RawLogger::ProcessFrame(uint64_t ts, const uint8_t *y_ptr, const uint8_t *u_
   frame->data[0] = (uint8_t*)y_ptr;
   frame->data[1] = (uint8_t*)u_ptr;
   frame->data[2] = (uint8_t*)v_ptr;
-  frame->pts = ts;
+  frame->pts = extra->timestamp_eof;
 
   int ret = counter;
 
@@ -148,7 +150,6 @@ int RawLogger::ProcessFrame(uint64_t ts, const uint8_t *y_ptr, const uint8_t *u_
     LOGE("encoding error\n");
     ret = -1;
   } else if (got_output) {
-
     av_packet_rescale_ts(&pkt, codec_ctx->time_base, stream->time_base);
     pkt.stream_index = 0;
 

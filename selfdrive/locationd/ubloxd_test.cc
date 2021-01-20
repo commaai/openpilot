@@ -1,16 +1,4 @@
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <signal.h>
-#include <unistd.h>
-#include <sched.h>
-#include <sys/time.h>
-#include <sys/cdefs.h>
-#include <sys/types.h>
-#include <assert.h>
-#include <math.h>
-#include <ctime>
-#include <chrono>
 #include <iostream>
 
 #include "messaging.hpp"
@@ -75,19 +63,23 @@ int main(int argc, char** argv) {
     printf("Format: ubloxd_test stream_file_path save_prefix\n");
     return 0;
   }
+
   // Parse 11360 msgs, generate 9452 events
   data = (uint8_t *)read_file(argv[1], &len);
   if(data == NULL) {
     LOGE("Read file %s failed\n", argv[1]);
     return -1;
   }
+
   prefix = argv[2];
   ubloxd_main(poll_ubloxraw_msg, send_gps_event);
   free(data);
   printf("Generated %d cereal events\n", save_idx);
+
   if(save_idx != 9452) {
     printf("Event count error: %d\n", save_idx);
     return -1;
   }
+
   return 0;
 }

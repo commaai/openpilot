@@ -1,10 +1,10 @@
-from common.numpy_fast import interp
 from math import atan2, sqrt
+
+from cereal import car
+from common.numpy_fast import interp
 from common.realtime import DT_DMON
 from common.filter_simple import FirstOrderFilter
 from common.stat_live import RunningStatFilter
-
-from cereal import car
 
 EventName = car.CarEvent.EventName
 
@@ -15,8 +15,8 @@ EventName = car.CarEvent.EventName
 # ******************************************************************************************
 
 _AWARENESS_TIME = 35.  # passive wheel touch total timeout
-_AWARENESS_PRE_TIME_TILL_TERMINAL = 7.
-_AWARENESS_PROMPT_TIME_TILL_TERMINAL = 5.
+_AWARENESS_PRE_TIME_TILL_TERMINAL = 12.
+_AWARENESS_PROMPT_TIME_TILL_TERMINAL = 6.
 _DISTRACTED_TIME = 11.
 _DISTRACTED_PRE_TIME_TILL_TERMINAL = 8.
 _DISTRACTED_PROMPT_TIME_TILL_TERMINAL = 6.
@@ -54,7 +54,7 @@ MAX_TERMINAL_DURATION = 300  # 30s
 RESIZED_FOCAL = 320.0
 H, W, FULL_W = 320, 160, 426
 
-class DistractedType():
+class DistractedType:
   NOT_DISTRACTED = 0
   BAD_POSE = 1
   BAD_BLINK = 2
@@ -63,22 +63,19 @@ def face_orientation_from_net(angles_desc, pos_desc, rpy_calib, is_rhd):
   # the output of these angles are in device frame
   # so from driver's perspective, pitch is up and yaw is right
 
-  pitch_net = angles_desc[0]
-  yaw_net = angles_desc[1]
-  roll_net = angles_desc[2]
+  pitch_net, yaw_net, roll_net = angles_desc
 
   face_pixel_position = ((pos_desc[0] + .5)*W - W + FULL_W, (pos_desc[1]+.5)*H)
   yaw_focal_angle = atan2(face_pixel_position[0] - FULL_W//2, RESIZED_FOCAL)
   pitch_focal_angle = atan2(face_pixel_position[1] - H//2, RESIZED_FOCAL)
 
-  roll = roll_net
   pitch = pitch_net + pitch_focal_angle
   yaw = -yaw_net + yaw_focal_angle
 
   # no calib for roll
   pitch -= rpy_calib[1]
   yaw -= rpy_calib[2] * (1 - 2 * int(is_rhd))  # lhd -> -=, rhd -> +=
-  return roll, pitch, yaw
+  return roll_net, pitch, yaw
 
 class DriverPose():
   def __init__(self):
@@ -100,7 +97,8 @@ class DriverBlink():
     self.cfactor = 1.
 
 class DriverStatus():
-  def __init__(self):
+  def __init__(self, rhd=False):
+    self.is_rhd_region = rhd
     self.pose = DriverPose()
     self.pose_calibrated = self.pose.pitch_offseter.filtered_stat.n > _POSE_OFFSET_MIN_COUNT and \
                             self.pose.yaw_offseter.filtered_stat.n > _POSE_OFFSET_MIN_COUNT
@@ -118,9 +116,6 @@ class DriverStatus():
     self.hi_stds = 0
     self.hi_std_alert_enabled = True
     self.threshold_prompt = _DISTRACTED_PROMPT_TIME_TILL_TERMINAL / _DISTRACTED_TIME
-
-    self.is_rhd_region = False
-    self.is_rhd_region_checked = False
 
     self._set_timers(active_monitoring=True)
 
@@ -181,8 +176,8 @@ class DriverStatus():
     self.blink.cfactor = interp(ep, [0, 0.5, 1], [_BLINK_THRESHOLD_STRICT, _BLINK_THRESHOLD, _BLINK_THRESHOLD_SLACK])/_BLINK_THRESHOLD
 
   def get_pose(self, driver_state, cal_rpy, car_speed, op_engaged):
-    # 10 Hz
-    if len(driver_state.faceOrientation) == 0 or len(driver_state.facePosition) == 0 or len(driver_state.faceOrientationStd) == 0 or len(driver_state.facePositionStd) == 0:
+    if not all(len(x) > 0 for x in [driver_state.faceOrientation, driver_state.facePosition,
+                                    driver_state.faceOrientationStd, driver_state.facePositionStd]):
       return
 
     self.pose.roll, self.pose.pitch, self.pose.yaw = face_orientation_from_net(driver_state.faceOrientation, driver_state.facePosition, cal_rpy, self.is_rhd_region)
@@ -251,13 +246,13 @@ class DriverStatus():
     if self.awareness <= 0.:
       # terminal red alert: disengagement required
       alert = EventName.driverDistracted if self.active_monitoring_mode else EventName.driverUnresponsive
+      self.hi_std_alert_enabled = True
       self.terminal_time += 1
       if awareness_prev > 0.:
         self.terminal_alert_cnt += 1
     elif self.awareness <= self.threshold_prompt:
       # prompt orange alert
       alert = EventName.promptDriverDistracted if self.active_monitoring_mode else EventName.promptDriverUnresponsive
-      self.hi_std_alert_enabled = True
     elif self.awareness <= self.threshold_pre:
       # pre green alert
       alert = EventName.preDriverDistracted if self.active_monitoring_mode else EventName.preDriverUnresponsive

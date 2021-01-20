@@ -1,18 +1,20 @@
-from transformations cimport Matrix3, Vector3, Quaternion
-from transformations cimport ECEF, NED, Geodetic
+# distutils: language = c++
+# cython: language_level = 3
+from common.transformations.transformations cimport Matrix3, Vector3, Quaternion
+from common.transformations.transformations cimport ECEF, NED, Geodetic
 
-from transformations cimport euler2quat as euler2quat_c
-from transformations cimport quat2euler as quat2euler_c
-from transformations cimport quat2rot as quat2rot_c
-from transformations cimport rot2quat as rot2quat_c
-from transformations cimport euler2rot as euler2rot_c
-from transformations cimport rot2euler as rot2euler_c
-from transformations cimport rot_matrix as rot_matrix_c
-from transformations cimport ecef_euler_from_ned as ecef_euler_from_ned_c
-from transformations cimport ned_euler_from_ecef as ned_euler_from_ecef_c
-from transformations cimport geodetic2ecef as geodetic2ecef_c
-from transformations cimport ecef2geodetic as ecef2geodetic_c
-from transformations cimport LocalCoord_c
+from common.transformations.transformations cimport euler2quat as euler2quat_c
+from common.transformations.transformations cimport quat2euler as quat2euler_c
+from common.transformations.transformations cimport quat2rot as quat2rot_c
+from common.transformations.transformations cimport rot2quat as rot2quat_c
+from common.transformations.transformations cimport euler2rot as euler2rot_c
+from common.transformations.transformations cimport rot2euler as rot2euler_c
+from common.transformations.transformations cimport rot_matrix as rot_matrix_c
+from common.transformations.transformations cimport ecef_euler_from_ned as ecef_euler_from_ned_c
+from common.transformations.transformations cimport ned_euler_from_ecef as ned_euler_from_ecef_c
+from common.transformations.transformations cimport geodetic2ecef as geodetic2ecef_c
+from common.transformations.transformations cimport ecef2geodetic as ecef2geodetic_c
+from common.transformations.transformations cimport LocalCoord_c
 
 
 import cython
@@ -26,7 +28,7 @@ cdef np.ndarray[double, ndim=2] matrix2numpy(Matrix3 m):
         [m(2, 0), m(2, 1), m(2, 2)],
     ])
 
-cdef Matrix3 numpy2matrix (np.ndarray[double, ndim=2, mode="fortran"] m):
+cdef Matrix3 numpy2matrix(np.ndarray[double, ndim=2, mode="fortran"] m):
     assert m.shape[0] == 3
     assert m.shape[1] == 3
     return Matrix3(<double*>m.data)

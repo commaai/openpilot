@@ -4,6 +4,7 @@ from selfdrive.car.nissan.values import CAR
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
 from selfdrive.car.interfaces import CarInterfaceBase
 
+
 class CarInterface(CarInterfaceBase):
   def __init__(self, CP, CarController, CarState):
     super().__init__(CP, CarController, CarState)
@@ -14,9 +15,9 @@ class CarInterface(CarInterfaceBase):
     return float(accel) / 4.0
 
   @staticmethod
-  def get_params(candidate, fingerprint=gen_empty_fingerprint(), has_relay=False, car_fw=None):
+  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None):
 
-    ret = CarInterfaceBase.get_std_params(candidate, fingerprint, has_relay)
+    ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
     ret.carName = "nissan"
     ret.safetyModel = car.CarParams.SafetyModel.nissan
 

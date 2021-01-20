@@ -6,10 +6,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pygame  # pylint: disable=import-error
 
+from common.transformations.camera import (eon_f_frame_size, eon_f_focal_length,
+                                           tici_f_frame_size, tici_f_focal_length)
 from selfdrive.config import RADAR_TO_CAMERA
 from selfdrive.config import UIParams as UP
-from selfdrive.controls.lib.lane_planner import (compute_path_pinv,
-                                                 model_polyfit)
 from tools.lib.lazy_property import lazy_property
 
 RED = (255, 0, 0)
@@ -21,15 +21,15 @@ WHITE = (255, 255, 255)
 
 _PATH_X = np.arange(192.)
 _PATH_XD = np.arange(192.)
-_PATH_PINV = compute_path_pinv(50)
-
 _FULL_FRAME_SIZE = {
 }
 
 _BB_TO_FULL_FRAME = {}
 _FULL_FRAME_TO_BB = {}
 _INTRINSICS = {}
-for width, height, focal in [(1164, 874, 910), (1928, 1208, 2648)]:
+cams = [(eon_f_frame_size[0], eon_f_frame_size[1], eon_f_focal_length),
+        (tici_f_frame_size[0], tici_f_frame_size[1], tici_f_focal_length)]
+for width, height, focal in cams:
   sz = width * height
   _BB_SCALE = width / 640.
   _BB_TO_FULL_FRAME[sz] = np.asarray([
@@ -158,6 +158,10 @@ def init_plots(arr, name_to_arr_idx, plot_xlims, plot_ylims, plot_names, plot_co
       plot_select.append(i)
     axs[i].set_title(", ".join("%s (%s)" % (nm, cl)
                                for (nm, cl) in zip(pl_list, plot_colors[i])), fontsize=10)
+    axs[i].tick_params(axis="x", colors="white")
+    axs[i].tick_params(axis="y", colors="white")
+    axs[i].title.set_color("white")
+
     if i < len(plot_ylims) - 1:
       axs[i].set_xticks([])
 
@@ -239,14 +243,11 @@ def draw_var(y, x, var, color, img, calibration, top_down):
 
 class ModelPoly(object):
   def __init__(self, model_path):
-    if len(model_path.points) == 0 and len(model_path.poly) == 0:
+    if len(model_path.poly) == 0:
       self.valid = False
       return
 
-    if len(model_path.poly):
-      self.poly = np.array(model_path.poly)
-    else:
-      self.poly = model_polyfit(model_path.points, _PATH_PINV)
+    self.poly = np.array(model_path.poly)
 
     self.prob = model_path.prob
     self.std = model_path.std

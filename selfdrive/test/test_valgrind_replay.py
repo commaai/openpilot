@@ -98,6 +98,5 @@ class TestValgrind(unittest.TestCase):
       self.replay_process(cfg, lr)
       time.sleep(1)  # Wait for the logs to get written
 
-
 if __name__ == "__main__":
   unittest.main()

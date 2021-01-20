@@ -3,7 +3,6 @@ import bz2
 import os
 import sys
 import numbers
-
 import dictdiffer
 
 if "CI" in os.environ:
@@ -32,7 +31,7 @@ def remove_ignored_fields(msg, ignore):
   for key in ignore:
     attr = msg
     keys = key.split(".")
-    if msg.which() not in key and len(keys) > 1:
+    if msg.which() != keys[0] and len(keys) > 1:
       continue
 
     for k in keys[:-1]:
@@ -59,6 +58,7 @@ def compare_logs(log1, log2, ignore_fields=None, ignore_msgs=None, tolerance=Non
     ignore_msgs = []
 
   log1, log2 = [list(filter(lambda m: m.which() not in ignore_msgs, log)) for log in (log1, log2)]
+
   if len(log1) != len(log2):
     raise Exception(f"logs are not same length: {len(log1)} VS {len(log2)}")
 

@@ -1,17 +1,10 @@
-#ifndef CAMERA_H
-#define CAMERA_H
+#pragma once
 
 #include <stdint.h>
 #include <stdbool.h>
 #include <pthread.h>
-#include <czmq.h>
-
-#include "common/mat.h"
-#include "common/visionbuf.h"
-#include "common/buffering.h"
 
 #include "camera_common.h"
-
 #include "media/cam_req_mgr.h"
 
 #define FRAME_BUF_COUNT 4
@@ -25,16 +18,11 @@
 
 #define EF_LOWPASS_K 0.35
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#define DEBAYER_LOCAL_WORKSIZE 16
 
 typedef struct CameraState {
   CameraInfo ci;
-  FrameMetadata camera_bufs_metadata[FRAME_BUF_COUNT];
-  TBuffer camera_tb;
 
-  int frame_size;
   float analog_gain_frac;
   uint16_t analog_gain;
   bool dc_gain_enabled;
@@ -42,8 +30,6 @@ typedef struct CameraState {
   int exposure_time_min;
   int exposure_time_max;
   float ef_filtered;
-
-  mat3 transform;
 
   int device_iommu;
   int cdm_iommu;
@@ -57,7 +43,6 @@ typedef struct CameraState {
 
   int camera_num;
 
-  VisionBuf *bufs;
 
   uint32_t session_handle;
 
@@ -78,6 +63,7 @@ typedef struct CameraState {
 
   struct cam_req_mgr_session_info req_mgr_session_info;
 
+  CameraBuf buf;
 } CameraState;
 
 typedef struct MultiCameraState {
@@ -90,24 +76,14 @@ typedef struct MultiCameraState {
   CameraState rear;
   CameraState front;
   CameraState wide;
-#ifdef NOSCREEN
-  zsock_t *rgb_sock;
-#endif
 
   pthread_mutex_t isp_lock;
+
+  SubMaster *sm;
+  PubMaster *pm;
 } MultiCameraState;
 
-void cameras_init(MultiCameraState *s);
-void cameras_open(MultiCameraState *s, VisionBuf *camera_bufs_rear, VisionBuf *camera_bufs_focus, VisionBuf *camera_bufs_stats, VisionBuf *camera_bufs_front, VisionBuf *camera_bufs_wide);
+void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_id, cl_context ctx);
+void cameras_open(MultiCameraState *s);
 void cameras_run(MultiCameraState *s);
 void camera_autoexposure(CameraState *s, float grey_frac);
-#ifdef NOSCREEN
-void sendrgb(MultiCameraState *s, uint8_t* dat, int len, uint8_t cam_id);
-#endif
-
-#ifdef __cplusplus
-}  // extern "C"
-#endif
-
-#endif
-

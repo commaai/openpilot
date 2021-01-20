@@ -4,28 +4,28 @@ from common.basedir import BASEDIR
 
 
 class Spinner():
-  def __init__(self, noop=False):
-    # spinner is currently only implemented for android
-    self.spinner_proc = None
-    if not noop:
-      try:
-        self.spinner_proc = subprocess.Popen(["./spinner"],
-                                             stdin=subprocess.PIPE,
-                                             cwd=os.path.join(BASEDIR, "selfdrive", "ui", "spinner"),
-                                             close_fds=True)
-      except OSError:
-        self.spinner_proc = None
+  def __init__(self):
+    try:
+      self.spinner_proc = subprocess.Popen(["./spinner"],
+                                           stdin=subprocess.PIPE,
+                                           cwd=os.path.join(BASEDIR, "selfdrive", "ui"),
+                                           close_fds=True)
+    except OSError:
+      self.spinner_proc = None
 
   def __enter__(self):
     return self
 
-  def update(self, spinner_text):
+  def update(self, spinner_text: str):
     if self.spinner_proc is not None:
       self.spinner_proc.stdin.write(spinner_text.encode('utf8') + b"\n")
       try:
         self.spinner_proc.stdin.flush()
       except BrokenPipeError:
         pass
+
+  def update_progress(self, cur: int, total: int):
+    self.update(str(int(100 * cur / total)))
 
   def close(self):
     if self.spinner_proc is not None:

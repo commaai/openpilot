@@ -49,7 +49,7 @@ if __name__ == "__main__":
 
     if sm.updated['thermal']:
       t = sm['thermal']
-      last_temp = np.mean([t.cpu0, t.cpu1, t.cpu2, t.cpu3]) / 10.
+      last_temp = np.mean(t.cpu)
       last_mem = t.memUsedPercent
 
     if sm.updated['procLog']:

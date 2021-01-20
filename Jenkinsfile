@@ -34,6 +34,9 @@ pipeline {
     COMMA_JWT = credentials('athena-test-jwt')
     TEST_DIR = "/data/openpilot"
   }
+  options {
+      timeout(time: 1, unit: 'HOURS')
+  }
 
   stages {
 
@@ -107,10 +110,12 @@ pipeline {
                     CI_PUSH = "${env.BRANCH_NAME == 'master' ? 'master-ci' : ' '}"
                   }
                   steps {
-                    phone_steps("eon", [
+                    phone_steps("eon-build", [
+                      ["build", "SCONS_CACHE=1 scons -j4"],
+                      ["test athena", "nosetests -s selfdrive/athena/tests/test_athenad_old.py"],
+                      ["test manager", "python selfdrive/test/test_manager.py"],
+                      ["onroad tests", "cd selfdrive/test/ && ./test_onroad.py"],
                       ["build devel", "cd release && CI_PUSH=${env.CI_PUSH} ./build_devel.sh"],
-                      ["test openpilot", "nosetests -s selfdrive/test/test_openpilot.py"],
-                      ["test cpu usage", "cd selfdrive/test/ && ./test_cpu_usage.py"],
                       ["test car interfaces", "cd selfdrive/car/tests/ && ./test_car_interfaces.py"],
                       ["test spinner build", "cd selfdrive/ui/spinner && make clean && make"],
                       ["test text window build", "cd selfdrive/ui/text && make clean && make"],
@@ -121,7 +126,7 @@ pipeline {
                 stage('Replay Tests') {
                   steps {
                     phone_steps("eon2", [
-                      ["camerad/modeld replay", "cd selfdrive/test/process_replay && ./camera_replay.py"],
+                      ["camerad/modeld replay", "SCONS_CACHE=1 QCOM_REPLAY=1 scons -j4 && cd selfdrive/test/process_replay && ./camera_replay.py"],
                     ])
                   }
                 }
@@ -129,11 +134,12 @@ pipeline {
                 stage('HW + Unit Tests') {
                   steps {
                     phone_steps("eon", [
-                      ["build cereal", "SCONS_CACHE=1 scons -j4 cereal/"],
+                      ["build", "SCONS_CACHE=1 scons -j4"],
                       ["test sounds", "nosetests -s selfdrive/test/test_sounds.py"],
                       ["test boardd loopback", "nosetests -s selfdrive/boardd/tests/test_boardd_loopback.py"],
                       ["test loggerd", "CI=1 python selfdrive/loggerd/tests/test_loggerd.py"],
-                      //["test camerad", "CI=1 python selfdrive/camerad/test/test_camerad.py"], // wait for shelf refactor
+                      ["test encoder", "CI=1 python selfdrive/loggerd/tests/test_encoder.py"],
+                      //["test camerad", "CI=1 SEND_REAR=1 SEND_FRONT=1 python selfdrive/camerad/test/test_camerad.py"], // wait for shelf refactor
                       //["test updater", "python installer/updater/test_updater.py"],
                     ])
                   }

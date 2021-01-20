@@ -20,11 +20,11 @@ from websocket import ABNF, WebSocketTimeoutException, create_connection
 
 import cereal.messaging as messaging
 from cereal.services import service_list
-from common.hardware import HARDWARE
 from common.api import Api
 from common.basedir import PERSIST
 from common.params import Params
 from common.realtime import sec_since_boot
+from selfdrive.hardware import HARDWARE
 from selfdrive.loggerd.config import ROOT
 from selfdrive.swaglog import cloudlog
 
@@ -222,6 +222,11 @@ def getSimInfo():
 
 
 @dispatcher.add_method
+def getNetworkType():
+  return HARDWARE.get_network_type()
+
+
+@dispatcher.add_method
 def takeSnapshot():
   from selfdrive.camerad.snapshot.snapshot import snapshot, jpeg_write
   ret = snapshot()
@@ -274,6 +279,8 @@ def ws_proxy_send(ws, local_sock, signal_sock, end_event):
     except Exception:
       cloudlog.exception("athenad.ws_proxy_send.exception")
       end_event.set()
+
+  signal_sock.close()
 
 
 def ws_recv(ws, end_event):

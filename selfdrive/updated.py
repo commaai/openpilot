@@ -34,16 +34,16 @@ import threading
 from pathlib import Path
 from typing import List, Tuple, Optional
 
-from common.hardware import ANDROID, TICI
 from common.basedir import BASEDIR
 from common.params import Params
+from selfdrive.hardware import EON, TICI, HARDWARE
 from selfdrive.swaglog import cloudlog
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
+from selfdrive.hardware.tici.agnos import flash_agnos_update
 
 LOCK_FILE = os.getenv("UPDATER_LOCK_FILE", "/tmp/safe_staging_overlay.lock")
 STAGING_ROOT = os.getenv("UPDATER_STAGING_ROOT", "/data/safe_staging")
 
-NEOS_VERSION = os.getenv("UPDATER_NEOS_VERSION", "/VERSION")
 NEOSUPDATE_DIR = os.getenv("UPDATER_NEOSUPDATE_DIR", "/data/neoupdate")
 
 OVERLAY_UPPER = os.path.join(STAGING_ROOT, "upper")
@@ -210,19 +210,27 @@ def finalize_update() -> None:
     shutil.rmtree(FINALIZED)
   shutil.copytree(OVERLAY_MERGED, FINALIZED, symlinks=True)
 
-  # Log git repo corruption
-  fsck = run(["git", "fsck", "--no-progress"], FINALIZED).rstrip()
-  if len(fsck):
-    cloudlog.error(f"found git corruption, git fsck:\n{fsck}")
-
   set_consistent_flag(True)
   cloudlog.info("done finalizing overlay")
 
 
-def handle_neos_update(wait_helper: WaitTimeHelper) -> None:
-  with open(NEOS_VERSION, "r") as f:
-    cur_neos = f.read().strip()
+def handle_agnos_update(wait_helper):
+  cur_version = HARDWARE.get_os_version()
+  updated_version = run(["bash", "-c", r"unset AGNOS_VERSION && source launch_env.sh && \
+                          echo -n $AGNOS_VERSION"], OVERLAY_MERGED).strip()
 
+  cloudlog.info(f"AGNOS version check: {cur_version} vs {updated_version}")
+  if cur_version == updated_version:
+    return
+
+  cloudlog.info(f"Beginning background installation for AGNOS {updated_version}")
+
+  manifest_path = os.path.join(OVERLAY_MERGED, "installer/updater/update_agnos.json")
+  flash_agnos_update(manifest_path, cloudlog)
+
+
+def handle_neos_update(wait_helper: WaitTimeHelper) -> None:
+  cur_neos = HARDWARE.get_os_version()
   updated_neos = run(["bash", "-c", r"unset REQUIRED_NEOS_VERSION && source launch_env.sh && \
                        echo -n $REQUIRED_NEOS_VERSION"], OVERLAY_MERGED).strip()
 
@@ -297,8 +305,10 @@ def fetch_update(wait_helper: WaitTimeHelper) -> bool:
       ]
       cloudlog.info("git reset success: %s", '\n'.join(r))
 
-      if ANDROID:
+      if EON:
         handle_neos_update(wait_helper)
+      elif TICI:
+        handle_agnos_update(wait_helper)
 
     # Create the finalized, ready-to-swap update
     finalize_update()
@@ -315,7 +325,11 @@ def main():
   if params.get("DisableUpdates") == b"1":
     raise RuntimeError("updates are disabled by the DisableUpdates param")
 
-  if ANDROID and os.geteuid() != 0:
+  # TODO: remove this after next release
+  if EON and "letv" not in open("/proc/cmdline").read():
+    raise RuntimeError("updates are disabled due to device deprecation")
+
+  if EON and os.geteuid() != 0:
     raise RuntimeError("updated must be launched as root!")
 
   # Set low io priority
@@ -392,6 +406,7 @@ def main():
     wait_helper.sleep(60)
 
   dismount_overlay()
+
 
 if __name__ == "__main__":
   main()

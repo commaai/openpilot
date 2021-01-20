@@ -3,32 +3,35 @@ lenv = env.Clone()
 
 libs = [cereal, messaging, common, 'OpenCL', 'SNPE', 'symphony-cpu', 'capnp', 'zmq', 'kj', 'yuv', gpucommon, visionipc]
 
-TEST_THNEED = False
-
 common_src = [
-  "models/commonmodel.c",
+  "models/commonmodel.cc",
   "runners/snpemodel.cc",
-  "transforms/loadyuv.c",
-  "transforms/transform.c"
+  "transforms/loadyuv.cc",
+  "transforms/transform.cc"
 ]
 
-if arch == "aarch64":
-  libs += ['gsl', 'CB', 'gnustl_shared']
-  if not TEST_THNEED:
-    common_src += ["thneed/thneed.cc"]
-    lenv['CFLAGS'].append("-DUSE_THNEED")
-    lenv['CXXFLAGS'].append("-DUSE_THNEED")
-elif arch == "larch64":
-  libs += ['gsl', 'CB', 'pthread']
+thneed_src = [
+  "thneed/thneed.cc",
+  "thneed/serialize.cc",
+  "runners/thneedmodel.cc",
+]
+
+if arch == "aarch64" or arch == "larch64":
+  libs += ['gsl', 'CB']
+  libs += ['gnustl_shared'] if arch == "aarch64" else ['pthread', 'dl']
+
+  common_src += thneed_src
+  lenv['CFLAGS'].append("-DUSE_THNEED")
+  lenv['CXXFLAGS'].append("-DUSE_THNEED")
 else:
   libs += ['pthread']
 
-  # for tensorflow support
-  common_src += ['runners/tfmodel.cc']
+  # for onnx support
+  common_src += ['runners/onnxmodel.cc']
 
-  # tell runners to use tensorflow
-  lenv['CFLAGS'].append("-DUSE_TF_MODEL")
-  lenv['CXXFLAGS'].append("-DUSE_TF_MODEL")
+  # tell runners to use onnx
+  lenv['CFLAGS'].append("-DUSE_ONNX_MODEL")
+  lenv['CXXFLAGS'].append("-DUSE_ONNX_MODEL")
 
   if arch == "Darwin":
     # fix OpenCL
@@ -40,20 +43,23 @@ else:
     del libs[libs.index('symphony-cpu')]
     del common_src[common_src.index('runners/snpemodel.cc')]
 
-common = lenv.Object(common_src)
+common_model = lenv.Object(common_src)
+
+# build thneed model
+if arch == "aarch64" or arch == "larch64":
+  compiler = lenv.Program('thneed/compile', ["thneed/compile.cc" ]+common_model, LIBS=libs)
+  cmd = f"cd {Dir('.').get_abspath()} && {compiler[0].get_abspath()} ../../models/supercombo.dlc ../../models/supercombo.thneed --binary"
+  snpe_path = "/data/pythonpath/phonelibs/snpe/"+arch
+  cenv = Environment(ENV = {'LD_LIBRARY_PATH' : snpe_path+":"+lenv["ENV"]["LD_LIBRARY_PATH"]})
+  cenv.Command("../../models/supercombo.thneed", ["../../models/supercombo.dlc", compiler], cmd)
 
 lenv.Program('_dmonitoringmodeld', [
     "dmonitoringmodeld.cc",
     "models/dmonitoring.cc",
-  ]+common, LIBS=libs)
+  ]+common_model, LIBS=libs)
 
 lenv.Program('_modeld', [
     "modeld.cc",
     "models/driving.cc",
-  ]+common, LIBS=libs)
-
-if TEST_THNEED:
-  lenv.Program('thneed/debug/_thneed', [
-      "thneed/thneed.cc", "thneed/debug/test.cc"
-    ]+common, LIBS=libs)
+  ]+common_model, LIBS=libs)
 

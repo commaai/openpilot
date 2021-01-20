@@ -3,14 +3,17 @@ import pygame  # pylint: disable=import-error
 import cv2  # pylint: disable=import-error
 
 class Window():
-  def __init__(self, w, h, caption="window", double=False):
+  def __init__(self, w, h, caption="window", double=False, halve=False):
     self.w = w
     self.h = h
     pygame.display.init()
     pygame.display.set_caption(caption)
     self.double = double
+    self.halve = halve
     if self.double:
       self.screen = pygame.display.set_mode((w*2, h*2))
+    elif self.halve:
+      self.screen = pygame.display.set_mode((w//2, h//2))
     else:
       self.screen = pygame.display.set_mode((w, h))
 
@@ -18,6 +21,9 @@ class Window():
     pygame.event.pump()
     if self.double:
       out2 = cv2.resize(out, (self.w*2, self.h*2))
+      pygame.surfarray.blit_array(self.screen, out2.swapaxes(0, 1))
+    elif self.halve:
+      out2 = cv2.resize(out, (self.w//2, self.h//2))
       pygame.surfarray.blit_array(self.screen, out2.swapaxes(0, 1))
     else:
       pygame.surfarray.blit_array(self.screen, out.swapaxes(0, 1))

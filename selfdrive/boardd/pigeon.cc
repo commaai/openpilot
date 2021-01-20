@@ -6,6 +6,7 @@
 
 #include "common/swaglog.h"
 #include "common/gpio.h"
+#include "common/util.h"
 
 #include "pigeon.h"
 
@@ -32,27 +33,27 @@ Pigeon * Pigeon::connect(const char * tty){
 }
 
 void Pigeon::init() {
-  usleep(1000*1000);
+  util::sleep_for(1000);
   LOGW("panda GPS start");
 
   // power off pigeon
-  set_power(0);
-  usleep(100*1000);
+  set_power(false);
+  util::sleep_for(100);
 
   // 9600 baud at init
   set_baud(9600);
 
   // power on pigeon
-  set_power(1);
-  usleep(500*1000);
+  set_power(true);
+  util::sleep_for(500);
 
   // baud rate upping
   send("\x24\x50\x55\x42\x58\x2C\x34\x31\x2C\x31\x2C\x30\x30\x30\x37\x2C\x30\x30\x30\x33\x2C\x34\x36\x30\x38\x30\x30\x2C\x30\x2A\x31\x35\x0D\x0A"s);
-  usleep(100*1000);
+  util::sleep_for(100);
 
   // set baud rate to 460800
   set_baud(460800);
-  usleep(100*1000);
+  util::sleep_for(100);
 
   // init from ubloxd
   // To generate this data, run test/ubloxd.py with the print statements enabled in the write function in panda/python/serial.py
