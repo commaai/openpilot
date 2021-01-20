@@ -1,8 +1,7 @@
 name: openpilot tests
 on:
-  #schedule:
-  #  - cron: '0 * * * *'
-  push:
+  schedule:
+    - cron: '0 * * * *'
 
 env:
   BASE_IMAGE: openpilot-base
@@ -18,7 +17,7 @@ jobs:
   build_prebuilt:
     name: build prebuilt
     runs-on: ubuntu-20.04
-    timeout-minutes: 50
+    timeout-minutes: 60
     if: github.repository == 'commaai/openpilot'
     env:
       IMAGE_NAME: openpilot-prebuilt
@@ -27,7 +26,7 @@ jobs:
       uses: lewagon/wait-on-check-action@v0.2
       with:
         ref: master
-        wait-interval: 600
+        wait-interval: 20
     - uses: actions/checkout@v2
       with:
         submodules: true
