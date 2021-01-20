@@ -81,7 +81,8 @@ int ioctl(int filedes, unsigned long request, void *argp) {
       }
 
       if (thneed->record & THNEED_RECORD) {
-        thneed->syncobjs.push_back(string((char *)objs, sizeof(struct kgsl_gpuobj_sync_obj)*cmd->count));
+        thneed->cmds.push_back(unique_ptr<CachedSync>(new
+              CachedSync(thneed, string((char *)objs, sizeof(struct kgsl_gpuobj_sync_obj)*cmd->count))));
       }
     } else if (request == IOCTL_KGSL_DEVICE_WAITTIMESTAMP_CTXTID) {
       struct kgsl_device_waittimestamp_ctxtid *cmd = (struct kgsl_device_waittimestamp_ctxtid *)argp;
@@ -100,6 +101,14 @@ int ioctl(int filedes, unsigned long request, void *argp) {
             hexdump((uint32_t *)constraint->data, constraint->size);
           }
         }
+      }
+    } else if (request == IOCTL_KGSL_DRAWCTXT_CREATE || request == IOCTL_KGSL_DRAWCTXT_DESTROY) {
+      // this happens
+    } else if (request == IOCTL_KGSL_GPUOBJ_ALLOC || request == IOCTL_KGSL_GPUOBJ_FREE) {
+      // this happens
+    } else {
+      if (thneed->record & THNEED_DEBUG) {
+        printf("other ioctl %lx\n", request);
       }
     }
   }
@@ -137,6 +146,19 @@ void *GPUMalloc::alloc(int size) {
   remaining -= size;
   base += size;
   return ret;
+}
+
+// *********** CachedSync, at the ioctl layer ***********
+
+void CachedSync::exec(bool wait) {
+  struct kgsl_gpuobj_sync cmd;
+
+  cmd.objs = (uint64_t)data.data();
+  cmd.obj_len = data.length();
+  cmd.count = data.length() / sizeof(struct kgsl_gpuobj_sync_obj);
+
+  int ret = ioctl(thneed->fd, IOCTL_KGSL_GPUOBJ_SYNC, &cmd);
+  assert(ret == 0);
 }
 
 // *********** CachedCommand, at the ioctl layer ***********
@@ -225,40 +247,49 @@ void Thneed::stop() {
 }
 
 void Thneed::find_inputs_outputs() {
-  inputs.clear();
-  output = NULL;
+  cl_int err;
+  if (inputs.size() > 0) return;
 
   // save the global inputs/outputs
   for (auto &k : kq) {
     for (int i = 0; i < k->num_args; i++) {
       if (k->name == "zero_pad_image_float" && k->arg_names[i] == "input") {
-        inputs.push_back(*(cl_mem*)(k->args[i].data()));
+        cl_mem aa = *(cl_mem*)(k->args[i].data());
+
+        size_t sz;
+        clGetMemObjectInfo(aa, CL_MEM_SIZE, sizeof(sz), &sz, NULL);
+        input_sizes.push_back(sz);
+
+        void *ret = clEnqueueMapBuffer(command_queue, aa, CL_TRUE, CL_MAP_WRITE, 0, sz, 0, NULL, NULL, &err);
+        assert(err == CL_SUCCESS);
+        inputs.push_back(ret);
       }
 
       if (k->name == "image2d_to_buffer_float" && k->arg_names[i] == "output") {
-        output = *(cl_mem*)(k->args[i].data());
+        cl_mem aa = *(cl_mem*)(k->args[i].data());
+
+        size_t sz;
+        clGetMemObjectInfo(aa, CL_MEM_SIZE, sizeof(sz), &sz, NULL);
+        output_size = sz;
+
+        output = clEnqueueMapBuffer(command_queue, aa, CL_TRUE, CL_MAP_READ, 0, sz, 0, NULL, NULL, &err);
+        assert(err == CL_SUCCESS);
       }
     }
   }
 }
 
 void Thneed::copy_inputs(float **finputs) {
+  //cl_int ret;
   for (int idx = 0; idx < inputs.size(); ++idx) {
-    size_t sz;
-    clGetMemObjectInfo(inputs[idx], CL_MEM_SIZE, sizeof(sz), &sz, NULL);
-
-    if (record & THNEED_DEBUG) printf("copying %lu -- %p -> %p\n", sz, finputs[idx], inputs[idx]);
-    // TODO: This shouldn't have to block
-    clEnqueueWriteBuffer(command_queue, inputs[idx], CL_TRUE, 0, sz, finputs[idx], 0, NULL, NULL);
+    if (record & THNEED_DEBUG) printf("copying %lu -- %p -> %p\n", input_sizes[idx], finputs[idx], inputs[idx]);
+    memcpy(inputs[idx], finputs[idx], input_sizes[idx]);
   }
 }
 
 void Thneed::copy_output(float *foutput) {
   if (output != NULL) {
-    size_t sz;
-    clGetMemObjectInfo(output, CL_MEM_SIZE, sizeof(sz), &sz, NULL);
-    if (record & THNEED_DEBUG) printf("copying %lu for output %p -> %p\n", sz, output, foutput);
-    clEnqueueReadBuffer(command_queue, output, CL_TRUE, 0, sz, foutput, 0, NULL, NULL);
+    memcpy(foutput, output, output_size);
   } else {
     printf("CAUTION: model output is NULL, does it have no outputs?\n");
   }
@@ -297,18 +328,6 @@ void Thneed::execute(float **finputs, float *foutput, bool slow) {
     it->exec((i == cmds.size()) || slow);
   }
 
-  // ****** sync objects
-  for (auto &it : syncobjs) {
-    struct kgsl_gpuobj_sync cmd;
-
-    cmd.objs = (uint64_t)it.data();
-    cmd.obj_len = it.length();
-    cmd.count = it.length() / sizeof(struct kgsl_gpuobj_sync_obj);
-
-    ret = ioctl(fd, IOCTL_KGSL_GPUOBJ_SYNC, &cmd);
-    assert(ret == 0);
-  }
-
   // ****** copy outputs
   copy_output(foutput);
 
@@ -343,7 +362,7 @@ void Thneed::clinit() {
   assert(err == 0);
 
   //cl_command_queue_properties props[3] = {CL_QUEUE_PROPERTIES, CL_QUEUE_PROFILING_ENABLE, 0};
-  cl_command_queue_properties props[3] = {CL_QUEUE_PROPERTIES, 0,  0};
+  cl_command_queue_properties props[3] = {CL_QUEUE_PROPERTIES, 0, 0};
   command_queue = clCreateCommandQueueWithProperties(context, device_id, props, &err);
   assert(err == 0);
 

@@ -63,12 +63,26 @@ class CLQueuedKernel {
     Thneed *thneed;
 };
 
-class CachedCommand {
+class CachedIoctl {
+  public:
+    virtual void exec(bool wait) {}
+};
+
+class CachedSync: public CachedIoctl {
+  public:
+    CachedSync(Thneed *lthneed, string ldata) { thneed = lthneed; data = ldata; }
+    void exec(bool wait);
+  private:
+    Thneed *thneed;
+    string data;
+};
+
+class CachedCommand: public CachedIoctl {
   public:
     CachedCommand(Thneed *lthneed, struct kgsl_gpu_command *cmd);
     void exec(bool wait);
-    void disassemble(int cmd_index);
   private:
+    void disassemble(int cmd_index);
     struct kgsl_gpu_command cache;
     unique_ptr<kgsl_command_object[]> cmds;
     unique_ptr<kgsl_command_object[]> objs;
@@ -83,8 +97,11 @@ class Thneed {
     void execute(float **finputs, float *foutput, bool slow=false);
     int optimize();
 
-    vector<cl_mem> inputs;
-    cl_mem output = NULL;
+    vector<void *> inputs;
+    vector<size_t> input_sizes;
+
+    void *output = NULL;
+    size_t output_size;
 
     cl_context context = NULL;
     cl_command_queue command_queue;
@@ -95,7 +112,7 @@ class Thneed {
     int record;
     int timestamp;
     unique_ptr<GPUMalloc> ram;
-    vector<unique_ptr<CachedCommand> > cmds;
+    vector<unique_ptr<CachedIoctl> > cmds;
     vector<string> syncobjs;
     int fd;
 
