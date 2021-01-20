@@ -157,7 +157,7 @@ void HomeWindow::setVisibility(bool offroad) {
 }
 
 void HomeWindow::mousePressEvent(QMouseEvent* e) {
-  UIState* ui_state = &glWindow->ui_state;
+  UIState* ui_state = glWindow->ui_state.get();
 
   glWindow->wake();
 
@@ -220,7 +220,7 @@ void GLWindow::initializeGL() {
   std::cout << "OpenGL renderer: " << glGetString(GL_RENDERER) << std::endl;
   std::cout << "OpenGL language version: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
 
-  ui_state = new UIState(new QtSound());
+  ui_state = std::make_unique<UIState>(new QtSound());
 
   wake();
 
@@ -233,11 +233,11 @@ void GLWindow::backlightUpdate() {
   // Update brightness
   float k = (BACKLIGHT_DT / BACKLIGHT_TS) / (1.0f + BACKLIGHT_DT / BACKLIGHT_TS);
 
-  float clipped_brightness = std::min(1023.0f, (ui_state.light_sensor * brightness_m) + brightness_b);
+  float clipped_brightness = std::min(1023.0f, (ui_state->light_sensor * brightness_m) + brightness_b);
   smooth_brightness = clipped_brightness * k + smooth_brightness * (1.0f - k);
   int brightness = smooth_brightness;
 
-  if (!ui_state.awake) {
+  if (!ui_state->awake) {
     brightness = 0;
   }
 
@@ -246,12 +246,12 @@ void GLWindow::backlightUpdate() {
 
 void GLWindow::timerUpdate() {
   // Connecting to visionIPC requires opengl to be current
-  if (!ui_state.vipc_client->connected){
+  if (!ui_state->vipc_client->connected){
     makeCurrent();
   }
 
-  if (ui_state.started != onroad) {
-    onroad = ui_state.started;
+  if (ui_state->started != onroad) {
+    onroad = ui_state->started;
     emit offroadTransition(!onroad);
 
     // Change timeout to 0 when onroad, this will call timerUpdate continously.
@@ -259,9 +259,9 @@ void GLWindow::timerUpdate() {
     timer->start(onroad ? 0 : 1000 / UI_FREQ);
   }
 
-  handle_display_state(&ui_state, false);
+  handle_display_state(ui_state.get(), false);
 
-  ui_update(&ui_state);
+  ui_update(ui_state.get());
   repaint();
 }
 
@@ -286,7 +286,7 @@ void GLWindow::paintGL() {
 }
 
 void GLWindow::wake() {
-  handle_display_state(&ui_state, true);
+  handle_display_state(ui_state.get(), true);
 }
 
 FrameBuffer::FrameBuffer(const char *name, uint32_t layer, int alpha, int *out_w, int *out_h) {

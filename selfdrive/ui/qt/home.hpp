@@ -9,7 +9,6 @@
 #include <QStackedWidget>
 #include <QTimer>
 #include <QWidget>
-
 #include "qt_sound.hpp"
 #include "ui/ui.hpp"
 #include "widgets/offroad_alerts.hpp"
@@ -24,7 +23,7 @@ public:
   void wake();
   ~GLWindow();
 
-  inline static UIState ui_state = {0};
+  inline static std::unique_ptr<UIState> ui_state;
 
 signals:
   void offroadTransition(bool offroad);
