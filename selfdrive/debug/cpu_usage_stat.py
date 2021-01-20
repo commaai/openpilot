@@ -98,20 +98,19 @@ if __name__ == "__main__":
     if i % interval_int == 0:
       l = []
       for k, stat in stats.items():
-        if len(stat['cpu_samples']) <= 0:
-          continue
-        for name, samples in stat['cpu_samples'].items():
-          samples = np.array(samples)
-          avg = samples.mean()
-          c = samples.size
-          min_cpu = np.amin(samples)
-          max_cpu = np.amax(samples)
-          if stat['min'][name] is None or min_cpu < stat['min'][name]:
-            stat['min'][name] = min_cpu
-          if stat['max'][name] is None or max_cpu > stat['max'][name]:
-            stat['max'][name] = max_cpu
-          stat['avg'][name] = (stat['avg'][name] * (i - c) + avg * c) / (i)
-          stat['cpu_samples'][name] = []
+        if len(stat['cpu_samples']) > 0:
+          for name, samples in stat['cpu_samples'].items():
+            samples = np.array(samples)
+            avg = samples.mean()
+            c = samples.size
+            min_cpu = np.amin(samples)
+            max_cpu = np.amax(samples)
+            if stat['min'][name] is None or min_cpu < stat['min'][name]:
+              stat['min'][name] = min_cpu
+            if stat['max'][name] is None or max_cpu > stat['max'][name]:
+              stat['max'][name] = max_cpu
+            stat['avg'][name] = (stat['avg'][name] * (i - c) + avg * c) / (i)
+            stat['cpu_samples'][name] = []
 
         msg = 'avg: {1:.2%}, min: {2:.2%}, max: {3:.2%} {0}'.format(os.path.basename(k), stat['avg']['total'], stat['min']['total'], stat['max']['total'])
         if args.detailed_times:
