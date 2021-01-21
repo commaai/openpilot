@@ -32,11 +32,6 @@
 
 #define UI_BUF_COUNT 4
 #define YUV_COUNT 40
-#define LOG_CAMERA_ID_FCAMERA 0
-#define LOG_CAMERA_ID_DCAMERA 1
-#define LOG_CAMERA_ID_ECAMERA 2
-#define LOG_CAMERA_ID_QCAMERA 3
-#define LOG_CAMERA_ID_MAX 4
 
 const bool env_send_front = getenv("SEND_FRONT") != NULL;
 const bool env_send_rear = getenv("SEND_REAR") != NULL;
@@ -53,7 +48,15 @@ typedef struct CameraInfo {
   bool hdr;
 } CameraInfo;
 
+enum LOG_CAMERA_ID {
+  F_CAMERA,
+  D_CAMERA,
+  E_CAMERA,
+  Q_CAMEERA
+};
+
 typedef struct LogCameraInfo {
+  LOG_CAMERA_ID id;
   const char* filename;
   const char* frame_packet_name;
   const char* encode_idx_name;
