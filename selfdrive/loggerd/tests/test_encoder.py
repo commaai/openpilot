@@ -4,7 +4,6 @@ import os
 import random
 import shutil
 import subprocess
-import threading
 import time
 import unittest
 from parameterized import parameterized
@@ -70,7 +69,6 @@ class TestEncoder(unittest.TestCase):
     num_segments = random.randint(80, 150)
     if "CI" in os.environ:
       num_segments = random.randint(15, 20) # ffprobe is slow on comma two
-    num_segments = 500
 
     # wait for loggerd to make the dir for first segment
     route_prefix_path = None
@@ -107,23 +105,12 @@ class TestEncoder(unittest.TestCase):
                         f"{camera} failed frame count check: expected {expected_frames}, got {frame_count}")
       shutil.rmtree(f"{route_prefix_path}--{i}")
 
-    def join(ts, timeout):
-      for t in ts:
-        t.join(timeout)
-
-    threads = []
     for i in trange(num_segments):
       # poll for next segment
       with Timeout(int(SEGMENT_LENGTH*2), error_msg=f"timed out waiting for segment {i}"):
         while int(self._get_latest_segment_path().rsplit("--", 1)[1]) <= i:
           time.sleep(0.1)
-      t = threading.Thread(target=check_seg, args=(i, ))
-      t.start()
-      threads.append(t)
-      join(threads, 0.1)
-
-    with Timeout(20):
-      join(threads, None)
+      check_seg(i)
 
 if __name__ == "__main__":
   unittest.main()

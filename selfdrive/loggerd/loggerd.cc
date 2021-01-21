@@ -243,7 +243,7 @@ void encoder_thread(int cam_idx) {
           // wait for all to start rotating
           rotate_state.rotating = true;
           for(auto &r : s.rotate_state) {
-             while(r.enabled && !r.rotating && !do_exit) util::sleep_for(20);
+             while(r.enabled && !r.rotating && !do_exit) util::sleep_for(5);
           }
 
           pthread_mutex_lock(&s.rotate_lock);
@@ -256,7 +256,7 @@ void encoder_thread(int cam_idx) {
 
           // wait for all to finish rotating
           for(auto &r : s.rotate_state) {
-             while(r.enabled && r.cur_seg != s.rotate_segment && !do_exit) util::sleep_for(20);
+             while(r.enabled && r.cur_seg != s.rotate_segment && !do_exit) util::sleep_for(5);
           }
           rotate_state.rotating = false;
           rotate_state.finish_rotate();
