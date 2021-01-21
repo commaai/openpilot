@@ -76,7 +76,7 @@ Networking::Networking(QWidget* parent){
   // Update network status
   QTimer* timer = new QTimer(this);
   QObject::connect(timer, SIGNAL(timeout()), this, SLOT(refresh()));
-  timer->start(2000);
+  timer->start(5000);
   
   setStyleSheet(R"(
     QPushButton {
@@ -140,6 +140,7 @@ void Networking::successfulConnection(QString ssid) {
 void Networking::sidebarChange(){
   s->setCurrentIndex(1);
   an->s->setCurrentIndex(1);
+  refresh();
 }
 
 QFrame* hline(QWidget* parent = 0){
@@ -188,7 +189,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   tetheringPassword->addWidget(new QLabel("Edit tethering password", this), 1);
   editPasswordButton = new QPushButton("EDIT", this);
   editPasswordButton->setFixedWidth(500);
-  connect(editPasswordButton, &QPushButton::released, [=](){s->setCurrentIndex(0);});
+  connect(editPasswordButton, &QPushButton::released, [=](){inputField->setPromptText("Enter the new hotspot password"); s->setCurrentIndex(0);});
   tetheringPassword->addWidget(editPasswordButton, 1, Qt::AlignRight);
   vlayout->addWidget(layoutToWidget(tetheringPassword, this), 0);
   vlayout->addWidget(hline(this), 0);
@@ -265,7 +266,6 @@ void AdvancedNetworking::abortTextInput(){
 
 WifiUI::WifiUI(QWidget *parent, int page_length, WifiManager* wifi) : QWidget(parent), networks_per_page(page_length), wifi(wifi) {
   vlayout = new QVBoxLayout;
-  setLayout(vlayout);
 
   // Scan on startup
   QLabel *scanning = new QLabel("Scanning for networks");
@@ -273,8 +273,8 @@ WifiUI::WifiUI(QWidget *parent, int page_length, WifiManager* wifi) : QWidget(pa
   vlayout->addWidget(scanning, 0, Qt::AlignCenter);
   vlayout->setSpacing(25);
 
+  setLayout(vlayout);
   page = 0;
-  refresh();
 }
 
 void WifiUI::refresh() {
@@ -293,7 +293,11 @@ void WifiUI::refresh() {
     if (page * networks_per_page <= i && i < (page + 1) * networks_per_page) {
       // SSID
       hlayout->addSpacing(50);
-      hlayout->addWidget(new QLabel(QString::fromUtf8(network.ssid)));
+      QString ssid = QString::fromUtf8(network.ssid);
+      if(ssid.length() > 20){
+        ssid = ssid.left(20)+"…";
+      }
+      hlayout->addWidget(new QLabel(ssid));
 
       // strength indicator
       unsigned int strength_scale = network.strength / 17;
@@ -318,7 +322,7 @@ void WifiUI::refresh() {
       w->setLayout(hlayout);
       vlayout->addWidget(w);
       // Don't add the last line
-      if (page * networks_per_page <= i+1 && i+1 < (page + 1) * networks_per_page) {
+      if (page * networks_per_page <= i+1 && i+1 < (page + 1) * networks_per_page && i+1 < wifi->seen_networks.size()) {
         vlayout->addWidget(hline(this));
       }
       countWidgets++;
