@@ -15,13 +15,8 @@ EventName = car.CarEvent.EventName
 HwType = log.HealthData.HwType
 
 
-<<<<<<< HEAD
-def get_startup_event(car_recognized, controller_available):
-  if (comma_remote or vw_community_remote) and tested_branch:
-=======
 def get_startup_event(car_recognized, controller_available, hw_type):
-  if comma_remote and tested_branch:
->>>>>>> 6c579cd6... Revert "grey panda is unsupported"
+  if (comma_remote or vw_community_remote) and tested_branch:
     event = EventName.startup
   else:
     event = EventName.startupMaster
