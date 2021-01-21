@@ -95,16 +95,17 @@ class CarInterface(CarInterfaceBase):
     # Determine installed network location: take a manually forced setting if
     # present, otherwise assume camera for C2/BP and gateway for white/grey Panda.
     # TODO: autodetect C2/BP gateway-side installation based on convenience/powertrain on CAN1
-    params = Params()
-    manual_network_location = params.get("ForceNetworkLocation", encoding='utf8')
-    if manual_network_location == "camera":
-      ret.networkLocation = NWL.fwdCamera
-    elif manual_network_location == "gateway":
-      ret.networkLocation = NWL.gateway
-    elif has_relay:
-      ret.networkLocation = NWL.fwdCamera
-    else:
-      ret.networkLocation = NWL.gateway
+    #params = Params()
+    #manual_network_location = params.get("ForceNetworkLocation", encoding='utf8')
+    #if manual_network_location == "camera":
+    #  ret.networkLocation = NWL.fwdCamera
+    #elif manual_network_location == "gateway":
+    #  ret.networkLocation = NWL.gateway
+    #elif has_relay:
+    #  ret.networkLocation = NWL.fwdCamera
+    #else:
+    #  ret.networkLocation = NWL.gateway
+    ret.networkLocation = NWL.gateway
 
     cloudlog.warning("Detected safety model: %s", ret.safetyModel)
     cloudlog.warning("Detected network location: %s", ret.networkLocation)
