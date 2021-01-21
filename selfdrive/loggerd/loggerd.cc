@@ -108,9 +108,11 @@ public:
   SubSocket* fpkt_sock;
   uint32_t stream_frame_id, log_frame_id, last_rotate_frame_id;
   bool enabled, should_rotate, initialized;
+  std::atomic<bool> rotating;
+  std::atomic<int> cur_seg;
 
   RotateState() : fpkt_sock(nullptr), stream_frame_id(0), log_frame_id(0),
-                  last_rotate_frame_id(UINT32_MAX), enabled(false), should_rotate(false), initialized(false) {};
+                  last_rotate_frame_id(UINT32_MAX), enabled(false), should_rotate(false), initialized(false), rotating(false), cur_seg(-1) {};
 
   void waitLogThread() {
     std::unique_lock<std::mutex> lk(fid_lock);
@@ -232,17 +234,31 @@ void encoder_thread(int cam_idx) {
             rotate_state.initialized = true;
           }
 
+          // get new logger handle for new segment
           if (lh) {
             lh_close(lh);
           }
           lh = logger_get_handle(&s.logger);
+
+          // wait for all to start rotating
+          rotate_state.rotating = true;
+          for(auto &r : s.rotate_state) {
+             while(r.enabled && !r.rotating && !do_exit) util::sleep_for(5);
+          }
 
           pthread_mutex_lock(&s.rotate_lock);
           for (auto &e : encoders) {
             e->encoder_close();
             e->encoder_open(s.segment_path, s.rotate_segment);
           }
+          rotate_state.cur_seg = s.rotate_segment;
           pthread_mutex_unlock(&s.rotate_lock);
+
+          // wait for all to finish rotating
+          for(auto &r : s.rotate_state) {
+             while(r.enabled && r.cur_seg != s.rotate_segment && !do_exit) util::sleep_for(5);
+          }
+          rotate_state.rotating = false;
           rotate_state.finish_rotate();
         }
       }
