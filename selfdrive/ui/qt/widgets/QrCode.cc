@@ -349,7 +349,7 @@ QrCode::QrCode(int ver, Ecc ecl, const vector<uint8_t> &dataCodewords, int msk) 
 			applyMask(i);  // Undoes the mask due to XOR
 		}
 	}
-	if (msk < 0 || msk > 7)
+	if (msk < 0 || msk > 7)//lgtm [cpp/constant-comparison]
 		throw std::logic_error("Assertion error");
 	this->mask = msk;
 	applyMask(msk);  // Apply the final choice of mask
@@ -635,12 +635,12 @@ long QrCode::getPenaltyScore() const {
 			} else {
 				finderPenaltyAddHistory(runX, runHistory);
 				if (!runColor)
-					result += finderPenaltyCountPatterns(runHistory) * PENALTY_N3;
+					result += finderPenaltyCountPatterns(runHistory) * PENALTY_N3;//lgtm [cpp/integer-multiplication-cast-to-long]
 				runColor = module(x, y);
 				runX = 1;
 			}
 		}
-		result += finderPenaltyTerminateAndCount(runColor, runX, runHistory) * PENALTY_N3;
+		result += finderPenaltyTerminateAndCount(runColor, runX, runHistory) * PENALTY_N3;//lgtm [cpp/integer-multiplication-cast-to-long]
 	}
 	// Adjacent modules in column having same color, and finder-like patterns
 	for (int x = 0; x < size; x++) {
@@ -657,12 +657,12 @@ long QrCode::getPenaltyScore() const {
 			} else {
 				finderPenaltyAddHistory(runY, runHistory);
 				if (!runColor)
-					result += finderPenaltyCountPatterns(runHistory) * PENALTY_N3;
+					result += finderPenaltyCountPatterns(runHistory) * PENALTY_N3;//lgtm [cpp/integer-multiplication-cast-to-long]
 				runColor = module(x, y);
 				runY = 1;
 			}
 		}
-		result += finderPenaltyTerminateAndCount(runColor, runY, runHistory) * PENALTY_N3;
+		result += finderPenaltyTerminateAndCount(runColor, runY, runHistory) * PENALTY_N3;//lgtm [cpp/integer-multiplication-cast-to-long]
 	}
 	
 	// 2*2 blocks of modules having same color
