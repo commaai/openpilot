@@ -29,7 +29,7 @@ QWidget* layoutToWidget(QLayout* l, QWidget* parent){
 
 // Networking functions
 
-Networking::Networking(QWidget* parent){
+Networking::Networking(QWidget* parent) : QWidget(parent){
   try {
     wifi = new WifiManager(this);
   } catch (std::exception &e) {
@@ -45,7 +45,7 @@ Networking::Networking(QWidget* parent){
   connect(wifi, SIGNAL(successfulConnection(QString)), this, SLOT(successfulConnection(QString)));
   
 
-  s = new QStackedLayout(this);
+  s = new QStackedLayout;
 
   inputField = new InputField(this, 8);
   connect(inputField, SIGNAL(emitText(QString)), this, SLOT(receiveText(QString)));
@@ -93,6 +93,7 @@ Networking::Networking(QWidget* parent){
       background-color: #222222;
     }
   )");
+  setLayout(s):
 }
 
 void Networking::refresh(){
