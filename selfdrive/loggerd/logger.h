@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <pthread.h>
 #include <bzlib.h>
+#include <mutex>
 #include <kj/array.h>
 #include <capnp/serialize.h>
 
@@ -16,7 +17,7 @@ const std::string LOG_ROOT = util::getenv_default("HOME", "/.comma/media/0/reald
 #define LOGGER_MAX_HANDLES 16
 
 typedef struct LoggerHandle {
-  pthread_mutex_t lock;
+  std::mutex lock;
   int refcnt;
   char segment_path[4096];
   char log_path[4096];

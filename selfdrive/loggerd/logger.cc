@@ -195,49 +195,24 @@ static LoggerHandle* logger_open(LoggerState *s, const char* root_path) {
   if (err) return NULL;
 
   FILE* lock_file = fopen(h->lock_path, "wb");
-  if (lock_file == NULL) return NULL;
+  assert(lock_file != nullptr);
   fclose(lock_file);
 
+  int bzerror;
   h->log_file = fopen(h->log_path, "wb");
-  if (h->log_file == NULL) goto fail;
+  assert(h->log_file != nullptr);
+  h->bz_file = BZ2_bzWriteOpen(&bzerror, h->log_file, 9, 0, 30);
+  assert(bzerror == BZ_OK);
 
   if (s->has_qlog) {
     h->qlog_file = fopen(h->qlog_path, "wb");
-    if (h->qlog_file == NULL) goto fail;
-  }
-
-  int bzerror;
-  h->bz_file = BZ2_bzWriteOpen(&bzerror, h->log_file, 9, 0, 30);
-  if (bzerror != BZ_OK) goto fail;
-
-  if (s->has_qlog) {
+    assert(h->qlog_file != nullptr);
     h->bz_qlog = BZ2_bzWriteOpen(&bzerror, h->qlog_file, 9, 0, 30);
-    if (bzerror != BZ_OK) goto fail;
+    assert(bzerror == BZ_OK);
   }
 
-  pthread_mutex_init(&h->lock, NULL);
   h->refcnt++;
   return h;
-
-fail:
-  LOGE("logger failed to open files");
-  if (h->bz_file) {
-    BZ2_bzWriteClose(&bzerror, h->bz_file, 0, NULL, NULL);
-    h->bz_file = NULL;
-  }
-  if (h->bz_qlog) {
-    BZ2_bzWriteClose(&bzerror, h->bz_qlog, 0, NULL, NULL);
-    h->bz_qlog = NULL;
-  }
-  if (h->qlog_file) {
-    fclose(h->qlog_file);
-    h->qlog_file = NULL;
-  }
-  if (h->log_file) {
-    fclose(h->log_file);
-    h->log_file = NULL;
-  }
-  return NULL;
 }
 
 int logger_next(LoggerState *s, const char* root_path,
@@ -250,10 +225,6 @@ int logger_next(LoggerState *s, const char* root_path,
   s->part++;
 
   LoggerHandle* next_h = logger_open(s, root_path);
-  if (!next_h) {
-    pthread_mutex_unlock(&s->lock);
-    return -1;
-  }
 
   if (s->cur_handle) {
     lh_close(s->cur_handle);
@@ -279,9 +250,8 @@ LoggerHandle* logger_get_handle(LoggerState *s) {
   pthread_mutex_lock(&s->lock);
   LoggerHandle* h = s->cur_handle;
   if (h) {
-    pthread_mutex_lock(&h->lock);
+    std::lock_guard lk(h->lock);
     h->refcnt++;
-    pthread_mutex_unlock(&h->lock);
   }
   pthread_mutex_unlock(&s->lock);
   return h;
@@ -306,42 +276,34 @@ void logger_close(LoggerState *s) {
 }
 
 void lh_log(LoggerHandle* h, uint8_t* data, size_t data_size, bool in_qlog) {
-  pthread_mutex_lock(&h->lock);
+  std::lock_guard lk(h->lock);
   assert(h->refcnt > 0);
   int bzerror;
   BZ2_bzWrite(&bzerror, h->bz_file, data, data_size);
-
   if (in_qlog && h->bz_qlog != NULL) {
     BZ2_bzWrite(&bzerror, h->bz_qlog, data, data_size);
   }
-  pthread_mutex_unlock(&h->lock);
 }
 
 void lh_close(LoggerHandle* h) {
-  pthread_mutex_lock(&h->lock);
+  std::lock_guard lk(h->lock);
   assert(h->refcnt > 0);
   h->refcnt--;
   if (h->refcnt == 0) {
+    int bzerror;
     if (h->bz_file){
-      int bzerror;
       BZ2_bzWriteClose(&bzerror, h->bz_file, 0, NULL, NULL);
       h->bz_file = NULL;
+      fclose(h->log_file);
+      h->log_file = NULL;
     }
     if (h->bz_qlog){
-      int bzerror;
       BZ2_bzWriteClose(&bzerror, h->bz_qlog, 0, NULL, NULL);
       h->bz_qlog = NULL;
-    }
-    if (h->qlog_file) {
       fclose(h->qlog_file);
       h->qlog_file = NULL;
     }
-    fclose(h->log_file);
-    h->log_file = NULL;
     unlink(h->lock_path);
-    pthread_mutex_unlock(&h->lock);
-    pthread_mutex_destroy(&h->lock);
     return;
   }
-  pthread_mutex_unlock(&h->lock);
 }
