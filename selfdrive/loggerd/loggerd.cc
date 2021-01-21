@@ -167,7 +167,7 @@ struct LoggerdState {
   pthread_mutex_t rotate_lock;
   RotateState rotate_state[LOG_CAMERA_ID_MAX-1];
 };
-LoggerdState s;
+LoggerdState s = {};
 
 void encoder_thread(int cam_idx) {
   assert(cam_idx < LOG_CAMERA_ID_MAX-1);
