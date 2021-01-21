@@ -441,6 +441,9 @@ phonelibs/json11/json11.hpp
 
 phonelibs/qpoases/**
 
+phonelibs/qrcode/*.cc
+phonelibs/qrcode/*.hpp
+
 phonelibs/libyuv/include/**
 phonelibs/libyuv/lib/**
 
