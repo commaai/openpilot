@@ -197,7 +197,8 @@ QWidget * developer_panel() {
 }
 
 QWidget * network_panel(QWidget * parent) {
-  WifiUI *w = new WifiUI();
+  Networking *w = new Networking();
+  QObject::connect(parent, SIGNAL(sidebarPressed()), w, SLOT(sidebarChange()));
   QObject::connect(w, SIGNAL(openKeyboard()), parent, SLOT(closeSidebar()));
   QObject::connect(w, SIGNAL(closeKeyboard()), parent, SLOT(openSidebar()));
   return w;
@@ -261,6 +262,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
     sidebar_layout->addWidget(btn, 0, Qt::AlignRight | Qt::AlignTop);
     panel_layout->addWidget(panel.second);
     QObject::connect(btn, SIGNAL(released()), this, SLOT(setActivePanel()));
+    QObject::connect(btn, &QPushButton::released, [=](){emit sidebarPressed();});
   }
   qobject_cast<QPushButton *>(nav_btns->buttons()[0])->setChecked(true);
   sidebar_layout->addStretch();
@@ -301,9 +303,9 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
 }
 
 void SettingsWindow::closeSidebar() {
-  sidebar_widget->setVisible(false);
+  sidebar_widget->setFixedWidth(0);
 }
 
 void SettingsWindow::openSidebar() {
-  sidebar_widget->setVisible(true);
+  sidebar_widget->setFixedWidth(300);
 }
