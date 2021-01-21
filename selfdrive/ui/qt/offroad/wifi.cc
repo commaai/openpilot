@@ -50,7 +50,7 @@ Networking::Networking(QWidget* parent) : QWidget(parent){
   inputField = new InputField(this, 8);
   connect(inputField, SIGNAL(emitText(QString)), this, SLOT(receiveText(QString)));
   connect(inputField, SIGNAL(cancel()), this, SLOT(abortTextInput()));
-  // inputField->setMargin(80);
+  inputField->setContentsMargins(100,0,100,0);
   s->addWidget(inputField);
 
   QVBoxLayout* vlayout = new QVBoxLayout;
@@ -128,6 +128,15 @@ void Networking::wrongPassword(QString ssid) {
   if(s->currentIndex()==0){
     qDebug()<<"Wrong password, but we are already trying a new network";
     return;
+  }
+  if(s->currentIndex()==2){
+    qDebug()<<"Wrong password, but we are in advanced settings";
+    return;
+  }
+  if(!this->isVisible()){
+    qDebug()<<"Wrong password, but we are not visible";
+    return;
+
   }
   for (Network n : wifi->seen_networks) {
     if (n.ssid == ssid) {

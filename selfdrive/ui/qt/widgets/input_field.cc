@@ -7,14 +7,14 @@ InputField::InputField(QWidget *parent, int minTextLength): QWidget(parent), min
   layout->setSpacing(30);
 
   label = new QLabel(this);
-  label->setStyleSheet(R"(font-size: 55px;)");
-  layout->addWidget(label, 0, 0, Qt::AlignVCenter | Qt::AlignLeft);
+  label->setStyleSheet(R"(font-size: 70px; font-weight: 500;)");
+  layout->addWidget(label, 0, 0,Qt::AlignLeft);
   layout->setColumnStretch(0, 1);
 
   QPushButton* cancel = new QPushButton("Cancel");
   cancel->setFixedSize(300, 150);
   cancel->setStyleSheet(R"(padding: 0;)");
-  layout->addWidget(cancel, 0, 1, Qt::AlignVCenter | Qt::AlignRight);
+  layout->addWidget(cancel, 0, 1, Qt::AlignRight);
   QObject::connect(cancel, SIGNAL(released()), this, SLOT(emitEmpty()));
 
   // text box
@@ -22,9 +22,9 @@ InputField::InputField(QWidget *parent, int minTextLength): QWidget(parent), min
   line->setStyleSheet(R"(
     color: white;
     background-color: #444444;
-    font-size: 60px;
-    font-weight: bold;
-    padding: 25px;
+    font-size: 80px;
+    font-weight: 500;
+    padding: 10px;
   )");
   layout->addWidget(line, 1, 0, 1, -1);
 
