@@ -62,7 +62,7 @@ class TestEncoder(unittest.TestCase):
 
   # TODO: this should run faster than real time
   @parameterized.expand([(True, ), (False, )])
-  @with_processes(['camerad', 'sensord', 'loggerd'])
+  @with_processes(['camerad', 'sensord', 'loggerd'], init_time=3)
   def test_log_rotation(self, record_front):
     Params().put("RecordFront", str(int(record_front)))
 
