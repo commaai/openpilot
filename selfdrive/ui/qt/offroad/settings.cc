@@ -197,7 +197,7 @@ QWidget * developer_panel() {
 }
 
 QWidget * network_panel(QWidget * parent) {
-  Networking *w = new Networking();
+  Networking *w = new Networking(parent);
   QObject::connect(parent, SIGNAL(sidebarPressed()), w, SLOT(sidebarChange()));
   QObject::connect(w, SIGNAL(openKeyboard()), parent, SLOT(closeSidebar()));
   QObject::connect(w, SIGNAL(closeKeyboard()), parent, SLOT(openSidebar()));

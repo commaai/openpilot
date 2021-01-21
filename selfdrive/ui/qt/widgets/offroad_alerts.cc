@@ -18,7 +18,7 @@ void cleanStackedWidget(QStackedWidget* swidget) {
   }
 }
 
-OffroadAlert::OffroadAlert(QWidget* parent) {
+OffroadAlert::OffroadAlert(QWidget* parent) : QFrame(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout();
   main_layout->setMargin(25);
 
