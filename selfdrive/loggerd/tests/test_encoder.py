@@ -15,7 +15,7 @@ from common.params import Params
 from common.timeout import Timeout
 from selfdrive.hardware import EON, TICI
 from selfdrive.test.helpers import with_processes
-from selfdrive.loggerd.config import ROOT, CAMERA_FPS
+from selfdrive.loggerd.config import ROOT
 
 
 SEGMENT_LENGTH = 2
