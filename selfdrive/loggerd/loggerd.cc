@@ -109,9 +109,10 @@ public:
   uint32_t stream_frame_id, log_frame_id, last_rotate_frame_id;
   bool enabled, should_rotate, initialized;
   std::atomic<bool> rotating;
+  std::atomic<int> cur_seg;
 
   RotateState() : fpkt_sock(nullptr), stream_frame_id(0), log_frame_id(0),
-                  last_rotate_frame_id(UINT32_MAX), enabled(false), should_rotate(false), initialized(false), rotating(false) {};
+                  last_rotate_frame_id(UINT32_MAX), enabled(false), should_rotate(false), initialized(false), rotating(false), cur_seg(-1) {};
 
   void waitLogThread() {
     std::unique_lock<std::mutex> lk(fid_lock);
@@ -250,13 +251,16 @@ void encoder_thread(int cam_idx) {
             e->encoder_close();
             e->encoder_open(s.segment_path, s.rotate_segment);
           }
-          rotate_state.rotating = false;
+          rotate_state.cur_seg = s.rotate_segment;
           pthread_mutex_unlock(&s.rotate_lock);
 
+          printf("%d rotated\n", cam_idx);
           // wait for all to finish rotating
           for(auto &r : s.rotate_state) {
-             while(r.enabled && r.rotating && !do_exit) util::sleep_for(20);
+             while(r.enabled && r.cur_seg != s.rotate_segment && !do_exit) util::sleep_for(20);
           }
+          rotate_state.rotating = false;
+          printf("%d finisedh\n", cam_idx);
           rotate_state.finish_rotate();
         }
       }
