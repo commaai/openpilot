@@ -1095,9 +1095,7 @@ void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
 }
 
 void cameras_run(MultiCameraState *s) {
-  // start threads
   LOG("-- Starting threads");
-  std::thread ae_op_thread(ae_thread, s);
   std::vector<std::thread> threads;
   threads.push_back(std::thread(ae_thread, s));
   threads.push_back(start_process_thread(s, &s->road_cam, process_road_camera));
@@ -1150,7 +1148,7 @@ void cameras_run(MultiCameraState *s) {
 
   LOG(" ************** STOPPING **************");
   s->exposure_info.stop();
-  ae_op_thread.join();
+  for (auto &t : threads) t.join();
 
   cameras_close(s);
 }

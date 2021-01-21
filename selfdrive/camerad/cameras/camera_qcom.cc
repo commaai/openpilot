@@ -1716,7 +1716,7 @@ void cameras_run(MultiCameraState *s) {
   }
 
   LOG(" ************** STOPPING **************");
-
+  s->exposure_info.stop();
   for (auto &t : threads) t.join();
 
   cameras_close(s);
