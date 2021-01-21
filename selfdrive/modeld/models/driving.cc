@@ -164,8 +164,7 @@ void fill_lead_v2(cereal::ModelDataV2::LeadDataV2::Builder lead, const float *le
   lead.setXyvaStd(xyva_stds_arr);
 }
 
-template <class MetaBuilder>
-void fill_meta(MetaBuilder meta, const float *meta_data) {
+void fill_meta(cereal::ModelDataV2::MetaData::Builder meta, const float *meta_data) {
   float desire_state_softmax[DESIRE_LEN];
   float desire_pred_softmax[4*DESIRE_LEN];
   softmax(&meta_data[0], desire_state_softmax, DESIRE_LEN);
