@@ -70,6 +70,8 @@ Networking::Networking(QWidget* parent) : QWidget(parent){
 
   an = new AdvancedNetworking(this, wifi);
   connect(an, &AdvancedNetworking::backPress, [=](){s->setCurrentIndex(1);});
+  connect(an, &AdvancedNetworking::openKeyboard, [=](){emit openKeyboard();});
+  connect(an, &AdvancedNetworking::closeKeyboard, [=](){emit closeKeyboard();});
   s->addWidget(an);
 
   s->setCurrentIndex(1);
@@ -173,6 +175,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   inputField = new InputField(this, 8);
   connect(inputField, SIGNAL(emitText(QString)), this, SLOT(receiveText(QString)));
   connect(inputField, SIGNAL(cancel()), this, SLOT(abortTextInput()));
+  inputField->setContentsMargins(100,0,100,0);
   s->addWidget(inputField);
 
   QVBoxLayout* vlayout = new QVBoxLayout;
@@ -204,7 +207,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   tetheringPassword->addWidget(new QLabel("Edit tethering password"), 1);
   editPasswordButton = new QPushButton("EDIT");
   editPasswordButton->setFixedWidth(500);
-  connect(editPasswordButton, &QPushButton::released, [=](){inputField->setPromptText("Enter the new hotspot password"); s->setCurrentIndex(0);});
+  connect(editPasswordButton, &QPushButton::released, [=](){inputField->setPromptText("Enter the new hotspot password"); s->setCurrentIndex(0); emit openKeyboard();});
   tetheringPassword->addWidget(editPasswordButton, 1, Qt::AlignRight);
   vlayout->addWidget(layoutToWidget(tetheringPassword, this), 0);
   vlayout->addWidget(hline(), 0);
@@ -271,10 +274,12 @@ void AdvancedNetworking::toggleTethering(int enable) {
 void AdvancedNetworking::receiveText(QString text){
   wifi->changeTetheringPassword(text);
   s->setCurrentIndex(1);
+  emit closeKeyboard();
 }
 
 void AdvancedNetworking::abortTextInput(){
   s->setCurrentIndex(1);
+  emit closeKeyboard();
 }
 
 // WifiUI functions
