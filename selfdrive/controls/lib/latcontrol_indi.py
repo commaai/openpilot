@@ -103,8 +103,8 @@ class LatControlINDI():
       rate_des = math.radians(self.rate_steers_des)
 
       # Expected actuator value
-      self.alpha = 1. - DT_CTRL / (self.RC + DT_CTRL)
-      self.delayed_output = self.delayed_output * self.alpha + self.output_steer * (1. - self.alpha)
+      alpha = 1. - DT_CTRL / (self.RC + DT_CTRL)
+      self.delayed_output = self.delayed_output * alpha + self.output_steer * (1. - alpha)
 
       # Compute acceleration error
       rate_sp = self.outer_loop_gain * (steers_des - self.x[0]) + rate_des
