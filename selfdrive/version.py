@@ -49,7 +49,7 @@ terms_version: bytes = b"2"
 
 dirty: bool = True
 comma_remote: bool = False
-vw_community_remote: bool = False
+khonsu_remote: bool = False
 tested_branch: bool = False
 origin = get_git_remote()
 branch = get_git_full_branchname()
