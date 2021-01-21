@@ -28,7 +28,7 @@ KeyboardLayout::KeyboardLayout(QWidget *parent, std::vector<QVector<QString>> la
       QPushButton* btn = new QPushButton(p);
       btn->setFixedHeight(120);
       btn_group->addButton(btn);
-      hlayout->addSpacing(10);
+      hlayout->addSpacing(30);
       if (p == QString("  ")) {
         hlayout->addWidget(btn, SPACEBAR_WIDTH);
       } else {

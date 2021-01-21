@@ -227,7 +227,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   )");
   close_btn->setFixedSize(200, 200);
   sidebar_layout->addSpacing(45);
-  sidebar_layout->addWidget(close_btn, 0, Qt::AlignLeft);
+  sidebar_layout->addWidget(close_btn, 0, Qt::AlignCenter);
   QObject::connect(close_btn, SIGNAL(released()), this, SIGNAL(closeSettings()));
 
   // setup panels
@@ -259,25 +259,24 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
     )");
 
     nav_btns->addButton(btn);
-    sidebar_layout->addWidget(btn, 0, Qt::AlignRight | Qt::AlignTop);
+    sidebar_layout->addWidget(btn, 0, Qt::AlignRight);
     panel_layout->addWidget(panel.second);
     QObject::connect(btn, SIGNAL(released()), this, SLOT(setActivePanel()));
     QObject::connect(btn, &QPushButton::released, [=](){emit sidebarPressed();});
   }
   qobject_cast<QPushButton *>(nav_btns->buttons()[0])->setChecked(true);
-  sidebar_layout->addStretch();
+  sidebar_layout->setContentsMargins(50, 50, 100, 50);
 
   // main settings layout, sidebar + main panel
   QHBoxLayout *settings_layout = new QHBoxLayout();
-  settings_layout->setContentsMargins(150, 50, 150, 50);
 
   sidebar_widget = new QWidget;
   sidebar_widget->setLayout(sidebar_layout);
+  sidebar_widget->setFixedWidth(500);
   settings_layout->addWidget(sidebar_widget);
 
-  settings_layout->addSpacing(25);
 
-  QFrame *panel_frame = new QFrame;
+  panel_frame = new QFrame;
   panel_frame->setLayout(panel_layout);
   panel_frame->setStyleSheet(R"(
     QFrame {
@@ -288,7 +287,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
       background-color: none;
     }
   )");
-  settings_layout->addWidget(panel_frame, 1, Qt::AlignRight);
+  settings_layout->addWidget(panel_frame);
 
   setLayout(settings_layout);
   setStyleSheet(R"(
@@ -307,5 +306,5 @@ void SettingsWindow::closeSidebar() {
 }
 
 void SettingsWindow::openSidebar() {
-  sidebar_widget->setFixedWidth(300);
+  sidebar_widget->setFixedWidth(500);
 }

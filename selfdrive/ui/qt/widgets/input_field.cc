@@ -20,9 +20,10 @@ InputField::InputField(QWidget *parent, int minTextLength): QWidget(parent), min
   // text box
   line = new QLineEdit();
   line->setStyleSheet(R"(
-    color: black;
-    background-color: white;
-    font-size: 45px;
+    color: white;
+    background-color: #444444;
+    font-size: 60px;
+    font-weight: bold;
     padding: 25px;
   )");
   layout->addWidget(line, 1, 0, 1, -1);

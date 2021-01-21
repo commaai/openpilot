@@ -50,6 +50,7 @@ Networking::Networking(QWidget* parent) : QWidget(parent){
   inputField = new InputField(this, 8);
   connect(inputField, SIGNAL(emitText(QString)), this, SLOT(receiveText(QString)));
   connect(inputField, SIGNAL(cancel()), this, SLOT(abortTextInput()));
+  // inputField->setMargin(80);
   s->addWidget(inputField);
 
   QVBoxLayout* vlayout = new QVBoxLayout;
@@ -107,17 +108,20 @@ void Networking::connectToNetwork(Network n) {
     inputField->setPromptText("Enter password for \"" + n.ssid + "\"");
     s->setCurrentIndex(0);
     selectedNetwork = n;
+    emit openKeyboard();
   }
 }
 
 void Networking::abortTextInput(){
   s->setCurrentIndex(1);
+    emit closeKeyboard();
 }
 
 void Networking::receiveText(QString text) {
   wifi->disconnect();
   wifi->connect(selectedNetwork, text);
   s->setCurrentIndex(1);
+  emit closeKeyboard();
 }
 
 void Networking::wrongPassword(QString ssid) {
@@ -129,6 +133,7 @@ void Networking::wrongPassword(QString ssid) {
     if (n.ssid == ssid) {
       inputField->setPromptText("Wrong password for \"" + n.ssid +"\"");
       s->setCurrentIndex(0);
+      emit openKeyboard();
       return;
     }
   }
@@ -321,10 +326,10 @@ void WifiUI::refresh() {
 
       QWidget * w = new QWidget;
       w->setLayout(hlayout);
-      vlayout->addWidget(w);
-      // Don't add the last line
+      vlayout->addWidget(w, 1);
+      // Don't add the last horizontal line
       if (page * networks_per_page <= i+1 && i+1 < (page + 1) * networks_per_page && i+1 < wifi->seen_networks.size()) {
-        vlayout->addWidget(hline());
+        vlayout->addWidget(hline(), 0);
       }
       countWidgets++;
     }
@@ -334,7 +339,8 @@ void WifiUI::refresh() {
   // Pad vlayout to prevert oversized network widgets in case of low visible network count
   for (int i = countWidgets; i < networks_per_page; i++) {
     QWidget *w = new QWidget;
-    vlayout->addWidget(w);
+    vlayout->addWidget(w, 1);
+    vlayout->addWidget(w, 1);
   }
 
   QHBoxLayout *prev_next_buttons = new QHBoxLayout;//Adding constructor exposes the qt bug
@@ -355,7 +361,7 @@ void WifiUI::refresh() {
 
   QWidget *w = new QWidget;
   w->setLayout(prev_next_buttons);
-  vlayout->addWidget(w);
+  vlayout->addWidget(w, 1, Qt::AlignBottom);
 }
 
 void WifiUI::handleButton(QAbstractButton* button) {
