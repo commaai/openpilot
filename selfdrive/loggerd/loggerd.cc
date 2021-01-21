@@ -162,6 +162,7 @@ struct LoggerdState {
   LoggerState logger;
   char segment_path[4096];
   int rotate_segment;
+  double last_rotate_tms;
   pthread_mutex_t rotate_lock;
   RotateState rotate_state[LOG_CAMERA_ID_MAX-1];
 };
@@ -315,6 +316,13 @@ static void clear_locks() {
   ftw(LOG_ROOT.c_str(), clear_locks_fn, 16);
 }
 
+void loggerd_logger_next() {
+  s.last_rotate_tms = millis_since_boot();
+  assert(0 == logger_next(&s.logger, LOG_ROOT.c_str(), s.segment_path, sizeof(s.segment_path), &s.rotate_segment));
+  LOGW((s.rotate_segment == 0) ? "logging to %s" : "rotated to %s", s.segment_path);
+}
+
+
 int main(int argc, char** argv) {
 
   setpriority(PRIO_PROCESS, 0, -12);
@@ -353,8 +361,9 @@ int main(int argc, char** argv) {
     qlog_states[sock] = {.counter = 0, .freq = it.decimation};
   }
 
-  // init logger
+  // init and open logger
   logger_init(&s.logger, "rlog", true);
+  loggerd_logger_next();
 
   // init encoders
   pthread_mutex_init(&s.rotate_lock, NULL);
@@ -382,10 +391,8 @@ int main(int argc, char** argv) {
   kj::Array<capnp::word> buf = kj::heapArray<capnp::word>(1024);
 
   double start_ts = seconds_since_boot();
-  double last_rotate_tms = millis_since_boot();
   double last_camera_seen_tms = millis_since_boot();
   while (!do_exit) {
-    // TODO: fix msgs from the first poll getting dropped
     // poll for new messages on all sockets
     for (auto sock : poller->poll(1000)) {
 
@@ -447,36 +454,28 @@ int main(int argc, char** argv) {
       delete last_msg;
     }
 
-    bool new_segment = s.logger.part == -1;
-    if (s.logger.part > -1) {
-      double tms = millis_since_boot();
-      if (tms - last_camera_seen_tms <= NO_CAMERA_PATIENCE && encoder_threads.size() > 0) {
-        new_segment = true;
-        for (auto &r : s.rotate_state) {
-          // this *should* be redundant on tici since all camera frames are synced
-          new_segment &= (((r.stream_frame_id >= r.last_rotate_frame_id + segment_length * MAIN_FPS) &&
-                          (!r.should_rotate) && (r.initialized)) ||
-                          (!r.enabled));
+    bool new_segment = false;
+    double tms = millis_since_boot();
+    if (tms - last_camera_seen_tms <= NO_CAMERA_PATIENCE && encoder_threads.size() > 0) {
+      new_segment = true;
+      for (auto &r : s.rotate_state) {
+        // this *should* be redundant on tici since all camera frames are synced
+        new_segment &= (((r.stream_frame_id >= r.last_rotate_frame_id + segment_length * MAIN_FPS) &&
+                        (!r.should_rotate) && (r.initialized)) ||
+                        (!r.enabled));
 #ifndef QCOM2
-          break; // only look at fcamera frame id if not QCOM2
+        break; // only look at fcamera frame id if not QCOM2
 #endif
-        }
-      } else {
-        if (tms - last_rotate_tms > segment_length * 1000) {
-          new_segment = true;
-          LOGW("no camera packet seen. auto rotated");
-        }
       }
+    } else if (tms - s.last_rotate_tms > segment_length * 1000) {
+      new_segment = true;
+      LOGW("no camera packet seen. auto rotated");
     }
 
     // rotate to new segment
     if (new_segment) {
       pthread_mutex_lock(&s.rotate_lock);
-      last_rotate_tms = millis_since_boot();
-
-      int err = logger_next(&s.logger, LOG_ROOT.c_str(), s.segment_path, sizeof(s.segment_path), &s.rotate_segment);
-      assert(err == 0);
-      LOGW((s.logger.part == 0) ? "logging to %s" : "rotated to %s", s.segment_path);
+      loggerd_logger_next();
 
       // rotate encoders
       for (auto &r : s.rotate_state) r.rotate();
