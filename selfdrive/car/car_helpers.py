@@ -1,7 +1,7 @@
 import os
 from common.params import Params
 from common.basedir import BASEDIR
-from selfdrive.version import comma_remote, vw_community_remote, tested_branch
+from selfdrive.version import comma_remote, khonsu_remote, tested_branch
 from selfdrive.car.fingerprints import eliminate_incompatible_cars, all_known_cars
 from selfdrive.car.vin import get_vin, VIN_UNKNOWN
 from selfdrive.car.fw_versions import get_fw_versions, match_fw_to_car
@@ -16,7 +16,7 @@ HwType = log.HealthData.HwType
 
 
 def get_startup_event(car_recognized, controller_available, hw_type):
-  if (comma_remote or vw_community_remote) and tested_branch:
+  if (comma_remote or khonsu_remote) and tested_branch:
     event = EventName.startup
   else:
     event = EventName.startupMaster
