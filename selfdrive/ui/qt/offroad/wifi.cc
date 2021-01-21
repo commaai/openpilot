@@ -52,7 +52,7 @@ Networking::Networking(QWidget* parent) : QWidget(parent){
   connect(inputField, SIGNAL(cancel()), this, SLOT(abortTextInput()));
   s->addWidget(inputField);
 
-  QVBoxLayout* vlayout = new QVBoxLayout(this);
+  QVBoxLayout* vlayout = new QVBoxLayout;
   QPushButton* advancedSettings = new QPushButton("Advanced");
   advancedSettings->setStyleSheet(R"(margin-right: 30px)");
   advancedSettings->setFixedSize(300, 100);
@@ -173,7 +173,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
 
   //Enable tethering layout
   QHBoxLayout* tetheringToggleLayout = new QHBoxLayout;
-  tetheringToggleLayout->addWidget(new QLabel("Enable tethering", this));
+  tetheringToggleLayout->addWidget(new QLabel("Enable tethering"));
   Toggle* toggle_switch = new Toggle;
   toggle_switch->setFixedSize(150, 100);
   tetheringToggleLayout->addWidget(toggle_switch);
@@ -187,8 +187,8 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   
   //Change tethering password
   QHBoxLayout *tetheringPassword = new QHBoxLayout;
-  tetheringPassword->addWidget(new QLabel("Edit tethering password", this), 1);
-  editPasswordButton = new QPushButton("EDIT", this);
+  tetheringPassword->addWidget(new QLabel("Edit tethering password"), 1);
+  editPasswordButton = new QPushButton("EDIT");
   editPasswordButton->setFixedWidth(500);
   connect(editPasswordButton, &QPushButton::released, [=](){inputField->setPromptText("Enter the new hotspot password"); s->setCurrentIndex(0);});
   tetheringPassword->addWidget(editPasswordButton, 1, Qt::AlignRight);
