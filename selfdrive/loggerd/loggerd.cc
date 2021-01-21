@@ -254,13 +254,11 @@ void encoder_thread(int cam_idx) {
           rotate_state.cur_seg = s.rotate_segment;
           pthread_mutex_unlock(&s.rotate_lock);
 
-          printf("%d rotated\n", cam_idx);
           // wait for all to finish rotating
           for(auto &r : s.rotate_state) {
              while(r.enabled && r.cur_seg != s.rotate_segment && !do_exit) util::sleep_for(20);
           }
           rotate_state.rotating = false;
-          printf("%d finisedh\n", cam_idx);
           rotate_state.finish_rotate();
         }
       }
