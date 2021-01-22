@@ -228,22 +228,21 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   IPlayout->addWidget(ipLabel, 0, Qt::AlignRight);
   vlayout->addWidget(layoutToWidget(IPlayout, this), 0);
   vlayout->addWidget(hline(), 0);
-  vlayout->addSpacing(300);
 
-  // //Enable SSH
-  // QHBoxLayout* enableSSHLayout = new QHBoxLayout(this);
-  // enableSSHLayout->addWidget(new QLabel("Enable SSH", this));
-  // Toggle* toggle_switch_SSH = new Toggle(this);
-  // toggle_switch_SSH->setFixedSize(150, 100);
-  // enableSSHLayout->addWidget(toggle_switch_SSH);
-  // vlayout->addWidget(layoutToWidget(enableSSHLayout, this));
+  //Enable SSH
+  QHBoxLayout* enableSSHLayout = new QHBoxLayout(this);
+  enableSSHLayout->addWidget(new QLabel("Enable SSH", this));
+  Toggle* toggle_switch_SSH = new Toggle(this);
+  toggle_switch_SSH->setFixedSize(150, 100);
+  enableSSHLayout->addWidget(toggle_switch_SSH);
+  vlayout->addWidget(layoutToWidget(enableSSHLayout, this));
 
-  // //Authorized SSH keys
-  // QHBoxLayout* authSSHLayout = new QHBoxLayout(this);
-  // authSSHLayout->addWidget(new QLabel("Authorized SSH keys", this));
-  // QPushButton* editAuthSSHButton = new QPushButton("EDIT", this);
-  // authSSHLayout->addWidget(editAuthSSHButton);
-  // vlayout->addWidget(layoutToWidget(authSSHLayout, this));
+  //Authorized SSH keys
+  QHBoxLayout* authSSHLayout = new QHBoxLayout(this);
+  authSSHLayout->addWidget(new QLabel("Authorized SSH keys", this));
+  QPushButton* editAuthSSHButton = new QPushButton("EDIT", this);
+  authSSHLayout->addWidget(editAuthSSHButton);
+  vlayout->addWidget(layoutToWidget(authSSHLayout, this));
 
   // //Disconnect or delete connections
   // QHBoxLayout* dangerZone = new QHBoxLayout(this);
