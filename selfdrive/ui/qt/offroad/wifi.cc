@@ -43,7 +43,7 @@ Networking::Networking(QWidget* parent) : QWidget(parent){
   }
   connect(wifi, SIGNAL(wrongPassword(QString)), this, SLOT(wrongPassword(QString)));
   connect(wifi, SIGNAL(successfulConnection(QString)), this, SLOT(successfulConnection(QString)));
-  
+
 
   s = new QStackedLayout;
 
@@ -80,7 +80,7 @@ Networking::Networking(QWidget* parent) : QWidget(parent){
   QTimer* timer = new QTimer(this);
   QObject::connect(timer, SIGNAL(timeout()), this, SLOT(refresh()));
   timer->start(5000);
-  
+
   setStyleSheet(R"(
     QPushButton {
       font-size: 50px;
@@ -155,6 +155,10 @@ void Networking::successfulConnection(QString ssid) {
 }
 
 void Networking::sidebarChange(){
+  if (s == nullptr || an == nullptr){
+    return;
+  }
+
   s->setCurrentIndex(1);
   an->s->setCurrentIndex(1);
   refresh();
@@ -179,7 +183,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   s->addWidget(inputField);
 
   QVBoxLayout* vlayout = new QVBoxLayout;
-  
+
   //Back button
   QHBoxLayout* backLayout = new QHBoxLayout;
   QPushButton* back = new QPushButton("BACK");
@@ -201,7 +205,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   QObject::connect(toggle_switch, SIGNAL(stateChanged(int)), this, SLOT(toggleTethering(int)));
   vlayout->addWidget(layoutToWidget(tetheringToggleLayout, this), 0);
   vlayout->addWidget(hline(), 0);
-  
+
   //Change tethering password
   QHBoxLayout *tetheringPassword = new QHBoxLayout;
   tetheringPassword->addWidget(new QLabel("Edit tethering password"), 1);
@@ -211,14 +215,14 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   tetheringPassword->addWidget(editPasswordButton, 1, Qt::AlignRight);
   vlayout->addWidget(layoutToWidget(tetheringPassword, this), 0);
   vlayout->addWidget(hline(), 0);
-  
+
   //IP adress
   QHBoxLayout* IPlayout = new QHBoxLayout;
   IPlayout->addWidget(new QLabel("IP address: "), 0);
   ipLabel = new QLabel(wifi->ipv4_address);
   ipLabel->setStyleSheet("color: #aaaaaa");
   IPlayout->addWidget(ipLabel, 0, Qt::AlignRight);
-  vlayout->addWidget(layoutToWidget(IPlayout, this), 0); 
+  vlayout->addWidget(layoutToWidget(IPlayout, this), 0);
   vlayout->addWidget(hline(), 0);
   vlayout->addSpacing(300);
 
@@ -362,7 +366,7 @@ void WifiUI::refresh() {
   QPushButton* prev = new QPushButton("Previous");
   prev->setEnabled(page);
   prev->setFixedSize(400, button_height);
-  
+
   QPushButton* next = new QPushButton("Next");
   next->setFixedSize(400, button_height);
 
