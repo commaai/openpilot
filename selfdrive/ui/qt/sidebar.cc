@@ -2,37 +2,9 @@
 #include "widgets/toggle.hpp"
 #include <QDebug>
 
-Indicator::Indicator(QWidget *parent) : QWidget(parent){
-  qDebug() << "Indicator ctor";
-
-  setFixedSize(parentWidget()->size());
-  
-  //TODO: fix cropping shadows. outer glow instead?
-  dropshadow = new QGraphicsDropShadowEffect(this);
-  dropshadow->setBlurRadius(50);
-  dropshadow->setOffset(0,0);
-  dropshadow->setColor(QColor(0xeac00b));
-  this->setGraphicsEffect(dropshadow);
-}
-
-void Indicator::paintEvent(QPaintEvent *e){
-
-  QPainter p(this);
-  p.setRenderHint(QPainter::Antialiasing, true);
-
-  p.setPen(Qt::NoPen);
-  p.setBrush(QColor(0xeac00b));
-  // p.setClipRect(0+32,0+16,25+6,128-6,Qt::ClipOperation::ReplaceClip);
-  p.drawRoundedRect(QRectF(0, 0, 236-15, 128-15), 25, 25);
-  qDebug() << "indicator size:"<< size();
-  qDebug() << "indicator parent size:"<< parentWidget()->size();
-}
-
 StatusWidget::StatusWidget(QString text, QWidget *parent) : QFrame(parent)
 {
   qDebug() << "StatusWidget ctor";
-
-  indicator = new Indicator(this);
   
   QLabel* label = new QLabel(this);
   label->setText(text);
@@ -52,7 +24,6 @@ StatusWidget::StatusWidget(QString text, QWidget *parent) : QFrame(parent)
   // setFixedSize(300,150);
   // setMinimumSize(300,200);
 
-  sw_layout->addWidget(indicator, 0,Qt::AlignTop | Qt::AlignLeft);
   sw_layout->addWidget(label, 0, Qt::AlignTop | Qt::AlignLeft);
 
   setStyleSheet(R"( StatusWidget { background-color: red;})");
