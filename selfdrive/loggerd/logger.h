@@ -4,8 +4,7 @@
 #include <stdint.h>
 #include <pthread.h>
 #include <bzlib.h>
-#include <kj/array.h>
-#include <capnp/serialize.h>
+#include <vector>
 
 #if defined(QCOM) || defined(QCOM2)
 const std::string LOG_ROOT = "/data/media/0/realdata";
@@ -31,7 +30,7 @@ typedef struct LoggerHandle {
 
 typedef struct LoggerState {
   pthread_mutex_t lock;
-  kj::Array<capnp::word> init_data;
+  std::vector<uint8_t> init_data;
   int part;
   char route_name[64];
   char log_name[64];

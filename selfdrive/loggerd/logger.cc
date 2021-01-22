@@ -53,7 +53,7 @@ static int mkpath(char* file_path) {
 
 // ***** log metadata *****
 
-kj::Array<capnp::word> get_init_data() {
+ std::vector<uint8_t> get_init_data() {
   MessageBuilder msg;
   auto init = msg.initEvent().initInitData();
 
@@ -120,7 +120,8 @@ kj::Array<capnp::word> get_init_data() {
     }
   }
 
-  return capnp::messageToFlatArray(msg);
+  auto bytes = msg.toBytes();
+  return std::vector<uint8_t>(std::begin(bytes), std::end(bytes));
 }
 
 
@@ -253,8 +254,7 @@ int logger_next(LoggerState *s, const char* root_path,
   pthread_mutex_unlock(&s->lock);
 
   // write beggining of log metadata
-  auto bytes = s->init_data.asBytes();
-  logger_log(s, bytes.begin(), bytes.size(), s->has_qlog);
+  logger_log(s, s->init_data.data(), s->init_data.size(), s->has_qlog);
   log_sentinel(s, is_start_of_route ? cereal::Sentinel::SentinelType::START_OF_ROUTE : cereal::Sentinel::SentinelType::START_OF_SEGMENT);
   return 0;
 }
