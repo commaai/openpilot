@@ -12,6 +12,8 @@
 #include <QWidget>
 
 #include "common/params.h"
+#include "common/timing.h"
+#include "common/swaglog.h"
 
 #include "home.hpp"
 #include "paint.hpp"
@@ -223,6 +225,7 @@ void GLWindow::initializeGL() {
 
   wake();
 
+  prev_draw_t = millis_since_boot();
   timer->start(1000 / UI_FREQ);
   backlight_timer->start(BACKLIGHT_DT * 1000);
 }
@@ -270,6 +273,14 @@ void GLWindow::resizeGL(int w, int h) {
 void GLWindow::paintGL() {
   if(GLWindow::ui_state.awake){
     ui_draw(&ui_state);
+
+    double cur_draw_t = millis_since_boot();
+    double dt = cur_draw_t - prev_draw_t;
+    if (dt > 66){
+      // warn on sub 15fps
+      LOGW("slow frame(%llu) time: %.2f", ui_state.sm->frame, dt);
+    }
+    prev_draw_t = cur_draw_t;
   }
 }
 
