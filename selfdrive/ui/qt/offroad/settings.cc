@@ -158,7 +158,6 @@ QWidget * device_panel() {
 
   QPushButton *poweroff_btn = new QPushButton("Power Off");
   device_layout->addWidget(poweroff_btn, Qt::AlignBottom);
-  device_layout->addWidget(horizontal_line(), Qt::AlignBottom);
   QPushButton *reboot_btn = new QPushButton("Reboot");
   device_layout->addWidget(reboot_btn, Qt::AlignBottom);
   device_layout->addWidget(horizontal_line(), Qt::AlignBottom);
