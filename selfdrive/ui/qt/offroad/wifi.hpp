@@ -58,7 +58,7 @@ signals:
   void closeKeyboard();
   void backPress();
 
-private slots:
+public slots:
   void receiveText(QString text);
   void abortTextInput();
   void toggleTethering(int enable);
