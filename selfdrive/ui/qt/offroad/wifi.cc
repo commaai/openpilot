@@ -100,7 +100,11 @@ Networking::Networking(QWidget* parent) : QWidget(parent){
 }
 
 void Networking::refresh(){
+  if(!this->isVisible()){
+    return;
+  }
   wifiWidget->refresh();
+  an->refresh();
 }
 
 void Networking::connectToNetwork(Network n) {
@@ -255,11 +259,6 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   s->addWidget(settingsWidget);
   s->setCurrentIndex(1);
   setLayout(s);
-
-  // Update network status
-  QTimer* timer = new QTimer(this);
-  QObject::connect(timer, SIGNAL(timeout()), this, SLOT(refresh()));
-  timer->start(5000);
 }
 
 void AdvancedNetworking::refresh(){
