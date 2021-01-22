@@ -41,6 +41,7 @@ private:
   QtSound sound;
 
   bool onroad = true;
+  double prev_draw_t = 0;
 
   // TODO: this shouldn't be here
   float brightness_b = 0;
