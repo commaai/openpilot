@@ -353,6 +353,7 @@ void WifiUI::refresh() {
   // Pad vlayout to prevert oversized network widgets in case of low visible network count
   for (int i = countWidgets; i < networks_per_page; i++) {
     QWidget *w = new QWidget;
+    // That we need to add w twice was determined empiricaly
     vlayout->addWidget(w, 1);
     vlayout->addWidget(w, 1);
   }

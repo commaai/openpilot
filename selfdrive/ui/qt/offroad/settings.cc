@@ -25,6 +25,16 @@ QFrame* horizontal_line(QWidget* parent = 0){
   line->setFixedHeight(2);
   return line;
 }
+QWidget* labelWidget(QString labelName, QString labelContent){
+  QHBoxLayout* labelLayout = new QHBoxLayout;
+  labelLayout->addWidget(new QLabel(labelName), 0, Qt::AlignLeft);
+  QLabel* paramContent = new QLabel(labelContent);
+  paramContent->setStyleSheet("color: #aaaaaa");
+  labelLayout->addWidget(paramContent, 0, Qt::AlignRight);
+  QWidget* labelWidget = new QWidget;
+  labelWidget->setLayout(labelLayout);
+  return labelWidget;
+}
 
 ParamsToggle::ParamsToggle(QString param, QString title, QString description, QString icon_path, QWidget *parent): QFrame(parent) , param(param) {
   QHBoxLayout *layout = new QHBoxLayout;
@@ -135,14 +145,7 @@ QWidget * device_panel() {
   //}
 
   for (auto &l : labels) {
-    QHBoxLayout* labelLayout = new QHBoxLayout;
-    labelLayout->addWidget(new QLabel(QString::fromStdString(l.first) + ":"), 0, Qt::AlignLeft);
-    QLabel* paramContent = new QLabel(QString::fromStdString(l.second));
-    paramContent->setStyleSheet("color: #aaaaaa");
-    labelLayout->addWidget(paramContent, 0, Qt::AlignRight);
-    QWidget* labelWidget = new QWidget;
-    labelWidget->setLayout(labelLayout);
-    device_layout->addWidget(labelWidget, 0, Qt::AlignTop);
+    device_layout->addWidget(labelWidget(QString::fromStdString(l.first+":"), QString::fromStdString(l.second)), 0, Qt::AlignTop);
   }
 
   // TODO: show current calibration values
@@ -204,15 +207,7 @@ QWidget * developer_panel() {
 
   for (int i = 0; i<labels.size(); i++) {
     auto l = labels[i];
-    QHBoxLayout* labelLayout = new QHBoxLayout;
-    labelLayout->addWidget(new QLabel(QString::fromStdString(l.first) + ":"), 0, Qt::AlignLeft);
-    QLabel* paramContent = new QLabel(QString::fromStdString(l.second));
-    paramContent->setStyleSheet("color: #aaaaaa");
-    labelLayout->addWidget(paramContent, 0, Qt::AlignRight);
-    QWidget* labelWidget = new QWidget;
-    labelWidget->setLayout(labelLayout);
-    main_layout->addWidget(labelWidget);
-
+    main_layout->addWidget(labelWidget(QString::fromStdString(l.first+":"), QString::fromStdString(l.second)), 0, Qt::AlignTop);
     if(i+1<labels.size()) {
       main_layout->addWidget(horizontal_line());
     }
