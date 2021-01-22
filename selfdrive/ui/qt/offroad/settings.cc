@@ -145,7 +145,7 @@ QWidget * device_panel() {
   //}
 
   for (auto &l : labels) {
-    device_layout->addWidget(labelWidget(QString::fromStdString(l.first+":"), QString::fromStdString(l.second)), 0, Qt::AlignTop);
+    device_layout->addWidget(labelWidget(QString::fromStdString(l.first), QString::fromStdString(l.second)), 0, Qt::AlignTop);
   }
 
   // TODO: show current calibration values
@@ -206,7 +206,7 @@ QWidget * developer_panel() {
 
   for (int i = 0; i<labels.size(); i++) {
     auto l = labels[i];
-    main_layout->addWidget(labelWidget(QString::fromStdString(l.first+":"), QString::fromStdString(l.second)));
+    main_layout->addWidget(labelWidget(QString::fromStdString(l.first), QString::fromStdString(l.second)));
 
     if(i+1<labels.size()) {
       main_layout->addWidget(horizontal_line());
