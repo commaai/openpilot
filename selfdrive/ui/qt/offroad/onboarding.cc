@@ -98,6 +98,7 @@ OnboardingWindow::OnboardingWindow(QWidget *parent) : QStackedWidget(parent) {
 
   setStyleSheet(R"(
     * {
+      color: white;
       background-color: black;
     }
     QPushButton {
