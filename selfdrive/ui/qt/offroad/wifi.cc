@@ -29,7 +29,7 @@ QWidget* layoutToWidget(QLayout* l, QWidget* parent){
 
 // Networking functions
 
-Networking::Networking(QWidget* parent){
+Networking::Networking(QWidget* parent) : QWidget(parent){
   try {
     wifi = new WifiManager(this);
   } catch (std::exception &e) {
@@ -45,14 +45,15 @@ Networking::Networking(QWidget* parent){
   connect(wifi, SIGNAL(successfulConnection(QString)), this, SLOT(successfulConnection(QString)));
   
 
-  s = new QStackedLayout(this);
+  s = new QStackedLayout;
 
   inputField = new InputField(this, 8);
   connect(inputField, SIGNAL(emitText(QString)), this, SLOT(receiveText(QString)));
   connect(inputField, SIGNAL(cancel()), this, SLOT(abortTextInput()));
+  inputField->setContentsMargins(100,0,100,0);
   s->addWidget(inputField);
 
-  QVBoxLayout* vlayout = new QVBoxLayout(this);
+  QVBoxLayout* vlayout = new QVBoxLayout;
   QPushButton* advancedSettings = new QPushButton("Advanced");
   advancedSettings->setStyleSheet(R"(margin-right: 30px)");
   advancedSettings->setFixedSize(300, 100);
@@ -69,6 +70,8 @@ Networking::Networking(QWidget* parent){
 
   an = new AdvancedNetworking(this, wifi);
   connect(an, &AdvancedNetworking::backPress, [=](){s->setCurrentIndex(1);});
+  connect(an, &AdvancedNetworking::openKeyboard, [=](){emit openKeyboard();});
+  connect(an, &AdvancedNetworking::closeKeyboard, [=](){emit closeKeyboard();});
   s->addWidget(an);
 
   s->setCurrentIndex(1);
@@ -93,6 +96,7 @@ Networking::Networking(QWidget* parent){
       background-color: #222222;
     }
   )");
+  setLayout(s);
 }
 
 void Networking::refresh(){
@@ -106,17 +110,20 @@ void Networking::connectToNetwork(Network n) {
     inputField->setPromptText("Enter password for \"" + n.ssid + "\"");
     s->setCurrentIndex(0);
     selectedNetwork = n;
+    emit openKeyboard();
   }
 }
 
 void Networking::abortTextInput(){
   s->setCurrentIndex(1);
+    emit closeKeyboard();
 }
 
 void Networking::receiveText(QString text) {
   wifi->disconnect();
   wifi->connect(selectedNetwork, text);
   s->setCurrentIndex(1);
+  emit closeKeyboard();
 }
 
 void Networking::wrongPassword(QString ssid) {
@@ -124,10 +131,20 @@ void Networking::wrongPassword(QString ssid) {
     qDebug()<<"Wrong password, but we are already trying a new network";
     return;
   }
+  if(s->currentIndex()==2){
+    qDebug()<<"Wrong password, but we are in advanced settings";
+    return;
+  }
+  if(!this->isVisible()){
+    qDebug()<<"Wrong password, but we are not visible";
+    return;
+
+  }
   for (Network n : wifi->seen_networks) {
     if (n.ssid == ssid) {
       inputField->setPromptText("Wrong password for \"" + n.ssid +"\"");
       s->setCurrentIndex(0);
+      emit openKeyboard();
       return;
     }
   }
@@ -154,16 +171,17 @@ QFrame* hline(QWidget* parent = 0){
 // AdvancedNetworking functions
 
 AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWidget(parent), wifi(wifi){
-  s = new QStackedLayout(this);// inputField and settings
+  s = new QStackedLayout;// inputField and settings
   inputField = new InputField(this, 8);
   connect(inputField, SIGNAL(emitText(QString)), this, SLOT(receiveText(QString)));
   connect(inputField, SIGNAL(cancel()), this, SLOT(abortTextInput()));
+  inputField->setContentsMargins(100,0,100,0);
   s->addWidget(inputField);
 
-  QVBoxLayout* vlayout = new QVBoxLayout(this);
+  QVBoxLayout* vlayout = new QVBoxLayout;
   
   //Back button
-  QHBoxLayout* backLayout = new QHBoxLayout(this);
+  QHBoxLayout* backLayout = new QHBoxLayout;
   QPushButton* back = new QPushButton("BACK");
   back->setFixedWidth(500);
   connect(back, &QPushButton::released, [=](){emit backPress();});
@@ -171,9 +189,9 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   vlayout->addWidget(layoutToWidget(backLayout, this), 0, Qt::AlignLeft);
 
   //Enable tethering layout
-  QHBoxLayout* tetheringToggleLayout = new QHBoxLayout(this);
-  tetheringToggleLayout->addWidget(new QLabel("Enable tethering", this));
-  Toggle* toggle_switch = new Toggle(this);
+  QHBoxLayout* tetheringToggleLayout = new QHBoxLayout;
+  tetheringToggleLayout->addWidget(new QLabel("Enable tethering"));
+  Toggle* toggle_switch = new Toggle;
   toggle_switch->setFixedSize(150, 100);
   tetheringToggleLayout->addWidget(toggle_switch);
   tetheringToggleLayout->addSpacing(40);
@@ -182,26 +200,26 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   }
   QObject::connect(toggle_switch, SIGNAL(stateChanged(int)), this, SLOT(toggleTethering(int)));
   vlayout->addWidget(layoutToWidget(tetheringToggleLayout, this), 0);
-  vlayout->addWidget(hline(this), 0);
+  vlayout->addWidget(hline(), 0);
   
   //Change tethering password
-  QHBoxLayout *tetheringPassword = new QHBoxLayout(this);
-  tetheringPassword->addWidget(new QLabel("Edit tethering password", this), 1);
-  editPasswordButton = new QPushButton("EDIT", this);
+  QHBoxLayout *tetheringPassword = new QHBoxLayout;
+  tetheringPassword->addWidget(new QLabel("Edit tethering password"), 1);
+  editPasswordButton = new QPushButton("EDIT");
   editPasswordButton->setFixedWidth(500);
-  connect(editPasswordButton, &QPushButton::released, [=](){inputField->setPromptText("Enter the new hotspot password"); s->setCurrentIndex(0);});
+  connect(editPasswordButton, &QPushButton::released, [=](){inputField->setPromptText("Enter the new hotspot password"); s->setCurrentIndex(0); emit openKeyboard();});
   tetheringPassword->addWidget(editPasswordButton, 1, Qt::AlignRight);
   vlayout->addWidget(layoutToWidget(tetheringPassword, this), 0);
-  vlayout->addWidget(hline(this), 0);
+  vlayout->addWidget(hline(), 0);
   
   //IP adress
-  QHBoxLayout* IPlayout = new QHBoxLayout(this);
+  QHBoxLayout* IPlayout = new QHBoxLayout;
   IPlayout->addWidget(new QLabel("IP address: "), 0);
   ipLabel = new QLabel(wifi->ipv4_address);
   ipLabel->setStyleSheet("color: #aaaaaa");
   IPlayout->addWidget(ipLabel, 0, Qt::AlignRight);
   vlayout->addWidget(layoutToWidget(IPlayout, this), 0); 
-  vlayout->addWidget(hline(this), 0);
+  vlayout->addWidget(hline(), 0);
   vlayout->addSpacing(300);
 
   // //Enable SSH
@@ -256,10 +274,12 @@ void AdvancedNetworking::toggleTethering(int enable) {
 void AdvancedNetworking::receiveText(QString text){
   wifi->changeTetheringPassword(text);
   s->setCurrentIndex(1);
+  emit closeKeyboard();
 }
 
 void AdvancedNetworking::abortTextInput(){
   s->setCurrentIndex(1);
+  emit closeKeyboard();
 }
 
 // WifiUI functions
@@ -320,10 +340,10 @@ void WifiUI::refresh() {
 
       QWidget * w = new QWidget;
       w->setLayout(hlayout);
-      vlayout->addWidget(w);
-      // Don't add the last line
+      vlayout->addWidget(w, 1);
+      // Don't add the last horizontal line
       if (page * networks_per_page <= i+1 && i+1 < (page + 1) * networks_per_page && i+1 < wifi->seen_networks.size()) {
-        vlayout->addWidget(hline(this));
+        vlayout->addWidget(hline(), 0);
       }
       countWidgets++;
     }
@@ -333,7 +353,9 @@ void WifiUI::refresh() {
   // Pad vlayout to prevert oversized network widgets in case of low visible network count
   for (int i = countWidgets; i < networks_per_page; i++) {
     QWidget *w = new QWidget;
-    vlayout->addWidget(w);
+    // That we need to add w twice was determined empiricaly
+    vlayout->addWidget(w, 1);
+    vlayout->addWidget(w, 1);
   }
 
   QHBoxLayout *prev_next_buttons = new QHBoxLayout;//Adding constructor exposes the qt bug
@@ -354,7 +376,7 @@ void WifiUI::refresh() {
 
   QWidget *w = new QWidget;
   w->setLayout(prev_next_buttons);
-  vlayout->addWidget(w);
+  vlayout->addWidget(w, 1, Qt::AlignBottom);
 }
 
 void WifiUI::handleButton(QAbstractButton* button) {

@@ -18,7 +18,7 @@ void cleanStackedWidget(QStackedWidget* swidget) {
   }
 }
 
-OffroadAlert::OffroadAlert(QWidget* parent) {
+OffroadAlert::OffroadAlert(QWidget* parent) : QFrame(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout();
   main_layout->setMargin(25);
 
@@ -30,11 +30,11 @@ OffroadAlert::OffroadAlert(QWidget* parent) {
   main_layout->addLayout(footer_layout);
 
   QPushButton *dismiss_btn = new QPushButton("Dismiss");
-  dismiss_btn->setFixedSize(453, 125);
+  dismiss_btn->setFixedSize(400, 125);
   footer_layout->addWidget(dismiss_btn, 0, Qt::AlignLeft);
 
   reboot_btn = new QPushButton("Reboot and Update");
-  reboot_btn->setFixedSize(453, 125);
+  reboot_btn->setFixedSize(600, 125);
   reboot_btn->setVisible(false);
   footer_layout->addWidget(reboot_btn, 0, Qt::AlignRight);
 
@@ -54,12 +54,13 @@ OffroadAlert::OffroadAlert(QWidget* parent) {
     }
     QPushButton {
       color: black;
-      font-size: 40px;
+      font-size: 50px;
       font-weight: 600;
-      border-radius: 20px;
+      border-radius: 30px;
       background-color: white;
     }
   )");
+  main_layout->setMargin(50);
 }
 
 void OffroadAlert::refresh() {
@@ -77,7 +78,6 @@ void OffroadAlert::refresh() {
     QLabel *title = new QLabel("Update Available");
     title->setStyleSheet(R"(
       font-size: 72px;
-      font-weight: 700;
     )");
     layout->addWidget(title, 0, Qt::AlignLeft | Qt::AlignTop);
 
@@ -85,7 +85,6 @@ void OffroadAlert::refresh() {
     QLabel *body = new QLabel(release_notes);
     body->setStyleSheet(R"(
       font-size: 48px;
-      font-weight: 600;
     )");
     layout->addWidget(body, 1, Qt::AlignLeft | Qt::AlignTop);
   } else {
@@ -97,7 +96,6 @@ void OffroadAlert::refresh() {
 
       QString style = R"(
         font-size: 48px;
-        font-weight: 600;
       )";
       style.append("background-color: " + QString(alert.severity ? "#E22C2C" : "#292929"));
       l->setStyleSheet(style);
@@ -106,7 +104,6 @@ void OffroadAlert::refresh() {
     }
     layout->setSpacing(20);
   }
-
   QWidget *w = new QWidget();
   w->setLayout(layout);
   alerts_stack->addWidget(w);

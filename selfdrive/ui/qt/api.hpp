@@ -32,7 +32,6 @@ public:
   bool active = true;
 private:
   bool disableWithScreen;
-  int callId;
   QNetworkReply* reply;
   QNetworkAccessManager* networkAccessManager;
   QTimer* networkTimer;
