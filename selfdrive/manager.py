@@ -110,7 +110,7 @@ def build():
       r = scons.stderr.read().split(b'\n')
       compile_output += r
 
-      if retry:
+      if retry and (not dirty):
         if not os.getenv("CI"):
           print("scons build failed, cleaning in")
           for i in range(3, -1, -1):
