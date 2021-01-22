@@ -65,6 +65,10 @@ class CarState(CarStateBase):
                         cp.vl["BodyInfo"]['DOOR_OPEN_FL']])
     ret.steerError = cp.vl["Steering_Torque"]['Steer_Error_1'] == 1
 
+    #----------------TRICK NON-EPB-------------------
+    self.brake_pedal_msg = copy.copy(cp.vl["Brake_Pedal"])
+    #------------------------------------------------
+
     if self.car_fingerprint in PREGLOBAL_CARS:
       self.button = cp_cam.vl["ES_CruiseThrottle"]["Cruise_Button"]
       self.ready = not cp_cam.vl["ES_DashStatus"]["Not_Ready_Startup"]
@@ -100,7 +104,20 @@ class CarState(CarStateBase):
       ("Steering_Angle", "Steering_Torque", 0),
       ("Cruise_On", "CruiseControl", 0),
       ("Cruise_Activated", "CruiseControl", 0),
+
       ("Brake_Pedal", "Brake_Pedal", 0),
+      #----------------TRICK NON-EPB-------------------
+      #Tagging all message parts so it can be sent without upseting ES
+      ("Checksum", "Brake_Pedal", 0),
+      ("Counter", "Brake_Pedal", 0),
+      ("Signal1", "Brake_Pedal", 0),
+      ("Speed", "Brake_Pedal", 0),
+      ("Signal2", "Brake_Pedal", 0),
+      ("Brake_Lights", "Brake_Pedal", 0),
+      ("Signal3", "Brake_Pedal", 0),
+      ("Signal4", "Brake_Pedal", 0),
+      #------------------------------------------------
+
       ("Throttle_Pedal", "Throttle", 0),
 
       ("LEFT_BLINKER", "Dashlights", 0),
