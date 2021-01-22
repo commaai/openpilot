@@ -72,11 +72,11 @@ public:
   explicit Networking(QWidget* parent = 0);
 
 private:
-  QStackedLayout* s;// keyboard, wifiScreen, advanced
-  
+  QStackedLayout* s = nullptr;// keyboard, wifiScreen, advanced
+  AdvancedNetworking* an = nullptr;
+
   Network selectedNetwork;
 
-  AdvancedNetworking* an;
   WifiUI* wifiWidget;
   WifiManager* wifi = nullptr;
   InputField* inputField;
