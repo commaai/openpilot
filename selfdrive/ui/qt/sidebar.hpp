@@ -2,6 +2,18 @@
 
 #include <QtWidgets>
 
+
+class SettingsBtn : public QAbstractButton {
+  Q_OBJECT
+
+public:
+  SettingsBtn(QWidget* parent = 0);
+protected:
+  void paintEvent(QPaintEvent*) override;
+private:
+  QImage image;
+};
+
 class StatusWidget : public QFrame {
   Q_OBJECT
 
