@@ -2,10 +2,6 @@
 #include "widgets/toggle.hpp"
 #include <QDebug>
 
-//TODO: settings btn
-//TODO: signal widget
-//TODO: comma logo
-//TODO: custom indicator color
 //TODO: custom qlabel text size
 
 SettingsBtn::SettingsBtn(QWidget* parent) : QAbstractButton(parent){
@@ -52,9 +48,9 @@ void StatusWidget::paintEvent(QPaintEvent *e){
   //origin at 1.5,1.5 because qt issues with pixel perfect borders
   p.drawRoundedRect(QRectF(1.5, 1.5, size().width()-3, size().height()-3), 30, 30);
 
-
-  // draw indicator background
+  // TODO: reimplement gradient indicators
   // TODO: postponed: indicator highlight and blinking?
+  // draw indicator background
   // QLinearGradient gradient = QLinearGradient(0,0,0,100);
   // gradient.setColorAt(0.0, QColor(0xcfcfcf));
   // gradient.setColorAt(1.0, QColor(0xb2b2b2));
@@ -99,10 +95,16 @@ void SignalWidget::paintEvent(QPaintEvent *e){
 }
 
 Sidebar::Sidebar(QWidget* parent) : QFrame(parent){
-  QVBoxLayout* main_layout = new QVBoxLayout();
-  main_layout->setContentsMargins(24,16,24,16); //24 sides, 16 vertical
-  main_layout->setSpacing(16);
+  QVBoxLayout* sb_layout = new QVBoxLayout();
+  sb_layout->setContentsMargins(24,16,24,16); //24 sides, 16 vertical
+  sb_layout->setSpacing(16);
   setFixedSize(300,1080);
+
+  QImage image = QImageReader("../assets/images/button_home.png").read();
+  QLabel *comma = new QLabel();
+  comma->setPixmap(QPixmap::fromImage(image));
+  comma->setAlignment(Qt::AlignCenter);
+  comma->setFixedSize(200,200);
 
   SettingsBtn* s_btn = new SettingsBtn(this);
   SignalWidget* signal = new SignalWidget("4G",2,this);
@@ -112,16 +114,17 @@ Sidebar::Sidebar(QWidget* parent) : QFrame(parent){
   StatusWidget* connect = new StatusWidget("CONNECT\nOFFLINE",  QColor(234,192,11), this); //test yellow
   
 
-  main_layout->addWidget(signal, 0,Qt::AlignTop);
-  main_layout->addWidget(s_btn, 0,Qt::AlignTop);
-  main_layout->addWidget(temp, 0,Qt::AlignTop);
-  main_layout->addWidget(vehicle, 0,Qt::AlignTop);
-  main_layout->addWidget(connect, 0,Qt::AlignTop);
-  main_layout->addStretch(1);
+  sb_layout->addWidget(signal, 0, Qt::AlignTop);
+  sb_layout->addWidget(s_btn, 0, Qt::AlignTop);
+  sb_layout->addWidget(temp, 0, Qt::AlignTop);
+  sb_layout->addWidget(vehicle, 0, Qt::AlignTop);
+  sb_layout->addWidget(connect, 0, Qt::AlignTop);
+  sb_layout->addStretch(1);
+  sb_layout->addWidget(comma, 0, Qt::AlignHCenter | Qt::AlignVCenter);
   setStyleSheet(R"( Sidebar { background: qlineargradient(
                                     x1: 0, y1: 0, x2: 0, y2: 1,
                                     stop: 0 #242424,
                                     stop: 1.0 #030303);
                                     } )");
-  setLayout(main_layout);
+  setLayout(sb_layout);
 }
