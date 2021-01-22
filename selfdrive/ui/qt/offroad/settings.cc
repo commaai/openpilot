@@ -68,7 +68,6 @@ void ParamsToggle::checkboxClicked(int state) {
 QWidget * toggles_panel() {
   QVBoxLayout *toggles_list = new QVBoxLayout();
   toggles_list->setMargin(50);
-  toggles_list->setSpacing(25);
 
   toggles_list->addWidget(new ParamsToggle("OpenpilotEnabledToggle",
                                             "Enable openpilot",
@@ -143,14 +142,17 @@ QWidget * device_panel() {
   // TODO: show current calibration values
   QPushButton *clear_cal_btn = new QPushButton("Reset Calibration");
   device_layout->addWidget(clear_cal_btn);
+  device_layout->addWidget(horizontal_line());
   QObject::connect(clear_cal_btn, &QPushButton::released, [=]() {
     Params().delete_db_value("CalibrationParams");
   });
 
   QPushButton *poweroff_btn = new QPushButton("Power Off");
   device_layout->addWidget(poweroff_btn);
+  device_layout->addWidget(horizontal_line());
   QPushButton *reboot_btn = new QPushButton("Reboot");
   device_layout->addWidget(reboot_btn);
+  device_layout->addWidget(horizontal_line());
 #ifdef __aarch64__
   QObject::connect(poweroff_btn, &QPushButton::released, [=]() { std::system("sudo poweroff"); });
   QObject::connect(reboot_btn, &QPushButton::released, [=]() { std::system("sudo reboot"); });
