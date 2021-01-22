@@ -37,11 +37,13 @@ class StatusWidget : public QFrame {
   Q_OBJECT
 
 public:
-  StatusWidget(QString text, QWidget* parent = 0);
-  QLabel* label;
+  StatusWidget(QString text, QColor color, QWidget* parent = 0);
 
 protected:
   void paintEvent(QPaintEvent*) override;
+private:
+  QColor ind_color = QColor(234,192,11); //init to yellow?
+  QLabel* label;
 };
 
 class Sidebar : public QFrame {

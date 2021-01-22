@@ -25,7 +25,8 @@ void SettingsBtn::paintEvent(QPaintEvent *e){
   p.drawImage((size().width()/2)-(image.width()/2), (size().height()/2)-(image.height()/2), image,0,0,0,0, Qt::AutoColor);
 }
 
-StatusWidget::StatusWidget(QString text, QWidget* parent) : QFrame(parent)
+StatusWidget::StatusWidget(QString text, QColor indicator, QWidget* parent) : QFrame(parent),
+ind_color(indicator)
 {  
   QLabel* label = new QLabel(this);
   label->setText(text);
@@ -51,15 +52,16 @@ void StatusWidget::paintEvent(QPaintEvent *e){
   //origin at 1.5,1.5 because qt issues with pixel perfect borders
   p.drawRoundedRect(QRectF(1.5, 1.5, size().width()-3, size().height()-3), 30, 30);
 
+
   // draw indicator background
   // TODO: postponed: indicator highlight and blinking?
-  QLinearGradient gradient = QLinearGradient(0,0,0,100);
-  gradient.setColorAt(0.0, QColor(0xcfcfcf));
-  gradient.setColorAt(1.0, QColor(0xb2b2b2));
-  QBrush brush(gradient);
+  // QLinearGradient gradient = QLinearGradient(0,0,0,100);
+  // gradient.setColorAt(0.0, QColor(0xcfcfcf));
+  // gradient.setColorAt(1.0, QColor(0xb2b2b2));
+  // QBrush brush(gradient);
   
   p.setPen(Qt::NoPen);
-  p.setBrush(brush);
+  p.setBrush(ind_color);
   p.setClipRect(0,0,25+6,size().height()-6,Qt::ClipOperation::ReplaceClip);
   p.drawRoundedRect(QRectF(6, 6, size().width()-12, size().height()-12), 25, 25);
 }
@@ -105,9 +107,9 @@ Sidebar::Sidebar(QWidget* parent) : QFrame(parent){
   SettingsBtn* s_btn = new SettingsBtn(this);
   SignalWidget* signal = new SignalWidget("4G",2,this);
   //TODO: better temp widget layouting/font
-  StatusWidget* temp = new StatusWidget("39C\nTEMP", this);
-  StatusWidget* vehicle = new StatusWidget("VEHICLE\nGOOD GPS", this);
-  StatusWidget* connect = new StatusWidget("CONNECT\nONLINE", this);
+  StatusWidget* temp = new StatusWidget("39C\nTEMP", Qt::white, this); //test white
+  StatusWidget* vehicle = new StatusWidget("VEHICLE\nGOOD GPS", QColor(0x33ab4c), this); //test green
+  StatusWidget* connect = new StatusWidget("CONNECT\nOFFLINE",  QColor(234,192,11), this); //test yellow
   
 
   main_layout->addWidget(signal, 0,Qt::AlignTop);
