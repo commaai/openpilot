@@ -18,6 +18,23 @@
 #include "common/params.h"
 #include "common/util.h"
 
+QFrame* horizontal_line(QWidget* parent = 0){
+  QFrame* line = new QFrame(parent);
+  line->setFrameShape(QFrame::StyledPanel);
+  line->setStyleSheet("margin-left: 40px; margin-right: 40px; border-width: 1px; border-bottom-style: solid; border-color: gray;");
+  line->setFixedHeight(2);
+  return line;
+}
+QWidget* labelWidget(QString labelName, QString labelContent){
+  QHBoxLayout* labelLayout = new QHBoxLayout;
+  labelLayout->addWidget(new QLabel(labelName), 0, Qt::AlignLeft);
+  QLabel* paramContent = new QLabel(labelContent);
+  paramContent->setStyleSheet("color: #aaaaaa");
+  labelLayout->addWidget(paramContent, 0, Qt::AlignRight);
+  QWidget* labelWidget = new QWidget;
+  labelWidget->setLayout(labelLayout);
+  return labelWidget;
+}
 
 ParamsToggle::ParamsToggle(QString param, QString title, QString description, QString icon_path, QWidget *parent): QFrame(parent) , param(param) {
   QHBoxLayout *layout = new QHBoxLayout;
@@ -61,38 +78,43 @@ void ParamsToggle::checkboxClicked(int state) {
 QWidget * toggles_panel() {
   QVBoxLayout *toggles_list = new QVBoxLayout();
   toggles_list->setMargin(50);
-  toggles_list->setSpacing(25);
 
   toggles_list->addWidget(new ParamsToggle("OpenpilotEnabledToggle",
                                             "Enable openpilot",
                                             "Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off.",
                                             "../assets/offroad/icon_openpilot.png"
                                               ));
+  toggles_list->addWidget(horizontal_line());
   toggles_list->addWidget(new ParamsToggle("LaneChangeEnabled",
                                             "Enable Lane Change Assist",
                                             "Perform assisted lane changes with openpilot by checking your surroundings for safety, activating the turn signal and gently nudging the steering wheel towards your desired lane. openpilot is not capable of checking if a lane change is safe. You must continuously observe your surroundings to use this feature.",
                                             "../assets/offroad/icon_road.png"
                                               ));
+  toggles_list->addWidget(horizontal_line());
   toggles_list->addWidget(new ParamsToggle("IsLdwEnabled",
                                             "Enable Lane Departure Warnings",
                                             "Receive alerts to steer back into the lane when your vehicle drifts over a detected lane line without a turn signal activated while driving over 31mph (50kph).",
                                             "../assets/offroad/icon_warning.png"
                                               ));
+  toggles_list->addWidget(horizontal_line());
   toggles_list->addWidget(new ParamsToggle("RecordFront",
                                             "Record and Upload Driver Camera",
                                             "Upload data from the driver facing camera and help improve the driver monitoring algorithm.",
                                             "../assets/offroad/icon_network.png"
                                             ));
+  toggles_list->addWidget(horizontal_line());
   toggles_list->addWidget(new ParamsToggle("IsRHD",
                                             "Enable Right-Hand Drive",
                                             "Allow openpilot to obey left-hand traffic conventions and perform driver monitoring on right driver seat.",
                                             "../assets/offroad/icon_openpilot_mirrored.png"
                                             ));
+  toggles_list->addWidget(horizontal_line());
   toggles_list->addWidget(new ParamsToggle("IsMetric",
                                             "Use Metric System",
                                             "Display speed in km/h instead of mp/h.",
                                             "../assets/offroad/icon_metric.png"
                                             ));
+  toggles_list->addWidget(horizontal_line());
   toggles_list->addWidget(new ParamsToggle("CommunityFeaturesToggle",
                                             "Enable Community Features",
                                             "Use features from the open source community that are not maintained or supported by comma.ai and have not been confirmed to meet the standard safety model. These features include community supported cars and community supported hardware. Be extra cautious when using these features",
@@ -108,7 +130,7 @@ QWidget * device_panel() {
 
   QVBoxLayout *device_layout = new QVBoxLayout;
   device_layout->setMargin(100);
-  device_layout->setSpacing(50);
+  device_layout->setSpacing(30);
 
   Params params = Params();
   std::vector<std::pair<std::string, std::string>> labels = {
@@ -123,21 +145,23 @@ QWidget * device_panel() {
   //}
 
   for (auto &l : labels) {
-    QString text = QString::fromStdString(l.first + ": " + l.second);
-    device_layout->addWidget(new QLabel(text));
+    device_layout->addWidget(labelWidget(QString::fromStdString(l.first+":"), QString::fromStdString(l.second)), 0, Qt::AlignTop);
   }
 
   // TODO: show current calibration values
   QPushButton *clear_cal_btn = new QPushButton("Reset Calibration");
-  device_layout->addWidget(clear_cal_btn);
+  device_layout->addWidget(clear_cal_btn, 0, Qt::AlignBottom);
+  device_layout->addWidget(horizontal_line(), Qt::AlignBottom);
   QObject::connect(clear_cal_btn, &QPushButton::released, [=]() {
     Params().delete_db_value("CalibrationParams");
   });
 
   QPushButton *poweroff_btn = new QPushButton("Power Off");
-  device_layout->addWidget(poweroff_btn);
+  device_layout->addWidget(poweroff_btn, Qt::AlignBottom);
+  device_layout->addWidget(horizontal_line(), Qt::AlignBottom);
   QPushButton *reboot_btn = new QPushButton("Reboot");
-  device_layout->addWidget(reboot_btn);
+  device_layout->addWidget(reboot_btn, Qt::AlignBottom);
+  device_layout->addWidget(horizontal_line(), Qt::AlignBottom);
 #ifdef __aarch64__
   QObject::connect(poweroff_btn, &QPushButton::released, [=]() { std::system("sudo poweroff"); });
   QObject::connect(reboot_btn, &QPushButton::released, [=]() { std::system("sudo reboot"); });
@@ -181,9 +205,13 @@ QWidget * developer_panel() {
     labels.push_back({"OS Version", "AGNOS " + os_version});
   }
 
-  for (auto l : labels) {
-    QString text = QString::fromStdString(l.first + ": " + l.second);
-    main_layout->addWidget(new QLabel(text));
+  for (int i = 0; i<labels.size(); i++) {
+    auto l = labels[i];
+    main_layout->addWidget(labelWidget(QString::fromStdString(l.first+":"), QString::fromStdString(l.second)));
+
+    if(i+1<labels.size()) {
+      main_layout->addWidget(horizontal_line());
+    }
   }
 
   QWidget *widget = new QWidget;
@@ -197,7 +225,7 @@ QWidget * developer_panel() {
 }
 
 QWidget * network_panel(QWidget * parent) {
-  Networking *w = new Networking();
+  Networking *w = new Networking(parent);
   QObject::connect(parent, SIGNAL(sidebarPressed()), w, SLOT(sidebarChange()));
   QObject::connect(w, SIGNAL(openKeyboard()), parent, SLOT(closeSidebar()));
   QObject::connect(w, SIGNAL(closeKeyboard()), parent, SLOT(openSidebar()));
@@ -227,7 +255,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   )");
   close_btn->setFixedSize(200, 200);
   sidebar_layout->addSpacing(45);
-  sidebar_layout->addWidget(close_btn, 0, Qt::AlignLeft);
+  sidebar_layout->addWidget(close_btn, 0, Qt::AlignCenter);
   QObject::connect(close_btn, SIGNAL(released()), this, SIGNAL(closeSettings()));
 
   // setup panels
@@ -259,25 +287,24 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
     )");
 
     nav_btns->addButton(btn);
-    sidebar_layout->addWidget(btn, 0, Qt::AlignRight | Qt::AlignTop);
+    sidebar_layout->addWidget(btn, 0, Qt::AlignRight);
     panel_layout->addWidget(panel.second);
     QObject::connect(btn, SIGNAL(released()), this, SLOT(setActivePanel()));
     QObject::connect(btn, &QPushButton::released, [=](){emit sidebarPressed();});
   }
   qobject_cast<QPushButton *>(nav_btns->buttons()[0])->setChecked(true);
-  sidebar_layout->addStretch();
+  sidebar_layout->setContentsMargins(50, 50, 100, 50);
 
   // main settings layout, sidebar + main panel
   QHBoxLayout *settings_layout = new QHBoxLayout();
-  settings_layout->setContentsMargins(150, 50, 150, 50);
 
   sidebar_widget = new QWidget;
   sidebar_widget->setLayout(sidebar_layout);
+  sidebar_widget->setFixedWidth(500);
   settings_layout->addWidget(sidebar_widget);
 
-  settings_layout->addSpacing(25);
 
-  QFrame *panel_frame = new QFrame;
+  panel_frame = new QFrame;
   panel_frame->setLayout(panel_layout);
   panel_frame->setStyleSheet(R"(
     QFrame {
@@ -288,7 +315,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
       background-color: none;
     }
   )");
-  settings_layout->addWidget(panel_frame, 1, Qt::AlignRight);
+  settings_layout->addWidget(panel_frame);
 
   setLayout(settings_layout);
   setStyleSheet(R"(
@@ -307,5 +334,5 @@ void SettingsWindow::closeSidebar() {
 }
 
 void SettingsWindow::openSidebar() {
-  sidebar_widget->setFixedWidth(300);
+  sidebar_widget->setFixedWidth(500);
 }

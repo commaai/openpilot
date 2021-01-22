@@ -92,7 +92,7 @@ void OnboardingWindow::updateActiveScreen() {
   }
 }
 
-OnboardingWindow::OnboardingWindow(QWidget *parent) {
+OnboardingWindow::OnboardingWindow(QWidget *parent) : QStackedWidget(parent) {
   addWidget(terms_screen());
   addWidget(training_screen());
 
