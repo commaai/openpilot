@@ -135,8 +135,14 @@ QWidget * device_panel() {
   //}
 
   for (auto &l : labels) {
-    QString text = QString::fromStdString(l.first + ": " + l.second);
-    device_layout->addWidget(new QLabel(text));
+    QHBoxLayout* labelLayout = new QHBoxLayout;
+    labelLayout->addWidget(new QLabel(QString::fromStdString(l.first) + ":"), 0, Qt::AlignLeft);
+    QLabel* paramContent = new QLabel(QString::fromStdString(l.second));
+    paramContent->setStyleSheet("color: #aaaaaa");
+    labelLayout->addWidget(paramContent, 0, Qt::AlignRight);
+    QWidget* labelWidget = new QWidget;
+    labelWidget->setLayout(labelLayout);
+    device_layout->addWidget(labelWidget);
   }
 
   // TODO: show current calibration values
@@ -196,9 +202,20 @@ QWidget * developer_panel() {
     labels.push_back({"OS Version", "AGNOS " + os_version});
   }
 
-  for (auto l : labels) {
-    QString text = QString::fromStdString(l.first + ": " + l.second);
-    main_layout->addWidget(new QLabel(text));
+  for (int i = 0; i<labels.size(); i++) {
+    auto l = labels[i];
+    QHBoxLayout* labelLayout = new QHBoxLayout;
+    labelLayout->addWidget(new QLabel(QString::fromStdString(l.first) + ":"), 0, Qt::AlignLeft);
+    QLabel* paramContent = new QLabel(QString::fromStdString(l.second));
+    paramContent->setStyleSheet("color: #aaaaaa");
+    labelLayout->addWidget(paramContent, 0, Qt::AlignRight);
+    QWidget* labelWidget = new QWidget;
+    labelWidget->setLayout(labelLayout);
+    main_layout->addWidget(labelWidget);
+
+    if(i+1<labels.size()) {
+      main_layout->addWidget(horizontal_line());
+    }
   }
 
   QWidget *widget = new QWidget;
