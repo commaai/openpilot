@@ -139,6 +139,7 @@ void ui_draw_sidebar(UIState *s) {
   if (s->scene.sidebar_collapsed) {
     return;
   }
+  // return;
   draw_background(s);
   draw_settings_button(s);
   draw_home_button(s);

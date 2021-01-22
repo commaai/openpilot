@@ -13,6 +13,7 @@
 #include "qt_sound.hpp"
 #include "ui/ui.hpp"
 #include "widgets/offroad_alerts.hpp"
+#include "sidebar.hpp"
 
 // container window for onroad NVG UI
 class GLWindow : public QOpenGLWidget, protected QOpenGLFunctions {
@@ -90,6 +91,7 @@ protected:
 private:
   QGridLayout* layout;
   OffroadHome* home;
+  Sidebar* sidebar;
 
 private slots:
   void setVisibility(bool offroad);
