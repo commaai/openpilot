@@ -73,9 +73,9 @@ void PairingQRWidget::updateQrCode(QString text) {
     }
   }
   // Integer division to prevent anti-aliasing
-  int approx450 = (450 / (sz + 2)) * (sz + 2);
-  qrCode->setPixmap(QPixmap::fromImage(im.scaled(approx450, approx450, Qt::KeepAspectRatio, Qt::FastTransformation), Qt::MonoOnly));
-  qrCode->setFixedSize(approx450, approx450);
+  int approx500 = (500 / (sz + 2)) * (sz + 2);
+  qrCode->setPixmap(QPixmap::fromImage(im.scaled(approx500, approx500, Qt::KeepAspectRatio, Qt::FastTransformation), Qt::MonoOnly));
+  qrCode->setFixedSize(approx500, approx500);
 }
 
 PrimeUserWidget::PrimeUserWidget(QWidget* parent) : QWidget(parent) {
@@ -173,21 +173,21 @@ SetupWidget::SetupWidget(QWidget* parent) : QWidget(parent) {
   QWidget* finishRegistration = new QWidget;
 
   QVBoxLayout* finishRegistationLayout = new QVBoxLayout;
-  finishRegistationLayout->addSpacing(50);
+  finishRegistationLayout->addSpacing(30);
   QPushButton* finishButton = new QPushButton("Finish registration");
   finishButton->setFixedHeight(200);
   finishButton->setStyleSheet(R"(
     border-radius: 30px;
-    font-size: 60px;
-    font-weight: 120;
-    background: #787878;
+    font-size: 55px;
+    background: #585858;
   )");
   QObject::connect(finishButton, SIGNAL(released()), this, SLOT(showQrCode()));
   finishRegistationLayout->addWidget(finishButton);
 
-  QLabel* registrationDescription = new QLabel("Pair your comma account with comma connect");
+  QLabel* registrationDescription = new QLabel("Pair your Comma device with the Comma Connect app");
   registrationDescription->setStyleSheet(R"(
-    font-size: 50px;
+    font-size: 55px;
+    font-weight: 400;
   )");
 
   registrationDescription->setWordWrap(true);
@@ -220,7 +220,7 @@ SetupWidget::SetupWidget(QWidget* parent) : QWidget(parent) {
   background->setStyleSheet(R"(
     .QFrame {
       border-radius: 40px;
-      padding: 60px;
+      padding: 40px;
     }
   )");
   backgroundLayout->addWidget(background);
