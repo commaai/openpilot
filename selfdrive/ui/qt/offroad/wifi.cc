@@ -222,7 +222,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
 
   //IP adress
   QHBoxLayout* IPlayout = new QHBoxLayout;
-  IPlayout->addWidget(new QLabel("IP address: "), 0);
+  IPlayout->addWidget(new QLabel("IP address"), 0);
   ipLabel = new QLabel(wifi->ipv4_address);
   ipLabel->setStyleSheet("color: #aaaaaa");
   IPlayout->addWidget(ipLabel, 0, Qt::AlignRight);
