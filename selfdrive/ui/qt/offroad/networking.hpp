@@ -9,7 +9,7 @@
 
 #include "wifiManager.hpp"
 #include "widgets/input_field.hpp"
-
+#include "widgets/ssh_keys.hpp"
 
 class WifiUI : public QWidget {
   Q_OBJECT
@@ -49,7 +49,7 @@ private:
   InputField* inputField;
   QLabel* ipLabel;
   QPushButton* editPasswordButton;
-
+  SSH* ssh;
 
   WifiManager* wifi = nullptr;
 
@@ -59,6 +59,7 @@ signals:
   void backPress();
 
 public slots:
+  void modifySSH();
   void receiveText(QString text);
   void abortTextInput();
   void toggleTethering(int enable);

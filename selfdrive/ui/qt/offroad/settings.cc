@@ -10,7 +10,7 @@
 #include <QLabel>
 #include <QPixmap>
 
-#include "wifi.hpp"
+#include "networking.hpp"
 #include "settings.hpp"
 #include "widgets/toggle.hpp"
 #include "widgets/offroad_alerts.hpp"
