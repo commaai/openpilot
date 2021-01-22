@@ -120,7 +120,7 @@ QWidget * device_panel() {
 
   QVBoxLayout *device_layout = new QVBoxLayout;
   device_layout->setMargin(100);
-  device_layout->setSpacing(50);
+  device_layout->setSpacing(30);
 
   Params params = Params();
   std::vector<std::pair<std::string, std::string>> labels = {
@@ -142,23 +142,23 @@ QWidget * device_panel() {
     labelLayout->addWidget(paramContent, 0, Qt::AlignRight);
     QWidget* labelWidget = new QWidget;
     labelWidget->setLayout(labelLayout);
-    device_layout->addWidget(labelWidget);
+    device_layout->addWidget(labelWidget, 0, Qt::AlignTop);
   }
 
   // TODO: show current calibration values
   QPushButton *clear_cal_btn = new QPushButton("Reset Calibration");
-  device_layout->addWidget(clear_cal_btn);
-  device_layout->addWidget(horizontal_line());
+  device_layout->addWidget(clear_cal_btn, 0, Qt::AlignBottom);
+  device_layout->addWidget(horizontal_line(), Qt::AlignBottom);
   QObject::connect(clear_cal_btn, &QPushButton::released, [=]() {
     Params().delete_db_value("CalibrationParams");
   });
 
   QPushButton *poweroff_btn = new QPushButton("Power Off");
-  device_layout->addWidget(poweroff_btn);
-  device_layout->addWidget(horizontal_line());
+  device_layout->addWidget(poweroff_btn, Qt::AlignBottom);
+  device_layout->addWidget(horizontal_line(), Qt::AlignBottom);
   QPushButton *reboot_btn = new QPushButton("Reboot");
-  device_layout->addWidget(reboot_btn);
-  device_layout->addWidget(horizontal_line());
+  device_layout->addWidget(reboot_btn, Qt::AlignBottom);
+  device_layout->addWidget(horizontal_line(), Qt::AlignBottom);
 #ifdef __aarch64__
   QObject::connect(poweroff_btn, &QPushButton::released, [=]() { std::system("sudo poweroff"); });
   QObject::connect(reboot_btn, &QPushButton::released, [=]() { std::system("sudo reboot"); });
