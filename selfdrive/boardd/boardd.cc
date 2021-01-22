@@ -38,10 +38,10 @@
 
 Panda * panda = NULL;
 std::atomic<bool> safety_setter_thread_running(false);
+std::atomic<bool> ignition(false);
 bool spoofing_started = false;
 bool fake_send = false;
 bool connected_once = false;
-bool ignition = false;
 
 ExitHandler do_exit;
 struct tm get_time(){
