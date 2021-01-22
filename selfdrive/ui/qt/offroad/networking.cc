@@ -6,8 +6,9 @@
 #include <QLineEdit>
 #include <QRandomGenerator>
 
-#include "wifi.hpp"
+#include "networking.hpp"
 #include "widgets/toggle.hpp"
+#include "widgets/ssh_keys.hpp"
 
 void clearLayout(QLayout* layout) {
   while (QLayoutItem* item = layout->takeAt(0)) {
@@ -179,7 +180,7 @@ QFrame* hline(QWidget* parent = 0){
 // AdvancedNetworking functions
 
 AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWidget(parent), wifi(wifi){
-  s = new QStackedLayout;// inputField and settings
+  s = new QStackedLayout;// inputField, mainPage, SSH settings
   inputField = new InputField(this, 8);
   connect(inputField, SIGNAL(emitText(QString)), this, SLOT(receiveText(QString)));
   connect(inputField, SIGNAL(cancel()), this, SLOT(abortTextInput()));
@@ -241,6 +242,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   QHBoxLayout* authSSHLayout = new QHBoxLayout(this);
   authSSHLayout->addWidget(new QLabel("Authorized SSH keys", this));
   QPushButton* editAuthSSHButton = new QPushButton("EDIT", this);
+  connect(editAuthSSHButton, &QPushButton::released, [=](){s->setCurrentIndex(2);});
   authSSHLayout->addWidget(editAuthSSHButton);
   vlayout->addWidget(layoutToWidget(authSSHLayout, this));
 
@@ -257,9 +259,17 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   settingsWidget->setStyleSheet("margin-left: 40px; margin-right: 40px;");
   s->addWidget(settingsWidget);
   s->setCurrentIndex(1);
+
+  ssh = new SSH;
+  connect(ssh, &SSH::closeSSHSettings, [=](){s->setCurrentIndex(1);});
+  s->addWidget(ssh);
+
   setLayout(s);
 }
 
+void AdvancedNetworking::modifySSH(){
+  s->setCurrentIndex(2);
+}
 void AdvancedNetworking::refresh(){
   ipLabel->setText(wifi->ipv4_address);
 }
