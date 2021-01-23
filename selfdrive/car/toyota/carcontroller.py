@@ -107,7 +107,10 @@ class CarController():
 
     # we can spam can to cancel the system even if we are using lat only control
     if (frame % 3 == 0 and CS.CP.openpilotLongitudinalControl) or (pcm_cancel_cmd and Ecu.fwdCamera in self.fake_ecus):
-      lead = lead or (CS.out.vEgo < 12. and (not CS.out.standstill))    # at low speed we always assume the lead is present so ACC can be engaged
+      if enabled:
+        lead = lead or CS.out.vEgo < 12. # at low speed and enabled we always assume the lead is present so ACC can be engaged and will not disengage
+      else:
+        lead = lead or (CS.out.vEgo < 12. and (not CS.out.standstill))    # at low speed and not enabled we always assume the lead is present unless speed is zero so ACC can be engaged but not at no speed
 
       # Lexus IS uses a different cancellation message
       if pcm_cancel_cmd and CS.CP.carFingerprint == CAR.LEXUS_IS:
