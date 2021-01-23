@@ -11,6 +11,9 @@ class Pc(HardwareBase):
   def get_os_version(self):
     return None
 
+  def get_device_type(self):
+    return "pc"
+
   def get_sound_card_online(self):
     return True
 
