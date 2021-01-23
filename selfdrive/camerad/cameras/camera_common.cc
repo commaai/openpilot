@@ -370,8 +370,8 @@ void common_camera_process_front(SubMaster *sm, PubMaster *pm, CameraState *c, i
 
   // auto exposure
   if (cnt % 3 == 0) {
-    if (sm->update(0) > 0 && sm->updated("driverState")) {
-      auto state = (*sm)["driverState"].getDriverState();
+    if (auto event = sm->updated("driverState"); event) {
+      auto state = event->getDriverState();
       // set front camera metering target
       if (state.getFaceProb() > 0.4) {
         auto face_position = state.getFacePosition();

@@ -410,9 +410,9 @@ void hardware_control_thread() {
     sm.update(1000); // TODO: what happens if EINTR is sent while in sm.update?
 
 #ifdef QCOM
-    if (sm.updated("thermal")){
+    if (auto event = sm.updated("thermal"); event){
       // Charging mode
-      bool charging_disabled = sm["thermal"].getThermal().getChargingDisabled();
+      bool charging_disabled = event->getThermal().getChargingDisabled();
       if (charging_disabled != prev_charging_disabled){
         if (charging_disabled){
           panda->set_usb_power_mode(cereal::HealthData::UsbPowerMode::CLIENT);
@@ -428,18 +428,17 @@ void hardware_control_thread() {
 
     // Other pandas don't have fan/IR to control
     if (panda->hw_type != cereal::HealthData::HwType::UNO && panda->hw_type != cereal::HealthData::HwType::DOS) continue;
-    if (sm.updated("thermal")){
+    if (auto event = sm.updated("thermal"); event) {
       // Fan speed
-      uint16_t fan_speed = sm["thermal"].getThermal().getFanSpeed();
+      uint16_t fan_speed = event->getThermal().getFanSpeed();
       if (fan_speed != prev_fan_speed || cnt % 100 == 0){
         panda->set_fan_speed(fan_speed);
         prev_fan_speed = fan_speed;
       }
     }
-    if (sm.updated("frontFrame")){
-      auto event = sm["frontFrame"];
-      int cur_integ_lines = event.getFrontFrame().getIntegLines();
-      last_front_frame_t = event.getLogMonoTime();
+    if (auto event = sm.updated("frontFrame"); event) {
+      int cur_integ_lines = event->getFrontFrame().getIntegLines();
+      last_front_frame_t = event->getLogMonoTime();
 
       if (cur_integ_lines <= CUTOFF_IL) {
         ir_pwr = 100.0 * MIN_IR_POWER;

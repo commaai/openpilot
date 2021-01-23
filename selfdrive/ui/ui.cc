@@ -110,9 +110,8 @@ static void update_sockets(UIState *s) {
     return;
   }
 
-  if (s->started && sm.updated("controlsState")) {
-    auto event = sm["controlsState"];
-    scene.controls_state = event.getControlsState();
+  if (auto event = sm.updated("controlsState"); event && s->started) {
+    scene.controls_state = event->getControlsState();
 
     // TODO: the alert stuff shouldn't be handled here
     auto alert_sound = scene.controls_state.getAlertSound();
@@ -137,51 +136,51 @@ static void update_sockets(UIState *s) {
       s->status = scene.controls_state.getEnabled() ? STATUS_ENGAGED : STATUS_DISENGAGED;
     }
   }
-  if (sm.updated("radarState")) {
-    auto data = sm["radarState"].getRadarState();
+  if (auto event = sm.updated("radarState"); event) {
+    auto data = event->getRadarState();
     scene.lead_data[0] = data.getLeadOne();
     scene.lead_data[1] = data.getLeadTwo();
   }
-  if (sm.updated("liveCalibration")) {
+  if (auto event = sm.updated("liveCalibration"); event) {
     scene.world_objects_visible = true;
-    auto extrinsicl = sm["liveCalibration"].getLiveCalibration().getExtrinsicMatrix();
+    auto extrinsicl = event->getLiveCalibration().getExtrinsicMatrix();
     for (int i = 0; i < 3 * 4; i++) {
       scene.extrinsic_matrix.v[i] = extrinsicl[i];
     }
   }
-  if (sm.updated("modelV2")) {
-    update_model(s, sm["modelV2"].getModelV2());
+  if (auto event = sm.updated("modelV2"); event) {
+    update_model(s, event->getModelV2());
   }
-  if (sm.updated("uiLayoutState")) {
-    auto data = sm["uiLayoutState"].getUiLayoutState();
+  if (auto event = sm.updated("uiLayoutState"); event) {
+    auto data = event->getUiLayoutState();
     s->active_app = data.getActiveApp();
     scene.sidebar_collapsed = data.getSidebarCollapsed();
   }
-  if (sm.updated("thermal")) {
-    scene.thermal = sm["thermal"].getThermal();
+  if (auto event = sm.updated("thermal"); event) {
+    scene.thermal = event->getThermal();
   }
-  if (sm.updated("health")) {
-    auto health = sm["health"].getHealth();
+  if (auto event = sm.updated("health"); event) {
+    auto health = event->getHealth();
     scene.hwType = health.getHwType();
     s->ignition = health.getIgnitionLine() || health.getIgnitionCan();
-  } else if ((s->sm->frame - s->sm->rcv_frame("health")) > 5*UI_FREQ) {
+  } else if ((s->sm->frame - s->sm->rcv_frame("health")) > 5 * UI_FREQ) {
     scene.hwType = cereal::HealthData::HwType::UNKNOWN;
   }
-  if (sm.updated("carParams")) {
-    s->longitudinal_control = sm["carParams"].getCarParams().getOpenpilotLongitudinalControl();
+  if (auto event = sm.updated("carParams"); event) {
+    s->longitudinal_control = event->getCarParams().getOpenpilotLongitudinalControl();
   }
-  if (sm.updated("driverState")) {
-    scene.driver_state = sm["driverState"].getDriverState();
+  if (auto event = sm.updated("driverState"); event) {
+    scene.driver_state = event->getDriverState();
   }
-  if (sm.updated("dMonitoringState")) {
-    scene.dmonitoring_state = sm["dMonitoringState"].getDMonitoringState();
+  if (auto event = sm.updated("dMonitoringState"); event) {
+    scene.dmonitoring_state = event->getDMonitoringState();
     scene.is_rhd = scene.dmonitoring_state.getIsRHD();
     scene.frontview = scene.dmonitoring_state.getIsPreview();
   } else if (scene.frontview && (sm.frame - sm.rcv_frame("dMonitoringState")) > UI_FREQ/2) {
     scene.frontview = false;
   }
-  if (sm.updated("sensorEvents")) {
-    for (auto sensor : sm["sensorEvents"].getSensorEvents()) {
+  if (auto event = sm.updated("sensorEvents"); event) {
+    for (auto sensor : event->getSensorEvents()) {
       if (sensor.which() == cereal::SensorEventData::LIGHT) {
         s->light_sensor = sensor.getLight();
       } else if (!s->started && sensor.which() == cereal::SensorEventData::ACCELERATION) {
