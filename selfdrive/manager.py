@@ -418,9 +418,10 @@ def manager_init():
   if not dirty:
     os.environ['CLEAN'] = '1'
 
-  cloudlog.bind_global(dongle_id=dongle_id, version=version, dirty=dirty, is_eon=True)
+  cloudlog.bind_global(dongle_id=dongle_id, version=version, dirty=dirty,
+                       device=HARDWARE.get_device_type())
   crash.bind_user(id=dongle_id)
-  crash.bind_extra(version=version, dirty=dirty, is_eon=True)
+  crash.bind_extra(version=version, dirty=dirty, device=HARDWARE.get_device_type())
 
   # ensure shared libraries are readable by apks
   if EON:
