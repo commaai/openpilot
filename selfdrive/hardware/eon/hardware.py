@@ -8,7 +8,6 @@ import subprocess
 from cereal import log
 from selfdrive.hardware.base import HardwareBase
 
-DeviceType = log.InitData.DeviceType
 NetworkType = log.ThermalData.NetworkType
 NetworkStrength = log.ThermalData.NetworkStrength
 
@@ -67,7 +66,7 @@ class Android(HardwareBase):
       return f.read().strip()
 
   def get_device_type(self):
-    return DeviceType.neo
+    return "eon"
 
   def get_sound_card_online(self):
     return (os.path.isfile('/proc/asound/card0/state') and
