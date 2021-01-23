@@ -310,16 +310,18 @@ void Panda::send_heartbeat(){
 }
 
 void Panda::can_send(capnp::List<cereal::CanData>::Reader can_data_list){
-  int msg_count = can_data_list.size();
+  const int msg_count = can_data_list.size();
+  if (msg_count == 0) return;
 
   uint32_t *send = new uint32_t[msg_count*0x10]();
 
   for (int i = 0; i < msg_count; i++) {
     auto cmsg = can_data_list[i];
-    if (cmsg.getAddress() >= 0x800) { // extended
-      send[i*4] = (cmsg.getAddress() << 3) | 5;
+    const uint32_t address = cmsg.getAddress();
+    if (address >= 0x800) { // extended
+      send[i*4] = (address << 3) | 5;
     } else { // normal
-      send[i*4] = (cmsg.getAddress() << 21) | 1;
+      send[i*4] = (address << 21) | 1;
     }
     auto can_data = cmsg.getDat();
     assert(can_data.size() <= 8);
