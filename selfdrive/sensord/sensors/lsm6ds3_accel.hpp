@@ -16,6 +16,7 @@
 
 
 class LSM6DS3_Accel : public I2CSensor {
+  float xyz[3];
   uint8_t get_device_address() {return LSM6DS3_ACCEL_I2C_ADDR;}
 public:
   LSM6DS3_Accel(I2CBus *bus);

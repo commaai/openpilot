@@ -28,6 +28,7 @@
 #define BMX055_ACCEL_BW_1000HZ  0b01111
 
 class BMX055_Accel : public I2CSensor {
+  float xyz[3];
   uint8_t get_device_address() {return BMX055_ACCEL_I2C_ADDR;}
 public:
   BMX055_Accel(I2CBus *bus);

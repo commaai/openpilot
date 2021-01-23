@@ -61,9 +61,9 @@ void BMX055_Gyro::get_event(cereal::SensorEventData::Builder &event){
 
   // 16 bit = +- 125 deg/s
   float scale = 125.0f / (1 << 15);
-  float x = -DEG2RAD(read_16_bit(buffer[0], buffer[1]) * scale);
-  float y = -DEG2RAD(read_16_bit(buffer[2], buffer[3]) * scale);
-  float z = DEG2RAD(read_16_bit(buffer[4], buffer[5]) * scale);
+  xyz[0] = -DEG2RAD(read_16_bit(buffer[0], buffer[1]) * scale);
+  xyz[1] = -DEG2RAD(read_16_bit(buffer[2], buffer[3]) * scale);
+  xyz[2] = DEG2RAD(read_16_bit(buffer[4], buffer[5]) * scale);
 
   event.setSource(cereal::SensorEventData::SensorSource::BMX055);
   event.setVersion(1);
@@ -71,7 +71,6 @@ void BMX055_Gyro::get_event(cereal::SensorEventData::Builder &event){
   event.setType(SENSOR_TYPE_GYROSCOPE_UNCALIBRATED);
   event.setTimestamp(start_time);
 
-  float xyz[] = {x, y, z};
   auto svec = event.initGyroUncalibrated();
   svec.setV(xyz);
   svec.setStatus(true);

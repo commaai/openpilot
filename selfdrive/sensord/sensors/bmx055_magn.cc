@@ -82,9 +82,9 @@ void BMX055_Magn::get_event(cereal::SensorEventData::Builder &event){
 
   bool ready = buffer[6] & 0x1;
   if (ready){
-    float x = parse_xy(buffer[0], buffer[1]);
-    float y = parse_xy(buffer[2], buffer[3]);
-    float z = parse_z(buffer[4], buffer[5]);
+    xyz[0] = parse_xy(buffer[0], buffer[1]);
+    xyz[1] = parse_xy(buffer[2], buffer[3]);
+    xyz[2] = parse_z(buffer[4], buffer[5]);
     //uint16_t rhall = parse_rhall(buffer[5], buffer[6]);
 
     // TODO: convert to micro tesla:
@@ -96,7 +96,6 @@ void BMX055_Magn::get_event(cereal::SensorEventData::Builder &event){
     event.setType(SENSOR_TYPE_MAGNETIC_FIELD_UNCALIBRATED);
     event.setTimestamp(start_time);
 
-    float xyz[] = {x, y, z};
     auto svec = event.initMagneticUncalibrated();
     svec.setV(xyz);
     svec.setStatus(true);

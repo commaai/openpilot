@@ -42,9 +42,9 @@ void LSM6DS3_Accel::get_event(cereal::SensorEventData::Builder &event){
   assert(len == sizeof(buffer));
 
   float scale = 9.81 * 2.0f / (1 << 15);
-  float x = read_16_bit(buffer[0], buffer[1]) * scale;
-  float y = read_16_bit(buffer[2], buffer[3]) * scale;
-  float z = read_16_bit(buffer[4], buffer[5]) * scale;
+  xyz[0] = read_16_bit(buffer[2], buffer[3]) * scale;
+  xyz[1] = -read_16_bit(buffer[0], buffer[1]) * scale;
+  xyz[2] = read_16_bit(buffer[4], buffer[5]) * scale;
 
   event.setSource(cereal::SensorEventData::SensorSource::LSM6DS3);
   event.setVersion(1);
@@ -52,7 +52,6 @@ void LSM6DS3_Accel::get_event(cereal::SensorEventData::Builder &event){
   event.setType(SENSOR_TYPE_ACCELEROMETER);
   event.setTimestamp(start_time);
 
-  float xyz[] = {y, -x, z};
   auto svec = event.initAcceleration();
   svec.setV(xyz);
   svec.setStatus(true);

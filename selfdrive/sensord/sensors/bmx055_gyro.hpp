@@ -28,6 +28,7 @@
 
 
 class BMX055_Gyro : public I2CSensor {
+  float xyz[3];
   uint8_t get_device_address() {return BMX055_GYRO_I2C_ADDR;}
 public:
   BMX055_Gyro(I2CBus *bus);

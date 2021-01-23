@@ -19,6 +19,7 @@
 #define BMX055_MAGN_FORCED      (0b01 << 1)
 
 class BMX055_Magn : public I2CSensor{
+  float xyz[3];
   uint8_t get_device_address() {return BMX055_MAGN_I2C_ADDR;}
 public:
   BMX055_Magn(I2CBus *bus);

@@ -45,9 +45,9 @@ void LSM6DS3_Gyro::get_event(cereal::SensorEventData::Builder &event){
   assert(len == sizeof(buffer));
 
   float scale = 250.0f / (1 << 15);
-  float x = DEG2RAD(read_16_bit(buffer[0], buffer[1]) * scale);
-  float y = DEG2RAD(read_16_bit(buffer[2], buffer[3]) * scale);
-  float z = DEG2RAD(read_16_bit(buffer[4], buffer[5]) * scale);
+  xyz[0] = DEG2RAD(read_16_bit(buffer[2], buffer[3]) * scale);
+  xyz[1] = -DEG2RAD(read_16_bit(buffer[0], buffer[1]) * scale);
+  xyz[2] = DEG2RAD(read_16_bit(buffer[4], buffer[5]) * scale);
 
   event.setSource(cereal::SensorEventData::SensorSource::LSM6DS3);
   event.setVersion(1);
@@ -55,7 +55,6 @@ void LSM6DS3_Gyro::get_event(cereal::SensorEventData::Builder &event){
   event.setType(SENSOR_TYPE_GYROSCOPE_UNCALIBRATED);
   event.setTimestamp(start_time);
 
-  float xyz[] = {y, -x, z};
   auto svec = event.initGyroUncalibrated();
   svec.setV(xyz);
   svec.setStatus(true);
