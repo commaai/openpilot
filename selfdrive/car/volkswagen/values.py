@@ -47,7 +47,7 @@ MQB_LDW_MESSAGES = {
 
 class CAR:
   GOLF = "VOLKSWAGEN GOLF"
-  A3 = "AUDI A3"
+  A3 = "AUDI_A3"
 
 FINGERPRINTS = {
   CAR.GOLF: [
