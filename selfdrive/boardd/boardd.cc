@@ -192,14 +192,6 @@ void usb_retry_connect() {
   LOGW("connected to board");
 }
 
-void can_recv(PubMaster &pm) {
-  // create message
-  MessageBuilder msg;
-  auto event = msg.initEvent();
-  panda->can_receive(event);
-  pm.send("can", msg);
-}
-
 void can_send_thread() {
   LOGD("start send thread");
 
@@ -244,13 +236,17 @@ void can_recv_thread() {
 
   // can = 8006
   PubMaster pm({"can"});
+  kj::Array<capnp::word> can_data;
 
   // run at 100hz
   const uint64_t dt = 10000000ULL;
   uint64_t next_frame_time = nanos_since_boot() + dt;
 
   while (!do_exit && panda->connected) {
-    can_recv(pm);
+    if (panda->can_receive(can_data) > 0) {
+      auto bytes = can_data.asBytes();
+      pm.send("can", bytes.begin(), bytes.size());
+    }
 
     uint64_t cur_time = nanos_since_boot();
     int64_t remaining = next_frame_time - cur_time;
