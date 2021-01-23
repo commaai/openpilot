@@ -114,7 +114,6 @@ class CarController():
         self.throttle_cnt = CS.throttle_msg["Counter"]
     else:
       #GLOBAL STOP AND GO
-      throttle_cmd = -1 #normally, just forward throttle msg from ECU
       #Car can only be in HOLD state (3) if it is standing still
       # => if not in HOLD state car has to be moving or driver has taken action
       if CS.cruise_state != 3:
@@ -134,10 +133,10 @@ class CarController():
           and CS.car_follow == 1):
         self.sng_resume_acc = True
       #If standstill for 1+ seconds and CruiseState is not 3, then this car has no EPB  
-      elif (enabled
-            and CS.cruise_state != 3 #cruise state == 3 => ACC HOLD state
-            and CS.out.standstill    #car standstill
-            and time.time_ns() > self.standstill_transition_timestamp + self.params.NON_EPB_STANDSTILL_THRESHOLD): #for more than 1 second
+      if (enabled
+          and CS.cruise_state != 3 #cruise state == 3 => ACC HOLD state
+          and CS.out.standstill    #car standstill
+          and time.time_ns() > self.standstill_transition_timestamp + self.params.NON_EPB_STANDSTILL_THRESHOLD): #for more than 1 second
         #send fake speed to ES, because we know this car has no EPB
         self.sng_send_fake_speed = True
 
