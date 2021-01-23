@@ -22,6 +22,7 @@ segments = [
   ("GM", "ae3ed0eb20960a20|2021-01-15--15-04-06--8"),          # GM.VOLT
   ("NISSAN", "e4d79cf6b8b19a0d|2021-01-17--14-48-08--7"),      # NISSAN.XTRAIL
   ("VOLKSWAGEN", "18105fc8427a07e1|2021-01-18--21-24-08--12"), # VW.GOLF
+  ("VOLKSWAGEN", "07667b885add75fd|2021-01-23--09-53-10"),     # VW.A3
 
   # Enable when port is tested and dascamOnly is no longer set
   #("MAZDA", "32a319f057902bb3|2020-04-27--15-18-58--2"),      # MAZDA.CX5

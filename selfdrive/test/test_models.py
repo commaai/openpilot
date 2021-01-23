@@ -22,6 +22,7 @@ ROUTES = {v['carFingerprint']: k for k, v in routes.items() if v['enableCamera']
 
 # TODO: get updated routes for these cars
 ignore_can_valid = [
+  "AUDI A3",
   "VOLKSWAGEN GOLF",
   "ACURA ILX 2016 ACURAWATCH PLUS",
   "TOYOTA PRIUS 2017",
