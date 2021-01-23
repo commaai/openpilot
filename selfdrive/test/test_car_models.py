@@ -433,7 +433,7 @@ routes = {
     'carFingerprint': VOLKSWAGEN.GOLF,
     'enableCamera': True,
   },
-  "07667b885add75fd|2019-10-20--15-42-29": {
+  "07667b885add75fd|2021-01-23--12-35-00": {
     'carFingerprint': VOLKSWAGEN.A3,
     'enableCamera': True,
   },
