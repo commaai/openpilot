@@ -358,7 +358,7 @@ struct i2c_random_wr_payload init_array_ar0231[] = {
    // Initial Gains
   {0x3022, 0x01}, // GROUPED_PARAMETER_HOLD_
   {0x3366, 0x5555}, // ANALOG_GAIN
-  {0x3060, 0xBBBB}, // ANALOG_COLOR_GAIN
+  {0x3060, 0xAAAA}, // ANALOG_COLOR_GAIN
   {0x305A, 0x00D8}, // RED_GAIN
   {0x3058, 0x011B}, // BLUE_GAIN
   {0x3056, 0x009A}, // GREEN1_GAIN
