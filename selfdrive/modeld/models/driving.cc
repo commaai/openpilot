@@ -47,6 +47,19 @@ constexpr int OUTPUT_SIZE =  POSE_IDX + POSE_SIZE;
 #endif
 
 // #define DUMP_YUV
+struct ModelBuildData {
+  float xyva_arr[LEAD_MHP_VALS];
+  float xyva_stds_arr[LEAD_MHP_VALS];
+  float desire_state_softmax[DESIRE_LEN];
+  float desire_pred_softmax[4*DESIRE_LEN];
+  float x_arr[TRAJECTORY_SIZE] = {};
+  float y_arr[TRAJECTORY_SIZE] = {};
+  float z_arr[TRAJECTORY_SIZE] = {};
+  float t_arr[TRAJECTORY_SIZE];
+  float lane_line_probs_arr[4];
+  float lane_line_stds_arr[4];
+  float road_edge_stds_arr[2];
+} model_data;
 
 void model_init(ModelState* s, cl_device_id device_id, cl_context context) {
   frame_init(&s->frame, MODEL_WIDTH, MODEL_HEIGHT, device_id, context);
@@ -154,67 +167,58 @@ void fill_lead_v2(cereal::ModelDataV2::LeadDataV2::Builder lead, const float *le
   const float *data = get_lead_data(lead_data, t_offset);
   lead.setProb(sigmoid(prob[t_offset]));
   lead.setT(t);
-  float xyva_arr[LEAD_MHP_VALS];
-  float xyva_stds_arr[LEAD_MHP_VALS];
+  
   for (int i=0; i<LEAD_MHP_VALS; i++) {
-    xyva_arr[i] = data[i];
-    xyva_stds_arr[i] = exp(data[LEAD_MHP_VALS + i]);
+    model_data.xyva_arr[i] = data[i];
+    model_data.xyva_stds_arr[i] = exp(data[LEAD_MHP_VALS + i]);
   }
-  lead.setXyva(xyva_arr);
-  lead.setXyvaStd(xyva_stds_arr);
+  lead.setXyva(model_data.xyva_arr);
+  lead.setXyvaStd(model_data.xyva_stds_arr);
 }
 
 void fill_meta(cereal::ModelDataV2::MetaData::Builder meta, const float *meta_data) {
-  float desire_state_softmax[DESIRE_LEN];
-  float desire_pred_softmax[4*DESIRE_LEN];
-  softmax(&meta_data[0], desire_state_softmax, DESIRE_LEN);
+  softmax(&meta_data[0], model_data.desire_state_softmax, DESIRE_LEN);
   for (int i=0; i<4; i++) {
     softmax(&meta_data[DESIRE_LEN + OTHER_META_SIZE + i*DESIRE_LEN],
-            &desire_pred_softmax[i*DESIRE_LEN], DESIRE_LEN);
+            &model_data.desire_pred_softmax[i*DESIRE_LEN], DESIRE_LEN);
   }
-  meta.setDesireState(desire_state_softmax);
+  meta.setDesireState(model_data.desire_state_softmax);
   meta.setEngagedProb(sigmoid(meta_data[DESIRE_LEN]));
   meta.setGasDisengageProb(sigmoid(meta_data[DESIRE_LEN + 1]));
   meta.setBrakeDisengageProb(sigmoid(meta_data[DESIRE_LEN + 2]));
   meta.setSteerOverrideProb(sigmoid(meta_data[DESIRE_LEN + 3]));
-  meta.setDesirePrediction(desire_pred_softmax);
+  meta.setDesirePrediction(model_data.desire_pred_softmax);
 }
 
 void fill_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const float * data,
                int columns, int column_offset, float * plan_t_arr) {
-  float x_arr[TRAJECTORY_SIZE] = {};
-  float y_arr[TRAJECTORY_SIZE] = {};
-  float z_arr[TRAJECTORY_SIZE] = {};
-  //float x_std_arr[TRAJECTORY_SIZE];
-  //float y_std_arr[TRAJECTORY_SIZE];
-  //float z_std_arr[TRAJECTORY_SIZE];
-  float t_arr[TRAJECTORY_SIZE];
+  
   for (int i=0; i<TRAJECTORY_SIZE; i++) {
     // column_offset == -1 means this data is X indexed not T indexed
     if (column_offset >= 0) {
-      t_arr[i] = T_IDXS[i];
-      x_arr[i] = data[i*columns + 0 + column_offset];
+      model_data.t_arr[i] = T_IDXS[i];
+      model_data.x_arr[i] = data[i*columns + 0 + column_offset];
       //x_std_arr[i] = data[columns*(TRAJECTORY_SIZE + i) + 0 + column_offset];
     } else {
-      t_arr[i] = plan_t_arr[i];
-      x_arr[i] = X_IDXS[i];
+      model_data.t_arr[i] = plan_t_arr[i];
+      model_data.x_arr[i] = X_IDXS[i];
       //x_std_arr[i] = NAN;
     }
-    y_arr[i] = data[i*columns + 1 + column_offset];
+    model_data.y_arr[i] = data[i*columns + 1 + column_offset];
     //y_std_arr[i] = data[columns*(TRAJECTORY_SIZE + i) + 1 + column_offset];
-    z_arr[i] = data[i*columns + 2 + column_offset];
+    model_data.z_arr[i] = data[i*columns + 2 + column_offset];
     //z_std_arr[i] = data[columns*(TRAJECTORY_SIZE + i) + 2 + column_offset];
   }
   //kj::ArrayPtr<const float> x_std(x_std_arr, TRAJECTORY_SIZE);
   //kj::ArrayPtr<const float> y_std(y_std_arr, TRAJECTORY_SIZE);
   //kj::ArrayPtr<const float> z_std(z_std_arr, TRAJECTORY_SIZE);
-  xyzt.setX(x_arr);
-  xyzt.setY(y_arr);
-  xyzt.setZ(z_arr);
+  xyzt.setX(model_data.x_arr);
+  xyzt.setY(model_data.y_arr);
+  xyzt.setZ(model_data.z_arr);
   //xyzt.setXStd(x_std);
   //xyzt.setYStd(y_std);
   //xyzt.setZStd(z_std);
-  xyzt.setT(t_arr);
+  xyzt.setT(model_data.t_arr);
 }
 
 void fill_model(cereal::ModelDataV2::Builder &framed, const ModelDataRaw &net_outputs) {
@@ -232,24 +236,23 @@ void fill_model(cereal::ModelDataV2::Builder &framed, const ModelDataRaw &net_ou
 
   // lane lines
   auto lane_lines = framed.initLaneLines(4);
-  float lane_line_probs_arr[4];
-  float lane_line_stds_arr[4];
+  
   for (int i = 0; i < 4; i++) {
     fill_xyzt(lane_lines[i], &net_outputs.lane_lines[i*TRAJECTORY_SIZE*2], 2, -1, plan_t_arr);
-    lane_line_probs_arr[i] = sigmoid(net_outputs.lane_lines_prob[i]);
-    lane_line_stds_arr[i] = exp(net_outputs.lane_lines[2*TRAJECTORY_SIZE*(4 + i)]);
+    model_data.lane_line_probs_arr[i] = sigmoid(net_outputs.lane_lines_prob[i]);
+    model_data.lane_line_stds_arr[i] = exp(net_outputs.lane_lines[2*TRAJECTORY_SIZE*(4 + i)]);
   }
-  framed.setLaneLineProbs(lane_line_probs_arr);
-  framed.setLaneLineStds(lane_line_stds_arr);
+  framed.setLaneLineProbs(model_data.lane_line_probs_arr);
+  framed.setLaneLineStds(model_data.lane_line_stds_arr);
 
   // road edges
   auto road_edges = framed.initRoadEdges(2);
-  float road_edge_stds_arr[2];
+  
   for (int i = 0; i < 2; i++) {
     fill_xyzt(road_edges[i], &net_outputs.road_edges[i*TRAJECTORY_SIZE*2], 2, -1, plan_t_arr);
-    road_edge_stds_arr[i] = exp(net_outputs.road_edges[2*TRAJECTORY_SIZE*(2 + i)]);
+    model_data.road_edge_stds_arr[i] = exp(net_outputs.road_edges[2*TRAJECTORY_SIZE*(2 + i)]);
   }
-  framed.setRoadEdgeStds(road_edge_stds_arr);
+  framed.setRoadEdgeStds(model_data.road_edge_stds_arr);
 
   // meta
   fill_meta(framed.initMeta(), net_outputs.meta);
