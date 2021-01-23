@@ -150,6 +150,7 @@ bool CameraBuf::acquire() {
     const size_t globalWorkSize[] = {size_t(camera_state->ci.frame_width), size_t(camera_state->ci.frame_height)};
     const size_t localWorkSize[] = {DEBAYER_LOCAL_WORKSIZE, DEBAYER_LOCAL_WORKSIZE};
     CL_CHECK(clSetKernelArg(krnl_debayer, 2, localMemSize, 0));
+    CL_CHECK(clSetKernelArg(krnl_debayer, 3, sizeof(float), &camera_state->mv));
     CL_CHECK(clEnqueueNDRangeKernel(q, krnl_debayer, 2, NULL, globalWorkSize, localWorkSize,
                                     0, 0, &debayer_event));
 #else
@@ -305,12 +306,15 @@ void set_exposure_target(CameraState *c, const uint8_t *pix_ptr, int x_start, in
   const CameraBuf *b = &c->buf;
 
   uint32_t lum_binning[256] = {0};
+  uint8_t mv_int = 0;
   for (int y = y_start; y < y_end; y += y_skip) {
     for (int x = x_start; x < x_end; x += x_skip) {
       uint8_t lum = pix_ptr[(y * b->rgb_width) + x];
+      mv_int = mv_int > lum ? mv_int : lum;
       lum_binning[lum]++;
     }
   }
+  c->mv = (float)mv_int/256.0f;
 
   unsigned int lum_total = (y_end - y_start) * (x_end - x_start) / x_skip / y_skip;
   unsigned int lum_cur = 0;

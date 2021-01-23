@@ -30,6 +30,7 @@ typedef struct CameraState {
   int exposure_time_min;
   int exposure_time_max;
   float ef_filtered;
+  float mv;
 
   int device_iommu;
   int cdm_iommu;

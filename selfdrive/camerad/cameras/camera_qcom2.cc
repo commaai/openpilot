@@ -570,6 +570,7 @@ static void camera_init(VisionIpcServer * v, CameraState *s, int camera_id, int 
   s->request_id_last = 0;
   s->skipped = true;
   s->ef_filtered = 1.0;
+  s->mv = 1.0;
 
   s->buf.init(device_id, ctx, s, v, FRAME_BUF_COUNT, rgb_type, yuv_type);
 }
