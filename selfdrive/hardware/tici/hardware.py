@@ -20,6 +20,7 @@ MM_MODEM_STATE_CONNECTED = 11
 
 TIMEOUT = 10
 
+DeviceType = log.InitData.DeviceType
 NetworkType = log.ThermalData.NetworkType
 NetworkStrength = log.ThermalData.NetworkStrength
 
@@ -39,6 +40,9 @@ class Tici(HardwareBase):
   def get_os_version(self):
     with open("/VERSION") as f:
       return f.read().strip()
+
+  def get_device_type(self):
+    return DeviceType.tici
 
   def get_sound_card_online(self):
     return os.system("pulseaudio --check") == 0
