@@ -167,7 +167,6 @@ void fill_lead_v2(cereal::ModelDataV2::LeadDataV2::Builder lead, const float *le
   const float *data = get_lead_data(lead_data, t_offset);
   lead.setProb(sigmoid(prob[t_offset]));
   lead.setT(t);
-  
   for (int i=0; i<LEAD_MHP_VALS; i++) {
     model_data.xyva_arr[i] = data[i];
     model_data.xyva_stds_arr[i] = exp(data[LEAD_MHP_VALS + i]);
@@ -192,7 +191,6 @@ void fill_meta(cereal::ModelDataV2::MetaData::Builder meta, const float *meta_da
 
 void fill_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const float * data,
                int columns, int column_offset, float * plan_t_arr) {
-  
   for (int i=0; i<TRAJECTORY_SIZE; i++) {
     // column_offset == -1 means this data is X indexed not T indexed
     if (column_offset >= 0) {
@@ -236,7 +234,6 @@ void fill_model(cereal::ModelDataV2::Builder &framed, const ModelDataRaw &net_ou
 
   // lane lines
   auto lane_lines = framed.initLaneLines(4);
-  
   for (int i = 0; i < 4; i++) {
     fill_xyzt(lane_lines[i], &net_outputs.lane_lines[i*TRAJECTORY_SIZE*2], 2, -1, plan_t_arr);
     model_data.lane_line_probs_arr[i] = sigmoid(net_outputs.lane_lines_prob[i]);
@@ -247,7 +244,6 @@ void fill_model(cereal::ModelDataV2::Builder &framed, const ModelDataRaw &net_ou
 
   // road edges
   auto road_edges = framed.initRoadEdges(2);
-  
   for (int i = 0; i < 2; i++) {
     fill_xyzt(road_edges[i], &net_outputs.road_edges[i*TRAJECTORY_SIZE*2], 2, -1, plan_t_arr);
     model_data.road_edge_stds_arr[i] = exp(net_outputs.road_edges[2*TRAJECTORY_SIZE*(2 + i)]);
