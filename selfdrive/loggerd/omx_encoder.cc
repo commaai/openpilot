@@ -34,12 +34,15 @@ extern ExitHandler do_exit;
 
 // ***** OMX callback functions *****
 
-void OmxEncoder::wait_for_state(OMX_STATETYPE state) {
-  pthread_mutex_lock(&this->state_lock);
-  while (this->state != state) {
-    pthread_cond_wait(&this->state_cv, &this->state_lock);
+void OmxEncoder::set_state(OMX_STATETYPE state, bool sync) {
+  OMX_CHECK(OMX_SendCommand(this->handle, OMX_CommandStateSet, state, NULL));
+  if (sync) {
+    pthread_mutex_lock(&this->state_lock);
+    while (this->state != state) {
+      pthread_cond_wait(&this->state_cv, &this->state_lock);
+    }
+    pthread_mutex_unlock(&this->state_lock);
   }
-  pthread_mutex_unlock(&this->state_lock);
 }
 
 static OMX_CALLBACKTYPE omx_callbacks = {
@@ -304,7 +307,7 @@ OmxEncoder::OmxEncoder(const char* filename, int width, int height, int fps, int
   //   printf("profile %d level 0x%x\n", params.eProfile, params.eLevel);
   // }
 
-  OMX_CHECK(OMX_SendCommand(this->handle, OMX_CommandStateSet, OMX_StateIdle, NULL));
+   set_state(OMX_StateIdle);
 
   for (auto &buf : this->in_buf_headers) {
     OMX_CHECK(OMX_AllocateBuffer(this->handle, &buf, PORT_INDEX_IN, this,
@@ -316,11 +319,7 @@ OmxEncoder::OmxEncoder(const char* filename, int width, int height, int fps, int
                              out_port.nBufferSize));
   }
 
-  wait_for_state(OMX_StateIdle);
-
-  OMX_CHECK(OMX_SendCommand(this->handle, OMX_CommandStateSet, OMX_StateExecuting, NULL));
-
-  wait_for_state(OMX_StateExecuting);
+  set_state(OMX_StateExecuting);
 
   // give omx all the output buffers
   for (auto &buf : this->out_buf_headers) {
@@ -593,11 +592,8 @@ void OmxEncoder::encoder_close() {
 OmxEncoder::~OmxEncoder() {
   assert(!this->is_open);
 
-  OMX_CHECK(OMX_SendCommand(this->handle, OMX_CommandStateSet, OMX_StateIdle, NULL));
-
-  wait_for_state(OMX_StateIdle);
-
-  OMX_CHECK(OMX_SendCommand(this->handle, OMX_CommandStateSet, OMX_StateLoaded, NULL));
+  set_state(OMX_StateIdle);
+  set_state(OMX_StateLoaded);
 
   for (auto &buf : this->in_buf_headers) {
     OMX_CHECK(OMX_FreeBuffer(this->handle, PORT_INDEX_IN, buf));
@@ -606,8 +602,6 @@ OmxEncoder::~OmxEncoder() {
   for (auto &buf : this->out_buf_headers) {
     OMX_CHECK(OMX_FreeBuffer(this->handle, PORT_INDEX_OUT, buf));
   }
-
-  wait_for_state(OMX_StateLoaded);
 
   OMX_CHECK(OMX_FreeHandle(this->handle));
 
