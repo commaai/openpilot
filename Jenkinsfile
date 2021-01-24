@@ -162,6 +162,7 @@ pipeline {
                       ["build", "SCONS_CACHE=1 scons -j16"],
                       ["test loggerd", "python selfdrive/loggerd/tests/test_loggerd.py"],
                       ["test encoder", "python selfdrive/loggerd/tests/test_encoder.py"],
+                      ["test boardd loopback", "nosetests -s selfdrive/boardd/tests/test_boardd_loopback.py"],
                     ])
                   }
                 }
