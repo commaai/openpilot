@@ -1,7 +1,7 @@
 def phone(String ip, String step_label, String cmd) {
   withCredentials([file(credentialsId: 'id_rsa_public', variable: 'key_file')]) {
     def ssh_cmd = """
-ssh -vvv -tt -o StrictHostKeyChecking=no -i ${key_file} -p 8022 'comma@${ip}' /bin/bash <<'EOF'
+ssh -tt -o StrictHostKeyChecking=no -i ${key_file} -p 8022 'comma@${ip}' /usr/bin/bash <<'EOF'
 
 set -e
 
