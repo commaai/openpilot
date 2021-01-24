@@ -184,6 +184,7 @@ OmxEncoder::OmxEncoder(const char* filename, int width, int height, int fps, int
     this->v_ptr2 = (uint8_t *)malloc(this->width*this->height/4);
   }
 
+  OMX_CHECK(OMX_Init());
   auto component = (OMX_STRING)(h265 ? "OMX.qcom.video.encoder.hevc" : "OMX.qcom.video.encoder.avc");
   int err = OMX_GetHandle(&this->handle, component, this, &omx_callbacks);
   if (err != OMX_ErrorNone) {
@@ -556,7 +557,7 @@ void OmxEncoder::encoder_close() {
       OMX_CHECK(OMX_EmptyThisBuffer(this->handle, in_buf));
 
       while (true) {
-        OMX_BUFFERHEADERTYPE *out_buf = (OMX_BUFFERHEADERTYPE *)queue_pop(&this->done_out);
+         OMX_BUFFERHEADERTYPE *out_buf = (OMX_BUFFERHEADERTYPE *)queue_pop(&this->done_out);
 
         handle_out_buf(this, out_buf);
 
@@ -603,6 +604,7 @@ OmxEncoder::~OmxEncoder() {
   wait_for_state(OMX_StateLoaded);
 
   OMX_CHECK(OMX_FreeHandle(this->handle));
+  OMX_CHECK(OMX_Deinit());
 
   while (queue_try_pop(&this->free_in)); 
   while (queue_try_pop(&this->done_out)); 
