@@ -9,12 +9,6 @@
 #include <zmq.h>
 
 #include "json11.hpp"
-<<<<<<< HEAD
-
-#include "common/timing.h"
-#include "common/util.h"
-=======
->>>>>>> c++ swaglog
 #include "common/version.h"
 #include "swaglog.h"
 
