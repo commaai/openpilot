@@ -10,15 +10,13 @@ export TEST_DIR=${env.TEST_DIR}
 export GIT_BRANCH=${env.GIT_BRANCH}
 export GIT_COMMIT=${env.GIT_COMMIT}
 
+source ~/.bash_profile
+
 if [ -f /EON ]; then
   echo \$\$ > /dev/cpuset/app/tasks || true
   echo \$PPID > /dev/cpuset/app/tasks || true
   mkdir -p /dev/shm
   chmod 777 /dev/shm
-fi
-
-if [ -f /TICI ]; then
-  source ~/.bash_profile
 fi
 
 cd ${env.TEST_DIR} || true
