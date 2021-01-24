@@ -1,25 +1,37 @@
 def phone(String ip, String step_label, String cmd) {
-  def ci_env = "CI=1 TEST_DIR=${env.TEST_DIR} GIT_BRANCH=${env.GIT_BRANCH} GIT_COMMIT=${env.GIT_COMMIT}"
-
   withCredentials([file(credentialsId: 'id_rsa_public', variable: 'key_file')]) {
-    sh label: step_label,
-        script: """
-                ssh -tt -o StrictHostKeyChecking=no -i ${key_file} -p 8022 root@${ip} '${ci_env} /usr/bin/bash -le' <<'EOF'
-echo \$\$ > /dev/cpuset/app/tasks || true
-echo \$PPID > /dev/cpuset/app/tasks || true
-mkdir -p /dev/shm
-chmod 777 /dev/shm
+    def ssh_cmd = """
+ssh -tt -o StrictHostKeyChecking=no -i ${key_file} -p 8022 'comma@${ip}' /usr/bin/bash <<'EOF'
+
+set -e
+
+export CI=1
+export TEST_DIR=${env.TEST_DIR}
+export GIT_BRANCH=${env.GIT_BRANCH}
+export GIT_COMMIT=${env.GIT_COMMIT}
+
+source ~/.bash_profile
+
+if [ -f /EON ]; then
+  echo \$\$ > /dev/cpuset/app/tasks || true
+  echo \$PPID > /dev/cpuset/app/tasks || true
+  mkdir -p /dev/shm
+  chmod 777 /dev/shm
+fi
+
 cd ${env.TEST_DIR} || true
 ${cmd}
 exit 0
+
 EOF"""
+
+    sh script: ssh_cmd, label: step_label
   }
 }
 
 def phone_steps(String device_type, steps) {
   lock(resource: "", label: device_type, inversePrecedence: true, variable: 'device_ip', quantity: 1) {
     timeout(time: 60, unit: 'MINUTES') {
-      phone(device_ip, "kill old processes", "pkill -f comma || true")
       phone(device_ip, "git checkout", readFile("selfdrive/test/setup_device_ci.sh"),)
       steps.each { item ->
         phone(device_ip, item[0], item[1])
@@ -40,7 +52,7 @@ pipeline {
 
   stages {
 
-    stage('Release Build') {
+    stage('Build release2') {
       agent {
         docker {
           image 'python:3.7.3'
@@ -104,7 +116,6 @@ pipeline {
           stages {
             stage('parallel tests') {
               parallel {
-
                 stage('Devel Build') {
                   environment {
                     CI_PUSH = "${env.BRANCH_NAME == 'master' ? 'master-ci' : ' '}"
@@ -145,6 +156,14 @@ pipeline {
                   }
                 }
 
+                stage('Tici Build') {
+                  steps {
+                    phone_steps("tici", [
+                      ["build", "SCONS_CACHE=1 scons -j16"],
+                    ])
+                  }
+                }
+
               }
             }
           }
@@ -161,3 +180,4 @@ pipeline {
     }
   }
 }
+
