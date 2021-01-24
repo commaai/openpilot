@@ -1,5 +1,4 @@
-#ifndef FFV1LOGGER_H
-#define FFV1LOGGER_H
+#pragma once
 
 #include <cstdio>
 #include <cstdlib>
@@ -24,7 +23,7 @@ public:
   ~RawLogger();
   int encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
                    int in_width, int in_height,
-                   int *frame_segment, VisionIpcBufExtra *extra);
+                   int *frame_segment, uint64_t ts);
   void encoder_open(const char* path, int segment);
   void encoder_close();
 
@@ -47,5 +46,3 @@ private:
 
   AVFrame *frame = NULL;
 };
-
-#endif
