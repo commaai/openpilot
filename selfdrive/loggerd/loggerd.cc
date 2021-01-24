@@ -270,7 +270,7 @@ void encoder_thread(int cam_idx) {
         int out_segment = -1;
         int out_id = encoders[0]->encode_frame(buf->y, buf->u, buf->v,
                                                buf->width, buf->height,
-                                               &out_segment, &extra);
+                                               &out_segment, extra.timestamp_eof);
         if (out_id == -1) {
           continue;
         }
@@ -278,7 +278,7 @@ void encoder_thread(int cam_idx) {
           int out_segment_alt = -1;
           if (-1 == encoders[1]->encode_frame(buf->y, buf->u, buf->v,
                                               buf->width, buf->height,
-                                              &out_segment_alt, &extra)) {
+                                              &out_segment_alt, extra.timestamp_eof)) {
             continue;
           }
         }
