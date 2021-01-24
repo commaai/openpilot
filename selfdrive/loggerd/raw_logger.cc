@@ -129,7 +129,7 @@ void RawLogger::encoder_close() {
 
 int RawLogger::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
                             int in_width, int in_height,
-                            int *frame_segment, VisionIpcBufExtra *extra) {
+                            int *frame_segment, uint64_t ts) {
   int err = 0;
 
   AVPacket pkt;
@@ -140,7 +140,7 @@ int RawLogger::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const ui
   frame->data[0] = (uint8_t*)y_ptr;
   frame->data[1] = (uint8_t*)u_ptr;
   frame->data[2] = (uint8_t*)v_ptr;
-  frame->pts = extra->timestamp_eof;
+  frame->pts = ts;
 
   int ret = counter;
 
