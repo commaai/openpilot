@@ -146,6 +146,7 @@ def flash_agnos_update(manifest_path, cloudlog, spinner=None):
 
     if not success:
       cloudlog.info(f"Failed to flash {partition['name']}, aborting")
+      raise Exception("Maximum retries exceeded")
 
   cloudlog.info(f"AGNOS ready on slot {target_slot}")
 
