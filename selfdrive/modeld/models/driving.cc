@@ -53,10 +53,10 @@ void model_init(ModelState* s, cl_device_id device_id, cl_context context) {
   s->input_frames = std::make_unique<float[]>(MODEL_FRAME_SIZE * 2);
 
   constexpr int output_size = OUTPUT_SIZE + TEMPORAL_SIZE;
-  s->output = std::make_unique<float[]>(output_size);
+  s->output.resize(output_size);
 
 #if defined(QCOM) || defined(QCOM2)
-  s->m = std::make_unique<ThneedModel>("../../models/supercombo.thneed", &s->output[0], output_size, USE_GPU_RUNTIME);
+  s->m = std::make_unique<ThneedModel>("../../models/supercombo.thneed", s->output[0], output_size, USE_GPU_RUNTIME);
 #else
   s->m = std::make_unique<DefaultRunModel>("../../models/supercombo.dlc", &s->output[0], output_size, USE_GPU_RUNTIME);
 #endif
@@ -262,8 +262,8 @@ void fill_model(cereal::ModelDataV2::Builder &framed, const ModelDataRaw &net_ou
 }
 
 void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id, float frame_drop,
-                   const ModelDataRaw &net_outputs, const float *raw_pred, uint64_t timestamp_eof,
-                   float model_execution_time) {
+                   const ModelDataRaw &net_outputs, uint64_t timestamp_eof,
+                   float model_execution_time, kj::ArrayPtr<const float> raw_pred) {
   const uint32_t frame_age = (frame_id > vipc_frame_id) ? (frame_id - vipc_frame_id) : 0;
   MessageBuilder msg;
   auto framed = msg.initEvent().initModelV2();
@@ -273,7 +273,7 @@ void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id, flo
   framed.setTimestampEof(timestamp_eof);
   framed.setModelExecutionTime(model_execution_time);
   if (send_raw_pred) {
-    framed.setRawPred(kj::arrayPtr((const uint8_t *)raw_pred, (OUTPUT_SIZE + TEMPORAL_SIZE) * sizeof(float)));
+    framed.setRawPred(raw_pred.asBytes());
   }
   fill_model(framed, net_outputs);
   pm.send("modelV2", msg);
