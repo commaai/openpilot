@@ -6,6 +6,7 @@
 #include <QStackedWidget>
 #include <QPushButton>
 #include <QTimer>
+#include <QNetworkAccessManager>
 
 #include "widgets/input_field.hpp"
 
@@ -19,8 +20,10 @@ private:
   InputField* inputField;
   QStackedLayout* slayout;
   QString usernameGitHub;
-  QNetworkAccessManager* networkAccessManager;
+  QNetworkAccessManager* manager;
+  QNetworkReply* reply;
   QTimer* networkTimer;
+  bool aborted;
 
 signals:
   void closeSSHSettings();
@@ -28,10 +31,13 @@ signals:
   void closeKeyboard();
   void NoSSHAdded();
   void SSHAdded();
-
+  void failedResponse(QString errorString);
+  void gotSSHKeys();
 
 private slots:
   void checkForSSHKey();
   void getSSHKeys();
+  void timeout();
+  void parseResponse();
 };
 
