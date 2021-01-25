@@ -133,8 +133,11 @@ class CarController():
           and CS.car_follow == 1):
         self.sng_resume_acc = True
       #If standstill for 1+ seconds and CruiseState is not 3, then this car has no EPB  
+      #Exception: SUBARU ASCENT, for some reason, Ascent even on Global does not resume out of HOLD mode with throttle tap
+      #so we prevent ASCENTs from entering HOLD in the first place
       if (enabled
-          and CS.cruise_state != 3 #cruise state == 3 => ACC HOLD state
+          and (CS.cruise_state != 3                    #cruise state == 3 => ACC HOLD state
+               or CS.CP.carFingerprint == CAR.ASCENT)  #Except for SUBARU ASCENT
           and CS.out.standstill    #car standstill
           and time.time_ns() > self.standstill_transition_timestamp + self.params.NON_EPB_STANDSTILL_THRESHOLD): #for more than 1 second
         #send fake speed to ES, because we know this car has no EPB
