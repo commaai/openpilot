@@ -146,6 +146,12 @@ function tici_init {
 
     if [[ "$SYSTEM_HASH" == "$SYSTEM_HASH_EXPECTED" && "$BOOT_HASH" == "$BOOT_HASH_EXPECTED" ]]; then
       echo "Swapping active slot to $OTHER_SLOT_NUMBER"
+
+      # Clean hashes before swapping to prevent looping
+      dd if=/dev/zero of="/dev/disk/by-partlabel/system$OTHER_SLOT" bs=1 seek="$SYSTEM_SIZE" count=64
+      dd if=/dev/zero of="/dev/disk/by-partlabel/boot$OTHER_SLOT" bs=1 seek="$BOOT_SIZE" count=64
+      sync
+
       abctl --set_active "$OTHER_SLOT_NUMBER"
 
       sleep 1
@@ -154,6 +160,12 @@ function tici_init {
       echo "Hash mismatch, downloading agnos"
       if $DIR/selfdrive/hardware/tici/agnos.py $MANIFEST; then
         echo "Download done, swapping active slot to $OTHER_SLOT_NUMBER"
+
+        # Clean hashes before swapping to prevent looping
+        dd if=/dev/zero of="/dev/disk/by-partlabel/system$OTHER_SLOT" bs=1 seek="$SYSTEM_SIZE" count=64
+        dd if=/dev/zero of="/dev/disk/by-partlabel/boot$OTHER_SLOT" bs=1 seek="$BOOT_SIZE" count=64
+        sync
+
         abctl --set_active "$OTHER_SLOT_NUMBER"
       fi
 
