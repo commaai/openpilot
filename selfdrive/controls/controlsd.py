@@ -169,7 +169,7 @@ class Controls:
 
     # Check if all manager processes are running
     not_running = set(p.name for p in self.sm['managerState'].processes if not p.running)
-    if (not_running - IGNORE_PROCESSES):
+    if self.sm.rcv_frame['managerState'] and (not_running - IGNORE_PROCESSES):
       self.events.add(EventName.processNotRunning)
 
     # Alert if fan isn't spinning for 5 seconds
