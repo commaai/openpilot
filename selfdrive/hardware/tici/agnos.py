@@ -89,45 +89,51 @@ def flash_agnos_update(manifest_path, cloudlog, spinner=None):
   os.system(f"abctl --set_unbootable {target_slot_number}")
 
   for partition in update:
-    cloudlog.info(f"Downloading and writing {partition['name']}")
+    try:
+      cloudlog.info(f"Downloading and writing {partition['name']}")
 
-    downloader = StreamingDecompressor(partition['url'])
-    with open(f"/dev/disk/by-partlabel/{partition['name']}{target_slot}", 'wb') as out:
-      partition_size = partition['size']
-      # Clear hash before flashing
-      out.seek(partition_size)
-      out.write(b"\x00" * 64)
-      out.seek(0)
-      os.sync()
+      downloader = StreamingDecompressor(partition['url'])
+      with open(f"/dev/disk/by-partlabel/{partition['name']}{target_slot}", 'wb') as out:
+        partition_size = partition['size']
+        # Clear hash before flashing
+        out.seek(partition_size)
+        out.write(b"\x00" * 64)
+        out.seek(0)
+        os.sync()
 
-      # Flash partition
-      if partition['sparse']:
-        raw_hash = hashlib.sha256()
-        for chunk in unsparsify(downloader):
-          raw_hash.update(chunk)
-          out.write(chunk)
+        # Flash partition
+        if partition['sparse']:
+          raw_hash = hashlib.sha256()
+          for chunk in unsparsify(downloader):
+            raw_hash.update(chunk)
+            out.write(chunk)
 
-          if spinner is not None:
-            spinner.update_progress(out.tell(), partition_size)
+            if spinner is not None:
+              spinner.update_progress(out.tell(), partition_size)
 
-        if raw_hash.hexdigest().lower() != partition['hash_raw'].lower():
-          raise Exception(f"Unsparse hash mismatch '{raw_hash.hexdigest().lower()}'")
-      else:
-        while not downloader.eof:
-          out.write(downloader.read(1024 * 1024))
+          if raw_hash.hexdigest().lower() != partition['hash_raw'].lower():
+            raise Exception(f"Unsparse hash mismatch '{raw_hash.hexdigest().lower()}'")
+        else:
+          while not downloader.eof:
+            out.write(downloader.read(1024 * 1024))
 
-          if spinner is not None:
-            spinner.update_progress(out.tell(), partition_size)
+            if spinner is not None:
+              spinner.update_progress(out.tell(), partition_size)
 
-      if downloader.sha256.hexdigest().lower() != partition['hash'].lower():
-        raise Exception("Uncompressed hash mismatch")
+        if downloader.sha256.hexdigest().lower() != partition['hash'].lower():
+          raise Exception("Uncompressed hash mismatch")
 
-      if out.tell() != partition['size']:
-        raise Exception("Uncompressed size mismatch")
+        if out.tell() != partition['size']:
+          raise Exception("Uncompressed size mismatch")
 
-      # Write hash after successfull flash
-      os.sync()
-      out.write(partition['hash_raw'].lower().encode())
+        # Write hash after successfull flash
+        os.sync()
+        out.write(partition['hash_raw'].lower().encode())
+
+    except requests.exceptions.ConnectionError:
+      spinner.update("Connecting to internet")
+      cloudlog.info(f"Failed to download {partition['name']}, retrying")
+      time.sleep(5)
 
   cloudlog.info(f"AGNOS ready on slot {target_slot}")
 
