@@ -27,6 +27,18 @@ def create_es_distance(packer, es_distance_msg, pcm_cancel_cmd):
 
   return packer.make_can_msg("ES_Distance", 0, values)
 
+#------------------TRICK NON-EPB------------------
+def create_brake_pedal(packer, brake_pedal_msg, fake_wheel_speed):
+
+  values = copy.copy(brake_pedal_msg)
+  #Only modify Speed if the fake speed is not -1
+  if fake_wheel_speed != -1:
+    values["Speed"] = fake_wheel_speed
+
+  return packer.make_can_msg("Brake_Pedal", 2, values)   
+#------------------------------------------------- 
+
+#---------------SUBARU STOP AND GO-----------------
 def create_throttle(packer, throttle_msg, throttle_cmd):
 
   values = copy.copy(throttle_msg)
@@ -36,6 +48,7 @@ def create_throttle(packer, throttle_msg, throttle_cmd):
     values["Throttle_Pedal"] = throttle_cmd
 
   return packer.make_can_msg("Throttle", 2, values)
+#---------------------------------------------------  
 
 def create_es_lkas(packer, es_lkas_msg, visual_alert, left_line, right_line):
 
