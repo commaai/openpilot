@@ -616,7 +616,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
   },
 
   EventName.processNotRunning: {
-    ET.NO_ENTRY: NoEntryAlert("Not All Processes Are Running",
+    ET.NO_ENTRY: NoEntryAlert("System Malfunction: Reboot Your Device",
                               audible_alert=AudibleAlert.chimeDisengage),
   },
 
