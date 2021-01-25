@@ -237,6 +237,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   toggle_switch_SSH->setFixedSize(150, 100);
   enableSSHLayout->addWidget(toggle_switch_SSH);
   vlayout->addWidget(layoutToWidget(enableSSHLayout, this));
+  vlayout->addWidget(hline(), 0);
 
   //Authorized SSH keys
   QHBoxLayout* authSSHLayout = new QHBoxLayout(this);
@@ -245,6 +246,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   connect(editAuthSSHButton, &QPushButton::released, [=](){s->setCurrentIndex(2);});
   authSSHLayout->addWidget(editAuthSSHButton);
   vlayout->addWidget(layoutToWidget(authSSHLayout, this));
+  vlayout->addSpacing(50);
 
   // //Disconnect or delete connections
   // QHBoxLayout* dangerZone = new QHBoxLayout(this);

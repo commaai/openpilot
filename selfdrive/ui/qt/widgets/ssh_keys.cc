@@ -39,20 +39,25 @@ SSH::SSH(QWidget* parent) : QWidget(parent){
   //Layout on entering
   QVBoxLayout* initialLayout = new QVBoxLayout;
   initialLayout->setContentsMargins(80, 80, 80, 80);
+
   QHBoxLayout* header = new QHBoxLayout;
-  header->addWidget(new QLabel("Authorized SSH keys"), 0, Qt::AlignLeft);
-
-  QPushButton* exitButton = new QPushButton("CANCEL", this);
-
-  header->addWidget(exitButton, 0, Qt::AlignRight);
+  QPushButton* exitButton = new QPushButton("BACK", this);
+  exitButton->setFixedSize(300, 100);
+  header->addWidget(exitButton, 0, Qt::AlignLeft | Qt::AlignTop);
   initialLayout->addWidget(layout_to_widget(header));
 
-  QLabel* wallOfText = new QLabel("Warning: This grants SSH access to all public keys in your GitHub settings. \nNever enter a GitHub username other than your own. \nA Comma employee will NEVER ask you to add their GitHub username.");
+  QLabel* title = new QLabel("Authorize SSH keys");
+  title->setStyleSheet(R"(font-size: 75px;)");
+  header->addWidget(title, 0, Qt::AlignRight | Qt::AlignTop);
+
+  QLabel* wallOfText = new QLabel("Warning: This grants SSH access to all public keys in your GitHub settings. Never enter a GitHub username other than your own. A Comma employee will NEVER ask you to add their GitHub username.");
   wallOfText->setWordWrap(true);
-  initialLayout->addWidget(wallOfText);
+  wallOfText->setStyleSheet(R"(font-size: 60px;)");
+  initialLayout->addWidget(wallOfText, 0, Qt::AlignLeft | Qt::AlignTop);
 
   QPushButton* actionButton = new QPushButton;
-  initialLayout->addWidget(actionButton);
+  actionButton->setFixedHeight(100);
+  initialLayout->addWidget(actionButton, 0, Qt::AlignBottom);
 
   slayout->addWidget(layout_to_widget(initialLayout));
 
@@ -61,7 +66,16 @@ SSH::SSH(QWidget* parent) : QWidget(parent){
 
   QLabel* loading = new QLabel("Loading SSH keys from GitHub.");
   slayout->addWidget(loading);
-
+  setStyleSheet(R"(
+    QPushButton {
+      font-size: 60px;
+      margin: 0px;
+      padding: 15px;
+      border-radius: 25px;
+      color: #dddddd;
+      background-color: #444444;
+    }
+  )");
   setLayout(slayout);
 
   // Adding states to the state machine and adding the transitions
@@ -103,7 +117,6 @@ SSH::SSH(QWidget* parent) : QWidget(parent){
   loadingState->addTransition(this, &SSH::gotSSHKeys, initialState);
 
 
-
   state->setInitialState(initialState);
   state->start();
 }
@@ -134,7 +147,7 @@ void SSH::parseResponse(){
   if(!aborted){
     networkTimer->stop();
     QString response = reply->readAll();
-    if (reply->error() == QNetworkReply::NoError) {
+    if (reply->error() == QNetworkReply::NoError && response.length()) {
       Params().write_db_value("GithubSshKeys", response.toStdString());
       emit gotSSHKeys();
     } else {
