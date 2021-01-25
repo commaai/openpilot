@@ -18,12 +18,20 @@ public:
 private:
   InputField* inputField;
   QStackedLayout* slayout;
-  
+  QString usernameGitHub;
+  QNetworkAccessManager* networkAccessManager;
+  QTimer* networkTimer;
 
 signals:
   void closeSSHSettings();
   void openKeyboard();
   void closeKeyboard();
+  void NoSSHAdded();
+  void SSHAdded();
 
+
+private slots:
+  void checkForSSHKey();
+  void getSSHKeys();
 };
 
