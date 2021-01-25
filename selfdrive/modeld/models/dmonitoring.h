@@ -5,7 +5,7 @@
 #include "runners/run.h"
 #include "messaging.hpp"
 
-#define OUTPUT_SIZE 34
+#define OUTPUT_SIZE 38
 
 typedef struct DMonitoringResult {
   float face_orientation[3];
@@ -18,6 +18,10 @@ typedef struct DMonitoringResult {
   float left_blink_prob;
   float right_blink_prob;
   float sg_prob;
+  float poor_vision;
+  float partial_face;
+  float distracted_pose;
+  float distracted_eyes;
   float dsp_execution_time;
 } DMonitoringResult;
 

@@ -157,6 +157,10 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
   memcpy(&ret.left_blink_prob, &s->output[31], sizeof ret.right_eye_prob);
   memcpy(&ret.right_blink_prob, &s->output[32], sizeof ret.right_eye_prob);
   memcpy(&ret.sg_prob, &s->output[33], sizeof ret.sg_prob);
+  memcpy(&ret.poor_vision, &s->output[34], sizeof ret.poor_vision);
+  memcpy(&ret.partial_face, &s->output[35], sizeof ret.partial_face);
+  memcpy(&ret.distracted_pose, &s->output[36], sizeof ret.distracted_pose);
+  memcpy(&ret.distracted_eyes, &s->output[37], sizeof ret.distracted_eyes);
   ret.face_orientation_meta[0] = softplus(ret.face_orientation_meta[0]);
   ret.face_orientation_meta[1] = softplus(ret.face_orientation_meta[1]);
   ret.face_orientation_meta[2] = softplus(ret.face_orientation_meta[2]);
@@ -184,6 +188,10 @@ void dmonitoring_publish(PubMaster &pm, uint32_t frame_id, const DMonitoringResu
   framed.setLeftBlinkProb(res.left_blink_prob);
   framed.setRightBlinkProb(res.right_blink_prob);
   framed.setSgProb(res.sg_prob);
+  framed.setPoorVision(res.poor_vision);
+  framed.setPartialFace(res.partial_face);
+  framed.setDistractedPose(res.distracted_pose);
+  framed.setDistractedEyes(res.distracted_eyes);
   if (send_raw_pred) {
     framed.setRawPred(raw_pred.asBytes());
   }
