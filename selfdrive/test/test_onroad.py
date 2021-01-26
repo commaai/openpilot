@@ -8,6 +8,7 @@ from pathlib import Path
 import cereal.messaging as messaging
 from common.basedir import BASEDIR
 from common.timeout import Timeout
+from panda import Panda
 from selfdrive.loggerd.config import ROOT
 from selfdrive.test.helpers import set_params_enabled
 from tools.lib.logreader import LogReader
@@ -79,6 +80,8 @@ class TestOnroad(unittest.TestCase):
     os.environ['FINGERPRINT'] = "TOYOTA COROLLA TSS2 2019"
     set_params_enabled()
 
+    Panda().reset()
+
     initial_segments = set(Path(ROOT).iterdir())
 
     # start manager and run openpilot for a minute
@@ -87,8 +90,8 @@ class TestOnroad(unittest.TestCase):
       proc = subprocess.Popen(["python", manager_path])
 
       sm = messaging.SubMaster(['carState'])
-      with Timeout(60, "controls didn't start"):
-        while not sm.updated['carState']:
+      with Timeout(150, "controls didn't start"):
+        while sm.rcv_frame['carState'] < 0:
           sm.update(1000)
 
       time.sleep(60)
