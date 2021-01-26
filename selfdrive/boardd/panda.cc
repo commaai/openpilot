@@ -40,7 +40,6 @@ void panda_set_power(bool power){
 Panda::Panda(){
   int err;
 
-  err = pthread_mutex_init(&usb_lock, NULL);
   if (err != 0) { goto fail; }
 
   // init libusb
@@ -83,10 +82,9 @@ fail:
 }
 
 Panda::~Panda(){
-  pthread_mutex_lock(&usb_lock);
+  std::lock_guard lk(usb_lock);
   cleanup();
   connected = false;
-  pthread_mutex_unlock(&usb_lock);
 }
 
 void Panda::cleanup(){
@@ -117,13 +115,11 @@ int Panda::usb_write(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigne
     return LIBUSB_ERROR_NO_DEVICE;
   }
 
-  pthread_mutex_lock(&usb_lock);
+  std::lock_guard lk(usb_lock);
   do {
     err = libusb_control_transfer(dev_handle, bmRequestType, bRequest, wValue, wIndex, NULL, 0, timeout);
     if (err < 0) handle_usb_issue(err, __func__);
   } while (err < 0 && connected);
-
-  pthread_mutex_unlock(&usb_lock);
 
   return err;
 }
@@ -132,12 +128,11 @@ int Panda::usb_read(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned
   int err;
   const uint8_t bmRequestType = LIBUSB_ENDPOINT_IN | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE;
 
-  pthread_mutex_lock(&usb_lock);
+  std::lock_guard lk(usb_lock);
   do {
     err = libusb_control_transfer(dev_handle, bmRequestType, bRequest, wValue, wIndex, data, wLength, timeout);
     if (err < 0) handle_usb_issue(err, __func__);
   } while (err < 0 && connected);
-  pthread_mutex_unlock(&usb_lock);
 
   return err;
 }
@@ -150,7 +145,7 @@ int Panda::usb_bulk_write(unsigned char endpoint, unsigned char* data, int lengt
     return 0;
   }
 
-  pthread_mutex_lock(&usb_lock);
+  std::lock_guard lk(usb_lock);
   do {
     // Try sending can messages. If the receive buffer on the panda is full it will NAK
     // and libusb will try again. After 5ms, it will time out. We will drop the messages.
@@ -164,7 +159,6 @@ int Panda::usb_bulk_write(unsigned char endpoint, unsigned char* data, int lengt
     }
   } while(err != 0 && connected);
 
-  pthread_mutex_unlock(&usb_lock);
   return transferred;
 }
 
@@ -176,7 +170,7 @@ int Panda::usb_bulk_read(unsigned char endpoint, unsigned char* data, int length
     return 0;
   }
 
-  pthread_mutex_lock(&usb_lock);
+  std::lock_guard lk(usb_lock);
 
   do {
     err = libusb_bulk_transfer(dev_handle, endpoint, data, length, &transferred, timeout);
@@ -190,8 +184,6 @@ int Panda::usb_bulk_read(unsigned char endpoint, unsigned char* data, int length
     }
 
   } while(err != 0 && connected);
-
-  pthread_mutex_unlock(&usb_lock);
 
   return transferred;
 }
