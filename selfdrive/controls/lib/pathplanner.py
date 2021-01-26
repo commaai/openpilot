@@ -186,7 +186,7 @@ class PathPlanner():
     # TODO this needs more thought, use .2s extra for now to estimate other delays
     delay = CP.steerActuatorDelay + .2
     next_tire_angle = interp(DT_MDL + delay, self.t_idxs[:MPC_N+1], self.mpc_solution.tire_angle)
-    next_tire_angle_rate = interp(delay, self.t_idxs[:MPC_N], self.mpc_solution.tire_angle_rate)
+    next_tire_angle_rate = self.mpc_solution.tire_angle_rate[0]
 
     # reset to current steer angle if not active or overriding
     if active:
