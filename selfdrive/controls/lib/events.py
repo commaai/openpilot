@@ -615,6 +615,11 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
                               audible_alert=AudibleAlert.chimeDisengage),
   },
 
+  EventName.processNotRunning: {
+    ET.NO_ENTRY: NoEntryAlert("System Malfunction: Reboot Your Device",
+                              audible_alert=AudibleAlert.chimeDisengage),
+  },
+
   EventName.radarCommIssue: {
     ET.SOFT_DISABLE: SoftDisableAlert("Radar Communication Issue"),
     ET.NO_ENTRY: NoEntryAlert("Radar Communication Issue",
