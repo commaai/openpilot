@@ -7,6 +7,7 @@
 #include "common/swaglog.h"
 #include "common/gpio.h"
 #include "common/util.h"
+#include "messaging.hpp"
 #include "panda.h"
 
 #ifdef QCOM2
@@ -324,19 +325,20 @@ void Panda::can_send(capnp::List<cereal::CanData>::Reader can_data_list){
   delete[] send;
 }
 
-int Panda::can_receive(cereal::Event::Builder &event){
+int Panda::can_receive(kj::Array<capnp::word>& out_buf) {
   uint32_t data[RECV_SIZE/4];
   int recv = usb_bulk_read(0x81, (unsigned char*)data, RECV_SIZE);
 
   // Not sure if this can happen
   if (recv < 0) recv = 0;
-
+ 
   if (recv == RECV_SIZE) {
     LOGW("Receive buffer full");
   }
 
   size_t num_msg = recv / 0x10;
-  auto canData = event.initCan(num_msg);
+  MessageBuilder msg;
+  auto canData = msg.initEvent().initCan(num_msg);
 
   // populate message
   for (int i = 0; i < num_msg; i++) {
@@ -353,6 +355,6 @@ int Panda::can_receive(cereal::Event::Builder &event){
     canData[i].setDat(kj::arrayPtr((uint8_t*)&data[i*4+2], len));
     canData[i].setSrc((data[i*4+1] >> 4) & 0xff);
   }
-
+  out_buf = capnp::messageToFlatArray(msg);
   return recv;
 }
