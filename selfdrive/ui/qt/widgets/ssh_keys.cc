@@ -42,7 +42,7 @@ SSH::SSH(QWidget* parent) : QWidget(parent){
 
   QHBoxLayout* header = new QHBoxLayout;
   QPushButton* exitButton = new QPushButton("BACK", this);
-  exitButton->setFixedSize(300, 100);
+  exitButton->setFixedSize(500, 100);
   header->addWidget(exitButton, 0, Qt::AlignLeft | Qt::AlignTop);
   initialLayout->addWidget(layout_to_widget(header));
 

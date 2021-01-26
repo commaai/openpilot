@@ -192,7 +192,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   //Back button
   QHBoxLayout* backLayout = new QHBoxLayout;
   QPushButton* back = new QPushButton("BACK");
-  back->setFixedWidth(500);
+  back->setFixedSize(500, 100);
   connect(back, &QPushButton::released, [=](){emit backPress();});
   backLayout->addWidget(back, 0, Qt::AlignLeft);
   vlayout->addWidget(layoutToWidget(backLayout, this), 0, Qt::AlignLeft);
