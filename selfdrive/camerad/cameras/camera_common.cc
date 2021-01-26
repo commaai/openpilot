@@ -237,7 +237,7 @@ void fill_frame_image(cereal::FrameData::Builder &framed, const CameraBuf *b) {
   delete[] resized_dat;
 }
 
-static void create_thumbnail(MultiCameraState *s, const CameraBuf *b) {
+static void publish_thumbnail(PubMaster *pm, const CameraBuf *b) {
   uint8_t* thumbnail_buffer = NULL;
   unsigned long thumbnail_len = 0;
 
@@ -295,9 +295,7 @@ static void create_thumbnail(MultiCameraState *s, const CameraBuf *b) {
   thumbnaild.setTimestampEof(b->cur_frame_data.timestamp_eof);
   thumbnaild.setThumbnail(kj::arrayPtr((const uint8_t*)thumbnail_buffer, thumbnail_len));
 
-  if (s->pm != NULL) {
-    s->pm->send("thumbnail", msg);
-  }
+  pm->send("thumbnail", msg);
   free(thumbnail_buffer);
 }
 
@@ -348,9 +346,9 @@ void *processing_thread(MultiCameraState *cameras, const char *tname,
 
     callback(cameras, cs, cnt);
 
-    if (cs == &(cameras->rear) && cnt % 100 == 3) {
+    if (cs == &(cameras->rear) && cameras->pm && cnt % 100 == 3) {
       // this takes 10ms???
-      create_thumbnail(cameras, &(cs->buf));
+      publish_thumbnail(cameras->pm, &(cs->buf));
     }
     cs->buf.release();
   }
