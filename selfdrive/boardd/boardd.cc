@@ -462,15 +462,13 @@ void hardware_control_thread() {
   }
 }
 
-static void pigeon_publish_raw(PubMaster &pm, std::string dat) {
+static void pigeon_publish_raw(PubMaster &pm, const std::string &dat) {
   // create message
   MessageBuilder msg;
-  auto ublox_raw = msg.initEvent().initUbloxRaw(dat.length());
-  memcpy(ublox_raw.begin(), dat.data(), dat.length());
-
+  capnp::Data::Builder ublox_row((uint8_t*)dat.data(), dat.length());
+  msg.initEvent().setUbloxRaw(ublox_row);
   pm.send("ubloxRaw", msg);
 }
-
 
 void pigeon_thread() {
   if (!panda->is_pigeon){ return; };
