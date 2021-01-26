@@ -135,7 +135,7 @@ void SSH::checkForSSHKey(){
 }
 
 void SSH::getSSHKeys(){
-  QString url = "https://github.com/" + usernameGitHub +".keys";
+  QString url = "https://github.com/" + usernameGitHub + ".keys";
   aborted = false;
   reply = manager->get(QNetworkRequest(QUrl(url)));
   connect(reply, SIGNAL(finished()), this, SLOT(parseResponse()));
@@ -148,7 +148,7 @@ void SSH::timeout(){
 }
 
 void SSH::parseResponse(){
-  if(!aborted){
+  if (!aborted) {
     networkTimer->stop();
     QString response = reply->readAll();
     if (reply->error() == QNetworkReply::NoError && response.length()) {

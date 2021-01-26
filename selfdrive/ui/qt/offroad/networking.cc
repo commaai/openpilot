@@ -26,6 +26,7 @@ QWidget* layoutToWidget(QLayout* l, QWidget* parent){
   return q;
 }
 
+// https://stackoverflow.com/questions/478898/how-do-i-execute-a-command-and-get-the-output-of-the-command-within-c-using-po
 std::string exec(const char* cmd) {
     std::array<char, 128> buffer;
     std::string result;
@@ -292,7 +293,7 @@ bool AdvancedNetworking::isSSHEnabled(){
 
 void AdvancedNetworking::refresh(){
   ipLabel->setText(wifi->ipv4_address);
-  if(toggle_switch_SSH->on != isSSHEnabled()){
+  if (toggle_switch_SSH->on != isSSHEnabled()) {
     toggle_switch_SSH->togglePosition();
   }
 }
@@ -306,10 +307,10 @@ void AdvancedNetworking::toggleTethering(int enable) {
   editPasswordButton->setEnabled(!enable);
 }
 void AdvancedNetworking::toggleSSH(int enable) {
-  if(enable){
+  if (enable) {
     system("sudo systemctl enable ssh");
     system("sudo systemctl start ssh");
-  }else{
+  } else {
     system("sudo systemctl stop ssh");
     system("sudo systemctl disable ssh");
 
