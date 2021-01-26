@@ -41,7 +41,7 @@ def test_boardd_loopback():
 
   with Timeout(60, "boardd didn't start"):
     sm = messaging.SubMaster(['health'])
-    while sm.rcv_frame['health'] < 0:
+    while sm.rcv_frame['health'] < 1:
       sm.update(1000)
 
   # boardd blocks on CarVin and CarParams
