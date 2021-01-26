@@ -330,7 +330,7 @@ int Panda::can_receive(kj::Array<capnp::word>& out_buf) {
 
   // Not sure if this can happen
   if (recv < 0) recv = 0;
- 
+
   if (recv == RECV_SIZE) {
     LOGW("Receive buffer full");
   }
