@@ -24,7 +24,7 @@ void dmonitoring_init(DMonitoringModelState* s) {
 #endif
 
   int runtime = USE_DSP_RUNTIME;
-  s->m = new DefaultRunModel(model_path, (float*)&s->output, OUTPUT_SIZE, runtime);
+  s->m = new DefaultRunModel(model_path, &s->output[0], OUTPUT_SIZE, runtime);
   s->is_rhd = Params().read_db_bool("IsRHD");
 }
 
