@@ -111,10 +111,6 @@ public:
     std::signal(SIGTERM, (sighandler_t)set_do_exit);
   };
   inline operator bool() { return do_exit; }
-  inline ExitHandler& operator=(bool v) {
-    do_exit = v;
-    return *this;
-  }
 private:
   static void set_do_exit(int sig) { do_exit = true; }
   inline static std::atomic<bool> do_exit = false;
