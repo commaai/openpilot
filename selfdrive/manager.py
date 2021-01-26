@@ -143,6 +143,7 @@ if __name__ == "__main__" and not PREBUILT:
   build()
 
 import cereal.messaging as messaging
+from cereal import log
 
 from common.params import Params
 from selfdrive.registration import register
@@ -165,7 +166,6 @@ managed_processes = {
   "tombstoned": "selfdrive.tombstoned",
   "logcatd": ("selfdrive/logcatd", ["./logcatd"]),
   "proclogd": ("selfdrive/proclogd", ["./proclogd"]),
-  "boardd": ("selfdrive/boardd", ["./boardd"]),   # not used directly
   "pandad": "selfdrive.pandad",
   "ui": ("selfdrive/ui", ["./ui"]),
   "calibrationd": "selfdrive.locationd.calibrationd",
@@ -418,9 +418,10 @@ def manager_init():
   if not dirty:
     os.environ['CLEAN'] = '1'
 
-  cloudlog.bind_global(dongle_id=dongle_id, version=version, dirty=dirty, is_eon=True)
+  cloudlog.bind_global(dongle_id=dongle_id, version=version, dirty=dirty,
+                       device=HARDWARE.get_device_type())
   crash.bind_user(id=dongle_id)
-  crash.bind_extra(version=version, dirty=dirty, is_eon=True)
+  crash.bind_extra(version=version, dirty=dirty, device=HARDWARE.get_device_type())
 
   # ensure shared libraries are readable by apks
   if EON:
@@ -461,6 +462,7 @@ def manager_thread():
   logger_dead = False
   params = Params()
   thermal_sock = messaging.sub_sock('thermal')
+  pm = messaging.PubMaster(['managerState'])
 
   while 1:
     msg = messaging.recv_sock(thermal_sock, wait=True)
@@ -499,6 +501,20 @@ def manager_thread():
     # check the status of all processes, did any of them die?
     running_list = ["%s%s\u001b[0m" % ("\u001b[32m" if running[p].is_alive() else "\u001b[31m", p) for p in running]
     cloudlog.debug(' '.join(running_list))
+
+    # send managerState
+    states = []
+    for p in managed_processes:
+      state = log.ManagerState.ProcessState.new_message()
+      state.name = p
+      if p in running:
+        state.running = running[p].is_alive()
+        state.pid = running[p].pid
+        state.exitCode = running[p].exitcode or 0
+      states.append(state)
+    msg = messaging.new_message('managerState')
+    msg.managerState.processes = states
+    pm.send('managerState', msg)
 
     # Exit main loop when uninstall is needed
     if params.get("DoUninstall", encoding='utf8') == "1":

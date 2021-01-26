@@ -65,6 +65,9 @@ class Android(HardwareBase):
     with open("/VERSION") as f:
       return f.read().strip()
 
+  def get_device_type(self):
+    return "eon"
+
   def get_sound_card_online(self):
     return (os.path.isfile('/proc/asound/card0/state') and
             open('/proc/asound/card0/state').read().strip() == 'ONLINE')

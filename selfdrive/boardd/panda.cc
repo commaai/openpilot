@@ -1,12 +1,13 @@
 #include <stdexcept>
 #include <cassert>
 #include <iostream>
-
+#include <vector>
 #include <unistd.h>
 
 #include "common/swaglog.h"
 #include "common/gpio.h"
 #include "common/util.h"
+#include "messaging.hpp"
 #include "panda.h"
 
 #ifdef QCOM2
@@ -40,7 +41,6 @@ void panda_set_power(bool power){
 Panda::Panda(){
   int err;
 
-  err = pthread_mutex_init(&usb_lock, NULL);
   if (err != 0) { goto fail; }
 
   // init libusb
@@ -83,10 +83,9 @@ fail:
 }
 
 Panda::~Panda(){
-  pthread_mutex_lock(&usb_lock);
+  std::lock_guard lk(usb_lock);
   cleanup();
   connected = false;
-  pthread_mutex_unlock(&usb_lock);
 }
 
 void Panda::cleanup(){
@@ -117,13 +116,11 @@ int Panda::usb_write(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigne
     return LIBUSB_ERROR_NO_DEVICE;
   }
 
-  pthread_mutex_lock(&usb_lock);
+  std::lock_guard lk(usb_lock);
   do {
     err = libusb_control_transfer(dev_handle, bmRequestType, bRequest, wValue, wIndex, NULL, 0, timeout);
     if (err < 0) handle_usb_issue(err, __func__);
   } while (err < 0 && connected);
-
-  pthread_mutex_unlock(&usb_lock);
 
   return err;
 }
@@ -132,12 +129,11 @@ int Panda::usb_read(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned
   int err;
   const uint8_t bmRequestType = LIBUSB_ENDPOINT_IN | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE;
 
-  pthread_mutex_lock(&usb_lock);
+  std::lock_guard lk(usb_lock);
   do {
     err = libusb_control_transfer(dev_handle, bmRequestType, bRequest, wValue, wIndex, data, wLength, timeout);
     if (err < 0) handle_usb_issue(err, __func__);
   } while (err < 0 && connected);
-  pthread_mutex_unlock(&usb_lock);
 
   return err;
 }
@@ -150,7 +146,7 @@ int Panda::usb_bulk_write(unsigned char endpoint, unsigned char* data, int lengt
     return 0;
   }
 
-  pthread_mutex_lock(&usb_lock);
+  std::lock_guard lk(usb_lock);
   do {
     // Try sending can messages. If the receive buffer on the panda is full it will NAK
     // and libusb will try again. After 5ms, it will time out. We will drop the messages.
@@ -164,7 +160,6 @@ int Panda::usb_bulk_write(unsigned char endpoint, unsigned char* data, int lengt
     }
   } while(err != 0 && connected);
 
-  pthread_mutex_unlock(&usb_lock);
   return transferred;
 }
 
@@ -176,7 +171,7 @@ int Panda::usb_bulk_read(unsigned char endpoint, unsigned char* data, int length
     return 0;
   }
 
-  pthread_mutex_lock(&usb_lock);
+  std::lock_guard lk(usb_lock);
 
   do {
     err = libusb_bulk_transfer(dev_handle, endpoint, data, length, &transferred, timeout);
@@ -190,8 +185,6 @@ int Panda::usb_bulk_read(unsigned char endpoint, unsigned char* data, int length
     }
 
   } while(err != 0 && connected);
-
-  pthread_mutex_unlock(&usb_lock);
 
   return transferred;
 }
@@ -310,9 +303,10 @@ void Panda::send_heartbeat(){
 }
 
 void Panda::can_send(capnp::List<cereal::CanData>::Reader can_data_list){
-  int msg_count = can_data_list.size();
+  static std::vector<uint32_t> send;
+  const int msg_count = can_data_list.size();
 
-  uint32_t *send = new uint32_t[msg_count*0x10]();
+  send.resize(msg_count*0x10);
 
   for (int i = 0; i < msg_count; i++) {
     auto cmsg = can_data_list[i];
@@ -327,12 +321,10 @@ void Panda::can_send(capnp::List<cereal::CanData>::Reader can_data_list){
     memcpy(&send[i*4+2], can_data.begin(), can_data.size());
   }
 
-  usb_bulk_write(3, (unsigned char*)send, msg_count*0x10, 5);
-
-  delete[] send;
+  usb_bulk_write(3, (unsigned char*)send.data(), send.size(), 5);
 }
 
-int Panda::can_receive(cereal::Event::Builder &event){
+int Panda::can_receive(kj::Array<capnp::word>& out_buf) {
   uint32_t data[RECV_SIZE/4];
   int recv = usb_bulk_read(0x81, (unsigned char*)data, RECV_SIZE);
 
@@ -344,7 +336,8 @@ int Panda::can_receive(cereal::Event::Builder &event){
   }
 
   size_t num_msg = recv / 0x10;
-  auto canData = event.initCan(num_msg);
+  MessageBuilder msg;
+  auto canData = msg.initEvent().initCan(num_msg);
 
   // populate message
   for (int i = 0; i < num_msg; i++) {
@@ -361,6 +354,6 @@ int Panda::can_receive(cereal::Event::Builder &event){
     canData[i].setDat(kj::arrayPtr((uint8_t*)&data[i*4+2], len));
     canData[i].setSrc((data[i*4+1] >> 4) & 0xff);
   }
-
+  out_buf = capnp::messageToFlatArray(msg);
   return recv;
 }

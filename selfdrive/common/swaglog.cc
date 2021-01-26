@@ -12,6 +12,7 @@
 #include "json11.hpp"
 
 #include "common/timing.h"
+#include "common/util.h"
 #include "common/version.h"
 
 #include "swaglog.h"
@@ -57,6 +58,15 @@ static void cloudlog_init() {
   }
   cloudlog_bind_locked("version", COMMA_VERSION);
   s.ctx_j["dirty"] = !getenv("CLEAN");
+
+  // device type
+  if (util::file_exists("/EON")) {
+    cloudlog_bind_locked("device", "eon");
+  } else if (util::file_exists("/TICI")) {
+    cloudlog_bind_locked("device", "tici");
+  } else {
+    cloudlog_bind_locked("device", "pc");
+  }
 
   s.inited = true;
 }

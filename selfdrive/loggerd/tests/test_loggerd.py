@@ -111,7 +111,7 @@ class TestLoggerd(unittest.TestCase):
       os.environ["LOGGERD_SEGMENT_LENGTH"] = str(length)
 
       manager.start_managed_process("loggerd")
-      time.sleep(num_segs * length)
+      time.sleep((num_segs + 1) * length)
       manager.kill_managed_process("loggerd")
 
       route_path = str(self._get_latest_log_dir()).rsplit("--", 1)[0]

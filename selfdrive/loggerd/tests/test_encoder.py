@@ -66,9 +66,7 @@ class TestEncoder(unittest.TestCase):
   def test_log_rotation(self, record_front):
     Params().put("RecordFront", str(int(record_front)))
 
-    num_segments = random.randint(80, 150)
-    if "CI" in os.environ:
-      num_segments = random.randint(15, 20) # ffprobe is slow on comma two
+    num_segments = int(os.getenv("SEGMENTS", random.randint(10, 15)))
 
     # wait for loggerd to make the dir for first segment
     route_prefix_path = None
