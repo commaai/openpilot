@@ -10,6 +10,7 @@ from cereal import car
 from common.basedir import BASEDIR
 from common.params import Params
 from common.spinner import Spinner
+from common.timeout import Timeout
 from panda import Panda
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.car import make_can_msg
@@ -37,6 +38,11 @@ def test_boardd_loopback():
   # wait for boardd to init
   spinner = Spinner()
   time.sleep(2)
+
+  with Timeout(60, "boardd didn't start"):
+    sm = messaging.SubMaster(['health'])
+    while sm.rcv_frame['health'] < 0:
+      sm.update(1000)
 
   # boardd blocks on CarVin and CarParams
   cp = car.CarParams.new_message()
