@@ -3,6 +3,7 @@
 #include <ctime>
 #include <cstdint>
 #include <pthread.h>
+#include <mutex>
 
 #include <libusb-1.0/libusb.h>
 
@@ -41,7 +42,7 @@ class Panda {
  private:
   libusb_context *ctx = NULL;
   libusb_device_handle *dev_handle = NULL;
-  pthread_mutex_t usb_lock;
+  std::mutex usb_lock;
   void handle_usb_issue(int err, const char func[]);
   void cleanup();
 
@@ -77,6 +78,5 @@ class Panda {
   void set_usb_power_mode(cereal::HealthData::UsbPowerMode power_mode);
   void send_heartbeat();
   void can_send(capnp::List<cereal::CanData>::Reader can_data_list);
-  int can_receive(cereal::Event::Builder &event);
-
+  int can_receive(kj::Array<capnp::word>& out_buf);
 };

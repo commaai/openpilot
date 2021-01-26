@@ -29,6 +29,7 @@ STEER_ANGLE_SATURATION_THRESHOLD = 2.5  # Degrees
 
 SIMULATION = "SIMULATION" in os.environ
 NOSENSOR = "NOSENSOR" in os.environ
+IGNORE_PROCESSES = set(["rtshield", "uploader", "deleter", "loggerd", "logmessaged", "tombstoned", "logcatd", "proclogd", "clocksd", "gpsd", "updated"])
 
 ThermalStatus = log.ThermalData.ThermalStatus
 State = log.ControlsState.OpenpilotState
@@ -52,10 +53,10 @@ class Controls:
 
     self.sm = sm
     if self.sm is None:
-      ignore = ['ubloxRaw', 'frontFrame'] if SIMULATION else None
+      ignore = ['ubloxRaw', 'frontFrame', 'managerState'] if SIMULATION else None
       self.sm = messaging.SubMaster(['thermal', 'health', 'modelV2', 'liveCalibration', 'ubloxRaw',
                                      'dMonitoringState', 'plan', 'pathPlan', 'liveLocationKalman',
-                                     'frame', 'frontFrame'], ignore_alive=ignore)
+                                     'frame', 'frontFrame', 'managerState'], ignore_alive=ignore)
 
     self.can_sock = can_sock
     if can_sock is None:
@@ -165,6 +166,11 @@ class Controls:
       self.events.add(EventName.outOfSpace)
     if self.sm['thermal'].memUsedPercent > 90:
       self.events.add(EventName.lowMemory)
+
+    # Check if all manager processes are running
+    not_running = set(p.name for p in self.sm['managerState'].processes if not p.running)
+    if self.sm.rcv_frame['managerState'] and (not_running - IGNORE_PROCESSES):
+      self.events.add(EventName.processNotRunning)
 
     # Alert if fan isn't spinning for 5 seconds
     if self.sm['health'].hwType in [HwType.uno, HwType.dos]:

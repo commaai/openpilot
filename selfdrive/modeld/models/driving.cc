@@ -54,7 +54,6 @@ void model_init(ModelState* s, cl_device_id device_id, cl_context context) {
 
   constexpr int output_size = OUTPUT_SIZE + TEMPORAL_SIZE;
   s->output = std::make_unique<float[]>(output_size);
-  memset(&s->output[0], 0, output_size*sizeof(float));
 
 #if defined(QCOM) || defined(QCOM2)
   s->m = std::make_unique<ThneedModel>("../../models/supercombo.thneed", &s->output[0], output_size, USE_GPU_RUNTIME);
