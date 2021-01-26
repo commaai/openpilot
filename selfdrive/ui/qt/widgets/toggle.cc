@@ -48,10 +48,11 @@ void Toggle::togglePosition() {
   on = !on;
   const int left = _radius;
   const int right = width() - _radius;
-  _anim->setStartValue(on ? left+1 : right-1);
+  _anim->setStartValue(on ? left + immediateOffset : right - immediateOffset);
   _anim->setEndValue(on ? right : left);
   _anim->setDuration(animation_duration);
   _anim->start();
+  repaint();
 }
 
 void Toggle::enterEvent(QEvent *e) {

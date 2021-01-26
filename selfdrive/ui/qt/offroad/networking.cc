@@ -245,7 +245,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   QHBoxLayout* enableSSHLayout = new QHBoxLayout(this);
   enableSSHLayout->addWidget(new QLabel("Enable SSH", this));
   toggle_switch_SSH = new Toggle(this);
-  // toggle_switch_SSH->animation_duration = 5000;//Ensure users don't accidentaly press twice.
+  toggle_switch_SSH->immediateOffset = 20;
   toggle_switch_SSH->setFixedSize(150, 100);
   if (isSSHEnabled()) {
     toggle_switch_SSH->togglePosition();
@@ -306,17 +306,12 @@ void AdvancedNetworking::toggleTethering(int enable) {
   editPasswordButton->setEnabled(!enable);
 }
 void AdvancedNetworking::toggleSSH(int enable) {
-  qDebug()<<enable;
   if(enable){
-    qDebug()<<"Enabling SSH";
-    system("sudo systemctl start ssh");
     system("sudo systemctl enable ssh");
-    qDebug()<<"done";
+    system("sudo systemctl start ssh");
   }else{
-    qDebug()<<"Disabling SSH";
     system("sudo systemctl stop ssh");
     system("sudo systemctl disable ssh");
-    qDebug()<<"done";
 
   }
 }

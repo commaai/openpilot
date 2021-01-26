@@ -10,6 +10,7 @@ public:
   void togglePosition();
   bool on;
   int animation_duration = 250;
+  int immediateOffset = 0;
   int offset_circle() const {
     return _x_circle;
   }
@@ -18,6 +19,7 @@ public:
     _x_circle = o;
     update();
   }
+
 
 protected:
   void paintEvent(QPaintEvent*) override;
