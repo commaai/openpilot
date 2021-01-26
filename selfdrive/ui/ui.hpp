@@ -121,7 +121,6 @@ typedef struct UIScene {
   cereal::ControlsState::AlertSize alert_size;
 
   cereal::HealthData::HwType hwType;
-  int satelliteCount;
   NetStatus athenaStatus;
 
   cereal::ThermalData::Reader thermal;

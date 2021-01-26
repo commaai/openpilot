@@ -40,6 +40,9 @@ class Tici(HardwareBase):
     with open("/VERSION") as f:
       return f.read().strip()
 
+  def get_device_type(self):
+    return "tici"
+
   def get_sound_card_online(self):
     return os.system("pulseaudio --check") == 0
 

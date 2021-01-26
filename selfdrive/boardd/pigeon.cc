@@ -89,7 +89,7 @@ void PandaPigeon::set_baud(int baud) {
   panda->usb_write(0xe4, 1, baud/300);
 }
 
-void PandaPigeon::send(std::string s) {
+void PandaPigeon::send(const std::string &s) {
   int len = s.length();
   const char * dat = s.data();
 
@@ -180,7 +180,7 @@ void TTYPigeon::set_baud(int baud){
   assert(tcflush(pigeon_tty_fd, TCIOFLUSH) == 0);
 }
 
-void TTYPigeon::send(std::string s) {
+void TTYPigeon::send(const std::string &s) {
   int len = s.length();
   const char * dat = s.data();
 

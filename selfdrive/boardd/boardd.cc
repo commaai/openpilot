@@ -38,10 +38,10 @@
 
 Panda * panda = NULL;
 std::atomic<bool> safety_setter_thread_running(false);
+std::atomic<bool> ignition(false);
 bool spoofing_started = false;
 bool fake_send = false;
 bool connected_once = false;
-bool ignition = false;
 
 ExitHandler do_exit;
 struct tm get_time(){
@@ -287,9 +287,6 @@ void can_health_thread() {
 
   // run at 2hz
   while (!do_exit && panda->connected) {
-    MessageBuilder msg;
-    auto healthData = msg.initEvent().initHealth();
-
     health_t health = panda->get_health();
 
     if (spoofing_started) {
@@ -349,6 +346,8 @@ void can_health_thread() {
     uint16_t fan_speed_rpm = panda->get_fan_speed();
 
     // set fields
+    MessageBuilder msg;
+    auto healthData = msg.initEvent().initHealth();
     healthData.setUptime(health.uptime);
 
 #ifdef QCOM2

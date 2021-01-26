@@ -406,7 +406,7 @@ void OmxEncoder::handle_out_buf(OmxEncoder *e, OMX_BUFFERHEADERTYPE *out_buf) {
 
 int OmxEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
                              int in_width, int in_height,
-                             int *frame_segment, VisionIpcBufExtra *extra) {
+                             int *frame_segment, uint64_t ts) {
   int err;
   pthread_mutex_lock(&this->lock);
 
@@ -458,7 +458,7 @@ int OmxEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const u
   in_buf->nFilledLen = VENUS_BUFFER_SIZE(COLOR_FMT_NV12, this->width, this->height);
   in_buf->nFlags = OMX_BUFFERFLAG_ENDOFFRAME;
   in_buf->nOffset = 0;
-  in_buf->nTimeStamp = extra->timestamp_eof/1000LL;  // OMX_TICKS, in microseconds
+  in_buf->nTimeStamp = ts/1000LL;  // OMX_TICKS, in microseconds
   this->last_t = in_buf->nTimeStamp;
 
   OMX_CHECK(OMX_EmptyThisBuffer(this->handle, in_buf));
