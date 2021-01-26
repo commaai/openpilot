@@ -249,11 +249,11 @@ void can_recv_thread() {
   uint64_t next_frame_time = nanos_since_boot() + dt;
 
   while (!do_exit && panda->connected) {
-   can_recv(pm);
+    can_recv(pm);
 
     uint64_t cur_time = nanos_since_boot();
     int64_t remaining = next_frame_time - cur_time;
-    if (remaining > 0){
+    if (remaining > 0) {
       std::this_thread::sleep_for(std::chrono::nanoseconds(remaining));
     } else {
       if (ignition){
