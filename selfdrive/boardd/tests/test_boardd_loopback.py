@@ -32,7 +32,7 @@ os.environ['BOARDD_LOOPBACK'] = '1'
 os.environ['BASEDIR'] = BASEDIR
 
 @reset_panda
-@with_processes(['boardd'])
+@with_processes(['pandad'])
 def test_boardd_loopback():
   # wait for boardd to init
   spinner = Spinner()
