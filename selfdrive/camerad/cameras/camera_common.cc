@@ -216,7 +216,7 @@ void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &fr
   framed.setGainFrac(frame_data.gain_frac);
 }
 
-void fill_frame_image(cereal::FrameData::Builder &framed, const CameraBuf *b) {
+kj::Array<uint8_t> get_frame_image(const CameraBuf *b) {
   assert(b->cur_rgb_buf);
   const uint8_t *dat = (const uint8_t *)b->cur_rgb_buf->addr;
   int scale = env_scale;
@@ -225,16 +225,15 @@ void fill_frame_image(cereal::FrameData::Builder &framed, const CameraBuf *b) {
   if (env_ymax != -1) y_max = env_ymax;
   int new_width = (x_max - x_min + 1) / scale;
   int new_height = (y_max - y_min + 1) / scale;
-  uint8_t *resized_dat = new uint8_t[new_width*new_height*3];
-
+  kj::Array<uint8_t> frame_image = kj::heapArray<uint8_t>(new_width*new_height*3);
+  uint8_t *resized_dat = frame_image.begin();
   int goff = x_min*3 + y_min*b->rgb_stride;
   for (int r=0;r<new_height;r++) {
     for (int c=0;c<new_width;c++) {
       memcpy(&resized_dat[(r*new_width+c)*3], &dat[goff+r*b->rgb_stride*scale+c*3*scale], 3*sizeof(uint8_t));
     }
   }
-  framed.setImage(kj::arrayPtr((const uint8_t*)resized_dat, (size_t)new_width*new_height*3));
-  delete[] resized_dat;
+  return kj::mv(frame_image);
 }
 
 static void publish_thumbnail(PubMaster *pm, const CameraBuf *b) {
@@ -410,7 +409,7 @@ void common_camera_process_front(SubMaster *sm, PubMaster *pm, CameraState *c, i
   framed.setFrameType(cereal::FrameData::FrameType::FRONT);
   fill_frame_data(framed, b->cur_frame_data, cnt);
   if (env_send_front) {
-    fill_frame_image(framed, b);
+    framed.setImage(get_frame_image(b));
   }
   pm->send("frontFrame", msg);
 }
