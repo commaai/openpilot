@@ -53,7 +53,7 @@ SSH::SSH(QWidget* parent) : QWidget(parent){
   QLabel* wallOfText = new QLabel("Warning: This grants SSH access to all public keys in your GitHub settings. Never enter a GitHub username other than your own. A Comma employee will NEVER ask you to add their GitHub username.");
   wallOfText->setWordWrap(true);
   wallOfText->setStyleSheet(R"(font-size: 60px;)");
-  initialLayout->addWidget(wallOfText, 0, Qt::AlignLeft | Qt::AlignTop);
+  initialLayout->addWidget(wallOfText, 0);
 
   QPushButton* actionButton = new QPushButton;
   actionButton->setFixedHeight(100);
@@ -90,7 +90,7 @@ SSH::SSH(QWidget* parent) : QWidget(parent){
   quitState->addTransition(quitState, &QState::entered, initialState);
 
   state->addState(initialStateConnected);
-  connect(initialStateConnected, &QState::entered, [=](){actionButton->setText("Remove GitHub SSH keys");});
+  connect(initialStateConnected, &QState::entered, [=](){actionButton->setText("Remove GitHub SSH keys"); actionButton->setStyleSheet(R"(background-color: #750c0c;)");});
   initialStateConnected->addTransition(exitButton, &QPushButton::released, quitState);
   initialStateConnected->addTransition(actionButton, &QPushButton::released, removeSSH_State);
 
@@ -99,7 +99,7 @@ SSH::SSH(QWidget* parent) : QWidget(parent){
   removeSSH_State->addTransition(removeSSH_State, &QState::entered, initialState);
 
   state->addState(initialStateNoGithub);
-  connect(initialStateNoGithub, &QState::entered, [=](){actionButton->setText("Link GitHub SSH keys");});
+  connect(initialStateNoGithub, &QState::entered, [=](){actionButton->setText("Link GitHub SSH keys"); actionButton->setStyleSheet(R"(background-color: #444444;)");});
   initialStateNoGithub->addTransition(exitButton, &QPushButton::released, quitState);
   initialStateNoGithub->addTransition(actionButton, &QPushButton::released, defaultInputFieldState);
   connect(actionButton, &QPushButton::released, [=](){input->setPromptText("Enter your GitHub username");});

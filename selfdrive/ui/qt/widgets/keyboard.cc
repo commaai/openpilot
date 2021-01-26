@@ -81,7 +81,7 @@ Keyboard::Keyboard(QWidget *parent) : QWidget(parent) {
   // Special characters
   std::vector<QVector<QString>> specials = {
     {"[","]","{","}","#","%","^","*","+","="},
-    {"_","\\","|","~","<",">","€","£","¥"," "},
+    {"_","\\","|","~","<",">","€","£","¥","•"},
     {"123",".",",","?","!","`","⌫"},
     {"ABC","  ","⏎"},
   };
