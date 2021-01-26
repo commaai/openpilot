@@ -35,12 +35,7 @@ int ubloxd_main(poll_ubloxraw_msg_func poll_func, send_gps_event_func send_func)
 
   while (!do_exit) {
     Message * msg = subscriber->receive();
-    if (!msg){
-      if (errno == EINTR) {
-        do_exit = true;
-      }
-      continue;
-    }
+    if (!msg) continue;
 
     auto amsg = kj::heapArray<capnp::word>((msg->getSize() / sizeof(capnp::word)) + 1);
     memcpy(amsg.begin(), msg->getData(), msg->getSize());

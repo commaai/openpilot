@@ -182,11 +182,7 @@ void encoder_thread(int cam_idx) {
   std::vector<Encoder *> encoders;
   VisionIpcClient vipc_client = VisionIpcClient("camerad", cam_info.stream_type, false);
 
-  while (!do_exit) {
-    if (!vipc_client.connect(false)){
-      util::sleep_for(100);
-      continue;
-    }
+  if (vipc_client.connect()) {
 
     // init encoders
     if (encoders.empty()) {

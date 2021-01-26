@@ -28,15 +28,7 @@ int main(int argc, char **argv) {
   dmonitoring_init(&dmonitoringmodel);
 
   VisionIpcClient vipc_client = VisionIpcClient("camerad", VISION_STREAM_YUV_FRONT, true);
-  while (!do_exit){
-    if (!vipc_client.connect(false)){
-      util::sleep_for(100);
-      continue;
-    }
-    break;
-  }
-
-  while (!do_exit) {
+  if (vipc_client.connect()) {
     LOGW("connected with buffer size: %d", vipc_client.buffers[0].len);
 
     double last = 0;

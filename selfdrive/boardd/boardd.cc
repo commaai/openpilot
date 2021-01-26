@@ -210,13 +210,7 @@ void can_send_thread() {
   // run as fast as messages come in
   while (!do_exit && panda->connected) {
     Message * msg = subscriber->receive();
-
-    if (!msg){
-      if (errno == EINTR) {
-        do_exit = true;
-      }
-      continue;
-    }
+    if (!msg) continue;
 
     auto amsg = kj::heapArray<capnp::word>((msg->getSize() / sizeof(capnp::word)) + 1);
     memcpy(amsg.begin(), msg->getData(), msg->getSize());
