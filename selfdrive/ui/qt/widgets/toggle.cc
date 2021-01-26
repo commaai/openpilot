@@ -3,7 +3,7 @@
 Toggle::Toggle(QWidget *parent) : QAbstractButton(parent),
 _height(80),
 _height_rect(60),
-_on(false),
+on(false),
 _anim(new QPropertyAnimation(this, "offset_circle", this))
 {
   _radius = _height / 2;
@@ -32,19 +32,25 @@ void Toggle::paintEvent(QPaintEvent *e) {
 }
 
 void Toggle::mouseReleaseEvent(QMouseEvent *e) {
+  const int left = _radius;
+  const int right = width() - _radius;
+  if(_x_circle != left && _x_circle != right){
+    //Don't parse touch events, while the animation is running
+    return;
+  }
   if (e->button() & Qt::LeftButton) {
     togglePosition();
-    emit stateChanged(_on);
+    emit stateChanged(on);
   }
 }
 
 void Toggle::togglePosition() {
-  _on = !_on;
+  on = !on;
   const int left = _radius;
   const int right = width() - _radius;
-  _anim->setStartValue(_on ? left : right);
-  _anim->setEndValue(_on ? right : left);
-  _anim->setDuration(120);
+  _anim->setStartValue(on ? left+1 : right-1);
+  _anim->setEndValue(on ? right : left);
+  _anim->setDuration(animation_duration);
   _anim->start();
 }
 

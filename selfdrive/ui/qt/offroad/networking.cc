@@ -7,8 +7,6 @@
 #include <QRandomGenerator>
 
 #include "networking.hpp"
-#include "widgets/toggle.hpp"
-#include "widgets/ssh_keys.hpp"
 
 void clearLayout(QLayout* layout) {
   while (QLayoutItem* item = layout->takeAt(0)) {
@@ -26,6 +24,19 @@ QWidget* layoutToWidget(QLayout* l, QWidget* parent){
   QWidget* q = new QWidget(parent);
   q->setLayout(l);
   return q;
+}
+
+std::string exec(const char* cmd) {
+    std::array<char, 128> buffer;
+    std::string result;
+    std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd, "r"), pclose);
+    if (!pipe) {
+        throw std::runtime_error("popen() failed!");
+    }
+    while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
+        result += buffer.data();
+    }
+    return result;
 }
 
 // Networking functions
@@ -233,8 +244,13 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   //Enable SSH
   QHBoxLayout* enableSSHLayout = new QHBoxLayout(this);
   enableSSHLayout->addWidget(new QLabel("Enable SSH", this));
-  Toggle* toggle_switch_SSH = new Toggle(this);
+  toggle_switch_SSH = new Toggle(this);
+  // toggle_switch_SSH->animation_duration = 5000;//Ensure users don't accidentaly press twice.
   toggle_switch_SSH->setFixedSize(150, 100);
+  if (isSSHEnabled()) {
+    toggle_switch_SSH->togglePosition();
+  }
+  QObject::connect(toggle_switch_SSH, SIGNAL(stateChanged(int)), this, SLOT(toggleSSH(int)));
   enableSSHLayout->addWidget(toggle_switch_SSH);
   vlayout->addWidget(layoutToWidget(enableSSHLayout, this));
   vlayout->addWidget(hline(), 0);
@@ -269,11 +285,16 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   setLayout(s);
 }
 
-void AdvancedNetworking::modifySSH(){
-  s->setCurrentIndex(2);
+bool AdvancedNetworking::isSSHEnabled(){
+  QString response = QString::fromStdString(exec("systemctl is-active ssh"));
+  return response.startsWith("active");
 }
+
 void AdvancedNetworking::refresh(){
   ipLabel->setText(wifi->ipv4_address);
+  if(toggle_switch_SSH->on != isSSHEnabled()){
+    toggle_switch_SSH->togglePosition();
+  }
 }
 
 void AdvancedNetworking::toggleTethering(int enable) {
@@ -284,7 +305,21 @@ void AdvancedNetworking::toggleTethering(int enable) {
   }
   editPasswordButton->setEnabled(!enable);
 }
+void AdvancedNetworking::toggleSSH(int enable) {
+  qDebug()<<enable;
+  if(enable){
+    qDebug()<<"Enabling SSH";
+    system("sudo systemctl start ssh");
+    system("sudo systemctl enable ssh");
+    qDebug()<<"done";
+  }else{
+    qDebug()<<"Disabling SSH";
+    system("sudo systemctl stop ssh");
+    system("sudo systemctl disable ssh");
+    qDebug()<<"done";
 
+  }
+}
 void AdvancedNetworking::receiveText(QString text){
   wifi->changeTetheringPassword(text);
   s->setCurrentIndex(1);

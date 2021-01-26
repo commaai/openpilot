@@ -17,21 +17,13 @@ QWidget* layout_to_widget(QLayout* l){
 }
 
 SSH::SSH(QWidget* parent) : QWidget(parent){
+  // init variables
   manager = new QNetworkAccessManager(this);
   networkTimer = new QTimer(this);
   networkTimer->setSingleShot(true);
   networkTimer->setInterval(5000);
   connect(networkTimer, SIGNAL(timeout()), this, SLOT(timeout()));
 
-  //Initialize the state machine and states
-  QStateMachine* state = new QStateMachine(this);
-  QState* initialState = new QState(); //State when entering the widget
-  QState* initialStateNoGithub = new QState(); //Starting state, key not connected
-  QState* initialStateConnected = new QState(); //Starting state, ssh connected
-  QState* quitState = new QState(); // State when exiting the widget
-  QState* removeSSH_State = new QState(); // State when user wants to remove the SSH keys 
-  QState* defaultInputFieldState = new QState(); // State when we want the user to give us the username 
-  QState* loadingState = new QState(); // State while waiting for the network response
 
   // Construct the layouts to display
   slayout = new QStackedLayout(this); // Initial screen, input, waiting for response
@@ -77,6 +69,18 @@ SSH::SSH(QWidget* parent) : QWidget(parent){
     }
   )");
   setLayout(slayout);
+
+
+  //Initialize the state machine and states
+  QStateMachine* state = new QStateMachine(this);
+  QState* initialState = new QState(); //State when entering the widget
+  QState* initialStateNoGithub = new QState(); //Starting state, key not connected
+  QState* initialStateConnected = new QState(); //Starting state, ssh connected
+  QState* quitState = new QState(); // State when exiting the widget
+  QState* removeSSH_State = new QState(); // State when user wants to remove the SSH keys 
+  QState* defaultInputFieldState = new QState(); // State when we want the user to give us the username 
+  QState* loadingState = new QState(); // State while waiting for the network response
+
 
   // Adding states to the state machine and adding the transitions
   state->addState(initialState);
