@@ -66,6 +66,8 @@ class Planner():
 
     self.v_acc_start = 0.0
     self.a_acc_start = 0.0
+    self.v_acc_next = 0.0
+    self.a_acc_next = 0.0
 
     self.v_acc = 0.0
     self.v_acc_future = 0.0
@@ -76,6 +78,11 @@ class Planner():
     self.longitudinalPlanSource = 'cruise'
     self.fcw_checker = FCWChecker()
     self.path_x = np.arange(192)
+
+    self.radar_dead = False
+    self.radar_fault = False
+    self.radar_can_error = False
+    self.fcw = False
 
     self.params = Params()
     self.first_loop = True
@@ -104,7 +111,7 @@ class Planner():
 
     self.v_acc_future = min([self.mpc1.v_mpc_future, self.mpc2.v_mpc_future, v_cruise_setpoint])
 
-  def update(self, sm, pm, CP, VM, PP):
+  def update(self, sm, CP, VM, PP):
     """Gets called when new radarState is available"""
     cur_time = sec_since_boot()
     v_ego = sm['carState'].vEgo
@@ -121,6 +128,9 @@ class Planner():
 
     enabled = (long_control_state == LongCtrlState.pid) or (long_control_state == LongCtrlState.stopping)
     following = lead_1.status and lead_1.dRel < 45.0 and lead_1.vLeadK > v_ego and lead_1.aLeadK > 0.0
+
+    self.v_acc_start = self.v_acc_next
+    self.a_acc_start = self.a_acc_next
 
     # Calculate speed for normal cruise control
     if enabled and not self.first_loop and not sm['carState'].gasPressed:
@@ -156,8 +166,8 @@ class Planner():
     self.mpc1.set_cur_state(self.v_acc_start, self.a_acc_start)
     self.mpc2.set_cur_state(self.v_acc_start, self.a_acc_start)
 
-    self.mpc1.update(pm, sm['carState'], lead_1)
-    self.mpc2.update(pm, sm['carState'], lead_2)
+    self.mpc1.update(sm['carState'], lead_1)
+    self.mpc2.update(sm['carState'], lead_2)
 
     self.choose_solution(v_cruise_setpoint, enabled)
 
@@ -166,22 +176,33 @@ class Planner():
       self.fcw_checker.reset_lead(cur_time)
 
     blinkers = sm['carState'].leftBlinker or sm['carState'].rightBlinker
-    fcw = self.fcw_checker.update(self.mpc1.mpc_solution, cur_time,
-                                  sm['controlsState'].active,
-                                  v_ego, sm['carState'].aEgo,
-                                  lead_1.dRel, lead_1.vLead, lead_1.aLeadK,
-                                  lead_1.yRel, lead_1.vLat,
-                                  lead_1.fcw, blinkers) and not sm['carState'].brakePressed
-    if fcw:
+    self.fcw = self.fcw_checker.update(self.mpc1.mpc_solution, cur_time,
+                                       sm['controlsState'].active,
+                                       v_ego, sm['carState'].aEgo,
+                                       lead_1.dRel, lead_1.vLead, lead_1.aLeadK,
+                                       lead_1.yRel, lead_1.vLat,
+                                       lead_1.fcw, blinkers) and not sm['carState'].brakePressed
+    if self.fcw:
       cloudlog.info("FCW triggered %s", self.fcw_checker.counters)
 
-    radar_dead = not sm.alive['radarState']
+    self.radar_dead = not sm.alive['radarState']
 
     radar_errors = list(sm['radarState'].radarErrors)
-    radar_fault = car.RadarData.Error.fault in radar_errors
-    radar_can_error = car.RadarData.Error.canError in radar_errors
+    self.radar_fault = car.RadarData.Error.fault in radar_errors
+    self.radar_can_error = car.RadarData.Error.canError in radar_errors
 
-    # **** send the plan ****
+    # Interpolate 0.05 seconds and save as starting point for next iteration
+    a_acc_sol = self.a_acc_start + (CP.radarTimeStep / LON_MPC_STEP) * (self.a_acc - self.a_acc_start)
+    v_acc_sol = self.v_acc_start + CP.radarTimeStep * (a_acc_sol + self.a_acc_start) / 2.0
+    self.v_acc_next = v_acc_sol
+    self.a_acc_next = a_acc_sol
+
+    self.first_loop = False
+
+  def publish(self, sm, pm):
+    self.mpc1.publish(pm)
+    self.mpc2.publish(pm)
+
     plan_send = messaging.new_message('plan')
 
     plan_send.valid = sm.all_alive_and_valid(service_list=['carState', 'controlsState', 'radarState'])
@@ -200,21 +221,13 @@ class Planner():
     plan_send.plan.hasLead = self.mpc1.prev_lead_status
     plan_send.plan.longitudinalPlanSource = self.longitudinalPlanSource
 
-    radar_valid = not (radar_dead or radar_fault)
+    radar_valid = not (self.radar_dead or self.radar_fault)
     plan_send.plan.radarValid = bool(radar_valid)
-    plan_send.plan.radarCanError = bool(radar_can_error)
+    plan_send.plan.radarCanError = bool(self.radar_can_error)
 
     plan_send.plan.processingDelay = (plan_send.logMonoTime / 1e9) - sm.rcv_time['radarState']
 
     # Send out fcw
-    plan_send.plan.fcw = fcw
+    plan_send.plan.fcw = self.fcw
 
     pm.send('plan', plan_send)
-
-    # Interpolate 0.05 seconds and save as starting point for next iteration
-    a_acc_sol = self.a_acc_start + (CP.radarTimeStep / LON_MPC_STEP) * (self.a_acc - self.a_acc_start)
-    v_acc_sol = self.v_acc_start + CP.radarTimeStep * (a_acc_sol + self.a_acc_start) / 2.0
-    self.v_acc_start = v_acc_sol
-    self.a_acc_start = a_acc_sol
-
-    self.first_loop = False
