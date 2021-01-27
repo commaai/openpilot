@@ -1102,7 +1102,7 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
   MessageBuilder msg;
   if (c == &s->rear) {
     auto framed = msg.initEvent().initFrame();
-    fill_frame_data(framed, b->cur_frame_data, cnt);
+    fill_frame_data(framed, b->cur_frame_data);
     framed.setTransform(b->yuv_transform.v);
     s->pm->send("frame", msg);
     if (env_send_rear) {
@@ -1110,7 +1110,7 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
     }
   } else {
     auto framed = msg.initEvent().initWideFrame();
-    fill_frame_data(framed, b->cur_frame_data, cnt);
+    fill_frame_data(framed, b->cur_frame_data);
     s->pm->send("wideFrame", msg);
     if (env_send_wide) {
       framed.setImage(get_frame_image(b));
