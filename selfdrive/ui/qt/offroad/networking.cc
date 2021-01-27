@@ -6,8 +6,7 @@
 #include <QLineEdit>
 #include <QRandomGenerator>
 
-#include "wifi.hpp"
-#include "widgets/toggle.hpp"
+#include "networking.hpp"
 
 void clearLayout(QLayout* layout) {
   while (QLayoutItem* item = layout->takeAt(0)) {
@@ -25,6 +24,20 @@ QWidget* layoutToWidget(QLayout* l, QWidget* parent){
   QWidget* q = new QWidget(parent);
   q->setLayout(l);
   return q;
+}
+
+// https://stackoverflow.com/questions/478898/how-do-i-execute-a-command-and-get-the-output-of-the-command-within-c-using-po
+std::string exec(const char* cmd) {
+    std::array<char, 128> buffer;
+    std::string result;
+    std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd, "r"), pclose);
+    if (!pipe) {
+        throw std::runtime_error("popen() failed!");
+    }
+    while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
+        result += buffer.data();
+    }
+    return result;
 }
 
 // Networking functions
@@ -179,7 +192,7 @@ QFrame* hline(QWidget* parent = 0){
 // AdvancedNetworking functions
 
 AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWidget(parent), wifi(wifi){
-  s = new QStackedLayout;// inputField and settings
+  s = new QStackedLayout;// inputField, mainPage, SSH settings
   inputField = new InputField(this, 8);
   connect(inputField, SIGNAL(emitText(QString)), this, SLOT(receiveText(QString)));
   connect(inputField, SIGNAL(cancel()), this, SLOT(abortTextInput()));
@@ -191,7 +204,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   //Back button
   QHBoxLayout* backLayout = new QHBoxLayout;
   QPushButton* back = new QPushButton("BACK");
-  back->setFixedWidth(500);
+  back->setFixedSize(500, 100);
   connect(back, &QPushButton::released, [=](){emit backPress();});
   backLayout->addWidget(back, 0, Qt::AlignLeft);
   vlayout->addWidget(layoutToWidget(backLayout, this), 0, Qt::AlignLeft);
@@ -222,28 +235,36 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
 
   //IP adress
   QHBoxLayout* IPlayout = new QHBoxLayout;
-  IPlayout->addWidget(new QLabel("IP address: "), 0);
+  IPlayout->addWidget(new QLabel("IP address"), 0);
   ipLabel = new QLabel(wifi->ipv4_address);
   ipLabel->setStyleSheet("color: #aaaaaa");
   IPlayout->addWidget(ipLabel, 0, Qt::AlignRight);
   vlayout->addWidget(layoutToWidget(IPlayout, this), 0);
   vlayout->addWidget(hline(), 0);
-  vlayout->addSpacing(300);
 
-  // //Enable SSH
-  // QHBoxLayout* enableSSHLayout = new QHBoxLayout(this);
-  // enableSSHLayout->addWidget(new QLabel("Enable SSH", this));
-  // Toggle* toggle_switch_SSH = new Toggle(this);
-  // toggle_switch_SSH->setFixedSize(150, 100);
-  // enableSSHLayout->addWidget(toggle_switch_SSH);
-  // vlayout->addWidget(layoutToWidget(enableSSHLayout, this));
+  //Enable SSH
+  QHBoxLayout* enableSSHLayout = new QHBoxLayout(this);
+  enableSSHLayout->addWidget(new QLabel("Enable SSH", this));
+  toggle_switch_SSH = new Toggle(this);
+  toggle_switch_SSH->immediateOffset = 40;
+  toggle_switch_SSH->setFixedSize(150, 100);
+  if (isSSHEnabled()) {
+    toggle_switch_SSH->togglePosition();
+  }
+  QObject::connect(toggle_switch_SSH, SIGNAL(stateChanged(int)), this, SLOT(toggleSSH(int)));
+  enableSSHLayout->addWidget(toggle_switch_SSH);
+  vlayout->addWidget(layoutToWidget(enableSSHLayout, this));
+  vlayout->addWidget(hline(), 0);
 
-  // //Authorized SSH keys
-  // QHBoxLayout* authSSHLayout = new QHBoxLayout(this);
-  // authSSHLayout->addWidget(new QLabel("Authorized SSH keys", this));
-  // QPushButton* editAuthSSHButton = new QPushButton("EDIT", this);
-  // authSSHLayout->addWidget(editAuthSSHButton);
-  // vlayout->addWidget(layoutToWidget(authSSHLayout, this));
+  //Authorized SSH keys
+  QHBoxLayout* authSSHLayout = new QHBoxLayout(this);
+  authSSHLayout->addWidget(new QLabel("Authorized SSH keys", this));
+  QPushButton* editAuthSSHButton = new QPushButton("EDIT", this);
+  editAuthSSHButton->setFixedWidth(500);
+  connect(editAuthSSHButton, &QPushButton::released, [=](){s->setCurrentIndex(2);});
+  authSSHLayout->addWidget(editAuthSSHButton);
+  vlayout->addWidget(layoutToWidget(authSSHLayout, this));
+  vlayout->addSpacing(50);
 
   // //Disconnect or delete connections
   // QHBoxLayout* dangerZone = new QHBoxLayout(this);
@@ -258,11 +279,24 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   settingsWidget->setStyleSheet("margin-left: 40px; margin-right: 40px;");
   s->addWidget(settingsWidget);
   s->setCurrentIndex(1);
+
+  ssh = new SSH;
+  connect(ssh, &SSH::closeSSHSettings, [=](){s->setCurrentIndex(1);});
+  s->addWidget(ssh);
+
   setLayout(s);
+}
+
+bool AdvancedNetworking::isSSHEnabled(){
+  QString response = QString::fromStdString(exec("systemctl is-active ssh"));
+  return response.startsWith("active");
 }
 
 void AdvancedNetworking::refresh(){
   ipLabel->setText(wifi->ipv4_address);
+  if (toggle_switch_SSH->on != isSSHEnabled()) {
+    toggle_switch_SSH->togglePosition();
+  }
 }
 
 void AdvancedNetworking::toggleTethering(int enable) {
@@ -273,7 +307,16 @@ void AdvancedNetworking::toggleTethering(int enable) {
   }
   editPasswordButton->setEnabled(!enable);
 }
+void AdvancedNetworking::toggleSSH(int enable) {
+  if (enable) {
+    system("sudo systemctl enable ssh");
+    system("sudo systemctl start ssh");
+  } else {
+    system("sudo systemctl stop ssh");
+    system("sudo systemctl disable ssh");
 
+  }
+}
 void AdvancedNetworking::receiveText(QString text){
   wifi->changeTetheringPassword(text);
   s->setCurrentIndex(1);

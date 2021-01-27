@@ -140,6 +140,7 @@ def flash_agnos_update(manifest_path, cloudlog, spinner=None):
         break
 
       except requests.exceptions.RequestException:
+        cloudlog.exception("Failed")
         spinner.update("Waiting for internet...")
         cloudlog.info(f"Failed to download {partition['name']}, retrying ({retries})")
         time.sleep(10)

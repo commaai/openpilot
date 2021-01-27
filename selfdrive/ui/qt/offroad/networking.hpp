@@ -9,7 +9,8 @@
 
 #include "wifiManager.hpp"
 #include "widgets/input_field.hpp"
-
+#include "widgets/ssh_keys.hpp"
+#include "widgets/toggle.hpp"
 
 class WifiUI : public QWidget {
   Q_OBJECT
@@ -49,10 +50,12 @@ private:
   InputField* inputField;
   QLabel* ipLabel;
   QPushButton* editPasswordButton;
-
+  SSH* ssh;
+  Toggle* toggle_switch_SSH;
 
   WifiManager* wifi = nullptr;
 
+  bool isSSHEnabled();
 signals:
   void openKeyboard();
   void closeKeyboard();
@@ -62,6 +65,7 @@ public slots:
   void receiveText(QString text);
   void abortTextInput();
   void toggleTethering(int enable);
+  void toggleSSH(int enable);
   void refresh();
 };
 
