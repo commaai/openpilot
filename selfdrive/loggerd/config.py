@@ -4,10 +4,8 @@ from selfdrive.hardware import PC
 
 if os.environ.get('LOGGERD_ROOT', False):
   ROOT = os.environ['LOGGERD_ROOT']
-  print("Custom loggerd root: ", ROOT)
 elif PC:
   ROOT = os.path.join(str(Path.home()), ".comma", "media", "0", "realdata")
-  print(ROOT)
 else:
   ROOT = '/data/media/0/realdata/'
 
