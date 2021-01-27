@@ -41,7 +41,7 @@ typedef struct LoggerState {
 } LoggerState;
 
 int logger_mkpath(char* file_path);
-void logger_build_boot(MessageBuilder &msg);
+kj::Array<capnp::word> logger_build_boot();
 void logger_build_init_data(MessageBuilder &msg);
 void logger_init(LoggerState *s, const char* log_name, bool has_qlog);
 int logger_next(LoggerState *s, const char* root_path,

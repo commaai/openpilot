@@ -52,7 +52,8 @@ int logger_mkpath(char* file_path) {
 }
 
 // ***** log metadata *****
-void logger_build_boot(MessageBuilder &msg) {
+kj::Array<capnp::word> logger_build_boot() {
+  MessageBuilder msg;
   auto boot = msg.initEvent().initBoot();
 
   boot.setWallTimeNanos(nanos_since_epoch());
@@ -65,6 +66,7 @@ void logger_build_boot(MessageBuilder &msg) {
 
   std::string launchLog = util::read_file("/tmp/launch_log");
   boot.setLaunchLog(capnp::Text::Reader(launchLog.data(), launchLog.size()));
+  return capnp::messageToFlatArray(msg);
 }
 
 void logger_build_init_data(MessageBuilder &msg) {
