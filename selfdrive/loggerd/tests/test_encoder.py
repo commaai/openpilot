@@ -101,10 +101,14 @@ class TestEncoder(unittest.TestCase):
         frame_count = int(probe.split('\n')[0].strip())
         counts.append(frame_count)
 
-        # loggerd waits for the slowest camera, so check count is at least the expected count,
-        # then check the min of the frame counts is exactly the expected frame count
-        self.assertTrue(frame_count >= expected_frames,
-                        f"{camera} failed frame count check: expected {expected_frames}, got {frame_count}")
+        if EON:
+          self.assertTrue(abs(expected_frames - frame_count) <= frame_tolerance,
+                          f"{camera} failed frame count check: expected {expected_frames}, got {frame_count}")
+        else:
+          # loggerd waits for the slowest camera, so check count is at least the expected count,
+          # then check the min of the frame counts is exactly the expected frame count
+          self.assertTrue(frame_count >= expected_frames,
+                          f"{camera} failed frame count check: expected {expected_frames}, got {frame_count}")
 
       if TICI:
         expected_frames = fps * SEGMENT_LENGTH
