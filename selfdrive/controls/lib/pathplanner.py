@@ -57,10 +57,12 @@ class PathPlanner():
     self.lane_change_timer = 0.0
     self.lane_change_ll_prob = 1.0
     self.prev_one_blinker = False
+    self.desire = log.PathPlan.Desire.none
 
     self.path_xyz = np.zeros((TRAJECTORY_SIZE,3))
     self.plan_yaw = np.zeros((TRAJECTORY_SIZE,))
     self.t_idxs = np.arange(TRAJECTORY_SIZE)
+    self.y_pts = np.zeros(TRAJECTORY_SIZE)
 
   def setup_mpc(self):
     self.libmpc = libmpc_py.libmpc
@@ -77,7 +79,7 @@ class PathPlanner():
     self.angle_steers_des_mpc = 0.0
     self.angle_steers_des_time = 0.0
 
-  def update(self, sm, pm, CP, VM):
+  def update(self, sm, CP, VM):
     v_ego = sm['carState'].vEgo
     active = sm['controlsState'].active
     steering_wheel_angle_offset_deg = sm['liveParameters'].angleOffset
@@ -158,15 +160,16 @@ class PathPlanner():
 
     self.prev_one_blinker = one_blinker
 
-    desire = DESIRES[self.lane_change_direction][self.lane_change_state]
+    self.desire = DESIRES[self.lane_change_direction][self.lane_change_state]
 
     # Turn off lanes during lane change
-    if desire == log.PathPlan.Desire.laneChangeRight or desire == log.PathPlan.Desire.laneChangeLeft:
+    if self.desire == log.PathPlan.Desire.laneChangeRight or self.desire == log.PathPlan.Desire.laneChangeLeft:
       self.LP.lll_prob *= self.lane_change_ll_prob
       self.LP.rll_prob *= self.lane_change_ll_prob
     d_path_xyz = self.LP.get_d_path(v_ego, self.t_idxs, self.path_xyz)
     y_pts = np.interp(v_ego * self.t_idxs[:MPC_N+1], np.linalg.norm(d_path_xyz, axis=1), d_path_xyz[:,1])
     heading_pts = np.interp(v_ego * self.t_idxs[:MPC_N+1], np.linalg.norm(self.path_xyz, axis=1), self.plan_yaw)
+    self.y_pts = y_pts
 
     v_ego_mpc = max(v_ego, 5.0)  # avoid mpc roughness due to low speed
     assert len(y_pts) == MPC_N + 1
@@ -215,11 +218,13 @@ class PathPlanner():
       self.solution_invalid_cnt += 1
     else:
       self.solution_invalid_cnt = 0
+
+  def publish(self, sm, pm):
     plan_solution_valid = self.solution_invalid_cnt < 2
     plan_send = messaging.new_message('pathPlan')
     plan_send.valid = sm.all_alive_and_valid(service_list=['carState', 'controlsState', 'liveParameters', 'modelV2'])
     plan_send.pathPlan.laneWidth = float(self.LP.lane_width)
-    plan_send.pathPlan.dPathPoints = [float(x) for x in y_pts]
+    plan_send.pathPlan.dPathPoints = [float(x) for x in self.y_pts]
     plan_send.pathPlan.lProb = float(self.LP.lll_prob)
     plan_send.pathPlan.rProb = float(self.LP.rll_prob)
     plan_send.pathPlan.dProb = float(self.LP.d_prob)
@@ -230,7 +235,7 @@ class PathPlanner():
     plan_send.pathPlan.mpcSolutionValid = bool(plan_solution_valid)
     plan_send.pathPlan.paramsValid = bool(sm['liveParameters'].valid)
 
-    plan_send.pathPlan.desire = desire
+    plan_send.pathPlan.desire = self.desire
     plan_send.pathPlan.laneChangeState = self.lane_change_state
     plan_send.pathPlan.laneChangeDirection = self.lane_change_direction
 
