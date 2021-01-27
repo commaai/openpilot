@@ -35,7 +35,6 @@ void append_property(const char* key, const char* value, void *cookie) {
   properties->push_back(std::make_pair(std::string(key), std::string(value)));
 }
 
-// TODO: this is a duplicate of mkdir_p from params.cc
 int logger_mkpath(char* file_path) {
   assert(file_path && *file_path);
   char* p;
