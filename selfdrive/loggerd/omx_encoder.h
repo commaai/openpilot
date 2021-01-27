@@ -35,7 +35,7 @@ public:
                                         OMX_BUFFERHEADERTYPE *buffer);
 
 private:
-  void set_state(OMX_STATETYPE state, bool sync = true);
+  void set_state_blocking(OMX_STATETYPE state);
   static void handle_out_buf(OmxEncoder *e, OMX_BUFFERHEADERTYPE *out_buf);
 
   pthread_mutex_t lock;

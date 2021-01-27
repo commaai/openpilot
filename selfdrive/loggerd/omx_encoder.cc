@@ -34,15 +34,13 @@ extern ExitHandler do_exit;
 
 // ***** OMX callback functions *****
 
-void OmxEncoder::set_state(OMX_STATETYPE state, bool sync) {
+void OmxEncoder::set_state_blocking(OMX_STATETYPE state) {
   OMX_CHECK(OMX_SendCommand(this->handle, OMX_CommandStateSet, state, NULL));
-  if (sync) {
-    pthread_mutex_lock(&this->state_lock);
-    while (this->state != state) {
-      pthread_cond_wait(&this->state_cv, &this->state_lock);
-    }
-    pthread_mutex_unlock(&this->state_lock);
+  pthread_mutex_lock(&this->state_lock);
+  while (this->state != state) {
+    pthread_cond_wait(&this->state_cv, &this->state_lock);
   }
+  pthread_mutex_unlock(&this->state_lock);
 }
 
 static OMX_CALLBACKTYPE omx_callbacks = {
@@ -307,7 +305,7 @@ OmxEncoder::OmxEncoder(const char* filename, int width, int height, int fps, int
   //   printf("profile %d level 0x%x\n", params.eProfile, params.eLevel);
   // }
 
-   set_state(OMX_StateIdle);
+   set_state_blocking(OMX_StateIdle);
 
   for (auto &buf : this->in_buf_headers) {
     OMX_CHECK(OMX_AllocateBuffer(this->handle, &buf, PORT_INDEX_IN, this,
@@ -319,7 +317,7 @@ OmxEncoder::OmxEncoder(const char* filename, int width, int height, int fps, int
                              out_port.nBufferSize));
   }
 
-  set_state(OMX_StateExecuting);
+  set_state_blocking(OMX_StateExecuting);
 
   // give omx all the output buffers
   for (auto &buf : this->out_buf_headers) {
@@ -592,8 +590,8 @@ void OmxEncoder::encoder_close() {
 OmxEncoder::~OmxEncoder() {
   assert(!this->is_open);
 
-  set_state(OMX_StateIdle);
-  set_state(OMX_StateLoaded);
+  set_state_blocking(OMX_StateIdle);
+  set_state_blocking(OMX_StateLoaded);
 
   for (auto &buf : this->in_buf_headers) {
     OMX_CHECK(OMX_FreeBuffer(this->handle, PORT_INDEX_IN, buf));
