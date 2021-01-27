@@ -194,7 +194,8 @@ class DriverStatus():
     self.blink.left_blink = driver_state.leftBlinkProb * (driver_state.leftEyeProb > _EYE_THRESHOLD) * (driver_state.sgProb < _SG_THRESHOLD)
     self.blink.right_blink = driver_state.rightBlinkProb * (driver_state.rightEyeProb > _EYE_THRESHOLD) * (driver_state.sgProb < _SG_THRESHOLD)
 
-    self.driver_distracted = self._is_driver_distracted(self.pose, self.blink) > 0 and self.pose.low_std
+    self.driver_distracted = self._is_driver_distracted(self.pose, self.blink) > 0 and \
+                              driver_state.faceProb > _FACE_THRESHOLD and self.pose.low_std
     self.driver_distraction_filter.update(self.driver_distracted)
 
     # update offseter
