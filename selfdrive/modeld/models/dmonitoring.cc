@@ -177,7 +177,7 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
   return ret;
 }
 
-void dmonitoring_publish(PubMaster &pm, uint32_t frame_id, const DMonitoringResult &res, const float* raw_pred, float execution_time){
+void dmonitoring_publish(PubMaster &pm, uint32_t frame_id, const DMonitoringResult &res, float execution_time, kj::ArrayPtr<const float> raw_pred){
   // make msg
   MessageBuilder msg;
   auto framed = msg.initEvent().initDriverState();
@@ -196,7 +196,7 @@ void dmonitoring_publish(PubMaster &pm, uint32_t frame_id, const DMonitoringResu
   framed.setRightBlinkProb(res.right_blink_prob);
   framed.setSgProb(res.sg_prob);
   if (send_raw_pred) {
-    framed.setRawPred(kj::arrayPtr((const uint8_t*)raw_pred, OUTPUT_SIZE*sizeof(float)));
+    framed.setRawPred(raw_pred.asBytes());
   }
 
   pm.send("driverState", msg);
