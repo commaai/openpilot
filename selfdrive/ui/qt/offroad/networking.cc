@@ -360,8 +360,8 @@ void WifiUI::refresh() {
       // SSID
       hlayout->addSpacing(50);
       QString ssid = QString::fromUtf8(network.ssid);
-      if(ssid.length() > 20){
-        ssid = ssid.left(20)+"…";
+      if(ssid.length() > 30){
+        ssid = ssid.left(30)+"…";
       }
       hlayout->addWidget(new QLabel(ssid));
 
@@ -375,8 +375,8 @@ void WifiUI::refresh() {
       hlayout->addSpacing(20);
 
       // connect button
-      QPushButton* btn = new QPushButton(network.connected == ConnectedType::CONNECTED ? "Connected" : (network.connected == ConnectedType::CONNECTING ? "Connecting" : "Connect"));
-      btn->setFixedWidth(350);
+      QPushButton* btn = new QPushButton(network.security_type == SecurityType::UNSUPPORTED ? "Unsupported" : (network.connected == ConnectedType::CONNECTED ? "Connected" : (network.connected == ConnectedType::CONNECTING ? "Connecting" : "Connect")));
+      btn->setFixedWidth(400);
       btn->setFixedHeight(button_height);
       btn->setDisabled(network.connected == ConnectedType::CONNECTED || network.connected == ConnectedType::CONNECTING || network.security_type == SecurityType::UNSUPPORTED);
       hlayout->addWidget(btn);
