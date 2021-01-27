@@ -83,9 +83,7 @@ fail:
 }
 
 Panda::~Panda(){
-  std::lock_guard lk(usb_lock);
   cleanup();
-  connected = false;
 }
 
 void Panda::cleanup(){
