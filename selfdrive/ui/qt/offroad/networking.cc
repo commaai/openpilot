@@ -246,7 +246,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   QHBoxLayout* enableSSHLayout = new QHBoxLayout(this);
   enableSSHLayout->addWidget(new QLabel("Enable SSH", this));
   toggle_switch_SSH = new Toggle(this);
-  toggle_switch_SSH->immediateOffset = 20;
+  toggle_switch_SSH->immediateOffset = 40;
   toggle_switch_SSH->setFixedSize(150, 100);
   if (isSSHEnabled()) {
     toggle_switch_SSH->togglePosition();
@@ -260,6 +260,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   QHBoxLayout* authSSHLayout = new QHBoxLayout(this);
   authSSHLayout->addWidget(new QLabel("Authorized SSH keys", this));
   QPushButton* editAuthSSHButton = new QPushButton("EDIT", this);
+  editAuthSSHButton->setFixedWidth(500);
   connect(editAuthSSHButton, &QPushButton::released, [=](){s->setCurrentIndex(2);});
   authSSHLayout->addWidget(editAuthSSHButton);
   vlayout->addWidget(layoutToWidget(authSSHLayout, this));
