@@ -141,9 +141,7 @@ class TestLoggerd(unittest.TestCase):
     # check length
     assert len(lr) == 2  # boot + initData
 
-    # check initData and sentinel
     self._check_init_data(lr)
-    self._check_sentinel(lr, True)
 
     # check msgs
     bootlog_msgs = [m for m in lr if m.which() == 'boot']
