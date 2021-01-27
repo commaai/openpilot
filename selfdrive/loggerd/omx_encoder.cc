@@ -557,7 +557,7 @@ void OmxEncoder::encoder_close() {
       OMX_CHECK(OMX_EmptyThisBuffer(this->handle, in_buf));
 
       while (true) {
-         OMX_BUFFERHEADERTYPE *out_buf = (OMX_BUFFERHEADERTYPE *)queue_pop(&this->done_out);
+        OMX_BUFFERHEADERTYPE *out_buf = (OMX_BUFFERHEADERTYPE *)queue_pop(&this->done_out);
 
         handle_out_buf(this, out_buf);
 
