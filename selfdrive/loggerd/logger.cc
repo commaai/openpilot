@@ -52,9 +52,22 @@ int logger_mkpath(char* file_path) {
 }
 
 // ***** log metadata *****
+void logger_build_boot(MessageBuilder &msg) {
+  auto boot = msg.initEvent().initBoot();
 
-void log_init_data(LoggerState *s) {
-  MessageBuilder msg;
+  boot.setWallTimeNanos(nanos_since_epoch());
+
+  std::string lastKmsg = util::read_file("/sys/fs/pstore/console-ramoops");
+  boot.setLastKmsg(capnp::Data::Reader((const kj::byte*)lastKmsg.data(), lastKmsg.size()));
+
+  std::string lastPmsg = util::read_file("/sys/fs/pstore/pmsg-ramoops-0");
+  boot.setLastPmsg(capnp::Data::Reader((const kj::byte*)lastPmsg.data(), lastPmsg.size()));
+
+  std::string launchLog = util::read_file("/tmp/launch_log");
+  boot.setLaunchLog(capnp::Text::Reader(launchLog.data(), launchLog.size()));
+}
+
+void logger_build_init_data(MessageBuilder &msg) {
   auto init = msg.initEvent().initInitData();
 
   if (util::file_exists("/EON")) {
@@ -119,7 +132,11 @@ void log_init_data(LoggerState *s) {
       i++;
     }
   }
+}
 
+void log_init_data(LoggerState *s) {
+  MessageBuilder msg;
+  logger_build_init_data(msg);
   auto bytes = msg.toBytes();
   logger_log(s, bytes.begin(), bytes.size(), s->has_qlog);
 }

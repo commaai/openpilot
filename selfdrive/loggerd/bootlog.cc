@@ -22,19 +22,11 @@ int main(int argc, char** argv) {
   std::string path = LOG_ROOT + "/boot/" + std::string(filename);
   LOGW("bootlog to %s", path.c_str());
 
-  MessageBuilder msg;
-  auto boot = msg.initEvent().initBoot();
+  MessageBuilder boot_msg;
+  logger_build_boot(boot_msg);
 
-  boot.setWallTimeNanos(nanos_since_epoch());
-
-  std::string lastKmsg = util::read_file("/sys/fs/pstore/console-ramoops");
-  boot.setLastKmsg(capnp::Data::Reader((const kj::byte*)lastKmsg.data(), lastKmsg.size()));
-
-  std::string lastPmsg = util::read_file("/sys/fs/pstore/pmsg-ramoops-0");
-  boot.setLastPmsg(capnp::Data::Reader((const kj::byte*)lastPmsg.data(), lastPmsg.size()));
-
-  std::string launchLog = util::read_file("/tmp/launch_log");
-  boot.setLaunchLog(capnp::Text::Reader(launchLog.data(), launchLog.size()));
+  MessageBuilder init_msg;
+  logger_build_init_data(init_msg);
 
 
   // Open bootlog
@@ -49,8 +41,13 @@ int main(int argc, char** argv) {
   BZFILE* bz_file = BZ2_bzWriteOpen(&bzerror, file, 9, 0, 30);
   assert(bzerror == BZ_OK);
 
-  // Write bootlog in bz2
-  auto bytes = msg.toBytes();
+  // Write initdata
+  auto bytes = init_msg.toBytes();
+  BZ2_bzWrite(&bzerror, bz_file, bytes.begin(), bytes.size());
+  assert(bzerror == BZ_OK);
+
+  // Write bootlog
+  bytes = boot_msg.toBytes();
   BZ2_bzWrite(&bzerror, bz_file, bytes.begin(), bytes.size());
   assert(bzerror == BZ_OK);
 

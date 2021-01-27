@@ -139,7 +139,7 @@ class TestLoggerd(unittest.TestCase):
     lr = list(LogReader(str(bootlog_path)))
 
     # check length
-    assert len(lr) == 4 # boot + initData + 2x sentinel
+    assert len(lr) == 2  # boot + initData
 
     # check initData and sentinel
     self._check_init_data(lr)
