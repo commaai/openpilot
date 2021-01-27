@@ -133,6 +133,7 @@ bool CameraBuf::acquire() {
   const FrameMetadata &frame_data = camera_bufs_metadata[cur_buf_idx];
   if (frame_data.frame_id == -1) {
     LOGE("no frame data? wtf");
+    release();
     return false;
   }
 
