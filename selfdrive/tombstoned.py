@@ -156,7 +156,7 @@ def report_tombstone_apport(fn, client):
       crash_function = stacktrace_s[1]
 
     # Remove arguments that can contain pointers to make sentry one-liner unique
-    crash_function = " ".join(crash_function.split(' ')[2:])
+    crash_function = " ".join(crash_function.split(' ')[4:])
     crash_function = re.sub(r'\(.*?\)', '', crash_function)
 
   contents = stacktrace + "\n\n" + contents
