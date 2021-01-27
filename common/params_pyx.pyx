@@ -62,6 +62,7 @@ keys = {
   b"UpdateAvailable": [TxType.CLEAR_ON_MANAGER_START],
   b"UpdateFailedCount": [TxType.CLEAR_ON_MANAGER_START],
   b"Version": [TxType.PERSISTENT],
+  b"VisionRadarToggle": [TxType.PERSISTENT],
   b"Offroad_ChargeDisabled": [TxType.CLEAR_ON_MANAGER_START, TxType.CLEAR_ON_PANDA_DISCONNECT],
   b"Offroad_ConnectivityNeeded": [TxType.CLEAR_ON_MANAGER_START],
   b"Offroad_ConnectivityNeededPrompt": [TxType.CLEAR_ON_MANAGER_START],
