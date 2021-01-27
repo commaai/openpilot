@@ -1656,7 +1656,7 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
 
   MessageBuilder msg;
   auto framed = msg.initEvent().initFrame();
-  fill_frame_data(framed, b->cur_frame_data, cnt);
+  fill_frame_data(framed, b->cur_frame_data);
   if (env_send_rear) {
     framed.setImage(get_frame_image(b));
   }
