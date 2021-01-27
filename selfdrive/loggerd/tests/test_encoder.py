@@ -79,6 +79,7 @@ class TestEncoder(unittest.TestCase):
 
     def check_seg(i):
       # check each camera file size
+      counts = []
       for camera, fps, size in CAMERAS:
         if not record_front and "dcamera" in camera:
           continue
@@ -93,14 +94,25 @@ class TestEncoder(unittest.TestCase):
         # TODO: this ffprobe call is really slow
         # check frame count
         cmd = f"ffprobe -v error -count_frames -select_streams v:0 -show_entries stream=nb_read_frames \
-               -of default=nokey=1:noprint_wrappers=1 {file_path}"
+                -of default=nokey=1:noprint_wrappers=1 {file_path}"
         expected_frames = fps * SEGMENT_LENGTH
         frame_tolerance = 1 if (EON and camera == 'dcamera.hevc') else 0
         probe = subprocess.check_output(cmd, shell=True, encoding='utf8')
         frame_count = int(probe.split('\n')[0].strip())
+        counts.append(frame_count)
 
-        self.assertTrue(abs(expected_frames - frame_count) <= frame_tolerance,
-                        f"{camera} failed frame count check: expected {expected_frames}, got {frame_count}")
+        if EON:
+          self.assertTrue(abs(expected_frames - frame_count) <= frame_tolerance,
+                          f"{camera} failed frame count check: expected {expected_frames}, got {frame_count}")
+        else:
+          # loggerd waits for the slowest camera, so check count is at least the expected count,
+          # then check the min of the frame counts is exactly the expected frame count
+          self.assertTrue(frame_count >= expected_frames,
+                          f"{camera} failed frame count check: expected {expected_frames}, got {frame_count}")
+
+      if TICI:
+        expected_frames = fps * SEGMENT_LENGTH
+        self.assertEqual(min(counts), expected_frames)
       shutil.rmtree(f"{route_prefix_path}--{i}")
 
     for i in trange(num_segments):
