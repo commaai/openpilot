@@ -202,7 +202,7 @@ void CameraBuf::queue(size_t buf_idx){
 
 // common functions
 
-void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &frame_data, uint32_t cnt) {
+void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &frame_data) {
   framed.setFrameId(frame_data.frame_id);
   framed.setTimestampEof(frame_data.timestamp_eof);
   framed.setTimestampSof(frame_data.timestamp_sof);
@@ -407,7 +407,7 @@ void common_camera_process_front(SubMaster *sm, PubMaster *pm, CameraState *c, i
   MessageBuilder msg;
   auto framed = msg.initEvent().initFrontFrame();
   framed.setFrameType(cereal::FrameData::FrameType::FRONT);
-  fill_frame_data(framed, b->cur_frame_data, cnt);
+  fill_frame_data(framed, b->cur_frame_data);
   if (env_send_front) {
     framed.setImage(get_frame_image(b));
   }
