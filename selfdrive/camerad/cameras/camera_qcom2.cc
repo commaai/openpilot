@@ -1101,7 +1101,7 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
 
   MessageBuilder msg;
   auto framed = c == &s->rear ? msg.initEvent().initFrame() : msg.initEvent().initWideFrame();
-  fill_frame_data(framed, b->cur_frame_data, cnt);
+  fill_frame_data(framed, b->cur_frame_data);
   if ((c == &s->rear && env_send_rear) || (c == &s->wide && env_send_wide)) {
     framed.setImage(get_frame_image(b));
   }
