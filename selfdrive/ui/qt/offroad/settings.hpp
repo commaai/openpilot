@@ -7,7 +7,7 @@
 #include <QButtonGroup>
 #include <QStackedLayout>
 
-#include "wifi.hpp"
+#include "networking.hpp"
 
 // *** settings widgets ***
 
