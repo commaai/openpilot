@@ -35,7 +35,8 @@ void append_property(const char* key, const char* value, void *cookie) {
   properties->push_back(std::make_pair(std::string(key), std::string(value)));
 }
 
-static int mkpath(char* file_path) {
+// TODO: this is a duplicate of mkdir_p from params.cc
+int logger_mkpath(char* file_path) {
   assert(file_path && *file_path);
   char* p;
   for (p=strchr(file_path+1, '/'); p; p=strchr(p+1, '/')) {
@@ -174,7 +175,7 @@ static LoggerHandle* logger_open(LoggerState *s, const char* root_path) {
   snprintf(h->qlog_path, sizeof(h->qlog_path), "%s/qlog.bz2", h->segment_path);
   snprintf(h->lock_path, sizeof(h->lock_path), "%s.lock", h->log_path);
 
-  err = mkpath(h->log_path);
+  err = logger_mkpath(h->log_path);
   if (err) return NULL;
 
   FILE* lock_file = fopen(h->lock_path, "wb");
