@@ -104,7 +104,6 @@ Networking::Networking(QWidget* parent) : QWidget(parent){
       background-color: #444444;
     }
     QPushButton:disabled {
-      padding: 20px;
       color: #777777;
       background-color: #222222;
     }
