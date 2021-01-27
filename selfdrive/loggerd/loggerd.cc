@@ -271,9 +271,7 @@ void encoder_thread(int cam_idx) {
         int out_id = encoders[i]->encode_frame(buf->y, buf->u, buf->v,
                                                buf->width, buf->height,
                                                &out_segment, extra.timestamp_eof);
-        if (!out_id) break;
-
-        if (i == 0) {
+        if (i == 0 && out_id != -1) {
           // publish encode index
           MessageBuilder msg;
           // this is really ugly
