@@ -178,8 +178,7 @@ def report_tombstone_apport(fn, client):
 
 
 def main():
-  # TODO: turn on when all tombstones are recovered
-  # clear_apport_folder()  # Clear apport folder on start, otherwise duplicate crashes won't register
+  clear_apport_folder()  # Clear apport folder on start, otherwise duplicate crashes won't register
   initial_tombstones = set(get_tombstones())
 
   tags = {
