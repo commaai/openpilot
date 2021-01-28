@@ -167,8 +167,6 @@ static void update_sockets(UIState *s) {
       }
     }
   }
-
-  s->started = scene.thermal.getStarted() || scene.frontview;
 }
 
 static void update_alert(UIState *s) {
@@ -257,6 +255,7 @@ void ui_update(UIState *s) {
   update_params(s);
   update_sockets(s);
   update_alert(s);
+  s->started = s->scene.thermal.getStarted() || s->scene.frontview;
   update_vision(s);
 
   // Handle onroad/offroad transition
