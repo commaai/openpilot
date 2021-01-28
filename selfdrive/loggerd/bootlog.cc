@@ -35,9 +35,8 @@ int main(int argc, char** argv) {
   assert(bzerror == BZ_OK);
 
   // Write initdata
-  MessageBuilder init_msg;
-  logger_build_init_data(init_msg);
-  auto bytes = init_msg.toBytes();
+  kj::Array<capnp::word> init_msg = logger_build_init_data();
+  auto bytes = init_msg.asBytes();
   BZ2_bzWrite(&bzerror, bz_file, bytes.begin(), bytes.size());
   assert(bzerror == BZ_OK);
 

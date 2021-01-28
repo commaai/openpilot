@@ -69,7 +69,8 @@ kj::Array<capnp::word> logger_build_boot() {
   return capnp::messageToFlatArray(msg);
 }
 
-void logger_build_init_data(MessageBuilder &msg) {
+kj::Array<capnp::word> logger_build_init_data() {
+  MessageBuilder msg;
   auto init = msg.initEvent().initInitData();
 
   if (util::file_exists("/EON")) {
@@ -134,12 +135,12 @@ void logger_build_init_data(MessageBuilder &msg) {
       i++;
     }
   }
+  return capnp::messageToFlatArray(msg);
 }
 
 void log_init_data(LoggerState *s) {
-  MessageBuilder msg;
-  logger_build_init_data(msg);
-  auto bytes = msg.toBytes();
+  kj::Array<capnp::word> data = logger_build_init_data();
+  auto bytes = data.asBytes();
   logger_log(s, bytes.begin(), bytes.size(), s->has_qlog);
 }
 
