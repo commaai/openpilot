@@ -13,7 +13,7 @@ from selfdrive.hardware import EON, TICI
 
 TEST_TIMESPAN = 30 # random.randint(60, 180) # seconds
 SKIP_FRAME_TOLERANCE = 0
-LAG_FRAME_TOLERANCE = 1 # ms
+LAG_FRAME_TOLERANCE = 3 # ms
 
 FPS_BASELINE = 20
 CAMERAS = {
