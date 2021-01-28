@@ -103,7 +103,7 @@ public:
 };
 
 struct LoggerdState {
-  LoggerState logger;
+  LoggerState logger = {};
   char segment_path[4096];
   int encoders_max_waiting = 0;
   int rotate_segment;
@@ -198,25 +198,26 @@ void encoder_thread(EncoderState *es) {
       // log frame socket
       drain_socket(lh, es->frame_sock.get(), es->qlog_state);
       // encode frame
-      for (int i = 0; i < encoders.size() && !do_exit; ++i) {
-        int out_id = encoders[i]->encode_frame(buf->y, buf->u, buf->v, buf->width, buf->height, extra.timestamp_eof);
-        if (i > 0) continue;
-
-        // publish encode index
-        MessageBuilder msg;
-        // this is really ugly
-        auto eidx = es->ci.id == D_CAMERA ? msg.initEvent().initFrontEncodeIdx() :
-                    (es->ci.id == E_CAMERA ? msg.initEvent().initWideEncodeIdx() : msg.initEvent().initEncodeIdx());
-        eidx.setFrameId(extra.frame_id);
-        eidx.setTimestampSof(extra.timestamp_sof);
-        eidx.setTimestampEof(extra.timestamp_eof);
-        eidx.setType((IS_QCOM2 || es->ci.id != D_CAMERA) ? cereal::EncodeIndex::Type::FULL_H_E_V_C : cereal::EncodeIndex::Type::FRONT);
-        eidx.setEncodeId(total_frame_cnt);
-        eidx.setSegmentNum(encoder_segment);
-        eidx.setSegmentId(out_id);
-        if (lh) {
-          auto bytes = msg.toBytes();
-          lh_log(lh, bytes.begin(), bytes.size(), false);
+      for (int i = 0; i < encoders.size(); ++i) {
+        int out_segment = -1;
+        int out_id = encoders[i]->encode_frame(buf->y, buf->u, buf->v, buf->width, buf->height,
+                                               &out_segment, extra.timestamp_eof);
+        if (i == 0 && out_id != -1) {
+          // publish encode index
+          MessageBuilder msg;
+          // this is really ugly
+          auto eidx = es->ci.id == D_CAMERA ? msg.initEvent().initFrontEncodeIdx() : (es->ci.id == E_CAMERA ? msg.initEvent().initWideEncodeIdx() : msg.initEvent().initEncodeIdx());
+          eidx.setFrameId(extra.frame_id);
+          eidx.setTimestampSof(extra.timestamp_sof);
+          eidx.setTimestampEof(extra.timestamp_eof);
+          eidx.setType((IS_QCOM2 || es->ci.id != D_CAMERA) ? cereal::EncodeIndex::Type::FULL_H_E_V_C : cereal::EncodeIndex::Type::FRONT);
+          eidx.setEncodeId(total_frame_cnt);
+          eidx.setSegmentNum(out_segment);
+          eidx.setSegmentId(out_id);
+          if (lh) {
+            auto bytes = msg.toBytes();
+            lh_log(lh, bytes.begin(), bytes.size(), false);
+          }
         }
       }
       ++segment_frame_cnt;
