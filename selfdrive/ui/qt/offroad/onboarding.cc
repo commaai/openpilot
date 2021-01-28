@@ -49,7 +49,7 @@ TrainingGuide::TrainingGuide(QWidget* parent) {
   setStyleSheet(R"(
     * {
       background-image: none;
-      background-color: none;
+      background-color: rgba(0,0,0,80);
       font-size: 70px;
     }
     QPushButton {
