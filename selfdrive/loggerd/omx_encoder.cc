@@ -305,7 +305,7 @@ OmxEncoder::OmxEncoder(const char* filename, int width, int height, int fps, int
   //   printf("profile %d level 0x%x\n", params.eProfile, params.eLevel);
   // }
 
-   set_state_blocking(OMX_StateIdle);
+  set_state_blocking(OMX_StateIdle);
 
   for (auto &buf : this->in_buf_headers) {
     OMX_CHECK(OMX_AllocateBuffer(this->handle, &buf, PORT_INDEX_IN, this,
