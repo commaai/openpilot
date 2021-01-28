@@ -17,14 +17,14 @@ KeyboardLayout::KeyboardLayout(QWidget *parent, std::vector<QVector<QString>> la
   QObject::connect(btn_group, SIGNAL(buttonClicked(QAbstractButton*)), parent, SLOT(handleButton(QAbstractButton*)));
 
   int i = 0;
-  for (auto s : layout) {
+  for (const auto &s : layout) {
     QHBoxLayout *hlayout = new QHBoxLayout;
 
     if (i == 1) {
       hlayout->addSpacing(90);
     }
 
-    for (QString p : s) {
+    for (const QString &p : s) {
       QPushButton* btn = new QPushButton(p);
       btn->setFixedHeight(120);
       btn_group->addButton(btn);
