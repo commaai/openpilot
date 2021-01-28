@@ -13,7 +13,7 @@ from selfdrive.hardware import EON, TICI
 
 TEST_TIMESPAN = 30 # random.randint(60, 180) # seconds
 SKIP_FRAME_TOLERANCE = 0
-LAG_FRAME_TOLERANCE = 3 # ms
+LAG_FRAME_TOLERANCE = 2 # ms
 
 FPS_BASELINE = 20
 CAMERAS = {
@@ -110,19 +110,20 @@ class TestCamerad(unittest.TestCase):
 
       for camera in CAMERAS:
         if sm.updated[camera]:
+          ct = (sm[camera].timestampEof if not TICI else sm[camera].timestampSof) / 1e6
           if last_frame_id[camera] is None:
             last_frame_id[camera] = sm[camera].frameId
-            last_ts[camera] = sm[camera].timestampEof / 1e6
+            last_ts[camera] = ct
             continue
 
           dfid = sm[camera].frameId - last_frame_id[camera]
           self.assertTrue(abs(dfid - 1) <= SKIP_FRAME_TOLERANCE, "%s frame id diff is %d" % (camera, dfid))
 
-          dts = sm[camera].timestampEof / 1e6 - last_ts[camera]
+          dts = ct - last_ts[camera]
           self.assertTrue(abs(dts - (1000/CAMERAS[camera])) < LAG_FRAME_TOLERANCE, "%s frame t(ms) diff is %f" % (camera, dts))
 
           last_frame_id[camera] = sm[camera].frameId
-          last_ts[camera] = sm[camera].timestampEof / 1e6
+          last_ts[camera] = ct
 
       time.sleep(0.01)
 
