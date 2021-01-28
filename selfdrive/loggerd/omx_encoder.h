@@ -13,7 +13,7 @@ extern "C" {
 }
 
 #include "encoder.h"
-#include "common/cqueue.h"
+#include "common/queue.h"
 
 // OmxEncoder, lossey codec using hardware hevc
 class OmxEncoder : public VideoEncoder {
