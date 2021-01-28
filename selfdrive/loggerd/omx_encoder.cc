@@ -564,12 +564,10 @@ void OmxEncoder::encoder_close() {
 
       while (true) {
         OMX_BUFFERHEADERTYPE *out_buf = this->done_out.pop();
-
-        handle_out_buf(this, out_buf);
-
         if (out_buf->nFlags & OMX_BUFFERFLAG_EOS) {
           break;
         }
+        handle_out_buf(this, out_buf);
       }
       this->dirty = false;
     }
