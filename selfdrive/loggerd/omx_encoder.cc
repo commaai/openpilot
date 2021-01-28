@@ -18,7 +18,6 @@
 #include <libyuv.h>
 #include <msm_media_info.h>
 
-#include "common/mutex.h"
 #include "common/util.h"
 #include "common/swaglog.h"
 
@@ -172,9 +171,6 @@ OmxEncoder::OmxEncoder(const char* filename, int width, int height, int fps, int
   this->height = height;
   this->fps = fps;
   this->remuxing = !h265;
-
-  queue_init(&this->free_in);
-  queue_init(&this->done_out);
 
   pthread_mutex_init(&this->state_lock, NULL);
   pthread_cond_init(&this->state_cv, NULL);
@@ -420,7 +416,6 @@ int OmxEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const u
   OMX_BUFFERHEADERTYPE* in_buf = nullptr;
   while (!this->free_in.try_pop(in_buf, 20)) {
     if (do_exit) {
-      pthread_mutex_unlock(&this->lock);
       return -1;
     }
   }
