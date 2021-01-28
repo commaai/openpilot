@@ -35,7 +35,7 @@ void append_property(const char* key, const char* value, void *cookie) {
   properties->push_back(std::make_pair(std::string(key), std::string(value)));
 }
 
-static int mkpath(char* file_path) {
+int logger_mkpath(char* file_path) {
   assert(file_path && *file_path);
   char* p;
   for (p=strchr(file_path+1, '/'); p; p=strchr(p+1, '/')) {
@@ -52,8 +52,24 @@ static int mkpath(char* file_path) {
 }
 
 // ***** log metadata *****
+kj::Array<capnp::word> logger_build_boot() {
+  MessageBuilder msg;
+  auto boot = msg.initEvent().initBoot();
 
-void log_init_data(LoggerState *s) {
+  boot.setWallTimeNanos(nanos_since_epoch());
+
+  std::string lastKmsg = util::read_file("/sys/fs/pstore/console-ramoops");
+  boot.setLastKmsg(capnp::Data::Reader((const kj::byte*)lastKmsg.data(), lastKmsg.size()));
+
+  std::string lastPmsg = util::read_file("/sys/fs/pstore/pmsg-ramoops-0");
+  boot.setLastPmsg(capnp::Data::Reader((const kj::byte*)lastPmsg.data(), lastPmsg.size()));
+
+  std::string launchLog = util::read_file("/tmp/launch_log");
+  boot.setLaunchLog(capnp::Text::Reader(launchLog.data(), launchLog.size()));
+  return capnp::messageToFlatArray(msg);
+}
+
+kj::Array<capnp::word> logger_build_init_data() {
   MessageBuilder msg;
   auto init = msg.initEvent().initInitData();
 
@@ -119,8 +135,11 @@ void log_init_data(LoggerState *s) {
       i++;
     }
   }
+  return capnp::messageToFlatArray(msg);
+}
 
-  auto bytes = msg.toBytes();
+void log_init_data(LoggerState *s) {
+  auto bytes = s->init_data.asBytes();
   logger_log(s, bytes.begin(), bytes.size(), s->has_qlog);
 }
 
@@ -137,8 +156,6 @@ static void log_sentinel(LoggerState *s, cereal::Sentinel::SentinelType type) {
 // ***** logging functions *****
 
 void logger_init(LoggerState *s, const char* log_name, bool has_qlog) {
-  memset(s, 0, sizeof(*s));
-
   umask(0);
 
   pthread_mutex_init(&s->lock, NULL);
@@ -153,6 +170,8 @@ void logger_init(LoggerState *s, const char* log_name, bool has_qlog) {
   strftime(s->route_name, sizeof(s->route_name),
            "%Y-%m-%d--%H-%M-%S", &timeinfo);
   snprintf(s->log_name, sizeof(s->log_name), "%s", log_name);
+
+  s->init_data = logger_build_init_data();
 }
 
 static LoggerHandle* logger_open(LoggerState *s, const char* root_path) {
@@ -174,7 +193,7 @@ static LoggerHandle* logger_open(LoggerState *s, const char* root_path) {
   snprintf(h->qlog_path, sizeof(h->qlog_path), "%s/qlog.bz2", h->segment_path);
   snprintf(h->lock_path, sizeof(h->lock_path), "%s.lock", h->log_path);
 
-  err = mkpath(h->log_path);
+  err = logger_mkpath(h->log_path);
   if (err) return NULL;
 
   FILE* lock_file = fopen(h->lock_path, "wb");

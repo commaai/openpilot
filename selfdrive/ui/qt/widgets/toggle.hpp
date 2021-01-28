@@ -8,7 +8,9 @@ class Toggle : public QAbstractButton {
 public:
   Toggle(QWidget* parent = nullptr);
   void togglePosition();
-
+  bool on;
+  int animation_duration = 250;
+  int immediateOffset = 0;
   int offset_circle() const {
     return _x_circle;
   }
@@ -18,13 +20,13 @@ public:
     update();
   }
 
+
 protected:
   void paintEvent(QPaintEvent*) override;
   void mouseReleaseEvent(QMouseEvent*) override;
   void enterEvent(QEvent*) override;
 
 private:
-  bool _on;
   int _x_circle, _y_circle;
   int _height, _radius;
   int _height_rect, _y_rect;

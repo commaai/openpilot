@@ -223,6 +223,9 @@ def handle_agnos_update(wait_helper):
   if cur_version == updated_version:
     return
 
+  # prevent an openpilot getting swapped in with a mismatched or partially downloaded agnos
+  set_consistent_flag(False)
+
   cloudlog.info(f"Beginning background installation for AGNOS {updated_version}")
 
   manifest_path = os.path.join(OVERLAY_MERGED, "installer/updater/update_agnos.json")

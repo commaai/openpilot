@@ -58,7 +58,7 @@ class Uploader():
     self.last_resp = None
     self.last_exc = None
 
-    self.immediate_folders = ["crash/"]
+    self.immediate_folders = ["crash/", "boot/"]
     self.immediate_priority = {"qlog.bz2": 0, "qcamera.ts": 1}
     self.high_priority = {"rlog.bz2": 0, "fcamera.hevc": 1, "dcamera.hevc": 2, "ecamera.hevc": 3}
 

@@ -1,7 +1,4 @@
 #pragma once
-#include <queue>
-#include <mutex>
-#include <condition_variable>
 
 #include <stdlib.h>
 #include <stdbool.h>
@@ -10,6 +7,7 @@
 #include <thread>
 #include "common/mat.h"
 #include "common/swaglog.h"
+#include "common/queue.h"
 #include "visionbuf.h"
 #include "common/visionimg.h"
 #include "imgproc/utils.h"
@@ -103,9 +101,7 @@ private:
   
   int cur_buf_idx;
 
-  std::mutex frame_queue_mutex;
-  std::condition_variable frame_queue_cv;
-  std::queue<size_t> frame_queue;
+  SafeQueue<int> safe_queue;
 
   int frame_buf_count;
   release_cb release_callback;
@@ -131,7 +127,7 @@ public:
 
 typedef void (*process_thread_cb)(MultiCameraState *s, CameraState *c, int cnt);
 
-void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &frame_data, uint32_t cnt);
+void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &frame_data);
 kj::Array<uint8_t> get_frame_image(const CameraBuf *b);
 void set_exposure_target(CameraState *c, const uint8_t *pix_ptr, int x_start, int x_end, int x_skip, int y_start, int y_end, int y_skip);
 std::thread start_process_thread(MultiCameraState *cameras, const char *tname,

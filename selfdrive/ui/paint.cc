@@ -63,16 +63,7 @@ static void ui_draw_text(const UIState *s, float x, float y, const char* string,
   nvgText(s->vg, x, y, string, NULL);
 }
 
-static void draw_chevron(UIState *s, float x_in, float y_in, float sz,
-                          NVGcolor fillColor, NVGcolor glowColor) {
-  vertex_data out = {};
-  car_space_to_full_frame(s, x_in, y_in, 0.0, &out);
-
-  auto [x, y] = out;
-  sz = std::clamp((sz * 30) / (x_in / 3 + 30), 15.0f, 30.0f) * zoom;
-  y = std::fmin(s->scene.viz_rect.bottom() - sz * .6,  y);
-  x = std::clamp(x, 0.f, s->scene.viz_rect.right() - sz / 2);
-
+static void draw_chevron(UIState *s, float x, float y, float sz, NVGcolor fillColor, NVGcolor glowColor) {
   // glow
   float g_xo = sz/5;
   float g_yo = sz/10;
@@ -109,8 +100,11 @@ static void ui_draw_circle_image(const UIState *s, int x, int y, int size, const
   ui_draw_circle_image(s, x, y, size, image, nvgRGBA(0, 0, 0, (255 * bg_alpha)), img_alpha);
 }
 
-static void draw_lead(UIState *s, const cereal::RadarState::LeadData::Reader &lead){
+static void draw_lead(UIState *s, int idx){
   // Draw lead car indicator
+  const auto &lead = s->scene.lead_data[idx];
+  auto [x, y] = s->scene.lead_vertices[idx];
+
   float fillAlpha = 0;
   float speedBuff = 10.;
   float leadBuff = 40.;
@@ -123,7 +117,11 @@ static void draw_lead(UIState *s, const cereal::RadarState::LeadData::Reader &le
     }
     fillAlpha = (int)(fmin(fillAlpha, 255));
   }
-  draw_chevron(s, d_rel, lead.getYRel(), 25, nvgRGBA(201, 34, 49, fillAlpha), COLOR_YELLOW);
+
+  float sz = std::clamp((25 * 30) / (d_rel / 3 + 30), 15.0f, 30.0f) * zoom;
+  x = std::clamp(x, 0.f, s->scene.viz_rect.right() - sz / 2);
+  y = std::fmin(s->scene.viz_rect.bottom() - sz * .6,  y);
+  draw_chevron(s, x, y, sz, nvgRGBA(201, 34, 49, fillAlpha), COLOR_YELLOW);
 }
 
 static void ui_draw_line(UIState *s, const vertex_data *v, const int cnt, NVGcolor *color, NVGpaint *paint) {
@@ -206,10 +204,10 @@ static void ui_draw_world(UIState *s) {
   // Draw lead indicators if openpilot is handling longitudinal
   if (s->longitudinal_control) {
     if (scene->lead_data[0].getStatus()) {
-      draw_lead(s, scene->lead_data[0]);
+      draw_lead(s, 0);
     }
     if (scene->lead_data[1].getStatus() && (std::abs(scene->lead_data[0].getDRel() - scene->lead_data[1].getDRel()) > 3.0)) {
-      draw_lead(s, scene->lead_data[1]);
+      draw_lead(s, 1);
     }
   }
   nvgResetScissor(s->vg);
@@ -287,7 +285,7 @@ static void ui_draw_driver_view(UIState *s) {
   // border
   ui_draw_rect(s->vg, rect, bg_colors[STATUS_OFFROAD], 1);
 
-  const bool face_detected = s->scene.dmonitoring_state.getFaceDetected();
+  const bool face_detected = s->scene.driver_state.getFaceProb() > 0.4;
   if (face_detected) {
     auto fxy_list = s->scene.driver_state.getFacePosition();
     float face_x = fxy_list[0];
@@ -307,7 +305,7 @@ static void ui_draw_driver_view(UIState *s) {
   const int face_size = 85;
   const int icon_x = is_rhd ? rect.right() - face_size - bdr_s * 2 : rect.x + face_size + bdr_s * 2;
   const int icon_y = rect.bottom() - face_size - bdr_s * 2.5;
-  ui_draw_circle_image(s, icon_x, icon_y, face_size, "driver_face", s->scene.dmonitoring_state.getIsActiveMode());
+  ui_draw_circle_image(s, icon_x, icon_y, face_size, "driver_face", face_detected);
 }
 
 static void ui_draw_vision_header(UIState *s) {

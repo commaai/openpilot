@@ -12,6 +12,7 @@
 #include <fstream>
 #include <iostream>
 #include <mutex>
+#include <memory>
 #include <thread>
 
 #include <curl/curl.h>
@@ -183,7 +184,7 @@ struct Updater {
 
   int fb_w, fb_h;
 
-  FramebufferState *fb = NULL;
+  std::unique_ptr<FrameBuffer> fb;
   NVGcontext *vg = NULL;
   int font_regular;
   int font_semibold;
@@ -227,11 +228,9 @@ struct Updater {
   void ui_init() {
     touch_init(&touch);
 
-    fb = framebuffer_init("updater", 0x00001000, false,
-                          &fb_w, &fb_h);
-    assert(fb);
+    fb = std::make_unique<FrameBuffer>("updater", 0x00001000, false, &fb_w, &fb_h);
 
-    framebuffer_set_power(fb, HWC_POWER_MODE_NORMAL);
+    fb->set_power(HWC_POWER_MODE_NORMAL);
 
     vg = nvgCreateGLES3(NVG_ANTIALIAS | NVG_STENCIL_STROKES | NVG_DEBUG);
     assert(vg);
@@ -751,7 +750,7 @@ struct Updater {
 
       glDisable(GL_BLEND);
 
-      framebuffer_swap(fb);
+      fb->swap();
 
       assert(glGetError() == GL_NO_ERROR);
 
