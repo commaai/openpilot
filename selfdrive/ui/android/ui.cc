@@ -53,7 +53,7 @@ static void handle_display_state(UIState *s, bool user_input) {
     s->awake = should_wake;
     int display_mode = s->awake ? HWC_POWER_MODE_NORMAL : HWC_POWER_MODE_OFF;
     LOGW("setting display mode %d", display_mode);
-    framebuffer_set_power(s->fb, display_mode);
+    s->fb->set_power(display_mode);
 
     if (s->awake) {
       system("service call window 18 i32 1");
@@ -178,7 +178,7 @@ int main(int argc, char* argv[]) {
       // warn on sub 15fps
       LOGW("slow frame(%llu) time: %.2f", (s->sm)->frame, u2-u1);
     }
-    framebuffer_swap(s->fb);
+    s->fb->swap();
   }
 
   handle_display_state(s, true);

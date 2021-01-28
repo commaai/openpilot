@@ -288,9 +288,8 @@ void GLWindow::wake() {
   handle_display_state(&ui_state, true);
 }
 
-FramebufferState* framebuffer_init(const char* name, int32_t layer, int alpha,
-                                   int *out_w, int *out_h) {
+FrameBuffer::FrameBuffer(const char *name, uint32_t layer, int alpha, int *out_w, int *out_h) {
   *out_w = vwp_w;
   *out_h = vwp_h;
-  return (FramebufferState*)1; // not null
 }
+FrameBuffer::~FrameBuffer() {}

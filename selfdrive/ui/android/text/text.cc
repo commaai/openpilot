@@ -4,7 +4,7 @@
 #include <math.h>
 #include <unistd.h>
 #include <assert.h>
-
+#include <memory>
 #include <GLES3/gl3.h>
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
@@ -30,7 +30,7 @@ int main(int argc, char** argv) {
 
   // spinner
   int fb_w, fb_h;
-  FramebufferState *fb = framebuffer_init("text", 0x00001000, false,
+  std::unique_ptr<FrameBuffer> fb = std::make_unique<FrameBuffer>("text", 0x00001000, false,
                                           &fb_w, &fb_h);
   assert(fb);
 
@@ -41,7 +41,7 @@ int main(int argc, char** argv) {
   assert(font >= 0);
 
   // Awake
-  framebuffer_set_power(fb, HWC_POWER_MODE_NORMAL);
+  fb->set_power(HWC_POWER_MODE_NORMAL);
   set_brightness(255);
 
   glClearColor(0.1, 0.1, 0.1, 1.0);
@@ -106,7 +106,7 @@ int main(int argc, char** argv) {
 
   // Draw to screen
   nvgEndFrame(vg);
-  framebuffer_swap(fb);
+  fb->swap();
   assert(glGetError() == GL_NO_ERROR);
 
 

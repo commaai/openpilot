@@ -80,8 +80,15 @@ def flash_partition(cloudlog, spinner, target_slot, partition):
   cloudlog.info(f"Downloading and writing {partition['name']}")
 
   downloader = StreamingDecompressor(partition['url'])
-  with open(f"/dev/disk/by-partlabel/{partition['name']}{target_slot}", 'wb') as out:
+  with open(f"/dev/disk/by-partlabel/{partition['name']}{target_slot}", 'wb+') as out:
     partition_size = partition['size']
+
+    # Check if partition is already flashed
+    out.seek(partition_size)
+    if out.read(64) == partition['hash_raw'].lower().encode():
+      cloudlog.info(f"Already flashed {partition['name']}")
+      return
+
     # Clear hash before flashing
     out.seek(partition_size)
     out.write(b"\x00" * 64)

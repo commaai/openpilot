@@ -52,7 +52,8 @@ int logger_mkpath(char* file_path) {
 }
 
 // ***** log metadata *****
-void logger_build_boot(MessageBuilder &msg) {
+kj::Array<capnp::word> logger_build_boot() {
+  MessageBuilder msg;
   auto boot = msg.initEvent().initBoot();
 
   boot.setWallTimeNanos(nanos_since_epoch());
@@ -65,9 +66,11 @@ void logger_build_boot(MessageBuilder &msg) {
 
   std::string launchLog = util::read_file("/tmp/launch_log");
   boot.setLaunchLog(capnp::Text::Reader(launchLog.data(), launchLog.size()));
+  return capnp::messageToFlatArray(msg);
 }
 
-void logger_build_init_data(MessageBuilder &msg) {
+kj::Array<capnp::word> logger_build_init_data() {
+  MessageBuilder msg;
   auto init = msg.initEvent().initInitData();
 
   if (util::file_exists("/EON")) {
@@ -132,12 +135,11 @@ void logger_build_init_data(MessageBuilder &msg) {
       i++;
     }
   }
+  return capnp::messageToFlatArray(msg);
 }
 
 void log_init_data(LoggerState *s) {
-  MessageBuilder msg;
-  logger_build_init_data(msg);
-  auto bytes = msg.toBytes();
+  auto bytes = s->init_data.asBytes();
   logger_log(s, bytes.begin(), bytes.size(), s->has_qlog);
 }
 
@@ -154,8 +156,6 @@ static void log_sentinel(LoggerState *s, cereal::Sentinel::SentinelType type) {
 // ***** logging functions *****
 
 void logger_init(LoggerState *s, const char* log_name, bool has_qlog) {
-  memset(s, 0, sizeof(*s));
-
   umask(0);
 
   pthread_mutex_init(&s->lock, NULL);
@@ -170,6 +170,8 @@ void logger_init(LoggerState *s, const char* log_name, bool has_qlog) {
   strftime(s->route_name, sizeof(s->route_name),
            "%Y-%m-%d--%H-%M-%S", &timeinfo);
   snprintf(s->log_name, sizeof(s->log_name), "%s", log_name);
+
+  s->init_data = logger_build_init_data();
 }
 
 static LoggerHandle* logger_open(LoggerState *s, const char* root_path) {

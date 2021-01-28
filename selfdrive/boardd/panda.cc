@@ -252,31 +252,17 @@ void Panda::set_loopback(bool loopback){
   usb_write(0xe5, loopback, 0);
 }
 
-const char* Panda::get_firmware_version(){
-  const char* fw_sig_buf = new char[128]();
-
-  int read_1 = usb_read(0xd3, 0, 0, (unsigned char*)fw_sig_buf, 64);
-  int read_2 = usb_read(0xd4, 0, 0, (unsigned char*)fw_sig_buf + 64, 64);
-
-  if ((read_1 == 64) && (read_2 == 64)) {
-    return fw_sig_buf;
-  }
-
-  delete[] fw_sig_buf;
-  return NULL;
+std::optional<std::vector<uint8_t>> Panda::get_firmware_version(){
+  std::vector<uint8_t> fw_sig_buf(128);
+  int read_1 = usb_read(0xd3, 0, 0, &fw_sig_buf[0], 64);
+  int read_2 = usb_read(0xd4, 0, 0, &fw_sig_buf[64], 64);
+  return ((read_1 == 64) && (read_2 == 64)) ? std::make_optional(fw_sig_buf) : std::nullopt;
 }
 
-const char* Panda::get_serial(){
-  const char* serial_buf = new char[16]();
-
-  int err = usb_read(0xd0, 0, 0, (unsigned char*)serial_buf, 16);
-
-  if (err >= 0) {
-    return serial_buf;
-  }
-
-  delete[] serial_buf;
-  return NULL;
+std::optional<std::string> Panda::get_serial() {
+  char serial_buf[17] = {'\0'};
+  int err = usb_read(0xd0, 0, 0, (uint8_t*)serial_buf, 16);
+  return err >= 0 ? std::make_optional(serial_buf) : std::nullopt;
 }
 
 void Panda::set_power_saving(bool power_saving){
