@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import os
 import time
 import unittest
 import numpy as np
@@ -32,8 +31,8 @@ class TestCamerad(unittest.TestCase):
     if not (EON or TICI):
       raise unittest.SkipTest
 
-    assert "SEND_REAR" in os.environ
-    assert "SEND_FRONT" in os.environ
+    # assert "SEND_REAR" in os.environ
+    # assert "SEND_FRONT" in os.environ
 
   def _numpy_bgr2gray(self, im):
     ret = np.clip(im[:,:,0] * 0.114 + im[:,:,1] * 0.587 + im[:,:,2] * 0.299, 0, 255).astype(np.uint8)
