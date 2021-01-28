@@ -266,17 +266,10 @@ const char* Panda::get_firmware_version(){
   return NULL;
 }
 
-const char* Panda::get_serial(){
-  const char* serial_buf = new char[16]();
-
-  int err = usb_read(0xd0, 0, 0, (unsigned char*)serial_buf, 16);
-
-  if (err >= 0) {
-    return serial_buf;
-  }
-
-  delete[] serial_buf;
-  return NULL;
+std::optional<std::string> Panda::get_serial() {
+  char serial_buf[17] = {'\0'};
+  int err = usb_read(0xd0, 0, 0, (uint8_t*)serial_buf, 16);
+  return err >= 0 ? std::make_optional(serial_buf) : std::nullopt;
 }
 
 void Panda::set_power_saving(bool power_saving){
