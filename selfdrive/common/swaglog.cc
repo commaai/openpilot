@@ -44,6 +44,10 @@ static void cloudlog_init() {
   s.ctx_j = json11::Json::object {};
   s.zctx = zmq_ctx_new();
   s.sock = zmq_socket(s.zctx, ZMQ_PUSH);
+
+  int timeout = 100; // 100 ms timeout on shutdown for messages to be received by logmessaged
+  zmq_setsockopt(s.sock, ZMQ_LINGER, &timeout, sizeof(timeout));
+
   zmq_connect(s.sock, "ipc:///tmp/logmessage");
 
   s.print_level = CLOUDLOG_WARNING;
