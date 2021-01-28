@@ -3,7 +3,6 @@
 #include <QPushButton>
 #include <QGridLayout>
 #include <QVBoxLayout>
-#include <QStackedLayout>
 #include <QDebug>
 
 #include "onboarding.hpp"
@@ -26,45 +25,32 @@ QWidget* layout2Widget(QLayout* l){
 
 
 void TrainingGuide::mouseReleaseEvent(QMouseEvent *e) {
-  qDebug()<<"Got event";
+  // Uncomment to help with tuning the bounding boxes
+  // qDebug()<<"Got event at index"<<currentIndex;
+  // qDebug()<<"Got coords at "<<e->x()<<e->y();
+
+  if(boundingBox[currentIndex][0] <= e->x() && e->x() <= boundingBox[currentIndex][1] && boundingBox[currentIndex][2] <= e->y() && e->y() <= boundingBox[currentIndex][3] ){
+    slayout->setCurrentIndex(++currentIndex);
+  }
+  if (currentIndex >= numberOfFrames){
+    emit completedTraining();
+    return;
+  }
 }
+
 TrainingGuide::TrainingGuide(QWidget* parent) {
   QHBoxLayout* hlayout = new QHBoxLayout;
-  hlayout->addSpacing(270); // 2160*1080 -> 1920*1080
-  QStackedLayout* slayout = new QStackedLayout(this);
-  
-  QVBoxLayout *welcomeLayout = new QVBoxLayout;
-  welcomeLayout->setMargin(80);
-  welcomeLayout->addWidget(title_label("Welcome to openpilot"));
-  QLabel* welcomeLabel = new QLabel("Now that you're all set up, it's important to understand the functionality and limitations of openpilot as alpha software before testing.");
-  welcomeLabel->setWordWrap(true);
-  welcomeLayout->addWidget(welcomeLabel);
-
-  QPushButton *beginTraining = new QPushButton("Begin Training");
-  beginTraining->setFixedWidth(600);
-  welcomeLayout->addWidget(beginTraining);
-  QObject::connect(beginTraining, &QPushButton::released, [=]() {emit completedTraining();});
-  QWidget* welcomeWidget = layout2Widget(welcomeLayout);
-  welcomeWidget->setStyleSheet(".QWidget {background-image: url(../assets/images/photo_baybridge_a_01.jpg); background-color: rgba(255, 255, 255, 10);}");
-  
-  slayout->addWidget(welcomeWidget);
+  hlayout->addSpacing(270); // 2160*1080 -> 1620*1080
+  slayout = new QStackedLayout(this);
+  for (int i = 0; i <= 14; i++) {
+    QWidget* w = new QWidget;
+    w->setStyleSheet(".QWidget {background-image: url(../assets/training/step" + QString::number(i) + ".png); background-color: rgba(255, 255, 255, 10);}");
+    slayout->addWidget(w);
+  }
 
   hlayout->addWidget(layout2Widget(slayout));
   hlayout->addSpacing(270);
   setLayout(hlayout);
-  setStyleSheet(R"(
-    * {
-      background-image: none;
-      background-color: rgba(0,0,0,80);
-      font-size: 70px;
-    }
-    QPushButton {
-      border-radius: 30px;
-      background-color: #292929;
-    }
-    QLabel {
-    }
-  )");
 }
 
 
@@ -127,8 +113,7 @@ void OnboardingWindow::updateActiveScreen() {
 OnboardingWindow::OnboardingWindow(QWidget *parent) : QStackedWidget(parent) {
   addWidget(terms_screen());
   TrainingGuide* tr = new TrainingGuide(this);
-  // connect(tr, &TrainingGuide::completedTraining, [=](){Params().write_db_value("CompletedTrainingVersion", LATEST_TRAINING_VERSION); updateActiveScreen();});
-  connect(tr, &TrainingGuide::completedTraining, [=](){qDebug()<<"Finished training";});
+  connect(tr, &TrainingGuide::completedTraining, [=](){Params().write_db_value("CompletedTrainingVersion", LATEST_TRAINING_VERSION); updateActiveScreen();});
   addWidget(tr);
 
   setStyleSheet(R"(
