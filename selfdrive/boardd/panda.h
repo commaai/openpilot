@@ -52,7 +52,7 @@ class Panda {
   Panda();
   ~Panda();
 
-  bool connected = true;
+  std::atomic<bool> connected = true;
   cereal::HealthData::HwType hw_type = cereal::HealthData::HwType::UNKNOWN;
   bool is_pigeon = false;
   bool has_rtc = false;
