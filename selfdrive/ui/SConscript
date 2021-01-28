@@ -3,7 +3,7 @@ Import('env', 'qt_env', 'arch', 'common', 'messaging', 'gpucommon', 'visionipc',
 
 
 src = ['ui.cc', 'paint.cc', 'sidebar.cc', '#phonelibs/nanovg/nanovg.c']
-libs = [common, 'zmq', 'capnp', 'kj', 'm', 'OpenCL', cereal, messaging, gpucommon, visionipc]
+libs = [gpucommon, common, 'zmq', 'capnp', 'kj', 'm', 'OpenCL', cereal, messaging, visionipc]
 
 if qt_env is None:
   libs += ['EGL', 'GLESv3', 'gnustl_shared', 'log', 'utils', 'gui', 'hardware',

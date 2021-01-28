@@ -144,7 +144,7 @@ typedef struct UIState {
   VisionBuf * last_frame;
 
   // framebuffer
-  FramebufferState *fb;
+  std::unique_ptr<FrameBuffer> fb;
   int fb_w, fb_h;
 
   // NVG
