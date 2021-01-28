@@ -21,8 +21,9 @@ _DISTRACTED_TIME = 11.
 _DISTRACTED_PRE_TIME_TILL_TERMINAL = 8.
 _DISTRACTED_PROMPT_TIME_TILL_TERMINAL = 6.
 
-_FACE_THRESHOLD = 0.6
-_EYE_THRESHOLD = 0.6
+_FACE_THRESHOLD = 0.5
+_PARTIAL_FACE_THRESHOLD = 0.5
+_EYE_THRESHOLD = 0.5
 _SG_THRESHOLD = 0.5
 _BLINK_THRESHOLD = 0.5
 _BLINK_THRESHOLD_SLACK = 0.65
@@ -109,10 +110,12 @@ class DriverStatus():
     self.driver_distracted = False
     self.driver_distraction_filter = FirstOrderFilter(0., _DISTRACTED_FILTER_TS, DT_DMON)
     self.face_detected = False
+    self.face_partial = False
     self.terminal_alert_cnt = 0
     self.terminal_time = 0
     self.step_change = 0.
     self.active_monitoring_mode = True
+    self.is_model_uncertain = False
     self.hi_stds = 0
     self.hi_std_alert_enabled = True
     self.threshold_prompt = _DISTRACTED_PROMPT_TIME_TILL_TERMINAL / _DISTRACTED_TIME
@@ -180,19 +183,19 @@ class DriverStatus():
                                     driver_state.faceOrientationStd, driver_state.facePositionStd]):
       return
 
+    self.face_partial = driver_state.partialFace > _PARTIAL_FACE_THRESHOLD
+    self.face_detected = driver_state.faceProb > _FACE_THRESHOLD or self.face_partial
     self.pose.roll, self.pose.pitch, self.pose.yaw = face_orientation_from_net(driver_state.faceOrientation, driver_state.facePosition, cal_rpy, self.is_rhd_region)
     self.pose.pitch_std = driver_state.faceOrientationStd[0]
     self.pose.yaw_std = driver_state.faceOrientationStd[1]
     # self.pose.roll_std = driver_state.faceOrientationStd[2]
     model_std_max = max(self.pose.pitch_std, self.pose.yaw_std)
-    self.pose.low_std = model_std_max < _POSESTD_THRESHOLD
+    self.pose.low_std = model_std_max < _POSESTD_THRESHOLD and not self.face_partial
     self.blink.left_blink = driver_state.leftBlinkProb * (driver_state.leftEyeProb > _EYE_THRESHOLD) * (driver_state.sgProb < _SG_THRESHOLD)
     self.blink.right_blink = driver_state.rightBlinkProb * (driver_state.rightEyeProb > _EYE_THRESHOLD) * (driver_state.sgProb < _SG_THRESHOLD)
-    self.face_detected = driver_state.faceProb > _FACE_THRESHOLD and \
-                          abs(driver_state.facePosition[0]) <= 0.4 and abs(driver_state.facePosition[1]) <= 0.45
 
-    self.driver_distracted = self._is_driver_distracted(self.pose, self.blink) > 0
-    # first order filters
+    self.driver_distracted = self._is_driver_distracted(self.pose, self.blink) > 0 and \
+                              driver_state.faceProb > _FACE_THRESHOLD and self.pose.low_std
     self.driver_distraction_filter.update(self.driver_distracted)
 
     # update offseter
@@ -204,11 +207,9 @@ class DriverStatus():
     self.pose_calibrated = self.pose.pitch_offseter.filtered_stat.n > _POSE_OFFSET_MIN_COUNT and \
                             self.pose.yaw_offseter.filtered_stat.n > _POSE_OFFSET_MIN_COUNT
 
-    is_model_uncertain = self.hi_stds * DT_DMON > _HI_STD_FALLBACK_TIME
-    self._set_timers(self.face_detected and not is_model_uncertain)
+    self.is_model_uncertain = self.hi_stds * DT_DMON > _HI_STD_FALLBACK_TIME
+    self._set_timers(self.face_detected and not self.is_model_uncertain)
     if self.face_detected and not self.pose.low_std:
-      if not is_model_uncertain:
-        self.step_change *= min(1.0, max(0.6, 1.6*(model_std_max-0.5)*(model_std_max-2)))
       self.hi_stds += 1
     elif self.face_detected and self.pose.low_std:
       self.hi_stds = 0
