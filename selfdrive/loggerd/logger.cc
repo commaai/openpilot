@@ -139,8 +139,7 @@ kj::Array<capnp::word> logger_build_init_data() {
 }
 
 void log_init_data(LoggerState *s) {
-  kj::Array<capnp::word> data = logger_build_init_data();
-  auto bytes = data.asBytes();
+  auto bytes = s->init_data.asBytes();
   logger_log(s, bytes.begin(), bytes.size(), s->has_qlog);
 }
 
@@ -157,8 +156,6 @@ static void log_sentinel(LoggerState *s, cereal::Sentinel::SentinelType type) {
 // ***** logging functions *****
 
 void logger_init(LoggerState *s, const char* log_name, bool has_qlog) {
-  memset(s, 0, sizeof(*s));
-
   umask(0);
 
   pthread_mutex_init(&s->lock, NULL);
@@ -173,6 +170,8 @@ void logger_init(LoggerState *s, const char* log_name, bool has_qlog) {
   strftime(s->route_name, sizeof(s->route_name),
            "%Y-%m-%d--%H-%M-%S", &timeinfo);
   snprintf(s->log_name, sizeof(s->log_name), "%s", log_name);
+
+  s->init_data = logger_build_init_data();
 }
 
 static LoggerHandle* logger_open(LoggerState *s, const char* root_path) {
