@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <pthread.h>
 #include <mutex>
+#include <vector>
 #include <optional>
 
 #include <libusb-1.0/libusb.h>
@@ -73,7 +74,7 @@ class Panda {
   void set_ir_pwr(uint16_t ir_pwr);
   health_t get_health();
   void set_loopback(bool loopback);
-  const char* get_firmware_version();
+  std::optional<std::vector<uint8_t>> get_firmware_version();
   std::optional<std::string> get_serial();
   void set_power_saving(bool power_saving);
   void set_usb_power_mode(cereal::HealthData::UsbPowerMode power_mode);
