@@ -161,7 +161,7 @@ private:
 
 struct LoggerdState {
   Context *ctx;
-  LoggerState logger;
+  LoggerState logger = {};
   char segment_path[4096];
   int rotate_segment;
   pthread_mutex_t rotate_lock;
