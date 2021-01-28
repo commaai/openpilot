@@ -285,7 +285,7 @@ static void ui_draw_driver_view(UIState *s) {
   // border
   ui_draw_rect(s->vg, rect, bg_colors[STATUS_OFFROAD], 1);
 
-  const bool face_detected = s->scene.dmonitoring_state.getFaceDetected();
+  const bool face_detected = s->scene.driver_state.getFaceProb() > 0.4;
   if (face_detected) {
     auto fxy_list = s->scene.driver_state.getFacePosition();
     float face_x = fxy_list[0];
@@ -305,7 +305,7 @@ static void ui_draw_driver_view(UIState *s) {
   const int face_size = 85;
   const int icon_x = is_rhd ? rect.right() - face_size - bdr_s * 2 : rect.x + face_size + bdr_s * 2;
   const int icon_y = rect.bottom() - face_size - bdr_s * 2.5;
-  ui_draw_circle_image(s, icon_x, icon_y, face_size, "driver_face", s->scene.dmonitoring_state.getIsActiveMode());
+  ui_draw_circle_image(s, icon_x, icon_y, face_size, "driver_face", face_detected);
 }
 
 static void ui_draw_vision_header(UIState *s) {
