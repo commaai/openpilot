@@ -266,38 +266,32 @@ void encoder_thread(int cam_idx) {
       rotate_state.setStreamFrameId(extra.frame_id);
 
       // encode a frame
-      {
+      for (int i = 0; i < encoders.size(); ++i) {
         int out_segment = -1;
-        int out_id = encoders[0]->encode_frame(buf->y, buf->u, buf->v,
+        int out_id = encoders[i]->encode_frame(buf->y, buf->u, buf->v,
                                                buf->width, buf->height,
                                                &out_segment, extra.timestamp_eof);
-        if (encoders.size() > 1) {
-          int out_segment_alt = -1;
-          encoders[1]->encode_frame(buf->y, buf->u, buf->v,
-                                    buf->width, buf->height,
-                                    &out_segment_alt, extra.timestamp_eof);
-        }
-
-        // publish encode index
-        MessageBuilder msg;
-        // this is really ugly
-        auto eidx = cam_idx == LOG_CAMERA_ID_DCAMERA ? msg.initEvent().initFrontEncodeIdx() :
-                    (cam_idx == LOG_CAMERA_ID_ECAMERA ? msg.initEvent().initWideEncodeIdx() : msg.initEvent().initEncodeIdx());
-        eidx.setFrameId(extra.frame_id);
-        eidx.setTimestampSof(extra.timestamp_sof);
-        eidx.setTimestampEof(extra.timestamp_eof);
-  #ifdef QCOM2
-        eidx.setType(cereal::EncodeIndex::Type::FULL_H_E_V_C);
-  #else
-        eidx.setType(cam_idx == LOG_CAMERA_ID_DCAMERA ? cereal::EncodeIndex::Type::FRONT : cereal::EncodeIndex::Type::FULL_H_E_V_C);
-  #endif
-        eidx.setEncodeId(cnt);
-        eidx.setSegmentNum(out_segment);
-        eidx.setSegmentId(out_id);
-
-        if (lh) {
-          auto bytes = msg.toBytes();
-          lh_log(lh, bytes.begin(), bytes.size(), false);
+        if (i == 0 && out_id != -1) {
+          // publish encode index
+          MessageBuilder msg;
+          // this is really ugly
+          auto eidx = cam_idx == LOG_CAMERA_ID_DCAMERA ? msg.initEvent().initFrontEncodeIdx() :
+                      (cam_idx == LOG_CAMERA_ID_ECAMERA ? msg.initEvent().initWideEncodeIdx() : msg.initEvent().initEncodeIdx());
+          eidx.setFrameId(extra.frame_id);
+          eidx.setTimestampSof(extra.timestamp_sof);
+          eidx.setTimestampEof(extra.timestamp_eof);
+    #ifdef QCOM2
+          eidx.setType(cereal::EncodeIndex::Type::FULL_H_E_V_C);
+    #else
+          eidx.setType(cam_idx == LOG_CAMERA_ID_DCAMERA ? cereal::EncodeIndex::Type::FRONT : cereal::EncodeIndex::Type::FULL_H_E_V_C);
+    #endif
+          eidx.setEncodeId(cnt);
+          eidx.setSegmentNum(out_segment);
+          eidx.setSegmentId(out_id);
+          if (lh) {
+            auto bytes = msg.toBytes();
+            lh_log(lh, bytes.begin(), bytes.size(), false);
+          }
         }
       }
 
