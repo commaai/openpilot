@@ -22,9 +22,15 @@ QWidget* layout2Widget(QLayout* l){
   return q;
 }
 
+
+
+
+void TrainingGuide::mouseReleaseEvent(QMouseEvent *e) {
+  qDebug()<<"Got event";
+}
 TrainingGuide::TrainingGuide(QWidget* parent) {
   QHBoxLayout* hlayout = new QHBoxLayout;
-  hlayout->addSpacing(120); // 2160*1080 -> 1920*1080
+  hlayout->addSpacing(270); // 2160*1080 -> 1920*1080
   QStackedLayout* slayout = new QStackedLayout(this);
   
   QVBoxLayout *welcomeLayout = new QVBoxLayout;
@@ -44,7 +50,7 @@ TrainingGuide::TrainingGuide(QWidget* parent) {
   slayout->addWidget(welcomeWidget);
 
   hlayout->addWidget(layout2Widget(slayout));
-  hlayout->addSpacing(120);
+  hlayout->addSpacing(270);
   setLayout(hlayout);
   setStyleSheet(R"(
     * {

@@ -13,6 +13,9 @@ class TrainingGuide : public QWidget {
 public:
   explicit TrainingGuide(QWidget *parent = 0);
 
+protected:
+  void mouseReleaseEvent(QMouseEvent*) override;
+
 signals:
   void completedTraining();
 };
