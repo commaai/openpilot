@@ -28,9 +28,6 @@ int main(int argc, char** argv) {
   MessageBuilder init_msg;
   logger_build_init_data(init_msg);
 
-  char segment_path[4096];
-  logger_next(&logger, LOG_ROOT.c_str(), segment_path, sizeof(segment_path), nullptr);
-  LOGW("bootlog to %s", segment_path);
 
   // Open bootlog
   int r = logger_mkpath((char*)path.c_str());
