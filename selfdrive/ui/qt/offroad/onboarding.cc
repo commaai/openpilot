@@ -12,7 +12,7 @@
 
 QLabel * title_label(QString text) {
   QLabel *l = new QLabel(text);
-  l->setStyleSheet(R"(font-size: 100px;)");
+  l->setStyleSheet(R"(font-size: 100px; font-weight: bold;)");
   return l;
 }
 
@@ -23,8 +23,10 @@ QWidget* layout2Widget(QLayout* l){
 }
 
 TrainingGuide::TrainingGuide(QWidget* parent) {
+  QHBoxLayout* hlayout = new QHBoxLayout;
+  hlayout->addSpacing(120); // 2160*1080 -> 1920*1080
   QStackedLayout* slayout = new QStackedLayout(this);
-
+  
   QVBoxLayout *welcomeLayout = new QVBoxLayout;
   welcomeLayout->setMargin(80);
   welcomeLayout->addWidget(title_label("Welcome to openpilot"));
@@ -33,20 +35,28 @@ TrainingGuide::TrainingGuide(QWidget* parent) {
   welcomeLayout->addWidget(welcomeLabel);
 
   QPushButton *beginTraining = new QPushButton("Begin Training");
+  beginTraining->setFixedWidth(600);
   welcomeLayout->addWidget(beginTraining);
   QObject::connect(beginTraining, &QPushButton::released, [=]() {emit completedTraining();});
-  slayout->addWidget(layout2Widget(welcomeLayout));
+  QWidget* welcomeWidget = layout2Widget(welcomeLayout);
+  welcomeWidget->setStyleSheet(".QWidget {background-image: url(../assets/images/photo_baybridge_a_01.jpg); background-color: rgba(255, 255, 255, 10);}");
+  
+  slayout->addWidget(welcomeWidget);
 
-  setLayout(slayout);
+  hlayout->addWidget(layout2Widget(slayout));
+  hlayout->addSpacing(120);
+  setLayout(hlayout);
   setStyleSheet(R"(
     * {
-      color: white;
+      background-image: none;
       background-color: none;
-      font-size: 50px;
+      font-size: 70px;
     }
     QPushButton {
-      border-radius: 10px;
+      border-radius: 30px;
       background-color: #292929;
+    }
+    QLabel {
     }
   )");
 }
@@ -112,6 +122,7 @@ OnboardingWindow::OnboardingWindow(QWidget *parent) : QStackedWidget(parent) {
   addWidget(terms_screen());
   TrainingGuide* tr = new TrainingGuide(this);
   // connect(tr, &TrainingGuide::completedTraining, [=](){Params().write_db_value("CompletedTrainingVersion", LATEST_TRAINING_VERSION); updateActiveScreen();});
+  connect(tr, &TrainingGuide::completedTraining, [=](){qDebug()<<"Finished training";});
   addWidget(tr);
 
   setStyleSheet(R"(
