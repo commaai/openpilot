@@ -149,14 +149,9 @@ bool usb_connect() {
   } else { return false; }
 
   // get panda serial
-  const char *serial_buf = panda->get_serial();
-  if (serial_buf) {
-    size_t serial_sz = strnlen(serial_buf, 16);
-
-    params.write_db_value("PandaDongleId", serial_buf, serial_sz);
-    LOGW("panda serial: %.*s", serial_sz, serial_buf);
-
-    delete[] serial_buf;
+  if (auto serial = panda->get_serial(); serial) {
+    params.write_db_value("PandaDongleId", serial->c_str(), serial->length());
+    LOGW("panda serial: %s", serial->c_str());
   } else { return false; }
 
   // power on charging, only the first time. Panda can also change mode and it causes a brief disconneciton
@@ -247,11 +242,11 @@ void can_recv_thread() {
   uint64_t next_frame_time = nanos_since_boot() + dt;
 
   while (!do_exit && panda->connected) {
-   can_recv(pm);
+    can_recv(pm);
 
     uint64_t cur_time = nanos_since_boot();
     int64_t remaining = next_frame_time - cur_time;
-    if (remaining > 0){
+    if (remaining > 0) {
       std::this_thread::sleep_for(std::chrono::nanoseconds(remaining));
     } else {
       if (ignition){

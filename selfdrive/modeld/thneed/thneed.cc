@@ -5,6 +5,7 @@
 #include <string>
 #include <string.h>
 #include <errno.h>
+#include "common/clutil.h"
 #include "thneed.h"
 
 //#define RUN_DISASSEMBLER
@@ -343,26 +344,11 @@ void Thneed::execute(float **finputs, float *foutput, bool slow) {
 }
 
 void Thneed::clinit() {
-  cl_int err;
-
-  cl_platform_id platform_id[2];
-  cl_uint num_devices;
-  cl_uint num_platforms;
-
-  err = clGetPlatformIDs(sizeof(platform_id)/sizeof(cl_platform_id), platform_id, &num_platforms);
-  assert(err == 0);
-
-  err = clGetDeviceIDs(platform_id[0], CL_DEVICE_TYPE_DEFAULT, 1, &device_id, &num_devices);
-  assert(err == 0);
-
-  context = clCreateContext(NULL, 1, &device_id, NULL, NULL, &err);
-  assert(err == 0);
-
+  device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
+  context = CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id, NULL, NULL, &err));
   //cl_command_queue_properties props[3] = {CL_QUEUE_PROPERTIES, CL_QUEUE_PROFILING_ENABLE, 0};
   cl_command_queue_properties props[3] = {CL_QUEUE_PROPERTIES, 0, 0};
-  command_queue = clCreateCommandQueueWithProperties(context, device_id, props, &err);
-  assert(err == 0);
-
+  command_queue = CL_CHECK_ERR(clCreateCommandQueueWithProperties(context, device_id, props, &err));
   printf("Thneed::clinit done\n");
 }
 
@@ -612,4 +598,3 @@ void CLQueuedKernel::debug_print(bool verbose) {
     }
   }
 }
-

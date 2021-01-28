@@ -121,18 +121,12 @@ CameraBuf::~CameraBuf() {
 }
 
 bool CameraBuf::acquire() {
-  {
-    std::unique_lock<std::mutex> lk(frame_queue_mutex);
-    bool got_frame = frame_queue_cv.wait_for(lk, std::chrono::milliseconds(1), [this]{ return !frame_queue.empty(); });
-    if (!got_frame) return false;
-
-    cur_buf_idx = frame_queue.front();
-    frame_queue.pop();
-  }
+  if (!safe_queue.try_pop(cur_buf_idx, 1)) return false;
 
   const FrameMetadata &frame_data = camera_bufs_metadata[cur_buf_idx];
   if (frame_data.frame_id == -1) {
     LOGE("no frame data? wtf");
+    release();
     return false;
   }
 
@@ -192,17 +186,13 @@ void CameraBuf::release() {
   }
 }
 
-void CameraBuf::queue(size_t buf_idx){
-  {
-    std::lock_guard<std::mutex> lk(frame_queue_mutex);
-    frame_queue.push(buf_idx);
-  }
-  frame_queue_cv.notify_one();
+void CameraBuf::queue(size_t buf_idx) {
+  safe_queue.push(buf_idx);
 }
 
 // common functions
 
-void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &frame_data, uint32_t cnt) {
+void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &frame_data) {
   framed.setFrameId(frame_data.frame_id);
   framed.setTimestampEof(frame_data.timestamp_eof);
   framed.setTimestampSof(frame_data.timestamp_sof);
@@ -407,7 +397,7 @@ void common_camera_process_front(SubMaster *sm, PubMaster *pm, CameraState *c, i
   MessageBuilder msg;
   auto framed = msg.initEvent().initFrontFrame();
   framed.setFrameType(cereal::FrameData::FrameType::FRONT);
-  fill_frame_data(framed, b->cur_frame_data, cnt);
+  fill_frame_data(framed, b->cur_frame_data);
   if (env_send_front) {
     framed.setImage(get_frame_image(b));
   }

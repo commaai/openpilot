@@ -181,10 +181,8 @@ void TTYPigeon::set_baud(int baud){
 }
 
 void TTYPigeon::send(const std::string &s) {
-  int len = s.length();
-  const char * dat = s.data();
+  int err = write(pigeon_tty_fd, s.data(), s.length());
 
-  int err = write(pigeon_tty_fd, dat, len);
   if(err < 0) { handle_tty_issue(err, __func__); }
   err = tcdrain(pigeon_tty_fd);
   if(err < 0) { handle_tty_issue(err, __func__); }

@@ -75,7 +75,7 @@ class Panda {
   health_t get_health();
   void set_loopback(bool loopback);
   std::optional<std::vector<uint8_t>> get_firmware_version();
-  const char* get_serial();
+  std::optional<std::string> get_serial();
   void set_power_saving(bool power_saving);
   void set_usb_power_mode(cereal::HealthData::UsbPowerMode power_mode);
   void send_heartbeat();
