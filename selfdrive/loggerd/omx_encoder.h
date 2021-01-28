@@ -65,8 +65,8 @@ private:
 
   uint64_t last_t;
 
-  Queue free_in;
-  Queue done_out;
+  SafeQueue<OMX_BUFFERHEADERTYPE *> free_in;
+  SafeQueue<OMX_BUFFERHEADERTYPE *> done_out;
 
   AVFormatContext *ofmt_ctx;
   AVCodecContext *codec_ctx;

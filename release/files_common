@@ -193,7 +193,7 @@ selfdrive/common/swaglog.h
 selfdrive/common/swaglog.cc
 selfdrive/common/util.cc
 selfdrive/common/util.h
-selfdrive/common/cqueue.[c,h]
+selfdrive/common/queue.h
 selfdrive/common/clutil.cc
 selfdrive/common/clutil.h
 selfdrive/common/params.h
