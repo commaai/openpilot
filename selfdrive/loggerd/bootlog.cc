@@ -35,15 +35,13 @@ int main(int argc, char** argv) {
   assert(bzerror == BZ_OK);
 
   // Write initdata
-  kj::Array<capnp::word> init_msg = logger_build_init_data();
-  auto bytes = init_msg.asBytes();
-  BZ2_bzWrite(&bzerror, bz_file, bytes.begin(), bytes.size());
+  kj::Array<capnp::byte> init_msg = logger_build_init_data();
+  BZ2_bzWrite(&bzerror, bz_file, init_msg.begin(), init_msg.size());
   assert(bzerror == BZ_OK);
 
   // Write bootlog
-  kj::Array<capnp::word> boot_msg = logger_build_boot();
-  bytes = boot_msg.asBytes();
-  BZ2_bzWrite(&bzerror, bz_file, bytes.begin(), bytes.size());
+  kj::Array<capnp::byte> boot_msg = logger_build_boot();
+  BZ2_bzWrite(&bzerror, bz_file, boot_msg.begin(), boot_msg.size());
   assert(bzerror == BZ_OK);
 
   // Close bz2 and file

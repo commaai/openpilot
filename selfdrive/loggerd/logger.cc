@@ -52,7 +52,7 @@ int logger_mkpath(char* file_path) {
 }
 
 // ***** log metadata *****
-kj::Array<capnp::word> logger_build_boot() {
+kj::Array<capnp::byte> logger_build_boot() {
   MessageBuilder msg;
   auto boot = msg.initEvent().initBoot();
 
@@ -66,10 +66,10 @@ kj::Array<capnp::word> logger_build_boot() {
 
   std::string launchLog = util::read_file("/tmp/launch_log");
   boot.setLaunchLog(capnp::Text::Reader(launchLog.data(), launchLog.size()));
-  return capnp::messageToFlatArray(msg);
+  return capnp::messageToFlatArray(msg).releaseAsBytes();
 }
 
-kj::Array<capnp::word> logger_build_init_data() {
+kj::Array<capnp::byte> logger_build_init_data() {
   MessageBuilder msg;
   auto init = msg.initEvent().initInitData();
 
@@ -135,13 +135,12 @@ kj::Array<capnp::word> logger_build_init_data() {
       i++;
     }
   }
-  return capnp::messageToFlatArray(msg);
+  return capnp::messageToFlatArray(msg).releaseAsBytes();
 }
 
 void log_init_data(LoggerState *s) {
-  kj::Array<capnp::word> data = logger_build_init_data();
-  auto bytes = data.asBytes();
-  logger_log(s, bytes.begin(), bytes.size(), s->has_qlog);
+  kj::Array<capnp::byte> data = logger_build_init_data();
+  logger_log(s, data.begin(), data.size(), s->has_qlog);
 }
 
 
