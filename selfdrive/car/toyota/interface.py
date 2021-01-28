@@ -9,10 +9,34 @@ from selfdrive.car.interfaces import CarInterfaceBase
 EventName = car.CarEvent.EventName
 
 
+def compute_gb_toyota(accel, speed):
+  return float(accel) / CarControllerParams.ACCEL_SCALE
+
+
+def compute_gb_gas_interceptor(accel, speed):
+  # This converts desired positive acceleration at a speed to gas percentage
+  # It's only accurate up to MIN_ACC_SPEED (19 mph) for now since the function was fitted on data up to that speed
+  # Once we reach that speed, we switch to sending acceleration anyway so this isn't a problem
+  def accel_to_gas(_speed, _accel):  # converts accel to gas using current speed
+    _c1, _c2, _c3, _c4 = [0.04412016647510183, 0.018224465923095633, 0.09983653162564889, 0.08837909527049172]
+    return (_accel * _c1 + (_c4 * (_speed * _c2 + 1))) * (_speed * _c3 + 1)
+
+  if accel > -0.1 and speed <= MIN_ACC_SPEED:  # todo: -0.1 is smooth but in data user was giving gas when a_ego was down to -0.5
+    return accel_to_gas(speed, accel)
+  return float(accel) / CarControllerParams.ACCEL_SCALE
+
+
 class CarInterface(CarInterfaceBase):
+  def __init__(self, CP, CarController, CarState):
+    super().__init__(CP, CarController, CarState)
+    if self.CP.enableGasInterceptor:
+      self.compute_gb = compute_gb_gas_interceptor
+    else:
+      self.compute_gb = compute_gb_toyota
+
   @staticmethod
   def compute_gb(accel, speed):
-    return float(accel) / CarControllerParams.ACCEL_SCALE
+    raise NotImplementedError
 
   @staticmethod
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=[]):  # pylint: disable=dangerous-default-value
