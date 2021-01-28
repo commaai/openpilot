@@ -133,12 +133,12 @@ bool usb_connect() {
     panda->set_loopback(true);
   }
 
-  const char *fw_sig_buf = panda->get_firmware_version();
-  if (fw_sig_buf){
-    params.write_db_value("PandaFirmware", fw_sig_buf, 128);
+  if (auto fw_sig = panda->get_firmware_version(); fw_sig) {
+    params.write_db_value("PandaFirmware", (const char *)fw_sig->data(), fw_sig->size());
 
     // Convert to hex for offroad
     char fw_sig_hex_buf[16] = {0};
+    const uint8_t *fw_sig_buf = fw_sig->data();
     for (size_t i = 0; i < 8; i++){
       fw_sig_hex_buf[2*i] = NIBBLE_TO_HEX((uint8_t)fw_sig_buf[i] >> 4);
       fw_sig_hex_buf[2*i+1] = NIBBLE_TO_HEX((uint8_t)fw_sig_buf[i] & 0xF);
@@ -146,8 +146,6 @@ bool usb_connect() {
 
     params.write_db_value("PandaFirmwareHex", fw_sig_hex_buf, 16);
     LOGW("fw signature: %.*s", 16, fw_sig_hex_buf);
-
-    delete[] fw_sig_buf;
   } else { return false; }
 
   // get panda serial
