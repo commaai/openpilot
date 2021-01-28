@@ -56,6 +56,25 @@ void ui_init(UIState *s) {
   s->vipc_client = s->vipc_client_rear;
 }
 
+static int get_path_length_idx(const cereal::ModelDataV2::XYZTData::Reader &line, const float path_height) {
+  const auto line_x = line.getX();
+  int max_idx = 0;
+  for (int i = 0; i < TRAJECTORY_SIZE && line_x[i] < path_height; ++i) {
+    max_idx = i;
+  }
+  return max_idx;
+}
+
+static void update_lead(UIState *s, const cereal::RadarState::Reader &radar_state,
+                        const cereal::ModelDataV2::XYZTData::Reader &line, int idx) {
+  auto &lead_data = s->scene.lead_data[idx];
+  lead_data = (idx == 0) ? radar_state.getLeadOne() : radar_state.getLeadTwo();
+  if (lead_data.getStatus()) {
+    const int path_idx = get_path_length_idx(line, lead_data.getDRel());
+    car_space_to_full_frame(s, lead_data.getDRel(), lead_data.getYRel(), -line.getZ()[path_idx], &s->scene.lead_vertices[idx]);
+  }
+}
+
 template <class T>
 static void update_line_data(const UIState *s, const cereal::ModelDataV2::XYZTData::Reader &line,
                              float y_off, float z_off, T *pvd, float max_distance) {
@@ -113,9 +132,10 @@ static void update_sockets(UIState *s) {
     scene.controls_state = sm["controlsState"].getControlsState();
   }
   if (sm.updated("radarState")) {
-    auto data = sm["radarState"].getRadarState();
-    scene.lead_data[0] = data.getLeadOne();
-    scene.lead_data[1] = data.getLeadTwo();
+    auto radar_state = sm["radarState"].getRadarState();
+    const auto line = sm["modelV2"].getModelV2().getPosition();
+    update_lead(s, radar_state, line, 0);
+    update_lead(s, radar_state, line, 1);
   }
   if (sm.updated("liveCalibration")) {
     scene.world_objects_visible = true;
