@@ -135,10 +135,7 @@ void logger_build_init_data(MessageBuilder &msg) {
 }
 
 void log_init_data(LoggerState *s) {
-  MessageBuilder msg;
-  logger_build_init_data(msg);
-  auto bytes = msg.toBytes();
-  logger_log(s, bytes.begin(), bytes.size(), s->has_qlog);
+  logger_log(s, s->init_data.begin(), s->init_data.size(), s->has_qlog);
 }
 
 
@@ -159,6 +156,10 @@ void logger_init(LoggerState *s, const char* log_name, bool has_qlog) {
   umask(0);
 
   pthread_mutex_init(&s->lock, NULL);
+
+  MessageBuilder msg;
+  logger_build_init_data(msg);
+  s->init_data = msg.toBytes();
 
   s->part = -1;
   s->has_qlog = has_qlog;

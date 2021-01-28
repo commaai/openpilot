@@ -31,6 +31,7 @@ typedef struct LoggerHandle {
 
 typedef struct LoggerState {
   pthread_mutex_t lock;
+  kj::ArrayPtr<capnp::byte> init_data;
   int part;
   char route_name[64];
   char log_name[64];
