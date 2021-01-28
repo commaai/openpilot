@@ -95,7 +95,8 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
                        cropped_width, cropped_height);
   }
 
-  auto [resized_y_buf, resized_u_buf, resized_v_buf] = get_yuv_buf(s->resized_buf, resized_width, resized_height);
+  auto [resized_buf, resized_u_buf, resized_v_buf] = get_yuv_buf(s->resized_buf, resized_width, resized_height);
+  uint8_t *resized_y_buf = resized_buf;
   libyuv::FilterMode mode = libyuv::FilterModeEnum::kFilterBilinear;
   libyuv::I420Scale(cropped_y_buf, cropped_width,
                     cropped_u_buf, cropped_width/2,
@@ -107,36 +108,24 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
                     resized_width, resized_height,
                     mode);
 
-  // prerotate to be cache aware
-  auto [resized_buf_rot, resized_u_buf_rot, resized_v_buf_rot] = get_yuv_buf(s->resized_buf_rot, resized_width, resized_height);
-  uint8_t *resized_y_buf_rot = resized_buf_rot;
-  libyuv::I420Rotate(resized_y_buf, resized_width,
-                     resized_u_buf, resized_width/2,
-                     resized_v_buf, resized_width/2,
-                     resized_y_buf_rot, resized_height,
-                     resized_u_buf_rot, resized_height/2,
-                     resized_v_buf_rot, resized_height/2,
-                     // negative height causes a vertical flip to match previous
-                     resized_width, -resized_height, libyuv::kRotate90);
-
   int yuv_buf_len = (MODEL_WIDTH/2) * (MODEL_HEIGHT/2) * 6; // Y|u|v -> y|y|y|y|u|v
   float *net_input_buf = get_buffer(s->net_input_buf, yuv_buf_len);
   // one shot conversion, O(n) anyway
   // yuvframe2tensor, normalize
-  for (int c = 0; c < MODEL_WIDTH/2; c++) {
-    for (int r = 0; r < MODEL_HEIGHT/2; r++) {
+  for (int r = 0; r < MODEL_HEIGHT/2; r++) {
+    for (int c = 0; c < MODEL_WIDTH/2; c++) {
       // Y_ul
-      net_input_buf[(c*MODEL_HEIGHT/2) + r + (0*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = input_lambda(resized_buf_rot[(2*r) + (2*c)*resized_height]);
+      net_input_buf[(r*MODEL_WIDTH/2) + c + (0*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = input_lambda(resized_buf[(2*r)*resized_width + (2*c)]);
       // Y_dl
-      net_input_buf[(c*MODEL_HEIGHT/2) + r + (1*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = input_lambda(resized_buf_rot[(2*r+1) + (2*c)*resized_height]);
+      net_input_buf[(r*MODEL_WIDTH/2) + c + (1*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = input_lambda(resized_buf[(2*r+1)*resized_width + (2*c)]);
       // Y_ur
-      net_input_buf[(c*MODEL_HEIGHT/2) + r + (2*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = input_lambda(resized_buf_rot[(2*r) + (2*c+1)*resized_height]);
+      net_input_buf[(r*MODEL_WIDTH/2) + c + (2*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = input_lambda(resized_buf[(2*r)*resized_width + (2*c+1)]);
       // Y_dr
-      net_input_buf[(c*MODEL_HEIGHT/2) + r + (3*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = input_lambda(resized_buf_rot[(2*r+1) + (2*c+1)*resized_height]);
+      net_input_buf[(r*MODEL_WIDTH/2) + c + (3*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = input_lambda(resized_buf[(2*r+1)*resized_width + (2*c+1)]);
       // U
-      net_input_buf[(c*MODEL_HEIGHT/2) + r + (4*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = input_lambda(resized_buf_rot[(resized_width*resized_height) + r + (c*resized_height/2)]);
+      net_input_buf[(r*MODEL_WIDTH/2) + c + (4*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = input_lambda(resized_buf[(resized_width*resized_height) + r*resized_width/2 + c]);
       // V
-      net_input_buf[(c*MODEL_HEIGHT/2) + r + (5*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = input_lambda(resized_buf_rot[(resized_width*resized_height) + ((resized_width/2)*(resized_height/2)) + r + (c*resized_height/2)]);
+      net_input_buf[(r*MODEL_WIDTH/2) + c + (5*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = input_lambda(resized_buf[(resized_width*resized_height) + ((resized_width/2)*(resized_height/2)) + c + (r*resized_width/2)]);
     }
   }
 
@@ -168,6 +157,10 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
   memcpy(&ret.left_blink_prob, &s->output[31], sizeof ret.right_eye_prob);
   memcpy(&ret.right_blink_prob, &s->output[32], sizeof ret.right_eye_prob);
   memcpy(&ret.sg_prob, &s->output[33], sizeof ret.sg_prob);
+  memcpy(&ret.poor_vision, &s->output[34], sizeof ret.poor_vision);
+  memcpy(&ret.partial_face, &s->output[35], sizeof ret.partial_face);
+  memcpy(&ret.distracted_pose, &s->output[36], sizeof ret.distracted_pose);
+  memcpy(&ret.distracted_eyes, &s->output[37], sizeof ret.distracted_eyes);
   ret.face_orientation_meta[0] = softplus(ret.face_orientation_meta[0]);
   ret.face_orientation_meta[1] = softplus(ret.face_orientation_meta[1]);
   ret.face_orientation_meta[2] = softplus(ret.face_orientation_meta[2]);
@@ -195,6 +188,10 @@ void dmonitoring_publish(PubMaster &pm, uint32_t frame_id, const DMonitoringResu
   framed.setLeftBlinkProb(res.left_blink_prob);
   framed.setRightBlinkProb(res.right_blink_prob);
   framed.setSgProb(res.sg_prob);
+  framed.setPoorVision(res.poor_vision);
+  framed.setPartialFace(res.partial_face);
+  framed.setDistractedPose(res.distracted_pose);
+  framed.setDistractedEyes(res.distracted_eyes);
   if (send_raw_pred) {
     framed.setRawPred(raw_pred.asBytes());
   }
