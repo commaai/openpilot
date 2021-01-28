@@ -13,7 +13,7 @@ from selfdrive.hardware import EON, TICI
 
 TEST_TIMESPAN = 30 # random.randint(60, 180) # seconds
 SKIP_FRAME_TOLERANCE = 0
-FRAME_COUNT_TOLERANCE = 0 # over the whole test time
+LAG_FRAME_TOLERANCE = 1 # ms
 
 FPS_BASELINE = 20
 CAMERAS = {
@@ -103,25 +103,28 @@ class TestCamerad(unittest.TestCase):
     sm = messaging.SubMaster([socket_name for socket_name in CAMERAS])
 
     last_frame_id = dict.fromkeys(CAMERAS, None)
-    start_frame_id = dict.fromkeys(CAMERAS, None)
-    start_time_milli = int(round(time.time() * 1000))
-    while int(round(time.time() * 1000)) - start_time_milli < (TEST_TIMESPAN+1) * 1000:
+    last_ts = dict.fromkeys(CAMERAS, None)
+    start_time_sec = time.time()
+    while time.time()- start_time_sec < TEST_TIMESPAN:
       sm.update()
 
       for camera in CAMERAS:
         if sm.updated[camera]:
-          if start_frame_id[camera] is None:
-            start_frame_id[camera] = last_frame_id[camera] = sm[camera].frameId
+          if last_frame_id[camera] is None:
+            last_frame_id[camera] = sm[camera].frameId
+            last_ts[camera] = sm[camera].timestampEof / 1e6
             continue
+
           dfid = sm[camera].frameId - last_frame_id[camera]
-          self.assertTrue(abs(dfid - 1) <= SKIP_FRAME_TOLERANCE)
+          self.assertTrue(abs(dfid - 1) <= SKIP_FRAME_TOLERANCE, "%s frame id diff is %d" % (camera, dfid))
+
+          dts = sm[camera].timestampEof / 1e6 - last_ts[camera]
+          self.assertTrue(abs(dts - (1000/CAMERAS[camera])) < LAG_FRAME_TOLERANCE, "%s frame t(ms) diff is %f" % (camera, dts))
+
           last_frame_id[camera] = sm[camera].frameId
+          last_ts[camera] = sm[camera].timestampEof / 1e6
 
       time.sleep(0.01)
-
-    for camera in CAMERAS:
-      print(camera, (last_frame_id[camera] - start_frame_id[camera]))
-      self.assertTrue(abs((last_frame_id[camera] - start_frame_id[camera]) - TEST_TIMESPAN*CAMERAS[camera]) <= FRAME_COUNT_TOLERANCE)
 
 if __name__ == "__main__":
   unittest.main()
