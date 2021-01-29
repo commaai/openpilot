@@ -21,3 +21,4 @@ phonelibs/fastcv/aarch64/libfastcvopt.so filter=lfs diff=lfs merge=lfs -text
 phonelibs/fastcv/aarch64/libfastcvadsp_stub.so filter=lfs diff=lfs merge=lfs -text
 models/segnet2.keras filter=lfs diff=lfs merge=lfs -text
 phonelibs/zmq/aarch64-linux/lib/libzmq.a filter=lfs diff=lfs merge=lfs -text
+*.jpg filter=lfs diff=lfs merge=lfs -text
