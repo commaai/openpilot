@@ -117,10 +117,9 @@ QString WifiManager::get_ipv4_address(){
       const QDBusArgument &arr = get_response<QDBusArgument>(nm2.call("Get", ipv4config_iface, "AddressData"));
       QMap<QString, QVariant> pth2;
       arr.beginArray();
-      QString ipv4;
       while (!arr.atEnd()){
         arr >> pth2;
-        ipv4 = pth2.value("address").value<QString>();
+        QString ipv4 = pth2.value("address").value<QString>();
         arr.endArray();
         return ipv4;  
       }
