@@ -136,9 +136,6 @@ OnboardingWindow::OnboardingWindow(QWidget *parent) : QStackedWidget(parent) {
       background-color: #292929;
     }
   )");
-
-  // TODO: remove this after training guide is done
-  // Params().write_db_value("CompletedTrainingVersion", LATEST_TRAINING_VERSION);
-
+  
   updateActiveScreen();
 }
