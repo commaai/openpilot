@@ -90,7 +90,7 @@ QWidget* OnboardingWindow::terms_screen() {
   QPushButton *accept_btn = new QPushButton("Accept");
   main_layout->addWidget(accept_btn, 2, 1);
   QObject::connect(accept_btn, &QPushButton::released, [=]() {
-    Params().write_db_value("HasAcceptedTerms", LATEST_TERMS_VERSION);
+    Params().write_db_value("HasAcceptedTerms", current_terms_version.toStdString());
     updateActiveScreen();
   });
 
@@ -111,11 +111,10 @@ QWidget* OnboardingWindow::terms_screen() {
 }
 
 void OnboardingWindow::updateActiveScreen() {
-
   Params params = Params();
-  bool accepted_terms = params.get("HasAcceptedTerms", false).compare(LATEST_TERMS_VERSION) == 0;
-  bool training_done = params.get("CompletedTrainingVersion", false).compare(LATEST_TRAINING_VERSION) == 0;
-
+   
+  bool accepted_terms = params.get("HasAcceptedTerms", false).compare(current_terms_version.toStdString()) == 0;
+  bool training_done = params.get("CompletedTrainingVersion", false).compare(current_training_version.toStdString()) == 0;
   if (!accepted_terms) {
     setCurrentIndex(0);
   } else if (!training_done) {
@@ -126,9 +125,12 @@ void OnboardingWindow::updateActiveScreen() {
 }
 
 OnboardingWindow::OnboardingWindow(QWidget *parent) : QStackedWidget(parent) {
+  Params params = Params();
+  current_terms_version = QString::fromStdString(params.get("TermsVersion", false));
+  current_training_version = QString::fromStdString(params.get("TrainingVersion", false));
   addWidget(terms_screen());
   TrainingGuide* tr = new TrainingGuide(this);
-  connect(tr, &TrainingGuide::completedTraining, [=](){Params().write_db_value("CompletedTrainingVersion", LATEST_TRAINING_VERSION); updateActiveScreen();});
+  connect(tr, &TrainingGuide::completedTraining, [=](){Params().write_db_value("CompletedTrainingVersion", current_training_version.toStdString()); updateActiveScreen();});
   addWidget(tr);
 
   setStyleSheet(R"(

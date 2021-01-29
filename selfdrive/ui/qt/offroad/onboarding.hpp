@@ -5,9 +5,6 @@
 #include <QStackedLayout>
 #include <QMouseEvent>
 
-// TODO: this is defined in python too
-#define LATEST_TERMS_VERSION "2"
-#define LATEST_TRAINING_VERSION "0.3.0"
 
 class TrainingGuide : public QWidget {
   Q_OBJECT
@@ -36,6 +33,8 @@ public:
   explicit OnboardingWindow(QWidget *parent = 0);
 
 private:
+  QString current_terms_version;
+  QString current_training_version;
   QWidget * terms_screen();
   QWidget * training_screen();
 
