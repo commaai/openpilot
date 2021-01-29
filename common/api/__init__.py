@@ -30,7 +30,7 @@ class Api():
     token = jwt.encode(payload, self.private_key, algorithm='RS256')
     if isinstance(token, str):
       return token
-    else if(isinstance(token, bytes)):
+    elif isinstance(token, bytes):
       return token.decode('utf8')
     
 
