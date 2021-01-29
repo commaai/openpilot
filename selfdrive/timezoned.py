@@ -21,7 +21,17 @@ def main():
   # Get allowed timezones
   valid_timezones = subprocess.check_output('timedatectl list-timezones', shell=True, encoding='utf8').strip().split('\n')
 
+  i = 0
   while True:
+    # Run on startup, after that once a minute
+    if i > 0:
+      time.sleep(60)
+    i += 1
+
+    is_onroad = params.get("IsOffroad") != b"1"
+    if is_onroad:
+      continue
+
     location = params.get("LastGPSPosition", encoding='utf8')
 
     if location is not None:
@@ -46,7 +56,6 @@ def main():
       except subprocess.CalledProcessError:
         cloudlog.exception(f"Error setting timezone to {timezone}")
 
-    time.sleep(60)
 
 if __name__ == "__main__":
   main()
