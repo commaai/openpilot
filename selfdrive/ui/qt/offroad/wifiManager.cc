@@ -106,24 +106,26 @@ QString WifiManager::get_ipv4_address(){
   QVector<QDBusObjectPath> conns = get_active_connections();
   for (auto &p : conns){
     QString active_connection = p.path();
-    qDebug()<<active_connection;
     QDBusInterface nm(nm_service, active_connection, props_iface, bus);
     QDBusObjectPath pth = get_response<QDBusObjectPath>(nm.call("Get", connection_iface, "Ip4Config"));
     QString ip4config = pth.path();
 
-    QDBusInterface nm2(nm_service, ip4config, props_iface, bus);
-    const QDBusArgument &arr = get_response<QDBusArgument>(nm2.call("Get", ipv4config_iface, "AddressData"));
-    QMap<QString, QVariant> pth2;
-    arr.beginArray();
-    QString ipv4;
-    while (!arr.atEnd()){
-      arr >> pth2;
-      ipv4 = pth2.value("address").value<QString>();
+    QString type = get_response<QString>(nm.call("Get", connection_iface, "Type"));
+
+    if (type == "802-11-wireless") {
+      QDBusInterface nm2(nm_service, ip4config, props_iface, bus);
+      const QDBusArgument &arr = get_response<QDBusArgument>(nm2.call("Get", ipv4config_iface, "AddressData"));
+      QMap<QString, QVariant> pth2;
+      arr.beginArray();
+      QString ipv4;
+      while (!arr.atEnd()){
+        arr >> pth2;
+        ipv4 = pth2.value("address").value<QString>();
+        arr.endArray();
+        return ipv4;  
+      }
       arr.endArray();
-      qDebug()<<ipv4;
     }
-    arr.endArray();
-    return ipv4;
   }
   return "";
 }
