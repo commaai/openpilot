@@ -5,14 +5,15 @@ import subprocess
 from common.params import Params
 from selfdrive.swaglog import cloudlog
 
-from selfdrive.hardware import TICI, HARDWARE
+from selfdrive.hardware import TICI
+
+if TICI:
+  from timezonefinder import TimezoneFinder # pylint: disable=import-error
 
 
 def main():
   if not TICI:
     return
-
-  from timezonefinder import TimezoneFinder
 
   params = Params()
   tf = TimezoneFinder()
@@ -22,10 +23,11 @@ def main():
 
   while True:
     location = params.get("LastGPSPosition", encoding='utf8')
+
     if location is not None:
       try:
         location = json.loads(location)
-      except json.JSONDecodeError:
+      except Exception:
         cloudlog.exception("Error parsing location")
         continue
 
@@ -43,7 +45,6 @@ def main():
         subprocess.check_call(f'sudo timedatectl set-timezone {timezone}', shell=True)
       except subprocess.CalledProcessError:
         cloudlog.exception(f"Error setting timezone to {timezone}")
-
 
     time.sleep(60)
 
