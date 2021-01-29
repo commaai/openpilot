@@ -30,20 +30,20 @@ QWidget* layout2Widget(QLayout* l){
 
 
 void TrainingGuide::mouseReleaseEvent(QMouseEvent *e) {
-  // Uncomment to help with tuning the bounding boxes
-  // qDebug()<<"Got event at index"<<currentIndex;
-  // qDebug()<<"Got coords at "<<e->x()<<e->y();
+  int leftOffset = (geometry().width()-1620)/2;
+  int mousex = e->x()-leftOffset;
+  int mousey = e->y();
 
   // Check for restart
   if (currentIndex == numberOfFrames-1) {
-    if (1320 <= e->x() && e->x() <= 1740 && 773 <= e->y() && e->y() <= 954){
+    if (1050 <= mousex && mousex <= 1500 && 773 <= mousey && mousey <= 954){
       slayout->setCurrentIndex(0);
       currentIndex = 0;
       return;
     }
   }
 
-  if (boundingBox[currentIndex][0] <= e->x() && e->x() <= boundingBox[currentIndex][1] && boundingBox[currentIndex][2] <= e->y() && e->y() <= boundingBox[currentIndex][3]) {
+  if (boundingBox[currentIndex][0] <= mousex && mousex <= boundingBox[currentIndex][1] && boundingBox[currentIndex][2] <= mousey && mousey <= boundingBox[currentIndex][3]) {
     slayout->setCurrentIndex(++currentIndex);
   }
   if (currentIndex >= numberOfFrames) {
@@ -63,7 +63,8 @@ TrainingGuide::TrainingGuide(QWidget* parent) {
     slayout->addWidget(w);
   }
 
-  hlayout->addWidget(layout2Widget(slayout), 1, Qt::AlignCenter);
+  QWidget* sw = layout2Widget(slayout);
+  hlayout->addWidget(sw, 1, Qt::AlignCenter);
   setLayout(hlayout);
 }
 
