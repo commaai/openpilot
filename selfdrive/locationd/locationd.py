@@ -330,7 +330,7 @@ def locationd_thread(sm, pm, disabled_logs=None):
       msg.liveLocationKalman.gpsOK = gps_age < 1.0
       pm.send('liveLocationKalman', msg)
 
-      if sm.frame % 1200 == 0:  # once a minute
+      if sm.frame % 1200 == 0 and msg.liveLocationKalman.gpsOK:  # once a minute
         location = {
           'latitude': msg.liveLocationKalman.positionGeodetic.value[0],
           'longitude': msg.liveLocationKalman.positionGeodetic.value[1],
