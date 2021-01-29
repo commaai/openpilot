@@ -4,9 +4,14 @@
 #include <QGridLayout>
 #include <QVBoxLayout>
 #include <QDebug>
+#include <QGuiApplication>
+#include <QScreen>
+#include <QApplication>
+#include <QDesktopWidget>
 
 #include "onboarding.hpp"
 #include "common/params.h"
+#include "home.hpp"
 
 
 QLabel * title_label(QString text) {
@@ -28,7 +33,7 @@ void TrainingGuide::mouseReleaseEvent(QMouseEvent *e) {
   // Uncomment to help with tuning the bounding boxes
   // qDebug()<<"Got event at index"<<currentIndex;
   // qDebug()<<"Got coords at "<<e->x()<<e->y();
-  
+
   // Check for restart
   if (currentIndex == numberOfFrames-1) {
     if (1320 <= e->x() && e->x() <= 1740 && 773 <= e->y() && e->y() <= 954){
@@ -49,16 +54,16 @@ void TrainingGuide::mouseReleaseEvent(QMouseEvent *e) {
 
 TrainingGuide::TrainingGuide(QWidget* parent) {
   QHBoxLayout* hlayout = new QHBoxLayout;
-  hlayout->addSpacing(270); // 2160*1080 -> 1620*1080
+
   slayout = new QStackedLayout(this);
   for (int i = 0; i <= 14; i++) {
     QWidget* w = new QWidget;
     w->setStyleSheet(".QWidget {background-image: url(../assets/training/step" + QString::number(i) + ".jpg);}");
+    w->setFixedSize(1620, 1080);
     slayout->addWidget(w);
   }
 
-  hlayout->addWidget(layout2Widget(slayout));
-  hlayout->addSpacing(270);
+  hlayout->addWidget(layout2Widget(slayout), 1, Qt::AlignCenter);
   setLayout(hlayout);
 }
 
@@ -136,6 +141,6 @@ OnboardingWindow::OnboardingWindow(QWidget *parent) : QStackedWidget(parent) {
       background-color: #292929;
     }
   )");
-  
+
   updateActiveScreen();
 }
