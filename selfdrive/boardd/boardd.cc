@@ -62,6 +62,12 @@ bool time_valid(struct tm sys_time){
 
 void safety_setter_thread() {
   LOGD("Starting safety setter thread");
+  Params params = Params();
+  int result = params.delete_db_value("CarVin");
+  assert((result == 0) || (result == ERR_NO_VALUE));
+  result = params.delete_db_value("CarParams");
+  assert((result == 0) || (result == ERR_NO_VALUE));
+
   // diagnostic only is the default, needed for VIN query
   panda->set_safety_model(cereal::CarParams::SafetyModel::ELM327);
 
@@ -72,7 +78,7 @@ void safety_setter_thread() {
       return;
     };
 
-    std::vector<char> value_vin = Params().read_db_bytes("CarVin");
+    std::vector<char> value_vin = params.read_db_bytes("CarVin");
     if (value_vin.size() > 0) {
       // sanity check VIN format
       assert(value_vin.size() == 17);
@@ -86,7 +92,7 @@ void safety_setter_thread() {
   // VIN query done, stop listening to OBDII
   panda->set_safety_model(cereal::CarParams::SafetyModel::NO_OUTPUT);
 
-  std::vector<char> params;
+  std::vector<char> car_params;
   LOGW("waiting for params to set safety model");
   while (true) {
     if (do_exit || !panda->connected){
@@ -94,23 +100,23 @@ void safety_setter_thread() {
       return;
     };
 
-    params = Params().read_db_bytes("CarParams");
-    if (params.size() > 0) break;
+    car_params = params.read_db_bytes("CarParams");
+    if (car_params.size() > 0) break;
     util::sleep_for(100);
   }
-  LOGW("got %d bytes CarParams", params.size());
+  LOGW("got %d bytes CarParams", car_params.size());
 
   // format for board, make copy due to alignment issues, will be freed on out of scope
-  auto amsg = kj::heapArray<capnp::word>((params.size() / sizeof(capnp::word)) + 1);
-  memcpy(amsg.begin(), params.data(), params.size());
+  auto amsg = kj::heapArray<capnp::word>((car_params.size() / sizeof(capnp::word)) + 1);
+  memcpy(amsg.begin(), car_params.data(), car_params.size());
 
   capnp::FlatArrayMessageReader cmsg(amsg);
-  cereal::CarParams::Reader car_params = cmsg.getRoot<cereal::CarParams>();
-  cereal::CarParams::SafetyModel safety_model = car_params.getSafetyModel();
+  cereal::CarParams::Reader reader = cmsg.getRoot<cereal::CarParams>();
+  cereal::CarParams::SafetyModel safety_model = reader.getSafetyModel();
 
   panda->set_unsafe_mode(0);  // see safety_declarations.h for allowed values
 
-  auto safety_param = car_params.getSafetyParam();
+  auto safety_param = reader.getSafetyParam();
   LOGW("setting safety model: %d with param %d", (int)safety_model, safety_param);
 
   panda->set_safety_model(safety_model, safety_param);
@@ -267,7 +273,6 @@ void can_health_thread() {
 
   uint32_t no_ignition_cnt = 0;
   bool ignition_last = false;
-  Params params = Params();
 
   // Broadcast empty health message when panda is not yet connected
   while (!do_exit && !panda) {
@@ -314,11 +319,6 @@ void can_health_thread() {
 
     // clear VIN, CarParams, and set new safety on car start
     if (ignition && !ignition_last) {
-      int result = params.delete_db_value("CarVin");
-      assert((result == 0) || (result == ERR_NO_VALUE));
-      result = params.delete_db_value("CarParams");
-      assert((result == 0) || (result == ERR_NO_VALUE));
-
       if (!safety_setter_thread_running) {
         safety_setter_thread_running = true;
         std::thread(safety_setter_thread).detach();
