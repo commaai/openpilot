@@ -15,18 +15,26 @@ const std::string LOG_ROOT = util::getenv_default("HOME", "/.comma/media/0/reald
 
 #define LOGGER_MAX_HANDLES 16
 
+class BZFile {
+ public:
+  BZFile(const char *path);
+  ~BZFile();
+  void write(void* data, size_t size);
+  inline void write(kj::ArrayPtr<capnp::byte> array) { write(array.begin(), array.size()); }
+
+ private:
+  FILE* file = nullptr;
+  BZFILE* bz_file = nullptr;
+};
+
 typedef struct LoggerHandle {
   pthread_mutex_t lock;
   int refcnt;
   char segment_path[4096];
   char log_path[4096];
-  char lock_path[4096];
-  FILE* log_file;
-  BZFILE* bz_file;
-
-  FILE* qlog_file;
   char qlog_path[4096];
-  BZFILE* bz_qlog;
+  char lock_path[4096];
+  std::unique_ptr<BZFile> log, q_log;
 } LoggerHandle;
 
 typedef struct LoggerState {
