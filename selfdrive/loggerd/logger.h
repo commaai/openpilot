@@ -37,7 +37,6 @@ class BZFile {
       LOGE("BZ2_bzWrite error, bzerror=%d", bzerror);
       log_err = false;
     }
-    assert(bzerror == BZ_OK);
   }
   inline void write(kj::ArrayPtr<capnp::byte> array) { write(array.begin(), array.size()); }
 
