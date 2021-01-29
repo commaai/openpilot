@@ -17,9 +17,22 @@ const std::string LOG_ROOT = util::getenv_default("HOME", "/.comma/media/0/reald
 
 class BZFile {
  public:
-  BZFile(const char *path);
-  ~BZFile();
-  void write(void* data, size_t size);
+  BZFile(const char* path) {
+    assert(file = fopen(path, "wb"));
+    int bzerror;
+    bz_file = BZ2_bzWriteOpen(&bzerror, file, 9, 0, 30);
+    assert(bzerror == BZ_OK);
+  }
+  ~BZFile() {
+    int bzerror;
+    BZ2_bzWriteClose(&bzerror, bz_file, 0, nullptr, nullptr);
+    fclose(file);
+  }
+  inline void write(void* data, size_t size) {
+    int bzerror;
+    BZ2_bzWrite(&bzerror, bz_file, data, size);
+    assert(bzerror == BZ_OK);
+  }
   inline void write(kj::ArrayPtr<capnp::byte> array) { write(array.begin(), array.size()); }
 
  private:

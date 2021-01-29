@@ -299,25 +299,3 @@ void lh_close(LoggerHandle* h) {
   }
   pthread_mutex_unlock(&h->lock);
 }
-
-// BZFile
-
-BZFile::BZFile(const char *path) {
-  file = fopen(path, "wb");
-  assert(file != nullptr);
-  int bzerror;
-  bz_file = BZ2_bzWriteOpen(&bzerror, file, 9, 0, 30);
-  assert(bzerror == BZ_OK);
-}
-
-BZFile::~BZFile() {
-  int bzerror;
-  BZ2_bzWriteClose(&bzerror, bz_file, 0, nullptr, nullptr);
-  fclose(file);
-}
-
-void BZFile::write(void* data, size_t size) {
-  int bzerror;
-  BZ2_bzWrite(&bzerror, bz_file, data, size);
-  assert(bzerror == BZ_OK);
-}
