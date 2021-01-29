@@ -4,6 +4,7 @@
 *.pb filter=lfs diff=lfs merge=lfs -text
 *.bin filter=lfs diff=lfs merge=lfs -text
 *.apk filter=lfs diff=lfs merge=lfs -text
+*.jpg filter=lfs diff=lfs merge=lfs -text
 *.ipynb filter=nbstripout -diff
 external/ffmpeg/bin/ffmpeg_cuda filter=lfs diff=lfs merge=lfs -text
 models/segnet.keras filter=lfs diff=lfs merge=lfs -text
@@ -41,7 +42,6 @@ third_party/catch2/include/catch2/catch.hpp filter=lfs diff=lfs merge=lfs -text
 *.apkpatch filter=lfs diff=lfs merge=lfs -text
 *.jar filter=lfs diff=lfs merge=lfs -text
 *.pdf filter=lfs diff=lfs merge=lfs -text
-*.jpg filter=lfs diff=lfs merge=lfs -text
 *.mp3 filter=lfs diff=lfs merge=lfs -text
 *.thneed filter=lfs diff=lfs merge=lfs -text
 *.tar.gz filter=lfs diff=lfs merge=lfs -text
