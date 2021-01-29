@@ -96,7 +96,7 @@ SSH::SSH(QWidget* parent) : QWidget(parent){
   initialStateConnected->addTransition(actionButton, &QPushButton::released, removeSSH_State);
 
   state->addState(removeSSH_State);
-  connect(removeSSH_State, &QState::entered, [=](){Params().delete_db_value("GithubSshKeys");});
+  connect(removeSSH_State, &QState::entered, [=]() { Params().delete_value("GithubSshKeys"); });
   removeSSH_State->addTransition(removeSSH_State, &QState::entered, initialState);
 
   state->addState(initialStateNoGithub);
@@ -150,7 +150,7 @@ void SSH::parseResponse(){
     networkTimer->stop();
     QString response = reply->readAll();
     if (reply->error() == QNetworkReply::NoError && response.length()) {
-      Params().write_db_value("GithubSshKeys", response.toStdString());
+      Params().put("GithubSshKeys", response.toStdString());
       emit gotSSHKeys();
     } else if(reply->error() == QNetworkReply::NoError){
       emit failedResponse("Username " + usernameGitHub + " has no keys on GitHub");
