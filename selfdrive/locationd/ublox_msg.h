@@ -105,6 +105,20 @@ typedef struct __attribute__((packed)) {
   uint32_t pullL;
 } mon_hw_msg;
 
+// MON_HW2
+typedef struct __attribute__((packed)) {
+  int8_t ofsI;
+  uint8_t magI;
+  int8_t ofsQ;
+  uint8_t magQ;
+  uint8_t cfgSource;
+  uint8_t reserved1[3];
+  uint32_t lowLevCfg;
+  uint8_t reserved2[8];
+  uint32_t postStatus;
+  uint8_t reserved3[4];
+} mon_hw2_msg;
+
 namespace ublox {
   // protocol constants
   const uint8_t PREAMBLE1 = 0xb5;
@@ -124,6 +138,7 @@ namespace ublox {
 
   // MON messages
   const uint8_t MSG_MON_HW = 0x09;
+  const uint8_t MSG_MON_HW2 = 0x0B;
 
   const int UBLOX_HEADER_SIZE = 6;
   const int UBLOX_CHECKSUM_SIZE = 2;
@@ -138,6 +153,7 @@ namespace ublox {
       kj::Array<capnp::word> gen_solution();
       kj::Array<capnp::word> gen_raw();
       kj::Array<capnp::word> gen_mon_hw();
+      kj::Array<capnp::word> gen_mon_hw2();
 
       kj::Array<capnp::word> gen_nav_data();
       bool add_data(const uint8_t *incoming_data, uint32_t incoming_data_len, size_t &bytes_consumed);
