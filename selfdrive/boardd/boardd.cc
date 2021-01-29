@@ -134,8 +134,8 @@ bool usb_connect() {
     tmp_panda->set_loopback(true);
   }
 
-  if (auto fw_sig = tmp_panda->get_firmware_version(); fw_sig) {
-    params.write_db_value("PandaFirmware", (const char *)fw_sig->data(), fw_sig->size());
+  if (auto fw_sig = panda->get_firmware_version(); fw_sig) {
+    params.put("PandaFirmware", (const char *)fw_sig->data(), fw_sig->size());
 
     // Convert to hex for offroad
     char fw_sig_hex_buf[16] = {0};
@@ -150,8 +150,8 @@ bool usb_connect() {
   } else { return false; }
 
   // get panda serial
-  if (auto serial = tmp_panda->get_serial(); serial) {
-    params.write_db_value("PandaDongleId", serial->c_str(), serial->length());
+  if (auto serial = panda->get_serial(); serial) {
+    params.put("PandaDongleId", serial->c_str(), serial->length());
     LOGW("panda serial: %s", serial->c_str());
   } else { return false; }
 
