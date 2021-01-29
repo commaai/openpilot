@@ -1,12 +1,6 @@
 #include <assert.h>
 #include <string>
-#include <cstdio>
-
-#include <bzlib.h>
-
 #include "common/swaglog.h"
-#include "common/util.h"
-#include "messaging.hpp"
 #include "logger.h"
 
 int main(int argc, char** argv) {

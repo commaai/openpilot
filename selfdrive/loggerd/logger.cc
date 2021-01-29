@@ -9,8 +9,6 @@
 #include <unistd.h>
 #include <sys/stat.h>
 
-#include <pthread.h>
-#include <bzlib.h>
 #include <iostream>
 #include <fstream>
 #include <streambuf>
@@ -20,7 +18,6 @@
 
 #include "common/swaglog.h"
 #include "common/params.h"
-#include "common/util.h"
 #include "common/version.h"
 #include "messaging.hpp"
 #include "logger.h"
