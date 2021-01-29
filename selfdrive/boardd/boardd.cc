@@ -466,7 +466,7 @@ static void pigeon_publish_raw(PubMaster &pm, const std::string &dat) {
 }
 
 void pigeon_thread() {
-  if (!panda->is_pigeon){ return; };
+  if (!panda->is_pigeon) { return; };
 
   // ubloxRaw = 8042
   PubMaster pm({"ubloxRaw"});
