@@ -106,6 +106,7 @@ QString WifiManager::get_ipv4_address(){
   QVector<QDBusObjectPath> conns = get_active_connections();
   for (auto &p : conns){
     QString active_connection = p.path();
+    qDebug()<<active_connection;
     QDBusInterface nm(nm_service, active_connection, props_iface, bus);
     QDBusObjectPath pth = get_response<QDBusObjectPath>(nm.call("Get", connection_iface, "Ip4Config"));
     QString ip4config = pth.path();
@@ -114,13 +115,15 @@ QString WifiManager::get_ipv4_address(){
     const QDBusArgument &arr = get_response<QDBusArgument>(nm2.call("Get", ipv4config_iface, "AddressData"));
     QMap<QString, QVariant> pth2;
     arr.beginArray();
+    QString ipv4;
     while (!arr.atEnd()){
       arr >> pth2;
-      QString ipv4 = pth2.value("address").value<QString>();
+      ipv4 = pth2.value("address").value<QString>();
       arr.endArray();
-      return ipv4;
+      qDebug()<<ipv4;
     }
     arr.endArray();
+    return ipv4;
   }
   return "";
 }
