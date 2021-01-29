@@ -14,9 +14,9 @@ public:
 
 protected:
   void mouseReleaseEvent(QMouseEvent* e) override;
+
 private:
   int currentIndex = 0;
-  const int numberOfFrames = 15;
   QStackedLayout* slayout;
   //Vector of bounding boxes for the next step. (minx, maxx, miny, maxy)
   QVector<QVector<int>> boundingBox {{250, 930, 750, 900}, {280, 1280, 650, 950}, {330, 1130, 590, 900}, {910, 1580, 500, 1000}, {1180, 1300, 630, 720}, {290, 1050, 590, 960}, 
@@ -33,8 +33,8 @@ public:
   explicit OnboardingWindow(QWidget *parent = 0);
 
 private:
-  QString current_terms_version;
-  QString current_training_version;
+  std::string current_terms_version;
+  std::string current_training_version;
   QWidget * terms_screen();
   QWidget * training_screen();
 
