@@ -28,11 +28,20 @@ void TrainingGuide::mouseReleaseEvent(QMouseEvent *e) {
   // Uncomment to help with tuning the bounding boxes
   // qDebug()<<"Got event at index"<<currentIndex;
   // qDebug()<<"Got coords at "<<e->x()<<e->y();
+  
+  // Check for restart
+  if (currentIndex == numberOfFrames-1) {
+    if (1320 <= e->x() && e->x() <= 1740 && 773 <= e->y() && e->y() <= 954){
+      slayout->setCurrentIndex(0);
+      currentIndex = 0;
+      return;
+    }
+  }
 
-  if(boundingBox[currentIndex][0] <= e->x() && e->x() <= boundingBox[currentIndex][1] && boundingBox[currentIndex][2] <= e->y() && e->y() <= boundingBox[currentIndex][3] ){
+  if (boundingBox[currentIndex][0] <= e->x() && e->x() <= boundingBox[currentIndex][1] && boundingBox[currentIndex][2] <= e->y() && e->y() <= boundingBox[currentIndex][3]) {
     slayout->setCurrentIndex(++currentIndex);
   }
-  if (currentIndex >= numberOfFrames){
+  if (currentIndex >= numberOfFrames) {
     emit completedTraining();
     return;
   }
@@ -44,7 +53,7 @@ TrainingGuide::TrainingGuide(QWidget* parent) {
   slayout = new QStackedLayout(this);
   for (int i = 0; i <= 14; i++) {
     QWidget* w = new QWidget;
-    w->setStyleSheet(".QWidget {background-image: url(../assets/training/step" + QString::number(i) + ".png); background-color: rgba(255, 255, 255, 10);}");
+    w->setStyleSheet(".QWidget {background-image: url(../assets/training/step" + QString::number(i) + ".jpg);}");
     slayout->addWidget(w);
   }
 
