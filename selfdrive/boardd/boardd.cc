@@ -120,9 +120,10 @@ void safety_setter_thread() {
 
 
 bool usb_connect() {
+  std::unique_ptr<Panda> tmp_panda;
   try {
     assert(panda == NULL);
-    panda = new Panda();
+    tmp_panda = std::make_unique<Panda>();
   } catch (std::exception &e) {
     return false;
   }
@@ -130,10 +131,10 @@ bool usb_connect() {
   Params params = Params();
 
   if (getenv("BOARDD_LOOPBACK")) {
-    panda->set_loopback(true);
+    tmp_panda->set_loopback(true);
   }
 
-  if (auto fw_sig = panda->get_firmware_version(); fw_sig) {
+  if (auto fw_sig = tmp_panda->get_firmware_version(); fw_sig) {
     params.write_db_value("PandaFirmware", (const char *)fw_sig->data(), fw_sig->size());
 
     // Convert to hex for offroad
@@ -149,7 +150,7 @@ bool usb_connect() {
   } else { return false; }
 
   // get panda serial
-  if (auto serial = panda->get_serial(); serial) {
+  if (auto serial = tmp_panda->get_serial(); serial) {
     params.write_db_value("PandaDongleId", serial->c_str(), serial->length());
     LOGW("panda serial: %s", serial->c_str());
   } else { return false; }
@@ -157,13 +158,13 @@ bool usb_connect() {
   // power on charging, only the first time. Panda can also change mode and it causes a brief disconneciton
 #ifndef __x86_64__
   if (!connected_once) {
-    panda->set_usb_power_mode(cereal::HealthData::UsbPowerMode::CDP);
+    tmp_panda->set_usb_power_mode(cereal::HealthData::UsbPowerMode::CDP);
   }
 #endif
 
-  if (panda->has_rtc){
+  if (tmp_panda->has_rtc){
     struct tm sys_time = get_time();
-    struct tm rtc_time = panda->get_rtc();
+    struct tm rtc_time = tmp_panda->get_rtc();
 
     if (!time_valid(sys_time) && time_valid(rtc_time)) {
       LOGE("System time wrong, setting from RTC");
@@ -175,6 +176,7 @@ bool usb_connect() {
   }
 
   connected_once = true;
+  panda = tmp_panda.release();
   return true;
 }
 
