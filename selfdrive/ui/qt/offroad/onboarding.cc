@@ -60,6 +60,9 @@ TrainingGuide::TrainingGuide(QWidget* parent) {
   QWidget* sw = layout2Widget(slayout);
   hlayout->addWidget(sw, 1, Qt::AlignCenter);
   setLayout(hlayout);
+  setStyleSheet(R"(
+    background-color: #072339;
+  )");
 }
 
 
