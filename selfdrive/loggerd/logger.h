@@ -33,11 +33,16 @@ class BZFile {
   inline void write(void* data, size_t size) {
     int bzerror;
     BZ2_bzWrite(&bzerror, bz_file, data, size);
+    if (bzerror != BZ_OK && log_err) {
+      LOGE("BZ2_bzWrite error, bzerror=%d", bzerror);
+      log_err = false;
+    }
     assert(bzerror == BZ_OK);
   }
   inline void write(kj::ArrayPtr<capnp::byte> array) { write(array.begin(), array.size()); }
 
  private:
+  bool log_err = true;
   FILE* file = nullptr;
   BZFILE* bz_file = nullptr;
 };
