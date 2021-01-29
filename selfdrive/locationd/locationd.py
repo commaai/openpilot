@@ -336,7 +336,7 @@ def locationd_thread(sm, pm, disabled_logs=None):
           'longitude': msg.liveLocationKalman.positionGeodetic.value[1],
           'altitude': msg.liveLocationKalman.positionGeodetic.value[2],
         }
-        params.put("LastGPSLocation", json.dumps(location))
+        params.put("LastGPSPosition", json.dumps(location))
 
 
 def main(sm=None, pm=None):
