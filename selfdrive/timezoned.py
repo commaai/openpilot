@@ -22,6 +22,8 @@ def main():
   # Get allowed timezones
   valid_timezones = subprocess.check_output('timedatectl list-timezones', shell=True, encoding='utf8').strip().split('\n')
 
+  time.sleep(1) # Wait for themald to set IsOffroad
+
   for i in itertools.count():
     # Run on startup, after that once a minute
     if i > 0:
