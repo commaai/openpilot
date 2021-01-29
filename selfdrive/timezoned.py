@@ -35,7 +35,7 @@ def main():
         continue
 
       if timezone not in valid_timezones:
-        cloudlog.erro(f"Timezone not supported {timezone}")
+        cloudlog.error(f"Timezone not supported {timezone}")
         continue
 
       cloudlog.info(f"Setting timezone to {timezone}")
