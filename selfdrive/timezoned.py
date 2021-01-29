@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import time
 import json
-import itertools
 import subprocess
 from common.params import Params
 from selfdrive.swaglog import cloudlog
@@ -22,12 +21,8 @@ def main():
   # Get allowed timezones
   valid_timezones = subprocess.check_output('timedatectl list-timezones', shell=True, encoding='utf8').strip().split('\n')
 
-  time.sleep(1) # Wait for themald to set IsOffroad
-
-  for i in itertools.count():
-    # Run on startup, after that once a minute
-    if i > 0:
-      time.sleep(60)
+  while True:
+    time.sleep(60)
 
     is_onroad = params.get("IsOffroad") != b"1"
     if is_onroad:
