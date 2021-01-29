@@ -6,7 +6,7 @@
 #include <QMouseEvent>
 
 
-class TrainingGuide : public QWidget {
+class TrainingGuide : public QFrame {
   Q_OBJECT
 
 public:
