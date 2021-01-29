@@ -124,7 +124,6 @@ void safety_setter_thread() {
   safety_setter_thread_running = false;
 }
 
-
 bool usb_connect() {
   std::unique_ptr<Panda> tmp_panda;
   try {
