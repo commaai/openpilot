@@ -20,13 +20,13 @@ int main(int argc, char** argv) {
   int r = logger_mkpath((char*)path.c_str());
   assert(r == 0);
 
-  std::unique_ptr<BZFile> bz_file = std::make_unique<BZFile>(path.c_str());
+  BZFile bz_file(path.c_str());
 
   // Write initdata
-  bz_file->write(logger_build_init_data().asBytes());
+  bz_file.write(logger_build_init_data().asBytes());
 
   // Write bootlog
-  bz_file->write(logger_build_boot().asBytes());
+  bz_file.write(logger_build_boot().asBytes());
 
   return 0;
 }
