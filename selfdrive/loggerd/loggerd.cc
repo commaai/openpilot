@@ -38,7 +38,6 @@ const bool IS_QCOM2 = true;
 #endif
 
 #define NO_CAMERA_PATIENCE 500 // fall back to time-based rotation if all cameras are dead
-
 const int SEGMENT_LENGTH = getenv("LOGGERD_TEST") ? atoi(getenv("LOGGERD_SEGMENT_LENGTH")) : 60;
 
 ExitHandler do_exit;
@@ -97,12 +96,13 @@ public:
   EncoderState(const LogCameraInfo &ci, SubSocket *sock, const QlogState &qs, bool need_waiting)
       : ci(ci), frame_sock(sock), qlog_state(qs), need_waiting(need_waiting) {}
   LogCameraInfo ci;
-  std::unique_ptr<SubSocket> frame_sock;
+  SubSocket *frame_sock;
   QlogState qlog_state;
   const bool need_waiting;
 };
 
 struct LoggerdState {
+  Context *ctx;
   LoggerState logger = {};
   char segment_path[4096];
   int encoders_max_waiting = 0;
@@ -116,7 +116,7 @@ struct LoggerdState {
 };
 LoggerdState s;
 
-void drain_socket(LoggerHandle *lh, SubSocket *sock, QlogState &qs) {
+static void drain_socket(LoggerHandle *lh, SubSocket *sock, QlogState &qs) {
   if (!lh) return;
 
   Message *msg = nullptr;
@@ -196,11 +196,12 @@ void encoder_thread(EncoderState *es) {
       }
 
       // log frame socket
-      drain_socket(lh, es->frame_sock.get(), es->qlog_state);
-      // encode frame
+      drain_socket(lh, es->frame_sock, es->qlog_state);
+      // encode a frame
       for (int i = 0; i < encoders.size(); ++i) {
         int out_segment = -1;
-        int out_id = encoders[i]->encode_frame(buf->y, buf->u, buf->v, buf->width, buf->height,
+        int out_id = encoders[i]->encode_frame(buf->y, buf->u, buf->v,
+                                               buf->width, buf->height,
                                                &out_segment, extra.timestamp_eof);
         if (i == 0 && out_id != -1) {
           // publish encode index
@@ -255,26 +256,6 @@ void loggerd_logger_next() {
   LOGW((s.rotate_segment == 0) ? "logging to %s" : "rotated to %s", s.segment_path);
 }
 
-void loggerd_rotate() {
-  bool new_segment = s.encoders_waiting >= s.encoders_max_waiting;
-  if (!new_segment) {
-    const double tms = millis_since_boot();
-    if (((tms - s.last_rotate_tms) >= SEGMENT_LENGTH * 1000) && (tms - s.last_camera_seen_tms) >= NO_CAMERA_PATIENCE ) {
-      new_segment = true;
-      LOGW("no camera packet seen. auto rotated");
-    }
-  }
-  // rotate to new segment
-  if (new_segment && !do_exit) {
-    {
-      std::unique_lock lk(s.rotate_lock);
-      loggerd_logger_next();
-      s.encoders_waiting = 0;
-    }
-    s.cv.notify_all();
-  }
-}
-
 } // namespace
 
 int main(int argc, char** argv) {
@@ -284,14 +265,14 @@ int main(int argc, char** argv) {
 
   // setup messaging
   std::map<SubSocket*, QlogState> qlog_states;
-  std::unique_ptr<Context> ctx(Context::create());
-  std::unique_ptr<Poller> poller(Poller::create());
+  s.ctx = Context::create();
+  Poller * poller = Poller::create();
   const bool record_front = Params().read_db_bool("RecordFront");
   // subscribe to all socks
   for (const auto& it : services) {
     if (!it.should_log) continue;
 
-    SubSocket * sock = SubSocket::create(ctx.get(), it.name);
+    SubSocket * sock = SubSocket::create(s.ctx, it.name);
     assert(sock != NULL);
     QlogState qs = {.counter = 0, .freq = it.decimation};
 
@@ -321,15 +302,38 @@ int main(int argc, char** argv) {
     for (auto sock : poller->poll(1000)) {
       drain_socket(s.logger.cur_handle, sock, qlog_states[sock]);
     }
-    loggerd_rotate();
+    bool new_segment = s.encoders_waiting >= s.encoders_max_waiting;
+    if (!new_segment) {
+      const double tms = millis_since_boot();
+      if (((tms - s.last_rotate_tms) >= SEGMENT_LENGTH * 1000) && (tms - s.last_camera_seen_tms) >= NO_CAMERA_PATIENCE) {
+        new_segment = true;
+        LOGW("no camera packet seen. auto rotated");
+      }
+    }
+    // rotate to new segment
+    if (new_segment && !do_exit) {
+      {
+        std::unique_lock lk(s.rotate_lock);
+        loggerd_logger_next();
+        s.encoders_waiting = 0;
+      }
+      s.cv.notify_all();
+    }
   }
 
   LOGW("closing encoders");
   s.cv.notify_all();
   for (auto &[sock, qs] : qlog_states) delete sock;
   for (auto &t : encoder_threads) t.join();
+  for (auto &e : s.encoder_states) {
+    delete e->frame_sock;
+  }
 
   LOGW("closing logger");
   logger_close(&s.logger);
+
+  delete poller;
+  delete s.ctx;
+
   return 0;
 }
