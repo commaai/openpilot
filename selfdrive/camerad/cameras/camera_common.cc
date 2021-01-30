@@ -371,7 +371,7 @@ void common_camera_process_front(SubMaster *sm, PubMaster *pm, CameraState *c, i
 #endif
         int x_offset = rhd_front ? 0 : frame_width - (0.5 * frame_height);
         x_offset += (face_position[0] * (rhd_front ? -1.0 : 1.0) + 0.5) * (0.5 * frame_height);
-        const int y_offset = (face_position[1] + 0.5) * frame_height;
+        int y_offset = (face_position[1] + 0.5) * frame_height;
 #ifdef QCOM2
         x_offset += 630;
         y_offset += 156;
