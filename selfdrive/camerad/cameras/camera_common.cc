@@ -362,10 +362,20 @@ void common_camera_process_front(SubMaster *sm, PubMaster *pm, CameraState *c, i
       // set front camera metering target
       if (state.getFaceProb() > 0.4) {
         auto face_position = state.getFacePosition();
-        int x_offset = rhd_front ? 0 : b->rgb_width - (0.5 * b->rgb_height);
-        x_offset += (face_position[0] * (rhd_front ? -1.0 : 1.0) + 0.5) * (0.5 * b->rgb_height);
-        const int y_offset = (face_position[1] + 0.5) * b->rgb_height;
-
+#ifndef QCOM2
+        int frame_width = b->rgb_width;
+        int frame_height = b->rgb_height;
+#else
+        int frame_width = 668;
+        int frame_height = frame_width / 1.33;
+#endif
+        int x_offset = rhd_front ? 0 : frame_width - (0.5 * frame_height);
+        x_offset += (face_position[0] * (rhd_front ? -1.0 : 1.0) + 0.5) * (0.5 * frame_height);
+        int y_offset = (face_position[1] + 0.5) * frame_height;
+#ifdef QCOM2
+        x_offset += 630;
+        y_offset += 156;
+#endif
         x_min = std::max(0, x_offset - 72);
         x_max = std::min(b->rgb_width - 1, x_offset + 72);
         y_min = std::max(0, y_offset - 72);
@@ -379,18 +389,20 @@ void common_camera_process_front(SubMaster *sm, PubMaster *pm, CameraState *c, i
     // use driver face crop for AE
     if (x_max == 0) {
       // default setting
+#ifndef QCOM2
       x_min = rhd_front ? 0 : b->rgb_width * 3 / 5;
       x_max = rhd_front ? b->rgb_width * 2 / 5 : b->rgb_width;
       y_min = b->rgb_height / 3;
       y_max = b->rgb_height;
-    }
-#ifdef QCOM2
-    x_min = 96;
-    x_max = 1832;
-    y_min = 242;
-    y_max = 1148;
-    skip = 4;
+#else
+      x_min = 96;
+      x_max = 1832;
+      y_min = 242;
+      y_max = 1148;
+      skip = 4;
 #endif
+    }
+
     set_exposure_target(c, (const uint8_t *)b->cur_yuv_buf->y, x_min, x_max, 2, y_min, y_max, skip);
   }
 
