@@ -28,12 +28,8 @@ void panda_set_power(bool power){
 }
 
 Panda::Panda(){
-  int err;
-
-  if (err != 0) { goto fail; }
-
   // init libusb
-  err = libusb_init(&ctx);
+  int err = libusb_init(&ctx);
   if (err != 0) { goto fail; }
 
 #if LIBUSB_API_VERSION >= 0x01000106
