@@ -1,5 +1,5 @@
 # Openpilot build steps:
-=========================
+
 1. Install git:
     apt-get update
     apt-get install git
