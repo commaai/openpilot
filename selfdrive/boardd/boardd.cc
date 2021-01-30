@@ -39,8 +39,6 @@
 Panda * panda = NULL;
 std::atomic<bool> safety_setter_thread_running(false);
 std::atomic<bool> ignition(false);
-bool spoofing_started = false;
-bool fake_send = false;
 bool connected_once = false;
 
 ExitHandler do_exit;
@@ -194,7 +192,7 @@ void can_recv(PubMaster &pm) {
   pm.send("can", bytes.begin(), bytes.size());
 }
 
-void can_send_thread() {
+void can_send_thread(bool fake_send) {
   LOGD("start send thread");
 
   Context * context = Context::create();
@@ -261,7 +259,7 @@ void can_recv_thread() {
   }
 }
 
-void can_health_thread() {
+void can_health_thread(bool spoofing_started) {
   LOGD("start health thread");
   PubMaster pm({"health"});
 
@@ -517,25 +515,16 @@ int main() {
   err = set_core_affinity(3);
   LOG("set affinity returns %d", err);
 
-  // check the environment
-  if (getenv("STARTED")) {
-    spoofing_started = true;
-  }
-
-  if (getenv("FAKESEND")) {
-    fake_send = true;
-  }
-
   panda_set_power(true);
 
   while (!do_exit){
     std::vector<std::thread> threads;
-    threads.push_back(std::thread(can_health_thread));
+    threads.push_back(std::thread(can_health_thread, getenv("STARTED") != nullptr));
 
     // connect to the board
     usb_retry_connect();
 
-    threads.push_back(std::thread(can_send_thread));
+    threads.push_back(std::thread(can_send_thread, getenv("FAKESEND") != nullptr));
     threads.push_back(std::thread(can_recv_thread));
     threads.push_back(std::thread(hardware_control_thread));
     threads.push_back(std::thread(pigeon_thread));
