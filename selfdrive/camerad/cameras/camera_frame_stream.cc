@@ -66,7 +66,7 @@ CameraInfo cameras_supported[CAMERA_ID_MAX] = {
     .frame_width = 1632,
     .frame_height = 1224,
     .frame_stride = 2040, // seems right
-    .bayer = true,
+    .bayer = false,
     .bayer_flip = 3,
     .hdr = false
   },
