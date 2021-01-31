@@ -39,6 +39,8 @@
 #define Encoder RawLogger
 #endif
 
+namespace {
+
 constexpr int MAIN_BITRATE = 5000000;
 constexpr int MAIN_FPS = 20;
 #ifndef QCOM2
@@ -50,6 +52,10 @@ constexpr int DCAM_BITRATE = MAIN_BITRATE;
 #endif
 
 #define NO_CAMERA_PATIENCE 500 // fall back to time-based rotation if all cameras are dead
+
+const int SEGMENT_LENGTH = getenv("LOGGERD_TEST") ? atoi(getenv("LOGGERD_SEGMENT_LENGTH")) : 60;
+
+ExitHandler do_exit;
 
 LogCameraInfo cameras_logged[LOG_CAMERA_ID_MAX] = {
   [LOG_CAMERA_ID_FCAMERA] = {
@@ -95,13 +101,6 @@ LogCameraInfo cameras_logged[LOG_CAMERA_ID_MAX] = {
 #endif
   },
 };
-
-
-namespace {
-
-constexpr int SEGMENT_LENGTH = 60;
-
-ExitHandler do_exit;
 
 class RotateState {
 public:
@@ -311,9 +310,7 @@ void encoder_thread(int cam_idx) {
   }
 }
 
-}
-
-static int clear_locks_fn(const char* fpath, const struct stat *sb, int tyupeflag) {
+int clear_locks_fn(const char* fpath, const struct stat *sb, int tyupeflag) {
   const char* dot = strrchr(fpath, '.');
   if (dot && strcmp(dot, ".lock") == 0) {
     unlink(fpath);
@@ -321,18 +318,15 @@ static int clear_locks_fn(const char* fpath, const struct stat *sb, int tyupefla
   return 0;
 }
 
-static void clear_locks() {
+void clear_locks() {
   ftw(LOG_ROOT.c_str(), clear_locks_fn, 16);
 }
+
+} // namespace
 
 int main(int argc, char** argv) {
 
   setpriority(PRIO_PROCESS, 0, -12);
-
-  int segment_length = SEGMENT_LENGTH;
-  if (getenv("LOGGERD_TEST")) {
-    segment_length = atoi(getenv("LOGGERD_SEGMENT_LENGTH"));
-  }
 
   clear_locks();
 
@@ -464,7 +458,7 @@ int main(int argc, char** argv) {
         new_segment = true;
         for (auto &r : s.rotate_state) {
           // this *should* be redundant on tici since all camera frames are synced
-          new_segment &= (((r.stream_frame_id >= r.last_rotate_frame_id + segment_length * MAIN_FPS) &&
+          new_segment &= (((r.stream_frame_id >= r.last_rotate_frame_id + SEGMENT_LENGTH * MAIN_FPS) &&
                           (!r.should_rotate) && (r.initialized)) ||
                           (!r.enabled));
 #ifndef QCOM2
@@ -472,7 +466,7 @@ int main(int argc, char** argv) {
 #endif
         }
       } else {
-        if (tms - last_rotate_tms > segment_length * 1000) {
+        if (tms - last_rotate_tms > SEGMENT_LENGTH * 1000) {
           new_segment = true;
           LOGW("no camera packet seen. auto rotated");
         }
