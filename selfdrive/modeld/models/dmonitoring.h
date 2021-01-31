@@ -36,7 +36,7 @@ typedef struct DMonitoringModelState {
 } DMonitoringModelState;
 
 void dmonitoring_init(DMonitoringModelState* s);
-DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState *s, const uint8_t *raw_buf, const int width, const int height);
-void dmonitoring_publish(PubMaster &pm, uint32_t frame_id, const DMonitoringResult &res, const float* raw_pred, float execution_time);
+DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, const uint8_t* stream_buf, int width, int height);
+void dmonitoring_publish(PubMaster &pm, uint32_t frame_id, const DMonitoringResult &res, float execution_time, kj::ArrayPtr<const float> raw_pred);
 void dmonitoring_free(DMonitoringModelState* s);
 
