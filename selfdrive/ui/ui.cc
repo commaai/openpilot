@@ -123,7 +123,7 @@ static void update_sockets(UIState *s) {
   if (sm.update(0) == 0) return;
 
   UIScene &scene = s->scene;
-  if (s->started && sm.updated("controlsState")) {
+  if (s->scene.started && sm.updated("controlsState")) {
     scene.controls_state = sm["controlsState"].getControlsState();
   }
   if (sm.updated("carState")) {
@@ -228,7 +228,7 @@ static void update_alert(UIState *s) {
   // Handle controls timeout
   if (scene.deviceState.getStarted() && (s->sm->frame - s->started_frame) > 10 * UI_FREQ) {
     const uint64_t cs_frame = s->sm->rcv_frame("controlsState");
-    if (cs_frame < s->started_frame) {
+    if (cs_frame < s->scene.started_frame) {
       // car is started, but controlsState hasn't been seen at all
       scene.alert_text1 = "openpilot Unavailable";
       scene.alert_text2 = "Waiting for controls to start";

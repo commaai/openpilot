@@ -234,7 +234,7 @@ void GLWindow::backlightUpdate() {
   // Update brightness
   float k = (BACKLIGHT_DT / BACKLIGHT_TS) / (1.0f + BACKLIGHT_DT / BACKLIGHT_TS);
 
-  float clipped_brightness = std::min(1023.0f, (ui_state.light_sensor * brightness_m) + brightness_b);
+  float clipped_brightness = std::min(1023.0f, (ui_state.scene.light_sensor * brightness_m) + brightness_b);
   smooth_brightness = clipped_brightness * k + smooth_brightness * (1.0f - k);
   int brightness = smooth_brightness;
 
@@ -251,8 +251,8 @@ void GLWindow::timerUpdate() {
     makeCurrent();
   }
 
-  if (ui_state.started != onroad) {
-    onroad = ui_state.started;
+  if (ui_state.scene.started != onroad) {
+    onroad = ui_state.scene.started;
     emit offroadTransition(!onroad);
 
     // Change timeout to 0 when onroad, this will call timerUpdate continously.
