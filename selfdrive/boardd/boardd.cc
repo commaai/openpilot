@@ -463,7 +463,7 @@ static void pigeon_publish_raw(PubMaster &pm, const std::string &dat) {
 }
 
 void pigeon_thread() {
-  if (!panda->is_pigeon){ return; };
+  if (!panda->is_pigeon) { return; };
 
   // ubloxRaw = 8042
   PubMaster pm({"ubloxRaw"});
@@ -476,12 +476,13 @@ void pigeon_thread() {
 #endif
 
   while (!do_exit && panda->connected) {
+    bool need_reset = false;
     std::string recv = pigeon->receive();
     if (recv.length() > 0) {
       if (recv[0] == (char)0x00){
         if (ignition) {
           LOGW("received invalid ublox message while onroad, resetting panda GPS");
-          pigeon->init();
+          need_reset = true;
         }
       } else {
         pigeon_publish_raw(pm, recv);
@@ -490,7 +491,7 @@ void pigeon_thread() {
 
     // init pigeon on rising ignition edge
     // since it was turned off in low power mode
-    if(ignition && !ignition_last) {
+    if((ignition && !ignition_last) || need_reset) {
       pigeon->init();
     }
 
