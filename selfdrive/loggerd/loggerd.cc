@@ -38,12 +38,15 @@ const bool IS_QCOM2 = true;
 #endif
 
 #define NO_CAMERA_PATIENCE 500 // fall back to time-based rotation if all cameras are dead
+
 const int SEGMENT_LENGTH = getenv("LOGGERD_TEST") ? atoi(getenv("LOGGERD_SEGMENT_LENGTH")) : 60;
 
 ExitHandler do_exit;
 
 LogCameraInfo cameras_logged[] = {
+  {.id = F_CAMERA,
     .stream_type = VISION_STREAM_YUV_BACK,
+    .filename = "fcamera.hevc",
     .frame_packet_name = "roadCameraState",
     .fps = MAIN_FPS,
     .bitrate = MAIN_BITRATE,
@@ -84,8 +87,6 @@ const LogCameraInfo qcam_info = {
 #endif
 };
 
-
-namespace {
 
 typedef struct QlogState {
   int counter, freq;
