@@ -40,14 +40,14 @@ static void ui_init_vision(UIState *s) {
 }
 
 
-void ui_init(UIState *s) {
+UIState::UIState(Sound *sound) : sound(sound) {
   s->sm = new SubMaster({"modelV2", "controlsState", "uiLayoutState", "liveCalibration", "radarState", "deviceState", "roadCameraState", "liveLocationKalman",
                          "pandaState", "carParams", "driverState", "driverMonitoringState", "sensorEvents", "carState", "ubloxGnss"});
 
-  s->started = false;
-  s->status = STATUS_OFFROAD;
+  started = false;
+  status = STATUS_OFFROAD;
 
-  s->fb = std::make_unique<FrameBuffer>("ui", 0, true, &s->fb_w, &s->fb_h);
+  fb = std::make_unique<FrameBuffer>("ui", 0, true, &fb_w, &fb_h);
 
   last_frame = nullptr;
   vipc_client_rear = new VisionIpcClient("camerad", VISION_STREAM_RGB_BACK, true);
