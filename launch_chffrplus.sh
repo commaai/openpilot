@@ -126,7 +126,7 @@ function tici_init {
     echo "Cur slot $CUR_SLOT, target $OTHER_SLOT"
 
     # Get expected hashes from manifest
-    MANIFEST="$DIR/installer/updater/update_agnos.json"
+    MANIFEST="$DIR/selfdrive/hardware/tici/agnos.json"
     SYSTEM_HASH_EXPECTED=$(jq -r ".[] | select(.name == \"system\") | .hash_raw" $MANIFEST)
     SYSTEM_SIZE=$(jq -r ".[] | select(.name == \"system\") | .size" $MANIFEST)
     BOOT_HASH_EXPECTED=$(jq -r ".[] | select(.name == \"boot\") | .hash_raw" $MANIFEST)
