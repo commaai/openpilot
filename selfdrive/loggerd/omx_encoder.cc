@@ -164,9 +164,6 @@ OmxEncoder::OmxEncoder(const char* filename, int width, int height, int fps, int
   this->fps = fps;
   this->remuxing = !h265;
 
-  pthread_mutex_init(&this->state_lock, NULL);
-  pthread_cond_init(&this->state_cv, NULL);
-
   this->downscale = downscale;
   if (this->downscale) {
     this->y_ptr2 = (uint8_t *)malloc(this->width*this->height);
