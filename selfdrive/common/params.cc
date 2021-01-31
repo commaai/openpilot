@@ -7,10 +7,6 @@
 
 namespace {
 
-#if !defined(QCOM) && !defined(QCOM2)
-const std::string env_home = getenv("HOME");
-#endif
-
 volatile sig_atomic_t params_do_exit = 0;
 void params_sig_handler(int signal) {
   params_do_exit = 1;
@@ -20,6 +16,7 @@ int fsync_dir(const std::string &path) {
   unique_fd fd = open(path.c_str(), O_RDONLY, 0755);
   return fd != -1 ? fsync(fd) : -1;
 }
+
 int mkdir_p(std::string path) {
   char * _path = (char *)path.c_str();
 
@@ -73,6 +70,7 @@ Params::Params(bool persistent_param) {
 #if defined(QCOM) || defined(QCOM2)
   params_path = !persistent_param ? "/data/params" : "/persist/comma/params";
 #else
+  static const std::string env_home = getenv("HOME");
   params_path = !env_home.empty() ? env_home + "/.comma/params" : "/data/params";
 #endif
 }

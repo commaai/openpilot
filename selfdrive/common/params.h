@@ -15,19 +15,23 @@ public:
   Params(const std::string &path);
   bool delete_value(const std::string &key);
   bool read_all(std::map<std::string, std::string> &params);
-  std::string get(const std::string &key, bool block = false);
-  inline bool getBool(const std::string &param_name, bool block = false) {
-    return get<bool>(param_name, block).value_or(false);
-  }
-  bool put(const std::string &key, const char *value, size_t value_size);
 
+  std::string get(const std::string &key, bool block = false);
+ 
   template <class T>
   std::optional<T> get(const std::string &param_name, bool block = false) {
-    std::istringstream iss(get(param_name.c_str(), block));
+    std::istringstream iss(get(param_name, block));
     T value{};
     iss >> value;
     return iss.fail() ? std::nullopt : std::optional(value);
   }
+
+  inline bool getBool(const std::string &param_name, bool block = false) {
+    return get<bool>(param_name, block).value_or(false);
+  }
+
+  bool put(const std::string &key, const char *value, size_t value_size);
+
   template <class T>
   bool put(const std::string &param_name, T val) {
     if constexpr (std::is_same<T, const char *>::value) {
