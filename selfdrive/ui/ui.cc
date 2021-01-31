@@ -120,14 +120,10 @@ static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
 }
 
 static void update_sockets(UIState *s) {
+  SubMaster &sm = *(s->sm);
+  if (sm.update(0) == 0) return;
 
   UIScene &scene = s->scene;
-  SubMaster &sm = *(s->sm);
-
-  if (sm.update(0) == 0){
-    return;
-  }
-
   if (s->started && sm.updated("controlsState")) {
     scene.controls_state = sm["controlsState"].getControlsState();
   }
@@ -206,14 +202,6 @@ static void update_alert(UIState *s) {
     scene.alert_size = scene.controls_state.getAlertSize();
     scene.alert_type = scene.controls_state.getAlertType();
     scene.alert_blinking_rate = scene.controls_state.getAlertBlinkingRate();
-    auto alert_status = scene.controls_state.getAlertStatus();
-    if (alert_status == cereal::ControlsState::AlertStatus::USER_PROMPT) {
-      s->status = STATUS_WARNING;
-    } else if (alert_status == cereal::ControlsState::AlertStatus::CRITICAL) {
-      s->status = STATUS_ALERT;
-    } else {
-      s->status = scene.controls_state.getEnabled() ? STATUS_ENGAGED : STATUS_DISENGAGED;
-    }
   }
 
   // Handle controls timeout
@@ -270,12 +258,19 @@ static void update_vision(UIState *s) {
   }
 }
 
-void ui_update(UIState *s) {
-  update_params(s);
-  update_sockets(s);
-  update_alert(s);
+static void update_status(UIState *s) {
   s->started = s->scene.thermal.getStarted() || s->scene.frontview;
-  update_vision(s);
+
+  if (s->started && s->sm->updated("controlsState")) {
+    auto alert_status = s->scene.controls_state.getAlertStatus();
+    if (alert_status == cereal::ControlsState::AlertStatus::USER_PROMPT) {
+      s->status = STATUS_WARNING;
+    } else if (alert_status == cereal::ControlsState::AlertStatus::CRITICAL) {
+      s->status = STATUS_ALERT;
+    } else {
+      s->status = s->scene.controls_state.getEnabled() ? STATUS_ENGAGED : STATUS_DISENGAGED;
+    }
+  }
 
   // Handle onroad/offroad transition
   if (!s->started && s->status != STATUS_OFFROAD) {
@@ -292,4 +287,12 @@ void ui_update(UIState *s) {
     s->scene.sidebar_collapsed = true;
     s->scene.alert_size = cereal::ControlsState::AlertSize::NONE;
   }
+}
+
+void ui_update(UIState *s) {
+  update_params(s);
+  update_sockets(s);
+  update_alert(s);
+  update_status(s);
+  update_vision(s);
 }
