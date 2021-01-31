@@ -3,7 +3,7 @@ FROM commaai/openpilot-base:latest
 ENV PYTHONUNBUFFERED 1
 ENV PYTHONPATH /tmp/openpilot:${PYTHONPATH}
 
-# install opencv
+# Install opencv
 ENV OPENCV_VERSION '4.2.0'
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -38,25 +38,3 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ldconfig && \
 
     cd /tmp && rm -rf /tmp/opencv_build
-
-
-RUN mkdir -p /tmp/openpilot
-
-COPY SConstruct \
-     .pylintrc \
-     .pre-commit-config.yaml \
-     /tmp/openpilot/
-
-COPY ./pyextra /tmp/openpilot/pyextra
-COPY ./phonelibs /tmp/openpilot/phonelibs
-COPY ./site_scons /tmp/openpilot/site_scons
-COPY ./laika /tmp/openpilot/laika
-COPY ./laika_repo /tmp/openpilot/laika_repo
-COPY ./rednose /tmp/openpilot/rednose
-COPY ./tools /tmp/openpilot/tools
-COPY ./release /tmp/openpilot/release
-COPY ./common /tmp/openpilot/common
-COPY ./opendbc /tmp/openpilot/opendbc
-COPY ./cereal /tmp/openpilot/cereal
-COPY ./panda /tmp/openpilot/panda
-COPY ./selfdrive /tmp/openpilot/selfdrive
