@@ -12,6 +12,7 @@ void params_sig_handler(int signal) {
   params_do_exit = 1;
 }
 
+
 int fsync_dir(const std::string &path) {
   unique_fd fd = open(path.c_str(), O_RDONLY, 0755);
   return fd != -1 ? fsync(fd) : -1;
@@ -40,11 +41,11 @@ int mkdir_p(std::string path) {
 
 bool ensure_dir_exists(const std::string &path) {
   // TODO: replace by std::filesystem::create_directories
-  return util::file_exists(path.c_str()) ? true : mkdir_p(path) == 0;
+  return util::file_exists(path) ? true : mkdir_p(path) == 0;
 }
 
 bool ensure_symlink(const std::string &param_path, const std::string &key_path) {
-  if (util::file_exists(key_path.c_str())) {
+  if (util::file_exists(key_path)) {
     // Ensure permissions are correct in case we didn't create the symlink
     return chmod(key_path.c_str(), 0777) == 0;
   } else {
@@ -154,5 +155,5 @@ bool Params::delete_value(const std::string &key) {
   if (lock_fd == -1 || flock(lock_fd, LOCK_EX) == -1) return false;
 
   const std::string path = key_file(key);
-  return !util::file_exists(path.c_str()) || (remove(path.c_str()) == 0 && fsync_dir(key_path()) == 0);
+  return !util::file_exists(path) || (remove(path.c_str()) == 0 && fsync_dir(key_path()) == 0);
 }
