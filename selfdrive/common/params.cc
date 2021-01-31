@@ -2,6 +2,7 @@
 #include <dirent.h>
 #include <sys/file.h>
 #include <csignal>
+#include <sys/stat.h>
 #include "common/util.h"
 
 namespace {

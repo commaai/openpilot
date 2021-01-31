@@ -14,6 +14,10 @@
 #include <QWebEngineSettings>
 #endif
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> rebase master
 class TrainingGuide : public QFrame {
   Q_OBJECT
 
@@ -35,8 +39,6 @@ signals:
   void completedTraining();
 };
 
-=======
->>>>>>> better put : use if constexpr
 class OnboardingWindow : public QStackedWidget {
   Q_OBJECT
 
