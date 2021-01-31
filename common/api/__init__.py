@@ -28,10 +28,9 @@ class Api():
       'exp': now + timedelta(hours=1)
     }
     token = jwt.encode(payload, self.private_key, algorithm='RS256')
-    if isinstance(token, str):
-      return token
-    elif isinstance(token, bytes):
-      return token.decode('utf8')
+    if isinstance(token, bytes):
+      token = token.decode('utf8')
+    return token
     
 
 def api_get(endpoint, method='GET', timeout=None, access_token=None, **params):
