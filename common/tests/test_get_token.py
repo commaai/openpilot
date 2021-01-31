@@ -6,7 +6,7 @@ from common.file_helpers import mkdirs_exists_ok
 from common.basedir import PERSIST
 
 class TestApiGetToken(unittest.TestCase):
-	def is_private_key_generated():
+	def is_private_key_generated(self):
 		mkdirs_exists_ok(PERSIST+"/comma")
 		assert os.system("openssl genrsa -out "+PERSIST+"/comma/id_rsa.tmp 2048") == 0
 		assert os.system("openssl rsa -in "+PERSIST+"/comma/id_rsa.tmp -pubout -out "+PERSIST+"/comma/id_rsa.tmp.pub") == 0
