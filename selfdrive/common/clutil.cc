@@ -182,3 +182,6 @@ const char* cl_get_error_string(int err) {
     default: return "CL_UNKNOWN_ERROR";
   }
 }
+
+CLContext CLContext::default_;
+std::once_flag CLContext::default_initialized_;
