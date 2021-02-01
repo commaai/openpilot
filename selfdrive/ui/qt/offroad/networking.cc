@@ -6,7 +6,6 @@
 #include <QLineEdit>
 #include <QRandomGenerator>
 #include <QtConcurrent>
-#include <QThreadPool>
 
 #include "networking.hpp"
 
@@ -298,9 +297,10 @@ void AdvancedNetworking::refresh(){
   if(!toggle_switch_SSH->getEnabled()){
     return;
   }
-  if (toggle_switch_SSH->on != isSSHEnabled() && !changingSSH) {
+  if (toggle_switch_SSH->on != isSSHEnabled()) {
     toggle_switch_SSH->togglePosition();
   }
+  //Qt can be lazy
   repaint();
 }
 
@@ -313,6 +313,15 @@ void AdvancedNetworking::toggleTethering(int enable) {
   editPasswordButton->setEnabled(!enable);
 }
 
+void AdvancedNetworking::toggleSSH(int enable) {
+  toggle_switch_SSH->setEnabled(false);
+  if (enable) {
+    QtConcurrent::run(enableSSH, toggle_switch_SSH);
+  } else {
+    QtConcurrent::run(disableSSH, toggle_switch_SSH);
+  }
+}
+
 void enableSSH(Toggle* toggle_switch_SSH){
   system("sudo systemctl enable ssh");
   system("sudo systemctl start ssh");
@@ -323,15 +332,6 @@ void disableSSH(Toggle* toggle_switch_SSH){
   system("sudo systemctl stop ssh");
   system("sudo systemctl disable ssh");
   toggle_switch_SSH->setEnabled(true);
-}
-
-void AdvancedNetworking::toggleSSH(int enable) {
-  toggle_switch_SSH->setEnabled(false);
-  if (enable) {
-    QtConcurrent::run(enableSSH, toggle_switch_SSH);
-  } else {
-    QtConcurrent::run(disableSSH, toggle_switch_SSH);
-  }
 }
 
 void AdvancedNetworking::receiveText(QString text){
