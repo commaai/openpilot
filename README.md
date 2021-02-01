@@ -191,6 +191,22 @@ Before placing the device on your windshield, check the state and local laws and
 
 You will be able to engage openpilot after reviewing the onboarding screens and finishing the calibration procedure.
 
+How to build
+------
+
+1. Install git and clone openpilot into your home directory:
+	apt-get update
+	apt-get install git
+	cd ~
+	git clone --recurse-submodule https://github.com/commaai/openpilot.git
+2. Run setup script:
+	source ~/openpilot/tools/ubuntu_setup.sh
+3. Install SConstruct and run in openpilot directory:
+        pip install SCons==4.1.0
+	cd ~/openpilot
+	scons
+4. You're done!
+
 Limitations of openpilot ALC and LDW
 ------
 
