@@ -32,6 +32,9 @@ void Toggle::paintEvent(QPaintEvent *e) {
 }
 
 void Toggle::mouseReleaseEvent(QMouseEvent *e) {
+  if(!enabled){
+    return;
+  }
   const int left = _radius;
   const int right = width() - _radius;
   if(_x_circle != left && _x_circle != right){

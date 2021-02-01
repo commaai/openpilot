@@ -11,6 +11,7 @@ public:
   bool on;
   int animation_duration = 250;
   int immediateOffset = 0;
+  bool enabled = true;
   int offset_circle() const {
     return _x_circle;
   }

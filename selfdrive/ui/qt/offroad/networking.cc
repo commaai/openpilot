@@ -6,6 +6,7 @@
 #include <QLineEdit>
 #include <QRandomGenerator>
 #include <QtConcurrent>
+#include <QThreadPool>
 
 #include "networking.hpp"
 
@@ -246,8 +247,6 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   QHBoxLayout* enableSSHLayout = new QHBoxLayout(this);
   enableSSHLayout->addWidget(new QLabel("Enable SSH", this));
   toggle_switch_SSH = new Toggle(this);
-  toggle_switch_SSH->immediateOffset = 40;
-  // toggle_switch_SSH->animation_duration = 5000;
   toggle_switch_SSH->setFixedSize(150, 100);
   if (isSSHEnabled()) {
     toggle_switch_SSH->togglePosition();
@@ -294,8 +293,15 @@ bool AdvancedNetworking::isSSHEnabled(){
 }
 
 void AdvancedNetworking::refresh(){
+  if(skipRefresh){
+    skipRefresh = false;
+    return;
+  }
   ipLabel->setText(wifi->ipv4_address);
   if (toggle_switch_SSH->on != isSSHEnabled() && !changingSSH) {
+    if(!toggle_switch_SSH->enabled){
+      return;
+    }
     toggle_switch_SSH->togglePosition();
   }
 }
@@ -309,31 +315,26 @@ void AdvancedNetworking::toggleTethering(int enable) {
   editPasswordButton->setEnabled(!enable);
 }
 
-void enableSSH(){
-  qDebug()<<"Enabling SSH";
+void enableSSH(Toggle* toggle_switch){
   system("sudo systemctl enable ssh");
   system("sudo systemctl start ssh");
-  qDebug()<<"Enabling SSH done";
+  toggle_switch->enabled = true;
 }
 
-void disableSSH(){
-  qDebug()<<"Disabling SSH";
+void disableSSH(Toggle* toggle_switch){
   system("sudo systemctl stop ssh");
   system("sudo systemctl disable ssh");
-  qDebug()<<"Disabling SSH done";
+  toggle_switch->enabled = true;
 }
 
 void AdvancedNetworking::toggleSSH(int enable) {
-  changingSSH = true;
-  qDebug()<<"";
-  qDebug()<<"Main started";
+  toggle_switch_SSH->enabled = false;
+  skipRefresh = true;
   if (enable) {
-    QtConcurrent::run(enableSSH);
+    QtConcurrent::run(enableSSH, toggle_switch_SSH);
   } else {
-    QtConcurrent::run(disableSSH);
+    QtConcurrent::run(disableSSH, toggle_switch_SSH);
   }
-  qDebug()<<"Main done";
-  changingSSH = false;
 }
 
 void AdvancedNetworking::receiveText(QString text){
