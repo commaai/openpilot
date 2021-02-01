@@ -6,7 +6,6 @@ import time
 import unittest
 
 import cereal.messaging as messaging
-import selfdrive.manager as manager
 from selfdrive.test.helpers import with_processes
 
 class TestLogcatdAndroid(unittest.TestCase):
