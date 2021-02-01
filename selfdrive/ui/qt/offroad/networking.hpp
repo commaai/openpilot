@@ -52,6 +52,7 @@ private:
   QPushButton* editPasswordButton;
   SSH* ssh;
   Toggle* toggle_switch_SSH;
+  bool changingSSH = false;
 
   WifiManager* wifi = nullptr;
 
