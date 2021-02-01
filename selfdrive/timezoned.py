@@ -36,9 +36,16 @@ def main():
     if is_onroad:
       continue
 
+    # Set based on param
+    timezone = params.get("Timezone", encoding='utf8')
+    if timezone is not None:
+      cloudlog.info("Setting timezone based on param")
+      set_timezone(valid_timezones, timezone)
+      continue
+
     location = params.get("LastGPSPosition", encoding='utf8')
 
-    # Find timezone based on IP geolocation
+    # Find timezone based on IP geolocation if no gps location is available
     if location is None:
       cloudlog.info("Setting timezone based on IP lookup")
       try:
