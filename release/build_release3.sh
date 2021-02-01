@@ -26,7 +26,7 @@ echo "[-] bringing master-ci and devel in sync T=$SECONDS"
 git fetch origin master-ci
 git fetch origin devel
 
-git checkout -f -B master-ci
+git checkout -f -B release3-staging
 git reset --hard origin/devel
 git clean -xdf
 
