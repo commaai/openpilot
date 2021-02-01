@@ -178,7 +178,6 @@ managed_processes = {
   "dmonitoringmodeld": ("selfdrive/modeld", ["./dmonitoringmodeld"]),
   "modeld": ("selfdrive/modeld", ["./modeld"]),
   "rtshield": "selfdrive.rtshield",
-  "timezoned": "selfdrive.timezoned",
 }
 
 daemon_processes = {
@@ -220,9 +219,8 @@ if EON:
   ]
 
 if TICI:
-  persistent_processes += [
-    'timezoned'
-  ]
+  managed_processes["timezoned"] = "selfdrive.timezoned"
+  persistent_processes += ['timezoned']
 
 car_started_processes = [
   'controlsd',

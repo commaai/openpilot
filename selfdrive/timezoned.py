@@ -2,19 +2,27 @@
 import time
 import json
 import subprocess
+
+import requests
+from timezonefinder import TimezoneFinder
+
 from common.params import Params
 from selfdrive.swaglog import cloudlog
 
-from selfdrive.hardware import TICI
 
-if TICI:
-  from timezonefinder import TimezoneFinder # pylint: disable=import-error
+def set_timezone(valid_timezones, timezone):
+  if timezone not in valid_timezones:
+    cloudlog.error(f"Timezone not supported {timezone}")
+    return
+
+  cloudlog.info(f"Setting timezone to {timezone}")
+  try:
+    subprocess.check_call(f'sudo timedatectl set-timezone {timezone}', shell=True)
+  except subprocess.CalledProcessError:
+    cloudlog.exception(f"Error setting timezone to {timezone}")
 
 
 def main():
-  if not TICI:
-    return
-
   params = Params()
   tf = TimezoneFinder()
 
@@ -30,7 +38,22 @@ def main():
 
     location = params.get("LastGPSPosition", encoding='utf8')
 
-    if location is not None:
+    # Find timezone based on IP geolocation
+    if location is None:
+      cloudlog.info("Setting timezone based on IP lookup")
+      try:
+        r = requests.get("https://ipapi.co/timezone", timeout=10)
+        if r.status_code == 200:
+          set_timezone(valid_timezones, r.text)
+        else:
+          cloudlog.error(f"Unexpected status code from api {r.status_code}")
+      except requests.exceptions.RequestException:
+        cloudlog.exception("Error getting timezone based on IP")
+        continue
+
+    # Find timezone by reverse geocoding the last known gps location
+    else:
+      cloudlog.info("Setting timezone based on GPS location")
       try:
         location = json.loads(location)
       except Exception:
@@ -41,16 +64,7 @@ def main():
       if timezone is None:
         cloudlog.error(f"No timezone found based on location, {location}")
         continue
-
-      if timezone not in valid_timezones:
-        cloudlog.error(f"Timezone not supported {timezone}")
-        continue
-
-      cloudlog.info(f"Setting timezone to {timezone}")
-      try:
-        subprocess.check_call(f'sudo timedatectl set-timezone {timezone}', shell=True)
-      except subprocess.CalledProcessError:
-        cloudlog.exception(f"Error setting timezone to {timezone}")
+      set_timezone(valid_timezones, timezone)
 
 
 if __name__ == "__main__":
