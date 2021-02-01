@@ -38,12 +38,13 @@ else:
 
   # build setup, factory resetter, and installer
   if "BUILD_SETUP" in os.environ:
-    qt_env.Program("qt/setup/reset", ["qt/setup/reset.cc"], LIBS=qt_libs)
-    qt_env.Program("qt/setup/setup", ["qt/setup/setup.cc"], LIBS=qt_libs + ['curl', 'common'])
+    #qt_env.Program("qt/setup/reset", ["qt/setup/reset.cc"], LIBS=qt_libs)
+    #qt_env.Program("qt/setup/setup", ["qt/setup/setup.cc"], LIBS=qt_libs + ['curl', 'common'])
 
     installers = [
-      ("openpilot", "master"),
-      ("openpilot_test", "master"),
+      #("openpilot", "master"),
+      ("openpilot", "release3-staging"),
+      ("dashcam", "dashcam3-staging"),
       #("dashcam", "dashcam"),
       #("dashcam_test", "dashcam"),
     ]
