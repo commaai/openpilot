@@ -311,15 +311,15 @@ void AdvancedNetworking::toggleTethering(int enable) {
 
 void enableSSH(){
   qDebug()<<"Enabling SSH";
-  // system("echo & sudo systemctl enable ssh");
-  system("echo & sudo systemctl start ssh");
+  system("sudo systemctl enable ssh");
+  system("sudo systemctl start ssh");
   qDebug()<<"Enabling SSH done";
 }
 
 void disableSSH(){
   qDebug()<<"Disabling SSH";
-  system("echo & sudo systemctl stop ssh");
-  // system("echo & sudo systemctl disable ssh");
+  system("sudo systemctl stop ssh");
+  system("sudo systemctl disable ssh");
   qDebug()<<"Disabling SSH done";
 }
 
