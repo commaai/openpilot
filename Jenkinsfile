@@ -118,7 +118,7 @@ pipeline {
               parallel {
                 stage('Devel Build') {
                   environment {
-                    CI_PUSH = "${env.BRANCH_NAME == 'master' ? 'master-ci' : ' '}"
+                    CI_PUSH = "${env.BRANCH_NAME == 'master' ? '1' : ' '}"
                   }
                   steps {
                     phone_steps("eon-build", [
@@ -157,10 +157,13 @@ pipeline {
                 }
 
                 stage('Tici Build') {
+                  environment {
+                    R3_PUSH = "${env.BRANCH_NAME == 'master' ? 'master-ci' : ' '}"
+                  }
                   steps {
                     phone_steps("tici", [
                       ["build", "SCONS_CACHE=1 scons -j16"],
-                      ["build release3-staging", "cd release && PUSH=1 ./build_release3.sh"],
+                      ["build release3-staging", "cd release && PUSH=${env.R3_PUSH} ./build_release3.sh"],
                       ["test loggerd", "python selfdrive/loggerd/tests/test_loggerd.py"],
                       ["test encoder", "python selfdrive/loggerd/tests/test_encoder.py"],
                       ["test camerad", "python selfdrive/camerad/test/test_camerad.py"],

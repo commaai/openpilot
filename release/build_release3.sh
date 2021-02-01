@@ -36,11 +36,8 @@ find . -maxdepth 1 -not -path './.git' -not -name '.' -not -name '..' -exec rm -
 
 # reset tree and get version
 cd $SOURCE_DIR
-#git clean -xdf
-#git checkout -- selfdrive/common/version.h
-
-VERSION=$(cat selfdrive/common/version.h | awk -F\" '{print $2}')
-echo "#define COMMA_VERSION \"$VERSION-$(git --git-dir=$SOURCE_DIR/.git rev-parse --short HEAD)-$(date '+%Y-%m-%dT%H:%M:%S')\"" > selfdrive/common/version.h
+git clean -xdf
+git checkout -- selfdrive/common/version.h
 
 # do the files copy
 echo "[-] copying files T=$SECONDS"
@@ -51,6 +48,9 @@ cp -pR --parents $(cat release/files_common) $BUILD_DIR/
 cd $BUILD_DIR
 
 rm -f panda/board/obj/panda.bin.signed
+
+VERSION=$(cat selfdrive/common/version.h | awk -F\" '{print $2}')
+echo "#define COMMA_VERSION \"$VERSION-$(git --git-dir=$SOURCE_DIR/.git rev-parse --short HEAD)-$(date '+%Y-%m-%dT%H:%M:%S')\"" > selfdrive/common/version.h
 
 echo "[-] committing version $VERSION T=$SECONDS"
 git add -f .
@@ -94,14 +94,13 @@ git commit --amend -m "openpilot v$VERSION"
 if [ ! -z "$PUSH" ]; then
   git remote set-url origin git@github.com:commaai/openpilot.git
 
-  # Push to release2-staging
-  git push origin release3-staging
+  git push -f origin release3-staging
 
-  # Create dashcam release
+  # Create dashcam
   git rm selfdrive/car/*/carcontroller.py
 
   git commit -m "create dashcam release from release"
-  git push origin release3-staging:dashcam3-staging
+  git push -f origin release3-staging:dashcam3-staging
 fi
 
 echo "[-] done T=$SECONDS"
