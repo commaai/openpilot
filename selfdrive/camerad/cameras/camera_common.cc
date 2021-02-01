@@ -24,12 +24,6 @@
 #include "common/util.h"
 #include "imgproc/utils.h"
 
-const int env_xmin = getenv("XMIN") ? atoi(getenv("XMIN")) : 0;
-const int env_xmax = getenv("XMAX") ? atoi(getenv("XMAX")) : -1;
-const int env_ymin = getenv("YMIN") ? atoi(getenv("YMIN")) : 0;
-const int env_ymax = getenv("YMAX") ? atoi(getenv("YMAX")) : -1;
-const int env_scale = getenv("SCALE") ? atoi(getenv("SCALE")) : 1;
-
 static cl_program build_debayer_program(cl_device_id device_id, cl_context context, const CameraInfo *ci, const CameraBuf *b, const CameraState *s) {
   char args[4096];
   snprintf(args, sizeof(args),
@@ -207,14 +201,20 @@ void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &fr
 }
 
 kj::Array<uint8_t> get_frame_image(const CameraBuf *b) {
+  static const int x_min = getenv("XMIN") ? atoi(getenv("XMIN")) : 0;
+  static const int y_min = getenv("YMIN") ? atoi(getenv("YMIN")) : 0;
+  static const int env_xmax = getenv("XMAX") ? atoi(getenv("XMAX")) : -1;
+  static const int env_ymax = getenv("YMAX") ? atoi(getenv("YMAX")) : -1;
+  static const int scale = getenv("SCALE") ? atoi(getenv("SCALE")) : 1;
+
   assert(b->cur_rgb_buf);
+
+  const int x_max = env_xmax != -1 ? env_xmax : b->rgb_width - 1;
+  const int y_max = env_ymax != -1 ? env_ymax : b->rgb_height - 1;
+  const int new_width = (x_max - x_min + 1) / scale;
+  const int new_height = (y_max - y_min + 1) / scale;
   const uint8_t *dat = (const uint8_t *)b->cur_rgb_buf->addr;
-  int scale = env_scale;
-  int x_min = env_xmin; int y_min = env_ymin; int x_max = b->rgb_width-1; int y_max = b->rgb_height-1;
-  if (env_xmax != -1) x_max = env_xmax;
-  if (env_ymax != -1) y_max = env_ymax;
-  int new_width = (x_max - x_min + 1) / scale;
-  int new_height = (y_max - y_min + 1) / scale;
+
   kj::Array<uint8_t> frame_image = kj::heapArray<uint8_t>(new_width*new_height*3);
   uint8_t *resized_dat = frame_image.begin();
   int goff = x_min*3 + y_min*b->rgb_stride;
@@ -362,10 +362,20 @@ void common_camera_process_front(SubMaster *sm, PubMaster *pm, CameraState *c, i
       // set front camera metering target
       if (state.getFaceProb() > 0.4) {
         auto face_position = state.getFacePosition();
-        int x_offset = rhd_front ? 0 : b->rgb_width - (0.5 * b->rgb_height);
-        x_offset += (face_position[0] * (rhd_front ? -1.0 : 1.0) + 0.5) * (0.5 * b->rgb_height);
-        const int y_offset = (face_position[1] + 0.5) * b->rgb_height;
-
+#ifndef QCOM2
+        int frame_width = b->rgb_width;
+        int frame_height = b->rgb_height;
+#else
+        int frame_width = 668;
+        int frame_height = frame_width / 1.33;
+#endif
+        int x_offset = rhd_front ? 0 : frame_width - (0.5 * frame_height);
+        x_offset += (face_position[0] * (rhd_front ? -1.0 : 1.0) + 0.5) * (0.5 * frame_height);
+        int y_offset = (face_position[1] + 0.5) * frame_height;
+#ifdef QCOM2
+        x_offset += 630;
+        y_offset += 156;
+#endif
         x_min = std::max(0, x_offset - 72);
         x_max = std::min(b->rgb_width - 1, x_offset + 72);
         y_min = std::max(0, y_offset - 72);
@@ -379,18 +389,20 @@ void common_camera_process_front(SubMaster *sm, PubMaster *pm, CameraState *c, i
     // use driver face crop for AE
     if (x_max == 0) {
       // default setting
+#ifndef QCOM2
       x_min = rhd_front ? 0 : b->rgb_width * 3 / 5;
       x_max = rhd_front ? b->rgb_width * 2 / 5 : b->rgb_width;
       y_min = b->rgb_height / 3;
       y_max = b->rgb_height;
-    }
-#ifdef QCOM2
-    x_min = 96;
-    x_max = 1832;
-    y_min = 242;
-    y_max = 1148;
-    skip = 4;
+#else
+      x_min = 96;
+      x_max = 1832;
+      y_min = 242;
+      y_max = 1148;
+      skip = 4;
 #endif
+    }
+
     set_exposure_target(c, (const uint8_t *)b->cur_yuv_buf->y, x_min, x_max, 2, y_min, y_max, skip);
   }
 

@@ -109,9 +109,9 @@ jobs:
         docker pull $DOCKER_REGISTRY/$IMAGE_NAME:latest || true
         docker build --cache-from $DOCKER_REGISTRY/$IMAGE_NAME:latest -t $DOCKER_REGISTRY/$IMAGE_NAME:latest -f tools/webcam/Dockerfile .
     - name: Build openpilot
-      run: docker run --shm-size 1G --rm $DOCKER_REGISTRY/$IMAGE_NAME /bin/sh -c "cd /tmp/openpilot && USE_WEBCAM=1 scons -j$(nproc)"
+      run: docker run --shm-size 1G --rm -v $PWD:/tmp/openpilot -e PYTHONPATH=/tmp/openpilot $DOCKER_REGISTRY/$IMAGE_NAME /bin/sh -c "cd /tmp/openpilot && USE_WEBCAM=1 scons -j$(nproc)"
     - name: Push to container registry
-      if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
+      if: github.ref == 'refs/heads/master' && github.repository == 'commaai/openpilot'
       run: |
         $DOCKER_LOGIN
         docker push $DOCKER_REGISTRY/$IMAGE_NAME:latest

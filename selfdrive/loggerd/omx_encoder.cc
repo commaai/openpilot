@@ -18,7 +18,6 @@
 #include <libyuv.h>
 #include <msm_media_info.h>
 
-#include "common/mutex.h"
 #include "common/util.h"
 #include "common/swaglog.h"
 
@@ -173,7 +172,6 @@ OmxEncoder::OmxEncoder(const char* filename, int width, int height, int fps, int
   this->fps = fps;
   this->remuxing = !h265;
 
-  mutex_init_reentrant(&this->lock);
   pthread_mutex_init(&this->state_lock, NULL);
   pthread_cond_init(&this->state_cv, NULL);
 
@@ -408,10 +406,7 @@ int OmxEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const u
                              int in_width, int in_height,
                              int *frame_segment, uint64_t ts) {
   int err;
-  pthread_mutex_lock(&this->lock);
-
   if (!this->is_open) {
-    pthread_mutex_unlock(&this->lock);
     return -1;
   }
 
@@ -421,7 +416,6 @@ int OmxEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const u
   OMX_BUFFERHEADERTYPE* in_buf = nullptr;
   while (!this->free_in.try_pop(in_buf, 20)) {
     if (do_exit) {
-      pthread_mutex_unlock(&this->lock);
       return -1;
     }
   }
@@ -487,14 +481,11 @@ int OmxEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const u
     *frame_segment = this->segment;
   }
 
-  pthread_mutex_unlock(&this->lock);
   return ret;
 }
 
 void OmxEncoder::encoder_open(const char* path, int segment) {
   int err;
-
-  pthread_mutex_lock(&this->lock);
 
   this->segment = segment;
   snprintf(this->vid_path, sizeof(this->vid_path), "%s/%s", path, this->filename);
@@ -543,13 +534,9 @@ void OmxEncoder::encoder_open(const char* path, int segment) {
 
   this->is_open = true;
   this->counter = 0;
-
-  pthread_mutex_unlock(&this->lock);
 }
 
 void OmxEncoder::encoder_close() {
-  pthread_mutex_lock(&this->lock);
-
   if (this->is_open) {
     if (this->dirty) {
       // drain output only if there could be frames in the encoder
@@ -586,8 +573,6 @@ void OmxEncoder::encoder_close() {
     unlink(this->lock_path);
   }
   this->is_open = false;
-
-  pthread_mutex_unlock(&this->lock);
 }
 
 OmxEncoder::~OmxEncoder() {

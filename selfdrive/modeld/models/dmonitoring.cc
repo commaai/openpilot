@@ -147,25 +147,24 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
   double t2 = millis_since_boot();
 
   DMonitoringResult ret = {0};
-  memcpy(&ret.face_orientation, &s->output[0], sizeof ret.face_orientation);
-  memcpy(&ret.face_orientation_meta, &s->output[6], sizeof ret.face_orientation_meta);
-  memcpy(&ret.face_position, &s->output[3], sizeof ret.face_position);
-  memcpy(&ret.face_position_meta, &s->output[9], sizeof ret.face_position_meta);
-  memcpy(&ret.face_prob, &s->output[12], sizeof ret.face_prob);
-  memcpy(&ret.left_eye_prob, &s->output[21], sizeof ret.left_eye_prob);
-  memcpy(&ret.right_eye_prob, &s->output[30], sizeof ret.right_eye_prob);
-  memcpy(&ret.left_blink_prob, &s->output[31], sizeof ret.right_eye_prob);
-  memcpy(&ret.right_blink_prob, &s->output[32], sizeof ret.right_eye_prob);
-  memcpy(&ret.sg_prob, &s->output[33], sizeof ret.sg_prob);
-  memcpy(&ret.poor_vision, &s->output[34], sizeof ret.poor_vision);
-  memcpy(&ret.partial_face, &s->output[35], sizeof ret.partial_face);
-  memcpy(&ret.distracted_pose, &s->output[36], sizeof ret.distracted_pose);
-  memcpy(&ret.distracted_eyes, &s->output[37], sizeof ret.distracted_eyes);
-  ret.face_orientation_meta[0] = softplus(ret.face_orientation_meta[0]);
-  ret.face_orientation_meta[1] = softplus(ret.face_orientation_meta[1]);
-  ret.face_orientation_meta[2] = softplus(ret.face_orientation_meta[2]);
-  ret.face_position_meta[0] = softplus(ret.face_position_meta[0]);
-  ret.face_position_meta[1] = softplus(ret.face_position_meta[1]);
+  for (int i = 0; i < 3; ++i) {
+    ret.face_orientation[i] = s->output[i];
+    ret.face_orientation_meta[i] = softplus(s->output[6 + i]);
+  }
+  for (int i = 0; i < 2; ++i) {
+    ret.face_position[i] = s->output[3 + i];
+    ret.face_position_meta[i] = softplus(s->output[9 + i]);
+  }
+  ret.face_prob = s->output[12];
+  ret.left_eye_prob = s->output[21];
+  ret.right_eye_prob = s->output[30];
+  ret.left_blink_prob = s->output[31];
+  ret.right_blink_prob = s->output[32];
+  ret.sg_prob = s->output[33];
+  ret.poor_vision = s->output[34];
+  ret.partial_face = s->output[35];
+  ret.distracted_pose = s->output[36];
+  ret.distracted_eyes = s->output[37];
   ret.dsp_execution_time = (t2 - t1) / 1000.;
   return ret;
 }

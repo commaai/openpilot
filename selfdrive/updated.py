@@ -228,7 +228,7 @@ def handle_agnos_update(wait_helper):
 
   cloudlog.info(f"Beginning background installation for AGNOS {updated_version}")
 
-  manifest_path = os.path.join(OVERLAY_MERGED, "installer/updater/update_agnos.json")
+  manifest_path = os.path.join(OVERLAY_MERGED, "selfdrive/hardware/tici/agnos.json")
   flash_agnos_update(manifest_path, cloudlog)
 
 

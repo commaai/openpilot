@@ -5,6 +5,7 @@
 #include <QPushButton>
 #include <QLineEdit>
 #include <QRandomGenerator>
+#include <QtConcurrent>
 
 #include "networking.hpp"
 
@@ -245,7 +246,6 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   QHBoxLayout* enableSSHLayout = new QHBoxLayout(this);
   enableSSHLayout->addWidget(new QLabel("Enable SSH", this));
   toggle_switch_SSH = new Toggle(this);
-  toggle_switch_SSH->immediateOffset = 40;
   toggle_switch_SSH->setFixedSize(150, 100);
   if (isSSHEnabled()) {
     toggle_switch_SSH->togglePosition();
@@ -293,9 +293,15 @@ bool AdvancedNetworking::isSSHEnabled(){
 
 void AdvancedNetworking::refresh(){
   ipLabel->setText(wifi->ipv4_address);
+  // Don't refresh while changing SSH state
+  if(!toggle_switch_SSH->getEnabled()){
+    return;
+  }
   if (toggle_switch_SSH->on != isSSHEnabled()) {
     toggle_switch_SSH->togglePosition();
   }
+  //Qt can be lazy
+  repaint();
 }
 
 void AdvancedNetworking::toggleTethering(int enable) {
@@ -306,16 +312,28 @@ void AdvancedNetworking::toggleTethering(int enable) {
   }
   editPasswordButton->setEnabled(!enable);
 }
-void AdvancedNetworking::toggleSSH(int enable) {
-  if (enable) {
-    system("sudo systemctl enable ssh");
-    system("sudo systemctl start ssh");
-  } else {
-    system("sudo systemctl stop ssh");
-    system("sudo systemctl disable ssh");
 
+void enableSSH(Toggle* toggle_switch_SSH){
+  system("sudo systemctl enable ssh");
+  system("sudo systemctl start ssh");
+  toggle_switch_SSH->setEnabled(true);
+}
+
+void disableSSH(Toggle* toggle_switch_SSH){
+  system("sudo systemctl stop ssh");
+  system("sudo systemctl disable ssh");
+  toggle_switch_SSH->setEnabled(true);
+}
+
+void AdvancedNetworking::toggleSSH(int enable) {
+  toggle_switch_SSH->setEnabled(false);
+  if (enable) {
+    QtConcurrent::run(enableSSH, toggle_switch_SSH);
+  } else {
+    QtConcurrent::run(disableSSH, toggle_switch_SSH);
   }
 }
+
 void AdvancedNetworking::receiveText(QString text){
   wifi->changeTetheringPassword(text);
   s->setCurrentIndex(1);

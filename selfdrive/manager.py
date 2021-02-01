@@ -268,10 +268,6 @@ def register_managed_process(name, desc, car_started=False):
 def nativelauncher(pargs, cwd):
   # exec the process
   os.chdir(cwd)
-
-  # because when extracted from pex zips permissions get lost -_-
-  os.chmod(pargs[0], 0o700)
-
   os.execvp(pargs[0], pargs)
 
 def start_managed_process(name):
