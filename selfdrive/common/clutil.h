@@ -33,26 +33,26 @@ class CLContext {
  public:
   CLContext() = default;
   CLContext(cl_device_type device_type) { init(device_type); }
-  ~CLContext() { if (context_) clReleaseContext(context_); }
+  ~CLContext() { if (context) clReleaseContext(context); }
   static CLContext getDefault() {
     std::call_once(default_initialized_, [] { default_.init(CL_DEVICE_TYPE_DEFAULT); });
     return default_;
   }
 
+  cl_context context = nullptr;
+  cl_device_id device_id = nullptr;
+
 private:
   void init(cl_device_type device_type) {
-    device_id_ = cl_get_device_id(device_type);
+    device_id = cl_get_device_id(device_type);
     // TODO: do this for QCOM2 too
 #if defined(QCOM)
-    const cl_context_properties props[] = {CL_CONTEXT_PRIORITY_HINT_QCOM, CL_PRIORITY_HINT_HIGH_QCOM, 0};
-    context_ = CL_CHECK_ERR(clCreateContext(props, 1, &device_id_, NULL, NULL, &err));
+    const cl_contextproperties props[] = {CL_contextPRIORITY_HINT_QCOM, CL_PRIORITY_HINT_HIGH_QCOM, 0};
+    context = CL_CHECK_ERR(clCreateContext(props, 1, &device_id, NULL, NULL, &err));
 #else
-    context_ = CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id_, NULL, NULL, &err));
+    context = CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id, NULL, NULL, &err));
 #endif
   }
-
-  cl_context context_ = nullptr;
-  cl_device_id device_id_ = nullptr;
   static std::once_flag default_initialized_;
   static CLContext default_;
 };

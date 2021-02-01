@@ -41,7 +41,8 @@ static cl_program build_debayer_program(cl_device_id device_id, cl_context conte
 #endif
 }
 
-void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s, VisionIpcServer * v, int frame_cnt, VisionStreamType rgb_type, VisionStreamType yuv_type, release_cb release_callback) {
+void CameraBuf::init(CameraState *s, VisionIpcServer * v, int frame_cnt, VisionStreamType rgb_type, VisionStreamType yuv_type, release_cb release_callback) {
+  CLContext ctx = CLContext::getDefault();
   vipc_server = v;
   this->rgb_type = rgb_type;
   this->yuv_type = yuv_type;
@@ -58,7 +59,7 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
 
   for (int i = 0; i < frame_buf_count; i++) {
     camera_bufs[i].allocate(frame_size);
-    camera_bufs[i].init_cl(device_id, context);
+    camera_bufs[i].init_cl(ctx.device_id, ctx.context);
   }
 
   rgb_width = ci->frame_width;
@@ -86,18 +87,18 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
   vipc_server->create_buffers(yuv_type, YUV_COUNT, false, rgb_width, rgb_height);
 
   if (ci->bayer) {
-    cl_program prg_debayer = build_debayer_program(device_id, context, ci, this);
+    cl_program prg_debayer = build_debayer_program(ctx.device_id, ctx.context, ci, this);
     krnl_debayer = CL_CHECK_ERR(clCreateKernel(prg_debayer, "debayer10", &err));
     CL_CHECK(clReleaseProgram(prg_debayer));
   }
 
-  rgb_to_yuv_init(&rgb_to_yuv_state, context, device_id, rgb_width, rgb_height, rgb_stride);
+  rgb_to_yuv_init(&rgb_to_yuv_state, ctx.context, ctx.device_id, rgb_width, rgb_height, rgb_stride);
 
 #ifdef __APPLE__
-  q = CL_CHECK_ERR(clCreateCommandQueue(context, device_id, 0, &err));
+  q = CL_CHECK_ERR(clCreateCommandQueue(ctx.context, ctx.device_id, 0, &err));
 #else
   const cl_queue_properties props[] = {0};  //CL_QUEUE_PRIORITY_KHR, CL_QUEUE_PRIORITY_HIGH_KHR, 0};
-  q = CL_CHECK_ERR(clCreateCommandQueueWithProperties(context, device_id, props, &err));
+  q = CL_CHECK_ERR(clCreateCommandQueueWithProperties(ctx.context, ctx.device_id, props, &err));
 #endif
 }
 

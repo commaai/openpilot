@@ -96,7 +96,7 @@ static void camera_release_buffer(void* cookie, int buf_idx) {
 
 static void camera_init(VisionIpcServer *v, CameraState *s, int camera_id, int camera_num,
                         uint32_t pixel_clock, uint32_t line_length_pclk,
-                        unsigned int max_gain, unsigned int fps, cl_device_id device_id, cl_context ctx,
+                        unsigned int max_gain, unsigned int fps,
                         VisionStreamType rgb_type, VisionStreamType yuv_type) {
   s->camera_num = camera_num;
   s->camera_id = camera_id;
@@ -112,7 +112,7 @@ static void camera_init(VisionIpcServer *v, CameraState *s, int camera_id, int c
 
   s->self_recover = 0;
 
-  s->buf.init(device_id, ctx, s, v, FRAME_BUF_COUNT, rgb_type, yuv_type, camera_release_buffer);
+  s->buf.init(s, v, FRAME_BUF_COUNT, rgb_type, yuv_type, camera_release_buffer);
 
   pthread_mutex_init(&s->frame_info_lock, NULL);
 }
@@ -224,7 +224,7 @@ static int imx179_s5k3p8sp_apply_exposure(CameraState *s, int gain, int integ_li
   return err;
 }
 
-cl_program build_conv_program(cl_device_id device_id, cl_context context, int image_w, int image_h, int filter_size) {
+cl_program build_conv_program(int image_w, int image_h, int filter_size) {
   char args[4096];
   snprintf(args, sizeof(args),
           "-cl-fast-relaxed-math -cl-denorms-are-zero "
@@ -232,10 +232,11 @@ cl_program build_conv_program(cl_device_id device_id, cl_context context, int im
           "-DFILTER_SIZE=%d -DHALF_FILTER_SIZE=%d -DTWICE_HALF_FILTER_SIZE=%d -DHALF_FILTER_SIZE_IMAGE_W=%d",
           image_w, image_h, 1,
           filter_size, filter_size/2, (filter_size/2)*2, (filter_size/2)*image_w);
-  return cl_program_from_file(context, device_id, "imgproc/conv.cl", args);
+  CLContext ctx = CLContext::getDefault();
+  return cl_program_from_file(ctx.context, ctx.device_id, "imgproc/conv.cl", args);
 }
 
-void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
+void cameras_init(VisionIpcServer *v, MultiCameraState *s) {
   char project_name[1024] = {0};
   property_get("ro.boot.project_name", project_name, "");
 
@@ -279,26 +280,25 @@ void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_i
 #else
               /*fps*/ 20,
 #endif
-              device_id, ctx,
               VISION_STREAM_RGB_BACK, VISION_STREAM_YUV_BACK);
   s->rear.apply_exposure = imx298_apply_exposure;
 
   if (s->device == DEVICE_OP3T) {
     camera_init(v, &s->front, CAMERA_ID_S5K3P8SP, 1,
                 /*pixel_clock=*/560000000, /*line_length_pclk=*/5120,
-                /*max_gain=*/510, 10, device_id, ctx,
+                /*max_gain=*/510, 10,
                 VISION_STREAM_RGB_FRONT, VISION_STREAM_YUV_FRONT);
     s->front.apply_exposure = imx179_s5k3p8sp_apply_exposure;
   } else if (s->device == DEVICE_LP3) {
     camera_init(v, &s->front, CAMERA_ID_OV8865, 1,
                 /*pixel_clock=*/72000000, /*line_length_pclk=*/1602,
-                /*max_gain=*/510, 10, device_id, ctx,
+                /*max_gain=*/510, 10,
                 VISION_STREAM_RGB_FRONT, VISION_STREAM_YUV_FRONT);
     s->front.apply_exposure = ov8865_apply_exposure;
   } else {
     camera_init(v, &s->front, CAMERA_ID_IMX179, 1,
                 /*pixel_clock=*/251200000, /*line_length_pclk=*/3440,
-                /*max_gain=*/224, 20, device_id, ctx,
+                /*max_gain=*/224, 20,
                 VISION_STREAM_RGB_FRONT, VISION_STREAM_YUV_FRONT);
     s->front.apply_exposure = imx179_s5k3p8sp_apply_exposure;
   }
@@ -316,7 +316,7 @@ void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_i
   }
   const int width = s->rear.buf.rgb_width/NUM_SEGMENTS_X;
   const int height = s->rear.buf.rgb_height/NUM_SEGMENTS_Y;
-  s->prg_rgb_laplacian = build_conv_program(device_id, ctx, width, height, 3);
+  s->prg_rgb_laplacian = build_conv_program(width, height, 3);
   s->krnl_rgb_laplacian = CL_CHECK_ERR(clCreateKernel(s->prg_rgb_laplacian, "rgb2gray_conv2d", &err));
   // TODO: Removed CL_MEM_SVM_FINE_GRAIN_BUFFER, confirm it doesn't matter
   s->rgb_conv_roi_cl = CL_CHECK_ERR(clCreateBuffer(ctx, CL_MEM_READ_WRITE,
