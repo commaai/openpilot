@@ -24,12 +24,6 @@
 #include "common/util.h"
 #include "imgproc/utils.h"
 
-const int env_xmin = getenv("XMIN") ? atoi(getenv("XMIN")) : 0;
-const int env_xmax = getenv("XMAX") ? atoi(getenv("XMAX")) : -1;
-const int env_ymin = getenv("YMIN") ? atoi(getenv("YMIN")) : 0;
-const int env_ymax = getenv("YMAX") ? atoi(getenv("YMAX")) : -1;
-const int env_scale = getenv("SCALE") ? atoi(getenv("SCALE")) : 1;
-
 static cl_program build_debayer_program(cl_device_id device_id, cl_context context, const CameraInfo *ci, const CameraBuf *b) {
   char args[4096];
   snprintf(args, sizeof(args),
@@ -207,14 +201,20 @@ void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &fr
 }
 
 kj::Array<uint8_t> get_frame_image(const CameraBuf *b) {
+  static const int x_min = getenv("XMIN") ? atoi(getenv("XMIN")) : 0;
+  static const int y_min = getenv("YMIN") ? atoi(getenv("YMIN")) : 0;
+  static const int env_xmax = getenv("XMAX") ? atoi(getenv("XMAX")) : -1;
+  static const int env_ymax = getenv("YMAX") ? atoi(getenv("YMAX")) : -1;
+  static const int scale = getenv("SCALE") ? atoi(getenv("SCALE")) : 1;
+
   assert(b->cur_rgb_buf);
+
+  const int x_max = env_xmax != -1 ? env_xmax : b->rgb_width - 1;
+  const int y_max = env_ymax != -1 ? env_ymax : b->rgb_height - 1;
+  const int new_width = (x_max - x_min + 1) / scale;
+  const int new_height = (y_max - y_min + 1) / scale;
   const uint8_t *dat = (const uint8_t *)b->cur_rgb_buf->addr;
-  int scale = env_scale;
-  int x_min = env_xmin; int y_min = env_ymin; int x_max = b->rgb_width-1; int y_max = b->rgb_height-1;
-  if (env_xmax != -1) x_max = env_xmax;
-  if (env_ymax != -1) y_max = env_ymax;
-  int new_width = (x_max - x_min + 1) / scale;
-  int new_height = (y_max - y_min + 1) / scale;
+
   kj::Array<uint8_t> frame_image = kj::heapArray<uint8_t>(new_width*new_height*3);
   uint8_t *resized_dat = frame_image.begin();
   int goff = x_min*3 + y_min*b->rgb_stride;
