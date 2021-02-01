@@ -293,17 +293,15 @@ bool AdvancedNetworking::isSSHEnabled(){
 }
 
 void AdvancedNetworking::refresh(){
-  if(skipRefresh){
-    skipRefresh = false;
+  ipLabel->setText(wifi->ipv4_address);
+  // Don't refresh while changing SSH state
+  if(!toggle_switch_SSH->getEnabled()){
     return;
   }
-  ipLabel->setText(wifi->ipv4_address);
   if (toggle_switch_SSH->on != isSSHEnabled() && !changingSSH) {
-    if(!toggle_switch_SSH->enabled){
-      return;
-    }
     toggle_switch_SSH->togglePosition();
   }
+  repaint();
 }
 
 void AdvancedNetworking::toggleTethering(int enable) {
@@ -315,21 +313,20 @@ void AdvancedNetworking::toggleTethering(int enable) {
   editPasswordButton->setEnabled(!enable);
 }
 
-void enableSSH(Toggle* toggle_switch){
+void enableSSH(Toggle* toggle_switch_SSH){
   system("sudo systemctl enable ssh");
   system("sudo systemctl start ssh");
-  toggle_switch->enabled = true;
+  toggle_switch_SSH->setEnabled(true);
 }
 
-void disableSSH(Toggle* toggle_switch){
+void disableSSH(Toggle* toggle_switch_SSH){
   system("sudo systemctl stop ssh");
   system("sudo systemctl disable ssh");
-  toggle_switch->enabled = true;
+  toggle_switch_SSH->setEnabled(true);
 }
 
 void AdvancedNetworking::toggleSSH(int enable) {
-  toggle_switch_SSH->enabled = false;
-  skipRefresh = true;
+  toggle_switch_SSH->setEnabled(false);
   if (enable) {
     QtConcurrent::run(enableSSH, toggle_switch_SSH);
   } else {

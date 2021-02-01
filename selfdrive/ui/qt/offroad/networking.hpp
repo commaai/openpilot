@@ -56,7 +56,6 @@ private:
 
   WifiManager* wifi = nullptr;
 
-  bool skipRefresh;
   bool isSSHEnabled();
 signals:
   void openKeyboard();
