@@ -160,7 +160,7 @@ pipeline {
 
                 stage('Tici Build') {
                   environment {
-                    R3_PUSH = "${env.BRANCH_NAME != 'master' ? '1' : ' '}"
+                    R3_PUSH = "${env.BRANCH_NAME == 'master' ? '1' : ' '}"
                   }
                   steps {
                     phone_steps("tici", [
