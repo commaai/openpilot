@@ -271,6 +271,7 @@ selfdrive/hardware/tici/__init__.py
 selfdrive/hardware/tici/hardware.py
 selfdrive/hardware/tici/pins.py
 selfdrive/hardware/tici/agnos.py
+selfdrive/hardware/tici/agnos.json
 selfdrive/hardware/pc/__init__.py
 selfdrive/hardware/pc/hardware.py
 
@@ -371,8 +372,11 @@ selfdrive/camerad/cameras/camera_frame_stream.cc
 selfdrive/camerad/cameras/camera_frame_stream.h
 selfdrive/camerad/cameras/camera_qcom.cc
 selfdrive/camerad/cameras/camera_qcom.h
+selfdrive/camerad/cameras/camera_qcom2.cc
+selfdrive/camerad/cameras/camera_qcom2.h
 selfdrive/camerad/cameras/debayer.cl
 selfdrive/camerad/cameras/sensor_i2c.h
+selfdrive/camerad/cameras/sensor2_i2c.h
 
 selfdrive/camerad/transforms/rgb_to_yuv.cc
 selfdrive/camerad/transforms/rgb_to_yuv.h
@@ -445,9 +449,11 @@ phonelibs/qrcode/*.hpp
 
 phonelibs/libyuv/include/**
 phonelibs/libyuv/lib/**
+phonelibs/libyuv/larch64/**
 
 phonelibs/snpe/include/**
 phonelibs/snpe/aarch64**
+phonelibs/snpe/larch64**
 phonelibs/snpe/dsp**
 
 phonelibs/android_frameworks_native/**

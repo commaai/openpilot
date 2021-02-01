@@ -12,6 +12,8 @@ export GIT_COMMIT=${env.GIT_COMMIT}
 
 source ~/.bash_profile
 
+ln -snf ${env.TEST_DIR} /data/pythonpath
+
 if [ -f /EON ]; then
   echo \$\$ > /dev/cpuset/app/tasks || true
   echo \$PPID > /dev/cpuset/app/tasks || true
@@ -157,12 +159,16 @@ pipeline {
                 }
 
                 stage('Tici Build') {
+                  environment {
+                    R3_PUSH = "${env.BRANCH_NAME == 'master' ? '1' : ' '}"
+                  }
                   steps {
                     phone_steps("tici", [
                       ["build", "SCONS_CACHE=1 scons -j16"],
                       ["test loggerd", "python selfdrive/loggerd/tests/test_loggerd.py"],
                       ["test encoder", "python selfdrive/loggerd/tests/test_encoder.py"],
                       ["test camerad", "python selfdrive/camerad/test/test_camerad.py"],
+                      ["build release3-staging", "cd release && PUSH=${env.R3_PUSH} ./build_release3.sh"],
                     ])
                   }
                 }
