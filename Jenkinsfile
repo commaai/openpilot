@@ -12,6 +12,8 @@ export GIT_COMMIT=${env.GIT_COMMIT}
 
 source ~/.bash_profile
 
+ln -snf ${env.TEST_DIR} /data/pythonpath
+
 if [ -f /EON ]; then
   echo \$\$ > /dev/cpuset/app/tasks || true
   echo \$PPID > /dev/cpuset/app/tasks || true
