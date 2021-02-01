@@ -120,7 +120,7 @@ pipeline {
               parallel {
                 stage('Devel Build') {
                   environment {
-                    CI_PUSH = "${env.BRANCH_NAME == 'master' ? '1' : ' '}"
+                    CI_PUSH = "${env.BRANCH_NAME == 'master' ? 'master-ci' : ' '}"
                   }
                   steps {
                     phone_steps("eon-build", [
