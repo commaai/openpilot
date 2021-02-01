@@ -43,6 +43,7 @@ git checkout -- selfdrive/common/version.h
 echo "[-] copying files T=$SECONDS"
 cd $SOURCE_DIR
 cp -pR --parents $(cat release/files_common) $BUILD_DIR/
+cp installer/continue_openpilot.sh $BUILD_DIR/
 
 # in the directory
 cd $BUILD_DIR
