@@ -43,6 +43,5 @@ class TestLogcatdAndroid(unittest.TestCase):
     self.assertEqual(len(sent_msgs), 0)
 
 
-
 if __name__ == "__main__":
   unittest.main()
