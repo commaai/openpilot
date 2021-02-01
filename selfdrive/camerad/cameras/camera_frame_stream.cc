@@ -20,6 +20,7 @@ void camera_init(VisionIpcServer * v, CameraState *s, int camera_id, unsigned in
   s->ci = cameras_supported[camera_id];
   assert(s->ci.frame_width != 0);
 
+  s->camera_num = camera_id;
   s->fps = fps;
   s->buf.init(device_id, ctx, s, v, FRAME_BUF_COUNT, rgb_type, yuv_type);
 }
@@ -66,7 +67,7 @@ CameraInfo cameras_supported[CAMERA_ID_MAX] = {
     .frame_width = 1632,
     .frame_height = 1224,
     .frame_stride = 2040, // seems right
-    .bayer = true,
+    .bayer = false,
     .bayer_flip = 3,
     .hdr = false
   },

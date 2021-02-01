@@ -24,16 +24,16 @@
 #include "common/util.h"
 #include "imgproc/utils.h"
 
-static cl_program build_debayer_program(cl_device_id device_id, cl_context context, const CameraInfo *ci, const CameraBuf *b) {
+static cl_program build_debayer_program(cl_device_id device_id, cl_context context, const CameraInfo *ci, const CameraBuf *b, const CameraState *s) {
   char args[4096];
   snprintf(args, sizeof(args),
            "-cl-fast-relaxed-math -cl-denorms-are-zero "
            "-DFRAME_WIDTH=%d -DFRAME_HEIGHT=%d -DFRAME_STRIDE=%d "
            "-DRGB_WIDTH=%d -DRGB_HEIGHT=%d -DRGB_STRIDE=%d "
-           "-DBAYER_FLIP=%d -DHDR=%d",
+           "-DBAYER_FLIP=%d -DHDR=%d -DCAM_NUM=%d",
            ci->frame_width, ci->frame_height, ci->frame_stride,
            b->rgb_width, b->rgb_height, b->rgb_stride,
-           ci->bayer_flip, ci->hdr);
+           ci->bayer_flip, ci->hdr, s->camera_num);
 #ifdef QCOM2
   return cl_program_from_file(context, device_id, "cameras/real_debayer.cl", args);
 #else
@@ -86,7 +86,7 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
   vipc_server->create_buffers(yuv_type, YUV_COUNT, false, rgb_width, rgb_height);
 
   if (ci->bayer) {
-    cl_program prg_debayer = build_debayer_program(device_id, context, ci, this);
+    cl_program prg_debayer = build_debayer_program(device_id, context, ci, this, s);
     krnl_debayer = CL_CHECK_ERR(clCreateKernel(prg_debayer, "debayer10", &err));
     CL_CHECK(clReleaseProgram(prg_debayer));
   }
