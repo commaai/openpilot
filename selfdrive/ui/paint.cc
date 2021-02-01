@@ -264,7 +264,7 @@ static void ui_draw_vision_face(UIState *s) {
   const int face_size = 96;
   const int face_x = (s->viz_rect.x + face_size + (bdr_s * 2));
   const int face_y = (s->viz_rect.bottom() - footer_h + ((footer_h - face_size) / 2));
-  ui_draw_circle_image(s, face_x, face_y, face_size, "driver_face", s->scene.dmonitoring_state.getFaceDetected());
+  ui_draw_circle_image(s, face_x, face_y, face_size, "driver_face", s->scene.dmonitoring_state.getIsActiveMode());
 }
 
 static void ui_draw_driver_view(UIState *s) {
