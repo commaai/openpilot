@@ -159,7 +159,8 @@ pipeline {
                 stage('Tici Build') {
                   steps {
                     phone_steps("tici", [
-                      ["build", "SCONS_CACHE=1 scons -j16"],
+                      ["build", "SCONS_CACHE=1 scons -j$(nproc)"],
+                      ["build release3-staging", "cd release && PUSH=1 ./build_release3.sh"],
                       ["test loggerd", "python selfdrive/loggerd/tests/test_loggerd.py"],
                       ["test encoder", "python selfdrive/loggerd/tests/test_encoder.py"],
                       ["test camerad", "python selfdrive/camerad/test/test_camerad.py"],
