@@ -57,14 +57,12 @@ git add -f .
 git status
 git commit -a -m "openpilot v$VERSION release"
 
-# Build signed panda firmware
+# Build panda firmware
 pushd panda/board/
-cp -r /data/pandaextra /data/openpilot/
-RELEASE=1 make obj/panda.bin
+make obj/panda.bin
 mv obj/panda.bin /tmp/panda.bin
 make clean
-mv /tmp/panda.bin obj/panda.bin.signed
-rm -rf /data/openpilot/pandaextra
+mv /tmp/panda.bin obj/panda.bin
 popd
 
 # Build
