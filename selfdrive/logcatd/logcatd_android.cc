@@ -18,7 +18,7 @@ int main() {
   ExitHandler do_exit;
 
   // setup android logging
-  struct logger_list *logger_list = android_logger_list_alloc(ANDROID_LOG_RDONLY | ANDROID_LOG_NONBLOCK, 0, 0);
+  struct logger_list *logger_list = android_logger_list_alloc(ANDROID_LOG_RDONLY, 0, 0);
   assert(logger_list);
   struct logger *main_logger = android_logger_open(logger_list, LOG_ID_MAIN);
   assert(main_logger);
