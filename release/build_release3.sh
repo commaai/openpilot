@@ -1,7 +1,7 @@
 #!/usr/bin/bash -e
 
-BUILD_DIR=/tmp/releasepilot
-SOURCE_DIR=/data/openpilot
+BUILD_DIR=/data/openpilot
+SOURCE_DIR=/data/openpilot_source
 
 ln -snf $BUILD_DIR /data/pythonpath
 
@@ -22,9 +22,8 @@ echo "[-] fetching public T=$SECONDS"
 git prune || true
 git remote prune origin || true
 
-echo "[-] bringing master-ci and devel in sync T=$SECONDS"
-git fetch origin master-ci
-git fetch origin devel
+echo "[-] git fetch origin T=$SECONDS"
+git fetch origin
 
 git checkout -f -B release3-staging
 git reset --hard origin/devel
