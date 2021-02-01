@@ -313,15 +313,6 @@ void AdvancedNetworking::toggleTethering(int enable) {
   editPasswordButton->setEnabled(!enable);
 }
 
-void AdvancedNetworking::toggleSSH(int enable) {
-  toggle_switch_SSH->setEnabled(false);
-  if (enable) {
-    QtConcurrent::run(enableSSH, toggle_switch_SSH);
-  } else {
-    QtConcurrent::run(disableSSH, toggle_switch_SSH);
-  }
-}
-
 void enableSSH(Toggle* toggle_switch_SSH){
   system("sudo systemctl enable ssh");
   system("sudo systemctl start ssh");
@@ -332,6 +323,15 @@ void disableSSH(Toggle* toggle_switch_SSH){
   system("sudo systemctl stop ssh");
   system("sudo systemctl disable ssh");
   toggle_switch_SSH->setEnabled(true);
+}
+
+void AdvancedNetworking::toggleSSH(int enable) {
+  toggle_switch_SSH->setEnabled(false);
+  if (enable) {
+    QtConcurrent::run(enableSSH, toggle_switch_SSH);
+  } else {
+    QtConcurrent::run(disableSSH, toggle_switch_SSH);
+  }
 }
 
 void AdvancedNetworking::receiveText(QString text){
