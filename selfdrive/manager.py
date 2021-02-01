@@ -196,7 +196,6 @@ kill_processes = []
 if EON:
   kill_processes += [
     'sensord',
-    'logcatd',
   ]
 
 persistent_processes = [
