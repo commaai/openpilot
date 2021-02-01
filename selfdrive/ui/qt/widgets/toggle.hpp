@@ -29,6 +29,7 @@ protected:
 
 private:
   QColor circleColor;
+  QColor green;
   bool enabled = true;
   int _x_circle, _y_circle;
   int _height, _radius;

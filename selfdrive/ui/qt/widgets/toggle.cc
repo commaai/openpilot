@@ -11,6 +11,7 @@ _anim(new QPropertyAnimation(this, "offset_circle", this))
   _y_circle = _radius;
   _y_rect = (_height - _height_rect)/2;
   circleColor = QColor(0xffffff); // placeholder
+  green = QColor(0xffffff); // placeholder
   setEnabled(true);
 }
 
@@ -21,7 +22,7 @@ void Toggle::paintEvent(QPaintEvent *e) {
   p.setRenderHint(QPainter::Antialiasing, true);
 
   // Draw toggle background left
-  p.setBrush(QColor(0x33ab4c));
+  p.setBrush(green);
   p.drawRoundedRect(QRect(0, _y_rect, _x_circle + _radius, _height_rect), _height_rect/2, _height_rect/2);
 
   // Draw toggle background right
@@ -72,7 +73,9 @@ void Toggle::setEnabled(bool value){
   enabled = value;
   if(value){
     circleColor.setRgb(0xfafafa);
+    green.setRgb(0x33ab4c);
   }else{
-    circleColor.setRgb(0xaaaaaa);
+    circleColor.setRgb(0x888888);
+    green.setRgb(0x227722);
   }
 }
