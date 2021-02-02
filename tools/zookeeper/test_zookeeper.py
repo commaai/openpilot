@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import time
-from __init__ import Zookeeper
+from tools.zookeeper import Zookeeper
 
 z = Zookeeper()
 z.set_device_power(True)
