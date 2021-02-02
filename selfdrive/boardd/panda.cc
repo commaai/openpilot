@@ -120,15 +120,12 @@ int Panda::usb_read(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned
 
 std::tuple<int, int> Panda::usb_bulk_transfer(libusb_endpoint_direction dir, unsigned char endpoint, unsigned char* data, int length, unsigned int timeout) {
   int err = 0, retries = 0, transferred = 0;
-  // Keep the lock while retrying
+  // Keep the lock while retrying for bulk transfer
   std::lock_guard lk(usb_lock);
   while (connected) {
-    err = libusb_bulk_transfer(dev_handle, endpoint, data, length, &transferred, timeout);
-    if (err == 0 && (dir != LIBUSB_ENDPOINT_OUT || length == transferred)) {
+    err = libusb_bulk_transfer(dev_handle, dir | endpoint, data, length, &transferred, timeout);
+    if ((err == 0 && (dir != LIBUSB_ENDPOINT_OUT || length == transferred)) || err == LIBUSB_ERROR_TIMEOUT) {
       break;
-    }
-    if (err == LIBUSB_ERROR_TIMEOUT) {
-      break; // timeout is okay to exit
     }
     handle_usb_issue(err, ++retries, __func__);
   };
@@ -276,7 +273,7 @@ void Panda::can_send(capnp::List<cereal::CanData>::Reader can_data_list){
 
 int Panda::can_receive(kj::Array<capnp::word>& out_buf) {
   uint32_t data[RECV_SIZE/4];
-  int recv = usb_bulk_read(0x81, (unsigned char*)data, RECV_SIZE);
+  int recv = usb_bulk_read(1, (unsigned char*)data, RECV_SIZE);
 
   // Not sure if this can happen
   if (recv < 0) recv = 0;
