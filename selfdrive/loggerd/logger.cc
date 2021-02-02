@@ -139,9 +139,8 @@ std::string logger_get_route_name() {
   char route_name[64] = {'\0'};
   time_t rawtime = time(NULL);
   struct tm timeinfo;
-
   localtime_r(&rawtime, &timeinfo);
-  strftime(route_name, sizeof(route_name), "%Y-%m-%d--%H-%M-%S.bz2", &timeinfo);
+  strftime(route_name, sizeof(route_name), "%Y-%m-%d--%H-%M-%S", &timeinfo);
   return route_name;
 }
 
@@ -170,6 +169,7 @@ void logger_init(LoggerState *s, const char* log_name, bool has_qlog) {
   s->part = -1;
   s->has_qlog = has_qlog;
   s->route_name = logger_get_route_name();
+  snprintf(s->log_name, sizeof(s->log_name), "%s", log_name);
   s->init_data = logger_build_init_data();
 }
 
