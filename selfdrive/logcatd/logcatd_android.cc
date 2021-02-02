@@ -10,21 +10,21 @@ log_time last_log_time = {};
 
 static void publish_log(PubMaster &pm) {
   // setup android logging
-  logger_list *logger_list =
+  logger_list *loggers =
       last_log_time.tv_sec == 0
           ? android_logger_list_alloc(ANDROID_LOG_RDONLY | ANDROID_LOG_NONBLOCK, 0, 0)
           : android_logger_list_alloc_time(ANDROID_LOG_RDONLY | ANDROID_LOG_NONBLOCK, last_log_time, 0);
-  assert(logger_list);
+  assert(loggers);
 
   const log_id_t log_ids[] = {LOG_ID_MAIN, LOG_ID_RADIO, LOG_ID_SYSTEM, LOG_ID_CRASH, (log_id_t)5};
   for (const auto &id : log_ids) {
-    struct logger *log = android_logger_open(logger_list, id);
+    struct logger *log = android_logger_open(loggers, id);
     assert(log != nullptr);
   }
 
   while (!do_exit) {
     log_msg log_msg;
-    int err = android_logger_list_read(logger_list, &log_msg);
+    int err = android_logger_list_read(loggers, &log_msg);
     if (err <= 0) break;
 
     AndroidLogEntry entry;
@@ -47,7 +47,7 @@ static void publish_log(PubMaster &pm) {
     }
   }
 
-  android_logger_list_free(logger_list);
+  android_logger_list_free(loggers);
 }
 
 int main() {
