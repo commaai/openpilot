@@ -22,8 +22,10 @@ ONNXModel::ONNXModel(const char *path, float *_output, size_t _output_size, int 
   strcat(tmp, ".onnx");
   LOGD("loading model %s", tmp);
 
-  assert(pipe(pipein) == 0);
-  assert(pipe(pipeout) == 0);
+  int err = pipe(pipein);
+  assert(err == 0);
+  err = pipe(pipeout);
+  assert(err == 0);
 
   std::string exe_dir = util::dir_name(util::readlink("/proc/self/exe"));
   std::string onnx_runner = exe_dir + "/runners/onnx_runner.py";
