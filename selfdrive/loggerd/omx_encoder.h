@@ -3,8 +3,6 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
-
-#include <pthread.h>
 #include <vector>
 #include <OMX_Component.h>
 
@@ -53,8 +51,8 @@ private:
   uint8_t *codec_config = NULL;
   bool wrote_codec_config;
 
-  pthread_mutex_t state_lock;
-  pthread_cond_t state_cv;
+  std::mutex state_lock;
+  std::condition_variable state_cv;
   OMX_STATETYPE state = OMX_StateLoaded;
 
   OMX_HANDLETYPE handle;

@@ -8,8 +8,6 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#include <pthread.h>
-
 #include <OMX_Component.h>
 #include <OMX_IndexExt.h>
 #include <OMX_VideoExt.h>
@@ -34,11 +32,10 @@ extern ExitHandler do_exit;
 // ***** OMX callback functions *****
 
 void OmxEncoder::wait_for_state(OMX_STATETYPE state) {
-  pthread_mutex_lock(&this->state_lock);
+  std::unique_lock lk(this->state_lock);
   while (this->state != state) {
-    pthread_cond_wait(&this->state_cv, &this->state_lock);
+    this->state_cv.wait(lk);
   }
-  pthread_mutex_unlock(&this->state_lock);
 }
 
 static OMX_CALLBACKTYPE omx_callbacks = {
@@ -50,24 +47,19 @@ static OMX_CALLBACKTYPE omx_callbacks = {
 OMX_ERRORTYPE OmxEncoder::event_handler(OMX_HANDLETYPE component, OMX_PTR app_data, OMX_EVENTTYPE event,
                                    OMX_U32 data1, OMX_U32 data2, OMX_PTR event_data) {
   OmxEncoder *e = (OmxEncoder*)app_data;
-
-  switch (event) {
-  case OMX_EventCmdComplete:
+  if (event == OMX_EventCmdComplete) {
     assert(data1 == OMX_CommandStateSet);
     LOG("set state event 0x%x", data2);
-    pthread_mutex_lock(&e->state_lock);
-    e->state = (OMX_STATETYPE)data2;
-    pthread_cond_broadcast(&e->state_cv);
-    pthread_mutex_unlock(&e->state_lock);
-    break;
-  case OMX_EventError:
+    {
+      std::unique_lock lk(e->state_lock);
+      e->state = (OMX_STATETYPE)data2;
+    }
+    e->state_cv.notify_all();
+  } else if (event == OMX_EventError) {
     LOGE("OMX error 0x%08x", data1);
-    // assert(false);
-    break;
-  default:
-    LOGE("unhandled event %d", event);
+  } else {
+    LOGE("OMX unhandled event %d", event);
     assert(false);
-    break;
   }
 
   return OMX_ErrorNone;
@@ -171,9 +163,6 @@ OmxEncoder::OmxEncoder(const char* filename, int width, int height, int fps, int
   this->height = height;
   this->fps = fps;
   this->remuxing = !h265;
-
-  pthread_mutex_init(&this->state_lock, NULL);
-  pthread_cond_init(&this->state_cv, NULL);
 
   this->downscale = downscale;
   if (this->downscale) {
