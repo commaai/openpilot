@@ -185,8 +185,8 @@ int main(int argc, char **argv) {
         if (run_count < 10) frames_dropped = 0;  // let frame drops warm up
         float frame_drop_ratio = frames_dropped / (1 + frames_dropped);
 
-        const float *raw_pred_ptr = send_raw_pred ? &model.output[0] : nullptr;
-        model_publish(pm, extra.frame_id, frame_id, frame_drop_ratio, model_buf, raw_pred_ptr, extra.timestamp_eof, model_execution_time);
+        model_publish(pm, extra.frame_id, frame_id, frame_drop_ratio, model_buf, extra.timestamp_eof, model_execution_time,
+                      kj::ArrayPtr<const float>(model.output.data(), model.output.size()));
         posenet_publish(pm, extra.frame_id, vipc_dropped_frames, model_buf, extra.timestamp_eof);
 
         LOGD("model process: %.2fms, from last %.2fms, vipc_frame_id %u, frame_id, %u, frame_drop %.3f", mt2-mt1, mt1-last, extra.frame_id, frame_id, frame_drop_ratio);
