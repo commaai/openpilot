@@ -56,7 +56,7 @@ void model_init(ModelState* s, cl_device_id device_id, cl_context context) {
   s->output.resize(output_size);
 
 #if defined(QCOM) || defined(QCOM2)
-  s->m = std::make_unique<ThneedModel>("../../models/supercombo.thneed", s->output[0], output_size, USE_GPU_RUNTIME);
+  s->m = std::make_unique<ThneedModel>("../../models/supercombo.thneed", &s->output[0], output_size, USE_GPU_RUNTIME);
 #else
   s->m = std::make_unique<DefaultRunModel>("../../models/supercombo.dlc", &s->output[0], output_size, USE_GPU_RUNTIME);
 #endif
