@@ -8,8 +8,6 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#include <pthread.h>
-
 #include <OMX_Component.h>
 #include <OMX_IndexExt.h>
 #include <OMX_VideoExt.h>
