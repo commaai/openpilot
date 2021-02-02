@@ -97,10 +97,9 @@ if [ ! -z "$PUSH" ]; then
   git push -f origin release3-staging
 
   # Create dashcam
-  git rm selfdrive/car/*/carcontroller.py
-
-  git commit -m "create dashcam release from release"
-  git push -f origin release3-staging:dashcam3-staging
+  #git rm selfdrive/car/*/carcontroller.py
+  #git commit -m "create dashcam release from release"
+  #git push -f origin release3-staging:dashcam3-staging
 fi
 
 echo "[-] done T=$SECONDS"
