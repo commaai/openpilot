@@ -101,8 +101,9 @@ void Panda::handle_usb_issue(int err, int retries, const char func[]) {
 int Panda::usb_transfer(libusb_endpoint_direction dir, uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned int timeout) {
   const uint8_t bmRequestType = dir | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE;
   int r = -1, retries = 0;
-  std::lock_guard lk(usb_lock);
   while (connected && r < 0) {
+    // Release the lock before retrying on failure, so that other threads have a chance to do transfer
+    std::lock_guard lk(usb_lock);
     r = libusb_control_transfer(dev_handle, bmRequestType, bRequest, wValue, wIndex, NULL, 0, timeout);
     if (r < 0) handle_usb_issue(r, ++retries, __func__);
   }
