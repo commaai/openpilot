@@ -1,12 +1,6 @@
 #include <assert.h>
 #include <string>
-#include <cstdio>
-
-#include <bzlib.h>
-
 #include "common/swaglog.h"
-#include "common/util.h"
-#include "messaging.hpp"
 #include "logger.h"
 
 int main(int argc, char** argv) {
@@ -26,30 +20,13 @@ int main(int argc, char** argv) {
   int r = logger_mkpath((char*)path.c_str());
   assert(r == 0);
 
-  FILE * file = fopen(path.c_str(), "wb");
-  assert(file != nullptr);
-
-  // Open as bz2
-  int bzerror;
-  BZFILE* bz_file = BZ2_bzWriteOpen(&bzerror, file, 9, 0, 30);
-  assert(bzerror == BZ_OK);
+  BZFile bz_file(path.c_str());
 
   // Write initdata
-  kj::Array<capnp::word> init_msg = logger_build_init_data();
-  auto bytes = init_msg.asBytes();
-  BZ2_bzWrite(&bzerror, bz_file, bytes.begin(), bytes.size());
-  assert(bzerror == BZ_OK);
+  bz_file.write(logger_build_init_data().asBytes());
 
   // Write bootlog
-  kj::Array<capnp::word> boot_msg = logger_build_boot();
-  bytes = boot_msg.asBytes();
-  BZ2_bzWrite(&bzerror, bz_file, bytes.begin(), bytes.size());
-  assert(bzerror == BZ_OK);
+  bz_file.write(logger_build_boot().asBytes());
 
-  // Close bz2 and file
-  BZ2_bzWriteClose(&bzerror, bz_file, 0, NULL, NULL);
-  assert(bzerror == BZ_OK);
-
-  fclose(file);
   return 0;
 }
