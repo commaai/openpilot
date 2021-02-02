@@ -139,7 +139,8 @@ pipeline {
                 stage('Replay Tests') {
                   steps {
                     phone_steps("eon2", [
-                      ["camerad/modeld replay", "SCONS_CACHE=1 QCOM_REPLAY=1 scons -j4 && cd selfdrive/test/process_replay && ./camera_replay.py"],
+                      ["build QCOM_REPLAY", "SCONS_CACHE=1 QCOM_REPLAY=1 scons -j4"],
+                      ["camerad/modeld replay", "cd selfdrive/test/process_replay && ./camera_replay.py"],
                     ])
                   }
                 }
