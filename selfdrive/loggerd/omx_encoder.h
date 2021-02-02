@@ -3,9 +3,6 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include <mutex>
-#include <condition_variable>
-#include <pthread.h>
 #include <vector>
 #include <OMX_Component.h>
 
