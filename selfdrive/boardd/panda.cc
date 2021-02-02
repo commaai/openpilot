@@ -120,6 +120,7 @@ int Panda::usb_read(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned
 
 std::tuple<int, int> Panda::usb_bulk_transfer(libusb_endpoint_direction dir, unsigned char endpoint, unsigned char* data, int length, unsigned int timeout) {
   int err = 0, retries = 0, transferred = 0;
+  // Keep the lock while retrying
   std::lock_guard lk(usb_lock);
   while (connected) {
     err = libusb_bulk_transfer(dev_handle, endpoint, data, length, &transferred, timeout);
