@@ -156,7 +156,7 @@ def report_tombstone_apport(fn, client):
       crash_function = stacktrace_s[1]
 
     # Remove arguments that can contain pointers to make sentry one-liner unique
-    crash_function = " ".join(crash_function.split(' ')[4:])
+    crash_function = " ".join(x for x in crash_function.split(' ')[1:] if not x.startswith('0x'))
     crash_function = re.sub(r'\(.*?\)', '', crash_function)
 
   contents = stacktrace + "\n\n" + contents
@@ -174,7 +174,11 @@ def report_tombstone_apport(fn, client):
 
   # Files could be on different filesystems, copy, then delete
   shutil.copy(fn, os.path.join(crashlog_dir, new_fn))
-  os.remove(fn)
+
+  try:
+    os.remove(fn)
+  except PermissionError:
+    pass
 
 
 def main():
