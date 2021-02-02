@@ -45,7 +45,7 @@ with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "common", "ve
 prebuilt = os.path.exists(os.path.join(BASEDIR, 'prebuilt'))
 
 training_version: bytes = b"0.2.0"
-terms_version: bytes = b"3"
+terms_version: bytes = b"2"
 
 dirty: bool = True
 comma_remote: bool = False
