@@ -20,7 +20,8 @@ const std::string LOG_ROOT = util::getenv_default("HOME", "/.comma/media/0/reald
 class BZFile {
  public:
   BZFile(const char* path) {
-    assert(file = fopen(path, "wb"));
+    file = fopen(path, "wb");
+    assert(file != nullptr);
     int bzerror;
     bz_file = BZ2_bzWriteOpen(&bzerror, file, 9, 0, 30);
     assert(bzerror == BZ_OK);
