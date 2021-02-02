@@ -28,8 +28,10 @@ class BZFile {
   ~BZFile() {
     int bzerror;
     BZ2_bzWriteClose(&bzerror, bz_file, 0, nullptr, nullptr);
-    assert(bzerror == BZ_OK);
-    assert(fclose(file) == 0);
+    if (bzerror != BZ_OK) {
+      LOGE("BZ2_bzWriteClose error, bzerror=%d", bzerror);
+    }
+    fclose(file);
   }
   inline void write(void* data, size_t size) {
     int bzerror;
