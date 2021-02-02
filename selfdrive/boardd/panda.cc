@@ -127,6 +127,9 @@ std::tuple<int, int> Panda::usb_bulk_transfer(libusb_endpoint_direction dir, uns
     if ((err == 0 && (dir != LIBUSB_ENDPOINT_OUT || length == transferred)) || err == LIBUSB_ERROR_TIMEOUT) {
       break;
     }
+    if (err < 0) {
+      libusb_clear_halt(dev_handle, dir | endpoint);
+    }
     handle_usb_issue(err, ++retries, __func__);
   };
   return std::make_tuple(err, transferred);
