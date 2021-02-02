@@ -39,7 +39,6 @@
 Panda * panda = NULL;
 std::atomic<bool> safety_setter_thread_running(false);
 std::atomic<bool> ignition(false);
-bool connected_once = false;
 
 ExitHandler do_exit;
 struct tm get_time(){
@@ -118,6 +117,8 @@ void safety_setter_thread() {
 
 
 bool usb_connect() {
+  static bool connected_once = false;
+
   std::unique_ptr<Panda> tmp_panda;
   try {
     assert(panda == NULL);
