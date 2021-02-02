@@ -136,7 +136,7 @@ static void draw_connectivity(UIState *s) {
 }
 
 void ui_draw_sidebar(UIState *s) {
-  if (s->scene.sidebar_collapsed) {
+  if (s->sidebar_collapsed) {
     return;
   }
   draw_background(s);

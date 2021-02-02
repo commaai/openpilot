@@ -146,7 +146,7 @@ static void update_sockets(UIState *s) {
   if (sm.updated("uiLayoutState")) {
     auto data = sm["uiLayoutState"].getUiLayoutState();
     s->active_app = data.getActiveApp();
-    scene.sidebar_collapsed = data.getSidebarCollapsed();
+    s->sidebar_collapsed = data.getSidebarCollapsed();
   }
   if (sm.updated("thermal")) {
     scene.thermal = sm["thermal"].getThermal();
@@ -276,7 +276,7 @@ static void update_status(UIState *s) {
   if (!s->started && s->status != STATUS_OFFROAD) {
     s->status = STATUS_OFFROAD;
     s->active_app = cereal::UiLayoutState::App::HOME;
-    s->scene.sidebar_collapsed = false;
+    s->sidebar_collapsed = false;
     s->sound->stop();
     s->vipc_client->connected = false;
   } else if (s->started && s->status == STATUS_OFFROAD) {
@@ -284,7 +284,7 @@ static void update_status(UIState *s) {
     s->started_frame = s->sm->frame;
 
     s->active_app = cereal::UiLayoutState::App::NONE;
-    s->scene.sidebar_collapsed = true;
+    s->sidebar_collapsed = true;
     s->scene.alert_size = cereal::ControlsState::AlertSize::NONE;
   }
 }
