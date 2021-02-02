@@ -195,9 +195,9 @@ class PathPlanner():
     # time between now and delay, need better abstraction between planner and controls
     plan_ahead_idx = sum(self.t_idxs < delay)
     if next_tire_angle_rate > 0:
-      next_tire_angle = max(list(self.mpc_solution.tire_angle[:plan_ahead_idx]) + [next_tire_angle])
+      next_tire_angle = max(list(self.mpc_solution.tire_angle)[:plan_ahead_idx] + [next_tire_angle])
     else:
-      next_tire_angle = min(list(self.mpc_solution.tire_angle[:plan_ahead_idx]) + [next_tire_angle])
+      next_tire_angle = min(list(self.mpc_solution.tire_angle)[:plan_ahead_idx] + [next_tire_angle])
 
     # reset to current steer angle if not active or overriding
     if active:
