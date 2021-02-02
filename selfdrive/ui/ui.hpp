@@ -131,6 +131,7 @@ typedef struct UIScene {
 
   // lead
   vertex_data lead_vertices[2];
+
   float light_sensor, accel_sensor, gyro_sensor;
   bool started, ignition, is_metric, longitudinal_control;
   uint64_t started_frame;
@@ -168,7 +169,7 @@ typedef struct UIState {
 
   // device state
   bool awake;
-  
+
   bool sidebar_collapsed;
   Rect video_rect, viz_rect;
   float car_space_transform[6];
