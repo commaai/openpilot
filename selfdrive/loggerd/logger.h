@@ -32,7 +32,8 @@ class BZFile {
     if (bzerror != BZ_OK) {
       LOGE("BZ2_bzWriteClose error, bzerror=%d", bzerror);
     }
-    fclose(file);
+    int err = fclose(file);
+    assert(err == 0);
   }
   inline void write(void* data, size_t size) {
     int bzerror;
