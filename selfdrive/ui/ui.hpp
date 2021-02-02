@@ -110,9 +110,6 @@ typedef struct UIScene {
 
   bool is_rhd;
   bool frontview;
-  bool sidebar_collapsed;
-  // responsive layout
-  Rect viz_rect;
 
   std::string alert_text1;
   std::string alert_text2;
@@ -180,7 +177,8 @@ typedef struct UIState {
   bool longitudinal_control;
   uint64_t started_frame;
 
-  Rect video_rect;
+  bool sidebar_collapsed;
+  Rect video_rect, viz_rect;
   float car_space_transform[6];
 } UIState;
 
