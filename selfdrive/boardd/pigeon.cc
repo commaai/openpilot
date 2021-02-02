@@ -132,8 +132,10 @@ void TTYPigeon::connect(const char * tty) {
   if (pigeon_tty_fd < 0){
     handle_tty_issue(errno, __func__);
     assert(pigeon_tty_fd >= 0);
+  
   }
-  assert(tcgetattr(pigeon_tty_fd, &pigeon_tty) == 0);
+  int err = tcgetattr(pigeon_tty_fd, &pigeon_tty);
+  assert(err == 0);
 
   // configure tty
   pigeon_tty.c_cflag &= ~PARENB;                                            // disable parity
@@ -152,7 +154,8 @@ void TTYPigeon::connect(const char * tty) {
   pigeon_tty.c_cc[VMIN] = 0;  // min amount of characters returned
   pigeon_tty.c_cc[VTIME] = 0; // max blocking time in s/10 (0=inf)
 
-  assert(tcsetattr(pigeon_tty_fd, TCSANOW, &pigeon_tty) == 0);
+  err = tcsetattr(pigeon_tty_fd, TCSANOW, &pigeon_tty);
+  assert(err == 0);
 }
 
 void TTYPigeon::set_baud(int baud){
@@ -169,15 +172,20 @@ void TTYPigeon::set_baud(int baud){
   }
 
   // make sure everything is tx'ed before changing baud
-  assert(tcdrain(pigeon_tty_fd) == 0);
+  int err = tcdrain(pigeon_tty_fd);
+  assert(err == 0);
 
   // change baud
-  assert(tcgetattr(pigeon_tty_fd, &pigeon_tty) == 0);
-  assert(cfsetspeed(&pigeon_tty, baud_const) == 0);
-  assert(tcsetattr(pigeon_tty_fd, TCSANOW, &pigeon_tty) == 0);
+  err = tcgetattr(pigeon_tty_fd, &pigeon_tty);
+  assert(err == 0);
+  err = cfsetspeed(&pigeon_tty, baud_const);
+  assert(err == 0);
+  err = tcsetattr(pigeon_tty_fd, TCSANOW, &pigeon_tty);
+  assert(err == 0);
 
   // flush
-  assert(tcflush(pigeon_tty_fd, TCIOFLUSH) == 0);
+  err = tcflush(pigeon_tty_fd, TCIOFLUSH);
+  assert(err == 0);
 }
 
 void TTYPigeon::send(const std::string &s) {
