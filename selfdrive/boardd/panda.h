@@ -46,9 +46,9 @@ class Panda {
   libusb_device_handle *dev_handle = NULL;
   std::mutex usb_lock;
   void handle_usb_issue(int err, int retries, const char func[]);
-  void cleanup();
   int usb_transfer(libusb_endpoint_direction dir, uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned int timeout);
-  std::tuple<int, int> usb_bulk_transfer(unsigned char endpoint, unsigned char* data, int length, unsigned int timeout);
+  std::tuple<int, int> usb_bulk_transfer(libusb_endpoint_direction dir, unsigned char endpoint, unsigned char* data, int length, unsigned int timeout);
+  void cleanup();
 
  public:
   Panda();

@@ -92,7 +92,7 @@ void Panda::handle_usb_issue(int err, int retries, const char func[]) {
     LOGE("lost connection");
     connected = false;
   } else if (retries >= USB_MAX_TRANSFER_RETRIES) {
-    LOGE("usb transfer reach max retries, close connection");
+    LOGE("usb transfer reach max retries %d, close connection", USB_MAX_TRANSFER_RETRIES);
     connected = false;
   }
   // TODO: check other errors, is simply retrying okay?
@@ -117,26 +117,26 @@ int Panda::usb_read(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned
   return usb_transfer(LIBUSB_ENDPOINT_IN, bRequest, wValue, wIndex, timeout);
 }
 
-std::tuple<int, int> Panda::usb_bulk_transfer(unsigned char endpoint, unsigned char* data, int length, unsigned int timeout) {
-  int err = -1, retries = 0, transferred = 0;
+std::tuple<int, int> Panda::usb_bulk_transfer(libusb_endpoint_direction dir, unsigned char endpoint, unsigned char* data, int length, unsigned int timeout) {
+  int err = 0, retries = 0, transferred = 0;
   std::lock_guard lk(usb_lock);
-  while (connected && err < 0) {
+  while (connected) {
     err = libusb_bulk_transfer(dev_handle, endpoint, data, length, &transferred, timeout);
-
+    if (err == 0 && (dir != LIBUSB_ENDPOINT_OUT || length == transferred)) {
+      break;
+    }
     if (err == LIBUSB_ERROR_TIMEOUT) {
       break; // timeout is okay to exit
-    } else if (err != 0 || length != transferred) {
-      handle_usb_issue(err, ++retries, __func__);
     }
+    handle_usb_issue(err, ++retries, __func__);
   };
-
   return std::make_tuple(err, transferred);
 }
 
 int Panda::usb_bulk_write(unsigned char endpoint, unsigned char* data, int length, unsigned int timeout) {
   // Try sending can messages. If the receive buffer on the panda is full it will NAK
   // and libusb will try again. After 5ms, it will time out. We will drop the messages.
-  auto[err, transferred] = usb_bulk_transfer(endpoint, data, length, timeout);
+  auto[err, transferred] = usb_bulk_transfer(LIBUSB_ENDPOINT_OUT, endpoint, data, length, timeout);
   if (err == LIBUSB_ERROR_TIMEOUT) {
     LOGW("Transmit buffer full");
   }
@@ -144,7 +144,7 @@ int Panda::usb_bulk_write(unsigned char endpoint, unsigned char* data, int lengt
 }
 
 int Panda::usb_bulk_read(unsigned char endpoint, unsigned char* data, int length, unsigned int timeout) {
-  auto [err, transferred] = usb_bulk_transfer(endpoint, data, length, timeout);
+  auto [err, transferred] = usb_bulk_transfer(LIBUSB_ENDPOINT_IN, endpoint, data, length, timeout);
   if (err == LIBUSB_ERROR_OVERFLOW) {
     LOGE_100("overflow got 0x%x", transferred);
   }
