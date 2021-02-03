@@ -56,7 +56,7 @@ class Controls:
     if self.sm is None:
       ignore = ['ubloxRaw', 'frontFrame', 'managerState'] if SIMULATION else None
       self.sm = messaging.SubMaster(['thermal', 'health', 'modelV2', 'liveCalibration', 'ubloxRaw',
-                                     'dMonitoringState', 'longitudinalPlan', 'lateralPlan', 'liveLocationKalman',
+                                     'driverMonitoringState', 'longitudinalPlan', 'lateralPlan', 'liveLocationKalman',
                                      'frame', 'frontFrame', 'managerState', 'liveParameters', 'radarState'], ignore_alive=ignore)
 
     self.can_sock = can_sock
@@ -128,9 +128,9 @@ class Controls:
 
     self.sm['liveCalibration'].calStatus = Calibration.CALIBRATED
     self.sm['thermal'].freeSpacePercent = 1.
-    self.sm['dMonitoringState'].events = []
-    self.sm['dMonitoringState'].awarenessStatus = 1.
-    self.sm['dMonitoringState'].faceDetected = False
+    self.sm['driverMonitoringState'].events = []
+    self.sm['driverMonitoringState'].awarenessStatus = 1.
+    self.sm['driverMonitoringState'].faceDetected = False
 
     self.startup_event = get_startup_event(car_recognized, controller_available)
 
@@ -150,7 +150,7 @@ class Controls:
 
     self.events.clear()
     self.events.add_from_msg(CS.events)
-    self.events.add_from_msg(self.sm['dMonitoringState'].events)
+    self.events.add_from_msg(self.sm['driverMonitoringState'].events)
 
     # Handle startup event
     if self.startup_event is not None:
@@ -467,7 +467,7 @@ class Controls:
       can_sends = self.CI.apply(CC)
       self.pm.send('sendcan', can_list_to_can_capnp(can_sends, msgtype='sendcan', valid=CS.canValid))
 
-    force_decel = (self.sm['dMonitoringState'].awarenessStatus < 0.) or \
+    force_decel = (self.sm['driverMonitoringState'].awarenessStatus < 0.) or \
                   (self.state == State.softDisabling)
 
     steer_angle_rad = (CS.steeringAngle - self.sm['lateralPlan'].angleOffset) * CV.DEG_TO_RAD

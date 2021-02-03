@@ -273,7 +273,7 @@ void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id, flo
   framed.setTimestampEof(timestamp_eof);
   framed.setModelExecutionTime(model_execution_time);
   if (send_raw_pred) {
-    framed.setRawPred(raw_pred.asBytes());
+    framed.setRawPredictions(raw_pred.asBytes());
   }
   fill_model(framed, net_outputs);
   pm.send("modelV2", msg);

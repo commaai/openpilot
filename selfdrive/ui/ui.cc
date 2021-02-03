@@ -41,7 +41,7 @@ static void ui_init_vision(UIState *s) {
 
 void ui_init(UIState *s) {
   s->sm = new SubMaster({"modelV2", "controlsState", "uiLayoutState", "liveCalibration", "radarState", "thermal", "frame",
-                         "health", "carParams", "driverState", "dMonitoringState", "sensorEvents", "carState"});
+                         "health", "carParams", "driverState", "driverMonitoringState", "sensorEvents", "carState"});
 
   s->started = false;
   s->status = STATUS_OFFROAD;
@@ -167,11 +167,10 @@ static void update_sockets(UIState *s) {
   if (sm.updated("driverState")) {
     scene.driver_state = sm["driverState"].getDriverState();
   }
-  if (sm.updated("dMonitoringState")) {
-    scene.dmonitoring_state = sm["dMonitoringState"].getDMonitoringState();
-    scene.is_rhd = scene.dmonitoring_state.getIsRHD();
-    scene.frontview = scene.dmonitoring_state.getIsPreview();
-  } else if (scene.frontview && (sm.frame - sm.rcv_frame("dMonitoringState")) > UI_FREQ/2) {
+  if (sm.updated("driverMonitoringState")) {
+    scene.dmonitoring_state = sm["driverMonitoringState"].getDriverMonitoringState();
+    scene.frontview = !s->ignition;
+  } else if (scene.frontview && (sm.frame - sm.rcv_frame("driverMonitoringState")) > UI_FREQ/2) {
     scene.frontview = false;
   }
   if (sm.updated("sensorEvents")) {
@@ -286,6 +285,7 @@ static void update_status(UIState *s) {
     s->status = STATUS_DISENGAGED;
     s->started_frame = s->sm->frame;
 
+    read_param(&s->scene.is_rhd, "IsRHD");
     s->active_app = cereal::UiLayoutState::App::NONE;
     s->sidebar_collapsed = true;
     s->scene.alert_size = cereal::ControlsState::AlertSize::NONE;
