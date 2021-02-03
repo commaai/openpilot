@@ -86,12 +86,16 @@ QWidget* OnboardingWindow::terms_screen() {
   QHBoxLayout* buttons = new QHBoxLayout;
   buttons->addWidget(new QPushButton("Decline"));
   buttons->addSpacing(50);
-  QPushButton *accept_btn = new QPushButton("Accept");
+  accept_btn = new QPushButton("Scroll to accept");
+  accept_btn->setEnabled(false);
   buttons->addWidget(accept_btn);
   QObject::connect(accept_btn, &QPushButton::released, [=]() {
     Params().write_db_value("HasAcceptedTerms", current_terms_version);
     updateActiveScreen();
   });
+
+  QObject::connect(view->page(), SIGNAL(scrollPositionChanged(QPointF)), this, SLOT(scrollPosition(QPointF)));
+
   QWidget* w = layout2Widget(buttons);
   w->setFixedHeight(200);
   main_layout->addWidget(w);
@@ -151,10 +155,21 @@ OnboardingWindow::OnboardingWindow(QWidget *parent) : QStackedWidget(parent) {
     }
     QPushButton {
       padding: 50px;
-      border-radius: 10px;
+      border-radius: 30px;
       background-color: #292929;
+    }
+    QPushButton:disabled {
+      color: #777777;
+      background-color: #222222;
     }
   )");
 
   updateActiveScreen();
+}
+
+void OnboardingWindow::scrollPosition(QPointF position){
+  if (position.y() > 10000){
+    accept_btn->setEnabled(true);
+    accept_btn->setText("Accept");
+  }
 }
