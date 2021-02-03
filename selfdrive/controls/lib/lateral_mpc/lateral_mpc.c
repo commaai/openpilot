@@ -72,11 +72,11 @@ int run_mpc(state_t * x0, log_t * solution, double v_ego,
     acadoVariables.od[i+1] = rotation_radius;
   }
   for (i = 0; i < N; i+= 1){
-    acadoVariables.y[NY*i + 0] = (target_y[i] * target_y[i] * target_y[i]);
+    acadoVariables.y[NY*i + 0] = target_y[i];
     acadoVariables.y[NY*i + 1] = (v_ego + 1.0) * target_psi[i];
     acadoVariables.y[NY*i + 2] = 0.0;
   }
-  acadoVariables.yN[0] = (target_y[N] * target_y[N] * target_y[N]);
+  acadoVariables.yN[0] = target_y[N];
   acadoVariables.yN[1] = (2.0 * v_ego + 1.0) * target_psi[N];
 
   acadoVariables.x0[0] = x0->x;
