@@ -233,7 +233,7 @@ static void ui_draw_vision_maxspeed(UIState *s) {
 }
 
 static void ui_draw_vision_speed(UIState *s) {
-  const float speed = std::max(0.0, s->scene.controls_state.getVEgo() * (s->is_metric ? 3.6 : 2.2369363));
+  const float speed = std::max(0.0, s->scene.car_state.getVEgo() * (s->is_metric ? 3.6 : 2.2369363));
   const std::string speed_str = std::to_string((int)std::nearbyint(speed));
   nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
   ui_draw_text(s, s->viz_rect.centerX(), 240, speed_str.c_str(), 96 * 2.5, COLOR_WHITE, "sans-bold");
@@ -244,12 +244,7 @@ static void ui_draw_vision_event(UIState *s) {
   const int viz_event_w = 220;
   const int viz_event_x = s->viz_rect.right() - (viz_event_w + bdr_s*2);
   const int viz_event_y = s->viz_rect.y + (bdr_s*1.5);
-  if (s->scene.controls_state.getDecelForModel() && s->scene.controls_state.getEnabled()) {
-    // draw winding road sign
-    const int img_turn_size = 160*1.5;
-    const Rect rect = {viz_event_x - (img_turn_size / 4), viz_event_y + bdr_s - 25, img_turn_size, img_turn_size};
-    ui_draw_image(s, rect, "trafficSign_turn", 1.0f);
-  } else if (s->scene.controls_state.getEngageable()) {
+  if (s->scene.controls_state.getEngageable()) {
     // draw steering wheel
     const int bg_wheel_size = 96;
     const int bg_wheel_x = viz_event_x + (viz_event_w-bg_wheel_size);

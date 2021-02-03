@@ -5,7 +5,6 @@ from common.params import Params
 from common.numpy_fast import interp
 
 import cereal.messaging as messaging
-from cereal import car
 from common.realtime import sec_since_boot
 from selfdrive.swaglog import cloudlog
 from selfdrive.config import Conversions as CV
@@ -79,9 +78,6 @@ class Planner():
     self.fcw_checker = FCWChecker()
     self.path_x = np.arange(192)
 
-    self.radar_dead = False
-    self.radar_fault = False
-    self.radar_can_error = False
     self.fcw = False
 
     self.params = Params()
@@ -185,12 +181,6 @@ class Planner():
     if self.fcw:
       cloudlog.info("FCW triggered %s", self.fcw_checker.counters)
 
-    self.radar_dead = not sm.alive['radarState']
-
-    radar_errors = list(sm['radarState'].radarErrors)
-    self.radar_fault = car.RadarData.Error.fault in radar_errors
-    self.radar_can_error = car.RadarData.Error.canError in radar_errors
-
     # Interpolate 0.05 seconds and save as starting point for next iteration
     a_acc_sol = self.a_acc_start + (CP.radarTimeStep / LON_MPC_STEP) * (self.a_acc - self.a_acc_start)
     v_acc_sol = self.v_acc_start + CP.radarTimeStep * (a_acc_sol + self.a_acc_start) / 2.0
@@ -203,31 +193,25 @@ class Planner():
     self.mpc1.publish(pm)
     self.mpc2.publish(pm)
 
-    plan_send = messaging.new_message('plan')
+    plan_send = messaging.new_message('longitudinalPlan')
 
     plan_send.valid = sm.all_alive_and_valid(service_list=['carState', 'controlsState', 'radarState'])
 
-    plan_send.plan.mdMonoTime = sm.logMonoTime['modelV2']
-    plan_send.plan.radarStateMonoTime = sm.logMonoTime['radarState']
+    longitudinalPlan = plan_send.longitudinalPlan
+    longitudinalPlan.mdMonoTime = sm.logMonoTime['modelV2']
+    longitudinalPlan.radarStateMonoTime = sm.logMonoTime['radarState']
 
-    # longitudal plan
-    plan_send.plan.vCruise = float(self.v_cruise)
-    plan_send.plan.aCruise = float(self.a_cruise)
-    plan_send.plan.vStart = float(self.v_acc_start)
-    plan_send.plan.aStart = float(self.a_acc_start)
-    plan_send.plan.vTarget = float(self.v_acc)
-    plan_send.plan.aTarget = float(self.a_acc)
-    plan_send.plan.vTargetFuture = float(self.v_acc_future)
-    plan_send.plan.hasLead = self.mpc1.prev_lead_status
-    plan_send.plan.longitudinalPlanSource = self.longitudinalPlanSource
+    longitudinalPlan.vCruise = float(self.v_cruise)
+    longitudinalPlan.aCruise = float(self.a_cruise)
+    longitudinalPlan.vStart = float(self.v_acc_start)
+    longitudinalPlan.aStart = float(self.a_acc_start)
+    longitudinalPlan.vTarget = float(self.v_acc)
+    longitudinalPlan.aTarget = float(self.a_acc)
+    longitudinalPlan.vTargetFuture = float(self.v_acc_future)
+    longitudinalPlan.hasLead = self.mpc1.prev_lead_status
+    longitudinalPlan.longitudinalPlanSource = self.longitudinalPlanSource
+    longitudinalPlan.fcw = self.fcw
 
-    radar_valid = not (self.radar_dead or self.radar_fault)
-    plan_send.plan.radarValid = bool(radar_valid)
-    plan_send.plan.radarCanError = bool(self.radar_can_error)
+    longitudinalPlan.processingDelay = (plan_send.logMonoTime / 1e9) - sm.rcv_time['radarState']
 
-    plan_send.plan.processingDelay = (plan_send.logMonoTime / 1e9) - sm.rcv_time['radarState']
-
-    # Send out fcw
-    plan_send.plan.fcw = self.fcw
-
-    pm.send('plan', plan_send)
+    pm.send('longitudinalPlan', plan_send)

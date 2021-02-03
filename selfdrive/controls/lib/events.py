@@ -620,17 +620,6 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
                               audible_alert=AudibleAlert.chimeDisengage),
   },
 
-  EventName.radarCommIssue: {
-    ET.SOFT_DISABLE: SoftDisableAlert("Radar Communication Issue"),
-    ET.NO_ENTRY: NoEntryAlert("Radar Communication Issue",
-                              audible_alert=AudibleAlert.chimeDisengage),
-  },
-
-  EventName.radarCanError: {
-    ET.SOFT_DISABLE: SoftDisableAlert("Radar Error: Restart the Car"),
-    ET.NO_ENTRY: NoEntryAlert("Radar Error: Restart the Car"),
-  },
-
   EventName.radarFault: {
     ET.SOFT_DISABLE: SoftDisableAlert("Radar Error: Restart the Car"),
     ET.NO_ENTRY : NoEntryAlert("Radar Error: Restart the Car"),

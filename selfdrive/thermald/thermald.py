@@ -245,9 +245,9 @@ def thermald_thread():
       except Exception:
         cloudlog.exception("Error getting network status")
 
-    msg.thermal.freeSpace = get_available_percent(default=100.0) / 100.0
-    msg.thermal.memUsedPercent = int(round(psutil.virtual_memory().percent))
-    msg.thermal.cpuPerc = int(round(psutil.cpu_percent()))
+    msg.thermal.freeSpacePercent   = get_available_percent(default=100.0) / 100.0
+    msg.thermal.memoryUsagePercent = int(round(psutil.virtual_memory().percent))
+    msg.thermal.cpuUsagePercent = int(round(psutil.cpu_percent()))
     msg.thermal.networkType = network_type
     msg.thermal.networkStrength = network_strength
     msg.thermal.batteryPercent = HARDWARE.get_battery_capacity()
@@ -399,7 +399,7 @@ def thermald_thread():
 
     msg.thermal.chargingError = current_filter.x > 0. and msg.thermal.batteryPercent < 90  # if current is positive, then battery is being discharged
     msg.thermal.started = started_ts is not None
-    msg.thermal.startedTs = int(1e9*(started_ts or 0))
+    msg.thermal.startedMonoTime = int(1e9*(started_ts or 0))
 
     msg.thermal.thermalStatus = thermal_status
     pm.send("thermal", msg)

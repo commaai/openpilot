@@ -58,7 +58,7 @@ def mpc_vwr_thread(addr="127.0.0.1"):
   # *** log ***
   livempc = messaging.sub_sock('liveMpc', addr=addr)
   model = messaging.sub_sock('model', addr=addr)
-  path_plan_sock = messaging.sub_sock('pathPlan', addr=addr)
+  path_plan_sock = messaging.sub_sock('lateralPlan', addr=addr)
 
   while 1:
     lMpc = messaging.recv_sock(livempc, wait=True)
@@ -75,7 +75,7 @@ def mpc_vwr_thread(addr="127.0.0.1"):
       r_path_y = np.polyval(l_poly, path_x)
 
     if pp is not None:
-      p_path_y = np.polyval(pp.pathPlan.dPolyDEPRECATED, path_x)
+      p_path_y = np.polyval(pp.lateralPlan.dPolyDEPRECATED, path_x)
       lineP.set_xdata(p_path_y)
       lineP.set_ydata(path_x)
 

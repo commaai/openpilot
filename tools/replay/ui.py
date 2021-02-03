@@ -70,7 +70,7 @@ def ui_thread(addr, frame_address):
 
   frame = messaging.sub_sock('frame', addr=addr, conflate=True)
   sm = messaging.SubMaster(['carState', 'plan', 'carControl', 'radarState', 'liveCalibration', 'controlsState',
-                            'liveTracks', 'model', 'liveMpc', 'liveParameters', 'pathPlan', 'frame'], addr=addr)
+                            'liveTracks', 'model', 'liveMpc', 'liveParameters', 'lateralPlan', 'frame'], addr=addr)
 
   calibration = None
   img = np.zeros((480, 640, 3), dtype='uint8')
@@ -184,7 +184,7 @@ def ui_thread(addr, frame_address):
     if len(sm['model'].path.poly) > 0:
       model_data = extract_model_data(sm['model'])
       plot_model(model_data, VM, sm['controlsState'].vEgo, sm['controlsState'].curvature, imgw, calibration,
-                  top_down, np.array(sm['pathPlan'].dPolyDEPRECATED))
+                  top_down, np.array(sm['lateralPlan'].dPolyDEPRECATED))
 
     # MPC
     if sm.updated['liveMpc']:

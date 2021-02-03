@@ -110,7 +110,6 @@ class Plant():
     self.rate = rate
 
     if not Plant.messaging_initialized:
-
       Plant.pm = messaging.PubMaster(['frame', 'frontFrame', 'ubloxRaw'])
       Plant.logcan = messaging.pub_sock('can')
       Plant.sendcan = messaging.sub_sock('sendcan')
@@ -122,7 +121,7 @@ class Plant():
       Plant.dMonitoringState = messaging.pub_sock('dMonitoringState')
       Plant.cal = messaging.pub_sock('liveCalibration')
       Plant.controls_state = messaging.sub_sock('controlsState')
-      Plant.plan = messaging.sub_sock('plan')
+      Plant.plan = messaging.sub_sock('longitudinalPlan')
       Plant.messaging_initialized = True
 
     self.frame = 0
@@ -200,7 +199,7 @@ class Plant():
 
     fcw = None
     for a in messaging.drain_sock(Plant.plan):
-      if a.plan.fcw:
+      if a.longitudinalPlan.fcw:
         fcw = True
 
     if self.cp.vl[0x1fa]['COMPUTER_BRAKE_REQUEST']:
@@ -380,7 +379,7 @@ class Plant():
     Plant.health.send(health.to_bytes())
 
     thermal = messaging.new_message('thermal')
-    thermal.thermal.freeSpace = 1.
+    thermal.thermal.freeSpacePercent = 1.
     thermal.thermal.batteryPercent = 100
     Plant.thermal.send(thermal.to_bytes())
 
