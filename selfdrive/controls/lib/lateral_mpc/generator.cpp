@@ -35,7 +35,7 @@ int main( )
   Function h;
 
   // Distance errors
-  h << yy;
+  h << (yy * yy * yy);
 
   // Heading error
   h << (v_ego + 1.0 ) * psi;
@@ -54,7 +54,7 @@ int main( )
   Function hN;
 
   // Distance errors
-  hN << yy;
+  hN << yy * yy * yy;
 
   // Heading errors
   hN << (2.0 * v_ego + 1.0 ) * psi;
