@@ -7,7 +7,7 @@ import cereal.messaging as messaging
 from selfdrive.car.car_helpers import get_car, get_one_can
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 
-DeviceType = log.HealthData.DeviceType
+PandaType = log.HealthData.PandaType
 
 
 def steer_thread():
