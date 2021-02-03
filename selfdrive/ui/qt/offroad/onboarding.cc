@@ -124,20 +124,17 @@ void OnboardingWindow::updateActiveScreen() {
   }
 }
 
-void enableBacklight(){
-  std::ofstream brightness_control("/sys/class/backlight/panel0-backlight/brightness");
-  if (brightness_control.is_open()) {
-    brightness_control << "1000\n";
-    brightness_control.close();
-  }
-
-}
 OnboardingWindow::OnboardingWindow(QWidget *parent) : QStackedWidget(parent) {
-  enableBacklight();
   Params params = Params();
   current_terms_version = params.get("TermsVersion", false);
   current_training_version = params.get("TrainingVersion", false);
-
+  bool accepted_terms = params.get("HasAcceptedTerms", false).compare(current_terms_version) == 0;
+  bool training_done = params.get("CompletedTrainingVersion", false).compare(current_training_version) == 0;
+  
+  //Don't initialize widgets unless neccesary. 
+  if (accepted_terms && training_done) {
+    return;
+  }
   addWidget(terms_screen());
 
   TrainingGuide* tr = new TrainingGuide(this);
