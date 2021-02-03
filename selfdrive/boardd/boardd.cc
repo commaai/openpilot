@@ -423,7 +423,7 @@ void hardware_control_thread() {
     if (panda->hw_type != cereal::HealthData::HwType::UNO && panda->hw_type != cereal::HealthData::HwType::DOS) continue;
     if (sm.updated("thermal")){
       // Fan speed
-      uint16_t fan_speed = sm["thermal"].getThermal().getFanSpeed();
+      uint16_t fan_speed = sm["thermal"].getThermal().getFanSpeedRpmDesired();
       if (fan_speed != prev_fan_speed || cnt % 100 == 0){
         panda->set_fan_speed(fan_speed);
         prev_fan_speed = fan_speed;

@@ -245,7 +245,7 @@ def thermald_thread():
       except Exception:
         cloudlog.exception("Error getting network status")
 
-    msg.thermal.freeSpacePercent   = get_available_percent(default=100.0) / 100.0
+    msg.thermal.freeSpacePercent = get_available_percent(default=100.0) / 100.0
     msg.thermal.memoryUsagePercent = int(round(psutil.virtual_memory().percent))
     msg.thermal.cpuUsagePercent = int(round(psutil.cpu_percent()))
     msg.thermal.networkType = network_type
@@ -271,7 +271,7 @@ def thermald_thread():
 
     if handle_fan is not None:
       fan_speed = handle_fan(max_cpu_temp, bat_temp, fan_speed, startup_conditions["ignition"])
-      msg.thermal.fanSpeed = fan_speed
+      msg.thermal.fanSpeedRpmDesired = fan_speed
 
     # If device is offroad we want to cool down before going onroad
     # since going onroad increases load and can make temps go over 107
@@ -347,7 +347,7 @@ def thermald_thread():
     set_offroad_alert_if_changed("Offroad_PandaFirmwareMismatch", (not startup_conditions["fw_version_match"]))
 
     # with 2% left, we killall, otherwise the phone will take a long time to boot
-    startup_conditions["free_space"] = msg.thermal.freeSpace > 0.02
+    startup_conditions["free_space"] = msg.thermal.freeSpacePercent > 0.02
     startup_conditions["completed_training"] = params.get("CompletedTrainingVersion") == training_version or \
                                                (current_branch in ['dashcam', 'dashcam-staging'])
     startup_conditions["not_driver_view"] = not params.get("IsDriverViewEnabled") == b"1"
