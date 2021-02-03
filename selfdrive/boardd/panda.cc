@@ -10,6 +10,7 @@
 #include "messaging.hpp"
 #include "panda.h"
 
+extern ExitHandler do_exit;
 void panda_set_power(bool power){
 #ifdef QCOM2
   int err = 0;
@@ -88,6 +89,8 @@ void Panda::handle_usb_issue(int err, const char func[]) {
   LOGE_100("usb error %d \"%s\" in %s", err, libusb_strerror((enum libusb_error)err), func);
   if (err == LIBUSB_ERROR_NO_DEVICE) {
     LOGE("lost connection");
+    connected = false;
+  } else if (do_exit) {
     connected = false;
   }
   // TODO: check other errors, is simply retrying okay?
