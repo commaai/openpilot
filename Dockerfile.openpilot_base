@@ -39,6 +39,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python-dev \
     qt5-default \
     qtmultimedia5-dev \
+    qtwebengine5-dev \
     sudo \
     valgrind \
     wget \
