@@ -73,7 +73,7 @@ class PathPlanner():
     self.cur_state[0].x = 0.0
     self.cur_state[0].y = 0.0
     self.cur_state[0].psi = 0.0
-    self.cur_state[0].tire_angle = 0.0
+    self.cur_state[0].curvature = 0.0
 
     self.angle_steers_des = 0.0
     self.angle_steers_des_mpc = 0.0
@@ -84,14 +84,13 @@ class PathPlanner():
     active = sm['controlsState'].active
     steering_wheel_angle_offset_deg = sm['liveParameters'].angleOffset
     steering_wheel_angle_deg = sm['carState'].steeringAngle
-    measured_tire_angle = -math.radians(steering_wheel_angle_deg - steering_wheel_angle_offset_deg) / VM.sR
-
 
     # Update vehicle model
     x = max(sm['liveParameters'].stiffnessFactor, 0.1)
     sr = max(sm['liveParameters'].steerRatio, 0.1)
     VM.update_params(x, sr)
     curvature_factor = VM.curvature_factor(v_ego)
+    measured_curvature = -curvature_factor * math.radians(steering_wheel_angle_deg - steering_wheel_angle_offset_deg) / VM.sR
 
 
     md = sm['modelV2']
@@ -176,7 +175,6 @@ class PathPlanner():
     assert len(heading_pts) == MPC_N + 1
     self.libmpc.run_mpc(self.cur_state, self.mpc_solution,
                         float(v_ego_mpc),
-                        curvature_factor,
                         CAR_ROTATION_RADIUS,
                         list(y_pts),
                         list(heading_pts))
@@ -184,39 +182,39 @@ class PathPlanner():
     self.cur_state.x = 0.0
     self.cur_state.y = 0.0
     self.cur_state.psi = 0.0
-    self.cur_state.tire_angle = interp(DT_MDL, self.t_idxs[:MPC_N+1], self.mpc_solution.tire_angle)
+    self.cur_state.curvature = interp(DT_MDL, self.t_idxs[:MPC_N+1], self.mpc_solution.curvature)
 
     # TODO this needs more thought, use .2s extra for now to estimate other delays
     delay = CP.steerActuatorDelay + .2
-    next_tire_angle = interp(DT_MDL + delay, self.t_idxs[:MPC_N+1], self.mpc_solution.tire_angle)
-    next_tire_angle_rate = self.mpc_solution.tire_angle_rate[0]
+    next_curvature = interp(DT_MDL + delay, self.t_idxs[:MPC_N+1], self.mpc_solution.curvature)
+    next_curvature_rate = self.mpc_solution.curvature_rate[0]
 
     # TODO This gets around the fact that MPC can plan to turn and turn back in the
     # time between now and delay, need better abstraction between planner and controls
     plan_ahead_idx = sum(self.t_idxs < delay)
-    if next_tire_angle_rate > 0:
-      next_tire_angle = max(list(self.mpc_solution.tire_angle)[:plan_ahead_idx] + [next_tire_angle])
+    if next_curvature_rate > 0:
+      next_curvature = max(list(self.mpc_solution.curvature)[:plan_ahead_idx] + [next_curvature])
     else:
-      next_tire_angle = min(list(self.mpc_solution.tire_angle)[:plan_ahead_idx] + [next_tire_angle])
+      next_curvature = min(list(self.mpc_solution.curvature)[:plan_ahead_idx] + [next_curvature])
 
     # reset to current steer angle if not active or overriding
     if active:
-      tire_angle_desired = next_tire_angle
-      desired_tire_angle_rate = next_tire_angle_rate
+      curvature_desired = next_curvature
+      desired_curvature_rate = next_curvature_rate
     else:
-      tire_angle_desired = measured_tire_angle
-      desired_tire_angle_rate = 0.0
+      curvature_desired = measured_curvature
+      desired_curvature_rate = 0.0
 
     # negative sign, controls uses different convention
-    self.desired_steering_wheel_angle_deg = -float(math.degrees(tire_angle_desired * VM.sR)) + steering_wheel_angle_offset_deg
-    self.desired_steering_wheel_angle_rate_deg = -float(math.degrees(desired_tire_angle_rate * VM.sR))
+    self.desired_steering_wheel_angle_deg = -float(math.degrees(curvature_desired * VM.sR)/curvature_factor) + steering_wheel_angle_offset_deg
+    self.desired_steering_wheel_angle_rate_deg = -float(math.degrees(desired_curvature_rate * VM.sR)/curvature_factor)
 
     #  Check for infeasable MPC solution
-    mpc_nans = any(math.isnan(x) for x in self.mpc_solution.tire_angle)
+    mpc_nans = any(math.isnan(x) for x in self.mpc_solution.curvature)
     t = sec_since_boot()
     if mpc_nans:
       self.libmpc.init(MPC_COST_LAT.PATH, MPC_COST_LAT.HEADING, CP.steerRateCost)
-      self.cur_state.tire_angle = measured_tire_angle
+      self.cur_state.curvature = measured_curvature
 
       if t > self.last_cloudlog_t + 5.0:
         self.last_cloudlog_t = t
