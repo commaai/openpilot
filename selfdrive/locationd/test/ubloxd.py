@@ -79,6 +79,7 @@ def configure_ublox(dev):
   dev.configure_message_rate(ublox.CLASS_RXM, ublox.MSG_RXM_RAW, 1)
   dev.configure_message_rate(ublox.CLASS_RXM, ublox.MSG_RXM_SFRBX, 1)
   dev.configure_message_rate(ublox.CLASS_MON, ublox.MSG_MON_HW, 1)
+  dev.configure_message_rate(ublox.CLASS_MON, ublox.MSG_MON_HW2, 1)
 
 
 def int_to_bool_list(num):
