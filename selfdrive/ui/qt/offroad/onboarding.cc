@@ -7,7 +7,6 @@
 #include <QtWebEngine>
 #include <QWebEngineView>
 #include <QWebEngineSettings>
-#include <fstream>
 
 #include "common/params.h"
 #include "onboarding.hpp"
