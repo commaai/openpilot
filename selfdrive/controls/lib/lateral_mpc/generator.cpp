@@ -41,7 +41,7 @@ int main( )
   h << (v_ego + 1.0 ) * psi;
 
   // Angular rate error
-  h << (v_ego + 1.0 ) * curvature_rate;
+  h << (v_ego + 1.0 ) * 5 * curvature_rate;
 
   BMatrix Q(3,3); Q.setAll(true);
   // Q(0,0) = 1.0;
