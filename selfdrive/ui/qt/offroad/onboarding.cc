@@ -76,6 +76,7 @@ TrainingGuide::TrainingGuide(QWidget* parent) {
 QWidget* OnboardingWindow::terms_screen() {
   QVBoxLayout *main_layout = new QVBoxLayout;
   main_layout->setContentsMargins(40, 0, 40, 0);
+
   QWebEngineView *view = new QWebEngineView(this);
   view->settings()->setAttribute(QWebEngineSettings::ShowScrollBars, false);
   QString html = QString::fromStdString(util::read_file("../assets/offroad/tc.html"));
