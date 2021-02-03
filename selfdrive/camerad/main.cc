@@ -24,18 +24,21 @@
 #include "visionipc_server.h"
 
 ExitHandler do_exit;
-VisionIpcServer *vipc_server = nullptr;
+
 void party(cl_device_id device_id, cl_context context) {
   MultiCameraState cameras = {};
-  vipc_server = new VisionIpcServer("camerad", device_id, context);
+  VisionIpcServer vipc_server("camerad", device_id, context);
 
-  cameras_init(&cameras, device_id, context);
+  CameraServerCtx ctx = {.device_id = device_id,
+                        .context = context,
+                        .cameras = &cameras,
+                        .vipc_server = &vipc_server};
+  cameras_init(ctx, &cameras);
   cameras_open(&cameras);
 
-  vipc_server->start_listener();
+  vipc_server.start_listener();
 
   cameras_run(&cameras);
-  delete vipc_server;
 }
 
 #ifdef QCOM

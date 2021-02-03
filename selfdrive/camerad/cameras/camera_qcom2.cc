@@ -551,7 +551,7 @@ void enqueue_req_multi(struct CameraState *s, int start, int n, bool dp) {
 
 // ******************* camera *******************
 
-static void camera_init(CameraState *s, int camera_id, int camera_num, unsigned int fps, cl_device_id device_id, cl_context ctx, VisionStreamType rgb_type, VisionStreamType yuv_type) {
+static void camera_init(const CameraServerCtx &ctx, CameraState *s, int camera_id, int camera_num, unsigned int fps) {
   LOGD("camera init %d", camera_num);
 
   assert(camera_id < ARRAYSIZE(cameras_supported));
@@ -570,7 +570,7 @@ static void camera_init(CameraState *s, int camera_id, int camera_num, unsigned 
   s->skipped = true;
   s->ef_filtered = 1.0;
 
-  s->buf.init(device_id, ctx, s, FRAME_BUF_COUNT, rgb_type, yuv_type);
+  s->buf.init(ctx, s, FRAME_BUF_COUNT);
 }
 
 // TODO: refactor this to somewhere nicer, perhaps use in camera_qcom as well
@@ -795,15 +795,12 @@ static void camera_open(CameraState *s) {
   enqueue_req_multi(s, 1, FRAME_BUF_COUNT, 0);
 }
 
-void cameras_init(MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
-  camera_init(&s->rear, CAMERA_ID_AR0231, 1, 20, device_id, ctx,
-              VISION_STREAM_RGB_BACK, VISION_STREAM_YUV_BACK); // swap left/right
+void cameras_init(const CameraServerCtx &ctx, MultiCameraState *s) {
+  camera_init(ctx, &s->rear, CAMERA_ID_AR0231, 1, 20); // swap left/right
   printf("rear initted \n");
-  camera_init(&s->wide, CAMERA_ID_AR0231, 0, 20, device_id, ctx,
-              VISION_STREAM_RGB_WIDE, VISION_STREAM_YUV_WIDE);
+  camera_init(ctx, &s->wide, CAMERA_ID_AR0231, 0, 20);
   printf("wide initted \n");
-  camera_init(&s->front, CAMERA_ID_AR0231, 2, 20, device_id, ctx,
-              VISION_STREAM_RGB_FRONT, VISION_STREAM_YUV_FRONT);
+  camera_init(ctx, &s->front, CAMERA_ID_AR0231, 2, 20);
   printf("front initted \n");
 
   s->sm = new SubMaster({"driverState"});

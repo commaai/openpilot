@@ -34,14 +34,14 @@ void camera_close(CameraState *s) {
   // empty
 }
 
-void camera_init(CameraState *s, int camera_id, unsigned int fps, cl_device_id device_id, cl_context ctx, VisionStreamType rgb_type, VisionStreamType yuv_type) {
+void camera_init(const CameraServerCtx &ctx, CameraState *s, int camera_id, unsigned int fps) {
   assert(camera_id < ARRAYSIZE(cameras_supported));
   s->ci = cameras_supported[camera_id];
   assert(s->ci.frame_width != 0);
 
   s->camera_num = camera_id;
   s->fps = fps;
-  s->buf.init(device_id, ctx, s, FRAME_BUF_COUNT, rgb_type, yuv_type);
+  s->buf.init(ctx, s, FRAME_BUF_COUNT);
 }
 
 static void* rear_thread(void *arg) {
