@@ -90,7 +90,6 @@ struct CameraState;
 
 class CameraBuf {
 private:
-  VisionIpcServer *vipc_server;
   CameraState *camera_state;
   cl_kernel krnl_debayer;
 
@@ -119,7 +118,7 @@ public:
 
   CameraBuf() = default;
   ~CameraBuf();
-  void init(cl_device_id device_id, cl_context context, CameraState *s, VisionIpcServer * v, int frame_cnt, VisionStreamType rgb_type, VisionStreamType yuv_type, release_cb release_callback=nullptr);
+  void init(cl_device_id device_id, cl_context context, CameraState *s, int frame_cnt, VisionStreamType rgb_type, VisionStreamType yuv_type, release_cb release_callback=nullptr);
   bool acquire();
   void release();
   void queue(size_t buf_idx);

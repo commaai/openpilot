@@ -41,8 +41,9 @@ static cl_program build_debayer_program(cl_device_id device_id, cl_context conte
 #endif
 }
 
-void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s, VisionIpcServer * v, int frame_cnt, VisionStreamType rgb_type, VisionStreamType yuv_type, release_cb release_callback) {
-  vipc_server = v;
+extern VisionIpcServer *vipc_server;
+
+void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s, int frame_cnt, VisionStreamType rgb_type, VisionStreamType yuv_type, release_cb release_callback) {
   this->rgb_type = rgb_type;
   this->yuv_type = yuv_type;
   this->release_callback = release_callback;
