@@ -100,12 +100,14 @@ void Panda::handle_usb_issue(int err, int retries, const char func[]) {
 
 int Panda::usb_transfer(libusb_endpoint_direction dir, uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned int timeout) {
   const uint8_t bmRequestType = dir | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE;
-  int r = -1, retries = 0;
-  while (connected && r < 0) {
+  int r = LIBUSB_ERROR_NO_DEVICE, retries = 0;
+  while (connected) {
     // Release the lock before retrying on failure, so that other threads have a chance to do transfer
     std::lock_guard lk(usb_lock);
     r = libusb_control_transfer(dev_handle, bmRequestType, bRequest, wValue, wIndex, NULL, 0, timeout);
-    if (r < 0) handle_usb_issue(r, ++retries, __func__);
+    if (r >= 0 || r == LIBUSB_ERROR_TIMEOUT) break;
+
+    handle_usb_issue(r, ++retries, __func__);
   }
   return r;
 }
@@ -119,7 +121,7 @@ int Panda::usb_read(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned
 }
 
 std::tuple<int, int> Panda::usb_bulk_transfer(libusb_endpoint_direction dir, unsigned char endpoint, unsigned char* data, int length, unsigned int timeout) {
-  int err = 0, retries = 0, transferred = 0;
+  int err = LIBUSB_ERROR_NO_DEVICE, retries = 0, transferred = 0;
   // Keep the lock while retrying for bulk transfer
   std::lock_guard lk(usb_lock);
   while (connected) {
