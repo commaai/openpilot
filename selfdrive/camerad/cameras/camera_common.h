@@ -94,6 +94,7 @@ typedef struct CameraServerCtx {
   MultiCameraState *cameras;
   VisionIpcServer *vipc_server;
 } CameraServerCtx;
+
 class CameraBuf {
 private:
   VisionIpcServer *vipc_server;
