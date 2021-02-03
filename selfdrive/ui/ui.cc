@@ -156,10 +156,10 @@ static void update_sockets(UIState *s) {
   }
   if (sm.updated("health")) {
     auto health = sm["health"].getHealth();
-    scene.hwType = health.getHwType();
+    scene.pandaType = health.getPandaType();
     s->ignition = health.getIgnitionLine() || health.getIgnitionCan();
   } else if ((s->sm->frame - s->sm->rcv_frame("health")) > 5*UI_FREQ) {
-    scene.hwType = cereal::HealthData::HwType::UNKNOWN;
+    scene.pandaType = cereal::HealthData::PandaType::UNKNOWN;
   }
   if (sm.updated("carParams")) {
     s->longitudinal_control = sm["carParams"].getCarParams().getOpenpilotLongitudinalControl();

@@ -208,7 +208,7 @@ def thermald_thread():
       usb_power = health.health.usbPowerMode != log.HealthData.UsbPowerMode.client
 
       # If we lose connection to the panda, wait 5 seconds before going offroad
-      if health.health.hwType == log.HealthData.HwType.unknown:
+      if health.health.pandaType == log.HealthData.PandaType.unknown:
         no_panda_cnt += 1
         if no_panda_cnt > DISCONNECT_TIMEOUT / DT_TRML:
           if startup_conditions["ignition"]:
@@ -219,8 +219,8 @@ def thermald_thread():
         startup_conditions["ignition"] = health.health.ignitionLine or health.health.ignitionCan
 
       # Setup fan handler on first connect to panda
-      if handle_fan is None and health.health.hwType != log.HealthData.HwType.unknown:
-        is_uno = health.health.hwType == log.HealthData.HwType.uno
+      if handle_fan is None and health.health.pandaType != log.HealthData.PandaType.unknown:
+        is_uno = health.health.pandaType == log.HealthData.PandaType.uno
 
         if (not EON) or is_uno:
           cloudlog.info("Setting up UNO fan handler")
@@ -232,8 +232,8 @@ def thermald_thread():
 
       # Handle disconnect
       if health_prev is not None:
-        if health.health.hwType == log.HealthData.HwType.unknown and \
-          health_prev.health.hwType != log.HealthData.HwType.unknown:
+        if health.health.pandaType == log.HealthData.PandaType.unknown and \
+          health_prev.health.pandaType != log.HealthData.PandaType.unknown:
           params.panda_disconnect()
       health_prev = health
 
@@ -357,8 +357,8 @@ def thermald_thread():
     startup_conditions["device_temp_good"] = thermal_status < ThermalStatus.danger
     set_offroad_alert_if_changed("Offroad_TemperatureTooHigh", (not startup_conditions["device_temp_good"]))
 
-    startup_conditions["hardware_supported"] = health is not None and health.health.hwType not in [log.HealthData.HwType.whitePanda,
-                                                                                                   log.HealthData.HwType.greyPanda]
+    startup_conditions["hardware_supported"] = health is not None and health.health.pandaType not in [log.HealthData.PandaType.whitePanda,
+                                                                                                   log.HealthData.PandaType.greyPanda]
     set_offroad_alert_if_changed("Offroad_HardwareUnsupported", health is not None and not startup_conditions["hardware_supported"])
 
     # Handle offroad/onroad transition

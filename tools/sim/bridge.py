@@ -88,7 +88,7 @@ def health_function():
     dat.valid = True
     dat.health = {
       'ignitionLine': True,
-      'hwType': "blackPanda",
+      'pandaType': "blackPanda",
       'controlsAllowed': True,
       'safetyModel': 'hondaNidec'
     }

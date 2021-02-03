@@ -34,7 +34,7 @@ IGNORE_PROCESSES = set(["rtshield", "uploader", "deleter", "loggerd", "logmessag
 
 ThermalStatus = log.ThermalData.ThermalStatus
 State = log.ControlsState.OpenpilotState
-HwType = log.HealthData.HwType
+PandaType = log.HealthData.PandaType
 LongitudinalPlanSource = log.LongitudinalPlan.LongitudinalPlanSource
 Desire = log.LateralPlan.Desire
 LaneChangeState = log.LateralPlan.LaneChangeState
@@ -175,7 +175,7 @@ class Controls:
       self.events.add(EventName.processNotRunning)
 
     # Alert if fan isn't spinning for 5 seconds
-    if self.sm['health'].hwType in [HwType.uno, HwType.dos]:
+    if self.sm['health'].pandaType in [PandaType.uno, PandaType.dos]:
       if self.sm['health'].fanSpeedRpm == 0 and self.sm['thermal'].fanSpeedRpmDesired > 50:
         if (self.sm.frame - self.last_functional_fan_frame) * DT_CTRL > 5.0:
           self.events.add(EventName.fanMalfunction)

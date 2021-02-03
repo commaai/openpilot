@@ -195,7 +195,7 @@ def calibration_incomplete_alert(CP: car.CarParams, sm: messaging.SubMaster, met
     Priority.LOWEST, VisualAlert.none, AudibleAlert.none, 0., 0., .2)
 
 def no_gps_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> Alert:
-  gps_integrated = sm['health'].hwType in [log.HealthData.HwType.uno, log.HealthData.HwType.dos]
+  gps_integrated = sm['health'].pandaType in [log.HealthData.PandaType.uno, log.HealthData.PandaType.dos]
   return Alert(
     "Poor GPS reception",
     "If sky is visible, contact support" if gps_integrated else "Check GPS antenna placement",
