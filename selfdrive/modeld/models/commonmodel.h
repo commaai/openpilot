@@ -14,24 +14,26 @@
 #include "selfdrive/modeld/transforms/loadyuv.h"
 #include "selfdrive/modeld/transforms/transform.h"
 
+constexpr int MODEL_WIDTH = 512;
+constexpr int MODEL_HEIGHT = 256;
+constexpr int MODEL_FRAME_SIZE = MODEL_WIDTH * MODEL_HEIGHT * 3 / 2;
+
 const bool send_raw_pred = getenv("SEND_RAW_PRED") != NULL;
 
 void softmax(const float* input, float* output, size_t len);
 float softplus(float input);
 float sigmoid(float input);
 
-typedef struct ModelFrame {
-  Transform transform;
-  int width, height;
-  cl_mem y_cl, u_cl, v_cl;
-  LoadYUVState loadyuv;
-  cl_mem net_input;
-  size_t net_input_size;
-} ModelFrame;
+class ModelFrame {
+ public:
+  void init(cl_device_id device_id, cl_context context);
+  std::tuple<float*, size_t> prepare(cl_mem yuv_cl, int width, int height, const mat3& transform);
+  void free();
 
-void frame_init(ModelFrame* frame, int width, int height,
-                      cl_device_id device_id, cl_context context);
-float *frame_prepare(ModelFrame* frame, cl_command_queue q,
-                           cl_mem yuv_cl, int width, int height,
-                           const mat3 &transform);
-void frame_free(ModelFrame* frame);
+ private:
+  Transform transform;
+  LoadYUVState loadyuv;
+  cl_command_queue q;
+  cl_mem y_cl, u_cl, v_cl, net_input_cl;
+  std::unique_ptr<float[]> input_frames;
+};

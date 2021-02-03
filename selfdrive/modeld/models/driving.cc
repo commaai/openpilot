@@ -15,10 +15,6 @@
 constexpr int DESIRE_PRED_SIZE = 32;
 constexpr int OTHER_META_SIZE = 4;
 
-constexpr int MODEL_WIDTH = 512;
-constexpr int MODEL_HEIGHT = 256;
-constexpr int MODEL_FRAME_SIZE = MODEL_WIDTH * MODEL_HEIGHT * 3 / 2;
-
 constexpr int PLAN_MHP_N = 5;
 constexpr int PLAN_MHP_COLUMNS = 30;
 constexpr int PLAN_MHP_VALS = 30*33;
@@ -51,8 +47,7 @@ constexpr int OUTPUT_SIZE =  POSE_IDX + POSE_SIZE;
 // #define DUMP_YUV
 
 void model_init(ModelState* s, cl_device_id device_id, cl_context context) {
-  frame_init(&s->frame, MODEL_WIDTH, MODEL_HEIGHT, device_id, context);
-  s->input_frames = std::make_unique<float[]>(MODEL_FRAME_SIZE * 2);
+  s->frame.init(device_id, context);
 
   constexpr int output_size = OUTPUT_SIZE + TEMPORAL_SIZE;
   s->output.resize(output_size);
@@ -76,8 +71,6 @@ void model_init(ModelState* s, cl_device_id device_id, cl_context context) {
   s->traffic_convention[idx] = 1.0;
   s->m->addTrafficConvention(s->traffic_convention, TRAFFIC_CONVENTION_LEN);
 #endif
-
-  s->q = CL_CHECK_ERR(clCreateCommandQueue(context, device_id, 0, &err));
 }
 
 ModelDataRaw model_eval_frame(ModelState* s, cl_mem yuv_cl, int width, int height,
@@ -99,19 +92,8 @@ ModelDataRaw model_eval_frame(ModelState* s, cl_mem yuv_cl, int width, int heigh
 
   //for (int i = 0; i < OUTPUT_SIZE + TEMPORAL_SIZE; i++) { printf("%f ", s->output[i]); } printf("\n");
 
-  float *new_frame_buf = frame_prepare(&s->frame, s->q, yuv_cl, width, height, transform);
-  memmove(&s->input_frames[0], &s->input_frames[MODEL_FRAME_SIZE], sizeof(float)*MODEL_FRAME_SIZE);
-  memmove(&s->input_frames[MODEL_FRAME_SIZE], new_frame_buf, sizeof(float)*MODEL_FRAME_SIZE);
-  s->m->execute(&s->input_frames[0], MODEL_FRAME_SIZE*2);
-
-  #ifdef DUMP_YUV
-    FILE *dump_yuv_file = fopen("/sdcard/dump.yuv", "wb");
-    fwrite(new_frame_buf, MODEL_HEIGHT*MODEL_WIDTH*3/2, sizeof(float), dump_yuv_file);
-    fclose(dump_yuv_file);
-    assert(1==2);
-  #endif
-
-  clEnqueueUnmapMemObject(s->q, s->frame.net_input, (void*)new_frame_buf, 0, NULL, NULL);
+  auto[net_input_buf, buf_size] = s->frame.prepare(yuv_cl, width, height, transform);
+  s->m->execute(net_input_buf, buf_size);
 
   // net outputs
   ModelDataRaw net_outputs;
@@ -127,8 +109,7 @@ ModelDataRaw model_eval_frame(ModelState* s, cl_mem yuv_cl, int width, int heigh
 }
 
 void model_free(ModelState* s) {
-  frame_free(&s->frame);
-  CL_CHECK(clReleaseCommandQueue(s->q));
+  s->frame.free();
 }
 
 static const float *get_best_data(const float *data, int size, int group_size, int offset) {
