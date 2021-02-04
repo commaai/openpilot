@@ -138,7 +138,6 @@ bool CameraBuf::acquire() {
     const size_t globalWorkSize[] = {size_t(camera_state->ci.frame_width), size_t(camera_state->ci.frame_height)};
     const size_t localWorkSize[] = {DEBAYER_LOCAL_WORKSIZE, DEBAYER_LOCAL_WORKSIZE};
     CL_CHECK(clSetKernelArg(krnl_debayer, 2, localMemSize, 0));
-    CL_CHECK(clSetKernelArg(krnl_debayer, 3, sizeof(float), &camera_state->max_pv));
     CL_CHECK(clEnqueueNDRangeKernel(q, krnl_debayer, 2, NULL, globalWorkSize, localWorkSize,
                                     0, 0, &debayer_event));
 #else
@@ -293,17 +292,13 @@ void set_exposure_target(CameraState *c, const uint8_t *pix_ptr, int x_start, in
   const CameraBuf *b = &c->buf;
 
   uint32_t lum_binning[256] = {0};
-  uint8_t max_pv = 0;
   for (int y = y_start; y < y_end; y += y_skip) {
     for (int x = x_start; x < x_end; x += x_skip) {
       uint8_t lum = pix_ptr[(y * b->rgb_width) + x];
-      max_pv = max_pv > lum ? max_pv : lum;
       lum_binning[lum]++;
     }
   }
-#ifdef QCOM2
-  c->max_pv = (float)max_pv/256.0f;
-#endif
+
   unsigned int lum_total = (y_end - y_start) * (x_end - x_start) / x_skip / y_skip;
   unsigned int lum_cur = 0;
   int lum_med = 0;
