@@ -14,10 +14,9 @@ int main() {
   PubMaster pm({"androidLog"});
   while (!do_exit) {
     // setup android logging
-    logger_list *loggers =
-        last_log_time.tv_sec == 0
-            ? android_logger_list_alloc(ANDROID_LOG_RDONLY | ANDROID_LOG_NONBLOCK, 0, 0)
-            : android_logger_list_alloc_time(ANDROID_LOG_RDONLY | ANDROID_LOG_NONBLOCK, last_log_time, 0);
+    logger_list *loggers = last_log_time.tv_sec == 0 ?
+                           android_logger_list_alloc(ANDROID_LOG_RDONLY | ANDROID_LOG_NONBLOCK, 0, 0) :
+                           android_logger_list_alloc_time(ANDROID_LOG_RDONLY | ANDROID_LOG_NONBLOCK, last_log_time, 0);
     assert(loggers);
 
     const log_id_t log_ids[] = {LOG_ID_MAIN, LOG_ID_RADIO, LOG_ID_SYSTEM, LOG_ID_CRASH, LOG_ID_KERNEL};
