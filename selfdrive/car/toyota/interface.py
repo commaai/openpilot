@@ -255,6 +255,16 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 4590. * CV.LB_TO_KG + STD_CARGO_KG
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.19], [0.02]]
       ret.lateralTuning.pid.kf = 0.00007818594
+      # Longitudinal tune
+      ret.longitudinalTuning.deadzoneBP = [0., 8.05]
+      ret.longitudinalTuning.deadzoneV = [.0, .14]
+      ret.longitudinalTuning.kpBP = [0., 5., 20.]
+      ret.longitudinalTuning.kpV = [1.3, 1.0, 0.7]
+      ret.longitudinalTuning.kiBP = [0., 5., 12., 20., 27.]
+      ret.longitudinalTuning.kiV = [.35, .23, .20, .17, .1]
+      ret.stoppingBrakeRate = 0.1 # reach stopping target smoothly
+      ret.startingBrakeRate = 2.0 # release brakes fast
+      ret.startAccel = 1.2 # Accelerate from 0 faster
 
     elif candidate == CAR.LEXUS_IS:
       stop_and_go = False
