@@ -66,6 +66,7 @@ if arch == "aarch64" or arch == "larch64":
   ]
 
   libpath = [
+    "/usr/local/lib",
     "/usr/lib",
     "/system/vendor/lib64",
     "/system/comma/usr/lib",
