@@ -3,6 +3,15 @@ lenv = env.Clone()
 
 libs = [cereal, messaging, common, 'OpenCL', 'SNPE', 'symphony-cpu', 'capnp', 'zmq', 'kj', 'yuv', gpucommon, visionipc]
 
+def get_dlsym_offset():
+  """Returns the offset between dlopen and dlsym in libdl.so"""
+  import ctypes
+  libdl = ctypes.PyDLL('libdl.so')
+  dlopen = ctypes.cast(libdl.dlopen, ctypes.c_void_p).value
+  dlsym = ctypes.cast(libdl.dlsym, ctypes.c_void_p).value
+  return dlsym - dlopen
+
+
 common_src = [
   "models/commonmodel.cc",
   "runners/snpemodel.cc",
@@ -21,8 +30,9 @@ if arch == "aarch64" or arch == "larch64":
   libs += ['gnustl_shared'] if arch == "aarch64" else ['pthread', 'dl']
 
   common_src += thneed_src
-  lenv['CFLAGS'].append("-DUSE_THNEED")
+  dlsym_offset = get_dlsym_offset()
   lenv['CXXFLAGS'].append("-DUSE_THNEED")
+  lenv['CXXFLAGS'].append(f"-DDLSYM_OFFSET={dlsym_offset}")
 else:
   libs += ['pthread']
 
@@ -44,6 +54,7 @@ else:
     del common_src[common_src.index('runners/snpemodel.cc')]
 
 common_model = lenv.Object(common_src)
+
 
 # build thneed model
 if arch == "aarch64" or arch == "larch64":
