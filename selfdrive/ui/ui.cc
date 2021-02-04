@@ -112,6 +112,7 @@ static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
   // update path
   int max_idx =  TRAJECTORY_SIZE - 1;
   if (scene.lead_data[0].getStatus()) {
+    // limit the max_idx if lead car detected
     const float lead_d = scene.lead_data[0].getDRel() * 2.;
     const float path_length = fmax((lead_d - fmin(lead_d * 0.35, 10.)), MIN_DRAW_DISTANCE);
     max_idx = get_path_length_idx(model.getPosition(), path_length);
