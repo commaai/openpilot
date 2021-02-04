@@ -69,7 +69,7 @@ def ui_thread(addr, frame_address):
   top_down_surface = pygame.surface.Surface((UP.lidar_x, UP.lidar_y), 0, 8)
 
   frame = messaging.sub_sock('frame', addr=addr, conflate=True)
-  sm = messaging.SubMaster(['carState', 'plan', 'carControl', 'radarState', 'liveCalibration', 'controlsState',
+  sm = messaging.SubMaster(['carState', 'longitudinalPlan', 'carControl', 'radarState', 'liveCalibration', 'controlsState',
                             'liveTracks', 'model', 'liveMpc', 'liveParameters', 'lateralPlan', 'frame'], addr=addr)
 
   calibration = None
@@ -164,7 +164,7 @@ def ui_thread(addr, frame_address):
       angle_steers_k = np.inf
 
     plot_arr[:-1] = plot_arr[1:]
-    plot_arr[-1, name_to_arr_idx['angle_steers']] = sm['controlsState'].angleSteers
+    plot_arr[-1, name_to_arr_idx['angle_steers']] = sm['controlsState'].angleSteersDes
     plot_arr[-1, name_to_arr_idx['angle_steers_des']] = sm['carControl'].actuators.steerAngle
     plot_arr[-1, name_to_arr_idx['angle_steers_k']] = angle_steers_k
     plot_arr[-1, name_to_arr_idx['gas']] = sm['carState'].gas
@@ -172,12 +172,12 @@ def ui_thread(addr, frame_address):
     plot_arr[-1, name_to_arr_idx['user_brake']] = sm['carState'].brake
     plot_arr[-1, name_to_arr_idx['steer_torque']] = sm['carControl'].actuators.steer * ANGLE_SCALE
     plot_arr[-1, name_to_arr_idx['computer_brake']] = sm['carControl'].actuators.brake
-    plot_arr[-1, name_to_arr_idx['v_ego']] = sm['controlsState'].vEgo
+    plot_arr[-1, name_to_arr_idx['v_ego']] = sm['carState'].vEgo
     plot_arr[-1, name_to_arr_idx['v_pid']] = sm['controlsState'].vPid
     plot_arr[-1, name_to_arr_idx['v_override']] = sm['carControl'].cruiseControl.speedOverride
     plot_arr[-1, name_to_arr_idx['v_cruise']] = sm['carState'].cruiseState.speed
     plot_arr[-1, name_to_arr_idx['a_ego']] = sm['carState'].aEgo
-    plot_arr[-1, name_to_arr_idx['a_target']] = sm['plan'].aTarget
+    plot_arr[-1, name_to_arr_idx['a_target']] = sm['longitudinalPlan'].aTarget
     plot_arr[-1, name_to_arr_idx['accel_override']] = sm['carControl'].cruiseControl.accelOverride
 
     # ***** model ****
@@ -241,7 +241,7 @@ def ui_thread(addr, frame_address):
       info_font.render("BRAKE LIGHTS", True, RED if sm['carState'].brakeLights else BLACK),
       info_font.render("SPEED: " + str(round(sm['carState'].vEgo, 1)) + " m/s", True, YELLOW),
       info_font.render("LONG CONTROL STATE: " + str(sm['controlsState'].longControlState), True, YELLOW),
-      info_font.render("LONG MPC SOURCE: " + str(sm['plan'].longitudinalPlanSource), True, YELLOW),
+      info_font.render("LONG MPC SOURCE: " + str(sm['longitudinalPlan'].longitudinalPlanSource), True, YELLOW),
       None,
       info_font.render("ANGLE OFFSET (AVG): " + str(round(sm['liveParameters'].angleOffsetAverage, 2)) + " deg", True, YELLOW),
       info_font.render("ANGLE OFFSET (INSTANT): " + str(round(sm['liveParameters'].angleOffset, 2)) + " deg", True, YELLOW),
