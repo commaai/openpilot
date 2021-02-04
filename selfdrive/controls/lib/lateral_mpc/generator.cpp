@@ -17,20 +17,19 @@ int main( )
   DifferentialState xx; // x position
   DifferentialState yy; // y position
   DifferentialState psi; // vehicle heading
-  DifferentialState tire_angle;
+  DifferentialState curvature;
 
-  OnlineData curvature_factor;
   OnlineData v_ego;
   OnlineData rotation_radius;
 
-  Control tire_angle_rate;
+  Control curvature_rate;
   
 
   // Equations of motion
-  f << dot(xx) == v_ego * cos(psi) - rotation_radius * sin(psi) * (v_ego * tire_angle *curvature_factor);
-  f << dot(yy) == v_ego * sin(psi) + rotation_radius * cos(psi) * (v_ego * tire_angle *curvature_factor);
-  f << dot(psi) == v_ego * tire_angle * curvature_factor;
-  f << dot(tire_angle) == tire_angle_rate;
+  f << dot(xx) == v_ego * cos(psi) - rotation_radius * sin(psi) * (v_ego * curvature);
+  f << dot(yy) == v_ego * sin(psi) + rotation_radius * cos(psi) * (v_ego * curvature);
+  f << dot(psi) == v_ego * curvature;
+  f << dot(curvature) == curvature_rate;
 
   // Running cost
   Function h;
@@ -42,7 +41,7 @@ int main( )
   h << (v_ego + 1.0 ) * psi;
 
   // Angular rate error
-  h << (v_ego + 1.0 ) * tire_angle_rate;
+  h << (v_ego + 1.0) * 4 * curvature_rate;
 
   BMatrix Q(3,3); Q.setAll(true);
   // Q(0,0) = 1.0;
@@ -78,8 +77,8 @@ int main( )
   // car can't go backward to avoid "circles"
   ocp.subjectTo( deg2rad(-90) <= psi <= deg2rad(90));
   // more than absolute max steer angle
-  ocp.subjectTo( deg2rad(-50) <= tire_angle <= deg2rad(50));
-  ocp.setNOD(3);
+  ocp.subjectTo( deg2rad(-50) <= curvature <= deg2rad(50));
+  ocp.setNOD(2);
 
   OCPexport mpc(ocp);
   mpc.set( HESSIAN_APPROXIMATION, GAUSS_NEWTON );
