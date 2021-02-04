@@ -25,6 +25,7 @@ def set_panda_power(power=True):
   gpio_set(GPIO_STM_RST_N, not power)
 
 
+# fn = file name
 def get_firmware_fn():
   signed_fn = os.path.join(PANDA_BASEDIR, "board", "obj", "panda.bin.signed")
   if os.path.exists(signed_fn):
@@ -110,8 +111,8 @@ def update_panda():
 
 
 def main():
-  set_panda_power()
-  update_panda()
+  # set_panda_power()
+  # update_panda()
 
   os.chdir(os.path.join(BASEDIR, "selfdrive/boardd"))
   os.execvp("./boardd", ["./boardd"])

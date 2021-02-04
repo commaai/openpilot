@@ -505,6 +505,41 @@ void pigeon_thread() {
   delete pigeon;
 }
 
+//Port pandad to boardd
+bool file_exists(std::string fileName){
+  std::ifstream infile(fileName);
+  return infile.good();
+}
+
+std::string get_firmware_fn(){
+  std::string basedir = getenv("BASEDIR");
+  if (basedir == ""){
+    LOGW("BASEDIR is not defined, provide the enviromental variable or run manager.py");
+    return "";
+  }
+
+  std::string signed_firmware_path = basedir + "panda/board/obj/panda.bin.signed";
+  std::cout<<signed_firmware_path<<std::endl;
+
+  if (file_exists(signed_firmware_path)) {
+    LOGW("Using prebuilt signed firmware");
+    return signed_firmware_path;
+  } else {
+    LOGW("Building panda firmware");
+    system(("cd " + basedir + "panda/board; make -f Makefile clean && make -f Makefile obj/panda.bin").c_str());
+    LOGW("Finished building panda firmware");
+    return basedir + "panda/board/obj/panda.bin";
+  }
+
+}
+
+
+
+
+void update_panda(){
+  std::cout<<"updating panda"<<std::endl;;
+  get_firmware_fn();
+}
 
 int main() {
   int err;
@@ -517,7 +552,8 @@ int main() {
   LOG("set affinity returns %d", err);
 
   panda_set_power(true);
-
+  update_panda();
+  LOGW("End of startup procedure");
   while (!do_exit){
     std::vector<std::thread> threads;
     threads.push_back(std::thread(can_health_thread, getenv("STARTED") != nullptr));
