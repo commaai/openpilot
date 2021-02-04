@@ -17,7 +17,7 @@ def cycle_alerts(duration=200, is_metric=False):
 
   CP = CarInterface.get_params("HONDA CIVIC 2016 TOURING")
   sm = messaging.SubMaster(['thermal', 'health', 'frame', 'model', 'liveCalibration',
-                            'dMonitoringState', 'plan', 'pathPlan', 'liveLocationKalman'])
+                            'driverMonitoringState', 'plan', 'lateralPlan', 'liveLocationKalman'])
 
   controls_state = messaging.pub_sock('controlsState')
   thermal = messaging.pub_sock('thermal')

@@ -19,7 +19,7 @@ from selfdrive.controls.lib.latcontrol_lqr import LatControlLQR
 from selfdrive.controls.lib.events import Events, ET
 from selfdrive.controls.lib.alertmanager import AlertManager
 from selfdrive.controls.lib.vehicle_model import VehicleModel
-from selfdrive.controls.lib.planner import LON_MPC_STEP
+from selfdrive.controls.lib.longitudinal_planner import LON_MPC_STEP
 from selfdrive.locationd.calibrationd import Calibration
 from selfdrive.hardware import HARDWARE, TICI
 
@@ -34,11 +34,11 @@ IGNORE_PROCESSES = set(["rtshield", "uploader", "deleter", "loggerd", "logmessag
 
 ThermalStatus = log.ThermalData.ThermalStatus
 State = log.ControlsState.OpenpilotState
-HwType = log.HealthData.HwType
-LongitudinalPlanSource = log.Plan.LongitudinalPlanSource
-Desire = log.PathPlan.Desire
-LaneChangeState = log.PathPlan.LaneChangeState
-LaneChangeDirection = log.PathPlan.LaneChangeDirection
+PandaType = log.HealthData.PandaType
+LongitudinalPlanSource = log.LongitudinalPlan.LongitudinalPlanSource
+Desire = log.LateralPlan.Desire
+LaneChangeState = log.LateralPlan.LaneChangeState
+LaneChangeDirection = log.LateralPlan.LaneChangeDirection
 EventName = car.CarEvent.EventName
 
 
@@ -56,8 +56,8 @@ class Controls:
     if self.sm is None:
       ignore = ['ubloxRaw', 'frontFrame', 'managerState'] if SIMULATION else None
       self.sm = messaging.SubMaster(['thermal', 'health', 'modelV2', 'liveCalibration', 'ubloxRaw',
-                                     'dMonitoringState', 'plan', 'pathPlan', 'liveLocationKalman',
-                                     'frame', 'frontFrame', 'managerState'], ignore_alive=ignore)
+                                     'driverMonitoringState', 'longitudinalPlan', 'lateralPlan', 'liveLocationKalman',
+                                     'frame', 'frontFrame', 'managerState', 'liveParameters', 'radarState'], ignore_alive=ignore)
 
     self.can_sock = can_sock
     if can_sock is None:
@@ -127,10 +127,10 @@ class Controls:
     self.logged_comm_issue = False
 
     self.sm['liveCalibration'].calStatus = Calibration.CALIBRATED
-    self.sm['thermal'].freeSpace = 1.
-    self.sm['dMonitoringState'].events = []
-    self.sm['dMonitoringState'].awarenessStatus = 1.
-    self.sm['dMonitoringState'].faceDetected = False
+    self.sm['thermal'].freeSpacePercent = 1.
+    self.sm['driverMonitoringState'].events = []
+    self.sm['driverMonitoringState'].awarenessStatus = 1.
+    self.sm['driverMonitoringState'].faceDetected = False
 
     self.startup_event = get_startup_event(car_recognized, controller_available)
 
@@ -150,7 +150,7 @@ class Controls:
 
     self.events.clear()
     self.events.add_from_msg(CS.events)
-    self.events.add_from_msg(self.sm['dMonitoringState'].events)
+    self.events.add_from_msg(self.sm['driverMonitoringState'].events)
 
     # Handle startup event
     if self.startup_event is not None:
@@ -163,10 +163,10 @@ class Controls:
       self.events.add(EventName.lowBattery)
     if self.sm['thermal'].thermalStatus >= ThermalStatus.red:
       self.events.add(EventName.overheat)
-    if self.sm['thermal'].freeSpace < 0.07:
+    if self.sm['thermal'].freeSpacePercent < 0.07:
       # under 7% of space free no enable allowed
       self.events.add(EventName.outOfSpace)
-    if self.sm['thermal'].memUsedPercent > 90:
+    if self.sm['thermal'].memoryUsagePercent  > 90:
       self.events.add(EventName.lowMemory)
 
     # Check if all manager processes are running
@@ -175,8 +175,8 @@ class Controls:
       self.events.add(EventName.processNotRunning)
 
     # Alert if fan isn't spinning for 5 seconds
-    if self.sm['health'].hwType in [HwType.uno, HwType.dos]:
-      if self.sm['health'].fanSpeedRpm == 0 and self.sm['thermal'].fanSpeed > 50:
+    if self.sm['health'].pandaType in [PandaType.uno, PandaType.dos]:
+      if self.sm['health'].fanSpeedRpm == 0 and self.sm['thermal'].fanSpeedRpmDesired > 50:
         if (self.sm.frame - self.last_functional_fan_frame) * DT_CTRL > 5.0:
           self.events.add(EventName.fanMalfunction)
       else:
@@ -191,8 +191,8 @@ class Controls:
         self.events.add(EventName.calibrationInvalid)
 
     # Handle lane change
-    if self.sm['pathPlan'].laneChangeState == LaneChangeState.preLaneChange:
-      direction = self.sm['pathPlan'].laneChangeDirection
+    if self.sm['lateralPlan'].laneChangeState == LaneChangeState.preLaneChange:
+      direction = self.sm['lateralPlan'].laneChangeDirection
       if (CS.leftBlindspot and direction == LaneChangeDirection.left) or \
          (CS.rightBlindspot and direction == LaneChangeDirection.right):
         self.events.add(EventName.laneChangeBlocked)
@@ -201,7 +201,7 @@ class Controls:
           self.events.add(EventName.preLaneChangeLeft)
         else:
           self.events.add(EventName.preLaneChangeRight)
-    elif self.sm['pathPlan'].laneChangeState in [LaneChangeState.laneChangeStarting,
+    elif self.sm['lateralPlan'].laneChangeState in [LaneChangeState.laneChangeStarting,
                                                  LaneChangeState.laneChangeFinishing]:
       self.events.add(EventName.laneChange)
 
@@ -211,9 +211,10 @@ class Controls:
       self.mismatch_counter >= 200:
       self.events.add(EventName.controlsMismatch)
 
-    if not self.sm.alive['plan'] and self.sm.alive['pathPlan']:
-      # only plan not being received: radar not communicating
-      self.events.add(EventName.radarCommIssue)
+    if len(self.sm['radarState'].radarErrors):
+      self.events.add(EventName.radarFault)
+    elif not self.sm.valid['liveParameters']:
+      self.events.add(EventName.vehicleModelInvalid)
     elif not self.sm.all_alive_and_valid():
       self.events.add(EventName.commIssue)
       if not self.logged_comm_issue:
@@ -222,24 +223,18 @@ class Controls:
     else:
       self.logged_comm_issue = False
 
-    if not self.sm['pathPlan'].mpcSolutionValid:
+    if not self.sm['lateralPlan'].mpcSolutionValid:
       self.events.add(EventName.plannerError)
     if not self.sm['liveLocationKalman'].sensorsOK and not NOSENSOR:
       if self.sm.frame > 5 / DT_CTRL:  # Give locationd some time to receive all the inputs
         self.events.add(EventName.sensorDataInvalid)
-    if not self.sm['pathPlan'].paramsValid:
-      self.events.add(EventName.vehicleModelInvalid)
     if not self.sm['liveLocationKalman'].posenetOK:
       self.events.add(EventName.posenetInvalid)
     if not self.sm['liveLocationKalman'].deviceStable:
       self.events.add(EventName.deviceFalling)
-    if not self.sm['plan'].radarValid:
-      self.events.add(EventName.radarFault)
-    if self.sm['plan'].radarCanError:
-      self.events.add(EventName.radarCanError)
     if log.HealthData.FaultType.relayMalfunction in self.sm['health'].faults:
       self.events.add(EventName.relayMalfunction)
-    if self.sm['plan'].fcw:
+    if self.sm['longitudinalPlan'].fcw:
       self.events.add(EventName.fcw)
 
     # TODO: fix simulator
@@ -256,7 +251,7 @@ class Controls:
         self.events.add(EventName.modeldLagging)
 
     # Only allow engagement with brake pressed when stopped behind another stopped car
-    if CS.brakePressed and self.sm['plan'].vTargetFuture >= STARTING_TARGET_SPEED \
+    if CS.brakePressed and self.sm['longitudinalPlan'].vTargetFuture >= STARTING_TARGET_SPEED \
       and self.CP.openpilotLongitudinalControl and CS.vEgo < 0.3:
       self.events.add(EventName.noTarget)
 
@@ -370,8 +365,8 @@ class Controls:
   def state_control(self, CS):
     """Given the state, this function returns an actuators packet"""
 
-    plan = self.sm['plan']
-    path_plan = self.sm['pathPlan']
+    plan = self.sm['longitudinalPlan']
+    path_plan = self.sm['lateralPlan']
 
     actuators = car.CarControl.Actuators.new_message()
 
@@ -384,7 +379,7 @@ class Controls:
       self.LaC.reset()
       self.LoC.reset(v_pid=CS.vEgo)
 
-    plan_age = DT_CTRL * (self.sm.frame - self.sm.rcv_frame['plan'])
+    plan_age = DT_CTRL * (self.sm.frame - self.sm.rcv_frame['longitudinalPlan'])
     # no greater than dt mpc + dt, to prevent too high extraps
     dt = min(plan_age, LON_MPC_STEP + DT_CTRL) + DT_CTRL
 
@@ -432,15 +427,15 @@ class Controls:
     brake_discount = (1.0 - clip(actuators.brake * 3., 0.0, 1.0))
     speed_override = max(0.0, (self.LoC.v_pid + CS.cruiseState.speedOffset) * brake_discount)
     CC.cruiseControl.speedOverride = float(speed_override if self.CP.enableCruise else 0.0)
-    CC.cruiseControl.accelOverride = self.CI.calc_accel_override(CS.aEgo, self.sm['plan'].aTarget, CS.vEgo, self.sm['plan'].vTarget)
+    CC.cruiseControl.accelOverride = self.CI.calc_accel_override(CS.aEgo, self.sm['longitudinalPlan'].aTarget, CS.vEgo, self.sm['longitudinalPlan'].vTarget)
 
     CC.hudControl.setSpeed = float(self.v_cruise_kph * CV.KPH_TO_MS)
     CC.hudControl.speedVisible = self.enabled
     CC.hudControl.lanesVisible = self.enabled
-    CC.hudControl.leadVisible = self.sm['plan'].hasLead
+    CC.hudControl.leadVisible = self.sm['longitudinalPlan'].hasLead
 
-    right_lane_visible = self.sm['pathPlan'].rProb > 0.5
-    left_lane_visible = self.sm['pathPlan'].lProb > 0.5
+    right_lane_visible = self.sm['lateralPlan'].rProb > 0.5
+    left_lane_visible = self.sm['lateralPlan'].lProb > 0.5
     CC.hudControl.rightLaneVisible = bool(right_lane_visible)
     CC.hudControl.leftLaneVisible = bool(left_lane_visible)
 
@@ -472,10 +467,10 @@ class Controls:
       can_sends = self.CI.apply(CC)
       self.pm.send('sendcan', can_list_to_can_capnp(can_sends, msgtype='sendcan', valid=CS.canValid))
 
-    force_decel = (self.sm['dMonitoringState'].awarenessStatus < 0.) or \
+    force_decel = (self.sm['driverMonitoringState'].awarenessStatus < 0.) or \
                   (self.state == State.softDisabling)
 
-    steer_angle_rad = (CS.steeringAngle - self.sm['pathPlan'].angleOffset) * CV.DEG_TO_RAD
+    steer_angle_rad = (CS.steeringAngle - self.sm['lateralPlan'].angleOffset) * CV.DEG_TO_RAD
 
     # controlsState
     dat = messaging.new_message('controlsState')
@@ -488,17 +483,12 @@ class Controls:
     controlsState.alertBlinkingRate = self.AM.alert_rate
     controlsState.alertType = self.AM.alert_type
     controlsState.alertSound = self.AM.audible_alert
-    controlsState.driverMonitoringOn = self.sm['dMonitoringState'].faceDetected
     controlsState.canMonoTimes = list(CS.canMonoTimes)
-    controlsState.planMonoTime = self.sm.logMonoTime['plan']
-    controlsState.pathPlanMonoTime = self.sm.logMonoTime['pathPlan']
+    controlsState.longitudinalPlanMonoTime = self.sm.logMonoTime['longitudinalPlan']
+    controlsState.lateralPlanMonoTime = self.sm.logMonoTime['lateralPlan']
     controlsState.enabled = self.enabled
     controlsState.active = self.active
-    controlsState.vEgo = CS.vEgo
-    controlsState.vEgoRaw = CS.vEgoRaw
-    controlsState.angleSteers = CS.steeringAngle
     controlsState.curvature = self.VM.calc_curvature(steer_angle_rad, CS.vEgo)
-    controlsState.steerOverride = CS.steeringPressed
     controlsState.state = self.state
     controlsState.engageable = not self.events.any(ET.NO_ENTRY)
     controlsState.longControlState = self.LoC.long_control_state
@@ -510,13 +500,8 @@ class Controls:
     controlsState.angleSteersDes = float(self.LaC.angle_steers_des)
     controlsState.vTargetLead = float(v_acc)
     controlsState.aTarget = float(a_acc)
-    controlsState.jerkFactor = float(self.sm['plan'].jerkFactor)
-    controlsState.gpsPlannerActive = self.sm['plan'].gpsPlannerActive
-    controlsState.vCurvature = self.sm['plan'].vCurvature
-    controlsState.decelForModel = self.sm['plan'].longitudinalPlanSource == LongitudinalPlanSource.model
     controlsState.cumLagMs = -self.rk.remaining * 1000.
     controlsState.startMonoTime = int(start_time * 1e9)
-    controlsState.mapValid = self.sm['plan'].mapValid
     controlsState.forceDecel = bool(force_decel)
     controlsState.canErrorCounter = self.can_error_counter
 

@@ -31,7 +31,6 @@ def make_msg(face_detected, distracted=False, model_uncertain=False):
   ds.rightBlinkProb = 1. * distracted
   ds.faceOrientationStd = [1.*model_uncertain, 1.*model_uncertain, 1.*model_uncertain]
   ds.facePositionStd = [1.*model_uncertain, 1.*model_uncertain]
-  ds.sgProb = 0.
   return ds
 
 # driver state from neural net, 10Hz

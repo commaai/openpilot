@@ -160,7 +160,7 @@ def fingerprint(msgs, fsm, can_sock):
   can_sock.recv_ready.set()
   can_sock.wait = False
 
-  # we know fingerprinting is done when controlsd sets sm['pathPlan'].sensorValid
+  # we know fingerprinting is done when controlsd sets sm['lateralPlan'].sensorValid
   wait_for_event(fsm.update_called)
   fsm.update_called.clear()
 
@@ -221,7 +221,7 @@ CONFIGS = [
     proc_name="controlsd",
     pub_sub={
       "can": ["controlsState", "carState", "carControl", "sendcan", "carEvents", "carParams"],
-      "thermal": [], "health": [], "liveCalibration": [], "dMonitoringState": [], "plan": [], "pathPlan": [], "gpsLocation": [], "liveLocationKalman": [],
+      "thermal": [], "health": [], "liveCalibration": [], "driverMonitoringState": [], "longitudinalPlan": [], "lateralPlan": [], "gpsLocation": [], "liveLocationKalman": [], "liveParameters": [], "radarState": [],
       "modelV2": [], "frontFrame": [], "frame": [], "ubloxRaw": [], "managerState": [],
     },
     ignore=["logMonoTime", "valid", "controlsState.startMonoTime", "controlsState.cumLagMs"],
@@ -233,7 +233,7 @@ CONFIGS = [
     proc_name="radard",
     pub_sub={
       "can": ["radarState", "liveTracks"],
-      "liveParameters":  [], "controlsState":  [], "modelV2":  [],
+      "liveParameters":  [], "carState":  [], "modelV2":  [],
     },
     ignore=["logMonoTime", "valid", "radarState.cumLagMs"],
     init_callback=get_car_params,
@@ -243,10 +243,10 @@ CONFIGS = [
   ProcessConfig(
     proc_name="plannerd",
     pub_sub={
-      "modelV2": ["pathPlan"], "radarState": ["plan"],
+      "modelV2": ["lateralPlan"], "radarState": ["longitudinalPlan"],
       "carState": [], "controlsState": [], "liveParameters": [],
     },
-    ignore=["logMonoTime", "valid", "plan.processingDelay"],
+    ignore=["logMonoTime", "valid", "longitudinalPlan.processingDelay"],
     init_callback=get_car_params,
     should_recv_callback=None,
     tolerance=None,
@@ -265,7 +265,7 @@ CONFIGS = [
   ProcessConfig(
     proc_name="dmonitoringd",
     pub_sub={
-      "driverState": ["dMonitoringState"],
+      "driverState": ["driverMonitoringState"],
       "liveCalibration": [], "carState": [], "modelV2": [], "controlsState": [],
     },
     ignore=["logMonoTime", "valid"],

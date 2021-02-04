@@ -580,7 +580,7 @@ if __name__ == "__main__":
     # Start unlogger
     print("Start unlogger")
     unlogger_cmd = [os.path.join(BASEDIR, 'tools/replay/unlogger.py'), route, '/tmp']
-    disable_socks = 'frame,encodeIdx,plan,pathPlan,liveLongitudinalMpc,radarState,controlsState,liveTracks,liveMpc,sendcan,carState,carControl,carEvents,carParams'
+    disable_socks = 'frame,encodeIdx,plan,lateralPlan,liveLongitudinalMpc,radarState,controlsState,liveTracks,liveMpc,sendcan,carState,carControl,carEvents,carParams'
     unlogger = subprocess.Popen(unlogger_cmd + ['--disable', disable_socks, '--no-interactive'], preexec_fn=os.setsid)  # pylint: disable=subprocess-popen-preexec-fn
 
     print("Check sockets")
@@ -589,7 +589,7 @@ if __name__ == "__main__":
     if (route not in passive_routes) and (route not in forced_dashcam_routes) and has_camera:
       extra_socks.append("sendcan")
     if route not in passive_routes:
-      extra_socks.append("pathPlan")
+      extra_socks.append("lateralPlan")
 
     recvd_socks = wait_for_sockets(tested_socks + extra_socks, timeout=30)
     failures = [s for s in tested_socks + extra_socks if s not in recvd_socks]
