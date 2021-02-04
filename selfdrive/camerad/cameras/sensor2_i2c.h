@@ -315,8 +315,8 @@ struct i2c_random_wr_payload init_array_ar0231[] = {
   {0x340C, 0x802}, // 2 // 0000 0000 0010
 
   // Readout timing
-  {0x300C, 0x074B}, // LINE_LENGTH_PCK: min for 3-exposure HDR
-  {0x300A, 0x06EB}, // FRAME_LENGTH_LINES_ 6EB
+  {0x300C, 0x074B}, // LINE_LENGTH_PCK: min for 2-exposure HDR
+  {0x300A, 0x085E}, // FRAME_LENGTH_LINES_ 6EB
   {0x3042, 0x0000}, // EXTRA_DELAY
 
   // Readout Settings
@@ -341,11 +341,11 @@ struct i2c_random_wr_payload init_array_ar0231[] = {
 
   // HDR Settings
   {0x3082, 0x0004}, // OPERATION_MODE_CTRL
-  {0x3238, 0x0222}, // EXPOSURE_RATIO
+  {0x3238, 0x0004}, // EXPOSURE_RATIO
   {0x3014, 0x098E}, // FINE_INTEGRATION_TIME_
   {0x321E, 0x098E}, // FINE_INTEGRATION_TIME2
-  {0x3222, 0x098E}, // FINE_INTEGRATION_TIME3
-  {0x3226, 0x098E}, // FINE_INTEGRATION_TIME4, 098E?
+  // {0x3222, 0x098E}, // FINE_INTEGRATION_TIME3
+  // {0x3226, 0x098E}, // FINE_INTEGRATION_TIME4, 098E?
   {0x30B0, 0x0800}, // DIGITAL_TEST
   {0x32EA, 0x3C0E}, // RESERVED_MFR_32EA
   {0x32EC, 0x72A1}, // RESERVED_MFR_32EC
@@ -358,7 +358,7 @@ struct i2c_random_wr_payload init_array_ar0231[] = {
    // Initial Gains
   {0x3022, 0x01}, // GROUPED_PARAMETER_HOLD_
   {0x3366, 0x5555}, // ANALOG_GAIN
-  {0x3060, 0xBBBB}, // ANALOG_COLOR_GAIN
+  {0x3060, 0x3333}, // ANALOG_COLOR_GAIN
   {0x305A, 0x00D8}, // RED_GAIN
   {0x3058, 0x011B}, // BLUE_GAIN
   {0x3056, 0x009A}, // GREEN1_GAIN
