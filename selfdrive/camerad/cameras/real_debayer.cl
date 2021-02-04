@@ -9,9 +9,9 @@ const __constant half3 color_correction[3] = {
   (half3)(-0.06943967, -0.01601912, 1.50009016),
 };
 
-half3 color_correct(half3 rgb) {
+half3 color_correct(half3 rgb, half mv) {
   half3 ret = (0,0,0);
-  rgb = 2*rgb / (1.0f + 2*rgb); // reinhard
+  rgb = 2*rgb*(1+(rgb/(2*mv*mv))) / (1.0f + 2*rgb); // reinhard
   ret += rgb.x * color_correction[0];
   ret += rgb.y * color_correction[1];
   ret += rgb.z * color_correction[2];
@@ -67,7 +67,8 @@ half phi(half x) {
 
 __kernel void debayer10(const __global uchar * in,
                         __global uchar * out,
-                        __local half * cached
+                        __local half * cached,
+                        float mv
                        )
 {
   const int x_global = get_global_id(0);
@@ -177,7 +178,7 @@ __kernel void debayer10(const __global uchar * in,
     }
   }
 
-  rgb = color_correct(rgb);
+  rgb = color_correct(rgb, (half)mv);
 
   out[out_idx + 0] = (uchar)(255.0f * rgb.z);
   out[out_idx + 1] = (uchar)(255.0f * rgb.y);
