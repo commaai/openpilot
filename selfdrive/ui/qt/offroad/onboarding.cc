@@ -5,7 +5,6 @@
 #include <QVBoxLayout>
 #include <QDesktopWidget>
 #include <QtWebEngine>
-#include <QWebEngineView>
 #include <QWebEngineSettings>
 
 #include "common/params.h"
@@ -77,7 +76,7 @@ QWidget* OnboardingWindow::terms_screen() {
   QVBoxLayout *main_layout = new QVBoxLayout;
   main_layout->setContentsMargins(40, 0, 40, 0);
 
-  QWebEngineView *view = new QWebEngineView(this);
+  view = new QWebEngineView(this);
   view->settings()->setAttribute(QWebEngineSettings::ShowScrollBars, false);
   QString html = QString::fromStdString(util::read_file("../assets/offroad/tc.html"));
   view->setHtml(html);
@@ -95,7 +94,7 @@ QWidget* OnboardingWindow::terms_screen() {
   });
 
   QObject::connect(view->page(), SIGNAL(scrollPositionChanged(QPointF)), this, SLOT(scrollPosition(QPointF)));
-
+  
   QWidget* w = layout2Widget(buttons);
   w->setFixedHeight(200);
   main_layout->addWidget(w);
@@ -168,7 +167,7 @@ OnboardingWindow::OnboardingWindow(QWidget *parent) : QStackedWidget(parent) {
 }
 
 void OnboardingWindow::scrollPosition(QPointF position){
-  if (position.y() > 10000){
+  if (position.y() > view->page()->contentsSize().height() - 1000){
     accept_btn->setEnabled(true);
     accept_btn->setText("Accept");
   }
