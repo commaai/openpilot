@@ -113,16 +113,13 @@ static void draw_temp_metric(UIState *s) {
   draw_metric(s, "TEMP", temp_val.c_str(), temp_severity_map[s->scene.thermal.getThermalStatus()], 0, NULL);
 }
 
+
 static void draw_panda_metric(UIState *s) {
   const int panda_y_offset = 32 + 148;
-
-  int panda_severity = 0;
-  std::string panda_message = "VEHICLE\nONLINE";
-  if (s->scene.pandaType == cereal::HealthData::PandaType::UNKNOWN) {
-    panda_severity = 2;
-    panda_message = "NO\nPANDA";
-  }
-  draw_metric(s, NULL, NULL, panda_severity, panda_y_offset, panda_message.c_str());
+  auto [severity, message] = s->scene.pandaType != cereal::HealthData::PandaType::UNKNOWN
+                                 ? std::pair(0, "VEHICLE\nONLINE")
+                                 : std::pair(2, "NO\nPANDA");
+  draw_metric(s, NULL, NULL, severity, panda_y_offset, message);
 }
 
 static void draw_connectivity(UIState *s) {
