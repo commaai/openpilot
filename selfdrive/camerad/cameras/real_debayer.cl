@@ -35,8 +35,17 @@ half val_from_10(const uchar * source, int gx, int gy) {
   if (CAM_NUM == 1) { // fcamera
     gx = (gx - RGB_WIDTH/2);
     gy = (gy - RGB_HEIGHT/2);
-    half r = pow(gx*gx + gy*gy, 0.825);
-    half s = 1 / (1-0.00000733*r);
+    float r = gx*gx + gy*gy;
+    half s;
+    if (r < 62500) {
+      s = (half)(1.0f + 0.0000005f*r);
+    } else if (r < 640000) {
+      s = (half)(0.9375f + 0.0000015f*r);
+    } else if (r < 1102500) {
+      s = (half)(1.2831f + 0.0000000000015f*r*r);
+    } else {
+      s = (half)(0.06759375f + 0.0000000000025f*r*r);
+    }
     pv = s * pv;
   }
 
