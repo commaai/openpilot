@@ -186,13 +186,13 @@ void dmonitoring_publish(PubMaster &pm, uint32_t frame_id, const DMonitoringResu
   framed.setRightEyeProb(res.right_eye_prob);
   framed.setLeftBlinkProb(res.left_blink_prob);
   framed.setRightBlinkProb(res.right_blink_prob);
-  framed.setSgProb(res.sg_prob);
+  framed.setSunglassesProb(res.sg_prob);
   framed.setPoorVision(res.poor_vision);
   framed.setPartialFace(res.partial_face);
   framed.setDistractedPose(res.distracted_pose);
   framed.setDistractedEyes(res.distracted_eyes);
   if (send_raw_pred) {
-    framed.setRawPred(raw_pred.asBytes());
+    framed.setRawPredictions(raw_pred.asBytes());
   }
 
   pm.send("driverState", msg);

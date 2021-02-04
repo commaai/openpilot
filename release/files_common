@@ -225,10 +225,10 @@ selfdrive/controls/lib/latcontrol_pid.py
 selfdrive/controls/lib/latcontrol_indi.py
 selfdrive/controls/lib/latcontrol_lqr.py
 selfdrive/controls/lib/longcontrol.py
-selfdrive/controls/lib/pathplanner.py
+selfdrive/controls/lib/lateral_planner.py
 selfdrive/controls/lib/lane_planner.py
 selfdrive/controls/lib/pid.py
-selfdrive/controls/lib/planner.py
+selfdrive/controls/lib/longitudinal_planner.py
 selfdrive/controls/lib/radar_helpers.py
 selfdrive/controls/lib/vehicle_model.py
 selfdrive/controls/lib/speed_smoother.py
@@ -475,6 +475,7 @@ rednose/**
 cereal/.gitignore
 cereal/__init__.py
 cereal/car.capnp
+cereal/legacy.capnp
 cereal/log.capnp
 cereal/services.py
 cereal/service_list.yaml

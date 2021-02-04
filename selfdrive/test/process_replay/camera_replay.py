@@ -34,7 +34,7 @@ def camera_replay(lr, fr, desire=None, calib=None):
   spinner = Spinner()
   spinner.update("starting model replay")
 
-  pm = messaging.PubMaster(['frame', 'liveCalibration', 'pathPlan'])
+  pm = messaging.PubMaster(['frame', 'liveCalibration', 'lateralPlan'])
   sm = messaging.SubMaster(['modelV2'])
 
   # TODO: add dmonitoringmodeld
@@ -49,7 +49,7 @@ def camera_replay(lr, fr, desire=None, calib=None):
     sm.update(1000)
     print("procs started")
 
-    desires_by_index = {v:k for k,v in log.PathPlan.Desire.schema.enumerants.items()}
+    desires_by_index = {v:k for k,v in log.LateralPlan.Desire.schema.enumerants.items()}
 
     cal = [msg for msg in lr if msg.which() == "liveCalibration"]
     for msg in cal[:5]:
@@ -63,9 +63,9 @@ def camera_replay(lr, fr, desire=None, calib=None):
       elif msg.which() == "frame":
         if desire is not None:
           for i in desire[frame_idx].nonzero()[0]:
-            dat = messaging.new_message('pathPlan')
-            dat.pathPlan.desire = desires_by_index[i]
-            pm.send('pathPlan', dat)
+            dat = messaging.new_message('lateralPlan')
+            dat.lateralPlan.desire = desires_by_index[i]
+            pm.send('lateralPlan', dat)
 
         f = msg.as_builder()
         img = fr.get(frame_idx, pix_fmt="rgb24")[0][:,:,::-1]

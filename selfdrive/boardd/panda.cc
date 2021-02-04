@@ -53,12 +53,12 @@ Panda::Panda(){
 
   hw_type = get_hw_type();
   is_pigeon =
-    (hw_type == cereal::HealthData::HwType::GREY_PANDA) ||
-    (hw_type == cereal::HealthData::HwType::BLACK_PANDA) ||
-    (hw_type == cereal::HealthData::HwType::UNO) ||
-    (hw_type == cereal::HealthData::HwType::DOS);
-  has_rtc = (hw_type == cereal::HealthData::HwType::UNO) ||
-    (hw_type == cereal::HealthData::HwType::DOS);
+    (hw_type == cereal::HealthData::PandaType::GREY_PANDA) ||
+    (hw_type == cereal::HealthData::PandaType::BLACK_PANDA) ||
+    (hw_type == cereal::HealthData::PandaType::UNO) ||
+    (hw_type == cereal::HealthData::PandaType::DOS);
+  has_rtc = (hw_type == cereal::HealthData::PandaType::UNO) ||
+    (hw_type == cereal::HealthData::PandaType::DOS);
 
   return;
 
@@ -186,11 +186,11 @@ void Panda::set_unsafe_mode(uint16_t unsafe_mode) {
   usb_write(0xdf, unsafe_mode, 0);
 }
 
-cereal::HealthData::HwType Panda::get_hw_type() {
+cereal::HealthData::PandaType Panda::get_hw_type() {
   unsigned char hw_query[1] = {0};
 
   usb_read(0xc1, 0, 0, hw_query, 1);
-  return (cereal::HealthData::HwType)(hw_query[0]);
+  return (cereal::HealthData::PandaType)(hw_query[0]);
 }
 
 void Panda::set_rtc(struct tm sys_time){

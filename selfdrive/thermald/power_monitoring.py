@@ -43,7 +43,7 @@ class PowerMonitoring:
       now = sec_since_boot()
 
       # If health is None, we're probably not in a car, so we don't care
-      if health is None or health.health.hwType == log.HealthData.HwType.unknown:
+      if health is None or health.health.pandaType == log.HealthData.PandaType.unknown:
         with self.integration_lock:
           self.last_measurement_time = None
           self.next_pulsed_measurement_time = None
@@ -77,7 +77,7 @@ class PowerMonitoring:
           self.last_measurement_time = now
       else:
         # No ignition, we integrate the offroad power used by the device
-        is_uno = health.health.hwType == log.HealthData.HwType.uno
+        is_uno = health.health.pandaType == log.HealthData.PandaType.uno
         # Get current power draw somehow
         current_power = HARDWARE.get_current_power_draw()
         if current_power is not None:

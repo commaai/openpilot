@@ -273,7 +273,7 @@ void can_health_thread(bool spoofing_started) {
     MessageBuilder msg;
     auto healthData  = msg.initEvent().initHealth();
 
-    healthData.setHwType(cereal::HealthData::HwType::UNKNOWN);
+    healthData.setPandaType(cereal::HealthData::PandaType::UNKNOWN);
     pm.send("health", msg);
     util::sleep_for(500);
   }
@@ -360,7 +360,7 @@ void can_health_thread(bool spoofing_started) {
     healthData.setCanSendErrs(health.can_send_errs);
     healthData.setCanFwdErrs(health.can_fwd_errs);
     healthData.setGmlanSendErrs(health.gmlan_send_errs);
-    healthData.setHwType(panda->hw_type);
+    healthData.setPandaType(panda->hw_type);
     healthData.setUsbPowerMode(cereal::HealthData::UsbPowerMode(health.usb_power_mode));
     healthData.setSafetyModel(cereal::CarParams::SafetyModel(health.safety_model));
     healthData.setFanSpeedRpm(fan_speed_rpm);
@@ -420,10 +420,10 @@ void hardware_control_thread() {
 #endif
 
     // Other pandas don't have fan/IR to control
-    if (panda->hw_type != cereal::HealthData::HwType::UNO && panda->hw_type != cereal::HealthData::HwType::DOS) continue;
+    if (panda->hw_type != cereal::HealthData::PandaType::UNO && panda->hw_type != cereal::HealthData::PandaType::DOS) continue;
     if (sm.updated("thermal")){
       // Fan speed
-      uint16_t fan_speed = sm["thermal"].getThermal().getFanSpeed();
+      uint16_t fan_speed = sm["thermal"].getThermal().getFanSpeedRpmDesired();
       if (fan_speed != prev_fan_speed || cnt % 100 == 0){
         panda->set_fan_speed(fan_speed);
         prev_fan_speed = fan_speed;

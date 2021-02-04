@@ -21,10 +21,10 @@ with patch("common.realtime.sec_since_boot", new=mock_sec_since_boot):
                                                     CAR_CHARGING_RATE_W, VBATT_PAUSE_CHARGING
 
 TEST_DURATION_S = 50
-ALL_PANDA_TYPES = [(hw_type,) for hw_type in [log.HealthData.HwType.whitePanda,
-                                              log.HealthData.HwType.greyPanda,
-                                              log.HealthData.HwType.blackPanda,
-                                              log.HealthData.HwType.uno]]
+ALL_PANDA_TYPES = [(hw_type,) for hw_type in [log.HealthData.PandaType.whitePanda,
+                                              log.HealthData.PandaType.greyPanda,
+                                              log.HealthData.PandaType.blackPanda,
+                                              log.HealthData.PandaType.uno]]
 
 def pm_patch(name, value, constant=False):
   if constant:
@@ -39,7 +39,7 @@ class TestPowerMonitoring(unittest.TestCase):
 
   def mock_health(self, ignition, hw_type, car_voltage=12):
     health = messaging.new_message('health')
-    health.health.hwType = hw_type
+    health.health.pandaType = hw_type
     health.health.voltage = car_voltage * 1e3
     health.health.ignitionLine = ignition
     health.health.ignitionCan = False
@@ -179,7 +179,7 @@ class TestPowerMonitoring(unittest.TestCase):
     pm_patch("HARDWARE.get_battery_status", "Discharging"), pm_patch("HARDWARE.get_current_power_draw", None):
       pm = PowerMonitoring()
       pm.car_battery_capacity_uWh = CAR_BATTERY_CAPACITY_uWh
-      health = self.mock_health(False, log.HealthData.HwType.uno, car_voltage=(VBATT_PAUSE_CHARGING - 1))
+      health = self.mock_health(False, log.HealthData.PandaType.uno, car_voltage=(VBATT_PAUSE_CHARGING - 1))
       for i in range(TEST_TIME):
         pm.calculate(health)
         if i % 10 == 0:
@@ -196,7 +196,7 @@ class TestPowerMonitoring(unittest.TestCase):
     pm_patch("HARDWARE.get_battery_status", "Discharging"), pm_patch("HARDWARE.get_current_power_draw", None):
       pm = PowerMonitoring()
       pm.car_battery_capacity_uWh = CAR_BATTERY_CAPACITY_uWh
-      health = self.mock_health(True, log.HealthData.HwType.uno, car_voltage=(VBATT_PAUSE_CHARGING - 1))
+      health = self.mock_health(True, log.HealthData.PandaType.uno, car_voltage=(VBATT_PAUSE_CHARGING - 1))
       for i in range(TEST_TIME):
         pm.calculate(health)
         if i % 10 == 0:

@@ -12,8 +12,8 @@ from common.params import Params
 import cereal.messaging as messaging
 from cereal import log
 
-LaneChangeState = log.PathPlan.LaneChangeState
-LaneChangeDirection = log.PathPlan.LaneChangeDirection
+LaneChangeState = log.LateralPlan.LaneChangeState
+LaneChangeDirection = log.LateralPlan.LaneChangeDirection
 
 LOG_MPC = os.environ.get('LOG_MPC', False)
 
@@ -22,27 +22,27 @@ LANE_CHANGE_TIME_MAX = 10.
 
 DESIRES = {
   LaneChangeDirection.none: {
-    LaneChangeState.off: log.PathPlan.Desire.none,
-    LaneChangeState.preLaneChange: log.PathPlan.Desire.none,
-    LaneChangeState.laneChangeStarting: log.PathPlan.Desire.none,
-    LaneChangeState.laneChangeFinishing: log.PathPlan.Desire.none,
+    LaneChangeState.off: log.LateralPlan.Desire.none,
+    LaneChangeState.preLaneChange: log.LateralPlan.Desire.none,
+    LaneChangeState.laneChangeStarting: log.LateralPlan.Desire.none,
+    LaneChangeState.laneChangeFinishing: log.LateralPlan.Desire.none,
   },
   LaneChangeDirection.left: {
-    LaneChangeState.off: log.PathPlan.Desire.none,
-    LaneChangeState.preLaneChange: log.PathPlan.Desire.none,
-    LaneChangeState.laneChangeStarting: log.PathPlan.Desire.laneChangeLeft,
-    LaneChangeState.laneChangeFinishing: log.PathPlan.Desire.laneChangeLeft,
+    LaneChangeState.off: log.LateralPlan.Desire.none,
+    LaneChangeState.preLaneChange: log.LateralPlan.Desire.none,
+    LaneChangeState.laneChangeStarting: log.LateralPlan.Desire.laneChangeLeft,
+    LaneChangeState.laneChangeFinishing: log.LateralPlan.Desire.laneChangeLeft,
   },
   LaneChangeDirection.right: {
-    LaneChangeState.off: log.PathPlan.Desire.none,
-    LaneChangeState.preLaneChange: log.PathPlan.Desire.none,
-    LaneChangeState.laneChangeStarting: log.PathPlan.Desire.laneChangeRight,
-    LaneChangeState.laneChangeFinishing: log.PathPlan.Desire.laneChangeRight,
+    LaneChangeState.off: log.LateralPlan.Desire.none,
+    LaneChangeState.preLaneChange: log.LateralPlan.Desire.none,
+    LaneChangeState.laneChangeStarting: log.LateralPlan.Desire.laneChangeRight,
+    LaneChangeState.laneChangeFinishing: log.LateralPlan.Desire.laneChangeRight,
   },
 }
 
 
-class PathPlanner():
+class LateralPlanner():
   def __init__(self, CP):
     self.LP = LanePlanner()
 
@@ -57,7 +57,7 @@ class PathPlanner():
     self.lane_change_timer = 0.0
     self.lane_change_ll_prob = 1.0
     self.prev_one_blinker = False
-    self.desire = log.PathPlan.Desire.none
+    self.desire = log.LateralPlan.Desire.none
 
     self.path_xyz = np.zeros((TRAJECTORY_SIZE,3))
     self.plan_yaw = np.zeros((TRAJECTORY_SIZE,))
@@ -162,7 +162,7 @@ class PathPlanner():
     self.desire = DESIRES[self.lane_change_direction][self.lane_change_state]
 
     # Turn off lanes during lane change
-    if self.desire == log.PathPlan.Desire.laneChangeRight or self.desire == log.PathPlan.Desire.laneChangeLeft:
+    if self.desire == log.LateralPlan.Desire.laneChangeRight or self.desire == log.LateralPlan.Desire.laneChangeLeft:
       self.LP.lll_prob *= self.lane_change_ll_prob
       self.LP.rll_prob *= self.lane_change_ll_prob
     d_path_xyz = self.LP.get_d_path(v_ego, self.t_idxs, self.path_xyz)
@@ -227,25 +227,24 @@ class PathPlanner():
 
   def publish(self, sm, pm):
     plan_solution_valid = self.solution_invalid_cnt < 2
-    plan_send = messaging.new_message('pathPlan')
+    plan_send = messaging.new_message('lateralPlan')
     plan_send.valid = sm.all_alive_and_valid(service_list=['carState', 'controlsState', 'liveParameters', 'modelV2'])
-    plan_send.pathPlan.laneWidth = float(self.LP.lane_width)
-    plan_send.pathPlan.dPathPoints = [float(x) for x in self.y_pts]
-    plan_send.pathPlan.lProb = float(self.LP.lll_prob)
-    plan_send.pathPlan.rProb = float(self.LP.rll_prob)
-    plan_send.pathPlan.dProb = float(self.LP.d_prob)
+    plan_send.lateralPlan.laneWidth = float(self.LP.lane_width)
+    plan_send.lateralPlan.dPathPoints = [float(x) for x in self.y_pts]
+    plan_send.lateralPlan.lProb = float(self.LP.lll_prob)
+    plan_send.lateralPlan.rProb = float(self.LP.rll_prob)
+    plan_send.lateralPlan.dProb = float(self.LP.d_prob)
 
-    plan_send.pathPlan.angleSteers = float(self.desired_steering_wheel_angle_deg)
-    plan_send.pathPlan.rateSteers = float(self.desired_steering_wheel_angle_rate_deg)
-    plan_send.pathPlan.angleOffset = float(sm['liveParameters'].angleOffsetAverage)
-    plan_send.pathPlan.mpcSolutionValid = bool(plan_solution_valid)
-    plan_send.pathPlan.paramsValid = bool(sm['liveParameters'].valid)
+    plan_send.lateralPlan.angleSteers = float(self.desired_steering_wheel_angle_deg)
+    plan_send.lateralPlan.rateSteers = float(self.desired_steering_wheel_angle_rate_deg)
+    plan_send.lateralPlan.angleOffset = float(sm['liveParameters'].angleOffsetAverage)
+    plan_send.lateralPlan.mpcSolutionValid = bool(plan_solution_valid)
 
-    plan_send.pathPlan.desire = self.desire
-    plan_send.pathPlan.laneChangeState = self.lane_change_state
-    plan_send.pathPlan.laneChangeDirection = self.lane_change_direction
+    plan_send.lateralPlan.desire = self.desire
+    plan_send.lateralPlan.laneChangeState = self.lane_change_state
+    plan_send.lateralPlan.laneChangeDirection = self.lane_change_direction
 
-    pm.send('pathPlan', plan_send)
+    pm.send('lateralPlan', plan_send)
 
     if LOG_MPC:
       dat = messaging.new_message('liveMpc')

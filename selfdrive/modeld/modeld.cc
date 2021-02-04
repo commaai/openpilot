@@ -107,7 +107,7 @@ int main(int argc, char **argv) {
 
   // messaging
   PubMaster pm({"modelV2", "cameraOdometry"});
-  SubMaster sm({"pathPlan", "frame"});
+  SubMaster sm({"lateralPlan", "frame"});
 
   // cl init
   cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
@@ -158,7 +158,7 @@ int main(int argc, char **argv) {
 
       if (sm.update(0) > 0){
         // TODO: path planner timeout?
-        desire = ((int)sm["pathPlan"].getPathPlan().getDesire());
+        desire = ((int)sm["lateralPlan"].getLateralPlan().getDesire());
         frame_id = sm["frame"].getFrame().getFrameId();
       }
 
