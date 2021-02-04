@@ -333,7 +333,7 @@ static void update_status(UIState *s) {
       s->status = STATUS_DISENGAGED;
       s->scene.started_frame = s->sm->frame;
 
-      read_param(&s->scene.is_rhd, "IsRHD");
+      s->scene.is_rhd = Params().getBool("IsRHD");
       s->active_app = cereal::UiLayoutState::App::NONE;
       s->sidebar_collapsed = true;
       s->scene.alert_size = cereal::ControlsState::AlertSize::NONE;
