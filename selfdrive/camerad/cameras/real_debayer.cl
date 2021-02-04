@@ -121,7 +121,7 @@ __kernel void debayer10(const __global uchar * in,
 
   half3 rgb;
 
-  // main
+  // a simplified version of https://opensignalprocessingjournal.com/contents/volumes/V6/TOSIGPJ-6-1/TOSIGPJ-6-1.pdf
   if (x_global % 2 == 0) {
     if (y_global % 2 == 0) {
       rgb.y = pv; // G1(R)
