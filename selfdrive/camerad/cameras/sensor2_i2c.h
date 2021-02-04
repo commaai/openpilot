@@ -352,7 +352,8 @@ struct i2c_random_wr_payload init_array_ar0231[] = {
   {0x31D0, 0x0000}, // COMPANDING, no good in 10 bit?
   {0x33DA, 0x0000}, // COMPANDING
   {0x3362, 0x0000}, // DC GAIN
-  {0x3370, 0x0231}, // DBLC
+  {0x3370, 0x03B1}, // DBLC
+  {0x31E0, 0x0001}, // PDC
   {0x318E, 0x0200}, // PRE_HDR_GAIN_EN
 
    // Initial Gains
