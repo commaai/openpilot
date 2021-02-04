@@ -259,11 +259,17 @@ OmxEncoder::OmxEncoder(const char* filename, int width, int height, int fps, int
     avc.nBFrames = 0;
     avc.nPFrames = 15;
 
-    avc.eProfile = OMX_VIDEO_AVCProfileBaseline;
+    avc.eProfile = OMX_VIDEO_AVCProfileHigh;
     avc.eLevel = OMX_VIDEO_AVCLevel31;
 
     avc.nAllowedPictureTypes |= OMX_VIDEO_PictureTypeB;
     avc.eLoopFilterMode = OMX_VIDEO_AVCLoopFilterEnable;
+
+    avc.nRefFrames = 1;
+    avc.bUseHadamard = OMX_TRUE;
+    avc.bEntropyCodingCABAC = OMX_TRUE;
+    avc.bWeightedPPrediction = OMX_TRUE;
+    avc.bconstIpred = OMX_TRUE;
 
     OMX_CHECK(OMX_SetParameter(this->handle, OMX_IndexParamVideoAvc, &avc));
   }
