@@ -88,7 +88,9 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
   if (ci->bayer) {
     cl_program prg_debayer = build_debayer_program(device_id, context, ci, this, s);
     krnl_debayer = CL_CHECK_ERR(clCreateKernel(prg_debayer, "debayer10", &err));
-    camera_state->process_krnl = CL_CHECK_ERR(clCreateKernel(prg_debayer, "postprocess", &err));
+#ifdef QCOM2
+    camera_state->krnl_process = CL_CHECK_ERR(clCreateKernel(prg_debayer, "postprocess", &err));
+#endif
     CL_CHECK(clReleaseProgram(prg_debayer));
   }
 
@@ -111,7 +113,9 @@ CameraBuf::~CameraBuf() {
 
   if (krnl_debayer) {
     CL_CHECK(clReleaseKernel(krnl_debayer));
-    CL_CHECK(clReleaseKernel(camera_state->process_krnl));
+  }
+  if (camera_state->krnl_process) {
+    CL_CHECK(clReleaseKernel(camera_state->krnl_process));
   }
   CL_CHECK(clReleaseCommandQueue(q));
 }
@@ -142,8 +146,8 @@ bool CameraBuf::acquire() {
     CL_CHECK(clSetKernelArg(krnl_debayer, 2, localMemSize, 0));
     CL_CHECK(clEnqueueNDRangeKernel(q, krnl_debayer, 2, NULL, globalWorkSize, localWorkSize,
                                     0, 0, &debayer_event));
-    CL_CHECK(clSetKernelArg(camera_state->process_krnl, 0, sizeof(cl_mem), &cur_rgb_buf->buf_cl));
-    CL_CHECK(clEnqueueNDRangeKernel(q, camera_state->process_krnl, 2, NULL, globalWorkSize, NULL,
+    CL_CHECK(clSetKernelArg(camera_state->krnl_process, 0, sizeof(cl_mem), &cur_rgb_buf->buf_cl));
+    CL_CHECK(clEnqueueNDRangeKernel(q, camera_state->krnl_process, 2, NULL, globalWorkSize, NULL,
                                     0, 0, &debayer_event));
 #else
     float digital_gain = camera_state->digital_gain;

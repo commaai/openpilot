@@ -23,7 +23,7 @@
 typedef struct CameraState {
   CameraInfo ci;
 
-  cl_kernel process_krnl;
+  cl_kernel krnl_process;
 
   float analog_gain_frac;
   uint16_t analog_gain;
