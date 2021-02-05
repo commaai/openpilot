@@ -122,6 +122,13 @@ static void draw_panda_metric(UIState *s) {
     panda_severity = 2;
     panda_message = "NO\nPANDA";
   }
+#ifdef QCOM2
+  else if (s->started) {
+    panda_severity = s->scene.cnoAvg > 30 ? 0 : 1;
+    panda_message = util::string_format("SAT CNT\n%d", s->scene.satelliteCount);
+  }
+#endif
+
   draw_metric(s, NULL, NULL, panda_severity, panda_y_offset, panda_message.c_str());
 }
 

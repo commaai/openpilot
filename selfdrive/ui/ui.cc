@@ -41,7 +41,7 @@ static void ui_init_vision(UIState *s) {
 
 void ui_init(UIState *s) {
   s->sm = new SubMaster({"modelV2", "controlsState", "uiLayoutState", "liveCalibration", "radarState", "thermal", "frame",
-                         "health", "carParams", "driverState", "driverMonitoringState", "sensorEvents", "carState"});
+                         "health", "carParams", "driverState", "driverMonitoringState", "sensorEvents", "carState", "ubloxGnss"});
 
   s->started = false;
   s->status = STATUS_OFFROAD;
@@ -160,6 +160,17 @@ static void update_sockets(UIState *s) {
     s->ignition = health.getIgnitionLine() || health.getIgnitionCan();
   } else if ((s->sm->frame - s->sm->rcv_frame("health")) > 5*UI_FREQ) {
     scene.pandaType = cereal::HealthData::PandaType::UNKNOWN;
+  }
+  if (sm.updated("ubloxGnss")) {
+    auto data = sm["ubloxGnss"].getUbloxGnss();
+    if (data.which() == cereal::UbloxGnss::MEASUREMENT_REPORT) {
+      auto measurements = data.getMeasurementReport().getMeasurements();
+      for (auto m : measurements) {
+        scene.cnoAvg += m.getCno();
+      }
+      scene.cnoAvg /= measurements.size();
+      scene.satelliteCount = data.getMeasurementReport().getNumMeas();
+    }
   }
   if (sm.updated("carParams")) {
     s->longitudinal_control = sm["carParams"].getCarParams().getOpenpilotLongitudinalControl();
