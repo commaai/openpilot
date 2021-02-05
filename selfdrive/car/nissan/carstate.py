@@ -22,14 +22,14 @@ class CarState(CarStateBase):
 
     if self.CP.carFingerprint in [CAR.ROGUE, CAR.XTRAIL]:
       ret.gas = cp.vl["GAS_PEDAL"]["GAS_PEDAL"]
-    elif self.CP.carFingerprint == CAR.LEAF:
+    elif self.CP.carFingerprint in [CAR.LEAF, CAR.LEAF_IC]:
       ret.gas = cp.vl["CRUISE_THROTTLE"]["GAS_PEDAL"]
 
     ret.gasPressed = bool(ret.gas > 3)
 
     if self.CP.carFingerprint in [CAR.ROGUE, CAR.XTRAIL]:
       ret.brakePressed = bool(cp.vl["DOORS_LIGHTS"]["USER_BRAKE_PRESSED"])
-    elif self.CP.carFingerprint == CAR.LEAF:
+    elif self.CP.carFingerprint in [CAR.LEAF, CAR.LEAF_IC]:
       ret.brakePressed = bool(cp.vl["BRAKE_PEDAL"]["BRAKE_PEDAL"] > 3)
 
     if self.CP.carFingerprint in [CAR.ROGUE, CAR.XTRAIL]:
@@ -49,13 +49,16 @@ class CarState(CarStateBase):
     if self.CP.carFingerprint in [CAR.ROGUE, CAR.XTRAIL]:
       ret.seatbeltUnlatched = cp.vl["HUD"]["SEATBELT_DRIVER_LATCHED"] == 0
       ret.cruiseState.available = bool(cp_cam.vl["PRO_PILOT"]["CRUISE_ON"])
-    elif self.CP.carFingerprint == CAR.LEAF:
-      ret.seatbeltUnlatched = cp.vl["SEATBELT"]["SEATBELT_DRIVER_LATCHED"] == 0
+    elif self.CP.carFingerprint in [CAR.LEAF, CAR.LEAF_IC]:
+      if self.CP.carFingerprint == CAR.LEAF:
+        ret.seatbeltUnlatched = cp.vl["SEATBELT"]["SEATBELT_DRIVER_LATCHED"] == 0
+      elif self.CP.carFingerprint == CAR.LEAF_IC:
+        ret.seatbeltUnlatched = cp.vl["CANCEL_MSG"]["CANCEL_SEATBELT"] == 1
       ret.cruiseState.available = bool(cp.vl["CRUISE_THROTTLE"]["CRUISE_AVAILABLE"])
 
     speed = cp_adas.vl["PROPILOT_HUD"]["SET_SPEED"]
     if speed != 255:
-      if self.CP.carFingerprint == CAR.LEAF:
+      if self.CP.carFingerprint in [CAR.LEAF, CAR.LEAF_IC]:
         conversion = CV.MPH_TO_MS if cp.vl["HUD_SETTINGS"]["SPEED_MPH"] else CV.KPH_TO_MS
       else:
         conversion = CV.MPH_TO_MS if cp.vl["HUD"]["SPEED_MPH"] else CV.KPH_TO_MS
@@ -86,7 +89,7 @@ class CarState(CarStateBase):
 
     self.cruise_throttle_msg = copy.copy(cp.vl["CRUISE_THROTTLE"])
 
-    if self.CP.carFingerprint == CAR.LEAF:
+    if self.CP.carFingerprint in [CAR.LEAF, CAR.LEAF_IC]:
       self.cancel_msg = copy.copy(cp.vl["CANCEL_MSG"])
 
     self.lkas_hud_msg = copy.copy(cp_adas.vl["PROPILOT_HUD"])
@@ -159,7 +162,7 @@ class CarState(CarStateBase):
         ("GAS_PEDAL", 50),
       ]
 
-    elif CP.carFingerprint == CAR.LEAF:
+    elif CP.carFingerprint in [CAR.LEAF, CAR.LEAF_IC]:
       signals += [
         ("BRAKE_PEDAL", "BRAKE_PEDAL", 0),
 

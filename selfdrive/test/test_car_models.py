@@ -477,6 +477,10 @@ routes = {
     'carFingerprint': NISSAN.LEAF,
     'enableCamera': True,
   },
+  "22c3dcce2dd627eb|2020-12-30--16-38-48": {
+    'carFingerprint': NISSAN.LEAF_IC,
+    'enableCamera': True,
+  },
   "059ab9162e23198e|2020-05-30--09-41-01": {
     'carFingerprint': NISSAN.ROGUE,
     'enableCamera': True,
