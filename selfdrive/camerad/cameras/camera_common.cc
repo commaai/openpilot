@@ -130,7 +130,6 @@ bool CameraBuf::acquire() {
 
   cur_rgb_buf = vipc_server->get_buffer(rgb_type);
 
-  double t1 = millis_since_boot();
   cl_event debayer_event;
   cl_mem camrabuf_cl = camera_bufs[cur_buf_idx].buf_cl;
   if (camera_state->ci.bayer) {
@@ -164,8 +163,6 @@ bool CameraBuf::acquire() {
 
   clWaitForEvents(1, &debayer_event);
   CL_CHECK(clReleaseEvent(debayer_event));
-  double t2 = millis_since_boot();
-  printf("db time %f\n", t2 - t1);
 
   cur_yuv_buf = vipc_server->get_buffer(yuv_type);
   yuv_metas[cur_yuv_buf->idx] = frame_data;
