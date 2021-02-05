@@ -124,6 +124,7 @@ typedef struct UIScene {
   cereal::ControlsState::Reader controls_state;
   cereal::DriverState::Reader driver_state;
   cereal::DriverMonitoringState::Reader dmonitoring_state;
+  cereal::UbloxGnss::MeasurementReport::Reader ublox_measurement;
 
   // modelV2
   float lane_line_probs[4];
