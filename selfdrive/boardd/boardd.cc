@@ -506,11 +506,6 @@ void pigeon_thread() {
 }
 
 //Port pandad to boardd
-bool file_exists(std::string fileName){
-  std::ifstream infile(fileName);
-  return infile.good();
-}
-
 std::string get_firmware_fn(){
   std::string basedir = getenv("BASEDIR");
   if (basedir == ""){
@@ -521,7 +516,7 @@ std::string get_firmware_fn(){
   std::string signed_firmware_path = basedir + "panda/board/obj/panda.bin.signed";
   std::cout<<signed_firmware_path<<std::endl;
 
-  if (file_exists(signed_firmware_path)) {
+  if (util::file_exists(signed_firmware_path)) {
     LOGW("Using prebuilt signed firmware");
     return signed_firmware_path;
   } else {
@@ -530,15 +525,25 @@ std::string get_firmware_fn(){
     LOGW("Finished building panda firmware");
     return basedir + "panda/board/obj/panda.bin";
   }
-
 }
 
+std::string get_expected_signature(){
+  std::string firmware_filename = get_firmware_fn();
+  std::string firmware_contents = util::read_file(firmware_filename);
+  std::string firmware_sig = firmware_contents.substr(firmware_contents.length()-128);
+  if (firmware_sig.length() != 128){
+    std::cout<<"Error getting the firmware signature"<<std::endl;
+  }
+  return firmware_sig;
+}
 
 
 
 void update_panda(){
   std::cout<<"updating panda"<<std::endl;;
-  get_firmware_fn();
+  LOGW("Connecting to panda");
+  
+
 }
 
 int main() {
@@ -557,7 +562,6 @@ int main() {
   while (!do_exit){
     std::vector<std::thread> threads;
     threads.push_back(std::thread(can_health_thread, getenv("STARTED") != nullptr));
-
     // connect to the board
     usb_retry_connect();
 

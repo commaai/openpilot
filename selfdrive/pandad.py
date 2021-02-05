@@ -54,7 +54,8 @@ def update_panda():
   panda_dfu = None
 
   cloudlog.info("Connecting to panda")
-
+  
+  # Ensures panda is not in DFU mode and that panda is not null
   while True:
     # break on normal mode Panda
     panda_list = Panda.list()
