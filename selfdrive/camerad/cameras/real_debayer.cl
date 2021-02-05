@@ -9,14 +9,13 @@ const __constant half3 color_correction[3] = {
   (half3)(-0.06943967, -0.01601912, 1.50009016),
 };
 
-half3 color_correct(uchar3 rgb, half mv) {
+half3 color_correct(half3 rgb) {
   half3 ret = (0,0,0);
-  half rk = 4.0;
+  half rk = 5.0;
   ret += (half)rgb.x * color_correction[0];
   ret += (half)rgb.y * color_correction[1];
   ret += (half)rgb.z * color_correction[2];
-  ret *= 0.003921569;
-  ret = rk*ret*(1.0h+(ret/(rk*mv*mv))) / (1.0h + rk*ret); // reinhard
+  ret = rk*ret / (1.0h + rk*ret); // reinhard
   ret = clamp(0.0h, 255.0h, ret*255.0h);
   return ret;
 }
@@ -69,24 +68,6 @@ half phi(half x) {
   // }
 }
 
-__kernel void postprocess(__global uchar * in)
-{
-  const int x_global = get_global_id(0);
-  const int y_global = get_global_id(1);
-
-  if (x_global < 1 || x_global >= RGB_WIDTH - 1 || y_global < 1 || y_global >= RGB_HEIGHT - 1) {
-    return;
-  }
-  int out_idx = x_global + y_global * RGB_WIDTH;
-
-  uchar3 rgb_8 = vload3(out_idx, in);
-  half3 rgb = color_correct(rgb_8, (half)(in[0] / 255.0h));
-
-  in[3*out_idx + 0] = (uchar)(rgb.z);
-  in[3*out_idx + 1] = (uchar)(rgb.y);
-  in[3*out_idx + 2] = (uchar)(rgb.x);
-}
-
 __kernel void debayer10(const __global uchar * in,
                         __global uchar * out,
                         __local half * cached
@@ -103,15 +84,10 @@ __kernel void debayer10(const __global uchar * in,
   int out_idx = 3 * x_global + 3 * y_global * RGB_WIDTH;
 
   half pv = val_from_10(in, x_global, y_global);
-  if (x_global % 3 == 1 && y_global % 3 == 1) {
-    uchar pv_8 = (uchar)(pv * 255.0h);
-    out[0] = max(out[0], pv_8);
-  }
   cached[localOffset] = pv;
 
   // don't care
   if (x_global < 1 || x_global >= RGB_WIDTH - 1 || y_global < 1 || y_global >= RGB_HEIGHT - 1) {
-    barrier(CLK_LOCAL_MEM_FENCE);
     return;
   }
 
@@ -203,8 +179,10 @@ __kernel void debayer10(const __global uchar * in,
     }
   }
 
-  out[out_idx + 0] = (uchar)(255.0h * rgb.x);
-  out[out_idx + 1] = (uchar)(255.0h * rgb.y);
-  out[out_idx + 2] = (uchar)(255.0h * rgb.z);
+  rgb = color_correct(rgb);
+
+  out[out_idx + 0] = (uchar)(rgb.z);
+  out[out_idx + 1] = (uchar)(rgb.y);
+  out[out_idx + 2] = (uchar)(rgb.x);
 
 }
