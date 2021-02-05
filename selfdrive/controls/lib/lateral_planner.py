@@ -186,16 +186,14 @@ class LateralPlanner():
 
     # TODO this needs more thought, use .2s extra for now to estimate other delays
     delay = CP.steerActuatorDelay + .2
-    next_curvature = interp(DT_MDL + delay, self.t_idxs[:MPC_N+1], self.mpc_solution.curvature)
+    next_curvature = interp(delay, self.t_idxs[:MPC_N+1], self.mpc_solution.curvature)
+    psi = interp(delay, self.t_idxs[:MPC_N+1], self.mpc_solution.psi)
     next_curvature_rate = self.mpc_solution.curvature_rate[0]
-
-    # TODO This gets around the fact that MPC can plan to turn and turn back in the
-    # time between now and delay, need better abstraction between planner and controls
-    plan_ahead_idx = sum(self.t_idxs < delay)
-    if next_curvature_rate > 0:
-      next_curvature = max(list(self.mpc_solution.curvature)[:plan_ahead_idx] + [next_curvature])
+    next_curvature_from_psi = psi/(v_ego*delay)
+    if psi > self.mpc_solution.curvature[0] * delay * v_ego:
+      next_curvature = max(next_curvature_from_psi, next_curvature)
     else:
-      next_curvature = min(list(self.mpc_solution.curvature)[:plan_ahead_idx] + [next_curvature])
+      next_curvature = min(next_curvature_from_psi, next_curvature)
 
     # reset to current steer angle if not active or overriding
     if active:
