@@ -1023,7 +1023,7 @@ static void set_camera_exposure(CameraState *s, float grey_frac) {
     if (s->analog_gain < ANALOG_GAIN_MAX_IDX - 1) {
       s->exposure_time = EXPOSURE_TIME_MAX / 2;
       s->analog_gain += 1;
-      if (!s->dc_gain_enabled && sensor_analog_gains[s->analog_gain] == 1.0) { // switch to HCG at iso 800
+      if (!s->dc_gain_enabled && sensor_analog_gains[s->analog_gain] == 4.0) { // switch to HCG
         switch_conversion_gain(s);
       }
       set_exposure_time_bounds(s);
@@ -1034,7 +1034,7 @@ static void set_camera_exposure(CameraState *s, float grey_frac) {
     if (s->analog_gain > 0) {
       s->exposure_time = std::max(EXPOSURE_TIME_MIN * 2, (int)(s->exposure_time / (sensor_analog_gains[s->analog_gain-1] / sensor_analog_gains[s->analog_gain])));
       s->analog_gain -= 1;
-      if (s->dc_gain_enabled && sensor_analog_gains[s->analog_gain] == 0.25) { // switch back to LCG at iso 200
+      if (s->dc_gain_enabled && sensor_analog_gains[s->analog_gain] == 1.25) { // switch back to LCG
         switch_conversion_gain(s);
       }
       set_exposure_time_bounds(s);
