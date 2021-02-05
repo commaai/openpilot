@@ -12,10 +12,10 @@
 
 
 void do_reset() {
-  std::system("sudo umount " USERDATA);
-  std::system("yes | sudo mkfs.ext4 " USERDATA);
   std::system("sudo umount " NVME);
   std::system("yes | sudo mkfs.ext4 " NVME);
+  std::system("sudo umount " USERDATA);
+  std::system("yes | sudo mkfs.ext4 " USERDATA);
   std::system("sudo reboot");
 }
 
