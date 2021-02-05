@@ -49,7 +49,7 @@ CameraInfo cameras_supported[CAMERA_ID_MAX] = {
 float sensor_analog_gains[ANALOG_GAIN_MAX_IDX] = {1.0/8.0, 2.0/8.0, 2.0/7.0, 3.0/7.0,
                                                   3.0/6.0, 4.0/6.0, 4.0/5.0, 5.0/5.0,
                                                   5.0/4.0, 6.0/4.0, 6.0/3.0, 7.0/3.0,
-                                                  7.0/2.0, 8.0/2.0, 8.0/1.0};
+                                                  7.0/2.0, 8.0/2.0};
 
 // ************** low level camera helpers ****************
 

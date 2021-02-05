@@ -88,6 +88,7 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
   if (ci->bayer) {
     cl_program prg_debayer = build_debayer_program(device_id, context, ci, this, s);
     krnl_debayer = CL_CHECK_ERR(clCreateKernel(prg_debayer, "debayer10", &err));
+    camera_state->process_krnl = CL_CHECK_ERR(clCreateKernel(prg_debayer, "postprocess", &err));
     CL_CHECK(clReleaseProgram(prg_debayer));
   }
 
@@ -110,6 +111,7 @@ CameraBuf::~CameraBuf() {
 
   if (krnl_debayer) {
     CL_CHECK(clReleaseKernel(krnl_debayer));
+    CL_CHECK(clReleaseKernel(camera_state->process_krnl));
   }
   CL_CHECK(clReleaseCommandQueue(q));
 }
@@ -128,6 +130,7 @@ bool CameraBuf::acquire() {
 
   cur_rgb_buf = vipc_server->get_buffer(rgb_type);
 
+  double t1 = millis_since_boot();
   cl_event debayer_event;
   cl_mem camrabuf_cl = camera_bufs[cur_buf_idx].buf_cl;
   if (camera_state->ci.bayer) {
@@ -139,6 +142,9 @@ bool CameraBuf::acquire() {
     const size_t localWorkSize[] = {DEBAYER_LOCAL_WORKSIZE, DEBAYER_LOCAL_WORKSIZE};
     CL_CHECK(clSetKernelArg(krnl_debayer, 2, localMemSize, 0));
     CL_CHECK(clEnqueueNDRangeKernel(q, krnl_debayer, 2, NULL, globalWorkSize, localWorkSize,
+                                    0, 0, &debayer_event));
+    CL_CHECK(clSetKernelArg(camera_state->process_krnl, 0, sizeof(cl_mem), &cur_rgb_buf->buf_cl));
+    CL_CHECK(clEnqueueNDRangeKernel(q, camera_state->process_krnl, 2, NULL, globalWorkSize, NULL,
                                     0, 0, &debayer_event));
 #else
     float digital_gain = camera_state->digital_gain;
@@ -158,6 +164,8 @@ bool CameraBuf::acquire() {
 
   clWaitForEvents(1, &debayer_event);
   CL_CHECK(clReleaseEvent(debayer_event));
+  double t2 = millis_since_boot();
+  printf("db time %f\n", t2 - t1);
 
   cur_yuv_buf = vipc_server->get_buffer(yuv_type);
   yuv_metas[cur_yuv_buf->idx] = frame_data;

@@ -9,12 +9,14 @@ const __constant half3 color_correction[3] = {
   (half3)(-0.06943967, -0.01601912, 1.50009016),
 };
 
-half3 color_correct(half3 rgb) {
+half3 color_correct(uchar3 rgb, half mv) {
   half3 ret = (0,0,0);
-  rgb = 2*rgb / (1.0f + 2*rgb); // reinhard
-  ret += rgb.x * color_correction[0];
-  ret += rgb.y * color_correction[1];
-  ret += rgb.z * color_correction[2];
+  int rk = 4;
+  ret += (half)rgb.x * color_correction[0];
+  ret += (half)rgb.y * color_correction[1];
+  ret += (half)rgb.z * color_correction[2];
+  ret /= 255.0h;
+  ret = rk*ret*(1+(ret/(rk*mv*mv))) / (1.0f + rk*ret); // reinhard
   ret = max(0.0h, min(1.0h, ret));
   return ret;
 }
@@ -65,6 +67,27 @@ half phi(half x) {
   }
 }
 
+__kernel void postprocess(__global uchar * in)
+{
+  const int x_global = get_global_id(0);
+  const int y_global = get_global_id(1);
+
+  if (x_global < 1 || x_global >= RGB_WIDTH - 1 || y_global < 1 || y_global >= RGB_HEIGHT - 1) {
+    return;
+  }
+  int out_idx = 3 * x_global + 3 * y_global * RGB_WIDTH;
+
+  uchar3 rgb_8 = vload3(out_idx/3, in);
+
+  half3 rgb = color_correct(rgb_8, (half)(in[0]/255.0f));
+
+  in[out_idx + 0] = (uchar)(255.0f * rgb.z);
+  in[out_idx + 1] = (uchar)(255.0f * rgb.y);
+  in[out_idx + 2] = (uchar)(255.0f * rgb.x);
+
+
+}
+
 __kernel void debayer10(const __global uchar * in,
                         __global uchar * out,
                         __local half * cached
@@ -81,6 +104,11 @@ __kernel void debayer10(const __global uchar * in,
   int out_idx = 3 * x_global + 3 * y_global * RGB_WIDTH;
 
   half pv = val_from_10(in, x_global, y_global);
+  if (x_global % 2 && y_global % 2) {
+    uchar pv_8 = (uchar)(pv * 255.0f);
+    out[0] = out[0] > pv_8 ? out[0] : pv_8;
+  }
+
   cached[localOffset] = pv;
 
   // don't care
@@ -177,10 +205,10 @@ __kernel void debayer10(const __global uchar * in,
     }
   }
 
-  rgb = color_correct(rgb);
+  rgb = max(0.0h, min(1.0h, rgb));
 
-  out[out_idx + 0] = (uchar)(255.0f * rgb.z);
+  out[out_idx + 0] = (uchar)(255.0f * rgb.x);
   out[out_idx + 1] = (uchar)(255.0f * rgb.y);
-  out[out_idx + 2] = (uchar)(255.0f * rgb.x);
+  out[out_idx + 2] = (uchar)(255.0f * rgb.z);
 
 }
