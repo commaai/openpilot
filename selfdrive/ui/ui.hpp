@@ -90,7 +90,7 @@ typedef struct {
 } vertex_data;
 
 typedef struct {
-  vertex_data v[TRAJECTORY_SIZE*2];
+  vertex_data v[TRAJECTORY_SIZE * 2];
   int cnt;
 } line_vertices_data;
 
