@@ -169,11 +169,6 @@ class Controls:
     if self.sm['thermal'].memoryUsagePercent  > 90:
       self.events.add(EventName.lowMemory)
 
-    # Check if all manager processes are running
-    not_running = set(p.name for p in self.sm['managerState'].processes if not p.running)
-    if self.sm.rcv_frame['managerState'] and (not_running - IGNORE_PROCESSES):
-      self.events.add(EventName.processNotRunning)
-
     # Alert if fan isn't spinning for 5 seconds
     if self.sm['health'].pandaType in [PandaType.uno, PandaType.dos]:
       if self.sm['health'].fanSpeedRpm == 0 and self.sm['thermal'].fanSpeedRpmDesired > 50:
@@ -249,6 +244,11 @@ class Controls:
         self.events.add(EventName.cameraMalfunction)
       if self.sm['modelV2'].frameDropPerc > 20:
         self.events.add(EventName.modeldLagging)
+
+      # Check if all manager processes are running
+      not_running = set(p.name for p in self.sm['managerState'].processes if not p.running)
+      if self.sm.rcv_frame['managerState'] and (not_running - IGNORE_PROCESSES):
+        self.events.add(EventName.processNotRunning)
 
     # Only allow engagement with brake pressed when stopped behind another stopped car
     if CS.brakePressed and self.sm['longitudinalPlan'].vTargetFuture >= STARTING_TARGET_SPEED \
