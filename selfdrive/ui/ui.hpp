@@ -125,6 +125,10 @@ typedef struct UIScene {
   cereal::DriverState::Reader driver_state;
   cereal::DriverMonitoringState::Reader dmonitoring_state;
 
+  // gps
+  int satelliteCount;
+  int cnoAvg;
+
   // modelV2
   float lane_line_probs[4];
   float road_edge_stds[2];
