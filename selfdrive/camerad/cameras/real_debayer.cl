@@ -179,6 +179,7 @@ __kernel void debayer10(const __global uchar * in,
     }
   }
 
+  rgb = clamp(0.0h, 1.0h, rgb);
   rgb = color_correct(rgb);
 
   out[out_idx + 0] = (uchar)(rgb.z);
