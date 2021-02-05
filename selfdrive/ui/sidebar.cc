@@ -126,13 +126,8 @@ static void draw_panda_metric(UIState *s) {
   }
 #ifdef QCOM2
   else if (s->started) {
-    auto measurements = s->scene.ublox_measurement.getMeasurements();
-    int cnosum = 0;
-    for (auto m : measurements) {
-      cnosum += m.getCno();
-    }
-    panda_severity = cnosum / measurements.size() > 30 ? 0 : 1;
-    panda_message = util::string_format("SAT COUNT\n%d", s->scene.ublox_measurement.getNumMeas());
+    panda_severity = s->scene.cnoAvg > 30 ? 0 : 1;
+    panda_message = util::string_format("SAT CNT\n%d", s->scene.satelliteCount);
   }
 #endif
 
