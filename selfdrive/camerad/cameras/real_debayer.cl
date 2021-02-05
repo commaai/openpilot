@@ -11,13 +11,13 @@ const __constant half3 color_correction[3] = {
 
 half3 color_correct(uchar3 rgb, half mv) {
   half3 ret = (0,0,0);
-  int rk = 4;
+  half rk = 4.0;
   ret += (half)rgb.x * color_correction[0];
   ret += (half)rgb.y * color_correction[1];
   ret += (half)rgb.z * color_correction[2];
-  ret /= 255.0h;
-  ret = rk*ret*(1+(ret/(rk*mv*mv))) / (1.0f + rk*ret); // reinhard
-  ret = max(0.0h, min(1.0h, ret));
+  ret *= 0.003921569;
+  ret = rk*ret*(1.0h+(ret/(rk*mv*mv))) / (1.0h + rk*ret); // reinhard
+  ret = clamp(0.0h, 255.0h, ret*255.0h);
   return ret;
 }
 
@@ -31,7 +31,7 @@ half val_from_10(const uchar * source, int gx, int gy) {
 
   // normalize
   pv = max(0.0h, pv - black_level);
-  pv /= (1024.0f - black_level);
+  pv *= 0.00101833h; // /= (1024.0f - black_level);
 
   // correct vignetting
   if (CAM_NUM == 1) { // fcamera
@@ -51,6 +51,7 @@ half val_from_10(const uchar * source, int gx, int gy) {
     pv = s * pv;
   }
 
+  pv = clamp(0.0h, 1.0h, pv);
   return pv;
 }
 
@@ -60,11 +61,12 @@ half fabs_diff(half x, half y) {
 
 half phi(half x) {
   // detection funtion
-  if (x > 1) {
-    return 1 / x;
-  } else {
-    return 2 - x;
-  }
+  return 2 - x;
+  // if (x > 1) {
+  //   return 1 / x;
+  // } else {
+  //   return 2 - x;
+  // }
 }
 
 __kernel void postprocess(__global uchar * in)
@@ -75,17 +77,14 @@ __kernel void postprocess(__global uchar * in)
   if (x_global < 1 || x_global >= RGB_WIDTH - 1 || y_global < 1 || y_global >= RGB_HEIGHT - 1) {
     return;
   }
-  int out_idx = 3 * x_global + 3 * y_global * RGB_WIDTH;
+  int out_idx = x_global + y_global * RGB_WIDTH;
 
-  uchar3 rgb_8 = vload3(out_idx/3, in);
+  uchar3 rgb_8 = vload3(out_idx, in);
+  half3 rgb = color_correct(rgb_8, (half)(in[0] / 255.0h));
 
-  half3 rgb = color_correct(rgb_8, (half)(in[0]/255.0f));
-
-  in[out_idx + 0] = (uchar)(255.0f * rgb.z);
-  in[out_idx + 1] = (uchar)(255.0f * rgb.y);
-  in[out_idx + 2] = (uchar)(255.0f * rgb.x);
-
-
+  in[3*out_idx + 0] = (uchar)(rgb.z);
+  in[3*out_idx + 1] = (uchar)(rgb.y);
+  in[3*out_idx + 2] = (uchar)(rgb.x);
 }
 
 __kernel void debayer10(const __global uchar * in,
@@ -104,11 +103,10 @@ __kernel void debayer10(const __global uchar * in,
   int out_idx = 3 * x_global + 3 * y_global * RGB_WIDTH;
 
   half pv = val_from_10(in, x_global, y_global);
-  if (x_global % 2 && y_global % 2) {
-    uchar pv_8 = (uchar)(pv * 255.0f);
-    out[0] = out[0] > pv_8 ? out[0] : pv_8;
+  if (x_global % 3 == 1 && y_global % 3 == 1) {
+    uchar pv_8 = (uchar)(pv * 255.0h);
+    out[0] = max(out[0], pv_8);
   }
-
   cached[localOffset] = pv;
 
   // don't care
@@ -177,9 +175,9 @@ __kernel void debayer10(const __global uchar * in,
       half k3 = phi(fabs_diff(d1, d2) + fabs_diff(d3, d4));
       half k4 = phi(fabs_diff(n1, n2) + fabs_diff(n3, n4));
       // G_B
-      rgb.y = (k1*(n1+n3)/2+k3*(n2+n4)/2)/(k1+k3);
+      rgb.y = (k1*(n1+n3)*0.5+k3*(n2+n4)*0.5)/(k1+k3);
       // R_B
-      rgb.x = (k2*(d2+d3)/2+k4*(d1+d4)/2)/(k2+k4);
+      rgb.x = (k2*(d2+d3)*0.5+k4*(d1+d4)*0.5)/(k2+k4);
     }
   } else {
     if (y_global % 2 == 0) {
@@ -189,9 +187,9 @@ __kernel void debayer10(const __global uchar * in,
       half k3 = phi(fabs_diff(d1, d2) + fabs_diff(d3, d4));
       half k4 = phi(fabs_diff(n1, n2) + fabs_diff(n3, n4));
       // G_R
-      rgb.y = (k1*(n1+n3)/2+k3*(n2+n4)/2)/(k1+k3);
+      rgb.y = (k1*(n1+n3)*0.5+k3*(n2+n4)*0.5)/(k1+k3);
       // B_R
-      rgb.z = (k2*(d2+d3)/2+k4*(d1+d4)/2)/(k2+k4);
+      rgb.z = (k2*(d2+d3)*0.5+k4*(d1+d4)*0.5)/(k2+k4);
     } else {
       rgb.y = pv; // G2(B)
       half k1 = phi(fabs_diff(d1, pv) + fabs_diff(d2, pv));
@@ -205,10 +203,8 @@ __kernel void debayer10(const __global uchar * in,
     }
   }
 
-  rgb = max(0.0h, min(1.0h, rgb));
-
-  out[out_idx + 0] = (uchar)(255.0f * rgb.x);
-  out[out_idx + 1] = (uchar)(255.0f * rgb.y);
-  out[out_idx + 2] = (uchar)(255.0f * rgb.z);
+  out[out_idx + 0] = (uchar)(255.0h * rgb.x);
+  out[out_idx + 1] = (uchar)(255.0h * rgb.y);
+  out[out_idx + 2] = (uchar)(255.0h * rgb.z);
 
 }

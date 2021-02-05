@@ -113,9 +113,9 @@ CameraBuf::~CameraBuf() {
 
   if (krnl_debayer) {
     CL_CHECK(clReleaseKernel(krnl_debayer));
-  }
-  if (camera_state->krnl_process) {
+#ifdef QCOM2
     CL_CHECK(clReleaseKernel(camera_state->krnl_process));
+#endif
   }
   CL_CHECK(clReleaseCommandQueue(q));
 }
@@ -146,9 +146,11 @@ bool CameraBuf::acquire() {
     CL_CHECK(clSetKernelArg(krnl_debayer, 2, localMemSize, 0));
     CL_CHECK(clEnqueueNDRangeKernel(q, krnl_debayer, 2, NULL, globalWorkSize, localWorkSize,
                                     0, 0, &debayer_event));
+    uint8_t zero = 0;
     CL_CHECK(clSetKernelArg(camera_state->krnl_process, 0, sizeof(cl_mem), &cur_rgb_buf->buf_cl));
     CL_CHECK(clEnqueueNDRangeKernel(q, camera_state->krnl_process, 2, NULL, globalWorkSize, NULL,
                                     0, 0, &debayer_event));
+    CL_CHECK(clEnqueueWriteBuffer(q, cur_rgb_buf->buf_cl, 1, 0, sizeof(uint8_t), &zero, 0, 0, &debayer_event));
 #else
     float digital_gain = camera_state->digital_gain;
     if ((int)digital_gain == 0) {
