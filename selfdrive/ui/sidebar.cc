@@ -2,8 +2,6 @@
 #include <string.h>
 #include <math.h>
 #include <map>
-#include <numeric>
-
 #include "common/util.h"
 #include "paint.hpp"
 #include "sidebar.hpp"
