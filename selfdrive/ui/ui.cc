@@ -124,7 +124,7 @@ static void update_sockets(UIState *s) {
   if (sm.update(0) == 0) return;
 
   UIScene &scene = s->scene;
-  if (s->scene.started && sm.updated("controlsState")) {
+  if (scene.started && sm.updated("controlsState")) {
     scene.controls_state = sm["controlsState"].getControlsState();
   }
   if (sm.updated("carState")) {
@@ -188,10 +188,10 @@ static void update_sockets(UIState *s) {
   }
   if (sm.updated("driverMonitoringState")) {
     scene.dmonitoring_state = sm["driverMonitoringState"].getDriverMonitoringState();
-    if(!scene.frontview && !s->ignition) {
+    if(!scene.frontview && !scene.ignition) {
       read_param(&scene.frontview, "IsDriverViewEnabled");
     }
-  } else if ((sm.frame - sm.rcv_frame("driverMonitoringState")) > UI_FREQ/2) {
+  } else if (scene.frontview && (sm.frame - sm.rcv_frame("driverMonitoringState")) > UI_FREQ/2) {
     scene.frontview = false;
   }
   if (sm.updated("sensorEvents")) {
@@ -229,7 +229,7 @@ static void update_alert(UIState *s) {
   // Handle controls timeout
   if (scene.deviceState.getStarted() && (s->sm->frame - s->started_frame) > 10 * UI_FREQ) {
     const uint64_t cs_frame = s->sm->rcv_frame("controlsState");
-    if (cs_frame < s->scene.started_frame) {
+    if (cs_frame < scene.started_frame) {
       // car is started, but controlsState hasn't been seen at all
       scene.alert_text1 = "openpilot Unavailable";
       scene.alert_text2 = "Waiting for controls to start";
@@ -251,20 +251,21 @@ static void update_alert(UIState *s) {
 
 static void update_params(UIState *s) {
   const uint64_t frame = s->sm->frame;
+  UIScene &scene = s->scene;
 
   if (frame % (5*UI_FREQ) == 0) {
-    read_param(&s->scene.is_metric, "IsMetric");
+    read_param(&scene.is_metric, "IsMetric");
   } else if (frame % (6*UI_FREQ) == 0) {
-    s->scene.athenaStatus = NET_DISCONNECTED;
+    scene.athenaStatus = NET_DISCONNECTED;
     uint64_t last_ping = 0;
     if (read_param(&last_ping, "LastAthenaPingTime") == 0) {
-      s->scene.athenaStatus = nanos_since_boot() - last_ping < 70e9 ? NET_CONNECTED : NET_ERROR;
+      scene.athenaStatus = nanos_since_boot() - last_ping < 70e9 ? NET_CONNECTED : NET_ERROR;
     }
   }
 }
 
 static void update_vision(UIState *s) {
-  if (!s->vipc_client->connected && s->started) {
+  if (!s->vipc_client->connected && s->scene.started) {
     if (s->vipc_client->connect(false)){
       ui_init_vision(s);
     }
@@ -283,7 +284,7 @@ static void update_vision(UIState *s) {
 }
 
 static void update_status(UIState *s) {
-  if (s->started && s->sm->updated("controlsState")) {
+  if (s->scene.started && s->sm->updated("controlsState")) {
     auto alert_status = s->scene.controls_state.getAlertStatus();
     if (alert_status == cereal::ControlsState::AlertStatus::USER_PROMPT) {
       s->status = STATUS_WARNING;
@@ -296,10 +297,10 @@ static void update_status(UIState *s) {
 
   // Handle onroad/offroad transition
   static bool started_prev = false;
-  if (s->started != started_prev) {
-    if (s->started) {
+  if (s->scene.started != started_prev) {
+    if (s->scene.started) {
       s->status = STATUS_DISENGAGED;
-      s->started_frame = s->sm->frame;
+      s->scene.started_frame = s->sm->frame;
 
       read_param(&s->scene.is_rhd, "IsRHD");
       s->active_app = cereal::UiLayoutState::App::NONE;
@@ -314,7 +315,7 @@ static void update_status(UIState *s) {
       s->vipc_client->connected = false;
     }
   }
-  started_prev = s->started;
+  started_prev = s->scene.started;
 }
 
 void ui_update(UIState *s) {
