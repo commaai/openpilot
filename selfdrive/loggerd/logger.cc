@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <sys/stat.h>
+#include <fcntl.h>
 #ifdef QCOM
 #include <cutils/properties.h>
 #endif
@@ -157,9 +158,9 @@ LoggerHandle::LoggerHandle(const std::string& route_path, int part) : part(part)
   int err = logger_mkpath((char*)log_path.c_str());
   assert(err == 0);
 
-  FILE* lock_file = fopen(lock_path.c_str(), "wb");
-  assert(lock_file != nullptr);
-  fclose(lock_file);
+  int flock = open(lock_path.c_str(), O_RDWR | O_CREAT);
+  assert(flock != -1);
+  close(flock);
 
   log = std::make_unique<BZFile>(log_path);
   qlog = std::make_unique<BZFile>(qlog_path);
