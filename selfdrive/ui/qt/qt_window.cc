@@ -16,9 +16,6 @@ void setMainWindow(QWidget *w) {
   w->setFixedSize(vwp_w*scale, vwp_h*scale);
   w->show();
 
-  QFontDatabase::addApplicationFont("../assets/fonts/inter.ttf");
-  QApplication::setFont(QFont("Inter"));
-
 #ifdef QCOM2
   QPlatformNativeInterface *native = QGuiApplication::platformNativeInterface();
   wl_surface *s = reinterpret_cast<wl_surface*>(native->nativeResourceForWindow("surface", w->windowHandle()));

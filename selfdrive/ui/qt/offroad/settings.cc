@@ -271,12 +271,12 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
     QPushButton *btn = new QPushButton(panel.first);
     btn->setCheckable(true);
     btn->setStyleSheet(R"(
-      QPushButton {
+      * {
         color: grey;
         border: none;
         background: none;
         font-size: 65px;
-        font-weight: bold;
+        font-weight: 600;
         padding-top: 35px;
         padding-bottom: 35px;
       }
