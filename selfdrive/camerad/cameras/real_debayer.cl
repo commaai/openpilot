@@ -26,9 +26,9 @@ half mf(half x, half cp) {
   }
 }
 
-half3 color_correct(half3 rgb, uint ggain) {
+half3 color_correct(half3 rgb, int ggain) {
   half3 ret = (0,0,0);
-  half cpx = clamp(0.1h, 0.4h, cpxb + cpxk * (ggain % 100));
+  half cpx = clamp(0.1h, 0.4h, cpxb + cpxk * min(10, ggain));
   ret += (half)rgb.x * color_correction[0];
   ret += (half)rgb.y * color_correction[1];
   ret += (half)rgb.z * color_correction[2];
@@ -200,7 +200,7 @@ __kernel void debayer10(const __global uchar * in,
   }
 
   rgb = clamp(0.0h, 1.0h, rgb);
-  rgb = color_correct(rgb, ggain);
+  rgb = color_correct(rgb, (int)ggain);
 
   out[out_idx + 0] = (uchar)(rgb.z);
   out[out_idx + 1] = (uchar)(rgb.y);

@@ -991,7 +991,7 @@ void set_exposure_time_bounds(CameraState *s) {
 void switch_conversion_gain(CameraState *s) {
   if (!s->dc_gain_enabled) {
     s->dc_gain_enabled = true;
-    s->analog_gain -= 5;
+    s->analog_gain -= 4;
   } else {
     s->dc_gain_enabled = false;
     s->analog_gain += 4;
