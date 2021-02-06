@@ -226,14 +226,15 @@ void encoder_thread(int cam_idx) {
 
         // rotate the encoder if the logger is on a newer segment
         if (rotate_state.should_rotate) {
-          lh = s.logger->get_handle();
           LOGW("camera %d rotate encoder to %s", cam_idx, lh->get_segment_path().c_str());
 
           if (!rotate_state.initialized) {
             rotate_state.last_rotate_frame_id = extra.frame_id - 1;
             rotate_state.initialized = true;
           }
-          
+
+          // get new logger handle for new segment
+          lh = s.logger->get_handle();
 
           // wait for all to start rotating
           rotate_state.rotating = true;
@@ -281,7 +282,7 @@ void encoder_thread(int cam_idx) {
           eidx.setEncodeId(cnt);
           eidx.setSegmentNum(rotate_state.cur_seg);
           eidx.setSegmentId(out_id);
-          lh->write(msg.toBytes(), false);
+          if (lh) lh->write(msg.toBytes(), false);
         }
       }
 
@@ -392,7 +393,7 @@ int main(int argc, char** argv) {
         last_msg = msg;
 
         QlogState& qs = qlog_states[sock];
-        lh->write((uint8_t*)msg->getData(), msg->getSize(), qs.counter == 0 && qs.freq != -1);
+        if (lh) lh->write((uint8_t*)msg->getData(), msg->getSize(), qs.counter == 0 && qs.freq != -1);
         if (qs.freq != -1) {
           qs.counter = (qs.counter + 1) % qs.freq;
         }
@@ -431,23 +432,25 @@ int main(int argc, char** argv) {
       delete last_msg;
     }
 
-    bool new_segment = false;
-    double tms = millis_since_boot();
-    if (tms - last_camera_seen_tms <= NO_CAMERA_PATIENCE && encoder_threads.size() > 0) {
-      new_segment = true;
-      for (auto &r : s.rotate_state) {
-        // this *should* be redundant on tici since all camera frames are synced
-        new_segment &= (((r.stream_frame_id >= r.last_rotate_frame_id + SEGMENT_LENGTH * MAIN_FPS) &&
-                        (!r.should_rotate) && (r.initialized)) ||
-                        (!r.enabled));
-#ifndef QCOM2
-        break; // only look at fcamera frame id if not QCOM2
-#endif
-      }
-    } else {
-      if (tms - last_rotate_tms > SEGMENT_LENGTH * 1000) {
+    bool new_segment = !lh;
+    if (lh) {
+      double tms = millis_since_boot();
+      if (tms - last_camera_seen_tms <= NO_CAMERA_PATIENCE && encoder_threads.size() > 0) {
         new_segment = true;
-        LOGW("no camera packet seen. auto rotated");
+        for (auto &r : s.rotate_state) {
+          // this *should* be redundant on tici since all camera frames are synced
+          new_segment &= (((r.stream_frame_id >= r.last_rotate_frame_id + SEGMENT_LENGTH * MAIN_FPS) &&
+                          (!r.should_rotate) && (r.initialized)) ||
+                          (!r.enabled));
+#ifndef QCOM2
+          break; // only look at fcamera frame id if not QCOM2
+#endif
+        }
+      } else {
+        if (tms - last_rotate_tms > SEGMENT_LENGTH * 1000) {
+          new_segment = true;
+          LOGW("no camera packet seen. auto rotated");
+        }
       }
     }
 
