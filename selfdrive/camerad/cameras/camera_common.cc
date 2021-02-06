@@ -138,6 +138,7 @@ bool CameraBuf::acquire() {
     const size_t globalWorkSize[] = {size_t(camera_state->ci.frame_width), size_t(camera_state->ci.frame_height)};
     const size_t localWorkSize[] = {DEBAYER_LOCAL_WORKSIZE, DEBAYER_LOCAL_WORKSIZE};
     CL_CHECK(clSetKernelArg(krnl_debayer, 2, localMemSize, 0));
+    CL_CHECK(clSetKernelArg(krnl_debayer, 3, sizeof(unsigned int), &cur_frame_data.global_gain));
     CL_CHECK(clEnqueueNDRangeKernel(q, krnl_debayer, 2, NULL, globalWorkSize, localWorkSize,
                                     0, 0, &debayer_event));
 #else

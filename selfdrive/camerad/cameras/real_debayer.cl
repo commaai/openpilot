@@ -9,13 +9,32 @@ const __constant half3 color_correction[3] = {
   (half3)(-0.06943967, -0.01601912, 1.50009016),
 };
 
-half3 color_correct(half3 rgb) {
+// tone mapping params
+const half cpk = 0.75;
+const half cpb = 0.125;
+const half cpxk = -0.03;
+const half cpxb = 0.4;
+
+half mf(half x, half cp) {
+  half rk = 2.65 - 6.5*cp;
+  if (x > cp) {
+    return (rk * (x-cp) * (1-(cpk*cp+cpb)) * (1+1/(rk*(1-cp))) / (1+rk*(x-cp))) + cpk*cp + cpb;
+  } else if (x < cp) {
+    return (rk * (x-cp) * (cpk*cp+cpb) * (1+1/(rk*cp)) / (1-rk*(x-cp))) + cpk*cp + cpb;
+  } else {
+    return x;
+  }
+}
+
+half3 color_correct(half3 rgb, uint ggain) {
   half3 ret = (0,0,0);
-  half rk = 5.0;
+  half cpx = clamp(0.1h, 0.4h, cpxb + cpxk * (ggain % 100));
   ret += (half)rgb.x * color_correction[0];
   ret += (half)rgb.y * color_correction[1];
   ret += (half)rgb.z * color_correction[2];
-  ret = rk*ret / (1.0h + rk*ret); // reinhard
+  ret.x = mf(ret.x, cpx);
+  ret.y = mf(ret.y, cpx);
+  ret.z = mf(ret.z, cpx);
   ret = clamp(0.0h, 255.0h, ret*255.0h);
   return ret;
 }
@@ -70,7 +89,8 @@ half phi(half x) {
 
 __kernel void debayer10(const __global uchar * in,
                         __global uchar * out,
-                        __local half * cached
+                        __local half * cached,
+                        uint ggain
                        )
 {
   const int x_global = get_global_id(0);
@@ -180,7 +200,7 @@ __kernel void debayer10(const __global uchar * in,
   }
 
   rgb = clamp(0.0h, 1.0h, rgb);
-  rgb = color_correct(rgb);
+  rgb = color_correct(rgb, ggain);
 
   out[out_idx + 0] = (uchar)(rgb.z);
   out[out_idx + 1] = (uchar)(rgb.y);
