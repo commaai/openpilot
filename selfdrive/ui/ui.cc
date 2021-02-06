@@ -153,7 +153,6 @@ static void update_sockets(UIState *s) {
   }
   if (sm.updated("thermal")) {
     scene.thermal = sm["thermal"].getThermal();
-    s->started = s->scene.thermal.getStarted();
   }
   if (sm.updated("health")) {
     auto health = sm["health"].getHealth();
@@ -181,8 +180,10 @@ static void update_sockets(UIState *s) {
   }
   if (sm.updated("driverMonitoringState")) {
     scene.dmonitoring_state = sm["driverMonitoringState"].getDriverMonitoringState();
-    scene.frontview = !s->ignition;
-  } else if (scene.frontview && (sm.frame - sm.rcv_frame("driverMonitoringState")) > UI_FREQ/2) {
+    if(!s->scene.frontview && !s->ignition) {
+      read_param(&s->scene.frontview, "IsDriverViewEnabled");
+    }
+  } else if ((sm.frame - sm.rcv_frame("driverMonitoringState")) > UI_FREQ/2) {
     scene.frontview = false;
   }
   if (sm.updated("sensorEvents")) {
@@ -196,6 +197,7 @@ static void update_sockets(UIState *s) {
       }
     }
   }
+  s->started = s->scene.thermal.getStarted() || s->scene.frontview;
 }
 
 static void update_alert(UIState *s) {
@@ -217,7 +219,7 @@ static void update_alert(UIState *s) {
   }
 
   // Handle controls timeout
-  if (s->started && (s->sm->frame - s->started_frame) > 10 * UI_FREQ) {
+  if (s->ignition && (s->sm->frame - s->started_frame) > 10 * UI_FREQ) {
     const uint64_t cs_frame = s->sm->rcv_frame("controlsState");
     if (cs_frame < s->started_frame) {
       // car is started, but controlsState hasn't been seen at all
@@ -255,8 +257,6 @@ static void update_params(UIState *s) {
 
 static void update_vision(UIState *s) {
   if (!s->vipc_client->connected && s->started) {
-    s->vipc_client = s->scene.frontview ? s->vipc_client_front : s->vipc_client_rear;
-
     if (s->vipc_client->connect(false)){
       ui_init_vision(s);
     }
@@ -286,7 +286,6 @@ static void update_status(UIState *s) {
   static bool started_prev = false;
   if (s->started != started_prev) {
     if (s->started) {
-      printf("\n\n\nGOING ONROAD\n\n\n");
       s->status = STATUS_DISENGAGED;
       s->started_frame = s->sm->frame;
 
@@ -294,14 +293,13 @@ static void update_status(UIState *s) {
       s->active_app = cereal::UiLayoutState::App::NONE;
       s->sidebar_collapsed = true;
       s->scene.alert_size = cereal::ControlsState::AlertSize::NONE;
+      s->vipc_client = s->scene.frontview ? s->vipc_client_front : s->vipc_client_rear;
     } else {
-      printf("\n\n\nGOING OFFROAD\n\n\n");
       s->status = STATUS_OFFROAD;
       s->active_app = cereal::UiLayoutState::App::HOME;
       s->sidebar_collapsed = false;
       s->sound->stop();
       s->vipc_client->connected = false;
-
     }
   }
   started_prev = s->started;
@@ -310,7 +308,7 @@ static void update_status(UIState *s) {
 void ui_update(UIState *s) {
   update_params(s);
   update_sockets(s);
-  update_alert(s);
   update_status(s);
+  update_alert(s);
   update_vision(s);
 }
