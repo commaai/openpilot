@@ -117,7 +117,7 @@ struct LoggerdState {
 };
 LoggerdState s;
 
-static void drain_socket(LoggerHandle *lh, SubSocket *sock, QlogState &qs) {
+void drain_socket(LoggerHandle *lh, SubSocket *sock, QlogState &qs) {
   if (!lh) return;
 
   Message *msg = nullptr;
@@ -239,7 +239,7 @@ void encoder_thread(EncoderState *es) {
   }
 }
 
-static int clear_locks_fn(const char* fpath, const struct stat *sb, int tyupeflag) {
+int clear_locks_fn(const char* fpath, const struct stat *sb, int tyupeflag) {
   const char* dot = strrchr(fpath, '.');
   if (dot && strcmp(dot, ".lock") == 0) {
     unlink(fpath);
@@ -247,7 +247,7 @@ static int clear_locks_fn(const char* fpath, const struct stat *sb, int tyupefla
   return 0;
 }
 
-static void clear_locks() {
+void clear_locks() {
   ftw(LOG_ROOT.c_str(), clear_locks_fn, 16);
 }
 
