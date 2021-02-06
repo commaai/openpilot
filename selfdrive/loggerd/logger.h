@@ -1,7 +1,5 @@
 #pragma once
 
-#include <stdio.h>
-#include <stdint.h>
 #include <memory>
 #include <mutex>
 #include <bzlib.h>
@@ -13,8 +11,6 @@ const std::string LOG_ROOT = "/data/media/0/realdata";
 #else
 const std::string LOG_ROOT = util::getenv_default("HOME", "/.comma/media/0/realdata", "/data/media/0/realdata");
 #endif
-
-#define LOGGER_MAX_HANDLES 16
 
 class BZFile {
  public:
@@ -50,7 +46,6 @@ class BZFile {
   BZFILE* bz_file = nullptr;
 };
 
-typedef cereal::Sentinel::SentinelType SentinelType;
 class LoggerHandle {
  public:
   LoggerHandle(const std::string& route_path, int part);

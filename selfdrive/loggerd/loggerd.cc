@@ -346,7 +346,7 @@ int main(int argc, char** argv) {
 
   // init logger
   s.logger = std::make_unique<LoggerState>(LOG_ROOT);
-  std::shared_ptr<LoggerHandle> log = s.logger->get_handle();
+  std::shared_ptr<LoggerHandle> lh = s.logger->next();
 
   // init encoders
   pthread_mutex_init(&s.rotate_lock, NULL);
@@ -392,7 +392,7 @@ int main(int argc, char** argv) {
         last_msg = msg;
 
         QlogState& qs = qlog_states[sock];
-        log->write((uint8_t*)msg->getData(), msg->getSize(), qs.counter == 0 && qs.freq != -1);
+        lh->write((uint8_t*)msg->getData(), msg->getSize(), qs.counter == 0 && qs.freq != -1);
         if (qs.freq != -1) {
           qs.counter = (qs.counter + 1) % qs.freq;
         }
@@ -456,8 +456,8 @@ int main(int argc, char** argv) {
       pthread_mutex_lock(&s.rotate_lock);
       last_rotate_tms = millis_since_boot();
 
-      log = s.logger->next();
-      LOGW((log->get_segment() == 0) ? "logging to %s" : "rotated to %s", log->get_segment_path().c_str());
+      lh = s.logger->next();
+      LOGW((lh->get_segment() == 0) ? "logging to %s" : "rotated to %s", lh->get_segment_path().c_str());
 
       // rotate encoders
       for (auto &r : s.rotate_state) r.rotate();

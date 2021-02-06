@@ -9,6 +9,7 @@
 #include "common/version.h"
 #include "logger.h"
 
+typedef cereal::Sentinel::SentinelType SentinelType;
 
 // ***** logging helpers *****
 
@@ -114,7 +115,6 @@ std::string logger_get_route_name() {
   return route_name;
 }
 
-
 static void log_sentinel(LoggerHandle *h, SentinelType type) {
   MessageBuilder msg;
   msg.initEvent().initSentinel().setType(type);
@@ -131,6 +131,8 @@ LoggerState::LoggerState(const std::string& log_root) : part(-1) {
 
 std::shared_ptr<LoggerHandle> LoggerState::next() {
   SentinelType sentinel_type = cur_handle ? SentinelType::START_OF_SEGMENT : SentinelType::START_OF_ROUTE;
+  if (cur_handle) log_sentinel(cur_handle.get(), SentinelType::END_OF_SEGMENT);
+
   cur_handle = std::make_shared<LoggerHandle>(route_path, ++part);
 
   // log init data
@@ -141,7 +143,7 @@ std::shared_ptr<LoggerHandle> LoggerState::next() {
 }
 
 LoggerState::~LoggerState() {
-  if (cur_handle) log_sentinel(cur_handle.get(), SentinelType::END_OF_SEGMENT);
+  if (cur_handle) log_sentinel(cur_handle.get(), SentinelType::END_OF_ROUTE);
 }
 
 // LoggerHandle
