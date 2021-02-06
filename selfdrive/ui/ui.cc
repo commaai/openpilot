@@ -219,7 +219,7 @@ static void update_alert(UIState *s) {
   }
 
   // Handle controls timeout
-  if (s->ignition && (s->sm->frame - s->started_frame) > 10 * UI_FREQ) {
+  if (s->scene.thermal.getStarted() && (s->sm->frame - s->started_frame) > 10 * UI_FREQ) {
     const uint64_t cs_frame = s->sm->rcv_frame("controlsState");
     if (cs_frame < s->started_frame) {
       // car is started, but controlsState hasn't been seen at all
