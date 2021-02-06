@@ -24,15 +24,7 @@ class CarInterface(CarInterfaceBase):
     ret.steerActuatorDelay = 0.12  # Default delay, Prius has larger delay
     ret.steerLimitTimer = 0.4
 
-    # Default longitudinal tune
-    ret.longitudinalTuning.deadzoneBP = [0., 9.]
-    ret.longitudinalTuning.deadzoneV = [0., .15]
-    ret.longitudinalTuning.kpBP = [0., 5., 35.]
-    ret.longitudinalTuning.kiBP = [0., 35.]
-    ret.longitudinalTuning.kpV = [3.6, 2.4, 1.5]
-    ret.longitudinalTuning.kiV = [0.54, 0.36]
-
-    # Community longitudinal custom tune
+    # Improved longitudinal tune
     if candidate in [CAR.COROLLA_TSS2, CAR.COROLLAH_TSS2]:
       ret.longitudinalTuning.deadzoneBP = [0., 8.05]
       ret.longitudinalTuning.deadzoneV = [.0, .14]
@@ -43,6 +35,14 @@ class CarInterface(CarInterfaceBase):
       ret.stoppingBrakeRate = 0.1 # reach stopping target smoothly
       ret.startingBrakeRate = 2.0 # release brakes fast
       ret.startAccel = 1.2 # Accelerate from 0 faster
+    else:
+      # Default longitudinal tune
+      ret.longitudinalTuning.deadzoneBP = [0., 9.]
+      ret.longitudinalTuning.deadzoneV = [0., .15]
+      ret.longitudinalTuning.kpBP = [0., 5., 35.]
+      ret.longitudinalTuning.kiBP = [0., 35.]
+      ret.longitudinalTuning.kpV = [3.6, 2.4, 1.5]
+      ret.longitudinalTuning.kiV = [0.54, 0.36]
 
     if candidate not in [CAR.PRIUS, CAR.RAV4, CAR.RAV4H]:  # These cars use LQR/INDI
       ret.lateralTuning.init('pid')
