@@ -346,7 +346,7 @@ int main(int argc, char** argv) {
 
   // init logger
   s.logger = std::make_unique<LoggerState>(LOG_ROOT);
-  std::shared_ptr<LoggerHandle> lh = s.logger->next();
+  std::shared_ptr<LoggerHandle> lh;
 
   // init encoders
   pthread_mutex_init(&s.rotate_lock, NULL);
