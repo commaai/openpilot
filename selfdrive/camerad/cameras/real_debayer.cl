@@ -58,13 +58,13 @@ half val_from_10(const uchar * source, int gx, int gy) {
     float r = gx*gx + gy*gy;
     half s;
     if (r < 62500) {
-      s = (half)(1.0f + 0.0000005f*r);
-    } else if (r < 640000) {
-      s = (half)(0.9375f + 0.0000015f*r);
+      s = (half)(1.0f + 0.0000008f*r);
+    } else if (r < 490000) {
+      s = (half)(0.9625f + 0.0000014f*r);
     } else if (r < 1102500) {
-      s = (half)(1.2831f + 0.0000000000015f*r*r);
+      s = (half)(1.26434f + 0.0000000000016f*r*r);
     } else {
-      s = (half)(0.06759375f + 0.0000000000025f*r*r);
+      s = (half)(0.53503625f + 0.0000000000022f*r*r);
     }
     pv = s * pv;
   }
