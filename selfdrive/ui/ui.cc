@@ -153,6 +153,7 @@ static void update_sockets(UIState *s) {
   }
   if (sm.updated("thermal")) {
     scene.thermal = sm["thermal"].getThermal();
+    s->started = s->scene.thermal.getStarted();
   }
   if (sm.updated("health")) {
     auto health = sm["health"].getHealth();
@@ -198,8 +199,6 @@ static void update_sockets(UIState *s) {
 }
 
 static void update_alert(UIState *s) {
-  if (!s->started || s->scene.frontview) return;
-
   UIScene &scene = s->scene;
   if (s->sm->updated("controlsState")) {
     auto alert_sound = scene.controls_state.getAlertSound();
@@ -218,7 +217,7 @@ static void update_alert(UIState *s) {
   }
 
   // Handle controls timeout
-  if ((s->sm->frame - s->started_frame) > 10 * UI_FREQ) {
+  if (s->started && (s->sm->frame - s->started_frame) > 10 * UI_FREQ) {
     const uint64_t cs_frame = s->sm->rcv_frame("controlsState");
     if (cs_frame < s->started_frame) {
       // car is started, but controlsState hasn't been seen at all
@@ -272,8 +271,6 @@ static void update_vision(UIState *s) {
 }
 
 static void update_status(UIState *s) {
-  s->started = s->scene.thermal.getStarted() || s->scene.frontview;
-
   if (s->started && s->sm->updated("controlsState")) {
     auto alert_status = s->scene.controls_state.getAlertStatus();
     if (alert_status == cereal::ControlsState::AlertStatus::USER_PROMPT) {
@@ -286,21 +283,28 @@ static void update_status(UIState *s) {
   }
 
   // Handle onroad/offroad transition
-  if (!s->started && s->status != STATUS_OFFROAD) {
-    s->status = STATUS_OFFROAD;
-    s->active_app = cereal::UiLayoutState::App::HOME;
-    s->sidebar_collapsed = false;
-    s->sound->stop();
-    s->vipc_client->connected = false;
-  } else if (s->started && s->status == STATUS_OFFROAD) {
-    s->status = STATUS_DISENGAGED;
-    s->started_frame = s->sm->frame;
+  static bool started_prev = false;
+  if (s->started != started_prev) {
+    if (s->started) {
+      printf("\n\n\nGOING ONROAD\n\n\n");
+      s->status = STATUS_DISENGAGED;
+      s->started_frame = s->sm->frame;
 
-    read_param(&s->scene.is_rhd, "IsRHD");
-    s->active_app = cereal::UiLayoutState::App::NONE;
-    s->sidebar_collapsed = true;
-    s->scene.alert_size = cereal::ControlsState::AlertSize::NONE;
+      read_param(&s->scene.is_rhd, "IsRHD");
+      s->active_app = cereal::UiLayoutState::App::NONE;
+      s->sidebar_collapsed = true;
+      s->scene.alert_size = cereal::ControlsState::AlertSize::NONE;
+    } else {
+      printf("\n\n\nGOING OFFROAD\n\n\n");
+      s->status = STATUS_OFFROAD;
+      s->active_app = cereal::UiLayoutState::App::HOME;
+      s->sidebar_collapsed = false;
+      s->sound->stop();
+      s->vipc_client->connected = false;
+
+    }
   }
+  started_prev = s->started;
 }
 
 void ui_update(UIState *s) {
