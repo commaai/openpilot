@@ -249,7 +249,7 @@ class Localizer():
         self.gyro_counter += 1
         if self.gyro_counter % SENSOR_DECIMATION == 0:
           v = sensor_reading.gyroUncalibrated.v
-          self.update_kalman(current_time, ObservationKind.PHONE_GYRO, [-v[2], -v[1], -v[0]])
+          self.update_kalman(sensor_reading.timestamp, ObservationKind.PHONE_GYRO, [-v[2], -v[1], -v[0]])
 
       # Accelerometer
       if sensor_reading.sensor == 1 and sensor_reading.type == 1:
@@ -260,7 +260,7 @@ class Localizer():
         self.acc_counter += 1
         if self.acc_counter % SENSOR_DECIMATION == 0:
           v = sensor_reading.acceleration.v
-          self.update_kalman(current_time, ObservationKind.PHONE_ACCEL, [-v[2], -v[1], -v[0]])
+          self.update_kalman(sensor_reading.timestamp, ObservationKind.PHONE_ACCEL, [-v[2], -v[1], -v[0]])
 
   def handle_live_calib(self, current_time, log):
     if len(log.rpyCalib):
