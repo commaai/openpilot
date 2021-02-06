@@ -57,7 +57,6 @@ const Rect settings_btn = {50, 35, 200, 117};
 const Rect home_btn = {60, 1080 - 180 - 40, 180, 180};
 
 const int UI_FREQ = 20;   // Hz
-const int SET_SPEED_NA = 255;
 
 typedef enum NetStatus {
   NET_CONNECTED,
