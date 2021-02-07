@@ -12,6 +12,8 @@ const int SPACEBAR_WIDTH = 3;
 
 KeyboardLayout::KeyboardLayout(QWidget *parent, std::vector<QVector<QString>> layout) : QWidget(parent) {
   QVBoxLayout* vlayout = new QVBoxLayout;
+  vlayout->setMargin(0);
+
   QButtonGroup* btn_group = new QButtonGroup(this);
 
   QObject::connect(btn_group, SIGNAL(buttonClicked(QAbstractButton*)), parent, SLOT(handleButton(QAbstractButton*)));
@@ -45,11 +47,22 @@ KeyboardLayout::KeyboardLayout(QWidget *parent, std::vector<QVector<QString>> la
     i++;
   }
 
+  setStyleSheet(R"(
+    QPushButton {
+      font-size: 50px;
+      margin: 0px;
+      padding: 0px;
+      border: 10px solid #444444;
+      color: #dddddd;
+      background-color: #444444;
+    }
+  )");
   setLayout(vlayout);
 }
 
-Keyboard::Keyboard(QWidget *parent) : QWidget(parent) {
+Keyboard::Keyboard(QWidget *parent) : QFrame(parent) {
   main_layout = new QStackedLayout;
+  main_layout->setMargin(0);
 
   // lowercase
   std::vector<QVector<QString>> lowercase = {
@@ -69,7 +82,7 @@ Keyboard::Keyboard(QWidget *parent) : QWidget(parent) {
   };
   main_layout->addWidget(new KeyboardLayout(this, uppercase));
 
-  // 1234567890
+  // numbers + specials
   std::vector<QVector<QString>> numbers = {
     {"1","2","3","4","5","6","7","8","9","0"},
     {"-","/",":",";","(",")","$","&&","@","\""},
@@ -78,7 +91,7 @@ Keyboard::Keyboard(QWidget *parent) : QWidget(parent) {
   };
   main_layout->addWidget(new KeyboardLayout(this, numbers));
 
-  // Special characters
+  // extra specials
   std::vector<QVector<QString>> specials = {
     {"[","]","{","}","#","%","^","*","+","="},
     {"_","\\","|","~","<",">","€","£","¥","•"},
@@ -89,19 +102,7 @@ Keyboard::Keyboard(QWidget *parent) : QWidget(parent) {
 
   setLayout(main_layout);
   main_layout->setCurrentIndex(0);
-
-  setStyleSheet(R"(
-    QPushButton {
-      font-size: 50px;
-      margin: 0px;
-      padding: 15px;
-      border: 10px solid #444444;
-      color: #dddddd;
-      background-color: #444444;
-    }
-  )");
 }
-
 
 void Keyboard::handleButton(QAbstractButton* m_button) {
   QString id = m_button->text();

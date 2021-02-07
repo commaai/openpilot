@@ -58,7 +58,6 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QWidget(parent){
   connect(wifi, SIGNAL(wrongPassword(QString)), this, SLOT(wrongPassword(QString)));
   connect(wifi, SIGNAL(successfulConnection(QString)), this, SLOT(successfulConnection(QString)));
 
-
   s = new QStackedLayout;
 
   inputField = new InputField(this, 8);
