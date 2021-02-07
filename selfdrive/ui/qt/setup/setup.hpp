@@ -19,6 +19,8 @@ private:
   QWidget *software_selection();
   QWidget *custom_software();
   QWidget *downloading();
+  
+  QWidget *build_page(QString title, QWidget *content, bool next, bool prev);
 
 public slots:
   void nextPage();

@@ -204,7 +204,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
 
   QVBoxLayout* vlayout = new QVBoxLayout;
 
-  //Back button
+  // Back button
   QHBoxLayout* backLayout = new QHBoxLayout;
   QPushButton* back = new QPushButton("BACK");
   back->setFixedSize(500, 100);
@@ -212,7 +212,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   backLayout->addWidget(back, 0, Qt::AlignLeft);
   vlayout->addWidget(layoutToWidget(backLayout, this), 0, Qt::AlignLeft);
 
-  //Enable tethering layout
+  // Enable tethering layout
   QHBoxLayout* tetheringToggleLayout = new QHBoxLayout;
   tetheringToggleLayout->addWidget(new QLabel("Enable tethering"));
   Toggle* toggle_switch = new Toggle;
@@ -226,7 +226,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   vlayout->addWidget(layoutToWidget(tetheringToggleLayout, this), 0);
   vlayout->addWidget(hline(), 0);
 
-  //Change tethering password
+  // Change tethering password
   QHBoxLayout *tetheringPassword = new QHBoxLayout;
   tetheringPassword->addWidget(new QLabel("Edit tethering password"), 1);
   editPasswordButton = new QPushButton("EDIT");
@@ -236,7 +236,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   vlayout->addWidget(layoutToWidget(tetheringPassword, this), 0);
   vlayout->addWidget(hline(), 0);
 
-  //IP adress
+  // IP adress
   QHBoxLayout* IPlayout = new QHBoxLayout;
   IPlayout->addWidget(new QLabel("IP address"), 0);
   ipLabel = new QLabel(wifi->ipv4_address);
@@ -245,7 +245,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   vlayout->addWidget(layoutToWidget(IPlayout, this), 0);
   vlayout->addWidget(hline(), 0);
 
-  //Enable SSH
+  // Enable SSH
   QHBoxLayout* enableSSHLayout = new QHBoxLayout(this);
   enableSSHLayout->addWidget(new QLabel("Enable SSH", this));
   toggle_switch_SSH = new Toggle(this);
@@ -258,7 +258,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   vlayout->addWidget(layoutToWidget(enableSSHLayout, this));
   vlayout->addWidget(hline(), 0);
 
-  //Authorized SSH keys
+  // Authorized SSH keys
   QHBoxLayout* authSSHLayout = new QHBoxLayout(this);
   authSSHLayout->addWidget(new QLabel("Authorized SSH keys", this));
   QPushButton* editAuthSSHButton = new QPushButton("EDIT", this);
@@ -276,7 +276,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   // dangerZone->addWidget(deleteAll);
   // vlayout->addWidget(layoutToWidget(dangerZone, this));
 
-  //vlayout to widget
+  // vlayout to widget
   QWidget* settingsWidget = layoutToWidget(vlayout, this);
   settingsWidget->setStyleSheet("margin-left: 40px; margin-right: 40px;");
   s->addWidget(settingsWidget);
@@ -303,7 +303,7 @@ void AdvancedNetworking::refresh(){
   if (toggle_switch_SSH->on != isSSHEnabled()) {
     toggle_switch_SSH->togglePosition();
   }
-  //Qt can be lazy
+  // Qt can be lazy
   repaint();
 }
 
@@ -385,10 +385,11 @@ void WifiUI::refresh() {
       }
       QLabel *ssid_label = new QLabel(ssid);
       ssid_label->setStyleSheet(R"(
-        font-size: 40px;
+        font-size: 55px;
       )");
       hlayout->addWidget(ssid_label);
 
+      // TODO: don't use images for this
       // strength indicator
       unsigned int strength_scale = network.strength / 17;
       QPixmap pix("../assets/images/network_" + QString::number(strength_scale) + ".png");
@@ -420,13 +421,13 @@ void WifiUI::refresh() {
     i++;
   }
 
-  QHBoxLayout *prev_next_buttons = new QHBoxLayout;//Adding constructor exposes the qt bug
+
+  // Setup buttons for pagination
+  QHBoxLayout *prev_next_buttons = new QHBoxLayout;
   QPushButton* prev = new QPushButton("Previous");
   prev->setEnabled(page);
-  prev->setFixedSize(400, button_height);
 
   QPushButton* next = new QPushButton("Next");
-  next->setFixedSize(400, button_height);
 
   // If there are more visible networks then we can show, enable going to next page
   next->setEnabled(wifi->seen_networks.size() > (page + 1) * networks_per_page);
@@ -438,7 +439,7 @@ void WifiUI::refresh() {
 
   QWidget *w = new QWidget;
   w->setLayout(prev_next_buttons);
-  vlayout->addWidget(w, 1, Qt::AlignBottom);
+  vlayout->addWidget(w, 0, Qt::AlignBottom);
 }
 
 void WifiUI::handleButton(QAbstractButton* button) {

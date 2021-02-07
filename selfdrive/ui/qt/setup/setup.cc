@@ -62,39 +62,43 @@ QPushButton * nav_btn(QString text) {
   return btn;
 }
 
-QWidget * Setup::getting_started() {
-
+QWidget * Setup::build_page(QString title, QWidget *content, bool next, bool prev) {
   QVBoxLayout *main_layout = new QVBoxLayout();
   main_layout->setContentsMargins(50, 50, 50, 50);
+  main_layout->addWidget(title_label(title), 0, Qt::AlignLeft | Qt::AlignTop);
 
-  main_layout->addWidget(title_label("Getting Started"), 0, Qt::AlignLeft | Qt::AlignTop);
+  main_layout->addWidget(content);
 
-  QLabel *body = new QLabel("Before we get on the road, let's finish\ninstallation and cover some details.");
-  body->setStyleSheet(R"(font-size: 65px;)");
-  main_layout->addWidget(body, 0, Qt::AlignCenter);
+  QHBoxLayout *nav_layout = new QHBoxLayout();
 
-  main_layout->addSpacing(100);
+  QPushButton *back_btn = new QPushButton("Back");
+  nav_layout->addWidget(back_btn, 0, Qt::AlignBottom | Qt::AlignLeft);
+  QObject::connect(back_btn, SIGNAL(released()), this, SLOT(prevPage()));
+  back_btn->setVisible(prev);
 
-  QPushButton *btn = new QPushButton("Continue");
-  main_layout->addWidget(btn);
-  QObject::connect(btn, SIGNAL(released()), this, SLOT(nextPage()));
+  QPushButton *continue_btn = new QPushButton("Continue");
+  nav_layout->addWidget(continue_btn, 0, Qt::AlignBottom | Qt::AlignRight);
+  QObject::connect(continue_btn, SIGNAL(released()), this, SLOT(nextPage()));
+  continue_btn->setVisible(next);
+
+  main_layout->addLayout(nav_layout, 0);
 
   QWidget *widget = new QWidget();
   widget->setLayout(main_layout);
   return widget;
 }
 
+QWidget * Setup::getting_started() {
+  QLabel *body = new QLabel("Before we get on the road, let's finish\ninstallation and cover some details.");
+  body->setStyleSheet(R"(font-size: 65px;)");
+  return build_page("Getting Started", body, true, false);
+}
+
 QWidget * Setup::network_setup() {
 
   // TODO: wait for internet, make it nice
 
-  QVBoxLayout *main_layout = new QVBoxLayout();
-  main_layout->setContentsMargins(50, 50, 50, 50);
-
-  main_layout->addWidget(title_label("Connect to WiFi"), 0, Qt::AlignTop);
-
   Networking *wifi = new Networking(this, false);
-  main_layout->addWidget(wifi);
   QObject::connect(wifi, &Networking::openKeyboard, this, [=]() {
     this->continue_btn->setVisible(false);
   });
@@ -102,22 +106,11 @@ QWidget * Setup::network_setup() {
     this->continue_btn->setVisible(true);
   });
 
-  continue_btn = nav_btn("Continue");
-  main_layout->addWidget(continue_btn, 0, Qt::AlignRight);
-  QObject::connect(continue_btn, SIGNAL(released()), this, SLOT(nextPage()));
-
-  QWidget *widget = new QWidget();
-  widget->setLayout(main_layout);
-  return widget;
+  return build_page("Connect to WiFi", wifi, true, true);
 }
 
 QWidget * Setup::software_selection() {
   QVBoxLayout *main_layout = new QVBoxLayout();
-  main_layout->setMargin(100);
-
-  main_layout->addWidget(title_label("Choose Software"), 0, Qt::AlignCenter);
-
-  main_layout->addSpacing(50);
 
   QPushButton *dashcam_btn = new QPushButton("Dashcam");
   main_layout->addWidget(dashcam_btn);
@@ -131,15 +124,9 @@ QWidget * Setup::software_selection() {
   main_layout->addWidget(custom_btn);
   QObject::connect(custom_btn, SIGNAL(released()), this, SLOT(nextPage()));
 
-  main_layout->addSpacing(100);
-
-  QPushButton *prev_btn = new QPushButton("Back");
-  main_layout->addWidget(prev_btn);
-  QObject::connect(prev_btn, SIGNAL(released()), this, SLOT(prevPage()));
-
   QWidget *widget = new QWidget();
   widget->setLayout(main_layout);
-  return widget;
+  return build_page("Choose Software", widget, true, true);
 }
 
 QWidget * Setup::custom_software() {
@@ -153,6 +140,7 @@ QWidget * Setup::custom_software() {
   main_layout->addWidget(input);
 
   QObject::connect(input, SIGNAL(emitText(QString)), this, SLOT(download(QString)));
+  QObject::connect(input, SIGNAL(cancel()), this, SLOT(prevPage()));
 
   QWidget *widget = new QWidget();
   widget->setLayout(main_layout);

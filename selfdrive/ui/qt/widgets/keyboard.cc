@@ -95,12 +95,9 @@ Keyboard::Keyboard(QWidget *parent) : QWidget(parent) {
       font-size: 50px;
       margin: 0px;
       padding: 15px;
-      border-radius: 25px;
+      border: 10px solid #444444;
       color: #dddddd;
       background-color: #444444;
-    }
-    * {
-      background-color: #99777777;
     }
   )");
 }
