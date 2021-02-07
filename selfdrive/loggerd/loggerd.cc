@@ -94,12 +94,17 @@ typedef struct QlogState {
 
 class EncoderState {
 public:
-  EncoderState(const LogCameraInfo &ci, SubSocket *sock, const QlogState &qs, bool need_waiting)
-      : ci(ci), frame_sock(sock), qlog_state(qs), need_waiting(need_waiting) {}
+ EncoderState(const LogCameraInfo &ci, SubSocket *sock, const QlogState &qs, bool need_waiting)
+     : ci(ci), frame_sock(sock), qlog_state(qs), need_waiting(need_waiting) {
+   thread = std::thread(&EncoderState::encoder_thread, this);
+ }
+ ~EncoderState() { thread.join(); }
+ void encoder_thread();
   LogCameraInfo ci;
-  SubSocket *frame_sock;
+  std::unique_ptr<SubSocket> frame_sock;
   QlogState qlog_state;
   const bool need_waiting;
+  std::thread thread;
 };
 
 struct LoggerdState {
@@ -113,7 +118,7 @@ struct LoggerdState {
   std::atomic<double> last_camera_seen_tms;
   std::atomic<int> encoders_waiting;
   std::condition_variable cv;
-  std::vector<std::unique_ptr<EncoderState>> encoder_states;
+  std::vector<EncoderState *> encoder_states;
 };
 LoggerdState s;
 
@@ -130,8 +135,8 @@ void drain_socket(LoggerHandle *lh, SubSocket *sock, QlogState &qs) {
   }
 }
 
-void encoder_thread(EncoderState *es) {
-  set_thread_name(es->ci.filename);
+void EncoderState::encoder_thread() {
+  set_thread_name(ci.filename);
 
   uint32_t total_frame_cnt = 0;
   LoggerHandle *lh = NULL;
@@ -140,7 +145,7 @@ void encoder_thread(EncoderState *es) {
   std::string segment_path;
   const int max_segment_frames = SEGMENT_LENGTH * MAIN_FPS;
  
-  VisionIpcClient vipc_client = VisionIpcClient("camerad", es->ci.stream_type, false);
+  VisionIpcClient vipc_client = VisionIpcClient("camerad", ci.stream_type, false);
   while (!do_exit) {
     if (!vipc_client.connect(false)){
       util::sleep_for(100);
@@ -152,10 +157,10 @@ void encoder_thread(EncoderState *es) {
       VisionBuf buf_info = vipc_client.buffers[0];
       LOGD("encoder init %dx%d", buf_info.width, buf_info.height);
       // main encoder
-      encoders.push_back(new Encoder(es->ci.filename, buf_info.width, buf_info.height,
-                                     es->ci.fps, es->ci.bitrate, es->ci.is_h265, es->ci.downscale));
+      encoders.push_back(new Encoder(ci.filename, buf_info.width, buf_info.height,
+                                     ci.fps, ci.bitrate, ci.is_h265, ci.downscale));
       // qcamera encoder
-      if (es->ci.has_qcamera) {
+      if (ci.has_qcamera) {
         encoders.push_back(new Encoder(qcam_info.filename, qcam_info.frame_width, qcam_info.frame_height,
                                        qcam_info.fps, qcam_info.bitrate, qcam_info.is_h265, qcam_info.downscale));
       }
@@ -172,7 +177,7 @@ void encoder_thread(EncoderState *es) {
         std::unique_lock lk(s.rotate_lock);
         // rotate the encoder if the logger is on a newer segment
         should_rotate = (encoder_segment != s.rotate_segment);
-        if (!should_rotate && es->need_waiting && ((total_frame_cnt % max_segment_frames) == 0)) {
+        if (!should_rotate && need_waiting && ((total_frame_cnt % max_segment_frames) == 0)) {
           // encoder need rotate
           should_rotate = true;
           s.encoders_waiting++;
@@ -185,7 +190,7 @@ void encoder_thread(EncoderState *es) {
         }
       }
       if (should_rotate) {
-        LOGW("camera %d rotate encoder to %s", es->ci.id, segment_path.c_str());
+        LOGW("camera %d rotate encoder to %s", ci.id, segment_path.c_str());
         if (lh) {
           lh_close(lh);
         }
@@ -197,7 +202,7 @@ void encoder_thread(EncoderState *es) {
       }
 
       // log frame socket
-      drain_socket(lh, es->frame_sock, es->qlog_state);
+      drain_socket(lh, frame_sock.get(), qlog_state);
       // encode a frame
       for (int i = 0; i < encoders.size(); ++i) {
         int out_segment = -1;
@@ -208,11 +213,11 @@ void encoder_thread(EncoderState *es) {
           // publish encode index
           MessageBuilder msg;
           // this is really ugly
-          auto eidx = es->ci.id == D_CAMERA ? msg.initEvent().initFrontEncodeIdx() : (es->ci.id == E_CAMERA ? msg.initEvent().initWideEncodeIdx() : msg.initEvent().initEncodeIdx());
+          auto eidx = ci.id == D_CAMERA ? msg.initEvent().initFrontEncodeIdx() : (ci.id == E_CAMERA ? msg.initEvent().initWideEncodeIdx() : msg.initEvent().initEncodeIdx());
           eidx.setFrameId(extra.frame_id);
           eidx.setTimestampSof(extra.timestamp_sof);
           eidx.setTimestampEof(extra.timestamp_eof);
-          eidx.setType((IS_QCOM2 || es->ci.id != D_CAMERA) ? cereal::EncodeIndex::Type::FULL_H_E_V_C : cereal::EncodeIndex::Type::FRONT);
+          eidx.setType((IS_QCOM2 || ci.id != D_CAMERA) ? cereal::EncodeIndex::Type::FULL_H_E_V_C : cereal::EncodeIndex::Type::FRONT);
           eidx.setEncodeId(total_frame_cnt);
           eidx.setSegmentNum(out_segment);
           eidx.setSegmentId(out_id);
@@ -284,20 +289,16 @@ int main(int argc, char** argv) {
       return strcmp(it.name, ci.frame_packet_name) == 0 && (ci.id != D_CAMERA || record_front);
     });
     if (cam != std::end(cameras_logged)) {
+      // init and start encoder thread
       bool need_waiting = (IS_QCOM2 || cam->id != D_CAMERA);
-      s.encoder_states.push_back(std::make_unique<EncoderState>(*cam, sock, qs, need_waiting));
+      s.encoders_max_waiting += need_waiting;
+      s.encoder_states.push_back(new EncoderState(*cam, sock, qs, need_waiting));
     } else {
       poller->registerSocket(sock);
       qlog_states[sock] = qs;
     }
   }
 
-  // start encoders
-  std::vector<std::thread> encoder_threads;
-  for (auto &es : s.encoder_states) {
-    s.encoders_max_waiting += es->need_waiting;
-    encoder_threads.push_back(std::thread(encoder_thread, es.get()));
-  }
   // poll for new messages on all sockets
   while (!do_exit) {
     for (auto sock : poller->poll(1000)) {
@@ -325,9 +326,8 @@ int main(int argc, char** argv) {
   LOGW("closing encoders");
   s.cv.notify_all();
   for (auto &[sock, qs] : qlog_states) delete sock;
-  for (auto &t : encoder_threads) t.join();
   for (auto &e : s.encoder_states) {
-    delete e->frame_sock;
+    delete e;
   }
 
   LOGW("closing logger");
