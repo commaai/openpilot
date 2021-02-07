@@ -373,7 +373,6 @@ void WifiUI::refresh() {
 
   int i = 0;
   int countWidgets = 0;
-  int button_height = static_cast<int>(this->height() / (networks_per_page + 1) * 0.6);
   for (Network &network : wifi->seen_networks) {
     QHBoxLayout *hlayout = new QHBoxLayout;
     if (page * networks_per_page <= i && i < (page + 1) * networks_per_page) {
@@ -396,16 +395,13 @@ void WifiUI::refresh() {
       QLabel *icon = new QLabel();
       icon->setPixmap(pix.scaledToWidth(100, Qt::SmoothTransformation));
       icon->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
-      hlayout->addWidget(icon);
+      hlayout->addWidget(icon, 0, Qt::AlignRight);
       hlayout->addSpacing(20);
 
       // connect button
       QPushButton* btn = new QPushButton(network.security_type == SecurityType::UNSUPPORTED ? "Unsupported" : (network.connected == ConnectedType::CONNECTED ? "Connected" : (network.connected == ConnectedType::CONNECTING ? "Connecting" : "Connect")));
-      btn->setFixedWidth(400);
-      btn->setFixedHeight(button_height);
       btn->setDisabled(network.connected == ConnectedType::CONNECTED || network.connected == ConnectedType::CONNECTING || network.security_type == SecurityType::UNSUPPORTED);
-      hlayout->addWidget(btn);
-      hlayout->addSpacing(20);
+      hlayout->addWidget(btn, 0, Qt::AlignRight);
 
       connectButtons->addButton(btn, i);
 

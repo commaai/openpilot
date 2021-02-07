@@ -95,17 +95,7 @@ QWidget * Setup::getting_started() {
 }
 
 QWidget * Setup::network_setup() {
-
-  // TODO: wait for internet, make it nice
-
   Networking *wifi = new Networking(this, false);
-  QObject::connect(wifi, &Networking::openKeyboard, this, [=]() {
-    this->continue_btn->setVisible(false);
-  });
-  QObject::connect(wifi, &Networking::closeKeyboard, this, [=]() {
-    this->continue_btn->setVisible(true);
-  });
-
   return build_page("Connect to WiFi", wifi, true, true);
 }
 
