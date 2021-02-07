@@ -276,7 +276,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
         border: none;
         background: none;
         font-size: 65px;
-        font-weight: 600;
+        font-weight: 500;
         padding-top: 35px;
         padding-bottom: 35px;
       }

@@ -135,7 +135,7 @@ void Networking::connectToNetwork(Network n) {
 
 void Networking::abortTextInput(){
   s->setCurrentIndex(1);
-    emit closeKeyboard();
+  emit closeKeyboard();
 }
 
 void Networking::receiveText(QString text) {
@@ -157,7 +157,6 @@ void Networking::wrongPassword(QString ssid) {
   if(!this->isVisible()){
     qDebug()<<"Wrong password, but we are not visible";
     return;
-
   }
   for (Network n : wifi->seen_networks) {
     if (n.ssid == ssid) {

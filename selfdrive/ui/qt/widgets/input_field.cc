@@ -102,6 +102,7 @@ InputDialog::InputDialog(QString prompt_text, QWidget *parent): QDialog(parent) 
   layout->addSpacing(20);
   line = new QLineEdit();
   line->setStyleSheet(R"(
+    border: none;
     background-color: #444444;
     font-size: 80px;
     font-weight: 500;

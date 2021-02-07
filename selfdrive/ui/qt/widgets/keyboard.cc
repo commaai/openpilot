@@ -31,12 +31,7 @@ KeyboardLayout::KeyboardLayout(QWidget *parent, std::vector<QVector<QString>> la
       btn->setFixedHeight(120);
       btn_group->addButton(btn);
       hlayout->addSpacing(30);
-      if (p == QString("  ")) {
-        hlayout->addWidget(btn, SPACEBAR_WIDTH);
-      } else {
-        hlayout->addWidget(btn, DEFAULT_WIDTH);
-      }
-
+      hlayout->addWidget(btn, p == QString("  ") ? SPACEBAR_WIDTH : DEFAULT_WIDTH);
     }
 
     if (i == 1) {
@@ -52,7 +47,7 @@ KeyboardLayout::KeyboardLayout(QWidget *parent, std::vector<QVector<QString>> la
       font-size: 60px;
       margin: 0px;
       padding: 0px;
-      border: 10px solid #444444;
+      border: 5px solid #444444;
       color: #dddddd;
       background-color: #444444;
     }

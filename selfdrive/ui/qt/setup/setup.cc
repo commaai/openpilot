@@ -14,12 +14,14 @@
 #define USER_AGENT "AGNOSSetup-0.1"
 
 void Setup::download(QString url) {
-  setCurrentIndex(count() - 1);
+  setCurrentIndex(count() - 2);
+  repaint();
 
   CURL *curl;
   curl = curl_easy_init();
-  // TODO: exit with return code
-  if (!curl) return;
+  if (!curl) {
+    emit downloadFailed();
+  }
 
   char tmpfile[] = "/tmp/installer_XXXXXX";
   FILE *fp = fdopen(mkstemp(tmpfile), "w");
@@ -30,7 +32,12 @@ void Setup::download(QString url) {
   curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
   curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
   curl_easy_setopt(curl, CURLOPT_USERAGENT, USER_AGENT);
-  curl_easy_perform(curl);
+
+  int ret = curl_easy_perform(curl);
+  if (ret != CURLE_OK) {
+    emit downloadFailed();
+  }
+
   curl_easy_cleanup(curl);
   fclose(fp);
 
@@ -44,22 +51,6 @@ QLabel * title_label(QString text) {
     font-weight: 500;
   )");
   return l;
-}
-
-QPushButton * nav_btn(QString text) {
-  QPushButton *btn = new QPushButton(text);
-  btn->setStyleSheet(R"(
-    QPushButton {
-      background: none;
-      padding: 50px;
-      padding-right: 100px;
-      padding-left: 100px;
-      border: 7px solid white;
-      border-radius: 20px;
-      font-size: 50px;
-    }
-  )");
-  return btn;
 }
 
 QWidget * Setup::build_page(QString title, QWidget *content, bool next, bool prev) {
@@ -126,8 +117,37 @@ QWidget * Setup::software_selection() {
 
 QWidget * Setup::downloading() {
   QVBoxLayout *main_layout = new QVBoxLayout();
-
   main_layout->addWidget(title_label("Downloading..."), 0, Qt::AlignCenter);
+
+  QWidget *widget = new QWidget();
+  widget->setLayout(main_layout);
+  return widget;
+}
+
+QWidget * Setup::download_failed() {
+  QVBoxLayout *main_layout = new QVBoxLayout();
+  main_layout->setContentsMargins(50, 50, 50, 50);
+  main_layout->addWidget(title_label("Download Failed"), 0, Qt::AlignLeft | Qt::AlignTop);
+
+  //main_layout->addWidget(content);
+
+  QHBoxLayout *nav_layout = new QHBoxLayout();
+
+  QPushButton *reboot_btn = new QPushButton("Reboot");
+  nav_layout->addWidget(reboot_btn, 0, Qt::AlignBottom | Qt::AlignLeft);
+  QObject::connect(reboot_btn, &QPushButton::released, this, [=]() {
+#ifdef QCOM2
+    std::system("reboot");
+#endif
+  });
+
+  QPushButton *restart_btn = new QPushButton("Start over");
+  nav_layout->addWidget(restart_btn, 0, Qt::AlignBottom | Qt::AlignRight);
+  QObject::connect(restart_btn, &QPushButton::released, this, [=]() {
+    setCurrentIndex(0);
+  });
+
+  main_layout->addLayout(nav_layout, 0);
 
   QWidget *widget = new QWidget();
   widget->setLayout(main_layout);
@@ -147,6 +167,9 @@ Setup::Setup(QWidget *parent) {
   addWidget(network_setup());
   addWidget(software_selection());
   addWidget(downloading());
+  addWidget(download_failed());
+
+  QObject::connect(this, SIGNAL(downloadFailed()), this, SLOT(nextPage()));
 
   setStyleSheet(R"(
     * {
