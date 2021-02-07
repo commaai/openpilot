@@ -88,9 +88,18 @@ QWidget * Setup::build_page(QString title, QWidget *content, bool next, bool pre
   return widget;
 }
 
+#include <QInputDialog>
+#include <iostream>
+
 QWidget * Setup::getting_started() {
   QLabel *body = new QLabel("Before we get on the road, let's finish\ninstallation and cover some details.");
   body->setStyleSheet(R"(font-size: 65px;)");
+
+  bool ok;
+  QString text = QInputDialog::getText(this, tr("QInputDialog::getText()"),
+                                       tr("User name:"), QLineEdit::Normal,
+                                       QDir::home().dirName(), &ok);
+  std::cout << text.toStdString() << "\n";
   return build_page("Getting Started", body, true, false);
 }
 
