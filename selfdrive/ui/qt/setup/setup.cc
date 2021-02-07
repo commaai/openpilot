@@ -80,7 +80,7 @@ QWidget * Setup::build_page(QString title, QWidget *content, bool next, bool pre
 QWidget * Setup::getting_started() {
   QLabel *body = new QLabel("Before we get on the road, let's finish\ninstallation and cover some details.");
   body->setAlignment(Qt::AlignHCenter);
-  body->setStyleSheet(R"(font-size: 65px;)");
+  body->setStyleSheet(R"(font-size: 80px;)");
   return build_page("Getting Started", body, true, false);
 }
 
@@ -131,7 +131,7 @@ QWidget * Setup::download_failed() {
   QLabel *body = new QLabel("Ensure the entered URL is valid, and the device's network connection is good.");
   body->setWordWrap(true);
   body->setAlignment(Qt::AlignHCenter);
-  body->setStyleSheet(R"(font-size: 65px;)");
+  body->setStyleSheet(R"(font-size: 80px;)");
   main_layout->addWidget(body);
 
   QHBoxLayout *nav_layout = new QHBoxLayout();

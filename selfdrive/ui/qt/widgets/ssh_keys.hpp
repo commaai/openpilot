@@ -1,8 +1,7 @@
 #pragma once
 
-#include <QWidget>
-#include <QStackedLayout>
 #include <QTimer>
+#include <QWidget>
 #include <QNetworkAccessManager>
 
 class SSH : public QWidget {
@@ -12,7 +11,6 @@ public:
   explicit SSH(QWidget* parent = 0);
 
 private:
-  QStackedLayout* slayout;
   QNetworkAccessManager* manager;
   QNetworkReply* reply;
   QTimer* networkTimer;
