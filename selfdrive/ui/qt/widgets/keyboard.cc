@@ -92,8 +92,12 @@ Keyboard::Keyboard(QWidget *parent) : QWidget(parent) {
 
   setStyleSheet(R"(
     QPushButton {
-      padding: 0;
       font-size: 50px;
+      margin: 0px;
+      padding: 15px;
+      border-radius: 25px;
+      color: #dddddd;
+      background-color: #444444;
     }
     * {
       background-color: #99777777;

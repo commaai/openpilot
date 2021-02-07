@@ -43,7 +43,7 @@ std::string exec(const char* cmd) {
 
 // Networking functions
 
-Networking::Networking(QWidget* parent) : QWidget(parent){
+Networking::Networking(QWidget* parent, bool show_advanced) : QWidget(parent){
   try {
     wifi = new WifiManager(this);
   } catch (std::exception &e) {
@@ -68,13 +68,16 @@ Networking::Networking(QWidget* parent) : QWidget(parent){
   s->addWidget(inputField);
 
   QVBoxLayout* vlayout = new QVBoxLayout;
-  QPushButton* advancedSettings = new QPushButton("Advanced");
-  advancedSettings->setStyleSheet(R"(margin-right: 30px)");
-  advancedSettings->setFixedSize(300, 100);
-  connect(advancedSettings, &QPushButton::released, [=](){s->setCurrentIndex(2);});
-  vlayout->addSpacing(10);
-  vlayout->addWidget(advancedSettings, 0, Qt::AlignRight);
-  vlayout->addSpacing(10);
+
+  if (show_advanced) {
+    QPushButton* advancedSettings = new QPushButton("Advanced");
+    advancedSettings->setStyleSheet(R"(margin-right: 30px)");
+    advancedSettings->setFixedSize(300, 100);
+    connect(advancedSettings, &QPushButton::released, [=](){s->setCurrentIndex(2);});
+    vlayout->addSpacing(10);
+    vlayout->addWidget(advancedSettings, 0, Qt::AlignRight);
+    vlayout->addSpacing(10);
+  }
 
   wifiWidget = new WifiUI(0, 5, wifi);
   connect(wifiWidget, SIGNAL(connectToNetwork(Network)), this, SLOT(connectToNetwork(Network)));
@@ -99,8 +102,8 @@ Networking::Networking(QWidget* parent) : QWidget(parent){
     QPushButton {
       font-size: 50px;
       margin: 0px;
-      padding: 15px;
-      border-radius: 25px;
+      padding: 0px;
+      border: 7px solid #00000000;
       color: #dddddd;
       background-color: #444444;
     }
@@ -380,7 +383,11 @@ void WifiUI::refresh() {
       if(ssid.length() > 30){
         ssid = ssid.left(30)+"…";
       }
-      hlayout->addWidget(new QLabel(ssid));
+      QLabel *ssid_label = new QLabel(ssid);
+      ssid_label->setStyleSheet(R"(
+        font-size: 40px;
+      )");
+      hlayout->addWidget(ssid_label);
 
       // strength indicator
       unsigned int strength_scale = network.strength / 17;
@@ -403,7 +410,7 @@ void WifiUI::refresh() {
 
       QWidget * w = new QWidget;
       w->setLayout(hlayout);
-      vlayout->addWidget(w, 1);
+      vlayout->addWidget(w, 1, Qt::AlignTop);
       // Don't add the last horizontal line
       if (page * networks_per_page <= i+1 && i+1 < (page + 1) * networks_per_page && i+1 < wifi->seen_networks.size()) {
         vlayout->addWidget(hline(), 0);
@@ -411,14 +418,6 @@ void WifiUI::refresh() {
       countWidgets++;
     }
     i++;
-  }
-
-  // Pad vlayout to prevert oversized network widgets in case of low visible network count
-  for (int i = countWidgets; i < networks_per_page; i++) {
-    QWidget *w = new QWidget;
-    // That we need to add w twice was determined empiricaly
-    vlayout->addWidget(w, 1);
-    vlayout->addWidget(w, 1);
   }
 
   QHBoxLayout *prev_next_buttons = new QHBoxLayout;//Adding constructor exposes the qt bug

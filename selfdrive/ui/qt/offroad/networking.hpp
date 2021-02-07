@@ -73,10 +73,10 @@ class Networking : public QWidget {
   Q_OBJECT
 
 public:
-  explicit Networking(QWidget* parent = 0);
+  explicit Networking(QWidget* parent = 0, bool show_advanced = true);
 
 private:
-  QStackedLayout* s = nullptr;// keyboard, wifiScreen, advanced
+  QStackedLayout* s = nullptr; // keyboard, wifiScreen, advanced
   AdvancedNetworking* an = nullptr;
 
   Network selectedNetwork;

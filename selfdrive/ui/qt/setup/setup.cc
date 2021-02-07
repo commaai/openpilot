@@ -7,7 +7,7 @@
 #include <QApplication>
 
 #include "setup.hpp"
-#include "offroad/wifi.hpp"
+#include "offroad/networking.hpp"
 #include "widgets/input_field.hpp"
 #include "qt_window.hpp"
 
@@ -41,16 +41,33 @@ QLabel * title_label(QString text) {
   QLabel *l = new QLabel(text);
   l->setStyleSheet(R"(
     font-size: 100px;
-    font-weight: bold;
+    font-weight: 500;
   )");
   return l;
 }
 
-QWidget * Setup::getting_started() {
-  QVBoxLayout *main_layout = new QVBoxLayout();
-  main_layout->setContentsMargins(200, 100, 200, 100);
+QPushButton * nav_btn(QString text) {
+  QPushButton *btn = new QPushButton(text);
+  btn->setStyleSheet(R"(
+    QPushButton {
+      background: none;
+      padding: 50px;
+      padding-right: 100px;
+      padding-left: 100px;
+      border: 7px solid white;
+      border-radius: 20px;
+      font-size: 50px;
+    }
+  )");
+  return btn;
+}
 
-  main_layout->addWidget(title_label("Getting Started"), 0, Qt::AlignCenter);
+QWidget * Setup::getting_started() {
+
+  QVBoxLayout *main_layout = new QVBoxLayout();
+  main_layout->setContentsMargins(50, 50, 50, 50);
+
+  main_layout->addWidget(title_label("Getting Started"), 0, Qt::AlignLeft | Qt::AlignTop);
 
   QLabel *body = new QLabel("Before we get on the road, let's finish\ninstallation and cover some details.");
   body->setStyleSheet(R"(font-size: 65px;)");
@@ -69,22 +86,24 @@ QWidget * Setup::getting_started() {
 
 QWidget * Setup::network_setup() {
 
+  // TODO: wait for internet, make it nice
+
   QVBoxLayout *main_layout = new QVBoxLayout();
   main_layout->setContentsMargins(50, 50, 50, 50);
 
   main_layout->addWidget(title_label("Connect to WiFi"), 0, Qt::AlignTop);
 
-  WifiUI *wifi = new WifiUI(this, 6);
+  Networking *wifi = new Networking(this, false);
   main_layout->addWidget(wifi);
-  QObject::connect(wifi, &WifiUI::openKeyboard, this, [=]() {
+  QObject::connect(wifi, &Networking::openKeyboard, this, [=]() {
     this->continue_btn->setVisible(false);
   });
-  QObject::connect(wifi, &WifiUI::closeKeyboard, this, [=]() {
+  QObject::connect(wifi, &Networking::closeKeyboard, this, [=]() {
     this->continue_btn->setVisible(true);
   });
 
-  continue_btn = new QPushButton("Continue");
-  main_layout->addWidget(continue_btn);
+  continue_btn = nav_btn("Continue");
+  main_layout->addWidget(continue_btn, 0, Qt::AlignRight);
   QObject::connect(continue_btn, SIGNAL(released()), this, SLOT(nextPage()));
 
   QWidget *widget = new QWidget();
@@ -168,17 +187,16 @@ Setup::Setup(QWidget *parent) {
   setStyleSheet(R"(
     * {
       font-family: Inter;
-    }
-    QWidget {
       color: white;
       background-color: black;
     }
     QPushButton {
-      font-size: 60px;
-      padding: 60px;
-      width: 800px;
-      color: white;
-      background-color: blue;
+      padding: 50px;
+      padding-right: 100px;
+      padding-left: 100px;
+      border: 7px solid white;
+      border-radius: 20px;
+      font-size: 50px;
     }
   )");
 }
