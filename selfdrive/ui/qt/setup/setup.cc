@@ -17,8 +17,7 @@ void Setup::download(QString url) {
   setCurrentIndex(count() - 2);
   repaint();
 
-  CURL *curl;
-  curl = curl_easy_init();
+  CURL *curl = curl_easy_init();
   if (!curl) {
     emit downloadFailed();
   }
@@ -37,7 +36,6 @@ void Setup::download(QString url) {
   if (ret != CURLE_OK) {
     emit downloadFailed();
   }
-
   curl_easy_cleanup(curl);
   fclose(fp);
 
@@ -81,6 +79,7 @@ QWidget * Setup::build_page(QString title, QWidget *content, bool next, bool pre
 
 QWidget * Setup::getting_started() {
   QLabel *body = new QLabel("Before we get on the road, let's finish\ninstallation and cover some details.");
+  body->setAlignment(Qt::AlignHCenter);
   body->setStyleSheet(R"(font-size: 65px;)");
   return build_page("Getting Started", body, true, false);
 }
@@ -129,7 +128,11 @@ QWidget * Setup::download_failed() {
   main_layout->setContentsMargins(50, 50, 50, 50);
   main_layout->addWidget(title_label("Download Failed"), 0, Qt::AlignLeft | Qt::AlignTop);
 
-  //main_layout->addWidget(content);
+  QLabel *body = new QLabel("Ensure the entered URL is valid, and the device's network connection is good.");
+  body->setWordWrap(true);
+  body->setAlignment(Qt::AlignHCenter);
+  body->setStyleSheet(R"(font-size: 65px;)");
+  main_layout->addWidget(body);
 
   QHBoxLayout *nav_layout = new QHBoxLayout();
 
@@ -137,7 +140,7 @@ QWidget * Setup::download_failed() {
   nav_layout->addWidget(reboot_btn, 0, Qt::AlignBottom | Qt::AlignLeft);
   QObject::connect(reboot_btn, &QPushButton::released, this, [=]() {
 #ifdef QCOM2
-    std::system("reboot");
+    std::system("sudo reboot");
 #endif
   });
 

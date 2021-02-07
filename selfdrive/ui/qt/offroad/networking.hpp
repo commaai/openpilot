@@ -56,6 +56,7 @@ private:
   WifiManager* wifi = nullptr;
 
   bool isSSHEnabled();
+
 signals:
   void openKeyboard();
   void closeKeyboard();
@@ -83,19 +84,10 @@ private:
 
   WifiUI* wifiWidget;
   WifiManager* wifi = nullptr;
-  InputField* inputField;
-
-signals:
-  void openKeyboard();
-  void closeKeyboard();
 
 private slots:
   void connectToNetwork(Network n);
   void refresh();
-  void receiveText(QString text);
-  void abortTextInput();
   void wrongPassword(QString ssid);
-  void successfulConnection(QString ssid);
-  void sidebarChange();
 };
 

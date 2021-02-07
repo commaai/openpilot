@@ -56,15 +56,8 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QWidget(parent){
     return;
   }
   connect(wifi, SIGNAL(wrongPassword(QString)), this, SLOT(wrongPassword(QString)));
-  connect(wifi, SIGNAL(successfulConnection(QString)), this, SLOT(successfulConnection(QString)));
 
   s = new QStackedLayout;
-
-  inputField = new InputField(this, 8);
-  connect(inputField, SIGNAL(emitText(QString)), this, SLOT(receiveText(QString)));
-  connect(inputField, SIGNAL(cancel()), this, SLOT(abortTextInput()));
-  inputField->setContentsMargins(100,0,100,0);
-  s->addWidget(inputField);
 
   QVBoxLayout* vlayout = new QVBoxLayout;
 
@@ -86,11 +79,7 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QWidget(parent){
 
   an = new AdvancedNetworking(this, wifi);
   connect(an, &AdvancedNetworking::backPress, [=](){s->setCurrentIndex(1);});
-  connect(an, &AdvancedNetworking::openKeyboard, [=](){emit openKeyboard();});
-  connect(an, &AdvancedNetworking::closeKeyboard, [=](){emit closeKeyboard();});
   s->addWidget(an);
-
-  s->setCurrentIndex(1);
 
   // Update network status
   QTimer* timer = new QTimer(this);
@@ -126,38 +115,14 @@ void Networking::connectToNetwork(Network n) {
   if (n.security_type == SecurityType::OPEN) {
     wifi->connect(n);
   } else if (n.security_type == SecurityType::WPA) {
-    inputField->setPromptText("Enter password for \"" + n.ssid + "\"");
-    s->setCurrentIndex(0);
-    selectedNetwork = n;
-    emit openKeyboard();
+    QString pass = InputDialog::getText("Enter password for \"" + n.ssid + "\"");
+    wifi->connect(n, pass);
   }
-}
-
-void Networking::abortTextInput(){
-  s->setCurrentIndex(1);
-  emit closeKeyboard();
-}
-
-void Networking::receiveText(QString text) {
-  wifi->disconnect();
-  wifi->connect(selectedNetwork, text);
-  s->setCurrentIndex(1);
-  emit closeKeyboard();
 }
 
 void Networking::wrongPassword(QString ssid) {
-  if(s->currentIndex()==0){
-    qDebug()<<"Wrong password, but we are already trying a new network";
-    return;
-  }
-  if(s->currentIndex()==2){
-    qDebug()<<"Wrong password, but we are in advanced settings";
-    return;
-  }
-  if(!this->isVisible()){
-    qDebug()<<"Wrong password, but we are not visible";
-    return;
-  }
+  return; // TODO: add this back
+  /*
   for (Network n : wifi->seen_networks) {
     if (n.ssid == ssid) {
       inputField->setPromptText("Wrong password for \"" + n.ssid +"\"");
@@ -166,20 +131,7 @@ void Networking::wrongPassword(QString ssid) {
       return;
     }
   }
-}
-
-void Networking::successfulConnection(QString ssid) {
-  //Maybe we will want to do something here in the future.
-}
-
-void Networking::sidebarChange(){
-  if (s == nullptr || an == nullptr){
-    return;
-  }
-
-  s->setCurrentIndex(1);
-  an->s->setCurrentIndex(1);
-  refresh();
+  */
 }
 
 QFrame* hline(QWidget* parent = 0){
