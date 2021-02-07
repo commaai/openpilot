@@ -47,7 +47,6 @@ public:
   QStackedLayout* s;
 
 private:
-  InputField* inputField;
   QLabel* ipLabel;
   QPushButton* editPasswordButton;
   SSH* ssh;
@@ -58,13 +57,9 @@ private:
   bool isSSHEnabled();
 
 signals:
-  void openKeyboard();
-  void closeKeyboard();
   void backPress();
 
 public slots:
-  void receiveText(QString text);
-  void abortTextInput();
   void toggleTethering(int enable);
   void toggleSSH(int enable);
   void refresh();

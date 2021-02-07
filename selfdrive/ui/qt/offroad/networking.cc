@@ -29,16 +29,16 @@ QWidget* layoutToWidget(QLayout* l, QWidget* parent){
 
 // https://stackoverflow.com/questions/478898/how-do-i-execute-a-command-and-get-the-output-of-the-command-within-c-using-po
 std::string exec(const char* cmd) {
-    std::array<char, 128> buffer;
-    std::string result;
-    std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd, "r"), pclose);
-    if (!pipe) {
-        throw std::runtime_error("popen() failed!");
-    }
-    while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
-        result += buffer.data();
-    }
-    return result;
+  std::array<char, 128> buffer;
+  std::string result;
+  std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd, "r"), pclose);
+  if (!pipe) {
+    throw std::runtime_error("popen() failed!");
+  }
+  while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
+    result += buffer.data();
+  }
+  return result;
 }
 
 // Networking functions
@@ -65,7 +65,7 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QWidget(parent){
     QPushButton* advancedSettings = new QPushButton("Advanced");
     advancedSettings->setStyleSheet(R"(margin-right: 30px)");
     advancedSettings->setFixedSize(300, 100);
-    connect(advancedSettings, &QPushButton::released, [=](){s->setCurrentIndex(2);});
+    connect(advancedSettings, &QPushButton::released, [=](){s->setCurrentIndex(1);});
     vlayout->addSpacing(10);
     vlayout->addWidget(advancedSettings, 0, Qt::AlignRight);
     vlayout->addSpacing(10);
@@ -78,7 +78,7 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QWidget(parent){
   s->addWidget(layoutToWidget(vlayout, this));
 
   an = new AdvancedNetworking(this, wifi);
-  connect(an, &AdvancedNetworking::backPress, [=](){s->setCurrentIndex(1);});
+  connect(an, &AdvancedNetworking::backPress, [=](){s->setCurrentIndex(0);});
   s->addWidget(an);
 
   // Update network status
@@ -145,18 +145,13 @@ QFrame* hline(QWidget* parent = 0){
 // AdvancedNetworking functions
 
 AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWidget(parent), wifi(wifi){
-  s = new QStackedLayout;// inputField, mainPage, SSH settings
-  inputField = new InputField(this, 8);
-  connect(inputField, SIGNAL(emitText(QString)), this, SLOT(receiveText(QString)));
-  connect(inputField, SIGNAL(cancel()), this, SLOT(abortTextInput()));
-  inputField->setContentsMargins(100,0,100,0);
-  s->addWidget(inputField);
+  s = new QStackedLayout; // mainPage, SSH settings
 
   QVBoxLayout* vlayout = new QVBoxLayout;
 
   // Back button
   QHBoxLayout* backLayout = new QHBoxLayout;
-  QPushButton* back = new QPushButton("BACK");
+  QPushButton* back = new QPushButton("Back");
   back->setFixedSize(500, 100);
   connect(back, &QPushButton::released, [=](){emit backPress();});
   backLayout->addWidget(back, 0, Qt::AlignLeft);
@@ -181,7 +176,12 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   tetheringPassword->addWidget(new QLabel("Edit tethering password"), 1);
   editPasswordButton = new QPushButton("EDIT");
   editPasswordButton->setFixedWidth(500);
-  connect(editPasswordButton, &QPushButton::released, [=](){inputField->setPromptText("Enter the new hotspot password"); s->setCurrentIndex(0); emit openKeyboard();});
+  connect(editPasswordButton, &QPushButton::released, [=](){
+    QString pass = InputDialog::getText("Enter new tethering password");
+    if (pass.size()) {
+      wifi->changeTetheringPassword(pass);
+    }
+  });
   tetheringPassword->addWidget(editPasswordButton, 1, Qt::AlignRight);
   vlayout->addWidget(layoutToWidget(tetheringPassword, this), 0);
   vlayout->addWidget(hline(), 0);
@@ -213,7 +213,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   authSSHLayout->addWidget(new QLabel("Authorized SSH keys", this));
   QPushButton* editAuthSSHButton = new QPushButton("EDIT", this);
   editAuthSSHButton->setFixedWidth(500);
-  connect(editAuthSSHButton, &QPushButton::released, [=](){s->setCurrentIndex(2);});
+  connect(editAuthSSHButton, &QPushButton::released, [=](){s->setCurrentIndex(1);});
   authSSHLayout->addWidget(editAuthSSHButton);
   vlayout->addWidget(layoutToWidget(authSSHLayout, this));
   vlayout->addSpacing(50);
@@ -287,16 +287,6 @@ void AdvancedNetworking::toggleSSH(int enable) {
   }
 }
 
-void AdvancedNetworking::receiveText(QString text){
-  wifi->changeTetheringPassword(text);
-  s->setCurrentIndex(1);
-  emit closeKeyboard();
-}
-
-void AdvancedNetworking::abortTextInput(){
-  s->setCurrentIndex(1);
-  emit closeKeyboard();
-}
 
 // WifiUI functions
 
@@ -367,21 +357,19 @@ void WifiUI::refresh() {
     i++;
   }
 
-
   // Setup buttons for pagination
   QHBoxLayout *prev_next_buttons = new QHBoxLayout;
+
   QPushButton* prev = new QPushButton("Previous");
   prev->setEnabled(page);
+  QObject::connect(prev, SIGNAL(released()), this, SLOT(prevPage()));
+  prev_next_buttons->addWidget(prev);
 
   QPushButton* next = new QPushButton("Next");
-
-  // If there are more visible networks then we can show, enable going to next page
   next->setEnabled(wifi->seen_networks.size() > (page + 1) * networks_per_page);
-
-  QObject::connect(prev, SIGNAL(released()), this, SLOT(prevPage()));
   QObject::connect(next, SIGNAL(released()), this, SLOT(nextPage()));
-  prev_next_buttons->addWidget(prev);
   prev_next_buttons->addWidget(next);
+
 
   QWidget *w = new QWidget;
   w->setLayout(prev_next_buttons);
@@ -398,6 +386,7 @@ void WifiUI::prevPage() {
   page--;
   refresh();
 }
+
 void WifiUI::nextPage() {
   page++;
   refresh();
