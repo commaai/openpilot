@@ -208,12 +208,12 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   vlayout->addWidget(layoutToWidget(enableSSHLayout, this));
   vlayout->addWidget(hline(), 0);
 
-  // Authorized SSH keys
+  // SSH keys
   QHBoxLayout* authSSHLayout = new QHBoxLayout(this);
-  authSSHLayout->addWidget(new QLabel("Authorized SSH keys", this));
+  authSSHLayout->addWidget(new QLabel("SSH keys", this));
   QPushButton* editAuthSSHButton = new QPushButton("EDIT", this);
   editAuthSSHButton->setFixedWidth(500);
-  connect(editAuthSSHButton, &QPushButton::released, [=](){s->setCurrentIndex(1);});
+  connect(editAuthSSHButton, &QPushButton::released, [=](){s->setCurrentWidget(ssh);});
   authSSHLayout->addWidget(editAuthSSHButton);
   vlayout->addWidget(layoutToWidget(authSSHLayout, this));
   vlayout->addSpacing(50);
@@ -230,10 +230,9 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   QWidget* settingsWidget = layoutToWidget(vlayout, this);
   settingsWidget->setStyleSheet("margin-left: 40px; margin-right: 40px;");
   s->addWidget(settingsWidget);
-  s->setCurrentIndex(1);
 
   ssh = new SSH;
-  connect(ssh, &SSH::closeSSHSettings, [=](){s->setCurrentIndex(1);});
+  connect(ssh, &SSH::closeSSHSettings, [=](){s->setCurrentIndex(0);});
   s->addWidget(ssh);
 
   setLayout(s);

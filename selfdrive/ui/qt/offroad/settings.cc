@@ -324,11 +324,3 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
     }
   )");
 }
-
-void SettingsWindow::closeSidebar() {
-  sidebar_widget->setFixedWidth(0);
-}
-
-void SettingsWindow::openSidebar() {
-  sidebar_widget->setFixedWidth(500);
-}
