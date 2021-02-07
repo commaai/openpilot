@@ -45,7 +45,7 @@ KeyboardLayout::KeyboardLayout(QWidget *parent, std::vector<QVector<QString>> la
       font-size: 65px;
       margin: 0px;
       padding: 0px;
-      border: 10px solid #444444;
+      border-radius: 7px;
       color: #dddddd;
       background-color: #444444;
     }

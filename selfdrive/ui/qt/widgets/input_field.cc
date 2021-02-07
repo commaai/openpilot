@@ -20,7 +20,7 @@ InputDialog::InputDialog(QString prompt_text, QWidget *parent): QDialog(parent) 
     padding: 30px;
     padding-right: 45px;
     padding-left: 45px;
-    border: 10px solid #444444;
+    border-radius: 7px;
     font-size: 45px;
     background-color: #444444;
   )");

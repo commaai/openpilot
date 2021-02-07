@@ -90,8 +90,9 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QWidget(parent){
     QPushButton {
       font-size: 50px;
       margin: 0px;
-      padding: 0px;
-      border: 7px solid #00000000;
+      padding: 15px;
+      border-width: 0;
+      border-radius: 7px;
       color: #dddddd;
       background-color: #444444;
     }
@@ -335,18 +336,16 @@ void WifiUI::refresh() {
       icon->setPixmap(pix.scaledToWidth(100, Qt::SmoothTransformation));
       icon->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
       hlayout->addWidget(icon, 0, Qt::AlignRight);
-      hlayout->addSpacing(20);
 
       // connect button
       QPushButton* btn = new QPushButton(network.security_type == SecurityType::UNSUPPORTED ? "Unsupported" : (network.connected == ConnectedType::CONNECTED ? "Connected" : (network.connected == ConnectedType::CONNECTING ? "Connecting" : "Connect")));
       btn->setDisabled(network.connected == ConnectedType::CONNECTED || network.connected == ConnectedType::CONNECTING || network.security_type == SecurityType::UNSUPPORTED);
+      btn->setFixedWidth(350);
       hlayout->addWidget(btn, 0, Qt::AlignRight);
 
       connectButtons->addButton(btn, i);
 
-      QWidget * w = new QWidget;
-      w->setLayout(hlayout);
-      vlayout->addWidget(w, 1, Qt::AlignTop);
+      vlayout->addLayout(hlayout, 1);
       // Don't add the last horizontal line
       if (page * networks_per_page <= i+1 && i+1 < (page + 1) * networks_per_page && i+1 < wifi->seen_networks.size()) {
         vlayout->addWidget(hline(), 0);
@@ -355,6 +354,8 @@ void WifiUI::refresh() {
     }
     i++;
   }
+  vlayout->addStretch(3);
+
 
   // Setup buttons for pagination
   QHBoxLayout *prev_next_buttons = new QHBoxLayout;
@@ -369,10 +370,7 @@ void WifiUI::refresh() {
   QObject::connect(next, SIGNAL(released()), this, SLOT(nextPage()));
   prev_next_buttons->addWidget(next);
 
-
-  QWidget *w = new QWidget;
-  w->setLayout(prev_next_buttons);
-  vlayout->addWidget(w, 0, Qt::AlignBottom);
+  vlayout->addLayout(prev_next_buttons, 2);
 }
 
 void WifiUI::handleButton(QAbstractButton* button) {
