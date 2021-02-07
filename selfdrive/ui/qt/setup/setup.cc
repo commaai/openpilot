@@ -104,7 +104,7 @@ QWidget * Setup::software_selection() {
 
   QPushButton *dashcam_btn = new QPushButton("Dashcam");
   main_layout->addWidget(dashcam_btn);
-  QObject::connect(dashcam_btn, &QPushButton::released, this,  [=]() {
+  QObject::connect(dashcam_btn, &QPushButton::released, this, [=]() {
     this->download("https://dashcam.comma.ai");
   });
 
@@ -112,29 +112,16 @@ QWidget * Setup::software_selection() {
 
   QPushButton *custom_btn = new QPushButton("Custom");
   main_layout->addWidget(custom_btn);
-  QObject::connect(custom_btn, SIGNAL(released()), this, SLOT(nextPage()));
+  QObject::connect(custom_btn, &QPushButton::released, this, [=]() {
+    QString input_url = InputDialog::getText("Enter URL");
+    if (input_url.size()) {
+      this->download(input_url);
+    }
+  });
 
   QWidget *widget = new QWidget();
   widget->setLayout(main_layout);
-  return build_page("Choose Software", widget, true, true);
-}
-
-QWidget * Setup::custom_software() {
-  QVBoxLayout *main_layout = new QVBoxLayout();
-  main_layout->setMargin(50);
-
-  main_layout->addWidget(title_label("Custom Software"), Qt::AlignTop | Qt::AlignHCenter);
-
-  InputField *input = new InputField();
-  input->setPromptText("Enter URL");
-  main_layout->addWidget(input);
-
-  QObject::connect(input, SIGNAL(emitText(QString)), this, SLOT(download(QString)));
-  QObject::connect(input, SIGNAL(cancel()), this, SLOT(prevPage()));
-
-  QWidget *widget = new QWidget();
-  widget->setLayout(main_layout);
-  return widget;
+  return build_page("Choose Software", widget, false, true);
 }
 
 QWidget * Setup::downloading() {
@@ -151,11 +138,7 @@ void Setup::prevPage() {
   setCurrentIndex(currentIndex() - 1);
 }
 
-#include "qt/widgets/input_field.hpp"
 void Setup::nextPage() {
-  auto d = InputDialog(this, "Enter something");
-  d.exec();
-
   setCurrentIndex(currentIndex() + 1);
 }
 
@@ -163,7 +146,6 @@ Setup::Setup(QWidget *parent) {
   addWidget(getting_started());
   addWidget(network_setup());
   addWidget(software_selection());
-  addWidget(custom_software());
   addWidget(downloading());
 
   setStyleSheet(R"(

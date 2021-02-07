@@ -49,7 +49,7 @@ KeyboardLayout::KeyboardLayout(QWidget *parent, std::vector<QVector<QString>> la
 
   setStyleSheet(R"(
     QPushButton {
-      font-size: 50px;
+      font-size: 60px;
       margin: 0px;
       padding: 0px;
       border: 10px solid #444444;

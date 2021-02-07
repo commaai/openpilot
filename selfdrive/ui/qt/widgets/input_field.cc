@@ -72,16 +72,16 @@ void InputField::getText(QString s) {
 
 
 
-InputDialog::InputDialog(QWidget *parent, QString prompt_text): QDialog(parent) {
+InputDialog::InputDialog(QString prompt_text, QWidget *parent): QDialog(parent) {
   layout = new QVBoxLayout();
   layout->setContentsMargins(50, 50, 50, 50);
-  layout->setSpacing(10);
+  layout->setSpacing(20);
 
   // build header
   QHBoxLayout *header_layout = new QHBoxLayout();
 
   label = new QLabel(prompt_text, this);
-  label->setStyleSheet(R"(font-size: 70px; font-weight: 500;)");
+  label->setStyleSheet(R"(font-size: 75px; font-weight: 500;)");
   header_layout->addWidget(label, 1, Qt::AlignLeft);
 
   QPushButton* cancel_btn = new QPushButton("Cancel");
@@ -94,7 +94,7 @@ InputDialog::InputDialog(QWidget *parent, QString prompt_text): QDialog(parent) 
     background-color: #444444;
   )");
   header_layout->addWidget(cancel_btn, 0, Qt::AlignRight);
-  QObject::connect(cancel_btn, SIGNAL(released()), this, SLOT(emitEmpty()));
+  QObject::connect(cancel_btn, SIGNAL(released()), this, SLOT(reject()));
 
   layout->addLayout(header_layout);
 
@@ -110,7 +110,7 @@ InputDialog::InputDialog(QWidget *parent, QString prompt_text): QDialog(parent) 
   layout->addWidget(line, 1, Qt::AlignTop);
 
   k = new Keyboard(this);
-  QObject::connect(k, SIGNAL(emitButton(QString)), this, SLOT(getText(QString)));
+  QObject::connect(k, SIGNAL(emitButton(QString)), this, SLOT(handleInput(QString)));
   layout->addWidget(k, 2, Qt::AlignBottom);
 
   setStyleSheet(R"(
@@ -120,18 +120,35 @@ InputDialog::InputDialog(QWidget *parent, QString prompt_text): QDialog(parent) 
     }
   )");
 
-  maximizeWidget(this);
   setLayout(layout);
 }
 
-void InputDialog::emitEmpty() {
-  line->setText("");
-  emit cancel();
+QString InputDialog::getText(const QString prompt) {
+  InputDialog d = InputDialog(prompt);
+  const int ret = d.exec();
+  if (ret) {
+    return d.text();
+  } else {
+    return QString();
+  }
 }
 
-void InputDialog::getText(QString s) {
+QString InputDialog::text() {
+  return line->text();
+}
+
+int InputDialog::exec() {
+  setMainWindow(this);
+  return QDialog::exec();
+}
+
+void InputDialog::handleInput(QString s) {
   if (!QString::compare(s,"⌫")) {
     line->backspace();
+  }
+
+  if (!QString::compare(s,"⏎")) {
+    done(QDialog::Accepted);
   }
 
   QVector<QString> control_buttons {"⇧", "↑", "ABC", "⏎", "#+=", "⌫", "123"};

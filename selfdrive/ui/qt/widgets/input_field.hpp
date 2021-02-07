@@ -37,7 +37,9 @@ class InputDialog : public QDialog {
   Q_OBJECT
 
 public:
-  explicit InputDialog(QWidget* parent = 0, QString prompt_text = "");
+  explicit InputDialog(QString prompt_text, QWidget* parent = 0);
+  static QString getText(QString prompt);
+  QString text();
 
 private:
   QLineEdit *line;
@@ -46,10 +48,8 @@ private:
   QVBoxLayout *layout;
 
 public slots:
-  void getText(QString s);
-  void emitEmpty();
+  int exec() override;
 
-signals:
-  void cancel();
-  void emitText(QString s);
+private slots:
+  void handleInput(QString s);
 };

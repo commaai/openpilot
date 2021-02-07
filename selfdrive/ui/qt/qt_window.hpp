@@ -17,13 +17,9 @@
   const int vwp_w = 1920, vwp_h = 1080;
 #endif
 
-inline void maximizeWidget(QWidget *w) {
+inline void setMainWindow(QWidget *w) {
   const float scale = getenv("SCALE") != NULL ? std::stof(getenv("SCALE")) : 1.0;
   w->setFixedSize(vwp_w*scale, vwp_h*scale);
-}
-
-inline void setMainWindow(QWidget *w) {
-  maximizeWidget(w);
   w->show();
 
 #ifdef QCOM2
