@@ -51,14 +51,15 @@ class Calibration:
 
   def car_space_to_ff(self, x, y, z):
     ones = np.ones_like(x)
-    car_space_projective = np.column_stack((x, y, z, ones))
+    car_space_projective = np.column_stack((x, y, z, ones)).T
 
-    ep = self.extrinsic.dot(car_space_projective.T)
+    ep = self.extrinsic.dot(car_space_projective)
     kep = self.intrinsic.dot(ep)
     return (kep[:-1, :] / kep[-1, :]).T
 
   def car_space_to_bb(self, x, y, z):
-    return self.car_space_to_ff(x, y, z) / self.zoom
+    pts = self.car_space_to_ff(x, y, z)
+    return pts / self.zoom
 
 
 _COLOR_CACHE : Dict[Tuple[int, int, int], Any] = {}
@@ -83,9 +84,9 @@ def to_lid_pt(y, x):
   return -1, -1
 
 
-def draw_path(path, color, img, calibration, top_down, lid_color=None):
+def draw_path(path, color, img, calibration, top_down, lid_color=None, z_off=0):
   x, y, z = np.asarray(path.x), np.asarray(path.y), np.asarray(path.z)
-  pts = calibration.car_space_to_bb(x, -y, -z)
+  pts = calibration.car_space_to_bb(x, -y, -z + z_off)
   pts = np.round(pts).astype(int)
 
   # draw lidar path point on lidar
@@ -200,12 +201,12 @@ def plot_model(m, img, calibration, top_down):
 
   for path, prob, _ in zip(m.laneLines, m.laneLineProbs, m.laneLineStds):
     color = (0, int(255 * prob), 0)
-    draw_path(path, color, img, calibration, top_down, YELLOW)
+    draw_path(path, color, img, calibration, top_down, YELLOW, 1.22)
 
   for edge, std in zip(m.roadEdges, m.roadEdgeStds):
     prob = max(1 - std, 0)
     color = (int(255 * prob), 0, 0)
-    draw_path(edge, color, img, calibration, top_down, RED)
+    draw_path(edge, color, img, calibration, top_down, RED, 1.22)
 
   color = (255, 0, 0)
   draw_path(m.position, color, img, calibration, top_down, RED)
