@@ -58,9 +58,6 @@ const Rect home_btn = {60, 1080 - 180 - 40, 180, 180};
 
 const int UI_FREQ = 20;   // Hz
 
-const int MODEL_PATH_MAX_VERTICES_CNT = TRAJECTORY_SIZE*2;
-const int TRACK_POINTS_MAX_CNT = TRAJECTORY_SIZE*4;
-
 typedef enum NetStatus {
   NET_CONNECTED,
   NET_DISCONNECTED,
@@ -92,14 +89,9 @@ typedef struct {
 } vertex_data;
 
 typedef struct {
-  vertex_data v[MODEL_PATH_MAX_VERTICES_CNT];
+  vertex_data v[TRAJECTORY_SIZE * 2];
   int cnt;
 } line_vertices_data;
-
-typedef struct {
-  vertex_data v[TRACK_POINTS_MAX_CNT];
-  int cnt;
-} track_vertices_data;
 
 typedef struct UIScene {
 
@@ -132,7 +124,7 @@ typedef struct UIScene {
   // modelV2
   float lane_line_probs[4];
   float road_edge_stds[2];
-  track_vertices_data track_vertices;
+  line_vertices_data track_vertices;
   line_vertices_data lane_line_vertices[4];
   line_vertices_data road_edge_vertices[2];
 

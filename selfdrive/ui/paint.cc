@@ -125,12 +125,13 @@ static void draw_lead(UIState *s, int idx){
   draw_chevron(s, x, y, sz, nvgRGBA(201, 34, 49, fillAlpha), COLOR_YELLOW);
 }
 
-static void ui_draw_line(UIState *s, const vertex_data *v, const int cnt, NVGcolor *color, NVGpaint *paint) {
-  if (cnt == 0) return;
+static void ui_draw_line(UIState *s, const line_vertices_data &vd, NVGcolor *color, NVGpaint *paint) {
+  if (vd.cnt == 0) return;
 
+  const vertex_data *v = &vd.v[0];
   nvgBeginPath(s->vg);
   nvgMoveTo(s->vg, v[0].x, v[0].y);
-  for (int i = 1; i < cnt; i++) {
+  for (int i = 1; i < vd.cnt; i++) {
     nvgLineTo(s->vg, v[i].x, v[i].y);
   }
   nvgClosePath(s->vg);
@@ -178,19 +179,19 @@ static void ui_draw_vision_lane_lines(UIState *s) {
   // paint lanelines
   for (int i = 0; i < std::size(scene.lane_line_vertices); i++) {
     NVGcolor color = nvgRGBAf(1.0, 1.0, 1.0, scene.lane_line_probs[i]);
-    ui_draw_line(s, scene.lane_line_vertices[i].v, scene.lane_line_vertices[i].cnt, &color, nullptr);
+    ui_draw_line(s, scene.lane_line_vertices[i], &color, nullptr);
   }
 
   // paint road edges
   for (int i = 0; i < std::size(scene.road_edge_vertices); i++) {
     NVGcolor color = nvgRGBAf(1.0, 0.0, 0.0, std::clamp<float>(1.0 - scene.road_edge_stds[i], 0.0, 1.0));
-    ui_draw_line(s, scene.road_edge_vertices[i].v, scene.road_edge_vertices[i].cnt, &color, nullptr);
+    ui_draw_line(s, scene.road_edge_vertices[i], &color, nullptr);
   }
 
   // paint path
   NVGpaint track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h * .4,
                                         COLOR_WHITE, COLOR_WHITE_ALPHA(0));
-  ui_draw_line(s, scene.track_vertices.v, scene.track_vertices.cnt, nullptr, &track_bg);
+  ui_draw_line(s, scene.track_vertices, nullptr, &track_bg);
 }
 
 // Draw all world space objects.
