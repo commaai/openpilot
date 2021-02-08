@@ -43,10 +43,16 @@ else:
 
     installers = [
       ("openpilot", "master"),
-      ("openpilot_test", "master"),
-      #("dashcam", "dashcam"),
-      #("dashcam_test", "dashcam"),
+      #("openpilot_test", "release3-staging"),
+      #("openpilot_internal", "master"),
+      #("dashcam", "dashcam3-staging"),
+      #("dashcam_test", "dashcam3-staging"),
     ]
     for name, branch in installers:
-      flags = qt_env["CXXFLAGS"] + [f"-D{branch}"]
-      qt_env.Program(f"qt/setup/installer_{name}", ["qt/setup/installer.cc"], LIBS=qt_libs)
+      d = {'BRANCH': f"'\"{branch}\"'"}
+      if "internal" in name:
+        import requests
+        r = requests.get("https://github.com/commaci2.keys")
+        r.raise_for_status()
+        d['SSH_KEYS'] = f'\\"{r.text.strip()}\\"'
+      qt_env.Program(f"qt/setup/installer_{name}", ["qt/setup/installer.cc"], LIBS=qt_libs, CPPDEFINES=d)
