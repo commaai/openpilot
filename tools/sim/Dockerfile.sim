@@ -1,4 +1,4 @@
-FROM commaai/openpilot-base:latest
+FROM ghcr.io/commaai/openpilot-base:latest
 
 RUN apt-get update && apt-get install -y \
     apt-utils \
