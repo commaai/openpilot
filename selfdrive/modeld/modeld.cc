@@ -111,10 +111,9 @@ int main(int argc, char **argv) {
   set_core_affinity(4);
 #endif
 
-  // start calibration thread
+  // start background thread
   std::thread thread = std::thread(model_context_thread);
 
-  // messaging
   PubMaster pm({"modelV2", "cameraOdometry"});
 
   // cl init
@@ -185,7 +184,6 @@ int main(int argc, char **argv) {
         last = mt1;
         last_vipc_frame_id = extra.frame_id;
       }
-
     }
   }
 
