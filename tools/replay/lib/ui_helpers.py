@@ -1,4 +1,4 @@
-from collections import namedtuple
+import itertools
 from typing import Any, Dict, Tuple
 
 import matplotlib
@@ -8,9 +8,7 @@ import pygame  # pylint: disable=import-error
 
 from common.transformations.camera import (eon_f_frame_size, eon_f_focal_length,
                                            tici_f_frame_size, tici_f_focal_length)
-from selfdrive.config import RADAR_TO_CAMERA
 from selfdrive.config import UIParams as UP
-from tools.lib.lazy_property import lazy_property
 
 
 RED = (255, 0, 0)
@@ -20,8 +18,6 @@ YELLOW = (255, 255, 0)
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 
-_PATH_X = np.arange(192.)
-_PATH_XD = np.arange(192.)
 _FULL_FRAME_SIZE = {
 }
 
@@ -47,31 +43,22 @@ for width, height, focal in cams:
 
 METER_WIDTH = 20
 
-ModelUIData = namedtuple("ModelUIData", ["cpath", "lpath", "rpath", "lead", "lead_future"])
-
-
 class Calibration:
-  def __init__(self, num_px, model_to_full_frame, K, E):
-    self._model_to_full_frame = model_to_full_frame
-    self._K = K
-    self._E = E
-    self.num_px = num_px
+  def __init__(self, num_px, extrinsic, intrinsic):
+    self.extrinsic = extrinsic
+    self.intrinsic = intrinsic
+    self.zoom = _BB_TO_FULL_FRAME[num_px][0, 0]
 
-  @property
-  def model_to_bb(self):
-    return _FULL_FRAME_TO_BB[self.num_px].dot(self._model_to_full_frame)
+  def car_space_to_ff(self, x, y, z):
+    ones = np.ones_like(x)
+    car_space_projective = np.column_stack((x, y, z, ones))
 
-  @lazy_property
-  def model_to_full_frame(self):
-    return self._model_to_full_frame
+    ep = self.extrinsic.dot(car_space_projective.T)
+    kep = self.intrinsic.dot(ep)
+    return (kep[:-1, :] / kep[-1, :]).T
 
-  @lazy_property
-  def car_to_model(self):
-    return np.linalg.inv(self._model_to_full_frame).dot(self._K).dot(self._E[:, [0, 1, 3]])
-
-  @lazy_property
-  def car_to_bb(self):
-    return _BB_TO_FULL_FRAME[self.num_px].dot(self._K).dot(self._E[:, [0, 1, 3]])
+  def car_space_to_bb(self, x, y, z):
+    return self.car_space_to_ff(x, y, z) / self.zoom
 
 
 _COLOR_CACHE : Dict[Tuple[int, int, int], Any] = {}
@@ -81,20 +68,12 @@ def find_color(lidar_surface, color):
   tcolor = 0
   ret = 255
   for x in lidar_surface.get_palette():
-    #print tcolor, x
     if x[0:3] == color:
       ret = tcolor
       break
     tcolor += 1
   _COLOR_CACHE[color] = ret
   return ret
-
-
-def warp_points(pt_s, warp_matrix):
-  pt_d = np.dot(warp_matrix, pt_s.T)# + warp_matrix[:, -1, None]
-
-  # Divide by last dimension for representation in image space.
-  return (pt_d[:-1, :] / pt_d[-1, :]).T
 
 
 def to_lid_pt(y, x):
@@ -105,16 +84,9 @@ def to_lid_pt(y, x):
 
 
 def draw_path(path, color, img, calibration, top_down, lid_color=None):
-  x, y, z = path.x, path.y, path.z
-  uv_model_real = warp_points(np.column_stack((x, y, z)), calibration.car_to_model)
-  uv_model = np.round(uv_model_real).astype(int)
-  print(uv_model)
-
-  uv_model_dots = uv_model[np.logical_and.reduce((np.all(  # pylint: disable=no-member
-    uv_model > 0, axis=1), uv_model[:, 0] < img.shape[1] - 1, uv_model[:, 1] < img.shape[0] - 1))]
-
-  for i, j in ((-1, 0), (0, -1), (0, 0), (0, 1), (1, 0)):
-    img[uv_model_dots[:, 1] + i, uv_model_dots[:, 0] + j] = color
+  x, y, z = np.asarray(path.x), np.asarray(path.y), np.asarray(path.z)
+  pts = calibration.car_space_to_bb(x, -y, -z)
+  pts = np.round(pts).astype(int)
 
   # draw lidar path point on lidar
   # find color in 8 bit
@@ -125,6 +97,12 @@ def draw_path(path, color, img, calibration, top_down, lid_color=None):
       if px != -1:
         top_down[1][px, py] = tcolor
 
+  height, width = img.shape[:2]
+  for x, y in pts:
+    if 1 < x < width - 1 and 1 < y < height - 1:
+      for a, b in itertools.permutations([-1, 0, -1], 2):
+        img[y + a, x + b] = color
+
 
 def init_plots(arr, name_to_arr_idx, plot_xlims, plot_ylims, plot_names, plot_colors, plot_styles, bigplots=False):
   color_palette = { "r": (1, 0, 0),
@@ -133,7 +111,7 @@ def init_plots(arr, name_to_arr_idx, plot_xlims, plot_ylims, plot_names, plot_co
                     "k": (0, 0, 0),
                     "y": (1, 1, 0),
                     "p": (0, 1, 1),
-                    "m": (1, 0, 1) }
+                    "m": (1, 0, 1)}
 
   if bigplots:
     fig = plt.figure(figsize=(6.4, 7.0))
@@ -205,15 +183,6 @@ def pygame_modules_have_loaded():
   return pygame.display.get_init() and pygame.font.get_init()
 
 
-# def draw_var(y, x, var, color, img, calibration, top_down):
-#   # otherwise drawing gets stupid
-#   var = max(1e-1, min(var, 0.7))
-
-#   varcolor = tuple(np.array(color)*0.5)
-#   draw_path(y - var, x, varcolor, img, calibration, top_down)
-#   draw_path(y + var, x, varcolor, img, calibration, top_down)
-
-
 def plot_model(m, img, calibration, top_down):
   if calibration is None or top_down is None:
     return
@@ -229,11 +198,17 @@ def plot_model(m, img, calibration, top_down):
     px, py_bottom = to_lid_pt(x - x_std, y)
     top_down[1][int(round(px - 4)):int(round(px + 4)), py_top:py_bottom] = find_color(top_down[0], YELLOW)
 
-  for path, prob, std in zip(m.laneLines, m.laneLineProbs, m.laneLineStds):
+  for path, prob, _ in zip(m.laneLines, m.laneLineProbs, m.laneLineStds):
     color = (0, int(255 * prob), 0)
     draw_path(path, color, img, calibration, top_down, YELLOW)
-  #   if path.valid:
-  #     draw_var(path.y, _PATH_XD, path.std, color, imgw, calibration, top_down)
+
+  for edge, std in zip(m.roadEdges, m.roadEdgeStds):
+    prob = max(1 - std, 0)
+    color = (int(255 * prob), 0, 0)
+    draw_path(edge, color, img, calibration, top_down, RED)
+
+  color = (255, 0, 0)
+  draw_path(m.position, color, img, calibration, top_down, RED)
 
 
 def maybe_update_radar_points(lt, lid_overlay):

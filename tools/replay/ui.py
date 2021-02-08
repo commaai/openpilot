@@ -10,13 +10,10 @@ import numpy as np
 import pygame  # pylint: disable=import-error
 
 from common.basedir import BASEDIR
-from common.transformations.model import (MODEL_CX, MODEL_CY, MODEL_INPUT_SIZE,
-                                          get_camera_frame_from_model_frame)
-from selfdrive.car.toyota.interface import CarInterface as ToyotaInterface
 from selfdrive.config import UIParams as UP
 import cereal.messaging as messaging
 from tools.replay.lib.ui_helpers import (_BB_TO_FULL_FRAME, _FULL_FRAME_SIZE, _INTRINSICS,
-                                         BLACK, BLUE, GREEN, YELLOW, RED,
+                                         BLACK,  GREEN, YELLOW, RED,
                                          get_blank_lid_overlay, init_plots,
                                          maybe_update_radar_points, plot_model,
                                          pygame_modules_have_loaded,
@@ -119,13 +116,13 @@ def ui_thread(addr, frame_address):
       FULL_FRAME_SIZE = _FULL_FRAME_SIZE[num_px]
 
       imgff_shape = (FULL_FRAME_SIZE[1], FULL_FRAME_SIZE[0], 3)
-      zoom_matrix = _BB_TO_FULL_FRAME[num_px]
 
       if imgff is None or imgff.shape != imgff_shape:
         imgff = np.zeros(imgff_shape, dtype=np.uint8)
 
       imgff = np.frombuffer(rgb_img_raw, dtype=np.uint8).reshape((FULL_FRAME_SIZE[1], FULL_FRAME_SIZE[0], 3))
       imgff = imgff[:, :, ::-1]  # Convert BGR to RGB
+      zoom_matrix = _BB_TO_FULL_FRAME[num_px]
       cv2.warpAffine(imgff, zoom_matrix[:2], (img.shape[1], img.shape[0]), dst=img, flags=cv2.WARP_INVERSE_MAP)
 
       intrinsic_matrix = _INTRINSICS[num_px]
@@ -169,9 +166,7 @@ def ui_thread(addr, frame_address):
 
     if sm.updated['liveCalibration'] and num_px:
       extrinsic_matrix = np.asarray(sm['liveCalibration'].extrinsicMatrix).reshape(3, 4)
-      ke = intrinsic_matrix.dot(extrinsic_matrix)
-      warp_matrix = get_camera_frame_from_model_frame(ke, camera_fl=intrinsic_matrix[0][0])
-      calibration = Calibration(num_px, warp_matrix, intrinsic_matrix, extrinsic_matrix)
+      calibration = Calibration(num_px, extrinsic_matrix, intrinsic_matrix)
 
     # *** blits ***
     pygame.surfarray.blit_array(camera_surface, img.swapaxes(0, 1))
