@@ -15,6 +15,7 @@
 
 #define HLC_THRESH 240
 #define HLC_A 80
+#define HISTO_CEIL_K 10
 
 #define EF_LOWPASS_K 0.35
 

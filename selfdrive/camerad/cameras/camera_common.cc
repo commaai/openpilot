@@ -293,14 +293,19 @@ void set_exposure_target(CameraState *c, const uint8_t *pix_ptr, int x_start, in
   const CameraBuf *b = &c->buf;
 
   uint32_t lum_binning[256] = {0};
+  unsigned int lum_total = (y_end - y_start) * (x_end - x_start) / x_skip / y_skip;
   for (int y = y_start; y < y_end; y += y_skip) {
     for (int x = x_start; x < x_end; x += x_skip) {
       uint8_t lum = pix_ptr[(y * b->rgb_width) + x];
+#ifdef QCOM2
+      if (lum < 80 && lum_binning[lum] > HISTO_CEIL_K * lum_total / 256) {
+        continue;
+      }
+#endif
       lum_binning[lum]++;
     }
   }
 
-  unsigned int lum_total = (y_end - y_start) * (x_end - x_start) / x_skip / y_skip;
   unsigned int lum_cur = 0;
   int lum_med = 0;
   int lum_med_alt = 0;
