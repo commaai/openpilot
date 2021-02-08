@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <mutex>
 #include <eigen3/Eigen/Dense>
 
 #include "visionbuf.h"
@@ -12,17 +13,23 @@
 #include "models/driving.h"
 #include "messaging.hpp"
 
-ExitHandler do_exit;
 // globals
-bool run_model;
-mat3 cur_transform;
-pthread_mutex_t transform_lock;
+ExitHandler do_exit;
+
+struct LiveData {
+bool run_model = false;
+mat3 cur_transform = {};
+uint32_t frame_id = 0;
+int desire = -1;
+} live_data;
+
+std::mutex transform_lock;
 
 void* live_thread(void *arg) {
   set_thread_name("live");
   set_realtime_priority(50);
 
-  SubMaster sm({"liveCalibration"});
+  SubMaster sm({"liveCalibration", "lateralPlan", "frame"});
 
   /*
      import numpy as np
@@ -58,8 +65,9 @@ void* live_thread(void *arg) {
   }}, db_s);
 
   while (!do_exit) {
-    if (sm.update(100) > 0){
+    if (sm.update(100) == 0) continue;
 
+    if (sm.updated("liveCalibration")) {
       auto extrinsic_matrix = sm["liveCalibration"].getLiveCalibration().getExtrinsicMatrix();
       Eigen::Matrix<float, 3, 4> extrinsic_matrix_eigen;
       for (int i = 0; i < 4*3; i++){
@@ -78,10 +86,18 @@ void* live_thread(void *arg) {
         transform.v[i] = warp_matrix(i / 3, i % 3);
       }
       mat3 model_transform = matmul3(yuv_transform, transform);
-      pthread_mutex_lock(&transform_lock);
-      cur_transform = model_transform;
-      run_model = true;
-      pthread_mutex_unlock(&transform_lock);
+      std::lock_guard lk(transform_lock);
+      live_data.cur_transform = model_transform;
+      live_data.run_model = true;
+    }
+    if (sm.updated("lateralPlan")) {
+      // TODO: path planner timeout?
+      std::lock_guard lk(transform_lock);
+      live_data.desire = ((int)sm["lateralPlan"].getLateralPlan().getDesire());
+    }
+    if (sm.updated("frame")) {
+      std::lock_guard lk(transform_lock);
+      live_data.frame_id = sm["frame"].getFrame().getFrameId();
     }
   }
   return NULL;
@@ -98,8 +114,6 @@ int main(int argc, char **argv) {
   set_core_affinity(4);
 #endif
 
-  pthread_mutex_init(&transform_lock, NULL);
-
   // start calibration thread
   pthread_t live_thread_handle;
   err = pthread_create(&live_thread_handle, NULL, live_thread, NULL);
@@ -107,7 +121,6 @@ int main(int argc, char **argv) {
 
   // messaging
   PubMaster pm({"modelV2", "cameraOdometry"});
-  SubMaster sm({"lateralPlan", "frame"});
 
   // cl init
   cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
@@ -139,9 +152,8 @@ int main(int argc, char **argv) {
     const float frame_filter_k = (dt / ts) / (1. + dt / ts);
     float frames_dropped = 0;
 
-    uint32_t frame_id = 0, last_vipc_frame_id = 0;
+    uint32_t last_vipc_frame_id = 0;
     double last = 0;
-    int desire = -1;
     uint32_t run_count = 0;
 
     while (!do_exit) {
@@ -151,31 +163,22 @@ int main(int argc, char **argv) {
         continue;
       }
 
-      pthread_mutex_lock(&transform_lock);
-      mat3 model_transform = cur_transform;
-      const bool run_model_this_iter = run_model;
-      pthread_mutex_unlock(&transform_lock);
-
-      if (sm.update(0) > 0){
-        // TODO: path planner timeout?
-        desire = ((int)sm["lateralPlan"].getLateralPlan().getDesire());
-        frame_id = sm["frame"].getFrame().getFrameId();
-      }
+      transform_lock.lock();
+      LiveData data = live_data;
+      transform_lock.unlock();
 
       double mt1 = 0, mt2 = 0;
-      if (run_model_this_iter) {
+      if (data.run_model) {
         run_count++;
 
         float vec_desire[DESIRE_LEN] = {0};
-        if (desire >= 0 && desire < DESIRE_LEN) {
-          vec_desire[desire] = 1.0;
+        if (data.desire >= 0 && data.desire < DESIRE_LEN) {
+          vec_desire[data.desire] = 1.0;
         }
 
         mt1 = millis_since_boot();
 
-        ModelDataRaw model_buf =
-            model_eval_frame(&model, buf->buf_cl, buf->width, buf->height,
-                             model_transform, vec_desire);
+        ModelDataRaw model_buf = model_eval_frame(&model, buf->buf_cl, buf->width, buf->height, data.cur_transform, vec_desire);
         mt2 = millis_since_boot();
         float model_execution_time = (mt2 - mt1) / 1000.0;
 
@@ -185,11 +188,11 @@ int main(int argc, char **argv) {
         if (run_count < 10) frames_dropped = 0;  // let frame drops warm up
         float frame_drop_ratio = frames_dropped / (1 + frames_dropped);
 
-        model_publish(pm, extra.frame_id, frame_id, frame_drop_ratio, model_buf, extra.timestamp_eof, model_execution_time,
+        model_publish(pm, extra.frame_id, data.frame_id, frame_drop_ratio, model_buf, extra.timestamp_eof, model_execution_time,
                       kj::ArrayPtr<const float>(model.output.data(), model.output.size()));
         posenet_publish(pm, extra.frame_id, vipc_dropped_frames, model_buf, extra.timestamp_eof);
 
-        LOGD("model process: %.2fms, from last %.2fms, vipc_frame_id %u, frame_id, %u, frame_drop %.3f", mt2-mt1, mt1-last, extra.frame_id, frame_id, frame_drop_ratio);
+        LOGD("model process: %.2fms, from last %.2fms, vipc_frame_id %u, frame_id, %u, frame_drop %.3f", mt2-mt1, mt1-last, extra.frame_id, data.frame_id, frame_drop_ratio);
         last = mt1;
         last_vipc_frame_id = extra.frame_id;
       }
@@ -203,6 +206,5 @@ int main(int argc, char **argv) {
   err = pthread_join(live_thread_handle, NULL);
   assert(err == 0);
   CL_CHECK(clReleaseContext(context));
-  pthread_mutex_destroy(&transform_lock);
   return 0;
 }
