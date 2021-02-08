@@ -7,14 +7,17 @@
 
 int main() {
   ExitHandler do_exit;
-  log_time last_log_time = {};
 
   PubMaster pm({"androidLog"});
+
+  log_time last_log_time = {};
+  logger_list *logger_list = android_logger_list_alloc(ANDROID_LOG_RDONLY | ANDROID_LOG_NONBLOCK, 0, 0);
+
   while (!do_exit) {
     // setup android logging
-    logger_list *logger_list = last_log_time.tv_sec == 0 ?
-                               android_logger_list_alloc(ANDROID_LOG_RDONLY | ANDROID_LOG_NONBLOCK, 0, 0) :
-                               android_logger_list_alloc_time(ANDROID_LOG_RDONLY | ANDROID_LOG_NONBLOCK, last_log_time, 0);
+    if (!logger_list) {
+      logger_list = android_logger_list_alloc_time(ANDROID_LOG_RDONLY | ANDROID_LOG_NONBLOCK, last_log_time, 0);
+    }
     assert(logger_list);
 
     struct logger *main_logger = android_logger_open(logger_list, LOG_ID_MAIN);
@@ -53,7 +56,13 @@ int main() {
     }
 
     android_logger_list_free(logger_list);
+    logger_list = NULL;
     util::sleep_for(500);
   }
+
+  if (logger_list) {
+    android_logger_list_free(logger_list);
+  }
+
   return 0;
 }
