@@ -245,7 +245,7 @@ void encoder_thread(int cam_idx) {
           pthread_mutex_lock(&s.rotate_lock);
           for (auto &e : encoders) {
             e->encoder_close();
-            e->encoder_open(s.segment_path);
+            e->encoder_open(lh->get_segment_path().c_str());
           }
           rotate_state.cur_seg = lh->get_segment();
           pthread_mutex_unlock(&s.rotate_lock);
