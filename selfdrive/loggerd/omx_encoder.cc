@@ -392,8 +392,7 @@ void OmxEncoder::handle_out_buf(OmxEncoder *e, OMX_BUFFERHEADERTYPE *out_buf) {
 }
 
 int OmxEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
-                             int in_width, int in_height,
-                             int *frame_segment, uint64_t ts) {
+                             int in_width, int in_height, uint64_t ts) {
   int err;
   if (!this->is_open) {
     return -1;
@@ -466,17 +465,12 @@ int OmxEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const u
 
   this->counter++;
 
-  if (frame_segment) {
-    *frame_segment = this->segment;
-  }
-
   return ret;
 }
 
-void OmxEncoder::encoder_open(const char* path, int segment) {
+void OmxEncoder::encoder_open(const char* path) {
   int err;
 
-  this->segment = segment;
   snprintf(this->vid_path, sizeof(this->vid_path), "%s/%s", path, this->filename);
   LOGD("encoder_open %s remuxing:%d", this->vid_path, this->remuxing);
 
