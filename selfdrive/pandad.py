@@ -112,11 +112,12 @@ def update_panda():
 
 
 def main():
-  # set_panda_power()
-  # update_panda()
+  print("RUNNING")
+  set_panda_power()
+  update_panda()
 
-  os.chdir(os.path.join(BASEDIR, "selfdrive/boardd"))
-  os.execvp("./boardd", ["./boardd"])
+  # os.chdir(os.path.join(BASEDIR, "selfdrive/boardd"))
+  # os.execvp("./boardd", ["./boardd"])
 
 
 if __name__ == "__main__":

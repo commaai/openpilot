@@ -505,6 +505,17 @@ void pigeon_thread() {
   delete pigeon;
 }
 
+std::string get_basedir(){
+  std::cout<<"Working"<<std::endl;
+  char* basedir = getenv("BASEDIR");
+  // std::cout<<basedir<<std::endl;
+  if (basedir == 0){
+    LOGW("BASEDIR is not defined, provide the enviromental variable or run manager.py");
+    return "";
+  }
+  return std::string(basedir);
+}
+
 //Port pandad to boardd
 std::string get_firmware_fn(){
   std::string basedir = getenv("BASEDIR");
@@ -521,7 +532,7 @@ std::string get_firmware_fn(){
     return signed_firmware_path;
   } else {
     LOGW("Building panda firmware");
-    system(("cd " + basedir + "panda/board; make -f Makefile clean && make -f Makefile obj/panda.bin").c_str());
+    system(("cd " + basedir + "panda/board && make -f Makefile clean && make -f Makefile obj/panda.bin").c_str());
     LOGW("Finished building panda firmware");
     return basedir + "panda/board/obj/panda.bin";
   }
@@ -537,12 +548,62 @@ std::string get_expected_signature(){
   return firmware_sig;
 }
 
+void get_out_of_dfu(){
+  int err = 0;
+  libusb_context* ctx;
+  err = libusb_init(&ctx);
+  assert(err == 0);
 
+  libusb_device **list = NULL;
+
+  int count = 0;
+  count = libusb_get_device_list(ctx, &list);
+  assert(count > 0);
+
+  for (int idx = 0; idx < count; idx++) {
+    libusb_device *device = list[idx];
+    libusb_device_descriptor desc;
+
+    err = libusb_get_device_descriptor(device, &desc);
+    assert(err == 0);
+    uint16_t vid = desc.idVendor;
+    uint16_t pid = desc.idProduct;
+    if (vid == 0x0483 && pid == 0xdf11){ // Panda in DFU 
+      printf("Vendor:Device = %04x:%04x\n", vid, pid);
+      libusb_device_handle* deviceHandle = libusb_open_device_with_vid_pid(ctx, vid, pid);
+      if (deviceHandle != NULL){
+        unsigned char buf[1024];
+        memset(buf, 0, sizeof(buf));//Ensure I can cout
+        std::cout<<"Id of MSG"<<desc.iManufacturer<<std::endl;
+        int length = libusb_get_string_descriptor_ascii(deviceHandle, 3, buf, 1024);
+        if (length < 0) {
+          std::cout<<"Error in getting description"<<std::endl;
+        } else {
+          std::cout<<"Got the DFU message"<<std::endl;
+          std::cout<<length<<std::endl;
+          std::cout<<buf<<std::endl;
+        }
+        libusb_close(deviceHandle);
+        std::cout<<"Got to end of loop"<<std::endl;
+      }
+      std::cout<<"Building panda bootstub"<<std::endl;
+      std::string basedir = get_basedir();
+      system(("cd " + basedir + "panda/board && make -f Makefile clean && make -f Makefile obj/bootstub.panda.bin").c_str());
+      std::cout<<"Bootstub should exist, reading"<<std::endl;
+
+    }
+  }
+
+  libusb_free_device_list(list, count);
+  libusb_exit(ctx);
+  //dummyPanda should be cleaned up automatically
+}
 
 void update_panda(){
-  std::cout<<"updating panda"<<std::endl;;
-  LOGW("Connecting to panda");
-  
+  std::cout<<"updating panda"<<std::endl;
+  std::cout<<"1: Move out of DFU"<<std::endl;
+  get_out_of_dfu();
+  // LOGW("Connecting to panda");
 
 }
 
