@@ -248,7 +248,7 @@ void encoder_thread(int cam_idx) {
           pthread_mutex_lock(&s.rotate_lock);
           for (auto &e : encoders) {
             e->encoder_close();
-            e->encoder_open(s.segment_path, s.rotate_segment);
+            e->encoder_open(s.segment_path);
           }
           rotate_state.cur_seg = s.rotate_segment;
           pthread_mutex_unlock(&s.rotate_lock);
@@ -266,10 +266,8 @@ void encoder_thread(int cam_idx) {
 
       // encode a frame
       for (int i = 0; i < encoders.size(); ++i) {
-        int out_segment = -1;
         int out_id = encoders[i]->encode_frame(buf->y, buf->u, buf->v,
-                                               buf->width, buf->height,
-                                               &out_segment, extra.timestamp_eof);
+                                               buf->width, buf->height, extra.timestamp_eof);
         if (i == 0 && out_id != -1) {
           // publish encode index
           MessageBuilder msg;
@@ -285,7 +283,7 @@ void encoder_thread(int cam_idx) {
           eidx.setType(cam_idx == LOG_CAMERA_ID_DCAMERA ? cereal::EncodeIndex::Type::FRONT : cereal::EncodeIndex::Type::FULL_H_E_V_C);
     #endif
           eidx.setEncodeId(cnt);
-          eidx.setSegmentNum(out_segment);
+          eidx.setSegmentNum(rotate_state.cur_seg);
           eidx.setSegmentId(out_id);
           if (lh) {
             auto bytes = msg.toBytes();
