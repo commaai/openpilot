@@ -75,19 +75,17 @@ static void update_lead(UIState *s, const cereal::RadarState::Reader &radar_stat
   }
 }
 
-template <class T>
 static void update_line_data(const UIState *s, const cereal::ModelDataV2::XYZTData::Reader &line,
-                             float y_off, float z_off, T *pvd, float max_distance) {
+                             float y_off, float z_off, line_vertices_data *pvd, float max_distance) {
   const auto line_x = line.getX(), line_y = line.getY(), line_z = line.getZ();
   int max_idx = -1;
   vertex_data *v = &pvd->v[0];
-  const float margin = 500.0f;
   for (int i = 0; ((i < TRAJECTORY_SIZE) and (line_x[i] < fmax(MIN_DRAW_DISTANCE, max_distance))); i++) {
-    v += car_space_to_full_frame(s, line_x[i], -line_y[i] - y_off, -line_z[i] + z_off, v, margin);
+    v += car_space_to_full_frame(s, line_x[i], -line_y[i] - y_off, -line_z[i] + z_off, v);
     max_idx = i;
   }
   for (int i = max_idx; i >= 0; i--) {
-    v += car_space_to_full_frame(s, line_x[i], -line_y[i] + y_off, -line_z[i] + z_off, v, margin);
+    v += car_space_to_full_frame(s, line_x[i], -line_y[i] + y_off, -line_z[i] + z_off, v);
   }
   pvd->cnt = v - pvd->v;
   assert(pvd->cnt < std::size(pvd->v));
