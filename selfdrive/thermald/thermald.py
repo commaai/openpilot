@@ -208,7 +208,7 @@ def thermald_thread():
       usb_power = health.health.usbPowerMode != log.HealthData.UsbPowerMode.client
 
       # If we lose connection to the panda, wait 5 seconds before going offroad
-      if health.health.hwType == log.HealthData.HwType.unknown:
+      if health.health.pandaType == log.HealthData.PandaType.unknown:
         no_panda_cnt += 1
         if no_panda_cnt > DISCONNECT_TIMEOUT / DT_TRML:
           if startup_conditions["ignition"]:
@@ -219,8 +219,8 @@ def thermald_thread():
         startup_conditions["ignition"] = health.health.ignitionLine or health.health.ignitionCan
 
       # Setup fan handler on first connect to panda
-      if handle_fan is None and health.health.hwType != log.HealthData.HwType.unknown:
-        is_uno = health.health.hwType == log.HealthData.HwType.uno
+      if handle_fan is None and health.health.pandaType != log.HealthData.PandaType.unknown:
+        is_uno = health.health.pandaType == log.HealthData.PandaType.uno
 
         if (not EON) or is_uno:
           cloudlog.info("Setting up UNO fan handler")
@@ -232,8 +232,8 @@ def thermald_thread():
 
       # Handle disconnect
       if health_prev is not None:
-        if health.health.hwType == log.HealthData.HwType.unknown and \
-          health_prev.health.hwType != log.HealthData.HwType.unknown:
+        if health.health.pandaType == log.HealthData.PandaType.unknown and \
+          health_prev.health.pandaType != log.HealthData.PandaType.unknown:
           params.panda_disconnect()
       health_prev = health
 
@@ -245,9 +245,9 @@ def thermald_thread():
       except Exception:
         cloudlog.exception("Error getting network status")
 
-    msg.thermal.freeSpace = get_available_percent(default=100.0) / 100.0
-    msg.thermal.memUsedPercent = int(round(psutil.virtual_memory().percent))
-    msg.thermal.cpuPerc = int(round(psutil.cpu_percent()))
+    msg.thermal.freeSpacePercent = get_available_percent(default=100.0) / 100.0
+    msg.thermal.memoryUsagePercent = int(round(psutil.virtual_memory().percent))
+    msg.thermal.cpuUsagePercent = int(round(psutil.cpu_percent()))
     msg.thermal.networkType = network_type
     msg.thermal.networkStrength = network_strength
     msg.thermal.batteryPercent = HARDWARE.get_battery_capacity()
@@ -271,7 +271,7 @@ def thermald_thread():
 
     if handle_fan is not None:
       fan_speed = handle_fan(max_cpu_temp, bat_temp, fan_speed, startup_conditions["ignition"])
-      msg.thermal.fanSpeed = fan_speed
+      msg.thermal.fanSpeedRpmDesired = fan_speed
 
     # If device is offroad we want to cool down before going onroad
     # since going onroad increases load and can make temps go over 107
@@ -347,7 +347,7 @@ def thermald_thread():
     set_offroad_alert_if_changed("Offroad_PandaFirmwareMismatch", (not startup_conditions["fw_version_match"]))
 
     # with 2% left, we killall, otherwise the phone will take a long time to boot
-    startup_conditions["free_space"] = msg.thermal.freeSpace > 0.02
+    startup_conditions["free_space"] = msg.thermal.freeSpacePercent > 0.02
     startup_conditions["completed_training"] = params.get("CompletedTrainingVersion") == training_version or \
                                                (current_branch in ['dashcam', 'dashcam-staging'])
     startup_conditions["not_driver_view"] = not params.get("IsDriverViewEnabled") == b"1"
@@ -357,8 +357,8 @@ def thermald_thread():
     startup_conditions["device_temp_good"] = thermal_status < ThermalStatus.danger
     set_offroad_alert_if_changed("Offroad_TemperatureTooHigh", (not startup_conditions["device_temp_good"]))
 
-    startup_conditions["hardware_supported"] = health is not None and health.health.hwType not in [log.HealthData.HwType.whitePanda,
-                                                                                                   log.HealthData.HwType.greyPanda]
+    startup_conditions["hardware_supported"] = health is not None and health.health.pandaType not in [log.HealthData.PandaType.whitePanda,
+                                                                                                   log.HealthData.PandaType.greyPanda]
     set_offroad_alert_if_changed("Offroad_HardwareUnsupported", health is not None and not startup_conditions["hardware_supported"])
 
     # Handle offroad/onroad transition
@@ -399,7 +399,7 @@ def thermald_thread():
 
     msg.thermal.chargingError = current_filter.x > 0. and msg.thermal.batteryPercent < 90  # if current is positive, then battery is being discharged
     msg.thermal.started = started_ts is not None
-    msg.thermal.startedTs = int(1e9*(started_ts or 0))
+    msg.thermal.startedMonoTime = int(1e9*(started_ts or 0))
 
     msg.thermal.thermalStatus = thermal_status
     pm.send("thermal", msg)

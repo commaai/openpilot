@@ -45,6 +45,7 @@ sudo apt-get update && sudo apt-get install -y \
     python3-pip \
     qt5-default \
     qtmultimedia5-dev \
+    qtwebengine5-dev \
     screen \
     sudo \
     vim \

@@ -225,9 +225,6 @@ QWidget * developer_panel() {
 
 QWidget * network_panel(QWidget * parent) {
   Networking *w = new Networking(parent);
-  QObject::connect(parent, SIGNAL(sidebarPressed()), w, SLOT(sidebarChange()));
-  QObject::connect(w, SIGNAL(openKeyboard()), parent, SLOT(closeSidebar()));
-  QObject::connect(w, SIGNAL(closeKeyboard()), parent, SLOT(openSidebar()));
   return w;
 }
 
@@ -271,12 +268,12 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
     QPushButton *btn = new QPushButton(panel.first);
     btn->setCheckable(true);
     btn->setStyleSheet(R"(
-      QPushButton {
+      * {
         color: grey;
         border: none;
         background: none;
         font-size: 65px;
-        font-weight: bold;
+        font-weight: 500;
         padding-top: 35px;
         padding-bottom: 35px;
       }
@@ -326,12 +323,4 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
       background-color: black;
     }
   )");
-}
-
-void SettingsWindow::closeSidebar() {
-  sidebar_widget->setFixedWidth(0);
-}
-
-void SettingsWindow::openSidebar() {
-  sidebar_widget->setFixedWidth(500);
 }

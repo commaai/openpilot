@@ -122,7 +122,7 @@ void OffroadHome::refresh() {
     border: 1px solid;
     border-radius: 5px;
     font-size: 40px;
-    font-weight: bold;
+    font-weight: 500;
     background-color: #E22C2C;
   )");
   if (alerts_widget->updateAvailable) {
@@ -276,7 +276,7 @@ void GLWindow::paintGL() {
 
     double cur_draw_t = millis_since_boot();
     double dt = cur_draw_t - prev_draw_t;
-    if (dt > 66){
+    if (dt > 66 && onroad){
       // warn on sub 15fps
       LOGW("slow frame(%llu) time: %.2f", ui_state.sm->frame, dt);
     }

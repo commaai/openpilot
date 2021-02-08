@@ -12,8 +12,8 @@ from common.params import Params
 import cereal.messaging as messaging
 from cereal import log
 
-LaneChangeState = log.PathPlan.LaneChangeState
-LaneChangeDirection = log.PathPlan.LaneChangeDirection
+LaneChangeState = log.LateralPlan.LaneChangeState
+LaneChangeDirection = log.LateralPlan.LaneChangeDirection
 
 LOG_MPC = os.environ.get('LOG_MPC', False)
 
@@ -22,27 +22,27 @@ LANE_CHANGE_TIME_MAX = 10.
 
 DESIRES = {
   LaneChangeDirection.none: {
-    LaneChangeState.off: log.PathPlan.Desire.none,
-    LaneChangeState.preLaneChange: log.PathPlan.Desire.none,
-    LaneChangeState.laneChangeStarting: log.PathPlan.Desire.none,
-    LaneChangeState.laneChangeFinishing: log.PathPlan.Desire.none,
+    LaneChangeState.off: log.LateralPlan.Desire.none,
+    LaneChangeState.preLaneChange: log.LateralPlan.Desire.none,
+    LaneChangeState.laneChangeStarting: log.LateralPlan.Desire.none,
+    LaneChangeState.laneChangeFinishing: log.LateralPlan.Desire.none,
   },
   LaneChangeDirection.left: {
-    LaneChangeState.off: log.PathPlan.Desire.none,
-    LaneChangeState.preLaneChange: log.PathPlan.Desire.none,
-    LaneChangeState.laneChangeStarting: log.PathPlan.Desire.laneChangeLeft,
-    LaneChangeState.laneChangeFinishing: log.PathPlan.Desire.laneChangeLeft,
+    LaneChangeState.off: log.LateralPlan.Desire.none,
+    LaneChangeState.preLaneChange: log.LateralPlan.Desire.none,
+    LaneChangeState.laneChangeStarting: log.LateralPlan.Desire.laneChangeLeft,
+    LaneChangeState.laneChangeFinishing: log.LateralPlan.Desire.laneChangeLeft,
   },
   LaneChangeDirection.right: {
-    LaneChangeState.off: log.PathPlan.Desire.none,
-    LaneChangeState.preLaneChange: log.PathPlan.Desire.none,
-    LaneChangeState.laneChangeStarting: log.PathPlan.Desire.laneChangeRight,
-    LaneChangeState.laneChangeFinishing: log.PathPlan.Desire.laneChangeRight,
+    LaneChangeState.off: log.LateralPlan.Desire.none,
+    LaneChangeState.preLaneChange: log.LateralPlan.Desire.none,
+    LaneChangeState.laneChangeStarting: log.LateralPlan.Desire.laneChangeRight,
+    LaneChangeState.laneChangeFinishing: log.LateralPlan.Desire.laneChangeRight,
   },
 }
 
 
-class PathPlanner():
+class LateralPlanner():
   def __init__(self, CP):
     self.LP = LanePlanner()
 
@@ -57,7 +57,7 @@ class PathPlanner():
     self.lane_change_timer = 0.0
     self.lane_change_ll_prob = 1.0
     self.prev_one_blinker = False
-    self.desire = log.PathPlan.Desire.none
+    self.desire = log.LateralPlan.Desire.none
 
     self.path_xyz = np.zeros((TRAJECTORY_SIZE,3))
     self.plan_yaw = np.zeros((TRAJECTORY_SIZE,))
@@ -73,7 +73,7 @@ class PathPlanner():
     self.cur_state[0].x = 0.0
     self.cur_state[0].y = 0.0
     self.cur_state[0].psi = 0.0
-    self.cur_state[0].tire_angle = 0.0
+    self.cur_state[0].curvature = 0.0
 
     self.angle_steers_des = 0.0
     self.angle_steers_des_mpc = 0.0
@@ -84,14 +84,13 @@ class PathPlanner():
     active = sm['controlsState'].active
     steering_wheel_angle_offset_deg = sm['liveParameters'].angleOffset
     steering_wheel_angle_deg = sm['carState'].steeringAngle
-    measured_tire_angle = -math.radians(steering_wheel_angle_deg - steering_wheel_angle_offset_deg) / VM.sR
-
 
     # Update vehicle model
     x = max(sm['liveParameters'].stiffnessFactor, 0.1)
     sr = max(sm['liveParameters'].steerRatio, 0.1)
     VM.update_params(x, sr)
     curvature_factor = VM.curvature_factor(v_ego)
+    measured_curvature = -curvature_factor * math.radians(steering_wheel_angle_deg - steering_wheel_angle_offset_deg) / VM.sR
 
 
     md = sm['modelV2']
@@ -163,7 +162,7 @@ class PathPlanner():
     self.desire = DESIRES[self.lane_change_direction][self.lane_change_state]
 
     # Turn off lanes during lane change
-    if self.desire == log.PathPlan.Desire.laneChangeRight or self.desire == log.PathPlan.Desire.laneChangeLeft:
+    if self.desire == log.LateralPlan.Desire.laneChangeRight or self.desire == log.LateralPlan.Desire.laneChangeLeft:
       self.LP.lll_prob *= self.lane_change_ll_prob
       self.LP.rll_prob *= self.lane_change_ll_prob
     d_path_xyz = self.LP.get_d_path(v_ego, self.t_idxs, self.path_xyz)
@@ -176,7 +175,6 @@ class PathPlanner():
     assert len(heading_pts) == MPC_N + 1
     self.libmpc.run_mpc(self.cur_state, self.mpc_solution,
                         float(v_ego_mpc),
-                        curvature_factor,
                         CAR_ROTATION_RADIUS,
                         list(y_pts),
                         list(heading_pts))
@@ -184,39 +182,37 @@ class PathPlanner():
     self.cur_state.x = 0.0
     self.cur_state.y = 0.0
     self.cur_state.psi = 0.0
-    self.cur_state.tire_angle = interp(DT_MDL, self.t_idxs[:MPC_N+1], self.mpc_solution.tire_angle)
+    self.cur_state.curvature = interp(DT_MDL, self.t_idxs[:MPC_N+1], self.mpc_solution.curvature)
 
     # TODO this needs more thought, use .2s extra for now to estimate other delays
     delay = CP.steerActuatorDelay + .2
-    next_tire_angle = interp(DT_MDL + delay, self.t_idxs[:MPC_N+1], self.mpc_solution.tire_angle)
-    next_tire_angle_rate = self.mpc_solution.tire_angle_rate[0]
-
-    # TODO This gets around the fact that MPC can plan to turn and turn back in the
-    # time between now and delay, need better abstraction between planner and controls
-    plan_ahead_idx = sum(self.t_idxs < delay)
-    if next_tire_angle_rate > 0:
-      next_tire_angle = max(list(self.mpc_solution.tire_angle)[:plan_ahead_idx] + [next_tire_angle])
+    next_curvature = interp(delay, self.t_idxs[:MPC_N+1], self.mpc_solution.curvature)
+    psi = interp(delay, self.t_idxs[:MPC_N+1], self.mpc_solution.psi)
+    next_curvature_rate = self.mpc_solution.curvature_rate[0]
+    next_curvature_from_psi = psi/(v_ego*delay)
+    if psi > self.mpc_solution.curvature[0] * delay * v_ego:
+      next_curvature = max(next_curvature_from_psi, next_curvature)
     else:
-      next_tire_angle = min(list(self.mpc_solution.tire_angle)[:plan_ahead_idx] + [next_tire_angle])
+      next_curvature = min(next_curvature_from_psi, next_curvature)
 
     # reset to current steer angle if not active or overriding
     if active:
-      tire_angle_desired = next_tire_angle
-      desired_tire_angle_rate = next_tire_angle_rate
+      curvature_desired = next_curvature
+      desired_curvature_rate = next_curvature_rate
     else:
-      tire_angle_desired = measured_tire_angle
-      desired_tire_angle_rate = 0.0
+      curvature_desired = measured_curvature
+      desired_curvature_rate = 0.0
 
     # negative sign, controls uses different convention
-    self.desired_steering_wheel_angle_deg = -float(math.degrees(tire_angle_desired * VM.sR)) + steering_wheel_angle_offset_deg
-    self.desired_steering_wheel_angle_rate_deg = -float(math.degrees(desired_tire_angle_rate * VM.sR))
+    self.desired_steering_wheel_angle_deg = -float(math.degrees(curvature_desired * VM.sR)/curvature_factor) + steering_wheel_angle_offset_deg
+    self.desired_steering_wheel_angle_rate_deg = -float(math.degrees(desired_curvature_rate * VM.sR)/curvature_factor)
 
     #  Check for infeasable MPC solution
-    mpc_nans = any(math.isnan(x) for x in self.mpc_solution.tire_angle)
+    mpc_nans = any(math.isnan(x) for x in self.mpc_solution.curvature)
     t = sec_since_boot()
     if mpc_nans:
       self.libmpc.init(MPC_COST_LAT.PATH, MPC_COST_LAT.HEADING, CP.steerRateCost)
-      self.cur_state.tire_angle = measured_tire_angle
+      self.cur_state.curvature = measured_curvature
 
       if t > self.last_cloudlog_t + 5.0:
         self.last_cloudlog_t = t
@@ -229,25 +225,24 @@ class PathPlanner():
 
   def publish(self, sm, pm):
     plan_solution_valid = self.solution_invalid_cnt < 2
-    plan_send = messaging.new_message('pathPlan')
+    plan_send = messaging.new_message('lateralPlan')
     plan_send.valid = sm.all_alive_and_valid(service_list=['carState', 'controlsState', 'liveParameters', 'modelV2'])
-    plan_send.pathPlan.laneWidth = float(self.LP.lane_width)
-    plan_send.pathPlan.dPathPoints = [float(x) for x in self.y_pts]
-    plan_send.pathPlan.lProb = float(self.LP.lll_prob)
-    plan_send.pathPlan.rProb = float(self.LP.rll_prob)
-    plan_send.pathPlan.dProb = float(self.LP.d_prob)
+    plan_send.lateralPlan.laneWidth = float(self.LP.lane_width)
+    plan_send.lateralPlan.dPathPoints = [float(x) for x in self.y_pts]
+    plan_send.lateralPlan.lProb = float(self.LP.lll_prob)
+    plan_send.lateralPlan.rProb = float(self.LP.rll_prob)
+    plan_send.lateralPlan.dProb = float(self.LP.d_prob)
 
-    plan_send.pathPlan.angleSteers = float(self.desired_steering_wheel_angle_deg)
-    plan_send.pathPlan.rateSteers = float(self.desired_steering_wheel_angle_rate_deg)
-    plan_send.pathPlan.angleOffset = float(sm['liveParameters'].angleOffsetAverage)
-    plan_send.pathPlan.mpcSolutionValid = bool(plan_solution_valid)
-    plan_send.pathPlan.paramsValid = bool(sm['liveParameters'].valid)
+    plan_send.lateralPlan.angleSteers = float(self.desired_steering_wheel_angle_deg)
+    plan_send.lateralPlan.rateSteers = float(self.desired_steering_wheel_angle_rate_deg)
+    plan_send.lateralPlan.angleOffset = float(sm['liveParameters'].angleOffsetAverage)
+    plan_send.lateralPlan.mpcSolutionValid = bool(plan_solution_valid)
 
-    plan_send.pathPlan.desire = self.desire
-    plan_send.pathPlan.laneChangeState = self.lane_change_state
-    plan_send.pathPlan.laneChangeDirection = self.lane_change_direction
+    plan_send.lateralPlan.desire = self.desire
+    plan_send.lateralPlan.laneChangeState = self.lane_change_state
+    plan_send.lateralPlan.laneChangeDirection = self.lane_change_direction
 
-    pm.send('pathPlan', plan_send)
+    pm.send('lateralPlan', plan_send)
 
     if LOG_MPC:
       dat = messaging.new_message('liveMpc')

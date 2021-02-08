@@ -22,16 +22,14 @@ public:
             int bitrate, bool h265, bool downscale);
   ~RawLogger();
   int encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
-                   int in_width, int in_height,
-                   int *frame_segment, uint64_t ts);
-  void encoder_open(const char* path, int segment);
+                   int in_width, int in_height, uint64_t ts);
+  void encoder_open(const char* path);
   void encoder_close();
 
 private:
   const char* filename;
   int fps;
   int counter = 0;
-  int segment = -1;
   bool is_open = false;
 
   std::string vid_path, lock_path;

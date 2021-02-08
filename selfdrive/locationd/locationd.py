@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
+import json
 import numpy as np
 import sympy as sp
 import cereal.messaging as messaging
 from cereal import log
+from common.params import Params
 import common.transformations.coordinates as coord
 from common.transformations.orientation import ecef_euler_from_ned, \
                                                euler_from_quat, \
@@ -295,6 +297,7 @@ def locationd_thread(sm, pm, disabled_logs=None):
   if pm is None:
     pm = messaging.PubMaster(['liveLocationKalman'])
 
+  params = Params()
   localizer = Localizer(disabled_logs=disabled_logs)
 
   while True:
@@ -326,6 +329,14 @@ def locationd_thread(sm, pm, disabled_logs=None):
       gps_age = (t / 1e9) - localizer.last_gps_fix
       msg.liveLocationKalman.gpsOK = gps_age < 1.0
       pm.send('liveLocationKalman', msg)
+
+      if sm.frame % 1200 == 0 and msg.liveLocationKalman.gpsOK:  # once a minute
+        location = {
+          'latitude': msg.liveLocationKalman.positionGeodetic.value[0],
+          'longitude': msg.liveLocationKalman.positionGeodetic.value[1],
+          'altitude': msg.liveLocationKalman.positionGeodetic.value[2],
+        }
+        params.put("LastGPSPosition", json.dumps(location))
 
 
 def main(sm=None, pm=None):

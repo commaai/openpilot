@@ -52,7 +52,7 @@ class TestStartup(unittest.TestCase):
     time.sleep(2) # wait for controlsd to be ready
 
     health = messaging.new_message('health')
-    health.health.hwType = log.HealthData.HwType.uno
+    health.health.pandaType = log.HealthData.PandaType.uno
     pm.send('health', health)
 
     # fingerprint

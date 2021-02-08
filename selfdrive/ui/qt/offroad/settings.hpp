@@ -48,6 +48,4 @@ private:
 
 public slots:
   void setActivePanel();
-  void closeSidebar();
-  void openSidebar();
 };

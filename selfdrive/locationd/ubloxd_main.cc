@@ -91,6 +91,13 @@ int ubloxd_main(poll_ubloxraw_msg_func poll_func, send_gps_event_func send_func)
               auto bytes = words.asBytes();
               pm.send("ubloxGnss", bytes.begin(), bytes.size());
             }
+          } else if(parser.msg_id() == MSG_MON_HW2) {
+            //LOGD("MSG_MON_HW2");
+            auto words = parser.gen_mon_hw2();
+            if(words.size() > 0) {
+              auto bytes = words.asBytes();
+              pm.send("ubloxGnss", bytes.begin(), bytes.size());
+            }
           } else {
             LOGW("Unknown mon msg id: 0x%02X", parser.msg_id());
           }

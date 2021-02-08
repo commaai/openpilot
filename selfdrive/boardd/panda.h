@@ -53,7 +53,7 @@ class Panda {
   ~Panda();
 
   std::atomic<bool> connected = true;
-  cereal::HealthData::HwType hw_type = cereal::HealthData::HwType::UNKNOWN;
+  cereal::HealthData::PandaType hw_type = cereal::HealthData::PandaType::UNKNOWN;
   bool is_pigeon = false;
   bool has_rtc = false;
 
@@ -64,7 +64,7 @@ class Panda {
   int usb_bulk_read(unsigned char endpoint, unsigned char* data, int length, unsigned int timeout=TIMEOUT);
 
   // Panda functionality
-  cereal::HealthData::HwType get_hw_type();
+  cereal::HealthData::PandaType get_hw_type();
   void set_safety_model(cereal::CarParams::SafetyModel safety_model, int safety_param=0);
   void set_unsafe_mode(uint16_t unsafe_mode);
   void set_rtc(struct tm sys_time);

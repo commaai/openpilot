@@ -41,7 +41,7 @@ static void ui_init_vision(UIState *s) {
 
 void ui_init(UIState *s) {
   s->sm = new SubMaster({"modelV2", "controlsState", "uiLayoutState", "liveCalibration", "radarState", "thermal", "frame",
-                         "health", "carParams", "driverState", "dMonitoringState", "sensorEvents"});
+                         "health", "carParams", "driverState", "driverMonitoringState", "sensorEvents", "carState", "ubloxGnss"});
 
   s->started = false;
   s->status = STATUS_OFFROAD;
@@ -75,19 +75,17 @@ static void update_lead(UIState *s, const cereal::RadarState::Reader &radar_stat
   }
 }
 
-template <class T>
 static void update_line_data(const UIState *s, const cereal::ModelDataV2::XYZTData::Reader &line,
-                             float y_off, float z_off, T *pvd, float max_distance) {
+                             float y_off, float z_off, line_vertices_data *pvd, float max_distance) {
   const auto line_x = line.getX(), line_y = line.getY(), line_z = line.getZ();
   int max_idx = -1;
   vertex_data *v = &pvd->v[0];
-  const float margin = 500.0f;
   for (int i = 0; ((i < TRAJECTORY_SIZE) and (line_x[i] < fmax(MIN_DRAW_DISTANCE, max_distance))); i++) {
-    v += car_space_to_full_frame(s, line_x[i], -line_y[i] - y_off, -line_z[i] + z_off, v, margin);
+    v += car_space_to_full_frame(s, line_x[i], -line_y[i] - y_off, -line_z[i] + z_off, v);
     max_idx = i;
   }
   for (int i = max_idx; i >= 0; i--) {
-    v += car_space_to_full_frame(s, line_x[i], -line_y[i] + y_off, -line_z[i] + z_off, v, margin);
+    v += car_space_to_full_frame(s, line_x[i], -line_y[i] + y_off, -line_z[i] + z_off, v);
   }
   pvd->cnt = v - pvd->v;
   assert(pvd->cnt < std::size(pvd->v));
@@ -127,6 +125,9 @@ static void update_sockets(UIState *s) {
   if (s->started && sm.updated("controlsState")) {
     scene.controls_state = sm["controlsState"].getControlsState();
   }
+  if (sm.updated("carState")) {
+    scene.car_state = sm["carState"].getCarState();
+  }
   if (sm.updated("radarState")) {
     auto radar_state = sm["radarState"].getRadarState();
     const auto line = sm["modelV2"].getModelV2().getPosition();
@@ -153,10 +154,21 @@ static void update_sockets(UIState *s) {
   }
   if (sm.updated("health")) {
     auto health = sm["health"].getHealth();
-    scene.hwType = health.getHwType();
+    scene.pandaType = health.getPandaType();
     s->ignition = health.getIgnitionLine() || health.getIgnitionCan();
   } else if ((s->sm->frame - s->sm->rcv_frame("health")) > 5*UI_FREQ) {
-    scene.hwType = cereal::HealthData::HwType::UNKNOWN;
+    scene.pandaType = cereal::HealthData::PandaType::UNKNOWN;
+  }
+  if (sm.updated("ubloxGnss")) {
+    auto data = sm["ubloxGnss"].getUbloxGnss();
+    if (data.which() == cereal::UbloxGnss::MEASUREMENT_REPORT) {
+      auto measurements = data.getMeasurementReport().getMeasurements();
+      for (auto m : measurements) {
+        scene.cnoAvg += m.getCno();
+      }
+      scene.cnoAvg /= measurements.size();
+      scene.satelliteCount = data.getMeasurementReport().getNumMeas();
+    }
   }
   if (sm.updated("carParams")) {
     s->longitudinal_control = sm["carParams"].getCarParams().getOpenpilotLongitudinalControl();
@@ -164,11 +176,12 @@ static void update_sockets(UIState *s) {
   if (sm.updated("driverState")) {
     scene.driver_state = sm["driverState"].getDriverState();
   }
-  if (sm.updated("dMonitoringState")) {
-    scene.dmonitoring_state = sm["dMonitoringState"].getDMonitoringState();
-    scene.is_rhd = scene.dmonitoring_state.getIsRHD();
-    scene.frontview = scene.dmonitoring_state.getIsPreview();
-  } else if (scene.frontview && (sm.frame - sm.rcv_frame("dMonitoringState")) > UI_FREQ/2) {
+  if (sm.updated("driverMonitoringState")) {
+    scene.dmonitoring_state = sm["driverMonitoringState"].getDriverMonitoringState();
+    if(!s->scene.frontview && !s->ignition) {
+      read_param(&s->scene.frontview, "IsDriverViewEnabled");
+    }
+  } else if ((sm.frame - sm.rcv_frame("driverMonitoringState")) > UI_FREQ/2) {
     scene.frontview = false;
   }
   if (sm.updated("sensorEvents")) {
@@ -182,11 +195,10 @@ static void update_sockets(UIState *s) {
       }
     }
   }
+  s->started = s->scene.thermal.getStarted() || s->scene.frontview;
 }
 
 static void update_alert(UIState *s) {
-  if (!s->started || s->scene.frontview) return;
-
   UIScene &scene = s->scene;
   if (s->sm->updated("controlsState")) {
     auto alert_sound = scene.controls_state.getAlertSound();
@@ -205,7 +217,7 @@ static void update_alert(UIState *s) {
   }
 
   // Handle controls timeout
-  if ((s->sm->frame - s->started_frame) > 10 * UI_FREQ) {
+  if (s->scene.thermal.getStarted() && (s->sm->frame - s->started_frame) > 10 * UI_FREQ) {
     const uint64_t cs_frame = s->sm->rcv_frame("controlsState");
     if (cs_frame < s->started_frame) {
       // car is started, but controlsState hasn't been seen at all
@@ -243,8 +255,6 @@ static void update_params(UIState *s) {
 
 static void update_vision(UIState *s) {
   if (!s->vipc_client->connected && s->started) {
-    s->vipc_client = s->scene.frontview ? s->vipc_client_front : s->vipc_client_rear;
-
     if (s->vipc_client->connect(false)){
       ui_init_vision(s);
     }
@@ -259,8 +269,6 @@ static void update_vision(UIState *s) {
 }
 
 static void update_status(UIState *s) {
-  s->started = s->scene.thermal.getStarted() || s->scene.frontview;
-
   if (s->started && s->sm->updated("controlsState")) {
     auto alert_status = s->scene.controls_state.getAlertStatus();
     if (alert_status == cereal::ControlsState::AlertStatus::USER_PROMPT) {
@@ -273,26 +281,32 @@ static void update_status(UIState *s) {
   }
 
   // Handle onroad/offroad transition
-  if (!s->started && s->status != STATUS_OFFROAD) {
-    s->status = STATUS_OFFROAD;
-    s->active_app = cereal::UiLayoutState::App::HOME;
-    s->sidebar_collapsed = false;
-    s->sound->stop();
-    s->vipc_client->connected = false;
-  } else if (s->started && s->status == STATUS_OFFROAD) {
-    s->status = STATUS_DISENGAGED;
-    s->started_frame = s->sm->frame;
+  static bool started_prev = false;
+  if (s->started != started_prev) {
+    if (s->started) {
+      s->status = STATUS_DISENGAGED;
+      s->started_frame = s->sm->frame;
 
-    s->active_app = cereal::UiLayoutState::App::NONE;
-    s->sidebar_collapsed = true;
-    s->scene.alert_size = cereal::ControlsState::AlertSize::NONE;
+      read_param(&s->scene.is_rhd, "IsRHD");
+      s->active_app = cereal::UiLayoutState::App::NONE;
+      s->sidebar_collapsed = true;
+      s->scene.alert_size = cereal::ControlsState::AlertSize::NONE;
+      s->vipc_client = s->scene.frontview ? s->vipc_client_front : s->vipc_client_rear;
+    } else {
+      s->status = STATUS_OFFROAD;
+      s->active_app = cereal::UiLayoutState::App::HOME;
+      s->sidebar_collapsed = false;
+      s->sound->stop();
+      s->vipc_client->connected = false;
+    }
   }
+  started_prev = s->started;
 }
 
 void ui_update(UIState *s) {
   update_params(s);
   update_sockets(s);
-  update_alert(s);
   update_status(s);
+  update_alert(s);
   update_vision(s);
 }

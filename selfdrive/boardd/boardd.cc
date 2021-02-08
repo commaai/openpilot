@@ -36,7 +36,7 @@
 #define SATURATE_IL 1600
 #define NIBBLE_TO_HEX(n) ((n) < 10 ? (n) + '0' : ((n) - 10) + 'a')
 
-Panda * panda = NULL;
+Panda * panda = nullptr;
 std::atomic<bool> safety_setter_thread_running(false);
 std::atomic<bool> ignition(false);
 
@@ -121,7 +121,7 @@ bool usb_connect() {
 
   std::unique_ptr<Panda> tmp_panda;
   try {
-    assert(panda == NULL);
+    assert(panda == nullptr);
     tmp_panda = std::make_unique<Panda>();
   } catch (std::exception &e) {
     return false;
@@ -180,10 +180,13 @@ bool usb_connect() {
 }
 
 // must be called before threads or with mutex
-void usb_retry_connect() {
+static bool usb_retry_connect() {
   LOGW("attempting to connect");
-  while (!usb_connect()) { util::sleep_for(100); }
-  LOGW("connected to board");
+  while (!do_exit && !usb_connect()) { util::sleep_for(100); }
+  if (panda) {
+    LOGW("connected to board");
+  }
+  return !do_exit;
 }
 
 void can_recv(PubMaster &pm) {
@@ -273,7 +276,7 @@ void can_health_thread(bool spoofing_started) {
     MessageBuilder msg;
     auto healthData  = msg.initEvent().initHealth();
 
-    healthData.setHwType(cereal::HealthData::HwType::UNKNOWN);
+    healthData.setPandaType(cereal::HealthData::PandaType::UNKNOWN);
     pm.send("health", msg);
     util::sleep_for(500);
   }
@@ -360,7 +363,7 @@ void can_health_thread(bool spoofing_started) {
     healthData.setCanSendErrs(health.can_send_errs);
     healthData.setCanFwdErrs(health.can_fwd_errs);
     healthData.setGmlanSendErrs(health.gmlan_send_errs);
-    healthData.setHwType(panda->hw_type);
+    healthData.setPandaType(panda->hw_type);
     healthData.setUsbPowerMode(cereal::HealthData::UsbPowerMode(health.usb_power_mode));
     healthData.setSafetyModel(cereal::CarParams::SafetyModel(health.safety_model));
     healthData.setFanSpeedRpm(fan_speed_rpm);
@@ -420,10 +423,10 @@ void hardware_control_thread() {
 #endif
 
     // Other pandas don't have fan/IR to control
-    if (panda->hw_type != cereal::HealthData::HwType::UNO && panda->hw_type != cereal::HealthData::HwType::DOS) continue;
+    if (panda->hw_type != cereal::HealthData::PandaType::UNO && panda->hw_type != cereal::HealthData::PandaType::DOS) continue;
     if (sm.updated("thermal")){
       // Fan speed
-      uint16_t fan_speed = sm["thermal"].getThermal().getFanSpeed();
+      uint16_t fan_speed = sm["thermal"].getThermal().getFanSpeedRpmDesired();
       if (fan_speed != prev_fan_speed || cnt % 100 == 0){
         panda->set_fan_speed(fan_speed);
         prev_fan_speed = fan_speed;
@@ -523,16 +526,16 @@ int main() {
     threads.push_back(std::thread(can_health_thread, getenv("STARTED") != nullptr));
 
     // connect to the board
-    usb_retry_connect();
-
-    threads.push_back(std::thread(can_send_thread, getenv("FAKESEND") != nullptr));
-    threads.push_back(std::thread(can_recv_thread));
-    threads.push_back(std::thread(hardware_control_thread));
-    threads.push_back(std::thread(pigeon_thread));
+    if (usb_retry_connect()) {
+      threads.push_back(std::thread(can_send_thread, getenv("FAKESEND") != nullptr));
+      threads.push_back(std::thread(can_recv_thread));
+      threads.push_back(std::thread(hardware_control_thread));
+      threads.push_back(std::thread(pigeon_thread));
+    }
 
     for (auto &t : threads) t.join();
 
     delete panda;
-    panda = NULL;
+    panda = nullptr;
   }
 }
