@@ -16,16 +16,16 @@
 // globals
 ExitHandler do_exit;
 
-struct LiveData {
+struct ModelContext {
 bool run_model = false;
 mat3 cur_transform = {};
 uint32_t frame_id = 0;
 int desire = -1;
-} live_data;
+} model_context;
 
 std::mutex transform_lock;
 
-void* live_thread(void *arg) {
+void model_context_thread() {
   set_thread_name("live");
   set_realtime_priority(50);
 
@@ -85,26 +85,23 @@ void* live_thread(void *arg) {
       for (int i=0; i<3*3; i++) {
         transform.v[i] = warp_matrix(i / 3, i % 3);
       }
-      mat3 model_transform = matmul3(yuv_transform, transform);
       std::lock_guard lk(transform_lock);
-      live_data.cur_transform = model_transform;
-      live_data.run_model = true;
+      model_context.cur_transform = matmul3(yuv_transform, transform);;
+      model_context.run_model = true;
     }
     if (sm.updated("lateralPlan")) {
       // TODO: path planner timeout?
       std::lock_guard lk(transform_lock);
-      live_data.desire = ((int)sm["lateralPlan"].getLateralPlan().getDesire());
+      model_context.desire = ((int)sm["lateralPlan"].getLateralPlan().getDesire());
     }
     if (sm.updated("frame")) {
       std::lock_guard lk(transform_lock);
-      live_data.frame_id = sm["frame"].getFrame().getFrameId();
+      model_context.frame_id = sm["frame"].getFrame().getFrameId();
     }
   }
-  return NULL;
 }
 
 int main(int argc, char **argv) {
-  int err;
   set_realtime_priority(54);
 
 #ifdef QCOM
@@ -115,9 +112,7 @@ int main(int argc, char **argv) {
 #endif
 
   // start calibration thread
-  pthread_t live_thread_handle;
-  err = pthread_create(&live_thread_handle, NULL, live_thread, NULL);
-  assert(err == 0);
+  std::thread thread = std::thread(model_context_thread);
 
   // messaging
   PubMaster pm({"modelV2", "cameraOdometry"});
@@ -133,12 +128,8 @@ int main(int argc, char **argv) {
 
   VisionIpcClient vipc_client = VisionIpcClient("camerad", VISION_STREAM_YUV_BACK, true, device_id, context);
 
-  while (!do_exit){
-    if (!vipc_client.connect(false)){
-      util::sleep_for(100);
-      continue;
-    }
-    break;
+  while (!do_exit && !vipc_client.connect(false)) {
+    util::sleep_for(100);
   }
 
   // loop
@@ -159,26 +150,24 @@ int main(int argc, char **argv) {
     while (!do_exit) {
       VisionIpcBufExtra extra;
       VisionBuf *buf = vipc_client.recv(&extra);
-      if (buf == nullptr){
-        continue;
-      }
+      if (buf == nullptr) continue;
 
       transform_lock.lock();
-      LiveData data = live_data;
+      ModelContext ctx = model_context;
       transform_lock.unlock();
 
       double mt1 = 0, mt2 = 0;
-      if (data.run_model) {
+      if (ctx.run_model) {
         run_count++;
 
         float vec_desire[DESIRE_LEN] = {0};
-        if (data.desire >= 0 && data.desire < DESIRE_LEN) {
-          vec_desire[data.desire] = 1.0;
+        if (ctx.desire >= 0 && ctx.desire < DESIRE_LEN) {
+          vec_desire[ctx.desire] = 1.0;
         }
 
         mt1 = millis_since_boot();
 
-        ModelDataRaw model_buf = model_eval_frame(&model, buf->buf_cl, buf->width, buf->height, data.cur_transform, vec_desire);
+        ModelDataRaw model_buf = model_eval_frame(&model, buf->buf_cl, buf->width, buf->height, ctx.cur_transform, vec_desire);
         mt2 = millis_since_boot();
         float model_execution_time = (mt2 - mt1) / 1000.0;
 
@@ -188,11 +177,11 @@ int main(int argc, char **argv) {
         if (run_count < 10) frames_dropped = 0;  // let frame drops warm up
         float frame_drop_ratio = frames_dropped / (1 + frames_dropped);
 
-        model_publish(pm, extra.frame_id, data.frame_id, frame_drop_ratio, model_buf, extra.timestamp_eof, model_execution_time,
+        model_publish(pm, extra.frame_id, ctx.frame_id, frame_drop_ratio, model_buf, extra.timestamp_eof, model_execution_time,
                       kj::ArrayPtr<const float>(model.output.data(), model.output.size()));
         posenet_publish(pm, extra.frame_id, vipc_dropped_frames, model_buf, extra.timestamp_eof);
 
-        LOGD("model process: %.2fms, from last %.2fms, vipc_frame_id %u, frame_id, %u, frame_drop %.3f", mt2-mt1, mt1-last, extra.frame_id, data.frame_id, frame_drop_ratio);
+        LOGD("model process: %.2fms, from last %.2fms, vipc_frame_id %u, frame_id, %u, frame_drop %.3f", mt2-mt1, mt1-last, extra.frame_id, ctx.frame_id, frame_drop_ratio);
         last = mt1;
         last_vipc_frame_id = extra.frame_id;
       }
@@ -203,8 +192,7 @@ int main(int argc, char **argv) {
   model_free(&model);
 
   LOG("joining live_thread");
-  err = pthread_join(live_thread_handle, NULL);
-  assert(err == 0);
+  thread.join();
   CL_CHECK(clReleaseContext(context));
   return 0;
 }
