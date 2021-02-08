@@ -18,7 +18,7 @@ else:
   qt_libs = qt_env["LIBS"] + libs + ["pthread", "ssl", "crypto"]
 
   widgets = qt_env.Library("qt_widgets",
-                 ["qt/qt_window.cc", "qt/qt_sound.cc", "qt/widgets/keyboard.cc", "qt/widgets/input_field.cc", "qt/widgets/drive_stats.cc", "qt/widgets/ssh_keys.cc",
+                 ["qt/qt_sound.cc", "qt/widgets/keyboard.cc", "qt/widgets/input_field.cc", "qt/widgets/drive_stats.cc", "qt/widgets/ssh_keys.cc",
                   "qt/offroad/networking.cc", "qt/offroad/wifiManager.cc", "qt/widgets/toggle.cc", "qt/widgets/offroad_alerts.cc", "qt/widgets/setup.cc"],
                  LIBS=qt_libs)
   qt_libs.append(widgets)
@@ -43,10 +43,16 @@ else:
 
     installers = [
       ("openpilot", "master"),
-      ("openpilot_test", "master"),
-      #("dashcam", "dashcam"),
-      #("dashcam_test", "dashcam"),
+      #("openpilot_test", "release3-staging"),
+      #("openpilot_internal", "master"),
+      #("dashcam", "dashcam3-staging"),
+      #("dashcam_test", "dashcam3-staging"),
     ]
     for name, branch in installers:
-      flags = qt_env["CXXFLAGS"] + [f"-D{branch}"]
-      qt_env.Program(f"qt/setup/installer_{name}", ["qt/setup/installer.cc"], LIBS=qt_libs)
+      d = {'BRANCH': f"'\"{branch}\"'"}
+      if "internal" in name:
+        import requests
+        r = requests.get("https://github.com/commaci2.keys")
+        r.raise_for_status()
+        d['SSH_KEYS'] = f'\\"{r.text.strip()}\\"'
+      qt_env.Program(f"qt/setup/installer_{name}", ["qt/setup/installer.cc"], LIBS=qt_libs, CPPDEFINES=d)
