@@ -12,6 +12,7 @@ from selfdrive.config import RADAR_TO_CAMERA
 from selfdrive.config import UIParams as UP
 from tools.lib.lazy_property import lazy_property
 
+
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
@@ -48,6 +49,31 @@ METER_WIDTH = 20
 
 ModelUIData = namedtuple("ModelUIData", ["cpath", "lpath", "rpath", "lead", "lead_future"])
 
+
+class Calibration:
+  def __init__(self, num_px, model_to_full_frame, K, E):
+    self._model_to_full_frame = model_to_full_frame
+    self._K = K
+    self._E = E
+    self.num_px = num_px
+
+  @property
+  def model_to_bb(self):
+    return _FULL_FRAME_TO_BB[self.num_px].dot(self._model_to_full_frame)
+
+  @lazy_property
+  def model_to_full_frame(self):
+    return self._model_to_full_frame
+
+  @lazy_property
+  def car_to_model(self):
+    return np.linalg.inv(self._model_to_full_frame).dot(self._K).dot(self._E[:, [0, 1, 3]])
+
+  @lazy_property
+  def car_to_bb(self):
+    return _BB_TO_FULL_FRAME[self.num_px].dot(self._K).dot(self._E[:, [0, 1, 3]])
+
+
 _COLOR_CACHE : Dict[Tuple[int, int, int], Any] = {}
 def find_color(lidar_surface, color):
   if color in _COLOR_CACHE:
@@ -63,12 +89,13 @@ def find_color(lidar_surface, color):
   _COLOR_CACHE[color] = ret
   return ret
 
+
 def warp_points(pt_s, warp_matrix):
-  # pt_s are the source points, nxm array.
-  pt_d = np.dot(warp_matrix[:, :-1], pt_s.T) + warp_matrix[:, -1, None]
+  pt_d = np.dot(warp_matrix, pt_s.T)# + warp_matrix[:, -1, None]
 
   # Divide by last dimension for representation in image space.
   return (pt_d[:-1, :] / pt_d[-1, :]).T
+
 
 def to_lid_pt(y, x):
   px, py = -x * UP.lidar_zoom + UP.lidar_car_x, -y * UP.lidar_zoom + UP.lidar_car_y
@@ -77,14 +104,14 @@ def to_lid_pt(y, x):
   return -1, -1
 
 
-def draw_path(y, x, color, img, calibration, top_down, lid_color=None):
-  # TODO: Remove big box.
-  uv_model_real = warp_points(np.column_stack((x, y)), calibration.car_to_model)
+def draw_path(path, color, img, calibration, top_down, lid_color=None):
+  x, y, z = path.x, path.y, path.z
+  uv_model_real = warp_points(np.column_stack((x, y, z)), calibration.car_to_model)
   uv_model = np.round(uv_model_real).astype(int)
+  print(uv_model)
 
   uv_model_dots = uv_model[np.logical_and.reduce((np.all(  # pylint: disable=no-member
-    uv_model > 0, axis=1), uv_model[:, 0] < img.shape[1] - 1, uv_model[:, 1] <
-                                                  img.shape[0] - 1))]
+    uv_model > 0, axis=1), uv_model[:, 0] < img.shape[1] - 1, uv_model[:, 1] < img.shape[0] - 1))]
 
   for i, j in ((-1, 0), (0, -1), (0, 0), (0, 1), (1, 0)):
     img[uv_model_dots[:, 1] + i, uv_model_dots[:, 0] + j] = color
@@ -97,29 +124,6 @@ def draw_path(y, x, color, img, calibration, top_down, lid_color=None):
       px, py = to_lid_pt(x[i], y[i])
       if px != -1:
         top_down[1][px, py] = tcolor
-
-def draw_steer_path(speed_ms, curvature, color, img,
-                    calibration, top_down, VM, lid_color=None):
-  path_x = np.arange(101.)
-  path_y = np.multiply(path_x, np.tan(np.arcsin(np.clip(path_x * curvature, -0.999, 0.999)) / 2.))
-
-  draw_path(path_y, path_x, color, img, calibration, top_down, lid_color)
-
-def draw_lead_car(closest, top_down):
-  if closest is not None:
-    closest_y = int(round(UP.lidar_car_y - closest * UP.lidar_zoom))
-    if closest_y > 0:
-      top_down[1][int(round(UP.lidar_car_x - METER_WIDTH * 2)):int(
-        round(UP.lidar_car_x + METER_WIDTH * 2)), closest_y] = find_color(
-          top_down[0], (255, 0, 0))
-
-def draw_lead_on(img, closest_x_m, closest_y_m, calibration, color, sz=10, img_offset=(0, 0)):
-  uv = warp_points(np.asarray([closest_x_m, closest_y_m]), calibration.car_to_bb)[0]
-  u, v = int(uv[0] + img_offset[0]), int(uv[1] + img_offset[1])
-  if u > 0 and u < 640 and v > 0 and v < 480 - 5:
-    img[v - 5 - sz:v - 5 + sz, u] = color
-    img[v - 5, u - sz:u + sz] = color
-  return u, v
 
 
 def init_plots(arr, name_to_arr_idx, plot_xlims, plot_ylims, plot_names, plot_colors, plot_styles, bigplots=False):
@@ -197,97 +201,39 @@ def init_plots(arr, name_to_arr_idx, plot_xlims, plot_ylims, plot_names, plot_co
   return draw_plots
 
 
-def draw_mpc(liveMpc, top_down):
-  mpc_color = find_color(top_down[0], (0, 255, 0))
-  for p in zip(liveMpc.x, liveMpc.y):
-    px, py = to_lid_pt(*p)
-    top_down[1][px, py] = mpc_color
-
-
-class CalibrationTransformsForWarpMatrix(object):
-  def __init__(self, num_px, model_to_full_frame, K, E):
-    self._model_to_full_frame = model_to_full_frame
-    self._K = K
-    self._E = E
-    self.num_px = num_px
-
-  @property
-  def model_to_bb(self):
-    return _FULL_FRAME_TO_BB[self.num_px].dot(self._model_to_full_frame)
-
-  @lazy_property
-  def model_to_full_frame(self):
-    return self._model_to_full_frame
-
-  @lazy_property
-  def car_to_model(self):
-    return np.linalg.inv(self._model_to_full_frame).dot(self._K).dot(
-      self._E[:, [0, 1, 3]])
-
-  @lazy_property
-  def car_to_bb(self):
-    return _BB_TO_FULL_FRAME[self.num_px].dot(self._K).dot(self._E[:, [0, 1, 3]])
-
-
 def pygame_modules_have_loaded():
   return pygame.display.get_init() and pygame.font.get_init()
 
-def draw_var(y, x, var, color, img, calibration, top_down):
-  # otherwise drawing gets stupid
-  var = max(1e-1, min(var, 0.7))
 
-  varcolor = tuple(np.array(color)*0.5)
-  draw_path(y - var, x, varcolor, img, calibration, top_down)
-  draw_path(y + var, x, varcolor, img, calibration, top_down)
+# def draw_var(y, x, var, color, img, calibration, top_down):
+#   # otherwise drawing gets stupid
+#   var = max(1e-1, min(var, 0.7))
+
+#   varcolor = tuple(np.array(color)*0.5)
+#   draw_path(y - var, x, varcolor, img, calibration, top_down)
+#   draw_path(y + var, x, varcolor, img, calibration, top_down)
 
 
-class ModelPoly(object):
-  def __init__(self, model_path):
-    if len(model_path.poly) == 0:
-      self.valid = False
-      return
-
-    self.poly = np.array(model_path.poly)
-
-    self.prob = model_path.prob
-    self.std = model_path.std
-    self.y = np.polyval(self.poly, _PATH_XD)
-    self.valid = True
-
-def extract_model_data(md):
-  return ModelUIData(
-    cpath=ModelPoly(md.path),
-    lpath=ModelPoly(md.leftLane),
-    rpath=ModelPoly(md.rightLane),
-    lead=md.lead,
-    lead_future=md.leadFuture,
-    )
-
-def plot_model(m, VM, v_ego, curvature, imgw, calibration, top_down, d_poly, top_down_color=216):
+def plot_model(m, img, calibration, top_down):
   if calibration is None or top_down is None:
     return
 
-  for lead in [m.lead, m.lead_future]:
+  for lead in m.leads:
     if lead.prob < 0.5:
       continue
 
-    lead_dist_from_radar = lead.dist - RADAR_TO_CAMERA
-    _, py_top = to_lid_pt(lead_dist_from_radar + lead.std, lead.relY)
-    px, py_bottom = to_lid_pt(lead_dist_from_radar - lead.std, lead.relY)
-    top_down[1][int(round(px - 4)):int(round(px + 4)), py_top:py_bottom] = top_down_color
+    x, y, _, _ = lead.xyva
+    x_std, _, _, _ = lead.xyvaStd
 
-  color = (0, int(255 * m.lpath.prob), 0)
-  for path in [m.cpath, m.lpath, m.rpath]:
-    if path.valid:
-      draw_path(path.y, _PATH_XD, color, imgw, calibration, top_down, YELLOW)
-      draw_var(path.y, _PATH_XD, path.std, color, imgw, calibration, top_down)
+    _, py_top = to_lid_pt(x + x_std, y)
+    px, py_bottom = to_lid_pt(x - x_std, y)
+    top_down[1][int(round(px - 4)):int(round(px + 4)), py_top:py_bottom] = find_color(top_down[0], YELLOW)
 
-  if d_poly is not None:
-    dpath_y = np.polyval(d_poly, _PATH_X)
-    draw_path(dpath_y, _PATH_X, RED, imgw, calibration, top_down, RED)
-
-  # draw user path from curvature
-  draw_steer_path(v_ego, curvature, BLUE, imgw, calibration, top_down, VM, BLUE)
+  for path, prob, std in zip(m.laneLines, m.laneLineProbs, m.laneLineStds):
+    color = (0, int(255 * prob), 0)
+    draw_path(path, color, img, calibration, top_down, YELLOW)
+  #   if path.valid:
+  #     draw_var(path.y, _PATH_XD, path.std, color, imgw, calibration, top_down)
 
 
 def maybe_update_radar_points(lt, lid_overlay):
