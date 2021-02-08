@@ -75,9 +75,8 @@ static void update_lead(UIState *s, const cereal::RadarState::Reader &radar_stat
   }
 }
 
-template <class T>
 static void update_line_data(const UIState *s, const cereal::ModelDataV2::XYZTData::Reader &line,
-                             float y_off, float z_off, T *pvd, float max_distance) {
+                             float y_off, float z_off, line_vertices_data *pvd, float max_distance) {
   const auto line_x = line.getX(), line_y = line.getY(), line_z = line.getZ();
   int max_idx = -1;
   vertex_data *v = &pvd->v[0];
