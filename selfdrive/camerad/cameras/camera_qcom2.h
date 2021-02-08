@@ -10,12 +10,12 @@
 #define FRAME_BUF_COUNT 4
 
 #define ANALOG_GAIN_MAX_IDX 14 // 0xF is bypass
-#define EXPOSURE_TIME_MIN 8 // min time limited by HDR exp factor
-#define EXPOSURE_TIME_MAX 1132 // with HDR, no slower than 1/25 sec (1416 lines)
+#define EXPOSURE_TIME_MIN 8 // with HDR, fastest ss
+#define EXPOSURE_TIME_MAX 1757 // with HDR, slowest ss
 
 #define HLC_THRESH 240
 #define HLC_A 80
-#define HISTO_CEIL_K 10
+#define HISTO_CEIL_K 5
 
 #define EF_LOWPASS_K 0.35
 
