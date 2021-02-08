@@ -114,7 +114,7 @@ struct LoggerdState {
   LoggerState logger = {};
   char segment_path[4096];
   int encoders_max_waiting = 0;
-  int rotate_segment;
+  int rotate_segment = -1;
   double last_rotate_tms;
   std::mutex rotate_lock;
   std::atomic<int> encoders_waiting;
@@ -207,10 +207,8 @@ void EncoderState::encoder_thread() {
 
       // encode a frame
       for (int i = 0; i < encoders.size(); ++i) {
-        int out_segment = -1;
         int out_id = encoders[i]->encode_frame(buf->y, buf->u, buf->v,
-                                               buf->width, buf->height,
-                                               &out_segment, extra.timestamp_eof);
+                                               buf->width, buf->height, extra.timestamp_eof);
         if (i == 0 && out_id != -1) {
           // publish encode index
           MessageBuilder msg;
@@ -221,7 +219,7 @@ void EncoderState::encoder_thread() {
           eidx.setTimestampEof(extra.timestamp_eof);
           eidx.setType((IS_QCOM2 || ci.id != D_CAMERA) ? cereal::EncodeIndex::Type::FULL_H_E_V_C : cereal::EncodeIndex::Type::FRONT);
           eidx.setEncodeId(total_frame_cnt);
-          eidx.setSegmentNum(out_segment);
+          eidx.setSegmentNum(encoder_segment);
           eidx.setSegmentId(out_id);
           if (lh) {
             auto bytes = msg.toBytes();
@@ -317,7 +315,7 @@ int main(int argc, char** argv) {
       qlog_states[sock] = qs;
     }
   }
-
+  s.last_rotate_tms = millis_since_boot();
   while (!do_exit) {
     for (auto sock : poller->poll(1000)) {
       drain_socket(s.logger.cur_handle, sock, qlog_states[sock]);
