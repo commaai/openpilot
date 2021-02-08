@@ -15,7 +15,7 @@
 
 void Setup::download(QString url) {
   setCurrentIndex(count() - 2);
-  repaint();
+  QCoreApplication::processEvents(QEventLoop::AllEvents, 1000);
 
   CURL *curl = curl_easy_init();
   if (!curl) {
