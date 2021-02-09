@@ -1,3 +1,4 @@
+#include <iostream>
 #include <stdio.h>
 #include <cmath>
 #include <stdlib.h>
@@ -141,9 +142,8 @@ static void update_sockets(UIState *s) {
     rpy << rpy_list[0], rpy_list[1], rpy_list[2];
     Eigen::Matrix3d device_from_calib = euler2rot(rpy);
     Eigen::Matrix3d view_from_device;
-    view_from_device << 0,0,1,1,0,0,0,1,0;
+    view_from_device << 0,1,0,0,0,1,1,0,0;
     Eigen::Matrix3d view_from_calib = view_from_device * device_from_calib;
-
     for (int i = 0; i < 3; i++) {
       for (int j = 0; j < 3; j++) {
         scene.view_from_calib.v[i*3 + j] = view_from_calib(i,j);

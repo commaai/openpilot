@@ -141,7 +141,3 @@ Eigen::Vector3d ned_euler_from_ecef(ECEF ecef_init, Eigen::Vector3d ecef_pose){
   return {phi, theta, psi};
 }
 
-
-
-int main(void){
-}
