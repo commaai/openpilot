@@ -30,7 +30,7 @@ constexpr int MAIN_FPS = 20;
 constexpr int MAIN_BITRATE = 5000000;
 constexpr int DCAM_BITRATE = 2500000;
 const bool IS_QCOM2 = false;
-constexpr int DCAM_BITRATE = 2500000;
+#define DCAM_BITRATE 2500000
 #else
 constexpr int MAIN_BITRATE = 10000000;
 constexpr int DCAM_BITRATE = MAIN_BITRATE;
@@ -53,6 +53,7 @@ std::map<std::string, LogCameraInfo> cameras_logged = {
     .is_h265 = true,
     .downscale = false,
     .has_qcamera = true}},
+#if defined(QCOM) || defined(QCOM2)
   {"frontFrame", LogCameraInfo{.id = D_CAMERA,
     .stream_type = VISION_STREAM_YUV_FRONT,
     .filename = "dcamera.hevc",
@@ -73,6 +74,7 @@ std::map<std::string, LogCameraInfo> cameras_logged = {
     .downscale = false,
     .has_qcamera = false}},
 #endif
+#endif
 };
 const LogCameraInfo qcam_info = {
     .filename = "qcamera.ts",
@@ -87,22 +89,37 @@ const LogCameraInfo qcam_info = {
 #endif
 };
 
-
-typedef struct QlogState {
+class SocketState {
+ public:
+  SocketState(Context *ctx, const struct service &srv) : freq(srv.decimation), counter(0) {
+    sock = SubSocket::create(ctx, srv.name);
+    assert(sock != NULL);
+  }
+  ~SocketState() { delete sock; }
+  void log(LoggerHandle *lh) {
+    Message *msg = nullptr;
+    while (!do_exit && (msg = sock->receive(true))) {
+      lh_log(lh, (uint8_t *)msg->getData(), msg->getSize(), counter == 0 && freq != -1);
+      if (freq != -1) {
+        counter = (counter + 1) % freq;
+      }
+      delete msg;
+    }
+  }
+  SubSocket *sock;
   int counter, freq;
-} QlogState;
+};
 
 class EncoderState {
 public:
-  EncoderState(const LogCameraInfo &ci, SubSocket *sock, const QlogState &qs, bool need_waiting)
-      : ci_(ci), frame_sock_(sock), qlog_state_(qs), need_waiting_(need_waiting) {
+  EncoderState(const LogCameraInfo &ci, SocketState *socket_state, bool need_waiting)
+      : ci_(ci), frame_sock_(socket_state), need_waiting_(need_waiting) {
     thread_ = std::thread(&EncoderState::encoder_thread, this);
   }
   ~EncoderState() { thread_.join(); }
   void encoder_thread();
   LogCameraInfo ci_;
-  std::unique_ptr<SubSocket> frame_sock_;
-  QlogState qlog_state_;
+  std::unique_ptr<SocketState> frame_sock_;
   std::thread thread_;
   const bool need_waiting_;
 };
@@ -118,17 +135,6 @@ struct LoggerdState {
   std::vector<EncoderState *> encoder_states;
 };
 LoggerdState s;
-
-void drain_socket(LoggerHandle *lh, SubSocket *sock, QlogState &qs) {
-  Message *msg = nullptr;
-  while (!do_exit && (msg = sock->receive(true))) {
-    lh_log(lh, (uint8_t *)msg->getData(), msg->getSize(), qs.counter == 0 && qs.freq != -1);
-    if (qs.freq != -1) {
-      qs.counter = (qs.counter + 1) % qs.freq;
-    }
-    delete msg;
-  }
-}
 
 void EncoderState::encoder_thread() {
   set_thread_name(ci_.filename);
@@ -195,7 +201,7 @@ void EncoderState::encoder_thread() {
       }
 
       // log frame socket
-      drain_socket(lh, frame_sock_.get(), qlog_state_);
+      frame_sock_->log(lh);
 
       // encode a frame
       for (int i = 0; i < encoders.size(); ++i) {
@@ -261,35 +267,32 @@ int main(int argc, char** argv) {
   logger_init(&s.logger, "rlog", true);
   loggerd_logger_next();
 
+  const bool record_front = Params().read_db_bool("RecordFront");
   // setup messaging
-  std::map<SubSocket*, QlogState> qlog_states;
+  std::map<SubSocket *, SocketState *> sockets;
   Context *ctx = Context::create();
   Poller * poller = Poller::create();
-  const bool record_front = Params().read_db_bool("RecordFront");
-  // subscribe to all socks
   for (const auto& it : services) {
     if (!it.should_log) continue;
 
-    SubSocket * sock = SubSocket::create(ctx, it.name);
-    assert(sock != NULL);
-    QlogState qs = {.counter = 0, .freq = it.decimation};
+    SocketState *socket_state = new SocketState(ctx, it);
 
     auto camera = cameras_logged.find(it.name);
     if (camera != cameras_logged.end() && (camera->second.id != D_CAMERA || record_front)) {
       // init and start encoder thread
       const bool need_waiting = (IS_QCOM2 || camera->second.id != D_CAMERA);
       s.encoders_max_waiting += need_waiting;
-      s.encoder_states.push_back(new EncoderState(camera->second, sock, qs, need_waiting));
+      s.encoder_states.push_back(new EncoderState(camera->second, socket_state, need_waiting));
     } else {
-      poller->registerSocket(sock);
-      qlog_states[sock] = qs;
+      poller->registerSocket(socket_state->sock);
+      sockets[socket_state->sock] = socket_state;
     }
   }
 
   s.last_camera_seen_tms = millis_since_boot();
   while (!do_exit) {
     for (auto sock : poller->poll(1000)) {
-      drain_socket(s.logger.cur_handle, sock, qlog_states[sock]);
+      sockets.at(sock)->log(s.logger.cur_handle);
     }
 
     std::unique_lock lk(s.rotate_lock);
@@ -313,7 +316,7 @@ int main(int argc, char** argv) {
   s.cv.notify_all();
   for (auto &e : s.encoder_states) { delete e; }
 
-  for (auto &[sock, qs] : qlog_states) delete sock;
+  for (auto &[sock, socket_state] : sockets) { delete socket_state; }
   LOGW("closing logger");
   logger_close(&s.logger);
 
