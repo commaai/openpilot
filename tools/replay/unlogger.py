@@ -11,12 +11,10 @@ from collections import namedtuple
 from collections import deque
 from datetime import datetime
 
-# strat 1: script to copy files
-# strat 2: build pip packages around these
-# could be its own pip package, which we'd need to build and release
 from cereal import log as capnp_log
 from cereal.services import service_list
 from cereal.messaging import pub_sock, MultiplePublishersError
+from cereal.visionipc.visionipc_pyx import VisionIpcServer, VisionStreamType  # pylint: disable=no-name-in-module
 from common import realtime
 
 from tools.lib.kbhit import KBHit
@@ -30,6 +28,7 @@ SeekAbsoluteTime = namedtuple("SeekAbsoluteTime", ("secs",))
 SeekRelativeTime = namedtuple("SeekRelativeTime", ("secs",))
 TogglePause = namedtuple("TogglePause", ())
 StopAndQuit = namedtuple("StopAndQuit", ())
+VIPC_TYP = "vipc"
 
 
 class UnloggerWorker(object):
@@ -116,7 +115,11 @@ class UnloggerWorker(object):
         if img is not None:
           img = img[:, :, ::-1]  # Convert RGB to BGR, which is what the camera outputs
           img = img.flatten()
-          smsg.frame.image = img.tobytes()
+          bts = img.tobytes()
+
+          smsg.frame.image = bts
+          data_socket.send_pyobj((cookie, VIPC_TYP, msg.logMonoTime, route_time), flags=zmq.SNDMORE)
+          data_socket.send(bts, copy=False)
 
       data_socket.send_pyobj((cookie, typ, msg.logMonoTime, route_time), flags=zmq.SNDMORE)
       data_socket.send(smsg.to_bytes(), copy=False)
@@ -155,9 +158,18 @@ def _get_address_send_func(address):
   sock = pub_sock(address)
   return sock.send
 
+def _get_vipc_server(length):
+  w, h = {
+    3052008: (1164, 874)
+  }[length]
+
+  vipc_server = VisionIpcServer("camerad")
+  vipc_server.create_buffers(VisionStreamType.VISION_STREAM_RGB_BACK, 4, True, w, h)
+  vipc_server.start_listener()
+  return vipc_server
 
 def unlogger_thread(command_address, forward_commands_address, data_address, run_realtime,
-                    address_mapping, publish_time_length, bind_early, no_loop):
+                    address_mapping, publish_time_length, bind_early, no_loop, vipc):
   # Clear context to avoid problems with multiprocessing.
   zmq.Context._instance = None
   context = zmq.Context.instance()
@@ -195,6 +207,8 @@ def unlogger_thread(command_address, forward_commands_address, data_address, run
   paused = False
   reset_time = True
   prev_msg_time = None
+  vipc_server = None
+
   while True:
     evts = dict(poller.poll())
     if command_sock in evts:
@@ -244,7 +258,7 @@ def unlogger_thread(command_address, forward_commands_address, data_address, run
         print("at", route_time)
         printed_at = route_time
 
-      if typ not in send_funcs:
+      if typ not in send_funcs and typ != 'vipc':
         if typ in address_mapping:
           # Remove so we don't keep printing warnings.
           address = address_mapping.pop(typ)
@@ -273,7 +287,12 @@ def unlogger_thread(command_address, forward_commands_address, data_address, run
 
       # Send message.
       try:
-        send_funcs[typ](msg_bytes)
+        if typ == VIPC_TYP and vipc:
+          if vipc_server is None:
+            vipc_server = _get_vipc_server(len(msg_bytes))
+          vipc_server.send(VisionStreamType.VISION_STREAM_RGB_BACK, msg_bytes)
+        if typ != VIPC_TYP:
+          send_funcs[typ](msg_bytes)
       except MultiplePublishersError:
         del send_funcs[typ]
 
@@ -385,6 +404,10 @@ def get_arg_parser():
     help="Bind early to avoid dropping messages.")
 
   parser.add_argument(
+    "--vipc", action="store_true", default=False,
+    help="Output video over visionipc")
+
+  parser.add_argument(
     "--start-time", type=float, default=0.,
     help="Seek to this absolute time (in seconds) upon starting playback.")
 
@@ -423,7 +446,7 @@ def main(argv):
     subprocesses["control"] = multiprocessing.Process(
       target=unlogger_thread,
       args=(command_address, forward_commands_address, data_address, args.realtime,
-            _get_address_mapping(args), args.publish_time_length, args.bind_early, args.no_loop))
+            _get_address_mapping(args), args.publish_time_length, args.bind_early, args.no_loop, args.vipc))
 
     subprocesses["data"].start()
     subprocesses["control"].start()
