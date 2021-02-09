@@ -49,7 +49,7 @@ class Panda {
   void cleanup();
 
  public:
-  Panda();
+  Panda(uint16_t vid = 0xbbaa, uint16_t pid = 0xddcc, bool getType = true);
   ~Panda();
 
   std::atomic<bool> connected = true;

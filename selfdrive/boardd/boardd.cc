@@ -549,59 +549,68 @@ std::string get_expected_signature(){
 }
 
 void get_out_of_dfu(){
-  int err = 0;
-  libusb_context* ctx;
-  err = libusb_init(&ctx);
-  assert(err == 0);
-
-  libusb_device **list = NULL;
-
-  int count = 0;
-  count = libusb_get_device_list(ctx, &list);
-  assert(count > 0);
-
-  for (int idx = 0; idx < count; idx++) {
-    libusb_device *device = list[idx];
-    libusb_device_descriptor desc;
-
-    err = libusb_get_device_descriptor(device, &desc);
-    assert(err == 0);
-    uint16_t vid = desc.idVendor;
-    uint16_t pid = desc.idProduct;
-    if (vid == 0x0483 && pid == 0xdf11){ // Panda in DFU 
-      printf("Vendor:Device = %04x:%04x\n", vid, pid);
-      libusb_device_handle* deviceHandle = libusb_open_device_with_vid_pid(ctx, vid, pid);
-      if (deviceHandle != NULL){
-        unsigned char buf[1024];
-        memset(buf, 0, sizeof(buf));//Ensure I can cout
-        std::cout<<"Id of MSG"<<desc.iManufacturer<<std::endl;
-        int length = libusb_get_string_descriptor_ascii(deviceHandle, 3, buf, 1024);
-        if (length < 0) {
-          std::cout<<"Error in getting description"<<std::endl;
-        } else {
-          std::cout<<"Got the DFU message"<<std::endl;
-          std::cout<<length<<std::endl;
-          std::cout<<buf<<std::endl;
-        }
-        libusb_close(deviceHandle);
-        std::cout<<"Got to end of loop"<<std::endl;
-      }
-      std::cout<<"Building panda bootstub"<<std::endl;
-      std::string basedir = get_basedir();
-      system(("cd " + basedir + "panda/board && make -f Makefile clean && make -f Makefile obj/bootstub.panda.bin").c_str());
-      std::cout<<"Bootstub should exist, reading"<<std::endl;
-
-    }
+  // int err = 0;
+  // libusb_context* ctx;
+  // err = libusb_init(&ctx);
+  // assert(err == 0);
+  // libusb_device **list = NULL;
+  // int count = 0;
+  // count = libusb_get_device_list(ctx, &list);
+  // assert(count > 0);
+  // for (int idx = 0; idx < count; idx++) {
+  //   libusb_device *device = list[idx];
+  //   libusb_device_descriptor desc;
+  //   err = libusb_get_device_descriptor(device, &desc);
+  //   assert(err == 0);
+  //   uint16_t vid = desc.idVendor;
+  //   uint16_t pid = desc.idProduct;
+  //   printf("Vendor:Device = %04x:%04x\n", vid, pid);
+    // if (vid == 0x0483 && pid == 0xdf11){ // Panda in DFU 
+    //   printf("Vendor:Device = %04x:%04x\n", vid, pid);
+    //   libusb_device_handle* deviceHandle = libusb_open_device_with_vid_pid(ctx, vid, pid);
+    //   if (deviceHandle != NULL){
+    //     unsigned char buf[1024];
+    //     memset(buf, 0, sizeof(buf));//Ensure I can cout
+    //     std::cout<<"Id of MSG"<<desc.iManufacturer<<std::endl;
+    //     int length = libusb_get_string_descriptor_ascii(deviceHandle, 3, buf, 1024);
+    //     if (length < 0) {
+    //       std::cout<<"Error in getting description"<<std::endl;
+    //     } else {
+    //       std::cout<<"Got the DFU message"<<std::endl;
+    //       std::cout<<length<<std::endl;
+    //       std::cout<<buf<<std::endl;
+    //     }
+    //     libusb_close(deviceHandle);
+    //     std::cout<<"Got to end of loop"<<std::endl;
+    //   }
+    // }
+  // }
+  // libusb_free_device_list(list, count);
+  // libusb_exit(ctx);
+  
+  Panda* dfuPanda;
+  try{
+    dfuPanda = new Panda(0x0483, 0xdf11, false);
+  }catch(std::runtime_error &e){
+    std::cout<<"DFU panda not found"<<std::endl;
+    free(dfuPanda);
+    return;
   }
-
-  libusb_free_device_list(list, count);
-  libusb_exit(ctx);
-  //dummyPanda should be cleaned up automatically
+  std::cout<<dfuPanda->connected<<std::endl;
+  std::cout<<"Building panda bootstub"<<std::endl;
+  util::sleep_for(500);
+  std::string basedir = get_basedir();
+  system(("cd " + basedir + "panda/board && make -f Makefile clean && make -f Makefile obj/bootstub.panda.bin").c_str());
+  std::cout<<"Bootstub should exist, reading"<<std::endl;
+  std::string program = util::read_file(basedir+"panda/board/obj/bootstub.panda.bin");
+  std::cout<<"Bootstub firmware has a length of: "<<std::dec<<program.length()<<std::endl;
 }
 
 void update_panda(){
   std::cout<<"updating panda"<<std::endl;
+  util::sleep_for(500);
   std::cout<<"1: Move out of DFU"<<std::endl;
+  util::sleep_for(500);
   get_out_of_dfu();
   // LOGW("Connecting to panda");
 
@@ -620,20 +629,20 @@ int main() {
   panda_set_power(true);
   update_panda();
   LOGW("End of startup procedure");
-  while (!do_exit){
-    std::vector<std::thread> threads;
-    threads.push_back(std::thread(can_health_thread, getenv("STARTED") != nullptr));
-    // connect to the board
-    usb_retry_connect();
+  // while (!do_exit){
+  //   std::vector<std::thread> threads;
+  //   threads.push_back(std::thread(can_health_thread, getenv("STARTED") != nullptr));
+  //   // connect to the board
+  //   usb_retry_connect();
 
-    threads.push_back(std::thread(can_send_thread, getenv("FAKESEND") != nullptr));
-    threads.push_back(std::thread(can_recv_thread));
-    threads.push_back(std::thread(hardware_control_thread));
-    threads.push_back(std::thread(pigeon_thread));
+  //   threads.push_back(std::thread(can_send_thread, getenv("FAKESEND") != nullptr));
+  //   threads.push_back(std::thread(can_recv_thread));
+  //   threads.push_back(std::thread(hardware_control_thread));
+  //   threads.push_back(std::thread(pigeon_thread));
 
-    for (auto &t : threads) t.join();
+  //   for (auto &t : threads) t.join();
 
-    delete panda;
-    panda = NULL;
-  }
+  //   delete panda;
+  //   panda = NULL;
+  // }
 }

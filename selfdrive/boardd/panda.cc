@@ -27,7 +27,8 @@ void panda_set_power(bool power){
 #endif
 }
 
-Panda::Panda(){
+Panda::Panda(uint16_t vid, uint16_t pid, bool getType){
+  std::cout<<"Starting with vid:pid "<< std::hex <<vid<<":"<<std::hex<<pid<<std::endl;
   // init libusb
   int err = libusb_init(&ctx);
   if (err != 0) { goto fail; }
@@ -38,9 +39,9 @@ Panda::Panda(){
   libusb_set_debug(ctx, 3);
 #endif
 
-  dev_handle = libusb_open_device_with_vid_pid(ctx, 0xbbaa, 0xddcc);
+  dev_handle = libusb_open_device_with_vid_pid(ctx, vid, pid);
   if (dev_handle == NULL) { goto fail; }
-
+  std::cout<<"Got dev handle with vid:pid "<< std::hex <<vid<<":"<<std::hex<<pid<<std::endl;
   if (libusb_kernel_driver_active(dev_handle, 0) == 1) {
     libusb_detach_kernel_driver(dev_handle, 0);
   }
@@ -50,15 +51,18 @@ Panda::Panda(){
 
   err = libusb_claim_interface(dev_handle, 0);
   if (err != 0) { goto fail; }
-
-  hw_type = get_hw_type();
-  is_pigeon =
-    (hw_type == cereal::HealthData::PandaType::GREY_PANDA) ||
-    (hw_type == cereal::HealthData::PandaType::BLACK_PANDA) ||
-    (hw_type == cereal::HealthData::PandaType::UNO) ||
-    (hw_type == cereal::HealthData::PandaType::DOS);
-  has_rtc = (hw_type == cereal::HealthData::PandaType::UNO) ||
-    (hw_type == cereal::HealthData::PandaType::DOS);
+  std::cout<<"Got everything with vid:pid "<< std::hex <<vid<<":"<<std::hex<<pid<<std::endl;
+  if (getType) {
+    hw_type = get_hw_type();
+    is_pigeon =
+      (hw_type == cereal::HealthData::PandaType::GREY_PANDA) ||
+      (hw_type == cereal::HealthData::PandaType::BLACK_PANDA) ||
+      (hw_type == cereal::HealthData::PandaType::UNO) ||
+      (hw_type == cereal::HealthData::PandaType::DOS);
+    has_rtc = (hw_type == cereal::HealthData::PandaType::UNO) ||
+      (hw_type == cereal::HealthData::PandaType::DOS);
+  }
+  std::cout<<"Got everything SUCCESS with vid:pid "<< std::hex <<vid<<":"<<std::hex<<pid<<std::endl;
 
   return;
 
