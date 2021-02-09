@@ -81,11 +81,11 @@ static void update_line_data(const UIState *s, const cereal::ModelDataV2::XYZTDa
   int max_idx = -1;
   vertex_data *v = &pvd->v[0];
   for (int i = 0; ((i < TRAJECTORY_SIZE) and (line_x[i] < fmax(MIN_DRAW_DISTANCE, max_distance))); i++) {
-    v += car_space_to_full_frame(s, line_x[i], -line_y[i] - y_off, -line_z[i] + z_off, v);
+    v += car_space_to_full_frame(s, line_x[i], line_y[i] - y_off, line_z[i] + z_off, v);
     max_idx = i;
   }
   for (int i = max_idx; i >= 0; i--) {
-    v += car_space_to_full_frame(s, line_x[i], -line_y[i] + y_off, -line_z[i] + z_off, v);
+    v += car_space_to_full_frame(s, line_x[i], line_y[i] + y_off, line_z[i] + z_off, v);
   }
   pvd->cnt = v - pvd->v;
   assert(pvd->cnt < std::size(pvd->v));
@@ -114,7 +114,7 @@ static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
   const float lead_d = scene.lead_data[0].getStatus() ? scene.lead_data[0].getDRel() * 2. : MAX_DRAW_DISTANCE;
   float path_length = (lead_d > 0.) ? lead_d - fmin(lead_d * 0.35, 10.) : MAX_DRAW_DISTANCE;
   path_length = fmin(path_length, max_distance);
-  update_line_data(s, model.getPosition(), 0.5, -1.22, &scene.track_vertices, path_length);
+  update_line_data(s, model.getPosition(), 0.5, 1.22, &scene.track_vertices, path_length);
 }
 
 static void update_sockets(UIState *s) {
@@ -136,10 +136,17 @@ static void update_sockets(UIState *s) {
   }
   if (sm.updated("liveCalibration")) {
     scene.world_objects_visible = true;
-    auto extrinsicl = sm["liveCalibration"].getLiveCalibration().getExtrinsicMatrix();
+    auto rpy_list = sm["liveCalibration"].getLiveCalibration().getRpyCalib();
+    Eigen::Vector3d rpy;
+    rpy << rpy_list[0], rpy_list[1], rpy_list[2];
+    Eigen::Matrix3d device_from_calib = euler2rot(rpy);
+    Eigen::Matrix3d view_from_device;
+    view_from_device << 0,0,1,1,0,0,0,1,0;
+    Eigen::Matrix3d view_from_calib = view_from_device * device_from_calib;
+
     for (int i = 0; i < 3; i++) {
       for (int j = 0; j < 3; j++) {
-        scene.calib_rot_matrix.v[i*3 + j] = extrinsicl[i*4 + j];
+        scene.view_from_calib.v[i*3 + j] = view_from_calib(i,j);
       }
     }
   }
