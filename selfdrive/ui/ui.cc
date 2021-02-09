@@ -162,11 +162,16 @@ static void update_sockets(UIState *s) {
   if (sm.updated("ubloxGnss")) {
     auto data = sm["ubloxGnss"].getUbloxGnss();
     if (data.which() == cereal::UbloxGnss::MEASUREMENT_REPORT) {
+
       auto measurements = data.getMeasurementReport().getMeasurements();
-      for (auto m : measurements) {
-        scene.cnoAvg += m.getCno();
+      if (measurements.size()){
+        for (auto m : measurements) {
+          scene.cnoAvg += m.getCno();
+        }
+        scene.cnoAvg /= measurements.size();
+      } else {
+        scene.cnoAvg = 0;
       }
-      scene.cnoAvg /= measurements.size();
       scene.satelliteCount = data.getMeasurementReport().getNumMeas();
     }
   }
