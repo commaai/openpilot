@@ -9,6 +9,7 @@ import pygame  # pylint: disable=import-error
 from common.transformations.camera import (eon_f_frame_size, eon_f_focal_length,
                                            tici_f_frame_size, tici_f_focal_length)
 from selfdrive.config import UIParams as UP
+from selfdrive.config import RADAR_TO_CAMERA
 
 
 RED = (255, 0, 0)
@@ -85,8 +86,8 @@ def to_lid_pt(y, x):
 
 
 def draw_path(path, color, img, calibration, top_down, lid_color=None, z_off=0):
-  x, y, z = np.asarray(path.x), np.asarray(path.y), np.asarray(path.z)
-  pts = calibration.car_space_to_bb(x, -y, -z + z_off)
+  x, y, z = np.asarray(path.x), -np.asarray(path.y), -np.asarray(path.z) + z_off
+  pts = calibration.car_space_to_bb(x, y, z)
   pts = np.round(pts).astype(int)
 
   # draw lidar path point on lidar
@@ -194,9 +195,10 @@ def plot_model(m, img, calibration, top_down):
 
     x, y, _, _ = lead.xyva
     x_std, _, _, _ = lead.xyvaStd
+    x -= RADAR_TO_CAMERA
 
-    _, py_top = to_lid_pt(x + x_std, y)
-    px, py_bottom = to_lid_pt(x - x_std, y)
+    _, py_top = to_lid_pt(x + x_std, -y)
+    px, py_bottom = to_lid_pt(x - x_std, -y)
     top_down[1][int(round(px - 4)):int(round(px + 4)), py_top:py_bottom] = find_color(top_down[0], YELLOW)
 
   for path, prob, _ in zip(m.laneLines, m.laneLineProbs, m.laneLineStds):
