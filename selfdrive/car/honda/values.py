@@ -1063,6 +1063,7 @@ FW_VERSIONS = {
     ],
     (Ecu.combinationMeter, 0x18da60f1, None): [
       b'78109-T3R-A120\x00\x00',
+      b'78109-T3R-A410\x00\x00',
     ],
   },
 }
