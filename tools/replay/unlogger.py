@@ -118,7 +118,9 @@ class UnloggerWorker(object):
           bts = img.tobytes()
 
           smsg.frame.image = bts
-          data_socket.send_pyobj((cookie, VIPC_TYP, msg.logMonoTime, route_time), flags=zmq.SNDMORE)
+
+          extra = (smsg.frame.frameId, smsg.frame.timestampSof, smsg.frame.timestampEof)
+          data_socket.send_pyobj((cookie, VIPC_TYP, msg.logMonoTime, route_time, extra), flags=zmq.SNDMORE)
           data_socket.send(bts, copy=False)
 
       data_socket.send_pyobj((cookie, typ, msg.logMonoTime, route_time), flags=zmq.SNDMORE)
@@ -229,7 +231,7 @@ def unlogger_thread(command_address, forward_commands_address, data_address, run
 
       reset_time = True
     elif data_socket in evts:
-      msg_generation, typ, msg_time, route_time = data_socket.recv_pyobj(flags=zmq.RCVMORE)
+      msg_generation, typ, msg_time, route_time, *extra = data_socket.recv_pyobj(flags=zmq.RCVMORE)
       msg_bytes = data_socket.recv()
       if msg_generation < generation:
         # Skip packets.
@@ -291,8 +293,8 @@ def unlogger_thread(command_address, forward_commands_address, data_address, run
           if vipc_server is None:
             vipc_server = _get_vipc_server(len(msg_bytes))
 
-          # TODO: set frame id and timestamps
-          vipc_server.send(VisionStreamType.VISION_STREAM_RGB_BACK, msg_bytes)
+          i, sof, eof = extra[0]
+          vipc_server.send(VisionStreamType.VISION_STREAM_RGB_BACK, msg_bytes, i, sof, eof)
         if typ != VIPC_TYP:
           send_funcs[typ](msg_bytes)
       except MultiplePublishersError:
