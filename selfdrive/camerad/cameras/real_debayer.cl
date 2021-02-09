@@ -12,11 +12,11 @@ const __constant half3 color_correction[3] = {
 // tone mapping params
 const half cpk = 0.75;
 const half cpb = 0.125;
-const half cpxk = -0.03;
-const half cpxb = 0.4;
+const half cpxk = 0.01;
+const half cpxb = 0.01;
 
 half mf(half x, half cp) {
-  half rk = 2.65 - 6.5*cp;
+  half rk = 8.6 - 66*cp;
   if (x > cp) {
     return (rk * (x-cp) * (1-(cpk*cp+cpb)) * (1+1/(rk*(1-cp))) / (1+rk*(x-cp))) + cpk*cp + cpb;
   } else if (x < cp) {
@@ -28,7 +28,7 @@ half mf(half x, half cp) {
 
 half3 color_correct(half3 rgb, int ggain) {
   half3 ret = (0,0,0);
-  half cpx = clamp(0.1h, 0.4h, cpxb + cpxk * min(10, ggain));
+  half cpx = clamp(0.01h, 0.1h, cpxb + cpxk * min(10, ggain));
   ret += (half)rgb.x * color_correction[0];
   ret += (half)rgb.y * color_correction[1];
   ret += (half)rgb.z * color_correction[2];
