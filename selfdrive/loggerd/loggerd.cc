@@ -104,12 +104,6 @@ LogCameraInfo cameras_logged[LOG_CAMERA_ID_MAX] = {
   },
 };
 
-namespace {
-
-constexpr int SEGMENT_LENGTH = 60;
-
-ExitHandler do_exit;
-
 typedef struct QlogState {
   int counter, freq;
 } QlogState;
