@@ -178,8 +178,8 @@ static void update_sockets(UIState *s) {
   }
   if (sm.updated("driverMonitoringState")) {
     scene.dmonitoring_state = sm["driverMonitoringState"].getDriverMonitoringState();
-    if(!s->scene.frontview && !s->ignition) {
-      read_param(&s->scene.frontview, "IsDriverViewEnabled");
+    if(!scene.frontview && !s->ignition) {
+      read_param(&scene.frontview, "IsDriverViewEnabled");
     }
   } else if ((sm.frame - sm.rcv_frame("driverMonitoringState")) > UI_FREQ/2) {
     scene.frontview = false;
@@ -195,7 +195,7 @@ static void update_sockets(UIState *s) {
       }
     }
   }
-  s->started = s->scene.thermal.getStarted() || s->scene.frontview;
+  s->started = scene.thermal.getStarted() || scene.frontview;
 }
 
 static void update_alert(UIState *s) {
@@ -217,23 +217,23 @@ static void update_alert(UIState *s) {
   }
 
   // Handle controls timeout
-  if (s->scene.thermal.getStarted() && (s->sm->frame - s->started_frame) > 10 * UI_FREQ) {
+  if (scene.thermal.getStarted() && (s->sm->frame - s->started_frame) > 10 * UI_FREQ) {
     const uint64_t cs_frame = s->sm->rcv_frame("controlsState");
     if (cs_frame < s->started_frame) {
       // car is started, but controlsState hasn't been seen at all
-      s->scene.alert_text1 = "openpilot Unavailable";
-      s->scene.alert_text2 = "Waiting for controls to start";
-      s->scene.alert_size = cereal::ControlsState::AlertSize::MID;
+      scene.alert_text1 = "openpilot Unavailable";
+      scene.alert_text2 = "Waiting for controls to start";
+      scene.alert_size = cereal::ControlsState::AlertSize::MID;
     } else if ((s->sm->frame - cs_frame) > 5 * UI_FREQ) {
       // car is started, but controls is lagging or died
-      if (s->scene.alert_text2 != "Controls Unresponsive") {
+      if (scene.alert_text2 != "Controls Unresponsive") {
         s->sound->play(AudibleAlert::CHIME_WARNING_REPEAT);
         LOGE("Controls unresponsive");
       }
 
-      s->scene.alert_text1 = "TAKE CONTROL IMMEDIATELY";
-      s->scene.alert_text2 = "Controls Unresponsive";
-      s->scene.alert_size = cereal::ControlsState::AlertSize::FULL;
+      scene.alert_text1 = "TAKE CONTROL IMMEDIATELY";
+      scene.alert_text2 = "Controls Unresponsive";
+      scene.alert_size = cereal::ControlsState::AlertSize::FULL;
       s->status = STATUS_ALERT;
     }
   }
