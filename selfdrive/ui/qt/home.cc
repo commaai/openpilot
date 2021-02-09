@@ -278,7 +278,9 @@ void GLWindow::paintGL() {
     double dt = cur_draw_t - prev_draw_t;
     if (dt > 66 && onroad){
       // warn on sub 15fps
+#ifdef QCOM2
       LOGW("slow frame(%llu) time: %.2f", ui_state.sm->frame, dt);
+#endif
     }
     prev_draw_t = cur_draw_t;
   }
