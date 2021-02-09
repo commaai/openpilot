@@ -67,7 +67,7 @@ class LoggerState {
   LoggerState(const std::string& log_root);
   ~LoggerState();
   std::shared_ptr<LoggerHandle> next();
-  inline std::shared_ptr<LoggerHandle> get_handle() { return cur_handle; };
+  inline std::shared_ptr<LoggerHandle> get_handle() { assert(cur_handle); return cur_handle; };
 
  private:
   int part = -1;
