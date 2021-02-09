@@ -290,6 +290,8 @@ def unlogger_thread(command_address, forward_commands_address, data_address, run
         if typ == VIPC_TYP and (not no_visionipc):
           if vipc_server is None:
             vipc_server = _get_vipc_server(len(msg_bytes))
+
+          # TODO: set frame id and timestamps
           vipc_server.send(VisionStreamType.VISION_STREAM_RGB_BACK, msg_bytes)
         if typ != VIPC_TYP:
           send_funcs[typ](msg_bytes)
