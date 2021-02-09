@@ -169,7 +169,7 @@ def _get_vipc_server(length):
   return vipc_server
 
 def unlogger_thread(command_address, forward_commands_address, data_address, run_realtime,
-                    address_mapping, publish_time_length, bind_early, no_loop, vipc):
+                    address_mapping, publish_time_length, bind_early, no_loop, no_visionipc):
   # Clear context to avoid problems with multiprocessing.
   zmq.Context._instance = None
   context = zmq.Context.instance()
@@ -287,7 +287,7 @@ def unlogger_thread(command_address, forward_commands_address, data_address, run
 
       # Send message.
       try:
-        if typ == VIPC_TYP and vipc:
+        if typ == VIPC_TYP and (not no_visionipc):
           if vipc_server is None:
             vipc_server = _get_vipc_server(len(msg_bytes))
           vipc_server.send(VisionStreamType.VISION_STREAM_RGB_BACK, msg_bytes)
@@ -404,8 +404,8 @@ def get_arg_parser():
     help="Bind early to avoid dropping messages.")
 
   parser.add_argument(
-    "--vipc", action="store_true", default=False,
-    help="Output video over visionipc")
+    "--no-visionipc", action="store_true", default=False,
+    help="Do not output video over visionipc")
 
   parser.add_argument(
     "--start-time", type=float, default=0.,
@@ -446,7 +446,7 @@ def main(argv):
     subprocesses["control"] = multiprocessing.Process(
       target=unlogger_thread,
       args=(command_address, forward_commands_address, data_address, args.realtime,
-            _get_address_mapping(args), args.publish_time_length, args.bind_early, args.no_loop, args.vipc))
+            _get_address_mapping(args), args.publish_time_length, args.bind_early, args.no_loop, args.no_visionipc))
 
     subprocesses["data"].start()
     subprocesses["control"].start()
