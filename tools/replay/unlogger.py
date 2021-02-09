@@ -14,7 +14,7 @@ from datetime import datetime
 from cereal import log as capnp_log
 from cereal.services import service_list
 from cereal.messaging import pub_sock, MultiplePublishersError
-from cereal.visionipc.visionipc_pyx import VisionIpcServer, VisionStreamType  # pylint: disable=no-name-in-module
+from cereal.visionipc.visionipc_pyx import VisionIpcServer, VisionStreamType  # pylint: disable=no-name-in-module, import-error
 from common import realtime
 from common.transformations.camera import eon_f_frame_size, tici_f_frame_size
 
