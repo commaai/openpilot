@@ -43,8 +43,8 @@ const int SEGMENT_LENGTH = getenv("LOGGERD_TEST") ? atoi(getenv("LOGGERD_SEGMENT
 
 ExitHandler do_exit;
 
-LogCameraInfo cameras_logged[] = {
-  {.id = F_CAMERA,
+std::map<std::string, LogCameraInfo> cameras_logged = {
+  {"frame", LogCameraInfo{.id = F_CAMERA,
     .stream_type = VISION_STREAM_YUV_BACK,
     .filename = "fcamera.hevc",
     .frame_packet_name = "roadCameraState",
@@ -52,8 +52,8 @@ LogCameraInfo cameras_logged[] = {
     .bitrate = MAIN_BITRATE,
     .is_h265 = true,
     .downscale = false,
-    .has_qcamera = true},
-  {.id = D_CAMERA,
+    .has_qcamera = true}},
+  {"frontFrame", LogCameraInfo{.id = D_CAMERA,
     .stream_type = VISION_STREAM_YUV_FRONT,
     .filename = "dcamera.hevc",
     .frame_packet_name = "driverCameraState",
@@ -61,9 +61,9 @@ LogCameraInfo cameras_logged[] = {
     .bitrate = DCAM_BITRATE,
     .is_h265 = true,
     .downscale = false,
-    .has_qcamera = false},
+    .has_qcamera = false}},
 #ifdef QCOM2
-  {.id = E_CAMERA,
+  {"wideFrame", LogCameraInfo{.id = E_CAMERA,
     .stream_type = VISION_STREAM_YUV_WIDE,
     .filename = "ecamera.hevc",
     .frame_packet_name = "wideRoadCameraState",
@@ -71,7 +71,7 @@ LogCameraInfo cameras_logged[] = {
     .bitrate = MAIN_BITRATE,
     .is_h265 = true,
     .downscale = false,
-    .has_qcamera = false},
+    .has_qcamera = false}},
 #endif
 };
 const LogCameraInfo qcam_info = {
@@ -302,14 +302,12 @@ int main(int argc, char** argv) {
     assert(sock != NULL);
     QlogState qs = {.counter = 0, .freq = it.decimation};
 
-    auto camra_info = std::find_if(std::begin(cameras_logged), std::end(cameras_logged), [&](LogCameraInfo &ci) {
-      return strcmp(it.name, ci.frame_packet_name) == 0 && (ci.id != D_CAMERA || record_front);
-    });
-    if (camra_info != std::end(cameras_logged)) {
+    auto camera = cameras_logged.find(it.name);
+    if (camera != cameras_logged.end() && (camera->second.id != D_CAMERA || record_front)) {
       // init and start encoder thread
-      const bool need_waiting = (IS_QCOM2 || camra_info->id != D_CAMERA);
+      const bool need_waiting = (IS_QCOM2 || camera->second.id != D_CAMERA);
       s.encoders_max_waiting += need_waiting;
-      s.encoder_states.push_back(new EncoderState(*camra_info, sock, qs, need_waiting));
+      s.encoder_states.push_back(new EncoderState(camera->second, sock, qs, need_waiting));
     } else {
       poller->registerSocket(sock);
       qlog_states[sock] = qs;

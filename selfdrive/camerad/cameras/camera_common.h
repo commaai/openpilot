@@ -56,7 +56,6 @@ enum LogCameraId {
 typedef struct LogCameraInfo {
   LogCameraId id;
   const char* filename;
-  const char* frame_packet_name;
   const char* encode_idx_name;
   VisionStreamType stream_type;
   int frame_width, frame_height;
