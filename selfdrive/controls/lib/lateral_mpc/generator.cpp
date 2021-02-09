@@ -38,10 +38,10 @@ int main( )
   h << yy;
 
   // Heading error
-  h << (v_ego + 1.0 ) * psi;
+  h << (v_ego + 5.0 ) * psi;
 
   // Angular rate error
-  h << (v_ego + 1.0) * 4 * curvature_rate;
+  h << (v_ego + 5.0) * 4 * curvature_rate;
 
   BMatrix Q(3,3); Q.setAll(true);
   // Q(0,0) = 1.0;
@@ -57,7 +57,7 @@ int main( )
   hN << yy;
 
   // Heading errors
-  hN << (2.0 * v_ego + 1.0 ) * psi;
+  hN << (2.0 * v_ego + 5.0 ) * psi;
 
   BMatrix QN(2,2); QN.setAll(true);
   // QN(0,0) = 1.0;
