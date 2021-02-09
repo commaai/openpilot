@@ -37,26 +37,42 @@ struct __attribute__((packed)) health_t {
   uint8_t power_save_enabled;
 };
 
-
 void panda_set_power(bool power);
+
+class PandaComm{
+private:
+  void cleanup();
+  std::mutex usb_lock;
+  void handle_usb_issue(int err, const char func[]);
+public:
+  libusb_device_handle *dev_handle = NULL;
+  libusb_context *ctx = NULL; // Should be private at some point
+  PandaComm(uint16_t vid = 0xbbaa, uint16_t pid = 0xddcc);
+  ~PandaComm();
+  std::atomic<bool> connected = true;
+
+  // HW communication
+  int usb_write(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned int timeout=TIMEOUT);
+  int usb_read(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned char *data, uint16_t wLength, unsigned int timeout=TIMEOUT);
+  int usb_bulk_write(unsigned char endpoint, unsigned char* data, int length, unsigned int timeout=TIMEOUT);
+  int usb_bulk_read(unsigned char endpoint, unsigned char* data, int length, unsigned int timeout=TIMEOUT);
+
+};
 
 class Panda {
  private:
-  libusb_context *ctx = NULL;
-  libusb_device_handle *dev_handle = NULL;
-  std::mutex usb_lock;
-  void handle_usb_issue(int err, const char func[]);
+  PandaComm* c;
   void cleanup();
 
  public:
-  Panda(uint16_t vid = 0xbbaa, uint16_t pid = 0xddcc, bool getType = true);
+  Panda(uint16_t vid = 0xbbaa, uint16_t pid = 0xddcc);
   ~Panda();
 
-  std::atomic<bool> connected = true;
   cereal::HealthData::PandaType hw_type = cereal::HealthData::PandaType::UNKNOWN;
   bool is_pigeon = false;
   bool has_rtc = false;
 
+  bool connected();
   // HW communication
   int usb_write(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned int timeout=TIMEOUT);
   int usb_read(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned char *data, uint16_t wLength, unsigned int timeout=TIMEOUT);

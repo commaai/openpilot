@@ -27,9 +27,7 @@ void panda_set_power(bool power){
 #endif
 }
 
-Panda::Panda(uint16_t vid, uint16_t pid, bool getType){
-  std::cout<<"Starting with vid:pid "<< std::hex <<vid<<":"<<std::hex<<pid<<std::endl;
-  // init libusb
+PandaComm::PandaComm(uint16_t vid, uint16_t pid){
   int err = libusb_init(&ctx);
   if (err != 0) { goto fail; }
 
@@ -52,32 +50,18 @@ Panda::Panda(uint16_t vid, uint16_t pid, bool getType){
   err = libusb_claim_interface(dev_handle, 0);
   if (err != 0) { goto fail; }
   std::cout<<"Got everything with vid:pid "<< std::hex <<vid<<":"<<std::hex<<pid<<std::endl;
-  if (getType) {
-    hw_type = get_hw_type();
-    is_pigeon =
-      (hw_type == cereal::HealthData::PandaType::GREY_PANDA) ||
-      (hw_type == cereal::HealthData::PandaType::BLACK_PANDA) ||
-      (hw_type == cereal::HealthData::PandaType::UNO) ||
-      (hw_type == cereal::HealthData::PandaType::DOS);
-    has_rtc = (hw_type == cereal::HealthData::PandaType::UNO) ||
-      (hw_type == cereal::HealthData::PandaType::DOS);
-  }
-  std::cout<<"Got everything SUCCESS with vid:pid "<< std::hex <<vid<<":"<<std::hex<<pid<<std::endl;
-
   return;
 
 fail:
   cleanup();
   throw std::runtime_error("Error connecting to panda");
 }
-
-Panda::~Panda(){
+PandaComm::~PandaComm(){
   std::lock_guard lk(usb_lock);
   cleanup();
   connected = false;
 }
-
-void Panda::cleanup(){
+void PandaComm::cleanup(){
   if (dev_handle){
     libusb_release_interface(dev_handle, 0);
     libusb_close(dev_handle);
@@ -87,17 +71,7 @@ void Panda::cleanup(){
     libusb_exit(ctx);
   }
 }
-
-void Panda::handle_usb_issue(int err, const char func[]) {
-  LOGE_100("usb error %d \"%s\" in %s", err, libusb_strerror((enum libusb_error)err), func);
-  if (err == LIBUSB_ERROR_NO_DEVICE) {
-    LOGE("lost connection");
-    connected = false;
-  }
-  // TODO: check other errors, is simply retrying okay?
-}
-
-int Panda::usb_write(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned int timeout) {
+int PandaComm::usb_write(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned int timeout) {
   int err;
   const uint8_t bmRequestType = LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE;
 
@@ -114,7 +88,7 @@ int Panda::usb_write(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigne
   return err;
 }
 
-int Panda::usb_read(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned char *data, uint16_t wLength, unsigned int timeout) {
+int PandaComm::usb_read(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned char *data, uint16_t wLength, unsigned int timeout) {
   int err;
   const uint8_t bmRequestType = LIBUSB_ENDPOINT_IN | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE;
 
@@ -131,7 +105,7 @@ int Panda::usb_read(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned
   return err;
 }
 
-int Panda::usb_bulk_write(unsigned char endpoint, unsigned char* data, int length, unsigned int timeout) {
+int PandaComm::usb_bulk_write(unsigned char endpoint, unsigned char* data, int length, unsigned int timeout) {
   int err;
   int transferred = 0;
 
@@ -156,7 +130,7 @@ int Panda::usb_bulk_write(unsigned char endpoint, unsigned char* data, int lengt
   return transferred;
 }
 
-int Panda::usb_bulk_read(unsigned char endpoint, unsigned char* data, int length, unsigned int timeout) {
+int PandaComm::usb_bulk_read(unsigned char endpoint, unsigned char* data, int length, unsigned int timeout) {
   int err;
   int transferred = 0;
 
@@ -180,6 +154,65 @@ int Panda::usb_bulk_read(unsigned char endpoint, unsigned char* data, int length
   } while(err != 0 && connected);
 
   return transferred;
+}
+
+void PandaComm::handle_usb_issue(int err, const char func[]) {
+  LOGE_100("usb error %d \"%s\" in %s", err, libusb_strerror((enum libusb_error)err), func);
+  if (err == LIBUSB_ERROR_NO_DEVICE) {
+    LOGE("lost connection");
+    connected = false;
+  }
+  // TODO: check other errors, is simply retrying okay?
+}
+
+
+
+
+Panda::Panda(uint16_t vid, uint16_t pid){
+  std::cout<<"Starting with vid:pid "<< std::hex <<vid<<":"<<std::hex<<pid<<std::endl;
+  // init communication
+  c = new PandaComm(vid, pid);
+
+  hw_type = get_hw_type();
+
+  is_pigeon =
+    (hw_type == cereal::HealthData::PandaType::GREY_PANDA) ||
+    (hw_type == cereal::HealthData::PandaType::BLACK_PANDA) ||
+    (hw_type == cereal::HealthData::PandaType::UNO) ||
+    (hw_type == cereal::HealthData::PandaType::DOS);
+  has_rtc = (hw_type == cereal::HealthData::PandaType::UNO) ||
+    (hw_type == cereal::HealthData::PandaType::DOS);
+
+  std::cout<<"Got everything SUCCESS with vid:pid "<< std::hex <<vid<<":"<<std::hex<<pid<<std::endl;
+
+}
+
+Panda::~Panda(){
+  cleanup();
+}
+
+void Panda::cleanup(){
+  delete(c);
+}
+
+bool Panda::connected(){
+  return c->connected;
+}
+
+int Panda::usb_write(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned int timeout) {
+  return c->usb_write(bRequest, wValue, wIndex, timeout);
+}
+
+int Panda::usb_read(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned char *data, uint16_t wLength, unsigned int timeout) {
+  return c->usb_read(bRequest, wValue, wIndex, data, wLength, timeout);
+}
+
+int Panda::usb_bulk_write(unsigned char endpoint, unsigned char* data, int length, unsigned int timeout) {
+  return c->usb_bulk_write(endpoint, data, length, timeout);
+}
+
+int Panda::usb_bulk_read(unsigned char endpoint, unsigned char* data, int length, unsigned int timeout) {
+  return c->usb_bulk_read(endpoint, data, length, timeout);
 }
 
 void Panda::set_safety_model(cereal::CarParams::SafetyModel safety_model, int safety_param){

@@ -64,7 +64,7 @@ void safety_setter_thread() {
 
   // switch to SILENT when CarVin param is read
   while (true) {
-    if (do_exit || !panda->connected){
+    if (do_exit || !panda->connected()){
       safety_setter_thread_running = false;
       return;
     };
@@ -86,7 +86,7 @@ void safety_setter_thread() {
   std::vector<char> params;
   LOGW("waiting for params to set safety model");
   while (true) {
-    if (do_exit || !panda->connected){
+    if (do_exit || !panda->connected()){
       safety_setter_thread_running = false;
       return;
     };
@@ -202,7 +202,7 @@ void can_send_thread(bool fake_send) {
   subscriber->setTimeout(100);
 
   // run as fast as messages come in
-  while (!do_exit && panda->connected) {
+  while (!do_exit && panda->connected()) {
     Message * msg = subscriber->receive();
 
     if (!msg){
@@ -242,7 +242,7 @@ void can_recv_thread() {
   const uint64_t dt = 10000000ULL;
   uint64_t next_frame_time = nanos_since_boot() + dt;
 
-  while (!do_exit && panda->connected) {
+  while (!do_exit && panda->connected()) {
     can_recv(pm);
 
     uint64_t cur_time = nanos_since_boot();
@@ -279,7 +279,7 @@ void can_health_thread(bool spoofing_started) {
   }
 
   // run at 2hz
-  while (!do_exit && panda->connected) {
+  while (!do_exit && panda->connected()) {
     health_t health = panda->get_health();
 
     if (spoofing_started) {
@@ -398,7 +398,7 @@ void hardware_control_thread() {
 #endif
   unsigned int cnt = 0;
 
-  while (!do_exit && panda->connected) {
+  while (!do_exit && panda->connected()) {
     cnt++;
     sm.update(1000); // TODO: what happens if EINTR is sent while in sm.update?
 
@@ -476,7 +476,7 @@ void pigeon_thread() {
   Pigeon * pigeon = Pigeon::connect(panda);
 #endif
 
-  while (!do_exit && panda->connected) {
+  while (!do_exit && panda->connected()) {
     bool need_reset = false;
     std::string recv = pigeon->receive();
     if (recv.length() > 0) {
@@ -548,6 +548,21 @@ std::string get_expected_signature(){
   return firmware_sig;
 }
 
+
+void dfu_clear_status(PandaComm* dfuPanda){
+  std::vector<uint8_t> stat(6);
+  libusb_control_transfer(dfuPanda->dev_handle, 0x21, 3, 0, 0, &stat[0], 6, 0);
+  for (auto x : stat){
+    std::cout<<x<<std::endl;
+  }
+  std::cout<<"Got status"<<std::endl;
+}
+
+void dfu_program_bootstub(PandaComm* dfuPanda, std::string program){
+   std::cout<<"Programming bootstub to panda"<<std::endl;
+   dfu_clear_status(dfuPanda);
+}
+
 void get_out_of_dfu(){
   // int err = 0;
   // libusb_context* ctx;
@@ -588,23 +603,25 @@ void get_out_of_dfu(){
   // libusb_free_device_list(list, count);
   // libusb_exit(ctx);
   
-  Panda* dfuPanda;
+  PandaComm* dfuPanda;
   try{
-    dfuPanda = new Panda(0x0483, 0xdf11, false);
+    dfuPanda = new PandaComm(0x0483, 0xdf11);
   }catch(std::runtime_error &e){
     std::cout<<"DFU panda not found"<<std::endl;
-    free(dfuPanda);
+    delete(dfuPanda);
     return;
   }
-  std::cout<<dfuPanda->connected<<std::endl;
   std::cout<<"Building panda bootstub"<<std::endl;
-  util::sleep_for(500);
+  util::sleep_for(2500);
   std::string basedir = get_basedir();
   system(("cd " + basedir + "panda/board && make -f Makefile clean && make -f Makefile obj/bootstub.panda.bin").c_str());
   std::cout<<"Bootstub should exist, reading"<<std::endl;
   std::string program = util::read_file(basedir+"panda/board/obj/bootstub.panda.bin");
   std::cout<<"Bootstub firmware has a length of: "<<std::dec<<program.length()<<std::endl;
+  dfu_program_bootstub(dfuPanda, program);
 }
+
+
 
 void update_panda(){
   std::cout<<"updating panda"<<std::endl;
