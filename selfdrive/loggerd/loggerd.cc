@@ -108,7 +108,6 @@ public:
 };
 
 struct LoggerdState {
-  Context *ctx;
   LoggerState logger = {};
   char segment_path[4096];
   int encoders_waiting = 0, encoders_max_waiting = 0;
@@ -175,10 +174,9 @@ void EncoderState::encoder_thread() {
         should_rotate = (encoder_segment != s.rotate_segment);
         if (!should_rotate && need_waiting_ && (total_frame_cnt % max_segment_frames) == 0) {
           // max_segment_frames have been recorded, need to rotate
-          should_rotate = true;
           s.encoders_waiting++;
           s.cv.wait(lk, [&] { return s.encoders_waiting == 0 || do_exit; });
-          if (do_exit) break;
+          should_rotate = !do_exit;
         }
         if (should_rotate) {
           encoder_segment = s.rotate_segment;
@@ -187,9 +185,8 @@ void EncoderState::encoder_thread() {
       }
       if (should_rotate) {
         LOGW("camera %d rotate encoder to %s", ci_.id, segment_path.c_str());
-        if (lh) {
-          lh_close(lh);
-        }
+        if (lh) { lh_close(lh); }
+
         lh = logger_get_handle(&s.logger);
         for (auto &e : encoders) {
           e->encoder_close();
@@ -202,8 +199,7 @@ void EncoderState::encoder_thread() {
 
       // encode a frame
       for (int i = 0; i < encoders.size(); ++i) {
-        int out_id = encoders[i]->encode_frame(buf->y, buf->u, buf->v,
-                                               buf->width, buf->height, extra.timestamp_eof);
+        int out_id = encoders[i]->encode_frame(buf->y, buf->u, buf->v, buf->width, buf->height, extra.timestamp_eof);
         if (i == 0 && out_id != -1) {
           // publish encode index
           MessageBuilder msg;
@@ -216,10 +212,8 @@ void EncoderState::encoder_thread() {
           eidx.setEncodeId(total_frame_cnt);
           eidx.setSegmentNum(encoder_segment);
           eidx.setSegmentId(out_id);
-          if (lh) {
-            auto bytes = msg.toBytes();
-            lh_log(lh, bytes.begin(), bytes.size(), false);
-          }
+          auto bytes = msg.toBytes();
+          lh_log(lh, bytes.begin(), bytes.size(), false);
         }
       }
       ++total_frame_cnt;
@@ -269,14 +263,14 @@ int main(int argc, char** argv) {
 
   // setup messaging
   std::map<SubSocket*, QlogState> qlog_states;
-  s.ctx = Context::create();
+  Context *ctx = Context::create();
   Poller * poller = Poller::create();
   const bool record_front = Params().read_db_bool("RecordFront");
   // subscribe to all socks
   for (const auto& it : services) {
     if (!it.should_log) continue;
 
-    SubSocket * sock = SubSocket::create(s.ctx, it.name);
+    SubSocket * sock = SubSocket::create(ctx, it.name);
     assert(sock != NULL);
     QlogState qs = {.counter = 0, .freq = it.decimation};
 
@@ -307,7 +301,7 @@ int main(int argc, char** argv) {
         LOGW("no camera packet seen. auto rotated");
       }
     }
-    if (should_rotate) {
+    if (should_rotate && !do_exit) {
       loggerd_logger_next();
       s.encoders_waiting = 0;
       s.cv.notify_all();
@@ -317,14 +311,14 @@ int main(int argc, char** argv) {
   LOGW("closing encoders");
   s.encoders_waiting = 0;
   s.cv.notify_all();
-  for (auto &[sock, qs] : qlog_states) delete sock;
   for (auto &e : s.encoder_states) { delete e; }
 
+  for (auto &[sock, qs] : qlog_states) delete sock;
   LOGW("closing logger");
   logger_close(&s.logger);
 
   delete poller;
-  delete s.ctx;
+  delete ctx;
 
   return 0;
 }
