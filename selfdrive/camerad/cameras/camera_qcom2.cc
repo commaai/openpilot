@@ -1051,13 +1051,16 @@ static void set_camera_exposure(CameraState *s, float grey_frac) {
   // printf("cam %d, min %d, max %d \n", s->camera_num, s->exposure_time_min, s->exposure_time_max);
   // printf("cam %d, set AG to 0x%X, S to %d, dc %d \n", s->camera_num, AG, s->exposure_time, s->dc_gain_enabled);
 
-  struct i2c_random_wr_payload exp_reg_array[] = {{0x3366, AG}, // analog gain
+  struct i2c_random_wr_payload exp_reg_array[] = {{0x3022, 0x01},
+                                                  {0x3366, AG}, // analog gain
+                                                  {0x3060, AG},
                                                   {0x3362, (uint16_t)(s->dc_gain_enabled?0x1:0x0)}, // DC_GAIN
                                                   {0x305A, 0x00D8}, // red gain
                                                   {0x3058, 0x011B}, // blue gain
                                                   {0x3056, 0x009A}, // g1 gain
                                                   {0x305C, 0x009A}, // g2 gain
-                                                  {0x3012, (uint16_t)s->exposure_time}}; // integ time
+                                                  {0x3012, (uint16_t)s->exposure_time}, // integ time
+                                                  {0x3022, 0x00}};
                                                   //{0x301A, 0x091C}}; // reset
   sensors_i2c(s, exp_reg_array, sizeof(exp_reg_array)/sizeof(struct i2c_random_wr_payload),
                CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
