@@ -177,7 +177,7 @@ void encoder_thread(int cam_idx) {
   set_thread_name(cam_info.filename);
 
   int cnt = 0;
-  std::shared_ptr<LoggerHandle> lh = NULL;
+  std::shared_ptr<LoggerHandle> lh = nullptr;
   std::vector<Encoder *> encoders;
   VisionIpcClient vipc_client = VisionIpcClient("camerad", cam_info.stream_type, false);
 
@@ -226,21 +226,20 @@ void encoder_thread(int cam_idx) {
 
         // rotate the encoder if the logger is on a newer segment
         if (rotate_state.should_rotate) {
-          LOGW("camera %d rotate encoder to %s", cam_idx, lh->get_segment_path().c_str());
-
           if (!rotate_state.initialized) {
             rotate_state.last_rotate_frame_id = extra.frame_id - 1;
             rotate_state.initialized = true;
           }
-
-          // get new logger handle for new segment
-          lh = s.logger->get_handle();
 
           // wait for all to start rotating
           rotate_state.rotating = true;
           for(auto &r : s.rotate_state) {
              while(r.enabled && !r.rotating && !do_exit) util::sleep_for(5);
           }
+
+          // get new logger handle for new segment
+          lh = s.logger->get_handle();
+          LOGW("camera %d rotate encoder to %s", cam_idx, lh->get_segment_path().c_str());
 
           pthread_mutex_lock(&s.rotate_lock);
           for (auto &e : encoders) {
@@ -347,7 +346,7 @@ int main(int argc, char** argv) {
 
   // init logger
   s.logger = std::make_unique<LoggerState>(LOG_ROOT);
-  std::shared_ptr<LoggerHandle> lh;
+  std::shared_ptr<LoggerHandle> lh = nullptr;
 
   // init encoders
   pthread_mutex_init(&s.rotate_lock, NULL);
@@ -432,8 +431,8 @@ int main(int argc, char** argv) {
       delete last_msg;
     }
 
-    bool new_segment = !lh;
-    if (lh) {
+    bool new_segment = (lh == nullptr);
+    if (!new_segment) {
       double tms = millis_since_boot();
       if (tms - last_camera_seen_tms <= NO_CAMERA_PATIENCE && encoder_threads.size() > 0) {
         new_segment = true;

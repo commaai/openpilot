@@ -124,7 +124,7 @@ static void log_sentinel(LoggerHandle *h, SentinelType type) {
 
 // LoggerState
 
-LoggerState::LoggerState(const std::string& log_root) : part(-1) {
+LoggerState::LoggerState(const std::string& log_root) {
   umask(0);
   init_data = logger_build_init_data();
   route_path = log_root + "/" + logger_get_route_name();
@@ -134,11 +134,9 @@ std::shared_ptr<LoggerHandle> LoggerState::next() {
   SentinelType sentinel_type = cur_handle ? SentinelType::START_OF_SEGMENT : SentinelType::START_OF_ROUTE;
   if (cur_handle) log_sentinel(cur_handle.get(), SentinelType::END_OF_SEGMENT);
 
+  // open next, log init data & sentinel type.
   cur_handle = std::make_shared<LoggerHandle>(route_path, ++part);
-
-  // log init data
   cur_handle->write(init_data.asBytes(), true);
-
   log_sentinel(cur_handle.get(), sentinel_type);
   return cur_handle;
 }
@@ -154,10 +152,10 @@ LoggerHandle::LoggerHandle(const std::string& route_path, int part) : part(part)
   const std::string log_path = segment_path + "/rlog.bz2";
   const std::string qlog_path = segment_path + "/qlog.bz2";
 
+  // mkpath & create lock file.
   lock_path = log_path + ".lock";
   int err = logger_mkpath((char*)log_path.c_str());
   assert(err == 0);
-
   int flock = open(lock_path.c_str(), O_RDWR | O_CREAT);
   assert(flock != -1);
   close(flock);

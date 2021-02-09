@@ -53,7 +53,7 @@ class LoggerHandle {
   void write(uint8_t* data, size_t data_size, bool in_qlog);
   inline void write(kj::ArrayPtr<capnp::byte> array, bool in_qlog) { write(array.begin(), array.size(), in_qlog); }
   inline int get_segment() const { return part; }
-  inline std::string get_segment_path() const { return segment_path; }
+  inline const std::string& get_segment_path() const { return segment_path; }
 
  private:
   std::mutex lock;
@@ -70,7 +70,7 @@ class LoggerState {
   inline std::shared_ptr<LoggerHandle> get_handle() { return cur_handle; };
 
  private:
-  int part;
+  int part = -1;
   std::string route_path;
   kj::Array<capnp::word> init_data;
   std::shared_ptr<LoggerHandle> cur_handle;
