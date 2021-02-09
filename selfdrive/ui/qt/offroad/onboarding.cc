@@ -93,7 +93,7 @@ QWidget* OnboardingWindow::terms_screen() {
     updateActiveScreen();
   });
 
-  QObject::connect(view->page(), SIGNAL(scrollPositionChanged(QPointF)), this, SLOT(scrollPosition(QPointF)));
+  QObject::connect(view->page(), SIGNAL(scrollPositionChanged(QPointF)), this, SLOT(scrollPositionChanged(QPointF)));
   
   QWidget* w = layout2Widget(buttons);
   w->setFixedHeight(200);
@@ -166,7 +166,7 @@ OnboardingWindow::OnboardingWindow(QWidget *parent) : QStackedWidget(parent) {
   updateActiveScreen();
 }
 
-void OnboardingWindow::scrollPosition(QPointF position){
+void OnboardingWindow::scrollPositionChanged(QPointF position){
   if (position.y() > view->page()->contentsSize().height() - 1000){
     accept_btn->setEnabled(true);
     accept_btn->setText("Accept");

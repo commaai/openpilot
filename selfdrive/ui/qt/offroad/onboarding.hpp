@@ -50,5 +50,5 @@ public slots:
   void updateActiveScreen();
 
 private slots:
-  void scrollPosition(QPointF position);
+  void scrollPositionChanged(QPointF position);
 };
