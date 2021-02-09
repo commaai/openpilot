@@ -16,6 +16,7 @@ from cereal.services import service_list
 from cereal.messaging import pub_sock, MultiplePublishersError
 from cereal.visionipc.visionipc_pyx import VisionIpcServer, VisionStreamType  # pylint: disable=no-name-in-module
 from common import realtime
+from common.transformations.camera import eon_f_frame_size, tici_f_frame_size
 
 from tools.lib.kbhit import KBHit
 from tools.lib.logreader import MultiLogIterator
@@ -161,9 +162,7 @@ def _get_address_send_func(address):
   return sock.send
 
 def _get_vipc_server(length):
-  w, h = {
-    3052008: (1164, 874)
-  }[length]
+  w, h = {3 * w * h: (w, h) for (w, h) in [tici_f_frame_size, eon_f_frame_size]}[length]
 
   vipc_server = VisionIpcServer("camerad")
   vipc_server.create_buffers(VisionStreamType.VISION_STREAM_RGB_BACK, 4, True, w, h)
