@@ -495,8 +495,12 @@ cereal/messaging/messaging_pyx.pyx
 cereal/messaging/msgq.cc
 cereal/messaging/msgq.hpp
 cereal/messaging/socketmaster.cc
+cereal/visionipc/.gitignore
+cereal/visionipc/__init__.py
 cereal/visionipc/*.cc
 cereal/visionipc/*.h
+cereal/visionipc/*.pyx
+cereal/visionipc/*.pxd
 
 panda/.gitignore
 panda/__init__.py
