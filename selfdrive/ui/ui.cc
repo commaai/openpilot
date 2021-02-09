@@ -99,7 +99,7 @@ static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
   const auto lane_line_probs = model.getLaneLineProbs();
   for (int i = 0; i < std::size(scene.lane_line_vertices); i++) {
     scene.lane_line_probs[i] = lane_line_probs[i];
-    update_line_data(s, lane_lines[i], 0.025 * scene.lane_line_probs[i], 1.22, &scene.lane_line_vertices[i], max_distance);
+    update_line_data(s, lane_lines[i], 0.025 * scene.lane_line_probs[i], 0, &scene.lane_line_vertices[i], max_distance);
   }
 
   // update road edges
@@ -107,14 +107,14 @@ static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
   const auto road_edge_stds = model.getRoadEdgeStds();
   for (int i = 0; i < std::size(scene.road_edge_vertices); i++) {
     scene.road_edge_stds[i] = road_edge_stds[i];
-    update_line_data(s, road_edges[i], 0.025, 1.22, &scene.road_edge_vertices[i], max_distance);
+    update_line_data(s, road_edges[i], 0.025, 0, &scene.road_edge_vertices[i], max_distance);
   }
 
   // update path
   const float lead_d = scene.lead_data[0].getStatus() ? scene.lead_data[0].getDRel() * 2. : MAX_DRAW_DISTANCE;
   float path_length = (lead_d > 0.) ? lead_d - fmin(lead_d * 0.35, 10.) : MAX_DRAW_DISTANCE;
   path_length = fmin(path_length, max_distance);
-  update_line_data(s, model.getPosition(), 0.5, 0, &scene.track_vertices, path_length);
+  update_line_data(s, model.getPosition(), 0.5, -1.22, &scene.track_vertices, path_length);
 }
 
 static void update_sockets(UIState *s) {
@@ -137,8 +137,10 @@ static void update_sockets(UIState *s) {
   if (sm.updated("liveCalibration")) {
     scene.world_objects_visible = true;
     auto extrinsicl = sm["liveCalibration"].getLiveCalibration().getExtrinsicMatrix();
-    for (int i = 0; i < 3 * 4; i++) {
-      scene.extrinsic_matrix.v[i] = extrinsicl[i];
+    for (int i = 0; i < 3; i++) {
+      for (int j = 0; j < 3; j++) {
+        scene.calib_rot_matrix.v[i*3 + j] = extrinsicl[i*4 + j];
+      }
     }
   }
   if (sm.updated("modelV2")) {

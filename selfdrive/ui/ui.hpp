@@ -95,7 +95,7 @@ typedef struct {
 
 typedef struct UIScene {
 
-  mat4 extrinsic_matrix;      // Last row is 0 so we can use mat4.
+  mat3 calib_rot_matrix;      // Last row is 0 so we can use mat4.
   bool world_objects_visible;
 
   bool is_rhd;
