@@ -73,7 +73,7 @@ static void update_lead(UIState *s, const cereal::RadarState::Reader &radar_stat
   if (lead_data.getStatus()) {
     const int path_idx = get_path_length_idx(line, lead_data.getDRel());
     // negative because radarState uses left positive convention
-    calib_frame_to_full_frame(s, lead_data.getDRel(), -lead_data.getYRel(), line.getZ()[path_idx], &s->scene.lead_vertices[idx]);
+    calib_frame_to_full_frame(s, lead_data.getDRel(), -lead_data.getYRel(), line.getZ()[path_idx] + 1.22, &s->scene.lead_vertices[idx]);
   }
 }
 
