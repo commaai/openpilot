@@ -12,7 +12,10 @@
 
 QLabel * title_label(QString text) {
   QLabel *l = new QLabel(text);
-  l->setStyleSheet(R"(font-size: 100px; font-weight: bold;)");
+  l->setStyleSheet(R"(
+    font-size: 100px;
+    font-weight: 400;
+  )");
   return l;
 }
 

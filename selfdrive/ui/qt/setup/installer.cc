@@ -1,6 +1,7 @@
 #include <time.h>
 #include <unistd.h>
 #include <cstdlib>
+#include <fstream>
 #include <iostream>
 
 #ifndef BRANCH
@@ -24,9 +25,7 @@ int fresh_clone() {
   int err;
 
   // Cleanup
-  err = std::system("rm -rf /tmp/openpilot");
-  if (err) return 1;
-  err = std::system("rm -rf /data/openpilot");
+  err = std::system("rm -rf /tmp/openpilot /data/openpilot");
   if (err) return 1;
 
   // Clone
@@ -40,13 +39,21 @@ int fresh_clone() {
   err = std::system("mv /tmp/openpilot /data");
   if (err) return 1;
 
+#ifdef SSH_KEYS
+  err = std::system("mkdir -p /data/params/d/");
+  if (err) return 1;
+
+  std::ofstream param;
+  param.open("/data/params/d/GithubSshKeys");
+  param << SSH_KEYS;
+  param.close();
+#endif
+
   return 0;
 }
 
 int install() {
   int err;
-
-  // TODO: Disable SSH after install done
 
   // Wait for valid time
   while (!time_valid()) {

@@ -64,12 +64,11 @@ RawLogger::~RawLogger() {
   av_free(codec_ctx);
 }
 
-void RawLogger::encoder_open(const char* path, int segment) {
+void RawLogger::encoder_open(const char* path) {
   int err = 0;
 
   std::lock_guard<std::recursive_mutex> guard(lock);
 
-  this->segment = segment;
   vid_path = util::string_format("%s/%s.mkv", path, filename);
 
   // create camera lock file
@@ -128,8 +127,7 @@ void RawLogger::encoder_close() {
 }
 
 int RawLogger::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
-                            int in_width, int in_height,
-                            int *frame_segment, uint64_t ts) {
+                            int in_width, int in_height, uint64_t ts) {
   int err = 0;
 
   AVPacket pkt;
