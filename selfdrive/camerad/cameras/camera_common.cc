@@ -293,12 +293,13 @@ void set_exposure_target(CameraState *c, const uint8_t *pix_ptr, int x_start, in
   const CameraBuf *b = &c->buf;
 
   uint32_t lum_binning[256] = {0};
-  unsigned int lum_total = (y_end - y_start) * (x_end - x_start) / x_skip / y_skip;
+  unsigned int lum_total = 0;
   for (int y = y_start; y < y_end; y += y_skip) {
     for (int x = x_start; x < x_end; x += x_skip) {
       uint8_t lum = pix_ptr[(y * b->rgb_width) + x];
+      lum_total += 1;
 #ifdef QCOM2
-      if (lum < 80 && lum_binning[lum] > HISTO_CEIL_K * lum_total / 256) {
+      if (lum < 80 && lum_binning[lum] > HISTO_CEIL_K * (y_end - y_start) * (x_end - x_start) / x_skip / y_skip / 256) {
         continue;
       }
 #endif
@@ -309,18 +310,19 @@ void set_exposure_target(CameraState *c, const uint8_t *pix_ptr, int x_start, in
   unsigned int lum_cur = 0;
   int lum_med = 0;
   int lum_med_alt = 0;
+  int lum_med_tmp = 0;
   for (lum_med=255; lum_med>=0; lum_med--) {
     lum_cur += lum_binning[lum_med];
 #ifdef QCOM2
-    bool reach_hlc_perc = false;
-    if (c->camera_num == 0) { // wide
-      reach_hlc_perc = lum_cur > 2*lum_total / (3*HLC_A);
-    } else {
-      reach_hlc_perc = lum_cur > lum_total / HLC_A;
+    int hb = HLC_THRESH - 4*c->analog_gain;
+    if (lum_cur > 0) {
+      if (lum_med > hb) {
+        lum_med_tmp = 50 * HLC_A * (1 + c->analog_gain/10) / lum_total + 75;
+      } else if (lum_med > hb - 8) {
+        lum_med_tmp = 75;
+      }
     }
-    if (reach_hlc_perc && lum_med > HLC_THRESH) {
-      lum_med_alt = 86;
-    }
+    lum_med_alt = lum_med_alt>lum_med_tmp?lum_med_alt:lum_med_tmp;
 #endif
     if (lum_cur >= lum_total / 2) {
       break;
