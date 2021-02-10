@@ -41,7 +41,7 @@ static void ui_init_vision(UIState *s) {
 
 
 void ui_init(UIState *s) {
-  s->sm = new SubMaster({"modelV2", "controlsState", "uiLayoutState", "liveCalibration", "radarState", "thermal", "frame",
+  s->sm = new SubMaster({"modelV2", "controlsState", "uiLayoutState", "liveCalibration", "radarState", "thermal", "frame", "liveLocationKalman",
                          "health", "carParams", "driverState", "driverMonitoringState", "sensorEvents", "carState", "ubloxGnss"});
 
   s->started = false;
@@ -174,18 +174,11 @@ static void update_sockets(UIState *s) {
   if (sm.updated("ubloxGnss")) {
     auto data = sm["ubloxGnss"].getUbloxGnss();
     if (data.which() == cereal::UbloxGnss::MEASUREMENT_REPORT) {
-
-      auto measurements = data.getMeasurementReport().getMeasurements();
-      if (measurements.size()){
-        for (auto m : measurements) {
-          scene.cnoAvg += m.getCno();
-        }
-        scene.cnoAvg /= measurements.size();
-      } else {
-        scene.cnoAvg = 0;
-      }
       scene.satelliteCount = data.getMeasurementReport().getNumMeas();
     }
+  }
+  if (sm.updated("liveLocationKalman")) {
+    scene.gpsOK = sm["liveLocationKalman"].getLiveLocationKalman().getGpsOK();
   }
   if (sm.updated("carParams")) {
     s->longitudinal_control = sm["carParams"].getCarParams().getOpenpilotLongitudinalControl();

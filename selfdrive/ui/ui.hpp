@@ -120,7 +120,7 @@ typedef struct UIScene {
 
   // gps
   int satelliteCount;
-  int cnoAvg;
+  bool gpsOK;
 
   // modelV2
   float lane_line_probs[4];
