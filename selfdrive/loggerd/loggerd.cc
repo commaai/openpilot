@@ -332,7 +332,7 @@ int main(int argc, char** argv) {
   typedef struct QlogState {
     int counter, freq;
   } QlogState;
-  std::map<SubSocket*, QlogState> qlog_states;
+  std::map<SubSocket*, QlogState> sock_to_qs_map;
 
   s.ctx = Context::create();
   Poller * poller = Poller::create();
@@ -350,7 +350,7 @@ int main(int argc, char** argv) {
         s.rotate_state[cid].fpkt_sock = sock;
       }
     }
-    qlog_states[sock] = {.counter = 0, .freq = it.decimation};
+    sock_to_qs_map[sock] = {.counter = 0, .freq = it.decimation};
   }
 
   // init logger
@@ -399,7 +399,7 @@ int main(int argc, char** argv) {
         delete last_msg;
         last_msg = msg;
 
-        QlogState& qs = qlog_states[sock];
+        QlogState& qs = sock_to_qs_map[sock];
         logger_log(&s.logger, (uint8_t*)msg->getData(), msg->getSize(), qs.counter == 0 && qs.freq != -1);
         if (qs.freq != -1) {
           qs.counter = (qs.counter + 1) % qs.freq;
@@ -492,7 +492,7 @@ int main(int argc, char** argv) {
   logger_close(&s.logger);
 
   // messaging cleanup
-  for (auto &[sock, qs] : qlog_states) delete sock;
+  for (auto &[sock, qs] : sock_to_qs_map) delete sock;
   delete poller;
   delete s.ctx;
 
