@@ -27,6 +27,10 @@ void panda_set_power(bool power){
 #endif
 }
 
+#define LIBUSB_ENDPOINT_DIR_MASK 0x80
+#define LIBUSB_ENDPOINT_IN 0x80
+#define LIBUSB_ENDPOINT_OUT 0x00
+
 PandaComm::PandaComm(uint16_t vid, uint16_t pid){
   int err = libusb_init(&ctx);
   if (err != 0) { goto fail; }
@@ -56,11 +60,13 @@ fail:
   cleanup();
   throw std::runtime_error("Error connecting to panda");
 }
+
 PandaComm::~PandaComm(){
   std::lock_guard lk(usb_lock);
   cleanup();
   connected = false;
 }
+
 void PandaComm::cleanup(){
   if (dev_handle){
     libusb_release_interface(dev_handle, 0);
@@ -71,6 +77,14 @@ void PandaComm::cleanup(){
     libusb_exit(ctx);
   }
 }
+
+int PandaComm::control_read(uint8_t request_type, uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned char *data, uint16_t wLength, unsigned int timeout){
+  return libusb_control_transfer(dev_handle, (request_type & ~LIBUSB_ENDPOINT_DIR_MASK) | LIBUSB_ENDPOINT_IN, bRequest, wValue, wIndex, data, wLength, timeout);
+}
+int PandaComm::control_write(uint8_t request_type, uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned char *data, uint16_t wLength, unsigned int timeout){
+  return libusb_control_transfer(dev_handle, (request_type & ~LIBUSB_ENDPOINT_DIR_MASK) | LIBUSB_ENDPOINT_OUT, bRequest, wValue, wIndex, data, wLength, timeout);
+}
+
 int PandaComm::usb_write(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned int timeout) {
   int err;
   const uint8_t bmRequestType = LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE;
@@ -164,7 +178,6 @@ void PandaComm::handle_usb_issue(int err, const char func[]) {
   }
   // TODO: check other errors, is simply retrying okay?
 }
-
 
 
 

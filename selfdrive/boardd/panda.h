@@ -41,12 +41,13 @@ void panda_set_power(bool power);
 
 class PandaComm{
 private:
-  void cleanup();
+  libusb_device_handle *dev_handle = NULL;
+  libusb_context *ctx = NULL;
   std::mutex usb_lock;
+
+  void cleanup();
   void handle_usb_issue(int err, const char func[]);
 public:
-  libusb_device_handle *dev_handle = NULL;
-  libusb_context *ctx = NULL; // Should be private at some point
   PandaComm(uint16_t vid = 0xbbaa, uint16_t pid = 0xddcc);
   ~PandaComm();
   std::atomic<bool> connected = true;
@@ -56,7 +57,8 @@ public:
   int usb_read(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned char *data, uint16_t wLength, unsigned int timeout=TIMEOUT);
   int usb_bulk_write(unsigned char endpoint, unsigned char* data, int length, unsigned int timeout=TIMEOUT);
   int usb_bulk_read(unsigned char endpoint, unsigned char* data, int length, unsigned int timeout=TIMEOUT);
-
+  int control_read(uint8_t request_type, uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned char *data, uint16_t wLength, unsigned int timeout=TIMEOUT);
+  int control_write(uint8_t request_type, uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned char *data, uint16_t wLength, unsigned int timeout=TIMEOUT);
 };
 
 class Panda {
