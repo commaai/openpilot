@@ -165,8 +165,8 @@ def ui_thread(addr, frame_address):
     maybe_update_radar_points(sm['liveTracks'], top_down[1])
 
     if sm.updated['liveCalibration'] and num_px:
-      extrinsic_matrix = np.asarray(sm['liveCalibration'].extrinsicMatrix).reshape(3, 4)
-      calibration = Calibration(num_px, extrinsic_matrix, intrinsic_matrix)
+      rpyCalib = np.asarray(sm['liveCalibration'].rpyCalib)
+      calibration = Calibration(num_px, rpyCalib, intrinsic_matrix)
 
     # *** blits ***
     pygame.surfarray.blit_array(camera_surface, img.swapaxes(0, 1))

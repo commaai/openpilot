@@ -7,7 +7,8 @@ import numpy as np
 import pygame  # pylint: disable=import-error
 
 from common.transformations.camera import (eon_f_frame_size, eon_f_focal_length,
-                                           tici_f_frame_size, tici_f_focal_length)
+                                           tici_f_frame_size, tici_f_focal_length,
+                                           get_view_frame_from_calib_frame)
 from selfdrive.config import UIParams as UP
 from selfdrive.config import RADAR_TO_CAMERA
 
@@ -45,16 +46,15 @@ for width, height, focal in cams:
 METER_WIDTH = 20
 
 class Calibration:
-  def __init__(self, num_px, extrinsic, intrinsic):
-    self.extrinsic = extrinsic
+  def __init__(self, num_px, rpy, intrinsic):
     self.intrinsic = intrinsic
+    self.extrinsics_matrix = get_view_frame_from_calib_frame(rpy[0], rpy[1], rpy[2], 0.0)[:,:3]
     self.zoom = _BB_TO_FULL_FRAME[num_px][0, 0]
 
   def car_space_to_ff(self, x, y, z):
-    ones = np.ones_like(x)
-    car_space_projective = np.column_stack((x, y, z, ones)).T
+    car_space_projective = np.column_stack((x, y, z)).T
 
-    ep = self.extrinsic.dot(car_space_projective)
+    ep = self.extrinsics_matrix.dot(car_space_projective)
     kep = self.intrinsic.dot(ep)
     return (kep[:-1, :] / kep[-1, :]).T
 
@@ -78,15 +78,15 @@ def find_color(lidar_surface, color):
   return ret
 
 
-def to_lid_pt(y, x):
-  px, py = -x * UP.lidar_zoom + UP.lidar_car_x, -y * UP.lidar_zoom + UP.lidar_car_y
+def to_topdown_pt(y, x):
+  px, py = x * UP.lidar_zoom + UP.lidar_car_x, -y * UP.lidar_zoom + UP.lidar_car_y
   if px > 0 and py > 0 and px < UP.lidar_x and py < UP.lidar_y:
     return int(px), int(py)
   return -1, -1
 
 
 def draw_path(path, color, img, calibration, top_down, lid_color=None, z_off=0):
-  x, y, z = np.asarray(path.x), -np.asarray(path.y), -np.asarray(path.z) + z_off
+  x, y, z = np.asarray(path.x), np.asarray(path.y), np.asarray(path.z) + z_off
   pts = calibration.car_space_to_bb(x, y, z)
   pts = np.round(pts).astype(int)
 
@@ -95,7 +95,7 @@ def draw_path(path, color, img, calibration, top_down, lid_color=None, z_off=0):
   if lid_color is not None and top_down is not None:
     tcolor = find_color(top_down[0], lid_color)
     for i in range(len(x)):
-      px, py = to_lid_pt(x[i], y[i])
+      px, py = to_topdown_pt(x[i], y[i])
       if px != -1:
         top_down[1][px, py] = tcolor
 
@@ -197,21 +197,21 @@ def plot_model(m, img, calibration, top_down):
     x_std, _, _, _ = lead.xyvaStd
     x -= RADAR_TO_CAMERA
 
-    _, py_top = to_lid_pt(x + x_std, -y)
-    px, py_bottom = to_lid_pt(x - x_std, -y)
+    _, py_top = to_topdown_pt(x + x_std, y)
+    px, py_bottom = to_topdown_pt(x - x_std, y)
     top_down[1][int(round(px - 4)):int(round(px + 4)), py_top:py_bottom] = find_color(top_down[0], YELLOW)
 
   for path, prob, _ in zip(m.laneLines, m.laneLineProbs, m.laneLineStds):
     color = (0, int(255 * prob), 0)
-    draw_path(path, color, img, calibration, top_down, YELLOW, 1.22)
+    draw_path(path, color, img, calibration, top_down, YELLOW)
 
   for edge, std in zip(m.roadEdges, m.roadEdgeStds):
     prob = max(1 - std, 0)
     color = (int(255 * prob), 0, 0)
-    draw_path(edge, color, img, calibration, top_down, RED, 1.22)
+    draw_path(edge, color, img, calibration, top_down, RED)
 
   color = (255, 0, 0)
-  draw_path(m.position, color, img, calibration, top_down, RED)
+  draw_path(m.position, color, img, calibration, top_down, RED, 1.22)
 
 
 def maybe_update_radar_points(lt, lid_overlay):
@@ -221,7 +221,8 @@ def maybe_update_radar_points(lt, lid_overlay):
     for track in lt:
       ar_pts[track.trackId] = [track.dRel, track.yRel, track.vRel, track.aRel, track.oncoming, track.stationary]
   for ids, pt in ar_pts.items():
-    px, py = to_lid_pt(pt[0], pt[1])
+    # negative here since radar is left positive
+    px, py = to_topdown_pt(pt[0], -pt[1])
     if px != -1:
       if pt[-1]:
         color = 240
