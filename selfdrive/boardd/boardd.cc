@@ -555,7 +555,7 @@ std::string get_expected_signature(){
 }
 
 
-void status(PandaComm* dfuPanda){
+void dfu_status(PandaComm* dfuPanda){
   std::vector<uint8_t> stat(6);
   while (true) {
     dfuPanda->control_read(0x21, DFU_GETSTATUS, 0, 0, &stat[0], 6);
@@ -577,29 +577,84 @@ void dfu_clear_status(PandaComm* dfuPanda){
     dfuPanda->control_read(0x21, DFU_CLRSTATUS, 0, 0, nullptr, 0);
   } else if(stat[4] == 0x9) {
     dfuPanda->control_write(0x21, DFU_ABORT, 0, 0, nullptr, 0);
-    status(dfuPanda);
+    dfu_status(dfuPanda);
   }
 }
-
+unsigned char* pack_int(int num){
+  // std::cout<<num<<std::endl;
+  unsigned char* data = new unsigned char[4];
+  for (int i = 0 ; i < 4 ; i++) {
+    data[i] = num % 256;
+    // std::cout<<num%256<<std::endl;
+    num /= 256;
+  }
+  return data;
+}
 void dfu_erase(PandaComm* dfuPanda, int adress){
   unsigned char data[5];
   data[0] = 0x41;
-  std::cout<<std::dec;
+  unsigned char* packed = pack_int(adress);
   for (int i = 0 ; i < 4 ; i++) {
-    data[i+1] = adress % 256;
-    std::cout<<i+1<<" "<<unsigned(data[i+1])<<std::endl;
-    adress /= 256;
+    data[i+1] = packed[i];
+    // std::cout<<i+1<<" "<<unsigned(data[i+1])<<std::endl;
   }
-
   dfuPanda->control_write(0x21, DFU_DNLOAD, 0, 0, data, 5);
-  status(dfuPanda);
+  dfu_status(dfuPanda);
 }
+void dfu_program(PandaComm* dfuPanda, int adress, std::string program){
+  int blockSize = 2048;
 
+  // Set address pointer
+  unsigned char data[5];
+  data[0] = 0x21;
+  unsigned char* packed = pack_int(adress);
+  for (int i = 0 ; i < 4 ; i++) {
+    data[i+1] = packed[i];
+    // std::cout<<i+1<<" "<<unsigned(data[i+1])<<std::endl;
+  }
+  dfuPanda->control_write(0x21, DFU_DNLOAD, 0, 0, data, 5);
+  dfu_status(dfuPanda);
+
+  // Program
+  int paddedLength = program.length() + (blockSize - (program.length() % blockSize));
+  unsigned char padded_program[paddedLength];
+  std::fill(padded_program, padded_program + paddedLength, 0xff);
+  for(int i = 0 ; i < program.length() ; i++){
+    padded_program[i]=program[i];
+  }
+  for(int i = 0 ; i < paddedLength/ blockSize ; i++){
+    std::cout<<"Programming with block "<<i<<std::endl;
+    dfuPanda->control_write(0x21, DFU_DNLOAD, 2 + i, 0, padded_program+blockSize * i, blockSize);
+    // std::cout<<"Ending dump "<<i<<std::endl;
+    dfu_status(dfuPanda);
+  }
+  std::cout<<"Done with programming"<<std::endl;
+}
+void dfu_reset(PandaComm* dfuPanda){
+  unsigned char data[5];
+  data[0] = 0x21;
+  unsigned char* packed = pack_int(0x8000000);
+  for (int i = 0 ; i < 4 ; i++) {
+    data[i+1] = packed[i];
+  }
+  dfuPanda->control_write(0x21, DFU_DNLOAD, 0, 0, data, 5);
+  dfu_status(dfuPanda);
+  try{
+    dfuPanda->control_write(0x21, DFU_DNLOAD, 2, 0, nullptr, 0);
+    unsigned char buf[6];
+    dfuPanda->control_read(0x21, DFU_GETSTATUS, 0, 0, buf, 6);
+  }catch(std::runtime_error &e){
+    std::cout<<"Reset failed"<<std::endl;
+    delete(dfuPanda);
+  }
+}
 void dfu_program_bootstub(PandaComm* dfuPanda, std::string program){
    std::cout<<"Programming bootstub to panda"<<std::endl;
    dfu_clear_status(dfuPanda);
    dfu_erase(dfuPanda, 0x8004000);
    dfu_erase(dfuPanda, 0x8000000);
+   dfu_program(dfuPanda, 0x8000000, program);
+   dfu_reset(dfuPanda);
 }
 
 void get_out_of_dfu(){
