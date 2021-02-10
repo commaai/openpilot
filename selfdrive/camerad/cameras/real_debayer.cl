@@ -4,9 +4,9 @@ const half black_level = 42.0;
 
 const __constant half3 color_correction[3] = {
   // post wb CCM
-  (half3)(1.44602146, -0.24727126, -0.0403062),
-  (half3)(-0.37658179, 1.26329038, -0.45978396),
-  (half3)(-0.06943967, -0.01601912, 1.50009016),
+  (half3)(1.21654339, -0.31576917, -0.17797381),
+  (half3)(-0.09264673, 1.33018184, -0.38619147),
+  (half3)(-0.17936605, -0.1120779,  1.39721516),
 };
 
 // tone mapping params
@@ -29,12 +29,12 @@ half mf(half x, half cp) {
 half3 color_correct(half3 rgb, int ggain) {
   half3 ret = (0,0,0);
   half cpx = clamp(0.01h, 0.1h, cpxb + cpxk * min(10, ggain));
+  rgb.x = mf(rgb.x, cpx);
+  rgb.y = mf(rgb.y, cpx);
+  rgb.z = mf(rgb.z, cpx);
   ret += (half)rgb.x * color_correction[0];
   ret += (half)rgb.y * color_correction[1];
   ret += (half)rgb.z * color_correction[2];
-  ret.x = mf(ret.x, cpx);
-  ret.y = mf(ret.y, cpx);
-  ret.z = mf(ret.z, cpx);
   ret = clamp(0.0h, 255.0h, ret*255.0h);
   return ret;
 }
