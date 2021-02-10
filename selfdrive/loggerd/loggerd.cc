@@ -2,7 +2,6 @@
 #include <sys/resource.h>
 
 #include <ftw.h>
-#include <algorithm>
 #include "common/timing.h"
 #include "common/params.h"
 #include "common/swaglog.h"
@@ -315,7 +314,6 @@ int main(int argc, char** argv) {
   s.encoders_waiting = 0;
   s.cv.notify_all();
   for (auto &e : s.encoder_states) { delete e; }
-
   for (auto &[sock, socket_state] : sockets) { delete socket_state; }
   LOGW("closing logger");
   logger_close(&s.logger);
