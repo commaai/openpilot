@@ -31,7 +31,10 @@ void panda_set_power(bool power){
 #define LIBUSB_ENDPOINT_IN 0x80
 #define LIBUSB_ENDPOINT_OUT 0x00
 
+#define REQUEST_IN 192
+
 PandaComm::PandaComm(uint16_t vid, uint16_t pid){
+  std::cout<<"Initializing comms with panda at "<<std::hex<<vid<<":"<<std::hex<<pid<<std::endl;
   int err = libusb_init(&ctx);
   if (err != 0) { goto fail; }
 
@@ -81,6 +84,7 @@ void PandaComm::cleanup(){
 int PandaComm::control_read(uint8_t request_type, uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned char *data, uint16_t wLength, unsigned int timeout){
   return libusb_control_transfer(dev_handle, (request_type & ~LIBUSB_ENDPOINT_DIR_MASK) | LIBUSB_ENDPOINT_IN, bRequest, wValue, wIndex, data, wLength, timeout);
 }
+
 int PandaComm::control_write(uint8_t request_type, uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned char *data, uint16_t wLength, unsigned int timeout){
   return libusb_control_transfer(dev_handle, (request_type & ~LIBUSB_ENDPOINT_DIR_MASK) | LIBUSB_ENDPOINT_OUT, bRequest, wValue, wIndex, data, wLength, timeout);
 }
@@ -179,12 +183,112 @@ void PandaComm::handle_usb_issue(int err, const char func[]) {
   // TODO: check other errors, is simply retrying okay?
 }
 
+DynamicPanda::DynamicPanda(){
+  reconnect();
+}
+
+void DynamicPanda::reconnect(){
+  // Find the first panda device in the list of devices
+  int err = 0;
+  libusb_context* ctx;
+  err = libusb_init(&ctx);
+  assert(err == 0);
+  libusb_device **list = NULL;
+  int count = 0;
+  count = libusb_get_device_list(ctx, &list);
+  assert(count > 0);
+  for (int idx = 0; idx < count; idx++) {
+    libusb_device *device = list[idx];
+    libusb_device_descriptor desc;
+    err = libusb_get_device_descriptor(device, &desc);
+    assert(err == 0);
+    uint16_t vid = desc.idVendor;
+    uint16_t pid = desc.idProduct;
+    printf("Vendor:Device = %04x:%04x\n", vid, pid);
+    if (vid == 0x0483 && pid == 0xdf11){ // Panda in DFU 
+      std::cout<<"Found panda in DFU mode, should not occur"<<std::endl;
+      pandaExists = false;
+      bootstub = false;
+      throw std::runtime_error("Found DFU panda...");
+    }else if(vid == 0xbbaa && pid == 0xddcc){ //Normal panda running the firmware
+      c = new PandaComm(0xbbaa, 0xddcc);
+      std::cout<<"Found panda in a good state, exiting"<<std::endl;
+      pandaExists = true;
+      bootstub = false;
+      break;
+    }else if(vid == 0xbbaa && pid == 0xddee){
+      c = new PandaComm(0xbbaa, 0xddee);
+      std::cout<<"Found panda in bootstub mode, some more work to do"<<std::endl;
+      pandaExists = true;
+      bootstub = true;
+      break;
+    }
+  }
+  libusb_free_device_list(list, count);
+  libusb_exit(ctx);
+}
+
+std::string DynamicPanda::get_version(){
+  std::vector<uint8_t> fw_sig_buf(64);
+  int read = c->usb_read(0xd6, 0, 0, &fw_sig_buf[0], 64);
+  std::cout<<"Get version read "<<read<<" bytes"<<std::endl;
+  return (read == 64) ? std::string(fw_sig_buf.begin(), fw_sig_buf.end()) : "";
+}
+
+std::string DynamicPanda::get_signature(){
+  std::vector<uint8_t> fw_sig_buf(128);
+  int read_1 = c->usb_read(0xd3, 0, 0, &fw_sig_buf[0], 64);
+  int read_2 = c->usb_read(0xd4, 0, 0, &fw_sig_buf[64], 64);
+  return ((read_1 == 64) && (read_2 == 64)) ? std::string(fw_sig_buf.begin(), fw_sig_buf.end()) : "";
+}
+void DynamicPanda::flash(std::string basedir, std::string fw_fn){
+  std::cout<<"flash: main version is "<<get_version()<<std::endl;
+  assert(bootstub);
+  std::string code = util::read_file(fw_fn);
+  unsigned char code_data[code.length()];
+  for(int i = 0 ; i < code.length() ; i++){
+    code_data[i]=code[i];
+  }
+  std::cout<<code.length()<<std::endl;
+  // confirm flashed is present
+  std::vector<uint8_t> buf(12);
+  c->control_read(REQUEST_IN, 0xb0, 0, 0, &buf[0], 12);
+  assert(buf[4] == 0xde && buf[5] == 0xad && buf[6] == 0xd0 && buf[7] == 0x0d);
+
+  //unlock flash
+  std::cout<<"flash: unlocking"<<std::endl;
+  c->control_write(REQUEST_IN, 0xb1, 0, 0, nullptr, 0);
+
+  // erase sectors 1-3
+  std::cout<<"flash: erasing"<<std::endl;
+  for (int i = 1 ; i < 4 ; i++) {
+    c->control_write(REQUEST_IN, 0xb2, i, 0, nullptr, 0);
+  }
+
+  // flash over EP2
+  int STEP = 0x10;
+  std::cout<<"flash: flashing"<<std::endl;
+  for(int i = 0 ; i < code.length() ; i += STEP){
+    c->usb_bulk_write(2, code_data + i, STEP);
+  }
+  //reset
+  std::cout<<"flash: resetting"<<std::endl;
+  try{
+    c->control_write(REQUEST_IN, 0xd8, 0, 0, nullptr, 0);
+  } catch (std::exception &e) {
+  }
+  util::sleep_for(2500);
+  reconnect();
+}
+
+DynamicPanda::~DynamicPanda(){
+  delete(c);
+}
 
 
-Panda::Panda(uint16_t vid, uint16_t pid){
-  std::cout<<"Starting with vid:pid "<< std::hex <<vid<<":"<<std::hex<<pid<<std::endl;
+Panda::Panda(){
   // init communication
-  c = new PandaComm(vid, pid);
+  c = new PandaComm(0xbbaa, 0xddcc);
 
   hw_type = get_hw_type();
 
@@ -195,8 +299,6 @@ Panda::Panda(uint16_t vid, uint16_t pid){
     (hw_type == cereal::HealthData::PandaType::DOS);
   has_rtc = (hw_type == cereal::HealthData::PandaType::UNO) ||
     (hw_type == cereal::HealthData::PandaType::DOS);
-
-  std::cout<<"Got everything SUCCESS with vid:pid "<< std::hex <<vid<<":"<<std::hex<<pid<<std::endl;
 
 }
 

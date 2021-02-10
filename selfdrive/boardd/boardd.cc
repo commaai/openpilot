@@ -188,7 +188,7 @@ bool usb_connect() {
 // must be called before threads or with mutex
 void usb_retry_connect() {
   LOGW("attempting to connect");
-  while (!usb_connect()) { util::sleep_for(100); }
+  while (!usb_connect()) { util::sleep_for(1000); }
   LOGW("connected to board");
 }
 
@@ -580,16 +580,14 @@ void dfu_clear_status(PandaComm* dfuPanda){
     dfu_status(dfuPanda);
   }
 }
+
 unsigned char* pack_int(int num){
   // std::cout<<num<<std::endl;
   unsigned char* data = new unsigned char[4];
-  for (int i = 0 ; i < 4 ; i++) {
-    data[i] = num % 256;
-    // std::cout<<num%256<<std::endl;
-    num /= 256;
-  }
+  memcpy(data, &num, sizeof(num));
   return data;
 }
+
 void dfu_erase(PandaComm* dfuPanda, int adress){
   unsigned char data[5];
   data[0] = 0x41;
@@ -601,6 +599,7 @@ void dfu_erase(PandaComm* dfuPanda, int adress){
   dfuPanda->control_write(0x21, DFU_DNLOAD, 0, 0, data, 5);
   dfu_status(dfuPanda);
 }
+
 void dfu_program(PandaComm* dfuPanda, int adress, std::string program){
   int blockSize = 2048;
 
@@ -624,12 +623,13 @@ void dfu_program(PandaComm* dfuPanda, int adress, std::string program){
   }
   for(int i = 0 ; i < paddedLength/ blockSize ; i++){
     std::cout<<"Programming with block "<<i<<std::endl;
-    dfuPanda->control_write(0x21, DFU_DNLOAD, 2 + i, 0, padded_program+blockSize * i, blockSize);
+    dfuPanda->control_write(0x21, DFU_DNLOAD, 2 + i, 0, padded_program + blockSize * i, blockSize);
     // std::cout<<"Ending dump "<<i<<std::endl;
     dfu_status(dfuPanda);
   }
   std::cout<<"Done with programming"<<std::endl;
 }
+
 void dfu_reset(PandaComm* dfuPanda){
   unsigned char data[5];
   data[0] = 0x21;
@@ -648,6 +648,7 @@ void dfu_reset(PandaComm* dfuPanda){
     delete(dfuPanda);
   }
 }
+
 void dfu_program_bootstub(PandaComm* dfuPanda, std::string program){
    std::cout<<"Programming bootstub to panda"<<std::endl;
    dfu_clear_status(dfuPanda);
@@ -676,25 +677,25 @@ void get_out_of_dfu(){
       uint16_t vid = desc.idVendor;
       uint16_t pid = desc.idProduct;
       printf("Vendor:Device = %04x:%04x\n", vid, pid);
-      if (vid == 0x0483 && pid == 0xdf11){ // Panda in DFU 
-        printf("Vendor:Device = %04x:%04x\n", vid, pid);
-        libusb_device_handle* deviceHandle = libusb_open_device_with_vid_pid(ctx, vid, pid);
-        if (deviceHandle != NULL){
-          unsigned char buf[1024];
-          memset(buf, 0, sizeof(buf));//Ensure I can cout
-          std::cout<<"Id of MSG"<<desc.iManufacturer<<std::endl;
-          int length = libusb_get_string_descriptor_ascii(deviceHandle, 3, buf, 1024);
-          if (length < 0) {
-            std::cout<<"Error in getting description"<<std::endl;
-          } else {
-            std::cout<<"Got the DFU message"<<std::endl;
-            std::cout<<length<<std::endl;
-            std::cout<<buf<<std::endl;
-          }
-          libusb_close(deviceHandle);
-          std::cout<<"Got to end of loop"<<std::endl;
-        }
-      }
+      // if (vid == 0x0483 && pid == 0xdf11){ // Panda in DFU 
+      //   printf("Vendor:Device = %04x:%04x\n", vid, pid);
+      //   libusb_device_handle* deviceHandle = libusb_open_device_with_vid_pid(ctx, vid, pid);
+      //   if (deviceHandle != NULL){
+      //     unsigned char buf[1024];
+      //     memset(buf, 0, sizeof(buf));//Ensure I can cout
+      //     std::cout<<"Id of MSG"<<desc.iManufacturer<<std::endl;
+      //     int length = libusb_get_string_descriptor_ascii(deviceHandle, 3, buf, 1024);
+      //     if (length < 0) {
+      //       std::cout<<"Error in getting description"<<std::endl;
+      //     } else {
+      //       std::cout<<"Got the DFU message"<<std::endl;
+      //       std::cout<<length<<std::endl;
+      //       std::cout<<buf<<std::endl;
+      //     }
+      //     libusb_close(deviceHandle);
+      //     std::cout<<"Got to end of loop"<<std::endl;
+      //   }
+      // }
     }
     libusb_free_device_list(list, count);
     libusb_exit(ctx);
@@ -715,8 +716,8 @@ void get_out_of_dfu(){
   std::string program = util::read_file(basedir+"panda/board/obj/bootstub.panda.bin");
   std::cout<<"Bootstub firmware has a length of: "<<std::dec<<program.length()<<std::endl;
   dfu_program_bootstub(dfuPanda, program);
+  delete(dfuPanda);
 }
-
 
 
 void update_panda(){
@@ -725,9 +726,38 @@ void update_panda(){
   std::cout<<"1: Move out of DFU"<<std::endl;
   util::sleep_for(500);
   get_out_of_dfu();
-  // LOGW("Connecting to panda");
+  util::sleep_for(2500);
+  std::cout<<"2: Start DynamicPanda and run the required steps"<<std::endl;
+  std::string fw_fn = get_firmware_fn();
+  std::string fw_signature = get_expected_signature();
+  DynamicPanda tempPanda;
+  std::string panda_signature = tempPanda.bootstub ? "": tempPanda.get_signature();
+  if (tempPanda.bootstub || panda_signature != fw_signature) {
+    std::cout<<"Panda firmware out of date, update required"<<std::endl;
+    tempPanda.flash(get_basedir(), fw_fn);
+    std::cout<<"Done flashing new firmware"<<std::endl;
+    util::sleep_for(2500);
+  }
+  if (tempPanda.bootstub) {
+    std::string bootstub_version = tempPanda.get_version();
+    std::cout<<"Flashed firmware not booting, flashing development bootloader. Bootstub verstion "<<bootstub_version<<std::endl;
+    // panda.recover();
+    std::cout<<"Done flashing dev bootloader"<<std::endl;
+    util::sleep_for(2500);
+  }
+  if(tempPanda.bootstub){
+    std::cout<<"Panda still not booting, exiting"<<std::endl;
+    util::sleep_for(2500);
+    throw std::runtime_error("PANDA NOT BOOTING");
+  }
+  panda_signature = tempPanda.get_signature();
+  if (panda_signature != fw_signature){
+    std::cout<<"Version mismatch after flashing, exiting"<<std::endl;
+    util::sleep_for(2500);
+    throw std::runtime_error("FIRMWARE VERSION MISMATCH");
+  }
 
-}
+} 
 
 int main() {
   int err;

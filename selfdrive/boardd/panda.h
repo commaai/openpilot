@@ -61,13 +61,31 @@ public:
   int control_write(uint8_t request_type, uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned char *data, uint16_t wLength, unsigned int timeout=TIMEOUT);
 };
 
+// DynamicPanda class is used while setting up the "real" panda; aka the Panda that is running the firmware
+// We need to be able to switch between different states before getting there though
+class DynamicPanda{
+private:
+  PandaComm* c;
+  void cleanup();
+  void reconnect();
+public:
+  DynamicPanda();
+  ~DynamicPanda();
+  std::string get_version();
+  std::string get_signature();
+  void flash(std::string basedir, std::string fw_fn);
+  bool pandaExists;
+  bool bootstub;
+};
+
+
 class Panda {
  private:
   PandaComm* c;
   void cleanup();
 
  public:
-  Panda(uint16_t vid = 0xbbaa, uint16_t pid = 0xddcc);
+  Panda();
   ~Panda();
 
   cereal::HealthData::PandaType hw_type = cereal::HealthData::PandaType::UNKNOWN;
