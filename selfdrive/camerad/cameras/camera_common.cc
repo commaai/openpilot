@@ -317,7 +317,7 @@ void set_exposure_target(CameraState *c, const uint8_t *pix_ptr, int x_start, in
     int hb = HLC_THRESH - 4*c->analog_gain;
     if (lum_cur > 0) {
       if (lum_med > hb) {
-        lum_med_tmp = 50 * HLC_A * (1 + c->analog_gain/10) / lum_total + 75;
+        lum_med_tmp = 100 * HLC_A * (1 + c->analog_gain/10) / lum_total + 75;
       } else if (lum_med > hb - 8) {
         lum_med_tmp = 75;
       }
