@@ -25,6 +25,7 @@
 #include "common/modeldata.h"
 #include "common/params.h"
 #include "common/glutil.h"
+#include "common/transformations/orientation.hpp"
 #include "sound.hpp"
 #include "visionipc.h"
 #include "visionipc_client.h"
@@ -95,7 +96,7 @@ typedef struct {
 
 typedef struct UIScene {
 
-  mat4 extrinsic_matrix;      // Last row is 0 so we can use mat4.
+  mat3 view_from_calib;
   bool world_objects_visible;
 
   bool is_rhd;
