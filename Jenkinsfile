@@ -43,11 +43,10 @@ def phone_steps(String device_type, steps) {
 }
 
 pipeline {
-  agent any
+  agent none
   environment {
     COMMA_JWT = credentials('athena-test-jwt')
     TEST_DIR = "/data/openpilot"
-    ZOOKEEPER_DEVICE = "/dev/bus/usb/001/004"
   }
   options {
       timeout(time: 1, unit: 'HOURS')
@@ -112,7 +111,7 @@ pipeline {
           agent {
             dockerfile {
               filename 'Dockerfile.ondevice_ci'
-              args "--device ${ZOOKEEPER_DEVICE} --shm-size=1G --user=root"
+              args "--privileged -v /dev:/dev --shm-size=1G --user=root"
             }
           }
 
