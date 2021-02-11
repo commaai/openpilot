@@ -67,13 +67,15 @@ class DynamicPanda{
 private:
   PandaComm* c;
   void cleanup();
+  void connect();
   void reconnect();
 public:
   DynamicPanda();
   ~DynamicPanda();
   std::string get_version();
   std::string get_signature();
-  void flash(std::string basedir, std::string fw_fn);
+  void flash(std::string fw_fn = "");
+  void reset(bool enter_bootstub, bool enter_bootloader);
   void recover();
   bool pandaExists;
   bool bootstub;

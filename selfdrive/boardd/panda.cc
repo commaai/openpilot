@@ -9,6 +9,7 @@
 #include "common/util.h"
 #include "messaging.hpp"
 #include "panda.h"
+#include "boardd.hpp"
 
 void panda_set_power(bool power){
 #ifdef QCOM2
@@ -187,8 +188,10 @@ DynamicPanda::DynamicPanda(){
   reconnect();
 }
 
-void DynamicPanda::reconnect(){
+void DynamicPanda::connect(){
   // Find the first panda device in the list of devices
+  pandaExists = false;
+
   int err = 0;
   libusb_context* ctx;
   err = libusb_init(&ctx);
@@ -197,6 +200,7 @@ void DynamicPanda::reconnect(){
   int count = 0;
   count = libusb_get_device_list(ctx, &list);
   assert(count > 0);
+  std::cout<<"Looking for panda"<<std::endl;
   for (int idx = 0; idx < count; idx++) {
     libusb_device *device = list[idx];
     libusb_device_descriptor desc;
@@ -241,7 +245,11 @@ std::string DynamicPanda::get_signature(){
   int read_2 = c->usb_read(0xd4, 0, 0, &fw_sig_buf[64], 64);
   return ((read_1 == 64) && (read_2 == 64)) ? std::string(fw_sig_buf.begin(), fw_sig_buf.end()) : "";
 }
-void DynamicPanda::flash(std::string basedir, std::string fw_fn){
+
+void DynamicPanda::flash(std::string fw_fn){
+  if(fw_fn == ""){
+    fw_fn = get_firmware_fn();
+  }
   std::cout<<"flash: main version is "<<get_version()<<std::endl;
   assert(bootstub);
   std::string code = util::read_file(fw_fn);
@@ -281,8 +289,58 @@ void DynamicPanda::flash(std::string basedir, std::string fw_fn){
   reconnect();
 }
 
+void DynamicPanda::reconnect(){
+  delete(c);
+  util::sleep_for(1000);
+  for (int i = 0 ; i < 15 ; i++) {
+    try{
+      PandaComm dfuPanda(0x0483, 0xdf11);
+      get_out_of_dfu();
+      continue;
+    }catch(std::runtime_error &e){}
+    connect();
+    if (pandaExists) {
+      return;
+    }
+    util::sleep_for(1000);
+  }
+  std::cout<<"Reconnect failed, aborting"<<std::endl;
+  throw std::runtime_error("reconnect failed");
+}
+
+void DynamicPanda::reset(bool enter_bootstub, bool enter_bootloader){
+  try{
+    if (enter_bootloader){
+      c->control_write(REQUEST_IN, 0xd1, 0, 0, nullptr, 0);
+    }else if(enter_bootstub){
+      c->control_write(REQUEST_IN, 0xd1, 1, 0, nullptr, 0);
+    }else{
+      c->control_write(REQUEST_IN, 0xd8, 0, 0, nullptr, 0);
+    }
+  }catch(std::runtime_error &e){}
+
+  if (!enter_bootloader){
+    reconnect();
+  }
+}
+
 void DynamicPanda::recover(){
-  
+  reset(true, false);
+  reset(false, true);
+  while(true){
+    util::sleep_for(100);
+    std::cout<<"Waiting for DFU"<<std::endl;
+    try{
+      PandaComm dfuPanda(0x0483, 0xdf11);
+      get_out_of_dfu();
+      break;
+    }catch(std::runtime_error &e){}
+  }
+  while(!pandaExists){
+    connect();
+    util::sleep_for(1000);
+  }
+  flash();
 }
 
 DynamicPanda::~DynamicPanda(){

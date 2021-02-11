@@ -733,14 +733,14 @@ void update_panda(){
   std::string panda_signature = tempPanda.bootstub ? "": tempPanda.get_signature();
   if (tempPanda.bootstub || panda_signature != fw_signature) {
     std::cout<<"Panda firmware out of date, update required"<<std::endl;
-    tempPanda.flash(get_basedir(), fw_fn);
+    tempPanda.flash(fw_fn);
     std::cout<<"Done flashing new firmware"<<std::endl;
     util::sleep_for(2500);
   }
   if (tempPanda.bootstub) {
     std::string bootstub_version = tempPanda.get_version();
     std::cout<<"Flashed firmware not booting, flashing development bootloader. Bootstub verstion "<<bootstub_version<<std::endl;
-    panda.recover();
+    tempPanda.recover();
     std::cout<<"Done flashing dev bootloader"<<std::endl;
     util::sleep_for(2500);
   }
