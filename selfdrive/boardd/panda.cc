@@ -35,7 +35,6 @@ void panda_set_power(bool power){
 #define REQUEST_IN 192
 
 PandaComm::PandaComm(uint16_t vid, uint16_t pid){
-  std::cout<<"Initializing comms with panda at "<<std::hex<<vid<<":"<<std::hex<<pid<<std::endl;
   int err = libusb_init(&ctx);
   if (err != 0) { goto fail; }
 
@@ -208,7 +207,6 @@ void DynamicPanda::connect(){
     assert(err == 0);
     uint16_t vid = desc.idVendor;
     uint16_t pid = desc.idProduct;
-    printf("Vendor:Device = %04x:%04x\n", vid, pid);
     if (vid == 0x0483 && pid == 0xdf11){ // Panda in DFU 
       std::cout<<"Found panda in DFU mode, should not occur"<<std::endl;
       pandaExists = false;
@@ -235,7 +233,6 @@ void DynamicPanda::connect(){
 std::string DynamicPanda::get_version(){
   std::vector<uint8_t> fw_sig_buf(64);
   int read = c->usb_read(0xd6, 0, 0, &fw_sig_buf[0], 64);
-  std::cout<<"Get version read "<<read<<" bytes"<<std::endl;
   return (read == 64) ? std::string(fw_sig_buf.begin(), fw_sig_buf.end()) : "";
 }
 

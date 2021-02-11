@@ -531,7 +531,6 @@ std::string get_firmware_fn(){
   }
 
   std::string signed_firmware_path = basedir + "panda/board/obj/panda.bin.signed";
-  std::cout<<signed_firmware_path<<std::endl;
 
   if (util::file_exists(signed_firmware_path)) {
     LOGW("Using prebuilt signed firmware");
@@ -658,7 +657,7 @@ void dfu_program_bootstub(PandaComm* dfuPanda, std::string program){
 }
 
 void get_out_of_dfu(){
-  bool listUsbDevices = true;
+  bool listUsbDevices = false;
   if(listUsbDevices){ // Useful for debugging
     int err = 0;
     libusb_context* ctx;
@@ -725,12 +724,14 @@ void update_panda(){
   std::cout<<"1: Move out of DFU"<<std::endl;
   util::sleep_for(500);
   get_out_of_dfu();
-  util::sleep_for(2500);
   std::cout<<"2: Start DynamicPanda and run the required steps"<<std::endl;
+  util::sleep_for(2500);
   std::string fw_fn = get_firmware_fn();
   std::string fw_signature = get_expected_signature();
   DynamicPanda tempPanda;
   std::string panda_signature = tempPanda.bootstub ? "": tempPanda.get_signature();
+  std::cout<<"fw_sig::panda_sig"<<std::endl<<fw_signature<<std::endl<<panda_signature<<std::endl;
+  util::sleep_for(2500);
   if (tempPanda.bootstub || panda_signature != fw_signature) {
     std::cout<<"Panda firmware out of date, update required"<<std::endl;
     tempPanda.flash(fw_fn);
