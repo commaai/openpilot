@@ -732,11 +732,14 @@ static void camera_open(CameraState *s) {
   // config csiphy
   LOG("-- Config CSI PHY");
   {
+
     uint32_t cam_packet_handle = 0;
+    int size = sizeof(struct cam_packet)+sizeof(struct cam_cmd_buf_desc)*1;
     struct cam_packet *pkt = (struct cam_packet *)alloc(s->video0_fd, sizeof(struct cam_packet)+sizeof(struct cam_cmd_buf_desc)*1, 8,
       CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE, &cam_packet_handle);
     pkt->num_cmd_buf = 1;
     pkt->kmd_cmd_buf_index = -1;
+    pkt->header.size = size;
     struct cam_cmd_buf_desc *buf_desc = (struct cam_cmd_buf_desc *)&pkt->payload;
 
     buf_desc[0].size = buf_desc[0].length = sizeof(struct cam_csiphy_info);
