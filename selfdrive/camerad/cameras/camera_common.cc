@@ -315,11 +315,8 @@ void set_exposure_target(CameraState *c, const uint8_t *pix_ptr, int x_start, in
     lum_cur += lum_binning[lum_med];
 #ifdef QCOM2
     int lum_med_tmp = 0;
-    int hb = HLC_THRESH - (c->analog_gain + 4*c->dc_gain_enabled)/3;
-    if (lum_cur > 0) {
-      if (lum_med > hb) {
-        lum_med_tmp = 50 * lum_cur * HLC_A / lum_total + 75 - 5*(c->analog_gain + 4*c->dc_gain_enabled)/2;
-      }
+    if (lum_cur > 0 && lum_med > HLC_THRESH) {
+      lum_med_tmp = 10 * lum_cur * HLC_A * (lum_med - HLC_THRESH) / (235 - HLC_THRESH) / lum_total + 75 - 5*(c->analog_gain + 4*c->dc_gain_enabled)/2;
     }
     lum_med_alt = lum_med_alt>lum_med_tmp?lum_med_alt:lum_med_tmp;
 #endif
@@ -327,7 +324,7 @@ void set_exposure_target(CameraState *c, const uint8_t *pix_ptr, int x_start, in
       break;
     }
   }
-  lum_med = lum_med_alt>lum_med?lum_med_alt:lum_med;
+  lum_med = lum_med_alt>lum_med ? lum_med_alt:lum_med;
   camera_autoexposure(c, lum_med / 256.0);
 }
 

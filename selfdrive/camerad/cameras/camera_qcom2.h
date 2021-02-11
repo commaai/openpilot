@@ -13,7 +13,7 @@
 #define EXPOSURE_TIME_MIN 8 // with HDR, fastest ss
 #define EXPOSURE_TIME_MAX 1757 // with HDR, slowest ss
 
-#define HLC_THRESH 240
+#define HLC_THRESH 225
 #define HLC_A 80
 #define HISTO_CEIL_K 5
 
