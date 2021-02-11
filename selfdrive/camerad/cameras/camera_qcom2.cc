@@ -732,7 +732,6 @@ static void camera_open(CameraState *s) {
   // config csiphy
   LOG("-- Config CSI PHY");
   {
-
     uint32_t cam_packet_handle = 0;
     int size = sizeof(struct cam_packet)+sizeof(struct cam_cmd_buf_desc)*1;
     struct cam_packet *pkt = (struct cam_packet *)alloc(s->video0_fd, sizeof(struct cam_packet)+sizeof(struct cam_cmd_buf_desc)*1, 8,
