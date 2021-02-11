@@ -111,7 +111,7 @@ pipeline {
           agent {
             dockerfile {
               filename 'Dockerfile.ondevice_ci'
-              args '-v /dev:/dev --shm-size=1G --user=root'
+              args '-v /dev/bus/usb:/dev/bus/usb --shm-size=1G --user=root'
             }
           }
 
