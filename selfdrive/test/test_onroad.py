@@ -10,6 +10,7 @@ from common.basedir import BASEDIR
 from common.timeout import Timeout
 from panda import Panda
 from selfdrive.loggerd.config import ROOT
+import selfdrive.manager as manager
 from selfdrive.test.helpers import set_params_enabled
 from tools.lib.logreader import LogReader
 
@@ -85,6 +86,8 @@ class TestOnroad(unittest.TestCase):
 
     # start manager and run openpilot for a minute
     try:
+      manager.build()
+      manager.manager_prepare()
       manager_path = os.path.join(BASEDIR, "selfdrive/manager.py")
       proc = subprocess.Popen(["python", manager_path])
 
@@ -93,21 +96,25 @@ class TestOnroad(unittest.TestCase):
         while sm.rcv_frame['carState'] < 0:
           sm.update(1000)
 
-      time.sleep(60)
+      cls.segments = []
+      with Timeout(150, "timed out waiting for logs"):
+        while len(cls.segments) < 3:
+          new_paths = set(Path(ROOT).iterdir()) - initial_segments
+          segs = [p for p in new_paths if "--" in list(p.iterdir())]
+          cls.segments = sorted(segs, key=lambda s: int(s.rsplit('--')[-1]))
+          time.sleep(5)
+
     finally:
       proc.terminate()
       if proc.wait(20) is None:
         proc.kill()
 
-    new_segments = set(Path(ROOT).iterdir()) - initial_segments
-
-    segments = [p for p in new_segments if len(list(p.iterdir())) > 1]
-    cls.segment = [s for s in segments if str(s).endswith("--0")][0]
-    cls.lr = list(LogReader(os.path.join(str(cls.segment), "rlog.bz2")))
+    cls.lr = list(LogReader(os.path.join(str(cls.segments[1]), "rlog.bz2")))
 
   def test_cpu_usage(self):
     proclogs = [m for m in self.lr if m.which() == 'procLog']
-    cpu_ok = check_cpu_usage(proclogs[5], proclogs[-3])
+    self.assertGreater(len(proclogs), service_list['procLog'].frequency * 45, "insufficient samples")
+    cpu_ok = check_cpu_usage(proclogs[0], proclogs[-1])
     self.assertTrue(cpu_ok)
 
 if __name__ == "__main__":
