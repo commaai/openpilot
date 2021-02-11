@@ -8,8 +8,6 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#include <pthread.h>
-
 #include <OMX_Component.h>
 #include <OMX_IndexExt.h>
 #include <OMX_VideoExt.h>
@@ -18,7 +16,6 @@
 #include <libyuv.h>
 #include <msm_media_info.h>
 
-#include "common/mutex.h"
 #include "common/util.h"
 #include "common/swaglog.h"
 
@@ -35,11 +32,10 @@ extern ExitHandler do_exit;
 // ***** OMX callback functions *****
 
 void OmxEncoder::wait_for_state(OMX_STATETYPE state) {
-  pthread_mutex_lock(&this->state_lock);
+  std::unique_lock lk(this->state_lock);
   while (this->state != state) {
-    pthread_cond_wait(&this->state_cv, &this->state_lock);
+    this->state_cv.wait(lk);
   }
-  pthread_mutex_unlock(&this->state_lock);
 }
 
 static OMX_CALLBACKTYPE omx_callbacks = {
@@ -51,24 +47,19 @@ static OMX_CALLBACKTYPE omx_callbacks = {
 OMX_ERRORTYPE OmxEncoder::event_handler(OMX_HANDLETYPE component, OMX_PTR app_data, OMX_EVENTTYPE event,
                                    OMX_U32 data1, OMX_U32 data2, OMX_PTR event_data) {
   OmxEncoder *e = (OmxEncoder*)app_data;
-
-  switch (event) {
-  case OMX_EventCmdComplete:
+  if (event == OMX_EventCmdComplete) {
     assert(data1 == OMX_CommandStateSet);
     LOG("set state event 0x%x", data2);
-    pthread_mutex_lock(&e->state_lock);
-    e->state = (OMX_STATETYPE)data2;
-    pthread_cond_broadcast(&e->state_cv);
-    pthread_mutex_unlock(&e->state_lock);
-    break;
-  case OMX_EventError:
+    {
+      std::unique_lock lk(e->state_lock);
+      e->state = (OMX_STATETYPE)data2;
+    }
+    e->state_cv.notify_all();
+  } else if (event == OMX_EventError) {
     LOGE("OMX error 0x%08x", data1);
-    // assert(false);
-    break;
-  default:
-    LOGE("unhandled event %d", event);
+  } else {
+    LOGE("OMX unhandled event %d", event);
     assert(false);
-    break;
   }
 
   return OMX_ErrorNone;
@@ -172,10 +163,6 @@ OmxEncoder::OmxEncoder(const char* filename, int width, int height, int fps, int
   this->height = height;
   this->fps = fps;
   this->remuxing = !h265;
-
-  mutex_init_reentrant(&this->lock);
-  pthread_mutex_init(&this->state_lock, NULL);
-  pthread_cond_init(&this->state_cv, NULL);
 
   this->downscale = downscale;
   if (this->downscale) {
@@ -405,13 +392,9 @@ void OmxEncoder::handle_out_buf(OmxEncoder *e, OMX_BUFFERHEADERTYPE *out_buf) {
 }
 
 int OmxEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
-                             int in_width, int in_height,
-                             int *frame_segment, uint64_t ts) {
+                             int in_width, int in_height, uint64_t ts) {
   int err;
-  pthread_mutex_lock(&this->lock);
-
   if (!this->is_open) {
-    pthread_mutex_unlock(&this->lock);
     return -1;
   }
 
@@ -421,7 +404,6 @@ int OmxEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const u
   OMX_BUFFERHEADERTYPE* in_buf = nullptr;
   while (!this->free_in.try_pop(in_buf, 20)) {
     if (do_exit) {
-      pthread_mutex_unlock(&this->lock);
       return -1;
     }
   }
@@ -483,20 +465,12 @@ int OmxEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const u
 
   this->counter++;
 
-  if (frame_segment) {
-    *frame_segment = this->segment;
-  }
-
-  pthread_mutex_unlock(&this->lock);
   return ret;
 }
 
-void OmxEncoder::encoder_open(const char* path, int segment) {
+void OmxEncoder::encoder_open(const char* path) {
   int err;
 
-  pthread_mutex_lock(&this->lock);
-
-  this->segment = segment;
   snprintf(this->vid_path, sizeof(this->vid_path), "%s/%s", path, this->filename);
   LOGD("encoder_open %s remuxing:%d", this->vid_path, this->remuxing);
 
@@ -543,13 +517,9 @@ void OmxEncoder::encoder_open(const char* path, int segment) {
 
   this->is_open = true;
   this->counter = 0;
-
-  pthread_mutex_unlock(&this->lock);
 }
 
 void OmxEncoder::encoder_close() {
-  pthread_mutex_lock(&this->lock);
-
   if (this->is_open) {
     if (this->dirty) {
       // drain output only if there could be frames in the encoder
@@ -586,8 +556,6 @@ void OmxEncoder::encoder_close() {
     unlink(this->lock_path);
   }
   this->is_open = false;
-
-  pthread_mutex_unlock(&this->lock);
 }
 
 OmxEncoder::~OmxEncoder() {

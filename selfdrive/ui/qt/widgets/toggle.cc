@@ -10,6 +10,9 @@ _anim(new QPropertyAnimation(this, "offset_circle", this))
   _x_circle = _radius;
   _y_circle = _radius;
   _y_rect = (_height - _height_rect)/2;
+  circleColor = QColor(0xffffff); // placeholder
+  green = QColor(0xffffff); // placeholder
+  setEnabled(true);
 }
 
 void Toggle::paintEvent(QPaintEvent *e) {
@@ -19,7 +22,7 @@ void Toggle::paintEvent(QPaintEvent *e) {
   p.setRenderHint(QPainter::Antialiasing, true);
 
   // Draw toggle background left
-  p.setBrush(QColor(0x33ab4c));
+  p.setBrush(green);
   p.drawRoundedRect(QRect(0, _y_rect, _x_circle + _radius, _height_rect), _height_rect/2, _height_rect/2);
 
   // Draw toggle background right
@@ -27,11 +30,14 @@ void Toggle::paintEvent(QPaintEvent *e) {
   p.drawRoundedRect(QRect(_x_circle - _radius, _y_rect, width() - (_x_circle - _radius), _height_rect), _height_rect/2, _height_rect/2);
 
   // Draw toggle circle
-  p.setBrush(QColor(0xfafafa));
+  p.setBrush(circleColor);
   p.drawEllipse(QRectF(_x_circle - _radius, _y_circle - _radius, 2 * _radius, 2 * _radius));
 }
 
 void Toggle::mouseReleaseEvent(QMouseEvent *e) {
+  if(!enabled){
+    return;
+  }
   const int left = _radius;
   const int right = width() - _radius;
   if(_x_circle != left && _x_circle != right){
@@ -57,4 +63,19 @@ void Toggle::togglePosition() {
 
 void Toggle::enterEvent(QEvent *e) {
   QAbstractButton::enterEvent(e);
+}
+
+bool Toggle::getEnabled(){
+  return enabled;
+}
+
+void Toggle::setEnabled(bool value){
+  enabled = value;
+  if(value){
+    circleColor.setRgb(0xfafafa);
+    green.setRgb(0x33ab4c);
+  }else{
+    circleColor.setRgb(0x888888);
+    green.setRgb(0x227722);
+  }
 }

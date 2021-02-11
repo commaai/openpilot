@@ -119,6 +119,7 @@ PyJWT = "*"
 pyserial = "*"
 onnx = "*"
 onnxruntime = "*"
+timezonefinder = "*"
 
 [requires]
 python_version = "3.8"

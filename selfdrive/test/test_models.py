@@ -16,7 +16,7 @@ from tools.lib.logreader import LogReader
 from panda.tests.safety import libpandasafety_py
 from panda.tests.safety.common import package_can_msg
 
-HwType = log.HealthData.HwType
+PandaType = log.HealthData.PandaType
 
 ROUTES = {v['carFingerprint']: k for k, v in routes.items() if v['enableCamera']}
 

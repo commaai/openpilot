@@ -1,6 +1,6 @@
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: master
+    rev: v3.4.0
     hooks:
     -   id: check-ast
     -   id: check-json
@@ -9,13 +9,13 @@ repos:
     -   id: check-merge-conflict
     -   id: check-symlinks
 -   repo: https://github.com/pre-commit/mirrors-mypy
-    rev: master
+    rev: v0.800
     hooks:
     -   id: mypy
         exclude: '^(pyextra)|(cereal)|(rednose)|(panda)|(laika)|(opendbc)|(laika_repo)|(rednose_repo)/'
         additional_dependencies: ['git+https://github.com/numpy/numpy-stubs']
 -   repo: https://github.com/PyCQA/flake8
-    rev: master
+    rev: 3.8.4
     hooks:
     -   id: flake8
         exclude: '^(pyextra)|(cereal)|(rednose)|(panda)|(laika)|(opendbc)|(laika_repo)|(rednose_repo)|(selfdrive/debug)/'

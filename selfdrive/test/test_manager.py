@@ -38,12 +38,12 @@ class TestManager(unittest.TestCase):
     manager.manager_prepare()
     for p in ALL_PROCESSES:
       manager.start_managed_process(p)
-    
+
     time.sleep(10)
 
     for p in reversed(ALL_PROCESSES):
       exit_code = manager.kill_managed_process(p, retry=False)
-      if not EON and (p == 'ui'or p == 'loggerd'):
+      if (not EON and p == 'ui') or (EON and p == 'logcatd'):
         # TODO: make Qt UI exit gracefully and fix OMX encoder exiting
         continue
 

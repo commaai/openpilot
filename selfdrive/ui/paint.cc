@@ -37,14 +37,10 @@ const mat3 intrinsic_matrix = (mat3){{
 
 // Projects a point in car to space to the corresponding point in full frame
 // image space.
-bool car_space_to_full_frame(const UIState *s, float in_x, float in_y, float in_z, vertex_data *out, float margin) {
-  const vec4 car_space_projective = (vec4){{in_x, in_y, in_z, 1.}};
-  // We'll call the car space point p.
-  // First project into normalized image coordinates with the extrinsics matrix.
-  const vec4 Ep4 = matvecmul(s->scene.extrinsic_matrix, car_space_projective);
-
-  // The last entry is zero because of how we store E (to use matvecmul).
-  const vec3 Ep = {{Ep4.v[0], Ep4.v[1], Ep4.v[2]}};
+bool calib_frame_to_full_frame(const UIState *s, float in_x, float in_y, float in_z, vertex_data *out) {
+  const float margin = 500.0f;
+  const vec3 pt = (vec3){{in_x, in_y, in_z}};
+  const vec3 Ep = matvecmul3(s->scene.view_from_calib, pt);
   const vec3 KEp = matvecmul3(intrinsic_matrix, Ep);
 
   // Project.
@@ -119,17 +115,18 @@ static void draw_lead(UIState *s, int idx){
   }
 
   float sz = std::clamp((25 * 30) / (d_rel / 3 + 30), 15.0f, 30.0f) * zoom;
-  x = std::clamp(x, 0.f, s->scene.viz_rect.right() - sz / 2);
-  y = std::fmin(s->scene.viz_rect.bottom() - sz * .6,  y);
+  x = std::clamp(x, 0.f, s->viz_rect.right() - sz / 2);
+  y = std::fmin(s->viz_rect.bottom() - sz * .6,  y);
   draw_chevron(s, x, y, sz, nvgRGBA(201, 34, 49, fillAlpha), COLOR_YELLOW);
 }
 
-static void ui_draw_line(UIState *s, const vertex_data *v, const int cnt, NVGcolor *color, NVGpaint *paint) {
-  if (cnt == 0) return;
+static void ui_draw_line(UIState *s, const line_vertices_data &vd, NVGcolor *color, NVGpaint *paint) {
+  if (vd.cnt == 0) return;
 
+  const vertex_data *v = &vd.v[0];
   nvgBeginPath(s->vg);
   nvgMoveTo(s->vg, v[0].x, v[0].y);
-  for (int i = 1; i < cnt; i++) {
+  for (int i = 1; i < vd.cnt; i++) {
     nvgLineTo(s->vg, v[i].x, v[i].y);
   }
   nvgClosePath(s->vg);
@@ -177,26 +174,26 @@ static void ui_draw_vision_lane_lines(UIState *s) {
   // paint lanelines
   for (int i = 0; i < std::size(scene.lane_line_vertices); i++) {
     NVGcolor color = nvgRGBAf(1.0, 1.0, 1.0, scene.lane_line_probs[i]);
-    ui_draw_line(s, scene.lane_line_vertices[i].v, scene.lane_line_vertices[i].cnt, &color, nullptr);
+    ui_draw_line(s, scene.lane_line_vertices[i], &color, nullptr);
   }
 
   // paint road edges
   for (int i = 0; i < std::size(scene.road_edge_vertices); i++) {
     NVGcolor color = nvgRGBAf(1.0, 0.0, 0.0, std::clamp<float>(1.0 - scene.road_edge_stds[i], 0.0, 1.0));
-    ui_draw_line(s, scene.road_edge_vertices[i].v, scene.road_edge_vertices[i].cnt, &color, nullptr);
+    ui_draw_line(s, scene.road_edge_vertices[i], &color, nullptr);
   }
 
   // paint path
   NVGpaint track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h * .4,
                                         COLOR_WHITE, COLOR_WHITE_ALPHA(0));
-  ui_draw_line(s, scene.track_vertices.v, scene.track_vertices.cnt, nullptr, &track_bg);
+  ui_draw_line(s, scene.track_vertices, nullptr, &track_bg);
 }
 
 // Draw all world space objects.
 static void ui_draw_world(UIState *s) {
   const UIScene *scene = &s->scene;
   // Don't draw on top of sidebar
-  nvgScissor(s->vg, scene->viz_rect.x, scene->viz_rect.y, scene->viz_rect.w, scene->viz_rect.h);
+  nvgScissor(s->vg, s->viz_rect.x, s->viz_rect.y, s->viz_rect.w, s->viz_rect.h);
 
   // Draw lane edges and vision/mpc tracks
   ui_draw_vision_lane_lines(s);
@@ -214,11 +211,12 @@ static void ui_draw_world(UIState *s) {
 }
 
 static void ui_draw_vision_maxspeed(UIState *s) {
+  const int SET_SPEED_NA = 255;
   float maxspeed = s->scene.controls_state.getVCruise();
   const bool is_cruise_set = maxspeed != 0 && maxspeed != SET_SPEED_NA;
   if (is_cruise_set && !s->is_metric) { maxspeed *= 0.6225; }
 
-  const Rect rect = {s->scene.viz_rect.x + (bdr_s * 2), int(s->scene.viz_rect.y + (bdr_s * 1.5)), 184, 202};
+  const Rect rect = {s->viz_rect.x + (bdr_s * 2), int(s->viz_rect.y + (bdr_s * 1.5)), 184, 202};
   ui_fill_rect(s->vg, rect, COLOR_BLACK_ALPHA(100), 30.);
   ui_draw_rect(s->vg, rect, COLOR_WHITE_ALPHA(100), 10, 20.);
 
@@ -233,23 +231,18 @@ static void ui_draw_vision_maxspeed(UIState *s) {
 }
 
 static void ui_draw_vision_speed(UIState *s) {
-  const float speed = std::max(0.0, s->scene.controls_state.getVEgo() * (s->is_metric ? 3.6 : 2.2369363));
+  const float speed = std::max(0.0, s->scene.car_state.getVEgo() * (s->is_metric ? 3.6 : 2.2369363));
   const std::string speed_str = std::to_string((int)std::nearbyint(speed));
   nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
-  ui_draw_text(s, s->scene.viz_rect.centerX(), 240, speed_str.c_str(), 96 * 2.5, COLOR_WHITE, "sans-bold");
-  ui_draw_text(s, s->scene.viz_rect.centerX(), 320, s->is_metric ? "km/h" : "mph", 36 * 2.5, COLOR_WHITE_ALPHA(200), "sans-regular");
+  ui_draw_text(s, s->viz_rect.centerX(), 240, speed_str.c_str(), 96 * 2.5, COLOR_WHITE, "sans-bold");
+  ui_draw_text(s, s->viz_rect.centerX(), 320, s->is_metric ? "km/h" : "mph", 36 * 2.5, COLOR_WHITE_ALPHA(200), "sans-regular");
 }
 
 static void ui_draw_vision_event(UIState *s) {
   const int viz_event_w = 220;
-  const int viz_event_x = s->scene.viz_rect.right() - (viz_event_w + bdr_s*2);
-  const int viz_event_y = s->scene.viz_rect.y + (bdr_s*1.5);
-  if (s->scene.controls_state.getDecelForModel() && s->scene.controls_state.getEnabled()) {
-    // draw winding road sign
-    const int img_turn_size = 160*1.5;
-    const Rect rect = {viz_event_x - (img_turn_size / 4), viz_event_y + bdr_s - 25, img_turn_size, img_turn_size};
-    ui_draw_image(s, rect, "trafficSign_turn", 1.0f);
-  } else if (s->scene.controls_state.getEngageable()) {
+  const int viz_event_x = s->viz_rect.right() - (viz_event_w + bdr_s*2);
+  const int viz_event_y = s->viz_rect.y + (bdr_s*1.5);
+  if (s->scene.controls_state.getEngageable()) {
     // draw steering wheel
     const int bg_wheel_size = 96;
     const int bg_wheel_x = viz_event_x + (viz_event_w-bg_wheel_size);
@@ -262,17 +255,16 @@ static void ui_draw_vision_event(UIState *s) {
 
 static void ui_draw_vision_face(UIState *s) {
   const int face_size = 96;
-  const int face_x = (s->scene.viz_rect.x + face_size + (bdr_s * 2));
-  const int face_y = (s->scene.viz_rect.bottom() - footer_h + ((footer_h - face_size) / 2));
+  const int face_x = (s->viz_rect.x + face_size + (bdr_s * 2));
+  const int face_y = (s->viz_rect.bottom() - footer_h + ((footer_h - face_size) / 2));
   ui_draw_circle_image(s, face_x, face_y, face_size, "driver_face", s->scene.dmonitoring_state.getIsActiveMode());
 }
 
 static void ui_draw_driver_view(UIState *s) {
-  s->scene.sidebar_collapsed = true;
+  s->sidebar_collapsed = true;
   const bool is_rhd = s->scene.is_rhd;
-  const Rect &viz_rect = s->scene.viz_rect; 
-  const int width = 3 * viz_rect.w / 4;
-  const Rect rect = {viz_rect.centerX() - width / 2, viz_rect.y, width, viz_rect.h};  // x, y, w, h
+  const int width = 3 * s->viz_rect.w / 4;
+  const Rect rect = {s->viz_rect.centerX() - width / 2, s->viz_rect.y, width, s->viz_rect.h};  // x, y, w, h
   const Rect valid_rect = {is_rhd ? rect.right() - rect.h / 2 : rect.x, rect.y, rect.h / 2, rect.h};
 
   // blackout
@@ -309,13 +301,12 @@ static void ui_draw_driver_view(UIState *s) {
 }
 
 static void ui_draw_vision_header(UIState *s) {
-  const Rect &viz_rect = s->scene.viz_rect;
-  NVGpaint gradient = nvgLinearGradient(s->vg, viz_rect.x,
-                        viz_rect.y+(header_h-(header_h/2.5)),
-                        viz_rect.x, viz_rect.y+header_h,
+  NVGpaint gradient = nvgLinearGradient(s->vg, s->viz_rect.x,
+                        s->viz_rect.y+(header_h-(header_h/2.5)),
+                        s->viz_rect.x, s->viz_rect.y+header_h,
                         nvgRGBAf(0,0,0,0.45), nvgRGBAf(0,0,0,0));
 
-  ui_fill_rect(s->vg, {viz_rect.x, viz_rect.y, viz_rect.w, header_h}, gradient);
+  ui_fill_rect(s->vg, {s->viz_rect.x, s->viz_rect.y, s->viz_rect.w, header_h}, gradient);
 
   ui_draw_vision_maxspeed(s);
   ui_draw_vision_speed(s);
@@ -341,9 +332,9 @@ static void ui_draw_vision_alert(UIState *s) {
   NVGcolor color = bg_colors[s->status];
   color.a *= get_alert_alpha(scene->alert_blinking_rate);
   const int alr_h = alert_size_map[scene->alert_size] + bdr_s;
-  const Rect rect = {.x = scene->viz_rect.x - bdr_s,
+  const Rect rect = {.x = s->viz_rect.x - bdr_s,
                   .y = s->fb_h - alr_h,
-                  .w = scene->viz_rect.w + (bdr_s * 2),
+                  .w = s->viz_rect.w + (bdr_s * 2),
                   .h = alr_h};
 
   ui_fill_rect(s->vg, rect, color);
@@ -371,13 +362,10 @@ static void ui_draw_vision_alert(UIState *s) {
 }
 
 static void ui_draw_vision_frame(UIState *s) {
-  const UIScene *scene = &s->scene;
-  const Rect &viz_rect = scene->viz_rect;
-
   // Draw video frames
   glEnable(GL_SCISSOR_TEST);
   glViewport(s->video_rect.x, s->video_rect.y, s->video_rect.w, s->video_rect.h);
-  glScissor(viz_rect.x, viz_rect.y, viz_rect.w, viz_rect.h);
+  glScissor(s->viz_rect.x, s->viz_rect.y, s->viz_rect.w, s->viz_rect.h);
   draw_frame(s);
   glDisable(GL_SCISSOR_TEST);
 
@@ -408,10 +396,10 @@ static void ui_draw_background(UIState *s) {
 }
 
 void ui_draw(UIState *s) {
-  s->scene.viz_rect = Rect{bdr_s, bdr_s, s->fb_w - 2 * bdr_s, s->fb_h - 2 * bdr_s};
-  if (!s->scene.sidebar_collapsed) {
-    s->scene.viz_rect.x += sbr_w;
-    s->scene.viz_rect.w -= sbr_w;
+  s->viz_rect = Rect{bdr_s, bdr_s, s->fb_w - 2 * bdr_s, s->fb_h - 2 * bdr_s};
+  if (!s->sidebar_collapsed) {
+    s->viz_rect.x += sbr_w;
+    s->viz_rect.w -= sbr_w;
   }
 
   const bool draw_alerts = s->started && s->active_app == cereal::UiLayoutState::App::NONE;

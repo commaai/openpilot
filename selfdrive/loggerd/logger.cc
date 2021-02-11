@@ -9,8 +9,6 @@
 #include <unistd.h>
 #include <sys/stat.h>
 
-#include <pthread.h>
-#include <bzlib.h>
 #include <iostream>
 #include <fstream>
 #include <streambuf>
@@ -20,7 +18,6 @@
 
 #include "common/swaglog.h"
 #include "common/params.h"
-#include "common/util.h"
 #include "common/version.h"
 #include "messaging.hpp"
 #include "logger.h"
@@ -52,23 +49,6 @@ int logger_mkpath(char* file_path) {
 }
 
 // ***** log metadata *****
-kj::Array<capnp::word> logger_build_boot() {
-  MessageBuilder msg;
-  auto boot = msg.initEvent().initBoot();
-
-  boot.setWallTimeNanos(nanos_since_epoch());
-
-  std::string lastKmsg = util::read_file("/sys/fs/pstore/console-ramoops");
-  boot.setLastKmsg(capnp::Data::Reader((const kj::byte*)lastKmsg.data(), lastKmsg.size()));
-
-  std::string lastPmsg = util::read_file("/sys/fs/pstore/pmsg-ramoops-0");
-  boot.setLastPmsg(capnp::Data::Reader((const kj::byte*)lastPmsg.data(), lastPmsg.size()));
-
-  std::string launchLog = util::read_file("/tmp/launch_log");
-  boot.setLaunchLog(capnp::Text::Reader(launchLog.data(), launchLog.size()));
-  return capnp::messageToFlatArray(msg);
-}
-
 kj::Array<capnp::word> logger_build_init_data() {
   MessageBuilder msg;
   auto init = msg.initEvent().initInitData();
@@ -138,6 +118,15 @@ kj::Array<capnp::word> logger_build_init_data() {
   return capnp::messageToFlatArray(msg);
 }
 
+std::string logger_get_route_name() {
+  char route_name[64] = {'\0'};
+  time_t rawtime = time(NULL);
+  struct tm timeinfo;
+  localtime_r(&rawtime, &timeinfo);
+  strftime(route_name, sizeof(route_name), "%Y-%m-%d--%H-%M-%S", &timeinfo);
+  return route_name;
+}
+
 void log_init_data(LoggerState *s) {
   auto bytes = s->init_data.asBytes();
   logger_log(s, bytes.begin(), bytes.size(), s->has_qlog);
@@ -162,15 +151,8 @@ void logger_init(LoggerState *s, const char* log_name, bool has_qlog) {
 
   s->part = -1;
   s->has_qlog = has_qlog;
-
-  time_t rawtime = time(NULL);
-  struct tm timeinfo;
-  localtime_r(&rawtime, &timeinfo);
-
-  strftime(s->route_name, sizeof(s->route_name),
-           "%Y-%m-%d--%H-%M-%S", &timeinfo);
+  s->route_name = logger_get_route_name();
   snprintf(s->log_name, sizeof(s->log_name), "%s", log_name);
-
   s->init_data = logger_build_init_data();
 }
 
@@ -187,7 +169,7 @@ static LoggerHandle* logger_open(LoggerState *s, const char* root_path) {
   assert(h);
 
   snprintf(h->segment_path, sizeof(h->segment_path),
-          "%s/%s--%d", root_path, s->route_name, s->part);
+          "%s/%s--%d", root_path, s->route_name.c_str(), s->part);
 
   snprintf(h->log_path, sizeof(h->log_path), "%s/%s.bz2", h->segment_path, s->log_name);
   snprintf(h->qlog_path, sizeof(h->qlog_path), "%s/qlog.bz2", h->segment_path);
@@ -200,46 +182,14 @@ static LoggerHandle* logger_open(LoggerState *s, const char* root_path) {
   if (lock_file == NULL) return NULL;
   fclose(lock_file);
 
-  h->log_file = fopen(h->log_path, "wb");
-  if (h->log_file == NULL) goto fail;
-
+  h->log = std::make_unique<BZFile>(h->log_path);
   if (s->has_qlog) {
-    h->qlog_file = fopen(h->qlog_path, "wb");
-    if (h->qlog_file == NULL) goto fail;
-  }
-
-  int bzerror;
-  h->bz_file = BZ2_bzWriteOpen(&bzerror, h->log_file, 9, 0, 30);
-  if (bzerror != BZ_OK) goto fail;
-
-  if (s->has_qlog) {
-    h->bz_qlog = BZ2_bzWriteOpen(&bzerror, h->qlog_file, 9, 0, 30);
-    if (bzerror != BZ_OK) goto fail;
+    h->q_log = std::make_unique<BZFile>(h->qlog_path);
   }
 
   pthread_mutex_init(&h->lock, NULL);
   h->refcnt++;
   return h;
-
-fail:
-  LOGE("logger failed to open files");
-  if (h->bz_file) {
-    BZ2_bzWriteClose(&bzerror, h->bz_file, 0, NULL, NULL);
-    h->bz_file = NULL;
-  }
-  if (h->bz_qlog) {
-    BZ2_bzWriteClose(&bzerror, h->bz_qlog, 0, NULL, NULL);
-    h->bz_qlog = NULL;
-  }
-  if (h->qlog_file) {
-    fclose(h->qlog_file);
-    h->qlog_file = NULL;
-  }
-  if (h->log_file) {
-    fclose(h->log_file);
-    h->log_file = NULL;
-  }
-  return NULL;
 }
 
 int logger_next(LoggerState *s, const char* root_path,
@@ -310,11 +260,9 @@ void logger_close(LoggerState *s) {
 void lh_log(LoggerHandle* h, uint8_t* data, size_t data_size, bool in_qlog) {
   pthread_mutex_lock(&h->lock);
   assert(h->refcnt > 0);
-  int bzerror;
-  BZ2_bzWrite(&bzerror, h->bz_file, data, data_size);
-
-  if (in_qlog && h->bz_qlog != NULL) {
-    BZ2_bzWrite(&bzerror, h->bz_qlog, data, data_size);
+  h->log->write(data, data_size);
+  if (in_qlog && h->q_log) {
+    h->q_log->write(data, data_size);
   }
   pthread_mutex_unlock(&h->lock);
 }
@@ -324,22 +272,8 @@ void lh_close(LoggerHandle* h) {
   assert(h->refcnt > 0);
   h->refcnt--;
   if (h->refcnt == 0) {
-    if (h->bz_file){
-      int bzerror;
-      BZ2_bzWriteClose(&bzerror, h->bz_file, 0, NULL, NULL);
-      h->bz_file = NULL;
-    }
-    if (h->bz_qlog){
-      int bzerror;
-      BZ2_bzWriteClose(&bzerror, h->bz_qlog, 0, NULL, NULL);
-      h->bz_qlog = NULL;
-    }
-    if (h->qlog_file) {
-      fclose(h->qlog_file);
-      h->qlog_file = NULL;
-    }
-    fclose(h->log_file);
-    h->log_file = NULL;
+    h->log.reset(nullptr);
+    h->q_log.reset(nullptr);
     unlink(h->lock_path);
     pthread_mutex_unlock(&h->lock);
     pthread_mutex_destroy(&h->lock);

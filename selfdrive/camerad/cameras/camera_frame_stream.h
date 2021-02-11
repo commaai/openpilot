@@ -15,6 +15,7 @@
 
 typedef struct CameraState {
   int camera_id;
+  int camera_num;
   CameraInfo ci;
 
   int fps;

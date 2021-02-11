@@ -66,6 +66,7 @@ if arch == "aarch64" or arch == "larch64":
   ]
 
   libpath = [
+    "/usr/local/lib",
     "/usr/lib",
     "/system/vendor/lib64",
     "/system/comma/usr/lib",
@@ -265,7 +266,7 @@ qt_env = None
 if arch in ["x86_64", "Darwin", "larch64"]:
   qt_env = env.Clone()
 
-  qt_modules = ["Widgets", "Gui", "Core", "DBus", "Multimedia", "Network"]
+  qt_modules = ["Widgets", "Gui", "Core", "DBus", "Multimedia", "Network", "Concurrent"]
 
   qt_libs = []
   if arch == "Darwin":

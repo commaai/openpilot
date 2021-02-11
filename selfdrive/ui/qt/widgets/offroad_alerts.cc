@@ -55,7 +55,7 @@ OffroadAlert::OffroadAlert(QWidget* parent) : QFrame(parent) {
     QPushButton {
       color: black;
       font-size: 50px;
-      font-weight: 600;
+      font-weight: 500;
       border-radius: 30px;
       background-color: white;
     }

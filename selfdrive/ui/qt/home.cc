@@ -122,7 +122,7 @@ void OffroadHome::refresh() {
     border: 1px solid;
     border-radius: 5px;
     font-size: 40px;
-    font-weight: bold;
+    font-weight: 500;
     background-color: #E22C2C;
   )");
   if (alerts_widget->updateAvailable) {
@@ -162,13 +162,13 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
   glWindow->wake();
 
   // Settings button click
-  if (!ui_state->scene.sidebar_collapsed && settings_btn.ptInRect(e->x(), e->y())) {
+  if (!ui_state->sidebar_collapsed && settings_btn.ptInRect(e->x(), e->y())) {
     emit openSettings();
   }
 
   // Vision click
-  if (ui_state->started && (e->x() >= ui_state->scene.viz_rect.x - bdr_s)) {
-    ui_state->scene.sidebar_collapsed = !ui_state->scene.sidebar_collapsed;
+  if (ui_state->started && (e->x() >= ui_state->viz_rect.x - bdr_s)) {
+    ui_state->sidebar_collapsed = !ui_state->sidebar_collapsed;
   }
 }
 
@@ -276,9 +276,11 @@ void GLWindow::paintGL() {
 
     double cur_draw_t = millis_since_boot();
     double dt = cur_draw_t - prev_draw_t;
-    if (dt > 66){
+    if (dt > 66 && onroad){
       // warn on sub 15fps
+#ifdef QCOM2
       LOGW("slow frame(%llu) time: %.2f", ui_state.sm->frame, dt);
+#endif
     }
     prev_draw_t = cur_draw_t;
   }

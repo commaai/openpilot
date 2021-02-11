@@ -47,7 +47,7 @@ if __name__ == "__main__":
 
       for msg in lr:
         if msg.which() == "health":
-          if msg.health.hwType not in ['uno', 'blackPanda']:
+          if msg.health.pandaType not in ['uno', 'blackPanda']:
             dongles.append(dongle_id)
             break
 
