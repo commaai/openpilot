@@ -64,7 +64,7 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QWidget(parent){
   if (show_advanced) {
     QPushButton* advancedSettings = new QPushButton("Advanced");
     advancedSettings->setStyleSheet(R"(margin-right: 30px)");
-    advancedSettings->setFixedSize(300, 100);
+    advancedSettings->setFixedSize(350, 100);
     connect(advancedSettings, &QPushButton::released, [=](){s->setCurrentIndex(1);});
     vlayout->addSpacing(10);
     vlayout->addWidget(advancedSettings, 0, Qt::AlignRight);
@@ -92,7 +92,7 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QWidget(parent){
       margin: 0px;
       padding: 15px;
       border-width: 0;
-      border-radius: 7px;
+      border-radius: 30px;
       color: #dddddd;
       background-color: #444444;
     }
