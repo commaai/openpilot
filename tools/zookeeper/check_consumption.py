@@ -1,13 +1,12 @@
 #!/usr/bin/env python
 
-import os
 import sys
 import time
 from tools.zookeeper import Zookeeper
 
 # Usage: check_consumption.py <averaging_time_sec> <max_average_power_W>
 # Exit code: 0 -> passed
-#	     1 -> failed
+#	           1 -> failed
 
 z = Zookeeper()
 
