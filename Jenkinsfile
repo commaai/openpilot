@@ -47,7 +47,7 @@ pipeline {
   environment {
     COMMA_JWT = credentials('athena-test-jwt')
     TEST_DIR = "/data/openpilot"
-    ZOOKEEPER_DEVICE = "${sh(script: 'realpath /dev/ZOOKEEPER', returnStdout: true).trim()}"
+    ZOOKEEPER_DEVICE = "/dev/bus/usb/001/004"
   }
   options {
       timeout(time: 1, unit: 'HOURS')
