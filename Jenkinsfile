@@ -160,7 +160,7 @@ pipeline {
 
                 stage('Power Consumption Tests') {
                   agent {
-                    docker {
+                    dockerfile {
                       filename 'Dockerfile.zookeeper'
                       args '--shm-size=1G --user=root'
                     }
