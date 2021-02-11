@@ -538,7 +538,7 @@ std::string get_firmware_fn(){
     return signed_firmware_path;
   } else {
     LOGW("Building panda firmware");
-    system(("cd " + basedir + "panda/board && make -f Makefile clean && make -f Makefile obj/panda.bin").c_str());
+    system(("cd " + basedir + "panda/board && make -f Makefile clean > /dev/null && make -f Makefile obj/panda.bin > /dev/null ").c_str());
     LOGW("Finished building panda firmware");
     return basedir + "panda/board/obj/panda.bin";
   }
@@ -710,7 +710,7 @@ void get_out_of_dfu(){
   std::cout<<"Building panda bootstub"<<std::endl;
   util::sleep_for(2500);
   std::string basedir = get_basedir();
-  system(("cd " + basedir + "panda/board && make -f Makefile clean && make -f Makefile obj/bootstub.panda.bin").c_str());
+  system(("cd " + basedir + "panda/board && make -f Makefile clean > /dev/null && make -f Makefile obj/bootstub.panda.bin > /dev/null").c_str());
   std::cout<<"Bootstub should exist, reading"<<std::endl;
   std::string program = util::read_file(basedir+"panda/board/obj/bootstub.panda.bin");
   std::cout<<"Bootstub firmware has a length of: "<<std::dec<<program.length()<<std::endl;
