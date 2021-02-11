@@ -73,11 +73,11 @@ int run_mpc(state_t * x0, log_t * solution, double v_ego,
   }
   for (i = 0; i < N; i+= 1){
     acadoVariables.y[NY*i + 0] = target_y[i];
-    acadoVariables.y[NY*i + 1] = (v_ego + 1.0) * target_psi[i];
+    acadoVariables.y[NY*i + 1] = (v_ego + 5.0) * target_psi[i];
     acadoVariables.y[NY*i + 2] = 0.0;
   }
   acadoVariables.yN[0] = target_y[N];
-  acadoVariables.yN[1] = (2.0 * v_ego + 1.0) * target_psi[N];
+  acadoVariables.yN[1] = (2.0 * v_ego + 5.0) * target_psi[N];
 
   acadoVariables.x0[0] = x0->x;
   acadoVariables.x0[1] = x0->y;
