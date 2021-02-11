@@ -47,6 +47,7 @@ pipeline {
   environment {
     COMMA_JWT = credentials('athena-test-jwt')
     TEST_DIR = "/data/openpilot"
+    ZOOKEEPER_DEVICE = sh(script: 'realpath /dev/ZOOKEEPER', returnStdout: true).trim()
   }
   options {
       timeout(time: 1, unit: 'HOURS')
@@ -111,7 +112,7 @@ pipeline {
           agent {
             dockerfile {
               filename 'Dockerfile.ondevice_ci'
-              args '--device $(realpath /dev/ZOOKEEPER) --shm-size=1G --user=root'
+              args "--device ${ZOOKEEPER_DEVICE} --shm-size=1G --user=root"
             }
           }
 
