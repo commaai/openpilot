@@ -319,14 +319,12 @@ selfdrive/loggerd/deleter.py
 selfdrive/loggerd/xattr_cache.py
 
 selfdrive/sensord/SConscript
-selfdrive/sensord/gpsd.cc
 selfdrive/sensord/libdiag.h
 selfdrive/sensord/sensors_qcom.cc
 selfdrive/sensord/sensors_qcom2.cc
 selfdrive/sensord/sensors/*.cc
 selfdrive/sensord/sensors/*.hpp
 selfdrive/sensord/sensord
-selfdrive/sensord/gpsd
 
 selfdrive/thermald/thermald.py
 selfdrive/thermald/power_monitoring.py
