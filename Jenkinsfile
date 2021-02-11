@@ -111,7 +111,7 @@ pipeline {
           agent {
             dockerfile {
               filename 'Dockerfile.ondevice_ci'
-              args '-v /dev/bus/usb:/dev/bus/usb --shm-size=1G --user=root'
+              args '--device $(realpath /dev/ZOOKEEPER) --shm-size=1G --user=root'
             }
           }
 
