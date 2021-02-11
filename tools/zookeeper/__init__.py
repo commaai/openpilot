@@ -41,9 +41,9 @@ class Zookeeper:
     self._initialize_ina()
 
   # Helper functions
-  def _read_ina_register(self, register, len):
+  def _read_ina_register(self, register, length):
     self.dev_a.i2cMaster_WriteEx(INA231_ADDR, data=register, flag=ft4222.I2CMaster.Flag.REPEATED_START)
-    return self.dev_a.i2cMaster_Read(INA231_ADDR, bytesToRead=len)
+    return self.dev_a.i2cMaster_Read(INA231_ADDR, bytesToRead=length)
   
   def _write_ina_register(self, register, data):
     msg = register.to_bytes(1, byteorder="big") + data.to_bytes(2, byteorder="big")
