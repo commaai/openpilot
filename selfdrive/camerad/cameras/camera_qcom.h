@@ -4,7 +4,6 @@
 #include <stdbool.h>
 #include <pthread.h>
 #include <memory>
-#include <atomic>
 #include "messaging.hpp"
 
 #include "msmb_isp.h"
@@ -75,17 +74,17 @@ typedef struct CameraState {
   camera_apply_exposure_func apply_exposure;
 
   // rear camera only,used for focusing
-  unique_fd actuator_fd;
-  std::atomic<float> focus_err;
-  std::atomic<float> last_sag_acc_z;
-  std::atomic<float> lens_true_pos;
-  std::atomic<int> self_recover; // af recovery counter, neg is patience, pos is active
-  uint16_t cur_step_pos;
-  uint16_t cur_lens_pos;
-  int16_t focus[NUM_FOCUS];
-  uint8_t confidence[NUM_FOCUS];
+  std::mutex focus_lock;
+  unique_fd actuator_fd, eeprom_fd;
+  float focus_err = 0.;
+  float last_sag_acc_z = 0.;
+  float lens_true_pos = 0.;
+  int self_recover = 0;  // af recovery counter, neg is patience, pos is active
+  uint16_t cur_step_pos = 0;
+  uint16_t cur_lens_pos = 0;
+  int16_t focus[NUM_FOCUS] = {};
+  uint8_t confidence[NUM_FOCUS] = {};
 } CameraState;
-
 
 typedef struct MultiCameraState {
   unique_fd ispif_fd;

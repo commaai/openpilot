@@ -842,6 +842,8 @@ static void parse_autofocus(CameraState *s, uint8_t *d) {
     printf("%2.2X ", d[i]);
   }*/
 
+  std::lock_guard lk(s->focus_lock);
+
   for (int i = 0; i < NUM_FOCUS; i++) {
     int doff = i*5+5;
     s->confidence[i] = d[doff];
@@ -894,21 +896,23 @@ static std::optional<float> get_accel_z(SubMaster *sm) {
 }
 
 static void do_autofocus(CameraState *s, SubMaster *sm) {
-  float lens_true_pos = s->lens_true_pos.load();
+  auto accel_z = get_accel_z(sm);
+
+  std::lock_guard lk(s->focus_lock);
+
   if (!isnan(s->focus_err)) {
     // learn lens_true_pos
     const float focus_kp = 0.005;
-    lens_true_pos -= s->focus_err*focus_kp;
+    s->lens_true_pos -= s->focus_err * focus_kp;
   }
 
-  if (auto accel_z = get_accel_z(sm)) {
+  if (accel_z) {
     s->last_sag_acc_z = *accel_z;
   }
   const float sag = (s->last_sag_acc_z / 9.8) * 128;
   // stay off the walls
-  lens_true_pos = std::clamp(lens_true_pos, float(LP3_AF_DAC_DOWN), float(LP3_AF_DAC_UP));
-  int target = std::clamp(lens_true_pos - sag, float(LP3_AF_DAC_DOWN), float(LP3_AF_DAC_UP));
-  s->lens_true_pos.store(lens_true_pos);
+  s->lens_true_pos = std::clamp(s->lens_true_pos, float(LP3_AF_DAC_DOWN), float(LP3_AF_DAC_UP));
+  int target = std::clamp(s->lens_true_pos - sag, float(LP3_AF_DAC_DOWN), float(LP3_AF_DAC_UP));
 
   /*char debug[4096];
   char *pdebug = debug;
@@ -1099,24 +1103,23 @@ static void ops_thread(MultiCameraState *s) {
 }
 
 static void setup_self_recover(CameraState *c, const uint16_t *lapres, size_t lapres_size) {
-  const float lens_true_pos = c->lens_true_pos.load();
-  int self_recover = c->self_recover.load();
-  if (self_recover < 2 && (lens_true_pos < (LP3_AF_DAC_DOWN + 1) || lens_true_pos > (LP3_AF_DAC_UP - 1)) && is_blur(lapres, lapres_size)) {
+  std::lock_guard lk(c->focus_lock);
+
+  if (c->self_recover < 2 && (c->lens_true_pos < (dac_down + 1) || c->lens_true_pos > (dac_up - 1)) && is_blur(lapres, lapres_size)) {
     // truly stuck, needs help
-    if (--self_recover < -FOCUS_RECOVER_PATIENCE) {
-      LOGD("road camera bad state detected. attempting recovery from %.1f, recover state is %d", lens_true_pos, self_recover);
+    if (--c->self_recover < -FOCUS_RECOVER_PATIENCE) {
+      LOGD("road camera bad state detected. attempting recovery from %.1f, recover state is %d", c->lens_true_pos, c->self_recover);
       // parity determined by which end is stuck at
-      self_recover = FOCUS_RECOVER_STEPS + (lens_true_pos < LP3_AF_DAC_M ? 1 : 0);
+      c->self_recover = FOCUS_RECOVER_STEPS + (lens_true_pos < LP3_AF_DAC_M ? 1 : 0);
     }
-  } else if (self_recover < 2 && (lens_true_pos < (LP3_AF_DAC_M - LP3_AF_DAC_3SIG) || lens_true_pos > (LP3_AF_DAC_M + LP3_AF_DAC_3SIG))) {
+  } else if (c->self_recover < 2 && (lens_true_pos < (LP3_AF_DAC_M - LP3_AF_DAC_3SIG) || lens_true_pos > (LP3_AF_DAC_M + LP3_AF_DAC_3SIG))) {
     // in suboptimal position with high prob, but may still recover by itself
-    if (--self_recover < -(FOCUS_RECOVER_PATIENCE * 3)) {
-      self_recover = FOCUS_RECOVER_STEPS / 2 + (lens_true_pos < LP3_AF_DAC_M ? 1 : 0);
+    if (--c->self_recover < -(FOCUS_RECOVER_PATIENCE * 3)) {
+      c->self_recover = FOCUS_RECOVER_STEPS / 2 + (lens_true_pos < LP3_AF_DAC_M ? 1 : 0);
     }
-  } else if (self_recover < 0) {
-    self_recover += 1;  // reset if fine
+  } else if (c->self_recover < 0) {
+    c->self_recover += 1;  // reset if fine
   }
-  c->self_recover.store(self_recover);
 }
 
 void process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) {
@@ -1136,9 +1139,13 @@ void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
   if (env_send_road) {
     framed.setImage(get_frame_image(b));
   }
+
+  c->focus_lock.lock();
   framed.setFocusVal(s->road_cam.focus);
   framed.setFocusConf(s->road_cam.confidence);
   framed.setRecoverState(s->road_cam.self_recover);
+  c->focus_lock.unlock();
+
   framed.setSharpnessScore(s->lapres);
   framed.setTransform(b->yuv_transform.v);
   s->pm->send("roadCameraState", msg);
@@ -1196,18 +1203,22 @@ void cameras_run(MultiCameraState *s) {
       } else if (ev.type == ISP_EVENT_EOF) {
         const uint64_t timestamp = (isp_event_data->mono_timestamp.tv_sec * 1000000000ULL + isp_event_data->mono_timestamp.tv_usec * 1000);
         std::lock_guard lk(c->frame_info_lock);
-        c->frame_metadata[c->frame_metadata_idx] = (FrameMetadata){
-            .frame_id = isp_event_data->frame_id,
-            .timestamp_eof = timestamp,
-            .frame_length = (uint32_t)c->cur_frame_length,
-            .integ_lines = (uint32_t)c->cur_integ_lines,
-            .global_gain = (uint32_t)c->cur_gain,
-            .lens_pos = c->cur_lens_pos,
-            .lens_sag = c->last_sag_acc_z,
-            .lens_err = c->focus_err,
-            .lens_true_pos = c->lens_true_pos,
-            .gain_frac = c->cur_gain_frac,
+        auto &meta_data = c->frame_metadata[c->frame_metadata_idx];
+        meta_data = (FrameMetadata){
+          .frame_id = isp_event_data->frame_id,
+          .timestamp_eof = timestamp,
+          .frame_length = c->frame_length,
+          .integ_lines = (uint32_t)c->cur_integ_lines,
+          .global_gain = (uint32_t)c->cur_gain,
+          .gain_frac = c->cur_gain_frac,
         };
+        if (c == &s->road_cam) {
+          std::lock_guard lk(c->focus_lock);
+          meta_data.lens_pos = c->cur_lens_pos;
+          meta_data.lens_sag = c->last_sag_acc_z;
+          meta_data.lens_err = c->focus_err;
+          meta_data.lens_true_pos = c->lens_true_pos;
+        }
         c->frame_metadata_idx = (c->frame_metadata_idx + 1) % METADATA_BUF_COUNT;
 
       } else if (ev.type == ISP_EVENT_ERROR) {
