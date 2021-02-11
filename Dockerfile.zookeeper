@@ -1,0 +1,14 @@
+FROM python:3.7.3
+
+ENV PYTHONUNBUFFERED 1
+
+ENV HOME_PATH /home/batman
+ENV ZOOKEEPER_PATH ${HOME_PATH}/zookeeper/
+ENV PYTHONPATH ${HOME_PATH}:${PYTHONPATH}
+
+RUN mkdir -p ${ZOOKEEPER_PATH}
+WORKDIR ${ZOOKEEPER_PATH}
+COPY tools/zookeeper/ ${ZOOKEEPER_PATH}
+
+COPY Pipfile Pipfile.lock $ZOOKEEPER_PATH
+RUN pip install -r ${ZOOKEEPER_PATH}/requirements.txt

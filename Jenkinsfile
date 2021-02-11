@@ -158,6 +158,23 @@ pipeline {
                   }
                 }
 
+                stage('Power Consumption Tests') {
+                  agent {
+                    docker {
+                      filename 'Dockerfile.zookeeper'
+                      args '--shm-size=1G --user=root'
+                    }
+                  }
+                  steps {
+                    lock(resource: "", label: "c2-zookeeper", inversePrecedence: true, variable: 'device_ip', quantity: 1) {
+                      timeout(time: 60, unit: 'MINUTES') {
+                        phone(device_ip, "git checkout", readFile("selfdrive/test/setup_device_ci.sh"),)
+                        phone(device_ip, "build", "SCONS_CACHE=1 scons -j4")
+                      }
+                    }
+                  }
+                }
+
                 stage('Tici Build') {
                   environment {
                     R3_PUSH = "${env.BRANCH_NAME == 'master' ? '1' : ' '}"
