@@ -43,11 +43,11 @@ def phone_steps(String device_type, steps) {
 }
 
 pipeline {
-  agent none
+  agent any
   environment {
     COMMA_JWT = credentials('athena-test-jwt')
     TEST_DIR = "/data/openpilot"
-    ZOOKEEPER_DEVICE = sh(script: 'realpath /dev/ZOOKEEPER', returnStdout: true).trim()
+    ZOOKEEPER_DEVICE = "${sh(script: 'realpath /dev/ZOOKEEPER', returnStdout: true).trim()}"
   }
   options {
       timeout(time: 1, unit: 'HOURS')
