@@ -624,7 +624,6 @@ void dfu_program(PandaComm* dfuPanda, int adress, std::string program){
   for(int i = 0 ; i < paddedLength/ blockSize ; i++){
     std::cout<<"Programming with block "<<i<<std::endl;
     dfuPanda->control_write(0x21, DFU_DNLOAD, 2 + i, 0, padded_program + blockSize * i, blockSize);
-    // std::cout<<"Ending dump "<<i<<std::endl;
     dfu_status(dfuPanda);
   }
   std::cout<<"Done with programming"<<std::endl;
@@ -741,7 +740,7 @@ void update_panda(){
   if (tempPanda.bootstub) {
     std::string bootstub_version = tempPanda.get_version();
     std::cout<<"Flashed firmware not booting, flashing development bootloader. Bootstub verstion "<<bootstub_version<<std::endl;
-    // panda.recover();
+    panda.recover();
     std::cout<<"Done flashing dev bootloader"<<std::endl;
     util::sleep_for(2500);
   }

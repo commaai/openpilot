@@ -74,6 +74,7 @@ public:
   std::string get_version();
   std::string get_signature();
   void flash(std::string basedir, std::string fw_fn);
+  void recover();
   bool pandaExists;
   bool bootstub;
 };

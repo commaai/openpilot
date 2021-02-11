@@ -281,6 +281,10 @@ void DynamicPanda::flash(std::string basedir, std::string fw_fn){
   reconnect();
 }
 
+void DynamicPanda::recover(){
+  
+}
+
 DynamicPanda::~DynamicPanda(){
   delete(c);
 }
