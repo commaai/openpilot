@@ -138,7 +138,8 @@ bool CameraBuf::acquire() {
     const size_t globalWorkSize[] = {size_t(camera_state->ci.frame_width), size_t(camera_state->ci.frame_height)};
     const size_t localWorkSize[] = {DEBAYER_LOCAL_WORKSIZE, DEBAYER_LOCAL_WORKSIZE};
     CL_CHECK(clSetKernelArg(krnl_debayer, 2, localMemSize, 0));
-    CL_CHECK(clSetKernelArg(krnl_debayer, 3, sizeof(unsigned int), &cur_frame_data.global_gain));
+    int ggain = camera_state->analog_gain + 4*camera_state->dc_gain_enabled;
+    CL_CHECK(clSetKernelArg(krnl_debayer, 3, sizeof(int), &ggain));
     CL_CHECK(clEnqueueNDRangeKernel(q, krnl_debayer, 2, NULL, globalWorkSize, localWorkSize,
                                     0, 0, &debayer_event));
 #else
@@ -310,16 +311,14 @@ void set_exposure_target(CameraState *c, const uint8_t *pix_ptr, int x_start, in
   unsigned int lum_cur = 0;
   int lum_med = 0;
   int lum_med_alt = 0;
-  int lum_med_tmp = 0;
   for (lum_med=255; lum_med>=0; lum_med--) {
     lum_cur += lum_binning[lum_med];
 #ifdef QCOM2
-    int hb = HLC_THRESH - 4*c->analog_gain;
+    int lum_med_tmp = 0;
+    int hb = HLC_THRESH - (c->analog_gain + 4*c->dc_gain_enabled)/3;
     if (lum_cur > 0) {
       if (lum_med > hb) {
-        lum_med_tmp = 100 * HLC_A * (1 + c->analog_gain/10) / lum_total + 75;
-      } else if (lum_med > hb - 8) {
-        lum_med_tmp = 75;
+        lum_med_tmp = 50 * lum_cur * HLC_A / lum_total + 75 - 5*(c->analog_gain + 4*c->dc_gain_enabled)/2;
       }
     }
     lum_med_alt = lum_med_alt>lum_med_tmp?lum_med_alt:lum_med_tmp;
