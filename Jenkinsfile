@@ -159,6 +159,13 @@ pipeline {
                 }
 
                 stage('Power Consumption Tests') {
+                  agent {
+                    dockerfile {
+                      filename 'Dockerfile.ondevice_ci'
+                      args "--privileged -v /dev:/dev --shm-size=1G --user=root"
+                    }
+                  }
+
                   steps {
                     lock(resource: "", label: "c2-zookeeper", inversePrecedence: true, variable: 'device_ip', quantity: 1) {
                       timeout(time: 60, unit: 'MINUTES') {
