@@ -511,34 +511,31 @@ void pigeon_thread() {
   delete pigeon;
 }
 
-std::string get_basedir(){
-  std::cout<<"Working"<<std::endl;
-  char* basedir = getenv("BASEDIR");
-  // std::cout<<basedir<<std::endl;
-  if (basedir == 0){
-    LOGW("BASEDIR is not defined, provide the enviromental variable or run manager.py");
-    return "";
-  }
-  return std::string(basedir);
-}
-
 //Port pandad to boardd
-std::string get_firmware_fn(){
+
+std::string get_basedir(){ // Ends with /
   std::string basedir = getenv("BASEDIR");
   if (basedir == ""){
     LOGW("BASEDIR is not defined, provide the enviromental variable or run manager.py");
     return "";
   }
 
-  std::string signed_firmware_path = basedir + "panda/board/obj/panda.bin.signed";
+  return basedir;
+}
+void build_st(std::string target){
+  system(("cd " + get_basedir() + "panda/board && make -f Makefile clean > /dev/null && make -f Makefile " + target +" > /dev/null ").c_str());
+}
 
-  if (util::file_exists(signed_firmware_path)) {
+std::string get_firmware_fn(){
+  std::string basedir = get_basedir();
+  std::string signed_fn = basedir + "panda/board/obj/panda.bin.signed";
+
+  if (util::file_exists(signed_fn)) {
     LOGW("Using prebuilt signed firmware");
-    return signed_firmware_path;
+    return signed_fn;
   } else {
     LOGW("Building panda firmware");
-    system(("cd " + basedir + "panda/board && make -f Makefile clean > /dev/null && make -f Makefile obj/panda.bin > /dev/null ").c_str());
-    LOGW("Finished building panda firmware");
+    build_st("obj/panda.bin");
     return basedir + "panda/board/obj/panda.bin";
   }
 }
@@ -559,7 +556,7 @@ void dfu_status(PandaComm* dfuPanda){
   while (true) {
     dfuPanda->control_read(0x21, DFU_GETSTATUS, 0, 0, &stat[0], 6);
     if (stat[1] == 0){
-      return;
+      break;
     }
   }
 }
@@ -567,21 +564,16 @@ void dfu_status(PandaComm* dfuPanda){
 void dfu_clear_status(PandaComm* dfuPanda){
   std::vector<uint8_t> stat(6);
   dfuPanda->control_read(0x21, DFU_GETSTATUS, 0, 0, &stat[0], 6);
-
-  std::cout<<"Got status"<<std::endl;
-  for (uint8_t x : stat) {
-    std::cout<<std::hex<<unsigned(x)<<std::endl;
-  }
   if (stat[4] == 0xa) {
     dfuPanda->control_read(0x21, DFU_CLRSTATUS, 0, 0, nullptr, 0);
   } else if(stat[4] == 0x9) {
     dfuPanda->control_write(0x21, DFU_ABORT, 0, 0, nullptr, 0);
     dfu_status(dfuPanda);
   }
+  dfuPanda->control_read(0x21, DFU_GETSTATUS, 0, 0, &stat[0], 6);
 }
 
 unsigned char* pack_int(int num){
-  // std::cout<<num<<std::endl;
   unsigned char* data = new unsigned char[4];
   memcpy(data, &num, sizeof(num));
   return data;
@@ -593,7 +585,6 @@ void dfu_erase(PandaComm* dfuPanda, int adress){
   unsigned char* packed = pack_int(adress);
   for (int i = 0 ; i < 4 ; i++) {
     data[i+1] = packed[i];
-    // std::cout<<i+1<<" "<<unsigned(data[i+1])<<std::endl;
   }
   dfuPanda->control_write(0x21, DFU_DNLOAD, 0, 0, data, 5);
   dfu_status(dfuPanda);
@@ -608,7 +599,6 @@ void dfu_program(PandaComm* dfuPanda, int adress, std::string program){
   unsigned char* packed = pack_int(adress);
   for (int i = 0 ; i < 4 ; i++) {
     data[i+1] = packed[i];
-    // std::cout<<i+1<<" "<<unsigned(data[i+1])<<std::endl;
   }
   dfuPanda->control_write(0x21, DFU_DNLOAD, 0, 0, data, 5);
   dfu_status(dfuPanda);
@@ -642,18 +632,23 @@ void dfu_reset(PandaComm* dfuPanda){
     unsigned char buf[6];
     dfuPanda->control_read(0x21, DFU_GETSTATUS, 0, 0, buf, 6);
   }catch(std::runtime_error &e){
-    std::cout<<"Reset failed"<<std::endl;
-    delete(dfuPanda);
+    std::cout<<"DFU reset failed"<<std::endl;
   }
 }
 
 void dfu_program_bootstub(PandaComm* dfuPanda, std::string program){
-   std::cout<<"Programming bootstub to panda"<<std::endl;
    dfu_clear_status(dfuPanda);
    dfu_erase(dfuPanda, 0x8004000);
    dfu_erase(dfuPanda, 0x8000000);
    dfu_program(dfuPanda, 0x8000000, program);
    dfu_reset(dfuPanda);
+}
+
+void dfu_recover(PandaComm* dfuPanda){
+  std::string basedir = get_basedir();
+  build_st("obj/bootstub.panda.bin");
+  std::string program = util::read_file(basedir+"panda/board/obj/bootstub.panda.bin");
+  dfu_program_bootstub(dfuPanda, program);
 }
 
 void get_out_of_dfu(){
@@ -706,53 +701,54 @@ void get_out_of_dfu(){
     delete(dfuPanda);
     return;
   }
-  std::cout<<"Building panda bootstub"<<std::endl;
+  std::cout<<"Panda in DFU mode found, flashing recovery"<<std::endl;
   util::sleep_for(2500);
-  std::string basedir = get_basedir();
-  system(("cd " + basedir + "panda/board && make -f Makefile clean > /dev/null && make -f Makefile obj/bootstub.panda.bin > /dev/null").c_str());
-  std::cout<<"Bootstub should exist, reading"<<std::endl;
-  std::string program = util::read_file(basedir+"panda/board/obj/bootstub.panda.bin");
-  std::cout<<"Bootstub firmware has a length of: "<<std::dec<<program.length()<<std::endl;
-  dfu_program_bootstub(dfuPanda, program);
+  dfu_recover(dfuPanda);
   delete(dfuPanda);
 }
 
 
 void update_panda(){
   std::cout<<"updating panda"<<std::endl;
-  util::sleep_for(500);
-  std::cout<<"1: Move out of DFU"<<std::endl;
+  std::cout<<std::endl<<"1: Move out of DFU"<<std::endl<<std::endl;
   util::sleep_for(500);
   get_out_of_dfu();
-  std::cout<<"2: Start DynamicPanda and run the required steps"<<std::endl;
+  std::cout<<std::endl<<"2: Start DynamicPanda and run the required steps"<<std::endl<<std::endl;
   util::sleep_for(2500);
+  
   std::string fw_fn = get_firmware_fn();
   std::string fw_signature = get_expected_signature();
   DynamicPanda tempPanda;
+  util::sleep_for(1000);
   std::string panda_signature = tempPanda.bootstub ? "": tempPanda.get_signature();
   std::cout<<"fw_sig::panda_sig"<<std::endl<<fw_signature<<std::endl<<panda_signature<<std::endl;
   util::sleep_for(2500);
+
   if (tempPanda.bootstub || panda_signature != fw_signature) {
-    std::cout<<"Panda firmware out of date, update required"<<std::endl;
+    std::cout<<std::endl<<"Panda firmware out of date, update required"<<std::endl<<std::endl;
     tempPanda.flash(fw_fn);
-    std::cout<<"Done flashing new firmware"<<std::endl;
+    std::cout<<std::endl<<"Done flashing new firmware"<<std::endl<<std::endl;
     util::sleep_for(2500);
   }
+
   if (tempPanda.bootstub) {
     std::string bootstub_version = tempPanda.get_version();
-    std::cout<<"Flashed firmware not booting, flashing development bootloader. Bootstub verstion "<<bootstub_version<<std::endl;
+    std::cout<<std::endl<<std::endl<<"Flashed firmware not booting, flashing development bootloader. Bootstub verstion "<<bootstub_version<<std::endl<<std::endl;
+    util::sleep_for(2500);
     tempPanda.recover();
     std::cout<<"Done flashing dev bootloader"<<std::endl;
     util::sleep_for(2500);
   }
+
   if(tempPanda.bootstub){
-    std::cout<<"Panda still not booting, exiting"<<std::endl;
+    std::cout<<std::endl<<"Panda still not booting, exiting"<<std::endl<<std::endl;
     util::sleep_for(2500);
     throw std::runtime_error("PANDA NOT BOOTING");
   }
+
   panda_signature = tempPanda.get_signature();
   if (panda_signature != fw_signature){
-    std::cout<<"Version mismatch after flashing, exiting"<<std::endl;
+    std::cout<<std::endl<<"Version mismatch after flashing, exiting"<<std::endl<<std::endl;
     util::sleep_for(2500);
     throw std::runtime_error("FIRMWARE VERSION MISMATCH");
   }
