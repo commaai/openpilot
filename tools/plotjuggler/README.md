@@ -1,20 +1,20 @@
 # PlotJuggler
-We've extended PlotJuggler to plot all of your openpilot logs <br/>
-Our fork: <br/>
-https://github.com/commaai/PlotJuggler <br/>
-Original: <br/>
-https://github.com/facontidavide/PlotJuggler <br/>
+We've extended [PlotJuggler](https://github.com/facontidavide/PlotJuggler) to plot all of your openpilot logs
 
-# How to build
-------
+Here's our fork: https://github.com/commaai/PlotJuggler 
 
-./install.sh
+## Installation
 
-# How to use
-------
+Once you've cloned openpilot run inside this directory:
 
-./juggle "route_name" segment_nr
+`./install.sh`
 
+# Usage
 
+`./juggle.py <route> <segment number>`
+
+Example:
+
+`./juggle.py "0982d79ebb0de295|2021-01-17--17-13-08" 0`
 
 
