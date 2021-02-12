@@ -476,7 +476,6 @@ cereal/car.capnp
 cereal/legacy.capnp
 cereal/log.capnp
 cereal/services.py
-cereal/service_list.yaml
 cereal/SConscript
 cereal/include/**
 cereal/messaging/.gitignore
