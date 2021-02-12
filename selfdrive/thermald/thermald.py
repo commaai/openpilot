@@ -271,7 +271,7 @@ def thermald_thread():
 
     if handle_fan is not None:
       fan_speed = handle_fan(max_cpu_temp, bat_temp, fan_speed, startup_conditions["ignition"])
-      msg.thermal.fanSpeedRpmDesired = fan_speed
+      msg.thermal.fanSpeedPercentDesired = fan_speed
 
     # If device is offroad we want to cool down before going onroad
     # since going onroad increases load and can make temps go over 107
