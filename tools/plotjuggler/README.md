@@ -5,7 +5,7 @@ Here's our fork: https://github.com/commaai/PlotJuggler
 
 ## Installation
 
-Once you've cloned openpilot run inside this directory:
+Once you've cloned openpilot, run this command inside this directory:
 
 `./install.sh`
 
