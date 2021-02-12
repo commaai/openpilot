@@ -4,6 +4,9 @@
 #include <QStackedWidget>
 #include <QStackedLayout>
 #include <QMouseEvent>
+#include <QPointF>
+#include <QPushButton>
+#include <QWebEngineView>
 
 
 class TrainingGuide : public QFrame {
@@ -37,10 +40,15 @@ private:
   std::string current_training_version;
   QWidget * terms_screen();
   QWidget * training_screen();
+  QWebEngineView* view;
+  QPushButton* accept_btn;
 
 signals:
   void onboardingDone();
 
 public slots:
   void updateActiveScreen();
+
+private slots:
+  void scrollPositionChanged(QPointF position);
 };

@@ -4,10 +4,13 @@
 #include <QGridLayout>
 #include <QVBoxLayout>
 #include <QDesktopWidget>
+#include <QtWebEngine>
+#include <QWebEngineSettings>
 
 #include "common/params.h"
 #include "onboarding.hpp"
 #include "home.hpp"
+#include "util.h"
 
 
 QLabel * title_label(QString text) {
@@ -70,31 +73,31 @@ TrainingGuide::TrainingGuide(QWidget* parent) {
 
 
 QWidget* OnboardingWindow::terms_screen() {
+  QVBoxLayout *main_layout = new QVBoxLayout;
+  main_layout->setContentsMargins(40, 0, 40, 0);
 
-  QGridLayout *main_layout = new QGridLayout();
-  main_layout->setMargin(100);
-  main_layout->setSpacing(30);
+  view = new QWebEngineView(this);
+  view->settings()->setAttribute(QWebEngineSettings::ShowScrollBars, false);
+  QString html = QString::fromStdString(util::read_file("../assets/offroad/tc.html"));
+  view->setHtml(html);
+  main_layout->addWidget(view);
 
-  main_layout->addWidget(title_label("Review Terms"), 0, 0, 1, -1);
-
-  QLabel *terms = new QLabel("See terms at https://my.comma.ai/terms");
-  terms->setAlignment(Qt::AlignCenter);
-  terms->setStyleSheet(R"(
-    font-size: 75px;
-    border-radius: 10px;
-    background-color: #292929;
-  )");
-  main_layout->addWidget(terms, 1, 0, 1, -1);
-  main_layout->setRowStretch(1, 1);
-
-  QPushButton *accept_btn = new QPushButton("Accept");
-  main_layout->addWidget(accept_btn, 2, 1);
+  QHBoxLayout* buttons = new QHBoxLayout;
+  buttons->addWidget(new QPushButton("Decline"));
+  buttons->addSpacing(50);
+  accept_btn = new QPushButton("Scroll to accept");
+  accept_btn->setEnabled(false);
+  buttons->addWidget(accept_btn);
   QObject::connect(accept_btn, &QPushButton::released, [=]() {
     Params().write_db_value("HasAcceptedTerms", current_terms_version);
     updateActiveScreen();
   });
 
-  main_layout->addWidget(new QPushButton("Decline"), 2, 0);
+  QObject::connect(view->page(), SIGNAL(scrollPositionChanged(QPointF)), this, SLOT(scrollPositionChanged(QPointF)));
+  
+  QWidget* w = layout2Widget(buttons);
+  w->setFixedHeight(200);
+  main_layout->addWidget(w);
 
   QWidget *widget = new QWidget;
   widget->setLayout(main_layout);
@@ -128,7 +131,13 @@ OnboardingWindow::OnboardingWindow(QWidget *parent) : QStackedWidget(parent) {
   Params params = Params();
   current_terms_version = params.get("TermsVersion", false);
   current_training_version = params.get("TrainingVersion", false);
-
+  bool accepted_terms = params.get("HasAcceptedTerms", false).compare(current_terms_version) == 0;
+  bool training_done = params.get("CompletedTrainingVersion", false).compare(current_training_version) == 0;
+  
+  //Don't initialize widgets unless neccesary. 
+  if (accepted_terms && training_done) {
+    return;
+  }
   addWidget(terms_screen());
 
   TrainingGuide* tr = new TrainingGuide(this);
@@ -145,10 +154,21 @@ OnboardingWindow::OnboardingWindow(QWidget *parent) : QStackedWidget(parent) {
     }
     QPushButton {
       padding: 50px;
-      border-radius: 10px;
+      border-radius: 30px;
       background-color: #292929;
+    }
+    QPushButton:disabled {
+      color: #777777;
+      background-color: #222222;
     }
   )");
 
   updateActiveScreen();
+}
+
+void OnboardingWindow::scrollPositionChanged(QPointF position){
+  if (position.y() > view->page()->contentsSize().height() - 1000){
+    accept_btn->setEnabled(true);
+    accept_btn->setText("Accept");
+  }
 }
