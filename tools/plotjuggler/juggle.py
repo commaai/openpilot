@@ -20,4 +20,4 @@ def juggle_segment(route_name, segment_nr):
 
 
 if __name__ == "__main__":
-  juggle_segment(str(sys.argv[1]), int(sys.argv[2]))
+  juggle_segment(sys.argv[1], int(sys.argv[2]))

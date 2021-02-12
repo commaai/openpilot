@@ -9,7 +9,7 @@ Once you've cloned openpilot run inside this directory:
 
 `./install.sh`
 
-# Usage
+## Usage
 
 `./juggle.py <route> <segment number>`
 
