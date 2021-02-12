@@ -1,9 +1,9 @@
 # PlotJuggler
-We've extended PlotJuggler to plot all of your openpilot logs
-Our fork:
-https://github.com/commaai/PlotJuggler
-Original:
-https://github.com/facontidavide/PlotJuggler
+We've extended PlotJuggler to plot all of your openpilot logs <br/>
+Our fork: <br/>
+https://github.com/commaai/PlotJuggler <br/>
+Original: <br/>
+https://github.com/facontidavide/PlotJuggler <br/>
 
 # How to build
 ------
