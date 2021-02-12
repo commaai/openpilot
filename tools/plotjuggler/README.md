@@ -16,5 +16,3 @@ Once you've cloned openpilot run inside this directory:
 Example:
 
 `./juggle.py "0982d79ebb0de295|2021-01-17--17-13-08" 0`
-
-

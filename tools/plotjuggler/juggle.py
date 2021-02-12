@@ -2,7 +2,6 @@
 
 import sys
 import subprocess
-import tempfile
 from tools.lib.route import Route
 from tools.lib.url_file import URLFile
 
@@ -11,9 +10,9 @@ def juggle_segment(route_name, segment_nr):
   r = Route(route_name)
   lp = r.log_paths()[segment_nr]
 
-  if lp == None:
-      print("This segment does not exist, please try a different one")
-      return
+  if lp is None:
+    print("This segment does not exist, please try a different one")
+    return
 
   uf = URLFile(lp)
   
@@ -22,6 +21,3 @@ def juggle_segment(route_name, segment_nr):
 
 if __name__ == "__main__":
   juggle_segment(str(sys.argv[1]), int(sys.argv[2]))
-
-
-
