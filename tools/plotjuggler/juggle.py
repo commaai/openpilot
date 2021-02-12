@@ -17,7 +17,7 @@ def juggle_segment(route_name, segment_nr):
 
   uf = URLFile(lp)
   
-  subprocess.call(f"PlotJuggler/build/bin/plotjuggler -d {uf.name}", shell=True)
+  subprocess.call(f"bin/plotjuggler -d {uf.name}", shell=True)
 
 
 if __name__ == "__main__":
