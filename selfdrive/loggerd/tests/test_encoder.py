@@ -23,14 +23,14 @@ if EON:
   CAMERAS = [
     ("fcamera.hevc", 20, FULL_SIZE),
     ("dcamera.hevc", 10, 770920),
-    ("qcamera.ts", 20, 38533),
+    ("qcamera.ts", 20, 77066),
   ]
 else:
   CAMERAS = [
     ("fcamera.hevc", 20, FULL_SIZE),
     ("dcamera.hevc", 20, FULL_SIZE),
     ("ecamera.hevc", 20, FULL_SIZE),
-    ("qcamera.ts", 20, 38533),
+    ("qcamera.ts", 20, 77066),
   ]
 
 # we check frame count, so we don't have to be too strict on size
