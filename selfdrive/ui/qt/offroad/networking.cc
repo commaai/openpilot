@@ -319,14 +319,15 @@ void WifiUI::refresh() {
       // SSID
       hlayout->addSpacing(50);
       QString ssid = QString::fromUtf8(network.ssid);
-      if(ssid.length() > 30){
-        ssid = ssid.left(30)+"…";
+      if(ssid.length() > 20){
+        ssid = ssid.left(20 - 3) + "…";
       }
       QLabel *ssid_label = new QLabel(ssid);
       ssid_label->setStyleSheet(R"(
         font-size: 55px;
       )");
-      hlayout->addWidget(ssid_label);
+      ssid_label->setFixedWidth(700);
+      hlayout->addWidget(ssid_label, 0, Qt::AlignLeft);
 
       // TODO: don't use images for this
       // strength indicator
@@ -336,6 +337,7 @@ void WifiUI::refresh() {
       icon->setPixmap(pix.scaledToWidth(100, Qt::SmoothTransformation));
       icon->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
       hlayout->addWidget(icon, 0, Qt::AlignRight);
+      // hlayout->addSpacing(150);
 
       // connect button
       QPushButton* btn = new QPushButton(network.security_type == SecurityType::UNSUPPORTED ? "Unsupported" : (network.connected == ConnectedType::CONNECTED ? "Connected" : (network.connected == ConnectedType::CONNECTING ? "Connecting" : "Connect")));
