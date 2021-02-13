@@ -8,6 +8,7 @@
 #include <QtConcurrent>
 
 #include "networking.hpp"
+#include "util.h"
 
 void clearLayout(QLayout* layout) {
   while (QLayoutItem* item = layout->takeAt(0)) {
@@ -44,9 +45,19 @@ std::string exec(const char* cmd) {
 // Networking functions
 
 Networking::Networking(QWidget* parent, bool show_advanced) : QWidget(parent){
-  try {
-    wifi = new WifiManager(this);
-  } catch (std::exception &e) {
+  bool connected = false;
+  for(int i = 0 ; i < 20 ; i++) {
+    try {
+      wifi = new WifiManager(this);
+      connected = true;
+      break;
+    } catch (std::exception &e) {
+      delete(wifi);
+    }
+    qDebug()<<"Waiting for network manager";
+    util::sleep_for(3000);
+  }
+  if(!connected){
     QLabel* warning = new QLabel("Network manager is inactive!");
     warning->setStyleSheet(R"(font-size: 65px;)");
 
