@@ -10,8 +10,6 @@
 #include "common/version.h"
 #include "logger.h"
 
-typedef cereal::Sentinel::SentinelType SentinelType;
-
 // ***** logging helpers *****
 
 void append_property(const char* key, const char* value, void *cookie) {
@@ -131,23 +129,18 @@ LoggerState::LoggerState(const std::string& log_root) {
 }
 
 std::shared_ptr<LoggerHandle> LoggerState::next() {
-  SentinelType sentinel_type = cur_handle ? SentinelType::START_OF_SEGMENT : SentinelType::START_OF_ROUTE;
-  if (cur_handle) log_sentinel(cur_handle.get(), SentinelType::END_OF_SEGMENT);
-
-  // open next, log init data & sentinel type.
-  cur_handle = std::make_shared<LoggerHandle>(route_path, ++part);
-  cur_handle->write(init_data.asBytes(), true);
-  log_sentinel(cur_handle.get(), sentinel_type);
+  SentinelType sentinel_type = part >= 0 ? SentinelType::START_OF_SEGMENT : SentinelType::START_OF_ROUTE;
+  cur_handle = std::make_shared<LoggerHandle>(route_path, ++part, sentinel_type, init_data.asBytes());
   return cur_handle;
 }
 
 LoggerState::~LoggerState() {
-  if (cur_handle) log_sentinel(cur_handle.get(), SentinelType::END_OF_ROUTE);
+  if (cur_handle) cur_handle->end_of_route();
 }
 
 // LoggerHandle
 
-LoggerHandle::LoggerHandle(const std::string& route_path, int part) : part(part) {
+LoggerHandle::LoggerHandle(const std::string& route_path, int part, SentinelType type, kj::ArrayPtr<kj::byte> init_data) : part(part) {
   segment_path = util::string_format("%s--%d", route_path.c_str(), part);
   const std::string log_path = segment_path + "/rlog.bz2";
   const std::string qlog_path = segment_path + "/qlog.bz2";
@@ -162,6 +155,10 @@ LoggerHandle::LoggerHandle(const std::string& route_path, int part) : part(part)
 
   log = std::make_unique<BZFile>(log_path);
   qlog = std::make_unique<BZFile>(qlog_path);
+
+  // log init data & sentinel type.
+  write(init_data, true);
+  log_sentinel(this, type);
 }
 
 void LoggerHandle::write(uint8_t* data, size_t data_size, bool in_qlog) {
@@ -171,5 +168,6 @@ void LoggerHandle::write(uint8_t* data, size_t data_size, bool in_qlog) {
 }
 
 LoggerHandle::~LoggerHandle() {
+  log_sentinel(this, end_sentinel_type);
   unlink(lock_path.c_str());
 }

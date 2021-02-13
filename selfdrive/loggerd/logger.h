@@ -46,20 +46,23 @@ class BZFile {
   BZFILE* bz_file = nullptr;
 };
 
+typedef cereal::Sentinel::SentinelType SentinelType;
 class LoggerHandle {
  public:
-  LoggerHandle(const std::string& route_path, int part);
+  LoggerHandle(const std::string& route_path, int part, SentinelType type, kj::ArrayPtr<kj::byte> init_data);
   ~LoggerHandle();
   void write(uint8_t* data, size_t data_size, bool in_qlog);
   inline void write(kj::ArrayPtr<capnp::byte> array, bool in_qlog) { write(array.begin(), array.size(), in_qlog); }
   inline int get_segment() const { return part; }
   inline const std::string& get_segment_path() const { return segment_path; }
+  inline void end_of_route() { end_sentinel_type = SentinelType::END_OF_ROUTE; }
 
  private:
   std::mutex lock;
   const int part;
   std::string segment_path, lock_path;
   std::unique_ptr<BZFile> log, qlog;
+  SentinelType end_sentinel_type = SentinelType::END_OF_SEGMENT;
 };
 
 class LoggerState {
@@ -67,7 +70,10 @@ class LoggerState {
   LoggerState(const std::string& log_root);
   ~LoggerState();
   std::shared_ptr<LoggerHandle> next();
-  inline std::shared_ptr<LoggerHandle> get_handle() { assert(cur_handle); return cur_handle; };
+  inline std::shared_ptr<LoggerHandle> get_handle() {
+    assert(cur_handle);
+    return cur_handle;
+  }
 
  private:
   int part = -1;
