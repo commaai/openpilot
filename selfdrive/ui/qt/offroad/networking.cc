@@ -75,7 +75,7 @@ void Networking::attemptInitialization(){
     QPushButton* advancedSettings = new QPushButton("Advanced");
     advancedSettings->setStyleSheet(R"(margin-right: 30px)");
     advancedSettings->setFixedSize(350, 100);
-    connect(advancedSettings, &QPushButton::released, [=](){s->setCurrentIndex(2);});
+    connect(advancedSettings, &QPushButton::released, [=](){s->setCurrentWidget(an);});
     vlayout->addSpacing(10);
     vlayout->addWidget(advancedSettings, 0, Qt::AlignRight);
     vlayout->addSpacing(10);
@@ -85,10 +85,11 @@ void Networking::attemptInitialization(){
   connect(wifiWidget, SIGNAL(connectToNetwork(Network)), this, SLOT(connectToNetwork(Network)));
   vlayout->addWidget(wifiWidget, 1);
 
-  s->addWidget(layoutToWidget(vlayout, this));
+  wifiScreen = layoutToWidget(vlayout, this);
+  s->addWidget(wifiScreen);
 
   an = new AdvancedNetworking(this, wifi);
-  connect(an, &AdvancedNetworking::backPress, [=](){s->setCurrentIndex(1);});
+  connect(an, &AdvancedNetworking::backPress, [=](){s->setCurrentWidget(wifiScreen);});
   s->addWidget(an);
 
   setStyleSheet(R"(
@@ -106,7 +107,7 @@ void Networking::attemptInitialization(){
       background-color: #222222;
     }
   )");
-  s->setCurrentIndex(1);
+  s->setCurrentWidget(wifiScreen);
   ui_setup_complete = true;
 }
 
@@ -243,7 +244,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   s->addWidget(settingsWidget);
 
   ssh = new SSH;
-  connect(ssh, &SSH::closeSSHSettings, [=](){s->setCurrentIndex(0);});
+  connect(ssh, &SSH::closeSSHSettings, [=](){s->setCurrentWidget(settingsWidget);});
   s->addWidget(ssh);
 
   setLayout(s);
