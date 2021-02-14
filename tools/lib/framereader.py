@@ -9,6 +9,8 @@ import tempfile
 import threading
 from functools import wraps
 
+from common.configreader import ConfigReader
+
 import numpy as np
 from aenum import Enum
 from lru import LRU
@@ -81,7 +83,9 @@ def ffprobe(fn, fmt=None):
 
 
 def vidindex(fn, typ):
-  vidindex_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "vidindex")
+  # Example 1: a static read
+  # vidindex_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "vidindex")
+  vidindex_dir = ConfigReader.static_get_path("TOOLS_FRAMEREADER_VIDINDEX_DIR")
   vidindex = os.path.join(vidindex_dir, "vidindex")
 
   subprocess.check_call(["make"], cwd=vidindex_dir, stdout=open("/dev/null", "w"))

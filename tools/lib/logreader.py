@@ -15,10 +15,19 @@ except ImportError:
   from tools.lib.filereader import FileReader
 from cereal import log as capnp_log
 
-OP_PATH = os.path.dirname(os.path.dirname(capnp_log.__file__))
+from common.configreader import ConfigReader
+
+CONFIGREADER = ConfigReader()
+
+# Example 2: reading from a ConfigReader instance
+# OP_PATH = os.path.dirname(os.path.dirname(capnp_log.__file__))
+OP_PATH = CONFIGREADER.get_path("TOOLS_LOGREADER_OP_DIR")
+
 
 def index_log(fn):
-  index_log_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "index_log")
+  # Example 2: reading from a ConfigReader instance
+  # index_log_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "index_log")
+  index_log_dir = CONFIGREADER.get_path("TOOLS_LOGREADER_LOG_DIR")
   index_log = os.path.join(index_log_dir, "index_log")
 
   if not os.path.exists(index_log):
