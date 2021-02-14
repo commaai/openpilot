@@ -44,31 +44,31 @@ std::string exec(const char* cmd) {
 
 // Networking functions
 
-Networking::Networking(QWidget* parent, bool show_advanced) : QWidget(parent){
-  bool connected = false;
-  for(int i = 0 ; i < 20 ; i++) {
-    try {
-      wifi = new WifiManager(this);
-      connected = true;
-      break;
-    } catch (std::exception &e) {
-      delete(wifi);
-    }
-    qDebug()<<"Waiting for network manager";
-    util::sleep_for(3000);
-  }
-  if(!connected){
-    QLabel* warning = new QLabel("Network manager is inactive!");
-    warning->setStyleSheet(R"(font-size: 65px;)");
+Networking::Networking(QWidget* parent, bool show_advanced) : QWidget(parent), show_advanced(show_advanced){
+  s = new QStackedLayout;
 
-    QVBoxLayout* warning_layout = new QVBoxLayout;
-    warning_layout->addWidget(warning, 0, Qt::AlignCenter);
-    setLayout(warning_layout);
-    return;
+  QLabel* warning = new QLabel("Network manager is inactive!");
+  warning->setStyleSheet(R"(font-size: 65px;)");
+
+  s->addWidget(warning);
+  setLayout(s);
+
+  startup_timer = new QTimer(this);
+  connect(startup_timer, SIGNAL(timeout()), this, SLOT(attemptInitialization()));
+  startup_timer->start(1000);
+}
+
+bool Networking::attemptInitialization(){
+  // Checks if network manager is active
+  try {
+    wifi = new WifiManager(this);
+  } catch (std::exception &e) {
+    delete(wifi);
+    return false;
   }
+
   connect(wifi, SIGNAL(wrongPassword(QString)), this, SLOT(wrongPassword(QString)));
 
-  s = new QStackedLayout;
 
   QVBoxLayout* vlayout = new QVBoxLayout;
 
@@ -76,7 +76,7 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QWidget(parent){
     QPushButton* advancedSettings = new QPushButton("Advanced");
     advancedSettings->setStyleSheet(R"(margin-right: 30px)");
     advancedSettings->setFixedSize(350, 100);
-    connect(advancedSettings, &QPushButton::released, [=](){s->setCurrentIndex(1);});
+    connect(advancedSettings, &QPushButton::released, [=](){s->setCurrentIndex(2);});
     vlayout->addSpacing(10);
     vlayout->addWidget(advancedSettings, 0, Qt::AlignRight);
     vlayout->addSpacing(10);
@@ -89,7 +89,7 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QWidget(parent){
   s->addWidget(layoutToWidget(vlayout, this));
 
   an = new AdvancedNetworking(this, wifi);
-  connect(an, &AdvancedNetworking::backPress, [=](){s->setCurrentIndex(0);});
+  connect(an, &AdvancedNetworking::backPress, [=](){s->setCurrentIndex(1);});
   s->addWidget(an);
 
   // Update network status
@@ -112,7 +112,10 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QWidget(parent){
       background-color: #222222;
     }
   )");
-  setLayout(s);
+  startup_timer->stop();
+  qDebug()<<"Succeded";
+  s->setCurrentIndex(1);
+  return true;
 }
 
 void Networking::refresh(){

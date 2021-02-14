@@ -2,8 +2,10 @@
 #include <set>
 #include <stdlib.h>
 #include <iostream>
-#include "wifiManager.hpp"
+
 #include "common/params.h"
+#include "common/swaglog.h"
+#include "wifiManager.hpp"
 
 /**
  * We are using a NetworkManager DBUS API : https://developer.gnome.org/NetworkManager/1.26/spec.html
@@ -45,10 +47,10 @@ T get_response(QDBusMessage response) {
   QVariant first =  response.arguments().at(0);
   QDBusVariant dbvFirst = first.value<QDBusVariant>();
   QVariant vFirst = dbvFirst.variant();
-  if(vFirst.canConvert<T>()){
+  if (vFirst.canConvert<T>()) {
     return vFirst.value<T>();
-  }else{
-    qDebug()<<"VARIANT UNPACKING FAILURE!!!!!";
+  } else {
+    LOGE("Variant unpacking failure");
     return T();
   }
 }

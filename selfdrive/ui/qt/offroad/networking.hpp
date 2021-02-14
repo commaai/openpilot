@@ -74,6 +74,8 @@ public:
 private:
   QStackedLayout* s = nullptr; // keyboard, wifiScreen, advanced
   AdvancedNetworking* an = nullptr;
+  QTimer* startup_timer;
+  bool show_advanced;
 
   Network selectedNetwork;
 
@@ -81,6 +83,7 @@ private:
   WifiManager* wifi = nullptr;
 
 private slots:
+  bool attemptInitialization();
   void connectToNetwork(Network n);
   void refresh();
   void wrongPassword(QString ssid);
