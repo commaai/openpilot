@@ -356,7 +356,7 @@ void WifiManager::change(unsigned int new_state, unsigned int previous_state, un
 
 void WifiManager::disconnect() {
   QString active_ap = get_active_ap();
-  if (active_ap!="" && active_ap!="/") {
+  if (active_ap != "" && active_ap != "/") {
     deactivate_connections(get_property(active_ap, "Ssid"));
   }
 }

@@ -53,22 +53,21 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QWidget(parent), s
   s->addWidget(warning);
   setLayout(s);
 
-  startup_timer = new QTimer(this);
-  connect(startup_timer, SIGNAL(timeout()), this, SLOT(attemptInitialization()));
-  startup_timer->start(1000);
+  QTimer* timer = new QTimer(this);
+  QObject::connect(timer, SIGNAL(timeout()), this, SLOT(refresh()));
+  timer->start(5000);
 }
 
-bool Networking::attemptInitialization(){
+void Networking::attemptInitialization(){
   // Checks if network manager is active
   try {
     wifi = new WifiManager(this);
   } catch (std::exception &e) {
     delete(wifi);
-    return false;
+    return;
   }
 
   connect(wifi, SIGNAL(wrongPassword(QString)), this, SLOT(wrongPassword(QString)));
-
 
   QVBoxLayout* vlayout = new QVBoxLayout;
 
@@ -92,11 +91,6 @@ bool Networking::attemptInitialization(){
   connect(an, &AdvancedNetworking::backPress, [=](){s->setCurrentIndex(1);});
   s->addWidget(an);
 
-  // Update network status
-  QTimer* timer = new QTimer(this);
-  QObject::connect(timer, SIGNAL(timeout()), this, SLOT(refresh()));
-  timer->start(5000);
-
   setStyleSheet(R"(
     QPushButton {
       font-size: 50px;
@@ -112,13 +106,15 @@ bool Networking::attemptInitialization(){
       background-color: #222222;
     }
   )");
-  startup_timer->stop();
-  qDebug()<<"Succeded";
   s->setCurrentIndex(1);
-  return true;
+  ui_setup_complete = true;
 }
 
 void Networking::refresh(){
+  if(!ui_setup_complete){
+    attemptInitialization();
+    return;
+  }
   if(!this->isVisible()){
     return;
   }
@@ -336,11 +332,12 @@ void WifiUI::refresh() {
       if(ssid.length() > 20){
         ssid = ssid.left(20 - 3) + "…";
       }
-      QLabel *ssid_label = new QLabel(ssid);
+      ssid += QString(20 - ssid.length(), ' ');
+      
+      QLabel *ssid_label = new QLabel("<pre>" + ssid + "</pre>");
       ssid_label->setStyleSheet(R"(
         font-size: 55px;
       )");
-      ssid_label->setFixedWidth(700);
       hlayout->addWidget(ssid_label, 0, Qt::AlignLeft);
 
       // TODO: don't use images for this
@@ -351,7 +348,6 @@ void WifiUI::refresh() {
       icon->setPixmap(pix.scaledToWidth(100, Qt::SmoothTransformation));
       icon->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
       hlayout->addWidget(icon, 0, Qt::AlignRight);
-      // hlayout->addSpacing(150);
 
       // connect button
       QPushButton* btn = new QPushButton(network.security_type == SecurityType::UNSUPPORTED ? "Unsupported" : (network.connected == ConnectedType::CONNECTED ? "Connected" : (network.connected == ConnectedType::CONNECTING ? "Connecting" : "Connect")));
