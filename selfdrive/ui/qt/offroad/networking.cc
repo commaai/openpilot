@@ -111,11 +111,11 @@ void Networking::attemptInitialization(){
 }
 
 void Networking::refresh(){
-  if(!ui_setup_complete){
+  if (!ui_setup_complete) {
     attemptInitialization();
     return;
   }
-  if(!this->isVisible()){
+  if (!this->isVisible()) {
     return;
   }
   wifiWidget->refresh();
