@@ -1090,6 +1090,11 @@ FW_VERSIONS = {
       b'78109-T3R-A410\x00\x00',
     ],
   },
+  CAR.CLARITY: {
+    (Ecu.vsa, 0x18da28f1, None): [b'57114-TRW-A020\x00\x00'],
+    (Ecu.eps, 0x18da30f1, None): [b'39990-TRW-A020\x00\x00'],
+    (Ecu.srs, 0x18da53f1, None): [b'77959-TRW-A210\x00\x00'],
+  },
 }
 
 DBC = {
