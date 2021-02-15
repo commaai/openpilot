@@ -55,6 +55,7 @@ class CAR:
   PILOT_2019 = "HONDA PILOT 2019 ELITE"
   RIDGELINE = "HONDA RIDGELINE 2017 BLACK EDITION"
   INSIGHT = "HONDA INSIGHT 2019 TOURING"
+  CLARITY = "HONDA CLARITY 2018 TOURING"
 
 # diag message that in some Nidec cars only appear with 1s freq if VIN query is performed
 DIAG_MSGS = {1600: 5, 1601: 8}
@@ -147,7 +148,10 @@ FINGERPRINTS = {
   # 2019 Insight
   CAR.INSIGHT: [{
     57: 3, 148: 8, 228: 5, 304: 8, 330: 8, 344: 8, 380: 8, 387: 8, 388: 8, 399: 7, 419: 8, 420: 8, 427: 3, 432: 7, 441: 5, 450: 8, 464: 8, 476: 8, 477: 8, 479: 8, 490: 8, 495: 8, 507: 1, 525: 8, 531: 8, 545: 6, 547: 6, 597: 8, 662: 4, 773: 7, 777: 8, 780: 8, 795: 8, 804: 8, 806: 8, 808: 8, 814: 4, 815: 8, 829: 5, 832: 3, 862: 8, 884: 8, 891: 8, 927: 8, 929: 8, 954: 2, 985: 3, 1029: 8, 1093: 4, 1115: 2, 1302: 8, 1361: 5, 1365: 5, 1600: 5, 1601: 8, 1652: 8, 2015: 3
-  }]
+  }],
+  CAR.CLARITY: [{
+    57: 3, 304: 8, 312: 8, 315: 7, 330: 8, 344: 8, 380: 8, 387: 8, 388: 8, 409: 8, 419: 8, 420: 8, 427: 3, 428: 8, 432: 7, 441: 5, 450: 8, 464: 8, 476: 8, 478: 3, 506: 8, 538: 5, 545: 5, 547: 6, 559: 3, 597: 8, 662: 4, 773: 7, 777: 8, 780: 8, 795: 8, 800: 8, 804: 8, 806: 8, 808: 8, 815: 8, 829: 5, 831: 5, 832: 3, 833: 8, 856: 7, 862: 8, 884: 8, 891: 8, 900: 8, 904: 8, 905: 8, 906: 4, 923: 2, 927: 8, 929: 8, 976: 8, 983: 8, 1029: 8, 1036: 8, 1070: 8, 1072: 4, 1092: 1, 1108: 8, 1113: 8, 1114: 2, 1125: 8, 1128: 8, 1129: 8, 1302: 8, 1331: 8, 1332: 5, 1341: 5
+  }],
 }
 
 # Don't use theses fingerprints for fingerprinting, they are still needed for ECU detection
@@ -1110,6 +1114,7 @@ DBC = {
   CAR.PILOT_2019: dbc_dict('honda_pilot_touring_2017_can_generated', 'acura_ilx_2016_nidec'),
   CAR.RIDGELINE: dbc_dict('honda_ridgeline_black_edition_2017_can_generated', 'acura_ilx_2016_nidec'),
   CAR.INSIGHT: dbc_dict('honda_insight_ex_2019_can_generated', None),
+  CAR.CLARITY: dbc_dict('honda_clarity_hybrid_2018_can_generated.dbc', 'acura_ilx_2016_nidec'),
 }
 
 STEER_THRESHOLD = {
@@ -1134,6 +1139,7 @@ STEER_THRESHOLD = {
   CAR.PILOT_2019: 1200,
   CAR.RIDGELINE: 1200,
   CAR.INSIGHT: 1200,
+  CAR.CLARITY: 1200,
 }
 
 SPEED_FACTOR = {
@@ -1158,6 +1164,7 @@ SPEED_FACTOR = {
   CAR.PILOT_2019: 1.,
   CAR.RIDGELINE: 1.,
   CAR.INSIGHT: 1.,
+  CAR.CLARITY: 1.,
 }
 
 HONDA_BOSCH = set([CAR.ACCORD, CAR.ACCORD_15, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_5G, CAR.CRV_HYBRID, CAR.INSIGHT, CAR.ACURA_RDX_3G])
