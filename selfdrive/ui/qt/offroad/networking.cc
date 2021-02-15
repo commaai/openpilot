@@ -64,7 +64,6 @@ void Networking::attemptInitialization(){
   try {
     wifi = new WifiManager(this);
   } catch (std::exception &e) {
-    delete(wifi);
     return;
   }
 
