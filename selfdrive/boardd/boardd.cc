@@ -183,7 +183,7 @@ bool usb_connect() {
 // must be called before threads or with mutex
 void usb_retry_connect() {
   LOGW("attempting to connect");
-  while (!usb_connect()) { util::sleep_for(1000); }
+  while (!usb_connect()) { util::sleep_for(100); }
   LOGW("connected to board");
 }
 

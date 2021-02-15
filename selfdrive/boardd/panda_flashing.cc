@@ -36,13 +36,17 @@
 #define DFU_ABORT 6
 
 std::string get_basedir(){ // Ends with /
-  std::string basedir = getenv("BASEDIR");
-  if (basedir == ""){
+  try {
+    std::string basedir = getenv("BASEDIR");
+    if (basedir == ""){
+      LOGW("BASEDIR is not defined, provide the enviromental variable or run manager.py");
+      return "";
+    }
+    return basedir;
+  } catch (std::logic_error &e) {
     LOGW("BASEDIR is not defined, provide the enviromental variable or run manager.py");
     return "";
   }
-
-  return basedir;
 }
 void build_st(std::string target){
   system(("cd " + get_basedir() + "panda/board && make -f Makefile clean > /dev/null && make -f Makefile " + target +" > /dev/null ").c_str());
