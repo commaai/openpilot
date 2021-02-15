@@ -8,6 +8,7 @@
 #include <QtConcurrent>
 
 #include "networking.hpp"
+#include "util.h"
 
 void clearLayout(QLayout* layout) {
   while (QLayoutItem* item = layout->takeAt(0)) {
@@ -43,29 +44,38 @@ std::string exec(const char* cmd) {
 
 // Networking functions
 
-Networking::Networking(QWidget* parent, bool show_advanced) : QWidget(parent){
+Networking::Networking(QWidget* parent, bool show_advanced) : QWidget(parent), show_advanced(show_advanced){
+  s = new QStackedLayout;
+
+  QLabel* warning = new QLabel("Network manager is inactive!");
+  warning->setStyleSheet(R"(font-size: 65px;)");
+
+  s->addWidget(warning);
+  setLayout(s);
+
+  QTimer* timer = new QTimer(this);
+  QObject::connect(timer, SIGNAL(timeout()), this, SLOT(refresh()));
+  timer->start(5000);
+  attemptInitialization();
+}
+
+void Networking::attemptInitialization(){
+  // Checks if network manager is active
   try {
     wifi = new WifiManager(this);
   } catch (std::exception &e) {
-    QLabel* warning = new QLabel("Network manager is inactive!");
-    warning->setStyleSheet(R"(font-size: 65px;)");
-
-    QVBoxLayout* warning_layout = new QVBoxLayout;
-    warning_layout->addWidget(warning, 0, Qt::AlignCenter);
-    setLayout(warning_layout);
     return;
   }
-  connect(wifi, SIGNAL(wrongPassword(QString)), this, SLOT(wrongPassword(QString)));
 
-  s = new QStackedLayout;
+  connect(wifi, SIGNAL(wrongPassword(QString)), this, SLOT(wrongPassword(QString)));
 
   QVBoxLayout* vlayout = new QVBoxLayout;
 
   if (show_advanced) {
     QPushButton* advancedSettings = new QPushButton("Advanced");
     advancedSettings->setStyleSheet(R"(margin-right: 30px)");
-    advancedSettings->setFixedSize(300, 100);
-    connect(advancedSettings, &QPushButton::released, [=](){s->setCurrentIndex(1);});
+    advancedSettings->setFixedSize(350, 100);
+    connect(advancedSettings, &QPushButton::released, [=](){s->setCurrentWidget(an);});
     vlayout->addSpacing(10);
     vlayout->addWidget(advancedSettings, 0, Qt::AlignRight);
     vlayout->addSpacing(10);
@@ -75,16 +85,12 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QWidget(parent){
   connect(wifiWidget, SIGNAL(connectToNetwork(Network)), this, SLOT(connectToNetwork(Network)));
   vlayout->addWidget(wifiWidget, 1);
 
-  s->addWidget(layoutToWidget(vlayout, this));
+  wifiScreen = layoutToWidget(vlayout, this);
+  s->addWidget(wifiScreen);
 
   an = new AdvancedNetworking(this, wifi);
-  connect(an, &AdvancedNetworking::backPress, [=](){s->setCurrentIndex(0);});
+  connect(an, &AdvancedNetworking::backPress, [=](){s->setCurrentWidget(wifiScreen);});
   s->addWidget(an);
-
-  // Update network status
-  QTimer* timer = new QTimer(this);
-  QObject::connect(timer, SIGNAL(timeout()), this, SLOT(refresh()));
-  timer->start(5000);
 
   setStyleSheet(R"(
     QPushButton {
@@ -92,7 +98,7 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QWidget(parent){
       margin: 0px;
       padding: 15px;
       border-width: 0;
-      border-radius: 7px;
+      border-radius: 30px;
       color: #dddddd;
       background-color: #444444;
     }
@@ -101,12 +107,19 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QWidget(parent){
       background-color: #222222;
     }
   )");
-  setLayout(s);
+  s->setCurrentWidget(wifiScreen);
+  ui_setup_complete = true;
 }
 
 void Networking::refresh(){
-  if(!this->isVisible()){
+  if (!this->isVisible()) {
     return;
+  }
+  if (!ui_setup_complete) {
+    attemptInitialization();
+    if (!ui_setup_complete) {
+      return;
+    }
   }
   wifiWidget->refresh();
   an->refresh();
@@ -233,7 +246,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   s->addWidget(settingsWidget);
 
   ssh = new SSH;
-  connect(ssh, &SSH::closeSSHSettings, [=](){s->setCurrentIndex(0);});
+  connect(ssh, &SSH::closeSSHSettings, [=](){s->setCurrentWidget(settingsWidget);});
   s->addWidget(ssh);
 
   setLayout(s);
@@ -319,14 +332,16 @@ void WifiUI::refresh() {
       // SSID
       hlayout->addSpacing(50);
       QString ssid = QString::fromUtf8(network.ssid);
-      if(ssid.length() > 30){
-        ssid = ssid.left(30)+"…";
+      if(ssid.length() > 20){
+        ssid = ssid.left(20 - 3) + "…";
       }
-      QLabel *ssid_label = new QLabel(ssid);
+      ssid += QString(20 - ssid.length(), ' ');
+      
+      QLabel *ssid_label = new QLabel("<pre>" + ssid + "</pre>");
       ssid_label->setStyleSheet(R"(
         font-size: 55px;
       )");
-      hlayout->addWidget(ssid_label);
+      hlayout->addWidget(ssid_label, 0, Qt::AlignLeft);
 
       // TODO: don't use images for this
       // strength indicator
