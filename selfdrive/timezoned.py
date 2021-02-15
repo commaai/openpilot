@@ -54,6 +54,8 @@ def main():
           set_timezone(valid_timezones, r.text)
         else:
           cloudlog.error(f"Unexpected status code from api {r.status_code}")
+
+        time.sleep(3600)  # Don't make too many API requests
       except requests.exceptions.RequestException:
         cloudlog.exception("Error getting timezone based on IP")
         continue
