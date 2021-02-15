@@ -56,6 +56,7 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QWidget(parent), s
   QTimer* timer = new QTimer(this);
   QObject::connect(timer, SIGNAL(timeout()), this, SLOT(refresh()));
   timer->start(5000);
+  attemptInitialization();
 }
 
 void Networking::attemptInitialization(){
@@ -112,12 +113,14 @@ void Networking::attemptInitialization(){
 }
 
 void Networking::refresh(){
-  if (!ui_setup_complete) {
-    attemptInitialization();
-    return;
-  }
   if (!this->isVisible()) {
     return;
+  }
+  if (!ui_setup_complete) {
+    attemptInitialization();
+    if (!ui_setup_complete) {
+      return;
+    }
   }
   wifiWidget->refresh();
   an->refresh();
