@@ -45,9 +45,12 @@ KeyboardLayout::KeyboardLayout(QWidget *parent, std::vector<QVector<QString>> la
       font-size: 65px;
       margin: 0px;
       padding: 0px;
-      border-radius: 7px;
+      border-radius: 30px;
       color: #dddddd;
       background-color: #444444;
+    }
+    QPushButton:pressed {
+      background-color: #000000;
     }
   )");
   setLayout(vlayout);

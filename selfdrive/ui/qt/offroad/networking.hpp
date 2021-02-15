@@ -72,13 +72,17 @@ public:
   explicit Networking(QWidget* parent = 0, bool show_advanced = true);
 
 private:
-  QStackedLayout* s = nullptr; // keyboard, wifiScreen, advanced
+  QStackedLayout* s = nullptr; // nm_warning, keyboard, wifiScreen, advanced
+  QWidget* wifiScreen = nullptr;
   AdvancedNetworking* an = nullptr;
+  bool ui_setup_complete = false;
+  bool show_advanced;
 
   Network selectedNetwork;
 
   WifiUI* wifiWidget;
   WifiManager* wifi = nullptr;
+  void attemptInitialization();
 
 private slots:
   void connectToNetwork(Network n);
