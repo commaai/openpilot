@@ -335,12 +335,12 @@ void WifiUI::refresh() {
       if(ssid.length() > 20){
         ssid = ssid.left(20 - 3) + "…";
       }
-      ssid += QString(20 - ssid.length(), ' ');
       
-      QLabel *ssid_label = new QLabel("<pre>" + ssid + "</pre>");
+      QLabel *ssid_label = new QLabel(ssid);
       ssid_label->setStyleSheet(R"(
         font-size: 55px;
       )");
+      ssid_label->setFixedWidth(this->width()*0.5);
       hlayout->addWidget(ssid_label, 0, Qt::AlignLeft);
 
       // TODO: don't use images for this
