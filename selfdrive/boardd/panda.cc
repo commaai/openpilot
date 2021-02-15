@@ -9,7 +9,7 @@
 #include "common/util.h"
 #include "messaging.hpp"
 #include "panda.h"
-#include "boardd.hpp"
+#include "panda_flashing.hpp"
 
 void panda_set_power(bool power){
 #ifdef QCOM2
@@ -46,7 +46,6 @@ PandaComm::PandaComm(uint16_t vid, uint16_t pid){
 
   dev_handle = libusb_open_device_with_vid_pid(ctx, vid, pid);
   if (dev_handle == NULL) { goto fail; }
-  std::cout<<"Got dev handle with vid:pid "<< std::hex <<vid<<":"<<std::hex<<pid<<std::endl;
   if (libusb_kernel_driver_active(dev_handle, 0) == 1) {
     libusb_detach_kernel_driver(dev_handle, 0);
   }
@@ -56,7 +55,7 @@ PandaComm::PandaComm(uint16_t vid, uint16_t pid){
 
   err = libusb_claim_interface(dev_handle, 0);
   if (err != 0) { goto fail; }
-  std::cout<<"Got everything with vid:pid "<< std::hex <<vid<<":"<<std::hex<<pid<<std::endl;
+  std::cout<<"Opened device with vid:pid "<< std::hex <<vid<<":"<<std::hex<<pid<<std::endl;
   return;
 
 fail:
