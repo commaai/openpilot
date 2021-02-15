@@ -738,6 +738,7 @@ void update_panda(){
     tempPanda.recover();
     std::cout<<"Done flashing dev bootloader"<<std::endl;
     util::sleep_for(2500);
+    std::cout<<"Panda should be out of bootstub now..."<<std::endl;
   }
 
   if(tempPanda.bootstub){

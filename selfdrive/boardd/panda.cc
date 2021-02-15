@@ -254,6 +254,7 @@ std::string DynamicPanda::get_signature(){
 }
 
 void DynamicPanda::flash(std::string fw_fn){
+  std::cout<<std::endl<<"Firmware string: "<<fw_fn<<std::endl;
   std::cout<<"flash: main version is "<<get_version()<<std::endl;
   if(!bootstub){
     reset(true, false);
@@ -355,7 +356,7 @@ void DynamicPanda::recover(){
     util::sleep_for(1000);
   }while(!pandaExists);
 
-  flash(get_basedir()+"panda/board/obj/panda.bin");
+  flash(get_firmware_fn());
 }
 
 DynamicPanda::~DynamicPanda(){
