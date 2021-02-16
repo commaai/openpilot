@@ -46,8 +46,7 @@ CameraInfo cameras_supported[CAMERA_ID_MAX] = {
   },
 };
 
-float sensor_analog_gains[ANALOG_GAIN_MAX_IDX] = {1.0/8.0, 2.0/8.0, 2.0/7.0, 3.0/7.0,
-                                                  3.0/6.0, 4.0/6.0, 4.0/5.0, 5.0/5.0,
+float sensor_analog_gains[ANALOG_GAIN_MAX_IDX] = {3.0/6.0, 4.0/6.0, 4.0/5.0, 5.0/5.0,
                                                   5.0/4.0, 6.0/4.0, 6.0/3.0, 7.0/3.0,
                                                   7.0/2.0, 8.0/2.0};
 
@@ -1044,23 +1043,22 @@ static void set_camera_exposure(CameraState *s, float grey_frac) {
   }
 
   // set up config
-  uint16_t AG = s->analog_gain;
-  AG = AG * 4096 + AG * 256 + AG * 16 + AG;
+  uint16_t AG = s->analog_gain + 4;
+  AG = 0xFF00 + AG * 16 + AG;
   s->analog_gain_frac = sensor_analog_gains[s->analog_gain];
 
   // printf("cam %d, min %d, max %d \n", s->camera_num, s->exposure_time_min, s->exposure_time_max);
   // printf("cam %d, set AG to 0x%X, S to %d, dc %d \n", s->camera_num, AG, s->exposure_time, s->dc_gain_enabled);
 
-  struct i2c_random_wr_payload exp_reg_array[] = {{0x3022, 0x01},
+  struct i2c_random_wr_payload exp_reg_array[] = {
                                                   {0x3366, AG}, // analog gain
-                                                  {0x3060, AG},
                                                   {0x3362, (uint16_t)(s->dc_gain_enabled?0x1:0x0)}, // DC_GAIN
                                                   {0x305A, 0x00D8}, // red gain
                                                   {0x3058, 0x011B}, // blue gain
                                                   {0x3056, 0x009A}, // g1 gain
                                                   {0x305C, 0x009A}, // g2 gain
                                                   {0x3012, (uint16_t)s->exposure_time}, // integ time
-                                                  {0x3022, 0x00}};
+                                                 };
                                                   //{0x301A, 0x091C}}; // reset
   sensors_i2c(s, exp_reg_array, sizeof(exp_reg_array)/sizeof(struct i2c_random_wr_payload),
                CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);

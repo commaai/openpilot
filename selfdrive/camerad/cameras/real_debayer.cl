@@ -35,7 +35,7 @@ half mf(half x, half cp) {
 
 half3 color_correct(half3 rgb, int ggain) {
   half3 ret = (0,0,0);
-  half cpx = clamp(0.01h, 0.1h, cpxb + cpxk * min(10, ggain));
+  half cpx = clamp(0.01h, 0.1h, cpxb + cpxk * min(10, ggain+4));
   rgb.x = mf(rgb.x, cpx);
   rgb.y = mf(rgb.y, cpx);
   rgb.z = mf(rgb.z, cpx);
