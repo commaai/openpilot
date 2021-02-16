@@ -41,7 +41,7 @@ class TestStartup(unittest.TestCase):
 
     # TODO: this should be done without any real sockets
     controls_sock = messaging.sub_sock("controlsState")
-    pm = messaging.PubMaster(['can', 'deviceState'])
+    pm = messaging.PubMaster(['can', 'pandaState'])
 
     params = Params()
     params.clear_all()
@@ -51,9 +51,9 @@ class TestStartup(unittest.TestCase):
 
     time.sleep(2) # wait for controlsd to be ready
 
-    deviceState = messaging.new_message('deviceState')
-    deviceState.deviceState.pandaType = log.PandaState.PandaType.uno
-    pm.send('deviceState', deviceState)
+    msg = messaging.new_message('pandaState')
+    msg.pandaState.pandaType = log.PandaState.PandaType.uno
+    pm.send('pandaState', msg)
 
     # fingerprint
     if car is None:

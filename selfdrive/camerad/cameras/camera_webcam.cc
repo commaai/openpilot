@@ -248,7 +248,7 @@ void cameras_close(MultiCameraState *s) {
 void camera_process_front(MultiCameraState *s, CameraState *c, int cnt) {
   MessageBuilder msg;
   auto framed = msg.initEvent().initDriverCameraState();
-  framed.setRoadCameraStateType(cereal::FrameData::FrameType::FRONT);
+  framed.setFrameType(cereal::FrameData::FrameType::FRONT);
   fill_frame_data(framed, c->buf.cur_frame_data);
   s->pm->send("driverCameraState", msg);
 }
