@@ -117,6 +117,8 @@ class TestPandaFlashing(unittest.TestCase):
     self.assertEqual(len(pandas), 1)
     # Flash release bootloader and firmware
     flash_signed_firmware()
+    panda = Panda(Panda.list()[0])
+    comma_sig = panda.get_signature()
     # Now we should flash the development firmware then find it doesn't run due to the signature and reflash the dev bootloader and firmware
     os.system("export BASEDIR=\"/home/batman/openpilot/\"; ./fix_panda")
     # In the end we want no DFU pandas and one running panda
@@ -124,6 +126,9 @@ class TestPandaFlashing(unittest.TestCase):
     self.assertEqual(len(Panda.list()), 1)
     panda1 = Panda(pandas[0])
     self.assertFalse(panda1.bootstub)
+    #Confirm we have our custom firmware
+    panda = Panda(Panda.list()[0])
+    self.assertNotEqual(panda.get_signature(), comma_sig)
     print("Test 2 finished")
 
   def test_signed_firmware(self):

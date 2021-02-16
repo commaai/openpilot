@@ -518,21 +518,21 @@ int main() {
 
   panda_set_power(true);
   update_panda();
-  LOGW("End of startup procedure");
-  // while (!do_exit){
-  //   std::vector<std::thread> threads;
-  //   threads.push_back(std::thread(can_health_thread, getenv("STARTED") != nullptr));
-  //   // connect to the board
-  //   usb_retry_connect();
+  while (!do_exit){
+    std::vector<std::thread> threads;
+    threads.push_back(std::thread(can_health_thread, getenv("STARTED") != nullptr));
+    
+    // connect to the board
+    usb_retry_connect();
 
-  //   threads.push_back(std::thread(can_send_thread, getenv("FAKESEND") != nullptr));
-  //   threads.push_back(std::thread(can_recv_thread));
-  //   threads.push_back(std::thread(hardware_control_thread));
-  //   threads.push_back(std::thread(pigeon_thread));
+    threads.push_back(std::thread(can_send_thread, getenv("FAKESEND") != nullptr));
+    threads.push_back(std::thread(can_recv_thread));
+    threads.push_back(std::thread(hardware_control_thread));
+    threads.push_back(std::thread(pigeon_thread));
 
-  //   for (auto &t : threads) t.join();
+    for (auto &t : threads) t.join();
 
-  //   delete panda;
-  //   panda = NULL;
-  // }
+    delete panda;
+    panda = NULL;
+  }
 }
