@@ -109,7 +109,7 @@ static void draw_temp_metric(UIState *s) {
       {cereal::DeviceState::ThermalStatus::YELLOW, 1},
       {cereal::DeviceState::ThermalStatus::RED, 2},
       {cereal::DeviceState::ThermalStatus::DANGER, 3}};
-  std::string temp_val = std::to_string((int)s->scene.deviceState.getAmbient()) + "°C";
+  std::string temp_val = std::to_string((int)s->scene.deviceState.getAmbientTempC()) + "°C";
   draw_metric(s, "TEMP", temp_val.c_str(), temp_severity_map[s->scene.deviceState.getDeviceStateStatus()], 0, NULL);
 }
 
@@ -118,7 +118,7 @@ static void draw_panda_metric(UIState *s) {
 
   int panda_severity = 0;
   std::string panda_message = "VEHICLE\nONLINE";
-  if (s->scene.pandaType == cereal::HealthData::PandaType::UNKNOWN) {
+  if (s->scene.pandaType == cereal::PandaState::PandaType::UNKNOWN) {
     panda_severity = 2;
     panda_message = "NO\nPANDA";
   }

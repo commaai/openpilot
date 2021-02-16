@@ -116,7 +116,7 @@ class Plant():
       Plant.model = messaging.pub_sock('modelV2')
       Plant.live_params = messaging.pub_sock('liveParameters')
       Plant.live_location_kalman = messaging.pub_sock('liveLocationKalman')
-      Plant.health = messaging.pub_sock('health')
+      Plant.pandaState = messaging.pub_sock('pandaState')
       Plant.deviceState = messaging.pub_sock('deviceState')
       Plant.driverMonitoringState = messaging.pub_sock('driverMonitoringState')
       Plant.cal = messaging.pub_sock('liveCalibration')
@@ -373,10 +373,10 @@ class Plant():
     dmon_state.driverMonitoringState.isDistracted = False
     Plant.driverMonitoringState.send(dmon_state.to_bytes())
 
-    health = messaging.new_message('health')
-    health.health.safetyModel = car.CarParams.SafetyModel.hondaNidec
-    health.health.controlsAllowed = True
-    Plant.health.send(health.to_bytes())
+    pandaState = messaging.new_message('pandaState')
+    pandaState.pandaState.safetyModel = car.CarParams.SafetyModel.hondaNidec
+    pandaState.pandaState.controlsAllowed = True
+    Plant.pandaState.send(pandaState.to_bytes())
 
     deviceState = messaging.new_message('deviceState')
     deviceState.deviceState.freeSpacePercent = 1.

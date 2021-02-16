@@ -42,7 +42,7 @@ static void ui_init_vision(UIState *s) {
 
 void ui_init(UIState *s) {
   s->sm = new SubMaster({"modelV2", "controlsState", "uiLayoutState", "liveCalibration", "radarState", "deviceState", "frame", "liveLocationKalman",
-                         "health", "carParams", "driverState", "driverMonitoringState", "sensorEvents", "carState", "ubloxGnss"});
+                         "pandaState", "carParams", "driverState", "driverMonitoringState", "sensorEvents", "carState", "ubloxGnss"});
 
   s->started = false;
   s->status = STATUS_OFFROAD;
@@ -164,12 +164,12 @@ static void update_sockets(UIState *s) {
   if (sm.updated("deviceState")) {
     scene.deviceState = sm["deviceState"].getDeviceState();
   }
-  if (sm.updated("health")) {
-    auto health = sm["health"].getHealth();
-    scene.pandaType = health.getPandaType();
-    s->ignition = health.getIgnitionLine() || health.getIgnitionCan();
-  } else if ((s->sm->frame - s->sm->rcv_frame("health")) > 5*UI_FREQ) {
-    scene.pandaType = cereal::HealthData::PandaType::UNKNOWN;
+  if (sm.updated("pandaState")) {
+    auto pandaState = sm["pandaState"].getHealth();
+    scene.pandaType = pandaState.getPandaType();
+    s->ignition = pandaState.getIgnitionLine() || pandaState.getIgnitionCan();
+  } else if ((s->sm->frame - s->sm->rcv_frame("pandaState")) > 5*UI_FREQ) {
+    scene.pandaType = cereal::PandaState::PandaType::UNKNOWN;
   }
   if (sm.updated("ubloxGnss")) {
     auto data = sm["ubloxGnss"].getUbloxGnss();

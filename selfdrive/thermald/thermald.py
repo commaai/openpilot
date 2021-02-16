@@ -165,8 +165,8 @@ def thermald_thread():
 
   pm = messaging.PubMaster(['deviceState'])
 
-  health_timeout = int(1000 * 2.5 * DT_TRML)  # 2.5x the expected health frequency
-  health_sock = messaging.sub_sock('health', timeout=health_timeout)
+  pandaState_timeout = int(1000 * 2.5 * DT_TRML)  # 2.5x the expected pandaState frequency
+  pandaState_sock = messaging.sub_sock('pandaState', timeout=pandaState_timeout)
   location_sock = messaging.sub_sock('gpsLocationExternal')
 
   fan_speed = 0
@@ -189,7 +189,7 @@ def thermald_thread():
 
   current_filter = FirstOrderFilter(0., CURRENT_TAU, DT_TRML)
   cpu_temp_filter = FirstOrderFilter(0., CPU_TEMP_TAU, DT_TRML)
-  health_prev = None
+  pandaState_prev = None
   should_start_prev = False
   handle_fan = None
   is_uno = False
@@ -201,14 +201,14 @@ def thermald_thread():
   thermal_config = get_thermal_config()
 
   while 1:
-    health = messaging.recv_sock(health_sock, wait=True)
+    pandaState = messaging.recv_sock(pandaState_sock, wait=True)
     msg = read_thermal(thermal_config)
 
-    if health is not None:
-      usb_power = health.health.usbPowerMode != log.HealthData.UsbPowerMode.client
+    if pandaState is not None:
+      usb_power = pandaState.pandaState.usbPowerMode != log.PandaState.UsbPowerMode.client
 
       # If we lose connection to the panda, wait 5 seconds before going offroad
-      if health.health.pandaType == log.HealthData.PandaType.unknown:
+      if pandaState.pandaState.pandaType == log.PandaState.PandaType.unknown:
         no_panda_cnt += 1
         if no_panda_cnt > DISCONNECT_TIMEOUT / DT_TRML:
           if startup_conditions["ignition"]:
@@ -216,11 +216,11 @@ def thermald_thread():
           startup_conditions["ignition"] = False
       else:
         no_panda_cnt = 0
-        startup_conditions["ignition"] = health.health.ignitionLine or health.health.ignitionCan
+        startup_conditions["ignition"] = pandaState.pandaState.ignitionLine or pandaState.pandaState.ignitionCan
 
       # Setup fan handler on first connect to panda
-      if handle_fan is None and health.health.pandaType != log.HealthData.PandaType.unknown:
-        is_uno = health.health.pandaType == log.HealthData.PandaType.uno
+      if handle_fan is None and pandaState.pandaState.pandaType != log.PandaState.PandaType.unknown:
+        is_uno = pandaState.pandaState.pandaType == log.PandaState.PandaType.uno
 
         if (not EON) or is_uno:
           cloudlog.info("Setting up UNO fan handler")
@@ -231,11 +231,11 @@ def thermald_thread():
           handle_fan = handle_fan_eon
 
       # Handle disconnect
-      if health_prev is not None:
-        if health.health.pandaType == log.HealthData.PandaType.unknown and \
-          health_prev.health.pandaType != log.HealthData.PandaType.unknown:
+      if pandaState_prev is not None:
+        if pandaState.pandaState.pandaType == log.PandaState.PandaType.unknown and \
+          pandaState_prev.pandaState.pandaType != log.PandaState.PandaType.unknown:
           params.panda_disconnect()
-      health_prev = health
+      pandaState_prev = pandaState
 
     # get_network_type is an expensive call. update every 10s
     if (count % int(10. / DT_TRML)) == 0:
@@ -357,9 +357,9 @@ def thermald_thread():
     startup_conditions["device_temp_good"] = thermal_status < ThermalStatus.danger
     set_offroad_alert_if_changed("Offroad_TemperatureTooHigh", (not startup_conditions["device_temp_good"]))
 
-    startup_conditions["hardware_supported"] = health is not None and health.health.pandaType not in [log.HealthData.PandaType.whitePanda,
-                                                                                                   log.HealthData.PandaType.greyPanda]
-    set_offroad_alert_if_changed("Offroad_HardwareUnsupported", health is not None and not startup_conditions["hardware_supported"])
+    startup_conditions["hardware_supported"] = pandaState is not None and pandaState.pandaState.pandaType not in [log.PandaState.PandaType.whitePanda,
+                                                                                                   log.PandaState.PandaType.greyPanda]
+    set_offroad_alert_if_changed("Offroad_HardwareUnsupported", pandaState is not None and not startup_conditions["hardware_supported"])
 
     # Handle offroad/onroad transition
     should_start = all(startup_conditions.values())
@@ -383,15 +383,15 @@ def thermald_thread():
         off_ts = sec_since_boot()
 
     # Offroad power monitoring
-    power_monitor.calculate(health)
+    power_monitor.calculate(pandaState)
     msg.deviceState.offroadPowerUsage = power_monitor.get_power_used()
-    msg.deviceState.carBatteryCapacity = max(0, power_monitor.get_car_battery_capacity())
+    msg.deviceState.carBatteryCapacityUwh = max(0, power_monitor.get_car_battery_capacity())
 
     # Check if we need to disable charging (handled by boardd)
-    msg.deviceState.chargingDisabled = power_monitor.should_disable_charging(health, off_ts)
+    msg.deviceState.chargingDisabled = power_monitor.should_disable_charging(pandaState, off_ts)
 
     # Check if we need to shut down
-    if power_monitor.should_shutdown(health, off_ts, started_seen, LEON):
+    if power_monitor.should_shutdown(pandaState, off_ts, started_seen, LEON):
       cloudlog.info(f"shutting device down, offroad since {off_ts}")
       # TODO: add function for blocking cloudlog instead of sleep
       time.sleep(10)
@@ -414,7 +414,7 @@ def thermald_thread():
       location = messaging.recv_sock(location_sock)
       cloudlog.event("STATUS_PACKET",
                      count=count,
-                     health=(health.to_dict() if health else None),
+                     pandaState=(pandaState.to_dict() if pandaState else None),
                      location=(location.gpsLocationExternal.to_dict() if location else None),
                      deviceState=msg.to_dict())
 

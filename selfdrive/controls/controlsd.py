@@ -34,7 +34,7 @@ IGNORE_PROCESSES = set(["rtshield", "uploader", "deleter", "loggerd", "logmessag
 
 ThermalStatus = log.DeviceState.ThermalStatus
 State = log.ControlsState.OpenpilotState
-PandaType = log.HealthData.PandaType
+PandaType = log.PandaState.PandaType
 LongitudinalPlanSource = log.LongitudinalPlan.LongitudinalPlanSource
 Desire = log.LateralPlan.Desire
 LaneChangeState = log.LateralPlan.LaneChangeState
@@ -55,7 +55,7 @@ class Controls:
     self.sm = sm
     if self.sm is None:
       ignore = ['ubloxRaw', 'frontFrame', 'managerState'] if SIMULATION else None
-      self.sm = messaging.SubMaster(['deviceState', 'health', 'modelV2', 'liveCalibration', 'ubloxRaw',
+      self.sm = messaging.SubMaster(['deviceState', 'pandaState', 'modelV2', 'liveCalibration', 'ubloxRaw',
                                      'driverMonitoringState', 'longitudinalPlan', 'lateralPlan', 'liveLocationKalman',
                                      'frame', 'frontFrame', 'managerState', 'liveParameters', 'radarState'], ignore_alive=ignore)
 
@@ -64,7 +64,7 @@ class Controls:
       can_timeout = None if os.environ.get('NO_CAN_TIMEOUT', False) else 100
       self.can_sock = messaging.sub_sock('can', timeout=can_timeout)
 
-    # wait for one health and one CAN packet
+    # wait for one pandaState and one CAN packet
     print("Waiting for CAN messages...")
     get_one_can(self.can_sock)
 
@@ -170,8 +170,8 @@ class Controls:
       self.events.add(EventName.lowMemory)
 
     # Alert if fan isn't spinning for 5 seconds
-    if self.sm['health'].pandaType in [PandaType.uno, PandaType.dos]:
-      if self.sm['health'].fanSpeedRpm == 0 and self.sm['deviceState'].fanSpeedPercentDesired > 50:
+    if self.sm['pandaState'].pandaType in [PandaType.uno, PandaType.dos]:
+      if self.sm['pandaState'].fanSpeedRpm == 0 and self.sm['deviceState'].fanSpeedPercentDesired > 50:
         if (self.sm.frame - self.last_functional_fan_frame) * DT_CTRL > 5.0:
           self.events.add(EventName.fanMalfunction)
       else:
@@ -202,7 +202,7 @@ class Controls:
 
     if self.can_rcv_error or (not CS.canValid and self.sm.frame > 5 / DT_CTRL):
       self.events.add(EventName.canError)
-    if (self.sm['health'].safetyModel != self.CP.safetyModel and self.sm.frame > 2 / DT_CTRL) or \
+    if (self.sm['pandaState'].safetyModel != self.CP.safetyModel and self.sm.frame > 2 / DT_CTRL) or \
       self.mismatch_counter >= 200:
       self.events.add(EventName.controlsMismatch)
 
@@ -227,7 +227,7 @@ class Controls:
       self.events.add(EventName.posenetInvalid)
     if not self.sm['liveLocationKalman'].deviceStable:
       self.events.add(EventName.deviceFalling)
-    if log.HealthData.FaultType.relayMalfunction in self.sm['health'].faults:
+    if log.PandaState.FaultType.relayMalfunction in self.sm['pandaState'].faults:
       self.events.add(EventName.relayMalfunction)
     if self.sm['longitudinalPlan'].fcw:
       self.events.add(EventName.fcw)
@@ -278,7 +278,7 @@ class Controls:
     if not self.enabled:
       self.mismatch_counter = 0
 
-    if not self.sm['health'].controlsAllowed and self.enabled:
+    if not self.sm['pandaState'].controlsAllowed and self.enabled:
       self.mismatch_counter += 1
 
     self.distance_traveled += CS.vEgo * DT_CTRL

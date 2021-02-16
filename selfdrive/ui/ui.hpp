@@ -108,7 +108,7 @@ typedef struct UIScene {
   float alert_blinking_rate;
   cereal::ControlsState::AlertSize alert_size;
 
-  cereal::HealthData::PandaType pandaType;
+  cereal::PandaState::PandaType pandaType;
   NetStatus athenaStatus;
 
   cereal::DeviceState::Reader deviceState;
