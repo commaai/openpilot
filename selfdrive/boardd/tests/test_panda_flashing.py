@@ -122,7 +122,8 @@ class TestPandaFlashing(unittest.TestCase):
     self.assertEqual(len(pandas), 1)
     flash_signed_firmware()
     # We load the signed firmware so that the C++ installer can use it
-    os.system("cd ../../../panda/board/obj/; wget \"https://github.com/commaai/openpilot/blob/release2/panda/board/obj/panda.bin.signed?raw=true\" -O panda.bin.signed")
+    # More reliable wget (https://superuser.com/questions/493640/how-to-retry-connections-with-wget)
+    os.system("cd ../../../panda/board/obj/; wget --retry-connrefused --waitretry=5 --timeout=30 \"https://github.com/commaai/openpilot/blob/release2/panda/board/obj/panda.bin.signed?raw=true\" -O panda.bin.signed")
     # Run the panda flasher. It should install the signed firmware
     os.system("export BASEDIR=\"/home/batman/openpilot/\"; ./fix_panda")
     # Remove the signed firmware
