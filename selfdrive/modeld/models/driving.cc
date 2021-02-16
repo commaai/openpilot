@@ -302,7 +302,7 @@ void posenet_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_droppe
   posenetd.setRotStd(rot_std_arr);
 
   posenetd.setTimestampEof(timestamp_eof);
-  posenetd.setRoadCameraStateId(vipc_frame_id);
+  posenetd.setFrameId(vipc_frame_id);
 
   pm.send("cameraOdometry", msg);
 }

@@ -187,10 +187,10 @@ void CameraBuf::queue(size_t buf_idx) {
 // common functions
 
 void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &frame_data) {
-  framed.setRoadCameraStateId(frame_data.frame_id);
+  framed.setFrameId(frame_data.frame_id);
   framed.setTimestampEof(frame_data.timestamp_eof);
   framed.setTimestampSof(frame_data.timestamp_sof);
-  framed.setRoadCameraStateLength(frame_data.frame_length);
+  framed.setFrameLength(frame_data.frame_length);
   framed.setIntegLines(frame_data.integ_lines);
   framed.setGlobalGain(frame_data.global_gain);
   framed.setLensPos(frame_data.lens_pos);
@@ -280,7 +280,7 @@ static void publish_thumbnail(PubMaster *pm, const CameraBuf *b) {
 
   MessageBuilder msg;
   auto thumbnaild = msg.initEvent().initThumbnail();
-  thumbnaild.setRoadCameraStateId(b->cur_frame_data.frame_id);
+  thumbnaild.setFrameId(b->cur_frame_data.frame_id);
   thumbnaild.setTimestampEof(b->cur_frame_data.timestamp_eof);
   thumbnaild.setThumbnail(kj::arrayPtr((const uint8_t*)thumbnail_buffer, thumbnail_len));
 
@@ -408,7 +408,7 @@ void common_camera_process_front(SubMaster *sm, PubMaster *pm, CameraState *c, i
 
   MessageBuilder msg;
   auto framed = msg.initEvent().initDriverCameraState();
-  framed.setRoadCameraStateType(cereal::FrameData::FrameType::FRONT);
+  framed.setFrameType(cereal::FrameData::FrameType::FRONT);
   fill_frame_data(framed, b->cur_frame_data);
   if (env_send_front) {
     framed.setImage(get_frame_image(b));

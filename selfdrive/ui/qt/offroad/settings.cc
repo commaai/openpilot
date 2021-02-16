@@ -20,7 +20,7 @@
 
 QFrame* horizontal_line(QWidget* parent = 0){
   QFrame* line = new QFrame(parent);
-  line->setRoadCameraStateShape(QFrame::StyledPanel);
+  line->setFrameShape(QFrame::StyledPanel);
   line->setStyleSheet("margin-left: 40px; margin-right: 40px; border-width: 1px; border-bottom-style: solid; border-color: gray;");
   line->setFixedHeight(2);
   return line;

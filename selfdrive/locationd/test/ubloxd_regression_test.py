@@ -48,8 +48,8 @@ def compare_results(dir1, dir2):
       old_gps = events1[i].gpsLocationExternal
       gps = events2[i].gpsLocationExternal
       # print(gps, old_gps)
-      attrs = ['flags', 'latitude', 'longitude', 'altitude', 'speed', 'bearing',
-               'accuracy', 'timestamp', 'source', 'vNED', 'verticalAccuracy', 'bearingAccuracy', 'speedAccuracy']
+      attrs = ['flags', 'latitude', 'longitude', 'altitude', 'speed', 'bearingDeg',
+               'accuracy', 'timestamp', 'source', 'vNED', 'verticalAccuracy', 'bearingAccuracyDeg', 'speedAccuracy']
       for attr in attrs:
         o = getattr(old_gps, attr)
         n = getattr(gps, attr)

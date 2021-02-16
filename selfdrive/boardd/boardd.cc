@@ -341,10 +341,10 @@ void panda_state_thread(bool spoofing_started) {
     ignition_last = ignition;
     uint16_t fan_speed_rpm = panda->get_fan_speed();
 
-    // set fields
+    // build msg
     MessageBuilder msg;
     auto ps = msg.initEvent().initPandaState();
-    pandaState.setUptime(pandaState.uptime);
+    ps.setUptime(pandaState.uptime);
 
 #ifdef QCOM2
     ps.setVoltage(std::stoi(util::read_file("/sys/class/hwmon/hwmon1/in1_input")));

@@ -153,11 +153,11 @@ void Unlogger::process() {
         auto ee = msg.getRoot<cereal::Event>();
         ee.setLogMonoTime(nanos_since_boot());
 
-        if (e.which() == cereal::Event::FRAME) {
+        if (e.which() == cereal::Event::ROAD_CAMERA_STATE) {
           auto fr = msg.getRoot<cereal::Event>().getRoadCameraState();
 
           // TODO: better way?
-          auto it = eidx.find(fr.getRoadCameraStateId());
+          auto it = eidx.find(fr.getFrameId());
           if (it != eidx.end()) {
             auto pp = *it;
             //qDebug() << fr.getRoadCameraStateId() << pp;
