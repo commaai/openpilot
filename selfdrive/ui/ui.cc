@@ -274,6 +274,10 @@ static void update_vision(UIState *s) {
     VisionBuf * buf = s->vipc_client->recv();
     if (buf != nullptr){
       s->last_frame = buf;
+    } else {
+#if defined(QCOM) || defined(QCOM2)
+      LOGE("visionIPC receive timeout");
+#endif
     }
   }
 }
