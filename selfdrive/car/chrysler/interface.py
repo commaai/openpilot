@@ -67,7 +67,7 @@ class CarInterface(CarInterfaceBase):
     ret.canValid = self.cp.can_valid and self.cp_cam.can_valid
 
     # speeds
-    ret.steeringRateLimited = self.CC.steer_rate_limited if self.CC is not None else False
+    ret.steeringRateDegLimited = self.CC.steer_rate_limited if self.CC is not None else False
 
     # events
     events = self.create_common_events(ret, extra_gears=[car.CarState.GearShifter.low],

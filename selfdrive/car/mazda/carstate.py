@@ -43,7 +43,7 @@ class CarState(CarStateBase):
     ret.steeringPressed = abs(ret.steeringTorque) > LKAS_LIMITS.STEER_THRESHOLD
 
     ret.steeringTorqueEps = cp.vl["STEER_TORQUE"]['STEER_TORQUE_MOTOR']
-    ret.steeringRate = cp.vl["STEER_RATE"]['STEER_ANGLE_RATE']
+    ret.steeringRateDeg = cp.vl["STEER_RATE"]['STEER_ANGLE_RATE']
 
     ret.brakePressed = cp.vl["PEDALS"]['BRAKE_ON'] == 1
     ret.brake = cp.vl["BRAKE"]['BRAKE_PRESSURE']

@@ -86,7 +86,7 @@ class LatControlLQR():
       self.output_steer = lqr_output + self.i_lqr
       self.output_steer = clip(self.output_steer, -steers_max, steers_max)
 
-    check_saturation = (CS.vEgo > 10) and not CS.steeringRateLimited and not CS.steeringPressed
+    check_saturation = (CS.vEgo > 10) and not CS.steeringRateDegLimited and not CS.steeringPressed
     saturated = self._check_saturation(self.output_steer, check_saturation, steers_max)
 
     lqr_log.steerAngle = angle_steers_k + path_plan.angleOffset

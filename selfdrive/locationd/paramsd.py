@@ -89,7 +89,7 @@ def main(sm=None, pm=None):
       params = None
 
   if (params is not None) and not all((
-      abs(params['angleOffsetAverage']) < 10.0,
+      abs(params['angleOffsetDegAverageDeg']) < 10.0,
       min_sr <= params['steerRatio'] <= max_sr)):
     cloudlog.info(f"Invalid starting values found {params}")
     params = None
@@ -99,7 +99,7 @@ def main(sm=None, pm=None):
       'carFingerprint': CP.carFingerprint,
       'steerRatio': CP.steerRatio,
       'stiffnessFactor': 1.0,
-      'angleOffsetAverage': 0.0,
+      'angleOffsetDegAverageDeg': 0.0,
     }
     cloudlog.info("Parameter learner resetting to default values")
 
@@ -107,7 +107,7 @@ def main(sm=None, pm=None):
   # Without a way to detect this we have to reset the stiffness every drive
   params['stiffnessFactor'] = 1.0
 
-  learner = ParamsLearner(CP, params['steerRatio'], params['stiffnessFactor'], math.radians(params['angleOffsetAverage']))
+  learner = ParamsLearner(CP, params['steerRatio'], params['stiffnessFactor'], math.radians(params['angleOffsetDegAverageDeg']))
 
   while True:
     sm.update()
@@ -127,10 +127,10 @@ def main(sm=None, pm=None):
       x = learner.kf.x
       msg.liveParameters.steerRatio = float(x[States.STEER_RATIO])
       msg.liveParameters.stiffnessFactor = float(x[States.STIFFNESS])
-      msg.liveParameters.angleOffsetAverage = math.degrees(x[States.ANGLE_OFFSET])
-      msg.liveParameters.angleOffset = msg.liveParameters.angleOffsetAverage + math.degrees(x[States.ANGLE_OFFSET_FAST])
+      msg.liveParameters.angleOffsetDegAverageDeg = math.degrees(x[States.ANGLE_OFFSET])
+      msg.liveParameters.angleOffset = msg.liveParameters.angleOffsetDegAverageDeg + math.degrees(x[States.ANGLE_OFFSET_FAST])
       msg.liveParameters.valid = all((
-        abs(msg.liveParameters.angleOffsetAverage) < 10.0,
+        abs(msg.liveParameters.angleOffsetDegAverageDeg) < 10.0,
         abs(msg.liveParameters.angleOffset) < 10.0,
         0.2 <= msg.liveParameters.stiffnessFactor <= 5.0,
         min_sr <= msg.liveParameters.steerRatio <= max_sr,
@@ -141,7 +141,7 @@ def main(sm=None, pm=None):
           'carFingerprint': CP.carFingerprint,
           'steerRatio': msg.liveParameters.steerRatio,
           'stiffnessFactor': msg.liveParameters.stiffnessFactor,
-          'angleOffsetAverage': msg.liveParameters.angleOffsetAverage,
+          'angleOffsetDegAverageDeg': msg.liveParameters.angleOffsetDegAverageDeg,
         }
         put_nonblocking("LiveParameters", json.dumps(params))
 

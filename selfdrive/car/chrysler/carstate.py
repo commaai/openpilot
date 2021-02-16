@@ -43,7 +43,7 @@ class CarState(CarStateBase):
     ret.leftBlinker = cp.vl["STEERING_LEVERS"]['TURN_SIGNALS'] == 1
     ret.rightBlinker = cp.vl["STEERING_LEVERS"]['TURN_SIGNALS'] == 2
     ret.steeringAngle = cp.vl["STEERING"]['STEER_ANGLE']
-    ret.steeringRate = cp.vl["STEERING"]['STEERING_RATE']
+    ret.steeringRateDeg = cp.vl["STEERING"]['STEERING_RATE']
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(cp.vl['GEAR']['PRNDL'], None))
 
     ret.cruiseState.enabled = cp.vl["ACC_2"]['ACC_STATUS_2'] == 7  # ACC is green.
