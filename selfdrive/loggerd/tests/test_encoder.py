@@ -27,9 +27,9 @@ if EON:
   ]
 else:
   CAMERAS = [
-    ("fcamera.hevc", 20, FULL_SIZE),
-    ("dcamera.hevc", 20, FULL_SIZE),
-    ("ecamera.hevc", 20, FULL_SIZE),
+    ("fcamera.hevc", 20, FULL_SIZE*2),
+    ("dcamera.hevc", 20, FULL_SIZE*2),
+    ("ecamera.hevc", 20, FULL_SIZE*2),
     ("qcamera.ts", 20, 77066),
   ]
 
