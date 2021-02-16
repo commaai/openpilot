@@ -100,7 +100,7 @@ void LogReader::mergeEvents(int dled) {
       // TODO: rewrite with callback
       if (event.which() == cereal::Event::ENCODE_IDX) {
         auto ee = event.getEncodeIdx();
-        eidx_local.insert(ee.getFrameId(), qMakePair(ee.getSegmentNum(), ee.getSegmentId()));
+        eidx_local.insert(ee.getRoadCameraStateId(), qMakePair(ee.getSegmentNum(), ee.getSegmentId()));
       }
 
       // increment

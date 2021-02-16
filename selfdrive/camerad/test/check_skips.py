@@ -2,7 +2,7 @@
 # type: ignore
 import cereal.messaging as messaging
 
-all_sockets = ['frame','frontFrame','wideFrame']
+all_sockets = ['frame','driverCameraState','wideRoadCameraState']
 prev_id = [None,None,None]
 this_id = [None,None,None]
 dt = [None,None,None]

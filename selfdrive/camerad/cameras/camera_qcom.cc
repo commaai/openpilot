@@ -307,7 +307,7 @@ void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_i
   s->front.device = s->device;
 
   s->sm_front = new SubMaster({"driverState"});
-  s->pm = new PubMaster({"frame", "frontFrame", "thumbnail"});
+  s->pm = new PubMaster({"frame", "driverCameraState", "thumbnail"});
 
   for (int i = 0; i < FRAME_BUF_COUNT; i++) {
     // TODO: make lengths correct

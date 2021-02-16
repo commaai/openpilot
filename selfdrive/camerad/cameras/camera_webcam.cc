@@ -226,7 +226,7 @@ void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_i
               VISION_STREAM_RGB_BACK, VISION_STREAM_YUV_BACK);
   camera_init(v, &s->front, CAMERA_ID_LGC615, 10, device_id, ctx,
               VISION_STREAM_RGB_FRONT, VISION_STREAM_YUV_FRONT);
-  s->pm = new PubMaster({"frame", "frontFrame", "thumbnail"});
+  s->pm = new PubMaster({"frame", "driverCameraState", "thumbnail"});
 }
 
 void camera_autoexposure(CameraState *s, float grey_frac) {}
@@ -247,10 +247,10 @@ void cameras_close(MultiCameraState *s) {
 
 void camera_process_front(MultiCameraState *s, CameraState *c, int cnt) {
   MessageBuilder msg;
-  auto framed = msg.initEvent().initFrontFrame();
-  framed.setFrameType(cereal::FrameData::FrameType::FRONT);
+  auto framed = msg.initEvent().initDriverCameraState();
+  framed.setRoadCameraStateType(cereal::FrameData::FrameType::FRONT);
   fill_frame_data(framed, c->buf.cur_frame_data);
-  s->pm->send("frontFrame", msg);
+  s->pm->send("driverCameraState", msg);
 }
 
 void camera_process_rear(MultiCameraState *s, CameraState *c, int cnt) {

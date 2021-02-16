@@ -173,7 +173,7 @@ void dmonitoring_publish(PubMaster &pm, uint32_t frame_id, const DMonitoringResu
   // make msg
   MessageBuilder msg;
   auto framed = msg.initEvent().initDriverState();
-  framed.setFrameId(frame_id);
+  framed.setRoadCameraStateId(frame_id);
   framed.setModelExecutionTime(execution_time);
   framed.setDspExecutionTime(res.dsp_execution_time);
 

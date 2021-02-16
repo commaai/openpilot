@@ -434,7 +434,7 @@ void hardware_control_thread() {
     }
     if (sm.updated("driverCameraState")){
       auto event = sm["driverCameraState"];
-      int cur_integ_lines = event.getFrontFrame().getIntegLines();
+      int cur_integ_lines = event.getDriverCameraState().getIntegLines();
       last_front_frame_t = event.getLogMonoTime();
 
       if (cur_integ_lines <= CUTOFF_IL) {
