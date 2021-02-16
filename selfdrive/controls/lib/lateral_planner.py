@@ -234,7 +234,7 @@ class LateralPlanner():
 
     plan_send.lateralPlan.steeringAngleDeg = float(self.desired_steering_wheel_angle_deg)
     plan_send.lateralPlan.steeringRateDeg = float(self.desired_steering_wheel_angle_rate_deg)
-    plan_send.lateralPlan.angleOffsetDeg = float(sm['liveParameters'].angleOffsetDeg)
+    plan_send.lateralPlan.angleOffsetDeg = float(sm['liveParameters'].angleOffsetAverageDeg)
     plan_send.lateralPlan.mpcSolutionValid = bool(plan_solution_valid)
 
     plan_send.lateralPlan.desire = self.desire
