@@ -445,7 +445,7 @@ bool WifiManager::activate_tethering_connection(){
 
   for(QDBusObjectPath path : list_connections()){
     QDBusInterface nm2(nm_service, path.path(), nm_settings_conn_iface, bus);
-    nm2.setTimeout(100);
+    nm2.setTimeout(dbus_timeout);
 
     QDBusMessage response = nm2.call("GetSettings");
     const QDBusArgument &dbusArg = response.arguments().at(0).value<QDBusArgument>();
@@ -458,7 +458,7 @@ bool WifiManager::activate_tethering_connection(){
         if (key == "ssid") {
           if (val == tethering_ssid.toUtf8()) {
             QDBusInterface nm3(nm_service, nm_path, nm_iface, bus);
-            nm3.setTimeout(100);
+            nm3.setTimeout(dbus_timeout);
             nm3.call("ActivateConnection", QVariant::fromValue(path), QVariant::fromValue(QDBusObjectPath(devicePath)), QVariant::fromValue(QDBusObjectPath("/")));
             return true;
           }
