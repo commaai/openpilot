@@ -6,6 +6,7 @@ import time
 import os
 import requests
 import zipfile
+from io import BytesIO
 
 from panda import BASEDIR as PANDA_BASEDIR
 
@@ -39,8 +40,9 @@ def flash_signed_firmware():
 
     time.sleep(0.5)
 
-  download_file("https://github.com/commaai/panda-artifacts/blob/master/panda-v1.7.3-DEV-d034f3e9-RELEASE.zip?raw=true", "firmware.zip")
-  with zipfile.ZipFile("firmware.zip") as zip_file:
+  fp = BytesIO(download_file("https://github.com/commaai/panda-artifacts/blob/master/panda-v1.7.3-DEV-d034f3e9-RELEASE.zip?raw=true"))
+
+  with zipfile.ZipFile(fp) as zip_file:
     # Flash bootstub
     bootstub_code = zip_file.open('bootstub.panda.bin').read()
     PandaDFU(None).program_bootstub(bootstub_code)
@@ -54,10 +56,8 @@ def flash_signed_firmware():
     firmware_code = zip_file.open('panda.bin').read()
     Panda().flash(code=firmware_code)
 
-def download_file(url, location = None):
+def download_file(url):
   r = requests.get(url, allow_redirects=True)
-  if location is not None:
-    open(location, 'wb').write(r.content)
   return r.content
 
 class TestPandaFlashing(unittest.TestCase):
@@ -119,6 +119,7 @@ class TestPandaFlashing(unittest.TestCase):
     flash_signed_firmware()
     panda = Panda(Panda.list()[0])
     comma_sig = panda.get_signature()
+    panda.close()
     # Now we should flash the development firmware then find it doesn't run due to the signature and reflash the dev bootloader and firmware
     os.system("export BASEDIR=\"/home/batman/openpilot/\"; ./fix_panda")
     # In the end we want no DFU pandas and one running panda
