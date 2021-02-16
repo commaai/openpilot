@@ -390,7 +390,7 @@ void can_health_thread(bool spoofing_started) {
 
 void hardware_control_thread() {
   LOGD("start hardware control thread");
-  SubMaster sm({"thermal", "frontFrame"});
+  SubMaster sm({"deviceState", "driverCameraState"});
 
   uint64_t last_front_frame_t = 0;
   uint16_t prev_fan_speed = 999;
@@ -406,9 +406,9 @@ void hardware_control_thread() {
     sm.update(1000); // TODO: what happens if EINTR is sent while in sm.update?
 
 #ifdef QCOM
-    if (sm.updated("thermal")){
+    if (sm.updated("deviceState")){
       // Charging mode
-      bool charging_disabled = sm["thermal"].getThermal().getChargingDisabled();
+      bool charging_disabled = sm["deviceState"].getDeviceState().getChargingDisabled();
       if (charging_disabled != prev_charging_disabled){
         if (charging_disabled){
           panda->set_usb_power_mode(cereal::HealthData::UsbPowerMode::CLIENT);
@@ -424,16 +424,16 @@ void hardware_control_thread() {
 
     // Other pandas don't have fan/IR to control
     if (panda->hw_type != cereal::HealthData::PandaType::UNO && panda->hw_type != cereal::HealthData::PandaType::DOS) continue;
-    if (sm.updated("thermal")){
+    if (sm.updated("deviceState")){
       // Fan speed
-      uint16_t fan_speed = sm["thermal"].getThermal().getFanSpeedPercentDesired();
+      uint16_t fan_speed = sm["deviceState"].getDeviceState().getFanSpeedPercentDesired();
       if (fan_speed != prev_fan_speed || cnt % 100 == 0){
         panda->set_fan_speed(fan_speed);
         prev_fan_speed = fan_speed;
       }
     }
-    if (sm.updated("frontFrame")){
-      auto event = sm["frontFrame"];
+    if (sm.updated("driverCameraState")){
+      auto event = sm["driverCameraState"];
       int cur_integ_lines = event.getFrontFrame().getIntegLines();
       last_front_frame_t = event.getLogMonoTime();
 

@@ -35,22 +35,22 @@ class TestAthenadMethods(unittest.TestCase):
     with self.assertRaises(TimeoutError) as _:
       dispatcher["getMessage"]("controlsState")
 
-    def send_thermal():
+    def send_deviceState():
       messaging.context = messaging.Context()
-      pub_sock = messaging.pub_sock("thermal")
+      pub_sock = messaging.pub_sock("deviceState")
       start = time.time()
 
       while time.time() - start < 1:
-        msg = messaging.new_message('thermal')
+        msg = messaging.new_message('deviceState')
         pub_sock.send(msg.to_bytes())
         time.sleep(0.01)
 
-    p = Process(target=send_thermal)
+    p = Process(target=send_deviceState)
     p.start()
     time.sleep(0.1)
     try:
-      thermal = dispatcher["getMessage"]("thermal")
-      assert thermal['thermal']
+      deviceState = dispatcher["getMessage"]("deviceState")
+      assert deviceState['deviceState']
     finally:
       p.terminate()
 

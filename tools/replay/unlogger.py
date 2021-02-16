@@ -313,7 +313,7 @@ def absolute_time_str(s, start_time):
 def _get_address_mapping(args):
   if args.min is not None:
     services_to_mock = [
-      'thermal', 'can', 'health', 'sensorEvents', 'gpsNMEA', 'frame', 'encodeIdx',
+      'deviceState', 'can', 'health', 'sensorEvents', 'gpsNMEA', 'frame', 'encodeIdx',
       'model', 'features', 'liveLocation',
     ]
   elif args.enabled is not None:

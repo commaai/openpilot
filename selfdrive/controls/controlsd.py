@@ -32,7 +32,7 @@ SIMULATION = "SIMULATION" in os.environ
 NOSENSOR = "NOSENSOR" in os.environ
 IGNORE_PROCESSES = set(["rtshield", "uploader", "deleter", "loggerd", "logmessaged", "tombstoned", "logcatd", "proclogd", "clocksd", "updated", "timezoned"])
 
-ThermalStatus = log.ThermalData.ThermalStatus
+ThermalStatus = log.DeviceState.ThermalStatus
 State = log.ControlsState.OpenpilotState
 PandaType = log.HealthData.PandaType
 LongitudinalPlanSource = log.LongitudinalPlan.LongitudinalPlanSource
@@ -55,7 +55,7 @@ class Controls:
     self.sm = sm
     if self.sm is None:
       ignore = ['ubloxRaw', 'frontFrame', 'managerState'] if SIMULATION else None
-      self.sm = messaging.SubMaster(['thermal', 'health', 'modelV2', 'liveCalibration', 'ubloxRaw',
+      self.sm = messaging.SubMaster(['deviceState', 'health', 'modelV2', 'liveCalibration', 'ubloxRaw',
                                      'driverMonitoringState', 'longitudinalPlan', 'lateralPlan', 'liveLocationKalman',
                                      'frame', 'frontFrame', 'managerState', 'liveParameters', 'radarState'], ignore_alive=ignore)
 
@@ -127,7 +127,7 @@ class Controls:
     self.logged_comm_issue = False
 
     self.sm['liveCalibration'].calStatus = Calibration.CALIBRATED
-    self.sm['thermal'].freeSpacePercent = 1.
+    self.sm['deviceState'].freeSpacePercent = 1.
     self.sm['driverMonitoringState'].events = []
     self.sm['driverMonitoringState'].awarenessStatus = 1.
     self.sm['driverMonitoringState'].faceDetected = False
@@ -158,20 +158,20 @@ class Controls:
       self.startup_event = None
 
     # Create events for battery, temperature, disk space, and memory
-    if self.sm['thermal'].batteryPercent < 1 and self.sm['thermal'].chargingError:
+    if self.sm['deviceState'].batteryPercent < 1 and self.sm['deviceState'].chargingError:
       # at zero percent battery, while discharging, OP should not allowed
       self.events.add(EventName.lowBattery)
-    if self.sm['thermal'].thermalStatus >= ThermalStatus.red:
+    if self.sm['deviceState'].thermalStatus >= ThermalStatus.red:
       self.events.add(EventName.overheat)
-    if self.sm['thermal'].freeSpacePercent < 0.07:
+    if self.sm['deviceState'].freeSpacePercent < 0.07:
       # under 7% of space free no enable allowed
       self.events.add(EventName.outOfSpace)
-    if self.sm['thermal'].memoryUsagePercent  > 90:
+    if self.sm['deviceState'].memoryUsagePercent  > 90:
       self.events.add(EventName.lowMemory)
 
     # Alert if fan isn't spinning for 5 seconds
     if self.sm['health'].pandaType in [PandaType.uno, PandaType.dos]:
-      if self.sm['health'].fanSpeedRpm == 0 and self.sm['thermal'].fanSpeedPercentDesired > 50:
+      if self.sm['health'].fanSpeedRpm == 0 and self.sm['deviceState'].fanSpeedPercentDesired > 50:
         if (self.sm.frame - self.last_functional_fan_frame) * DT_CTRL > 5.0:
           self.events.add(EventName.fanMalfunction)
       else:
