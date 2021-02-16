@@ -1,6 +1,8 @@
 Import('env', 'envCython', 'common', 'cereal', 'messaging')
 
-env.Program('tests/fix_panda', ['tests/fix_panda.cc', 'panda.cc', 'panda_flashing.cc'], LIBS=['usb-1.0', common, cereal, messaging, 'pthread', 'zmq', 'capnp', 'kj'])
+if GetOption('test'):
+  env.Program('tests/fix_panda', ['tests/fix_panda.cc', 'panda.cc', 'panda_flashing.cc'], LIBS=['usb-1.0', common, cereal, messaging, 'pthread', 'zmq', 'capnp', 'kj'])
+
 env.Program('boardd', ['boardd.cc', 'panda.cc', 'panda_flashing.cc', 'pigeon.cc'], LIBS=['usb-1.0', common, cereal, messaging, 'pthread', 'zmq', 'capnp', 'kj'])
 env.Library('libcan_list_to_can_capnp', ['can_list_to_can_capnp.cc'])
 
