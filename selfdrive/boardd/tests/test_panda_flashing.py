@@ -4,6 +4,8 @@ from panda import *
 import unittest
 import time
 import os
+import requests
+import zipfile
 
 from panda import BASEDIR as PANDA_BASEDIR
 
@@ -37,18 +39,26 @@ def flash_signed_firmware():
 
     time.sleep(0.5)
 
-  # Flash bootstub
-  bootstub_code = open('bootstub.panda.bin', 'rb').read()
-  PandaDFU(None).program_bootstub(bootstub_code)
+  download_file("https://github.com/commaai/panda-artifacts/blob/master/panda-v1.7.3-DEV-d034f3e9-RELEASE.zip?raw=true", "firmware.zip")
+  with zipfile.ZipFile("firmware.zip") as zip_file:
+    # Flash bootstub
+    bootstub_code = zip_file.open('bootstub.panda.bin').read()
+    PandaDFU(None).program_bootstub(bootstub_code)
 
-  # Wait for panda to come back online
-  while not Panda.list():
-    print("Waiting for Panda")
-    time.sleep(0.5)
+    # Wait for panda to come back online
+    while not Panda.list():
+      print("Waiting for Panda")
+      time.sleep(0.5)
 
-  # Flash firmware
-  firmware_code = open('panda.bin', 'rb').read()
-  Panda().flash(code=firmware_code)
+    # Flash firmware
+    firmware_code = zip_file.open('panda.bin').read()
+    Panda().flash(code=firmware_code)
+
+def download_file(url, location = None):
+  r = requests.get(url, allow_redirects=True)
+  if location is not None:
+    open(location, 'wb').write(r.content)
+  return r.content
 
 class TestPandaFlashing(unittest.TestCase):
   def setUp(self):
