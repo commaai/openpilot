@@ -188,7 +188,7 @@ class LateralPlanner():
     next_curvature = interp(delay, self.t_idxs[:MPC_N+1], self.mpc_solution.curvature)
     psi = interp(delay, self.t_idxs[:MPC_N+1], self.mpc_solution.psi)
     next_curvature_rate = self.mpc_solution.curvature_rate[0]
-    next_curvature_from_psi = psi/(v_ego*delay)
+    next_curvature_from_psi = psi/(max(v_ego, 1e-1) * delay)
     if psi > self.mpc_solution.curvature[0] * delay * v_ego:
       next_curvature = max(next_curvature_from_psi, next_curvature)
     else:
