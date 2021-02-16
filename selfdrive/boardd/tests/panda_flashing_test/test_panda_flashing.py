@@ -106,7 +106,7 @@ class TestPandaFlashing(unittest.TestCase):
     self.assertEqual(len(PandaDFU.list()), 1)
     self.assertEqual(len(Panda.list()), 0)
     # Run the C++ panda flasher, takes a bit of time
-    os.system("export BASEDIR=\"/home/batman/openpilot/\"; ./fix_panda")
+    os.system("export BASEDIR=\"/home/batman/openpilot/\"; ./../fix_panda")
     # Now we should have one panda and 0 DFU pandas
     self.assertEqual(len(Panda.list()), 1)
     self.assertEqual(len(PandaDFU.list()), 0)
@@ -122,7 +122,7 @@ class TestPandaFlashing(unittest.TestCase):
     comma_sig = panda.get_signature()
     panda.close()
     # Now we should flash the development firmware then find it doesn't run due to the signature and reflash the dev bootloader and firmware
-    os.system("export BASEDIR=\"/home/batman/openpilot/\"; ./fix_panda")
+    os.system("export BASEDIR=\"/home/batman/openpilot/\"; ./../fix_panda")
     # In the end we want no DFU pandas and one running panda
     self.assertEqual(len(PandaDFU.list()), 0)
     self.assertEqual(len(Panda.list()), 1)
@@ -140,11 +140,11 @@ class TestPandaFlashing(unittest.TestCase):
     flash_signed_firmware()
     # We load the signed firmware so that the C++ installer can use it
     # More reliable wget (https://superuser.com/questions/493640/how-to-retry-connections-with-wget)
-    os.system("cd ../../../panda/board/obj/; wget --retry-connrefused --waitretry=5 --timeout=30 \"https://github.com/commaai/openpilot/blob/release2/panda/board/obj/panda.bin.signed?raw=true\" -O panda.bin.signed")
+    os.system("cd ../../../../panda/board/obj/; wget --retry-connrefused --waitretry=5 --timeout=30 \"https://github.com/commaai/openpilot/blob/release2/panda/board/obj/panda.bin.signed?raw=true\" -O panda.bin.signed")
     # Run the panda flasher. It should install the signed firmware
-    os.system("export BASEDIR=\"/home/batman/openpilot/\"; ./fix_panda")
+    os.system("export BASEDIR=\"/home/batman/openpilot/\"; ./../fix_panda")
     # Remove the signed firmware
-    os.system("rm ../../../panda/board/obj/panda.bin.signed")
+    os.system("rm ../../../../panda/board/obj/panda.bin.signed")
     # In the end we want no DFU pandas and one running panda
     self.assertEqual(len(PandaDFU.list()), 0)
     self.assertEqual(len(Panda.list()), 1)

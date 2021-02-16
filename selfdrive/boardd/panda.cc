@@ -262,7 +262,7 @@ void DynamicPanda::flash(std::string fw_fn) {
 
   std::string code = util::read_file(fw_fn);
   unsigned char code_data[code.length()];
-  for(int i = 0 ; i < code.length() ; i++) {
+  for (int i = 0 ; i < code.length() ; i++) {
     code_data[i]=code[i];
   }
   std::cout<<"Firmware code length: "<<code.length()<<std::endl;
@@ -291,7 +291,7 @@ void DynamicPanda::flash(std::string fw_fn) {
   }
   //reset
   std::cout<<"flash: resetting"<<std::endl;
-  try{
+  try {
     c->control_write(REQUEST_IN, 0xd8, 0, 0, nullptr, 0);
   } catch (std::runtime_error &e) {}
 
@@ -301,16 +301,16 @@ void DynamicPanda::flash(std::string fw_fn) {
 void DynamicPanda::reconnect() {
   util::sleep_for(1000);
   for (int i = 0 ; i < 15 ; i++) {
-    try{
+    try {
      connect();
      return;
-    }catch(std::runtime_error &e) {
+    } catch(std::runtime_error &e) {
       std::cout<<"reconnecting is taking "<<i+1<<" seconds..."<<std::endl;
       PandaComm* dfu;
-      try{
+      try {
         dfu = new PandaComm(0x0483, 0xdf11);
         dfu_recover(dfu);
-      }catch(std::runtime_error &e) {}
+      } catch(std::runtime_error &e) {}
       delete(dfu);
       util::sleep_for(1000);
     }
@@ -353,7 +353,7 @@ void DynamicPanda::recover() {
     } catch(std::runtime_error &e) {};
     
     std::cout<<"Looking for panda"<<std::endl;
-    util::sleep_for(1000);
+    util::sleep_for(100);
   } while(!pandaExists);
 
   flash(get_firmware_fn());
