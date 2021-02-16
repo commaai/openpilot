@@ -55,7 +55,7 @@ class CarController():
         )
 
     else:
-      apply_angle = CS.out.steeringAngle
+      apply_angle = CS.out.steeringAngleDeg
       self.lkas_max_torque = 0
 
     self.last_angle = apply_angle

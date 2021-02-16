@@ -274,7 +274,7 @@ void panda_state_thread(bool spoofing_started) {
   // Broadcast empty pandaState message when panda is not yet connected
   while (!do_exit && !panda) {
     MessageBuilder msg;
-    auto pandaState  = msg.initEvent().initHealth();
+    auto pandaState  = msg.initEvent().initPandaState();
 
     pandaState.setPandaType(cereal::PandaState::PandaType::UNKNOWN);
     pm.send("pandaState", msg);
@@ -343,36 +343,36 @@ void panda_state_thread(bool spoofing_started) {
 
     // set fields
     MessageBuilder msg;
-    auto pandaState = msg.initEvent().initHealth();
+    auto ps = msg.initEvent().initPandaState();
     pandaState.setUptime(pandaState.uptime);
 
 #ifdef QCOM2
-    pandaState.setVoltage(std::stoi(util::read_file("/sys/class/hwmon/hwmon1/in1_input")));
-    pandaState.setCurrent(std::stoi(util::read_file("/sys/class/hwmon/hwmon1/curr1_input")));
+    ps.setVoltage(std::stoi(util::read_file("/sys/class/hwmon/hwmon1/in1_input")));
+    ps.setCurrent(std::stoi(util::read_file("/sys/class/hwmon/hwmon1/curr1_input")));
 #else
-    pandaState.setVoltage(pandaState.voltage);
-    pandaState.setCurrent(pandaState.current);
+    ps.setVoltage(pandaState.voltage);
+    ps.setCurrent(pandaState.current);
 #endif
 
-    pandaState.setIgnitionLine(pandaState.ignition_line);
-    pandaState.setIgnitionCan(pandaState.ignition_can);
-    pandaState.setControlsAllowed(pandaState.controls_allowed);
-    pandaState.setGasInterceptorDetected(pandaState.gas_interceptor_detected);
-    pandaState.setHasGps(panda->is_pigeon);
-    pandaState.setCanRxErrs(pandaState.can_rx_errs);
-    pandaState.setCanSendErrs(pandaState.can_send_errs);
-    pandaState.setCanFwdErrs(pandaState.can_fwd_errs);
-    pandaState.setGmlanSendErrs(pandaState.gmlan_send_errs);
-    pandaState.setPandaType(panda->hw_type);
-    pandaState.setUsbPowerMode(cereal::PandaState::UsbPowerMode(pandaState.usb_power_mode));
-    pandaState.setSafetyModel(cereal::CarParams::SafetyModel(pandaState.safety_model));
-    pandaState.setFanSpeedRpm(fan_speed_rpm);
-    pandaState.setFaultStatus(cereal::PandaState::FaultStatus(pandaState.fault_status));
-    pandaState.setPowerSaveEnabled((bool)(pandaState.power_save_enabled));
+    ps.setIgnitionLine(pandaState.ignition_line);
+    ps.setIgnitionCan(pandaState.ignition_can);
+    ps.setControlsAllowed(pandaState.controls_allowed);
+    ps.setGasInterceptorDetected(pandaState.gas_interceptor_detected);
+    ps.setHasGps(panda->is_pigeon);
+    ps.setCanRxErrs(pandaState.can_rx_errs);
+    ps.setCanSendErrs(pandaState.can_send_errs);
+    ps.setCanFwdErrs(pandaState.can_fwd_errs);
+    ps.setGmlanSendErrs(pandaState.gmlan_send_errs);
+    ps.setPandaType(panda->hw_type);
+    ps.setUsbPowerMode(cereal::PandaState::UsbPowerMode(pandaState.usb_power_mode));
+    ps.setSafetyModel(cereal::CarParams::SafetyModel(pandaState.safety_model));
+    ps.setFanSpeedRpm(fan_speed_rpm);
+    ps.setFaultStatus(cereal::PandaState::FaultStatus(pandaState.fault_status));
+    ps.setPowerSaveEnabled((bool)(pandaState.power_save_enabled));
 
     // Convert faults bitset to capnp list
     std::bitset<sizeof(pandaState.faults) * 8> fault_bits(pandaState.faults);
-    auto faults = pandaState.initFaults(fault_bits.count());
+    auto faults = ps.initFaults(fault_bits.count());
 
     size_t i = 0;
     for (size_t f = size_t(cereal::PandaState::FaultType::RELAY_MALFUNCTION);

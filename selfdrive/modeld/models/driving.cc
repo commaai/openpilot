@@ -267,9 +267,9 @@ void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id, flo
   const uint32_t frame_age = (frame_id > vipc_frame_id) ? (frame_id - vipc_frame_id) : 0;
   MessageBuilder msg;
   auto framed = msg.initEvent().initModelV2();
-  framed.setRoadCameraStateId(vipc_frame_id);
-  framed.setRoadCameraStateAge(frame_age);
-  framed.setRoadCameraStateDropPerc(frame_drop * 100);
+  framed.setFrameId(vipc_frame_id);
+  framed.setFrameAge(frame_age);
+  framed.setFrameDropPerc(frame_drop * 100);
   framed.setTimestampEof(timestamp_eof);
   framed.setModelExecutionTime(model_execution_time);
   if (send_raw_pred) {

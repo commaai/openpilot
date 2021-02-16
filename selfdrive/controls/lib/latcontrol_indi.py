@@ -83,7 +83,7 @@ class LatControlINDI():
   def update(self, active, CS, CP, path_plan):
     self.speed = CS.vEgo
     # Update Kalman filter
-    y = np.array([[math.radians(CS.steeringAngle)], [math.radians(CS.steeringRateDeg)]])
+    y = np.array([[math.radians(CS.steeringAngleDeg)], [math.radians(CS.steeringRateDeg)]])
     self.x = np.dot(self.A_K, self.x) + np.dot(self.K, y)
 
     indi_log = log.ControlsState.LateralINDIState.new_message()

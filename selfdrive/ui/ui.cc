@@ -165,7 +165,7 @@ static void update_sockets(UIState *s) {
     scene.deviceState = sm["deviceState"].getDeviceState();
   }
   if (sm.updated("pandaState")) {
-    auto pandaState = sm["pandaState"].getHealth();
+    auto pandaState = sm["pandaState"].getPandaState();
     scene.pandaType = pandaState.getPandaType();
     s->ignition = pandaState.getIgnitionLine() || pandaState.getIgnitionCan();
   } else if ((s->sm->frame - s->sm->rcv_frame("pandaState")) > 5*UI_FREQ) {

@@ -83,7 +83,7 @@ class LateralPlanner():
     v_ego = sm['carState'].vEgo
     active = sm['controlsState'].active
     steering_wheel_angle_offset_deg = sm['liveParameters'].angleOffset
-    steering_wheel_angle_deg = sm['carState'].steeringAngle
+    steering_wheel_angle_deg = sm['carState'].steeringAngleDeg
 
     # Update vehicle model
     x = max(sm['liveParameters'].stiffnessFactor, 0.1)
