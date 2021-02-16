@@ -18,7 +18,7 @@ MM_SIM = MM + ".Sim"
 
 MM_MODEM_STATE_CONNECTED = 11
 
-TIMEOUT = 10
+TIMEOUT = 0.1
 
 NetworkType = log.ThermalData.NetworkType
 NetworkStrength = log.ThermalData.NetworkStrength
