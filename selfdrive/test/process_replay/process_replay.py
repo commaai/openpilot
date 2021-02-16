@@ -221,7 +221,7 @@ CONFIGS = [
     proc_name="controlsd",
     pub_sub={
       "can": ["controlsState", "carState", "carControl", "sendcan", "carEvents", "carParams"],
-      "thermal": [], "health": [], "liveCalibration": [], "driverMonitoringState": [], "longitudinalPlan": [], "lateralPlan": [], "gpsLocation": [], "liveLocationKalman": [], "liveParameters": [], "radarState": [],
+      "thermal": [], "health": [], "liveCalibration": [], "driverMonitoringState": [], "longitudinalPlan": [], "lateralPlan": [], "liveLocationKalman": [], "liveParameters": [], "radarState": [],
       "modelV2": [], "frontFrame": [], "frame": [], "ubloxRaw": [], "managerState": [],
     },
     ignore=["logMonoTime", "valid", "controlsState.startMonoTime", "controlsState.cumLagMs"],

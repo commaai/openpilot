@@ -30,7 +30,7 @@ STEER_ANGLE_SATURATION_THRESHOLD = 2.5  # Degrees
 
 SIMULATION = "SIMULATION" in os.environ
 NOSENSOR = "NOSENSOR" in os.environ
-IGNORE_PROCESSES = set(["rtshield", "uploader", "deleter", "loggerd", "logmessaged", "tombstoned", "logcatd", "proclogd", "clocksd", "gpsd", "updated", "timezoned"])
+IGNORE_PROCESSES = set(["rtshield", "uploader", "deleter", "loggerd", "logmessaged", "tombstoned", "logcatd", "proclogd", "clocksd", "updated", "timezoned"])
 
 ThermalStatus = log.ThermalData.ThermalStatus
 State = log.ControlsState.OpenpilotState
@@ -171,7 +171,7 @@ class Controls:
 
     # Alert if fan isn't spinning for 5 seconds
     if self.sm['health'].pandaType in [PandaType.uno, PandaType.dos]:
-      if self.sm['health'].fanSpeedRpm == 0 and self.sm['thermal'].fanSpeedRpmDesired > 50:
+      if self.sm['health'].fanSpeedRpm == 0 and self.sm['thermal'].fanSpeedPercentDesired > 50:
         if (self.sm.frame - self.last_functional_fan_frame) * DT_CTRL > 5.0:
           self.events.add(EventName.fanMalfunction)
       else:

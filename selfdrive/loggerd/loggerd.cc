@@ -91,7 +91,7 @@ LogCameraInfo cameras_logged[LOG_CAMERA_ID_MAX] = {
   [LOG_CAMERA_ID_QCAMERA] = {
     .filename = "qcamera.ts",
     .fps = MAIN_FPS,
-    .bitrate = 128000,
+    .bitrate = 256000,
     .is_h265 = false,
     .downscale = true,
 #ifndef QCOM2

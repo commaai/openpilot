@@ -7,7 +7,7 @@ venv/
 .overlay_init
 .overlay_consistent
 .sconsign.dblite
-.vscode
+.vscode*
 model2.png
 a.out
 
