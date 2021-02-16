@@ -99,6 +99,7 @@ class TestPandaFlashing(unittest.TestCase):
     # Move the panda into the DFU mode
     panda1.reset(enter_bootstub=True)
     panda1.reset(enter_bootloader=True)
+    panda1.close()
     print("DFU?")
     time.sleep(5)
     # Ensure no normal pandas and one DFU panda
@@ -125,11 +126,11 @@ class TestPandaFlashing(unittest.TestCase):
     # In the end we want no DFU pandas and one running panda
     self.assertEqual(len(PandaDFU.list()), 0)
     self.assertEqual(len(Panda.list()), 1)
-    panda1 = Panda(pandas[0])
-    self.assertFalse(panda1.bootstub)
-    #Confirm we have our custom firmware
+    #Confirm panda is running the firmware and that we have our custom firmware
     panda = Panda(Panda.list()[0])
+    self.assertFalse(panda.bootstub)
     self.assertNotEqual(panda.get_signature(), comma_sig)
+    panda.close()
     print("Test 2 finished")
 
   def test_signed_firmware(self):
@@ -149,6 +150,7 @@ class TestPandaFlashing(unittest.TestCase):
     self.assertEqual(len(Panda.list()), 1)
     panda1 = Panda(pandas[0])
     self.assertFalse(panda1.bootstub)
+    panda1.close()
     print("Test 3 finished")
 
 if __name__ == '__main__':
