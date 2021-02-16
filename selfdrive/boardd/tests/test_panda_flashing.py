@@ -23,6 +23,33 @@ def get_expected_signature():
   except Exception:
     return b""
 
+def flash_signed_firmware():
+  print("Flashing signed firmware")
+  # Wait for panda to connect
+  while not PandaDFU.list():
+    print("Waiting for panda in DFU mode")
+
+    if Panda.list():
+      print("Panda found. Putting in DFU Mode")
+      panda = Panda()
+      panda.reset(enter_bootstub=True)
+      panda.reset(enter_bootloader=True)
+
+    time.sleep(0.5)
+
+  # Flash bootstub
+  bootstub_code = open('bootstub.panda.bin', 'rb').read()
+  PandaDFU(None).program_bootstub(bootstub_code)
+
+  # Wait for panda to come back online
+  while not Panda.list():
+    print("Waiting for Panda")
+    time.sleep(0.5)
+
+  # Flash firmware
+  firmware_code = open('panda.bin', 'rb').read()
+  Panda().flash(code=firmware_code)
+
 class TestPandaFlashing(unittest.TestCase):
   def setUp(self):
     print("Setting up panda before the test")
@@ -79,11 +106,9 @@ class TestPandaFlashing(unittest.TestCase):
     pandas = Panda.list()
     self.assertEqual(len(pandas), 1)
     # Flash release bootloader and firmware
-    os.system("git clone https://github.com/commaai/panda-artifacts.git; cd panda-artifacts; python flash.py")
-    # Now we should flash the development firmware, find it doesn't run due to the signature and reflash the dev bootloader and firmware
+    flash_signed_firmware()
+    # Now we should flash the development firmware then find it doesn't run due to the signature and reflash the dev bootloader and firmware
     os.system("export BASEDIR=\"/home/batman/openpilot/\"; ./fix_panda")
-    # Cleanup
-    os.system("rm -rf panda-artifacts")
     # In the end we want no DFU pandas and one running panda
     self.assertEqual(len(PandaDFU.list()), 0)
     self.assertEqual(len(Panda.list()), 1)
@@ -95,12 +120,13 @@ class TestPandaFlashing(unittest.TestCase):
     # We make the same preparation as on previous test
     pandas = Panda.list()
     self.assertEqual(len(pandas), 1)
-    os.system("git clone https://github.com/commaai/panda-artifacts.git; cd panda-artifacts; python flash.py")
-    os.system("ls; rm -rf panda-artifacts")
-    # We load the signed firmware
+    flash_signed_firmware()
+    # We load the signed firmware so that the C++ installer can use it
     os.system("cd ../../../panda/board/obj/; wget \"https://github.com/commaai/openpilot/blob/release2/panda/board/obj/panda.bin.signed?raw=true\" -O panda.bin.signed")
     # Run the panda flasher. It should install the signed firmware
     os.system("export BASEDIR=\"/home/batman/openpilot/\"; ./fix_panda")
+    # Remove the signed firmware
+    os.system("rm ../../../panda/board/obj/panda.bin.signed")
     # In the end we want no DFU pandas and one running panda
     self.assertEqual(len(PandaDFU.list()), 0)
     self.assertEqual(len(Panda.list()), 1)
