@@ -55,7 +55,7 @@ PandaComm::PandaComm(uint16_t vid, uint16_t pid) {
 
   err = libusb_claim_interface(dev_handle, 0);
   if (err != 0) { goto fail; }
-  std::cout<<"Opened device with vid:pid "<< std::hex <<vid<<":"<<std::hex<<pid<<std::endl;
+  LOGD("Opened device with vid:pid %s: %s", vid, pid);
   return;
 
 fail:
@@ -202,7 +202,7 @@ void DynamicPanda::connect() {
   int count = 0;
   count = libusb_get_device_list(ctx, &list);
   assert(count > 0);
-  std::cout<<"Looking for panda"<<std::endl;
+  LOGD("Looking for panda");
   for (int idx = 0; idx < count; idx++) {
     libusb_device *device = list[idx];
     libusb_device_descriptor desc;
@@ -211,7 +211,7 @@ void DynamicPanda::connect() {
     uint16_t vid = desc.idVendor;
     uint16_t pid = desc.idProduct;
     if (vid == 0x0483 && pid == 0xdf11) { // Panda in DFU 
-      std::cout<<"Found panda in DFU mode, should not occur"<<std::endl;
+      LOGD("Found panda in DFU mode, should not occur");
       pandaExists = false;
       bootstub = false;
       libusb_free_device_list(list, count);
@@ -219,13 +219,13 @@ void DynamicPanda::connect() {
       throw std::runtime_error("Found DFU panda...");
     }else if (vid == 0xbbaa && pid == 0xddcc) { //Normal panda running the firmware
       c = new PandaComm(0xbbaa, 0xddcc);
-      std::cout<<"Found panda in a good state, exiting"<<std::endl;
+      LOGD("Found panda in a good state, exiting");
       pandaExists = true;
       bootstub = false;
       break;
     }else if (vid == 0xbbaa && pid == 0xddee) {
       c = new PandaComm(0xbbaa, 0xddee);
-      std::cout<<"Found panda in bootstub mode, some more work to do"<<std::endl;
+      LOGD("Found panda in bootstub mode, some more work to do");
       pandaExists = true;
       bootstub = true;
       break;
@@ -234,7 +234,7 @@ void DynamicPanda::connect() {
   libusb_free_device_list(list, count);
   libusb_exit(ctx);
   if (!pandaExists) {
-    std::cout<<"Dynamic panda cannot find any non DFU panda"<<std::endl;
+    LOGW("Dynamic panda cannot find any non DFU panda");
     throw std::runtime_error("Panda not found...");
   }
 }
@@ -253,8 +253,10 @@ std::string DynamicPanda::get_signature() {
 }
 
 void DynamicPanda::flash(std::string fw_fn) {
-  std::cout<<std::endl<<"Firmware string: "<<fw_fn<<std::endl;
-  std::cout<<"flash: main version is "<<get_version()<<std::endl;
+  LOGD("Firmware string: ");
+  LOGD(fw_fn.c_str());
+  LOGD("flash: main version:");
+  LOGD(get_version().c_str());
   if (!bootstub) {
     reset(true, false);
   }
@@ -265,32 +267,29 @@ void DynamicPanda::flash(std::string fw_fn) {
   for (int i = 0 ; i < code.length() ; i++) {
     code_data[i]=code[i];
   }
-  std::cout<<"Firmware code length: "<<code.length()<<std::endl;
-  std::cout<<"flash: bootstub version is "<<get_version()<<std::endl;
-
   // confirm flashed is present
   std::vector<uint8_t> buf(12);
   c->control_read(REQUEST_IN, 0xb0, 0, 0, &buf[0], 12);
   assert(buf[4] == 0xde && buf[5] == 0xad && buf[6] == 0xd0 && buf[7] == 0x0d);
 
   //unlock flash
-  std::cout<<"flash: unlocking"<<std::endl;
+  LOGD("flash: unlocking");
   c->control_write(REQUEST_IN, 0xb1, 0, 0, nullptr, 0);
 
   // erase sectors 1-3
-  std::cout<<"flash: erasing"<<std::endl;
+  LOGD("flash: erasing");
   for (int i = 1 ; i < 4 ; i++) {
     c->control_write(REQUEST_IN, 0xb2, i, 0, nullptr, 0);
   }
 
   // flash over EP2
   int STEP = 0x10;
-  std::cout<<"flash: flashing"<<std::endl;
+  LOGD("flash: flashing");
   for(int i = 0 ; i < code.length() ; i += STEP) {
     c->usb_bulk_write(2, code_data + i, STEP);
   }
   //reset
-  std::cout<<"flash: resetting"<<std::endl;
+  LOGD("flash: resetting");
   try {
     c->control_write(REQUEST_IN, 0xd8, 0, 0, nullptr, 0);
   } catch (std::runtime_error &e) {}
@@ -305,7 +304,7 @@ void DynamicPanda::reconnect() {
      connect();
      return;
     } catch(std::runtime_error &e) {
-      std::cout<<"reconnecting is taking "<<i+1<<" seconds..."<<std::endl;
+      LOGD("reconnecting");
       PandaComm* dfu;
       try {
         dfu = new PandaComm(0x0483, 0xdf11);
@@ -338,7 +337,7 @@ void DynamicPanda::recover() {
   reset(true, false);
   reset(false, true);
   while(true) {
-    std::cout<<"Waiting for DFU"<<std::endl;
+    LOGD("Waiting for DFU");
     util::sleep_for(100);
     try {
       PandaComm dfuPanda(0x0483, 0xdf11); // Throws exception if Panda is not in DFU mdoe
@@ -352,7 +351,7 @@ void DynamicPanda::recover() {
     connect();
     } catch(std::runtime_error &e) {};
     
-    std::cout<<"Looking for panda"<<std::endl;
+    LOGD("Looking for panda");
     util::sleep_for(100);
   } while(!pandaExists);
 

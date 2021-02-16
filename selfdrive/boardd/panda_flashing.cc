@@ -71,7 +71,7 @@ std::string get_expected_signature() {
   std::string firmware_contents = util::read_file(firmware_filename);
   std::string firmware_sig = firmware_contents.substr(firmware_contents.length()-128);
   if (firmware_sig.length() != 128) {
-    std::cout<<"Error getting the firmware signature"<<std::endl;
+    LOGE("Error getting the firmware signature");
   }
   return firmware_sig;
 }
@@ -137,11 +137,11 @@ void dfu_program(PandaComm* dfuPanda, int adress, std::string program) {
     padded_program[i]=program[i];
   }
   for (int i = 0 ; i < paddedLength/ blockSize ; i++) {
-    std::cout<<"Programming with block "<<i<<std::endl;
+    LOGD("Programming with block %d", i);
     dfuPanda->control_write(0x21, DFU_DNLOAD, 2 + i, 0, padded_program + blockSize * i, blockSize);
     dfu_status(dfuPanda);
   }
-  std::cout<<"Done with programming"<<std::endl;
+  LOGD("Done with programming");
 }
 
 void dfu_reset(PandaComm* dfuPanda) {
@@ -158,7 +158,7 @@ void dfu_reset(PandaComm* dfuPanda) {
     unsigned char buf[6];
     dfuPanda->control_read(0x21, DFU_GETSTATUS, 0, 0, buf, 6);
   } catch(std::runtime_error &e) {
-    std::cout<<"DFU reset failed"<<std::endl;
+    LOGE("DFU reset failed");
   }
 }
 
@@ -182,48 +182,51 @@ void get_out_of_dfu() {
   try {
     dfuPanda = new PandaComm(0x0483, 0xdf11);
   } catch(std::runtime_error &e) {
-    std::cout<<"DFU panda not found"<<std::endl;
+    LOGD("DFU panda not found");
     delete(dfuPanda);
     return;
   }
-  std::cout<<"Panda in DFU mode found, flashing recovery"<<std::endl;
+  LOGD("Panda in DFU mode found, flashing recovery");
   dfu_recover(dfuPanda);
   delete(dfuPanda);
 }
 
 void update_panda() {
-  std::cout<<"updating panda"<<std::endl;
-  std::cout<<std::endl<<"1: Move out of DFU"<<std::endl<<std::endl;
+  LOGD("updating panda");
+  LOGD("\n1: Move out of DFU\n");
   get_out_of_dfu();
-  std::cout<<std::endl<<"2: Start DynamicPanda and run the required steps"<<std::endl<<std::endl;
+  LOGD("\n2: Start DynamicPanda and run the required steps\n");
   
   std::string fw_fn = get_firmware_fn();
   std::string fw_signature = get_expected_signature();
   DynamicPanda tempPanda;
   std::string panda_signature = tempPanda.bootstub ? "": tempPanda.get_signature();
-  std::cout<<"fw_sig::panda_sig"<<std::endl<<fw_signature<<std::endl<<panda_signature<<std::endl;
+  LOGD("fw_sig::panda_sig");
+  LOGD(fw_signature.c_str());
+  LOGD(panda_signature.c_str());
 
   if (tempPanda.bootstub || panda_signature != fw_signature) {
-    std::cout<<std::endl<<"Panda firmware out of date, update required"<<std::endl;
+    LOGD("Panda firmware out of date, update required");
     tempPanda.flash(fw_fn);
-    std::cout<<std::endl<<"Done flashing new firmware"<<std::endl;
+    LOGD("Done flashing new firmware");
   }
 
   if (tempPanda.bootstub) {
     std::string bootstub_version = tempPanda.get_version();
-    std::cout<<"Flashed firmware not booting, flashing development bootloader. Bootstub verstion "<<bootstub_version<<std::endl;
+    LOGD("Flashed firmware not booting, flashing development bootloader. Bootstub verstion: ");
+    LOGD(bootstub_version.c_str());
     tempPanda.recover();
-    std::cout<<"Done flashing dev bootloader and firmware"<<std::endl;
+    LOGD("Done flashing dev bootloader and firmware");
   }
 
   if (tempPanda.bootstub) {
-    std::cout<<"Panda still not booting, exiting"<<std::endl;
+    LOGD("Panda still not booting, exiting");
     throw std::runtime_error("PANDA NOT BOOTING");
   }
 
   panda_signature = tempPanda.get_signature();
   if (panda_signature != fw_signature) {
-    std::cout<<"Version mismatch after flashing, exiting"<<std::endl;
+    LOGD("Version mismatch after flashing, exiting");
     throw std::runtime_error("FIRMWARE VERSION MISMATCH");
   }
 
