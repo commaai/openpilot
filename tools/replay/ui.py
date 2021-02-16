@@ -134,15 +134,15 @@ def ui_thread(addr, frame_address):
 
     w = sm['controlsState'].lateralControlState.which()
     if w == 'lqrState':
-      angle_steers_k = sm['controlsState'].lateralControlState.lqrState.steeringAngleDeg
+      angle_steers_k = sm['controlsState'].lateralControlState.lqrState.steerAngle
     elif w == 'indiState':
-      angle_steers_k = sm['controlsState'].lateralControlState.indiState.steeringAngleDeg
+      angle_steers_k = sm['controlsState'].lateralControlState.indiState.steerAngle
     else:
       angle_steers_k = np.inf
 
     plot_arr[:-1] = plot_arr[1:]
-    plot_arr[-1, name_to_arr_idx['angle_steers']] = sm['carState'].steeringAngleDegDeg
-    plot_arr[-1, name_to_arr_idx['angle_steers_des']] = sm['carControl'].actuators.steeringAngleDeg
+    plot_arr[-1, name_to_arr_idx['angle_steers']] = sm['carState'].steeringAngle
+    plot_arr[-1, name_to_arr_idx['angle_steers_des']] = sm['carControl'].actuators.steerAngle
     plot_arr[-1, name_to_arr_idx['angle_steers_k']] = angle_steers_k
     plot_arr[-1, name_to_arr_idx['gas']] = sm['carState'].gas
     plot_arr[-1, name_to_arr_idx['computer_gas']] = sm['carControl'].actuators.gas

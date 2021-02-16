@@ -83,11 +83,11 @@ class LatControlINDI():
   def update(self, active, CS, CP, path_plan):
     self.speed = CS.vEgo
     # Update Kalman filter
-    y = np.array([[math.radians(CS.steeringAngleDegDegDeg)], [math.radians(CS.steeringRateDeg)]])
+    y = np.array([[math.radians(CS.steeringAngle)], [math.radians(CS.steeringRate)]])
     self.x = np.dot(self.A_K, self.x) + np.dot(self.K, y)
 
     indi_log = log.ControlsState.LateralINDIState.new_message()
-    indi_log.steeringAngleDeg = math.degrees(self.x[0])
+    indi_log.steerAngle = math.degrees(self.x[0])
     indi_log.steerRate = math.degrees(self.x[1])
     indi_log.steerAccel = math.degrees(self.x[2])
 
@@ -136,7 +136,7 @@ class LatControlINDI():
       indi_log.delta = float(delta_u)
       indi_log.output = float(self.output_steer)
 
-      check_saturation = (CS.vEgo > 10.) and not CS.steeringRateDegLimited and not CS.steeringPressed
+      check_saturation = (CS.vEgo > 10.) and not CS.steeringRateLimited and not CS.steeringPressed
       indi_log.saturated = self._check_saturation(self.output_steer, check_saturation, steers_max)
 
     return float(self.output_steer), float(self.angle_steers_des), indi_log

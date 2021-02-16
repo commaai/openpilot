@@ -29,7 +29,7 @@ class CarController():
     acc_active = bool(CS.out.cruiseState.enabled)
     lkas_hud_msg = CS.lkas_hud_msg
     lkas_hud_info_msg = CS.lkas_hud_info_msg
-    apply_angle = actuators.steeringAngleDeg
+    apply_angle = actuators.steerAngle
 
     steer_hud_alert = 1 if hud_alert == VisualAlert.steerRequired else 0
 
@@ -55,7 +55,7 @@ class CarController():
         )
 
     else:
-      apply_angle = CS.out.steeringAngleDegDegDeg
+      apply_angle = CS.out.steeringAngle
       self.lkas_max_torque = 0
 
     self.last_angle = apply_angle

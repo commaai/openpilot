@@ -389,11 +389,11 @@ class Controls:
     # Gas/Brake PID loop
     actuators.gas, actuators.brake = self.LoC.update(self.active, CS, v_acc_sol, plan.vTargetFuture, a_acc_sol, self.CP)
     # Steering PID loop and lateral MPC
-    actuators.steer, actuators.steeringAngleDeg, lac_log = self.LaC.update(self.active, CS, self.CP, path_plan)
+    actuators.steer, actuators.steerAngle, lac_log = self.LaC.update(self.active, CS, self.CP, path_plan)
 
     # Check for difference between desired angle and angle for angle based control
     angle_control_saturated = self.CP.steerControlType == car.CarParams.SteerControlType.angle and \
-      abs(actuators.steeringAngleDeg - CS.steeringAngleDegDegDeg) > STEER_ANGLE_SATURATION_THRESHOLD
+      abs(actuators.steerAngle - CS.steeringAngle) > STEER_ANGLE_SATURATION_THRESHOLD
 
     if angle_control_saturated and not CS.steeringPressed and self.active:
       self.saturated_count += 1
@@ -470,7 +470,7 @@ class Controls:
     force_decel = (self.sm['driverMonitoringState'].awarenessStatus < 0.) or \
                   (self.state == State.softDisabling)
 
-    steer_angle_rad = (CS.steeringAngleDegDegDeg - self.sm['lateralPlan'].angleOffset) * CV.DEG_TO_RAD
+    steer_angle_rad = (CS.steeringAngle - self.sm['lateralPlan'].angleOffset) * CV.DEG_TO_RAD
 
     # controlsState
     dat = messaging.new_message('controlsState')

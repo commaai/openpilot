@@ -49,7 +49,7 @@ class LatControlLQR():
     steers_max = get_steer_max(CP, CS.vEgo)
     torque_scale = (0.45 + CS.vEgo / 60.0)**2  # Scale actuator model with speed
 
-    steering_angle = CS.steeringAngleDegDegDeg
+    steering_angle = CS.steeringAngle
 
     # Subtract offset. Zero angle should correspond to zero torque
     self.angle_steers_des = path_plan.angleSteers - path_plan.angleOffset
@@ -86,10 +86,10 @@ class LatControlLQR():
       self.output_steer = lqr_output + self.i_lqr
       self.output_steer = clip(self.output_steer, -steers_max, steers_max)
 
-    check_saturation = (CS.vEgo > 10) and not CS.steeringRateDegLimited and not CS.steeringPressed
+    check_saturation = (CS.vEgo > 10) and not CS.steeringRateLimited and not CS.steeringPressed
     saturated = self._check_saturation(self.output_steer, check_saturation, steers_max)
 
-    lqr_log.steeringAngleDeg = angle_steers_k + path_plan.angleOffset
+    lqr_log.steerAngle = angle_steers_k + path_plan.angleOffset
     lqr_log.i = self.i_lqr
     lqr_log.output = self.output_steer
     lqr_log.lqrOutput = lqr_output
