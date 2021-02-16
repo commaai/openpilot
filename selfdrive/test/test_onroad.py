@@ -96,7 +96,7 @@ class TestOnroad(unittest.TestCase):
 
       # make sure we get at least two full segments
       cls.segments = []
-      with Timeout(180, "timed out waiting for logs"):
+      with Timeout(300, "timed out waiting for logs"):
         while len(cls.segments) < 3:
           new_paths = set(Path(ROOT).iterdir()) - initial_segments
           segs = [p for p in new_paths if "--" in str(p)]
