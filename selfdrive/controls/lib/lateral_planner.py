@@ -82,7 +82,7 @@ class LateralPlanner():
   def update(self, sm, CP, VM):
     v_ego = sm['carState'].vEgo
     active = sm['controlsState'].active
-    steering_wheel_angle_offset_deg = sm['liveParameters'].angleOffset
+    steering_wheel_angle_offset_deg = sm['liveParameters'].angleOffsetDeg
     steering_wheel_angle_deg = sm['carState'].steeringAngleDeg
 
     # Update vehicle model
@@ -232,9 +232,9 @@ class LateralPlanner():
     plan_send.lateralPlan.rProb = float(self.LP.rll_prob)
     plan_send.lateralPlan.dProb = float(self.LP.d_prob)
 
-    plan_send.lateralPlan.angleSteers = float(self.desired_steering_wheel_angle_deg)
-    plan_send.lateralPlan.rateSteers = float(self.desired_steering_wheel_angle_rate_deg)
-    plan_send.lateralPlan.angleOffset = float(sm['liveParameters'].angleOffsetDegAverageDeg)
+    plan_send.lateralPlan.steeringAngleDeg = float(self.desired_steering_wheel_angle_deg)
+    plan_send.lateralPlan.steeringRateDeg = float(self.desired_steering_wheel_angle_rate_deg)
+    plan_send.lateralPlan.angleOffsetDeg = float(sm['liveParameters'].angleOffsetDeg)
     plan_send.lateralPlan.mpcSolutionValid = bool(plan_solution_valid)
 
     plan_send.lateralPlan.desire = self.desire

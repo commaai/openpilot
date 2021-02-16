@@ -74,7 +74,7 @@ class CarInterface(CarInterfaceBase):
 
     ret = self.CS.update(self.cp)
     ret.canValid = self.cp.can_valid and self.cp_cam.can_valid
-    ret.steeringRateDegLimited = self.CC.steer_rate_limited if self.CC is not None else False
+    ret.steeringRateLimited = self.CC.steer_rate_limited if self.CC is not None else False
 
     # TODO: add a field for this to carState, car interface code shouldn't write params
     # Update the device metric configuration to match the car at first startup,
