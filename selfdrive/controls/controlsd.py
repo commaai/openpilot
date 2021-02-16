@@ -365,8 +365,8 @@ class Controls:
   def state_control(self, CS):
     """Given the state, this function returns an actuators packet"""
 
-    plan = self.sm['longitudinalPlan']
-    path_plan = self.sm['lateralPlan']
+    lat_plan = self.sm['lateralPlan']
+    long_plan = self.sm['longitudinalPlan']
 
     actuators = car.CarControl.Actuators.new_message()
 
@@ -379,17 +379,17 @@ class Controls:
       self.LaC.reset()
       self.LoC.reset(v_pid=CS.vEgo)
 
-    plan_age = DT_CTRL * (self.sm.frame - self.sm.rcv_frame['longitudinalPlan'])
+    long_plan_age = DT_CTRL * (self.sm.frame - self.sm.rcv_frame['longitudinalPlan'])
     # no greater than dt mpc + dt, to prevent too high extraps
-    dt = min(plan_age, LON_MPC_STEP + DT_CTRL) + DT_CTRL
+    dt = min(long_plan_age, LON_MPC_STEP + DT_CTRL) + DT_CTRL
 
-    a_acc_sol = plan.aStart + (dt / LON_MPC_STEP) * (plan.aTarget - plan.aStart)
-    v_acc_sol = plan.vStart + dt * (a_acc_sol + plan.aStart) / 2.0
+    a_acc_sol = long_plan.aStart + (dt / LON_MPC_STEP) * (long_plan.aTarget - long_plan.aStart)
+    v_acc_sol = long_plan.vStart + dt * (a_acc_sol + long_plan.aStart) / 2.0
 
     # Gas/Brake PID loop
-    actuators.gas, actuators.brake = self.LoC.update(self.active, CS, v_acc_sol, plan.vTargetFuture, a_acc_sol, self.CP)
+    actuators.gas, actuators.brake = self.LoC.update(self.active, CS, v_acc_sol, long_plan.vTargetFuture, a_acc_sol, self.CP)
     # Steering PID loop and lateral MPC
-    actuators.steer, actuators.steeringAngleDeg, lac_log = self.LaC.update(self.active, CS, self.CP, path_plan)
+    actuators.steer, actuators.steeringAngleDeg, lac_log = self.LaC.update(self.active, CS, self.CP, lat_plan)
 
     # Check for difference between desired angle and angle for angle based control
     angle_control_saturated = self.CP.steerControlType == car.CarParams.SteerControlType.angle and \
@@ -404,8 +404,8 @@ class Controls:
     if (lac_log.saturated and not CS.steeringPressed) or \
        (self.saturated_count > STEER_ANGLE_SATURATION_TIMEOUT):
       # Check if we deviated from the path
-      left_deviation = actuators.steer > 0 and path_plan.dPathPoints[0] < -0.1
-      right_deviation = actuators.steer < 0 and path_plan.dPathPoints[0] > 0.1
+      left_deviation = actuators.steer > 0 and lat_plan.dPathPoints[0] < -0.1
+      right_deviation = actuators.steer < 0 and lat_plan.dPathPoints[0] > 0.1
 
       if left_deviation or right_deviation:
         self.events.add(EventName.steerSaturated)
