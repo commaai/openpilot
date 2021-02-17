@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <iostream>
+#include <cassert>
+#include <algorithm>
 
 #include "messaging.hpp"
 #include "impl_zmq.hpp"
@@ -32,7 +34,7 @@ static std::string prefix;
 Message * poll_ubloxraw_msg(Poller * poller) {
   assert(poller);
 
-  size_t consuming  = min(len - consumed, 128);
+  size_t consuming  = std::min((int)(len - consumed), 128);
   if(consumed < len) {
     // create message
     MessageBuilder msg_builder;
