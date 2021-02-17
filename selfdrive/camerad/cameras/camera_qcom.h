@@ -91,8 +91,6 @@ typedef struct CameraState {
 
   StreamState ss[3];
 
-  uint64_t last_t;
-
   camera_apply_exposure_func apply_exposure;
 
   int16_t focus[NUM_FOCUS];
