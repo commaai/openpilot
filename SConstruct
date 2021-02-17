@@ -163,6 +163,7 @@ env = Environment(
   CPPPATH=cpppath + [
     "#",
     "#selfdrive",
+    "#phonelibs/catch2/include",
     "#phonelibs/bzip2",
     "#phonelibs/libyuv/include",
     "#phonelibs/openmax/include",
