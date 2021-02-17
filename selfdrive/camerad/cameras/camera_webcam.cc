@@ -232,10 +232,10 @@ void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_i
 void camera_autoexposure(CameraState *s, float grey_frac) {}
 
 void cameras_open(MultiCameraState *s) {
-  // LOG("*** open front ***");
+  // LOG("*** open driver camera ***");
   camera_open(&s->driver_cam, false);
 
-  // LOG("*** open rear ***");
+  // LOG("*** open road camera ***");
   camera_open(&s->road_cam, true);
 }
 

@@ -359,7 +359,7 @@ void common_driver_camera_process(SubMaster *sm, PubMaster *pm, CameraState *c, 
   if (cnt % 3 == 0) {
     if (sm->update(0) > 0 && sm->updated("driverState")) {
       auto state = (*sm)["driverState"].getDriverState();
-      // set front camera metering target
+      // set driver camera metering target
       if (state.getFaceProb() > 0.4) {
         auto face_position = state.getFacePosition();
 #ifndef QCOM2

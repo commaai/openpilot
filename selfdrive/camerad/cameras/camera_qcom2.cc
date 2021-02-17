@@ -798,13 +798,13 @@ static void camera_open(CameraState *s) {
 void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
   camera_init(v, &s->road_cam, CAMERA_ID_AR0231, 1, 20, device_id, ctx,
               VISION_STREAM_RGB_BACK, VISION_STREAM_YUV_BACK); // swap left/right
-  printf("rear initted \n");
+  printf("road camera initted \n");
   camera_init(v, &s->wide_road_cam, CAMERA_ID_AR0231, 0, 20, device_id, ctx,
               VISION_STREAM_RGB_WIDE, VISION_STREAM_YUV_WIDE);
-  printf("wide initted \n");
+  printf("wide road camera initted \n");
   camera_init(v, &s->driver_cam, CAMERA_ID_AR0231, 2, 20, device_id, ctx,
               VISION_STREAM_RGB_FRONT, VISION_STREAM_YUV_FRONT);
-  printf("front initted \n");
+  printf("driver camera initted \n");
 
   s->sm = new SubMaster({"driverState"});
   s->pm = new PubMaster({"roadCameraState", "driverCameraState", "wideRoadCameraState", "thumbnail"});
@@ -857,11 +857,11 @@ void cameras_open(MultiCameraState *s) {
   printf("req mgr subscribe: %d\n", ret);
 
   camera_open(&s->road_cam);
-  printf("rear opened \n");
+  printf("road camera opened \n");
   camera_open(&s->wide_road_cam);
-  printf("wide opened \n");
+  printf("wide road camera opened \n");
   camera_open(&s->driver_cam);
-  printf("front opened \n");
+  printf("driver camera opened \n");
 }
 
 static void camera_close(CameraState *s) {
