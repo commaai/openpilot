@@ -369,12 +369,12 @@ Panda::Panda() {
   hw_type = get_hw_type();
 
   is_pigeon =
-    (hw_type == cereal::HealthData::PandaType::GREY_PANDA) ||
-    (hw_type == cereal::HealthData::PandaType::BLACK_PANDA) ||
-    (hw_type == cereal::HealthData::PandaType::UNO) ||
-    (hw_type == cereal::HealthData::PandaType::DOS);
-  has_rtc = (hw_type == cereal::HealthData::PandaType::UNO) ||
-    (hw_type == cereal::HealthData::PandaType::DOS);
+    (hw_type == cereal::PandaState::PandaType::GREY_PANDA) ||
+    (hw_type == cereal::PandaState::PandaType::BLACK_PANDA) ||
+    (hw_type == cereal::PandaState::PandaType::UNO) ||
+    (hw_type == cereal::PandaState::PandaType::DOS);
+  has_rtc = (hw_type == cereal::PandaState::PandaType::UNO) ||
+    (hw_type == cereal::PandaState::PandaType::DOS);
 
 }
 

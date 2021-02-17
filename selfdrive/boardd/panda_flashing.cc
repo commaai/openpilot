@@ -178,7 +178,6 @@ void get_out_of_dfu() {
 }
 
 void update_panda() {
-  std::cout<<"Updating panda"<<std::endl;
   LOGD("updating panda");
   LOGD("\n1: Move out of DFU\n");
   get_out_of_dfu();
