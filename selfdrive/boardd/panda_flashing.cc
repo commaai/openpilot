@@ -99,19 +99,10 @@ void dfu_clear_status(PandaComm* dfuPanda) {
   dfuPanda->control_read(0x21, DFU_GETSTATUS, 0, 0, &stat[0], 6);
 }
 
-unsigned char* pack_int(int num) {
-  unsigned char* data = new unsigned char[4];
-  memcpy(data, &num, sizeof(num));
-  return data;
-}
-
 void dfu_erase(PandaComm* dfuPanda, int adress) {
   unsigned char data[5];
   data[0] = 0x41;
-  unsigned char* packed = pack_int(adress);
-  for (int i = 0 ; i < 4 ; i++) {
-    data[i+1] = packed[i];
-  }
+  memcpy(&data[1], &adress, sizeof(adress));
   dfuPanda->control_write(0x21, DFU_DNLOAD, 0, 0, data, 5);
   dfu_status(dfuPanda);
 }
@@ -122,10 +113,7 @@ void dfu_program(PandaComm* dfuPanda, int adress, std::string program) {
   // Set address pointer
   unsigned char data[5];
   data[0] = 0x21;
-  unsigned char* packed = pack_int(adress);
-  for (int i = 0 ; i < 4 ; i++) {
-    data[i+1] = packed[i];
-  }
+  memcpy(&data[1], &adress, sizeof(adress));
   dfuPanda->control_write(0x21, DFU_DNLOAD, 0, 0, data, 5);
   dfu_status(dfuPanda);
 
@@ -133,8 +121,9 @@ void dfu_program(PandaComm* dfuPanda, int adress, std::string program) {
   int paddedLength = program.length() + (blockSize - (program.length() % blockSize));
   unsigned char padded_program[paddedLength];
   std::fill(padded_program, padded_program + paddedLength, 0xff);
+  // Not sure how to copy from string to unsigned char * with one command. For loop works
   for (int i = 0 ; i < program.length() ; i++) {
-    padded_program[i]=program[i];
+    padded_program[i] = program[i];
   }
   for (int i = 0 ; i < paddedLength/ blockSize ; i++) {
     LOGD("Programming with block %d", i);
@@ -147,10 +136,8 @@ void dfu_program(PandaComm* dfuPanda, int adress, std::string program) {
 void dfu_reset(PandaComm* dfuPanda) {
   unsigned char data[5];
   data[0] = 0x21;
-  unsigned char* packed = pack_int(0x8000000);
-  for (int i = 0 ; i < 4 ; i++) {
-    data[i+1] = packed[i];
-  }
+  int adress = 0x8000000;
+  memcpy(&data[1], &adress, sizeof(adress));
   dfuPanda->control_write(0x21, DFU_DNLOAD, 0, 0, data, 5);
   dfu_status(dfuPanda);
   try {

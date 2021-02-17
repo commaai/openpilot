@@ -68,8 +68,7 @@ class TestPandaFlashing(unittest.TestCase):
     if len(panda_dfu) > 0:
       panda_dfu = PandaDFU(panda_dfu[0])
       panda_dfu.recover()
-      time.sleep(1)
-    time.sleep(5)
+      time.sleep(5)
     panda_list = Panda.list()
     if len(panda_list) > 0:
       panda = Panda(panda_list[0])
