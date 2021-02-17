@@ -256,7 +256,7 @@ void camera_process_front(MultiCameraState *s, CameraState *c, int cnt) {
 void camera_process_rear(MultiCameraState *s, CameraState *c, int cnt) {
   const CameraBuf *b = &c->buf;
   MessageBuilder msg;
-  auto framed = msg.initEvent().initFrame();
+  auto framed = msg.initEvent().initRoadCameraState();
   fill_frame_data(framed, b->cur_frame_data);
   framed.setImage(kj::arrayPtr((const uint8_t *)b->cur_yuv_buf->addr, b->cur_yuv_buf->len));
   framed.setTransform(b->yuv_transform.v);
