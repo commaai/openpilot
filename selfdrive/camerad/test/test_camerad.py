@@ -17,7 +17,7 @@ LAG_FRAME_TOLERANCE = 2 # ms
 
 FPS_BASELINE = 20
 CAMERAS = {
-  "frame": FPS_BASELINE,
+  "roadCameraState": FPS_BASELINE,
   "driverCameraState": FPS_BASELINE // 2,
 }
 
