@@ -1211,7 +1211,7 @@ static struct damping_params_t actuator_ringing_params = {
   .hw_params = 0x0000e422,
 };
 
-static void rear_start(CameraState *s) {
+static void road_camera_start(CameraState *s) {
   struct msm_actuator_cfg_data actuator_cfg_data = {0};
 
   set_exposure(s, 1.0, 1.0);
@@ -1410,7 +1410,7 @@ void camera_autoexposure(CameraState *s, float grey_frac) {
   }
 }
 
-static void front_start(CameraState *s) {
+static void driver_camera_start(CameraState *s) {
   set_exposure(s, 1.0, 1.0);
   int err = sensor_write_regs(s, start_reg_array, ARRAYSIZE(start_reg_array), MSM_CAMERA_I2C_BYTE_DATA);
   LOG("sensor start regs: %d", err);
@@ -1485,8 +1485,8 @@ void cameras_open(MultiCameraState *s) {
   err = ioctl(s->ispif_fd, VIDIOC_MSM_ISPIF_CFG, &ispif_cfg_data);
   LOG("ispif start_frame_boundary: %d", err);
 
-  front_start(&s->driver_cam);
-  rear_start(&s->road_cam);
+  driver_camera_start(&s->driver_cam);
+  road_camera_start(&s->road_cam);
 }
 
 

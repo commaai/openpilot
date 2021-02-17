@@ -44,10 +44,10 @@ void camera_init(VisionIpcServer * v, CameraState *s, int camera_id, unsigned in
   s->buf.init(device_id, ctx, s, v, FRAME_BUF_COUNT, rgb_type, yuv_type);
 }
 
-static void* rear_thread(void *arg) {
+static void* road_camera_thread(void *arg) {
   int err;
 
-  set_thread_name("webcam_rear_thread");
+  set_thread_name("webcam_road_camera_thread");
   CameraState *s = (CameraState*)arg;
 
   cv::VideoCapture cap_rear(1); // road
@@ -125,7 +125,7 @@ static void* rear_thread(void *arg) {
   return NULL;
 }
 
-void front_thread(CameraState *s) {
+void driver_camera_thread(CameraState *s) {
   int err;
 
   cv::VideoCapture cap_front(2); // driver
@@ -268,9 +268,9 @@ void cameras_run(MultiCameraState *s) {
   threads.push_back(start_process_thread(s, "processing", &s->road_cam, road_camera_process));
   threads.push_back(start_process_thread(s, "frontview", &s->driver_cam, driver_camera_process));
 
-  std::thread t_rear = std::thread(rear_thread, &s->road_cam);
+  std::thread t_rear = std::thread(road_camera_thread, &s->road_cam);
   set_thread_name("webcam_thread");
-  front_thread(&s->driver_cam);
+  driver_camera_thread(&s->driver_cam);
 
   t_rear.join();
 
