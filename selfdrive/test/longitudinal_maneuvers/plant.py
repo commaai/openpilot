@@ -110,7 +110,7 @@ class Plant():
     self.rate = rate
 
     if not Plant.messaging_initialized:
-      Plant.pm = messaging.PubMaster(['frame', 'driverCameraState', 'ubloxRaw'])
+      Plant.pm = messaging.PubMaster(['roadCameraState', 'driverCameraState', 'ubloxRaw'])
       Plant.logcan = messaging.pub_sock('can')
       Plant.sendcan = messaging.sub_sock('sendcan')
       Plant.model = messaging.pub_sock('modelV2')
