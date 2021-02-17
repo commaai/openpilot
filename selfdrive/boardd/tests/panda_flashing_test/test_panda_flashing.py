@@ -131,7 +131,7 @@ class TestPandaFlashing(unittest.TestCase):
       f.write(download_file(SIGNED_FIRMWARE_URL))
 
     try:
-      os.system("./flash_panda")
+      self.run_flasher()
     finally:
       os.unlink(SIGNED_FW_FN)
 
