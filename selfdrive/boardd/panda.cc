@@ -217,13 +217,13 @@ void DynamicPanda::connect() {
       libusb_free_device_list(list, count);
       libusb_exit(ctx);
       throw std::runtime_error("Found DFU panda...");
-    }else if (vid == 0xbbaa && pid == 0xddcc) { //Normal panda running the firmware
+    } else if (vid == 0xbbaa && pid == 0xddcc) { //Normal panda running the firmware
       c = new PandaComm(0xbbaa, 0xddcc);
       LOGD("Found panda in a good state, exiting");
       pandaExists = true;
       bootstub = false;
       break;
-    }else if (vid == 0xbbaa && pid == 0xddee) {
+    } else if (vid == 0xbbaa && pid == 0xddee) {
       c = new PandaComm(0xbbaa, 0xddee);
       LOGD("Found panda in bootstub mode, some more work to do");
       pandaExists = true;
@@ -265,7 +265,7 @@ void DynamicPanda::flash(std::string fw_fn) {
   std::string code = util::read_file(fw_fn);
   unsigned char code_data[code.length()];
   for (int i = 0 ; i < code.length() ; i++) {
-    code_data[i]=code[i];
+    code_data[i] = code[i];
   }
   // confirm flashed is present
   std::vector<uint8_t> buf(12);
