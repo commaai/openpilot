@@ -306,7 +306,7 @@ void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_i
   s->road_cam.device = s->device;
   s->driver_cam.device = s->device;
 
-  s->sm_front = new SubMaster({"driverState"});
+  s->sm = new SubMaster({"driverState"});
   s->pm = new PubMaster({"roadCameraState", "driverCameraState", "thumbnail"});
 
   for (int i = 0; i < FRAME_BUF_COUNT; i++) {
@@ -1645,7 +1645,7 @@ static void setup_self_recover(CameraState *c, const uint16_t *lapres, size_t la
 }
 
 void driver_camera_process(MultiCameraState *s, CameraState *c, int cnt) {
-  common_driver_camera_process(s->sm_front, s->pm, c, cnt);
+  common_driver_camera_process(s->sm, s->pm, c, cnt);
 }
 
 // called by processing_thread
@@ -1761,6 +1761,6 @@ void cameras_close(MultiCameraState *s) {
 
   CL_CHECK(clReleaseKernel(s->krnl_rgb_laplacian));
   CL_CHECK(clReleaseProgram(s->prg_rgb_laplacian));
-  delete s->sm_front;
+  delete s->sm;
   delete s->pm;
 }
