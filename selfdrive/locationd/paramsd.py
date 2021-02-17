@@ -88,12 +88,17 @@ def main(sm=None, pm=None):
       cloudlog.info("Parameter learner found parameters for wrong car.")
       params = None
 
-  if (params is not None) and not all((
-      abs(params['angleOffsetAverageDeg']) < 10.0,
-      min_sr <= params['steerRatio'] <= max_sr)):
-    cloudlog.info(f"Invalid starting values found {params}")
+  try:
+    if params is not None and not all((
+        abs(params.get('angleOffsetAverageDeg')) < 10.0,
+        min_sr <= params['steerRatio'] <= max_sr)):
+      cloudlog.info(f"Invalid starting values found {params}")
+      params = None
+  except Exception as e:
+    cloudlog.info(f"Error reading params {params}: {str(e)}")
     params = None
 
+  # TODO: cache the params with the capnp struct
   if params is None:
     params = {
       'carFingerprint': CP.carFingerprint,
