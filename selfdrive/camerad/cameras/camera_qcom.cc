@@ -730,7 +730,7 @@ static void sensors_init(MultiCameraState *s) {
   assert(err >= 0);
 }
 
-static void camera_open(CameraState *s, bool rear) {
+static void camera_open(CameraState *s, bool is_road_cam) {
   int err;
 
   struct csid_cfg_data csid_cfg_data = {};
@@ -741,7 +741,7 @@ static void camera_open(CameraState *s, bool rear) {
 
   // open devices
   const char *sensor_dev;
-  if (rear) {
+  if (is_road_cam) {
     s->csid_fd = open("/dev/v4l-subdev3", O_RDWR | O_NONBLOCK);
     assert(s->csid_fd >= 0);
     s->csiphy_fd = open("/dev/v4l-subdev0", O_RDWR | O_NONBLOCK);
@@ -816,7 +816,7 @@ static void camera_open(CameraState *s, bool rear) {
   err = ioctl(s->sensor_fd, VIDIOC_MSM_SENSOR_CFG, &sensorb_cfg_data);
   LOG("sensor power down: %d", err);
 
-  if (rear && s->device != DEVICE_LP3) {
+  if (is_road_cam && s->device != DEVICE_LP3) {
     // ois powerdown
     ois_cfg_data.cfgtype = CFG_OIS_POWERDOWN;
     err = ioctl(s->ois_fd, VIDIOC_MSM_OIS_CFG, &ois_cfg_data);
@@ -905,7 +905,7 @@ static void camera_open(CameraState *s, bool rear) {
   }
   LOG("sensor init i2c: %d", err);
 
-  if (rear) {
+  if (is_road_cam) {
     // init the actuator
     actuator_cfg_data.cfgtype = CFG_ACTUATOR_POWERUP;
     err = ioctl(s->actuator_fd, VIDIOC_MSM_ACTUATOR_CFG, &actuator_cfg_data);
@@ -1082,8 +1082,8 @@ static void camera_open(CameraState *s, bool rear) {
   struct msm_camera_csid_params csid_params = {
     .lane_cnt = 4,
     .lane_assign = 0x4320,
-    .phy_sel = (uint8_t)(rear ? 0 : 2),
-    .lut_params.num_cid = (uint8_t)(rear ? 3 : 1),
+    .phy_sel = (uint8_t)(is_road_cam ? 0 : 2),
+    .lut_params.num_cid = (uint8_t)(is_road_cam ? 3 : 1),
     .lut_params.vc_cfg_a = {
       {.cid = 0, .dt = CSI_RAW10, .decode_format = CSI_DECODE_10BIT},
       {.cid = 1, .dt = CSI_PD, .decode_format = CSI_DECODE_10BIT},
@@ -1109,7 +1109,7 @@ static void camera_open(CameraState *s, bool rear) {
 
   // configure QMET input
   struct msm_vfe_input_cfg input_cfg = {};
-  for (int i = 0; i < (rear ? 3 : 1); i++) {
+  for (int i = 0; i < (is_road_cam ? 3 : 1); i++) {
     StreamState *ss = &s->ss[i];
 
     memset(&input_cfg, 0, sizeof(struct msm_vfe_input_cfg));
@@ -1122,7 +1122,7 @@ static void camera_open(CameraState *s, bool rear) {
 
     // ISP: REQUEST_STREAM
     ss->stream_req.axi_stream_handle = 0;
-    if (rear) {
+    if (is_road_cam) {
       ss->stream_req.session_id = 2;
       ss->stream_req.stream_id = /*ISP_META_CHANNEL_BIT | */ISP_NATIVE_BUF_BIT | (1+i);
     } else {
@@ -1138,7 +1138,7 @@ static void camera_open(CameraState *s, bool rear) {
     ss->stream_req.stream_src = (msm_vfe_axi_stream_src)(RDI_INTF_0+i);
 
 #ifdef HIGH_FPS
-    if (rear) {
+    if (is_road_cam) {
       ss->stream_req.frame_skip_pattern = EVERY_3FRAME;
     }
 #endif
@@ -1196,7 +1196,7 @@ static void camera_open(CameraState *s, bool rear) {
 
   // ISP: START_STREAM
   s->stream_cfg.cmd = START_STREAM;
-  s->stream_cfg.num_streams = rear ? 3 : 1;
+  s->stream_cfg.num_streams = is_road_cam ? 3 : 1;
   for (int i = 0; i < s->stream_cfg.num_streams; i++) {
     s->stream_cfg.stream_handle[i] = s->ss[i].stream_req.axi_stream_handle;
   }
