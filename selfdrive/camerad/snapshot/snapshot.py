@@ -29,7 +29,7 @@ def extract_image(dat, frame_sizes):
   return np.dstack([r, g, b])
 
 
-def get_snapshots(frame="frame", front_frame="frontFrame"):
+def get_snapshots(frame="roadCameraState", front_frame="driverCameraState"):
   frame_sizes = [eon_f_frame_size, eon_d_frame_size, leon_d_frame_size, tici_f_frame_size]
   frame_sizes = {w * h: (w, h) for (w, h) in frame_sizes}
 
@@ -73,7 +73,7 @@ def snapshot():
                           cwd=os.path.join(BASEDIR, "selfdrive/camerad"), env=env)
   time.sleep(3.0)
 
-  frame = "wideFrame" if TICI else "frame"
+  frame = "wideRoadCameraState" if TICI else "roadCameraState"
   rear, front = get_snapshots(frame)
 
   proc.send_signal(signal.SIGINT)

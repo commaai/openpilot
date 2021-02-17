@@ -46,7 +46,7 @@ def steer_thread():
     if joystick is not None:
       axis_3 = clip(-joystick.testJoystick.axes[3] * 1.05, -1., 1.)          # -1 to 1
       actuators.steer = axis_3
-      actuators.steerAngle = axis_3 * 43.   # deg
+      actuators.steeringAngleDeg = axis_3 * 43.   # deg
       axis_1 = clip(-joystick.testJoystick.axes[1] * 1.05, -1., 1.)          # -1 to 1
       actuators.gas = max(axis_1, 0.)
       actuators.brake = max(-axis_1, 0.)
@@ -67,7 +67,7 @@ def steer_thread():
     CC.actuators.gas = actuators.gas
     CC.actuators.brake = actuators.brake
     CC.actuators.steer = actuators.steer
-    CC.actuators.steerAngle = actuators.steerAngle
+    CC.actuators.steeringAngleDeg = actuators.steeringAngleDeg
     CC.hudControl.visualAlert = hud_alert
     CC.hudControl.setSpeed = 20
     CC.cruiseControl.cancel = pcm_cancel_cmd

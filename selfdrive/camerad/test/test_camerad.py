@@ -17,13 +17,13 @@ LAG_FRAME_TOLERANCE = 2 # ms
 
 FPS_BASELINE = 20
 CAMERAS = {
-  "frame": FPS_BASELINE,
-  "frontFrame": FPS_BASELINE // 2,
+  "roadCameraState": FPS_BASELINE,
+  "driverCameraState": FPS_BASELINE // 2,
 }
 
 if TICI:
-  CAMERAS["frontFrame"] = FPS_BASELINE
-  CAMERAS["wideFrame"] = FPS_BASELINE
+  CAMERAS["driverCameraState"] = FPS_BASELINE
+  CAMERAS["wideRoadCameraState"] = FPS_BASELINE
 
 class TestCamerad(unittest.TestCase):
   @classmethod

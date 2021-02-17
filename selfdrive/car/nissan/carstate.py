@@ -70,7 +70,7 @@ class CarState(CarStateBase):
     # Filtering driver torque to prevent steeringPressed false positives
     ret.steeringPressed = bool(abs(sum(self.steeringTorqueSamples) / TORQUE_SAMPLES) > CarControllerParams.STEER_THRESHOLD)
 
-    ret.steeringAngle = cp.vl["STEER_ANGLE_SENSOR"]["STEER_ANGLE"]
+    ret.steeringAngleDeg = cp.vl["STEER_ANGLE_SENSOR"]["STEER_ANGLE"]
 
     ret.leftBlinker = bool(cp.vl["LIGHTS"]["LEFT_BLINKER"])
     ret.rightBlinker = bool(cp.vl["LIGHTS"]["RIGHT_BLINKER"])

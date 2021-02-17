@@ -88,6 +88,6 @@ void camera_process_rear(MultiCameraState *s, CameraState *c, int cnt) {}
 void cameras_run(MultiCameraState *s) {
   std::thread t = start_process_thread(s, "processing", &s->rear, camera_process_rear);
   set_thread_name("frame_streaming");
-  run_frame_stream(s->rear, "frame");
+  run_frame_stream(s->rear, "roadCameraState");
   t.join();
 }

@@ -307,7 +307,7 @@ void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_i
   s->front.device = s->device;
 
   s->sm_front = new SubMaster({"driverState"});
-  s->pm = new PubMaster({"frame", "frontFrame", "thumbnail"});
+  s->pm = new PubMaster({"roadCameraState", "driverCameraState", "thumbnail"});
 
   for (int i = 0; i < FRAME_BUF_COUNT; i++) {
     // TODO: make lengths correct
@@ -1655,7 +1655,7 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
   setup_self_recover(c, &s->lapres[0], std::size(s->lapres));
 
   MessageBuilder msg;
-  auto framed = msg.initEvent().initFrame();
+  auto framed = msg.initEvent().initRoadCameraState();
   fill_frame_data(framed, b->cur_frame_data);
   if (env_send_rear) {
     framed.setImage(get_frame_image(b));
@@ -1665,7 +1665,7 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
   framed.setRecoverState(s->rear.self_recover);
   framed.setSharpnessScore(s->lapres);
   framed.setTransform(b->yuv_transform.v);
-  s->pm->send("frame", msg);
+  s->pm->send("roadCameraState", msg);
 
   if (cnt % 3 == 0) {
     const int x = 290, y = 322, width = 560, height = 314;
@@ -1685,7 +1685,6 @@ void cameras_run(MultiCameraState *s) {
   while (!do_exit) {
     struct pollfd fds[2] = {{.fd = cameras[0]->isp_fd, .events = POLLPRI},
                             {.fd = cameras[1]->isp_fd, .events = POLLPRI}};
-
     int ret = poll(fds, ARRAYSIZE(fds), 1000);
     if (ret < 0) {
       if (errno == EINTR || errno == EAGAIN) continue;
@@ -1701,71 +1700,43 @@ void cameras_run(MultiCameraState *s) {
 
       struct v4l2_event ev = {};
       ret = ioctl(c->isp_fd, VIDIOC_DQEVENT, &ev);
-      struct msm_isp_event_data *isp_event_data = (struct msm_isp_event_data *)ev.u.data;
-      unsigned int event_type = ev.type;
+      const msm_isp_event_data *isp_event_data = (const msm_isp_event_data *)ev.u.data;
 
-      uint64_t timestamp = (isp_event_data->mono_timestamp.tv_sec*1000000000ULL
-                            + isp_event_data->mono_timestamp.tv_usec*1000);
-
-      int buf_idx = isp_event_data->u.buf_done.buf_idx;
-      int stream_id = isp_event_data->u.buf_done.stream_id;
-      int buffer = (stream_id&0xFFFF) - 1;
-
-      uint64_t t = nanos_since_boot();
-
-      /*if (i == 1) {
-        printf("%10.2f: VIDIOC_DQEVENT: %d  type:%X (%s)\n", t*1.0/1e6, ret, event_type, get_isp_event_name(event_type));
-      }*/
-
-      // printf("%d: %s\n", i, get_isp_event_name(event_type));
-
-      switch (event_type) {
-      case ISP_EVENT_BUF_DIVERT:
-
-        /*if (c->is_samsung) {
-          printf("write %d\n", c->frame_size);
-          FILE *f = fopen("/tmp/test", "wb");
-          fwrite((void*)c->camera_bufs[i].addr, 1, c->frame_size, f);
-          fclose(f);
-        }*/
-        //printf("divert: %d %d %d\n", i, buffer, buf_idx);
-
+      if (ev.type == ISP_EVENT_BUF_DIVERT) {
+        const int buf_idx = isp_event_data->u.buf_done.buf_idx;
+        const int buffer = (isp_event_data->u.buf_done.stream_id & 0xFFFF) - 1;
         if (buffer == 0) {
           c->buf.camera_bufs_metadata[buf_idx] = get_frame_metadata(c, isp_event_data->frame_id);
           c->buf.queue(buf_idx);
         } else {
-          uint8_t *d = (uint8_t*)(c->ss[buffer].bufs[buf_idx].addr);
+          auto &ss = c->ss[buffer];
           if (buffer == 1) {
-            parse_autofocus(c, d);
+            parse_autofocus(c, (uint8_t *)(ss.bufs[buf_idx].addr));
           }
-          c->ss[buffer].qbuf_info[buf_idx].dirty_buf = 1;
-          ioctl(c->isp_fd, VIDIOC_MSM_ISP_ENQUEUE_BUF, &c->ss[buffer].qbuf_info[buf_idx]);
+          ss.qbuf_info[buf_idx].dirty_buf = 1;
+          ioctl(c->isp_fd, VIDIOC_MSM_ISP_ENQUEUE_BUF, &ss.qbuf_info[buf_idx]);
         }
-        break;
-      case ISP_EVENT_EOF:
-        // printf("ISP_EVENT_EOF delta %f\n", (t-last_t)/1e6);
-        c->last_t = t;
 
+      } else if (ev.type == ISP_EVENT_EOF) {
+        const uint64_t timestamp = (isp_event_data->mono_timestamp.tv_sec * 1000000000ULL + isp_event_data->mono_timestamp.tv_usec * 1000);
         pthread_mutex_lock(&c->frame_info_lock);
         c->frame_metadata[c->frame_metadata_idx] = (FrameMetadata){
-          .frame_id = isp_event_data->frame_id,
-          .timestamp_eof = timestamp,
-          .frame_length = (unsigned int)c->cur_frame_length,
-          .integ_lines = (unsigned int)c->cur_integ_lines,
-          .global_gain = (unsigned int)c->cur_gain,
-          .lens_pos = c->cur_lens_pos,
-          .lens_sag = c->last_sag_acc_z,
-          .lens_err = c->focus_err,
-          .lens_true_pos = c->lens_true_pos,
-          .gain_frac = c->cur_gain_frac,
+            .frame_id = isp_event_data->frame_id,
+            .timestamp_eof = timestamp,
+            .frame_length = (unsigned int)c->cur_frame_length,
+            .integ_lines = (unsigned int)c->cur_integ_lines,
+            .global_gain = (unsigned int)c->cur_gain,
+            .lens_pos = c->cur_lens_pos,
+            .lens_sag = c->last_sag_acc_z,
+            .lens_err = c->focus_err,
+            .lens_true_pos = c->lens_true_pos,
+            .gain_frac = c->cur_gain_frac,
         };
-        c->frame_metadata_idx = (c->frame_metadata_idx+1)%METADATA_BUF_COUNT;
+        c->frame_metadata_idx = (c->frame_metadata_idx + 1) % METADATA_BUF_COUNT;
         pthread_mutex_unlock(&c->frame_info_lock);
 
-        break;
-      case ISP_EVENT_ERROR:
+      } else if (ev.type == ISP_EVENT_ERROR) {
         LOGE("ISP_EVENT_ERROR! err type: 0x%08x", isp_event_data->u.error_info.err_type);
-        break;
       }
     }
   }

@@ -8,8 +8,8 @@ import subprocess
 from cereal import log
 from selfdrive.hardware.base import HardwareBase
 
-NetworkType = log.ThermalData.NetworkType
-NetworkStrength = log.ThermalData.NetworkStrength
+NetworkType = log.DeviceState.NetworkType
+NetworkStrength = log.DeviceState.NetworkStrength
 
 
 def service_call(call):

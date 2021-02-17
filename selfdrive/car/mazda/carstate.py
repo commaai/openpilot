@@ -38,12 +38,12 @@ class CarState(CarStateBase):
     ret.leftBlinker = cp.vl["BLINK_INFO"]['LEFT_BLINK'] == 1
     ret.rightBlinker = cp.vl["BLINK_INFO"]['RIGHT_BLINK'] == 1
 
-    ret.steeringAngle = cp.vl["STEER"]['STEER_ANGLE']
+    ret.steeringAngleDeg = cp.vl["STEER"]['STEER_ANGLE']
     ret.steeringTorque = cp.vl["STEER_TORQUE"]['STEER_TORQUE_SENSOR']
     ret.steeringPressed = abs(ret.steeringTorque) > LKAS_LIMITS.STEER_THRESHOLD
 
     ret.steeringTorqueEps = cp.vl["STEER_TORQUE"]['STEER_TORQUE_MOTOR']
-    ret.steeringRate = cp.vl["STEER_RATE"]['STEER_ANGLE_RATE']
+    ret.steeringRateDeg = cp.vl["STEER_RATE"]['STEER_ANGLE_RATE']
 
     ret.brakePressed = cp.vl["PEDALS"]['BRAKE_ON'] == 1
     ret.brake = cp.vl["BRAKE"]['BRAKE_PRESSURE']

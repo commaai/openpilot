@@ -61,7 +61,7 @@ LogCameraInfo cameras_logged[LOG_CAMERA_ID_MAX] = {
   [LOG_CAMERA_ID_FCAMERA] = {
     .stream_type = VISION_STREAM_YUV_BACK,
     .filename = "fcamera.hevc",
-    .frame_packet_name = "frame",
+    .frame_packet_name = "roadCameraState",
     .fps = MAIN_FPS,
     .bitrate = MAIN_BITRATE,
     .is_h265 = true,
@@ -71,7 +71,7 @@ LogCameraInfo cameras_logged[LOG_CAMERA_ID_MAX] = {
   [LOG_CAMERA_ID_DCAMERA] = {
     .stream_type = VISION_STREAM_YUV_FRONT,
     .filename = "dcamera.hevc",
-    .frame_packet_name = "frontFrame",
+    .frame_packet_name = "driverCameraState",
     .fps = MAIN_FPS, // on EONs, more compressed this way
     .bitrate = DCAM_BITRATE,
     .is_h265 = true,
@@ -81,7 +81,7 @@ LogCameraInfo cameras_logged[LOG_CAMERA_ID_MAX] = {
   [LOG_CAMERA_ID_ECAMERA] = {
     .stream_type = VISION_STREAM_YUV_WIDE,
     .filename = "ecamera.hevc",
-    .frame_packet_name = "wideFrame",
+    .frame_packet_name = "wideRoadCameraState",
     .fps = MAIN_FPS,
     .bitrate = MAIN_BITRATE,
     .is_h265 = true,
@@ -272,8 +272,8 @@ void encoder_thread(int cam_idx) {
           // publish encode index
           MessageBuilder msg;
           // this is really ugly
-          auto eidx = cam_idx == LOG_CAMERA_ID_DCAMERA ? msg.initEvent().initFrontEncodeIdx() :
-                      (cam_idx == LOG_CAMERA_ID_ECAMERA ? msg.initEvent().initWideEncodeIdx() : msg.initEvent().initEncodeIdx());
+          auto eidx = cam_idx == LOG_CAMERA_ID_DCAMERA ? msg.initEvent().initDriverEncodeIdx() :
+                     (cam_idx == LOG_CAMERA_ID_ECAMERA ? msg.initEvent().initWideRoadEncodeIdx() : msg.initEvent().initRoadEncodeIdx());
           eidx.setFrameId(extra.frame_id);
           eidx.setTimestampSof(extra.timestamp_sof);
           eidx.setTimestampEof(extra.timestamp_eof);
@@ -437,11 +437,11 @@ int main(int argc, char** argv) {
           cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
 
           if (fpkt_id == LOG_CAMERA_ID_FCAMERA) {
-            s.rotate_state[fpkt_id].setLogFrameId(event.getFrame().getFrameId());
+            s.rotate_state[fpkt_id].setLogFrameId(event.getRoadCameraState().getFrameId());
           } else if (fpkt_id == LOG_CAMERA_ID_DCAMERA) {
-            s.rotate_state[fpkt_id].setLogFrameId(event.getFrontFrame().getFrameId());
+            s.rotate_state[fpkt_id].setLogFrameId(event.getDriverCameraState().getFrameId());
           } else if (fpkt_id == LOG_CAMERA_ID_ECAMERA) {
-            s.rotate_state[fpkt_id].setLogFrameId(event.getWideFrame().getFrameId());
+            s.rotate_state[fpkt_id].setLogFrameId(event.getWideRoadCameraState().getFrameId());
           }
           last_camera_seen_tms = millis_since_boot();
         }

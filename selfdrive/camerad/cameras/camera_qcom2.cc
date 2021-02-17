@@ -807,7 +807,7 @@ void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_i
   printf("front initted \n");
 
   s->sm = new SubMaster({"driverState"});
-  s->pm = new PubMaster({"frame", "frontFrame", "wideFrame", "thumbnail"});
+  s->pm = new PubMaster({"roadCameraState", "driverCameraState", "wideRoadCameraState", "thumbnail"});
 }
 
 void cameras_open(MultiCameraState *s) {
@@ -1101,7 +1101,7 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
   const CameraBuf *b = &c->buf;
 
   MessageBuilder msg;
-  auto framed = c == &s->rear ? msg.initEvent().initFrame() : msg.initEvent().initWideFrame();
+  auto framed = c == &s->rear ? msg.initEvent().initRoadCameraState() : msg.initEvent().initWideRoadCameraState();
   fill_frame_data(framed, b->cur_frame_data);
   if ((c == &s->rear && env_send_rear) || (c == &s->wide && env_send_wide)) {
     framed.setImage(get_frame_image(b));
@@ -1109,7 +1109,7 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
   if (c == &s->rear) {
     framed.setTransform(b->yuv_transform.v);
   }
-  s->pm->send(c == &s->rear ? "frame" : "wideFrame", msg);
+  s->pm->send(c == &s->rear ? "roadCameraState" : "wideRoadCameraState", msg);
 
   if (cnt % 3 == 0) {
     const auto [x, y, w, h] = (c == &s->wide) ? std::tuple(96, 250, 1734, 524) : std::tuple(96, 160, 1734, 986);
