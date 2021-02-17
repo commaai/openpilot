@@ -50,12 +50,12 @@ static void* road_camera_thread(void *arg) {
   set_thread_name("webcam_road_camera_thread");
   CameraState *s = (CameraState*)arg;
 
-  cv::VideoCapture cap_rear(1); // road
-  cap_rear.set(cv::CAP_PROP_FRAME_WIDTH, 853);
-  cap_rear.set(cv::CAP_PROP_FRAME_HEIGHT, 480);
-  cap_rear.set(cv::CAP_PROP_FPS, s->fps);
-  cap_rear.set(cv::CAP_PROP_AUTOFOCUS, 0); // off
-  cap_rear.set(cv::CAP_PROP_FOCUS, 0); // 0 - 255?
+  cv::VideoCapture cap_road(1); // road
+  cap_road.set(cv::CAP_PROP_FRAME_WIDTH, 853);
+  cap_road.set(cv::CAP_PROP_FRAME_HEIGHT, 480);
+  cap_road.set(cv::CAP_PROP_FPS, s->fps);
+  cap_road.set(cv::CAP_PROP_AUTOFOCUS, 0); // off
+  cap_road.set(cv::CAP_PROP_FOCUS, 0); // 0 - 255?
   // cv::Rect roi_rear(160, 0, 960, 720);
 
   cv::Size size;
@@ -72,7 +72,7 @@ static void* road_camera_thread(void *arg) {
   //                 0.0, 0.0, 1.0};
   const cv::Mat transform = cv::Mat(3, 3, CV_32F, ts);
 
-  if (!cap_rear.isOpened()) {
+  if (!cap_road.isOpened()) {
     err = 1;
   }
 
@@ -82,7 +82,7 @@ static void* road_camera_thread(void *arg) {
     cv::Mat frame_mat;
     cv::Mat transformed_mat;
 
-    cap_rear >> frame_mat;
+    cap_road >> frame_mat;
 
     // int rows = frame_mat.rows;
     // int cols = frame_mat.cols;
@@ -121,17 +121,17 @@ static void* road_camera_thread(void *arg) {
     buf_idx = (buf_idx + 1) % FRAME_BUF_COUNT;
   }
 
-  cap_rear.release();
+  cap_road.release();
   return NULL;
 }
 
 void driver_camera_thread(CameraState *s) {
   int err;
 
-  cv::VideoCapture cap_front(2); // driver
-  cap_front.set(cv::CAP_PROP_FRAME_WIDTH, 853);
-  cap_front.set(cv::CAP_PROP_FRAME_HEIGHT, 480);
-  cap_front.set(cv::CAP_PROP_FPS, s->fps);
+  cv::VideoCapture cap_driver(2); // driver
+  cap_driver.set(cv::CAP_PROP_FRAME_WIDTH, 853);
+  cap_driver.set(cv::CAP_PROP_FRAME_HEIGHT, 480);
+  cap_driver.set(cv::CAP_PROP_FPS, s->fps);
   // cv::Rect roi_front(320, 0, 960, 720);
 
   cv::Size size;
@@ -148,7 +148,7 @@ void driver_camera_thread(CameraState *s) {
   //                 0.0, 0.0, 1.0};
   const cv::Mat transform = cv::Mat(3, 3, CV_32F, ts);
 
-  if (!cap_front.isOpened()) {
+  if (!cap_driver.isOpened()) {
     err = 1;
   }
 
@@ -159,7 +159,7 @@ void driver_camera_thread(CameraState *s) {
     cv::Mat frame_mat;
     cv::Mat transformed_mat;
 
-    cap_front >> frame_mat;
+    cap_driver >> frame_mat;
 
     // int rows = frame_mat.rows;
     // int cols = frame_mat.cols;
@@ -196,7 +196,7 @@ void driver_camera_thread(CameraState *s) {
     buf_idx = (buf_idx + 1) % FRAME_BUF_COUNT;
   }
 
-  cap_front.release();
+  cap_driver.release();
   return;
 }
 
