@@ -12,6 +12,7 @@ import subprocess
 from panda import BASEDIR as PANDA_BASEDIR
 
 SIGNED_FW_FN = os.path.join(os.path.abspath(PANDA_BASEDIR), "board", "obj", "panda.bin.signed")
+DEV_FW_FN = os.path.join(os.path.abspath(PANDA_BASEDIR), "board", "obj", "panda.bin")
 SIGNED_FIRMWARE_URL = "https://github.com/commaai/openpilot/blob/release2/panda/board/obj/panda.bin.signed?raw=true"
 
 
@@ -102,6 +103,11 @@ class TestPandaFlashing(unittest.TestCase):
 
     try:
       os.unlink(SIGNED_FW_FN)
+    except FileNotFoundError:
+      pass
+
+    try:
+      os.unlink(DEV_FW_FN)
     except FileNotFoundError:
       pass
 
