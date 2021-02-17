@@ -46,8 +46,8 @@ if __name__ == "__main__":
       lr = LogReader(qlog_path)
 
       for msg in lr:
-        if msg.which() == "health":
-          if msg.health.pandaType not in ['uno', 'blackPanda']:
+        if msg.which() == "pandaState":
+          if msg.pandaState.pandaType not in ['uno', 'blackPanda']:
             dongles.append(dongle_id)
             break
 

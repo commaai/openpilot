@@ -20,8 +20,8 @@ MM_MODEM_STATE_CONNECTED = 11
 
 TIMEOUT = 0.1
 
-NetworkType = log.ThermalData.NetworkType
-NetworkStrength = log.ThermalData.NetworkStrength
+NetworkType = log.DeviceState.NetworkType
+NetworkStrength = log.DeviceState.NetworkStrength
 
 # https://developer.gnome.org/ModemManager/unstable/ModemManager-Flags-and-Enumerations.html#MMModemAccessTechnology
 MM_MODEM_ACCESS_TECHNOLOGY_UMTS = 1 << 5

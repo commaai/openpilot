@@ -49,9 +49,9 @@ class UnloggerWorker(object):
     poller = zmq.Poller()
     poller.register(commands_socket, zmq.POLLIN)
 
-    # We can't publish frames without encodeIdx, so add when it's missing.
-    if "frame" in pub_types:
-      pub_types["encodeIdx"] = None
+    # We can't publish frames without roadEncodeIdx, so add when it's missing.
+    if "roadCameraState" in pub_types:
+      pub_types["roadEncodeIdx"] = None
 
     # gc.set_debug(gc.DEBUG_LEAK | gc.DEBUG_OBJECTS | gc.DEBUG_STATS | gc.DEBUG_SAVEALL |
     # gc.DEBUG_UNCOLLECTABLE)
@@ -86,11 +86,11 @@ class UnloggerWorker(object):
         continue
 
       # **** special case certain message types ****
-      if typ == "encodeIdx" and msg.encodeIdx.type == fullHEVC:
-        # this assumes the encodeIdx always comes before the frame
+      if typ == "roadEncodeIdx" and msg.roadEncodeIdx.type == fullHEVC:
+        # this assumes the roadEncodeIdx always comes before the frame
         self._frame_id_lookup[
-          msg.encodeIdx.frameId] = msg.encodeIdx.segmentNum, msg.encodeIdx.segmentId
-        #print "encode", msg.encodeIdx.frameId, len(self._readahead), route_time
+          msg.roadEncodeIdx.frameId] = msg.roadEncodeIdx.segmentNum, msg.roadEncodeIdx.segmentId
+        #print "encode", msg.roadEncodeIdx.frameId, len(self._readahead), route_time
       self._readahead.appendleft((typ, msg, route_time, cookie))
 
   def _send_logs(self, data_socket):
@@ -98,7 +98,7 @@ class UnloggerWorker(object):
       typ, msg, route_time, cookie = self._readahead.pop()
       smsg = msg.as_builder()
 
-      if typ == "frame":
+      if typ == "roadCameraState":
         frame_id = msg.frame.frameId
 
         # Frame exists, make sure we have a framereader.
@@ -135,7 +135,7 @@ class UnloggerWorker(object):
       self._lr = MultiLogIterator(route.log_paths(), wraparound=True)
       if self._frame_reader is not None:
         self._frame_reader.close()
-      if "frame" in pub_types or "encodeIdx" in pub_types:
+      if "roadCameraState" in pub_types or "roadEncodeIdx" in pub_types:
         # reset frames for a route
         self._frame_id_lookup = {}
         self._frame_reader = RouteFrameReader(
@@ -313,8 +313,8 @@ def absolute_time_str(s, start_time):
 def _get_address_mapping(args):
   if args.min is not None:
     services_to_mock = [
-      'thermal', 'can', 'health', 'sensorEvents', 'gpsNMEA', 'frame', 'encodeIdx',
-      'model', 'features', 'liveLocation',
+      'deviceState', 'can', 'pandaState', 'sensorEvents', 'gpsNMEA', 'roadCameraState', 'roadEncodeIdx',
+      'modelV2', 'liveLocation',
     ]
   elif args.enabled is not None:
     services_to_mock = args.enabled

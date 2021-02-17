@@ -407,11 +407,11 @@ void common_camera_process_front(SubMaster *sm, PubMaster *pm, CameraState *c, i
   }
 
   MessageBuilder msg;
-  auto framed = msg.initEvent().initFrontFrame();
+  auto framed = msg.initEvent().initDriverCameraState();
   framed.setFrameType(cereal::FrameData::FrameType::FRONT);
   fill_frame_data(framed, b->cur_frame_data);
   if (env_send_front) {
     framed.setImage(get_frame_image(b));
   }
-  pm->send("frontFrame", msg);
+  pm->send("driverCameraState", msg);
 }

@@ -196,7 +196,7 @@ class Localizer():
 
     orientation_ecef = euler_from_quat(self.kf.x[States.ECEF_ORIENTATION])
     orientation_ned = ned_euler_from_ecef(ecef_pos, orientation_ecef)
-    orientation_ned_gps = np.array([0, 0, np.radians(log.bearing)])
+    orientation_ned_gps = np.array([0, 0, np.radians(log.bearingDeg)])
     orientation_error = np.mod(orientation_ned - orientation_ned_gps - np.pi, 2*np.pi) - np.pi
     initial_pose_ecef_quat = quat_from_euler(ecef_euler_from_ned(ecef_pos, orientation_ned_gps))
     if np.linalg.norm(ecef_vel) > 5 and np.linalg.norm(orientation_error) > 1:
