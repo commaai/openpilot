@@ -35,26 +35,19 @@
 #define DFU_CLRSTATUS 4
 #define DFU_ABORT 6
 
-std::string get_basedir() { // Ends with /
-  try {
-    std::string basedir = getenv("BASEDIR");
-    if (basedir == "") {
-      LOGW("BASEDIR is not defined, provide the enviromental variable or run manager.py");
-      return "";
-    }
-    return basedir;
-  } catch (std::logic_error &e) {
-    LOGW("BASEDIR is not defined, provide the enviromental variable or run manager.py");
-    return "";
-  }
-}
-void build_st(std::string target) {
-  system(("cd " + get_basedir() + "panda/board && make -f Makefile clean > /dev/null && make -f Makefile " + target +" > /dev/null ").c_str());
+const std::string basedir = util::getenv_default("BASEDIR", "", "/data/pythonpath");
+
+void build_st(std::string target, bool clean=true, bool output=false) {
+  std::string cmd = "cd " + basedir + "/panda/board";
+  if (clean) cmd += " && make clean";
+  cmd += " && make " + target;
+  if (!output) cmd += " > /dev/null";
+
+  system(cmd.c_str());
 }
 
 std::string get_firmware_fn() {
-  std::string basedir = get_basedir();
-  std::string signed_fn = basedir + "panda/board/obj/panda.bin.signed";
+  std::string signed_fn = basedir + "/panda/board/obj/panda.bin.signed";
 
   if (util::file_exists(signed_fn)) {
     LOGW("Using prebuilt signed firmware");
@@ -62,12 +55,13 @@ std::string get_firmware_fn() {
   } else {
     LOGW("Building panda firmware");
     build_st("obj/panda.bin");
-    return basedir + "panda/board/obj/panda.bin";
+    return basedir + "/panda/board/obj/panda.bin";
   }
 }
 
 std::string get_expected_signature() {
   std::string firmware_filename = get_firmware_fn();
+  // TODO: check that file exists and has a length > 128
   std::string firmware_contents = util::read_file(firmware_filename);
   std::string firmware_sig = firmware_contents.substr(firmware_contents.length()-128);
   if (firmware_sig.length() != 128) {
@@ -158,9 +152,8 @@ void dfu_program_bootstub(PandaComm* dfuPanda, std::string program) {
 }
 
 void dfu_recover(PandaComm* dfuPanda) {
-  std::string basedir = get_basedir();
   build_st("obj/bootstub.panda.bin");
-  std::string program = util::read_file(basedir+"panda/board/obj/bootstub.panda.bin");
+  std::string program = util::read_file(basedir + "/panda/board/obj/bootstub.panda.bin");
   dfu_program_bootstub(dfuPanda, program);
 }
 
@@ -182,7 +175,7 @@ void update_panda() {
   LOGD("\n1: Move out of DFU\n");
   get_out_of_dfu();
   LOGD("\n2: Start DynamicPanda and run the required steps\n");
-  
+
   std::string fw_fn = get_firmware_fn();
   std::string fw_signature = get_expected_signature();
   DynamicPanda tempPanda;
@@ -216,4 +209,4 @@ void update_panda() {
     throw std::runtime_error("FIRMWARE VERSION MISMATCH");
   }
 
-} 
+}
