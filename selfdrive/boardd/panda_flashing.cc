@@ -183,7 +183,6 @@ void get_out_of_dfu() {
     dfuPanda = new PandaComm(0x0483, 0xdf11);
   } catch(std::runtime_error &e) {
     LOGD("DFU panda not found");
-    delete(dfuPanda);
     return;
   }
   LOGD("Panda in DFU mode found, flashing recovery");

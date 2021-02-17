@@ -100,11 +100,13 @@ class TestPandaFlashing(unittest.TestCase):
     panda1.reset(enter_bootloader=True)
     panda1.close()
     print("DFU?")
+    time.sleep(5)
     # Ensure no normal pandas and one DFU panda
     self.assertEqual(len(PandaDFU.list()), 1)
     self.assertEqual(len(Panda.list()), 0)
     # Run the C++ panda flasher, takes a bit of time
-    os.system("export BASEDIR=\"/home/batman/openpilot/\"; ./flash_panda")
+    print("RUNNING C++")
+    os.system("export BASEDIR=\"/home/batman/openpilot/\";export LOGPRINT=\"debug\"; ./flash_panda")
     # Now we should have one panda and 0 DFU pandas
     self.assertEqual(len(Panda.list()), 1)
     self.assertEqual(len(PandaDFU.list()), 0)
@@ -120,7 +122,8 @@ class TestPandaFlashing(unittest.TestCase):
     comma_sig = panda.get_signature()
     panda.close()
     # Now we should flash the development firmware then find it doesn't run due to the signature and reflash the dev bootloader and firmware
-    os.system("export BASEDIR=\"/home/batman/openpilot/\"; ./flash_panda")
+    print("RUNNING C++")
+    os.system("export BASEDIR=\"/home/batman/openpilot/\";export LOGPRINT=\"debug\"; ./flash_panda")
     # In the end we want no DFU pandas and one running panda
     self.assertEqual(len(PandaDFU.list()), 0)
     self.assertEqual(len(Panda.list()), 1)
@@ -140,7 +143,8 @@ class TestPandaFlashing(unittest.TestCase):
     # More reliable wget (https://superuser.com/questions/493640/how-to-retry-connections-with-wget)
     os.system("cd ../../../../panda/board/obj/; wget --retry-connrefused --waitretry=5 --timeout=30 \"https://github.com/commaai/openpilot/blob/release2/panda/board/obj/panda.bin.signed?raw=true\" -O panda.bin.signed")
     # Run the panda flasher. It should install the signed firmware
-    os.system("export BASEDIR=\"/home/batman/openpilot/\"; ./flash_panda")
+    print("RUNNING C++")
+    os.system("export BASEDIR=\"/home/batman/openpilot/\";export LOGPRINT=\"debug\"; ./flash_panda")
     # Remove the signed firmware
     os.system("rm ../../../../panda/board/obj/panda.bin.signed")
     # In the end we want no DFU pandas and one running panda
