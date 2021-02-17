@@ -359,7 +359,7 @@ void common_driver_camera_process(SubMaster *sm, PubMaster *pm, CameraState *c, 
   const CameraBuf *b = &c->buf;
 
   static int x_min = 0, x_max = 0, y_min = 0, y_max = 0;
-  static const bool rhd_front = Params().read_db_bool("IsRHD");
+  static const bool is_rhd = Params().read_db_bool("IsRHD");
 
   // auto exposure
   if (cnt % 3 == 0) {
@@ -375,8 +375,8 @@ void common_driver_camera_process(SubMaster *sm, PubMaster *pm, CameraState *c, 
         int frame_width = 668;
         int frame_height = frame_width / 1.33;
 #endif
-        int x_offset = rhd_front ? 0 : frame_width - (0.5 * frame_height);
-        x_offset += (face_position[0] * (rhd_front ? -1.0 : 1.0) + 0.5) * (0.5 * frame_height);
+        int x_offset = is_rhd ? 0 : frame_width - (0.5 * frame_height);
+        x_offset += (face_position[0] * (is_rhd ? -1.0 : 1.0) + 0.5) * (0.5 * frame_height);
         int y_offset = (face_position[1] + 0.5) * frame_height;
 #ifdef QCOM2
         x_offset += 630;
@@ -396,8 +396,8 @@ void common_driver_camera_process(SubMaster *sm, PubMaster *pm, CameraState *c, 
     if (x_max == 0) {
       // default setting
 #ifndef QCOM2
-      x_min = rhd_front ? 0 : b->rgb_width * 3 / 5;
-      x_max = rhd_front ? b->rgb_width * 2 / 5 : b->rgb_width;
+      x_min = is_rhd ? 0 : b->rgb_width * 3 / 5;
+      x_max = is_rhd ? b->rgb_width * 2 / 5 : b->rgb_width;
       y_min = b->rgb_height / 3;
       y_max = b->rgb_height;
 #else
