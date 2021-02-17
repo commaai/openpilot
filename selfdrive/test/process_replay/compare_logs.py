@@ -16,11 +16,11 @@ from tools.lib.logreader import LogReader
 EPSILON = sys.float_info.epsilon
 
 
-def save_log(dest, log_msgs):
-  dat = b""
-  for msg in tqdm(log_msgs):
-    dat += msg.as_builder().to_bytes()
-  dat = bz2.compress(dat)
+def save_log(dest, log_msgs, compress=True):
+  dat = b"".join([msg.as_builder().to_bytes() for msg in tqdm(log_msgs)])
+
+  if compress:
+    dat = bz2.compress(dat)
 
   with open(dest, "wb") as f:
    f.write(dat)
