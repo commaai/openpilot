@@ -260,14 +260,14 @@ def thermald_thread():
     if (not EON) or is_uno:
       msg.deviceState.batteryPercent = 100
       msg.deviceState.batteryStatus = "Charging"
-      msg.deviceState.bat = 0
+      msg.deviceState.batteryTempC = 0
 
     current_filter.update(msg.deviceState.batteryCurrent / 1e6)
 
     # TODO: add car battery voltage check
-    max_cpu_temp = cpu_temp_filter.update(max(msg.deviceState.cpu))
-    max_comp_temp = max(max_cpu_temp, msg.deviceState.mem, max(msg.deviceState.gpu))
-    bat_temp = msg.deviceState.bat
+    max_cpu_temp = cpu_temp_filter.update(max(msg.deviceState.cpuTempC))
+    max_comp_temp = max(max_cpu_temp, msg.deviceState.memoryTempC, max(msg.deviceState.gpuTempC))
+    bat_temp = msg.deviceState.batteryTempC
 
     if handle_fan is not None:
       fan_speed = handle_fan(max_cpu_temp, bat_temp, fan_speed, startup_conditions["ignition"])
@@ -384,7 +384,7 @@ def thermald_thread():
 
     # Offroad power monitoring
     power_monitor.calculate(pandaState)
-    msg.deviceState.offroadPowerUsage = power_monitor.get_power_used()
+    msg.deviceState.offroadPowerUsageUwh = power_monitor.get_power_used()
     msg.deviceState.carBatteryCapacityUwh = max(0, power_monitor.get_car_battery_capacity())
 
     # Check if we need to disable charging (handled by boardd)
