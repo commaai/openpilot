@@ -326,9 +326,16 @@ void set_exposure_target(CameraState *c, const uint8_t *pix_ptr, int x_start, in
 
 extern ExitHandler do_exit;
 
-void *processing_thread(MultiCameraState *cameras, const char *tname,
-                        CameraState *cs, process_thread_cb callback) {
-  set_thread_name(tname);
+void *processing_thread(MultiCameraState *cameras, CameraState *cs, process_thread_cb callback) {
+  const char *thread_name = nullptr;
+  if (cs == &cameras->road_cam) {
+    thread_name = "RoadCamera";
+  } else if (cs == &cameras->driver_cam) {
+    thread_name = "DriverCamera";
+  } else {
+    thread_name = "WideRoadCamera";
+  }
+  set_thread_name(thread_name);
 
   for (int cnt = 0; !do_exit; cnt++) {
     if (!cs->buf.acquire()) continue;
@@ -344,9 +351,8 @@ void *processing_thread(MultiCameraState *cameras, const char *tname,
   return NULL;
 }
 
-std::thread start_process_thread(MultiCameraState *cameras, const char *tname,
-                                 CameraState *cs, process_thread_cb callback) {
-  return std::thread(processing_thread, cameras, tname, cs, callback);
+std::thread start_process_thread(MultiCameraState *cameras, CameraState *cs, process_thread_cb callback) {
+  return std::thread(processing_thread, cameras, cs, callback);
 }
 
 void common_driver_camera_process(SubMaster *sm, PubMaster *pm, CameraState *c, int cnt) {

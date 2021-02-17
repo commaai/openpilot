@@ -86,7 +86,7 @@ void camera_autoexposure(CameraState *s, float grey_frac) {}
 void road_camera_process(MultiCameraState *s, CameraState *c, int cnt) {}
 
 void cameras_run(MultiCameraState *s) {
-  std::thread t = start_process_thread(s, "processing", &s->road_cam, road_camera_process);
+  std::thread t = start_process_thread(s, &s->road_cam, road_camera_process);
   set_thread_name("frame_streaming");
   run_frame_stream(s->road_cam, "roadCameraState");
   t.join();

@@ -265,8 +265,8 @@ void road_camera_process(MultiCameraState *s, CameraState *c, int cnt) {
 
 void cameras_run(MultiCameraState *s) {
   std::vector<std::thread> threads;
-  threads.push_back(start_process_thread(s, "processing", &s->road_cam, road_camera_process));
-  threads.push_back(start_process_thread(s, "frontview", &s->driver_cam, driver_camera_process));
+  threads.push_back(start_process_thread(s, &s->road_cam, road_camera_process));
+  threads.push_back(start_process_thread(s, &s->driver_cam, driver_camera_process));
 
   std::thread t_rear = std::thread(road_camera_thread, &s->road_cam);
   set_thread_name("webcam_thread");
