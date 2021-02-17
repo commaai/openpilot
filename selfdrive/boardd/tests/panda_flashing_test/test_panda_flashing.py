@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from panda.python import serial
 from panda import Panda, PandaDFU, build_st
 import unittest
 import time
@@ -33,32 +34,33 @@ def download_file(url):
 
 
 class TestPandaFlashing(unittest.TestCase):
+  def wait_for(self, cls, serial):
+    for _ in range(10):
+      pandas = cls.list()
+      if serial in pandas:
+        return
+
+      time.sleep(0.5)
+    self.assertTrue(False)
+
   def ensure_dfu(self):
     """Ensures the connected panda is running in DFU mode"""
-    if len(PandaDFU.list()) == 1:
+    dfu_list = PandaDFU.list()
+    if self.dfu_serial in dfu_list:
       return
 
-    pandas = Panda.list()
-    self.assertEqual(len(pandas), 1)
-
     # Move to DFU mode
-    panda1 = Panda(pandas[0])
-    panda1.reset(enter_bootstub=True)
-    panda1.reset(enter_bootloader=True)
-    panda1.close()
+    panda = Panda(self.serial)
+    panda.reset(enter_bootstub=True)
+    panda.reset(enter_bootloader=True)
+    panda.close()
 
-    # TODO: check faster, but still have max timeout
-    time.sleep(5)
-
-    # Ensure no normal pandas and one DFU panda
-    self.assertEqual(len(PandaDFU.list()), 1)
-    self.assertEqual(len(Panda.list()), 0)
+    self.wait_for(PandaDFU, self.dfu_serial)
 
   def check_panda_running(self, expected_signature=None):
-    self.assertEqual(len(PandaDFU.list()), 0)
-    self.assertEqual(len(Panda.list()), 1)
+    self.wait_for(Panda, self.serial)
 
-    panda = Panda(Panda.list()[0])
+    panda = Panda(self.serial)
     self.assertFalse(panda.bootstub)
 
     # TODO: check signature
@@ -71,29 +73,40 @@ class TestPandaFlashing(unittest.TestCase):
     fp = BytesIO(download_file("https://github.com/commaai/panda-artifacts/blob/master/panda-v1.7.3-DEV-d034f3e9-RELEASE.zip?raw=true"))
 
     with zipfile.ZipFile(fp) as zip_file:
-      # Flash bootstub
       bootstub_code = zip_file.open('bootstub.panda.bin').read()
-      PandaDFU(None).program_bootstub(bootstub_code)
+      PandaDFU(self.dfu_serial).program_bootstub(bootstub_code)
 
-      # Wait for panda to come back online
-      while not Panda.list():
-        print("Waiting for Panda")
-        time.sleep(0.5)
+      self.wait_for(Panda, self.serial)
 
-      # Flash firmware
       firmware_code = zip_file.open('panda.bin').read()
-      Panda().flash(code=firmware_code)
+      panda = Panda(self.serial)
+      panda.flash(code=firmware_code)
+      panda.close()
 
   def run_flasher(self):
     subprocess.check_call("./flash_panda")
 
+  def claim_panda(self):
+    # TODO: handle starting test with a panda in DFU mode
+
+    panda_list = Panda.list()
+    self.assertTrue(len(panda_list) > 0)
+
+    self.serial = panda_list[0]
+    self.dfu_serial = PandaDFU.st_serial_to_dfu_serial(self.serial)
+    print("Got panda", self.serial, self.dfu_serial)
+
   def setUp(self):
+    if not hasattr(self, 'serial'):
+      self.claim_panda()
+
     try:
       os.unlink(SIGNED_FW_FN)
     except FileNotFoundError:
       pass
 
     self.flash_release_bootloader_and_fw()
+    self.wait_for(Panda, self.serial)
 
   def test_flash_from_dfu(self):
     self.ensure_dfu()
