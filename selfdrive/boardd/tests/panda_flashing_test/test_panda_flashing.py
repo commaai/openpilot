@@ -88,8 +88,12 @@ class TestPandaFlashing(unittest.TestCase):
     subprocess.check_call("./flash_panda")
 
   def claim_panda(self):
-    # TODO: handle starting test with a panda in DFU mode
-
+    dfu_list = PandaDFU.list()
+    for p in dfu_list:
+      dpanda = PandaDFU(p)
+      dpanda.recover()
+    time.sleep(1)
+    self.assertTrue(len(dfu_list) == 0)
     panda_list = Panda.list()
     self.assertTrue(len(panda_list) > 0)
 
@@ -130,10 +134,8 @@ class TestPandaFlashing(unittest.TestCase):
     with open(SIGNED_FW_FN, 'wb') as f:
       f.write(download_file(SIGNED_FIRMWARE_URL))
 
-    try:
-      os.system("./flash_panda")
-    finally:
-      os.unlink(SIGNED_FW_FN)
+    self.run_flasher()
+    os.unlink(SIGNED_FW_FN)
 
     # TODO: check for signed signature
     self.check_panda_running()
