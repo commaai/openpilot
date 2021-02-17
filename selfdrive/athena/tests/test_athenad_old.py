@@ -107,18 +107,18 @@ def test_athena():
     assert resp.get('result'), resp
     assert resp['result']['jpegBack'], resp['result']
 
-    @with_processes(["thermald"])
-    def test_athena_thermal():
-      print("ATHENA: getMessage(thermal)")
+    @with_processes(["deviceStated"])
+    def test_athena_deviceState():
+      print("ATHENA: getMessage(deviceState)")
       resp = athena_post({
         "method": "getMessage",
-        "params": {"service": "thermal", "timeout": 5000},
+        "params": {"service": "deviceState", "timeout": 5000},
         "id": 0,
         "jsonrpc": "2.0"
       })
       assert resp.get('result'), resp
-      assert resp['result']['thermal'], resp['result']
-    test_athena_thermal()
+      assert resp['result']['deviceState'], resp['result']
+    test_athena_deviceState()
   finally:
     try:
       athenad_pid = subprocess.check_output(["pgrep", "-P", manage_athenad_pid], encoding="utf-8").strip()

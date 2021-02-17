@@ -157,7 +157,7 @@ bool usb_connect() {
   // power on charging, only the first time. Panda can also change mode and it causes a brief disconneciton
 #ifndef __x86_64__
   if (!connected_once) {
-    tmp_panda->set_usb_power_mode(cereal::HealthData::UsbPowerMode::CDP);
+    tmp_panda->set_usb_power_mode(cereal::PandaState::UsbPowerMode::CDP);
   }
 #endif
 
@@ -263,38 +263,38 @@ void can_recv_thread() {
   }
 }
 
-void can_health_thread(bool spoofing_started) {
-  LOGD("start health thread");
-  PubMaster pm({"health"});
+void panda_state_thread(bool spoofing_started) {
+  LOGD("start panda state thread");
+  PubMaster pm({"pandaState"});
 
   uint32_t no_ignition_cnt = 0;
   bool ignition_last = false;
   Params params = Params();
 
-  // Broadcast empty health message when panda is not yet connected
+  // Broadcast empty pandaState message when panda is not yet connected
   while (!do_exit && !panda) {
     MessageBuilder msg;
-    auto healthData  = msg.initEvent().initHealth();
+    auto pandaState  = msg.initEvent().initPandaState();
 
-    healthData.setPandaType(cereal::HealthData::PandaType::UNKNOWN);
-    pm.send("health", msg);
+    pandaState.setPandaType(cereal::PandaState::PandaType::UNKNOWN);
+    pm.send("pandaState", msg);
     util::sleep_for(500);
   }
 
   // run at 2hz
   while (!do_exit && panda->connected) {
-    health_t health = panda->get_health();
+    health_t pandaState = panda->get_state();
 
     if (spoofing_started) {
-      health.ignition_line = 1;
+      pandaState.ignition_line = 1;
     }
 
     // Make sure CAN buses are live: safety_setter_thread does not work if Panda CAN are silent and there is only one other CAN node
-    if (health.safety_model == (uint8_t)(cereal::CarParams::SafetyModel::SILENT)) {
+    if (pandaState.safety_model == (uint8_t)(cereal::CarParams::SafetyModel::SILENT)) {
       panda->set_safety_model(cereal::CarParams::SafetyModel::NO_OUTPUT);
     }
 
-    ignition = ((health.ignition_line != 0) || (health.ignition_can != 0));
+    ignition = ((pandaState.ignition_line != 0) || (pandaState.ignition_can != 0));
 
     if (ignition) {
       no_ignition_cnt = 0;
@@ -304,12 +304,12 @@ void can_health_thread(bool spoofing_started) {
 
 #ifndef __x86_64__
     bool power_save_desired = !ignition;
-    if (health.power_save_enabled != power_save_desired){
+    if (pandaState.power_save_enabled != power_save_desired){
       panda->set_power_saving(power_save_desired);
     }
 
     // set safety mode to NO_OUTPUT when car is off. ELM327 is an alternative if we want to leverage athenad/connect
-    if (!ignition && (health.safety_model != (uint8_t)(cereal::CarParams::SafetyModel::NO_OUTPUT))) {
+    if (!ignition && (pandaState.safety_model != (uint8_t)(cereal::CarParams::SafetyModel::NO_OUTPUT))) {
       panda->set_safety_model(cereal::CarParams::SafetyModel::NO_OUTPUT);
     }
 #endif
@@ -341,48 +341,48 @@ void can_health_thread(bool spoofing_started) {
     ignition_last = ignition;
     uint16_t fan_speed_rpm = panda->get_fan_speed();
 
-    // set fields
+    // build msg
     MessageBuilder msg;
-    auto healthData = msg.initEvent().initHealth();
-    healthData.setUptime(health.uptime);
+    auto ps = msg.initEvent().initPandaState();
+    ps.setUptime(pandaState.uptime);
 
 #ifdef QCOM2
-    healthData.setVoltage(std::stoi(util::read_file("/sys/class/hwmon/hwmon1/in1_input")));
-    healthData.setCurrent(std::stoi(util::read_file("/sys/class/hwmon/hwmon1/curr1_input")));
+    ps.setVoltage(std::stoi(util::read_file("/sys/class/hwmon/hwmon1/in1_input")));
+    ps.setCurrent(std::stoi(util::read_file("/sys/class/hwmon/hwmon1/curr1_input")));
 #else
-    healthData.setVoltage(health.voltage);
-    healthData.setCurrent(health.current);
+    ps.setVoltage(pandaState.voltage);
+    ps.setCurrent(pandaState.current);
 #endif
 
-    healthData.setIgnitionLine(health.ignition_line);
-    healthData.setIgnitionCan(health.ignition_can);
-    healthData.setControlsAllowed(health.controls_allowed);
-    healthData.setGasInterceptorDetected(health.gas_interceptor_detected);
-    healthData.setHasGps(panda->is_pigeon);
-    healthData.setCanRxErrs(health.can_rx_errs);
-    healthData.setCanSendErrs(health.can_send_errs);
-    healthData.setCanFwdErrs(health.can_fwd_errs);
-    healthData.setGmlanSendErrs(health.gmlan_send_errs);
-    healthData.setPandaType(panda->hw_type);
-    healthData.setUsbPowerMode(cereal::HealthData::UsbPowerMode(health.usb_power_mode));
-    healthData.setSafetyModel(cereal::CarParams::SafetyModel(health.safety_model));
-    healthData.setFanSpeedRpm(fan_speed_rpm);
-    healthData.setFaultStatus(cereal::HealthData::FaultStatus(health.fault_status));
-    healthData.setPowerSaveEnabled((bool)(health.power_save_enabled));
+    ps.setIgnitionLine(pandaState.ignition_line);
+    ps.setIgnitionCan(pandaState.ignition_can);
+    ps.setControlsAllowed(pandaState.controls_allowed);
+    ps.setGasInterceptorDetected(pandaState.gas_interceptor_detected);
+    ps.setHasGps(panda->is_pigeon);
+    ps.setCanRxErrs(pandaState.can_rx_errs);
+    ps.setCanSendErrs(pandaState.can_send_errs);
+    ps.setCanFwdErrs(pandaState.can_fwd_errs);
+    ps.setGmlanSendErrs(pandaState.gmlan_send_errs);
+    ps.setPandaType(panda->hw_type);
+    ps.setUsbPowerMode(cereal::PandaState::UsbPowerMode(pandaState.usb_power_mode));
+    ps.setSafetyModel(cereal::CarParams::SafetyModel(pandaState.safety_model));
+    ps.setFanSpeedRpm(fan_speed_rpm);
+    ps.setFaultStatus(cereal::PandaState::FaultStatus(pandaState.fault_status));
+    ps.setPowerSaveEnabled((bool)(pandaState.power_save_enabled));
 
     // Convert faults bitset to capnp list
-    std::bitset<sizeof(health.faults) * 8> fault_bits(health.faults);
-    auto faults = healthData.initFaults(fault_bits.count());
+    std::bitset<sizeof(pandaState.faults) * 8> fault_bits(pandaState.faults);
+    auto faults = ps.initFaults(fault_bits.count());
 
     size_t i = 0;
-    for (size_t f = size_t(cereal::HealthData::FaultType::RELAY_MALFUNCTION);
-        f <= size_t(cereal::HealthData::FaultType::INTERRUPT_RATE_TIM9); f++){
+    for (size_t f = size_t(cereal::PandaState::FaultType::RELAY_MALFUNCTION);
+        f <= size_t(cereal::PandaState::FaultType::INTERRUPT_RATE_TIM9); f++){
       if (fault_bits.test(f)) {
-        faults.set(i, cereal::HealthData::FaultType(f));
+        faults.set(i, cereal::PandaState::FaultType(f));
         i++;
       }
     }
-    pm.send("health", msg);
+    pm.send("pandaState", msg);
     panda->send_heartbeat();
     util::sleep_for(500);
   }
@@ -390,7 +390,7 @@ void can_health_thread(bool spoofing_started) {
 
 void hardware_control_thread() {
   LOGD("start hardware control thread");
-  SubMaster sm({"thermal", "frontFrame"});
+  SubMaster sm({"deviceState", "driverCameraState"});
 
   uint64_t last_front_frame_t = 0;
   uint16_t prev_fan_speed = 999;
@@ -406,15 +406,15 @@ void hardware_control_thread() {
     sm.update(1000); // TODO: what happens if EINTR is sent while in sm.update?
 
 #ifdef QCOM
-    if (sm.updated("thermal")){
+    if (sm.updated("deviceState")){
       // Charging mode
-      bool charging_disabled = sm["thermal"].getThermal().getChargingDisabled();
+      bool charging_disabled = sm["deviceState"].getDeviceState().getChargingDisabled();
       if (charging_disabled != prev_charging_disabled){
         if (charging_disabled){
-          panda->set_usb_power_mode(cereal::HealthData::UsbPowerMode::CLIENT);
+          panda->set_usb_power_mode(cereal::PandaState::UsbPowerMode::CLIENT);
           LOGW("TURN OFF CHARGING!\n");
         } else {
-          panda->set_usb_power_mode(cereal::HealthData::UsbPowerMode::CDP);
+          panda->set_usb_power_mode(cereal::PandaState::UsbPowerMode::CDP);
           LOGW("TURN ON CHARGING!\n");
         }
         prev_charging_disabled = charging_disabled;
@@ -423,18 +423,18 @@ void hardware_control_thread() {
 #endif
 
     // Other pandas don't have fan/IR to control
-    if (panda->hw_type != cereal::HealthData::PandaType::UNO && panda->hw_type != cereal::HealthData::PandaType::DOS) continue;
-    if (sm.updated("thermal")){
+    if (panda->hw_type != cereal::PandaState::PandaType::UNO && panda->hw_type != cereal::PandaState::PandaType::DOS) continue;
+    if (sm.updated("deviceState")){
       // Fan speed
-      uint16_t fan_speed = sm["thermal"].getThermal().getFanSpeedPercentDesired();
+      uint16_t fan_speed = sm["deviceState"].getDeviceState().getFanSpeedPercentDesired();
       if (fan_speed != prev_fan_speed || cnt % 100 == 0){
         panda->set_fan_speed(fan_speed);
         prev_fan_speed = fan_speed;
       }
     }
-    if (sm.updated("frontFrame")){
-      auto event = sm["frontFrame"];
-      int cur_integ_lines = event.getFrontFrame().getIntegLines();
+    if (sm.updated("driverCameraState")){
+      auto event = sm["driverCameraState"];
+      int cur_integ_lines = event.getDriverCameraState().getIntegLines();
       last_front_frame_t = event.getLogMonoTime();
 
       if (cur_integ_lines <= CUTOFF_IL) {
@@ -523,7 +523,7 @@ int main() {
 
   while (!do_exit){
     std::vector<std::thread> threads;
-    threads.push_back(std::thread(can_health_thread, getenv("STARTED") != nullptr));
+    threads.push_back(std::thread(panda_state_thread, getenv("STARTED") != nullptr));
 
     // connect to the board
     if (usb_retry_connect()) {

@@ -34,7 +34,7 @@ def camera_replay(lr, fr, desire=None, calib=None):
   spinner = Spinner()
   spinner.update("starting model replay")
 
-  pm = messaging.PubMaster(['frame', 'liveCalibration', 'lateralPlan'])
+  pm = messaging.PubMaster(['roadCameraState', 'liveCalibration', 'lateralPlan'])
   sm = messaging.SubMaster(['modelV2'])
 
   # TODO: add dmonitoringmodeld
@@ -60,7 +60,7 @@ def camera_replay(lr, fr, desire=None, calib=None):
     for msg in tqdm(lr):
       if msg.which() == "liveCalibration":
         pm.send(msg.which(), replace_calib(msg, calib))
-      elif msg.which() == "frame":
+      elif msg.which() == "roadCameraState":
         if desire is not None:
           for i in desire[frame_idx].nonzero()[0]:
             dat = messaging.new_message('lateralPlan')
@@ -69,7 +69,7 @@ def camera_replay(lr, fr, desire=None, calib=None):
 
         f = msg.as_builder()
         img = fr.get(frame_idx, pix_fmt="rgb24")[0][:,:,::-1]
-        f.frame.image = img.flatten().tobytes()
+        f.roadCameraState.image = img.flatten().tobytes()
         frame_idx += 1
 
         pm.send(msg.which(), f)

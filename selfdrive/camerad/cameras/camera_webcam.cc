@@ -226,7 +226,7 @@ void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_i
               VISION_STREAM_RGB_BACK, VISION_STREAM_YUV_BACK);
   camera_init(v, &s->front, CAMERA_ID_LGC615, 10, device_id, ctx,
               VISION_STREAM_RGB_FRONT, VISION_STREAM_YUV_FRONT);
-  s->pm = new PubMaster({"frame", "frontFrame", "thumbnail"});
+  s->pm = new PubMaster({"roadCameraState", "driverCameraState", "thumbnail"});
 }
 
 void camera_autoexposure(CameraState *s, float grey_frac) {}
@@ -247,20 +247,20 @@ void cameras_close(MultiCameraState *s) {
 
 void camera_process_front(MultiCameraState *s, CameraState *c, int cnt) {
   MessageBuilder msg;
-  auto framed = msg.initEvent().initFrontFrame();
+  auto framed = msg.initEvent().initDriverCameraState();
   framed.setFrameType(cereal::FrameData::FrameType::FRONT);
   fill_frame_data(framed, c->buf.cur_frame_data);
-  s->pm->send("frontFrame", msg);
+  s->pm->send("driverCameraState", msg);
 }
 
 void camera_process_rear(MultiCameraState *s, CameraState *c, int cnt) {
   const CameraBuf *b = &c->buf;
   MessageBuilder msg;
-  auto framed = msg.initEvent().initFrame();
+  auto framed = msg.initEvent().initRoadCameraState();
   fill_frame_data(framed, b->cur_frame_data);
   framed.setImage(kj::arrayPtr((const uint8_t *)b->cur_yuv_buf->addr, b->cur_yuv_buf->len));
   framed.setTransform(b->yuv_transform.v);
-  s->pm->send("frame", msg);
+  s->pm->send("roadCameraState", msg);
 }
 
 void cameras_run(MultiCameraState *s) {

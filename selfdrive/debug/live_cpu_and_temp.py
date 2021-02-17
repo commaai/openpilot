@@ -33,7 +33,7 @@ if __name__ == "__main__":
   parser.add_argument('--cpu', action='store_true')
   args = parser.parse_args()
 
-  sm = SubMaster(['thermal', 'procLog'])
+  sm = SubMaster(['deviceState', 'procLog'])
 
   last_temp = 0.0
   last_mem = 0.0
@@ -46,10 +46,10 @@ if __name__ == "__main__":
   while True:
     sm.update()
 
-    if sm.updated['thermal']:
-      t = sm['thermal']
-      last_temp = mean(t.cpu)
-      last_mem = t.memUsedPercent
+    if sm.updated['deviceState']:
+      t = sm['deviceState']
+      last_temp = mean(t.cpuTempC)
+      last_mem = t.memoryUsagePercent
 
     if sm.updated['procLog']:
       m = sm['procLog']

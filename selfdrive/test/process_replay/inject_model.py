@@ -25,12 +25,12 @@ def regen_model(msgs, pm, frame_reader, model_sock):
   for msg in tqdm(msgs):
     w = msg.which()
 
-    if w == 'frame':
+    if w == 'roadCameraState':
       msg = msg.as_builder()
 
       img = frame_reader.get(fidx, pix_fmt="rgb24")[0][:,:,::-1]
 
-      msg.frame.image = img.flatten().tobytes()
+      msg.roadCameraState.image = img.flatten().tobytes()
 
       pm.send(w, msg)
       model = recv_one(model_sock)
@@ -52,7 +52,7 @@ def inject_model(msgs, segment_name):
   # TODO do better than just wait for modeld to boot
   time.sleep(5)
 
-  pm = PubMaster(['liveCalibration', 'frame'])
+  pm = PubMaster(['liveCalibration', 'roadCameraState'])
   model_sock = sub_sock('model')
   try:
     out_msgs = regen_model(msgs, pm, frame_reader, model_sock)

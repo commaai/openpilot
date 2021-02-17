@@ -15,30 +15,30 @@ class LatControlPID():
   def reset(self):
     self.pid.reset()
 
-  def update(self, active, CS, CP, path_plan):
+  def update(self, active, CS, CP, lat_plan):
     pid_log = log.ControlsState.LateralPIDState.new_message()
-    pid_log.steerAngle = float(CS.steeringAngle)
-    pid_log.steerRate = float(CS.steeringRate)
+    pid_log.steeringAngleDeg = float(CS.steeringAngleDeg)
+    pid_log.steeringRateDeg = float(CS.steeringRateDeg)
 
     if CS.vEgo < 0.3 or not active:
       output_steer = 0.0
       pid_log.active = False
       self.pid.reset()
     else:
-      self.angle_steers_des = path_plan.angleSteers  # get from MPC/LateralPlanner
+      self.angle_steers_des = lat_plan.steeringAngleDeg # get from MPC/LateralPlanner
 
       steers_max = get_steer_max(CP, CS.vEgo)
       self.pid.pos_limit = steers_max
       self.pid.neg_limit = -steers_max
       steer_feedforward = self.angle_steers_des   # feedforward desired angle
       if CP.steerControlType == car.CarParams.SteerControlType.torque:
-        # TODO: feedforward something based on path_plan.rateSteers
-        steer_feedforward -= path_plan.angleOffset   # subtract the offset, since it does not contribute to resistive torque
+        # TODO: feedforward something based on lat_plan.rateSteers
+        steer_feedforward -= lat_plan.angleOffsetDeg # subtract the offset, since it does not contribute to resistive torque
         steer_feedforward *= CS.vEgo**2  # proportional to realigning tire momentum (~ lateral accel)
       deadzone = 0.0
 
       check_saturation = (CS.vEgo > 10) and not CS.steeringRateLimited and not CS.steeringPressed
-      output_steer = self.pid.update(self.angle_steers_des, CS.steeringAngle, check_saturation=check_saturation, override=CS.steeringPressed,
+      output_steer = self.pid.update(self.angle_steers_des, CS.steeringAngleDeg, check_saturation=check_saturation, override=CS.steeringPressed,
                                      feedforward=steer_feedforward, speed=CS.vEgo, deadzone=deadzone)
       pid_log.active = True
       pid_log.p = self.pid.p

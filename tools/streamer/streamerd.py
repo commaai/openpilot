@@ -35,7 +35,7 @@ def receiver_thread():
 
   context = zmq.Context()
   s = messaging.sub_sock(context, 9002, addr=addr)
-  frame_sock = messaging.pub_sock(context, service_list['frame'].port)
+  frame_sock = messaging.pub_sock(context, service_list['roadCameraState'].port)
 
   ctx = av.codec.codec.Codec('hevc', 'r').create()
   ctx.decode(av.packet.Packet(start.decode("hex")))
@@ -64,10 +64,10 @@ def receiver_thread():
     #print 'ms to make yuv:', (t1-t2)*1000
     #print 'tsEof:', ts
 
-    dat = messaging.new_message('frame')
-    dat.frame.image = yuv_img
-    dat.frame.timestampEof = ts
-    dat.frame.transform = map(float, list(np.eye(3).flatten()))
+    dat = messaging.new_message('roadCameraState')
+    dat.roadCameraState.image = yuv_img
+    dat.roadCameraState.timestampEof = ts
+    dat.roadCameraState.transform = map(float, list(np.eye(3).flatten()))
     frame_sock.send(dat.to_bytes())
 
     if PYGAME:

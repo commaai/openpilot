@@ -307,7 +307,7 @@ void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_i
   s->front.device = s->device;
 
   s->sm_front = new SubMaster({"driverState"});
-  s->pm = new PubMaster({"frame", "frontFrame", "thumbnail"});
+  s->pm = new PubMaster({"roadCameraState", "driverCameraState", "thumbnail"});
 
   for (int i = 0; i < FRAME_BUF_COUNT; i++) {
     // TODO: make lengths correct
@@ -1655,7 +1655,7 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
   setup_self_recover(c, &s->lapres[0], std::size(s->lapres));
 
   MessageBuilder msg;
-  auto framed = msg.initEvent().initFrame();
+  auto framed = msg.initEvent().initRoadCameraState();
   fill_frame_data(framed, b->cur_frame_data);
   if (env_send_rear) {
     framed.setImage(get_frame_image(b));
@@ -1665,7 +1665,7 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
   framed.setRecoverState(s->rear.self_recover);
   framed.setSharpnessScore(s->lapres);
   framed.setTransform(b->yuv_transform.v);
-  s->pm->send("frame", msg);
+  s->pm->send("roadCameraState", msg);
 
   if (cnt % 3 == 0) {
     const int x = 290, y = 322, width = 560, height = 314;
