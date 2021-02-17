@@ -19,8 +19,8 @@ def load_segment(segment_name):
   return r
 
 def juggle_file(fn):
-  # subprocess.call(f"bin/plotjuggler -d {fn}", shell=True)
-  subprocess.call(f"/home/batman/PlotJuggler/build/bin/plotjuggler -d {fn}", shell=True)
+  subprocess.call(f"bin/plotjuggler -d {fn}", shell=True)
+  # subprocess.call(f"/home/batman/PlotJuggler/build/bin/plotjuggler -d {fn}", shell=True)
 
 def juggle_route(route_name):
   r = Route(route_name)
