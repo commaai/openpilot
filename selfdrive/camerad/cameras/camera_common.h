@@ -42,7 +42,14 @@ const bool env_send_wide = getenv("SEND_WIDE") != NULL;
 
 typedef void (*release_cb)(void *cookie, int buf_idx);
 
+enum CameraType {
+  ROAD_CAM = 0,
+  DRIVER_CAM,
+  WIDE_ROAD_CAM
+};
+
 typedef struct CameraInfo {
+  CameraType type;
   int frame_width, frame_height;
   int frame_stride;
   bool bayer;

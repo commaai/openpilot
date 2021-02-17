@@ -37,6 +37,7 @@ std::atomic<CameraExpInfo> front_exp{{0}};
 
 CameraInfo cameras_supported[CAMERA_ID_MAX] = {
   [CAMERA_ID_IMX298] = {
+    .type = ROAD_CAM,
     .frame_width = 2328,
     .frame_height = 1748,
     .frame_stride = 2912,
@@ -45,6 +46,7 @@ CameraInfo cameras_supported[CAMERA_ID_MAX] = {
     .hdr = true
   },
   [CAMERA_ID_IMX179] = {
+    .type = DRIVER_CAM,
     .frame_width = 3280,
     .frame_height = 2464,
     .frame_stride = 4104,
@@ -53,6 +55,7 @@ CameraInfo cameras_supported[CAMERA_ID_MAX] = {
     .hdr = false
   },
   [CAMERA_ID_S5K3P8SP] = {
+    .type = DRIVER_CAM,
     .frame_width = 2304,
     .frame_height = 1728,
     .frame_stride = 2880,
@@ -61,6 +64,7 @@ CameraInfo cameras_supported[CAMERA_ID_MAX] = {
     .hdr = false
   },
   [CAMERA_ID_OV8865] = {
+    .type = DRIVER_CAM,
     .frame_width = 1632,
     .frame_height = 1224,
     .frame_stride = 2040, // seems right

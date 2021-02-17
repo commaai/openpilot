@@ -57,6 +57,7 @@ void run_frame_stream(CameraState &camera, const char* frame_pkt) {
 // TODO: make this more generic
 CameraInfo cameras_supported[CAMERA_ID_MAX] = {
   [CAMERA_ID_IMX298] = {
+    .type = ROAD_CAM,
     .frame_width = FRAME_WIDTH,
     .frame_height = FRAME_HEIGHT,
     .frame_stride = FRAME_WIDTH*3,
@@ -64,6 +65,7 @@ CameraInfo cameras_supported[CAMERA_ID_MAX] = {
     .bayer_flip = false,
   },
   [CAMERA_ID_OV8865] = {
+    .type = DRIVER_CAM,
     .frame_width = 1632,
     .frame_height = 1224,
     .frame_stride = 2040, // seems right

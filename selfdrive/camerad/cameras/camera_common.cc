@@ -42,21 +42,20 @@ static cl_program build_debayer_program(cl_device_id device_id, cl_context conte
 }
 
 void CameraBuf::init(const CameraServerCtx &ctx, CameraState *s, int frame_cnt, release_cb release_callback) {
-  vipc_server = ctx.vipc_server;
-  if (s == &ctx.cameras->rear) {
+  const CameraInfo *ci = &s->ci;
+  if (ci->type == ROAD_CAM) {
     this->rgb_type = VISION_STREAM_RGB_BACK;
     this->yuv_type = VISION_STREAM_YUV_BACK;
-  } else if (s == &ctx.cameras->front) {
+  } else if (ci->type == DRIVER_CAM) {
     this->rgb_type = VISION_STREAM_RGB_FRONT;
     this->yuv_type = VISION_STREAM_YUV_FRONT;
   } else {
     this->rgb_type = VISION_STREAM_RGB_WIDE;
     this->yuv_type = VISION_STREAM_YUV_WIDE;
   }
-
+  vipc_server = ctx.vipc_server;
   this->release_callback = release_callback;
 
-  const CameraInfo *ci = &s->ci;
   camera_state = s;
   frame_buf_count = frame_cnt;
 

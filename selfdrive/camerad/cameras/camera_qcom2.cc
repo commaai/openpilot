@@ -551,11 +551,12 @@ void enqueue_req_multi(struct CameraState *s, int start, int n, bool dp) {
 
 // ******************* camera *******************
 
-static void camera_init(const CameraServerCtx &ctx, CameraState *s, int camera_id, int camera_num, unsigned int fps) {
+static void camera_init(const CameraServerCtx &ctx, CameraState *s, CameraType type, int camera_id, int camera_num, unsigned int fps) {
   LOGD("camera init %d", camera_num);
 
   assert(camera_id < ARRAYSIZE(cameras_supported));
   s->ci = cameras_supported[camera_id];
+  s->ci.type = type;
   assert(s->ci.frame_width != 0);
 
   s->camera_num = camera_num;
@@ -796,11 +797,11 @@ static void camera_open(CameraState *s) {
 }
 
 void cameras_init(const CameraServerCtx &ctx) {
-  camera_init(ctx, &ctx.cameras->rear, CAMERA_ID_AR0231, 1, 20); // swap left/right
+  camera_init(ctx, &ctx.cameras->rear, ROAD_CAM, CAMERA_ID_AR0231, 1, 20); // swap left/right
   printf("rear initted \n");
-  camera_init(ctx, &ctx.cameras->wide, CAMERA_ID_AR0231, 0, 20);
+  camera_init(ctx, &ctx.cameras->wide, WIDE_ROAD_CAM, CAMERA_ID_AR0231, 0, 20);
   printf("wide initted \n");
-  camera_init(ctx, &ctx.cameras->front, CAMERA_ID_AR0231, 2, 20);
+  camera_init(ctx, &ctx.cameras->front, DRIVER_CAM, CAMERA_ID_AR0231, 2, 20);
   printf("front initted \n");
 
   s->sm = new SubMaster({"driverState"});
@@ -1098,18 +1099,18 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
   const CameraBuf *b = &c->buf;
 
   MessageBuilder msg;
-  auto framed = c == &s->rear ? msg.initEvent().initRoadCameraState() : msg.initEvent().initWideRoadCameraState();
+  auto framed = (c->ci.type == ROAD_CAM) ? msg.initEvent().initRoadCameraState() : msg.initEvent().initWideRoadCameraState();
   fill_frame_data(framed, b->cur_frame_data);
-  if ((c == &s->rear && env_send_rear) || (c == &s->wide && env_send_wide)) {
+  if ((c->ci.type == ROAD_CAM && env_send_rear) || (c->ci.type == WIDE_ROAD_CAM && env_send_wide)) {
     framed.setImage(get_frame_image(b));
   }
-  if (c == &s->rear) {
+  if (c->ci.type == ROAD_CAM) {
     framed.setTransform(b->yuv_transform.v);
   }
-  s->pm->send(c == &s->rear ? "roadCameraState" : "wideRoadCameraState", msg);
+  s->pm->send(c->ci.type == ROAD_CAM ? "roadCameraState" : "wideRoadCameraState", msg);
 
   if (cnt % 3 == 0) {
-    const auto [x, y, w, h] = (c == &s->wide) ? std::tuple(96, 250, 1734, 524) : std::tuple(96, 160, 1734, 986);
+    const auto [x, y, w, h] = (c->ci.type == WIDE_ROAD_CAM) ? std::tuple(96, 250, 1734, 524) : std::tuple(96, 160, 1734, 986);
     const int skip = 2;
     set_exposure_target(c, (const uint8_t *)b->cur_yuv_buf->y, x, x + w, skip, y, y + h, skip);
   }
