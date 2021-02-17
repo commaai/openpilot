@@ -55,7 +55,7 @@ PandaComm::PandaComm(uint16_t vid, uint16_t pid) {
 
   err = libusb_claim_interface(dev_handle, 0);
   if (err != 0) { goto fail; }
-  LOGD("Opened device with vid:pid %s: %s", vid, pid);
+  // LOGD("Opened device with vid:pid %s: %s", vid, pid);
   return;
 
 fail:

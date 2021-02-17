@@ -192,6 +192,7 @@ void get_out_of_dfu() {
 }
 
 void update_panda() {
+  std::cout<<"Updating panda"<<std::endl;
   LOGD("updating panda");
   LOGD("\n1: Move out of DFU\n");
   get_out_of_dfu();
@@ -206,27 +207,27 @@ void update_panda() {
   LOGD(panda_signature.c_str());
 
   if (tempPanda.bootstub || panda_signature != fw_signature) {
-    LOGD("Panda firmware out of date, update required");
+    LOGW("Panda firmware out of date, update required");
     tempPanda.flash(fw_fn);
     LOGD("Done flashing new firmware");
   }
 
   if (tempPanda.bootstub) {
     std::string bootstub_version = tempPanda.get_version();
-    LOGD("Flashed firmware not booting, flashing development bootloader. Bootstub verstion: ");
-    LOGD(bootstub_version.c_str());
+    LOGW("Flashed firmware not booting, flashing development bootloader. Bootstub verstion: ");
+    LOGW(bootstub_version.c_str());
     tempPanda.recover();
     LOGD("Done flashing dev bootloader and firmware");
   }
 
   if (tempPanda.bootstub) {
-    LOGD("Panda still not booting, exiting");
+    LOGW("Panda still not booting, exiting");
     throw std::runtime_error("PANDA NOT BOOTING");
   }
 
   panda_signature = tempPanda.get_signature();
   if (panda_signature != fw_signature) {
-    LOGD("Version mismatch after flashing, exiting");
+    LOGW("Version mismatch after flashing, exiting");
     throw std::runtime_error("FIRMWARE VERSION MISMATCH");
   }
 
