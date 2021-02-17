@@ -81,18 +81,18 @@ def imu_callback(imu):
   dat.sensorEvents[1].gyroUncalibrated.v = [imu.gyroscope.x, imu.gyroscope.y, imu.gyroscope.z]
   pm.send('sensorEvents', dat)
 
-def health_function():
-  pm = messaging.PubMaster(['health'])
+def panda_state_function():
+  pm = messaging.PubMaster(['pandaState'])
   while 1:
-    dat = messaging.new_message('health')
+    dat = messaging.new_message('pandaState')
     dat.valid = True
-    dat.health = {
+    dat.pandaState = {
       'ignitionLine': True,
       'pandaType': "blackPanda",
       'controlsAllowed': True,
       'safetyModel': 'hondaNidec'
     }
-    pm.send('health', dat)
+    pm.send('pandaState', dat)
     time.sleep(0.5)
 
 def fake_gps():
@@ -197,7 +197,7 @@ def go(q):
   vehicle_state = VehicleState()
 
   # launch fake car threads
-  threading.Thread(target=health_function).start()
+  threading.Thread(target=panda_state_function).start()
   threading.Thread(target=fake_driver_monitoring).start()
   threading.Thread(target=fake_gps).start()
   threading.Thread(target=can_function_runner, args=(vehicle_state,)).start()

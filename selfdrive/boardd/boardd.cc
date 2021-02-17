@@ -264,7 +264,7 @@ void can_recv_thread() {
 }
 
 void panda_state_thread(bool spoofing_started) {
-  LOGD("start health thread");
+  LOGD("start panda state thread");
   PubMaster pm({"pandaState"});
 
   uint32_t no_ignition_cnt = 0;
