@@ -45,11 +45,11 @@ def replay(route, loop):
     start_time = time.time()
     w = msg.which()
 
-    if w == 'frame':
+    if w == 'roadCameraState':
       try:
         img = fr.get(frame_idx[msg.frame.frameId], pix_fmt="rgb24")
         img = img[0][:, :, ::-1]  # Convert RGB to BGR, which is what the camera outputs
-        msg.frame.image = img.flatten().tobytes()
+        msg.roadCameraState.image = img.flatten().tobytes()
       except (KeyError, ValueError):
         pass
 

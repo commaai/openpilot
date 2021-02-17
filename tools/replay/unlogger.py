@@ -50,7 +50,7 @@ class UnloggerWorker(object):
     poller.register(commands_socket, zmq.POLLIN)
 
     # We can't publish frames without roadEncodeIdx, so add when it's missing.
-    if "frame" in pub_types:
+    if "roadCameraState" in pub_types:
       pub_types["roadEncodeIdx"] = None
 
     # gc.set_debug(gc.DEBUG_LEAK | gc.DEBUG_OBJECTS | gc.DEBUG_STATS | gc.DEBUG_SAVEALL |
@@ -98,7 +98,7 @@ class UnloggerWorker(object):
       typ, msg, route_time, cookie = self._readahead.pop()
       smsg = msg.as_builder()
 
-      if typ == "frame":
+      if typ == "roadCameraState":
         frame_id = msg.frame.frameId
 
         # Frame exists, make sure we have a framereader.
@@ -135,7 +135,7 @@ class UnloggerWorker(object):
       self._lr = MultiLogIterator(route.log_paths(), wraparound=True)
       if self._frame_reader is not None:
         self._frame_reader.close()
-      if "frame" in pub_types or "roadEncodeIdx" in pub_types:
+      if "roadCameraState" in pub_types or "roadEncodeIdx" in pub_types:
         # reset frames for a route
         self._frame_id_lookup = {}
         self._frame_reader = RouteFrameReader(
