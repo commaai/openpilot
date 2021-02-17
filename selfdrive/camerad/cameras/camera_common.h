@@ -43,7 +43,6 @@ const bool env_send_wide = getenv("SEND_WIDE") != NULL;
 typedef void (*release_cb)(void *cookie, int buf_idx);
 
 typedef struct CameraInfo {
-  const char* name;
   int frame_width, frame_height;
   int frame_stride;
   bool bayer;
