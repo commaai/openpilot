@@ -433,11 +433,8 @@ cl_program thneed_clCreateProgramWithSource(cl_context context, cl_uint count, c
 }
 
 void *dlsym(void *handle, const char *symbol) {
-  // TODO: Find dlsym in a better way. Currently this is hand looked up in libdl.so
-#if defined QCOM
-  void *(*my_dlsym)(void *handle, const char *symbol) = (void *(*)(void *handle, const char *symbol))((uintptr_t)dlopen-0x2d4);
-#elif defined QCOM2
-  void *(*my_dlsym)(void *handle, const char *symbol) = (void *(*)(void *handle, const char *symbol))((uintptr_t)dlopen+0x138);
+#if defined(QCOM) || defined(QCOM2)
+  void *(*my_dlsym)(void *handle, const char *symbol) = (void *(*)(void *handle, const char *symbol))((uintptr_t)dlopen + DLSYM_OFFSET);
 #else
   #error "Unsupported platform for thneed"
 #endif

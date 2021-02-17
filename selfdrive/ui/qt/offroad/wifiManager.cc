@@ -2,8 +2,10 @@
 #include <set>
 #include <stdlib.h>
 #include <iostream>
-#include "wifiManager.hpp"
+
 #include "common/params.h"
+#include "common/swaglog.h"
+#include "wifiManager.hpp"
 
 /**
  * We are using a NetworkManager DBUS API : https://developer.gnome.org/NetworkManager/1.26/spec.html
@@ -45,7 +47,12 @@ T get_response(QDBusMessage response) {
   QVariant first =  response.arguments().at(0);
   QDBusVariant dbvFirst = first.value<QDBusVariant>();
   QVariant vFirst = dbvFirst.variant();
-  return vFirst.value<T>();
+  if (vFirst.canConvert<T>()) {
+    return vFirst.value<T>();
+  } else {
+    LOGE("Variant unpacking failure");
+    return T();
+  }
 }
 
 bool compare_by_strength(const Network &a, const Network &b) {
@@ -229,10 +236,12 @@ void WifiManager::deactivate_connections(QString ssid) {
     QString active_connection = active_connection_raw.path();
     QDBusInterface nm(nm_service, active_connection, props_iface, bus);
     QDBusObjectPath pth = get_response<QDBusObjectPath>(nm.call("Get", connection_iface, "SpecificObject"));
-    QString Ssid = get_property(pth.path(), "Ssid");
-    if (Ssid == ssid) {
-      QDBusInterface nm2(nm_service, nm_path, nm_iface, bus);
-      nm2.call("DeactivateConnection", QVariant::fromValue(active_connection_raw));// TODO change to disconnect
+    if (pth.path() != "" && pth.path() != "/") {
+      QString Ssid = get_property(pth.path(), "Ssid");
+      if (Ssid == ssid) {
+        QDBusInterface nm2(nm_service, nm_path, nm_iface, bus);
+        nm2.call("DeactivateConnection", QVariant::fromValue(active_connection_raw));// TODO change to disconnect
+      }
     }
   }
 }
@@ -347,7 +356,7 @@ void WifiManager::change(unsigned int new_state, unsigned int previous_state, un
 
 void WifiManager::disconnect() {
   QString active_ap = get_active_ap();
-  if (active_ap!="" && active_ap!="/") {
+  if (active_ap != "" && active_ap != "/") {
     deactivate_connections(get_property(active_ap, "Ssid"));
   }
 }

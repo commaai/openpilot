@@ -16,10 +16,10 @@ class CarState(CarStateBase):
     # All TSS2 car have the accurate sensor
     self.accurate_steer_angle_seen = CP.carFingerprint in TSS2_CAR
 
-    # On NO_DSU cars but not TSS2 cars the cp.vl["STEER_TORQUE_SENSOR"]['STEER_ANGLE']
-    # is zeroed to where the steering angle is at start.
+    # On cars with cp.vl["STEER_TORQUE_SENSOR"]['STEER_ANGLE']
+    # the signal is zeroed to where the steering angle is at start.
     # Need to apply an offset as soon as the steering angle measurements are both received
-    self.needs_angle_offset = CP.carFingerprint not in TSS2_CAR
+    self.needs_angle_offset = True
     self.angle_offset = 0.
 
   def update(self, cp, cp_cam):

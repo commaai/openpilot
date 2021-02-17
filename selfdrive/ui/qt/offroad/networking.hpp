@@ -47,7 +47,6 @@ public:
   QStackedLayout* s;
 
 private:
-  InputField* inputField;
   QLabel* ipLabel;
   QPushButton* editPasswordButton;
   SSH* ssh;
@@ -56,14 +55,11 @@ private:
   WifiManager* wifi = nullptr;
 
   bool isSSHEnabled();
+
 signals:
-  void openKeyboard();
-  void closeKeyboard();
   void backPress();
 
 public slots:
-  void receiveText(QString text);
-  void abortTextInput();
   void toggleTethering(int enable);
   void toggleSSH(int enable);
   void refresh();
@@ -73,29 +69,24 @@ class Networking : public QWidget {
   Q_OBJECT
 
 public:
-  explicit Networking(QWidget* parent = 0);
+  explicit Networking(QWidget* parent = 0, bool show_advanced = true);
 
 private:
-  QStackedLayout* s = nullptr;// keyboard, wifiScreen, advanced
+  QStackedLayout* s = nullptr; // nm_warning, keyboard, wifiScreen, advanced
+  QWidget* wifiScreen = nullptr;
   AdvancedNetworking* an = nullptr;
+  bool ui_setup_complete = false;
+  bool show_advanced;
 
   Network selectedNetwork;
 
   WifiUI* wifiWidget;
   WifiManager* wifi = nullptr;
-  InputField* inputField;
-
-signals:
-  void openKeyboard();
-  void closeKeyboard();
+  void attemptInitialization();
 
 private slots:
   void connectToNetwork(Network n);
   void refresh();
-  void receiveText(QString text);
-  void abortTextInput();
   void wrongPassword(QString ssid);
-  void successfulConnection(QString ssid);
-  void sidebarChange();
 };
 

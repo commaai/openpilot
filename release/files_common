@@ -322,14 +322,12 @@ selfdrive/loggerd/deleter.py
 selfdrive/loggerd/xattr_cache.py
 
 selfdrive/sensord/SConscript
-selfdrive/sensord/gpsd.cc
 selfdrive/sensord/libdiag.h
 selfdrive/sensord/sensors_qcom.cc
 selfdrive/sensord/sensors_qcom2.cc
 selfdrive/sensord/sensors/*.cc
 selfdrive/sensord/sensors/*.hpp
 selfdrive/sensord/sensord
-selfdrive/sensord/gpsd
 
 selfdrive/thermald/thermald.py
 selfdrive/thermald/power_monitoring.py
@@ -481,7 +479,6 @@ cereal/car.capnp
 cereal/legacy.capnp
 cereal/log.capnp
 cereal/services.py
-cereal/service_list.yaml
 cereal/SConscript
 cereal/include/**
 cereal/messaging/.gitignore
@@ -498,8 +495,12 @@ cereal/messaging/messaging_pyx.pyx
 cereal/messaging/msgq.cc
 cereal/messaging/msgq.hpp
 cereal/messaging/socketmaster.cc
+cereal/visionipc/.gitignore
+cereal/visionipc/__init__.py
 cereal/visionipc/*.cc
 cereal/visionipc/*.h
+cereal/visionipc/*.pyx
+cereal/visionipc/*.pxd
 
 panda/.gitignore
 panda/__init__.py
