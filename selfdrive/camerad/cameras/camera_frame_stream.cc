@@ -83,10 +83,10 @@ void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_i
 void cameras_open(MultiCameraState *s) {}
 void cameras_close(MultiCameraState *s) {}
 void camera_autoexposure(CameraState *s, float grey_frac) {}
-void camera_process_rear(MultiCameraState *s, CameraState *c, int cnt) {}
+void road_camera_process(MultiCameraState *s, CameraState *c, int cnt) {}
 
 void cameras_run(MultiCameraState *s) {
-  std::thread t = start_process_thread(s, "processing", &s->road_cam, camera_process_rear);
+  std::thread t = start_process_thread(s, "processing", &s->road_cam, road_camera_process);
   set_thread_name("frame_streaming");
   run_frame_stream(s->road_cam, "roadCameraState");
   t.join();

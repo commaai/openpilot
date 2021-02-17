@@ -1644,12 +1644,12 @@ static void setup_self_recover(CameraState *c, const uint16_t *lapres, size_t la
   c->self_recover.store(self_recover);
 }
 
-void camera_process_front(MultiCameraState *s, CameraState *c, int cnt) {
-  common_camera_process_front(s->sm_front, s->pm, c, cnt);
+void driver_camera_process(MultiCameraState *s, CameraState *c, int cnt) {
+  common_driver_camera_process(s->sm_front, s->pm, c, cnt);
 }
 
 // called by processing_thread
-void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
+void road_camera_process(MultiCameraState *s, CameraState *c, int cnt) {
   const CameraBuf *b = &c->buf;
   update_lapmap(s, b, cnt);
   setup_self_recover(c, &s->lapres[0], std::size(s->lapres));
@@ -1677,8 +1677,8 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
 void cameras_run(MultiCameraState *s) {
   std::vector<std::thread> threads;
   threads.push_back(std::thread(ops_thread, s));
-  threads.push_back(start_process_thread(s, "processing", &s->road_cam, camera_process_frame));
-  threads.push_back(start_process_thread(s, "frontview", &s->driver_cam, camera_process_front));
+  threads.push_back(start_process_thread(s, "processing", &s->road_cam, road_camera_process));
+  threads.push_back(start_process_thread(s, "frontview", &s->driver_cam, driver_camera_process));
 
   CameraState* cameras[2] = {&s->road_cam, &s->driver_cam};
 

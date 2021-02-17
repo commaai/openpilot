@@ -349,7 +349,7 @@ std::thread start_process_thread(MultiCameraState *cameras, const char *tname,
   return std::thread(processing_thread, cameras, tname, cs, callback);
 }
 
-void common_camera_process_front(SubMaster *sm, PubMaster *pm, CameraState *c, int cnt) {
+void common_driver_camera_process(SubMaster *sm, PubMaster *pm, CameraState *c, int cnt) {
   const CameraBuf *b = &c->buf;
 
   static int x_min = 0, x_max = 0, y_min = 0, y_max = 0;

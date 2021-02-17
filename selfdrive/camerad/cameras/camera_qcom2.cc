@@ -1092,12 +1092,12 @@ static void ae_thread(MultiCameraState *s) {
   }
 }
 
-void camera_process_front(MultiCameraState *s, CameraState *c, int cnt) {
-  common_camera_process_front(s->sm, s->pm, c, cnt);
+void driver_camera_process(MultiCameraState *s, CameraState *c, int cnt) {
+  common_driver_camera_process(s->sm, s->pm, c, cnt);
 }
 
 // called by processing_thread
-void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
+void road_camera_process(MultiCameraState *s, CameraState *c, int cnt) {
   const CameraBuf *b = &c->buf;
 
   MessageBuilder msg;
@@ -1122,9 +1122,9 @@ void cameras_run(MultiCameraState *s) {
   LOG("-- Starting threads");
   std::vector<std::thread> threads;
   threads.push_back(std::thread(ae_thread, s));
-  threads.push_back(start_process_thread(s, "processing", &s->road_cam, camera_process_frame));
-  threads.push_back(start_process_thread(s, "frontview", &s->driver_cam, camera_process_front));
-  threads.push_back(start_process_thread(s, "wideview", &s->wide_road_cam, camera_process_frame));
+  threads.push_back(start_process_thread(s, "processing", &s->road_cam, road_camera_process));
+  threads.push_back(start_process_thread(s, "frontview", &s->driver_cam, driver_camera_process));
+  threads.push_back(start_process_thread(s, "wideview", &s->wide_road_cam, road_camera_process));
 
   // start devices
   LOG("-- Starting devices");
