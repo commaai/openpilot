@@ -36,9 +36,9 @@
 #define LOG_CAMERA_ID_QCAMERA 3
 #define LOG_CAMERA_ID_MAX 4
 
-const bool env_send_front = getenv("SEND_FRONT") != NULL;
-const bool env_send_rear = getenv("SEND_REAR") != NULL;
-const bool env_send_wide = getenv("SEND_WIDE") != NULL;
+const bool env_send_driver = getenv("SEND_DRIVER") != NULL;
+const bool env_send_road = getenv("SEND_ROAD") != NULL;
+const bool env_send_wide_road = getenv("SEND_WIDE_ROAD") != NULL;
 
 typedef void (*release_cb)(void *cookie, int buf_idx);
 

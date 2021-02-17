@@ -416,7 +416,7 @@ void common_driver_camera_process(SubMaster *sm, PubMaster *pm, CameraState *c, 
   auto framed = msg.initEvent().initDriverCameraState();
   framed.setFrameType(cereal::FrameData::FrameType::FRONT);
   fill_frame_data(framed, b->cur_frame_data);
-  if (env_send_front) {
+  if (env_send_driver) {
     framed.setImage(get_frame_image(b));
   }
   pm->send("driverCameraState", msg);
