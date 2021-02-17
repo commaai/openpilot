@@ -335,7 +335,7 @@ void *processing_thread(MultiCameraState *cameras, const char *tname,
 
     callback(cameras, cs, cnt);
 
-    if (cs == &(cameras->rear) && cameras->pm && cnt % 100 == 3) {
+    if (cs == &(cameras->road_cam) && cameras->pm && cnt % 100 == 3) {
       // this takes 10ms???
       publish_thumbnail(cameras->pm, &(cs->buf));
     }
