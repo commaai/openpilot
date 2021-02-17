@@ -796,12 +796,12 @@ static void camera_open(CameraState *s) {
   enqueue_req_multi(s, 1, FRAME_BUF_COUNT, 0);
 }
 
-void cameras_init(const CameraServerCtx &ctx) {
-  camera_init(ctx, &ctx.cameras->rear, ROAD_CAM, CAMERA_ID_AR0231, 1, 20); // swap left/right
+void cameras_init(MultiCameraState *s, const CameraServerCtx &ctx) {
+  camera_init(ctx, &s->rear, ROAD_CAM, CAMERA_ID_AR0231, 1, 20); // swap left/right
   printf("rear initted \n");
-  camera_init(ctx, &ctx.cameras->wide, WIDE_ROAD_CAM, CAMERA_ID_AR0231, 0, 20);
+  camera_init(ctx, &s->wide, WIDE_ROAD_CAM, CAMERA_ID_AR0231, 0, 20);
   printf("wide initted \n");
-  camera_init(ctx, &ctx.cameras->front, DRIVER_CAM, CAMERA_ID_AR0231, 2, 20);
+  camera_init(ctx, &s->front, DRIVER_CAM, CAMERA_ID_AR0231, 2, 20);
   printf("front initted \n");
 
   s->sm = new SubMaster({"driverState"});

@@ -238,8 +238,7 @@ cl_program build_conv_program(cl_device_id device_id, cl_context context, int im
   return cl_program_from_file(context, device_id, "imgproc/conv.cl", args);
 }
 
-void cameras_init(const CameraServerCtx &ctx) {
-  MultiCameraState *s = ctx.cameras;
+void cameras_init(MultiCameraState *s, const CameraServerCtx &ctx) {
   char project_name[1024] = {0};
   property_get("ro.boot.project_name", project_name, "");
 

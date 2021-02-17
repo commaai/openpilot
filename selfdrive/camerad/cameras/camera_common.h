@@ -97,7 +97,6 @@ struct CameraState;
 typedef struct CameraServerCtx {
   cl_device_id device_id;
   cl_context context;
-  MultiCameraState *cameras;
   VisionIpcServer *vipc_server;
 } CameraServerCtx;
 

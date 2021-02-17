@@ -221,9 +221,9 @@ CameraInfo cameras_supported[CAMERA_ID_MAX] = {
   },
 };
 
-void cameras_init(MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
-  camera_init(&s->rear, CAMERA_ID_LGC920, 20, device_id, ctx);
-  camera_init(&s->front, CAMERA_ID_LGC615, 10, device_id, ctx);
+void cameras_init(MultiCameraState *s, const CameraServerCtx &ctx) {
+  camera_init(ctx, &s->rear, CAMERA_ID_LGC920, 20);
+  camera_init(ctx, &s->front, CAMERA_ID_LGC615, 10);
   s->pm = new PubMaster({"roadCameraState", "driverCameraState", "thumbnail"});
 }
 

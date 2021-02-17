@@ -75,9 +75,9 @@ CameraInfo cameras_supported[CAMERA_ID_MAX] = {
   },
 };
 
-void cameras_init(const CameraServerCtx &ctx) {
-  camera_init(ctx, &ctx.cameras->rear, CAMERA_ID_IMX298, 20);
-  camera_init(ctx, &ctx.cameras->front, CAMERA_ID_OV8865, 10);
+void cameras_init(MultiCameraState *s, const CameraServerCtx &ctx) {
+  camera_init(ctx, &s->rear, CAMERA_ID_IMX298, 20);
+  camera_init(ctx, &s->front, CAMERA_ID_OV8865, 10);
 }
 
 void cameras_open(MultiCameraState *s) {}

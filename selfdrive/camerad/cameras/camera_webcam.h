@@ -29,7 +29,7 @@ typedef struct MultiCameraState {
   PubMaster *pm;
 } MultiCameraState;
 
-void cameras_init(const CameraServerCtx &ctx);
+void cameras_init(MultiCameraState *s, const CameraServerCtx &ctx);
 void cameras_open(MultiCameraState *s);
 void cameras_run(MultiCameraState *s);
 void cameras_close(MultiCameraState *s);

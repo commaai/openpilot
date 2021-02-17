@@ -31,10 +31,9 @@ void party(cl_device_id device_id, cl_context context) {
 
   CameraServerCtx ctx = {.device_id = device_id,
                         .context = context,
-                        .cameras = &cameras,
                         .vipc_server = &vipc_server};
 
-  cameras_init(ctx);
+  cameras_init(&cameras, ctx);
   cameras_open(&cameras);
 
   vipc_server.start_listener();
