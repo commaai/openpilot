@@ -73,9 +73,9 @@ typedef struct MultiCameraState {
   int video1_fd;
   int isp_fd;
 
-  CameraState rear;
-  CameraState front;
-  CameraState wide;
+  CameraState road_cam;
+  CameraState wide_road_cam;
+  CameraState driver_cam;
 
   pthread_mutex_t isp_lock;
 

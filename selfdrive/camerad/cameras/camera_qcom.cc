@@ -271,7 +271,7 @@ void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_i
   // 508 = ISO 12800, 16x digital gain
   // 510 = ISO 25600, 32x digital gain
 
-  camera_init(v, &s->rear, CAMERA_ID_IMX298, 0,
+  camera_init(v, &s->road_cam, CAMERA_ID_IMX298, 0,
               /*pixel_clock=*/600000000, /*line_length_pclk=*/5536,
               /*max_gain=*/510,  //0 (ISO 100)- 448 (ISO 800, max analog gain) - 511 (super noisy)
 #ifdef HIGH_FPS
@@ -281,30 +281,30 @@ void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_i
 #endif
               device_id, ctx,
               VISION_STREAM_RGB_BACK, VISION_STREAM_YUV_BACK);
-  s->rear.apply_exposure = imx298_apply_exposure;
+  s->road_cam.apply_exposure = imx298_apply_exposure;
 
   if (s->device == DEVICE_OP3T) {
-    camera_init(v, &s->front, CAMERA_ID_S5K3P8SP, 1,
+    camera_init(v, &s->driver_cam, CAMERA_ID_S5K3P8SP, 1,
                 /*pixel_clock=*/560000000, /*line_length_pclk=*/5120,
                 /*max_gain=*/510, 10, device_id, ctx,
                 VISION_STREAM_RGB_FRONT, VISION_STREAM_YUV_FRONT);
-    s->front.apply_exposure = imx179_s5k3p8sp_apply_exposure;
+    s->driver_cam.apply_exposure = imx179_s5k3p8sp_apply_exposure;
   } else if (s->device == DEVICE_LP3) {
-    camera_init(v, &s->front, CAMERA_ID_OV8865, 1,
+    camera_init(v, &s->driver_cam, CAMERA_ID_OV8865, 1,
                 /*pixel_clock=*/72000000, /*line_length_pclk=*/1602,
                 /*max_gain=*/510, 10, device_id, ctx,
                 VISION_STREAM_RGB_FRONT, VISION_STREAM_YUV_FRONT);
-    s->front.apply_exposure = ov8865_apply_exposure;
+    s->driver_cam.apply_exposure = ov8865_apply_exposure;
   } else {
-    camera_init(v, &s->front, CAMERA_ID_IMX179, 1,
+    camera_init(v, &s->driver_cam, CAMERA_ID_IMX179, 1,
                 /*pixel_clock=*/251200000, /*line_length_pclk=*/3440,
                 /*max_gain=*/224, 20, device_id, ctx,
                 VISION_STREAM_RGB_FRONT, VISION_STREAM_YUV_FRONT);
-    s->front.apply_exposure = imx179_s5k3p8sp_apply_exposure;
+    s->driver_cam.apply_exposure = imx179_s5k3p8sp_apply_exposure;
   }
 
-  s->rear.device = s->device;
-  s->front.device = s->device;
+  s->road_cam.device = s->device;
+  s->driver_cam.device = s->device;
 
   s->sm_front = new SubMaster({"driverState"});
   s->pm = new PubMaster({"roadCameraState", "driverCameraState", "thumbnail"});
@@ -314,8 +314,8 @@ void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_i
     s->focus_bufs[i].allocate(0xb80);
     s->stats_bufs[i].allocate(0xb80);
   }
-  const int width = s->rear.buf.rgb_width/NUM_SEGMENTS_X;
-  const int height = s->rear.buf.rgb_height/NUM_SEGMENTS_Y;
+  const int width = s->road_cam.buf.rgb_width/NUM_SEGMENTS_X;
+  const int height = s->road_cam.buf.rgb_height/NUM_SEGMENTS_Y;
   s->prg_rgb_laplacian = build_conv_program(device_id, ctx, width, height, 3);
   s->krnl_rgb_laplacian = CL_CHECK_ERR(clCreateKernel(s->prg_rgb_laplacian, "rgb2gray_conv2d", &err));
   // TODO: Removed CL_MEM_SVM_FINE_GRAIN_BUFFER, confirm it doesn't matter
@@ -649,7 +649,7 @@ static void sensors_init(MultiCameraState *s) {
       .sensor_init_params = {.modes_supported = 1, .position = FRONT_CAMERA_B, .sensor_mount_angle = 270},
       .output_format = MSM_SENSOR_BAYER,
     };
-  } else if (s->front.camera_id == CAMERA_ID_S5K3P8SP) {
+  } else if (s->driver_cam.camera_id == CAMERA_ID_S5K3P8SP) {
     // init front camera
     slave_info2 = (struct msm_camera_sensor_slave_info){
       .sensor_name = "s5k3p8sp",
@@ -1453,14 +1453,14 @@ void cameras_open(MultiCameraState *s) {
   // LOG("ispif stop: %d", err);
 
   LOG("*** open front ***");
-  s->front.ss[0].bufs = s->front.buf.camera_bufs.get();
-  camera_open(&s->front, false);
+  s->driver_cam.ss[0].bufs = s->driver_cam.buf.camera_bufs.get();
+  camera_open(&s->driver_cam, false);
 
   LOG("*** open rear ***");
-  s->rear.ss[0].bufs = s->rear.buf.camera_bufs.get();
-  s->rear.ss[1].bufs = s->focus_bufs;
-  s->rear.ss[2].bufs = s->stats_bufs;
-  camera_open(&s->rear, true);
+  s->road_cam.ss[0].bufs = s->road_cam.buf.camera_bufs.get();
+  s->road_cam.ss[1].bufs = s->focus_bufs;
+  s->road_cam.ss[2].bufs = s->stats_bufs;
+  camera_open(&s->road_cam, true);
 
   if (getenv("CAMERA_TEST")) {
     cameras_close(s);
@@ -1485,8 +1485,8 @@ void cameras_open(MultiCameraState *s) {
   err = ioctl(s->ispif_fd, VIDIOC_MSM_ISPIF_CFG, &ispif_cfg_data);
   LOG("ispif start_frame_boundary: %d", err);
 
-  front_start(&s->front);
-  rear_start(&s->rear);
+  front_start(&s->driver_cam);
+  rear_start(&s->road_cam);
 }
 
 
@@ -1569,14 +1569,14 @@ static void ops_thread(MultiCameraState *s) {
   while(!do_exit) {
     rear_op = rear_exp.load();
     if (rear_op.op_id != rear_op_id_last) {
-      do_autoexposure(&s->rear, rear_op.grey_frac);
-      do_autofocus(&s->rear, &sm);
+      do_autoexposure(&s->road_cam, rear_op.grey_frac);
+      do_autofocus(&s->road_cam, &sm);
       rear_op_id_last = rear_op.op_id;
     }
 
     front_op = front_exp.load();
     if (front_op.op_id != front_op_id_last) {
-      do_autoexposure(&s->front, front_op.grey_frac);
+      do_autoexposure(&s->driver_cam, front_op.grey_frac);
       front_op_id_last = front_op.op_id;
     }
 
@@ -1660,9 +1660,9 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
   if (env_send_rear) {
     framed.setImage(get_frame_image(b));
   }
-  framed.setFocusVal(s->rear.focus);
-  framed.setFocusConf(s->rear.confidence);
-  framed.setRecoverState(s->rear.self_recover);
+  framed.setFocusVal(s->road_cam.focus);
+  framed.setFocusConf(s->road_cam.confidence);
+  framed.setRecoverState(s->road_cam.self_recover);
   framed.setSharpnessScore(s->lapres);
   framed.setTransform(b->yuv_transform.v);
   s->pm->send("roadCameraState", msg);
@@ -1677,10 +1677,10 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
 void cameras_run(MultiCameraState *s) {
   std::vector<std::thread> threads;
   threads.push_back(std::thread(ops_thread, s));
-  threads.push_back(start_process_thread(s, "processing", &s->rear, camera_process_frame));
-  threads.push_back(start_process_thread(s, "frontview", &s->front, camera_process_front));
+  threads.push_back(start_process_thread(s, "processing", &s->road_cam, camera_process_frame));
+  threads.push_back(start_process_thread(s, "frontview", &s->driver_cam, camera_process_front));
 
-  CameraState* cameras[2] = {&s->rear, &s->front};
+  CameraState* cameras[2] = {&s->road_cam, &s->driver_cam};
 
   while (!do_exit) {
     struct pollfd fds[2] = {{.fd = cameras[0]->isp_fd, .events = POLLPRI},
@@ -1749,8 +1749,8 @@ void cameras_run(MultiCameraState *s) {
 }
 
 void cameras_close(MultiCameraState *s) {
-  camera_close(&s->rear);
-  camera_close(&s->front);
+  camera_close(&s->road_cam);
+  camera_close(&s->driver_cam);
   for (int i = 0; i < FRAME_BUF_COUNT; i++) {
     s->focus_bufs[i].free();
     s->stats_bufs[i].free();

@@ -222,9 +222,9 @@ CameraInfo cameras_supported[CAMERA_ID_MAX] = {
 };
 
 void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
-  camera_init(v, &s->rear, CAMERA_ID_LGC920, 20, device_id, ctx,
+  camera_init(v, &s->road_cam, CAMERA_ID_LGC920, 20, device_id, ctx,
               VISION_STREAM_RGB_BACK, VISION_STREAM_YUV_BACK);
-  camera_init(v, &s->front, CAMERA_ID_LGC615, 10, device_id, ctx,
+  camera_init(v, &s->driver_cam, CAMERA_ID_LGC615, 10, device_id, ctx,
               VISION_STREAM_RGB_FRONT, VISION_STREAM_YUV_FRONT);
   s->pm = new PubMaster({"roadCameraState", "driverCameraState", "thumbnail"});
 }
@@ -233,15 +233,15 @@ void camera_autoexposure(CameraState *s, float grey_frac) {}
 
 void cameras_open(MultiCameraState *s) {
   // LOG("*** open front ***");
-  camera_open(&s->front, false);
+  camera_open(&s->driver_cam, false);
 
   // LOG("*** open rear ***");
-  camera_open(&s->rear, true);
+  camera_open(&s->road_cam, true);
 }
 
 void cameras_close(MultiCameraState *s) {
-  camera_close(&s->rear);
-  camera_close(&s->front);
+  camera_close(&s->road_cam);
+  camera_close(&s->driver_cam);
   delete s->pm;
 }
 
@@ -265,12 +265,12 @@ void camera_process_rear(MultiCameraState *s, CameraState *c, int cnt) {
 
 void cameras_run(MultiCameraState *s) {
   std::vector<std::thread> threads;
-  threads.push_back(start_process_thread(s, "processing", &s->rear, camera_process_rear));
-  threads.push_back(start_process_thread(s, "frontview", &s->front, camera_process_front));
+  threads.push_back(start_process_thread(s, "processing", &s->road_cam, camera_process_rear));
+  threads.push_back(start_process_thread(s, "frontview", &s->driver_cam, camera_process_front));
 
-  std::thread t_rear = std::thread(rear_thread, &s->rear);
+  std::thread t_rear = std::thread(rear_thread, &s->road_cam);
   set_thread_name("webcam_thread");
-  front_thread(&s->front);
+  front_thread(&s->driver_cam);
 
   t_rear.join();
 
