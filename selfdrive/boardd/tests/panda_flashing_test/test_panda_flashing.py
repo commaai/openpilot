@@ -1,158 +1,124 @@
 #!/usr/bin/env python3
-import selfdrive.boardd.boardd as boardd
-from panda import *
+from panda import Panda, PandaDFU, build_st
 import unittest
 import time
 import os
 import requests
 import zipfile
 from io import BytesIO
+import subprocess
 
 from panda import BASEDIR as PANDA_BASEDIR
 
-def get_firmware_fn():
-  signed_fn = os.path.join(PANDA_BASEDIR, "board", "obj", "panda.bin.signed")
-  if os.path.exists(signed_fn):
-    return signed_fn
-  else:
-    fn = "obj/panda.bin"
-    build_st(fn, clean=False)
-    return os.path.join(PANDA_BASEDIR, "board", fn)
+SIGNED_FW_FN = os.path.join(os.path.abspath(PANDA_BASEDIR), "board", "obj", "panda.bin.signed")
+SIGNED_FIRMWARE_URL = "https://github.com/commaai/openpilot/blob/release2/panda/board/obj/panda.bin.signed?raw=true"
 
 
-def get_expected_signature():
+def build_dev_fw():
+  fn = "obj/panda.bin"
+  build_st(fn, clean=False)
+  return os.path.abspath(os.path.join(PANDA_BASEDIR, "board", fn))
+
+
+def get_expected_signature(fn):
   try:
-    return Panda.get_signature_from_firmware(get_firmware_fn())
+    return Panda.get_signature_from_firmware(fn)
   except Exception:
     return b""
 
-def flash_signed_firmware():
-  print("Flashing signed firmware")
-  # Wait for panda to connect
-  while not PandaDFU.list():
-    print("Waiting for panda in DFU mode")
-
-    if Panda.list():
-      print("Panda found. Putting in DFU Mode")
-      panda = Panda()
-      panda.reset(enter_bootstub=True)
-      panda.reset(enter_bootloader=True)
-
-    time.sleep(0.5)
-
-  fp = BytesIO(download_file("https://github.com/commaai/panda-artifacts/blob/master/panda-v1.7.3-DEV-d034f3e9-RELEASE.zip?raw=true"))
-
-  with zipfile.ZipFile(fp) as zip_file:
-    # Flash bootstub
-    bootstub_code = zip_file.open('bootstub.panda.bin').read()
-    PandaDFU(None).program_bootstub(bootstub_code)
-
-    # Wait for panda to come back online
-    while not Panda.list():
-      print("Waiting for Panda")
-      time.sleep(0.5)
-
-    # Flash firmware
-    firmware_code = zip_file.open('panda.bin').read()
-    Panda().flash(code=firmware_code)
 
 def download_file(url):
   r = requests.get(url, allow_redirects=True)
   return r.content
 
+
 class TestPandaFlashing(unittest.TestCase):
-  def setUp(self):
-    print("Setting up panda before the test")
-    panda = None
-    panda_dfu = PandaDFU.list()
-    if len(panda_dfu) > 0:
-      panda_dfu = PandaDFU(panda_dfu[0])
-      panda_dfu.recover()
-      time.sleep(5)
-    panda_list = Panda.list()
-    if len(panda_list) > 0:
-      panda = Panda(panda_list[0])
-    else:
-      print("Panda setup failed")
-      raise AssertionError
+  def ensure_dfu(self):
+    """Ensures the connected panda is running in DFU mode"""
+    if len(PandaDFU.list()) == 1:
+      return
 
-    fw_signature = get_expected_signature()
-
-    panda_signature = b"" if panda.bootstub else panda.get_signature()
-
-    if panda.bootstub or panda_signature != fw_signature:
-      panda.flash(get_firmware_fn())
-
-    if panda.bootstub:
-      panda.recover()
-
-
-  def test_panda_flashing(self):
-    # Ensure we have one normal panda running
     pandas = Panda.list()
     self.assertEqual(len(pandas), 1)
-    # Ensure it is running the firmware
+
+    # Move to DFU mode
     panda1 = Panda(pandas[0])
-    self.assertFalse(panda1.bootstub)
-    # Move the panda into the DFU mode
     panda1.reset(enter_bootstub=True)
     panda1.reset(enter_bootloader=True)
     panda1.close()
-    print("DFU?")
+
+    # TODO: check faster, but still have max timeout
     time.sleep(5)
+
     # Ensure no normal pandas and one DFU panda
     self.assertEqual(len(PandaDFU.list()), 1)
     self.assertEqual(len(Panda.list()), 0)
-    # Run the C++ panda flasher, takes a bit of time
-    print("RUNNING C++")
-    os.system("export BASEDIR=\"/home/batman/openpilot/\";export LOGPRINT=\"debug\"; ./flash_panda")
-    # Now we should have one panda and 0 DFU pandas
-    self.assertEqual(len(Panda.list()), 1)
-    self.assertEqual(len(PandaDFU.list()), 0)
-    print("Test 1 finished")
 
-  def test_release_bootloader(self):
-    # Ensure we have one normal panda running
-    pandas = Panda.list()
-    self.assertEqual(len(pandas), 1)
-    # Flash release bootloader and firmware
-    flash_signed_firmware()
-    panda = Panda(Panda.list()[0])
-    comma_sig = panda.get_signature()
-    panda.close()
-    # Now we should flash the development firmware then find it doesn't run due to the signature and reflash the dev bootloader and firmware
-    print("RUNNING C++")
-    os.system("export BASEDIR=\"/home/batman/openpilot/\";export LOGPRINT=\"debug\"; ./flash_panda")
-    # In the end we want no DFU pandas and one running panda
+  def check_panda_running(self, expected_signature=None):
     self.assertEqual(len(PandaDFU.list()), 0)
     self.assertEqual(len(Panda.list()), 1)
-    #Confirm panda is running the firmware and that we have our custom firmware
+
     panda = Panda(Panda.list()[0])
     self.assertFalse(panda.bootstub)
-    self.assertNotEqual(panda.get_signature(), comma_sig)
+
+    # TODO: check signature
+    # self.assertNotEqual(panda.get_signature(), comma_sig)
     panda.close()
-    print("Test 2 finished")
+
+  def flash_release_bootloader_and_fw(self):
+    self.ensure_dfu()
+
+    fp = BytesIO(download_file("https://github.com/commaai/panda-artifacts/blob/master/panda-v1.7.3-DEV-d034f3e9-RELEASE.zip?raw=true"))
+
+    with zipfile.ZipFile(fp) as zip_file:
+      # Flash bootstub
+      bootstub_code = zip_file.open('bootstub.panda.bin').read()
+      PandaDFU(None).program_bootstub(bootstub_code)
+
+      # Wait for panda to come back online
+      while not Panda.list():
+        print("Waiting for Panda")
+        time.sleep(0.5)
+
+      # Flash firmware
+      firmware_code = zip_file.open('panda.bin').read()
+      Panda().flash(code=firmware_code)
+
+  def run_flasher(self):
+    subprocess.check_call("./flash_panda")
+
+  def setUp(self):
+    try:
+      os.unlink(SIGNED_FW_FN)
+    except FileNotFoundError:
+      pass
+
+    self.flash_release_bootloader_and_fw()
+
+  def test_flash_from_dfu(self):
+    self.ensure_dfu()
+
+    self.run_flasher()
+    self.check_panda_running()
+
+  def test_dev_firmware(self):
+    self.run_flasher()
+
+    # TODO: check for development signature
+    self.check_panda_running()
 
   def test_signed_firmware(self):
-    # We make the same preparation as on previous test
-    pandas = Panda.list()
-    self.assertEqual(len(pandas), 1)
-    flash_signed_firmware()
-    # We load the signed firmware so that the C++ installer can use it
-    # More reliable wget (https://superuser.com/questions/493640/how-to-retry-connections-with-wget)
-    os.system("cd ../../../../panda/board/obj/; wget --retry-connrefused --waitretry=5 --timeout=30 \"https://github.com/commaai/openpilot/blob/release2/panda/board/obj/panda.bin.signed?raw=true\" -O panda.bin.signed")
-    # Run the panda flasher. It should install the signed firmware
-    print("RUNNING C++")
-    os.system("export BASEDIR=\"/home/batman/openpilot/\";export LOGPRINT=\"debug\"; ./flash_panda")
-    # Remove the signed firmware
-    os.system("rm ../../../../panda/board/obj/panda.bin.signed")
-    # In the end we want no DFU pandas and one running panda
-    self.assertEqual(len(PandaDFU.list()), 0)
-    self.assertEqual(len(Panda.list()), 1)
-    panda1 = Panda(pandas[0])
-    self.assertFalse(panda1.bootstub)
-    panda1.close()
-    print("Test 3 finished")
+    with open(SIGNED_FW_FN, 'wb') as f:
+      f.write(download_file(SIGNED_FIRMWARE_URL))
+
+    try:
+      os.system("./flash_panda")
+    finally:
+      os.unlink(SIGNED_FW_FN)
+
+    # TODO: check for signed signature
+    self.check_panda_running()
+
 
 if __name__ == '__main__':
     unittest.main()
