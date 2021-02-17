@@ -1,6 +1,6 @@
 Import('env', 'envCython', 'common', 'cereal', 'messaging')
 
-if GetOption('test') or True: # TODO remove or True
+if GetOption('test'):
   env.Program('tests/panda_flashing_test/flash_panda', ['tests/panda_flashing_test/flash_panda.cc', 'panda.cc', 'panda_flashing.cc'], LIBS=['usb-1.0', common, cereal, messaging, 'pthread', 'zmq', 'capnp', 'kj'])
 
 env.Program('boardd', ['boardd.cc', 'panda.cc', 'panda_flashing.cc', 'pigeon.cc'], LIBS=['usb-1.0', common, cereal, messaging, 'pthread', 'zmq', 'capnp', 'kj'])
