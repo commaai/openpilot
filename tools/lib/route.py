@@ -18,28 +18,26 @@ CAMERA_FILENAMES = ['fcamera.hevc', 'video.hevc']
 class Route(object):
   def __init__(self, route_name, data_dir=None):
     self.route_name = route_name.replace('_', '|')
-    self.max_seg_number = 0
     if data_dir is not None:
       self._segments = self._get_segments_local(data_dir)
     else:
       self._segments = self._get_segments_remote()
+    self.max_seg_number = self._segments[-1].canonical_name.segment_num
+
 
   @property
   def segments(self):
     return self._segments
 
   def log_paths(self):
-    self.max_seg_number = self._segments[-1].canonical_name.segment_num
     log_path_by_seg_num = {s.canonical_name.segment_num: s.log_path for s in self._segments}
     return [log_path_by_seg_num.get(i, None) for i in range(self.max_seg_number+1)]
-  
+
   def qlog_paths(self):
-    self.max_seg_number = self._segments[-1].canonical_name.segment_num
     qlog_path_by_seg_num = {s.canonical_name.segment_num: s.qlog_path for s in self._segments}
     return [qlog_path_by_seg_num.get(i, None) for i in range(self.max_seg_number+1)]
 
   def camera_paths(self):
-    self.max_seg_number = self._segments[-1].canonical_name.segment_num
     camera_path_by_seg_num = {s.canonical_name.segment_num: s.camera_path for s in self._segments}
     return [camera_path_by_seg_num.get(i, None) for i in range(self.max_seg_number+1)]
 
@@ -97,14 +95,17 @@ class Route(object):
 
     segments = []
     for segment, files in segment_files.items():
+
       try:
         log_path = next(path for path, filename in files if filename in LOG_FILENAMES)
       except StopIteration:
         log_path = None
+
       try:
         qlog_path = next(path for path, filename in files if filename in QLOG_FILENAMES)
       except StopIteration:
         qlog_path = None
+
       try:
         camera_path = next(path for path, filename in files if filename in CAMERA_FILENAMES)
       except StopIteration:
@@ -120,7 +121,7 @@ class RouteSegment(object):
   def __init__(self, name, log_path, qlog_path, camera_path):
     self._name = RouteSegmentName(name)
     self.log_path = log_path
-    self.qlog_path = qlog_path 
+    self.qlog_path = qlog_path
     self.camera_path = camera_path
 
   @property
