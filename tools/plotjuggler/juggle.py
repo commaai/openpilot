@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+import os
 import sys
 import multiprocessing
 import subprocess
@@ -8,8 +8,8 @@ from tempfile import NamedTemporaryFile
 
 from common.basedir import BASEDIR
 from selfdrive.test.process_replay.compare_logs import save_log
-from tools.lib.route import Route 
-from tools.lib.logreader import LogReader 
+from tools.lib.route import Route
+from tools.lib.logreader import LogReader
 from tools.lib.url_file import URLFile
 
 
