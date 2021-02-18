@@ -24,7 +24,6 @@ class Route(object):
       self._segments = self._get_segments_remote()
     self.max_seg_number = self._segments[-1].canonical_name.segment_num
 
-
   @property
   def segments(self):
     return self._segments
