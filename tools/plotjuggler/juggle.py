@@ -16,7 +16,6 @@ def load_segment(segment_name):
   print(f"Loading {segment_name}")
   lr = LogReader(segment_name)
   r = [d for d in lr if d.which() not in ['can', 'sendcan']]
-  print(f"done {segment_name}")
   return r
 
 def juggle_file(fn):
@@ -25,10 +24,10 @@ def juggle_file(fn):
   juggle_dir = os.path.dirname(os.path.realpath(__file__))
   subprocess.call(f"bin/plotjuggler -d {fn}", shell=True, env=env, cwd=juggle_dir)
 
-def juggle_route(route_name, segment_number):
+def juggle_route(route_name, segment_number, qlog):
   r = Route(route_name)
 
-  logs = r.log_paths()
+  logs = r.qlog_paths() if qlog else r.log_paths()
   if segment_number is not None:
     logs = logs[segment_number:segment_number+1]
 
@@ -57,6 +56,7 @@ def get_arg_parser():
   parser = argparse.ArgumentParser(description="PlotJuggler plugin for reading rlogs",
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
+  parser.add_argument("--qlog", action="store_true", help="Use qlogs")
   parser.add_argument("route_name", nargs='?', help="The name of the route that will be plotted.")
   parser.add_argument("segment_number", type=int, nargs='?', help="The index of the segment that will be plotted")
   return parser
@@ -68,4 +68,4 @@ if __name__ == "__main__":
     arg_parser.print_help()
     sys.exit()
   args = arg_parser.parse_args(sys.argv[1:])
-  juggle_route(args.route_name, args.segment_number)
+  juggle_route(args.route_name, args.segment_number, args.qlog)
