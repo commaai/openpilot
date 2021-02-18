@@ -14,7 +14,7 @@ class TestPlotJuggler(unittest.TestCase):
 
   def test_run(self):
 
-    test_url = get_url(random.choice(routes.keys()), 0, log_type="rlog")
+    test_url = get_url(random.choice(routes.keys()), 0)
 
     exit_code = os.system(f'./juggle.py "{test_url}"')
     self.assertEqual(exit_code, 0)
