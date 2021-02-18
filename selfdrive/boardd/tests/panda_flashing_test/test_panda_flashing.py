@@ -34,6 +34,7 @@ def download_file(url):
   return r.content
 
 
+@unittest.skipIf(len(Panda.list()) + len(PandaDFU.list()) == 0, "No panda found")
 class TestPandaFlashing(unittest.TestCase):
   def wait_for(self, cls, serial):
     for _ in range(10):
@@ -114,21 +115,18 @@ class TestPandaFlashing(unittest.TestCase):
     self.flash_release_bootloader_and_fw()
     self.wait_for(Panda, self.serial)
   
-  @unittest.skipIf(len(Panda.list()) + len(PandaDFU.list()) == 0, "No panda found")
   def test_flash_from_dfu(self):
     self.ensure_dfu()
 
     self.run_flasher()
     self.check_panda_running()
 
-  @unittest.skipIf(len(Panda.list()) + len(PandaDFU.list()) == 0, "No panda found")
   def test_dev_firmware(self):
     self.run_flasher()
 
     # TODO: check for development signature
     self.check_panda_running()
 
-  @unittest.skipIf(len(Panda.list()) + len(PandaDFU.list()) == 0, "No panda found")
   def test_signed_firmware(self):
     with open(SIGNED_FW_FN, 'wb') as f:
       f.write(download_file(SIGNED_FIRMWARE_URL))
