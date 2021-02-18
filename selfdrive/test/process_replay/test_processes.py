@@ -12,7 +12,6 @@ from tools.lib.logreader import LogReader
 INJECT_MODEL = 0
 
 segments = [
-  ("TOYOTA3", "a0defbc23933e4f8|2021-02-12--21-26-54--0"),  # TOYOTA.COROLLA_TSS2
   ("HYUNDAI", "02c45f73a2e5c6e9|2021-01-01--19-08-22--1"),     # HYUNDAI.SONATA
   ("TOYOTA", "0982d79ebb0de295|2021-01-04--17-13-21--13"),     # TOYOTA.PRIUS (INDI)
   ("TOYOTA2", "0982d79ebb0de295|2021-01-03--20-03-36--6"),      # TOYOTA.RAV4  (LQR)
