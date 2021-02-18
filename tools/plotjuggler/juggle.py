@@ -25,9 +25,13 @@ def juggle_file(fn):
   subprocess.call(f"bin/plotjuggler -d {fn}", shell=True, env=env, cwd=juggle_dir)
 
 def juggle_route(route_name, segment_number):
-  r = Route(route_name)
 
-  logs = r.log_paths()
+  if route_name.startswith("http://") or route_name.startswith("https://"):
+    logs = [route_name]
+  else:
+    r = Route(route_name)
+    logs = r.log_paths()
+
   if segment_number is not None:
     logs = logs[segment_number:segment_number+1]
 
