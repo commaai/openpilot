@@ -11,7 +11,6 @@ from selfdrive.test.process_replay.compare_logs import save_log
 from tools.lib.route import Route
 from tools.lib.logreader import LogReader
 
-
 def load_segment(segment_name):
   print(f"Loading {segment_name}")
   lr = LogReader(segment_name)
@@ -62,7 +61,6 @@ def get_arg_parser():
   return parser
 
 if __name__ == "__main__":
-
   arg_parser = get_arg_parser()
   if len(sys.argv) == 1:
     arg_parser.print_help()
