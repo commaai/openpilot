@@ -43,30 +43,30 @@ const int SEGMENT_LENGTH = getenv("LOGGERD_TEST") ? atoi(getenv("LOGGERD_SEGMENT
 ExitHandler do_exit;
 
 std::map<std::string, LogCameraInfo> cameras_logged = {
-  {"frame", LogCameraInfo{.id = F_CAMERA,
+  {"roadCameraState", LogCameraInfo{
+    .id = F_CAMERA,
     .stream_type = VISION_STREAM_YUV_BACK,
     .filename = "fcamera.hevc",
-    .frame_packet_name = "roadCameraState",
     .fps = MAIN_FPS,
     .bitrate = MAIN_BITRATE,
     .is_h265 = true,
     .downscale = false,
     .has_qcamera = true}},
 #if defined(QCOM) || defined(QCOM2)
-  {"frontFrame", LogCameraInfo{.id = D_CAMERA,
+  {"driverCameraState", LogCameraInfo{
+    .id = D_CAMERA,
     .stream_type = VISION_STREAM_YUV_FRONT,
     .filename = "dcamera.hevc",
-    .frame_packet_name = "driverCameraState",
     .fps = MAIN_FPS, // on EONs, more compressed this way
     .bitrate = DCAM_BITRATE,
     .is_h265 = true,
     .downscale = false,
     .has_qcamera = false}},
 #ifdef QCOM2
-  {"wideFrame", LogCameraInfo{.id = E_CAMERA,
+  {"wideRoadCameraState", LogCameraInfo{
+    .id = E_CAMERA,
     .stream_type = VISION_STREAM_YUV_WIDE,
     .filename = "ecamera.hevc",
-    .frame_packet_name = "wideRoadCameraState",
     .fps = MAIN_FPS,
     .bitrate = MAIN_BITRATE,
     .is_h265 = true,
@@ -209,7 +209,7 @@ void EncoderState::encoder_thread() {
           // publish encode index
           MessageBuilder msg;
           // this is really ugly
-          auto eidx = ci_.id == D_CAMERA ? msg.initEvent().initFrontEncodeIdx() : (ci_.id == E_CAMERA ? msg.initEvent().initWideEncodeIdx() : msg.initEvent().initEncodeIdx());
+          auto eidx = ci_.id == D_CAMERA ? msg.initEvent().initDriverEncodeIdx() : (ci_.id == E_CAMERA ? msg.initEvent().initWideRoadEncodeIdx() : msg.initEvent().initRoadEncodeIdx());
           eidx.setFrameId(extra.frame_id);
           eidx.setTimestampSof(extra.timestamp_sof);
           eidx.setTimestampEof(extra.timestamp_eof);
