@@ -167,7 +167,7 @@ static void update_sockets(UIState *s) {
   if (sm.updated("pandaState")) {
     auto pandaState = sm["pandaState"].getPandaState();
     scene.pandaType = pandaState.getPandaType();
-    s->ignition = pandaState.getIgnitionLine() || pandaState.getIgnitionCan();
+    scene.ignition = pandaState.getIgnitionLine() || pandaState.getIgnitionCan();
   } else if ((s->sm->frame - s->sm->rcv_frame("pandaState")) > 5*UI_FREQ) {
     scene.pandaType = cereal::PandaState::PandaType::UNKNOWN;
   }
@@ -205,7 +205,7 @@ static void update_sockets(UIState *s) {
       }
     }
   }
-  s->started = scene.deviceState.getStarted() || scene.frontview;
+  scene.started = scene.deviceState.getStarted() || scene.frontview;
 }
 
 static void update_alert(UIState *s) {
@@ -227,7 +227,7 @@ static void update_alert(UIState *s) {
   }
 
   // Handle controls timeout
-  if (scene.deviceState.getStarted() && (s->sm->frame - s->started_frame) > 10 * UI_FREQ) {
+  if (scene.deviceState.getStarted() && (s->sm->frame - scene.started_frame) > 10 * UI_FREQ) {
     const uint64_t cs_frame = s->sm->rcv_frame("controlsState");
     if (cs_frame < scene.started_frame) {
       // car is started, but controlsState hasn't been seen at all
