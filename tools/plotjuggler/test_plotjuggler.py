@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
-import unittest
 import os
+import random
+import unittest
 
+from selfdrive.test.openpilotci import get_url
+from selfdrive.test.test_car_models import routes
 
 class TestPlotJuggler(unittest.TestCase):
 
@@ -10,5 +13,11 @@ class TestPlotJuggler(unittest.TestCase):
     self.assertEqual(exit_code, 0)
 
   def test_run(self):
-    exit_code = os.system('./juggle.py "0982d79ebb0de295|2021-01-17--17-13-08"')
+
+    test_url = get_url(random.choice(routes.keys()), 0, log_type="rlog")
+
+    exit_code = os.system(f'./juggle.py "{test_url}"')
     self.assertEqual(exit_code, 0)
+
+if __name__ == "__main__":
+  unittest.main()
