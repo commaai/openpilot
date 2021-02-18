@@ -105,37 +105,35 @@ class TestPandaFlashing(unittest.TestCase):
     if not hasattr(self, 'serial'):
       self.claim_panda()
 
-    try:
-      os.unlink(SIGNED_FW_FN)
-    except FileNotFoundError:
-      pass
-
-    try:
-      os.unlink(DEV_FW_FN)
-    except FileNotFoundError:
-      pass
+    for fn in [SIGNED_FW_FN, DEV_FW_FN]:
+      try:
+        os.unlink(fn)
+      except FileNotFoundError:
+        pass
 
     self.flash_release_bootloader_and_fw()
     self.wait_for(Panda, self.serial)
-
+  
+  @unittest.skipIf(len(Panda.list()) + len(PandaDFU.list()) == 0, "No panda found")
   def test_flash_from_dfu(self):
     self.ensure_dfu()
 
     self.run_flasher()
     self.check_panda_running()
 
+  @unittest.skipIf(len(Panda.list()) + len(PandaDFU.list()) == 0, "No panda found")
   def test_dev_firmware(self):
     self.run_flasher()
 
     # TODO: check for development signature
     self.check_panda_running()
 
+  @unittest.skipIf(len(Panda.list()) + len(PandaDFU.list()) == 0, "No panda found")
   def test_signed_firmware(self):
     with open(SIGNED_FW_FN, 'wb') as f:
       f.write(download_file(SIGNED_FIRMWARE_URL))
 
     self.run_flasher()
-    os.unlink(SIGNED_FW_FN)
 
     # TODO: check for signed signature
     self.check_panda_running()
