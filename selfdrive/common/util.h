@@ -109,14 +109,24 @@ public:
   ExitHandler() {
     std::signal(SIGINT, (sighandler_t)set_do_exit);
     std::signal(SIGTERM, (sighandler_t)set_do_exit);
+
+#ifndef __APPLE__
+    std::signal(SIGPWR, (sighandler_t)set_do_exit);
+#endif
   };
+  inline static std::atomic<bool> power_failure = false;
   inline operator bool() { return do_exit; }
   inline ExitHandler& operator=(bool v) {
     do_exit = v;
     return *this;
   }
 private:
-  static void set_do_exit(int sig) { do_exit = true; }
+  static void set_do_exit(int sig) {
+#ifndef __APPLE__
+    power_failure = (sig == SIGPWR);
+#endif
+    do_exit = true;
+  }
   inline static std::atomic<bool> do_exit = false;
 };
 
