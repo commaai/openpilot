@@ -9,6 +9,7 @@
 #include <QStackedWidget>
 #include <QTimer>
 #include <QWidget>
+
 #include "qt_sound.hpp"
 #include "ui/ui.hpp"
 #include "widgets/offroad_alerts.hpp"

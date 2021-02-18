@@ -41,7 +41,7 @@ static void ui_init_vision(UIState *s) {
 
 
 UIState::UIState(Sound *sound) : sound(sound) {
-  s->sm = new SubMaster({"modelV2", "controlsState", "uiLayoutState", "liveCalibration", "radarState", "deviceState", "roadCameraState", "liveLocationKalman",
+  sm = new SubMaster({"modelV2", "controlsState", "uiLayoutState", "liveCalibration", "radarState", "deviceState", "roadCameraState", "liveLocationKalman",
                          "pandaState", "carParams", "driverState", "driverMonitoringState", "sensorEvents", "carState", "ubloxGnss"});
 
   started = false;
