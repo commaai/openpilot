@@ -99,7 +99,7 @@ class UnloggerWorker(object):
       smsg = msg.as_builder()
 
       if typ == "roadCameraState":
-        frame_id = msg.frame.frameId
+        frame_id = msg.roadCameraState.frameId
 
         # Frame exists, make sure we have a framereader.
         # load the frame readers as needed
@@ -118,9 +118,9 @@ class UnloggerWorker(object):
           img = img.flatten()
           bts = img.tobytes()
 
-          smsg.frame.image = bts
+          smsg.roadCameraState.image = bts
 
-          extra = (smsg.frame.frameId, smsg.frame.timestampSof, smsg.frame.timestampEof)
+          extra = (smsg.roadCameraState.frameId, smsg.roadCameraState.timestampSof, smsg.roadCameraState.timestampEof)
           data_socket.send_pyobj((cookie, VIPC_TYP, msg.logMonoTime, route_time, extra), flags=zmq.SNDMORE)
           data_socket.send(bts, copy=False)
 
