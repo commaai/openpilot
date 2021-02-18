@@ -54,9 +54,8 @@ def juggle_segment(route_name, segment_nr):
   juggle_file(uf.name)
 
 def get_arg_parser():
-  parser = argparse.ArgumentParser(
-    description="PlotJuggler plugin for reading rlogs",
-    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+  parser = argparse.ArgumentParser(description="PlotJuggler plugin for reading rlogs",
+                                   formatter_class=argparse.ArgumentDefaultsHelpFormatter)
   
   parser.add_argument("route_name", nargs='?', help="The name of the route that will be plotted.") 
   parser.add_argument("segment_number", type=int, nargs='?', help="The index of the segment that will be plotted")
