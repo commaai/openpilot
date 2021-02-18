@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
-import time
 import json
+import os
+import time
 import subprocess
 
 import requests
 from timezonefinder import TimezoneFinder
 
 from common.params import Params
+from selfdrive.hardware import TICI
 from selfdrive.swaglog import cloudlog
 
 
@@ -17,7 +19,13 @@ def set_timezone(valid_timezones, timezone):
 
   cloudlog.info(f"Setting timezone to {timezone}")
   try:
-    subprocess.check_call(f'sudo timedatectl set-timezone {timezone}', shell=True)
+    if TICI:
+      tzpath = os.path.join("/usr/share/zoneinfo/", timezone)
+      os.symlink(tzpath, "/data/etc/localtime")
+      with open("/data/etc/timezone", "w") as f:
+        f.write(timezone)
+    else:
+      subprocess.check_call(f'sudo timedatectl set-timezone {timezone}', shell=True)
   except subprocess.CalledProcessError:
     cloudlog.exception(f"Error setting timezone to {timezone}")
 
