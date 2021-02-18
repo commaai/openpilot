@@ -21,7 +21,8 @@ def load_segment(segment_name):
   return r
 
 def juggle_file(fn):
-  env = {"BASEDIR": BASEDIR}
+  env = os.environ.copy()
+  env["BASEDIR"] = BASEDIR
   juggle_dir = os.path.dirname(os.path.realpath(__file__))
   subprocess.call(f"bin/plotjuggler -d {fn}", shell=True, env=env, cwd=juggle_dir)
 
