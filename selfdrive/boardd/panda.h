@@ -49,7 +49,7 @@ private:
   void cleanup();
   void handle_usb_issue(int err, const char func[]);
 public:
-  PandaComm(uint16_t vid = 0xbbaa, uint16_t pid = 0xddcc);
+  PandaComm(uint16_t vid, uint16_t pid, std::string serial = "");
   ~PandaComm();
   std::atomic<bool> connected = true;
 
@@ -70,8 +70,10 @@ private:
   void cleanup();
   void connect();
   void reconnect();
+  std::string serial;
+  std::string dfu_serial;
 public:
-  DynamicPanda();
+  DynamicPanda(std::string serial, std::string dfu_serial);
   ~DynamicPanda();
   std::string get_version();
   std::string get_signature();

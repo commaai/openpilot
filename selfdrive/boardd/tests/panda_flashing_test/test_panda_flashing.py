@@ -41,8 +41,8 @@ class TestPandaFlashing(unittest.TestCase):
       pandas = cls.list()
       if serial in pandas:
         return
-
       time.sleep(0.5)
+    
     self.assertTrue(False)
 
   def ensure_dfu(self):
@@ -86,7 +86,7 @@ class TestPandaFlashing(unittest.TestCase):
       panda.close()
 
   def run_flasher(self):
-    print("Running C++ flasher")
+    print("Running C++ flasher", self.serial, self.dfu_serial)
     cmd = "bash -c 'export LOGPRINT=\"debug\"; ./flash_panda aa bb'"
     subprocess.check_call(cmd, shell=True)
     print("Done with C++ flasher")
@@ -96,7 +96,7 @@ class TestPandaFlashing(unittest.TestCase):
     for p in dfu_list:
       dpanda = PandaDFU(p)
       dpanda.recover()
-    time.sleep(1)
+    time.sleep(2)
     self.assertTrue(len(dfu_list) == 0)
     panda_list = Panda.list()
     self.assertTrue(len(panda_list) > 0)
@@ -123,12 +123,14 @@ class TestPandaFlashing(unittest.TestCase):
 
     self.run_flasher()
     self.check_panda_running()
+    print("Test 2 finished\n")
 
   def test_dev_firmware(self):
     self.run_flasher()
 
     # TODO: check for development signature
     self.check_panda_running()
+    print("Test 1 finished\n")
 
   def test_signed_firmware(self):
     with open(SIGNED_FW_FN, 'wb') as f:
@@ -138,6 +140,7 @@ class TestPandaFlashing(unittest.TestCase):
 
     # TODO: check for signed signature
     self.check_panda_running()
+    print("Test 3 finished\n")
 
 
 if __name__ == '__main__':

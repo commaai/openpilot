@@ -3,6 +3,7 @@
 #include <iostream>
 #include <vector>
 #include <unistd.h>
+#include <string>
 
 #include "common/swaglog.h"
 #include "common/gpio.h"
@@ -34,7 +35,9 @@ void panda_set_power(bool power) {
 
 #define REQUEST_IN 192
 
-PandaComm::PandaComm(uint16_t vid, uint16_t pid) {
+PandaComm::PandaComm(uint16_t vid, uint16_t pid, std::string serial) {
+  libusb_device **list = NULL;
+  int count = 0;
   int err = libusb_init(&ctx);
   if (err != 0) { goto fail; }
 
@@ -44,7 +47,36 @@ PandaComm::PandaComm(uint16_t vid, uint16_t pid) {
   libusb_set_debug(ctx, 3);
 #endif
 
-  dev_handle = libusb_open_device_with_vid_pid(ctx, vid, pid);
+  count = libusb_get_device_list(ctx, &list);
+  assert(count > 0);
+  for (int idx = 0; idx < count; idx++) {
+    libusb_device *device = list[idx];
+    libusb_device_descriptor desc;
+    err = libusb_get_device_descriptor(device, &desc);
+    assert(err == 0);
+    uint16_t vid2 = desc.idVendor;
+    uint16_t pid2 = desc.idProduct;
+    if (vid2 == vid && pid2 == pid){
+      printf("Vendor:Device = %04x:%04x\n", vid, pid);
+      err = libusb_open(device, &dev_handle);
+      assert(err == 0);
+      if (dev_handle != NULL){
+        unsigned char buf[1024];
+        memset(buf, 0, sizeof(buf));//Ensure I can cout
+        int length = libusb_get_string_descriptor_ascii(dev_handle, 3, buf, 1024);
+        assert(length >= 0);
+        std::string serial2 = std::string((char*) buf);
+        std::cout<<"Panda serial: "<<serial2<<std::endl;
+        if(serial2 == serial || serial == ""){
+          std::cout<<"Found the correct panda"<<std::endl;
+          break;
+        }
+        libusb_close(dev_handle);
+        std::cout<<"Got to end of loop"<<std::endl;
+      }
+      util::sleep_for(5000);
+    }
+  }
   if (dev_handle == NULL) { goto fail; }
   if (libusb_kernel_driver_active(dev_handle, 0) == 1) {
     libusb_detach_kernel_driver(dev_handle, 0);
@@ -184,7 +216,7 @@ void PandaComm::handle_usb_issue(int err, const char func[]) {
 }
 
 
-DynamicPanda::DynamicPanda() {
+DynamicPanda::DynamicPanda(std::string serial, std::string dfu_serial) : serial(serial), dfu_serial(dfu_serial) {
   reconnect();
 }
 
@@ -217,13 +249,13 @@ void DynamicPanda::connect() {
       libusb_exit(ctx);
       throw std::runtime_error("Found DFU panda...");
     } else if (vid == 0xbbaa && pid == 0xddcc) { //Normal panda running the firmware
-      c = new PandaComm(0xbbaa, 0xddcc);
+      c = new PandaComm(0xbbaa, 0xddcc, serial);
       LOGD("Found panda in a good state, exiting");
       pandaExists = true;
       bootstub = false;
       break;
     } else if (vid == 0xbbaa && pid == 0xddee) {
-      c = new PandaComm(0xbbaa, 0xddee);
+      c = new PandaComm(0xbbaa, 0xddee, serial);
       LOGD("Found panda in bootstub mode, some more work to do");
       pandaExists = true;
       bootstub = true;
@@ -306,7 +338,7 @@ void DynamicPanda::reconnect() {
       LOGD("reconnecting");
       PandaComm* dfu;
       try {
-        dfu = new PandaComm(0x0483, 0xdf11);
+        dfu = new PandaComm(0x0483, 0xdf11, dfu_serial);
         dfu_recover(dfu);
       } catch(std::runtime_error &e) {}
       delete(dfu);
@@ -339,7 +371,7 @@ void DynamicPanda::recover() {
     LOGD("Waiting for DFU");
     util::sleep_for(100);
     try {
-      PandaComm dfuPanda(0x0483, 0xdf11); // Throws exception if Panda is not in DFU mdoe
+      PandaComm dfuPanda(0x0483, 0xdf11, dfu_serial); // Throws exception if Panda is not in DFU mdoe
       dfu_recover(&dfuPanda);
       break;
     } catch(std::runtime_error &e) {}

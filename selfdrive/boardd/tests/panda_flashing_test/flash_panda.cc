@@ -2,8 +2,9 @@
 #include <iostream>
 
 int main(int argc, char* argv[]){
-  std::string serial(argv[0]);
-  std::string dfu_serial(argv[1]);
-  update_panda();
+  std::string serial(argv[1]);
+  std::string dfu_serial(argv[2]);
+  update_panda(serial="", dfu_serial="");
+  std::cout<<"console parsing"<<std::endl;
   std::cout<<serial<<" "<<dfu_serial<<std::endl;
 }
