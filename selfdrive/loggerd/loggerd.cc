@@ -44,7 +44,7 @@ ExitHandler do_exit;
 
 std::map<std::string, LogCameraInfo> cameras_logged = {
   {"roadCameraState", LogCameraInfo{
-    .id = F_CAMERA,
+    .type = ROAD_CAM,
     .stream_type = VISION_STREAM_YUV_BACK,
     .filename = "fcamera.hevc",
     .fps = MAIN_FPS,
@@ -54,7 +54,7 @@ std::map<std::string, LogCameraInfo> cameras_logged = {
     .has_qcamera = true}},
 #if defined(QCOM) || defined(QCOM2)
   {"driverCameraState", LogCameraInfo{
-    .id = D_CAMERA,
+    .type = DRIVER_CAM,
     .stream_type = VISION_STREAM_YUV_FRONT,
     .filename = "dcamera.hevc",
     .fps = MAIN_FPS, // on EONs, more compressed this way
@@ -64,7 +64,7 @@ std::map<std::string, LogCameraInfo> cameras_logged = {
     .has_qcamera = false}},
 #ifdef QCOM2
   {"wideRoadCameraState", LogCameraInfo{
-    .id = E_CAMERA,
+    .type = WIDE_ROAD_CAM,
     .stream_type = VISION_STREAM_YUV_WIDE,
     .filename = "ecamera.hevc",
     .fps = MAIN_FPS,
@@ -189,7 +189,7 @@ void EncoderState::encoder_thread() {
         }
       }
       if (should_rotate) {
-        LOGW("camera %d rotate encoder to %s", ci_.id, segment_path.c_str());
+        LOGW("camera %d rotate encoder to %s", ci_.type, segment_path.c_str());
         if (lh) { lh_close(lh); }
 
         lh = logger_get_handle(&s.logger);
@@ -209,11 +209,11 @@ void EncoderState::encoder_thread() {
           // publish encode index
           MessageBuilder msg;
           // this is really ugly
-          auto eidx = ci_.id == D_CAMERA ? msg.initEvent().initDriverEncodeIdx() : (ci_.id == E_CAMERA ? msg.initEvent().initWideRoadEncodeIdx() : msg.initEvent().initRoadEncodeIdx());
+          auto eidx = ci_.type == DRIVER_CAM ? msg.initEvent().initDriverEncodeIdx() : (ci_.type == WIDE_ROAD_CAM ? msg.initEvent().initWideRoadEncodeIdx() : msg.initEvent().initRoadEncodeIdx());
           eidx.setFrameId(extra.frame_id);
           eidx.setTimestampSof(extra.timestamp_sof);
           eidx.setTimestampEof(extra.timestamp_eof);
-          eidx.setType((IS_QCOM2 || ci_.id != D_CAMERA) ? cereal::EncodeIndex::Type::FULL_H_E_V_C : cereal::EncodeIndex::Type::FRONT);
+          eidx.setType((IS_QCOM2 || ci_.type != DRIVER_CAM) ? cereal::EncodeIndex::Type::FULL_H_E_V_C : cereal::EncodeIndex::Type::FRONT);
           eidx.setEncodeId(total_frame_cnt);
           eidx.setSegmentNum(encoder_segment);
           eidx.setSegmentId(out_id);
@@ -277,9 +277,9 @@ int main(int argc, char** argv) {
     SocketState *socket_state = new SocketState(ctx, it);
 
     auto camera = cameras_logged.find(it.name);
-    if (camera != cameras_logged.end() && (camera->second.id != D_CAMERA || record_front)) {
+    if (camera != cameras_logged.end() && (camera->second.type != DRIVER_CAM || record_front)) {
       // init and start encoder thread
-      const bool need_waiting = (IS_QCOM2 || camera->second.id != D_CAMERA);
+      const bool need_waiting = (IS_QCOM2 || camera->second.type != DRIVER_CAM);
       s.encoders_max_waiting += need_waiting;
       s.encoder_states.push_back(new EncoderState(camera->second, socket_state, need_waiting));
     } else {

@@ -48,13 +48,13 @@ typedef struct CameraInfo {
   bool hdr;
 } CameraInfo;
 
-enum LogCameraId {
-  F_CAMERA,
-  D_CAMERA,
-  E_CAMERA
+enum CameraType {
+  ROAD_CAM = 0,
+  DRIVER_CAM,
+  WIDE_ROAD_CAM
 };
 typedef struct LogCameraInfo {
-  LogCameraId id;
+  CameraType type;
   const char* filename;
   const char* encode_idx_name;
   VisionStreamType stream_type;
