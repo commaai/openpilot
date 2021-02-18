@@ -158,47 +158,6 @@ void dfu_recover(PandaComm* dfuPanda) {
 }
 
 void get_out_of_dfu(std::string dfu_serial) {
-  bool listUsbDevices = true;
-  if(listUsbDevices){ // Useful for debugging
-    int err = 0;
-    libusb_context* ctx;
-    err = libusb_init(&ctx);
-    assert(err == 0);
-    libusb_device **list = NULL;
-    int count = 0;
-    count = libusb_get_device_list(ctx, &list);
-    assert(count > 0);
-    for (int idx = 0; idx < count; idx++) {
-      libusb_device *device = list[idx];
-      libusb_device_descriptor desc;
-      err = libusb_get_device_descriptor(device, &desc);
-      assert(err == 0);
-      uint16_t vid = desc.idVendor;
-      uint16_t pid = desc.idProduct;
-      printf("Vendor:Device = %04x:%04x\n", vid, pid);
-      if (vid == 0x0483 && pid == 0xdf11){ // Panda in DFU 
-        printf("Vendor:Device = %04x:%04x\n", vid, pid);
-        libusb_device_handle* deviceHandle = libusb_open_device_with_vid_pid(ctx, vid, pid);
-        if (deviceHandle != NULL){
-          unsigned char buf[1024];
-          memset(buf, 0, sizeof(buf));//Ensure I can cout
-          int length = libusb_get_string_descriptor_ascii(deviceHandle, 3, buf, 1024);
-          if (length < 0) {
-            std::cout<<"Error in getting description"<<std::endl;
-          } else {
-            std::cout<<"Got the DFU message"<<std::endl;
-            std::cout<<length<<std::endl;
-            std::cout<<buf<<std::endl;
-          }
-          libusb_close(deviceHandle);
-          std::cout<<"Got to end of loop"<<std::endl;
-        }
-        util::sleep_for(5000);
-      }
-    }
-    libusb_free_device_list(list, count);
-    libusb_exit(ctx);
-  }
   PandaComm* dfuPanda;
   try {
     dfuPanda = new PandaComm(0x0483, 0xdf11, dfu_serial);
