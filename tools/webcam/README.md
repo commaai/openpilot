@@ -1,4 +1,4 @@
-#Run openpilot with webcam on PC
+# Run openpilot with webcam on PC
 
 What's needed:
 - Ubuntu 20.04

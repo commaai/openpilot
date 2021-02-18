@@ -23,7 +23,7 @@ Table of Contents
 Requirements
 ============
 
-openpilot tools and the following setup steps are developed and tested on Ubuntu 20.04, MacOS 10.14.2 and Python 3.8.2.
+openpilot tools and the following setup steps are developed and tested on Ubuntu 20.04, MacOS 10.14.2 and, Python 3.8.2.
 
 Setup
 ============
