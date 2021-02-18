@@ -33,8 +33,22 @@ def juggle_route(route_name):
   pool = multiprocessing.Pool(24)
 
   all_data = []
+  missing_rlog = False
   for d in pool.map(load_segment, r.log_paths()):
+    if d is None:
+      missing_rlog = True
+      break
     all_data += d
+
+  if missing_rlog:
+    fallback_answer = input("At least one of the rlogs in this segment does not exist, would you like to use the qlogs? (y/n) : ")
+    if fallback_answer == 'y':
+      all_data = []
+      for d in pool.map(load_segment, r.qlog_paths()):
+        all_data += d
+    else:
+      print("Please try a different route")
+      return
 
   tempfile = NamedTemporaryFile(suffix='.rlog')
   save_log(tempfile.name, all_data, compress=False)
@@ -47,8 +61,12 @@ def juggle_segment(route_name, segment_nr):
   lp = r.log_paths()[segment_nr]
 
   if lp is None:
-    print("This segment does not exist, please try a different one")
-    return
+    fallback_answer = input("The rlog for this segment does not exist, would you like to use the qlog? (y/n) : ")
+    if fallback_answer == 'y':
+      lp = r.qlog_paths()[segment_nr]
+    else:
+      print("Please try a different segment")
+      return
 
   uf = URLFile(lp)
   juggle_file(uf.name)
