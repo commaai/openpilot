@@ -168,6 +168,14 @@ struct LoggerdState {
 };
 LoggerdState s;
 
+cereal::EncodeIndex::Builder init_encoder_idx(MessageBuilder &msg, int cam_idx) {
+  switch(cam_idx) {
+    case LOG_CAMERA_ID_ECAMERA: return msg.initEvent().initWideRoadEncodeIdx();
+    case LOG_CAMERA_ID_DCAMERA: return msg.initEvent().initDriverEncodeIdx();
+    default: return msg.initEvent().initRoadEncodeIdx();
+  }
+}
+
 void encoder_thread(int cam_idx) {
   assert(cam_idx < LOG_CAMERA_ID_MAX-1);
 
@@ -271,9 +279,7 @@ void encoder_thread(int cam_idx) {
         if (i == 0 && out_id != -1) {
           // publish encode index
           MessageBuilder msg;
-          // this is really ugly
-          auto eidx = cam_idx == LOG_CAMERA_ID_DCAMERA ? msg.initEvent().initDriverEncodeIdx() :
-                     (cam_idx == LOG_CAMERA_ID_ECAMERA ? msg.initEvent().initWideRoadEncodeIdx() : msg.initEvent().initRoadEncodeIdx());
+          auto eidx = init_encoder_idx(msg, cam_idx);
           eidx.setFrameId(extra.frame_id);
           eidx.setTimestampSof(extra.timestamp_sof);
           eidx.setTimestampEof(extra.timestamp_eof);
