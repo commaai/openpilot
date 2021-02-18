@@ -16,7 +16,6 @@ Table of Contents
    * [Replay driving data](#replay-driving-data)
    * [Debug car controls](#debug-car-controls)
    * [Stream replayed CAN messages to EON](#stream-replayed-can-messages-to-eon)
-   * [Stream EON video data to a PC](#stream-eon-video-data-to-a-pc)
  * [Welcomed contributions](#welcomed-contributions)
 <!--te-->
 
@@ -24,7 +23,7 @@ Table of Contents
 Requirements
 ============
 
-openpilot tools and the following setup steps are developed and tested on Ubuntu 20.04, MacOS 10.14.2 and Python 3.8.2.
+openpilot tools and the following setup steps are developed and tested on Ubuntu 20.04, MacOS 10.14.2 and, Python 3.8.2.
 
 Setup
 ============
@@ -135,33 +134,6 @@ python replay/unlogger.py <route-name> <path-to-data-directory>
 
 ```
 ![Imgur](https://i.imgur.com/AcurZk8.jpg)
-
-
-Stream EON video data to a PC
--------------
-
-**Hardware needed**: [EON](https://comma.ai/shop/products/eon-gold-dashcam-devkit/), [comma Smays](https://comma.ai/shop/products/comma-smays-adapter/).
-
-You can connect your EON to your pc using the Ethernet cable provided with the comma Smays and you'll be able to stream data from your EON, in real time, with low latency. A useful application is being able to stream the raw video frames at 20fps, as captured by the EON's camera.
-
-Usage:
-```
-# ssh into the eon and run loggerd with the flag "--stream". In ../selfdrive/manager.py you can change:
-# ...
-# "loggerd": ("selfdrive/loggerd", ["./loggerd"]),
-# ...
-# with:
-# ...
-# "loggerd": ("selfdrive/loggerd", ["./loggerd", "--stream"]),
-# ...
-
-# On the PC:
-# To receive frames from the EON and re-publish them. Set PYGAME env variable if you want to display the video stream
-python streamer/streamerd.py
-```
-
-![Imgur](stream.gif)
-
 
 Welcomed contributions
 =============
