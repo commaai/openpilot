@@ -86,7 +86,10 @@ class TestPandaFlashing(unittest.TestCase):
       panda.close()
 
   def run_flasher(self):
-    subprocess.check_call("./flash_panda")
+    print("Running C++ flasher")
+    cmd = "bash -c 'export LOGPRINT=\"debug\"; ./flash_panda aa bb'"
+    subprocess.check_call(cmd, shell=True)
+    print("Done with C++ flasher")
 
   def claim_panda(self):
     dfu_list = PandaDFU.list()
