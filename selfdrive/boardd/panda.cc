@@ -17,12 +17,12 @@ void panda_set_power(bool power){
   err += gpio_init(GPIO_STM_RST_N, true);
   err += gpio_init(GPIO_STM_BOOT0, true);
 
-  err += gpio_set(GPIO_STM_RST_N, false);
+  err += gpio_set(GPIO_STM_RST_N, true);
   err += gpio_set(GPIO_STM_BOOT0, false);
 
   util::sleep_for(100); // 100 ms
 
-  err += gpio_set(GPIO_STM_RST_N, power);
+  err += gpio_set(GPIO_STM_RST_N, !power);
   assert(err == 0);
 #endif
 }
