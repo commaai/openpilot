@@ -6,6 +6,7 @@ import time
 import unittest
 
 from common.basedir import BASEDIR
+from common.timeout import Timeout
 from selfdrive.test.openpilotci import get_url
 from selfdrive.test.test_car_models import routes
 
@@ -21,23 +22,15 @@ class TestPlotJuggler(unittest.TestCase):
 
     p = subprocess.Popen(f'{os.path.join(BASEDIR, "tools/plotjuggler/juggle.py")} "{test_url}"', stderr=subprocess.PIPE, shell=True)
 
-    exit_code = 1
-    state = "parsing"
+    with Timeout(60):
+      while True:
+          output = p.stderr.readline()
+          if output == b'Done\n':
+            break
 
-    while True:
-      if state == "parsing":
-        output = p.stderr.readline()
-        if output == b'Done\n':
-          state = "waiting"
-          start = time.time()
-        continue
-
-      if time.time() - start >= 15.0:
-        exit_code = 0
-        break
-
+    time.sleep(5)
+    self.assertEqual(p.poll(), None)
     p.kill()
-    self.assertEqual(exit_code, 0)
 
 if __name__ == "__main__":
   unittest.main()
