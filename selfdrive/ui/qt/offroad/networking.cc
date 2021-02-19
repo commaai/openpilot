@@ -7,6 +7,7 @@
 #include <QRandomGenerator>
 #include <QtConcurrent>
 
+#include "common/params.h"
 #include "networking.hpp"
 #include "util.h"
 
@@ -280,14 +281,12 @@ void AdvancedNetworking::toggleTethering(int enable) {
 }
 
 void enableSSH(Toggle* toggle_switch_SSH){
-  system("sudo systemctl enable ssh");
-  system("sudo systemctl start ssh");
+  Params().write_db_value("SshEnabled", "1");
   toggle_switch_SSH->setEnabled(true);
 }
 
 void disableSSH(Toggle* toggle_switch_SSH){
-  system("sudo systemctl stop ssh");
-  system("sudo systemctl disable ssh");
+  Params().write_db_value("SshEnabled", "0");
   toggle_switch_SSH->setEnabled(true);
 }
 
