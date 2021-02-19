@@ -465,7 +465,7 @@ def manager_thread():
   while 1:
     msg = messaging.recv_sock(device_state_sock, wait=True)
 
-    if msg.deviceState.freeSpacePercent < 0.05:
+    if msg.deviceState.freeSpacePercent < 5:
       logger_dead = True
 
     if msg.deviceState.started:

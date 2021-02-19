@@ -245,7 +245,7 @@ def thermald_thread():
       except Exception:
         cloudlog.exception("Error getting network status")
 
-    msg.deviceState.freeSpacePercent = get_available_percent(default=100.0) / 100.0
+    msg.deviceState.freeSpacePercent = get_available_percent(default=100.0)
     msg.deviceState.memoryUsagePercent = int(round(psutil.virtual_memory().percent))
     msg.deviceState.cpuUsagePercent = int(round(psutil.cpu_percent()))
     msg.deviceState.networkType = network_type
@@ -347,7 +347,7 @@ def thermald_thread():
     set_offroad_alert_if_changed("Offroad_PandaFirmwareMismatch", (not startup_conditions["fw_version_match"]))
 
     # with 2% left, we killall, otherwise the phone will take a long time to boot
-    startup_conditions["free_space"] = msg.deviceState.freeSpacePercent > 0.02
+    startup_conditions["free_space"] = msg.deviceState.freeSpacePercent > 2
     startup_conditions["completed_training"] = params.get("CompletedTrainingVersion") == training_version or \
                                                (current_branch in ['dashcam', 'dashcam-staging'])
     startup_conditions["not_driver_view"] = not params.get("IsDriverViewEnabled") == b"1"
