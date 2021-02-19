@@ -1,16 +1,15 @@
-Run openpilot with webcam on PC/laptop
-=====================
+# Run openpilot with webcam on PC
+
 What's needed:
 - Ubuntu 20.04
 - Python 3.8.2
 - GPU (recommended)
 - Two USB webcams, at least 720p and 78 degrees FOV (e.g. Logitech C920/C615)
 - [Car harness](https://comma.ai/shop/products/comma-car-harness) with black panda to connect to your car
-- [Panda paw](https://comma.ai/shop/products/panda-paw) (or USB-A to USB-A cable) to connect panda to your computer
-- Tape, Charger, ...
+- [Panda paw](https://comma.ai/shop/products/panda-paw) or USB-A to USB-A cable to connect panda to your computer
 That's it!
 
-## Clone openpilot and install the requirements
+## Setup openpilot
 ```
 cd ~
 git clone https://github.com/commaai/openpilot.git
@@ -37,10 +36,8 @@ USE_WEBCAM=1 scons -j$(nproc)
 
 ## GO
 ```
-cd ~/openpilot/tools/webcam
-./accept_terms.py # accept the user terms so that thermald can detect the car started
 cd ~/openpilot/selfdrive
-PASSIVE=0 NOSENSOR=1 WEBCAM=1 ./manager.py
+PASSIVE=0 NOSENSOR=1 USE_WEBCAM=1 ./manager.py
 ```
 - Start the car, then the UI should show the road webcam's view
 - Adjust and secure the webcams (you can run tools/webcam/front_mount_helper.py to help mount the driver camera)

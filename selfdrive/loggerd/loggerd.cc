@@ -493,6 +493,11 @@ int main(int argc, char** argv) {
   LOGW("closing logger");
   logger_close(&s.logger);
 
+  if (do_exit.power_failure){
+    LOGE("power failure");
+    sync();
+  }
+
   // messaging cleanup
   for (auto sock : socks) delete sock;
   delete poller;

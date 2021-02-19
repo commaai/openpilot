@@ -793,7 +793,7 @@ static void camera_open(CameraState *s, bool rear) {
     s->sensor_fd = open(sensor_dev, O_RDWR | O_NONBLOCK);
     if (s->sensor_fd >= 0) break;
     LOGW("waiting for sensors...");
-    sleep(1);
+    util::sleep_for(1000); // sleep one second
   }
   assert(s->sensor_fd >= 0);
 
