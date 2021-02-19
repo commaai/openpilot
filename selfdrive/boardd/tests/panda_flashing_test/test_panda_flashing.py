@@ -87,8 +87,9 @@ class TestPandaFlashing(unittest.TestCase):
 
   def run_flasher(self):
     print("Running C++ flasher", self.serial, self.dfu_serial)
-    cmd = "bash -c 'export LOGPRINT=\"debug\"; ./flash_panda aa bb'"
-    subprocess.check_call(cmd, shell=True)
+    env = os.environ.copy()
+    env["LOGPRINT"] = "debug" 
+    subprocess.check_call("./flash_panda " + self.serial + " " + self.dfu_serial, shell=True, env=env)
     print("Done with C++ flasher")
 
   def claim_panda(self):
@@ -123,14 +124,12 @@ class TestPandaFlashing(unittest.TestCase):
 
     self.run_flasher()
     self.check_panda_running()
-    print("Test 2 finished\n")
 
   def test_dev_firmware(self):
     self.run_flasher()
 
     # TODO: check for development signature
     self.check_panda_running()
-    print("Test 1 finished\n")
 
   def test_signed_firmware(self):
     with open(SIGNED_FW_FN, 'wb') as f:
@@ -140,8 +139,8 @@ class TestPandaFlashing(unittest.TestCase):
 
     # TODO: check for signed signature
     self.check_panda_running()
-    print("Test 3 finished\n")
 
 
 if __name__ == '__main__':
-    unittest.main()
+  t = unittest.TestLoader().loadTestsFromTestCase(TestPandaFlashing)
+  unittest.TextTestRunner(verbosity=2).run(t)
