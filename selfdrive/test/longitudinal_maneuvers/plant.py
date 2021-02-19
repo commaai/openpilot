@@ -379,7 +379,7 @@ class Plant():
     Plant.pandaState.send(pandaState.to_bytes())
 
     deviceState = messaging.new_message('deviceState')
-    deviceState.deviceState.freeSpacePercent = 1.
+    deviceState.deviceState.freeSpacePercent = 100
     deviceState.deviceState.batteryPercent = 100
     Plant.deviceState.send(deviceState.to_bytes())
 

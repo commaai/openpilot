@@ -3,7 +3,7 @@ from selfdrive.config import Conversions as CV
 from cereal import car
 
 # kph
-V_CRUISE_MAX = 144
+V_CRUISE_MAX = 135
 V_CRUISE_MIN = 8
 V_CRUISE_DELTA = 8
 V_CRUISE_ENABLE_MIN = 40
