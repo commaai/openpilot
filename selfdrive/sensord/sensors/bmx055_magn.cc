@@ -139,7 +139,6 @@ int BMX055_Magn::init(){
 
   trim_data.dig_xyz1 = read_16_bit(trim_xy1xy2[4], trim_xy1xy2[5] & 0x7f);
 
-  // TODO: perform self-test
 
   // 9 REPXY and 15 REPZ for 100 Hz
   // 3 REPXY and 3 REPZ for > 300 Hz
@@ -153,10 +152,50 @@ int BMX055_Magn::init(){
     goto fail;
   }
 
+  perform_self_test();
+
   return 0;
 
  fail:
   return ret;
+}
+
+bool BMX055_Magn::perform_self_test(){
+  uint8_t buffer[8];
+  int16_t z;
+
+  // Clean existing measurement
+  read_register(BMX055_MAGN_I2C_REG_DATAX_LSB, buffer, sizeof(buffer));
+
+  // Normal
+  uint8_t reg = BMX055_MAGN_FORCED;
+  set_register(BMX055_MAGN_I2C_REG_MAG, reg);
+  util::sleep_for(25);
+
+  read_register(BMX055_MAGN_I2C_REG_DATAX_LSB, buffer, sizeof(buffer));
+  z = compensate_z(trim_data, parse_z(buffer[4], buffer[5]), parse_rhall(buffer[5], buffer[6]));
+  LOGE("No current %d", z);
+
+  // Negative current
+  set_register(BMX055_MAGN_I2C_REG_MAG, reg | (uint8_t(0b01) << 6));
+  util::sleep_for(25);
+
+  read_register(BMX055_MAGN_I2C_REG_DATAX_LSB, buffer, sizeof(buffer));
+  z = compensate_z(trim_data, parse_z(buffer[4], buffer[5]), parse_rhall(buffer[5], buffer[6]));
+  LOGE("Negative current %d", z);
+
+  // Positive current
+  set_register(BMX055_MAGN_I2C_REG_MAG, reg | (uint8_t(0b11) << 6));
+  util::sleep_for(25);
+
+  read_register(BMX055_MAGN_I2C_REG_DATAX_LSB, buffer, sizeof(buffer));
+  z = compensate_z(trim_data, parse_z(buffer[4], buffer[5]), parse_rhall(buffer[5], buffer[6]));
+  LOGE("Negative current %d", z);
+
+  // Put back in normal mode
+  set_register(BMX055_MAGN_I2C_REG_MAG, reg);
+
+  return true;
 }
 
 

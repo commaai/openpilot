@@ -1,4 +1,5 @@
 #pragma once
+#include <tuple>
 
 #include "sensors/i2c_sensor.hpp"
 
@@ -40,6 +41,7 @@ struct trim_data_t {
 class BMX055_Magn : public I2CSensor{
   uint8_t get_device_address() {return BMX055_MAGN_I2C_ADDR;}
   trim_data_t trim_data = {0};
+  bool perform_self_test();
 public:
   BMX055_Magn(I2CBus *bus);
   int init();
