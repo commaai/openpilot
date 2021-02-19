@@ -13,13 +13,11 @@ class CarState(CarStateBase):
     can_define = CANDefine(DBC[CP.carFingerprint]['pt'])
     self.shifter_values = can_define.dv["GEAR_PACKET"]['GEAR']
 
-    # All TSS2 car have the accurate sensor
-    self.accurate_steer_angle_seen = CP.carFingerprint in TSS2_CAR
-
     # On cars with cp.vl["STEER_TORQUE_SENSOR"]['STEER_ANGLE']
     # the signal is zeroed to where the steering angle is at start.
     # Need to apply an offset as soon as the steering angle measurements are both received
     self.needs_angle_offset = True
+    self.accurate_steer_angle_seen = False
     self.angle_offset = 0.
 
   def update(self, cp, cp_cam):
@@ -53,10 +51,9 @@ class CarState(CarStateBase):
 
     if self.accurate_steer_angle_seen:
       ret.steeringAngleDeg = cp.vl["STEER_TORQUE_SENSOR"]['STEER_ANGLE'] - self.angle_offset
-
       if self.needs_angle_offset:
         angle_wheel = cp.vl["STEER_ANGLE_SENSOR"]['STEER_ANGLE'] + cp.vl["STEER_ANGLE_SENSOR"]['STEER_FRACTION']
-        if abs(angle_wheel) > 1e-3 and abs(ret.steeringAngleDeg) > 1e-3:
+        if abs(angle_wheel) > 1e-3:
           self.needs_angle_offset = False
           self.angle_offset = ret.steeringAngleDeg - angle_wheel
     else:
