@@ -28,6 +28,7 @@ public:
 
 signals:
   void offroadTransition(bool offroad);
+  void screen_shutoff();
 
 protected:
   void initializeGL() override;
@@ -84,6 +85,7 @@ public:
 
 signals:
   void openSettings();
+  void closeSettings();
 
 protected:
   void mousePressEvent(QMouseEvent* e) override;

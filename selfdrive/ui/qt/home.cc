@@ -143,6 +143,7 @@ HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
   home = new OffroadHome();
   layout->addWidget(home, 0, 0);
   QObject::connect(glWindow, SIGNAL(offroadTransition(bool)), this, SLOT(setVisibility(bool)));
+  QObject::connect(glWindow, &GLWindow::screen_shutoff, [=](){emit closeSettings();});
   QObject::connect(this, SIGNAL(openSettings()), home, SLOT(refresh()));
   setLayout(layout);
   setStyleSheet(R"(
@@ -240,8 +241,8 @@ void GLWindow::backlightUpdate() {
 
   if (!ui_state.awake) {
     brightness = 0;
+    emit screen_shutoff();
   }
-
   std::thread{set_backlight, brightness}.detach();
 }
 
