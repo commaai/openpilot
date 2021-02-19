@@ -66,9 +66,9 @@ def snapshot():
     pass
 
   env = os.environ.copy()
-  env["SEND_REAR"] = "1"
-  env["SEND_WIDE"] = "1"
-  env["SEND_FRONT"] = "1"
+  env["SEND_ROAD"] = "1"
+  env["SEND_WIDE_ROAD"] = "1"
+  env["SEND_DRIVER"] = "1"
   proc = subprocess.Popen(os.path.join(BASEDIR, "selfdrive/camerad/camerad"),
                           cwd=os.path.join(BASEDIR, "selfdrive/camerad"), env=env)
   time.sleep(3.0)

@@ -44,18 +44,18 @@ void camera_init(VisionIpcServer * v, CameraState *s, int camera_id, unsigned in
   s->buf.init(device_id, ctx, s, v, FRAME_BUF_COUNT, rgb_type, yuv_type);
 }
 
-static void* rear_thread(void *arg) {
+static void* road_camera_thread(void *arg) {
   int err;
 
-  set_thread_name("webcam_rear_thread");
+  set_thread_name("webcam_road_camera_thread");
   CameraState *s = (CameraState*)arg;
 
-  cv::VideoCapture cap_rear(1); // road
-  cap_rear.set(cv::CAP_PROP_FRAME_WIDTH, 853);
-  cap_rear.set(cv::CAP_PROP_FRAME_HEIGHT, 480);
-  cap_rear.set(cv::CAP_PROP_FPS, s->fps);
-  cap_rear.set(cv::CAP_PROP_AUTOFOCUS, 0); // off
-  cap_rear.set(cv::CAP_PROP_FOCUS, 0); // 0 - 255?
+  cv::VideoCapture cap_road(1); // road
+  cap_road.set(cv::CAP_PROP_FRAME_WIDTH, 853);
+  cap_road.set(cv::CAP_PROP_FRAME_HEIGHT, 480);
+  cap_road.set(cv::CAP_PROP_FPS, s->fps);
+  cap_road.set(cv::CAP_PROP_AUTOFOCUS, 0); // off
+  cap_road.set(cv::CAP_PROP_FOCUS, 0); // 0 - 255?
   // cv::Rect roi_rear(160, 0, 960, 720);
 
   cv::Size size;
@@ -72,7 +72,7 @@ static void* rear_thread(void *arg) {
   //                 0.0, 0.0, 1.0};
   const cv::Mat transform = cv::Mat(3, 3, CV_32F, ts);
 
-  if (!cap_rear.isOpened()) {
+  if (!cap_road.isOpened()) {
     err = 1;
   }
 
@@ -82,7 +82,7 @@ static void* rear_thread(void *arg) {
     cv::Mat frame_mat;
     cv::Mat transformed_mat;
 
-    cap_rear >> frame_mat;
+    cap_road >> frame_mat;
 
     // int rows = frame_mat.rows;
     // int cols = frame_mat.cols;
@@ -121,17 +121,17 @@ static void* rear_thread(void *arg) {
     buf_idx = (buf_idx + 1) % FRAME_BUF_COUNT;
   }
 
-  cap_rear.release();
+  cap_road.release();
   return NULL;
 }
 
-void front_thread(CameraState *s) {
+void driver_camera_thread(CameraState *s) {
   int err;
 
-  cv::VideoCapture cap_front(2); // driver
-  cap_front.set(cv::CAP_PROP_FRAME_WIDTH, 853);
-  cap_front.set(cv::CAP_PROP_FRAME_HEIGHT, 480);
-  cap_front.set(cv::CAP_PROP_FPS, s->fps);
+  cv::VideoCapture cap_driver(2); // driver
+  cap_driver.set(cv::CAP_PROP_FRAME_WIDTH, 853);
+  cap_driver.set(cv::CAP_PROP_FRAME_HEIGHT, 480);
+  cap_driver.set(cv::CAP_PROP_FPS, s->fps);
   // cv::Rect roi_front(320, 0, 960, 720);
 
   cv::Size size;
@@ -148,7 +148,7 @@ void front_thread(CameraState *s) {
   //                 0.0, 0.0, 1.0};
   const cv::Mat transform = cv::Mat(3, 3, CV_32F, ts);
 
-  if (!cap_front.isOpened()) {
+  if (!cap_driver.isOpened()) {
     err = 1;
   }
 
@@ -159,7 +159,7 @@ void front_thread(CameraState *s) {
     cv::Mat frame_mat;
     cv::Mat transformed_mat;
 
-    cap_front >> frame_mat;
+    cap_driver >> frame_mat;
 
     // int rows = frame_mat.rows;
     // int cols = frame_mat.cols;
@@ -196,7 +196,7 @@ void front_thread(CameraState *s) {
     buf_idx = (buf_idx + 1) % FRAME_BUF_COUNT;
   }
 
-  cap_front.release();
+  cap_driver.release();
   return;
 }
 
@@ -222,9 +222,9 @@ CameraInfo cameras_supported[CAMERA_ID_MAX] = {
 };
 
 void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
-  camera_init(v, &s->rear, CAMERA_ID_LGC920, 20, device_id, ctx,
+  camera_init(v, &s->road_cam, CAMERA_ID_LGC920, 20, device_id, ctx,
               VISION_STREAM_RGB_BACK, VISION_STREAM_YUV_BACK);
-  camera_init(v, &s->front, CAMERA_ID_LGC615, 10, device_id, ctx,
+  camera_init(v, &s->driver_cam, CAMERA_ID_LGC615, 10, device_id, ctx,
               VISION_STREAM_RGB_FRONT, VISION_STREAM_YUV_FRONT);
   s->pm = new PubMaster({"roadCameraState", "driverCameraState", "thumbnail"});
 }
@@ -232,20 +232,20 @@ void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_i
 void camera_autoexposure(CameraState *s, float grey_frac) {}
 
 void cameras_open(MultiCameraState *s) {
-  // LOG("*** open front ***");
-  camera_open(&s->front, false);
+  // LOG("*** open driver camera ***");
+  camera_open(&s->driver_cam, false);
 
-  // LOG("*** open rear ***");
-  camera_open(&s->rear, true);
+  // LOG("*** open road camera ***");
+  camera_open(&s->road_cam, true);
 }
 
 void cameras_close(MultiCameraState *s) {
-  camera_close(&s->rear);
-  camera_close(&s->front);
+  camera_close(&s->road_cam);
+  camera_close(&s->driver_cam);
   delete s->pm;
 }
 
-void camera_process_front(MultiCameraState *s, CameraState *c, int cnt) {
+void process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) {
   MessageBuilder msg;
   auto framed = msg.initEvent().initDriverCameraState();
   framed.setFrameType(cereal::FrameData::FrameType::FRONT);
@@ -253,7 +253,7 @@ void camera_process_front(MultiCameraState *s, CameraState *c, int cnt) {
   s->pm->send("driverCameraState", msg);
 }
 
-void camera_process_rear(MultiCameraState *s, CameraState *c, int cnt) {
+void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
   const CameraBuf *b = &c->buf;
   MessageBuilder msg;
   auto framed = msg.initEvent().initRoadCameraState();
@@ -265,12 +265,12 @@ void camera_process_rear(MultiCameraState *s, CameraState *c, int cnt) {
 
 void cameras_run(MultiCameraState *s) {
   std::vector<std::thread> threads;
-  threads.push_back(start_process_thread(s, "processing", &s->rear, camera_process_rear));
-  threads.push_back(start_process_thread(s, "frontview", &s->front, camera_process_front));
+  threads.push_back(start_process_thread(s, &s->road_cam, process_road_camera));
+  threads.push_back(start_process_thread(s, &s->driver_cam, process_driver_camera));
 
-  std::thread t_rear = std::thread(rear_thread, &s->rear);
+  std::thread t_rear = std::thread(road_camera_thread, &s->road_cam);
   set_thread_name("webcam_thread");
-  front_thread(&s->front);
+  driver_camera_thread(&s->driver_cam);
 
   t_rear.join();
 
