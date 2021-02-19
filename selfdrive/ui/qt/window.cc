@@ -29,6 +29,12 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   )");
 }
 
+// Should occur when going onroad
+void MainWindow::hideEvent(QHideEvent* event){
+  qDebug()<<"Going onroad";
+  closeSettings();
+}
+
 void MainWindow::openSettings() {
   main_layout->setCurrentWidget(settingsWindow);
 }

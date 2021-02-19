@@ -17,6 +17,7 @@ public:
   explicit MainWindow(QWidget *parent = 0);
 
 private:
+  void hideEvent(QHideEvent* event);
   QStackedLayout *main_layout;
   HomeWindow *homeWindow;
   SettingsWindow *settingsWindow;
