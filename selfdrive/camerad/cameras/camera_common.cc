@@ -326,16 +326,23 @@ void set_exposure_target(CameraState *c, const uint8_t *pix_ptr, int x_start, in
 
 extern ExitHandler do_exit;
 
-void *processing_thread(MultiCameraState *cameras, const char *tname,
-                        CameraState *cs, process_thread_cb callback) {
-  set_thread_name(tname);
+void *processing_thread(MultiCameraState *cameras, CameraState *cs, process_thread_cb callback) {
+  const char *thread_name = nullptr;
+  if (cs == &cameras->road_cam) {
+    thread_name = "RoadCamera";
+  } else if (cs == &cameras->driver_cam) {
+    thread_name = "DriverCamera";
+  } else {
+    thread_name = "WideRoadCamera";
+  }
+  set_thread_name(thread_name);
 
   for (int cnt = 0; !do_exit; cnt++) {
     if (!cs->buf.acquire()) continue;
 
     callback(cameras, cs, cnt);
 
-    if (cs == &(cameras->rear) && cameras->pm && cnt % 100 == 3) {
+    if (cs == &(cameras->road_cam) && cameras->pm && cnt % 100 == 3) {
       // this takes 10ms???
       publish_thumbnail(cameras->pm, &(cs->buf));
     }
@@ -344,22 +351,21 @@ void *processing_thread(MultiCameraState *cameras, const char *tname,
   return NULL;
 }
 
-std::thread start_process_thread(MultiCameraState *cameras, const char *tname,
-                                 CameraState *cs, process_thread_cb callback) {
-  return std::thread(processing_thread, cameras, tname, cs, callback);
+std::thread start_process_thread(MultiCameraState *cameras, CameraState *cs, process_thread_cb callback) {
+  return std::thread(processing_thread, cameras, cs, callback);
 }
 
-void common_camera_process_front(SubMaster *sm, PubMaster *pm, CameraState *c, int cnt) {
+void common_process_driver_camera(SubMaster *sm, PubMaster *pm, CameraState *c, int cnt) {
   const CameraBuf *b = &c->buf;
 
   static int x_min = 0, x_max = 0, y_min = 0, y_max = 0;
-  static const bool rhd_front = Params().read_db_bool("IsRHD");
+  static const bool is_rhd = Params().read_db_bool("IsRHD");
 
   // auto exposure
   if (cnt % 3 == 0) {
     if (sm->update(0) > 0 && sm->updated("driverState")) {
       auto state = (*sm)["driverState"].getDriverState();
-      // set front camera metering target
+      // set driver camera metering target
       if (state.getFaceProb() > 0.4) {
         auto face_position = state.getFacePosition();
 #ifndef QCOM2
@@ -369,8 +375,8 @@ void common_camera_process_front(SubMaster *sm, PubMaster *pm, CameraState *c, i
         int frame_width = 668;
         int frame_height = frame_width / 1.33;
 #endif
-        int x_offset = rhd_front ? 0 : frame_width - (0.5 * frame_height);
-        x_offset += (face_position[0] * (rhd_front ? -1.0 : 1.0) + 0.5) * (0.5 * frame_height);
+        int x_offset = is_rhd ? 0 : frame_width - (0.5 * frame_height);
+        x_offset += (face_position[0] * (is_rhd ? -1.0 : 1.0) + 0.5) * (0.5 * frame_height);
         int y_offset = (face_position[1] + 0.5) * frame_height;
 #ifdef QCOM2
         x_offset += 630;
@@ -390,8 +396,8 @@ void common_camera_process_front(SubMaster *sm, PubMaster *pm, CameraState *c, i
     if (x_max == 0) {
       // default setting
 #ifndef QCOM2
-      x_min = rhd_front ? 0 : b->rgb_width * 3 / 5;
-      x_max = rhd_front ? b->rgb_width * 2 / 5 : b->rgb_width;
+      x_min = is_rhd ? 0 : b->rgb_width * 3 / 5;
+      x_max = is_rhd ? b->rgb_width * 2 / 5 : b->rgb_width;
       y_min = b->rgb_height / 3;
       y_max = b->rgb_height;
 #else
@@ -410,7 +416,7 @@ void common_camera_process_front(SubMaster *sm, PubMaster *pm, CameraState *c, i
   auto framed = msg.initEvent().initDriverCameraState();
   framed.setFrameType(cereal::FrameData::FrameType::FRONT);
   fill_frame_data(framed, b->cur_frame_data);
-  if (env_send_front) {
+  if (env_send_driver) {
     framed.setImage(get_frame_image(b));
   }
   pm->send("driverCameraState", msg);

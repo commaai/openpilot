@@ -74,20 +74,20 @@ CameraInfo cameras_supported[CAMERA_ID_MAX] = {
 };
 
 void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
-  camera_init(v, &s->rear, CAMERA_ID_IMX298, 20, device_id, ctx,
+  camera_init(v, &s->road_cam, CAMERA_ID_IMX298, 20, device_id, ctx,
               VISION_STREAM_RGB_BACK, VISION_STREAM_YUV_BACK);
-  camera_init(v, &s->front, CAMERA_ID_OV8865, 10, device_id, ctx,
+  camera_init(v, &s->driver_cam, CAMERA_ID_OV8865, 10, device_id, ctx,
               VISION_STREAM_RGB_FRONT, VISION_STREAM_YUV_FRONT);
 }
 
 void cameras_open(MultiCameraState *s) {}
 void cameras_close(MultiCameraState *s) {}
 void camera_autoexposure(CameraState *s, float grey_frac) {}
-void camera_process_rear(MultiCameraState *s, CameraState *c, int cnt) {}
+void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {}
 
 void cameras_run(MultiCameraState *s) {
-  std::thread t = start_process_thread(s, "processing", &s->rear, camera_process_rear);
+  std::thread t = start_process_thread(s, &s->road_cam, process_road_camera);
   set_thread_name("frame_streaming");
-  run_frame_stream(s->rear, "roadCameraState");
+  run_frame_stream(s->road_cam, "roadCameraState");
   t.join();
 }

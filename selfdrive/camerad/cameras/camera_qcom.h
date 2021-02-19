@@ -127,10 +127,10 @@ typedef struct MultiCameraState {
   cl_program prg_rgb_laplacian;
   cl_kernel krnl_rgb_laplacian;
 
-  CameraState rear;
-  CameraState front;
+  CameraState road_cam;
+  CameraState driver_cam;
 
-  SubMaster *sm_front;
+  SubMaster *sm;
   PubMaster *pm;
 
 } MultiCameraState;
