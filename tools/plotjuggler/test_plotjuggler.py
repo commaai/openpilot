@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import os
 import random
+import signal
 import subprocess
 import time
 import unittest
@@ -20,7 +21,7 @@ class TestPlotJuggler(unittest.TestCase):
 
     test_url = get_url(random.choice(list(routes.keys())), 0)
 
-    p = subprocess.Popen(f'{os.path.join(BASEDIR, "tools/plotjuggler/juggle.py")} "{test_url}"', stderr=subprocess.PIPE, shell=True)
+    p = subprocess.Popen(f'{os.path.join(BASEDIR, "tools/plotjuggler/juggle.py")} "{test_url}"', stderr=subprocess.PIPE, shell=True, start_new_session=True)
 
     with Timeout(60):
       while True:
@@ -28,9 +29,9 @@ class TestPlotJuggler(unittest.TestCase):
           if output == b'Done\n':
             break
 
-    time.sleep(5)
+    time.sleep(15)
     self.assertEqual(p.poll(), None)
-    p.kill()
+    os.killpg(os.getpgid(p.pid), signal.SIGTERM)
 
 if __name__ == "__main__":
   unittest.main()
