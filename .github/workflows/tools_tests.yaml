@@ -5,6 +5,17 @@ on:
 
 env:
   BASE_IMAGE: openpilot-base
+  DOCKER_REGISTRY: ghcr.io/commaai
+
+  DOCKER_LOGIN: docker login ghcr.io -u adeebshihadeh -p ${{ secrets.CONTAINER_TOKEN }}
+  BUILD: |
+      docker pull $(grep -iohP '(?<=^from)\s+\S+' Dockerfile.openpilot_base) || true
+      docker pull $DOCKER_REGISTRY/$BASE_IMAGE:latest || true
+      docker build --cache-from $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $BASE_IMAGE:latest -f Dockerfile.openpilot_base . 
+
+  RUN: docker run --shm-size 1G -v $PWD:/tmp/openpilot -e PYTHONPATH=/tmp/openpilot -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e \
+       GITHUB_REPOSITORY -e GITHUB_RUN_ID -v /tmp/comma_download_cache:/tmp/comma_download_cache $BASE_IMAGE /bin/sh -c
+  UNIT_TEST: coverage run --append -m unittest discover
 
 jobs:
   plotjuggler:
@@ -17,5 +28,4 @@ jobs:
         submodules: true
     - name: Unit test
       run: |
-        ${{ env.RUN }} "cd /tmp/openpilot && \
-                        tools/plotjuggler/test_plotjuggler.py"
+        ${{ env.RUN }} "tools/plotjuggler/test_plotjuggler.py"
