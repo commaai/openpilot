@@ -14,9 +14,13 @@ from tools.lib.logreader import LogReader
 
 def load_segment(segment_name):
   print(f"Loading {segment_name}")
-  lr = LogReader(segment_name)
-  r = [d for d in lr if d.which() not in ['can', 'sendcan']]
-  return r
+  try:
+    lr = LogReader(segment_name)
+    r = [d for d in lr if d.which() not in ['can', 'sendcan']]
+    return r
+  except ValueError as e:
+    print(f"Error parsing {segment_name}: {e}")
+    return []
 
 def juggle_file(fn):
   env = os.environ.copy()
