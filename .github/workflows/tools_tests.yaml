@@ -16,4 +16,6 @@ jobs:
       with:
         submodules: true
     - name: Unit test
-      run: ${{ env.RUN }} "tools/plotjuggler/test_plotjuggler.py"
+      run: |
+        ${{ env.RUN }} "cd /tmp/openpilot && \
+                        tools/plotjuggler/test_plotjuggler.py"
