@@ -154,6 +154,7 @@ HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
 
 void HomeWindow::setVisibility(bool offroad) {
   home->setVisible(offroad);
+  emit offroadTransition(offroad);
 }
 
 void HomeWindow::mousePressEvent(QMouseEvent* e) {
@@ -253,6 +254,7 @@ void GLWindow::timerUpdate() {
 
   if (ui_state.started != onroad) {
     onroad = ui_state.started;
+    qDebug()<<"Sending transition"<<!onroad;
     emit offroadTransition(!onroad);
 
     // Change timeout to 0 when onroad, this will call timerUpdate continously.

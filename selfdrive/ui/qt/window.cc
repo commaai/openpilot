@@ -15,6 +15,7 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   main_layout->setMargin(0);
   setLayout(main_layout);
   QObject::connect(homeWindow, SIGNAL(openSettings()), this, SLOT(openSettings()));
+  QObject::connect(homeWindow, SIGNAL(offroadTransition(bool)), this, SLOT(offroadTransition(bool)));
   QObject::connect(settingsWindow, SIGNAL(closeSettings()), this, SLOT(closeSettings()));
 
   // start at onboarding
@@ -29,10 +30,11 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   )");
 }
 
-// Should occur when going onroad
-void MainWindow::hideEvent(QHideEvent* event){
-  qDebug()<<"Going onroad";
-  closeSettings();
+void MainWindow::offroadTransition(bool offroad){
+  qDebug()<<offroad<<" received";
+  if(!offroad){
+    closeSettings();
+  }  
 }
 
 void MainWindow::openSettings() {

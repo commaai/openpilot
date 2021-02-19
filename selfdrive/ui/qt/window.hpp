@@ -17,13 +17,13 @@ public:
   explicit MainWindow(QWidget *parent = 0);
 
 private:
-  void hideEvent(QHideEvent* event);
   QStackedLayout *main_layout;
   HomeWindow *homeWindow;
   SettingsWindow *settingsWindow;
   OnboardingWindow *onboardingWindow;
 
 public slots:
+  void offroadTransition(bool offroad);
   void openSettings();
   void closeSettings();
 };
