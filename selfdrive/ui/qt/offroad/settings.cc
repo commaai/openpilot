@@ -25,7 +25,6 @@ QFrame* horizontal_line(QWidget* parent = 0){
   line->setFixedHeight(2);
   return line;
 }
-
 QWidget* labelWidget(QString labelName, QString labelContent){
   QHBoxLayout* labelLayout = new QHBoxLayout;
   labelLayout->addWidget(new QLabel(labelName), 0, Qt::AlignLeft);

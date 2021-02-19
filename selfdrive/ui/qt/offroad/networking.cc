@@ -10,8 +10,6 @@
 #include "common/params.h"
 #include "networking.hpp"
 #include "util.h"
-#include "ui.hpp"
-#include "home.hpp"
 
 void clearLayout(QLayout* layout) {
   while (QLayoutItem* item = layout->takeAt(0)) {
@@ -115,7 +113,6 @@ void Networking::attemptInitialization(){
 }
 
 void Networking::refresh(){
-  qDebug()<<"ONROAD?"<<GLWindow::ui_state.started;
   if (!this->isVisible()) {
     return;
   }

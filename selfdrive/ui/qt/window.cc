@@ -31,7 +31,6 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
 }
 
 void MainWindow::offroadTransition(bool offroad){
-  qDebug()<<offroad<<" received";
   if(!offroad){
     closeSettings();
   }  
