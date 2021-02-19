@@ -13,5 +13,4 @@ jobs:
       with:
         submodules: true
     - name: Unit test
-      run: |
-        ${{ env.RUN }} "tools/plotjuggler/test_plotjuggler.py"
+      run: "tools/plotjuggler/test_plotjuggler.py"
