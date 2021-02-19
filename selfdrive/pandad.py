@@ -17,12 +17,12 @@ def set_panda_power(power=True):
   gpio_init(GPIO_STM_RST_N, True)
   gpio_init(GPIO_STM_BOOT0, True)
 
-  gpio_set(GPIO_STM_RST_N, True)
+  gpio_set(GPIO_STM_RST_N, False)
   gpio_set(GPIO_HUB_RST_N, True)
 
   time.sleep(0.1)
 
-  gpio_set(GPIO_STM_RST_N, not power)
+  gpio_set(GPIO_STM_RST_N, power)
 
 
 def get_firmware_fn():
