@@ -25,18 +25,16 @@ int fresh_clone() {
   int err;
 
   // Cleanup
-  err = std::system("rm -rf /tmp/openpilot /data/openpilot");
+  err = std::system("rm -rf /data/tmppilot /data/openpilot");
   if (err) return 1;
 
   // Clone
-  err = std::system("git clone " GIT_URL " -b " BRANCH " --depth=1 /tmp/openpilot");
+  err = std::system("git clone " GIT_URL " -b " BRANCH " --depth=1 --recurse-submodules /data/tmppilot");
   if (err) return 1;
-  err = std::system("cd /tmp/openpilot && git submodule update --init");
-  if (err) return 1;
-  err = std::system("cd /tmp/openpilot && git remote set-url origin --push " GIT_SSH_URL);
+  err = std::system("cd /data/tmppilot && git remote set-url origin --push " GIT_SSH_URL);
   if (err) return 1;
 
-  err = std::system("mv /tmp/openpilot /data");
+  err = std::system("mv /data/tmppilot /data/openpilot");
   if (err) return 1;
 
 #ifdef SSH_KEYS
