@@ -3,6 +3,9 @@ on:
   push:
   pull_request:
 
+env:
+  BASE_IMAGE: openpilot-base
+
 jobs:
   plotjuggler:
     name: plotjuggler
