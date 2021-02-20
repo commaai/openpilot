@@ -256,7 +256,6 @@ FW_VERSIONS = {
       b'\xab*@@\a',
       b'\xab\"@s\a',
       b'\xb4"@0\a',
-      b'\xb4"@0\a',
       b'\xb4+@p\a',
       b'\xb5q\xe0@\a',
     ],
