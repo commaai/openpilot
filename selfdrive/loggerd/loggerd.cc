@@ -318,6 +318,10 @@ int main(int argc, char** argv) {
   LOGW("closing logger");
   logger_close(&s.logger);
 
+  if (do_exit.power_failure){
+    LOGE("power failure");
+    sync();
+  }
   delete poller;
   delete ctx;
 
