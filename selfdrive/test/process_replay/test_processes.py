@@ -35,6 +35,7 @@ BASE_URL = "https://commadataci.blob.core.windows.net/openpilotci/"
 # run the full test (including checks) when no args given
 FULL_TEST = len(sys.argv) <= 1
 
+LOCAL_REF = True
 
 def get_segment(segment_name, original=True):
   route_name, segment_num = segment_name.rsplit("--", 1)
@@ -48,12 +49,15 @@ def get_segment(segment_name, original=True):
   return rlog_url
 
 
-def test_process(cfg, lr, cmp_log_fn, ignore_fields=None, ignore_msgs=None):
+def test_process(cfg, lr, cmp_log_fn, ignore_fields=None, ignore_msgs=None, local_ref=False):
   if ignore_fields is None:
     ignore_fields = []
   if ignore_msgs is None:
     ignore_msgs = []
-  url = BASE_URL + os.path.basename(cmp_log_fn)
+  if local_ref:
+    url = cmp_log_fn
+  else:
+    url = BASE_URL + os.path.basename(cmp_log_fn)
   cmp_log_msgs = list(LogReader(url))
 
   log_msgs = replay_process(cfg, lr)
@@ -105,7 +109,6 @@ def format_diff(results, ref_commit):
   return diff1, diff2, failed
 
 if __name__ == "__main__":
-
   parser = argparse.ArgumentParser(description="Regression test to identify changes in a process's output")
 
   # whitelist has precedence over blacklist in case both are defined
@@ -160,7 +163,7 @@ if __name__ == "__main__":
         continue
 
       cmp_log_fn = os.path.join(process_replay_dir, "%s_%s_%s.bz2" % (segment, cfg.proc_name, ref_commit))
-      results[segment][cfg.proc_name] = test_process(cfg, lr, cmp_log_fn, args.ignore_fields, args.ignore_msgs)
+      results[segment][cfg.proc_name] = test_process(cfg, lr, cmp_log_fn, args.ignore_fields, args.ignore_msgs, local_ref=LOCAL_REF)
 
   diff1, diff2, failed = format_diff(results, ref_commit)
   with open(os.path.join(process_replay_dir, "diff.txt"), "w") as f:

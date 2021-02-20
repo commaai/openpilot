@@ -118,7 +118,7 @@ def fake_driver_monitoring():
       "faceDetected": True,
       "isDistracted": False,
       "awarenessStatus": 1.,
-      "isRHD": False,
+      "isRHDDEPRECATED": False,
     }
     pm.send('driverMonitoringState', dat)
 

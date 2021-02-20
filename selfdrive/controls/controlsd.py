@@ -210,7 +210,7 @@ class Controls:
       self.events.add(EventName.radarFault)
     elif not self.sm.valid['liveParameters']:
       self.events.add(EventName.vehicleModelInvalid)
-    elif not self.sm.all_alive_and_valid():
+    elif not self.sm.all_alive_and_valid() and not SIMULATION:
       self.events.add(EventName.commIssue)
       if not self.logged_comm_issue:
         cloudlog.error(f"commIssue - valid: {self.sm.valid} - alive: {self.sm.alive}")

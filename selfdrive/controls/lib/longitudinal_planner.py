@@ -83,14 +83,23 @@ class Planner():
     self.params = Params()
     self.first_loop = True
 
+    self.slow_on_curve = True
+    self.use_speed_limit = True
+    self.v_model = 0.0
+    self.a_model = 0.0
+    self.speed_limit_MS = 0.0 #MS
+
   def choose_solution(self, v_cruise_setpoint, enabled):
     if enabled:
-      solutions = {'cruise': self.v_cruise}
+      if self.slow_on_curve:
+        solutions = {'model': self.v_model, 'cruise': self.v_cruise}
+      else:
+        solutions = {'cruise': self.v_cruise}
       if self.mpc1.prev_lead_status:
         solutions['mpc1'] = self.mpc1.v_mpc
       if self.mpc2.prev_lead_status:
         solutions['mpc2'] = self.mpc2.v_mpc
-
+        
       slowest = min(solutions, key=solutions.get)
 
       self.longitudinalPlanSource = slowest
@@ -104,7 +113,9 @@ class Planner():
       elif slowest == 'cruise':
         self.v_acc = self.v_cruise
         self.a_acc = self.a_cruise
-
+      elif self.slow_on_curve and slowest == 'model':
+        self.v_acc = self.v_model
+        self.a_acc = self.a_model
     self.v_acc_future = min([self.mpc1.v_mpc_future, self.mpc2.v_mpc_future, v_cruise_setpoint])
 
   def update(self, sm, CP, VM, PP):
@@ -112,12 +123,24 @@ class Planner():
     cur_time = sec_since_boot()
     v_ego = sm['carState'].vEgo
 
+    # logic for using map information. e.g. speed limit or curvature from map.
+    gps_planner_points = sm['gpsPlannerPointsDEPRECATED']
+    speed_limit_MPH = gps_planner_points.speedLimit #MPH
+    self.speed_limit_MS = speed_limit_MPH * CV.MPH_TO_MS #MS
+    # print(f"speed limit in planner is {speed_limit_MPH:.3f} MPH.")
+    # print(f"speed limit in planner is {self.speed_limit_MS:.3f} MS")
+
     long_control_state = sm['controlsState'].longControlState
     v_cruise_kph = sm['controlsState'].vCruise
     force_slow_decel = sm['controlsState'].forceDecel
+    # force_slow_decel = False
 
     v_cruise_kph = min(v_cruise_kph, V_CRUISE_MAX)
-    v_cruise_setpoint = v_cruise_kph * CV.KPH_TO_MS
+    self.speed_limit_MS = min(self.speed_limit_MS, V_CRUISE_MAX * CV.KPH_TO_MS)
+    if self.use_speed_limit and self.speed_limit_MS > 0:
+      v_cruise_setpoint = self.speed_limit_MS
+    else:
+      v_cruise_setpoint = v_cruise_kph * CV.KPH_TO_MS
 
     lead_1 = sm['radarState'].leadOne
     lead_2 = sm['radarState'].leadTwo
@@ -127,11 +150,31 @@ class Planner():
 
     self.v_acc_start = self.v_acc_next
     self.a_acc_start = self.a_acc_next
+    md = sm['modelV2']
+    if self.slow_on_curve and len(md.position.x):
+      # path = np.column_stack([md.position.x, md.position.y, md.position.z])
+      coeff = np.polyfit(md.position.x, md.position.y, 3)
 
+      # Curvature of polynomial https://en.wikipedia.org/wiki/Curvature#Curvature_of_the_graph_of_a_function
+      # y = a x^3 + b x^2 + c x + d, y' = 3 a x^2 + 2 b x + c, y'' = 6 a x + 2 b
+      # k = y'' / (1 + y'^2)^1.5
+      # TODO: compute max speed without using a list of points and without numpy
+      y_p = 3 * coeff[0] * self.path_x**2 + 2 * coeff[1] * self.path_x + coeff[2]
+      y_pp = 6 * coeff[0] * self.path_x + 2 * coeff[1]
+      curv = y_pp / (1. + y_p**2)**1.5
+
+      a_y_max = 2.975 - v_ego * 0.0375  # ~1.85 @ 75mph, ~2.6 @ 25mph
+      v_curvature = np.sqrt(a_y_max / np.clip(np.abs(curv), 1e-4, None))
+      model_speed = np.min(v_curvature) # MS
+      # print ("model speed is: ", model_speed * CV.MS_TO_MPH)
+      model_speed = max(25.0 * CV.MPH_TO_MS, model_speed)  # Don't slow down below 20mph
+      # print ("actual model speed is: ", model_speed * CV.MS_TO_MPH)
+    else:
+      model_speed = v_cruise_setpoint
     # Calculate speed for normal cruise control
     if enabled and not self.first_loop and not sm['carState'].gasPressed:
       accel_limits = [float(x) for x in calc_cruise_accel_limits(v_ego, following)]
-      jerk_limits = [min(-0.1, accel_limits[0]), max(0.1, accel_limits[1])]  # TODO: make a separate lookup for jerk tuning
+      jerk_limits = [min(-0.2, accel_limits[0]), max(0.1, accel_limits[1])]  # TODO: make a separate lookup for jerk tuning
       accel_limits_turns = limit_accel_in_turns(v_ego, sm['carState'].steeringAngleDeg, accel_limits, self.CP)
 
       if force_slow_decel:
@@ -144,6 +187,11 @@ class Planner():
                                                     accel_limits_turns[1], accel_limits_turns[0],
                                                     jerk_limits[1], jerk_limits[0],
                                                     LON_MPC_STEP)
+      if self.slow_on_curve:
+        self.v_model, self.a_model = speed_smoother(self.v_acc_start, self.a_acc_start,
+                                                      model_speed, 2*accel_limits[1],
+                                                      3*accel_limits[0], 2*jerk_limits[1], 3*jerk_limits[0],
+                                                      LON_MPC_STEP)
 
       # cruise speed can't be negative even is user is distracted
       self.v_cruise = max(self.v_cruise, 0.)
@@ -195,7 +243,8 @@ class Planner():
 
     plan_send = messaging.new_message('longitudinalPlan')
 
-    plan_send.valid = sm.all_alive_and_valid(service_list=['carState', 'controlsState', 'radarState'])
+    plan_send.valid = sm.all_alive_and_valid(service_list=['carState', 'controlsState', 'radarState', 'modelV2',
+                                                           'gpsPlannerPointsDEPRECATED'])
 
     longitudinalPlan = plan_send.longitudinalPlan
     longitudinalPlan.mdMonoTime = sm.logMonoTime['modelV2']

@@ -42,7 +42,8 @@ static void ui_init_vision(UIState *s) {
 
 void ui_init(UIState *s) {
   s->sm = new SubMaster({"modelV2", "controlsState", "uiLayoutState", "liveCalibration", "radarState", "deviceState", "roadCameraState", "liveLocationKalman",
-                         "pandaState", "carParams", "driverState", "driverMonitoringState", "sensorEvents", "carState", "ubloxGnss"});
+                         "pandaState", "carParams", "driverState", "driverMonitoringState", "sensorEvents", "carState", "ubloxGnss", "longitudinalPlan",
+                         "gpsPlannerPointsDEPRECATED"});
 
   s->started = false;
   s->status = STATUS_OFFROAD;
@@ -126,6 +127,12 @@ static void update_sockets(UIState *s) {
   UIScene &scene = s->scene;
   if (s->started && sm.updated("controlsState")) {
     scene.controls_state = sm["controlsState"].getControlsState();
+  }
+  if (s->started && sm.updated("longitudinalPlan")) {
+    scene.longitudinal_plan = sm["longitudinalPlan"].getLongitudinalPlan();
+  }
+  if (s->started && sm.updated("gpsPlannerPointsDEPRECATED")) {
+    scene.gpsplaner_points = sm["gpsPlannerPointsDEPRECATED"].getGpsPlannerPointsDEPRECATED();
   }
   if (sm.updated("carState")) {
     scene.car_state = sm["carState"].getCarState();
