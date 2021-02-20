@@ -224,7 +224,7 @@ static int imx179_s5k3p8sp_apply_exposure(CameraState *s, int gain, int integ_li
   return err;
 }
 
-void cameras_init(MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
+void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
   char project_name[1024] = {0};
   property_get("ro.boot.project_name", project_name, "");
 
@@ -304,7 +304,7 @@ void cameras_init(MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
     s->stats_bufs[i].allocate(0xb80);
   }
   std::fill_n(s->lapres, std::size(s->lapres), 16160);
-  s->rgb2gray_conv = new Rgb2Gray(device_id, ctx, s->rear.buf.rgb_width, s->rear.buf.rgb_height, 3);
+  s->rgb2gray_conv = new Rgb2Gray(device_id, ctx, s->road_cam.buf.rgb_width, s->road_cam.buf.rgb_height, 3);
 }
 
 static void set_exposure(CameraState *s, float exposure_frac, float gain_frac) {
@@ -1613,10 +1613,6 @@ void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
   framed.setSharpnessScore(s->lapres);
   framed.setTransform(b->yuv_transform.v);
   s->pm->send("roadCameraState", msg);
-
-  if (cnt % 100 == 3) {
-    create_thumbnail(s, c, rgb_addr);
-  }
 
   if (cnt % 3 == 0) {
     const int x = 290, y = 322, width = 560, height = 314;
