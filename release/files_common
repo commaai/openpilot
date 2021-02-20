@@ -282,6 +282,7 @@ selfdrive/locationd/ubloxd.cc
 selfdrive/locationd/ubloxd_main.cc
 selfdrive/locationd/ublox_msg.cc
 selfdrive/locationd/ublox_msg.h
+selfdrive/locationd/speedlimitd.py
 
 selfdrive/locationd/locationd.py
 selfdrive/locationd/paramsd.py
