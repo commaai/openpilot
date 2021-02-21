@@ -1,8 +1,7 @@
 name: prebuilt
 on:
-  #schedule:
-  #  - cron: '0 * * * *'
-  push:
+  schedule:
+    - cron: '0 * * * *'
 
 env:
   BASE_IMAGE: openpilot-base
