@@ -31,12 +31,6 @@ std::tuple<float*, size_t> ModelFrame::prepare(cl_mem yuv_cl, int frame_width, i
   memmove(&input_frames[0], &input_frames[MODEL_FRAME_SIZE], sizeof(float)*MODEL_FRAME_SIZE);
   clEnqueueWriteBuffer(q, net_input_cl, CL_TRUE, 0, MODEL_FRAME_SIZE * sizeof(float), &input_frames[MODEL_FRAME_SIZE], 0, nullptr, nullptr);
   clFinish(q);
-  #ifdef DUMP_YUV
-    FILE *dump_yuv_file = fopen("/sdcard/dump.yuv", "wb");
-    fwrite(&input_frames[MODEL_FRAME_SIZE], MODEL_FRAME_SIZE, sizeof(float), dump_yuv_file);
-    fclose(dump_yuv_file);
-    assert(1==2);
-  #endif
   return std::make_tuple(&input_frames[0], MODEL_FRAME_SIZE * 2);
 }
 
