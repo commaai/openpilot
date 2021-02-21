@@ -1,7 +1,8 @@
 name: prebuilt
 on:
-  schedule:
-    - cron: '0 * * * *'
+  #schedule:
+  #  - cron: '0 * * * *'
+  push:
 
 env:
   BASE_IMAGE: openpilot-base
@@ -26,7 +27,8 @@ jobs:
       uses: lewagon/wait-on-check-action@v0.2
       with:
         ref: master
-        wait-interval: 20
+        wait-interval: 30
+        running-workflow-name: 'build prebuilt'
     - uses: actions/checkout@v2
       with:
         submodules: true
