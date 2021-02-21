@@ -26,9 +26,9 @@ float sigmoid(float input);
 
 class ModelFrame {
  public:
-  void init(cl_device_id device_id, cl_context context);
+  ModelFrame(cl_device_id device_id, cl_context context);
+  ~ModelFrame();
   std::tuple<float*, size_t> prepare(cl_mem yuv_cl, int width, int height, const mat3& transform);
-  void free();
 
  private:
   Transform transform;

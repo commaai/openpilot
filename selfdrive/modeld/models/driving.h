@@ -32,7 +32,7 @@ struct ModelDataRaw {
 };
 
 typedef struct ModelState {
-  ModelFrame frame;
+  ModelFrame *frame;
   std::vector<float> output;
   std::unique_ptr<RunModel> m;
 #ifdef DESIRE

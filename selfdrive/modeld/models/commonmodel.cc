@@ -9,7 +9,7 @@
 #include "selfdrive/common/mat.h"
 #include "selfdrive/common/timing.h"
 
-void ModelFrame::init(cl_device_id device_id, cl_context context) {
+ModelFrame::ModelFrame(cl_device_id device_id, cl_context context) {
   input_frames = std::make_unique<float[]>(MODEL_FRAME_SIZE * 2);
 
   q = CL_CHECK_ERR(clCreateCommandQueue(context, device_id, 0, &err));
@@ -28,13 +28,13 @@ std::tuple<float*, size_t> ModelFrame::prepare(cl_mem yuv_cl, int frame_width, i
                   y_cl, u_cl, v_cl, MODEL_WIDTH, MODEL_HEIGHT, transform);
   loadyuv_queue(&loadyuv, q, y_cl, u_cl, v_cl, net_input_cl);
 
-  memmove(&input_frames[0], &input_frames[MODEL_FRAME_SIZE], sizeof(float)*MODEL_FRAME_SIZE);
+  memmove(&input_frames[0], &input_frames[MODEL_FRAME_SIZE], sizeof(float) * MODEL_FRAME_SIZE);
   clEnqueueWriteBuffer(q, net_input_cl, CL_TRUE, 0, MODEL_FRAME_SIZE * sizeof(float), &input_frames[MODEL_FRAME_SIZE], 0, nullptr, nullptr);
   clFinish(q);
   return std::make_tuple(&input_frames[0], MODEL_FRAME_SIZE * 2);
 }
 
-void ModelFrame::free() {
+ModelFrame::~ModelFrame() {
   transform_destroy(&transform);
   loadyuv_destroy(&loadyuv);
   CL_CHECK(clReleaseMemObject(net_input_cl));

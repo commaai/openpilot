@@ -47,7 +47,7 @@ constexpr int OUTPUT_SIZE =  POSE_IDX + POSE_SIZE;
 // #define DUMP_YUV
 
 void model_init(ModelState* s, cl_device_id device_id, cl_context context) {
-  s->frame.init(device_id, context);
+  s->frame = new ModelFrame(device_id, context);
 
   constexpr int output_size = OUTPUT_SIZE + TEMPORAL_SIZE;
   s->output.resize(output_size);
@@ -92,7 +92,7 @@ ModelDataRaw model_eval_frame(ModelState* s, cl_mem yuv_cl, int width, int heigh
 
   //for (int i = 0; i < OUTPUT_SIZE + TEMPORAL_SIZE; i++) { printf("%f ", s->output[i]); } printf("\n");
 
-  auto[net_input_buf, buf_size] = s->frame.prepare(yuv_cl, width, height, transform);
+  auto[net_input_buf, buf_size] = s->frame->prepare(yuv_cl, width, height, transform);
   s->m->execute(net_input_buf, buf_size);
 
   // net outputs
@@ -109,7 +109,7 @@ ModelDataRaw model_eval_frame(ModelState* s, cl_mem yuv_cl, int width, int heigh
 }
 
 void model_free(ModelState* s) {
-  s->frame.free();
+  delete s->frame;
 }
 
 static const float *get_best_data(const float *data, int size, int group_size, int offset) {
