@@ -10,6 +10,7 @@
 #include "common/util.h"
 #include "messaging.hpp"
 #include "panda.h"
+#include "pandaDFU.hpp"
 #include "panda_flashing.hpp"
 
 void panda_set_power(bool power) {
