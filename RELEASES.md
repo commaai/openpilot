@@ -1,8 +1,9 @@
 Version 0.8.2 (2021-02-26)
 ========================
- * Use model points directly in MPC (no more polyfits), making for lateral planning more accurate
+ * Use model points directly in MPC (no more polyfits), making lateral planning more accurate
  * Use model heading prediction for smoother lateral control
  * Smarter actuator delay compensation
+ * Improve qcamera resolution for improved video in explorer and connect
  * Adjust maximum engagement speed to better fit the model's training distribution
  * New driver monitoring model trained with 3x more diverse data
  * Improved face detection with masks
