@@ -35,7 +35,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerRateCost = 1.0
       ret.steerActuatorDelay = 0.05  # Hopefully all MQB racks are similar here
       ret.steerLimitTimer = 0.4
-
+      ret.lateralTuning.init('pid')
       ret.lateralTuning.pid.kpBP = [0.]
       ret.lateralTuning.pid.kiBP = [0.]
 
