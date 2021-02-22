@@ -336,11 +336,10 @@ void DynamicPanda::reconnect() {
      return;
     } catch(std::runtime_error &e) {
       LOGD("reconnecting, trying for DFU panda");
-      PandaComm* dfu;
       try {
-        dfu = new PandaComm(0x0483, 0xdf11, dfu_serial);
+        PandaDFU dfu(dfu_serial);
         LOGD("Found DFU panda, recovering");
-        dfu_recover(dfu);
+        dfu.recover();
       } catch(std::runtime_error &e) {}
     }
     util::sleep_for(1000);
@@ -371,8 +370,8 @@ void DynamicPanda::recover() {
     LOGD("Waiting for DFU");
     util::sleep_for(100);
     try {
-      PandaComm dfuPanda(0x0483, 0xdf11, dfu_serial); // Throws exception if Panda is not in DFU mdoe
-      dfu_recover(&dfuPanda);
+      PandaDFU dfu(dfu_serial);
+      dfu.recover();
       break;
     } catch(std::runtime_error &e) {}
   }
