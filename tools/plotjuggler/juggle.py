@@ -14,10 +14,11 @@ from tools.lib.logreader import LogReader
 
 def load_segment(segment_name):
   print(f"Loading {segment_name}")
+  if segment_name is None:
+    return []
+
   try:
-    lr = LogReader(segment_name)
-    r = [d for d in lr if d.which() not in ['can', 'sendcan']]
-    return r
+    return list(LogReader(segment_name))
   except ValueError as e:
     print(f"Error parsing {segment_name}: {e}")
     return []
