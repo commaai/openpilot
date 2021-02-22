@@ -19,11 +19,11 @@ const __constant half3 base_ccm[3] = {
 // tone mapping params
 const half cpk = 0.75;
 const half cpb = 0.125;
-const half cpxk = 0.007;
-const half cpxb = 0.03;
+const half cpxk = 0.01;
+const half cpxb = 0.01;
 
 half mf(half x, half cp) {
-  half rk = 4.86 - 28.6*cp;
+  half rk = 8.6 - 66*cp;
   if (x > cp) {
     return (rk * (x-cp) * (1-(cpk*cp+cpb)) * (1+1/(rk*(1-cp))) / (1+rk*(x-cp))) + cpk*cp + cpb;
   } else if (x < cp) {
@@ -39,18 +39,9 @@ half3 color_correct(half3 rgb, int ggain) {
   rgb.x = mf(rgb.x, cpx);
   rgb.y = mf(rgb.y, cpx);
   rgb.z = mf(rgb.z, cpx);
-  half ml = (rgb.x + rgb.y + rgb.z)/3;
-  half wc;
-  if (ml < 0.3) {
-    wc = (0.3 - ml)/0.3;
-  } else if (ml > 0.7) {
-    wc = (ml - 0.7)/0.3;
-  } else {
-    wc = 0;
-  }
-  ret += (half)rgb.x * ((1-wc)*color_correction[0] + wc*base_ccm[0]);
-  ret += (half)rgb.y * ((1-wc)*color_correction[1] + wc*base_ccm[1]);
-  ret += (half)rgb.z * ((1-wc)*color_correction[2] + wc*base_ccm[2]);
+  ret += (half)rgb.x * (color_correction[0]);
+  ret += (half)rgb.y * (color_correction[1]);
+  ret += (half)rgb.z * (color_correction[2]);
   ret = clamp(0.0h, 255.0h, ret*255.0h);
   return ret;
 }
