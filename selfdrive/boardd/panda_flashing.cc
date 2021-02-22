@@ -168,16 +168,6 @@ void get_out_of_dfu(std::string dfu_serial) {
     LOGD("DFU panda not found");
     return;
   }
-  // PandaComm* dfuPanda;
-  // try {
-  //   dfuPanda = new PandaComm(0x0483, 0xdf11, dfu_serial);
-  // } catch(std::runtime_error &e) {
-  //   LOGD("DFU panda not found");
-  //   return;
-  // }
-  // LOGD("Panda in DFU mode found, flashing recovery");
-  // dfu_recover(dfuPanda);
-  // delete(dfuPanda);
 }
 
 void update_panda(std::string serial, std::string dfu_serial) {
