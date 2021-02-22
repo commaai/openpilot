@@ -43,7 +43,7 @@ class TestPandaFlashing(unittest.TestCase):
         return
       time.sleep(0.5)
     
-    self.assertTrue(False)
+    self.assertTrue(False, msg="Panda not found")
 
   def ensure_dfu(self):
     """Ensures the connected panda is running in DFU mode"""
@@ -63,7 +63,7 @@ class TestPandaFlashing(unittest.TestCase):
     self.wait_for(Panda, self.serial)
 
     panda = Panda(self.serial)
-    self.assertFalse(panda.bootstub)
+    self.assertFalse(panda.bootstub, msg="Panda shouldn't be in bootstub")
 
     # TODO: check signature
     # self.assertNotEqual(panda.get_signature(), comma_sig)
@@ -98,9 +98,9 @@ class TestPandaFlashing(unittest.TestCase):
       dpanda = PandaDFU(p)
       dpanda.recover()
     time.sleep(2)
-    self.assertTrue(len(dfu_list) == 0)
+    self.assertTrue(len(dfu_list) == 0, msg="Found DFU panda in claim")
     panda_list = Panda.list()
-    self.assertTrue(len(panda_list) > 0)
+    self.assertTrue(len(panda_list) > 0, msg="Found no non DFU panda in claim")
 
     self.serial = panda_list[0]
     self.dfu_serial = PandaDFU.st_serial_to_dfu_serial(self.serial)
@@ -108,6 +108,7 @@ class TestPandaFlashing(unittest.TestCase):
 
   def setUp(self):
     if not hasattr(self, 'serial'):
+      print("Claiming first panda")
       self.claim_panda()
 
     for fn in [SIGNED_FW_FN, DEV_FW_FN]:
@@ -120,18 +121,21 @@ class TestPandaFlashing(unittest.TestCase):
     self.wait_for(Panda, self.serial)
   
   def test_flash_from_dfu(self):
+    print("Testing flash_from_dfu")
     self.ensure_dfu()
 
     self.run_flasher()
     self.check_panda_running()
 
   def test_dev_firmware(self):
+    print("Testing dev_firmware")
     self.run_flasher()
 
     # TODO: check for development signature
     self.check_panda_running()
 
   def test_signed_firmware(self):
+    print("Testing signed_firmware")
     with open(SIGNED_FW_FN, 'wb') as f:
       f.write(download_file(SIGNED_FIRMWARE_URL))
 

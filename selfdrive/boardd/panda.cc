@@ -335,15 +335,15 @@ void DynamicPanda::reconnect() {
      connect();
      return;
     } catch(std::runtime_error &e) {
-      LOGD("reconnecting");
+      LOGD("reconnecting, trying for DFU panda");
       PandaComm* dfu;
       try {
         dfu = new PandaComm(0x0483, 0xdf11, dfu_serial);
+        LOGD("Found DFU panda, recovering");
         dfu_recover(dfu);
       } catch(std::runtime_error &e) {}
-      delete(dfu);
-      util::sleep_for(1000);
     }
+    util::sleep_for(1000);
   }
   throw std::runtime_error("Reconnecting timed out");
 }
