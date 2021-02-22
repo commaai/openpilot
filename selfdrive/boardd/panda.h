@@ -85,25 +85,13 @@ public:
 };
 
 
-class Panda {
- private:
-  PandaComm* c;
-  void cleanup();
-
+class Panda : public PandaComm{
  public:
   Panda();
-  ~Panda();
 
   cereal::PandaState::PandaType hw_type = cereal::PandaState::PandaType::UNKNOWN;
   bool is_pigeon = false;
   bool has_rtc = false;
-
-  bool connected();
-  // HW communication
-  int usb_write(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned int timeout=TIMEOUT);
-  int usb_read(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned char *data, uint16_t wLength, unsigned int timeout=TIMEOUT);
-  int usb_bulk_write(unsigned char endpoint, unsigned char* data, int length, unsigned int timeout=TIMEOUT);
-  int usb_bulk_read(unsigned char endpoint, unsigned char* data, int length, unsigned int timeout=TIMEOUT);
 
   // Panda functionality
   cereal::PandaState::PandaType get_hw_type();

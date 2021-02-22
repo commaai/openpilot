@@ -106,6 +106,7 @@ class TestPandaFlashing(unittest.TestCase):
     self.dfu_serial = PandaDFU.st_serial_to_dfu_serial(self.serial)
     print("Got panda", self.serial, self.dfu_serial)
 
+
   def setUp(self):
     if not hasattr(self, 'serial'):
       print("Claiming first panda")
@@ -120,6 +121,7 @@ class TestPandaFlashing(unittest.TestCase):
     self.flash_release_bootloader_and_fw()
     self.wait_for(Panda, self.serial)
   
+
   def test_flash_from_dfu(self):
     print("Testing flash_from_dfu")
     self.ensure_dfu()

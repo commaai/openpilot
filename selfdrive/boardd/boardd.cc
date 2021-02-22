@@ -65,7 +65,7 @@ void safety_setter_thread() {
 
   // switch to SILENT when CarVin param is read
   while (true) {
-    if (do_exit || !panda->connected()){
+    if (do_exit || !panda->connected){
       safety_setter_thread_running = false;
       return;
     };
@@ -87,7 +87,7 @@ void safety_setter_thread() {
   std::vector<char> params;
   LOGW("waiting for params to set safety model");
   while (true) {
-    if (do_exit || !panda->connected()){
+    if (do_exit || !panda->connected){
       safety_setter_thread_running = false;
       return;
     };
@@ -206,7 +206,7 @@ void can_send_thread(bool fake_send) {
   subscriber->setTimeout(100);
 
   // run as fast as messages come in
-  while (!do_exit && panda->connected()) {
+  while (!do_exit && panda->connected) {
     Message * msg = subscriber->receive();
 
     if (!msg){
@@ -246,7 +246,7 @@ void can_recv_thread() {
   const uint64_t dt = 10000000ULL;
   uint64_t next_frame_time = nanos_since_boot() + dt;
 
-  while (!do_exit && panda->connected()) {
+  while (!do_exit && panda->connected) {
     can_recv(pm);
 
     uint64_t cur_time = nanos_since_boot();
@@ -283,7 +283,7 @@ void panda_state_thread(bool spoofing_started) {
   }
 
   // run at 2hz
-  while (!do_exit && panda->connected()) {
+  while (!do_exit && panda->connected) {
     health_t pandaState = panda->get_state();
 
     if (spoofing_started) {
@@ -402,7 +402,7 @@ void hardware_control_thread() {
 #endif
   unsigned int cnt = 0;
 
-  while (!do_exit && panda->connected()) {
+  while (!do_exit && panda->connected) {
     cnt++;
     sm.update(1000); // TODO: what happens if EINTR is sent while in sm.update?
 
@@ -480,7 +480,7 @@ void pigeon_thread() {
   Pigeon * pigeon = Pigeon::connect(panda);
 #endif
 
-  while (!do_exit && panda->connected()) {
+  while (!do_exit && panda->connected) {
     bool need_reset = false;
     std::string recv = pigeon->receive();
     if (recv.length() > 0) {
