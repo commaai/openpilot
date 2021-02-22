@@ -3,10 +3,8 @@ import argparse
 import json
 
 import cereal.messaging as messaging
-
-from tools.lib.route import Route
 from tools.lib.logreader import LogReader
-
+from tools.lib.route import Route
 
 LEVELS = {
   "DEBUG": 10,
@@ -25,6 +23,7 @@ ANDROID_LOG_SOURCE = {
   5: "KERNEL",
 }
 
+
 def print_logmessage(t, msg, min_level):
   try:
     log = json.loads(msg)
@@ -37,8 +36,6 @@ def print_logmessage(t, msg, min_level):
 def print_androidlog(t, msg):
   source = ANDROID_LOG_SOURCE[msg.id]
   print(f"[{t / 1e9:.6f}] {source} {msg.pid} {msg.tag} - {msg.message}")
-
-
 
 
 if __name__ == "__main__":
@@ -56,7 +53,7 @@ if __name__ == "__main__":
 
   if len(args.route) == 2 and logs:
     n = int(args.route[1])
-    logs = [logs[n:n+1]]
+    logs = [logs[n]]
 
   min_level = LEVELS[args.level]
 
