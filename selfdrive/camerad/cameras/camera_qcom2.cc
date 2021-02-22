@@ -46,10 +46,9 @@ CameraInfo cameras_supported[CAMERA_ID_MAX] = {
   },
 };
 
-float sensor_analog_gains[ANALOG_GAIN_MAX_IDX] = {1.0/8.0, 2.0/8.0, 2.0/7.0, 3.0/7.0,
-                                                  3.0/6.0, 4.0/6.0, 4.0/5.0, 5.0/5.0,
+float sensor_analog_gains[ANALOG_GAIN_MAX_IDX] = {3.0/6.0, 4.0/6.0, 4.0/5.0, 5.0/5.0,
                                                   5.0/4.0, 6.0/4.0, 6.0/3.0, 7.0/3.0,
-                                                  7.0/2.0, 8.0/2.0, 8.0/1.0};
+                                                  7.0/2.0, 8.0/2.0};
 
 // ************** low level camera helpers ****************
 
@@ -992,7 +991,7 @@ void set_exposure_time_bounds(CameraState *s) {
 void switch_conversion_gain(CameraState *s) {
   if (!s->dc_gain_enabled) {
     s->dc_gain_enabled = true;
-    s->analog_gain -= 5;
+    s->analog_gain -= 4;
   } else {
     s->dc_gain_enabled = false;
     s->analog_gain += 4;
@@ -1001,9 +1000,9 @@ void switch_conversion_gain(CameraState *s) {
 
 static void set_camera_exposure(CameraState *s, float grey_frac) {
   // TODO: get stats from sensor?
-  float target_grey = 0.3 - (s->analog_gain / 105.0);
+  float target_grey = 0.4 - ((float)(s->analog_gain + 4*s->dc_gain_enabled) / 48.0f);
   float exposure_factor = 1 + 30 * pow((target_grey - grey_frac), 3);
-  exposure_factor = std::max(exposure_factor, 0.55f);
+  exposure_factor = std::max(exposure_factor, 0.4f);
 
   if (s->camera_num != 1) {
     s->ef_filtered = (1 - EF_LOWPASS_K) * s->ef_filtered + EF_LOWPASS_K * exposure_factor;
@@ -1024,7 +1023,7 @@ static void set_camera_exposure(CameraState *s, float grey_frac) {
     if (s->analog_gain < ANALOG_GAIN_MAX_IDX - 1) {
       s->exposure_time = EXPOSURE_TIME_MAX / 2;
       s->analog_gain += 1;
-      if (!s->dc_gain_enabled && sensor_analog_gains[s->analog_gain] == 1.0) { // switch to HCG at iso 800
+      if (!s->dc_gain_enabled && sensor_analog_gains[s->analog_gain] >= 4.0) { // switch to HCG
         switch_conversion_gain(s);
       }
       set_exposure_time_bounds(s);
@@ -1035,7 +1034,7 @@ static void set_camera_exposure(CameraState *s, float grey_frac) {
     if (s->analog_gain > 0) {
       s->exposure_time = std::max(EXPOSURE_TIME_MIN * 2, (int)(s->exposure_time / (sensor_analog_gains[s->analog_gain-1] / sensor_analog_gains[s->analog_gain])));
       s->analog_gain -= 1;
-      if (s->dc_gain_enabled && sensor_analog_gains[s->analog_gain] == 0.25) { // switch back to LCG at iso 200
+      if (s->dc_gain_enabled && sensor_analog_gains[s->analog_gain] <= 1.25) { // switch back to LCG
         switch_conversion_gain(s);
       }
       set_exposure_time_bounds(s);
@@ -1045,20 +1044,22 @@ static void set_camera_exposure(CameraState *s, float grey_frac) {
   }
 
   // set up config
-  uint16_t AG = s->analog_gain;
-  AG = AG * 4096 + AG * 256 + AG * 16 + AG;
+  uint16_t AG = s->analog_gain + 4;
+  AG = 0xFF00 + AG * 16 + AG;
   s->analog_gain_frac = sensor_analog_gains[s->analog_gain];
 
   // printf("cam %d, min %d, max %d \n", s->camera_num, s->exposure_time_min, s->exposure_time_max);
   // printf("cam %d, set AG to 0x%X, S to %d, dc %d \n", s->camera_num, AG, s->exposure_time, s->dc_gain_enabled);
 
-  struct i2c_random_wr_payload exp_reg_array[] = {{0x3366, AG}, // analog gain
+  struct i2c_random_wr_payload exp_reg_array[] = {
+                                                  {0x3366, AG}, // analog gain
                                                   {0x3362, (uint16_t)(s->dc_gain_enabled?0x1:0x0)}, // DC_GAIN
                                                   {0x305A, 0x00D8}, // red gain
                                                   {0x3058, 0x011B}, // blue gain
                                                   {0x3056, 0x009A}, // g1 gain
                                                   {0x305C, 0x009A}, // g2 gain
-                                                  {0x3012, (uint16_t)s->exposure_time}}; // integ time
+                                                  {0x3012, (uint16_t)s->exposure_time}, // integ time
+                                                 };
                                                   //{0x301A, 0x091C}}; // reset
   sensors_i2c(s, exp_reg_array, sizeof(exp_reg_array)/sizeof(struct i2c_random_wr_payload),
                CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
