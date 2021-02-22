@@ -143,6 +143,7 @@ HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
   home = new OffroadHome();
   layout->addWidget(home, 0, 0);
   QObject::connect(glWindow, SIGNAL(offroadTransition(bool)), this, SLOT(setVisibility(bool)));
+  QObject::connect(glWindow, SIGNAL(offroadTransition(bool)), this, SIGNAL(offroadTransition(bool)));
   QObject::connect(this, SIGNAL(openSettings()), home, SLOT(refresh()));
   setLayout(layout);
   setStyleSheet(R"(
