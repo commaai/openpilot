@@ -18,14 +18,15 @@ from selfdrive.loggerd.config import ROOT
 
 
 SEGMENT_LENGTH = 2
-FULL_SIZE = 1253786  # file size for a 2s segment in bytes
 if EON:
+  FULL_SIZE = 1253786 # file size for a 2s segment in bytes
   CAMERAS = [
     ("fcamera.hevc", 20, FULL_SIZE),
     ("dcamera.hevc", 10, 770920),
     ("qcamera.ts", 20, 77066),
   ]
 else:
+  FULL_SIZE = 2507572
   CAMERAS = [
     ("fcamera.hevc", 20, FULL_SIZE),
     ("dcamera.hevc", 20, FULL_SIZE),
