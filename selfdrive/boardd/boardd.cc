@@ -396,7 +396,7 @@ void hardware_control_thread() {
   uint16_t prev_fan_speed = 999;
   uint16_t ir_pwr = 0;
   uint16_t prev_ir_pwr = 999;
-#ifdef QCOM
+#if defined(QCOM) || defined(QCOM2)
   bool prev_charging_disabled = false;
 #endif
   unsigned int cnt = 0;
@@ -405,7 +405,7 @@ void hardware_control_thread() {
     cnt++;
     sm.update(1000); // TODO: what happens if EINTR is sent while in sm.update?
 
-#ifdef QCOM
+#if defined(QCOM) || defined(QCOM2)
     if (sm.updated("deviceState")){
       // Charging mode
       bool charging_disabled = sm["deviceState"].getDeviceState().getChargingDisabled();
