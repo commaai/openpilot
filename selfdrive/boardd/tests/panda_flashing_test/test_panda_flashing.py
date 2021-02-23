@@ -89,7 +89,7 @@ class TestPandaFlashing(unittest.TestCase):
     print("Running C++ flasher", self.serial, self.dfu_serial)
     env = os.environ.copy()
     env["LOGPRINT"] = "debug" 
-    subprocess.check_call("./flash_panda " + self.serial + " " + self.dfu_serial, shell=True, env=env)
+    subprocess.check_call("./flash_panda " + self.serial, shell=True, env=env)
     print("Done with C++ flasher")
 
   def claim_panda(self):

@@ -223,52 +223,33 @@ DynamicPanda::DynamicPanda(std::string serial, std::string dfu_serial) : serial(
 
 // Attempts to connect once
 void DynamicPanda::connect() {
-  // Find the first panda device in the list of devices
-  pandaExists = false;
+  try{
+    PandaComm(0x0483, 0xdf11, serial);
+    LOGD("Found panda in DFU mode");
+    pandaExists = false;
+    bootstub = false;
+    return;
+  } catch (std::runtime_error &e){}
 
-  int err = 0;
-  libusb_context* ctx;
-  err = libusb_init(&ctx);
-  assert(err == 0);
-  libusb_device **list = NULL;
-  int count = 0;
-  count = libusb_get_device_list(ctx, &list);
-  assert(count > 0);
-  LOGD("Looking for panda");
-  for (int idx = 0; idx < count; idx++) {
-    libusb_device *device = list[idx];
-    libusb_device_descriptor desc;
-    err = libusb_get_device_descriptor(device, &desc);
-    assert(err == 0);
-    uint16_t vid = desc.idVendor;
-    uint16_t pid = desc.idProduct;
-    if (vid == 0x0483 && pid == 0xdf11) { // Panda in DFU 
-      LOGD("Found panda in DFU mode, should not occur");
-      pandaExists = false;
-      bootstub = false;
-      libusb_free_device_list(list, count);
-      libusb_exit(ctx);
-      throw std::runtime_error("Found DFU panda...");
-    } else if (vid == 0xbbaa && pid == 0xddcc) { //Normal panda running the firmware
-      c = new PandaComm(0xbbaa, 0xddcc, serial);
-      LOGD("Found panda in a good state, exiting");
-      pandaExists = true;
-      bootstub = false;
-      break;
-    } else if (vid == 0xbbaa && pid == 0xddee) {
-      c = new PandaComm(0xbbaa, 0xddee, serial);
-      LOGD("Found panda in bootstub mode, some more work to do");
-      pandaExists = true;
-      bootstub = true;
-      break;
-    }
-  }
-  libusb_free_device_list(list, count);
-  libusb_exit(ctx);
-  if (!pandaExists) {
-    LOGW("Dynamic panda cannot find any non DFU panda");
-    throw std::runtime_error("Panda not found...");
-  }
+  try{
+    c = new PandaComm(0xbbaa, 0xddcc, serial);
+    LOGD("Found panda in a good state");
+    pandaExists = true;
+    bootstub = false;
+    return;
+  } catch (std::runtime_error &e){}
+
+  try{
+    c = new PandaComm(0xbbaa, 0xddee, serial);
+    LOGD("Found panda in bootstub mode");
+    pandaExists = true;
+    bootstub = true;
+    return;
+  } catch (std::runtime_error &e){}
+
+  LOGW("Dynamic panda cannot find any non DFU panda");
+  pandaExists = false;
+  throw std::runtime_error("Panda not found...");
 }
 
 std::string DynamicPanda::get_version() {

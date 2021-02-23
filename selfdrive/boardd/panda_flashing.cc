@@ -31,6 +31,35 @@
 #include "panda_flashing.hpp"
 #include "pigeon.h"
 
+#define NIBBLE_TO_HEX(n) ((n) < 10 ? (n) + '0' : ((n) - 10) + 'A')
+
+std::string convert(unsigned short s){
+  short left = s / 256;
+  short right = s % 256;
+  std::string ans = "";
+  ans += NIBBLE_TO_HEX(right / 16);
+  ans += NIBBLE_TO_HEX(right % 16);
+  ans += NIBBLE_TO_HEX(left / 16);
+  ans += NIBBLE_TO_HEX(left % 16);
+  return ans;
+}
+
+std::string dfu_serial_from_serial(std::string serial){
+  if (serial==""){
+    return "";
+  }
+  std::vector<unsigned short> hex_values;
+  for(int i = 0 ; i < serial.size(); i+=4){
+    hex_values.push_back(stoi(serial.substr(i, 4), 0, 16));
+  }
+  assert(hex_values.size() == 6);
+  unsigned short left = hex_values[1] + hex_values[5];
+  unsigned short middle = hex_values[0] + hex_values[4] + 0x0a00;
+  unsigned short right = hex_values[3];
+  //Split to bytes, cast to string
+  return convert(left)+convert(middle)+convert(right);
+}
+
 const std::string basedir = util::getenv_default("BASEDIR", "", "/data/pythonpath");
 
 void build_st(std::string target, bool clean, bool output) {
@@ -78,15 +107,18 @@ void get_out_of_dfu(std::string dfu_serial) {
   }
 }
 
-void update_panda(std::string serial, std::string dfu_serial) {
+void update_panda(std::string serial) {
   LOGD("updating panda");
   LOGD("\n1: Move out of DFU\n");
+  std::string dfu_serial = dfu_serial_from_serial(serial);
   get_out_of_dfu(dfu_serial);
   LOGD("\n2: Start DynamicPanda and run the required steps\n");
 
   std::string fw_fn = get_firmware_fn();
   std::string fw_signature = get_expected_signature();
+ 
   DynamicPanda tempPanda(serial, dfu_serial);
+
   std::string panda_signature = tempPanda.bootstub ? "": tempPanda.get_signature();
   LOGD("fw_sig::panda_sig");
   LOGD(fw_signature.c_str());

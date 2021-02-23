@@ -11,6 +11,7 @@ private:
   void program(int adress, std::string program);
   void reset();
   void program_bootstub(std::string program_file);
+
 public:
   PandaDFU(std::string dfu_serial="");
   void recover();

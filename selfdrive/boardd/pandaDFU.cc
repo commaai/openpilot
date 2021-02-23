@@ -96,4 +96,5 @@ void PandaDFU::recover() {
   std::string program = util::read_file(basedir + "/panda/board/obj/bootstub.panda.bin");
   program_bootstub(program);
 }
+
 PandaDFU::PandaDFU(std::string dfu_serial) : PandaComm(0x0483, 0xdf11, dfu_serial){}
