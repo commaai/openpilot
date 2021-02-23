@@ -339,7 +339,6 @@ static void processing_thread(MultiCameraState *cameras, CameraState *cs, proces
     pub_name = "wideRoadCameraState";
     framed_set_image = getenv("SEND_WIDE_ROAD") != NULL;
     init_cam_state_func = &cereal::Event::Builder::initWideRoadCameraState;
-    
   }
 
   uint32_t cnt = 0;
