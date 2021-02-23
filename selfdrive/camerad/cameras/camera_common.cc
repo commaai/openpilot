@@ -318,32 +318,29 @@ float set_exposure_target(const CameraBuf *b, int x_start, int x_end, int x_skip
 }
 
 static void processing_thread(MultiCameraState *cameras, CameraState *cs, process_thread_cb callback) {
-  const char *thread_name = nullptr;
   const char *pub_name = nullptr;
   bool framed_set_image = false, framed_set_transform = false;
   bool pub_thumbnail = false;
-  
   ::cereal::FrameData::Builder (cereal::Event::Builder::*init_cam_state_func)() = nullptr;
+
   if (cs == &cameras->road_cam) {
-    thread_name = "RoadCamera";
+    set_thread_name("RoadCamera");
     pub_name = "roadCameraState";
     framed_set_image = getenv("SEND_ROAD") != NULL;
+    pub_thumbnail = framed_set_transform = true;
     init_cam_state_func = &cereal::Event::Builder::initRoadCameraState;
-    pub_thumbnail = true;
-    framed_set_transform = true;
   } else if (cs == &cameras->driver_cam) {
-    thread_name = "DriverCamera";
+    set_thread_name("DriverCamera");
     pub_name = "driverCameraState";
     framed_set_image = getenv("SEND_DRIVER") != NULL;
     init_cam_state_func = &cereal::Event::Builder::initDriverCameraState;
   } else {
-    thread_name = "WideRoadCamera";
+    set_thread_name("WideRoadCamera");
     pub_name = "wideRoadCameraState";
     framed_set_image = getenv("SEND_WIDE_ROAD") != NULL;
     init_cam_state_func = &cereal::Event::Builder::initWideRoadCameraState;
     
   }
-  set_thread_name(thread_name);
 
   uint32_t cnt = 0;
   while (!do_exit) {
@@ -361,12 +358,13 @@ static void processing_thread(MultiCameraState *cameras, CameraState *cs, proces
     if (callback != nullptr) {
       callback(cameras, cs, framed, cnt);
     }
-
     cameras->pm->send(pub_name, msg);
+
     if (pub_thumbnail && cnt % 100 == 3) {
       // this takes 10ms???
       publish_thumbnail(cameras->pm, &(cs->buf));
     }
+
     cs->buf.release();
     ++cnt;
   }
