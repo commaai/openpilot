@@ -178,7 +178,7 @@ void CameraBuf::queue(size_t buf_idx) {
 
 // common functions
 
-void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &frame_data) {
+static void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &frame_data) {
   framed.setFrameId(frame_data.frame_id);
   framed.setTimestampEof(frame_data.timestamp_eof);
   framed.setTimestampSof(frame_data.timestamp_sof);
@@ -192,7 +192,7 @@ void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &fr
   framed.setGainFrac(frame_data.gain_frac);
 }
 
-kj::Array<uint8_t> get_frame_image(const CameraBuf *b) {
+static kj::Array<uint8_t> get_frame_image(const CameraBuf *b) {
   static const int x_min = getenv("XMIN") ? atoi(getenv("XMIN")) : 0;
   static const int y_min = getenv("YMIN") ? atoi(getenv("YMIN")) : 0;
   static const int env_xmax = getenv("XMAX") ? atoi(getenv("XMAX")) : -1;
@@ -317,7 +317,7 @@ float set_exposure_target(const CameraBuf *b, int x_start, int x_end, int x_skip
   return lum_med / 256.0;
 }
 
-void processing_thread(MultiCameraState *cameras, CameraState *cs, process_thread_cb callback) {
+static void processing_thread(MultiCameraState *cameras, CameraState *cs, process_thread_cb callback) {
   const char *thread_name = nullptr;
   const char *pub_name = nullptr;
   bool framed_set_image = false, framed_set_transform = false;
@@ -362,9 +362,7 @@ void processing_thread(MultiCameraState *cameras, CameraState *cs, process_threa
       callback(cameras, cs, framed, cnt);
     }
 
-    // framed.setFrameType(cereal::FrameData::FrameType::FRONT);
     cameras->pm->send(pub_name, msg);
-
     if (pub_thumbnail && cnt % 100 == 3) {
       // this takes 10ms???
       publish_thumbnail(cameras->pm, &(cs->buf));
