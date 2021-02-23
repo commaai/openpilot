@@ -61,19 +61,16 @@ PandaComm::PandaComm(uint16_t vid, uint16_t pid, std::string serial) {
       assert(err == 0);
       if (dev_handle != NULL){
         unsigned char buf[1024];
-        memset(buf, 0, sizeof(buf));//Ensure I can cout
+        memset(buf, 0, sizeof(buf));
         int length = libusb_get_string_descriptor_ascii(dev_handle, 3, buf, 1024);
         assert(length >= 0);
         std::string serial2 = std::string((char*) buf);
-        std::cout<<"Panda serial: "<<serial2<<std::endl;
         if(serial2 == serial || serial == ""){
-          std::cout<<"Found the correct panda"<<std::endl;
+          LOGD("Found the correct panda");
           break;
         }
         libusb_close(dev_handle);
-        std::cout<<"Got to end of loop"<<std::endl;
       }
-      util::sleep_for(5000);
     }
   }
   if (dev_handle == NULL) { goto fail; }
