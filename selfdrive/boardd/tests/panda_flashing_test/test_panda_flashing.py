@@ -33,8 +33,7 @@ def download_file(url):
   return r.content
 
 
-fp = BytesIO(download_file("https://github.com/commaai/panda-artifacts/blob/master/panda-v1.7.3-DEV-d034f3e9-RELEASE.zip?raw=true"))
-
+fp = None
 
 @unittest.skipIf(len(Panda.list()) + len(PandaDFU.list()) == 0, "No panda found")
 class TestPandaFlashing(unittest.TestCase):
@@ -108,6 +107,9 @@ class TestPandaFlashing(unittest.TestCase):
 
 
   def setUp(self):
+    if fp is None:
+      fp = BytesIO(download_file("https://github.com/commaai/panda-artifacts/blob/master/panda-v1.7.3-DEV-d034f3e9-RELEASE.zip?raw=true"))
+
     if not hasattr(self, 'serial'):
       print("Claiming first panda")
       self.claim_panda()
