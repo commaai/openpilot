@@ -3,7 +3,7 @@ import subprocess
 from pathlib import Path
 
 from cereal import log
-from selfdrive.hardware.base import HardwareBase
+from selfdrive.hardware.base import HardwareBase, ThermalConfig
 
 NM = 'org.freedesktop.NetworkManager'
 NM_CON_ACT = NM + '.Connection.Active'
@@ -176,3 +176,10 @@ class Tici(HardwareBase):
 
   def get_current_power_draw(self):
     return (self.read_param_file("/sys/class/hwmon/hwmon1/power1_input", int) / 1e6)
+
+  def shutdown(self):
+    # Note that for this to work and have the device stay powered off, the panda needs to be in UsbPowerMode::CLIENT!
+    os.system("sudo poweroff")
+
+  def get_thermal_config(self):
+    return ThermalConfig(cpu=((1, 2, 3, 4, 5, 6, 7, 8), 1000), gpu=((48,49), 1000), mem=(15, 1000), bat=(None, 1), ambient=(70, 1000))

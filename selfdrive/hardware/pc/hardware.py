@@ -1,7 +1,7 @@
 import random
 
 from cereal import log
-from selfdrive.hardware.base import HardwareBase
+from selfdrive.hardware.base import HardwareBase, ThermalConfig
 
 NetworkType = log.DeviceState.NetworkType
 NetworkStrength = log.DeviceState.NetworkStrength
@@ -70,3 +70,9 @@ class Pc(HardwareBase):
 
   def get_current_power_draw(self):
     return 0
+
+  def shutdown(self):
+    print("SHUTDOWN!")
+
+  def get_thermal_config(self):
+    return ThermalConfig(cpu=((None,), 1), gpu=((None,), 1), mem=(None, 1), bat=(None, 1), ambient=(None, 1))

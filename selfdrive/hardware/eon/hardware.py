@@ -6,7 +6,7 @@ import struct
 import subprocess
 
 from cereal import log
-from selfdrive.hardware.base import HardwareBase
+from selfdrive.hardware.base import HardwareBase, ThermalConfig
 
 NetworkType = log.DeviceState.NetworkType
 NetworkStrength = log.DeviceState.NetworkStrength
@@ -342,3 +342,9 @@ class Android(HardwareBase):
   def get_current_power_draw(self):
     # We don't have a good direct way to measure this on android
     return None
+
+  def shutdown(self):
+    os.system('LD_LIBRARY_PATH="" svc power shutdown')
+
+  def get_thermal_config(self):
+    return ThermalConfig(cpu=((5, 7, 10, 12), 10), gpu=((16,), 10), mem=(2, 10), bat=(29, 1000), ambient=(25, 1))
