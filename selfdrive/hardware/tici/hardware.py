@@ -178,6 +178,7 @@ class Tici(HardwareBase):
     return (self.read_param_file("/sys/class/hwmon/hwmon1/power1_input", int) / 1e6)
 
   def shutdown(self):
+    # Note that for this to work and have the device stay powered off, the panda needs to be in UsbPowerMode::CLIENT!
     os.system("sudo poweroff")
 
   def get_thermal_config(self):
