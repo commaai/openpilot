@@ -246,28 +246,10 @@ void cameras_close(MultiCameraState *s) {
   delete s->pm;
 }
 
-void process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) {
-  MessageBuilder msg;
-  auto framed = msg.initEvent().initDriverCameraState();
-  framed.setFrameType(cereal::FrameData::FrameType::FRONT);
-  fill_frame_data(framed, c->buf.cur_frame_data);
-  s->pm->send("driverCameraState", msg);
-}
-
-void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
-  const CameraBuf *b = &c->buf;
-  MessageBuilder msg;
-  auto framed = msg.initEvent().initRoadCameraState();
-  fill_frame_data(framed, b->cur_frame_data);
-  framed.setImage(kj::arrayPtr((const uint8_t *)b->cur_yuv_buf->addr, b->cur_yuv_buf->len));
-  framed.setTransform(b->yuv_transform.v);
-  s->pm->send("roadCameraState", msg);
-}
-
 void cameras_run(MultiCameraState *s) {
   std::vector<std::thread> threads;
-  threads.push_back(start_process_thread(s, &s->road_cam, process_road_camera));
-  threads.push_back(start_process_thread(s, &s->driver_cam, process_driver_camera));
+  threads.push_back(start_process_thread(s, &s->road_cam, nullptr));
+  threads.push_back(start_process_thread(s, &s->driver_cam, nullptr));
 
   std::thread t_rear = std::thread(road_camera_thread, &s->road_cam);
   set_thread_name("webcam_thread");

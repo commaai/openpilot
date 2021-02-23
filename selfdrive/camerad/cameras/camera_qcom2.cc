@@ -1092,25 +1092,13 @@ static void ae_thread(MultiCameraState *s) {
   }
 }
 
-void process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) {
+void process_driver_camera(MultiCameraState *s, CameraState *c, cereal::FrameData::Builder& framed, int cnt) {
   common_process_driver_camera(s->sm, s->pm, c, cnt);
 }
 
 // called by processing_thread
-void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
+static void process_road_camera(MultiCameraState *s, CameraState *c, cereal::FrameData::Builder& framed, int cnt) {
   const CameraBuf *b = &c->buf;
-
-  MessageBuilder msg;
-  auto framed = c == &s->road_cam ? msg.initEvent().initRoadCameraState() : msg.initEvent().initWideRoadCameraState();
-  fill_frame_data(framed, b->cur_frame_data);
-  if ((c == &s->road_cam && env_send_road) || (c == &s->wide_road_cam && env_send_wide_road)) {
-    framed.setImage(get_frame_image(b));
-  }
-  if (c == &s->road_cam) {
-    framed.setTransform(b->yuv_transform.v);
-  }
-  s->pm->send(c == &s->road_cam ? "roadCameraState" : "wideRoadCameraState", msg);
-
   if (cnt % 3 == 0) {
     const auto [x, y, w, h] = (c == &s->wide_road_cam) ? std::tuple(96, 250, 1734, 524) : std::tuple(96, 160, 1734, 986);
     const int skip = 2;

@@ -39,10 +39,6 @@
 #define HLC_A 80
 #define HISTO_CEIL_K 5
 
-const bool env_send_driver = getenv("SEND_DRIVER") != NULL;
-const bool env_send_road = getenv("SEND_ROAD") != NULL;
-const bool env_send_wide_road = getenv("SEND_WIDE_ROAD") != NULL;
-
 typedef void (*release_cb)(void *cookie, int buf_idx);
 
 typedef struct CameraInfo {
@@ -124,7 +120,7 @@ public:
   void queue(size_t buf_idx);
 };
 
-typedef void (*process_thread_cb)(MultiCameraState *s, CameraState *c, int cnt);
+typedef void (*process_thread_cb)(MultiCameraState *s, CameraState *c, cereal::FrameData::Builder &framed, int cnt);
 
 void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &frame_data);
 kj::Array<uint8_t> get_frame_image(const CameraBuf *b);
