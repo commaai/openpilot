@@ -102,7 +102,7 @@ Supported Cars
 | Toyota    | Camry 2021                    | All               | openpilot        | 0mph               | 0mph              |
 | Toyota    | Camry Hybrid 2018-20          | All               | Stock            | 0mph<sup>4</sup>   | 0mph              |
 | Toyota    | Camry Hybrid 2021             | All               | openpilot        | 0mph               | 0mph              |
-| Toyota    | C-HR 2017-19                  | All               | Stock            | 0mph               | 0mph              |
+| Toyota    | C-HR 2017-20                  | All               | Stock            | 0mph               | 0mph              |
 | Toyota    | C-HR Hybrid 2017-19           | All               | Stock            | 0mph               | 0mph              |
 | Toyota    | Corolla 2017-19               | All               | Stock<sup>3</sup>| 20mph<sup>1</sup>  | 0mph              |
 | Toyota    | Corolla 2020-21               | All               | openpilot        | 0mph               | 0mph              |
@@ -132,7 +132,7 @@ Community Maintained Cars and Features
 
 | Make      | Model (US Market Reference)   | Supported Package | ACC              | No ACC accel below | No ALC below |
 | ----------| ------------------------------| ------------------| -----------------| -------------------| -------------|
-| Audi      | A3 2015                       | Driver Assistance | Stock            | 0mph               | 0mph         |
+| Audi      | A3 2015, 2018                 | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Buick     | Regal 2018<sup>1</sup>        | Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
 | Cadillac  | ATS 2018<sup>1</sup>          | Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
 | Chevrolet | Malibu 2017<sup>1</sup>       | Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
@@ -163,6 +163,7 @@ Community Maintained Cars and Features
 | Kia       | Optima 2019                   | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Kia       | Sorento 2018                  | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Kia       | Stinger 2018                  | SCC + LKAS        | Stock            | 0mph               | 0mph         |
+| Nissan    | Altima 2020                   | ProPILOT          | Stock            | 0mph               | 0mph         |
 | Nissan    | Leaf 2018-20                  | ProPILOT          | Stock            | 0mph               | 0mph         |
 | Nissan    | Rogue 2018-19                 | ProPILOT          | Stock            | 0mph               | 0mph         |
 | Nissan    | X-Trail 2017                  | ProPILOT          | Stock            | 0mph               | 0mph         |

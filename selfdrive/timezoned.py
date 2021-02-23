@@ -21,9 +21,9 @@ def set_timezone(valid_timezones, timezone):
   try:
     if TICI:
       tzpath = os.path.join("/usr/share/zoneinfo/", timezone)
-      os.symlink(tzpath, "/data/etc/localtime")
-      with open("/data/etc/timezone", "w") as f:
-        f.write(timezone)
+      subprocess.check_call(f'sudo su -c "ln -snf {tzpath} /data/etc/tmptime && \
+                              mv /data/etc/tmptime /data/etc/localtime"', shell=True)
+      subprocess.check_call(f'sudo su -c "echo \"{timezone}\" > /data/etc/timezone"', shell=True)
     else:
       subprocess.check_call(f'sudo timedatectl set-timezone {timezone}', shell=True)
   except subprocess.CalledProcessError:

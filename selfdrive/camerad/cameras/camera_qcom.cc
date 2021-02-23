@@ -32,8 +32,8 @@
 extern ExitHandler do_exit;
 
 // global var for AE/AF ops
-std::atomic<CameraExpInfo> rear_exp{{0}};
-std::atomic<CameraExpInfo> front_exp{{0}};
+std::atomic<CameraExpInfo> road_cam_exp{{0}};
+std::atomic<CameraExpInfo> driver_cam_exp{{0}};
 
 CameraInfo cameras_supported[CAMERA_ID_MAX] = {
   [CAMERA_ID_IMX298] = {
@@ -165,7 +165,7 @@ static int imx298_apply_exposure(CameraState *s, int gain, int integ_lines, int 
 }
 
 static int ov8865_apply_exposure(CameraState *s, int gain, int integ_lines, int frame_length) {
-  //printf("front camera: %d %d %d\n", gain, integ_lines, frame_length);
+  //printf("driver camera: %d %d %d\n", gain, integ_lines, frame_length);
   int coarse_gain_bitmap, fine_gain_bitmap;
 
   // get bitmaps from iso
@@ -204,7 +204,7 @@ static int ov8865_apply_exposure(CameraState *s, int gain, int integ_lines, int 
 }
 
 static int imx179_s5k3p8sp_apply_exposure(CameraState *s, int gain, int integ_lines, int frame_length) {
-  //printf("front camera: %d %d %d\n", gain, integ_lines, frame_length);
+  //printf("driver camera: %d %d %d\n", gain, integ_lines, frame_length);
   struct msm_camera_i2c_reg_array reg_array[] = {
     {0x104,0x1,0},
 
@@ -271,7 +271,7 @@ void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_i
   // 508 = ISO 12800, 16x digital gain
   // 510 = ISO 25600, 32x digital gain
 
-  camera_init(v, &s->rear, CAMERA_ID_IMX298, 0,
+  camera_init(v, &s->road_cam, CAMERA_ID_IMX298, 0,
               /*pixel_clock=*/600000000, /*line_length_pclk=*/5536,
               /*max_gain=*/510,  //0 (ISO 100)- 448 (ISO 800, max analog gain) - 511 (super noisy)
 #ifdef HIGH_FPS
@@ -281,32 +281,32 @@ void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_i
 #endif
               device_id, ctx,
               VISION_STREAM_RGB_BACK, VISION_STREAM_YUV_BACK);
-  s->rear.apply_exposure = imx298_apply_exposure;
+  s->road_cam.apply_exposure = imx298_apply_exposure;
 
   if (s->device == DEVICE_OP3T) {
-    camera_init(v, &s->front, CAMERA_ID_S5K3P8SP, 1,
+    camera_init(v, &s->driver_cam, CAMERA_ID_S5K3P8SP, 1,
                 /*pixel_clock=*/560000000, /*line_length_pclk=*/5120,
                 /*max_gain=*/510, 10, device_id, ctx,
                 VISION_STREAM_RGB_FRONT, VISION_STREAM_YUV_FRONT);
-    s->front.apply_exposure = imx179_s5k3p8sp_apply_exposure;
+    s->driver_cam.apply_exposure = imx179_s5k3p8sp_apply_exposure;
   } else if (s->device == DEVICE_LP3) {
-    camera_init(v, &s->front, CAMERA_ID_OV8865, 1,
+    camera_init(v, &s->driver_cam, CAMERA_ID_OV8865, 1,
                 /*pixel_clock=*/72000000, /*line_length_pclk=*/1602,
                 /*max_gain=*/510, 10, device_id, ctx,
                 VISION_STREAM_RGB_FRONT, VISION_STREAM_YUV_FRONT);
-    s->front.apply_exposure = ov8865_apply_exposure;
+    s->driver_cam.apply_exposure = ov8865_apply_exposure;
   } else {
-    camera_init(v, &s->front, CAMERA_ID_IMX179, 1,
+    camera_init(v, &s->driver_cam, CAMERA_ID_IMX179, 1,
                 /*pixel_clock=*/251200000, /*line_length_pclk=*/3440,
                 /*max_gain=*/224, 20, device_id, ctx,
                 VISION_STREAM_RGB_FRONT, VISION_STREAM_YUV_FRONT);
-    s->front.apply_exposure = imx179_s5k3p8sp_apply_exposure;
+    s->driver_cam.apply_exposure = imx179_s5k3p8sp_apply_exposure;
   }
 
-  s->rear.device = s->device;
-  s->front.device = s->device;
+  s->road_cam.device = s->device;
+  s->driver_cam.device = s->device;
 
-  s->sm_front = new SubMaster({"driverState"});
+  s->sm = new SubMaster({"driverState"});
   s->pm = new PubMaster({"roadCameraState", "driverCameraState", "thumbnail"});
 
   for (int i = 0; i < FRAME_BUF_COUNT; i++) {
@@ -314,8 +314,8 @@ void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_i
     s->focus_bufs[i].allocate(0xb80);
     s->stats_bufs[i].allocate(0xb80);
   }
-  const int width = s->rear.buf.rgb_width/NUM_SEGMENTS_X;
-  const int height = s->rear.buf.rgb_height/NUM_SEGMENTS_Y;
+  const int width = s->road_cam.buf.rgb_width/NUM_SEGMENTS_X;
+  const int height = s->road_cam.buf.rgb_height/NUM_SEGMENTS_Y;
   s->prg_rgb_laplacian = build_conv_program(device_id, ctx, width, height, 3);
   s->krnl_rgb_laplacian = CL_CHECK_ERR(clCreateKernel(s->prg_rgb_laplacian, "rgb2gray_conv2d", &err));
   // TODO: Removed CL_MEM_SVM_FINE_GRAIN_BUFFER, confirm it doesn't matter
@@ -350,7 +350,7 @@ static void set_exposure(CameraState *s, float exposure_frac, float gain_frac) {
     gain_frac = std::clamp(gain_frac, 1.0f/64, 1.0f);
 
     // linearize gain response
-    // TODO: will be wrong for front camera
+    // TODO: will be wrong for driver camera
     // 0.125 -> 448
     // 0.25  -> 480
     // 0.5   -> 496
@@ -523,7 +523,7 @@ static void sensors_init(MultiCameraState *s) {
   }
   assert(sensorinit_fd >= 0);
 
-  // init rear sensor
+  // init road camera sensor
 
   struct msm_camera_sensor_slave_info slave_info = {0};
   if (s->device == DEVICE_LP3) {
@@ -610,7 +610,7 @@ static void sensors_init(MultiCameraState *s) {
     (struct msm_sensor_power_setting *)&slave_info.power_setting_array.power_down_setting_a[0];
   sensor_init_cfg_data sensor_init_cfg = {.cfgtype = CFG_SINIT_PROBE, .cfg.setting = &slave_info};
   err = ioctl(sensorinit_fd, VIDIOC_MSM_SENSOR_INIT_CFG, &sensor_init_cfg);
-  LOG("sensor init cfg (rear): %d", err);
+  LOG("sensor init cfg (road camera): %d", err);
   assert(err >= 0);
 
   struct msm_camera_sensor_slave_info slave_info2 = {0};
@@ -649,8 +649,8 @@ static void sensors_init(MultiCameraState *s) {
       .sensor_init_params = {.modes_supported = 1, .position = FRONT_CAMERA_B, .sensor_mount_angle = 270},
       .output_format = MSM_SENSOR_BAYER,
     };
-  } else if (s->front.camera_id == CAMERA_ID_S5K3P8SP) {
-    // init front camera
+  } else if (s->driver_cam.camera_id == CAMERA_ID_S5K3P8SP) {
+    // init driver camera
     slave_info2 = (struct msm_camera_sensor_slave_info){
       .sensor_name = "s5k3p8sp",
       .eeprom_name = "s5k3p8sp_m24c64s",
@@ -685,7 +685,7 @@ static void sensors_init(MultiCameraState *s) {
       .output_format = MSM_SENSOR_BAYER,
     };
   } else {
-    // init front camera
+    // init driver camera
     slave_info2 = (struct msm_camera_sensor_slave_info){
       .sensor_name = "imx179",
       .eeprom_name = "sony_imx179",
@@ -726,11 +726,11 @@ static void sensors_init(MultiCameraState *s) {
   sensor_init_cfg.cfgtype = CFG_SINIT_PROBE;
   sensor_init_cfg.cfg.setting = &slave_info2;
   err = ioctl(sensorinit_fd, VIDIOC_MSM_SENSOR_INIT_CFG, &sensor_init_cfg);
-  LOG("sensor init cfg (front): %d", err);
+  LOG("sensor init cfg (driver): %d", err);
   assert(err >= 0);
 }
 
-static void camera_open(CameraState *s, bool rear) {
+static void camera_open(CameraState *s, bool is_road_cam) {
   int err;
 
   struct csid_cfg_data csid_cfg_data = {};
@@ -741,7 +741,7 @@ static void camera_open(CameraState *s, bool rear) {
 
   // open devices
   const char *sensor_dev;
-  if (rear) {
+  if (is_road_cam) {
     s->csid_fd = open("/dev/v4l-subdev3", O_RDWR | O_NONBLOCK);
     assert(s->csid_fd >= 0);
     s->csiphy_fd = open("/dev/v4l-subdev0", O_RDWR | O_NONBLOCK);
@@ -816,7 +816,7 @@ static void camera_open(CameraState *s, bool rear) {
   err = ioctl(s->sensor_fd, VIDIOC_MSM_SENSOR_CFG, &sensorb_cfg_data);
   LOG("sensor power down: %d", err);
 
-  if (rear && s->device != DEVICE_LP3) {
+  if (is_road_cam && s->device != DEVICE_LP3) {
     // ois powerdown
     ois_cfg_data.cfgtype = CFG_OIS_POWERDOWN;
     err = ioctl(s->ois_fd, VIDIOC_MSM_OIS_CFG, &ois_cfg_data);
@@ -905,7 +905,7 @@ static void camera_open(CameraState *s, bool rear) {
   }
   LOG("sensor init i2c: %d", err);
 
-  if (rear) {
+  if (is_road_cam) {
     // init the actuator
     actuator_cfg_data.cfgtype = CFG_ACTUATOR_POWERUP;
     err = ioctl(s->actuator_fd, VIDIOC_MSM_ACTUATOR_CFG, &actuator_cfg_data);
@@ -1082,8 +1082,8 @@ static void camera_open(CameraState *s, bool rear) {
   struct msm_camera_csid_params csid_params = {
     .lane_cnt = 4,
     .lane_assign = 0x4320,
-    .phy_sel = (uint8_t)(rear ? 0 : 2),
-    .lut_params.num_cid = (uint8_t)(rear ? 3 : 1),
+    .phy_sel = (uint8_t)(is_road_cam ? 0 : 2),
+    .lut_params.num_cid = (uint8_t)(is_road_cam ? 3 : 1),
     .lut_params.vc_cfg_a = {
       {.cid = 0, .dt = CSI_RAW10, .decode_format = CSI_DECODE_10BIT},
       {.cid = 1, .dt = CSI_PD, .decode_format = CSI_DECODE_10BIT},
@@ -1109,7 +1109,7 @@ static void camera_open(CameraState *s, bool rear) {
 
   // configure QMET input
   struct msm_vfe_input_cfg input_cfg = {};
-  for (int i = 0; i < (rear ? 3 : 1); i++) {
+  for (int i = 0; i < (is_road_cam ? 3 : 1); i++) {
     StreamState *ss = &s->ss[i];
 
     memset(&input_cfg, 0, sizeof(struct msm_vfe_input_cfg));
@@ -1122,7 +1122,7 @@ static void camera_open(CameraState *s, bool rear) {
 
     // ISP: REQUEST_STREAM
     ss->stream_req.axi_stream_handle = 0;
-    if (rear) {
+    if (is_road_cam) {
       ss->stream_req.session_id = 2;
       ss->stream_req.stream_id = /*ISP_META_CHANNEL_BIT | */ISP_NATIVE_BUF_BIT | (1+i);
     } else {
@@ -1138,7 +1138,7 @@ static void camera_open(CameraState *s, bool rear) {
     ss->stream_req.stream_src = (msm_vfe_axi_stream_src)(RDI_INTF_0+i);
 
 #ifdef HIGH_FPS
-    if (rear) {
+    if (is_road_cam) {
       ss->stream_req.frame_skip_pattern = EVERY_3FRAME;
     }
 #endif
@@ -1196,7 +1196,7 @@ static void camera_open(CameraState *s, bool rear) {
 
   // ISP: START_STREAM
   s->stream_cfg.cmd = START_STREAM;
-  s->stream_cfg.num_streams = rear ? 3 : 1;
+  s->stream_cfg.num_streams = is_road_cam ? 3 : 1;
   for (int i = 0; i < s->stream_cfg.num_streams; i++) {
     s->stream_cfg.stream_handle[i] = s->ss[i].stream_req.axi_stream_handle;
   }
@@ -1211,7 +1211,7 @@ static struct damping_params_t actuator_ringing_params = {
   .hw_params = 0x0000e422,
 };
 
-static void rear_start(CameraState *s) {
+static void road_camera_start(CameraState *s) {
   struct msm_actuator_cfg_data actuator_cfg_data = {0};
 
   set_exposure(s, 1.0, 1.0);
@@ -1398,19 +1398,19 @@ static void do_autofocus(CameraState *s, SubMaster *sm) {
 
 void camera_autoexposure(CameraState *s, float grey_frac) {
   if (s->camera_num == 0) {
-    CameraExpInfo tmp = rear_exp.load();
+    CameraExpInfo tmp = road_cam_exp.load();
     tmp.op_id++;
     tmp.grey_frac = grey_frac;
-    rear_exp.store(tmp);
+    road_cam_exp.store(tmp);
   } else {
-    CameraExpInfo tmp = front_exp.load();
+    CameraExpInfo tmp = driver_cam_exp.load();
     tmp.op_id++;
     tmp.grey_frac = grey_frac;
-    front_exp.store(tmp);
+    driver_cam_exp.store(tmp);
   }
 }
 
-static void front_start(CameraState *s) {
+static void driver_camera_start(CameraState *s) {
   set_exposure(s, 1.0, 1.0);
   int err = sensor_write_regs(s, start_reg_array, ARRAYSIZE(start_reg_array), MSM_CAMERA_I2C_BYTE_DATA);
   LOG("sensor start regs: %d", err);
@@ -1420,13 +1420,13 @@ void cameras_open(MultiCameraState *s) {
   struct msm_ispif_param_data ispif_params = {
     .num = 4,
     .entries = {
-      // rear camera
+      // road camera
       {.vfe_intf = VFE0, .intftype = RDI0, .num_cids = 1, .cids[0] = CID0, .csid = CSID0},
-      // front camera
+      // driver camera
       {.vfe_intf = VFE1, .intftype = RDI0, .num_cids = 1, .cids[0] = CID0, .csid = CSID2},
-      // rear camera (focus)
+      // road camera (focus)
       {.vfe_intf = VFE0, .intftype = RDI1, .num_cids = CID1, .cids[0] = CID1, .csid = CSID0},
-      // rear camera (stats, for AE)
+      // road camera (stats, for AE)
       {.vfe_intf = VFE0, .intftype = RDI2, .num_cids = 1, .cids[0] = CID2, .csid = CSID0},
     },
   };
@@ -1452,15 +1452,15 @@ void cameras_open(MultiCameraState *s) {
   // err = ioctl(s->ispif_fd, VIDIOC_MSM_ISPIF_CFG, &ispif_cfg_data);
   // LOG("ispif stop: %d", err);
 
-  LOG("*** open front ***");
-  s->front.ss[0].bufs = s->front.buf.camera_bufs.get();
-  camera_open(&s->front, false);
+  LOG("*** open driver camera ***");
+  s->driver_cam.ss[0].bufs = s->driver_cam.buf.camera_bufs.get();
+  camera_open(&s->driver_cam, false);
 
-  LOG("*** open rear ***");
-  s->rear.ss[0].bufs = s->rear.buf.camera_bufs.get();
-  s->rear.ss[1].bufs = s->focus_bufs;
-  s->rear.ss[2].bufs = s->stats_bufs;
-  camera_open(&s->rear, true);
+  LOG("*** open road camera ***");
+  s->road_cam.ss[0].bufs = s->road_cam.buf.camera_bufs.get();
+  s->road_cam.ss[1].bufs = s->focus_bufs;
+  s->road_cam.ss[2].bufs = s->stats_bufs;
+  camera_open(&s->road_cam, true);
 
   if (getenv("CAMERA_TEST")) {
     cameras_close(s);
@@ -1485,8 +1485,8 @@ void cameras_open(MultiCameraState *s) {
   err = ioctl(s->ispif_fd, VIDIOC_MSM_ISPIF_CFG, &ispif_cfg_data);
   LOG("ispif start_frame_boundary: %d", err);
 
-  front_start(&s->front);
-  rear_start(&s->rear);
+  driver_camera_start(&s->driver_cam);
+  road_camera_start(&s->road_cam);
 }
 
 
@@ -1558,26 +1558,26 @@ static FrameMetadata get_frame_metadata(CameraState *s, uint32_t frame_id) {
 }
 
 static void ops_thread(MultiCameraState *s) {
-  int rear_op_id_last = 0;
-  int front_op_id_last = 0;
+  int last_road_cam_op_id = 0;
+  int last_driver_cam_op_id = 0;
 
-  CameraExpInfo rear_op;
-  CameraExpInfo front_op;
+  CameraExpInfo road_cam_op;
+  CameraExpInfo driver_cam_op;
 
   set_thread_name("camera_settings");
   SubMaster sm({"sensorEvents"});
   while(!do_exit) {
-    rear_op = rear_exp.load();
-    if (rear_op.op_id != rear_op_id_last) {
-      do_autoexposure(&s->rear, rear_op.grey_frac);
-      do_autofocus(&s->rear, &sm);
-      rear_op_id_last = rear_op.op_id;
+    road_cam_op = road_cam_exp.load();
+    if (road_cam_op.op_id != last_road_cam_op_id) {
+      do_autoexposure(&s->road_cam, road_cam_op.grey_frac);
+      do_autofocus(&s->road_cam, &sm);
+      last_road_cam_op_id = road_cam_op.op_id;
     }
 
-    front_op = front_exp.load();
-    if (front_op.op_id != front_op_id_last) {
-      do_autoexposure(&s->front, front_op.grey_frac);
-      front_op_id_last = front_op.op_id;
+    driver_cam_op = driver_cam_exp.load();
+    if (driver_cam_op.op_id != last_driver_cam_op_id) {
+      do_autoexposure(&s->driver_cam, driver_cam_op.grey_frac);
+      last_driver_cam_op_id = driver_cam_op.op_id;
     }
 
     util::sleep_for(50);
@@ -1629,7 +1629,7 @@ static void setup_self_recover(CameraState *c, const uint16_t *lapres, size_t la
   if (self_recover < 2 && (lens_true_pos < (dac_down + 1) || lens_true_pos > (dac_up - 1)) && is_blur(lapres, lapres_size)) {
     // truly stuck, needs help
     if (--self_recover < -FOCUS_RECOVER_PATIENCE) {
-      LOGD("rear camera bad state detected. attempting recovery from %.1f, recover state is %d", lens_true_pos, self_recover);
+      LOGD("road camera bad state detected. attempting recovery from %.1f, recover state is %d", lens_true_pos, self_recover);
       // parity determined by which end is stuck at
       self_recover = FOCUS_RECOVER_STEPS + (lens_true_pos < dac_m ? 1 : 0);
     }
@@ -1644,12 +1644,12 @@ static void setup_self_recover(CameraState *c, const uint16_t *lapres, size_t la
   c->self_recover.store(self_recover);
 }
 
-void camera_process_front(MultiCameraState *s, CameraState *c, int cnt) {
-  common_camera_process_front(s->sm_front, s->pm, c, cnt);
+void process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) {
+  common_process_driver_camera(s->sm, s->pm, c, cnt);
 }
 
 // called by processing_thread
-void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
+void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
   const CameraBuf *b = &c->buf;
   update_lapmap(s, b, cnt);
   setup_self_recover(c, &s->lapres[0], std::size(s->lapres));
@@ -1657,12 +1657,12 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
   MessageBuilder msg;
   auto framed = msg.initEvent().initRoadCameraState();
   fill_frame_data(framed, b->cur_frame_data);
-  if (env_send_rear) {
+  if (env_send_road) {
     framed.setImage(get_frame_image(b));
   }
-  framed.setFocusVal(s->rear.focus);
-  framed.setFocusConf(s->rear.confidence);
-  framed.setRecoverState(s->rear.self_recover);
+  framed.setFocusVal(s->road_cam.focus);
+  framed.setFocusConf(s->road_cam.confidence);
+  framed.setRecoverState(s->road_cam.self_recover);
   framed.setSharpnessScore(s->lapres);
   framed.setTransform(b->yuv_transform.v);
   s->pm->send("roadCameraState", msg);
@@ -1677,10 +1677,10 @@ void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
 void cameras_run(MultiCameraState *s) {
   std::vector<std::thread> threads;
   threads.push_back(std::thread(ops_thread, s));
-  threads.push_back(start_process_thread(s, "processing", &s->rear, camera_process_frame));
-  threads.push_back(start_process_thread(s, "frontview", &s->front, camera_process_front));
+  threads.push_back(start_process_thread(s, &s->road_cam, process_road_camera));
+  threads.push_back(start_process_thread(s, &s->driver_cam, process_driver_camera));
 
-  CameraState* cameras[2] = {&s->rear, &s->front};
+  CameraState* cameras[2] = {&s->road_cam, &s->driver_cam};
 
   while (!do_exit) {
     struct pollfd fds[2] = {{.fd = cameras[0]->isp_fd, .events = POLLPRI},
@@ -1749,8 +1749,8 @@ void cameras_run(MultiCameraState *s) {
 }
 
 void cameras_close(MultiCameraState *s) {
-  camera_close(&s->rear);
-  camera_close(&s->front);
+  camera_close(&s->road_cam);
+  camera_close(&s->driver_cam);
   for (int i = 0; i < FRAME_BUF_COUNT; i++) {
     s->focus_bufs[i].free();
     s->stats_bufs[i].free();
@@ -1761,6 +1761,6 @@ void cameras_close(MultiCameraState *s) {
 
   CL_CHECK(clReleaseKernel(s->krnl_rgb_laplacian));
   CL_CHECK(clReleaseProgram(s->prg_rgb_laplacian));
-  delete s->sm_front;
+  delete s->sm;
   delete s->pm;
 }

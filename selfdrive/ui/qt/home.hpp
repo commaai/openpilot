@@ -84,6 +84,7 @@ public:
   GLWindow* glWindow;
 
 signals:
+  void offroadTransition(bool offroad);
   void openSettings();
   void closeSettings();
 

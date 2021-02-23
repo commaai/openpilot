@@ -1,8 +1,8 @@
 ---
-name: Bug report
-about: For issues with running openpilot on your comma device
+name: Car bug report
+about: For issues with a particular car or make
 title: ''
-labels: 'bug'
+labels: 'car bug'
 assignees: ''
 ---
 
