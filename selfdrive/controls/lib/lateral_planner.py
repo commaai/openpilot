@@ -185,14 +185,15 @@ class LateralPlanner():
 
     # TODO this needs more thought, use .2s extra for now to estimate other delays
     delay = CP.steerActuatorDelay + .2
-    next_curvature = interp(delay, self.t_idxs[:MPC_N+1], self.mpc_solution.curvature)
+    current_curvature = self.mpc_solution.curvature[0]
     psi = interp(delay, self.t_idxs[:MPC_N+1], self.mpc_solution.psi)
     next_curvature_rate = self.mpc_solution.curvature_rate[0]
-    next_curvature_from_psi = psi/(max(v_ego, 1e-1) * delay)
-    if psi > self.mpc_solution.curvature[0] * delay * v_ego:
-      next_curvature = max(next_curvature_from_psi, next_curvature)
-    else:
-      next_curvature = min(next_curvature_from_psi, next_curvature)
+
+    # MPC can plan to turn the wheel and turn back before t_delay. This means
+    # in high delay cases some corrections never even get commanded. So just use
+    # psi to calculate a simple linearization of desired curvature
+    curvature_diff_from_psi = psi/(max(v_ego, 1e-1) * delay) - current_curvature
+    next_curvature = current_curvature + 2*curvature_diff_from_psi
 
     # reset to current steer angle if not active or overriding
     if active:
