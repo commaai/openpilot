@@ -57,14 +57,14 @@ class TestPandaFlashing(unittest.TestCase):
 
     self.wait_for(PandaDFU, self.dfu_serial)
 
-  def check_panda_running(self, expected_signature=None):
+  def check_panda_running(self, expected_changed_signature=None):
     self.wait_for(Panda, self.serial)
 
     panda = Panda(self.serial)
     self.assertFalse(panda.bootstub, msg="Panda shouldn't be in bootstub")
-
-    # TODO: check signature
-    # self.assertNotEqual(panda.get_signature(), comma_sig)
+    if expected_changed_signature is not None:
+      self.assertNotEqual(panda.get_signature(), expected_changed_signature, msg="Expected the signature to change")
+    
     panda.close()
 
   def flash_release_bootloader_and_fw(self):
@@ -130,10 +130,9 @@ class TestPandaFlashing(unittest.TestCase):
 
   def test_dev_firmware(self):
     print("Testing dev_firmware")
+    comma_sig = Panda(self.serial).get_signature()
     self.run_flasher()
-
-    # TODO: check for development signature
-    self.check_panda_running()
+    self.check_panda_running(comma_sig)
 
   def test_signed_firmware(self):
     print("Testing signed_firmware")
@@ -142,7 +141,6 @@ class TestPandaFlashing(unittest.TestCase):
 
     self.run_flasher()
 
-    # TODO: check for signed signature
     self.check_panda_running()
 
 
