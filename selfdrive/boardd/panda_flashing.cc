@@ -145,10 +145,8 @@ std::string DynamicPanda::get_signature() {
 }
 
 void DynamicPanda::flash(std::string fw_fn) {
-  LOGD("Firmware string: ");
-  LOGD(fw_fn.c_str());
-  LOGD("flash: main version:");
-  LOGD(get_version().c_str());
+  LOGD(("Firmware string: " + fw_fn).c_str());
+  LOGD(("flash: main version:" + get_version()).c_str());
   if (!bootstub) {
     reset(true, false);
   }
@@ -274,9 +272,7 @@ bool update_panda(std::string serial) {
   DynamicPanda tempPanda(serial, dfu_serial);
 
   std::string panda_signature = tempPanda.bootstub ? "": tempPanda.get_signature();
-  LOGD("fw_sig::panda_sig");
-  LOGD(fw_signature.c_str());
-  LOGD(panda_signature.c_str());
+  LOGD(("fw_sig::panda_sig \n" + fw_signature + "\n" + panda_signature).c_str());
 
   if (tempPanda.bootstub || panda_signature != fw_signature) {
     LOGW("Panda firmware out of date, update required");
@@ -286,8 +282,7 @@ bool update_panda(std::string serial) {
 
   if (tempPanda.bootstub) {
     std::string bootstub_version = tempPanda.get_version();
-    LOGW("Flashed firmware not booting, flashing development bootloader. Bootstub verstion: ");
-    LOGW(bootstub_version.c_str());
+    LOGW(("Flashed firmware not booting, flashing development bootloader. Bootstub verstion: " + bootstub_version).c_str());
     tempPanda.recover();
     LOGD("Done flashing dev bootloader and firmware");
   }
