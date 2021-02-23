@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 from panda.python import serial
-from panda import Panda, PandaDFU, build_st
 import unittest
 import time
 import os
@@ -9,17 +8,17 @@ import zipfile
 from io import BytesIO
 import subprocess
 
-from panda import BASEDIR as PANDA_BASEDIR
+from panda import Panda, PandaDFU, build_st, BASEDIR
 
-SIGNED_FW_FN = os.path.join(os.path.abspath(PANDA_BASEDIR), "board", "obj", "panda.bin.signed")
-DEV_FW_FN = os.path.join(os.path.abspath(PANDA_BASEDIR), "board", "obj", "panda.bin")
+SIGNED_FW_FN = os.path.join(os.path.abspath(BASEDIR), "board", "obj", "panda.bin.signed")
+DEV_FW_FN = os.path.join(os.path.abspath(BASEDIR), "board", "obj", "panda.bin")
 SIGNED_FIRMWARE_URL = "https://github.com/commaai/openpilot/blob/release2/panda/board/obj/panda.bin.signed?raw=true"
 
 
 def build_dev_fw():
   fn = "obj/panda.bin"
   build_st(fn, clean=False)
-  return os.path.abspath(os.path.join(PANDA_BASEDIR, "board", fn))
+  return os.path.abspath(os.path.join(BASEDIR, "board", fn))
 
 
 def get_expected_signature(fn):
@@ -32,6 +31,9 @@ def get_expected_signature(fn):
 def download_file(url):
   r = requests.get(url, allow_redirects=True)
   return r.content
+
+
+fp = BytesIO(download_file("https://github.com/commaai/panda-artifacts/blob/master/panda-v1.7.3-DEV-d034f3e9-RELEASE.zip?raw=true"))
 
 
 @unittest.skipIf(len(Panda.list()) + len(PandaDFU.list()) == 0, "No panda found")
@@ -71,8 +73,6 @@ class TestPandaFlashing(unittest.TestCase):
 
   def flash_release_bootloader_and_fw(self):
     self.ensure_dfu()
-
-    fp = BytesIO(download_file("https://github.com/commaai/panda-artifacts/blob/master/panda-v1.7.3-DEV-d034f3e9-RELEASE.zip?raw=true"))
 
     with zipfile.ZipFile(fp) as zip_file:
       bootstub_code = zip_file.open('bootstub.panda.bin').read()

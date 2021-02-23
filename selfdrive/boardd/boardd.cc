@@ -509,7 +509,12 @@ void pigeon_thread() {
   delete pigeon;
 }
 
-int main() {
+int main(int argc, char* argv[]) {
+  std::string serial = "";
+  if (argc >= 1){
+    serial = std::string(argv[1]);
+  }
+
   int err;
   LOGW("starting boardd");
 
@@ -520,8 +525,8 @@ int main() {
   LOG("set affinity returns %d", err);
 
   panda_set_power(true);
-  update_panda();
   while (!do_exit){
+    update_panda(serial);
     std::vector<std::thread> threads;
     threads.push_back(std::thread(panda_state_thread, getenv("STARTED") != nullptr));
 
