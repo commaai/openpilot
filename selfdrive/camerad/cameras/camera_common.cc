@@ -25,6 +25,8 @@
 #include "modeldata.h"
 #include "imgproc/utils.h"
 
+extern ExitHandler do_exit;
+
 static cl_program build_debayer_program(cl_device_id device_id, cl_context context, const CameraInfo *ci, const CameraBuf *b, const CameraState *s) {
   char args[4096];
   snprintf(args, sizeof(args),
@@ -314,8 +316,6 @@ float set_exposure_target(const CameraBuf *b, int x_start, int x_end, int x_skip
 
   return lum_med / 256.0;
 }
-
-extern ExitHandler do_exit;
 
 void processing_thread(MultiCameraState *cameras, CameraState *cs, process_thread_cb callback) {
   const char *thread_name = nullptr;
