@@ -23,9 +23,13 @@ def load_segment(segment_name):
     print(f"Error parsing {segment_name}: {e}")
     return []
 
-def juggle_file(fn):
+def juggle_file(fn, dbc=None):
   env = os.environ.copy()
   env["BASEDIR"] = BASEDIR
+
+  if dbc:
+    env["DBC_NAME"] = dbc
+
   juggle_dir = os.path.dirname(os.path.realpath(__file__))
   subprocess.call(f"bin/plotjuggler -d {fn}", shell=True, env=env, cwd=juggle_dir)
 
@@ -51,11 +55,25 @@ def juggle_route(route_name, segment_number, qlog):
   for d in pool.map(load_segment, logs):
     all_data += d
 
+  # Infer DBC name from logs
+  dbc = None
+  car_params = [m for m in all_data if m.which() == 'carParams']
+  if len(car_params):
+    brand_name = car_params[0].carParams.carName
+    name = car_params[0].carParams.carFingerprint
+
+    path = ('selfdrive.car.%s' % brand_name)
+    try:
+      DBC = __import__(path + '.values', fromlist=['DBC']).DBC
+      dbc = DBC[name]['pt']
+    except (ImportError, KeyError):
+      pass
+
   tempfile = NamedTemporaryFile(suffix='.rlog')
   save_log(tempfile.name, all_data, compress=False)
   del all_data
 
-  juggle_file(tempfile.name)
+  juggle_file(tempfile.name, dbc)
 
 def get_arg_parser():
   parser = argparse.ArgumentParser(description="PlotJuggler plugin for reading rlogs",
