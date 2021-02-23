@@ -6,7 +6,7 @@
 
 std::string get_firmware_fn();
 // Ensures panda is running firmware or throws an exception if it fails
-void update_panda(std::string serial="");
+bool update_panda(std::string serial="");
 void build_st(std::string target, bool clean=true, bool output=false);
 
 // DynamicPanda class is used while setting up the "real" panda; aka the Panda that is running the firmware
@@ -16,7 +16,7 @@ private:
   PandaComm* c;
   void cleanup();
   bool connect();
-  void reconnect();
+  bool reconnect();
   std::string serial;
   std::string dfu_serial;
 public:

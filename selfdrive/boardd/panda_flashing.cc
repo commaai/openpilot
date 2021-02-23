@@ -189,11 +189,11 @@ void DynamicPanda::flash(std::string fw_fn) {
   reconnect();
 }
 
-void DynamicPanda::reconnect() {
+bool DynamicPanda::reconnect() {
   util::sleep_for(1000);
   for (int i = 0 ; i < 15 ; i++) {
     if (connect()) {
-      return;
+      return true;
     } else {
       LOGD("reconnecting, trying for DFU panda");
       try {
@@ -204,7 +204,7 @@ void DynamicPanda::reconnect() {
     }
     util::sleep_for(1000);
   }
-  throw std::runtime_error("Reconnecting timed out");
+  return false;
 }
 
 void DynamicPanda::reset(bool enter_bootstub, bool enter_bootloader) {
@@ -261,7 +261,7 @@ void get_out_of_dfu(std::string dfu_serial) {
   }
 }
 
-void update_panda(std::string serial) {
+bool update_panda(std::string serial) {
   LOGD("updating panda");
   LOGD("\n1: Move out of DFU\n");
   std::string dfu_serial = dfu_serial_from_serial(serial);
@@ -294,14 +294,14 @@ void update_panda(std::string serial) {
 
   if (tempPanda.bootstub) {
     LOGW("Panda still not booting, exiting");
-    throw std::runtime_error("PANDA NOT BOOTING");
+    return false;
   }
 
   panda_signature = tempPanda.get_signature();
   if (panda_signature != fw_signature) {
     LOGW("Version mismatch after flashing, exiting");
-    throw std::runtime_error("FIRMWARE VERSION MISMATCH");
+    return false;
   }
-
+  return true;
 }
 
