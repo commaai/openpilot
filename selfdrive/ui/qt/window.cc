@@ -15,6 +15,7 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   main_layout->setMargin(0);
   setLayout(main_layout);
   QObject::connect(homeWindow, SIGNAL(openSettings()), this, SLOT(openSettings()));
+  QObject::connect(homeWindow, SIGNAL(closeSettings()), this, SLOT(closeSettings()));
   QObject::connect(homeWindow, SIGNAL(offroadTransition(bool)), this, SLOT(offroadTransition(bool)));
   QObject::connect(settingsWindow, SIGNAL(closeSettings()), this, SLOT(closeSettings()));
 
