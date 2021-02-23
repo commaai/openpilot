@@ -215,7 +215,6 @@ void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_i
               VISION_STREAM_RGB_FRONT, VISION_STREAM_YUV_FRONT);
 
   s->sm = new SubMaster({"driverState"});
-  s->pm = new PubMaster({"roadCameraState", "driverCameraState", "thumbnail"});
 
   for (int i = 0; i < FRAME_BUF_COUNT; i++) {
     // TODO: make lengths correct
@@ -1119,8 +1118,8 @@ static void setup_self_recover(CameraState *c, const uint16_t *lapres, size_t la
   c->self_recover.store(self_recover);
 }
 
-void process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) {
-  common_process_driver_camera(s->sm, s->pm, c, cnt);
+void process_driver_camera(MultiCameraState *s, CameraState *c, cereal::FrameData::Builder& framd, int cnt) {
+  common_process_driver_camera(s->sm, c, cnt);
 }
 
 // called by processing_thread
@@ -1225,5 +1224,4 @@ void cameras_close(MultiCameraState *s) {
 
   delete s->lap_conv;
   delete s->sm;
-  delete s->pm;
 }

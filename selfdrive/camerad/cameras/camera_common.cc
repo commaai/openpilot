@@ -318,6 +318,8 @@ float set_exposure_target(const CameraBuf *b, int x_start, int x_end, int x_skip
 }
 
 static void processing_thread(MultiCameraState *cameras, CameraState *cs, process_thread_cb callback) {
+  static PubMaster pm({"roadCameraState", "driverCameraState", "wideRoadCameraState", "thumbnail"});
+
   const char *pub_name = nullptr;
   bool framed_set_image = false, framed_set_transform = false;
   bool pub_thumbnail = false;
@@ -345,23 +347,25 @@ static void processing_thread(MultiCameraState *cameras, CameraState *cs, proces
   while (!do_exit) {
     if (!cs->buf.acquire()) continue;
 
-    MessageBuilder msg;
-    cereal::FrameData::Builder framed = (msg.initEvent().*init_cam_state_func)();
-    fill_frame_data(framed, cs->buf.cur_frame_data);
-    if (framed_set_image) {
-      framed.setImage(get_frame_image(&cs->buf));
-    }
-    if (framed_set_transform) {
-      framed.setTransform(cs->buf.yuv_transform.v);
-    }
-    if (callback != nullptr) {
-      callback(cameras, cs, framed, cnt);
-    }
-    cameras->pm->send(pub_name, msg);
+    if (callback) { // camera_frame_stream has no callbak 
+      MessageBuilder msg;
+      cereal::FrameData::Builder framed = (msg.initEvent().*init_cam_state_func)();
+      fill_frame_data(framed, cs->buf.cur_frame_data);
+      if (framed_set_image) {
+        framed.setImage(get_frame_image(&cs->buf));
+      }
+      if (framed_set_transform) {
+        framed.setTransform(cs->buf.yuv_transform.v);
+      }
 
-    if (pub_thumbnail && cnt % 100 == 3) {
-      // this takes 10ms???
-      publish_thumbnail(cameras->pm, &(cs->buf));
+      callback(cameras, cs, framed, cnt);
+
+      pm.send(pub_name, msg);
+
+      if (pub_thumbnail && cnt % 100 == 3) {
+        // this takes 10ms???
+        publish_thumbnail(&pm, &(cs->buf));
+      }
     }
 
     cs->buf.release();
@@ -373,7 +377,7 @@ std::thread start_process_thread(MultiCameraState *cameras, CameraState *cs, pro
   return std::thread(processing_thread, cameras, cs, callback);
 }
 
-void common_process_driver_camera(SubMaster *sm, PubMaster *pm, CameraState *c, int cnt) {
+void common_process_driver_camera(SubMaster *sm, CameraState *c, int cnt) {
   const CameraBuf *b = &c->buf;
 
   static int x_min = 0, x_max = 0, y_min = 0, y_max = 0;

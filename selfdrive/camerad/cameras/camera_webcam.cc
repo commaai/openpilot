@@ -227,7 +227,6 @@ void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_i
               VISION_STREAM_RGB_BACK, VISION_STREAM_YUV_BACK);
   camera_init(v, &s->driver_cam, CAMERA_ID_LGC615, 10, device_id, ctx,
               VISION_STREAM_RGB_FRONT, VISION_STREAM_YUV_FRONT);
-  s->pm = new PubMaster({"roadCameraState", "driverCameraState", "thumbnail"});
 }
 
 void camera_autoexposure(CameraState *s, float grey_frac) {}
@@ -243,7 +242,6 @@ void cameras_open(MultiCameraState *s) {
 void cameras_close(MultiCameraState *s) {
   camera_close(&s->road_cam);
   camera_close(&s->driver_cam);
-  delete s->pm;
 }
 
 void cameras_run(MultiCameraState *s) {

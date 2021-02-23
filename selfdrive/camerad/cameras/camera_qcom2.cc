@@ -799,7 +799,6 @@ void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_i
   printf("driver camera initted \n");
 
   s->sm = new SubMaster({"driverState"});
-  s->pm = new PubMaster({"roadCameraState", "driverCameraState", "wideRoadCameraState", "thumbnail"});
 }
 
 void cameras_open(MultiCameraState *s) {
@@ -904,7 +903,6 @@ void cameras_close(MultiCameraState *s) {
   camera_close(&s->driver_cam);
 
   delete s->sm;
-  delete s->pm;
 }
 
 // ******************* just a helper *******************
@@ -1093,7 +1091,7 @@ static void ae_thread(MultiCameraState *s) {
 }
 
 void process_driver_camera(MultiCameraState *s, CameraState *c, cereal::FrameData::Builder& framed, int cnt) {
-  common_process_driver_camera(s->sm, s->pm, c, cnt);
+  common_process_driver_camera(s->sm, c, cnt);
 }
 
 // called by processing_thread
