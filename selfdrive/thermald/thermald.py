@@ -388,7 +388,7 @@ def thermald_thread():
     # If UI has crashed, set the brightness to reasonable non-zero value
     manager_state = messaging.recv_one_or_none(managerState_sock)
     if manager_state is not None:
-      ui_running = "ui" in (p.name for p in manager_state.managerState.processes if not p.running)
+      ui_running = "ui" in (p.name for p in manager_state.managerState.processes if p.running)
       if ui_running_prev and not ui_running:
         HARDWARE.set_screen_brightness(20)
       ui_running_prev = ui_running
