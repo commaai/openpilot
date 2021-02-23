@@ -121,6 +121,7 @@ public:
 };
 
 typedef void (*process_thread_cb)(MultiCameraState *s, CameraState *c, cereal::FrameData::Builder &framed, int cnt);
+std::thread start_process_thread(MultiCameraState *cameras, CameraState *cs, process_thread_cb callback);
 
 void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &frame_data);
 kj::Array<uint8_t> get_frame_image(const CameraBuf *b);
