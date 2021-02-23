@@ -93,8 +93,6 @@ selfdrive/boardd/panda.cc
 selfdrive/boardd/panda.h
 selfdrive/boardd/pandaDFU.cc
 selfdrive/boardd/pandaDFU.hpp
-selfdrive/boardd/pandaBootLoader.cc
-selfdrive/boardd/pandaBootLoader.hpp
 selfdrive/boardd/panda_flashing.cc
 selfdrive/boardd/panda_flashing.hpp
 
