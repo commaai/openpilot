@@ -27,8 +27,8 @@
 #include "messaging.hpp"
 
 #include "panda.h"
-#include "pandaDFU.hpp"
-#include "panda_flashing.hpp"
+#include "panda_dfu.h"
+#include "panda_flashing.h"
 #include "pigeon.h"
 
 #define NIBBLE_TO_HEX(n) ((n) < 10 ? (n) + '0' : ((n) - 10) + 'A')

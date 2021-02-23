@@ -10,8 +10,8 @@
 #include "common/util.h"
 #include "messaging.hpp"
 #include "panda.h"
-#include "pandaDFU.hpp"
-#include "panda_flashing.hpp"
+#include "panda_dfu.h"
+#include "panda_flashing.h"
 
 void panda_set_power(bool power) {
 #ifdef QCOM2

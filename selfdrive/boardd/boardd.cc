@@ -27,7 +27,7 @@
 #include "messaging.hpp"
 
 #include "panda.h"
-#include "panda_flashing.hpp"
+#include "panda_flashing.h"
 #include "pigeon.h"
 
 

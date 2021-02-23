@@ -1,4 +1,4 @@
-#include "panda_flashing.hpp"
+#include "panda_flashing.h"
 #include <iostream>
 #include <algorithm>
 

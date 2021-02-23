@@ -1,7 +1,7 @@
 #include <string>
 
 #include "panda.h"
-#include "panda_flashing.hpp"
+#include "panda_flashing.h"
 
 class PandaDFU : public PandaComm{
 private:

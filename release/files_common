@@ -91,10 +91,10 @@ selfdrive/boardd/boardd_api_impl.pyx
 selfdrive/boardd/can_list_to_can_capnp.cc
 selfdrive/boardd/panda.cc
 selfdrive/boardd/panda.h
-selfdrive/boardd/pandaDFU.cc
-selfdrive/boardd/pandaDFU.hpp
+selfdrive/boardd/panda_dfu.cc
+selfdrive/boardd/panda_dfu.h
 selfdrive/boardd/panda_flashing.cc
-selfdrive/boardd/panda_flashing.hpp
+selfdrive/boardd/panda_flashing.h
 
 selfdrive/boardd/pigeon.cc
 selfdrive/boardd/pigeon.h

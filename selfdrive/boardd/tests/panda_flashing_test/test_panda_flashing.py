@@ -32,9 +32,6 @@ def download_file(url):
   r = requests.get(url, allow_redirects=True)
   return r.content
 
-
-fp = None
-
 @unittest.skipIf(len(Panda.list()) + len(PandaDFU.list()) == 0, "No panda found")
 class TestPandaFlashing(unittest.TestCase):
   def wait_for(self, cls, serial):
@@ -73,7 +70,7 @@ class TestPandaFlashing(unittest.TestCase):
   def flash_release_bootloader_and_fw(self):
     self.ensure_dfu()
 
-    with zipfile.ZipFile(fp) as zip_file:
+    with zipfile.ZipFile(self.fp) as zip_file:
       bootstub_code = zip_file.open('bootstub.panda.bin').read()
       PandaDFU(self.dfu_serial).program_bootstub(bootstub_code)
 
@@ -107,8 +104,8 @@ class TestPandaFlashing(unittest.TestCase):
 
 
   def setUp(self):
-    if fp is None:
-      fp = BytesIO(download_file("https://github.com/commaai/panda-artifacts/blob/master/panda-v1.7.3-DEV-d034f3e9-RELEASE.zip?raw=true"))
+    if not hasattr(self, 'fp'):
+      self.fp = BytesIO(download_file("https://github.com/commaai/panda-artifacts/blob/master/panda-v1.7.3-DEV-d034f3e9-RELEASE.zip?raw=true"))
 
     if not hasattr(self, 'serial'):
       print("Claiming first panda")

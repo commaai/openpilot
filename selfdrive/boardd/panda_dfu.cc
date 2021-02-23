@@ -1,4 +1,4 @@
-#include "pandaDFU.hpp"
+#include "panda_dfu.h"
 
 #include "common/swaglog.h"
 #include "common/util.h"
