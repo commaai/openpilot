@@ -79,7 +79,7 @@ class PowerMonitoring:
         # No ignition, we integrate the offroad power used by the device
         is_uno = pandaState.pandaState.pandaType == log.PandaState.PandaType.uno
         # Get current power draw somehow
-        current_power = HARDWARE.get_current_power_draw()
+        current_power = HARDWARE.get_current_power_draw() # pylint: disable=assignment-from-none
         if current_power is not None:
           pass
         elif HARDWARE.get_battery_status() == 'Discharging':
