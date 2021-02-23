@@ -387,7 +387,7 @@ def thermald_thread():
     # If UI has crashed, set the brightness to reasonable non-zero value
     manager_state = messaging.recv_one_or_none(managerState_sock)
     if manager_state is not None:
-      if "ui" in (p.name for p in manager_state.ManagerState.processes if not p.running):
+      if "ui" in (p.name for p in manager_state.managerState.processes if not p.running):
         HARDWARE.set_screen_brightness(20)
 
     msg.deviceState.chargingError = current_filter.x > 0. and msg.deviceState.batteryPercent < 90  # if current is positive, then battery is being discharged

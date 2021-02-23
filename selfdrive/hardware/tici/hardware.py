@@ -186,4 +186,4 @@ class Tici(HardwareBase):
 
   def set_screen_brightness(self, percentage):
     with open("/sys/class/backlight/panel0-backlight/brightness", "w") as f:
-      f.write(percentage)
+      f.write(str(percentage))
