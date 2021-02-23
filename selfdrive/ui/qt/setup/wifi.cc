@@ -20,11 +20,23 @@ WifiSetup::WifiSetup(QWidget *parent) {
 
   QPushButton *finish_btn = new QPushButton("Exit");
   finish_btn->setFixedSize(400, 200);
-  main_layout->addWidget(finish_btn, 0, Qt::AlignBottom | Qt::AlignLeft);
+  main_layout->addWidget(finish_btn, 0, Qt::AlignTop | Qt::AlignLeft);
 
   QObject::connect(finish_btn, SIGNAL(released()), this, SLOT(finish()));
 
-  main_layout->addWidget(new Networking(this, true), 1);
+  QWidget* n = new Networking(this, true);
+  
+  //Next 5 lines to keep the same stylesheet on the networking widget
+  QLayout* backgroundLayout = new QVBoxLayout();
+  backgroundLayout->addWidget(n);
+  QWidget* q = new QWidget();
+  q->setLayout(backgroundLayout);
+  q->setStyleSheet(R"(
+  * {
+    background-color: #292929;
+  }
+  )");
+  main_layout->addWidget(q, 1);
 
   setLayout(main_layout);
 
@@ -32,7 +44,7 @@ WifiSetup::WifiSetup(QWidget *parent) {
 
   setStyleSheet(R"(
     * {
-      background-color: #292929;
+      background-color: black;
       color: white;
     }
     QFrame {
@@ -40,6 +52,7 @@ WifiSetup::WifiSetup(QWidget *parent) {
       background-color: #292929;
     }
     QPushButton {
+      font-size: 50px;
       margin: 40px;
       padding: 5px;
       border-width: 0;
