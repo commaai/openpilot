@@ -9,10 +9,10 @@ const __constant half3 color_correction[3] = {
   (half3)(-0.21523926, -0.13449348, 1.47665819),
 };
 
-const __constant half3 base_ccm[3] = {
-  (half3)(1,0,0),
-  (half3)(0,1,0),
-  (half3)(0,0,1),
+const __constant half3 alt_ccm[3] = {
+  (half3)(0.84166382, -0.25025687, 0.1593848),
+  (half3)(0.25124881, 1.13196952, 0.16597516),
+  (half3)(-0.09291263, 0.11828735, 0.67464003),
 };
 
 
@@ -39,9 +39,10 @@ half3 color_correct(half3 rgb, int ggain) {
   rgb.x = mf(rgb.x, cpx);
   rgb.y = mf(rgb.y, cpx);
   rgb.z = mf(rgb.z, cpx);
-  ret += (half)rgb.x * (color_correction[0]);
-  ret += (half)rgb.y * (color_correction[1]);
-  ret += (half)rgb.z * (color_correction[2]);
+  half alp = 1.0 - 0.07*ggain;
+  ret += (half)rgb.x * (alp*color_correction[0]+(1-alp)*alt_ccm[0]);
+  ret += (half)rgb.y * (alp*color_correction[1]+(1-alp)*alt_ccm[1]);
+  ret += (half)rgb.z * (alp*color_correction[2]+(1-alp)*alt_ccm[2]);
   ret = clamp(0.0h, 255.0h, ret*255.0h);
   return ret;
 }
