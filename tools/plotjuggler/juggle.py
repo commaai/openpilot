@@ -57,17 +57,13 @@ def juggle_route(route_name, segment_number, qlog):
 
   # Infer DBC name from logs
   dbc = None
-  car_params = [m for m in all_data if m.which() == 'carParams']
-  if len(car_params):
-    brand_name = car_params[0].carParams.carName
-    name = car_params[0].carParams.carFingerprint
-
-    path = ('selfdrive.car.%s' % brand_name)
+  for cp in [m for m in all_data if m.which() == 'carParams']:
     try:
-      DBC = __import__(path + '.values', fromlist=['DBC']).DBC
-      dbc = DBC[name]['pt']
+      DBC = __import__(f"selfdrive.car.{cp.carParams.carName}.values", fromlist=['DBC']).DBC
+      dbc = DBC[cp.carParams.carFingerprint]['pt']
     except (ImportError, KeyError):
       pass
+    break
 
   tempfile = NamedTemporaryFile(suffix='.rlog')
   save_log(tempfile.name, all_data, compress=False)
