@@ -14,6 +14,7 @@ Version 0.8.2 (2021-02-26)
  * Nissan Altima 2020 support thanks to avolmensky!
  * Lexus ES Hybrid 2018 support thanks to TheInventorMan!
  * Toyota Camry Hybrid 2021 support thanks to alancyau!
+ * Toyota Prius Prime 2021 support thanks to VirtuallyChris!
 
 Version 0.8.1 (2020-12-21)
 ========================
