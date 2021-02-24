@@ -8,6 +8,59 @@
 
 #include "bmx055_magn.hpp"
 
+static int16_t compensate_x(trim_data_t trim_data, int16_t mag_data_x, uint16_t data_rhall) {
+  uint16_t process_comp_x0 = data_rhall;
+  int32_t process_comp_x1 = ((int32_t)trim_data.dig_xyz1) * 16384;
+  uint16_t process_comp_x2 = ((uint16_t)(process_comp_x1 / process_comp_x0)) - ((uint16_t)0x4000);
+  int16_t retval = ((int16_t)process_comp_x2);
+  int32_t process_comp_x3 = (((int32_t)retval) * ((int32_t)retval));
+  int32_t process_comp_x4 = (((int32_t)trim_data.dig_xy2) * (process_comp_x3 / 128));
+  int32_t process_comp_x5 = (int32_t)(((int16_t)trim_data.dig_xy1) * 128);
+  int32_t process_comp_x6 = ((int32_t)retval) * process_comp_x5;
+  int32_t process_comp_x7 = (((process_comp_x4 + process_comp_x6) / 512) + ((int32_t)0x100000));
+  int32_t process_comp_x8 = ((int32_t)(((int16_t)trim_data.dig_x2) + ((int16_t)0xA0)));
+  int32_t process_comp_x9 = ((process_comp_x7 * process_comp_x8) / 4096);
+  int32_t process_comp_x10 = ((int32_t)mag_data_x) * process_comp_x9;
+  retval = ((int16_t)(process_comp_x10 / 8192));
+  retval = (retval + (((int16_t)trim_data.dig_x1) * 8)) / 16;
+
+  return retval;
+}
+
+static int16_t compensate_y(trim_data_t trim_data, int16_t mag_data_y, uint16_t data_rhall) {
+  uint16_t process_comp_y0 = trim_data.dig_xyz1;
+  int32_t process_comp_y1 = (((int32_t)trim_data.dig_xyz1) * 16384) / process_comp_y0;
+  uint16_t process_comp_y2 = ((uint16_t)process_comp_y1) - ((uint16_t)0x4000);
+  int16_t retval = ((int16_t)process_comp_y2);
+  int32_t process_comp_y3 = ((int32_t) retval) * ((int32_t)retval);
+  int32_t process_comp_y4 = ((int32_t)trim_data.dig_xy2) * (process_comp_y3 / 128);
+  int32_t process_comp_y5 = ((int32_t)(((int16_t)trim_data.dig_xy1) * 128));
+  int32_t process_comp_y6 = ((process_comp_y4 + (((int32_t)retval) * process_comp_y5)) / 512);
+  int32_t process_comp_y7 = ((int32_t)(((int16_t)trim_data.dig_y2) + ((int16_t)0xA0)));
+  int32_t process_comp_y8 = (((process_comp_y6 + ((int32_t)0x100000)) * process_comp_y7) / 4096);
+  int32_t process_comp_y9 = (((int32_t)mag_data_y) * process_comp_y8);
+  retval = (int16_t)(process_comp_y9 / 8192);
+  retval = (retval + (((int16_t)trim_data.dig_y1) * 8)) / 16;
+
+  return retval;
+}
+
+static int16_t compensate_z(trim_data_t trim_data, int16_t mag_data_z, uint16_t data_rhall) {
+  int16_t process_comp_z0 = ((int16_t)data_rhall) - ((int16_t) trim_data.dig_xyz1);
+  int32_t process_comp_z1 = (((int32_t)trim_data.dig_z3) * ((int32_t)(process_comp_z0))) / 4;
+  int32_t process_comp_z2 = (((int32_t)(mag_data_z - trim_data.dig_z4)) * 32768);
+  int32_t process_comp_z3 = ((int32_t)trim_data.dig_z1) * (((int16_t)data_rhall) * 2);
+  int16_t process_comp_z4 = (int16_t)((process_comp_z3 + (32768)) / 65536);
+  int32_t retval = ((process_comp_z2 - process_comp_z1) / (trim_data.dig_z2 + process_comp_z4));
+
+  /* saturate result to +/- 2 micro-tesla */
+  retval = std::clamp(retval, -32767, 32767);
+
+  /* Conversion of LSB to micro-tesla*/
+  retval = retval / 16;
+
+  return (int16_t)retval;
+}
 
 BMX055_Magn::BMX055_Magn(I2CBus *bus) : I2CSensor(bus) {}
 
@@ -58,6 +111,8 @@ int BMX055_Magn::init(){
   if(ret < 0) goto fail;
   ret = read_register(BMX055_MAGN_I2C_REG_DIG_Z4_LSB, trim_z4, 2);
   if(ret < 0) goto fail;
+  ret = read_register(BMX055_MAGN_I2C_REG_DIG_XYZ1_LSB, trim_xyz1, 2);
+  if(ret < 0) goto fail;
 
   // Read trim data
   trim_data.dig_x1 = trim_x1y1[0];
@@ -70,11 +125,12 @@ int BMX055_Magn::init(){
   trim_data.dig_xy2 = trim_xy1xy2[0];
 
   trim_data.dig_z1 = read_16_bit(trim_z1[0], trim_z1[1]);
-  trim_data.dig_z1 = read_16_bit(trim_z2[0], trim_z2[1]);
-  trim_data.dig_z1 = read_16_bit(trim_z3[0], trim_z3[1]);
-  trim_data.dig_z1 = read_16_bit(trim_z4[0], trim_z4[1]);
+  trim_data.dig_z2 = read_16_bit(trim_z2[0], trim_z2[1]);
+  trim_data.dig_z3 = read_16_bit(trim_z3[0], trim_z3[1]);
+  trim_data.dig_z4 = read_16_bit(trim_z4[0], trim_z4[1]);
 
   trim_data.dig_xyz1 = read_16_bit(trim_xyz1[0], trim_xyz1[1] & 0x7f);
+  assert(trim_data.dig_xyz1 != 0);
 
   // 9 REPXY and 15 REPZ for 100 Hz
   // 3 REPXY and 3 REPZ for > 300 Hz
@@ -103,30 +159,31 @@ bool BMX055_Magn::perform_self_test(){
   // Clean existing measurement
   read_register(BMX055_MAGN_I2C_REG_DATAX_LSB, buffer, sizeof(buffer));
 
-  // Normal
   uint8_t reg = BMX055_MAGN_FORCED;
-  set_register(BMX055_MAGN_I2C_REG_MAG, reg);
-  util::sleep_for(25);
 
-  read_register(BMX055_MAGN_I2C_REG_DATAX_LSB, buffer, sizeof(buffer));
-  parse_xyz(buffer, &x, &y, &z);
-  LOGE("No current %d", z);
+  // Normal
+	set_register(BMX055_MAGN_I2C_REG_MAG, reg);
+	util::sleep_for(25);
+
+	read_register(BMX055_MAGN_I2C_REG_DATAX_LSB, buffer, sizeof(buffer));
+	assert(parse_xyz(buffer, &x, &y, &z));
+	LOGE("No current %d", z);
 
   // Negative current
-  set_register(BMX055_MAGN_I2C_REG_MAG, reg | (uint8_t(0b01) << 6));
-  util::sleep_for(25);
+	set_register(BMX055_MAGN_I2C_REG_MAG, reg | (uint8_t(0b01) << 6));
+	util::sleep_for(25);
 
-  read_register(BMX055_MAGN_I2C_REG_DATAX_LSB, buffer, sizeof(buffer));
-  parse_xyz(buffer, &x, &y, &z);
-  LOGE("Negative current %d", z);
+	read_register(BMX055_MAGN_I2C_REG_DATAX_LSB, buffer, sizeof(buffer));
+	assert(parse_xyz(buffer, &x, &y, &z));
+	LOGE("Negative current %d", z);
 
   // Positive current
-  set_register(BMX055_MAGN_I2C_REG_MAG, reg | (uint8_t(0b11) << 6));
-  util::sleep_for(25);
+	set_register(BMX055_MAGN_I2C_REG_MAG, reg | (uint8_t(0b11) << 6));
+	util::sleep_for(25);
 
-  read_register(BMX055_MAGN_I2C_REG_DATAX_LSB, buffer, sizeof(buffer));
-  parse_xyz(buffer, &x, &y, &z);
-  LOGE("Negative current %d", z);
+	read_register(BMX055_MAGN_I2C_REG_DATAX_LSB, buffer, sizeof(buffer));
+	assert(parse_xyz(buffer, &x, &y, &z));
+	LOGE("Negative current %d", z);
 
   // Put back in normal mode
   set_register(BMX055_MAGN_I2C_REG_MAG, reg);
@@ -141,23 +198,11 @@ bool BMX055_Magn::parse_xyz(uint8_t buffer[8], int16_t *x, int16_t *y, int16_t *
     int16_t mdata_y = (int16_t) (((int16_t)buffer[3] << 8) | buffer[2]) >> 3;
     int16_t mdata_z = (int16_t) (((int16_t)buffer[5] << 8) | buffer[4]) >> 1;
     uint16_t data_r = (uint16_t) (((uint16_t)buffer[7] << 8) | buffer[6]) >> 2;
+    assert(data_r != 0);
 
-    // calculate temperature compensated 16-bit magnetic fields
-    int16_t temp = ((int16_t)(((uint16_t)((((int32_t)trim_data.dig_xyz1) << 14)/(data_r != 0 ? data_r : trim_data.dig_xyz1))) - ((uint16_t)0x4000)));
-    *x = ((int16_t)((((int32_t)mdata_x) *
-          ((((((((int32_t)trim_data.dig_xy2) * ((((int32_t)temp) * ((int32_t)temp)) >> 7)) +
-            (((int32_t)temp) * ((int32_t)(((int16_t)trim_data.dig_xy1) << 7)))) >> 9) +
-          ((int32_t)0x100000)) * ((int32_t)(((int16_t)trim_data.dig_x2) + ((int16_t)0xA0)))) >> 12)) >> 13)) +
-        (((int16_t)trim_data.dig_x1) << 3);
-
-    temp = ((int16_t)(((uint16_t)((((int32_t)trim_data.dig_xyz1) << 14)/(data_r != 0 ? data_r : trim_data.dig_xyz1))) - ((uint16_t)0x4000)));
-    *y = ((int16_t)((((int32_t)mdata_y) *
-          ((((((((int32_t)trim_data.dig_xy2) * ((((int32_t)temp) * ((int32_t)temp)) >> 7)) +
-            (((int32_t)temp) * ((int32_t)(((int16_t)trim_data.dig_xy1) << 7)))) >> 9) +
-                ((int32_t)0x100000)) * ((int32_t)(((int16_t)trim_data.dig_y2) + ((int16_t)0xA0)))) >> 12)) >> 13)) +
-        (((int16_t)trim_data.dig_y1) << 3);
-    *z = (((((int32_t)(mdata_z - trim_data.dig_z4)) << 15) - ((((int32_t)trim_data.dig_z3) * ((int32_t)(((int16_t)data_r) -
-    ((int16_t)trim_data.dig_xyz1))))>>2))/(trim_data.dig_z2 + ((int16_t)(((((int32_t)trim_data.dig_z1) * ((((int16_t)data_r) << 1)))+(1<<15))>>16))));
+		*x = compensate_x(trim_data, mdata_x, data_r);
+		*y = compensate_y(trim_data, mdata_y, data_r);
+		*z = compensate_z(trim_data, mdata_z, data_r);
   }
   return ready;
 }
