@@ -15,8 +15,13 @@ int BMX055_Magn::init(){
   int ret;
   uint8_t buffer[1];
   uint8_t trim_x1y1[2] = {0};
-  uint8_t trim_xyz_data[4] = {0};
-  uint8_t trim_xy1xy2[10] = {0};
+  uint8_t trim_x2y2[2] = {0};
+  uint8_t trim_xy1xy2[2] = {0};
+  uint8_t trim_z1[2] = {0};
+  uint8_t trim_z2[2] = {0};
+  uint8_t trim_z3[2] = {0};
+  uint8_t trim_z4[2] = {0};
+  uint8_t trim_xyz1[2] = {0};
 
   // suspend -> sleep
   ret = set_register(BMX055_MAGN_I2C_REG_PWR_0, 0x01);
@@ -40,35 +45,36 @@ int BMX055_Magn::init(){
 
   // Load magnetometer trim
   ret = read_register(BMX055_MAGN_I2C_REG_DIG_X1, trim_x1y1, 2);
-  if(ret < 0){
-    goto fail;
-  }
-  ret = read_register(BMX055_MAGN_I2C_REG_DIG_Z4, trim_xyz_data, 4);
-  if(ret < 0){
-    goto fail;
-  }
-  ret = read_register(BMX055_MAGN_I2C_REG_DIG_Z2, trim_xy1xy2, 10);
-  if(ret < 0){
-    goto fail;
-  }
+  if(ret < 0) goto fail;
+  ret = read_register(BMX055_MAGN_I2C_REG_DIG_X2, trim_x2y2, 2);
+  if(ret < 0) goto fail;
+  ret = read_register(BMX055_MAGN_I2C_REG_DIG_XY2, trim_xy1xy2, 2);
+  if(ret < 0) goto fail;
+  ret = read_register(BMX055_MAGN_I2C_REG_DIG_Z1_LSB, trim_z1, 2);
+  if(ret < 0) goto fail;
+  ret = read_register(BMX055_MAGN_I2C_REG_DIG_Z2_LSB, trim_z2, 2);
+  if(ret < 0) goto fail;
+  ret = read_register(BMX055_MAGN_I2C_REG_DIG_Z3_LSB, trim_z3, 2);
+  if(ret < 0) goto fail;
+  ret = read_register(BMX055_MAGN_I2C_REG_DIG_Z4_LSB, trim_z4, 2);
+  if(ret < 0) goto fail;
 
   // Read trim data
-  trim_data.dig_x1 = (int8_t)trim_x1y1[0];
-  trim_data.dig_y1 = (int8_t)trim_x1y1[1];
+  trim_data.dig_x1 = trim_x1y1[0];
+  trim_data.dig_y1 = trim_x1y1[1];
 
-  trim_data.dig_x2 = (int8_t)trim_xyz_data[2];
-  trim_data.dig_y2 = (int8_t)trim_xyz_data[3];
+  trim_data.dig_x2 = trim_x2y2[0];
+  trim_data.dig_y2 = trim_x2y2[1];
 
-  trim_data.dig_z1 = read_16_bit(trim_xy1xy2[2], trim_xy1xy2[3]);
-  trim_data.dig_z2 = read_16_bit(trim_xy1xy2[0], trim_xy1xy2[1]);
-  trim_data.dig_z3 = read_16_bit(trim_xy1xy2[6], trim_xy1xy2[7]);
-  trim_data.dig_z4 = read_16_bit(trim_xyz_data[0], trim_xyz_data[1]);
+  trim_data.dig_xy1 = trim_xy1xy2[1]; // NB: MSB/LSB swapped
+  trim_data.dig_xy2 = trim_xy1xy2[0];
 
-  trim_data.dig_xy1 = trim_xy1xy2[9];
-  trim_data.dig_xy2 = (int8_t)trim_xy1xy2[8];
+  trim_data.dig_z1 = read_16_bit(trim_z1[0], trim_z1[1]);
+  trim_data.dig_z1 = read_16_bit(trim_z2[0], trim_z2[1]);
+  trim_data.dig_z1 = read_16_bit(trim_z3[0], trim_z3[1]);
+  trim_data.dig_z1 = read_16_bit(trim_z4[0], trim_z4[1]);
 
-  trim_data.dig_xyz1 = read_16_bit(trim_xy1xy2[4], trim_xy1xy2[5] & 0x7f);
-
+  trim_data.dig_xyz1 = read_16_bit(trim_xyz1[0], trim_xyz1[1] & 0x7f);
 
   // 9 REPXY and 15 REPZ for 100 Hz
   // 3 REPXY and 3 REPZ for > 300 Hz
