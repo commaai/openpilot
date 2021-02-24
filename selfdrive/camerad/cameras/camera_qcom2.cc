@@ -749,7 +749,10 @@ static void camera_open(CameraState *s) {
     csiphy_info->combo_mode = 0x0;
     csiphy_info->lane_cnt = 0x4;
     csiphy_info->secure_mode = 0x0;
-    csiphy_info->settle_time = 6200000000;
+    csiphy_info->settle_time = 8200000000;
+    // calc from mipi specs
+    // settle_cnt = ((85 + 6ui + 145 + 10ui) / 2) / (1e9 / f_csiphy) - 1, where ui = 1e9 / f_pixclk / n_bits * (2*lane_cnt) / 2
+    // settle_time = settle_cnt * 200000000
     csiphy_info->data_rate = 44000000;
 
     static struct cam_config_dev_cmd config_dev_cmd = {};
