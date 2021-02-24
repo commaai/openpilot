@@ -46,13 +46,16 @@ WifiSetup::WifiSetup(QWidget *parent) {
     * {
       background-color: black;
       color: white;
+      font-size: 50px;
+    }
+    QVBoxLayout {
+      padding: 20px;
     }
     QFrame {
       border-radius: 30px;
       background-color: #292929;
     }
     QPushButton {
-      font-size: 50px;
       margin: 40px;
       padding: 5px;
       border-width: 0;
