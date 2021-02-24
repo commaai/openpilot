@@ -6,6 +6,7 @@
 #include <QLineEdit>
 #include <QRandomGenerator>
 #include <QtConcurrent>
+#include <algorithm>
 
 #include "common/params.h"
 #include "networking.hpp"
@@ -325,6 +326,8 @@ void WifiUI::refresh() {
 
   int i = 0;
   int countWidgets = 0;
+  int pageCount = (wifi->seen_networks.size() - 1) / networks_per_page;
+  page = std::max(0, std::min(page, pageCount));
   for (Network &network : wifi->seen_networks) {
     QHBoxLayout *hlayout = new QHBoxLayout;
     if (page * networks_per_page <= i && i < (page + 1) * networks_per_page) {
@@ -385,12 +388,6 @@ void WifiUI::refresh() {
   prev_next_buttons->addWidget(next);
 
   vlayout->addLayout(prev_next_buttons, 2);
-  // Ensure users don't jump to an empty page
-  if (countWidgets == 0 && wifi->seen_networks.size() > 0){
-    page = 0;
-    refresh();
-  }
-
 }
 
 void WifiUI::handleButton(QAbstractButton* button) {
