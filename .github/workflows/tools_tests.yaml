@@ -21,6 +21,8 @@ jobs:
   plotjuggler:
     name: plotjuggler
     runs-on: ubuntu-20.04
+    variables:
+      QT_QPA_PLATFORM: "offscreen"
     timeout-minutes: 30
     steps:
     - uses: actions/checkout@v2
