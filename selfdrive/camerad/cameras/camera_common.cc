@@ -317,7 +317,7 @@ float set_exposure_target(const CameraBuf *b, int x_start, int x_end, int x_skip
   return lum_med / 256.0;
 }
 
-static void processing_thread(MultiCameraState *cameras, CameraState *cs, process_thread_cb callback) {
+static void processing_thread(MultiCameraState *cameras, CameraState *cs, process_thread_cb callback, bool is_frame_stream) {
   static PubMaster pm({"roadCameraState", "driverCameraState", "wideRoadCameraState", "thumbnail"});
 
   const char *pub_name = nullptr;
@@ -347,7 +347,7 @@ static void processing_thread(MultiCameraState *cameras, CameraState *cs, proces
   while (!do_exit) {
     if (!cs->buf.acquire()) continue;
 
-    if (callback) { // camera_frame_stream has no callbak 
+    if (!is_frame_stream) {
       MessageBuilder msg;
       cereal::FrameData::Builder framed = (msg.initEvent().*init_cam_state_func)();
       fill_frame_data(framed, cs->buf.cur_frame_data);
@@ -358,10 +358,11 @@ static void processing_thread(MultiCameraState *cameras, CameraState *cs, proces
         framed.setTransform(cs->buf.yuv_transform.v);
       }
 
-      callback(cameras, cs, framed, cnt);
+      if (callback) {
+        callback(cameras, cs, framed, cnt);
+      }
 
       pm.send(pub_name, msg);
-
       if (pub_thumbnail && cnt % 100 == 3) {
         // this takes 10ms???
         publish_thumbnail(&pm, &(cs->buf));
@@ -373,8 +374,8 @@ static void processing_thread(MultiCameraState *cameras, CameraState *cs, proces
   }
 }
 
-std::thread start_process_thread(MultiCameraState *cameras, CameraState *cs, process_thread_cb callback) {
-  return std::thread(processing_thread, cameras, cs, callback);
+std::thread start_process_thread(MultiCameraState *cameras, CameraState *cs, process_thread_cb callback, bool is_frame_stream) {
+  return std::thread(processing_thread, cameras, cs, callback, is_frame_stream);
 }
 
 void common_process_driver_camera(SubMaster *sm, CameraState *c, int cnt) {

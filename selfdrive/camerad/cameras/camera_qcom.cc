@@ -1133,7 +1133,7 @@ static void process_road_camera(MultiCameraState *s, CameraState *c, cereal::Fra
   framed.setFocusConf(s->road_cam.confidence);
   framed.setRecoverState(s->road_cam.self_recover);
   framed.setSharpnessScore(s->lapres);
-  
+
   if (cnt % 3 == 0) {
     const int x = 290, y = 322, width = 560, height = 314;
     const int skip = 1;
