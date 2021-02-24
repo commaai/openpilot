@@ -31,7 +31,6 @@ jobs:
     - name: Unit test
       run: |
         ${{ env.RUN }} "cd /tmp/openpilot && \
-                        export QT_QPA_PLATFORM=offscreen && \
                         scons -j$(nproc) && \
                         coverage run tools/plotjuggler/test_plotjuggler.py"
 
