@@ -183,3 +183,7 @@ class Tici(HardwareBase):
 
   def get_thermal_config(self):
     return ThermalConfig(cpu=((1, 2, 3, 4, 5, 6, 7, 8), 1000), gpu=((48,49), 1000), mem=(15, 1000), bat=(None, 1), ambient=(70, 1000))
+
+  def set_screen_brightness(self, percentage):
+    with open("/sys/class/backlight/panel0-backlight/brightness", "w") as f:
+      f.write(str(percentage * 10.23))
