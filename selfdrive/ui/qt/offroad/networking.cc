@@ -385,6 +385,12 @@ void WifiUI::refresh() {
   prev_next_buttons->addWidget(next);
 
   vlayout->addLayout(prev_next_buttons, 2);
+  // Ensure users don't jump to an empty page
+  if (countWidgets == 0 && wifi->seen_networks.size() > 0){
+    page = 0;
+    refresh();
+  }
+
 }
 
 void WifiUI::handleButton(QAbstractButton* button) {
