@@ -91,3 +91,7 @@ DBC = {
 }
 
 STEER_THRESHOLD = 120
+
+ECU_FINGERPRINT = {
+  Ecu.fwdCamera: [0x292],  # lkas cmd
+}

@@ -38,7 +38,7 @@
     "severity": 0
   },
   "Offroad_HardwareUnsupported": {
-    "text": "White and grey panda are unsupported. Upgrade to comma two or black panda.",
+    "text": "White panda is unsupported. Upgrade to comma two, black or grey panda.",
     "severity": 0
   }
 }
