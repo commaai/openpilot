@@ -1,4 +1,5 @@
 #include "window.hpp"
+#include "common/params.h"
 
 MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   main_layout = new QStackedLayout;
