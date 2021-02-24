@@ -1,4 +1,5 @@
 venv/
+.clang-format
 .DS_Store
 .tags
 .ipynb_checkpoints
@@ -6,7 +7,7 @@ venv/
 .overlay_init
 .overlay_consistent
 .sconsign.dblite
-.vscode
+.vscode*
 model2.png
 a.out
 
@@ -31,6 +32,7 @@ a.out
 *.vcd
 config.json
 clcache
+compile_commands.json
 
 persist
 board/obj/
@@ -42,6 +44,7 @@ selfdrive/ui/_ui
 selfdrive/test/longitudinal_maneuvers/out
 selfdrive/visiond/visiond
 selfdrive/loggerd/loggerd
+selfdrive/loggerd/bootlog
 selfdrive/sensord/_gpsd
 selfdrive/sensord/_sensord
 selfdrive/camerad/camerad
@@ -68,3 +71,6 @@ flycheck_*
 
 cppcheck_report.txt
 comma.sh
+
+selfdrive/modeld/thneed/compile
+models/*.thneed

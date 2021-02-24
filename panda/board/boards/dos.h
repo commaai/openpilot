@@ -62,7 +62,23 @@ void dos_set_phone_power(bool enabled){
 }
 
 void dos_set_usb_power_mode(uint8_t mode) {
-  dos_set_bootkick(mode == USB_POWER_CDP);
+  bool valid = false;
+  switch (mode) {
+    case USB_POWER_CLIENT:
+      dos_set_bootkick(false);
+      valid = true;
+      break;
+    case USB_POWER_CDP:
+      dos_set_bootkick(true);
+      valid = true;
+      break;
+    default:
+      puts("Invalid USB power mode\n");
+      break;
+  }
+  if (valid) {
+    usb_power_mode = mode;
+  }
 }
 
 void dos_set_gps_mode(uint8_t mode) {

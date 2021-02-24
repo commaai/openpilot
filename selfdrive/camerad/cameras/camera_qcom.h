@@ -12,10 +12,10 @@
 #include "msmb_camera.h"
 #include "msm_cam_sensor.h"
 
+#include "visionbuf.h"
+
 #include "common/mat.h"
-#include "common/visionbuf.h"
-#include "common/buffering.h"
-#include "common/utilpp.h"
+#include "common/util.h"
 
 #include "camera_common.h"
 
@@ -91,14 +91,12 @@ typedef struct CameraState {
 
   StreamState ss[3];
 
-  uint64_t last_t;
-
   camera_apply_exposure_func apply_exposure;
 
   int16_t focus[NUM_FOCUS];
   uint8_t confidence[NUM_FOCUS];
 
-  float focus_err;
+  std::atomic<float> focus_err;
 
   uint16_t cur_step_pos;
   uint16_t cur_lens_pos;
@@ -108,8 +106,6 @@ typedef struct CameraState {
   std::atomic<int> self_recover; // af recovery counter, neg is patience, pos is active
 
   int fps;
-
-  mat3 transform;
 
   CameraBuf buf;
 } CameraState;
@@ -131,15 +127,15 @@ typedef struct MultiCameraState {
   cl_program prg_rgb_laplacian;
   cl_kernel krnl_rgb_laplacian;
 
-  CameraState rear;
-  CameraState front;
+  CameraState road_cam;
+  CameraState driver_cam;
 
-  SubMaster *sm_front;
+  SubMaster *sm;
   PubMaster *pm;
 
 } MultiCameraState;
 
-void cameras_init(MultiCameraState *s, cl_device_id device_id, cl_context ctx);
+void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_id, cl_context ctx);
 void cameras_open(MultiCameraState *s);
 void cameras_run(MultiCameraState *s);
 void cameras_close(MultiCameraState *s);

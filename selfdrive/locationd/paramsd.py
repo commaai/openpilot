@@ -48,7 +48,7 @@ class ParamsLearner:
         self.kf.predict_and_observe(t, ObservationKind.ANGLE_OFFSET_FAST, np.array([[[0]]]))
 
     elif which == 'carState':
-      self.steering_angle = msg.steeringAngle
+      self.steering_angle = msg.steeringAngleDeg
       self.steering_pressed = msg.steeringPressed
       self.speed = msg.vEgo
 
@@ -56,7 +56,7 @@ class ParamsLearner:
       self.active = self.speed > 5 and in_linear_region
 
       if self.active:
-        self.kf.predict_and_observe(t, ObservationKind.STEER_ANGLE, np.array([[[math.radians(msg.steeringAngle)]]]))
+        self.kf.predict_and_observe(t, ObservationKind.STEER_ANGLE, np.array([[[math.radians(msg.steeringAngleDeg)]]]))
         self.kf.predict_and_observe(t, ObservationKind.ROAD_FRAME_X_SPEED, np.array([[[self.speed]]]))
 
     if not self.active:
@@ -88,18 +88,23 @@ def main(sm=None, pm=None):
       cloudlog.info("Parameter learner found parameters for wrong car.")
       params = None
 
-  if (params is not None) and not all((
-      abs(params['angleOffsetAverage']) < 10.0,
-      min_sr <= params['steerRatio'] <= max_sr)):
-    cloudlog.info(f"Invalid starting values found {params}")
+  try:
+    if params is not None and not all((
+        abs(params.get('angleOffsetAverageDeg')) < 10.0,
+        min_sr <= params['steerRatio'] <= max_sr)):
+      cloudlog.info(f"Invalid starting values found {params}")
+      params = None
+  except Exception as e:
+    cloudlog.info(f"Error reading params {params}: {str(e)}")
     params = None
 
+  # TODO: cache the params with the capnp struct
   if params is None:
     params = {
       'carFingerprint': CP.carFingerprint,
       'steerRatio': CP.steerRatio,
       'stiffnessFactor': 1.0,
-      'angleOffsetAverage': 0.0,
+      'angleOffsetAverageDeg': 0.0,
     }
     cloudlog.info("Parameter learner resetting to default values")
 
@@ -107,7 +112,7 @@ def main(sm=None, pm=None):
   # Without a way to detect this we have to reset the stiffness every drive
   params['stiffnessFactor'] = 1.0
 
-  learner = ParamsLearner(CP, params['steerRatio'], params['stiffnessFactor'], math.radians(params['angleOffsetAverage']))
+  learner = ParamsLearner(CP, params['steerRatio'], params['stiffnessFactor'], math.radians(params['angleOffsetAverageDeg']))
 
   while True:
     sm.update()
@@ -127,11 +132,11 @@ def main(sm=None, pm=None):
       x = learner.kf.x
       msg.liveParameters.steerRatio = float(x[States.STEER_RATIO])
       msg.liveParameters.stiffnessFactor = float(x[States.STIFFNESS])
-      msg.liveParameters.angleOffsetAverage = math.degrees(x[States.ANGLE_OFFSET])
-      msg.liveParameters.angleOffset = msg.liveParameters.angleOffsetAverage + math.degrees(x[States.ANGLE_OFFSET_FAST])
+      msg.liveParameters.angleOffsetAverageDeg = math.degrees(x[States.ANGLE_OFFSET])
+      msg.liveParameters.angleOffsetDeg = msg.liveParameters.angleOffsetAverageDeg + math.degrees(x[States.ANGLE_OFFSET_FAST])
       msg.liveParameters.valid = all((
-        abs(msg.liveParameters.angleOffsetAverage) < 10.0,
-        abs(msg.liveParameters.angleOffset) < 10.0,
+        abs(msg.liveParameters.angleOffsetAverageDeg) < 10.0,
+        abs(msg.liveParameters.angleOffsetDeg) < 10.0,
         0.2 <= msg.liveParameters.stiffnessFactor <= 5.0,
         min_sr <= msg.liveParameters.steerRatio <= max_sr,
       ))
@@ -141,7 +146,7 @@ def main(sm=None, pm=None):
           'carFingerprint': CP.carFingerprint,
           'steerRatio': msg.liveParameters.steerRatio,
           'stiffnessFactor': msg.liveParameters.stiffnessFactor,
-          'angleOffsetAverage': msg.liveParameters.angleOffsetAverage,
+          'angleOffsetAverageDeg': msg.liveParameters.angleOffsetAverageDeg,
         }
         put_nonblocking("LiveParameters", json.dumps(params))
 

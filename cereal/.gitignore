@@ -6,10 +6,16 @@ package-lock.json
 __pycache__
 .*.swp
 .*.swo
-libcereal*.a
+*.os
+*.o
+*.a
+
+test_runner
+
 libmessaging.*
 libmessaging_shared.*
 services.h
 .sconsign.dblite
 libcereal_shared.*
 .mypy_cache/
+catch2/

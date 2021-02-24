@@ -1,5 +1,4 @@
 #include <vector>
-#include <csignal>
 #include <chrono>
 #include <thread>
 #include <sys/resource.h>
@@ -7,6 +6,7 @@
 #include "messaging.hpp"
 #include "common/i2c.h"
 #include "common/timing.h"
+#include "common/util.h"
 #include "common/swaglog.h"
 
 #include "sensors/sensor.hpp"
@@ -23,14 +23,9 @@
 
 #include "sensors/light_sensor.hpp"
 
-volatile sig_atomic_t do_exit = 0;
-
 #define I2C_BUS_IMU 1
 
-
-void set_do_exit(int sig) {
-  do_exit = 1;
-}
+ExitHandler do_exit;
 
 int sensor_loop() {
   I2CBus *i2c_bus_imu;
@@ -99,8 +94,5 @@ int sensor_loop() {
 
 int main(int argc, char *argv[]) {
   setpriority(PRIO_PROCESS, 0, -13);
-  signal(SIGINT, set_do_exit);
-  signal(SIGTERM, set_do_exit);
-
   return sensor_loop();
 }

@@ -5,16 +5,17 @@
 #include <stdint.h>
 #include <memory>
 #include <thread>
-#include "common/buffering.h"
 #include "common/mat.h"
 #include "common/swaglog.h"
-#include "common/visionbuf.h"
+#include "common/queue.h"
+#include "visionbuf.h"
 #include "common/visionimg.h"
 #include "imgproc/utils.h"
 #include "messaging.hpp"
 #include "transforms/rgb_to_yuv.h"
 
-#include "common/visionipc.h"
+#include "visionipc.h"
+#include "visionipc_server.h"
 
 #define CAMERA_ID_IMX298 0
 #define CAMERA_ID_IMX179 1
@@ -35,12 +36,13 @@
 #define LOG_CAMERA_ID_QCAMERA 3
 #define LOG_CAMERA_ID_MAX 4
 
-const bool env_send_front = getenv("SEND_FRONT") != NULL;
-const bool env_send_rear = getenv("SEND_REAR") != NULL;
-const bool env_send_wide = getenv("SEND_WIDE") != NULL;
+const bool env_send_driver = getenv("SEND_DRIVER") != NULL;
+const bool env_send_road = getenv("SEND_ROAD") != NULL;
+const bool env_send_wide_road = getenv("SEND_WIDE_ROAD") != NULL;
+
+typedef void (*release_cb)(void *cookie, int buf_idx);
 
 typedef struct CameraInfo {
-  const char* name;
   int frame_width, frame_height;
   int frame_stride;
   bool bayer;
@@ -82,61 +84,50 @@ typedef struct CameraExpInfo {
 
 extern CameraInfo cameras_supported[CAMERA_ID_MAX];
 
-typedef struct {
-  uint8_t *y, *u, *v;
-} YUVBuf;
-
 struct MultiCameraState;
 struct CameraState;
-typedef void (*release_cb)(void *cookie, int buf_idx);
 
 class CameraBuf {
-public:
-
+private:
+  VisionIpcServer *vipc_server;
   CameraState *camera_state;
   cl_kernel krnl_debayer;
-  cl_command_queue q;
 
-  Pool yuv_pool;
-  VisionBuf yuv_ion[YUV_COUNT];
-  YUVBuf yuv_bufs[YUV_COUNT];
-  FrameMetadata yuv_metas[YUV_COUNT];
-  size_t yuv_buf_size;
-  int yuv_width, yuv_height;
   RGBToYUVState rgb_to_yuv_state;
 
-  int rgb_width, rgb_height, rgb_stride;
-  VisionBuf rgb_bufs[UI_BUF_COUNT];
+  FrameMetadata yuv_metas[YUV_COUNT];
+  VisionStreamType rgb_type, yuv_type;
+  
+  int cur_buf_idx;
 
-  mat3 yuv_transform;
+  SafeQueue<int> safe_queue;
 
-  int cur_yuv_idx, cur_rgb_idx;
+  int frame_buf_count;
+  release_cb release_callback;
+
+public:
+  cl_command_queue q;
   FrameMetadata cur_frame_data;
   VisionBuf *cur_rgb_buf;
-
-
+  VisionBuf *cur_yuv_buf;
   std::unique_ptr<VisionBuf[]> camera_bufs;
   std::unique_ptr<FrameMetadata[]> camera_bufs_metadata;
-  TBuffer camera_tb, ui_tb;
-  TBuffer *yuv_tb; // only for visionserver
+  int rgb_width, rgb_height, rgb_stride;
+  
+  mat3 yuv_transform;
 
   CameraBuf() = default;
   ~CameraBuf();
-  void init(cl_device_id device_id, cl_context context, CameraState *s, int frame_cnt,
-            const char *name = "frame", release_cb relase_callback = nullptr);
+  void init(cl_device_id device_id, cl_context context, CameraState *s, VisionIpcServer * v, int frame_cnt, VisionStreamType rgb_type, VisionStreamType yuv_type, release_cb release_callback=nullptr);
   bool acquire();
   void release();
-  void stop();
-  int frame_buf_count;
-  int frame_size;
+  void queue(size_t buf_idx);
 };
 
 typedef void (*process_thread_cb)(MultiCameraState *s, CameraState *c, int cnt);
 
-void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &frame_data, uint32_t cnt);
-void fill_frame_image(cereal::FrameData::Builder &framed, uint8_t *dat, int w, int h, int stride);
-void create_thumbnail(MultiCameraState *s, CameraState *c, uint8_t *bgr_ptr);
+void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &frame_data);
+kj::Array<uint8_t> get_frame_image(const CameraBuf *b);
 void set_exposure_target(CameraState *c, const uint8_t *pix_ptr, int x_start, int x_end, int x_skip, int y_start, int y_end, int y_skip);
-std::thread start_process_thread(MultiCameraState *cameras, const char *tname,
-                                    CameraState *cs, process_thread_cb callback);
-void common_camera_process_front(SubMaster *sm, PubMaster *pm, CameraState *c, int cnt);
+std::thread start_process_thread(MultiCameraState *cameras, CameraState *cs, process_thread_cb callback);
+void common_process_driver_camera(SubMaster *sm, PubMaster *pm, CameraState *c, int cnt);

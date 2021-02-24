@@ -18,22 +18,12 @@
 #include <string.h>
 
 #include "common/util.h"
-#include "common/utilpp.h"
 
-
-std::string getenv_default(const char* env_var, const char * suffix, const char* default_val) {
-  const char* env_val = getenv(env_var);
-  if (env_val != NULL){
-    return std::string(env_val) + std::string(suffix);
-  } else {
-    return std::string(default_val);
-  }
-}
 
 #if defined(QCOM) || defined(QCOM2)
 const std::string default_params_path = "/data/params";
 #else
-const std::string default_params_path = getenv_default("HOME", "/.comma/params", "/data/params");
+const std::string default_params_path = util::getenv_default("HOME", "/.comma/params", "/data/params");
 #endif
 
 #if defined(QCOM) || defined(QCOM2)
@@ -266,7 +256,7 @@ std::string Params::get(std::string key, bool block){
   size_t size;
   int r;
 
-  if (block){
+  if (block) {
     r = read_db_value_blocking((const char*)key.c_str(), &value, &size);
   } else {
     r = read_db_value((const char*)key.c_str(), &value, &size);
@@ -300,7 +290,7 @@ int Params::read_db_value_blocking(const char* key, char** value, size_t* value_
     if (result == 0) {
       break;
     } else {
-      usleep(100000); // 0.1 s
+      util::sleep_for(100); // 0.1 s
     }
   }
 

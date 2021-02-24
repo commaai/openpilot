@@ -125,9 +125,9 @@ def listDataDirectory():
 
 @dispatcher.add_method
 def reboot():
-  thermal_sock = messaging.sub_sock("thermal", timeout=1000)
-  ret = messaging.recv_one(thermal_sock)
-  if ret is None or ret.thermal.started:
+  sock = messaging.sub_sock("deviceState", timeout=1000)
+  ret = messaging.recv_one(sock)
+  if ret is None or ret.deviceState.started:
     raise Exception("Reboot unavailable")
 
   def do_reboot():
@@ -279,6 +279,8 @@ def ws_proxy_send(ws, local_sock, signal_sock, end_event):
     except Exception:
       cloudlog.exception("athenad.ws_proxy_send.exception")
       end_event.set()
+
+  signal_sock.close()
 
 
 def ws_recv(ws, end_event):

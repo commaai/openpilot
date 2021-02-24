@@ -4,7 +4,6 @@ from selfdrive.car.nissan.values import CAR
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
 from selfdrive.car.interfaces import CarInterfaceBase
 
-
 class CarInterface(CarInterfaceBase):
   def __init__(self, CP, CarController, CarState):
     super().__init__(CP, CarController, CarState)
@@ -40,12 +39,19 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.705
       ret.centerToFront = ret.wheelbase * 0.44
       ret.steerRatio = 17
-    elif candidate == CAR.LEAF:
+    elif candidate in [CAR.LEAF, CAR.LEAF_IC]:
       ret.mass = 1610 + STD_CARGO_KG
       ret.wheelbase = 2.705
       ret.centerToFront = ret.wheelbase * 0.44
       ret.steerRatio = 17
-
+    elif candidate == CAR.ALTIMA:
+      # Altima has EPS on C-CAN unlike the others that have it on V-CAN
+      ret.safetyParam = 1 # EPS is on alternate bus
+      ret.mass = 1492 + STD_CARGO_KG
+      ret.wheelbase = 2.824
+      ret.centerToFront = ret.wheelbase * 0.44
+      ret.steerRatio = 17
+  
     ret.steerControlType = car.CarParams.SteerControlType.angle
     ret.radarOffCan = True
 

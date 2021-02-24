@@ -1,22 +1,18 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <signal.h>
 #include <unistd.h>
 #include <eigen3/Eigen/Dense>
 
-#include "common/visionbuf.h"
-#include "common/visionipc.h"
+#include "visionbuf.h"
+#include "visionipc_client.h"
 #include "common/swaglog.h"
 #include "common/clutil.h"
+#include "common/util.h"
 
 #include "models/driving.h"
 #include "messaging.hpp"
-volatile sig_atomic_t do_exit = 0;
 
-static void set_do_exit(int sig) {
-  do_exit = 1;
-}
-
+ExitHandler do_exit;
 // globals
 bool run_model;
 mat3 cur_transform;
@@ -102,9 +98,6 @@ int main(int argc, char **argv) {
   set_core_affinity(4);
 #endif
 
-  signal(SIGINT, (sighandler_t)set_do_exit);
-  signal(SIGTERM, (sighandler_t)set_do_exit);
-
   pthread_mutex_init(&transform_lock, NULL);
 
   // start calibration thread
@@ -113,8 +106,8 @@ int main(int argc, char **argv) {
   assert(err == 0);
 
   // messaging
-  PubMaster pm({"modelV2", "model", "cameraOdometry"});
-  SubMaster sm({"pathPlan", "frame"});
+  PubMaster pm({"modelV2", "cameraOdometry"});
+  SubMaster sm({"lateralPlan", "roadCameraState"});
 
   // cl init
   cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
@@ -125,17 +118,20 @@ int main(int argc, char **argv) {
   model_init(&model, device_id, context);
   LOGW("models loaded, modeld starting");
 
-  // loop
-  VisionStream stream;
-  while (!do_exit) {
-    VisionStreamBufs buf_info;
-    err = visionstream_init(&stream, VISION_STREAM_YUV, true, &buf_info);
-    if (err) {
-      LOGW("visionstream connect failed");
-      usleep(100000);
+  VisionIpcClient vipc_client = VisionIpcClient("camerad", VISION_STREAM_YUV_BACK, true, device_id, context);
+
+  while (!do_exit){
+    if (!vipc_client.connect(false)){
+      util::sleep_for(100);
       continue;
     }
-    LOGW("connected with buffer size: %d", buf_info.buf_len);
+    break;
+  }
+
+  // loop
+  while (!do_exit) {
+    VisionBuf *b = &vipc_client.buffers[0];
+    LOGW("connected with buffer size: %d (%d x %d)", b->len, b->width, b->height);
 
     // setup filter to track dropped frames
     const float dt = 1. / MODEL_FREQ;
@@ -143,20 +139,16 @@ int main(int argc, char **argv) {
     const float frame_filter_k = (dt / ts) / (1. + dt / ts);
     float frames_dropped = 0;
 
-    // one frame in memory
-    VisionBuf yuv_ion = visionbuf_allocate_cl(buf_info.buf_len, device_id, context);
-
     uint32_t frame_id = 0, last_vipc_frame_id = 0;
     double last = 0;
     int desire = -1;
     uint32_t run_count = 0;
+
     while (!do_exit) {
-      VIPCBuf *buf;
-      VIPCBufExtra extra;
-      buf = visionstream_get(&stream, &extra);
-      if (buf == NULL) {
-        LOGW("visionstream get failed");
-        break;
+      VisionIpcBufExtra extra;
+      VisionBuf *buf = vipc_client.recv(&extra);
+      if (buf == nullptr){
+        continue;
       }
 
       pthread_mutex_lock(&transform_lock);
@@ -166,8 +158,8 @@ int main(int argc, char **argv) {
 
       if (sm.update(0) > 0){
         // TODO: path planner timeout?
-        desire = ((int)sm["pathPlan"].getPathPlan().getDesire());
-        frame_id = sm["frame"].getFrame().getFrameId();
+        desire = ((int)sm["lateralPlan"].getLateralPlan().getDesire());
+        frame_id = sm["roadCameraState"].getRoadCameraState().getFrameId();
       }
 
       double mt1 = 0, mt2 = 0;
@@ -181,12 +173,8 @@ int main(int argc, char **argv) {
 
         mt1 = millis_since_boot();
 
-        // TODO: don't make copies!
-        memcpy(yuv_ion.addr, buf->addr, buf_info.buf_len);
-        visionbuf_sync(&yuv_ion, VISIONBUF_SYNC_TO_DEVICE);
-
         ModelDataRaw model_buf =
-            model_eval_frame(&model, yuv_ion.buf_cl, buf_info.width, buf_info.height,
+            model_eval_frame(&model, buf->buf_cl, buf->width, buf->height,
                              model_transform, vec_desire);
         mt2 = millis_since_boot();
         float model_execution_time = (mt2 - mt1) / 1000.0;
@@ -197,18 +185,16 @@ int main(int argc, char **argv) {
         if (run_count < 10) frames_dropped = 0;  // let frame drops warm up
         float frame_drop_ratio = frames_dropped / (1 + frames_dropped);
 
-        const float *raw_pred_ptr = send_raw_pred ? &model.output[0] : nullptr;
-        model_publish(pm, extra.frame_id, frame_id, frame_drop_ratio, model_buf, raw_pred_ptr, extra.timestamp_eof, model_execution_time);
+        model_publish(pm, extra.frame_id, frame_id, frame_drop_ratio, model_buf, extra.timestamp_eof, model_execution_time,
+                      kj::ArrayPtr<const float>(model.output.data(), model.output.size()));
         posenet_publish(pm, extra.frame_id, vipc_dropped_frames, model_buf, extra.timestamp_eof);
 
-        LOGD("model process: %.2fms, from last %.2fms, vipc_frame_id %zu, frame_id, %zu, frame_drop %.3f", mt2-mt1, mt1-last, extra.frame_id, frame_id, frame_drop_ratio);
+        LOGD("model process: %.2fms, from last %.2fms, vipc_frame_id %u, frame_id, %u, frame_drop %.3f", mt2-mt1, mt1-last, extra.frame_id, frame_id, frame_drop_ratio);
         last = mt1;
         last_vipc_frame_id = extra.frame_id;
       }
 
     }
-    visionbuf_free(&yuv_ion);
-    visionstream_destroy(&stream);
   }
 
   model_free(&model);

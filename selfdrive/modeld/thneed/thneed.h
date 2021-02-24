@@ -48,6 +48,7 @@ class CLQueuedKernel {
     string name;
     cl_uint num_args;
     vector<string> arg_names;
+    vector<string> arg_types;
     vector<string> args;
     vector<int> args_size;
     cl_kernel kernel = NULL;
@@ -60,12 +61,26 @@ class CLQueuedKernel {
     Thneed *thneed;
 };
 
-class CachedCommand {
+class CachedIoctl {
+  public:
+    virtual void exec() {}
+};
+
+class CachedSync: public CachedIoctl {
+  public:
+    CachedSync(Thneed *lthneed, string ldata) { thneed = lthneed; data = ldata; }
+    void exec();
+  private:
+    Thneed *thneed;
+    string data;
+};
+
+class CachedCommand: public CachedIoctl {
   public:
     CachedCommand(Thneed *lthneed, struct kgsl_gpu_command *cmd);
-    void exec(bool wait);
-    void disassemble(int cmd_index);
+    void exec();
   private:
+    void disassemble(int cmd_index);
     struct kgsl_gpu_command cache;
     unique_ptr<kgsl_command_object[]> cmds;
     unique_ptr<kgsl_command_object[]> objs;
@@ -78,9 +93,11 @@ class Thneed {
     Thneed(bool do_clinit=false);
     void stop();
     void execute(float **finputs, float *foutput, bool slow=false);
+    void wait();
     int optimize();
 
-    vector<cl_mem> inputs;
+    vector<void *> inputs;
+    vector<size_t> input_sizes;
     cl_mem output = NULL;
 
     cl_context context = NULL;
@@ -92,11 +109,13 @@ class Thneed {
     int record;
     int timestamp;
     unique_ptr<GPUMalloc> ram;
-    vector<unique_ptr<CachedCommand> > cmds;
-    vector<string> syncobjs;
+    vector<unique_ptr<CachedIoctl> > cmds;
     int fd;
 
     // all CL kernels
+    void find_inputs_outputs();
+    void copy_inputs(float **finputs);
+    void copy_output(float *foutput);
     cl_int clexec();
     vector<shared_ptr<CLQueuedKernel> > kq;
 
@@ -105,9 +124,8 @@ class Thneed {
 
     // loading and saving
     void load(const char *filename);
-    void save(const char *filename);
+    void save(const char *filename, bool save_binaries=false);
   private:
     void clinit();
-    json11::Json to_json();
 };
 

@@ -67,21 +67,83 @@ def create_clu11(packer, frame, clu11, button):
   return packer.make_can_msg("CLU11", 0, values)
 
 
-def create_lfa_mfa(packer, frame, enabled):
+def create_lfahda_mfc(packer, enabled, hda_set_speed=0):
   values = {
-    "ACTIVE": enabled,
+    "LFA_Icon_State": 2 if enabled else 0,
+    "HDA_Active": 1 if hda_set_speed else 0,
+    "HDA_Icon_State": 2 if hda_set_speed else 0,
+    "HDA_VSetReq": hda_set_speed,
   }
-
-  # ACTIVE 1 = Green steering wheel icon
-
-  # LFA_USM 2 & 3 = LFA cancelled, fast loud beeping
-  # LFA_USM 0 & 1 = No mesage
-
-  # LFA_SysWarning 1 = "Switching to HDA", short beep
-  # LFA_SysWarning 2 = "Switching to Smart Cruise control", short beep
-  # LFA_SysWarning 3 =  LFA error
-
-  # ACTIVE2: nothing
-  # HDA_USM: nothing
-
   return packer.make_can_msg("LFAHDA_MFC", 0, values)
+
+def create_acc_commands(packer, enabled, accel, idx, lead_visible, set_speed, stopping):
+  commands = []
+
+  scc11_values = {
+    "MainMode_ACC": 1,
+    "TauGapSet": 4,
+    "VSetDis": set_speed if enabled else 0,
+    "AliveCounterACC": idx % 0x10,
+  }
+  commands.append(packer.make_can_msg("SCC11", 0, scc11_values))
+
+  scc12_values = {
+    "ACCMode": 1 if enabled else 0,
+    "StopReq": 1 if stopping else 0,
+    "aReqRaw": accel,
+    "aReqValue": accel, # stock ramps up at 1.0/s and down at 0.5/s until it reaches aReqRaw
+    "CR_VSM_Alive": idx % 0xF,
+  }
+  scc12_dat = packer.make_can_msg("SCC12", 0, scc12_values)[2]
+  scc12_values["CR_VSM_ChkSum"] = 0x10 - sum([sum(divmod(i, 16)) for i in scc12_dat]) % 0x10
+
+  commands.append(packer.make_can_msg("SCC12", 0, scc12_values))
+
+  scc14_values = {
+    "ComfortBandUpper": 0.0, # stock usually is 0 but sometimes uses higher values
+    "ComfortBandLower": 0.0, # stock usually is 0 but sometimes uses higher values
+    "JerkUpperLimit": 1.0 if enabled else 0, # stock usually is 1.0 but sometimes uses higher values
+    "JerkLowerLimit": 0.5 if enabled else 0, # stock usually is 0.5 but sometimes uses higher values
+    "ACCMode": 1 if enabled else 4, # stock will always be 4 instead of 0 after first disengage
+    "ObjGap": 3 if lead_visible else 0, # TODO: 1-5 based on distance to lead vehicle
+  }
+  commands.append(packer.make_can_msg("SCC14", 0, scc14_values))
+
+  fca11_values = {
+    # seems to count 2,1,0,3,2,1,0,3,2,1,0,3,2,1,0,repeat...
+    # (where first value is aligned to Supplemental_Counter == 0)
+    # test: [(idx % 0xF, -((idx % 0xF) + 2) % 4) for idx in range(0x14)]
+    "CR_FCA_Alive": ((-((idx % 0xF) + 2) % 4) << 2) + 1,
+    "Supplemental_Counter": idx % 0xF,
+  }
+  fca11_dat = packer.make_can_msg("FCA11", 0, fca11_values)[2]
+  fca11_values["CR_FCA_ChkSum"] = 0x10 - sum([sum(divmod(i, 16)) for i in fca11_dat]) % 0x10
+  commands.append(packer.make_can_msg("FCA11", 0, fca11_values))
+
+  return commands
+
+def create_acc_opt(packer):
+  commands = []
+
+  scc13_values = {
+    "SCCDrvModeRValue": 2,
+    "SCC_Equip": 1,
+    "Lead_Veh_Dep_Alert_USM": 2,
+  }
+  commands.append(packer.make_can_msg("SCC13", 0, scc13_values))
+
+  fca12_values = {
+    # stock values may be needed if openpilot has vision based AEB some day
+    # for now we are not setting these because there is no AEB for vision only
+    # "FCA_USM": 3,
+    # "FCA_DrvSetState": 2,
+  }
+  commands.append(packer.make_can_msg("FCA12", 0, fca12_values))
+
+  return commands
+
+def create_frt_radar_opt(packer):
+  frt_radar11_values = {
+    "CF_FCA_Equip_Front_Radar": 1,
+  }
+  return packer.make_can_msg("FRT_RADAR11", 0, frt_radar11_values)

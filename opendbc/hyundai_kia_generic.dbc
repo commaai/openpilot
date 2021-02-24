@@ -996,7 +996,7 @@ BO_ 1342 LKAS12: 6 LDWS_LKAS
  SG_ CF_LkasTsrSpeed_Display_Navi : 24|8@1+ (1.0,0.0) [0.0|255.0] ""  BCM,CLU
  SG_ CF_Lkas_TsrAddinfo_Display : 32|2@1+ (1.0,0.0) [0.0|3.0] ""  CLU
  SG_ CF_LkasDawStatus : 40|3@1+ (1,0) [0|7] "" CLU
- SG_ CF_Lkas_Daw_USM : 39|3@1+ (1,0) [0|7] "" CLU
+ SG_ CF_Lkas_Daw_USM : 37|3@1+ (1,0) [0|7] "" CLU
 
 BO_ 1338 TMU_GW_E_01: 8 CLU
  SG_ CF_Gway_TeleReqDrLock : 0|2@1+ (1.0,0.0) [0.0|3.0] ""  BCM
@@ -1470,19 +1470,24 @@ BO_ 1186 FRT_RADAR11: 2 FCA
  SG_ CF_FCA_Equip_Front_Radar : 0|3@1+ (1,0) [0|7] "" LDWS_LKAS,LDW_LKA,ESC
 
 BO_ 905 SCC14: 8 SCC
- SG_ ComfortBandUpper : 0|6@1+ (0.0986,-4.14) [0|1.26] "m/s^2" ESC
- SG_ ComfortBandLower : 6|6@1+ (0.0986,-4.14) [0|1.26] "m/s^2" ESC
- SG_ JerkUpperLimit : 12|7@1+ (1,0) [0|12.7] "m/s^3" ESC
+ SG_ ComfortBandUpper : 0|6@1+ (0.02,0) [0|1.26] "m/s^2" ESC
+ SG_ ComfortBandLower : 6|6@1+ (0.02,0) [0|1.26] "m/s^2" ESC
+ SG_ JerkUpperLimit : 12|7@1+ (0.1,0) [0|12.7] "m/s^3" ESC
  SG_ JerkLowerLimit : 19|7@1+ (0.1,0) [0|12.7] "m/s^3" ESC
  SG_ ACCMode : 32|3@1+ (1,0) [0|7] "" CLU,HUD,LDWS_LKAS,ESC
  SG_ ObjGap : 56|8@1+ (1,0) [0|255] "" CLU,HUD,ESC
 
 BO_ 1157 LFAHDA_MFC: 4 XXX
  SG_ HDA_USM : 0|2@1+ (1,0) [0|3] "" XXX
- SG_ ACTIVE2 : 4|2@0+ (1,0) [0|3] "" XXX
- SG_ LFA_SysWarning : 16|2@1+ (1,0) [0|3] "" XXX
- SG_ ACTIVE : 25|1@1+ (1,0) [0|3] "" XXX
- SG_ LFA_USM : 28|2@1+ (1,0) [0|3] "" XXX
+ SG_ HDA_Active : 2|1@1+ (1,0) [0|1] "" XXX
+ SG_ HDA_Icon_State : 3|2@1+ (1,0) [0|3] "" XXX
+ SG_ HDA_Chime : 7|1@1+ (1,0) [0|1] "" XXX
+ SG_ HDA_VSetReq : 8|8@1+ (1,0) [0|255] "km/h" XXX
+ SG_ LFA_SysWarning : 16|3@1+ (1,0) [0|7] "" XXX
+ SG_ NEW_SIGNAL_1 : 20|3@1+ (1,0) [0|7] "" XXX
+ SG_ LFA_Icon_State : 24|2@1+ (1,0) [0|3] "" XXX
+ SG_ LFA_USM : 27|2@1+ (1,0) [0|3] "" XXX
+ SG_ HDA_SysWarning : 29|2@1+ (1,0) [0|3] "" XXX
 
 BO_ 913 BCM_PO_11: 8 Vector__XXX
  SG_ BCM_Door_Dri_Status : 5|1@0+ (1,0) [0|1] "" PT_ESC_ABS
@@ -1565,7 +1570,7 @@ BO_ 352 AHB1: 8 iBAU
  SG_ CF_Ahb_Bzzr : 26|1@1+ (1,0) [0|1] "" Vector__XXX
  SG_ CF_Ahb_ChkSum : 56|8@1+ (1,0) [0|255] "" Vector__XXX
 
-BO_ 1191 4a7MFC: 8 XXX
+BO_ 1191 MFC_4a7: 8 XXX
  SG_ PAINT1 : 0|1@0+ (1,0) [0|1] "" XXX
 
 BO_ 1162 BCA11: 8 BCW
@@ -1575,9 +1580,11 @@ BO_ 1162 BCA11: 8 BCW
  SG_ RCCA_Brake_Command : 29|1@1+ (1,0) [0|1] "" iBAU
  SG_ Check_Sum : 56|8@1+ (1,0) [0|16] "" iBAU
 
-BO_ 1136 P_STS: 6 CGW
+BO_ 1136 P_STS: 8 CGW
  SG_ HCU1_STS : 6|2@1+ (1,0) [0|3] "" BCW,EPB,FCA,MDPS,SCC,iBAU
  SG_ HCU5_STS : 8|2@1+ (1,0) [0|3] "" EPB,FCA,MDPS,iBAU
+ SG_ Counter : 58|4@1+ (1,0) [0|15] "" MDPS
+ SG_ Checksum : 62|2@1+ (1,0) [0|3] "" MDPS
 
 BO_ 304 YRS11: 8 ACU
  SG_ CR_Yrs_Yr : 0|16@1+ (0.005,-163.84) [-163.84|163.83] "deg/s" CGW,iBAU
@@ -1601,14 +1608,14 @@ BO_ 320 YRS12: 8 ACU
 BO_ 1173 YRS13: 8 ACU
  SG_ YRS_SeralNo : 16|48@1+ (1,0) [0|281474976710655] "" iBAU
 
-BO_ 870 366_EMS: 8 EMS
- SG_ N : 7|16@0+ (1,0.25) [0|16383.75] "rpm" XXX
- SG_ EMS_Related : 23|16@0+ (1,0) [0|65535] "" XXX
- SG_ TQFR : 39|8@0+ (0.390625,0) [0|99.6094] "%" XXX
+BO_ 870 EMS_366: 8 EMS
+ SG_ TQI_1 : 0|8@1+ (0.390625,0) [0|99.6094] "%" MDPS
+ SG_ N : 8|16@1+ (0.25,0.0) [0.0|16383.75] "rpm" MDPS
+ SG_ TQI_2 : 24|8@1+ (0.390625,0) [0|99.6094] "%" MDPS
  SG_ VS : 40|8@1+ (1,0) [0|255] "km/h" MDPS
  SG_ SWI_IGK : 48|1@0+ (1,0) [0|1] "" XXX
 
-BO_ 854 356: 8 XXX
+BO_ 854 M_356: 8 XXX
  SG_ PAINT1 : 32|1@0+ (1,0) [0|1] "" XXX
  SG_ PAINT2 : 34|2@0+ (1,0) [0|1] "" XXX
  SG_ PAINT3 : 36|2@0+ (1,0) [0|3] "" XXX
@@ -1633,3 +1640,7 @@ BO_ 1042 ICM_412h: 8 ICM
  SG_ PopupMessageOutput_8Level : 55|1@0+ (1,0) [0|1] "" Vector__XXX
 
 VAL_ 909 CF_VSM_Warn 2 "FCW" 3 "AEB";
+VAL_ 1157 LFA_Icon_State 0 "no_wheel" 1 "white_wheel" 2 "green_wheel" 3 "green_wheel_blink";
+VAL_ 1157 LFA_SysWarning 0 "no_message" 1 "switching_to_hda" 2 "switching_to_scc" 3 "lfa_error" 4 "check_hda" 5 "keep_hands_on_wheel_orange" 6 "keep_hands_on_wheel_red";
+VAL_ 1157 HDA_Icon_State 0 "no_hda" 1 "white_hda" 2 "green_hda";
+VAL_ 1157 HDA_SysWarning 0 "no_message" 1 "driving_convenience_systems_cancelled" 2 "highway_drive_assist_system_cancelled";

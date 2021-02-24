@@ -1,3 +1,20 @@
+Version 0.8.2 (2021-02-26)
+========================
+ * Use model points directly in MPC (no more polyfits), making lateral planning more accurate
+ * Use model heading prediction for smoother lateral control
+ * Smarter actuator delay compensation
+ * Improve qcamera resolution for improved video in explorer and connect
+ * Adjust maximum engagement speed to better fit the model's training distribution
+ * New driver monitoring model trained with 3x more diverse data
+ * Improved face detection with masks
+ * More predictable DM alerts when visibility is bad
+ * Rewritten video streaming between openpilot processes
+ * Improved longitudinal tuning on TSS2 Corolla and Rav4 thanks to briskspirit!
+ * Audi A3 2015 and 2017 support thanks to keeleysam!
+ * Nissan Altima 2020 support thanks to avolmensky!
+ * Lexus ES Hybrid 2018 support thanks to TheInventorMan!
+ * Toyota Camry Hybrid 2021 support thanks to alancyau!
+
 Version 0.8.1 (2020-12-21)
 ========================
  * Original EON is deprecated, upgrade to comma two

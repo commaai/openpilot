@@ -18,5 +18,8 @@ libdbc = env.SharedLibrary('libdbc', ["dbc.cc", "parser.cc", "packer.cc", "commo
 # Build packer and parser
 lenv = envCython.Clone()
 lenv["LINKFLAGS"] += [libdbc[0].get_labspath()]
-lenv.Program('parser_pyx.so', 'parser_pyx.pyx')
-lenv.Program('packer_pyx.so', 'packer_pyx.pyx')
+parser = lenv.Program('parser_pyx.so', 'parser_pyx.pyx')
+packer = lenv.Program('packer_pyx.so', 'packer_pyx.pyx')
+
+lenv.Depends(parser, libdbc)
+lenv.Depends(packer, libdbc)

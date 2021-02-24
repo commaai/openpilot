@@ -1,9 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <signal.h>
 #include <unistd.h>
-#include <sched.h>
 #include <errno.h>
 #include <sys/time.h>
 #include <sys/cdefs.h>
@@ -21,17 +19,10 @@
 
 #include "ublox_msg.h"
 
-volatile sig_atomic_t do_exit = 0; // Flag for process exit on signal
-
-void set_do_exit(int sig) {
-  do_exit = 1;
-}
-
+ExitHandler do_exit;
 using namespace ublox;
 int ubloxd_main(poll_ubloxraw_msg_func poll_func, send_gps_event_func send_func) {
   LOGW("starting ubloxd");
-  signal(SIGINT, (sighandler_t) set_do_exit);
-  signal(SIGTERM, (sighandler_t) set_do_exit);
 
   UbloxMsgParser parser;
 
@@ -96,6 +87,13 @@ int ubloxd_main(poll_ubloxraw_msg_func poll_func, send_gps_event_func send_func)
           if(parser.msg_id() == MSG_MON_HW) {
             //LOGD("MSG_MON_HW");
             auto words = parser.gen_mon_hw();
+            if(words.size() > 0) {
+              auto bytes = words.asBytes();
+              pm.send("ubloxGnss", bytes.begin(), bytes.size());
+            }
+          } else if(parser.msg_id() == MSG_MON_HW2) {
+            //LOGD("MSG_MON_HW2");
+            auto words = parser.gen_mon_hw2();
             if(words.size() > 0) {
               auto bytes = words.asBytes();
               pm.send("ubloxGnss", bytes.begin(), bytes.size());

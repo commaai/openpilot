@@ -34,7 +34,7 @@ struct ModelDataRaw {
 
 typedef struct ModelState {
   ModelFrame frame;
-  std::unique_ptr<float[]> output;
+  std::vector<float> output;
   std::unique_ptr<float[]> input_frames;
   std::unique_ptr<RunModel> m;
   cl_command_queue q;
@@ -53,7 +53,7 @@ ModelDataRaw model_eval_frame(ModelState* s, cl_mem yuv_cl, int width, int heigh
 void model_free(ModelState* s);
 void poly_fit(float *in_pts, float *in_stds, float *out);
 void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id, float frame_drop,
-                   const ModelDataRaw &net_outputs, const float *raw_pred, uint64_t timestamp_eof,
-                   float model_execution_time);
+                   const ModelDataRaw &net_outputs, uint64_t timestamp_eof,
+                   float model_execution_time, kj::ArrayPtr<const float> raw_pred);
 void posenet_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_dropped_frames,
                      const ModelDataRaw &net_outputs, uint64_t timestamp_eof);

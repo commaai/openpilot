@@ -5,7 +5,7 @@ from selfdrive.car import dbc_dict
 Ecu = car.CarParams.Ecu
 
 # Steer torque limits
-class SteerLimitParams:
+class CarControllerParams:
   def __init__(self, CP):
     if CP.carFingerprint in [CAR.SONATA, CAR.PALISADE, CAR.SANTA_FE, CAR.VELOSTER, CAR.GENESIS_G70, CAR.IONIQ_EV_2020]:
       self.STEER_MAX = 384
@@ -30,12 +30,12 @@ class CAR:
   KONA_EV = "HYUNDAI KONA ELECTRIC 2019"
   SANTA_FE = "HYUNDAI SANTA FE LIMITED 2019"
   SONATA = "HYUNDAI SONATA 2020"
-  SONATA_2019 = "HYUNDAI SONATA 2019"
+  SONATA_LF = "HYUNDAI SONATA 2019"
   PALISADE = "HYUNDAI PALISADE 2020"
   VELOSTER = "HYUNDAI VELOSTER 2019"
 
   # Kia
-  KIA_FORTE = "KIA FORTE E 2018"
+  KIA_FORTE = "KIA FORTE E 2018 & GT 2021"
   KIA_NIRO_EV = "KIA NIRO EV 2020"
   KIA_OPTIMA = "KIA OPTIMA SX 2019 & 2016"
   KIA_OPTIMA_H = "KIA OPTIMA HYBRID 2017 & SPORTS 2019"
@@ -52,6 +52,7 @@ class Buttons:
   NONE = 0
   RES_ACCEL = 1
   SET_DECEL = 2
+  GAP_DIST = 3
   CANCEL = 4
 
 FINGERPRINTS = {
@@ -94,7 +95,7 @@ FINGERPRINTS = {
   CAR.SONATA: [
     {67: 8, 68: 8, 127: 8, 304: 8, 320: 8, 339: 8, 356: 4, 544: 8, 546: 8, 549: 8, 550: 8, 576: 8, 593: 8, 608: 8, 688: 6, 809: 8, 832: 8, 854: 8, 865: 8, 870: 7, 871: 8, 872: 8, 897: 8, 902: 8, 903: 8, 905: 8, 908: 8, 909: 8, 912: 7, 913: 8, 916: 8, 1040: 8, 1042: 8, 1056: 8, 1057: 8, 1078: 4, 1089: 5, 1096: 8, 1107: 5, 1108: 8, 1114: 8, 1136: 8, 1145: 8, 1151: 8, 1155: 8, 1156: 8, 1157: 4, 1162: 8, 1164: 8, 1168: 8, 1170: 8, 1173: 8, 1180: 8, 1183: 8, 1184: 8, 1186: 2, 1191: 2, 1193: 8, 1210: 8, 1225: 8, 1227: 8, 1265: 4, 1268: 8, 1280: 8, 1287: 4, 1290: 8, 1292: 8, 1294: 8, 1312: 8, 1322: 8, 1330: 8, 1339: 8, 1342: 6, 1343: 8, 1345: 8, 1348: 8, 1363: 8, 1369: 8, 1371: 8, 1378: 8, 1379: 8, 1384: 8, 1394: 8, 1407: 8, 1419: 8, 1427: 6, 1446: 8, 1456: 4, 1460: 8, 1470: 8, 1485: 8, 1504: 3, 1988: 8, 1996: 8, 2000: 8, 2004: 8, 2008: 8, 2012: 8, 2015: 8},
   ],
-  CAR.SONATA_2019: [
+  CAR.SONATA_LF: [
     {66: 8, 67: 8, 68: 8, 127: 8, 273: 8, 274: 8, 275: 8, 339: 8, 356: 4, 399: 8, 447: 8, 512: 6, 544: 8, 593: 8, 608: 8, 688: 5, 790: 8, 809: 8, 832: 8, 884: 8, 897: 8, 899: 8, 902: 8, 903: 6, 916: 8, 1040: 8, 1056: 8, 1057: 8, 1078: 4, 1151: 6, 1168: 7, 1170: 8, 1253: 8, 1254: 8, 1255: 8, 1265: 4, 1280: 1, 1287: 4, 1290: 8, 1292: 8, 1294: 8, 1312: 8, 1314: 8, 1322: 8, 1331: 8, 1332: 8, 1333: 8, 1342: 6, 1345: 8, 1348: 8, 1349: 8, 1351: 8, 1353: 8, 1363: 8, 1365: 8, 1366: 8, 1367: 8, 1369: 8, 1397: 8, 1407: 8, 1415: 8, 1419: 8, 1425: 2, 1427: 6, 1440: 8, 1456: 4, 1470: 8, 1472: 8, 1486: 8, 1487: 8, 1491: 8, 1530: 8, 1532: 5, 2000: 8, 2001: 8, 2004: 8, 2005: 8, 2008: 8, 2009: 8, 2012: 8, 2013: 8, 2014: 8, 2016: 8, 2017: 8, 2024: 8, 2025: 8},
   ],
   CAR.KIA_OPTIMA: [{
@@ -123,7 +124,7 @@ FINGERPRINTS = {
   }],
   CAR.IONIQ_EV_2020: [{
     127: 8, 304: 8, 320: 8, 339: 8, 352: 8, 356: 4, 524: 8, 544: 7, 593: 8, 688: 5, 832: 8, 881: 8, 882: 8, 897: 8, 902: 8, 903: 8, 905: 8, 909: 8, 916: 8, 1040: 8, 1042: 8, 1056: 8, 1057: 8, 1078: 4, 1136: 8, 1151: 6, 1155: 8, 1156: 8, 1157: 4, 1164: 8, 1168: 7, 1173: 8, 1183: 8, 1186: 2, 1191: 2, 1225: 8, 1265: 4, 1280: 1, 1287: 4, 1290: 8, 1291: 8, 1292: 8, 1294: 8, 1312: 8, 1322: 8, 1342: 6, 1345: 8, 1348: 8, 1355: 8, 1363: 8, 1369: 8, 1379: 8, 1407: 8, 1419: 8, 1426: 8, 1427: 6, 1429: 8, 1430: 8, 1456: 4, 1470: 8, 1473: 8, 1507: 8, 1535: 8, 1988: 8, 1996: 8, 2000: 8, 2004: 8, 2005: 8, 2008: 8, 2012: 8, 2013: 8
-  }],  
+  }],
   CAR.IONIQ_EV_LTD: [{
     127: 8, 304: 8, 320: 8, 339: 8, 352: 8, 356: 4, 544: 7, 593: 8, 688: 5, 832: 8, 881: 8, 882: 8, 897: 8, 902: 8, 903: 8, 916: 8, 1040: 8, 1056: 8, 1057: 8, 1078: 4, 1136: 8, 1151: 6, 1168: 7, 1173: 8, 1265: 4, 1280: 1, 1287: 4, 1290: 8, 1291: 8, 1292: 8, 1294: 8, 1322: 8, 1342: 6, 1345: 8, 1348: 8, 1355: 8, 1363: 8, 1369: 8, 1407: 8, 1419: 8, 1425: 2, 1426: 8, 1427: 6, 1429: 8, 1430: 8, 1456: 4, 1470: 8, 1507: 8, 1535: 8
   }],
@@ -140,7 +141,7 @@ FINGERPRINTS = {
     127: 8, 304: 8, 320: 8, 339: 8, 352: 8, 356: 4, 516: 8, 544: 8, 593: 8, 688: 5, 832: 8, 881: 8, 882: 8, 897: 8, 902: 8, 903: 8, 905: 8, 909: 8, 916: 8, 1040: 8, 1042: 8, 1056: 8, 1057: 8, 1078: 4, 1136: 8, 1151: 6, 1156: 8, 1157: 4, 1168: 7, 1173: 8, 1183: 8, 1186: 2, 1191: 2, 1193: 8, 1225: 8, 1260: 8, 1265: 4, 1280: 1, 1287: 4, 1290: 8, 1291: 8, 1292: 8, 1294: 8, 1312: 8, 1322: 8, 1342: 6, 1345: 8, 1348: 8, 1355: 8, 1363: 8, 1369: 8, 1407: 8, 1419: 8, 1426: 8, 1427: 6, 1429: 8, 1430: 8, 1456: 4, 1470: 8, 1473: 8, 1507: 8, 1535: 8, 1990: 8, 1998: 8, 1996: 8, 2000: 8, 2004: 8, 2008: 8, 2012: 8, 2015: 8
   }],
   CAR.KIA_FORTE: [{
-    67: 8, 127: 8, 304: 8, 320: 8, 339: 8, 356: 4, 544: 8, 593: 8, 608: 8, 688: 5, 809: 8, 832: 8, 854: 7, 870: 7, 871: 8, 872: 8, 897: 8, 902: 8, 903: 8, 909: 8, 916: 8, 1040: 8, 1042: 8, 1078: 4, 1107: 5, 1136: 8, 1156: 8, 1170: 8, 1173: 8, 1191: 2, 1225: 8, 1265: 4, 1280: 4, 1287: 4, 1292: 8, 1294: 8, 1312: 8, 1322: 8, 1342: 6, 1345: 8, 1348: 8, 1363: 8, 1369: 8, 1384: 8, 1394: 8, 1407: 8, 1427: 6, 1456: 4, 1470: 8
+    67: 8, 127: 8, 304: 8, 320: 8, 339: 8, 354: 3, 356: 4, 544: 8, 576: 8, 593: 8, 608: 8, 688: 5, 809: 8, 832: 8, 854: 7, 870: 7, 871: 8, 872: 8, 897: 8, 902: 8, 903: 8, 905: 8, 909: 8, 916: 8, 1040: 8, 1042: 8, 1056: 8, 1057: 8, 1078: 4, 1107: 5, 1136: 8, 1156: 8, 1170: 8, 1173: 8, 1186: 2, 1191: 2, 1225: 8, 1265: 4, 1280: 4, 1287: 4, 1290: 8, 1292: 8, 1294: 8, 1312: 8, 1322: 8, 1342: 6, 1345: 8, 1348: 8, 1363: 8, 1369: 8, 1384: 8, 1394: 8, 1407: 8, 1414: 3, 1419: 8, 1427: 6, 1456: 4, 1470: 8, 1988: 8, 1996: 8, 2000: 8, 2004: 8, 2008: 8, 2012: 8, 2015: 8
   }],
   CAR.KIA_OPTIMA_H: [{
     68: 8, 127: 8, 304: 8, 320: 8, 339: 8, 352: 8, 356: 4, 544: 8, 593: 8, 688: 5, 832: 8, 881: 8, 882: 8, 897: 8, 902: 8, 903: 6, 916: 8, 1040: 8, 1056: 8, 1057: 8, 1078: 4, 1136: 6, 1151: 6, 1168: 7, 1173: 8, 1236: 2, 1265: 4, 1280: 1, 1287: 4, 1290: 8, 1291: 8, 1292: 8, 1322: 8, 1331: 8, 1332: 8, 1333: 8, 1342: 6, 1345: 8, 1348: 8, 1355: 8, 1363: 8, 1369: 8, 1371: 8, 1407: 8, 1419: 8, 1427: 6, 1429: 8, 1430: 8, 1448: 8, 1456: 4, 1470: 8, 1476: 8, 1535: 8
@@ -160,6 +161,28 @@ FINGERPRINTS = {
 IGNORED_FINGERPRINTS = [CAR.VELOSTER, CAR.GENESIS_G70, CAR.KONA]
 
 FW_VERSIONS = {
+  CAR.IONIQ_EV_2020: {
+    (Ecu.fwdRadar, 0x7d0, None): [
+      b'\xf1\x00AEev SCC F-CUP      1.00 1.00 99110-G7200         ',
+    ],
+    (Ecu.eps, 0x7d4, None): [
+      b'\xf1\x00AE  MDPS C 1.00 1.01 56310/G7560 4APEC101',
+    ],
+    (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00AEE MFC  AT EUR RHD 1.00 1.01 95740-G2600 190819',
+    ],
+  },
+  CAR.IONIQ_EV_LTD: {
+    (Ecu.fwdRadar, 0x7d0, None): [
+      b'\xf1\x00AEev SCC F-CUP      1.00 1.00 96400-G7000         ',
+    ],
+    (Ecu.eps, 0x7d4, None): [
+      b'\xf1\x00AE  MDPS C 1.00 1.02 56310G7300\x00 4AEEC102',
+    ],
+    (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00AEE MFC  AT EUR LHD 1.00 1.00 95740-G7200 160418',
+    ],
+  },
   CAR.SONATA: {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00DN8_ SCC FHCUP      1.00 1.01 99110-L1000         ',
@@ -172,6 +195,7 @@ FW_VERSIONS = {
       b'\xf1\x00DN ESC \x06 104\x19\x08\x01 58910-L0100',
       b'\xf1\x8758910-L0100\xf1\x00DN ESC \x06 104\x19\x08\x01 58910-L0100\xf1\xa01.04',
       b'\xf1\x8758910-L0100\xf1\x00DN ESC \x07 104\x19\x08\x01 58910-L0100\xf1\xa01.04',
+      b'\xf1\x8758910-L0100\xf1\x00DN ESC \a 106 \a\x01 58910-L0100\xf1\xa01.06',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'HM6M2_0a0_BD0',
@@ -193,15 +217,53 @@ FW_VERSIONS = {
       b'\xf1\x00HT6TA260BLHT6TA800A1TDN8C20KS4\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'\xf1\x00bcsh8p54  U903\x00\x00\x00\x00\x00\x00SDN8T16NB0z{\xd4v',
       b'\xf1\x00HT6WA250BLHT6WA910A1SDN8G25NB1\x00\x00\x00\x00\x00\x00\x96\xa1\xf1\x92',
+      b'\xf1\x00HT6WA250BLHT6WA910A1SDN8G25NB1\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+  },
+  CAR.SONATA_LF: {
+    (Ecu.fwdRadar, 0x7d0, None): [
+      b'\xf1\x00LF__ SCC F-CUP      1.00 1.00 96401-C2200         ',
+    ],
+    (Ecu.esp, 0x7d1, None): [
+      b'\xf1\x00LF ESC \t 11 \x17\x01\x13 58920-C2610',
+    ],
+    (Ecu.engine, 0x7e0, None): [
+      b'\xf1\x81606D5K51\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00LFF LKAS AT USA LHD 1.00 1.01 95740-C1000 E51',
+      b'\xf1\xa01.01',
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+      b'\xf1\x87\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xf1\x816T6B4051\x00\x00\xf1\x006T6H0_C2\x00\x006T6B4051\x00\x00TLF0G24NL1\xb0\x9f\xee\xf5',
+      b'\xf1\x87\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xf1\x816T6B4051\x00\x00\xf1\x006T6H0_C2\x00\x006T6B4051\x00\x00TLF0G24NL1\x00\x00\x00\x00',
+      b'\xf1\x006T6H0_C2\x00\x006T6B4051\x00\x00TLF0G24NL1\xb0\x9f\xee\xf5',
     ],
   },
   CAR.SANTA_FE: {
-    (Ecu.fwdRadar, 0x7d0, None): [b'\xf1\x00TM__ SCC F-CUP      1.00 1.02 99110-S2000         \xf1\xa01.02'],
-    (Ecu.esp, 0x7d1, None): [b'\xf1\x00TM ESC \x02 100\x18\x030 58910-S2600\xf1\xa01.00',],
-    (Ecu.engine, 0x7e0, None): [b'\xf1\x81606EA051\x00\x00\x00\x00\x00\x00\x00\x00'],
-    (Ecu.eps, 0x7d4, None): [b'\xf1\x00TM  MDPS C 1.00 1.00 56340-S2000 8409'],
-    (Ecu.fwdCamera, 0x7c4, None): [b'\xf1\x00TM  MFC  AT USA LHD 1.00 1.00 99211-S2000 180409'],
-    (Ecu.transmission, 0x7e1, None): [b'\xf1\x87SBJWAA6562474GG0ffvgeTeFx\x88\x97\x88ww\x87www\x87w\x84o\xfa\xff\x87fO\xff\xc2 \xf1\x816W3C2051\x00\x00\xf1\x006W351_C2\x00\x006W3C2051\x00\x00TTM2G24NS1\x00\x00\x00\x00'],
+    (Ecu.fwdRadar, 0x7d0, None): [
+      b'\xf1\x00TM__ SCC F-CUP      1.00 1.03 99110-S2000         \xf1\xa01.03',
+      b'\xf1\x00TM__ SCC F-CUP      1.00 1.02 99110-S2000         \xf1\xa01.02',
+    ],
+    (Ecu.esp, 0x7d1, None): [
+      b'\xf1\x00TM ESC \r 104\x19\a\b 58910-S2650\xf1\xa01.04',
+      b'\xf1\x00TM ESC \x02 100\x18\x030 58910-S2600\xf1\xa01.00',
+    ],
+    (Ecu.engine, 0x7e0, None): [
+      b'\xf1\x81606G3051\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'\xf1\x81606EA051\x00\x00\x00\x00\x00\x00\x00\x00',      
+    ],
+    (Ecu.eps, 0x7d4, None): [
+      b'\xf1\x00TM  MDPS C 1.00 1.01 56340-S2000 9129',
+      b'\xf1\x00TM  MDPS C 1.00 1.00 56340-S2000 8409',      
+    ],
+    (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00TM  MFC  AT USA LHD 1.00 1.00 99211-S2000 180409',
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+      b'\xf1\x87LDLUEA6159884HG1\x88\x87hv\x99\x99y\x97\x89\xaa\xb8\x9ax\x99\x87\x89y\x99\xb7\x99\xa7?\xf7\xff\x97wo\xff\xf3\x05\xf1\x816W3E1051\x00\x00\xf1\x006W351_C2\x00\x006W3E1051\x00\x00TTM4T20NS5\x00\x00\x00\x00',
+      b'\xf1\x87SBJWAA6562474GG0ffvgeTeFx\x88\x97\x88ww\x87www\x87w\x84o\xfa\xff\x87fO\xff\xc2 \xf1\x816W3C2051\x00\x00\xf1\x006W351_C2\x00\x006W3C2051\x00\x00TTM2G24NS1\x00\x00\x00\x00',
+    ],
   },
   CAR.KIA_STINGER: {
     (Ecu.fwdRadar, 0x7d0, None): [ b'\xf1\x00CK__ SCC F_CUP      1.00 1.01 96400-J5100         \xf1\xa01.01'],
@@ -235,13 +297,17 @@ FW_VERSIONS = {
       b'\xf1\x81640J0051\x00\x00\x00\x00\x00\x00\x00\x00',
       b'\xf1\x81640K0051\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
-    (Ecu.eps, 0x7d4, None): [b'\xf1\x00LX2 MDPS C 1.00 1.03 56310-S8020 4LXDC103',],
+    (Ecu.eps, 0x7d4, None): [
+      b'\xf1\x00LX2 MDPS C 1,00 1,03 56310-S8020 4LXDC103', # modified firmware
+      b'\xf1\x00LX2 MDPS C 1.00 1.03 56310-S8020 4LXDC103',
+    ],
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00LX2 MFC  AT USA LHD 1.00 1.03 99211-S8100 190125',
       b'\xf1\x00LX2 MFC  AT USA LHD 1.00 1.05 99211-S8100 190909',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x87LBLUFN650868KF36\xa9\x98\x89\x88\xa8\x88\x88\x88h\x99\xa6\x89fw\x86gw\x88\x97x\xaa\x7f\xf6\xff\xbb\xbb\x8f\xff+\x82\xf1\x81U891\x00\x00\x00\x00\x00\x00\xf1\x00bcsh8p54  U891\x00\x00\x00\x00\x00\x00SLX2G38NB3\xd1\xc3\xf8\xa8',
+      b'\xf1\x87LBLUFN655162KF36\x98\x88\x88\x88\x98\x88\x88\x88x\x99\xa7\x89x\x99\xa7\x89x\x99\x97\x89g\x7f\xf7\xffwU_\xff\xe9!\xf1\x81U891\x00\x00\x00\x00\x00\x00\xf1\x00bcsh8p54  U891\x00\x00\x00\x00\x00\x00SLX2G38NB3\xd1\xc3\xf8\xa8',
       b'\xf1\x87LDKVBN424201KF26\xba\xaa\x9a\xa9\x99\x99\x89\x98\x89\x99\xa8\x99\x88\x99\x98\x89\x88\x99\xa8\x89v\x7f\xf7\xffwf_\xffq\xa6\xf1\x81U891\x00\x00\x00\x00\x00\x00\xf1\x00bcsh8p54  U891\x00\x00\x00\x00\x00\x00SLX4G38NB2\xafL]\xe7',
       b'\xf1\x87LDLVBN560098KF26\x86fff\x87vgfg\x88\x96xfw\x86gfw\x86g\x95\xf6\xffeU_\xff\x92c\xf1\x81U891\x00\x00\x00\x00\x00\x00\xf1\x00bcsh8p54  U891\x00\x00\x00\x00\x00\x00SLX4G38NB2\xafL]\xe7',
     ],
@@ -273,7 +339,10 @@ FW_VERSIONS = {
     (Ecu.transmission, 0x7e1, None): [b'\xf1\x816U2VE051\x00\x00\xf1\x006U2V0_C2\x00\x006U2VE051\x00\x00DOS4T16NS3\x00\x00\x00\x00', ],
   },
   CAR.KONA_EV: {
-    (Ecu.esp, 0x7D1, None): [b'\xf1\x00OS IEB \r 105\x18\t\x18 58520-K4000\xf1\xa01.05', ],
+    (Ecu.esp, 0x7D1, None): [
+      b'\xf1\x00OS IEB \r 105\x18\t\x18 58520-K4000\xf1\xa01.05',
+      b'\xf1\x00OS IEB \x03 212 \x11\x13 58520-K4000\xf1\xa02.12',
+    ],
     (Ecu.fwdCamera, 0x7C4, None): [b'\xf1\x00OSE LKAS AT EUR LHD 1.00 1.00 95740-K4100 W40', ],
     (Ecu.eps, 0x7D4, None): [b'\xf1\x00OS  MDPS C 1.00 1.04 56310K4050\x00 4OEDC104', ],
     (Ecu.fwdRadar, 0x7D0, None): [b'\xf1\x00OSev SCC F-CUP      1.00 1.01 99110-K4000         \xf1\xa01.01', ],
@@ -314,13 +383,15 @@ CHECKSUM = {
 FEATURES = {
   # which message has the gear
   "use_cluster_gears": set([CAR.ELANTRA, CAR.ELANTRA_GT_I30, CAR.KONA]),
-  "use_tcu_gears": set([CAR.KIA_OPTIMA, CAR.SONATA_2019, CAR.VELOSTER]),
+  "use_tcu_gears": set([CAR.KIA_OPTIMA, CAR.SONATA_LF, CAR.VELOSTER]),
   "use_elect_gears": set([CAR.KIA_NIRO_EV, CAR.KIA_OPTIMA_H, CAR.IONIQ_EV_LTD, CAR.KONA_EV, CAR.IONIQ, CAR.IONIQ_EV_2020]),
 
   # these cars use the FCA11 message for the AEB and FCW signals, all others use SCC12
-  "use_fca": set([CAR.SONATA, CAR.ELANTRA, CAR.ELANTRA_GT_I30, CAR.KIA_STINGER, CAR.IONIQ, CAR.IONIQ_EV_2020, CAR.KONA_EV, CAR.KIA_FORTE, CAR.KIA_NIRO_EV, CAR.PALISADE, CAR.GENESIS_G70, CAR.KONA]),
+  "use_fca": set([CAR.SONATA, CAR.ELANTRA, CAR.ELANTRA_GT_I30, CAR.KIA_STINGER, CAR.IONIQ, CAR.IONIQ_EV_2020, CAR.KONA_EV, CAR.KIA_FORTE, CAR.KIA_NIRO_EV, CAR.PALISADE, CAR.GENESIS_G70, CAR.KONA, CAR.SANTA_FE]),
 
-  "use_bsm": set([CAR.SONATA, CAR.PALISADE, CAR.HYUNDAI_GENESIS, CAR.GENESIS_G70, CAR.GENESIS_G80, CAR.GENESIS_G90, CAR.KONA, CAR.IONIQ_EV_2020]),
+  "use_bsm": set([CAR.SONATA, CAR.PALISADE, CAR.HYUNDAI_GENESIS, CAR.GENESIS_G70,
+                  CAR.GENESIS_G80, CAR.GENESIS_G90, CAR.KONA, CAR.IONIQ_EV_2020,
+                  CAR.SANTA_FE, CAR.KIA_NIRO_EV]),
 }
 
 EV_HYBRID = set([CAR.IONIQ_EV_2020, CAR.IONIQ_EV_LTD, CAR.IONIQ, CAR.KONA_EV, CAR.KIA_NIRO_EV])
@@ -345,7 +416,7 @@ DBC = {
   CAR.KONA_EV: dbc_dict('hyundai_kia_generic', None),
   CAR.SANTA_FE: dbc_dict('hyundai_kia_generic', None),
   CAR.SONATA: dbc_dict('hyundai_kia_generic', None),
-  CAR.SONATA_2019: dbc_dict('hyundai_kia_generic', None),
+  CAR.SONATA_LF: dbc_dict('hyundai_kia_generic', None),
   CAR.PALISADE: dbc_dict('hyundai_kia_generic', None),
   CAR.VELOSTER: dbc_dict('hyundai_kia_generic', None),
 }

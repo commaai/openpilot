@@ -271,6 +271,7 @@ BO_ 1410 VIN_PART_3: 8 CGW
 
 BO_ 1553 UI_SETTING: 8 XXX
  SG_ UNITS : 26|2@0+ (1,0) [0|3] "" XXX
+ SG_ ODOMETER : 43|20@0+ (1,0) [0|1048575] "" XXX
 
 BO_ 1556 STEERING_LEVERS: 8 XXX
  SG_ TURN_SIGNALS : 29|2@0+ (1,0) [0|3] "" XXX
@@ -333,6 +334,7 @@ CM_ SG_ 36 STEERING_TORQUE "does not seem the steer torque, tbd";
 CM_ SG_ 37 STEER_FRACTION "1/15th of the signal STEER_ANGLE, which is 1.5 deg; note that 0x8 is never set";
 CM_ SG_ 37 STEER_RATE "factor is tbd";
 CM_ SG_ 466 ACCEL_NET "net acceleration produced by the system, given ACCEL_CMD, road grade and other factors";
+CM_ SG_ 466 CRUISE_STATE "Active state is 8, if standstill is requested will switch to state 11(3 sec timer), after timer is elapsed will switch into state 7(standstill). If plus button was pressed - status 9, minus button pressed - status 10";
 CM_ SG_ 467 SET_SPEED "43 kph are shown as 28mph, so conversion isn't perfect";
 CM_ SG_ 467 LOW_SPEED_LOCKOUT "in low speed lockout, system would always disengage below 28mph";
 CM_ SG_ 560 BRAKE_PRESSED "another brake pressed?";
@@ -362,8 +364,9 @@ CM_ SG_ 1163 OVSPVALL "-5 at start then 2 after 2 seconds";
 CM_ SG_ 1163 OVSPVALM "-5 at start then 5 after 2 seconds";
 CM_ SG_ 1163 OVSPVALH "-5 at start then 10 after 2 seconds";
 CM_ SG_ 1163 TSRSPU "always 1";
+CM_ SG_ 1553 ODOMETER "Unit is dependent upon units signal";
 
-VAL_ 466 CRUISE_STATE 8 "active" 7 "standstill" 1 "off";
+VAL_ 466 CRUISE_STATE 11 "timer_3sec" 10 "adaptive click down" 9 "adaptive click up" 8 "adaptive engaged" 7 "standstill" 6 "non-adaptive click up" 5 "non-adaptive click down" 4 "non-adaptive hold down" 3 "non-adaptive hold up" 2 "non-adaptive being engaged" 1 "non-adaptive engaged" 0 "off";
 VAL_ 467 LOW_SPEED_LOCKOUT 2 "low speed locked" 1 "ok";
 VAL_ 614 STATE 3 "enabled" 1 "disabled";
 VAL_ 614 DIRECTION_CMD 3 "right" 2 "center" 1 "left";

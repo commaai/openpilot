@@ -1,50 +1,35 @@
 #include <stdexcept>
 #include <cassert>
 #include <iostream>
-
+#include <vector>
 #include <unistd.h>
 
 #include "common/swaglog.h"
 #include "common/gpio.h"
-
+#include "common/util.h"
+#include "messaging.hpp"
 #include "panda.h"
-
-#ifdef QCOM2
-bool is_legacy_panda_reset() {
-  FILE *file = fopen("/persist/LEGACY_PANDA_RESET", "r");
-  if(file) {
-    fclose(file);
-  }
-  return (file != NULL);
-}
-#endif
 
 void panda_set_power(bool power){
 #ifdef QCOM2
   int err = 0;
-  bool is_legacy = is_legacy_panda_reset();
 
   err += gpio_init(GPIO_STM_RST_N, true);
   err += gpio_init(GPIO_STM_BOOT0, true);
 
-  err += gpio_set(GPIO_STM_RST_N, is_legacy ? false : true);
+  err += gpio_set(GPIO_STM_RST_N, true);
   err += gpio_set(GPIO_STM_BOOT0, false);
 
-  usleep(100*1000); // 100 ms
+  util::sleep_for(100); // 100 ms
 
-  err += gpio_set(GPIO_STM_RST_N, is_legacy ? power : (!power));
+  err += gpio_set(GPIO_STM_RST_N, !power);
   assert(err == 0);
 #endif
 }
 
 Panda::Panda(){
-  int err;
-
-  err = pthread_mutex_init(&usb_lock, NULL);
-  if (err != 0) { goto fail; }
-
   // init libusb
-  err = libusb_init(&ctx);
+  int err = libusb_init(&ctx);
   if (err != 0) { goto fail; }
 
 #if LIBUSB_API_VERSION >= 0x01000106
@@ -68,12 +53,12 @@ Panda::Panda(){
 
   hw_type = get_hw_type();
   is_pigeon =
-    (hw_type == cereal::HealthData::HwType::GREY_PANDA) ||
-    (hw_type == cereal::HealthData::HwType::BLACK_PANDA) ||
-    (hw_type == cereal::HealthData::HwType::UNO) ||
-    (hw_type == cereal::HealthData::HwType::DOS);
-  has_rtc = (hw_type == cereal::HealthData::HwType::UNO) ||
-    (hw_type == cereal::HealthData::HwType::DOS);
+    (hw_type == cereal::PandaState::PandaType::GREY_PANDA) ||
+    (hw_type == cereal::PandaState::PandaType::BLACK_PANDA) ||
+    (hw_type == cereal::PandaState::PandaType::UNO) ||
+    (hw_type == cereal::PandaState::PandaType::DOS);
+  has_rtc = (hw_type == cereal::PandaState::PandaType::UNO) ||
+    (hw_type == cereal::PandaState::PandaType::DOS);
 
   return;
 
@@ -83,10 +68,9 @@ fail:
 }
 
 Panda::~Panda(){
-  pthread_mutex_lock(&usb_lock);
+  std::lock_guard lk(usb_lock);
   cleanup();
   connected = false;
-  pthread_mutex_unlock(&usb_lock);
 }
 
 void Panda::cleanup(){
@@ -117,13 +101,11 @@ int Panda::usb_write(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigne
     return LIBUSB_ERROR_NO_DEVICE;
   }
 
-  pthread_mutex_lock(&usb_lock);
+  std::lock_guard lk(usb_lock);
   do {
     err = libusb_control_transfer(dev_handle, bmRequestType, bRequest, wValue, wIndex, NULL, 0, timeout);
     if (err < 0) handle_usb_issue(err, __func__);
   } while (err < 0 && connected);
-
-  pthread_mutex_unlock(&usb_lock);
 
   return err;
 }
@@ -132,12 +114,15 @@ int Panda::usb_read(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned
   int err;
   const uint8_t bmRequestType = LIBUSB_ENDPOINT_IN | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE;
 
-  pthread_mutex_lock(&usb_lock);
+  if (!connected){
+    return LIBUSB_ERROR_NO_DEVICE;
+  }
+
+  std::lock_guard lk(usb_lock);
   do {
     err = libusb_control_transfer(dev_handle, bmRequestType, bRequest, wValue, wIndex, data, wLength, timeout);
     if (err < 0) handle_usb_issue(err, __func__);
   } while (err < 0 && connected);
-  pthread_mutex_unlock(&usb_lock);
 
   return err;
 }
@@ -150,7 +135,7 @@ int Panda::usb_bulk_write(unsigned char endpoint, unsigned char* data, int lengt
     return 0;
   }
 
-  pthread_mutex_lock(&usb_lock);
+  std::lock_guard lk(usb_lock);
   do {
     // Try sending can messages. If the receive buffer on the panda is full it will NAK
     // and libusb will try again. After 5ms, it will time out. We will drop the messages.
@@ -164,7 +149,6 @@ int Panda::usb_bulk_write(unsigned char endpoint, unsigned char* data, int lengt
     }
   } while(err != 0 && connected);
 
-  pthread_mutex_unlock(&usb_lock);
   return transferred;
 }
 
@@ -176,7 +160,7 @@ int Panda::usb_bulk_read(unsigned char endpoint, unsigned char* data, int length
     return 0;
   }
 
-  pthread_mutex_lock(&usb_lock);
+  std::lock_guard lk(usb_lock);
 
   do {
     err = libusb_bulk_transfer(dev_handle, endpoint, data, length, &transferred, timeout);
@@ -191,8 +175,6 @@ int Panda::usb_bulk_read(unsigned char endpoint, unsigned char* data, int length
 
   } while(err != 0 && connected);
 
-  pthread_mutex_unlock(&usb_lock);
-
   return transferred;
 }
 
@@ -204,11 +186,11 @@ void Panda::set_unsafe_mode(uint16_t unsafe_mode) {
   usb_write(0xdf, unsafe_mode, 0);
 }
 
-cereal::HealthData::HwType Panda::get_hw_type() {
+cereal::PandaState::PandaType Panda::get_hw_type() {
   unsigned char hw_query[1] = {0};
 
   usb_read(0xc1, 0, 0, hw_query, 1);
-  return (cereal::HealthData::HwType)(hw_query[0]);
+  return (cereal::PandaState::PandaType)(hw_query[0]);
 }
 
 void Panda::set_rtc(struct tm sys_time){
@@ -260,7 +242,7 @@ void Panda::set_ir_pwr(uint16_t ir_pwr) {
   usb_write(0xb0, ir_pwr, 0);
 }
 
-health_t Panda::get_health(){
+health_t Panda::get_state(){
   health_t health {0};
   usb_read(0xd2, 0, 0, (unsigned char*)&health, sizeof(health));
   return health;
@@ -270,38 +252,24 @@ void Panda::set_loopback(bool loopback){
   usb_write(0xe5, loopback, 0);
 }
 
-const char* Panda::get_firmware_version(){
-  const char* fw_sig_buf = new char[128]();
-
-  int read_1 = usb_read(0xd3, 0, 0, (unsigned char*)fw_sig_buf, 64);
-  int read_2 = usb_read(0xd4, 0, 0, (unsigned char*)fw_sig_buf + 64, 64);
-
-  if ((read_1 == 64) && (read_2 == 64)) {
-    return fw_sig_buf;
-  }
-
-  delete[] fw_sig_buf;
-  return NULL;
+std::optional<std::vector<uint8_t>> Panda::get_firmware_version(){
+  std::vector<uint8_t> fw_sig_buf(128);
+  int read_1 = usb_read(0xd3, 0, 0, &fw_sig_buf[0], 64);
+  int read_2 = usb_read(0xd4, 0, 0, &fw_sig_buf[64], 64);
+  return ((read_1 == 64) && (read_2 == 64)) ? std::make_optional(fw_sig_buf) : std::nullopt;
 }
 
-const char* Panda::get_serial(){
-  const char* serial_buf = new char[16]();
-
-  int err = usb_read(0xd0, 0, 0, (unsigned char*)serial_buf, 16);
-
-  if (err >= 0) {
-    return serial_buf;
-  }
-
-  delete[] serial_buf;
-  return NULL;
+std::optional<std::string> Panda::get_serial() {
+  char serial_buf[17] = {'\0'};
+  int err = usb_read(0xd0, 0, 0, (uint8_t*)serial_buf, 16);
+  return err >= 0 ? std::make_optional(serial_buf) : std::nullopt;
 }
 
 void Panda::set_power_saving(bool power_saving){
   usb_write(0xe7, power_saving, 0);
 }
 
-void Panda::set_usb_power_mode(cereal::HealthData::UsbPowerMode power_mode){
+void Panda::set_usb_power_mode(cereal::PandaState::UsbPowerMode power_mode){
   usb_write(0xe6, (uint16_t)power_mode, 0);
 }
 
@@ -310,9 +278,10 @@ void Panda::send_heartbeat(){
 }
 
 void Panda::can_send(capnp::List<cereal::CanData>::Reader can_data_list){
-  int msg_count = can_data_list.size();
+  static std::vector<uint32_t> send;
+  const int msg_count = can_data_list.size();
 
-  uint32_t *send = new uint32_t[msg_count*0x10]();
+  send.resize(msg_count*0x10);
 
   for (int i = 0; i < msg_count; i++) {
     auto cmsg = can_data_list[i];
@@ -327,12 +296,10 @@ void Panda::can_send(capnp::List<cereal::CanData>::Reader can_data_list){
     memcpy(&send[i*4+2], can_data.begin(), can_data.size());
   }
 
-  usb_bulk_write(3, (unsigned char*)send, msg_count*0x10, 5);
-
-  delete[] send;
+  usb_bulk_write(3, (unsigned char*)send.data(), send.size(), 5);
 }
 
-int Panda::can_receive(cereal::Event::Builder &event){
+int Panda::can_receive(kj::Array<capnp::word>& out_buf) {
   uint32_t data[RECV_SIZE/4];
   int recv = usb_bulk_read(0x81, (unsigned char*)data, RECV_SIZE);
 
@@ -344,7 +311,8 @@ int Panda::can_receive(cereal::Event::Builder &event){
   }
 
   size_t num_msg = recv / 0x10;
-  auto canData = event.initCan(num_msg);
+  MessageBuilder msg;
+  auto canData = msg.initEvent().initCan(num_msg);
 
   // populate message
   for (int i = 0; i < num_msg; i++) {
@@ -361,6 +329,6 @@ int Panda::can_receive(cereal::Event::Builder &event){
     canData[i].setDat(kj::arrayPtr((uint8_t*)&data[i*4+2], len));
     canData[i].setSrc((data[i*4+1] >> 4) & 0xff);
   }
-
+  out_buf = capnp::messageToFlatArray(msg);
   return recv;
 }

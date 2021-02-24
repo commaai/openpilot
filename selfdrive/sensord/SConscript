@@ -1,9 +1,7 @@
 Import('env', 'arch', 'common', 'cereal', 'messaging')
+
 if arch == "aarch64":
   env.Program('_sensord', 'sensors_qcom.cc', LIBS=['hardware', common, cereal, messaging, 'capnp', 'zmq', 'kj'])
-  lenv = env.Clone()
-  lenv['LIBPATH'] += ['/system/vendor/lib64']
-  lenv.Program('_gpsd', ['gpsd.cc'], LIBS=['hardware', common, 'diag', 'time_genoff', cereal, messaging, 'capnp', 'zmq', 'kj'])
 else:
   sensors = [
     'sensors/file_sensor.cc',

@@ -15,6 +15,8 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   main_layout->setMargin(0);
   setLayout(main_layout);
   QObject::connect(homeWindow, SIGNAL(openSettings()), this, SLOT(openSettings()));
+  QObject::connect(homeWindow, SIGNAL(closeSettings()), this, SLOT(closeSettings()));
+  QObject::connect(homeWindow, SIGNAL(offroadTransition(bool)), this, SLOT(offroadTransition(bool)));
   QObject::connect(settingsWindow, SIGNAL(closeSettings()), this, SLOT(closeSettings()));
 
   // start at onboarding
@@ -24,10 +26,15 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
 
   setStyleSheet(R"(
     * {
-      color: white;
-      background-color: #072339;
+      font-family: Inter;
     }
   )");
+}
+
+void MainWindow::offroadTransition(bool offroad){
+  if(!offroad){
+    closeSettings();
+  }  
 }
 
 void MainWindow::openSettings() {

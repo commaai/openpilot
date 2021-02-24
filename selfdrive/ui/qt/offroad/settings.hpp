@@ -4,9 +4,10 @@
 #include <QFrame>
 #include <QTimer>
 #include <QPushButton>
+#include <QButtonGroup>
 #include <QStackedLayout>
 
-#include "wifi.hpp"
+#include "networking.hpp"
 
 // *** settings widgets ***
 
@@ -27,7 +28,7 @@ public slots:
 
 // *** settings window ***
 
-class SettingsWindow : public QWidget {
+class SettingsWindow : public QFrame {
   Q_OBJECT
 
 public:
@@ -35,15 +36,16 @@ public:
 
 signals:
   void closeSettings();
+  void sidebarPressed();
 
 private:
   QPushButton *sidebar_alert_widget;
   QWidget *sidebar_widget;
   std::map<QString, QWidget *> panels;
+  QButtonGroup *nav_btns;
   QStackedLayout *panel_layout;
+  QFrame* panel_frame;
 
 public slots:
   void setActivePanel();
-  void closeSidebar();
-  void openSidebar();
 };

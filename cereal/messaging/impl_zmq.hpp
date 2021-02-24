@@ -32,7 +32,7 @@ private:
   void * sock;
   std::string full_endpoint;
 public:
-  int connect(Context *context, std::string endpoint, std::string address, bool conflate=false);
+  int connect(Context *context, std::string endpoint, std::string address, bool conflate=false, bool check_endpoint=true);
   void setTimeout(int timeout);
   void * getRawSocket() {return sock;}
   Message *receive(bool non_blocking=false);
@@ -44,7 +44,7 @@ private:
   void * sock;
   std::string full_endpoint;
 public:
-  int connect(Context *context, std::string endpoint);
+  int connect(Context *context, std::string endpoint, bool check_endpoint=true);
   int sendMessage(Message *message);
   int send(char *data, size_t size);
   ~ZMQPubSocket();

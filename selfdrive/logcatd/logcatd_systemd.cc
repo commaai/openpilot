@@ -1,5 +1,6 @@
 #include <iostream>
 #include <cassert>
+#include <csignal>
 #include <string>
 #include <map>
 
@@ -7,37 +8,36 @@
 #include <systemd/sd-journal.h>
 
 #include "common/timing.h"
+#include "common/util.h"
 #include "messaging.hpp"
 
+ExitHandler do_exit;
 int main(int argc, char *argv[]) {
+
   PubMaster pm({"androidLog"});
 
   sd_journal *journal;
-  assert(sd_journal_open(&journal, 0) >= 0);
-  assert(sd_journal_get_fd(journal) >= 0); // needed so sd_journal_wait() works properly if files rotate
-  assert(sd_journal_seek_tail(journal) >= 0);
+  int err = sd_journal_open(&journal, 0);
+  assert(err >= 0);
+  err = sd_journal_get_fd(journal); // needed so sd_journal_wait() works properly if files rotate
+  assert(err >= 0);
+  err = sd_journal_seek_tail(journal);
+  assert(err >= 0);
 
-  int r;
-  while (true) {
-    r = sd_journal_next(journal);
-    assert(r >= 0);
+  while (!do_exit) {
+    err = sd_journal_next(journal);
+    assert(err >= 0);
 
     // Wait for new message if we didn't receive anything
-    if (r == 0){
-      do {
-        r = sd_journal_wait(journal, (uint64_t)-1);
-        assert(r >= 0);
-      } while (r == SD_JOURNAL_NOP);
-
-      r = sd_journal_next(journal);
-      assert(r >= 0);
-
-      if (r == 0) continue; // Try again if we still didn't get anything
+    if (err == 0){
+      err = sd_journal_wait(journal, 1000 * 1000);
+      assert (err >= 0);
+      continue; // Try again
     }
 
     uint64_t timestamp = 0;
-    r = sd_journal_get_realtime_usec(journal, &timestamp);
-    assert(r >= 0);
+    err = sd_journal_get_realtime_usec(journal, &timestamp);
+    assert(err >= 0);
 
     const void *data;
     size_t length;

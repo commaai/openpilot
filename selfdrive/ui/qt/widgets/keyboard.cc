@@ -7,49 +7,58 @@
 
 #include "keyboard.hpp"
 
-const int DEFAULT_WIDTH = 1;
-const int SPACEBAR_WIDTH = 3;
+const int DEFAULT_STRETCH = 1;
+const int SPACEBAR_STRETCH = 3;
 
 KeyboardLayout::KeyboardLayout(QWidget *parent, std::vector<QVector<QString>> layout) : QWidget(parent) {
   QVBoxLayout* vlayout = new QVBoxLayout;
-  QButtonGroup* btn_group = new QButtonGroup(this);
+  vlayout->setMargin(0);
+  vlayout->setSpacing(15);
 
+  QButtonGroup* btn_group = new QButtonGroup(this);
   QObject::connect(btn_group, SIGNAL(buttonClicked(QAbstractButton*)), parent, SLOT(handleButton(QAbstractButton*)));
 
-  int i = 0;
-  for (auto s : layout) {
+  for (const auto &s : layout) {
     QHBoxLayout *hlayout = new QHBoxLayout;
+    hlayout->setSpacing(30);
 
-    if (i == 1) {
+    if (vlayout->count() == 1) {
       hlayout->addSpacing(90);
     }
 
-    for (QString p : s) {
+    for (const QString &p : s) {
       QPushButton* btn = new QPushButton(p);
       btn->setFixedHeight(120);
       btn_group->addButton(btn);
-      hlayout->addSpacing(10);
-      if (p == QString("  ")) {
-        hlayout->addWidget(btn, SPACEBAR_WIDTH);
-      } else {
-        hlayout->addWidget(btn, DEFAULT_WIDTH);
-      }
-
+      hlayout->addWidget(btn, p == QString("  ") ? SPACEBAR_STRETCH : DEFAULT_STRETCH);
     }
 
-    if (i == 1) {
+    if (vlayout->count() == 1) {
       hlayout->addSpacing(90);
     }
 
     vlayout->addLayout(hlayout);
-    i++;
   }
 
+  setStyleSheet(R"(
+    QPushButton {
+      font-size: 65px;
+      margin: 0px;
+      padding: 0px;
+      border-radius: 30px;
+      color: #dddddd;
+      background-color: #444444;
+    }
+    QPushButton:pressed {
+      background-color: #000000;
+    }
+  )");
   setLayout(vlayout);
 }
 
-Keyboard::Keyboard(QWidget *parent) : QWidget(parent) {
+Keyboard::Keyboard(QWidget *parent) : QFrame(parent) {
   main_layout = new QStackedLayout;
+  main_layout->setMargin(0);
 
   // lowercase
   std::vector<QVector<QString>> lowercase = {
@@ -69,7 +78,7 @@ Keyboard::Keyboard(QWidget *parent) : QWidget(parent) {
   };
   main_layout->addWidget(new KeyboardLayout(this, uppercase));
 
-  // 1234567890
+  // numbers + specials
   std::vector<QVector<QString>> numbers = {
     {"1","2","3","4","5","6","7","8","9","0"},
     {"-","/",":",";","(",")","$","&&","@","\""},
@@ -78,10 +87,10 @@ Keyboard::Keyboard(QWidget *parent) : QWidget(parent) {
   };
   main_layout->addWidget(new KeyboardLayout(this, numbers));
 
-  // Special characters
+  // extra specials
   std::vector<QVector<QString>> specials = {
     {"[","]","{","}","#","%","^","*","+","="},
-    {"_","\\","|","~","<",">","€","£","¥"," "},
+    {"_","\\","|","~","<",">","€","£","¥","•"},
     {"123",".",",","?","!","`","⌫"},
     {"ABC","  ","⏎"},
   };
@@ -89,18 +98,7 @@ Keyboard::Keyboard(QWidget *parent) : QWidget(parent) {
 
   setLayout(main_layout);
   main_layout->setCurrentIndex(0);
-
-  setStyleSheet(R"(
-    QPushButton {
-      padding: 0;
-      font-size: 50px;
-    }
-    * {
-      background-color: #99777777;
-    }
-  )");
 }
-
 
 void Keyboard::handleButton(QAbstractButton* m_button) {
   QString id = m_button->text();

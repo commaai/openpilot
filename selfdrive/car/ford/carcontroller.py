@@ -33,7 +33,7 @@ class CarController():
 
       if (frame % 3) == 0:
 
-        curvature = self.vehicle_model.calc_curvature(actuators.steerAngle*3.1415/180., CS.out.vEgo)
+        curvature = self.vehicle_model.calc_curvature(actuators.steeringAngleDeg*3.1415/180., CS.out.vEgo)
 
         # The use of the toggle below is handy for trying out the various LKAS modes
         if TOGGLE_DEBUG:
@@ -43,7 +43,7 @@ class CarController():
           self.lkas_action = 5   # 4 and 5 seem the best. 8 and 9 seem to aggressive and laggy
 
         can_sends.append(create_steer_command(self.packer, apply_steer, enabled,
-                                              CS.lkas_state, CS.out.steeringAngle, curvature, self.lkas_action))
+                                              CS.lkas_state, CS.out.steeringAngleDeg, curvature, self.lkas_action))
         self.generic_toggle_last = CS.out.genericToggle
 
       if (frame % 100) == 0:

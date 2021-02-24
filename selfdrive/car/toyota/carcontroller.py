@@ -4,16 +4,11 @@ from selfdrive.car import apply_toyota_steer_torque_limits, create_gas_command, 
 from selfdrive.car.toyota.toyotacan import create_steer_command, create_ui_command, \
                                            create_accel_command, create_acc_cancel_command, \
                                            create_fcw_command
-from selfdrive.car.toyota.values import Ecu, CAR, STATIC_MSGS, NO_STOP_TIMER_CAR, SteerLimitParams
+from selfdrive.car.toyota.values import Ecu, CAR, STATIC_MSGS, NO_STOP_TIMER_CAR, CarControllerParams
 from opendbc.can.packer import CANPacker
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
-# Accel limits
-ACCEL_HYST_GAP = 0.02  # don't change accel command for small oscilalitons within this value
-ACCEL_MAX = 1.5  # 1.5 m/s2
-ACCEL_MIN = -3.0  # 3   m/s2
-ACCEL_SCALE = max(ACCEL_MAX, -ACCEL_MIN)
 
 def accel_hysteresis(accel, accel_steady, enabled):
 
@@ -21,10 +16,10 @@ def accel_hysteresis(accel, accel_steady, enabled):
   if not enabled:
     # send 0 when disabled, otherwise acc faults
     accel_steady = 0.
-  elif accel > accel_steady + ACCEL_HYST_GAP:
-    accel_steady = accel - ACCEL_HYST_GAP
-  elif accel < accel_steady - ACCEL_HYST_GAP:
-    accel_steady = accel + ACCEL_HYST_GAP
+  elif accel > accel_steady + CarControllerParams.ACCEL_HYST_GAP:
+    accel_steady = accel - CarControllerParams.ACCEL_HYST_GAP
+  elif accel < accel_steady - CarControllerParams.ACCEL_HYST_GAP:
+    accel_steady = accel + CarControllerParams.ACCEL_HYST_GAP
   accel = accel_steady
 
   return accel, accel_steady
@@ -65,11 +60,11 @@ class CarController():
       apply_accel = actuators.gas - actuators.brake
 
     apply_accel, self.accel_steady = accel_hysteresis(apply_accel, self.accel_steady, enabled)
-    apply_accel = clip(apply_accel * ACCEL_SCALE, ACCEL_MIN, ACCEL_MAX)
+    apply_accel = clip(apply_accel * CarControllerParams.ACCEL_SCALE, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
 
     # steer torque
-    new_steer = int(round(actuators.steer * SteerLimitParams.STEER_MAX))
-    apply_steer = apply_toyota_steer_torque_limits(new_steer, self.last_steer, CS.out.steeringTorqueEps, SteerLimitParams)
+    new_steer = int(round(actuators.steer * CarControllerParams.STEER_MAX))
+    apply_steer = apply_toyota_steer_torque_limits(new_steer, self.last_steer, CS.out.steeringTorqueEps, CarControllerParams)
     self.steer_rate_limited = new_steer != apply_steer
 
     # Cut steering while we're in a known fault state (2s)
@@ -108,7 +103,7 @@ class CarController():
       # LTA mode. Set ret.steerControlType = car.CarParams.SteerControlType.angle and whitelist 0x191 in the panda
       # if frame % 2 == 0:
       #   can_sends.append(create_steer_command(self.packer, 0, 0, frame // 2))
-      #   can_sends.append(create_lta_steer_command(self.packer, actuators.steerAngle, apply_steer_req, frame // 2))
+      #   can_sends.append(create_lta_steer_command(self.packer, actuators.steeringAngleDeg, apply_steer_req, frame // 2))
 
     # we can spam can to cancel the system even if we are using lat only control
     if (frame % 3 == 0 and CS.CP.openpilotLongitudinalControl) or (pcm_cancel_cmd and Ecu.fwdCamera in self.fake_ecus):
