@@ -115,6 +115,10 @@ class LatControlINDI():
       g_inv = 1. / self.G
       delta_u = g_inv * accel_error
 
+      # If steering pressed, only allow wind down
+      if CS.steeringPressed and (delta_u * self.output_steer > 0):
+        delta_u = 0
+
       # Enforce rate limit
       if self.enforce_rate_limit:
         steer_max = float(CarControllerParams.STEER_MAX)
