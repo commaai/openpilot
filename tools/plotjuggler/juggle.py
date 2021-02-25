@@ -31,7 +31,7 @@ def juggle_file(fn, dbc=None):
   if dbc:
     env["DBC_NAME"] = dbc
 
-  subprocess.call(f"bin/plotjuggler -d {fn}", shell=True, env=env, cwd=juggle_dir)
+  subprocess.call(f"plotjuggler --plugin_folders {os.path.join(BASEDIR, 'tools/plotjuggler')} -d {fn}", shell=True, env=env, cwd=juggle_dir)
 
 def juggle_route(route_name, segment_number, qlog):
   r = Route(route_name)
