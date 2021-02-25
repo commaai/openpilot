@@ -28,7 +28,7 @@ KeyboardLayout::KeyboardLayout(QWidget *parent, std::vector<QVector<QString>> la
 
     for (const QString &p : s) {
       QPushButton* btn = new QPushButton(p);
-      btn->setFixedHeight(140);
+      btn->setFixedHeight(120);
       btn_group->addButton(btn);
       hlayout->addWidget(btn, p == QString("  ") ? SPACEBAR_STRETCH : DEFAULT_STRETCH);
     }
