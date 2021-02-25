@@ -6,7 +6,8 @@
 #include <QMouseEvent>
 #include <QPointF>
 #include <QPushButton>
-#include <QWebEngineView>
+
+//#include <QWebEngineView>
 
 
 class TrainingGuide : public QFrame {
@@ -40,7 +41,7 @@ private:
   std::string current_training_version;
   QWidget * terms_screen();
   QWidget * training_screen();
-  QWebEngineView* view;
+  //QWebEngineView* view;
   QPushButton* accept_btn;
 
 signals:
