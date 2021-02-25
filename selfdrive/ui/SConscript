@@ -10,7 +10,7 @@ if arch == 'aarch64':
   libs += ['log', 'utils', 'gui', 'ui', 'CB', 'gsl', 'adreno_utils',
            'cutils', 'uuid', 'ssl', 'crypto']
 
-if "QT" not in os.environ:
+if arch == 'aarch64' and "QT" not in os.environ:
   libs += ['EGL', 'GLESv3', 'gnustl_shared', 'hardware', 'OpenSLES', 'cutils', 'uuid']
   linkflags = ['-Wl,-rpath=/system/lib64,-rpath=/system/comma/usr/lib']
 
