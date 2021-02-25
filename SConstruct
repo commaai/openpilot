@@ -264,10 +264,12 @@ Export('envCython')
 
 # Qt build environment
 qt_env = None
-if arch in ["x86_64", "Darwin", "larch64"]:
+if arch in ["x86_64", "Darwin", "larch64", "aarch64"]:
   qt_env = env.Clone()
 
-  qt_modules = ["Widgets", "Gui", "Core", "DBus", "Multimedia", "Network", "Concurrent", "WebEngine", "WebEngineWidgets"]
+  qt_modules = ["Widgets", "Gui", "Core", "Network", "Concurrent", "Multimedia"]
+  if arch != "aarch64":
+    qt_modules += ["DBus", "WebEngine", "WebEngineWidgets"]
 
   qt_libs = []
   if arch == "Darwin":
@@ -279,6 +281,15 @@ if arch in ["x86_64", "Darwin", "larch64"]:
     qt_dirs += [f"{QT_BASE}include/Qt{m}" for m in qt_modules]
     qt_env["LINKFLAGS"] += ["-F" + QT_BASE + "lib"]
     qt_env["FRAMEWORKS"] += [f"Qt{m}" for m in qt_modules] + ["OpenGL"]
+  elif arch == "aarch64":
+    qt_env['QTDIR'] = "/system/comma/usr"
+    qt_dirs = [
+      f"/system/comma/usr/include/qt",
+    ]
+    qt_dirs += [f"/system/comma/usr/include/qt/Qt{m}" for m in qt_modules]
+
+    qt_libs = [f"Qt5{m}" for m in qt_modules]
+    qt_libs += ['EGL', 'GLESv3', 'c++_shared']
   else:
     qt_env['QTDIR'] = "/usr"
     qt_dirs = [
