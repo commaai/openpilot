@@ -30,7 +30,7 @@ jobs:
       run: sudo snap install plotjuggler
     - name: Unit test
       run: |
-        export PYTHONPATH=/home/runner/work/openpilot/openpilot
-        pip3 install pycapnp
+        tools/openpilot_build.sh && \
+        scons -j$(nproc) && \
         tools/plotjuggler/test_plotjuggler.py
 
