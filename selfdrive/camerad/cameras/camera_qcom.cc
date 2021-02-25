@@ -87,11 +87,9 @@ CameraInfo cameras_supported[CAMERA_ID_MAX] = {
   },
 };
 
-static void camera_release_buffer(void* cookie, int buf_idx) {
-  CameraState *s = (CameraState *)cookie;
-  // printf("camera_release_buffer %d\n", buf_idx);
-  s->ss[0].qbuf_info[buf_idx].dirty_buf = 1;
-  ioctl(s->isp_fd, VIDIOC_MSM_ISP_ENQUEUE_BUF, &s->ss[0].qbuf_info[buf_idx]);
+void CameraState::release_callback(int buf_idx) {
+  this->ss[0].qbuf_info[buf_idx].dirty_buf = 1;
+  ioctl(this->isp_fd, VIDIOC_MSM_ISP_ENQUEUE_BUF, &this->ss[0].qbuf_info[buf_idx]);
 }
 
 static void camera_init(VisionIpcServer *v, CameraState *s, int camera_id, int camera_num,
@@ -112,7 +110,7 @@ static void camera_init(VisionIpcServer *v, CameraState *s, int camera_id, int c
 
   s->self_recover = 0;
 
-  s->buf.init(device_id, ctx, s, v, FRAME_BUF_COUNT, rgb_type, yuv_type, camera_release_buffer);
+  s->buf.init(device_id, ctx, s, v, FRAME_BUF_COUNT, rgb_type, yuv_type);
 
   pthread_mutex_init(&s->frame_info_lock, NULL);
 }
@@ -1396,8 +1394,8 @@ static void do_autofocus(CameraState *s, SubMaster *sm) {
   actuator_move(s, target);
 }
 
-void camera_autoexposure(CameraState *s, float grey_frac) {
-  if (s->camera_num == 0) {
+void CameraState::auto_exposure(float grey_frac) {
+  if (this->camera_num == 0) {
     CameraExpInfo tmp = road_cam_exp.load();
     tmp.op_id++;
     tmp.grey_frac = grey_frac;

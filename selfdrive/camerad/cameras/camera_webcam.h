@@ -12,14 +12,11 @@
 
 #define FRAME_BUF_COUNT 16
 
-typedef struct CameraState {
-  CameraInfo ci;
-  int camera_num;
+class CameraState : public CameraStateBase {
+ public:
   int fps;
   float digital_gain;
-  CameraBuf buf;
-} CameraState;
-
+};
 
 typedef struct MultiCameraState {
   CameraState road_cam;
@@ -33,4 +30,3 @@ void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_i
 void cameras_open(MultiCameraState *s);
 void cameras_run(MultiCameraState *s);
 void cameras_close(MultiCameraState *s);
-void camera_autoexposure(CameraState *s, float grey_frac);
