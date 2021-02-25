@@ -7,8 +7,6 @@
 #include <QButtonGroup>
 #include <QStackedLayout>
 
-#include "networking.hpp"
-
 // *** settings widgets ***
 
 class ParamsToggle : public QFrame {

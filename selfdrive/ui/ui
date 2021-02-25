@@ -1,4 +1,11 @@
 #!/bin/sh
-export LD_LIBRARY_PATH="/system/lib64:$LD_LIBRARY_PATH"
-exec ./_ui
 
+export LD_LIBRARY_PATH="/system/lib64:$LD_LIBRARY_PATH"
+
+if [ -f /EON ]; then
+  export QT_QPA_EGLFS_HIDECURSOR=1
+  export QT_QPA_EVDEV_TOUCHSCREEN_PARAMETERS=/dev/input/event1:rotate=270
+  export QT_QPA_FONTDIR=../assets/fonts
+fi
+
+exec ./_ui

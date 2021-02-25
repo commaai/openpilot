@@ -10,7 +10,10 @@
 #include <QLabel>
 #include <QPixmap>
 
+#ifndef QCOM
 #include "networking.hpp"
+#endif
+
 #include "settings.hpp"
 #include "widgets/toggle.hpp"
 #include "widgets/offroad_alerts.hpp"
@@ -224,7 +227,11 @@ QWidget * developer_panel() {
 }
 
 QWidget * network_panel(QWidget * parent) {
+#ifdef QCOM
+  QWidget *w = new QWidget;
+#else
   Networking *w = new Networking(parent);
+#endif
   return w;
 }
 

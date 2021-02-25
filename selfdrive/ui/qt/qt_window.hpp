@@ -1,7 +1,6 @@
 #include <string>
 
 #include <QWidget>
-#include <QFontDatabase>
 #include <QApplication>
 
 #ifdef QCOM2
