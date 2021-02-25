@@ -11,6 +11,7 @@ from selfdrive.test.process_replay.compare_logs import save_log
 from tools.lib.route import Route
 from tools.lib.logreader import LogReader
 
+juggle_dir = os.path.dirname(os.path.realpath(__file__))
 
 def load_segment(segment_name):
   print(f"Loading {segment_name}")
@@ -30,8 +31,7 @@ def juggle_file(fn, dbc=None):
   if dbc:
     env["DBC_NAME"] = dbc
 
-  juggle_dir = os.path.dirname(os.path.realpath(__file__))
-  subprocess.call(f"bin/plotjuggler -d {fn}", shell=True, env=env, cwd=juggle_dir)
+  subprocess.call(f"plotjuggler --plugin_folders {juggle_dir} -d {fn}", shell=True, env=env, cwd=juggle_dir)
 
 def juggle_route(route_name, segment_number, qlog):
   r = Route(route_name)
@@ -65,7 +65,7 @@ def juggle_route(route_name, segment_number, qlog):
       pass
     break
 
-  tempfile = NamedTemporaryFile(suffix='.rlog')
+  tempfile = NamedTemporaryFile(suffix='.rlog', dir=juggle_dir)
   save_log(tempfile.name, all_data, compress=False)
   del all_data
 
