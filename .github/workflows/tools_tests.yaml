@@ -26,9 +26,8 @@ jobs:
     - uses: actions/checkout@v2
       with:
         submodules: true
-    - name: Build docker image
+    - name: Install plotjuggler snap
       run: sudo snap install plotjuggler
-      # run: eval "$BUILD"
     - name: Unit test
       run: |
         ${{ env.RUN }} "cd /tmp/openpilot && \
