@@ -16,6 +16,8 @@ public:
   explicit InputDialog(QString prompt_text, QWidget* parent = 0);
   static QString getText(QString prompt);
   QString text();
+  void show();
+  void setMessage(QString message, bool clearInputField=true);
 
 private:
   QLineEdit *line;
@@ -28,4 +30,8 @@ public slots:
 
 private slots:
   void handleInput(QString s);
+
+signals:
+  void cancel();
+  void emitText(QString text);
 };

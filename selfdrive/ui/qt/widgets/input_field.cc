@@ -26,6 +26,7 @@ InputDialog::InputDialog(QString prompt_text, QWidget *parent): QDialog(parent) 
   )");
   header_layout->addWidget(cancel_btn, 0, Qt::AlignRight);
   QObject::connect(cancel_btn, SIGNAL(released()), this, SLOT(reject()));
+  QObject::connect(cancel_btn, SIGNAL(released()), this, SIGNAL(cancel()));
 
   layout->addLayout(header_layout);
 
@@ -81,6 +82,7 @@ void InputDialog::handleInput(QString s) {
 
   if (!QString::compare(s,"⏎")) {
     done(QDialog::Accepted);
+    emitText(line->text());
   }
 
   QVector<QString> control_buttons {"⇧", "↑", "ABC", "⏎", "#+=", "⌫", "123"};
@@ -93,3 +95,13 @@ void InputDialog::handleInput(QString s) {
   line->insert(s.left(1));
 }
 
+void InputDialog::show(){
+  setMainWindow(this);
+}
+
+void InputDialog::setMessage(QString message, bool clearInputField){
+  label->setText(message);
+  if (clearInputField){
+    line->setText("");
+  }
+}
