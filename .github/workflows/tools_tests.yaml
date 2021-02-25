@@ -17,6 +17,6 @@ jobs:
     - name: Unit test
       run: |
         pip3 install pycapnp
-        export PYTHONPATH="${PYTHONPATH}:/home/runner/work/openpilot/openpilot:/home/runner/work/openpilot/openpilot/cereal"
+        export PYTHONPATH="${PYTHONPATH}:/home/runner/work/openpilot/openpilot"
         tools/plotjuggler/test_plotjuggler.py
 
