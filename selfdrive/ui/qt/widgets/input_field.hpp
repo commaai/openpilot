@@ -13,7 +13,7 @@ class InputDialog : public QDialog {
   Q_OBJECT
 
 public:
-  explicit InputDialog(QString prompt_text="Default text", QWidget* parent = 0);
+  explicit InputDialog(QString prompt_text, QWidget* parent = 0);
   static QString getText(QString prompt);
   QString text();
   void show();
