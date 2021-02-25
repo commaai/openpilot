@@ -1,4 +1,3 @@
-#include <QDebug>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QPushButton>
@@ -24,7 +23,7 @@ SSH::SSH(QWidget* parent) : QWidget(parent){
   networkTimer->setInterval(5000);
   connect(networkTimer, SIGNAL(timeout()), this, SLOT(timeout()));
 
-  dialog = new InputDialog();
+  dialog = new InputDialog("");
   // Construct the layouts to display
   slayout = new QStackedLayout(this); // Initial screen, input, waiting for response
 
@@ -75,8 +74,8 @@ SSH::SSH(QWidget* parent) : QWidget(parent){
   QState* initialStateNoGithub = new QState(); //Starting state, key not connected
   QState* initialStateConnected = new QState(); //Starting state, ssh connected
   QState* quitState = new QState(); // State when exiting the widget
-  QState* removeSSH_State = new QState(); // State when user wants to remove the SSH keys 
-  QState* defaultInputFieldState = new QState(); // State when we want the user to give us the username 
+  QState* removeSSH_State = new QState(); // State when user wants to remove the SSH keys
+  QState* defaultInputFieldState = new QState(); // State when we want the user to give us the username
   QState* loadingState = new QState(); // State while waiting for the network response
 
 
@@ -85,8 +84,8 @@ SSH::SSH(QWidget* parent) : QWidget(parent){
   connect(initialState, &QState::entered, [=](){checkForSSHKey(); slayout->setCurrentIndex(0);});
   initialState->addTransition(this, &SSH::NoSSHAdded, initialStateNoGithub);
   initialState->addTransition(this, &SSH::SSHAdded, initialStateConnected);
-  
-  
+
+
   state->addState(quitState);
   connect(quitState, &QState::entered, [=](){emit closeSSHSettings();});
   quitState->addTransition(quitState, &QState::entered, initialState);
