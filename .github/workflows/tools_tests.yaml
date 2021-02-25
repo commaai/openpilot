@@ -30,7 +30,7 @@ jobs:
       run: sudo snap install plotjuggler
     - name: Unit test
       run: |
-        ${{ env.RUN }} "cd /tmp/openpilot && \
-                        scons -j$(nproc) && \
-                        coverage run tools/plotjuggler/test_plotjuggler.py"
+        coverage run tools/plotjuggler/test_plotjuggler.py
+        #cd /tmp/openpilot && \
+        #scons -j$(nproc) && \
 
