@@ -28,3 +28,4 @@ optional arguments:
 Example:
 
 `./juggle.py "0982d79ebb0de295|2021-01-17--17-13-08"`
+`./juggle.py https://commadataci.blob.core.windows.net/openpilotci/b0f5a01cf604185c/2017-12-18--20-32-32/0/rlog.bz2`

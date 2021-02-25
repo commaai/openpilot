@@ -21,15 +21,11 @@ class TestPlotJuggler(unittest.TestCase):
 
     test_url = get_url(random.choice(list(routes.keys())), 0)
 
-    p = subprocess.Popen(f'QT_QPA_PLATFORM=offscreen {os.path.join(BASEDIR, "tools/plotjuggler/juggle.py")} "{test_url}"', stderr=subprocess.PIPE, stdout=subprocess.PIPE ,shell=True, start_new_session=True)
+    p = subprocess.Popen(f'QT_QPA_PLATFORM=offscreen {os.path.join(BASEDIR, "tools/plotjuggler/juggle.py")} "{test_url}"', stderr=subprocess.PIPE ,shell=True, start_new_session=True)
 
     with Timeout(60):
       while True:
-          # output = p.stderr.readline()
-          # print(output)
-          output = p.stdout.readline()
-          if output != b'':
-            print(output)
+          output = p.stderr.readline()
           if output == b'Done\n':
             break
 
