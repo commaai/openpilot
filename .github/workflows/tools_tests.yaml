@@ -31,5 +31,6 @@ jobs:
     - name: Unit test
       run: |
         export PYTHONPATH=/home/runner/work/openpilot/openpilot
+        pip3 install pycapnp
         tools/plotjuggler/test_plotjuggler.py
 
