@@ -26,13 +26,12 @@ namespace {
 constexpr int MAIN_FPS = 20;
 
 #ifndef QCOM2
-constexpr int MAIN_BITRATE = 5000000;
-constexpr int DCAM_BITRATE = 2500000;
-const bool IS_QCOM2 = false;
+#define MAIN_BITRATE 5000000
 #define DCAM_BITRATE 2500000
+const bool IS_QCOM2 = false;
 #else
-constexpr int MAIN_BITRATE = 10000000;
-constexpr int DCAM_BITRATE = MAIN_BITRATE;
+#define MAIN_BITRATE 10000000
+#define  DCAM_BITRATE MAIN_BITRATE
 const bool IS_QCOM2 = true;
 #endif
 
