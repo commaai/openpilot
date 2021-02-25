@@ -17,10 +17,10 @@
 
 #define DEBAYER_LOCAL_WORKSIZE 16
 
-typedef struct CameraState {
-  CameraInfo ci;
-  
-  std::mutex exp_lock;
+class CameraState : public CameraStateBase{
+public:
+  void auto_exposure(float grey_frac) override;
+
   float analog_gain_frac;
   uint16_t analog_gain;
   bool dc_gain_enabled;
@@ -38,9 +38,6 @@ typedef struct CameraState {
 
   int sensor_fd;
   int csiphy_fd;
-
-  int camera_num;
-
 
   uint32_t session_handle;
 
@@ -60,9 +57,7 @@ typedef struct CameraState {
   bool skipped;
 
   struct cam_req_mgr_session_info req_mgr_session_info;
-
-  CameraBuf buf;
-} CameraState;
+};
 
 typedef struct MultiCameraState {
   int device;

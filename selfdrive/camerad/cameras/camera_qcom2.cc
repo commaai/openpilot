@@ -1064,11 +1064,11 @@ static void set_camera_exposure(CameraState *s, float grey_frac) {
                CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
 }
 
-void camera_autoexposure(CameraState *s, float grey_frac) {
-  CameraExpInfo tmp = cam_exp[s->camera_num].load();
+void CameraState::auto_exposure(float grey_frac) {
+  CameraExpInfo tmp = cam_exp[this->camera_num].load();
   tmp.op_id++;
   tmp.grey_frac = grey_frac;
-  cam_exp[s->camera_num].store(tmp);
+  cam_exp[this->camera_num].store(tmp);
 }
 
 static void ae_thread(MultiCameraState *s) {

@@ -44,12 +44,12 @@ typedef struct StreamState {
   VisionBuf *bufs;
 } StreamState;
 
-typedef struct CameraState {
-  int camera_num;
+class CameraState : public CameraStateBase {
+public:
+  void auto_exposure(float grey_frac) override;
+  void release_callback(int buf_idx) override;
   int camera_id;
-
   int fps;
-  CameraInfo ci;
 
   unique_fd csid_fd;
   unique_fd csiphy_fd;
@@ -84,8 +84,7 @@ typedef struct CameraState {
   uint16_t cur_lens_pos;
   int16_t focus[NUM_FOCUS];
   uint8_t confidence[NUM_FOCUS];
-} CameraState;
-
+};
 
 typedef struct MultiCameraState {
   unique_fd ispif_fd;

@@ -229,8 +229,6 @@ void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_i
   s->pm = new PubMaster({"roadCameraState", "driverCameraState", "thumbnail"});
 }
 
-void camera_autoexposure(CameraState *s, float grey_frac) {}
-
 void cameras_open(MultiCameraState *s) {
   // LOG("*** open driver camera ***");
   camera_open(&s->driver_cam, false);

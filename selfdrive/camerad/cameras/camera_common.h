@@ -43,8 +43,6 @@ const bool env_send_driver = getenv("SEND_DRIVER") != NULL;
 const bool env_send_road = getenv("SEND_ROAD") != NULL;
 const bool env_send_wide_road = getenv("SEND_WIDE_ROAD") != NULL;
 
-typedef void (*release_cb)(void *cookie, int buf_idx);
-
 typedef struct CameraInfo {
   int frame_width, frame_height;
   int frame_stride;
@@ -88,7 +86,7 @@ typedef struct CameraExpInfo {
 extern CameraInfo cameras_supported[CAMERA_ID_MAX];
 
 struct MultiCameraState;
-struct CameraState;
+class CameraState;
 
 class CameraBuf {
 private:
@@ -106,7 +104,6 @@ private:
   SafeQueue<int> safe_queue;
 
   int frame_buf_count;
-  release_cb release_callback;
 
 public:
   cl_command_queue q;
@@ -121,10 +118,20 @@ public:
 
   CameraBuf() = default;
   ~CameraBuf();
-  void init(cl_device_id device_id, cl_context context, CameraState *s, VisionIpcServer * v, int frame_cnt, VisionStreamType rgb_type, VisionStreamType yuv_type, release_cb release_callback=nullptr);
+  void init(cl_device_id device_id, cl_context context, CameraState *s, VisionIpcServer * v, int frame_cnt, VisionStreamType rgb_type, VisionStreamType yuv_type);
   bool acquire();
   void release();
   void queue(size_t buf_idx);
+};
+
+class CameraStateBase {
+public:
+  CameraStateBase() = default;
+  virtual void auto_exposure(float grey_frac) {}
+  virtual void release_callback(int buf_idx) {}
+  int camera_num;
+  CameraInfo ci;
+  CameraBuf buf;
 };
 
 typedef void (*process_thread_cb)(MultiCameraState *s, CameraState *c, int cnt);

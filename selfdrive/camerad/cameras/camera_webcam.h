@@ -12,14 +12,11 @@
 
 #define FRAME_BUF_COUNT 16
 
-typedef struct CameraState {
-  CameraInfo ci;
-  int camera_num;
+class CameraState : public CameraStateBase {
+ public:
   int fps;
   float digital_gain;
-  CameraBuf buf;
-} CameraState;
-
+};
 
 typedef struct MultiCameraState {
   CameraState road_cam;

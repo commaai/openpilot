@@ -74,11 +74,9 @@ CameraInfo cameras_supported[CAMERA_ID_MAX] = {
   },
 };
 
-static void camera_release_buffer(void* cookie, int buf_idx) {
-  CameraState *s = (CameraState *)cookie;
-  // printf("camera_release_buffer %d\n", buf_idx);
-  s->ss[0].qbuf_info[buf_idx].dirty_buf = 1;
-  ioctl(s->isp_fd, VIDIOC_MSM_ISP_ENQUEUE_BUF, &s->ss[0].qbuf_info[buf_idx]);
+void CameraState::release_callback(int buf_idx) {
+  this->ss[0].qbuf_info[buf_idx].dirty_buf = 1;
+  ioctl(this->isp_fd, VIDIOC_MSM_ISP_ENQUEUE_BUF, &this->ss[0].qbuf_info[buf_idx]);
 }
 
 int sensor_write_regs(CameraState *s, struct msm_camera_i2c_reg_array* arr, size_t size, msm_camera_i2c_data_type data_type) {
@@ -920,8 +918,8 @@ static void do_autofocus(CameraState *s, SubMaster *sm) {
   actuator_move(s, target);
 }
 
-void camera_autoexposure(CameraState *s, float grey_frac) {
-  if (s->camera_num == 0) {
+void CameraState::auto_exposure(float grey_frac) {
+  if (this->camera_num == 0) {
     CameraExpInfo tmp = road_cam_exp.load();
     tmp.op_id++;
     tmp.grey_frac = grey_frac;
