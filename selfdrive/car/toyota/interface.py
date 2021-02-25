@@ -90,7 +90,7 @@ class CarInterface(CarInterfaceBase):
       stop_and_go = False
       ret.safetyParam = 88
       ret.wheelbase = 2.70
-      ret.steerRatio = 17.43
+      ret.steerRatio = 18.27
       ret.minSpeedCan = 0.1 * CV.KPH_TO_MS
       tire_stiffness_factor = 0.444  # not optimized yet
       ret.mass = 2860. * CV.LB_TO_KG + STD_CARGO_KG  # mean between normal and hybrid
