@@ -30,8 +30,6 @@ jobs:
       run: sudo snap install plotjuggler
     - name: Unit test
       run: |
-        export PYTHONPATH=/openpilot
+        scons -j$(nproc) && \
         tools/plotjuggler/test_plotjuggler.py
-        #cd /tmp/openpilot && \
-        #scons -j$(nproc) && \
 
