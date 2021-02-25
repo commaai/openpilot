@@ -228,8 +228,8 @@ function launch {
     tici_init
   fi
 
-  # write tmux scrollback to a file
-  tmux capture-pane -pq -S-1000 > /tmp/launch_log
+  # bind key to write tmux scrollback to a file
+  tmux bind-key S command-prompt -p 'Save history to file:' -I '/tmp/launch_log' 'capture-pane -S-1000; save-buffer %1; delete-buffer'
 
   # start manager
   cd selfdrive
