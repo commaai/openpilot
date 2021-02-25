@@ -132,19 +132,21 @@ int BMX055_Magn::init(){
   trim_data.dig_xyz1 = read_16_bit(trim_xyz1[0], trim_xyz1[1] & 0x7f);
   assert(trim_data.dig_xyz1 != 0);
 
-  // 9 REPXY and 15 REPZ for 100 Hz
-  // 3 REPXY and 3 REPZ for > 300 Hz
-  ret = set_register(BMX055_MAGN_I2C_REG_REPXY, (3 - 1) / 2);
-  if (ret < 0){
-    goto fail;
-  }
-
-  ret = set_register(BMX055_MAGN_I2C_REG_REPZ, 3 - 1);
-  if (ret < 0){
-    goto fail;
-  }
-
   perform_self_test();
+
+  // f_max = 1 / (145us * nXY + 500us * NZ + 980us)
+  // Chose NXY = 7, NZ = 12, which gives 125 Hz,
+  // and has the same ratio as the high accuracy preset
+  ret = set_register(BMX055_MAGN_I2C_REG_REPXY, (7 - 1) / 2);
+  if (ret < 0){
+    goto fail;
+  }
+
+  ret = set_register(BMX055_MAGN_I2C_REG_REPZ, 12 - 1);
+  if (ret < 0){
+    goto fail;
+  }
+
 
   return 0;
 
@@ -154,41 +156,43 @@ int BMX055_Magn::init(){
 
 bool BMX055_Magn::perform_self_test(){
   uint8_t buffer[8];
-  int16_t x, y, z;
+  int16_t x, y;
+  int16_t neg_z, pos_z;
+
+  // Increase z reps for less false positives (~30 Hz ODR)
+  set_register(BMX055_MAGN_I2C_REG_REPXY, 1);
+  set_register(BMX055_MAGN_I2C_REG_REPZ, 64 - 1);
 
   // Clean existing measurement
   read_register(BMX055_MAGN_I2C_REG_DATAX_LSB, buffer, sizeof(buffer));
 
-  uint8_t reg = BMX055_MAGN_FORCED;
-
-  // Normal
-	set_register(BMX055_MAGN_I2C_REG_MAG, reg);
-	util::sleep_for(25);
-
-	read_register(BMX055_MAGN_I2C_REG_DATAX_LSB, buffer, sizeof(buffer));
-	assert(parse_xyz(buffer, &x, &y, &z));
-	LOGE("No current %d", z);
+  uint8_t forced = BMX055_MAGN_FORCED;
 
   // Negative current
-	set_register(BMX055_MAGN_I2C_REG_MAG, reg | (uint8_t(0b01) << 6));
-	util::sleep_for(25);
+	set_register(BMX055_MAGN_I2C_REG_MAG, forced | (uint8_t(0b10) << 6));
+	util::sleep_for(100);
 
 	read_register(BMX055_MAGN_I2C_REG_DATAX_LSB, buffer, sizeof(buffer));
-	assert(parse_xyz(buffer, &x, &y, &z));
-	LOGE("Negative current %d", z);
+	parse_xyz(buffer, &x, &y, &neg_z);
 
   // Positive current
-	set_register(BMX055_MAGN_I2C_REG_MAG, reg | (uint8_t(0b11) << 6));
-	util::sleep_for(25);
+	set_register(BMX055_MAGN_I2C_REG_MAG, forced | (uint8_t(0b11) << 6));
+	util::sleep_for(100);
 
 	read_register(BMX055_MAGN_I2C_REG_DATAX_LSB, buffer, sizeof(buffer));
-	assert(parse_xyz(buffer, &x, &y, &z));
-	LOGE("Negative current %d", z);
+  parse_xyz(buffer, &x, &y, &pos_z);
 
   // Put back in normal mode
-  set_register(BMX055_MAGN_I2C_REG_MAG, reg);
+  set_register(BMX055_MAGN_I2C_REG_MAG, 0);
 
-  return true;
+  int16_t diff = pos_z - neg_z;
+  bool passed = (diff > 180) && (diff < 240);
+
+  if (!passed){
+    LOGE("self test failed: neg %d pos %d diff %d", neg_z, pos_z, diff);
+  }
+
+  return passed;
 }
 
 bool BMX055_Magn::parse_xyz(uint8_t buffer[8], int16_t *x, int16_t *y, int16_t *z){
@@ -222,6 +226,10 @@ void BMX055_Magn::get_event(cereal::SensorEventData::Builder &event){
     event.setSensor(SENSOR_MAGNETOMETER_UNCALIBRATED);
     event.setType(SENSOR_TYPE_MAGNETIC_FIELD_UNCALIBRATED);
     event.setTimestamp(start_time);
+
+    // Axis convention
+    x = -x;
+    y = -y;
 
     float xyz[] = {(float)x, (float)y, (float)z};
     auto svec = event.initMagneticUncalibrated();
