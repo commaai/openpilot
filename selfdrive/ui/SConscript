@@ -20,6 +20,9 @@ if arch == 'aarch64' and "QT" not in os.environ:
     LIBS=libs)
 else:
   qt_base_libs = qt_env["LIBS"] + libs + ["pthread", "ssl", "crypto"]
+  if arch == "Darwin":
+    del qt_libs[qt_libs.index('OpenCL')]
+    qt_env['FRAMEWORKS'] += ['OpenCL']
 
   widgets_src = ["qt/widgets/input_field.cc", "qt/widgets/drive_stats.cc",
                  "qt/widgets/ssh_keys.cc", "qt/widgets/toggle.cc", "qt/qt_sound.cc",
@@ -30,11 +33,6 @@ else:
 
   widgets = qt_env.Library("qt_widgets", widgets_src, LIBS=qt_base_libs)
   qt_libs = qt_base_libs + [widgets]
-
-  if arch == "Darwin":
-    # fix OpenCL
-    del qt_libs[qt_libs.index('OpenCL')]
-    qt_env['FRAMEWORKS'] += ['OpenCL']
 
   qt_src = ["qt/ui.cc", "qt/window.cc", "qt/home.cc", "qt/api.cc", "qt/offroad/settings.cc", "qt/offroad/onboarding.cc", "#phonelibs/qrcode/QrCode.cc"] + src
   qt_env.Program("_ui", qt_src, LIBS=qt_libs)
