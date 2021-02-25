@@ -28,6 +28,7 @@ QFrame* horizontal_line(QWidget* parent = 0){
   line->setFixedHeight(2);
   return line;
 }
+
 QWidget* labelWidget(QString labelName, QString labelContent){
   QHBoxLayout* labelLayout = new QHBoxLayout;
   labelLayout->addWidget(new QLabel(labelName), 0, Qt::AlignLeft);
@@ -150,6 +151,14 @@ QWidget * device_panel() {
   for (auto &l : labels) {
     device_layout->addWidget(labelWidget(QString::fromStdString(l.first), QString::fromStdString(l.second)), 0, Qt::AlignTop);
   }
+  
+  QPushButton* dcam_view = new QPushButton("Driver camera view");
+  device_layout->addWidget(dcam_view, 0, Qt::AlignBottom);
+  device_layout->addWidget(horizontal_line(), Qt::AlignBottom);
+  QObject::connect(dcam_view, &QPushButton::released, [=]() {
+    Params().write_db_value("IsDriverViewEnabled", "1", 1);
+  });
+
 
   // TODO: show current calibration values
   QPushButton *clear_cal_btn = new QPushButton("Reset Calibration");

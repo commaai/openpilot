@@ -160,7 +160,11 @@ void HomeWindow::setVisibility(bool offroad) {
 
 void HomeWindow::mousePressEvent(QMouseEvent* e) {
   UIState* ui_state = &glWindow->ui_state;
-
+  if (GLWindow::ui_state.started && GLWindow::ui_state.scene.frontview) {
+    Params().write_db_value("IsDriverViewEnabled", "0", 1);
+    return;
+  }
+  
   glWindow->wake();
 
   // Settings button click
