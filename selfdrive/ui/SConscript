@@ -21,7 +21,7 @@ if arch == 'aarch64' and "QT" not in os.environ:
 else:
   qt_base_libs = qt_env["LIBS"] + libs + ["pthread", "ssl", "crypto"]
   if arch == "Darwin":
-    del qt_libs[qt_libs.index('OpenCL')]
+    del qt_base_libs[qt_base_libs.index('OpenCL')]
     qt_env['FRAMEWORKS'] += ['OpenCL']
 
   widgets_src = ["qt/widgets/input_field.cc", "qt/widgets/drive_stats.cc",
