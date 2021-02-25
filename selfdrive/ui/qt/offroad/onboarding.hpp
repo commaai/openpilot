@@ -9,6 +9,7 @@
 
 #ifndef QCOM
 #include <QtWebEngine>
+#include <QWebEngineView>
 #include <QWebEngineSettings>
 #endif
 
