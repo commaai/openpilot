@@ -153,9 +153,9 @@ void SSH::parseResponse(){
       Params().write_db_value("GithubSshKeys", response.toStdString());
       emit gotSSHKeys();
     } else if(reply->error() == QNetworkReply::NoError){
-      emit failedResponse("Username "+usernameGitHub+" has no keys on GitHub");
+      emit failedResponse("Username " + usernameGitHub + " has no keys on GitHub");
     } else {
-      emit failedResponse("Username "+usernameGitHub+" doesn't exist");
+      emit failedResponse("Username " + usernameGitHub + " doesn't exist");
     }
   }else{
     emit failedResponse("Request timed out");
