@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import os
-import random
+# import random
 import signal
 import subprocess
 import time
@@ -8,8 +8,8 @@ import unittest
 
 from common.basedir import BASEDIR
 from common.timeout import Timeout
-from selfdrive.test.openpilotci import get_url
-from selfdrive.test.test_car_models import routes
+# from selfdrive.test.openpilotci import get_url
+# from selfdrive.test.test_car_models import routes
 
 class TestPlotJuggler(unittest.TestCase):
 
@@ -19,7 +19,8 @@ class TestPlotJuggler(unittest.TestCase):
 
   def test_run(self):
 
-    test_url = get_url(random.choice(list(routes.keys())), 0)
+    # test_url = get_url(random.choice(list(routes.keys())), 0)
+    test_url = "https://commadataci.blob.core.windows.net/openpilotci/d83f36766f8012a5/2020-02-05--18-42-21/0/rlog.bz2"
 
     p = subprocess.Popen(f'QT_QPA_PLATFORM=offscreen {os.path.join(BASEDIR, "tools/plotjuggler/juggle.py")} "{test_url}"', stderr=subprocess.PIPE ,shell=True, start_new_session=True)
 
