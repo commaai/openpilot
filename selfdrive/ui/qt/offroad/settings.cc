@@ -249,7 +249,9 @@ QWidget * network_panel(QWidget * parent) {
                             -a android.net.wifi.PICK_WIFI_NETWORK \
                             --ez extra_prefs_show_button_bar true \
                             --es extra_prefs_set_next_text ''"},
-    {"Open Tethering Settings", ""},
+    {"Open Tethering Settings", "am start -n com.android.settings/.TetherSettings \
+                                 --ez extra_prefs_show_button_bar true \
+                                 --es extra_prefs_set_next_text ''"},
   };
   for (auto &b : btns) {
     QPushButton *btn = new QPushButton(b.first);
