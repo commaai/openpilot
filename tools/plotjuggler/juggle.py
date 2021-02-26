@@ -24,19 +24,19 @@ def load_segment(segment_name):
     print(f"Error parsing {segment_name}: {e}")
     return []
 
-def juggle_file(fn, dbc=None, bin_exec=False):
+def juggle_file(fn, dbc=None, bin_path=None):
   env = os.environ.copy()
   env["BASEDIR"] = BASEDIR
 
   if dbc:
     env["DBC_NAME"] = dbc
 
-  if bin_exec:
-    subprocess.call(f'bin/plotjuggler --plugin_folders {os.path.join(juggle_dir, "bin")} -d {fn}', shell=True, env=env, cwd=juggle_dir)
+  if bin_path is not None:
+    subprocess.call(f'{bin_path}/plotjuggler --plugin_folders {os.path.join(juggle_dir, "bin")} -d {fn}', shell=True, env=env, cwd=juggle_dir)
   else:
     subprocess.call(f'plotjuggler --plugin_folders {os.path.join(juggle_dir, "bin")} -d {fn}', shell=True, env=env, cwd=juggle_dir)
 
-def juggle_route(route_name, segment_number, qlog, bin_exec=False):
+def juggle_route(route_name, segment_number, qlog, bin_path=None):
 
   if route_name.startswith("http://") or route_name.startswith("https://"):
     logs = [route_name]
@@ -76,14 +76,14 @@ def juggle_route(route_name, segment_number, qlog, bin_exec=False):
   save_log(tempfile.name, all_data, compress=False)
   del all_data
 
-  juggle_file(tempfile.name, dbc, bin_exec)
+  juggle_file(tempfile.name, dbc, bin_path)
 
 def get_arg_parser():
   parser = argparse.ArgumentParser(description="PlotJuggler plugin for reading rlogs",
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
   parser.add_argument("--qlog", action="store_true", help="Use qlogs")
-  parser.add_argument("--bin", action="store_true", help="Run plotjuggler using executable in bin")
+  parser.add_argument("--bin_path", nargs='?', help="Run plotjuggler using executable in bin_path (absolute path)")
   parser.add_argument("route_name", nargs='?', help="The name of the route that will be plotted.")
   parser.add_argument("segment_number", type=int, nargs='?', help="The index of the segment that will be plotted")
   return parser
@@ -94,4 +94,4 @@ if __name__ == "__main__":
     arg_parser.print_help()
     sys.exit()
   args = arg_parser.parse_args(sys.argv[1:])
-  juggle_route(args.route_name, args.segment_number, args.qlog, args.bin)
+  juggle_route(args.route_name, args.segment_number, args.qlog, args.bin_path)

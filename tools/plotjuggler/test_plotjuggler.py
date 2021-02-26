@@ -23,13 +23,13 @@ class TestPlotJuggler(unittest.TestCase):
     #test_url = get_url(random.choice(list(routes.keys())), 0)
     test_url = "https://commadataci.blob.core.windows.net/openpilotci/ffccc77938ddbc44/2021-01-04--16-55-41/0/rlog.bz2"
 
-    p = subprocess.Popen(f'QT_QPA_PLATFORM=offscreen {os.path.join(BASEDIR, "tools/plotjuggler/juggle.py")} "{test_url}" --bin', stderr=subprocess.PIPE ,shell=True, start_new_session=True)
+    p = subprocess.Popen(f'QT_QPA_PLATFORM=offscreen {os.path.join(BASEDIR, "tools/plotjuggler/juggle.py")} \
+    "{test_url}" --bin_path={os.path.join(BASEDIR, "tools/plotjuggler/bin")} ', stderr=subprocess.PIPE ,shell=True,
+    start_new_session=True)
 
     with Timeout(60):
       while True:
           output = p.stderr.readline()
-          if output != b'':
-            print(output)
           if output == b'Done\n':
             break
 

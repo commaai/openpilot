@@ -36,4 +36,4 @@ jobs:
                           libqt5svg5-dev \
                           libqt5x11extras5-dev && \
                         cd tools/plotjuggler && \
-                        coverage run test_plotjuggler.py"
+                        ./test_plotjuggler.py"
