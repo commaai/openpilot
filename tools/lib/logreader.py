@@ -4,6 +4,8 @@ import sys
 import bz2
 import urllib.parse
 import capnp
+import codecs
+codecs.register_error("strict", codecs.backslashreplace_errors)
 
 try:
   from xx.chffr.lib.filereader import FileReader
