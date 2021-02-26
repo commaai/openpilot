@@ -4,6 +4,7 @@
 #include <QGridLayout>
 #include <QVBoxLayout>
 #include <QDesktopWidget>
+#include <QWebView>
 
 #include "common/params.h"
 #include "onboarding.hpp"
@@ -74,15 +75,10 @@ QWidget* OnboardingWindow::terms_screen() {
   QVBoxLayout *main_layout = new QVBoxLayout;
   main_layout->setContentsMargins(40, 0, 40, 0);
 
-#ifndef QCOM
-  view = new QWebEngineView(this);
-  view->settings()->setAttribute(QWebEngineSettings::ShowScrollBars, false);
-  QString html = QString::fromStdString(util::read_file("../assets/offroad/tc.html"));
-  view->setHtml(html);
-  main_layout->addWidget(view);
+  // QWebView* m_pWebView = new QWebView();
+  // m_pWebView->load(QUrl("http://www.google.com"));
 
-  QObject::connect(view->page(), SIGNAL(scrollPositionChanged(QPointF)), this, SLOT(scrollPositionChanged(QPointF)));
-#endif
+  // main_layout->addWidget(m_pWebView);
 
   QHBoxLayout* buttons = new QHBoxLayout;
   buttons->addWidget(new QPushButton("Decline"));
