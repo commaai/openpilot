@@ -31,9 +31,6 @@ def juggle_file(fn, dbc=None, bin_exec=False):
   if dbc:
     env["DBC_NAME"] = dbc
 
-  print(os.path.join(juggle_dir, "bin"))
-  print(os.listdir(os.path.join(juggle_dir, "bin")))
-
   if bin_exec:
     subprocess.call(f'bin/plotjuggler --plugin_folders {os.path.join(juggle_dir, "bin")} -d {fn}', shell=True, env=env, cwd=juggle_dir)
   else:

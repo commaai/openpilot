@@ -35,4 +35,5 @@ jobs:
                         apt-get install -y libdw-dev \
                           libqt5svg5-dev \
                           libqt5x11extras5-dev && \
+                        cd tools/plotjuggler && \
                         coverage run tools/plotjuggler/test_plotjuggler.py"
