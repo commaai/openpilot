@@ -24,19 +24,29 @@ def load_segment(segment_name):
     print(f"Error parsing {segment_name}: {e}")
     return []
 
-def juggle_file(fn, dbc=None):
+def juggle_file(fn, dbc=None, bin_exec=False):
   env = os.environ.copy()
   env["BASEDIR"] = BASEDIR
 
   if dbc:
     env["DBC_NAME"] = dbc
 
-  subprocess.call(f"plotjuggler --plugin_folders {juggle_dir} -d {fn}", shell=True, env=env, cwd=juggle_dir)
+  print(os.path.join(juggle_dir, "bin"))
+  print(os.listdir(os.path.join(juggle_dir, "bin")))
 
-def juggle_route(route_name, segment_number, qlog):
-  r = Route(route_name)
+  if bin_exec:
+    subprocess.call(f'bin/plotjuggler --plugin_folders {os.path.join(juggle_dir, "bin")} -d {fn}', shell=True, env=env, cwd=juggle_dir)
+  else:
+    subprocess.call(f'plotjuggler --plugin_folders {os.path.join(juggle_dir, "bin")} -d {fn}', shell=True, env=env, cwd=juggle_dir)
 
-  logs = r.qlog_paths() if qlog else r.log_paths()
+def juggle_route(route_name, segment_number, qlog, bin_exec=False):
+
+  if route_name.startswith("http://") or route_name.startswith("https://"):
+    logs = [route_name]
+  else:
+    r = Route(route_name)
+    logs = r.qlog_paths() if qlog else r.log_paths()
+
   if segment_number is not None:
     logs = logs[segment_number:segment_number+1]
 
@@ -69,22 +79,22 @@ def juggle_route(route_name, segment_number, qlog):
   save_log(tempfile.name, all_data, compress=False)
   del all_data
 
-  juggle_file(tempfile.name, dbc)
+  juggle_file(tempfile.name, dbc, bin_exec)
 
 def get_arg_parser():
   parser = argparse.ArgumentParser(description="PlotJuggler plugin for reading rlogs",
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
   parser.add_argument("--qlog", action="store_true", help="Use qlogs")
+  parser.add_argument("--bin", action="store_true", help="Run plotjuggler using executable in bin")
   parser.add_argument("route_name", nargs='?', help="The name of the route that will be plotted.")
   parser.add_argument("segment_number", type=int, nargs='?', help="The index of the segment that will be plotted")
   return parser
 
 if __name__ == "__main__":
-
   arg_parser = get_arg_parser()
   if len(sys.argv) == 1:
     arg_parser.print_help()
     sys.exit()
   args = arg_parser.parse_args(sys.argv[1:])
-  juggle_route(args.route_name, args.segment_number, args.qlog)
+  juggle_route(args.route_name, args.segment_number, args.qlog, args.bin)

@@ -1,7 +1,7 @@
 # PlotJuggler
 We've extended [PlotJuggler](https://github.com/facontidavide/PlotJuggler) to plot all of your openpilot logs
 
-Here's our fork: https://github.com/commaai/PlotJuggler 
+Here's our fork: https://github.com/commaai/PlotJuggler
 
 ## Installation
 
