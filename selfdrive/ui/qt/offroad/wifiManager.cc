@@ -393,10 +393,8 @@ void WifiManager::disconnect() {
 }
 
 QVector<QDBusObjectPath> WifiManager::list_connections(){
-  qDebug() << "list connections";
   QVector<QDBusObjectPath> connections;
   QDBusInterface nm(nm_service, nm_settings_path, nm_settings_iface, bus);
-  qDebug() << "here";
   nm.setTimeout(dbus_timeout);
 
   QDBusMessage response = nm.call("ListConnections");

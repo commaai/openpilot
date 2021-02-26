@@ -45,6 +45,7 @@ else:
   if "BUILD_SETUP" in os.environ:
     qt_env.Program("qt/setup/reset", ["qt/setup/reset.cc"], LIBS=qt_libs)
     qt_env.Program("qt/setup/setup", ["qt/setup/setup.cc"], LIBS=qt_libs + ['curl', 'common', 'json11'])
+    qt_env.Program("qt/setup/wifi", ["qt/setup/wifi.cc"], LIBS=qt_libs + ['common', 'json11'])
 
     installers = [
       ("openpilot", "master"),
