@@ -14,6 +14,7 @@ from common.timeout import Timeout
 class TestPlotJuggler(unittest.TestCase):
 
   def test_install(self):
+    os.system(f'cd {os.path.join(BASEDIR, "tools/plotjuggler/install.sh")}')
     exit_code = os.system(os.path.join(BASEDIR, "tools/plotjuggler/install.sh"))
     self.assertEqual(exit_code, 0)
 
@@ -21,12 +22,6 @@ class TestPlotJuggler(unittest.TestCase):
 
     # test_url = get_url(random.choice(list(routes.keys())), 0)
     test_url = "https://commadataci.blob.core.windows.net/openpilotci/d83f36766f8012a5/2020-02-05--18-42-21/0/rlog.bz2"
-
-    print(os.listdir(os.path.join(BASEDIR, "tools/plotjuggler")))
-    print(os.listdir(os.path.join(BASEDIR, "tools/plotjuggler")))
-    print(os.listdir(os.path.join(BASEDIR, "tools/plotjuggler")))
-    print(os.listdir(os.path.join(BASEDIR, "tools/plotjuggler")))
-    print(os.listdir(os.path.join(BASEDIR, "tools/plotjuggler")))
 
     p = subprocess.Popen(f'QT_QPA_PLATFORM=offscreen {os.path.join(BASEDIR, "tools/plotjuggler/juggle.py")} "{test_url}"', stderr=subprocess.PIPE ,shell=True, start_new_session=True)
 
