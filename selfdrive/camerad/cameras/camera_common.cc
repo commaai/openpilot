@@ -384,6 +384,8 @@ void common_process_driver_camera(MultiCameraState *s, CameraState *c, cereal::F
   static const bool is_rhd = Params().read_db_bool("IsRHD");
   const CameraBuf *b = &c->buf;
 
+  framed.setFrameType(cereal::FrameData::FrameType::FRONT);
+
   // auto exposure
   if (cnt % 3 == 0) {
     if (sm.update(0) > 0 && sm.updated("driverState")) {
