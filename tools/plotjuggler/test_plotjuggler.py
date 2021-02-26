@@ -21,15 +21,14 @@ class TestPlotJuggler(unittest.TestCase):
 
     # Launch PlotJuggler with the executable in the bin directory
     p = subprocess.Popen(f'QT_QPA_PLATFORM=offscreen {os.path.join(BASEDIR, "tools/plotjuggler/juggle.py")} \
-    "{test_url}" --bin_path={os.path.join(BASEDIR, "tools/plotjuggler/bin")} ', stderr=subprocess.PIPE ,shell=True,
+    "{test_url}"', stderr=subprocess.PIPE, shell=True,
     start_new_session=True)
 
     # Wait max 60 seconds for the "Done reading Rlog data" signal from the plugin
-    with Timeout(60):
-      while True:
-          output = p.stderr.readline()
-          if output == b'Done reading Rlog data\n':
-            break
+    output = ""
+    with Timeout(60, error_msg=output):
+      while output != b'Done reading Rlog data\n':
+        output = p.stderr.readline()
 
     # ensure plotjuggler didn't crash after exiting the plugin
     time.sleep(15)

@@ -32,7 +32,7 @@ def juggle_file(fn, dbc=None):
     env["DBC_NAME"] = dbc
 
   pj = os.getenv("PLOTJUGGLER_PATH", "plotjuggler")
-  subprocess.call(f'{{pj} --plugin_folders {os.path.join(juggle_dir, "bin")} -d {fn}', shell=True, env=env, cwd=juggle_dir)
+  subprocess.call(f'{pj} --plugin_folders {os.path.join(juggle_dir, "bin")} -d {fn}', shell=True, env=env, cwd=juggle_dir)
 
 def juggle_route(route_name, segment_number, qlog):
 
@@ -81,7 +81,6 @@ def get_arg_parser():
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
   parser.add_argument("--qlog", action="store_true", help="Use qlogs")
-  parser.add_argument("--bin_path", default="plotjuggler", help="Run plotjuggler using executable at bin_path (absolute path)")
   parser.add_argument("route_name", nargs='?', help="The name of the route that will be plotted.")
   parser.add_argument("segment_number", type=int, nargs='?', help="The index of the segment that will be plotted")
   return parser
@@ -92,5 +91,4 @@ if __name__ == "__main__":
     arg_parser.print_help()
     sys.exit()
   args = arg_parser.parse_args(sys.argv[1:])
-  os.environ["PLOTJUGGLER_PATH"] = args.bin_path
   juggle_route(args.route_name, args.segment_number, args.qlog)
