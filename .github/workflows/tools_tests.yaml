@@ -17,5 +17,6 @@ jobs:
     - name: Unit test
       run: |
         pip3 install pycapnp
+        pip3 install pycurl
         export PYTHONPATH="${PYTHONPATH}:/home/runner/work/openpilot/openpilot"
         tools/plotjuggler/test_plotjuggler.py

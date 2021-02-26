@@ -27,7 +27,8 @@ class TestPlotJuggler(unittest.TestCase):
     with Timeout(60):
       while True:
           output = p.stderr.readline()
-          print(output)
+          if output != b'':
+            print(output)
           if output == b'Done\n':
             break
 
