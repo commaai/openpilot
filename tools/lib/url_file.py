@@ -25,12 +25,13 @@ def hash_256(link):
 class URLFile(object):
   _tlocal = threading.local()
 
-  def __init__(self, url, debug=False, cache=None):
+  def __init__(self, url, debug=False, cache=None, destination_path=None):
     self._url = url
     self._pos = 0
     self._length = None
     self._local_file = None
     self._debug = debug
+    self._destination_path = destination_path
     #  True by default, false if FILEREADER_CACHE is defined, but can be overwritten by the cache input
     self._force_download = not int(os.environ.get("FILEREADER_CACHE", "0"))
     if cache is not None:
@@ -176,7 +177,7 @@ class URLFile(object):
     """
     if self._local_file is None:
       _, ext = os.path.splitext(urllib.parse.urlparse(self._url).path)
-      local_fd, local_path = tempfile.mkstemp(suffix=ext)
+      local_fd, local_path = tempfile.mkstemp(suffix=ext, dir=self._destination_path)
       try:
         os.write(local_fd, self.read())
         local_file = open(local_path, "rb")

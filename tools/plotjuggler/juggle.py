@@ -6,35 +6,48 @@ import subprocess
 import argparse
 from tempfile import NamedTemporaryFile
 
-from common.basedir import BASEDIR
-from selfdrive.test.process_replay.compare_logs import save_log
-from tools.lib.route import Route
-from tools.lib.logreader import LogReader
+from tools.lib.url_file import URLFile
 
 juggle_dir = os.path.dirname(os.path.realpath(__file__))
 
+try:
+  from selfdrive.test.process_replay.compare_logs import save_log
+  from tools.lib.route import Route
+  from tools.lib.logreader import LogReader
+except ImportError:
+  pass
+
+try:
+  from common.basedir import BASEDIR
+except ImportError:
+  BASEDIR = os.path.join(juggle_dir, "../..")
+  print(f"Falling back to relative BASEDIR: {BASEDIR}")
+
+
 def load_segment(segment_name):
   print(f"Loading {segment_name}")
+  if segment_name is None:
+    return []
+
   try:
-    lr = LogReader(segment_name)
-    r = [d for d in lr if d.which() not in ['can', 'sendcan']]
-    return r
+    return list(LogReader(segment_name))
   except ValueError as e:
     print(f"Error parsing {segment_name}: {e}")
     return []
 
-def juggle_file(fn):
+def juggle_file(fn, dbc=None):
   env = os.environ.copy()
   env["BASEDIR"] = BASEDIR
-  subprocess.call(f"plotjuggler --plugin_folders {os.path.join(BASEDIR, 'tools/plotjuggler')} -d {fn}", shell=True, env=env, cwd=juggle_dir)
+
+  if dbc:
+    env["DBC_NAME"] = dbc
+
+  subprocess.call(f"plotjuggler --plugin_folders {juggle_dir} -d {fn}", shell=True, env=env, cwd=juggle_dir)
 
 def juggle_route(route_name, segment_number, qlog):
-  if route_name.startswith("http://") or route_name.startswith("https://"):
-    logs = [route_name]
-  else:
-    r = Route(route_name)
-    logs = r.qlog_paths() if qlog else r.log_paths()
+  r = Route(route_name)
 
+  logs = r.qlog_paths() if qlog else r.log_paths()
   if segment_number is not None:
     logs = logs[segment_number:segment_number+1]
 
@@ -53,11 +66,21 @@ def juggle_route(route_name, segment_number, qlog):
   for d in pool.map(load_segment, logs):
     all_data += d
 
+  # Infer DBC name from logs
+  dbc = None
+  for cp in [m for m in all_data if m.which() == 'carParams']:
+    try:
+      DBC = __import__(f"selfdrive.car.{cp.carParams.carName}.values", fromlist=['DBC']).DBC
+      dbc = DBC[cp.carParams.carFingerprint]['pt']
+    except (ImportError, KeyError):
+      pass
+    break
+
   tempfile = NamedTemporaryFile(suffix='.rlog', dir=juggle_dir)
   save_log(tempfile.name, all_data, compress=False)
   del all_data
 
-  juggle_file(tempfile.name)
+  juggle_file(tempfile.name, dbc)
 
 def get_arg_parser():
   parser = argparse.ArgumentParser(description="PlotJuggler plugin for reading rlogs",
@@ -74,4 +97,10 @@ if __name__ == "__main__":
     arg_parser.print_help()
     sys.exit()
   args = arg_parser.parse_args(sys.argv[1:])
-  juggle_route(args.route_name, args.segment_number, args.qlog)
+  if args.route_name.startswith("http://") or args.route_name.startswith("https://"):
+    u = URLFile(args.route_name, destination_path=juggle_dir)
+    juggle_file(u.name, dbc="hack") # hack to get CI working for now
+    os.system(f"rm {u.name}") # hack because url_file uses mkstemp which doesn't delete files after
+    print("removed")
+  else:
+    juggle_route(args.route_name, args.segment_number, args.qlog)
