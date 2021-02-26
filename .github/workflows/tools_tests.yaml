@@ -20,5 +20,6 @@ jobs:
         sudo apt install libcurl4-openssl-dev libssl-dev
         pip3 install pycurl
         pip3 install tenacity
+        pip3 install atomicwrites
         export PYTHONPATH="${PYTHONPATH}:/home/runner/work/openpilot/openpilot"
         tools/plotjuggler/test_plotjuggler.py
