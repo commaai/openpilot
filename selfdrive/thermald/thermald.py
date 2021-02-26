@@ -14,7 +14,7 @@ from common.numpy_fast import clip, interp
 from common.params import Params
 from common.realtime import DT_TRML, sec_since_boot
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
-from selfdrive.hardware import EON, HARDWARE
+from selfdrive.hardware import EON, TICI, HARDWARE
 from selfdrive.loggerd.config import get_available_percent
 from selfdrive.pandad import get_expected_signature
 from selfdrive.swaglog import cloudlog
@@ -22,6 +22,8 @@ from selfdrive.thermald.power_monitoring import PowerMonitoring
 from selfdrive.version import get_git_branch, terms_version, training_version
 
 FW_SIGNATURE = get_expected_signature()
+
+DISABLE_LTE_ONROAD = os.path.exists("/persist/disable_lte_onroad")
 
 ThermalStatus = log.DeviceState.ThermalStatus
 NetworkType = log.DeviceState.NetworkType
@@ -354,6 +356,8 @@ def thermald_thread():
     if should_start:
       if not should_start_prev:
         params.delete("IsOffroad")
+        if TICI and DISABLE_LTE_ONROAD:
+          os.system("sudo systemctl stop --no-block lte")
 
       off_ts = None
       if started_ts is None:
@@ -365,6 +369,8 @@ def thermald_thread():
 
       if should_start_prev or (count == 0):
         params.put("IsOffroad", "1")
+        if TICI and DISABLE_LTE_ONROAD:
+          os.system("sudo systemctl start --no-block lte")
 
       started_ts = None
       if off_ts is None:
