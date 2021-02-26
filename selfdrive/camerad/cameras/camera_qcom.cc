@@ -214,8 +214,6 @@ void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_i
               /*max_gain=*/510, 10, device_id, ctx,
               VISION_STREAM_RGB_FRONT, VISION_STREAM_YUV_FRONT);
 
-  s->sm = new SubMaster({"driverState"});
-
   for (int i = 0; i < FRAME_BUF_COUNT; i++) {
     // TODO: make lengths correct
     s->focus_bufs[i].allocate(0xb80);
@@ -1119,7 +1117,7 @@ static void setup_self_recover(CameraState *c, const uint16_t *lapres, size_t la
 }
 
 void process_driver_camera(MultiCameraState *s, CameraState *c, cereal::FrameData::Builder& framd, int cnt) {
-  common_process_driver_camera(s->sm, c, cnt);
+  common_process_driver_camera(c, cnt);
 }
 
 // called by processing_thread
@@ -1222,6 +1220,11 @@ void cameras_close(MultiCameraState *s) {
     s->stats_bufs[i].free();
   }
 
+<<<<<<< HEAD
   delete s->lap_conv;
   delete s->sm;
+=======
+  CL_CHECK(clReleaseKernel(s->krnl_rgb_laplacian));
+  CL_CHECK(clReleaseProgram(s->prg_rgb_laplacian));
+>>>>>>> move submaster to common_process_driver_camera
 }

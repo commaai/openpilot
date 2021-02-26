@@ -378,7 +378,9 @@ std::thread start_process_thread(MultiCameraState *cameras, CameraState *cs, pro
   return std::thread(processing_thread, cameras, cs, callback, is_frame_stream);
 }
 
-void common_process_driver_camera(SubMaster *sm, CameraState *c, int cnt) {
+void common_process_driver_camera(CameraState *c, int cnt) {
+  static SubMaster sm({"driverState"});
+
   const CameraBuf *b = &c->buf;
 
   static int x_min = 0, x_max = 0, y_min = 0, y_max = 0;
@@ -386,8 +388,8 @@ void common_process_driver_camera(SubMaster *sm, CameraState *c, int cnt) {
 
   // auto exposure
   if (cnt % 3 == 0) {
-    if (sm->update(0) > 0 && sm->updated("driverState")) {
-      auto state = (*sm)["driverState"].getDriverState();
+    if (sm.update(0) > 0 && sm.updated("driverState")) {
+      auto state = sm["driverState"].getDriverState();
       // set driver camera metering target
       if (state.getFaceProb() > 0.4) {
         auto face_position = state.getFacePosition();
