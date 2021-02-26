@@ -31,7 +31,7 @@ class TestPlotJuggler(unittest.TestCase):
           if output == b'Done reading Rlog data\n':
             break
 
-    # See if the process is still running after 15 seconds
+    # ensure plotjuggler didn't crash after exiting the plugin
     time.sleep(15)
     self.assertEqual(p.poll(), None)
     os.killpg(os.getpgid(p.pid), signal.SIGTERM)
