@@ -151,7 +151,7 @@ QWidget * device_panel() {
   for (auto &l : labels) {
     device_layout->addWidget(labelWidget(QString::fromStdString(l.first), QString::fromStdString(l.second)), 0, Qt::AlignTop);
   }
-  
+
   QPushButton* dcam_view = new QPushButton("Driver camera view");
   device_layout->addWidget(dcam_view, 0, Qt::AlignBottom);
   device_layout->addWidget(horizontal_line(), Qt::AlignBottom);
@@ -237,7 +237,39 @@ QWidget * developer_panel() {
 
 QWidget * network_panel(QWidget * parent) {
 #ifdef QCOM
+  QVBoxLayout *layout = new QVBoxLayout;
+  layout->setMargin(100);
+  layout->setSpacing(30);
+
+  // TODO: can probably use the ndk for this
+  // simple wifi + tethering buttons
+  std::vector<std::pair<const char*, const char*>> btns = {
+    {"Open WiFi Settings", "am start -n com.android.settings/.wifi.WifiPickerActivity \
+                            -a android.net.wifi.PICK_WIFI_NETWORK \
+                            --ez extra_prefs_show_button_bar true \
+                            --es extra_prefs_set_next_text ''"},
+    {"Open Tethering Settings", "am start -n com.android.settings/.TetherSettings \
+                                 --ez extra_prefs_show_button_bar true \
+                                 --es extra_prefs_set_next_text ''"},
+  };
+  for (auto &b : btns) {
+    QPushButton *btn = new QPushButton(b.first);
+    layout->addWidget(btn, 0, Qt::AlignTop);
+    QObject::connect(btn, &QPushButton::released, [=]() { std::system(b.second); });
+  }
+  layout->addStretch(1);
+
   QWidget *w = new QWidget;
+  w->setLayout(layout);
+  w->setStyleSheet(R"(
+    QPushButton {
+      padding: 0;
+      height: 120px;
+      border-radius: 15px;
+      background-color: #393939;
+    }
+  )");
+
 #else
   Networking *w = new Networking(parent);
 #endif
