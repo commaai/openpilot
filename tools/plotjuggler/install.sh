@@ -1,13 +1,11 @@
 #!/bin/bash -e
 
-wget https://github.com/commaai/PlotJuggler/releases/download/latest/libDataLoadRlog.so.tar.gz
-tar -xf libDataLoadRlog.so.tar.gz
-rm libDataLoadRlog.so.tar.gz
-
-wget https://github.com/commaai/PlotJuggler/releases/download/latest/plotjuggler.tar.gz
-tar -xf plotjuggler.tar.gz
-rm plotjuggler.tar.gz
-
 mkdir -p bin
-mv libDataLoadRlog.so bin
-mv plotjuggler bin
+
+wget https://github.com/commaai/PlotJuggler/releases/download/latest/libDataLoadRlog.so.tar.gz --directory-prefix bin
+tar --directory bin -xf bin/libDataLoadRlog.so.tar.gz
+rm bin/libDataLoadRlog.so.tar.gz
+
+wget https://github.com/commaai/PlotJuggler/releases/download/latest/plotjuggler.tar.gz --directory-prefix bin
+tar --directory bin -xf bin/plotjuggler.tar.gz
+rm bin/plotjuggler.tar.gz
