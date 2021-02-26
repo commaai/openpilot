@@ -17,6 +17,7 @@ jobs:
     - name: Unit test
       run: |
         pip3 install pycapnp
+        sudo apt install libcurl4-openssl-dev libssl-dev
         pip3 install pycurl
         export PYTHONPATH="${PYTHONPATH}:/home/runner/work/openpilot/openpilot"
         tools/plotjuggler/test_plotjuggler.py
