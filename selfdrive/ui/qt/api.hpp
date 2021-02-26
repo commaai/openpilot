@@ -40,6 +40,7 @@ private:
 private slots:
   void requestTimeout();
   void requestFinished();
+  void printSslErrors(QNetworkReply *reply, const QList<QSslError>& errors);
 signals:
   void receivedResponse(QString response);
   void failedResponse(QString errorString);

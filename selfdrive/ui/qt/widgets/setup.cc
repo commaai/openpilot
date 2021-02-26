@@ -184,7 +184,7 @@ SetupWidget::SetupWidget(QWidget* parent) : QWidget(parent) {
   QObject::connect(finishButton, SIGNAL(released()), this, SLOT(showQrCode()));
   finishRegistationLayout->addWidget(finishButton);
 
-  QLabel* registrationDescription = new QLabel("Pair your Comma device with the Comma Connect app");
+  QLabel* registrationDescription = new QLabel("Pair your device with the comma connect app");
   registrationDescription->setStyleSheet(R"(
     font-size: 55px;
     font-weight: 400;
@@ -198,10 +198,8 @@ SetupWidget::SetupWidget(QWidget* parent) : QWidget(parent) {
 
   QVBoxLayout* qrLayout = new QVBoxLayout;
 
-  QLabel* qrLabel = new QLabel("Pair with Comma Connect app!");
-  qrLabel->setStyleSheet(R"(
-    font-size: 40px;
-  )");
+  QLabel* qrLabel = new QLabel("Pair with comma connect!");
+  qrLabel->setStyleSheet(R"(font-size: 40px)");
   qrLayout->addWidget(qrLabel);
 
   qrLayout->addWidget(new PairingQRWidget);
