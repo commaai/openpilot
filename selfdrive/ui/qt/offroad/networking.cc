@@ -5,7 +5,6 @@
 #include <QPushButton>
 #include <QLineEdit>
 #include <QRandomGenerator>
-#include <QtConcurrent>
 #include <algorithm>
 
 #include "common/params.h"
@@ -28,20 +27,6 @@ QWidget* layoutToWidget(QLayout* l, QWidget* parent){
   QWidget* q = new QWidget(parent);
   q->setLayout(l);
   return q;
-}
-
-// https://stackoverflow.com/questions/478898/how-do-i-execute-a-command-and-get-the-output-of-the-command-within-c-using-po
-std::string exec(const char* cmd) {
-  std::array<char, 128> buffer;
-  std::string result;
-  std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd, "r"), pclose);
-  if (!pipe) {
-    throw std::runtime_error("popen() failed!");
-  }
-  while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
-    result += buffer.data();
-  }
-  return result;
 }
 
 // Networking functions
@@ -131,23 +116,19 @@ void Networking::connectToNetwork(Network n) {
   if (n.security_type == SecurityType::OPEN) {
     wifi->connect(n);
   } else if (n.security_type == SecurityType::WPA) {
-    QString pass = InputDialog::getText("Enter password for \"" + n.ssid + "\"");
+    QString pass = InputDialog::getText("Enter password for \"" + n.ssid + "\"", 8);
     wifi->connect(n, pass);
   }
 }
 
 void Networking::wrongPassword(QString ssid) {
-  return; // TODO: add this back
-  /*
   for (Network n : wifi->seen_networks) {
     if (n.ssid == ssid) {
-      inputField->setPromptText("Wrong password for \"" + n.ssid +"\"");
-      s->setCurrentIndex(0);
-      emit openKeyboard();
+      QString pass = InputDialog::getText("Wrong password for \"" + n.ssid +"\"", 8);
+      wifi->connect(n, pass);
       return;
     }
   }
-  */
 }
 
 QFrame* hline(QWidget* parent = 0){
@@ -193,7 +174,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   editPasswordButton = new QPushButton("EDIT");
   editPasswordButton->setFixedWidth(500);
   connect(editPasswordButton, &QPushButton::released, [=](){
-    QString pass = InputDialog::getText("Enter new tethering password");
+    QString pass = InputDialog::getText("Enter new tethering password", 8);
     if (pass.size()) {
       wifi->changeTetheringPassword(pass);
     }
@@ -255,16 +236,11 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
 }
 
 bool AdvancedNetworking::isSSHEnabled(){
-  QString response = QString::fromStdString(exec("systemctl is-active ssh"));
-  return response.startsWith("active");
+  return Params().get("SshEnabled") == "1";
 }
 
 void AdvancedNetworking::refresh(){
   ipLabel->setText(wifi->ipv4_address);
-  // Don't refresh while changing SSH state
-  if(!toggle_switch_SSH->getEnabled()){
-    return;
-  }
   if (toggle_switch_SSH->on != isSSHEnabled()) {
     toggle_switch_SSH->togglePosition();
   }
@@ -281,23 +257,8 @@ void AdvancedNetworking::toggleTethering(int enable) {
   editPasswordButton->setEnabled(!enable);
 }
 
-void enableSSH(Toggle* toggle_switch_SSH){
-  Params().write_db_value("SshEnabled", "1");
-  toggle_switch_SSH->setEnabled(true);
-}
-
-void disableSSH(Toggle* toggle_switch_SSH){
-  Params().write_db_value("SshEnabled", "0");
-  toggle_switch_SSH->setEnabled(true);
-}
-
 void AdvancedNetworking::toggleSSH(int enable) {
-  toggle_switch_SSH->setEnabled(false);
-  if (enable) {
-    QtConcurrent::run(enableSSH, toggle_switch_SSH);
-  } else {
-    QtConcurrent::run(disableSSH, toggle_switch_SSH);
-  }
+  Params().write_db_value("SshEnabled", QString::number(enable).toStdString());
 }
 
 

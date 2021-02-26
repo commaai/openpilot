@@ -3,7 +3,7 @@
 #include "input_field.hpp"
 #include "qt_window.hpp"
 
-InputDialog::InputDialog(QString prompt_text, QWidget *parent): QDialog(parent) {
+InputDialog::InputDialog(QString prompt_text, QWidget *parent):QDialog(parent) {
   layout = new QVBoxLayout();
   layout->setContentsMargins(50, 50, 50, 50);
   layout->setSpacing(20);
@@ -56,8 +56,9 @@ InputDialog::InputDialog(QString prompt_text, QWidget *parent): QDialog(parent) 
   setLayout(layout);
 }
 
-QString InputDialog::getText(const QString prompt) {
+QString InputDialog::getText(const QString prompt, int minLength) {
   InputDialog d = InputDialog(prompt);
+  d.setMinLength(minLength);
   const int ret = d.exec();
   if (ret) {
     return d.text();
@@ -81,8 +82,12 @@ void InputDialog::handleInput(QString s) {
   }
 
   if (!QString::compare(s,"⏎")) {
-    done(QDialog::Accepted);
-    emitText(line->text());
+    if (line->text().length() > minLength){
+      done(QDialog::Accepted);
+      emitText(line->text());
+    } else {
+      setMessage("Need at least "+QString::number(minLength)+" characters!", false);
+    }
   }
 
   QVector<QString> control_buttons {"⇧", "↑", "ABC", "⏎", "#+=", "⌫", "123"};
@@ -104,4 +109,8 @@ void InputDialog::setMessage(QString message, bool clearInputField){
   if (clearInputField){
     line->setText("");
   }
+}
+
+void InputDialog::setMinLength(int length){
+  minLength = length;
 }
