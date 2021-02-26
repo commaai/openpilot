@@ -257,6 +257,7 @@ QWidget * network_panel(QWidget * parent) {
     layout->addWidget(btn, 0, Qt::AlignTop);
     QObject::connect(btn, &QPushButton::released, [=]() { std::system(b.second); });
   }
+  layout->addStretch(1);
 
   QWidget *w = new QWidget;
   w->setLayout(layout);
