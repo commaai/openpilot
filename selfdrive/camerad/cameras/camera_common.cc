@@ -380,11 +380,9 @@ std::thread start_process_thread(MultiCameraState *cameras, CameraState *cs, pro
 
 void common_process_driver_camera(CameraState *c, int cnt) {
   static SubMaster sm({"driverState"});
-
-  const CameraBuf *b = &c->buf;
-
   static int x_min = 0, x_max = 0, y_min = 0, y_max = 0;
   static const bool is_rhd = Params().read_db_bool("IsRHD");
+  const CameraBuf *b = &c->buf;
 
   // auto exposure
   if (cnt % 3 == 0) {
