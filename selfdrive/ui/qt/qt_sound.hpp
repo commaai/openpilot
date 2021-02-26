@@ -6,7 +6,6 @@
 class QtSound : public Sound {
 public:
   QtSound();
-  ~QtSound();
   bool play(AudibleAlert alert);
   void stop();
   void setVolume(int volume);

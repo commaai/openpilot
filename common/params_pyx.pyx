@@ -2,7 +2,7 @@
 # cython: language_level = 3
 from libcpp cimport bool
 from libcpp.string cimport string
-from params_pxd cimport Params as c_Params
+from common.params_pxd cimport Params as c_Params
 
 import os
 import threading
@@ -31,9 +31,11 @@ keys = {
   b"GitCommit": [TxType.PERSISTENT],
   b"GitRemote": [TxType.PERSISTENT],
   b"GithubSshKeys": [TxType.PERSISTENT],
+  b"HardwareSerial": [TxType.PERSISTENT],
   b"HasAcceptedTerms": [TxType.PERSISTENT],
   b"HasCompletedSetup": [TxType.PERSISTENT],
   b"IsDriverViewEnabled": [TxType.CLEAR_ON_MANAGER_START],
+  b"IMEI": [TxType.PERSISTENT],
   b"IsLdwEnabled": [TxType.PERSISTENT],
   b"IsMetric": [TxType.PERSISTENT],
   b"IsOffroad": [TxType.CLEAR_ON_MANAGER_START],
@@ -42,8 +44,9 @@ keys = {
   b"IsUpdateAvailable": [TxType.CLEAR_ON_MANAGER_START],
   b"IsUploadRawEnabled": [TxType.PERSISTENT],
   b"LastAthenaPingTime": [TxType.PERSISTENT],
-  b"LastUpdateTime": [TxType.PERSISTENT],
+  b"LastGPSPosition": [TxType.PERSISTENT],
   b"LastUpdateException": [TxType.PERSISTENT],
+  b"LastUpdateTime": [TxType.PERSISTENT],
   b"LiveParameters": [TxType.PERSISTENT],
   b"OpenpilotEnabledToggle": [TxType.PERSISTENT],
   b"LaneChangeEnabled": [TxType.PERSISTENT],
@@ -55,11 +58,14 @@ keys = {
   b"ReleaseNotes": [TxType.PERSISTENT],
   b"ShouldDoUpdate": [TxType.CLEAR_ON_MANAGER_START],
   b"SubscriberInfo": [TxType.PERSISTENT],
+  b"SshEnabled": [TxType.PERSISTENT],
   b"TermsVersion": [TxType.PERSISTENT],
+  b"Timezone": [TxType.PERSISTENT],
   b"TrainingVersion": [TxType.PERSISTENT],
   b"UpdateAvailable": [TxType.CLEAR_ON_MANAGER_START],
   b"UpdateFailedCount": [TxType.CLEAR_ON_MANAGER_START],
   b"Version": [TxType.PERSISTENT],
+  b"VisionRadarToggle": [TxType.PERSISTENT],
   b"Offroad_ChargeDisabled": [TxType.CLEAR_ON_MANAGER_START, TxType.CLEAR_ON_PANDA_DISCONNECT],
   b"Offroad_ConnectivityNeeded": [TxType.CLEAR_ON_MANAGER_START],
   b"Offroad_ConnectivityNeededPrompt": [TxType.CLEAR_ON_MANAGER_START],
@@ -69,6 +75,8 @@ keys = {
   b"Offroad_IsTakingSnapshot": [TxType.CLEAR_ON_MANAGER_START],
   b"Offroad_NeosUpdate": [TxType.CLEAR_ON_MANAGER_START],
   b"Offroad_UpdateFailed": [TxType.CLEAR_ON_MANAGER_START],
+  b"Offroad_HardwareUnsupported": [TxType.CLEAR_ON_MANAGER_START],
+  b"ForcePowerDown": [TxType.CLEAR_ON_MANAGER_START],
 }
 
 def ensure_bytes(v):

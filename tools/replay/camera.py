@@ -35,7 +35,7 @@ def ui_thread(addr, frame_address):
 
   camera_surface = pygame.surface.Surface((_FULL_FRAME_SIZE[0] * SCALE, _FULL_FRAME_SIZE[1] * SCALE), 0, 24).convert()
 
-  frame = messaging.sub_sock('frame', conflate=True)
+  frame = messaging.sub_sock('roadCameraState', conflate=True)
 
   img = np.zeros((_FULL_FRAME_SIZE[1], _FULL_FRAME_SIZE[0], 3), dtype='uint8')
   imgff = np.zeros((_FULL_FRAME_SIZE[1], _FULL_FRAME_SIZE[0], 3), dtype=np.uint8)
@@ -46,10 +46,10 @@ def ui_thread(addr, frame_address):
 
     # ***** frame *****
     fpkt = messaging.recv_one(frame)
-    yuv_img = fpkt.frame.image
+    yuv_img = fpkt.roadCameraState.image
 
-    if fpkt.frame.transform:
-      yuv_transform = np.array(fpkt.frame.transform).reshape(3, 3)
+    if fpkt.roadCameraState.transform:
+      yuv_transform = np.array(fpkt.roadCameraState.transform).reshape(3, 3)
     else:
       # assume frame is flipped
       yuv_transform = np.array([[-1.0, 0.0, _FULL_FRAME_SIZE[0] - 1],

@@ -185,6 +185,10 @@ routes = {
     'carFingerprint': HYUNDAI.GENESIS_G70,
     'enableCamera': True,
   },
+  "6b301bf83f10aa90|2020-11-22--16-45-07": {
+    'carFingerprint': HYUNDAI.GENESIS_G80,
+    'enableCamera': True,
+  },
   "38bfd238edecbcd7|2018-08-22--09-45-44": {
     'carFingerprint': HYUNDAI.SANTA_FE,
     'enableCamera': False,
@@ -202,7 +206,7 @@ routes = {
     'enableCamera': True,
   },
   "b2a38c712dcf90bd|2020-05-18--18-12-48": {
-    'carFingerprint': HYUNDAI.SONATA_2019,
+    'carFingerprint': HYUNDAI.SONATA_LF,
     'enableCamera': True,
   },
   "5875672fc1d4bf57|2020-07-23--21-33-28": {
@@ -211,6 +215,10 @@ routes = {
   },
   "9c917ba0d42ffe78|2020-04-17--12-43-19": {
     'carFingerprint': HYUNDAI.PALISADE,
+    'enableCamera': True,
+  },
+  "2c5cf2dd6102e5da|2020-12-17--16-06-44": {
+    'carFingerprint': HYUNDAI.IONIQ_EV_2020,
     'enableCamera': True,
   },
   "610ebb9faaad6b43|2020-06-13--15-28-36": {
@@ -233,6 +241,10 @@ routes = {
     'carFingerprint': HYUNDAI.VELOSTER,
     'enableCamera': True,
   },
+  "50c6c9b85fd1ff03|2020-10-26--17-56-06": {
+    'carFingerprint': HYUNDAI.KIA_NIRO_EV,
+    'enableCamera': True,
+  },
   "f7b6be73e3dfd36c|2019-05-12--18-07-16": {
     'carFingerprint': TOYOTA.AVALON,
     'enableCamera': False,
@@ -240,6 +252,18 @@ routes = {
   },
   "6cdecc4728d4af37|2020-02-23--15-44-18": {
     'carFingerprint': TOYOTA.CAMRY,
+    'enableCamera': True,
+    'enableDsu': False,
+    'fingerprintSource': 'fixed',
+  },
+  "3456ad0cd7281b24|2020-12-13--17-45-56": {
+    'carFingerprint': TOYOTA.CAMRY_TSS2,
+    'enableCamera': True,
+    'enableDsu': False,
+    'fingerprintSource': 'fixed',
+  },
+  "ffccc77938ddbc44|2021-01-04--16-55-41": {
+    'carFingerprint': TOYOTA.CAMRYH_TSS2,
     'enableCamera': True,
     'enableDsu': False,
     'fingerprintSource': 'fixed',
@@ -334,6 +358,11 @@ routes = {
     'enableCamera': True,
     'enableDsu': False,
   },
+  "37041c500fd30100|2020-12-30--12-17-24": {
+    'carFingerprint': TOYOTA.LEXUS_ESH,
+    'enableCamera': True,
+    'enableDsu': True,
+  },
   "886fcd8408d570e9|2020-01-29--05-11-22": {
       'carFingerprint': TOYOTA.LEXUS_RX,
       'enableCamera': True,
@@ -361,6 +390,11 @@ routes = {
   },
   "ec429c0f37564e3c|2020-02-01--17-28-12": {
     'carFingerprint': TOYOTA.LEXUS_NXH,
+    'enableCamera': True,
+    'enableDsu': False,
+  },
+  "964c09eb11ca8089|2020-11-03--22-04-00": {
+    'carFingerprint': TOYOTA.LEXUS_NX,
     'enableCamera': True,
     'enableDsu': False,
   },
@@ -397,6 +431,10 @@ routes = {
   },
   "76b83eb0245de90e|2019-10-20--15-42-29": {
     'carFingerprint': VOLKSWAGEN.GOLF,
+    'enableCamera': True,
+  },
+  "07667b885add75fd|2021-01-23--19-48-42": {
+    'carFingerprint': VOLKSWAGEN.AUDI_A3,
     'enableCamera': True,
   },
   "3c8f0c502e119c1c|2020-06-30--12-58-02": {
@@ -439,6 +477,10 @@ routes = {
     'carFingerprint': NISSAN.LEAF,
     'enableCamera': True,
   },
+  "22c3dcce2dd627eb|2020-12-30--16-38-48": {
+    'carFingerprint': NISSAN.LEAF_IC,
+    'enableCamera': True,
+  },
   "059ab9162e23198e|2020-05-30--09-41-01": {
     'carFingerprint': NISSAN.ROGUE,
     'enableCamera': True,
@@ -453,6 +495,10 @@ routes = {
   },
   "74f1038827005090|2020-08-26--20-05-50": {
     'carFingerprint': MAZDA.Mazda3,
+    'enableCamera': True,
+  },
+    "b72d3ec617c0a90f|2020-12-11--15-38-17": {
+    'carFingerprint': NISSAN.ALTIMA,
     'enableCamera': True,
   },
 }
@@ -486,7 +532,6 @@ non_tested_cars = [
   HONDA.RIDGELINE,
   HYUNDAI.ELANTRA,
   HYUNDAI.ELANTRA_GT_I30,
-  HYUNDAI.GENESIS_G80,
   HYUNDAI.GENESIS_G90,
   HYUNDAI.KIA_FORTE,
   HYUNDAI.KIA_OPTIMA_H,
@@ -543,7 +588,7 @@ if __name__ == "__main__":
     # Start unlogger
     print("Start unlogger")
     unlogger_cmd = [os.path.join(BASEDIR, 'tools/replay/unlogger.py'), route, '/tmp']
-    disable_socks = 'frame,encodeIdx,plan,pathPlan,liveLongitudinalMpc,radarState,controlsState,liveTracks,liveMpc,sendcan,carState,carControl,carEvents,carParams'
+    disable_socks = 'frame,roadEncodeIdx,plan,lateralPlan,liveLongitudinalMpc,radarState,controlsState,liveTracks,liveMpc,sendcan,carState,carControl,carEvents,carParams'
     unlogger = subprocess.Popen(unlogger_cmd + ['--disable', disable_socks, '--no-interactive'], preexec_fn=os.setsid)  # pylint: disable=subprocess-popen-preexec-fn
 
     print("Check sockets")
@@ -552,7 +597,7 @@ if __name__ == "__main__":
     if (route not in passive_routes) and (route not in forced_dashcam_routes) and has_camera:
       extra_socks.append("sendcan")
     if route not in passive_routes:
-      extra_socks.append("pathPlan")
+      extra_socks.append("lateralPlan")
 
     recvd_socks = wait_for_sockets(tested_socks + extra_socks, timeout=30)
     failures = [s for s in tested_socks + extra_socks if s not in recvd_socks]

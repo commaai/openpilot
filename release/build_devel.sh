@@ -44,7 +44,7 @@ git clean -xdf
 git checkout -- selfdrive/common/version.h
 
 VERSION=$(cat selfdrive/common/version.h | awk -F\" '{print $2}')
-echo "#define COMMA_VERSION \"$VERSION-release\"" > selfdrive/common/version.h
+echo "#define COMMA_VERSION \"$VERSION-$(git --git-dir=$SOURCE_DIR/.git rev-parse --short HEAD)-$(date '+%Y-%m-%dT%H:%M:%S')\"" > selfdrive/common/version.h
 
 # do the files copy
 echo "[-] copying files T=$SECONDS"

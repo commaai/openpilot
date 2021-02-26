@@ -23,7 +23,7 @@ static inline double millis_since_boot() {
 static inline double seconds_since_boot() {
   struct timespec t;
   clock_gettime(CLOCK_BOOTTIME, &t);
-  return (double)t.tv_sec + t.tv_nsec * 1e-9;;
+  return (double)t.tv_sec + t.tv_nsec * 1e-9;
 }
 
 static inline uint64_t nanos_since_epoch() {

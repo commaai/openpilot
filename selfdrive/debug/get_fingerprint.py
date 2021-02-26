@@ -6,7 +6,6 @@
 # - connect to a Panda
 # - run selfdrive/boardd/boardd
 # - launching this script
-# - turn on the car in STOCK MODE (set giraffe switches properly).
 #   Note: it's very important that the car is in stock mode, in order to collect a complete fingerprint
 # - since some messages are published at low frequency, keep this script running for at least 30s,
 #   until all messages are received at least once

@@ -1,0 +1,18 @@
+name: tools
+on:
+  push:
+  pull_request:
+
+jobs:
+  plotjuggler:
+    name: plotjuggler
+    runs-on: ubuntu-20.04
+    timeout-minutes: 30
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Install
+      run: cd tools/plotjuggler && ./install.sh
+    #- name: Juggle Demo
+    #  run: cd tools/plotjuggler && ./juggle.py

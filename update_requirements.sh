@@ -27,6 +27,9 @@ if ! command -v pipenv &> /dev/null; then
   pip install pipenv
 fi
 
+echo "update pip"
+pip install --upgrade pip
+
 echo "pip packages install ..."
 pipenv install --dev --deploy --system
 # update shims for newly installed executables (e.g. scons)

@@ -9,7 +9,12 @@ source "$BASEDIR/launch_env.sh"
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 
 function two_init {
-  # Restrict Android and other system processes to the first two cores
+  # Wifi scan
+  wpa_cli IFNAME=wlan0 SCAN
+
+  # *** shield cores 2-3 ***
+
+  # android gets two cores
   echo 0-1 > /dev/cpuset/background/cpus
   echo 0-1 > /dev/cpuset/system-background/cpus
   echo 0-1 > /dev/cpuset/foreground/cpus
@@ -19,14 +24,56 @@ function two_init {
   # openpilot gets all the cores
   echo 0-3 > /dev/cpuset/app/cpus
 
+  # mask off 2-3 from RPS and XPS - Receive/Transmit Packet Steering
+  echo 3 | tee  /sys/class/net/*/queues/*/rps_cpus
+  echo 3 | tee  /sys/class/net/*/queues/*/xps_cpus
+
+  # *** set up governors ***
+
+  # +50mW offroad, +500mW onroad for 30% more RAM bandwidth
+  echo "performance" > /sys/class/devfreq/soc:qcom,cpubw/governor
+  echo 1056000 > /sys/class/devfreq/soc:qcom,m4m/max_freq
+  echo "performance" > /sys/class/devfreq/soc:qcom,m4m/governor
+
+  # unclear if these help, but they don't seem to hurt
+  echo "performance" > /sys/class/devfreq/soc:qcom,memlat-cpu0/governor
+  echo "performance" > /sys/class/devfreq/soc:qcom,memlat-cpu2/governor
+
+  # GPU
+  echo "performance" > /sys/class/devfreq/b00000.qcom,kgsl-3d0/governor
+
+  # /sys/class/devfreq/soc:qcom,mincpubw is the only one left at "powersave"
+  # it seems to gain nothing but a wasted 500mW
+
+  # *** set up IRQ affinities ***
+
   # Collect RIL and other possibly long-running I/O interrupts onto CPU 1
   echo 1 > /proc/irq/78/smp_affinity_list # qcom,smd-modem (LTE radio)
   echo 1 > /proc/irq/33/smp_affinity_list # ufshcd (flash storage)
   echo 1 > /proc/irq/35/smp_affinity_list # wifi (wlan_pci)
+  echo 1 > /proc/irq/6/smp_affinity_list  # MDSS
+
   # USB traffic needs realtime handling on cpu 3
   [ -d "/proc/irq/733" ] && echo 3 > /proc/irq/733/smp_affinity_list # USB for LeEco
   [ -d "/proc/irq/736" ] && echo 3 > /proc/irq/736/smp_affinity_list # USB for OP3T
 
+  # GPU and camera get cpu 2
+  CAM_IRQS="177 178 179 180 181 182 183 184 185 186 192"
+  for irq in $CAM_IRQS; do
+    echo 2 > /proc/irq/$irq/smp_affinity_list
+  done
+  echo 2 > /proc/irq/193/smp_affinity_list # GPU
+
+  # give GPU threads RT priority
+  for pid in $(pgrep "kgsl"); do
+    chrt -f -p 52 $pid
+  done
+
+  # the flippening!
+  LD_LIBRARY_PATH="" content insert --uri content://settings/system --bind name:s:user_rotation --bind value:i:1
+
+  # disable bluetooth
+  service call bluetooth_manager 8
 
   # Check for NEOS update
   if [ $(< /VERSION) != "$REQUIRED_NEOS_VERSION" ]; then
@@ -58,10 +105,75 @@ function two_init {
   fi
 }
 
-function launch {
-  # Wifi scan
-  wpa_cli IFNAME=wlan0 SCAN
+function tici_init {
+  sudo su -c 'echo "performance" > /sys/class/devfreq/soc:qcom,memlat-cpu0/governor'
+  sudo su -c 'echo "performance" > /sys/class/devfreq/soc:qcom,memlat-cpu4/governor'
 
+  # set success flag for current boot slot
+  sudo abctl --set_success
+
+  # Check if AGNOS update is required
+  if [ $(< /VERSION) != "$AGNOS_VERSION" ]; then
+    # Get number of slot to switch to
+    CUR_SLOT=$(abctl --boot_slot)
+    if [[ "$CUR_SLOT" == "_a" ]]; then
+      OTHER_SLOT="_b"
+      OTHER_SLOT_NUMBER="1"
+    else
+      OTHER_SLOT="_a"
+      OTHER_SLOT_NUMBER="0"
+    fi
+    echo "Cur slot $CUR_SLOT, target $OTHER_SLOT"
+
+    # Get expected hashes from manifest
+    MANIFEST="$DIR/selfdrive/hardware/tici/agnos.json"
+    SYSTEM_HASH_EXPECTED=$(jq -r ".[] | select(.name == \"system\") | .hash_raw" $MANIFEST)
+    SYSTEM_SIZE=$(jq -r ".[] | select(.name == \"system\") | .size" $MANIFEST)
+    BOOT_HASH_EXPECTED=$(jq -r ".[] | select(.name == \"boot\") | .hash_raw" $MANIFEST)
+    BOOT_SIZE=$(jq -r ".[] | select(.name == \"boot\") | .size" $MANIFEST)
+    echo "Expected hashes:"
+    echo "System: $SYSTEM_HASH_EXPECTED"
+    echo "Boot: $BOOT_HASH_EXPECTED"
+
+    # Read hashes from alternate partitions, should already be flashed by updated
+    SYSTEM_HASH=$(dd if="/dev/disk/by-partlabel/system$OTHER_SLOT" bs=1 skip="$SYSTEM_SIZE" count=64 2>/dev/null)
+    BOOT_HASH=$(dd if="/dev/disk/by-partlabel/boot$OTHER_SLOT" bs=1 skip="$BOOT_SIZE" count=64 2>/dev/null)
+    echo "Found hashes:"
+    echo "System: $SYSTEM_HASH"
+    echo "Boot: $BOOT_HASH"
+
+    if [[ "$SYSTEM_HASH" == "$SYSTEM_HASH_EXPECTED" && "$BOOT_HASH" == "$BOOT_HASH_EXPECTED" ]]; then
+      echo "Swapping active slot to $OTHER_SLOT_NUMBER"
+
+      # Clean hashes before swapping to prevent looping
+      dd if=/dev/zero of="/dev/disk/by-partlabel/system$OTHER_SLOT" bs=1 seek="$SYSTEM_SIZE" count=64
+      dd if=/dev/zero of="/dev/disk/by-partlabel/boot$OTHER_SLOT" bs=1 seek="$BOOT_SIZE" count=64
+      sync
+
+      abctl --set_active "$OTHER_SLOT_NUMBER"
+
+      sleep 1
+      sudo reboot
+    else
+      echo "Hash mismatch, downloading agnos"
+      if $DIR/selfdrive/hardware/tici/agnos.py $MANIFEST; then
+        echo "Download done, swapping active slot to $OTHER_SLOT_NUMBER"
+
+        # Clean hashes before swapping to prevent looping
+        dd if=/dev/zero of="/dev/disk/by-partlabel/system$OTHER_SLOT" bs=1 seek="$SYSTEM_SIZE" count=64
+        dd if=/dev/zero of="/dev/disk/by-partlabel/boot$OTHER_SLOT" bs=1 seek="$BOOT_SIZE" count=64
+        sync
+
+        abctl --set_active "$OTHER_SLOT_NUMBER"
+      fi
+
+      sleep 1
+      sudo reboot
+    fi
+  fi
+}
+
+function launch {
   # Remove orphaned git lock if it exists on boot
   [ -f "$DIR/.git/index.lock" ] && rm -f $DIR/.git/index.lock
 
@@ -95,6 +207,7 @@ function launch {
 
           echo "Restarting launch script ${LAUNCHER_LOCATION}"
           unset REQUIRED_NEOS_VERSION
+          unset AGNOS_VERSION
           exec "${LAUNCHER_LOCATION}"
         else
           echo "openpilot backup found, not updating"
@@ -104,14 +217,16 @@ function launch {
     fi
   fi
 
-  # comma two init
-  if [ -f /EON ]; then
-    two_init
-  fi
-
   # handle pythonpath
   ln -sfn $(pwd) /data/pythonpath
   export PYTHONPATH="$PWD"
+
+  # hardware specific init
+  if [ -f /EON ]; then
+    two_init
+  elif [ -f /TICI ]; then
+    tici_init
+  fi
 
   # write tmux scrollback to a file
   tmux capture-pane -pq -S-1000 > /tmp/launch_log

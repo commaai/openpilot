@@ -74,6 +74,10 @@ LogReader::LogReader(const QString& file, Events *events_, QReadWriteLock* event
   });
 }
 
+LogReader::~LogReader() {
+  delete parser;
+}
+
 void LogReader::mergeEvents(int dled) {
   auto amsg = kj::arrayPtr((const capnp::word*)(raw.data() + event_offset), (dled-event_offset)/sizeof(capnp::word));
   Events events_local;
@@ -94,8 +98,8 @@ void LogReader::mergeEvents(int dled) {
 
       // hack
       // TODO: rewrite with callback
-      if (event.which() == cereal::Event::ENCODE_IDX) {
-        auto ee = event.getEncodeIdx();
+      if (event.which() == cereal::Event::ROAD_ENCODE_IDX) {
+        auto ee = event.getRoadEncodeIdx();
         eidx_local.insert(ee.getFrameId(), qMakePair(ee.getSegmentNum(), ee.getSegmentId()));
       }
 

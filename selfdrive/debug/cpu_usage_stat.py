@@ -24,23 +24,19 @@ import argparse
 import re
 from collections import defaultdict
 
+import selfdrive.manager as manager
 
 # Do statistics every 5 seconds
 PRINT_INTERVAL = 5
 SLEEP_INTERVAL = 0.2
 
 monitored_proc_names = [
-  # openpilot procs
-  'controlsd', 'locationd', 'loggerd','plannerd',
-  'ubloxd', 'thermald', 'uploader', 'deleter', 'radard', 'logmessaged', 'tombstoned',
-  'logcatd', 'proclogd', 'boardd', 'pandad', './ui', 'ui', 'calibrationd', 'params_learner', 'modeld', 'dmonitoringd',
-  'dmonitoringmodeld', 'camerad', 'sensord', 'updated', 'gpsd', 'athena', 'locationd', 'paramsd',
-
+  # offroad APK
   'ai.comma.plus.offroad',
 
   # android procs
   'SurfaceFlinger', 'sensors.qcom'
-]
+] + manager.car_started_processes + manager.persistent_processes
 
 cpu_time_names = ['user', 'system', 'children_user', 'children_system']
 
@@ -48,9 +44,7 @@ timer = getattr(time, 'monotonic', time.time)
 
 
 def get_arg_parser():
-  parser = argparse.ArgumentParser(
-    description="Unlogger and UI",
-    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+  parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
   parser.add_argument("proc_names", nargs="?", default='',
                       help="Process names to be monitored, comma seperated")

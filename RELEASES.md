@@ -1,5 +1,41 @@
-Version 0.7.11 (2020-XX-XX)
+Version 0.8.2 (2021-02-26)
 ========================
+ * Use model points directly in MPC (no more polyfits), making lateral planning more accurate
+ * Use model heading prediction for smoother lateral control
+ * Smarter actuator delay compensation
+ * Improve qcamera resolution for improved video in explorer and connect
+ * Adjust maximum engagement speed to better fit the model's training distribution
+ * New driver monitoring model trained with 3x more diverse data
+ * Improved face detection with masks
+ * More predictable DM alerts when visibility is bad
+ * Rewritten video streaming between openpilot processes
+ * Improved longitudinal tuning on TSS2 Corolla and Rav4 thanks to briskspirit!
+ * Audi A3 2015 and 2017 support thanks to keeleysam!
+ * Nissan Altima 2020 support thanks to avolmensky!
+ * Lexus ES Hybrid 2018 support thanks to TheInventorMan!
+ * Toyota Camry Hybrid 2021 support thanks to alancyau!
+
+Version 0.8.1 (2020-12-21)
+========================
+ * Original EON is deprecated, upgrade to comma two
+ * Better model performance in heavy rain
+ * Better lane positioning in turns
+ * Fixed bug where model would cut turns on empty roads at night
+ * Fixed issue where some Toyotas would not completely stop thanks to briskspirit!
+ * Toyota Camry 2021 with TSS2.5 support
+ * Hyundai Ioniq Electric 2020 support thanks to baldwalker!
+
+Version 0.8.0 (2020-11-30)
+========================
+ * New driving model: fully 3D and improved cut-in detection
+ * UI draws 2 road edges, 4 lanelines and paths in 3D
+ * Major fixes to cut-in detection for openpilot longitudinal
+ * Grey panda is no longer supported, upgrade to comma two or black panda
+ * Lexus NX 2018 support thanks to matt12eagles!
+ * Kia Niro EV 2020 support thanks to nickn17!
+ * Toyota Prius 2021 support thanks to rav4kumar!
+ * Improved lane positioning with uncertain lanelines, wide lanes and exits
+ * Improved lateral control for Prius and Subaru
 
 Version 0.7.10 (2020-10-29)
 ========================

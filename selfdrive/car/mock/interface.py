@@ -21,7 +21,7 @@ class CarInterface(CarInterfaceBase):
 
     # TODO: subscribe to phone sensor
     self.sensor = messaging.sub_sock('sensorEvents')
-    self.gps = messaging.sub_sock('gpsLocation')
+    self.gps = messaging.sub_sock('gpsLocationExternal')
 
     self.speed = 0.
     self.prev_speed = 0.
@@ -33,8 +33,8 @@ class CarInterface(CarInterfaceBase):
     return accel
 
   @staticmethod
-  def get_params(candidate, fingerprint=gen_empty_fingerprint(), has_relay=False, car_fw=None):
-    ret = CarInterfaceBase.get_std_params(candidate, fingerprint, has_relay)
+  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None):
+    ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
     ret.carName = "mock"
     ret.safetyModel = car.CarParams.SafetyModel.noOutput
     ret.mass = 1700.
@@ -59,7 +59,7 @@ class CarInterface(CarInterfaceBase):
     gps = messaging.recv_sock(self.gps)
     if gps is not None:
       self.prev_speed = self.speed
-      self.speed = gps.gpsLocation.speed
+      self.speed = gps.gpsLocationExternal.speed
 
     # create message
     ret = car.CarState.new_message()
@@ -81,7 +81,7 @@ class CarInterface(CarInterfaceBase):
 
     self.yawRate = LPG * self.yaw_rate_meas + (1. - LPG) * self.yaw_rate
     curvature = self.yaw_rate / max(self.speed, 1.)
-    ret.steeringAngle = curvature * self.CP.steerRatio * self.CP.wheelbase * CV.RAD_TO_DEG
+    ret.steeringAngleDeg = curvature * self.CP.steerRatio * self.CP.wheelbase * CV.RAD_TO_DEG
 
     return ret.as_reader()
 

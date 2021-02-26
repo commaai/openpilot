@@ -4,7 +4,7 @@ if [ $# -gt 0 ]; then
   if [ "$INTERNAL" = 1 ]; then
     ./_nui "$1"
   else
-    ./get_files_comma_api.py $1 
+    ./get_files_comma_api.py $1
     if [ -f ./_nui ]; then
       ./_nui use_api
     elif [ -f _nui.app/Contents/MacOS/_nui ]; then

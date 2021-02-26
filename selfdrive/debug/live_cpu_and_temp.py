@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 import argparse
 
-import numpy as np
-
 from cereal.messaging import SubMaster
+from common.numpy_fast import mean
 
 
 def cputime_total(ct):
@@ -34,7 +33,7 @@ if __name__ == "__main__":
   parser.add_argument('--cpu', action='store_true')
   args = parser.parse_args()
 
-  sm = SubMaster(['thermal', 'procLog'])
+  sm = SubMaster(['deviceState', 'procLog'])
 
   last_temp = 0.0
   last_mem = 0.0
@@ -47,10 +46,10 @@ if __name__ == "__main__":
   while True:
     sm.update()
 
-    if sm.updated['thermal']:
-      t = sm['thermal']
-      last_temp = np.mean(t.cpu)
-      last_mem = t.memUsedPercent
+    if sm.updated['deviceState']:
+      t = sm['deviceState']
+      last_temp = mean(t.cpuTempC)
+      last_mem = t.memoryUsagePercent
 
     if sm.updated['procLog']:
       m = sm['procLog']
@@ -72,7 +71,7 @@ if __name__ == "__main__":
       total_times = total_times_new[:]
       busy_times = busy_times_new[:]
 
-      print("CPU %.2f%% - RAM: %.2f - Temp %.2f" % (100. * np.mean(cores), last_mem, last_temp))
+      print("CPU %.2f%% - RAM: %.2f - Temp %.2f" % (100. * mean(cores), last_mem, last_temp))
 
       if args.cpu and prev_proclog is not None:
         procs = {}

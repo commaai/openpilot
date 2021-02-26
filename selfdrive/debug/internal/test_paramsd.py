@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # pylint: skip-file
+# type: ignore
 
 import numpy as np
 import math

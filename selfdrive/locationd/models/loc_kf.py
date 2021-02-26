@@ -378,7 +378,7 @@ class LocKalman():
     self.dim_state_err = self.dim_main_err + self.dim_augment_err * self.N
 
     if self.N > 0:
-      x_initial, P_initial, Q = self.pad_augmented(self.x_initial, self.P_initial, self.Q)  # pylint: disable=unbalanced-tuple-unpacking
+      x_initial, P_initial, Q = self.pad_augmented(self.x_initial, self.P_initial, self.Q)  # lgtm[py/mismatched-multiple-assignment] pylint: disable=unbalanced-tuple-unpacking
       self.computer = LstSqComputer(generated_dir, N)
       self.max_tracks = max_tracks
 
@@ -584,5 +584,6 @@ class LocKalman():
 
 
 if __name__ == "__main__":
+  N = int(sys.argv[1].split("_")[-1])
   generated_dir = sys.argv[2]
-  LocKalman.generate_code(generated_dir, N=4)
+  LocKalman.generate_code(generated_dir, N=N)

@@ -7,14 +7,13 @@ import cereal.messaging as messaging
 from selfdrive.car.car_helpers import get_car, get_one_can
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 
-HwType = log.HealthData.HwType
+PandaType = log.HealthData.PandaType
 
 
 def steer_thread():
   poller = messaging.Poller()
 
   logcan = messaging.sub_sock('can')
-  health = messaging.sub_sock('health')
   joystick_sock = messaging.sub_sock('testJoystick', conflate=True, poller=poller)
 
   carstate = messaging.pub_sock('carState')
@@ -24,13 +23,11 @@ def steer_thread():
   button_1_last = 0
   enabled = False
 
-  # wait for health and CAN packets
-  hw_type = messaging.recv_one(health).health.hwType
-  has_relay = hw_type in [HwType.blackPanda, HwType.uno, HwType.dos]
+  # wait for CAN packets
   print("Waiting for CAN messages...")
   get_one_can(logcan)
 
-  CI, CP = get_car(logcan, sendcan, has_relay)
+  CI, CP = get_car(logcan, sendcan)
   Params().put("CarParams", CP.to_bytes())
 
   CC = car.CarControl.new_message()
@@ -49,7 +46,7 @@ def steer_thread():
     if joystick is not None:
       axis_3 = clip(-joystick.testJoystick.axes[3] * 1.05, -1., 1.)          # -1 to 1
       actuators.steer = axis_3
-      actuators.steerAngle = axis_3 * 43.   # deg
+      actuators.steeringAngleDeg = axis_3 * 43.   # deg
       axis_1 = clip(-joystick.testJoystick.axes[1] * 1.05, -1., 1.)          # -1 to 1
       actuators.gas = max(axis_1, 0.)
       actuators.brake = max(-axis_1, 0.)
@@ -70,7 +67,7 @@ def steer_thread():
     CC.actuators.gas = actuators.gas
     CC.actuators.brake = actuators.brake
     CC.actuators.steer = actuators.steer
-    CC.actuators.steerAngle = actuators.steerAngle
+    CC.actuators.steeringAngleDeg = actuators.steeringAngleDeg
     CC.hudControl.visualAlert = hud_alert
     CC.hudControl.setSpeed = 20
     CC.cruiseControl.cancel = pcm_cancel_cmd
