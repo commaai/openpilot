@@ -28,6 +28,7 @@ sudo apt-get update && sudo apt-get install -y \
     libomp-dev \
     libopencv-dev \
     libpng16-16 \
+    libqt5webkit5-dev \
     libssl-dev \
     libstdc++-arm-none-eabi-newlib \
     libsqlite3-dev \

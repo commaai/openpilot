@@ -7,11 +7,8 @@
 #include <QPointF>
 #include <QPushButton>
 
-#ifndef QCOM
-#include <QtWebEngine>
-#include <QWebEngineView>
-#include <QWebEngineSettings>
-#endif
+#include <QWebView>
+#include <QWebFrame>
 
 
 class TrainingGuide : public QFrame {
@@ -47,9 +44,7 @@ private:
   QWidget * training_screen();
   QPushButton* accept_btn;
 
-#ifndef QCOM
-  QWebEngineView* view;
-#endif
+  QWebView* webView;
 
 signals:
   void onboardingDone();
@@ -58,5 +53,5 @@ public slots:
   void updateActiveScreen();
 
 private slots:
-  void scrollPositionChanged(QPointF position);
+  void scrollPositionChanged(int dummy1, int dummy2, QRect dummy3);
 };

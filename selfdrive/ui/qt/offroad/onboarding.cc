@@ -4,7 +4,6 @@
 #include <QGridLayout>
 #include <QVBoxLayout>
 #include <QDesktopWidget>
-#include <QWebView>
 
 #include "common/params.h"
 #include "onboarding.hpp"
@@ -75,10 +74,12 @@ QWidget* OnboardingWindow::terms_screen() {
   QVBoxLayout *main_layout = new QVBoxLayout;
   main_layout->setContentsMargins(40, 0, 40, 0);
 
-  // QWebView* m_pWebView = new QWebView();
-  // m_pWebView->load(QUrl("http://www.google.com"));
+  webView = new QWebView();
+  QString html = QString::fromStdString(util::read_file("../assets/offroad/tc.html"));                                            
+  webView->setHtml(html);
 
-  // main_layout->addWidget(m_pWebView);
+  main_layout->addWidget(webView);
+  QObject::connect(webView->page(), SIGNAL(scrollRequested(int, int, QRect)), this, SLOT(scrollPositionChanged(int, int, QRect)));
 
   QHBoxLayout* buttons = new QHBoxLayout;
   buttons->addWidget(new QPushButton("Decline"));
@@ -86,6 +87,7 @@ QWidget* OnboardingWindow::terms_screen() {
   accept_btn = new QPushButton("Scroll to accept");
   accept_btn->setEnabled(false);
   buttons->addWidget(accept_btn);
+  
   QObject::connect(accept_btn, &QPushButton::released, [=]() {
     Params().write_db_value("HasAcceptedTerms", current_terms_version);
     updateActiveScreen();
@@ -162,11 +164,11 @@ OnboardingWindow::OnboardingWindow(QWidget *parent) : QStackedWidget(parent) {
   updateActiveScreen();
 }
 
-void OnboardingWindow::scrollPositionChanged(QPointF position){
-#ifndef QCOM
-  if (position.y() > view->page()->contentsSize().height() - 1000){
+void OnboardingWindow::scrollPositionChanged(int dummy1, int dummy2, QRect dummy3){
+  QPoint currentPosition = webView->page()->mainFrame()->scrollPosition();
+
+  if (currentPosition.y() == webView->page()->mainFrame()->scrollBarMaximum(Qt::Vertical)){
     accept_btn->setEnabled(true);
     accept_btn->setText("Accept");
   }
-#endif
 }
