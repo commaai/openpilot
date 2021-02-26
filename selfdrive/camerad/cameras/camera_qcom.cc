@@ -1116,10 +1116,6 @@ static void setup_self_recover(CameraState *c, const uint16_t *lapres, size_t la
   c->self_recover.store(self_recover);
 }
 
-void process_driver_camera(MultiCameraState *s, CameraState *c, cereal::FrameData::Builder& framd, int cnt) {
-  common_process_driver_camera(c, cnt);
-}
-
 // called by processing_thread
 static void process_road_camera(MultiCameraState *s, CameraState *c, cereal::FrameData::Builder& framed, int cnt) {
   const CameraBuf *b = &c->buf;
@@ -1143,7 +1139,7 @@ void cameras_run(MultiCameraState *s) {
   std::vector<std::thread> threads;
   threads.push_back(std::thread(ops_thread, s));
   threads.push_back(start_process_thread(s, &s->road_cam, process_road_camera));
-  threads.push_back(start_process_thread(s, &s->driver_cam, process_driver_camera));
+  threads.push_back(start_process_thread(s, &s->driver_cam, common_process_driver_camera));
 
   CameraState* cameras[2] = {&s->road_cam, &s->driver_cam};
 

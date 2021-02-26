@@ -378,7 +378,7 @@ std::thread start_process_thread(MultiCameraState *cameras, CameraState *cs, pro
   return std::thread(processing_thread, cameras, cs, callback, is_frame_stream);
 }
 
-void common_process_driver_camera(CameraState *c, int cnt) {
+void common_process_driver_camera(MultiCameraState *s, CameraState *c, cereal::FrameData::Builder &framed, int cnt) {
   static SubMaster sm({"driverState"});
   static int x_min = 0, x_max = 0, y_min = 0, y_max = 0;
   static const bool is_rhd = Params().read_db_bool("IsRHD");
