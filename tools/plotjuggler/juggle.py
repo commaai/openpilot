@@ -35,16 +35,16 @@ def load_segment(segment_name):
     print(f"Error parsing {segment_name}: {e}")
     return []
 
-def juggle_file(fn, dbc=None):
+def juggle_file(fn, dbc=None, layout_file=None):
   env = os.environ.copy()
   env["BASEDIR"] = BASEDIR
 
   if dbc:
     env["DBC_NAME"] = dbc
 
-  subprocess.call(f"plotjuggler --plugin_folders {juggle_dir} -d {fn}", shell=True, env=env, cwd=juggle_dir)
+  subprocess.call(f"plotjuggler --plugin_folders {juggle_dir} -d {fn} -l {layout_file}", shell=True, env=env, cwd=juggle_dir)
 
-def juggle_route(route_name, segment_number, qlog):
+def juggle_route(route_name, segment_number, qlog, layout):
   r = Route(route_name)
 
   logs = r.qlog_paths() if qlog else r.log_paths()
@@ -80,13 +80,14 @@ def juggle_route(route_name, segment_number, qlog):
   save_log(tempfile.name, all_data, compress=False)
   del all_data
 
-  juggle_file(tempfile.name, dbc)
+  juggle_file(tempfile.name, dbc, layout)
 
 def get_arg_parser():
   parser = argparse.ArgumentParser(description="PlotJuggler plugin for reading rlogs",
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
   parser.add_argument("--qlog", action="store_true", help="Use qlogs")
+  parser.add_argument("--layout", nargs='?', help="Load a pre-defined layout")
   parser.add_argument("route_name", nargs='?', help="The name of the route that will be plotted.")
   parser.add_argument("segment_number", type=int, nargs='?', help="The index of the segment that will be plotted")
   return parser
@@ -99,8 +100,8 @@ if __name__ == "__main__":
   args = arg_parser.parse_args(sys.argv[1:])
   if args.route_name.startswith("http://") or args.route_name.startswith("https://"):
     u = URLFile(args.route_name, destination_path=juggle_dir)
-    juggle_file(u.name, dbc="hack") # hack to get CI working for now
+    juggle_file(u.name, dbc="hack", layout_file = args.layout) # hack to get CI working for now
     os.system(f"rm {u.name}") # hack because url_file uses mkstemp which doesn't delete files after
     print("removed")
   else:
-    juggle_route(args.route_name, args.segment_number, args.qlog)
+    juggle_route(args.route_name, args.segment_number, args.qlog, args.layout)

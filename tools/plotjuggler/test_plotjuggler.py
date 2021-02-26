@@ -22,6 +22,12 @@ class TestPlotJuggler(unittest.TestCase):
     # test_url = get_url(random.choice(list(routes.keys())), 0)
     test_url = "https://commadataci.blob.core.windows.net/openpilotci/d83f36766f8012a5/2020-02-05--18-42-21/0/rlog.bz2"
 
+    print(os.listdir(os.path.join(BASEDIR, "tools/plotjuggler/juggle.py")))
+    print(os.listdir(os.path.join(BASEDIR, "tools/plotjuggler/juggle.py")))
+    print(os.listdir(os.path.join(BASEDIR, "tools/plotjuggler/juggle.py")))
+    print(os.listdir(os.path.join(BASEDIR, "tools/plotjuggler/juggle.py")))
+    print(os.listdir(os.path.join(BASEDIR, "tools/plotjuggler/juggle.py")))
+
     p = subprocess.Popen(f'QT_QPA_PLATFORM=offscreen {os.path.join(BASEDIR, "tools/plotjuggler/juggle.py")} "{test_url}"', stderr=subprocess.PIPE ,shell=True, start_new_session=True)
 
     with Timeout(60):
