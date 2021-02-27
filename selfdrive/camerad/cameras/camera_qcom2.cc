@@ -196,7 +196,7 @@ void sensors_i2c(struct CameraState *s, struct i2c_random_wr_payload* dat, int l
   munmap(pkt, size);
   release_fd(s->video0_fd, cam_packet_handle);
 }
-static cam_cmd_power *power_set_wait_cmd(cam_cmd_power *power, int16_t delay) {
+static cam_cmd_power *power_set_wait(cam_cmd_power *power, int16_t delay) {
   cam_cmd_unconditional_wait *unconditional_wait = (cam_cmd_unconditional_wait *)((char *)power + (sizeof(struct cam_cmd_power) + (power->count - 1) * sizeof(struct cam_power_settings)));
   unconditional_wait->cmd_type = CAMERA_SENSOR_CMD_TYPE_WAIT;
   unconditional_wait->delay = delay;
@@ -270,21 +270,21 @@ void sensors_init(int video0_fd, int sensor_fd, int camera_num) {
   power->power_settings[1].power_seq_type = 1; // analog
   power->power_settings[2].power_seq_type = 2; // digital
   power->power_settings[3].power_seq_type = 8; // reset low
-  power = power_set_wait_cmd(power, 5);
+  power = power_set_wait(power, 5);
 
   // set clock
   power->count = 1;
   power->cmd_type = CAMERA_SENSOR_CMD_TYPE_PWR_UP;
   power->power_settings[0].power_seq_type = 0;
   power->power_settings[0].config_val_low = 24000000; //Hz
-  power = power_set_wait_cmd(power, 10);
+  power = power_set_wait(power, 10);
 
   // 8,1 is this reset?
   power->count = 1;
   power->cmd_type = CAMERA_SENSOR_CMD_TYPE_PWR_UP;
   power->power_settings[0].power_seq_type = 8;
   power->power_settings[0].config_val_low = 1;
-  power = power_set_wait_cmd(power, 100);
+  power = power_set_wait(power, 100);
 
   // probe happens here
 
@@ -293,21 +293,21 @@ void sensors_init(int video0_fd, int sensor_fd, int camera_num) {
   power->cmd_type = CAMERA_SENSOR_CMD_TYPE_PWR_DOWN;
   power->power_settings[0].power_seq_type = 0;
   power->power_settings[0].config_val_low = 0;
-  power = power_set_wait_cmd(power, 1);
+  power = power_set_wait(power, 1);
 
   // reset high
   power->count = 1;
   power->cmd_type = CAMERA_SENSOR_CMD_TYPE_PWR_DOWN;
   power->power_settings[0].power_seq_type = 8;
   power->power_settings[0].config_val_low = 1;
-  power = power_set_wait_cmd(power, 1);
+  power = power_set_wait(power, 1);
 
   // reset low
   power->count = 1;
   power->cmd_type = CAMERA_SENSOR_CMD_TYPE_PWR_DOWN;
   power->power_settings[0].power_seq_type = 8;
   power->power_settings[0].config_val_low = 0;
-  power = power_set_wait_cmd(power, 1);
+  power = power_set_wait(power, 1);
 
   // 7750
   /*power->count = 1;
