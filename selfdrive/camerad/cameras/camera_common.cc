@@ -25,7 +25,7 @@
 #include "modeldata.h"
 #include "imgproc/utils.h"
 
-static cl_program build_debayer_program(cl_device_id device_id, cl_context context, const CameraInfo *ci, const CameraBuf *b, const CameraState *s) {
+static cl_program build_debayer_program(cl_device_id device_id, cl_context context, const CameraInfo *ci, const CameraBuf *b, const CameraStateBase *s) {
   char args[4096];
   snprintf(args, sizeof(args),
            "-cl-fast-relaxed-math -cl-denorms-are-zero "
@@ -42,7 +42,7 @@ static cl_program build_debayer_program(cl_device_id device_id, cl_context conte
 #endif
 }
 
-void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s, VisionIpcServer * v, int frame_cnt, VisionStreamType rgb_type, VisionStreamType yuv_type) {
+void CameraBuf::init(cl_device_id device_id, cl_context context, CameraStateBase *s, VisionIpcServer * v, int frame_cnt, VisionStreamType rgb_type, VisionStreamType yuv_type) {
   vipc_server = v;
   this->rgb_type = rgb_type;
   this->yuv_type = yuv_type;
@@ -122,20 +122,16 @@ bool CameraBuf::acquire() {
   if (camera_state->ci.bayer) {
     CL_CHECK(clSetKernelArg(krnl_debayer, 0, sizeof(cl_mem), &camrabuf_cl));
     CL_CHECK(clSetKernelArg(krnl_debayer, 1, sizeof(cl_mem), &cur_rgb_buf->buf_cl));
+    float digital_gain = camera_state->get_gain();
 #ifdef QCOM2
     constexpr int localMemSize = (DEBAYER_LOCAL_WORKSIZE + 2 * (3 / 2)) * (DEBAYER_LOCAL_WORKSIZE + 2 * (3 / 2)) * sizeof(short int);
     const size_t globalWorkSize[] = {size_t(camera_state->ci.frame_width), size_t(camera_state->ci.frame_height)};
     const size_t localWorkSize[] = {DEBAYER_LOCAL_WORKSIZE, DEBAYER_LOCAL_WORKSIZE};
     CL_CHECK(clSetKernelArg(krnl_debayer, 2, localMemSize, 0));
-    int ggain = camera_state->analog_gain + 4*camera_state->dc_gain_enabled;
-    CL_CHECK(clSetKernelArg(krnl_debayer, 3, sizeof(int), &ggain));
+    CL_CHECK(clSetKernelArg(krnl_debayer, 3, sizeof(int), &digital_gain));
     CL_CHECK(clEnqueueNDRangeKernel(q, krnl_debayer, 2, NULL, globalWorkSize, localWorkSize,
                                     0, 0, &debayer_event));
 #else
-    float digital_gain = camera_state->digital_gain;
-    if ((int)digital_gain == 0) {
-      digital_gain = 1.0;
-    }
     CL_CHECK(clSetKernelArg(krnl_debayer, 2, sizeof(float), &digital_gain));
     const size_t debayer_work_size = rgb_height;  // doesn't divide evenly, is this okay?
     CL_CHECK(clEnqueueNDRangeKernel(q, krnl_debayer, 1, NULL,
@@ -429,5 +425,5 @@ void CameraStateBase::init(VisionIpcServer *v, int camera_id, int camera_num, ui
   assert(camera_id < std::size(cameras_supported));
   ci = cameras_supported[camera_id];
   assert(ci.frame_width != 0);
-  buf.init(device_id, ctx, dynamic_cast<CameraState *>(this), v, FRAME_BUF_COUNT, rgb_type, yuv_type);
+  buf.init(device_id, ctx, this, v, FRAME_BUF_COUNT, rgb_type, yuv_type);
 }

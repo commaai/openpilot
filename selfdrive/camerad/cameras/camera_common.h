@@ -86,12 +86,12 @@ typedef struct CameraExpInfo {
 extern CameraInfo cameras_supported[CAMERA_ID_MAX];
 
 struct MultiCameraState;
-class CameraState;
+class CameraStateBase;
 
 class CameraBuf {
 private:
   VisionIpcServer *vipc_server;
-  CameraState *camera_state;
+  CameraStateBase *camera_state;
   cl_kernel krnl_debayer;
 
   RGBToYUVState rgb_to_yuv_state;
@@ -118,7 +118,7 @@ public:
 
   CameraBuf() = default;
   ~CameraBuf();
-  void init(cl_device_id device_id, cl_context context, CameraState *s, VisionIpcServer * v, int frame_cnt, VisionStreamType rgb_type, VisionStreamType yuv_type);
+  void init(cl_device_id device_id, cl_context context, CameraStateBase *s, VisionIpcServer * v, int frame_cnt, VisionStreamType rgb_type, VisionStreamType yuv_type);
   bool acquire();
   void release();
   void queue(size_t buf_idx);
@@ -131,11 +131,14 @@ class CameraStateBase {
             VisionStreamType rgb_type, VisionStreamType yuv_type);
   virtual void auto_exposure(float grey_frac) {}
   virtual void release_callback(int buf_idx) {}
+  inline virtual float get_gain() const { return digital_gain; }
   int camera_num = 0, camera_id = 0;
   uint32_t fps = 0;
   CameraInfo ci = {};
   CameraBuf buf;
 };
+
+class CameraState;
 
 typedef void (*process_thread_cb)(MultiCameraState *s, CameraState *c, int cnt);
 

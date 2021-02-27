@@ -20,6 +20,7 @@
 class CameraState : public CameraStateBase{
 public:
   void auto_exposure(float grey_frac) override;
+  inline float get_gain() const override { return analog_gain + 4 * dc_gain_enabled; }
 
   float analog_gain_frac;
   uint16_t analog_gain;
