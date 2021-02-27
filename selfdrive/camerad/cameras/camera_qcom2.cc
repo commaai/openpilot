@@ -909,9 +909,7 @@ void cameras_close(MultiCameraState *s) {
 
 // ******************* just a helper *******************
 
-void handle_camera_event(CameraState *s, void *evdat) {
-  struct cam_req_mgr_message *event_data = (struct cam_req_mgr_message *)evdat;
-
+static void handle_camera_event(CameraState *s, const cam_req_mgr_message *event_data) {
   uint64_t timestamp = event_data->u.frame_msg.timestamp;
   int main_id = event_data->u.frame_msg.frame_id;
   int real_id = event_data->u.frame_msg.request_id;
@@ -1150,7 +1148,7 @@ void cameras_run(MultiCameraState *s) {
     struct v4l2_event ev = {0};
     ret = ioctl(s->video0_fd, VIDIOC_DQEVENT, &ev);
     if (ev.type == 0x8000000) {
-      struct cam_req_mgr_message *event_data = (struct cam_req_mgr_message *)ev.u.data;
+      const cam_req_mgr_message *event_data = (const cam_req_mgr_message *)ev.u.data;
       // LOGD("v4l2 event: sess_hdl %d, link_hdl %d, frame_id %d, req_id %lld, timestamp 0x%llx, sof_status %d\n", event_data->session_hdl, event_data->u.frame_msg.link_hdl, event_data->u.frame_msg.frame_id, event_data->u.frame_msg.request_id, event_data->u.frame_msg.timestamp, event_data->u.frame_msg.sof_status);
       // printf("sess_hdl %d, link_hdl %d, frame_id %lu, req_id %lu, timestamp 0x%lx, sof_status %d\n", event_data->session_hdl, event_data->u.frame_msg.link_hdl, event_data->u.frame_msg.frame_id, event_data->u.frame_msg.request_id, event_data->u.frame_msg.timestamp, event_data->u.frame_msg.sof_status);
       for (auto &c : cameras) {
