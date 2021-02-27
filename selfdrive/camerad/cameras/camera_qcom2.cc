@@ -255,8 +255,6 @@ void sensors_init(int video0_fd, int sensor_fd, int camera_num) {
   buf_desc[1].type = CAM_CMD_BUF_I2C;
   struct cam_cmd_power *power_settings = (struct cam_cmd_power *)alloc_w_mmu_hdl(video0_fd, buf_desc[1].size, (uint32_t*)&buf_desc[1].mem_handle);
   memset(power_settings, 0, buf_desc[1].size);
-
-  //void *ptr = power;
   // 7750
   /*power->count = 2;
   power->cmd_type = CAMERA_SENSOR_CMD_TYPE_PWR_UP;
