@@ -1400,11 +1400,11 @@ struct Event {
     kalmanOdometryDEPRECATED @65 :Legacy.KalmanOdometry;
 
 
-    dynamicFollowData @78 :DynamicFollowData;
-    dynamicFollowButton @79 :DynamicFollowButton;
-    laneSpeed @80 :LaneSpeed;
-    laneSpeedButton @81 :LaneSpeedButton;
-    dynamicCameraOffset @82 :DynamicCameraOffset;
-    modelLongButton @83 :ModelLongButton;
+    dynamicFollowData @79 :DynamicFollowData;
+    dynamicFollowButton @80 :DynamicFollowButton;
+    laneSpeed @81 :LaneSpeed;
+    laneSpeedButton @82 :LaneSpeedButton;
+    dynamicCameraOffset @83 :DynamicCameraOffset;
+    modelLongButton @84 :ModelLongButton;
   }
 }
