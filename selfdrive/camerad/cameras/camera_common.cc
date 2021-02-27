@@ -426,3 +426,23 @@ void common_process_driver_camera(SubMaster *sm, PubMaster *pm, CameraState *c, 
   }
   pm->send("driverCameraState", msg);
 }
+
+int open_v4l_by_name_and_index(const char name[], int index, int flags) {
+  int cnt_index = index, v4l_index = 0;
+  while (true) {
+    std::string content = util::read_file(util::string_format("/sys/class/video4linux/v4l-subdev%d/name", v4l_index));
+    if (content.empty()) return -1;
+    // name ends with '\n', remove it
+    content.pop_back();
+    printf("*** v4l name is %s \n", content.c_str());
+    if (content == name) {
+      if (cnt_index == 0) {
+        std::string path = util::string_format("/dev/v4l-subdev%d", v4l_index);
+        LOGD("open %s for %s index %d", path.c_str(), name, index);
+        return open(path.c_str(), flags);
+      }
+      cnt_index--;
+    }
+    v4l_index++;
+  }
+}

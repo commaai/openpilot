@@ -515,12 +515,7 @@ static void imx298_ois_calibration(int ois_fd, uint8_t* eeprom) {
 static void sensors_init(MultiCameraState *s) {
   int err;
 
-  unique_fd sensorinit_fd;
-  if (s->device == DEVICE_LP3) {
-    sensorinit_fd = open("/dev/v4l-subdev11", O_RDWR | O_NONBLOCK);
-  } else {
-    sensorinit_fd = open("/dev/v4l-subdev12", O_RDWR | O_NONBLOCK);
-  }
+  unique_fd sensorinit_fd = open_v4l_by_name_and_index("msm_sensor_init");
   assert(sensorinit_fd >= 0);
 
   // init road camera sensor
@@ -731,8 +726,6 @@ static void sensors_init(MultiCameraState *s) {
 }
 
 static void camera_open(CameraState *s, bool is_road_cam) {
-  int err;
-
   struct csid_cfg_data csid_cfg_data = {};
   struct v4l2_event_subscription sub = {};
 
@@ -740,51 +733,26 @@ static void camera_open(CameraState *s, bool is_road_cam) {
   struct msm_ois_cfg_data ois_cfg_data = {};
 
   // open devices
+  s->csid_fd = open_v4l_by_name_and_index("msm_csid", s->camera_num * 2);
+  assert(s->csid_fd >= 0);
+  s->isp_fd = open_v4l_by_name_and_index("vfe", s->camera_num);
+  assert(s->isp_fd >= 0);
+  s->csiphy_fd = open_v4l_by_name_and_index("msm_csiphy", s->camera_num * 2);
+  assert(s->csiphy_fd >= 0);
+  s->eeprom_fd = open_v4l_by_name_and_index("msm_eeprom", s->camera_num);
+  assert(s->eeprom_fd >= 0);
+
   const char *sensor_dev;
   if (is_road_cam) {
-    s->csid_fd = open("/dev/v4l-subdev3", O_RDWR | O_NONBLOCK);
-    assert(s->csid_fd >= 0);
-    s->csiphy_fd = open("/dev/v4l-subdev0", O_RDWR | O_NONBLOCK);
-    assert(s->csiphy_fd >= 0);
-    if (s->device == DEVICE_LP3) {
-      sensor_dev = "/dev/v4l-subdev17";
-    } else {
-      sensor_dev = "/dev/v4l-subdev18";
-    }
-    if (s->device == DEVICE_LP3) {
-      s->isp_fd = open("/dev/v4l-subdev13", O_RDWR | O_NONBLOCK);
-    } else {
-      s->isp_fd = open("/dev/v4l-subdev14", O_RDWR | O_NONBLOCK);
-    }
-    assert(s->isp_fd >= 0);
-    s->eeprom_fd = open("/dev/v4l-subdev8", O_RDWR | O_NONBLOCK);
-    assert(s->eeprom_fd >= 0);
-
-    s->actuator_fd = open("/dev/v4l-subdev7", O_RDWR | O_NONBLOCK);
+    sensor_dev = s->device == DEVICE_LP3 ? "/dev/v4l-subdev17" : "/dev/v4l-subdev18";
+    s->actuator_fd = open_v4l_by_name_and_index("msm_actuator", s->camera_num);
     assert(s->actuator_fd >= 0);
-
     if (s->device != DEVICE_LP3) {
       s->ois_fd = open("/dev/v4l-subdev10", O_RDWR | O_NONBLOCK);
       assert(s->ois_fd >= 0);
     }
   } else {
-    s->csid_fd = open("/dev/v4l-subdev5", O_RDWR | O_NONBLOCK);
-    assert(s->csid_fd >= 0);
-    s->csiphy_fd = open("/dev/v4l-subdev2", O_RDWR | O_NONBLOCK);
-    assert(s->csiphy_fd >= 0);
-    if (s->device == DEVICE_LP3) {
-      sensor_dev = "/dev/v4l-subdev18";
-    } else {
-      sensor_dev = "/dev/v4l-subdev19";
-    }
-    if (s->device == DEVICE_LP3) {
-      s->isp_fd = open("/dev/v4l-subdev14", O_RDWR | O_NONBLOCK);
-    } else {
-      s->isp_fd = open("/dev/v4l-subdev15", O_RDWR | O_NONBLOCK);
-    }
-    assert(s->isp_fd >= 0);
-    s->eeprom_fd = open("/dev/v4l-subdev9", O_RDWR | O_NONBLOCK);
-    assert(s->eeprom_fd >= 0);
+    sensor_dev = s->device == DEVICE_LP3 ? "/dev/v4l-subdev18" : "/dev/v4l-subdev19";
   }
 
   // wait for sensor device
@@ -803,7 +771,7 @@ static void camera_open(CameraState *s, bool is_road_cam) {
   struct msm_camera_csi_lane_params csi_lane_params = {0};
   csi_lane_params.csi_lane_mask = 0x1f;
   csiphy_cfg_data csiphy_cfg_data = { .cfg.csi_lane_params = &csi_lane_params, .cfgtype = CSIPHY_RELEASE};
-  err = ioctl(s->csiphy_fd, VIDIOC_MSM_CSIPHY_IO_CFG, &csiphy_cfg_data);
+  int err = ioctl(s->csiphy_fd, VIDIOC_MSM_CSIPHY_IO_CFG, &csiphy_cfg_data);
   LOG("release csiphy: %d", err);
 
   // CSID: release csid
@@ -1438,11 +1406,7 @@ void cameras_open(MultiCameraState *s) {
   s->v4l_fd = open("/dev/video0", O_RDWR | O_NONBLOCK);
   assert(s->v4l_fd >= 0);
 
-  if (s->device == DEVICE_LP3) {
-    s->ispif_fd = open("/dev/v4l-subdev15", O_RDWR | O_NONBLOCK);
-  } else {
-    s->ispif_fd = open("/dev/v4l-subdev16", O_RDWR | O_NONBLOCK);
-  }
+  s->ispif_fd = open_v4l_by_name_and_index("msm_ispif");
   assert(s->ispif_fd >= 0);
 
   // ISPIF: stop
