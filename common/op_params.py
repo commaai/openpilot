@@ -73,8 +73,8 @@ class opParams:
                         'alca_min_speed': Param(25.0, NUMBER, 'The minimum speed allowed for an automatic lane change (in MPH)'),
                         'steer_ratio': Param(None, NONE_OR_NUMBER, '(Can be: None, or a float) If you enter None, openpilot will use the learned sR.\n'
                                                                    'If you use a float/int, openpilot will use that steer ratio instead', live=True),
-                        'lane_speed_alerts': Param('silent', str, 'Can be: (\'off\', \'silent\', \'audible\')\n'
-                                                                  'Whether you want openpilot to alert you of faster-traveling adjacent lanes'),
+                        # 'lane_speed_alerts': Param('silent', str, 'Can be: (\'off\', \'silent\', \'audible\')\n'
+                        #                                           'Whether you want openpilot to alert you of faster-traveling adjacent lanes'),
                         'upload_on_hotspot': Param(False, bool, 'If False, openpilot will not upload driving data while connected to your phone\'s hotspot'),
                         'enable_long_derivative': Param(False, bool, 'If you have longitudinal overshooting, enable this! This enables derivative-based\n'
                                                                      'integral wind-down to help reduce overshooting within the long PID loop'),
@@ -85,9 +85,9 @@ class opParams:
                         'dynamic_gas': Param(True, bool, 'Whether to use dynamic gas if your car is supported'),
                         'hide_auto_df_alerts': Param(False, bool, 'Hides the alert that shows what profile the model has chosen'),
                         'log_auto_df': Param(False, bool, 'Logs dynamic follow data for auto-df'),
-                        'dynamic_camera_offset': Param(False, bool, 'Whether to automatically keep away from oncoming traffic.\n'
-                                                                    'Works from 35 to ~60 mph (requires radar)'),
-                        'dynamic_camera_offset_time': Param(3.5, NUMBER, 'How long to keep away from oncoming traffic in seconds after losing lead'),
+                        # 'dynamic_camera_offset': Param(False, bool, 'Whether to automatically keep away from oncoming traffic.\n'
+                        #                                             'Works from 35 to ~60 mph (requires radar)'),
+                        # 'dynamic_camera_offset_time': Param(3.5, NUMBER, 'How long to keep away from oncoming traffic in seconds after losing lead'),
                         'support_white_panda': Param(False, bool, 'Enable this to allow engagement with the deprecated white panda.\n'
                                                                   'localizer might not work correctly'),
                         'slowdown_for_curves': Param(True, bool, 'Whether your car will slow down for curves using the old planner code from 0.5/0.6'),
