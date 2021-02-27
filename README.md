@@ -21,10 +21,10 @@ Want to request a feature or create a bug report? [Open an issue here!](https://
 ### General Features
 * [**Customize this fork**](#Customize-this-fork-opEdit) - easily edit fork parameters with support for live tuning
 * [**Automatic updates**](#Automatic-updates)
-* [***NEW❗* ZSS Support**](#ZSS-support) - takes advantage of your high-precision Zorrobyte Steering Sensor
+* [**ZSS Support**](#ZSS-support) - takes advantage of your high-precision Zorrobyte Steering Sensor
 * [**Offline crash logging**](#Offline-crash-logging) - check out `/data/community/crashes`
 
-### ***NEW❗*** Visual Changes (LINKS WIP)
+### Visual Changes (LINKS WIP)
 * [**Colored the lane lines**]() - based on distance from car
 * [**Colored model path**]() - based on curvature
 
