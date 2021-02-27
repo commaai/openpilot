@@ -30,8 +30,8 @@ typedef struct CameraState {
   int exposure_time_max;
   float ef_filtered;
 
-  int sensor_fd;
-  int csiphy_fd;
+  unique_fd sensor_fd;
+  unique_fd csiphy_fd;
 
   int camera_num;
 
