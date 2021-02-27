@@ -32,7 +32,10 @@ def juggle_file(fn, dbc=None, layout=None):
     env["DBC_NAME"] = dbc
 
   pj = os.getenv("PLOTJUGGLER_PATH", "plotjuggler")
-  subprocess.call(f'{pj} --plugin_folders {os.path.join(juggle_dir, "bin")} -d {fn} -l {layout}', shell=True, env=env, cwd=juggle_dir)
+  if layout is not None:
+    subprocess.call(f'{pj} --plugin_folders {os.path.join(juggle_dir, "bin")} -d {fn} -l {layout}', shell=True, env=env, cwd=juggle_dir)
+  else:
+    subprocess.call(f'{pj} --plugin_folders {os.path.join(juggle_dir, "bin")} -d {fn}', shell=True, env=env, cwd=juggle_dir)
 
 def juggle_route(route_name, segment_number, qlog, layout):
 
