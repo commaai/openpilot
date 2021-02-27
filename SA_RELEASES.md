@@ -1,3 +1,8 @@
+Stock Additions v0.6.5 - 2020-12-07 (0.8)
+===
+ * Grey panda support
+
+
 Stock Additions v0.6 - 2020-11-09 (0.7.10)
 ===
  * Update Stock Additions to openpilot v0.7.10
