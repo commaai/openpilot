@@ -552,6 +552,7 @@ static void camera_init(VisionIpcServer * v, CameraState *s, int camera_id, int 
   assert(s->ci.frame_width != 0);
 
   s->camera_num = camera_num;
+  s->fps = fps;
 
   s->dc_gain_enabled = false;
   s->analog_gain = 0x5;

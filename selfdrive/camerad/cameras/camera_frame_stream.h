@@ -15,7 +15,6 @@
 
 class CameraState : public CameraStateBase{
 public:
-  int fps;
   float digital_gain;
   float cur_gain_frac;
 };

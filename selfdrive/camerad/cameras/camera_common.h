@@ -130,6 +130,7 @@ public:
   virtual void auto_exposure(float grey_frac) {}
   virtual void release_callback(int buf_idx) {}
   int camera_num;
+  int fps;
   CameraInfo ci;
   CameraBuf buf;
 };
