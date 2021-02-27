@@ -26,9 +26,9 @@ def accel_hysteresis(accel, accel_steady, enabled):
 
 
 def coast_accel(speed):  # given a speed, output coasting acceleration
-  points = [[0, .504], [1.697, .266],
-            [2.839, -.187], [3.413, -.233],
-            [MIN_ACC_SPEED, -.145]]
+  points = [[0.0, 0.538], [1.697, 0.28],
+            [2.853, -0.199], [3.443, -0.249],
+            [MIN_ACC_SPEED, -0.145]]
   return interp(speed, *zip(*points))
 
 
