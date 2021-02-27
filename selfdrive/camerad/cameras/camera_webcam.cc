@@ -35,13 +35,7 @@ void camera_close(CameraState *s) {
 }
 
 void camera_init(VisionIpcServer * v, CameraState *s, int camera_id, unsigned int fps, cl_device_id device_id, cl_context ctx, VisionStreamType rgb_type, VisionStreamType yuv_type) {
-  assert(camera_id < ARRAYSIZE(cameras_supported));
-  s->ci = cameras_supported[camera_id];
-  assert(s->ci.frame_width != 0);
-
-  s->camera_num = camera_id;
-  s->fps = fps;
-  s->buf.init(device_id, ctx, s, v, FRAME_BUF_COUNT, rgb_type, yuv_type);
+  s->init(v, camera_id, camera_num, fps, device_id, ctx, rgb_type, yuv_type);
 }
 
 static void* road_camera_thread(void *arg) {

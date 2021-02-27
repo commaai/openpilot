@@ -546,14 +546,6 @@ void enqueue_req_multi(struct CameraState *s, int start, int n, bool dp) {
 
 static void camera_init(VisionIpcServer * v, CameraState *s, int camera_id, int camera_num, unsigned int fps, cl_device_id device_id, cl_context ctx, VisionStreamType rgb_type, VisionStreamType yuv_type) {
   LOGD("camera init %d", camera_num);
-
-  assert(camera_id < ARRAYSIZE(cameras_supported));
-  s->ci = cameras_supported[camera_id];
-  assert(s->ci.frame_width != 0);
-
-  s->camera_num = camera_num;
-  s->fps = fps;
-
   s->dc_gain_enabled = false;
   s->analog_gain = 0x5;
   s->analog_gain_frac = sensor_analog_gains[s->analog_gain];
@@ -564,7 +556,7 @@ static void camera_init(VisionIpcServer * v, CameraState *s, int camera_id, int 
   s->skipped = true;
   s->ef_filtered = 1.0;
 
-  s->buf.init(device_id, ctx, s, v, FRAME_BUF_COUNT, rgb_type, yuv_type);
+  s->init(v, camera_id, camera_num, fps, device_id, ctx, rgb_type, yuv_type);
 }
 
 // TODO: refactor this to somewhere nicer, perhaps use in camera_qcom as well

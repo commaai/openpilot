@@ -16,13 +16,7 @@ extern ExitHandler do_exit;
 namespace {
 
 void camera_init(VisionIpcServer * v, CameraState *s, int camera_id, unsigned int fps, cl_device_id device_id, cl_context ctx, VisionStreamType rgb_type, VisionStreamType yuv_type) {
-  assert(camera_id < ARRAYSIZE(cameras_supported));
-  s->ci = cameras_supported[camera_id];
-  assert(s->ci.frame_width != 0);
-
-  s->camera_num = camera_id;
-  s->fps = fps;
-  s->buf.init(device_id, ctx, s, v, FRAME_BUF_COUNT, rgb_type, yuv_type);
+  s->init(v, camera_id, camera_id, fps, device_id, ctx, rgb_type, yuv_type);
 }
 
 void run_frame_stream(CameraState &camera, const char* frame_pkt) {

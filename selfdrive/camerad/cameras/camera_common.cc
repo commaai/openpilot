@@ -417,3 +417,17 @@ void common_process_driver_camera(SubMaster *sm, PubMaster *pm, CameraState *c, 
   }
   pm->send("driverCameraState", msg);
 }
+
+
+// CameraStateBase
+
+void CameraStateBase::init(VisionIpcServer *v, int camera_id, int camera_num, uint32_t fps, cl_device_id device_id, cl_context ctx,
+                           VisionStreamType rgb_type, VisionStreamType yuv_type) {
+  this->camera_num = camera_num;
+  this->camera_id = camera_id;
+  this->fps = fps;
+  assert(camera_id < std::size(cameras_supported));
+  ci = cameras_supported[camera_id];
+  assert(ci.frame_width != 0);
+  buf.init(device_id, ctx, dynamic_cast<CameraState *>(this), v, FRAME_BUF_COUNT, rgb_type, yuv_type);
+}

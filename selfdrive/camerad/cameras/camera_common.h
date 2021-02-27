@@ -125,13 +125,15 @@ public:
 };
 
 class CameraStateBase {
-public:
+ public:
   CameraStateBase() = default;
+  void init(VisionIpcServer *v, int camera_id, int camera_num, uint32_t fps, cl_device_id device_id, cl_context ctx,
+            VisionStreamType rgb_type, VisionStreamType yuv_type);
   virtual void auto_exposure(float grey_frac) {}
   virtual void release_callback(int buf_idx) {}
-  int camera_num;
-  int fps;
-  CameraInfo ci;
+  int camera_num = 0, camera_id = 0;
+  uint32_t fps = 0;
+  CameraInfo ci = {};
   CameraBuf buf;
 };
 
