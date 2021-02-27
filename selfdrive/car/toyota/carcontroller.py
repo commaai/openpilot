@@ -33,8 +33,8 @@ def coast_accel(speed):  # given a speed, output coasting acceleration
 
 
 def compute_gb_pedal(desired_accel, speed):
-  _c1, _c2, _c3, _c4 = [0.04412016647510183, 0.018224465923095633, 0.09983653162564889, 0.08837909527049172]
-  return (desired_accel * _c1 + (_c4 * (speed * _c2 + 1))) * (speed * _c3 + 1)
+  _c1, _c2, _c3, _c4  = [0.015332129994618495, -0.013848089187675144, -0.05406226668839383, 0.180209019025656]
+  return (_c1 * speed + _c2) + (_c3 * desired_accel ** 2 + _c4 * desired_accel)
 
 
 class CarController():
@@ -67,8 +67,9 @@ class CarController():
 
     if CS.CP.enableGasInterceptor and enabled and CS.out.vEgo < MIN_ACC_SPEED and apply_accel > coast_accel(CS.out.vEgo):
       # converts desired acceleration to gas percentage for pedal
+      # +0.06 offset to reduce ABS pump usage when applying very small gas
       apply_gas = clip(compute_gb_pedal(apply_accel, CS.out.vEgo), 0., 1.)
-      apply_accel = 0.0
+      apply_accel = min(apply_accel + 0.06 * CarControllerParams.ACCEL_SCALE, CarControllerParams.ACCEL_MAX)
 
     # steer torque
     new_steer = int(round(actuators.steer * CarControllerParams.STEER_MAX))
