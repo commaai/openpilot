@@ -30,13 +30,6 @@ typedef struct CameraState {
   int exposure_time_max;
   float ef_filtered;
 
-  // int device_iommu;
-  // int cdm_iommu;
-
-  // int video0_fd;
-  // int video1_fd;
-  // int isp_fd;
-
   int sensor_fd;
   int csiphy_fd;
 
@@ -67,9 +60,9 @@ typedef struct CameraState {
 typedef struct MultiCameraState {
   int device;
 
-  int video0_fd;
-  int video1_fd;
-  int isp_fd;
+  unique_fd video0_fd;
+  unique_fd video1_fd;
+  unique_fd isp_fd;
   int device_iommu;
   int cdm_iommu;
 
