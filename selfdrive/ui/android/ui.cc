@@ -92,9 +92,9 @@ static bool handle_ml_touch(UIState *s, int touch_x, int touch_y) {
 
 static bool handle_SA_touched(UIState *s, int touch_x, int touch_y) {
   if (s->active_app == cereal::UiLayoutState::App::NONE) {  // if onroad (not settings or home)
-    if ((s->awake && s->vision_connected && s->status != STATUS_OFFROAD) || s->ui_debug) {  // if car started or debug mode
+    if ((s->awake && s->status != STATUS_OFFROAD) || s->ui_debug) {  // if car started or debug mode
       if (handle_df_touch(s, touch_x, touch_y) || handle_ls_touch(s, touch_x, touch_y) || handle_ml_touch(s, touch_x, touch_y)) {
-        s->scene.uilayout_sidebarcollapsed = true;  // collapse sidebar when tapping any SA button
+        s->sidebar_collapsed = true;  // collapse sidebar when tapping any SA button
         return true;  // only allow one button to be pressed at a time
       }
     }
