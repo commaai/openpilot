@@ -15,36 +15,40 @@ from common.data_collector import DataCollector
 travis = False
 
 
-class IntegralDistanceFactor:
-  """
-  Basically an integral controller. Acts like a human, remembers the past; keeps a large distance even AFTER lead slows down, not only just when the lead is braking.
-  Anxiety simulator! Will the lead keep braking? Will the lead brake again soon? This keeps larger distances in situations you might want them.
-  """
-  def __init__(self, k_i, x_clip, mods):  # todo: add derivative, but only for distance-gaining output (negative i)
+class DistanceModController:
+  def __init__(self, k_i, k_d, x_clip, mods):
     self._rate = 1 / 20.
 
     self._k_i = k_i
+    self._k_d = k_d
     self._to_clip = x_clip  # reaches this with v_rel=3.5 mph for 4 seconds
     self._mods = mods
 
     self.i = 0  # never resets, even when new lead
+    self.last_error = 0
 
-  def integrate(self, error):
+  def update(self, error):
     """
-    Integrates relative velocity, could also integrate on a_lead or a_rel, not sure
     Relative velocity is a good starting point
     Returns: Multiplier for final y_dist output
     """
+
+    if (d := self._k_d * (error - self.last_error)) < 0:  # only add if it will add distance
+      self.i += d
+
     self.i += error * self._rate * self._k_i
     self.i = clip(self.i, self._to_clip[0], self._to_clip[-1])  # clip to reasonable range
     self._slow_reset()  # slowly reset from max to 0
+
     fact = interp(self.i, self._to_clip, self._mods)
+    self.last_error = float(error)
+
     print("I: {}, FACT: {}".format(round(self.i, 4), round(fact, 3)))
     return fact
 
   def _slow_reset(self):
     if abs(self.i) > 0.01:  # oscillation starts around 0.006
-      reset_time = 25  # in x seconds i goes from max to 0
+      reset_time = 15  # in x seconds i goes from max to 0
       sign = 1 if self.i > 0 else -1
       self.i -= sign * max(self._to_clip) / (reset_time / self._rate)
 
@@ -55,8 +59,8 @@ class DynamicFollow:
     self.op_params = opParams()
     self.df_profiles = dfProfiles()
     self.df_manager = dfManager(self.op_params)
-    self.idf_v_rel = IntegralDistanceFactor(k_i=0.042, x_clip=[-1, 0, 1], mods=[1.1, 1., 0.95])
-    self.idf_a_lead = IntegralDistanceFactor(k_i=0.042 * 1.05, x_clip=[-1, 0, 0.33], mods=[1.1, 1., 0.98])  # a_lead loop is 5% faster
+    self.dmc_v_rel = DistanceModController(k_i=0.042, k_d=0.08, x_clip=[-1, 0, 0.66], mods=[1.15, 1., 0.95])
+    self.dmc_a_rel = DistanceModController(k_i=0.042 * 1.05, k_d=0.08, x_clip=[-1, 0, 0.33], mods=[1.15, 1., 0.98])  # a_lead loop is 5% faster
 
     if not travis and mpc_id == 1:
       self.pm = messaging.PubMaster(['dynamicFollowData'])
@@ -260,7 +264,6 @@ class DynamicFollow:
     return [y - (y * global_df_mod * interp(x, speeds, mods)) for x, y in zip(x_vel, y_dist)]
 
   def _get_TR(self):
-    x_vel = [0.0, 1.8627, 3.7253, 5.588, 7.4507, 9.3133, 11.5598, 13.645, 22.352, 31.2928, 33.528, 35.7632, 40.2336]  # velocities
     if self.df_manager.is_auto:  # decide which profile to use, model profile will be updated before this
       df_profile = self.model_profile
     else:
@@ -270,26 +273,26 @@ class DynamicFollow:
       self.profile_change_time = sec_since_boot()
     self.last_effective_profile = df_profile
 
+    x_vel = [0.0, 1.8627, 3.7253, 5.588, 7.4507, 9.3133, 11.5598, 13.645, 22.352, 31.2928, 33.528, 35.7632, 40.2336]  # velocities
     if df_profile == self.df_profiles.roadtrip:
-      y_dist = [1.5486, 1.556, 1.5655, 1.5773, 1.5964, 1.6246, 1.6715, 1.7057, 1.7859, 1.8542, 1.8697, 1.8833, 1.8961]  # TRs
+      y_dist = [1.6428, 1.646, 1.6514, 1.6591, 1.6744, 1.6992, 1.7422, 1.7739, 1.8335, 1.8687, 1.8755, 1.8833, 1.8961]  # TRs
     elif df_profile == self.df_profiles.traffic:  # for in congested traffic
       x_vel = [0.0, 1.892, 3.7432, 5.8632, 8.0727, 10.7301, 14.343, 17.6275, 22.4049, 28.6752, 34.8858, 40.35]
       y_dist = [1.3781, 1.3791, 1.3457, 1.3134, 1.3145, 1.318, 1.3485, 1.257, 1.144, 0.979, 0.9461, 0.9156]
     elif df_profile == self.df_profiles.relaxed:  # default to relaxed/stock
-      y_dist = [1.385, 1.394, 1.406, 1.421, 1.444, 1.474, 1.521, 1.544, 1.568, 1.588, 1.599, 1.613, 1.634]
+      y_dist = [1.411, 1.418, 1.428, 1.441, 1.461, 1.49, 1.535, 1.561, 1.589, 1.612, 1.621, 1.632, 1.648]
     else:
       raise Exception('Unknown profile type: {}'.format(df_profile))
 
     # Global df mod
     y_dist = self.global_profile_mod(x_vel, y_dist)
 
-    v_rel_dist_factor = self.idf_v_rel.integrate(self.lead_data.v_lead - self.car_data.v_ego)
-    a_lead_dist_factor = self.idf_a_lead.integrate(self.lead_data.a_lead)  # TODO: should this be relative accel or just a_lead?
+    v_rel_dist_factor = self.dmc_v_rel.update(self.lead_data.v_lead - self.car_data.v_ego)
+    a_lead_dist_factor = self.dmc_a_rel.update(self.lead_data.a_lead - self.car_data.a_ego)
 
     TR = interp(self.car_data.v_ego, x_vel, y_dist)
     TR *= v_rel_dist_factor
     TR *= a_lead_dist_factor
-    return TR
 
     if self.car_data.v_ego > self.sng_speed:  # keep sng distance until we're above sng speed again
       self.sng = False
@@ -302,6 +305,8 @@ class DynamicFollow:
       x = [self.sng_speed * 0.7, self.sng_speed]  # decrease TR between 12.6 and 18 mph from 1.8s to defined TR above at 18mph while accelerating
       y = [self.sng_TR, interp(self.sng_speed, x_vel, y_dist)]
       TR = interp(self.car_data.v_ego, x, y)
+
+    return float(clip(TR, self.min_TR, 2.7))
 
     TR_mods = []
     # Dynamic follow modifications (the secret sauce)
@@ -355,7 +360,7 @@ class DynamicFollow:
   def _get_live_params(self):
     self.global_df_mod = self.op_params.get('global_df_mod')
     if self.global_df_mod != 1.:
-      self.global_df_mod = clip(self.global_df_mod, 0.85, 1.5)
+      self.global_df_mod = clip(self.global_df_mod, 0.85, 2.5)
 
     self.min_TR = self.op_params.get('min_TR')
     if self.min_TR != 1.:

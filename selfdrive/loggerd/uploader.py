@@ -55,7 +55,7 @@ def is_on_hotspot():
   try:
     result = subprocess.check_output(["ifconfig", "wlan0"], stderr=subprocess.STDOUT, encoding='utf8')
     result = re.findall(r"inet addr:((\d+\.){3}\d+)", result)[0][0]
-    is_android = result.startswith('192.168.43.')
+    is_android = result.startswith('192.168.43.') or (result.startswith('192.168.') and result.endswith('.20'))  # 2nd is Android 11
     is_ios = result.startswith('172.20.10.')
     is_entune = result.startswith('10.0.2.')
     return (is_android or is_ios or is_entune)

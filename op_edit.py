@@ -10,7 +10,7 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
   def __init__(self):
     self.op_params = opParams()
     self.params = None
-    self.sleep_time = 0.75
+    self.sleep_time = 0.5
     self.live_tuning = self.op_params.get('op_edit_live_mode')
     self.username = self.op_params.get('username')
     self.type_colors = {int: COLORS.BASE(179), float: COLORS.BASE(179),
@@ -34,13 +34,13 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
         while username == '':
           username = input('>> ').strip()
         self.success('Thanks! Saved your Discord username\n'
-                     'Edit the \'username\' parameter at any time to update', sleep_time=3.0)
+                     'Edit the \'username\' parameter at any time to update', sleep_time=1.0)
         self.op_params.put('username', username)
         self.username = username
       elif username_choice == 2:
         self.op_params.put('username', False)
         self.info('Got it, bringing you into opEdit\n'
-                  'Edit the \'username\' parameter at any time to update', sleep_time=3.0)
+                  'Edit the \'username\' parameter at any time to update', sleep_time=1.0)
     else:
       self.success('\nWelcome to the opParams command line editor, {}!'.format(self.username), sleep_time=0)
 
@@ -55,7 +55,7 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
         self.info('(changes take effect within {} seconds)'.format(self.op_params.read_frequency), end='\n', sleep_time=0)
       self.params = self.op_params.get(force_live=True)
       if self.live_tuning:  # only display live tunable params
-        self.params = {k: v for k, v in self.params.items() if self.op_params.param_info(k).live}
+        self.params = {k: v for k, v in self.params.items() if self.op_params.fork_params[k].live}
 
       values_list = []
       for k, v in self.params.items():
@@ -70,7 +70,7 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
           v = '{} ... {}'.format(str(v)[:30], str(v)[-15:])
         values_list.append(v)
 
-      live = [COLORS.INFO + '(live!)' + COLORS.ENDC if self.op_params.param_info(k).live else '' for k in self.params]
+      live = [COLORS.INFO + '(live!)' + COLORS.ENDC if self.op_params.fork_params[k].live else '' for k in self.params]
 
       to_print = []
       blue_gradient = [33, 39, 45, 51, 87]
@@ -83,9 +83,7 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
           line = COLORS.BASE(_color) + line
         to_print.append(line)
 
-      extras = {'a': ('Add new parameter', COLORS.OKGREEN),
-                'd': ('Delete parameter', COLORS.FAIL),
-                'l': ('Toggle live tuning', COLORS.WARNING),
+      extras = {'l': ('Toggle live tuning', COLORS.WARNING),
                 'e': ('Exit opEdit', COLORS.PINK)}
 
       to_print += ['---'] + ['{}. {}'.format(ext_col + e, ext_txt + COLORS.ENDC) for e, (ext_txt, ext_col) in extras.items()]
@@ -96,13 +94,9 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
       parsed, choice = self.parse_choice(choice, len(to_print) - len(extras))
       if parsed == 'continue':
         continue
-      elif parsed == 'add':
-        self.add_parameter()
       elif parsed == 'change':
         self.last_choice = choice
         self.change_parameter(choice)
-      elif parsed == 'delete':
-        self.delete_parameter()
       elif parsed == 'live':
         self.last_choice = None
         self.live_tuning = not self.live_tuning
@@ -119,11 +113,7 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
         return 'continue', choice
       return 'change', choice
 
-    if choice in ['a', 'add']:  # add new parameter
-      return 'add', choice
-    elif choice in ['d', 'delete', 'del']:  # delete parameter
-      return 'delete', choice
-    elif choice in ['l', 'live']:  # live tuning mode
+    if choice in ['l', 'live']:  # live tuning mode
       return 'live', choice
     elif choice in ['exit', 'e', '']:
       self.error('Exiting opEdit!', sleep_time=0)
@@ -144,7 +134,7 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
   def change_parameter(self, choice):
     while True:
       chosen_key = list(self.params)[choice]
-      param_info = self.op_params.param_info(chosen_key)
+      param_info = self.op_params.fork_params[chosen_key]
 
       old_value = self.params[chosen_key]
       if param_info.live:
@@ -174,10 +164,10 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
       self.info('Current value: {}{}{} (type: {})'.format(v_color, old_value, COLORS.INFO, type(old_value).__name__), sleep_time=0)
 
       while True:
-        self.prompt('\nEnter your new value:')
+        self.prompt('\nEnter your new value (enter to exit):')
         new_value = input('>> ').strip()
         if new_value == '':
-          self.info('Exiting this parameter...\n', 0.5)
+          self.info('Exiting this parameter...\n')
           return
 
         new_value = self.str_eval(new_value)
@@ -196,7 +186,7 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
             self.op_params.put(chosen_key, new_value)
             self.success('Saved!')
           else:
-            self.info('Not saved!', sleep_time=0)
+            self.info('Not saved!')
           return
 
   def change_param_list(self, old_value, param_info, chosen_key):
@@ -205,7 +195,7 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
       self.prompt('\nEnter index to edit (0 to {}):'.format(len(old_value) - 1))
       choice_idx = self.str_eval(input('>> '))
       if choice_idx == '':
-        self.info('Exiting this parameter...', 0.5)
+        self.info('Exiting this parameter...')
         return
 
       if not isinstance(choice_idx, int) or choice_idx not in range(len(old_value)):
@@ -218,7 +208,7 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
         self.prompt('\nEnter your new value:')
         new_value = input('>> ').strip()
         if new_value == '':
-          self.info('Exiting this list item...', 0.5)
+          self.info('Exiting this list item...')
           break
 
         new_value = self.str_eval(new_value)
@@ -319,58 +309,6 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
       elif dat.lower() == 'true':  # else, assume string
         dat = True
     return dat
-
-  def delete_parameter(self):
-    while True:
-      self.prompt('Enter the name of the parameter to delete:')
-      key = self.str_eval(input('>> '))
-
-      if key == '':
-        return
-      if not isinstance(key, str):
-        self.error('Input must be a string!')
-        continue
-      if key not in self.params:
-        self.error("Parameter doesn't exist!")
-        continue
-
-      value = self.params.get(key)
-      print('Parameter name: {}'.format(key))
-      print('Parameter value: {} (type: {})'.format(value, type(value).__name__))
-      self.prompt('Do you want to delete this?')
-
-      if self.input_with_options(['Y', 'n'], default='n')[0] == 0:
-        self.op_params.delete(key)
-        self.success('Deleted!')
-      else:
-        self.info('Not deleted!')
-      return
-
-  def add_parameter(self):
-    while True:
-      self.prompt('Type the name of your new parameter:')
-      key = self.str_eval(input('>> '))
-
-      if key == '':
-        return
-      if not isinstance(key, str):
-        self.error('Input must be a string!')
-        continue
-
-      self.prompt("Enter the data you'd like to save with this parameter:")
-      value = input('>> ').strip()
-      value = self.str_eval(value)
-
-      print('Parameter name: {}'.format(key))
-      print('Parameter value: {} (type: {})'.format(value, type(value).__name__))
-      self.prompt('Do you want to save this?')
-
-      if self.input_with_options(['Y', 'n'], default='n')[0] == 0:
-        self.op_params.put(key, value)
-        self.success('Saved!')
-      else:
-        self.info('Not saved!')
-      return
 
 
 opEdit()

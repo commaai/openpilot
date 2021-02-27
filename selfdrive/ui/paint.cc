@@ -254,7 +254,8 @@ static void ui_draw_vision_speed(UIState *s) {
   const float speed = std::max(0.0, s->scene.car_state.getVEgo() * (s->is_metric ? 3.6 : 2.2369363));
   const std::string speed_str = std::to_string((int)std::nearbyint(speed));
   nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
-  ui_draw_text(s, s->viz_rect.centerX(), 240, speed_str.c_str(), 96 * 2.5, COLOR_WHITE, "sans-bold");
+  NVGcolor color = s->scene.car_state.getBrakeLights() ? nvgRGBA(255, 66, 66, 255) : COLOR_WHITE;
+  ui_draw_text(s, s->viz_rect.centerX(), 240, speed_str.c_str(), 96 * 2.5, color, "sans-bold");
   ui_draw_text(s, s->viz_rect.centerX(), 320, s->is_metric ? "km/h" : "mph", 36 * 2.5, COLOR_WHITE_ALPHA(200), "sans-regular");
 }
 
@@ -370,10 +371,10 @@ static void ui_draw_df_button(UIState *s) {
 }
 
 static void ui_draw_ml_button(UIState *s) {
-  int btn_w = 500;
-  int btn_h = 138;
+  int btn_w = 475;
+  int btn_h = 130;
   int x = 1920 / 2;
-  int y = 915;
+  int y = 940;
   int btn_x = x - btn_w / 2;
   int btn_y = y - btn_h / 2;
 
@@ -393,7 +394,7 @@ static void ui_draw_ml_button(UIState *s) {
   nvgFill(s->vg);
 
   nvgFillColor(s->vg, nvgRGBA(255, 255, 255, 255));
-  nvgFontSize(s->vg, 65);
+  nvgFontSize(s->vg, 60);
   nvgText(s->vg, x, y + btn_h / 8, "Toggle Model Long", NULL);
 }
 

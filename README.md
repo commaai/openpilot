@@ -141,7 +141,7 @@ Here are the main parameters you can change with this fork:
   - `slowdown_for_curves`: Whether your car will slow down for curves using the old planner code from 0.5/0.6
 - **Dynamic params**:
   - `dynamic_gas`: Whether to use [dynamic gas](#dynamic-gas) if your car is supported
-  - `global_df_mod` **`(live!)`**: The multiplier for the current distance used by dynamic follow. The range is limited from 0.85 to 1.5. Smaller values will get you closer, larger will get you farther. This is applied to ALL profiles!
+  - `global_df_mod` **`(live!)`**: The multiplier for the current distance used by dynamic follow. The range is limited from 0.85 to 2.5. Smaller values will get you closer, larger will get you farther. This is applied to ALL profiles!
   - `min_TR` **`(live!)`**: The minimum allowed following distance in seconds. Default is 0.9 seconds, the range of this mod is limited from 0.85 to 1.3 seconds. This is applied to ALL profiles!
   - `hide_auto_df_alerts`: Hides the alert that shows what profile the model has chosen
   - [`dynamic_camera_offset`](#Dynamic-camera-offset-based-on-oncoming-traffic): Whether to automatically keep away from oncoming traffic. Works from 35 to ~60 mph
@@ -196,16 +196,15 @@ The `--depth 1` flag shallow clones the fork, it ends up being about 90 Mb so yo
 ### Branches
 Most of the branches on this fork are development branches I use as various openpilot tests. The few that more permanent are the following:
   * [`stock_additions`](https://github.com/ShaneSmiskol/openpilot/tree/stock_additions): This is similar to stock openpilot's release branch. Will receive occasional and tested updates to Stock Additions.
-  * [`stock_additions-devel`](https://github.com/ShaneSmiskol/openpilot/tree/stock_additions-devel): My development branch of Stock Additions I use to test new features or changes; similar to the master branch. Not recommendeded as a daily driver.
-  * [`traffic_lights-074`](https://github.com/ShaneSmiskol/openpilot/tree/traffic_lights-074):  The development branch testing our traffic light detection model [found here](https://github.com/ShaneSmiskol/traffic-lights).
+  * `stock_additions-devel` or `SA-staging`: My development branch of Stock Additions I use to test new features or changes; similar to the master branch. Not recommendeded as a daily driver.
 
 ### Archive Stock Additions branches
-* [Stock Additions 0.7](https://github.com/ShaneSmiskol/openpilot/tree/stock_additions-07)
-* [Stock Additions 0.7.1](https://github.com/ShaneSmiskol/openpilot/tree/stock_additions-071)
-* [Stock Additions 0.7.4](https://github.com/ShaneSmiskol/openpilot/tree/stock_additions-074)
-* [Stock Additions 0.7.5](https://github.com/ShaneSmiskol/openpilot/tree/stock_additions-075)
-* [Stock Additions 0.7.7](https://github.com/ShaneSmiskol/openpilot/tree/stock_additions-077)
-* [Stock Additions 0.7.10](https://github.com/ShaneSmiskol/openpilot/tree/stock_additions-0710)
+* [Stock Additions 0.7](https://github.com/ShaneSmiskol/openpilot-archive/tree/stock_additions-07)
+* [Stock Additions 0.7.1](https://github.com/ShaneSmiskol/openpilot-archive/tree/stock_additions-071)
+* [Stock Additions 0.7.4](https://github.com/ShaneSmiskol/openpilot-archive/tree/stock_additions-074)
+* [Stock Additions 0.7.5](https://github.com/ShaneSmiskol/openpilot-archive/tree/stock_additions-075)
+* [Stock Additions 0.7.7](https://github.com/ShaneSmiskol/openpilot-archive/tree/stock_additions-077)
+* [Stock Additions 0.7.10](https://github.com/ShaneSmiskol/openpilot-archive/tree/stock_additions-0710)
 
 ---
 ### Videos
