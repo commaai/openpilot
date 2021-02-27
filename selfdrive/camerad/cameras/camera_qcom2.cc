@@ -196,10 +196,10 @@ void sensors_i2c(struct CameraState *s, struct i2c_random_wr_payload* dat, int l
   munmap(pkt, size);
   release_fd(s->video0_fd, cam_packet_handle);
 }
-static cam_cmd_power *power_set_wait(cam_cmd_power *power, int16_t delay) {
+static cam_cmd_power *power_set_wait(cam_cmd_power *power, int16_t delay_ms) {
   cam_cmd_unconditional_wait *unconditional_wait = (cam_cmd_unconditional_wait *)((char *)power + (sizeof(struct cam_cmd_power) + (power->count - 1) * sizeof(struct cam_power_settings)));
   unconditional_wait->cmd_type = CAMERA_SENSOR_CMD_TYPE_WAIT;
-  unconditional_wait->delay = delay;
+  unconditional_wait->delay = delay_ms;
   unconditional_wait->op_code = CAMERA_SENSOR_WAIT_OP_SW_UCND;
   return (struct cam_cmd_power *)(unconditional_wait + 1);
 };
