@@ -31,7 +31,7 @@
 
 extern ExitHandler do_exit;
 
-int g_device = 0;
+static int g_device = 0;
 
 // global var for AE/AF ops
 std::atomic<CameraExpInfo> road_cam_exp{{0}};
