@@ -14,12 +14,8 @@
 #define FRAME_BUF_COUNT 16
 
 class CameraState : public CameraStateBase{
-<<<<<<< HEAD
 public:
   float digital_gain;
-  float cur_gain_frac;
-=======
->>>>>>> remove cur_gain_frac
 };
 typedef struct MultiCameraState {
   CameraState road_cam;
