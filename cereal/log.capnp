@@ -1260,6 +1260,7 @@ struct ManagerState {
     running @2 :Bool;
     exitCode @3 :Int32;
   }
+}
 
 
 struct DynamicFollowData {
