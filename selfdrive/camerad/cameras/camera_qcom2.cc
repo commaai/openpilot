@@ -1126,46 +1126,38 @@ void cameras_run(MultiCameraState *s) {
   threads.push_back(start_process_thread(s, &s->driver_cam, process_driver_camera));
   threads.push_back(start_process_thread(s, &s->wide_road_cam, process_road_camera));
 
+  CameraState *cameras[] = {&s->road_cam, &s->wide_road_cam, &s->driver_cam};
   // start devices
   LOG("-- Starting devices");
-  int start_reg_len = sizeof(start_reg_array) / sizeof(struct i2c_random_wr_payload);
-  sensors_i2c(&s->road_cam, start_reg_array, start_reg_len, CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
-  sensors_i2c(&s->wide_road_cam, start_reg_array, start_reg_len, CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
-  sensors_i2c(&s->driver_cam, start_reg_array, start_reg_len, CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
+  for (auto &c : cameras) {
+    sensors_i2c(c, start_reg_array, std::size(start_reg_array), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);  
+  }
 
   // poll events
   LOG("-- Dequeueing Video events");
   while (!do_exit) {
-    struct pollfd fds[1] = {{0}};
-
-    fds[0].fd = s->video0_fd;
-    fds[0].events = POLLPRI;
-
-    int ret = poll(fds, ARRAYSIZE(fds), 1000);
+    struct pollfd poll_fd = {.fd = s->video0_fd,
+                             .events = POLLPRI};
+    int ret = poll(&poll_fd, 1, 1000);
     if (ret < 0) {
       if (errno == EINTR || errno == EAGAIN) continue;
       LOGE("poll failed (%d - %d)", ret, errno);
       break;
     }
 
-    if (!fds[0].revents) continue;
+    if (!poll_fd.revents) continue;
 
     struct v4l2_event ev = {0};
-    ret = ioctl(fds[0].fd, VIDIOC_DQEVENT, &ev);
+    ret = ioctl(s->video0_fd, VIDIOC_DQEVENT, &ev);
     if (ev.type == 0x8000000) {
       struct cam_req_mgr_message *event_data = (struct cam_req_mgr_message *)ev.u.data;
       // LOGD("v4l2 event: sess_hdl %d, link_hdl %d, frame_id %d, req_id %lld, timestamp 0x%llx, sof_status %d\n", event_data->session_hdl, event_data->u.frame_msg.link_hdl, event_data->u.frame_msg.frame_id, event_data->u.frame_msg.request_id, event_data->u.frame_msg.timestamp, event_data->u.frame_msg.sof_status);
       // printf("sess_hdl %d, link_hdl %d, frame_id %lu, req_id %lu, timestamp 0x%lx, sof_status %d\n", event_data->session_hdl, event_data->u.frame_msg.link_hdl, event_data->u.frame_msg.frame_id, event_data->u.frame_msg.request_id, event_data->u.frame_msg.timestamp, event_data->u.frame_msg.sof_status);
-
-      if (event_data->session_hdl == s->road_cam.req_mgr_session_info.session_hdl) {
-        handle_camera_event(&s->road_cam, event_data);
-      } else if (event_data->session_hdl == s->wide_road_cam.req_mgr_session_info.session_hdl) {
-        handle_camera_event(&s->wide_road_cam, event_data);
-      } else if (event_data->session_hdl == s->driver_cam.req_mgr_session_info.session_hdl) {
-        handle_camera_event(&s->driver_cam, event_data);
-      } else {
-        printf("Unknown vidioc event source\n");
-        assert(false);
+      for (auto &c : cameras) {
+        if (event_data->session_hdl == c->req_mgr_session_info.session_hdl) {
+          handle_camera_event(c, event_data);
+          break;
+        }
       }
     }
   }
