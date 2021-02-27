@@ -27,9 +27,8 @@ jobs:
       run: eval "$BUILD"
     - name: Unit test
       run: |
-        ${{ env.RUN }} "cd /tmp/openpilot && \
-                        scons -j$(nproc) && \
+        ${{ env.RUN }} "scons -j$(nproc) --directory=/tmp/openpilot/cereal && \
                         apt-get update && \
                         apt-get install -y libdw-dev libqt5svg5-dev libqt5x11extras5-dev && \
-                        cd tools/plotjuggler && \
+                        cd /tmp/openpilot/tools/plotjuggler && \
                         ./test_plotjuggler.py"
