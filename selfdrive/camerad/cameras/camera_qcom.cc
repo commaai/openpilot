@@ -604,10 +604,8 @@ static void sensors_init(MultiCameraState *s) {
       .output_format = MSM_SENSOR_BAYER,
     };
   }
-  slave_info.power_setting_array.power_setting =
-    (struct msm_sensor_power_setting *)&slave_info.power_setting_array.power_setting_a[0];
-  slave_info.power_setting_array.power_down_setting =
-    (struct msm_sensor_power_setting *)&slave_info.power_setting_array.power_down_setting_a[0];
+  slave_info.power_setting_array.power_setting = &slave_info.power_setting_array.power_setting_a[0];
+  slave_info.power_setting_array.power_down_setting = &slave_info.power_setting_array.power_down_setting_a[0];
   sensor_init_cfg_data sensor_init_cfg = {.cfgtype = CFG_SINIT_PROBE, .cfg.setting = &slave_info};
   err = ioctl(sensorinit_fd, VIDIOC_MSM_SENSOR_INIT_CFG, &sensor_init_cfg);
   LOG("sensor init cfg (road camera): %d", err);
@@ -719,10 +717,8 @@ static void sensors_init(MultiCameraState *s) {
       .output_format = MSM_SENSOR_BAYER,
     };
   }
-  slave_info2.power_setting_array.power_setting =
-    (struct msm_sensor_power_setting *)&slave_info2.power_setting_array.power_setting_a[0];
-  slave_info2.power_setting_array.power_down_setting =
-    (struct msm_sensor_power_setting *)&slave_info2.power_setting_array.power_down_setting_a[0];
+  slave_info2.power_setting_array.power_setting = &slave_info2.power_setting_array.power_setting_a[0];
+  slave_info2.power_setting_array.power_down_setting = &slave_info2.power_setting_array.power_down_setting_a[0];
   sensor_init_cfg.cfgtype = CFG_SINIT_PROBE;
   sensor_init_cfg.cfg.setting = &slave_info2;
   err = ioctl(sensorinit_fd, VIDIOC_MSM_SENSOR_INIT_CFG, &sensor_init_cfg);
