@@ -56,21 +56,6 @@ void sa_init(UIState *s, bool full_init) {
   s->scene.mlButtonEnabled = false;  // state isn't saved yet
 }
 
-void ui_init(UIState *s) {
-  s->sm = new SubMaster({"modelV2", "controlsState", "uiLayoutState", "liveCalibration", "radarState", "thermal",
-                         "health", "carParams", "ubloxGnss", "driverState", "dMonitoringState", "sensorEvents"});
-
-  s->started = false;
-  s->status = STATUS_OFFROAD;
-  s->scene.satelliteCount = -1;
-  read_param(&s->is_metric, "IsMetric");
-
-  s->fb = framebuffer_init("ui", 0, true, &s->fb_w, &s->fb_h);
-  assert(s->fb);
-
-  ui_nvg_init(s);
-}
-
 static void ui_init_vision(UIState *s) {
   // Invisible until we receive a calibration message.
   s->scene.world_objects_visible = false;
