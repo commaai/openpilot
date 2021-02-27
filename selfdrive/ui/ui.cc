@@ -131,6 +131,7 @@ static void update_line_data(const UIState *s, const cereal::ModelDataV2::XYZTDa
 
 static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
   UIScene &scene = s->scene;
+  scene.model = model;
   const float max_distance = fmin(model.getPosition().getX()[TRAJECTORY_SIZE - 1], MAX_DRAW_DISTANCE);
   // update lane lines
   const auto lane_lines = model.getLaneLines();

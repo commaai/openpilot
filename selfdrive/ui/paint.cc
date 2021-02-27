@@ -173,7 +173,17 @@ static void ui_draw_vision_lane_lines(UIState *s) {
   const UIScene &scene = s->scene;
   // paint lanelines
   for (int i = 0; i < std::size(scene.lane_line_vertices); i++) {
-    NVGcolor color = nvgRGBAf(1.0, 1.0, 1.0, scene.lane_line_probs[i]);
+    NVGcolor color;
+    if (i == 1 || i == 2) {
+      const cereal::ModelDataV2::XYZTData::Reader &line = scene.model.getLaneLines()[i];
+      const float default_pos = 1.4;  // when lane poly isn't available
+      const float lane_pos = line.getY().size() > 0 ? std::abs(line.getY()[5]) : default_pos;  // get redder when line is closer to car
+      float hue = 332.5 * lane_pos - 332.5;  // equivalent to {1.4, 1.0}: {133, 0} (green to red)
+      hue = fmin(133, fmax(0, hue)) / 360.;  // clip and normalize
+      color = nvgHSLA(hue, 0.73, 0.64, scene.lane_line_probs[i] * 255);
+    } else {
+      color = nvgRGBAf(1.0, 1.0, 1.0, scene.lane_line_probs[i]);
+    }
     ui_draw_line(s, scene.lane_line_vertices[i], &color, nullptr);
   }
 
@@ -184,8 +194,18 @@ static void ui_draw_vision_lane_lines(UIState *s) {
   }
 
   // paint path
-  NVGpaint track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h * .4,
-                                        COLOR_WHITE, COLOR_WHITE_ALPHA(0));
+  const bool enabled = scene.controls_state.getEnabled();
+  const cereal::ModelDataV2::XYZTData::Reader &pos = scene.model.getPosition();
+  const float lat_pos = pos.getY().size() > 0 ? std::abs(pos.getY()[16] - pos.getY()[0]) : 0;  // 14 is 1.91406 (subtract initial pos to not consider offset)
+  const float hue = lat_pos * -39.46 + 148;  // interp from {0, 4.5} -> {148, 0}
+  NVGpaint track_bg;
+  if (enabled) {
+    track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h*.4,
+                                 nvgHSLA(hue / 360., .94, .51, 255), nvgHSLA(hue / 360., .73, .49, 100));
+  } else {
+    track_bg = nvgLinearGradient(s->vg, s->fb_w, s->fb_h, s->fb_w, s->fb_h * .4,
+                                 COLOR_WHITE, COLOR_WHITE_ALPHA(0));
+  }
   ui_draw_line(s, scene.track_vertices, nullptr, &track_bg);
 }
 
