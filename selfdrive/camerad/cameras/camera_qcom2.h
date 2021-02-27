@@ -18,6 +18,7 @@
 #define DEBAYER_LOCAL_WORKSIZE 16
 
 typedef struct CameraState {
+  MultiCameraState *multi_cam_state;
   CameraInfo ci;
   
   std::mutex exp_lock;
@@ -29,18 +30,17 @@ typedef struct CameraState {
   int exposure_time_max;
   float ef_filtered;
 
-  int device_iommu;
-  int cdm_iommu;
+  // int device_iommu;
+  // int cdm_iommu;
 
-  int video0_fd;
-  int video1_fd;
-  int isp_fd;
+  // int video0_fd;
+  // int video1_fd;
+  // int isp_fd;
 
   int sensor_fd;
   int csiphy_fd;
 
   int camera_num;
-
 
   uint32_t session_handle;
 
@@ -70,6 +70,9 @@ typedef struct MultiCameraState {
   int video0_fd;
   int video1_fd;
   int isp_fd;
+  int device_iommu;
+  int cdm_iommu;
+
 
   CameraState road_cam;
   CameraState wide_road_cam;
