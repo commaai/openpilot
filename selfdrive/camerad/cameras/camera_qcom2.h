@@ -61,8 +61,6 @@ public:
 };
 
 typedef struct MultiCameraState {
-  int device;
-
   int video0_fd;
   int video1_fd;
   int isp_fd;
