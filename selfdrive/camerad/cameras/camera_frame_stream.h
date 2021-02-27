@@ -21,7 +21,6 @@ public:
 =======
 >>>>>>> remove cur_gain_frac
 };
-
 typedef struct MultiCameraState {
   CameraState road_cam;
   CameraState driver_cam;

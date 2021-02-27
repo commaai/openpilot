@@ -35,7 +35,7 @@ void camera_close(CameraState *s) {
 }
 
 void camera_init(VisionIpcServer * v, CameraState *s, int camera_id, unsigned int fps, cl_device_id device_id, cl_context ctx, VisionStreamType rgb_type, VisionStreamType yuv_type) {
-  s->init(v, camera_id, camera_num, fps, device_id, ctx, rgb_type, yuv_type);
+  s->init(v, camera_id, camera_id, fps, device_id, ctx, rgb_type, yuv_type);
 }
 
 static void* road_camera_thread(void *arg) {
