@@ -905,7 +905,7 @@ static void camera_close(CameraState *s) {
   LOGD("destroyed session: %d", ret);
 }
 
-static void cameras_close(MultiCameraState *s) {
+void cameras_close(MultiCameraState *s) {
   camera_close(&s->road_cam);
   camera_close(&s->wide_road_cam);
   camera_close(&s->driver_cam);
