@@ -78,7 +78,7 @@ typedef struct CameraState {
 
   // uint32_t camera_bufs_ids[FRAME_BUF_COUNT];
 
-  pthread_mutex_t frame_info_lock;
+  std::mutex frame_info_lock;
   FrameMetadata frame_metadata[METADATA_BUF_COUNT];
   int frame_metadata_idx;
   float cur_exposure_frac;
