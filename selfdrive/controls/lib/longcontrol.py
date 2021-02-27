@@ -56,10 +56,7 @@ class LongControl():
   def __init__(self, CP, compute_gb, candidate):
     self.long_control_state = LongCtrlState.off  # initialized to off
     kdBP = [0., 16., 35.]
-    if CP.enableGasInterceptor:
-      kdV = [0.05, 1.0285 * 1.45, 1.8975 * 0.8]
-    else:
-      kdV = [0.08, 1.215, 2.51]
+    kdV = [0.08, 1.215, 2.51]
 
     self.pid = LongPIDController((CP.longitudinalTuning.kpBP, CP.longitudinalTuning.kpV),
                                  (CP.longitudinalTuning.kiBP, CP.longitudinalTuning.kiV),
