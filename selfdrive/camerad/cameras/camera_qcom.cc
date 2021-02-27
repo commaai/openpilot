@@ -31,6 +31,8 @@
 
 extern ExitHandler do_exit;
 
+int g_device = 0;
+
 // global var for AE/AF ops
 std::atomic<CameraExpInfo> road_cam_exp{{0}};
 std::atomic<CameraExpInfo> driver_cam_exp{{0}};
@@ -244,7 +246,7 @@ void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_i
 
   if (strlen(project_name) == 0) {
     LOGD("LePro 3 op system detected");
-    s->device = DEVICE_LP3;
+    g_device = DEVICE_LP3;
 
     // sensor is flipped in LP3
     // IMAGE_ORIENT = 3
@@ -252,11 +254,11 @@ void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_i
     cameras_supported[CAMERA_ID_IMX298].bayer_flip = 3;
   } else if (strcmp(product_name, "OnePlus3") == 0 && strcmp(project_name, "15811") != 0) {
     // no more OP3 support
-    s->device = DEVICE_OP3;
+    g_device = DEVICE_OP3;
     assert(false);
   } else if (strcmp(product_name, "OnePlus3") == 0 && strcmp(project_name, "15811") == 0) {
     // only OP3T support
-    s->device = DEVICE_OP3T;
+    g_device = DEVICE_OP3T;
   } else {
     assert(false);
   }
@@ -283,13 +285,13 @@ void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_i
               VISION_STREAM_RGB_BACK, VISION_STREAM_YUV_BACK);
   s->road_cam.apply_exposure = imx298_apply_exposure;
 
-  if (s->device == DEVICE_OP3T) {
+  if (g_device == DEVICE_OP3T) {
     camera_init(v, &s->driver_cam, CAMERA_ID_S5K3P8SP, 1,
                 /*pixel_clock=*/560000000, /*line_length_pclk=*/5120,
                 /*max_gain=*/510, 10, device_id, ctx,
                 VISION_STREAM_RGB_FRONT, VISION_STREAM_YUV_FRONT);
     s->driver_cam.apply_exposure = imx179_s5k3p8sp_apply_exposure;
-  } else if (s->device == DEVICE_LP3) {
+  } else if (g_device == DEVICE_LP3) {
     camera_init(v, &s->driver_cam, CAMERA_ID_OV8865, 1,
                 /*pixel_clock=*/72000000, /*line_length_pclk=*/1602,
                 /*max_gain=*/510, 10, device_id, ctx,
@@ -302,9 +304,6 @@ void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_i
                 VISION_STREAM_RGB_FRONT, VISION_STREAM_YUV_FRONT);
     s->driver_cam.apply_exposure = imx179_s5k3p8sp_apply_exposure;
   }
-
-  s->road_cam.device = s->device;
-  s->driver_cam.device = s->device;
 
   s->sm = new SubMaster({"driverState"});
   s->pm = new PubMaster({"roadCameraState", "driverCameraState", "thumbnail"});
@@ -516,7 +515,7 @@ static void sensors_init(MultiCameraState *s) {
   int err;
 
   unique_fd sensorinit_fd;
-  if (s->device == DEVICE_LP3) {
+  if (g_device == DEVICE_LP3) {
     sensorinit_fd = open("/dev/v4l-subdev11", O_RDWR | O_NONBLOCK);
   } else {
     sensorinit_fd = open("/dev/v4l-subdev12", O_RDWR | O_NONBLOCK);
@@ -526,7 +525,7 @@ static void sensors_init(MultiCameraState *s) {
   // init road camera sensor
 
   struct msm_camera_sensor_slave_info slave_info = {0};
-  if (s->device == DEVICE_LP3) {
+  if (g_device == DEVICE_LP3) {
     slave_info = (struct msm_camera_sensor_slave_info){
       .sensor_name = "imx298",
       .eeprom_name = "sony_imx298",
@@ -614,7 +613,7 @@ static void sensors_init(MultiCameraState *s) {
   assert(err >= 0);
 
   struct msm_camera_sensor_slave_info slave_info2 = {0};
-  if (s->device == DEVICE_LP3) {
+  if (g_device == DEVICE_LP3) {
     slave_info2 = (struct msm_camera_sensor_slave_info){
       .sensor_name = "ov8865_sunny",
       .eeprom_name = "ov8865_plus",
@@ -746,12 +745,12 @@ static void camera_open(CameraState *s, bool is_road_cam) {
     assert(s->csid_fd >= 0);
     s->csiphy_fd = open("/dev/v4l-subdev0", O_RDWR | O_NONBLOCK);
     assert(s->csiphy_fd >= 0);
-    if (s->device == DEVICE_LP3) {
+    if (g_device == DEVICE_LP3) {
       sensor_dev = "/dev/v4l-subdev17";
     } else {
       sensor_dev = "/dev/v4l-subdev18";
     }
-    if (s->device == DEVICE_LP3) {
+    if (g_device == DEVICE_LP3) {
       s->isp_fd = open("/dev/v4l-subdev13", O_RDWR | O_NONBLOCK);
     } else {
       s->isp_fd = open("/dev/v4l-subdev14", O_RDWR | O_NONBLOCK);
@@ -763,7 +762,7 @@ static void camera_open(CameraState *s, bool is_road_cam) {
     s->actuator_fd = open("/dev/v4l-subdev7", O_RDWR | O_NONBLOCK);
     assert(s->actuator_fd >= 0);
 
-    if (s->device != DEVICE_LP3) {
+    if (g_device != DEVICE_LP3) {
       s->ois_fd = open("/dev/v4l-subdev10", O_RDWR | O_NONBLOCK);
       assert(s->ois_fd >= 0);
     }
@@ -772,12 +771,12 @@ static void camera_open(CameraState *s, bool is_road_cam) {
     assert(s->csid_fd >= 0);
     s->csiphy_fd = open("/dev/v4l-subdev2", O_RDWR | O_NONBLOCK);
     assert(s->csiphy_fd >= 0);
-    if (s->device == DEVICE_LP3) {
+    if (g_device == DEVICE_LP3) {
       sensor_dev = "/dev/v4l-subdev18";
     } else {
       sensor_dev = "/dev/v4l-subdev19";
     }
-    if (s->device == DEVICE_LP3) {
+    if (g_device == DEVICE_LP3) {
       s->isp_fd = open("/dev/v4l-subdev14", O_RDWR | O_NONBLOCK);
     } else {
       s->isp_fd = open("/dev/v4l-subdev15", O_RDWR | O_NONBLOCK);
@@ -816,7 +815,7 @@ static void camera_open(CameraState *s, bool is_road_cam) {
   err = ioctl(s->sensor_fd, VIDIOC_MSM_SENSOR_CFG, &sensorb_cfg_data);
   LOG("sensor power down: %d", err);
 
-  if (is_road_cam && s->device != DEVICE_LP3) {
+  if (is_road_cam && g_device != DEVICE_LP3) {
     // ois powerdown
     ois_cfg_data.cfgtype = CFG_OIS_POWERDOWN;
     err = ioctl(s->ois_fd, VIDIOC_MSM_OIS_CFG, &ois_cfg_data);
@@ -917,7 +916,7 @@ static void camera_open(CameraState *s, bool is_road_cam) {
 
 
     // no OIS in LP3
-    if (s->device != DEVICE_LP3) {
+    if (g_device != DEVICE_LP3) {
       // see sony_imx298_eeprom_format_afdata in libmmcamera_sony_imx298_eeprom.so
       const float far_margin = -0.28;
       uint16_t macro_dac = *(uint16_t*)(s->eeprom + 0x24);
@@ -1222,7 +1221,7 @@ static void road_camera_start(CameraState *s) {
   // focus on infinity assuming phone is perpendicular
   int inf_step;
 
-  if (s->device != DEVICE_LP3) {
+  if (g_device != DEVICE_LP3) {
     imx298_ois_calibration(s->ois_fd, s->eeprom);
     inf_step = 332 - s->infinity_dac;
 
@@ -1245,7 +1244,7 @@ static void road_camera_start(CameraState *s) {
   actuator_cfg_data.cfgtype = CFG_SET_POSITION;
   actuator_cfg_data.cfg.setpos = (struct msm_actuator_set_position_t){
     .number_of_steps = 1,
-    .hw_params = (uint32_t)((s->device != DEVICE_LP3) ? 0x0000e424 : 7),
+    .hw_params = (uint32_t)((g_device != DEVICE_LP3) ? 0x0000e424 : 7),
     .pos = {s->infinity_dac, 0},
     .delay = {0,}
   };
@@ -1278,7 +1277,7 @@ static void road_camera_start(CameraState *s) {
 void actuator_move(CameraState *s, uint16_t target) {
   int step = target - s->cur_lens_pos;
   // LP3 moves only on even positions. TODO: use proper sensor params
-  if (s->device == DEVICE_LP3) {
+  if (g_device == DEVICE_LP3) {
     step /= 2;
   }
 
@@ -1367,8 +1366,8 @@ static std::optional<float> get_accel_z(SubMaster *sm) {
 
 static void do_autofocus(CameraState *s, SubMaster *sm) {
   // params for focus PI controller
-  const int dac_up = s->device == DEVICE_LP3? LP3_AF_DAC_UP:OP3T_AF_DAC_UP;
-  const int dac_down = s->device == DEVICE_LP3? LP3_AF_DAC_DOWN:OP3T_AF_DAC_DOWN;
+  static const int dac_up = g_device == DEVICE_LP3? LP3_AF_DAC_UP:OP3T_AF_DAC_UP;
+  static const int dac_down = g_device == DEVICE_LP3? LP3_AF_DAC_DOWN:OP3T_AF_DAC_DOWN;
 
   float lens_true_pos = s->lens_true_pos.load();
   if (!isnan(s->focus_err)) {
@@ -1438,7 +1437,7 @@ void cameras_open(MultiCameraState *s) {
   s->v4l_fd = open("/dev/video0", O_RDWR | O_NONBLOCK);
   assert(s->v4l_fd >= 0);
 
-  if (s->device == DEVICE_LP3) {
+  if (g_device == DEVICE_LP3) {
     s->ispif_fd = open("/dev/v4l-subdev15", O_RDWR | O_NONBLOCK);
   } else {
     s->ispif_fd = open("/dev/v4l-subdev16", O_RDWR | O_NONBLOCK);
@@ -1619,10 +1618,10 @@ static void update_lapmap(MultiCameraState *s, const CameraBuf *b, const int cnt
 }
 
 static void setup_self_recover(CameraState *c, const uint16_t *lapres, size_t lapres_size) {
-  const int dac_down = c->device == DEVICE_LP3 ? LP3_AF_DAC_DOWN : OP3T_AF_DAC_DOWN;
-  const int dac_up = c->device == DEVICE_LP3 ? LP3_AF_DAC_UP : OP3T_AF_DAC_UP;
-  const int dac_m = c->device == DEVICE_LP3 ? LP3_AF_DAC_M : OP3T_AF_DAC_M;
-  const int dac_3sig = c->device == DEVICE_LP3 ? LP3_AF_DAC_3SIG : OP3T_AF_DAC_3SIG;
+  static const int dac_down = g_device == DEVICE_LP3 ? LP3_AF_DAC_DOWN : OP3T_AF_DAC_DOWN;
+  static const int dac_up = g_device == DEVICE_LP3 ? LP3_AF_DAC_UP : OP3T_AF_DAC_UP;
+  static const int dac_m = g_device == DEVICE_LP3 ? LP3_AF_DAC_M : OP3T_AF_DAC_M;
+  static const int dac_3sig = g_device == DEVICE_LP3 ? LP3_AF_DAC_3SIG : OP3T_AF_DAC_3SIG;
 
   const float lens_true_pos = c->lens_true_pos.load();
   int self_recover = c->self_recover.load();

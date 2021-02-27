@@ -56,8 +56,6 @@ typedef struct CameraState {
   int camera_id;
   CameraInfo ci;
 
-  int device;
-
   uint32_t pixel_clock;
   uint32_t line_length_pclk;
   unsigned int max_gain;
@@ -112,8 +110,6 @@ typedef struct CameraState {
 
 
 typedef struct MultiCameraState {
-  int device;
-
   unique_fd ispif_fd;
   unique_fd msmcfg_fd;
   unique_fd v4l_fd;
