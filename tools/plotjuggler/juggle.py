@@ -31,12 +31,17 @@ def juggle_file(fn, dbc=None):
   if dbc:
     env["DBC_NAME"] = dbc
 
-  subprocess.call(f"plotjuggler --plugin_folders {juggle_dir} -d {fn}", shell=True, env=env, cwd=juggle_dir)
+  pj = os.getenv("PLOTJUGGLER_PATH", "plotjuggler")
+  subprocess.call(f'{pj} --plugin_folders {os.path.join(juggle_dir, "bin")} -d {fn}', shell=True, env=env, cwd=juggle_dir)
 
 def juggle_route(route_name, segment_number, qlog):
-  r = Route(route_name)
 
-  logs = r.qlog_paths() if qlog else r.log_paths()
+  if route_name.startswith("http://") or route_name.startswith("https://"):
+    logs = [route_name]
+  else:
+    r = Route(route_name)
+    logs = r.qlog_paths() if qlog else r.log_paths()
+
   if segment_number is not None:
     logs = logs[segment_number:segment_number+1]
 
@@ -81,7 +86,6 @@ def get_arg_parser():
   return parser
 
 if __name__ == "__main__":
-
   arg_parser = get_arg_parser()
   if len(sys.argv) == 1:
     arg_parser.print_help()
