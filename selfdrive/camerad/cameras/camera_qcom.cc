@@ -34,7 +34,7 @@ const uint16_t INFINITY_DAC = 364;
 
 extern ExitHandler do_exit;
 
-int cam_ioctl(int fd, unsigned long int request, void *arg, const char *log_msg = nullptr) {
+static int cam_ioctl(int fd, unsigned long int request, void *arg, const char *log_msg = nullptr) {
   int err = ioctl(fd, request, arg);
   if (err != 0 && log_msg) {
     LOG(util::string_format("%s: %d", log_msg, err).c_str());
