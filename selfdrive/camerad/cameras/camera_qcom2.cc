@@ -33,9 +33,6 @@
 
 extern ExitHandler do_exit;
 
-// global var for AE ops
-std::atomic<CameraExpInfo> cam_exp[3] = {{{0}}};
-
 CameraInfo cameras_supported[CAMERA_ID_MAX] = {
   [CAMERA_ID_AR0231] = {
     .frame_width = FRAME_WIDTH,
@@ -1065,29 +1062,18 @@ static void set_camera_exposure(CameraState *s, float grey_frac) {
 }
 
 void camera_autoexposure(CameraState *s, float grey_frac) {
-  CameraExpInfo tmp = cam_exp[s->camera_num].load();
-  tmp.op_id++;
-  tmp.grey_frac = grey_frac;
-  cam_exp[s->camera_num].store(tmp);
+  s->exp_info.set(grey_frac);
 }
 
 static void ae_thread(MultiCameraState *s) {
-  CameraState *c_handles[3] = {&s->wide_road_cam, &s->road_cam, &s->driver_cam};
-
-  int op_id_last[3] = {0};
-  CameraExpInfo cam_op[3];
-
   set_thread_name("camera_settings");
-
+  CameraState *c_handles[] = {&s->wide_road_cam, &s->road_cam, &s->driver_cam};
   while(!do_exit) {
-    for (int i=0;i<3;i++) {
-      cam_op[i] = cam_exp[i].load();
-      if (cam_op[i].op_id != op_id_last[i]) {
-        set_camera_exposure(c_handles[i], cam_op[i].grey_frac);
-        op_id_last[i] = cam_op[i].op_id;
+    for (auto &c : c_handles) {
+      if (auto grey_frac = c->exp_info.load(); grey_frac) {
+        set_camera_exposure(c, *grey_frac);
       }
     }
-
     util::sleep_for(50);
   }
 }

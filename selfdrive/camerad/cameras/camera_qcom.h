@@ -66,6 +66,7 @@ typedef struct CameraState {
   int frame_metadata_idx;
 
   // exposure
+  CameraExpInfo exp_info;
   uint32_t pixel_clock, line_length_pclk;
   uint32_t max_gain;
   float cur_exposure_frac, cur_gain_frac;
@@ -85,7 +86,6 @@ typedef struct CameraState {
   int16_t focus[NUM_FOCUS];
   uint8_t confidence[NUM_FOCUS];
 } CameraState;
-
 
 typedef struct MultiCameraState {
   unique_fd ispif_fd;

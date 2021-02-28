@@ -34,10 +34,6 @@ const uint16_t INFINITY_DAC = 364;
 
 extern ExitHandler do_exit;
 
-// global var for AE/AF ops
-std::atomic<CameraExpInfo> road_cam_exp{{0}};
-std::atomic<CameraExpInfo> driver_cam_exp{{0}};
-
 CameraInfo cameras_supported[CAMERA_ID_MAX] = {
   [CAMERA_ID_IMX298] = {
     .frame_width = 2328,
@@ -921,17 +917,7 @@ static void do_autofocus(CameraState *s, SubMaster *sm) {
 }
 
 void camera_autoexposure(CameraState *s, float grey_frac) {
-  if (s->camera_num == 0) {
-    CameraExpInfo tmp = road_cam_exp.load();
-    tmp.op_id++;
-    tmp.grey_frac = grey_frac;
-    road_cam_exp.store(tmp);
-  } else {
-    CameraExpInfo tmp = driver_cam_exp.load();
-    tmp.op_id++;
-    tmp.grey_frac = grey_frac;
-    driver_cam_exp.store(tmp);
-  }
+  s->exp_info.set(grey_frac);
 }
 
 static void driver_camera_start(CameraState *s) {
@@ -1072,28 +1058,18 @@ static FrameMetadata get_frame_metadata(CameraState *s, uint32_t frame_id) {
 }
 
 static void ops_thread(MultiCameraState *s) {
-  int last_road_cam_op_id = 0;
-  int last_driver_cam_op_id = 0;
-
-  CameraExpInfo road_cam_op;
-  CameraExpInfo driver_cam_op;
-
   set_thread_name("camera_settings");
   SubMaster sm({"sensorEvents"});
+  CameraState *c_handles[] = {&s->road_cam, &s->driver_cam};
   while(!do_exit) {
-    road_cam_op = road_cam_exp.load();
-    if (road_cam_op.op_id != last_road_cam_op_id) {
-      do_autoexposure(&s->road_cam, road_cam_op.grey_frac);
-      do_autofocus(&s->road_cam, &sm);
-      last_road_cam_op_id = road_cam_op.op_id;
+    for (auto &c : c_handles) {
+      if (auto grey_frac = c->exp_info.load(); grey_frac) {
+        do_autoexposure(c, *grey_frac);
+        if (c == &s->road_cam) {
+          do_autofocus(c, &sm);
+        }
+      }
     }
-
-    driver_cam_op = driver_cam_exp.load();
-    if (driver_cam_op.op_id != last_driver_cam_op_id) {
-      do_autoexposure(&s->driver_cam, driver_cam_op.grey_frac);
-      last_driver_cam_op_id = driver_cam_op.op_id;
-    }
-
     util::sleep_for(50);
   }
 }

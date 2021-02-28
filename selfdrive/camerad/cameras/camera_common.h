@@ -80,13 +80,30 @@ typedef struct FrameMetadata {
   float gain_frac;
 } FrameMetadata;
 
-typedef struct CameraExpInfo {
-  int op_id;
-  float grey_frac;
-} CameraExpInfo;
-
 struct MultiCameraState;
 struct CameraState;
+
+// for AE/AF ops
+class CameraExpInfo {
+public:
+  void set(float grey_frac) {
+    std::unique_lock lock(mutex);
+    this->grey_frac = grey_frac;
+    op_id++;
+  }
+  std::optional<float> load() {
+    std::unique_lock lock(mutex);
+    if (op_id == last_op_id) return std::nullopt;
+
+    last_op_id = op_id;
+    return grey_frac;
+  }
+
+private:
+  int op_id = 0, last_op_id = 0;
+  float grey_frac = 0.0;
+  std::mutex mutex;
+};
 
 class CameraBuf {
 private:
