@@ -35,7 +35,7 @@ jobs:
       uses: actions/cache@v2
       with:
         path: /tmp/scons_cache
-        key: scons-cache-${{ hashFiles(selfdrive/**) }}
+        key: scons-cache-${{ hashFiles('selfdrive/**') }}
         restore-keys: scons-cache-
     - name: Strip non-release files
       run: |
