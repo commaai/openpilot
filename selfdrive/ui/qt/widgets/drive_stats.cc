@@ -97,5 +97,4 @@ DriveStats::DriveStats(QWidget* parent) : QWidget(parent) {
   RequestRepeater* repeater = new RequestRepeater(this, url, 13);
   QObject::connect(repeater, SIGNAL(receivedResponse(QString)), this, SLOT(parseResponse(QString)));
   QObject::connect(repeater, SIGNAL(failedResponse(QString)), this, SLOT(parseError(QString)));
-
 }
