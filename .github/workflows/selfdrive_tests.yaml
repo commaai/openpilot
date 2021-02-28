@@ -55,7 +55,7 @@ jobs:
       run: |
           cd $STRIPPED_DIR
           ${{ env.RUN }} "scons -j$(nproc) && \
-                          rm -rf /tmp/scons_cache && \
+                          rm -rf /tmp/scons_cache/* && \
                           scons -j$(nproc) --cache-populate"
 
   build_mac:
