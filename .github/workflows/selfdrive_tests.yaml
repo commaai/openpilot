@@ -15,10 +15,11 @@ env:
       docker pull $DOCKER_REGISTRY/$BASE_IMAGE:latest || true
       docker build --cache-from $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $BASE_IMAGE:latest -f Dockerfile.openpilot_base .
 
-  RUN: docker run --shm-size 1G -v $PWD:/tmp/openpilot -e PYTHONPATH=/tmp/openpilot -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v /tmp/comma_download_cache:/tmp/comma_download_cache $BASE_IMAGE /bin/sh -c
+  RUN: docker run --shm-size 1G -v $PWD:/tmp/openpilot -w /tmp/openpilot -e PYTHONPATH=/tmp/openpilot -e SCONS_CACHE=1 -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v /tmp/scons_cache:/tmp/scons_cache -v /tmp/comma_download_cache:/tmp/comma_download_cache $BASE_IMAGE /bin/sh -c
   UNIT_TEST: coverage run --append -m unittest discover
 
 jobs:
+  # TODO: once actions/cache supports read only mode, use the cache for all jobs
   build_release:
     name: build release
     runs-on: ubuntu-20.04
@@ -29,6 +30,13 @@ jobs:
     - uses: actions/checkout@v2
       with:
         submodules: true
+    - name: Cache dependencies
+      id: dependency-cache
+      uses: actions/cache@v2
+      with:
+        path: /tmp/scons_cache
+        key: scons-cache-${{ hashFiles('selfdrive/**') }}
+        restore-keys: scons-cache-
     - name: Strip non-release files
       run: |
         mkdir $STRIPPED_DIR
@@ -42,9 +50,14 @@ jobs:
     - name: Build openpilot and run checks
       run: |
           cd $STRIPPED_DIR
-          ${{ env.RUN }} "cd /tmp/openpilot && \
-                          scons -j$(nproc) && \
+          ${{ env.RUN }} "scons -j$(nproc) && \
                           python -m unittest discover selfdrive/car"
+    - name: Cleanup scons cache
+      run: |
+          cd $STRIPPED_DIR
+          ${{ env.RUN }} "scons -j$(nproc) && \
+                          rm -rf /tmp/scons_cache/* && \
+                          scons -j$(nproc) --cache-populate"
 
   build_mac:
     name: build macos
@@ -144,7 +157,7 @@ jobs:
     - name: Build Docker image
       run: eval "$BUILD"
     - name: pre-commit
-      run: ${{ env.RUN }} "cd /tmp/openpilot/ && git init && git add -A && pre-commit run --all"
+      run: ${{ env.RUN }} "git init && git add -A && pre-commit run --all"
 
   valgrind:
     name: valgrind
@@ -164,8 +177,7 @@ jobs:
       run: eval "$BUILD"
     - name: Run valgrind
       run: |
-        ${{ env.RUN }} "cd /tmp/openpilot && \
-                        scons -j$(nproc) && \
+        ${{ env.RUN }} "scons -j$(nproc) && \
                         FILEREADER_CACHE=1 python selfdrive/test/test_valgrind_replay.py"
     - name: Print logs
       if: always()
@@ -183,8 +195,7 @@ jobs:
       run: eval "$BUILD"
     - name: Run unit tests
       run: |
-        ${{ env.RUN }} "cd /tmp/openpilot && \
-                        scons -j$(nproc) && \
+        ${{ env.RUN }} "scons -j$(nproc) && \
                         coverage run selfdrive/test/test_fingerprints.py && \
                         $UNIT_TEST common && \
                         $UNIT_TEST opendbc/can && \
@@ -218,8 +229,7 @@ jobs:
       run: eval "$BUILD"
     - name: Run replay
       run: |
-        ${{ env.RUN }} "cd /tmp/openpilot && \
-                        scons -j$(nproc) && \
+        ${{ env.RUN }} "scons -j$(nproc) && \
                         FILEREADER_CACHE=1 CI=1 coverage run selfdrive/test/process_replay/test_processes.py"
     - name: Upload coverage to Codecov
       run: bash <(curl -s https://codecov.io/bash) -v -F process_replay
@@ -245,8 +255,7 @@ jobs:
       run: eval "$BUILD"
     - name: Test longitudinal
       run: |
-        ${{ env.RUN }} "mkdir -p /tmp/openpilot/selfdrive/test/out && \
-                        cd /tmp/openpilot/ && \
+        ${{ env.RUN }} "mkdir -p selfdrive/test/out && \
                         scons -j$(nproc) && \
                         cd selfdrive/test/longitudinal_maneuvers && \
                         ./test_longitudinal.py"
@@ -275,8 +284,7 @@ jobs:
       run: eval "$BUILD"
     - name: Test car models
       run: |
-        ${{ env.RUN }} "cd /tmp/openpilot && \
-                        scons -j$(nproc) && \
+        ${{ env.RUN }} "scons -j$(nproc) && \
                         FILEREADER_CACHE=1 coverage run --parallel-mode -m nose --processes=4 --process-timeout=60 \
                                            selfdrive/test/test_models.py && \
                         coverage combine"
