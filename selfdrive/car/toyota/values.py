@@ -472,6 +472,7 @@ FW_VERSIONS = {
     ],
     (Ecu.esp, 0x7b0, None): [
       b'\x01F152606370\x00\x00\x00\x00\x00\x00',
+      b'\x01F152606390\x00\x00\x00\x00\x00\x00',
       b'\x01F152606400\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.engine, 0x700, None): [
