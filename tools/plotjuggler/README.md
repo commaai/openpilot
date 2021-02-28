@@ -1,13 +1,12 @@
 # PlotJuggler
-We've extended [PlotJuggler](https://github.com/facontidavide/PlotJuggler) to plot all of your openpilot logs
 
-Here's our fork: https://github.com/commaai/PlotJuggler
+We've extended [PlotJuggler](https://github.com/facontidavide/PlotJuggler) to plot all of your openpilot logs. Check out our plugin: https://github.com/commaai/PlotJuggler.
 
 ## Installation
 
-Once you've cloned openpilot, run this command inside this directory:
+Once you've cloned openpilot, install our plugin with this command:
 
-`./install.sh`
+`cd tools/plotjuggler && ./install.sh`
 
 ## Usage
 
@@ -33,7 +32,9 @@ Example:
 
 ## Demo:
 
-For a quick demo of what PlotJuggler can do, go through the installation step and use this command:
+For a quick demo, go through the installation step and run this command:
 
 `./juggle.py "https://commadataci.blob.core.windows.net/openpilotci/d83f36766f8012a5/2020-02-05--18-42-21/0/rlog.bz2" --layout=demo_layout.xml`
 
+
+![screenshot](https://i.imgur.com/cizHCH3.png)
