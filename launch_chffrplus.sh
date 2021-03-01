@@ -91,18 +91,6 @@ function two_init {
 
     "$DIR/installer/updater/updater" "file://$DIR/installer/updater/update.json"
   fi
-
-  # One-time fix for a subset of OP3T with gyro orientation offsets.
-  # Remove and regenerate qcom sensor registry. Only done on OP3T mainboards.
-  # Performed exactly once. The old registry is preserved just-in-case, and
-  # doubles as a flag denoting we've already done the reset.
-  if ! $(grep -q "letv" /proc/cmdline) && [ ! -f "/persist/comma/op3t-sns-reg-backup" ]; then
-    echo "Performing OP3T sensor registry reset"
-    mv /persist/sensors/sns.reg /persist/comma/op3t-sns-reg-backup &&
-      rm -f /persist/sensors/sensors_settings /persist/sensors/error_log /persist/sensors/gyro_sensitity_cal &&
-      echo "restart" > /sys/kernel/debug/msm_subsys/slpi &&
-      sleep 5  # Give Android sensor subsystem a moment to recover
-  fi
 }
 
 function tici_init {
