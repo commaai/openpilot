@@ -1,33 +1,8 @@
 struct i2c_random_wr_payload start_reg_array[] = {{0x301A, 0x91C}};
-struct i2c_random_wr_payload stop_reg_array[] = {{0x301A, 0x918}};;
+struct i2c_random_wr_payload stop_reg_array[] = {{0x301A, 0x918}};
 
 struct i2c_random_wr_payload init_array_ar0231[] = {
   {0x301A, 0x0018}, // RESET_REGISTER
-  {0x3520, 0x1288}, // RESERVED_MFR_3520
-  {0x3522, 0x880C}, // RESERVED_MFR_3522
-  {0x3524, 0x0C12}, // RESERVED_MFR_3524
-  {0x352C, 0x1212}, // RESERVED_MFR_352C
-  {0x354A, 0x007F}, // RESERVED_MFR_354A
-  {0x350C, 0x055C}, // RESERVED_MFR_350C
-  {0x3506, 0x3333}, // RESERVED_MFR_3506
-  {0x3508, 0x3333}, // RESERVED_MFR_3508
-  {0x1008, 0x036F}, // RESERVED_PARAM_1008
-  {0x100C, 0x058F}, // RESERVED_PARAM_100C
-  {0x100E, 0x07AF}, // RESERVED_PARAM_100E
-  {0x1010, 0x014F}, // RESERVED_PARAM_1010
-  {0x3230, 0x0312}, // FINE_CORRECTION
-  {0x3232, 0x0532}, // FINE_CORRECTION2
-  {0x3234, 0x0752}, // FINE_CORRECTION3
-  {0x3236, 0x00F2}, // FINE_CORRECTION4
-  {0x3566, 0x3328}, // RESERVED_MFR_3566
-  {0x32D0, 0x3A02}, // RESERVED_MFR_32D0
-  {0x32D2, 0x3508}, // RESERVED_MFR_32D2
-  {0x32D4, 0x3702}, // RESERVED_MFR_32D4
-  {0x32D6, 0x3C04}, // RESERVED_MFR_32D6
-  {0x32DC, 0x370A}, // RESERVED_MFR_32DC
-  {0x3064, 0x1802}, // SMIA_TEST
-  {0x3180, 0x0080}, // RESERVED_MFR_3180
-  {0x33E4, 0x0080}, // RESERVED_MFR_33E4
 
   // CLOCK Settings
   {0x302A, 0x0006}, // VT_PIX_CLK_DIV
@@ -46,9 +21,9 @@ struct i2c_random_wr_payload init_array_ar0231[] = {
   {0x3032, 0x0000}, // SCALING_MODE
   {0x30A2, 0x0001}, // X_ODD_INC_
   {0x30A6, 0x0001}, // Y_ODD_INC_
-  {0x3400, 0x0010}, // RESERVED_MFR_3400
   {0x3402, 0x0F10}, // X_OUTPUT_CONTROL
   {0x3404, 0x0970}, // Y_OUTPUT_CONTROL
+  {0x3064, 0x1802}, // SMIA_TEST
   {0x30BA, 0x11F2}, // DIGITAL_CTRL
 
   // SLAV* MODE
@@ -102,7 +77,6 @@ struct i2c_random_wr_payload init_array_ar0231[] = {
   {0x328A, 0x0FA0}, // T2 R
   {0x328C, 0x0FA0}, // T2 B
   {0x328E, 0x0FA0}, // T2 G2
-  {0x32E6, 0x00E0}, // RESERVED_MFR_32E6
 
    // Initial Gains
   {0x3022, 0x01}, // GROUPED_PARAMETER_HOLD_
@@ -118,3 +92,4 @@ struct i2c_random_wr_payload init_array_ar0231[] = {
   // Initial Integration Time
   {0x3012, 0x256},
 };
+
