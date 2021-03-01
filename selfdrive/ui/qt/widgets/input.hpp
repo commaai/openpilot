@@ -16,7 +16,6 @@ public:
   explicit InputDialog(QString prompt_text, QWidget* parent = 0);
   static QString getText(QString prompt, int minLength = -1);
   QString text();
-  void show();
   void setMessage(QString message, bool clearInputField=true);
   void setMinLength(int length);
 

@@ -96,10 +96,6 @@ void InputDialog::handleInput(QString s) {
   line->insert(s.left(1));
 }
 
-void InputDialog::show(){
-  setMainWindow(this);
-}
-
 void InputDialog::setMessage(QString message, bool clearInputField){
   label->setText(message);
   if (clearInputField){
@@ -163,12 +159,9 @@ bool ConfirmationDialog::confirm(const QString prompt_text) {
 }
 
 int ConfirmationDialog::exec() {
-  //setMainWindow(this);
+   // TODO: make this work without fullscreen
+#ifdef QCOM2
+  setMainWindow(this);
+#endif
   return QDialog::exec();
 }
-
-/*
-void InputDialog::show(){
-  setMainWindow(this);
-}
-*/
