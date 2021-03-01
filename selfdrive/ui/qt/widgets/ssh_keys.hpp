@@ -8,7 +8,7 @@
 #include <QTimer>
 #include <QNetworkAccessManager>
 #include <QStackedLayout>
-#include "input_field.hpp"
+#include "widgets/input.hpp"
 
 class SSH : public QWidget {
   Q_OBJECT
