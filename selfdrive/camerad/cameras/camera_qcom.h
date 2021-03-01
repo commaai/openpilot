@@ -22,10 +22,6 @@
 #define FRAME_BUF_COUNT 4
 #define METADATA_BUF_COUNT 4
 
-#define DEVICE_OP3 0
-#define DEVICE_OP3T 1
-#define DEVICE_LP3 2
-
 #define NUM_FOCUS 8
 
 #define LP3_AF_DAC_DOWN 366
@@ -55,8 +51,6 @@ typedef struct CameraState {
   int camera_num;
   int camera_id;
   CameraInfo ci;
-
-  int device;
 
   uint32_t pixel_clock;
   uint32_t line_length_pclk;
@@ -112,8 +106,6 @@ typedef struct CameraState {
 
 
 typedef struct MultiCameraState {
-  int device;
-
   unique_fd ispif_fd;
   unique_fd msmcfg_fd;
   unique_fd v4l_fd;

@@ -54,8 +54,7 @@ function two_init {
   echo 1 > /proc/irq/6/smp_affinity_list  # MDSS
 
   # USB traffic needs realtime handling on cpu 3
-  [ -d "/proc/irq/733" ] && echo 3 > /proc/irq/733/smp_affinity_list # USB for LeEco
-  [ -d "/proc/irq/736" ] && echo 3 > /proc/irq/736/smp_affinity_list # USB for OP3T
+  [ -d "/proc/irq/733" ] && echo 3 > /proc/irq/733/smp_affinity_list
 
   # GPU and camera get cpu 2
   CAM_IRQS="177 178 179 180 181 182 183 184 185 186 192"
