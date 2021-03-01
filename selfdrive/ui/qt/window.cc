@@ -24,9 +24,11 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   QObject::connect(onboardingWindow, SIGNAL(onboardingDone()), this, SLOT(closeSettings()));
   onboardingWindow->updateActiveScreen();
 
+  // no outline to prevent the focus rectangle
   setStyleSheet(R"(
     * {
       font-family: Inter;
+      outline: none;
     }
   )");
 }
@@ -34,7 +36,7 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
 void MainWindow::offroadTransition(bool offroad){
   if(!offroad){
     closeSettings();
-  }  
+  }
 }
 
 void MainWindow::openSettings() {

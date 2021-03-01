@@ -6,7 +6,7 @@
 #include <QNetworkReply>
 
 #include "widgets/ssh_keys.hpp"
-#include "widgets/input_field.hpp"
+#include "widgets/input.hpp"
 #include "common/params.h"
 
 QWidget* layout_to_widget(QLayout* l){
