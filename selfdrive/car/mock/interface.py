@@ -5,12 +5,13 @@ from selfdrive.swaglog import cloudlog
 import cereal.messaging as messaging
 from selfdrive.car import gen_empty_fingerprint
 from selfdrive.car.interfaces import CarInterfaceBase
+import math
 
 # mocked car interface to work with chffrplus
 TS = 0.01  # 100Hz
 YAW_FR = 0.2  # ~0.8s time constant on yaw rate filter
 # low pass gain
-LPG = 2 * 3.1415 * YAW_FR * TS / (1 + 2 * 3.1415 * YAW_FR * TS)
+LPG = 2 * math.pi * YAW_FR * TS / (1 + 2 * math.pi * YAW_FR * TS)
 
 
 class CarInterface(CarInterfaceBase):

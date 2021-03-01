@@ -81,9 +81,6 @@ on of this parser
     self._rsvd4 = GET_FIELD_U(subframes[1][2+4], 16, 14)
     self.aodo = GET_FIELD_U(subframes[2][2+7], 5, 8)
 
-    # Definition of Pi used in the GPS coordinate system
-    gpsPi = 3.1415926535898
-
     # now form variables in radians, meters and seconds etc
     self.Tgd = t_gd * math.pow(2, -31)
     self.A = math.pow(a_powhalf * math.pow(2, -19), 2.0)
@@ -93,14 +90,14 @@ on of this parser
     self.crs = c_rs * math.pow(2, -5)
     self.cuc = c_uc * math.pow(2, -29)
     self.cus = c_us * math.pow(2, -29)
-    self.deltaN = delta_n * math.pow(2, -43) * gpsPi
+    self.deltaN = delta_n * math.pow(2, -43) * math.pi
     self.ecc = e * math.pow(2, -33)
-    self.i0 = i_0 * math.pow(2, -31) * gpsPi
-    self.idot = idot * math.pow(2, -43) * gpsPi
-    self.M0 = m_0 * math.pow(2, -31) * gpsPi
-    self.omega = w * math.pow(2, -31) * gpsPi
-    self.omega_dot = omega_dot * math.pow(2, -43) * gpsPi
-    self.omega0 = omega_0 * math.pow(2, -31) * gpsPi
+    self.i0 = i_0 * math.pow(2, -31) * math.pi
+    self.idot = idot * math.pow(2, -43) * math.pi
+    self.M0 = m_0 * math.pow(2, -31) * math.pi
+    self.omega = w * math.pow(2, -31) * math.pi
+    self.omega_dot = omega_dot * math.pow(2, -43) * math.pi
+    self.omega0 = omega_0 * math.pow(2, -31) * math.pi
     self.toe = t_oe * math.pow(2, 4)
 
     # clock correction information
