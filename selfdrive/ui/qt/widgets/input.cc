@@ -1,6 +1,6 @@
 #include <QPushButton>
 
-#include "input_field.hpp"
+#include "input.hpp"
 #include "qt_window.hpp"
 
 InputDialog::InputDialog(QString prompt_text, QWidget *parent):QDialog(parent) {
@@ -60,11 +60,7 @@ QString InputDialog::getText(const QString prompt, int minLength) {
   InputDialog d = InputDialog(prompt);
   d.setMinLength(minLength);
   const int ret = d.exec();
-  if (ret) {
-    return d.text();
-  } else {
-    return QString();
-  }
+  return ret ? d.text() : QString();
 }
 
 QString InputDialog::text() {
@@ -117,26 +113,23 @@ void InputDialog::setMinLength(int length){
 
 
 
-
-
-
-
-
-
 ConfirmationDialog::ConfirmationDialog(QString prompt_text, QString confirm_text, QString cancel_text,
                                        QWidget *parent):QDialog(parent) {
   layout = new QVBoxLayout();
-  layout->setContentsMargins(50, 50, 50, 50);
-  layout->setSpacing(20);
+  layout->setMargin(25);
 
   prompt = new QLabel(prompt_text, this);
-  prompt->setStyleSheet(R"(font-size: 75px; font-weight: 500;)");
+  prompt->setWordWrap(true);
+  prompt->setAlignment(Qt::AlignHCenter);
+  prompt->setStyleSheet(R"(font-size: 55px; font-weight: 400;)");
   layout->addWidget(prompt, 1, Qt::AlignTop | Qt::AlignHCenter);
 
   // cancel + confirm buttons
   QHBoxLayout *btn_layout = new QHBoxLayout();
+  btn_layout->setSpacing(20);
+  btn_layout->addStretch(1);
   layout->addLayout(btn_layout);
-  
+
   QPushButton* cancel_btn = new QPushButton(cancel_text);
   btn_layout->addWidget(cancel_btn, 0, Qt::AlignRight);
   QObject::connect(cancel_btn, SIGNAL(released()), this, SLOT(reject()));
@@ -145,19 +138,19 @@ ConfirmationDialog::ConfirmationDialog(QString prompt_text, QString confirm_text
   btn_layout->addWidget(confirm_btn, 0, Qt::AlignRight);
   QObject::connect(confirm_btn, SIGNAL(released()), this, SLOT(accept()));
 
-  setFixedSize(1000, 500);
+  setFixedSize(900, 350);
   setStyleSheet(R"(
     * {
-      color: white;
-      background-color: black;
+      color: black;
+      background-color: white;
     }
     QPushButton {
+      font-size: 40px;
       padding: 30px;
       padding-right: 45px;
       padding-left: 45px;
       border-radius: 7px;
-      font-size: 45px;
-      background-color: #444444;
+      background-color: #44444400;
     }
   )");
 
@@ -179,4 +172,3 @@ void InputDialog::show(){
   setMainWindow(this);
 }
 */
-

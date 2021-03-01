@@ -45,7 +45,6 @@ class ConfirmationDialog : public QDialog {
 public:
   explicit ConfirmationDialog(QString prompt_text, QString confirm_text = "Ok",
                               QString cancel_text = "Cancel", QWidget* parent = 0);
-  void setPrompt(QString prompt, bool clearInputField=true);
   static bool confirm(QString prompt_text);
 
 private:

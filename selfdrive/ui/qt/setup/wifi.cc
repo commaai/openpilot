@@ -8,7 +8,7 @@
 
 #include "wifi.hpp"
 #include "offroad/networking.hpp"
-#include "widgets/input_field.hpp"
+#include "widgets/input.hpp"
 #include "qt_window.hpp"
 
 void WifiSetup::finish() {
@@ -25,8 +25,8 @@ WifiSetup::WifiSetup(QWidget *parent) {
   QObject::connect(finish_btn, SIGNAL(released()), this, SLOT(finish()));
 
   QWidget* n = new Networking(this, true);
-  
-  //Next 5 lines to keep the same stylesheet on the networking widget
+
+  // Next 5 lines to keep the same stylesheet on the networking widget
   QLayout* backgroundLayout = new QVBoxLayout();
   backgroundLayout->addWidget(n);
   QWidget* q = new QWidget();
