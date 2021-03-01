@@ -2,47 +2,14 @@
 import os
 import sys
 import bz2
-import tempfile
-import subprocess
 import urllib.parse
 import capnp
-import numpy as np
 
-from tools.lib.exceptions import DataUnreadableError
 try:
   from xx.chffr.lib.filereader import FileReader
 except ImportError:
   from tools.lib.filereader import FileReader
 from cereal import log as capnp_log
-
-OP_PATH = os.path.dirname(os.path.dirname(capnp_log.__file__))
-
-def index_log(fn):
-  index_log_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "index_log")
-  index_log = os.path.join(index_log_dir, "index_log")
-
-  if not os.path.exists(index_log):
-    phonelibs_dir = os.path.join(OP_PATH, 'phonelibs')
-    subprocess.check_call(["make", "PHONELIBS=" + phonelibs_dir], cwd=index_log_dir, stdout=subprocess.DEVNULL)
-
-  try:
-    dat = subprocess.check_output([index_log, fn, "-"])
-  except subprocess.CalledProcessError as e:
-    raise DataUnreadableError("%s capnp is corrupted/truncated" % fn) from e
-  return np.frombuffer(dat, dtype=np.uint64)
-
-def event_read_multiple_bytes(dat):
-  with tempfile.NamedTemporaryFile() as dat_f:
-    dat_f.write(dat)
-    dat_f.flush()
-    idx = index_log(dat_f.name)
-
-  end_idx = np.uint64(len(dat))
-  idx = np.append(idx, end_idx)
-
-  return [capnp_log.Event.from_bytes(dat[idx[i]:idx[i+1]])
-          for i in range(len(idx)-1)]
-
 
 # this is an iterator itself, and uses private variables from LogReader
 class MultiLogIterator(object):
@@ -117,17 +84,17 @@ class LogReader(object):
 
     if ext == "":
       # old rlogs weren't bz2 compressed
-      ents = event_read_multiple_bytes(dat)
+      ents = capnp_log.Event.read_multiple_bytes(dat)
     elif ext == ".bz2":
       dat = bz2.decompress(dat)
-      ents = event_read_multiple_bytes(dat)
+      ents = capnp_log.Event.read_multiple_bytes(dat)
     else:
       raise Exception(f"unknown extension {ext}")
 
-    self._ts = [x.logMonoTime for x in ents]
+    self._ents = list(ents)
+    self._ts = [x.logMonoTime for x in self._ents]
     self.data_version = data_version
     self._only_union_types = only_union_types
-    self._ents = ents
 
   def __iter__(self):
     for ent in self._ents:
@@ -141,6 +108,10 @@ class LogReader(object):
         yield ent
 
 if __name__ == "__main__":
+  import codecs
+  # capnproto <= 0.8.0 throws errors converting byte data to string
+  # below line catches those errors and replaces the bytes with \x__
+  codecs.register_error("strict", codecs.backslashreplace_errors)
   log_path = sys.argv[1]
   lr = LogReader(log_path)
   for msg in lr:
