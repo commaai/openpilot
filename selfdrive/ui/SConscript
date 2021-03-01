@@ -8,7 +8,7 @@ libs = [gpucommon, common, 'zmq', 'capnp', 'kj', 'm', 'OpenCL', 'ssl', 'crypto',
 
 if arch == 'aarch64':
   libs += ['log', 'utils', 'gui', 'ui', 'CB', 'gsl', 'adreno_utils',
-           'cutils', 'uuid', 'icuuc', 'icui18n', 'icudata']
+           'cutils', 'uuid']
 
 if arch == 'aarch64' and "QT" not in os.environ:
   libs += ['EGL', 'GLESv3', 'gnustl_shared', 'hardware', 'OpenSLES', 'cutils', 'uuid']

@@ -15,8 +15,6 @@
 #include "common/params.h"
 #include "common/util.h"
 
-#include <QSslSocket>
-
 #if defined(QCOM) || defined(QCOM2)
 const std::string private_key_path = "/persist/comma/id_rsa";
 #else
@@ -90,15 +88,22 @@ RequestRepeater::RequestRepeater(QWidget* parent, QString requestURL, int period
 
   networkTimer = new QTimer(this);
   networkTimer->setSingleShot(true);
-  networkTimer->setInterval(5000); // 20s before aborting
+  networkTimer->setInterval(20000);
   connect(networkTimer, SIGNAL(timeout()), this, SLOT(requestTimeout()));
 }
 
 void RequestRepeater::sendRequest(QString requestURL, QVector<QPair<QString, QJsonValue>> payloads){
   // No network calls onroad
-  if (reply != NULL) {
+  if(GLWindow::ui_state.started){
     return;
   }
+  if (!active || (!GLWindow::ui_state.awake && disableWithScreen)) {
+    return;
+  }
+  if(reply != NULL){
+    return;
+  }
+
   aborted = false;
   QString token = CommaApi::create_jwt(payloads);
   QNetworkRequest request;

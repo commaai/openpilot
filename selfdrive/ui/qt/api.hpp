@@ -34,6 +34,7 @@ class RequestRepeater : public QObject {
 
 public:
   explicit RequestRepeater(QWidget* parent, QString requestURL, int period = 10, QVector<QPair<QString, QJsonValue>> payloads = *(new QVector<QPair<QString, QJsonValue>>()), bool disableWithScreen = true);
+  bool active = true;
 
 private:
   bool disableWithScreen;
