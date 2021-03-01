@@ -81,9 +81,8 @@ QString CommaApi::create_jwt() {
 RequestRepeater::RequestRepeater(QWidget* parent, QString requestURL, int period_seconds, QVector<QPair<QString, QJsonValue>> payloads, bool disableWithScreen)
   : disableWithScreen(disableWithScreen), QObject(parent)  {
   networkAccessManager = new QNetworkAccessManager(this);
-  connect(networkAccessManager, SIGNAL(sslErrors(QNetworkReply*, const QList<QSslError>&)), this, SLOT(printSslErrors(QNetworkReply*, const QList<QSslError>&)));
 
-  qDebug() << "Device supports OpenSSL: " << QSslSocket::supportsSsl();
+  reply = NULL;
 
   QTimer* timer = new QTimer(this);
   QObject::connect(timer, &QTimer::timeout, [=](){sendRequest(requestURL, payloads);});
@@ -95,29 +94,18 @@ RequestRepeater::RequestRepeater(QWidget* parent, QString requestURL, int period
   connect(networkTimer, SIGNAL(timeout()), this, SLOT(requestTimeout()));
 }
 
-void RequestRepeater::printSslErrors(QNetworkReply *reply, const QList<QSslError>& errors) {
-  for (auto &e : errors) {
-    qInfo() << e.errorString();
-  }
-}
-
 void RequestRepeater::sendRequest(QString requestURL, QVector<QPair<QString, QJsonValue>> payloads){
   // No network calls onroad
-  if(GLWindow::ui_state.started){
-    return;
-  }
-  if (!active || (!GLWindow::ui_state.awake && disableWithScreen)) {
-    return;
-  }
-  if(reply != NULL){
+  if (reply != NULL) {
     return;
   }
   aborted = false;
   QString token = CommaApi::create_jwt(payloads);
   QNetworkRequest request;
   request.setUrl(QUrl(requestURL));
-  request.setRawHeader("Authorization", ("JWT " + token).toUtf8());
+  request.setRawHeader(QByteArray("Authorization"), ("JWT " + token).toUtf8());
 
+  // TODO: fix this
 #ifdef QCOM
   QSslConfiguration ssl = QSslConfiguration::defaultConfiguration();
   ssl.setPeerVerifyMode(QSslSocket::VerifyNone);
@@ -143,6 +131,7 @@ void RequestRepeater::requestFinished(){
     if (reply->error() == QNetworkReply::NoError) {
       emit receivedResponse(response);
     } else {
+      qDebug() << reply->errorString();
       emit failedResponse(reply->errorString());
     }
   } else {
