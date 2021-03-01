@@ -1,3 +1,6 @@
+Version 0.8.3 (2021-XX-XX)
+========================
+
 Version 0.8.2 (2021-02-26)
 ========================
  * Use model points directly in MPC (no more polyfits), making lateral planning more accurate

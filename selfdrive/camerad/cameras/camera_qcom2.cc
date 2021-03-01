@@ -905,7 +905,7 @@ static void camera_close(CameraState *s) {
   LOGD("destroyed session: %d", ret);
 }
 
-static void cameras_close(MultiCameraState *s) {
+void cameras_close(MultiCameraState *s) {
   camera_close(&s->road_cam);
   camera_close(&s->wide_road_cam);
   camera_close(&s->driver_cam);
@@ -1115,7 +1115,7 @@ void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
   if (cnt % 3 == 0) {
     const auto [x, y, w, h] = (c == &s->wide_road_cam) ? std::tuple(96, 250, 1734, 524) : std::tuple(96, 160, 1734, 986);
     const int skip = 2;
-    set_exposure_target(c, (const uint8_t *)b->cur_yuv_buf->y, x, x + w, skip, y, y + h, skip);
+    set_exposure_target(c, x, x + w, skip, y, y + h, skip);
   }
 }
 

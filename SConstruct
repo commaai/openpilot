@@ -392,7 +392,6 @@ if arch != "Darwin":
 
 if real_arch == "x86_64":
   SConscript(['tools/nui/SConscript'])
-  SConscript(['tools/lib/index_log/SConscript'])
 
 external_sconscript = GetOption('external_sconscript')
 if external_sconscript:
