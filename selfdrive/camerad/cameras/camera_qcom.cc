@@ -203,27 +203,6 @@ static int ov8865_apply_exposure(CameraState *s, int gain, int integ_lines, int 
   return err;
 }
 
-static int imx179_s5k3p8sp_apply_exposure(CameraState *s, int gain, int integ_lines, int frame_length) {
-  //printf("driver camera: %d %d %d\n", gain, integ_lines, frame_length);
-  struct msm_camera_i2c_reg_array reg_array[] = {
-    {0x104,0x1,0},
-
-    // FRM_LENGTH
-    {0x340, (uint16_t)(frame_length >> 8), 0}, {0x341, (uint16_t)(frame_length & 0xff), 0},
-    // coarse_int_time
-    {0x202, (uint16_t)(integ_lines >> 8), 0}, {0x203, (uint16_t)(integ_lines & 0xff),0},
-    // global_gain
-    {0x204, (uint16_t)(gain >> 8), 0}, {0x205, (uint16_t)(gain & 0xff),0},
-
-    {0x104,0x0,0},
-  };
-  int err = sensor_write_regs(s, reg_array, ARRAYSIZE(reg_array), MSM_CAMERA_I2C_BYTE_DATA);
-  if (err != 0) {
-    LOGE("apply_exposure err %d", err);
-  }
-  return err;
-}
-
 cl_program build_conv_program(cl_device_id device_id, cl_context context, int image_w, int image_h, int filter_size) {
   char args[4096];
   snprintf(args, sizeof(args),
@@ -419,66 +398,6 @@ static uint8_t* get_eeprom(int eeprom_fd, size_t *out_len) {
   return buffer;
 }
 
-static void imx298_ois_calibration(int ois_fd, uint8_t* eeprom) {
-  const int ois_registers[][2] = {
-    // == SET_FADJ_PARAM() == (factory adjustment)
-
-    // Set Hall Current DAC
-    {0x8230, *(uint16_t*)(eeprom+0x102)}, //_P_30_ADC_CH0 (CURDAT)
-
-    // Set Hall     PreAmp Offset
-    {0x8231, *(uint16_t*)(eeprom+0x104)}, //_P_31_ADC_CH1 (HALOFS_X)
-    {0x8232, *(uint16_t*)(eeprom+0x106)}, //_P_32_ADC_CH2 (HALOFS_Y)
-
-    // Set Hall-X/Y PostAmp Offset
-    {0x841e, *(uint16_t*)(eeprom+0x108)}, //_M_X_H_ofs
-    {0x849e, *(uint16_t*)(eeprom+0x10a)}, //_M_Y_H_ofs
-
-    // Set Residual Offset
-    {0x8239, *(uint16_t*)(eeprom+0x10c)}, //_P_39_Ch3_VAL_1 (PSTXOF)
-    {0x823b, *(uint16_t*)(eeprom+0x10e)}, //_P_3B_Ch3_VAL_3 (PSTYOF)
-
-    // DIGITAL GYRO OFFSET
-    {0x8406, *(uint16_t*)(eeprom+0x110)}, //_M_Kgx00
-    {0x8486, *(uint16_t*)(eeprom+0x112)}, //_M_Kgy00
-    {0x846a, *(uint16_t*)(eeprom+0x120)}, //_M_TMP_X_
-    {0x846b, *(uint16_t*)(eeprom+0x122)}, //_M_TMP_Y_
-
-    // HALLSENSE
-    // Set Hall Gain
-    {0x8446, *(uint16_t*)(eeprom+0x114)}, //_M_KgxHG
-    {0x84c6, *(uint16_t*)(eeprom+0x116)}, //_M_KgyHG
-    // Set Cross Talk Canceller
-    {0x8470, *(uint16_t*)(eeprom+0x124)}, //_M_KgxH0
-    {0x8472, *(uint16_t*)(eeprom+0x126)}, //_M_KgyH0
-
-    // LOOPGAIN
-    {0x840f, *(uint16_t*)(eeprom+0x118)}, //_M_KgxG
-    {0x848f, *(uint16_t*)(eeprom+0x11a)}, //_M_KgyG
-
-    // Position Servo ON ( OIS OFF )
-    {0x847f, 0x0c0c}, //_M_EQCTL
-  };
-
-
-  struct msm_camera_i2c_seq_reg_array ois_reg_settings[ARRAYSIZE(ois_registers)] = {{0}};
-  for (int i=0; i<ARRAYSIZE(ois_registers); i++) {
-    ois_reg_settings[i].reg_addr = ois_registers[i][0];
-    ois_reg_settings[i].reg_data[0] = ois_registers[i][1] & 0xff;
-    ois_reg_settings[i].reg_data[1] = (ois_registers[i][1] >> 8) & 0xff;
-    ois_reg_settings[i].reg_data_size = 2;
-  }
-  struct msm_camera_i2c_seq_reg_setting ois_reg_setting = {
-    .reg_setting = &ois_reg_settings[0],
-    .size = ARRAYSIZE(ois_reg_settings),
-    .addr_type = MSM_CAMERA_I2C_WORD_ADDR,
-    .delay = 0,
-  };
-  msm_ois_cfg_data cfg = {.cfgtype = CFG_OIS_I2C_WRITE_SEQ_TABLE, .cfg.settings = &ois_reg_setting};
-  int err = ioctl(ois_fd, VIDIOC_MSM_OIS_CFG, &cfg);
-  LOG("ois reg calibration: %d", err);
-}
-
 static void sensors_init(MultiCameraState *s) {
   int err;
 
@@ -589,7 +508,6 @@ static void camera_open(CameraState *s, bool is_road_cam) {
   struct v4l2_event_subscription sub = {};
 
   struct msm_actuator_cfg_data actuator_cfg_data = {};
-  struct msm_ois_cfg_data ois_cfg_data = {};
 
   // open devices
   const char *sensor_dev;
