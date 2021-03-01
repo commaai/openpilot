@@ -54,60 +54,46 @@ typedef struct StreamState {
 typedef struct CameraState {
   int camera_num;
   int camera_id;
-  CameraInfo ci;
-
   int device;
-
-  uint32_t pixel_clock;
-  uint32_t line_length_pclk;
-  unsigned int max_gain;
+  int fps;
+  CameraInfo ci;
 
   unique_fd csid_fd;
   unique_fd csiphy_fd;
   unique_fd sensor_fd;
   unique_fd isp_fd;
-  unique_fd eeprom_fd;
-  // rear only
-  unique_fd ois_fd, actuator_fd;
-  uint16_t infinity_dac;
 
   struct msm_vfe_axi_stream_cfg_cmd stream_cfg;
 
-  size_t eeprom_size;
-  uint8_t *eeprom;
-
-  // uint32_t camera_bufs_ids[FRAME_BUF_COUNT];
+  StreamState ss[3];
+  CameraBuf buf;
 
   pthread_mutex_t frame_info_lock;
   FrameMetadata frame_metadata[METADATA_BUF_COUNT];
   int frame_metadata_idx;
-  float cur_exposure_frac;
-  float cur_gain_frac;
-  int cur_gain;
+  
+  // exposure
+  uint32_t pixel_clock, line_length_pclk;
+  unsigned int max_gain;
+  float cur_exposure_frac, cur_gain_frac;
+  int cur_gain, cur_integ_lines;
   int cur_frame_length;
-  int cur_integ_lines;
-
   std::atomic<float> digital_gain;
-
-  StreamState ss[3];
-
   camera_apply_exposure_func apply_exposure;
 
-  int16_t focus[NUM_FOCUS];
-  uint8_t confidence[NUM_FOCUS];
-
+  // rear camera only,used for focusing
+  unique_fd actuator_fd, ois_fd, eeprom_fd;
   std::atomic<float> focus_err;
-
-  uint16_t cur_step_pos;
-  uint16_t cur_lens_pos;
   std::atomic<float> last_sag_acc_z;
   std::atomic<float> lens_true_pos;
-
   std::atomic<int> self_recover; // af recovery counter, neg is patience, pos is active
-
-  int fps;
-
-  CameraBuf buf;
+  uint16_t cur_step_pos;
+  uint16_t cur_lens_pos;
+  int16_t focus[NUM_FOCUS];
+  uint8_t confidence[NUM_FOCUS];
+  uint16_t infinity_dac;
+  size_t eeprom_size;
+  uint8_t *eeprom;
 } CameraState;
 
 
