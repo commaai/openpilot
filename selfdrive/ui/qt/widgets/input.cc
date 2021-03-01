@@ -78,7 +78,7 @@ void InputDialog::handleInput(QString s) {
   }
 
   if (!QString::compare(s,"⏎")) {
-    if (line->text().length() > minLength){
+    if (line->text().length() >= minLength){
       done(QDialog::Accepted);
       emitText(line->text());
     } else {
