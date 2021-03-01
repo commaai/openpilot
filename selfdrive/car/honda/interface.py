@@ -406,6 +406,8 @@ class CarInterface(CarInterfaceBase):
       ret.longitudinalTuning.kiV = [0.18, 0.12]
 
     elif candidate == CAR.CLARITY:
+      # Clarity port is a community feature since we don't have one to test and requires proxy panda
+      ret.communityFeature = True
       stop_and_go = True
       ret.mass = 4052. * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 2.75

@@ -148,6 +148,7 @@ Community Maintained Cars and Features
 | Genesis   | G90 2018                      | All               | Stock            | 0mph               | 0mph         |
 | GMC       | Acadia 2018<sup>1</sup>       | Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
 | Holden    | Astra 2017<sup>1</sup>        | Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
+| Honda     | Clarity 2018<sup>2</sup> 	    | Honda Sensing     | openpilot        | 0mph    		| 12mph        |
 | Hyundai   | Elantra 2017-19               | SCC + LKAS        | Stock            | 19mph              | 34mph        |
 | Hyundai   | Genesis 2015-16               | SCC + LKAS        | Stock            | 19mph              | 37mph        |
 | Hyundai   | Ioniq Electric 2019           | SCC + LKAS        | Stock            | 0mph               | 32mph        |
@@ -192,6 +193,8 @@ Community Maintained Cars and Features
 
 <sup>1</sup>Requires an [OBD-II car harness](https://comma.ai/shop/products/comma-car-harness) and [community built ASCM harness](https://github.com/commaai/openpilot/wiki/GM#hardware). ***NOTE: disconnecting the ASCM disables Automatic Emergency Braking (AEB).*** <br />
 <sup>2</sup>Only includes the MQB Passat sold outside of North America. The NMS Passat made in Chattanooga TN is not yet supported.
+
+<sup>2</sup> Requires a custom Nidec harness (requires what is CAN0/2 on the Nidec harness to be made passtrhough, and the additional CAN pair on the Clarity be made CAN0/2), as well as a custom Proxy Panda either at the camera, or the gateway located behind the glovebox.
 
 Although it's not upstream, there's a community of people getting openpilot to run on Tesla's [here](https://tinkla.us/)
 
