@@ -111,11 +111,13 @@ void RequestRepeater::sendRequest(QString requestURL, QVector<QPair<QString, QJs
   request.setRawHeader(QByteArray("Authorization"), ("JWT " + token).toUtf8());
 
   // TODO: fix this
+/*
 #ifdef QCOM
   QSslConfiguration ssl = QSslConfiguration::defaultConfiguration();
   ssl.setPeerVerifyMode(QSslSocket::VerifyNone);
   request.setSslConfiguration(ssl);
 #endif
+*/
 
   reply = networkAccessManager->get(request);
 
