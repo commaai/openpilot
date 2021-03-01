@@ -14,6 +14,7 @@
 #include "common/util.h"
 #include "common/swaglog.h"
 #include "camera_qcom2.h"
+#include "common/params.h"
 
 #include "media/cam_defs.h"
 #include "media/cam_isp.h"
@@ -1064,11 +1065,19 @@ static void set_camera_exposure(CameraState *s, float grey_frac) {
                CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
 }
 
-void camera_autoexposure(CameraState *s, float grey_frac) {
-  CameraExpInfo tmp = cam_exp[s->camera_num].load();
+void camera_autoexposure(MultiCameraState *s, CameraState *c) {
+  float grey_frac = 0.0;
+  if (c == &s->driver_cam) {
+    grey_frac = driver_cam_get_exp_grey_frac(c, s->sm);
+  } else {
+    const auto [x, y, w, h] = (c == &s->wide_road_cam) ? std::tuple(96, 250, 1734, 524) : std::tuple(96, 160, 1734, 986);
+    const int skip = 2;
+    grey_frac = get_exp_grey_frac(c, x, x + w, skip, y, y + h, skip);
+  }
+  CameraExpInfo tmp = cam_exp[c->camera_num].load();
   tmp.op_id++;
   tmp.grey_frac = grey_frac;
-  cam_exp[s->camera_num].store(tmp);
+  cam_exp[c->camera_num].store(tmp);
 }
 
 static void ae_thread(MultiCameraState *s) {
@@ -1110,12 +1119,6 @@ void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
     framed.setTransform(b->yuv_transform.v);
   }
   s->pm->send(c == &s->road_cam ? "roadCameraState" : "wideRoadCameraState", msg);
-
-  if (cnt % 3 == 0) {
-    const auto [x, y, w, h] = (c == &s->wide_road_cam) ? std::tuple(96, 250, 1734, 524) : std::tuple(96, 160, 1734, 986);
-    const int skip = 2;
-    camera_autoexposure(c, set_exposure_target(b, x, x + w, skip, y, y + h, skip, (int)c->analog_gain, true, true));
-  }
 }
 
 void cameras_run(MultiCameraState *s) {

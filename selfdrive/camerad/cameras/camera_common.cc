@@ -332,6 +332,9 @@ void *processing_thread(MultiCameraState *cameras, CameraState *cs, process_thre
   while (!do_exit) {
     if (!cs->buf.acquire()) continue;
 
+    if (cnt % 3 == 0) {
+      camera_autoexposure(cameras, cs);
+    }
     callback(cameras, cs, cnt);
 
     if (cs == &(cameras->road_cam) && cameras->pm && cnt % 100 == 3) {
@@ -348,57 +351,56 @@ std::thread start_process_thread(MultiCameraState *cameras, CameraState *cs, pro
   return std::thread(processing_thread, cameras, cs, callback);
 }
 
-void common_process_driver_camera(SubMaster *sm, PubMaster *pm, CameraState *c, int cnt) {
-  const CameraBuf *b = &c->buf;
+float driver_cam_get_exp_grey_frac(CameraState *c, SubMaster *sm) {
+   const CameraBuf *b = &c->buf;
 
   static int x_min = 0, x_max = 0, y_min = 0, y_max = 0;
   static const bool is_rhd = Params().read_db_bool("IsRHD");
 
   // auto exposure
-  if (cnt % 3 == 0) {
-    if (sm->update(0) > 0 && sm->updated("driverState")) {
-      auto state = (*sm)["driverState"].getDriverState();
-      // set driver camera metering target
-      if (state.getFaceProb() > 0.4) {
-        auto face_position = state.getFacePosition();
+  if (sm->update(0) > 0 && sm->updated("driverState")) {
+    auto state = (*sm)["driverState"].getDriverState();
+    // set driver camera metering target
+    if (state.getFaceProb() > 0.4) {
+      auto face_position = state.getFacePosition();
 #ifndef QCOM2
-        int frame_width = b->rgb_width;
-        int frame_height = b->rgb_height;
+      int frame_width = b->rgb_width;
+      int frame_height = b->rgb_height;
 #else
-        int frame_width = 668;
-        int frame_height = frame_width / 1.33;
+      int frame_width = 668;
+      int frame_height = frame_width / 1.33;
 #endif
-        int x_offset = is_rhd ? 0 : frame_width - (0.5 * frame_height);
-        x_offset += (face_position[0] * (is_rhd ? -1.0 : 1.0) + 0.5) * (0.5 * frame_height);
-        int y_offset = (face_position[1] + 0.5) * frame_height;
+      int x_offset = is_rhd ? 0 : frame_width - (0.5 * frame_height);
+      x_offset += (face_position[0] * (is_rhd ? -1.0 : 1.0) + 0.5) * (0.5 * frame_height);
+      int y_offset = (face_position[1] + 0.5) * frame_height;
 #ifdef QCOM2
-        x_offset += 630;
-        y_offset += 156;
+      x_offset += 630;
+      y_offset += 156;
 #endif
-        x_min = std::max(0, x_offset - 72);
-        x_max = std::min(b->rgb_width - 1, x_offset + 72);
-        y_min = std::max(0, y_offset - 72);
-        y_max = std::min(b->rgb_height - 1, y_offset + 72);
-      } else {  // use default setting if no face
-        x_min = x_max = y_min = y_max = 0;
-      }
+      x_min = std::max(0, x_offset - 72);
+      x_max = std::min(b->rgb_width - 1, x_offset + 72);
+      y_min = std::max(0, y_offset - 72);
+      y_max = std::min(b->rgb_height - 1, y_offset + 72);
+    } else {  // use default setting if no face
+      x_min = x_max = y_min = y_max = 0;
     }
+  }
 
-    int skip = 1;
-    // use driver face crop for AE
-    if (x_max == 0) {
-      // default setting
+  int skip = 1;
+  // use driver face crop for AE
+  if (x_max == 0) {
+    // default setting
 #ifndef QCOM2
-      x_min = is_rhd ? 0 : b->rgb_width * 3 / 5;
-      x_max = is_rhd ? b->rgb_width * 2 / 5 : b->rgb_width;
-      y_min = b->rgb_height / 3;
-      y_max = b->rgb_height;
+    x_min = is_rhd ? 0 : b->rgb_width * 3 / 5;
+    x_max = is_rhd ? b->rgb_width * 2 / 5 : b->rgb_width;
+    y_min = b->rgb_height / 3;
+    y_max = b->rgb_height;
 #else
-      x_min = 96;
-      x_max = 1832;
-      y_min = 242;
-      y_max = 1148;
-      skip = 4;
+    x_min = 96;
+    x_max = 1832;
+    y_min = 242;
+    y_max = 1148;
+    skip = 4;
 #endif
     }
 
@@ -409,6 +411,8 @@ void common_process_driver_camera(SubMaster *sm, PubMaster *pm, CameraState *c, 
 #endif
   }
 
+void common_process_driver_camera(SubMaster *sm, PubMaster *pm, CameraState *c, int cnt) {
+  const CameraBuf *b = &c->buf;
   MessageBuilder msg;
   auto framed = msg.initEvent().initDriverCameraState();
   framed.setFrameType(cereal::FrameData::FrameType::FRONT);

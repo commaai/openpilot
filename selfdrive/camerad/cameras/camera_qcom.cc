@@ -920,13 +920,17 @@ static void do_autofocus(CameraState *s, SubMaster *sm) {
   actuator_move(s, target);
 }
 
-void camera_autoexposure(CameraState *s, float grey_frac) {
-  if (s->camera_num == 0) {
+void camera_autoexposure(MultiCameraState *s, CameraState *c) {
+  if (c->camera_num == 0) {
+    const int x = 290, y = 322, width = 560, height = 314;
+    const int skip = 1;
+    float grey_frac = get_exp_grey_frac(c, x, x + width, skip, y, y + height, skip);
     CameraExpInfo tmp = road_cam_exp.load();
     tmp.op_id++;
     tmp.grey_frac = grey_frac;
     road_cam_exp.store(tmp);
   } else {
+    float grey_frac = driver_cam_get_exp_grey_frac(c, s->sm);
     CameraExpInfo tmp = driver_cam_exp.load();
     tmp.op_id++;
     tmp.grey_frac = grey_frac;

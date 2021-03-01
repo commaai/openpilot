@@ -82,7 +82,7 @@ void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_i
 
 void cameras_open(MultiCameraState *s) {}
 void cameras_close(MultiCameraState *s) {}
-void camera_autoexposure(CameraState *s, float grey_frac) {}
+void camera_autoexposure(MultiCameraState *s, CameraState *c) {}
 void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {}
 
 void cameras_run(MultiCameraState *s) {
