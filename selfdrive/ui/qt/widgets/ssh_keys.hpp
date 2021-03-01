@@ -1,8 +1,14 @@
 #pragma once
 
-#include <QTimer>
 #include <QWidget>
+#include <QButtonGroup>
+#include <QVBoxLayout>
+#include <QStackedWidget>
+#include <QPushButton>
+#include <QTimer>
 #include <QNetworkAccessManager>
+#include <QStackedLayout>
+#include "widgets/input.hpp"
 
 class SSH : public QWidget {
   Q_OBJECT
@@ -11,22 +17,26 @@ public:
   explicit SSH(QWidget* parent = 0);
 
 private:
+  QStackedLayout* slayout;
+  InputDialog* dialog;
   QNetworkAccessManager* manager;
+
+  QString usernameGitHub;
   QNetworkReply* reply;
   QTimer* networkTimer;
   bool aborted;
 
-  void getSSHKeys(QString user);
-
 signals:
+  void closeSSHSettings();
   void NoSSHAdded();
   void SSHAdded();
   void failedResponse(QString errorString);
   void gotSSHKeys();
-  void closeSSHSettings();
 
 private slots:
   void checkForSSHKey();
+  void getSSHKeys();
   void timeout();
   void parseResponse();
 };
+

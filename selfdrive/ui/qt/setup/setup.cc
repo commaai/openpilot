@@ -8,7 +8,7 @@
 
 #include "setup.hpp"
 #include "offroad/networking.hpp"
-#include "widgets/input_field.hpp"
+#include "widgets/input.hpp"
 #include "qt_window.hpp"
 
 #define USER_AGENT "AGNOSSetup-0.1"

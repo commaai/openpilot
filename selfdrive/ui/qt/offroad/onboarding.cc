@@ -4,8 +4,6 @@
 #include <QGridLayout>
 #include <QVBoxLayout>
 #include <QDesktopWidget>
-#include <QtWebEngine>
-#include <QWebEngineSettings>
 
 #include "common/params.h"
 #include "onboarding.hpp"
@@ -76,11 +74,15 @@ QWidget* OnboardingWindow::terms_screen() {
   QVBoxLayout *main_layout = new QVBoxLayout;
   main_layout->setContentsMargins(40, 0, 40, 0);
 
+#ifndef QCOM
   view = new QWebEngineView(this);
   view->settings()->setAttribute(QWebEngineSettings::ShowScrollBars, false);
   QString html = QString::fromStdString(util::read_file("../assets/offroad/tc.html"));
   view->setHtml(html);
   main_layout->addWidget(view);
+
+  QObject::connect(view->page(), SIGNAL(scrollPositionChanged(QPointF)), this, SLOT(scrollPositionChanged(QPointF)));
+#endif
 
   QHBoxLayout* buttons = new QHBoxLayout;
   buttons->addWidget(new QPushButton("Decline"));
@@ -93,8 +95,6 @@ QWidget* OnboardingWindow::terms_screen() {
     updateActiveScreen();
   });
 
-  QObject::connect(view->page(), SIGNAL(scrollPositionChanged(QPointF)), this, SLOT(scrollPositionChanged(QPointF)));
-  
   QWidget* w = layout2Widget(buttons);
   w->setFixedHeight(200);
   main_layout->addWidget(w);
@@ -167,8 +167,10 @@ OnboardingWindow::OnboardingWindow(QWidget *parent) : QStackedWidget(parent) {
 }
 
 void OnboardingWindow::scrollPositionChanged(QPointF position){
+#ifndef QCOM
   if (position.y() > view->page()->contentsSize().height() - 1000){
     accept_btn->setEnabled(true);
     accept_btn->setText("Accept");
   }
+#endif
 }

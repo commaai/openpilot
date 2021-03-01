@@ -445,7 +445,7 @@ def manager_thread():
     start_managed_process(p)
 
   # start offroad
-  if EON:
+  if EON and "QT" not in os.environ:
     pm_apply_packages('enable')
     start_offroad()
 

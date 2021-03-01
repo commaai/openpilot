@@ -905,7 +905,7 @@ static void camera_close(CameraState *s) {
   LOGD("destroyed session: %d", ret);
 }
 
-static void cameras_close(MultiCameraState *s) {
+void cameras_close(MultiCameraState *s) {
   camera_close(&s->road_cam);
   camera_close(&s->wide_road_cam);
   camera_close(&s->driver_cam);
@@ -1054,8 +1054,8 @@ static void set_camera_exposure(CameraState *s, float grey_frac) {
   struct i2c_random_wr_payload exp_reg_array[] = {
                                                   {0x3366, AG}, // analog gain
                                                   {0x3362, (uint16_t)(s->dc_gain_enabled?0x1:0x0)}, // DC_GAIN
-                                                  {0x305A, 0x00D8}, // red gain
-                                                  {0x3058, 0x011B}, // blue gain
+                                                  {0x305A, 0x0108}, // red gain
+                                                  {0x3058, 0x00FB}, // blue gain
                                                   {0x3056, 0x009A}, // g1 gain
                                                   {0x305C, 0x009A}, // g2 gain
                                                   {0x3012, (uint16_t)s->exposure_time}, // integ time
@@ -1115,7 +1115,7 @@ void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
   if (cnt % 3 == 0) {
     const auto [x, y, w, h] = (c == &s->wide_road_cam) ? std::tuple(96, 250, 1734, 524) : std::tuple(96, 160, 1734, 986);
     const int skip = 2;
-    set_exposure_target(c, (const uint8_t *)b->cur_yuv_buf->y, x, x + w, skip, y, y + h, skip);
+    set_exposure_target(c, x, x + w, skip, y, y + h, skip);
   }
 }
 

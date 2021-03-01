@@ -8,13 +8,12 @@ procs = ['camerad', 'ui', 'modeld', 'calibrationd']
 [start_managed_process(p) for p in procs]  # start needed processes
 pm = messaging.PubMaster(services)
 
-dat_cs, dat_deviceState, dat_radar = [messaging.new_message(s) for s in services]
-dat_cs.controlsState.rearViewCam = False  # ui checks for these two messages
+dat_controlsState, dat_deviceState, dat_radar = [messaging.new_message(s) for s in services]
 dat_deviceState.deviceState.started = True
 
 try:
   while True:
-    pm.send('controlsState', dat_cs)
+    pm.send('controlsState', dat_controlsState)
     pm.send('deviceState', dat_deviceState)
     pm.send('radarState', dat_radar)
     time.sleep(1 / 100)  # continually send, rate doesn't matter for deviceState

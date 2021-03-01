@@ -7,7 +7,7 @@
 #include "sidebar.hpp"
 
 static void draw_background(UIState *s) {
-#ifdef QCOM
+#ifndef QT_GUI_LIB
   const NVGcolor color = COLOR_BLACK_ALPHA(85);
 #else
   const NVGcolor color = nvgRGBA(0x39, 0x39, 0x39, 0xff);
