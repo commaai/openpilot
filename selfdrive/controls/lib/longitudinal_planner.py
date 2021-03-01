@@ -62,25 +62,29 @@ def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
   return [a_target[0], min(a_target[1], a_x_allowed)]
 
 
-def parse_modelV2_data(sm):
-  modelV2 = sm['modelV2']
-  distances, speeds, accelerations = [], [], []
-  if not sm.updated['modelV2'] or len(modelV2.position.x) == 0:
+class ModelMpcHelper:
+  def __init__(self):
+    self.model_t = [i ** 2 / 102.4 for i in range(33)]  # the timesteps of the model predictions
+    self.mpc_t = list(range(10))  # the timesteps of what the LongMpcModel class takes in, 1 sec intervels to 10
+    self.model_t_idx = [sorted(range(len(self.model_t)), key=[abs(idx - t) for t in self.model_t].__getitem__)[0] for idx in self.mpc_t]  # matches 0 to 9 interval to idx from t
+    assert len(self.model_t_idx) == 10, 'Needs to be length 10 for mpc'
+
+  def convert_data(self, sm):
+    modelV2 = sm['modelV2']
+    distances, speeds, accelerations = [], [], []
+    if not sm.alive['modelV2'] or len(modelV2.position.x) == 0:
+      return distances, speeds, accelerations
+
+    speeds = [modelV2.velocity.x[t] for t in self.model_t_idx]
+    distances = [modelV2.position.x[t] for t in self.model_t_idx]
+    for t in self.mpc_t:  # todo these three in one loop
+      if 0 < t < 9:
+        accelerations.append((speeds[t + 1] - speeds[t - 1]) / 2)
+
+    # Extrapolate forward and backward at edges
+    accelerations.append(accelerations[-1] - (accelerations[-2] - accelerations[-1]))
+    accelerations.insert(0, accelerations[0] - (accelerations[1] - accelerations[0]))
     return distances, speeds, accelerations
-
-  model_t = modelV2.position.t
-  mpc_times = list(range(10))
-
-  model_t_idx = [sorted(range(len(model_t)), key=[abs(idx - t) for t in model_t].__getitem__)[0] for idx in mpc_times]  # matches 0 to 9 interval to idx from t
-
-  for t in model_t_idx:  # everything is derived from x position since velocity is outputting weird values
-    speeds.append(modelV2.velocity.x[t])
-    distances.append(modelV2.position.x[t])
-    if model_t_idx.index(t) > 0:  # skip first since we can't calculate (and don't want to use v_ego)
-      accelerations.append((speeds[-1] - speeds[-2]) / model_t[t])
-
-  accelerations.insert(0, accelerations[1] - (accelerations[2] - accelerations[1]))  # extrapolate back first accel from second and third, less weight
-  return distances, speeds, accelerations
 
 
 class Planner():
@@ -91,6 +95,7 @@ class Planner():
     self.mpc1 = LongitudinalMpc(1)
     self.mpc2 = LongitudinalMpc(2)
     self.mpc_model = LongitudinalMpcModel()
+    self.model_mpc_helper = ModelMpcHelper()
 
     self.v_acc_start = 0.0
     self.a_acc_start = 0.0
@@ -140,6 +145,7 @@ class Planner():
       elif slowest == 'model':
         self.v_acc = self.mpc_model.v_mpc
         self.a_acc = self.mpc_model.a_mpc
+    # print('{} mph, {} mph/s'.format(round(self.mpc_model.v_mpc * 2.23694, 2), round(self.mpc_model.a_mpc * 2.23694, 2)))
 
     self.v_acc_future = min(possible_futures)
 
@@ -202,7 +208,7 @@ class Planner():
     self.mpc1.update(sm['carState'], lead_1)
     self.mpc2.update(sm['carState'], lead_2)
 
-    distances, speeds, accelerations = parse_modelV2_data(sm)
+    distances, speeds, accelerations = self.model_mpc_helper.convert_data(sm)
     self.mpc_model.update(sm['carState'].vEgo, sm['carState'].aEgo,
                           distances,
                           speeds,

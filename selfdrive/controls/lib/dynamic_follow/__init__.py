@@ -43,7 +43,7 @@ class DistanceModController:
     fact = interp(self.i, self._to_clip, self._mods)
     self.last_error = float(error)
 
-    print("I: {}, FACT: {}".format(round(self.i, 4), round(fact, 3)))
+    # print("I: {}, FACT: {}".format(round(self.i, 4), round(fact, 3)))
     return fact
 
   def _slow_reset(self):

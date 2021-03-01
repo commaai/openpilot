@@ -278,7 +278,7 @@ class Controls:
 
     # Only allow engagement with brake pressed when stopped behind another stopped car
     if CS.brakePressed and self.sm['longitudinalPlan'].vTargetFuture >= STARTING_TARGET_SPEED \
-      and self.CP.openpilotLongitudinalControl and CS.vEgo < 0.3:
+      and self.CP.openpilotLongitudinalControl and CS.vEgo < 0.3 and not self.last_model_long:
       self.events.add(EventName.noTarget)
 
     self.add_stock_additions_alerts(CS)
