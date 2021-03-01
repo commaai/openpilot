@@ -114,3 +114,69 @@ void InputDialog::setMessage(QString message, bool clearInputField){
 void InputDialog::setMinLength(int length){
   minLength = length;
 }
+
+
+
+
+
+
+
+
+
+ConfirmationDialog::ConfirmationDialog(QString prompt_text, QString confirm_text, QString cancel_text,
+                                       QWidget *parent):QDialog(parent) {
+  layout = new QVBoxLayout();
+  layout->setContentsMargins(50, 50, 50, 50);
+  layout->setSpacing(20);
+
+  prompt = new QLabel(prompt_text, this);
+  prompt->setStyleSheet(R"(font-size: 75px; font-weight: 500;)");
+  layout->addWidget(prompt, 1, Qt::AlignTop | Qt::AlignHCenter);
+
+  // cancel + confirm buttons
+  QHBoxLayout *btn_layout = new QHBoxLayout();
+  layout->addLayout(btn_layout);
+  
+  QPushButton* cancel_btn = new QPushButton(cancel_text);
+  btn_layout->addWidget(cancel_btn, 0, Qt::AlignRight);
+  QObject::connect(cancel_btn, SIGNAL(released()), this, SLOT(reject()));
+
+  QPushButton* confirm_btn = new QPushButton(confirm_text);
+  btn_layout->addWidget(confirm_btn, 0, Qt::AlignRight);
+  QObject::connect(confirm_btn, SIGNAL(released()), this, SLOT(accept()));
+
+  setFixedSize(1000, 500);
+  setStyleSheet(R"(
+    * {
+      color: white;
+      background-color: black;
+    }
+    QPushButton {
+      padding: 30px;
+      padding-right: 45px;
+      padding-left: 45px;
+      border-radius: 7px;
+      font-size: 45px;
+      background-color: #444444;
+    }
+  )");
+
+  setLayout(layout);
+}
+
+bool ConfirmationDialog::confirm(const QString prompt_text) {
+  ConfirmationDialog d = ConfirmationDialog(prompt_text);
+  return d.exec();
+}
+
+int ConfirmationDialog::exec() {
+  //setMainWindow(this);
+  return QDialog::exec();
+}
+
+/*
+void InputDialog::show(){
+  setMainWindow(this);
+}
+*/
+
