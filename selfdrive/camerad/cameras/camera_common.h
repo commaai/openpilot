@@ -130,4 +130,4 @@ void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_i
 void cameras_open(MultiCameraState *s);
 void cameras_run(MultiCameraState *s);
 void cameras_close(MultiCameraState *s);
-void camera_autoexposure(CameraState *s, float grey_frac);
+void camera_autoexposure(MultiCameraState *s, CameraState *c);

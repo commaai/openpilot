@@ -917,13 +917,17 @@ static void do_autofocus(CameraState *s, SubMaster *sm) {
   actuator_move(s, target);
 }
 
-void camera_autoexposure(CameraState *s, float grey_frac) {
-  if (s->camera_num == 0) {
+void camera_autoexposure(MultiCameraState *s, CameraState *c) {
+  if (c->camera_num == 0) {
+    const int x = 290, y = 322, width = 560, height = 314;
+    const int skip = 1;
+    float grey_frac = get_exp_grey_frac(c, x, x + width, skip, y, y + height, skip);
     CameraExpInfo tmp = road_cam_exp.load();
     tmp.op_id++;
     tmp.grey_frac = grey_frac;
     road_cam_exp.store(tmp);
   } else {
+    float grey_frac = driver_cam_get_exp_grey_frac(c);
     CameraExpInfo tmp = driver_cam_exp.load();
     tmp.op_id++;
     tmp.grey_frac = grey_frac;
@@ -1127,19 +1131,13 @@ static void process_road_camera(MultiCameraState *s, CameraState *c, cereal::Fra
   framed.setFocusConf(s->road_cam.confidence);
   framed.setRecoverState(s->road_cam.self_recover);
   framed.setSharpnessScore(s->lapres);
-
-  if (cnt % 3 == 0) {
-    const int x = 290, y = 322, width = 560, height = 314;
-    const int skip = 1;
-    camera_autoexposure(c, set_exposure_target(b, x, x + width, skip, y, y + height, skip, -1, false, false));
-  }
 }
 
 void cameras_run(MultiCameraState *s) {
   std::vector<std::thread> threads;
   threads.push_back(std::thread(ops_thread, s));
   threads.push_back(start_process_thread(s, &s->road_cam, process_road_camera));
-  threads.push_back(start_process_thread(s, &s->driver_cam, common_process_driver_camera));
+  threads.push_back(start_process_thread(s, &s->driver_cam));
 
   CameraState* cameras[2] = {&s->road_cam, &s->driver_cam};
 
@@ -1215,12 +1213,5 @@ void cameras_close(MultiCameraState *s) {
     s->focus_bufs[i].free();
     s->stats_bufs[i].free();
   }
-
-<<<<<<< HEAD
   delete s->lap_conv;
-  delete s->sm;
-=======
-  CL_CHECK(clReleaseKernel(s->krnl_rgb_laplacian));
-  CL_CHECK(clReleaseProgram(s->prg_rgb_laplacian));
->>>>>>> move submaster to common_process_driver_camera
 }

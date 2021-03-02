@@ -229,7 +229,7 @@ void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_i
               VISION_STREAM_RGB_FRONT, VISION_STREAM_YUV_FRONT);
 }
 
-void camera_autoexposure(CameraState *s, float grey_frac) {}
+void camera_autoexposure(MultiCameraState *s, CameraState *c) {}
 
 void cameras_open(MultiCameraState *s) {
   // LOG("*** open driver camera ***");
@@ -246,8 +246,8 @@ void cameras_close(MultiCameraState *s) {
 
 void cameras_run(MultiCameraState *s) {
   std::vector<std::thread> threads;
-  threads.push_back(start_process_thread(s, &s->road_cam, nullptr));
-  threads.push_back(start_process_thread(s, &s->driver_cam, nullptr));
+  threads.push_back(start_process_thread(s, &s->road_cam));
+  threads.push_back(start_process_thread(s, &s->driver_cam));
 
   std::thread t_rear = std::thread(road_camera_thread, &s->road_cam);
   set_thread_name("webcam_thread");

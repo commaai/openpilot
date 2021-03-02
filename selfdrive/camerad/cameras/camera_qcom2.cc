@@ -1058,11 +1058,19 @@ static void set_camera_exposure(CameraState *s, float grey_frac) {
                CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
 }
 
-void camera_autoexposure(CameraState *s, float grey_frac) {
-  CameraExpInfo tmp = cam_exp[s->camera_num].load();
+void camera_autoexposure(MultiCameraState *s, CameraState *c) {
+  float grey_frac = 0.0;
+  if (c == &s->driver_cam) {
+    grey_frac = driver_cam_get_exp_grey_frac(c);
+  } else {
+    const auto [x, y, w, h] = (c == &s->wide_road_cam) ? std::tuple(96, 250, 1734, 524) : std::tuple(96, 160, 1734, 986);
+    const int skip = 2;
+    grey_frac = get_exp_grey_frac(c, x, x + w, skip, y, y + h, skip);
+  }
+  CameraExpInfo tmp = cam_exp[c->camera_num].load();
   tmp.op_id++;
   tmp.grey_frac = grey_frac;
-  cam_exp[s->camera_num].store(tmp);
+  cam_exp[c->camera_num].store(tmp);
 }
 
 static void ae_thread(MultiCameraState *s) {
@@ -1086,23 +1094,13 @@ static void ae_thread(MultiCameraState *s) {
   }
 }
 
-// called by processing_thread
-static void process_road_camera(MultiCameraState *s, CameraState *c, cereal::FrameData::Builder& framed, int cnt) {
-  const CameraBuf *b = &c->buf;
-  if (cnt % 3 == 0) {
-    const auto [x, y, w, h] = (c == &s->wide_road_cam) ? std::tuple(96, 250, 1734, 524) : std::tuple(96, 160, 1734, 986);
-    const int skip = 2;
-    camera_autoexposure(c, set_exposure_target(b, x, x + w, skip, y, y + h, skip, (int)c->analog_gain, true, true));
-  }
-}
-
 void cameras_run(MultiCameraState *s) {
   LOG("-- Starting threads");
   std::vector<std::thread> threads;
   threads.push_back(std::thread(ae_thread, s));
-  threads.push_back(start_process_thread(s, &s->road_cam, process_road_camera));
-  threads.push_back(start_process_thread(s, &s->driver_cam, common_process_driver_camera));
-  threads.push_back(start_process_thread(s, &s->wide_road_cam, process_road_camera));
+  threads.push_back(start_process_thread(s, &s->road_cam));
+  threads.push_back(start_process_thread(s, &s->driver_cam));
+  threads.push_back(start_process_thread(s, &s->wide_road_cam));
 
   // start devices
   LOG("-- Starting devices");
