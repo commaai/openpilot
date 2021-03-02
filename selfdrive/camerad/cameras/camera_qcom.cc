@@ -93,7 +93,6 @@ static void camera_init(VisionIpcServer *v, CameraState *s, int camera_id, int c
   s->line_length_pclk = line_length_pclk;
   s->max_gain = max_gain;
   s->fps = fps;
-
   s->self_recover = 0;
 
   s->apply_exposure = (camera_id == CAMERA_ID_IMX298) ? imx298_apply_exposure : ov8865_apply_exposure;
@@ -374,8 +373,6 @@ static uint8_t* get_eeprom(int eeprom_fd, size_t *out_len) {
 }
 
 static void sensors_init(MultiCameraState *s) {
-  int err;
-
   unique_fd sensorinit_fd;
   sensorinit_fd = open("/dev/v4l-subdev11", O_RDWR | O_NONBLOCK);
   assert(sensorinit_fd >= 0);
@@ -422,7 +419,7 @@ static void sensors_init(MultiCameraState *s) {
   slave_info.power_setting_array.power_setting = &slave_info.power_setting_array.power_setting_a[0];
   slave_info.power_setting_array.power_down_setting = &slave_info.power_setting_array.power_down_setting_a[0];
   sensor_init_cfg_data sensor_init_cfg = {.cfgtype = CFG_SINIT_PROBE, .cfg.setting = &slave_info};
-  err = ioctl(sensorinit_fd, VIDIOC_MSM_SENSOR_INIT_CFG, &sensor_init_cfg);
+  int err = ioctl(sensorinit_fd, VIDIOC_MSM_SENSOR_INIT_CFG, &sensor_init_cfg);
   LOG("sensor init cfg (road camera): %d", err);
   assert(err >= 0);
 
@@ -1111,7 +1108,6 @@ static void camera_close(CameraState *s) {
 
   free(s->eeprom);
 }
-
 
 const char* get_isp_event_name(unsigned int type) {
   switch (type) {
