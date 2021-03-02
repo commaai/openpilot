@@ -123,21 +123,19 @@ int main(int argc, char* argv[]) {
   PubMaster *pm = new PubMaster({"offroadLayout"});
 
   // light sensor scaling and volume params
-  const bool LEON = util::read_file("/proc/cmdline").find("letv") != std::string::npos;
-
   float brightness_b = 0, brightness_m = 0;
   int result = read_param(&brightness_b, "BRIGHTNESS_B", true);
   result += read_param(&brightness_m, "BRIGHTNESS_M", true);
   if (result != 0) {
-    brightness_b = LEON ? 10.0 : 5.0;
-    brightness_m = LEON ? 2.6 : 1.3;
+    brightness_b = 10.0;
+    brightness_m = 2.6;
     write_param_float(brightness_b, "BRIGHTNESS_B", true);
     write_param_float(brightness_m, "BRIGHTNESS_M", true);
   }
   float smooth_brightness = brightness_b;
 
-  const int MIN_VOLUME = LEON ? 12 : 9;
-  const int MAX_VOLUME = LEON ? 15 : 12;
+  const int MIN_VOLUME = 12;
+  const int MAX_VOLUME = 15;
   s->sound->setVolume(MIN_VOLUME);
 
   while (!do_exit) {
