@@ -278,7 +278,12 @@ static void publish_thumbnail(PubMaster *pm, const CameraBuf *b) {
   free(thumbnail_buffer);
 }
 
+<<<<<<< HEAD
 float set_exposure_target(const CameraBuf *b, int x_start, int x_end, int x_skip, int y_start, int y_end, int y_skip, int analog_gain, bool hist_ceil, bool hl_weighted) {
+=======
+float get_exp_grey_frac(CameraState *c, int x_start, int x_end, int x_skip, int y_start, int y_end, int y_skip) {
+  const CameraBuf *b = &c->buf;
+>>>>>>> space
   const uint8_t *pix_ptr = b->cur_yuv_buf->y;
   uint32_t lum_binning[256] = {0};
   unsigned int lum_total = 0;
@@ -352,7 +357,7 @@ std::thread start_process_thread(MultiCameraState *cameras, CameraState *cs, pro
 }
 
 float driver_cam_get_exp_grey_frac(CameraState *c, SubMaster *sm) {
-   const CameraBuf *b = &c->buf;
+  const CameraBuf *b = &c->buf;
 
   static int x_min = 0, x_max = 0, y_min = 0, y_max = 0;
   static const bool is_rhd = Params().read_db_bool("IsRHD");
@@ -402,14 +407,9 @@ float driver_cam_get_exp_grey_frac(CameraState *c, SubMaster *sm) {
     y_max = 1148;
     skip = 4;
 #endif
-    }
-
-#ifdef QCOM2
-    camera_autoexposure(c, set_exposure_target(b, x_min, x_max, 2, y_min, y_max, skip, (int)c->analog_gain, true, true));
-#else
-    camera_autoexposure(c, set_exposure_target(b, x_min, x_max, 2, y_min, y_max, skip, -1, false, false));
-#endif
   }
+  return get_exp_grey_frac(c, x_min, x_max, 2, y_min, y_max, skip);
+}
 
 void common_process_driver_camera(SubMaster *sm, PubMaster *pm, CameraState *c, int cnt) {
   const CameraBuf *b = &c->buf;
