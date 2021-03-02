@@ -41,7 +41,7 @@ CameraInfo cameras_supported[CAMERA_ID_MAX] = {
     .frame_height = 1748,
     .frame_stride = 2912,
     .bayer = true,
-    .bayer_flip = 0,
+    .bayer_flip = 3,
     .hdr = true
   },
   [CAMERA_ID_OV8865] = {
@@ -204,7 +204,6 @@ void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_i
   // sensor is flipped in LP3
   // IMAGE_ORIENT = 3
   init_array_imx298[0].reg_data = 3;
-  cameras_supported[CAMERA_ID_IMX298].bayer_flip = 3;
 
   // 0   = ISO 100
   // 256 = ISO 200
@@ -293,11 +292,8 @@ static void set_exposure(CameraState *s, float exposure_frac, float gain_frac) {
 
     if (s->apply_exposure == ov8865_apply_exposure) {
       gain = 800 * gain_frac; // ISO
-      err = s->apply_exposure(s, gain, integ_lines, frame_length);
-    } else if (s->apply_exposure) {
-      err = s->apply_exposure(s, gain, integ_lines, frame_length);
     }
-
+    err = s->apply_exposure(s, gain, integ_lines, frame_length);
     if (err == 0) {
       std::lock_guard lk(s->frame_info_lock);
       s->cur_gain = gain;
