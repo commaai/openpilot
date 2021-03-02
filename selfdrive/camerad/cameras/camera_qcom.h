@@ -48,8 +48,6 @@ class CameraState : public CameraStateBase {
 public:
   void auto_exposure(float grey_frac) override;
   void release_callback(int buf_idx) override;
-  int camera_id;
-  int fps;
 
   unique_fd csid_fd;
   unique_fd csiphy_fd;
@@ -57,9 +55,7 @@ public:
   unique_fd isp_fd;
 
   struct msm_vfe_axi_stream_cfg_cmd stream_cfg;
-
   StreamState ss[3];
-  CameraBuf buf;
 
   std::mutex frame_info_lock;
   FrameMetadata frame_metadata[METADATA_BUF_COUNT];

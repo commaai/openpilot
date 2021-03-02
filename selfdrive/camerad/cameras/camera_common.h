@@ -135,6 +135,7 @@ class CameraStateBase {
   int camera_num = 0, camera_id = 0;
   uint32_t fps = 0;
   CameraInfo ci = {};
+  std::atomic<float> digital_gain = 1.0;
   CameraBuf buf;
 };
 
