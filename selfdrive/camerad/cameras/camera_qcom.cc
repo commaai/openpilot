@@ -44,22 +44,6 @@ CameraInfo cameras_supported[CAMERA_ID_MAX] = {
     .bayer_flip = 0,
     .hdr = true
   },
-  [CAMERA_ID_IMX179] = {
-    .frame_width = 3280,
-    .frame_height = 2464,
-    .frame_stride = 4104,
-    .bayer = true,
-    .bayer_flip = 0,
-    .hdr = false
-  },
-  [CAMERA_ID_S5K3P8SP] = {
-    .frame_width = 2304,
-    .frame_height = 1728,
-    .frame_stride = 2880,
-    .bayer = true,
-    .bayer_flip = 1,
-    .hdr = false
-  },
   [CAMERA_ID_OV8865] = {
     .frame_width = 1632,
     .frame_height = 1224,
@@ -626,10 +610,6 @@ static void camera_open(CameraState *s, bool is_road_cam) {
   // SENSOR: send i2c configuration
   if (s->camera_id == CAMERA_ID_IMX298) {
     err = sensor_write_regs(s, init_array_imx298, ARRAYSIZE(init_array_imx298), MSM_CAMERA_I2C_BYTE_DATA);
-  } else if  (s->camera_id == CAMERA_ID_S5K3P8SP) {
-    err = sensor_write_regs(s, init_array_s5k3p8sp, ARRAYSIZE(init_array_s5k3p8sp), MSM_CAMERA_I2C_WORD_DATA);
-  } else if (s->camera_id == CAMERA_ID_IMX179) {
-    err = sensor_write_regs(s, init_array_imx179, ARRAYSIZE(init_array_imx179), MSM_CAMERA_I2C_BYTE_DATA);
   } else if (s->camera_id == CAMERA_ID_OV8865) {
     err = sensor_write_regs(s, init_array_ov8865, ARRAYSIZE(init_array_ov8865), MSM_CAMERA_I2C_BYTE_DATA);
   } else {
@@ -713,10 +693,6 @@ static void camera_open(CameraState *s, bool is_road_cam) {
   struct msm_camera_csiphy_params csiphy_params = {};
   if (s->camera_id == CAMERA_ID_IMX298) {
     csiphy_params = {.lane_cnt = 4, .settle_cnt = 14, .lane_mask = 0x1f, .csid_core = 0};
-  } else if (s->camera_id == CAMERA_ID_S5K3P8SP) {
-    csiphy_params = {.lane_cnt = 4, .settle_cnt = 24, .lane_mask = 0x1f, .csid_core = 0};
-  } else if (s->camera_id == CAMERA_ID_IMX179) {
-    csiphy_params = {.lane_cnt = 4, .settle_cnt = 11, .lane_mask = 0x1f, .csid_core = 2};
   } else if (s->camera_id == CAMERA_ID_OV8865) {
     // guess!
     csiphy_params = {.lane_cnt = 4, .settle_cnt = 24, .lane_mask = 0x1f, .csid_core = 2};
