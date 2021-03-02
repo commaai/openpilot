@@ -29,6 +29,7 @@
 //#define FRAME_STRIDE 1936 // for 8 bit output
 #define FRAME_STRIDE 2416  // for 10 bit output
 
+#define MIPI_SETTLE_CNT 33  // Calculated by camera_freqs.py
 
 extern ExitHandler do_exit;
 
@@ -749,8 +750,8 @@ static void camera_open(CameraState *s) {
     csiphy_info->combo_mode = 0x0;
     csiphy_info->lane_cnt = 0x4;
     csiphy_info->secure_mode = 0x0;
-    csiphy_info->settle_time = 2800000000;
-    csiphy_info->data_rate = 44000000;
+    csiphy_info->settle_time = MIPI_SETTLE_CNT * 200000000ULL;
+    csiphy_info->data_rate = 48000000;  // Calculated by camera_freqs.py
 
     static struct cam_config_dev_cmd config_dev_cmd = {};
     config_dev_cmd.session_handle = s->session_handle;
