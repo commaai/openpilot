@@ -69,7 +69,7 @@ def juggle_route(route_name, segment_number, qlog, layout):
     try:
       DBC = __import__(f"selfdrive.car.{cp.carParams.carName}.values", fromlist=['DBC']).DBC
       dbc = DBC[cp.carParams.carFingerprint]['pt']
-    except (ImportError, KeyError):
+    except (ImportError, KeyError, AttributeError):
       pass
     break
 
