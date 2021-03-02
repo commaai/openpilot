@@ -980,10 +980,6 @@ static std::optional<float> get_accel_z(SubMaster *sm) {
 }
 
 static void do_autofocus(CameraState *s, SubMaster *sm) {
-  // params for focus PI controller
-  const int dac_up = LP3_AF_DAC_UP;
-  const int dac_down = LP3_AF_DAC_DOWN;
-
   float lens_true_pos = s->lens_true_pos.load();
   if (!isnan(s->focus_err)) {
     // learn lens_true_pos
@@ -996,8 +992,8 @@ static void do_autofocus(CameraState *s, SubMaster *sm) {
   }
   const float sag = (s->last_sag_acc_z / 9.8) * 128;
   // stay off the walls
-  lens_true_pos = std::clamp(lens_true_pos, float(dac_down), float(dac_up));
-  int target = std::clamp(lens_true_pos - sag, float(dac_down), float(dac_up));
+  lens_true_pos = std::clamp(lens_true_pos, float(LP3_AF_DAC_DOWN), float(LP3_AF_DAC_UP));
+  int target = std::clamp(lens_true_pos - sag, float(LP3_AF_DAC_DOWN), float(LP3_AF_DAC_UP));
   s->lens_true_pos.store(lens_true_pos);
 
   /*char debug[4096];
@@ -1226,24 +1222,19 @@ static void update_lapmap(MultiCameraState *s, const CameraBuf *b, const int cnt
 }
 
 static void setup_self_recover(CameraState *c, const uint16_t *lapres, size_t lapres_size) {
-  const int dac_down = LP3_AF_DAC_DOWN;
-  const int dac_up = LP3_AF_DAC_UP;
-  const int dac_m = LP3_AF_DAC_M;
-  const int dac_3sig = LP3_AF_DAC_3SIG;
-
   const float lens_true_pos = c->lens_true_pos.load();
   int self_recover = c->self_recover.load();
-  if (self_recover < 2 && (lens_true_pos < (dac_down + 1) || lens_true_pos > (dac_up - 1)) && is_blur(lapres, lapres_size)) {
+  if (self_recover < 2 && (lens_true_pos < (LP3_AF_DAC_DOWN + 1) || lens_true_pos > (LP3_AF_DAC_UP - 1)) && is_blur(lapres, lapres_size)) {
     // truly stuck, needs help
     if (--self_recover < -FOCUS_RECOVER_PATIENCE) {
       LOGD("road camera bad state detected. attempting recovery from %.1f, recover state is %d", lens_true_pos, self_recover);
       // parity determined by which end is stuck at
-      self_recover = FOCUS_RECOVER_STEPS + (lens_true_pos < dac_m ? 1 : 0);
+      self_recover = FOCUS_RECOVER_STEPS + (lens_true_pos < LP3_AF_DAC_M ? 1 : 0);
     }
-  } else if (self_recover < 2 && (lens_true_pos < (dac_m - dac_3sig) || lens_true_pos > (dac_m + dac_3sig))) {
+  } else if (self_recover < 2 && (lens_true_pos < (LP3_AF_DAC_M - LP3_AF_DAC_3SIG) || lens_true_pos > (LP3_AF_DAC_M + LP3_AF_DAC_3SIG))) {
     // in suboptimal position with high prob, but may still recover by itself
     if (--self_recover < -(FOCUS_RECOVER_PATIENCE * 3)) {
-      self_recover = FOCUS_RECOVER_STEPS / 2 + (lens_true_pos < dac_m ? 1 : 0);
+      self_recover = FOCUS_RECOVER_STEPS / 2 + (lens_true_pos < LP3_AF_DAC_M ? 1 : 0);
     }
   } else if (self_recover < 0) {
     self_recover += 1;  // reset if fine
