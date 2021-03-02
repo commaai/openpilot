@@ -467,7 +467,7 @@ static void sensors_init(MultiCameraState *s) {
   sensor_init_cfg.cfgtype = CFG_SINIT_PROBE;
   sensor_init_cfg.cfg.setting = &slave_info2;
   err = ioctl(sensorinit_fd, VIDIOC_MSM_SENSOR_INIT_CFG, &sensor_init_cfg);
-  LOG("sensor init cfg (driver): %d", err);
+  LOG("sensor init cfg (driver camera): %d", err);
   assert(err >= 0);
 }
 
