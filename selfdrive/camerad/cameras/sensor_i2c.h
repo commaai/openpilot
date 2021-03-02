@@ -594,19 +594,6 @@ static struct msm_camera_i2c_reg_array start_reg_array[] = {{0x100,0x1,0}};
 // stop, enable standby mode
 static struct msm_camera_i2c_reg_array stop_reg_array[] = {{0x100,0x0,0}};
 
-
-/////////////// ois stuff ///////////////
-
-/*
-#define _OP_FIRM_DWNLD  0x80
-#define _OP_Periphe_RW  0x82
-#define _OP_Memory__RW  0x84
-#define _OP_AD_TRNSFER  0x86
-#define _OP_COEF_DWNLD  0x88
-#define _OP_PrgMem__RD  0x8A
-#define _OP_SpecialCMD  0x8C
-*/
-
 /*
 // still mode settings:
   {0x847f, 0x0c0c,}, //_M_EQCTL
