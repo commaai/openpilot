@@ -96,6 +96,7 @@ static void camera_init(VisionIpcServer *v, CameraState *s, int camera_id, int c
 
   s->self_recover = 0;
 
+  s->apply_exposure = (camera_id == CAMERA_ID_IMX298) ? imx298_apply_exposure : ov8865_apply_exposure;
   s->buf.init(device_id, ctx, s, v, FRAME_BUF_COUNT, rgb_type, yuv_type, camera_release_buffer);
 }
 
@@ -225,13 +226,11 @@ void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_i
 #endif
               device_id, ctx,
               VISION_STREAM_RGB_BACK, VISION_STREAM_YUV_BACK);
-  s->road_cam.apply_exposure = imx298_apply_exposure;
 
   camera_init(v, &s->driver_cam, CAMERA_ID_OV8865, 1,
               /*pixel_clock=*/72000000, /*line_length_pclk=*/1602,
               /*max_gain=*/510, 10, device_id, ctx,
               VISION_STREAM_RGB_FRONT, VISION_STREAM_YUV_FRONT);
-  s->driver_cam.apply_exposure = ov8865_apply_exposure;
 
   s->sm = new SubMaster({"driverState"});
   s->pm = new PubMaster({"roadCameraState", "driverCameraState", "thumbnail"});
