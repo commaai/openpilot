@@ -28,7 +28,7 @@ half mf(half x, half cp) {
 
 half3 color_correct(half3 rgb, int ggain) {
   half3 ret = (0,0,0);
-  half cpx = clamp(0.01h, 0.05h, cpxb + cpxk * min(10, ggain));
+  half cpx = 0.01; //clamp(0.01h, 0.05h, cpxb + cpxk * min(10, ggain));
   ret += (half)rgb.x * color_correction[0];
   ret += (half)rgb.y * color_correction[1];
   ret += (half)rgb.z * color_correction[2];
