@@ -5,8 +5,6 @@ import sys
 import numpy as np
 
 os.environ["OMP_NUM_THREADS"] = "1"
-os.environ["MKL_NUM_THREADS"] = "1"
-os.environ["NUMEXPR_NUM_THREADS"] = "1"
 
 import onnxruntime as ort
 
