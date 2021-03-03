@@ -188,11 +188,11 @@ static void update_sockets(UIState *s) {
   }
   if (sm.updated("driverMonitoringState")) {
     scene.dmonitoring_state = sm["driverMonitoringState"].getDriverMonitoringState();
-    if(!scene.frontview && !s->ignition) {
-      read_param(&scene.frontview, "IsDriverViewEnabled");
+    if(!scene.driver_view && !s->ignition) {
+      read_param(&scene.driver_view, "IsDriverViewEnabled");
     }
   } else if ((sm.frame - sm.rcv_frame("driverMonitoringState")) > UI_FREQ/2) {
-    scene.frontview = false;
+    scene.driver_view = false;
   }
   if (sm.updated("sensorEvents")) {
     for (auto sensor : sm["sensorEvents"].getSensorEvents()) {
@@ -205,7 +205,7 @@ static void update_sockets(UIState *s) {
       }
     }
   }
-  s->started = scene.deviceState.getStarted() || scene.frontview;
+  s->started = scene.deviceState.getStarted() || scene.driver_view;
 }
 
 static void update_alert(UIState *s) {
@@ -305,7 +305,7 @@ static void update_status(UIState *s) {
       s->active_app = cereal::UiLayoutState::App::NONE;
       s->sidebar_collapsed = true;
       s->scene.alert_size = cereal::ControlsState::AlertSize::NONE;
-      s->vipc_client = s->scene.frontview ? s->vipc_client_front : s->vipc_client_rear;
+      s->vipc_client = s->scene.driver_view ? s->vipc_client_front : s->vipc_client_rear;
     } else {
       s->status = STATUS_OFFROAD;
       s->active_app = cereal::UiLayoutState::App::HOME;
