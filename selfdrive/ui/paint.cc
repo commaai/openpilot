@@ -263,19 +263,17 @@ static void ui_draw_vision_face(UIState *s) {
 static void ui_draw_driver_view(UIState *s) {
   s->sidebar_collapsed = true;
   const bool is_rhd = s->scene.is_rhd;
-  const int width = 3 * s->viz_rect.w / 4;
+  const int width = 4 * s->viz_rect.h / 3;
   const Rect rect = {s->viz_rect.centerX() - width / 2, s->viz_rect.y, width, s->viz_rect.h};  // x, y, w, h
   const Rect valid_rect = {is_rhd ? rect.right() - rect.h / 2 : rect.x, rect.y, rect.h / 2, rect.h};
 
   // blackout
-  const int blackout_x = is_rhd ? rect.x : valid_rect.right();
-  const int blackout_w = rect.w - valid_rect.w;
-  NVGpaint gradient = nvgLinearGradient(s->vg, blackout_x, rect.y, blackout_x + blackout_w, rect.y,
-                                        COLOR_BLACK_ALPHA(is_rhd ? 255 : 0), COLOR_BLACK_ALPHA(is_rhd ? 0 : 255));
-  ui_fill_rect(s->vg, {blackout_x, rect.y, blackout_w, rect.h}, gradient);
-  ui_fill_rect(s->vg, {blackout_x, rect.y, blackout_w, rect.h}, COLOR_BLACK_ALPHA(144));
-  // border
-  ui_draw_rect(s->vg, rect, bg_colors[STATUS_OFFROAD], 1);
+  const int blackout_x_l = s->viz_rect.x;
+  const int blackout_w_l = valid_rect.x - s->viz_rect.x;
+  const int blackout_x_r = valid_rect.right();
+  const int blackout_w_r = s->viz_rect.right() - valid_rect.right();
+  ui_fill_rect(s->vg, {blackout_x_l, rect.y, blackout_w_l, rect.h}, COLOR_BLACK_ALPHA(144));
+  ui_fill_rect(s->vg, {blackout_x_r, rect.y, blackout_w_r, rect.h}, COLOR_BLACK_ALPHA(144));
 
   const bool face_detected = s->scene.driver_state.getFaceProb() > 0.4;
   if (face_detected) {
@@ -494,13 +492,23 @@ static const mat4 device_transform = {{
   0.0,  0.0, 0.0, 1.0,
 }};
 
+#ifndef QCOM2
 // frame from 4/3 to 16/9 display
-static const mat4 full_to_wide_frame_transform = {{
-  .75,  0.0, 0.0, 0.0,
+static const mat4 driver_view_transform = {{
+  0.75, 0.0, 0.0, 0.0,
   0.0,  1.0, 0.0, 0.0,
   0.0,  0.0, 1.0, 0.0,
   0.0,  0.0, 0.0, 1.0,
 }};
+#else
+// from dmonitoring.cc
+static const mat4 driver_view_transform = {{
+  1.92, 0.0, 0.0, 1.92 * 32.0 / 1928.0 * 2,
+  0.0,  2.4, 0.0, 2.4 * (-196.0) / 1208.0 * 2,
+  0.0,  0.0, 1.0, 0.0,
+  0.0,  0.0, 0.0, 1.0,
+}};
+#endif
 
 void ui_nvg_init(UIState *s) {
   // init drawing
@@ -606,7 +614,7 @@ void ui_nvg_init(UIState *s) {
     0.0, 0.0, 0.0, 1.0,
   }};
 
-  s->front_frame_mat = matmul(device_transform, full_to_wide_frame_transform);
+  s->front_frame_mat = matmul(device_transform, driver_view_transform);
   s->rear_frame_mat = matmul(device_transform, frame_transform);
 
   // Apply transformation such that video pixel coordinates match video
