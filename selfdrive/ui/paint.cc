@@ -3,6 +3,7 @@
 #include <assert.h>
 #include "common/util.h"
 #include "common/timing.h"
+#include "common/swaglog.h"
 #include <algorithm>
 
 #define NANOVG_GLES3_IMPLEMENTATION
@@ -107,29 +108,22 @@ static void ui_draw_line(UIState *s, const line_vertices_data &vd, NVGcolor *col
   nvgFill(s->vg);
 }
 
-static void draw_frame(UIState *s) {
-  mat4 *out_mat;
-  if (s->scene.driver_view) {
-    glBindVertexArray(s->frame_vao[1]);
-    out_mat = &s->front_frame_mat;
-  } else {
-    glBindVertexArray(s->frame_vao[0]);
-    out_mat = &s->rear_frame_mat;
-  }
+void UIVision::draw() {
+  glBindVertexArray(frame_vao);
   glActiveTexture(GL_TEXTURE0);
 
-  if (s->last_frame) {
-    glBindTexture(GL_TEXTURE_2D, s->texture[s->last_frame->idx]->frame_tex);
+  if (last_frame) {
+    glBindTexture(GL_TEXTURE_2D, texture[last_frame->idx]->frame_tex);
 #ifndef QCOM
     // this is handled in ion on QCOM
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, s->last_frame->width, s->last_frame->height,
-                 0, GL_RGB, GL_UNSIGNED_BYTE, s->last_frame->addr);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, last_frame->width, last_frame->height,
+                 0, GL_RGB, GL_UNSIGNED_BYTE, last_frame->addr);
 #endif
   }
 
-  glUseProgram(s->gl_shader->prog);
-  glUniform1i(s->gl_shader->getUniformLocation("uTexture"), 0);
-  glUniformMatrix4fv(s->gl_shader->getUniformLocation("uTransform"), 1, GL_TRUE, out_mat->v);
+  glUseProgram(gl_shader->prog);
+  glUniform1i(gl_shader->getUniformLocation("uTexture"), 0);
+  glUniformMatrix4fv(gl_shader->getUniformLocation("uTransform"), 1, GL_TRUE, frame_mat.v);
 
   assert(glGetError() == GL_NO_ERROR);
   glEnableVertexAttribArray(0);
@@ -338,7 +332,7 @@ static void ui_draw_vision_frame(UIState *s) {
   glEnable(GL_SCISSOR_TEST);
   glViewport(s->video_rect.x, s->video_rect.y, s->video_rect.w, s->video_rect.h);
   glScissor(s->viz_rect.x, s->viz_rect.y, s->viz_rect.w, s->viz_rect.h);
-  draw_frame(s);
+   s->vision->draw();
   glDisable(GL_SCISSOR_TEST);
 
   glViewport(0, 0, s->fb_w, s->fb_h);
@@ -374,8 +368,7 @@ void ui_draw(UIState *s) {
     s->viz_rect.w -= sbr_w;
   }
 
-  const bool draw_alerts = s->scene.started;
-  const bool draw_vision = draw_alerts && s->vipc_client->connected;
+  const bool draw_vision = s->vision != nullptr;
 
   // GL drawing functions
   ui_draw_background(s);
@@ -391,10 +384,9 @@ void ui_draw(UIState *s) {
   ui_draw_sidebar(s);
   if (draw_vision) {
     ui_draw_vision(s);
-  }
-
-  if (draw_alerts && s->scene.alert_size != cereal::ControlsState::AlertSize::NONE) {
-    ui_draw_vision_alert(s);
+    if (s->scene.alert_size != cereal::ControlsState::AlertSize::NONE) {
+      ui_draw_vision_alert(s);
+    }
   }
 
   if (s->scene.driver_view && !s->vipc_client->connected) {
@@ -540,70 +532,11 @@ void ui_nvg_init(UIState *s) {
     assert(s->images[name] != 0);
   }
 
-  // init gl
-  s->gl_shader = std::make_unique<GLShader>(frame_vertex_shader, frame_fragment_shader);
-  GLint frame_pos_loc = glGetAttribLocation(s->gl_shader->prog, "aPosition");
-  GLint frame_texcoord_loc = glGetAttribLocation(s->gl_shader->prog, "aTexCoord");
-
   glViewport(0, 0, s->fb_w, s->fb_h);
-
   glDisable(GL_DEPTH_TEST);
-
   assert(glGetError() == GL_NO_ERROR);
 
-  for (int i = 0; i < 2; i++) {
-    float x1, x2, y1, y2;
-    if (i == 1) {
-      // flip horizontally so it looks like a mirror
-      x1 = 0.0;
-      x2 = 1.0;
-      y1 = 1.0;
-      y2 = 0.0;
-    } else {
-      x1 = 1.0;
-      x2 = 0.0;
-      y1 = 1.0;
-      y2 = 0.0;
-    }
-    const uint8_t frame_indicies[] = {0, 1, 2, 0, 2, 3};
-    const float frame_coords[4][4] = {
-      {-1.0, -1.0, x2, y1}, //bl
-      {-1.0,  1.0, x2, y2}, //tl
-      { 1.0,  1.0, x1, y2}, //tr
-      { 1.0, -1.0, x1, y1}, //br
-    };
-
-    glGenVertexArrays(1, &s->frame_vao[i]);
-    glBindVertexArray(s->frame_vao[i]);
-    glGenBuffers(1, &s->frame_vbo[i]);
-    glBindBuffer(GL_ARRAY_BUFFER, s->frame_vbo[i]);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(frame_coords), frame_coords, GL_STATIC_DRAW);
-    glEnableVertexAttribArray(frame_pos_loc);
-    glVertexAttribPointer(frame_pos_loc, 2, GL_FLOAT, GL_FALSE,
-                          sizeof(frame_coords[0]), (const void *)0);
-    glEnableVertexAttribArray(frame_texcoord_loc);
-    glVertexAttribPointer(frame_texcoord_loc, 2, GL_FLOAT, GL_FALSE,
-                          sizeof(frame_coords[0]), (const void *)(sizeof(float) * 2));
-    glGenBuffers(1, &s->frame_ibo[i]);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, s->frame_ibo[i]);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(frame_indicies), frame_indicies, GL_STATIC_DRAW);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
-  }
-
   s->video_rect = Rect{bdr_s, bdr_s, s->fb_w - 2 * bdr_s, s->fb_h - 2 * bdr_s};
-  float zx = zoom * 2 * fcam_intrinsic_matrix.v[2] / s->video_rect.w;
-  float zy = zoom * 2 * fcam_intrinsic_matrix.v[5] / s->video_rect.h;
-
-  const mat4 frame_transform = {{
-    zx, 0.0, 0.0, 0.0,
-    0.0, zy, 0.0, -y_offset / s->video_rect.h * 2,
-    0.0, 0.0, 1.0, 0.0,
-    0.0, 0.0, 0.0, 1.0,
-  }};
-
-  s->front_frame_mat = matmul(device_transform, driver_view_transform);
-  s->rear_frame_mat = matmul(device_transform, frame_transform);
 
   // Apply transformation such that video pixel coordinates match video
   // 1) Put (0, 0) in the middle of the video
@@ -617,4 +550,94 @@ void ui_nvg_init(UIState *s) {
 
   nvgCurrentTransform(s->vg, s->car_space_transform);
   nvgResetTransform(s->vg);
+}
+
+UIVision::UIVision(const Rect &video_rect, bool is_driver_view) : last_frame(nullptr) {
+  // init gl
+  if (!gl_shader) {
+    gl_shader = std::make_unique<GLShader>(frame_vertex_shader, frame_fragment_shader);
+  }
+  GLint frame_pos_loc = glGetAttribLocation(gl_shader->prog, "aPosition");
+  GLint frame_texcoord_loc = glGetAttribLocation(gl_shader->prog, "aTexCoord");
+
+  auto [x1, x2, y1, y2] = is_driver_view ? std::tuple(0.f, 1.f, 1.f, 0.f) : std::tuple(1.f, 0.f, 1.f, 0.f);
+  const uint8_t frame_indicies[] = {0, 1, 2, 0, 2, 3};
+  const float frame_coords[4][4] = {
+    {-1.0, -1.0, x2, y1}, //bl
+    {-1.0,  1.0, x2, y2}, //tl
+    { 1.0,  1.0, x1, y2}, //tr
+    { 1.0, -1.0, x1, y1}, //br
+  };
+
+  glGenVertexArrays(1, &frame_vao);
+  glBindVertexArray(frame_vao);
+  glGenBuffers(1, &frame_vbo);
+  glBindBuffer(GL_ARRAY_BUFFER, frame_vbo);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(frame_coords), frame_coords, GL_STATIC_DRAW);
+  glEnableVertexAttribArray(frame_pos_loc);
+  glVertexAttribPointer(frame_pos_loc, 2, GL_FLOAT, GL_FALSE,
+                        sizeof(frame_coords[0]), (const void *)0);
+  glEnableVertexAttribArray(frame_texcoord_loc);
+  glVertexAttribPointer(frame_texcoord_loc, 2, GL_FLOAT, GL_FALSE,
+                        sizeof(frame_coords[0]), (const void *)(sizeof(float) * 2));
+  glGenBuffers(1, &frame_ibo);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, frame_ibo);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(frame_indicies), frame_indicies, GL_STATIC_DRAW);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+  glBindVertexArray(0);
+
+  if (!is_driver_view) {
+    float zx = zoom * 2 * intrinsic_matrix.v[2] / video_rect.w;
+    float zy = zoom * 2 * intrinsic_matrix.v[5] / video_rect.h;
+
+    const mat4 frame_transform = {{
+      zx, 0.0, 0.0, 0.0,
+      0.0, zy, 0.0, -y_offset / video_rect.h * 2,
+      0.0, 0.0, 1.0, 0.0,
+      0.0, 0.0, 0.0, 1.0,
+    }};
+    frame_mat = matmul(device_transform, frame_transform);
+  } else {
+    frame_mat = matmul(device_transform, driver_view_transform);
+  }
+
+  const VisionStreamType stream_type = front ? VISION_STREAM_RGB_FRONT : VISION_STREAM_RGB_BACK;
+  vipc_client = std::make_unique<VisionIpcClient>("camerad", stream_type, true);
+  LOGW("UIVision connected,stream type: %d", stream_type);
+}
+
+UIVision::~UIVision() {
+  glDeleteVertexArrays(1, &frame_vao);
+  glDeleteBuffers(1, &frame_vbo);
+  glDeleteBuffers(1, &frame_ibo);
+  LOGW("UIVision disconnected");
+}
+
+void UIVision::update() {
+  if (!vipc_client->connected && vipc_client->connect(false)) {
+    // init vision
+    for (int i = 0; i < vipc_client->num_buffers; i++) {
+      texture[i].reset(new EGLImageTexture(&vipc_client->buffers[i]));
+
+      glBindTexture(GL_TEXTURE_2D, texture[i]->frame_tex);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+      // BGR
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_BLUE);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
+      assert(glGetError() == GL_NO_ERROR);
+    }
+  }
+
+  if (vipc_client->connected) {
+    if (VisionBuf *buf = vipc_client->recv(); buf != nullptr) {
+      last_frame = buf;
+    } else {
+#if defined(QCOM) || defined(QCOM2)
+      LOGE("visionIPC receive timeout");
+#endif
+    }
+  }
 }

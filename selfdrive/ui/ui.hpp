@@ -133,11 +133,24 @@ typedef struct UIScene {
   uint64_t started_frame;
 } UIScene;
 
+class UIVision {
+public:
+  UIVision(const Rect &video_rect, bool is_driver_view);
+  ~UIVision();
+  void update();
+  void draw();
+
+private:
+  std::unique_ptr<VisionIpcClient> vipc_client;
+  VisionBuf *last_frame;
+  GLuint frame_vao, frame_vbo, frame_ibo;
+  mat4 frame_mat;
+  std::unique_ptr<EGLImageTexture> texture[UI_BUF_COUNT];
+  inline static std::unique_ptr<GLShader> gl_shader;
+};
+
 typedef struct UIState {
-  VisionIpcClient * vipc_client;
-  VisionIpcClient * vipc_client_front;
-  VisionIpcClient * vipc_client_rear;
-  VisionBuf * last_frame;
+  std::unique_ptr<UIVision> vision;
 
   // framebuffer
   int fb_w, fb_h;
@@ -153,13 +166,6 @@ typedef struct UIState {
   Sound *sound;
   UIStatus status;
   UIScene scene;
-
-  // graphics
-  std::unique_ptr<GLShader> gl_shader;
-  std::unique_ptr<EGLImageTexture> texture[UI_BUF_COUNT];
-
-  GLuint frame_vao[2], frame_vbo[2], frame_ibo[2];
-  mat4 rear_frame_mat, front_frame_mat;
 
   // device state
   bool awake;

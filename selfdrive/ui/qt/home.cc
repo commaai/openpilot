@@ -279,7 +279,7 @@ void GLWindow::backlightUpdate() {
 
 void GLWindow::timerUpdate() {
   // Connecting to visionIPC requires opengl to be current
-  if (!ui_state.vipc_client->connected){
+  if (!ui_state.vision) {
     makeCurrent();
   }
 
