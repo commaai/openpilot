@@ -311,23 +311,12 @@ def start_daemon_process(name):
 
   params.put(pid_param, str(proc.pid))
 
-def prepare_managed_process(p, build=False):
+def prepare_managed_process(p):
   proc = managed_processes[p]
   if isinstance(proc, str):
     # import this python
     cloudlog.info("preimporting %s" % proc)
     importlib.import_module(proc)
-  elif os.path.isfile(os.path.join(BASEDIR, proc[0], "SConscript")) and build:
-    # build this process
-    cloudlog.info("building %s" % (proc,))
-    try:
-      subprocess.check_call(["scons", "u", "-j4", "."], cwd=os.path.join(BASEDIR, proc[0]))
-    except subprocess.CalledProcessError:
-      # clean and retry if the build failed
-      cloudlog.warning("building %s failed, cleaning and retrying" % (proc, ))
-      subprocess.check_call(["scons", "-u", "-c", "."], cwd=os.path.join(BASEDIR, proc[0]))
-      subprocess.check_call(["scons", "-u", "-j4", "."], cwd=os.path.join(BASEDIR, proc[0]))
-
 
 def join_process(process, timeout):
   # Process().join(timeout) will hang due to a python 3 bug: https://bugs.python.org/issue28382
