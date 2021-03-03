@@ -1,8 +1,6 @@
 #include <iostream>
 #include <stdio.h>
 #include <cmath>
-#include <stdlib.h>
-#include <stdbool.h>
 #include <unistd.h>
 #include <assert.h>
 
@@ -19,6 +17,21 @@ int write_param_float(float param, const char* param_name, bool persistent_param
   return Params(persistent_param).write_db_value(param_name, s, size < sizeof(s) ? size : sizeof(s));
 }
 
+// Projects a point in car to space to the corresponding point in full frame
+// image space.
+static bool calib_frame_to_full_frame(const UIState *s, float in_x, float in_y, float in_z, vertex_data *out) {
+  const float margin = 500.0f;
+  const vec3 pt = (vec3){{in_x, in_y, in_z}};
+  const vec3 Ep = matvecmul3(s->scene.view_from_calib, pt);
+  const vec3 KEp = matvecmul3(fcam_intrinsic_matrix, Ep);
+
+  // Project.
+  float x = KEp.v[0] / KEp.v[2];
+  float y = KEp.v[1] / KEp.v[2];
+
+  nvgTransformPoint(&out->x, &out->y, s->car_space_transform, x, y);
+  return out->x >= -margin && out->x <= s->fb_w + margin && out->y >= -margin && out->y <= s->fb_h + margin;
+}
 
 static void ui_init_vision(UIState *s) {
   // Invisible until we receive a calibration message.
