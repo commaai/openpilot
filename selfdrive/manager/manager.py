@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import datetime
-import importlib
 import os
 import sys
 import fcntl
@@ -12,9 +11,6 @@ import textwrap
 import time
 import traceback
 
-from multiprocessing import Process
-from typing import Dict
-
 from common.basedir import BASEDIR
 from common.spinner import Spinner
 from common.text_window import TextWindow
@@ -23,6 +19,7 @@ from selfdrive.hardware import HARDWARE, EON, PC, TICI
 from selfdrive.hardware.eon.apk import update_apks, pm_apply_packages, start_offroad
 from selfdrive.swaglog import cloudlog, add_logentries_handler
 from selfdrive.version import version, dirty
+
 
 os.environ['BASEDIR'] = BASEDIR
 sys.path.append(os.path.join(BASEDIR, "pyextra"))
@@ -65,6 +62,7 @@ def unblock_stdout():
     exit_status = os.wait()[1] >> 8
     os._exit(exit_status)
 
+
 if __name__ == "__main__":
   unblock_stdout()
 
@@ -74,6 +72,7 @@ spinner = Spinner()
 spinner.update_progress(0, 100)
 if __name__ != "__main__":
   spinner.close()
+
 
 def build():
   env = os.environ.copy()
@@ -139,226 +138,59 @@ def build():
     else:
       break
 
+
 if __name__ == "__main__" and not PREBUILT:
   build()
 
 import cereal.messaging as messaging
-from cereal import log
 
 from common.params import Params
 from selfdrive.registration import register
-from selfdrive.launcher import launcher
+from selfdrive.manager.process import PythonProcess, NativeProcess, DaemonProcess, manage_processes
 
 
-# comment out anything you don't want to run
-managed_processes = {
-  "thermald": "selfdrive.thermald.thermald",
-  "uploader": "selfdrive.loggerd.uploader",
-  "deleter": "selfdrive.loggerd.deleter",
-  "controlsd": "selfdrive.controls.controlsd",
-  "plannerd": "selfdrive.controls.plannerd",
-  "radard": "selfdrive.controls.radard",
-  "dmonitoringd": "selfdrive.monitoring.dmonitoringd",
-  "ubloxd": ("selfdrive/locationd", ["./ubloxd"]),
-  "loggerd": ("selfdrive/loggerd", ["./loggerd"]),
-  "logmessaged": "selfdrive.logmessaged",
-  "locationd": "selfdrive.locationd.locationd",
-  "tombstoned": "selfdrive.tombstoned",
-  "logcatd": ("selfdrive/logcatd", ["./logcatd"]),
-  "proclogd": ("selfdrive/proclogd", ["./proclogd"]),
-  "pandad": "selfdrive.pandad",
-  "ui": ("selfdrive/ui", ["./ui"]),
-  "calibrationd": "selfdrive.locationd.calibrationd",
-  "paramsd": "selfdrive.locationd.paramsd",
-  "camerad": ("selfdrive/camerad", ["./camerad"]),
-  "sensord": ("selfdrive/sensord", ["./sensord"]),
-  "clocksd": ("selfdrive/clocksd", ["./clocksd"]),
-  "updated": "selfdrive.updated",
-  "dmonitoringmodeld": ("selfdrive/modeld", ["./dmonitoringmodeld"]),
-  "modeld": ("selfdrive/modeld", ["./modeld"]),
-  "rtshield": "selfdrive.rtshield",
-}
-
-daemon_processes = {
-  "manage_athenad": ("selfdrive.athena.manage_athenad", "AthenadPid"),
-}
-
-running: Dict[str, Process] = {}
-def get_running():
-  return running
-
-# due to qualcomm kernel bugs SIGKILLing camerad sometimes causes page table corruption
-unkillable_processes = ['camerad']
-
-# processes to end with SIGKILL instead of SIGTERM
-kill_processes = []
-if EON:
-  kill_processes += [
-    'sensord',
-  ]
-
-persistent_processes = [
-  'pandad',
-  'thermald',
-  'logmessaged',
-  'ui',
-  'uploader',
-  'deleter',
+managed_processes = [
+  DaemonProcess("manage_athenad", "selfdrive.athena.manage_athenad", "AthenadPid"),
+  # due to qualcomm kernel bugs SIGKILLing camerad sometimes causes page table corruption
+  NativeProcess("camerad", "selfdrive/camerad", ["./camerad"], unkillable=True, driverview=True),
+  NativeProcess("clocksd", "selfdrive/clocksd", ["./clocksd"]),
+  NativeProcess("dmonitoringmodeld", "selfdrive/modeld", ["./dmonitoringmodeld"], driverview=True),
+  NativeProcess("logcatd", "selfdrive/logcatd", ["./logcatd"]),
+  NativeProcess("loggerd", "selfdrive/loggerd", ["./loggerd"]),
+  NativeProcess("modeld", "selfdrive/modeld", ["./modeld"]),
+  NativeProcess("proclogd", "selfdrive/proclogd", ["./proclogd"]),
+  NativeProcess("sensord", "selfdrive/sensord", ["./sensord"], persistent=EON, sigkill=EON),
+  NativeProcess("ubloxd", "selfdrive/locationd", ["./ubloxd"]),
+  NativeProcess("ui", "selfdrive/ui", ["./ui"], persistent=True),
+  PythonProcess("calibrationd", "selfdrive.locationd.calibrationd"),
+  PythonProcess("controlsd", "selfdrive.controls.controlsd"),
+  PythonProcess("deleter", "selfdrive.loggerd.deleter", persistent=True),
+  PythonProcess("dmonitoringd", "selfdrive.monitoring.dmonitoringd", driverview=True),
+  PythonProcess("locationd", "selfdrive.locationd.locationd"),
+  PythonProcess("logmessaged", "selfdrive.logmessaged", persistent=True),
+  PythonProcess("pandad", "selfdrive.pandad", persistent=True),
+  PythonProcess("paramsd", "selfdrive.locationd.paramsd"),
+  PythonProcess("plannerd", "selfdrive.controls.plannerd"),
+  PythonProcess("radard", "selfdrive.controls.radard"),
+  PythonProcess("thermald", "selfdrive.thermald.thermald", persistent=True),
+  PythonProcess("uploader", "selfdrive.loggerd.uploader", persistent=True),
 ]
 
 if not PC:
-  persistent_processes += [
-    'updated',
-    'tombstoned',
-  ]
-
-if EON:
-  persistent_processes += [
-    'sensord',
+  managed_processes += [
+    PythonProcess("tombstoned", "selfdrive.tombstoned", persistent=True),
+    PythonProcess("updated", "selfdrive.updated", persistent=True),
   ]
 
 if TICI:
-  managed_processes["timezoned"] = "selfdrive.timezoned"
-  persistent_processes += ['timezoned']
-
-car_started_processes = [
-  'controlsd',
-  'plannerd',
-  'loggerd',
-  'radard',
-  'calibrationd',
-  'paramsd',
-  'camerad',
-  'modeld',
-  'proclogd',
-  'locationd',
-  'clocksd',
-  'logcatd',
-]
-
-driver_view_processes = [
-  'camerad',
-  'dmonitoringd',
-  'dmonitoringmodeld'
-]
-
-if not PC or WEBCAM:
-  car_started_processes += [
-    'ubloxd',
-    'dmonitoringd',
-    'dmonitoringmodeld',
+  managed_processes += [
+    PythonProcess("timezoned", "selfdrive.timezoned", persistent=True),
   ]
 
 if EON:
-  car_started_processes += [
-    'rtshield',
+  managed_processes += [
+    PythonProcess("rtshield", "selfdrive.rtshield"),
   ]
-else:
-   car_started_processes += [
-    'sensord',
-  ]
-
-def register_managed_process(name, desc, car_started=False):
-  global managed_processes, car_started_processes, persistent_processes
-  managed_processes[name] = desc
-  if car_started:
-    car_started_processes.append(name)
-  else:
-    persistent_processes.append(name)
-
-# ****************** process management functions ******************
-def nativelauncher(pargs, cwd):
-  # exec the process
-  os.chdir(cwd)
-  os.execvp(pargs[0], pargs)
-
-def start_managed_process(name):
-  if name in running or name not in managed_processes:
-    return
-  proc = managed_processes[name]
-  if isinstance(proc, str):
-    cloudlog.info("starting python %s" % proc)
-    running[name] = Process(name=name, target=launcher, args=(proc,))
-  else:
-    pdir, pargs = proc
-    cwd = os.path.join(BASEDIR, pdir)
-    cloudlog.info("starting process %s" % name)
-    running[name] = Process(name=name, target=nativelauncher, args=(pargs, cwd))
-  running[name].start()
-
-def start_daemon_process(name):
-  params = Params()
-  proc, pid_param = daemon_processes[name]
-  pid = params.get(pid_param, encoding='utf-8')
-
-  if pid is not None:
-    try:
-      os.kill(int(pid), 0)
-      with open(f'/proc/{pid}/cmdline') as f:
-        if proc in f.read():
-          # daemon is running
-          return
-    except (OSError, FileNotFoundError):
-      # process is dead
-      pass
-
-  cloudlog.info("starting daemon %s" % name)
-  proc = subprocess.Popen(['python', '-m', proc],  # pylint: disable=subprocess-popen-preexec-fn
-                          stdin=open('/dev/null', 'r'),
-                          stdout=open('/dev/null', 'w'),
-                          stderr=open('/dev/null', 'w'),
-                          preexec_fn=os.setpgrp)
-
-  params.put(pid_param, str(proc.pid))
-
-def prepare_managed_process(p):
-  proc = managed_processes[p]
-  if isinstance(proc, str):
-    # import this python
-    cloudlog.info("preimporting %s" % proc)
-    importlib.import_module(proc)
-
-def join_process(process, timeout):
-  # Process().join(timeout) will hang due to a python 3 bug: https://bugs.python.org/issue28382
-  # We have to poll the exitcode instead
-  t = time.time()
-  while time.time() - t < timeout and process.exitcode is None:
-    time.sleep(0.001)
-
-
-def kill_managed_process(name, retry=True):
-  if name not in running or name not in managed_processes:
-    return
-  cloudlog.info(f"killing {name}")
-
-  if running[name].exitcode is None:
-    sig = signal.SIGKILL if name in kill_processes else signal.SIGINT
-    os.kill(running[name].pid, sig)
-
-    join_process(running[name], 5)
-
-    if running[name].exitcode is None:
-      if not retry:
-        raise Exception(f"{name} failed to die")
-
-      if name in unkillable_processes:
-        cloudlog.critical("unkillable process %s failed to exit! rebooting in 15 if it doesn't die" % name)
-        join_process(running[name], 15)
-        if running[name].exitcode is None:
-          cloudlog.critical("unkillable process %s failed to die!" % name)
-          os.system("date >> /data/unkillable_reboot")
-          os.sync()
-          HARDWARE.reboot()
-          raise RuntimeError
-      else:
-        cloudlog.info("killing %s with SIGKILL" % name)
-        os.kill(running[name].pid, signal.SIGKILL)
-        running[name].join()
-
-  ret = running[name].exitcode
-  cloudlog.info(f"{name} is dead with {ret}")
-  del running[name]
-  return ret
 
 
 def cleanup_all_processes(signal, frame):
@@ -367,18 +199,10 @@ def cleanup_all_processes(signal, frame):
   if EON:
     pm_apply_packages('disable')
 
-  for name in list(running.keys()):
-    kill_managed_process(name)
+  for p in managed_processes:
+    p.stop()
+
   cloudlog.info("everything is dead")
-
-
-def send_managed_process_signal(name, sig):
-  if name not in running or name not in managed_processes or \
-     running[name].exitcode is not None:
-    return
-
-  cloudlog.info(f"sending signal {sig} to {name}")
-  os.kill(running[name].pid, sig)
 
 
 # ****************** run loop ******************
@@ -425,87 +249,57 @@ def manager_thread():
   # save boot log
   subprocess.call("./bootlog", cwd=os.path.join(BASEDIR, "selfdrive/loggerd"))
 
-  # start daemon processes
-  for p in daemon_processes:
-    start_daemon_process(p)
+  ignore = []
+  if os.getenv("NOBOARD") is not None:
+    ignore.append("pandad")
+  if os.getenv("BLOCK") is not None:
+    ignore += os.getenv("BLOCK").split(",")
 
-  # start persistent processes
-  for p in persistent_processes:
-    start_managed_process(p)
+  # Start persistent processes before launching apk
+  manage_processes(managed_processes, False, not_run=ignore)
 
   # start offroad
   if EON and "QT" not in os.environ:
     pm_apply_packages('enable')
     start_offroad()
 
-  if os.getenv("NOBOARD") is not None:
-    del managed_processes["pandad"]
-
-  if os.getenv("BLOCK") is not None:
-    for k in os.getenv("BLOCK").split(","):
-      del managed_processes[k]
-
   started_prev = False
-  logger_dead = False
   params = Params()
-  device_state_sock = messaging.sub_sock('deviceState')
+  sm = messaging.SubMaster(['deviceState'])
   pm = messaging.PubMaster(['managerState'])
 
-  while 1:
-    msg = messaging.recv_sock(device_state_sock, wait=True)
+  while True:
+    sm.update()
+    not_run = ignore[:]
 
-    if msg.deviceState.freeSpacePercent < 5:
-      logger_dead = True
+    if sm['deviceState'].freeSpacePercent < 5:
+      not_run.append("loggerd")
 
-    if msg.deviceState.started:
-      for p in car_started_processes:
-        if p == "loggerd" and logger_dead:
-          kill_managed_process(p)
-        else:
-          start_managed_process(p)
-    else:
-      logger_dead = False
-      driver_view = params.get("IsDriverViewEnabled") == b"1"
+    started = sm['deviceState'].started
+    driverview = params.get("IsDriverViewEnabled") == b"1"
+    manage_processes(managed_processes, started, driverview, not_run)
 
-      # TODO: refactor how manager manages processes
-      for p in reversed(car_started_processes):
-        if p not in driver_view_processes or not driver_view:
-          kill_managed_process(p)
+    # trigger an update after going offroad
+    if started_prev and not started:
+      os.sync()
+      # TODO
+      # send_managed_process_signal("updated", signal.SIGHUP)
 
-      for p in driver_view_processes:
-        if driver_view:
-          start_managed_process(p)
-        else:
-          kill_managed_process(p)
+    started_prev = started
 
-      # trigger an update after going offroad
-      if started_prev:
-        os.sync()
-        send_managed_process_signal("updated", signal.SIGHUP)
-
-    started_prev = msg.deviceState.started
-
-    # check the status of all processes, did any of them die?
-    running_list = ["%s%s\u001b[0m" % ("\u001b[32m" if running[p].is_alive() else "\u001b[31m", p) for p in running]
+    running_list = ["%s%s\u001b[0m" % ("\u001b[32m" if p.proc.is_alive() else "\u001b[31m", p.name)
+                    for p in managed_processes if p.proc]
     cloudlog.debug(' '.join(running_list))
 
     # send managerState
-    states = []
-    for p in managed_processes:
-      state = log.ManagerState.ProcessState.new_message()
-      state.name = p
-      if p in running:
-        state.running = running[p].is_alive()
-        state.pid = running[p].pid
-        state.exitCode = running[p].exitcode or 0
-      states.append(state)
     msg = messaging.new_message('managerState')
-    msg.managerState.processes = states
+    msg.managerState.processes = [p.get_process_state_msg() for p in managed_processes]
     pm.send('managerState', msg)
 
     # Exit main loop when uninstall is needed
     if params.get("DoUninstall", encoding='utf8') == "1":
       break
+
 
 def manager_prepare():
   # build all processes
@@ -516,7 +310,9 @@ def manager_prepare():
   for i, p in enumerate(managed_processes):
     perc = (100.0 - total) + total * (i + 1) / len(managed_processes)
     spinner.update_progress(perc, 100.)
-    prepare_managed_process(p)
+
+    p.prepare()
+
 
 def main():
   params = Params()

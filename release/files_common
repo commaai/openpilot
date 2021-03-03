@@ -69,7 +69,6 @@ selfdrive/__init__.py
 selfdrive/registration.py
 selfdrive/config.py
 selfdrive/crash.py
-selfdrive/launcher.py
 selfdrive/swaglog.py
 selfdrive/logmessaged.py
 selfdrive/tombstoned.py
@@ -386,6 +385,7 @@ selfdrive/camerad/imgproc/utils.cc
 selfdrive/camerad/imgproc/utils.h
 
 selfdrive/manager/__init__.py
+selfdrive/manager/process.py
 selfdrive/manager/manager.py
 
 selfdrive/modeld/SConscript
