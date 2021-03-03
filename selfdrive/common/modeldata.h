@@ -16,3 +16,23 @@ const double X_IDXS[TRAJECTORY_SIZE] = { 0.    ,   0.1875,   0.75  ,   1.6875,  
         60.75  ,  67.6875,  75.    ,  82.6875,  90.75  ,  99.1875,
        108.    , 117.1875, 126.75  , 136.6875, 147.    , 157.6875,
        168.75  , 180.1875, 192.};
+
+#ifdef __cplusplus
+
+#include "common/mat.h"
+#ifdef QCOM2
+const mat3 fcam_intrinsic_matrix = (mat3){{
+  2648.0, 0.0, 1928.0/2,
+  0.0, 2648.0, 1208.0/2,
+  0.0,   0.0,   1.0
+}};
+#else
+const mat3 fcam_intrinsic_matrix = (mat3){{
+  910., 0., 1164.0/2,
+  0., 910., 874.0/2,
+  0.,   0.,   1.
+}};
+#endif
+
+#endif
+
