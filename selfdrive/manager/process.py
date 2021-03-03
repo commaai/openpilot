@@ -208,9 +208,11 @@ def manage_processes(procs, started, driverview=False, not_run=None):
   if not_run is None:
     not_run = []
 
+  # Make sure we stop processes in reverse order when we go offroad
   if not started:
     procs = reversed(procs)
 
+  # TODO: can we do this in parallel?
   for p in procs:
     if p.name in not_run:
       p.stop()
