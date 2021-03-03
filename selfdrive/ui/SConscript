@@ -43,8 +43,6 @@ else:
   qt_env.Program("qt/text", ["qt/text.cc"], LIBS=qt_base_libs)
   qt_env.Program("qt/spinner", ["qt/spinner.cc"], LIBS=qt_base_libs)
 
-  #qt_env.Program("tests/ssl_test", ["tests/ssl_test.cc"], LIBS=qt_base_libs)
-
   # build setup, factory resetter, and installer
   if "BUILD_SETUP" in os.environ:
     qt_env.Program("qt/setup/reset", ["qt/setup/reset.cc"], LIBS=qt_libs)
