@@ -214,6 +214,17 @@ def plot_model(m, img, calibration, top_down):
   draw_path(m.position, color, img, calibration, top_down, RED, 1.22)
 
 
+def plot_lead(rs, top_down):
+  for lead in [rs.leadOne, rs.leadTwo]:
+    if not lead.status:
+      continue
+
+    x = lead.dRel
+    px_left, py = to_topdown_pt(x, -10)
+    px_right, _ = to_topdown_pt(x, 10)
+    top_down[1][px_left:px_right, py] = find_color(top_down[0], RED)
+
+
 def maybe_update_radar_points(lt, lid_overlay):
   ar_pts = []
   if lt is not None:
