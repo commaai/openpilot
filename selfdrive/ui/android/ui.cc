@@ -64,7 +64,7 @@ static void handle_display_state(UIState *s, bool user_input) {
 static void handle_vision_touch(UIState *s, int touch_x, int touch_y) {
   if (s->started && (touch_x >= s->viz_rect.x - bdr_s)
       && (s->active_app != cereal::UiLayoutState::App::SETTINGS)) {
-    if (!s->scene.frontview) {
+    if (!s->scene.driver_view) {
       s->sidebar_collapsed = !s->sidebar_collapsed;
     } else {
       Params().write_db_value("IsDriverViewEnabled", "0", 1);
@@ -172,7 +172,7 @@ int main(int argc, char* argv[]) {
 
     ui_draw(s);
     double u2 = millis_since_boot();
-    if (!s->scene.frontview && (u2-u1 > 66)) {
+    if (!s->scene.driver_view && (u2-u1 > 66)) {
       // warn on sub 15fps
       LOGW("slow frame(%llu) time: %.2f", (s->sm)->frame, u2-u1);
     }
