@@ -552,7 +552,7 @@ void ui_nvg_init(UIState *s) {
   nvgResetTransform(s->vg);
 }
 
-UIVision::UIVision(const Rect &video_rect, bool is_driver_view) : last_frame(nullptr) {
+UIVision::UIVision(const Rect &video_rect, bool driver_view) : driver_view(driver_view), video_rect(video_rect), last_frame(nullptr) {
   // init gl
   if (!gl_shader) {
     gl_shader = std::make_unique<GLShader>(frame_vertex_shader, frame_fragment_shader);
@@ -560,7 +560,7 @@ UIVision::UIVision(const Rect &video_rect, bool is_driver_view) : last_frame(nul
   GLint frame_pos_loc = glGetAttribLocation(gl_shader->prog, "aPosition");
   GLint frame_texcoord_loc = glGetAttribLocation(gl_shader->prog, "aTexCoord");
 
-  auto [x1, x2, y1, y2] = is_driver_view ? std::tuple(0.f, 1.f, 1.f, 0.f) : std::tuple(1.f, 0.f, 1.f, 0.f);
+  auto [x1, x2, y1, y2] = driver_view ? std::tuple(0.f, 1.f, 1.f, 0.f) : std::tuple(1.f, 0.f, 1.f, 0.f);
   const uint8_t frame_indicies[] = {0, 1, 2, 0, 2, 3};
   const float frame_coords[4][4] = {
     {-1.0, -1.0, x2, y1}, //bl
@@ -586,22 +586,7 @@ UIVision::UIVision(const Rect &video_rect, bool is_driver_view) : last_frame(nul
   glBindBuffer(GL_ARRAY_BUFFER, 0);
   glBindVertexArray(0);
 
-  if (is_driver_view) {
-    frame_mat = matmul(device_transform, driver_view_transform);
-  } else {
-    float zx = zoom * 2 * fcam_intrinsic_matrix.v[2] / video_rect.w;
-    float zy = zoom * 2 * fcam_intrinsic_matrix.v[5] / video_rect.h;
-
-    const mat4 frame_transform = {{
-      zx, 0.0, 0.0, 0.0,
-      0.0, zy, 0.0, -y_offset / video_rect.h * 2,
-      0.0, 0.0, 1.0, 0.0,
-      0.0, 0.0, 0.0, 1.0,
-    }};
-    frame_mat = matmul(device_transform, frame_transform);    
-  }
-
-  const VisionStreamType stream_type = is_driver_view ? VISION_STREAM_RGB_FRONT : VISION_STREAM_RGB_BACK;
+  const VisionStreamType stream_type = driver_view ? VISION_STREAM_RGB_FRONT : VISION_STREAM_RGB_BACK;
   vipc_client = std::make_unique<VisionIpcClient>("camerad", stream_type, true);
   LOGW("UIVision connected,stream type: %d", stream_type);
 }
@@ -628,6 +613,20 @@ void UIVision::update() {
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
       assert(glGetError() == GL_NO_ERROR);
+    }
+    const VisionBuf *b = &vipc_client->buffers[0];
+    if (driver_view) {
+      frame_mat = matmul(device_transform, driver_view_transform);    
+    } else {
+      const float zx = zoom * b->width / video_rect.w;
+      const float zy = zoom * b->height / video_rect.h;
+      const mat4 frame_transform = {{
+        zx, 0.0, 0.0, 0.0,
+        0.0, zy, 0.0, -y_offset / video_rect.h * 2,
+        0.0, 0.0, 1.0, 0.0,
+        0.0, 0.0, 0.0, 1.0,
+      }};
+      frame_mat = matmul(device_transform, frame_transform);    
     }
   }
 

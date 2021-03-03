@@ -135,12 +135,14 @@ typedef struct UIScene {
 
 class UIVision {
 public:
-  UIVision(const Rect &video_rect, bool is_driver_view);
+  UIVision(const Rect &video_rect, bool driver_view);
   ~UIVision();
   void update();
   void draw();
 
 private:
+  bool driver_view;
+  Rect video_rect;
   std::unique_ptr<VisionIpcClient> vipc_client;
   VisionBuf *last_frame;
   GLuint frame_vao, frame_vbo, frame_ibo;
