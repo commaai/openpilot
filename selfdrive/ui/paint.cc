@@ -384,9 +384,10 @@ void ui_draw(UIState *s) {
   ui_draw_sidebar(s);
   if (draw_vision) {
     ui_draw_vision(s);
-    if (s->scene.alert_size != cereal::ControlsState::AlertSize::NONE) {
-      ui_draw_vision_alert(s);
-    }
+  }
+
+  if (draw_alerts && s->scene.alert_size != cereal::ControlsState::AlertSize::NONE) {
+    ui_draw_vision_alert(s);
   }
 
   if (s->scene.driver_view && !s->vipc_client->connected) {
