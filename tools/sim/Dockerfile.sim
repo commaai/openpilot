@@ -34,8 +34,9 @@ RUN dbus-uuidgen > /etc/machine-id
 
 # CARLA python api
 COPY ./tools/sim/install_carla.sh /tmp
-RUN /tmp/install_carla.sh && \
-    export PYTHONPATH=$PYTHONPATH:/usr/local/lib/python3.8/dist-packages/carla-0.9.7-py3.5-linux-x86_64.egg
+RUN /tmp/install_carla.sh
+
+ENV PYTHONPATH $PYTHONPATH:/usr/local/lib/python3.8/dist-packages/carla-0.9.7-py3.5-linux-x86_64.egg
 
 # get same tmux config used on NEOS for debugging
 RUN cd $HOME && \
