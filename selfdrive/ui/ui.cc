@@ -1,8 +1,6 @@
 #include <iostream>
 #include <stdio.h>
 #include <cmath>
-#include <stdlib.h>
-#include <stdbool.h>
 #include <unistd.h>
 #include <assert.h>
 

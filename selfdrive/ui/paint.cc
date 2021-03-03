@@ -1,9 +1,6 @@
 #include "ui.hpp"
 
 #include <assert.h>
-#include <map>
-#include <cmath>
-#include <iostream>
 #include "common/util.h"
 #include "common/timing.h"
 #include <algorithm>
