@@ -435,7 +435,7 @@ int main(int argc, char** argv) {
           }
           memcpy(buf.begin(), data, len);
 
-          capnp::FlatArrayMessageReader cmsg(buf);
+          capnp::FlatArrayMessageReader cmsg(buf.slice(0, size));
           cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
 
           if (fpkt_id == LOG_CAMERA_ID_FCAMERA) {
