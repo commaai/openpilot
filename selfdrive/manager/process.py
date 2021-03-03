@@ -76,7 +76,7 @@ class ManagerProcess(ABC):
 
     if self.proc.exitcode is None:
       sig = signal.SIGKILL if self.sigkill else signal.SIGINT
-      os.kill(self.proc.pid, sig)
+      self.signal(sig)
 
       join_process(self.proc, 5)
 
@@ -94,7 +94,7 @@ class ManagerProcess(ABC):
             raise RuntimeError
         else:
           cloudlog.info(f"killing {self.name} with SIGKILL")
-          os.kill(self.proc.pid, signal.SIGKILL)
+          self.signal(signal.SIGKILL)
           self.proc.join()
 
     ret = self.proc.exitcode
@@ -103,7 +103,7 @@ class ManagerProcess(ABC):
     return ret
 
   def signal(self, sig):
-    if self.proc.exitcode is not None:
+    if self.proc.exitcode is not None and self.proc.pid is not None:
       return
 
     cloudlog.info(f"sending signal {sig} to {self.name}")
