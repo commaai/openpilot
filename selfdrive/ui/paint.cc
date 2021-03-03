@@ -268,10 +268,15 @@ static void ui_draw_driver_view(UIState *s) {
   const Rect valid_rect = {is_rhd ? rect.right() - rect.h / 2 : rect.x, rect.y, rect.h / 2, rect.h};
 
   // blackout
-  const int blackout_x_l = s->viz_rect.x;
-  const int blackout_w_l = valid_rect.x - s->viz_rect.x;
   const int blackout_x_r = valid_rect.right();
+#ifndef QCOM2
+  const int blackout_w_r = rect.right() - valid_rect.right();
+  const int blackout_x_l = rect.x;
+#else
   const int blackout_w_r = s->viz_rect.right() - valid_rect.right();
+  const int blackout_x_l = s->viz_rect.x;
+#endif
+  const int blackout_w_l = valid_rect.x - blackout_x_l;
   ui_fill_rect(s->vg, {blackout_x_l, rect.y, blackout_w_l, rect.h}, COLOR_BLACK_ALPHA(144));
   ui_fill_rect(s->vg, {blackout_x_r, rect.y, blackout_w_r, rect.h}, COLOR_BLACK_ALPHA(144));
 
@@ -496,7 +501,7 @@ static const float driver_view_ratio = 1.333;
 #ifndef QCOM2
 // frame from 4/3 to 16/9 display
 static const mat4 driver_view_transform = {{
-  (1080-2*bdr_s)/(1920-2*bdr_s)*driver_view_ratio,  0.0, 0.0, 0.0,
+  driver_view_ratio*(1080-2*bdr_s)/(1920-2*bdr_s),  0.0, 0.0, 0.0,
   0.0,  1.0, 0.0, 0.0,
   0.0,  0.0, 1.0, 0.0,
   0.0,  0.0, 0.0, 1.0,
