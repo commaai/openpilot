@@ -148,7 +148,7 @@ Community Maintained Cars and Features
 | Genesis   | G90 2018                      | All               | Stock            | 0mph               | 0mph         |
 | GMC       | Acadia 2018<sup>1</sup>       | Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
 | Holden    | Astra 2017<sup>1</sup>        | Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
-| Honda     | Clarity 2018<sup>2</sup>      | Honda Sensing     | openpilot        | 0mph         	 | 12mph        |
+| Honda     | Clarity 2018<sup>2</sup>      | Honda Sensing     | openpilot        | 0mph         	| 12mph        |
 | Hyundai   | Elantra 2017-19               | SCC + LKAS        | Stock            | 19mph              | 34mph        |
 | Hyundai   | Genesis 2015-16               | SCC + LKAS        | Stock            | 19mph              | 37mph        |
 | Hyundai   | Ioniq Electric 2019           | SCC + LKAS        | Stock            | 0mph               | 32mph        |
