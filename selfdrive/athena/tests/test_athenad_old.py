@@ -10,7 +10,7 @@ os.environ['FAKEUPLOAD'] = "1"
 
 from common.params import Params
 from common.realtime import sec_since_boot
-import selfdrive.manager as manager
+import selfdrive.manager.manager as manager
 from selfdrive.test.helpers import with_processes
 
 

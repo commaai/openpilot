@@ -10,7 +10,7 @@ from cereal.services import service_list
 from common.basedir import BASEDIR
 from common.timeout import Timeout
 from selfdrive.loggerd.config import ROOT
-import selfdrive.manager as manager
+import selfdrive.manager.manager as manager
 from selfdrive.test.helpers import set_params_enabled
 from tools.lib.logreader import LogReader
 
@@ -86,7 +86,7 @@ class TestOnroad(unittest.TestCase):
     try:
       manager.build()
       manager.manager_prepare()
-      manager_path = os.path.join(BASEDIR, "selfdrive/manager.py")
+      manager_path = os.path.join(BASEDIR, "selfdrive/manager/manager.py")
       proc = subprocess.Popen(["python", manager_path])
 
       sm = messaging.SubMaster(['carState'])

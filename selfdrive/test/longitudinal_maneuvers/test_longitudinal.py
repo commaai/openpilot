@@ -9,7 +9,7 @@ matplotlib.use('svg')
 from selfdrive.config import Conversions as CV
 from selfdrive.car.honda.values import CruiseButtons as CB
 from selfdrive.test.longitudinal_maneuvers.maneuver import Maneuver
-import selfdrive.manager as manager
+import selfdrive.manager.manager as manager
 from common.file_helpers import mkdirs_exists_ok
 from common.params import Params
 

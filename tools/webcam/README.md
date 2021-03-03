@@ -36,7 +36,7 @@ USE_WEBCAM=1 scons -j$(nproc)
 
 ## GO
 ```
-cd ~/openpilot/selfdrive
+cd ~/openpilot/selfdrive/manager
 PASSIVE=0 NOSENSOR=1 USE_WEBCAM=1 ./manager.py
 ```
 - Start the car, then the UI should show the road webcam's view

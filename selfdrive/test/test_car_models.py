@@ -9,7 +9,7 @@ from typing import List, cast
 import requests
 
 import cereal.messaging as messaging
-import selfdrive.manager as manager
+import selfdrive.manager.manager as manager
 from cereal import car
 from common.basedir import BASEDIR
 from common.params import Params

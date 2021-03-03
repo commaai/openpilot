@@ -24,7 +24,7 @@ import argparse
 import re
 from collections import defaultdict
 
-import selfdrive.manager as manager
+import selfdrive.manager.manager as manager
 
 # Do statistics every 5 seconds
 PRINT_INTERVAL = 5

@@ -70,7 +70,6 @@ selfdrive/registration.py
 selfdrive/config.py
 selfdrive/crash.py
 selfdrive/launcher.py
-selfdrive/manager.py
 selfdrive/swaglog.py
 selfdrive/logmessaged.py
 selfdrive/tombstoned.py
@@ -385,6 +384,9 @@ selfdrive/camerad/imgproc/conv.cl
 selfdrive/camerad/imgproc/pool.cl
 selfdrive/camerad/imgproc/utils.cc
 selfdrive/camerad/imgproc/utils.h
+
+selfdrive/manager/__init__.py
+selfdrive/manager/manager.py
 
 selfdrive/modeld/SConscript
 selfdrive/modeld/modeld.cc

@@ -3,7 +3,7 @@ import os
 import time
 import numpy as np
 import cereal.messaging as messaging
-import selfdrive.manager as manager
+import selfdrive.manager.manager as manager
 
 
 N = int(os.getenv("N", "5"))

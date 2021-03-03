@@ -4,7 +4,7 @@ import time
 
 from tqdm import tqdm
 
-import selfdrive.manager as manager
+import selfdrive.manager.manager as manager
 from cereal.messaging import PubMaster, recv_one, sub_sock
 from tools.lib.framereader import FrameReader
 

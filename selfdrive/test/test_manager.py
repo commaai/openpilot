@@ -6,7 +6,7 @@ import unittest
 
 os.environ['FAKEUPLOAD'] = "1"
 
-import selfdrive.manager as manager
+import selfdrive.manager.manager as manager
 from selfdrive.hardware import EON
 
 # TODO: make eon fast

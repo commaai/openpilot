@@ -9,7 +9,7 @@ os.environ['QCOM_REPLAY'] = '1'
 
 from common.spinner import Spinner
 from common.timeout import Timeout
-import selfdrive.manager as manager
+import selfdrive.manager.manager as manager
 
 from cereal import log
 import cereal.messaging as messaging

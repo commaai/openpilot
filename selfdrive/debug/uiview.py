@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import time
 import cereal.messaging as messaging
-from selfdrive.manager import start_managed_process, kill_managed_process
+from selfdrive.manager.manager import start_managed_process, kill_managed_process
 
 services = ['controlsState', 'deviceState', 'radarState']  # the services needed to be spoofed to start ui offroad
 procs = ['camerad', 'ui', 'modeld', 'calibrationd']

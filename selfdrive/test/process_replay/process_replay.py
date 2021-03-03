@@ -14,12 +14,12 @@ else:
 
 from cereal import car, log
 from selfdrive.car.car_helpers import get_car
-import selfdrive.manager as manager
+import selfdrive.manager.manager as manager
 import cereal.messaging as messaging
 from common.params import Params
 from cereal.services import service_list
 from collections import namedtuple
-from selfdrive.manager import managed_processes
+from selfdrive.manager.manager import managed_processes
 # Numpy gives different results based on CPU features after version 19
 NUMPY_TOLERANCE = 1e-7
 
