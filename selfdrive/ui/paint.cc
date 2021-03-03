@@ -589,8 +589,8 @@ UIVision::UIVision(const Rect &video_rect, bool is_driver_view) : last_frame(nul
   if (is_driver_view) {
     frame_mat = matmul(device_transform, driver_view_transform);
   } else {
-    float zx = zoom * 2 * intrinsic_matrix.v[2] / video_rect.w;
-    float zy = zoom * 2 * intrinsic_matrix.v[5] / video_rect.h;
+    float zx = zoom * 2 * fcam_intrinsic_matrix.v[2] / video_rect.w;
+    float zy = zoom * 2 * fcam_intrinsic_matrix.v[5] / video_rect.h;
 
     const mat4 frame_transform = {{
       zx, 0.0, 0.0, 0.0,
