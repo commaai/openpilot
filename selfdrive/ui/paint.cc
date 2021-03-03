@@ -586,7 +586,9 @@ UIVision::UIVision(const Rect &video_rect, bool is_driver_view) : last_frame(nul
   glBindBuffer(GL_ARRAY_BUFFER, 0);
   glBindVertexArray(0);
 
-  if (!is_driver_view) {
+  if (is_driver_view) {
+    frame_mat = matmul(device_transform, driver_view_transform);
+  } else {
     float zx = zoom * 2 * intrinsic_matrix.v[2] / video_rect.w;
     float zy = zoom * 2 * intrinsic_matrix.v[5] / video_rect.h;
 
@@ -596,12 +598,10 @@ UIVision::UIVision(const Rect &video_rect, bool is_driver_view) : last_frame(nul
       0.0, 0.0, 1.0, 0.0,
       0.0, 0.0, 0.0, 1.0,
     }};
-    frame_mat = matmul(device_transform, frame_transform);
-  } else {
-    frame_mat = matmul(device_transform, driver_view_transform);
+    frame_mat = matmul(device_transform, frame_transform);    
   }
 
-  const VisionStreamType stream_type = front ? VISION_STREAM_RGB_FRONT : VISION_STREAM_RGB_BACK;
+  const VisionStreamType stream_type = is_driver_view ? VISION_STREAM_RGB_FRONT : VISION_STREAM_RGB_BACK;
   vipc_client = std::make_unique<VisionIpcClient>("camerad", stream_type, true);
   LOGW("UIVision connected,stream type: %d", stream_type);
 }
