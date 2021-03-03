@@ -241,8 +241,8 @@ def manager_init():
     os.chmod(os.path.join(BASEDIR, "cereal"), 0o755)
     os.chmod(os.path.join(BASEDIR, "cereal", "libmessaging_shared.so"), 0o755)
 
-def manager_thread():
 
+def manager_thread():
   cloudlog.info("manager start")
   cloudlog.info({"environ": os.environ})
 
@@ -254,9 +254,6 @@ def manager_thread():
     ignore.append("pandad")
   if os.getenv("BLOCK") is not None:
     ignore += os.getenv("BLOCK").split(",")
-
-  # Start persistent processes before launching apk
-  manage_processes(managed_processes, False, not_run=ignore)
 
   # start offroad
   if EON and "QT" not in os.environ:
@@ -284,7 +281,6 @@ def manager_thread():
       os.sync()
       # TODO
       # send_managed_process_signal("updated", signal.SIGHUP)
-
     started_prev = started
 
     running_list = ["%s%s\u001b[0m" % ("\u001b[32m" if p.proc.is_alive() else "\u001b[31m", p.name)
