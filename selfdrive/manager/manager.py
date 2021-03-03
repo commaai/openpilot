@@ -143,7 +143,6 @@ if __name__ == "__main__" and not PREBUILT:
   build()
 
 import cereal.messaging as messaging
-
 from common.params import Params
 from selfdrive.registration import register
 from selfdrive.manager.process import PythonProcess, NativeProcess, DaemonProcess, manage_processes
@@ -306,7 +305,6 @@ def manager_prepare():
   for i, p in enumerate(managed_processes):
     perc = (100.0 - total) + total * (i + 1) / len(managed_processes)
     spinner.update_progress(perc, 100.)
-
     p.prepare()
 
 
