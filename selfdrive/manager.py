@@ -171,7 +171,7 @@ managed_processes = {
   "calibrationd": "selfdrive.locationd.calibrationd",
   "paramsd": "selfdrive.locationd.paramsd",
   "camerad": ("selfdrive/camerad", ["./camerad"]),
-  # "sensord": ("selfdrive/sensord", ["./sensord"]),
+  "sensord": ("selfdrive/sensord", ["./sensord"]),
   "clocksd": ("selfdrive/clocksd", ["./clocksd"]),
   "updated": "selfdrive.updated",
   "dmonitoringmodeld": ("selfdrive/modeld", ["./dmonitoringmodeld"]),
@@ -214,7 +214,7 @@ if not PC:
 
 if EON:
   persistent_processes += [
-    # 'sensord',
+    'sensord',
   ]
 
 if TICI:

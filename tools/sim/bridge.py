@@ -277,7 +277,7 @@ def go(q):
       sm.update(0)
       throttle_op = sm['carControl'].actuators.gas #[0,1]
       brake_op = sm['carControl'].actuators.brake #[0,1]
-      steer_op = sm['controlsState'].steeringAngleDesiredDeg # angleSteersDes # degrees [-180,180]
+      steer_op = sm['controlsState'].steeringAngleDesiredDeg # degrees [-180,180]
 
       throttle_out = throttle_op
       steer_out = steer_op
