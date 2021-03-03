@@ -620,13 +620,13 @@ void UIVision::update() {
     } else {
       const float zx = zoom * b->width / video_rect.w;
       const float zy = zoom * b->height / video_rect.h;
-      const mat4 frame_transform = {{
+      const mat4 road_view_transform = {{
         zx, 0.0, 0.0, 0.0,
         0.0, zy, 0.0, -y_offset / video_rect.h * 2,
         0.0, 0.0, 1.0, 0.0,
         0.0, 0.0, 0.0, 1.0,
       }};
-      frame_mat = matmul(device_transform, frame_transform);    
+      frame_mat = matmul(device_transform, road_view_transform);    
     }
   }
 
