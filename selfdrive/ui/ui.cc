@@ -57,7 +57,7 @@ void ui_init(UIState *s) {
   s->sm = new SubMaster({"modelV2", "controlsState", "uiLayoutState", "liveCalibration", "radarState", "deviceState", "roadCameraState", "liveLocationKalman",
                          "pandaState", "carParams", "driverState", "driverMonitoringState", "sensorEvents", "carState", "ubloxGnss"});
 
-  s->started = false;
+  s->scene.started = false;
   s->status = STATUS_OFFROAD;
 
   s->fb = std::make_unique<FrameBuffer>("ui", 0, true, &s->fb_w, &s->fb_h);
@@ -137,7 +137,7 @@ static void update_sockets(UIState *s) {
   if (sm.update(0) == 0) return;
 
   UIScene &scene = s->scene;
-  if (s->started && sm.updated("controlsState")) {
+  if (scene.started && sm.updated("controlsState")) {
     scene.controls_state = sm["controlsState"].getControlsState();
   }
   if (sm.updated("carState")) {
@@ -180,7 +180,7 @@ static void update_sockets(UIState *s) {
   if (sm.updated("pandaState")) {
     auto pandaState = sm["pandaState"].getPandaState();
     scene.pandaType = pandaState.getPandaType();
-    s->ignition = pandaState.getIgnitionLine() || pandaState.getIgnitionCan();
+    scene.ignition = pandaState.getIgnitionLine() || pandaState.getIgnitionCan();
   } else if ((s->sm->frame - s->sm->rcv_frame("pandaState")) > 5*UI_FREQ) {
     scene.pandaType = cereal::PandaState::PandaType::UNKNOWN;
   }
@@ -194,14 +194,14 @@ static void update_sockets(UIState *s) {
     scene.gpsOK = sm["liveLocationKalman"].getLiveLocationKalman().getGpsOK();
   }
   if (sm.updated("carParams")) {
-    s->longitudinal_control = sm["carParams"].getCarParams().getOpenpilotLongitudinalControl();
+    scene.longitudinal_control = sm["carParams"].getCarParams().getOpenpilotLongitudinalControl();
   }
   if (sm.updated("driverState")) {
     scene.driver_state = sm["driverState"].getDriverState();
   }
   if (sm.updated("driverMonitoringState")) {
     scene.dmonitoring_state = sm["driverMonitoringState"].getDriverMonitoringState();
-    if(!scene.driver_view && !s->ignition) {
+    if(!scene.driver_view && !scene.ignition) {
       read_param(&scene.driver_view, "IsDriverViewEnabled");
     }
   } else if ((sm.frame - sm.rcv_frame("driverMonitoringState")) > UI_FREQ/2) {
@@ -210,15 +210,15 @@ static void update_sockets(UIState *s) {
   if (sm.updated("sensorEvents")) {
     for (auto sensor : sm["sensorEvents"].getSensorEvents()) {
       if (sensor.which() == cereal::SensorEventData::LIGHT) {
-        s->light_sensor = sensor.getLight();
-      } else if (!s->started && sensor.which() == cereal::SensorEventData::ACCELERATION) {
-        s->accel_sensor = sensor.getAcceleration().getV()[2];
-      } else if (!s->started && sensor.which() == cereal::SensorEventData::GYRO_UNCALIBRATED) {
-        s->gyro_sensor = sensor.getGyroUncalibrated().getV()[1];
+        scene.light_sensor = sensor.getLight();
+      } else if (!scene.started && sensor.which() == cereal::SensorEventData::ACCELERATION) {
+        scene.accel_sensor = sensor.getAcceleration().getV()[2];
+      } else if (!scene.started && sensor.which() == cereal::SensorEventData::GYRO_UNCALIBRATED) {
+        scene.gyro_sensor = sensor.getGyroUncalibrated().getV()[1];
       }
     }
   }
-  s->started = scene.deviceState.getStarted() || scene.driver_view;
+  scene.started = scene.deviceState.getStarted() || scene.driver_view;
 }
 
 static void update_alert(UIState *s) {
@@ -240,9 +240,9 @@ static void update_alert(UIState *s) {
   }
 
   // Handle controls timeout
-  if (scene.deviceState.getStarted() && (s->sm->frame - s->started_frame) > 10 * UI_FREQ) {
+  if (scene.deviceState.getStarted() && (s->sm->frame - scene.started_frame) > 10 * UI_FREQ) {
     const uint64_t cs_frame = s->sm->rcv_frame("controlsState");
-    if (cs_frame < s->started_frame) {
+    if (cs_frame < scene.started_frame) {
       // car is started, but controlsState hasn't been seen at all
       scene.alert_text1 = "openpilot Unavailable";
       scene.alert_text2 = "Waiting for controls to start";
@@ -264,20 +264,21 @@ static void update_alert(UIState *s) {
 
 static void update_params(UIState *s) {
   const uint64_t frame = s->sm->frame;
+  UIScene &scene = s->scene;
 
   if (frame % (5*UI_FREQ) == 0) {
-    read_param(&s->is_metric, "IsMetric");
+    read_param(&scene.is_metric, "IsMetric");
   } else if (frame % (6*UI_FREQ) == 0) {
-    s->scene.athenaStatus = NET_DISCONNECTED;
+    scene.athenaStatus = NET_DISCONNECTED;
     uint64_t last_ping = 0;
     if (read_param(&last_ping, "LastAthenaPingTime") == 0) {
-      s->scene.athenaStatus = nanos_since_boot() - last_ping < 70e9 ? NET_CONNECTED : NET_ERROR;
+      scene.athenaStatus = nanos_since_boot() - last_ping < 70e9 ? NET_CONNECTED : NET_ERROR;
     }
   }
 }
 
 static void update_vision(UIState *s) {
-  if (!s->vipc_client->connected && s->started) {
+  if (!s->vipc_client->connected && s->scene.started) {
     if (s->vipc_client->connect(false)){
       ui_init_vision(s);
     }
@@ -296,7 +297,7 @@ static void update_vision(UIState *s) {
 }
 
 static void update_status(UIState *s) {
-  if (s->started && s->sm->updated("controlsState")) {
+  if (s->scene.started && s->sm->updated("controlsState")) {
     auto alert_status = s->scene.controls_state.getAlertStatus();
     if (alert_status == cereal::ControlsState::AlertStatus::USER_PROMPT) {
       s->status = STATUS_WARNING;
@@ -309,10 +310,10 @@ static void update_status(UIState *s) {
 
   // Handle onroad/offroad transition
   static bool started_prev = false;
-  if (s->started != started_prev) {
-    if (s->started) {
+  if (s->scene.started != started_prev) {
+    if (s->scene.started) {
       s->status = STATUS_DISENGAGED;
-      s->started_frame = s->sm->frame;
+      s->scene.started_frame = s->sm->frame;
 
       read_param(&s->scene.is_rhd, "IsRHD");
       s->active_app = cereal::UiLayoutState::App::NONE;
@@ -327,7 +328,7 @@ static void update_status(UIState *s) {
       s->vipc_client->connected = false;
     }
   }
-  started_prev = s->started;
+  started_prev = s->scene.started;
 }
 
 void ui_update(UIState *s) {
