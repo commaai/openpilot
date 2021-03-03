@@ -114,7 +114,7 @@ void RequestRepeater::sendRequest(QString requestURL, QVector<QPair<QString, QJs
 
 #ifdef QCOM
   QSslConfiguration ssl = QSslConfiguration::defaultConfiguration();
-  ssl.setCaCertificates(certsQSslCertificate::fromPath("/usr/etc/tls/cert.pem",
+  ssl.setCaCertificates(QSslCertificate::fromPath("/usr/etc/tls/cert.pem",
                         QSsl::Pem, QRegExp::Wildcard));
   request.setSslConfiguration(ssl);
 #endif
