@@ -139,7 +139,7 @@ class NativeProcess(ManagerProcess):
     cwd = os.path.join(BASEDIR, self.cwd)
     cloudlog.info("starting process %s" % self.name)
     self.proc = Process(name=self.name, target=nativelauncher, args=(self.cmdline, cwd))
-    print(self.proc)
+    self.proc.start()
 
 
 class PythonProcess(ManagerProcess):
@@ -161,6 +161,7 @@ class PythonProcess(ManagerProcess):
 
     cloudlog.info("starting python %s" % self.module)
     self.proc = Process(name=self.name, target=launcher, args=(self.module,))
+    self.proc.start()
 
 
 class DaemonProcess(ManagerProcess):
