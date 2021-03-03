@@ -1067,7 +1067,7 @@ void cameras_open(MultiCameraState *s) {
       // driver camera
       {.vfe_intf = VFE1, .intftype = RDI0, .num_cids = 1, .cids[0] = CID0, .csid = CSID2},
       // road camera (focus)
-      {.vfe_intf = VFE0, .intftype = RDI1, .num_cids = CID1, .cids[0] = CID1, .csid = CSID0},
+      {.vfe_intf = VFE0, .intftype = RDI1, .num_cids = 1, .cids[0] = CID1, .csid = CSID0},
       // road camera (stats, for AE)
       {.vfe_intf = VFE0, .intftype = RDI2, .num_cids = 1, .cids[0] = CID2, .csid = CSID0},
     },
