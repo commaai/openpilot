@@ -62,7 +62,7 @@ def cam_callback(image):
   dat = messaging.new_message('roadCameraState')
   dat.roadCameraState = {
     "frameId": image.frame,
-    "image": img.tostring(),
+    "image": img.tobytes(),
     "transform": [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
   }
   pm.send('roadCameraState', dat)
@@ -118,7 +118,6 @@ def fake_driver_monitoring():
       "faceDetected": True,
       "isDistracted": False,
       "awarenessStatus": 1.,
-      "isRHD": False,
     }
     pm.send('driverMonitoringState', dat)
 
@@ -278,7 +277,7 @@ def go(q):
       sm.update(0)
       throttle_op = sm['carControl'].actuators.gas #[0,1]
       brake_op = sm['carControl'].actuators.brake #[0,1]
-      steer_op = sm['controlsState'].angleSteersDes # degrees [-180,180]
+      steer_op = sm['controlsState'].steeringAngleDesiredDeg # angleSteersDes # degrees [-180,180]
 
       throttle_out = throttle_op
       steer_out = steer_op

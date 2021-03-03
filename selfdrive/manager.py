@@ -171,7 +171,7 @@ managed_processes = {
   "calibrationd": "selfdrive.locationd.calibrationd",
   "paramsd": "selfdrive.locationd.paramsd",
   "camerad": ("selfdrive/camerad", ["./camerad"]),
-  "sensord": ("selfdrive/sensord", ["./sensord"]),
+  # "sensord": ("selfdrive/sensord", ["./sensord"]),
   "clocksd": ("selfdrive/clocksd", ["./clocksd"]),
   "updated": "selfdrive.updated",
   "dmonitoringmodeld": ("selfdrive/modeld", ["./dmonitoringmodeld"]),
@@ -214,7 +214,7 @@ if not PC:
 
 if EON:
   persistent_processes += [
-    'sensord',
+    # 'sensord',
   ]
 
 if TICI:
@@ -253,10 +253,10 @@ if EON:
   car_started_processes += [
     'rtshield',
   ]
-else:
-   car_started_processes += [
-    'sensord',
-  ]
+# else:
+     #car_started_processes += [
+    # 'sensord',
+  # ]
 
 def register_managed_process(name, desc, car_started=False):
   global managed_processes, car_started_processes, persistent_processes
