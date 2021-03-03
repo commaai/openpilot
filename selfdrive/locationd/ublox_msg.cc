@@ -69,6 +69,8 @@ class EphemerisData {
       this->_rsvd4 = GET_FIELD_U(subframes[1][2+4], 16, 14);
       this->aodo = GET_FIELD_U(subframes[2][2+7], 5, 8);
 
+      double gpsPi = 3.1415926535898;
+
       // now form variables in radians, meters and seconds etc
       this->Tgd = t_gd * pow(2, -31);
       this->A = pow(a_powhalf * pow(2, -19), 2.0);
@@ -78,14 +80,14 @@ class EphemerisData {
       this->crs = c_rs * pow(2, -5);
       this->cuc = c_uc * pow(2, -29);
       this->cus = c_us * pow(2, -29);
-      this->deltaN = delta_n * pow(2, -43) * M_PI;
+      this->deltaN = delta_n * pow(2, -43) * gpsPi;
       this->ecc = e * pow(2, -33);
-      this->i0 = i_0 * pow(2, -31) * M_PI;
-      this->idot = idot * pow(2, -43) * M_PI;
-      this->M0 = m_0 * pow(2, -31) * M_PI;
-      this->omega = w * pow(2, -31) * M_PI;
-      this->omega_dot = omega_dot * pow(2, -43) * M_PI;
-      this->omega0 = omega_0 * pow(2, -31) * M_PI;
+      this->i0 = i_0 * pow(2, -31) * gpsPi;
+      this->idot = idot * pow(2, -43) * gpsPi;
+      this->M0 = m_0 * pow(2, -31) * gpsPi;
+      this->omega = w * pow(2, -31) * gpsPi;
+      this->omega_dot = omega_dot * pow(2, -43) * gpsPi;
+      this->omega0 = omega_0 * pow(2, -31) * gpsPi;
       this->toe = t_oe * pow(2, 4);
 
       this->toc = t_oc * pow(2, 4);
