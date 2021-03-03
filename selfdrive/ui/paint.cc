@@ -20,19 +20,9 @@
 #ifdef QCOM2
 const float y_offset = 150.0;
 const float zoom = 1.1;
-const mat3 intrinsic_matrix = (mat3){{
-  2648.0, 0.0, 1928.0/2,
-  0.0, 2648.0, 1208.0/2,
-  0.0,   0.0,   1.0
-}};
 #else
 const float y_offset = 0.0;
 const float zoom = 2.35;
-const mat3 intrinsic_matrix = (mat3){{
-  910., 0., 1164.0/2,
-  0., 910., 874.0/2,
-  0.,   0.,   1.
-}};
 #endif
 
 // Projects a point in car to space to the corresponding point in full frame
@@ -41,7 +31,7 @@ bool calib_frame_to_full_frame(const UIState *s, float in_x, float in_y, float i
   const float margin = 500.0f;
   const vec3 pt = (vec3){{in_x, in_y, in_z}};
   const vec3 Ep = matvecmul3(s->scene.view_from_calib, pt);
-  const vec3 KEp = matvecmul3(intrinsic_matrix, Ep);
+  const vec3 KEp = matvecmul3(fcam_intrinsic_matrix, Ep);
 
   // Project.
   float x = KEp.v[0] / KEp.v[2];
@@ -618,8 +608,8 @@ void ui_nvg_init(UIState *s) {
   }
 
   s->video_rect = Rect{bdr_s, bdr_s, s->fb_w - 2 * bdr_s, s->fb_h - 2 * bdr_s};
-  float zx = zoom * 2 * intrinsic_matrix.v[2] / s->video_rect.w;
-  float zy = zoom * 2 * intrinsic_matrix.v[5] / s->video_rect.h;
+  float zx = zoom * 2 * fcam_intrinsic_matrix.v[2] / s->video_rect.w;
+  float zy = zoom * 2 * fcam_intrinsic_matrix.v[5] / s->video_rect.h;
 
   const mat4 frame_transform = {{
     zx, 0.0, 0.0, 0.0,
@@ -639,7 +629,7 @@ void ui_nvg_init(UIState *s) {
   nvgScale(s->vg, zoom, zoom);
 
   // 3) Put (0, 0) in top left corner of video
-  nvgTranslate(s->vg, -intrinsic_matrix.v[2], -intrinsic_matrix.v[5]);
+  nvgTranslate(s->vg, -fcam_intrinsic_matrix.v[2], -fcam_intrinsic_matrix.v[5]);
 
   nvgCurrentTransform(s->vg, s->car_space_transform);
   nvgResetTransform(s->vg);
