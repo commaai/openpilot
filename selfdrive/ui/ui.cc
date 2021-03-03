@@ -282,6 +282,8 @@ static void update_status(UIState *s) {
       s->sidebar_collapsed = true;
       s->scene.alert_size = cereal::ControlsState::AlertSize::NONE;
       s->vision = std::make_unique<UIVision>(s->video_rect, s->scene.driver_view);
+      // Invisible until we receive a calibration message.
+      s->scene.world_objects_visible = false;
     } else {
       s->status = STATUS_OFFROAD;
       s->sidebar_collapsed = false;
