@@ -16,24 +16,20 @@ from selfdrive.hardware.eon.apk import update_apks, pm_apply_packages, start_off
 from selfdrive.swaglog import cloudlog, add_logentries_handler
 from selfdrive.version import version, dirty
 
-
 os.environ['BASEDIR'] = BASEDIR
 sys.path.append(os.path.join(BASEDIR, "pyextra"))
 
 WEBCAM = os.getenv("WEBCAM") is not None
 PREBUILT = os.path.exists(os.path.join(BASEDIR, 'prebuilt'))
 
-
 if __name__ == "__main__":
   unblock_stdout()
-
 
 # Start spinner
 spinner = Spinner()
 spinner.update_progress(0, 100)
 if __name__ != "__main__":
   spinner.close()
-
 
 if __name__ == "__main__" and not PREBUILT:
   build(spinner, dirty)
@@ -99,8 +95,6 @@ def cleanup_all_processes(signal, frame):
 
   cloudlog.info("everything is dead")
 
-
-# ****************** run loop ******************
 
 def manager_init():
   os.umask(0)  # Make sure we can create files with 777 permissions

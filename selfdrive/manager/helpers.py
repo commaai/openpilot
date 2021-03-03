@@ -15,6 +15,7 @@ from common.basedir import BASEDIR
 TOTAL_SCONS_NODES = 1225
 MAX_BUILD_PROGRESS = 70
 
+
 def unblock_stdout():
   # get a non-blocking stdout
   child_pid, child_pty = os.forkpty()
