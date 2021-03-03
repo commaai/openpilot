@@ -96,7 +96,7 @@ RequestRepeater::RequestRepeater(QWidget* parent, QString requestURL, int period
 
 void RequestRepeater::sendRequest(QString requestURL, QVector<QPair<QString, QJsonValue>> payloads){
   // No network calls onroad
-  if(GLWindow::ui_state.started){
+  if(GLWindow::ui_state.scene.started){
     return;
   }
   if (!active || (!GLWindow::ui_state.awake && disableWithScreen)) {
