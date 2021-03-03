@@ -44,7 +44,14 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.705
       ret.centerToFront = ret.wheelbase * 0.44
       ret.steerRatio = 17
-
+    elif candidate == CAR.ALTIMA:
+      # Altima has EPS on C-CAN unlike the others that have it on V-CAN
+      ret.safetyParam = 1 # EPS is on alternate bus
+      ret.mass = 1492 + STD_CARGO_KG
+      ret.wheelbase = 2.824
+      ret.centerToFront = ret.wheelbase * 0.44
+      ret.steerRatio = 17
+  
     ret.steerControlType = car.CarParams.SteerControlType.angle
     ret.radarOffCan = True
 

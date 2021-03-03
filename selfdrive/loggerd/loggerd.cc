@@ -41,12 +41,14 @@
 
 namespace {
 
-constexpr int MAIN_BITRATE = 5000000;
 constexpr int MAIN_FPS = 20;
+
 #ifndef QCOM2
+constexpr int MAIN_BITRATE = 5000000;
 constexpr int MAX_CAM_IDX = LOG_CAMERA_ID_DCAMERA;
 constexpr int DCAM_BITRATE = 2500000;
 #else
+constexpr int MAIN_BITRATE = 10000000;
 constexpr int MAX_CAM_IDX = LOG_CAMERA_ID_ECAMERA;
 constexpr int DCAM_BITRATE = MAIN_BITRATE;
 #endif
@@ -492,6 +494,11 @@ int main(int argc, char** argv) {
 
   LOGW("closing logger");
   logger_close(&s.logger);
+
+  if (do_exit.power_failure){
+    LOGE("power failure");
+    sync();
+  }
 
   // messaging cleanup
   for (auto sock : socks) delete sock;

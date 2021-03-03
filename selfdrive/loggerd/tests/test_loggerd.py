@@ -163,8 +163,8 @@ class TestLoggerd(unittest.TestCase):
     qlog_services = [s for s in CEREAL_SERVICES if service_list[s].decimation is not None]
     no_qlog_services = [s for s in CEREAL_SERVICES if service_list[s].decimation is None]
 
-    services = random.sample(qlog_services, random.randint(2, 10)) + \
-               random.sample(no_qlog_services, random.randint(2, 10))
+    services = random.sample(qlog_services, random.randint(2, min(10, len(qlog_services)))) + \
+               random.sample(no_qlog_services, random.randint(2, min(10, len(no_qlog_services))))
 
     pm = messaging.PubMaster(services)
 

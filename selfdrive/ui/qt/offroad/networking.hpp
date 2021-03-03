@@ -8,7 +8,7 @@
 #include <QTimer>
 
 #include "wifiManager.hpp"
-#include "widgets/input_field.hpp"
+#include "widgets/input.hpp"
 #include "widgets/ssh_keys.hpp"
 #include "widgets/toggle.hpp"
 

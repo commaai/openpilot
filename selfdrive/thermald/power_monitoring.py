@@ -79,7 +79,7 @@ class PowerMonitoring:
         # No ignition, we integrate the offroad power used by the device
         is_uno = pandaState.pandaState.pandaType == log.PandaState.PandaType.uno
         # Get current power draw somehow
-        current_power = HARDWARE.get_current_power_draw()
+        current_power = HARDWARE.get_current_power_draw() # pylint: disable=assignment-from-none
         if current_power is not None:
           pass
         elif HARDWARE.get_battery_status() == 'Discharging':
@@ -165,6 +165,7 @@ class PowerMonitoring:
     disable_charging |= (self.car_battery_capacity_uWh <= 0)
     disable_charging &= (not pandaState.pandaState.ignitionLine and not pandaState.pandaState.ignitionCan)
     disable_charging &= (self.params.get("DisablePowerDown") != b"1")
+    disable_charging |= (self.params.get("ForcePowerDown") == b"1")
     return disable_charging
 
   # See if we need to shutdown

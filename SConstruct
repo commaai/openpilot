@@ -263,60 +263,69 @@ else:
 Export('envCython')
 
 # Qt build environment
-qt_env = None
-if arch in ["x86_64", "Darwin", "larch64"]:
-  qt_env = env.Clone()
+qt_env = env.Clone()
 
-  qt_modules = ["Widgets", "Gui", "Core", "DBus", "Multimedia", "Network", "Concurrent", "WebEngine", "WebEngineWidgets"]
+qt_modules = ["Widgets", "Gui", "Core", "Network", "Concurrent", "Multimedia"]
+if arch != "aarch64":
+  qt_modules += ["DBus", "WebEngine", "WebEngineWidgets"]
 
-  qt_libs = []
-  if arch == "Darwin":
-    qt_env['QTDIR'] = "/usr/local/opt/qt"
-    QT_BASE = "/usr/local/opt/qt/"
-    qt_dirs = [
-      QT_BASE + "include/",
-    ]
-    qt_dirs += [f"{QT_BASE}include/Qt{m}" for m in qt_modules]
-    qt_env["LINKFLAGS"] += ["-F" + QT_BASE + "lib"]
-    qt_env["FRAMEWORKS"] += [f"Qt{m}" for m in qt_modules] + ["OpenGL"]
-  else:
-    qt_env['QTDIR'] = "/usr"
-    qt_dirs = [
-      f"/usr/include/{real_arch}-linux-gnu/qt5",
-      f"/usr/include/{real_arch}-linux-gnu/qt5/QtGui/5.5.1/QtGui",
-      f"/usr/include/{real_arch}-linux-gnu/qt5/QtGui/5.12.8/QtGui",
-    ]
-    qt_dirs += [f"/usr/include/{real_arch}-linux-gnu/qt5/Qt{m}" for m in qt_modules]
-
-    qt_libs = [f"Qt5{m}" for m in qt_modules]
-    if arch == "larch64":
-      qt_libs += ["GLESv2", "wayland-client"]
-    elif arch != "Darwin":
-      qt_libs += ["GL"]
-
-  qt_env.Tool('qt')
-  qt_env['CPPPATH'] += qt_dirs + ["#selfdrive/ui/qt/"]
-  qt_flags = [
-    "-D_REENTRANT",
-    "-DQT_NO_DEBUG",
-    "-DQT_WIDGETS_LIB",
-    "-DQT_GUI_LIB",
-    "-DQT_CORE_LIB"
+qt_libs = []
+if arch == "Darwin":
+  qt_env['QTDIR'] = "/usr/local/opt/qt"
+  QT_BASE = "/usr/local/opt/qt/"
+  qt_dirs = [
+    QT_BASE + "include/",
   ]
-  qt_env['CXXFLAGS'] += qt_flags
-  qt_env['LIBPATH'] += ['#selfdrive/ui']
-  qt_env['LIBS'] = qt_libs
+  qt_dirs += [f"{QT_BASE}include/Qt{m}" for m in qt_modules]
+  qt_env["LINKFLAGS"] += ["-F" + QT_BASE + "lib"]
+  qt_env["FRAMEWORKS"] += [f"Qt{m}" for m in qt_modules] + ["OpenGL"]
+elif arch == "aarch64":
+  qt_env['QTDIR'] = "/system/comma/usr"
+  qt_dirs = [
+    f"/system/comma/usr/include/qt",
+  ]
+  qt_dirs += [f"/system/comma/usr/include/qt/Qt{m}" for m in qt_modules]
 
-  if GetOption("clazy"):
-    checks = [
-      "level0",
-      "level1",
-      "no-range-loop",
-      "no-non-pod-global-static",
-    ]
-    qt_env['CXX'] = 'clazy'
-    qt_env['ENV']['CLAZY_IGNORE_DIRS'] = qt_dirs[0]
-    qt_env['ENV']['CLAZY_CHECKS'] = ','.join(checks)
+  qt_libs = [f"Qt5{m}" for m in qt_modules]
+  qt_libs += ['EGL', 'GLESv3', 'c++_shared']
+else:
+  qt_env['QTDIR'] = "/usr"
+  qt_dirs = [
+    f"/usr/include/{real_arch}-linux-gnu/qt5",
+    f"/usr/include/{real_arch}-linux-gnu/qt5/QtGui/5.5.1/QtGui",
+    f"/usr/include/{real_arch}-linux-gnu/qt5/QtGui/5.12.8/QtGui",
+  ]
+  qt_dirs += [f"/usr/include/{real_arch}-linux-gnu/qt5/Qt{m}" for m in qt_modules]
+
+  qt_libs = [f"Qt5{m}" for m in qt_modules]
+  if arch == "larch64":
+    qt_libs += ["GLESv2", "wayland-client"]
+  elif arch != "Darwin":
+    qt_libs += ["GL"]
+
+qt_env.Tool('qt')
+qt_env['CPPPATH'] += qt_dirs + ["#selfdrive/ui/qt/"]
+qt_flags = [
+  "-D_REENTRANT",
+  "-DQT_NO_DEBUG",
+  "-DQT_WIDGETS_LIB",
+  "-DQT_GUI_LIB",
+  "-DQT_CORE_LIB"
+]
+qt_env['CXXFLAGS'] += qt_flags
+qt_env['LIBPATH'] += ['#selfdrive/ui']
+qt_env['LIBS'] = qt_libs
+
+if GetOption("clazy"):
+  checks = [
+    "level0",
+    "level1",
+    "no-range-loop",
+    "no-non-pod-global-static",
+  ]
+  qt_env['CXX'] = 'clazy'
+  qt_env['ENV']['CLAZY_IGNORE_DIRS'] = qt_dirs[0]
+  qt_env['ENV']['CLAZY_CHECKS'] = ','.join(checks)
 Export('qt_env')
 
 
@@ -383,7 +392,6 @@ if arch != "Darwin":
 
 if real_arch == "x86_64":
   SConscript(['tools/nui/SConscript'])
-  SConscript(['tools/lib/index_log/SConscript'])
 
 external_sconscript = GetOption('external_sconscript')
 if external_sconscript:

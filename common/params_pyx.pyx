@@ -58,6 +58,7 @@ keys = {
   b"ReleaseNotes": [TxType.PERSISTENT],
   b"ShouldDoUpdate": [TxType.CLEAR_ON_MANAGER_START],
   b"SubscriberInfo": [TxType.PERSISTENT],
+  b"SshEnabled": [TxType.PERSISTENT],
   b"TermsVersion": [TxType.PERSISTENT],
   b"Timezone": [TxType.PERSISTENT],
   b"TrainingVersion": [TxType.PERSISTENT],
@@ -75,6 +76,7 @@ keys = {
   b"Offroad_NeosUpdate": [TxType.CLEAR_ON_MANAGER_START],
   b"Offroad_UpdateFailed": [TxType.CLEAR_ON_MANAGER_START],
   b"Offroad_HardwareUnsupported": [TxType.CLEAR_ON_MANAGER_START],
+  b"ForcePowerDown": [TxType.CLEAR_ON_MANAGER_START],
 }
 
 def ensure_bytes(v):

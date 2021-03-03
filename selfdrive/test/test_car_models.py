@@ -497,6 +497,10 @@ routes = {
     'carFingerprint': MAZDA.Mazda3,
     'enableCamera': True,
   },
+    "b72d3ec617c0a90f|2020-12-11--15-38-17": {
+    'carFingerprint': NISSAN.ALTIMA,
+    'enableCamera': True,
+  },
 }
 
 passive_routes: List[str] = [

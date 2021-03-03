@@ -461,6 +461,7 @@ FW_VERSIONS = {
       b'37805-5AN-LR20\x00\x00',
       b'37805-5AN-LS20\x00\x00',
       b'37805-5AW-G720\x00\x00',
+      b'37805-5AN-E820\x00\x00',
       b'37805-5AZ-E850\x00\x00',
       b'37805-5BB-A630\x00\x00',
       b'37805-5BB-A640\x00\x00',
@@ -531,6 +532,7 @@ FW_VERSIONS = {
       b'78109-TGG-A810\x00\x00',
       b'78109-TGG-A820\x00\x00',
       b'78109-TGG-C220\x00\x00',
+      b'78109-TGG-G030\x00\x00',
       b'78109-TGL-G120\x00\x00',
       b'78109-TGL-G130\x00\x00',
       b'78109-TGG-G410\x00\x00',
@@ -689,6 +691,7 @@ FW_VERSIONS = {
       b'77959-TLA-A240\x00\x00',
       b'77959-TLA-A250\x00\x00',
       b'77959-TLA-A320\x00\x00',
+      b'77959-TLA-A410\x00\x00',
       b'77959-TLA-Q040\x00\x00',
     ],
   },
@@ -949,6 +952,7 @@ FW_VERSIONS = {
     ],
     (Ecu.combinationMeter, 0x18da60f1, None): [
       b'78109-TJB-AB10\x00\x00',
+      b'78109-TJB-AD10\x00\x00',
       b'78109-TJB-AF10\x00\x00',
     ],
     (Ecu.srs, 0x18da53f1, None): [

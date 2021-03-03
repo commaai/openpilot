@@ -2,7 +2,6 @@
 import datetime
 import os
 import time
-from collections import namedtuple
 from typing import Dict, Optional, Tuple
 
 import psutil
@@ -15,16 +14,16 @@ from common.numpy_fast import clip, interp
 from common.params import Params
 from common.realtime import DT_TRML, sec_since_boot
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
-from selfdrive.hardware import EON, HARDWARE, TICI
+from selfdrive.hardware import EON, TICI, HARDWARE
 from selfdrive.loggerd.config import get_available_percent
 from selfdrive.pandad import get_expected_signature
 from selfdrive.swaglog import cloudlog
 from selfdrive.thermald.power_monitoring import PowerMonitoring
 from selfdrive.version import get_git_branch, terms_version, training_version
 
-ThermalConfig = namedtuple('ThermalConfig', ['cpu', 'gpu', 'mem', 'bat', 'ambient'])
-
 FW_SIGNATURE = get_expected_signature()
+
+DISABLE_LTE_ONROAD = os.path.exists("/persist/disable_lte_onroad") or TICI
 
 ThermalStatus = log.DeviceState.ThermalStatus
 NetworkType = log.DeviceState.NetworkType
@@ -39,17 +38,6 @@ prev_offroad_states: Dict[str, Tuple[bool, Optional[str]]] = {}
 
 LEON = False
 last_eon_fan_val = None
-
-
-def get_thermal_config():
-  # (tz, scale)
-  if EON:
-    return ThermalConfig(cpu=((5, 7, 10, 12), 10), gpu=((16,), 10), mem=(2, 10), bat=(29, 1000), ambient=(25, 1))
-  elif TICI:
-    return ThermalConfig(cpu=((1, 2, 3, 4, 5, 6, 7, 8), 1000), gpu=((48,49), 1000), mem=(15, 1000), bat=(None, 1), ambient=(70, 1000))
-  else:
-    return ThermalConfig(cpu=((None,), 1), gpu=((None,), 1), mem=(None, 1), bat=(None, 1), ambient=(None, 1))
-
 
 def read_tz(x):
   if x is None:
@@ -168,6 +156,7 @@ def thermald_thread():
   pandaState_timeout = int(1000 * 2.5 * DT_TRML)  # 2.5x the expected pandaState frequency
   pandaState_sock = messaging.sub_sock('pandaState', timeout=pandaState_timeout)
   location_sock = messaging.sub_sock('gpsLocationExternal')
+  managerState_sock = messaging.sub_sock('managerState', conflate=True)
 
   fan_speed = 0
   count = 0
@@ -193,12 +182,13 @@ def thermald_thread():
   should_start_prev = False
   handle_fan = None
   is_uno = False
+  ui_running_prev = False
 
   params = Params()
   power_monitor = PowerMonitoring()
   no_panda_cnt = 0
 
-  thermal_config = get_thermal_config()
+  thermal_config = HARDWARE.get_thermal_config()
 
   while 1:
     pandaState = messaging.recv_sock(pandaState_sock, wait=True)
@@ -245,7 +235,7 @@ def thermald_thread():
       except Exception:
         cloudlog.exception("Error getting network status")
 
-    msg.deviceState.freeSpacePercent = get_available_percent(default=100.0) / 100.0
+    msg.deviceState.freeSpacePercent = get_available_percent(default=100.0)
     msg.deviceState.memoryUsagePercent = int(round(psutil.virtual_memory().percent))
     msg.deviceState.cpuUsagePercent = int(round(psutil.cpu_percent()))
     msg.deviceState.networkType = network_type
@@ -347,7 +337,7 @@ def thermald_thread():
     set_offroad_alert_if_changed("Offroad_PandaFirmwareMismatch", (not startup_conditions["fw_version_match"]))
 
     # with 2% left, we killall, otherwise the phone will take a long time to boot
-    startup_conditions["free_space"] = msg.deviceState.freeSpacePercent > 0.02
+    startup_conditions["free_space"] = msg.deviceState.freeSpacePercent > 2
     startup_conditions["completed_training"] = params.get("CompletedTrainingVersion") == training_version or \
                                                (current_branch in ['dashcam', 'dashcam-staging'])
     startup_conditions["not_driver_view"] = not params.get("IsDriverViewEnabled") == b"1"
@@ -366,6 +356,8 @@ def thermald_thread():
     if should_start:
       if not should_start_prev:
         params.delete("IsOffroad")
+        if TICI and DISABLE_LTE_ONROAD:
+          os.system("sudo systemctl stop --no-block lte")
 
       off_ts = None
       if started_ts is None:
@@ -377,6 +369,8 @@ def thermald_thread():
 
       if should_start_prev or (count == 0):
         params.put("IsOffroad", "1")
+        if TICI and DISABLE_LTE_ONROAD:
+          os.system("sudo systemctl start --no-block lte")
 
       started_ts = None
       if off_ts is None:
@@ -395,7 +389,15 @@ def thermald_thread():
       cloudlog.info(f"shutting device down, offroad since {off_ts}")
       # TODO: add function for blocking cloudlog instead of sleep
       time.sleep(10)
-      os.system('LD_LIBRARY_PATH="" svc power shutdown')
+      HARDWARE.shutdown()
+
+    # If UI has crashed, set the brightness to reasonable non-zero value
+    manager_state = messaging.recv_one_or_none(managerState_sock)
+    if manager_state is not None:
+      ui_running = "ui" in (p.name for p in manager_state.managerState.processes if p.running)
+      if ui_running_prev and not ui_running:
+        HARDWARE.set_screen_brightness(20)
+      ui_running_prev = ui_running
 
     msg.deviceState.chargingError = current_filter.x > 0. and msg.deviceState.batteryPercent < 90  # if current is positive, then battery is being discharged
     msg.deviceState.started = started_ts is not None
