@@ -254,7 +254,7 @@ if EON:
     'rtshield',
   ]
 elif not PC:
-  car_started_processes += [
+   car_started_processes += [
     'sensord',
   ]
 
