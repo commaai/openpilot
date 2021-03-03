@@ -1,9 +1,6 @@
 #include "ui.hpp"
 
 #include <assert.h>
-#include <map>
-#include <cmath>
-#include <iostream>
 #include "common/util.h"
 #include "common/timing.h"
 #include <algorithm>
@@ -24,23 +21,6 @@ const float zoom = 1.1;
 const float y_offset = 0.0;
 const float zoom = 2.35;
 #endif
-
-// Projects a point in car to space to the corresponding point in full frame
-// image space.
-bool calib_frame_to_full_frame(const UIState *s, float in_x, float in_y, float in_z, vertex_data *out) {
-  const float margin = 500.0f;
-  const vec3 pt = (vec3){{in_x, in_y, in_z}};
-  const vec3 Ep = matvecmul3(s->scene.view_from_calib, pt);
-  const vec3 KEp = matvecmul3(fcam_intrinsic_matrix, Ep);
-
-  // Project.
-  float x = KEp.v[0] / KEp.v[2];
-  float y = KEp.v[1] / KEp.v[2];
-
-  nvgTransformPoint(&out->x, &out->y, s->car_space_transform, x, y);
-  return out->x >= -margin && out->x <= s->fb_w + margin && out->y >= -margin && out->y <= s->fb_h + margin;
-}
-
 
 static void ui_draw_text(const UIState *s, float x, float y, const char* string, float size, NVGcolor color, const char *font_name){
   nvgFontFace(s->vg, font_name);
