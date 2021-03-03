@@ -29,6 +29,7 @@
 //#define FRAME_STRIDE 1936 // for 8 bit output
 #define FRAME_STRIDE 2416  // for 10 bit output
 
+#define MIPI_SETTLE_CNT 33  // Calculated by camera_freqs.py
 
 extern ExitHandler do_exit;
 
@@ -749,8 +750,8 @@ static void camera_open(CameraState *s) {
     csiphy_info->combo_mode = 0x0;
     csiphy_info->lane_cnt = 0x4;
     csiphy_info->secure_mode = 0x0;
-    csiphy_info->settle_time = 2800000000;
-    csiphy_info->data_rate = 44000000;
+    csiphy_info->settle_time = MIPI_SETTLE_CNT * 200000000ULL;
+    csiphy_info->data_rate = 48000000;  // Calculated by camera_freqs.py
 
     static struct cam_config_dev_cmd config_dev_cmd = {};
     config_dev_cmd.session_handle = s->session_handle;
@@ -1054,8 +1055,8 @@ static void set_camera_exposure(CameraState *s, float grey_frac) {
   struct i2c_random_wr_payload exp_reg_array[] = {
                                                   {0x3366, AG}, // analog gain
                                                   {0x3362, (uint16_t)(s->dc_gain_enabled?0x1:0x0)}, // DC_GAIN
-                                                  {0x305A, 0x0108}, // red gain
-                                                  {0x3058, 0x00FB}, // blue gain
+                                                  {0x305A, 0x00F8}, // red gain
+                                                  {0x3058, 0x0122}, // blue gain
                                                   {0x3056, 0x009A}, // g1 gain
                                                   {0x305C, 0x009A}, // g2 gain
                                                   {0x3012, (uint16_t)s->exposure_time}, // integ time

@@ -23,7 +23,7 @@ from selfdrive.version import get_git_branch, terms_version, training_version
 
 FW_SIGNATURE = get_expected_signature()
 
-DISABLE_LTE_ONROAD = os.path.exists("/persist/disable_lte_onroad")
+DISABLE_LTE_ONROAD = os.path.exists("/persist/disable_lte_onroad") or TICI
 
 ThermalStatus = log.DeviceState.ThermalStatus
 NetworkType = log.DeviceState.NetworkType
