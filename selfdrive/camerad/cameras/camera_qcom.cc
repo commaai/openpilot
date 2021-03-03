@@ -113,8 +113,6 @@ static void camera_init(VisionIpcServer *v, CameraState *s, int camera_id, int c
   s->self_recover = 0;
 
   s->buf.init(device_id, ctx, s, v, FRAME_BUF_COUNT, rgb_type, yuv_type, camera_release_buffer);
-
-  pthread_mutex_init(&s->frame_info_lock, NULL);
 }
 
 int sensor_write_regs(CameraState *s, struct msm_camera_i2c_reg_array* arr, size_t size, msm_camera_i2c_data_type data_type) {
@@ -317,19 +315,17 @@ static void set_exposure(CameraState *s, float exposure_frac, float gain_frac) {
     }
 
     if (err == 0) {
-      pthread_mutex_lock(&s->frame_info_lock);
+      std::lock_guard lk(s->frame_info_lock);
       s->cur_gain = gain;
       s->cur_integ_lines = integ_lines;
       s->cur_frame_length = frame_length;
-      pthread_mutex_unlock(&s->frame_info_lock);
     }
   }
 
   if (err == 0) {
     s->cur_exposure_frac = exposure_frac;
-    pthread_mutex_lock(&s->frame_info_lock);
+    std::lock_guard lk(s->frame_info_lock);
     s->cur_gain_frac = gain_frac;
-    pthread_mutex_unlock(&s->frame_info_lock);
   }
 
   //LOGD("set exposure: %f %f - %d", exposure_frac, gain_frac, err);
@@ -355,9 +351,9 @@ static void do_autoexposure(CameraState *s, float grey_frac) {
     } else if (cur_gain_frac * exposure_factor <= gain_frac_max && cur_gain_frac * exposure_factor >= gain_frac_min) {
       cur_gain_frac *= exposure_factor;
     }
-    pthread_mutex_lock(&s->frame_info_lock);
+    s->frame_info_lock.lock();
     s->cur_gain_frac = cur_gain_frac;
-    pthread_mutex_unlock(&s->frame_info_lock);
+    s->frame_info_lock.unlock();
 
     set_exposure(s, s->cur_exposure_frac, cur_gain_frac);
   } else { // keep the old for others
@@ -1180,15 +1176,12 @@ const char* get_isp_event_name(unsigned int type) {
 }
 
 static FrameMetadata get_frame_metadata(CameraState *s, uint32_t frame_id) {
-  pthread_mutex_lock(&s->frame_info_lock);
+  std::lock_guard lk(s->frame_info_lock);
   for (auto &i : s->frame_metadata) {
     if (i.frame_id == frame_id) {
-      pthread_mutex_unlock(&s->frame_info_lock);
       return i;
     }
   }
-  pthread_mutex_unlock(&s->frame_info_lock);
-
   // should never happen
   return (FrameMetadata){
     .frame_id = (uint32_t)-1,
@@ -1357,7 +1350,7 @@ void cameras_run(MultiCameraState *s) {
 
       } else if (ev.type == ISP_EVENT_EOF) {
         const uint64_t timestamp = (isp_event_data->mono_timestamp.tv_sec * 1000000000ULL + isp_event_data->mono_timestamp.tv_usec * 1000);
-        pthread_mutex_lock(&c->frame_info_lock);
+        std::lock_guard lk(c->frame_info_lock);
         c->frame_metadata[c->frame_metadata_idx] = (FrameMetadata){
             .frame_id = isp_event_data->frame_id,
             .timestamp_eof = timestamp,
@@ -1371,7 +1364,6 @@ void cameras_run(MultiCameraState *s) {
             .gain_frac = c->cur_gain_frac,
         };
         c->frame_metadata_idx = (c->frame_metadata_idx + 1) % METADATA_BUF_COUNT;
-        pthread_mutex_unlock(&c->frame_info_lock);
 
       } else if (ev.type == ISP_EVENT_ERROR) {
         LOGE("ISP_EVENT_ERROR! err type: 0x%08x", isp_event_data->u.error_info.err_type);

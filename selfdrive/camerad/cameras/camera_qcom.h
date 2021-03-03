@@ -60,7 +60,7 @@ typedef struct CameraState {
   StreamState ss[3];
   CameraBuf buf;
 
-  pthread_mutex_t frame_info_lock;
+  std::mutex frame_info_lock;
   FrameMetadata frame_metadata[METADATA_BUF_COUNT];
   int frame_metadata_idx;
 
