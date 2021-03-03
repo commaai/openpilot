@@ -191,7 +191,7 @@ static void update_sockets(UIState *s) {
     if(!scene.driver_view && !scene.ignition) {
       read_param(&scene.driver_view, "IsDriverViewEnabled");
     }
-  } else if (scene.driver_view && (sm.frame - sm.rcv_frame("driverMonitoringState")) > UI_FREQ/2) {
+  } else if ((sm.frame - sm.rcv_frame("driverMonitoringState")) > UI_FREQ/2) {
     scene.driver_view = false;
   }
   if (sm.updated("sensorEvents")) {
