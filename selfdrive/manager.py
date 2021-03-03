@@ -253,10 +253,10 @@ if EON:
   car_started_processes += [
     'rtshield',
   ]
-# else:
-     #car_started_processes += [
-    # 'sensord',
-  # ]
+elif not PC:
+  car_started_processes += [
+    'sensord',
+  ]
 
 def register_managed_process(name, desc, car_started=False):
   global managed_processes, car_started_processes, persistent_processes
