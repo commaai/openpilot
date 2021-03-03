@@ -100,7 +100,7 @@ typedef struct UIScene {
   bool world_objects_visible;
 
   bool is_rhd;
-  bool frontview;
+  bool driver_view;
 
   std::string alert_text1;
   std::string alert_text2;

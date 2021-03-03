@@ -140,7 +140,7 @@ static void ui_draw_line(UIState *s, const line_vertices_data &vd, NVGcolor *col
 
 static void draw_frame(UIState *s) {
   mat4 *out_mat;
-  if (s->scene.frontview) {
+  if (s->scene.driver_view) {
     glBindVertexArray(s->frame_vao[1]);
     out_mat = &s->front_frame_mat;
   } else {
@@ -377,7 +377,7 @@ static void ui_draw_vision_frame(UIState *s) {
 
 static void ui_draw_vision(UIState *s) {
   const UIScene *scene = &s->scene;
-  if (!scene->frontview) {
+  if (!scene->driver_view) {
     // Draw augmented elements
     if (scene->world_objects_visible) {
       ui_draw_world(s);
