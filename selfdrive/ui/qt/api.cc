@@ -15,6 +15,8 @@
 #include "common/params.h"
 #include "common/util.h"
 
+#include <QSslSocket>
+
 #if defined(QCOM) || defined(QCOM2)
 const std::string private_key_path = "/persist/comma/id_rsa";
 #else
@@ -110,14 +112,12 @@ void RequestRepeater::sendRequest(QString requestURL, QVector<QPair<QString, QJs
   request.setUrl(QUrl(requestURL));
   request.setRawHeader(QByteArray("Authorization"), ("JWT " + token).toUtf8());
 
-  // TODO: fix this
-/*
 #ifdef QCOM
   QSslConfiguration ssl = QSslConfiguration::defaultConfiguration();
-  ssl.setPeerVerifyMode(QSslSocket::VerifyNone);
+  ssl.setCaCertificates(certsQSslCertificate::fromPath("/usr/etc/tls/cert.pem",
+                        QSsl::Pem, QRegExp::Wildcard));
   request.setSslConfiguration(ssl);
 #endif
-*/
 
   reply = networkAccessManager->get(request);
 
