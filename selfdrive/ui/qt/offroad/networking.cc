@@ -258,7 +258,7 @@ void AdvancedNetworking::toggleTethering(int enable) {
 }
 
 void AdvancedNetworking::toggleSSH(int enable) {
-  Params().put("SshEnabled", QString::number(enable).toStdString());
+  Params().put("SshEnabled", (bool)enable);
 }
 
 // WifiUI functions

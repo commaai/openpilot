@@ -128,14 +128,8 @@ int main(int argc, char* argv[]) {
 
   // light sensor scaling and volume params
   Params params(true);
-  float brightness_b = params.get<float>("BRIGHTNESS_B").value_or(-1.);
-  float brightness_m = params.get<float>("BRIGHTNESS_M").value_or(-1.);
-  if (brightness_b <= 0. ||  brightness_m <= 0) {
-    brightness_b = 10.0;
-    brightness_m = 2.6;
-    params.put("BRIGHTNESS_B", brightness_b);
-    params.put("BRIGHTNESS_M", brightness_m);
-  }
+  float brightness_b = params.get<float>("BRIGHTNESS_B").value_or(10.0);
+  float brightness_m = params.get<float>("BRIGHTNESS_M").value_or(2.6);
   float smooth_brightness = brightness_b;
 
   const int MIN_VOLUME = 12;
