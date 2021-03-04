@@ -100,7 +100,7 @@ class ManagerProcess(ABC):
     ret = self.proc.exitcode
     cloudlog.info(f"{self.name} is dead with {ret}")
 
-    if self.proc.exitcode is None:
+    if self.proc.exitcode is not None:
       self.proc = None
 
     return ret
