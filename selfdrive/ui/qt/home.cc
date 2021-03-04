@@ -2,6 +2,8 @@
 #include <fstream>
 #include <iostream>
 #include <thread>
+#include <exception>
+
 
 #include <QDateTime>
 #include <QHBoxLayout>
@@ -164,7 +166,7 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
     Params().write_db_value("IsDriverViewEnabled", "0", 1);
     return;
   }
-  
+
   glWindow->wake();
 
   // Settings button click
@@ -191,10 +193,14 @@ static void handle_display_state(UIState* s, bool user_input) {
 }
 
 static void set_backlight(int brightness) {
-  std::ofstream brightness_control("/sys/class/backlight/panel0-backlight/brightness");
-  if (brightness_control.is_open()) {
-    brightness_control << brightness << "\n";
-    brightness_control.close();
+  try {
+    std::ofstream brightness_control("/sys/class/backlight/panel0-backlight/brightness");
+    if (brightness_control.is_open()) {
+      brightness_control << brightness << "\n";
+      brightness_control.close();
+    }
+  } catch (std::exception& e) {
+    qDebug() << "Error setting brightness";
   }
 }
 
