@@ -36,18 +36,10 @@ void* live_thread(void *arg) {
     -1.09890110e-03, 0.00000000e+00, 2.81318681e-01,
     -1.84808520e-20, 9.00738606e-04,-4.28751576e-02;
 
-  Eigen::Matrix<float, 3, 3> fcam_intrinsics;
+  Eigen::Matrix<float, 3, 3> fcam_intrinsics = Eigen::Matrix<float, 3, 3, Eigen::RowMajor>(fcam_intrinsic_matrix.v);
 #ifndef QCOM2
-  fcam_intrinsics <<
-    910.0, 0.0, 582.0,
-    0.0, 910.0, 437.0,
-    0.0,   0.0,   1.0;
   float db_s = 0.5; // debayering does a 2x downscale
 #else
-  fcam_intrinsics <<
-    2648.0, 0.0, 1928.0/2,
-    0.0, 2648.0, 1208.0/2,
-    0.0,   0.0,   1.0;
   float db_s = 1.0;
 #endif
 

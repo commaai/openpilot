@@ -952,6 +952,7 @@ FW_VERSIONS = {
     ],
     (Ecu.combinationMeter, 0x18da60f1, None): [
       b'78109-TJB-AB10\x00\x00',
+      b'78109-TJB-AD10\x00\x00',
       b'78109-TJB-AF10\x00\x00',
     ],
     (Ecu.srs, 0x18da53f1, None): [

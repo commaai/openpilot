@@ -9,15 +9,16 @@ import cv2  # pylint: disable=import-error
 import numpy as np
 import pygame  # pylint: disable=import-error
 
+import cereal.messaging as messaging
 from common.basedir import BASEDIR
 from selfdrive.config import UIParams as UP
-import cereal.messaging as messaging
-from tools.replay.lib.ui_helpers import (_BB_TO_FULL_FRAME, _FULL_FRAME_SIZE, _INTRINSICS,
-                                         BLACK,  GREEN, YELLOW, RED,
+from tools.replay.lib.ui_helpers import (_BB_TO_FULL_FRAME, _FULL_FRAME_SIZE,
+                                         _INTRINSICS, BLACK, GREEN, RED,
+                                         YELLOW, Calibration,
                                          get_blank_lid_overlay, init_plots,
-                                         maybe_update_radar_points, plot_model,
-                                         pygame_modules_have_loaded,
-                                         Calibration)
+                                         maybe_update_radar_points, plot_lead,
+                                         plot_model,
+                                         pygame_modules_have_loaded)
 
 os.environ['BASEDIR'] = BASEDIR
 
@@ -157,9 +158,11 @@ def ui_thread(addr, frame_address):
     plot_arr[-1, name_to_arr_idx['a_target']] = sm['longitudinalPlan'].aTarget
     plot_arr[-1, name_to_arr_idx['accel_override']] = sm['carControl'].cruiseControl.accelOverride
 
-    # ***** model ****
     if sm.rcv_frame['modelV2']:
       plot_model(sm['modelV2'], img, calibration, top_down)
+
+    if sm.rcv_frame['radarState']:
+      plot_lead(sm['radarState'], top_down)
 
     # draw all radar points
     maybe_update_radar_points(sm['liveTracks'], top_down[1])
