@@ -104,14 +104,31 @@ LogCameraInfo cameras_logged[LOG_CAMERA_ID_MAX] = {
   },
 };
 
-typedef struct QlogState {
+class SocketState {
+ public:
+  SocketState(SubSocket *s, int freq) : sock(s), freq(freq), counter(0) {}
+  void log(LoggerHandle *lh) {
+    if (!lh) return;
+
+    while (!do_exit) {
+      Message *msg = sock->receive(true);
+      if (!msg) break;
+
+      lh_log(lh, (uint8_t *)msg->getData(), msg->getSize(), counter == 0 && freq != -1);
+      if (freq != -1) {
+        counter = (counter + 1) % freq;
+      }
+      delete msg;
+    }
+  }
+  SubSocket *sock;
   int counter, freq;
-} QlogState;
+};
 
 class RotateState {
 public:
   SubSocket* fpkt_sock;
-  QlogState qlog_state;
+  SocketState qlog_state;
   uint32_t stream_frame_id, last_rotate_frame_id;
   bool enabled, should_rotate, initialized;
   std::atomic<bool> rotating;
@@ -158,21 +175,6 @@ struct LoggerdState {
   RotateState rotate_state[LOG_CAMERA_ID_MAX-1];
 };
 LoggerdState s;
-
-void drain_socket(LoggerHandle *lh, SubSocket *sock, QlogState &qs) {
-  if (!lh) return;
-
-  while (!do_exit) {
-    Message *msg = sock->receive(true);
-    if (!msg) break;
-
-    lh_log(lh, (uint8_t *)msg->getData(), msg->getSize(), qs.counter == 0 && qs.freq != -1);
-    if (qs.freq != -1) {
-      qs.counter = (qs.counter + 1) % qs.freq;
-    }
-    delete msg;
-  }
-}
 
 void encoder_thread(int cam_idx) {
   assert(cam_idx < LOG_CAMERA_ID_MAX-1);
@@ -266,7 +268,7 @@ void encoder_thread(int cam_idx) {
       rotate_state.setStreamFrameId(extra.frame_id);
 
       // log frame socket
-      drain_socket(lh, rotate_state.fpkt_sock, rotate_state.qlog_state);
+      rotate_state.qlog_state.log(lh);
       // encode a frame
       for (int i = 0; i < encoders.size(); ++i) {
         int out_id = encoders[i]->encode_frame(buf->y, buf->u, buf->v,
@@ -332,7 +334,7 @@ int main(int argc, char** argv) {
   clear_locks();
 
   // setup messaging
-  std::map<SubSocket*, QlogState> qlog_states;
+  std::map<SubSocket*, SocketState> socket_states;
 
   s.ctx = Context::create();
   Poller * poller = Poller::create();
@@ -345,13 +347,13 @@ int main(int argc, char** argv) {
     SubSocket * sock = SubSocket::create(s.ctx, it.name);
     assert(sock != NULL);
     socks.push_back(sock);
-    QlogState qs = {.counter = 0, .freq = it.decimation};
+    SocketState ss(sock, it.decimation);
 
     bool is_frame_sock = false;
     for (int cid=0; cid<=MAX_CAM_IDX; cid++) {
       if (std::string(it.name) == cameras_logged[cid].frame_packet_name) {
         s.rotate_state[cid].fpkt_sock = sock;
-        s.rotate_state[cid].qlog_state = qs;
+        s.rotate_state[cid].qlog_state = ss;
         is_frame_sock = true;
         break;
       }
@@ -359,7 +361,7 @@ int main(int argc, char** argv) {
     if (is_frame_sock) continue;
 
     poller->registerSocket(sock);
-    qlog_states[sock] = qs;
+    socket_states[sock] = ss;
   }
 
   // init logger
@@ -400,6 +402,7 @@ int main(int argc, char** argv) {
     // TODO: fix msgs from the first poll getting dropped
     // poll for new messages on all sockets
     for (auto sock : poller->poll(1000)) {
+<<<<<<< HEAD
 <<<<<<< HEAD
 
       // drain socket
@@ -453,6 +456,9 @@ int main(int argc, char** argv) {
 =======
       drain_socket(s.logger.cur_handle, sock, qlog_states[sock]);
 >>>>>>> log frame message in encoder
+=======
+      socket_states.at(sock).log(s.logger.cur_handle);
+>>>>>>> struct QlogState to class SocketState
     }
 
     bool new_segment = s.logger.part == -1;
@@ -505,7 +511,7 @@ int main(int argc, char** argv) {
   }
 
   // messaging cleanup
-  for (auto sock : socks) delete sock;
+  for (auto &[sock, ss] : socket_states) delete sock;
   delete poller;
   delete s.ctx;
 
