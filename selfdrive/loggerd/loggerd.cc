@@ -347,11 +347,11 @@ int main(int argc, char** argv) {
     poller->registerSocket(sock);
     socks.push_back(sock);
 
-    for (auto &cam_info : cameras_logged) {
-      if (strcmp(it.name, cam_info.frame_packet_name) == 0 &&
-          (cam_info.type != DRIVER_CAM || Params().read_db_bool("RecordFront"))) {
-        s.rotate_states.push_back(std::make_unique<RotateState>(sock, cam_info));
-      }
+    auto cam_info = std::find_if(std::begin(cameras_logged), std::end(cameras_logged), [it](auto &ci) { 
+      return strcmp(it.name, ci.frame_packet_name) == 0; 
+    });
+    if (cam_info != std::end(cameras_logged) && (cam_info->type != DRIVER_CAM || Params().read_db_bool("RecordFront"))) {
+      s.rotate_states.push_back(std::make_unique<RotateState>(sock, *cam_info));
     }
     qlog_states[sock] = {.counter = 0, .freq = it.decimation};
   }
