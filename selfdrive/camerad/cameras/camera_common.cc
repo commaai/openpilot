@@ -342,7 +342,8 @@ void *processing_thread(MultiCameraState *cameras, CameraState *cs, process_thre
   }
   set_thread_name(thread_name);
 
-  for (int cnt = 0; !do_exit; cnt++) {
+  uint32_t cnt = 0;
+  while (!do_exit) {
     if (!cs->buf.acquire()) continue;
 
     callback(cameras, cs, cnt);
@@ -352,6 +353,7 @@ void *processing_thread(MultiCameraState *cameras, CameraState *cs, process_thre
       publish_thumbnail(cameras->pm, &(cs->buf));
     }
     cs->buf.release();
+    ++cnt;
   }
   return NULL;
 }
