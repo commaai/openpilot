@@ -61,10 +61,10 @@ class CarState(CarStateBase):
     self.displayMetricUnits = not pt_cp.vl["Einheiten_01"]["KBI_MFA_v_Einheit_02"]
 
     # Consume blind-spot radar info/warning LED states, if available
-    ret.leftBlindspot = any([bool(acc_cp.vl["SWA_01"]["SWA_Infostufe_SWA_li"]),
-                             bool(acc_cp.vl["SWA_01"]["SWA_Warnung_SWA_li"])])
-    ret.rightBlindspot = any([bool(acc_cp.vl["SWA_01"]["SWA_Infostufe_SWA_re"]),
-                             bool(acc_cp.vl["SWA_01"]["SWA_Warnung_SWA_re"])])
+    ret.leftBlindspot = any([bool(pt_cp.vl["SWA_01"]["SWA_Infostufe_SWA_li"]),
+                             bool(pt_cp.vl["SWA_01"]["SWA_Warnung_SWA_li"])])
+    ret.rightBlindspot = any([bool(pt_cp.vl["SWA_01"]["SWA_Infostufe_SWA_re"]),
+                             bool(pt_cp.vl["SWA_01"]["SWA_Warnung_SWA_re"])])
 
     # Update ACC radar status.
     accStatus = pt_cp.vl["TSK_06"]['TSK_Status']
