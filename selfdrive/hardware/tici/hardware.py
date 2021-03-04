@@ -44,7 +44,8 @@ class Tici(HardwareBase):
     return "tici"
 
   def get_sound_card_online(self):
-    return os.system("pulseaudio --check") == 0
+    return (os.path.isfile('/proc/asound/card0/state') and
+            open('/proc/asound/card0/state').read().strip() == 'ONLINE')
 
   def reboot(self, reason=None):
     subprocess.check_output(["sudo", "reboot"])
