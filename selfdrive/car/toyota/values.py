@@ -300,6 +300,7 @@ FW_VERSIONS = {
   CAR.AVALON: {
     (Ecu.esp, 0x7b0, None): [
       b'F152607110\x00\x00\x00\x00\x00\x00',
+      b'F152607171\x00\x00\x00\x00\x00\x00',
       b'F152607180\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.dsu, 0x791, None): [
@@ -308,6 +309,7 @@ FW_VERSIONS = {
       b'881510703200\x00\x00\x00\x00',
     ],
     (Ecu.eps, 0x7a1, None): [
+      b'8965B41080\x00\x00\x00\x00\x00\x00',
       b'8965B41090\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.engine, 0x7e0, None): [
@@ -315,6 +317,7 @@ FW_VERSIONS = {
       b'\x0230721200\x00\x00\x00\x00\x00\x00\x00\x00A0C01000\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.engine, 0x700, None): [
+      b'\001896630735100\x00\x00\x00\x00',
       b'\x01896630738000\x00\x00\x00\x00',
     ],
     (Ecu.fwdRadar, 0x750, 0xf): [
