@@ -14,7 +14,7 @@ os.environ['FAKEUPLOAD'] = "1"
 
 # TODO: make eon fast
 MAX_STARTUP_TIME = 30 if EON else 15
-ALL_PROCESSES = [p for p in managed_processes if not type(p) is DaemonProcess]
+ALL_PROCESSES = [p.name for p in managed_processes.values() if type(p) is not DaemonProcess]
 
 
 class TestManager(unittest.TestCase):
