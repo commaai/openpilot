@@ -1,9 +1,7 @@
 #!/bin/bash
 
 # expose X to the container
-xhost +local:root
-
-# docker pull commaai/openpilot-sim:latest
+sudo xhost +local:root
 
 docker run --net=host\
   --name openpilot_client \
@@ -16,5 +14,6 @@ docker run --net=host\
   -v /run/user/1000:/run/user/1000 \
   --shm-size 1G \
   -e DISPLAY=$DISPLAY \
+  -e QT_X11_NO_MITSHM=1 \
   commaai/openpilot-sim:latest \
   /bin/bash -c "cd tools && cd sim && sh tmux_script.sh $*"
