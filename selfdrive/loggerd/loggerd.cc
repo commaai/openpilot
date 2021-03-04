@@ -107,13 +107,12 @@ LogCameraInfo cameras_logged[LOG_CAMERA_ID_MAX] = {
 class SocketState {
  public:
   SocketState(SubSocket *s, int freq) : sock(s), freq(freq), counter(0) {}
+  ~SocketState() { delete sock; }
   void log(LoggerHandle *lh) {
     if (!lh) return;
 
-    while (!do_exit) {
-      Message *msg = sock->receive(true);
-      if (!msg) break;
-
+    Message *msg = nullptr;
+    while (!do_exit && (msg = sock->receive(true))) {
       lh_log(lh, (uint8_t *)msg->getData(), msg->getSize(), counter == 0 && freq != -1);
       if (freq != -1) {
         counter = (counter + 1) % freq;
@@ -127,14 +126,13 @@ class SocketState {
 
 class RotateState {
 public:
-  SubSocket* fpkt_sock;
-  SocketState qlog_state;
+  SocketState *socket_state;
   uint32_t stream_frame_id, last_rotate_frame_id;
   bool enabled, should_rotate, initialized;
   std::atomic<bool> rotating;
   std::atomic<int> cur_seg;
 
-  RotateState() : fpkt_sock(nullptr), stream_frame_id(0),
+  RotateState() : socket_state(nullptr), stream_frame_id(0),
                   last_rotate_frame_id(UINT32_MAX), enabled(false), should_rotate(false), initialized(false), rotating(false), cur_seg(-1) {};
 
   void cancelWait() {
@@ -171,6 +169,7 @@ struct LoggerdState {
   LoggerState logger = {};
   char segment_path[4096];
   int rotate_segment;
+  std::atomic<double> last_camera_seen_tms;
   pthread_mutex_t rotate_lock;
   RotateState rotate_state[LOG_CAMERA_ID_MAX-1];
 };
@@ -268,7 +267,9 @@ void encoder_thread(int cam_idx) {
       rotate_state.setStreamFrameId(extra.frame_id);
 
       // log frame socket
-      rotate_state.qlog_state.log(lh);
+      rotate_state.socket_state->log(lh);
+      s.last_camera_seen_tms = millis_since_boot();
+
       // encode a frame
       for (int i = 0; i < encoders.size(); ++i) {
         int out_id = encoders[i]->encode_frame(buf->y, buf->u, buf->v,
@@ -328,13 +329,30 @@ void clear_locks() {
 } // namespace
 
 int main(int argc, char** argv) {
-
   setpriority(PRIO_PROCESS, 0, -12);
 
   clear_locks();
 
+  pthread_mutex_init(&s.rotate_lock, NULL);
+
+  // init logger
+  logger_init(&s.logger, "rlog", true);
+
+  // config encoders.  
+  s.rotate_state[LOG_CAMERA_ID_FCAMERA].enabled = true;
+#if defined(QCOM) || defined(QCOM2)
+  bool record_front = Params().read_db_bool("RecordFront");
+  if (record_front) {
+    s.rotate_state[LOG_CAMERA_ID_DCAMERA].enabled = true;
+  }
+#endif
+#ifdef QCOM2
+  s.rotate_state[LOG_CAMERA_ID_ECAMERA].enabled = true;
+#endif
+
+  std::vector<std::thread> encoder_threads;
   // setup messaging
-  std::map<SubSocket*, SocketState> socket_states;
+  std::map<SubSocket *, SocketState *> socket_states;
 
   s.ctx = Context::create();
   Poller * poller = Poller::create();
@@ -345,23 +363,26 @@ int main(int argc, char** argv) {
 
     SubSocket * sock = SubSocket::create(s.ctx, it.name);
     assert(sock != NULL);
-    SocketState ss(sock, it.decimation);
+    SocketState *ss = new SocketState(sock, it.decimation);
 
-    bool is_frame_sock = false;
+    bool poll_sock = true;
     for (int cid=0; cid<=MAX_CAM_IDX; cid++) {
       if (std::string(it.name) == cameras_logged[cid].frame_packet_name) {
-        s.rotate_state[cid].fpkt_sock = sock;
-        s.rotate_state[cid].qlog_state = ss;
-        is_frame_sock = true;
+        s.rotate_state[cid].socket_state = ss;
+        if (s.rotate_state[cid].enabled) {
+          poll_sock =  false;
+          encoder_threads.push_back(std::thread(encoder_thread, cid));
+        }
         break;
       }
     }
-    if (is_frame_sock) continue;
-
-    poller->registerSocket(sock);
+    if (poll_sock) {
+      poller->registerSocket(sock);
+    }
     socket_states[sock] = ss;
   }
 
+<<<<<<< HEAD
   // init logger
   logger_init(&s.logger, "rlog", true);
 
@@ -394,12 +415,15 @@ int main(int argc, char** argv) {
   double start_ts = seconds_since_boot();
 =======
 >>>>>>> log frame message in encoder
+=======
+>>>>>>> continue
   double last_rotate_tms = millis_since_boot();
-  double last_camera_seen_tms = millis_since_boot();
+  s.last_camera_seen_tms = millis_since_boot();
   while (!do_exit) {
     // TODO: fix msgs from the first poll getting dropped
     // poll for new messages on all sockets
     for (auto sock : poller->poll(1000)) {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 
@@ -457,12 +481,15 @@ int main(int argc, char** argv) {
 =======
       socket_states.at(sock).log(s.logger.cur_handle);
 >>>>>>> struct QlogState to class SocketState
+=======
+      socket_states.at(sock)->log(s.logger.cur_handle);
+>>>>>>> continue
     }
 
     bool new_segment = s.logger.part == -1;
     if (s.logger.part > -1) {
       double tms = millis_since_boot();
-      if (tms - last_camera_seen_tms <= NO_CAMERA_PATIENCE && encoder_threads.size() > 0) {
+      if (tms - s.last_camera_seen_tms <= NO_CAMERA_PATIENCE && encoder_threads.size() > 0) {
         new_segment = true;
         for (auto &r : s.rotate_state) {
           // this *should* be redundant on tici since all camera frames are synced
@@ -509,7 +536,7 @@ int main(int argc, char** argv) {
   }
 
   // messaging cleanup
-  for (auto &[sock, ss] : socket_states) delete sock;
+  for (auto &[sock, ss] : socket_states) delete ss;
   delete poller;
   delete s.ctx;
 
