@@ -341,12 +341,7 @@ def python_replay_process(cfg, lr):
   os.environ['FINGERPRINT'] = ""
   for msg in lr:
     if msg.which() == 'carParams':
-      # TODO: get a stock VW route
-      if "Generic Volkswagen" in msg.carParams.carFingerprint:
-        os.environ['FINGERPRINT'] = "VOLKSWAGEN GOLF"
-      else:
-        os.environ['FINGERPRINT'] = msg.carParams.carFingerprint
-      break
+      os.environ['FINGERPRINT'] = msg.carParams.carFingerprint
 
   manager.prepare_managed_process(cfg.proc_name)
   mod = importlib.import_module(manager.managed_processes[cfg.proc_name])
