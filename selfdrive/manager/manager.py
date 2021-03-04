@@ -11,7 +11,7 @@ from common.spinner import Spinner
 from common.text_window import TextWindow
 import selfdrive.crash as crash
 from selfdrive.manager.helpers import build, unblock_stdout, MAX_BUILD_PROGRESS
-from selfdrive.hardware import HARDWARE, EON, PC, TICI
+from selfdrive.hardware import HARDWARE, EON
 from selfdrive.hardware.eon.apk import update_apks, pm_apply_packages, start_offroad
 from selfdrive.swaglog import cloudlog, add_logentries_handler
 from selfdrive.version import version, dirty
@@ -37,51 +37,8 @@ if __name__ == "__main__" and not PREBUILT:
 import cereal.messaging as messaging
 from common.params import Params
 from selfdrive.registration import register
-from selfdrive.manager.process import PythonProcess, NativeProcess, DaemonProcess, manage_processes
-
-
-managed_processes = [
-  DaemonProcess("manage_athenad", "selfdrive.athena.manage_athenad", "AthenadPid"),
-  # due to qualcomm kernel bugs SIGKILLing camerad sometimes causes page table corruption
-  NativeProcess("camerad", "selfdrive/camerad", ["./camerad"], unkillable=True, driverview=True),
-  NativeProcess("clocksd", "selfdrive/clocksd", ["./clocksd"]),
-  NativeProcess("dmonitoringmodeld", "selfdrive/modeld", ["./dmonitoringmodeld"], driverview=True),
-  NativeProcess("logcatd", "selfdrive/logcatd", ["./logcatd"]),
-  NativeProcess("loggerd", "selfdrive/loggerd", ["./loggerd"]),
-  NativeProcess("modeld", "selfdrive/modeld", ["./modeld"]),
-  NativeProcess("proclogd", "selfdrive/proclogd", ["./proclogd"]),
-  NativeProcess("sensord", "selfdrive/sensord", ["./sensord"], persistent=EON, sigkill=EON),
-  NativeProcess("ubloxd", "selfdrive/locationd", ["./ubloxd"]),
-  NativeProcess("ui", "selfdrive/ui", ["./ui"], persistent=True),
-  PythonProcess("calibrationd", "selfdrive.locationd.calibrationd"),
-  PythonProcess("controlsd", "selfdrive.controls.controlsd"),
-  PythonProcess("deleter", "selfdrive.loggerd.deleter", persistent=True),
-  PythonProcess("dmonitoringd", "selfdrive.monitoring.dmonitoringd", driverview=True),
-  PythonProcess("locationd", "selfdrive.locationd.locationd"),
-  PythonProcess("logmessaged", "selfdrive.logmessaged", persistent=True),
-  PythonProcess("pandad", "selfdrive.pandad", persistent=True),
-  PythonProcess("paramsd", "selfdrive.locationd.paramsd"),
-  PythonProcess("plannerd", "selfdrive.controls.plannerd"),
-  PythonProcess("radard", "selfdrive.controls.radard"),
-  PythonProcess("thermald", "selfdrive.thermald.thermald", persistent=True),
-  PythonProcess("uploader", "selfdrive.loggerd.uploader", persistent=True),
-]
-
-if not PC:
-  managed_processes += [
-    PythonProcess("tombstoned", "selfdrive.tombstoned", persistent=True),
-    PythonProcess("updated", "selfdrive.updated", persistent=True),
-  ]
-
-if TICI:
-  managed_processes += [
-    PythonProcess("timezoned", "selfdrive.timezoned", persistent=True),
-  ]
-
-if EON:
-  managed_processes += [
-    PythonProcess("rtshield", "selfdrive.rtshield"),
-  ]
+from selfdrive.manager.process import  ensure_running
+from selfdrive.manager.process_config import managed_processes
 
 
 def cleanup_all_processes(signal, frame):
@@ -163,7 +120,7 @@ def manager_thread():
 
     started = sm['deviceState'].started
     driverview = params.get("IsDriverViewEnabled") == b"1"
-    manage_processes(managed_processes, started, driverview, not_run)
+    ensure_running(managed_processes, started, driverview, not_run)
 
     # trigger an update after going offroad
     if started_prev and not started:

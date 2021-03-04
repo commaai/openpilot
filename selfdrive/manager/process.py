@@ -204,7 +204,7 @@ class DaemonProcess(ManagerProcess):
     pass
 
 
-def manage_processes(procs, started, driverview=False, not_run=None):
+def ensure_running(procs, started, driverview=False, not_run=None):
   if not_run is None:
     not_run = []
 

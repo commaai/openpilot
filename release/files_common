@@ -387,6 +387,7 @@ selfdrive/camerad/imgproc/utils.h
 selfdrive/manager/__init__.py
 selfdrive/manager/helpers.py
 selfdrive/manager/process.py
+selfdrive/manager/process_config.py
 selfdrive/manager/manager.py
 
 selfdrive/modeld/SConscript
