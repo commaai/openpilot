@@ -47,6 +47,7 @@ RUN scons -j$(nproc)
 # Dependencies for glvnd and X11.
 RUN apt-get update \
   && apt-get install -y -qq --no-install-recommends \
+    clinfo \
     libpocl2 \
     libglvnd0 \
     libgl1 \
