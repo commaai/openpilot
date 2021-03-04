@@ -547,7 +547,7 @@ non_tested_cars = [
 if __name__ == "__main__":
 
   tested_procs = ["controlsd", "radard", "plannerd"]
-  tested_socks = ["radarState", "controlsState", "carState", "plan"]
+  tested_socks = ["radarState", "controlsState", "carState", "longitudinalPlan"]
 
   tested_cars = [keys["carFingerprint"] for route, keys in routes.items()]
   for car_model in all_known_cars():
