@@ -11,7 +11,6 @@ procs = [
   NativeProcess("loggerd", "selfdrive/loggerd", ["./loggerd"]),
   NativeProcess("modeld", "selfdrive/modeld", ["./modeld"]),
   NativeProcess("proclogd", "selfdrive/proclogd", ["./proclogd"]),
-  NativeProcess("sensord", "selfdrive/sensord", ["./sensord"], persistent=EON, sigkill=EON),
   NativeProcess("ubloxd", "selfdrive/locationd", ["./ubloxd"]),
   NativeProcess("ui", "selfdrive/ui", ["./ui"], persistent=True),
   PythonProcess("calibrationd", "selfdrive.locationd.calibrationd"),
@@ -30,6 +29,7 @@ procs = [
 
 if not PC:
   procs += [
+    NativeProcess("sensord", "selfdrive/sensord", ["./sensord"], persistent=EON, sigkill=EON),
     PythonProcess("tombstoned", "selfdrive.tombstoned", persistent=True),
     PythonProcess("updated", "selfdrive.updated", persistent=True),
   ]

@@ -55,6 +55,9 @@ class TestManager(unittest.TestCase):
         # TODO: make Qt UI exit gracefully and fix OMX encoder exiting
         continue
 
+      # Make sure the process is actually dead
+      managed_processes[p].stop()
+
       # TODO: interrupted blocking read exits with 1 in cereal. use a more unique return code
       exit_codes = [0, 1]
       if managed_processes[p].sigkill:
