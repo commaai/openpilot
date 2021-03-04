@@ -1,7 +1,7 @@
 from selfdrive.manager.process import PythonProcess, NativeProcess, DaemonProcess
 from selfdrive.hardware import EON, TICI, PC
 
-managed_processes = [
+procs = [
   DaemonProcess("manage_athenad", "selfdrive.athena.manage_athenad", "AthenadPid"),
   # due to qualcomm kernel bugs SIGKILLing camerad sometimes causes page table corruption
   NativeProcess("camerad", "selfdrive/camerad", ["./camerad"], unkillable=True, driverview=True),
@@ -29,17 +29,20 @@ managed_processes = [
 ]
 
 if not PC:
-  managed_processes += [
+  procs += [
     PythonProcess("tombstoned", "selfdrive.tombstoned", persistent=True),
     PythonProcess("updated", "selfdrive.updated", persistent=True),
   ]
 
 if TICI:
-  managed_processes += [
+  procs += [
     PythonProcess("timezoned", "selfdrive.timezoned", persistent=True),
   ]
 
 if EON:
-  managed_processes += [
+  procs += [
     PythonProcess("rtshield", "selfdrive.rtshield"),
   ]
+
+
+managed_processes = {p.name: p for p in procs}

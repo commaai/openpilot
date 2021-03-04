@@ -11,6 +11,7 @@ from selfdrive.version import version, dirty
 
 ATHENA_MGR_PID_PARAM = "AthenadPid"
 
+
 def main():
   params = Params()
   dongle_id = params.get("DongleId").decode('utf-8')
@@ -31,6 +32,7 @@ def main():
     cloudlog.exception("manage_athenad.exception")
   finally:
     params.delete(ATHENA_MGR_PID_PARAM)
+
 
 if __name__ == '__main__':
   main()

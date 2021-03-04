@@ -65,7 +65,7 @@ def manager_prepare(spinner):
 
   total = 100.0 - (0 if PREBUILT else MAX_BUILD_PROGRESS)
 
-  for i, p in enumerate(managed_processes):
+  for i, p in enumerate(managed_processes.values()):
     perc = (100.0 - total) + total * (i + 1) / len(managed_processes)
     spinner.update_progress(perc, 100.)
     p.prepare()
@@ -77,7 +77,7 @@ def cleanup_all_processes(signal, frame):
   if EON:
     pm_apply_packages('disable')
 
-  for p in managed_processes:
+  for p in managed_processes.values():
     p.stop()
 
   cloudlog.info("everything is dead")
@@ -115,22 +115,22 @@ def manager_thread():
 
     started = sm['deviceState'].started
     driverview = params.get("IsDriverViewEnabled") == b"1"
-    ensure_running(managed_processes, started, driverview, not_run)
+    ensure_running(managed_processes.values(), started, driverview, not_run)
 
     # trigger an update after going offroad
     if started_prev and not started:
       os.sync()
-      # TODO
-      # send_managed_process_signal("updated", signal.SIGHUP)
+      managed_processes['updated'].signal(signal.SIGHUP)
+
     started_prev = started
 
     running_list = ["%s%s\u001b[0m" % ("\u001b[32m" if p.proc.is_alive() else "\u001b[31m", p.name)
-                    for p in managed_processes if p.proc]
+                    for p in managed_processes.values() if p.proc]
     cloudlog.debug(' '.join(running_list))
 
     # send managerState
     msg = messaging.new_message('managerState')
-    msg.managerState.processes = [p.get_process_state_msg() for p in managed_processes]
+    msg.managerState.processes = [p.get_process_state_msg() for p in managed_processes.values()]
     pm.send('managerState', msg)
 
     # Exit main loop when uninstall is needed

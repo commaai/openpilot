@@ -9,7 +9,7 @@ from typing import List, cast
 import requests
 
 import cereal.messaging as messaging
-import selfdrive.manager.manager as manager
+from selfdrive.manager.process_config import managed_processes
 from cereal import car
 from common.basedir import BASEDIR
 from common.params import Params
@@ -561,7 +561,7 @@ if __name__ == "__main__":
 
   print("Preparing processes")
   for p in tested_procs:
-    manager.prepare_managed_process(p)
+    managed_processes[p].prepare()
 
   results = {}
   for route, checks in routes.items():
@@ -583,7 +583,7 @@ if __name__ == "__main__":
     print("testing ", route, " ", checks['carFingerprint'])
     print("Starting processes")
     for p in tested_procs:
-      manager.start_managed_process(p)
+      managed_processes[p].start()
 
     # Start unlogger
     print("Start unlogger")
@@ -603,11 +603,11 @@ if __name__ == "__main__":
     failures = [s for s in tested_socks + extra_socks if s not in recvd_socks]
 
     print("Check if everything is running")
-    running = manager.get_running()
     for p in tested_procs:
-      if not running[p].is_alive:
+      proc = managed_processes[p].proc
+      if not proc or not proc.is_alive:
         failures.append(p)
-      manager.kill_managed_process(p)
+      managed_processes[p].stop()
     os.killpg(os.getpgid(unlogger.pid), signal.SIGTERM)
 
     sockets_ok = len(failures) == 0

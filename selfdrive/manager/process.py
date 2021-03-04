@@ -58,7 +58,7 @@ class ManagerProcess(ABC):
   daemon = False
   sigkill = False
   proc = None
-  name = None
+  name = ""
 
   @abstractmethod
   def prepare(self):
@@ -68,7 +68,7 @@ class ManagerProcess(ABC):
   def start(self):
     pass
 
-  def stop(self):
+  def stop(self, retry=True):
     if self.proc is None:
       return
 
@@ -81,7 +81,7 @@ class ManagerProcess(ABC):
       join_process(self.proc, 5)
 
       # If process failed to die send SIGKILL or reboot
-      if self.proc.exitcode is None:
+      if self.proc.exitcode is None and retry:
         if self.unkillable:
           cloudlog.critical(f"unkillable process {self.name} failed to exit! rebooting in 15 if it doesn't die")
           join_process(self.proc, 15)
@@ -99,7 +99,10 @@ class ManagerProcess(ABC):
 
     ret = self.proc.exitcode
     cloudlog.info(f"{self.name} is dead with {ret}")
-    self.proc = None
+
+    if self.proc.exitcode is None:
+      self.proc = None
+
     return ret
 
   def signal(self, sig):
@@ -200,7 +203,7 @@ class DaemonProcess(ManagerProcess):
 
     params.put(self.param_name, str(proc.pid))
 
-  def stop(self):
+  def stop(self, retry=True):
     pass
 
 
