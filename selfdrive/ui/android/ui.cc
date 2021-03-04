@@ -127,8 +127,6 @@ int main(int argc, char* argv[]) {
   PubMaster *pm = new PubMaster({"offroadLayout"});
 
   // light sensor scaling and volume params
-  const bool LEON = util::read_file("/proc/cmdline").find("letv") != std::string::npos;
-
   Params params(true);
   float brightness_b = params.get<float>("BRIGHTNESS_B").value_or(-1.);
   float brightness_m = params.get<float>("BRIGHTNESS_M").value_or(-1.);
