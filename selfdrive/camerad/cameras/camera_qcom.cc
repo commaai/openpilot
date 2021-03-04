@@ -41,24 +41,8 @@ CameraInfo cameras_supported[CAMERA_ID_MAX] = {
     .frame_height = 1748,
     .frame_stride = 2912,
     .bayer = true,
-    .bayer_flip = 0,
+    .bayer_flip = 3,
     .hdr = true
-  },
-  [CAMERA_ID_IMX179] = {
-    .frame_width = 3280,
-    .frame_height = 2464,
-    .frame_stride = 4104,
-    .bayer = true,
-    .bayer_flip = 0,
-    .hdr = false
-  },
-  [CAMERA_ID_S5K3P8SP] = {
-    .frame_width = 2304,
-    .frame_height = 1728,
-    .frame_stride = 2880,
-    .bayer = true,
-    .bayer_flip = 1,
-    .hdr = false
   },
   [CAMERA_ID_OV8865] = {
     .frame_width = 1632,
@@ -92,27 +76,6 @@ static void camera_release_buffer(void* cookie, int buf_idx) {
   // printf("camera_release_buffer %d\n", buf_idx);
   s->ss[0].qbuf_info[buf_idx].dirty_buf = 1;
   ioctl(s->isp_fd, VIDIOC_MSM_ISP_ENQUEUE_BUF, &s->ss[0].qbuf_info[buf_idx]);
-}
-
-static void camera_init(VisionIpcServer *v, CameraState *s, int camera_id, int camera_num,
-                        uint32_t pixel_clock, uint32_t line_length_pclk,
-                        unsigned int max_gain, unsigned int fps, cl_device_id device_id, cl_context ctx,
-                        VisionStreamType rgb_type, VisionStreamType yuv_type) {
-  s->camera_num = camera_num;
-  s->camera_id = camera_id;
-
-  assert(camera_id < ARRAYSIZE(cameras_supported));
-  s->ci = cameras_supported[camera_id];
-  assert(s->ci.frame_width != 0);
-
-  s->pixel_clock = pixel_clock;
-  s->line_length_pclk = line_length_pclk;
-  s->max_gain = max_gain;
-  s->fps = fps;
-
-  s->self_recover = 0;
-
-  s->buf.init(device_id, ctx, s, v, FRAME_BUF_COUNT, rgb_type, yuv_type, camera_release_buffer);
 }
 
 int sensor_write_regs(CameraState *s, struct msm_camera_i2c_reg_array* arr, size_t size, msm_camera_i2c_data_type data_type) {
@@ -201,6 +164,27 @@ static int ov8865_apply_exposure(CameraState *s, int gain, int integ_lines, int 
   return err;
 }
 
+static void camera_init(VisionIpcServer *v, CameraState *s, int camera_id, int camera_num,
+                        uint32_t pixel_clock, uint32_t line_length_pclk,
+                        unsigned int max_gain, unsigned int fps, cl_device_id device_id, cl_context ctx,
+                        VisionStreamType rgb_type, VisionStreamType yuv_type) {
+  s->camera_num = camera_num;
+  s->camera_id = camera_id;
+
+  assert(camera_id < ARRAYSIZE(cameras_supported));
+  s->ci = cameras_supported[camera_id];
+  assert(s->ci.frame_width != 0);
+
+  s->pixel_clock = pixel_clock;
+  s->line_length_pclk = line_length_pclk;
+  s->max_gain = max_gain;
+  s->fps = fps;
+  s->self_recover = 0;
+
+  s->apply_exposure = (camera_id == CAMERA_ID_IMX298) ? imx298_apply_exposure : ov8865_apply_exposure;
+  s->buf.init(device_id, ctx, s, v, FRAME_BUF_COUNT, rgb_type, yuv_type, camera_release_buffer);
+}
+
 cl_program build_conv_program(cl_device_id device_id, cl_context context, int image_w, int image_h, int filter_size) {
   char args[4096];
   snprintf(args, sizeof(args),
@@ -220,7 +204,6 @@ void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_i
   // sensor is flipped in LP3
   // IMAGE_ORIENT = 3
   init_array_imx298[0].reg_data = 3;
-  cameras_supported[CAMERA_ID_IMX298].bayer_flip = 3;
 
   // 0   = ISO 100
   // 256 = ISO 200
@@ -242,13 +225,11 @@ void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_i
 #endif
               device_id, ctx,
               VISION_STREAM_RGB_BACK, VISION_STREAM_YUV_BACK);
-  s->road_cam.apply_exposure = imx298_apply_exposure;
 
   camera_init(v, &s->driver_cam, CAMERA_ID_OV8865, 1,
               /*pixel_clock=*/72000000, /*line_length_pclk=*/1602,
               /*max_gain=*/510, 10, device_id, ctx,
               VISION_STREAM_RGB_FRONT, VISION_STREAM_YUV_FRONT);
-  s->driver_cam.apply_exposure = ov8865_apply_exposure;
 
   s->sm = new SubMaster({"driverState"});
   s->pm = new PubMaster({"roadCameraState", "driverCameraState", "thumbnail"});
@@ -309,11 +290,8 @@ static void set_exposure(CameraState *s, float exposure_frac, float gain_frac) {
 
     if (s->apply_exposure == ov8865_apply_exposure) {
       gain = 800 * gain_frac; // ISO
-      err = s->apply_exposure(s, gain, integ_lines, frame_length);
-    } else if (s->apply_exposure) {
-      err = s->apply_exposure(s, gain, integ_lines, frame_length);
     }
-
+    err = s->apply_exposure(s, gain, integ_lines, frame_length);
     if (err == 0) {
       std::lock_guard lk(s->frame_info_lock);
       s->cur_gain = gain;
@@ -395,8 +373,6 @@ static uint8_t* get_eeprom(int eeprom_fd, size_t *out_len) {
 }
 
 static void sensors_init(MultiCameraState *s) {
-  int err;
-
   unique_fd sensorinit_fd;
   sensorinit_fd = open("/dev/v4l-subdev11", O_RDWR | O_NONBLOCK);
   assert(sensorinit_fd >= 0);
@@ -443,7 +419,7 @@ static void sensors_init(MultiCameraState *s) {
   slave_info.power_setting_array.power_setting = &slave_info.power_setting_array.power_setting_a[0];
   slave_info.power_setting_array.power_down_setting = &slave_info.power_setting_array.power_down_setting_a[0];
   sensor_init_cfg_data sensor_init_cfg = {.cfgtype = CFG_SINIT_PROBE, .cfg.setting = &slave_info};
-  err = ioctl(sensorinit_fd, VIDIOC_MSM_SENSOR_INIT_CFG, &sensor_init_cfg);
+  int err = ioctl(sensorinit_fd, VIDIOC_MSM_SENSOR_INIT_CFG, &sensor_init_cfg);
   LOG("sensor init cfg (road camera): %d", err);
   assert(err >= 0);
 
@@ -487,13 +463,11 @@ static void sensors_init(MultiCameraState *s) {
   sensor_init_cfg.cfgtype = CFG_SINIT_PROBE;
   sensor_init_cfg.cfg.setting = &slave_info2;
   err = ioctl(sensorinit_fd, VIDIOC_MSM_SENSOR_INIT_CFG, &sensor_init_cfg);
-  LOG("sensor init cfg (driver): %d", err);
+  LOG("sensor init cfg (driver camera): %d", err);
   assert(err >= 0);
 }
 
 static void camera_open(CameraState *s, bool is_road_cam) {
-  int err;
-
   struct csid_cfg_data csid_cfg_data = {};
   struct v4l2_event_subscription sub = {};
 
@@ -542,7 +516,7 @@ static void camera_open(CameraState *s, bool is_road_cam) {
   struct msm_camera_csi_lane_params csi_lane_params = {0};
   csi_lane_params.csi_lane_mask = 0x1f;
   csiphy_cfg_data csiphy_cfg_data = { .cfg.csi_lane_params = &csi_lane_params, .cfgtype = CSIPHY_RELEASE};
-  err = ioctl(s->csiphy_fd, VIDIOC_MSM_CSIPHY_IO_CFG, &csiphy_cfg_data);
+  int err = ioctl(s->csiphy_fd, VIDIOC_MSM_CSIPHY_IO_CFG, &csiphy_cfg_data);
   LOG("release csiphy: %d", err);
 
   // CSID: release csid
@@ -626,10 +600,6 @@ static void camera_open(CameraState *s, bool is_road_cam) {
   // SENSOR: send i2c configuration
   if (s->camera_id == CAMERA_ID_IMX298) {
     err = sensor_write_regs(s, init_array_imx298, ARRAYSIZE(init_array_imx298), MSM_CAMERA_I2C_BYTE_DATA);
-  } else if  (s->camera_id == CAMERA_ID_S5K3P8SP) {
-    err = sensor_write_regs(s, init_array_s5k3p8sp, ARRAYSIZE(init_array_s5k3p8sp), MSM_CAMERA_I2C_WORD_DATA);
-  } else if (s->camera_id == CAMERA_ID_IMX179) {
-    err = sensor_write_regs(s, init_array_imx179, ARRAYSIZE(init_array_imx179), MSM_CAMERA_I2C_BYTE_DATA);
   } else if (s->camera_id == CAMERA_ID_OV8865) {
     err = sensor_write_regs(s, init_array_ov8865, ARRAYSIZE(init_array_ov8865), MSM_CAMERA_I2C_BYTE_DATA);
   } else {
@@ -713,10 +683,6 @@ static void camera_open(CameraState *s, bool is_road_cam) {
   struct msm_camera_csiphy_params csiphy_params = {};
   if (s->camera_id == CAMERA_ID_IMX298) {
     csiphy_params = {.lane_cnt = 4, .settle_cnt = 14, .lane_mask = 0x1f, .csid_core = 0};
-  } else if (s->camera_id == CAMERA_ID_S5K3P8SP) {
-    csiphy_params = {.lane_cnt = 4, .settle_cnt = 24, .lane_mask = 0x1f, .csid_core = 0};
-  } else if (s->camera_id == CAMERA_ID_IMX179) {
-    csiphy_params = {.lane_cnt = 4, .settle_cnt = 11, .lane_mask = 0x1f, .csid_core = 2};
   } else if (s->camera_id == CAMERA_ID_OV8865) {
     // guess!
     csiphy_params = {.lane_cnt = 4, .settle_cnt = 24, .lane_mask = 0x1f, .csid_core = 2};
@@ -1004,10 +970,6 @@ static std::optional<float> get_accel_z(SubMaster *sm) {
 }
 
 static void do_autofocus(CameraState *s, SubMaster *sm) {
-  // params for focus PI controller
-  const int dac_up = LP3_AF_DAC_UP;
-  const int dac_down = LP3_AF_DAC_DOWN;
-
   float lens_true_pos = s->lens_true_pos.load();
   if (!isnan(s->focus_err)) {
     // learn lens_true_pos
@@ -1020,8 +982,8 @@ static void do_autofocus(CameraState *s, SubMaster *sm) {
   }
   const float sag = (s->last_sag_acc_z / 9.8) * 128;
   // stay off the walls
-  lens_true_pos = std::clamp(lens_true_pos, float(dac_down), float(dac_up));
-  int target = std::clamp(lens_true_pos - sag, float(dac_down), float(dac_up));
+  lens_true_pos = std::clamp(lens_true_pos, float(LP3_AF_DAC_DOWN), float(LP3_AF_DAC_UP));
+  int target = std::clamp(lens_true_pos - sag, float(LP3_AF_DAC_DOWN), float(LP3_AF_DAC_UP));
   s->lens_true_pos.store(lens_true_pos);
 
   /*char debug[4096];
@@ -1147,7 +1109,6 @@ static void camera_close(CameraState *s) {
   free(s->eeprom);
 }
 
-
 const char* get_isp_event_name(unsigned int type) {
   switch (type) {
   case ISP_EVENT_REG_UPDATE: return "ISP_EVENT_REG_UPDATE";
@@ -1250,24 +1211,19 @@ static void update_lapmap(MultiCameraState *s, const CameraBuf *b, const int cnt
 }
 
 static void setup_self_recover(CameraState *c, const uint16_t *lapres, size_t lapres_size) {
-  const int dac_down = LP3_AF_DAC_DOWN;
-  const int dac_up = LP3_AF_DAC_UP;
-  const int dac_m = LP3_AF_DAC_M;
-  const int dac_3sig = LP3_AF_DAC_3SIG;
-
   const float lens_true_pos = c->lens_true_pos.load();
   int self_recover = c->self_recover.load();
-  if (self_recover < 2 && (lens_true_pos < (dac_down + 1) || lens_true_pos > (dac_up - 1)) && is_blur(lapres, lapres_size)) {
+  if (self_recover < 2 && (lens_true_pos < (LP3_AF_DAC_DOWN + 1) || lens_true_pos > (LP3_AF_DAC_UP - 1)) && is_blur(lapres, lapres_size)) {
     // truly stuck, needs help
     if (--self_recover < -FOCUS_RECOVER_PATIENCE) {
       LOGD("road camera bad state detected. attempting recovery from %.1f, recover state is %d", lens_true_pos, self_recover);
       // parity determined by which end is stuck at
-      self_recover = FOCUS_RECOVER_STEPS + (lens_true_pos < dac_m ? 1 : 0);
+      self_recover = FOCUS_RECOVER_STEPS + (lens_true_pos < LP3_AF_DAC_M ? 1 : 0);
     }
-  } else if (self_recover < 2 && (lens_true_pos < (dac_m - dac_3sig) || lens_true_pos > (dac_m + dac_3sig))) {
+  } else if (self_recover < 2 && (lens_true_pos < (LP3_AF_DAC_M - LP3_AF_DAC_3SIG) || lens_true_pos > (LP3_AF_DAC_M + LP3_AF_DAC_3SIG))) {
     // in suboptimal position with high prob, but may still recover by itself
     if (--self_recover < -(FOCUS_RECOVER_PATIENCE * 3)) {
-      self_recover = FOCUS_RECOVER_STEPS / 2 + (lens_true_pos < dac_m ? 1 : 0);
+      self_recover = FOCUS_RECOVER_STEPS / 2 + (lens_true_pos < LP3_AF_DAC_M ? 1 : 0);
     }
   } else if (self_recover < 0) {
     self_recover += 1;  // reset if fine
