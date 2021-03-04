@@ -158,7 +158,7 @@ QWidget * device_panel() {
   device_layout->addWidget(dcam_view, 0, Qt::AlignBottom);
   device_layout->addWidget(horizontal_line(), Qt::AlignBottom);
   QObject::connect(dcam_view, &QPushButton::released, [=]() {
-    Params().write_db_value("IsDriverViewEnabled", "1", 1);
+    Params().put("IsDriverViewEnabled", true);
   });
 
   // TODO: show current calibration values
@@ -166,13 +166,9 @@ QWidget * device_panel() {
   device_layout->addWidget(clear_cal_btn, 0, Qt::AlignBottom);
   device_layout->addWidget(horizontal_line(), Qt::AlignBottom);
   QObject::connect(clear_cal_btn, &QPushButton::released, [=]() {
-<<<<<<< HEAD
     if (ConfirmationDialog::confirm("Are you sure you want to reset calibration?")) {
-      Params().delete_db_value("CalibrationParams");
+      Params().delete_value("CalibrationParams");
     }
-=======
-    Params().delete_value("CalibrationParams");
->>>>>>> same api with python version
   });
 
   // power buttons
@@ -197,15 +193,11 @@ QWidget * device_panel() {
 
   QPushButton *uninstall_btn = new QPushButton("Uninstall openpilot");
   device_layout->addWidget(uninstall_btn);
-<<<<<<< HEAD
   QObject::connect(uninstall_btn, &QPushButton::released, [=]() {
     if (ConfirmationDialog::confirm("Are you sure you want to uninstall?")) {
-      Params().write_db_value("DoUninstall", "1");
+      Params().put("DoUninstall", true);
     }
   });
-=======
-  QObject::connect(uninstall_btn, &QPushButton::released, [=]() { Params().put("DoUninstall", "1"); });
->>>>>>> rebase master,fix build error
 
   QWidget *widget = new QWidget;
   widget->setLayout(device_layout);

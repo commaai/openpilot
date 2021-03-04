@@ -204,8 +204,8 @@ static void update_sockets(UIState *s) {
   }
   if (sm.updated("driverMonitoringState")) {
     scene.dmonitoring_state = sm["driverMonitoringState"].getDriverMonitoringState();
-    if(!scene.frontview && !s->ignition) {
-      scene.frontview = Params().getBool("IsDriverViewEnabled");
+    if(!scene.driver_view && !scene.ignition) {
+      scene.driver_view = Params().getBool("IsDriverViewEnabled");
     }
   } else if ((sm.frame - sm.rcv_frame("driverMonitoringState")) > UI_FREQ/2) {
     scene.driver_view = false;
@@ -286,11 +286,11 @@ static void update_params(UIState *s) {
 
   Params params;
   if (frame % (5*UI_FREQ) == 0) {
-    s->is_metric = params.getBool("IsMetric");
+    scene.is_metric = params.getBool("IsMetric");
   } else if (frame % (6*UI_FREQ) == 0) {
-    s->scene.athenaStatus = NET_DISCONNECTED;
+    scene.athenaStatus = NET_DISCONNECTED;
     if (auto last_ping = params.get<float>("LastAthenaPingTime")) {
-      s->scene.athenaStatus = nanos_since_boot() - *last_ping < 70e9 ? NET_CONNECTED : NET_ERROR;
+      scene.athenaStatus = nanos_since_boot() - *last_ping < 70e9 ? NET_CONNECTED : NET_ERROR;
     }
   }
 }
