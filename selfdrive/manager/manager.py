@@ -1,59 +1,30 @@
 #!/usr/bin/env python3
 import datetime
 import os
-import sys
 import signal
 import subprocess
+import sys
 import traceback
 
+import cereal.messaging as messaging
+import selfdrive.crash as crash
 from common.basedir import BASEDIR
+from common.params import Params
 from common.spinner import Spinner
 from common.text_window import TextWindow
-import selfdrive.crash as crash
-from selfdrive.manager.helpers import build, unblock_stdout, MAX_BUILD_PROGRESS
-from selfdrive.hardware import HARDWARE, EON
-from selfdrive.hardware.eon.apk import update_apks, pm_apply_packages, start_offroad
-from selfdrive.swaglog import cloudlog, add_logentries_handler
-from selfdrive.version import version, dirty
-
-os.environ['BASEDIR'] = BASEDIR
-sys.path.append(os.path.join(BASEDIR, "pyextra"))
-
-WEBCAM = os.getenv("WEBCAM") is not None
-PREBUILT = os.path.exists(os.path.join(BASEDIR, 'prebuilt'))
-
-if __name__ == "__main__":
-  unblock_stdout()
-
-# Start spinner
-spinner = Spinner()
-spinner.update_progress(0, 100)
-if __name__ != "__main__":
-  spinner.close()
-
-if __name__ == "__main__" and not PREBUILT:
-  build(spinner, dirty)
-
-import cereal.messaging as messaging
-from common.params import Params
-from selfdrive.registration import register
-from selfdrive.manager.process import  ensure_running
+from selfdrive.hardware import EON, HARDWARE
+from selfdrive.hardware.eon.apk import (pm_apply_packages, start_offroad,
+                                        update_apks)
+from selfdrive.manager.build import MAX_BUILD_PROGRESS, PREBUILT
+from selfdrive.manager.helpers import unblock_stdout
+from selfdrive.manager.process import ensure_running
 from selfdrive.manager.process_config import managed_processes
+from selfdrive.registration import register
+from selfdrive.swaglog import add_logentries_handler, cloudlog
+from selfdrive.version import dirty, version
 
 
-def cleanup_all_processes(signal, frame):
-  cloudlog.info("caught ctrl-c %s %s" % (signal, frame))
-
-  if EON:
-    pm_apply_packages('disable')
-
-  for p in managed_processes:
-    p.stop()
-
-  cloudlog.info("everything is dead")
-
-
-def manager_init():
+def manager_init(spinner):
   os.umask(0)  # Make sure we can create files with 777 permissions
 
   # Create folders needed for msgq
@@ -86,6 +57,30 @@ def manager_init():
     os.chmod("/dev/shm", 0o777)
     os.chmod(os.path.join(BASEDIR, "cereal"), 0o755)
     os.chmod(os.path.join(BASEDIR, "cereal", "libmessaging_shared.so"), 0o755)
+
+
+def manager_prepare(spinner):
+  # build all processes
+  os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
+  total = 100.0 - (0 if PREBUILT else MAX_BUILD_PROGRESS)
+
+  for i, p in enumerate(managed_processes):
+    perc = (100.0 - total) + total * (i + 1) / len(managed_processes)
+    spinner.update_progress(perc, 100.)
+    p.prepare()
+
+
+def cleanup_all_processes(signal, frame):
+  cloudlog.info("caught ctrl-c %s %s" % (signal, frame))
+
+  if EON:
+    pm_apply_packages('disable')
+
+  for p in managed_processes:
+    p.stop()
+
+  cloudlog.info("everything is dead")
 
 
 def manager_thread():
@@ -143,19 +138,7 @@ def manager_thread():
       break
 
 
-def manager_prepare():
-  # build all processes
-  os.chdir(os.path.dirname(os.path.abspath(__file__)))
-
-  total = 100.0 - (0 if PREBUILT else MAX_BUILD_PROGRESS)
-
-  for i, p in enumerate(managed_processes):
-    perc = (100.0 - total) + total * (i + 1) / len(managed_processes)
-    spinner.update_progress(perc, 100.)
-    p.prepare()
-
-
-def main():
+def main(spinner):
   params = Params()
   params.manager_start()
 
@@ -190,8 +173,9 @@ def main():
 
   if EON:
     update_apks()
-  manager_init()
-  manager_prepare()
+
+  manager_init(spinner)
+  manager_prepare(spinner)
   spinner.close()
 
   if os.getenv("PREPAREONLY") is not None:
@@ -214,8 +198,11 @@ def main():
 
 
 if __name__ == "__main__":
+  unblock_stdout()
+  spinner = Spinner()
+
   try:
-    main()
+    main(spinner)
   except Exception:
     add_logentries_handler(cloudlog)
     cloudlog.exception("Manager failed to start")
