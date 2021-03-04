@@ -338,7 +338,6 @@ int main(int argc, char** argv) {
 
   s.ctx = Context::create();
   Poller * poller = Poller::create();
-  std::vector<SubSocket*> socks;
 
   // subscribe to all socks
   for (const auto& it : services) {
@@ -346,7 +345,6 @@ int main(int argc, char** argv) {
 
     SubSocket * sock = SubSocket::create(s.ctx, it.name);
     assert(sock != NULL);
-    socks.push_back(sock);
     SocketState ss(sock, it.decimation);
 
     bool is_frame_sock = false;
