@@ -22,10 +22,10 @@
 
 #define CONV_LOCAL_WORKSIZE 16
 
-class Rgb2Gray {
+class LapConv {
 public:
-  Rgb2Gray(cl_device_id device_id, cl_context ctx, int rgb_width, int rgb_height, int filter_size);
-  ~Rgb2Gray();
+  LapConv(cl_device_id device_id, cl_context ctx, int rgb_width, int rgb_height, int filter_size);
+  ~LapConv();
   uint16_t Update(cl_command_queue q, const uint8_t *rgb_buf, const int roi_id);
 
 private:

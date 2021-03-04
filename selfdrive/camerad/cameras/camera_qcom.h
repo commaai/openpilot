@@ -104,7 +104,7 @@ typedef struct MultiCameraState {
 
   SubMaster *sm;
   PubMaster *pm;
-  Rgb2Gray *rgb2gray_conv;
+  LapConv *lap_conv;
 } MultiCameraState;
 
 void actuator_move(CameraState *s, uint16_t target);

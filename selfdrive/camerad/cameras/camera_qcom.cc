@@ -240,7 +240,7 @@ void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_i
     s->stats_bufs[i].allocate(0xb80);
   }
   std::fill_n(s->lapres, std::size(s->lapres), 16160);
-  s->rgb2gray_conv = new Rgb2Gray(device_id, ctx, s->road_cam.buf.rgb_width, s->road_cam.buf.rgb_height, 3);
+  s->lap_conv = new LapConv(device_id, ctx, s->road_cam.buf.rgb_width, s->road_cam.buf.rgb_height, 3);
 }
 
 static void set_exposure(CameraState *s, float exposure_frac, float gain_frac) {
@@ -1194,7 +1194,7 @@ void process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) {
 void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
   const CameraBuf *b = &c->buf;
   const int roi_id = cnt % std::size(s->lapres);  // rolling roi
-  s->lapres[roi_id] = s->rgb2gray_conv->Update(b->q, (uint8_t *)b->cur_rgb_buf->addr, roi_id);
+  s->lapres[roi_id] = s->lap_conv->Update(b->q, (uint8_t *)b->cur_rgb_buf->addr, roi_id);
   setup_self_recover(c, &s->lapres[0], std::size(s->lapres));
 
   MessageBuilder msg;
@@ -1298,7 +1298,7 @@ void cameras_close(MultiCameraState *s) {
     s->stats_bufs[i].free();
   }
 
-  delete s->rgb2gray_conv;
+  delete s->lap_conv;
   delete s->sm;
   delete s->pm;
 }

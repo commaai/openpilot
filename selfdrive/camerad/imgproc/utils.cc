@@ -54,7 +54,7 @@ static cl_program build_conv_program(cl_device_id device_id, cl_context context,
   return cl_program_from_file(context, device_id, "imgproc/conv.cl", args);
 }
 
-Rgb2Gray::Rgb2Gray(cl_device_id device_id, cl_context ctx, int rgb_width, int rgb_height, int filter_size)
+LapConv::LapConv(cl_device_id device_id, cl_context ctx, int rgb_width, int rgb_height, int filter_size)
     : width(rgb_width / NUM_SEGMENTS_X), height(rgb_height / NUM_SEGMENTS_Y), 
       roi_buf(width * height * 3), result_buf(width * height) {
 
@@ -67,7 +67,7 @@ Rgb2Gray::Rgb2Gray(cl_device_id device_id, cl_context ctx, int rgb_width, int rg
                                           9 * sizeof(int16_t), (void *)&lapl_conv_krnl, &err));
 }
 
-Rgb2Gray::~Rgb2Gray() {
+LapConv::~LapConv() {
   CL_CHECK(clReleaseMemObject(roi_cl));
   CL_CHECK(clReleaseMemObject(result_cl));
   CL_CHECK(clReleaseMemObject(filter_cl));
@@ -75,7 +75,7 @@ Rgb2Gray::~Rgb2Gray() {
   CL_CHECK(clReleaseProgram(prg));
 }
 
-uint16_t Rgb2Gray::Update(cl_command_queue q, const uint8_t *rgb_buf, const int roi_id) {
+uint16_t LapConv::Update(cl_command_queue q, const uint8_t *rgb_buf, const int roi_id) {
   // sharpness scores
   const int x_offset = ROI_X_MIN + roi_id % (ROI_X_MAX - ROI_X_MIN + 1);
   const int y_offset = ROI_Y_MIN + roi_id / (ROI_X_MAX - ROI_X_MIN + 1);
