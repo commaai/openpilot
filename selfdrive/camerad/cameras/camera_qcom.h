@@ -74,7 +74,7 @@ typedef struct CameraState {
   camera_apply_exposure_func apply_exposure;
 
   // rear camera only,used for focusing
-  unique_fd actuator_fd, ois_fd, eeprom_fd;
+  unique_fd actuator_fd, eeprom_fd;
   std::atomic<float> focus_err;
   std::atomic<float> last_sag_acc_z;
   std::atomic<float> lens_true_pos;
