@@ -78,27 +78,6 @@ static void camera_release_buffer(void* cookie, int buf_idx) {
   ioctl(s->isp_fd, VIDIOC_MSM_ISP_ENQUEUE_BUF, &s->ss[0].qbuf_info[buf_idx]);
 }
 
-static void camera_init(VisionIpcServer *v, CameraState *s, int camera_id, int camera_num,
-                        uint32_t pixel_clock, uint32_t line_length_pclk,
-                        unsigned int max_gain, unsigned int fps, cl_device_id device_id, cl_context ctx,
-                        VisionStreamType rgb_type, VisionStreamType yuv_type) {
-  s->camera_num = camera_num;
-  s->camera_id = camera_id;
-
-  assert(camera_id < ARRAYSIZE(cameras_supported));
-  s->ci = cameras_supported[camera_id];
-  assert(s->ci.frame_width != 0);
-
-  s->pixel_clock = pixel_clock;
-  s->line_length_pclk = line_length_pclk;
-  s->max_gain = max_gain;
-  s->fps = fps;
-  s->self_recover = 0;
-
-  s->apply_exposure = (camera_id == CAMERA_ID_IMX298) ? imx298_apply_exposure : ov8865_apply_exposure;
-  s->buf.init(device_id, ctx, s, v, FRAME_BUF_COUNT, rgb_type, yuv_type, camera_release_buffer);
-}
-
 int sensor_write_regs(CameraState *s, struct msm_camera_i2c_reg_array* arr, size_t size, msm_camera_i2c_data_type data_type) {
   struct msm_camera_i2c_reg_setting out_settings = {
     .reg_setting = arr,
@@ -183,6 +162,27 @@ static int ov8865_apply_exposure(CameraState *s, int gain, int integ_lines, int 
     LOGE("apply_exposure err %d", err);
   }
   return err;
+}
+
+static void camera_init(VisionIpcServer *v, CameraState *s, int camera_id, int camera_num,
+                        uint32_t pixel_clock, uint32_t line_length_pclk,
+                        unsigned int max_gain, unsigned int fps, cl_device_id device_id, cl_context ctx,
+                        VisionStreamType rgb_type, VisionStreamType yuv_type) {
+  s->camera_num = camera_num;
+  s->camera_id = camera_id;
+
+  assert(camera_id < ARRAYSIZE(cameras_supported));
+  s->ci = cameras_supported[camera_id];
+  assert(s->ci.frame_width != 0);
+
+  s->pixel_clock = pixel_clock;
+  s->line_length_pclk = line_length_pclk;
+  s->max_gain = max_gain;
+  s->fps = fps;
+  s->self_recover = 0;
+
+  s->apply_exposure = (camera_id == CAMERA_ID_IMX298) ? imx298_apply_exposure : ov8865_apply_exposure;
+  s->buf.init(device_id, ctx, s, v, FRAME_BUF_COUNT, rgb_type, yuv_type, camera_release_buffer);
 }
 
 cl_program build_conv_program(cl_device_id device_id, cl_context context, int image_w, int image_h, int filter_size) {
