@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <sys/types.h>
 #include <sys/resource.h>
 #include <map>
@@ -91,8 +92,10 @@ void sensor_loop() {
     struct sensors_poll_device_t* device;
     struct sensors_module_t* module;
 
-    hw_get_module(SENSORS_HARDWARE_MODULE_ID, (hw_module_t const**)&module);
-    sensors_open(&module->common, &device);
+    int err = hw_get_module(SENSORS_HARDWARE_MODULE_ID, (hw_module_t const**)&module);
+    assert(err == 0);
+    err = sensors_open(&module->common, &device);
+    assert(err == 0);
 
     // required
     struct sensor_t const* list;
