@@ -165,7 +165,6 @@ class CarState(CarStateBase):
       ("ZV_HD_offen", "Gateway_72", 0),             # Trunk or hatch open
       ("BH_Blinker_li", "Gateway_72", 0),           # Left turn signal on
       ("BH_Blinker_re", "Gateway_72", 0),           # Right turn signal on
-      ("GE_Fahrstufe", "Getriebe_11", 0),           # Auto trans gear selector position
       ("AB_Gurtschloss_FA", "Airbag_02", 0),        # Seatbelt status, driver
       ("AB_Gurtschloss_BF", "Airbag_02", 0),        # Seatbelt status, passenger
       ("ESP_Fahrer_bremst", "ESP_05", 0),           # Brake pedal pressed
@@ -217,7 +216,6 @@ class CarState(CarStateBase):
       ("TSK_06", 50),       # From J623 Engine control module
       ("GRA_ACC_01", 33),   # From J??? steering wheel control buttons
       ("ACC_02", 17),       # From J428 ACC radar control module
-      ("Getriebe_11", 20),  # From J743 Auto transmission control module
       ("Gateway_72", 10),   # From J533 CAN gateway (aggregated data)
       ("Motor_14", 10),     # From J623 Engine control module
       ("Airbag_02", 5),     # From J234 Airbag control module
