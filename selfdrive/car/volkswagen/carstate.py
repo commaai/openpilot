@@ -60,7 +60,15 @@ class CarState(CarStateBase):
     # We use the speed preference for OP.
     self.displayMetricUnits = not pt_cp.vl["Einheiten_01"]["KBI_MFA_v_Einheit_02"]
 
-    # Consume blind-spot radar info/warning LED states, if available
+    # Consume blind-spot monitoring info/warning LED states, if available. The
+    # info signal (LED on) is enabled whenever a vehicle is detected in the
+    # driver's blind spot. The warning signal (LED flashing) is enabled if the
+    # driver shows possibly hazardous intent toward BSM detected vehicle, by
+    # setting the turn signal in that direction, or (for cars with factory Lane
+    # Assist) approaches the lane boundary in that direction. Size of the BSM
+    # detection box is dynamic based on speed and road curvature.
+    # Refer to VW Self Study Program 890253: Volkswagen Driver Assist Systems,
+    # pages 32-35.
     ret.leftBlindspot = any([bool(pt_cp.vl["SWA_01"]["SWA_Infostufe_SWA_li"]),
                              bool(pt_cp.vl["SWA_01"]["SWA_Warnung_SWA_li"])])
     ret.rightBlindspot = any([bool(pt_cp.vl["SWA_01"]["SWA_Infostufe_SWA_re"]),
