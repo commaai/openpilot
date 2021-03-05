@@ -812,7 +812,7 @@ void actuator_move(CameraState *s, uint16_t target) {
   // LP3 moves only on even positions. TODO: use proper sensor params
 
   // focus on infinity assuming phone is perpendicular
-  struct damping_params_t actuator_ringing_params = {
+  static struct damping_params_t actuator_ringing_params = {
       .damping_step = 1023,
       .damping_delay = 20000,
       .hw_params = 13,
