@@ -6,7 +6,7 @@ RUN apt-get update && apt-get install -y \
     tar \
     curl \
     xz-utils \
-    # beignet-opencl-icd \
+    beignet-opencl-icd \
     libglvnd-dev \
     alien \
     dbus \
@@ -48,6 +48,7 @@ RUN scons -j$(nproc)
 RUN apt-get update \
   && apt-get install -y -qq --no-install-recommends \
     clinfo \
+    lsb-core \
     libpocl2 \
     libglvnd0 \
     libgl1 \
@@ -59,3 +60,17 @@ RUN apt-get update \
 
 ENV NVIDIA_VISIBLE_DEVICES all
 ENV NVIDIA_DRIVER_CAPABILITIES graphics,utility,compute
+
+RUN apt-get update -q \
+    && apt-get install --no-install-recommends -yq gcc alien wget unzip clinfo \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+RUN mkdir -p /tmp/opencl-driver-intel
+WORKDIR /tmp/opencl-driver-intel
+RUN curl -O http://registrationcenter-download.intel.com/akdlm/irc_nas/vcp/15532/l_opencl_p_18.1.0.015.tgz
+RUN tar -xzf l_opencl_p_18.1.0.015.tgz
+RUN for i in $(basename l_opencl_p_18.1.0.015.tgz .tgz)/rpm/*.rpm; do alien --to-deb $i; done
+RUN dpkg -i *.deb
+RUN mkdir -p /etc/OpenCL/vendors
+RUN echo /opt/intel/opencl_compilers_and_libraries_18.1.0.015/linux/compiler/lib/intel64_lin/libintelocl.so > /etc/OpenCL/vendors/intel.icd
