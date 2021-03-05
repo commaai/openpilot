@@ -160,21 +160,13 @@ static void camera_init(VisionIpcServer *v, CameraState *s, int camera_id, int c
                         uint32_t pixel_clock, uint32_t line_length_pclk,
                         uint32_t max_gain, uint32_t fps, cl_device_id device_id, cl_context ctx,
                         VisionStreamType rgb_type, VisionStreamType yuv_type) {
-  s->camera_num = camera_num;
-  s->camera_id = camera_id;
-
-  assert(camera_id < ARRAYSIZE(cameras_supported));
-  s->ci = cameras_supported[camera_id];
-  assert(s->ci.frame_width != 0);
-
   s->pixel_clock = pixel_clock;
   s->line_length_pclk = line_length_pclk;
   s->max_gain = max_gain;
-  s->fps = fps;
   s->self_recover = 0;
-
   s->apply_exposure = (camera_id == CAMERA_ID_IMX298) ? imx298_apply_exposure : ov8865_apply_exposure;
-  s->buf.init(device_id, ctx, s, v, FRAME_BUF_COUNT, rgb_type, yuv_type, camera_release_buffer);
+
+  s->init(v, camera_id, camera_num, fps, device_id, ctx, rgb_type, yuv_type);
 }
 
 void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
