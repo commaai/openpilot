@@ -16,6 +16,7 @@ from selfdrive.controls.lib.longcontrol import LongControl, STARTING_TARGET_SPEE
 from selfdrive.controls.lib.latcontrol_pid import LatControlPID
 from selfdrive.controls.lib.latcontrol_indi import LatControlINDI
 from selfdrive.controls.lib.latcontrol_lqr import LatControlLQR
+from selfdrive.controls.lib.latcontrol_angle import LatControlAngle
 from selfdrive.controls.lib.events import Events, ET
 from selfdrive.controls.lib.alertmanager import AlertManager
 from selfdrive.controls.lib.vehicle_model import VehicleModel
@@ -102,7 +103,9 @@ class Controls:
     self.LoC = LongControl(self.CP, self.CI.compute_gb)
     self.VM = VehicleModel(self.CP)
 
-    if self.CP.lateralTuning.which() == 'pid':
+    if self.CP.steerControlType == car.CarParams.SteerControlType.angle:
+      self.LaC = LatControlAngle(self.CP)
+    elif self.CP.lateralTuning.which() == 'pid':
       self.LaC = LatControlPID(self.CP)
     elif self.CP.lateralTuning.which() == 'indi':
       self.LaC = LatControlINDI(self.CP)
