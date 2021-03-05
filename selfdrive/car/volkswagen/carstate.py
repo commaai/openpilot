@@ -72,6 +72,14 @@ class CarState(CarStateBase):
     ret.leftBlindspot = bool(pt_cp.vl["SWA_01"]["SWA_Infostufe_SWA_li"]) or bool(pt_cp.vl["SWA_01"]["SWA_Warnung_SWA_li"])
     ret.rightBlindspot = bool(pt_cp.vl["SWA_01"]["SWA_Infostufe_SWA_re"]) or bool(pt_cp.vl["SWA_01"]["SWA_Warnung_SWA_re"])
 
+    # Stock FCW is considered active if the release bit for brake-jerk warning
+    # is set. Stock AEB considered active if the partial braking or target
+    # braking release bits are set.
+    # Refer to VW Self Study Program 890253: Volkswagen Driver Assistance
+    # Systems, chapter on Front Assist with Braking: Golf Family for all MQB
+    ret.stockFcw = bool(pt_cp.vl["ACC_10"]["AWV2_Freigabe"])
+    ret.stockAeb = bool(pt_cp.vl["ACC_10"]["ANB_Teilbremsung_Freigabe"]) or bool(pt_cp.vl["ACC_10"]["ANB_Zielbremsung_Freigabe"])
+
     # Update ACC radar status.
     accStatus = pt_cp.vl["TSK_06"]['TSK_Status']
     if accStatus == 2:
@@ -165,6 +173,9 @@ class CarState(CarStateBase):
       ("ACC_Status_ACC", "ACC_06", 0),              # ACC engagement status
       ("ACC_Typ", "ACC_06", 0),                     # ACC type (follow to stop, stop&go)
       ("SetSpeed", "ACC_02", 0),                    # ACC set speed
+      ("AWV2_Freigabe", "ACC_10", 0),               # FCW brake jerk release
+      ("ANB_Teilbremsung_Freigabe", "ACC_10", 0),   # AEB partial braking release
+      ("ANB_Zielbremsung_Freigabe", "ACC_10", 0),   # AEB target braking release
       ("GRA_Hauptschalter", "GRA_ACC_01", 0),       # ACC button, on/off
       ("GRA_Abbrechen", "GRA_ACC_01", 0),           # ACC button, cancel
       ("GRA_Tip_Setzen", "GRA_ACC_01", 0),          # ACC button, set
@@ -190,6 +201,7 @@ class CarState(CarStateBase):
       ("ESP_05", 50),       # From J104 ABS/ESP controller
       ("ESP_21", 50),       # From J104 ABS/ESP controller
       ("ACC_06", 50),       # From J428 ACC radar control module
+      ("ACC_10", 50),       # From J428 ACC radar control module
       ("Motor_20", 50),     # From J623 Engine control module
       ("TSK_06", 50),       # From J623 Engine control module
       ("GRA_ACC_01", 33),   # From J??? steering wheel control buttons
