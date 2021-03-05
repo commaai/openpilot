@@ -1,29 +1,28 @@
 #!/usr/bin/env python3
-import capnp
+import importlib
 import os
 import sys
 import threading
-import importlib
 import time
-
-if "CI" in os.environ:
-  def tqdm(x):
-    return x
-else:
-  from tqdm import tqdm   # type: ignore
-
-from cereal import car, log
-from selfdrive.car.car_helpers import get_car
-import selfdrive.manager as manager
-import cereal.messaging as messaging
-from common.params import Params
-from cereal.services import service_list
 from collections import namedtuple
-from selfdrive.manager import managed_processes
+
+import capnp
+from tqdm import tqdm
+
+import cereal.messaging as messaging
+from cereal import car, log
+from cereal.services import service_list
+from common.params import Params
+from selfdrive.car.car_helpers import get_car
+from selfdrive.manager.process import PythonProcess
+from selfdrive.manager.process_config import managed_processes
+
 # Numpy gives different results based on CPU features after version 19
 NUMPY_TOLERANCE = 1e-7
+CI = "CI" in os.environ
 
 ProcessConfig = namedtuple('ProcessConfig', ['proc_name', 'pub_sub', 'ignore', 'init_callback', 'should_recv_callback', 'tolerance'])
+
 
 def wait_for_event(evt):
   if not evt.wait(15):
@@ -148,6 +147,7 @@ class FakePubMaster(messaging.PubMaster):
     self.get_called.set()
     return dat
 
+
 def fingerprint(msgs, fsm, can_sock):
   print("start fingerprinting")
   fsm.wait_on_getitem = True
@@ -171,6 +171,7 @@ def fingerprint(msgs, fsm, can_sock):
   fsm.update_ready.set()
   print("finished fingerprinting")
 
+
 def get_car_params(msgs, fsm, can_sock):
   can = FakeSocket(wait=False)
   sendcan = FakeSocket(wait=False)
@@ -180,6 +181,7 @@ def get_car_params(msgs, fsm, can_sock):
     can.send(m.as_builder().to_bytes())
   _, CP = get_car(can, sendcan)
   Params().put("CarParams", CP.to_bytes())
+
 
 def radar_rcv_callback(msg, CP, cfg, fsm):
   if msg.which() != "can":
@@ -198,6 +200,7 @@ def radar_rcv_callback(msg, CP, cfg, fsm):
       return ["radarState", "liveTracks"], True
   return [], False
 
+
 def calibration_rcv_callback(msg, CP, cfg, fsm):
   # calibrationd publishes 1 calibrationData every 5 cameraOdometry packets.
   # should_recv always true to increment frame
@@ -207,6 +210,7 @@ def calibration_rcv_callback(msg, CP, cfg, fsm):
     recv_socks = ["liveCalibration"]
   return recv_socks, fsm.frame == 0 or msg.which() == 'cameraOdometry'
 
+
 def ublox_rcv_callback(msg):
   msg_class, msg_id = msg.ubloxRaw[2:4]
   if (msg_class, msg_id) in {(1, 7 * 16)}:
@@ -215,6 +219,7 @@ def ublox_rcv_callback(msg):
     return ["ubloxGnss"]
   else:
      return []
+
 
 CONFIGS = [
   ProcessConfig(
@@ -233,7 +238,7 @@ CONFIGS = [
     proc_name="radard",
     pub_sub={
       "can": ["radarState", "liveTracks"],
-      "liveParameters":  [], "carState":  [], "modelV2":  [],
+      "liveParameters": [], "carState": [], "modelV2": [],
     },
     ignore=["logMonoTime", "valid", "radarState.cumLagMs"],
     init_callback=get_car_params,
@@ -307,9 +312,10 @@ CONFIGS = [
   ),
 ]
 
+
 def replay_process(cfg, lr):
   proc = managed_processes[cfg.proc_name]
-  if isinstance(proc, str):
+  if isinstance(proc, PythonProcess):
     return python_replay_process(cfg, lr)
   else:
     return cpp_replay_process(cfg, lr)
@@ -343,8 +349,10 @@ def python_replay_process(cfg, lr):
     if msg.which() == 'carParams':
       os.environ['FINGERPRINT'] = msg.carParams.carFingerprint
 
-  manager.prepare_managed_process(cfg.proc_name)
-  mod = importlib.import_module(manager.managed_processes[cfg.proc_name])
+  assert(type(managed_processes[cfg.proc_name]) is PythonProcess)
+  managed_processes[cfg.proc_name].prepare()
+  mod = importlib.import_module(managed_processes[cfg.proc_name].module)
+
   thread = threading.Thread(target=mod.main, args=args)
   thread.daemon = True
   thread.start()
@@ -363,7 +371,7 @@ def python_replay_process(cfg, lr):
     fsm.wait_for_update()
 
   log_msgs, msg_queue = [], []
-  for msg in tqdm(pub_msgs):
+  for msg in tqdm(pub_msgs, disable=CI):
     if cfg.should_recv_callback is not None:
       recv_socks, should_recv = cfg.should_recv_callback(msg, CP, cfg, fsm)
     else:
@@ -388,16 +396,17 @@ def python_replay_process(cfg, lr):
         recv_cnt -= m.which() in recv_socks
   return log_msgs
 
+
 def cpp_replay_process(cfg, lr):
   sub_sockets = [s for _, sub in cfg.pub_sub.items() for s in sub]  # We get responses here
   pm = messaging.PubMaster(cfg.pub_sub.keys())
-  sockets = {s : messaging.sub_sock(s, timeout=1000) for s in sub_sockets}
+  sockets = {s: messaging.sub_sock(s, timeout=1000) for s in sub_sockets}
 
   all_msgs = sorted(lr, key=lambda msg: msg.logMonoTime)
   pub_msgs = [msg for msg in all_msgs if msg.which() in list(cfg.pub_sub.keys())]
 
-  manager.prepare_managed_process(cfg.proc_name)
-  manager.start_managed_process(cfg.proc_name)
+  managed_processes[cfg.proc_name].prepare()
+  managed_processes[cfg.proc_name].start()
 
   time.sleep(1)  # We give the process time to start
 
@@ -405,7 +414,7 @@ def cpp_replay_process(cfg, lr):
   for s in sub_sockets:
     messaging.recv_one_or_none(sockets[s])
 
-  for msg in tqdm(pub_msgs):
+  for msg in tqdm(pub_msgs, disable=CI):
     pm.send(msg.which(), msg.as_builder())
     resp_sockets = sub_sockets if cfg.should_recv_callback is None else cfg.should_recv_callback(msg)
     for s in resp_sockets:
@@ -413,5 +422,5 @@ def cpp_replay_process(cfg, lr):
       if response is not None:
         log_msgs.append(response)
 
-  manager.kill_managed_process(cfg.proc_name)
+  managed_processes[cfg.proc_name].stop()
   return log_msgs
