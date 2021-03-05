@@ -1,9 +1,8 @@
 from cereal import car
-from selfdrive.car.volkswagen.values import CAR, BUTTON_STATES
+from selfdrive.car.volkswagen.values import CAR, BUTTON_STATES, TRANS, GEAR
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
 from selfdrive.car.interfaces import CarInterfaceBase
 
-GEAR = car.CarState.GearShifter
 EventName = car.CarEvent.EventName
 
 
@@ -49,7 +48,18 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 1.0
 
     ret.enableCamera = True  # Stock camera detection doesn't apply to VW
-    ret.transmissionType = car.CarParams.TransmissionType.automatic
+
+    # Determine transmission type by CAN message(s) present on the bus
+    if 0xAD in fingerprint[0]:
+      # Getribe_11 message detected: traditional automatic or DSG gearbox
+      ret.transmissionType = TRANS.automatic
+    elif 0x187 in fingerprint[0]:
+      # EV_Gearshift message detected: e-Golf or similar direct-drive electric
+      ret.transmissionType = TRANS.direct
+    else:
+      # No trans message at all, must be a true stick-shift manual
+      ret.transmissionType = TRANS.manual
+    cloudlog.info("Detected transmission type: %s", ret.transmissionType)
 
     # TODO: get actual value, for now starting with reasonable value for
     # civic and scaling by mass and wheelbase
