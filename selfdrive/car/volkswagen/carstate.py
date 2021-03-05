@@ -16,7 +16,7 @@ class CarState(CarStateBase):
       self.shifter_values = can_define.dv["EV_Gearshift"]['GearPosition']
     self.buttonStates = BUTTON_STATES.copy()
 
-  def update(self, pt_cp):
+  def update(self, pt_cp, trans_type):
     ret = car.CarState.new_message()
     # Update vehicle speed and acceleration from ABS wheel speeds.
     ret.wheelSpeeds.fl = pt_cp.vl["ESP_19"]['ESP_VL_Radgeschw_02'] * CV.KPH_TO_MS
@@ -225,6 +225,17 @@ class CarState(CarStateBase):
       ("Motor_16", 2),      # From J623 Engine control module
       ("Einheiten_01", 1),  # From J??? not known if gateway, cluster, or BCM
     ]
+
+    if CP.transmissionType == TRANS.automatic:
+      signals += [("GE_Fahrstufe", "Getriebe_11", 0)]  # Auto trans gear selector position
+      checks += [("Getriebe_11", 20)]  # From J743 Auto transmission control module
+    elif CP.transmissionType == TRANS.direct:
+      signals += [("GearPosition", "EV_Gearshift", 0)]  # EV gear selector position
+      checks += [("EV_Gearshift", 10)]  # From J??? unknown EV control module
+    elif CP.transmissionType == TRANS.manual:
+      signals += [("MO_Kuppl_schalter", "Motor_14", 0),  # Clutch switch
+                  ("BCM1_Rueckfahrlicht_Schalter", "Gateway_72", 0)]  # Reverse light from BCM
+      checks += [("Motor_14", 10)]  # From J623 Engine control module
 
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, CANBUS.pt)
 
