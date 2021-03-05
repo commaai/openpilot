@@ -4,13 +4,16 @@ from selfdrive.config import Conversions as CV
 from selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
 from opendbc.can.can_define import CANDefine
-from selfdrive.car.volkswagen.values import DBC, CANBUS, BUTTON_STATES, CarControllerParams
+from selfdrive.car.volkswagen.values import DBC, CANBUS, TRANS, GEAR, BUTTON_STATES, CarControllerParams
 
 class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
     can_define = CANDefine(DBC[CP.carFingerprint]['pt'])
-    self.shifter_values = can_define.dv["Getriebe_11"]['GE_Fahrstufe']
+    if CP.transmissionType == TRANS.automatic:
+      self.shifter_values = can_define.dv["Getriebe_11"]['GE_Fahrstufe']
+    elif CP.transmissionType == TRANS.direct:
+      self.shifter_values = can_define.dv["EV_Gearshift"]['GearPosition']
     self.buttonStates = BUTTON_STATES.copy()
 
   def update(self, pt_cp):
@@ -42,8 +45,16 @@ class CarState(CarStateBase):
     ret.brakeLights = bool(pt_cp.vl["ESP_05"]['ESP_Status_Bremsdruck'])
 
     # Update gear and/or clutch position data.
-    can_gear_shifter = int(pt_cp.vl["Getriebe_11"]['GE_Fahrstufe'])
-    ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(can_gear_shifter, None))
+    if trans_type == TRANS.automatic:
+      ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(pt_cp.vl["Getriebe_11"]['GE_Fahrstufe'], None))
+    elif trans_type == TRANS.direct:
+      ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(pt_cp.vl["EV_Gearshift"]['GearPosition'], None))
+    elif trans_type == TRANS.manual:
+      ret.clutchPressed = not pt_cp.vl["Motor_14"]['MO_Kuppl_schalter']
+      if bool(pt_cp.vl["Gateway_72"]['BCM1_Rueckfahrlicht_Schalter']):
+        ret.gearShifter = GEAR.reverse
+      else:
+        ret.gearShifter = GEAR.drive
 
     # Update door and trunk/hatch lid open status.
     ret.doorOpen = any([pt_cp.vl["Gateway_72"]['ZV_FT_offen'],
