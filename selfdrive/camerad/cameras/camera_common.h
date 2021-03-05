@@ -10,7 +10,6 @@
 #include "common/queue.h"
 #include "visionbuf.h"
 #include "common/visionimg.h"
-#include "imgproc/utils.h"
 #include "messaging.hpp"
 #include "transforms/rgb_to_yuv.h"
 
