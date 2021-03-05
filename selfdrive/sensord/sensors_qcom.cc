@@ -45,13 +45,13 @@ void sigpipe_handler(int sig) {
 void sensor_loop() {
   LOG("*** sensor loop");
 
+  SubMaster sm({"deviceState"});
+  PubMaster pm({"sensorEvents"});
+
   uint64_t frame = 0;
   bool low_power_mode = false;
 
   while (!do_exit) {
-    SubMaster sm({"deviceState"});
-    PubMaster pm({"sensorEvents"});
-
     struct sensors_poll_device_t* device;
     struct sensors_module_t* module;
 
