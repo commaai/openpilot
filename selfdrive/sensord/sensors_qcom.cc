@@ -69,17 +69,8 @@ void sensor_loop() {
 
     for (int i = 0; i < count; i++) {
       LOGD("sensor %4d: %4d %60s  %d-%ld us", i, list[i].handle, list[i].name, list[i].minDelay, list[i].maxDelay);
+      device->activate(device, list[i].handle, 0);
     }
-
-    std::set<int> sensor_types = {
-      SENSOR_TYPE_ACCELEROMETER,
-      SENSOR_TYPE_MAGNETIC_FIELD_UNCALIBRATED,
-      SENSOR_TYPE_MAGNETIC_FIELD,
-      SENSOR_TYPE_GYROSCOPE_UNCALIBRATED,
-      SENSOR_TYPE_GYROSCOPE,
-      SENSOR_TYPE_PROXIMITY,
-      SENSOR_TYPE_LIGHT,
-    };
 
     std::map<int, int64_t> sensors = {
       {SENSOR_GYRO_UNCALIBRATED, ms2ns(10)},
@@ -100,43 +91,27 @@ void sensor_loop() {
 
     // init all the sensors
     for (auto &s : sensors) {
-      device->activate(device, s.first, 0);
       device->activate(device, s.first, 1);
       device->setDelay(device, s.first, s.second);
     }
 
-    // TODO: why is this 16?
-    static const size_t numEvents = 16;
-    sensors_event_t buffer[numEvents];
+    sensors_event_t buffer[sensors.size()];
 
     while (!do_exit) {
-      int n = device->poll(device, buffer, numEvents);
+      int n = device->poll(device, buffer, sensors.size());
       if (n == 0) continue;
       if (n < 0) {
         LOG("sensor_loop poll failed: %d", n);
         continue;
       }
 
-      int log_events = 0;
-      for (int i=0; i < n; i++) {
-        if (sensor_types.find(buffer[i].type) != sensor_types.end()) {
-          log_events++;
-        }
-      }
-
       MessageBuilder msg;
-      auto sensor_events = msg.initEvent().initSensorEvents(log_events);
+      auto sensor_events = msg.initEvent().initSensorEvents(n);
 
-      int log_i = 0;
       for (int i = 0; i < n; i++) {
-
         const sensors_event_t& data = buffer[i];
 
-        if (sensor_types.find(data.type) == sensor_types.end()) {
-          continue;
-        }
-
-        auto log_event = sensor_events[log_i];
+        auto log_event = sensor_events[i];
         log_event.setSource(cereal::SensorEventData::SensorSource::ANDROID);
         log_event.setVersion(data.version);
         log_event.setSensor(data.sensor);
@@ -183,9 +158,9 @@ void sensor_loop() {
         case SENSOR_TYPE_LIGHT:
           log_event.setLight(data.light);
           break;
+        default:
+          assert(0);
         }
-
-        log_i++;
       }
 
       pm.send("sensorEvents", msg);
