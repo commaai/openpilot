@@ -24,7 +24,42 @@ from selfdrive.swaglog import add_logentries_handler, cloudlog
 from selfdrive.version import dirty, version
 
 
-def manager_init(spinner):
+def manager_init(spinner=None):
+  params = Params()
+  params.manager_start()
+
+  default_params = [
+    ("CommunityFeaturesToggle", "0"),
+    ("CompletedTrainingVersion", "0"),
+    ("IsRHD", "0"),
+    ("IsMetric", "0"),
+    ("RecordFront", "0"),
+    ("HasAcceptedTerms", "0"),
+    ("HasCompletedSetup", "0"),
+    ("IsUploadRawEnabled", "1"),
+    ("IsLdwEnabled", "1"),
+    ("LastUpdateTime", datetime.datetime.utcnow().isoformat().encode('utf8')),
+    ("OpenpilotEnabledToggle", "1"),
+    ("VisionRadarToggle", "0"),
+    ("LaneChangeEnabled", "1"),
+    ("IsDriverViewEnabled", "0"),
+  ]
+
+  # set unset params
+  for k, v in default_params:
+    if params.get(k) is None:
+      params.put(k, v)
+
+  # is this dashcam?
+  if os.getenv("PASSIVE") is not None:
+    params.put("Passive", str(int(os.getenv("PASSIVE"))))
+
+  if params.get("Passive") is None:
+    raise Exception("Passive must be set to continue")
+
+  if EON:
+    update_apks()
+
   os.umask(0)  # Make sure we can create files with 777 permissions
 
   # Create folders needed for msgq
@@ -41,7 +76,7 @@ def manager_init(spinner):
     dongle_id = reg_res
   else:
     raise Exception("server registration failed")
-  os.environ['DONGLE_ID'] = dongle_id
+  os.environ['DONGLE_ID'] = dongle_id  # Needed for swaglog and loggerd
 
   if not dirty:
     os.environ['CLEAN'] = '1'
@@ -59,7 +94,7 @@ def manager_init(spinner):
     os.chmod(os.path.join(BASEDIR, "cereal", "libmessaging_shared.so"), 0o755)
 
 
-def manager_prepare(spinner):
+def manager_prepare(spinner=None):
   # build all processes
   os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
@@ -67,13 +102,13 @@ def manager_prepare(spinner):
 
   for i, p in enumerate(managed_processes.values()):
     perc = (100.0 - total) + total * (i + 1) / len(managed_processes)
-    spinner.update_progress(perc, 100.)
+
+    if spinner:
+      spinner.update_progress(perc, 100.)
     p.prepare()
 
 
-def cleanup_all_processes(signal, frame):
-  cloudlog.info("caught ctrl-c %s %s" % (signal, frame))
-
+def manager_cleanup():
   if EON:
     pm_apply_packages('disable')
 
@@ -138,45 +173,12 @@ def manager_thread():
       break
 
 
-def main(spinner):
-  params = Params()
-  params.manager_start()
-
-  default_params = [
-    ("CommunityFeaturesToggle", "0"),
-    ("CompletedTrainingVersion", "0"),
-    ("IsRHD", "0"),
-    ("IsMetric", "0"),
-    ("RecordFront", "0"),
-    ("HasAcceptedTerms", "0"),
-    ("HasCompletedSetup", "0"),
-    ("IsUploadRawEnabled", "1"),
-    ("IsLdwEnabled", "1"),
-    ("LastUpdateTime", datetime.datetime.utcnow().isoformat().encode('utf8')),
-    ("OpenpilotEnabledToggle", "1"),
-    ("VisionRadarToggle", "0"),
-    ("LaneChangeEnabled", "1"),
-    ("IsDriverViewEnabled", "0"),
-  ]
-
-  # set unset params
-  for k, v in default_params:
-    if params.get(k) is None:
-      params.put(k, v)
-
-  # is this dashcam?
-  if os.getenv("PASSIVE") is not None:
-    params.put("Passive", str(int(os.getenv("PASSIVE"))))
-
-  if params.get("Passive") is None:
-    raise Exception("Passive must be set to continue")
-
-  if EON:
-    update_apks()
-
+def main(spinner=None):
   manager_init(spinner)
   manager_prepare(spinner)
-  spinner.close()
+
+  if spinner:
+    spinner.close()
 
   if os.getenv("PREPAREONLY") is not None:
     return
@@ -190,9 +192,9 @@ def main(spinner):
     traceback.print_exc()
     crash.capture_exception()
   finally:
-    cleanup_all_processes(None, None)
+    manager_cleanup()
 
-  if params.get("DoUninstall", encoding='utf8') == "1":
+  if Params().params.get("DoUninstall", encoding='utf8') == "1":
     cloudlog.warning("uninstalling")
     HARDWARE.uninstall()
 
