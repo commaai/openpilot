@@ -97,7 +97,6 @@ void sensor_loop() {
     err = sensors_open(&module->common, &device);
     assert(err == 0);
 
-    // required
     struct sensor_t const* list;
     int count = module->get_sensors_list(module, &list);
     LOG("%d sensors found", count);
@@ -159,6 +158,7 @@ void sensor_loop() {
             device->activate(device, s.handle, 0);
             if (!offroad || s.offroad) {
               device->activate(device, s.handle, 1);
+              device->setDelay(device, s.handle, s.delay);
             }
           }
           low_power_mode = offroad;
