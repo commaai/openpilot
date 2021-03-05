@@ -63,7 +63,7 @@ class CarState(CarStateBase):
     # Consume blind-spot monitoring info/warning LED states, if available. The
     # info signal (LED on) is enabled whenever a vehicle is detected in the
     # driver's blind spot. The warning signal (LED flashing) is enabled if the
-    # driver shows possibly hazardous intent toward BSM detected vehicle, by
+    # driver shows possibly hazardous intent toward a BSM detected vehicle, by
     # setting the turn signal in that direction, or (for cars with factory Lane
     # Assist) approaches the lane boundary in that direction. Size of the BSM
     # detection box is dynamic based on speed and road curvature.
