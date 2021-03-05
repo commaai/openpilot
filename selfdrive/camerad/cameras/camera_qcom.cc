@@ -1105,17 +1105,17 @@ static void ops_thread(MultiCameraState *s) {
 static void setup_self_recover(CameraState *c, const uint16_t *lapres, size_t lapres_size) {
   std::lock_guard lk(c->focus_lock);
 
-  if (c->self_recover < 2 && (c->lens_true_pos < (dac_down + 1) || c->lens_true_pos > (dac_up - 1)) && is_blur(lapres, lapres_size)) {
+  if (c->self_recover < 2 && (c->lens_true_pos < (LP3_AF_DAC_DOWN + 1) || c->lens_true_pos > (LP3_AF_DAC_UP - 1)) && is_blur(lapres, lapres_size)) {
     // truly stuck, needs help
     if (--c->self_recover < -FOCUS_RECOVER_PATIENCE) {
       LOGD("road camera bad state detected. attempting recovery from %.1f, recover state is %d", c->lens_true_pos, c->self_recover);
       // parity determined by which end is stuck at
-      c->self_recover = FOCUS_RECOVER_STEPS + (lens_true_pos < LP3_AF_DAC_M ? 1 : 0);
+      c->self_recover = FOCUS_RECOVER_STEPS + (c->lens_true_pos < LP3_AF_DAC_M ? 1 : 0);
     }
-  } else if (c->self_recover < 2 && (lens_true_pos < (LP3_AF_DAC_M - LP3_AF_DAC_3SIG) || lens_true_pos > (LP3_AF_DAC_M + LP3_AF_DAC_3SIG))) {
+  } else if (c->self_recover < 2 && (c->lens_true_pos < (LP3_AF_DAC_M - LP3_AF_DAC_3SIG) || c->lens_true_pos > (LP3_AF_DAC_M + LP3_AF_DAC_3SIG))) {
     // in suboptimal position with high prob, but may still recover by itself
     if (--c->self_recover < -(FOCUS_RECOVER_PATIENCE * 3)) {
-      c->self_recover = FOCUS_RECOVER_STEPS / 2 + (lens_true_pos < LP3_AF_DAC_M ? 1 : 0);
+      c->self_recover = FOCUS_RECOVER_STEPS / 2 + (c->lens_true_pos < LP3_AF_DAC_M ? 1 : 0);
     }
   } else if (c->self_recover < 0) {
     c->self_recover += 1;  // reset if fine
