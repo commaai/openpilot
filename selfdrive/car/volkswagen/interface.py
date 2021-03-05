@@ -49,12 +49,11 @@ class CarInterface(CarInterfaceBase):
 
     ret.enableCamera = True  # Stock camera detection doesn't apply to VW
 
-    # Determine transmission type by CAN message(s) present on the bus
     if 0xAD in fingerprint[0]:
-      # Getribe_11 message detected: traditional automatic or DSG gearbox
+      # Getribe_11 detected: traditional automatic or DSG gearbox
       ret.transmissionType = TRANS.automatic
     elif 0x187 in fingerprint[0]:
-      # EV_Gearshift message detected: e-Golf or similar direct-drive electric
+      # EV_Gearshift detected: e-Golf or similar direct-drive electric
       ret.transmissionType = TRANS.direct
     else:
       # No trans message at all, must be a true stick-shift manual
