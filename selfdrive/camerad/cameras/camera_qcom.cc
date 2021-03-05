@@ -185,17 +185,6 @@ static void camera_init(VisionIpcServer *v, CameraState *s, int camera_id, int c
   s->buf.init(device_id, ctx, s, v, FRAME_BUF_COUNT, rgb_type, yuv_type, camera_release_buffer);
 }
 
-cl_program build_conv_program(cl_device_id device_id, cl_context context, int image_w, int image_h, int filter_size) {
-  char args[4096];
-  snprintf(args, sizeof(args),
-          "-cl-fast-relaxed-math -cl-denorms-are-zero "
-          "-DIMAGE_W=%d -DIMAGE_H=%d -DFLIP_RB=%d "
-          "-DFILTER_SIZE=%d -DHALF_FILTER_SIZE=%d -DTWICE_HALF_FILTER_SIZE=%d -DHALF_FILTER_SIZE_IMAGE_W=%d",
-          image_w, image_h, 1,
-          filter_size, filter_size/2, (filter_size/2)*2, (filter_size/2)*image_w);
-  return cl_program_from_file(context, device_id, "imgproc/conv.cl", args);
-}
-
 void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
   char project_name[1024] = {0};
   property_get("ro.boot.project_name", project_name, "");
