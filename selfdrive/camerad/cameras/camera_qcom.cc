@@ -28,6 +28,9 @@
 #include "sensor_i2c.h"
 #include "camera_qcom.h"
 
+// leeco actuator (DW9800W H-Bridge Driver IC)
+// from sniff
+const uint16_t INFINITY_DAC = 364;
 
 extern ExitHandler do_exit;
 
@@ -560,10 +563,6 @@ static void camera_open(CameraState *s, bool is_road_cam) {
     err = ioctl(s->actuator_fd, VIDIOC_MSM_ACTUATOR_CFG, &actuator_cfg_data);
     LOG("actuator init: %d", err);
 
-    // leeco actuator (DW9800W H-Bridge Driver IC)
-    // from sniff
-    s->infinity_dac = 364;
-
     struct msm_actuator_reg_params_t actuator_reg_params[] = {
       {
         .reg_write_type = MSM_ACTUATOR_WRITE_DAC,
@@ -605,7 +604,7 @@ static void camera_open(CameraState *s, bool is_road_cam) {
         .park_lens = {.damping_step = 1023, .damping_delay = 14000, .hw_params = 11, .max_step = 20},
       },
       .af_tuning_params = {
-        .initial_code = (int16_t)s->infinity_dac,
+        .initial_code = INFINITY_DAC,
         .pwd_step = 0,
         .region_size = 1,
         .total_steps = 238,
@@ -769,7 +768,7 @@ static void road_camera_start(CameraState *s) {
   int err = sensor_write_regs(s, start_reg_array, ARRAYSIZE(start_reg_array), MSM_CAMERA_I2C_BYTE_DATA);
   LOG("sensor start regs: %d", err);
 
-  int inf_step = 512 - s->infinity_dac;
+  int inf_step = 512 - INFINITY_DAC;
 
   // initial guess
   s->lens_true_pos = 400;
@@ -780,7 +779,7 @@ static void road_camera_start(CameraState *s) {
   actuator_cfg_data.cfg.setpos = (struct msm_actuator_set_position_t){
     .number_of_steps = 1,
     .hw_params = (uint32_t)7,
-    .pos = {s->infinity_dac, 0},
+    .pos = {INFINITY_DAC, 0},
     .delay = {0,}
   };
   err = ioctl(s->actuator_fd, VIDIOC_MSM_ACTUATOR_CFG, &actuator_cfg_data);
