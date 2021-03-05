@@ -68,7 +68,7 @@ void Networking::attemptInitialization(){
     vlayout->addSpacing(10);
   }
 
-  wifiWidget = new WifiUI(0, 5, wifi);
+  wifiWidget = new WifiUI(0, wifi);
   connect(wifiWidget, SIGNAL(connectToNetwork(Network)), this, SLOT(connectToNetwork(Network)));
   vlayout->addWidget(wifiWidget, 1);
 
@@ -264,7 +264,7 @@ void AdvancedNetworking::toggleSSH(int enable) {
 
 // WifiUI functions
 
-WifiUI::WifiUI(QWidget *parent, int page_length, WifiManager* wifi) : QWidget(parent), networks_per_page(page_length), wifi(wifi) {
+WifiUI::WifiUI(QWidget *parent, WifiManager* wifi) : QWidget(parent), wifi(wifi) {
   vlayout = new QVBoxLayout;
 
   // Scan on startup
@@ -285,8 +285,9 @@ void WifiUI::refresh() {
   connectButtons = new QButtonGroup(this); // TODO check if this is a leak
   QObject::connect(connectButtons, SIGNAL(buttonClicked(QAbstractButton*)), this, SLOT(handleButton(QAbstractButton*)));
 
+  int networks_per_page = height() / 180;
+
   int i = 0;
-  int countWidgets = 0;
   int pageCount = (wifi->seen_networks.size() - 1) / networks_per_page;
   page = std::max(0, std::min(page, pageCount));
   for (Network &network : wifi->seen_networks) {
@@ -298,7 +299,7 @@ void WifiUI::refresh() {
       if(ssid.length() > 20){
         ssid = ssid.left(20 - 3) + "…";
       }
-      
+
       QLabel *ssid_label = new QLabel(ssid);
       ssid_label->setStyleSheet(R"(
         font-size: 55px;
@@ -328,7 +329,6 @@ void WifiUI::refresh() {
       if (page * networks_per_page <= i+1 && i+1 < (page + 1) * networks_per_page && i+1 < wifi->seen_networks.size()) {
         vlayout->addWidget(hline(), 0);
       }
-      countWidgets++;
     }
     i++;
   }
