@@ -119,8 +119,7 @@ void sensor_loop() {
     // init sensors
     for (int i = 0; i < count; i++) {
       auto &s = list[i];
-      LOGW("sensor %4d: %4d %60s  %d-%ld us", s.type, s.handle, s.name, s.minDelay, s.maxDelay);
-      // LOG("sensor %4d: %4d %60s  %d-%ld us", i, list[i].handle, list[i].name, list[i].minDelay, list[i].maxDelay);
+      LOG("sensor %4d: %4d %60s  %d-%ld us", i, s.handle, s.name, s.minDelay, s.maxDelay);
       device->activate(device, s.handle, 0);
       auto it = sensors.find(s.type);
       if(it != sensors.end() && it->second.handle == 0) {
