@@ -72,7 +72,7 @@ void sensor_loop() {
       device->activate(device, list[i].handle, 0);
     }
 
-    std::map<int, int64_t> sensors = {
+    const std::map<int, int64_t> sensors = {
       {SENSOR_GYRO_UNCALIBRATED, ms2ns(10)},
       {SENSOR_MAGNETOMETER_UNCALIBRATED, ms2ns(100)},
       {SENSOR_ACCELEROMETER, ms2ns(10)},
@@ -83,7 +83,7 @@ void sensor_loop() {
     };
 
     // sensors needed while offroad
-    std::set<int> offroad_sensors = {
+    const std::set<int> offroad_sensors = {
       SENSOR_LIGHT,
       SENSOR_ACCELEROMETER,
       SENSOR_GYRO_UNCALIBRATED,
