@@ -343,7 +343,7 @@ static void processing_thread(MultiCameraState *cameras, CameraState *cs, proces
     init_cam_state_func = &cereal::Event::Builder::initWideRoadCameraState;
   }
 
-  uint32_t cnt = 0;
+  uint32_t frame_cnt = 0;
   while (!do_exit) {
     if (!cs->buf.acquire()) continue;
 
@@ -359,22 +359,22 @@ static void processing_thread(MultiCameraState *cameras, CameraState *cs, proces
       }
 
       if (callback) {
-        callback(cameras, cs, framed, cnt);
+        callback(cameras, cs, framed, frame_cnt);
       }
 
-      if (cnt % 3 == 0) {
+      if (frame_cnt % 3 == 0) {
         camera_autoexposure(cameras, cs);
       }
 
       pm.send(pub_name, msg);
-      if (pub_thumbnail && cnt % 100 == 3) {
+      if (pub_thumbnail && frame_cnt % 100 == 3) {
         // this takes 10ms???
         publish_thumbnail(&pm, &(cs->buf));
       }
     }
 
     cs->buf.release();
-    ++cnt;
+    ++frame_cnt;
   }
 }
 
