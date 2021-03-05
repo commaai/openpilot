@@ -838,8 +838,6 @@ void actuator_move(CameraState *s, uint16_t target) {
 
   s->cur_step_pos = dest_step_pos;
   s->cur_lens_pos = actuator_cfg_data.cfg.move.curr_lens_pos;
-  LOGW("%d, %d, %d", actuator_ringing_params.damping_delay, actuator_ringing_params.damping_step, 
-  actuator_ringing_params.hw_params);
   //LOGD("step %d   target: %d  lens pos: %d", dest_step_pos, target, s->cur_lens_pos);
 }
 
