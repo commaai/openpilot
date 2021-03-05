@@ -60,6 +60,18 @@ class CarState(CarStateBase):
     # We use the speed preference for OP.
     self.displayMetricUnits = not pt_cp.vl["Einheiten_01"]["KBI_MFA_v_Einheit_02"]
 
+    # Consume blind-spot monitoring info/warning LED states, if available. The
+    # info signal (LED on) is enabled whenever a vehicle is detected in the
+    # driver's blind spot. The warning signal (LED flashing) is enabled if the
+    # driver shows possibly hazardous intent toward a BSM detected vehicle, by
+    # setting the turn signal in that direction, or (for cars with factory Lane
+    # Assist) approaches the lane boundary in that direction. Size of the BSM
+    # detection box is dynamic based on speed and road curvature.
+    # Refer to VW Self Study Program 890253: Volkswagen Driver Assist Systems,
+    # pages 32-35.
+    ret.leftBlindspot = bool(pt_cp.vl["SWA_01"]["SWA_Infostufe_SWA_li"]) or bool(pt_cp.vl["SWA_01"]["SWA_Warnung_SWA_li"])
+    ret.rightBlindspot = bool(pt_cp.vl["SWA_01"]["SWA_Infostufe_SWA_re"]) or bool(pt_cp.vl["SWA_01"]["SWA_Warnung_SWA_re"])
+
     # Update ACC radar status.
     accStatus = pt_cp.vl["TSK_06"]['TSK_Status']
     if accStatus == 2:
@@ -164,6 +176,10 @@ class CarState(CarStateBase):
       ("GRA_Tip_Stufe_2", "GRA_ACC_01", 0),         # unknown related to stalk type
       ("GRA_ButtonTypeInfo", "GRA_ACC_01", 0),      # unknown related to stalk type
       ("COUNTER", "GRA_ACC_01", 0),                 # GRA_ACC_01 CAN message counter
+      ("SWA_Infostufe_SWA_li", "SWA_01", 0),        # Blind spot object info, left
+      ("SWA_Warnung_SWA_li", "SWA_01", 0),          # Blind spot object warning, left
+      ("SWA_Infostufe_SWA_re", "SWA_01", 0),        # Blind spot object info, right
+      ("SWA_Warnung_SWA_re", "SWA_01", 0),          # Blind spot object warning, right
     ]
 
     checks = [
