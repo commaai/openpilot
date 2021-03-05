@@ -6,7 +6,7 @@ from selfdrive.swaglog import get_file_handler
 
 def main():
   log_handler = get_file_handler()
-  le_level = 20  # logging.INFO
+  log_level = 20  # logging.INFO
 
   ctx = zmq.Context().instance()
   sock = ctx.socket(zmq.PULL)
@@ -22,7 +22,7 @@ def main():
     levelnum = ord(dat[0])
     dat = dat[1:]
 
-    if levelnum >= le_level:
+    if levelnum >= log_level:
       log_handler.emit(dat)
 
     # then we publish them
