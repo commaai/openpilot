@@ -24,25 +24,67 @@
 // ACCELEROMETER_UNCALIBRATED is only in Android O
 // https://developer.android.com/reference/android/hardware/Sensor.html#STRING_TYPE_ACCELEROMETER_UNCALIBRATED
 
+namespace {
+
 ExitHandler do_exit;
 volatile sig_atomic_t re_init_sensors = 0;
+typedef cereal::SensorEventData::Builder SensorBuilder;
+
+void build_accel(SensorBuilder& log_event, const sensors_event_t& data) {
+  auto svec = log_event.initAcceleration();
+  svec.setV(data.acceleration.v);
+  svec.setStatus(data.acceleration.status);
+}
+
+void build_magnetic_uncalib(SensorBuilder& log_event, const sensors_event_t& data) {
+  auto svec = log_event.initMagneticUncalibrated();
+  // assuming the uncalib and bias floats are contiguous in memory
+  kj::ArrayPtr<const float> vs(&data.uncalibrated_magnetic.uncalib[0], 6);
+  svec.setV(vs);
+}
+
+void build_magnetic(SensorBuilder& log_event, const sensors_event_t& data) {
+  auto svec = log_event.initMagnetic();
+  svec.setV(data.magnetic.v);
+  svec.setStatus(data.magnetic.status);
+}
+
+void build_gypo_uncalib(SensorBuilder& log_event, const sensors_event_t& data) {
+  auto svec = log_event.initGyroUncalibrated();
+  // assuming the uncalib and bias floats are contiguous in memory
+  kj::ArrayPtr<const float> vs(&data.uncalibrated_gyro.uncalib[0], 6);
+  svec.setV(vs);
+}
+
+void build_gypo(SensorBuilder& log_event, const sensors_event_t& data) {
+  auto svec = log_event.initGyro();
+  svec.setV(data.gyro.v);
+  svec.setStatus(data.gyro.status);
+}
+
+void build_proximity(SensorBuilder& log_event, const sensors_event_t& data) {
+  log_event.setProximity(data.distance);
+}
+
+void build_light(SensorBuilder& log_event, const sensors_event_t& data) {
+  log_event.setLight(data.light);
+}
 
 typedef struct SensorState {
   int handle;
   bool offroad;
   nsecs_t delay;
+  void (*build)(SensorBuilder& log_event, const sensors_event_t& data);
 } SensorState;
 
 static std::map<int, SensorState> sensors = {
-    {SENSOR_TYPE_GYROSCOPE, {.delay = ms2ns(10)}},
-    {SENSOR_TYPE_MAGNETIC_FIELD, {.delay = ms2ns(100)}},
-    {SENSOR_TYPE_MAGNETIC_FIELD_UNCALIBRATED, {.delay = ms2ns(100)}},
-    {SENSOR_TYPE_PROXIMITY, {.delay = ms2ns(100)}},
-    {SENSOR_TYPE_GYROSCOPE_UNCALIBRATED, {.delay = ms2ns(10), .offroad = true}},
-    {SENSOR_TYPE_ACCELEROMETER, {.delay = ms2ns(10), .offroad = true}},
-    {SENSOR_TYPE_LIGHT, {.delay = ms2ns(100), .offroad = true}}};
-
-namespace {
+  {SENSOR_TYPE_GYROSCOPE, {.delay = ms2ns(10), .build = build_gypo}},
+  {SENSOR_TYPE_MAGNETIC_FIELD, {.delay = ms2ns(100), .build = build_magnetic}},
+  {SENSOR_TYPE_MAGNETIC_FIELD_UNCALIBRATED, {.delay = ms2ns(100), .build = build_magnetic_uncalib}},
+  {SENSOR_TYPE_PROXIMITY, {.delay = ms2ns(100), .build = build_proximity}},
+  {SENSOR_TYPE_GYROSCOPE_UNCALIBRATED, {.delay = ms2ns(10), .build = build_gypo_uncalib, .offroad = true}},
+  {SENSOR_TYPE_ACCELEROMETER, {.delay = ms2ns(10), .build = build_accel, .offroad = true}},
+  {SENSOR_TYPE_LIGHT, {.delay = ms2ns(100), .build = build_light, .offroad = true}}};
 
 void sigpipe_handler(int sig) {
   LOGE("SIGPIPE received");
@@ -109,49 +151,7 @@ void sensor_loop() {
         log_event.setType(data.type);
         log_event.setTimestamp(data.timestamp);
 
-        switch (data.type) {
-        case SENSOR_TYPE_ACCELEROMETER: {
-          auto svec = log_event.initAcceleration();
-          svec.setV(data.acceleration.v);
-          svec.setStatus(data.acceleration.status);
-          break;
-        }
-        case SENSOR_TYPE_MAGNETIC_FIELD_UNCALIBRATED: {
-          auto svec = log_event.initMagneticUncalibrated();
-          // assuming the uncalib and bias floats are contiguous in memory
-          kj::ArrayPtr<const float> vs(&data.uncalibrated_magnetic.uncalib[0], 6);
-          svec.setV(vs);
-          break;
-        }
-        case SENSOR_TYPE_MAGNETIC_FIELD: {
-          auto svec = log_event.initMagnetic();
-          svec.setV(data.magnetic.v);
-          svec.setStatus(data.magnetic.status);
-          break;
-        }
-        case SENSOR_TYPE_GYROSCOPE_UNCALIBRATED: {
-          auto svec = log_event.initGyroUncalibrated();
-          // assuming the uncalib and bias floats are contiguous in memory
-          kj::ArrayPtr<const float> vs(&data.uncalibrated_gyro.uncalib[0], 6);
-          svec.setV(vs);
-          break;
-        }
-        case SENSOR_TYPE_GYROSCOPE: {
-          auto svec = log_event.initGyro();
-          svec.setV(data.gyro.v);
-          svec.setStatus(data.gyro.status);
-          break;
-        }
-        case SENSOR_TYPE_PROXIMITY: {
-          log_event.setProximity(data.distance);
-          break;
-        }
-        case SENSOR_TYPE_LIGHT:
-          log_event.setLight(data.light);
-          break;
-        default:
-          assert(0);
-        }
+        sensors.at(data.type).build(log_event, data);
       }
 
       pm.send("sensorEvents", msg);
