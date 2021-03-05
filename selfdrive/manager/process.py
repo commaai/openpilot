@@ -48,8 +48,8 @@ def nativelauncher(pargs, cwd):
 def join_process(process, timeout):
   # Process().join(timeout) will hang due to a python 3 bug: https://bugs.python.org/issue28382
   # We have to poll the exitcode instead
-  t = time.time()
-  while time.time() - t < timeout and process.exitcode is None:
+  t = time.monotonic()
+  while time.monotonic() - t < timeout and process.exitcode is None:
     time.sleep(0.001)
 
 
