@@ -69,10 +69,8 @@ class CarState(CarStateBase):
     # detection box is dynamic based on speed and road curvature.
     # Refer to VW Self Study Program 890253: Volkswagen Driver Assist Systems,
     # pages 32-35.
-    ret.leftBlindspot = any([bool(pt_cp.vl["SWA_01"]["SWA_Infostufe_SWA_li"]),
-                             bool(pt_cp.vl["SWA_01"]["SWA_Warnung_SWA_li"])])
-    ret.rightBlindspot = any([bool(pt_cp.vl["SWA_01"]["SWA_Infostufe_SWA_re"]),
-                             bool(pt_cp.vl["SWA_01"]["SWA_Warnung_SWA_re"])])
+    ret.leftBlindspot = bool(pt_cp.vl["SWA_01"]["SWA_Infostufe_SWA_li"]) or bool(pt_cp.vl["SWA_01"]["SWA_Warnung_SWA_li"])
+    ret.rightBlindspot = bool(pt_cp.vl["SWA_01"]["SWA_Infostufe_SWA_re"]) or bool(pt_cp.vl["SWA_01"]["SWA_Warnung_SWA_re"])
 
     # Update ACC radar status.
     accStatus = pt_cp.vl["TSK_06"]['TSK_Status']
