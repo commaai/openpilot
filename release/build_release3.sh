@@ -70,7 +70,7 @@ export PYTHONPATH="$BUILD_DIR"
 SCONS_CACHE=1 scons -j$(nproc)
 
 # Run tests
-#python selfdrive/test/test_manager.py
+#python selfdrive/manager/test/test_manager.py
 selfdrive/car/tests/test_car_interfaces.py
 
 # Cleanup

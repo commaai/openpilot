@@ -331,7 +331,6 @@ selfdrive/test/__init__.py
 selfdrive/test/helpers.py
 selfdrive/test/setup_device_ci.sh
 selfdrive/test/test_fingerprints.py
-selfdrive/test/test_manager.py
 
 selfdrive/ui/SConscript
 selfdrive/ui/*.cc
@@ -390,6 +389,8 @@ selfdrive/manager/helpers.py
 selfdrive/manager/manager.py
 selfdrive/manager/process_config.py
 selfdrive/manager/process.py
+selfdrive/manager/test/__init__.py
+selfdrive/manager/test/test_manager.py
 
 selfdrive/modeld/SConscript
 selfdrive/modeld/modeld.cc
