@@ -763,35 +763,19 @@ static void camera_open(CameraState *s, bool is_road_cam) {
   LOG("isp start stream: %d", err);
 }
 
-
-static struct damping_params_t actuator_ringing_params = {
-  .damping_step = 1023,
-  .damping_delay = 15000,
-  .hw_params = 0x0000e422,
-};
-
 static void road_camera_start(CameraState *s) {
-  struct msm_actuator_cfg_data actuator_cfg_data = {0};
-
   set_exposure(s, 1.0, 1.0);
 
   int err = sensor_write_regs(s, start_reg_array, ARRAYSIZE(start_reg_array), MSM_CAMERA_I2C_BYTE_DATA);
   LOG("sensor start regs: %d", err);
 
-  // focus on infinity assuming phone is perpendicular
-  int inf_step;
-
-  actuator_ringing_params.damping_step = 1023;
-  actuator_ringing_params.damping_delay = 20000;
-  actuator_ringing_params.hw_params = 13;
-
-  inf_step = 512 - s->infinity_dac;
+  int inf_step = 512 - s->infinity_dac;
 
   // initial guess
   s->lens_true_pos = 400;
 
   // reset lens position
-  memset(&actuator_cfg_data, 0, sizeof(actuator_cfg_data));
+  struct msm_actuator_cfg_data actuator_cfg_data = {};
   actuator_cfg_data.cfgtype = CFG_SET_POSITION;
   actuator_cfg_data.cfg.setpos = (struct msm_actuator_set_position_t){
     .number_of_steps = 1,
@@ -827,6 +811,14 @@ static void road_camera_start(CameraState *s) {
 
 void actuator_move(CameraState *s, uint16_t target) {
   // LP3 moves only on even positions. TODO: use proper sensor params
+
+  // focus on infinity assuming phone is perpendicular
+  struct damping_params_t actuator_ringing_params = {
+      .damping_step = 1023,
+      .damping_delay = 20000,
+      .hw_params = 13,
+  };
+
   int step = (target - s->cur_lens_pos) / 2;
 
   int dest_step_pos = s->cur_step_pos + step;
@@ -847,7 +839,8 @@ void actuator_move(CameraState *s, uint16_t target) {
 
   s->cur_step_pos = dest_step_pos;
   s->cur_lens_pos = actuator_cfg_data.cfg.move.curr_lens_pos;
-
+  LOGW("%d, %d, %d", actuator_ringing_params.damping_delay, actuator_ringing_params.damping_step, 
+  actuator_ringing_params.hw_params);
   //LOGD("step %d   target: %d  lens pos: %d", dest_step_pos, target, s->cur_lens_pos);
 }
 
