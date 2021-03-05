@@ -1055,6 +1055,7 @@ FW_VERSIONS = {
     (Ecu.combinationMeter, 0x18da60f1, None): [
       b'78109-THX-A110\x00\x00',
       b'78109-THX-A210\x00\x00',
+      b'78109-THX-A220\x00\x00',
       b'78109-THX-C220\x00\x00',
     ],
   },
