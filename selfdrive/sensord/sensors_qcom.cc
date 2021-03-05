@@ -1,23 +1,10 @@
-#include <stdio.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <assert.h>
-#include <sys/time.h>
-#include <sys/cdefs.h>
 #include <sys/types.h>
 #include <sys/resource.h>
-
 #include <map>
-#include <set>
-
-#include <cutils/log.h>
 #include <hardware/sensors.h>
 #include <utils/Timers.h>
 
 #include "messaging.hpp"
-#include "common/timing.h"
 #include "common/util.h"
 #include "common/swaglog.h"
 
