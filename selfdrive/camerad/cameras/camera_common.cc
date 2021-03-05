@@ -318,7 +318,7 @@ float set_exposure_target(const CameraBuf *b, int x_start, int x_end, int x_skip
 }
 
 static void processing_thread(MultiCameraState *cameras, CameraState *cs, process_thread_cb callback, bool is_frame_stream) {
-  PubMaster pm({"roadCameraState", "driverCameraState", "wideRoadCameraState", "thumbnail"});
+  static PubMaster pm({"roadCameraState", "driverCameraState", "wideRoadCameraState", "thumbnail"});
 
   const char *pub_name = nullptr;
   bool framed_set_image = false, framed_set_transform = false;
