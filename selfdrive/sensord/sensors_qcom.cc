@@ -49,14 +49,14 @@ void build_magnetic(SensorBuilder& log_event, const sensors_event_t& data) {
   svec.setStatus(data.magnetic.status);
 }
 
-void build_gypo_uncalib(SensorBuilder& log_event, const sensors_event_t& data) {
+void build_gyro_uncalib(SensorBuilder& log_event, const sensors_event_t& data) {
   auto svec = log_event.initGyroUncalibrated();
   // assuming the uncalib and bias floats are contiguous in memory
   kj::ArrayPtr<const float> vs(&data.uncalibrated_gyro.uncalib[0], 6);
   svec.setV(vs);
 }
 
-void build_gypo(SensorBuilder& log_event, const sensors_event_t& data) {
+void build_gyro(SensorBuilder& log_event, const sensors_event_t& data) {
   auto svec = log_event.initGyro();
   svec.setV(data.gyro.v);
   svec.setStatus(data.gyro.status);
@@ -78,11 +78,11 @@ typedef struct SensorState {
 } SensorState;
 
 static std::map<int, SensorState> sensors = {
-  {SENSOR_TYPE_GYROSCOPE, {.delay = ms2ns(10), .build = build_gypo}},
+  {SENSOR_TYPE_GYROSCOPE, {.delay = ms2ns(10), .build = build_gyro}},
   {SENSOR_TYPE_MAGNETIC_FIELD, {.delay = ms2ns(100), .build = build_magnetic}},
   {SENSOR_TYPE_MAGNETIC_FIELD_UNCALIBRATED, {.delay = ms2ns(100), .build = build_magnetic_uncalib}},
   {SENSOR_TYPE_PROXIMITY, {.delay = ms2ns(100), .build = build_proximity}},
-  {SENSOR_TYPE_GYROSCOPE_UNCALIBRATED, {.delay = ms2ns(10), .build = build_gypo_uncalib, .offroad = true}},
+  {SENSOR_TYPE_GYROSCOPE_UNCALIBRATED, {.delay = ms2ns(10), .build = build_gyro_uncalib, .offroad = true}},
   {SENSOR_TYPE_ACCELEROMETER, {.delay = ms2ns(10), .build = build_accel, .offroad = true}},
   {SENSOR_TYPE_LIGHT, {.delay = ms2ns(100), .build = build_light, .offroad = true}}};
 
