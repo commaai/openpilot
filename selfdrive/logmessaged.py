@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 import zmq
 import cereal.messaging as messaging
-from selfdrive.swaglog import get_le_handler
+from selfdrive.swaglog import get_file_handler
 
 
 def main():
-  le_handler = get_le_handler()
+  log_handler = get_file_handler()
   le_level = 20  # logging.INFO
 
   ctx = zmq.Context().instance()
@@ -23,9 +23,7 @@ def main():
     dat = dat[1:]
 
     if levelnum >= le_level:
-      # push to logentries
-      # TODO: push to athena instead
-      le_handler.emit_raw(dat)
+      log_handler.emit(dat)
 
     # then we publish them
     msg = messaging.new_message()

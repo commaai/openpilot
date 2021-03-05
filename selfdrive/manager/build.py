@@ -10,7 +10,7 @@ import textwrap
 from common.basedir import BASEDIR
 from common.spinner import Spinner
 from common.text_window import TextWindow
-from selfdrive.swaglog import add_logentries_handler, cloudlog
+from selfdrive.swaglog import cloudlog, add_file_handler
 from selfdrive.version import dirty
 
 TOTAL_SCONS_NODES = 1225
@@ -70,7 +70,7 @@ def build(spinner, dirty=False):
         errors = [line.decode('utf8', 'replace') for line in compile_output
                   if any([err in line for err in [b'error: ', b'not found, needed by target']])]
         error_s = "\n".join(errors)
-        add_logentries_handler(cloudlog)
+        add_file_handler(cloudlog)
         cloudlog.error("scons build failed\n" + error_s)
 
         # Show TextWindow

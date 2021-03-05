@@ -26,18 +26,19 @@ from common.params import Params
 from common.realtime import sec_since_boot
 from selfdrive.hardware import HARDWARE
 from selfdrive.loggerd.config import ROOT
-from selfdrive.swaglog import cloudlog
+from selfdrive.swaglog import cloudlog, SWAGLOG_DIR
 
 ATHENA_HOST = os.getenv('ATHENA_HOST', 'wss://athena.comma.ai')
 HANDLER_THREADS = int(os.getenv('HANDLER_THREADS', "4"))
 LOCAL_PORT_WHITELIST = set([8022])
 
 dispatcher["echo"] = lambda s: s
-payload_queue: Any = queue.Queue()
-response_queue: Any = queue.Queue()
+recv_queue: Any = queue.Queue()
+send_queue: Any = queue.Queue()
 upload_queue: Any = queue.Queue()
 cancelled_uploads: Any = set()
 UploadItem = namedtuple('UploadItem', ['path', 'url', 'headers', 'created_at', 'id'])
+result_queue: Any = queue.Queue()
 
 
 def handle_long_poll(ws):
@@ -46,7 +47,8 @@ def handle_long_poll(ws):
   threads = [
     threading.Thread(target=ws_recv, args=(ws, end_event)),
     threading.Thread(target=ws_send, args=(ws, end_event)),
-    threading.Thread(target=upload_handler, args=(end_event,))
+    threading.Thread(target=upload_handler, args=(end_event,)),
+    threading.Thread(target=log_handler, args=(end_event,)),
   ] + [
     threading.Thread(target=jsonrpc_handler, args=(end_event,))
     for x in range(HANDLER_THREADS)
@@ -69,14 +71,17 @@ def jsonrpc_handler(end_event):
   dispatcher["startLocalProxy"] = partial(startLocalProxy, end_event)
   while not end_event.is_set():
     try:
-      data = payload_queue.get(timeout=1)
-      response = JSONRPCResponseManager.handle(data, dispatcher)
-      response_queue.put_nowait(response)
+      data = recv_queue.get(timeout=1)
+      if "method" in data and "params" in data:
+        response = JSONRPCResponseManager.handle(data, dispatcher)
+        send_queue.put_nowait(response)
+      elif "result" in data and "id" in data:
+        result_queue.put_nowait(data)
     except queue.Empty:
       pass
     except Exception as e:
       cloudlog.exception("athena jsonrpc handler failed")
-      response_queue.put_nowait(json.dumps({"error": str(e)}))
+      send_queue.put_nowait(json.dumps({"error": str(e)}))
 
 
 def upload_handler(end_event):
@@ -244,6 +249,56 @@ def takeSnapshot():
     raise Exception("not available while camerad is started")
 
 
+def log_handler(end_event):
+  if not HARDWARE.get_cloudlog_enabled():
+    return
+
+  logs = []
+  last_scan = 0
+  log_retries = 0
+  pending_upload = False
+  while not end_event.is_set():
+    try:
+      try:
+        result = json.loads(result_queue.get(timeout=1))
+        # TODO: response may get lost and then uploads would stop
+        pending_upload = False
+        if result["success"] == 1:
+          log_file_succeeded = result["id"]
+          if os.path.exists(log_file_succeeded):
+            os.remove(log_file_succeeded)
+      except queue.Empty:
+        pass
+
+      if time.time() - last_scan > 10:
+        # TODO: scan once then use inotify to detect file creation
+        # file without an extension is always the active log file
+        logs = sorted([f for f in os.listdir(SWAGLOG_DIR) if '.' in f], reverse=True)
+        last_scan = time.time()
+      if len(logs) == 0 or pending_upload:
+        continue
+
+      log_file = logs[0]
+      with open(log_file, "r") as f:
+        logs = f.read()
+      jsonrpc = {
+        "method": "forwardLogs",
+        "params": {
+          "logs": logs
+        },
+        "jsonrpc": "2.0",
+        "id": log_file
+      }
+      send_queue.put_nowait(jsonrpc)
+      pending_upload = True
+    except Exception:
+      cloudlog.exception("athena.log_handler.exception")
+      log_retries += 1
+
+    if log_retries != 0:
+      time.sleep(backoff(log_retries))
+
+
 def ws_proxy_recv(ws, local_sock, ssock, end_event, global_end_event):
   while not (end_event.is_set() or global_end_event.is_set()):
     try:
@@ -290,7 +345,7 @@ def ws_recv(ws, end_event):
       if opcode in (ABNF.OPCODE_TEXT, ABNF.OPCODE_BINARY):
         if opcode == ABNF.OPCODE_TEXT:
           data = data.decode("utf-8")
-        payload_queue.put_nowait(data)
+        recv_queue.put_nowait(data)
       elif opcode == ABNF.OPCODE_PING:
         Params().put("LastAthenaPingTime", str(int(sec_since_boot() * 1e9)))
     except WebSocketTimeoutException:
@@ -303,8 +358,8 @@ def ws_recv(ws, end_event):
 def ws_send(ws, end_event):
   while not end_event.is_set():
     try:
-      response = response_queue.get(timeout=1)
-      ws.send(response.json)
+      data = send_queue.get(timeout=1)
+      ws.send(data.json)
     except queue.Empty:
       pass
     except Exception:

@@ -1,17 +1,23 @@
 import os
+from pathlib import Path
 import logging
+from logging.handlers import TimedRotatingFileHandler
 
-from logentries import LogentriesHandler
 import zmq
 
 from common.logging_extra import SwagLogger, SwagFormatter
+from selfdrive.hardware import PC
 
+if PC:
+  SWAGLOG_DIR = os.path.join(str(Path.home()), ".comma", "log")
+else:
+  SWAGLOG_DIR = "/data/log/"
 
-def get_le_handler():
-  # setup logentries. we forward log messages to it
-  le_token = "e8549616-0798-4d7e-a2ca-2513ae81fa17"
-  return LogentriesHandler(le_token, use_tls=False, verbose=False)
-
+def get_file_handler():
+  Path(SWAGLOG_DIR).mkdir(parents=True, exist_ok=True)
+  file_name = os.path.join(SWAGLOG_DIR, "swaglog")
+  handler = TimedRotatingFileHandler(file_name, when="M", interval=1, backupCount=2000)
+  return handler
 
 class LogMessageHandler(logging.Handler):
   def __init__(self, formatter):
@@ -40,10 +46,12 @@ class LogMessageHandler(logging.Handler):
       pass
 
 
-def add_logentries_handler(log):
-  """Function to add the logentries handler to swaglog.
-  This can be used to send logs when logmessaged is not running."""
-  handler = get_le_handler()
+def add_file_handler(log):
+  """
+  Function to add the file log handler to swaglog.
+  This can be used to store logs when logmessaged is not running.
+  """
+  handler = get_file_handler()
   handler.setFormatter(SwagFormatter(log))
   log.addHandler(handler)
 

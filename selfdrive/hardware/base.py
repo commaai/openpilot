@@ -105,3 +105,7 @@ class HardwareBase:
   @abstractmethod
   def set_screen_brightness(self, percentage):
     pass
+
+  @abstractmethod
+  def get_cloudlog_enabled(self):
+    pass

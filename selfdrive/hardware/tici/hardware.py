@@ -191,3 +191,6 @@ class Tici(HardwareBase):
         f.write(str(int(percentage * 10.23)))
     except Exception:
       pass
+
+  def get_cloudlog_enabled(self):
+    return False

@@ -79,3 +79,6 @@ class Pc(HardwareBase):
 
   def set_screen_brightness(self, percentage):
     pass
+
+  def get_cloudlog_enabled(self):
+    return False
