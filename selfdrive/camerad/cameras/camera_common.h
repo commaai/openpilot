@@ -88,6 +88,7 @@ struct CameraState;
 
 class CameraBuf {
 private:
+  void copy_cl_buffer(cl_mem cam_buf_cl, cl_mem rgb_buf_cl, size_t rgb_buf_len);
   VisionIpcServer *vipc_server;
   CameraState *camera_state;
   cl_kernel krnl_debayer;

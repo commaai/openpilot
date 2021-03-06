@@ -125,41 +125,8 @@ bool CameraBuf::acquire() {
   }
 
   cur_frame_data = frame_data;
-
   cur_rgb_buf = vipc_server->get_buffer(rgb_type);
-
-  cl_event debayer_event;
-  cl_mem camrabuf_cl = camera_bufs[cur_buf_idx].buf_cl;
-  if (camera_state->ci.bayer) {
-    CL_CHECK(clSetKernelArg(krnl_debayer, 0, sizeof(cl_mem), &camrabuf_cl));
-    CL_CHECK(clSetKernelArg(krnl_debayer, 1, sizeof(cl_mem), &cur_rgb_buf->buf_cl));
-#ifdef QCOM2
-    constexpr int localMemSize = (DEBAYER_LOCAL_WORKSIZE + 2 * (3 / 2)) * (DEBAYER_LOCAL_WORKSIZE + 2 * (3 / 2)) * sizeof(short int);
-    const size_t globalWorkSize[] = {size_t(camera_state->ci.frame_width), size_t(camera_state->ci.frame_height)};
-    const size_t localWorkSize[] = {DEBAYER_LOCAL_WORKSIZE, DEBAYER_LOCAL_WORKSIZE};
-    CL_CHECK(clSetKernelArg(krnl_debayer, 2, localMemSize, 0));
-    int ggain = camera_state->analog_gain + 4*camera_state->dc_gain_enabled;
-    CL_CHECK(clSetKernelArg(krnl_debayer, 3, sizeof(int), &ggain));
-    CL_CHECK(clEnqueueNDRangeKernel(q, krnl_debayer, 2, NULL, globalWorkSize, localWorkSize,
-                                    0, 0, &debayer_event));
-#else
-    float digital_gain = camera_state->digital_gain;
-    if ((int)digital_gain == 0) {
-      digital_gain = 1.0;
-    }
-    CL_CHECK(clSetKernelArg(krnl_debayer, 2, sizeof(float), &digital_gain));
-    const size_t debayer_work_size = rgb_height;  // doesn't divide evenly, is this okay?
-    CL_CHECK(clEnqueueNDRangeKernel(q, krnl_debayer, 1, NULL,
-                                    &debayer_work_size, NULL, 0, 0, &debayer_event));
-#endif
-  } else {
-    assert(rgb_stride == camera_state->ci.frame_stride);
-    CL_CHECK(clEnqueueCopyBuffer(q, camrabuf_cl, cur_rgb_buf->buf_cl, 0, 0,
-                               cur_rgb_buf->len, 0, 0, &debayer_event));
-  }
-
-  clWaitForEvents(1, &debayer_event);
-  CL_CHECK(clReleaseEvent(debayer_event));
+  copy_cl_buffer(camera_bufs[cur_buf_idx].buf_cl, cur_rgb_buf->buf_cl, cur_rgb_buf->len);
 
   cur_yuv_buf = vipc_server->get_buffer(yuv_type);
   yuv_metas[cur_yuv_buf->idx] = frame_data;
@@ -174,6 +141,36 @@ bool CameraBuf::acquire() {
   vipc_server->send(cur_yuv_buf, &extra);
 
   return true;
+}
+
+void CameraBuf::copy_cl_buffer(cl_mem cam_buf_cl, cl_mem rgb_buf_cl, size_t rgb_buf_len) {
+  cl_event event;
+  if (krnl_debayer) {
+    CL_CHECK(clSetKernelArg(krnl_debayer, 0, sizeof(cl_mem), &cam_buf_cl));
+    CL_CHECK(clSetKernelArg(krnl_debayer, 1, sizeof(cl_mem), &rgb_buf_cl));
+#ifdef QCOM2
+    constexpr int localMemSize = (DEBAYER_LOCAL_WORKSIZE + 2 * (3 / 2)) * (DEBAYER_LOCAL_WORKSIZE + 2 * (3 / 2)) * sizeof(short int);
+    const size_t globalWorkSize[] = {size_t(camera_state->ci.frame_width), size_t(camera_state->ci.frame_height)};
+    const size_t localWorkSize[] = {DEBAYER_LOCAL_WORKSIZE, DEBAYER_LOCAL_WORKSIZE};
+    CL_CHECK(clSetKernelArg(krnl_debayer, 2, localMemSize, 0));
+    int ggain = camera_state->analog_gain + 4 * camera_state->dc_gain_enabled;
+    CL_CHECK(clSetKernelArg(krnl_debayer, 3, sizeof(int), &ggain));
+    CL_CHECK(clEnqueueNDRangeKernel(q, krnl_debayer, 2, NULL, globalWorkSize, localWorkSize, 0, 0, &event));
+#else
+    float digital_gain = camera_state->digital_gain;
+    if ((int)digital_gain == 0) {
+      digital_gain = 1.0;
+    }
+    CL_CHECK(clSetKernelArg(krnl_debayer, 2, sizeof(float), &digital_gain));
+    const size_t debayer_work_size = rgb_height;  // doesn't divide evenly, is this okay?
+    CL_CHECK(clEnqueueNDRangeKernel(q, krnl_debayer, 1, NULL, &debayer_work_size, NULL, 0, 0, &event));
+#endif
+  } else {
+    assert(rgb_stride == camera_state->ci.frame_stride);
+    CL_CHECK(clEnqueueCopyBuffer(q, cam_buf_cl, rgb_buf_cl, 0, 0, rgb_buf_len, 0, 0, &event));
+  }
+  clWaitForEvents(1, &event);
+  CL_CHECK(clReleaseEvent(event));
 }
 
 void CameraBuf::release() {
