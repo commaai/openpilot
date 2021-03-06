@@ -445,6 +445,76 @@ static void sensors_init(MultiCameraState *s) {
   assert(err >= 0);
 }
 
+static void actuator_init(CameraState *s) {
+  msm_actuator_cfg_data cfg = {.cfgtype = CFG_ACTUATOR_POWERDOWN};
+  int err = ioctl(s->actuator_fd, VIDIOC_MSM_ACTUATOR_CFG, &cfg);
+  LOG("actuator powerdown: %d", err);
+
+  cfg.cfgtype = CFG_ACTUATOR_POWERUP;
+  err = ioctl(s->actuator_fd, VIDIOC_MSM_ACTUATOR_CFG, &cfg);
+  LOG("actuator powerup: %d", err);
+
+  cfg.cfgtype = CFG_ACTUATOR_INIT;
+  err = ioctl(s->actuator_fd, VIDIOC_MSM_ACTUATOR_CFG, &cfg);
+  LOG("actuator init: %d", err);
+
+  // leeco actuator (DW9800W H-Bridge Driver IC)
+  // from sniff
+  s->infinity_dac = 364;
+
+  struct msm_actuator_reg_params_t reg_params[] = {
+    {
+      .reg_write_type = MSM_ACTUATOR_WRITE_DAC,
+      // MSB here at address 3
+      .reg_addr = 3,
+      .data_type = 9,
+      .addr_type = 4,
+    },
+  };
+
+  struct reg_settings_t init_settings[] = {
+    { .reg_addr=2, .addr_type=MSM_ACTUATOR_BYTE_ADDR, .reg_data=1, .data_type = MSM_ACTUATOR_BYTE_DATA, .i2c_operation = MSM_ACT_WRITE, .delay = 0 },   // PD = power down
+    { .reg_addr=2, .addr_type=MSM_ACTUATOR_BYTE_ADDR, .reg_data=0, .data_type = MSM_ACTUATOR_BYTE_DATA, .i2c_operation = MSM_ACT_WRITE, .delay = 2 },   // 0 = power up
+    { .reg_addr=2, .addr_type=MSM_ACTUATOR_BYTE_ADDR, .reg_data=2, .data_type = MSM_ACTUATOR_BYTE_DATA, .i2c_operation = MSM_ACT_WRITE, .delay = 2 },   // RING = SAC mode
+    { .reg_addr=6, .addr_type=MSM_ACTUATOR_BYTE_ADDR, .reg_data=64, .data_type = MSM_ACTUATOR_BYTE_DATA, .i2c_operation = MSM_ACT_WRITE, .delay = 0 },  // 0x40 = SAC3 mode
+    { .reg_addr=7, .addr_type=MSM_ACTUATOR_BYTE_ADDR, .reg_data=113, .data_type = MSM_ACTUATOR_BYTE_DATA, .i2c_operation = MSM_ACT_WRITE, .delay = 0 },
+    // 0x71 = DIV1 | DIV0 | SACT0 -- Tvib x 1/4 (quarter)
+    // SAC Tvib = 6.3 ms + 0.1 ms = 6.4 ms / 4 = 1.6 ms
+    // LSC 1-step = 252 + 1*4 = 256 ms / 4 = 64 ms
+  };
+
+  struct region_params_t region_params[] = {
+    {.step_bound = {238, 0,}, .code_per_step = 235, .qvalue = 128}
+  };
+
+  cfg.cfgtype = CFG_SET_ACTUATOR_INFO;
+  cfg.cfg.set_info = (struct msm_actuator_set_info_t){
+    .actuator_params = {
+      .act_type = ACTUATOR_BIVCM,
+      .reg_tbl_size = 1,
+      .data_size = 10,
+      .init_setting_size = 5,
+      .i2c_freq_mode = I2C_STANDARD_MODE,
+      .i2c_addr = 24,
+      .i2c_addr_type = MSM_ACTUATOR_BYTE_ADDR,
+      .i2c_data_type = MSM_ACTUATOR_WORD_DATA,
+      .reg_tbl_params = &reg_params[0],
+      .init_settings = &init_settings[0],
+      .park_lens = {.damping_step = 1023, .damping_delay = 14000, .hw_params = 11, .max_step = 20},
+    },
+    .af_tuning_params = {
+      .initial_code = (int16_t)s->infinity_dac,
+      .pwd_step = 0,
+      .region_size = 1,
+      .total_steps = 238,
+      .region_params = &region_params[0],
+    },
+  };
+
+  err = ioctl(s->actuator_fd, VIDIOC_MSM_ACTUATOR_CFG, &cfg);
+  LOG("actuator set info: %d", err);
+}
+
 static void camera_open(CameraState *s, bool is_road_cam) {
   // open devices
   const char *sensor_dev;
@@ -502,11 +572,7 @@ static void camera_open(CameraState *s, bool is_road_cam) {
   err = ioctl(s->sensor_fd, VIDIOC_MSM_SENSOR_CFG, &sensorb_cfg_data);
   LOG("sensor power down: %d", err);
 
-  // actuator powerdown
-  struct msm_actuator_cfg_data actuator_cfg_data = {.cfgtype = CFG_ACTUATOR_POWERDOWN};
-  err = ioctl(s->actuator_fd, VIDIOC_MSM_ACTUATOR_CFG, &actuator_cfg_data);
-  LOG("actuator powerdown: %d", err);
-
+  
   // reset isp
   // struct msm_vfe_axi_halt_cmd halt_cmd = {
   //   .stop_camif = 1,
@@ -581,70 +647,7 @@ static void camera_open(CameraState *s, bool is_road_cam) {
   LOG("sensor init i2c: %d", err);
 
   if (is_road_cam) {
-    // init the actuator
-    actuator_cfg_data.cfgtype = CFG_ACTUATOR_POWERUP;
-    err = ioctl(s->actuator_fd, VIDIOC_MSM_ACTUATOR_CFG, &actuator_cfg_data);
-    LOG("actuator powerup: %d", err);
-
-    actuator_cfg_data.cfgtype = CFG_ACTUATOR_INIT;
-    err = ioctl(s->actuator_fd, VIDIOC_MSM_ACTUATOR_CFG, &actuator_cfg_data);
-    LOG("actuator init: %d", err);
-
-    // leeco actuator (DW9800W H-Bridge Driver IC)
-    // from sniff
-    s->infinity_dac = 364;
-
-    struct msm_actuator_reg_params_t actuator_reg_params[] = {
-      {
-        .reg_write_type = MSM_ACTUATOR_WRITE_DAC,
-        // MSB here at address 3
-        .reg_addr = 3,
-        .data_type = 9,
-        .addr_type = 4,
-      },
-    };
-
-    struct reg_settings_t actuator_init_settings[] = {
-      { .reg_addr=2, .addr_type=MSM_ACTUATOR_BYTE_ADDR, .reg_data=1, .data_type = MSM_ACTUATOR_BYTE_DATA, .i2c_operation = MSM_ACT_WRITE, .delay = 0 },   // PD = power down
-      { .reg_addr=2, .addr_type=MSM_ACTUATOR_BYTE_ADDR, .reg_data=0, .data_type = MSM_ACTUATOR_BYTE_DATA, .i2c_operation = MSM_ACT_WRITE, .delay = 2 },   // 0 = power up
-      { .reg_addr=2, .addr_type=MSM_ACTUATOR_BYTE_ADDR, .reg_data=2, .data_type = MSM_ACTUATOR_BYTE_DATA, .i2c_operation = MSM_ACT_WRITE, .delay = 2 },   // RING = SAC mode
-      { .reg_addr=6, .addr_type=MSM_ACTUATOR_BYTE_ADDR, .reg_data=64, .data_type = MSM_ACTUATOR_BYTE_DATA, .i2c_operation = MSM_ACT_WRITE, .delay = 0 },  // 0x40 = SAC3 mode
-      { .reg_addr=7, .addr_type=MSM_ACTUATOR_BYTE_ADDR, .reg_data=113, .data_type = MSM_ACTUATOR_BYTE_DATA, .i2c_operation = MSM_ACT_WRITE, .delay = 0 },
-      // 0x71 = DIV1 | DIV0 | SACT0 -- Tvib x 1/4 (quarter)
-      // SAC Tvib = 6.3 ms + 0.1 ms = 6.4 ms / 4 = 1.6 ms
-      // LSC 1-step = 252 + 1*4 = 256 ms / 4 = 64 ms
-    };
-
-    struct region_params_t region_params[] = {
-      {.step_bound = {238, 0,}, .code_per_step = 235, .qvalue = 128}
-    };
-
-    actuator_cfg_data.cfgtype = CFG_SET_ACTUATOR_INFO;
-    actuator_cfg_data.cfg.set_info = (struct msm_actuator_set_info_t){
-      .actuator_params = {
-        .act_type = ACTUATOR_BIVCM,
-        .reg_tbl_size = 1,
-        .data_size = 10,
-        .init_setting_size = 5,
-        .i2c_freq_mode = I2C_STANDARD_MODE,
-        .i2c_addr = 24,
-        .i2c_addr_type = MSM_ACTUATOR_BYTE_ADDR,
-        .i2c_data_type = MSM_ACTUATOR_WORD_DATA,
-        .reg_tbl_params = &actuator_reg_params[0],
-        .init_settings = &actuator_init_settings[0],
-        .park_lens = {.damping_step = 1023, .damping_delay = 14000, .hw_params = 11, .max_step = 20},
-      },
-      .af_tuning_params = {
-        .initial_code = (int16_t)s->infinity_dac,
-        .pwd_step = 0,
-        .region_size = 1,
-        .total_steps = 238,
-        .region_params = &region_params[0],
-      },
-    };
-
-    err = ioctl(s->actuator_fd, VIDIOC_MSM_ACTUATOR_CFG, &actuator_cfg_data);
-    LOG("actuator set info: %d", err);
+    actuator_init(s);
   }
 
   if (s->camera_id == CAMERA_ID_IMX298) {
