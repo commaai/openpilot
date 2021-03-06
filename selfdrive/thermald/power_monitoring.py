@@ -18,7 +18,7 @@ CAR_BATTERY_CAPACITY_uWh = 30e6
 CAR_CHARGING_RATE_W = 45
 
 VBATT_PAUSE_CHARGING = 11.0
-MAX_TIME_OFFROAD_S = 30*3600
+MAX_TIME_OFFROAD_S = 4*3600
 
 
 def panda_current_to_actual_current(panda_current):
