@@ -14,4 +14,4 @@ docker run --net=host\
   -e DISPLAY=$DISPLAY \
   -e QT_X11_NO_MITSHM=1 \
   commaai/openpilot-sim:latest \
-  /bin/bash -c "cd /openpilot/tools && cd sim && sh tmux_script.sh $*"
+  /bin/bash -c "cd /openpilot/tools/sim && ./tmux_script.sh $*"
