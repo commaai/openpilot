@@ -125,6 +125,7 @@ bool CameraBuf::acquire() {
   }
 
   cur_frame_data = frame_data;
+
   cur_rgb_buf = vipc_server->get_buffer(rgb_type);
   copy_cl_buffer(camera_bufs[cur_buf_idx].buf_cl, cur_rgb_buf->buf_cl, cur_rgb_buf->len);
 
