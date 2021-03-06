@@ -138,7 +138,6 @@ Here are the main parameters you can change with this fork:
   - `upload_on_hotspot`: Controls whether your EON will upload driving data on your phone's hotspot
   - [`update_behavior`](#Automatic-updates): `off` will never update, `alert` shows an alert on-screen. `auto` will reboot the device when an update is seen
   - `disengage_on_gas`: Whether you want openpilot to disengage on gas input or not
-  - `slowdown_for_curves`: Whether your car will slow down for curves using the old planner code from 0.5/0.6
 - **Dynamic params**:
   - `dynamic_gas`: Whether to use [dynamic gas](#dynamic-gas) if your car is supported
   - `global_df_mod` **`(live!)`**: The multiplier for the current distance used by dynamic follow. The range is limited from 0.85 to 2.5. Smaller values will get you closer, larger will get you farther. This is applied to ALL profiles!
