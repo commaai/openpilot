@@ -251,7 +251,6 @@ class CarInterface(CarInterfaceBase):
         ret.lateralTuning.indi.timeConstantV = [1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.0, 4.0, 4.0]
         ret.lateralTuning.indi.actuatorEffectivenessBP = [16.7, 25]
         ret.lateralTuning.indi.actuatorEffectivenessV = [15, 15]
-        ret.steerActuatorDelay = 0.12
         ret.steerRateCost = 0.3
 
     elif candidate == CAR.RAV4H_TSS2:
@@ -280,7 +279,6 @@ class CarInterface(CarInterfaceBase):
         ret.lateralTuning.indi.timeConstantV = [1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.0, 4.0, 4.0]
         ret.lateralTuning.indi.actuatorEffectivenessBP = [16.7, 25]
         ret.lateralTuning.indi.actuatorEffectivenessV = [15, 15]
-        ret.steerActuatorDelay = 0.12
         ret.steerRateCost = 0.3
 
     elif candidate in [CAR.COROLLA_TSS2, CAR.COROLLAH_TSS2]:
@@ -300,13 +298,13 @@ class CarInterface(CarInterfaceBase):
         ret.lateralTuning.indi.timeConstantV = [1, 3, 4.5]
         ret.lateralTuning.indi.actuatorEffectivenessBP = [18, 22, 26]
         ret.lateralTuning.indi.actuatorEffectivenessV = [9, 12, 15]
-        ret.steerActuatorDelay = 0.42
+        ret.steerActuatorDelay = 0.42 - 0.2
       else:
         ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[.028], [.0012]]  # birdman6450#7399's Corolla 2020 PIF Tune
         ret.lateralTuning.pid.kdV = [0.]
         ret.lateralTuning.pid.kf = 0.000153263811757641
         ret.lateralTuning.pid.newKfTuned = True
-        ret.steerActuatorDelay = 0.48
+        ret.steerActuatorDelay = 0.48 - 0.2
 
     elif candidate in [CAR.LEXUS_ES_TSS2, CAR.LEXUS_ESH_TSS2]:
       stop_and_go = True
