@@ -637,29 +637,24 @@ static void camera_open(CameraState *s, bool is_road_cam) {
   // **** configure the sensor ****
 
   // SENSOR: send i2c configuration
-  if (s->camera_id == CAMERA_ID_IMX298) {
+  if (is_road_cam) {
     err = sensor_write_regs(s, init_array_imx298, ARRAYSIZE(init_array_imx298), MSM_CAMERA_I2C_BYTE_DATA);
   } else if (s->camera_id == CAMERA_ID_OV8865) {
     err = sensor_write_regs(s, init_array_ov8865, ARRAYSIZE(init_array_ov8865), MSM_CAMERA_I2C_BYTE_DATA);
-  } else {
-    assert(false);
   }
   LOG("sensor init i2c: %d", err);
 
   if (is_road_cam) {
     actuator_init(s);
-  }
-
-  if (s->camera_id == CAMERA_ID_IMX298) {
     err = sensor_write_regs(s, mode_setting_array_imx298, ARRAYSIZE(mode_setting_array_imx298), MSM_CAMERA_I2C_BYTE_DATA);
     LOG("sensor setup: %d", err);
   }
 
   // CSIPHY: configure csiphy
   struct msm_camera_csiphy_params csiphy_params = {};
-  if (s->camera_id == CAMERA_ID_IMX298) {
+  if (is_road_cam) {
     csiphy_params = {.lane_cnt = 4, .settle_cnt = 14, .lane_mask = 0x1f, .csid_core = 0};
-  } else if (s->camera_id == CAMERA_ID_OV8865) {
+  } else {
     // guess!
     csiphy_params = {.lane_cnt = 4, .settle_cnt = 24, .lane_mask = 0x1f, .csid_core = 2};
   }
