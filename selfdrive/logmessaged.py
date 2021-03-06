@@ -20,13 +20,13 @@ def main():
   while True:
     dat = b''.join(sock.recv_multipart())
     level = dat[0]
+    record = dat[1:].decode("utf-8")
     if level >= log_level:
-      entry = dat[1:].decode('utf-8')
-      log_handler.emit(entry)
+      log_handler.emit(record)
 
     # then we publish them
     msg = messaging.new_message()
-    msg.logMessage = dat
+    msg.logMessage = record
     pub_sock.send(msg.to_bytes())
 
 
