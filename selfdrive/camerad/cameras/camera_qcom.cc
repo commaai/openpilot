@@ -446,11 +446,6 @@ static void sensors_init(MultiCameraState *s) {
 }
 
 static void camera_open(CameraState *s, bool is_road_cam) {
-  struct csid_cfg_data csid_cfg_data = {};
-  struct v4l2_event_subscription sub = {};
-
-  struct msm_actuator_cfg_data actuator_cfg_data = {};
-
   // open devices
   const char *sensor_dev;
   if (is_road_cam) {
@@ -498,7 +493,7 @@ static void camera_open(CameraState *s, bool is_road_cam) {
   LOG("release csiphy: %d", err);
 
   // CSID: release csid
-  csid_cfg_data.cfgtype = CSID_RELEASE;
+  struct csid_cfg_data csid_cfg_data = {.cfgtype = CSID_RELEASE};
   err = ioctl(s->csid_fd, VIDIOC_MSM_CSID_IO_CFG, &csid_cfg_data);
   LOG("release csid: %d", err);
 
@@ -508,7 +503,7 @@ static void camera_open(CameraState *s, bool is_road_cam) {
   LOG("sensor power down: %d", err);
 
   // actuator powerdown
-  actuator_cfg_data.cfgtype = CFG_ACTUATOR_POWERDOWN;
+  struct msm_actuator_cfg_data actuator_cfg_data = {.cfgtype = CFG_ACTUATOR_POWERDOWN};
   err = ioctl(s->actuator_fd, VIDIOC_MSM_ACTUATOR_CFG, &actuator_cfg_data);
   LOG("actuator powerdown: %d", err);
 
@@ -783,8 +778,7 @@ static void camera_open(CameraState *s, bool is_road_cam) {
 
   LOG("******** START STREAMS ********");
 
-  sub.id = 0;
-  sub.type = 0x1ff;
+  struct v4l2_event_subscription sub = {.id = 0, .type = 0x1ff};
   err = ioctl(s->isp_fd, VIDIOC_SUBSCRIBE_EVENT, &sub);
   LOG("isp subscribe: %d", err);
 
