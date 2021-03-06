@@ -26,19 +26,24 @@ from common.params import Params
 from common.realtime import sec_since_boot
 from selfdrive.hardware import HARDWARE
 from selfdrive.loggerd.config import ROOT
+from selfdrive.loggerd.xattr_cache import getxattr, setxattr
 from selfdrive.swaglog import cloudlog, SWAGLOG_DIR
 
 ATHENA_HOST = os.getenv('ATHENA_HOST', 'wss://athena.comma.ai')
 HANDLER_THREADS = int(os.getenv('HANDLER_THREADS', "4"))
 LOCAL_PORT_WHITELIST = set([8022])
 
+LOG_ATTR_NAME = 'user.upload'
+MAX_UNIX_TIME = 2147483647
+
 dispatcher["echo"] = lambda s: s
 recv_queue: Any = queue.Queue()
 send_queue: Any = queue.Queue()
 upload_queue: Any = queue.Queue()
+log_send_queue: Any = queue.Queue()
+log_recv_queue: Any = queue.Queue()
 cancelled_uploads: Any = set()
 UploadItem = namedtuple('UploadItem', ['path', 'url', 'headers', 'created_at', 'id'])
-result_queue: Any = queue.Queue()
 
 
 def handle_long_poll(ws):
@@ -76,7 +81,7 @@ def jsonrpc_handler(end_event):
         response = JSONRPCResponseManager.handle(data, dispatcher)
         send_queue.put_nowait(response.json)
       elif "result" in data and "id" in data:
-        result_queue.put_nowait(data)
+        log_recv_queue.put_nowait(data)
     except queue.Empty:
       pass
     except Exception as e:
@@ -249,6 +254,22 @@ def takeSnapshot():
     raise Exception("not available while camerad is started")
 
 
+def get_log_files_sorted(curr_time, last_scan):
+  # TODO: scan once then use inotify to detect file creation/deletion
+  logs = []
+  for log_entry in os.listdir(SWAGLOG_DIR):
+    log_path = os.path.join(SWAGLOG_DIR, log_entry)
+    # file without an extension is always the active log file
+    if log_entry == "swaglog":
+      continue
+    time_sent = getxattr(log_path, LOG_ATTR_NAME)
+    # assume send failed and we lost the response if sent more than one hour ago
+    if not time_sent or curr_time - time_sent > 3600:
+      logs.append(log_entry)
+
+  return sorted(logs, reverse=True)
+
+
 def log_handler(end_event):
   if not HARDWARE.get_cloudlog_enabled():
     return
@@ -256,42 +277,46 @@ def log_handler(end_event):
   logs = []
   last_scan = 0
   log_retries = 0
-  pending_upload = False
   while not end_event.is_set():
     try:
       try:
-        result = json.loads(result_queue.get(timeout=1))
-        # TODO: response may get lost and then uploads would stop
-        pending_upload = False
-        if result["success"] == 1:
-          log_file_name = result["id"]
-          log_file_path = os.path.join(SWAGLOG_DIR, log_file_name)
-          if os.path.exists(log_file_path):
-            os.remove(log_file_path)
+        result = json.loads(log_recv_queue.get(timeout=1))
+        log_entry = result["id"]
+        log_path = os.path.join(SWAGLOG_DIR, log_entry)
+        try:
+          setxattr(log_path, LOG_ATTR_NAME, MAX_UNIX_TIME if result["success"] else 0)
+        except OSError:
+          pass
       except queue.Empty:
         pass
 
-      if time.time() - last_scan > 10:
-        # TODO: scan once then use inotify to detect file creation
-        # skip the file without an extension, it is always the active log file
-        logs = sorted([f for f in os.listdir(SWAGLOG_DIR) if f != 'swaglog'], reverse=True)
+      curr_time = time.time()
+      if curr_time - last_scan > 10:
+        logs = get_log_files_sorted(curr_time, last_scan)
         last_scan = time.time()
-      if len(logs) == 0 or pending_upload:
+
+      if len(logs) == 0 or not log_send_queue.empty():
         continue
 
-      log_file = logs[0]
-      with open(os.path.join(SWAGLOG_DIR, log_file), "r") as f:
-        logs = f.read()
-      jsonrpc = {
-        "method": "forwardLogs",
-        "params": {
-          "logs": logs
-        },
-        "jsonrpc": "2.0",
-        "id": log_file
-      }
-      send_queue.put_nowait(jsonrpc)
-      pending_upload = True
+      log_entry = logs[0]
+      try:
+        log_path = os.path.join(SWAGLOG_DIR, log_entry)
+        with open(log_path, "r") as f:
+          logs = f.read()
+        jsonrpc = {
+          "method": "forwardLogs",
+          "params": {
+            "logs": logs
+          },
+          "jsonrpc": "2.0",
+          "id": log_entry
+        }
+        log_send_queue.put_nowait(jsonrpc)
+        setxattr(log_path, LOG_ATTR_NAME, curr_time)
+      except OSError:
+        pass
+      logs = logs[1:]
+      log_retries = 0
     except Exception:
       cloudlog.exception("athena.log_handler.exception")
       log_retries += 1
@@ -359,7 +384,10 @@ def ws_recv(ws, end_event):
 def ws_send(ws, end_event):
   while not end_event.is_set():
     try:
-      data = send_queue.get(timeout=1)
+      try:
+        data = send_queue.get_nowait()
+      except queue.Empty:
+        data = log_send_queue.get(timeout=1)
       ws.send(data)
     except queue.Empty:
       pass
