@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 import zmq
 import cereal.messaging as messaging
+from common.logging_extra import PassThruFormatter
 from selfdrive.swaglog import get_file_handler
 
 
 def main():
   log_handler = get_file_handler()
+  log_handler.setFormatter(PassThruFormatter())
   log_level = 20  # logging.INFO
 
   ctx = zmq.Context().instance()
@@ -17,13 +19,10 @@ def main():
 
   while True:
     dat = b''.join(sock.recv_multipart())
-    dat = dat.decode('utf8')
-
-    levelnum = ord(dat[0])
-    dat = dat[1:]
-
-    if levelnum >= log_level:
-      log_handler.emit(dat)
+    level = dat[0]
+    if level >= log_level:
+      entry = dat[1:].decode('utf-8')
+      log_handler.emit(entry)
 
     # then we publish them
     msg = messaging.new_message()

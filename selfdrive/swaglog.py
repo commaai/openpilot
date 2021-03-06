@@ -19,7 +19,9 @@ def get_file_handler():
   handler = TimedRotatingFileHandler(file_name, when="M", interval=1, backupCount=2000)
   return handler
 
-class LogMessageHandler(logging.Handler):
+# TODO: could be replaced with QueueHandler/QueueListener?
+# (perhaps simplifies what we do for catching exceptions when logmessaged isn't running)
+class UnixDomainSocketHandler(logging.Handler):
   def __init__(self, formatter):
     logging.Handler.__init__(self)
     self.setFormatter(formatter)
@@ -61,4 +63,5 @@ log.setLevel(logging.DEBUG)
 
 outhandler = logging.StreamHandler()
 log.addHandler(outhandler)
-log.addHandler(LogMessageHandler(SwagFormatter(log)))
+# logs are sent through IPC before writing to disk to prevent disk I/O blocking
+log.addHandler(UnixDomainSocketHandler(SwagFormatter(log)))

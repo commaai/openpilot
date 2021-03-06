@@ -10,6 +10,10 @@ from threading import local
 from collections import OrderedDict
 from contextlib import contextmanager
 
+class PassThruFormatter(logging.Formatter):
+  def format(self, record):
+    return record
+
 def json_handler(obj):
   # if isinstance(obj, (datetime.date, datetime.time)):
   #   return obj.isoformat()

@@ -264,22 +264,23 @@ def log_handler(end_event):
         # TODO: response may get lost and then uploads would stop
         pending_upload = False
         if result["success"] == 1:
-          log_file_succeeded = result["id"]
-          if os.path.exists(log_file_succeeded):
-            os.remove(log_file_succeeded)
+          log_file_name = result["id"]
+          log_file_path = os.path.join(SWAGLOG_DIR, log_file_name)
+          if os.path.exists(log_file_path):
+            os.remove(log_file_path)
       except queue.Empty:
         pass
 
       if time.time() - last_scan > 10:
         # TODO: scan once then use inotify to detect file creation
-        # file without an extension is always the active log file
-        logs = sorted([f for f in os.listdir(SWAGLOG_DIR) if '.' in f], reverse=True)
+        # skip the file without an extension, it is always the active log file
+        logs = sorted([f for f in os.listdir(SWAGLOG_DIR) if f != 'swaglog'], reverse=True)
         last_scan = time.time()
       if len(logs) == 0 or pending_upload:
         continue
 
       log_file = logs[0]
-      with open(log_file, "r") as f:
+      with open(os.path.join(SWAGLOG_DIR, log_file), "r") as f:
         logs = f.read()
       jsonrpc = {
         "method": "forwardLogs",
