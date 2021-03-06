@@ -19,7 +19,7 @@ parser.add_argument('--joystick', action='store_true')
 parser.add_argument('--town', type=str, default='Town04')
 parser.add_argument('--spawn_point', dest='num_selected_spawn_point',
         type=int, default=16)
-parser.add_argument('--cloudyness', default=0.1, type=float)
+parser.add_argument('--cloudiness', default=0.1, type=float)
 parser.add_argument('--precipitation', default=0.0, type=float)
 parser.add_argument('--precipitation_deposits', default=0.0, type=float)
 parser.add_argument('--wind_intensity', default=0.0, type=float)
@@ -142,7 +142,7 @@ def go(q):
 
   world_map = world.get_map()
 
-  vehicle_bp = blueprint_library.filter('vehicle.tesla.*')[0]
+  vehicle_bp = blueprint_library.filter('vehicle.tesla.*')[1]
   spawn_points = world_map.get_spawn_points()
   assert len(spawn_points) > args.num_selected_spawn_point, \
     f'''No spawn point {args.num_selected_spawn_point}, try a value between 0 and
@@ -166,12 +166,12 @@ def go(q):
   blueprint.set_attribute('image_size_y', str(H))
   blueprint.set_attribute('fov', '70')
   blueprint.set_attribute('sensor_tick', '0.05')
-  transform = carla.Transform(carla.Location(x=0.8, z=1.45))
+  transform = carla.Transform(carla.Location(x=0.8, z=1.13))
   camera = world.spawn_actor(blueprint, transform, attach_to=vehicle)
   camera.listen(cam_callback)
 
   world.set_weather(carla.WeatherParameters(
-    cloudyness=args.cloudyness,
+    cloudiness=args.cloudiness,
     precipitation=args.precipitation,
     precipitation_deposits=args.precipitation_deposits,
     wind_intensity=args.wind_intensity,
