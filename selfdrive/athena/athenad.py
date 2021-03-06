@@ -74,7 +74,7 @@ def jsonrpc_handler(end_event):
       data = recv_queue.get(timeout=1)
       if "method" in data and "params" in data:
         response = JSONRPCResponseManager.handle(data, dispatcher)
-        send_queue.put_nowait(response)
+        send_queue.put_nowait(response.json)
       elif "result" in data and "id" in data:
         result_queue.put_nowait(data)
     except queue.Empty:
@@ -360,7 +360,7 @@ def ws_send(ws, end_event):
   while not end_event.is_set():
     try:
       data = send_queue.get(timeout=1)
-      ws.send(data.json)
+      ws.send(data)
     except queue.Empty:
       pass
     except Exception:
