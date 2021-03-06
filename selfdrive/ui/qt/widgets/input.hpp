@@ -18,6 +18,7 @@ public:
   QString text();
   void setMessage(QString message, bool clearInputField=true);
   void setMinLength(int length);
+  void show();
 
 private:
   int minLength;

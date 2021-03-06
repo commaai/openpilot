@@ -9,7 +9,7 @@ matplotlib.use('svg')
 from selfdrive.config import Conversions as CV
 from selfdrive.car.honda.values import CruiseButtons as CB
 from selfdrive.test.longitudinal_maneuvers.maneuver import Maneuver
-import selfdrive.manager as manager
+from selfdrive.manager.process_config import managed_processes
 from common.file_helpers import mkdirs_exists_ok
 from common.params import Params
 
@@ -344,16 +344,16 @@ def run_maneuver_worker(k):
     valid = False
 
     for _ in range(3):
-      manager.start_managed_process('radard')
-      manager.start_managed_process('controlsd')
-      manager.start_managed_process('plannerd')
+      managed_processes['radard'].start()
+      managed_processes['controlsd'].start()
+      managed_processes['plannerd'].start()
 
       plot, valid = man.evaluate()
       plot.write_plot(output_dir, "maneuver" + str(k + 1).zfill(2))
 
-      manager.kill_managed_process('radard')
-      manager.kill_managed_process('controlsd')
-      manager.kill_managed_process('plannerd')
+      managed_processes['radard'].stop()
+      managed_processes['controlsd'].stop()
+      managed_processes['plannerd'].stop()
 
       if valid:
         break

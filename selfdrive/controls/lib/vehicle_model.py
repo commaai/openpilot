@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Dynamic bycicle model from "The Science of Vehicle Dynamics (2014), M. Guiggiani"
+Dynamic bicycle model from "The Science of Vehicle Dynamics (2014), M. Guiggiani"
 
 The state is x = [v, r]^T
 with v lateral speed [m/s], and r rotational speed [rad/s]
@@ -46,7 +46,7 @@ class VehicleModel:
   def steady_state_sol(self, sa: float, u: float) -> np.ndarray:
     """Returns the steady state solution.
 
-    If the speed is too small we can't use the dynamic model (tire slip is undefined),
+    If the speed is too low we can't use the dynamic model (tire slip is undefined),
     we then have to use the kinematic model
 
     Args:
@@ -155,8 +155,8 @@ def create_dyn_state_matrices(u: float, VM: VehicleModel) -> Tuple[np.ndarray, n
     A tuple with the 2x2 A matrix, and 2x1 B matrix
 
   Parameters in the vehicle model:
-    cF: Tire stiffnes Front [N/rad]
-    cR: Tire stiffnes Front [N/rad]
+    cF: Tire stiffness Front [N/rad]
+    cR: Tire stiffness Front [N/rad]
     aF: Distance from CG to front wheels [m]
     aR: Distance from CG to rear wheels [m]
     m: Mass [kg]
@@ -177,7 +177,7 @@ def create_dyn_state_matrices(u: float, VM: VehicleModel) -> Tuple[np.ndarray, n
 
 def dyn_ss_sol(sa: float, u: float, VM: VehicleModel) -> np.ndarray:
   """Calculate the steady state solution when x_dot = 0,
-  Ax + Bu = 0 => x = A^{-1} B u
+  Ax + Bu = 0 => x = -A^{-1} B u
 
   Args:
     sa: Steering angle [rad]

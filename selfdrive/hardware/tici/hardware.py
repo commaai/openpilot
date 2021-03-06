@@ -44,7 +44,8 @@ class Tici(HardwareBase):
     return "tici"
 
   def get_sound_card_online(self):
-    return os.system("pulseaudio --check") == 0
+    return (os.path.isfile('/proc/asound/card0/state') and
+            open('/proc/asound/card0/state').read().strip() == 'ONLINE')
 
   def reboot(self, reason=None):
     subprocess.check_output(["sudo", "reboot"])
@@ -185,5 +186,8 @@ class Tici(HardwareBase):
     return ThermalConfig(cpu=((1, 2, 3, 4, 5, 6, 7, 8), 1000), gpu=((48,49), 1000), mem=(15, 1000), bat=(None, 1), ambient=(65, 1000))
 
   def set_screen_brightness(self, percentage):
-    with open("/sys/class/backlight/panel0-backlight/brightness", "w") as f:
-      f.write(str(percentage * 10.23))
+    try:
+      with open("/sys/class/backlight/panel0-backlight/brightness", "w") as f:
+        f.write(str(int(percentage * 10.23)))
+    except Exception:
+      pass
