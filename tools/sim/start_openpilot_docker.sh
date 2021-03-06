@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # expose X to the container
-sudo xhost +local:root
+xhost +local:root
 
 docker run --net=host\
   --name openpilot_client \
