@@ -354,4 +354,4 @@ class Android(HardwareBase):
       f.write(str(int(percentage * 2.55)))
 
   def get_cloudlog_enabled(self):
-    return False
+    return True

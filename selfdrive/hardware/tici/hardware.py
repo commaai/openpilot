@@ -193,4 +193,4 @@ class Tici(HardwareBase):
       pass
 
   def get_cloudlog_enabled(self):
-    return False
+    return True
