@@ -54,7 +54,7 @@ static void ui_init_vision(UIState *s) {
 
 
 void ui_init(UIState *s) {
-  s->sm = new SubMaster({"modelV2", "controlsState", "uiLayoutState", "liveCalibration", "radarState", "deviceState", "roadCameraState", "liveLocationKalman",
+  s->sm = new SubMaster({"modelV2", "controlsState", "uiLayoutState", "liveCalibration", "radarState", "deviceState", "liveLocationKalman",
                          "pandaState", "carParams", "driverState", "driverMonitoringState", "sensorEvents", "carState", "ubloxGnss"});
 
   s->scene.started = false;

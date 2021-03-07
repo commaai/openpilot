@@ -185,17 +185,6 @@ static void camera_init(VisionIpcServer *v, CameraState *s, int camera_id, int c
   s->buf.init(device_id, ctx, s, v, FRAME_BUF_COUNT, rgb_type, yuv_type, camera_release_buffer);
 }
 
-cl_program build_conv_program(cl_device_id device_id, cl_context context, int image_w, int image_h, int filter_size) {
-  char args[4096];
-  snprintf(args, sizeof(args),
-          "-cl-fast-relaxed-math -cl-denorms-are-zero "
-          "-DIMAGE_W=%d -DIMAGE_H=%d -DFLIP_RB=%d "
-          "-DFILTER_SIZE=%d -DHALF_FILTER_SIZE=%d -DTWICE_HALF_FILTER_SIZE=%d -DHALF_FILTER_SIZE_IMAGE_W=%d",
-          image_w, image_h, 1,
-          filter_size, filter_size/2, (filter_size/2)*2, (filter_size/2)*image_w);
-  return cl_program_from_file(context, device_id, "imgproc/conv.cl", args);
-}
-
 void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
   char project_name[1024] = {0};
   property_get("ro.boot.project_name", project_name, "");
@@ -239,19 +228,8 @@ void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_i
     s->focus_bufs[i].allocate(0xb80);
     s->stats_bufs[i].allocate(0xb80);
   }
-  const int width = s->road_cam.buf.rgb_width/NUM_SEGMENTS_X;
-  const int height = s->road_cam.buf.rgb_height/NUM_SEGMENTS_Y;
-  s->prg_rgb_laplacian = build_conv_program(device_id, ctx, width, height, 3);
-  s->krnl_rgb_laplacian = CL_CHECK_ERR(clCreateKernel(s->prg_rgb_laplacian, "rgb2gray_conv2d", &err));
-  // TODO: Removed CL_MEM_SVM_FINE_GRAIN_BUFFER, confirm it doesn't matter
-  s->rgb_conv_roi_cl = CL_CHECK_ERR(clCreateBuffer(ctx, CL_MEM_READ_WRITE,
-      width * height * 3 * sizeof(uint8_t), NULL, &err));
-  s->rgb_conv_result_cl = CL_CHECK_ERR(clCreateBuffer(ctx, CL_MEM_READ_WRITE,
-      width * height * sizeof(int16_t), NULL, &err));
-  s->rgb_conv_filter_cl = CL_CHECK_ERR(clCreateBuffer(ctx, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-      9 * sizeof(int16_t), (void*)&lapl_conv_krnl, &err));
-
   std::fill_n(s->lapres, std::size(s->lapres), 16160);
+  s->lap_conv = new LapConv(device_id, ctx, s->road_cam.buf.rgb_width, s->road_cam.buf.rgb_height, 3);
 }
 
 static void set_exposure(CameraState *s, float exposure_frac, float gain_frac) {
@@ -1176,40 +1154,6 @@ static void ops_thread(MultiCameraState *s) {
   }
 }
 
-static void update_lapmap(MultiCameraState *s, const CameraBuf *b, const int cnt) {
-  const size_t width = b->rgb_width / NUM_SEGMENTS_X;
-  const size_t height = b->rgb_height / NUM_SEGMENTS_Y;
-  static std::unique_ptr<uint8_t[]> rgb_roi_buf = std::make_unique<uint8_t[]>(width * height * 3);
-  static std::unique_ptr<int16_t[]> conv_result = std::make_unique<int16_t[]>(width * height);
-
-  // sharpness scores
-  const int roi_id = cnt % std::size(s->lapres);  // rolling roi
-  const int x_offset = ROI_X_MIN + roi_id % (ROI_X_MAX - ROI_X_MIN + 1);
-  const int y_offset = ROI_Y_MIN + roi_id / (ROI_X_MAX - ROI_X_MIN + 1);
-
-  const uint8_t *rgb_addr_offset = (uint8_t *)b->cur_rgb_buf->addr + y_offset * height * FULL_STRIDE_X * 3 + x_offset * width * 3;
-  for (int i = 0; i < height; ++i) {
-    memcpy(rgb_roi_buf.get() + i * width * 3, rgb_addr_offset + i * FULL_STRIDE_X * 3, width * 3);
-  }
-
-  constexpr int conv_cl_localMemSize = (CONV_LOCAL_WORKSIZE + 2 * (3 / 2)) * (CONV_LOCAL_WORKSIZE + 2 * (3 / 2)) * (3 * sizeof(uint8_t));
-  CL_CHECK(clEnqueueWriteBuffer(b->q, s->rgb_conv_roi_cl, true, 0, width * height * 3 * sizeof(uint8_t), rgb_roi_buf.get(), 0, 0, 0));
-  CL_CHECK(clSetKernelArg(s->krnl_rgb_laplacian, 0, sizeof(cl_mem), (void *)&s->rgb_conv_roi_cl));
-  CL_CHECK(clSetKernelArg(s->krnl_rgb_laplacian, 1, sizeof(cl_mem), (void *)&s->rgb_conv_result_cl));
-  CL_CHECK(clSetKernelArg(s->krnl_rgb_laplacian, 2, sizeof(cl_mem), (void *)&s->rgb_conv_filter_cl));
-  CL_CHECK(clSetKernelArg(s->krnl_rgb_laplacian, 3, conv_cl_localMemSize, 0));
-  cl_event conv_event;
-  CL_CHECK(clEnqueueNDRangeKernel(b->q, s->krnl_rgb_laplacian, 2, NULL,
-                                  (size_t[]){width, height}, (size_t[]){CONV_LOCAL_WORKSIZE, CONV_LOCAL_WORKSIZE}, 0, 0, &conv_event));
-  clWaitForEvents(1, &conv_event);
-  CL_CHECK(clReleaseEvent(conv_event));
-
-  CL_CHECK(clEnqueueReadBuffer(b->q, s->rgb_conv_result_cl, true, 0,
-                               width * height * sizeof(int16_t), conv_result.get(), 0, 0, 0));
-
-  s->lapres[roi_id] = get_lapmap_one(conv_result.get(), width, height);
-}
-
 static void setup_self_recover(CameraState *c, const uint16_t *lapres, size_t lapres_size) {
   const float lens_true_pos = c->lens_true_pos.load();
   int self_recover = c->self_recover.load();
@@ -1238,7 +1182,8 @@ void process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) {
 // called by processing_thread
 void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
   const CameraBuf *b = &c->buf;
-  update_lapmap(s, b, cnt);
+  const int roi_id = cnt % std::size(s->lapres);  // rolling roi
+  s->lapres[roi_id] = s->lap_conv->Update(b->q, (uint8_t *)b->cur_rgb_buf->addr, roi_id);
   setup_self_recover(c, &s->lapres[0], std::size(s->lapres));
 
   MessageBuilder msg;
@@ -1341,12 +1286,8 @@ void cameras_close(MultiCameraState *s) {
     s->focus_bufs[i].free();
     s->stats_bufs[i].free();
   }
-  CL_CHECK(clReleaseMemObject(s->rgb_conv_roi_cl));
-  CL_CHECK(clReleaseMemObject(s->rgb_conv_result_cl));
-  CL_CHECK(clReleaseMemObject(s->rgb_conv_filter_cl));
 
-  CL_CHECK(clReleaseKernel(s->krnl_rgb_laplacian));
-  CL_CHECK(clReleaseProgram(s->prg_rgb_laplacian));
+  delete s->lap_conv;
   delete s->sm;
   delete s->pm;
 }
