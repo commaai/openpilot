@@ -1091,9 +1091,35 @@ FW_VERSIONS = {
     ],
   },
   CAR.CLARITY: {
-    (Ecu.vsa, 0x18da28f1, None): [b'57114-TRW-A020\x00\x00'],
-    (Ecu.eps, 0x18da30f1, None): [b'39990-TRW-A020\x00\x00'],
-    (Ecu.srs, 0x18da53f1, None): [b'77959-TRW-A210\x00\x00'],
+    (Ecu.programmedFuelInjection, 0x18da10f1, None): [
+        b'37805-5WJ-A610\x00\x00',
+    ],
+    (Ecu.shiftByWire, 0x18da0bf1, None): [
+        b'54008-TWR-A910\x00\x00',
+    ],
+    (Ecu.vsa, 0x18da28f1, None): [
+        b'57114-TWR-A010\x00\x00',
+        b'57114-TRW-A020\x00\x00',
+    ],
+    (Ecu.eps, 0x18da30f1, None): [
+        b'39990-TRW-A020\x00\x00',
+        b'39990,TRW,A020\x00\x00', #modified firmware
+    ],
+    (Ecu.srs, 0x18da53f1, None): [
+        b'77959-TRW-A210\x00\x00',
+    ],
+    (Ecu.electricBrakeBooster, 0x18da2bf1, None): [
+        b'46114-TRW-A020\x00\x00',
+    ],
+    (Ecu.fwdCamera, 0x18dab5f1, None): [
+        b'36161-TRW-A040\x00\x00',
+    ],
+    (Ecu.gateway, 0x18daeff1, None): [
+        b'38897-TRW-A010\x00\x00',
+    ],
+    (Ecu.combinationMeter, 0x18da60f1, None): [
+        b'78109-TRW-A020\x00\x00',
+    ],
   },
 }
 
