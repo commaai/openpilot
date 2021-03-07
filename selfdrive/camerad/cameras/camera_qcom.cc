@@ -125,19 +125,17 @@ static int imx298_apply_exposure(CameraState *s, int gain, int integ_lines, int 
 
 static int ov8865_apply_exposure(CameraState *s, int gain, int integ_lines, int frame_length) {
   //printf("driver camera: %d %d %d\n", gain, integ_lines, frame_length);
-  int coarse_gain_bitmap, fine_gain_bitmap;
-
+  gain = std::min(gain, 800);
   // get bitmaps from iso
-  static const int gains[] = {0, 100, 200, 400, 800};
-  int i;
-  for (i = 1; i < ARRAYSIZE(gains); i++) {
-    if (gain >= gains[i - 1] && gain < gains[i])
-      break;
+  const int gains[] = {0, 100, 200, 400, 800};
+  int coarse_idx = 0;
+  for (int i = 0; i < ARRAYSIZE(gains) - 1; i++) {
+    if (gain >= gains[i]) 
+      coarse_idx = i;
   }
-  int coarse_gain = i - 1;
-  float fine_gain = (gain - gains[coarse_gain])/(float)(gains[coarse_gain+1]-gains[coarse_gain]);
-  coarse_gain_bitmap = (1 << coarse_gain) - 1;
-  fine_gain_bitmap = ((int)(16*fine_gain) << 3) + 128; // 7th is always 1, 0-2nd are always 0
+  float fine_gain = (gain - gains[coarse_idx]) / (float)(gains[coarse_idx + 1] - gains[coarse_idx]);
+  int coarse_gain_bitmap = (1 << coarse_idx) - 1;
+  int fine_gain_bitmap = ((int)(16 * fine_gain) << 3) + 128;  // 7th is always 1, 0-2nd are always 0
 
   integ_lines *= 16; // The exposure value in reg is in 16ths of a line
 
