@@ -855,7 +855,7 @@ static void road_camera_start(CameraState *s) {
   s->cur_lens_pos = 0;
   s->cur_step_pos = inf_step;
 
-  actuator_move(s, 0);
+  actuator_move(s, s->cur_lens_pos);
   LOG("init lens pos: %d", s->cur_lens_pos);
 }
 
