@@ -501,7 +501,7 @@ routes = {
     'carFingerprint': NISSAN.ALTIMA,
     'enableCamera': True,
   },
-    "e0e98335f3ebc58f|2021-03-06--12-29-04": {
+    "e0e98335f3ebc58f|2021-03-07--16-38-29": {
     'carFingerprint': HYUNDAI.KIA_CEED,
     'enableCamera': True,  
 }
