@@ -102,16 +102,12 @@ int main(int argc, char **argv) {
 
   VisionIpcClient vipc_client = VisionIpcClient("camerad", VISION_STREAM_YUV_BACK, true, device_id, context);
 
-  while (!do_exit){
-    if (!vipc_client.connect(false)){
+  while (!do_exit) {
+    if (!vipc_client.connect(false)) {
       util::sleep_for(100);
       continue;
     }
-    break;
-  }
 
-  // loop
-  while (!do_exit) {
     VisionBuf *b = &vipc_client.buffers[0];
     LOGW("connected with buffer size: %d (%d x %d)", b->len, b->width, b->height);
 
@@ -127,9 +123,11 @@ int main(int argc, char **argv) {
     uint32_t run_count = 0;
 
     while (!do_exit) {
-      VisionIpcBufExtra extra;
+      VisionIpcBufExtra extra = {};
       VisionBuf *buf = vipc_client.recv(&extra);
-      if (buf == nullptr){
+      if (buf == nullptr) {
+        if (!vipc_client.connected) break; 
+
         continue;
       }
 
@@ -138,7 +136,7 @@ int main(int argc, char **argv) {
       const bool run_model_this_iter = run_model;
       pthread_mutex_unlock(&transform_lock);
 
-      if (sm.update(0) > 0){
+      if (sm.update(0) > 0) {
         // TODO: path planner timeout?
         desire = ((int)sm["lateralPlan"].getLateralPlan().getDesire());
         frame_id = sm["roadCameraState"].getRoadCameraState().getFrameId();
