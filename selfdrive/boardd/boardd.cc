@@ -508,9 +508,14 @@ void pigeon_thread() {
         uint64_t dt = t - last_recv_time[msg_cls];
         // LOGE("0x%02x %llu", msg_cls, dt);
         if (dt > max_dt) {
-          LOGE("Pigeon receive timeout, msg class: 0x%02x, dt %llu", msg_cls, dt);
+          LOGE("ublox receive timeout, msg class: 0x%02x, dt %llu, resetting panda GPS", msg_cls, dt);
           need_reset = true;
         }
+      }
+
+      if (recv[0] == (char)0x00){
+        need_reset = true;
+        LOGW("received invalid ublox message while onroad, resetting panda GPS");
       }
 
       pigeon_publish_raw(pm, recv);
