@@ -153,7 +153,7 @@ def manager_thread():
     ensure_running(managed_processes.values(), started, driverview, not_run)
 
     # trigger an update after going offroad
-    if started_prev and not started:
+    if started_prev and not started and 'updated' in managed_processes:
       os.sync()
       managed_processes['updated'].signal(signal.SIGHUP)
 
