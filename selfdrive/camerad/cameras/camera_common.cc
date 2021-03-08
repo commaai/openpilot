@@ -318,7 +318,7 @@ void set_exposure_target(CameraState *c, int x_start, int x_end, int x_skip, int
       break;
     }
   }
-  lum_med = lum_med_alt>0 ? lum_med + lum_med*lum_cur*(lum_med_alt - lum_med)/lum_total/32:lum_med;
+  lum_med = lum_med_alt>0 ? lum_med + lum_med/32*lum_cur*(lum_med_alt - lum_med)/lum_total:lum_med;
   camera_autoexposure(c, lum_med / 256.0);
 }
 
