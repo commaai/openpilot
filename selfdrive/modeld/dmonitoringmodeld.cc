@@ -1,10 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
-#include <cassert>
 #include <sys/resource.h>
 
-#include "visionbuf.h"
 #include "visionipc_client.h"
 #include "common/swaglog.h"
 #include "common/util.h"

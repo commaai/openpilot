@@ -1,10 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <mutex>
 #include <eigen3/Eigen/Dense>
 
-#include "visionbuf.h"
 #include "visionipc_client.h"
 #include "common/swaglog.h"
 #include "common/clutil.h"
@@ -157,7 +155,7 @@ int main(int argc, char **argv) {
   while (!do_exit && !vipc_client.connect(false)) {
     util::sleep_for(100);
   }
-  
+
   // run the models
   if (vipc_client.connected) {
     const VisionBuf *b = &vipc_client.buffers[0];
@@ -166,7 +164,6 @@ int main(int argc, char **argv) {
   }
 
   model_free(&model);
-
   LOG("joining live_thread");
   thread.join();
   CL_CHECK(clReleaseContext(context));
