@@ -117,12 +117,7 @@ static int imx298_apply_exposure(CameraState *s, int gain, int integ_lines, int 
     // REG_HOLD
     {0x104,0x0,0},
   };
-
-  int err = sensor_write_regs(s, reg_array, ARRAYSIZE(reg_array), MSM_CAMERA_I2C_BYTE_DATA);
-  if (err != 0) {
-    LOGE("apply_exposure err %d", err);
-  }
-  return err;
+  return sensor_write_regs(s, reg_array, ARRAYSIZE(reg_array), MSM_CAMERA_I2C_BYTE_DATA);
 }
 
 static int ov8865_apply_exposure(CameraState *s, int gain, int integ_lines, int frame_length) {
@@ -157,16 +152,12 @@ static int ov8865_apply_exposure(CameraState *s, int gain, int integ_lines, int 
 
     //{0x104,0x0,0},
   };
-  int err = sensor_write_regs(s, reg_array, ARRAYSIZE(reg_array), MSM_CAMERA_I2C_BYTE_DATA);
-  if (err != 0) {
-    LOGE("apply_exposure err %d", err);
-  }
-  return err;
+  return sensor_write_regs(s, reg_array, ARRAYSIZE(reg_array), MSM_CAMERA_I2C_BYTE_DATA);
 }
 
 static void camera_init(VisionIpcServer *v, CameraState *s, int camera_id, int camera_num,
                         uint32_t pixel_clock, uint32_t line_length_pclk,
-                        unsigned int max_gain, unsigned int fps, cl_device_id device_id, cl_context ctx,
+                        uint32_t max_gain, uint32_t fps, cl_device_id device_id, cl_context ctx,
                         VisionStreamType rgb_type, VisionStreamType yuv_type) {
   s->camera_num = camera_num;
   s->camera_id = camera_id;
@@ -235,10 +226,10 @@ void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_i
 static void set_exposure(CameraState *s, float exposure_frac, float gain_frac) {
   int err = 0;
 
-  unsigned int frame_length = s->pixel_clock / s->line_length_pclk / s->fps;
+  uint32_t frame_length = s->pixel_clock / s->line_length_pclk / s->fps;
 
-  unsigned int gain = s->cur_gain;
-  unsigned int integ_lines = s->cur_integ_lines;
+  uint32_t gain = s->cur_gain;
+  uint32_t integ_lines = s->cur_integ_lines;
 
   if (exposure_frac >= 0) {
     exposure_frac = std::clamp(exposure_frac, 2.0f / frame_length, 1.0f);
@@ -275,6 +266,8 @@ static void set_exposure(CameraState *s, float exposure_frac, float gain_frac) {
       s->cur_gain = gain;
       s->cur_integ_lines = integ_lines;
       s->cur_frame_length = frame_length;
+    } else {
+      LOGE("camera %d apply_exposure err: %d", s->camera_num, err);
     }
   }
 
@@ -294,9 +287,9 @@ static void do_autoexposure(CameraState *s, float grey_frac) {
     const float gain_frac_min = 0.015625;
     const float gain_frac_max = 1.0;
     // exposure time limits
-    unsigned int frame_length = s->pixel_clock / s->line_length_pclk / s->fps;
-    const unsigned int exposure_time_min = 16;
-    const unsigned int exposure_time_max = frame_length - 11; // copied from set_exposure()
+    uint32_t frame_length = s->pixel_clock / s->line_length_pclk / s->fps;
+    const uint32_t exposure_time_min = 16;
+    const uint32_t exposure_time_max = frame_length - 11; // copied from set_exposure()
 
     float cur_gain_frac = s->cur_gain_frac;
     float exposure_factor = pow(1.05, (target_grey - grey_frac) / 0.05);
@@ -326,28 +319,6 @@ static void do_autoexposure(CameraState *s, float grey_frac) {
 
     set_exposure(s, new_exposure, new_gain);
   }
-}
-
-static uint8_t* get_eeprom(int eeprom_fd, size_t *out_len) {
-  msm_eeprom_cfg_data cfg = {.cfgtype = CFG_EEPROM_GET_CAL_DATA};
-  int err = ioctl(eeprom_fd, VIDIOC_MSM_EEPROM_CFG, &cfg);
-  assert(err >= 0);
-
-  uint32_t num_bytes = cfg.cfg.get_data.num_bytes;
-  assert(num_bytes > 100);
-
-  uint8_t* buffer = (uint8_t*)malloc(num_bytes);
-  assert(buffer);
-  memset(buffer, 0, num_bytes);
-
-  cfg.cfgtype = CFG_EEPROM_READ_CAL_DATA;
-  cfg.cfg.read_data.num_bytes = num_bytes;
-  cfg.cfg.read_data.dbuffer = buffer;
-  err = ioctl(eeprom_fd, VIDIOC_MSM_EEPROM_CFG, &cfg);
-  assert(err >= 0);
-
-  *out_len = num_bytes;
-  return buffer;
 }
 
 static void sensors_init(MultiCameraState *s) {
@@ -461,9 +432,6 @@ static void camera_open(CameraState *s, bool is_road_cam) {
     sensor_dev = "/dev/v4l-subdev17";
     s->isp_fd = open("/dev/v4l-subdev13", O_RDWR | O_NONBLOCK);
     assert(s->isp_fd >= 0);
-    s->eeprom_fd = open("/dev/v4l-subdev8", O_RDWR | O_NONBLOCK);
-    assert(s->eeprom_fd >= 0);
-
     s->actuator_fd = open("/dev/v4l-subdev7", O_RDWR | O_NONBLOCK);
     assert(s->actuator_fd >= 0);
   } else {
@@ -474,8 +442,6 @@ static void camera_open(CameraState *s, bool is_road_cam) {
     sensor_dev = "/dev/v4l-subdev18";
     s->isp_fd = open("/dev/v4l-subdev14", O_RDWR | O_NONBLOCK);
     assert(s->isp_fd >= 0);
-    s->eeprom_fd = open("/dev/v4l-subdev9", O_RDWR | O_NONBLOCK);
-    assert(s->eeprom_fd >= 0);
   }
 
   // wait for sensor device
@@ -536,14 +502,6 @@ static void camera_open(CameraState *s, bool is_road_cam) {
 
   // **** GO GO GO ****
   LOG("******************** GO GO GO ************************");
-
-  s->eeprom = get_eeprom(s->eeprom_fd, &s->eeprom_size);
-
-  // printf("eeprom:\n");
-  // for (int i=0; i<s->eeprom_size; i++) {
-  //   printf("%02x", s->eeprom[i]);
-  // }
-  // printf("\n");
 
   // CSID: init csid
   csid_cfg_data.cfgtype = CSID_INIT;
@@ -856,7 +814,6 @@ static void road_camera_start(CameraState *s) {
   s->cur_step_pos = inf_step;
 
   actuator_move(s, s->cur_lens_pos);
-
   LOG("init lens pos: %d", s->cur_lens_pos);
 }
 
@@ -870,8 +827,8 @@ void actuator_move(CameraState *s, uint16_t target) {
   struct msm_actuator_cfg_data actuator_cfg_data = {0};
   actuator_cfg_data.cfgtype = CFG_MOVE_FOCUS;
   actuator_cfg_data.cfg.move = (struct msm_actuator_move_params_t){
-    .dir = (int8_t)((step > 0) ? 0 : 1),
-    .sign_dir = (int8_t)((step > 0) ? 1 : -1),
+    .dir = (int8_t)((step > 0) ? MOVE_NEAR : MOVE_FAR),
+    .sign_dir = (int8_t)((step > 0) ? MSM_ACTUATOR_MOVE_SIGNED_NEAR : MSM_ACTUATOR_MOVE_SIGNED_FAR),
     .dest_step_pos = (int16_t)dest_step_pos,
     .num_steps = abs(step),
     .curr_lens_pos = s->cur_lens_pos,
@@ -1083,11 +1040,9 @@ static void camera_close(CameraState *s) {
       LOG("isp release stream: %d", err);
     }
   }
-
-  free(s->eeprom);
 }
 
-const char* get_isp_event_name(unsigned int type) {
+const char* get_isp_event_name(uint32_t type) {
   switch (type) {
   case ISP_EVENT_REG_UPDATE: return "ISP_EVENT_REG_UPDATE";
   case ISP_EVENT_EPOCH_0: return "ISP_EVENT_EPOCH_0";
@@ -1255,9 +1210,9 @@ void cameras_run(MultiCameraState *s) {
         c->frame_metadata[c->frame_metadata_idx] = (FrameMetadata){
             .frame_id = isp_event_data->frame_id,
             .timestamp_eof = timestamp,
-            .frame_length = (unsigned int)c->cur_frame_length,
-            .integ_lines = (unsigned int)c->cur_integ_lines,
-            .global_gain = (unsigned int)c->cur_gain,
+            .frame_length = (uint32_t)c->cur_frame_length,
+            .integ_lines = (uint32_t)c->cur_integ_lines,
+            .global_gain = (uint32_t)c->cur_gain,
             .lens_pos = c->cur_lens_pos,
             .lens_sag = c->last_sag_acc_z,
             .lens_err = c->focus_err,
