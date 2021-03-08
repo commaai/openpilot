@@ -14,6 +14,8 @@ from cereal import car, log
 from cereal.services import service_list
 from common.params import Params
 from selfdrive.car.car_helpers import get_car
+
+os.environ['WEBCAM'] = '1' # hack to get dmonitoringd in managed_processes
 from selfdrive.manager.process import PythonProcess
 from selfdrive.manager.process_config import managed_processes
 
