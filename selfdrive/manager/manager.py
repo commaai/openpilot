@@ -4,7 +4,6 @@ import os
 import signal
 import subprocess
 import sys
-import time
 import traceback
 
 import cereal.messaging as messaging
@@ -104,8 +103,6 @@ def manager_prepare(spinner=None):
     p.prepare()
     if spinner:
       perc = (100.0 - total) + total * (i + 1) / len(managed_processes)
-      if perc == 100:
-        time.sleep(1 / 50.)
       spinner.update_progress(perc, 100.)
 
 
