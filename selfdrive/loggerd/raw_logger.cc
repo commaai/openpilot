@@ -67,8 +67,6 @@ RawLogger::~RawLogger() {
 void RawLogger::encoder_open(const char* path) {
   int err = 0;
 
-  std::lock_guard<std::recursive_mutex> guard(lock);
-
   vid_path = util::string_format("%s/%s.mkv", path, filename);
 
   // create camera lock file
@@ -106,8 +104,6 @@ void RawLogger::encoder_open(const char* path) {
 
 void RawLogger::encoder_close() {
   int err = 0;
-
-  std::lock_guard<std::recursive_mutex> guard(lock);
 
   if (!is_open) return;
 

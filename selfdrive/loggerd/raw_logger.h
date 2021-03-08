@@ -5,7 +5,6 @@
 
 #include <string>
 #include <vector>
-#include <mutex>
 #include <condition_variable>
 
 extern "C" {
@@ -33,8 +32,6 @@ private:
   bool is_open = false;
 
   std::string vid_path, lock_path;
-
-  std::recursive_mutex lock;
 
   AVCodec *codec = NULL;
   AVCodecContext *codec_ctx = NULL;
