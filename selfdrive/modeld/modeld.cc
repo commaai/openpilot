@@ -19,7 +19,7 @@ bool live_calib_seen;
 mat3 cur_transform;
 std::mutex transform_lock;
 
-void* live_thread(void *arg) {
+void live_thread() {
   set_thread_name("live");
   set_realtime_priority(50);
 
@@ -66,7 +66,6 @@ void* live_thread(void *arg) {
       live_calib_seen = true;
     }
   }
-  return NULL;
 }
 
 void run_model(ModelState &model, VisionIpcClient &vipc_client) {
@@ -143,9 +142,7 @@ int main(int argc, char **argv) {
 #endif
 
   // start calibration thread
-  pthread_t live_thread_handle;
-  int err = pthread_create(&live_thread_handle, NULL, live_thread, NULL);
-  assert(err == 0);
+  std::thread thread = std::thread(live_thread);
 
   // cl init
   cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
@@ -170,8 +167,7 @@ int main(int argc, char **argv) {
   model_free(&model);
 
   LOG("joining live_thread");
-  err = pthread_join(live_thread_handle, NULL);
-  assert(err == 0);
+  thread.join();
   CL_CHECK(clReleaseContext(context));
   return 0;
 }
