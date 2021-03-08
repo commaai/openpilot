@@ -51,10 +51,20 @@ class CarInterface(CarInterfaceBase):
         ret.mass = 1335 + STD_CARGO_KG
         ret.wheelbase = 2.61
 
+      elif candidate == CAR.VW_ATLAS_MK1:
+        # Averages of all CA Atlas/Teramont variants
+        ret.mass = 2011 + STD_CARGO_KG
+        ret.wheelbase = 2.98
+
       elif candidate == CAR.VW_GOLF_MK7:
         # Averages of all AU Golf variants
         ret.mass = 1397 + STD_CARGO_KG
         ret.wheelbase = 2.62
+
+      elif candidate == CAR.VW_TIGUAN_MK2:
+        # Averages of all AX Tiguan variants, both SWB and LWB
+        ret.mass = 1715 + STD_CARGO_KG
+        ret.wheelbase = 2.74
 
       ret.centerToFront = ret.wheelbase * 0.45
 

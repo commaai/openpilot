@@ -49,13 +49,18 @@ MQB_LDW_MESSAGES = {
 
 class CAR:
   AU_A3_MK3 = "AUDI A3 3RD GEN"
+  VW_ATLAS_MK1 = "VOLKSWAGEN ATLAS 1ST GEN"
   VW_GOLF_MK7 = "VOLKSWAGEN GOLF 7TH GEN"
+  VW_TIGUAN_MK2 = "VOLKSWAGEN TIGUAN 2ND GEN"
 
 MQB_CARS = {
   CAR.AU_A3_MK3,             # Chassis 8V, 2013-2019, includes A3, A3 e-tron, A3 g-tron, S3, RS3
-  CAR.VW_GOLF_MK7            # Chassis AU, 2013-2020, includes Golf, Alltrack, Sportwagen, GTI, GTI TCR, GTE, GTD, Clubsport, Golf R, e-Golf
+  CAR.VW_ATLAS_MK1,          # Chassis CA, 2018-2021, includes Atlas and Atlas Cross Sport, known as VW Teramont in some markets
+  CAR.VW_GOLF_MK7,           # Chassis AU, 2013-2020, includes Golf, Alltrack, Sportwagen, GTI, GTI TCR, GTE, GTD, Clubsport, Golf R, e-Golf
+  CAR.VW_TIGUAN_MK2          # Chassis AX, 2016-2021, includes Tiguan, Allspace/L, Tiguan R
 }
 
+# Intent is to decommission FPv1 entirely, after all Mk3 A3 and Mk7 Golf in the field have verified FPv2
 FINGERPRINTS = {
   CAR.AU_A3_MK3: [{
     64: 8, 134: 8, 159: 8, 173: 8, 178: 8, 253: 8, 257: 8, 260: 8, 262: 8, 278: 8, 279: 8, 283: 8, 285: 8, 286: 8, 288: 8, 289: 8, 290: 8, 294: 8, 295: 8, 299: 8, 302: 8, 346: 8, 418: 8, 427: 8, 506: 8, 679: 8, 681: 8, 695: 8, 779: 8, 780: 8, 783: 8, 787: 8, 788: 8, 789: 8, 792: 8, 802: 8, 804: 8, 806: 8, 807: 8, 808: 8, 809: 8, 846: 8, 847: 8, 870: 8, 896: 8, 897:  8, 898: 8, 901: 8, 917: 8, 919: 8, 949: 8, 958: 8, 960: 4, 981: 8, 987: 8, 988: 8, 991: 8, 997: 8, 1000: 8, 1019: 8, 1122: 8, 1123: 8, 1124: 8, 1153: 8, 1162: 8, 1175: 8, 1312: 8, 1385: 8, 1413: 8, 1440: 5, 1514: 8, 1515: 8, 1520: 8, 1600: 8, 1601: 8, 1603: 8, 1624: 8, 1629: 8, 1631: 8, 1646: 8, 1648: 8, 1712: 6, 1714: 8, 1716: 8, 1717: 8, 1719: 8, 1720: 8, 1721: 8, 1792: 8, 1872: 8, 1976: 8, 1977: 8, 1982: 8, 1985: 8
@@ -66,8 +71,30 @@ FINGERPRINTS = {
 }
 
 FW_VERSIONS = {
+  CAR.VW_ATLAS_MK1: {
+    (Ecu.engine, 0x7e0, None): [
+      b'03H906026J ',  # 2018 Atlas (CDVC)
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+      b'09G927158A ',  # 2018 Atlas (AQ8)
+    ],
+    (Ecu.esp, 0x713, None): [
+      b'5Q0614517CF',  # 2018 Atlas
+    ],
+    (Ecu.srs, 0x715, None): [
+      b'3Q0959655BC',  # 2018 Atlas
+    ],
+    (Ecu.eps, 0x712, None): [
+      b'5Q0909143P ',  # Shared
+    ],
+    (Ecu.fwdRadar, 0x757, None): [
+      b'5Q0907572H ',  # Shared
+    ],
+    (Ecu.fwdCamera, 0x74f, None): [
+      b'3Q0980654G ',  # Shared
+    ],
+  },
   CAR.VW_GOLF_MK7: {
-    # Mk7 2013-2017 and Mk7.5 facelift 2018-2020
     (Ecu.engine, 0x7e0, None): [
       b'8V0906259P ',  # 2018 Golf R (DJJA)
     ],
@@ -89,10 +116,35 @@ FW_VERSIONS = {
     (Ecu.fwdCamera, 0x74f, None): [
       b'3Q0980654H ',  # Shared
     ],
+  },
+  CAR.VW_TIGUAN_MK2: {
+    (Ecu.engine, 0x7e0, None): [
+      b'83A907115B ',  # 2020 Tiguan (DGUA)
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+      b'09G927158DT',  # 2020 Tiguan (AQ8)
+    ],
+    (Ecu.esp, 0x713, None): [
+      b'5Q0614517FE',  # 2020 Tiguan
+    ],
+    (Ecu.srs, 0x715, None): [
+      b'5Q0959655BM',  # 2020 Tiguan
+    ],
+    (Ecu.eps, 0x712, None): [
+      b'5QM909144C ',  # Shared
+    ],
+    (Ecu.fwdRadar, 0x757, None): [
+      b'2Q0907572R ',  # Shared
+    ],
+    (Ecu.fwdCamera, 0x74f, None): [
+      b'3Q0980654L ',  # Shared
+    ],
   }
 }
 
 DBC = {
   CAR.AU_A3_MK3: dbc_dict('vw_mqb_2010', None),
+  CAR.VW_ATLAS_MK1: dbc_dict('vw_mqb_2010', None),
   CAR.VW_GOLF_MK7: dbc_dict('vw_mqb_2010', None),
+  CAR.VW_TIGUAN_MK2: dbc_dict('vw_mqb_2010', None)
 }
