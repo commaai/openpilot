@@ -37,17 +37,7 @@ void* live_thread(void *arg) {
     -1.84808520e-20, 9.00738606e-04,-4.28751576e-02;
 
   Eigen::Matrix<float, 3, 3> fcam_intrinsics = Eigen::Matrix<float, 3, 3, Eigen::RowMajor>(fcam_intrinsic_matrix.v);
-#ifndef QCOM2
-  float db_s = 0.5; // debayering does a 2x downscale
-#else
-  float db_s = 1.0;
-#endif
-
-  mat3 yuv_transform = transform_scale_buffer((mat3){{
-    1.0, 0.0, 0.0,
-    0.0, 1.0, 0.0,
-    0.0, 0.0, 1.0,
-  }}, db_s);
+  const mat3 yuv_transform = get_model_yuv_transform();
 
   while (!do_exit) {
     if (sm.update(100) > 0){
