@@ -158,6 +158,7 @@ int main(int argc, char **argv) {
     util::sleep_for(100);
   }
   
+  // run the models
   if (vipc_client.connected) {
     const VisionBuf *b = &vipc_client.buffers[0];
     LOGW("connected with buffer size: %d (%d x %d)", b->len, b->width, b->height);

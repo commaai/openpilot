@@ -50,6 +50,7 @@ int main(int argc, char **argv) {
     util::sleep_for(100);
   }
 
+  // run the models
   if (vipc_client.connected) {
     LOGW("connected with buffer size: %d", vipc_client.buffers[0].len);
     run_model(model, vipc_client);
