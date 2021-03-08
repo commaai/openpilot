@@ -1,5 +1,6 @@
 Version 0.8.3 (2021-XX-XX)
 ========================
+ * Kia Ceed 2019 support thanks to ZanZaD13!
 
 Version 0.8.2 (2021-02-26)
 ========================
