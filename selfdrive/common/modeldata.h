@@ -34,5 +34,19 @@ const mat3 fcam_intrinsic_matrix = (mat3){{
 }};
 #endif
 
+static inline mat3 get_model_yuv_transform(bool bayer = true) {
+#ifndef QCOM2
+  float db_s = 0.5; // debayering does a 2x downscale
+#else
+  float db_s = 1.0;
+#endif
+  const mat3 transform = (mat3){{
+    1.0, 0.0, 0.0,
+    0.0, 1.0, 0.0,
+    0.0, 0.0, 1.0
+  }};
+  return bayer ? transform_scale_buffer(transform, db_s) : transform;
+}
+
 #endif
 
