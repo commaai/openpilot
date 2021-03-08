@@ -358,12 +358,12 @@ static void processing_thread(MultiCameraState *cameras, CameraState *cs, proces
         framed.setTransform(cs->buf.yuv_transform.v);
       }
 
-      if (callback) {
-        callback(cameras, cs, framed, frame_cnt);
-      }
-
       if (frame_cnt % 3 == 0) {
         camera_autoexposure(cameras, cs);
+      }
+
+      if (callback) {
+        callback(cameras, cs, framed, frame_cnt);
       }
 
       pm.send(pub_name, msg);
