@@ -17,7 +17,7 @@ procs = [
   NativeProcess("proclogd", "selfdrive/proclogd", ["./proclogd"]),
   NativeProcess("sensord", "selfdrive/sensord", ["./sensord"], enabled=not PC, persistent=EON, sigkill=EON),
   NativeProcess("ubloxd", "selfdrive/locationd", ["./ubloxd"], enabled=(not PC or WEBCAM)),
-  NativeProcess("ui", "selfdrive/ui", ["./ui"], persistent=True),
+  NativeProcess("ui", "selfdrive/ui", ["./ui"], persistent=True, watchdog_max_dt=10),
   PythonProcess("calibrationd", "selfdrive.locationd.calibrationd"),
   PythonProcess("controlsd", "selfdrive.controls.controlsd"),
   PythonProcess("deleter", "selfdrive.loggerd.deleter", persistent=True),
