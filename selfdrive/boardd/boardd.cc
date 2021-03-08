@@ -15,7 +15,7 @@
 #include <bitset>
 #include <thread>
 #include <atomic>
-#include <map>
+#include <unordered_map>
 
 #include <libusb-1.0/libusb.h>
 
