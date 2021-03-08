@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-# TODO: why are the keras models saved with python 2?
-from __future__ import print_function
 
 import os
 import sys
 import numpy as np
+
+os.environ["OMP_NUM_THREADS"] = "1"
+
 import onnxruntime as ort
 
 def read(sz):
@@ -53,4 +54,3 @@ if __name__ == "__main__":
   ort_session = ort.InferenceSession(sys.argv[1], options)
   ort_session.set_providers([provider], None)
   run_loop(ort_session)
-
