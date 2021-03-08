@@ -1,7 +1,7 @@
 CC = clang
 CXX = clang++
 
-ROOT_DIR = ../../..
+ROOT_DIR = ../../../..
 PHONELIBS = $(ROOT_DIR)/phonelibs
 COMMON = $(ROOT)/selfdrive/common
 
