@@ -821,7 +821,6 @@ static void road_camera_start(CameraState *s) {
   s->cur_step_pos = inf_step;
 
   actuator_move(s, s->cur_lens_pos);
-
   LOG("init lens pos: %d", s->cur_lens_pos);
 }
 
@@ -835,8 +834,8 @@ void actuator_move(CameraState *s, uint16_t target) {
   struct msm_actuator_cfg_data actuator_cfg_data = {0};
   actuator_cfg_data.cfgtype = CFG_MOVE_FOCUS;
   actuator_cfg_data.cfg.move = (struct msm_actuator_move_params_t){
-    .dir = (int8_t)((step > 0) ? 0 : 1),
-    .sign_dir = (int8_t)((step > 0) ? 1 : -1),
+    .dir = (int8_t)((step > 0) ? MOVE_NEAR : MOVE_FAR),
+    .sign_dir = (int8_t)((step > 0) ? MSM_ACTUATOR_MOVE_SIGNED_NEAR : MSM_ACTUATOR_MOVE_SIGNED_FAR),
     .dest_step_pos = (int16_t)dest_step_pos,
     .num_steps = abs(step),
     .curr_lens_pos = s->cur_lens_pos,
