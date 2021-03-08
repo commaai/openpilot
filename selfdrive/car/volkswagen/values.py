@@ -53,7 +53,7 @@ class CAR:
 
 MQB_CARS = {
   CAR.AU_A3_MK3,             # Chassis 8V, 2013-2019, includes A3, A3 e-tron, A3 g-tron, S3, RS3
-  CAR.VW_GOLF_MK7            # Chassis AU, 2013-2020, includes Golf, Alltrack, Sportwagen, GTI, GTI TCR, GTE, GTD, Clubsport, Golf R
+  CAR.VW_GOLF_MK7            # Chassis AU, 2013-2020, includes Golf, Alltrack, Sportwagen, GTI, GTI TCR, GTE, GTD, Clubsport, Golf R, e-Golf
 }
 
 FINGERPRINTS = {
