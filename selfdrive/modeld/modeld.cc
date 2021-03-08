@@ -17,8 +17,8 @@ bool live_calib_seen;
 mat3 cur_transform;
 std::mutex transform_lock;
 
-void live_thread() {
-  set_thread_name("live");
+void calibration_thread() {
+  set_thread_name("calibration");
   set_realtime_priority(50);
 
   SubMaster sm({"liveCalibration"});
@@ -140,7 +140,7 @@ int main(int argc, char **argv) {
 #endif
 
   // start calibration thread
-  std::thread thread = std::thread(live_thread);
+  std::thread thread = std::thread(calibration_thread);
 
   // cl init
   cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
@@ -164,7 +164,7 @@ int main(int argc, char **argv) {
   }
 
   model_free(&model);
-  LOG("joining live_thread");
+  LOG("joining calibration thread");
   thread.join();
   CL_CHECK(clReleaseContext(context));
   return 0;
