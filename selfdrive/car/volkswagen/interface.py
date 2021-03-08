@@ -51,7 +51,7 @@ class CarInterface(CarInterfaceBase):
     ret.enableCamera = True  # Stock camera detection doesn't apply to VW
 
     if 0xAD in fingerprint[0]:
-      # Getribe_11 detected: traditional automatic or DSG gearbox
+      # Getriebe_11 detected: traditional automatic or DSG gearbox
       ret.transmissionType = TRANS.automatic
     elif 0x187 in fingerprint[0]:
       # EV_Gearshift detected: e-Golf or similar direct-drive electric
