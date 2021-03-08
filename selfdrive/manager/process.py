@@ -65,8 +65,8 @@ class ManagerProcess(ABC):
   enabled = True
   name = ""
 
-  watchdog_max_dt = None
   last_watchdog_time = 0
+  watchdog_max_dt = None
   watchdog_seen = False
 
   @abstractmethod
@@ -85,17 +85,16 @@ class ManagerProcess(ABC):
     if self.watchdog_max_dt is None or self.proc is None:
       return
 
-    fn = WATCHDOG_FN + str(self.proc.pid)
     try:
+      fn = WATCHDOG_FN + str(self.proc.pid)
       self.last_watchdog_time = int(open(fn).read())
-    except (FileNotFoundError, ValueError, OSError):
+    except Exception:
       pass
 
     dt = sec_since_boot() - self.last_watchdog_time / 1e9
-    print(self.name, fn, dt, self.watchdog_seen)
 
-    # Only restart while offroad for now
     if dt > self.watchdog_max_dt:
+      # Only restart while offroad for now
       if self.watchdog_seen and ENABLE_WATCHDOG and (not started):
         cloudlog.error(f"Watchdog timeout for {self.name}, restarting")
         self.restart()

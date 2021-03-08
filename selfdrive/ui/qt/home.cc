@@ -277,6 +277,7 @@ void GLWindow::timerUpdate() {
 
   ui_update(&ui_state);
   repaint();
+  watchdog_kick();
 }
 
 void GLWindow::resizeGL(int w, int h) {
@@ -297,7 +298,6 @@ void GLWindow::paintGL() {
     }
     prev_draw_t = cur_draw_t;
   }
-  watchdog_kick();
 }
 
 void GLWindow::wake() {
