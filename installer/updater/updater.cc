@@ -12,6 +12,7 @@
 #include <fstream>
 #include <iostream>
 #include <mutex>
+#include <memory>
 #include <thread>
 
 #include <curl/curl.h>
@@ -30,7 +31,7 @@
 
 #include "common/framebuffer.h"
 #include "common/touch.h"
-#include "common/utilpp.h"
+#include "common/util.h"
 
 #define USER_AGENT "NEOSUpdater-0.2"
 
@@ -183,7 +184,7 @@ struct Updater {
 
   int fb_w, fb_h;
 
-  FramebufferState *fb = NULL;
+  std::unique_ptr<FrameBuffer> fb;
   NVGcontext *vg = NULL;
   int font_regular;
   int font_semibold;
@@ -227,11 +228,9 @@ struct Updater {
   void ui_init() {
     touch_init(&touch);
 
-    fb = framebuffer_init("updater", 0x00001000, false,
-                          &fb_w, &fb_h);
-    assert(fb);
+    fb = std::make_unique<FrameBuffer>("updater", 0x00001000, false, &fb_w, &fb_h);
 
-    framebuffer_set_power(fb, HWC_POWER_MODE_NORMAL);
+    fb->set_power(HWC_POWER_MODE_NORMAL);
 
     vg = nvgCreateGLES3(NVG_ANTIALIAS | NVG_STENCIL_STROKES | NVG_DEBUG);
     assert(vg);
@@ -465,7 +464,7 @@ struct Updater {
       while(battery_cap < min_battery_cap) {
         battery_cap = battery_capacity();
         battery_cap_text = std::to_string(battery_cap);
-        usleep(1000000);
+        util::sleep_for(1000);
       }
       set_running();
     }
@@ -483,7 +482,7 @@ struct Updater {
       while(battery_cap < min_battery_cap) {
         battery_cap = battery_capacity();
         battery_cap_text = std::to_string(battery_cap);
-        usleep(1000000);
+        util::sleep_for(1000);
       }
       set_running();
     }
@@ -751,12 +750,12 @@ struct Updater {
 
       glDisable(GL_BLEND);
 
-      framebuffer_swap(fb);
+      fb->swap();
 
       assert(glGetError() == GL_NO_ERROR);
 
       // no simple way to do 30fps vsync with surfaceflinger...
-      usleep(30000);
+      util::sleep_for(30);
     }
 
     if (update_thread_handle.joinable()) {

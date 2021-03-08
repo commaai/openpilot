@@ -6,7 +6,7 @@
 
 #include "common/visionipc.h"
 #include "common/timing.h"
-
+#include "common/util.h"
 #include "RawLogger.h"
 
 int main() {
@@ -19,7 +19,7 @@ int main() {
     err = visionstream_init(&stream, VISION_STREAM_YUV, false, &buf_info);
     if (err != 0) {
       printf("visionstream fail\n");
-      usleep(100000);
+      util::sleep_for(100);
     }
     break;
   }
@@ -28,7 +28,7 @@ int main() {
   vidlogger.Open("o1");
 
   for (int cnt=0; cnt<200; cnt++) {
-    VIPCBufExtra extra;
+    VisionIpcBufExtra extra;
     VIPSBuf* buf = visionstream_get(&stream, &extra);
     if (buf == NULL) {
       printf("visionstream get failed\n");

@@ -17,9 +17,9 @@ from selfdrive.test.helpers import set_params_enabled
 parser = argparse.ArgumentParser(description='Bridge between CARLA and openpilot.')
 parser.add_argument('--joystick', action='store_true')
 parser.add_argument('--town', type=str, default='Town04')
-parser.add_argument('--spawn_point', dest='num_selected_spawn_point', 
+parser.add_argument('--spawn_point', dest='num_selected_spawn_point',
         type=int, default=16)
-parser.add_argument('--cloudyness', default=0.1, type=float)
+parser.add_argument('--cloudiness', default=0.1, type=float)
 parser.add_argument('--precipitation', default=0.0, type=float)
 parser.add_argument('--precipitation_deposits', default=0.0, type=float)
 parser.add_argument('--wind_intensity', default=0.0, type=float)
@@ -32,7 +32,7 @@ REPEAT_COUNTER = 5
 PRINT_DECIMATION = 100
 STEER_RATIO = 15.
 
-pm = messaging.PubMaster(['frame', 'sensorEvents', 'can'])
+pm = messaging.PubMaster(['roadCameraState', 'sensorEvents', 'can'])
 sm = messaging.SubMaster(['carControl','controlsState'])
 
 class VehicleState:
@@ -59,13 +59,13 @@ def cam_callback(image):
   img = np.reshape(img, (H, W, 4))
   img = img[:, :, [0, 1, 2]].copy()
 
-  dat = messaging.new_message('frame')
-  dat.frame = {
-    "frameId": frame_id, # TODO: can we get frame ID from the CARLA camera?
-    "image": img.tostring(),
+  dat = messaging.new_message('roadCameraState')
+  dat.roadCameraState = {
+    "frameId": image.frame,
+    "image": img.tobytes(),
     "transform": [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
   }
-  pm.send('frame', dat)
+  pm.send('roadCameraState', dat)
   frame_id += 1
 
 def imu_callback(imu):
@@ -81,17 +81,18 @@ def imu_callback(imu):
   dat.sensorEvents[1].gyroUncalibrated.v = [imu.gyroscope.x, imu.gyroscope.y, imu.gyroscope.z]
   pm.send('sensorEvents', dat)
 
-def health_function():
-  pm = messaging.PubMaster(['health'])
+def panda_state_function():
+  pm = messaging.PubMaster(['pandaState'])
   while 1:
-    dat = messaging.new_message('health')
+    dat = messaging.new_message('pandaState')
     dat.valid = True
-    dat.health = {
+    dat.pandaState = {
       'ignitionLine': True,
-      'hwType': "greyPanda",
-      'controlsAllowed': True
+      'pandaType': "blackPanda",
+      'controlsAllowed': True,
+      'safetyModel': 'hondaNidec'
     }
-    pm.send('health', dat)
+    pm.send('pandaState', dat)
     time.sleep(0.5)
 
 def fake_gps():
@@ -103,7 +104,7 @@ def fake_gps():
     time.sleep(0.01)
 
 def fake_driver_monitoring():
-  pm = messaging.PubMaster(['driverState','dMonitoringState'])
+  pm = messaging.PubMaster(['driverState','driverMonitoringState'])
   while 1:
 
     # dmonitoringmodeld output
@@ -112,14 +113,13 @@ def fake_driver_monitoring():
     pm.send('driverState', dat)
 
     # dmonitoringd output
-    dat = messaging.new_message('dMonitoringState')
-    dat.dMonitoringState = {
+    dat = messaging.new_message('driverMonitoringState')
+    dat.driverMonitoringState = {
       "faceDetected": True,
       "isDistracted": False,
       "awarenessStatus": 1.,
-      "isRHD": False,
     }
-    pm.send('dMonitoringState', dat)
+    pm.send('driverMonitoringState', dat)
 
     time.sleep(DT_DMON)
 
@@ -142,10 +142,10 @@ def go(q):
 
   world_map = world.get_map()
 
-  vehicle_bp = blueprint_library.filter('vehicle.tesla.*')[0]
+  vehicle_bp = blueprint_library.filter('vehicle.tesla.*')[1]
   spawn_points = world_map.get_spawn_points()
   assert len(spawn_points) > args.num_selected_spawn_point, \
-    f'''No spawn point {args.num_selected_spawn_point}, try a value between 0 and 
+    f'''No spawn point {args.num_selected_spawn_point}, try a value between 0 and
     {len(spawn_points)} for this town.'''
   spawn_point = spawn_points[args.num_selected_spawn_point]
   vehicle = world.spawn_actor(vehicle_bp, spawn_point)
@@ -166,12 +166,12 @@ def go(q):
   blueprint.set_attribute('image_size_y', str(H))
   blueprint.set_attribute('fov', '70')
   blueprint.set_attribute('sensor_tick', '0.05')
-  transform = carla.Transform(carla.Location(x=0.8, z=1.45))
+  transform = carla.Transform(carla.Location(x=0.8, z=1.13))
   camera = world.spawn_actor(blueprint, transform, attach_to=vehicle)
   camera.listen(cam_callback)
 
   world.set_weather(carla.WeatherParameters(
-    cloudyness=args.cloudyness,
+    cloudiness=args.cloudiness,
     precipitation=args.precipitation,
     precipitation_deposits=args.precipitation_deposits,
     wind_intensity=args.wind_intensity,
@@ -196,7 +196,7 @@ def go(q):
   vehicle_state = VehicleState()
 
   # launch fake car threads
-  threading.Thread(target=health_function).start()
+  threading.Thread(target=panda_state_function).start()
   threading.Thread(target=fake_driver_monitoring).start()
   threading.Thread(target=fake_gps).start()
   threading.Thread(target=can_function_runner, args=(vehicle_state,)).start()
@@ -277,7 +277,7 @@ def go(q):
       sm.update(0)
       throttle_op = sm['carControl'].actuators.gas #[0,1]
       brake_op = sm['carControl'].actuators.brake #[0,1]
-      steer_op = sm['controlsState'].angleSteersDes # degrees [-180,180]
+      steer_op = sm['controlsState'].steeringAngleDesiredDeg # degrees [-180,180]
 
       throttle_out = throttle_op
       steer_out = steer_op
@@ -349,11 +349,10 @@ def go(q):
     rk.keep_time()
 
 if __name__ == "__main__":
-
   # make sure params are in a good state
-  params = Params()
-  params.clear_all()
   set_params_enabled()
+
+  params = Params()
   params.delete("Offroad_ConnectivityNeeded")
   params.put("CalibrationParams", '{"calib_radians": [0,0,0], "valid_blocks": 20}')
 

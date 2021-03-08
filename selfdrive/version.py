@@ -52,6 +52,7 @@ comma_remote: bool = False
 tested_branch: bool = False
 origin = get_git_remote()
 branch = get_git_full_branchname()
+commit = get_git_commit()
 
 if (origin is not None) and (branch is not None):
   try:
@@ -74,7 +75,7 @@ if (origin is not None) and (branch is not None):
         try:
           dirty_files = run_cmd(["git", "diff-index", branch, "--"])
           cloudlog.event("dirty comma branch", version=version, dirty=dirty, origin=origin, branch=branch,
-                         dirty_files=dirty_files, commit=get_git_commit(), origin_commit=get_git_commit(branch))
+                         dirty_files=dirty_files, commit=commit, origin_commit=get_git_commit(branch))
         except subprocess.CalledProcessError:
           pass
 

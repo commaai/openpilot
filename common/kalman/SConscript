@@ -1,6 +1,3 @@
-Import('env', 'cython_dependencies')
+Import('envCython')
 
-env.Command(['simple_kalman_impl.so'],
-            cython_dependencies + ['simple_kalman_impl.pyx', 'simple_kalman_impl.pxd', 'simple_kalman_setup.py'],
-            "cd common/kalman && python3 simple_kalman_setup.py build_ext --inplace")
-
+envCython.Program('simple_kalman_impl.so', 'simple_kalman_impl.pyx')

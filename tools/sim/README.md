@@ -3,18 +3,19 @@ openpilot in simulator
 
 
 ## Running the simulator
-Start Carla in a background container and openpilot in a foreground container with an interactive terminal running tmux.
+
+First, start the CARLA server.
 ```
-./start_sim.sh
+./start_carla.sh
 ```
 
-Clean up with:
+Then start bridge and openpilot.
 ```
-./stop_sim.sh
+./start_openpilot_docker.sh
 ```
-(shuts down Carla and cleans up the containers)
 
-To engage openpilot press 1 a few times while focused on bridge.py to increase the cruise speed. 
+To engage openpilot press 1 a few times while focused on bridge.py to increase the cruise speed.
+
 ## Controls
 
 You can control openpilot driving in the simulation with the following keys
@@ -28,3 +29,7 @@ You can control openpilot driving in the simulation with the following keys
 
 To see the options for changing the environment, such as the town, spawn point or precipitation, you can run `./start_openpilot_docker.sh --help`.
 This will print the help output inside the docker container. You need to exit the docker container before running `./start_openpilot_docker.sh` again.
+
+## Further Reading
+The following resources contain more details and troubleshooting tips.
+* [CARLA on the openpilot wiki](https://github.com/commaai/openpilot/wiki/CARLA) 

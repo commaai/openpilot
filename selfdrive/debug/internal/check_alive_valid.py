@@ -4,7 +4,7 @@ import cereal.messaging as messaging
 
 
 if __name__ == "__main__":
-  sm = messaging.SubMaster(['thermal', 'health', 'model', 'liveCalibration', 'dMonitoringState', 'plan', 'pathPlan'])
+  sm = messaging.SubMaster(['deviceState', 'pandaState', 'modelV2', 'liveCalibration', 'driverMonitoringState', 'longitudinalPlan', 'lateralPlan'])
 
   i = 0
   while True:

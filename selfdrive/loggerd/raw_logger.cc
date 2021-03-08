@@ -16,17 +16,14 @@ extern "C" {
 }
 
 #include "common/swaglog.h"
-#include "common/utilpp.h"
+#include "common/util.h"
 
 #include "raw_logger.h"
 
-RawLogger::RawLogger(const std::string &afilename, int awidth, int aheight, int afps)
-  : filename(afilename),
-    width(awidth),
-    height(aheight),
-    fps(afps) {
-
-  int err = 0;
+RawLogger::RawLogger(const char* filename, int width, int height, int fps,
+                     int bitrate, bool h265, bool downscale)
+  : filename(filename),
+    fps(fps) {
 
   av_register_all();
   codec = avcodec_find_encoder(AV_CODEC_ID_FFVHUFF);
@@ -46,7 +43,7 @@ RawLogger::RawLogger(const std::string &afilename, int awidth, int aheight, int 
 
   codec_ctx->time_base = (AVRational){ 1, fps };
 
-  err = avcodec_open2(codec_ctx, codec, NULL);
+  int err = avcodec_open2(codec_ctx, codec, NULL);
   assert(err >= 0);
 
   frame = av_frame_alloc();
@@ -65,15 +62,11 @@ RawLogger::~RawLogger() {
   av_free(codec_ctx);
 }
 
-void RawLogger::Open(const std::string &path) {
-  int err = 0;
-
-  std::lock_guard<std::recursive_mutex> guard(lock);
-
-  vid_path = util::string_format("%s/%s.mkv", path.c_str(), filename.c_str());
+void RawLogger::encoder_open(const char* path) {
+  vid_path = util::string_format("%s/%s.mkv", path, filename);
 
   // create camera lock file
-  lock_path = util::string_format("%s/%s.lock", path.c_str(), filename.c_str());
+  lock_path = util::string_format("%s/%s.lock", path, filename);
 
   LOG("open %s\n", lock_path.c_str());
 
@@ -92,7 +85,7 @@ void RawLogger::Open(const std::string &path) {
   stream->time_base = (AVRational){ 1, fps };
   // codec_ctx->time_base = stream->time_base;
 
-  err = avcodec_parameters_from_context(stream->codecpar, codec_ctx);
+  int err = avcodec_parameters_from_context(stream->codecpar, codec_ctx);
   assert(err >= 0);
 
   err = avio_open(&format_ctx->pb, vid_path.c_str(), AVIO_FLAG_WRITE);
@@ -105,14 +98,10 @@ void RawLogger::Open(const std::string &path) {
   counter = 0;
 }
 
-void RawLogger::Close() {
-  int err = 0;
-
-  std::lock_guard<std::recursive_mutex> guard(lock);
-
+void RawLogger::encoder_close() {
   if (!is_open) return;
 
-  err = av_write_trailer(format_ctx);
+  int err = av_write_trailer(format_ctx);
   assert(err == 0);
 
   avcodec_close(stream->codec);
@@ -127,9 +116,8 @@ void RawLogger::Close() {
   is_open = false;
 }
 
-int RawLogger::ProcessFrame(uint64_t ts, const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr) {
-  int err = 0;
-
+int RawLogger::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
+                            int in_width, int in_height, uint64_t ts) {
   AVPacket pkt;
   av_init_packet(&pkt);
   pkt.data = NULL;
@@ -143,12 +131,11 @@ int RawLogger::ProcessFrame(uint64_t ts, const uint8_t *y_ptr, const uint8_t *u_
   int ret = counter;
 
   int got_output = 0;
-  err = avcodec_encode_video2(codec_ctx, &pkt, frame, &got_output);
+  int err = avcodec_encode_video2(codec_ctx, &pkt, frame, &got_output);
   if (err) {
     LOGE("encoding error\n");
     ret = -1;
   } else if (got_output) {
-
     av_packet_rescale_ts(&pkt, codec_ctx->time_base, stream->time_base);
     pkt.stream_index = 0;
 

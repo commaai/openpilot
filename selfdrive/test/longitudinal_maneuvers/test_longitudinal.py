@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import os
-os.environ['OLD_CAN'] = '1'
 os.environ['NOCRASH'] = '1'
 
 import unittest
@@ -10,15 +9,9 @@ matplotlib.use('svg')
 from selfdrive.config import Conversions as CV
 from selfdrive.car.honda.values import CruiseButtons as CB
 from selfdrive.test.longitudinal_maneuvers.maneuver import Maneuver
-import selfdrive.manager as manager
+from selfdrive.manager.process_config import managed_processes
+from common.file_helpers import mkdirs_exists_ok
 from common.params import Params
-
-
-def create_dir(path):
-  try:
-    os.makedirs(path)
-  except OSError:
-    pass
 
 
 def check_no_collision(log):
@@ -317,7 +310,7 @@ def setup_output():
         view_html += "<td><img class='maneuver_graph' src='%s'/></td>" % (os.path.join("maneuver" + str(i + 1).zfill(2), c), )
       view_html += "</tr>"
 
-    create_dir(output_dir)
+    mkdirs_exists_ok(output_dir)
     with open(os.path.join(output_dir, "index.html"), "w") as f:
       f.write(view_html)
 
@@ -325,6 +318,8 @@ def setup_output():
 class LongitudinalControl(unittest.TestCase):
   @classmethod
   def setUpClass(cls):
+    os.environ['SIMULATION'] = "1"
+    os.environ['SKIP_FW_QUERY'] = "1"
     os.environ['NO_CAN_TIMEOUT'] = "1"
 
     setup_output()
@@ -334,15 +329,6 @@ class LongitudinalControl(unittest.TestCase):
     params.put("Passive", "1" if os.getenv("PASSIVE") else "0")
     params.put("OpenpilotEnabledToggle", "1")
     params.put("CommunityFeaturesToggle", "1")
-
-    manager.prepare_managed_process('radard')
-    manager.prepare_managed_process('controlsd')
-    manager.prepare_managed_process('plannerd')
-    manager.prepare_managed_process('dmonitoringd')
-
-  @classmethod
-  def tearDownClass(cls):
-    pass
 
   # hack
   def test_longitudinal_setup(self):
@@ -358,18 +344,16 @@ def run_maneuver_worker(k):
     valid = False
 
     for _ in range(3):
-      manager.start_managed_process('radard')
-      manager.start_managed_process('controlsd')
-      manager.start_managed_process('plannerd')
-      manager.start_managed_process('dmonitoringd')
+      managed_processes['radard'].start()
+      managed_processes['controlsd'].start()
+      managed_processes['plannerd'].start()
 
       plot, valid = man.evaluate()
       plot.write_plot(output_dir, "maneuver" + str(k + 1).zfill(2))
 
-      manager.kill_managed_process('radard')
-      manager.kill_managed_process('controlsd')
-      manager.kill_managed_process('plannerd')
-      manager.kill_managed_process('dmonitoringd')
+      managed_processes['radard'].stop()
+      managed_processes['controlsd'].stop()
+      managed_processes['plannerd'].stop()
 
       if valid:
         break

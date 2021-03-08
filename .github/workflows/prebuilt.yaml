@@ -1,0 +1,42 @@
+name: prebuilt
+on:
+  schedule:
+    - cron: '0 * * * *'
+
+env:
+  BASE_IMAGE: openpilot-base
+  DOCKER_REGISTRY: ghcr.io/commaai
+
+  DOCKER_LOGIN: docker login ghcr.io -u adeebshihadeh -p ${{ secrets.CONTAINER_TOKEN }}
+  BUILD: |
+      docker pull $(grep -iohP '(?<=^from)\s+\S+' Dockerfile.openpilot_base) || true
+      docker pull $DOCKER_REGISTRY/$BASE_IMAGE:latest || true
+      docker build --cache-from $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $BASE_IMAGE:latest -f Dockerfile.openpilot_base .
+
+jobs:
+  build_prebuilt:
+    name: build prebuilt
+    runs-on: ubuntu-20.04
+    timeout-minutes: 60
+    if: github.repository == 'commaai/openpilot'
+    env:
+      IMAGE_NAME: openpilot-prebuilt
+    steps:
+    - name: Wait for green check mark
+      uses: lewagon/wait-on-check-action@v0.2
+      with:
+        ref: master
+        wait-interval: 30
+        running-workflow-name: 'build prebuilt'
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Build Docker image
+      run: |
+        eval "$BUILD"
+        docker pull $DOCKER_REGISTRY/$IMAGE_NAME:latest || true
+        docker build --cache-from $DOCKER_REGISTRY/$IMAGE_NAME:latest -t $DOCKER_REGISTRY/$IMAGE_NAME:latest -f Dockerfile.openpilot .
+    - name: Push to container registry
+      run: |
+        $DOCKER_LOGIN
+        docker push $DOCKER_REGISTRY/$IMAGE_NAME:latest

@@ -13,13 +13,11 @@ class CarState(CarStateBase):
     can_define = CANDefine(DBC[CP.carFingerprint]['pt'])
     self.shifter_values = can_define.dv["GEAR_PACKET"]['GEAR']
 
-    # All TSS2 car have the accurate sensor
-    self.accurate_steer_angle_seen = CP.carFingerprint in TSS2_CAR
-
-    # On NO_DSU cars but not TSS2 cars the cp.vl["STEER_TORQUE_SENSOR"]['STEER_ANGLE']
-    # is zeroed to where the steering angle is at start.
+    # On cars with cp.vl["STEER_TORQUE_SENSOR"]['STEER_ANGLE']
+    # the signal is zeroed to where the steering angle is at start.
     # Need to apply an offset as soon as the steering angle measurements are both received
-    self.needs_angle_offset = CP.carFingerprint not in TSS2_CAR
+    self.needs_angle_offset = True
+    self.accurate_steer_angle_seen = False
     self.angle_offset = 0.
 
   def update(self, cp, cp_cam):
@@ -52,17 +50,17 @@ class CarState(CarStateBase):
       self.accurate_steer_angle_seen = True
 
     if self.accurate_steer_angle_seen:
-      ret.steeringAngle = cp.vl["STEER_TORQUE_SENSOR"]['STEER_ANGLE'] - self.angle_offset
-
+      ret.steeringAngleDeg = cp.vl["STEER_TORQUE_SENSOR"]['STEER_ANGLE'] - self.angle_offset
       if self.needs_angle_offset:
         angle_wheel = cp.vl["STEER_ANGLE_SENSOR"]['STEER_ANGLE'] + cp.vl["STEER_ANGLE_SENSOR"]['STEER_FRACTION']
-        if abs(angle_wheel) > 1e-3 and abs(ret.steeringAngle) > 1e-3:
+        if abs(angle_wheel) > 1e-3:
           self.needs_angle_offset = False
-          self.angle_offset = ret.steeringAngle - angle_wheel
+          self.angle_offset = ret.steeringAngleDeg - angle_wheel
     else:
-      ret.steeringAngle = cp.vl["STEER_ANGLE_SENSOR"]['STEER_ANGLE'] + cp.vl["STEER_ANGLE_SENSOR"]['STEER_FRACTION']
+      ret.steeringAngleDeg = cp.vl["STEER_ANGLE_SENSOR"]['STEER_ANGLE'] + cp.vl["STEER_ANGLE_SENSOR"]['STEER_FRACTION']
 
-    ret.steeringRate = cp.vl["STEER_ANGLE_SENSOR"]['STEER_RATE']
+    ret.steeringRateDeg = cp.vl["STEER_ANGLE_SENSOR"]['STEER_RATE']
+
     can_gear = int(cp.vl["GEAR_PACKET"]['GEAR'])
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(can_gear, None))
     ret.leftBlinker = cp.vl["STEERING_LEVERS"]['TURN_SIGNALS'] == 1
@@ -90,8 +88,7 @@ class CarState(CarStateBase):
     else:
       ret.cruiseState.standstill = self.pcm_acc_status == 7
     ret.cruiseState.enabled = bool(cp.vl["PCM_CRUISE"]['CRUISE_ACTIVE'])
-    # TODO: CRUISE_STATE is a 4 bit signal, find any other non-adaptive cruise states
-    ret.cruiseState.nonAdaptive = cp.vl["PCM_CRUISE"]['CRUISE_STATE'] in [5]
+    ret.cruiseState.nonAdaptive = cp.vl["PCM_CRUISE"]['CRUISE_STATE'] in [1, 2, 3, 4, 5, 6]
 
     if self.CP.carFingerprint == CAR.PRIUS:
       ret.genericToggle = cp.vl["AUTOPARK_STATUS"]['STATE'] != 0

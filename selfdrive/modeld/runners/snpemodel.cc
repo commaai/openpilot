@@ -1,6 +1,7 @@
 #pragma clang diagnostic ignored "-Wexceptions"
 
 #include <cassert>
+#include <string.h>
 #include <stdlib.h>
 #include "common/util.h"
 #include "snpemodel.h"
@@ -139,7 +140,8 @@ void SNPEModel::execute(float *net_input_buf, int buf_size) {
   if (Runtime == zdl::DlSystem::Runtime_t::GPU) {
     float *inputs[4] = {recurrent, trafficConvention, desire, net_input_buf};
     if (thneed == NULL) {
-      assert(inputBuffer->setBufferAddress(net_input_buf));
+      bool ret = inputBuffer->setBufferAddress(net_input_buf);
+      assert(ret == true);
       if (!snpe->execute(inputMap, outputMap)) {
         PrintErrorStringAndExit();
       }
@@ -172,7 +174,8 @@ void SNPEModel::execute(float *net_input_buf, int buf_size) {
     }
   } else {
 #endif
-    assert(inputBuffer->setBufferAddress(net_input_buf));
+    bool ret = inputBuffer->setBufferAddress(net_input_buf);
+    assert(ret == true);
     if (!snpe->execute(inputMap, outputMap)) {
       PrintErrorStringAndExit();
     }

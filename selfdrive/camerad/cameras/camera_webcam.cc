@@ -3,11 +3,11 @@
 #include <unistd.h>
 #include <assert.h>
 #include <string.h>
-#include <signal.h>
 #include <pthread.h>
 
 #include "common/util.h"
 #include "common/timing.h"
+#include "common/clutil.h"
 #include "common/swaglog.h"
 
 #pragma clang diagnostic push
@@ -19,7 +19,7 @@
 #pragma clang diagnostic pop
 
 
-extern volatile sig_atomic_t do_exit;
+extern ExitHandler do_exit;
 
 #define FRAME_WIDTH  1164
 #define FRAME_HEIGHT 874
@@ -31,31 +31,31 @@ void camera_open(CameraState *s, bool rear) {
 }
 
 void camera_close(CameraState *s) {
-  s->buf.stop();
+  // empty
 }
 
-void camera_init(CameraState *s, int camera_id, unsigned int fps, cl_device_id device_id, cl_context ctx) {
+void camera_init(VisionIpcServer * v, CameraState *s, int camera_id, unsigned int fps, cl_device_id device_id, cl_context ctx, VisionStreamType rgb_type, VisionStreamType yuv_type) {
   assert(camera_id < ARRAYSIZE(cameras_supported));
   s->ci = cameras_supported[camera_id];
   assert(s->ci.frame_width != 0);
 
+  s->camera_num = camera_id;
   s->fps = fps;
-
-  s->buf.init(device_id, ctx, s, FRAME_BUF_COUNT, "frame");
+  s->buf.init(device_id, ctx, s, v, FRAME_BUF_COUNT, rgb_type, yuv_type);
 }
 
-static void* rear_thread(void *arg) {
+static void* road_camera_thread(void *arg) {
   int err;
 
-  set_thread_name("webcam_rear_thread");
-  CameraState* s = (CameraState*)arg;
+  set_thread_name("webcam_road_camera_thread");
+  CameraState *s = (CameraState*)arg;
 
-  cv::VideoCapture cap_rear(1); // road
-  cap_rear.set(cv::CAP_PROP_FRAME_WIDTH, 853);
-  cap_rear.set(cv::CAP_PROP_FRAME_HEIGHT, 480);
-  cap_rear.set(cv::CAP_PROP_FPS, s->fps);
-  cap_rear.set(cv::CAP_PROP_AUTOFOCUS, 0); // off
-  cap_rear.set(cv::CAP_PROP_FOCUS, 0); // 0 - 255?
+  cv::VideoCapture cap_road(1); // road
+  cap_road.set(cv::CAP_PROP_FRAME_WIDTH, 853);
+  cap_road.set(cv::CAP_PROP_FRAME_HEIGHT, 480);
+  cap_road.set(cv::CAP_PROP_FPS, s->fps);
+  cap_road.set(cv::CAP_PROP_AUTOFOCUS, 0); // off
+  cap_road.set(cv::CAP_PROP_FOCUS, 0); // 0 - 255?
   // cv::Rect roi_rear(160, 0, 960, 720);
 
   cv::Size size;
@@ -72,18 +72,17 @@ static void* rear_thread(void *arg) {
   //                 0.0, 0.0, 1.0};
   const cv::Mat transform = cv::Mat(3, 3, CV_32F, ts);
 
-  if (!cap_rear.isOpened()) {
+  if (!cap_road.isOpened()) {
     err = 1;
   }
 
   uint32_t frame_id = 0;
-  TBuffer* tb = &s->buf.camera_tb;
-
+  size_t buf_idx = 0;
   while (!do_exit) {
     cv::Mat frame_mat;
     cv::Mat transformed_mat;
 
-    cap_rear >> frame_mat;
+    cap_road >> frame_mat;
 
     // int rows = frame_mat.rows;
     // int cols = frame_mat.cols;
@@ -93,43 +92,46 @@ static void* rear_thread(void *arg) {
 
     int transformed_size = transformed_mat.total() * transformed_mat.elemSize();
 
-    const int buf_idx = tbuffer_select(tb);
     s->buf.camera_bufs_metadata[buf_idx] = {
       .frame_id = frame_id,
     };
 
     cl_command_queue q = s->buf.camera_bufs[buf_idx].copy_q;
     cl_mem yuv_cl = s->buf.camera_bufs[buf_idx].buf_cl;
+
     cl_event map_event;
-    void *yuv_buf = (void *)clEnqueueMapBuffer(q, yuv_cl, CL_TRUE,
+    void *yuv_buf = (void *)CL_CHECK_ERR(clEnqueueMapBuffer(q, yuv_cl, CL_TRUE,
                                                 CL_MAP_WRITE, 0, transformed_size,
-                                                0, NULL, &map_event, &err);
-    assert(err == 0);
+                                                0, NULL, &map_event, &err));
     clWaitForEvents(1, &map_event);
     clReleaseEvent(map_event);
     memcpy(yuv_buf, transformed_mat.data, transformed_size);
 
-    clEnqueueUnmapMemObject(q, yuv_cl, yuv_buf, 0, NULL, &map_event);
+    CL_CHECK(clEnqueueUnmapMemObject(q, yuv_cl, yuv_buf, 0, NULL, &map_event));
     clWaitForEvents(1, &map_event);
     clReleaseEvent(map_event);
-    tbuffer_dispatch(tb, buf_idx);
+
+    s->buf.queue(buf_idx);
 
     frame_id += 1;
     frame_mat.release();
     transformed_mat.release();
+
+
+    buf_idx = (buf_idx + 1) % FRAME_BUF_COUNT;
   }
 
-  cap_rear.release();
+  cap_road.release();
   return NULL;
 }
 
-void front_thread(CameraState *s) {
+void driver_camera_thread(CameraState *s) {
   int err;
 
-  cv::VideoCapture cap_front(2); // driver
-  cap_front.set(cv::CAP_PROP_FRAME_WIDTH, 853);
-  cap_front.set(cv::CAP_PROP_FRAME_HEIGHT, 480);
-  cap_front.set(cv::CAP_PROP_FPS, s->fps);
+  cv::VideoCapture cap_driver(2); // driver
+  cap_driver.set(cv::CAP_PROP_FRAME_WIDTH, 853);
+  cap_driver.set(cv::CAP_PROP_FRAME_HEIGHT, 480);
+  cap_driver.set(cv::CAP_PROP_FPS, s->fps);
   // cv::Rect roi_front(320, 0, 960, 720);
 
   cv::Size size;
@@ -146,18 +148,18 @@ void front_thread(CameraState *s) {
   //                 0.0, 0.0, 1.0};
   const cv::Mat transform = cv::Mat(3, 3, CV_32F, ts);
 
-  if (!cap_front.isOpened()) {
+  if (!cap_driver.isOpened()) {
     err = 1;
   }
 
   uint32_t frame_id = 0;
-  TBuffer* tb = &s->buf.camera_tb;
+  size_t buf_idx = 0;
 
   while (!do_exit) {
     cv::Mat frame_mat;
     cv::Mat transformed_mat;
 
-    cap_front >> frame_mat;
+    cap_driver >> frame_mat;
 
     // int rows = frame_mat.rows;
     // int cols = frame_mat.cols;
@@ -167,7 +169,6 @@ void front_thread(CameraState *s) {
 
     int transformed_size = transformed_mat.total() * transformed_mat.elemSize();
 
-    const int buf_idx = tbuffer_select(tb);
     s->buf.camera_bufs_metadata[buf_idx] = {
       .frame_id = frame_id,
     };
@@ -175,25 +176,27 @@ void front_thread(CameraState *s) {
     cl_command_queue q = s->buf.camera_bufs[buf_idx].copy_q;
     cl_mem yuv_cl = s->buf.camera_bufs[buf_idx].buf_cl;
     cl_event map_event;
-    void *yuv_buf = (void *)clEnqueueMapBuffer(q, yuv_cl, CL_TRUE,
+    void *yuv_buf = (void *)CL_CHECK_ERR(clEnqueueMapBuffer(q, yuv_cl, CL_TRUE,
                                                 CL_MAP_WRITE, 0, transformed_size,
-                                                0, NULL, &map_event, &err);
-    assert(err == 0);
+                                                0, NULL, &map_event, &err));
     clWaitForEvents(1, &map_event);
     clReleaseEvent(map_event);
     memcpy(yuv_buf, transformed_mat.data, transformed_size);
 
-    clEnqueueUnmapMemObject(q, yuv_cl, yuv_buf, 0, NULL, &map_event);
+    CL_CHECK(clEnqueueUnmapMemObject(q, yuv_cl, yuv_buf, 0, NULL, &map_event));
     clWaitForEvents(1, &map_event);
     clReleaseEvent(map_event);
-    tbuffer_dispatch(tb, buf_idx);
+
+    s->buf.queue(buf_idx);
 
     frame_id += 1;
     frame_mat.release();
     transformed_mat.release();
+
+    buf_idx = (buf_idx + 1) % FRAME_BUF_COUNT;
   }
 
-  cap_front.release();
+  cap_driver.release();
   return;
 }
 
@@ -218,69 +221,60 @@ CameraInfo cameras_supported[CAMERA_ID_MAX] = {
   },
 };
 
-void cameras_init(MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
-
-  camera_init(&s->rear, CAMERA_ID_LGC920, 20, device_id, ctx);
-  s->rear.transform = (mat3){{
-    1.0, 0.0, 0.0,
-    0.0, 1.0, 0.0,
-    0.0, 0.0, 1.0,
-  }};
-
-  camera_init(&s->front, CAMERA_ID_LGC615, 10, device_id, ctx);
-  s->front.transform = (mat3){{
-    1.0, 0.0, 0.0,
-    0.0, 1.0, 0.0,
-    0.0, 0.0, 1.0,
-  }};
-
-  s->pm = new PubMaster({"frame", "frontFrame"});
+void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
+  camera_init(v, &s->road_cam, CAMERA_ID_LGC920, 20, device_id, ctx,
+              VISION_STREAM_RGB_BACK, VISION_STREAM_YUV_BACK);
+  camera_init(v, &s->driver_cam, CAMERA_ID_LGC615, 10, device_id, ctx,
+              VISION_STREAM_RGB_FRONT, VISION_STREAM_YUV_FRONT);
+  s->pm = new PubMaster({"roadCameraState", "driverCameraState", "thumbnail"});
 }
 
 void camera_autoexposure(CameraState *s, float grey_frac) {}
 
 void cameras_open(MultiCameraState *s) {
-  // LOG("*** open front ***");
-  camera_open(&s->front, false);
+  // LOG("*** open driver camera ***");
+  camera_open(&s->driver_cam, false);
 
-  // LOG("*** open rear ***");
-  camera_open(&s->rear, true);
+  // LOG("*** open road camera ***");
+  camera_open(&s->road_cam, true);
 }
 
 void cameras_close(MultiCameraState *s) {
-  camera_close(&s->rear);
-  camera_close(&s->front);
+  camera_close(&s->road_cam);
+  camera_close(&s->driver_cam);
   delete s->pm;
 }
 
-void camera_process_front(MultiCameraState *s, CameraState *c, int cnt) {
+void process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) {
   MessageBuilder msg;
-  auto framed = msg.initEvent().initFrontFrame();
+  auto framed = msg.initEvent().initDriverCameraState();
   framed.setFrameType(cereal::FrameData::FrameType::FRONT);
-  fill_frame_data(framed, c->buf.cur_frame_data, cnt);
-  s->pm->send("frontFrame", msg);
+  fill_frame_data(framed, c->buf.cur_frame_data);
+  s->pm->send("driverCameraState", msg);
 }
 
-void camera_process_rear(MultiCameraState *s, CameraState *c, int cnt) {
+void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
   const CameraBuf *b = &c->buf;
   MessageBuilder msg;
-  auto framed = msg.initEvent().initFrame();
-  fill_frame_data(framed, b->cur_frame_data, cnt);
-  framed.setImage(kj::arrayPtr((const uint8_t *)b->yuv_ion[b->cur_yuv_idx].addr, b->yuv_buf_size));
-  framed.setTransform(kj::ArrayPtr<const float>(&b->yuv_transform.v[0], 9));
-  s->pm->send("frame", msg);
+  auto framed = msg.initEvent().initRoadCameraState();
+  fill_frame_data(framed, b->cur_frame_data);
+  framed.setImage(kj::arrayPtr((const uint8_t *)b->cur_yuv_buf->addr, b->cur_yuv_buf->len));
+  framed.setTransform(b->yuv_transform.v);
+  s->pm->send("roadCameraState", msg);
 }
 
 void cameras_run(MultiCameraState *s) {
   std::vector<std::thread> threads;
-  threads.push_back(start_process_thread(s, "processing", &s->rear, 51, camera_process_rear));
-  threads.push_back(start_process_thread(s, "frontview", &s->front, 51, camera_process_front));
-  
-  std::thread t_rear = std::thread(rear_thread, &s->rear);
+  threads.push_back(start_process_thread(s, &s->road_cam, process_road_camera));
+  threads.push_back(start_process_thread(s, &s->driver_cam, process_driver_camera));
+
+  std::thread t_rear = std::thread(road_camera_thread, &s->road_cam);
   set_thread_name("webcam_thread");
-  front_thread(&s->front);
+  driver_camera_thread(&s->driver_cam);
+
   t_rear.join();
-  cameras_close(s);
-  
+
   for (auto &t : threads) t.join();
+
+  cameras_close(s);
 }

@@ -4,6 +4,8 @@ import sys
 import argparse
 import json
 from hexdump import hexdump
+import codecs
+codecs.register_error("strict", codecs.backslashreplace_errors)
 
 from cereal import log
 import cereal.messaging as messaging

@@ -1,10 +1,10 @@
+#include <math.h>
 #include <acado_code_generation.hpp>
+#include "common/modeldata.h"
 
-#define PI 3.1415926536
-#define deg2rad(d) (d/180.0*PI)
+#define deg2rad(d) (d/180.0*M_PI)
 
-const int controlHorizon = 50;
-
+const int N_steps = 16;
 using namespace std;
 
 int main( )
@@ -17,54 +17,33 @@ int main( )
   DifferentialState xx; // x position
   DifferentialState yy; // y position
   DifferentialState psi; // vehicle heading
-  DifferentialState delta;
+  DifferentialState curvature;
 
-  OnlineData curvature_factor;
-  OnlineData v_ref; // m/s
-  OnlineData l_poly_r0, l_poly_r1, l_poly_r2, l_poly_r3;
-  OnlineData r_poly_r0, r_poly_r1, r_poly_r2, r_poly_r3;
-  OnlineData d_poly_r0, d_poly_r1, d_poly_r2, d_poly_r3;
-  OnlineData l_prob, r_prob;
-  OnlineData lane_width;
+  OnlineData v_ego;
+  OnlineData rotation_radius;
 
-  Control t;
+  Control curvature_rate;
+
 
   // Equations of motion
-  f << dot(xx) == v_ref * cos(psi);
-  f << dot(yy) == v_ref * sin(psi);
-  f << dot(psi) == v_ref * delta * curvature_factor;
-  f << dot(delta) == t;
-
-  auto lr_prob = l_prob + r_prob - l_prob * r_prob;
-
-  auto poly_l = l_poly_r0*(xx*xx*xx) + l_poly_r1*(xx*xx) + l_poly_r2*xx + l_poly_r3;
-  auto poly_r = r_poly_r0*(xx*xx*xx) + r_poly_r1*(xx*xx) + r_poly_r2*xx + r_poly_r3;
-  auto poly_d = d_poly_r0*(xx*xx*xx) + d_poly_r1*(xx*xx) + d_poly_r2*xx + d_poly_r3;
-
-  auto angle_d = atan(3*d_poly_r0*xx*xx + 2*d_poly_r1*xx + d_poly_r2);
-
-  // When the lane is not visible, use an estimate of its position
-  auto weighted_left_lane = l_prob * poly_l + (1 - l_prob) * (poly_d + lane_width/2.0);
-  auto weighted_right_lane = r_prob * poly_r + (1 - r_prob) * (poly_d - lane_width/2.0);
-
-  auto c_left_lane = exp(-(weighted_left_lane - yy));
-  auto c_right_lane = exp(weighted_right_lane - yy);
+  f << dot(xx) == v_ego * cos(psi) - rotation_radius * sin(psi) * (v_ego * curvature);
+  f << dot(yy) == v_ego * sin(psi) + rotation_radius * cos(psi) * (v_ego * curvature);
+  f << dot(psi) == v_ego * curvature;
+  f << dot(curvature) == curvature_rate;
 
   // Running cost
   Function h;
 
   // Distance errors
-  h << poly_d - yy;
-  h << lr_prob * c_left_lane;
-  h << lr_prob * c_right_lane;
+  h << yy;
 
   // Heading error
-  h << (v_ref + 1.0 ) * (angle_d - psi);
+  h << (v_ego + 5.0 ) * psi;
 
   // Angular rate error
-  h << (v_ref + 1.0 ) * t;
+  h << (v_ego + 5.0) * 4 * curvature_rate;
 
-  BMatrix Q(5,5); Q.setAll(true);
+  BMatrix Q(3,3); Q.setAll(true);
   // Q(0,0) = 1.0;
   // Q(1,1) = 1.0;
   // Q(2,2) = 1.0;
@@ -75,34 +54,21 @@ int main( )
   Function hN;
 
   // Distance errors
-  hN << poly_d - yy;
-  hN << l_prob * c_left_lane;
-  hN << r_prob * c_right_lane;
+  hN << yy;
 
   // Heading errors
-  hN << (2.0 * v_ref + 1.0 ) * (angle_d - psi);
+  hN << (2.0 * v_ego + 5.0 ) * psi;
 
-  BMatrix QN(4,4); QN.setAll(true);
+  BMatrix QN(2,2); QN.setAll(true);
   // QN(0,0) = 1.0;
   // QN(1,1) = 1.0;
   // QN(2,2) = 1.0;
   // QN(3,3) = 1.0;
 
-  // Non uniform time grid
-  // First 5 timesteps are 0.05, after that it's 0.15
-  DMatrix numSteps(20, 1);
-  for (int i = 0; i < 5; i++){
-    numSteps(i) = 1;
-  }
-  for (int i = 5; i < 20; i++){
-    numSteps(i) = 3;
-  }
-
-  // Setup Optimal Control Problem
-  const double tStart = 0.0;
-  const double tEnd   = 2.5;
-
-  OCP ocp( tStart, tEnd, numSteps);
+  double T_IDXS_ARR[N_steps + 1];
+  memcpy(T_IDXS_ARR, T_IDXS, (N_steps + 1) * sizeof(double));
+  Grid times(N_steps + 1, T_IDXS_ARR);
+  OCP ocp(times);
   ocp.subjectTo(f);
 
   ocp.minimizeLSQ(Q, h);
@@ -111,15 +77,15 @@ int main( )
   // car can't go backward to avoid "circles"
   ocp.subjectTo( deg2rad(-90) <= psi <= deg2rad(90));
   // more than absolute max steer angle
-  ocp.subjectTo( deg2rad(-50) <= delta <= deg2rad(50));
-  ocp.setNOD(17);
+  ocp.subjectTo( deg2rad(-50) <= curvature <= deg2rad(50));
+  ocp.setNOD(2);
 
   OCPexport mpc(ocp);
   mpc.set( HESSIAN_APPROXIMATION, GAUSS_NEWTON );
   mpc.set( DISCRETIZATION_TYPE, MULTIPLE_SHOOTING );
   mpc.set( INTEGRATOR_TYPE, INT_RK4 );
-  mpc.set( NUM_INTEGRATOR_STEPS, 1 * controlHorizon);
-  mpc.set( MAX_NUM_QP_ITERATIONS, 500);
+  mpc.set( NUM_INTEGRATOR_STEPS, 2500);
+  mpc.set( MAX_NUM_QP_ITERATIONS, 1000);
   mpc.set( CG_USE_VARIABLE_WEIGHTING_MATRIX, YES);
 
   mpc.set( SPARSE_QP_SOLUTION, CONDENSING );

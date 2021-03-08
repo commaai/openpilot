@@ -1,6 +1,6 @@
 #include <thread>
+#include <chrono>
 #include <stdio.h>
-#include <signal.h>
 #include <assert.h>
 #include <unistd.h>
 
@@ -22,36 +22,44 @@
 #include "common/params.h"
 #include "common/swaglog.h"
 #include "common/util.h"
+#include "modeldata.h"
 #include "imgproc/utils.h"
 
-static cl_program build_debayer_program(cl_device_id device_id, cl_context context, const CameraInfo *ci, const CameraBuf *b) {
+static cl_program build_debayer_program(cl_device_id device_id, cl_context context, const CameraInfo *ci, const CameraBuf *b, const CameraState *s) {
   char args[4096];
   snprintf(args, sizeof(args),
            "-cl-fast-relaxed-math -cl-denorms-are-zero "
            "-DFRAME_WIDTH=%d -DFRAME_HEIGHT=%d -DFRAME_STRIDE=%d "
            "-DRGB_WIDTH=%d -DRGB_HEIGHT=%d -DRGB_STRIDE=%d "
-           "-DBAYER_FLIP=%d -DHDR=%d",
+           "-DBAYER_FLIP=%d -DHDR=%d -DCAM_NUM=%d",
            ci->frame_width, ci->frame_height, ci->frame_stride,
            b->rgb_width, b->rgb_height, b->rgb_stride,
-           ci->bayer_flip, ci->hdr);
+           ci->bayer_flip, ci->hdr, s->camera_num);
 #ifdef QCOM2
-  return CLU_LOAD_FROM_FILE(context, device_id, "cameras/real_debayer.cl", args);
+  return cl_program_from_file(context, device_id, "cameras/real_debayer.cl", args);
 #else
-  return CLU_LOAD_FROM_FILE(context, device_id, "cameras/debayer.cl", args);
+  return cl_program_from_file(context, device_id, "cameras/debayer.cl", args);
 #endif
 }
 
-void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s, int frame_cnt,
-                     const char *name, release_cb relase_callback) {
+void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s, VisionIpcServer * v, int frame_cnt, VisionStreamType rgb_type, VisionStreamType yuv_type, release_cb release_callback) {
+  vipc_server = v;
+  this->rgb_type = rgb_type;
+  this->yuv_type = yuv_type;
+  this->release_callback = release_callback;
+
   const CameraInfo *ci = &s->ci;
   camera_state = s;
   frame_buf_count = frame_cnt;
-  frame_size = ci->frame_height * ci->frame_stride;
- 
+
+  // RAW frame
+  const int frame_size = ci->frame_height * ci->frame_stride;
   camera_bufs = std::make_unique<VisionBuf[]>(frame_buf_count);
   camera_bufs_metadata = std::make_unique<FrameMetadata[]>(frame_buf_count);
+
   for (int i = 0; i < frame_buf_count; i++) {
-    camera_bufs[i] = visionbuf_allocate_cl(frame_size, device_id, context);
+    camera_bufs[i].allocate(frame_size);
+    camera_bufs[i].init_cl(device_id, context);
   }
 
   rgb_width = ci->frame_width;
@@ -62,154 +70,121 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
     rgb_width = ci->frame_width / 2;
     rgb_height = ci->frame_height / 2;
   }
-  float db_s = 0.5;
-#else
-  float db_s = 1.0;
 #endif
+  yuv_transform = get_model_yuv_transform(ci->bayer);
+
+  vipc_server->create_buffers(rgb_type, UI_BUF_COUNT, true, rgb_width, rgb_height);
+  rgb_stride = vipc_server->get_buffer(rgb_type)->stride;
+
+  vipc_server->create_buffers(yuv_type, YUV_COUNT, false, rgb_width, rgb_height);
 
   if (ci->bayer) {
-    yuv_transform = transform_scale_buffer(s->transform, db_s);
-  } else {
-    yuv_transform = s->transform;
+    cl_program prg_debayer = build_debayer_program(device_id, context, ci, this, s);
+    krnl_debayer = CL_CHECK_ERR(clCreateKernel(prg_debayer, "debayer10", &err));
+    CL_CHECK(clReleaseProgram(prg_debayer));
   }
 
-  for (int i = 0; i < UI_BUF_COUNT; i++) {
-    VisionImg img = visionimg_alloc_rgb24(device_id, context, rgb_width, rgb_height, &rgb_bufs[i]);
-    if (i == 0) {
-      rgb_stride = img.stride;
-    }
-  }
-  tbuffer_init(&ui_tb, UI_BUF_COUNT, name);
-  tbuffer_init2(&camera_tb, frame_buf_count, "frame", relase_callback, s);
-
-  // yuv back for recording and orbd
-  pool_init(&yuv_pool, YUV_COUNT);
-  yuv_tb = pool_get_tbuffer(&yuv_pool);
-
-  yuv_width = rgb_width;
-  yuv_height = rgb_height;
-  yuv_buf_size = rgb_width * rgb_height * 3 / 2;
-
-  for (int i = 0; i < YUV_COUNT; i++) {
-    yuv_ion[i] = visionbuf_allocate_cl(yuv_buf_size, device_id, context);
-    yuv_bufs[i].y = (uint8_t *)yuv_ion[i].addr;
-    yuv_bufs[i].u = yuv_bufs[i].y + (yuv_width * yuv_height);
-    yuv_bufs[i].v = yuv_bufs[i].u + (yuv_width / 2 * yuv_height / 2);
-  }
-
-  int err;
-  if (ci->bayer) {
-    cl_program prg_debayer = build_debayer_program(device_id, context, ci, this);
-    krnl_debayer = clCreateKernel(prg_debayer, "debayer10", &err);
-    assert(err == 0);
-    assert(clReleaseProgram(prg_debayer) == 0);
-  }
-
-  rgb_to_yuv_init(&rgb_to_yuv_state, context, device_id, yuv_width, yuv_height, rgb_stride);
+  rgb_to_yuv_init(&rgb_to_yuv_state, context, device_id, rgb_width, rgb_height, rgb_stride);
 
 #ifdef __APPLE__
-  q = clCreateCommandQueue(context, device_id, 0, &err);
+  q = CL_CHECK_ERR(clCreateCommandQueue(context, device_id, 0, &err));
 #else
   const cl_queue_properties props[] = {0};  //CL_QUEUE_PRIORITY_KHR, CL_QUEUE_PRIORITY_HIGH_KHR, 0};
-  q = clCreateCommandQueueWithProperties(context, device_id, props, &err);
+  q = CL_CHECK_ERR(clCreateCommandQueueWithProperties(context, device_id, props, &err));
 #endif
-  assert(err == 0);
 }
 
 CameraBuf::~CameraBuf() {
   for (int i = 0; i < frame_buf_count; i++) {
-    visionbuf_free(&camera_bufs[i]);
+    camera_bufs[i].free();
   }
-  for (int i = 0; i < UI_BUF_COUNT; i++) {
-    visionbuf_free(&rgb_bufs[i]);
+
+  rgb_to_yuv_destroy(&rgb_to_yuv_state);
+
+  if (krnl_debayer) {
+    CL_CHECK(clReleaseKernel(krnl_debayer));
   }
-  for (int i = 0; i < YUV_COUNT; i++) {
-    visionbuf_free(&yuv_ion[i]);
-  }
-  clReleaseKernel(krnl_debayer);
-  clReleaseCommandQueue(q);
+  CL_CHECK(clReleaseCommandQueue(q));
 }
 
 bool CameraBuf::acquire() {
-  const int buf_idx = tbuffer_acquire(&camera_tb);
-  if (buf_idx < 0) {
-    return false;
-  }
-  const FrameMetadata &frame_data = camera_bufs_metadata[buf_idx];
+  if (!safe_queue.try_pop(cur_buf_idx, 1)) return false;
+
+  const FrameMetadata &frame_data = camera_bufs_metadata[cur_buf_idx];
   if (frame_data.frame_id == -1) {
     LOGE("no frame data? wtf");
-    tbuffer_release(&camera_tb, buf_idx);
+    release();
     return false;
   }
 
   cur_frame_data = frame_data;
 
-  cur_rgb_idx = tbuffer_select(&ui_tb);
-  cur_rgb_buf = &rgb_bufs[cur_rgb_idx];
+  cur_rgb_buf = vipc_server->get_buffer(rgb_type);
 
   cl_event debayer_event;
-  cl_mem camrabuf_cl = camera_bufs[buf_idx].buf_cl;
+  cl_mem camrabuf_cl = camera_bufs[cur_buf_idx].buf_cl;
   if (camera_state->ci.bayer) {
-    assert(clSetKernelArg(krnl_debayer, 0, sizeof(cl_mem), &camrabuf_cl) == 0);
-    assert(clSetKernelArg(krnl_debayer, 1, sizeof(cl_mem), &cur_rgb_buf->buf_cl) == 0);
+    CL_CHECK(clSetKernelArg(krnl_debayer, 0, sizeof(cl_mem), &camrabuf_cl));
+    CL_CHECK(clSetKernelArg(krnl_debayer, 1, sizeof(cl_mem), &cur_rgb_buf->buf_cl));
 #ifdef QCOM2
-    assert(clSetKernelArg(krnl_debayer, 2, camera_state->debayer_cl_localMemSize, 0) == 0);
-    assert(clEnqueueNDRangeKernel(q, krnl_debayer, 2, NULL,
-                                  camera_state->debayer_cl_globalWorkSize, camera_state->debayer_cl_localWorkSize,
-                                  0, 0, &debayer_event) == 0);
+    constexpr int localMemSize = (DEBAYER_LOCAL_WORKSIZE + 2 * (3 / 2)) * (DEBAYER_LOCAL_WORKSIZE + 2 * (3 / 2)) * sizeof(short int);
+    const size_t globalWorkSize[] = {size_t(camera_state->ci.frame_width), size_t(camera_state->ci.frame_height)};
+    const size_t localWorkSize[] = {DEBAYER_LOCAL_WORKSIZE, DEBAYER_LOCAL_WORKSIZE};
+    CL_CHECK(clSetKernelArg(krnl_debayer, 2, localMemSize, 0));
+    int ggain = camera_state->analog_gain + 4*camera_state->dc_gain_enabled;
+    CL_CHECK(clSetKernelArg(krnl_debayer, 3, sizeof(int), &ggain));
+    CL_CHECK(clEnqueueNDRangeKernel(q, krnl_debayer, 2, NULL, globalWorkSize, localWorkSize,
+                                    0, 0, &debayer_event));
 #else
     float digital_gain = camera_state->digital_gain;
     if ((int)digital_gain == 0) {
       digital_gain = 1.0;
     }
-    assert(clSetKernelArg(krnl_debayer, 2, sizeof(float), &digital_gain) == 0);
+    CL_CHECK(clSetKernelArg(krnl_debayer, 2, sizeof(float), &digital_gain));
     const size_t debayer_work_size = rgb_height;  // doesn't divide evenly, is this okay?
-    const size_t debayer_local_work_size = 128;
-    assert(clEnqueueNDRangeKernel(q, krnl_debayer, 1, NULL,
-                                  &debayer_work_size, &debayer_local_work_size, 0, 0, &debayer_event) == 0);
+    CL_CHECK(clEnqueueNDRangeKernel(q, krnl_debayer, 1, NULL,
+                                    &debayer_work_size, NULL, 0, 0, &debayer_event));
 #endif
   } else {
-    assert(cur_rgb_buf->len >= frame_size);
     assert(rgb_stride == camera_state->ci.frame_stride);
-    assert(clEnqueueCopyBuffer(q, camrabuf_cl, cur_rgb_buf->buf_cl, 0, 0,
-                               cur_rgb_buf->len, 0, 0, &debayer_event) == 0);
+    CL_CHECK(clEnqueueCopyBuffer(q, camrabuf_cl, cur_rgb_buf->buf_cl, 0, 0,
+                               cur_rgb_buf->len, 0, 0, &debayer_event));
   }
 
   clWaitForEvents(1, &debayer_event);
-  clReleaseEvent(debayer_event);
+  CL_CHECK(clReleaseEvent(debayer_event));
 
-  tbuffer_release(&camera_tb, buf_idx);
-  visionbuf_sync(cur_rgb_buf, VISIONBUF_SYNC_FROM_DEVICE);
+  cur_yuv_buf = vipc_server->get_buffer(yuv_type);
+  yuv_metas[cur_yuv_buf->idx] = frame_data;
+  rgb_to_yuv_queue(&rgb_to_yuv_state, q, cur_rgb_buf->buf_cl, cur_yuv_buf->buf_cl);
 
-  cur_yuv_idx = pool_select(&yuv_pool);
-  yuv_metas[cur_yuv_idx] = frame_data;
-  rgb_to_yuv_queue(&rgb_to_yuv_state, q, cur_rgb_buf->buf_cl, yuv_ion[cur_yuv_idx].buf_cl);
-  visionbuf_sync(&yuv_ion[cur_yuv_idx], VISIONBUF_SYNC_FROM_DEVICE);
-
-  // keep another reference around till were done processing
-  pool_acquire(&yuv_pool, cur_yuv_idx);
-  pool_push(&yuv_pool, cur_yuv_idx);
+  VisionIpcBufExtra extra = {
+                        frame_data.frame_id,
+                        frame_data.timestamp_sof,
+                        frame_data.timestamp_eof,
+  };
+  vipc_server->send(cur_rgb_buf, &extra);
+  vipc_server->send(cur_yuv_buf, &extra);
 
   return true;
 }
 
 void CameraBuf::release() {
-  tbuffer_dispatch(&ui_tb, cur_rgb_idx);
-  pool_release(&yuv_pool, cur_yuv_idx);
+  if (release_callback){
+    release_callback((void*)camera_state, cur_buf_idx);
+  }
 }
 
-void CameraBuf::stop() {
-  tbuffer_stop(&ui_tb);
-  tbuffer_stop(&camera_tb);
-  pool_stop(&yuv_pool);
+void CameraBuf::queue(size_t buf_idx) {
+  safe_queue.push(buf_idx);
 }
 
 // common functions
 
-void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &frame_data, uint32_t cnt) {
+void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &frame_data) {
   framed.setFrameId(frame_data.frame_id);
-  framed.setEncodeId(cnt);
   framed.setTimestampEof(frame_data.timestamp_eof);
+  framed.setTimestampSof(frame_data.timestamp_sof);
   framed.setFrameLength(frame_data.frame_length);
   framed.setIntegLines(frame_data.integ_lines);
   framed.setGlobalGain(frame_data.global_gain);
@@ -220,9 +195,33 @@ void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &fr
   framed.setGainFrac(frame_data.gain_frac);
 }
 
-void create_thumbnail(MultiCameraState *s, CameraState *c, uint8_t *bgr_ptr) {
-  const CameraBuf *b = &c->buf;
+kj::Array<uint8_t> get_frame_image(const CameraBuf *b) {
+  static const int x_min = getenv("XMIN") ? atoi(getenv("XMIN")) : 0;
+  static const int y_min = getenv("YMIN") ? atoi(getenv("YMIN")) : 0;
+  static const int env_xmax = getenv("XMAX") ? atoi(getenv("XMAX")) : -1;
+  static const int env_ymax = getenv("YMAX") ? atoi(getenv("YMAX")) : -1;
+  static const int scale = getenv("SCALE") ? atoi(getenv("SCALE")) : 1;
 
+  assert(b->cur_rgb_buf);
+
+  const int x_max = env_xmax != -1 ? env_xmax : b->rgb_width - 1;
+  const int y_max = env_ymax != -1 ? env_ymax : b->rgb_height - 1;
+  const int new_width = (x_max - x_min + 1) / scale;
+  const int new_height = (y_max - y_min + 1) / scale;
+  const uint8_t *dat = (const uint8_t *)b->cur_rgb_buf->addr;
+
+  kj::Array<uint8_t> frame_image = kj::heapArray<uint8_t>(new_width*new_height*3);
+  uint8_t *resized_dat = frame_image.begin();
+  int goff = x_min*3 + y_min*b->rgb_stride;
+  for (int r=0;r<new_height;r++) {
+    for (int c=0;c<new_width;c++) {
+      memcpy(&resized_dat[(r*new_width+c)*3], &dat[goff+r*b->rgb_stride*scale+c*3*scale], 3*sizeof(uint8_t));
+    }
+  }
+  return kj::mv(frame_image);
+}
+
+static void publish_thumbnail(PubMaster *pm, const CameraBuf *b) {
   uint8_t* thumbnail_buffer = NULL;
   unsigned long thumbnail_len = 0;
 
@@ -250,6 +249,7 @@ void create_thumbnail(MultiCameraState *s, CameraState *c, uint8_t *bgr_ptr) {
 #endif
 
   JSAMPROW row_pointer[1];
+  const uint8_t *bgr_ptr = (const uint8_t *)b->cur_rgb_buf->addr;
   for (int ii = 0; ii < b->rgb_height/4; ii+=1) {
     for (int j = 0; j < b->rgb_width*3; j+=12) {
       for (int k = 0; k < 3; k++) {
@@ -269,8 +269,9 @@ void create_thumbnail(MultiCameraState *s, CameraState *c, uint8_t *bgr_ptr) {
     row_pointer[0] = row;
     jpeg_write_scanlines(&cinfo, row_pointer, 1);
   }
-  free(row);
   jpeg_finish_compress(&cinfo);
+  jpeg_destroy_compress(&cinfo);
+  free(row);
 
   MessageBuilder msg;
   auto thumbnaild = msg.initEvent().initThumbnail();
@@ -278,130 +279,145 @@ void create_thumbnail(MultiCameraState *s, CameraState *c, uint8_t *bgr_ptr) {
   thumbnaild.setTimestampEof(b->cur_frame_data.timestamp_eof);
   thumbnaild.setThumbnail(kj::arrayPtr((const uint8_t*)thumbnail_buffer, thumbnail_len));
 
-  if (s->pm != NULL) {
-    s->pm->send("thumbnail", msg);
-  }
+  pm->send("thumbnail", msg);
+  free(thumbnail_buffer);
 }
 
-void set_exposure_target(CameraState *c, const uint8_t *pix_ptr, int x_start, int x_end, int x_skip, int y_start, int y_end, int y_skip) {
+void set_exposure_target(CameraState *c, int x_start, int x_end, int x_skip, int y_start, int y_end, int y_skip) {
   const CameraBuf *b = &c->buf;
-
+  const uint8_t *pix_ptr = b->cur_yuv_buf->y;
   uint32_t lum_binning[256] = {0};
+  unsigned int lum_total = 0;
   for (int y = y_start; y < y_end; y += y_skip) {
     for (int x = x_start; x < x_end; x += x_skip) {
-      uint8_t lum = pix_ptr[(y * b->yuv_width) + x];
+      uint8_t lum = pix_ptr[(y * b->rgb_width) + x];
+#ifdef QCOM2
+      if (lum < 80 && lum_binning[lum] > HISTO_CEIL_K * (y_end - y_start) * (x_end - x_start) / x_skip / y_skip / 256) {
+        continue;
+      }
+#endif
       lum_binning[lum]++;
+      lum_total += 1;
     }
   }
 
-  unsigned int lum_total = (y_end - y_start) * (x_end - x_start) / x_skip / y_skip;
   unsigned int lum_cur = 0;
   int lum_med = 0;
   int lum_med_alt = 0;
   for (lum_med=255; lum_med>=0; lum_med--) {
     lum_cur += lum_binning[lum_med];
 #ifdef QCOM2
-    bool reach_hlc_perc = false;
-    if (c->camera_num == 0) { // wide
-      reach_hlc_perc = lum_cur > 2*lum_total / (3*HLC_A);
-    } else {
-      reach_hlc_perc = lum_cur > lum_total / HLC_A;
+    int lum_med_tmp = 0;
+    int hb = HLC_THRESH + (10 - c->analog_gain);
+    if (lum_cur > 0 && lum_med > hb) {
+      lum_med_tmp = (lum_med - hb) + 100;
     }
-    if (reach_hlc_perc && lum_med > HLC_THRESH) {
-      lum_med_alt = 86;
-    }
+    lum_med_alt = lum_med_alt>lum_med_tmp?lum_med_alt:lum_med_tmp;
 #endif
     if (lum_cur >= lum_total / 2) {
       break;
     }
   }
-  lum_med = lum_med_alt>lum_med?lum_med_alt:lum_med;
+  lum_med = lum_med_alt>0 ? lum_med + lum_med/32*lum_cur*(lum_med_alt - lum_med)/lum_total:lum_med;
   camera_autoexposure(c, lum_med / 256.0);
 }
 
-extern volatile sig_atomic_t do_exit;
+extern ExitHandler do_exit;
 
-void *processing_thread(MultiCameraState *cameras, const char *tname,
-                        CameraState *cs, int priority, process_thread_cb callback) {
-  set_thread_name(tname);
-  int err = set_realtime_priority(priority);
-  LOG("%s start! setpriority returns %d", tname, err);
+void *processing_thread(MultiCameraState *cameras, CameraState *cs, process_thread_cb callback) {
+  const char *thread_name = nullptr;
+  if (cs == &cameras->road_cam) {
+    thread_name = "RoadCamera";
+  } else if (cs == &cameras->driver_cam) {
+    thread_name = "DriverCamera";
+  } else {
+    thread_name = "WideRoadCamera";
+  }
+  set_thread_name(thread_name);
 
-  for (int cnt = 0; !do_exit; cnt++) {
+  uint32_t cnt = 0;
+  while (!do_exit) {
     if (!cs->buf.acquire()) continue;
 
     callback(cameras, cs, cnt);
 
+    if (cs == &(cameras->road_cam) && cameras->pm && cnt % 100 == 3) {
+      // this takes 10ms???
+      publish_thumbnail(cameras->pm, &(cs->buf));
+    }
     cs->buf.release();
+    ++cnt;
   }
   return NULL;
 }
 
-std::thread start_process_thread(MultiCameraState *cameras, const char *tname,
-                                 CameraState *cs, int priority, process_thread_cb callback) {
-  return std::thread(processing_thread, cameras, tname, cs, priority, callback);
+std::thread start_process_thread(MultiCameraState *cameras, CameraState *cs, process_thread_cb callback) {
+  return std::thread(processing_thread, cameras, cs, callback);
 }
 
-void common_camera_process_front(SubMaster *sm, PubMaster *pm, CameraState *c, int cnt) {
+void common_process_driver_camera(SubMaster *sm, PubMaster *pm, CameraState *c, int cnt) {
   const CameraBuf *b = &c->buf;
 
-  static int meteringbox_xmin = 0, meteringbox_xmax = 0;
-  static int meteringbox_ymin = 0, meteringbox_ymax = 0;
-  static const bool rhd_front = Params().read_db_bool("IsRHD");
-
-  sm->update(0);
-  if (sm->updated("driverState")) {
-    auto state = (*sm)["driverState"].getDriverState();
-    float face_prob = state.getFaceProb();
-    float face_position[2];
-    face_position[0] = state.getFacePosition()[0];
-    face_position[1] = state.getFacePosition()[1];
-
-    // set front camera metering target
-    if (face_prob > 0.4) {
-      int x_offset = rhd_front ? 0:b->rgb_width - 0.5 * b->rgb_height;
-      meteringbox_xmin = x_offset + (face_position[0] + 0.5) * (0.5 * b->rgb_height) - 72;
-      meteringbox_xmax = x_offset + (face_position[0] + 0.5) * (0.5 * b->rgb_height) + 72;
-      meteringbox_ymin = (face_position[1] + 0.5) * (b->rgb_height) - 72;
-      meteringbox_ymax = (face_position[1] + 0.5) * (b->rgb_height) + 72;
-    } else { // use default setting if no face
-      meteringbox_ymin = b->rgb_height * 1 / 3;
-      meteringbox_ymax = b->rgb_height * 1;
-      meteringbox_xmin = rhd_front ? 0:b->rgb_width * 3 / 5;
-      meteringbox_xmax = rhd_front ? b->rgb_width * 2 / 5:b->rgb_width;
-    }
-  }
+  static int x_min = 0, x_max = 0, y_min = 0, y_max = 0;
+  static const bool is_rhd = Params().read_db_bool("IsRHD");
 
   // auto exposure
   if (cnt % 3 == 0) {
-    // use driver face crop for AE
-    int x_start, x_end, y_start, y_end;
-    int skip = 1;
-
-    if (meteringbox_xmax > 0) {
-      x_start = std::max(0, meteringbox_xmin);
-      x_end = std::min(b->rgb_width - 1, meteringbox_xmax);
-      y_start = std::max(0, meteringbox_ymin);
-      y_end = std::min(b->rgb_height - 1, meteringbox_ymax);
-    } else {
-      y_start = b->rgb_height * 1 / 3;
-      y_end = b->rgb_height * 1;
-      x_start = rhd_front ? 0 : b->rgb_width * 3 / 5;
-      x_end = rhd_front ? b->rgb_width * 2 / 5 : b->rgb_width;
-    }
-#ifdef QCOM2
-    x_start = 96;
-    x_end = 1832;
-    y_start = 242;
-    y_end = 1148;
-    skip = 4;
+    if (sm->update(0) > 0 && sm->updated("driverState")) {
+      auto state = (*sm)["driverState"].getDriverState();
+      // set driver camera metering target
+      if (state.getFaceProb() > 0.4) {
+        auto face_position = state.getFacePosition();
+#ifndef QCOM2
+        int frame_width = b->rgb_width;
+        int frame_height = b->rgb_height;
+#else
+        int frame_width = 668;
+        int frame_height = frame_width / 1.33;
 #endif
-    set_exposure_target(c, (const uint8_t *)b->yuv_bufs[b->cur_yuv_idx].y, x_start, x_end, 2, y_start, y_end, skip);
+        int x_offset = is_rhd ? 0 : frame_width - (0.5 * frame_height);
+        x_offset += (face_position[0] * (is_rhd ? -1.0 : 1.0) + 0.5) * (0.5 * frame_height);
+        int y_offset = (face_position[1] + 0.5) * frame_height;
+#ifdef QCOM2
+        x_offset += 630;
+        y_offset += 156;
+#endif
+        x_min = std::max(0, x_offset - 72);
+        x_max = std::min(b->rgb_width - 1, x_offset + 72);
+        y_min = std::max(0, y_offset - 72);
+        y_max = std::min(b->rgb_height - 1, y_offset + 72);
+      } else {  // use default setting if no face
+        x_min = x_max = y_min = y_max = 0;
+      }
+    }
+
+    int skip = 1;
+    // use driver face crop for AE
+    if (x_max == 0) {
+      // default setting
+#ifndef QCOM2
+      x_min = is_rhd ? 0 : b->rgb_width * 3 / 5;
+      x_max = is_rhd ? b->rgb_width * 2 / 5 : b->rgb_width;
+      y_min = b->rgb_height / 3;
+      y_max = b->rgb_height;
+#else
+      x_min = 96;
+      x_max = 1832;
+      y_min = 242;
+      y_max = 1148;
+      skip = 4;
+#endif
+    }
+
+    set_exposure_target(c, x_min, x_max, 2, y_min, y_max, skip);
   }
 
   MessageBuilder msg;
-  auto framed = msg.initEvent().initFrontFrame();
+  auto framed = msg.initEvent().initDriverCameraState();
   framed.setFrameType(cereal::FrameData::FrameType::FRONT);
-  fill_frame_data(framed, b->cur_frame_data, cnt);
-  pm->send("frontFrame", msg);
+  fill_frame_data(framed, b->cur_frame_data);
+  if (env_send_driver) {
+    framed.setImage(get_frame_image(b));
+  }
+  pm->send("driverCameraState", msg);
 }

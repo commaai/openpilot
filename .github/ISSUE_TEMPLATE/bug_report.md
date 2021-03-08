@@ -8,7 +8,7 @@ assignees: ''
 
 **Describe the bug**
 
-<!-- A clear and concise description of what the bug is. Add the `car bug` label for vehicle/brand specific bugs and the `bug` label for all other bugs. -->
+<!-- A clear and concise description of what the bug is. -->
 
 **How to reproduce or log data**
 

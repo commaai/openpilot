@@ -1,25 +1,39 @@
 def phone(String ip, String step_label, String cmd) {
-  def ci_env = "CI=1 TEST_DIR=${env.TEST_DIR} GIT_BRANCH=${env.GIT_BRANCH} GIT_COMMIT=${env.GIT_COMMIT}"
-
   withCredentials([file(credentialsId: 'id_rsa_public', variable: 'key_file')]) {
-    sh label: step_label,
-        script: """
-                ssh -tt -o StrictHostKeyChecking=no -i ${key_file} -p 8022 root@${ip} '${ci_env} /usr/bin/bash -le' <<'EOF'
-echo \$\$ > /dev/cpuset/app/tasks || true
-echo \$PPID > /dev/cpuset/app/tasks || true
-mkdir -p /dev/shm
-chmod 777 /dev/shm
+    def ssh_cmd = """
+ssh -tt -o StrictHostKeyChecking=no -i ${key_file} -p 8022 'comma@${ip}' /usr/bin/bash <<'EOF'
+
+set -e
+
+export CI=1
+export TEST_DIR=${env.TEST_DIR}
+export GIT_BRANCH=${env.GIT_BRANCH}
+export GIT_COMMIT=${env.GIT_COMMIT}
+
+source ~/.bash_profile
+
+ln -snf ${env.TEST_DIR} /data/pythonpath
+
+if [ -f /EON ]; then
+  echo \$\$ > /dev/cpuset/app/tasks || true
+  echo \$PPID > /dev/cpuset/app/tasks || true
+  mkdir -p /dev/shm
+  chmod 777 /dev/shm
+fi
+
 cd ${env.TEST_DIR} || true
 ${cmd}
 exit 0
+
 EOF"""
+
+    sh script: ssh_cmd, label: step_label
   }
 }
 
 def phone_steps(String device_type, steps) {
   lock(resource: "", label: device_type, inversePrecedence: true, variable: 'device_ip', quantity: 1) {
     timeout(time: 60, unit: 'MINUTES') {
-      phone(device_ip, "kill old processes", "pkill -f comma || true")
       phone(device_ip, "git checkout", readFile("selfdrive/test/setup_device_ci.sh"),)
       steps.each { item ->
         phone(device_ip, item[0], item[1])
@@ -40,7 +54,7 @@ pipeline {
 
   stages {
 
-    stage('Release Build') {
+    stage('Build release2') {
       agent {
         docker {
           image 'python:3.7.3'
@@ -104,16 +118,17 @@ pipeline {
           stages {
             stage('parallel tests') {
               parallel {
-
                 stage('Devel Build') {
                   environment {
                     CI_PUSH = "${env.BRANCH_NAME == 'master' ? 'master-ci' : ' '}"
                   }
                   steps {
-                    phone_steps("eon", [
+                    phone_steps("eon-build", [
+                      ["build", "SCONS_CACHE=1 scons -j4"],
+                      ["test athena", "nosetests -s selfdrive/athena/tests/test_athenad_old.py"],
+                      ["test manager", "python selfdrive/manager/test/test_manager.py"],
+                      ["onroad tests", "cd selfdrive/test/ && ./test_onroad.py"],
                       ["build devel", "cd release && CI_PUSH=${env.CI_PUSH} ./build_devel.sh"],
-                      ["test openpilot", "nosetests -s selfdrive/test/test_openpilot.py"],
-                      ["test cpu usage", "cd selfdrive/test/ && ./test_cpu_usage.py"],
                       ["test car interfaces", "cd selfdrive/car/tests/ && ./test_car_interfaces.py"],
                       ["test spinner build", "cd selfdrive/ui/spinner && make clean && make"],
                       ["test text window build", "cd selfdrive/ui/text && make clean && make"],
@@ -124,6 +139,7 @@ pipeline {
                 stage('Replay Tests') {
                   steps {
                     phone_steps("eon2", [
+                      ["build QCOM_REPLAY", "SCONS_CACHE=1 QCOM_REPLAY=1 scons -j4"],
                       ["camerad/modeld replay", "cd selfdrive/test/process_replay && ./camera_replay.py"],
                     ])
                   }
@@ -132,12 +148,29 @@ pipeline {
                 stage('HW + Unit Tests') {
                   steps {
                     phone_steps("eon", [
-                      ["build cereal", "SCONS_CACHE=1 scons -j4 cereal/"],
+                      ["build", "SCONS_CACHE=1 scons -j4"],
                       ["test sounds", "nosetests -s selfdrive/test/test_sounds.py"],
                       ["test boardd loopback", "nosetests -s selfdrive/boardd/tests/test_boardd_loopback.py"],
-                      ["test loggerd", "CI=1 python selfdrive/loggerd/tests/test_loggerd.py"],
-                      //["test camerad", "CI=1 python selfdrive/camerad/test/test_camerad.py"], // wait for shelf refactor
+                      ["test loggerd", "python selfdrive/loggerd/tests/test_loggerd.py"],
+                      ["test encoder", "python selfdrive/loggerd/tests/test_encoder.py"],
+                      ["test camerad", "python selfdrive/camerad/test/test_camerad.py"],
+                      ["test logcatd", "python selfdrive/logcatd/tests/test_logcatd_android.py"],
                       //["test updater", "python installer/updater/test_updater.py"],
+                    ])
+                  }
+                }
+
+                stage('Tici Build') {
+                  environment {
+                    R3_PUSH = "${env.BRANCH_NAME == 'master' ? '1' : ' '}"
+                  }
+                  steps {
+                    phone_steps("tici", [
+                      ["build", "SCONS_CACHE=1 scons -j16"],
+                      ["test loggerd", "python selfdrive/loggerd/tests/test_loggerd.py"],
+                      ["test encoder", "LD_LIBRARY_PATH=/usr/local/lib python selfdrive/loggerd/tests/test_encoder.py"],
+                      ["test camerad", "python selfdrive/camerad/test/test_camerad.py"],
+                      //["build release3-staging", "cd release && PUSH=${env.R3_PUSH} ./build_release3.sh"],
                     ])
                   }
                 }
@@ -158,3 +191,4 @@ pipeline {
     }
   }
 }
+

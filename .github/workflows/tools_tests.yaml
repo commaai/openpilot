@@ -1,0 +1,34 @@
+name: tools
+on:
+  push:
+  pull_request:
+
+env:
+  BASE_IMAGE: openpilot-base
+  DOCKER_REGISTRY: ghcr.io/commaai
+
+  BUILD: |
+      docker pull $(grep -iohP '(?<=^from)\s+\S+' Dockerfile.openpilot_base) || true
+      docker pull $DOCKER_REGISTRY/$BASE_IMAGE:latest || true
+      docker build --cache-from $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $BASE_IMAGE:latest -f Dockerfile.openpilot_base .
+  RUN: docker run --shm-size 1G -v $PWD:/tmp/openpilot -e PYTHONPATH=/tmp/openpilot -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e \
+       GITHUB_REPOSITORY -e GITHUB_RUN_ID -v /tmp/comma_download_cache:/tmp/comma_download_cache $BASE_IMAGE /bin/sh -c
+
+jobs:
+  plotjuggler:
+    name: plotjuggler
+    runs-on: ubuntu-20.04
+    timeout-minutes: 30
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Build docker image
+      run: eval "$BUILD"
+    - name: Unit test
+      run: |
+        ${{ env.RUN }} "scons -j$(nproc) --directory=/tmp/openpilot/cereal && \
+                        apt-get update && \
+                        apt-get install -y libdw-dev libqt5svg5-dev libqt5x11extras5-dev && \
+                        cd /tmp/openpilot/tools/plotjuggler && \
+                        ./test_plotjuggler.py"

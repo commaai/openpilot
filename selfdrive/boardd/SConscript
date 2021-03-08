@@ -1,8 +1,6 @@
-Import('env', 'common', 'cereal', 'messaging', 'cython_dependencies')
+Import('env', 'envCython', 'common', 'cereal', 'messaging')
 
 env.Program('boardd', ['boardd.cc', 'panda.cc', 'pigeon.cc'], LIBS=['usb-1.0', common, cereal, messaging, 'pthread', 'zmq', 'capnp', 'kj'])
 env.Library('libcan_list_to_can_capnp', ['can_list_to_can_capnp.cc'])
 
-env.Command(['boardd_api_impl.so', 'boardd_api_impl.cpp'],
-            cython_dependencies + ['libcan_list_to_can_capnp.a', 'boardd_api_impl.pyx', 'boardd_setup.py'],
-            "cd selfdrive/boardd && python3 boardd_setup.py build_ext --inplace")
+envCython.Program('boardd_api_impl.so', 'boardd_api_impl.pyx', LIBS=["can_list_to_can_capnp", 'capnp', 'kj'] + envCython["LIBS"])

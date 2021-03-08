@@ -6,28 +6,34 @@
 #include <string.h>
 #include <assert.h>
 
-#include <pthread.h>
+#include <mutex>
 #include <zmq.h>
 
 #include "json11.hpp"
 
-#include "common/timing.h"
+#include "common/util.h"
 #include "common/version.h"
 
 #include "swaglog.h"
 
-typedef struct LogState {
-  pthread_mutex_t lock;
+class LogState {
+public:
+  LogState() = default;
+  ~LogState();
+  std::mutex lock;
   bool inited;
   json11::Json::object ctx_j;
   void *zctx;
   void *sock;
   int print_level;
-} LogState;
-
-static LogState s = {
-  .lock = PTHREAD_MUTEX_INITIALIZER,
 };
+
+LogState::~LogState() {
+  zmq_close(sock);
+  zmq_ctx_destroy(zctx);
+}
+
+static LogState s = {};
 
 static void cloudlog_bind_locked(const char* k, const char* v) {
   s.ctx_j[k] = v;
@@ -38,6 +44,10 @@ static void cloudlog_init() {
   s.ctx_j = json11::Json::object {};
   s.zctx = zmq_ctx_new();
   s.sock = zmq_socket(s.zctx, ZMQ_PUSH);
+
+  int timeout = 100; // 100 ms timeout on shutdown for messages to be received by logmessaged
+  zmq_setsockopt(s.sock, ZMQ_LINGER, &timeout, sizeof(timeout));
+
   zmq_connect(s.sock, "ipc:///tmp/logmessage");
 
   s.print_level = CLOUDLOG_WARNING;
@@ -60,28 +70,38 @@ static void cloudlog_init() {
   cloudlog_bind_locked("version", COMMA_VERSION);
   s.ctx_j["dirty"] = !getenv("CLEAN");
 
+  // device type
+  if (util::file_exists("/EON")) {
+    cloudlog_bind_locked("device", "eon");
+  } else if (util::file_exists("/TICI")) {
+    cloudlog_bind_locked("device", "tici");
+  } else {
+    cloudlog_bind_locked("device", "pc");
+  }
+
   s.inited = true;
+}
+
+void log(int levelnum, const char* filename, int lineno, const char* func, const char* msg, const std::string& log_s) {
+  std::lock_guard lk(s.lock);
+  cloudlog_init();
+  if (levelnum >= s.print_level) {
+    printf("%s: %s\n", filename, msg);
+  }
+  char levelnum_c = levelnum;
+  zmq_send(s.sock, &levelnum_c, 1, ZMQ_NOBLOCK | ZMQ_SNDMORE);
+  zmq_send(s.sock, log_s.c_str(), log_s.length(), ZMQ_NOBLOCK);
 }
 
 void cloudlog_e(int levelnum, const char* filename, int lineno, const char* func,
                 const char* fmt, ...) {
-  pthread_mutex_lock(&s.lock);
-  cloudlog_init();
-
-  char* msg_buf = NULL;
+  char* msg_buf = nullptr;
   va_list args;
   va_start(args, fmt);
   vasprintf(&msg_buf, fmt, args);
   va_end(args);
 
-  if (!msg_buf) {
-    pthread_mutex_unlock(&s.lock);
-    return;
-  }
-
-  if (levelnum >= s.print_level) {
-    printf("%s: %s\n", filename, msg_buf);
-  }
+  if (!msg_buf) return;
 
   json11::Json log_j = json11::Json::object {
     {"msg", msg_buf},
@@ -92,21 +112,13 @@ void cloudlog_e(int levelnum, const char* filename, int lineno, const char* func
     {"funcname", func},
     {"created", seconds_since_epoch()}
   };
-
   std::string log_s = log_j.dump();
-
+  log(levelnum, filename, lineno, func, msg_buf, log_s);
   free(msg_buf);
-
-  char levelnum_c = levelnum;
-  zmq_send(s.sock, &levelnum_c, 1, ZMQ_NOBLOCK | ZMQ_SNDMORE);
-  zmq_send(s.sock, log_s.c_str(), log_s.length(), ZMQ_NOBLOCK);
-
-  pthread_mutex_unlock(&s.lock);
 }
 
 void cloudlog_bind(const char* k, const char* v) {
-  pthread_mutex_lock(&s.lock);
+  std::lock_guard lk(s.lock);
   cloudlog_init();
   cloudlog_bind_locked(k, v);
-  pthread_mutex_unlock(&s.lock);
 }

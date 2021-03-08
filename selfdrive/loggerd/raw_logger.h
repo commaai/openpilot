@@ -1,13 +1,10 @@
-#ifndef FFV1LOGGER_H
-#define FFV1LOGGER_H
+#pragma once
 
 #include <cstdio>
 #include <cstdlib>
 
 #include <string>
 #include <vector>
-#include <mutex>
-#include <condition_variable>
 
 extern "C" {
 #include <libavutil/imgutils.h>
@@ -15,21 +12,25 @@ extern "C" {
 #include <libavformat/avformat.h>
 }
 
-#include "frame_logger.h"
+#include "encoder.h"
 
-class RawLogger : public FrameLogger {
+class RawLogger : public VideoEncoder {
 public:
-  RawLogger(const std::string &filename, int awidth, int aheight, int afps);
+  RawLogger(const char* filename, int width, int height, int fps,
+            int bitrate, bool h265, bool downscale);
   ~RawLogger();
-
-  int ProcessFrame(uint64_t ts, const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr);
-  void Open(const std::string &path);
-  void Close();
+  int encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
+                   int in_width, int in_height, uint64_t ts);
+  void encoder_open(const char* path);
+  void encoder_close();
 
 private:
-  std::string filename;
-  int width, height, fps;
+  const char* filename;
+  int fps;
   int counter = 0;
+  bool is_open = false;
+
+  std::string vid_path, lock_path;
 
   AVCodec *codec = NULL;
   AVCodecContext *codec_ctx = NULL;
@@ -39,5 +40,3 @@ private:
 
   AVFrame *frame = NULL;
 };
-
-#endif

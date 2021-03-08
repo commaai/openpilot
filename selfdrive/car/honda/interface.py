@@ -6,15 +6,16 @@ from common.realtime import DT_CTRL
 from selfdrive.swaglog import cloudlog
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.events import ET
-from selfdrive.car.honda.values import CruiseButtons, CAR, HONDA_BOSCH, Ecu, ECU_FINGERPRINT, FINGERPRINTS
-from selfdrive.car import STD_CARGO_KG, CivicParams, scale_rot_inertia, scale_tire_stiffness, is_ecu_disconnected, gen_empty_fingerprint
-from selfdrive.controls.lib.planner import _A_CRUISE_MAX_V_FOLLOWING
+from selfdrive.car.honda.values import CruiseButtons, CAR, HONDA_BOSCH
+from selfdrive.car import STD_CARGO_KG, CivicParams, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
+from selfdrive.controls.lib.longitudinal_planner import _A_CRUISE_MAX_V_FOLLOWING
 from selfdrive.car.interfaces import CarInterfaceBase
 
 A_ACC_MAX = max(_A_CRUISE_MAX_V_FOLLOWING)
 
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
+
 
 def compute_gb_honda(accel, speed):
   creep_brake = 0.0
@@ -119,19 +120,18 @@ class CarInterface(CarInterfaceBase):
     return float(max(max_accel, a_target / A_ACC_MAX)) * min(speedLimiter, accelLimiter)
 
   @staticmethod
-  def get_params(candidate, fingerprint=gen_empty_fingerprint(), has_relay=False, car_fw=[]):  # pylint: disable=dangerous-default-value
-    ret = CarInterfaceBase.get_std_params(candidate, fingerprint, has_relay)
+  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=[]):  # pylint: disable=dangerous-default-value
+    ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
     ret.carName = "honda"
 
     if candidate in HONDA_BOSCH:
-      ret.safetyModel = car.CarParams.SafetyModel.hondaBoschHarness if has_relay else car.CarParams.SafetyModel.hondaBoschGiraffe
-      rdr_bus = 0 if has_relay else 2
-      ret.enableCamera = is_ecu_disconnected(fingerprint[rdr_bus], FINGERPRINTS, ECU_FINGERPRINT, candidate, Ecu.fwdCamera) or has_relay
+      ret.safetyModel = car.CarParams.SafetyModel.hondaBoschHarness
+      ret.enableCamera = True
       ret.radarOffCan = True
       ret.openpilotLongitudinalControl = False
     else:
       ret.safetyModel = car.CarParams.SafetyModel.hondaNidec
-      ret.enableCamera = is_ecu_disconnected(fingerprint[0], FINGERPRINTS, ECU_FINGERPRINT, candidate, Ecu.fwdCamera) or has_relay
+      ret.enableCamera = True
       ret.enableGasInterceptor = 0x201 in fingerprint[0]
       ret.openpilotLongitudinalControl = ret.enableCamera
 
@@ -253,7 +253,7 @@ class CarInterface(CarInterfaceBase):
         # stock request output values:    0x0000, 0x0500, 0x0A15, 0x0E6D, 0x1100, 0x1200, 0x129A, 0x134D, 0x1400
         # modified request output values: 0x0000, 0x0500, 0x0A15, 0x0E6D, 0x1100, 0x1200, 0x1ACD, 0x239A, 0x2800
         ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 2560, 10000], [0, 2560, 3840]]
-        ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.3], [0.1]]
+        ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.21], [0.07]]
       else:
         ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 3840], [0, 3840]]
         ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.64], [0.192]]
@@ -286,7 +286,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 13.06
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
       tire_stiffness_factor = 0.75
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.06]]
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2], [0.05]]
       ret.longitudinalTuning.kpBP = [0., 5., 35.]
       ret.longitudinalTuning.kpV = [1.2, 0.8, 0.5]
       ret.longitudinalTuning.kiBP = [0., 35.]
@@ -343,7 +343,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 14.35  # as spec
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
       tire_stiffness_factor = 0.82
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.45], [0.135]]
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.28], [0.08]]
       ret.longitudinalTuning.kpBP = [0., 5., 35.]
       ret.longitudinalTuning.kpV = [1.2, 0.8, 0.5]
       ret.longitudinalTuning.kiBP = [0., 35.]
@@ -357,7 +357,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 14.35
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 32767], [0, 32767]]  # TODO: determine if there is a dead zone at the top end
       tire_stiffness_factor = 0.82
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.45], [0.135]]
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.28], [0.08]]
       ret.longitudinalTuning.kpBP = [0., 5., 35.]
       ret.longitudinalTuning.kpV = [1.2, 0.8, 0.5]
       ret.longitudinalTuning.kiBP = [0., 35.]
@@ -447,7 +447,7 @@ class CarInterface(CarInterfaceBase):
     ret = self.CS.update(self.cp, self.cp_cam, self.cp_body)
 
     ret.canValid = self.cp.can_valid and self.cp_cam.can_valid and (self.cp_body is None or self.cp_body.can_valid)
-    ret.yawRate = self.VM.yaw_rate(ret.steeringAngle * CV.DEG_TO_RAD, ret.vEgo)
+    ret.yawRate = self.VM.yaw_rate(ret.steeringAngleDeg * CV.DEG_TO_RAD, ret.vEgo)
     # FIXME: read sendcan for brakelights
     brakelights_threshold = 0.02 if self.CS.CP.carFingerprint == CAR.CIVIC else 0.1
     ret.brakeLights = bool(self.CS.brake_switch or
