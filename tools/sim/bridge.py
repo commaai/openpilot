@@ -349,11 +349,10 @@ def go(q):
     rk.keep_time()
 
 if __name__ == "__main__":
-
   # make sure params are in a good state
-  params = Params()
-  params.clear_all()
   set_params_enabled()
+
+  params = Params()
   params.delete("Offroad_ConnectivityNeeded")
   params.put("CalibrationParams", '{"calib_radians": [0,0,0], "valid_blocks": 20}')
 
