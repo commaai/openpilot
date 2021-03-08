@@ -108,30 +108,6 @@ static void ui_draw_line(UIState *s, const line_vertices_data &vd, NVGcolor *col
   nvgFill(s->vg);
 }
 
-void UIVision::draw() {
-  glBindVertexArray(frame_vao);
-  glActiveTexture(GL_TEXTURE0);
-
-  if (last_frame) {
-    glBindTexture(GL_TEXTURE_2D, texture[last_frame->idx]->frame_tex);
-#ifndef QCOM
-    // this is handled in ion on QCOM
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, last_frame->width, last_frame->height,
-                 0, GL_RGB, GL_UNSIGNED_BYTE, last_frame->addr);
-#endif
-  }
-
-  glUseProgram(gl_shader->prog);
-  glUniform1i(gl_shader->getUniformLocation("uTexture"), 0);
-  glUniformMatrix4fv(gl_shader->getUniformLocation("uTransform"), 1, GL_TRUE, frame_mat.v);
-
-  assert(glGetError() == GL_NO_ERROR);
-  glEnableVertexAttribArray(0);
-  glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, (const void *)0);
-  glDisableVertexAttribArray(0);
-  glBindVertexArray(0);
-}
-
 static void ui_draw_vision_lane_lines(UIState *s) {
   const UIScene &scene = s->scene;
   NVGpaint track_bg;
@@ -428,6 +404,7 @@ void ui_fill_rect(NVGcontext *vg, const Rect &r, const NVGpaint &paint, float ra
   fill_rect(vg, r, nullptr, &paint, radius);
 }
 
+
 static const char frame_vertex_shader[] =
 #ifdef NANOVG_GL3_IMPLEMENTATION
   "#version 150 core\n"
@@ -640,4 +617,28 @@ void UIVision::update() {
 #endif
     }
   }
+}
+
+void UIVision::draw() {
+  glBindVertexArray(frame_vao);
+  glActiveTexture(GL_TEXTURE0);
+
+  if (last_frame) {
+    glBindTexture(GL_TEXTURE_2D, texture[last_frame->idx]->frame_tex);
+#ifndef QCOM
+    // this is handled in ion on QCOM
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, last_frame->width, last_frame->height,
+                 0, GL_RGB, GL_UNSIGNED_BYTE, last_frame->addr);
+#endif
+  }
+
+  glUseProgram(gl_shader->prog);
+  glUniform1i(gl_shader->getUniformLocation("uTexture"), 0);
+  glUniformMatrix4fv(gl_shader->getUniformLocation("uTransform"), 1, GL_TRUE, frame_mat.v);
+
+  assert(glGetError() == GL_NO_ERROR);
+  glEnableVertexAttribArray(0);
+  glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, (const void*)0);
+  glDisableVertexAttribArray(0);
+  glBindVertexArray(0);
 }
