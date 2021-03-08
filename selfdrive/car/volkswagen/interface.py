@@ -39,7 +39,6 @@ class CarInterface(CarInterfaceBase):
 
       ret.lateralTuning.pid.kpBP = [0.]
       ret.lateralTuning.pid.kiBP = [0.]
-
       ret.lateralTuning.pid.kf = 0.00006
       ret.lateralTuning.pid.kpV = [0.6]
       ret.lateralTuning.pid.kiV = [0.2]
@@ -58,7 +57,6 @@ class CarInterface(CarInterfaceBase):
         ret.wheelbase = 2.62
 
       ret.centerToFront = ret.wheelbase * 0.45
-
 
     ret.enableCamera = True  # Stock camera detection doesn't apply to VW
     ret.transmissionType = car.CarParams.TransmissionType.automatic
