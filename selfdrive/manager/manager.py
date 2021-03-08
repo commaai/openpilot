@@ -134,6 +134,10 @@ def manager_thread():
     pm_apply_packages('enable')
     start_offroad()
 
+  ensure_running(managed_processes.values(), False)
+  if spinner:  # close spinner when ui has started
+    spinner.close()
+
   started_prev = False
   params = Params()
   sm = messaging.SubMaster(['deviceState'])
@@ -149,8 +153,6 @@ def manager_thread():
     started = sm['deviceState'].started
     driverview = params.get("IsDriverViewEnabled") == b"1"
     ensure_running(managed_processes.values(), started, driverview, not_run)
-    if spinner:  # finally close spinner when ui has started
-      spinner.close()
 
     # trigger an update after going offroad
     if started_prev and not started and 'updated' in managed_processes:
