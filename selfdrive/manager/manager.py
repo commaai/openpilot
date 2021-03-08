@@ -4,6 +4,7 @@ import os
 import signal
 import subprocess
 import sys
+import time
 import traceback
 
 import cereal.messaging as messaging
@@ -99,13 +100,14 @@ def manager_prepare(spinner=None):
   os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
   total = 100.0 - (0 if PREBUILT else MAX_BUILD_PROGRESS)
-
   for i, p in enumerate(managed_processes.values()):
-    perc = (100.0 - total) + total * (i + 1) / len(managed_processes)
-
-    if spinner:
-      spinner.update_progress(perc, 100.)
     p.prepare()
+    if spinner:
+      perc = (100.0 - total) + total * (i + 1) / len(managed_processes)
+      spinner.update_progress(perc, 100.)
+
+  if spinner:
+    time.sleep(0.25)  # gives some time to update progress bar to 100%
 
 
 def manager_cleanup():
