@@ -199,6 +199,7 @@ void can_recv(PubMaster &pm) {
 void can_send_thread(bool fake_send) {
   LOGD("start send thread");
 
+  kj::Array<capnp::word> buf = kj::heapArray<capnp::word>(1024);
   Context * context = Context::create();
   SubSocket * subscriber = SubSocket::create(context, "sendcan");
   assert(subscriber != NULL);
@@ -214,11 +215,13 @@ void can_send_thread(bool fake_send) {
       }
       continue;
     }
+    const size_t size = (msg->getSize() / sizeof(capnp::word)) + 1;
+    if (buf.size() < size) {
+      buf = kj::heapArray<capnp::word>(size);
+    }
+    memcpy(buf.begin(), msg->getData(), msg->getSize());
 
-    auto amsg = kj::heapArray<capnp::word>((msg->getSize() / sizeof(capnp::word)) + 1);
-    memcpy(amsg.begin(), msg->getData(), msg->getSize());
-
-    capnp::FlatArrayMessageReader cmsg(amsg);
+    capnp::FlatArrayMessageReader cmsg(buf.slice(0, size));
     cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
 
     //Dont send if older than 1 second
