@@ -158,8 +158,9 @@ class PythonProcess(ManagerProcess):
     self.sigkill = sigkill
 
   def prepare(self):
-    cloudlog.info("preimporting %s" % self.module)
-    importlib.import_module(self.module)
+    if self.enabled:
+      cloudlog.info("preimporting %s" % self.module)
+      importlib.import_module(self.module)
 
   def start(self):
     if self.proc is not None:
