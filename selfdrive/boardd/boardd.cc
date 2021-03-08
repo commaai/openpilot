@@ -496,28 +496,30 @@ void pigeon_thread() {
     bool need_reset = false;
     std::string recv = pigeon->receive();
 
-    if (did_init && recv.length() >= 3) {
-      uint64_t t = nanos_since_boot();
-
+    // Parse message header
+    if (ignition && recv.length() >= 3) {
       if (recv[0] == (char)ublox::PREAMBLE1 && recv[1] == (char)ublox::PREAMBLE2){
         const char msg_cls = recv[2];
-        last_recv_time[msg_cls] = t;
+        last_recv_time[msg_cls] = nanos_since_boot();
       }
+    }
 
-      for (const auto& [msg_cls, max_dt] : cls_max_dt) {
-        uint64_t dt = t - last_recv_time[msg_cls];
-        // LOGE("0x%02x %llu", msg_cls, dt);
-        if (dt > max_dt) {
-          LOGE("ublox receive timeout, msg class: 0x%02x, dt %llu, resetting panda GPS", msg_cls, dt);
-          need_reset = true;
-        }
-      }
-
-      if (recv[0] == (char)0x00){
+    // Check based on message frequency
+    for (const auto& [msg_cls, max_dt] : cls_max_dt) {
+      uint64_t dt = nanos_since_boot() - last_recv_time[msg_cls];
+      if (ignition && did_init && dt > max_dt) {
+        LOGE("ublox receive timeout, msg class: 0x%02x, dt %llu, resetting panda GPS", msg_cls, dt);
         need_reset = true;
-        LOGW("received invalid ublox message while onroad, resetting panda GPS");
       }
+    }
 
+    // Check based on null bytes
+    if (ignition && recv.length() > 0 && recv[0] == (char)0x00){
+      need_reset = true;
+      LOGW("received invalid ublox message while onroad, resetting panda GPS");
+    }
+
+    if (recv.length() > 0){
       pigeon_publish_raw(pm, recv);
     }
 
@@ -525,13 +527,14 @@ void pigeon_thread() {
     // since it was turned off in low power mode
     if((ignition && !ignition_last) || need_reset) {
       pigeon->init();
-      last_recv_time.clear();
+      did_init = true;
 
+      // Set receive times to current time
+      last_recv_time.clear();
       uint64_t t = nanos_since_boot();
       for (const auto& [msg_cls, dt] : cls_max_dt) {
         last_recv_time[msg_cls] = t;
       }
-      did_init = true;
     }
 
     ignition_last = ignition;
