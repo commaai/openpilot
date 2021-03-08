@@ -1,14 +1,10 @@
 import os
-import time
 import subprocess
 from common.basedir import BASEDIR
-from common.realtime import sec_since_boot
 
 
 class Spinner():
   def __init__(self):
-    self.update_t = -1
-    self.sleep_t = 1 / 50.
     try:
       self.spinner_proc = subprocess.Popen(["./spinner"],
                                            stdin=subprocess.PIPE,
@@ -29,12 +25,7 @@ class Spinner():
         pass
 
   def update_progress(self, cur: int, total: int):
-    elapsed_t = sec_since_boot() - self.update_t
-    if elapsed_t < self.sleep_t:
-      time.sleep(self.sleep_t - elapsed_t)
-
     self.update(str(round(100 * cur / total)))
-    self.update_t = sec_since_boot()
 
   def close(self):
     if self.spinner_proc is not None:
