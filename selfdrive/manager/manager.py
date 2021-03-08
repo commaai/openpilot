@@ -106,9 +106,6 @@ def manager_prepare(spinner=None):
       perc = (100.0 - total) + total * (i + 1) / len(managed_processes)
       spinner.update_progress(perc, 100.)
 
-  if spinner:
-    time.sleep(0.25)  # gives some time to update progress bar to 100%
-
 
 def manager_cleanup():
   if EON:
@@ -137,6 +134,9 @@ def manager_thread():
   if EON and "QT" not in os.environ:
     pm_apply_packages('enable')
     start_offroad()
+
+  if spinner:
+    spinner.close()
 
   started_prev = False
   params = Params()
@@ -179,10 +179,9 @@ def main(spinner=None):
   manager_init(spinner)
   manager_prepare(spinner)
 
-  if spinner:
-    spinner.close()
-
   if os.getenv("PREPAREONLY") is not None:
+    if spinner:
+      spinner.close()
     return
 
   # SystemExit on sigterm
