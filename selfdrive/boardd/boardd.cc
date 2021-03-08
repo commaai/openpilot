@@ -531,7 +531,7 @@ void pigeon_thread() {
 
       // Set receive times to current time
       last_recv_time.clear();
-      uint64_t t = nanos_since_boot();
+      uint64_t t = nanos_since_boot() + 10000000000ULL; // Give ublox 10 seconds to start
       for (const auto& [msg_cls, dt] : cls_max_dt) {
         last_recv_time[msg_cls] = t;
       }
