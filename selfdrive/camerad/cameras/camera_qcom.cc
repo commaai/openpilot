@@ -328,28 +328,6 @@ static void do_autoexposure(CameraState *s, float grey_frac) {
   }
 }
 
-static uint8_t* get_eeprom(int eeprom_fd, size_t *out_len) {
-  msm_eeprom_cfg_data cfg = {.cfgtype = CFG_EEPROM_GET_CAL_DATA};
-  int err = ioctl(eeprom_fd, VIDIOC_MSM_EEPROM_CFG, &cfg);
-  assert(err >= 0);
-
-  uint32_t num_bytes = cfg.cfg.get_data.num_bytes;
-  assert(num_bytes > 100);
-
-  uint8_t* buffer = (uint8_t*)malloc(num_bytes);
-  assert(buffer);
-  memset(buffer, 0, num_bytes);
-
-  cfg.cfgtype = CFG_EEPROM_READ_CAL_DATA;
-  cfg.cfg.read_data.num_bytes = num_bytes;
-  cfg.cfg.read_data.dbuffer = buffer;
-  err = ioctl(eeprom_fd, VIDIOC_MSM_EEPROM_CFG, &cfg);
-  assert(err >= 0);
-
-  *out_len = num_bytes;
-  return buffer;
-}
-
 static void sensors_init(MultiCameraState *s) {
   unique_fd sensorinit_fd;
   sensorinit_fd = open("/dev/v4l-subdev11", O_RDWR | O_NONBLOCK);
@@ -461,9 +439,6 @@ static void camera_open(CameraState *s, bool is_road_cam) {
     sensor_dev = "/dev/v4l-subdev17";
     s->isp_fd = open("/dev/v4l-subdev13", O_RDWR | O_NONBLOCK);
     assert(s->isp_fd >= 0);
-    s->eeprom_fd = open("/dev/v4l-subdev8", O_RDWR | O_NONBLOCK);
-    assert(s->eeprom_fd >= 0);
-
     s->actuator_fd = open("/dev/v4l-subdev7", O_RDWR | O_NONBLOCK);
     assert(s->actuator_fd >= 0);
   } else {
@@ -474,8 +449,6 @@ static void camera_open(CameraState *s, bool is_road_cam) {
     sensor_dev = "/dev/v4l-subdev18";
     s->isp_fd = open("/dev/v4l-subdev14", O_RDWR | O_NONBLOCK);
     assert(s->isp_fd >= 0);
-    s->eeprom_fd = open("/dev/v4l-subdev9", O_RDWR | O_NONBLOCK);
-    assert(s->eeprom_fd >= 0);
   }
 
   // wait for sensor device
@@ -536,14 +509,6 @@ static void camera_open(CameraState *s, bool is_road_cam) {
 
   // **** GO GO GO ****
   LOG("******************** GO GO GO ************************");
-
-  s->eeprom = get_eeprom(s->eeprom_fd, &s->eeprom_size);
-
-  // printf("eeprom:\n");
-  // for (int i=0; i<s->eeprom_size; i++) {
-  //   printf("%02x", s->eeprom[i]);
-  // }
-  // printf("\n");
 
   // CSID: init csid
   csid_cfg_data.cfgtype = CSID_INIT;
@@ -1083,8 +1048,6 @@ static void camera_close(CameraState *s) {
       LOG("isp release stream: %d", err);
     }
   }
-
-  free(s->eeprom);
 }
 
 const char* get_isp_event_name(unsigned int type) {
