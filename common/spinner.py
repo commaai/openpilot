@@ -2,7 +2,7 @@ import os
 import time
 import subprocess
 from common.basedir import BASEDIR
-from common.clock import sec_since_boot
+from common.realtime import sec_since_boot
 
 
 class Spinner():
