@@ -15,6 +15,7 @@
 #include <bitset>
 #include <thread>
 #include <atomic>
+#include <map>
 
 #include <libusb-1.0/libusb.h>
 
@@ -25,6 +26,7 @@
 #include "common/swaglog.h"
 #include "common/timing.h"
 #include "messaging.hpp"
+#include "locationd/ublox_msg.h"
 
 #include "panda.h"
 #include "pigeon.h"
@@ -475,6 +477,7 @@ void pigeon_thread() {
   // ubloxRaw = 8042
   PubMaster pm({"ubloxRaw"});
   bool ignition_last = false;
+  bool did_init = false;
 
 #ifdef QCOM2
   Pigeon * pigeon = Pigeon::connect("/dev/ttyHS0");
@@ -482,24 +485,48 @@ void pigeon_thread() {
   Pigeon * pigeon = Pigeon::connect(panda);
 #endif
 
+  std::unordered_map<char, uint64_t> last_recv_time;
+  std::unordered_map<char, uint64_t> cls_max_dt = {
+    {(char)ublox::CLASS_NAV, uint64_t(1000000000ULL)}, // 1.0s - 10Hz
+    {(char)ublox::CLASS_RXM, uint64_t(1000000000ULL)}, // 1.0s - 10Hz
+    {(char)ublox::CLASS_MON, uint64_t(2000000000ULL)}, // 2.0s - 1Hz
+  };
+
   while (!do_exit && panda->connected) {
     bool need_reset = false;
     std::string recv = pigeon->receive();
-    if (recv.length() > 0) {
-      if (recv[0] == (char)0x00){
-        if (ignition) {
-          LOGW("received invalid ublox message while onroad, resetting panda GPS");
+
+    if (did_init && recv.length() >= 3) {
+      uint64_t t = nanos_since_boot();
+
+      if (recv[0] == (char)ublox::PREAMBLE1 && recv[1] == (char)ublox::PREAMBLE2){
+        const char msg_cls = recv[2];
+        last_recv_time[msg_cls] = t;
+      }
+
+      for (const auto& [msg_cls, max_dt] : cls_max_dt) {
+        uint64_t dt = t - last_recv_time[msg_cls];
+        // LOGE("0x%02x %llu", msg_cls, dt);
+        if (dt > max_dt) {
+          LOGE("Pigeon receive timeout, msg class: 0x%02x, dt %llu", msg_cls, dt);
           need_reset = true;
         }
-      } else {
-        pigeon_publish_raw(pm, recv);
       }
+
+      pigeon_publish_raw(pm, recv);
     }
 
     // init pigeon on rising ignition edge
     // since it was turned off in low power mode
     if((ignition && !ignition_last) || need_reset) {
       pigeon->init();
+      last_recv_time.clear();
+
+      uint64_t t = nanos_since_boot();
+      for (const auto& [msg_cls, dt] : cls_max_dt) {
+        last_recv_time[msg_cls] = t;
+      }
+      did_init = true;
     }
 
     ignition_last = ignition;
