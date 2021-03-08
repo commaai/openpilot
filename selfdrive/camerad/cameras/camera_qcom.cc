@@ -1207,7 +1207,7 @@ void cameras_run(MultiCameraState *s) {
         meta_data = (FrameMetadata){
           .frame_id = isp_event_data->frame_id,
           .timestamp_eof = timestamp,
-          .frame_length = c->frame_length,
+          .frame_length = (uint32_t)c->cur_frame_length,
           .integ_lines = (uint32_t)c->cur_integ_lines,
           .global_gain = (uint32_t)c->cur_gain,
           .gain_frac = c->cur_gain_frac,

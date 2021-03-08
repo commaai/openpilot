@@ -75,7 +75,7 @@ typedef struct CameraState {
 
   // rear camera only,used for focusing
   std::mutex focus_lock;
-  unique_fd actuator_fd, eeprom_fd;
+  unique_fd actuator_fd;
   float focus_err = 0.;
   float last_sag_acc_z = 0.;
   float lens_true_pos = 0.;
