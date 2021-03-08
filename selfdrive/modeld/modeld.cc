@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <mutex>
 #include <eigen3/Eigen/Dense>
 
 #include "visionbuf.h"
@@ -16,7 +17,7 @@ ExitHandler do_exit;
 // globals
 bool live_calib_seen;
 mat3 cur_transform;
-pthread_mutex_t transform_lock;
+std::mutex transform_lock;
 
 void* live_thread(void *arg) {
   set_thread_name("live");
@@ -60,10 +61,9 @@ void* live_thread(void *arg) {
         transform.v[i] = warp_matrix(i / 3, i % 3);
       }
       mat3 model_transform = matmul3(yuv_transform, transform);
-      pthread_mutex_lock(&transform_lock);
+      std::lock_guard lk(transform_lock);
       cur_transform = model_transform;
       live_calib_seen = true;
-      pthread_mutex_unlock(&transform_lock);
     }
   }
   return NULL;
@@ -90,10 +90,10 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client) {
     VisionBuf *buf = vipc_client.recv(&extra);
     if (buf == nullptr) continue;
 
-    pthread_mutex_lock(&transform_lock);
+    transform_lock.lock();
     mat3 model_transform = cur_transform;
     const bool run_model_this_iter = live_calib_seen;
-    pthread_mutex_unlock(&transform_lock);
+    transform_lock.unlock();
 
     if (sm.update(0) > 0) {
       // TODO: path planner timeout?
@@ -142,8 +142,6 @@ int main(int argc, char **argv) {
   set_core_affinity(4);
 #endif
 
-  pthread_mutex_init(&transform_lock, NULL);
-
   // start calibration thread
   pthread_t live_thread_handle;
   int err = pthread_create(&live_thread_handle, NULL, live_thread, NULL);
@@ -175,6 +173,5 @@ int main(int argc, char **argv) {
   err = pthread_join(live_thread_handle, NULL);
   assert(err == 0);
   CL_CHECK(clReleaseContext(context));
-  pthread_mutex_destroy(&transform_lock);
   return 0;
 }
