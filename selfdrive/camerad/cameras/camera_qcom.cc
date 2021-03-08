@@ -166,7 +166,7 @@ static int ov8865_apply_exposure(CameraState *s, int gain, int integ_lines, int 
 
 static void camera_init(VisionIpcServer *v, CameraState *s, int camera_id, int camera_num,
                         uint32_t pixel_clock, uint32_t line_length_pclk,
-                        unsigned int max_gain, unsigned int fps, cl_device_id device_id, cl_context ctx,
+                        uint32_t max_gain, uint32_t fps, cl_device_id device_id, cl_context ctx,
                         VisionStreamType rgb_type, VisionStreamType yuv_type) {
   s->camera_num = camera_num;
   s->camera_id = camera_id;
@@ -235,10 +235,10 @@ void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_i
 static void set_exposure(CameraState *s, float exposure_frac, float gain_frac) {
   int err = 0;
 
-  unsigned int frame_length = s->pixel_clock / s->line_length_pclk / s->fps;
+  uint32_t frame_length = s->pixel_clock / s->line_length_pclk / s->fps;
 
-  unsigned int gain = s->cur_gain;
-  unsigned int integ_lines = s->cur_integ_lines;
+  uint32_t gain = s->cur_gain;
+  uint32_t integ_lines = s->cur_integ_lines;
 
   if (exposure_frac >= 0) {
     exposure_frac = std::clamp(exposure_frac, 2.0f / frame_length, 1.0f);
@@ -294,9 +294,9 @@ static void do_autoexposure(CameraState *s, float grey_frac) {
     const float gain_frac_min = 0.015625;
     const float gain_frac_max = 1.0;
     // exposure time limits
-    unsigned int frame_length = s->pixel_clock / s->line_length_pclk / s->fps;
-    const unsigned int exposure_time_min = 16;
-    const unsigned int exposure_time_max = frame_length - 11; // copied from set_exposure()
+    uint32_t frame_length = s->pixel_clock / s->line_length_pclk / s->fps;
+    const uint32_t exposure_time_min = 16;
+    const uint32_t exposure_time_max = frame_length - 11; // copied from set_exposure()
 
     float cur_gain_frac = s->cur_gain_frac;
     float exposure_factor = pow(1.05, (target_grey - grey_frac) / 0.05);
@@ -1049,7 +1049,7 @@ static void camera_close(CameraState *s) {
   }
 }
 
-const char* get_isp_event_name(unsigned int type) {
+const char* get_isp_event_name(uint32_t type) {
   switch (type) {
   case ISP_EVENT_REG_UPDATE: return "ISP_EVENT_REG_UPDATE";
   case ISP_EVENT_EPOCH_0: return "ISP_EVENT_EPOCH_0";
@@ -1217,9 +1217,9 @@ void cameras_run(MultiCameraState *s) {
         c->frame_metadata[c->frame_metadata_idx] = (FrameMetadata){
             .frame_id = isp_event_data->frame_id,
             .timestamp_eof = timestamp,
-            .frame_length = (unsigned int)c->cur_frame_length,
-            .integ_lines = (unsigned int)c->cur_integ_lines,
-            .global_gain = (unsigned int)c->cur_gain,
+            .frame_length = (uint32_t)c->cur_frame_length,
+            .integ_lines = (uint32_t)c->cur_integ_lines,
+            .global_gain = (uint32_t)c->cur_gain,
             .lens_pos = c->cur_lens_pos,
             .lens_sag = c->last_sag_acc_z,
             .lens_err = c->focus_err,

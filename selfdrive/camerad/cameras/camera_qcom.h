@@ -67,7 +67,7 @@ typedef struct CameraState {
 
   // exposure
   uint32_t pixel_clock, line_length_pclk;
-  unsigned int max_gain;
+  uint32_t max_gain;
   float cur_exposure_frac, cur_gain_frac;
   int cur_gain, cur_integ_lines;
   int cur_frame_length;
