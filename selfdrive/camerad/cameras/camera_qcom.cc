@@ -117,12 +117,7 @@ static int imx298_apply_exposure(CameraState *s, int gain, int integ_lines, int 
     // REG_HOLD
     {0x104,0x0,0},
   };
-
-  int err = sensor_write_regs(s, reg_array, ARRAYSIZE(reg_array), MSM_CAMERA_I2C_BYTE_DATA);
-  if (err != 0) {
-    LOGE("apply_exposure err %d", err);
-  }
-  return err;
+  return sensor_write_regs(s, reg_array, ARRAYSIZE(reg_array), MSM_CAMERA_I2C_BYTE_DATA);
 }
 
 static int ov8865_apply_exposure(CameraState *s, int gain, int integ_lines, int frame_length) {
@@ -157,11 +152,7 @@ static int ov8865_apply_exposure(CameraState *s, int gain, int integ_lines, int 
 
     //{0x104,0x0,0},
   };
-  int err = sensor_write_regs(s, reg_array, ARRAYSIZE(reg_array), MSM_CAMERA_I2C_BYTE_DATA);
-  if (err != 0) {
-    LOGE("apply_exposure err %d", err);
-  }
-  return err;
+  return sensor_write_regs(s, reg_array, ARRAYSIZE(reg_array), MSM_CAMERA_I2C_BYTE_DATA);
 }
 
 static void camera_init(VisionIpcServer *v, CameraState *s, int camera_id, int camera_num,
@@ -275,6 +266,8 @@ static void set_exposure(CameraState *s, float exposure_frac, float gain_frac) {
       s->cur_gain = gain;
       s->cur_integ_lines = integ_lines;
       s->cur_frame_length = frame_length;
+    } else {
+      LOGE("camera %d apply_exposure err: %d", s->camera_num, err);
     }
   }
 
