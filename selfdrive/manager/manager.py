@@ -194,7 +194,7 @@ def main(spinner=None):
   finally:
     manager_cleanup()
 
-  if Params().params.get("DoUninstall", encoding='utf8') == "1":
+  if Params().get("DoUninstall", encoding='utf8') == "1":
     cloudlog.warning("uninstalling")
     HARDWARE.uninstall()
 
