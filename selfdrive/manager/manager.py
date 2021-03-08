@@ -117,6 +117,7 @@ def manager_cleanup():
 
 
 def manager_thread():
+  spinner.update_progress(100, 100)
   cloudlog.info("manager start")
   cloudlog.info({"environ": os.environ})
 
