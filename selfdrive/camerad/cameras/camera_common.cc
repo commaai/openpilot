@@ -367,6 +367,7 @@ static void processing_thread(MultiCameraState *cameras, CameraState *cs, proces
       }
 
       pm.send(pub_name, msg);
+
       if (pub_thumbnail && frame_cnt % 100 == 3) {
         // this takes 10ms???
         publish_thumbnail(&pm, &(cs->buf));
