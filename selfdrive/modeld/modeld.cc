@@ -14,7 +14,7 @@
 
 ExitHandler do_exit;
 // globals
-bool run_model;
+bool live_calib_seen;
 mat3 cur_transform;
 pthread_mutex_t transform_lock;
 
@@ -62,11 +62,74 @@ void* live_thread(void *arg) {
       mat3 model_transform = matmul3(yuv_transform, transform);
       pthread_mutex_lock(&transform_lock);
       cur_transform = model_transform;
-      run_model = true;
+      live_calib_seen = true;
       pthread_mutex_unlock(&transform_lock);
     }
   }
   return NULL;
+}
+
+void run_model(ModelState &model, VisionIpcClient &vipc_client) {
+  // messaging
+  PubMaster pm({"modelV2", "cameraOdometry"});
+  SubMaster sm({"lateralPlan", "roadCameraState"});
+
+  // setup filter to track dropped frames
+  const float dt = 1. / MODEL_FREQ;
+  const float ts = 10.0;  // filter time constant (s)
+  const float frame_filter_k = (dt / ts) / (1. + dt / ts);
+  float frames_dropped = 0;
+
+  uint32_t frame_id = 0, last_vipc_frame_id = 0;
+  double last = 0;
+  int desire = -1;
+  uint32_t run_count = 0;
+
+  while (!do_exit) {
+    VisionIpcBufExtra extra = {};
+    VisionBuf *buf = vipc_client.recv(&extra);
+    if (buf == nullptr) continue;
+
+    pthread_mutex_lock(&transform_lock);
+    mat3 model_transform = cur_transform;
+    const bool run_model_this_iter = live_calib_seen;
+    pthread_mutex_unlock(&transform_lock);
+
+    if (sm.update(0) > 0) {
+      // TODO: path planner timeout?
+      desire = ((int)sm["lateralPlan"].getLateralPlan().getDesire());
+      frame_id = sm["roadCameraState"].getRoadCameraState().getFrameId();
+    }
+
+    if (run_model_this_iter) {
+      run_count++;
+
+      float vec_desire[DESIRE_LEN] = {0};
+      if (desire >= 0 && desire < DESIRE_LEN) {
+        vec_desire[desire] = 1.0;
+      }
+
+      double mt1 = millis_since_boot();
+      ModelDataRaw model_buf = model_eval_frame(&model, buf->buf_cl, buf->width, buf->height,
+                                                model_transform, vec_desire);
+      double mt2 = millis_since_boot();
+      float model_execution_time = (mt2 - mt1) / 1000.0;
+
+      // tracked dropped frames
+      uint32_t vipc_dropped_frames = extra.frame_id - last_vipc_frame_id - 1;
+      frames_dropped = (1. - frame_filter_k) * frames_dropped + frame_filter_k * (float)std::min(vipc_dropped_frames, 10U);
+      if (run_count < 10) frames_dropped = 0;  // let frame drops warm up
+      float frame_drop_ratio = frames_dropped / (1 + frames_dropped);
+
+      model_publish(pm, extra.frame_id, frame_id, frame_drop_ratio, model_buf, extra.timestamp_eof, model_execution_time,
+                    kj::ArrayPtr<const float>(model.output.data(), model.output.size()));
+      posenet_publish(pm, extra.frame_id, vipc_dropped_frames, model_buf, extra.timestamp_eof);
+
+      LOGD("model process: %.2fms, from last %.2fms, vipc_frame_id %u, frame_id, %u, frame_drop %.3f", mt2 - mt1, mt1 - last, extra.frame_id, frame_id, frame_drop_ratio);
+      last = mt1;
+      last_vipc_frame_id = extra.frame_id;
+    }
+  }
 }
 
 int main(int argc, char **argv) {
@@ -87,10 +150,6 @@ int main(int argc, char **argv) {
   err = pthread_create(&live_thread_handle, NULL, live_thread, NULL);
   assert(err == 0);
 
-  // messaging
-  PubMaster pm({"modelV2", "cameraOdometry"});
-  SubMaster sm({"lateralPlan", "roadCameraState"});
-
   // cl init
   cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
   cl_context context = CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id, NULL, NULL, &err));
@@ -101,80 +160,14 @@ int main(int argc, char **argv) {
   LOGW("models loaded, modeld starting");
 
   VisionIpcClient vipc_client = VisionIpcClient("camerad", VISION_STREAM_YUV_BACK, true, device_id, context);
-
-  while (!do_exit) {
-    if (!vipc_client.connect(false)) {
-      util::sleep_for(100);
-      continue;
-    }
-
+  while (!do_exit && !vipc_client.connect(false)) {
+    util::sleep_for(100);
+  }
+  
+  if (vipc_client.connected) {
     VisionBuf *b = &vipc_client.buffers[0];
     LOGW("connected with buffer size: %d (%d x %d)", b->len, b->width, b->height);
-
-    // setup filter to track dropped frames
-    const float dt = 1. / MODEL_FREQ;
-    const float ts = 10.0;  // filter time constant (s)
-    const float frame_filter_k = (dt / ts) / (1. + dt / ts);
-    float frames_dropped = 0;
-
-    uint32_t frame_id = 0, last_vipc_frame_id = 0;
-    double last = 0;
-    int desire = -1;
-    uint32_t run_count = 0;
-
-    while (!do_exit) {
-      VisionIpcBufExtra extra = {};
-      VisionBuf *buf = vipc_client.recv(&extra);
-      if (buf == nullptr) {
-        if (!vipc_client.connected) break; 
-
-        continue;
-      }
-
-      pthread_mutex_lock(&transform_lock);
-      mat3 model_transform = cur_transform;
-      const bool run_model_this_iter = run_model;
-      pthread_mutex_unlock(&transform_lock);
-
-      if (sm.update(0) > 0) {
-        // TODO: path planner timeout?
-        desire = ((int)sm["lateralPlan"].getLateralPlan().getDesire());
-        frame_id = sm["roadCameraState"].getRoadCameraState().getFrameId();
-      }
-
-      double mt1 = 0, mt2 = 0;
-      if (run_model_this_iter) {
-        run_count++;
-
-        float vec_desire[DESIRE_LEN] = {0};
-        if (desire >= 0 && desire < DESIRE_LEN) {
-          vec_desire[desire] = 1.0;
-        }
-
-        mt1 = millis_since_boot();
-
-        ModelDataRaw model_buf =
-            model_eval_frame(&model, buf->buf_cl, buf->width, buf->height,
-                             model_transform, vec_desire);
-        mt2 = millis_since_boot();
-        float model_execution_time = (mt2 - mt1) / 1000.0;
-
-        // tracked dropped frames
-        uint32_t vipc_dropped_frames = extra.frame_id - last_vipc_frame_id - 1;
-        frames_dropped = (1. - frame_filter_k) * frames_dropped + frame_filter_k * (float)std::min(vipc_dropped_frames, 10U);
-        if (run_count < 10) frames_dropped = 0;  // let frame drops warm up
-        float frame_drop_ratio = frames_dropped / (1 + frames_dropped);
-
-        model_publish(pm, extra.frame_id, frame_id, frame_drop_ratio, model_buf, extra.timestamp_eof, model_execution_time,
-                      kj::ArrayPtr<const float>(model.output.data(), model.output.size()));
-        posenet_publish(pm, extra.frame_id, vipc_dropped_frames, model_buf, extra.timestamp_eof);
-
-        LOGD("model process: %.2fms, from last %.2fms, vipc_frame_id %u, frame_id, %u, frame_drop %.3f", mt2-mt1, mt1-last, extra.frame_id, frame_id, frame_drop_ratio);
-        last = mt1;
-        last_vipc_frame_id = extra.frame_id;
-      }
-
-    }
+    run_model(model, vipc_client);
   }
 
   model_free(&model);
