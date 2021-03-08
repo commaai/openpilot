@@ -477,7 +477,6 @@ void pigeon_thread() {
   // ubloxRaw = 8042
   PubMaster pm({"ubloxRaw"});
   bool ignition_last = false;
-  bool did_init = false;
 
 #ifdef QCOM2
   Pigeon * pigeon = Pigeon::connect("/dev/ttyHS0");
@@ -507,7 +506,7 @@ void pigeon_thread() {
     // Check based on message frequency
     for (const auto& [msg_cls, max_dt] : cls_max_dt) {
       int64_t dt = (int64_t)nanos_since_boot() - (int64_t)last_recv_time[msg_cls];
-      if (ignition_last && ignition && did_init && dt > max_dt) {
+      if (ignition_last && ignition && dt > max_dt) {
         LOGE("ublox receive timeout, msg class: 0x%02x, dt %llu, resetting panda GPS", msg_cls, dt);
         need_reset = true;
       }
@@ -527,7 +526,6 @@ void pigeon_thread() {
     // since it was turned off in low power mode
     if((ignition && !ignition_last) || need_reset) {
       pigeon->init();
-      did_init = true;
 
       // Set receive times to current time
       last_recv_time.clear();
