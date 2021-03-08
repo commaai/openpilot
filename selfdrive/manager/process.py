@@ -107,6 +107,10 @@ class ManagerProcess(ABC):
     return ret
 
   def signal(self, sig):
+    if self.proc is None:
+      return
+
+    # Don't signal if already exited
     if self.proc.exitcode is not None and self.proc.pid is not None:
       return
 
