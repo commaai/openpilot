@@ -15,7 +15,6 @@
 #include <linux/limits.h>
 #endif
 
-
 ExitHandler do_exit;
 
 void run_model(DMonitoringModelState &model, VisionIpcClient &vipc_client) {
@@ -50,13 +49,12 @@ int main(int argc, char **argv) {
   while (!do_exit && !vipc_client.connect(false)) {
     util::sleep_for(100);
   }
-  
+
   if (vipc_client.connected) {
     LOGW("connected with buffer size: %d", vipc_client.buffers[0].len);
     run_model(model, vipc_client);
   }
 
   dmonitoring_free(&model);
-
   return 0;
 }

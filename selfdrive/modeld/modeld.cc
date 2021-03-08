@@ -133,7 +133,6 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client) {
 }
 
 int main(int argc, char **argv) {
-  int err;
   set_realtime_priority(54);
 
 #ifdef QCOM
@@ -147,7 +146,7 @@ int main(int argc, char **argv) {
 
   // start calibration thread
   pthread_t live_thread_handle;
-  err = pthread_create(&live_thread_handle, NULL, live_thread, NULL);
+  int err = pthread_create(&live_thread_handle, NULL, live_thread, NULL);
   assert(err == 0);
 
   // cl init
