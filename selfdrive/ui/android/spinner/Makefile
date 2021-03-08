@@ -1,7 +1,7 @@
 CC = clang
 CXX = clang++
 
-ROOT_DIR = ../..
+ROOT_DIR = ../../..
 PHONELIBS = $(ROOT_DIR)/phonelibs
 COMMON = $(ROOT)/selfdrive/common
 
@@ -66,7 +66,7 @@ img_spinner_comma.o: $(ROOT_DIR)/selfdrive/assets/img_spinner_comma.png
 %.o: %.c
 	@echo "[ CC ] $@"
 	$(CC) $(CFLAGS) -MMD \
-          -I../../.. \
+          -I../.. \
           $(NANOVG_FLAGS) \
           -c -o '$@' '$<'
 
