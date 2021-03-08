@@ -14,12 +14,10 @@ procs = [
   NativeProcess("loggerd", "selfdrive/loggerd", ["./loggerd"]),
   NativeProcess("modeld", "selfdrive/modeld", ["./modeld"]),
   NativeProcess("proclogd", "selfdrive/proclogd", ["./proclogd"]),
-  NativeProcess("ubloxd", "selfdrive/locationd", ["./ubloxd"]),
   NativeProcess("ui", "selfdrive/ui", ["./ui"], persistent=True),
   PythonProcess("calibrationd", "selfdrive.locationd.calibrationd"),
   PythonProcess("controlsd", "selfdrive.controls.controlsd"),
   PythonProcess("deleter", "selfdrive.loggerd.deleter", persistent=True),
-  PythonProcess("dmonitoringd", "selfdrive.monitoring.dmonitoringd", driverview=True),
   PythonProcess("locationd", "selfdrive.locationd.locationd"),
   PythonProcess("logmessaged", "selfdrive.logmessaged", persistent=True),
   PythonProcess("pandad", "selfdrive.pandad", persistent=True),
@@ -39,6 +37,8 @@ if not PC:
 
 if not PC or WEBCAM:
   procs += [
+    NativeProcess("ubloxd", "selfdrive/locationd", ["./ubloxd"]),
+    PythonProcess("dmonitoringd", "selfdrive.monitoring.dmonitoringd", driverview=True),
     NativeProcess("dmonitoringmodeld", "selfdrive/modeld", ["./dmonitoringmodeld"], driverview=True),
   ]
 
