@@ -14,7 +14,6 @@
 #include "common/util.h"
 #include "common/swaglog.h"
 #include "camera_qcom2.h"
-#include "common/params.h"
 
 #include "media/cam_defs.h"
 #include "media/cam_isp.h"
