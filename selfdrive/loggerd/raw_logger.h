@@ -5,7 +5,6 @@
 
 #include <string>
 #include <vector>
-#include <condition_variable>
 
 extern "C" {
 #include <libavutil/imgutils.h>
