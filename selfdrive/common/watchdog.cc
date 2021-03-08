@@ -3,6 +3,7 @@
 #include <unistd.h>
 
 #include "common/timing.h"
+#include "common/util.h"
 #include "common/watchdog.h"
 
 const std::string watchdog_fn_prefix = "/dev/shm/wd_";  // + <pid>
