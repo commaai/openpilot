@@ -16,6 +16,7 @@
 #include "common/params.h"
 #include "common/timing.h"
 #include "common/swaglog.h"
+#include "common/watchdog.h"
 
 #include "home.hpp"
 #include "paint.hpp"
@@ -296,6 +297,7 @@ void GLWindow::paintGL() {
     }
     prev_draw_t = cur_draw_t;
   }
+  watchdog_kick();
 }
 
 void GLWindow::wake() {

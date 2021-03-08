@@ -1,3 +1,3 @@
 #pragma once
 
-bool watchdock_kick();
+bool watchdog_kick();

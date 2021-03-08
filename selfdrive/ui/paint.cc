@@ -3,7 +3,6 @@
 #include <assert.h>
 #include "common/util.h"
 #include "common/timing.h"
-#include "common/watchdog.h"
 #include <algorithm>
 
 #define NANOVG_GLES3_IMPLEMENTATION
@@ -400,8 +399,6 @@ void ui_draw(UIState *s) {
   }
   nvgEndFrame(s->vg);
   glDisable(GL_BLEND);
-
-  watchdock_kick();
 }
 
 void ui_draw_image(const UIState *s, const Rect &r, const char *name, float alpha){
