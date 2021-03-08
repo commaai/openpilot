@@ -58,6 +58,7 @@ class ManagerProcess(ABC):
   daemon = False
   sigkill = False
   proc = None
+  enabled = True
   name = ""
 
   @abstractmethod
@@ -123,10 +124,11 @@ class ManagerProcess(ABC):
 
 
 class NativeProcess(ManagerProcess):
-  def __init__(self, name, cwd, cmdline, persistent=False, driverview=False, unkillable=False, sigkill=False):
+  def __init__(self, name, cwd, cmdline, enabled=True, persistent=False, driverview=False, unkillable=False, sigkill=False):
     self.name = name
     self.cwd = cwd
     self.cmdline = cmdline
+    self.enabled = enabled
     self.persistent = persistent
     self.driverview = driverview
     self.unkillable = unkillable
@@ -146,17 +148,19 @@ class NativeProcess(ManagerProcess):
 
 
 class PythonProcess(ManagerProcess):
-  def __init__(self, name, module, persistent=False, driverview=False, unkillable=False, sigkill=False):
+  def __init__(self, name, module, enabled=True, persistent=False, driverview=False, unkillable=False, sigkill=False):
     self.name = name
     self.module = module
+    self.enabled = enabled
     self.persistent = persistent
     self.driverview = driverview
     self.unkillable = unkillable
     self.sigkill = sigkill
 
   def prepare(self):
-    cloudlog.info("preimporting %s" % self.module)
-    importlib.import_module(self.module)
+    if self.enabled:
+      cloudlog.info("preimporting %s" % self.module)
+      importlib.import_module(self.module)
 
   def start(self):
     if self.proc is not None:
@@ -170,10 +174,11 @@ class PythonProcess(ManagerProcess):
 class DaemonProcess(ManagerProcess):
   """Python process that has to stay running accross manager restart.
   This is used for athena so you don't lose SSH access when restarting manager."""
-  def __init__(self, name, module, param_name):
+  def __init__(self, name, module, param_name, enabled=True):
     self.name = name
     self.module = module
     self.param_name = param_name
+    self.enabled = enabled
     self.persistent = True
 
   def prepare(self):
@@ -214,6 +219,8 @@ def ensure_running(procs, started, driverview=False, not_run=None):
   # TODO: can we do this in parallel?
   for p in procs:
     if p.name in not_run:
+      p.stop()
+    elif not p.enabled:
       p.stop()
     elif p.persistent:
       p.start()
