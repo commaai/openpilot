@@ -215,8 +215,8 @@ GLWindow::GLWindow(QWidget* parent) : QOpenGLWidget(parent) {
   int result = read_param(&brightness_b, "BRIGHTNESS_B", true);
   result += read_param(&brightness_m, "BRIGHTNESS_M", true);
   if (result != 0) {
-    brightness_b = 200.0;
-    brightness_m = 10.0;
+    brightness_b = 100.0;
+    brightness_m = 1.0;
   }
   smooth_brightness = 512;
 }
@@ -247,6 +247,7 @@ void GLWindow::backlightUpdate() {
   // Update brightness
   float k = (BACKLIGHT_DT / BACKLIGHT_TS) / (1.0f + BACKLIGHT_DT / BACKLIGHT_TS);
 
+  // TODO: no light sensor when offroad
   float clipped_brightness = std::min(1023.0f, (ui_state.scene.light_sensor * brightness_m) + brightness_b);
   smooth_brightness = clipped_brightness * k + smooth_brightness * (1.0f - k);
   int brightness = smooth_brightness;
