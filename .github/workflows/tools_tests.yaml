@@ -6,6 +6,7 @@ on:
 env:
   BASE_IMAGE: openpilot-base
   DOCKER_REGISTRY: ghcr.io/commaai
+  DOCKER_LOGIN: docker login ghcr.io -u adeebshihadeh -p ${{ secrets.CONTAINER_TOKEN }}
 
   BUILD: |
       docker pull $(grep -iohP '(?<=^from)\s+\S+' Dockerfile.openpilot_base) || true
@@ -23,7 +24,7 @@ jobs:
     - uses: actions/checkout@v2
       with:
         submodules: true
-    - name: Build docker image
+    - name: Build Docker image
       run: eval "$BUILD"
     - name: Unit test
       run: |
@@ -32,3 +33,26 @@ jobs:
                         apt-get install -y libdw-dev libqt5svg5-dev libqt5x11extras5-dev && \
                         cd /tmp/openpilot/tools/plotjuggler && \
                         ./test_plotjuggler.py"
+
+  simulator:
+    name: simulator
+    runs-on: ubuntu-20.04
+    timeout-minutes: 50
+    env:
+      IMAGE_NAME: openpilot-sim
+    if: github.repository == 'commaai/openpilot'
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+        lfs: true
+    - name: Build Docker image
+      run: |
+        eval "$BUILD"
+        docker pull $DOCKER_REGISTRY/$IMAGE_NAME:latest || true
+        docker build --cache-from $DOCKER_REGISTRY/$IMAGE_NAME:latest -t $DOCKER_REGISTRY/$IMAGE_NAME:latest -f tools/sim/Dockerfile.sim .
+    - name: Push to container registry
+      if: github.ref == 'refs/heads/master' && github.repository == 'commaai/openpilot'
+      run: |
+        $DOCKER_LOGIN
+        docker push $DOCKER_REGISTRY/$IMAGE_NAME:latest

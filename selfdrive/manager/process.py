@@ -12,9 +12,13 @@ import cereal.messaging as messaging
 import selfdrive.crash as crash
 from common.basedir import BASEDIR
 from common.params import Params
+from common.realtime import sec_since_boot
 from selfdrive.swaglog import cloudlog
 from selfdrive.hardware import HARDWARE
 from cereal import log
+
+WATCHDOG_FN = "/dev/shm/wd_"
+ENABLE_WATCHDOG = os.getenv("NO_WATCHDOG") is None
 
 
 def launcher(proc):
@@ -58,7 +62,12 @@ class ManagerProcess(ABC):
   daemon = False
   sigkill = False
   proc = None
+  enabled = True
   name = ""
+
+  last_watchdog_time = 0
+  watchdog_max_dt = None
+  watchdog_seen = False
 
   @abstractmethod
   def prepare(self):
@@ -67,6 +76,30 @@ class ManagerProcess(ABC):
   @abstractmethod
   def start(self):
     pass
+
+  def restart(self):
+    self.stop()
+    self.start()
+
+  def check_watchdog(self, started):
+    if self.watchdog_max_dt is None or self.proc is None:
+      return
+
+    try:
+      fn = WATCHDOG_FN + str(self.proc.pid)
+      self.last_watchdog_time = int(open(fn).read())
+    except Exception:
+      pass
+
+    dt = sec_since_boot() - self.last_watchdog_time / 1e9
+
+    if dt > self.watchdog_max_dt:
+      # Only restart while offroad for now
+      if self.watchdog_seen and ENABLE_WATCHDOG and (not started):
+        cloudlog.error(f"Watchdog timeout for {self.name} (exitcode {self.proc.exitcode}) restarting")
+        self.restart()
+    else:
+      self.watchdog_seen = True
 
   def stop(self, retry=True):
     if self.proc is None:
@@ -106,6 +139,10 @@ class ManagerProcess(ABC):
     return ret
 
   def signal(self, sig):
+    if self.proc is None:
+      return
+
+    # Don't signal if already exited
     if self.proc.exitcode is not None and self.proc.pid is not None:
       return
 
@@ -123,14 +160,16 @@ class ManagerProcess(ABC):
 
 
 class NativeProcess(ManagerProcess):
-  def __init__(self, name, cwd, cmdline, persistent=False, driverview=False, unkillable=False, sigkill=False):
+  def __init__(self, name, cwd, cmdline, enabled=True, persistent=False, driverview=False, unkillable=False, sigkill=False, watchdog_max_dt=None):
     self.name = name
     self.cwd = cwd
     self.cmdline = cmdline
+    self.enabled = enabled
     self.persistent = persistent
     self.driverview = driverview
     self.unkillable = unkillable
     self.sigkill = sigkill
+    self.watchdog_max_dt = watchdog_max_dt
 
   def prepare(self):
     pass
@@ -143,20 +182,24 @@ class NativeProcess(ManagerProcess):
     cloudlog.info("starting process %s" % self.name)
     self.proc = Process(name=self.name, target=nativelauncher, args=(self.cmdline, cwd))
     self.proc.start()
+    self.watchdog_seen = False
 
 
 class PythonProcess(ManagerProcess):
-  def __init__(self, name, module, persistent=False, driverview=False, unkillable=False, sigkill=False):
+  def __init__(self, name, module, enabled=True, persistent=False, driverview=False, unkillable=False, sigkill=False, watchdog_max_dt=None):
     self.name = name
     self.module = module
+    self.enabled = enabled
     self.persistent = persistent
     self.driverview = driverview
     self.unkillable = unkillable
     self.sigkill = sigkill
+    self.watchdog_max_dt = watchdog_max_dt
 
   def prepare(self):
-    cloudlog.info("preimporting %s" % self.module)
-    importlib.import_module(self.module)
+    if self.enabled:
+      cloudlog.info("preimporting %s" % self.module)
+      importlib.import_module(self.module)
 
   def start(self):
     if self.proc is not None:
@@ -165,15 +208,17 @@ class PythonProcess(ManagerProcess):
     cloudlog.info("starting python %s" % self.module)
     self.proc = Process(name=self.name, target=launcher, args=(self.module,))
     self.proc.start()
+    self.watchdog_seen = False
 
 
 class DaemonProcess(ManagerProcess):
   """Python process that has to stay running accross manager restart.
   This is used for athena so you don't lose SSH access when restarting manager."""
-  def __init__(self, name, module, param_name):
+  def __init__(self, name, module, param_name, enabled=True):
     self.name = name
     self.module = module
     self.param_name = param_name
+    self.enabled = enabled
     self.persistent = True
 
   def prepare(self):
@@ -215,6 +260,8 @@ def ensure_running(procs, started, driverview=False, not_run=None):
   for p in procs:
     if p.name in not_run:
       p.stop()
+    elif not p.enabled:
+      p.stop()
     elif p.persistent:
       p.start()
     elif p.driverview and driverview:
@@ -223,3 +270,6 @@ def ensure_running(procs, started, driverview=False, not_run=None):
       p.start()
     else:
       p.stop()
+
+    p.check_watchdog(started)
+

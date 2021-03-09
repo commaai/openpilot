@@ -1,5 +1,6 @@
 # flake8: noqa
 
+from cereal import car
 from selfdrive.car import dbc_dict
 from cereal import car
 Ecu = car.CarParams.Ecu
@@ -25,6 +26,9 @@ class CarControllerParams:
 class CANBUS:
   pt = 0
   cam = 2
+
+TransmissionType = car.CarParams.TransmissionType
+GearShifter = car.CarState.GearShifter
 
 BUTTON_STATES = {
   "accelCruise": False,

@@ -22,6 +22,7 @@
 #include "common/params.h"
 #include "common/swaglog.h"
 #include "common/util.h"
+#include "modeldata.h"
 #include "imgproc/utils.h"
 
 static cl_program build_debayer_program(cl_device_id device_id, cl_context context, const CameraInfo *ci, const CameraBuf *b, const CameraState *s) {
@@ -69,16 +70,8 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
     rgb_width = ci->frame_width / 2;
     rgb_height = ci->frame_height / 2;
   }
-  float db_s = 0.5;
-#else
-  float db_s = 1.0;
 #endif
-  const mat3 transform = (mat3){{
-    1.0, 0.0, 0.0,
-    0.0, 1.0, 0.0,
-    0.0, 0.0, 1.0
-  }};
-  yuv_transform = ci->bayer ? transform_scale_buffer(transform, db_s) : transform;
+  yuv_transform = get_model_yuv_transform(ci->bayer);
 
   vipc_server->create_buffers(rgb_type, UI_BUF_COUNT, true, rgb_width, rgb_height);
   rgb_stride = vipc_server->get_buffer(rgb_type)->stride;
@@ -325,7 +318,7 @@ void set_exposure_target(CameraState *c, int x_start, int x_end, int x_skip, int
       break;
     }
   }
-  lum_med = lum_med_alt>0 ? lum_med + lum_med*lum_cur*(lum_med_alt - lum_med)/lum_total/32:lum_med;
+  lum_med = lum_med_alt>0 ? lum_med + lum_med/32*lum_cur*(lum_med_alt - lum_med)/lum_total:lum_med;
   camera_autoexposure(c, lum_med / 256.0);
 }
 
