@@ -499,7 +499,10 @@ void pigeon_thread() {
     if (ignition && recv.length() >= 3) {
       if (recv[0] == (char)ublox::PREAMBLE1 && recv[1] == (char)ublox::PREAMBLE2){
         const char msg_cls = recv[2];
-        last_recv_time[msg_cls] = nanos_since_boot();
+        uint64_t t = nanos_since_boot();
+        if (t > last_recv_time[msg_cls]){
+          last_recv_time[msg_cls] = t;
+        }
       }
     }
 
