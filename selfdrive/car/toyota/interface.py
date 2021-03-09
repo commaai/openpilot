@@ -54,7 +54,6 @@ class CarInterface(CarInterfaceBase):
 
     CARS_NOT_PID = [CAR.RAV4, CAR.RAV4H]
     if not prius_use_pid:
-      CARS_NOT_PID.append(CAR.PRIUS_2020)
       CARS_NOT_PID.append(CAR.PRIUS)
 
     if candidate not in CARS_NOT_PID and not use_lqr:  # These cars use LQR/INDI
@@ -63,44 +62,27 @@ class CarInterface(CarInterfaceBase):
 
     if candidate == CAR.PRIUS:
       stop_and_go = True
-      ret.safetyParam = 50  # see conversion factor for STEER_TORQUE_EPS in dbc file
-      ret.wheelbase = 2.70
+      ret.safetyParam = 54  # see conversion factor for STEER_TORQUE_EPS in dbc file
+      ret.wheelbase = 2.6924
       ret.steerRatio = 13.4   # unknown end-to-end spec
       tire_stiffness_factor = 0.6371   # hand-tune
-      ret.mass = 3045. * CV.LB_TO_KG + STD_CARGO_KG
+      ret.mass = 3115. * CV.LB_TO_KG + STD_CARGO_KG
       ret.steerActuatorDelay = 0.3
 
       if prius_use_pid:
-        ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.38], [0.02]]  # todo: parametertize by zss
-        ret.lateralTuning.pid.kdV = [0.85]
-        ret.lateralTuning.pid.kf = 0.000068  # full torque for 20 deg at 80mph means 0.00007818594
-      else:
-        ret.lateralTuning.init('indi')
-        ret.lateralTuning.indi.innerLoopGainV = [4.0]
-        ret.lateralTuning.indi.outerLoopGainV = [3.0]
-        ret.lateralTuning.indi.timeConstantV = [0.1] if ret.hasZss else [1.0]
-        ret.lateralTuning.indi.actuatorEffectivenessV = [1.0]
-
-    elif candidate == CAR.PRIUS_2020:
-      stop_and_go = True
-      ret.safetyParam = 54
-      ret.wheelbase = 2.6924
-      ret.steerRatio = 13.4  # unknown end-to-end spec
-      ret.steerActuatorDelay = 0.54
-      tire_stiffness_factor = 0.6371  # hand-tune
-      ret.mass = 3115. * CV.LB_TO_KG + STD_CARGO_KG
-
-      if prius_use_pid:
-        ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.21], [0.008]]
-        ret.lateralTuning.pid.kdV = [1.]  # corolla D times gain in PI values
+        ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.07], [0.04]]
+        ret.lateralTuning.pid.kdV = [0.]
         ret.lateralTuning.pid.kf = 0.00009531750004645412
         ret.lateralTuning.pid.newKfTuned = True
       else:
         ret.lateralTuning.init('indi')
-        ret.lateralTuning.indi.innerLoopGainV = [3.84]
-        ret.lateralTuning.indi.outerLoopGainV = [3.0]
+        ret.lateralTuning.indi.innerLoopGainBP = [15, 27]
+        ret.lateralTuning.indi.innerLoopGainV = [4.0, 4.06]
+        ret.lateralTuning.indi.outerLoopGainBP = [15, 27]
+        ret.lateralTuning.indi.outerLoopGainV = [3.0, 3.02]
         ret.lateralTuning.indi.timeConstantV = [0.1] if ret.hasZss else [1.0]
-        ret.lateralTuning.indi.actuatorEffectivenessV = [1.0]
+        ret.lateralTuning.indi.actuatorEffectivenessBP = [15, 27]
+        ret.lateralTuning.indi.actuatorEffectivenessV = [1.1, 1.2]
 
     elif candidate in [CAR.RAV4, CAR.RAV4H]:
       stop_and_go = True if (candidate in CAR.RAV4H) else False
