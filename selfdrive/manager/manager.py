@@ -134,7 +134,7 @@ def manager_thread(spinner):
     pm_apply_packages('enable')
     start_offroad()
 
-  ensure_running(managed_processes.values(), False)
+  ensure_running(managed_processes.values(), started=False, not_run=ignore)
   if spinner:  # close spinner when ui has started
     spinner.close()
 
