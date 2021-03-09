@@ -214,8 +214,8 @@ class LateralPlanner():
     plan_send.lateralPlan.rProb = float(self.LP.rll_prob)
     plan_send.lateralPlan.dProb = float(self.LP.d_prob)
 
-    plan_send.lateralPlan.curvature = self.desired_curvature
-    plan_send.lateralPlan.curvatureRate = self.desired_curvature_rate
+    plan_send.lateralPlan.curvature = float(self.desired_curvature)
+    plan_send.lateralPlan.curvatureRate = float(self.desired_curvature_rate)
 
     plan_send.lateralPlan.mpcSolutionValid = bool(plan_solution_valid)
 
