@@ -25,8 +25,8 @@ class CANBUS:
   pt = 0
   cam = 2
 
-TRANS = car.CarParams.TransmissionType
-GEAR = car.CarState.GearShifter
+TransmissionType = car.CarParams.TransmissionType
+GearShifter = car.CarState.GearShifter
 
 BUTTON_STATES = {
   "accelCruise": False,
