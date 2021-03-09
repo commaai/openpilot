@@ -30,7 +30,6 @@ class LatControlLQR():
 
   def reset(self):
     self.i_lqr = 0.0
-    self.output_steer = 0.0
     self.sat_count = 0.0
 
   def _check_saturation(self, control, check_saturation, limit):
@@ -92,11 +91,11 @@ class LatControlLQR():
       output_steer = clip(output_steer, -steers_max, steers_max)
 
     check_saturation = (CS.vEgo > 10) and not CS.steeringRateLimited and not CS.steeringPressed
-    saturated = self._check_saturation(self.output_steer, check_saturation, steers_max)
+    saturated = self._check_saturation(output_steer, check_saturation, steers_max)
 
     lqr_log.steeringAngleDeg = angle_steers_k + params.angleOffsetAverageDeg
     lqr_log.i = self.i_lqr
-    lqr_log.output = self.output_steer
+    lqr_log.output = output_steer
     lqr_log.lqrOutput = lqr_output
     lqr_log.saturated = saturated
     return output_steer, 0, lqr_log
