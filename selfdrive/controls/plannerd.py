@@ -20,16 +20,11 @@ def plannerd_thread(sm=None, pm=None):
   lateral_planner = LateralPlanner(CP)
 
   if sm is None:
-    sm = messaging.SubMaster(['carState', 'controlsState', 'radarState', 'modelV2', 'liveParameters'],
+    sm = messaging.SubMaster(['carState', 'controlsState', 'radarState', 'modelV2'],
                              poll=['radarState', 'modelV2'])
 
   if pm is None:
     pm = messaging.PubMaster(['longitudinalPlan', 'liveLongitudinalMpc', 'lateralPlan', 'liveMpc'])
-
-  sm['liveParameters'].valid = True
-  sm['liveParameters'].sensorValid = True
-  sm['liveParameters'].steerRatio = CP.steerRatio
-  sm['liveParameters'].stiffnessFactor = 1.0
 
   while True:
     sm.update()
