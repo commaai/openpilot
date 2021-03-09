@@ -22,9 +22,11 @@ class TestLogcatdAndroid(unittest.TestCase):
       # write some log messages
       sent_msgs = {}
       for __ in range(random.randint(5, 50)):
-        msg = ''.join([random.choice(string.ascii_letters) for _ in range(random.randrange(2, 200))])
+        msg = ''.join([random.choice(string.ascii_letters) for _ in range(random.randrange(2, 50))])
+        if msg in sent_msgs:
+          continue
         sent_msgs[msg] = ''.join([random.choice(string.ascii_letters) for _ in range(random.randrange(2, 20))])
-        os.system(f"log -t {sent_msgs[msg]} {msg}")
+        os.system(f"log -t '{sent_msgs[msg]}' '{msg}'")
 
       time.sleep(1)
       msgs = messaging.drain_sock(sock)
@@ -36,12 +38,20 @@ class TestLogcatdAndroid(unittest.TestCase):
         if recv_msg not in sent_msgs:
           continue
 
-        self.assertEqual(m.androidLog.tag, sent_msgs[recv_msg])
+        # see https://android.googlesource.com/platform/system/core/+/android-2.1_r1/liblog/logd_write.c#144
+        if not (m.androidLog.id == 1 and m.androidLog.tag.startswith("use-Rlog/RLOG-")):
+          self.assertEqual(m.androidLog.tag, sent_msgs[recv_msg], m.androidLog)
         del sent_msgs[recv_msg]
 
       # ensure we received all the logs we sent
       self.assertEqual(len(sent_msgs), 0)
-    time.sleep(1)
+
+  def testx(self):
+    i = 0
+    while True:
+      i += 1
+      print("TEST ", i)
+      self.test_log()
 
 
 if __name__ == "__main__":
