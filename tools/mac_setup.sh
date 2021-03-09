@@ -35,8 +35,8 @@ if [ -z "$OPENPILOT_ENV" ] && [ -n "$RC_FILE" ] && [ -z "$CI" ]; then
   echo "Added openpilot_env to RC file: $RC_FILE"
 fi
 
-pyenv install -s 3.8.2
-pyenv global 3.8.2
+pyenv install -s 3.8.5
+pyenv global 3.8.5
 pyenv rehash
 eval "$(pyenv init -)"
 
