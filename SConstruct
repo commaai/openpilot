@@ -264,7 +264,6 @@ Export('envCython')
 
 # Qt build environment
 qt_env = env.Clone()
-
 qt_modules = ["Widgets", "Gui", "Core", "Network", "Concurrent", "Multimedia"]
 if arch != "aarch64":
   qt_modules += ["DBus", "WebEngine", "WebEngineWidgets"]
@@ -275,10 +274,10 @@ if arch == "Darwin":
 
   qt_env['QTDIR'] = QT_BASE
   qt_dirs = [
-    QT_BASE + "include/",
+    os.path.join(QT_BASE, "include"),
   ]
-  qt_dirs += [f"{QT_BASE}include/Qt{m}" for m in qt_modules]
-  qt_env["LINKFLAGS"] += ["-F" + QT_BASE + "lib"]
+  qt_dirs += [f"{QT_BASE}/include/Qt{m}" for m in qt_modules]
+  qt_env["LINKFLAGS"] += ["-F" + os.path.join(QT_BASE, "libs")]
   qt_env["FRAMEWORKS"] += [f"Qt{m}" for m in qt_modules] + ["OpenGL"]
 elif arch == "aarch64":
   qt_env['QTDIR'] = "/system/comma/usr"
