@@ -2,9 +2,15 @@
 
 We've extended [PlotJuggler](https://github.com/facontidavide/PlotJuggler) to plot all of your openpilot logs. Check out our plugin: https://github.com/commaai/PlotJuggler.
 
-## Requirements
+## Installation
 
-The plugin is only built for and tested on *Ubuntu 20.04*. On the first run, `juggle.py` will handle installing plotjuggler and the plugin if not already installed.
+Once you've cloned openpilot, install our plugin with this command:
+
+`cd tools/plotjuggler && ./install.sh`
+
+Usage requires an installation of PlotJuggler. On systems with snap (e.g. Ubuntu), you can install PlotJuggler with this command:
+
+ `sudo snap install plotjuggler`
 
 ## Usage
 
