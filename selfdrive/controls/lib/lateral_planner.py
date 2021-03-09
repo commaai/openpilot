@@ -185,13 +185,8 @@ class LateralPlanner():
     curvature_diff_from_psi = psi / (max(v_ego, 1e-1) * delay) - current_curvature
     next_curvature = current_curvature + 2 * curvature_diff_from_psi
 
-    # reset to current curvature if not active or overriding
-    if active:
-      self.desired_curvature = next_curvature
-      self.desired_curvature_rate = next_curvature_rate
-    else:
-      self.desired_curvature = measured_curvature
-      self.desired_curvature_rate = 0.0
+    self.desired_curvature = next_curvature
+    self.desired_curvature_rate = next_curvature_rate
 
     #  Check for infeasable MPC solution
     mpc_nans = any(math.isnan(x) for x in self.mpc_solution.curvature)
