@@ -26,6 +26,7 @@
 
 #define BACKLIGHT_DT 0.25
 #define BACKLIGHT_TS 2.00
+#define BACKLIGHT_OFFROAD 512
 
 OffroadHome::OffroadHome(QWidget* parent) : QWidget(parent) {
   QVBoxLayout* main_layout = new QVBoxLayout();
@@ -215,10 +216,10 @@ GLWindow::GLWindow(QWidget* parent) : QOpenGLWidget(parent) {
   int result = read_param(&brightness_b, "BRIGHTNESS_B", true);
   result += read_param(&brightness_m, "BRIGHTNESS_M", true);
   if (result != 0) {
-    brightness_b = 200.0;
-    brightness_m = 10.0;
+    brightness_b = 10.0;
+    brightness_m = 1.0;
   }
-  smooth_brightness = 512;
+  smooth_brightness = BACKLIGHT_OFFROAD;
 }
 
 GLWindow::~GLWindow() {
@@ -247,8 +248,11 @@ void GLWindow::backlightUpdate() {
   // Update brightness
   float k = (BACKLIGHT_DT / BACKLIGHT_TS) / (1.0f + BACKLIGHT_DT / BACKLIGHT_TS);
 
-  float clipped_brightness = std::min(1023.0f, (ui_state.scene.light_sensor * brightness_m) + brightness_b);
+  float clipped_brightness = ui_state.scene.started ?
+    std::min(1023.0f, (ui_state.scene.light_sensor * brightness_m) + brightness_b) : BACKLIGHT_OFFROAD;
+
   smooth_brightness = clipped_brightness * k + smooth_brightness * (1.0f - k);
+
   int brightness = smooth_brightness;
 
   if (!ui_state.awake) {

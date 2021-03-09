@@ -54,8 +54,13 @@ static void ui_init_vision(UIState *s) {
 
 
 void ui_init(UIState *s) {
-  s->sm = new SubMaster({"modelV2", "controlsState", "uiLayoutState", "liveCalibration", "radarState", "deviceState", "liveLocationKalman",
-                         "pandaState", "carParams", "driverState", "driverMonitoringState", "sensorEvents", "carState", "ubloxGnss"});
+  s->sm = new SubMaster({
+    "modelV2", "controlsState", "uiLayoutState", "liveCalibration", "radarState", "deviceState", "liveLocationKalman",
+    "pandaState", "carParams", "driverState", "driverMonitoringState", "sensorEvents", "carState", "ubloxGnss",
+#ifdef QCOM2
+    "roadCameraState",
+#endif
+  });
 
   s->scene.started = false;
   s->status = STATUS_OFFROAD;
@@ -215,7 +220,9 @@ static void update_sockets(UIState *s) {
   if (sm.updated("sensorEvents")) {
     for (auto sensor : sm["sensorEvents"].getSensorEvents()) {
       if (sensor.which() == cereal::SensorEventData::LIGHT) {
+#ifndef QCOM2
         scene.light_sensor = sensor.getLight();
+#endif
       } else if (!scene.started && sensor.which() == cereal::SensorEventData::ACCELERATION) {
         auto accel = sensor.getAcceleration().getV();
         if (accel.totalSize().wordCount){ // TODO: sometimes empty lists are received. Figure out why
@@ -229,6 +236,11 @@ static void update_sockets(UIState *s) {
       }
     }
   }
+#ifdef QCOM2
+  if (sm.updated("roadCameraState")) {
+    scene.light_sensor = std::clamp<float>(1023.0 - sm["roadCameraState"].getRoadCameraState().getIntegLines(), 0.0, 1023.0);
+  }
+#endif
   scene.started = scene.deviceState.getStarted() || scene.driver_view;
 }
 
