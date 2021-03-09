@@ -16,6 +16,7 @@
 #include "common/params.h"
 #include "common/timing.h"
 #include "common/swaglog.h"
+#include "common/watchdog.h"
 
 #include "home.hpp"
 #include "paint.hpp"
@@ -276,6 +277,7 @@ void GLWindow::timerUpdate() {
 
   ui_update(&ui_state);
   repaint();
+  watchdog_kick();
 }
 
 void GLWindow::resizeGL(int w, int h) {

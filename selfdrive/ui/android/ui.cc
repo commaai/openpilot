@@ -9,6 +9,7 @@
 #include "common/params.h"
 #include "common/touch.h"
 #include "common/swaglog.h"
+#include "common/watchdog.h"
 
 #include "ui.hpp"
 #include "paint.hpp"
@@ -139,6 +140,7 @@ int main(int argc, char* argv[]) {
   s->sound->setVolume(MIN_VOLUME);
 
   while (!do_exit) {
+    watchdog_kick();
     if (!s->scene.started) {
       util::sleep_for(50);
     }
