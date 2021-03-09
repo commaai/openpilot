@@ -106,7 +106,10 @@ LogCameraInfo cameras_logged[LOG_CAMERA_ID_MAX] = {
 
 class SocketState {
  public:
-  SocketState(SubSocket *s, int freq) : sock(s), freq(freq), counter(0) {}
+  SocketState(Context *ctx, const char *name, int freq) : freq(freq), counter(0) {
+    sock = SubSocket::create(ctx, name);
+    assert(sock != NULL);
+  }
   ~SocketState() { delete sock; }
   void log(LoggerHandle *lh) {
     if (!lh) return;
@@ -341,10 +344,7 @@ int main(int argc, char** argv) {
   // config encoders.  
   s.rotate_state[LOG_CAMERA_ID_FCAMERA].enabled = true;
 #if defined(QCOM) || defined(QCOM2)
-  bool record_front = Params().read_db_bool("RecordFront");
-  if (record_front) {
-    s.rotate_state[LOG_CAMERA_ID_DCAMERA].enabled = true;
-  }
+  s.rotate_state[LOG_CAMERA_ID_DCAMERA].enabled = Params().read_db_bool("RecordFront");
 #endif
 #ifdef QCOM2
   s.rotate_state[LOG_CAMERA_ID_ECAMERA].enabled = true;
@@ -361,25 +361,23 @@ int main(int argc, char** argv) {
   for (const auto& it : services) {
     if (!it.should_log) continue;
 
-    SubSocket * sock = SubSocket::create(s.ctx, it.name);
-    assert(sock != NULL);
-    SocketState *ss = new SocketState(sock, it.decimation);
+    SocketState *ss = new SocketState(s.ctx, it.name, it.decimation);
 
     bool poll_sock = true;
     for (int cid=0; cid<=MAX_CAM_IDX; cid++) {
       if (std::string(it.name) == cameras_logged[cid].frame_packet_name) {
-        s.rotate_state[cid].socket_state = ss;
         if (s.rotate_state[cid].enabled) {
-          poll_sock =  false;
+          s.rotate_state[cid].socket_state = ss;
           encoder_threads.push_back(std::thread(encoder_thread, cid));
+          poll_sock =  false;
         }
         break;
       }
     }
     if (poll_sock) {
-      poller->registerSocket(sock);
+      poller->registerSocket(ss->sock);
     }
-    socket_states[sock] = ss;
+    socket_states[ss->sock] = ss;
   }
 
 <<<<<<< HEAD
@@ -536,7 +534,7 @@ int main(int argc, char** argv) {
   }
 
   // messaging cleanup
-  for (auto &[sock, ss] : socket_states) delete ss;
+  for (auto &[_, ss] : socket_states) delete ss;
   delete poller;
   delete s.ctx;
 
