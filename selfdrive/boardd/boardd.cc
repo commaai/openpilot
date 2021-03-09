@@ -486,8 +486,8 @@ void pigeon_thread() {
 
   std::unordered_map<char, uint64_t> last_recv_time;
   std::unordered_map<char, int64_t> cls_max_dt = {
-    {(char)ublox::CLASS_NAV, int64_t(500000000ULL)}, // 0.5s
-    {(char)ublox::CLASS_RXM, int64_t(1000000000ULL)}, // 1.0s
+    {(char)ublox::CLASS_NAV, int64_t(900000000ULL)}, // 0.9s
+    {(char)ublox::CLASS_RXM, int64_t(900000000ULL)}, // 0.9s
   };
 
   while (!do_exit && panda->connected) {
@@ -510,7 +510,8 @@ void pigeon_thread() {
       int64_t dt = (int64_t)nanos_since_boot() - (int64_t)last_recv_time[msg_cls];
       if (ignition_last && ignition && dt > max_dt) {
         LOGE("ublox receive timeout, msg class: 0x%02x, dt %llu, resetting panda GPS", msg_cls, dt);
-        need_reset = true;
+        // TODO: turn on reset after verification of logs
+        // need_reset = true;
       }
     }
 
