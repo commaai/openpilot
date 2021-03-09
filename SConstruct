@@ -271,8 +271,9 @@ if arch != "aarch64":
 
 qt_libs = []
 if arch == "Darwin":
-  qt_env['QTDIR'] = "/usr/local/opt/qt"
-  QT_BASE = "/usr/local/opt/qt/"
+  QT_BASE = "/usr/local/opt/qt5"
+
+  qt_env['QTDIR'] = QT_BASE
   qt_dirs = [
     QT_BASE + "include/",
   ]

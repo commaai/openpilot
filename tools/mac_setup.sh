@@ -18,7 +18,7 @@ brew "libtool"
 brew "llvm"
 brew "openssl"
 brew "pyenv"
-brew "qt@5"
+brew "qt5"
 brew "zeromq"
 EOS
 
