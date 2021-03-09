@@ -29,6 +29,7 @@ fi
 
 echo "update pip"
 pip install --upgrade pip
+pip install pipenv
 
 echo "pip packages install ..."
 pipenv install --dev --deploy --system
