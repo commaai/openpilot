@@ -96,7 +96,7 @@ class ManagerProcess(ABC):
     if dt > self.watchdog_max_dt:
       # Only restart while offroad for now
       if self.watchdog_seen and ENABLE_WATCHDOG and (not started):
-        cloudlog.error(f"Watchdog timeout for {self.name}, restarting")
+        cloudlog.error(f"Watchdog timeout for {self.name} (exitcode {self.proc.exitcode}) restarting")
         self.restart()
     else:
       self.watchdog_seen = True
