@@ -116,7 +116,7 @@ def manager_cleanup():
   cloudlog.info("everything is dead")
 
 
-def manager_thread():
+def manager_thread(spinner):
   cloudlog.info("manager start")
   cloudlog.info({"environ": os.environ})
 
@@ -186,7 +186,7 @@ def main(spinner=None):
   signal.signal(signal.SIGTERM, lambda signum, frame: sys.exit(1))
 
   try:
-    manager_thread()
+    manager_thread(spinner)
   except Exception:
     traceback.print_exc()
     crash.capture_exception()
