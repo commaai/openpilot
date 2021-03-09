@@ -68,22 +68,22 @@ FINGERPRINTS = {
 FW_VERSIONS = {
   CAR.GOLF: {
     (Ecu.engine, 0x7e0, None): [
-      b'8V0906259P ',  # 2018 Golf R (DJJA)
+      b'\xf1\x878V0906259P \xf1\x890001',  # 2018 Golf R (DJJA)
     ],
     (Ecu.transmission, 0x7e1, None): [
-      b'0GC300012A ',  # 2018 Golf R (DQ381)
+      b'\xf1\x870GC300012A \xf1\x891403',  # 2018 Golf R (DQ381)
     ],
     (Ecu.srs, 0x715, None): [
-      b'5Q0959655J ',  # 2018 Golf R
+      b'\xf1\x875Q0959655J \xf1\x890830\xf1\x82\x13271212111312--071104171838103891131211',  # 2018 Golf R (USA)
     ],
     (Ecu.eps, 0x712, None): [
-      b'3Q0909144L ',  # Shared
+      b'\xf1\x873Q0909144L \xf1\x895081\xf1\x82\x0571A0JA15A1',  # 2018 Golf R (progressive ratio)
     ],
     (Ecu.fwdRadar, 0x757, None): [
-      b'5Q0907572J ',  # Shared
+      b'\xf1\x875Q0907572J \xf1\x890654',
     ],
     (Ecu.fwdCamera, 0x74f, None): [
-      b'3Q0980654H ',  # Shared
+      b'\xf1\x873Q0980654H \xf1\x890272\xf1\x82\x0460041116',
     ],
   }
 }
