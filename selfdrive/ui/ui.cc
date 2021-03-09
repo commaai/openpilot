@@ -220,7 +220,7 @@ static void update_sockets(UIState *s) {
   if (sm.updated("sensorEvents")) {
     for (auto sensor : sm["sensorEvents"].getSensorEvents()) {
       if (sensor.which() == cereal::SensorEventData::LIGHT) {
-#ifdef QCOM
+#ifndef QCOM2
         scene.light_sensor = sensor.getLight();
 #endif
       } else if (!scene.started && sensor.which() == cereal::SensorEventData::ACCELERATION) {
