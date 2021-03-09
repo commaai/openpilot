@@ -215,7 +215,7 @@ GLWindow::GLWindow(QWidget* parent) : QOpenGLWidget(parent) {
   int result = read_param(&brightness_b, "BRIGHTNESS_B", true);
   result += read_param(&brightness_m, "BRIGHTNESS_M", true);
   if (result != 0) {
-    brightness_b = 100.0;
+    brightness_b = 200.0;
     brightness_m = 1.0;
   }
   smooth_brightness = 512;
