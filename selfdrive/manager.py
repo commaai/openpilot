@@ -454,6 +454,7 @@ def manager_thread():
   if EON:
     pm_apply_packages('enable')
     start_offroad()
+  spinner.close()
 
   if os.getenv("NOBOARD") is not None:
     del managed_processes["pandad"]
@@ -532,9 +533,9 @@ def manager_prepare():
   total = 100.0 - (0 if PREBUILT else MAX_BUILD_PROGRESS)
 
   for i, p in enumerate(managed_processes):
+    prepare_managed_process(p)
     perc = (100.0 - total) + total * (i + 1) / len(managed_processes)
     spinner.update_progress(perc, 100.)
-    prepare_managed_process(p)
 
 def main():
   params = Params()
@@ -573,7 +574,6 @@ def main():
     update_apks()
   manager_init()
   manager_prepare()
-  spinner.close()
 
   if os.getenv("PREPAREONLY") is not None:
     return

@@ -1,10 +1,13 @@
 import os
+import time
 import subprocess
 from common.basedir import BASEDIR
 
 
 class Spinner():
   def __init__(self):
+    self.update_t = -1
+    self.sleep_t = 1 / 50.
     try:
       self.spinner_proc = subprocess.Popen(["./spinner"],
                                            stdin=subprocess.PIPE,
@@ -25,7 +28,12 @@ class Spinner():
         pass
 
   def update_progress(self, cur: int, total: int):
-    self.update(str(int(100 * cur / total)))
+    elapsed_t = time.time() - self.update_t
+    if elapsed_t < self.sleep_t:
+      time.sleep(self.sleep_t - elapsed_t)
+
+    self.update(str(round(100 * cur / total)))
+    self.update_t = time.time()
 
   def close(self):
     if self.spinner_proc is not None:
@@ -44,7 +52,6 @@ class Spinner():
 
 
 if __name__ == "__main__":
-  import time
   with Spinner() as s:
     s.update("Spinner text")
     time.sleep(5.0)
