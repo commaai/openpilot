@@ -73,9 +73,6 @@ FW_VERSIONS = {
     (Ecu.transmission, 0x7e1, None): [
       b'0GC300012A ',  # 2018 Golf R (DQ381)
     ],
-    (Ecu.esp, 0x713, None): [
-      b'5Q0614517CR',  # 2018 Golf R
-    ],
     (Ecu.srs, 0x715, None): [
       b'5Q0959655J ',  # 2018 Golf R
     ],
