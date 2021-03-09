@@ -196,6 +196,8 @@ selfdrive/common/clutil.cc
 selfdrive/common/clutil.h
 selfdrive/common/params.h
 selfdrive/common/params.cc
+selfdrive/common/watchdog.cc
+selfdrive/common/watchdog.h
 
 selfdrive/common/modeldata.h
 selfdrive/common/mat.h
