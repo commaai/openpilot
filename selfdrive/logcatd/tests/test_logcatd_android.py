@@ -39,9 +39,9 @@ class TestLogcatdAndroid(unittest.TestCase):
           continue
 
         # see https://android.googlesource.com/platform/system/core/+/android-2.1_r1/liblog/logd_write.c#144
-        if not (m.androidLog.id == 1 and m.androidLog.tag.startswith("use-Rlog/RLOG-")):
-          self.assertEqual(m.androidLog.tag, sent_msgs[recv_msg], m.androidLog)
-        del sent_msgs[recv_msg]
+        radio_msg = m.androidLog.id == 1 and m.androidLog.tag.startswith("use-Rlog/RLOG-")
+        if m.androidLog.tag == sent_msgs[recv_msg] or radio_msg:
+          del sent_msgs[recv_msg]
 
       # ensure we received all the logs we sent
       self.assertEqual(len(sent_msgs), 0)
