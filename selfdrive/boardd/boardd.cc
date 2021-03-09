@@ -488,7 +488,6 @@ void pigeon_thread() {
   std::unordered_map<char, int64_t> cls_max_dt = {
     {(char)ublox::CLASS_NAV, int64_t(500000000ULL)}, // 0.5s - msg is 10Hz
     {(char)ublox::CLASS_RXM, int64_t(500000000ULL)}, // 0.5s - msg is 10Hz
-    {(char)ublox::CLASS_MON, int64_t(2000000000ULL)}, // 2.0s - msg is 1Hz
   };
 
   while (!do_exit && panda->connected) {
