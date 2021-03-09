@@ -46,13 +46,6 @@ class TestLogcatdAndroid(unittest.TestCase):
       # ensure we received all the logs we sent
       self.assertEqual(len(sent_msgs), 0)
 
-  def testx(self):
-    i = 0
-    while True:
-      i += 1
-      print("TEST ", i)
-      self.test_log()
-
 
 if __name__ == "__main__":
   unittest.main()
