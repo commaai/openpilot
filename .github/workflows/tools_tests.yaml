@@ -23,7 +23,7 @@ jobs:
     - uses: actions/checkout@v2
       with:
         submodules: true
-    - name: Build docker image
+    - name: Build Docker image
       run: eval "$BUILD"
     - name: Unit test
       run: |
@@ -32,3 +32,22 @@ jobs:
                         apt-get install -y libdw-dev libqt5svg5-dev libqt5x11extras5-dev && \
                         cd /tmp/openpilot/tools/plotjuggler && \
                         ./test_plotjuggler.py"
+
+  simulator:
+    name: simulator
+    runs-on: ubuntu-20.04
+    timeout-minutes: 50
+    if: github.repository == 'commaai/openpilot'
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+        lfs: true
+    - name: Build Docker image
+      run: eval "$BUILD"
+    - name: Push to dockerhub
+      if: github.ref == 'refs/heads/master'
+      run: |
+        docker login -u wmelching -p ${{ secrets.COMMA_DOCKERHUB_TOKEN }}
+        docker tag commaai/openpilot-sim "$DOCKER_REGISTRY"/openpilot-sim:latest
+        docker push "$DOCKER_REGISTRY"/openpilot-sim:latest
