@@ -400,9 +400,6 @@ class Controls:
     # Steering PID loop and lateral MPC
     actuators.steer, actuators.steeringAngleDeg, lac_log = self.LaC.update(self.active, CS, self.CP, self.VM, params, lat_plan)
 
-    angle_steers_des = math.degrees(self.VM.get_steer_from_curvature(lat_plan.curvature, CS.vEgo))
-    angle_steers_des += params.angleOffsetDeg
-
     # Check for difference between desired angle and angle for angle based control
     angle_control_saturated = self.CP.steerControlType == car.CarParams.SteerControlType.angle and \
       abs(actuators.steeringAngleDeg - CS.steeringAngleDeg) > STEER_ANGLE_SATURATION_THRESHOLD
