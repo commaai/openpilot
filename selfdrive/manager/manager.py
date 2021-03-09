@@ -116,7 +116,7 @@ def manager_cleanup():
   cloudlog.info("everything is dead")
 
 
-def manager_thread(spinner):
+def manager_thread(spinner=None):
   cloudlog.info("manager start")
   cloudlog.info({"environ": os.environ})
 
