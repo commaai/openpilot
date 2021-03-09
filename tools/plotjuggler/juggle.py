@@ -94,5 +94,8 @@ if __name__ == "__main__":
   if len(sys.argv) == 1:
     arg_parser.print_help()
     sys.exit()
+
+  # handle installation 
+
   args = arg_parser.parse_args(sys.argv[1:])
   juggle_route(args.route_name, args.segment_number, args.qlog, args.layout)
