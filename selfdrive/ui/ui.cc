@@ -236,9 +236,11 @@ static void update_sockets(UIState *s) {
       }
     }
   }
+#ifdef QCOM2
   if (sm.updated("roadCameraState")) {
     scene.light_sensor = std::clamp<float>(1023.0 - sm["roadCameraState"].getRoadCameraState().getIntegLines(), 0.0, 1023.0);
   }
+#endif
   scene.started = scene.deviceState.getStarted() || scene.driver_view;
 }
 
