@@ -134,9 +134,14 @@ def can_function_runner(vs):
 def bridge(q):
 
   # setup CARLA
-  client = carla.Client("127.0.0.1", 2000)
-  client.set_timeout(10.0)
-  world = client.load_world(args.town)
+  loaded = False
+  while not loaded:
+    try:
+      client = carla.Client("127.0.0.1", 2000)
+      client.set_timeout(10.0)
+      world = client.load_world(args.town)
+    except RuntimeError:
+      print("Loading unsuccessful, trying again...")
 
   blueprint_library = world.get_blueprint_library()
 
