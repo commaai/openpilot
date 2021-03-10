@@ -25,4 +25,4 @@ docker run \
   -it \
   --gpus all \
   carlasim/carla:0.9.11 \
-  ./CarlaUE4.sh -opengl -nosound -quality-level=Low
+  ./CarlaUE4.sh -opengl -nosound -quality-level=Medium
