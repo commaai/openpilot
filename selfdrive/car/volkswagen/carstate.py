@@ -245,7 +245,7 @@ class CarState(CarStateBase):
 
     signals = [
       # sig_name, sig_address, default
-      ("Kombi_Lamp_Green", "LDW_02", 0),            # Lane Assist status LED
+      ("KLDW_Status_LED_gelb", "LDW_02", 0),            # Lane Assist status LED
     ]
 
     checks = [
