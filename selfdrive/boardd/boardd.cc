@@ -533,6 +533,7 @@ void pigeon_thread() {
         last_recv_time[msg_cls] = t;
       }
     } else if (!ignition && ignition_last) {
+      // power off on falling edge of ignition
       LOGD("powering off pigeon\n");
       pigeon->set_power(false);
     }
