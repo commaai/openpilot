@@ -4,6 +4,8 @@ Stock Additions v0.6.6 - 2020-02-27 (0.8.2)
  * Temporary removal of LaneSpeed and DynamicCameraOffset features
    * They used the now-removed lane line polys
  * Remove slowdown_for_curves param
+ * Roadtrip profile is now stock longitudinal for smoother road trips
+   * No dynamic follow distance modiciations, all stock
 
 Stock Additions v0.6.5 - 2020-12-07 (0.8)
 ===
