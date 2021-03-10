@@ -270,7 +270,7 @@ if arch != "aarch64":
 
 qt_libs = []
 if arch == "Darwin":
-  qt_env['QTDIR'] = "/usr/local/opt/qt5"
+  qt_env['QTDIR'] = "/usr/local/opt/qt@5"
   qt_dirs = [
     os.path.join(qt_env['QTDIR'], "include"),
   ]
