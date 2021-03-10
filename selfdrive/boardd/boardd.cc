@@ -363,7 +363,7 @@ void panda_state_thread(bool spoofing_started) {
     ps.setIgnitionCan(pandaState.ignition_can);
     ps.setControlsAllowed(pandaState.controls_allowed);
     ps.setGasInterceptorDetected(pandaState.gas_interceptor_detected);
-    ps.setHasGps(panda->is_pigeon);
+    ps.setHasGps(true);
     ps.setCanRxErrs(pandaState.can_rx_errs);
     ps.setCanSendErrs(pandaState.can_send_errs);
     ps.setCanFwdErrs(pandaState.can_fwd_errs);
@@ -472,16 +472,13 @@ static void pigeon_publish_raw(PubMaster &pm, const std::string &dat) {
 }
 
 void pigeon_thread() {
-  if (!panda->is_pigeon) { return; };
-
-  // ubloxRaw = 8042
   PubMaster pm({"ubloxRaw"});
   bool ignition_last = false;
 
 #ifdef QCOM2
-  Pigeon * pigeon = Pigeon::connect("/dev/ttyHS0");
+  Pigeon *pigeon = Pigeon::connect("/dev/ttyHS0");
 #else
-  Pigeon * pigeon = Pigeon::connect(panda);
+  Pigeon *pigeon = Pigeon::connect(panda);
 #endif
 
   std::unordered_map<char, uint64_t> last_recv_time;
@@ -535,6 +532,10 @@ void pigeon_thread() {
       for (const auto& [msg_cls, dt] : cls_max_dt) {
         last_recv_time[msg_cls] = t;
       }
+    } else if (!ignition && ignition_last) {
+      // power off on falling edge of ignition
+      LOGD("powering off pigeon\n");
+      pigeon->set_power(false);
     }
 
     ignition_last = ignition;
