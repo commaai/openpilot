@@ -264,20 +264,18 @@ Export('envCython')
 
 # Qt build environment
 qt_env = env.Clone()
-
 qt_modules = ["Widgets", "Gui", "Core", "Network", "Concurrent", "Multimedia"]
 if arch != "aarch64":
   qt_modules += ["DBus", "WebEngine", "WebEngineWidgets"]
 
 qt_libs = []
 if arch == "Darwin":
-  qt_env['QTDIR'] = "/usr/local/opt/qt"
-  QT_BASE = "/usr/local/opt/qt/"
+  qt_env['QTDIR'] = "/usr/local/opt/qt5"
   qt_dirs = [
-    QT_BASE + "include/",
+    os.path.join(qt_env['QTDIR'], "include"),
   ]
-  qt_dirs += [f"{QT_BASE}include/Qt{m}" for m in qt_modules]
-  qt_env["LINKFLAGS"] += ["-F" + QT_BASE + "lib"]
+  qt_dirs += [f"{qt_env['QTDIR']}/include/Qt{m}" for m in qt_modules]
+  qt_env["LINKFLAGS"] += ["-F" + os.path.join(qt_env['QTDIR'], "lib")]
   qt_env["FRAMEWORKS"] += [f"Qt{m}" for m in qt_modules] + ["OpenGL"]
 elif arch == "aarch64":
   qt_env['QTDIR'] = "/system/comma/usr"
@@ -292,7 +290,6 @@ else:
   qt_env['QTDIR'] = "/usr"
   qt_dirs = [
     f"/usr/include/{real_arch}-linux-gnu/qt5",
-    f"/usr/include/{real_arch}-linux-gnu/qt5/QtGui/5.5.1/QtGui",
     f"/usr/include/{real_arch}-linux-gnu/qt5/QtGui/5.12.8/QtGui",
   ]
   qt_dirs += [f"/usr/include/{real_arch}-linux-gnu/qt5/Qt{m}" for m in qt_modules]
