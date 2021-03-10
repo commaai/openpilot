@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
-# type: ignore
-import carla # pylint: disable=import-error
-import time
-import math
-import atexit
-import numpy as np
-import threading
-import cereal.messaging as messaging
 import argparse
+import atexit
+import carla # pylint: disable=import-error
+import math
+import numpy as np
+import time
+import threading
+from typing import Any
+
+import cereal.messaging as messaging
 from common.params import Params
 from common.realtime import Ratekeeper, DT_DMON
 from lib.can import can_function
@@ -322,7 +323,7 @@ def bridge(q):
 
     rk.keep_time()
 
-def go(q):
+def go(q: Any):
   while 1:
     try:
       bridge(q)
@@ -338,7 +339,7 @@ if __name__ == "__main__":
   params.put("CalibrationParams", '{"calib_radians": [0,0,0], "valid_blocks": 20}')
 
   from multiprocessing import Process, Queue
-  q = Queue()
+  q: Any = Queue()
   p = Process(target=go, args=(q,))
   p.daemon = True
   p.start()
