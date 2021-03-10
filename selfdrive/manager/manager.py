@@ -99,13 +99,11 @@ def manager_prepare(spinner=None):
   os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
   total = 100.0 - (0 if PREBUILT else MAX_BUILD_PROGRESS)
-
   for i, p in enumerate(managed_processes.values()):
-    perc = (100.0 - total) + total * (i + 1) / len(managed_processes)
-
-    if spinner:
-      spinner.update_progress(perc, 100.)
     p.prepare()
+    if spinner:
+      perc = (100.0 - total) + total * (i + 1) / len(managed_processes)
+      spinner.update_progress(perc, 100.)
 
 
 def manager_cleanup():
@@ -118,7 +116,7 @@ def manager_cleanup():
   cloudlog.info("everything is dead")
 
 
-def manager_thread():
+def manager_thread(spinner=None):
   cloudlog.info("manager start")
   cloudlog.info({"environ": os.environ})
 
@@ -135,6 +133,10 @@ def manager_thread():
   if EON and "QT" not in os.environ:
     pm_apply_packages('enable')
     start_offroad()
+
+  ensure_running(managed_processes.values(), started=False, not_run=ignore)
+  if spinner:  # close spinner when ui has started
+    spinner.close()
 
   started_prev = False
   params = Params()
@@ -177,9 +179,6 @@ def main(spinner=None):
   manager_init(spinner)
   manager_prepare(spinner)
 
-  if spinner:
-    spinner.close()
-
   if os.getenv("PREPAREONLY") is not None:
     return
 
@@ -187,7 +186,7 @@ def main(spinner=None):
   signal.signal(signal.SIGTERM, lambda signum, frame: sys.exit(1))
 
   try:
-    manager_thread()
+    manager_thread(spinner)
   except Exception:
     traceback.print_exc()
     crash.capture_exception()

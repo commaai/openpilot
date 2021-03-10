@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
-# type: ignore
-import carla # pylint: disable=import-error
-import time
-import math
-import atexit
-import numpy as np
-import threading
-import cereal.messaging as messaging
 import argparse
+import atexit
+import carla # pylint: disable=import-error
+import math
+import numpy as np
+import time
+import threading
+from typing import Any
+
+import cereal.messaging as messaging
 from common.params import Params
 from common.realtime import Ratekeeper, DT_DMON
 from lib.can import can_function
@@ -19,12 +20,6 @@ parser.add_argument('--joystick', action='store_true')
 parser.add_argument('--town', type=str, default='Town04')
 parser.add_argument('--spawn_point', dest='num_selected_spawn_point',
         type=int, default=16)
-parser.add_argument('--cloudiness', default=0.1, type=float)
-parser.add_argument('--precipitation', default=0.0, type=float)
-parser.add_argument('--precipitation_deposits', default=0.0, type=float)
-parser.add_argument('--wind_intensity', default=0.0, type=float)
-parser.add_argument('--sun_azimuth_angle', default=15.0, type=float)
-parser.add_argument('--sun_altitude_angle', default=75.0, type=float)
 args = parser.parse_args()
 
 W, H = 1164, 874
@@ -131,7 +126,7 @@ def can_function_runner(vs):
     i+=1
 
 
-def go(q):
+def bridge(q):
 
   # setup CARLA
   client = carla.Client("127.0.0.1", 2000)
@@ -169,15 +164,6 @@ def go(q):
   transform = carla.Transform(carla.Location(x=0.8, z=1.13))
   camera = world.spawn_actor(blueprint, transform, attach_to=vehicle)
   camera.listen(cam_callback)
-
-  world.set_weather(carla.WeatherParameters(
-    cloudiness=args.cloudiness,
-    precipitation=args.precipitation,
-    precipitation_deposits=args.precipitation_deposits,
-    wind_intensity=args.wind_intensity,
-    sun_azimuth_angle=args.sun_azimuth_angle,
-    sun_altitude_angle=args.sun_altitude_angle
-  ))
 
   # reenable IMU
   imu_bp = blueprint_library.find('sensor.other.imu')
@@ -286,17 +272,6 @@ def go(q):
       steer_out = steer_rate_limit(old_steer, steer_out)
       old_steer = steer_out
 
-    # OP Exit conditions
-    # if throttle_out > 0.3:
-    #   cruise_button = CruiseButtons.CANCEL
-    #   is_openpilot_engaged = False
-    # if brake_out > 0.3:
-    #   cruise_button = CruiseButtons.CANCEL
-    #   is_openpilot_engaged = False
-    # if steer_out > 0.3:
-    #   cruise_button = CruiseButtons.CANCEL
-    #   is_openpilot_engaged = False
-
     else:
       if throttle_out==0 and old_throttle>0:
         if throttle_ease_out_counter>0:
@@ -348,6 +323,13 @@ def go(q):
 
     rk.keep_time()
 
+def go(q: Any):
+  while 1:
+    try:
+      bridge(q)
+    except RuntimeError:
+      print("Restarting bridge...")
+
 if __name__ == "__main__":
   # make sure params are in a good state
   set_params_enabled()
@@ -357,7 +339,7 @@ if __name__ == "__main__":
   params.put("CalibrationParams", '{"calib_radians": [0,0,0], "valid_blocks": 20}')
 
   from multiprocessing import Process, Queue
-  q = Queue()
+  q: Any = Queue()
   p = Process(target=go, args=(q,))
   p.daemon = True
   p.start()
