@@ -131,17 +131,12 @@ def can_function_runner(vs):
     i+=1
 
 
-def go(q):
+def bridge(q):
 
   # setup CARLA
-  loaded = False
-  while not loaded:
-    try:
-      client = carla.Client("127.0.0.1", 2000)
-      client.set_timeout(10.0)
-      world = client.load_world(args.town)
-    except RuntimeError:
-      print("Loading unsuccessful, trying again...")
+  client = carla.Client("127.0.0.1", 2000)
+  client.set_timeout(10.0)
+  world = client.load_world(args.town)
 
   blueprint_library = world.get_blueprint_library()
 
@@ -291,17 +286,6 @@ def go(q):
       steer_out = steer_rate_limit(old_steer, steer_out)
       old_steer = steer_out
 
-    # OP Exit conditions
-    # if throttle_out > 0.3:
-    #   cruise_button = CruiseButtons.CANCEL
-    #   is_openpilot_engaged = False
-    # if brake_out > 0.3:
-    #   cruise_button = CruiseButtons.CANCEL
-    #   is_openpilot_engaged = False
-    # if steer_out > 0.3:
-    #   cruise_button = CruiseButtons.CANCEL
-    #   is_openpilot_engaged = False
-
     else:
       if throttle_out==0 and old_throttle>0:
         if throttle_ease_out_counter>0:
@@ -352,6 +336,13 @@ def go(q):
       print("frame: ", "engaged:", is_openpilot_engaged, "; throttle: ", round(vc.throttle, 3), "; steer(c/deg): ", round(vc.steer, 3), round(steer_out, 3), "; brake: ", round(vc.brake, 3))
 
     rk.keep_time()
+
+def go(q):
+  while 1:
+    try:
+      bridge(q)
+    except RuntimeError:
+      print("Loading unsuccessful, trying again...")
 
 if __name__ == "__main__":
   # make sure params are in a good state
