@@ -270,14 +270,12 @@ if arch != "aarch64":
 
 qt_libs = []
 if arch == "Darwin":
-  QT_BASE = "/usr/local/opt/qt5"
-
-  qt_env['QTDIR'] = QT_BASE
+  qt_env['QTDIR'] = "/usr/local/opt/qt5"
   qt_dirs = [
-    os.path.join(QT_BASE, "include"),
+    os.path.join(qt_env['QTDIR'], "include"),
   ]
-  qt_dirs += [f"{QT_BASE}/include/Qt{m}" for m in qt_modules]
-  qt_env["LINKFLAGS"] += ["-F" + os.path.join(QT_BASE, "libs")]
+  qt_dirs += [f"{qt_env['QTDIR']}/include/Qt{m}" for m in qt_modules]
+  qt_env["LINKFLAGS"] += ["-F" + os.path.join(qt_env['QTDIR'], "lib")]
   qt_env["FRAMEWORKS"] += [f"Qt5{m}" for m in qt_modules] + ["OpenGL"]
 elif arch == "aarch64":
   qt_env['QTDIR'] = "/system/comma/usr"
