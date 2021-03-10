@@ -8,6 +8,7 @@ from common.params import Params, put_nonblocking
 from common.realtime import sec_since_boot
 from selfdrive.hardware import HARDWARE
 from selfdrive.swaglog import cloudlog
+from common.op_params import opParams
 
 PANDA_OUTPUT_VOLTAGE = 5.28
 CAR_VOLTAGE_LOW_PASS_K = 0.091 # LPF gain for 5s tau (dt/tau / (dt/tau + 1))
@@ -18,7 +19,7 @@ CAR_BATTERY_CAPACITY_uWh = 30e6
 CAR_CHARGING_RATE_W = 45
 
 VBATT_PAUSE_CHARGING = 11.0
-MAX_TIME_OFFROAD_S = 4*3600
+MAX_TIME_OFFROAD_S = round(3600 * opParams().get('disable_charging'))
 
 
 def panda_current_to_actual_current(panda_current):
