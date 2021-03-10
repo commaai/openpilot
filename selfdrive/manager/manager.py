@@ -201,7 +201,7 @@ def main(spinner=None):
 if __name__ == "__main__":
   unblock_stdout()
   spinner = Spinner()
-  #spinner.update_progress(MAX_BUILD_PROGRESS, 100)
+  spinner.update_progress(MAX_BUILD_PROGRESS, 100)
 
   try:
     main(spinner)
