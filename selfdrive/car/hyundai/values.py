@@ -162,7 +162,7 @@ FINGERPRINTS = {
 }
 
 # Don't use these fingerprints for fingerprinting, they are still used for ECU detection
-IGNORED_FINGERPRINTS = [CAR.VELOSTER, CAR.GENESIS_G70, CAR.KONA, CAR.KIA_SELTOS]
+IGNORED_FINGERPRINTS = [CAR.VELOSTER, CAR.GENESIS_G70, CAR.KONA]
 
 FW_VERSIONS = {
   CAR.IONIQ_EV_2020: {
