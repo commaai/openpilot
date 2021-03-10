@@ -532,6 +532,9 @@ void pigeon_thread() {
       for (const auto& [msg_cls, dt] : cls_max_dt) {
         last_recv_time[msg_cls] = t;
       }
+    } else if (!ignition && ignition_last) {
+      LOGD("powering off pigeon\n");
+      pigeon->set_power(false);
     }
 
     ignition_last = ignition;
