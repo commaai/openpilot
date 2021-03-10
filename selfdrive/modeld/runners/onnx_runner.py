@@ -4,7 +4,7 @@ import os
 import sys
 import numpy as np
 
-os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["OMP_NUM_THREADS"] = "4"
 
 import onnxruntime as ort
 
@@ -49,6 +49,9 @@ if __name__ == "__main__":
     options = ort.SessionOptions()
     options.intra_op_num_threads = 4
     options.inter_op_num_threads = 8
+    options.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL
+    options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
+
     provider = 'CPUExecutionProvider'
 
   ort_session = ort.InferenceSession(sys.argv[1], options)
