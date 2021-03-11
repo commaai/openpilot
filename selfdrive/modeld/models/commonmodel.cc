@@ -29,7 +29,7 @@ std::tuple<float*, size_t> ModelFrame::prepare(cl_mem yuv_cl, int frame_width, i
   loadyuv_queue(&loadyuv, q, y_cl, u_cl, v_cl, net_input_cl);
 
   memmove(&input_frames[0], &input_frames[MODEL_FRAME_SIZE], sizeof(float) * MODEL_FRAME_SIZE);
-  clEnqueueWriteBuffer(q, net_input_cl, CL_TRUE, 0, MODEL_FRAME_SIZE * sizeof(float), &input_frames[MODEL_FRAME_SIZE], 0, nullptr, nullptr);
+  clEnqueueReadBuffer(q, net_input_cl, CL_TRUE, 0, MODEL_FRAME_SIZE * sizeof(float), &input_frames[MODEL_FRAME_SIZE], 0, nullptr, nullptr);
   clFinish(q);
   return std::make_tuple(&input_frames[0], MODEL_FRAME_SIZE * 2);
 }
