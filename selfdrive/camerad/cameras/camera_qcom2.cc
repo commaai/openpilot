@@ -1116,7 +1116,7 @@ void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
   if (cnt % 3 == 0) {
     const auto [x, y, w, h] = (c == &s->wide_road_cam) ? std::tuple(96, 250, 1734, 524) : std::tuple(96, 160, 1734, 986);
     const int skip = 2;
-    set_exposure_target(c, x, x + w, skip, y, y + h, skip);
+    camera_autoexposure(c, set_exposure_target(c, x, x + w, skip, y, y + h, skip));
   }
 }
 

@@ -283,7 +283,7 @@ static void publish_thumbnail(PubMaster *pm, const CameraBuf *b) {
   free(thumbnail_buffer);
 }
 
-void set_exposure_target(CameraState *c, int x_start, int x_end, int x_skip, int y_start, int y_end, int y_skip) {
+float set_exposure_target(CameraState *c, int x_start, int x_end, int x_skip, int y_start, int y_end, int y_skip) {
   const CameraBuf *b = &c->buf;
   const uint8_t *pix_ptr = b->cur_yuv_buf->y;
   uint32_t lum_binning[256] = {0};
@@ -319,7 +319,8 @@ void set_exposure_target(CameraState *c, int x_start, int x_end, int x_skip, int
     }
   }
   lum_med = lum_med_alt>0 ? lum_med + lum_med/32*lum_cur*(lum_med_alt - lum_med)/lum_total:lum_med;
-  camera_autoexposure(c, lum_med / 256.0);
+
+  return lum_med / 256.0;
 }
 
 extern ExitHandler do_exit;
@@ -409,7 +410,7 @@ void common_process_driver_camera(SubMaster *sm, PubMaster *pm, CameraState *c, 
 #endif
     }
 
-    set_exposure_target(c, x_min, x_max, 2, y_min, y_max, skip);
+    camera_autoexposure(c, set_exposure_target(c, x_min, x_max, 2, y_min, y_max, skip));
   }
 
   MessageBuilder msg;
