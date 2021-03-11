@@ -5,9 +5,7 @@ openpilot tools
 System requirements
 ============
 
-openpilot tools and the following setup steps are developed and tested on Ubuntu 20.04
-
-We also test building openpilot on MacOS 10.14.2, but building is all that we can guarantee
+openpilot is developed and tested on *Ubuntu 20.04*, which is the primary development target aside from the [supported embdedded hardware](../#supported-hardware). We also have a CI test to verify that openpilot builds on macOS.
 
 
 Setup
