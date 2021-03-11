@@ -72,7 +72,7 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client) {
   SubMaster sm({"lateralPlan", "roadCameraState"});
 
   // setup filter to track dropped frames
-  FirstOrderFilter frame_dropped_filter(0, 10.0, 1. / MODEL_FREQ);
+  FirstOrderFilter frame_dropped_filter(0., 10., 1. / MODEL_FREQ);
 
   uint32_t frame_id = 0, last_vipc_frame_id = 0;
   double last = 0;
