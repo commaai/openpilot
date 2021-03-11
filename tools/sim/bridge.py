@@ -135,7 +135,7 @@ def bridge(q):
   client.set_timeout(10.0)
   world = client.load_world(args.town)
 
-  if args.low_quality is True:
+  if args.low_quality:
     world.unload_map_layer(carla.MapLayer.Foliage)
     world.unload_map_layer(carla.MapLayer.Buildings)
     world.unload_map_layer(carla.MapLayer.ParkedVehicles)
