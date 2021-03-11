@@ -16,7 +16,7 @@ Table of Contents
    * [Replay driving data](#replay-driving-data)
    * [Debug car controls](#debug-car-controls)
    * [Juggle plots](#juggle-plots)
-   * [Try openpilot in a simulator](#try-openpilot-in-a-simulator)
+   * [Run openpilot in a simulator](#run-openpilot-in-a-simulator)
  * [Welcomed contributions](#welcomed-contributions)
 <!--te-->
 
@@ -62,7 +62,7 @@ Use a joystick to control your car.
 Easily plot openpilot logs with [PlotJuggler](https://github.com/facontidavide/PlotJuggler), an open source tool for visualizing time series data.
 
 
-[Try openpilot in a simulator](sim)
+[Run openpilot in a simulator](sim)
 -------------
 
 Test openpilots performance in a simulated environment. The [CARLA simulator](https://github.com/carla-simulator/carla) allows you to set a variety of features like:
