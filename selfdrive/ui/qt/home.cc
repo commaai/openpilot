@@ -28,7 +28,6 @@
 #define BACKLIGHT_TS 2.00
 #define BACKLIGHT_OFFROAD 50
 
-
 // HomeWindow: the container for the offroad (OffroadHome) and onroad (GLWindow) UIs
 
 HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
@@ -42,10 +41,12 @@ HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
   // draw offroad UI on top of onroad UI
   home = new OffroadHome();
   layout->addWidget(home, 0, 0);
+
   QObject::connect(glWindow, SIGNAL(offroadTransition(bool)), this, SLOT(setVisibility(bool)));
   QObject::connect(glWindow, SIGNAL(offroadTransition(bool)), this, SIGNAL(offroadTransition(bool)));
   QObject::connect(glWindow, SIGNAL(screen_shutoff()), this, SIGNAL(closeSettings()));
   QObject::connect(this, SIGNAL(openSettings()), home, SLOT(refresh()));
+
   setLayout(layout);
   setStyleSheet(R"(
     * {
@@ -188,7 +189,7 @@ void OffroadHome::refresh() {
 }
 
 static void handle_display_state(UIState* s, bool user_input) {
-  static int awake_timeout = 0; // Somehow this only gets called on program start
+  static int awake_timeout = 0;
   awake_timeout = std::max(awake_timeout - 1, 0);
 
   if (user_input || s->scene.ignition || s->scene.started) {
@@ -245,7 +246,7 @@ void GLWindow::backlightUpdate() {
   float k = (BACKLIGHT_DT / BACKLIGHT_TS) / (1.0f + BACKLIGHT_DT / BACKLIGHT_TS);
 
   float clipped_brightness = std::min(100.0f, (ui_state.scene.light_sensor * brightness_m) + brightness_b);
-  if (ui_state.scene.started) {
+  if (!ui_state.scene.started) {
     clipped_brightness = BACKLIGHT_OFFROAD;
   }
 
@@ -256,7 +257,11 @@ void GLWindow::backlightUpdate() {
     brightness = 0;
     emit screen_shutoff();
   }
-  std::thread{Hardware::set_brightness, brightness}.detach();
+
+  if (brightness != last_brightness) {
+    std::thread{Hardware::set_brightness, brightness}.detach();
+  }
+  last_brightness = brightness;
 }
 
 void GLWindow::timerUpdate() {

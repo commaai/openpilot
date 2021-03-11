@@ -115,10 +115,10 @@ int main(int argc, char* argv[]) {
   SLSound sound;
   UIState uistate = {};
   UIState *s = &uistate;
+  FrameBuffer fb = FrameBuffer("ui", 0, true, &s->fb_w, &s->fb_h);
+
   ui_init(s);
   s->sound = &sound;
-
-  FrameBuffer fb = FrameBuffer("ui", 0, true, &s->fb_w, &s->fb_h);
 
   TouchState touch = {0};
   touch_init(&touch);
