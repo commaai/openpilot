@@ -731,7 +731,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
   EventName.speedTooHigh: {
     ET.WARNING: Alert(
       "Speed Too High",
-      "Slow down to resume operation",
+      "Model uncertain at this speed",
       AlertStatus.normal, AlertSize.mid,
       Priority.HIGH, VisualAlert.steerRequired, AudibleAlert.none, 2.2, 3., 4.),
     ET.NO_ENTRY: Alert(
