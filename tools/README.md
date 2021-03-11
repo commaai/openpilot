@@ -8,7 +8,6 @@ System requirements
 openpilot tools and the following setup steps are developed and tested on:
 * Ubuntu 20.04
 * MacOS 10.14.2 (only building is tested on MacOS)
-* Python 3.8.2
 
 
 Setup
@@ -25,10 +24,10 @@ Tool examples
 ============
 
 
-[Replay driving data](replay)
+[Replay a drive](replay)
 -------------
 
-Review video and log data from routes and stream CAN messages to your EON.
+Review video and log data from routes and stream CAN messages to your device.
 
 
 [Debug car controls](carcontrols)
