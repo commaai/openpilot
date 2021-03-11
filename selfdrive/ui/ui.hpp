@@ -21,7 +21,6 @@
 
 #include "common/mat.h"
 #include "common/visionimg.h"
-#include "common/framebuffer.h"
 #include "common/modeldata.h"
 #include "common/params.h"
 #include "common/glutil.h"
@@ -144,7 +143,6 @@ typedef struct UIState {
   VisionBuf * last_frame;
 
   // framebuffer
-  std::unique_ptr<FrameBuffer> fb;
   int fb_w, fb_h;
 
   // NVG

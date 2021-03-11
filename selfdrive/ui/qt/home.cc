@@ -28,6 +28,59 @@
 #define BACKLIGHT_TS 2.00
 #define BACKLIGHT_OFFROAD 50
 
+
+// HomeWindow: the container for the offroad (OffroadHome) and onroad (GLWindow) UIs
+
+HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
+  layout = new QGridLayout;
+  layout->setMargin(0);
+
+  // onroad UI
+  glWindow = new GLWindow(this);
+  layout->addWidget(glWindow, 0, 0);
+
+  // draw offroad UI on top of onroad UI
+  home = new OffroadHome();
+  layout->addWidget(home, 0, 0);
+  QObject::connect(glWindow, SIGNAL(offroadTransition(bool)), this, SLOT(setVisibility(bool)));
+  QObject::connect(glWindow, SIGNAL(offroadTransition(bool)), this, SIGNAL(offroadTransition(bool)));
+  QObject::connect(glWindow, SIGNAL(screen_shutoff()), this, SIGNAL(closeSettings()));
+  QObject::connect(this, SIGNAL(openSettings()), home, SLOT(refresh()));
+  setLayout(layout);
+  setStyleSheet(R"(
+    * {
+      color: white;
+    }
+  )");
+}
+
+void HomeWindow::setVisibility(bool offroad) {
+  home->setVisible(offroad);
+}
+
+void HomeWindow::mousePressEvent(QMouseEvent* e) {
+  UIState* ui_state = &glWindow->ui_state;
+  if (GLWindow::ui_state.scene.started && GLWindow::ui_state.scene.driver_view) {
+    Params().write_db_value("IsDriverViewEnabled", "0", 1);
+    return;
+  }
+
+  glWindow->wake();
+
+  // Settings button click
+  if (!ui_state->sidebar_collapsed && settings_btn.ptInRect(e->x(), e->y())) {
+    emit openSettings();
+  }
+
+  // Vision click
+  if (ui_state->scene.started && (e->x() >= ui_state->viz_rect.x - bdr_s)) {
+    ui_state->sidebar_collapsed = !ui_state->sidebar_collapsed;
+  }
+}
+
+
+// OffroadHome: the offroad home page
+
 OffroadHome::OffroadHome(QWidget* parent) : QWidget(parent) {
   QVBoxLayout* main_layout = new QVBoxLayout();
   main_layout->setContentsMargins(sbr_w + 50, 50, 50, 50);
@@ -109,7 +162,6 @@ void OffroadHome::refresh() {
   }
 
   if (alerts_widget->updateAvailable) {
-    // There is a new release
     alert_notification->setText("UPDATE");
   } else {
     int alerts = alerts_widget->alerts.size();
@@ -135,53 +187,6 @@ void OffroadHome::refresh() {
   alert_notification->setStyleSheet(style);
 }
 
-HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
-  layout = new QGridLayout;
-  layout->setMargin(0);
-
-  // onroad UI
-  glWindow = new GLWindow(this);
-  layout->addWidget(glWindow, 0, 0);
-
-  // draw offroad UI on top of onroad UI
-  home = new OffroadHome();
-  layout->addWidget(home, 0, 0);
-  QObject::connect(glWindow, SIGNAL(offroadTransition(bool)), this, SLOT(setVisibility(bool)));
-  QObject::connect(glWindow, SIGNAL(offroadTransition(bool)), this, SIGNAL(offroadTransition(bool)));
-  QObject::connect(glWindow, SIGNAL(screen_shutoff()), this, SIGNAL(closeSettings()));
-  QObject::connect(this, SIGNAL(openSettings()), home, SLOT(refresh()));
-  setLayout(layout);
-  setStyleSheet(R"(
-    * {
-      color: white;
-    }
-  )");
-}
-
-void HomeWindow::setVisibility(bool offroad) {
-  home->setVisible(offroad);
-}
-
-void HomeWindow::mousePressEvent(QMouseEvent* e) {
-  UIState* ui_state = &glWindow->ui_state;
-  if (GLWindow::ui_state.scene.started && GLWindow::ui_state.scene.driver_view) {
-    Params().write_db_value("IsDriverViewEnabled", "0", 1);
-    return;
-  }
-
-  glWindow->wake();
-
-  // Settings button click
-  if (!ui_state->sidebar_collapsed && settings_btn.ptInRect(e->x(), e->y())) {
-    emit openSettings();
-  }
-
-  // Vision click
-  if (ui_state->scene.started && (e->x() >= ui_state->viz_rect.x - bdr_s)) {
-    ui_state->sidebar_collapsed = !ui_state->sidebar_collapsed;
-  }
-}
-
 static void handle_display_state(UIState* s, bool user_input) {
   static int awake_timeout = 0; // Somehow this only gets called on program start
   awake_timeout = std::max(awake_timeout - 1, 0);
@@ -193,6 +198,9 @@ static void handle_display_state(UIState* s, bool user_input) {
     s->awake = false;
   }
 }
+
+
+// GLWindow: the onroad UI
 
 GLWindow::GLWindow(QWidget* parent) : QOpenGLWidget(parent) {
   timer = new QTimer(this);
@@ -285,9 +293,7 @@ void GLWindow::paintGL() {
     double dt = cur_draw_t - prev_draw_t;
     if (dt > 66 && onroad){
       // warn on sub 15fps
-#ifdef QCOM2
       LOGW("slow frame(%llu) time: %.2f", ui_state.sm->frame, dt);
-#endif
     }
     prev_draw_t = cur_draw_t;
   }
@@ -296,9 +302,3 @@ void GLWindow::paintGL() {
 void GLWindow::wake() {
   handle_display_state(&ui_state, true);
 }
-
-FrameBuffer::FrameBuffer(const char *name, uint32_t layer, int alpha, int *out_w, int *out_h) {
-  *out_w = vwp_w;
-  *out_h = vwp_h;
-}
-FrameBuffer::~FrameBuffer() {}
