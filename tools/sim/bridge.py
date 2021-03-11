@@ -17,10 +17,10 @@ from selfdrive.test.helpers import set_params_enabled
 
 parser = argparse.ArgumentParser(description='Bridge between CARLA and openpilot.')
 parser.add_argument('--joystick', action='store_true')
+parser.add_argument('--low_quality', action='store_true')
 parser.add_argument('--town', type=str, default='Town04_Opt')
 parser.add_argument('--spawn_point', dest='num_selected_spawn_point',
         type=int, default=16)
-parser.add_argument('--low_quality', type=bool, default=False)
 
 args = parser.parse_args()
 

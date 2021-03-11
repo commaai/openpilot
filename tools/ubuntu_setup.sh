@@ -84,6 +84,7 @@ git submodule update
 pyenv install -s 3.8.5
 pyenv global 3.8.5
 pyenv rehash
+eval "$(pyenv init -)"
 
 # **** in python env ****
 
