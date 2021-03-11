@@ -46,15 +46,10 @@ class CarInterface(CarInterfaceBase):
 
       # Per-chassis tuning values, override tuning defaults here if desired
 
-      if candidate == CAR.AUDI_A3:
-        # Averages of all 8V A3 variants
-        ret.mass = 1335 + STD_CARGO_KG
-        ret.wheelbase = 2.61
-
-      elif candidate == CAR.GOLF:
-        # Averages of all AU Golf variants
-        ret.mass = 1397 + STD_CARGO_KG
-        ret.wheelbase = 2.62
+      if candidate in [CAR.AUDI_A3, CAR.GOLF]:
+        # Temporarily carry forward old tuning values while we test vehicle identification
+        ret.mass = 1500 + STD_CARGO_KG
+        ret.wheelbase = 2.64
 
       ret.centerToFront = ret.wheelbase * 0.45
 
