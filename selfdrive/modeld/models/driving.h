@@ -18,19 +18,19 @@
 constexpr int DESIRE_LEN = 8;
 constexpr int TRAFFIC_CONVENTION_LEN = 2;
 constexpr int MODEL_FREQ = 20;
-struct ModelDataRaw {
-    float *plan;
-    float *lane_lines;
-    float *lane_lines_prob;
-    float *road_edges;
-    float *lead;
-    float *lead_prob;
-    float *desire_state;
-    float *meta;
-    float *desire_pred;
-    float *pose;
-  };
 
+struct ModelDataRaw {
+  float *plan;
+  float *lane_lines;
+  float *lane_lines_prob;
+  float *road_edges;
+  float *lead;
+  float *lead_prob;
+  float *desire_state;
+  float *meta;
+  float *desire_pred;
+  float *pose;
+};
 
 typedef struct ModelState {
   ModelFrame frame;
