@@ -25,7 +25,7 @@ def create_mqb_hud_control(packer, bus, hca_enabled, steering_pressed, hud_alert
     rightlanehud = 2 if rightLaneVisible else 1
 
   values = {
-    "LDW_SW_Warnung_links": 1,  # FIXME: to be store-and-forwarded from the stock camera
+    "LDW_SW_Warnung_links": 0,  # FIXME: to be store-and-forwarded from the stock camera
     "LDW_SW_Warnung_rechts": 1,  # FIXME: to be store-and-forwarded from the stock camera
     "LDW_Status_LED_gelb": 1 if hca_enabled and steering_pressed else 0,
     "LDW_Status_LED_gruen": 1 if hca_enabled and not steering_pressed else 0,
