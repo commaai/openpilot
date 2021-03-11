@@ -27,9 +27,5 @@ Rgb2Yuv::~Rgb2Yuv() {
 void Rgb2Yuv::queue(cl_command_queue q, cl_mem rgb_cl, cl_mem yuv_cl) {
   CL_CHECK(clSetKernelArg(krnl, 0, sizeof(cl_mem), &rgb_cl));
   CL_CHECK(clSetKernelArg(krnl, 1, sizeof(cl_mem), &yuv_cl));
-
-  cl_event event;
-  CL_CHECK(clEnqueueNDRangeKernel(q, krnl, 2, NULL, &work_size[0], NULL, 0, 0, &event));
-  CL_CHECK(clWaitForEvents(1, &event));
-  CL_CHECK(clReleaseEvent(event));
+  CL_CHECK(clEnqueueNDRangeKernel(q, krnl, 2, NULL, &work_size[0], NULL, 0, 0, nullptr));
 }
