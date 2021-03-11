@@ -486,7 +486,7 @@ class Controls:
     lat_plan = self.sm['lateralPlan']
 
     steer_angle_without_offset = math.radians(CS.steeringAngleDeg - params.angleOffsetAverageDeg)
-    curvature = -self.VM.calc_curvature(math.radians(steer_angle_without_offset), CS.vEgo)
+    curvature = -self.VM.calc_curvature(steer_angle_without_offset, CS.vEgo)
     angle_steers_des = math.degrees(self.VM.get_steer_from_curvature(-lat_plan.curvature, CS.vEgo))
     angle_steers_des += params.angleOffsetDeg
 
