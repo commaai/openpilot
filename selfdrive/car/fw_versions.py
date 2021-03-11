@@ -10,6 +10,7 @@ from cereal import car
 from selfdrive.car.fingerprints import FW_VERSIONS, get_attr_from_cars
 from selfdrive.car.isotp_parallel_query import IsoTpParallelQuery, RX_OFFSET
 from selfdrive.car.toyota.values import CAR as TOYOTA
+from selfdrive.car.volkswagen.values import MQB_CARS as VOLKSWAGEN_MQB_CARS
 from selfdrive.swaglog import cloudlog
 
 Ecu = car.CarParams.Ecu
@@ -155,6 +156,10 @@ def match_fw_to_car(fw_versions):
 
       # TODO: on some toyota, the engine can show on two different addresses
       if ecu_type == Ecu.engine and candidate in [TOYOTA.COROLLA_TSS2, TOYOTA.CHR, TOYOTA.LEXUS_IS, TOYOTA.AVALON] and found_version is None:
+        continue
+
+      # For VW, the factory LKAS camera is sometimes slow to wake up, and is optional for openpilot support
+      if ecu_type == Ecu.fwdCamera and candidate in VOLKSWAGEN_MQB_CARS and found_version is None:
         continue
 
       # ignore non essential ecus
