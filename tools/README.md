@@ -47,7 +47,7 @@ Tool examples
 [Replay driving data](replay)
 -------------
 
-Review video and log data from routes and stream CAN messages back to your device.
+Review video and log data from routes and stream CAN messages to your EON.
 
 
 [Debug car controls](carcontrols)
