@@ -264,6 +264,7 @@ selfdrive/controls/lib/longitudinal_mpc_model/longitudinal_mpc.c
 
 selfdrive/hardware/__init__.py
 selfdrive/hardware/base.py
+selfdrive/hardware/hw.h
 selfdrive/hardware/eon/__init__.py
 selfdrive/hardware/eon/apk.py
 selfdrive/hardware/eon/hardware.py
