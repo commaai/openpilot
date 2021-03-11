@@ -11,7 +11,6 @@
 #include "paint.hpp"
 #include "sidebar.hpp"
 
-
 // TODO: this is also hardcoded in common/transformations/camera.py
 // TODO: choose based on frame input size
 #ifdef QCOM2
@@ -22,7 +21,7 @@ const float y_offset = 0.0;
 const float zoom = 2.35;
 #endif
 
-static void ui_draw_text(const UIState *s, float x, float y, const char* string, float size, NVGcolor color, const char *font_name){
+static void ui_draw_text(const UIState *s, float x, float y, const char *string, float size, NVGcolor color, const char *font_name) {
   nvgFontFace(s->vg, font_name);
   nvgFontSize(s->vg, size);
   nvgFillColor(s->vg, color);
@@ -66,7 +65,7 @@ static void ui_draw_circle_image(const UIState *s, int x, int y, int size, const
   ui_draw_circle_image(s, x, y, size, image, nvgRGBA(0, 0, 0, (255 * bg_alpha)), img_alpha);
 }
 
-static void draw_lead(UIState *s, int idx){
+static void draw_lead(UIState *s, int idx) {
   // Draw lead car indicator
   const auto &lead = s->scene.lead_data[idx];
   auto [x, y] = s->scene.lead_vertices[idx];
@@ -86,7 +85,7 @@ static void draw_lead(UIState *s, int idx){
 
   float sz = std::clamp((25 * 30) / (d_rel / 3 + 30), 15.0f, 30.0f) * zoom;
   x = std::clamp(x, 0.f, s->viz_rect.right() - sz / 2);
-  y = std::fmin(s->viz_rect.bottom() - sz * .6,  y);
+  y = std::fmin(s->viz_rect.bottom() - sz * .6, y);
   draw_chevron(s, x, y, sz, nvgRGBA(201, 34, 49, fillAlpha), COLOR_YELLOW);
 }
 
@@ -134,7 +133,7 @@ static void draw_frame(UIState *s) {
 
   assert(glGetError() == GL_NO_ERROR);
   glEnableVertexAttribArray(0);
-  glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, (const void*)0);
+  glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, (const void *)0);
   glDisableVertexAttribArray(0);
   glBindVertexArray(0);
 }
@@ -306,9 +305,9 @@ static void ui_draw_vision_alert(UIState *s) {
   color.a *= get_alert_alpha(scene->alert_blinking_rate);
   const int alr_h = alert_size_map[scene->alert_size] + bdr_s;
   const Rect rect = {.x = s->viz_rect.x - bdr_s,
-                  .y = s->fb_h - alr_h,
-                  .w = s->viz_rect.w + (bdr_s * 2),
-                  .h = alr_h};
+                     .y = s->fb_h - alr_h,
+                     .w = s->viz_rect.w + (bdr_s * 2),
+                     .h = alr_h};
 
   ui_fill_rect(s->vg, rect, color);
   ui_fill_rect(s->vg, rect, nvgLinearGradient(s->vg, rect.x, rect.y, rect.x, rect.bottom(), 
@@ -401,7 +400,7 @@ void ui_draw(UIState *s) {
   glDisable(GL_BLEND);
 }
 
-void ui_draw_image(const UIState *s, const Rect &r, const char *name, float alpha){
+void ui_draw_image(const UIState *s, const Rect &r, const char *name, float alpha) {
   nvgBeginPath(s->vg);
   NVGpaint imgPaint = nvgImagePattern(s->vg, r.x, r.y, r.w, r.h, 0, s->images.at(name), alpha);
   nvgRect(s->vg, r.x, r.y, r.w, r.h);
@@ -419,7 +418,7 @@ void ui_draw_rect(NVGcontext *vg, const Rect &r, NVGcolor color, int width, floa
 
 static inline void fill_rect(NVGcontext *vg, const Rect &r, const NVGcolor *color, const NVGpaint *paint, float radius) {
   nvgBeginPath(vg);
-  radius > 0? nvgRoundedRect(vg, r.x, r.y, r.w, r.h, radius) : nvgRect(vg, r.x, r.y, r.w, r.h);
+  radius > 0 ? nvgRoundedRect(vg, r.x, r.y, r.w, r.h, radius) : nvgRect(vg, r.x, r.y, r.w, r.h);
   if (color) nvgFillColor(vg, *color);
   if (paint) nvgFillPaint(vg, *paint);
   nvgFill(vg);
@@ -427,7 +426,7 @@ static inline void fill_rect(NVGcontext *vg, const Rect &r, const NVGcolor *colo
 void ui_fill_rect(NVGcontext *vg, const Rect &r, const NVGcolor &color, float radius) {
   fill_rect(vg, r, &color, nullptr, radius);
 }
-void ui_fill_rect(NVGcontext *vg, const Rect &r, const NVGpaint &paint, float radius){
+void ui_fill_rect(NVGcontext *vg, const Rect &r, const NVGpaint &paint, float radius) {
   fill_rect(vg, r, nullptr, &paint, radius);
 }
 
@@ -547,7 +546,7 @@ void ui_nvg_init(UIState *s) {
 
   assert(glGetError() == GL_NO_ERROR);
 
-  for(int i = 0; i < 2; i++) {
+  for (int i = 0; i < 2; i++) {
     float x1, x2, y1, y2;
     if (i == 1) {
       // flip horizontally so it looks like a mirror
@@ -583,7 +582,7 @@ void ui_nvg_init(UIState *s) {
     glGenBuffers(1, &s->frame_ibo[i]);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, s->frame_ibo[i]);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(frame_indicies), frame_indicies, GL_STATIC_DRAW);
-    glBindBuffer(GL_ARRAY_BUFFER,0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
   }
 
