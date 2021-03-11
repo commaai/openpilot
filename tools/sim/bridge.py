@@ -17,9 +17,11 @@ from selfdrive.test.helpers import set_params_enabled
 
 parser = argparse.ArgumentParser(description='Bridge between CARLA and openpilot.')
 parser.add_argument('--joystick', action='store_true')
-parser.add_argument('--town', type=str, default='Town04')
+parser.add_argument('--town', type=str, default='Town04_Opt')
 parser.add_argument('--spawn_point', dest='num_selected_spawn_point',
         type=int, default=16)
+parser.add_argument('--low_quality', type=bool, default=False)
+
 args = parser.parse_args()
 
 W, H = 1164, 874
@@ -132,6 +134,14 @@ def bridge(q):
   client = carla.Client("127.0.0.1", 2000)
   client.set_timeout(10.0)
   world = client.load_world(args.town)
+
+  if args.low_quality:
+    world.unload_map_layer(carla.MapLayer.Foliage)
+    world.unload_map_layer(carla.MapLayer.Buildings)
+    world.unload_map_layer(carla.MapLayer.ParkedVehicles)
+    world.unload_map_layer(carla.MapLayer.Particles)
+    world.unload_map_layer(carla.MapLayer.Props)
+    world.unload_map_layer(carla.MapLayer.StreetLights)
 
   blueprint_library = world.get_blueprint_library()
 
