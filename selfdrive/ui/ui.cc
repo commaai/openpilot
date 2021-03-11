@@ -110,8 +110,8 @@ static void update_line_data(const UIState *s, const cereal::ModelDataV2::XYZTDa
 static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
   UIScene &scene = s->scene;
   auto model_position = model.getPosition();
-  const float max_distance = std::clamp(model_position.getX()[TRAJECTORY_SIZE - 1],
-                                        MIN_DRAW_DISTANCE, MAX_DRAW_DISTANCE);
+  float max_distance = std::clamp(model_position.getX()[TRAJECTORY_SIZE - 1],
+                                  MIN_DRAW_DISTANCE, MAX_DRAW_DISTANCE);
 
   // update lane lines
   const auto lane_lines = model.getLaneLines();
@@ -133,12 +133,9 @@ static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
   // update path
   if (scene.lead_data[0].getStatus()) {
     const float lead_d = scene.lead_data[0].getDRel() * 2.;
-    const float path_length = std::clamp((float)(lead_d - fmin(lead_d * 0.35, 10.)),
-                                         0.0f, max_distance);
-    max_idx = get_path_length_idx(model_position, path_length);
-  } else {
-    max_idx = get_path_length_idx(model_position, max_distance);
+    max_distance = std::clamp((float)(lead_d - fmin(lead_d * 0.35, 10.)), 0.0f, max_distance);
   }
+  max_idx = get_path_length_idx(model_position, max_distance);
   update_line_data(s, model_position, 0.5, 1.22, &scene.track_vertices, max_idx);
 }
 
