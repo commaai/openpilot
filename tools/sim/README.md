@@ -32,7 +32,7 @@ This will print the help output inside the docker container. You need to exit th
 
 ## Performance
 
-openpilot doesn't have any extreme hardware requirements, however CARLA is very resource-intensive and might cause issues for people using lower-end systems. For this case we have a low quality mode you can activate by running:
+openpilot doesn't have any extreme hardware requirements, however CARLA is very resource-intensive and may not run smoothly on your system. For this case, we have a low quality mode you can activate by running:
 ```
 ./start_openpilot_docker.sh --low_quality
 ```
