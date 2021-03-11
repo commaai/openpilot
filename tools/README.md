@@ -5,19 +5,36 @@ openpilot tools
 System requirements
 ============
 
-openpilot tools and the following setup steps are developed and tested on:
-* Ubuntu 20.04
-* MacOS 10.14.2 (only building is tested on MacOS)
+openpilot tools and the following setup steps are developed and tested on Ubuntu 20.04
+
+We also test building openpilot on MacOS 10.14.2, but building is all that we can guarantee
 
 
 Setup
 ============
-1. Run `ubuntu_setup.sh` or `mac_setup.sh`, and make sure that everything completed correctly
+1. Clone openpilot into home directory:
+```
+cd ~
 
-2. Compile openpilot by running ```scons``` in the openpilot directory
-   or alternatively run ```./openpilot_build.sh``` (uses a pre-configured docker container)
+git clone --recurse-submodule https://github.com/commaai/openpilot.git
+```
 
-3. Try out some tools!
+2. Run setup script:
+Ubuntu:
+```
+source ~/openpilot/tools/ubuntu_setup.sh
+```
+MacOS:
+```
+source ~/openpilot/tools/mac_setup.sh
+```
+
+3. Compile openpilot by running SCons in openpilot directory
+```
+scons --directory=~/openpilot
+```
+
+4. Try out some tools!
 
 
 Tool examples
