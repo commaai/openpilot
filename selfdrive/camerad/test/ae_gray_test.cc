@@ -1,8 +1,10 @@
 // unittest for set_exposure_target
 
 #include <assert.h>
+#include <cstring>
 
 #include "selfdrive/camerad/cameras/camera_common.h"
+#include "selfdrive/camerad/test/ae_gray_test.h"
 
 #define W 240
 #define H 160
@@ -19,31 +21,29 @@ int main() {
   cb.rgb_width = W;
   cb.rgb_height = H;
 
-  printf("WxH %dx%d\n", cb.rgb_width, cb.rgb_height);
+  printf("AE test patterns %dx%d\n", cb.rgb_width, cb.rgb_height);
 
-  // calculate EV
-  for (int round=0; round<3; round++) {
-    for (int i=0; i<80; i++) {
-      uint8_t pc, sc;
-      if (round==0) {
-        pc = 235;
-      } else {
-        pc = 117;
+  // mix of 4 tones
+  uint8_t l[4] = {0, 32, 96, 235}; // 235 is yuv max
+
+  // generate pattern and calculate EV
+  for (int i_0=0; i_0<5; i_0++) {
+    for (int i_1=0; i_1<5; i_1++) {
+      for (int i_2=0; i_2<5; i_2++) {
+        int h_0 = i_0 * H / 5;
+        int h_1 = i_1 * (H - h_0) / 5;
+        int h_2 = i_2 * (H - h_0 - h_1) / 5;
+        int h_3 = H - h_0 - h_1 - h_2;
+        memset(fb_y, l[0], h_0*W);
+        memset(fb_y+h_0*W, l[1], h_1*W);
+        memset(fb_y+h_0*W+h_1*W, l[0], h_2*W);
+        memset(fb_y+h_0*W+h_1*W+h_2*W, l[0], h_3*W);
+        float ev = set_exposure_target((const CameraBuf*) &cb, 0, W-1, 1, 0, H-1, 1, 0);
+        printf("%d/%d/%d/%d ev is %f\n", h_0, h_1, h_2, h_3, ev);
       }
-      if (round==2) {
-        sc = 235;
-      } else {
-        sc = 0;
-      }
-      for (int r=0; r<H; r++) {
-        for (int c=0; c<W; c++) {
-          fb_y[r*W+c] = r > i * (H/80) ? pc : sc;
-        }
-      }
-      float ev;
-      ev = set_exposure_target((const CameraBuf*) &cb, 0, W-1, 1, 0, H-1, 1, 0);
-      printf("ev is %f\n", ev);
     }
   }
+
+  delete[] fb_y;
   return 0;
 }
