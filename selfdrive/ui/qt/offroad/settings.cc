@@ -173,13 +173,24 @@ QWidget * device_panel() {
   });
 
   // power buttons
+
   QPushButton *poweroff_btn = new QPushButton("Power Off");
   device_layout->addWidget(poweroff_btn, Qt::AlignBottom);
+  QObject::connect(poweroff_btn, &QPushButton::released, [=]() {
+    if (ConfirmationDialog::confirm("Are you sure you want to power off?")) {
+      Hardware::poweroff();
+    }
+  });
+
+  device_layout->addWidget(horizontal_line(), Qt::AlignBottom);
+
   QPushButton *reboot_btn = new QPushButton("Reboot");
   device_layout->addWidget(reboot_btn, Qt::AlignBottom);
-  device_layout->addWidget(horizontal_line(), Qt::AlignBottom);
-  QObject::connect(poweroff_btn, &QPushButton::released, [=]() { Hardware::poweroff(); });
-  QObject::connect(reboot_btn, &QPushButton::released, [=]() { Hardware::reboot(); });
+  QObject::connect(reboot_btn, &QPushButton::released, [=]() {
+    if (ConfirmationDialog::confirm("Are you sure you want to reboot?")) {
+      Hardware::reboot();
+    }
+  });
 
   QPushButton *uninstall_btn = new QPushButton("Uninstall openpilot");
   device_layout->addWidget(uninstall_btn);
