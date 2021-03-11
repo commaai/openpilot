@@ -99,12 +99,17 @@ CameraBuf::~CameraBuf() {
     camera_bufs[i].free();
   }
 
-  rgb_to_yuv_destroy(&rgb_to_yuv_state);
+  if (rgb_to_yuv_state.rgb_to_yuv_krnl) {
+    rgb_to_yuv_destroy(&rgb_to_yuv_state);
+  }
 
   if (krnl_debayer) {
     CL_CHECK(clReleaseKernel(krnl_debayer));
   }
-  CL_CHECK(clReleaseCommandQueue(q));
+
+  if (q) {
+    CL_CHECK(clReleaseCommandQueue(q));
+  }
 }
 
 bool CameraBuf::acquire() {
@@ -283,8 +288,7 @@ static void publish_thumbnail(PubMaster *pm, const CameraBuf *b) {
   free(thumbnail_buffer);
 }
 
-float set_exposure_target(CameraState *c, int x_start, int x_end, int x_skip, int y_start, int y_end, int y_skip) {
-  const CameraBuf *b = &c->buf;
+float set_exposure_target(const CameraBuf *b, int x_start, int x_end, int x_skip, int y_start, int y_end, int y_skip, int analog_gain) {
   const uint8_t *pix_ptr = b->cur_yuv_buf->y;
   uint32_t lum_binning[256] = {0};
   unsigned int lum_total = 0;
@@ -308,7 +312,7 @@ float set_exposure_target(CameraState *c, int x_start, int x_end, int x_skip, in
     lum_cur += lum_binning[lum_med];
 #ifdef QCOM2
     int lum_med_tmp = 0;
-    int hb = HLC_THRESH + (10 - c->analog_gain);
+    int hb = HLC_THRESH + (10 - analog_gain);
     if (lum_cur > 0 && lum_med > hb) {
       lum_med_tmp = (lum_med - hb) + 100;
     }
@@ -318,7 +322,7 @@ float set_exposure_target(CameraState *c, int x_start, int x_end, int x_skip, in
       break;
     }
   }
-  lum_med = lum_med_alt>0 ? lum_med + lum_med/32*lum_cur*(lum_med_alt - lum_med)/lum_total:lum_med;
+  lum_med = lum_med_alt>0 ? lum_med + lum_med/32*lum_cur*abs(lum_med_alt - lum_med)/lum_total:lum_med;
 
   return lum_med / 256.0;
 }
@@ -410,7 +414,12 @@ void common_process_driver_camera(SubMaster *sm, PubMaster *pm, CameraState *c, 
 #endif
     }
 
-    camera_autoexposure(c, set_exposure_target(c, x_min, x_max, 2, y_min, y_max, skip));
+#ifdef QCOM2
+  int ggain = c->analog_gain;
+#else
+  int ggain = -1;
+#endif
+    camera_autoexposure(c, set_exposure_target(b, x_min, x_max, 2, y_min, y_max, skip, ggain));
   }
 
   MessageBuilder msg;

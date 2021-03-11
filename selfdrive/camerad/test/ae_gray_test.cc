@@ -1,50 +1,49 @@
-// unittest for
-// void set_exposure_target(CameraState *c, int x_start, int x_end, int x_skip, int y_start, int y_end, int y_skip)
+// unittest for set_exposure_target
 
 #include <assert.h>
-#include "clutil.h"
 
-#include "visionipc_server.h"
 #include "selfdrive/camerad/cameras/camera_common.h"
 
 #define W 240
 #define H 160
 
-typedef struct CameraState {
-  CameraInfo ci;
-  CameraBuf buf;
-} CameraState;
-
-// generic camera state
 void camera_autoexposure(CameraState *s, float grey_frac) {}
 
 int main() {
-  // set up fake camera
-  CameraState cs = {};
-  CameraState *s = &cs;
+  // set up fake camerabuf
+  CameraBuf cb = {};
+  VisionBuf vb = {};
+  uint8_t * fb_y = new uint8_t[W*H];
+  vb.y = fb_y;
+  cb.cur_yuv_buf = &vb;
+  cb.rgb_width = W;
+  cb.rgb_height = H;
 
-  // copied from main.cc
-  cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
-  #if defined(QCOM)
-    const cl_context_properties props[] = {CL_CONTEXT_PRIORITY_HINT_QCOM, CL_PRIORITY_HINT_HIGH_QCOM, 0};
-    cl_context context = CL_CHECK_ERR(clCreateContext(props, 1, &device_id, NULL, NULL, &err));
-  #else
-    cl_context context = CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id, NULL, NULL, &err));
-  #endif
-  VisionIpcServer vipc_server("camerad-test", device_id, context);
-
-  CameraInfo fci = (struct CameraInfo) {
-    .frame_width = W,
-    .frame_height = H,
-    .frame_stride = W*3,
-  };
-
-  s->ci = fci;
-  assert(s->ci.frame_width != 0);
-  s->buf.init(device_id, context, s, &vipc_server, 1, VISION_STREAM_RGB_BACK, VISION_STREAM_YUV_BACK);
+  printf("WxH %dx%d\n", cb.rgb_width, cb.rgb_height);
 
   // calculate EV
-  printf("hello\n");
-  // check output
+  for (int round=0; round<3; round++) {
+    for (int i=0; i<80; i++) {
+      uint8_t pc, sc;
+      if (round==0) {
+        pc = 235;
+      } else {
+        pc = 117;
+      }
+      if (round==2) {
+        sc = 235;
+      } else {
+        sc = 0;
+      }
+      for (int r=0; r<H; r++) {
+        for (int c=0; c<W; c++) {
+          fb_y[r*W+c] = r > i * (H/80) ? pc : sc;
+        }
+      }
+      float ev;
+      ev = set_exposure_target((const CameraBuf*) &cb, 0, W-1, 1, 0, H-1, 1, 0);
+      printf("ev is %f\n", ev);
+    }
+  }
   return 0;
 }

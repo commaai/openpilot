@@ -96,7 +96,7 @@ private:
 
   FrameMetadata yuv_metas[YUV_COUNT];
   VisionStreamType rgb_type, yuv_type;
-  
+
   int cur_buf_idx;
 
   SafeQueue<int> safe_queue;
@@ -112,7 +112,7 @@ public:
   std::unique_ptr<VisionBuf[]> camera_bufs;
   std::unique_ptr<FrameMetadata[]> camera_bufs_metadata;
   int rgb_width, rgb_height, rgb_stride;
-  
+
   mat3 yuv_transform;
 
   CameraBuf() = default;
@@ -127,7 +127,7 @@ typedef void (*process_thread_cb)(MultiCameraState *s, CameraState *c, int cnt);
 
 void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &frame_data);
 kj::Array<uint8_t> get_frame_image(const CameraBuf *b);
-float set_exposure_target(CameraState *c, int x_start, int x_end, int x_skip, int y_start, int y_end, int y_skip);
+float set_exposure_target(const CameraBuf *b, int x_start, int x_end, int x_skip, int y_start, int y_end, int y_skip, int analog_gain);
 std::thread start_process_thread(MultiCameraState *cameras, CameraState *cs, process_thread_cb callback);
 void common_process_driver_camera(SubMaster *sm, PubMaster *pm, CameraState *c, int cnt);
 
