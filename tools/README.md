@@ -1,12 +1,10 @@
 openpilot tools
 ============
 
-
 System requirements
 ============
 
-openpilot is developed and tested on *Ubuntu 20.04*, which is the primary development target aside from the [supported embdedded hardware](../#supported-hardware). We also have a CI test to verify that openpilot builds on macOS.
-
+openpilot is developed and tested on **Ubuntu 20.04**, which is the primary development target aside from the [supported embdedded hardware](https://github.com/commaai/openpilot#supported-hardware). We also have a CI test to verify that openpilot builds on macOS, but the tools are untested. For the best experience, stick to Ubuntu 20.04, otherwise openpilot and the tools should work with minimal to no modifications.
 
 Setup
 ============
@@ -35,9 +33,8 @@ scons --directory=~/openpilot
 4. Try out some tools!
 
 
-Tool examples
+Tools
 ============
-
 
 [Replay a drive](replay)
 -------------
@@ -65,7 +62,6 @@ Test openpilots performance in a simulated environment. The [CARLA simulator](ht
 * Environment physics
 * Cars
 * Traffic and pedestrians
-
 
 Welcomed contributions
 =============
