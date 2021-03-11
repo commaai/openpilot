@@ -65,7 +65,7 @@ Easily plot openpilot logs with [PlotJuggler](https://github.com/facontidavide/P
 [Try openpilot in a simulator](sim)
 -------------
 
-Test openpilots performance in a simulated environment. The [CARLA simulator](https://github.com/carla-simulator/carla) allows you to change a variety of features like:
+Test openpilots performance in a simulated environment. The [CARLA simulator](https://github.com/carla-simulator/carla) allows you to set a variety of features like:
 * Weather
 * Environment physics
 * Cars
