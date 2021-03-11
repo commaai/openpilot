@@ -14,23 +14,22 @@ cd ~
 
 git clone --recurse-submodule https://github.com/commaai/openpilot.git
 
-cd openpilot
 ```
 
 2. Run setup script:
 
 Ubuntu:
 ```
-tools/ubuntu_setup.sh
+openpilot/tools/ubuntu_setup.sh
 ```
 MacOS:
 ```
-tools/mac_setup.sh
+openpilot/tools/mac_setup.sh
 ```
 
 3. Compile openpilot by running SCons in openpilot directory
 ```
-scons
+cd openpilot && scons -j$(nproc)
 ```
 
 4. Try out some tools!
