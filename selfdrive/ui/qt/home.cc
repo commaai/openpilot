@@ -4,7 +4,6 @@
 #include <thread>
 #include <exception>
 
-
 #include <QDateTime>
 #include <QHBoxLayout>
 #include <QLayout>
@@ -17,6 +16,7 @@
 #include "common/timing.h"
 #include "common/swaglog.h"
 #include "common/watchdog.h"
+#include "selfdrive/hardware/hw.h"
 
 #include "home.hpp"
 #include "paint.hpp"
@@ -26,7 +26,7 @@
 
 #define BACKLIGHT_DT 0.25
 #define BACKLIGHT_TS 2.00
-#define BACKLIGHT_OFFROAD 512
+#define BACKLIGHT_OFFROAD 50
 
 OffroadHome::OffroadHome(QWidget* parent) : QWidget(parent) {
   QVBoxLayout* main_layout = new QVBoxLayout();
@@ -194,18 +194,6 @@ static void handle_display_state(UIState* s, bool user_input) {
   }
 }
 
-static void set_backlight(int brightness) {
-  try {
-    std::ofstream brightness_control("/sys/class/backlight/panel0-backlight/brightness");
-    if (brightness_control.is_open()) {
-      brightness_control << brightness << "\n";
-      brightness_control.close();
-    }
-  } catch (std::exception& e) {
-    qDebug() << "Error setting brightness";
-  }
-}
-
 GLWindow::GLWindow(QWidget* parent) : QOpenGLWidget(parent) {
   timer = new QTimer(this);
   QObject::connect(timer, SIGNAL(timeout()), this, SLOT(timerUpdate()));
@@ -248,18 +236,19 @@ void GLWindow::backlightUpdate() {
   // Update brightness
   float k = (BACKLIGHT_DT / BACKLIGHT_TS) / (1.0f + BACKLIGHT_DT / BACKLIGHT_TS);
 
-  float clipped_brightness = ui_state.scene.started ?
-    std::min(1023.0f, (ui_state.scene.light_sensor * brightness_m) + brightness_b) : BACKLIGHT_OFFROAD;
+  float clipped_brightness = std::min(100.0f, (ui_state.scene.light_sensor * brightness_m) + brightness_b);
+  if (ui_state.scene.started) {
+    clipped_brightness = BACKLIGHT_OFFROAD;
+  }
 
   smooth_brightness = clipped_brightness * k + smooth_brightness * (1.0f - k);
 
   int brightness = smooth_brightness;
-
   if (!ui_state.awake) {
     brightness = 0;
     emit screen_shutoff();
   }
-  std::thread{set_backlight, brightness}.detach();
+  std::thread{Hardware::set_brightness, brightness}.detach();
 }
 
 void GLWindow::timerUpdate() {
