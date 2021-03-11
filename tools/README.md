@@ -53,13 +53,13 @@ Debug car controls
 Short description
 
 
-Juggle plots
+[Juggle plots](plotjuggler)
 -------------
 
 Easily plot openpilot logs with [PlotJuggler](https://github.com/facontidavide/PlotJuggler), an open source tool for visualizing time series data.
 
 
-Try openpilot in a simulator
+[Try openpilot in a simulator](sim)
 -------------
 
 Test openpilots performance in a simulated environment. The [CARLA simulator](https://github.com/carla-simulator/carla) allows you to change a variety of features like:
