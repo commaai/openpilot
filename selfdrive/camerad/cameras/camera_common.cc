@@ -145,6 +145,7 @@ bool CameraBuf::acquire() {
     CL_CHECK(clEnqueueCopyBuffer(q, camrabuf_cl, cur_rgb_buf->buf_cl, 0, 0,
                                cur_rgb_buf->len, 0, 0, nullptr));
   }
+
   rgb2yuv->queue(q, cur_rgb_buf->buf_cl, cur_yuv_buf->buf_cl);
   CL_CHECK(clFinish(q));
 
