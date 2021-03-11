@@ -52,7 +52,7 @@ public:
   static void set_brightness(int percent) {
     std::ofstream brightness_control("/sys/class/backlight/panel0-backlight/brightness");
     if (brightness_control.is_open()) {
-      brightness_control << (percent * (1023/100.)) << "\n";
+      brightness_control << (percent * (int)(1023/100.)) << "\n";
       brightness_control.close();
     }
   };
