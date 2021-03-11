@@ -43,14 +43,13 @@ Tool examples
 [Replay driving data](replay)
 -------------
 
-Short description
-+ sth about stream replayed can messages to EON
+Review video and log data from routes and stream CAN messages back to your device.
 
 
 [Debug car controls](carcontrols)
 -------------
 
-Short description
+Use a joystick to control your car.
 
 
 [Juggle plots](plotjuggler)
