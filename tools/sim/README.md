@@ -30,6 +30,13 @@ You can control openpilot driving in the simulation with the following keys
 To see the options for changing the environment, such as the town, spawn point or precipitation, you can run `./start_openpilot_docker.sh --help`.
 This will print the help output inside the docker container. You need to exit the docker container before running `./start_openpilot_docker.sh` again.
 
+## Low quality mode
+
+It is possible that you may run into performance issues with CARLA because of reasons stated in [this](https://github.com/carla-simulator/carla/issues/2617) thread. For this case we have a low quality mode you can activate by running:
+```
+./start_openpilot_docker.sh --low_quality=True
+```
+
 ## Further Reading
 The following resources contain more details and troubleshooting tips.
 * [CARLA on the openpilot wiki](https://github.com/commaai/openpilot/wiki/CARLA) 
