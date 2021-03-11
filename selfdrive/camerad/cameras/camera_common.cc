@@ -99,12 +99,9 @@ CameraBuf::~CameraBuf() {
     camera_bufs[i].free();
   }
 
-  rgb_to_yuv_destroy(&rgb_to_yuv_state);
-
-  if (krnl_debayer) {
-    CL_CHECK(clReleaseKernel(krnl_debayer));
-  }
-  CL_CHECK(clReleaseCommandQueue(q));
+  if (rgb_to_yuv_state.rgb_to_yuv_krnl) rgb_to_yuv_destroy(&rgb_to_yuv_state);
+  if (krnl_debayer) CL_CHECK(clReleaseKernel(krnl_debayer));
+  if (q) CL_CHECK(clReleaseCommandQueue(q));
 }
 
 bool CameraBuf::acquire() {
