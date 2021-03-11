@@ -10,12 +10,13 @@ Table of Contents
 ============
 
 <!--ts-->
- * [Requirements](#requirements)
+ * [System requirements](#requirements)
  * [Setup](#setup)
  * [Tool examples](#tool-examples)
    * [Replay driving data](#replay-driving-data)
    * [Debug car controls](#debug-car-controls)
-   * [Stream replayed CAN messages to EON](#stream-replayed-can-messages-to-eon)
+   * [Juggle plots](#juggle-plots)
+   * [Try openpilot in a simulator](#try-openpilot-in-a-simulator)
  * [Welcomed contributions](#welcomed-contributions)
 <!--te-->
 
@@ -52,16 +53,20 @@ Debug car controls
 Short description
 
 
-PlotJuggler
+Juggle plots
 -------------
 
-Short Description
+Easily plot openpilot logs with [PlotJuggler](https://github.com/facontidavide/PlotJuggler), an open source tool for visualizing time series data.
 
 
-CARLA simulator
+Try openpilot in a simulator
 -------------
 
-Short Description
+Test openpilots performance in a simulated environment. The [CARLA simulator](https://github.com/carla-simulator/carla) allows you to change a variety of features like:
+* Weather
+* Environment physics
+* Cars
+* Traffic and pedestrians
 
 
 Welcomed contributions
