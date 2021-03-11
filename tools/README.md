@@ -27,7 +27,7 @@ source ~/openpilot/tools/mac_setup.sh
 
 3. Compile openpilot by running SCons in openpilot directory
 ```
-scons --directory=~/openpilot
+scons --directory=openpilot
 ```
 
 4. Try out some tools!
