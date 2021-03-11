@@ -5,10 +5,12 @@
 
 #include <algorithm>
 
+#include "common/framebuffer.h"
 #include "common/util.h"
 #include "common/params.h"
-#include "common/touch.h"
 #include "common/swaglog.h"
+#include "common/touch.h"
+#include "common/watchdog.h"
 
 #include "ui.hpp"
 #include "paint.hpp"
@@ -24,7 +26,7 @@ static void ui_set_brightness(UIState *s, int brightness) {
   }
 }
 
-static void handle_display_state(UIState *s, bool user_input) {
+static void handle_display_state(UIState *s, FrameBuffer *fb, bool user_input) {
   static int awake_timeout = 0;
 
   constexpr float accel_samples = 5*UI_FREQ;
@@ -53,7 +55,7 @@ static void handle_display_state(UIState *s, bool user_input) {
     s->awake = should_wake;
     int display_mode = s->awake ? HWC_POWER_MODE_NORMAL : HWC_POWER_MODE_OFF;
     LOGW("setting display mode %d", display_mode);
-    s->fb->set_power(display_mode);
+    fb->set_power(display_mode);
 
     if (s->awake) {
       system("service call window 18 i32 1");
@@ -109,16 +111,18 @@ static void update_offroad_layout_state(UIState *s, PubMaster *pm) {
 
 int main(int argc, char* argv[]) {
   setpriority(PRIO_PROCESS, 0, -14);
-  SLSound sound;
 
+  SLSound sound;
   UIState uistate = {};
   UIState *s = &uistate;
+  FrameBuffer fb = FrameBuffer("ui", 0, true, &s->fb_w, &s->fb_h);
+
   ui_init(s);
   s->sound = &sound;
 
   TouchState touch = {0};
   touch_init(&touch);
-  handle_display_state(s, true);
+  handle_display_state(s, &fb, true);
 
   PubMaster *pm = new PubMaster({"offroadLayout"});
 
@@ -139,6 +143,7 @@ int main(int argc, char* argv[]) {
   s->sound->setVolume(MIN_VOLUME);
 
   while (!do_exit) {
+    watchdog_kick();
     if (!s->scene.started) {
       util::sleep_for(50);
     }
@@ -155,7 +160,7 @@ int main(int argc, char* argv[]) {
     }
 
     // Don't waste resources on drawing in case screen is off
-    handle_display_state(s, touched == 1);
+    handle_display_state(s, &fb, touched == 1);
     if (!s->awake) {
       continue;
     }
@@ -176,10 +181,10 @@ int main(int argc, char* argv[]) {
       // warn on sub 15fps
       LOGW("slow frame(%llu) time: %.2f", (s->sm)->frame, u2-u1);
     }
-    s->fb->swap();
+    fb.swap();
   }
 
-  handle_display_state(s, true);
+  handle_display_state(s, &fb, true);
   delete s->sm;
   delete pm;
   return 0;

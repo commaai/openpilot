@@ -2,7 +2,6 @@
 
 What's needed:
 - Ubuntu 20.04
-- Python 3.8.2
 - GPU (recommended)
 - Two USB webcams, at least 720p and 78 degrees FOV (e.g. Logitech C920/C615)
 - [Car harness](https://comma.ai/shop/products/comma-car-harness) with black panda to connect to your car

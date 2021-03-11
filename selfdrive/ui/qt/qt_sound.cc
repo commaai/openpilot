@@ -11,7 +11,7 @@ QtSound::QtSound() {
 bool QtSound::play(AudibleAlert alert) {
   int loops = sound_map[alert].second> - 1 ? sound_map[alert].second : QSoundEffect::Infinite;
   sounds[alert].setLoopCount(loops);
-  sounds[alert].setVolume(0.7);
+  sounds[alert].setVolume(0.45);
   sounds[alert].play();
   return true;
 }
