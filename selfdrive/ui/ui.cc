@@ -111,7 +111,7 @@ static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
   UIScene &scene = s->scene;
   auto model_position = model.getPosition();
   float max_distance = std::clamp(model_position.getX()[TRAJECTORY_SIZE - 1],
-                                        MIN_DRAW_DISTANCE, MAX_DRAW_DISTANCE);
+                                  MIN_DRAW_DISTANCE, MAX_DRAW_DISTANCE);
 
   // update lane lines
   const auto lane_lines = model.getLaneLines();
