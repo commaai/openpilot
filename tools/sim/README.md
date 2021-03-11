@@ -34,7 +34,7 @@ This will print the help output inside the docker container. You need to exit th
 
 It is possible that you may run into performance issues with CARLA because of reasons stated in [this](https://github.com/carla-simulator/carla/issues/2617) thread. For this case we have a low quality mode you can activate by running:
 ```
-./start_openpilot_docker.sh --low_quality=True
+./start_openpilot_docker.sh --low_quality
 ```
 
 ## Further Reading
