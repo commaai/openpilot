@@ -13,21 +13,24 @@ Setup
 cd ~
 
 git clone --recurse-submodule https://github.com/commaai/openpilot.git
+
+cd openpilot
 ```
 
 2. Run setup script:
+
 Ubuntu:
 ```
-source ~/openpilot/tools/ubuntu_setup.sh
+tools/ubuntu_setup.sh
 ```
 MacOS:
 ```
-source ~/openpilot/tools/mac_setup.sh
+tools/mac_setup.sh
 ```
 
 3. Compile openpilot by running SCons in openpilot directory
 ```
-scons --directory=openpilot
+scons
 ```
 
 4. Try out some tools!
@@ -35,18 +38,6 @@ scons --directory=openpilot
 
 Tools
 ============
-
-[Replay a drive](replay)
--------------
-
-Review video and log data from routes and stream CAN messages to your device.
-
-
-[Debug car controls](carcontrols)
--------------
-
-Use a joystick to control your car.
-
 
 [Plot logs](plotjuggler)
 -------------
@@ -62,6 +53,20 @@ Test openpilots performance in a simulated environment. The [CARLA simulator](ht
 * Environment physics
 * Cars
 * Traffic and pedestrians
+
+
+[Replay a drive](replay)
+-------------
+
+Review video and log data from routes and stream CAN messages to your device.
+
+
+[Debug car controls](carcontrols)
+-------------
+
+Use a joystick to control your car.
+
+
 
 Welcomed contributions
 =============
