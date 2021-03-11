@@ -1,25 +1,6 @@
 openpilot tools
 ============
 
-tools to facilitate development and debugging of openpilot
-
-![Imgur](https://i.imgur.com/IdfBgwK.jpg)
-
-
-Table of Contents
-============
-
-<!--ts-->
- * [System requirements](#requirements)
- * [Setup](#setup)
- * [Tool examples](#tool-examples)
-   * [Replay driving data](#replay-driving-data)
-   * [Debug car controls](#debug-car-controls)
-   * [Juggle plots](#juggle-plots)
-   * [Run openpilot in a simulator](#run-openpilot-in-a-simulator)
- * [Welcomed contributions](#welcomed-contributions)
-<!--te-->
-
 
 System requirements
 ============
@@ -56,7 +37,7 @@ Review video and log data from routes and stream CAN messages to your EON.
 Use a joystick to control your car.
 
 
-[Juggle plots](plotjuggler)
+[Plot logs](plotjuggler)
 -------------
 
 Easily plot openpilot logs with [PlotJuggler](https://github.com/facontidavide/PlotJuggler), an open source tool for visualizing time series data.
@@ -79,3 +60,5 @@ Welcomed contributions
 * Support for other platforms other than Ubuntu 20.04.
 * Performance improvements: the tools have been developed on high-performance workstations (12+ logical cores with 32+ GB of RAM), so they are not optimized for running efficiently. For example, `ui.py` might not be able to run real-time on most PCs.
 * More tools: anything that you think might be helpful to others.
+
+![Imgur](https://i.imgur.com/IdfBgwK.jpg)
