@@ -20,7 +20,7 @@ parser.add_argument('--joystick', action='store_true')
 parser.add_argument('--town', type=str, default='Town04_Opt')
 parser.add_argument('--spawn_point', dest='num_selected_spawn_point',
         type=int, default=16)
-parser.add_argument('--quality', type=str, default='Regular')
+parser.add_argument('--low_quality', type=bool, default=False)
 
 args = parser.parse_args()
 
@@ -135,7 +135,7 @@ def bridge(q):
   client.set_timeout(10.0)
   world = client.load_world(args.town)
 
-  if args.quality == "Low":
+  if args.low_quality is True:
     world.unload_map_layer(carla.MapLayer.Foliage)
     world.unload_map_layer(carla.MapLayer.Buildings)
     world.unload_map_layer(carla.MapLayer.ParkedVehicles)
