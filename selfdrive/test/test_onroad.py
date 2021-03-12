@@ -30,7 +30,7 @@ PROCS = [
   ("selfdrive.locationd.calibrationd", 2.0),
   ("selfdrive.monitoring.dmonitoringd", 1.90),
   ("./proclogd", 1.54),
-  ("selfdrive.logmessaged", 0.5),
+  ("selfdrive.logmessaged", 0.2),
   ("./clocksd", 0.02),
   ("./ubloxd", 0.02),
   ("selfdrive.tombstoned", 0),
