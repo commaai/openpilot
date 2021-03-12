@@ -148,13 +148,12 @@ pipeline {
                 stage('HW + Unit Tests') {
                   steps {
                     phone_steps("eon", [
-                      ["build", "SCONS_CACHE=1 scons -j4 --test"],
+                      ["build", "SCONS_CACHE=1 scons -j4"],
                       ["test sounds", "nosetests -s selfdrive/test/test_sounds.py"],
                       ["test boardd loopback", "nosetests -s selfdrive/boardd/tests/test_boardd_loopback.py"],
                       ["test loggerd", "python selfdrive/loggerd/tests/test_loggerd.py"],
                       ["test encoder", "python selfdrive/loggerd/tests/test_encoder.py"],
                       ["test camerad", "python selfdrive/camerad/test/test_camerad.py"],
-                      ["test camerad set_exposure", "./selfdrive/camerad/test/ae_gray_test"],
                       ["test logcatd", "python selfdrive/logcatd/tests/test_logcatd_android.py"],
                       //["test updater", "python installer/updater/test_updater.py"],
                     ])
@@ -167,11 +166,10 @@ pipeline {
                   }
                   steps {
                     phone_steps("tici", [
-                      ["build", "SCONS_CACHE=1 scons -j16 --test"],
+                      ["build", "SCONS_CACHE=1 scons -j16"],
                       ["test loggerd", "python selfdrive/loggerd/tests/test_loggerd.py"],
                       ["test encoder", "LD_LIBRARY_PATH=/usr/local/lib python selfdrive/loggerd/tests/test_encoder.py"],
                       ["test camerad", "python selfdrive/camerad/test/test_camerad.py"],
-                      ["test camerad set_exposure", "./selfdrive/camerad/test/ae_gray_test"],
                       //["build release3-staging", "cd release && PUSH=${env.R3_PUSH} ./build_release3.sh"],
                     ])
                   }
