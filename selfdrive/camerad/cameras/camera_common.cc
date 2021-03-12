@@ -280,18 +280,16 @@ static void publish_thumbnail(PubMaster *pm, const CameraBuf *b) {
   free(thumbnail_buffer);
 }
 
-float set_exposure_target(const CameraBuf *b, int x_start, int x_end, int x_skip, int y_start, int y_end, int y_skip, int analog_gain) {
+float set_exposure_target(const CameraBuf *b, int x_start, int x_end, int x_skip, int y_start, int y_end, int y_skip, int analog_gain, bool hist_ceil, bool hl_weighted) {
   const uint8_t *pix_ptr = b->cur_yuv_buf->y;
   uint32_t lum_binning[256] = {0};
   unsigned int lum_total = 0;
   for (int y = y_start; y < y_end; y += y_skip) {
     for (int x = x_start; x < x_end; x += x_skip) {
       uint8_t lum = pix_ptr[(y * b->rgb_width) + x];
-#ifdef QCOM2
-      if (lum < 80 && lum_binning[lum] > HISTO_CEIL_K * (y_end - y_start) * (x_end - x_start) / x_skip / y_skip / 256) {
+      if (hist_ceil && lum < 80 && lum_binning[lum] > HISTO_CEIL_K * (y_end - y_start) * (x_end - x_start) / x_skip / y_skip / 256) {
         continue;
       }
-#endif
       lum_binning[lum]++;
       lum_total += 1;
     }
@@ -302,14 +300,14 @@ float set_exposure_target(const CameraBuf *b, int x_start, int x_end, int x_skip
   int lum_med_alt = 0;
   for (lum_med=255; lum_med>=0; lum_med--) {
     lum_cur += lum_binning[lum_med];
-#ifdef QCOM2
-    int lum_med_tmp = 0;
-    int hb = HLC_THRESH + (10 - analog_gain);
-    if (lum_cur > 0 && lum_med > hb) {
-      lum_med_tmp = (lum_med - hb) + 100;
+    if (hl_weighted) {
+      int lum_med_tmp = 0;
+      int hb = HLC_THRESH + (10 - analog_gain);
+      if (lum_cur > 0 && lum_med > hb) {
+        lum_med_tmp = (lum_med - hb) + 100;
+      }
+      lum_med_alt = lum_med_alt>lum_med_tmp?lum_med_alt:lum_med_tmp;
     }
-    lum_med_alt = lum_med_alt>lum_med_tmp?lum_med_alt:lum_med_tmp;
-#endif
     if (lum_cur >= lum_total / 2) {
       break;
     }
@@ -407,11 +405,10 @@ void common_process_driver_camera(SubMaster *sm, PubMaster *pm, CameraState *c, 
     }
 
 #ifdef QCOM2
-  int ggain = c->analog_gain;
+    camera_autoexposure(c, set_exposure_target(b, x_min, x_max, 2, y_min, y_max, skip, (int)c->analog_gain, true, true));
 #else
-  int ggain = -1;
+    camera_autoexposure(c, set_exposure_target(b, x_min, x_max, 2, y_min, y_max, skip, -1, false, false));
 #endif
-    camera_autoexposure(c, set_exposure_target(b, x_min, x_max, 2, y_min, y_max, skip, ggain));
   }
 
   MessageBuilder msg;
