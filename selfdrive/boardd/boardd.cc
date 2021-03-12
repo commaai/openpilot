@@ -363,7 +363,7 @@ void panda_state_thread(bool spoofing_started) {
     ps.setIgnitionCan(pandaState.ignition_can);
     ps.setControlsAllowed(pandaState.controls_allowed);
     ps.setGasInterceptorDetected(pandaState.gas_interceptor_detected);
-    ps.setHasGps(panda->is_pigeon);
+    ps.setHasGps(true);
     ps.setCanRxErrs(pandaState.can_rx_errs);
     ps.setCanSendErrs(pandaState.can_send_errs);
     ps.setCanFwdErrs(pandaState.can_fwd_errs);
@@ -472,22 +472,19 @@ static void pigeon_publish_raw(PubMaster &pm, const std::string &dat) {
 }
 
 void pigeon_thread() {
-  if (!panda->is_pigeon) { return; };
-
-  // ubloxRaw = 8042
   PubMaster pm({"ubloxRaw"});
   bool ignition_last = false;
 
 #ifdef QCOM2
-  Pigeon * pigeon = Pigeon::connect("/dev/ttyHS0");
+  Pigeon *pigeon = Pigeon::connect("/dev/ttyHS0");
 #else
-  Pigeon * pigeon = Pigeon::connect(panda);
+  Pigeon *pigeon = Pigeon::connect(panda);
 #endif
 
   std::unordered_map<char, uint64_t> last_recv_time;
   std::unordered_map<char, int64_t> cls_max_dt = {
-    {(char)ublox::CLASS_NAV, int64_t(500000000ULL)}, // 0.5s
-    {(char)ublox::CLASS_RXM, int64_t(1000000000ULL)}, // 1.0s
+    {(char)ublox::CLASS_NAV, int64_t(250000000ULL)}, // 0.25s
+    {(char)ublox::CLASS_RXM, int64_t(250000000ULL)}, // 0.25s
   };
 
   while (!do_exit && panda->connected) {
@@ -510,7 +507,8 @@ void pigeon_thread() {
       int64_t dt = (int64_t)nanos_since_boot() - (int64_t)last_recv_time[msg_cls];
       if (ignition_last && ignition && dt > max_dt) {
         LOGE("ublox receive timeout, msg class: 0x%02x, dt %llu, resetting panda GPS", msg_cls, dt);
-        need_reset = true;
+        // TODO: turn on reset after verification of logs
+        // need_reset = true;
       }
     }
 
@@ -534,6 +532,10 @@ void pigeon_thread() {
       for (const auto& [msg_cls, dt] : cls_max_dt) {
         last_recv_time[msg_cls] = t;
       }
+    } else if (!ignition && ignition_last) {
+      // power off on falling edge of ignition
+      LOGD("powering off pigeon\n");
+      pigeon->set_power(false);
     }
 
     ignition_last = ignition;

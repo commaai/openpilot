@@ -31,7 +31,7 @@ def juggle_file(fn, dbc=None, layout=None):
   if dbc:
     env["DBC_NAME"] = dbc
 
-  pj = os.getenv("PLOTJUGGLER_PATH", "bin/plotjuggler")
+  pj = os.getenv("PLOTJUGGLER_PATH", "plotjuggler")
   extra_args = ""
   if layout is not None:
     extra_args += f'-l {layout}'
