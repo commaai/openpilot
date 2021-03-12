@@ -834,8 +834,7 @@ void actuator_move(CameraState *s, uint16_t target) {
     .curr_lens_pos = s->cur_lens_pos,
     .ringing_params = &actuator_ringing_params,
   };
-  int err = ioctl(s->actuator_fd, VIDIOC_MSM_ACTUATOR_CFG, &actuator_cfg_data);
-  LOG("actuator move focus: %d", err);
+  ioctl(s->actuator_fd, VIDIOC_MSM_ACTUATOR_CFG, &actuator_cfg_data);
 
   s->cur_step_pos = dest_step_pos;
   s->cur_lens_pos = actuator_cfg_data.cfg.move.curr_lens_pos;

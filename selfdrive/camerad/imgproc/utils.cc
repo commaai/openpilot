@@ -16,7 +16,7 @@ uint16_t get_lapmap_one(const int16_t *lap, int x_pitch, int y_pitch) {
   int16_t max = 0;
   int sum = 0;
   for (int i = 0; i < size; ++i) {
-    const int16_t v = lap[i % x_pitch + (i / x_pitch) * x_pitch];
+    const int16_t v = lap[i];
     sum += v;
     if (v > max) max = v;
   }
@@ -26,7 +26,7 @@ uint16_t get_lapmap_one(const int16_t *lap, int x_pitch, int y_pitch) {
   // var of roi
   int var = 0;
   for (int i = 0; i < size; ++i) {
-    var += std::pow(lap[i % x_pitch + (i / x_pitch) * x_pitch] - mean, 2);
+    var += std::pow(lap[i] - mean, 2);
   }
 
   const float fvar = (float)var / size;
@@ -89,7 +89,7 @@ uint16_t LapConv::Update(cl_command_queue q, const uint8_t *rgb_buf, const int r
   const size_t global_work_size[] = {(size_t)width, (size_t)height};
   const size_t local_work_size[] = {CONV_LOCAL_WORKSIZE, CONV_LOCAL_WORKSIZE};
 
-  CL_CHECK(clEnqueueWriteBuffer(q, roi_cl, true, 0, roi_buf.size() * sizeof(roi_buf[0]), roi_buf.data(), 0, 0, 0));
+  CL_CHECK(clEnqueueWriteBuffer(q, roi_cl, CL_TRUE, 0, roi_buf.size() * sizeof(roi_buf[0]), roi_buf.data(), 0, 0, 0));
   CL_CHECK(clSetKernelArg(krnl, 0, sizeof(cl_mem), (void *)&roi_cl));
   CL_CHECK(clSetKernelArg(krnl, 1, sizeof(cl_mem), (void *)&result_cl));
   CL_CHECK(clSetKernelArg(krnl, 2, sizeof(cl_mem), (void *)&filter_cl));
@@ -98,7 +98,7 @@ uint16_t LapConv::Update(cl_command_queue q, const uint8_t *rgb_buf, const int r
   CL_CHECK(clEnqueueNDRangeKernel(q, krnl, 2, NULL, global_work_size, local_work_size, 0, 0, &conv_event));
   CL_CHECK(clWaitForEvents(1, &conv_event));
   CL_CHECK(clReleaseEvent(conv_event));
-  CL_CHECK(clEnqueueReadBuffer(q, result_cl, true, 0,
+  CL_CHECK(clEnqueueReadBuffer(q, result_cl, CL_TRUE, 0,
                                result_buf.size() * sizeof(result_buf[0]), result_buf.data(), 0, 0, 0));
 
   return get_lapmap_one(result_buf.data(), width, height);

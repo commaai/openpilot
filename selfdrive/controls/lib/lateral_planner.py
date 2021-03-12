@@ -75,23 +75,13 @@ class LateralPlanner():
     self.cur_state[0].psi = 0.0
     self.cur_state[0].curvature = 0.0
 
-    self.angle_steers_des = 0.0
-    self.angle_steers_des_mpc = 0.0
-    self.angle_steers_des_time = 0.0
+    self.desired_curvature = 0.0
+    self.desired_curvature_rate = 0.0
 
-  def update(self, sm, CP, VM):
+  def update(self, sm, CP):
     v_ego = sm['carState'].vEgo
     active = sm['controlsState'].active
-    steering_wheel_angle_offset_deg = sm['liveParameters'].angleOffsetDeg
-    steering_wheel_angle_deg = sm['carState'].steeringAngleDeg
-
-    # Update vehicle model
-    x = max(sm['liveParameters'].stiffnessFactor, 0.1)
-    sr = max(sm['liveParameters'].steerRatio, 0.1)
-    VM.update_params(x, sr)
-    curvature_factor = VM.curvature_factor(v_ego)
-    measured_curvature = -curvature_factor * math.radians(steering_wheel_angle_deg - steering_wheel_angle_offset_deg) / VM.sR
-
+    measured_curvature = sm['controlsState'].curvature
 
     md = sm['modelV2']
     self.LP.parse_model(sm['modelV2'])
@@ -166,8 +156,8 @@ class LateralPlanner():
       self.LP.lll_prob *= self.lane_change_ll_prob
       self.LP.rll_prob *= self.lane_change_ll_prob
     d_path_xyz = self.LP.get_d_path(v_ego, self.t_idxs, self.path_xyz)
-    y_pts = np.interp(v_ego * self.t_idxs[:MPC_N+1], np.linalg.norm(d_path_xyz, axis=1), d_path_xyz[:,1])
-    heading_pts = np.interp(v_ego * self.t_idxs[:MPC_N+1], np.linalg.norm(self.path_xyz, axis=1), self.plan_yaw)
+    y_pts = np.interp(v_ego * self.t_idxs[:MPC_N + 1], np.linalg.norm(d_path_xyz, axis=1), d_path_xyz[:,1])
+    heading_pts = np.interp(v_ego * self.t_idxs[:MPC_N + 1], np.linalg.norm(self.path_xyz, axis=1), self.plan_yaw)
     self.y_pts = y_pts
 
     assert len(y_pts) == MPC_N + 1
@@ -181,31 +171,22 @@ class LateralPlanner():
     self.cur_state.x = 0.0
     self.cur_state.y = 0.0
     self.cur_state.psi = 0.0
-    self.cur_state.curvature = interp(DT_MDL, self.t_idxs[:MPC_N+1], self.mpc_solution.curvature)
+    self.cur_state.curvature = interp(DT_MDL, self.t_idxs[:MPC_N + 1], self.mpc_solution.curvature)
 
     # TODO this needs more thought, use .2s extra for now to estimate other delays
     delay = CP.steerActuatorDelay + .2
     current_curvature = self.mpc_solution.curvature[0]
-    psi = interp(delay, self.t_idxs[:MPC_N+1], self.mpc_solution.psi)
+    psi = interp(delay, self.t_idxs[:MPC_N + 1], self.mpc_solution.psi)
     next_curvature_rate = self.mpc_solution.curvature_rate[0]
 
     # MPC can plan to turn the wheel and turn back before t_delay. This means
     # in high delay cases some corrections never even get commanded. So just use
     # psi to calculate a simple linearization of desired curvature
-    curvature_diff_from_psi = psi/(max(v_ego, 1e-1) * delay) - current_curvature
-    next_curvature = current_curvature + 2*curvature_diff_from_psi
+    curvature_diff_from_psi = psi / (max(v_ego, 1e-1) * delay) - current_curvature
+    next_curvature = current_curvature + 2 * curvature_diff_from_psi
 
-    # reset to current steer angle if not active or overriding
-    if active:
-      curvature_desired = next_curvature
-      desired_curvature_rate = next_curvature_rate
-    else:
-      curvature_desired = measured_curvature
-      desired_curvature_rate = 0.0
-
-    # negative sign, controls uses different convention
-    self.desired_steering_wheel_angle_deg = -float(math.degrees(curvature_desired * VM.sR)/curvature_factor) + steering_wheel_angle_offset_deg
-    self.desired_steering_wheel_angle_rate_deg = -float(math.degrees(desired_curvature_rate * VM.sR)/curvature_factor)
+    self.desired_curvature = next_curvature
+    self.desired_curvature_rate = next_curvature_rate
 
     #  Check for infeasable MPC solution
     mpc_nans = any(math.isnan(x) for x in self.mpc_solution.curvature)
@@ -226,16 +207,16 @@ class LateralPlanner():
   def publish(self, sm, pm):
     plan_solution_valid = self.solution_invalid_cnt < 2
     plan_send = messaging.new_message('lateralPlan')
-    plan_send.valid = sm.all_alive_and_valid(service_list=['carState', 'controlsState', 'liveParameters', 'modelV2'])
+    plan_send.valid = sm.all_alive_and_valid(service_list=['carState', 'controlsState', 'modelV2'])
     plan_send.lateralPlan.laneWidth = float(self.LP.lane_width)
     plan_send.lateralPlan.dPathPoints = [float(x) for x in self.y_pts]
     plan_send.lateralPlan.lProb = float(self.LP.lll_prob)
     plan_send.lateralPlan.rProb = float(self.LP.rll_prob)
     plan_send.lateralPlan.dProb = float(self.LP.d_prob)
 
-    plan_send.lateralPlan.steeringAngleDeg = float(self.desired_steering_wheel_angle_deg)
-    plan_send.lateralPlan.steeringRateDeg = float(self.desired_steering_wheel_angle_rate_deg)
-    plan_send.lateralPlan.angleOffsetDeg = float(sm['liveParameters'].angleOffsetAverageDeg)
+    plan_send.lateralPlan.curvature = float(self.desired_curvature)
+    plan_send.lateralPlan.curvatureRate = float(self.desired_curvature_rate)
+
     plan_send.lateralPlan.mpcSolutionValid = bool(plan_solution_valid)
 
     plan_send.lateralPlan.desire = self.desire
@@ -246,9 +227,9 @@ class LateralPlanner():
 
     if LOG_MPC:
       dat = messaging.new_message('liveMpc')
-      dat.liveMpc.x = list(self.mpc_solution[0].x)
-      dat.liveMpc.y = list(self.mpc_solution[0].y)
-      dat.liveMpc.psi = list(self.mpc_solution[0].psi)
-      dat.liveMpc.tire_angle = list(self.mpc_solution[0].tire_angle)
-      dat.liveMpc.cost = self.mpc_solution[0].cost
+      dat.liveMpc.x = list(self.mpc_solution.x)
+      dat.liveMpc.y = list(self.mpc_solution.y)
+      dat.liveMpc.psi = list(self.mpc_solution.psi)
+      dat.liveMpc.curvature = list(self.mpc_solution.curvature)
+      dat.liveMpc.cost = self.mpc_solution.cost
       pm.send('liveMpc', dat)

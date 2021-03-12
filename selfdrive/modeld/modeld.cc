@@ -122,7 +122,7 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client) {
                     kj::ArrayPtr<const float>(model.output.data(), model.output.size()));
       posenet_publish(pm, extra.frame_id, vipc_dropped_frames, model_buf, extra.timestamp_eof);
 
-      LOGD("model process: %.2fms, from last %.2fms, vipc_frame_id %u, frame_id, %u, frame_drop %.3f", mt2 - mt1, mt1 - last, extra.frame_id, frame_id, frame_drop_ratio);
+      //printf("model process: %.2fms, from last %.2fms, vipc_frame_id %u, frame_id, %u, frame_drop %.3f\n", mt2 - mt1, mt1 - last, extra.frame_id, frame_id, frame_drop_ratio);
       last = mt1;
       last_vipc_frame_id = extra.frame_id;
     }
