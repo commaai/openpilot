@@ -48,6 +48,7 @@ jobs:
         lfs: true
     - name: Build Docker image
       run: |
+        eval "$BUILD"
         docker pull $DOCKER_REGISTRY/$IMAGE_NAME:latest || true
         docker build --cache-from $DOCKER_REGISTRY/$IMAGE_NAME:latest -t $DOCKER_REGISTRY/$IMAGE_NAME:latest -f tools/sim/Dockerfile.sim .
     - name: Push to container registry
