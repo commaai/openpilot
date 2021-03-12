@@ -85,13 +85,14 @@ class TestCarModel(unittest.TestCase):
     self.assertGreater(self.CP.mass, 1)
     self.assertGreater(self.CP.steerRateCost, 1e-3)
 
-    tuning = self.CP.lateralTuning.which()
-    if tuning == 'pid':
-      self.assertTrue(len(self.CP.lateralTuning.pid.kpV))
-    elif tuning == 'lqr':
-      self.assertTrue(len(self.CP.lateralTuning.lqr.a))
-    elif tuning == 'indi':
-      self.assertTrue(len(self.CP.lateralTuning.indi.outerLoopGainV))
+    if self.CP.steerControlType != car.CarParams.SteerControlType.angle:
+      tuning = self.CP.lateralTuning.which()
+      if tuning == 'pid':
+        self.assertTrue(len(self.CP.lateralTuning.pid.kpV))
+      elif tuning == 'lqr':
+        self.assertTrue(len(self.CP.lateralTuning.lqr.a))
+      elif tuning == 'indi':
+        self.assertTrue(len(self.CP.lateralTuning.indi.outerLoopGainV))
 
     self.assertTrue(self.CP.enableCamera)
 
