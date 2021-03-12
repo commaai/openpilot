@@ -5,6 +5,7 @@
 #include <string>
 #include <string.h>
 #include <errno.h>
+#include "common/timing.h"
 #include "common/clutil.h"
 #include "thneed.h"
 
@@ -16,12 +17,6 @@ int g_fd = -1;
 map<pair<cl_kernel, int>, string> g_args;
 map<pair<cl_kernel, int>, int> g_args_size;
 map<cl_program, string> g_program_source;
-
-static inline uint64_t nanos_since_boot() {
-  struct timespec t;
-  clock_gettime(CLOCK_BOOTTIME, &t);
-  return t.tv_sec * 1000000000ULL + t.tv_nsec;
-}
 
 void hexdump(uint32_t *d, int len) {
   assert((len%4) == 0);
