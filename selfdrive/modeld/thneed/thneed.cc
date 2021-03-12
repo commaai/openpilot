@@ -118,29 +118,28 @@ int ioctl(int filedes, unsigned long request, void *argp) {
 
 // *********** GPUMalloc ***********
 
-GPUMalloc::GPUMalloc(int size, int fd) {
-  struct kgsl_gpuobj_alloc alloc;
-  memset(&alloc, 0, sizeof(alloc));
-  alloc.size = size;
-  alloc.flags = 0x10000a00;
+GPUMalloc::GPUMalloc(int size, int fd) : fd(fd) {
+  kgsl_gpuobj_alloc alloc{.size = size, .flags = 0x10000a00};
   ioctl(fd, IOCTL_KGSL_GPUOBJ_ALLOC, &alloc);
-  void *addr = mmap64(NULL, alloc.mmapsize, 0x3, 0x1, fd, alloc.id*0x1000);
+  mmap_size = alloc.mmapsize;
+  addr = mmap64(NULL, mmap_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, alloc.id * 0x1000);
   assert(addr != MAP_FAILED);
-
-  base = (uint64_t)addr;
+  base = addr;
   remaining = size;
 }
 
 GPUMalloc::~GPUMalloc() {
-  // TODO: free the GPU malloced area
+  munmap(addr, mmap_size);
+  struct kgsl_gpu_event_fence fence {.fd = fd};
+  ioctl(fd, IOCTL_KGSL_GPUOBJ_FREE, &fence);
 }
 
 void *GPUMalloc::alloc(int size) {
-  void *ret = (void*)base;
-  size = (size+0xff) & (~0xFF);
+  void *ret = base;
+  size = (size + 0xff) & (~0xFF);
   assert(size <= remaining);
   remaining -= size;
-  base += size;
+  base = (char *)base + size;
   return ret;
 }
 

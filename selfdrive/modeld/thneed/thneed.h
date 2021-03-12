@@ -24,13 +24,16 @@ namespace json11 {
 class Thneed;
 
 class GPUMalloc {
-  public:
-    GPUMalloc(int size, int fd);
-    ~GPUMalloc();
-    void *alloc(int size);
-  private:
-    uint64_t base;
-    int remaining;
+ public:
+  GPUMalloc(int size, int fd);
+  ~GPUMalloc();
+  void *alloc(int size);
+
+ private:
+  int fd;
+  void *addr, *base;
+  size_t mmap_size;
+  int remaining;
 };
 
 class CLQueuedKernel {
