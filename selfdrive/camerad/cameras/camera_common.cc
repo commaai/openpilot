@@ -376,14 +376,13 @@ static void driver_cam_set_exp_target(CameraState *c, SubMaster &sm) {
     } else {
       rect = def_rect;
     }
+  }
 
 #ifdef QCOM2
-    camera_autoexposure(c, set_exposure_target(b, x_min, x_max, 2, y_min, y_max, skip, (int)c->analog_gain, true, true));
+  camera_autoexposure(c, set_exposure_target(b, rect.x1, rect.x2, rect.x_skip, rect.y1, rect.y2, rect.y_skip, (int)c->analog_gain, true, true));
 #else
-    camera_autoexposure(c, set_exposure_target(b, x_min, x_max, 2, y_min, y_max, skip, -1, false, false));
+  camera_autoexposure(c, set_exposure_target(b, rect.x1, rect.x2, rect.x_skip, rect.y1, rect.y2, rect.y_skip, -1, false, false));
 #endif
-  }
-  set_exposure_target(c, rect.x1, rect.x2, rect.x_skip, rect.y1, rect.y2, rect.y_skip);
 }
 
 void common_process_driver_camera(SubMaster *sm, PubMaster *pm, CameraState *c, int cnt) {
