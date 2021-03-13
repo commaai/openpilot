@@ -19,7 +19,8 @@
 
 typedef struct CameraState {
   CameraInfo ci;
-
+  
+  std::mutex exp_lock;
   float analog_gain_frac;
   uint16_t analog_gain;
   bool dc_gain_enabled;
