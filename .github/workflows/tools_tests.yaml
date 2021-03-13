@@ -58,7 +58,7 @@ jobs:
         docker push $DOCKER_REGISTRY/$IMAGE_NAME:latest
     - name: Testing
       run: |
+        INSTALL=1 tools/sim/start_carla.sh
         ${{ env.RUN }} "scons -j$(nproc) --directory=/tmp/openpilot/cereal && \
                         cd /tmp/openpilot/tools/sim && \
-                        INSTALL=1 ./start_carla.sh && \
                         ./test_simulator.py"
