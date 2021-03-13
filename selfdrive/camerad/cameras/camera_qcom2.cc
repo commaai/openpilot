@@ -1071,7 +1071,7 @@ void camera_autoexposure(MultiCameraState *s, CameraState *c) {
   } else {
     const auto [x, y, w, h] = (c == &s->wide_road_cam) ? std::tuple(96, 250, 1734, 524) : std::tuple(96, 160, 1734, 986);
     const int skip = 2;
-    grey_frac = get_exp_grey_frac(c, x, x + w, skip, y, y + h, skip);
+    grey_frac = get_exp_grey_frac(&c->buf, x, x + w, skip, y, y + h, skip, (int)c->analog_gain, true, true);
   }
   CameraExpInfo tmp = cam_exp[c->camera_num].load();
   tmp.op_id++;

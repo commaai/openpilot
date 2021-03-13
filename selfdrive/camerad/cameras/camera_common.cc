@@ -278,12 +278,7 @@ static void publish_thumbnail(PubMaster *pm, const CameraBuf *b) {
   free(thumbnail_buffer);
 }
 
-<<<<<<< HEAD
-float set_exposure_target(const CameraBuf *b, int x_start, int x_end, int x_skip, int y_start, int y_end, int y_skip, int analog_gain, bool hist_ceil, bool hl_weighted) {
-=======
-float get_exp_grey_frac(CameraState *c, int x_start, int x_end, int x_skip, int y_start, int y_end, int y_skip) {
-  const CameraBuf *b = &c->buf;
->>>>>>> space
+float get_exp_grey_frac(const CameraBuf *b, int x_start, int x_end, int x_skip, int y_start, int y_end, int y_skip, int analog_gain, bool hist_ceil, bool hl_weighted) {
   const uint8_t *pix_ptr = b->cur_yuv_buf->y;
   uint32_t lum_binning[256] = {0};
   unsigned int lum_total = 0;
@@ -408,7 +403,11 @@ float driver_cam_get_exp_grey_frac(CameraState *c, SubMaster *sm) {
     skip = 4;
 #endif
   }
-  return get_exp_grey_frac(c, x_min, x_max, 2, y_min, y_max, skip);
+#ifdef QCOM2
+  return get_exp_grey_frac(b, x_min, x_max, 2, y_min, y_max, skip, (int)c->analog_gain, true, true);
+#else
+  return get_exp_grey_frac(b, x_min, x_max, 2, y_min, y_max, skip, -1, false, false);
+#endif
 }
 
 void common_process_driver_camera(SubMaster *sm, PubMaster *pm, CameraState *c, int cnt) {

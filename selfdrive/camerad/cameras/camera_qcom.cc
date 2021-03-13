@@ -924,7 +924,7 @@ void camera_autoexposure(MultiCameraState *s, CameraState *c) {
   if (c->camera_num == 0) {
     const int x = 290, y = 322, width = 560, height = 314;
     const int skip = 1;
-    float grey_frac = get_exp_grey_frac(c, x, x + width, skip, y, y + height, skip);
+    float grey_frac = get_exp_grey_frac(&c->buf, x, x + width, skip, y, y + height, skip, -1, false ,false);
     CameraExpInfo tmp = road_cam_exp.load();
     tmp.op_id++;
     tmp.grey_frac = grey_frac;
@@ -1146,12 +1146,6 @@ void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
   framed.setSharpnessScore(s->lapres);
   framed.setTransform(b->yuv_transform.v);
   s->pm->send("roadCameraState", msg);
-
-  if (cnt % 3 == 0) {
-    const int x = 290, y = 322, width = 560, height = 314;
-    const int skip = 1;
-    camera_autoexposure(c, set_exposure_target(b, x, x + width, skip, y, y + height, skip, -1, false, false));
-  }
 }
 
 void cameras_run(MultiCameraState *s) {
