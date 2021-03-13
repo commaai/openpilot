@@ -208,7 +208,7 @@ def bridge(q):
 
   vc = carla.VehicleControl(throttle=0, steer=0, brake=0, reverse=False)
 
-  is_openpilot_engaged = False
+  is_openpilot_engaged = True
   throttle_out = steer_out = brake_out = 0
   throttle_op = steer_op = brake_op = 0
   throttle_manual = steer_manual = brake_manual = 0
@@ -218,6 +218,7 @@ def bridge(q):
   brake_manual_multiplier = 0.7 #keyboard signal is always 1
   steer_manual_multiplier = 45 * STEER_RATIO  #keyboard signal is always 1
 
+  initial_speed_set = False
 
   while 1:
     # 1. Read the throttle, steer and brake from op or manual controls
@@ -230,6 +231,12 @@ def bridge(q):
     throttle_manual = steer_manual = brake_manual = 0
 
     # --------------Step 1-------------------------------
+    if sm.updated["controlsState"] and not initial_speed_set:
+      for _ in range(8):
+        q.put(str("cruise_up"))
+        q.put(str(""))
+      initial_speed_set = True
+
     if not q.empty():
       message = q.get()
       m = message.split('_')
