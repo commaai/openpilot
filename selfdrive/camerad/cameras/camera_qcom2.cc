@@ -938,11 +938,15 @@ void handle_camera_event(CameraState *s, void *evdat) {
     // metas
     s->frame_id_last = main_id;
     s->request_id_last = real_id;
-    s->buf.camera_bufs_metadata[buf_idx].frame_id = main_id - s->idx_offset;
-    s->buf.camera_bufs_metadata[buf_idx].timestamp_sof = timestamp;
-    s->buf.camera_bufs_metadata[buf_idx].global_gain = s->analog_gain + (100*s->dc_gain_enabled);
-    s->buf.camera_bufs_metadata[buf_idx].gain_frac = s->analog_gain_frac;
-    s->buf.camera_bufs_metadata[buf_idx].integ_lines = s->exposure_time;
+
+    auto &meta_data = s->buf.camera_bufs_metadata[buf_idx];
+    meta_data.frame_id = main_id - s->idx_offset;
+    meta_data.timestamp_sof = timestamp;
+    s->exp_lock.lock();
+    meta_data.global_gain = s->analog_gain + (100*s->dc_gain_enabled);
+    meta_data.gain_frac = s->analog_gain_frac;
+    meta_data.integ_lines = s->exposure_time;
+    s->exp_lock.unlock();
 
     // dispatch
     enqueue_req_multi(s, real_id + FRAME_BUF_COUNT, 1, 1);
@@ -1002,6 +1006,7 @@ static void set_camera_exposure(CameraState *s, float grey_frac) {
     exposure_factor = s->ef_filtered;
   }
 
+  s->exp_lock.lock();
   // always prioritize exposure time adjust
   s->exposure_time *= exposure_factor;
 
@@ -1041,6 +1046,7 @@ static void set_camera_exposure(CameraState *s, float grey_frac) {
   AG = 0xFF00 + AG * 16 + AG;
   s->analog_gain_frac = sensor_analog_gains[s->analog_gain];
 
+  s->exp_lock.unlock();
   // printf("cam %d, min %d, max %d \n", s->camera_num, s->exposure_time_min, s->exposure_time_max);
   // printf("cam %d, set AG to 0x%X, S to %d, dc %d \n", s->camera_num, AG, s->exposure_time, s->dc_gain_enabled);
 
