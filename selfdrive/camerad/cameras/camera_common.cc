@@ -348,7 +348,7 @@ std::thread start_process_thread(MultiCameraState *cameras, CameraState *cs, pro
   return std::thread(processing_thread, cameras, cs, callback);
 }
 
-static void driver_cam_set_exp_target(CameraState *c, SubMaster &sm) {
+static void driver_cam_auto_exposure(CameraState *c, SubMaster &sm) {
   static const bool is_rhd = Params().getBool("IsRHD");
   struct ExpRect {int x1, x2, x_skip, y1, y2, y_skip;};
   const CameraBuf *b = &c->buf;
@@ -387,7 +387,7 @@ static void driver_cam_set_exp_target(CameraState *c, SubMaster &sm) {
 
 void common_process_driver_camera(SubMaster *sm, PubMaster *pm, CameraState *c, int cnt) {
   if (cnt % 3 == 0) {
-    driver_cam_set_exp_target(c, *sm);
+    driver_cam_auto_exposure(c, *sm);
   }
   MessageBuilder msg;
   auto framed = msg.initEvent().initDriverCameraState();
