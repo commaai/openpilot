@@ -21,7 +21,6 @@ void camera_init(VisionIpcServer * v, CameraState *s, int camera_id, unsigned in
   assert(s->ci.frame_width != 0);
 
   s->camera_num = camera_id;
-  s->fps = fps;
   s->buf.init(device_id, ctx, s, v, FRAME_BUF_COUNT, rgb_type, yuv_type);
 }
 
