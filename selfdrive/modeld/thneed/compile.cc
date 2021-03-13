@@ -23,7 +23,6 @@ int main(int argc, char* argv[]) {
 
   // first run
   printf("************** execute 1 **************\n");
-  memset(output.get(), 0, OUTPUT_SIZE * sizeof(float));
   mdl.execute(input.get(), 0);
 
   // save model
