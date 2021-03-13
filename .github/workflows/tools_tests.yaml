@@ -56,3 +56,8 @@ jobs:
       run: |
         $DOCKER_LOGIN
         docker push $DOCKER_REGISTRY/$IMAGE_NAME:latest
+    - name: Testing
+      run: |
+        ${{ env.RUN }} "cd /tmp/openpilot/tools/sim && \
+                        ./start_carla.sh && \
+                        ./test_simulator.py"
