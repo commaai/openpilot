@@ -48,6 +48,7 @@ selfdrive/loggerd/bootlog
 selfdrive/sensord/_gpsd
 selfdrive/sensord/_sensord
 selfdrive/camerad/camerad
+selfdrive/camerad/test/ae_gray_test
 selfdrive/modeld/_modeld
 selfdrive/modeld/_dmonitoringmodeld
 /src/
