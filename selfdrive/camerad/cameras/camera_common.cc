@@ -353,11 +353,15 @@ static void driver_cam_set_exp_target(CameraState *c, SubMaster &sm) {
   struct ExpRect {int x1, x2, x_skip, y1, y2, y_skip;};
   const CameraBuf *b = &c->buf;
 #ifndef QCOM2
+  bool hist_ceil = false, hl_weighted = false;
+  int analog_gain = -1;
   const int x_offset = 0, y_offset = 0;
   const int frame_width = b->rgb_width, frame_height = b->rgb_height;
   const ExpRect def_rect = {is_rhd ? 0 : b->rgb_width * 3 / 5, is_rhd ? b->rgb_width * 2 / 5 : b->rgb_width, 2,
                          b->rgb_height / 3, b->rgb_height, 1};
 #else
+  bool hist_ceil = true, hl_weighted = true;
+  int analog_gain = (int)c->analog_gain;
   const int x_offset = 630, y_offset = 156;
   const int frame_width = 668, frame_height = frame_width / 1.33;
   const ExpRect def_rect = {96, 1832, 2, 242, 1148, 4};
@@ -378,11 +382,7 @@ static void driver_cam_set_exp_target(CameraState *c, SubMaster &sm) {
     }
   }
 
-#ifdef QCOM2
-  camera_autoexposure(c, set_exposure_target(b, rect.x1, rect.x2, rect.x_skip, rect.y1, rect.y2, rect.y_skip, (int)c->analog_gain, true, true));
-#else
-  camera_autoexposure(c, set_exposure_target(b, rect.x1, rect.x2, rect.x_skip, rect.y1, rect.y2, rect.y_skip, -1, false, false));
-#endif
+  camera_autoexposure(c, set_exposure_target(b, rect.x1, rect.x2, rect.x_skip, rect.y1, rect.y2, rect.y_skip, analog_gain, hist_ceil, hl_weighted));
 }
 
 void common_process_driver_camera(SubMaster *sm, PubMaster *pm, CameraState *c, int cnt) {
