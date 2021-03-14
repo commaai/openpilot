@@ -623,6 +623,7 @@ FW_VERSIONS = {
       b'37805-5PA-A870\x00\x00',
       b'37805-5PA-A880\x00\x00',
       b'37805-5PA-A890\x00\x00',
+      b'37805-5PA-AF20\x00\x00',
       b'37805-5PD-Q630\x00\x00',
     ],
     (Ecu.transmission, 0x18da1ef1, None): [
@@ -660,6 +661,7 @@ FW_VERSIONS = {
     ],
     (Ecu.combinationMeter, 0x18da60f1, None): [
       b'78109-TLA-A110\x00\x00',
+      b'78109-TLA-A120\x00\x00',
       b'78109-TLA-A210\x00\x00',
       b'78109-TLA-A220\x00\x00',
       b'78109-TLA-C210\x00\x00',
@@ -692,6 +694,7 @@ FW_VERSIONS = {
       b'77959-TLA-A250\x00\x00',
       b'77959-TLA-A320\x00\x00',
       b'77959-TLA-A410\x00\x00',
+      b'77959-TLA-A420\x00\x00',
       b'77959-TLA-Q040\x00\x00',
     ],
   },
