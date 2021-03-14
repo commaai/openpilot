@@ -383,7 +383,7 @@ int main(int argc, char** argv) {
 
   uint64_t msg_count = 0;
   uint64_t bytes_count = 0;
-  AlignedBuffer buf;
+  AlignedBuffer aligned_buf;
 
   double start_ts = seconds_since_boot();
   double last_rotate_tms = millis_since_boot();
@@ -427,7 +427,7 @@ int main(int argc, char** argv) {
         if (fpkt_id >= 0) {
           // track camera frames to sync to encoder
           // only process last frame
-          capnp::FlatArrayMessageReader cmsg(buf.aligned(last_msg->getData(), last_msg->getSize()));
+          capnp::FlatArrayMessageReader cmsg(aligned_buf.get(last_msg->getData(), last_msg->getSize()));
           cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
 
           if (fpkt_id == LOG_CAMERA_ID_FCAMERA) {

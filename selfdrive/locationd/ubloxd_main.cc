@@ -23,7 +23,7 @@ ExitHandler do_exit;
 using namespace ublox;
 int ubloxd_main(poll_ubloxraw_msg_func poll_func, send_gps_event_func send_func) {
   LOGW("starting ubloxd");
-  AlignedBuffer buf;
+  AlignedBuffer aligned_buf;
   UbloxMsgParser parser;
 
   Context * context = Context::create();
@@ -42,7 +42,7 @@ int ubloxd_main(poll_ubloxraw_msg_func poll_func, send_gps_event_func send_func)
       continue;
     }
 
-    capnp::FlatArrayMessageReader cmsg(buf.aligned(msg->getData(), msg->getSize()));
+    capnp::FlatArrayMessageReader cmsg(aligned_buf.get(msg->getData(), msg->getSize()));
     cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
     auto ubloxRaw = event.getUbloxRaw();
 

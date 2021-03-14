@@ -197,7 +197,7 @@ void can_recv(PubMaster &pm) {
 void can_send_thread(bool fake_send) {
   LOGD("start send thread");
 
-  AlignedBuffer buf;
+  AlignedBuffer aligned_buf;
   Context * context = Context::create();
   SubSocket * subscriber = SubSocket::create(context, "sendcan");
   assert(subscriber != NULL);
@@ -214,7 +214,7 @@ void can_send_thread(bool fake_send) {
       continue;
     }
 
-    capnp::FlatArrayMessageReader cmsg(buf.aligned(msg->getData(), msg->getSize()));
+    capnp::FlatArrayMessageReader cmsg(aligned_buf.get(msg->getData(), msg->getSize()));
     cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
 
     //Dont send if older than 1 second
