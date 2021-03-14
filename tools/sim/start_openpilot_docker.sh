@@ -3,7 +3,7 @@
 # expose X to the container
 xhost +local:root
 
-docker pull commaai/openpilot-sim:latest
+docker pull ghcr.io/commaai/openpilot-sim:latest
 
 docker run --net=host\
   --name openpilot_client \
