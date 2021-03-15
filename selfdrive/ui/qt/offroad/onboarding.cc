@@ -74,21 +74,20 @@ QWidget* OnboardingWindow::terms_screen() {
   QVBoxLayout *main_layout = new QVBoxLayout;
   main_layout->setContentsMargins(40, 0, 40, 0);
 
-#ifndef QCOM
-  view = new QWebEngineView(this);
-  view->settings()->setAttribute(QWebEngineSettings::ShowScrollBars, false);
+  QTextEdit *text = new QTextEdit();
+  text->setReadOnly(true);
+  text->setTextInteractionFlags(Qt::NoTextInteraction);
   QString html = QString::fromStdString(util::read_file("../assets/offroad/tc.html"));
-  view->setHtml(html);
-  main_layout->addWidget(view);
+  text->setHtml(html);
+  main_layout->addWidget(text);
 
-  QObject::connect(view->page(), SIGNAL(scrollPositionChanged(QPointF)), this, SLOT(scrollPositionChanged(QPointF)));
-#endif
+  //QObject::connect(view->page(), SIGNAL(scrollPositionChanged(QPointF)), this, SLOT(scrollPositionChanged(QPointF)));
 
   QHBoxLayout* buttons = new QHBoxLayout;
   buttons->addWidget(new QPushButton("Decline"));
   buttons->addSpacing(50);
   accept_btn = new QPushButton("Scroll to accept");
-  accept_btn->setEnabled(false);
+  //accept_btn->setEnabled(false);
   buttons->addWidget(accept_btn);
   QObject::connect(accept_btn, &QPushButton::released, [=]() {
     Params().write_db_value("HasAcceptedTerms", current_terms_version);

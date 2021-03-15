@@ -6,13 +6,7 @@
 #include <QMouseEvent>
 #include <QPointF>
 #include <QPushButton>
-
-#ifndef QCOM
-#include <QtWebEngine>
-#include <QWebEngineView>
-#include <QWebEngineSettings>
-#endif
-
+#include <QTextEdit>
 
 class TrainingGuide : public QFrame {
   Q_OBJECT
@@ -46,10 +40,6 @@ private:
   QWidget * terms_screen();
   QWidget * training_screen();
   QPushButton* accept_btn;
-
-#ifndef QCOM
-  QWebEngineView* view;
-#endif
 
 signals:
   void onboardingDone();
