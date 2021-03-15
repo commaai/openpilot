@@ -22,6 +22,8 @@
 #include "common/params.h"
 #include "common/util.h"
 
+#include "selfdrive/hardware/hw.h"
+
 QFrame* horizontal_line(QWidget* parent = 0){
   QFrame* line = new QFrame(parent);
   line->setFrameShape(QFrame::StyledPanel);
@@ -170,15 +172,25 @@ QWidget * device_panel() {
     }
   });
 
+  // power buttons
+
   QPushButton *poweroff_btn = new QPushButton("Power Off");
   device_layout->addWidget(poweroff_btn, Qt::AlignBottom);
+  QObject::connect(poweroff_btn, &QPushButton::released, [=]() {
+    if (ConfirmationDialog::confirm("Are you sure you want to power off?")) {
+      Hardware::poweroff();
+    }
+  });
+
+  device_layout->addWidget(horizontal_line(), Qt::AlignBottom);
+
   QPushButton *reboot_btn = new QPushButton("Reboot");
   device_layout->addWidget(reboot_btn, Qt::AlignBottom);
-  device_layout->addWidget(horizontal_line(), Qt::AlignBottom);
-#ifdef __aarch64__
-  QObject::connect(poweroff_btn, &QPushButton::released, [=]() { std::system("sudo poweroff"); });
-  QObject::connect(reboot_btn, &QPushButton::released, [=]() { std::system("sudo reboot"); });
-#endif
+  QObject::connect(reboot_btn, &QPushButton::released, [=]() {
+    if (ConfirmationDialog::confirm("Are you sure you want to reboot?")) {
+      Hardware::reboot();
+    }
+  });
 
   QPushButton *uninstall_btn = new QPushButton("Uninstall openpilot");
   device_layout->addWidget(uninstall_btn);
@@ -205,8 +217,6 @@ QWidget * developer_panel() {
   QVBoxLayout *main_layout = new QVBoxLayout;
   main_layout->setMargin(100);
 
-  // TODO: enable SSH toggle and github keys
-
   Params params = Params();
   std::string brand = params.read_db_bool("Passive") ? "dashcam" : "openpilot";
   std::vector<std::pair<std::string, std::string>> labels = {
@@ -214,18 +224,14 @@ QWidget * developer_panel() {
     {"Git Branch", params.get("GitBranch", false)},
     {"Git Commit", params.get("GitCommit", false).substr(0, 10)},
     {"Panda Firmware", params.get("PandaFirmwareHex", false)},
+    {"OS Version", Hardware::get_os_version()},
   };
 
-  std::string os_version = util::read_file("/VERSION");
-  if (os_version.size()) {
-    labels.push_back({"OS Version", "AGNOS " + os_version});
-  }
-
-  for (int i = 0; i<labels.size(); i++) {
+  for (int i = 0; i < labels.size(); i++) {
     auto l = labels[i];
     main_layout->addWidget(labelWidget(QString::fromStdString(l.first), QString::fromStdString(l.second)));
 
-    if(i+1<labels.size()) {
+    if(i+1 < labels.size()) {
       main_layout->addWidget(horizontal_line());
     }
   }

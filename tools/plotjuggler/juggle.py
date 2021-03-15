@@ -37,7 +37,7 @@ def juggle_file(fn, dbc=None, layout=None):
     extra_args += f'-l {layout}'
   subprocess.call(f'{pj} --plugin_folders {os.path.join(juggle_dir, "bin")} -d {fn} {extra_args}', shell=True, env=env, cwd=juggle_dir)
 
-def juggle_route(route_name, segment_number, qlog, layout):
+def juggle_route(route_name, segment_number, qlog, can, layout):
 
   if route_name.startswith("http://") or route_name.startswith("https://"):
     logs = [route_name]
@@ -63,6 +63,9 @@ def juggle_route(route_name, segment_number, qlog, layout):
   for d in pool.map(load_segment, logs):
     all_data += d
 
+  if not can:
+    all_data = [d for d in all_data if d.which() not in ['can', 'sendcan']]
+
   # Infer DBC name from logs
   dbc = None
   for cp in [m for m in all_data if m.which() == 'carParams']:
@@ -84,6 +87,7 @@ def get_arg_parser():
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
   parser.add_argument("--qlog", action="store_true", help="Use qlogs")
+  parser.add_argument("--can", action="store_true", help="Parse CAN data")
   parser.add_argument("--layout", nargs='?', help="Run PlotJuggler with a pre-defined layout")
   parser.add_argument("route_name", nargs='?', help="The name of the route that will be plotted.")
   parser.add_argument("segment_number", type=int, nargs='?', help="The index of the segment that will be plotted")
@@ -95,4 +99,4 @@ if __name__ == "__main__":
     arg_parser.print_help()
     sys.exit()
   args = arg_parser.parse_args(sys.argv[1:])
-  juggle_route(args.route_name, args.segment_number, args.qlog, args.layout)
+  juggle_route(args.route_name, args.segment_number, args.qlog, args.can, args.layout)

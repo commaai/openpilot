@@ -197,9 +197,17 @@ routes = {
     'carFingerprint': HYUNDAI.SANTA_FE,
     'enableCamera': True,
   },
+  "e0e98335f3ebc58f|2021-03-07--16-38-29": {
+    'carFingerprint': HYUNDAI.KIA_CEED,
+    'enableCamera': True,
+  },
   "7653b2bce7bcfdaa|2020-03-04--15-34-32": {
     'carFingerprint': HYUNDAI.KIA_OPTIMA,
     'enableCamera': True,
+  },
+  "c75a59efa0ecd502|2021-03-11--20-52-55": {
+    'carFingerprint': HYUNDAI.KIA_SELTOS,
+    'enableCamera': True,  
   },
   "5b7c365c50084530|2020-04-15--16-13-24": {
     'carFingerprint': HYUNDAI.SONATA,
@@ -497,7 +505,7 @@ routes = {
     'carFingerprint': MAZDA.Mazda3,
     'enableCamera': True,
   },
-    "b72d3ec617c0a90f|2020-12-11--15-38-17": {
+  "b72d3ec617c0a90f|2020-12-11--15-38-17": {
     'carFingerprint': NISSAN.ALTIMA,
     'enableCamera': True,
   },
