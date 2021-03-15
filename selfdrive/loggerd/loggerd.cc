@@ -39,23 +39,31 @@
 #define Encoder RawLogger
 #endif
 
-constexpr int MAIN_BITRATE = 5000000;
+namespace {
+
 constexpr int MAIN_FPS = 20;
+
 #ifndef QCOM2
+constexpr int MAIN_BITRATE = 5000000;
 constexpr int MAX_CAM_IDX = LOG_CAMERA_ID_DCAMERA;
 constexpr int DCAM_BITRATE = 2500000;
 #else
+constexpr int MAIN_BITRATE = 10000000;
 constexpr int MAX_CAM_IDX = LOG_CAMERA_ID_ECAMERA;
 constexpr int DCAM_BITRATE = MAIN_BITRATE;
 #endif
 
 #define NO_CAMERA_PATIENCE 500 // fall back to time-based rotation if all cameras are dead
 
+const int SEGMENT_LENGTH = getenv("LOGGERD_TEST") ? atoi(getenv("LOGGERD_SEGMENT_LENGTH")) : 60;
+
+ExitHandler do_exit;
+
 LogCameraInfo cameras_logged[LOG_CAMERA_ID_MAX] = {
   [LOG_CAMERA_ID_FCAMERA] = {
     .stream_type = VISION_STREAM_YUV_BACK,
     .filename = "fcamera.hevc",
-    .frame_packet_name = "frame",
+    .frame_packet_name = "roadCameraState",
     .fps = MAIN_FPS,
     .bitrate = MAIN_BITRATE,
     .is_h265 = true,
@@ -65,7 +73,7 @@ LogCameraInfo cameras_logged[LOG_CAMERA_ID_MAX] = {
   [LOG_CAMERA_ID_DCAMERA] = {
     .stream_type = VISION_STREAM_YUV_FRONT,
     .filename = "dcamera.hevc",
-    .frame_packet_name = "frontFrame",
+    .frame_packet_name = "driverCameraState",
     .fps = MAIN_FPS, // on EONs, more compressed this way
     .bitrate = DCAM_BITRATE,
     .is_h265 = true,
@@ -75,7 +83,7 @@ LogCameraInfo cameras_logged[LOG_CAMERA_ID_MAX] = {
   [LOG_CAMERA_ID_ECAMERA] = {
     .stream_type = VISION_STREAM_YUV_WIDE,
     .filename = "ecamera.hevc",
-    .frame_packet_name = "wideFrame",
+    .frame_packet_name = "wideRoadCameraState",
     .fps = MAIN_FPS,
     .bitrate = MAIN_BITRATE,
     .is_h265 = true,
@@ -85,7 +93,7 @@ LogCameraInfo cameras_logged[LOG_CAMERA_ID_MAX] = {
   [LOG_CAMERA_ID_QCAMERA] = {
     .filename = "qcamera.ts",
     .fps = MAIN_FPS,
-    .bitrate = 128000,
+    .bitrate = 256000,
     .is_h265 = false,
     .downscale = true,
 #ifndef QCOM2
@@ -95,13 +103,6 @@ LogCameraInfo cameras_logged[LOG_CAMERA_ID_MAX] = {
 #endif
   },
 };
-
-
-namespace {
-
-constexpr int SEGMENT_LENGTH = 60;
-
-ExitHandler do_exit;
 
 class RotateState {
 public:
@@ -161,7 +162,7 @@ private:
 
 struct LoggerdState {
   Context *ctx;
-  LoggerState logger;
+  LoggerState logger = {};
   char segment_path[4096];
   int rotate_segment;
   pthread_mutex_t rotate_lock;
@@ -249,7 +250,7 @@ void encoder_thread(int cam_idx) {
           pthread_mutex_lock(&s.rotate_lock);
           for (auto &e : encoders) {
             e->encoder_close();
-            e->encoder_open(s.segment_path, s.rotate_segment);
+            e->encoder_open(s.segment_path);
           }
           rotate_state.cur_seg = s.rotate_segment;
           pthread_mutex_unlock(&s.rotate_lock);
@@ -266,38 +267,30 @@ void encoder_thread(int cam_idx) {
       rotate_state.setStreamFrameId(extra.frame_id);
 
       // encode a frame
-      {
-        int out_segment = -1;
-        int out_id = encoders[0]->encode_frame(buf->y, buf->u, buf->v,
-                                               buf->width, buf->height,
-                                               &out_segment, &extra);
-        if (encoders.size() > 1) {
-          int out_segment_alt = -1;
-          encoders[1]->encode_frame(buf->y, buf->u, buf->v,
-                                    buf->width, buf->height,
-                                    &out_segment_alt, &extra);
-        }
-
-        // publish encode index
-        MessageBuilder msg;
-        // this is really ugly
-        auto eidx = cam_idx == LOG_CAMERA_ID_DCAMERA ? msg.initEvent().initFrontEncodeIdx() :
-                    (cam_idx == LOG_CAMERA_ID_ECAMERA ? msg.initEvent().initWideEncodeIdx() : msg.initEvent().initEncodeIdx());
-        eidx.setFrameId(extra.frame_id);
-        eidx.setTimestampSof(extra.timestamp_sof);
-        eidx.setTimestampEof(extra.timestamp_eof);
-  #ifdef QCOM2
-        eidx.setType(cereal::EncodeIndex::Type::FULL_H_E_V_C);
-  #else
-        eidx.setType(cam_idx == LOG_CAMERA_ID_DCAMERA ? cereal::EncodeIndex::Type::FRONT : cereal::EncodeIndex::Type::FULL_H_E_V_C);
-  #endif
-        eidx.setEncodeId(cnt);
-        eidx.setSegmentNum(out_segment);
-        eidx.setSegmentId(out_id);
-
-        if (lh) {
-          auto bytes = msg.toBytes();
-          lh_log(lh, bytes.begin(), bytes.size(), false);
+      for (int i = 0; i < encoders.size(); ++i) {
+        int out_id = encoders[i]->encode_frame(buf->y, buf->u, buf->v,
+                                               buf->width, buf->height, extra.timestamp_eof);
+        if (i == 0 && out_id != -1) {
+          // publish encode index
+          MessageBuilder msg;
+          // this is really ugly
+          auto eidx = cam_idx == LOG_CAMERA_ID_DCAMERA ? msg.initEvent().initDriverEncodeIdx() :
+                     (cam_idx == LOG_CAMERA_ID_ECAMERA ? msg.initEvent().initWideRoadEncodeIdx() : msg.initEvent().initRoadEncodeIdx());
+          eidx.setFrameId(extra.frame_id);
+          eidx.setTimestampSof(extra.timestamp_sof);
+          eidx.setTimestampEof(extra.timestamp_eof);
+    #ifdef QCOM2
+          eidx.setType(cereal::EncodeIndex::Type::FULL_H_E_V_C);
+    #else
+          eidx.setType(cam_idx == LOG_CAMERA_ID_DCAMERA ? cereal::EncodeIndex::Type::FRONT : cereal::EncodeIndex::Type::FULL_H_E_V_C);
+    #endif
+          eidx.setEncodeId(cnt);
+          eidx.setSegmentNum(rotate_state.cur_seg);
+          eidx.setSegmentId(out_id);
+          if (lh) {
+            auto bytes = msg.toBytes();
+            lh_log(lh, bytes.begin(), bytes.size(), false);
+          }
         }
       }
 
@@ -317,9 +310,7 @@ void encoder_thread(int cam_idx) {
   }
 }
 
-}
-
-static int clear_locks_fn(const char* fpath, const struct stat *sb, int tyupeflag) {
+int clear_locks_fn(const char* fpath, const struct stat *sb, int tyupeflag) {
   const char* dot = strrchr(fpath, '.');
   if (dot && strcmp(dot, ".lock") == 0) {
     unlink(fpath);
@@ -327,18 +318,15 @@ static int clear_locks_fn(const char* fpath, const struct stat *sb, int tyupefla
   return 0;
 }
 
-static void clear_locks() {
+void clear_locks() {
   ftw(LOG_ROOT.c_str(), clear_locks_fn, 16);
 }
+
+} // namespace
 
 int main(int argc, char** argv) {
 
   setpriority(PRIO_PROCESS, 0, -12);
-
-  int segment_length = SEGMENT_LENGTH;
-  if (getenv("LOGGERD_TEST")) {
-    segment_length = atoi(getenv("LOGGERD_SEGMENT_LENGTH"));
-  }
 
   clear_locks();
 
@@ -451,11 +439,11 @@ int main(int argc, char** argv) {
           cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
 
           if (fpkt_id == LOG_CAMERA_ID_FCAMERA) {
-            s.rotate_state[fpkt_id].setLogFrameId(event.getFrame().getFrameId());
+            s.rotate_state[fpkt_id].setLogFrameId(event.getRoadCameraState().getFrameId());
           } else if (fpkt_id == LOG_CAMERA_ID_DCAMERA) {
-            s.rotate_state[fpkt_id].setLogFrameId(event.getFrontFrame().getFrameId());
+            s.rotate_state[fpkt_id].setLogFrameId(event.getDriverCameraState().getFrameId());
           } else if (fpkt_id == LOG_CAMERA_ID_ECAMERA) {
-            s.rotate_state[fpkt_id].setLogFrameId(event.getWideFrame().getFrameId());
+            s.rotate_state[fpkt_id].setLogFrameId(event.getWideRoadCameraState().getFrameId());
           }
           last_camera_seen_tms = millis_since_boot();
         }
@@ -470,7 +458,7 @@ int main(int argc, char** argv) {
         new_segment = true;
         for (auto &r : s.rotate_state) {
           // this *should* be redundant on tici since all camera frames are synced
-          new_segment &= (((r.stream_frame_id >= r.last_rotate_frame_id + segment_length * MAIN_FPS) &&
+          new_segment &= (((r.stream_frame_id >= r.last_rotate_frame_id + SEGMENT_LENGTH * MAIN_FPS) &&
                           (!r.should_rotate) && (r.initialized)) ||
                           (!r.enabled));
 #ifndef QCOM2
@@ -478,7 +466,7 @@ int main(int argc, char** argv) {
 #endif
         }
       } else {
-        if (tms - last_rotate_tms > segment_length * 1000) {
+        if (tms - last_rotate_tms > SEGMENT_LENGTH * 1000) {
           new_segment = true;
           LOGW("no camera packet seen. auto rotated");
         }
@@ -506,6 +494,11 @@ int main(int argc, char** argv) {
 
   LOGW("closing logger");
   logger_close(&s.logger);
+
+  if (do_exit.power_failure){
+    LOGE("power failure");
+    sync();
+  }
 
   // messaging cleanup
   for (auto sock : socks) delete sock;

@@ -9,7 +9,7 @@ from typing import List, cast
 import requests
 
 import cereal.messaging as messaging
-import selfdrive.manager as manager
+from selfdrive.manager.process_config import managed_processes
 from cereal import car
 from common.basedir import BASEDIR
 from common.params import Params
@@ -197,16 +197,24 @@ routes = {
     'carFingerprint': HYUNDAI.SANTA_FE,
     'enableCamera': True,
   },
+  "e0e98335f3ebc58f|2021-03-07--16-38-29": {
+    'carFingerprint': HYUNDAI.KIA_CEED,
+    'enableCamera': True,
+  },
   "7653b2bce7bcfdaa|2020-03-04--15-34-32": {
     'carFingerprint': HYUNDAI.KIA_OPTIMA,
     'enableCamera': True,
+  },
+  "c75a59efa0ecd502|2021-03-11--20-52-55": {
+    'carFingerprint': HYUNDAI.KIA_SELTOS,
+    'enableCamera': True,  
   },
   "5b7c365c50084530|2020-04-15--16-13-24": {
     'carFingerprint': HYUNDAI.SONATA,
     'enableCamera': True,
   },
   "b2a38c712dcf90bd|2020-05-18--18-12-48": {
-    'carFingerprint': HYUNDAI.SONATA_2019,
+    'carFingerprint': HYUNDAI.SONATA_LF,
     'enableCamera': True,
   },
   "5875672fc1d4bf57|2020-07-23--21-33-28": {
@@ -433,6 +441,10 @@ routes = {
     'carFingerprint': VOLKSWAGEN.GOLF,
     'enableCamera': True,
   },
+  "07667b885add75fd|2021-01-23--19-48-42": {
+    'carFingerprint': VOLKSWAGEN.AUDI_A3,
+    'enableCamera': True,
+  },
   "3c8f0c502e119c1c|2020-06-30--12-58-02": {
     'carFingerprint': SUBARU.ASCENT,
     'enableCamera': True,
@@ -473,6 +485,10 @@ routes = {
     'carFingerprint': NISSAN.LEAF,
     'enableCamera': True,
   },
+  "22c3dcce2dd627eb|2020-12-30--16-38-48": {
+    'carFingerprint': NISSAN.LEAF_IC,
+    'enableCamera': True,
+  },
   "059ab9162e23198e|2020-05-30--09-41-01": {
     'carFingerprint': NISSAN.ROGUE,
     'enableCamera': True,
@@ -487,6 +503,10 @@ routes = {
   },
   "74f1038827005090|2020-08-26--20-05-50": {
     'carFingerprint': MAZDA.Mazda3,
+    'enableCamera': True,
+  },
+  "b72d3ec617c0a90f|2020-12-11--15-38-17": {
+    'carFingerprint': NISSAN.ALTIMA,
     'enableCamera': True,
   },
 }
@@ -535,7 +555,7 @@ non_tested_cars = [
 if __name__ == "__main__":
 
   tested_procs = ["controlsd", "radard", "plannerd"]
-  tested_socks = ["radarState", "controlsState", "carState", "plan"]
+  tested_socks = ["radarState", "controlsState", "carState", "longitudinalPlan"]
 
   tested_cars = [keys["carFingerprint"] for route, keys in routes.items()]
   for car_model in all_known_cars():
@@ -549,7 +569,7 @@ if __name__ == "__main__":
 
   print("Preparing processes")
   for p in tested_procs:
-    manager.prepare_managed_process(p)
+    managed_processes[p].prepare()
 
   results = {}
   for route, checks in routes.items():
@@ -571,12 +591,12 @@ if __name__ == "__main__":
     print("testing ", route, " ", checks['carFingerprint'])
     print("Starting processes")
     for p in tested_procs:
-      manager.start_managed_process(p)
+      managed_processes[p].start()
 
     # Start unlogger
     print("Start unlogger")
     unlogger_cmd = [os.path.join(BASEDIR, 'tools/replay/unlogger.py'), route, '/tmp']
-    disable_socks = 'frame,encodeIdx,plan,pathPlan,liveLongitudinalMpc,radarState,controlsState,liveTracks,liveMpc,sendcan,carState,carControl,carEvents,carParams'
+    disable_socks = 'frame,roadEncodeIdx,plan,lateralPlan,liveLongitudinalMpc,radarState,controlsState,liveTracks,liveMpc,sendcan,carState,carControl,carEvents,carParams'
     unlogger = subprocess.Popen(unlogger_cmd + ['--disable', disable_socks, '--no-interactive'], preexec_fn=os.setsid)  # pylint: disable=subprocess-popen-preexec-fn
 
     print("Check sockets")
@@ -585,17 +605,17 @@ if __name__ == "__main__":
     if (route not in passive_routes) and (route not in forced_dashcam_routes) and has_camera:
       extra_socks.append("sendcan")
     if route not in passive_routes:
-      extra_socks.append("pathPlan")
+      extra_socks.append("lateralPlan")
 
     recvd_socks = wait_for_sockets(tested_socks + extra_socks, timeout=30)
     failures = [s for s in tested_socks + extra_socks if s not in recvd_socks]
 
     print("Check if everything is running")
-    running = manager.get_running()
     for p in tested_procs:
-      if not running[p].is_alive:
+      proc = managed_processes[p].proc
+      if not proc or not proc.is_alive:
         failures.append(p)
-      manager.kill_managed_process(p)
+      managed_processes[p].stop()
     os.killpg(os.getpgid(unlogger.pid), signal.SIGTERM)
 
     sockets_ok = len(failures) == 0

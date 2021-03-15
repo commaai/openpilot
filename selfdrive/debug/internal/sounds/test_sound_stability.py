@@ -19,7 +19,7 @@ if __name__ == "__main__":
 
   os.environ["LD_LIBRARY_PATH"] = ""
 
-  sm = messaging.SubMaster(["thermal"])
+  sm = messaging.SubMaster(["deviceState"])
 
   FNULL = open(os.devnull, "w")
   start_time = time.time()
@@ -42,4 +42,4 @@ if __name__ == "__main__":
     s = time.time() - start_time
     hhmmss = str(datetime.timedelta(seconds=s)).split(".")[0]
     print("test duration:", hhmmss)
-    print("\tbattery percent", sm["thermal"].batteryPercent)
+    print("\tbattery percent", sm["deviceState"].batteryPercent)

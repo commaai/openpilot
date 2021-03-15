@@ -1,3 +1,0 @@
-Import('env', 'arch', 'messaging')
-
-env.Program('index_log', ['index_log.cc'], LIBS=[messaging, 'kj', 'capnp'])

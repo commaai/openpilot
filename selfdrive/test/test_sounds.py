@@ -37,7 +37,7 @@ def test_sound_card_init():
 @with_processes(['ui', 'camerad'])
 def test_alert_sounds():
 
-  pm = messaging.PubMaster(['thermal', 'controlsState'])
+  pm = messaging.PubMaster(['deviceState', 'controlsState'])
 
   # make sure they're all defined
   alert_sounds = {v: k for k, v in car.CarControl.HUDControl.AudibleAlert.schema.enumerants.items()}
@@ -47,9 +47,9 @@ def test_alert_sounds():
   # wait for procs to init
   time.sleep(5)
 
-  msg = messaging.new_message('thermal')
-  msg.thermal.started = True
-  pm.send('thermal', msg)
+  msg = messaging.new_message('deviceState')
+  msg.deviceState.started = True
+  pm.send('deviceState', msg)
 
   for sound, expected_writes in SOUNDS.items():
     print(f"testing {alert_sounds[sound]}")

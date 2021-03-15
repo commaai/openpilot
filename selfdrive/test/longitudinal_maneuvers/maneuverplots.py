@@ -28,7 +28,6 @@ class ManeuverPlot():
     self.v_target_lead_array = []
     self.pid_speed_array = []
     self.cruise_speed_array = []
-    self.jerk_factor_array = []
 
     self.a_target_array = []
 
@@ -40,7 +39,7 @@ class ManeuverPlot():
 
   def add_data(self, time, gas, brake, steer_torque, distance, speed,
     acceleration, up_accel_cmd, ui_accel_cmd, uf_accel_cmd, d_rel, v_rel,
-    v_lead, v_target_lead, pid_speed, cruise_speed, jerk_factor, a_target, fcw):
+    v_lead, v_target_lead, pid_speed, cruise_speed, a_target, fcw):
     self.time_array.append(time)
     self.gas_array.append(gas)
     self.brake_array.append(brake)
@@ -57,7 +56,6 @@ class ManeuverPlot():
     self.v_target_lead_array.append(v_target_lead)
     self.pid_speed_array.append(pid_speed)
     self.cruise_speed_array.append(cruise_speed)
-    self.jerk_factor_array.append(jerk_factor)
     self.a_target_array.append(a_target)
     self.fcw_array.append(fcw)
 

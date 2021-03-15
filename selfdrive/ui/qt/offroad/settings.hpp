@@ -7,8 +7,6 @@
 #include <QButtonGroup>
 #include <QStackedLayout>
 
-#include "wifi.hpp"
-
 // *** settings widgets ***
 
 class ParamsToggle : public QFrame {
@@ -44,9 +42,8 @@ private:
   std::map<QString, QWidget *> panels;
   QButtonGroup *nav_btns;
   QStackedLayout *panel_layout;
+  QFrame* panel_frame;
 
 public slots:
   void setActivePanel();
-  void closeSidebar();
-  void openSidebar();
 };

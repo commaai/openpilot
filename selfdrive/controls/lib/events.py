@@ -195,7 +195,7 @@ def calibration_incomplete_alert(CP: car.CarParams, sm: messaging.SubMaster, met
     Priority.LOWEST, VisualAlert.none, AudibleAlert.none, 0., 0., .2)
 
 def no_gps_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> Alert:
-  gps_integrated = sm['health'].hwType in [log.HealthData.HwType.uno, log.HealthData.HwType.dos]
+  gps_integrated = sm['pandaState'].pandaType in [log.PandaState.PandaType.uno, log.PandaState.PandaType.dos]
   return Alert(
     "Poor GPS reception",
     "If sky is visible, contact support" if gps_integrated else "Check GPS antenna placement",
@@ -615,15 +615,9 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
                               audible_alert=AudibleAlert.chimeDisengage),
   },
 
-  EventName.radarCommIssue: {
-    ET.SOFT_DISABLE: SoftDisableAlert("Radar Communication Issue"),
-    ET.NO_ENTRY: NoEntryAlert("Radar Communication Issue",
+  EventName.processNotRunning: {
+    ET.NO_ENTRY: NoEntryAlert("System Malfunction: Reboot Your Device",
                               audible_alert=AudibleAlert.chimeDisengage),
-  },
-
-  EventName.radarCanError: {
-    ET.SOFT_DISABLE: SoftDisableAlert("Radar Error: Restart the Car"),
-    ET.NO_ENTRY: NoEntryAlert("Radar Error: Restart the Car"),
   },
 
   EventName.radarFault: {
@@ -737,7 +731,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
   EventName.speedTooHigh: {
     ET.WARNING: Alert(
       "Speed Too High",
-      "Slow down to resume operation",
+      "Model uncertain at this speed",
       AlertStatus.normal, AlertSize.mid,
       Priority.HIGH, VisualAlert.steerRequired, AudibleAlert.none, 2.2, 3., 4.),
     ET.NO_ENTRY: Alert(

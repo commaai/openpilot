@@ -85,7 +85,8 @@ void test(char *filename) {
   cout << "**** starting benchmark ****" << endl;
   for (int i = 0; i < 50; i++) {
     clock_gettime(CLOCK_MONOTONIC, &start);
-    assert(snpe->execute(inputTensorMap, outputTensorMap));
+    int err = snpe->execute(inputTensorMap, outputTensorMap);
+    assert(err == true);
     clock_gettime(CLOCK_MONOTONIC, &end);
     uint64_t timeElapsed = timespecDiff(&end, &start);
     printf("time: %f ms\n", timeElapsed*1.0/1e6);

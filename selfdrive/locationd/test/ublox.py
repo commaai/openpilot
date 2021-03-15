@@ -729,7 +729,7 @@ class UBlox:
       class BoarddSerial():
         def __init__(self):
           self.ubloxRaw = messaging.sub_sock('ubloxRaw')
-          self.buf = ""
+          self.buf = b""
 
         def read(self, n):
           for msg in messaging.drain_sock(self.ubloxRaw, len(self.buf) < n):

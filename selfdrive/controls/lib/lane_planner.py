@@ -1,9 +1,17 @@
 from common.numpy_fast import interp
 import numpy as np
+from selfdrive.hardware import EON, TICI
 from cereal import log
 
-CAMERA_OFFSET = 0.06  # m from center car to camera
+
 TRAJECTORY_SIZE = 33
+# camera offset is meters from center car to camera
+if EON:
+  CAMERA_OFFSET = 0.06
+elif TICI:
+  CAMERA_OFFSET = -0.04
+else:
+  CAMERA_OFFSET = 0.0
 
 
 
@@ -42,8 +50,8 @@ class LanePlanner:
       self.rll_std = md.laneLineStds[2]
 
     if len(md.meta.desireState):
-      self.l_lane_change_prob = md.meta.desireState[log.PathPlan.Desire.laneChangeLeft]
-      self.r_lane_change_prob = md.meta.desireState[log.PathPlan.Desire.laneChangeRight]
+      self.l_lane_change_prob = md.meta.desireState[log.LateralPlan.Desire.laneChangeLeft]
+      self.r_lane_change_prob = md.meta.desireState[log.LateralPlan.Desire.laneChangeRight]
 
   def get_d_path(self, v_ego, path_t, path_xyz):
     # Reduce reliance on lanelines that are too far apart or

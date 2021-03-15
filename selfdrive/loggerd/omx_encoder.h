@@ -3,8 +3,6 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
-
-#include <pthread.h>
 #include <vector>
 #include <OMX_Component.h>
 
@@ -13,8 +11,7 @@ extern "C" {
 }
 
 #include "encoder.h"
-#include "common/cqueue.h"
-#include "visionipc.h"
+#include "common/queue.h"
 
 // OmxEncoder, lossey codec using hardware hevc
 class OmxEncoder : public VideoEncoder {
@@ -22,9 +19,8 @@ public:
   OmxEncoder(const char* filename, int width, int height, int fps, int bitrate, bool h265, bool downscale);
   ~OmxEncoder();
   int encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
-                   int in_width, int in_height,
-                   int *frame_segment, VisionIpcBufExtra *extra);
-  void encoder_open(const char* path, int segment);
+                   int in_width, int in_height, uint64_t ts);
+  void encoder_open(const char* path);
   void encoder_close();
 
   // OMX callbacks
@@ -39,14 +35,12 @@ private:
   void wait_for_state(OMX_STATETYPE state);
   static void handle_out_buf(OmxEncoder *e, OMX_BUFFERHEADERTYPE *out_buf);
 
-  pthread_mutex_t lock;
   int width, height, fps;
   char vid_path[1024];
   char lock_path[1024];
   bool is_open = false;
   bool dirty = false;
   int counter = 0;
-  int segment = -1;
 
   const char* filename;
   FILE *of;
@@ -55,8 +49,8 @@ private:
   uint8_t *codec_config = NULL;
   bool wrote_codec_config;
 
-  pthread_mutex_t state_lock;
-  pthread_cond_t state_cv;
+  std::mutex state_lock;
+  std::condition_variable state_cv;
   OMX_STATETYPE state = OMX_StateLoaded;
 
   OMX_HANDLETYPE handle;
@@ -66,8 +60,8 @@ private:
 
   uint64_t last_t;
 
-  Queue free_in;
-  Queue done_out;
+  SafeQueue<OMX_BUFFERHEADERTYPE *> free_in;
+  SafeQueue<OMX_BUFFERHEADERTYPE *> done_out;
 
   AVFormatContext *ofmt_ctx;
   AVCodecContext *codec_ctx;

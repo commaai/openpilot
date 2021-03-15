@@ -79,6 +79,7 @@ def configure_ublox(dev):
   dev.configure_message_rate(ublox.CLASS_RXM, ublox.MSG_RXM_RAW, 1)
   dev.configure_message_rate(ublox.CLASS_RXM, ublox.MSG_RXM_SFRBX, 1)
   dev.configure_message_rate(ublox.CLASS_MON, ublox.MSG_MON_HW, 1)
+  dev.configure_message_rate(ublox.CLASS_MON, ublox.MSG_MON_HW2, 1)
 
 
 def int_to_bool_list(num):
@@ -137,7 +138,7 @@ def gen_solution(msg):
                                       msg_data['sec']) -
                  datetime.datetime(1970, 1, 1)).total_seconds())*1e+03 +
                  msg_data['nano']*1e-06)
-  gps_fix = {'bearing': msg_data['headMot']*1e-05,  # heading of motion in degrees
+  gps_fix = {'bearingDeg': msg_data['headMot']*1e-05,  # heading of motion in degrees
              'altitude': msg_data['height']*1e-03,  # altitude above ellipsoid
              'latitude': msg_data['lat']*1e-07,  # latitude in degrees
              'longitude': msg_data['lon']*1e-07,  # longitude in degrees
@@ -149,7 +150,7 @@ def gen_solution(msg):
                      msg_data['velD']*1e-03],  # velocity in NED frame in m/s
              'speedAccuracy': msg_data['sAcc']*1e-03,  # speed accuracy in m/s
              'verticalAccuracy': msg_data['vAcc']*1e-03,  # vertical accuracy in meters
-             'bearingAccuracy': msg_data['headAcc']*1e-05,  # heading accuracy in degrees
+             'bearingAccuracyDeg': msg_data['headAcc']*1e-05,  # heading accuracy in degrees
              'source': 'ublox',
              'flags': msg_data['flags'],
   }

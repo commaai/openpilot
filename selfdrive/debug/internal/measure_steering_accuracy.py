@@ -47,7 +47,7 @@ if __name__ == "__main__":
       if cnt >= 500:
         # calculate error before rounding
         actual_angle = sm['controlsState'].angleSteers
-        desired_angle = sm['carControl'].actuators.steerAngle
+        desired_angle = sm['carControl'].actuators.steeringAngleDeg
         angle_error = abs(desired_angle - actual_angle)
 
         # round numbers

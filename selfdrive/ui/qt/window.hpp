@@ -23,6 +23,7 @@ private:
   OnboardingWindow *onboardingWindow;
 
 public slots:
+  void offroadTransition(bool offroad);
   void openSettings();
   void closeSettings();
 };

@@ -9,12 +9,9 @@
 
 #define FRAME_BUF_COUNT 4
 
-#define ANALOG_GAIN_MAX_IDX 15 // 0xF is bypass
-#define EXPOSURE_TIME_MIN 8 // min time limited by HDR exp factor
-#define EXPOSURE_TIME_MAX 1132 // with HDR, no slower than 1/25 sec (1416 lines)
-
-#define HLC_THRESH 240
-#define HLC_A 80
+#define ANALOG_GAIN_MAX_IDX 10 // 0xF is bypass
+#define EXPOSURE_TIME_MIN 2 // with HDR, fastest ss
+#define EXPOSURE_TIME_MAX 1757 // with HDR, slowest ss
 
 #define EF_LOWPASS_K 0.35
 
@@ -22,7 +19,8 @@
 
 typedef struct CameraState {
   CameraInfo ci;
-
+  
+  std::mutex exp_lock;
   float analog_gain_frac;
   uint16_t analog_gain;
   bool dc_gain_enabled;
@@ -73,17 +71,12 @@ typedef struct MultiCameraState {
   int video1_fd;
   int isp_fd;
 
-  CameraState rear;
-  CameraState front;
-  CameraState wide;
+  CameraState road_cam;
+  CameraState wide_road_cam;
+  CameraState driver_cam;
 
   pthread_mutex_t isp_lock;
 
   SubMaster *sm;
   PubMaster *pm;
 } MultiCameraState;
-
-void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_id, cl_context ctx);
-void cameras_open(MultiCameraState *s);
-void cameras_run(MultiCameraState *s);
-void camera_autoexposure(CameraState *s, float grey_frac);

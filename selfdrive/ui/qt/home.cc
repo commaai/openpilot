@@ -2,6 +2,7 @@
 #include <fstream>
 #include <iostream>
 #include <thread>
+#include <exception>
 
 #include <QDateTime>
 #include <QHBoxLayout>
@@ -12,6 +13,10 @@
 #include <QWidget>
 
 #include "common/params.h"
+#include "common/timing.h"
+#include "common/swaglog.h"
+#include "common/watchdog.h"
+#include "selfdrive/hardware/hw.h"
 
 #include "home.hpp"
 #include "paint.hpp"
@@ -21,6 +26,61 @@
 
 #define BACKLIGHT_DT 0.25
 #define BACKLIGHT_TS 2.00
+#define BACKLIGHT_OFFROAD 50
+
+// HomeWindow: the container for the offroad (OffroadHome) and onroad (GLWindow) UIs
+
+HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
+  layout = new QGridLayout;
+  layout->setMargin(0);
+
+  // onroad UI
+  glWindow = new GLWindow(this);
+  layout->addWidget(glWindow, 0, 0);
+
+  // draw offroad UI on top of onroad UI
+  home = new OffroadHome();
+  layout->addWidget(home, 0, 0);
+
+  QObject::connect(glWindow, SIGNAL(offroadTransition(bool)), this, SLOT(setVisibility(bool)));
+  QObject::connect(glWindow, SIGNAL(offroadTransition(bool)), this, SIGNAL(offroadTransition(bool)));
+  QObject::connect(glWindow, SIGNAL(screen_shutoff()), this, SIGNAL(closeSettings()));
+  QObject::connect(this, SIGNAL(openSettings()), home, SLOT(refresh()));
+
+  setLayout(layout);
+  setStyleSheet(R"(
+    * {
+      color: white;
+    }
+  )");
+}
+
+void HomeWindow::setVisibility(bool offroad) {
+  home->setVisible(offroad);
+}
+
+void HomeWindow::mousePressEvent(QMouseEvent* e) {
+  UIState* ui_state = &glWindow->ui_state;
+  if (GLWindow::ui_state.scene.started && GLWindow::ui_state.scene.driver_view) {
+    Params().write_db_value("IsDriverViewEnabled", "0", 1);
+    return;
+  }
+
+  glWindow->wake();
+
+  // Settings button click
+  if (!ui_state->sidebar_collapsed && settings_btn.ptInRect(e->x(), e->y())) {
+    emit openSettings();
+  }
+
+  // Vision click
+  if (ui_state->scene.started && (e->x() >= ui_state->viz_rect.x - bdr_s)) {
+    ui_state->sidebar_collapsed = !ui_state->sidebar_collapsed;
+  }
+}
+
+
+// OffroadHome: the offroad home page
 
 OffroadHome::OffroadHome(QWidget* parent) : QWidget(parent) {
   QVBoxLayout* main_layout = new QVBoxLayout();
@@ -103,7 +163,6 @@ void OffroadHome::refresh() {
   }
 
   if (alerts_widget->updateAvailable) {
-    // There is a new release
     alert_notification->setText("UPDATE");
   } else {
     int alerts = alerts_widget->alerts.size();
@@ -120,7 +179,7 @@ void OffroadHome::refresh() {
     border: 1px solid;
     border-radius: 5px;
     font-size: 40px;
-    font-weight: bold;
+    font-weight: 500;
     background-color: #E22C2C;
   )");
   if (alerts_widget->updateAvailable) {
@@ -129,60 +188,11 @@ void OffroadHome::refresh() {
   alert_notification->setStyleSheet(style);
 }
 
-HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
-  layout = new QGridLayout;
-  layout->setMargin(0);
-
-  // onroad UI
-  glWindow = new GLWindow(this);
-  layout->addWidget(glWindow, 0, 0);
-
-  sidebar = new Sidebar(this);
-
-  
-  
-
-  // draw offroad UI on top of onroad UI
-  home = new OffroadHome();
-  layout->addWidget(home, 0, 0);
-
-  layout->addWidget(sidebar, 0, 0);
-  
-  QObject::connect(glWindow, SIGNAL(offroadTransition(bool)), this, SLOT(setVisibility(bool)));
-  QObject::connect(this, SIGNAL(openSettings()), home, SLOT(refresh()));
-  setLayout(layout);
-  setStyleSheet(R"(
-    * {
-      color: white;
-    }
-  )");
-}
-
-void HomeWindow::setVisibility(bool offroad) {
-  home->setVisible(offroad);
-}
-
-void HomeWindow::mousePressEvent(QMouseEvent* e) {
-  UIState* ui_state = &glWindow->ui_state;
-
-  glWindow->wake();
-
-  // Settings button click
-  if (!ui_state->scene.sidebar_collapsed && settings_btn.ptInRect(e->x(), e->y())) {
-    emit openSettings();
-  }
-
-  // Vision click
-  if (ui_state->started && (e->x() >= ui_state->scene.viz_rect.x - bdr_s)) {
-    ui_state->scene.sidebar_collapsed = !ui_state->scene.sidebar_collapsed;
-  }
-}
-
 static void handle_display_state(UIState* s, bool user_input) {
-  static int awake_timeout = 0; // Somehow this only gets called on program start
+  static int awake_timeout = 0;
   awake_timeout = std::max(awake_timeout - 1, 0);
 
-  if (user_input || s->ignition || s->started) {
+  if (user_input || s->scene.ignition || s->scene.started) {
     s->awake = true;
     awake_timeout = 30 * UI_FREQ;
   } else if (awake_timeout == 0) {
@@ -190,13 +200,8 @@ static void handle_display_state(UIState* s, bool user_input) {
   }
 }
 
-static void set_backlight(int brightness) {
-  std::ofstream brightness_control("/sys/class/backlight/panel0-backlight/brightness");
-  if (brightness_control.is_open()) {
-    brightness_control << brightness << "\n";
-    brightness_control.close();
-  }
-}
+
+// GLWindow: the onroad UI
 
 GLWindow::GLWindow(QWidget* parent) : QOpenGLWidget(parent) {
   timer = new QTimer(this);
@@ -208,10 +213,10 @@ GLWindow::GLWindow(QWidget* parent) : QOpenGLWidget(parent) {
   int result = read_param(&brightness_b, "BRIGHTNESS_B", true);
   result += read_param(&brightness_m, "BRIGHTNESS_M", true);
   if (result != 0) {
-    brightness_b = 200.0;
-    brightness_m = 10.0;
+    brightness_b = 10.0;
+    brightness_m = 0.1;
   }
-  smooth_brightness = 512;
+  smooth_brightness = BACKLIGHT_OFFROAD;
 }
 
 GLWindow::~GLWindow() {
@@ -227,10 +232,13 @@ void GLWindow::initializeGL() {
   std::cout << "OpenGL language version: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
 
   ui_state.sound = &sound;
+  ui_state.fb_w = vwp_w;
+  ui_state.fb_h = vwp_h;
   ui_init(&ui_state);
 
   wake();
 
+  prev_draw_t = millis_since_boot();
   timer->start(1000 / UI_FREQ);
   backlight_timer->start(BACKLIGHT_DT * 1000);
 }
@@ -239,15 +247,23 @@ void GLWindow::backlightUpdate() {
   // Update brightness
   float k = (BACKLIGHT_DT / BACKLIGHT_TS) / (1.0f + BACKLIGHT_DT / BACKLIGHT_TS);
 
-  float clipped_brightness = std::min(1023.0f, (ui_state.light_sensor * brightness_m) + brightness_b);
-  smooth_brightness = clipped_brightness * k + smooth_brightness * (1.0f - k);
-  int brightness = smooth_brightness;
-
-  if (!ui_state.awake) {
-    brightness = 0;
+  float clipped_brightness = std::min(100.0f, (ui_state.scene.light_sensor * brightness_m) + brightness_b);
+  if (!ui_state.scene.started) {
+    clipped_brightness = BACKLIGHT_OFFROAD;
   }
 
-  std::thread{set_backlight, brightness}.detach();
+  smooth_brightness = clipped_brightness * k + smooth_brightness * (1.0f - k);
+
+  int brightness = smooth_brightness;
+  if (!ui_state.awake) {
+    brightness = 0;
+    emit screen_shutoff();
+  }
+
+  if (brightness != last_brightness) {
+    std::thread{Hardware::set_brightness, brightness}.detach();
+  }
+  last_brightness = brightness;
 }
 
 void GLWindow::timerUpdate() {
@@ -256,8 +272,8 @@ void GLWindow::timerUpdate() {
     makeCurrent();
   }
 
-  if (ui_state.started != onroad) {
-    onroad = ui_state.started;
+  if (ui_state.scene.started != onroad) {
+    onroad = ui_state.scene.started;
     emit offroadTransition(!onroad);
 
     // Change timeout to 0 when onroad, this will call timerUpdate continously.
@@ -269,6 +285,7 @@ void GLWindow::timerUpdate() {
 
   ui_update(&ui_state);
   repaint();
+  watchdog_kick();
 }
 
 void GLWindow::resizeGL(int w, int h) {
@@ -278,16 +295,17 @@ void GLWindow::resizeGL(int w, int h) {
 void GLWindow::paintGL() {
   if(GLWindow::ui_state.awake){
     ui_draw(&ui_state);
+
+    double cur_draw_t = millis_since_boot();
+    double dt = cur_draw_t - prev_draw_t;
+    if (dt > 66 && onroad){
+      // warn on sub 15fps
+      LOGW("slow frame(%llu) time: %.2f", ui_state.sm->frame, dt);
+    }
+    prev_draw_t = cur_draw_t;
   }
 }
 
 void GLWindow::wake() {
   handle_display_state(&ui_state, true);
-}
-
-FramebufferState* framebuffer_init(const char* name, int32_t layer, int alpha,
-                                   int *out_w, int *out_h) {
-  *out_w = vwp_w;
-  *out_h = vwp_h;
-  return (FramebufferState*)1; // not null
 }

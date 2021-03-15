@@ -2,7 +2,7 @@
 # type: ignore
 import cereal.messaging as messaging
 
-all_sockets = ['frame','frontFrame','wideFrame']
+all_sockets = ['roadCameraState', 'driverCameraState', 'wideRoadCameraState']
 prev_id = [None,None,None]
 this_id = [None,None,None]
 dt = [None,None,None]
@@ -12,7 +12,7 @@ if __name__ == "__main__":
   sm = messaging.SubMaster(all_sockets)
   while True:
     sm.update()
-    
+
     for i in range(len(all_sockets)):
       if not sm.updated[all_sockets[i]]:
         continue

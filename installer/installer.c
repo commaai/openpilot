@@ -156,7 +156,8 @@ void * run_spinner(void * args) {
 
 int main() {
   pthread_t spinner_thread;
-  assert(pthread_create(&spinner_thread, NULL, run_spinner, NULL) == 0);
+  int err = pthread_create(&spinner_thread, NULL, run_spinner, NULL);
+  assert(err == 0);
 
   int status = do_install();
 

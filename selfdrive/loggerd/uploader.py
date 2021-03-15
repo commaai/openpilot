@@ -15,7 +15,7 @@ from selfdrive.loggerd.xattr_cache import getxattr, setxattr
 from selfdrive.loggerd.config import ROOT
 from selfdrive.swaglog import cloudlog
 
-NetworkType = log.ThermalData.NetworkType
+NetworkType = log.DeviceState.NetworkType
 UPLOAD_ATTR_NAME = 'user.upload'
 UPLOAD_ATTR_VALUE = b'1'
 
@@ -58,7 +58,7 @@ class Uploader():
     self.last_resp = None
     self.last_exc = None
 
-    self.immediate_folders = ["crash/"]
+    self.immediate_folders = ["crash/", "boot/"]
     self.immediate_priority = {"qlog.bz2": 0, "qcamera.ts": 1}
     self.high_priority = {"rlog.bz2": 0, "fcamera.hevc": 1, "dcamera.hevc": 2, "ecamera.hevc": 3}
 
@@ -198,13 +198,13 @@ def uploader_fn(exit_event):
     cloudlog.info("uploader missing dongle_id")
     raise Exception("uploader can't start without dongle id")
 
-  sm = messaging.SubMaster(['thermal'])
+  sm = messaging.SubMaster(['deviceState'])
   uploader = Uploader(dongle_id, ROOT)
 
   backoff = 0.1
   while not exit_event.is_set():
     sm.update(0)
-    on_wifi = force_wifi or sm['thermal'].networkType == NetworkType.wifi
+    on_wifi = force_wifi or sm['deviceState'].networkType == NetworkType.wifi
     offroad = params.get("IsOffroad") == b'1'
     allow_raw_upload = params.get("IsUploadRawEnabled") != b"0"
 

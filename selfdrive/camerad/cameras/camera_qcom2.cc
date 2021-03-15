@@ -29,6 +29,7 @@
 //#define FRAME_STRIDE 1936 // for 8 bit output
 #define FRAME_STRIDE 2416  // for 10 bit output
 
+#define MIPI_SETTLE_CNT 33  // Calculated by camera_freqs.py
 
 extern ExitHandler do_exit;
 
@@ -46,10 +47,9 @@ CameraInfo cameras_supported[CAMERA_ID_MAX] = {
   },
 };
 
-float sensor_analog_gains[ANALOG_GAIN_MAX_IDX] = {1.0/8.0, 2.0/8.0, 2.0/7.0, 3.0/7.0,
-                                                  3.0/6.0, 4.0/6.0, 4.0/5.0, 5.0/5.0,
+float sensor_analog_gains[ANALOG_GAIN_MAX_IDX] = {3.0/6.0, 4.0/6.0, 4.0/5.0, 5.0/5.0,
                                                   5.0/4.0, 6.0/4.0, 6.0/3.0, 7.0/3.0,
-                                                  7.0/2.0, 8.0/2.0, 8.0/1.0};
+                                                  7.0/2.0, 8.0/2.0};
 
 // ************** low level camera helpers ****************
 
@@ -80,7 +80,8 @@ int device_control(int fd, int op_code, int session_handle, int dev_handle) {
   return cam_control(fd, op_code, &release_dev_cmd, sizeof(release_dev_cmd));
 }
 
-void *alloc_w_mmu_hdl(int video0_fd, int len, int align, int flags, uint32_t *handle, int mmu_hdl, int mmu_hdl2) {
+void *alloc_w_mmu_hdl(int video0_fd, int len, uint32_t *handle, int align = 8, int flags = CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE,
+                      int mmu_hdl = 0, int mmu_hdl2 = 0) {
   struct cam_mem_mgr_alloc_cmd mem_mgr_alloc_cmd = {0};
   mem_mgr_alloc_cmd.len = len;
   mem_mgr_alloc_cmd.align = align;
@@ -107,10 +108,6 @@ void *alloc_w_mmu_hdl(int video0_fd, int len, int align, int flags, uint32_t *ha
   // LOGD("alloced: %x %d %llx mapped %p", mem_mgr_alloc_cmd.out.buf_handle, mem_mgr_alloc_cmd.out.fd, mem_mgr_alloc_cmd.out.vaddr, ptr);
 
   return ptr;
-}
-
-void *alloc(int video0_fd, int len, int align, int flags, uint32_t *handle) {
-  return alloc_w_mmu_hdl(video0_fd, len, align, flags, handle, 0, 0);
 }
 
 void release(int video0_fd, uint32_t handle) {
@@ -143,14 +140,12 @@ void clear_req_queue(int fd, int32_t session_hdl, int32_t link_hdl) {
 void sensors_poke(struct CameraState *s, int request_id) {
   uint32_t cam_packet_handle = 0;
   int size = sizeof(struct cam_packet);
-  struct cam_packet *pkt = (struct cam_packet *)alloc(s->video0_fd, size, 8,
-    CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE, &cam_packet_handle);
-  pkt->num_cmd_buf = 1;
+  struct cam_packet *pkt = (struct cam_packet *)alloc_w_mmu_hdl(s->video0_fd, size, &cam_packet_handle);
+  pkt->num_cmd_buf = 0;
   pkt->kmd_cmd_buf_index = -1;
   pkt->header.size = size;
   pkt->header.op_code = 0x7f;
   pkt->header.request_id = request_id;
-  //struct cam_cmd_buf_desc *buf_desc = (struct cam_cmd_buf_desc *)&pkt->payload;
 
   struct cam_config_dev_cmd config_dev_cmd = {};
   config_dev_cmd.session_handle = s->session_handle;
@@ -169,18 +164,17 @@ void sensors_i2c(struct CameraState *s, struct i2c_random_wr_payload* dat, int l
   // LOGD("sensors_i2c: %d", len);
   uint32_t cam_packet_handle = 0;
   int size = sizeof(struct cam_packet)+sizeof(struct cam_cmd_buf_desc)*1;
-  struct cam_packet *pkt = (struct cam_packet *)alloc(s->video0_fd, size, 8,
-    CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE, &cam_packet_handle);
+  struct cam_packet *pkt = (struct cam_packet *)alloc_w_mmu_hdl(s->video0_fd, size, &cam_packet_handle);
   pkt->num_cmd_buf = 1;
   pkt->kmd_cmd_buf_index = -1;
   pkt->header.size = size;
   pkt->header.op_code = op_code;
   struct cam_cmd_buf_desc *buf_desc = (struct cam_cmd_buf_desc *)&pkt->payload;
 
-  buf_desc[0].size = buf_desc[0].length = sizeof(struct cam_cmd_i2c_random_wr) + (len-1)*sizeof(struct i2c_random_wr_payload);
+  buf_desc[0].size = buf_desc[0].length = sizeof(struct i2c_rdwr_header) + len*sizeof(struct i2c_random_wr_payload);
   buf_desc[0].type = CAM_CMD_BUF_I2C;
-  struct cam_cmd_power *power = (struct cam_cmd_power *)alloc(s->video0_fd, buf_desc[0].size, 8, CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE, (uint32_t*)&buf_desc[0].mem_handle);
-  struct cam_cmd_i2c_random_wr *i2c_random_wr = (struct cam_cmd_i2c_random_wr *)power;
+
+  struct cam_cmd_i2c_random_wr *i2c_random_wr = (struct cam_cmd_i2c_random_wr *)alloc_w_mmu_hdl(s->video0_fd, buf_desc[0].size, (uint32_t*)&buf_desc[0].mem_handle);
   i2c_random_wr->header.count = len;
   i2c_random_wr->header.op_code = 1;
   i2c_random_wr->header.cmd_type = CAMERA_SENSOR_CMD_TYPE_I2C_RNDM_WR;
@@ -197,7 +191,7 @@ void sensors_i2c(struct CameraState *s, struct i2c_random_wr_payload* dat, int l
   int ret = cam_control(s->sensor_fd, CAM_CONFIG_DEV, &config_dev_cmd, sizeof(config_dev_cmd));
   assert(ret == 0);
 
-  munmap(power, buf_desc[0].size);
+  munmap(i2c_random_wr, buf_desc[0].size);
   release_fd(s->video0_fd, buf_desc[0].mem_handle);
   munmap(pkt, size);
   release_fd(s->video0_fd, cam_packet_handle);
@@ -206,8 +200,7 @@ void sensors_i2c(struct CameraState *s, struct i2c_random_wr_payload* dat, int l
 void sensors_init(int video0_fd, int sensor_fd, int camera_num) {
   uint32_t cam_packet_handle = 0;
   int size = sizeof(struct cam_packet)+sizeof(struct cam_cmd_buf_desc)*2;
-  struct cam_packet *pkt = (struct cam_packet *)alloc(video0_fd, size, 8,
-    CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE, &cam_packet_handle);
+  struct cam_packet *pkt = (struct cam_packet *)alloc_w_mmu_hdl(video0_fd, size, &cam_packet_handle);
   pkt->num_cmd_buf = 2;
   pkt->kmd_cmd_buf_index = -1;
   pkt->header.op_code = 0x1000003;
@@ -216,7 +209,7 @@ void sensors_init(int video0_fd, int sensor_fd, int camera_num) {
 
   buf_desc[0].size = buf_desc[0].length = sizeof(struct cam_cmd_i2c_info) + sizeof(struct cam_cmd_probe);
   buf_desc[0].type = CAM_CMD_BUF_LEGACY;
-  struct cam_cmd_i2c_info *i2c_info = (struct cam_cmd_i2c_info *)alloc(video0_fd, buf_desc[0].size, 8, CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE, (uint32_t*)&buf_desc[0].mem_handle);
+  struct cam_cmd_i2c_info *i2c_info = (struct cam_cmd_i2c_info *)alloc_w_mmu_hdl(video0_fd, buf_desc[0].size, (uint32_t*)&buf_desc[0].mem_handle);
   struct cam_cmd_probe *probe = (struct cam_cmd_probe *)((uint8_t *)i2c_info) + sizeof(struct cam_cmd_i2c_info);
 
   switch (camera_num) {
@@ -253,7 +246,7 @@ void sensors_init(int video0_fd, int sensor_fd, int camera_num) {
   //buf_desc[1].size = buf_desc[1].length = 148;
   buf_desc[1].size = buf_desc[1].length = 196;
   buf_desc[1].type = CAM_CMD_BUF_I2C;
-  struct cam_cmd_power *power = (struct cam_cmd_power *)alloc(video0_fd, buf_desc[1].size, 8, CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE, (uint32_t*)&buf_desc[1].mem_handle);
+  struct cam_cmd_power *power = (struct cam_cmd_power *)alloc_w_mmu_hdl(video0_fd, buf_desc[1].size, (uint32_t*)&buf_desc[1].mem_handle);
   memset(power, 0, buf_desc[1].size);
   struct cam_cmd_unconditional_wait *unconditional_wait;
 
@@ -379,8 +372,7 @@ void config_isp(struct CameraState *s, int io_mem_handle, int fence, int request
   if (io_mem_handle != 0) {
     size += sizeof(struct cam_buf_io_cfg);
   }
-  struct cam_packet *pkt = (struct cam_packet *)alloc(s->video0_fd, size, 8,
-    CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE, &cam_packet_handle);
+  struct cam_packet *pkt = (struct cam_packet *)alloc_w_mmu_hdl(s->video0_fd, size, &cam_packet_handle);
   pkt->num_cmd_buf = 2;
   pkt->kmd_cmd_buf_index = 0;
 
@@ -416,7 +408,7 @@ void config_isp(struct CameraState *s, int io_mem_handle, int fence, int request
   }
   buf_desc[1].type = CAM_CMD_BUF_GENERIC;
   buf_desc[1].meta_data = CAM_ISP_PACKET_META_GENERIC_BLOB_COMMON;
-  uint32_t *buf2 = (uint32_t *)alloc(s->video0_fd, buf_desc[1].size, 0x20, CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE, (uint32_t*)&buf_desc[1].mem_handle);
+  uint32_t *buf2 = (uint32_t *)alloc_w_mmu_hdl(s->video0_fd, buf_desc[1].size, (uint32_t*)&buf_desc[1].mem_handle, 0x20);
 
   // cam_isp_packet_generic_blob_handler
   uint32_t tmp[] = {
@@ -718,7 +710,7 @@ static void camera_open(CameraState *s) {
   // acquires done
 
   // config ISP
-  alloc_w_mmu_hdl(s->video0_fd, 984480, 0x20, CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE, (uint32_t*)&s->buf0_handle, s->device_iommu, s->cdm_iommu);
+  alloc_w_mmu_hdl(s->video0_fd, 984480, (uint32_t*)&s->buf0_handle, 0x20, CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE, s->device_iommu, s->cdm_iommu);
   config_isp(s, 0, 0, 1, s->buf0_handle, 0);
 
   LOG("-- Configuring sensor");
@@ -733,24 +725,25 @@ static void camera_open(CameraState *s) {
   LOG("-- Config CSI PHY");
   {
     uint32_t cam_packet_handle = 0;
-    struct cam_packet *pkt = (struct cam_packet *)alloc(s->video0_fd, sizeof(struct cam_packet)+sizeof(struct cam_cmd_buf_desc)*1, 8,
-      CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE, &cam_packet_handle);
+    int size = sizeof(struct cam_packet)+sizeof(struct cam_cmd_buf_desc)*1;
+    struct cam_packet *pkt = (struct cam_packet *)alloc_w_mmu_hdl(s->video0_fd, size, &cam_packet_handle);
     pkt->num_cmd_buf = 1;
     pkt->kmd_cmd_buf_index = -1;
+    pkt->header.size = size;
     struct cam_cmd_buf_desc *buf_desc = (struct cam_cmd_buf_desc *)&pkt->payload;
 
     buf_desc[0].size = buf_desc[0].length = sizeof(struct cam_csiphy_info);
     buf_desc[0].type = CAM_CMD_BUF_GENERIC;
-    struct cam_csiphy_info *csiphy_info = (struct cam_csiphy_info *)alloc(s->video0_fd, buf_desc[0].size, 8, CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE, (uint32_t*)&buf_desc[0].mem_handle);
 
+    struct cam_csiphy_info *csiphy_info = (struct cam_csiphy_info *)alloc_w_mmu_hdl(s->video0_fd, buf_desc[0].size, (uint32_t*)&buf_desc[0].mem_handle);
     csiphy_info->lane_mask = 0x1f;
     csiphy_info->lane_assign = 0x3210;// skip clk. How is this 16 bit for 5 channels??
     csiphy_info->csiphy_3phase = 0x0; // no 3 phase, only 2 conductors per lane
     csiphy_info->combo_mode = 0x0;
     csiphy_info->lane_cnt = 0x4;
     csiphy_info->secure_mode = 0x0;
-    csiphy_info->settle_time = 2800000000;
-    csiphy_info->data_rate = 44000000;
+    csiphy_info->settle_time = MIPI_SETTLE_CNT * 200000000ULL;
+    csiphy_info->data_rate = 48000000;  // Calculated by camera_freqs.py
 
     static struct cam_config_dev_cmd config_dev_cmd = {};
     config_dev_cmd.session_handle = s->session_handle;
@@ -795,18 +788,18 @@ static void camera_open(CameraState *s) {
 }
 
 void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
-  camera_init(v, &s->rear, CAMERA_ID_AR0231, 1, 20, device_id, ctx,
+  camera_init(v, &s->road_cam, CAMERA_ID_AR0231, 1, 20, device_id, ctx,
               VISION_STREAM_RGB_BACK, VISION_STREAM_YUV_BACK); // swap left/right
-  printf("rear initted \n");
-  camera_init(v, &s->wide, CAMERA_ID_AR0231, 0, 20, device_id, ctx,
+  printf("road camera initted \n");
+  camera_init(v, &s->wide_road_cam, CAMERA_ID_AR0231, 0, 20, device_id, ctx,
               VISION_STREAM_RGB_WIDE, VISION_STREAM_YUV_WIDE);
-  printf("wide initted \n");
-  camera_init(v, &s->front, CAMERA_ID_AR0231, 2, 20, device_id, ctx,
+  printf("wide road camera initted \n");
+  camera_init(v, &s->driver_cam, CAMERA_ID_AR0231, 2, 20, device_id, ctx,
               VISION_STREAM_RGB_FRONT, VISION_STREAM_YUV_FRONT);
-  printf("front initted \n");
+  printf("driver camera initted \n");
 
   s->sm = new SubMaster({"driverState"});
-  s->pm = new PubMaster({"frame", "frontFrame", "wideFrame", "thumbnail"});
+  s->pm = new PubMaster({"roadCameraState", "driverCameraState", "wideRoadCameraState", "thumbnail"});
 }
 
 void cameras_open(MultiCameraState *s) {
@@ -817,19 +810,19 @@ void cameras_open(MultiCameraState *s) {
   s->video0_fd = open("/dev/v4l/by-path/platform-soc:qcom_cam-req-mgr-video-index0", O_RDWR | O_NONBLOCK);
   assert(s->video0_fd >= 0);
   LOGD("opened video0");
-  s->rear.video0_fd = s->front.video0_fd = s->wide.video0_fd = s->video0_fd;
+  s->road_cam.video0_fd = s->driver_cam.video0_fd = s->wide_road_cam.video0_fd = s->video0_fd;
 
   // video1 is cam_sync, the target of some ioctls
   s->video1_fd = open("/dev/v4l/by-path/platform-cam_sync-video-index0", O_RDWR | O_NONBLOCK);
   assert(s->video1_fd >= 0);
   LOGD("opened video1");
-  s->rear.video1_fd = s->front.video1_fd = s->wide.video1_fd = s->video1_fd;
+  s->road_cam.video1_fd = s->driver_cam.video1_fd = s->wide_road_cam.video1_fd = s->video1_fd;
 
   // looks like there's only one of these
   s->isp_fd = open("/dev/v4l-subdev1", O_RDWR | O_NONBLOCK);
   assert(s->isp_fd >= 0);
   LOGD("opened isp");
-  s->rear.isp_fd = s->front.isp_fd = s->wide.isp_fd = s->isp_fd;
+  s->road_cam.isp_fd = s->driver_cam.isp_fd = s->wide_road_cam.isp_fd = s->isp_fd;
 
   // query icp for MMU handles
   LOG("-- Query ICP for MMU handles");
@@ -844,8 +837,8 @@ void cameras_open(MultiCameraState *s) {
   LOGD("using MMU handle: %x", isp_query_cap_cmd.cdm_iommu.non_secure);
   int device_iommu = isp_query_cap_cmd.device_iommu.non_secure;
   int cdm_iommu = isp_query_cap_cmd.cdm_iommu.non_secure;
-  s->rear.device_iommu = s->front.device_iommu = s->wide.device_iommu = device_iommu;
-  s->rear.cdm_iommu = s->front.cdm_iommu = s->wide.cdm_iommu = cdm_iommu;
+  s->road_cam.device_iommu = s->driver_cam.device_iommu = s->wide_road_cam.device_iommu = device_iommu;
+  s->road_cam.cdm_iommu = s->driver_cam.cdm_iommu = s->wide_road_cam.cdm_iommu = cdm_iommu;
 
   // subscribe
   LOG("-- Subscribing");
@@ -855,12 +848,12 @@ void cameras_open(MultiCameraState *s) {
   ret = ioctl(s->video0_fd, VIDIOC_SUBSCRIBE_EVENT, &sub);
   printf("req mgr subscribe: %d\n", ret);
 
-  camera_open(&s->rear);
-  printf("rear opened \n");
-  camera_open(&s->wide);
-  printf("wide opened \n");
-  camera_open(&s->front);
-  printf("front opened \n");
+  camera_open(&s->road_cam);
+  printf("road camera opened \n");
+  camera_open(&s->wide_road_cam);
+  printf("wide road camera opened \n");
+  camera_open(&s->driver_cam);
+  printf("driver camera opened \n");
 }
 
 static void camera_close(CameraState *s) {
@@ -905,10 +898,10 @@ static void camera_close(CameraState *s) {
   LOGD("destroyed session: %d", ret);
 }
 
-static void cameras_close(MultiCameraState *s) {
-  camera_close(&s->rear);
-  camera_close(&s->wide);
-  camera_close(&s->front);
+void cameras_close(MultiCameraState *s) {
+  camera_close(&s->road_cam);
+  camera_close(&s->wide_road_cam);
+  camera_close(&s->driver_cam);
 
   delete s->sm;
   delete s->pm;
@@ -945,11 +938,15 @@ void handle_camera_event(CameraState *s, void *evdat) {
     // metas
     s->frame_id_last = main_id;
     s->request_id_last = real_id;
-    s->buf.camera_bufs_metadata[buf_idx].frame_id = main_id - s->idx_offset;
-    s->buf.camera_bufs_metadata[buf_idx].timestamp_sof = timestamp;
-    s->buf.camera_bufs_metadata[buf_idx].global_gain = s->analog_gain + (100*s->dc_gain_enabled);
-    s->buf.camera_bufs_metadata[buf_idx].gain_frac = s->analog_gain_frac;
-    s->buf.camera_bufs_metadata[buf_idx].integ_lines = s->exposure_time;
+
+    auto &meta_data = s->buf.camera_bufs_metadata[buf_idx];
+    meta_data.frame_id = main_id - s->idx_offset;
+    meta_data.timestamp_sof = timestamp;
+    s->exp_lock.lock();
+    meta_data.global_gain = s->analog_gain + (100*s->dc_gain_enabled);
+    meta_data.gain_frac = s->analog_gain_frac;
+    meta_data.integ_lines = s->exposure_time;
+    s->exp_lock.unlock();
 
     // dispatch
     enqueue_req_multi(s, real_id + FRAME_BUF_COUNT, 1, 1);
@@ -991,7 +988,7 @@ void set_exposure_time_bounds(CameraState *s) {
 void switch_conversion_gain(CameraState *s) {
   if (!s->dc_gain_enabled) {
     s->dc_gain_enabled = true;
-    s->analog_gain -= 5;
+    s->analog_gain -= 4;
   } else {
     s->dc_gain_enabled = false;
     s->analog_gain += 4;
@@ -1000,15 +997,16 @@ void switch_conversion_gain(CameraState *s) {
 
 static void set_camera_exposure(CameraState *s, float grey_frac) {
   // TODO: get stats from sensor?
-  float target_grey = 0.3 - (s->analog_gain / 105.0);
+  float target_grey = 0.4 - ((float)(s->analog_gain + 4*s->dc_gain_enabled) / 48.0f);
   float exposure_factor = 1 + 30 * pow((target_grey - grey_frac), 3);
-  exposure_factor = std::max(exposure_factor, 0.55f);
+  exposure_factor = std::max(exposure_factor, 0.56f);
 
   if (s->camera_num != 1) {
     s->ef_filtered = (1 - EF_LOWPASS_K) * s->ef_filtered + EF_LOWPASS_K * exposure_factor;
     exposure_factor = s->ef_filtered;
   }
 
+  s->exp_lock.lock();
   // always prioritize exposure time adjust
   s->exposure_time *= exposure_factor;
 
@@ -1023,7 +1021,7 @@ static void set_camera_exposure(CameraState *s, float grey_frac) {
     if (s->analog_gain < ANALOG_GAIN_MAX_IDX - 1) {
       s->exposure_time = EXPOSURE_TIME_MAX / 2;
       s->analog_gain += 1;
-      if (!s->dc_gain_enabled && sensor_analog_gains[s->analog_gain] == 1.0) { // switch to HCG at iso 800
+      if (!s->dc_gain_enabled && sensor_analog_gains[s->analog_gain] >= 4.0) { // switch to HCG
         switch_conversion_gain(s);
       }
       set_exposure_time_bounds(s);
@@ -1034,7 +1032,7 @@ static void set_camera_exposure(CameraState *s, float grey_frac) {
     if (s->analog_gain > 0) {
       s->exposure_time = std::max(EXPOSURE_TIME_MIN * 2, (int)(s->exposure_time / (sensor_analog_gains[s->analog_gain-1] / sensor_analog_gains[s->analog_gain])));
       s->analog_gain -= 1;
-      if (s->dc_gain_enabled && sensor_analog_gains[s->analog_gain] == 0.25) { // switch back to LCG at iso 200
+      if (s->dc_gain_enabled && sensor_analog_gains[s->analog_gain] <= 1.25) { // switch back to LCG
         switch_conversion_gain(s);
       }
       set_exposure_time_bounds(s);
@@ -1044,20 +1042,23 @@ static void set_camera_exposure(CameraState *s, float grey_frac) {
   }
 
   // set up config
-  uint16_t AG = s->analog_gain;
-  AG = AG * 4096 + AG * 256 + AG * 16 + AG;
+  uint16_t AG = s->analog_gain + 4;
+  AG = 0xFF00 + AG * 16 + AG;
   s->analog_gain_frac = sensor_analog_gains[s->analog_gain];
 
+  s->exp_lock.unlock();
   // printf("cam %d, min %d, max %d \n", s->camera_num, s->exposure_time_min, s->exposure_time_max);
   // printf("cam %d, set AG to 0x%X, S to %d, dc %d \n", s->camera_num, AG, s->exposure_time, s->dc_gain_enabled);
 
-  struct i2c_random_wr_payload exp_reg_array[] = {{0x3366, AG}, // analog gain
+  struct i2c_random_wr_payload exp_reg_array[] = {
+                                                  {0x3366, AG}, // analog gain
                                                   {0x3362, (uint16_t)(s->dc_gain_enabled?0x1:0x0)}, // DC_GAIN
-                                                  {0x305A, 0x00D8}, // red gain
-                                                  {0x3058, 0x011B}, // blue gain
+                                                  {0x305A, 0x00F8}, // red gain
+                                                  {0x3058, 0x0122}, // blue gain
                                                   {0x3056, 0x009A}, // g1 gain
                                                   {0x305C, 0x009A}, // g2 gain
-                                                  {0x3012, (uint16_t)s->exposure_time}}; // integ time
+                                                  {0x3012, (uint16_t)s->exposure_time}, // integ time
+                                                 };
                                                   //{0x301A, 0x091C}}; // reset
   sensors_i2c(s, exp_reg_array, sizeof(exp_reg_array)/sizeof(struct i2c_random_wr_payload),
                CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
@@ -1071,7 +1072,7 @@ void camera_autoexposure(CameraState *s, float grey_frac) {
 }
 
 static void ae_thread(MultiCameraState *s) {
-  CameraState *c_handles[3] = {&s->wide, &s->rear, &s->front};
+  CameraState *c_handles[3] = {&s->wide_road_cam, &s->road_cam, &s->driver_cam};
 
   int op_id_last[3] = {0};
   CameraExpInfo cam_op[3];
@@ -1091,29 +1092,29 @@ static void ae_thread(MultiCameraState *s) {
   }
 }
 
-void camera_process_front(MultiCameraState *s, CameraState *c, int cnt) {
-  common_camera_process_front(s->sm, s->pm, c, cnt);
+void process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) {
+  common_process_driver_camera(s->sm, s->pm, c, cnt);
 }
 
 // called by processing_thread
-void camera_process_frame(MultiCameraState *s, CameraState *c, int cnt) {
+void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
   const CameraBuf *b = &c->buf;
 
   MessageBuilder msg;
-  auto framed = c == &s->rear ? msg.initEvent().initFrame() : msg.initEvent().initWideFrame();
-  fill_frame_data(framed, b->cur_frame_data, cnt);
-  if ((c == &s->rear && env_send_rear) || (c == &s->wide && env_send_wide)) {
-    fill_frame_image(framed, b);
+  auto framed = c == &s->road_cam ? msg.initEvent().initRoadCameraState() : msg.initEvent().initWideRoadCameraState();
+  fill_frame_data(framed, b->cur_frame_data);
+  if ((c == &s->road_cam && env_send_road) || (c == &s->wide_road_cam && env_send_wide_road)) {
+    framed.setImage(get_frame_image(b));
   }
-  if (c == &s->rear) {
+  if (c == &s->road_cam) {
     framed.setTransform(b->yuv_transform.v);
   }
-  s->pm->send(c == &s->rear ? "frame" : "wideFrame", msg);
+  s->pm->send(c == &s->road_cam ? "roadCameraState" : "wideRoadCameraState", msg);
 
   if (cnt % 3 == 0) {
-    const auto [x, y, w, h] = (c == &s->wide) ? std::tuple(96, 250, 1734, 524) : std::tuple(96, 160, 1734, 986);
+    const auto [x, y, w, h] = (c == &s->wide_road_cam) ? std::tuple(96, 250, 1734, 524) : std::tuple(96, 160, 1734, 986);
     const int skip = 2;
-    set_exposure_target(c, (const uint8_t *)b->cur_yuv_buf->y, x, x + w, skip, y, y + h, skip);
+    camera_autoexposure(c, set_exposure_target(b, x, x + w, skip, y, y + h, skip, (int)c->analog_gain, true, true));
   }
 }
 
@@ -1121,16 +1122,16 @@ void cameras_run(MultiCameraState *s) {
   LOG("-- Starting threads");
   std::vector<std::thread> threads;
   threads.push_back(std::thread(ae_thread, s));
-  threads.push_back(start_process_thread(s, "processing", &s->rear, camera_process_frame));
-  threads.push_back(start_process_thread(s, "frontview", &s->front, camera_process_front));
-  threads.push_back(start_process_thread(s, "wideview", &s->wide, camera_process_frame));
+  threads.push_back(start_process_thread(s, &s->road_cam, process_road_camera));
+  threads.push_back(start_process_thread(s, &s->driver_cam, process_driver_camera));
+  threads.push_back(start_process_thread(s, &s->wide_road_cam, process_road_camera));
 
   // start devices
   LOG("-- Starting devices");
   int start_reg_len = sizeof(start_reg_array) / sizeof(struct i2c_random_wr_payload);
-  sensors_i2c(&s->rear, start_reg_array, start_reg_len, CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
-  sensors_i2c(&s->wide, start_reg_array, start_reg_len, CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
-  sensors_i2c(&s->front, start_reg_array, start_reg_len, CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
+  sensors_i2c(&s->road_cam, start_reg_array, start_reg_len, CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
+  sensors_i2c(&s->wide_road_cam, start_reg_array, start_reg_len, CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
+  sensors_i2c(&s->driver_cam, start_reg_array, start_reg_len, CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
 
   // poll events
   LOG("-- Dequeueing Video events");
@@ -1156,12 +1157,12 @@ void cameras_run(MultiCameraState *s) {
       // LOGD("v4l2 event: sess_hdl %d, link_hdl %d, frame_id %d, req_id %lld, timestamp 0x%llx, sof_status %d\n", event_data->session_hdl, event_data->u.frame_msg.link_hdl, event_data->u.frame_msg.frame_id, event_data->u.frame_msg.request_id, event_data->u.frame_msg.timestamp, event_data->u.frame_msg.sof_status);
       // printf("sess_hdl %d, link_hdl %d, frame_id %lu, req_id %lu, timestamp 0x%lx, sof_status %d\n", event_data->session_hdl, event_data->u.frame_msg.link_hdl, event_data->u.frame_msg.frame_id, event_data->u.frame_msg.request_id, event_data->u.frame_msg.timestamp, event_data->u.frame_msg.sof_status);
 
-      if (event_data->session_hdl == s->rear.req_mgr_session_info.session_hdl) {
-        handle_camera_event(&s->rear, event_data);
-      } else if (event_data->session_hdl == s->wide.req_mgr_session_info.session_hdl) {
-        handle_camera_event(&s->wide, event_data);
-      } else if (event_data->session_hdl == s->front.req_mgr_session_info.session_hdl) {
-        handle_camera_event(&s->front, event_data);
+      if (event_data->session_hdl == s->road_cam.req_mgr_session_info.session_hdl) {
+        handle_camera_event(&s->road_cam, event_data);
+      } else if (event_data->session_hdl == s->wide_road_cam.req_mgr_session_info.session_hdl) {
+        handle_camera_event(&s->wide_road_cam, event_data);
+      } else if (event_data->session_hdl == s->driver_cam.req_mgr_session_info.session_hdl) {
+        handle_camera_event(&s->driver_cam, event_data);
       } else {
         printf("Unknown vidioc event source\n");
         assert(false);

@@ -1,3 +1,6 @@
-Import('envCython')
+Import('env', 'envCython')
+
+transformations = env.Library('transformations', ['orientation.cc', 'coordinates.cc'])
+Export('transformations')
 
 envCython.Program('transformations.so', 'transformations.pyx')

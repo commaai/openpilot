@@ -8,15 +8,15 @@ import unittest
 from collections import defaultdict
 from pathlib import Path
 
-from cereal import log
 import cereal.messaging as messaging
+from cereal import log
 from cereal.services import service_list
 from common.basedir import BASEDIR
-from common.timeout import Timeout
 from common.params import Params
-import selfdrive.manager as manager
-from selfdrive.hardware import TICI, PC
+from common.timeout import Timeout
+from selfdrive.hardware import PC, TICI
 from selfdrive.loggerd.config import ROOT
+from selfdrive.manager.process_config import managed_processes
 from selfdrive.test.helpers import with_processes
 from selfdrive.version import version as VERSION
 from tools.lib.logreader import LogReader
@@ -26,8 +26,8 @@ SentinelType = log.Sentinel.SentinelType
 CEREAL_SERVICES = [f for f in log.Event.schema.union_fields if f in service_list
                    and service_list[f].should_log and "encode" not in f.lower()]
 
-class TestLoggerd(unittest.TestCase):
 
+class TestLoggerd(unittest.TestCase):
   # TODO: all tests should work on PC
   @classmethod
   def setUpClass(cls):
@@ -45,15 +45,23 @@ class TestLoggerd(unittest.TestCase):
         return path
     return None
 
+  def _get_log_fn(self, x):
+    for p in x.split(' '):
+      path = Path(p.strip())
+      if path.is_file():
+        return path
+    return None
+
   def _gen_bootlog(self):
     with Timeout(5):
       out = subprocess.check_output("./bootlog", cwd=os.path.join(BASEDIR, "selfdrive/loggerd"), encoding='utf-8')
 
+    log_fn = self._get_log_fn(out)
+
     # check existence
-    d = self._get_log_dir(out)
-    path = Path(os.path.join(d, "bootlog.bz2"))
-    assert path.is_file(), "failed to create bootlog file"
-    return path
+    assert log_fn is not None
+
+    return log_fn
 
   def _check_init_data(self, msgs):
     msg = msgs[0]
@@ -110,9 +118,9 @@ class TestLoggerd(unittest.TestCase):
       length = random.randint(2, 5)
       os.environ["LOGGERD_SEGMENT_LENGTH"] = str(length)
 
-      manager.start_managed_process("loggerd")
-      time.sleep(num_segs * length)
-      manager.kill_managed_process("loggerd")
+      managed_processes["loggerd"].start()
+      time.sleep((num_segs + 1) * length)
+      managed_processes["loggerd"].stop()
 
       route_path = str(self._get_latest_log_dir()).rsplit("--", 1)[0]
       for n in range(num_segs):
@@ -131,11 +139,9 @@ class TestLoggerd(unittest.TestCase):
     lr = list(LogReader(str(bootlog_path)))
 
     # check length
-    assert len(lr) == 4 # boot + initData + 2x sentinel
-    
-    # check initData and sentinel
+    assert len(lr) == 2  # boot + initData
+
     self._check_init_data(lr)
-    self._check_sentinel(lr, True)
 
     # check msgs
     bootlog_msgs = [m for m in lr if m.which() == 'boot']
@@ -157,14 +163,14 @@ class TestLoggerd(unittest.TestCase):
     qlog_services = [s for s in CEREAL_SERVICES if service_list[s].decimation is not None]
     no_qlog_services = [s for s in CEREAL_SERVICES if service_list[s].decimation is None]
 
-    services = random.sample(qlog_services, random.randint(2, 10)) + \
-               random.sample(no_qlog_services, random.randint(2, 10))
+    services = random.sample(qlog_services, random.randint(2, min(10, len(qlog_services)))) + \
+               random.sample(no_qlog_services, random.randint(2, min(10, len(no_qlog_services))))
 
     pm = messaging.PubMaster(services)
 
     # sleep enough for the first poll to time out
     # TOOD: fix loggerd bug dropping the msgs from the first poll
-    manager.start_managed_process("loggerd")
+    managed_processes["loggerd"].start()
     time.sleep(2)
 
     sent_msgs = defaultdict(list)
@@ -179,7 +185,7 @@ class TestLoggerd(unittest.TestCase):
       time.sleep(0.01)
 
     time.sleep(1)
-    manager.kill_managed_process("loggerd")
+    managed_processes["loggerd"].stop()
 
     qlog_path = os.path.join(self._get_latest_log_dir(), "qlog.bz2")
     lr = list(LogReader(qlog_path))
@@ -209,7 +215,7 @@ class TestLoggerd(unittest.TestCase):
 
     # sleep enough for the first poll to time out
     # TOOD: fix loggerd bug dropping the msgs from the first poll
-    manager.start_managed_process("loggerd")
+    managed_processes["loggerd"].start()
     time.sleep(2)
 
     sent_msgs = defaultdict(list)
@@ -224,7 +230,7 @@ class TestLoggerd(unittest.TestCase):
       time.sleep(0.01)
 
     time.sleep(1)
-    manager.kill_managed_process("loggerd")
+    managed_processes["loggerd"].stop()
 
     lr = list(LogReader(os.path.join(self._get_latest_log_dir(), "rlog.bz2")))
 

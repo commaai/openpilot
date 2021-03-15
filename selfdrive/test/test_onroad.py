@@ -6,6 +6,7 @@ import unittest
 from pathlib import Path
 
 import cereal.messaging as messaging
+from cereal.services import service_list
 from common.basedir import BASEDIR
 from common.timeout import Timeout
 from selfdrive.loggerd.config import ROOT
@@ -18,29 +19,28 @@ PROCS = [
   ("selfdrive.locationd.locationd", 35.0),
   ("selfdrive.controls.plannerd", 20.0),
   ("selfdrive.locationd.paramsd", 12.0),
-  ("./_modeld", 7.12),
   ("./camerad", 7.07),
   ("./_sensord", 6.17),
   ("./_ui", 5.82),
   ("selfdrive.controls.radard", 5.67),
+  ("./_modeld", 4.48),
   ("./boardd", 3.63),
   ("./_dmonitoringmodeld", 2.67),
-  ("selfdrive.logmessaged", 1.7),
   ("selfdrive.thermald.thermald", 2.41),
   ("selfdrive.locationd.calibrationd", 2.0),
   ("selfdrive.monitoring.dmonitoringd", 1.90),
   ("./proclogd", 1.54),
-  ("./_gpsd", 0.09),
+  ("selfdrive.logmessaged", 0.2),
   ("./clocksd", 0.02),
   ("./ubloxd", 0.02),
   ("selfdrive.tombstoned", 0),
   ("./logcatd", 0),
 ]
 
-# ***** test helpers *****
 
 def cputime_total(ct):
   return ct.cpuUser + ct.cpuSystem + ct.cpuChildrenUser + ct.cpuChildrenSystem
+
 
 def check_cpu_usage(first_proc, last_proc):
   result =  "------------------------------------------------\n"
@@ -83,30 +83,36 @@ class TestOnroad(unittest.TestCase):
 
     # start manager and run openpilot for a minute
     try:
-      manager_path = os.path.join(BASEDIR, "selfdrive/manager.py")
+      manager_path = os.path.join(BASEDIR, "selfdrive/manager/manager.py")
       proc = subprocess.Popen(["python", manager_path])
 
       sm = messaging.SubMaster(['carState'])
-      with Timeout(60, "controls didn't start"):
-        while not sm.updated['carState']:
+      with Timeout(150, "controls didn't start"):
+        while sm.rcv_frame['carState'] < 0:
           sm.update(1000)
 
-      time.sleep(60)
+      # make sure we get at least two full segments
+      cls.segments = []
+      with Timeout(300, "timed out waiting for logs"):
+        while len(cls.segments) < 3:
+          new_paths = set(Path(ROOT).iterdir()) - initial_segments
+          segs = [p for p in new_paths if "--" in str(p)]
+          cls.segments = sorted(segs, key=lambda s: int(str(s).rsplit('--')[-1]))
+          time.sleep(5)
+
     finally:
       proc.terminate()
-      if proc.wait(20) is None:
+      if proc.wait(60) is None:
         proc.kill()
 
-    new_segments = set(Path(ROOT).iterdir()) - initial_segments
-
-    segments = [p for p in new_segments if len(list(p.iterdir())) > 1]
-    cls.segment = [s for s in segments if str(s).endswith("--0")][0]
-    cls.lr = list(LogReader(os.path.join(str(cls.segment), "rlog.bz2")))
+    cls.lr = list(LogReader(os.path.join(str(cls.segments[1]), "rlog.bz2")))
 
   def test_cpu_usage(self):
     proclogs = [m for m in self.lr if m.which() == 'procLog']
-    cpu_ok = check_cpu_usage(proclogs[5], proclogs[-3])
+    self.assertGreater(len(proclogs), service_list['procLog'].frequency * 45, "insufficient samples")
+    cpu_ok = check_cpu_usage(proclogs[0], proclogs[-1])
     self.assertTrue(cpu_ok)
+
 
 if __name__ == "__main__":
   unittest.main()

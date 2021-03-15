@@ -43,7 +43,7 @@ class CarState(CarStateBase):
     can_gear = int(cp.vl["Transmission"]['Gear'])
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(can_gear, None))
 
-    ret.steeringAngle = cp.vl["Steering_Torque"]['Steering_Angle']
+    ret.steeringAngleDeg = cp.vl["Steering_Torque"]['Steering_Angle']
     ret.steeringTorque = cp.vl["Steering_Torque"]['Steer_Torque_Sensor']
     ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD[self.car_fingerprint]
 

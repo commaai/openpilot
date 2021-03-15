@@ -21,10 +21,10 @@
 
 #include "common/mat.h"
 #include "common/visionimg.h"
-#include "common/framebuffer.h"
 #include "common/modeldata.h"
 #include "common/params.h"
 #include "common/glutil.h"
+#include "common/transformations/orientation.hpp"
 #include "sound.hpp"
 #include "visionipc.h"
 #include "visionipc_client.h"
@@ -58,11 +58,6 @@ const Rect home_btn = {60, 1080 - 180 - 40, 180, 180};
 
 const int UI_FREQ = 20;   // Hz
 
-const int MODEL_PATH_MAX_VERTICES_CNT = TRAJECTORY_SIZE*2;
-const int TRACK_POINTS_MAX_CNT = TRAJECTORY_SIZE*4;
-
-const int SET_SPEED_NA = 255;
-
 typedef enum NetStatus {
   NET_CONNECTED,
   NET_DISCONNECTED,
@@ -78,7 +73,7 @@ typedef enum UIStatus {
 } UIStatus;
 
 static std::map<UIStatus, NVGcolor> bg_colors = {
-#ifdef QCOM
+#ifndef QT_GUI_LIB
   {STATUS_OFFROAD, nvgRGBA(0x07, 0x23, 0x39, 0xf1)},
 #else
   {STATUS_OFFROAD, nvgRGBA(0x0, 0x0, 0x0, 0xff)},
@@ -94,25 +89,17 @@ typedef struct {
 } vertex_data;
 
 typedef struct {
-  vertex_data v[MODEL_PATH_MAX_VERTICES_CNT];
+  vertex_data v[TRAJECTORY_SIZE * 2];
   int cnt;
 } line_vertices_data;
 
-typedef struct {
-  vertex_data v[TRACK_POINTS_MAX_CNT];
-  int cnt;
-} track_vertices_data;
-
 typedef struct UIScene {
 
-  mat4 extrinsic_matrix;      // Last row is 0 so we can use mat4.
+  mat3 view_from_calib;
   bool world_objects_visible;
 
   bool is_rhd;
-  bool frontview;
-  bool sidebar_collapsed;
-  // responsive layout
-  Rect viz_rect;
+  bool driver_view;
 
   std::string alert_text1;
   std::string alert_text2;
@@ -120,22 +107,33 @@ typedef struct UIScene {
   float alert_blinking_rate;
   cereal::ControlsState::AlertSize alert_size;
 
-  cereal::HealthData::HwType hwType;
-  int satelliteCount;
+  cereal::PandaState::PandaType pandaType;
   NetStatus athenaStatus;
 
-  cereal::ThermalData::Reader thermal;
+  cereal::DeviceState::Reader deviceState;
   cereal::RadarState::LeadData::Reader lead_data[2];
+  cereal::CarState::Reader car_state;
   cereal::ControlsState::Reader controls_state;
   cereal::DriverState::Reader driver_state;
-  cereal::DMonitoringState::Reader dmonitoring_state;
+  cereal::DriverMonitoringState::Reader dmonitoring_state;
+
+  // gps
+  int satelliteCount;
+  bool gpsOK;
 
   // modelV2
   float lane_line_probs[4];
   float road_edge_stds[2];
-  track_vertices_data track_vertices;
+  line_vertices_data track_vertices;
   line_vertices_data lane_line_vertices[4];
   line_vertices_data road_edge_vertices[2];
+
+  // lead
+  vertex_data lead_vertices[2];
+
+  float light_sensor, accel_sensor, gyro_sensor;
+  bool started, ignition, is_metric, longitudinal_control;
+  uint64_t started_frame;
 } UIScene;
 
 typedef struct UIState {
@@ -145,7 +143,6 @@ typedef struct UIState {
   VisionBuf * last_frame;
 
   // framebuffer
-  FramebufferState *fb;
   int fb_w, fb_h;
 
   // NVG
@@ -170,15 +167,9 @@ typedef struct UIState {
 
   // device state
   bool awake;
-  float light_sensor, accel_sensor, gyro_sensor;
 
-  bool started;
-  bool ignition;
-  bool is_metric;
-  bool longitudinal_control;
-  uint64_t started_frame;
-
-  Rect video_rect;
+  bool sidebar_collapsed;
+  Rect video_rect, viz_rect;
   float car_space_transform[6];
 } UIState;
 

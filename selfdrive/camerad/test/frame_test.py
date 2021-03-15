@@ -19,18 +19,18 @@ if __name__ == "__main__":
   from common.realtime import Ratekeeper
   rk = Ratekeeper(20)
 
-  pm = messaging.PubMaster(['frame'])
+  pm = messaging.PubMaster(['roadCameraState'])
   frm = [get_frame(x) for x in range(30)]
   idx = 0
   while 1:
     print("send %d" % idx)
-    dat = messaging.new_message('frame')
+    dat = messaging.new_message('roadCameraState')
     dat.valid = True
     dat.frame = {
       "frameId": idx,
       "image": frm[idx % len(frm)],
     }
-    pm.send('frame', dat)
+    pm.send('roadCameraState', dat)
 
     idx += 1
     rk.keep_time()

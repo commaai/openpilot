@@ -1,5 +1,24 @@
-Version 0.8.2 (2021-XX-XX)
+Version 0.8.3 (2021-XX-XX)
 ========================
+ * Kia Ceed 2019 support thanks to ZanZaD13!
+ * Kia Seltos 2021 support thanks to speedking456!
+ * NEOS update: update packages and support for new UI
+ * Default SSH key only used for setup
+
+Version 0.8.2 (2021-02-26)
+========================
+ * Use model points directly in MPC (no more polyfits), making lateral planning more accurate
+ * Use model heading prediction for smoother lateral control
+ * Smarter actuator delay compensation
+ * Improve qcamera resolution for improved video in explorer and connect
+ * Adjust maximum engagement speed to better fit the model's training distribution
+ * New driver monitoring model trained with 3x more diverse data
+ * Improved face detection with masks
+ * More predictable DM alerts when visibility is bad
+ * Rewritten video streaming between openpilot processes
+ * Improved longitudinal tuning on TSS2 Corolla and Rav4 thanks to briskspirit!
+ * Audi A3 2015 and 2017 support thanks to keeleysam!
+ * Nissan Altima 2020 support thanks to avolmensky!
  * Lexus ES Hybrid 2018 support thanks to TheInventorMan!
  * Toyota Camry Hybrid 2021 support thanks to alancyau!
 

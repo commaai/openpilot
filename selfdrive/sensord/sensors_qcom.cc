@@ -49,7 +49,7 @@ void sensor_loop() {
   bool low_power_mode = false;
 
   while (!do_exit) {
-    SubMaster sm({"thermal"});
+    SubMaster sm({"deviceState"});
     PubMaster pm({"sensorEvents"});
 
     struct sensors_poll_device_t* device;
@@ -198,7 +198,7 @@ void sensor_loop() {
 
       // Check whether to go into low power mode at 5Hz
       if (frame % 20 == 0 && sm.update(0) > 0) {
-        bool offroad = !sm["thermal"].getThermal().getStarted();
+        bool offroad = !sm["deviceState"].getDeviceState().getStarted();
         if (low_power_mode != offroad) {
           for (auto &s : sensors) {
             device->activate(device, s.first, 0);

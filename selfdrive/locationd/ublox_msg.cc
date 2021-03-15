@@ -192,7 +192,7 @@ kj::Array<capnp::word> UbloxMsgParser::gen_solution() {
   gpsLoc.setLongitude(msg->lon * 1e-07);
   gpsLoc.setAltitude(msg->height * 1e-03);
   gpsLoc.setSpeed(msg->gSpeed * 1e-03);
-  gpsLoc.setBearing(msg->headMot * 1e-5);
+  gpsLoc.setBearingDeg(msg->headMot * 1e-5);
   gpsLoc.setAccuracy(msg->hAcc * 1e-03);
   std::tm timeinfo = std::tm();
   timeinfo.tm_year = msg->year - 1900;
@@ -207,7 +207,7 @@ kj::Array<capnp::word> UbloxMsgParser::gen_solution() {
   gpsLoc.setVNED(f);
   gpsLoc.setVerticalAccuracy(msg->vAcc * 1e-03);
   gpsLoc.setSpeedAccuracy(msg->sAcc * 1e-03);
-  gpsLoc.setBearingAccuracy(msg->headAcc * 1e-05);
+  gpsLoc.setBearingAccuracyDeg(msg->headAcc * 1e-05);
   return capnp::messageToFlatArray(msg_builder);
 }
 
@@ -332,6 +332,40 @@ kj::Array<capnp::word> UbloxMsgParser::gen_mon_hw() {
   hwStatus.setAStatus((cereal::UbloxGnss::HwStatus::AntennaSupervisorState) msg->aStatus);
   hwStatus.setAPower((cereal::UbloxGnss::HwStatus::AntennaPowerStatus) msg->aPower);
   hwStatus.setJamInd(msg->jamInd);
+  return capnp::messageToFlatArray(msg_builder);
+}
+
+kj::Array<capnp::word> UbloxMsgParser::gen_mon_hw2() {
+  mon_hw2_msg *msg = (mon_hw2_msg *)&msg_parse_buf[UBLOX_HEADER_SIZE];
+
+  MessageBuilder msg_builder;
+  auto hwStatus = msg_builder.initEvent().initUbloxGnss().initHwStatus2();
+  hwStatus.setOfsI(msg->ofsI);
+  hwStatus.setMagI(msg->magI);
+  hwStatus.setOfsQ(msg->ofsQ);
+  hwStatus.setMagQ(msg->magQ);
+
+  switch (msg->cfgSource) {
+    case 114:
+      hwStatus.setCfgSource(cereal::UbloxGnss::HwStatus2::ConfigSource::ROM);
+      break;
+    case 111:
+      hwStatus.setCfgSource(cereal::UbloxGnss::HwStatus2::ConfigSource::OTP);
+      break;
+    case 112:
+      hwStatus.setCfgSource(cereal::UbloxGnss::HwStatus2::ConfigSource::CONFIGPINS);
+      break;
+    case 102:
+      hwStatus.setCfgSource(cereal::UbloxGnss::HwStatus2::ConfigSource::FLASH);
+      break;
+    default:
+      hwStatus.setCfgSource(cereal::UbloxGnss::HwStatus2::ConfigSource::UNDEFINED);
+      break;
+  }
+
+  hwStatus.setLowLevCfg(msg->lowLevCfg);
+  hwStatus.setPostStatus(msg->postStatus);
+
   return capnp::messageToFlatArray(msg_builder);
 }
 

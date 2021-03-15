@@ -69,8 +69,6 @@ selfdrive/__init__.py
 selfdrive/registration.py
 selfdrive/config.py
 selfdrive/crash.py
-selfdrive/launcher.py
-selfdrive/manager.py
 selfdrive/swaglog.py
 selfdrive/logmessaged.py
 selfdrive/tombstoned.py
@@ -193,12 +191,13 @@ selfdrive/common/swaglog.h
 selfdrive/common/swaglog.cc
 selfdrive/common/util.cc
 selfdrive/common/util.h
-selfdrive/common/cqueue.[c,h]
+selfdrive/common/queue.h
 selfdrive/common/clutil.cc
 selfdrive/common/clutil.h
 selfdrive/common/params.h
 selfdrive/common/params.cc
-selfdrive/common/mutex.h
+selfdrive/common/watchdog.cc
+selfdrive/common/watchdog.h
 
 selfdrive/common/modeldata.h
 selfdrive/common/mat.h
@@ -225,11 +224,12 @@ selfdrive/controls/lib/drive_helpers.py
 selfdrive/controls/lib/latcontrol_pid.py
 selfdrive/controls/lib/latcontrol_indi.py
 selfdrive/controls/lib/latcontrol_lqr.py
+selfdrive/controls/lib/latcontrol_angle.py
 selfdrive/controls/lib/longcontrol.py
-selfdrive/controls/lib/pathplanner.py
+selfdrive/controls/lib/lateral_planner.py
 selfdrive/controls/lib/lane_planner.py
 selfdrive/controls/lib/pid.py
-selfdrive/controls/lib/planner.py
+selfdrive/controls/lib/longitudinal_planner.py
 selfdrive/controls/lib/radar_helpers.py
 selfdrive/controls/lib/vehicle_model.py
 selfdrive/controls/lib/speed_smoother.py
@@ -265,6 +265,7 @@ selfdrive/controls/lib/longitudinal_mpc_model/longitudinal_mpc.c
 
 selfdrive/hardware/__init__.py
 selfdrive/hardware/base.py
+selfdrive/hardware/hw.h
 selfdrive/hardware/eon/__init__.py
 selfdrive/hardware/eon/apk.py
 selfdrive/hardware/eon/hardware.py
@@ -272,6 +273,7 @@ selfdrive/hardware/tici/__init__.py
 selfdrive/hardware/tici/hardware.py
 selfdrive/hardware/tici/pins.py
 selfdrive/hardware/tici/agnos.py
+selfdrive/hardware/tici/agnos.json
 selfdrive/hardware/pc/__init__.py
 selfdrive/hardware/pc/hardware.py
 
@@ -319,14 +321,12 @@ selfdrive/loggerd/deleter.py
 selfdrive/loggerd/xattr_cache.py
 
 selfdrive/sensord/SConscript
-selfdrive/sensord/gpsd.cc
 selfdrive/sensord/libdiag.h
 selfdrive/sensord/sensors_qcom.cc
 selfdrive/sensord/sensors_qcom2.cc
 selfdrive/sensord/sensors/*.cc
 selfdrive/sensord/sensors/*.hpp
 selfdrive/sensord/sensord
-selfdrive/sensord/gpsd
 
 selfdrive/thermald/thermald.py
 selfdrive/thermald/power_monitoring.py
@@ -335,7 +335,6 @@ selfdrive/test/__init__.py
 selfdrive/test/helpers.py
 selfdrive/test/setup_device_ci.sh
 selfdrive/test/test_fingerprints.py
-selfdrive/test/test_manager.py
 
 selfdrive/ui/SConscript
 selfdrive/ui/*.cc
@@ -372,8 +371,11 @@ selfdrive/camerad/cameras/camera_frame_stream.cc
 selfdrive/camerad/cameras/camera_frame_stream.h
 selfdrive/camerad/cameras/camera_qcom.cc
 selfdrive/camerad/cameras/camera_qcom.h
+selfdrive/camerad/cameras/camera_qcom2.cc
+selfdrive/camerad/cameras/camera_qcom2.h
 selfdrive/camerad/cameras/debayer.cl
 selfdrive/camerad/cameras/sensor_i2c.h
+selfdrive/camerad/cameras/sensor2_i2c.h
 
 selfdrive/camerad/transforms/rgb_to_yuv.cc
 selfdrive/camerad/transforms/rgb_to_yuv.h
@@ -384,6 +386,15 @@ selfdrive/camerad/imgproc/conv.cl
 selfdrive/camerad/imgproc/pool.cl
 selfdrive/camerad/imgproc/utils.cc
 selfdrive/camerad/imgproc/utils.h
+
+selfdrive/manager/__init__.py
+selfdrive/manager/build.py
+selfdrive/manager/helpers.py
+selfdrive/manager/manager.py
+selfdrive/manager/process_config.py
+selfdrive/manager/process.py
+selfdrive/manager/test/__init__.py
+selfdrive/manager/test/test_manager.py
 
 selfdrive/modeld/SConscript
 selfdrive/modeld/modeld.cc
@@ -446,9 +457,11 @@ phonelibs/qrcode/*.hpp
 
 phonelibs/libyuv/include/**
 phonelibs/libyuv/lib/**
+phonelibs/libyuv/larch64/**
 
 phonelibs/snpe/include/**
 phonelibs/snpe/aarch64**
+phonelibs/snpe/larch64**
 phonelibs/snpe/dsp**
 
 phonelibs/android_frameworks_native/**
@@ -470,9 +483,9 @@ rednose/**
 cereal/.gitignore
 cereal/__init__.py
 cereal/car.capnp
+cereal/legacy.capnp
 cereal/log.capnp
 cereal/services.py
-cereal/service_list.yaml
 cereal/SConscript
 cereal/include/**
 cereal/messaging/.gitignore
@@ -489,8 +502,12 @@ cereal/messaging/messaging_pyx.pyx
 cereal/messaging/msgq.cc
 cereal/messaging/msgq.hpp
 cereal/messaging/socketmaster.cc
+cereal/visionipc/.gitignore
+cereal/visionipc/__init__.py
 cereal/visionipc/*.cc
 cereal/visionipc/*.h
+cereal/visionipc/*.pyx
+cereal/visionipc/*.pxd
 
 panda/.gitignore
 panda/__init__.py

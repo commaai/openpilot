@@ -1,23 +1,25 @@
 #!/usr/bin/env python3
 import json
 import os
-import requests
 import signal
 import subprocess
 import time
 
-os.environ['FAKEUPLOAD'] = "1"
+import requests
 
+from selfdrive.manager.process_config import managed_processes
 from common.params import Params
 from common.realtime import sec_since_boot
-import selfdrive.manager as manager
 from selfdrive.test.helpers import with_processes
+
+os.environ['FAKEUPLOAD'] = "1"
 
 
 def test_athena():
   print("ATHENA")
   start = sec_since_boot()
-  manager.start_daemon_process("manage_athenad")
+  managed_processes['manage_athenad'].start()
+
   params = Params()
   manage_athenad_pid = params.get("AthenadPid")
   assert manage_athenad_pid is not None
@@ -107,18 +109,18 @@ def test_athena():
     assert resp.get('result'), resp
     assert resp['result']['jpegBack'], resp['result']
 
-    @with_processes(["thermald"])
-    def test_athena_thermal():
-      print("ATHENA: getMessage(thermal)")
+    @with_processes(["deviceStated"])
+    def test_athena_deviceState():
+      print("ATHENA: getMessage(deviceState)")
       resp = athena_post({
         "method": "getMessage",
-        "params": {"service": "thermal", "timeout": 5000},
+        "params": {"service": "deviceState", "timeout": 5000},
         "id": 0,
         "jsonrpc": "2.0"
       })
       assert resp.get('result'), resp
-      assert resp['result']['thermal'], resp['result']
-    test_athena_thermal()
+      assert resp['result']['deviceState'], resp['result']
+    test_athena_deviceState()
   finally:
     try:
       athenad_pid = subprocess.check_output(["pgrep", "-P", manage_athenad_pid], encoding="utf-8").strip()

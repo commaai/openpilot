@@ -5,6 +5,8 @@
 #include <string>
 #include <string.h>
 #include <errno.h>
+#include "common/timing.h"
+#include "common/clutil.h"
 #include "thneed.h"
 
 //#define RUN_DISASSEMBLER
@@ -15,12 +17,6 @@ int g_fd = -1;
 map<pair<cl_kernel, int>, string> g_args;
 map<pair<cl_kernel, int>, int> g_args_size;
 map<cl_program, string> g_program_source;
-
-static inline uint64_t nanos_since_boot() {
-  struct timespec t;
-  clock_gettime(CLOCK_BOOTTIME, &t);
-  return t.tv_sec * 1000000000ULL + t.tv_nsec;
-}
 
 void hexdump(uint32_t *d, int len) {
   assert((len%4) == 0);
@@ -343,26 +339,11 @@ void Thneed::execute(float **finputs, float *foutput, bool slow) {
 }
 
 void Thneed::clinit() {
-  cl_int err;
-
-  cl_platform_id platform_id[2];
-  cl_uint num_devices;
-  cl_uint num_platforms;
-
-  err = clGetPlatformIDs(sizeof(platform_id)/sizeof(cl_platform_id), platform_id, &num_platforms);
-  assert(err == 0);
-
-  err = clGetDeviceIDs(platform_id[0], CL_DEVICE_TYPE_DEFAULT, 1, &device_id, &num_devices);
-  assert(err == 0);
-
-  context = clCreateContext(NULL, 1, &device_id, NULL, NULL, &err);
-  assert(err == 0);
-
+  device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
+  context = CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id, NULL, NULL, &err));
   //cl_command_queue_properties props[3] = {CL_QUEUE_PROPERTIES, CL_QUEUE_PROFILING_ENABLE, 0};
   cl_command_queue_properties props[3] = {CL_QUEUE_PROPERTIES, 0, 0};
-  command_queue = clCreateCommandQueueWithProperties(context, device_id, props, &err);
-  assert(err == 0);
-
+  command_queue = CL_CHECK_ERR(clCreateCommandQueueWithProperties(context, device_id, props, &err));
   printf("Thneed::clinit done\n");
 }
 
@@ -447,11 +428,8 @@ cl_program thneed_clCreateProgramWithSource(cl_context context, cl_uint count, c
 }
 
 void *dlsym(void *handle, const char *symbol) {
-  // TODO: Find dlsym in a better way. Currently this is hand looked up in libdl.so
-#if defined QCOM
-  void *(*my_dlsym)(void *handle, const char *symbol) = (void *(*)(void *handle, const char *symbol))((uintptr_t)dlopen-0x2d4);
-#elif defined QCOM2
-  void *(*my_dlsym)(void *handle, const char *symbol) = (void *(*)(void *handle, const char *symbol))((uintptr_t)dlopen+0x138);
+#if defined(QCOM) || defined(QCOM2)
+  void *(*my_dlsym)(void *handle, const char *symbol) = (void *(*)(void *handle, const char *symbol))((uintptr_t)dlopen + DLSYM_OFFSET);
 #else
   #error "Unsupported platform for thneed"
 #endif
@@ -612,4 +590,3 @@ void CLQueuedKernel::debug_print(bool verbose) {
     }
   }
 }
-

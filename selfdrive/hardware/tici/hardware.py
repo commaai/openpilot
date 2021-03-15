@@ -3,7 +3,7 @@ import subprocess
 from pathlib import Path
 
 from cereal import log
-from selfdrive.hardware.base import HardwareBase
+from selfdrive.hardware.base import HardwareBase, ThermalConfig
 
 NM = 'org.freedesktop.NetworkManager'
 NM_CON_ACT = NM + '.Connection.Active'
@@ -18,10 +18,10 @@ MM_SIM = MM + ".Sim"
 
 MM_MODEM_STATE_CONNECTED = 11
 
-TIMEOUT = 10
+TIMEOUT = 0.1
 
-NetworkType = log.ThermalData.NetworkType
-NetworkStrength = log.ThermalData.NetworkStrength
+NetworkType = log.DeviceState.NetworkType
+NetworkStrength = log.DeviceState.NetworkStrength
 
 # https://developer.gnome.org/ModemManager/unstable/ModemManager-Flags-and-Enumerations.html#MMModemAccessTechnology
 MM_MODEM_ACCESS_TECHNOLOGY_UMTS = 1 << 5
@@ -40,8 +40,12 @@ class Tici(HardwareBase):
     with open("/VERSION") as f:
       return f.read().strip()
 
+  def get_device_type(self):
+    return "tici"
+
   def get_sound_card_online(self):
-    return os.system("pulseaudio --check") == 0
+    return (os.path.isfile('/proc/asound/card0/state') and
+            open('/proc/asound/card0/state').read().strip() == 'ONLINE')
 
   def reboot(self, reason=None):
     subprocess.check_output(["sudo", "reboot"])
@@ -173,3 +177,17 @@ class Tici(HardwareBase):
 
   def get_current_power_draw(self):
     return (self.read_param_file("/sys/class/hwmon/hwmon1/power1_input", int) / 1e6)
+
+  def shutdown(self):
+    # Note that for this to work and have the device stay powered off, the panda needs to be in UsbPowerMode::CLIENT!
+    os.system("sudo poweroff")
+
+  def get_thermal_config(self):
+    return ThermalConfig(cpu=((1, 2, 3, 4, 5, 6, 7, 8), 1000), gpu=((48,49), 1000), mem=(15, 1000), bat=(None, 1), ambient=(65, 1000))
+
+  def set_screen_brightness(self, percentage):
+    try:
+      with open("/sys/class/backlight/panel0-backlight/brightness", "w") as f:
+        f.write(str(int(percentage * 10.23)))
+    except Exception:
+      pass

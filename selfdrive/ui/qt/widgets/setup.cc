@@ -2,6 +2,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QLabel>
+#include <QPushButton>
 #include <QStackedLayout>
 #include <QTimer>
 #include <QVBoxLayout>
@@ -9,17 +10,9 @@
 #include "QrCode.hpp"
 #include "api.hpp"
 #include "common/params.h"
-#include "common/util.h"
-#include "home.hpp"
 #include "setup.hpp"
 
 using qrcodegen::QrCode;
-
-#if defined(QCOM) || defined(QCOM2)
-const std::string private_key_path = "/persist/comma/id_rsa";
-#else
-const std::string private_key_path = util::getenv_default("HOME", "/.comma/persist/comma/id_rsa", "/persist/comma/id_rsa");
-#endif
 
 PairingQRWidget::PairingQRWidget(QWidget* parent) : QWidget(parent) {
   qrCode = new QLabel;
@@ -29,7 +22,7 @@ PairingQRWidget::PairingQRWidget(QWidget* parent) : QWidget(parent) {
   setLayout(v);
 
   QTimer* timer = new QTimer(this);
-  timer->start(30 * 1000);// HaLf a minute
+  timer->start(30 * 1000);
   connect(timer, SIGNAL(timeout()), this, SLOT(refresh()));
   refresh(); // Not waiting for the first refresh
 }
@@ -41,9 +34,7 @@ void PairingQRWidget::refresh(){
   if (std::min(IMEI.length(), serial.length()) <= 5) {
     qrCode->setText("Error getting serial: contact support");
     qrCode->setWordWrap(true);
-    qrCode->setStyleSheet(R"(
-      font-size: 60px;
-    )");
+    qrCode->setStyleSheet(R"(font-size: 60px;)");
     return;
   }
   QVector<QPair<QString, QJsonValue>> payloads;
@@ -79,26 +70,26 @@ void PairingQRWidget::updateQrCode(QString text) {
 }
 
 PrimeUserWidget::PrimeUserWidget(QWidget* parent) : QWidget(parent) {
-  mainLayout = new QVBoxLayout(this);
-  QLabel* commaPrime = new QLabel("COMMA PRIME", this);
+  mainLayout = new QVBoxLayout;
+  QLabel* commaPrime = new QLabel("COMMA PRIME");
   commaPrime->setStyleSheet(R"(
     font-size: 60px;
   )");
   mainLayout->addWidget(commaPrime);
 
-  username = new QLabel("", this);
+  username = new QLabel("");
   mainLayout->addWidget(username);
 
   mainLayout->addSpacing(200);
 
-  QLabel* commaPoints = new QLabel("COMMA POINTS", this);
+  QLabel* commaPoints = new QLabel("COMMA POINTS");
   commaPoints->setStyleSheet(R"(
     font-size: 60px;
     color: #b8b8b8;
   )");
   mainLayout->addWidget(commaPoints);
 
-  points = new QLabel("", this);
+  points = new QLabel("");
   mainLayout->addWidget(points);
 
   setLayout(mainLayout);
@@ -127,12 +118,12 @@ void PrimeUserWidget::replyFinished(QString response) {
 }
 
 PrimeAdWidget::PrimeAdWidget(QWidget* parent) : QWidget(parent) {
-  QVBoxLayout* vlayout = new QVBoxLayout(this);
+  QVBoxLayout* vlayout = new QVBoxLayout;
 
-  QLabel* upgradeNow = new QLabel("Upgrade now", this);
+  QLabel* upgradeNow = new QLabel("Upgrade now");
   vlayout->addWidget(upgradeNow);
 
-  QLabel* description = new QLabel("Become a comma prime member in the comma app and get premium features!", this);
+  QLabel* description = new QLabel("Become a comma prime member in the comma app and get premium features!");
   description->setStyleSheet(R"(
     font-size: 50px;
     color: #b8b8b8;
@@ -144,7 +135,7 @@ PrimeAdWidget::PrimeAdWidget(QWidget* parent) : QWidget(parent) {
 
   QVector<QString> features = {"✓ REMOTE ACCESS", "✓ 14 DAYS OF STORAGE", "✓ DEVELOPER PERKS"};
   for (auto featureContent : features) {
-    QLabel* feature = new QLabel(featureContent, this);
+    QLabel* feature = new QLabel(featureContent);
     feature->setStyleSheet(R"(
       font-size: 40px;
     )");
@@ -157,37 +148,36 @@ PrimeAdWidget::PrimeAdWidget(QWidget* parent) : QWidget(parent) {
 }
 
 
-
 SetupWidget::SetupWidget(QWidget* parent) : QWidget(parent) {
-  QVBoxLayout* backgroundLayout = new QVBoxLayout(this);
+  QVBoxLayout* backgroundLayout = new QVBoxLayout;
 
   backgroundLayout->addSpacing(100);
 
-  QFrame* background = new QFrame(this);
+  QFrame* background = new QFrame;
 
-  mainLayout = new QStackedLayout(this);
+  mainLayout = new QStackedLayout;
 
-  QWidget* blankWidget = new QWidget(this);
+  QWidget* blankWidget = new QWidget;
   mainLayout->addWidget(blankWidget);
 
-  QWidget* finishRegistration = new QWidget(this);
+  QWidget* finishRegistration = new QWidget;
 
-  QVBoxLayout* finishRegistationLayout = new QVBoxLayout(this);
-  finishRegistationLayout->addSpacing(50);
-  QPushButton* finishButton = new QPushButton("Finish registration", this);
+  QVBoxLayout* finishRegistationLayout = new QVBoxLayout;
+  finishRegistationLayout->addSpacing(30);
+  QPushButton* finishButton = new QPushButton("Finish registration");
   finishButton->setFixedHeight(200);
   finishButton->setStyleSheet(R"(
     border-radius: 30px;
-    font-size: 60px;
-    font-weight: bold;
-    background: #787878;
+    font-size: 55px;
+    background: #585858;
   )");
   QObject::connect(finishButton, SIGNAL(released()), this, SLOT(showQrCode()));
   finishRegistationLayout->addWidget(finishButton);
 
-  QLabel* registrationDescription = new QLabel("Pair your device with comma connect app", this);
+  QLabel* registrationDescription = new QLabel("Pair your device with the comma connect app");
   registrationDescription->setStyleSheet(R"(
-    font-size: 50px;
+    font-size: 55px;
+    font-weight: 400;
   )");
 
   registrationDescription->setWordWrap(true);
@@ -196,31 +186,29 @@ SetupWidget::SetupWidget(QWidget* parent) : QWidget(parent) {
   finishRegistration->setLayout(finishRegistationLayout);
   mainLayout->addWidget(finishRegistration);
 
-  QVBoxLayout* qrLayout = new QVBoxLayout(this);
+  QVBoxLayout* qrLayout = new QVBoxLayout;
 
-  QLabel* qrLabel = new QLabel("Pair with Comma Connect app!", this);
-  qrLabel->setStyleSheet(R"(
-    font-size: 40px;
-  )");
+  QLabel* qrLabel = new QLabel("Pair with comma connect!");
+  qrLabel->setStyleSheet(R"(font-size: 40px)");
   qrLayout->addWidget(qrLabel);
 
-  qrLayout->addWidget(new PairingQRWidget(this));
+  qrLayout->addWidget(new PairingQRWidget);
 
-  QWidget* q = new QWidget(this);
+  QWidget* q = new QWidget;
   q->setLayout(qrLayout);
   mainLayout->addWidget(q);
 
-  PrimeAdWidget* primeAd = new PrimeAdWidget(this);
+  PrimeAdWidget* primeAd = new PrimeAdWidget;
   mainLayout->addWidget(primeAd);
 
-  PrimeUserWidget* primeUserWidget = new PrimeUserWidget(this);
+  PrimeUserWidget* primeUserWidget = new PrimeUserWidget;
   mainLayout->addWidget(primeUserWidget);
 
   background->setLayout(mainLayout);
   background->setStyleSheet(R"(
     .QFrame {
       border-radius: 40px;
-      padding: 60px;
+      padding: 40px;
     }
   )");
   backgroundLayout->addWidget(background);
@@ -232,7 +220,6 @@ SetupWidget::SetupWidget(QWidget* parent) : QWidget(parent) {
 
   QObject::connect(repeater, SIGNAL(receivedResponse(QString)), this, SLOT(replyFinished(QString)));
   QObject::connect(repeater, SIGNAL(failedResponse(QString)), this, SLOT(parseError(QString)));
-
 }
 
 void SetupWidget::parseError(QString response) {
@@ -243,16 +230,19 @@ void SetupWidget::parseError(QString response) {
     background-color: #000000;
   )");
 }
+
 void SetupWidget::showQrCode(){
   showQr = true;
   mainLayout->setCurrentIndex(2);
 }
+
 void SetupWidget::replyFinished(QString response) {
   QJsonDocument doc = QJsonDocument::fromJson(response.toUtf8());
   if (doc.isNull()) {
     qDebug() << "JSON Parse failed on getting pairing and prime status";
     return;
   }
+
   if (mainLayout->currentIndex() == 0) { // If we are still on the blank widget
     setStyleSheet(R"(
       font-size: 90px;
@@ -260,6 +250,7 @@ void SetupWidget::replyFinished(QString response) {
       background-color: #292929;
     )");
   }
+
   QJsonObject json = doc.object();
   bool is_paired = json["is_paired"].toBool();
   bool is_prime = json["prime"].toBool();

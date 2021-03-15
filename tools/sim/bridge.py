@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
-# type: ignore
-import carla # pylint: disable=import-error
-import time
-import math
-import atexit
-import numpy as np
-import threading
-import cereal.messaging as messaging
 import argparse
+import atexit
+import carla # pylint: disable=import-error
+import math
+import numpy as np
+import time
+import threading
+from typing import Any
+
+import cereal.messaging as messaging
 from common.params import Params
 from common.realtime import Ratekeeper, DT_DMON
 from lib.can import can_function
@@ -16,15 +17,11 @@ from selfdrive.test.helpers import set_params_enabled
 
 parser = argparse.ArgumentParser(description='Bridge between CARLA and openpilot.')
 parser.add_argument('--joystick', action='store_true')
-parser.add_argument('--town', type=str, default='Town04')
+parser.add_argument('--low_quality', action='store_true')
+parser.add_argument('--town', type=str, default='Town04_Opt')
 parser.add_argument('--spawn_point', dest='num_selected_spawn_point',
         type=int, default=16)
-parser.add_argument('--cloudyness', default=0.1, type=float)
-parser.add_argument('--precipitation', default=0.0, type=float)
-parser.add_argument('--precipitation_deposits', default=0.0, type=float)
-parser.add_argument('--wind_intensity', default=0.0, type=float)
-parser.add_argument('--sun_azimuth_angle', default=15.0, type=float)
-parser.add_argument('--sun_altitude_angle', default=75.0, type=float)
+
 args = parser.parse_args()
 
 W, H = 1164, 874
@@ -32,7 +29,7 @@ REPEAT_COUNTER = 5
 PRINT_DECIMATION = 100
 STEER_RATIO = 15.
 
-pm = messaging.PubMaster(['frame', 'sensorEvents', 'can'])
+pm = messaging.PubMaster(['roadCameraState', 'sensorEvents', 'can'])
 sm = messaging.SubMaster(['carControl','controlsState'])
 
 class VehicleState:
@@ -59,13 +56,13 @@ def cam_callback(image):
   img = np.reshape(img, (H, W, 4))
   img = img[:, :, [0, 1, 2]].copy()
 
-  dat = messaging.new_message('frame')
-  dat.frame = {
+  dat = messaging.new_message('roadCameraState')
+  dat.roadCameraState = {
     "frameId": image.frame,
-    "image": img.tostring(),
+    "image": img.tobytes(),
     "transform": [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
   }
-  pm.send('frame', dat)
+  pm.send('roadCameraState', dat)
   frame_id += 1
 
 def imu_callback(imu):
@@ -81,18 +78,18 @@ def imu_callback(imu):
   dat.sensorEvents[1].gyroUncalibrated.v = [imu.gyroscope.x, imu.gyroscope.y, imu.gyroscope.z]
   pm.send('sensorEvents', dat)
 
-def health_function():
-  pm = messaging.PubMaster(['health'])
+def panda_state_function():
+  pm = messaging.PubMaster(['pandaState'])
   while 1:
-    dat = messaging.new_message('health')
+    dat = messaging.new_message('pandaState')
     dat.valid = True
-    dat.health = {
+    dat.pandaState = {
       'ignitionLine': True,
-      'hwType': "blackPanda",
+      'pandaType': "blackPanda",
       'controlsAllowed': True,
       'safetyModel': 'hondaNidec'
     }
-    pm.send('health', dat)
+    pm.send('pandaState', dat)
     time.sleep(0.5)
 
 def fake_gps():
@@ -104,7 +101,7 @@ def fake_gps():
     time.sleep(0.01)
 
 def fake_driver_monitoring():
-  pm = messaging.PubMaster(['driverState','dMonitoringState'])
+  pm = messaging.PubMaster(['driverState','driverMonitoringState'])
   while 1:
 
     # dmonitoringmodeld output
@@ -113,14 +110,13 @@ def fake_driver_monitoring():
     pm.send('driverState', dat)
 
     # dmonitoringd output
-    dat = messaging.new_message('dMonitoringState')
-    dat.dMonitoringState = {
+    dat = messaging.new_message('driverMonitoringState')
+    dat.driverMonitoringState = {
       "faceDetected": True,
       "isDistracted": False,
       "awarenessStatus": 1.,
-      "isRHD": False,
     }
-    pm.send('dMonitoringState', dat)
+    pm.send('driverMonitoringState', dat)
 
     time.sleep(DT_DMON)
 
@@ -132,18 +128,26 @@ def can_function_runner(vs):
     i+=1
 
 
-def go(q):
+def bridge(q):
 
   # setup CARLA
   client = carla.Client("127.0.0.1", 2000)
   client.set_timeout(10.0)
   world = client.load_world(args.town)
 
+  if args.low_quality:
+    world.unload_map_layer(carla.MapLayer.Foliage)
+    world.unload_map_layer(carla.MapLayer.Buildings)
+    world.unload_map_layer(carla.MapLayer.ParkedVehicles)
+    world.unload_map_layer(carla.MapLayer.Particles)
+    world.unload_map_layer(carla.MapLayer.Props)
+    world.unload_map_layer(carla.MapLayer.StreetLights)
+
   blueprint_library = world.get_blueprint_library()
 
   world_map = world.get_map()
 
-  vehicle_bp = blueprint_library.filter('vehicle.tesla.*')[0]
+  vehicle_bp = blueprint_library.filter('vehicle.tesla.*')[1]
   spawn_points = world_map.get_spawn_points()
   assert len(spawn_points) > args.num_selected_spawn_point, \
     f'''No spawn point {args.num_selected_spawn_point}, try a value between 0 and
@@ -167,18 +171,9 @@ def go(q):
   blueprint.set_attribute('image_size_y', str(H))
   blueprint.set_attribute('fov', '70')
   blueprint.set_attribute('sensor_tick', '0.05')
-  transform = carla.Transform(carla.Location(x=0.8, z=1.45))
+  transform = carla.Transform(carla.Location(x=0.8, z=1.13))
   camera = world.spawn_actor(blueprint, transform, attach_to=vehicle)
   camera.listen(cam_callback)
-
-  world.set_weather(carla.WeatherParameters(
-    cloudyness=args.cloudyness,
-    precipitation=args.precipitation,
-    precipitation_deposits=args.precipitation_deposits,
-    wind_intensity=args.wind_intensity,
-    sun_azimuth_angle=args.sun_azimuth_angle,
-    sun_altitude_angle=args.sun_altitude_angle
-  ))
 
   # reenable IMU
   imu_bp = blueprint_library.find('sensor.other.imu')
@@ -197,7 +192,7 @@ def go(q):
   vehicle_state = VehicleState()
 
   # launch fake car threads
-  threading.Thread(target=health_function).start()
+  threading.Thread(target=panda_state_function).start()
   threading.Thread(target=fake_driver_monitoring).start()
   threading.Thread(target=fake_gps).start()
   threading.Thread(target=can_function_runner, args=(vehicle_state,)).start()
@@ -278,7 +273,7 @@ def go(q):
       sm.update(0)
       throttle_op = sm['carControl'].actuators.gas #[0,1]
       brake_op = sm['carControl'].actuators.brake #[0,1]
-      steer_op = sm['controlsState'].angleSteersDes # degrees [-180,180]
+      steer_op = sm['controlsState'].steeringAngleDesiredDeg # degrees [-180,180]
 
       throttle_out = throttle_op
       steer_out = steer_op
@@ -286,17 +281,6 @@ def go(q):
 
       steer_out = steer_rate_limit(old_steer, steer_out)
       old_steer = steer_out
-
-    # OP Exit conditions
-    # if throttle_out > 0.3:
-    #   cruise_button = CruiseButtons.CANCEL
-    #   is_openpilot_engaged = False
-    # if brake_out > 0.3:
-    #   cruise_button = CruiseButtons.CANCEL
-    #   is_openpilot_engaged = False
-    # if steer_out > 0.3:
-    #   cruise_button = CruiseButtons.CANCEL
-    #   is_openpilot_engaged = False
 
     else:
       if throttle_out==0 and old_throttle>0:
@@ -349,17 +333,23 @@ def go(q):
 
     rk.keep_time()
 
-if __name__ == "__main__":
+def go(q: Any):
+  while 1:
+    try:
+      bridge(q)
+    except RuntimeError:
+      print("Restarting bridge...")
 
+if __name__ == "__main__":
   # make sure params are in a good state
-  params = Params()
-  params.clear_all()
   set_params_enabled()
+
+  params = Params()
   params.delete("Offroad_ConnectivityNeeded")
   params.put("CalibrationParams", '{"calib_radians": [0,0,0], "valid_blocks": 20}')
 
   from multiprocessing import Process, Queue
-  q = Queue()
+  q: Any = Queue()
   p = Process(target=go, args=(q,))
   p.daemon = True
   p.start()

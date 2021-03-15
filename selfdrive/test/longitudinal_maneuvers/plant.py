@@ -110,19 +110,18 @@ class Plant():
     self.rate = rate
 
     if not Plant.messaging_initialized:
-
-      Plant.pm = messaging.PubMaster(['frame', 'frontFrame', 'ubloxRaw'])
+      Plant.pm = messaging.PubMaster(['roadCameraState', 'driverCameraState', 'ubloxRaw'])
       Plant.logcan = messaging.pub_sock('can')
       Plant.sendcan = messaging.sub_sock('sendcan')
       Plant.model = messaging.pub_sock('modelV2')
       Plant.live_params = messaging.pub_sock('liveParameters')
       Plant.live_location_kalman = messaging.pub_sock('liveLocationKalman')
-      Plant.health = messaging.pub_sock('health')
-      Plant.thermal = messaging.pub_sock('thermal')
-      Plant.dMonitoringState = messaging.pub_sock('dMonitoringState')
+      Plant.pandaState = messaging.pub_sock('pandaState')
+      Plant.deviceState = messaging.pub_sock('deviceState')
+      Plant.driverMonitoringState = messaging.pub_sock('driverMonitoringState')
       Plant.cal = messaging.pub_sock('liveCalibration')
       Plant.controls_state = messaging.sub_sock('controlsState')
-      Plant.plan = messaging.sub_sock('plan')
+      Plant.plan = messaging.sub_sock('longitudinalPlan')
       Plant.messaging_initialized = True
 
     self.frame = 0
@@ -200,7 +199,7 @@ class Plant():
 
     fcw = None
     for a in messaging.drain_sock(Plant.plan):
-      if a.plan.fcw:
+      if a.longitudinalPlan.fcw:
         fcw = True
 
     if self.cp.vl[0x1fa]['COMPUTER_BRAKE_REQUEST']:
@@ -370,19 +369,19 @@ class Plant():
     live_parameters.liveParameters.stiffnessFactor = 1.0
     Plant.live_params.send(live_parameters.to_bytes())
 
-    dmon_state = messaging.new_message('dMonitoringState')
-    dmon_state.dMonitoringState.isDistracted = False
-    Plant.dMonitoringState.send(dmon_state.to_bytes())
+    dmon_state = messaging.new_message('driverMonitoringState')
+    dmon_state.driverMonitoringState.isDistracted = False
+    Plant.driverMonitoringState.send(dmon_state.to_bytes())
 
-    health = messaging.new_message('health')
-    health.health.safetyModel = car.CarParams.SafetyModel.hondaNidec
-    health.health.controlsAllowed = True
-    Plant.health.send(health.to_bytes())
+    pandaState = messaging.new_message('pandaState')
+    pandaState.pandaState.safetyModel = car.CarParams.SafetyModel.hondaNidec
+    pandaState.pandaState.controlsAllowed = True
+    Plant.pandaState.send(pandaState.to_bytes())
 
-    thermal = messaging.new_message('thermal')
-    thermal.thermal.freeSpace = 1.
-    thermal.thermal.batteryPercent = 100
-    Plant.thermal.send(thermal.to_bytes())
+    deviceState = messaging.new_message('deviceState')
+    deviceState.deviceState.freeSpacePercent = 100
+    deviceState.deviceState.batteryPercent = 100
+    Plant.deviceState.send(deviceState.to_bytes())
 
     live_location_kalman = messaging.new_message('liveLocationKalman')
     live_location_kalman.liveLocationKalman.inputsOK = True

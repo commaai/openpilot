@@ -11,6 +11,7 @@ SEGMENT_NAME_RE = r'[a-z0-9]{16}[|_][0-9]{4}-[0-9]{2}-[0-9]{2}--[0-9]{2}-[0-9]{2
 EXPLORER_FILE_RE = r'^({})--([a-z]+\.[a-z0-9]+)$'.format(SEGMENT_NAME_RE)
 OP_SEGMENT_DIR_RE = r'^({})$'.format(SEGMENT_NAME_RE)
 
+QLOG_FILENAMES = ['qlog.bz2']
 LOG_FILENAMES = ['rlog.bz2', 'raw_log.bz2']
 CAMERA_FILENAMES = ['fcamera.hevc', 'video.hevc']
 
@@ -21,20 +22,23 @@ class Route(object):
       self._segments = self._get_segments_local(data_dir)
     else:
       self._segments = self._get_segments_remote()
+    self.max_seg_number = self._segments[-1].canonical_name.segment_num
 
   @property
   def segments(self):
     return self._segments
 
   def log_paths(self):
-    max_seg_number = self._segments[-1].canonical_name.segment_num
     log_path_by_seg_num = {s.canonical_name.segment_num: s.log_path for s in self._segments}
-    return [log_path_by_seg_num.get(i, None) for i in range(max_seg_number+1)]
+    return [log_path_by_seg_num.get(i, None) for i in range(self.max_seg_number+1)]
+
+  def qlog_paths(self):
+    qlog_path_by_seg_num = {s.canonical_name.segment_num: s.qlog_path for s in self._segments}
+    return [qlog_path_by_seg_num.get(i, None) for i in range(self.max_seg_number+1)]
 
   def camera_paths(self):
-    max_seg_number = self._segments[-1].canonical_name.segment_num
     camera_path_by_seg_num = {s.canonical_name.segment_num: s.camera_path for s in self._segments}
-    return [camera_path_by_seg_num.get(i, None) for i in range(max_seg_number+1)]
+    return [camera_path_by_seg_num.get(i, None) for i in range(self.max_seg_number+1)]
 
   def _get_segments_remote(self):
     api = CommaApi(get_token())
@@ -48,12 +52,14 @@ class Route(object):
         segments[segment_name] = RouteSegment(
           segment_name,
           url if fn in LOG_FILENAMES else segments[segment_name].log_path,
+          url if fn in QLOG_FILENAMES else segments[segment_name].qlog_path,
           url if fn in CAMERA_FILENAMES else segments[segment_name].camera_path
         )
       else:
         segments[segment_name] = RouteSegment(
           segment_name,
           url if fn in LOG_FILENAMES else None,
+          url if fn in QLOG_FILENAMES else None,
           url if fn in CAMERA_FILENAMES else None
         )
 
@@ -88,26 +94,33 @@ class Route(object):
 
     segments = []
     for segment, files in segment_files.items():
+
       try:
         log_path = next(path for path, filename in files if filename in LOG_FILENAMES)
       except StopIteration:
         log_path = None
 
       try:
+        qlog_path = next(path for path, filename in files if filename in QLOG_FILENAMES)
+      except StopIteration:
+        qlog_path = None
+
+      try:
         camera_path = next(path for path, filename in files if filename in CAMERA_FILENAMES)
       except StopIteration:
         camera_path = None
 
-      segments.append(RouteSegment(segment, log_path, camera_path))
+      segments.append(RouteSegment(segment, log_path, qlog_path, camera_path))
 
     if len(segments) == 0:
       raise ValueError('Could not find segments for route {} in data directory {}'.format(self.route_name, data_dir))
     return sorted(segments, key=lambda seg: seg.canonical_name.segment_num)
 
 class RouteSegment(object):
-  def __init__(self, name, log_path, camera_path):
+  def __init__(self, name, log_path, qlog_path, camera_path):
     self._name = RouteSegmentName(name)
     self.log_path = log_path
+    self.qlog_path = qlog_path
     self.camera_path = camera_path
 
   @property

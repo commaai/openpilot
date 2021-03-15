@@ -80,27 +80,26 @@ class LatControlINDI():
 
     return self.sat_count > self.sat_limit
 
-  def update(self, active, CS, CP, path_plan):
+  def update(self, active, CS, CP, VM, params, lat_plan):
     self.speed = CS.vEgo
     # Update Kalman filter
-    y = np.array([[math.radians(CS.steeringAngle)], [math.radians(CS.steeringRate)]])
+    y = np.array([[math.radians(CS.steeringAngleDeg)], [math.radians(CS.steeringRateDeg)]])
     self.x = np.dot(self.A_K, self.x) + np.dot(self.K, y)
 
     indi_log = log.ControlsState.LateralINDIState.new_message()
-    indi_log.steerAngle = math.degrees(self.x[0])
-    indi_log.steerRate = math.degrees(self.x[1])
-    indi_log.steerAccel = math.degrees(self.x[2])
+    indi_log.steeringAngleDeg = math.degrees(self.x[0])
+    indi_log.steeringRateDeg = math.degrees(self.x[1])
+    indi_log.steeringAccelDeg = math.degrees(self.x[2])
 
     if CS.vEgo < 0.3 or not active:
       indi_log.active = False
       self.output_steer = 0.0
       self.delayed_output = 0.0
     else:
-      self.angle_steers_des = path_plan.angleSteers
-      self.rate_steers_des = path_plan.rateSteers
+      steers_des = VM.get_steer_from_curvature(-lat_plan.curvature, CS.vEgo)
+      steers_des += math.radians(params.angleOffsetDeg)
 
-      steers_des = math.radians(self.angle_steers_des)
-      rate_des = math.radians(self.rate_steers_des)
+      rate_des = VM.get_steer_from_curvature(-lat_plan.curvatureRate, CS.vEgo)
 
       # Expected actuator value
       alpha = 1. - DT_CTRL / (self.RC + DT_CTRL)
@@ -114,6 +113,10 @@ class LatControlINDI():
       # Compute change in actuator
       g_inv = 1. / self.G
       delta_u = g_inv * accel_error
+
+      # If steering pressed, only allow wind down
+      if CS.steeringPressed and (delta_u * self.output_steer > 0):
+        delta_u = 0
 
       # Enforce rate limit
       if self.enforce_rate_limit:
@@ -139,4 +142,4 @@ class LatControlINDI():
       check_saturation = (CS.vEgo > 10.) and not CS.steeringRateLimited and not CS.steeringPressed
       indi_log.saturated = self._check_saturation(self.output_steer, check_saturation, steers_max)
 
-    return float(self.output_steer), float(self.angle_steers_des), indi_log
+    return float(self.output_steer), 0, indi_log

@@ -21,10 +21,10 @@ if __name__ == "__main__":
     if os.path.isfile(cache_path):
       os.remove(cache_path)
 
-  output_size = len(np.frombuffer(msgs[0].model.rawPred, dtype=np.float32))
+  output_size = len(np.frombuffer(msgs[0].model.rawPredictions, dtype=np.float32))
   output_data = np.zeros((len(msgs), output_size), dtype=np.float32)
   for i, msg in enumerate(msgs):
-    output_data[i] = np.frombuffer(msg.model.rawPred, dtype=np.float32)
+    output_data[i] = np.frombuffer(msg.model.rawPredictions, dtype=np.float32)
   np.save(os.path.expanduser('~/modeldata.npy'), output_data)
 
   print("Finished replay")

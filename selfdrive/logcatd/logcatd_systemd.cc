@@ -17,25 +17,27 @@ int main(int argc, char *argv[]) {
   PubMaster pm({"androidLog"});
 
   sd_journal *journal;
-  assert(sd_journal_open(&journal, 0) >= 0);
-  assert(sd_journal_get_fd(journal) >= 0); // needed so sd_journal_wait() works properly if files rotate
-  assert(sd_journal_seek_tail(journal) >= 0);
+  int err = sd_journal_open(&journal, 0);
+  assert(err >= 0);
+  err = sd_journal_get_fd(journal); // needed so sd_journal_wait() works properly if files rotate
+  assert(err >= 0);
+  err = sd_journal_seek_tail(journal);
+  assert(err >= 0);
 
-  int r;
   while (!do_exit) {
-    r = sd_journal_next(journal);
-    assert(r >= 0);
+    err = sd_journal_next(journal);
+    assert(err >= 0);
 
     // Wait for new message if we didn't receive anything
-    if (r == 0){
-      r = sd_journal_wait(journal, 1000 * 1000);
-      assert (r >= 0);
+    if (err == 0){
+      err = sd_journal_wait(journal, 1000 * 1000);
+      assert (err >= 0);
       continue; // Try again
     }
 
     uint64_t timestamp = 0;
-    r = sd_journal_get_realtime_usec(journal, &timestamp);
-    assert(r >= 0);
+    err = sd_journal_get_realtime_usec(journal, &timestamp);
+    assert(err >= 0);
 
     const void *data;
     size_t length;

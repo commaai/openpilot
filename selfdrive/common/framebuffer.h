@@ -1,13 +1,7 @@
 #pragma once
 
-typedef struct FramebufferState FramebufferState;
+#include <cstdlib>
 
-FramebufferState* framebuffer_init(
-    const char* name, int32_t layer, int alpha,
-    int *out_w, int *out_h);
-
-void framebuffer_set_power(FramebufferState *s, int mode);
-void framebuffer_swap(FramebufferState *s);
 bool set_brightness(int brightness);
 
 /* Display power modes */
@@ -34,4 +28,15 @@ enum {
      * and manage it autonomously to implement low power always-on display
      * functionality. */
     HWC_POWER_MODE_DOZE_SUSPEND  = 3,
+};
+
+struct FramebufferState;
+class FrameBuffer {
+ public:
+  FrameBuffer(const char *name, uint32_t layer, int alpha, int *out_w, int *out_h);
+  ~FrameBuffer();
+  void set_power(int mode);
+  void swap();
+private:
+  FramebufferState *s;
 };

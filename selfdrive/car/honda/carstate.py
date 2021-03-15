@@ -227,8 +227,8 @@ class CarState(CarStateBase):
     ret.vEgoRaw = (1. - v_weight) * cp.vl["ENGINE_DATA"]['XMISSION_SPEED'] * CV.KPH_TO_MS * speed_factor + v_weight * v_wheel
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
 
-    ret.steeringAngle = cp.vl["STEERING_SENSORS"]['STEER_ANGLE']
-    ret.steeringRate = cp.vl["STEERING_SENSORS"]['STEER_ANGLE_RATE']
+    ret.steeringAngleDeg = cp.vl["STEERING_SENSORS"]['STEER_ANGLE']
+    ret.steeringRateDeg = cp.vl["STEERING_SENSORS"]['STEER_ANGLE_RATE']
 
     self.cruise_setting = cp.vl["SCM_BUTTONS"]['CRUISE_SETTING']
     self.cruise_buttons = cp.vl["SCM_BUTTONS"]['CRUISE_BUTTONS']

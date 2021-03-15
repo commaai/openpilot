@@ -6,10 +6,10 @@ import struct
 import subprocess
 
 from cereal import log
-from selfdrive.hardware.base import HardwareBase
+from selfdrive.hardware.base import HardwareBase, ThermalConfig
 
-NetworkType = log.ThermalData.NetworkType
-NetworkStrength = log.ThermalData.NetworkStrength
+NetworkType = log.DeviceState.NetworkType
+NetworkStrength = log.DeviceState.NetworkStrength
 
 
 def service_call(call):
@@ -64,6 +64,9 @@ class Android(HardwareBase):
   def get_os_version(self):
     with open("/VERSION") as f:
       return f.read().strip()
+
+  def get_device_type(self):
+    return "eon"
 
   def get_sound_card_online(self):
     return (os.path.isfile('/proc/asound/card0/state') and
@@ -339,3 +342,13 @@ class Android(HardwareBase):
   def get_current_power_draw(self):
     # We don't have a good direct way to measure this on android
     return None
+
+  def shutdown(self):
+    os.system('LD_LIBRARY_PATH="" svc power shutdown')
+
+  def get_thermal_config(self):
+    return ThermalConfig(cpu=((5, 7, 10, 12), 10), gpu=((16,), 10), mem=(2, 10), bat=(29, 1000), ambient=(25, 1))
+
+  def set_screen_brightness(self, percentage):
+    with open("/sys/class/leds/lcd-backlight/brightness", "w") as f:
+      f.write(str(int(percentage * 2.55)))

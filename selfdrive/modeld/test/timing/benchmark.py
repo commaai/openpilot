@@ -2,8 +2,9 @@
 import os
 import time
 import numpy as np
+
 import cereal.messaging as messaging
-import selfdrive.manager as manager
+from selfdrive.manager.process_config import managed_processes
 
 
 N = int(os.getenv("N", "5"))
@@ -16,7 +17,7 @@ if __name__ == "__main__":
 
   for _ in range(N):
     os.environ['LOGPRINT'] = 'debug'
-    manager.start_managed_process('modeld')
+    managed_processes['modeld'].start()
     time.sleep(5)
 
     t = []
@@ -27,7 +28,7 @@ if __name__ == "__main__":
         t.append(m.modelV2.modelExecutionTime)
 
     execution_times.append(np.array(t[10:]) * 1000)
-    manager.kill_managed_process('modeld')
+    managed_processes['modeld'].stop()
 
   print("\n\n")
   print(f"ran modeld {N} times for {TIME}s each")

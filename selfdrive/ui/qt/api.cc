@@ -9,10 +9,14 @@
 #include <QWidget>
 #include <QTimer>
 #include <QRandomGenerator>
+
 #include "api.hpp"
 #include "home.hpp"
 #include "common/params.h"
 #include "common/util.h"
+
+#include <QSslSocket>
+
 #if defined(QCOM) || defined(QCOM2)
 const std::string private_key_path = "/persist/comma/id_rsa";
 #else
@@ -44,11 +48,14 @@ QByteArray CommaApi::rsa_sign(QByteArray data) {
 }
 
 QString CommaApi::create_jwt(QVector<QPair<QString, QJsonValue>> payloads, int expiry) {
+  QString dongle_id = QString::fromStdString(Params().get("DongleId"));
+
   QJsonObject header;
   header.insert("alg", "RS256");
+
   QJsonObject payload;
-  QString dongle_id = QString::fromStdString(Params().get("DongleId"));
   payload.insert("identity", dongle_id);
+
   auto t = QDateTime::currentSecsSinceEpoch();
   payload.insert("nbf", t);
   payload.insert("iat", t);
@@ -56,13 +63,14 @@ QString CommaApi::create_jwt(QVector<QPair<QString, QJsonValue>> payloads, int e
   for (auto load : payloads) {
     payload.insert(load.first, load.second);
   }
-  QString jwt =
-      QJsonDocument(header).toJson(QJsonDocument::Compact).toBase64(QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals) +
-      '.' +
-      QJsonDocument(payload).toJson(QJsonDocument::Compact).toBase64(QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals);
+
+  auto b64_opts = QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals;
+  QString jwt = QJsonDocument(header).toJson(QJsonDocument::Compact).toBase64(b64_opts) + '.' +
+                QJsonDocument(payload).toJson(QJsonDocument::Compact).toBase64(b64_opts);
+
   auto hash = QCryptographicHash::hash(jwt.toUtf8(), QCryptographicHash::Sha256);
   auto sig = rsa_sign(hash);
-  jwt += '.' + sig.toBase64(QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals);
+  jwt += '.' + sig.toBase64(b64_opts);
   return jwt;
 }
 
@@ -71,20 +79,24 @@ QString CommaApi::create_jwt() {
 }
 
 RequestRepeater::RequestRepeater(QWidget* parent, QString requestURL, int period_seconds, QVector<QPair<QString, QJsonValue>> payloads, bool disableWithScreen)
-  : disableWithScreen(disableWithScreen) {
-  networkAccessManager = new QNetworkAccessManager(parent);
+  : disableWithScreen(disableWithScreen), QObject(parent)  {
+  networkAccessManager = new QNetworkAccessManager(this);
+
+  reply = NULL;
+
   QTimer* timer = new QTimer(this);
   QObject::connect(timer, &QTimer::timeout, [=](){sendRequest(requestURL, payloads);});
   timer->start(period_seconds * 1000);
+
   networkTimer = new QTimer(this);
   networkTimer->setSingleShot(true);
-  networkTimer->setInterval(20000); // 20s before aborting
+  networkTimer->setInterval(20000);
   connect(networkTimer, SIGNAL(timeout()), this, SLOT(requestTimeout()));
 }
 
 void RequestRepeater::sendRequest(QString requestURL, QVector<QPair<QString, QJsonValue>> payloads){
   // No network calls onroad
-  if(GLWindow::ui_state.started){
+  if(GLWindow::ui_state.scene.started){
     return;
   }
   if (!active || (!GLWindow::ui_state.awake && disableWithScreen)) {
@@ -93,13 +105,22 @@ void RequestRepeater::sendRequest(QString requestURL, QVector<QPair<QString, QJs
   if(reply != NULL){
     return;
   }
+
   aborted = false;
-  callId = QRandomGenerator::global()->bounded(1000);
   QString token = CommaApi::create_jwt(payloads);
   QNetworkRequest request;
   request.setUrl(QUrl(requestURL));
-  request.setRawHeader("Authorization", ("JWT " + token).toUtf8());
+  request.setRawHeader(QByteArray("Authorization"), ("JWT " + token).toUtf8());
+
+#ifdef QCOM
+  QSslConfiguration ssl = QSslConfiguration::defaultConfiguration();
+  ssl.setCaCertificates(QSslCertificate::fromPath("/usr/etc/tls/cert.pem",
+                        QSsl::Pem, QRegExp::Wildcard));
+  request.setSslConfiguration(ssl);
+#endif
+
   reply = networkAccessManager->get(request);
+
   networkTimer->start();
   connect(reply, SIGNAL(finished()), this, SLOT(requestFinished()));
 }
@@ -111,16 +132,17 @@ void RequestRepeater::requestTimeout(){
 
 // This function should always emit something
 void RequestRepeater::requestFinished(){
-  if(!aborted){
+  if (!aborted) {
     networkTimer->stop();
     QString response = reply->readAll();
     if (reply->error() == QNetworkReply::NoError) {
       emit receivedResponse(response);
     } else {
+      qDebug() << reply->errorString();
       emit failedResponse(reply->errorString());
     }
-  }else{
-    emit failedResponse("Custom Openpilot network timeout");
+  } else {
+    emit failedResponse("network timeout");
   }
   reply->deleteLater();
   reply = NULL;

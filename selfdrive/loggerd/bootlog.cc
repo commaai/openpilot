@@ -1,20 +1,10 @@
 #include <assert.h>
 #include <string>
-
 #include "common/swaglog.h"
-#include "common/util.h"
 #include "logger.h"
 #include "messaging.hpp"
 
-int main(int argc, char** argv) {
-  LoggerState logger;
-  logger_init(&logger, "bootlog", false);
-
-  char segment_path[4096];
-  int err = logger_next(&logger, LOG_ROOT.c_str(), segment_path, sizeof(segment_path), nullptr);
-  assert(err == 0);
-  LOGW("bootlog to %s", segment_path);
-
+static kj::Array<capnp::word> build_boot_log() {
   MessageBuilder msg;
   auto boot = msg.initEvent().initBoot();
 
@@ -28,10 +18,25 @@ int main(int argc, char** argv) {
 
   std::string launchLog = util::read_file("/tmp/launch_log");
   boot.setLaunchLog(capnp::Text::Reader(launchLog.data(), launchLog.size()));
+  return capnp::messageToFlatArray(msg);
+}
 
-  auto bytes = msg.toBytes();
-  logger_log(&logger, bytes.begin(), bytes.size(), false);
+int main(int argc, char** argv) {
 
-  logger_close(&logger);
+  const std::string path = LOG_ROOT + "/boot/" + logger_get_route_name() + ".bz2";
+  LOGW("bootlog to %s", path.c_str());
+
+  // Open bootlog
+  int r = logger_mkpath((char*)path.c_str());
+  assert(r == 0);
+
+  BZFile bz_file(path.c_str());
+
+  // Write initdata
+  bz_file.write(logger_build_init_data().asBytes());
+
+  // Write bootlog
+  bz_file.write(build_boot_log().asBytes());
+
   return 0;
 }

@@ -27,11 +27,11 @@ def replay(route, loop):
   lr = LogReader(f"cd:/{route}/rlog.bz2")
   fr = FrameReader(f"cd:/{route}/fcamera.hevc", readahead=True)
 
-  # Build mapping from frameId to segmentId from encodeIdx, type == fullHEVC
+  # Build mapping from frameId to segmentId from roadEncodeIdx, type == fullHEVC
   msgs = [m for m in lr if m.which() not in IGNORE]
   msgs = sorted(msgs, key=lambda m: m.logMonoTime)
   times = [m.logMonoTime for m in msgs]
-  frame_idx = {m.encodeIdx.frameId: m.encodeIdx.segmentId for m in msgs if m.which() == 'encodeIdx' and m.encodeIdx.type == 'fullHEVC'}
+  frame_idx = {m.roadEncodeIdx.frameId: m.roadEncodeIdx.segmentId for m in msgs if m.which() == 'roadEncodeIdx' and m.roadEncodeIdx.type == 'fullHEVC'}
 
   socks = {}
   lag = 0
@@ -45,11 +45,11 @@ def replay(route, loop):
     start_time = time.time()
     w = msg.which()
 
-    if w == 'frame':
+    if w == 'roadCameraState':
       try:
         img = fr.get(frame_idx[msg.frame.frameId], pix_fmt="rgb24")
         img = img[0][:, :, ::-1]  # Convert RGB to BGR, which is what the camera outputs
-        msg.frame.image = img.flatten().tobytes()
+        msg.roadCameraState.image = img.flatten().tobytes()
       except (KeyError, ValueError):
         pass
 

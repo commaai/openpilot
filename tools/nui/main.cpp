@@ -165,6 +165,7 @@ void Window::paintEvent(QPaintEvent *event) {
   //p.drawRect(0, 0, 600, 100);
 
   // TODO: we really don't have to redraw this every time, only on updates to events
+  float vEgo = 0.;
   int this_event_size = events.size();
   if (last_event_size != this_event_size) {
     if (px != NULL) delete px;
@@ -179,10 +180,11 @@ void Window::paintEvent(QPaintEvent *event) {
     for (auto e : events) {
       auto type = e.which();
       //printf("%lld %d\n", e.getLogMonoTime()-t0, type);
-      if (type == cereal::Event::CONTROLS_STATE) {
+      if (type == cereal::Event::CAR_STATE) {
+        vEgo = e.getCarState().getVEgo();
+      } else if (type == cereal::Event::CONTROLS_STATE) {
         auto controlsState = e.getControlsState();
         uint64_t t = (e.getLogMonoTime()-t0);
-        float vEgo = controlsState.getVEgo();
         int enabled = controlsState.getState() == cereal::ControlsState::OpenpilotState::ENABLED;
         int rt = timeToPixel(t); // 250 ms per pixel
         if (rt != lt) {
