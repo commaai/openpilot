@@ -27,29 +27,29 @@ else:
   from raven.transport.http import HTTPTransport
   from selfdrive.version import origin, branch, smiskol_remote, get_git_commit
   from common.op_params import opParams
+  import shutil
 
   CRASHES_DIR = '/data/community/crashes'
   if not os.path.exists(CRASHES_DIR):
     os.makedirs(CRASHES_DIR)
 
-  error_tags = {'dirty': dirty, 'origin': origin, 'branch': branch, 'commit': get_git_commit()}
-  username = opParams().get('username')
-  if username is None or not isinstance(username, str):
+  error_tags = {'dirty': dirty, 'origin': origin, 'branch': branch, 'commit': get_git_commit(), 'username': opParams().get('username')}
+  if error_tags['username'] is None or not isinstance(error_tags['username'], str):
     username = 'undefined'
-  error_tags['username'] = username
 
   if smiskol_remote:  # CHANGE TO YOUR remote and sentry key to receive errors if you fork this fork
-    sentry_uri = 'https://7f66878806a948f9a8b52b0fe7781201@o237581.ingest.sentry.io/5252098'
+    sentry_uri = 'https://a83947fe6772400bb220c3f0e4a6e63b@o237581.ingest.sentry.io/5252098'
   else:
     sentry_uri = 'https://1994756b5e6f41cf939a4c65de45f4f2:cefebaf3a8aa40d182609785f7189bd7@app.getsentry.com/77924'  # stock
   client = Client(sentry_uri, install_sys_hook=False, transport=HTTPTransport, release=version, tags=error_tags)
 
 
   def save_exception(exc_text):
-    log_file = '{}/{}'.format(CRASHES_DIR, datetime.now().strftime('%d-%m-%Y--%I:%M.%S-%p.log'))
+    log_file = '{}/{}'.format(CRASHES_DIR, datetime.now().strftime('%Y-%m-%d--%H:%M.log'))
     with open(log_file, 'w') as f:
       f.write(exc_text)
-    print('Logged current crash to {}'.format(log_file))
+    shutil.copyfile(log_file, '{}/latest.log'.format(CRASHES_DIR))
+    print('Logged current crash to {} and {}'.format(log_file, '{}/latest.log'.format(CRASHES_DIR)))
 
   def capture_exception(*args, **kwargs):
     save_exception(traceback.format_exc())

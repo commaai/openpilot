@@ -171,9 +171,11 @@ Therefore, if your device sees an update while you're driving it will reboot app
 
 ---
 ### Offline crash logging
-If you experience a crash or exception while driving with this fork and you're not on internet for the error to be uploaded to Sentry, you should be able to check out the directory `/data/community/crashes` to see any and all logs of exceptions caught in `manager.py`. Simply `cat` the log file you wish to view. This does not catch all errors, for example scons compilation errors or some Python syntax errors will not be caught, `tmux a` is usually best to view these (if openpilot didn't start).
+If you experience a crash or exception while driving with this fork, and you're not on internet for the error to be uploaded to Sentry, you should be able to check out the directory `/data/community/crashes` to see any and all logs of exceptions caught in openpilot. Simply view the logs with `ls -lah` and then `cat` the file you wish to view by date. This does not catch all errors, for example scons compilation errors or some Python syntax errors will not be caught, `tmux a` is usually best to view these (if openpilot didn't start).
 
-Feel free to reach out to me on Discord or my email if you're having any issues with the fork!
+❗***Quickly view the latest crash:*** `cat /data/community/crashes/latest.log`
+
+Feel free to reach out to me on [Discord](#stock-additions-v066-082) if you're having any issues with the fork!
 
 ---
 ## Documentation
