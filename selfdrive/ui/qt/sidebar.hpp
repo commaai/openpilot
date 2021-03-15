@@ -2,6 +2,9 @@
 
 #include <QtWidgets>
 
+#define QT_COLOR_WHITE QColor(255, 255, 255)
+#define QT_COLOR_YELLOW QColor(218, 202, 37)
+#define QT_COLOR_RED QColor(201, 34, 49)
 
 class SettingsBtn : public QAbstractButton {
   Q_OBJECT
@@ -37,13 +40,14 @@ class StatusWidget : public QFrame {
   Q_OBJECT
 
 public:
-  StatusWidget(QString text, QColor color, QWidget* parent = 0);
+  StatusWidget(QString label, QString msg, QColor color, QWidget* parent = 0);
 
 protected:
   void paintEvent(QPaintEvent*) override;
 private:
-  QColor ind_color = QColor(234,192,11); //init to yellow?
-  QLabel* label;
+  QColor _severity = QT_COLOR_YELLOW;
+  QLabel* l_label;
+  QLabel* l_msg;
 };
 
 class Sidebar : public QFrame {
