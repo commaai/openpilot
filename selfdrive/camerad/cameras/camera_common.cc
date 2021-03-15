@@ -107,14 +107,13 @@ CameraBuf::~CameraBuf() {
 bool CameraBuf::acquire() {
   if (!safe_queue.try_pop(cur_buf_idx, 1)) return false;
 
-  const FrameMetadata &frame_data = camera_bufs_metadata[cur_buf_idx];
-  if (frame_data.frame_id == -1) {
+  if (camera_bufs_metadata[cur_buf_idx].frame_id == -1) {
     LOGE("no frame data? wtf");
     release();
     return false;
   }
 
-  cur_frame_data = frame_data;
+  cur_frame_data = camera_bufs_metadata[cur_buf_idx];
 
   cur_rgb_buf = vipc_server->get_buffer(rgb_type);
 
@@ -152,13 +151,13 @@ bool CameraBuf::acquire() {
   CL_CHECK(clReleaseEvent(debayer_event));
 
   cur_yuv_buf = vipc_server->get_buffer(yuv_type);
-  yuv_metas[cur_yuv_buf->idx] = frame_data;
+  yuv_metas[cur_yuv_buf->idx] = cur_frame_data;
   rgb_to_yuv_queue(&rgb_to_yuv_state, q, cur_rgb_buf->buf_cl, cur_yuv_buf->buf_cl);
 
   VisionIpcBufExtra extra = {
-                        frame_data.frame_id,
-                        frame_data.timestamp_sof,
-                        frame_data.timestamp_eof,
+                        cur_frame_data.frame_id,
+                        cur_frame_data.timestamp_sof,
+                        cur_frame_data.timestamp_eof,
   };
   vipc_server->send(cur_rgb_buf, &extra);
   vipc_server->send(cur_yuv_buf, &extra);
