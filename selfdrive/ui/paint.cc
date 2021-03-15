@@ -457,6 +457,16 @@ static const char frame_fragment_shader[] =
   "out vec4 colorOut;\n"
   "void main() {\n"
   "  colorOut = texture(uTexture, vTexCoord.xy);\n"
+#ifdef QCOM2
+  "  colorOut.r *= 1.158f;\n"
+  "  colorOut.b *= 0.9886f;\n"
+  "  vec3 rgb_cc = vec3(0.0f, 0.0f, 0.0f);\n"
+  "  rgb_cc += colorOut.r * vec3(0.76224983f, -0.03831579f, -0.00478179f);\n"
+  "  rgb_cc += colorOut.g * vec3(0.4664375f, 1.26247242f, -0.10263401f);\n"
+  "  rgb_cc += colorOut.b * vec3(-0.22868733f, -0.22415664f, 1.1074158f);\n"
+  "  colorOut.rgb = rgb_cc;\n"
+  "  colorOut.rgb = pow(colorOut.rgb, vec3(0.555f, 0.555f, 0.555f));\n"
+#endif
   "}\n";
 
 static const mat4 device_transform = {{
