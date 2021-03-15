@@ -205,18 +205,20 @@ void can_send_thread(bool fake_send) {
   Context * context = Context::create();
   SubSocket * subscriber = SubSocket::create(context, "sendcan");
   assert(subscriber != NULL);
-  subscriber->setTimeout(100);
+
+  Poller * poller = Poller::create({subscriber});
 
   // run as fast as messages come in
   while (!do_exit && panda->connected) {
-    Message * msg = subscriber->receive();
-
-    if (!msg){
-      if (errno == EINTR) {
-        do_exit = true;
-      }
+    if (poller->poll(100).size() == 0){
       continue;
     }
+
+    Message * msg = subscriber->receive();
+    if (!msg){
+      continue;
+    }
+
     const size_t size = (msg->getSize() / sizeof(capnp::word)) + 1;
     if (buf.size() < size) {
       buf = kj::heapArray<capnp::word>(size);

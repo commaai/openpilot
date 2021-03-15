@@ -396,7 +396,7 @@ int main(int argc, char** argv) {
       // drain socket
       Message * last_msg = nullptr;
       while (!do_exit) {
-        Message * msg = sock->receive(true);
+        Message * msg = sock->receive();
         if (!msg){
           break;
         }

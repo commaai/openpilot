@@ -29,18 +29,21 @@ int ubloxd_main(poll_ubloxraw_msg_func poll_func, send_gps_event_func send_func)
   Context * context = Context::create();
   SubSocket * subscriber = SubSocket::create(context, "ubloxRaw");
   assert(subscriber != NULL);
-  subscriber->setTimeout(100);
+
+  Poller * poller = Poller::create({subscriber});
 
   PubMaster pm({"ubloxGnss", "gpsLocationExternal"});
 
   while (!do_exit) {
-    Message * msg = subscriber->receive();
-    if (!msg){
-      if (errno == EINTR) {
-        do_exit = true;
-      }
+    if (poller->poll(100).size() == 0){
       continue;
     }
+
+    Message * msg = subscriber->receive();
+    if (!msg){
+      continue;
+    }
+
     const size_t size = (msg->getSize() / sizeof(capnp::word)) + 1;
     if (buf.size() < size) {
       buf = kj::heapArray<capnp::word>(size);
