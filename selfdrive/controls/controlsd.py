@@ -65,6 +65,9 @@ class Controls:
     if can_sock is None:
       self.can_sock = messaging.sub_sock('can')
 
+    self.poller = messaging.Poller()
+    self.poller.registerSocket(self.can_sock)
+
     # wait for one pandaState and one CAN packet
     print("Waiting for CAN messages...")
     get_one_can(self.can_sock)
@@ -262,7 +265,7 @@ class Controls:
     """Receive data from sockets and update carState"""
 
     # Update carState from CAN
-    can_strs = messaging.drain_sock_raw(self.can_sock, wait_for_one=True)
+    can_strs = messaging.drain_sock_raw(self.can_sock, wait_for_one=True, poller=self.poller)
     CS = self.CI.update(self.CC, can_strs)
 
     self.sm.update(0)
