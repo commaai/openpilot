@@ -20,16 +20,15 @@ void SettingsBtn::paintEvent(QPaintEvent *e){
 
 StatusWidget::StatusWidget(QString label, QString msg, QColor indicator, QWidget* parent) : QFrame(parent),
 _severity(indicator)
-{  
-  l_label = new QLabel(this);
-  l_label->setText(label);  
+{ l_label = new QLabel(this);
+  l_label->setText(label);
 
   QVBoxLayout* sw_layout = new QVBoxLayout();
   sw_layout->setSpacing(0);
 
   if(msg.length() > 0){
     sw_layout->setContentsMargins(50,24,16,24); //50l, 16r, 24 vertical
-    l_label->setStyleSheet(R"(font-size: 65px; font-weight: 600;)"); 
+    l_label->setStyleSheet(R"(font-size: 65px; font-weight: 600;)");
     l_label->setAlignment(Qt::AlignLeft | Qt::AlignHCenter);
 
     l_msg = new QLabel(this);
@@ -41,7 +40,7 @@ _severity(indicator)
     sw_layout->addWidget(l_msg, 0, Qt::AlignLeft);
   } else {
     sw_layout->setContentsMargins(40,24,16,24); //40l, 16r, 24 vertical
-    
+
     //TODO: is qt really using the font?
     //TODO: does qt allow to set the line spacing?
     QFont msg_font("Inter", 24);
@@ -63,7 +62,7 @@ _severity(indicator)
 
 void StatusWidget::paintEvent(QPaintEvent *e){
   QPainter p(this);
-  p.setRenderHint(QPainter::Antialiasing, true);  
+  p.setRenderHint(QPainter::Antialiasing, true);
   p.setPen(QPen(QColor(0xb2b2b2), 3, Qt::SolidLine, Qt::FlatCap));
   //origin at 1.5,1.5 because qt issues with pixel perfect borders
   p.drawRoundedRect(QRectF(1.5, 1.5, size().width()-3, size().height()-3), 30, 30);
@@ -77,11 +76,9 @@ void StatusWidget::paintEvent(QPaintEvent *e){
 
 SignalWidget::SignalWidget(QString text, int strength, QWidget* parent) : QFrame(parent),
 _strength(strength)
-{ 
+{
 
-  //TODO: battery icon
-  QLabel* label = new QLabel(this);
-  label->setText("WiFi");
+  QLabel* label = new QLabel(text, this);
   label->setStyleSheet(R"(font-size: 35px; font-weight: 200;)");
   label->setAlignment(Qt::AlignVCenter);
   label->setFixedSize(100, 50);
@@ -91,26 +88,26 @@ _strength(strength)
   layout->setContentsMargins(50,0,50,0);
   layout->addWidget(label, 0, Qt::AlignVCenter | Qt::AlignLeft);
   setMinimumHeight(120);
-  setMaximumSize(300,150);
+  //setMaximumSize(300,150);
+  setMaximumSize(176,80);
   setLayout(layout);
 }
 
-void SignalWidget::paintEvent(QPaintEvent *e){  
+void SignalWidget::paintEvent(QPaintEvent *e){
   QPainter p(this);
   p.setRenderHint(QPainter::Antialiasing, true);
   p.setPen(Qt::NoPen);
   p.setBrush(Qt::darkGray);
-  int center = width() / 2;
   for (int i = _strength; i < 5 ; i++) //draw empty dots
   {
-    p.drawEllipse(QRectF( center + _firstdot + (_dotspace * i), _top, _dia, _dia));
+    p.drawEllipse(QRectF(_dotspace * i, _top, _dia, _dia));
   }
   p.setPen(Qt::NoPen);
   p.setBrush(Qt::white);
   for (int i = 0; i < _strength; i++) //draw filled dots
   {
-    p.drawEllipse(QRectF( center + _firstdot + (_dotspace * i), _top, _dia, _dia));
-  } 
+    p.drawEllipse(QRectF(_dotspace * i, _top, _dia, _dia));
+  }
 }
 
 Sidebar::Sidebar(QWidget* parent) : QFrame(parent){
@@ -131,10 +128,10 @@ Sidebar::Sidebar(QWidget* parent) : QFrame(parent){
   StatusWidget* temp = new StatusWidget("39C", "TEMP", QT_COLOR_RED, this);
   StatusWidget* vehicle = new StatusWidget("VEHICLE\nGOOD GPS", "", QT_COLOR_WHITE, this);
   StatusWidget* connect = new StatusWidget("CONNECT\nOFFLINE", "",  QT_COLOR_YELLOW, this);
-  
+
 
   sb_layout->addWidget(s_btn, 0, Qt::AlignTop);
-  sb_layout->addWidget(signal, 0, Qt::AlignTop);
+  sb_layout->addWidget(signal, 0, Qt::AlignTop | Qt::AlignHCenter);
   sb_layout->addWidget(temp, 0, Qt::AlignTop);
   sb_layout->addWidget(vehicle, 0, Qt::AlignTop);
   sb_layout->addWidget(connect, 0, Qt::AlignTop);

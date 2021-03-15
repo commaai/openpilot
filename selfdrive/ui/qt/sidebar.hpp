@@ -29,7 +29,6 @@ protected:
   void paintEvent(QPaintEvent*) override;
 
 private:
-  float _firstdot = -87; //1st dot x pos offset
   float _dotspace = 37; //spacing between dots
   float _top = 10;
   float _dia = 28; //dot diameter
