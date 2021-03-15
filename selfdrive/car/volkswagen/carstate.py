@@ -108,7 +108,7 @@ class CarState(CarStateBase):
 
     # Update ACC setpoint. When the setpoint is zero or there's an error, the
     # radar sends a set-speed of ~90.69 m/s / 203mph.
-    ret.cruiseState.speed = pt_cp.vl["ACC_02"]['SetSpeed']
+    ret.cruiseState.speed = pt_cp.vl["ACC_02"]['ACC_Wunschgeschw'] * CV.KPH_TO_MS
     if ret.cruiseState.speed > 90:
       ret.cruiseState.speed = 0
 
@@ -182,7 +182,7 @@ class CarState(CarStateBase):
       ("TSK_Fahrzeugmasse_02", "Motor_16", 0),      # Estimated vehicle mass from drivetrain coordinator
       ("ACC_Status_ACC", "ACC_06", 0),              # ACC engagement status
       ("ACC_Typ", "ACC_06", 0),                     # ACC type (follow to stop, stop&go)
-      ("SetSpeed", "ACC_02", 0),                    # ACC set speed
+      ("ACC_Wunschgeschw", "ACC_02", 0),            # ACC set speed
       ("AWV2_Freigabe", "ACC_10", 0),               # FCW brake jerk release
       ("ANB_Teilbremsung_Freigabe", "ACC_10", 0),   # AEB partial braking release
       ("ANB_Zielbremsung_Freigabe", "ACC_10", 0),   # AEB target braking release
