@@ -82,14 +82,15 @@ static int get_path_length_idx(const cereal::ModelDataV2::XYZTData::Reader &line
   return max_idx;
 }
 
-static void update_lead(UIState *s, const cereal::RadarState::Reader &radar_state,
-                        const cereal::ModelDataV2::XYZTData::Reader &line, int idx) {
-  auto &lead_data = s->scene.lead_data[idx];
-  lead_data = (idx == 0) ? radar_state.getLeadOne() : radar_state.getLeadTwo();
-  if (lead_data.getStatus()) {
-    const int path_idx = get_path_length_idx(line, lead_data.getDRel());
-    // negative because radarState uses left positive convention
-    calib_frame_to_full_frame(s, lead_data.getDRel(), -lead_data.getYRel(), line.getZ()[path_idx] + 1.22, &s->scene.lead_vertices[idx]);
+static void update_leads(UIState *s, const cereal::RadarState::Reader &radar_state, std::optional<cereal::ModelDataV2::XYZTData::Reader> line) {
+  for (int i = 0; i < 2; ++i) {
+    auto lead_data = (i == 0) ? radar_state.getLeadOne() : radar_state.getLeadTwo();
+    if (lead_data.getStatus()) {
+      float z = line ? (*line).getZ()[get_path_length_idx(*line, lead_data.getDRel())] : 0.0;
+      // negative because radarState uses left positive convention
+      calib_frame_to_full_frame(s, lead_data.getDRel(), -lead_data.getYRel(), z + 1.22, &s->scene.lead_vertices[i]);
+    }
+    s->scene.lead_data[i] = lead_data;
   }
 }
 
@@ -151,10 +152,11 @@ static void update_sockets(UIState *s) {
     scene.car_state = sm["carState"].getCarState();
   }
   if (sm.updated("radarState")) {
-    auto radar_state = sm["radarState"].getRadarState();
-    const auto line = sm["modelV2"].getModelV2().getPosition();
-    update_lead(s, radar_state, line, 0);
-    update_lead(s, radar_state, line, 1);
+    std::optional<cereal::ModelDataV2::XYZTData::Reader> line;
+    if (sm.rcv_frame("modelV2") > 0) {
+      line = sm["modelV2"].getModelV2().getPosition();
+    }
+    update_leads(s, sm["radarState"].getRadarState(), line);
   }
   if (sm.updated("liveCalibration")) {
     scene.world_objects_visible = true;
