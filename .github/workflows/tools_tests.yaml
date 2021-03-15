@@ -59,6 +59,6 @@ jobs:
     - name: Testing
       run: |
         INSTALL=1 tools/sim/start_carla.sh &
-        ${{ env.RUN }} "scons -j$(nproc) --directory=/tmp/openpilot/cereal && \
+        ${{ env.RUN }} "scons -j$(nproc) --directory=/tmp/openpilot && \
                         cd /tmp/openpilot/tools/sim && \
                         ./test_simulator.py"
