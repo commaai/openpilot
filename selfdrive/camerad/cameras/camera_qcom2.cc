@@ -765,9 +765,6 @@ void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_i
   camera_init(s, v, &s->driver_cam, CAMERA_ID_AR0231, 2, 20, device_id, ctx,
               VISION_STREAM_RGB_FRONT, VISION_STREAM_YUV_FRONT);
   printf("driver camera initted \n");
-
-  s->sm = new SubMaster({"driverState"});
-  s->pm = new PubMaster({"roadCameraState", "driverCameraState", "wideRoadCameraState", "thumbnail"});
 }
 
 void cameras_open(MultiCameraState *s) {
@@ -865,9 +862,6 @@ void cameras_close(MultiCameraState *s) {
   camera_close(&s->road_cam);
   camera_close(&s->wide_road_cam);
   camera_close(&s->driver_cam);
-
-  delete s->sm;
-  delete s->pm;
 }
 
 // ******************* just a helper *******************
@@ -1055,12 +1049,8 @@ static void ae_thread(MultiCameraState *s) {
   }
 }
 
-void process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) {
-  common_process_driver_camera(s->sm, s->pm, c, cnt);
-}
-
 // called by processing_thread
-void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
+void process_road_camera(MultiCameraState *s, CameraState *c, PubMaster *pm, int cnt) {
   const CameraBuf *b = &c->buf;
 
   MessageBuilder msg;
@@ -1072,7 +1062,7 @@ void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
   if (c == &s->road_cam) {
     framed.setTransform(b->yuv_transform.v);
   }
-  s->pm->send(c == &s->road_cam ? "roadCameraState" : "wideRoadCameraState", msg);
+  pm->send(c == &s->road_cam ? "roadCameraState" : "wideRoadCameraState", msg);
 
   if (cnt % 3 == 0) {
     const auto [x, y, w, h] = (c == &s->wide_road_cam) ? std::tuple(96, 250, 1734, 524) : std::tuple(96, 160, 1734, 986);
@@ -1086,7 +1076,7 @@ void cameras_run(MultiCameraState *s) {
   std::vector<std::thread> threads;
   threads.push_back(std::thread(ae_thread, s));
   threads.push_back(start_process_thread(s, &s->road_cam, process_road_camera));
-  threads.push_back(start_process_thread(s, &s->driver_cam, process_driver_camera));
+  threads.push_back(start_process_thread(s, &s->driver_cam, common_process_driver_camera));
   threads.push_back(start_process_thread(s, &s->wide_road_cam, process_road_camera));
 
   // start devices

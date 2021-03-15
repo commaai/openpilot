@@ -318,6 +318,11 @@ float set_exposure_target(const CameraBuf *b, int x_start, int x_end, int x_skip
 extern ExitHandler do_exit;
 
 void *processing_thread(MultiCameraState *cameras, CameraState *cs, process_thread_cb callback) {
+  static PubMaster pm({"roadCameraState", "driverCameraState", "thumbnail"
+#ifdef QCOM2
+    , "wideRoadCameraState"
+#endif
+  });
   const char *thread_name = nullptr;
   if (cs == &cameras->road_cam) {
     thread_name = "RoadCamera";
@@ -332,11 +337,11 @@ void *processing_thread(MultiCameraState *cameras, CameraState *cs, process_thre
   while (!do_exit) {
     if (!cs->buf.acquire()) continue;
 
-    callback(cameras, cs, cnt);
+    callback(cameras, cs, &pm, cnt);
 
-    if (cs == &(cameras->road_cam) && cameras->pm && cnt % 100 == 3) {
+    if (cs == &(cameras->road_cam) && cnt % 100 == 3) {
       // this takes 10ms???
-      publish_thumbnail(cameras->pm, &(cs->buf));
+      publish_thumbnail(&pm, &(cs->buf));
     }
     cs->buf.release();
     ++cnt;

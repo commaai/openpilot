@@ -221,9 +221,6 @@ void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_i
               /*max_gain=*/510, 10, device_id, ctx,
               VISION_STREAM_RGB_FRONT, VISION_STREAM_YUV_FRONT);
 
-  s->sm = new SubMaster({"driverState"});
-  s->pm = new PubMaster({"roadCameraState", "driverCameraState", "thumbnail"});
-
   for (int i = 0; i < FRAME_BUF_COUNT; i++) {
     // TODO: make lengths correct
     s->focus_bufs[i].allocate(0xb80);
@@ -1082,12 +1079,8 @@ static void setup_self_recover(CameraState *c, const uint16_t *lapres, size_t la
   c->self_recover.store(self_recover);
 }
 
-void process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) {
-  common_process_driver_camera(s->sm, s->pm, c, cnt);
-}
-
 // called by processing_thread
-void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
+void process_road_camera(MultiCameraState *s, CameraState *c, PubMaster *pm, int cnt) {
   const CameraBuf *b = &c->buf;
   const int roi_id = cnt % std::size(s->lapres);  // rolling roi
   s->lapres[roi_id] = s->lap_conv->Update(b->q, (uint8_t *)b->cur_rgb_buf->addr, roi_id);
@@ -1104,7 +1097,7 @@ void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
   framed.setRecoverState(s->road_cam.self_recover);
   framed.setSharpnessScore(s->lapres);
   framed.setTransform(b->yuv_transform.v);
-  s->pm->send("roadCameraState", msg);
+  pm->send("roadCameraState", msg);
 
   if (cnt % 3 == 0) {
     const int x = 290, y = 322, width = 560, height = 314;
@@ -1117,7 +1110,7 @@ void cameras_run(MultiCameraState *s) {
   std::vector<std::thread> threads;
   threads.push_back(std::thread(ops_thread, s));
   threads.push_back(start_process_thread(s, &s->road_cam, process_road_camera));
-  threads.push_back(start_process_thread(s, &s->driver_cam, process_driver_camera));
+  threads.push_back(start_process_thread(s, &s->driver_cam, common_process_driver_camera));
 
   CameraState* cameras[2] = {&s->road_cam, &s->driver_cam};
 
@@ -1195,6 +1188,4 @@ void cameras_close(MultiCameraState *s) {
   }
 
   delete s->lap_conv;
-  delete s->sm;
-  delete s->pm;
 }

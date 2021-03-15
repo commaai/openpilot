@@ -20,11 +20,7 @@ typedef struct CameraState {
   CameraBuf buf;
 } CameraState;
 
-
 typedef struct MultiCameraState {
   CameraState road_cam;
   CameraState driver_cam;
-
-  SubMaster *sm;
-  PubMaster *pm;
 } MultiCameraState;
