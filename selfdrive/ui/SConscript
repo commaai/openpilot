@@ -27,7 +27,7 @@ else:
   widgets_src = ["qt/widgets/input.cc", "qt/widgets/drive_stats.cc",
                  "qt/widgets/ssh_keys.cc", "qt/widgets/toggle.cc", "qt/qt_sound.cc",
                  "qt/widgets/offroad_alerts.cc", "qt/widgets/setup.cc", "qt/widgets/keyboard.cc",
-                 "#phonelibs/qrcode/QrCode.cc"]
+                 "#phonelibs/qrcode/QrCode.cc", "qt/sidebar.cc"]
 
   if arch != 'aarch64':
     widgets_src += ["qt/offroad/networking.cc", "qt/offroad/wifiManager.cc"]
