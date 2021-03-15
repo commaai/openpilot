@@ -214,7 +214,7 @@ void can_send_thread(bool fake_send) {
       continue;
     }
 
-    capnp::FlatArrayMessageReader cmsg(aligned_buf.get(msg->getData(), msg->getSize()));
+    capnp::FlatArrayMessageReader cmsg(aligned_buf.get(msg));
     cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
 
     //Dont send if older than 1 second
