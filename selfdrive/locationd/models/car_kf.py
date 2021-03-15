@@ -9,6 +9,7 @@ import sympy as sp
 from rednose import KalmanFilter
 from rednose.helpers.ekf_sym import EKF_sym, gen_code
 from selfdrive.locationd.models.constants import ObservationKind
+from selfdrive.swaglog import cloudlog
 
 i = 0
 
@@ -148,7 +149,7 @@ class CarKalman(KalmanFilter):
     x_init[States.ANGLE_OFFSET] = angle_offset
 
     # init filter
-    self.filter = EKF_sym(generated_dir, self.name, self.Q, self.initial_x, self.P_initial, dim_state, dim_state_err, global_vars=self.global_vars)
+    self.filter = EKF_sym(generated_dir, self.name, self.Q, self.initial_x, self.P_initial, dim_state, dim_state_err, global_vars=self.global_vars, logger=cloudlog)
 
 
 if __name__ == "__main__":
