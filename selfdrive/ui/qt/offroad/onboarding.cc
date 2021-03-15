@@ -62,11 +62,9 @@ QWidget* OnboardingWindow::terms_screen() {
   main_layout->setContentsMargins(40, 20, 40, 0);
 
   QString terms_html = QString::fromStdString(util::read_file("../assets/offroad/tc.html"));
-
   terms_text = new QTextEdit();
   terms_text->setReadOnly(true);
   terms_text->setTextInteractionFlags(Qt::NoTextInteraction);
-  terms_text->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   terms_text->setHtml(terms_html);
   main_layout->addWidget(terms_text);
 
@@ -86,8 +84,25 @@ QWidget* OnboardingWindow::terms_screen() {
   });
 
   // TODO: tune the scrolling
-  QScroller::grabGesture(terms_text, QScroller::TouchGesture);
   auto sb = terms_text->verticalScrollBar();
+#ifdef QCOM2
+  sb->setStyleSheet(R"(
+    QScrollBar {
+      width: 150px;
+      background: grey;
+    }
+    QScrollBar::handle {
+      background-color: white;
+    }
+    QScrollBar::add-line, QScrollBar::sub-line{
+      width: 0;
+      height: 0;
+    }
+  )");
+#else
+  QScroller::grabGesture(terms_text, QScroller::TouchGesture);
+  terms_text->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+#endif
   QObject::connect(sb, &QScrollBar::valueChanged, [sb, accept_btn]() {
     accept_btn->setEnabled(accept_btn->isEnabled() || (sb->value() == sb->maximum()));
   });
