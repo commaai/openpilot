@@ -222,22 +222,11 @@ static void ui_draw_vision_event(UIState *s) {
   }
 }
 
-// copied from driver_monitor.py
-#define DISTRACTED_FILTER_TS 0.25  // 0.6Hz
-#ifdef QCOM2
-#define DT_DMON 0.05
-#else
-#define DT_DMON 0.1
-#endif
 static void ui_draw_vision_face(UIState *s) {
-  static FirstOrderFilter filter(0., DISTRACTED_FILTER_TS, DT_DMON);
   const int face_size = 96;
   const int face_x = (s->viz_rect.x + face_size + (bdr_s * 2));
   const int face_y = (s->viz_rect.bottom() - footer_h + ((footer_h - face_size) / 2));
-  const bool is_distracted = s->scene.dmonitoring_state.getIsDistracted();
-  const bool face_detected = s->scene.dmonitoring_state.getFaceDetected();
-  bool deactivate_icon = filter.update(!face_detected || is_distracted) > 0.64;
-  ui_draw_circle_image(s, face_x, face_y, face_size, "driver_face", !deactivate_icon);
+  ui_draw_circle_image(s, face_x, face_y, face_size, "driver_face", s->scene.dmonitoring_state.getIsActiveMode());
 }
 
 static void ui_draw_driver_view(UIState *s) {
