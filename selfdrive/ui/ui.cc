@@ -87,9 +87,9 @@ static void update_lead(UIState *s, const cereal::RadarState::Reader &radar_stat
   auto &lead_data = s->scene.lead_data[idx];
   lead_data = (idx == 0) ? radar_state.getLeadOne() : radar_state.getLeadTwo();
   if (lead_data.getStatus()) {
-    const int path_idx = get_path_length_idx(line, lead_data.getDRel());
+    float z = line.totalSize().wordCount > 0 ? line.getZ()[get_path_length_idx(line, lead_data.getDRel())] : 0.;
     // negative because radarState uses left positive convention
-    calib_frame_to_full_frame(s, lead_data.getDRel(), -lead_data.getYRel(), line.getZ()[path_idx] + 1.22, &s->scene.lead_vertices[idx]);
+    calib_frame_to_full_frame(s, lead_data.getDRel(), -lead_data.getYRel(), z + 1.22, &s->scene.lead_vertices[idx]);
   }
 }
 
@@ -140,7 +140,6 @@ static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
 }
 
 static void update_sockets(UIState *s) {
-  static bool model_udpated = false;
   SubMaster &sm = *(s->sm);
   if (sm.update(0) == 0) return;
 
@@ -151,7 +150,7 @@ static void update_sockets(UIState *s) {
   if (sm.updated("carState")) {
     scene.car_state = sm["carState"].getCarState();
   }
-  if (model_udpated && sm.updated("radarState")) {
+  if (sm.updated("radarState")) {
     auto radar_state = sm["radarState"].getRadarState();
     const auto line = sm["modelV2"].getModelV2().getPosition();
     update_lead(s, radar_state, line, 0);
@@ -176,7 +175,6 @@ static void update_sockets(UIState *s) {
   }
   if (sm.updated("modelV2")) {
     update_model(s, sm["modelV2"].getModelV2());
-    model_udpated = true;
   }
   if (sm.updated("uiLayoutState")) {
     auto data = sm["uiLayoutState"].getUiLayoutState();
