@@ -51,7 +51,7 @@ def test_boardd_loopback():
   Params().put("CarParams", cp.to_bytes())
 
   sendcan = messaging.pub_sock('sendcan')
-  can = messaging.sub_sock('can', conflate=False, timeout=100)
+  can = messaging.sub_sock('can')
 
   time.sleep(1)
 

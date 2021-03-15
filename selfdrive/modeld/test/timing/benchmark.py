@@ -11,7 +11,7 @@ N = int(os.getenv("N", "5"))
 TIME = int(os.getenv("TIME", "30"))
 
 if __name__ == "__main__":
-  sock = messaging.sub_sock('modelV2', conflate=False, timeout=1000)
+  sock = messaging.sub_sock('modelV2')
 
   execution_times = []
 

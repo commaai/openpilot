@@ -320,7 +320,6 @@ class LongitudinalControl(unittest.TestCase):
   def setUpClass(cls):
     os.environ['SIMULATION'] = "1"
     os.environ['SKIP_FW_QUERY'] = "1"
-    os.environ['NO_CAN_TIMEOUT'] = "1"
 
     setup_output()
 

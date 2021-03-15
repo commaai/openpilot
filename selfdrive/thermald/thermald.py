@@ -154,7 +154,7 @@ def thermald_thread():
   pm = messaging.PubMaster(['deviceState'])
 
   pandaState_timeout = int(1000 * 2.5 * DT_TRML)  # 2.5x the expected pandaState frequency
-  pandaState_sock = messaging.sub_sock('pandaState', timeout=pandaState_timeout)
+  pandaState_sock = messaging.sub_sock('pandaState')
   location_sock = messaging.sub_sock('gpsLocationExternal')
   managerState_sock = messaging.sub_sock('managerState', conflate=True)
 
@@ -191,7 +191,7 @@ def thermald_thread():
   thermal_config = HARDWARE.get_thermal_config()
 
   while 1:
-    pandaState = messaging.recv_sock(pandaState_sock, wait=True)
+    pandaState = messaging.recv_sock(pandaState_sock, wait=True, timeout=pandaState_timeout)
     msg = read_thermal(thermal_config)
 
     if pandaState is not None:

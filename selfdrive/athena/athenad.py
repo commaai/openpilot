@@ -108,8 +108,8 @@ def getMessage(service=None, timeout=1000):
   if service is None or service not in service_list:
     raise Exception("invalid service")
 
-  socket = messaging.sub_sock(service, timeout=timeout)
-  ret = messaging.recv_one(socket)
+  socket = messaging.sub_sock(service)
+  ret = messaging.recv_one(socket, timeout=timeout)
 
   if ret is None:
     raise TimeoutError
@@ -125,8 +125,8 @@ def listDataDirectory():
 
 @dispatcher.add_method
 def reboot():
-  sock = messaging.sub_sock("deviceState", timeout=1000)
-  ret = messaging.recv_one(sock)
+  sock = messaging.sub_sock("deviceState")
+  ret = messaging.recv_one(sock, timeout=1000)
   if ret is None or ret.deviceState.started:
     raise Exception("Reboot unavailable")
 
