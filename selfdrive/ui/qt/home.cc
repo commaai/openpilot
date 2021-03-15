@@ -38,9 +38,13 @@ HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
   glWindow = new GLWindow(this);
   layout->addWidget(glWindow, 0, 0);
 
+  sidebar = new Sidebar(this);
+
   // draw offroad UI on top of onroad UI
   home = new OffroadHome();
   layout->addWidget(home, 0, 0);
+
+  layout->addWidget(sidebar, 0, 0);
 
   QObject::connect(glWindow, SIGNAL(offroadTransition(bool)), this, SLOT(setVisibility(bool)));
   QObject::connect(glWindow, SIGNAL(offroadTransition(bool)), this, SIGNAL(offroadTransition(bool)));
