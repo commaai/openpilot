@@ -34,22 +34,35 @@ def wait_for_event(evt):
       sys.exit(0)
 
 
+class FakePoller:
+  def __init__(self, socket):
+    self.socket = socket
+
+  def poll(self, timeout):
+    if self.socket.wait:
+      self.socket.recv_called.set()
+      wait_for_event(self.socket.recv_ready)
+      self.socket.recv_ready.clear()
+      return [True]
+    elif len(self.socket.data):
+      return [True]
+    else:
+      return []
+
+
 class FakeSocket:
   def __init__(self, wait=True):
     self.data = []
     self.wait = wait
     self.recv_called = threading.Event()
     self.recv_ready = threading.Event()
+    self.poller = FakePoller(self)
 
-  def receive(self, non_blocking=False):
-    if non_blocking:
+  def receive(self):
+    if len(self.data):
+      return self.data.pop()
+    else:
       return None
-
-    if self.wait:
-      self.recv_called.set()
-      wait_for_event(self.recv_ready)
-      self.recv_ready.clear()
-    return self.data.pop()
 
   def send(self, data):
     if self.wait:
