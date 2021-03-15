@@ -131,6 +131,7 @@ class Controls:
     self.sm['driverMonitoringState'].events = []
     self.sm['driverMonitoringState'].awarenessStatus = 1.
     self.sm['driverMonitoringState'].faceDetected = False
+    self.sm['liveParameters'].valid = True
 
     self.startup_event = get_startup_event(car_recognized, controller_available)
 
@@ -208,7 +209,7 @@ class Controls:
 
     if len(self.sm['radarState'].radarErrors):
       self.events.add(EventName.radarFault)
-    elif not self.sm.valid['liveParameters']:
+    elif not self.sm['liveParameters'].valid:
       self.events.add(EventName.vehicleModelInvalid)
     elif not self.sm.all_alive_and_valid():
       self.events.add(EventName.commIssue)
