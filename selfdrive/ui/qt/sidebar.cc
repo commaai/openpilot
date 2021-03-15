@@ -2,7 +2,7 @@
 #include "widgets/toggle.hpp"
 
 //TODO: settings btn signals
-//TODO: 
+//TODO: indicator widgets signals (text and color)
 
 SettingsBtn::SettingsBtn(QWidget* parent) : QAbstractButton(parent){
   setMinimumHeight(160);
@@ -27,30 +27,35 @@ _severity(indicator)
   QVBoxLayout* sw_layout = new QVBoxLayout();
   sw_layout->setSpacing(0);
 
-  //TODO: some way to set qt text vertical line spacing and char tracking?
   if(msg.length() > 0){
     sw_layout->setContentsMargins(50,24,16,24); //50l, 16r, 24 vertical
-
     l_label->setStyleSheet(R"(font-size: 65px; font-weight: 600;)"); 
     l_label->setAlignment(Qt::AlignLeft | Qt::AlignHCenter);
 
     l_msg = new QLabel(this);
     l_msg->setText(msg);
-    l_msg->setStyleSheet(R"(font-size: 30px; font-weight: 200;)");
+    l_msg->setStyleSheet(R"(font-size: 30px; font-weight: 400;)");
     l_msg->setAlignment(Qt::AlignLeft | Qt::AlignHCenter);
 
     sw_layout->addWidget(l_label, 0, Qt::AlignLeft);
     sw_layout->addWidget(l_msg, 0, Qt::AlignLeft);
   } else {
     sw_layout->setContentsMargins(40,24,16,24); //40l, 16r, 24 vertical
+    
+    //TODO: is qt really using the font?
+    //TODO: does qt allow to set the line spacing?
+    QFont msg_font("Inter", 24);
+    msg_font.setLetterSpacing(QFont::PercentageSpacing, 95);
+    msg_font.setWeight(600);
 
-    l_label->setStyleSheet(R"(font-size: 30px; font-weight: 600;)");
+    // l_label->setStyleSheet(R"(font-size: 30px; font-weight: 600;)");
     l_label->setAlignment(Qt::AlignVCenter | Qt::AlignHCenter);
+    l_label->setFont(msg_font);
 
     sw_layout->addWidget(l_label, 0, Qt::AlignCenter);
   }
 
-  setMinimumHeight(120);
+  setMinimumHeight(124);
   setMaximumSize(300,200);
   setStyleSheet(R"( StatusWidget { background-color: transparent;})");
   setLayout(sw_layout);
@@ -123,9 +128,9 @@ Sidebar::Sidebar(QWidget* parent) : QFrame(parent){
   SettingsBtn* s_btn = new SettingsBtn(this);
   SignalWidget* signal = new SignalWidget("4G",2,this);
   //TODO: better temp widget layouting/font
-  StatusWidget* temp = new StatusWidget("39C", "TEMP", QT_COLOR_WHITE, this); //test white
-  StatusWidget* vehicle = new StatusWidget("VEHICLE\nGOOD GPS", "", QT_COLOR_WHITE, this); //test green
-  StatusWidget* connect = new StatusWidget("CONNECT\nOFFLINE", "",  QT_COLOR_YELLOW, this); //test yellow
+  StatusWidget* temp = new StatusWidget("39C", "TEMP", QT_COLOR_RED, this);
+  StatusWidget* vehicle = new StatusWidget("VEHICLE\nGOOD GPS", "", QT_COLOR_WHITE, this);
+  StatusWidget* connect = new StatusWidget("CONNECT\nOFFLINE", "",  QT_COLOR_YELLOW, this);
   
 
   sb_layout->addWidget(s_btn, 0, Qt::AlignTop);
