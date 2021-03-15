@@ -7,7 +7,7 @@
 #include "selfdrive/camerad/cameras/camera_common.h"
 #include "selfdrive/camerad/test/ae_gray_test.h"
 
-void camera_autoexposure(CameraState *s, float grey_frac) {}
+void camera_autoexposure(MultiCameraState *s, CameraState *c) {}
 
 int main() {
   // set up fake camerabuf
@@ -44,7 +44,7 @@ int main() {
               memset(&fb_y[h_0*W+h_1*W], l[2], h_2*W);
               memset(&fb_y[h_0*W+h_1*W+h_2*W], l[3], h_3*W);
               memset(&fb_y[h_0*W+h_1*W+h_2*W+h_3*W], l[4], h_4*W);
-              float ev = set_exposure_target((const CameraBuf*) &cb, 0, W-1, 1, 0, H-1, 1, g*10, (bool)is_qcom2, (bool)is_qcom2);
+              float ev = get_exp_grey_frac((const CameraBuf*) &cb, 0, W-1, 1, 0, H-1, 1, g*10, (bool)is_qcom2, (bool)is_qcom2);
               // printf("%d/%d/%d/%d/%d ev is %f\n", h_0, h_1, h_2, h_3, h_4, ev);
               // printf("%f\n", ev);
 
