@@ -41,15 +41,8 @@ _severity(indicator)
   } else {
     sw_layout->setContentsMargins(40,24,16,24); //40l, 16r, 24 vertical
 
-    //TODO: is qt really using the font?
-    //TODO: does qt allow to set the line spacing?
-    QFont msg_font("Inter", 24);
-    msg_font.setLetterSpacing(QFont::PercentageSpacing, 95);
-    msg_font.setWeight(600);
-
-    // l_label->setStyleSheet(R"(font-size: 30px; font-weight: 600;)");
+    l_label->setStyleSheet(R"(font-size: 30px; font-weight: 600;)");
     l_label->setAlignment(Qt::AlignVCenter | Qt::AlignHCenter);
-    l_label->setFont(msg_font);
 
     sw_layout->addWidget(l_label, 0, Qt::AlignCenter);
   }
