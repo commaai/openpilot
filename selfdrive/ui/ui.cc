@@ -140,6 +140,7 @@ static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
 }
 
 static void update_sockets(UIState *s) {
+  static bool model_udpated = false;
   SubMaster &sm = *(s->sm);
   if (sm.update(0) == 0) return;
 
@@ -150,7 +151,7 @@ static void update_sockets(UIState *s) {
   if (sm.updated("carState")) {
     scene.car_state = sm["carState"].getCarState();
   }
-  if (sm.updated("radarState")) {
+  if (model_udpated && sm.updated("radarState")) {
     auto radar_state = sm["radarState"].getRadarState();
     const auto line = sm["modelV2"].getModelV2().getPosition();
     update_lead(s, radar_state, line, 0);
@@ -175,6 +176,7 @@ static void update_sockets(UIState *s) {
   }
   if (sm.updated("modelV2")) {
     update_model(s, sm["modelV2"].getModelV2());
+    model_udpated = true;
   }
   if (sm.updated("uiLayoutState")) {
     auto data = sm["uiLayoutState"].getUiLayoutState();
