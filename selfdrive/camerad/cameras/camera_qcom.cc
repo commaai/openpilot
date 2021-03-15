@@ -1176,6 +1176,11 @@ void cameras_run(MultiCameraState *s) {
 
       struct v4l2_event ev = {};
       ret = ioctl(c->isp_fd, VIDIOC_DQEVENT, &ev);
+      if (ret < 0) {
+        LOGE("camera %d dequeue event from video err: %d", i, errno);
+        continue;
+      }
+
       const msm_isp_event_data *isp_event_data = (const msm_isp_event_data *)ev.u.data;
 
       if (ev.type == ISP_EVENT_BUF_DIVERT) {
