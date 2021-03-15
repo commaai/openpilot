@@ -1,5 +1,7 @@
 #include <QLabel>
 #include <QString>
+#include <QScroller>
+#include <QScrollBar>
 #include <QPushButton>
 #include <QGridLayout>
 #include <QVBoxLayout>
@@ -9,22 +11,6 @@
 #include "onboarding.hpp"
 #include "home.hpp"
 #include "util.h"
-
-
-QLabel * title_label(QString text) {
-  QLabel *l = new QLabel(text);
-  l->setStyleSheet(R"(
-    font-size: 100px;
-    font-weight: 400;
-  )");
-  return l;
-}
-
-QWidget * layout2Widget(QLayout* l){
-  QWidget *q = new QWidget;
-  q->setLayout(l);
-  return q;
-}
 
 
 void TrainingGuide::mouseReleaseEvent(QMouseEvent *e) {
@@ -61,7 +47,8 @@ TrainingGuide::TrainingGuide(QWidget* parent) {
     slayout->addWidget(w);
   }
 
-  QWidget* sw = layout2Widget(slayout);
+  QWidget* sw = new QWidget();
+  sw->setLayout(slayout);
   hlayout->addWidget(sw, 1, Qt::AlignCenter);
   setLayout(hlayout);
   setStyleSheet(R"(
@@ -72,31 +59,38 @@ TrainingGuide::TrainingGuide(QWidget* parent) {
 
 QWidget* OnboardingWindow::terms_screen() {
   QVBoxLayout *main_layout = new QVBoxLayout;
-  main_layout->setContentsMargins(40, 0, 40, 0);
+  main_layout->setContentsMargins(40, 20, 40, 0);
 
-  QTextEdit *text = new QTextEdit();
-  text->setReadOnly(true);
-  text->setTextInteractionFlags(Qt::NoTextInteraction);
-  QString html = QString::fromStdString(util::read_file("../assets/offroad/tc.html"));
-  text->setHtml(html);
-  main_layout->addWidget(text);
+  QString terms_html = QString::fromStdString(util::read_file("../assets/offroad/tc.html"));
 
-  //QObject::connect(view->page(), SIGNAL(scrollPositionChanged(QPointF)), this, SLOT(scrollPositionChanged(QPointF)));
+  terms_text = new QTextEdit();
+  terms_text->setReadOnly(true);
+  terms_text->setTextInteractionFlags(Qt::NoTextInteraction);
+  terms_text->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+  terms_text->setHtml(terms_html);
+  main_layout->addWidget(terms_text);
 
+  // TODO: add decline page
   QHBoxLayout* buttons = new QHBoxLayout;
+  main_layout->addLayout(buttons);
+
   buttons->addWidget(new QPushButton("Decline"));
   buttons->addSpacing(50);
-  accept_btn = new QPushButton("Scroll to accept");
-  //accept_btn->setEnabled(false);
+
+  QPushButton *accept_btn = new QPushButton("Scroll to accept");
+  accept_btn->setEnabled(false);
   buttons->addWidget(accept_btn);
   QObject::connect(accept_btn, &QPushButton::released, [=]() {
     Params().write_db_value("HasAcceptedTerms", current_terms_version);
     updateActiveScreen();
   });
 
-  QWidget* w = layout2Widget(buttons);
-  w->setFixedHeight(200);
-  main_layout->addWidget(w);
+  // TODO: tune the scrolling
+  QScroller::grabGesture(terms_text, QScroller::TouchGesture);
+  auto sb = terms_text->verticalScrollBar();
+  QObject::connect(sb, &QScrollBar::valueChanged, [sb, accept_btn]() {
+    accept_btn->setEnabled(accept_btn->isEnabled() || (sb->value() == sb->maximum()));
+  });
 
   QWidget *widget = new QWidget;
   widget->setLayout(main_layout);
@@ -132,8 +126,9 @@ OnboardingWindow::OnboardingWindow(QWidget *parent) : QStackedWidget(parent) {
   current_training_version = params.get("TrainingVersion", false);
   bool accepted_terms = params.get("HasAcceptedTerms", false).compare(current_terms_version) == 0;
   bool training_done = params.get("CompletedTrainingVersion", false).compare(current_training_version) == 0;
-  
-  //Don't initialize widgets unless neccesary. 
+
+  // TODO: is this necessary after removing webengine?
+  // Don't initialize widgets unless neccesary.
   if (accepted_terms && training_done) {
     return;
   }
@@ -163,13 +158,4 @@ OnboardingWindow::OnboardingWindow(QWidget *parent) : QStackedWidget(parent) {
   )");
 
   updateActiveScreen();
-}
-
-void OnboardingWindow::scrollPositionChanged(QPointF position){
-#ifndef QCOM
-  if (position.y() > view->page()->contentsSize().height() - 1000){
-    accept_btn->setEnabled(true);
-    accept_btn->setText("Accept");
-  }
-#endif
 }
