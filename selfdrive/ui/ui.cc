@@ -82,12 +82,15 @@ static int get_path_length_idx(const cereal::ModelDataV2::XYZTData::Reader &line
   return max_idx;
 }
 
-static void update_lead(UIState *s, const cereal::RadarState::Reader &radar_state,
-                        const cereal::ModelDataV2::XYZTData::Reader &line, int idx) {
+static void update_lead(UIState *s, const cereal::RadarState::Reader &radar_state, int idx) {
   auto &lead_data = s->scene.lead_data[idx];
   lead_data = (idx == 0) ? radar_state.getLeadOne() : radar_state.getLeadTwo();
   if (lead_data.getStatus()) {
-    float z = line.totalSize().wordCount > 0 ? line.getZ()[get_path_length_idx(line, lead_data.getDRel())] : 0.;
+    float z = 0.0;
+    if (s->sm->rcv_frame("modelV2") > 0) {
+      const auto line = (*s->sm)["modelV2"].getModelV2().getPosition();
+      z = line.getZ()[get_path_length_idx(line, lead_data.getDRel())];
+    }
     // negative because radarState uses left positive convention
     calib_frame_to_full_frame(s, lead_data.getDRel(), -lead_data.getYRel(), z + 1.22, &s->scene.lead_vertices[idx]);
   }
@@ -152,9 +155,8 @@ static void update_sockets(UIState *s) {
   }
   if (sm.updated("radarState")) {
     auto radar_state = sm["radarState"].getRadarState();
-    const auto line = sm["modelV2"].getModelV2().getPosition();
-    update_lead(s, radar_state, line, 0);
-    update_lead(s, radar_state, line, 1);
+    update_lead(s, radar_state, 0);
+    update_lead(s, radar_state, 1);
   }
   if (sm.updated("liveCalibration")) {
     scene.world_objects_visible = true;
