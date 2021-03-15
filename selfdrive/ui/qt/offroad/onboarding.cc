@@ -95,8 +95,10 @@ QWidget* OnboardingWindow::terms_screen() {
   QWidget *widget = new QWidget;
   widget->setLayout(main_layout);
   widget->setStyleSheet(R"(
-    QPushButton {
+    * {
       font-size: 50px;
+    }
+    QPushButton {
       padding: 50px;
       border-radius: 10px;
       background-color: #292929;
@@ -127,11 +129,12 @@ OnboardingWindow::OnboardingWindow(QWidget *parent) : QStackedWidget(parent) {
   bool accepted_terms = params.get("HasAcceptedTerms", false).compare(current_terms_version) == 0;
   bool training_done = params.get("CompletedTrainingVersion", false).compare(current_training_version) == 0;
 
-  // TODO: is this necessary after removing webengine?
+  // TODO: fix this, training guide is slow
   // Don't initialize widgets unless neccesary.
   if (accepted_terms && training_done) {
     return;
   }
+
   addWidget(terms_screen());
 
   TrainingGuide* tr = new TrainingGuide(this);
