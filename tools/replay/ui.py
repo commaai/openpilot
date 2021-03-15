@@ -109,7 +109,7 @@ def ui_thread(addr, frame_address):
     top_down = top_down_surface, lid_overlay
 
     # ***** frame *****
-    fpkt = messaging.recv_one(frame)
+    fpkt = messaging.recv_one_retry(frame)
     rgb_img_raw = fpkt.roadCameraState.image
 
     num_px = len(rgb_img_raw) // 3
