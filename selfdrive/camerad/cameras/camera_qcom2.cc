@@ -910,6 +910,7 @@ void cameras_close(MultiCameraState *s) {
 // ******************* just a helper *******************
 
 static void handle_camera_event(CameraState *s, const cam_req_mgr_message *event_data) {
+  const uint64_t timestamp = event_data->u.frame_msg.timestamp;
   const int main_id = event_data->u.frame_msg.frame_id;
   const int real_id = event_data->u.frame_msg.request_id;
 
