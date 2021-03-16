@@ -179,53 +179,6 @@ static void camera_init(VisionIpcServer *v, CameraState *s, int camera_id, int c
   s->buf.init(device_id, ctx, s, v, FRAME_BUF_COUNT, rgb_type, yuv_type, camera_release_buffer);
 }
 
-void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
-  char project_name[1024] = {0};
-  property_get("ro.boot.project_name", project_name, "");
-  assert(strlen(project_name) == 0);
-
-  // sensor is flipped in LP3
-  // IMAGE_ORIENT = 3
-  init_array_imx298[0].reg_data = 3;
-
-  // 0   = ISO 100
-  // 256 = ISO 200
-  // 384 = ISO 400
-  // 448 = ISO 800
-  // 480 = ISO 1600
-  // 496 = ISO 3200
-  // 504 = ISO 6400, 8x digital gain
-  // 508 = ISO 12800, 16x digital gain
-  // 510 = ISO 25600, 32x digital gain
-
-  camera_init(v, &s->road_cam, CAMERA_ID_IMX298, 0,
-              /*pixel_clock=*/600000000, /*line_length_pclk=*/5536,
-              /*max_gain=*/510,  //0 (ISO 100)- 448 (ISO 800, max analog gain) - 511 (super noisy)
-#ifdef HIGH_FPS
-              /*fps*/ 60,
-#else
-              /*fps*/ 20,
-#endif
-              device_id, ctx,
-              VISION_STREAM_RGB_BACK, VISION_STREAM_YUV_BACK);
-
-  camera_init(v, &s->driver_cam, CAMERA_ID_OV8865, 1,
-              /*pixel_clock=*/72000000, /*line_length_pclk=*/1602,
-              /*max_gain=*/510, 10, device_id, ctx,
-              VISION_STREAM_RGB_FRONT, VISION_STREAM_YUV_FRONT);
-
-  s->sm = new SubMaster({"driverState"});
-  s->pm = new PubMaster({"roadCameraState", "driverCameraState", "thumbnail"});
-
-  for (int i = 0; i < FRAME_BUF_COUNT; i++) {
-    // TODO: make lengths correct
-    s->focus_bufs[i].allocate(0xb80);
-    s->stats_bufs[i].allocate(0xb80);
-  }
-  std::fill_n(s->lapres, std::size(s->lapres), 16160);
-  s->lap_conv = new LapConv(device_id, ctx, s->road_cam.buf.rgb_width, s->road_cam.buf.rgb_height, 3);
-}
-
 static void set_exposure(CameraState *s, float exposure_frac, float gain_frac) {
   int err = 0;
 
@@ -940,76 +893,6 @@ static void driver_camera_start(CameraState *s) {
   LOG("sensor start regs: %d", err);
 }
 
-void cameras_open(MultiCameraState *s) {
-  struct msm_ispif_param_data ispif_params = {
-    .num = 4,
-    .entries = {
-      // road camera
-      {.vfe_intf = VFE0, .intftype = RDI0, .num_cids = 1, .cids[0] = CID0, .csid = CSID0},
-      // driver camera
-      {.vfe_intf = VFE1, .intftype = RDI0, .num_cids = 1, .cids[0] = CID0, .csid = CSID2},
-      // road camera (focus)
-      {.vfe_intf = VFE0, .intftype = RDI1, .num_cids = 1, .cids[0] = CID1, .csid = CSID0},
-      // road camera (stats, for AE)
-      {.vfe_intf = VFE0, .intftype = RDI2, .num_cids = 1, .cids[0] = CID2, .csid = CSID0},
-    },
-  };
-  s->msmcfg_fd = open("/dev/media0", O_RDWR | O_NONBLOCK);
-  assert(s->msmcfg_fd >= 0);
-
-  sensors_init(s);
-
-  s->v4l_fd = open("/dev/video0", O_RDWR | O_NONBLOCK);
-  assert(s->v4l_fd >= 0);
-
-  s->ispif_fd = open("/dev/v4l-subdev15", O_RDWR | O_NONBLOCK);
-  assert(s->ispif_fd >= 0);
-
-  // ISPIF: stop
-  // memset(&ispif_cfg_data, 0, sizeof(ispif_cfg_data));
-  // ispif_cfg_data.cfg_type = ISPIF_STOP_FRAME_BOUNDARY;
-  // ispif_cfg_data.params = ispif_params;
-  // err = ioctl(s->ispif_fd, VIDIOC_MSM_ISPIF_CFG, &ispif_cfg_data);
-  // LOG("ispif stop: %d", err);
-
-  LOG("*** open driver camera ***");
-  s->driver_cam.ss[0].bufs = s->driver_cam.buf.camera_bufs.get();
-  camera_open(&s->driver_cam, false);
-
-  LOG("*** open road camera ***");
-  s->road_cam.ss[0].bufs = s->road_cam.buf.camera_bufs.get();
-  s->road_cam.ss[1].bufs = s->focus_bufs;
-  s->road_cam.ss[2].bufs = s->stats_bufs;
-  camera_open(&s->road_cam, true);
-
-  if (getenv("CAMERA_TEST")) {
-    cameras_close(s);
-    exit(0);
-  }
-
-  // ISPIF: set vfe info
-  struct ispif_cfg_data ispif_cfg_data = {.cfg_type = ISPIF_SET_VFE_INFO, .vfe_info.num_vfe = 2};
-  int err = ioctl(s->ispif_fd, VIDIOC_MSM_ISPIF_CFG, &ispif_cfg_data);
-  LOG("ispif set vfe info: %d", err);
-
-  // ISPIF: setup
-  ispif_cfg_data = {.cfg_type = ISPIF_INIT, .csid_version = 0x30050000 /* CSID_VERSION_V35*/};
-  err = ioctl(s->ispif_fd, VIDIOC_MSM_ISPIF_CFG, &ispif_cfg_data);
-  LOG("ispif setup: %d", err);
-
-  ispif_cfg_data = {.cfg_type = ISPIF_CFG, .params = ispif_params};
-  err = ioctl(s->ispif_fd, VIDIOC_MSM_ISPIF_CFG, &ispif_cfg_data);
-  LOG("ispif cfg: %d", err);
-
-  ispif_cfg_data.cfg_type = ISPIF_START_FRAME_BOUNDARY;
-  err = ioctl(s->ispif_fd, VIDIOC_MSM_ISPIF_CFG, &ispif_cfg_data);
-  LOG("ispif start_frame_boundary: %d", err);
-
-  driver_camera_start(&s->driver_cam);
-  road_camera_start(&s->road_cam);
-}
-
-
 static void camera_close(CameraState *s) {
   // ISP: STOP_STREAM
   s->stream_cfg.cmd = STOP_STREAM;
@@ -1148,6 +1031,125 @@ void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
     const int skip = 1;
     camera_autoexposure(c, set_exposure_target(b, x, x + width, skip, y, y + height, skip, -1, false, false));
   }
+}
+
+
+// MultiCameraState
+
+void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
+  char project_name[1024] = {0};
+  property_get("ro.boot.project_name", project_name, "");
+  assert(strlen(project_name) == 0);
+
+  // sensor is flipped in LP3
+  // IMAGE_ORIENT = 3
+  init_array_imx298[0].reg_data = 3;
+
+  // 0   = ISO 100
+  // 256 = ISO 200
+  // 384 = ISO 400
+  // 448 = ISO 800
+  // 480 = ISO 1600
+  // 496 = ISO 3200
+  // 504 = ISO 6400, 8x digital gain
+  // 508 = ISO 12800, 16x digital gain
+  // 510 = ISO 25600, 32x digital gain
+
+  camera_init(v, &s->road_cam, CAMERA_ID_IMX298, 0,
+              /*pixel_clock=*/600000000, /*line_length_pclk=*/5536,
+              /*max_gain=*/510,  //0 (ISO 100)- 448 (ISO 800, max analog gain) - 511 (super noisy)
+#ifdef HIGH_FPS
+              /*fps*/ 60,
+#else
+              /*fps*/ 20,
+#endif
+              device_id, ctx,
+              VISION_STREAM_RGB_BACK, VISION_STREAM_YUV_BACK);
+
+  camera_init(v, &s->driver_cam, CAMERA_ID_OV8865, 1,
+              /*pixel_clock=*/72000000, /*line_length_pclk=*/1602,
+              /*max_gain=*/510, 10, device_id, ctx,
+              VISION_STREAM_RGB_FRONT, VISION_STREAM_YUV_FRONT);
+
+  s->sm = new SubMaster({"driverState"});
+  s->pm = new PubMaster({"roadCameraState", "driverCameraState", "thumbnail"});
+
+  for (int i = 0; i < FRAME_BUF_COUNT; i++) {
+    // TODO: make lengths correct
+    s->focus_bufs[i].allocate(0xb80);
+    s->stats_bufs[i].allocate(0xb80);
+  }
+  std::fill_n(s->lapres, std::size(s->lapres), 16160);
+  s->lap_conv = new LapConv(device_id, ctx, s->road_cam.buf.rgb_width, s->road_cam.buf.rgb_height, 3);
+}
+
+void cameras_open(MultiCameraState *s) {
+  struct msm_ispif_param_data ispif_params = {
+    .num = 4,
+    .entries = {
+      // road camera
+      {.vfe_intf = VFE0, .intftype = RDI0, .num_cids = 1, .cids[0] = CID0, .csid = CSID0},
+      // driver camera
+      {.vfe_intf = VFE1, .intftype = RDI0, .num_cids = 1, .cids[0] = CID0, .csid = CSID2},
+      // road camera (focus)
+      {.vfe_intf = VFE0, .intftype = RDI1, .num_cids = 1, .cids[0] = CID1, .csid = CSID0},
+      // road camera (stats, for AE)
+      {.vfe_intf = VFE0, .intftype = RDI2, .num_cids = 1, .cids[0] = CID2, .csid = CSID0},
+    },
+  };
+  s->msmcfg_fd = open("/dev/media0", O_RDWR | O_NONBLOCK);
+  assert(s->msmcfg_fd >= 0);
+
+  sensors_init(s);
+
+  s->v4l_fd = open("/dev/video0", O_RDWR | O_NONBLOCK);
+  assert(s->v4l_fd >= 0);
+
+  s->ispif_fd = open("/dev/v4l-subdev15", O_RDWR | O_NONBLOCK);
+  assert(s->ispif_fd >= 0);
+
+  // ISPIF: stop
+  // memset(&ispif_cfg_data, 0, sizeof(ispif_cfg_data));
+  // ispif_cfg_data.cfg_type = ISPIF_STOP_FRAME_BOUNDARY;
+  // ispif_cfg_data.params = ispif_params;
+  // err = ioctl(s->ispif_fd, VIDIOC_MSM_ISPIF_CFG, &ispif_cfg_data);
+  // LOG("ispif stop: %d", err);
+
+  LOG("*** open driver camera ***");
+  s->driver_cam.ss[0].bufs = s->driver_cam.buf.camera_bufs.get();
+  camera_open(&s->driver_cam, false);
+
+  LOG("*** open road camera ***");
+  s->road_cam.ss[0].bufs = s->road_cam.buf.camera_bufs.get();
+  s->road_cam.ss[1].bufs = s->focus_bufs;
+  s->road_cam.ss[2].bufs = s->stats_bufs;
+  camera_open(&s->road_cam, true);
+
+  if (getenv("CAMERA_TEST")) {
+    cameras_close(s);
+    exit(0);
+  }
+
+  // ISPIF: set vfe info
+  struct ispif_cfg_data ispif_cfg_data = {.cfg_type = ISPIF_SET_VFE_INFO, .vfe_info.num_vfe = 2};
+  int err = ioctl(s->ispif_fd, VIDIOC_MSM_ISPIF_CFG, &ispif_cfg_data);
+  LOG("ispif set vfe info: %d", err);
+
+  // ISPIF: setup
+  ispif_cfg_data = {.cfg_type = ISPIF_INIT, .csid_version = 0x30050000 /* CSID_VERSION_V35*/};
+  err = ioctl(s->ispif_fd, VIDIOC_MSM_ISPIF_CFG, &ispif_cfg_data);
+  LOG("ispif setup: %d", err);
+
+  ispif_cfg_data = {.cfg_type = ISPIF_CFG, .params = ispif_params};
+  err = ioctl(s->ispif_fd, VIDIOC_MSM_ISPIF_CFG, &ispif_cfg_data);
+  LOG("ispif cfg: %d", err);
+
+  ispif_cfg_data.cfg_type = ISPIF_START_FRAME_BOUNDARY;
+  err = ioctl(s->ispif_fd, VIDIOC_MSM_ISPIF_CFG, &ispif_cfg_data);
+  LOG("ispif start_frame_boundary: %d", err);
+
+  driver_camera_start(&s->driver_cam);
+  road_camera_start(&s->road_cam);
 }
 
 void cameras_run(MultiCameraState *s) {

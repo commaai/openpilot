@@ -221,29 +221,7 @@ void driver_camera_thread(CameraState *s) {
 
 }  // namespace
 
-void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
-  camera_init(v, &s->road_cam, CAMERA_ID_LGC920, 20, device_id, ctx,
-              VISION_STREAM_RGB_BACK, VISION_STREAM_YUV_BACK);
-  camera_init(v, &s->driver_cam, CAMERA_ID_LGC615, 10, device_id, ctx,
-              VISION_STREAM_RGB_FRONT, VISION_STREAM_YUV_FRONT);
-  s->pm = new PubMaster({"roadCameraState", "driverCameraState", "thumbnail"});
-}
-
 void camera_autoexposure(CameraState *s, float grey_frac) {}
-
-void cameras_open(MultiCameraState *s) {
-  // LOG("*** open driver camera ***");
-  camera_open(&s->driver_cam, false);
-
-  // LOG("*** open road camera ***");
-  camera_open(&s->road_cam, true);
-}
-
-void cameras_close(MultiCameraState *s) {
-  camera_close(&s->road_cam);
-  camera_close(&s->driver_cam);
-  delete s->pm;
-}
 
 void process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) {
   MessageBuilder msg;
@@ -263,6 +241,25 @@ void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
   s->pm->send("roadCameraState", msg);
 }
 
+
+// MultiCameraState
+
+void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
+  camera_init(v, &s->road_cam, CAMERA_ID_LGC920, 20, device_id, ctx,
+              VISION_STREAM_RGB_BACK, VISION_STREAM_YUV_BACK);
+  camera_init(v, &s->driver_cam, CAMERA_ID_LGC615, 10, device_id, ctx,
+              VISION_STREAM_RGB_FRONT, VISION_STREAM_YUV_FRONT);
+  s->pm = new PubMaster({"roadCameraState", "driverCameraState", "thumbnail"});
+}
+
+void cameras_open(MultiCameraState *s) {
+  // LOG("*** open driver camera ***");
+  camera_open(&s->driver_cam, false);
+
+  // LOG("*** open road camera ***");
+  camera_open(&s->road_cam, true);
+}
+
 void cameras_run(MultiCameraState *s) {
   std::vector<std::thread> threads;
   threads.push_back(start_process_thread(s, &s->road_cam, process_road_camera));
@@ -277,4 +274,10 @@ void cameras_run(MultiCameraState *s) {
   for (auto &t : threads) t.join();
 
   cameras_close(s);
+}
+
+void cameras_close(MultiCameraState *s) {
+  camera_close(&s->road_cam);
+  camera_close(&s->driver_cam);
+  delete s->pm;
 }

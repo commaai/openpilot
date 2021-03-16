@@ -787,75 +787,6 @@ static void camera_open(CameraState *s) {
   enqueue_req_multi(s, 1, FRAME_BUF_COUNT, 0);
 }
 
-void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
-  camera_init(v, &s->road_cam, CAMERA_ID_AR0231, 1, 20, device_id, ctx,
-              VISION_STREAM_RGB_BACK, VISION_STREAM_YUV_BACK); // swap left/right
-  printf("road camera initted \n");
-  camera_init(v, &s->wide_road_cam, CAMERA_ID_AR0231, 0, 20, device_id, ctx,
-              VISION_STREAM_RGB_WIDE, VISION_STREAM_YUV_WIDE);
-  printf("wide road camera initted \n");
-  camera_init(v, &s->driver_cam, CAMERA_ID_AR0231, 2, 20, device_id, ctx,
-              VISION_STREAM_RGB_FRONT, VISION_STREAM_YUV_FRONT);
-  printf("driver camera initted \n");
-
-  s->sm = new SubMaster({"driverState"});
-  s->pm = new PubMaster({"roadCameraState", "driverCameraState", "wideRoadCameraState", "thumbnail"});
-}
-
-void cameras_open(MultiCameraState *s) {
-  int ret;
-
-  LOG("-- Opening devices");
-  // video0 is req_mgr, the target of many ioctls
-  s->video0_fd = open("/dev/v4l/by-path/platform-soc:qcom_cam-req-mgr-video-index0", O_RDWR | O_NONBLOCK);
-  assert(s->video0_fd >= 0);
-  LOGD("opened video0");
-  s->road_cam.video0_fd = s->driver_cam.video0_fd = s->wide_road_cam.video0_fd = s->video0_fd;
-
-  // video1 is cam_sync, the target of some ioctls
-  s->video1_fd = open("/dev/v4l/by-path/platform-cam_sync-video-index0", O_RDWR | O_NONBLOCK);
-  assert(s->video1_fd >= 0);
-  LOGD("opened video1");
-  s->road_cam.video1_fd = s->driver_cam.video1_fd = s->wide_road_cam.video1_fd = s->video1_fd;
-
-  // looks like there's only one of these
-  s->isp_fd = open("/dev/v4l-subdev1", O_RDWR | O_NONBLOCK);
-  assert(s->isp_fd >= 0);
-  LOGD("opened isp");
-  s->road_cam.isp_fd = s->driver_cam.isp_fd = s->wide_road_cam.isp_fd = s->isp_fd;
-
-  // query icp for MMU handles
-  LOG("-- Query ICP for MMU handles");
-  static struct cam_isp_query_cap_cmd isp_query_cap_cmd = {0};
-  static struct cam_query_cap_cmd query_cap_cmd = {0};
-  query_cap_cmd.handle_type = 1;
-  query_cap_cmd.caps_handle = (uint64_t)&isp_query_cap_cmd;
-  query_cap_cmd.size = sizeof(isp_query_cap_cmd);
-  ret = cam_control(s->isp_fd, CAM_QUERY_CAP, &query_cap_cmd, sizeof(query_cap_cmd));
-  assert(ret == 0);
-  LOGD("using MMU handle: %x", isp_query_cap_cmd.device_iommu.non_secure);
-  LOGD("using MMU handle: %x", isp_query_cap_cmd.cdm_iommu.non_secure);
-  int device_iommu = isp_query_cap_cmd.device_iommu.non_secure;
-  int cdm_iommu = isp_query_cap_cmd.cdm_iommu.non_secure;
-  s->road_cam.device_iommu = s->driver_cam.device_iommu = s->wide_road_cam.device_iommu = device_iommu;
-  s->road_cam.cdm_iommu = s->driver_cam.cdm_iommu = s->wide_road_cam.cdm_iommu = cdm_iommu;
-
-  // subscribe
-  LOG("-- Subscribing");
-  static struct v4l2_event_subscription sub = {0};
-  sub.type = 0x8000000;
-  sub.id = 2; // should use boot time for sof
-  ret = ioctl(s->video0_fd, VIDIOC_SUBSCRIBE_EVENT, &sub);
-  printf("req mgr subscribe: %d\n", ret);
-
-  camera_open(&s->road_cam);
-  printf("road camera opened \n");
-  camera_open(&s->wide_road_cam);
-  printf("wide road camera opened \n");
-  camera_open(&s->driver_cam);
-  printf("driver camera opened \n");
-}
-
 static void camera_close(CameraState *s) {
   int ret;
 
@@ -896,15 +827,6 @@ static void camera_close(CameraState *s) {
 
   ret = cam_control(s->video0_fd, CAM_REQ_MGR_DESTROY_SESSION, &s->req_mgr_session_info, sizeof(s->req_mgr_session_info));
   LOGD("destroyed session: %d", ret);
-}
-
-void cameras_close(MultiCameraState *s) {
-  camera_close(&s->road_cam);
-  camera_close(&s->wide_road_cam);
-  camera_close(&s->driver_cam);
-
-  delete s->sm;
-  delete s->pm;
 }
 
 // ******************* just a helper *******************
@@ -1118,6 +1040,78 @@ void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
   }
 }
 
+
+// MultiCameraState
+
+void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
+  camera_init(v, &s->road_cam, CAMERA_ID_AR0231, 1, 20, device_id, ctx,
+              VISION_STREAM_RGB_BACK, VISION_STREAM_YUV_BACK); // swap left/right
+  printf("road camera initted \n");
+  camera_init(v, &s->wide_road_cam, CAMERA_ID_AR0231, 0, 20, device_id, ctx,
+              VISION_STREAM_RGB_WIDE, VISION_STREAM_YUV_WIDE);
+  printf("wide road camera initted \n");
+  camera_init(v, &s->driver_cam, CAMERA_ID_AR0231, 2, 20, device_id, ctx,
+              VISION_STREAM_RGB_FRONT, VISION_STREAM_YUV_FRONT);
+  printf("driver camera initted \n");
+
+  s->sm = new SubMaster({"driverState"});
+  s->pm = new PubMaster({"roadCameraState", "driverCameraState", "wideRoadCameraState", "thumbnail"});
+}
+
+void cameras_open(MultiCameraState *s) {
+  int ret;
+
+  LOG("-- Opening devices");
+  // video0 is req_mgr, the target of many ioctls
+  s->video0_fd = open("/dev/v4l/by-path/platform-soc:qcom_cam-req-mgr-video-index0", O_RDWR | O_NONBLOCK);
+  assert(s->video0_fd >= 0);
+  LOGD("opened video0");
+  s->road_cam.video0_fd = s->driver_cam.video0_fd = s->wide_road_cam.video0_fd = s->video0_fd;
+
+  // video1 is cam_sync, the target of some ioctls
+  s->video1_fd = open("/dev/v4l/by-path/platform-cam_sync-video-index0", O_RDWR | O_NONBLOCK);
+  assert(s->video1_fd >= 0);
+  LOGD("opened video1");
+  s->road_cam.video1_fd = s->driver_cam.video1_fd = s->wide_road_cam.video1_fd = s->video1_fd;
+
+  // looks like there's only one of these
+  s->isp_fd = open("/dev/v4l-subdev1", O_RDWR | O_NONBLOCK);
+  assert(s->isp_fd >= 0);
+  LOGD("opened isp");
+  s->road_cam.isp_fd = s->driver_cam.isp_fd = s->wide_road_cam.isp_fd = s->isp_fd;
+
+  // query icp for MMU handles
+  LOG("-- Query ICP for MMU handles");
+  static struct cam_isp_query_cap_cmd isp_query_cap_cmd = {0};
+  static struct cam_query_cap_cmd query_cap_cmd = {0};
+  query_cap_cmd.handle_type = 1;
+  query_cap_cmd.caps_handle = (uint64_t)&isp_query_cap_cmd;
+  query_cap_cmd.size = sizeof(isp_query_cap_cmd);
+  ret = cam_control(s->isp_fd, CAM_QUERY_CAP, &query_cap_cmd, sizeof(query_cap_cmd));
+  assert(ret == 0);
+  LOGD("using MMU handle: %x", isp_query_cap_cmd.device_iommu.non_secure);
+  LOGD("using MMU handle: %x", isp_query_cap_cmd.cdm_iommu.non_secure);
+  int device_iommu = isp_query_cap_cmd.device_iommu.non_secure;
+  int cdm_iommu = isp_query_cap_cmd.cdm_iommu.non_secure;
+  s->road_cam.device_iommu = s->driver_cam.device_iommu = s->wide_road_cam.device_iommu = device_iommu;
+  s->road_cam.cdm_iommu = s->driver_cam.cdm_iommu = s->wide_road_cam.cdm_iommu = cdm_iommu;
+
+  // subscribe
+  LOG("-- Subscribing");
+  static struct v4l2_event_subscription sub = {0};
+  sub.type = 0x8000000;
+  sub.id = 2; // should use boot time for sof
+  ret = ioctl(s->video0_fd, VIDIOC_SUBSCRIBE_EVENT, &sub);
+  printf("req mgr subscribe: %d\n", ret);
+
+  camera_open(&s->road_cam);
+  printf("road camera opened \n");
+  camera_open(&s->wide_road_cam);
+  printf("wide road camera opened \n");
+  camera_open(&s->driver_cam);
+  printf("driver camera opened \n");
+}
+
 void cameras_run(MultiCameraState *s) {
   LOG("-- Starting threads");
   std::vector<std::thread> threads;
@@ -1175,4 +1169,13 @@ void cameras_run(MultiCameraState *s) {
   for (auto &t : threads) t.join();
 
   cameras_close(s);
+}
+
+void cameras_close(MultiCameraState *s) {
+  camera_close(&s->road_cam);
+  camera_close(&s->wide_road_cam);
+  camera_close(&s->driver_cam);
+
+  delete s->sm;
+  delete s->pm;
 }
