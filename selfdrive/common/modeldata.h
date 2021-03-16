@@ -21,6 +21,12 @@ const int tici_driver_cam_adapt_width = 668;
 const int full_width_tici = 1928;
 const int full_height_tici = 1208;
 
+#ifdef QCOM2
+const int vwp_width = 2160, vwp_height = 1080;
+#else
+const int vwp_width = 1920, vwp_height = 1080;
+#endif
+
 #ifdef __cplusplus
 
 #include "common/mat.h"

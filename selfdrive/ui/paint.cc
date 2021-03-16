@@ -470,7 +470,7 @@ static const float driver_view_ratio = 1.333;
 #ifndef QCOM2
 // frame from 4/3 to 16/9 display
 static const mat4 driver_view_transform = {{
-  driver_view_ratio*(1080-2*bdr_s)/(1920-2*bdr_s),  0.0, 0.0, 0.0,
+  driver_view_ratio*(vwp_height-2*bdr_s)/(vwp_width-2*bdr_s),  0.0, 0.0, 0.0,
   0.0,  1.0, 0.0, 0.0,
   0.0,  0.0, 1.0, 0.0,
   0.0,  0.0, 0.0, 1.0,
@@ -480,7 +480,7 @@ static const mat4 driver_view_transform = {{
 static const int crop_x_offset = 32;
 static const int crop_y_offset = -196;
 static const float yscale = full_height_tici * driver_view_ratio / tici_driver_cam_adapt_width;
-static const float xscale = yscale*(1080-2*bdr_s)/(2160-2*bdr_s)*full_width_tici/full_height_tici;
+static const float xscale = yscale*(vwp_height-2*bdr_s)/(vwp_width-2*bdr_s)*full_width_tici/full_height_tici;
 
 static const mat4 driver_view_transform = {{
   xscale,  0.0, 0.0, xscale*crop_x_offset/full_width_tici*2,

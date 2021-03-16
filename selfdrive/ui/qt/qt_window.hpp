@@ -8,17 +8,11 @@
 #include <QPlatformSurfaceEvent>
 #include <wayland-client-protocol.h>
 #endif
-
-
-#ifdef QCOM2
-  const int vwp_w = 2160, vwp_h = 1080;
-#else
-  const int vwp_w = 1920, vwp_h = 1080;
-#endif
+#include "common/modeldata.h"
 
 inline void setMainWindow(QWidget *w) {
   const float scale = getenv("SCALE") != NULL ? std::stof(getenv("SCALE")) : 1.0;
-  w->setFixedSize(vwp_w*scale, vwp_h*scale);
+  w->setFixedSize(vwp_width*scale, vwp_height*scale);
   w->show();
 
 #ifdef QCOM2
