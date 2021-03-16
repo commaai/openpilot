@@ -419,8 +419,7 @@ float driver_cam_get_exp_grey_frac(CameraState *c) {
     }
   }
 
-  int skip = 1;
-  // use driver face crop for AE
+  int skip = 1;  // use driver face crop for AE
   if (x_max == 0) {
     // default setting
 #ifndef QCOM2
@@ -438,8 +437,8 @@ float driver_cam_get_exp_grey_frac(CameraState *c) {
     }
 
 #ifdef QCOM2
-    return get_exp_grey_frac(b, x_min, x_max, 2, y_min, y_max, skip, (int)c->analog_gain, true, true));
+    return get_exp_grey_frac(b, x_min, x_max, 2, y_min, y_max, skip, (int)c->analog_gain, true, true);
 #else
-    return get_exp_grey_frac(b, x_min, x_max, 2, y_min, y_max, skip, -1, false, false));
+    return get_exp_grey_frac(b, x_min, x_max, 2, y_min, y_max, skip, -1, false, false);
 #endif
 }
