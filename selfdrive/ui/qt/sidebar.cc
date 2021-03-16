@@ -1,22 +1,7 @@
 #include "sidebar.hpp"
 #include "widgets/toggle.hpp"
 
-//TODO: settings btn signals
 //TODO: indicator widgets signals (text and color)
-
-SettingsBtn::SettingsBtn(QWidget* parent) : QAbstractButton(parent){
-  setMinimumHeight(160);
-  setMaximumSize(300,200);
-  image = QImageReader("../assets/images/button_settings.png").read().scaledToWidth(200,Qt::SmoothTransformation);
-}
-
-void SettingsBtn::paintEvent(QPaintEvent *e){
-  QPainter p(this);
-  p.setOpacity(0.65);
-  p.drawImage((size().width()/2)-(image.width()/2), (size().height()/2)-(image.height()/2),
-              image, 0 , 0 , 0 , 0, Qt::AutoColor);
-}
-
 
 StatusWidget::StatusWidget(QString label, QString msg, QColor indicator, QWidget* parent) : QFrame(parent),
 _severity(indicator)
@@ -115,7 +100,14 @@ Sidebar::Sidebar(QWidget* parent) : QFrame(parent){
   comma->setAlignment(Qt::AlignCenter);
   comma->setFixedSize(200,200);
 
-  SettingsBtn* s_btn = new SettingsBtn(this);
+  // TODO: set opacity to 0.65
+  QPushButton* s_btn = new QPushButton(this);
+  s_btn->setStyleSheet(R"(
+    border-image: url(../assets/images/button_settings.png);
+  )");
+  s_btn->setFixedSize(252, 150);
+
+
   SignalWidget* signal = new SignalWidget("4G",2,this);
   //TODO: better temp widget layouting/font
   StatusWidget* temp = new StatusWidget("39C", "TEMP", QT_COLOR_RED, this);

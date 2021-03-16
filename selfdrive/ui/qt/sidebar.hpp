@@ -6,17 +6,6 @@
 #define QT_COLOR_YELLOW QColor(218, 202, 37)
 #define QT_COLOR_RED QColor(201, 34, 49)
 
-class SettingsBtn : public QAbstractButton {
-  Q_OBJECT
-
-public:
-  SettingsBtn(QWidget* parent = 0);
-protected:
-  void paintEvent(QPaintEvent*) override;
-private:
-  QImage image;
-};
-
 class SignalWidget : public QFrame {
   Q_OBJECT
 
