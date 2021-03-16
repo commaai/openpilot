@@ -6,7 +6,7 @@ Your comma device fetches your public SSH keys from your GitHub account. You wil
 Your email will have to be verified by GitHub, for more information on email verification, please see the [GitHub Doc](https://docs.github.com/en/github/getting-started-with-github/verifying-your-email-address) regarding this topic.
 
 # General information
-For security reasons, SSH is not enabled by default on your comma device, you can enable it by navigating to `Settings → Developer → Enable SSH`
+For security reasons, SSH is not enabled by default on your comma device, you can enable it by navigating to `Settings → Developer → Enable SSH`.
 
 SSH Keys can be imported from GitHub by going to `Settings → Developer → GitHub Username`, once GitHub username is inserted, it will automatically fetch the public keys on your account.
 
