@@ -37,7 +37,7 @@ In order for your comma device to obtain the key from your GitHub Account, it ha
 
 Your comma device will now obtain your Public Key from GitHub.
 
-*Please kindly note that the obtaining process only occurs once, future keys added to your account will not be automatically fetched, and would require the user to repeat the obtaining process*
+*Please kindly note that the obtaining process only occurs once, future keys added to your account will not be automatically fetched, and would require the user to repeat the obtaining process.*
 
 # Connecting to your comma device using SSH
 Now you may connect to your comma device using SSH, the comma device's default SSH port is `8022`.
