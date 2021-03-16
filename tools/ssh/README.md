@@ -11,7 +11,7 @@ Table of Contents
 * [Register Your Public Key On Your comma two](#register-key-on-c2)
 * [Connecting To Your comma two Using SSH](#connection)
 
-# Creating a GitHub Account
+# Creating a GitHub Account<a name="create-github-account" />
 In order to create a GitHub Account, you have to have your email address handy and ready to receive your confirmation email.
 1. Go to the [GitHub Account Creation Page](https://github.com/join).
 2. Enter your information, this includes your desired username, email address, and password.
@@ -20,7 +20,7 @@ In order to create a GitHub Account, you have to have your email address handy a
 
 For more information on email verification, please see the [GitHub Doc](https://docs.github.com/en/github/getting-started-with-github/verifying-your-email-address) regarding this topic.
 
-# Generating an SSH Key
+# Generating an SSH Key<a name="generate-ssh-key" />
 An SSH key pair is like a padlock and its key, your public key is the padlock, and your private key holds the information of opening the padlock.
 
 To create your SSH key pair, you will have to have OpenSSH client installed on your operating system, please consult your operating system manual on the procedure of accomplishing this.
@@ -29,7 +29,7 @@ Once OpenSSH Client is installed and operational, using command line console, yo
 
 This will create two files in your `.ssh` folder, one file will be named `id_rsa` and another file will be named `id_rsa.pub`. This step is completed once these two files are present in your `.ssh` folder.
 
-# Uploading the Public SSH Key To Your GitHub Account
+# Uploading the Public SSH Key To Your GitHub Account<a name="upload-public-key" />
 For your comma two to obtain your public key, it will have to be added to your GitHub Account.
 
 1. Open the `id_rsa.pub` you just created in the text editor of your choice, copy its content as-is.
@@ -41,7 +41,7 @@ This step is complete once GitHub accepts the Public Key.
 
 You may refer to [This GitHub Doc](https://docs.github.com/en/github/authenticating-to-github/adding-a-new-ssh-key-to-your-github-account) for more information regarding uploading your Public SSH Key.
 
-# Register Your Public Key On Your comma two
+# Register Your Public Key On Your comma two<a name="register-key-on-c2" />
 In order for your comma two to obtain the key from your GitHub Account, it has to be connected to the internet and know your GitHub username.
 
 1. Turn off your vehicle and wait till your comma two goes to `offroad` mode.
@@ -51,7 +51,7 @@ In order for your comma two to obtain the key from your GitHub Account, it has t
 
 Your comma two will now obtain your Public Key from GitHub.
 
-# Connecting To Your comma two Using SSH
+# Connecting To Your comma two Using SSH<a name="connection" />
 Now you may connect to your comma two using SSH, the comma two's default SSH port is `8022`.
 
 You will need to find out your comma two's IP address either from your router or from the comma two itself. You may obtain your comma two's IP address by going to `Settings > WiFi > Open WiFi Settings > More Options > Three Dots in Top Left > Advanced`, once you have scrolled to the bottom, you should be able to see its IP address.
