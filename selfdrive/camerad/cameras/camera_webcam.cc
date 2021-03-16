@@ -27,6 +27,26 @@ extern ExitHandler do_exit;
 #define FRAME_HEIGHT_FRONT 864
 
 namespace {
+
+CameraInfo cameras_supported[CAMERA_ID_MAX] = {
+  // road facing
+  [CAMERA_ID_LGC920] = {
+      .frame_width = FRAME_WIDTH,
+      .frame_height = FRAME_HEIGHT,
+      .frame_stride = FRAME_WIDTH*3,
+      .bayer = false,
+      .bayer_flip = false,
+  },
+  // driver facing
+  [CAMERA_ID_LGC615] = {
+      .frame_width = FRAME_WIDTH_FRONT,
+      .frame_height = FRAME_HEIGHT_FRONT,
+      .frame_stride = FRAME_WIDTH_FRONT*3,
+      .bayer = false,
+      .bayer_flip = false,
+  },
+};
+
 void camera_open(CameraState *s, bool rear) {
 }
 
@@ -201,25 +221,6 @@ void driver_camera_thread(CameraState *s) {
 }
 
 }  // namespace
-
-CameraInfo cameras_supported[CAMERA_ID_MAX] = {
-  // road facing
-  [CAMERA_ID_LGC920] = {
-      .frame_width = FRAME_WIDTH,
-      .frame_height = FRAME_HEIGHT,
-      .frame_stride = FRAME_WIDTH*3,
-      .bayer = false,
-      .bayer_flip = false,
-  },
-  // driver facing
-  [CAMERA_ID_LGC615] = {
-      .frame_width = FRAME_WIDTH_FRONT,
-      .frame_height = FRAME_HEIGHT_FRONT,
-      .frame_stride = FRAME_WIDTH_FRONT*3,
-      .bayer = false,
-      .bayer_flip = false,
-  },
-};
 
 void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
   camera_init(v, &s->road_cam, CAMERA_ID_LGC920, 20, device_id, ctx,
