@@ -1,26 +1,20 @@
-![SSH into comma two](https://user-images.githubusercontent.com/37757984/82586797-0496cc00-9b4d-11ea-9e98-48d193cf38ff.jpg)
-# Connecting To Your comma two Using SSH
-This will walk you through the procedure of connecting to your comma two using SSH in order for you to make localised changes on your comma two.
+# Connecting to your comma device using SSH
+This will walk you through the procedure of connecting to your comma device using SSH in order for you to make localised changes on your comma device.
 
-Table of Contents
-=================
+Your comma device fetches your public SSH key from your GitHub account. You will have to have a pre-existing GitHub Account, for more information, visit [this GitHub Doc](https://docs.github.com/en/github/getting-started-with-github/signing-up-for-a-new-github-account)
+Your email will need to be verified by GitHub, for more information on email verification, please see the [GitHub Doc](https://docs.github.com/en/github/getting-started-with-github/verifying-your-email-address) regarding this topic.
 
-* [Creating a GitHub Account](#create-github-account)
-* [Generating an SSH Key](#generate-ssh-key)
-* [Uploading the Public SSH Key To Your GitHub Account](#upload-public-key)
-* [Register Your Public Key On Your comma two](#register-key-on-c2)
-* [Connecting To Your comma two Using SSH](#connection)
+# General information
+For security reasons, SSH is not enabled by default on your comma device, you can enable it by navigating to `Settings → Developer → Enable SSH`
 
-# Creating a GitHub Account<a name="create-github-account" />
-In order to create a GitHub Account, you have to have your email address handy and ready to receive your confirmation email.
-1. Go to the [GitHub Account Creation Page](https://github.com/join).
-2. Enter your information, this includes your desired username, email address, and password.
-3. Once your details are correct, you may click the `create account` button.
-4. You will soon receive an account verification email from GitHub, once your account is verified, you may proceed to the next step.
+SSH Keys can be imported from GitHub by going to `Settings → Developer → GitHub Username`, once GitHub username is inserted, it will automatically fetch the public keys on your account.
 
-For more information on email verification, please see the [GitHub Doc](https://docs.github.com/en/github/getting-started-with-github/verifying-your-email-address) regarding this topic.
+default ssh username: `root`
+default ssh port: `8022`
 
-# Generating an SSH Key<a name="generate-ssh-key" />
+To view the IP address of your comma device, go to `Settings → WiFi → Open WiFi Settings → More Options → Three Dot Menu at the Top Left Corner → Advanced`.
+
+# Generating an SSH key
 An SSH key pair is like a padlock and its key, your public key is the padlock, and your private key holds the information of opening the padlock.
 
 To create your SSH key pair, you will have to have OpenSSH client installed on your operating system, please consult your operating system manual on the procedure of accomplishing this.
@@ -29,35 +23,28 @@ Once OpenSSH Client is installed and operational, using command line console, yo
 
 This will create two files in your `.ssh` folder, one file will be named `id_rsa` and another file will be named `id_rsa.pub`. This step is completed once these two files are present in your `.ssh` folder.
 
-# Uploading the Public SSH Key To Your GitHub Account<a name="upload-public-key" />
-For your comma two to obtain your public key, it will have to be added to your GitHub Account.
-
-1. Open the `id_rsa.pub` you just created in the text editor of your choice, copy its content as-is.
-2. Login to your GitHub Account, on the top right corner, click your profile picture, this will open a menu, you shall now navigate to `Settings`.
-3. You should be able to see an `SSH and GPG Keys` section under your Settings page, navigate to this page.
-4. Using the `New SSH Key` function, enter a desired `Title` for your key, then paste the content of your *Public Key* (`id_rsa.pub`) into the field below.
-
-This step is complete once GitHub accepts the Public Key.
+# Uploading the public SSH key to your GitHub Account
+For your comma device to obtain your public key, it will have to be added to your GitHub Account.
 
 You may refer to [This GitHub Doc](https://docs.github.com/en/github/authenticating-to-github/adding-a-new-ssh-key-to-your-github-account) for more information regarding uploading your Public SSH Key.
 
-# Register Your Public Key On Your comma two<a name="register-key-on-c2" />
-In order for your comma two to obtain the key from your GitHub Account, it has to be connected to the internet and know your GitHub username.
+# Register your public key on your comma device
+In order for your comma device to obtain the key from your GitHub Account, it has to be connected to the internet and know your GitHub username.
 
-1. Turn off your vehicle and wait till your comma two goes to `offroad` mode.
-2. Navigate to `Settings -> Developer -> Enable SSH`, and ensure SSH has been enabled.
-3. Navigate to `Settings -> Developer -> GitHub Username`
+1. Turn off your vehicle and wait till your comma device goes to `offroad` mode.
+2. Navigate to `Settings → Developer → Enable SSH`, and ensure SSH has been enabled.
+3. Navigate to `Settings → Developer → GitHub Username`
 4. Using the On-screen Keyboard, type in your GitHub username
 
-Your comma two will now obtain your Public Key from GitHub.
+Your comma device will now obtain your Public Key from GitHub.
 
-# Connecting To Your comma two Using SSH<a name="connection" />
-Now you may connect to your comma two using SSH, the comma two's default SSH port is `8022`.
+# Connecting to your comma device using SSH
+Now you may connect to your comma device using SSH, the comma device's default SSH port is `8022`.
 
-You will need to find out your comma two's IP address either from your router or from the comma two itself. You may obtain your comma two's IP address by going to `Settings > WiFi > Open WiFi Settings > More Options > Three Dots in Top Left > Advanced`, once you have scrolled to the bottom, you should be able to see its IP address.
+You will need to find out your comma device's IP address either from your router or from the comma device itself. You may obtain your comma device's IP address by going to `Settings → WiFi → Open WiFi Settings → More Options → Three Dots Menu at the Top Left Corner → Advanced`, once you have scrolled to the bottom, you should be able to see its IP address.
 
 We will assume the IP address to be `10.10.8.3`
 
-In your command line console, type `ssh root@10.10.8.3 -p 8022` (replace `10.10.8.3` with the IP address you have obtained), your computer will now attempt to make connection with your comma two using SSH.
+In your command line console, type `ssh root@10.10.8.3 -p 8022` (replace `10.10.8.3` with the IP address you have obtained), your computer will now attempt to make connection with your comma device using SSH.
 
 Once you see `root@localhost:/data/openpilot$`, you are connected and all set.
