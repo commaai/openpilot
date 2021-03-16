@@ -68,7 +68,7 @@ Use a joystick to control your car.
 [SSH](ssh)
 -------------
 
-Connecting to your comma device using [SSH](tools/ssh/README.md)
+Connecting to your comma device using [SSH](ssh/README.md)
 
 Welcomed contributions
 =============
