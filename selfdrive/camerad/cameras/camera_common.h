@@ -85,8 +85,6 @@ typedef struct CameraExpInfo {
   float grey_frac;
 } CameraExpInfo;
 
-extern CameraInfo cameras_supported[CAMERA_ID_MAX];
-
 struct MultiCameraState;
 struct CameraState;
 
