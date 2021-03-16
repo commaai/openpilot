@@ -58,6 +58,6 @@ You will need to find out your comma two's IP address either from your router or
 
 We will assume the IP address to be `10.10.8.3`
 
-In your command line console, type `ssh root@10.10.8.3 -p 8022`, your computer will now attempt to make connection with your comma two using SSH.
+In your command line console, type `ssh root@10.10.8.3 -p 8022` (replace `10.10.8.3` with the IP address you have obtained), your computer will now attempt to make connection with your comma two using SSH.
 
 Once you see `root@localhost:/data/openpilot$`, you are connected and all set.
