@@ -11,6 +11,7 @@ For security reasons, SSH is not enabled by default on your comma device, you ca
 SSH Keys can be imported from GitHub by going to `Settings → Developer → GitHub Username`, once GitHub username is inserted, it will automatically fetch the public keys on your account.
 
 default ssh username: `root`
+
 default ssh port: `8022`
 
 To view the IP address of your comma device, go to `Settings → WiFi → Open WiFi Settings → More Options → Three Dot Menu at the Top Left Corner → Advanced`.
