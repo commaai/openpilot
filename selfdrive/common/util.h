@@ -172,6 +172,7 @@ public:
     x_ = (1. - k_) * x_ + k_ * x;
     return x_;
   }
+  inline void reset(float x) { x_ = x; }
 
 private:
   float x_, k_;
