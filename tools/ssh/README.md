@@ -1,8 +1,9 @@
 # Connecting to your comma device using SSH
 This will walk you through the procedure of connecting to your comma device using SSH in order for you to make localised changes on your comma device.
 
-Your comma device fetches your public SSH key from your GitHub account. You will have to have a pre-existing GitHub Account, for more information, visit [this GitHub Doc](https://docs.github.com/en/github/getting-started-with-github/signing-up-for-a-new-github-account)
-Your email will need to be verified by GitHub, for more information on email verification, please see the [GitHub Doc](https://docs.github.com/en/github/getting-started-with-github/verifying-your-email-address) regarding this topic.
+Your comma device fetches your public SSH keys from your GitHub account. You will have to have a pre-existing GitHub Account, for more information on account registration, visit [this GitHub Doc](https://docs.github.com/en/github/getting-started-with-github/signing-up-for-a-new-github-account).
+
+Your email will have to be verified by GitHub, for more information on email verification, please see the [GitHub Doc](https://docs.github.com/en/github/getting-started-with-github/verifying-your-email-address) regarding this topic.
 
 # General information
 For security reasons, SSH is not enabled by default on your comma device, you can enable it by navigating to `Settings → Developer → Enable SSH`
