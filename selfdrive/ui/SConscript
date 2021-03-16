@@ -27,7 +27,7 @@ else:
   widgets_src = ["qt/widgets/input.cc", "qt/widgets/drive_stats.cc",
                  "qt/widgets/ssh_keys.cc", "qt/widgets/toggle.cc", "qt/qt_sound.cc",
                  "qt/widgets/offroad_alerts.cc", "qt/widgets/setup.cc", "qt/widgets/keyboard.cc",
-                 "#phonelibs/qrcode/QrCode.cc", "qt/sidebar.cc"]
+                 "#phonelibs/qrcode/QrCode.cc"]
 
   if arch != 'aarch64':
     widgets_src += ["qt/offroad/networking.cc", "qt/offroad/wifiManager.cc"]
@@ -36,7 +36,7 @@ else:
   qt_libs = qt_base_libs + [widgets]
 
   qt_src = ["qt/ui.cc", "qt/window.cc", "qt/home.cc", "qt/api.cc", "qt/offroad/settings.cc",
-            "qt/offroad/onboarding.cc"] + src
+            "qt/offroad/onboarding.cc", "qt/sidebar.cc"] + src
   qt_env.Program("_ui", qt_src, LIBS=qt_libs)
 
   # spinner and text window
