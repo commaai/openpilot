@@ -16,7 +16,7 @@ default ssh port: `8022`
 
 To view the IP address of your comma device, go to `Settings → WiFi → Open WiFi Settings → More Options → Three Dot Menu at the Top Left Corner → Advanced`.
 
-# Generating an SSH key
+# Generating an SSH key and adding it to your GitHub Account
 An SSH key pair is like a padlock and its key, your public key is the padlock, and your private key holds the information of opening the padlock.
 
 To create your SSH key pair, you will have to have OpenSSH client installed on your operating system, please consult your operating system manual on the procedure of accomplishing this.
@@ -24,9 +24,6 @@ To create your SSH key pair, you will have to have OpenSSH client installed on y
 Once OpenSSH Client is installed and operational, using command line console, you will have to type `ssh-keygen -t rsa -f ~/.ssh/id_rsa`, it will then prompt you for a password, you may ignore this and press the `enter` key; nevertheless, setting a password is always a good practice.
 
 This will create two files in your `.ssh` folder, one file will be named `id_rsa` and another file will be named `id_rsa.pub`. This step is completed once these two files are present in your `.ssh` folder.
-
-# Uploading the public SSH key to your GitHub Account
-For your comma device to obtain your public key, it will have to be added to your GitHub Account.
 
 You may refer to [This GitHub Doc](https://docs.github.com/en/github/authenticating-to-github/adding-a-new-ssh-key-to-your-github-account) for more information regarding uploading your Public SSH Key.
 
