@@ -32,8 +32,8 @@ In order for your comma device to obtain the key from your GitHub Account, it ha
 
 1. Turn off your vehicle and wait till your comma device goes to `offroad` mode.
 2. Navigate to `Settings → Developer → Enable SSH`, and ensure SSH has been enabled.
-3. Navigate to `Settings → Developer → GitHub Username`
-4. Using the On-screen Keyboard, type in your GitHub username
+3. Navigate to `Settings → Developer → GitHub Username`.
+4. Using the On-screen Keyboard, type in your GitHub username.
 
 Your comma device will now obtain your Public Key from GitHub.
 
