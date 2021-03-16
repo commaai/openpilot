@@ -55,9 +55,6 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
   const int crop_x_offset = width - cropped_width;
   const int crop_y_offset = 0;
 #else
-  const int full_width_tici = 1928;
-  const int full_height_tici = 1208;
-
   const int cropped_height = tici_driver_cam_adapt_width / 1.33;
   const int cropped_width = cropped_height / 2;
   const int global_x_offset = full_width_tici / 2 - tici_driver_cam_adapt_width / 2;

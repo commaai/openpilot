@@ -477,8 +477,6 @@ static const mat4 driver_view_transform = {{
 }};
 #else
 // from dmonitoring.cc
-static const int full_width_tici = 1928;
-static const int full_height_tici = 1208;
 static const int crop_x_offset = 32;
 static const int crop_y_offset = -196;
 static const float yscale = full_height_tici * driver_view_ratio / tici_driver_cam_adapt_width;

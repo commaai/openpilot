@@ -18,14 +18,16 @@ const double X_IDXS[TRAJECTORY_SIZE] = { 0.    ,   0.1875,   0.75  ,   1.6875,  
        168.75  , 180.1875, 192.};
 
 const int tici_driver_cam_adapt_width = 668;
+const int full_width_tici = 1928;
+const int full_height_tici = 1208;
 
 #ifdef __cplusplus
 
 #include "common/mat.h"
 #ifdef QCOM2
 const mat3 fcam_intrinsic_matrix = (mat3){{
-  2648.0, 0.0, 1928.0/2,
-  0.0, 2648.0, 1208.0/2,
+  2648.0, 0.0, full_width_tici/2.0,
+  0.0, 2648.0, full_height_tici/2.0,
   0.0,   0.0,   1.0
 }};
 #else

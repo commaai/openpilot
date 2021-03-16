@@ -12,6 +12,7 @@
 #include <atomic>
 
 #include "common/util.h"
+#include "common/modeldata.h"
 #include "common/swaglog.h"
 #include "camera_qcom2.h"
 
@@ -24,8 +25,8 @@
 
 #include "sensor2_i2c.h"
 
-#define FRAME_WIDTH  1928
-#define FRAME_HEIGHT 1208
+const int FRAME_WIDTH = full_width_tici;
+const int FRAME_HEIGHT = full_height_tici;
 //#define FRAME_STRIDE 1936 // for 8 bit output
 #define FRAME_STRIDE 2416  // for 10 bit output
 
