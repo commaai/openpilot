@@ -5,19 +5,7 @@
 #include <QStackedLayout>
 #include <QTextEdit>
 #include <QMouseEvent>
-#include <QPointF>
-#include <QPushButton>
 
-#ifndef QCOM
-#include <QtWebEngine>
-#include <QWebEngineView>
-#include <QWebEngineSettings>
-#endif
-
-<<<<<<< HEAD
-=======
-
->>>>>>> rebase master
 class TrainingGuide : public QFrame {
   Q_OBJECT
 

@@ -4,7 +4,6 @@
 #include <csignal>
 #include <cstring>
 #include <cstdlib>
-#include <sys/stat.h>
 #include <string>
 #include <memory>
 #include <atomic>

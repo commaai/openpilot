@@ -219,7 +219,6 @@ QWidget * developer_panel() {
   Params params = Params();
   std::string brand = params.getBool("Passive") ? "dashcam" : "openpilot";
   std::vector<std::pair<std::string, std::string>> labels = {
-<<<<<<< HEAD
     {"Version", brand + " v" + params.get("Version", false)},
     {"Git Branch", params.get("GitBranch", false)},
     {"Git Commit", params.get("GitCommit", false).substr(0, 10)},
@@ -228,20 +227,6 @@ QWidget * developer_panel() {
   };
 
   for (int i = 0; i < labels.size(); i++) {
-=======
-    {"Version", brand + " v" + params.get("Version")},
-    {"Git Branch", params.get("GitBranch")},
-    {"Git Commit", params.get("GitCommit").substr(0, 10)},
-    {"Panda Firmware", params.get("PandaFirmwareHex")},
-  };
-
-  std::string os_version = util::read_file("/VERSION");
-  if (os_version.size()) {
-    labels.push_back({"OS Version", "AGNOS " + os_version});
-  }
-
-  for (int i = 0; i<labels.size(); i++) {
->>>>>>> rebase master
     auto l = labels[i];
     main_layout->addWidget(labelWidget(QString::fromStdString(l.first), QString::fromStdString(l.second)));
 
