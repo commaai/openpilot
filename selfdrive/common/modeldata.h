@@ -17,6 +17,8 @@ const double X_IDXS[TRAJECTORY_SIZE] = { 0.    ,   0.1875,   0.75  ,   1.6875,  
        108.    , 117.1875, 126.75  , 136.6875, 147.    , 157.6875,
        168.75  , 180.1875, 192.};
 
+const int tici_driver_cam_adapt_width = 668;
+
 #ifdef __cplusplus
 
 #include "common/mat.h"

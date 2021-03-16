@@ -367,7 +367,7 @@ void common_process_driver_camera(SubMaster *sm, PubMaster *pm, CameraState *c, 
         int frame_width = b->rgb_width;
         int frame_height = b->rgb_height;
 #else
-        int frame_width = 668;
+        int frame_width = tici_driver_cam_adapt_width;
         int frame_height = frame_width / 1.33;
 #endif
         int x_offset = is_rhd ? 0 : frame_width - (0.5 * frame_height);
