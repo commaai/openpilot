@@ -398,9 +398,9 @@ void common_process_driver_camera(SubMaster *sm, PubMaster *pm, CameraState *c, 
     }
 
 #ifdef QCOM2
-    camera_autoexposure(c, set_exposure_target(b, x_min, x_max, 2, y_min, y_max, skip, (int)c->analog_gain, true, true));
+    c->auto_exposure(set_exposure_target(b, x_min, x_max, 2, y_min, y_max, skip, (int)c->analog_gain, true, true));
 #else
-    camera_autoexposure(c, set_exposure_target(b, x_min, x_max, 2, y_min, y_max, skip, -1, false, false));
+    c->auto_exposure(set_exposure_target(b, x_min, x_max, 2, y_min, y_max, skip, -1, false, false));
 #endif
   }
 
