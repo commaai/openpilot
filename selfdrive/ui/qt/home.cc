@@ -39,7 +39,7 @@ HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
   grid_layout->setMargin(0);
 
   sidebar = new Sidebar(this);
-  layout->addWidget(sidebar);
+  layout->addWidget(sidebar, 1);
 
   // onroad UI
   glWindow = new GLWindow(this);
@@ -85,7 +85,7 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
   // Vision click
   if (ui_state->scene.started && (e->x() >= sidebar->width())) {
     sidebar->setVisible(!sidebar->isVisible());
-    ui_state->sidebar_collapsed = sidebar->isVisible();
+    ui_state->sidebar_collapsed = !sidebar->isVisible();
   }
 }
 
