@@ -141,18 +141,13 @@ Sidebar::Sidebar(QWidget* parent) : QFrame(parent){
   sb_layout->addWidget(comma, 0, Qt::AlignHCenter | Qt::AlignVCenter);
   setStyleSheet(R"( Sidebar { background-color: #393939 ;})");
   setLayout(sb_layout);
-
-  UIState s = {};
-  s.scene.athenaStatus = NET_CONNECTED;
-  update(&s);
 }
 
 void Sidebar::update(UIState *s){
-
-	  static std::map<NetStatus, std::pair<const char *, int>> connectivity_map = {
-      {NET_ERROR, {"CONNECT\nERROR", 2}},
-      {NET_CONNECTED, {"CONNECT\nONLINE", 0}},
-      {NET_DISCONNECTED, {"CONNECT\nOFFLINE", 1}},
+  static std::map<NetStatus, std::pair<const char *, int>> connectivity_map = {
+    {NET_ERROR, {"CONNECT\nERROR", 2}},
+    {NET_CONNECTED, {"CONNECT\nONLINE", 0}},
+    {NET_DISCONNECTED, {"CONNECT\nOFFLINE", 1}},
   };
   auto net_params = connectivity_map[s->scene.athenaStatus];
 	connect->update(net_params.first, "", QColor(218, 202, 37));
@@ -187,8 +182,7 @@ void Sidebar::update(UIState *s){
   if (s->scene.pandaType == cereal::PandaState::PandaType::UNKNOWN) {
     panda_severity = 2;
     panda_message = "NO\nPANDA";
-  }
-  else if (s->scene.started) {
+  } else if (s->scene.started) {
     panda_severity = s->scene.gpsOK ? 0 : 1;
     panda_message = util::string_format("SAT CNT\n%d", s->scene.satelliteCount);
   }
