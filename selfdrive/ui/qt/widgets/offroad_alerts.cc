@@ -8,7 +8,7 @@
 
 #include "offroad_alerts.hpp"
 #include "common/params.h"
-
+#include "selfdrive/hardware/hw.h"
 
 void cleanStackedWidget(QStackedWidget* swidget) {
   while(swidget->count() > 0) {
@@ -39,9 +39,7 @@ OffroadAlert::OffroadAlert(QWidget* parent) : QFrame(parent) {
   footer_layout->addWidget(reboot_btn, 0, Qt::AlignRight);
 
   QObject::connect(dismiss_btn, SIGNAL(released()), this, SIGNAL(closeAlerts()));
-#ifdef __aarch64__
-  QObject::connect(reboot_btn, &QPushButton::released, [=]() {std::system("sudo reboot");});
-#endif
+  QObject::connect(reboot_btn, &QPushButton::released, [=]() { Hardware::reboot(); });
 
   setLayout(main_layout);
   setStyleSheet(R"(

@@ -85,8 +85,6 @@ typedef struct CameraExpInfo {
   float grey_frac;
 } CameraExpInfo;
 
-extern CameraInfo cameras_supported[CAMERA_ID_MAX];
-
 struct MultiCameraState;
 struct CameraState;
 
@@ -98,7 +96,6 @@ private:
 
   RGBToYUVState rgb_to_yuv_state;
 
-  FrameMetadata yuv_metas[YUV_COUNT];
   VisionStreamType rgb_type, yuv_type;
 
   int cur_buf_idx;
