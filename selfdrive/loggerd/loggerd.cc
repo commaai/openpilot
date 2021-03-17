@@ -427,7 +427,7 @@ int main(int argc, char** argv) {
         if (fpkt_id >= 0) {
           // track camera frames to sync to encoder
           // only process last frame
-          capnp::FlatArrayMessageReader cmsg(aligned_buf.get(last_msg));
+          capnp::FlatArrayMessageReader cmsg(aligned_buf.align(last_msg));
           cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
 
           if (fpkt_id == LOG_CAMERA_ID_FCAMERA) {

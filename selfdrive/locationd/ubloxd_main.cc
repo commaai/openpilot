@@ -42,7 +42,7 @@ int ubloxd_main(poll_ubloxraw_msg_func poll_func, send_gps_event_func send_func)
       continue;
     }
 
-    capnp::FlatArrayMessageReader cmsg(aligned_buf.get(msg));
+    capnp::FlatArrayMessageReader cmsg(aligned_buf.align(msg));
     cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
     auto ubloxRaw = event.getUbloxRaw();
 

@@ -99,7 +99,8 @@ void safety_setter_thread() {
   }
   LOGW("got %d bytes CarParams", params.size());
 
-  capnp::FlatArrayMessageReader cmsg(AlignedBuffer(params.data(), params.size()));
+  AlignedBuffer aligned_buf;
+  capnp::FlatArrayMessageReader cmsg(aligned_buf.align(params.data(), params.size()));
   cereal::CarParams::Reader car_params = cmsg.getRoot<cereal::CarParams>();
   cereal::CarParams::SafetyModel safety_model = car_params.getSafetyModel();
 
@@ -214,7 +215,7 @@ void can_send_thread(bool fake_send) {
       continue;
     }
 
-    capnp::FlatArrayMessageReader cmsg(aligned_buf.get(msg));
+    capnp::FlatArrayMessageReader cmsg(aligned_buf.align(msg));
     cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
 
     //Dont send if older than 1 second
