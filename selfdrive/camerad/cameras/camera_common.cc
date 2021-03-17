@@ -151,7 +151,6 @@ bool CameraBuf::acquire() {
   CL_CHECK(clReleaseEvent(debayer_event));
 
   cur_yuv_buf = vipc_server->get_buffer(yuv_type);
-  yuv_metas[cur_yuv_buf->idx] = cur_frame_data;
   rgb_to_yuv_queue(&rgb_to_yuv_state, q, cur_rgb_buf->buf_cl, cur_yuv_buf->buf_cl);
 
   VisionIpcBufExtra extra = {
