@@ -33,6 +33,7 @@
 HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
   layout = new QHBoxLayout;
   layout->setMargin(0);
+  layout->setSpacing(0);
 
   QGridLayout* grid_layout = new QGridLayout;
   grid_layout->setMargin(0);
@@ -84,6 +85,7 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
   // Vision click
   if (ui_state->scene.started && (e->x() >= sidebar->width())) {
     sidebar->setVisible(!sidebar->isVisible());
+    ui_state->sidebar_collapsed = sidebar->isVisible();
   }
 }
 

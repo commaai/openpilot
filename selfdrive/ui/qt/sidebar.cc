@@ -83,13 +83,13 @@ void SignalWidget::paintEvent(QPaintEvent *e){
   QPainter p(this);
   p.setRenderHint(QPainter::Antialiasing, true);
   p.setPen(Qt::NoPen);
-  p.setBrush(Qt::darkGray);
+  p.setBrush(Qt::white);
   for (int i = 0; i < 5 ; i++) //draw empty dots
   {
     if(i == _strength)
     {
       p.setPen(Qt::NoPen);
-      p.setBrush(Qt::white);
+      p.setBrush(Qt::darkGray);
     }
     p.drawEllipse(QRectF(_dotspace * i, _top, _dia, _dia));
   }
