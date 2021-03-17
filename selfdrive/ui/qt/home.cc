@@ -93,7 +93,7 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
 
 OffroadHome::OffroadHome(QWidget* parent) : QWidget(parent) {
   QVBoxLayout* main_layout = new QVBoxLayout();
-  main_layout->setContentsMargins(sbr_w + 50, 50, 50, 50);
+  main_layout->setContentsMargins(50, 50, 50, 50);
 
   // top header
   QHBoxLayout* header_layout = new QHBoxLayout();
