@@ -99,11 +99,8 @@ void safety_setter_thread() {
   }
   LOGW("got %d bytes CarParams", params.size());
 
-  // format for board, make copy due to alignment issues, will be freed on out of scope
-  auto amsg = kj::heapArray<capnp::word>((params.size() / sizeof(capnp::word)) + 1);
-  memcpy(amsg.begin(), params.data(), params.size());
-
-  capnp::FlatArrayMessageReader cmsg(amsg);
+  AlignedBuffer aligned_buf;
+  capnp::FlatArrayMessageReader cmsg(aligned_buf.align(params.data(), params.size()));
   cereal::CarParams::Reader car_params = cmsg.getRoot<cereal::CarParams>();
   cereal::CarParams::SafetyModel safety_model = car_params.getSafetyModel();
 
@@ -201,7 +198,7 @@ void can_recv(PubMaster &pm) {
 void can_send_thread(bool fake_send) {
   LOGD("start send thread");
 
-  kj::Array<capnp::word> buf = kj::heapArray<capnp::word>(1024);
+  AlignedBuffer aligned_buf;
   Context * context = Context::create();
   SubSocket * subscriber = SubSocket::create(context, "sendcan");
   assert(subscriber != NULL);
@@ -217,13 +214,8 @@ void can_send_thread(bool fake_send) {
       }
       continue;
     }
-    const size_t size = (msg->getSize() / sizeof(capnp::word)) + 1;
-    if (buf.size() < size) {
-      buf = kj::heapArray<capnp::word>(size);
-    }
-    memcpy(buf.begin(), msg->getData(), msg->getSize());
 
-    capnp::FlatArrayMessageReader cmsg(buf.slice(0, size));
+    capnp::FlatArrayMessageReader cmsg(aligned_buf.align(msg));
     cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
 
     //Dont send if older than 1 second
