@@ -113,9 +113,7 @@ bool CameraBuf::acquire() {
   }
 
   cur_frame_data = camera_bufs_metadata[cur_buf_idx];
-
   cur_rgb_buf = vipc_server->get_buffer(rgb_type);
-  cur_yuv_buf = vipc_server->get_buffer(yuv_type);
 
   cl_mem camrabuf_cl = camera_bufs[cur_buf_idx].buf_cl;
   if (camera_state->ci.bayer) {
@@ -146,6 +144,7 @@ bool CameraBuf::acquire() {
                                cur_rgb_buf->len, 0, 0, nullptr));
   }
 
+  cur_yuv_buf = vipc_server->get_buffer(yuv_type);
   rgb2yuv->queue(q, cur_rgb_buf->buf_cl, cur_yuv_buf->buf_cl);
   CL_CHECK(clFinish(q));
 
