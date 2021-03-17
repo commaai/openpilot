@@ -1,16 +1,14 @@
 #pragma once
 
 #include <QtWidgets>
-
-#define QT_COLOR_WHITE QColor(255, 255, 255)
-#define QT_COLOR_YELLOW QColor(218, 202, 37)
-#define QT_COLOR_RED QColor(201, 34, 49)
+#include <ui.hpp>
 
 class SignalWidget : public QFrame {
   Q_OBJECT
 
 public:
   SignalWidget(QString text, int strength, QWidget* parent = 0);
+  void update(QString text, int strength);
   QLabel* label;
   int _strength = 0;
 
@@ -29,11 +27,12 @@ class StatusWidget : public QFrame {
 
 public:
   StatusWidget(QString label, QString msg, QColor color, QWidget* parent = 0);
+  void update(QString label, QString msg, QColor color);
 
 protected:
   void paintEvent(QPaintEvent*) override;
 private:
-  QColor _severity = QT_COLOR_YELLOW;
+  QColor _severity = QColor(218, 202, 37);
   QLabel* l_label;
   QLabel* l_msg;
 };
@@ -41,7 +40,12 @@ private:
 class Sidebar : public QFrame {
   Q_OBJECT
 
-
 public:
   explicit Sidebar(QWidget* parent = 0);
+  void update(UIState *s);
+private:
+  SignalWidget* signal;
+  StatusWidget* temp;
+  StatusWidget* vehicle;
+  StatusWidget* connect;
 };
