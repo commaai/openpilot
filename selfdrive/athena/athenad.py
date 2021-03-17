@@ -264,7 +264,7 @@ def get_log_files_sorted(curr_time, last_scan):
       continue
     try:
       time_sent = int(getxattr(log_path, LOG_ATTR_NAME))
-    except ValueError:
+    except (ValueError, TypeError):
       time_sent = 0
     # assume send failed and we lost the response if sent more than one hour ago
     if not time_sent or curr_time - time_sent > 3600:
