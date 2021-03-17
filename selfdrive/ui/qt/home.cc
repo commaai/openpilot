@@ -31,25 +31,19 @@
 // HomeWindow: the container for the offroad (OffroadHome) and onroad (GLWindow) UIs
 
 HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
-  layout = new QHBoxLayout;
+  QGridLayout* layout = new QGridLayout;
   layout->setMargin(0);
-  layout->setSpacing(0);
-
-  QGridLayout* grid_layout = new QGridLayout;
-  grid_layout->setMargin(0);
-
-  sidebar = new Sidebar(this);
-  layout->addWidget(sidebar, 1);
 
   // onroad UI
   glWindow = new GLWindow(this);
-  grid_layout->addWidget(glWindow, 0, 0);
+  layout->addWidget(glWindow, 0, 0);
 
   // draw offroad UI on top of onroad UI
   home = new OffroadHome();
-  grid_layout->addWidget(home, 0, 0);
+  layout->addWidget(home, 0, 0);
 
-  layout->addLayout(grid_layout);
+  sidebar = new Sidebar(this);
+  layout->addWidget(sidebar, 0, 0, Qt::AlignLeft);
 
   QObject::connect(glWindow, SIGNAL(offroadTransition(bool)), this, SLOT(setVisibility(bool)));
   QObject::connect(glWindow, SIGNAL(offroadTransition(bool)), this, SIGNAL(offroadTransition(bool)));
@@ -93,7 +87,7 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
 
 OffroadHome::OffroadHome(QWidget* parent) : QWidget(parent) {
   QVBoxLayout* main_layout = new QVBoxLayout();
-  main_layout->setContentsMargins(50, 50, 50, 50);
+  main_layout->setContentsMargins(sbr_w + 50, 50, 50, 50);
 
   // top header
   QHBoxLayout* header_layout = new QHBoxLayout();
@@ -284,6 +278,7 @@ void GLWindow::timerUpdate() {
   if (ui_state.scene.started != onroad) {
     onroad = ui_state.scene.started;
     emit offroadTransition(!onroad);
+
 
     // Change timeout to 0 when onroad, this will call timerUpdate continously.
     // This puts visionIPC in charge of update frequency, reducing video latency

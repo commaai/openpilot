@@ -369,10 +369,10 @@ static void ui_draw_background(UIState *s) {
 
 void ui_draw(UIState *s) {
   s->viz_rect = Rect{bdr_s, bdr_s, s->fb_w - 2 * bdr_s, s->fb_h - 2 * bdr_s};
-  //if (!s->sidebar_collapsed) {
-  //  s->viz_rect.x += sbr_w;
-  //  s->viz_rect.w -= sbr_w;
-  //}
+  if (!s->sidebar_collapsed) {
+    s->viz_rect.x += sbr_w;
+    s->viz_rect.w -= sbr_w;
+  }
 
   const bool draw_alerts = s->scene.started && s->active_app == cereal::UiLayoutState::App::NONE;
   const bool draw_vision = draw_alerts && s->vipc_client->connected;

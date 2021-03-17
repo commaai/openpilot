@@ -94,7 +94,7 @@ protected:
   void mousePressEvent(QMouseEvent* e) override;
 
 private:
-  QHBoxLayout* layout;
+  QGridLayout* layout;
 
   OffroadHome* home;
   Sidebar* sidebar;
