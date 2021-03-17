@@ -115,8 +115,13 @@ Sidebar::Sidebar(QWidget* parent) : QFrame(parent){
 
   // TODO: set opacity to 0.65
   QPushButton* s_btn = new QPushButton(this);
+
+  //  border-image: url(../assets/images/button_settings.png);
   s_btn->setStyleSheet(R"(
-    border-image: url(../assets/images/button_settings.png);
+    background-color: rgba(0, 0, 0, 0);
+    background-image: url(../assets/images/button_settings.png);
+    background-repeat: no-repeat;
+    background-position: center;
   )");
   s_btn->setFixedSize(252, 150);
 
