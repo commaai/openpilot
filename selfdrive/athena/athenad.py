@@ -4,6 +4,7 @@ import hashlib
 import io
 import json
 import os
+import sys
 import queue
 import random
 import select
@@ -34,7 +35,7 @@ HANDLER_THREADS = int(os.getenv('HANDLER_THREADS', "4"))
 LOCAL_PORT_WHITELIST = set([8022])
 
 LOG_ATTR_NAME = 'user.upload'
-MAX_UNIX_TIME = 2147483647
+LOG_ATTR_VALUE_MAX_UNIX_TIME = int.to_bytes(2147483647, 4, sys.byteorder)
 
 dispatcher["echo"] = lambda s: s
 recv_queue: Any = queue.Queue()
@@ -70,7 +71,6 @@ def handle_long_poll(ws):
   finally:
     for thread in threads:
       thread.join()
-
 
 def jsonrpc_handler(end_event):
   dispatcher["startLocalProxy"] = partial(startLocalProxy, end_event)
@@ -263,7 +263,7 @@ def get_log_files_sorted(curr_time, last_scan):
     if log_entry == "swaglog":
       continue
     try:
-      time_sent = int(getxattr(log_path, LOG_ATTR_NAME))
+      time_sent = int.from_bytes(getxattr(log_path, LOG_ATTR_NAME), sys.byteorder)
     except (ValueError, TypeError):
       time_sent = 0
     # assume send failed and we lost the response if sent more than one hour ago
@@ -284,12 +284,14 @@ def log_handler(end_event):
     try:
       try:
         result = json.loads(log_recv_queue.get(timeout=1))
-        log_entry = result["id"]
+        log_success = result.get("success", default=False)
+        log_entry = result.get("id", default="")
         log_path = os.path.join(SWAGLOG_DIR, log_entry)
-        try:
-          setxattr(log_path, LOG_ATTR_NAME, str(MAX_UNIX_TIME if result["success"] else 0))
-        except OSError:
-          pass
+        if log_entry and log_success:
+          try:
+            setxattr(log_path, LOG_ATTR_NAME, LOG_ATTR_VALUE_MAX_UNIX_TIME)
+          except OSError:
+            pass # file could be deleted by log rotation
       except queue.Empty:
         pass
 
@@ -314,8 +316,8 @@ def log_handler(end_event):
           "jsonrpc": "2.0",
           "id": log_entry
         }
-        log_send_queue.put_nowait(jsonrpc)
-        setxattr(log_path, LOG_ATTR_NAME, str(curr_time))
+        log_send_queue.put_nowait(json.dumps(jsonrpc))
+        setxattr(log_path, LOG_ATTR_NAME, int.to_bytes(curr_time, 4, sys.byteorder))
       except OSError:
         pass
       logs = logs[1:]

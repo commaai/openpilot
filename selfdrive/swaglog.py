@@ -63,8 +63,6 @@ class SwaglogRotatingFileHandler(BaseRotatingHandler):
         if os.path.exists(to_delete): # just being safe, should always exist
           os.remove(to_delete)
 
-# TODO: could be replaced with QueueHandler/QueueListener?
-# (perhaps simplifies what we do for catching exceptions when logmessaged isn't running)
 class UnixDomainSocketHandler(logging.Handler):
   def __init__(self, formatter):
     logging.Handler.__init__(self)
