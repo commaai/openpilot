@@ -32,7 +32,7 @@ class SwaglogRotatingFileHandler(BaseRotatingHandler):
 
   def get_existing_logfiles(self):
     log_files = list()
-    base_dir = os.path.basename(self.base_filename)
+    base_dir = os.path.dirname(self.base_filename)
     for fn in os.listdir(base_dir):
       fp = os.path.join(base_dir, fn)
       if fp.startswith(self.base_filename) and os.path.isfile(fp):
