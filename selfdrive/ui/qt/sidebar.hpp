@@ -10,7 +10,7 @@ public:
   SignalWidget(QString text, int strength, QWidget* parent = 0);
   void update(QString text, int strength);
   QLabel* label;
-  int _strength = 0;
+ int _strength = 0;
 
 protected:
   void paintEvent(QPaintEvent*) override;

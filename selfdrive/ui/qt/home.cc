@@ -31,20 +31,24 @@
 // HomeWindow: the container for the offroad (OffroadHome) and onroad (GLWindow) UIs
 
 HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
-  layout = new QGridLayout;
+  layout = new QHBoxLayout;
   layout->setMargin(0);
+
+  QGridLayout* grid_layout = new QGridLayout;
+  grid_layout->setMargin(0);
+
+  sidebar = new Sidebar(this);
+  layout->addWidget(sidebar);
 
   // onroad UI
   glWindow = new GLWindow(this);
-  layout->addWidget(glWindow, 0, 0);
-
-  sidebar = new Sidebar(this);
+  grid_layout->addWidget(glWindow, 0, 0);
 
   // draw offroad UI on top of onroad UI
   home = new OffroadHome();
-  layout->addWidget(home, 0, 0);
+  grid_layout->addWidget(home, 0, 0);
 
-  layout->addWidget(sidebar, 0, 0);
+  layout->addLayout(grid_layout);
 
   QObject::connect(glWindow, SIGNAL(offroadTransition(bool)), this, SLOT(setVisibility(bool)));
   QObject::connect(glWindow, SIGNAL(offroadTransition(bool)), this, SIGNAL(offroadTransition(bool)));
@@ -82,7 +86,6 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
     sidebar->setVisible(!sidebar->isVisible());
   }
 }
-
 
 // OffroadHome: the offroad home page
 
