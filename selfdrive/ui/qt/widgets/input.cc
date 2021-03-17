@@ -72,6 +72,10 @@ int InputDialog::exec() {
   return QDialog::exec();
 }
 
+void InputDialog::show(){
+  setMainWindow(this);
+}
+
 void InputDialog::handleInput(QString s) {
   if (!QString::compare(s,"⌫")) {
     line->backspace();

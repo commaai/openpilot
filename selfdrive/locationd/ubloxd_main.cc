@@ -23,7 +23,7 @@ ExitHandler do_exit;
 using namespace ublox;
 int ubloxd_main(poll_ubloxraw_msg_func poll_func, send_gps_event_func send_func) {
   LOGW("starting ubloxd");
-
+  kj::Array<capnp::word> buf = kj::heapArray<capnp::word>(1024);
   UbloxMsgParser parser;
 
   Context * context = Context::create();
@@ -41,11 +41,13 @@ int ubloxd_main(poll_ubloxraw_msg_func poll_func, send_gps_event_func send_func)
       }
       continue;
     }
+    const size_t size = (msg->getSize() / sizeof(capnp::word)) + 1;
+    if (buf.size() < size) {
+      buf = kj::heapArray<capnp::word>(size);
+    }
+    memcpy(buf.begin(), msg->getData(), msg->getSize());
 
-    auto amsg = kj::heapArray<capnp::word>((msg->getSize() / sizeof(capnp::word)) + 1);
-    memcpy(amsg.begin(), msg->getData(), msg->getSize());
-
-    capnp::FlatArrayMessageReader cmsg(amsg);
+    capnp::FlatArrayMessageReader cmsg(buf.slice(0, size));
     cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
     auto ubloxRaw = event.getUbloxRaw();
 

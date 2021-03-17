@@ -13,17 +13,14 @@
 #define EXPOSURE_TIME_MIN 2 // with HDR, fastest ss
 #define EXPOSURE_TIME_MAX 1757 // with HDR, slowest ss
 
-#define HLC_THRESH 222
-#define HLC_A 80
-#define HISTO_CEIL_K 5
-
 #define EF_LOWPASS_K 0.35
 
 #define DEBAYER_LOCAL_WORKSIZE 16
 
 typedef struct CameraState {
   CameraInfo ci;
-
+  
+  std::mutex exp_lock;
   float analog_gain_frac;
   uint16_t analog_gain;
   bool dc_gain_enabled;

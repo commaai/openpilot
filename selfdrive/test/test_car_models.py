@@ -9,7 +9,7 @@ from typing import List, cast
 import requests
 
 import cereal.messaging as messaging
-import selfdrive.manager as manager
+from selfdrive.manager.process_config import managed_processes
 from cereal import car
 from common.basedir import BASEDIR
 from common.params import Params
@@ -197,9 +197,17 @@ routes = {
     'carFingerprint': HYUNDAI.SANTA_FE,
     'enableCamera': True,
   },
+  "e0e98335f3ebc58f|2021-03-07--16-38-29": {
+    'carFingerprint': HYUNDAI.KIA_CEED,
+    'enableCamera': True,
+  },
   "7653b2bce7bcfdaa|2020-03-04--15-34-32": {
     'carFingerprint': HYUNDAI.KIA_OPTIMA,
     'enableCamera': True,
+  },
+  "c75a59efa0ecd502|2021-03-11--20-52-55": {
+    'carFingerprint': HYUNDAI.KIA_SELTOS,
+    'enableCamera': True,  
   },
   "5b7c365c50084530|2020-04-15--16-13-24": {
     'carFingerprint': HYUNDAI.SONATA,
@@ -501,7 +509,7 @@ routes = {
     'carFingerprint': MAZDA.Mazda3,
     'enableCamera': True,
   },
-    "b72d3ec617c0a90f|2020-12-11--15-38-17": {
+  "b72d3ec617c0a90f|2020-12-11--15-38-17": {
     'carFingerprint': NISSAN.ALTIMA,
     'enableCamera': True,
   },
@@ -551,7 +559,7 @@ non_tested_cars = [
 if __name__ == "__main__":
 
   tested_procs = ["controlsd", "radard", "plannerd"]
-  tested_socks = ["radarState", "controlsState", "carState", "plan"]
+  tested_socks = ["radarState", "controlsState", "carState", "longitudinalPlan"]
 
   tested_cars = [keys["carFingerprint"] for route, keys in routes.items()]
   for car_model in all_known_cars():
@@ -565,7 +573,7 @@ if __name__ == "__main__":
 
   print("Preparing processes")
   for p in tested_procs:
-    manager.prepare_managed_process(p)
+    managed_processes[p].prepare()
 
   results = {}
   for route, checks in routes.items():
@@ -587,7 +595,7 @@ if __name__ == "__main__":
     print("testing ", route, " ", checks['carFingerprint'])
     print("Starting processes")
     for p in tested_procs:
-      manager.start_managed_process(p)
+      managed_processes[p].start()
 
     # Start unlogger
     print("Start unlogger")
@@ -607,11 +615,11 @@ if __name__ == "__main__":
     failures = [s for s in tested_socks + extra_socks if s not in recvd_socks]
 
     print("Check if everything is running")
-    running = manager.get_running()
     for p in tested_procs:
-      if not running[p].is_alive:
+      proc = managed_processes[p].proc
+      if not proc or not proc.is_alive:
         failures.append(p)
-      manager.kill_managed_process(p)
+      managed_processes[p].stop()
     os.killpg(os.getpgid(unlogger.pid), signal.SIGTERM)
 
     sockets_ok = len(failures) == 0

@@ -1,23 +1,25 @@
 #!/usr/bin/env python3
 import json
 import os
-import requests
 import signal
 import subprocess
 import time
 
-os.environ['FAKEUPLOAD'] = "1"
+import requests
 
+from selfdrive.manager.process_config import managed_processes
 from common.params import Params
 from common.realtime import sec_since_boot
-import selfdrive.manager as manager
 from selfdrive.test.helpers import with_processes
+
+os.environ['FAKEUPLOAD'] = "1"
 
 
 def test_athena():
   print("ATHENA")
   start = sec_since_boot()
-  manager.start_daemon_process("manage_athenad")
+  managed_processes['manage_athenad'].start()
+
   params = Params()
   manage_athenad_pid = params.get("AthenadPid")
   assert manage_athenad_pid is not None

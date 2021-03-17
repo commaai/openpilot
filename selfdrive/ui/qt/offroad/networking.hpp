@@ -17,11 +17,10 @@ class WifiUI : public QWidget {
 
 public:
   int page;
-  explicit WifiUI(QWidget *parent = 0, int page_length = 5, WifiManager* wifi = 0);
+  explicit WifiUI(QWidget *parent = 0, WifiManager* wifi = 0);
 
 private:
   WifiManager *wifi = nullptr;
-  int networks_per_page;
   QVBoxLayout *vlayout;
 
   QButtonGroup *connectButtons;

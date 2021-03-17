@@ -15,20 +15,14 @@ if ! $(apt list --installed | grep -q nvidia-container-toolkit); then
   fi
 fi
 
-docker pull carlasim/carla:0.9.7
+docker pull carlasim/carla:0.9.11
 
-if [ -z "$WINDOW" ]; then
-  docker run -it --net=host --gpus all carlasim/carla:0.9.7
-else
-  docker run --name openpilot_carla \
-    --privileged --rm \
-    --net=host \
-    -e SDL_VIDEODRIVER=x11 \
-    -e DISPLAY=$DISPLAY \
-    -v /tmp/.X11-unix:/tmp/.X11-unix \
-    -it \
-    --gpus all \
-    carlasim/carla:0.9.7 \
-    ./CarlaUE4.sh -quality-level=Medium
-fi
-
+docker run \
+  --rm \
+  --net=host \
+  -e DISPLAY= \
+  -e SDL_VIDEODRIVER=offscreen \
+  -it \
+  --gpus all \
+  carlasim/carla:0.9.11 \
+  ./CarlaUE4.sh -opengl -nosound -quality-level=Epic

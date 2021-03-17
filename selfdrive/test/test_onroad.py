@@ -10,7 +10,6 @@ from cereal.services import service_list
 from common.basedir import BASEDIR
 from common.timeout import Timeout
 from selfdrive.loggerd.config import ROOT
-import selfdrive.manager as manager
 from selfdrive.test.helpers import set_params_enabled
 from tools.lib.logreader import LogReader
 
@@ -27,21 +26,21 @@ PROCS = [
   ("./_modeld", 4.48),
   ("./boardd", 3.63),
   ("./_dmonitoringmodeld", 2.67),
-  ("selfdrive.logmessaged", 1.7),
   ("selfdrive.thermald.thermald", 2.41),
   ("selfdrive.locationd.calibrationd", 2.0),
   ("selfdrive.monitoring.dmonitoringd", 1.90),
   ("./proclogd", 1.54),
+  ("selfdrive.logmessaged", 0.2),
   ("./clocksd", 0.02),
   ("./ubloxd", 0.02),
   ("selfdrive.tombstoned", 0),
   ("./logcatd", 0),
 ]
 
-# ***** test helpers *****
 
 def cputime_total(ct):
   return ct.cpuUser + ct.cpuSystem + ct.cpuChildrenUser + ct.cpuChildrenSystem
+
 
 def check_cpu_usage(first_proc, last_proc):
   result =  "------------------------------------------------\n"
@@ -84,9 +83,7 @@ class TestOnroad(unittest.TestCase):
 
     # start manager and run openpilot for a minute
     try:
-      manager.build()
-      manager.manager_prepare()
-      manager_path = os.path.join(BASEDIR, "selfdrive/manager.py")
+      manager_path = os.path.join(BASEDIR, "selfdrive/manager/manager.py")
       proc = subprocess.Popen(["python", manager_path])
 
       sm = messaging.SubMaster(['carState'])
@@ -115,6 +112,7 @@ class TestOnroad(unittest.TestCase):
     self.assertGreater(len(proclogs), service_list['procLog'].frequency * 45, "insufficient samples")
     cpu_ok = check_cpu_usage(proclogs[0], proclogs[-1])
     self.assertTrue(cpu_ok)
+
 
 if __name__ == "__main__":
   unittest.main()

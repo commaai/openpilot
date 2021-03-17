@@ -14,8 +14,8 @@
 #define USER_AGENT "AGNOSSetup-0.1"
 
 void Setup::download(QString url) {
-  setCurrentIndex(count() - 2);
   QCoreApplication::processEvents(QEventLoop::AllEvents, 1000);
+  setCurrentIndex(count() - 2);
 
   CURL *curl = curl_easy_init();
   if (!curl) {
@@ -53,7 +53,7 @@ QLabel * title_label(QString text) {
 
 QWidget * Setup::build_page(QString title, QWidget *content, bool next, bool prev) {
   QVBoxLayout *main_layout = new QVBoxLayout();
-  main_layout->setContentsMargins(50, 50, 50, 50);
+  main_layout->setMargin(50);
   main_layout->addWidget(title_label(title), 0, Qt::AlignLeft | Qt::AlignTop);
 
   main_layout->addWidget(content);

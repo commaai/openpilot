@@ -4,7 +4,7 @@ import time
 
 from tqdm import tqdm
 
-import selfdrive.manager as manager
+from selfdrive.manager.process_config import managed_processes
 from cereal.messaging import PubMaster, recv_one, sub_sock
 from tools.lib.framereader import FrameReader
 
@@ -47,8 +47,8 @@ def inject_model(msgs, segment_name):
     segment_name = rreplace(segment_name, '--', '/', 1)
   frame_reader = FrameReader('cd:/'+segment_name.replace("|", "/") + "/fcamera.hevc")
 
-  manager.start_managed_process('camerad')
-  manager.start_managed_process('modeld')
+  managed_processes['camerad'].start()
+  managed_processes['modeld'].start()
   # TODO do better than just wait for modeld to boot
   time.sleep(5)
 
@@ -57,13 +57,13 @@ def inject_model(msgs, segment_name):
   try:
     out_msgs = regen_model(msgs, pm, frame_reader, model_sock)
   except (KeyboardInterrupt, SystemExit, Exception) as e:
-    manager.kill_managed_process('modeld')
+    managed_processes['modeld'].stop()
     time.sleep(2)
-    manager.kill_managed_process('camerad')
+    managed_processes['camerad'].stop()
     raise e
-  manager.kill_managed_process('modeld')
+  managed_processes['modeld'].stop()
   time.sleep(2)
-  manager.kill_managed_process('camerad')
+  managed_processes['camerad'].stop()
 
   new_msgs = []
   midx = 0

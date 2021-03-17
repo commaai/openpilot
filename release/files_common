@@ -69,8 +69,6 @@ selfdrive/__init__.py
 selfdrive/registration.py
 selfdrive/config.py
 selfdrive/crash.py
-selfdrive/launcher.py
-selfdrive/manager.py
 selfdrive/swaglog.py
 selfdrive/logmessaged.py
 selfdrive/tombstoned.py
@@ -198,6 +196,8 @@ selfdrive/common/clutil.cc
 selfdrive/common/clutil.h
 selfdrive/common/params.h
 selfdrive/common/params.cc
+selfdrive/common/watchdog.cc
+selfdrive/common/watchdog.h
 
 selfdrive/common/modeldata.h
 selfdrive/common/mat.h
@@ -224,6 +224,7 @@ selfdrive/controls/lib/drive_helpers.py
 selfdrive/controls/lib/latcontrol_pid.py
 selfdrive/controls/lib/latcontrol_indi.py
 selfdrive/controls/lib/latcontrol_lqr.py
+selfdrive/controls/lib/latcontrol_angle.py
 selfdrive/controls/lib/longcontrol.py
 selfdrive/controls/lib/lateral_planner.py
 selfdrive/controls/lib/lane_planner.py
@@ -264,6 +265,7 @@ selfdrive/controls/lib/longitudinal_mpc_model/longitudinal_mpc.c
 
 selfdrive/hardware/__init__.py
 selfdrive/hardware/base.py
+selfdrive/hardware/hw.h
 selfdrive/hardware/eon/__init__.py
 selfdrive/hardware/eon/apk.py
 selfdrive/hardware/eon/hardware.py
@@ -333,7 +335,6 @@ selfdrive/test/__init__.py
 selfdrive/test/helpers.py
 selfdrive/test/setup_device_ci.sh
 selfdrive/test/test_fingerprints.py
-selfdrive/test/test_manager.py
 
 selfdrive/ui/SConscript
 selfdrive/ui/*.cc
@@ -385,6 +386,15 @@ selfdrive/camerad/imgproc/conv.cl
 selfdrive/camerad/imgproc/pool.cl
 selfdrive/camerad/imgproc/utils.cc
 selfdrive/camerad/imgproc/utils.h
+
+selfdrive/manager/__init__.py
+selfdrive/manager/build.py
+selfdrive/manager/helpers.py
+selfdrive/manager/manager.py
+selfdrive/manager/process_config.py
+selfdrive/manager/process.py
+selfdrive/manager/test/__init__.py
+selfdrive/manager/test/test_manager.py
 
 selfdrive/modeld/SConscript
 selfdrive/modeld/modeld.cc

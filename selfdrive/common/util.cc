@@ -1,10 +1,6 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <assert.h>
-#include <unistd.h>
-#include <fcntl.h>
 #include <errno.h>
+
+#include "common/util.h"
 
 #ifdef __linux__
 #include <sys/prctl.h>
@@ -45,8 +41,8 @@ void* read_file(const char* path, size_t* out_len) {
   return buf;
 }
 
-int write_file(const char* path, const void* data, size_t size) {
-  int fd = open(path, O_WRONLY);
+int write_file(const char* path, const void* data, size_t size, int flags, mode_t mode) {
+  int fd = open(path, flags, mode);
   if (fd == -1) {
     return -1;
   }

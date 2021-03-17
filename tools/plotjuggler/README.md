@@ -8,6 +8,10 @@ Once you've cloned openpilot, install our plugin with this command:
 
 `cd tools/plotjuggler && ./install.sh`
 
+Usage requires an installation of PlotJuggler. On systems with snap (e.g. Ubuntu), you can install PlotJuggler with this command:
+
+ `sudo snap install plotjuggler`
+
 ## Usage
 
 ```

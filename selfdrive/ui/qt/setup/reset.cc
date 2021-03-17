@@ -11,12 +11,20 @@
 #define NVME "/dev/nvme0n1"
 
 
-void do_reset() {
-  std::system("sudo umount " NVME);
-  std::system("yes | sudo mkfs.ext4 " NVME);
-  std::system("sudo umount " USERDATA);
-  std::system("yes | sudo mkfs.ext4 " USERDATA);
-  std::system("sudo reboot");
+bool do_reset() {
+  std::vector<const char*> cmds = {
+    "sudo umount " NVME,
+    "yes | sudo mkfs.ext4 " NVME,
+    "sudo umount " USERDATA,
+    "yes | sudo mkfs.ext4 " USERDATA,
+    "sudo reboot",
+  };
+
+  for (auto &cmd : cmds) {
+    int ret = std::system(cmd);
+    if (ret != 0) return false;
+  }
+  return true;
 }
 
 int main(int argc, char *argv[]) {
@@ -58,7 +66,11 @@ int main(int argc, char *argv[]) {
       confirm_btn->hide();
       QCoreApplication::processEvents(QEventLoop::AllEvents, 1000);
 #ifdef __aarch64__
-      do_reset();
+      bool ret = do_reset();
+      if (!ret) {
+        body->setText("Reset failed.");
+        cancel_btn->show();
+      }
 #endif
     }
   });

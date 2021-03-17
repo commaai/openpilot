@@ -8,15 +8,15 @@ import unittest
 from collections import defaultdict
 from pathlib import Path
 
-from cereal import log
 import cereal.messaging as messaging
+from cereal import log
 from cereal.services import service_list
 from common.basedir import BASEDIR
-from common.timeout import Timeout
 from common.params import Params
-import selfdrive.manager as manager
-from selfdrive.hardware import TICI, PC
+from common.timeout import Timeout
+from selfdrive.hardware import PC, TICI
 from selfdrive.loggerd.config import ROOT
+from selfdrive.manager.process_config import managed_processes
 from selfdrive.test.helpers import with_processes
 from selfdrive.version import version as VERSION
 from tools.lib.logreader import LogReader
@@ -26,8 +26,8 @@ SentinelType = log.Sentinel.SentinelType
 CEREAL_SERVICES = [f for f in log.Event.schema.union_fields if f in service_list
                    and service_list[f].should_log and "encode" not in f.lower()]
 
-class TestLoggerd(unittest.TestCase):
 
+class TestLoggerd(unittest.TestCase):
   # TODO: all tests should work on PC
   @classmethod
   def setUpClass(cls):
@@ -118,9 +118,9 @@ class TestLoggerd(unittest.TestCase):
       length = random.randint(2, 5)
       os.environ["LOGGERD_SEGMENT_LENGTH"] = str(length)
 
-      manager.start_managed_process("loggerd")
+      managed_processes["loggerd"].start()
       time.sleep((num_segs + 1) * length)
-      manager.kill_managed_process("loggerd")
+      managed_processes["loggerd"].stop()
 
       route_path = str(self._get_latest_log_dir()).rsplit("--", 1)[0]
       for n in range(num_segs):
@@ -170,7 +170,7 @@ class TestLoggerd(unittest.TestCase):
 
     # sleep enough for the first poll to time out
     # TOOD: fix loggerd bug dropping the msgs from the first poll
-    manager.start_managed_process("loggerd")
+    managed_processes["loggerd"].start()
     time.sleep(2)
 
     sent_msgs = defaultdict(list)
@@ -185,7 +185,7 @@ class TestLoggerd(unittest.TestCase):
       time.sleep(0.01)
 
     time.sleep(1)
-    manager.kill_managed_process("loggerd")
+    managed_processes["loggerd"].stop()
 
     qlog_path = os.path.join(self._get_latest_log_dir(), "qlog.bz2")
     lr = list(LogReader(qlog_path))
@@ -215,7 +215,7 @@ class TestLoggerd(unittest.TestCase):
 
     # sleep enough for the first poll to time out
     # TOOD: fix loggerd bug dropping the msgs from the first poll
-    manager.start_managed_process("loggerd")
+    managed_processes["loggerd"].start()
     time.sleep(2)
 
     sent_msgs = defaultdict(list)
@@ -230,7 +230,7 @@ class TestLoggerd(unittest.TestCase):
       time.sleep(0.01)
 
     time.sleep(1)
-    manager.kill_managed_process("loggerd")
+    managed_processes["loggerd"].stop()
 
     lr = list(LogReader(os.path.join(self._get_latest_log_dir(), "rlog.bz2")))
 

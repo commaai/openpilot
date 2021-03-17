@@ -123,7 +123,7 @@ static void draw_panda_metric(UIState *s) {
     panda_message = "NO\nPANDA";
   }
 #ifdef QCOM2
-  else if (s->started) {
+  else if (s->scene.started) {
     panda_severity = s->scene.gpsOK ? 0 : 1;
     panda_message = util::string_format("SAT CNT\n%d", s->scene.satelliteCount);
   }
