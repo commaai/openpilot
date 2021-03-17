@@ -101,3 +101,7 @@ class HardwareBase:
   @abstractmethod
   def get_thermal_config(self):
     pass
+
+  @abstractmethod
+  def set_screen_brightness(self, percentage):
+    pass

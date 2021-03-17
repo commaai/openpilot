@@ -20,7 +20,7 @@ uint64_t ReverseBytes(uint64_t x) {
           ((x & 0x00000000000000ffull) << 56);
 }
 
-uint64_t set_value(uint64_t ret, Signal sig, int64_t ival){
+static uint64_t set_value(uint64_t ret, const Signal& sig, int64_t ival) {
   int shift = sig.is_little_endian? sig.b1 : sig.bo;
   uint64_t mask = ((1ULL << sig.b2)-1) << shift;
   uint64_t dat = (ival & ((1ULL << sig.b2)-1)) << shift;
@@ -59,7 +59,7 @@ uint64_t CANPacker::pack(uint32_t address, const std::vector<SignalPackValue> &s
       WARN("undefined signal %s - %d\n", name.c_str(), address);
       continue;
     }
-    auto sig = sig_it->second;
+    const auto& sig = sig_it->second;
 
     int64_t ival = (int64_t)(round((value - sig.offset) / sig.factor));
     if (ival < 0) {
@@ -75,7 +75,7 @@ uint64_t CANPacker::pack(uint32_t address, const std::vector<SignalPackValue> &s
       WARN("COUNTER not defined\n");
       return ret;
     }
-    auto sig = sig_it->second;
+    const auto& sig = sig_it->second;
 
     if ((sig.type != SignalType::HONDA_COUNTER) && (sig.type != SignalType::VOLKSWAGEN_COUNTER)) {
       WARN("COUNTER signal type not valid\n");
@@ -86,7 +86,7 @@ uint64_t CANPacker::pack(uint32_t address, const std::vector<SignalPackValue> &s
 
   auto sig_it_checksum = signal_lookup.find(std::make_pair(address, "CHECKSUM"));
   if (sig_it_checksum != signal_lookup.end()) {
-    auto sig = sig_it_checksum->second;
+    const auto& sig = sig_it_checksum->second;
     if (sig.type == SignalType::HONDA_CHECKSUM) {
       unsigned int chksm = honda_checksum(address, ret, message_lookup[address].size);
       ret = set_value(ret, sig, chksm);
@@ -111,4 +111,8 @@ uint64_t CANPacker::pack(uint32_t address, const std::vector<SignalPackValue> &s
   }
 
   return ret;
+}
+
+Msg* CANPacker::lookup_message(uint32_t address) {
+  return &message_lookup[address];
 }

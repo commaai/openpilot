@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <string>
+#include <vector>
 
 #define ARRAYSIZE(x) (sizeof(x)/sizeof(x[0]))
 
@@ -74,6 +75,7 @@ struct DBC {
   size_t num_vals;
 };
 
+std::vector<const DBC*>& get_dbcs();
 const DBC* dbc_lookup(const std::string& dbc_name);
 
 void dbc_register(const DBC* dbc);

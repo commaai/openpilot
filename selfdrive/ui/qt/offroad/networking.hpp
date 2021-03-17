@@ -8,7 +8,7 @@
 #include <QTimer>
 
 #include "wifiManager.hpp"
-#include "widgets/input_field.hpp"
+#include "widgets/input.hpp"
 #include "widgets/ssh_keys.hpp"
 #include "widgets/toggle.hpp"
 
@@ -17,11 +17,10 @@ class WifiUI : public QWidget {
 
 public:
   int page;
-  explicit WifiUI(QWidget *parent = 0, int page_length = 5, WifiManager* wifi = 0);
+  explicit WifiUI(QWidget *parent = 0, WifiManager* wifi = 0);
 
 private:
   WifiManager *wifi = nullptr;
-  int networks_per_page;
   QVBoxLayout *vlayout;
 
   QButtonGroup *connectButtons;

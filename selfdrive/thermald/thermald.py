@@ -14,7 +14,7 @@ from common.numpy_fast import clip, interp
 from common.params import Params
 from common.realtime import DT_TRML, sec_since_boot
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
-from selfdrive.hardware import EON, HARDWARE
+from selfdrive.hardware import EON, TICI, HARDWARE
 from selfdrive.loggerd.config import get_available_percent
 from selfdrive.pandad import get_expected_signature
 from selfdrive.swaglog import cloudlog
@@ -22,6 +22,8 @@ from selfdrive.thermald.power_monitoring import PowerMonitoring
 from selfdrive.version import get_git_branch, terms_version, training_version
 
 FW_SIGNATURE = get_expected_signature()
+
+DISABLE_LTE_ONROAD = os.path.exists("/persist/disable_lte_onroad") or TICI
 
 ThermalStatus = log.DeviceState.ThermalStatus
 NetworkType = log.DeviceState.NetworkType
@@ -154,6 +156,7 @@ def thermald_thread():
   pandaState_timeout = int(1000 * 2.5 * DT_TRML)  # 2.5x the expected pandaState frequency
   pandaState_sock = messaging.sub_sock('pandaState', timeout=pandaState_timeout)
   location_sock = messaging.sub_sock('gpsLocationExternal')
+  managerState_sock = messaging.sub_sock('managerState', conflate=True)
 
   fan_speed = 0
   count = 0
@@ -179,6 +182,7 @@ def thermald_thread():
   should_start_prev = False
   handle_fan = None
   is_uno = False
+  ui_running_prev = False
 
   params = Params()
   power_monitor = PowerMonitoring()
@@ -352,6 +356,8 @@ def thermald_thread():
     if should_start:
       if not should_start_prev:
         params.delete("IsOffroad")
+        if TICI and DISABLE_LTE_ONROAD:
+          os.system("sudo systemctl stop --no-block lte")
 
       off_ts = None
       if started_ts is None:
@@ -363,6 +369,8 @@ def thermald_thread():
 
       if should_start_prev or (count == 0):
         params.put("IsOffroad", "1")
+        if TICI and DISABLE_LTE_ONROAD:
+          os.system("sudo systemctl start --no-block lte")
 
       started_ts = None
       if off_ts is None:
@@ -383,6 +391,14 @@ def thermald_thread():
       time.sleep(10)
       HARDWARE.shutdown()
 
+    # If UI has crashed, set the brightness to reasonable non-zero value
+    manager_state = messaging.recv_one_or_none(managerState_sock)
+    if manager_state is not None:
+      ui_running = "ui" in (p.name for p in manager_state.managerState.processes if p.running)
+      if ui_running_prev and not ui_running:
+        HARDWARE.set_screen_brightness(20)
+      ui_running_prev = ui_running
+
     msg.deviceState.chargingError = current_filter.x > 0. and msg.deviceState.batteryPercent < 90  # if current is positive, then battery is being discharged
     msg.deviceState.started = started_ts is not None
     msg.deviceState.startedMonoTime = int(1e9*(started_ts or 0))
@@ -390,7 +406,8 @@ def thermald_thread():
     msg.deviceState.thermalStatus = thermal_status
     pm.send("deviceState", msg)
 
-    set_offroad_alert_if_changed("Offroad_ChargeDisabled", (not usb_power))
+    if EON and not is_uno:
+      set_offroad_alert_if_changed("Offroad_ChargeDisabled", (not usb_power))
 
     should_start_prev = should_start
     startup_conditions_prev = startup_conditions.copy()

@@ -48,9 +48,6 @@ void FrameBuffer::set_power(int mode) {
 }
 
 FrameBuffer::FrameBuffer(const char *name, uint32_t layer, int alpha, int *out_w, int *out_h) {
-  status_t status;
-  int success;
-
   s = new FramebufferState;
 
   s->session = new SurfaceComposerClient();
@@ -60,7 +57,7 @@ FrameBuffer::FrameBuffer(const char *name, uint32_t layer, int alpha, int *out_w
                 ISurfaceComposer::eDisplayIdMain);
   assert(s->dtoken != NULL);
 
-  status = SurfaceComposerClient::getDisplayInfo(s->dtoken, &s->dinfo);
+  status_t status = SurfaceComposerClient::getDisplayInfo(s->dtoken, &s->dinfo);
   assert(status == 0);
 
   //int orientation = 3; // rotate framebuffer 270 degrees
@@ -106,7 +103,7 @@ FrameBuffer::FrameBuffer(const char *name, uint32_t layer, int alpha, int *out_w
   s->display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
   assert(s->display != EGL_NO_DISPLAY);
 
-  success = eglInitialize(s->display, &s->egl_major, &s->egl_minor);
+  int success = eglInitialize(s->display, &s->egl_major, &s->egl_minor);
   assert(success);
 
   printf("egl version %d.%d\n", s->egl_major, s->egl_minor);

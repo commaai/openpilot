@@ -25,8 +25,6 @@ RawLogger::RawLogger(const char* filename, int width, int height, int fps,
   : filename(filename),
     fps(fps) {
 
-  int err = 0;
-
   av_register_all();
   codec = avcodec_find_encoder(AV_CODEC_ID_FFVHUFF);
   // codec = avcodec_find_encoder(AV_CODEC_ID_FFV1);
@@ -45,7 +43,7 @@ RawLogger::RawLogger(const char* filename, int width, int height, int fps,
 
   codec_ctx->time_base = (AVRational){ 1, fps };
 
-  err = avcodec_open2(codec_ctx, codec, NULL);
+  int err = avcodec_open2(codec_ctx, codec, NULL);
   assert(err >= 0);
 
   frame = av_frame_alloc();
@@ -65,10 +63,6 @@ RawLogger::~RawLogger() {
 }
 
 void RawLogger::encoder_open(const char* path) {
-  int err = 0;
-
-  std::lock_guard<std::recursive_mutex> guard(lock);
-
   vid_path = util::string_format("%s/%s.mkv", path, filename);
 
   // create camera lock file
@@ -91,7 +85,7 @@ void RawLogger::encoder_open(const char* path) {
   stream->time_base = (AVRational){ 1, fps };
   // codec_ctx->time_base = stream->time_base;
 
-  err = avcodec_parameters_from_context(stream->codecpar, codec_ctx);
+  int err = avcodec_parameters_from_context(stream->codecpar, codec_ctx);
   assert(err >= 0);
 
   err = avio_open(&format_ctx->pb, vid_path.c_str(), AVIO_FLAG_WRITE);
@@ -105,13 +99,9 @@ void RawLogger::encoder_open(const char* path) {
 }
 
 void RawLogger::encoder_close() {
-  int err = 0;
-
-  std::lock_guard<std::recursive_mutex> guard(lock);
-
   if (!is_open) return;
 
-  err = av_write_trailer(format_ctx);
+  int err = av_write_trailer(format_ctx);
   assert(err == 0);
 
   avcodec_close(stream->codec);
@@ -128,8 +118,6 @@ void RawLogger::encoder_close() {
 
 int RawLogger::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
                             int in_width, int in_height, uint64_t ts) {
-  int err = 0;
-
   AVPacket pkt;
   av_init_packet(&pkt);
   pkt.data = NULL;
@@ -143,7 +131,7 @@ int RawLogger::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const ui
   int ret = counter;
 
   int got_output = 0;
-  err = avcodec_encode_video2(codec_ctx, &pkt, frame, &got_output);
+  int err = avcodec_encode_video2(codec_ctx, &pkt, frame, &got_output);
   if (err) {
     LOGE("encoding error\n");
     ret = -1;

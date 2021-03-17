@@ -5,6 +5,7 @@ import sys
 import numpy as np
 import sympy as sp
 
+from selfdrive.swaglog import cloudlog
 from selfdrive.locationd.models.constants import ObservationKind
 from rednose.helpers.ekf_sym import EKF_sym, gen_code
 from rednose.helpers.sympy_helpers import euler_rotate, quat_matrix_r, quat_rotate
@@ -206,7 +207,7 @@ class LiveKalman():
                       ObservationKind.ECEF_ORIENTATION_FROM_GPS: np.diag([.2**2, .2**2, .2**2, .2**2])}
 
     # init filter
-    self.filter = EKF_sym(generated_dir, self.name, self.Q, self.initial_x, np.diag(self.initial_P_diag), self.dim_state, self.dim_state_err, max_rewind_age=0.2)
+    self.filter = EKF_sym(generated_dir, self.name, self.Q, self.initial_x, np.diag(self.initial_P_diag), self.dim_state, self.dim_state_err, max_rewind_age=0.2, logger=cloudlog)
 
   @property
   def x(self):

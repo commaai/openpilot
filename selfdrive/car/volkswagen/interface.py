@@ -1,9 +1,9 @@
 from cereal import car
-from selfdrive.car.volkswagen.values import CAR, BUTTON_STATES
+from selfdrive.swaglog import cloudlog
+from selfdrive.car.volkswagen.values import CAR, BUTTON_STATES, TransmissionType, GearShifter
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
 from selfdrive.car.interfaces import CarInterfaceBase
 
-GEAR = car.CarState.GearShifter
 EventName = car.CarEvent.EventName
 
 
@@ -49,7 +49,17 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 1.0
 
     ret.enableCamera = True  # Stock camera detection doesn't apply to VW
-    ret.transmissionType = car.CarParams.TransmissionType.automatic
+
+    if 0xAD in fingerprint[0]:
+      # Getriebe_11 detected: traditional automatic or DSG gearbox
+      ret.transmissionType = TransmissionType.automatic
+    elif 0x187 in fingerprint[0]:
+      # EV_Gearshift detected: e-Golf or similar direct-drive electric
+      ret.transmissionType = TransmissionType.direct
+    else:
+      # No trans message at all, must be a true stick-shift manual
+      ret.transmissionType = TransmissionType.manual
+    cloudlog.info("Detected transmission type: %s", ret.transmissionType)
 
     # TODO: get actual value, for now starting with reasonable value for
     # civic and scaling by mass and wheelbase
@@ -72,7 +82,7 @@ class CarInterface(CarInterfaceBase):
     self.cp.update_strings(can_strings)
     self.cp_cam.update_strings(can_strings)
 
-    ret = self.CS.update(self.cp)
+    ret = self.CS.update(self.cp, self.CP.transmissionType)
     ret.canValid = self.cp.can_valid and self.cp_cam.can_valid
     ret.steeringRateLimited = self.CC.steer_rate_limited if self.CC is not None else False
 
@@ -91,7 +101,7 @@ class CarInterface(CarInterfaceBase):
         be.pressed = self.CS.buttonStates[button]
         buttonEvents.append(be)
 
-    events = self.create_common_events(ret, extra_gears=[GEAR.eco, GEAR.sport])
+    events = self.create_common_events(ret, extra_gears=[GearShifter.eco, GearShifter.sport])
 
     # Vehicle health and operation safety checks
     if self.CS.parkingBrakeSet:

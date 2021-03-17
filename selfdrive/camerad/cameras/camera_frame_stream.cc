@@ -15,6 +15,25 @@ extern ExitHandler do_exit;
 
 namespace {
 
+// TODO: make this more generic
+CameraInfo cameras_supported[CAMERA_ID_MAX] = {
+  [CAMERA_ID_IMX298] = {
+    .frame_width = FRAME_WIDTH,
+    .frame_height = FRAME_HEIGHT,
+    .frame_stride = FRAME_WIDTH*3,
+    .bayer = false,
+    .bayer_flip = false,
+  },
+  [CAMERA_ID_OV8865] = {
+    .frame_width = 1632,
+    .frame_height = 1224,
+    .frame_stride = 2040, // seems right
+    .bayer = false,
+    .bayer_flip = 3,
+    .hdr = false
+  },
+};
+
 void camera_init(VisionIpcServer * v, CameraState *s, int camera_id, unsigned int fps, cl_device_id device_id, cl_context ctx, VisionStreamType rgb_type, VisionStreamType yuv_type) {
   assert(camera_id < ARRAYSIZE(cameras_supported));
   s->ci = cameras_supported[camera_id];
@@ -53,25 +72,6 @@ void run_frame_stream(CameraState &camera, const char* frame_pkt) {
 }
 
 }  // namespace
-
-// TODO: make this more generic
-CameraInfo cameras_supported[CAMERA_ID_MAX] = {
-  [CAMERA_ID_IMX298] = {
-    .frame_width = FRAME_WIDTH,
-    .frame_height = FRAME_HEIGHT,
-    .frame_stride = FRAME_WIDTH*3,
-    .bayer = false,
-    .bayer_flip = false,
-  },
-  [CAMERA_ID_OV8865] = {
-    .frame_width = 1632,
-    .frame_height = 1224,
-    .frame_stride = 2040, // seems right
-    .bayer = false,
-    .bayer_flip = 3,
-    .hdr = false
-  },
-};
 
 void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
   camera_init(v, &s->road_cam, CAMERA_ID_IMX298, 20, device_id, ctx,

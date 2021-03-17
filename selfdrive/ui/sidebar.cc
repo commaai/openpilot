@@ -7,7 +7,7 @@
 #include "sidebar.hpp"
 
 static void draw_background(UIState *s) {
-#ifdef QCOM
+#ifndef QT_GUI_LIB
   const NVGcolor color = COLOR_BLACK_ALPHA(85);
 #else
   const NVGcolor color = nvgRGBA(0x39, 0x39, 0x39, 0xff);
@@ -123,7 +123,7 @@ static void draw_panda_metric(UIState *s) {
     panda_message = "NO\nPANDA";
   }
 #ifdef QCOM2
-  else if (s->started) {
+  else if (s->scene.started) {
     panda_severity = s->scene.gpsOK ? 0 : 1;
     panda_message = util::string_format("SAT CNT\n%d", s->scene.satelliteCount);
   }

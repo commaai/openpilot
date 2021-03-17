@@ -28,7 +28,7 @@ void transform_queue(Transform* s,
                      cl_mem in_yuv, int in_width, int in_height,
                      cl_mem out_y, cl_mem out_u, cl_mem out_v,
                      int out_width, int out_height,
-                     mat3 projection) {
+                     const mat3& projection) {
   const int zero = 0;
 
   // sampled using pixel center origin

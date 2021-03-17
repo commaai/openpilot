@@ -6,11 +6,12 @@
 #define BMX055_GYRO_I2C_ADDR        0x68
 
 // Registers of the chip
-#define BMX055_GYRO_I2C_REG_ID      0x00
-#define BMX055_GYRO_I2C_REG_RANGE   0x0F
-#define BMX055_GYRO_I2C_REG_BW      0x10
-#define BMX055_GYRO_I2C_REG_HBW     0x13
-#define BMX055_GYRO_I2C_REG_FIFO    0x3F
+#define BMX055_GYRO_I2C_REG_ID         0x00
+#define BMX055_GYRO_I2C_REG_RATE_X_LSB 0x02
+#define BMX055_GYRO_I2C_REG_RANGE      0x0F
+#define BMX055_GYRO_I2C_REG_BW         0x10
+#define BMX055_GYRO_I2C_REG_HBW        0x13
+#define BMX055_GYRO_I2C_REG_FIFO       0x3F
 
 // Constants
 #define BMX055_GYRO_CHIP_ID         0x0F

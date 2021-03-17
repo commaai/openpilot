@@ -56,7 +56,7 @@ fail:
 void BMX055_Gyro::get_event(cereal::SensorEventData::Builder &event){
   uint64_t start_time = nanos_since_boot();
   uint8_t buffer[6];
-  int len = read_register(BMX055_GYRO_I2C_REG_FIFO, buffer, sizeof(buffer));
+  int len = read_register(BMX055_GYRO_I2C_REG_RATE_X_LSB, buffer, sizeof(buffer));
   assert(len == 6);
 
   // 16 bit = +- 125 deg/s

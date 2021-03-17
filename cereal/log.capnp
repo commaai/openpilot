@@ -39,7 +39,7 @@ struct InitData {
 
   dirty @9 :Bool;
   passive @12 :Bool;
-  params @17 :Map(Text, Text);
+  params @17 :Map(Text, Data);
 
   enum DeviceType {
     unknown @0;
@@ -356,6 +356,7 @@ struct PandaState @0xa7649e2575e4591e {
   usbPowerMode @12 :UsbPowerMode;
   ignitionCan @13 :Bool;
   safetyModel @14 :Car.CarParams.SafetyModel;
+  safetyParam @20 :Int16;
   faultStatus @15 :FaultStatus;
   powerSaveEnabled @16 :Bool;
   uptime @17 :UInt32;
@@ -521,6 +522,7 @@ struct ControlsState @0x97ff69c53601abf1 {
     indiState @52 :LateralINDIState;
     pidState @53 :LateralPIDState;
     lqrState @55 :LateralLQRState;
+    angleState @58 :LateralAngleState;
   }
 
   enum OpenpilotState @0xdbe58b96d2d1ac61 {
@@ -583,6 +585,13 @@ struct ControlsState @0x97ff69c53601abf1 {
     output @3 :Float32;
     lqrOutput @4 :Float32;
     saturated @5 :Bool;
+  }
+
+  struct LateralAngleState {
+    active @0 :Bool;
+    steeringAngleDeg @1 :Float32;
+    output @2 :Float32;
+    saturated @3 :Bool;
   }
 
   # deprecated
@@ -770,13 +779,16 @@ struct LateralPlan @0xe1e9318e2ae8b51e {
   dPathPoints @20 :List(Float32);
   dProb @21 :Float32;
 
-  steeringAngleDeg @8 :Float32; # deg
-  steeringRateDeg @13 :Float32; # deg/s
   mpcSolutionValid @9 :Bool;
-  angleOffsetDeg @11 :Float32;
   desire @17 :Desire;
   laneChangeState @18 :LaneChangeState;
   laneChangeDirection @19 :LaneChangeDirection;
+
+  # curvature is in rad/m
+  curvature @22 :Float32;
+  curvatureRate @23 :Float32;
+  rawCurvature @24 :Float32;
+  rawCurvatureRate @25 :Float32;
 
   enum Desire {
     none @0;
@@ -812,6 +824,9 @@ struct LateralPlan @0xe1e9318e2ae8b51e {
   posenetValidDEPRECATED @16 :Bool;
   sensorValidDEPRECATED @14 :Bool;
   paramsValidDEPRECATED @10 :Bool;
+  steeringAngleDegDEPRECATED @8 :Float32; # deg
+  steeringRateDegDEPRECATED @13 :Float32; # deg/s
+  angleOffsetDegDEPRECATED @11 :Float32;
 }
 
 struct LiveLocationKalman {
@@ -1102,7 +1117,7 @@ struct LiveMpcData {
   x @0 :List(Float32);
   y @1 :List(Float32);
   psi @2 :List(Float32);
-  delta @3 :List(Float32);
+  curvature @3 :List(Float32);
   qpIterations @4 :UInt32;
   calculationTime @5 :UInt64;
   cost @6 :Float64;
@@ -1282,7 +1297,6 @@ struct Event {
     liveTracks @16 :List(LiveTracks);
     sendcan @17 :List(CanData);
     liveCalibration @19 :LiveCalibrationData;
-    gpsLocation @21 :GpsLocationData;
     carState @22 :Car.CarState;
     carControl @23 :Car.CarControl;
     longitudinalPlan @24 :LongitudinalPlan;
@@ -1356,5 +1370,6 @@ struct Event {
     orbFeaturesSummaryDEPRECATED @58 :Legacy.OrbFeaturesSummary;
     featuresDEPRECATED @10 :Legacy.CalibrationFeatures;
     kalmanOdometryDEPRECATED @65 :Legacy.KalmanOdometry;
+    gpsLocationDEPRECATED @21 :GpsLocationData;
   }
 }

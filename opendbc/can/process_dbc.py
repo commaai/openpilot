@@ -106,8 +106,12 @@ def process(in_fn, out_fn):
 
   parser_code = template.render(dbc=can_dbc, checksum_type=checksum_type, msgs=msgs, def_vals=def_vals, len=len)
 
-  with open(out_fn, "w") as out_f:
-    out_f.write(parser_code)
+  with open(out_fn, "a+") as out_f:
+    out_f.seek(0)
+    if out_f.read() != parser_code:
+      out_f.seek(0)
+      out_f.truncate()
+      out_f.write(parser_code)
 
 def main():
   if len(sys.argv) != 3:

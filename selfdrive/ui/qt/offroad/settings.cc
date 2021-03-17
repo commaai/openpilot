@@ -10,13 +10,19 @@
 #include <QLabel>
 #include <QPixmap>
 
+#ifndef QCOM
 #include "networking.hpp"
+#endif
+
 #include "settings.hpp"
+#include "widgets/input.hpp"
 #include "widgets/toggle.hpp"
 #include "widgets/offroad_alerts.hpp"
 
 #include "common/params.h"
 #include "common/util.h"
+
+#include "selfdrive/hardware/hw.h"
 
 QFrame* horizontal_line(QWidget* parent = 0){
   QFrame* line = new QFrame(parent);
@@ -25,6 +31,7 @@ QFrame* horizontal_line(QWidget* parent = 0){
   line->setFixedHeight(2);
   return line;
 }
+
 QWidget* labelWidget(QString labelName, QString labelContent){
   QHBoxLayout* labelLayout = new QHBoxLayout;
   labelLayout->addWidget(new QLabel(labelName), 0, Qt::AlignLeft);
@@ -148,28 +155,50 @@ QWidget * device_panel() {
     device_layout->addWidget(labelWidget(QString::fromStdString(l.first), QString::fromStdString(l.second)), 0, Qt::AlignTop);
   }
 
+  QPushButton* dcam_view = new QPushButton("Driver camera view");
+  device_layout->addWidget(dcam_view, 0, Qt::AlignBottom);
+  device_layout->addWidget(horizontal_line(), Qt::AlignBottom);
+  QObject::connect(dcam_view, &QPushButton::released, [=]() {
+    Params().write_db_value("IsDriverViewEnabled", "1", 1);
+  });
+
   // TODO: show current calibration values
   QPushButton *clear_cal_btn = new QPushButton("Reset Calibration");
   device_layout->addWidget(clear_cal_btn, 0, Qt::AlignBottom);
   device_layout->addWidget(horizontal_line(), Qt::AlignBottom);
   QObject::connect(clear_cal_btn, &QPushButton::released, [=]() {
-    Params().delete_db_value("CalibrationParams");
+    if (ConfirmationDialog::confirm("Are you sure you want to reset calibration?")) {
+      Params().delete_db_value("CalibrationParams");
+    }
   });
+
+  // power buttons
 
   QPushButton *poweroff_btn = new QPushButton("Power Off");
   device_layout->addWidget(poweroff_btn, Qt::AlignBottom);
+  QObject::connect(poweroff_btn, &QPushButton::released, [=]() {
+    if (ConfirmationDialog::confirm("Are you sure you want to power off?")) {
+      Hardware::poweroff();
+    }
+  });
+
+  device_layout->addWidget(horizontal_line(), Qt::AlignBottom);
+
   QPushButton *reboot_btn = new QPushButton("Reboot");
   device_layout->addWidget(reboot_btn, Qt::AlignBottom);
-  device_layout->addWidget(horizontal_line(), Qt::AlignBottom);
-#ifdef __aarch64__
-  QObject::connect(poweroff_btn, &QPushButton::released, [=]() { std::system("sudo poweroff"); });
-  QObject::connect(reboot_btn, &QPushButton::released, [=]() { std::system("sudo reboot"); });
-#endif
+  QObject::connect(reboot_btn, &QPushButton::released, [=]() {
+    if (ConfirmationDialog::confirm("Are you sure you want to reboot?")) {
+      Hardware::reboot();
+    }
+  });
 
-  // TODO: add confirmation dialog
   QPushButton *uninstall_btn = new QPushButton("Uninstall openpilot");
   device_layout->addWidget(uninstall_btn);
-  QObject::connect(uninstall_btn, &QPushButton::released, [=]() { Params().write_db_value("DoUninstall", "1"); });
+  QObject::connect(uninstall_btn, &QPushButton::released, [=]() {
+    if (ConfirmationDialog::confirm("Are you sure you want to uninstall?")) {
+      Params().write_db_value("DoUninstall", "1");
+    }
+  });
 
   QWidget *widget = new QWidget;
   widget->setLayout(device_layout);
@@ -188,8 +217,6 @@ QWidget * developer_panel() {
   QVBoxLayout *main_layout = new QVBoxLayout;
   main_layout->setMargin(100);
 
-  // TODO: enable SSH toggle and github keys
-
   Params params = Params();
   std::string brand = params.read_db_bool("Passive") ? "dashcam" : "openpilot";
   std::vector<std::pair<std::string, std::string>> labels = {
@@ -197,18 +224,14 @@ QWidget * developer_panel() {
     {"Git Branch", params.get("GitBranch", false)},
     {"Git Commit", params.get("GitCommit", false).substr(0, 10)},
     {"Panda Firmware", params.get("PandaFirmwareHex", false)},
+    {"OS Version", Hardware::get_os_version()},
   };
 
-  std::string os_version = util::read_file("/VERSION");
-  if (os_version.size()) {
-    labels.push_back({"OS Version", "AGNOS " + os_version});
-  }
-
-  for (int i = 0; i<labels.size(); i++) {
+  for (int i = 0; i < labels.size(); i++) {
     auto l = labels[i];
     main_layout->addWidget(labelWidget(QString::fromStdString(l.first), QString::fromStdString(l.second)));
 
-    if(i+1<labels.size()) {
+    if(i+1 < labels.size()) {
       main_layout->addWidget(horizontal_line());
     }
   }
@@ -224,7 +247,43 @@ QWidget * developer_panel() {
 }
 
 QWidget * network_panel(QWidget * parent) {
+#ifdef QCOM
+  QVBoxLayout *layout = new QVBoxLayout;
+  layout->setMargin(100);
+  layout->setSpacing(30);
+
+  // TODO: can probably use the ndk for this
+  // simple wifi + tethering buttons
+  std::vector<std::pair<const char*, const char*>> btns = {
+    {"Open WiFi Settings", "am start -n com.android.settings/.wifi.WifiPickerActivity \
+                            -a android.net.wifi.PICK_WIFI_NETWORK \
+                            --ez extra_prefs_show_button_bar true \
+                            --es extra_prefs_set_next_text ''"},
+    {"Open Tethering Settings", "am start -n com.android.settings/.TetherSettings \
+                                 --ez extra_prefs_show_button_bar true \
+                                 --es extra_prefs_set_next_text ''"},
+  };
+  for (auto &b : btns) {
+    QPushButton *btn = new QPushButton(b.first);
+    layout->addWidget(btn, 0, Qt::AlignTop);
+    QObject::connect(btn, &QPushButton::released, [=]() { std::system(b.second); });
+  }
+  layout->addStretch(1);
+
+  QWidget *w = new QWidget;
+  w->setLayout(layout);
+  w->setStyleSheet(R"(
+    QPushButton {
+      padding: 0;
+      height: 120px;
+      border-radius: 15px;
+      background-color: #393939;
+    }
+  )");
+
+#else
   Networking *w = new Networking(parent);
+#endif
   return w;
 }
 

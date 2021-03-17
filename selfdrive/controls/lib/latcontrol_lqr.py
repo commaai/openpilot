@@ -1,4 +1,6 @@
+import math
 import numpy as np
+
 from selfdrive.controls.lib.drive_helpers import get_steer_max
 from common.numpy_fast import clip
 from common.realtime import DT_CTRL
@@ -28,7 +30,6 @@ class LatControlLQR():
 
   def reset(self):
     self.i_lqr = 0.0
-    self.output_steer = 0.0
     self.sat_count = 0.0
 
   def _check_saturation(self, control, check_saturation, limit):
@@ -43,39 +44,42 @@ class LatControlLQR():
 
     return self.sat_count > self.sat_limit
 
-  def update(self, active, CS, CP, lat_plan):
+  def update(self, active, CS, CP, VM, params, lat_plan):
     lqr_log = log.ControlsState.LateralLQRState.new_message()
 
     steers_max = get_steer_max(CP, CS.vEgo)
     torque_scale = (0.45 + CS.vEgo / 60.0)**2  # Scale actuator model with speed
 
-    steering_angle = CS.steeringAngleDeg
-
     # Subtract offset. Zero angle should correspond to zero torque
-    self.angle_steers_des = lat_plan.steeringAngleDeg - lat_plan.angleOffsetDeg
-    steering_angle -= lat_plan.angleOffsetDeg
+    steering_angle_no_offset = CS.steeringAngleDeg - params.angleOffsetAverageDeg
+
+    desired_angle = math.degrees(VM.get_steer_from_curvature(-lat_plan.curvature, CS.vEgo))
+
+    instant_offset = params.angleOffsetDeg - params.angleOffsetAverageDeg
+    desired_angle += instant_offset  # Only add offset that originates from vehicle model errors
 
     # Update Kalman filter
     angle_steers_k = float(self.C.dot(self.x_hat))
-    e = steering_angle - angle_steers_k
+    e = steering_angle_no_offset - angle_steers_k
     self.x_hat = self.A.dot(self.x_hat) + self.B.dot(CS.steeringTorqueEps / torque_scale) + self.L.dot(e)
 
     if CS.vEgo < 0.3 or not active:
       lqr_log.active = False
       lqr_output = 0.
+      output_steer = 0.
       self.reset()
     else:
       lqr_log.active = True
 
       # LQR
-      u_lqr = float(self.angle_steers_des / self.dc_gain - self.K.dot(self.x_hat))
+      u_lqr = float(desired_angle / self.dc_gain - self.K.dot(self.x_hat))
       lqr_output = torque_scale * u_lqr / self.scale
 
       # Integrator
       if CS.steeringPressed:
         self.i_lqr -= self.i_unwind_rate * float(np.sign(self.i_lqr))
       else:
-        error = self.angle_steers_des - angle_steers_k
+        error = desired_angle - angle_steers_k
         i = self.i_lqr + self.ki * self.i_rate * error
         control = lqr_output + i
 
@@ -83,15 +87,15 @@ class LatControlLQR():
            (error <= 0 and (control >= -steers_max or i > 0.0)):
           self.i_lqr = i
 
-      self.output_steer = lqr_output + self.i_lqr
-      self.output_steer = clip(self.output_steer, -steers_max, steers_max)
+      output_steer = lqr_output + self.i_lqr
+      output_steer = clip(output_steer, -steers_max, steers_max)
 
     check_saturation = (CS.vEgo > 10) and not CS.steeringRateLimited and not CS.steeringPressed
-    saturated = self._check_saturation(self.output_steer, check_saturation, steers_max)
+    saturated = self._check_saturation(output_steer, check_saturation, steers_max)
 
-    lqr_log.steeringAngleDeg = angle_steers_k + lat_plan.angleOffsetDeg
+    lqr_log.steeringAngleDeg = angle_steers_k + params.angleOffsetAverageDeg
     lqr_log.i = self.i_lqr
-    lqr_log.output = self.output_steer
+    lqr_log.output = output_steer
     lqr_log.lqrOutput = lqr_output
     lqr_log.saturated = saturated
-    return self.output_steer, float(self.angle_steers_des), lqr_log
+    return output_steer, 0, lqr_log

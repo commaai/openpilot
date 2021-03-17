@@ -1,8 +1,9 @@
 #pragma once
 
-#include <stdio.h>
-#include <unistd.h>
+#include <cstdio>
 #include <csignal>
+#include <cstring>
+#include <cstdlib>
 #include <string>
 #include <memory>
 #include <atomic>
@@ -10,6 +11,9 @@
 #include <fstream>
 #include <thread>
 #include <chrono>
+#include <cassert>
+#include <unistd.h>
+#include <fcntl.h>
 
 #ifndef sighandler_t
 typedef void (*sighandler_t)(int sig);
@@ -25,7 +29,7 @@ typedef void (*sighandler_t)(int sig);
 // Returns NULL on failure, otherwise the NULL-terminated file contents.
 // The result must be freed by the caller.
 void* read_file(const char* path, size_t* out_len);
-int write_file(const char* path, const void* data, size_t size);
+int write_file(const char* path, const void* data, size_t size, int flags=O_WRONLY, mode_t mode=0777);
 
 void set_thread_name(const char* name);
 

@@ -21,7 +21,6 @@
 
 #include "common/mat.h"
 #include "common/visionimg.h"
-#include "common/framebuffer.h"
 #include "common/modeldata.h"
 #include "common/params.h"
 #include "common/glutil.h"
@@ -74,7 +73,7 @@ typedef enum UIStatus {
 } UIStatus;
 
 static std::map<UIStatus, NVGcolor> bg_colors = {
-#ifdef QCOM
+#ifndef QT_GUI_LIB
   {STATUS_OFFROAD, nvgRGBA(0x07, 0x23, 0x39, 0xf1)},
 #else
   {STATUS_OFFROAD, nvgRGBA(0x0, 0x0, 0x0, 0xff)},
@@ -100,7 +99,7 @@ typedef struct UIScene {
   bool world_objects_visible;
 
   bool is_rhd;
-  bool frontview;
+  bool driver_view;
 
   std::string alert_text1;
   std::string alert_text2;
@@ -131,6 +130,10 @@ typedef struct UIScene {
 
   // lead
   vertex_data lead_vertices[2];
+
+  float light_sensor, accel_sensor, gyro_sensor;
+  bool started, ignition, is_metric, longitudinal_control;
+  uint64_t started_frame;
 } UIScene;
 
 typedef struct UIState {
@@ -140,7 +143,6 @@ typedef struct UIState {
   VisionBuf * last_frame;
 
   // framebuffer
-  std::unique_ptr<FrameBuffer> fb;
   int fb_w, fb_h;
 
   // NVG
@@ -165,13 +167,6 @@ typedef struct UIState {
 
   // device state
   bool awake;
-  float light_sensor, accel_sensor, gyro_sensor;
-
-  bool started;
-  bool ignition;
-  bool is_metric;
-  bool longitudinal_control;
-  uint64_t started_frame;
 
   bool sidebar_collapsed;
   Rect video_rect, viz_rect;

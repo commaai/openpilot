@@ -44,10 +44,11 @@ private:
   bool onroad = true;
   double prev_draw_t = 0;
 
-  // TODO: this shouldn't be here
+  // TODO: make a nice abstraction to handle embedded device stuff
   float brightness_b = 0;
   float brightness_m = 0;
   float smooth_brightness = 0;
+  float last_brightness = 0;
 
 public slots:
   void timerUpdate();

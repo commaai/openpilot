@@ -2,13 +2,16 @@ import os
 Import('env', 'qt_env', 'arch', 'common', 'messaging', 'gpucommon', 'visionipc',
        'cereal', 'transformations')
 
-
 src = ['ui.cc', 'paint.cc', 'sidebar.cc', '#phonelibs/nanovg/nanovg.c']
-libs = [gpucommon, common, 'zmq', 'capnp', 'kj', 'm', 'OpenCL', cereal, messaging, visionipc, transformations]
+libs = [gpucommon, common, 'zmq', 'capnp', 'kj', 'm', 'OpenCL', 'ssl', 'crypto',
+        cereal, messaging, visionipc, transformations]
 
-if qt_env is None:
-  libs += ['EGL', 'GLESv3', 'gnustl_shared', 'log', 'utils', 'gui', 'hardware',
-           'ui', 'CB', 'gsl', 'adreno_utils', 'OpenSLES', 'cutils', 'uuid', 'OpenCL']
+if arch == 'aarch64':
+  libs += ['log', 'utils', 'gui', 'ui', 'CB', 'gsl', 'adreno_utils',
+           'cutils', 'uuid']
+
+if arch == 'aarch64' and "QT" not in os.environ:
+  libs += ['EGL', 'GLESv3', 'gnustl_shared', 'hardware', 'OpenSLES', 'cutils', 'uuid']
   linkflags = ['-Wl,-rpath=/system/lib64,-rpath=/system/comma/usr/lib']
 
   src += ["android/ui.cc", "android/sl_sound.cc"]
@@ -16,31 +19,35 @@ if qt_env is None:
     LINKFLAGS=linkflags,
     LIBS=libs)
 else:
-  qt_libs = qt_env["LIBS"] + libs + ["pthread", "ssl", "crypto"]
-
-  widgets = qt_env.Library("qt_widgets",
-                 ["qt/qt_sound.cc", "qt/widgets/keyboard.cc", "qt/widgets/input_field.cc", "qt/widgets/drive_stats.cc", "qt/widgets/ssh_keys.cc",
-                  "qt/offroad/networking.cc", "qt/offroad/wifiManager.cc", "qt/widgets/toggle.cc", "qt/widgets/offroad_alerts.cc", "qt/widgets/setup.cc"],
-                 LIBS=qt_libs)
-  qt_libs.append(widgets)
-
-
+  qt_base_libs = qt_env["LIBS"] + libs + ["pthread"]
   if arch == "Darwin":
-    # fix OpenCL
-    del qt_libs[qt_libs.index('OpenCL')]
+    del qt_base_libs[qt_base_libs.index('OpenCL')]
     qt_env['FRAMEWORKS'] += ['OpenCL']
 
-  qt_src = ["qt/ui.cc", "qt/window.cc", "qt/home.cc", "qt/api.cc", "qt/offroad/settings.cc", "qt/offroad/onboarding.cc", "#phonelibs/qrcode/QrCode.cc"] + src
+  widgets_src = ["qt/widgets/input.cc", "qt/widgets/drive_stats.cc",
+                 "qt/widgets/ssh_keys.cc", "qt/widgets/toggle.cc", "qt/qt_sound.cc",
+                 "qt/widgets/offroad_alerts.cc", "qt/widgets/setup.cc", "qt/widgets/keyboard.cc",
+                 "#phonelibs/qrcode/QrCode.cc"]
+
+  if arch != 'aarch64':
+    widgets_src += ["qt/offroad/networking.cc", "qt/offroad/wifiManager.cc"]
+
+  widgets = qt_env.Library("qt_widgets", widgets_src, LIBS=qt_base_libs)
+  qt_libs = qt_base_libs + [widgets]
+
+  qt_src = ["qt/ui.cc", "qt/window.cc", "qt/home.cc", "qt/api.cc", "qt/offroad/settings.cc",
+            "qt/offroad/onboarding.cc"] + src
   qt_env.Program("_ui", qt_src, LIBS=qt_libs)
 
   # spinner and text window
-  qt_env.Program("qt/text", ["qt/text.cc"], LIBS=qt_libs)
-  qt_env.Program("qt/spinner", ["qt/spinner.cc"], LIBS=qt_libs)
+  qt_env.Program("qt/text", ["qt/text.cc"], LIBS=qt_base_libs)
+  qt_env.Program("qt/spinner", ["qt/spinner.cc"], LIBS=qt_base_libs)
 
   # build setup, factory resetter, and installer
   if "BUILD_SETUP" in os.environ:
     qt_env.Program("qt/setup/reset", ["qt/setup/reset.cc"], LIBS=qt_libs)
     qt_env.Program("qt/setup/setup", ["qt/setup/setup.cc"], LIBS=qt_libs + ['curl', 'common', 'json11'])
+    qt_env.Program("qt/setup/wifi", ["qt/setup/wifi.cc"], LIBS=qt_libs + ['common', 'json11'])
 
     installers = [
       ("openpilot", "master"),

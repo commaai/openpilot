@@ -25,7 +25,7 @@ class Spinner():
         pass
 
   def update_progress(self, cur: int, total: int):
-    self.update(str(int(100 * cur / total)))
+    self.update(str(round(100 * cur / total)))
 
   def close(self):
     if self.spinner_proc is not None:

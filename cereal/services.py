@@ -31,7 +31,6 @@ service_list = {
   "carControl": Service(8023, True, 100., 10),
   "longitudinalPlan": Service(8024, True, 20., 2),
   "liveLocation": Service(8025, True, 0., 1),
-  "gpsLocation": Service(8026, True, 1., 1),
   "procLog": Service(8031, True, 0.5),
   "gpsLocationExternal": Service(8032, True, 10., 1),
   "ubloxGnss": Service(8033, True, 10.),

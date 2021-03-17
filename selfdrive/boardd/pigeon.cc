@@ -133,7 +133,6 @@ void TTYPigeon::connect(const char * tty) {
   if (pigeon_tty_fd < 0){
     handle_tty_issue(errno, __func__);
     assert(pigeon_tty_fd >= 0);
-  
   }
   int err = tcgetattr(pigeon_tty_fd, &pigeon_tty);
   assert(err == 0);

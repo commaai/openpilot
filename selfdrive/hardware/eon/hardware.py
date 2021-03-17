@@ -348,3 +348,7 @@ class Android(HardwareBase):
 
   def get_thermal_config(self):
     return ThermalConfig(cpu=((5, 7, 10, 12), 10), gpu=((16,), 10), mem=(2, 10), bat=(29, 1000), ambient=(25, 1))
+
+  def set_screen_brightness(self, percentage):
+    with open("/sys/class/leds/lcd-backlight/brightness", "w") as f:
+      f.write(str(int(percentage * 2.55)))
