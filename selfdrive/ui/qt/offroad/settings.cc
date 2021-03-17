@@ -228,10 +228,10 @@ QWidget * developer_panel() {
   };
 
   for (int i = 0; i < labels.size(); i++) {
-    auto l = labels[i];
-    main_layout->addWidget(labelWidget(QString::fromStdString(l.first), QString::fromStdString(l.second)));
+    const auto &[name, value] = labels[i];
+    main_layout->addWidget(labelWidget(QString::fromStdString(name), QString::fromStdString(value)));
 
-    if(i+1 < labels.size()) {
+    if(i < (labels.size() - 1)) {
       main_layout->addWidget(horizontal_line());
     }
   }
