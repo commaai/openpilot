@@ -17,18 +17,26 @@ else:
 def get_file_handler():
   Path(SWAGLOG_DIR).mkdir(parents=True, exist_ok=True)
   base_filename = os.path.join(SWAGLOG_DIR, "swaglog")
-  handler = SwaglogRotatingFileHandler(base_filename, interval=60, max_bytes=1024*256, backup_count=2500)
+  handler = SwaglogRotatingFileHandler(base_filename)
   return handler
 
 class SwaglogRotatingFileHandler(BaseRotatingHandler):
-  def __init__(self, base_filename, interval=60, max_bytes=0, backup_count=0, encoding=None):
-    BaseRotatingHandler.__init__(self, base_filename, mode="a", encoding=encoding, delay=False)
+  def __init__(self, base_filename, interval=60, max_bytes=1024*256, backup_count=2500, encoding=None):
+    BaseRotatingHandler.__init__(self, base_filename, mode="a", encoding=encoding, delay=True)
     self.base_filename = base_filename
     self.interval = interval # seconds
     self.max_bytes = max_bytes
     self.backup_count = backup_count
-    self.last_rollover = time()
     self.log_files = self.get_existing_logfiles()
+    self.last_rollover = None
+    self.stream = self._open()
+
+  def _open(self):
+    self.last_rollover = time()
+    next_filename = f"{self.base_filename}.{self.last_rollover}"
+    stream = open(next_filename, self.mode, encoding=self.encoding)
+    self.log_files.insert(0, next_filename)
+    return stream
 
   def get_existing_logfiles(self):
     log_files = list()
@@ -47,17 +55,13 @@ class SwaglogRotatingFileHandler(BaseRotatingHandler):
   def doRollover(self):
     if self.stream:
       self.stream.close()
+    self.stream = self._open()
 
     if self.backup_count > 0:
       while len(self.log_files) >= self.backup_count:
         to_delete = self.log_files.pop()
         if os.path.exists(to_delete): # just being safe, should always exist
           os.remove(to_delete)
-
-    self.last_rollover = time()
-    next_filename = f"{self.base_filename}.{self.last_rollover}"
-    self.stream = open(next_filename, self.mode, encoding=self.encoding)
-    self.log_files.insert(0, next_filename)
 
 # TODO: could be replaced with QueueHandler/QueueListener?
 # (perhaps simplifies what we do for catching exceptions when logmessaged isn't running)

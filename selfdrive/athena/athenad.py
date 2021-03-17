@@ -262,7 +262,10 @@ def get_log_files_sorted(curr_time, last_scan):
     # file without an extension is always the active log file
     if log_entry == "swaglog":
       continue
-    time_sent = getxattr(log_path, LOG_ATTR_NAME)
+    try:
+      time_sent = int(getxattr(log_path, LOG_ATTR_NAME))
+    except ValueError:
+      time_sent = 0
     # assume send failed and we lost the response if sent more than one hour ago
     if not time_sent or curr_time - time_sent > 3600:
       logs.append(log_entry)
@@ -284,16 +287,16 @@ def log_handler(end_event):
         log_entry = result["id"]
         log_path = os.path.join(SWAGLOG_DIR, log_entry)
         try:
-          setxattr(log_path, LOG_ATTR_NAME, MAX_UNIX_TIME if result["success"] else 0)
+          setxattr(log_path, LOG_ATTR_NAME, str(MAX_UNIX_TIME if result["success"] else 0))
         except OSError:
           pass
       except queue.Empty:
         pass
 
-      curr_time = time.time()
+      curr_time = int(time.time())
       if curr_time - last_scan > 10:
         logs = get_log_files_sorted(curr_time, last_scan)
-        last_scan = time.time()
+        last_scan = curr_time
 
       if len(logs) == 0 or not log_send_queue.empty():
         continue
@@ -312,7 +315,7 @@ def log_handler(end_event):
           "id": log_entry
         }
         log_send_queue.put_nowait(jsonrpc)
-        setxattr(log_path, LOG_ATTR_NAME, curr_time)
+        setxattr(log_path, LOG_ATTR_NAME, str(curr_time))
       except OSError:
         pass
       logs = logs[1:]
