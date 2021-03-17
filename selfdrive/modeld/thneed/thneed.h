@@ -25,9 +25,9 @@ class Thneed;
 
 class GPUMalloc {
  public:
-  GPUMalloc(int size, int fd);
+  GPUMalloc(size_t size, int fd);
   ~GPUMalloc();
-  void *alloc(int size);
+  void *alloc(size_t size);
 
  private:
   int fd;

@@ -12,6 +12,10 @@ ThneedModel::ThneedModel(const char *path, float *loutput, size_t loutput_size, 
   output = loutput;
 }
 
+ThneedModel::~ThneedModel() {
+  delete thneed;
+}
+
 void ThneedModel::addRecurrent(float *state, int state_size) {
   recurrent = state;
 }

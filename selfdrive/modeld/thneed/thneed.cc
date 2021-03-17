@@ -118,13 +118,12 @@ int ioctl(int filedes, unsigned long request, void *argp) {
 
 // *********** GPUMalloc ***********
 
-GPUMalloc::GPUMalloc(int size, int fd) : fd(fd) {
+GPUMalloc::GPUMalloc(size_t size, int fd) : fd(fd) {
   kgsl_gpuobj_alloc alloc{.size = size, .flags = 0x10000a00};
   ioctl(fd, IOCTL_KGSL_GPUOBJ_ALLOC, &alloc);
   mmap_size = alloc.mmapsize;
-  addr = mmap64(NULL, mmap_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, alloc.id * 0x1000);
+  addr = base = mmap64(NULL, mmap_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, alloc.id * 0x1000);
   assert(addr != MAP_FAILED);
-  base = addr;
   remaining = size;
 }
 
@@ -134,7 +133,7 @@ GPUMalloc::~GPUMalloc() {
   ioctl(fd, IOCTL_KGSL_GPUOBJ_FREE, &fence);
 }
 
-void *GPUMalloc::alloc(int size) {
+void *GPUMalloc::alloc(size_t size) {
   void *ret = base;
   size = (size + 0xff) & (~0xFF);
   assert(size <= remaining);

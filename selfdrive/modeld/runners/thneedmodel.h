@@ -6,6 +6,7 @@
 class ThneedModel : public RunModel {
 public:
   ThneedModel(const char *path, float *loutput, size_t loutput_size, int runtime);
+  ~ThneedModel();
   void addRecurrent(float *state, int state_size);
   void addTrafficConvention(float *state, int state_size);
   void addDesire(float *state, int state_size);
