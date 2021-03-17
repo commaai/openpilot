@@ -96,7 +96,6 @@ private:
 
   RGBToYUVState rgb_to_yuv_state;
 
-  FrameMetadata yuv_metas[YUV_COUNT];
   VisionStreamType rgb_type, yuv_type;
 
   int cur_buf_idx;
