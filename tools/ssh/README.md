@@ -5,16 +5,12 @@ Your comma device fetches your public SSH keys from your GitHub account. You wil
 
 Your email will have to be verified by GitHub, for more information on email verification, please see the [GitHub Doc](https://docs.github.com/en/github/getting-started-with-github/verifying-your-email-address) regarding this topic.
 
-# General information
-For security reasons, SSH is not enabled by default on your comma device, you can enable it by navigating to `Settings → Developer → Enable SSH`.
+# Quick Start
 
-SSH Keys can be imported from GitHub by going to `Settings → Developer → GitHub Username`, once GitHub username is inserted, it will automatically fetch the public keys on your account.
+SSH is disabled by default. SSH can be enabled in the Network section of the settings. The IP address can also be found in the settings.
 
-default ssh username: `root`
-
-default ssh port: `8022`
-
-To view the IP address of your comma device, go to `Settings → WiFi → Open WiFi Settings → More Options → Three Dot Menu at the Top Left Corner → Advanced`.
+* Username: root
+* Port: 22 or 8022
 
 # Generating an SSH key and adding it to your GitHub Account
 An SSH key pair is like a padlock and its key, your public key is the padlock, and your private key holds the information of opening the padlock.
