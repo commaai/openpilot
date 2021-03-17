@@ -352,6 +352,3 @@ class Android(HardwareBase):
   def set_screen_brightness(self, percentage):
     with open("/sys/class/leds/lcd-backlight/brightness", "w") as f:
       f.write(str(int(percentage * 2.55)))
-
-  def get_cloudlog_enabled(self):
-    return True

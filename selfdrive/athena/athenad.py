@@ -24,7 +24,7 @@ from common.api import Api
 from common.basedir import PERSIST
 from common.params import Params
 from common.realtime import sec_since_boot
-from selfdrive.hardware import HARDWARE
+from selfdrive.hardware import HARDWARE, PC
 from selfdrive.loggerd.config import ROOT
 from selfdrive.loggerd.xattr_cache import getxattr, setxattr
 from selfdrive.swaglog import cloudlog, SWAGLOG_DIR
@@ -271,7 +271,7 @@ def get_log_files_sorted(curr_time, last_scan):
 
 
 def log_handler(end_event):
-  if not HARDWARE.get_cloudlog_enabled():
+  if PC:
     return
 
   logs = []
