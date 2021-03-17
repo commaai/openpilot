@@ -43,6 +43,7 @@ class Sidebar : public QFrame {
 public:
   explicit Sidebar(QWidget* parent = 0);
   void update(UIState *s);
+
 private:
   SignalWidget* signal;
   StatusWidget* temp;

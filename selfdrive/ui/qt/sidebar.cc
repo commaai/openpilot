@@ -114,7 +114,7 @@ Sidebar::Sidebar(QWidget* parent) : QFrame(parent){
   comma->setFixedSize(200,200);
 
   // TODO: set opacity to 0.65
-  QPushButton* s_btn = new QPushButton(this);
+  QWidget* s_btn = new QWidget(this);
 
   //  border-image: url(../assets/images/button_settings.png);
   s_btn->setStyleSheet(R"(
@@ -124,7 +124,6 @@ Sidebar::Sidebar(QWidget* parent) : QFrame(parent){
     background-position: center;
   )");
   s_btn->setFixedSize(252, 150);
-
 
   signal = new SignalWidget("4G",2,this);
   temp = new StatusWidget("39C", "TEMP", QColor(201, 34, 49), this);

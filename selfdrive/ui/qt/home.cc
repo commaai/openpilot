@@ -78,7 +78,7 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
   glWindow->wake();
 
   // Settings button click
-  if (!ui_state->sidebar_collapsed && settings_btn.ptInRect(e->x(), e->y())) {
+  if (sidebar->isVisible() && settings_btn.ptInRect(e->x(), e->y())) {
     emit openSettings();
   }
 
