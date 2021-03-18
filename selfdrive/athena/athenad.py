@@ -270,7 +270,7 @@ def get_log_files_sorted(curr_time, last_scan):
     if not time_sent or curr_time - time_sent > 3600:
       logs.append(log_entry)
 
-  return sorted(logs, reverse=True)
+  return sorted(logs)
 
 
 def log_handler(end_event):
@@ -284,8 +284,8 @@ def log_handler(end_event):
     try:
       try:
         result = json.loads(log_recv_queue.get(timeout=1))
-        log_success = result.get("success", default=False)
-        log_entry = result.get("id", default="")
+        log_success = result.get("success")
+        log_entry = result.get("id")
         log_path = os.path.join(SWAGLOG_DIR, log_entry)
         if log_entry and log_success:
           try:
@@ -302,24 +302,22 @@ def log_handler(end_event):
 
       if len(logs) == 0 or not log_send_queue.empty():
         continue
-
-      log_entry = logs[0]
+      log_entry = logs.pop()
       try:
         log_path = os.path.join(SWAGLOG_DIR, log_entry)
-        with open(log_path, "r") as f:
-          logs = f.read()
-        jsonrpc = {
-          "method": "forwardLogs",
-          "params": {
-            "logs": logs
-          },
-          "jsonrpc": "2.0",
-          "id": log_entry
-        }
-        log_send_queue.put_nowait(json.dumps(jsonrpc))
         setxattr(log_path, LOG_ATTR_NAME, int.to_bytes(curr_time, 4, sys.byteorder))
+        with open(log_path, "r") as f:
+          jsonrpc = {
+            "method": "forwardLogs",
+            "params": {
+              "logs": f.read()
+            },
+            "jsonrpc": "2.0",
+            "id": log_entry
+          }
+          log_send_queue.put_nowait(json.dumps(jsonrpc))
       except OSError:
-        pass
+        pass # file could be deleted by log rotation
       logs = logs[1:]
       log_retries = 0
     except Exception:

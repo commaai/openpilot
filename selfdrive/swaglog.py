@@ -58,7 +58,7 @@ class SwaglogRotatingFileHandler(BaseRotatingHandler):
     self.stream = self._open()
 
     if self.backup_count > 0:
-      while len(self.log_files) >= self.backup_count:
+      while len(self.log_files) > self.backup_count:
         to_delete = self.log_files.pop()
         if os.path.exists(to_delete): # just being safe, should always exist
           os.remove(to_delete)
