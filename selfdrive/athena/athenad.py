@@ -254,7 +254,7 @@ def takeSnapshot():
     raise Exception("not available while camerad is started")
 
 
-def get_log_files_sorted(curr_time, last_scan):
+def get_logs_to_send_sorted(curr_time, last_scan):
   # TODO: scan once then use inotify to detect file creation/deletion
   logs = []
   for log_entry in os.listdir(SWAGLOG_DIR):
@@ -277,7 +277,7 @@ def log_handler(end_event):
   if PC:
     return
 
-  logs = []
+  log_files = []
   last_scan = 0
   log_retries = 0
   while not end_event.is_set():
@@ -297,15 +297,15 @@ def log_handler(end_event):
 
       curr_time = int(time.time())
       if curr_time - last_scan > 10:
-        logs = get_log_files_sorted(curr_time, last_scan)
+        log_files = get_logs_to_send_sorted(curr_time, last_scan)
         last_scan = curr_time
 
       # never send last log file because it is the active log
       # and only send one log file at a time
-      if len(logs) <= 1 or not log_send_queue.empty():
+      if len(log_files) <= 1 or not log_send_queue.empty():
         continue
 
-      log_entry = logs.pop()
+      log_entry = log_files.pop()
       try:
         log_path = os.path.join(SWAGLOG_DIR, log_entry)
         setxattr(log_path, LOG_ATTR_NAME, int.to_bytes(curr_time, 4, sys.byteorder))
@@ -321,7 +321,6 @@ def log_handler(end_event):
           log_send_queue.put_nowait(json.dumps(jsonrpc))
       except OSError:
         pass # file could be deleted by log rotation
-      logs = logs[1:]
       log_retries = 0
     except Exception:
       cloudlog.exception("athena.log_handler.exception")
