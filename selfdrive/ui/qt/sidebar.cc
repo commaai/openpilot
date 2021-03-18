@@ -111,8 +111,6 @@ Sidebar::Sidebar(QWidget* parent) : QFrame(parent){
 
   // TODO: set opacity to 0.65
   QWidget* s_btn = new QWidget(this);
-
-  //  border-image: url(../assets/images/button_settings.png);
   s_btn->setStyleSheet(R"(
     background-color: rgba(0, 0, 0, 0);
     background-image: url(../assets/images/button_settings.png);
@@ -177,10 +175,12 @@ void Sidebar::update(UIState *s){
   if (s->scene.pandaType == cereal::PandaState::PandaType::UNKNOWN) {
     panda_severity = 2;
     panda_message = "NO\nPANDA";
-  } else if (s->scene.started) {
+  }
+#ifdef QCOM2
+  else if (s->scene.started) {
     panda_severity = s->scene.gpsOK ? 0 : 1;
     panda_message = util::string_format("SAT CNT\n%d", s->scene.satelliteCount);
   }
-
+#endif
   vehicle->update(panda_message.c_str(), "", QColor(255, 255, 255));
 }
