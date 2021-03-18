@@ -64,7 +64,7 @@ ParamsToggle::ParamsToggle(QString param, QString title, QString description, QS
   layout->addWidget(label);
 
   // toggle switch
-  Toggle *toggle = new Toggle(this);
+  toggle = new Toggle(this);
   toggle->setFixedSize(150, 100);
   layout->addWidget(toggle);
   QObject::connect(toggle, SIGNAL(stateChanged(int)), this, SLOT(checkboxClicked(int)));
@@ -104,12 +104,6 @@ QWidget * toggles_panel() {
                                             "../assets/offroad/icon_warning.png"
                                               ));
   toggles_list->addWidget(horizontal_line());
-  toggles_list->addWidget(new ParamsToggle("RecordFront",
-                                            "Record and Upload Driver Camera",
-                                            "Upload data from the driver facing camera and help improve the driver monitoring algorithm.",
-                                            "../assets/offroad/icon_network.png"
-                                            ));
-  toggles_list->addWidget(horizontal_line());
   toggles_list->addWidget(new ParamsToggle("IsRHD",
                                             "Enable Right-Hand Drive",
                                             "Allow openpilot to obey left-hand traffic conventions and perform driver monitoring on right driver seat.",
@@ -127,6 +121,16 @@ QWidget * toggles_panel() {
                                             "Use features from the open source community that are not maintained or supported by comma.ai and have not been confirmed to meet the standard safety model. These features include community supported cars and community supported hardware. Be extra cautious when using these features",
                                             "../assets/offroad/icon_shell.png"
                                             ));
+
+  ParamsToggle *record_toggle = new ParamsToggle("RecordFront",
+                                            "Record and Upload Driver Camera",
+                                            "Upload data from the driver facing camera and help improve the driver monitoring algorithm.",
+                                            "../assets/offroad/icon_network.png");
+  toggles_list->addWidget(horizontal_line());
+  toggles_list->addWidget(record_toggle);
+
+  bool record_lock = Params().read_db_bool("RecordFrontLock");
+  record_toggle->toggle->setEnabled(!record_lock);
 
   QWidget *widget = new QWidget;
   widget->setLayout(toggles_list);

@@ -55,6 +55,7 @@ keys = {
   b"PandaDongleId": [TxType.CLEAR_ON_MANAGER_START, TxType.CLEAR_ON_PANDA_DISCONNECT],
   b"Passive": [TxType.PERSISTENT],
   b"RecordFront": [TxType.PERSISTENT],
+  b"RecordFrontLock": [TxType.PERSISTENT],  # for the internal fleet
   b"ReleaseNotes": [TxType.PERSISTENT],
   b"ShouldDoUpdate": [TxType.CLEAR_ON_MANAGER_START],
   b"SubscriberInfo": [TxType.PERSISTENT],
