@@ -300,8 +300,11 @@ def log_handler(end_event):
         logs = get_log_files_sorted(curr_time, last_scan)
         last_scan = curr_time
 
-      if len(logs) == 0 or not log_send_queue.empty():
+      # never send last log file because it is the active log
+      # and only send one log file at a time
+      if len(logs) <= 1 or not log_send_queue.empty():
         continue
+
       log_entry = logs.pop()
       try:
         log_path = os.path.join(SWAGLOG_DIR, log_entry)
