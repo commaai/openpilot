@@ -12,6 +12,8 @@
 #include "home.hpp"
 #include "util.h"
 
+#include <QEasingCurve>
+
 
 void TrainingGuide::mouseReleaseEvent(QMouseEvent *e) {
   int leftOffset = (geometry().width()-1620)/2;
@@ -85,11 +87,17 @@ QWidget* OnboardingWindow::terms_screen() {
 
   // TODO: tune the scrolling
 
-  QScrollerProperties sp;
-  sp.setScrollMetric(QScrollerProperties::DragStartDistance, 0.001);
-
-
   auto sb = terms_text->verticalScrollBar();
+  QScrollerProperties sp;
+  /*
+  sp.setScrollMetric(QScrollerProperties::DragStartDistance, 0.001);
+  sp.setScrollMetric(QScrollerProperties::DragVelocitySmoothingFactor, 0.5);
+  sp.setScrollMetric( QScrollerProperties::ScrollingCurve, QEasingCurve::Linear );
+  sp.setScrollMetric(QScrollerProperties::DecelerationFactor, 0.4);
+  */
+  scroller = QScroller::scroller(terms_text);
+  scroller->setScrollerProperties(sp);
+
 #ifdef QCOM2
   sb->setStyleSheet(R"(
     QScrollBar {
@@ -105,7 +113,8 @@ QWidget* OnboardingWindow::terms_screen() {
     }
   )");
 #else
-  QScroller::grabGesture(terms_text, QScroller::TouchGesture);
+  //QScroller::grabGesture(terms_text, QScroller::TouchGesture);
+  scroller->grabGesture(terms_text, QScroller::TouchGesture);
   terms_text->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 #endif
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QWidget>
+#include <QScroller>
 #include <QStackedWidget>
 #include <QStackedLayout>
 #include <QTextEdit>
@@ -40,6 +41,7 @@ private:
   QTextEdit *terms_text;
   QWidget *terms_screen();
   QWidget *training_screen();
+  QScroller *scroller;
 
 signals:
   void onboardingDone();
