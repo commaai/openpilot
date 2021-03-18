@@ -17,7 +17,7 @@ _severity(indicator)
     l_label->setStyleSheet(R"(font-size: 65px; font-weight: 600;)");
     l_label->setAlignment(Qt::AlignLeft | Qt::AlignHCenter);
 
-		l_msg = new QLabel(this);
+    l_msg = new QLabel(this);
     l_msg->setText(msg);
     l_msg->setStyleSheet(R"(font-size: 30px; font-weight: 400;)");
     l_msg->setAlignment(Qt::AlignLeft | Qt::AlignHCenter);
@@ -53,11 +53,11 @@ void StatusWidget::paintEvent(QPaintEvent *e){
 }
 
 void StatusWidget::update(QString label, QString msg, QColor color){
-	l_label->setText(label);
-	if(msg.length() > 0)
-		l_msg->setText(msg);
-	_severity = color;
-	return;
+  l_label->setText(label);
+  if(msg.length() > 0)
+    l_msg->setText(msg);
+  _severity = color;
+  return;
 }
 
 SignalWidget::SignalWidget(QString text, int strength, QWidget* parent) : QFrame(parent),
@@ -142,17 +142,17 @@ void Sidebar::update(UIState *s){
     {NET_DISCONNECTED, {"CONNECT\nOFFLINE", 1}},
   };
   auto net_params = connectivity_map[s->scene.athenaStatus];
-	connect->update(net_params.first, "", QColor(218, 202, 37));
+  connect->update(net_params.first, "", QColor(218, 202, 37));
 
-	static std::map<cereal::DeviceState::ThermalStatus, const int> temp_severity_map = {
-				{cereal::DeviceState::ThermalStatus::GREEN, 0},
-				{cereal::DeviceState::ThermalStatus::YELLOW, 1},
-				{cereal::DeviceState::ThermalStatus::RED, 2},
-				{cereal::DeviceState::ThermalStatus::DANGER, 3}};
-	std::string temp_val = std::to_string((int)s->scene.deviceState.getAmbientTempC()) + "°C";
-	temp->update(QString(temp_val.c_str()), "", QColor(201, 34, 49));
+  static std::map<cereal::DeviceState::ThermalStatus, const int> temp_severity_map = {
+        {cereal::DeviceState::ThermalStatus::GREEN, 0},
+        {cereal::DeviceState::ThermalStatus::YELLOW, 1},
+        {cereal::DeviceState::ThermalStatus::RED, 2},
+        {cereal::DeviceState::ThermalStatus::DANGER, 3}};
+  std::string temp_val = std::to_string((int)s->scene.deviceState.getAmbientTempC()) + "°C";
+  temp->update(QString(temp_val.c_str()), "", QColor(201, 34, 49));
 
-	static std::map<cereal::DeviceState::NetworkType, const char *> network_type_map = {
+  static std::map<cereal::DeviceState::NetworkType, const char *> network_type_map = {
       {cereal::DeviceState::NetworkType::NONE, "--"},
       {cereal::DeviceState::NetworkType::WIFI, "WiFi"},
       {cereal::DeviceState::NetworkType::CELL2_G, "2G"},

@@ -62,8 +62,8 @@ HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
 void HomeWindow::setVisibility(bool offroad) {
   home->setVisible(offroad);
   UIState* ui_state = &glWindow->ui_state;
-	sidebar->setVisible(offroad);
-	ui_state->sidebar_collapsed = !offroad;
+  sidebar->setVisible(offroad);
+  ui_state->sidebar_collapsed = !offroad;
 }
 
 void HomeWindow::mousePressEvent(QMouseEvent* e) {
