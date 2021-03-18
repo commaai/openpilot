@@ -29,7 +29,7 @@ class NiceOrderedDict(OrderedDict):
 
 class SwagFormatter(logging.Formatter):
   def __init__(self, swaglogger):
-    super().__init__(self, None, '%a %b %d %H:%M:%S %Z %Y')
+    logging.Formatter.__init__(self, None, '%a %b %d %H:%M:%S %Z %Y')
 
     self.swaglogger = swaglogger
     self.host = socket.gethostname()
