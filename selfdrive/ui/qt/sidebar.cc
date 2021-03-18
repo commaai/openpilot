@@ -82,7 +82,7 @@ void SignalWidget::paintEvent(QPaintEvent *e){
   p.setRenderHint(QPainter::Antialiasing, true);
   p.setPen(Qt::NoPen);
   p.setBrush(Qt::white);
-  for (int i = 0; i < 5 ; i++) //draw empty dots
+  for (int i = 0; i < 5 ; i++)
   {
     if(i == _strength){
       p.setPen(Qt::NoPen);
