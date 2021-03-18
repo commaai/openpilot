@@ -44,14 +44,8 @@ QLayout* build_stat(QString name, int stat) {
   return layout;
 }
 
-// void DriveStats::parseError(QString response) {
-//   clearLayouts(vlayout);
-//   vlayout->addWidget(new QLabel("No Internet connection"), 0, Qt::AlignCenter);
-// }
-
 void DriveStats::parseResponse(QString response, bool save) {
   static QString prev_response;
-
   response = response.trimmed();
   if (prev_response == response) {
     return;
@@ -116,5 +110,4 @@ DriveStats::DriveStats(QWidget* parent) : QWidget(parent) {
   QString url = "https://api.commadotai.com/v1.1/devices/" + dongleId + "/stats";
   RequestRepeater* repeater = new RequestRepeater(this, url, 13);
   QObject::connect(repeater, SIGNAL(receivedResponse(QString)), this, SLOT(parseResponse(QString)));
-  // QObject::connect(repeater, SIGNAL(failedResponse(QString)), this, SLOT(parseError(QString)));
 }
