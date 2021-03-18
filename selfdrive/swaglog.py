@@ -6,7 +6,7 @@ from logging.handlers import BaseRotatingHandler
 
 import zmq
 
-from common.logging_extra import SwagLogger, SwagFormatter
+from common.logging_extra import SwagLogger, SwagFormatter, SwagLogfileFormatter
 from selfdrive.hardware import PC
 
 if PC:
@@ -106,4 +106,4 @@ log.setLevel(logging.DEBUG)
 outhandler = logging.StreamHandler()
 log.addHandler(outhandler)
 # logs are sent through IPC before writing to disk to prevent disk I/O blocking
-log.addHandler(UnixDomainSocketHandler(SwagFormatter(log)))
+log.addHandler(UnixDomainSocketHandler(SwagLogfileFormatter(log)))

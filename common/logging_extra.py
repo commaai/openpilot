@@ -29,11 +29,48 @@ class NiceOrderedDict(OrderedDict):
 
 class SwagFormatter(logging.Formatter):
   def __init__(self, swaglogger):
-    logging.Formatter.__init__(self, None, '%a %b %d %H:%M:%S %Z %Y')
+    super().__init__(self, None, '%a %b %d %H:%M:%S %Z %Y')
 
     self.swaglogger = swaglogger
     self.host = socket.gethostname()
 
+  def format_dict(self, record):
+    record_dict = NiceOrderedDict()
+
+    if isinstance(record.msg, dict):
+      record_dict['msg'] = record.msg
+    else:
+      try:
+        record_dict['msg'] = record.getMessage()
+      except (ValueError, TypeError):
+        record_dict['msg'] = [record.msg]+record.args
+
+    record_dict['ctx'] = self.swaglogger.get_ctx()
+
+    if record.exc_info:
+      record_dict['exc_info'] = self.formatException(record.exc_info)
+
+    record_dict['level'] = record.levelname
+    record_dict['levelnum'] = record.levelno
+    record_dict['name'] = record.name
+    record_dict['filename'] = record.filename
+    record_dict['lineno'] = record.lineno
+    record_dict['pathname'] = record.pathname
+    record_dict['module'] = record.module
+    record_dict['funcName'] = record.funcName
+    record_dict['host'] = self.host
+    record_dict['process'] = record.process
+    record_dict['thread'] = record.thread
+    record_dict['threadName'] = record.threadName
+    record_dict['created'] = record.created
+    record_dict['id'] = uuid.uuid4().hex
+
+    return record_dict
+
+  def format(self, record):
+    return json_robust_dumps(self.format_dict(record))
+
+class SwagLogfileFormatter(SwagFormatter):
   def fix_kv(self, k, v):
     if isinstance(v, (str, bytes)):
       k += "$s"
@@ -52,39 +89,6 @@ class SwagFormatter(logging.Formatter):
     elif isinstance(v, list):
       k += "$a"
     return k, v
-
-  def format_dict(self, record):
-    record_dict = NiceOrderedDict()
-
-    if isinstance(record.msg, dict):
-      record_dict['msg'] = record.msg
-    else:
-      try:
-        record_dict['msg'] = record.getMessage()
-      except (ValueError, TypeError):
-        record_dict['msg'] = [record.msg]+record.args
-
-    record_dict['ctx'] = self.swaglogger.get_ctx()
-
-    if record.exc_info:
-      record_dict['exc_info'] = self.formatException(record.exc_info)
-
-    record_dict['id'] = uuid.uuid4()
-    record_dict['level'] = record.levelname
-    record_dict['levelnum'] = record.levelno
-    record_dict['name'] = record.name
-    record_dict['filename'] = record.filename
-    record_dict['lineno'] = record.lineno
-    record_dict['pathname'] = record.pathname
-    record_dict['module'] = record.module
-    record_dict['funcName'] = record.funcName
-    record_dict['host'] = self.host
-    record_dict['process'] = record.process
-    record_dict['thread'] = record.thread
-    record_dict['threadName'] = record.threadName
-    record_dict['created'] = record.created
-
-    return record_dict
 
   def format(self, record):
     v = self.format_dict(record)
