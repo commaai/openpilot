@@ -50,14 +50,14 @@ else:
     qt_env.Program("qt/setup/wifi", ["qt/setup/wifi.cc"], LIBS=qt_libs + ['common', 'json11'])
 
     installers = [
-      ("openpilot", "master"),
+      #("openpilot", "master"),
       #("openpilot_test", "release3-staging"),
-      #("openpilot_internal", "master"),
+      ("openpilot_internal", "master"),
       #("dashcam", "dashcam3-staging"),
       #("dashcam_test", "dashcam3-staging"),
     ]
     for name, branch in installers:
-      d = {'BRANCH': f"'\"{branch}\"'"}
+      d = {'BRANCH': f"'\"{branch}\"'", 'INTERNAL': '1'}
       if "internal" in name:
         import requests
         r = requests.get("https://github.com/commaci2.keys")
