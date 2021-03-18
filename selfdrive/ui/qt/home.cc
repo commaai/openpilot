@@ -47,8 +47,8 @@ HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
 
   QObject::connect(glWindow, SIGNAL(offroadTransition(bool)), this, SLOT(setVisibility(bool)));
   QObject::connect(glWindow, SIGNAL(offroadTransition(bool)), this, SIGNAL(offroadTransition(bool)));
-	QObject::connect(glWindow, SIGNAL(offroadTransition(bool)), this, SLOT(setSidebarVisibility(bool)));
   QObject::connect(glWindow, SIGNAL(screen_shutoff()), this, SIGNAL(closeSettings()));
+	QObject::connect(glWindow, SIGNAL(ui_update_step(UIState*)), sidebar, SLOT(update(UIState*)));
   QObject::connect(this, SIGNAL(openSettings()), home, SLOT(refresh()));
 
   setLayout(layout);
@@ -61,9 +61,6 @@ HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
 
 void HomeWindow::setVisibility(bool offroad) {
   home->setVisible(offroad);
-}
-
-void HomeWindow::setSidebarVisibility(bool offroad) {
   UIState* ui_state = &glWindow->ui_state;
 	sidebar->setVisible(offroad);
 	ui_state->sidebar_collapsed = !offroad;
@@ -295,6 +292,7 @@ void GLWindow::timerUpdate() {
   handle_display_state(&ui_state, false);
 
   ui_update(&ui_state);
+	emit ui_update_step(&ui_state);
   repaint();
   watchdog_kick();
 }

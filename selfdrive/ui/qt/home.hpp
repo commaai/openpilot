@@ -30,6 +30,7 @@ public:
 signals:
   void offroadTransition(bool offroad);
   void screen_shutoff();
+  void ui_update_step(UIState* ui_state);
 
 protected:
   void initializeGL() override;
@@ -101,5 +102,4 @@ private:
 
 private slots:
   void setVisibility(bool offroad);
-  void setSidebarVisibility(bool offroad);
 };

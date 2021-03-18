@@ -42,6 +42,8 @@ class Sidebar : public QFrame {
 
 public:
   explicit Sidebar(QWidget* parent = 0);
+
+public slots:
   void update(UIState *s);
 
 private:
