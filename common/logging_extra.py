@@ -11,10 +11,6 @@ from threading import local
 from collections import OrderedDict
 from contextlib import contextmanager
 
-class PassThruFormatter(logging.Formatter):
-  def format(self, record):
-    return record
-
 def json_handler(obj):
   # if isinstance(obj, (datetime.date, datetime.time)):
   #   return obj.isoformat()
@@ -63,14 +59,13 @@ class SwagFormatter(logging.Formatter):
     record_dict['thread'] = record.thread
     record_dict['threadName'] = record.threadName
     record_dict['created'] = record.created
-    record_dict['id'] = uuid.uuid4().hex
 
     return record_dict
 
   def format(self, record):
     return json_robust_dumps(self.format_dict(record))
 
-class SwagLogfileFormatter(SwagFormatter):
+class SwagLogFileFormatter(SwagFormatter):
   def fix_kv(self, k, v):
     if isinstance(v, (str, bytes)):
       k += "$s"
@@ -91,11 +86,15 @@ class SwagLogfileFormatter(SwagFormatter):
     return k, v
 
   def format(self, record):
-    v = self.format_dict(record)
+    if type(record) == str:
+      v = json.loads(record)
+    else:
+      v = self.format_dict(record)
 
     mk, mv = self.fix_kv('msg', v['msg'])
     del v['msg']
     v[mk] = mv
+    v['id'] = uuid.uuid4().hex
 
     return json_robust_dumps(v)
 
