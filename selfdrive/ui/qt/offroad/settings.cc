@@ -84,6 +84,7 @@ ParamsToggle::ParamsToggle(QString param, QString title, QString description, QS
 
   QVBoxLayout *main_l = new QVBoxLayout(this);
   main_l->addLayout(layout);
+  main_l->addStretch();
   main_l->addWidget(desc_label);
 }
 
