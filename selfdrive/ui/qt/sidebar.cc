@@ -34,7 +34,7 @@ _severity(indicator)
 
   setMinimumHeight(124);
   setMaximumSize(300,200);
-  setStyleSheet(R"( StatusWidget { background-color: transparent;})");
+  setStyleSheet("background-color: transparent;");
   setLayout(sw_layout);
 }
 
@@ -84,8 +84,7 @@ void SignalWidget::paintEvent(QPaintEvent *e){
   p.setBrush(Qt::white);
   for (int i = 0; i < 5 ; i++) //draw empty dots
   {
-    if(i == _strength)
-    {
+    if(i == _strength){
       p.setPen(Qt::NoPen);
       p.setBrush(Qt::darkGray);
     }
