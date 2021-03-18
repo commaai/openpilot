@@ -2,6 +2,7 @@
 #include "sidebar.hpp"
 #include "ui.hpp"
 #include "widgets/toggle.hpp"
+#include "qt_window.hpp"
 
 StatusWidget::StatusWidget(QString label, QString msg, QColor indicator, QWidget* parent) : QFrame(parent),
 _severity(indicator)
@@ -33,7 +34,7 @@ _severity(indicator)
   }
 
   setMinimumHeight(124);
-  setMaximumSize(sbr_w, window_h);
+  setMaximumSize(sbr_w, vwp_h);
   setStyleSheet("background-color: transparent;");
   setLayout(sw_layout);
 }
