@@ -3,8 +3,6 @@
 #include "ui.hpp"
 #include "widgets/toggle.hpp"
 
-//TODO: indicator widgets signals (text and color)
-
 StatusWidget::StatusWidget(QString label, QString msg, QColor indicator, QWidget* parent) : QFrame(parent),
 _severity(indicator)
 { l_label = new QLabel(this);
