@@ -75,7 +75,7 @@ QWidget* OnboardingWindow::terms_screen() {
   buttons->addWidget(new QPushButton("Decline"));
   buttons->addSpacing(50);
 
-  QPushButton *accept_btn = new QPushButton("Accept");
+  QPushButton *accept_btn = new QPushButton("Scroll to accept");
   accept_btn->setEnabled(false);
   buttons->addWidget(accept_btn);
   QObject::connect(accept_btn, &QPushButton::released, [=]() {
@@ -105,6 +105,8 @@ QWidget* OnboardingWindow::terms_screen() {
 #endif
   QObject::connect(sb, &QScrollBar::valueChanged, [sb, accept_btn]() {
     accept_btn->setEnabled(accept_btn->isEnabled() || (sb->value() == sb->maximum()));
+    if (sb->value() == sb->maximum())
+      accept_btn->setText("Accept");
   });
 
   QWidget *widget = new QWidget;
