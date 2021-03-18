@@ -63,6 +63,8 @@ class SwagFormatter(logging.Formatter):
     return record_dict
 
   def format(self, record):
+    if self.swaglogger is None:
+      raise Exception("must set swaglogger before calling format()")
     return json_robust_dumps(self.format_dict(record))
 
 class SwagLogFileFormatter(SwagFormatter):
