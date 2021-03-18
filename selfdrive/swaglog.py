@@ -29,7 +29,7 @@ class SwaglogRotatingFileHandler(BaseRotatingHandler):
     self.backup_count = backup_count
     self.log_files = self.get_existing_logfiles()
     self.last_rollover = None
-    self.stream = self._open()
+    self.doRollover()
 
   def _open(self):
     self.last_rollover = time()
