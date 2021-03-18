@@ -81,7 +81,7 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
   }
 
   // Vision click
-  if (ui_state->scene.started && (e->x() >= sidebar->width())) {
+  if (ui_state->scene.started && (e->x() >= sidebar->width()*sidebar->isVisible())) {
     sidebar->setVisible(!sidebar->isVisible());
     ui_state->sidebar_collapsed = !sidebar->isVisible();
   }
