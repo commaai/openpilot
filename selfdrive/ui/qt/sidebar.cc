@@ -74,7 +74,6 @@ _strength(strength)
   layout->setContentsMargins(50,0,50,0);
   layout->addWidget(label, 0, Qt::AlignVCenter | Qt::AlignLeft);
   setMinimumHeight(120);
-  setMaximumSize(176,80);
   setLayout(layout);
 }
 
