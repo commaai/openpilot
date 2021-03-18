@@ -45,6 +45,7 @@ QWidget* labelWidget(QString labelName, QString labelContent){
 
 ParamsToggle::ParamsToggle(QString param, QString title, QString description, QString icon_path, QWidget *parent): QFrame(parent) , param(param) {
   QHBoxLayout *layout = new QHBoxLayout;
+  layout->setContentsMargins(0, 15, 0, 15);
   layout->setSpacing(50);
 
   // Parameter image
