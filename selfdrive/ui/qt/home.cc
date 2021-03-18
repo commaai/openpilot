@@ -292,7 +292,7 @@ void GLWindow::timerUpdate() {
   handle_display_state(&ui_state, false);
 
   ui_update(&ui_state);
-	emit ui_update_step(&ui_state);
+  emit ui_update_step(&ui_state);
   repaint();
   watchdog_kick();
 }
