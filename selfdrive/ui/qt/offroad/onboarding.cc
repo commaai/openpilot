@@ -61,7 +61,7 @@ TrainingGuide::TrainingGuide(QWidget* parent) {
 
 QWidget* OnboardingWindow::terms_screen() {
   QVBoxLayout *main_layout = new QVBoxLayout;
-  main_layout->setContentsMargins(40, 20, 40, 0);
+  main_layout->setContentsMargins(40, 20, 40, 20);
 
   QString terms_html = QString::fromStdString(util::read_file("../assets/offroad/tc.html"));
   terms_text = new QTextEdit();
@@ -89,10 +89,11 @@ QWidget* OnboardingWindow::terms_screen() {
 
   auto sb = terms_text->verticalScrollBar();
   QScrollerProperties sp;
-  /*
+
   sp.setScrollMetric(QScrollerProperties::DragStartDistance, 0.001);
   sp.setScrollMetric(QScrollerProperties::DragVelocitySmoothingFactor, 0.5);
-  sp.setScrollMetric( QScrollerProperties::ScrollingCurve, QEasingCurve::Linear );
+  /*
+  sp.setScrollMetric(QScrollerProperties::ScrollingCurve, QEasingCurve::Linear );
   sp.setScrollMetric(QScrollerProperties::DecelerationFactor, 0.4);
   */
   scroller = QScroller::scroller(terms_text);
