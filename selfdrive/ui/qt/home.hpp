@@ -101,4 +101,5 @@ private:
 
 private slots:
   void setVisibility(bool offroad);
+  void setSidebarVisibility(bool offroad);
 };
