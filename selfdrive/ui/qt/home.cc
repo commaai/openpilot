@@ -48,7 +48,7 @@ HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
   QObject::connect(glWindow, SIGNAL(offroadTransition(bool)), this, SLOT(setVisibility(bool)));
   QObject::connect(glWindow, SIGNAL(offroadTransition(bool)), this, SIGNAL(offroadTransition(bool)));
   QObject::connect(glWindow, SIGNAL(screen_shutoff()), this, SIGNAL(closeSettings()));
-	QObject::connect(glWindow, SIGNAL(ui_update_step(UIState*)), sidebar, SLOT(update(UIState*)));
+  QObject::connect(glWindow, SIGNAL(ui_update_step(UIState*)), sidebar, SLOT(update(UIState*)));
   QObject::connect(this, SIGNAL(openSettings()), home, SLOT(refresh()));
 
   setLayout(layout);
