@@ -32,7 +32,7 @@ class CarController():
     moving_fast = CS.out.vEgo > CS.CP.minSteerSpeed  # for status message
     if CS.out.vEgo > (CS.CP.minSteerSpeed - 0.5):  # for command high bit
       self.gone_fast_yet = True
-    elif self.car_fingerprint in (CAR.PACIFICA_2019_HYBRID, CAR.JEEP_CHEROKEE_2019):
+    elif self.car_fingerprint in (CAR.PACIFICA_2019_HYBRID, CAR.PACIFICA_2020, CAR.JEEP_CHEROKEE_2019):
       if CS.out.vEgo < (CS.CP.minSteerSpeed - 3.0):
         self.gone_fast_yet = False  # < 14.5m/s stock turns off this bit, but fine down to 13.5
     lkas_active = moving_fast and enabled
