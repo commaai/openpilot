@@ -84,6 +84,11 @@ QWidget* OnboardingWindow::terms_screen() {
   });
 
   // TODO: tune the scrolling
+
+  QScrollerProperties sp;
+  sp.setScrollMetric(QScrollerProperties::DragStartDistance, 0.001);
+
+
   auto sb = terms_text->verticalScrollBar();
 #ifdef QCOM2
   sb->setStyleSheet(R"(
@@ -103,10 +108,12 @@ QWidget* OnboardingWindow::terms_screen() {
   QScroller::grabGesture(terms_text, QScroller::TouchGesture);
   terms_text->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 #endif
+
   QObject::connect(sb, &QScrollBar::valueChanged, [sb, accept_btn]() {
-    accept_btn->setEnabled(accept_btn->isEnabled() || (sb->value() == sb->maximum()));
-    if (sb->value() == sb->maximum())
+    if (sb->value() == sb->maximum()){
       accept_btn->setText("Accept");
+      accept_btn->setEnabled(true);
+    }
   });
 
   QWidget *widget = new QWidget;
