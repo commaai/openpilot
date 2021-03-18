@@ -93,8 +93,7 @@ void SignalWidget::paintEvent(QPaintEvent *e){
 }
 
 void SignalWidget::update(QString text, int strength){
-  if(text.length() > 0)
-    label->setText(text);
+  label->setText(text);
   _strength = strength;
 }
 
