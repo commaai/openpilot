@@ -270,7 +270,7 @@ def get_logs_to_send_sorted(curr_time, last_scan):
     if not time_sent or curr_time - time_sent > 3600:
       logs.append(log_entry)
 
-  return sorted(logs)
+  return sorted(logs, reverse=True)
 
 
 def log_handler(end_event):
