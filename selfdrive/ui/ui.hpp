@@ -49,6 +49,7 @@ typedef struct Rect {
   }
 } Rect;
 
+const int window_h = 1080;
 const int sbr_w = 300;
 const int bdr_s = 30;
 const int header_h = 420;

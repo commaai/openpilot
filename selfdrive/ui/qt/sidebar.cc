@@ -33,7 +33,7 @@ _severity(indicator)
   }
 
   setMinimumHeight(124);
-  setMaximumSize(300,200);
+  setMaximumSize(sbr_w, window_h);
   setStyleSheet("background-color: transparent;");
   setLayout(sw_layout);
 }
