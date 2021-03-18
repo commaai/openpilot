@@ -15,6 +15,7 @@ BASE_URL = "https://commadataci.blob.core.windows.net/openpilotci/"
 CARS = {
   'toyota': ("77611a1fac303767|2020-02-29--13-29-33/3", "TOYOTA COROLLA TSS2 2019"),
   'honda': ("99c94dc769b5d96e|2019-08-03--14-19-59/2", "HONDA CIVIC 2016 TOURING"),
+  "vw": ("e2a273d7e6eecec2|2021-03-03--16-05-26/4", "AUDI A3"),
 }
 
 
@@ -40,7 +41,7 @@ def get_inputs(msgs, process):
   return sm, pm, can_sock
 
 
-def profile(proc, func, car='toyota'):
+def profile(proc, func, car='vw'):
   segment, fingerprint = CARS[car]
   segment = segment.replace('|', '/')
   rlog_url = f"{BASE_URL}{segment}/rlog.bz2"
