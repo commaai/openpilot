@@ -50,7 +50,15 @@ QLayout* build_stat(QString name, int stat) {
 // }
 
 void DriveStats::parseResponse(QString response, bool save) {
+  static QString prev_response;
+
   response = response.trimmed();
+  if (prev_response == response) {
+    return;
+  }
+
+  prev_response = response;
+
   clearLayouts(vlayout);
   QJsonDocument doc = QJsonDocument::fromJson(response.toUtf8());
   if (doc.isNull()) {
@@ -98,16 +106,16 @@ DriveStats::DriveStats(QWidget* parent) : QWidget(parent) {
     }
   )");
 
+  QString cached_stat = QString::fromStdString(Params().get("DriveStats"));
+  if (cached_stat.isEmpty()) {
+    cached_stat = R"({"all":{"distance":0.0,"minutes":0,"routes":0},"week":{"distance":0.0,"minutes":0,"routes":0}})";
+  }
+  parseResponse(cached_stat, false);
+
   // TODO: do we really need to update this frequently?
   QString dongleId = QString::fromStdString(Params().get("DongleId"));
   QString url = "https://api.commadotai.com/v1.1/devices/" + dongleId + "/stats";
   RequestRepeater* repeater = new RequestRepeater(this, url, 13);
   QObject::connect(repeater, SIGNAL(receivedResponse(QString)), this, SLOT(parseResponse(QString)));
   // QObject::connect(repeater, SIGNAL(failedResponse(QString)), this, SLOT(parseError(QString)));
-
-  QString cached_stat = QString::fromStdString(Params().get("DriveStats"));
-  if (cached_stat.isEmpty()) {
-    cached_stat = R"({"all":{"distance":0.0,"minutes":0,"routes":0},"week":{"distance":0.0,"minutes":0,"routes":0}})";
-  }
-  parseResponse(cached_stat, false);
 }
