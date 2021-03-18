@@ -44,18 +44,21 @@ QLayout* build_stat(QString name, int stat) {
   return layout;
 }
 
-void DriveStats::parseError(QString response) {
-  clearLayouts(vlayout);
-  vlayout->addWidget(new QLabel("No Internet connection"), 0, Qt::AlignCenter);
-}
+// void DriveStats::parseError(QString response) {
+//   clearLayouts(vlayout);
+//   vlayout->addWidget(new QLabel("No Internet connection"), 0, Qt::AlignCenter);
+// }
 
-void DriveStats::parseResponse(QString response) {
-  response.chop(1);
+void DriveStats::parseResponse(QString response, bool save) {
+  response = response.trimmed();
   clearLayouts(vlayout);
   QJsonDocument doc = QJsonDocument::fromJson(response.toUtf8());
   if (doc.isNull()) {
     qDebug() << "JSON Parse failed on getting past drives statistics";
     return;
+  }
+  if (save) {
+    Params().write_db_value("DriveStats", response.toStdString());
   }
 
   bool metric = Params().read_db_bool("IsMetric");
@@ -100,5 +103,11 @@ DriveStats::DriveStats(QWidget* parent) : QWidget(parent) {
   QString url = "https://api.commadotai.com/v1.1/devices/" + dongleId + "/stats";
   RequestRepeater* repeater = new RequestRepeater(this, url, 13);
   QObject::connect(repeater, SIGNAL(receivedResponse(QString)), this, SLOT(parseResponse(QString)));
-  QObject::connect(repeater, SIGNAL(failedResponse(QString)), this, SLOT(parseError(QString)));
+  // QObject::connect(repeater, SIGNAL(failedResponse(QString)), this, SLOT(parseError(QString)));
+
+  QString cached_stat = QString::fromStdString(Params().get("DriveStats"));
+  if (cached_stat.isEmpty()) {
+    cached_stat = R"({"all":{"distance":0.0,"minutes":0,"routes":0},"week":{"distance":0.0,"minutes":0,"routes":0}})";
+  }
+  parseResponse(cached_stat, false);
 }
