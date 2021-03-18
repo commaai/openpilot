@@ -6,26 +6,38 @@
 #include <QPushButton>
 #include <QButtonGroup>
 #include <QStackedLayout>
+#include <QLabel>
 
 #include "selfdrive/ui/qt/widgets/toggle.hpp"
 
 // *** settings widgets ***
-
 class ParamsToggle : public QFrame {
   Q_OBJECT
 
 public:
   explicit ParamsToggle(QString param, QString title, QString description,
                         QString icon, QWidget *parent = 0);
-  Toggle *toggle;
+protected:
+  void mousePressEvent(QMouseEvent *event) override {
+    pressed = true;
+  }
+  void mouseMoveEvent(QMouseEvent *event) override {
+    if (pressed) dragging = true;
+  }
+  void mouseReleaseEvent(QMouseEvent *event) override {
+    if (!dragging) {
+      desc_label->setVisible(!desc_label->isVisible());
+    }
+    pressed = dragging = false;
+  }
 
-private:
   QString param;
+  QLabel *desc_label;
+  bool pressed = false, dragging = false;
 
 public slots:
   void checkboxClicked(int state);
 };
-
 
 // *** settings window ***
 
