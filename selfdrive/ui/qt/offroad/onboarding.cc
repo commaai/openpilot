@@ -75,7 +75,7 @@ QWidget* OnboardingWindow::terms_screen() {
   buttons->addWidget(new QPushButton("Decline"));
   buttons->addSpacing(50);
 
-  QPushButton *accept_btn = new QPushButton("Scroll to accept");
+  QPushButton *accept_btn = new QPushButton("Accept");
   accept_btn->setEnabled(false);
   buttons->addWidget(accept_btn);
   QObject::connect(accept_btn, &QPushButton::released, [=]() {
