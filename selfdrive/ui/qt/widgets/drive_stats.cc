@@ -56,7 +56,6 @@ void DriveStats::parseResponse(QString response, bool save) {
   if (prev_response == response) {
     return;
   }
-
   prev_response = response;
 
   clearLayouts(vlayout);
