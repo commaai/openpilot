@@ -3,6 +3,7 @@ import os
 import sys
 import copy
 import json
+import uuid
 import socket
 import logging
 import traceback
@@ -33,6 +34,25 @@ class SwagFormatter(logging.Formatter):
     self.swaglogger = swaglogger
     self.host = socket.gethostname()
 
+  def fix_kv(self, k, v):
+    if isinstance(v, (str, bytes)):
+      k += "$s"
+    elif isinstance(v, float):
+      k += "$f"
+    elif isinstance(v, bool):
+      k += "$b"
+    elif isinstance(v, int):
+      k += "$i"
+    elif isinstance(v, dict):
+      nv = {}
+      for ik, iv in v.items():
+        ik, iv = self.fix_kv(ik, iv)
+        nv[ik] = iv
+      v = nv
+    elif isinstance(v, list):
+      k += "$a"
+    return k, v
+
   def format_dict(self, record):
     record_dict = NiceOrderedDict()
 
@@ -49,6 +69,7 @@ class SwagFormatter(logging.Formatter):
     if record.exc_info:
       record_dict['exc_info'] = self.formatException(record.exc_info)
 
+    record_dict['id'] = uuid.uuid4()
     record_dict['level'] = record.levelname
     record_dict['levelnum'] = record.levelno
     record_dict['name'] = record.name
@@ -66,7 +87,13 @@ class SwagFormatter(logging.Formatter):
     return record_dict
 
   def format(self, record):
-    return json_robust_dumps(self.format_dict(record))
+    v = self.format_dict(record)
+
+    mk, mv = self.fix_kv('msg', v['msg'])
+    del v['msg']
+    v[mk] = mv
+
+    return json_robust_dumps(v)
 
 class SwagErrorFilter(logging.Filter):
   def filter(self, record):
