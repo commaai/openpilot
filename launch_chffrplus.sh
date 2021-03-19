@@ -93,8 +93,14 @@ function two_init {
 }
 
 function tici_init {
+  # setup governors
   sudo su -c 'echo "performance" > /sys/class/devfreq/soc:qcom,memlat-cpu0/governor'
   sudo su -c 'echo "performance" > /sys/class/devfreq/soc:qcom,memlat-cpu4/governor'
+
+  # setup workqueues
+  sudo su -c "echo f > /sys/devices/virtual/workqueue/cpumask"
+  sudo su -c "echo f0 > /sys/devices/virtual/workqueue/qcom,cam_virtual_cdm/cpumask"
+  sudo su -c "echo f0 > /sys/devices/virtual/workqueue/qcom,cam170-cpas-cdm0/cpumask"
 
   # set success flag for current boot slot
   sudo abctl --set_success
