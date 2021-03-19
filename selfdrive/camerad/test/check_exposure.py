@@ -2,6 +2,7 @@
 
 import time
 import unittest
+import os
 import numpy as np
 
 from selfdrive.test.helpers import with_processes
@@ -10,6 +11,10 @@ from selfdrive.camerad.snapshot.snapshot import get_snapshots
 from selfdrive.hardware import EON, TICI
 
 WAIT_TIME = 15 # wait for cameras startup and adjustment
+
+os.environ["SEND_ROAD"] = "1"
+os.environ["SEND_WIDE_ROAD"] = "1"
+os.environ["SEND_DRIVER"] = "1"
 
 class TestCamerad(unittest.TestCase):
   @classmethod
