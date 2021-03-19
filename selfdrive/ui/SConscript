@@ -50,9 +50,9 @@ else:
     qt_env.Program("qt/setup/wifi", ["qt/setup/wifi.cc"], LIBS=qt_libs + ['common', 'json11'])
 
     installers = [
-      #("openpilot", "master"),
+      ("openpilot", "master"),
       #("openpilot_test", "release3-staging"),
-      ("openpilot_internal", "master"),
+      #("openpilot_internal", "master"),
       #("dashcam", "dashcam3-staging"),
       #("dashcam_test", "dashcam3-staging"),
     ]
