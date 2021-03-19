@@ -16,7 +16,7 @@ class ParamsToggle : public QFrame {
 
 public:
   explicit ParamsToggle(QString param, QString title, QString description,
-                        QString icon, QWidget *parent = 0);
+                        QString icon, bool disabled, QWidget *parent = 0);
 protected:
   void mousePressEvent(QMouseEvent *event) override {
     pressed = true;

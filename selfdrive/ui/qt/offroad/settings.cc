@@ -43,7 +43,7 @@ QWidget* labelWidget(QString labelName, QString labelContent){
   return labelWidget;
 }
 
-ParamsToggle::ParamsToggle(QString param, QString title, QString description, QString icon_path, QWidget *parent): QFrame(parent) , param(param) {
+ParamsToggle::ParamsToggle(QString param, QString title, QString description, QString icon_path, bool disabled, QWidget *parent): QFrame(parent) , param(param) {
   QHBoxLayout *layout = new QHBoxLayout;
   layout->setContentsMargins(0, 15, 0, 15);
   layout->setSpacing(50);
@@ -65,7 +65,7 @@ ParamsToggle::ParamsToggle(QString param, QString title, QString description, QS
   layout->addWidget(label);
 
   // toggle switch
-  toggle = new Toggle(this);
+  Toggle *toggle = new Toggle(this);
   toggle->setFixedSize(150, 100);
   layout->addWidget(toggle);
   QObject::connect(toggle, SIGNAL(stateChanged(int)), this, SLOT(checkboxClicked(int)));
@@ -73,6 +73,9 @@ ParamsToggle::ParamsToggle(QString param, QString title, QString description, QS
   // set initial state from param
   if (Params().read_db_bool(param.toStdString().c_str())) {
     toggle->togglePosition();
+  }
+  if (disabled) {
+    toggle->setEnabled(false);
   }
 
   // description of the parameter
@@ -105,9 +108,10 @@ QWidget *toggles_panel() {
   sa->setWidget(widget);
   QVBoxLayout *toggles_list = new QVBoxLayout(widget);
   toggles_list->setMargin(50);
-  
+
   struct Toggleparameter {
     const char *name, *title, *desc, *icon;
+    bool disabled = false;
   } parameters[] = {
       {"OpenpilotEnabledToggle",
        "Enable openpilot",
@@ -121,10 +125,6 @@ QWidget *toggles_panel() {
        "Enable Lane Departure Warnings",
        "Receive alerts to steer back into the lane when your vehicle drifts over a detected lane line without a turn signal activated while driving over 31mph (50kph).",
        "../assets/offroad/icon_warning.png"},
-      {"RecordFront",
-       "Record and Upload Driver Camera",
-       "Upload data from the driver facing camera and help improve the driver monitoring algorithm.",
-       "../assets/offroad/icon_network.png"},
       {"IsRHD",
        "Enable Right-Hand Drive",
        "Allow openpilot to obey left-hand traffic conventions and perform driver monitoring on right driver seat.",
@@ -137,10 +137,19 @@ QWidget *toggles_panel() {
        "Enable Community Features",
        "Use features from the open source community that are not maintained or supported by comma.ai and have not been confirmed to meet the standard safety model. These features include community supported cars and community supported hardware. Be extra cautious when using these features",
        "../assets/offroad/icon_shell.png"},
+      {"RecordFront",
+          "Record and Upload Driver Camera",
+          "Upload data from the driver facing camera and help improve the driver monitoring algorithm.",
+          "../assets/offroad/icon_network.png",
+          Params().read_db_bool("RecordFrontLock")
+      },
   };
-  for (const auto &param : parameters) {
-    toggles_list->addWidget(new ParamsToggle(param.name, param.title, param.desc, param.icon));
-    toggles_list->addWidget(horizontal_line());
+  for (int i = 0; i < std::size(parameters); ++i) {
+    const auto &param = parameters[i];
+    toggles_list->addWidget(new ParamsToggle(param.name, param.title, param.desc, param.icon, param.disabled));
+    if (i < (std::size(parameters) - 1)) {
+      toggles_list->addWidget(horizontal_line());
+    }
   }
   return sa;
 }
