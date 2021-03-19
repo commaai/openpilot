@@ -52,10 +52,20 @@ void StatusWidget::paintEvent(QPaintEvent *e){
   p.drawRoundedRect(QRectF(6, 6, size().width()-12, size().height()-12), 25, 25);
 }
 
-void StatusWidget::update(QString label, QString msg, QColor color){
+void StatusWidget::update(QString label, QString msg, int severity){
   l_label->setText(label);
   if(msg.length() > 0)
     l_msg->setText(msg);
+
+  QColor color;
+  if (severity == 0){
+    color = QColor(255, 255, 255);
+  } else if (severity == 1){
+    color = QColor(218, 202, 37);
+  } else if (severity > 1){
+    color = QColor(201, 34, 49);
+  }
+
   _severity = color;
   return;
 }
@@ -118,11 +128,10 @@ Sidebar::Sidebar(QWidget* parent) : QFrame(parent){
   )");
   s_btn->setFixedSize(252, 150);
 
-  signal = new SignalWidget("4G",2,this);
-  temp = new StatusWidget("39C", "TEMP", QColor(201, 34, 49), this);
-  vehicle = new StatusWidget("VEHICLE\nGOOD GPS", "", QColor(255, 255, 255), this);
+  signal = new SignalWidget("--",0,this);
+  temp = new StatusWidget("0°C", "TEMP", QColor(255, 255, 255), this);
+  vehicle = new StatusWidget("NO\nPANDA", "", QColor(201, 34, 49), this);
   connect = new StatusWidget("CONNECT\nOFFLINE", "",  QColor(218, 202, 37), this);
-
 
   sb_layout->addWidget(s_btn, 0, Qt::AlignTop);
   sb_layout->addWidget(signal, 0, Qt::AlignTop | Qt::AlignHCenter);
@@ -142,7 +151,7 @@ void Sidebar::update(UIState *s){
     {NET_DISCONNECTED, {"CONNECT\nOFFLINE", 1}},
   };
   auto net_params = connectivity_map[s->scene.athenaStatus];
-  connect->update(net_params.first, "", QColor(218, 202, 37));
+  connect->update(net_params.first, "", net_params.second);
 
   static std::map<cereal::DeviceState::ThermalStatus, const int> temp_severity_map = {
         {cereal::DeviceState::ThermalStatus::GREEN, 0},
@@ -150,7 +159,7 @@ void Sidebar::update(UIState *s){
         {cereal::DeviceState::ThermalStatus::RED, 2},
         {cereal::DeviceState::ThermalStatus::DANGER, 3}};
   std::string temp_val = std::to_string((int)s->scene.deviceState.getAmbientTempC()) + "°C";
-  temp->update(QString(temp_val.c_str()), "", QColor(201, 34, 49));
+  temp->update(QString(temp_val.c_str()), "", temp_severity_map[s->scene.deviceState.getThermalStatus()]);
 
   static std::map<cereal::DeviceState::NetworkType, const char *> network_type_map = {
       {cereal::DeviceState::NetworkType::NONE, "--"},
@@ -181,5 +190,5 @@ void Sidebar::update(UIState *s){
     panda_message = util::string_format("SAT CNT\n%d", s->scene.satelliteCount);
   }
 #endif
-  vehicle->update(panda_message.c_str(), "", QColor(255, 255, 255));
+  vehicle->update(panda_message.c_str(), "", panda_severity);
 }

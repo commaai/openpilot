@@ -27,7 +27,7 @@ class StatusWidget : public QFrame {
 
 public:
   StatusWidget(QString label, QString msg, QColor color, QWidget* parent = 0);
-  void update(QString label, QString msg, QColor color);
+  void update(QString label, QString msg, int severity);
 
 protected:
   void paintEvent(QPaintEvent*) override;
