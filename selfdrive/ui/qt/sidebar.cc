@@ -28,7 +28,7 @@ _severity(indicator)
     sw_layout->setContentsMargins(40,24,16,24); //40l, 16r, 24 vertical
 
     l_label->setStyleSheet(R"(font-size: 30px; font-weight: 600;)");
-    l_label->setAlignment(Qt::AlignVCenter | Qt::AlignHCenter);
+    l_label->setAlignment(Qt::AlignCenter);
 
     sw_layout->addWidget(l_label, 0, Qt::AlignCenter);
   }
