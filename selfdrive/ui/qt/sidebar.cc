@@ -12,12 +12,13 @@ _severity(indicator)
   QVBoxLayout* sw_layout = new QVBoxLayout();
   sw_layout->setSpacing(0);
 
+  l_msg = new QLabel(this);
+
   if(msg.length() > 0){
     sw_layout->setContentsMargins(50,24,16,24); //50l, 16r, 24 vertical
     l_label->setStyleSheet(R"(font-size: 65px; font-weight: 600;)");
     l_label->setAlignment(Qt::AlignLeft | Qt::AlignHCenter);
 
-    l_msg = new QLabel(this);
     l_msg->setText(msg);
     l_msg->setStyleSheet(R"(font-size: 30px; font-weight: 400;)");
     l_msg->setAlignment(Qt::AlignLeft | Qt::AlignHCenter);
@@ -54,8 +55,7 @@ void StatusWidget::paintEvent(QPaintEvent *e){
 
 void StatusWidget::update(QString label, QString msg, int severity){
   l_label->setText(label);
-  if(msg.length() > 0)
-    l_msg->setText(msg);
+  l_msg->setText(msg);
 
   QColor color;
   if (severity == 0){
