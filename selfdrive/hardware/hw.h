@@ -21,6 +21,7 @@ public:
 
   static void reboot() {};
   static void poweroff() {};
+  static void set_color_mode(int mode) {};
   static void set_brightness(int percent) {};
 };
 
@@ -32,6 +33,11 @@ public:
 
   static void reboot() { std::system("reboot"); };
   static void poweroff() { std::system("LD_LIBRARY_PATH= svc power shutdown"); };
+  static void set_color_mode(int mode) {
+    char color_correction_cmd[64];
+    snprintf(color_correction_cmd, sizeof(color_correction_cmd), "service call SurfaceFlinger 1014 i32 %d", mode);
+    std::system(color_correction_cmd);
+    }
   static void set_brightness(int percent) {
     std::ofstream brightness_control("/sys/class/leds/lcd-backlight/brightness");
     if (brightness_control.is_open()) {
@@ -49,6 +55,7 @@ public:
 
   static void reboot() { std::system("sudo reboot"); };
   static void poweroff() { std::system("sudo poweroff"); };
+  static void set_color_mode(int mode) {};  // TODO
   static void set_brightness(int percent) {
     std::ofstream brightness_control("/sys/class/backlight/panel0-backlight/brightness");
     if (brightness_control.is_open()) {
