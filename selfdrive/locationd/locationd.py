@@ -62,7 +62,7 @@ class Localizer():
     self.calib = np.zeros(3)
     self.device_from_calib = np.eye(3)
     self.calib_from_device = np.eye(3)
-    self.calibrated = 0
+    self.calibrated = False
     self.H = get_H()
 
     self.posenet_invalid_count = 0
