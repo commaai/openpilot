@@ -75,7 +75,7 @@ _strength(strength)
 {
 
   label = new QLabel(text, this);
-  label->setStyleSheet(R"(font-size: 35px; font-weight: 200;)");
+  label->setStyleSheet(R"(font-size: 35px; font-weight: 400;)");
   label->setAlignment(Qt::AlignVCenter);
   label->setFixedSize(100, 50);
   QVBoxLayout* layout = new QVBoxLayout();
@@ -85,6 +85,7 @@ _strength(strength)
   layout->addWidget(label, 0, Qt::AlignVCenter | Qt::AlignLeft);
   setMinimumHeight(120);
   setLayout(layout);
+  setFixedSize(177, 100);
 }
 
 void SignalWidget::paintEvent(QPaintEvent *e){
@@ -159,7 +160,7 @@ void Sidebar::update(UIState *s){
         {cereal::DeviceState::ThermalStatus::RED, 2},
         {cereal::DeviceState::ThermalStatus::DANGER, 3}};
   std::string temp_val = std::to_string((int)s->scene.deviceState.getAmbientTempC()) + "°C";
-  temp->update(QString(temp_val.c_str()), "", temp_severity_map[s->scene.deviceState.getThermalStatus()]);
+  temp->update(QString(temp_val.c_str()), "TEMP", temp_severity_map[s->scene.deviceState.getThermalStatus()]);
 
   static std::map<cereal::DeviceState::NetworkType, const char *> network_type_map = {
       {cereal::DeviceState::NetworkType::NONE, "--"},
