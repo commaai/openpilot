@@ -6,12 +6,11 @@
 #include <QGridLayout>
 #include <QVBoxLayout>
 #include <QDesktopWidget>
-
+#include <QPainter>
 #include "common/params.h"
 #include "onboarding.hpp"
 #include "home.hpp"
 #include "util.h"
-
 
 void TrainingGuide::mouseReleaseEvent(QMouseEvent *e) {
   int leftOffset = (geometry().width()-1620)/2;
@@ -19,41 +18,34 @@ void TrainingGuide::mouseReleaseEvent(QMouseEvent *e) {
   int mousey = e->y();
 
   // Check for restart
-  if (currentIndex == boundingBox.size()-1) {
-    if (1050 <= mousex && mousex <= 1500 && 773 <= mousey && mousey <= 954){
-      slayout->setCurrentIndex(0);
-      currentIndex = 0;
-      return;
-    }
-  }
-
-  if (boundingBox[currentIndex][0] <= mousex && mousex <= boundingBox[currentIndex][1] && boundingBox[currentIndex][2] <= mousey && mousey <= boundingBox[currentIndex][3]) {
-    slayout->setCurrentIndex(++currentIndex);
+  if (currentIndex == (boundingBox.size() - 1) && 1050 <= mousex && mousex <= 1500 && 773 <= mousey && mousey <= 954) {
+    currentIndex = 0;
+  } else if (boundingBox[currentIndex][0] <= mousex && mousex <= boundingBox[currentIndex][1] && boundingBox[currentIndex][2] <= mousey && mousey <= boundingBox[currentIndex][3]) {
+    ++currentIndex;
   }
   if (currentIndex >= boundingBox.size()) {
     emit completedTraining();
     return;
   }
+
+  image.load("../assets/training/step" + QString::number(currentIndex) + ".jpg");
+  repaint();
 }
 
 TrainingGuide::TrainingGuide(QWidget* parent) {
-  QHBoxLayout* hlayout = new QHBoxLayout;
+  image.load("../assets/training/step0.jpg");
+}
 
-  slayout = new QStackedLayout(this);
-  for (int i = 0; i < boundingBox.size(); i++) {
-    QWidget* w = new QWidget;
-    w->setStyleSheet(".QWidget {background-image: url(../assets/training/step" + QString::number(i) + ".jpg);}");
-    w->setFixedSize(1620, 1080);
-    slayout->addWidget(w);
-  }
+void TrainingGuide::paintEvent(QPaintEvent *event) {
+  QPainter painter(this);
 
-  QWidget* sw = new QWidget();
-  sw->setLayout(slayout);
-  hlayout->addWidget(sw, 1, Qt::AlignCenter);
-  setLayout(hlayout);
-  setStyleSheet(R"(
-    background-color: #072339;
-  )");
+  QRect devRect(0, 0, painter.device()->width(), painter.device()->height());
+  QBrush bgBrush("#072339");
+  painter.fillRect(devRect, bgBrush);
+
+  QRect rect(image.rect());
+  rect.moveCenter(devRect.center());
+  painter.drawImage(rect.topLeft(), image);
 }
 
 
@@ -144,7 +136,6 @@ OnboardingWindow::OnboardingWindow(QWidget *parent) : QStackedWidget(parent) {
   bool accepted_terms = params.get("HasAcceptedTerms", false).compare(current_terms_version) == 0;
   bool training_done = params.get("CompletedTrainingVersion", false).compare(current_training_version) == 0;
 
-  // TODO: fix this, training guide is slow
   // Don't initialize widgets unless neccesary.
   if (accepted_terms && training_done) {
     return;
