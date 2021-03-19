@@ -235,7 +235,7 @@ void fill_model(cereal::ModelDataV2::Builder &framed, const ModelDataRaw &net_ou
   float lane_line_stds_arr[4];
   for (int i = 0; i < 4; i++) {
     fill_xyzt(lane_lines[i], &net_outputs.lane_lines[i*TRAJECTORY_SIZE*2], 2, -1, plan_t_arr);
-    lane_line_probs_arr[i] = sigmoid(net_outputs.lane_lines_prob[i]);
+    lane_line_probs_arr[i] = 0*sigmoid(net_outputs.lane_lines_prob[i]);
     lane_line_stds_arr[i] = exp(net_outputs.lane_lines[2*TRAJECTORY_SIZE*(4 + i)]);
   }
   framed.setLaneLineProbs(lane_line_probs_arr);
