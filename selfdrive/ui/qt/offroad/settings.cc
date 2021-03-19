@@ -166,12 +166,32 @@ QWidget * device_panel() {
     Params().write_db_value("IsDriverViewEnabled", "1", 1);
   });
 
-  // TODO: show current calibration values
   QPushButton *clear_cal_btn = new QPushButton("Reset Calibration");
   device_layout->addWidget(clear_cal_btn, 0, Qt::AlignBottom);
   device_layout->addWidget(horizontal_line(), Qt::AlignBottom);
   QObject::connect(clear_cal_btn, &QPushButton::released, [=]() {
-    if (ConfirmationDialog::confirm("Are you sure you want to reset calibration?")) {
+    QString prompt;
+    QString params = QString::fromStdString(Params().get("CalibrationParams"));
+    if (!params.isEmpty()) {
+      QJsonDocument doc = QJsonDocument::fromJson(params.toUtf8());
+      if (!doc.isNull()) {
+        QJsonArray array = doc.object()["calib_radians"].toArray();
+        if (array.size() == 3) {
+          double pitch = array[1].toDouble() * (180 / M_PI);
+          double yaw = array[2].toDouble() * (180 / M_PI);
+          const char *up_down = pitch > 0 ? "up" : "down";
+          const char *left_right = yaw > 0 ? "right" : "left";
+          prompt += QString("Your device is pointed %1° %2 and %3° %4.")
+                        .arg(QString::number(std::abs(pitch), 'g', 1), up_down,
+                             QString::number(std::abs(yaw), 'g', 1), left_right);
+        }
+      }
+    }
+    if (prompt.isEmpty()) {
+      prompt = "Are you sure you want to reset?";
+    }
+    ConfirmationDialog d(prompt, "Reset");
+    if (d.exec()) {
       Params().delete_db_value("CalibrationParams");
     }
   });
