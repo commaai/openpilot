@@ -45,6 +45,9 @@ def manager_init(spinner=None):
     ("IsDriverViewEnabled", "0"),
   ]
 
+  if params.get("RecordFrontLock", encoding='utf-8') == "1":
+    params.put("RecordFront", "1")
+
   # set unset params
   for k, v in default_params:
     if params.get(k) is None:

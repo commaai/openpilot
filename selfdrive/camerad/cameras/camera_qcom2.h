@@ -11,7 +11,7 @@
 
 #define ANALOG_GAIN_MAX_IDX 10 // 0xF is bypass
 #define EXPOSURE_TIME_MIN 2 // with HDR, fastest ss
-#define EXPOSURE_TIME_MAX 1757 // with HDR, slowest ss
+#define EXPOSURE_TIME_MAX 1904 // with HDR, slowest ss
 
 #define EF_LOWPASS_K 0.35
 
