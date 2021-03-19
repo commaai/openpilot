@@ -183,7 +183,7 @@ QWidget * device_panel() {
   colorc_menu->addAction("Tritanopia (blue-yello)", [=]() {Hardware::set_color_mode(3);});
 
   QPushButton *set_colorc_btn = new QPushButton("Colour correction");
-  set_color_btn->setMenu(colorc_menu);
+  set_colorc_btn->setMenu(colorc_menu);
   device_layout->addWidget(set_colorc_btn, 0, Qt::AlignBottom);
   device_layout->addWidget(horizontal_line(), Qt::AlignBottom);
 
