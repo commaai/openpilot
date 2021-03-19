@@ -91,11 +91,11 @@ QWidget* OnboardingWindow::terms_screen() {
   QScrollerProperties sp;
 
   sp.setScrollMetric(QScrollerProperties::DragStartDistance, 0.001);
-  sp.setScrollMetric(QScrollerProperties::DragVelocitySmoothingFactor, 0.5);
-  /*
-  sp.setScrollMetric(QScrollerProperties::ScrollingCurve, QEasingCurve::Linear );
   sp.setScrollMetric(QScrollerProperties::DecelerationFactor, 0.4);
-  */
+  sp.setScrollMetric(QScrollerProperties::DragVelocitySmoothingFactor, 0.5);
+  sp.setScrollMetric(QScrollerProperties::MaximumVelocity, 1.0);
+  sp.setScrollMetric(QScrollerProperties::SnapPositionRatio, 0.0);
+
   scroller = QScroller::scroller(terms_text);
   scroller->setScrollerProperties(sp);
 
