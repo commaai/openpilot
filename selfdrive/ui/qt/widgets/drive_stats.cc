@@ -1,7 +1,6 @@
 #include <QDebug>
 #include <QJsonDocument>
 #include <QJsonObject>
-#include <QLabel>
 #include <QStackedLayout>
 #include <QVBoxLayout>
 
@@ -11,28 +10,15 @@
 
 const double MILE_TO_KM = 1.60934;
 
-void clearLayouts(QLayout* layout) {
-  while (QLayoutItem* item = layout->takeAt(0)) {
-    if (QWidget* widget = item->widget()) {
-      widget->deleteLater();
-    }
-    if (QLayout* childLayout = item->layout()) {
-      clearLayouts(childLayout);
-    }
-    delete item;
-  }
-}
-
-QLayout* build_stat(QString name, int stat) {
+static QLayout* build_stat_layout(QLabel** metric, const QString& name) {
   QVBoxLayout* layout = new QVBoxLayout;
   layout->setMargin(0);
-
-  QLabel* metric = new QLabel(QString("%1").arg(stat));
-  metric->setStyleSheet(R"(
+  *metric = new QLabel("0");
+  (*metric)->setStyleSheet(R"(
     font-size: 80px;
     font-weight: 600;
   )");
-  layout->addWidget(metric, 0, Qt::AlignLeft);
+  layout->addWidget(*metric, 0, Qt::AlignLeft);
 
   QLabel* label = new QLabel(name);
   label->setStyleSheet(R"(
@@ -46,52 +32,32 @@ QLayout* build_stat(QString name, int stat) {
 
 void DriveStats::parseResponse(QString response, bool save) {
   static QString prev_response;
-  response = response.trimmed();
-  if (prev_response == response) {
-    return;
-  }
+  if (prev_response == response) { return; }
   prev_response = response;
 
-  clearLayouts(vlayout);
+  response = response.trimmed();
   QJsonDocument doc = QJsonDocument::fromJson(response.toUtf8());
   if (doc.isNull()) {
     qDebug() << "JSON Parse failed on getting past drives statistics";
     return;
   }
-  if (save) {
-    Params().write_db_value("DriveStats", response.toStdString());
-  }
+  
+  auto update = [](const QJsonObject& stats, StatsLabels& labels, bool metric) {
+    const int distance = stats["distance"].toDouble() * (metric ? MILE_TO_KM : 1);
+    labels.routes->setText(QString::number((int)stats["routes"].toDouble()));
+    labels.distance->setText(QString::number(distance));
+    labels.hours->setText(QString::number((int)(stats["minutes"].toDouble() / 60)));
+  };
 
   bool metric = Params().read_db_bool("IsMetric");
-
   QJsonObject json = doc.object();
-  auto all = json["all"].toObject();
-  auto week = json["week"].toObject();
+  update(json["all"].toObject(), all_, metric);
+  update(json["week"].toObject(), week_, metric);
 
-  QGridLayout* gl = new QGridLayout();
-  gl->setMargin(0);
-
-  int all_distance = all["distance"].toDouble() * (metric ? MILE_TO_KM : 1);
-  gl->addWidget(new QLabel("ALL TIME"), 0, 0, 1, 3);
-  gl->addLayout(build_stat("DRIVES", all["routes"].toDouble()), 1, 0, 3, 1);
-  gl->addLayout(build_stat(metric ? "KM" : "MILES", all_distance), 1, 1, 3, 1);
-  gl->addLayout(build_stat("HOURS", all["minutes"].toDouble() / 60), 1, 2, 3, 1);
-
-  int week_distance = week["distance"].toDouble() * (metric ? MILE_TO_KM : 1);
-  gl->addWidget(new QLabel("PAST WEEK"), 6, 0, 1, 3);
-  gl->addLayout(build_stat("DRIVES", week["routes"].toDouble()), 7, 0, 3, 1);
-  gl->addLayout(build_stat(metric ? "KM" : "MILES", week_distance), 7, 1, 3, 1);
-  gl->addLayout(build_stat("HOURS", week["minutes"].toDouble() / 60), 7, 2, 3, 1);
-
-  QWidget* q = new QWidget;
-  q->setLayout(gl);
-  vlayout->addWidget(q);
+  if (save) { Params().write_db_value("DriveStats", response.toStdString()); }
 }
 
 DriveStats::DriveStats(QWidget* parent) : QWidget(parent) {
-  vlayout = new QVBoxLayout(this);
-  vlayout->setMargin(0);
-  setLayout(vlayout);
   setStyleSheet(R"(
     QLabel {
       font-size: 48px;
@@ -99,11 +65,26 @@ DriveStats::DriveStats(QWidget* parent) : QWidget(parent) {
     }
   )");
 
-  QString cached_stat = QString::fromStdString(Params().get("DriveStats"));
-  if (cached_stat.isEmpty()) {
-    cached_stat = R"({"all":{"distance":0.0,"minutes":0,"routes":0},"week":{"distance":0.0,"minutes":0,"routes":0}})";
+  auto add_stats_layouts = [&](QGridLayout* gl, StatsLabels& labels, int row, const char* distance_unit) {
+    gl->addLayout(build_stat_layout(&labels.routes, "DRIVES"), row, 0, 3, 1);
+    gl->addLayout(build_stat_layout(&labels.distance, distance_unit), row, 1, 3, 1);
+    gl->addLayout(build_stat_layout(&labels.hours, "HOURS"), row, 2, 3, 1);
+  };
+
+  const char* distance_unit = Params().read_db_bool("IsMetric") ? "KM" : "MILES";
+  QGridLayout* gl = new QGridLayout();
+  gl->setMargin(0);
+  gl->addWidget(new QLabel("ALL TIME"), 0, 0, 1, 3);
+  add_stats_layouts(gl, all_, 1, distance_unit);
+  gl->addWidget(new QLabel("PAST WEEK"), 6, 0, 1, 3);
+  add_stats_layouts(gl, week_, 7, distance_unit);
+
+  QVBoxLayout* vlayout = new QVBoxLayout(this);
+  vlayout->addLayout(gl);
+
+  if (std::string cached_stat = Params().get("DriveStats"); !cached_stat.empty()) {
+    parseResponse(QString::fromStdString(cached_stat), false);
   }
-  parseResponse(cached_stat, false);
 
   // TODO: do we really need to update this frequently?
   QString dongleId = QString::fromStdString(Params().get("DongleId"));
