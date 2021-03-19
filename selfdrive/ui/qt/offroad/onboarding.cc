@@ -86,7 +86,6 @@ QWidget* OnboardingWindow::terms_screen() {
   });
 
   // TODO: tune the scrolling
-
   auto sb = terms_text->verticalScrollBar();
   QScrollerProperties sp;
 
@@ -94,7 +93,6 @@ QWidget* OnboardingWindow::terms_screen() {
   sp.setScrollMetric(QScrollerProperties::DecelerationFactor, 0.4);
   sp.setScrollMetric(QScrollerProperties::DragVelocitySmoothingFactor, 0.5);
   sp.setScrollMetric(QScrollerProperties::MaximumVelocity, 1.0);
-  sp.setScrollMetric(QScrollerProperties::SnapPositionRatio, 0.0);
 
   scroller = QScroller::scroller(terms_text);
   scroller->setScrollerProperties(sp);
