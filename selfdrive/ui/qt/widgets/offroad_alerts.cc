@@ -59,6 +59,13 @@ OffroadAlert::OffroadAlert(QWidget* parent) : QFrame(parent) {
     }
   )");
   main_layout->setMargin(50);
+
+  QFile inFile("../controls/lib/alerts_offroad.json");
+  bool ret = inFile.open(QIODevice::ReadOnly | QIODevice::Text);
+  assert(ret);
+  QJsonDocument doc = QJsonDocument::fromJson(inFile.readAll());
+  assert(!doc.isNull());
+  alert_keys = doc.object().keys();
 }
 
 void OffroadAlert::refresh() {
@@ -109,20 +116,7 @@ void OffroadAlert::refresh() {
 
 void OffroadAlert::parse_alerts() {
   alerts.clear();
-
-  // TODO: only read this once
-  QFile inFile("../controls/lib/alerts_offroad.json");
-  inFile.open(QIODevice::ReadOnly | QIODevice::Text);
-  QByteArray data = inFile.readAll();
-  inFile.close();
-
-  QJsonDocument doc = QJsonDocument::fromJson(data);
-  if (doc.isNull()) {
-    qDebug() << "Parse failed";
-  }
-
-  QJsonObject json = doc.object();
-  for (const QString &key : json.keys()) {
+  for (const QString &key : alert_keys) {
     std::vector<char> bytes = Params().read_db_bytes(key.toStdString().c_str());
 
     if (bytes.size()) {
