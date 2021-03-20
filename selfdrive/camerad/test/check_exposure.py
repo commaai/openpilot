@@ -27,7 +27,7 @@ class TestCamerad(unittest.TestCase):
     ret = np.clip(im[:,:,2] * 0.114 + im[:,:,1] * 0.587 + im[:,:,0] * 0.299, 0, 255).astype(np.uint8)
     return ret
 
-  def _is_exposure_okay(self, i, med_mean=np.array([[0.35,0.45] if TICI else [0.25,0.35],[0.2,0.6]])):
+  def _is_exposure_okay(self, i, med_mean=np.array([[0.25,0.4],[0.2,0.6]])):
     med_ex, mean_ex = med_mean
     i = self._numpy_rgb2gray(i)
     i_median = np.median(i) / 255.
