@@ -58,7 +58,7 @@ class LabelControl : public AbstractControl {
   void setText(const QString &text) { label.setText(text); }
 
  private:
-  QLabel label = QLabel();
+  QLabel label;
 };
 
 class ButtonControl : public AbstractControl {
@@ -67,14 +67,14 @@ class ButtonControl : public AbstractControl {
   template <typename Functor>
   ButtonControl(const QString &title, const QString &text, const QString &desc, Functor functor, const QString &icon = "") : AbstractControl(title, desc, icon) {
     btn.setText(text);
-    btn.setStyleSheet(R"(font-size: 30px;border-radius: 30px;min-width: 220px; max-width: 220px;)");
+    btn.setStyleSheet(R"(padding: 0; height: 80px; border-radius: 15px;background-color: #393939;font-size: 30px;min-width: 220px; max-width: 220px;)");
     QObject::connect(&btn, &QPushButton::released, functor);
     setControlWidget(&btn);
   }
   void setText(const QString &text) { btn.setText(text); }
 
  private:
-  QPushButton btn = QPushButton();
+  QPushButton btn;
 };
 
 class ToggleControl : public AbstractControl {
@@ -94,7 +94,7 @@ class ToggleControl : public AbstractControl {
   }
 
  private:
-  Toggle toggle = Toggle();
+  Toggle toggle;
 };
 
 class ScrollControl : public QScrollArea {
