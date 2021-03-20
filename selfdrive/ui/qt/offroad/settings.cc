@@ -91,9 +91,7 @@ QWidget *device_panel() {
   device_layout->addWidget(new ButtonControl("Driver camera view",
                                              "PREVIEW",
                                              "Preview the driver facing camera to help optimize device mounting position for best driver monitoring experience. (vehicle must be off)",
-                                             [=]() {
-                                               Params().write_db_value("IsDriverViewEnabled", "1", 1);
-                                             }));
+                                             [=]() { Params().write_db_value("IsDriverViewEnabled", "1", 1); }));
 
   // TODO: show current calibration values
   device_layout->addWidget(new ButtonControl("Reset Calibration",
@@ -164,16 +162,10 @@ QWidget * developer_panel() {
   for (int i = 0; i < labels.size(); i++) {
     auto l = labels[i];
     main_layout->addWidget(new LabelControl(QString::fromStdString(l.first), QString::fromStdString(l.second)));
-
   }
 
   QWidget *widget = new QWidget;
   widget->setLayout(main_layout);
-  widget->setStyleSheet(R"(
-    QLabel {
-      font-size: 50px;
-    }
-  )");
   return widget;
 }
 
@@ -201,15 +193,6 @@ QWidget * network_panel(QWidget * parent) {
 
   QWidget *w = new QWidget;
   w->setLayout(layout);
-  w->setStyleSheet(R"(
-    QPushButton {
-      padding: 0;
-      height: 120px;
-      border-radius: 15px;
-      background-color: #393939;
-    }
-  )");
-
 #else
   Networking *w = new Networking(parent);
 #endif
