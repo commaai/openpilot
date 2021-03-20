@@ -284,7 +284,9 @@ void GLWindow::timerUpdate() {
   handle_display_state(&ui_state, false);
 
   ui_update(&ui_state);
-  repaint();
+  if (ui_state.vipc_client->connected) {
+    repaint();
+  }
   watchdog_kick();
 }
 
