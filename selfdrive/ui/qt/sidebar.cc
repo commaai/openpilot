@@ -81,11 +81,12 @@ _strength(strength)
   QVBoxLayout* layout = new QVBoxLayout();
   layout->setSpacing(0);
   layout->insertSpacing(0,35);
-  layout->setContentsMargins(50,0,50,0);
+  layout->setContentsMargins(50,20,50,20);
   layout->addWidget(label, 0, Qt::AlignVCenter | Qt::AlignLeft);
   setMinimumHeight(120);
   setLayout(layout);
-  setFixedSize(177, 100);
+  setFixedSize(177, 120);
+  //setStyleSheet(R"(background-color: red)");
 }
 
 void SignalWidget::paintEvent(QPaintEvent *e){
@@ -117,24 +118,37 @@ Sidebar::Sidebar(QWidget* parent) : QFrame(parent){
   QLabel *comma = new QLabel();
   comma->setPixmap(QPixmap::fromImage(image));
   comma->setAlignment(Qt::AlignCenter);
-  comma->setFixedSize(200,200);
+  comma->setFixedSize(250,250);
 
   // TODO: set opacity to 0.65
-  QWidget* s_btn = new QWidget(this);
-  s_btn->setStyleSheet(R"(
+  /*
     background-color: rgba(0, 0, 0, 0);
     background-image: url(../assets/images/button_settings.png);
     background-repeat: no-repeat;
     background-position: center;
+  QWidget* s_btn = new QWidget(this);
+  s_btn->setStyleSheet(R"(
+    border-image: url(../assets/images/button_settings.png);
   )");
-  s_btn->setFixedSize(252, 150);
+  s_btn->setFixedSize(200, 117);
+  */
+
+  QVBoxLayout* s_btn_layout = new QVBoxLayout();
+  QWidget* s_btn = new QWidget;
+  s_btn->setStyleSheet(R"(
+    border-image: url(../assets/images/button_settings.png);
+  )");
+  s_btn->setFixedSize(200, 117);
+  s_btn_layout->addWidget(s_btn, 0, Qt::AlignHCenter);
+  s_btn_layout->setContentsMargins(16,34,16,16);
 
   signal = new SignalWidget("--",0,this);
   temp = new StatusWidget("0°C", "TEMP", QColor(255, 255, 255), this);
   vehicle = new StatusWidget("NO\nPANDA", "", QColor(201, 34, 49), this);
   connect = new StatusWidget("CONNECT\nOFFLINE", "",  QColor(218, 202, 37), this);
 
-  sb_layout->addWidget(s_btn, 0, Qt::AlignTop);
+  //sb_layout->addWidget(s_btn, 0, Qt::AlignTop | Qt::AlignHCenter);
+  sb_layout->addLayout(s_btn_layout, 0);
   sb_layout->addWidget(signal, 0, Qt::AlignTop | Qt::AlignHCenter);
   sb_layout->addWidget(temp, 0, Qt::AlignTop);
   sb_layout->addWidget(vehicle, 0, Qt::AlignTop);
