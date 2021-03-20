@@ -93,8 +93,9 @@ OffroadHome::OffroadHome(QWidget* parent) : QWidget(parent) {
   date->setStyleSheet(R"(font-size: 55px;)");
   header_layout->addWidget(date, 0, Qt::AlignTop | Qt::AlignLeft);
 
-  QLabel* version = new QLabel(QString::fromStdString("openpilot v" + Params().get("Version")));
-  version->setStyleSheet(R"(font-size: 45px;)");
+  std::string brand = Params().read_db_bool("Passive") ? "dashcam" : "openpilot";
+  QLabel* version = new QLabel(QString::fromStdString(brand + " v" + Params().get("Version")));
+  version->setStyleSheet(R"(font-size: 55px;)");
   header_layout->addWidget(version, 0, Qt::AlignTop | Qt::AlignRight);
 
   main_layout->addLayout(header_layout);
@@ -110,7 +111,7 @@ OffroadHome::OffroadHome(QWidget* parent) : QWidget(parent) {
   QHBoxLayout* statsAndSetup = new QHBoxLayout();
 
   DriveStats* drive = new DriveStats;
-  drive->setFixedSize(1000, 800);
+  //drive->setFixedSize(1000, 800);
   statsAndSetup->addWidget(drive);
 
   SetupWidget* setup = new SetupWidget;
