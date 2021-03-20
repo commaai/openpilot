@@ -1,10 +1,10 @@
 #pragma once
 
-#include <QFrame>
 #include <QHBoxLayout>
+#include <QVBoxLayout>
+#include <QFrame>
 #include <QLabel>
 #include <QPushButton>
-#include <QVBoxLayout>
 
 #include "common/params.h"
 #include "toggle.hpp"
@@ -14,10 +14,10 @@ class AbstractControl : public QFrame {
  public:
   void setEnabled(bool enabled) {
     title_label->setEnabled(enabled);
-    if (control) {
-      control->setEnabled(enabled);
+    if (control_widget) {
+      control_widget->setEnabled(enabled);
     }
-    if (desc_label) {
+    if (desc_label) { 
       desc_label->setEnabled(enabled);
     }
   }
@@ -34,75 +34,67 @@ class AbstractControl : public QFrame {
     }
     pressed = dragging = false;
   }
-  void setControl(QWidget *w) {
-    assert(control == nullptr);
+  void setControlWidget(QWidget *w) {
+    assert(control_widget == nullptr);
     hboxLayout->addWidget(w);
-    control = w;
+    control_widget = w;
   }
 
  private:
-  QHBoxLayout *hboxLayout;
   bool pressed = false, dragging = false;
+  QHBoxLayout *hboxLayout = nullptr;
   QLabel *title_label = nullptr, *desc_label = nullptr;
-  QWidget *control = nullptr;
+  QWidget *control_widget = nullptr;
 };
 
 class LabelControl : public AbstractControl {
   Q_OBJECT
  public:
-  LabelControl(const QString &title, const QString &text) : AbstractControl(title) {
-    label = new QLabel(text);
-    label->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-    setControl(label);
+  LabelControl(const QString &title, const QString &text, const QString &desc = "") : AbstractControl(title, desc) {
+    label.setText(text);
+    label.setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    setControlWidget(&label);
   }
-  void setText(const QString &text) {
-    label->setText(text);
-  }
+  void setText(const QString &text) { label.setText(text); }
 
  private:
-  QLabel *label;
+  QLabel label = QLabel();
 };
 
 class ButtonControl : public AbstractControl {
   Q_OBJECT
  public:
   template <typename Functor>
-  ButtonControl(const QString &title, const QString &text, const QString &desc, Functor functor) : AbstractControl(title, desc) {
-    btn = new QPushButton(text);
-    btn->setStyleSheet(R"(font-size: 30px;border-radius: 30px;min-width: 220px; max-width: 220px;)");
-    QObject::connect(btn, &QPushButton::released, functor);
-    setControl(btn);
+  ButtonControl(const QString &title, const QString &text, const QString &desc, Functor functor, const QString &icon = "") : AbstractControl(title, desc, icon) {
+    btn.setText(text);
+    btn.setStyleSheet(R"(font-size: 30px;border-radius: 30px;min-width: 220px; max-width: 220px;)");
+    QObject::connect(&btn, &QPushButton::released, functor);
+    setControlWidget(&btn);
   }
-  void setText(const QString &text) {
-    btn->setText(text);
-  }
+  void setText(const QString &text) { btn.setText(text); }
 
  private:
-  QPushButton *btn;
+  QPushButton btn = QPushButton();
 };
 
 class ToggleControl : public AbstractControl {
   Q_OBJECT
  public:
   ToggleControl(const QString &param, const QString &title, const QString &desc, const QString &icon) : AbstractControl(title, desc, icon) {
-    toggle = new Toggle(this);
-    toggle->setFixedSize(150, 100);
-
+    toggle.setFixedSize(150, 100);
     // set initial state from param
     if (Params().read_db_bool(param.toStdString().c_str())) {
-      toggle->togglePosition();
+      toggle.togglePosition();
     }
-
-    QObject::connect(toggle, &Toggle::stateChanged, [=](int state) {
+    QObject::connect(&toggle, &Toggle::stateChanged, [=](int state) {
       char value = state ? '1' : '0';
       Params().write_db_value(param.toStdString().c_str(), &value, 1);
     });
-
-    setControl(toggle);
+    setControlWidget(&toggle);
   }
 
  private:
-  Toggle *toggle;
+  Toggle toggle = Toggle();
 };
 
 class ScrollControl : public QScrollArea {

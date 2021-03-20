@@ -12,7 +12,6 @@ AbstractControl::AbstractControl(const QString &title, const QString &desc, cons
   hboxLayout = new QHBoxLayout;
   hboxLayout->setContentsMargins(0, 15, 0, 15);
   hboxLayout->setSpacing(50);
-
   // left icon
   if (!icon.isEmpty()) {
     QPixmap pix(icon);
@@ -26,14 +25,10 @@ AbstractControl::AbstractControl(const QString &title, const QString &desc, cons
   title_label->setStyleSheet(R"(font-size: 50px;)");
   hboxLayout->addWidget(title_label);
 
-  // right control
-  if (control) {
-    hboxLayout->addWidget(control);
-  }
-
   QVBoxLayout *vboxLayout = new QVBoxLayout(this);
   vboxLayout->addLayout(hboxLayout);
   vboxLayout->addStretch();
+
   // description
   if (!desc.isEmpty()) {
     desc_label = new QLabel(desc);
@@ -48,4 +43,3 @@ AbstractControl::AbstractControl(const QString &title, const QString &desc, cons
     vboxLayout->addWidget(horizontal_line());
   }
 }
-

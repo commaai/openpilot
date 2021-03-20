@@ -3,13 +3,6 @@
 #include <sstream>
 #include <cassert>
 
-#include <QString>
-#include <QVBoxLayout>
-#include <QHBoxLayout>
-#include <QPushButton>
-#include <QLabel>
-#include <QPixmap>
-
 #ifndef QCOM
 #include "networking.hpp"
 #endif
@@ -68,7 +61,6 @@ QWidget * toggles_panel() {
   record_toggle->setEnabled(!record_lock);
 
   QWidget *widget = new QWidget;
-  widget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
   widget->setLayout(toggles_list);
   ScrollControl *scroll = new ScrollControl();
   scroll->setWidget(widget);
