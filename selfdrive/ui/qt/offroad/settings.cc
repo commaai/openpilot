@@ -18,125 +18,64 @@
 #include "widgets/input.hpp"
 #include "widgets/toggle.hpp"
 #include "widgets/offroad_alerts.hpp"
-
-#include "selfdrive/common/params.h"
-#include "selfdrive/common/util.h"
+#include "widgets/controls.hpp"
+#include "common/params.h"
+#include "common/util.h"
 #include "selfdrive/hardware/hw.h"
 
-template <typename Functor>
-QPushButton *round_button(const QString &text, Functor functor) {
-  QPushButton* btn = new QPushButton(text);
-  btn->setStyleSheet(R"(font-size: 30px;border-radius: 30px;min-width: 220px; max-width: 220px;)");
-  QObject::connect(btn, &QPushButton::released, functor);
-  return btn;
-}
-
-ParamsToggle::ParamsToggle(QString param, QString title, QString description, QString icon_path, QWidget *parent): QFrame(parent) , param(param) {
-  QHBoxLayout *layout = new QHBoxLayout;
-  layout->setMargin(0);
-  layout->setSpacing(50);
-
-  // Parameter image
-  const int img_size = 80;
-  if (icon_path.length()) {
-    QPixmap pix(icon_path);
-    QLabel *icon = new QLabel();
-    icon->setPixmap(pix.scaledToWidth(img_size, Qt::SmoothTransformation));
-    icon->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
-    layout->addWidget(icon);
-  } else {
-    layout->addSpacing(img_size);
-  }
-
-  // Name of the parameter
-  QLabel *label = new QLabel(title);
-  label->setStyleSheet(R"(font-size: 50px;)");
-  layout->addWidget(label);
-
-  // toggle switch
-  toggle = new Toggle(this);
-  toggle->setFixedSize(150, 100);
-  QObject::connect(toggle, SIGNAL(stateChanged(int)), this, SLOT(checkboxClicked(int)));
-
-  // set initial state from param
-  if (Params().read_db_bool(param.toStdString().c_str())) {
-    toggle->togglePosition();
-  }
-  QHBoxLayout *layout = new QHBoxLayout(this);
-  layout->addWidget(new ClickableLabel(title, description, toggle, icon_path));
-}
-
-void ParamsToggle::checkboxClicked(int state) {
-  char value = state ? '1': '0';
-  Params().write_db_value(param.toStdString().c_str(), &value, 1);
-}
-
 QWidget * toggles_panel() {
-  QScrollArea *sa = new QScrollArea;
-  sa->setStyleSheet(R"(background-color: transparent;)");
-  sa->setWidgetResizable(true);
-  sa->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-  sa->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-  QScroller::grabGesture(sa, QScroller::TouchGesture);
-
   QVBoxLayout *toggles_list = new QVBoxLayout();
   toggles_list->setMargin(50);
 
-  toggles_list->addWidget(new ParamsToggle("OpenpilotEnabledToggle",
+  toggles_list->addWidget(new ToggleControl("OpenpilotEnabledToggle",
                                             "Enable openpilot",
                                             "Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off.",
                                             "../assets/offroad/icon_openpilot.png"
                                               ));
-  toggles_list->addWidget(new ParamsToggle("LaneChangeEnabled",
+  toggles_list->addWidget(new ToggleControl("LaneChangeEnabled",
                                             "Enable Lane Change Assist",
                                             "Perform assisted lane changes with openpilot by checking your surroundings for safety, activating the turn signal and gently nudging the steering wheel towards your desired lane. openpilot is not capable of checking if a lane change is safe. You must continuously observe your surroundings to use this feature.",
                                             "../assets/offroad/icon_road.png"
                                               ));
-  toggles_list->addWidget(new ParamsToggle("IsLdwEnabled",
+  toggles_list->addWidget(new ToggleControl("IsLdwEnabled",
                                             "Enable Lane Departure Warnings",
                                             "Receive alerts to steer back into the lane when your vehicle drifts over a detected lane line without a turn signal activated while driving over 31mph (50kph).",
                                             "../assets/offroad/icon_warning.png"
                                               ));
-  toggles_list->addWidget(new ParamsToggle("IsRHD",
+  toggles_list->addWidget(new ToggleControl("IsRHD",
                                             "Enable Right-Hand Drive",
                                             "Allow openpilot to obey left-hand traffic conventions and perform driver monitoring on right driver seat.",
                                             "../assets/offroad/icon_openpilot_mirrored.png"
                                             ));
-  toggles_list->addWidget(new ParamsToggle("IsMetric",
+  toggles_list->addWidget(new ToggleControl("IsMetric",
                                             "Use Metric System",
                                             "Display speed in km/h instead of mp/h.",
                                             "../assets/offroad/icon_metric.png"
                                             ));
-  toggles_list->addWidget(new ParamsToggle("CommunityFeaturesToggle",
+  toggles_list->addWidget(new ToggleControl("CommunityFeaturesToggle",
                                             "Enable Community Features",
                                             "Use features from the open source community that are not maintained or supported by comma.ai and have not been confirmed to meet the standard safety model. These features include community supported cars and community supported hardware. Be extra cautious when using these features",
                                             "../assets/offroad/icon_shell.png"
                                             ));
 
-  ParamsToggle *record_toggle = new ParamsToggle("RecordFront",
+  ToggleControl *record_toggle = new ToggleControl("RecordFront",
                                             "Record and Upload Driver Camera",
                                             "Upload data from the driver facing camera and help improve the driver monitoring algorithm.",
                                             "../assets/offroad/icon_network.png");
   toggles_list->addWidget(record_toggle);
 
   bool record_lock = Params().read_db_bool("RecordFrontLock");
-  record_toggle->toggle->setEnabled(!record_lock);
+  record_toggle->setEnabled(!record_lock);
 
   QWidget *widget = new QWidget;
   widget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
   widget->setLayout(toggles_list);
-  sa->setWidget(widget);
-  return sa;
+  ScrollControl *scroll = new ScrollControl();
+  scroll->setWidget(widget);
+  return scroll;
 }
 
 QWidget *device_panel() {
-  QScrollArea *sa = new QScrollArea;
-  sa->setStyleSheet(R"(background-color: transparent;)");
-  sa->setWidgetResizable(true);
-  sa->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-  sa->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-  QScroller::grabGesture(sa, QScroller::TouchGesture);
-
   QVBoxLayout *device_layout = new QVBoxLayout;
   device_layout->setMargin(100);
   device_layout->setSpacing(30);
@@ -154,27 +93,25 @@ QWidget *device_panel() {
   //}
 
   for (auto &l : labels) {
-    QLabel * text = new QLabel(QString::fromStdString(l.second));
-    text->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-    device_layout->addWidget(new ClickableLabel(QString::fromStdString(l.first), "", text, "", false));
+    device_layout->addWidget(new LabelControl(QString::fromStdString(l.first), QString::fromStdString(l.second)));
   }
 
-  QPushButton* dcam_view = round_button("PREVIEW", [=]() {
-    Params().write_db_value("IsDriverViewEnabled", "1", 1);
-  });
-  device_layout->addWidget(new ClickableLabel("Driver camera view",
-                                              "Preview the driver facing camera to help optimize device mounting position for best driver monitoring experience. (vehicle must be off)",
-                                              dcam_view));
+  device_layout->addWidget(new ButtonControl("Driver camera view",
+                                             "PREVIEW",
+                                             "Preview the driver facing camera to help optimize device mounting position for best driver monitoring experience. (vehicle must be off)",
+                                             [=]() {
+                                               Params().write_db_value("IsDriverViewEnabled", "1", 1);
+                                             }));
 
   // TODO: show current calibration values
-  QPushButton *clear_cal_btn = round_button("RESET", [=]() {
-    if (ConfirmationDialog::confirm("Are you sure you want to reset calibration?")) {
-      Params().delete_db_value("CalibrationParams");
-    }
-  });
-  device_layout->addWidget(new ClickableLabel("Reset Calibration",
-                                              "openpilot requires the device to be mounted within 4° left or right and within 5° up or down. openpilot is continuously calibrating, resetting is rarely required.",
-                                              clear_cal_btn));
+  device_layout->addWidget(new ButtonControl("Reset Calibration",
+                                             "RESET",
+                                             "openpilot requires the device to be mounted within 4° left or right and within 5° up or down. openpilot is continuously calibrating, resetting is rarely required.",
+                                             [=]() {
+                                               if (ConfirmationDialog::confirm("Are you sure you want to reset calibration?")) {
+                                                 Params().delete_db_value("CalibrationParams");
+                                               }
+                                             }));
 
   // power buttons
 
@@ -185,8 +122,6 @@ QWidget *device_panel() {
       Hardware::poweroff();
     }
   });
-
-  // device_layout->addWidget(horizontal_line(), Qt::AlignBottom);
 
   QPushButton *reboot_btn = new QPushButton("Reboot");
   device_layout->addWidget(reboot_btn, Qt::AlignBottom);
@@ -214,8 +149,10 @@ QWidget *device_panel() {
       background-color: #393939;
     }
   )");
-  sa->setWidget(widget);
-  return sa;
+  
+  ScrollControl *scroll = new ScrollControl();
+  scroll->setWidget(widget);
+  return scroll;
 }
 
 QWidget * developer_panel() {
@@ -234,10 +171,7 @@ QWidget * developer_panel() {
 
   for (int i = 0; i < labels.size(); i++) {
     auto l = labels[i];
-    QLabel * text = new QLabel(QString::fromStdString(l.second));
-    text->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-    bool has_line = i < (labels.size() -1);
-    main_layout->addWidget(new ClickableLabel(QString::fromStdString(l.first), "", text, "", has_line));
+    main_layout->addWidget(new LabelControl(QString::fromStdString(l.first), QString::fromStdString(l.second)));
 
   }
 
@@ -269,8 +203,7 @@ QWidget * network_panel(QWidget * parent) {
                                  --es extra_prefs_set_next_text ''"},
   };
   for (auto &b : btns) {
-    QPushButton *btn = round_button("OPEN", [=]() { std::system(b.second); });
-    layout->addWidget(new ClickableLabel(b.first, "", btn));
+    layout->addWidget(new ButtonControl(b.first, "OPEN", "", [=]() { std::system(b.second); }));
   }
   layout->addStretch(1);
 
@@ -290,7 +223,6 @@ QWidget * network_panel(QWidget * parent) {
 #endif
   return w;
 }
-
 
 void SettingsWindow::setActivePanel() {
   auto *btn = qobject_cast<QPushButton *>(nav_btns->checkedButton());

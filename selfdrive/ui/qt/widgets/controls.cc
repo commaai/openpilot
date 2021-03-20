@@ -1,9 +1,6 @@
-#include "clickable_label.hpp"
+#include "controls.hpp"
 
-#include <QHBoxLayout>
-#include <QVBoxLayout>
-
-static QFrame *horizontal_line(QWidget *parent = 0) {
+ QFrame *horizontal_line(QWidget *parent) {
   QFrame *line = new QFrame(parent);
   line->setFrameShape(QFrame::StyledPanel);
   line->setStyleSheet("margin-left: 40px; margin-right: 40px; border-width: 1px; border-bottom-style: solid; border-color: gray;");
@@ -11,10 +8,10 @@ static QFrame *horizontal_line(QWidget *parent = 0) {
   return line;
 }
 
-ClickableLabel::ClickableLabel(const QString &title, const QString &desc, QWidget *control, const QString &icon, bool bottom_line) : QFrame() {
-  QHBoxLayout *layout = new QHBoxLayout;
-  layout->setContentsMargins(0, 15, 0, 15);
-  layout->setSpacing(50);
+AbstractControl::AbstractControl(const QString &title, const QString &desc, const QString &icon, bool bottom_line) : QFrame() {
+  hboxLayout = new QHBoxLayout;
+  hboxLayout->setContentsMargins(0, 15, 0, 15);
+  hboxLayout->setSpacing(50);
 
   // left icon
   if (!icon.isEmpty()) {
@@ -22,19 +19,21 @@ ClickableLabel::ClickableLabel(const QString &title, const QString &desc, QWidge
     QLabel *icon = new QLabel();
     icon->setPixmap(pix.scaledToWidth(80, Qt::SmoothTransformation));
     icon->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
-    layout->addWidget(icon);
+    hboxLayout->addWidget(icon);
   }
   // title
-  QLabel *title_label = new QLabel(title);
+  title_label = new QLabel(title);
   title_label->setStyleSheet(R"(font-size: 50px;)");
-  layout->addWidget(title_label);
+  hboxLayout->addWidget(title_label);
 
   // right control
-  layout->addWidget(control);
+  if (control) {
+    hboxLayout->addWidget(control);
+  }
 
-  QVBoxLayout *main_l = new QVBoxLayout(this);
-  main_l->addLayout(layout);
-  main_l->addStretch();
+  QVBoxLayout *vboxLayout = new QVBoxLayout(this);
+  vboxLayout->addLayout(hboxLayout);
+  vboxLayout->addStretch();
   // description
   if (!desc.isEmpty()) {
     desc_label = new QLabel(desc);
@@ -42,10 +41,11 @@ ClickableLabel::ClickableLabel(const QString &title, const QString &desc, QWidge
     desc_label->setStyleSheet(R"(font-size: 40px;color:grey)");
     desc_label->setWordWrap(true);
     desc_label->setVisible(false);
-    main_l->addWidget(desc_label);
+    vboxLayout->addWidget(desc_label);
   }
 
   if (bottom_line) {
-    main_l->addWidget(horizontal_line());
+    vboxLayout->addWidget(horizontal_line());
   }
 }
+

@@ -7,28 +7,6 @@
 #include <QButtonGroup>
 #include <QStackedLayout>
 
-#include "selfdrive/ui/qt/widgets/toggle.hpp"
-
-// *** settings widgets ***
-
-class ParamsToggle : public QFrame {
-  Q_OBJECT
-
-public:
-  explicit ParamsToggle(QString param, QString title, QString description,
-                        QString icon, QWidget *parent = 0);
-  Toggle *toggle;
-
-private:
-  QString param;
-
-public slots:
-  void checkboxClicked(int state);
-};
-
-
-// *** settings window ***
-
 class SettingsWindow : public QFrame {
   Q_OBJECT
 
