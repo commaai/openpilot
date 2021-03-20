@@ -64,6 +64,13 @@ void ParamsToggle::checkboxClicked(int state) {
 }
 
 QWidget * toggles_panel() {
+  QScrollArea *sa = new QScrollArea;
+  sa->setStyleSheet(R"(background-color: transparent;)");
+  sa->setWidgetResizable(true);
+  sa->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+  sa->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+  QScroller::grabGesture(sa, QScroller::TouchGesture);
+  
   QVBoxLayout *toggles_list = new QVBoxLayout();
   toggles_list->setMargin(50);
 
@@ -110,10 +117,18 @@ QWidget * toggles_panel() {
   QWidget *widget = new QWidget;
   widget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
   widget->setLayout(toggles_list);
-  return widget;
+  sa->setWidget(widget);
+  return sa;
 }
 
 QWidget *device_panel() {
+  QScrollArea *sa = new QScrollArea;
+  sa->setStyleSheet(R"(background-color: transparent;)");
+  sa->setWidgetResizable(true);
+  sa->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+  sa->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+  QScroller::grabGesture(sa, QScroller::TouchGesture);
+
   QVBoxLayout *device_layout = new QVBoxLayout;
   device_layout->setMargin(100);
   device_layout->setSpacing(30);
@@ -194,7 +209,8 @@ QWidget *device_panel() {
       background-color: #393939;
     }
   )");
-  return widget;
+  sa->setWidget(widget);
+  return sa;
 }
 
 QWidget * developer_panel() {

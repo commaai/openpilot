@@ -48,5 +48,4 @@ ClickableLabel::ClickableLabel(const QString &title, const QString &desc, QWidge
   if (bottom_line) {
     main_l->addWidget(horizontal_line());
   }
-  setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
 }
