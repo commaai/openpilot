@@ -10,7 +10,7 @@ from selfdrive.camerad.snapshot.snapshot import get_snapshots
 
 from selfdrive.hardware import EON, TICI
 
-WAIT_TIME = 20 # wait for cameras startup and adjustment
+TEST_TIME = 30
 
 os.environ["SEND_ROAD"] = "1"
 os.environ["SEND_DRIVER"] = "1"
@@ -42,15 +42,21 @@ class TestCamerad(unittest.TestCase):
   def test_camera_operation(self):
     print("checking image outputs")
 
-    time.sleep(WAIT_TIME)
-    rpic, dpic = get_snapshots(frame="roadCameraState", front_frame="driverCameraState")
+    start = time.time()
+    passed = False
+    while(time.time() - start < TEST_TIME and not passed):
+      rpic, dpic = get_snapshots(frame="roadCameraState", front_frame="driverCameraState")
 
-    self.assertTrue(self._is_exposure_okay(rpic))
-    self.assertTrue(self._is_exposure_okay(dpic))
+      res = self._is_exposure_okay(rpic)
+      res &= self._is_exposure_okay(dpic)
 
-    if TICI:
-      wpic, _ = get_snapshots(frame="wideRoadCameraState")
-      self.assertTrue(self._is_exposure_okay(wpic))
+      if TICI:
+        wpic, _ = get_snapshots(frame="wideRoadCameraState")
+        res &= self._is_exposure_okay(wpic)
+
+      passed = res
+      time.sleep(2)
+    self.assertTrue(passed)
 
 if __name__ == "__main__":
   unittest.main()
