@@ -13,7 +13,6 @@
 #include "home.hpp"
 #include "util.h"
 
-#include <QEasingCurve>
 
 void TrainingGuide::mouseReleaseEvent(QMouseEvent *e) {
   int leftOffset = (geometry().width()-1620)/2;
