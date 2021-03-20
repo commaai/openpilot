@@ -7,6 +7,7 @@
 #include <QVBoxLayout>
 #include <QDesktopWidget>
 #include <QPainter>
+
 #include "common/params.h"
 #include "onboarding.hpp"
 #include "home.hpp"
@@ -20,18 +21,21 @@ void TrainingGuide::mouseReleaseEvent(QMouseEvent *e) {
   int mousey = e->y();
 
   // Check for restart
-  if (currentIndex == (boundingBox.size() - 1) && 1050 <= mousex && mousex <= 1500 && 773 <= mousey && mousey <= 954) {
+  if (currentIndex == (boundingBox.size() - 1) && 1050 <= mousex && mousex <= 1500 &&
+      773 <= mousey && mousey <= 954) {
     currentIndex = 0;
-  } else if (boundingBox[currentIndex][0] <= mousex && mousex <= boundingBox[currentIndex][1] && boundingBox[currentIndex][2] <= mousey && mousey <= boundingBox[currentIndex][3]) {
-    ++currentIndex;
+  } else if (boundingBox[currentIndex][0] <= mousex && mousex <= boundingBox[currentIndex][1] &&
+             boundingBox[currentIndex][2] <= mousey && mousey <= boundingBox[currentIndex][3]) {
+    currentIndex += 1;
   }
+
   if (currentIndex >= boundingBox.size()) {
     emit completedTraining();
     return;
+  } else {
+    image.load("../assets/training/step" + QString::number(currentIndex) + ".jpg");
+    update();
   }
-
-  image.load("../assets/training/step" + QString::number(currentIndex) + ".jpg");
-  repaint();
 }
 
 TrainingGuide::TrainingGuide(QWidget* parent) {
@@ -79,16 +83,6 @@ QWidget* OnboardingWindow::terms_screen() {
 
   // TODO: tune the scrolling
   auto sb = terms_text->verticalScrollBar();
-  QScrollerProperties sp;
-
-  sp.setScrollMetric(QScrollerProperties::DragStartDistance, 0.001);
-  sp.setScrollMetric(QScrollerProperties::DecelerationFactor, 0.4);
-  sp.setScrollMetric(QScrollerProperties::DragVelocitySmoothingFactor, 0.5);
-  sp.setScrollMetric(QScrollerProperties::MaximumVelocity, 1.0);
-
-  scroller = QScroller::scroller(terms_text);
-  scroller->setScrollerProperties(sp);
-
 #ifdef QCOM2
   sb->setStyleSheet(R"(
     QScrollBar {
@@ -133,10 +127,9 @@ QWidget* OnboardingWindow::terms_screen() {
 }
 
 void OnboardingWindow::updateActiveScreen() {
-  Params params = Params();
-
   bool accepted_terms = params.get("HasAcceptedTerms", false).compare(current_terms_version) == 0;
   bool training_done = params.get("CompletedTrainingVersion", false).compare(current_training_version) == 0;
+
   if (!accepted_terms) {
     setCurrentIndex(0);
   } else if (!training_done) {
@@ -147,11 +140,9 @@ void OnboardingWindow::updateActiveScreen() {
 }
 
 OnboardingWindow::OnboardingWindow(QWidget *parent) : QStackedWidget(parent) {
-  Params params = Params();
+  params = Params();
   current_terms_version = params.get("TermsVersion", false);
   current_training_version = params.get("TrainingVersion", false);
-  bool accepted_terms = params.get("HasAcceptedTerms", false).compare(current_terms_version) == 0;
-  bool training_done = params.get("CompletedTrainingVersion", false).compare(current_training_version) == 0;
 
   addWidget(terms_screen());
 
