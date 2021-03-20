@@ -45,7 +45,7 @@ if [ -n "$RC_FILE" ]; then
   echo 'export CPPFLAGS="$CPPFLAGS -I/usr/local/opt/openssl@1.1/include"' >> $RC_FILE
   echo 'export PATH="$PATH:/usr/local/bin"' >> $RC_FILE
   echo 'export PATH="$PATH:/usr/local/opt/openssl@1.1/bin"' >> $RC_FILE
-  echo 'export PATH="$HOME/.cargo/bin"' >> $RC_FILE
+  echo 'export PATH="$PATH:$HOME/.cargo/bin"' >> $RC_FILE
 fi
 
 # OpenPilot environment variables
