@@ -150,8 +150,7 @@ PrimeAdWidget::PrimeAdWidget(QWidget* parent) : QWidget(parent) {
 
 SetupWidget::SetupWidget(QWidget* parent) : QWidget(parent) {
   QVBoxLayout* backgroundLayout = new QVBoxLayout;
-
-  backgroundLayout->addSpacing(100);
+  backgroundLayout->setMargin(25);
 
   QFrame* background = new QFrame;
 
@@ -160,37 +159,49 @@ SetupWidget::SetupWidget(QWidget* parent) : QWidget(parent) {
   QWidget* blankWidget = new QWidget;
   mainLayout->addWidget(blankWidget);
 
+
+  // Unpaired, registration prompt layout
+
   QWidget* finishRegistration = new QWidget;
 
   QVBoxLayout* finishRegistationLayout = new QVBoxLayout;
   finishRegistationLayout->addSpacing(30);
-  QPushButton* finishButton = new QPushButton("Finish registration");
-  finishButton->setFixedHeight(200);
-  finishButton->setStyleSheet(R"(
-    border-radius: 30px;
-    font-size: 55px;
-    background: #585858;
-  )");
-  QObject::connect(finishButton, SIGNAL(released()), this, SLOT(showQrCode()));
-  finishRegistationLayout->addWidget(finishButton);
-
   QLabel* registrationDescription = new QLabel("Pair your device with the comma connect app");
+  registrationDescription->setWordWrap(true);
+  registrationDescription->setAlignment(Qt::AlignCenter);
   registrationDescription->setStyleSheet(R"(
     font-size: 55px;
     font-weight: 400;
   )");
 
-  registrationDescription->setWordWrap(true);
   finishRegistationLayout->addWidget(registrationDescription);
+
+  QPushButton* finishButton = new QPushButton("Finish registration");
+  finishButton->setFixedHeight(200);
+  finishButton->setStyleSheet(R"(
+    border-radius: 30px;
+    font-size: 55px;
+    font-weight: 500;
+    background: #585858;
+  )");
+  finishRegistationLayout->addWidget(finishButton);
+  QObject::connect(finishButton, SIGNAL(released()), this, SLOT(showQrCode()));
 
   finishRegistration->setLayout(finishRegistationLayout);
   mainLayout->addWidget(finishRegistration);
 
+  // Pairing QR code layout
+
   QVBoxLayout* qrLayout = new QVBoxLayout;
 
-  QLabel* qrLabel = new QLabel("Pair with comma connect!");
-  qrLabel->setStyleSheet(R"(font-size: 40px)");
-  qrLayout->addWidget(qrLabel);
+  QLabel* qrLabel = new QLabel("Scan with comma connect!");
+  qrLabel->setWordWrap(true);
+  qrLabel->setAlignment(Qt::AlignHCenter);
+  qrLabel->setStyleSheet(R"(
+    font-size: 55px;
+    font-weight: 400;
+  )");
+  qrLayout->addWidget(qrLabel, 0, Qt::AlignTop);
 
   qrLayout->addWidget(new PairingQRWidget);
 
@@ -206,14 +217,13 @@ SetupWidget::SetupWidget(QWidget* parent) : QWidget(parent) {
 
   background->setLayout(mainLayout);
   background->setStyleSheet(R"(
-    .QFrame {
-      border-radius: 40px;
-      padding: 40px;
-    }
+    border-radius: 40px;
+    padding: 40px;
   )");
   backgroundLayout->addWidget(background);
   setLayout(backgroundLayout);
 
+  // set up API requests
   QString dongleId = QString::fromStdString(Params().get("DongleId"));
   QString url = "https://api.commadotai.com/v1.1/devices/" + dongleId + "/";
   RequestRepeater* repeater = new RequestRepeater(this, url, 5);
@@ -246,7 +256,6 @@ void SetupWidget::replyFinished(QString response) {
   if (mainLayout->currentIndex() == 0) { // If we are still on the blank widget
     setStyleSheet(R"(
       font-size: 90px;
-      font-weight: bold;
       background-color: #292929;
     )");
   }
