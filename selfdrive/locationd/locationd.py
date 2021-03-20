@@ -62,7 +62,7 @@ class Localizer():
     self.calib = np.zeros(3)
     self.device_from_calib = np.eye(3)
     self.calib_from_device = np.eye(3)
-    self.calibrated = 0
+    self.calibrated = False
     self.H = get_H()
 
     self.posenet_invalid_count = 0
@@ -77,7 +77,7 @@ class Localizer():
     self.device_fell = False
 
   @staticmethod
-  def msg_from_state(converter, calib_from_device, H, predicted_state, predicted_cov):
+  def msg_from_state(converter, calib_from_device, H, predicted_state, predicted_cov, calibrated):
     predicted_std = np.sqrt(np.diagonal(predicted_cov))
 
     fix_ecef = predicted_state[States.ECEF_POS]
@@ -130,12 +130,12 @@ class Localizer():
       (fix.velocityDevice, vel_device, vel_device_std, True),
       (fix.accelerationDevice, predicted_state[States.ACCELERATION], predicted_std[States.ACCELERATION_ERR], True),
       (fix.orientationECEF, orientation_ecef, orientation_ecef_std, True),
-      (fix.calibratedOrientationECEF, calibrated_orientation_ecef, np.nan*np.zeros(3), True),
+      (fix.calibratedOrientationECEF, calibrated_orientation_ecef, np.nan*np.zeros(3), calibrated),
       (fix.orientationNED, orientation_ned, np.nan*np.zeros(3), True),
       (fix.angularVelocityDevice, predicted_state[States.ANGULAR_VELOCITY], predicted_std[States.ANGULAR_VELOCITY_ERR], True),
-      (fix.velocityCalibrated, vel_calib, vel_calib_std, True),
-      (fix.angularVelocityCalibrated, ang_vel_calib, ang_vel_calib_std, True),
-      (fix.accelerationCalibrated, acc_calib, acc_calib_std, True),
+      (fix.velocityCalibrated, vel_calib, vel_calib_std, calibrated),
+      (fix.angularVelocityCalibrated, ang_vel_calib, ang_vel_calib_std, calibrated),
+      (fix.accelerationCalibrated, acc_calib, acc_calib_std, calibrated),
     ]
 
     for field, value, std, valid in measurements:
@@ -147,7 +147,7 @@ class Localizer():
     return fix
 
   def liveLocationMsg(self):
-    fix = self.msg_from_state(self.converter, self.calib_from_device, self.H, self.kf.x, self.kf.P)
+    fix = self.msg_from_state(self.converter, self.calib_from_device, self.H, self.kf.x, self.kf.P, self.calibrated)
     # experimentally found these values, no false positives in 20k minutes of driving
     old_mean, new_mean = np.mean(self.posenet_stds[:POSENET_STD_HIST//2]), np.mean(self.posenet_stds[POSENET_STD_HIST//2:])
     std_spike = new_mean/old_mean > 4 and new_mean > 7

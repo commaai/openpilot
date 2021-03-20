@@ -201,7 +201,7 @@ class LiveKalman():
                       ObservationKind.PHONE_ACCEL: np.diag([.5**2, .5**2, .5**2]),
                       ObservationKind.CAMERA_ODO_ROTATION: np.diag([0.05**2, 0.05**2, 0.05**2]),
                       ObservationKind.IMU_FRAME: np.diag([0.05**2, 0.05**2, 0.05**2]),
-                      ObservationKind.NO_ROT: np.diag([0.00025**2, 0.00025**2, 0.00025**2]),
+                      ObservationKind.NO_ROT: np.diag([0.005**2, 0.005**2, 0.005**2]),
                       ObservationKind.ECEF_POS: np.diag([5**2, 5**2, 5**2]),
                       ObservationKind.ECEF_VEL: np.diag([.5**2, .5**2, .5**2]),
                       ObservationKind.ECEF_ORIENTATION_FROM_GPS: np.diag([.2**2, .2**2, .2**2, .2**2])}
