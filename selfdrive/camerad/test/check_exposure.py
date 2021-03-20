@@ -10,7 +10,7 @@ from selfdrive.camerad.snapshot.snapshot import get_snapshots
 
 from selfdrive.hardware import EON, TICI
 
-WAIT_TIME = 15 # wait for cameras startup and adjustment
+WAIT_TIME = 20 # wait for cameras startup and adjustment
 
 CAMERAS = {
   "roadCameraState": [[0.25,0.35],[0.2,0.6]],
@@ -37,8 +37,8 @@ class TestCamerad(unittest.TestCase):
   def _is_exposure_okay(self, i, med_mean=np.array([[-1,-1], [-1,-1]])):
     med_ex, mean_ex = med_mean
     i = self._numpy_rgb2gray(i)
-    i_median = np.median(i) / 256
-    i_mean = np.mean(i) / 256
+    i_median = np.median(i) / 255.
+    i_mean = np.mean(i) / 255.
     print([i_median, i_mean])
     return med_ex[0] < i_median < med_ex[1] and mean_ex[0] < i_mean < mean_ex[1]
 
