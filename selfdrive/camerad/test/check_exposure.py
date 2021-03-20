@@ -30,8 +30,8 @@ class TestCamerad(unittest.TestCase):
     if not (EON or TICI):
       raise unittest.SkipTest
 
-  def _numpy_bgr2gray(self, im):
-    ret = np.clip(im[:,:,0] * 0.114 + im[:,:,1] * 0.587 + im[:,:,2] * 0.299, 0, 255).astype(np.uint8)
+  def _numpy_rgb2gray(self, im):
+    ret = np.clip(im[:,:,2] * 0.114 + im[:,:,1] * 0.587 + im[:,:,0] * 0.299, 0, 255).astype(np.uint8)
     return ret
 
   def _numpy_lap(self, im):
@@ -45,7 +45,7 @@ class TestCamerad(unittest.TestCase):
     return ret
 
   def _is_really_sharp(self, i, threshold=800, roi_max=np.array([8,6]), roi_xxyy=np.array([1,6,2,3])):
-    i = self._numpy_bgr2gray(i)
+    i = self._numpy_rgb2gray(i)
     x_pitch = i.shape[1] // roi_max[0]
     y_pitch = i.shape[0] // roi_max[1]
     lap = self._numpy_lap(i)
@@ -63,7 +63,7 @@ class TestCamerad(unittest.TestCase):
 
   def _is_exposure_okay(self, i, med_mean=np.array([[-1,-1], [-1,-1]])):
     med_ex, mean_ex = med_mean
-    i = self._numpy_bgr2gray(i)
+    i = self._numpy_rgb2gray(i)
     i_median = np.median(i) / 256
     i_mean = np.mean(i) / 256
     print([i_median, i_mean])
