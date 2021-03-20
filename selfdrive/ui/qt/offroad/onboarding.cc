@@ -153,11 +153,6 @@ OnboardingWindow::OnboardingWindow(QWidget *parent) : QStackedWidget(parent) {
   bool accepted_terms = params.get("HasAcceptedTerms", false).compare(current_terms_version) == 0;
   bool training_done = params.get("CompletedTrainingVersion", false).compare(current_training_version) == 0;
 
-  // Don't initialize widgets unless neccesary.
-  if (accepted_terms && training_done) {
-    return;
-  }
-
   addWidget(terms_screen());
 
   TrainingGuide* tr = new TrainingGuide(this);
