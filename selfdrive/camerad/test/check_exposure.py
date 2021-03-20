@@ -12,17 +12,10 @@ from selfdrive.hardware import EON, TICI
 
 WAIT_TIME = 20 # wait for cameras startup and adjustment
 
-CAMERAS = {
-  "roadCameraState": [[0.25,0.35],[0.2,0.6]],
-  "driverCameraState": [[0.25,0.35],[0.2,0.6]],
-}
-
 os.environ["SEND_ROAD"] = "1"
 os.environ["SEND_DRIVER"] = "1"
-
 if TICI:
   os.environ["SEND_WIDE_ROAD"] = "1"
-  CAMERAS["wideRoadCameraState"] = [[0.2,0.4],[0.2,0.6]]
 
 class TestCamerad(unittest.TestCase):
   @classmethod
@@ -34,7 +27,7 @@ class TestCamerad(unittest.TestCase):
     ret = np.clip(im[:,:,2] * 0.114 + im[:,:,1] * 0.587 + im[:,:,0] * 0.299, 0, 255).astype(np.uint8)
     return ret
 
-  def _is_exposure_okay(self, i, med_mean=np.array([[-1,-1], [-1,-1]])):
+  def _is_exposure_okay(self, i, med_mean=np.array([[0.35,0.45] if TICI else [0.25,0.35],[0.2,0.6]])):
     med_ex, mean_ex = med_mean
     i = self._numpy_rgb2gray(i)
     i_median = np.median(i) / 255.
@@ -50,12 +43,12 @@ class TestCamerad(unittest.TestCase):
     time.sleep(WAIT_TIME)
     rpic, dpic = get_snapshots(frame="roadCameraState", front_frame="driverCameraState")
 
-    self.assertTrue(self._is_exposure_okay(rpic, CAMERAS["roadCameraState"]))
-    self.assertTrue(self._is_exposure_okay(dpic, CAMERAS["driverCameraState"]))
+    self.assertTrue(self._is_exposure_okay(rpic))
+    self.assertTrue(self._is_exposure_okay(dpic))
 
     if TICI:
       wpic, _ = get_snapshots(frame="wideRoadCameraState")
-      self.assertTrue(self._is_exposure_okay(wpic, CAMERAS["wideRoadCameraState"]))
+      self.assertTrue(self._is_exposure_okay(wpic))
 
 if __name__ == "__main__":
   unittest.main()
