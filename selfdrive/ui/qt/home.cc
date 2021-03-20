@@ -111,7 +111,7 @@ OffroadHome::OffroadHome(QWidget* parent) : QWidget(parent) {
   QHBoxLayout* statsAndSetup = new QHBoxLayout();
 
   DriveStats* drive = new DriveStats;
-  //drive->setFixedSize(1000, 800);
+  drive->setFixedSize(900, 800);
   statsAndSetup->addWidget(drive);
 
   SetupWidget* setup = new SetupWidget;
