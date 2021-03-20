@@ -23,6 +23,14 @@
 #include "selfdrive/common/util.h"
 #include "selfdrive/hardware/hw.h"
 
+template <typename Functor>
+QPushButton *round_button(const QString &text, Functor functor) {
+  QPushButton* btn = new QPushButton(text);
+  btn->setStyleSheet(R"(font-size: 30px;border-radius: 30px;min-width: 220px; max-width: 220px;)");
+  QObject::connect(btn, &QPushButton::released, functor);
+  return btn;
+}
+
 ParamsToggle::ParamsToggle(QString param, QString title, QString description, QString icon_path, QWidget *parent): QFrame(parent) , param(param) {
   QHBoxLayout *layout = new QHBoxLayout;
   layout->setMargin(0);
@@ -70,7 +78,7 @@ QWidget * toggles_panel() {
   sa->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   sa->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   QScroller::grabGesture(sa, QScroller::TouchGesture);
-  
+
   QVBoxLayout *toggles_list = new QVBoxLayout();
   toggles_list->setMargin(50);
 
@@ -151,18 +159,15 @@ QWidget *device_panel() {
     device_layout->addWidget(new ClickableLabel(QString::fromStdString(l.first), "", text, "", false));
   }
 
-  QPushButton* dcam_view = new QPushButton("PREVIEW");
-  QObject::connect(dcam_view, &QPushButton::released, [=]() {
+  QPushButton* dcam_view = round_button("PREVIEW", [=]() {
     Params().write_db_value("IsDriverViewEnabled", "1", 1);
   });
-
   device_layout->addWidget(new ClickableLabel("Driver camera view",
                                               "Preview the driver facing camera to help optimize device mounting position for best driver monitoring experience. (vehicle must be off)",
                                               dcam_view));
 
   // TODO: show current calibration values
-  QPushButton *clear_cal_btn = new QPushButton("RESET");
-  QObject::connect(clear_cal_btn, &QPushButton::released, [=]() {
+  QPushButton *clear_cal_btn = round_button("RESET", [=]() {
     if (ConfirmationDialog::confirm("Are you sure you want to reset calibration?")) {
       Params().delete_db_value("CalibrationParams");
     }
@@ -264,8 +269,7 @@ QWidget * network_panel(QWidget * parent) {
                                  --es extra_prefs_set_next_text ''"},
   };
   for (auto &b : btns) {
-    QPushButton *btn = new QPushButton("OPEN");
-    QObject::connect(btn, &QPushButton::released, [=]() { std::system(b.second); });
+    QPushButton *btn = round_button("OPEN", [=]() { std::system(b.second); });
     layout->addWidget(new ClickableLabel(b.first, "", btn));
   }
   layout->addStretch(1);
