@@ -98,8 +98,7 @@ QWidget* OnboardingWindow::terms_screen() {
     }
   )");
 #else
-  //QScroller::grabGesture(terms_text, QScroller::TouchGesture);
-  scroller->grabGesture(terms_text, QScroller::TouchGesture);
+  QScroller::grabGesture(terms_text, QScroller::TouchGesture);
   terms_text->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 #endif
 
