@@ -155,8 +155,8 @@ def get_can_signals(CP):
     signals += [("CAR_GAS", "GAS_PEDAL_2", 0),
                 ("MAIN_ON", "SCM_FEEDBACK", 0),
                 ("EPB_STATE", "EPB_STATUS", 0),
-                ("BRAKE_ERROR", "BRAKE_ERROR_1", 0),
-                ("BRAKE_ERROR", "BRAKE_ERROR_2", 0)]
+                ("BRAKE_ERROR_1", "BRAKE_ERROR", 0),
+                ("BRAKE_ERROR_2", "BRAKE_ERROR", 0)]
     checks += [("BRAKE_ERROR", 100)]
 
   # add gas interceptor reading if we are using it
