@@ -88,20 +88,17 @@ QWidget *device_panel() {
     device_layout->addWidget(new LabelControl(QString::fromStdString(l.first), QString::fromStdString(l.second)));
   }
 
-  device_layout->addWidget(new ButtonControl("Driver camera view",
-                                             "PREVIEW",
+  device_layout->addWidget(new ButtonControl("Driver camera view", "PREVIEW",
                                              "Preview the driver facing camera to help optimize device mounting position for best driver monitoring experience. (vehicle must be off)",
                                              [=]() { Params().write_db_value("IsDriverViewEnabled", "1", 1); }));
 
   // TODO: show current calibration values
-  device_layout->addWidget(new ButtonControl("Reset Calibration",
-                                             "RESET",
+  device_layout->addWidget(new ButtonControl("Reset Calibration", "RESET",
                                              "openpilot requires the device to be mounted within 4° left or right and within 5° up or down. openpilot is continuously calibrating, resetting is rarely required.",
                                              [=]() {
                                                if (ConfirmationDialog::confirm("Are you sure you want to reset calibration?")) {
                                                  Params().delete_db_value("CalibrationParams");
-                                               }
-                                             }));
+                                               } }));
 
   // power buttons
 
@@ -112,6 +109,8 @@ QWidget *device_panel() {
       Hardware::poweroff();
     }
   });
+
+  device_layout->addWidget(horizontal_line(), Qt::AlignBottom);
 
   QPushButton *reboot_btn = new QPushButton("Reboot");
   device_layout->addWidget(reboot_btn, Qt::AlignBottom);
@@ -139,7 +138,6 @@ QWidget *device_panel() {
       background-color: #393939;
     }
   )");
-  
   ScrollControl *scroll = new ScrollControl();
   scroll->setWidget(widget);
   return scroll;
