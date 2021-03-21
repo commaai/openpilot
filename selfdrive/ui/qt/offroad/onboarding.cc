@@ -15,22 +15,20 @@
 
 
 void TrainingGuide::mouseReleaseEvent(QMouseEvent *e) {
-  int leftOffset = (geometry().width()-1620)/2;
-  int mousex = e->x()-leftOffset;
-  int mousey = e->y();
+  const QRect restart_rect{QPoint(1050, 773), QPoint(1500, 954)};
+  const int leftOffset = (geometry().width()-1620)/2;
+
+  QPoint pt(e->x() - leftOffset, e->y());
 
   // Check for restart
-  if (currentIndex == (boundingBox.size() - 1) && 1050 <= mousex && mousex <= 1500 &&
-      773 <= mousey && mousey <= 954) {
+  if (currentIndex == (std::size(boundingBox) - 1) && restart_rect.contains(pt)) {
     currentIndex = 0;
-  } else if (boundingBox[currentIndex][0] <= mousex && mousex <= boundingBox[currentIndex][1] &&
-             boundingBox[currentIndex][2] <= mousey && mousey <= boundingBox[currentIndex][3]) {
+  } else if (boundingBox[currentIndex].contains(pt)) {
     currentIndex += 1;
   }
 
-  if (currentIndex >= boundingBox.size()) {
+  if (currentIndex >= std::size(boundingBox)) {
     emit completedTraining();
-    return;
   } else {
     image.load("../assets/training/step" + QString::number(currentIndex) + ".jpg");
     update();

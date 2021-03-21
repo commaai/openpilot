@@ -21,10 +21,25 @@ protected:
 private:
   int currentIndex = 0;
   QImage image;
-
-  // Vector of bounding boxes for the a given training guide step. (minx, maxx, miny, maxy)
-  QVector<QVector<int>> boundingBox {{250, 930, 750, 900}, {280, 1280, 650, 950}, {330, 1130, 590, 900}, {910, 1580, 500, 1000}, {1180, 1300, 630, 720}, {290, 1050, 590, 960}, 
-  {1090, 1240, 550, 660}, {1050, 1580, 250, 900}, {320, 1130, 670, 1020}, {1010, 1580, 410, 750}, {1040, 1500, 230, 1030}, {300, 1190, 590, 920}, {1050, 1310, 170, 870}, {950, 1530, 460, 770}, {190, 970, 750, 970}};
+  
+  // Array of bounding rects for the a given training guide step.
+  static inline constexpr QRect boundingBox[] = {
+      {QPoint{250, 750}, QPoint{930, 900}},
+      {QPoint{280, 640}, QPoint{1280, 950}},
+      {QPoint{330, 590}, QPoint{1130, 900}},
+      {QPoint{910, 500}, QPoint{1580, 1000}},
+      {QPoint{1180, 630}, QPoint{1300, 720}},
+      {QPoint{290, 590}, QPoint{1050, 960}},
+      {QPoint{1090, 550}, QPoint{1240, 660}},
+      {QPoint{1050, 250}, QPoint{1580, 900}},
+      {QPoint{320, 670}, QPoint{1130, 1020}},
+      {QPoint{1010, 410}, QPoint{1580, 750}},
+      {QPoint{1040, 230}, QPoint{1500, 1030}},
+      {QPoint{300, 590}, QPoint{1190, 920}},
+      {QPoint{1050, 170}, QPoint{1310, 870}},
+      {QPoint{950, 460}, QPoint{1530, 770}},
+      {QPoint{190, 750}, QPoint{970, 970}},
+  };
 
 signals:
   void completedTraining();
