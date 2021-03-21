@@ -42,8 +42,6 @@ QWidget * toggles_panel() {
                                             "Display speed in km/h instead of mp/h.",
                                             "../assets/offroad/icon_metric.png"
                                             ));
-
-                                            
   toggles_list->addWidget(new ToggleControl("CommunityFeaturesToggle",
                                             "Enable Community Features",
                                             "Use features from the open source community that are not maintained or supported by comma.ai and have not been confirmed to meet the standard safety model. These features include community supported cars and community supported hardware. Be extra cautious when using these features",
@@ -65,10 +63,9 @@ QWidget * toggles_panel() {
   return scroll;
 }
 
-QWidget *device_panel() {
+QWidget * device_panel() {
   QVBoxLayout *device_layout = new QVBoxLayout;
   device_layout->setMargin(100);
-  // device_layout->setSpacing(30);
 
   Params params = Params();
   std::vector<std::pair<std::string, std::string>> labels = {
@@ -123,7 +120,7 @@ QWidget *device_panel() {
       Params().write_db_value("DoUninstall", "1");
     }
   });
-  device_layout->addStretch();
+
   QWidget *widget = new QWidget;
   widget->setLayout(device_layout);
   widget->setStyleSheet(R"(
@@ -158,7 +155,6 @@ QWidget * developer_panel() {
     bool has_bottom_line = i < (labels.size() - 1);
     main_layout->addWidget(new LabelControl(QString::fromStdString(l.first), QString::fromStdString(l.second), "", has_bottom_line));
   }
-  main_layout->addStretch();
 
   QWidget *widget = new QWidget;
   widget->setLayout(main_layout);
@@ -184,7 +180,6 @@ QWidget * network_panel(QWidget * parent) {
   };
   for (auto &b : btns) {
     layout->addWidget(new ButtonControl(b.first, "OPEN", "", [=]() { std::system(b.second); }));
-    // layout->addWidget(horizontal_line());
   }
   layout->addStretch(1);
 
