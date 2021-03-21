@@ -71,11 +71,13 @@ void PairingQRWidget::updateQrCode(QString text) {
 
 PrimeUserWidget::PrimeUserWidget(QWidget* parent) : QWidget(parent) {
   mainLayout = new QVBoxLayout;
+  mainLayout->setMargin(30);
 
   QLabel* commaPrime = new QLabel("COMMA PRIME");
   mainLayout->addWidget(commaPrime, 0, Qt::AlignTop);
 
   username = new QLabel();
+  username->setStyleSheet("font-size: 55px;"); // TODO: fit width
   mainLayout->addWidget(username, 0, Qt::AlignTop);
 
   mainLayout->addSpacing(100);
@@ -92,7 +94,7 @@ PrimeUserWidget::PrimeUserWidget(QWidget* parent) : QWidget(parent) {
   setLayout(mainLayout);
   setStyleSheet(R"(
     QLabel {
-      font-size: 60px;
+      font-size: 70px;
       font-weight: 500;
     }
   )");
@@ -129,6 +131,7 @@ void PrimeUserWidget::replyFinished(QString response) {
 
 PrimeAdWidget::PrimeAdWidget(QWidget* parent) : QWidget(parent) {
   QVBoxLayout* vlayout = new QVBoxLayout;
+  vlayout->setMargin(30);
   vlayout->setSpacing(15);
 
   vlayout->addWidget(new QLabel("Upgrade now"), 1, Qt::AlignTop);
@@ -156,6 +159,7 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
   mainLayout = new QStackedLayout;
 
   QWidget* blankWidget = new QWidget;
+  //blankWidget->setStyleSheet(R"background-color: transparent;");
   mainLayout->addWidget(blankWidget);
 
   // Unpaired, registration prompt layout
@@ -216,10 +220,14 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
 
   setLayout(mainLayout);
   setStyleSheet(R"(
-    font-size: 90px;
-    font-weight: bold;
-    background-color: #292929;
-    border-radius: 40px;
+    QFrame {
+      background-color: #292929;
+    }
+    * {
+      font-size: 90px;
+      font-weight: 500;
+      border-radius: 40px;
+    }
   )");
 
   // set up API requests
