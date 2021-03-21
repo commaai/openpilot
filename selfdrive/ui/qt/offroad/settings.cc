@@ -31,7 +31,7 @@ QFrame* horizontal_line(QWidget* parent = 0){
   return line;
 }
 
-QWidget* labelWidget(QString labelName, QString labelContent){
+QWidget *labelWidget(QString labelName, QString labelContent, QLabel **label = nullptr) {
   QHBoxLayout* labelLayout = new QHBoxLayout;
   labelLayout->addWidget(new QLabel(labelName), 0, Qt::AlignLeft);
   QLabel* paramContent = new QLabel(labelContent);
@@ -39,6 +39,7 @@ QWidget* labelWidget(QString labelName, QString labelContent){
   labelLayout->addWidget(paramContent, 0, Qt::AlignRight);
   QWidget* labelWidget = new QWidget;
   labelWidget->setLayout(labelLayout);
+  if (label) *label = paramContent;
   return labelWidget;
 }
 
@@ -218,13 +219,16 @@ QWidget * device_panel() {
   return widget;
 }
 
-QWidget * developer_panel() {
-  QVBoxLayout *main_layout = new QVBoxLayout;
+DeveloperPanel::DeveloperPanel(QWidget* parent) : QFrame(parent) {
+  QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setMargin(100);
+  setStyleSheet(R"(QLabel {font-size: 50px;})");
+}
 
+void DeveloperPanel::showEvent(QShowEvent *event) {
   Params params = Params();
   std::string brand = params.read_db_bool("Passive") ? "dashcam" : "openpilot";
-  std::vector<std::pair<std::string, std::string>> labels = {
+  QList<QPair<QString, std::string>> dev_params = {
     {"Version", brand + " v" + params.get("Version", false)},
     {"Git Branch", params.get("GitBranch", false)},
     {"Git Commit", params.get("GitCommit", false).substr(0, 10)},
@@ -232,24 +236,21 @@ QWidget * developer_panel() {
     {"OS Version", Hardware::get_os_version()},
   };
 
-  for (int i = 0; i < labels.size(); i++) {
-    auto l = labels[i];
-    main_layout->addWidget(labelWidget(QString::fromStdString(l.first), QString::fromStdString(l.second)));
-
-    if(i+1 < labels.size()) {
-      main_layout->addWidget(horizontal_line());
+  bool do_initialize = labels.isEmpty();
+  for (int i = 0; i < dev_params.size(); i++) {
+    const auto &[name, value] = dev_params[i];
+    if (do_initialize) {
+      QLabel *label = nullptr;
+      layout()->addWidget(labelWidget(name, QString::fromStdString(value), &label));
+      if (i < (dev_params.size() - 1)) { layout()->addWidget(horizontal_line()); }
+      labels.push_back(label);
+    } else {
+      labels[i]->setText(QString::fromStdString(value));
     }
   }
-
-  QWidget *widget = new QWidget;
-  widget->setLayout(main_layout);
-  widget->setStyleSheet(R"(
-    QLabel {
-      font-size: 50px;
-    }
-  )");
-  return widget;
 }
+
+QWidget *developer_panel() { return new DeveloperPanel(); }
 
 QWidget * network_panel(QWidget * parent) {
 #ifdef QCOM
