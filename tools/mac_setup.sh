@@ -41,7 +41,6 @@ rustup-init -y
 if [ -n "$RC_FILE" ]; then
   echo 'export LDFLAGS="$LDFLAGS -L/usr/local/opt/zlib/lib"' >> $RC_FILE
   echo 'export LDFLAGS="$LDFLAGS -L/usr/local/opt/bzip2/lib"' >> $RC_FILE
-  echo 'export LDFLAGS="$LDFLAGS -L/usr/local/opt/openssl@1.1/lib"' >> $RC_FILE
   echo 'export CPPFLAGS="$CPPFLAGS -I/usr/local/opt/zlib/include"' >> $RC_FILE
   echo 'export CPPFLAGS="$CPPFLAGS -I/usr/local/opt/bzip2/include"' >> $RC_FILE
   echo 'export CPPFLAGS="$CPPFLAGS -I/usr/local/opt/openssl@1.1/include"' >> $RC_FILE
