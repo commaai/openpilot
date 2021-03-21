@@ -1,6 +1,5 @@
 #pragma once
 
-#include <QWidget>
 #include <QLabel>
 
 class DriveStats : public QWidget {
@@ -10,6 +9,10 @@ public:
   explicit DriveStats(QWidget* parent = 0);
 
 private:
+  void showEvent(QShowEvent *event) override {
+    
+  }
+
   struct StatsLabels {
     QLabel *routes, *distance, *hours;
   } all_, week_;

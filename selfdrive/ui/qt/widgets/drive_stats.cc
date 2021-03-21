@@ -1,7 +1,7 @@
 #include <QDebug>
 #include <QJsonDocument>
 #include <QJsonObject>
-#include <QStackedLayout>
+// #include <QStackedLayout>
 #include <QVBoxLayout>
 
 #include "api.hpp"
@@ -42,7 +42,7 @@ void DriveStats::parseResponse(QString response, bool save) {
     return;
   }
 
-  auto update = [](QJsonValueRef json_value, StatsLabels& labels, bool metric) {
+  auto update = [](const QJsonValueRef json_value, StatsLabels& labels, bool metric) {
     if (json_value == QJsonValue::Undefined || json_value.type() != QJsonValue::Object) {
       return;
     }
