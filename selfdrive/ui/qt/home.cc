@@ -83,6 +83,7 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
 // OffroadHome: the offroad home page
 
 OffroadHome::OffroadHome(QWidget* parent) : QWidget(parent) {
+
   QVBoxLayout* main_layout = new QVBoxLayout();
   main_layout->setContentsMargins(sbr_w + 50, 50, 50, 50);
 
@@ -97,24 +98,25 @@ OffroadHome::OffroadHome(QWidget* parent) : QWidget(parent) {
   version->setStyleSheet(R"(font-size: 45px;)");
   header_layout->addWidget(version, 0, Qt::AlignTop | Qt::AlignRight);
 
-  main_layout->addLayout(header_layout);
+  main_layout->addLayout(header_layout, 0);
 
   alert_notification = new QPushButton();
   QObject::connect(alert_notification, SIGNAL(released()), this, SLOT(openAlerts()));
-  main_layout->addWidget(alert_notification, 0, Qt::AlignTop | Qt::AlignRight);
 
   // main content
   main_layout->addSpacing(25);
   center_layout = new QStackedLayout();
 
-  QHBoxLayout* statsAndSetup = new QHBoxLayout();
+  QGridLayout* statsAndSetup = new QGridLayout();
+
 
   DriveStats* drive = new DriveStats;
   drive->setFixedSize(1000, 800);
-  statsAndSetup->addWidget(drive);
+  statsAndSetup->addWidget(drive, 0, 0);
 
   SetupWidget* setup = new SetupWidget;
-  statsAndSetup->addWidget(setup);
+  statsAndSetup->addWidget(setup, 0, 1);
+  statsAndSetup->addWidget(alert_notification, 0, 1, Qt::AlignTop | Qt::AlignRight);
 
   QWidget* statsAndSetupWidget = new QWidget();
   statsAndSetupWidget->setLayout(statsAndSetup);
