@@ -23,10 +23,6 @@ static QLayout* build_stat_layout(QLabel** metric, const QString& name) {
 }
 
 void DriveStats::parseResponse(QString response, bool save) {
-  static QString prev_response;
-  if (prev_response == response) { return; }
-  prev_response = response;
-
   response = response.trimmed();
   QJsonDocument doc = QJsonDocument::fromJson(response.toUtf8());
   if (doc.isNull()) {
@@ -34,20 +30,16 @@ void DriveStats::parseResponse(QString response, bool save) {
     return;
   }
 
-  auto update = [](const QJsonValueRef json_value, StatsLabels& labels, bool metric) {
-    if (json_value == QJsonValue::Undefined || json_value.type() != QJsonValue::Object) return;
-
-    QJsonObject stats = json_value.toObject();
-    const int distance = stats["distance"].toDouble() * (metric ? MILE_TO_KM : 1);
-    labels.routes->setText(QString::number((int)stats["routes"].toDouble()));
-    labels.distance->setText(QString::number(distance));
-    labels.hours->setText(QString::number((int)(stats["minutes"].toDouble() / 60)));
+  auto update = [](const QJsonObject &obj, StatsLabels& labels, bool metric) {
+    labels.routes->setText(QString::number((int)obj["routes"].toDouble()));
+    labels.distance->setText(QString::number(obj["distance"].toDouble() * (metric ? MILE_TO_KM : 1)));
+    labels.hours->setText(QString::number((int)(obj["minutes"].toDouble() / 60)));
   };
 
   bool metric = Params().read_db_bool("IsMetric");
   QJsonObject json = doc.object();
-  update(json["all"], all_, metric);
-  update(json["week"], week_, metric);
+  update(json["all"].toObject(), all_, metric);
+  update(json["week"].toObject(), week_, metric);
 
   if (save) { Params().write_db_value("DriveStats", response.toStdString()); }
 }
