@@ -83,7 +83,6 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
 // OffroadHome: the offroad home page
 
 OffroadHome::OffroadHome(QWidget* parent) : QWidget(parent) {
-
   QVBoxLayout* main_layout = new QVBoxLayout();
   main_layout->setContentsMargins(sbr_w + 50, 50, 50, 50);
 
@@ -98,7 +97,7 @@ OffroadHome::OffroadHome(QWidget* parent) : QWidget(parent) {
   version->setStyleSheet(R"(font-size: 45px;)");
   header_layout->addWidget(version, 0, Qt::AlignTop | Qt::AlignRight);
 
-  main_layout->addLayout(header_layout, 0);
+  main_layout->addLayout(header_layout);
 
   alert_notification = new QPushButton();
   QObject::connect(alert_notification, SIGNAL(released()), this, SLOT(openAlerts()));
@@ -108,7 +107,6 @@ OffroadHome::OffroadHome(QWidget* parent) : QWidget(parent) {
   center_layout = new QStackedLayout();
 
   QGridLayout* statsAndSetup = new QGridLayout();
-
 
   DriveStats* drive = new DriveStats;
   drive->setFixedSize(1000, 800);
