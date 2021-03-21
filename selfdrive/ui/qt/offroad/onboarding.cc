@@ -30,7 +30,7 @@ void TrainingGuide::mouseReleaseEvent(QMouseEvent *e) {
 
   if (currentIndex >= std::size(boundingBox)) {
     emit completedTraining();
-  } else if (prevIndex != currentIndex) {
+  } else if (currentIndex != prevIndex) {
     image.load("../assets/training/step" + QString::number(currentIndex) + ".jpg");
     update();
   }
