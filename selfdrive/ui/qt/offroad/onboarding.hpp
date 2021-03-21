@@ -25,7 +25,7 @@ private:
   // Array of bounding rects for the a given training guide step.
   static inline constexpr QRect boundingBox[] = {
       {QPoint{250, 750}, QPoint{930, 900}},
-      {QPoint{280, 640}, QPoint{1280, 950}},
+      {QPoint{280, 650}, QPoint{1280, 950}},
       {QPoint{330, 590}, QPoint{1130, 900}},
       {QPoint{910, 500}, QPoint{1580, 1000}},
       {QPoint{1180, 630}, QPoint{1300, 720}},
