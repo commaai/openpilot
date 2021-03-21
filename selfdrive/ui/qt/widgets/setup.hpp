@@ -50,6 +50,8 @@ public:
 private:
   QStackedLayout* mainLayout;
   CommaApi* api;
+  PrimeAdWidget *primeAd;
+  PrimeUserWidget *primeUser;
   bool showQr = false;
 
 private slots:
