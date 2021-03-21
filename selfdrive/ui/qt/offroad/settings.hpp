@@ -42,11 +42,7 @@ signals:
 private:
   QPushButton *sidebar_alert_widget;
   QWidget *sidebar_widget;
-  std::map<QString, QWidget *> panels;
   QButtonGroup *nav_btns;
   QStackedLayout *panel_layout;
   QFrame* panel_frame;
-
-public slots:
-  void setActivePanel();
 };
