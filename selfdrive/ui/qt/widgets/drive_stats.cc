@@ -14,19 +14,12 @@ static QLayout* build_stat_layout(QLabel** metric, const QString& name) {
   QVBoxLayout* layout = new QVBoxLayout;
   layout->setMargin(0);
   *metric = new QLabel("0");
-  (*metric)->setStyleSheet(R"(
-    font-size: 80px;
-    font-weight: 600;
-  )");
+  (*metric)->setStyleSheet("font-size: 80px; font-weight: 600;");
   layout->addWidget(*metric, 0, Qt::AlignLeft);
 
   QLabel* label = new QLabel(name);
-  label->setStyleSheet(R"(
-    font-size: 45px;
-    font-weight: 500;
-  )");
+  label->setStyleSheet("font-size: 45px; font-weight: 500;");
   layout->addWidget(label, 0, Qt::AlignLeft);
-
   return layout;
 }
 
@@ -43,9 +36,8 @@ void DriveStats::parseResponse(QString response, bool save) {
   }
 
   auto update = [](const QJsonValueRef json_value, StatsLabels& labels, bool metric) {
-    if (json_value == QJsonValue::Undefined || json_value.type() != QJsonValue::Object) {
-      return;
-    }
+    if (json_value == QJsonValue::Undefined || json_value.type() != QJsonValue::Object) return;
+
     QJsonObject stats = json_value.toObject();
     const int distance = stats["distance"].toDouble() * (metric ? MILE_TO_KM : 1);
     labels.routes->setText(QString::number((int)stats["routes"].toDouble()));
@@ -62,12 +54,7 @@ void DriveStats::parseResponse(QString response, bool save) {
 }
 
 DriveStats::DriveStats(QWidget* parent) : QWidget(parent) {
-  setStyleSheet(R"(
-    QLabel {
-      font-size: 48px;
-      font-weight: 500;
-    }
-  )");
+  setStyleSheet("QLabel {font-size: 48px; font-weight: 500;}");
 
   auto add_stats_layouts = [&](QGridLayout* gl, StatsLabels& labels, int row, const char* distance_unit) {
     gl->addLayout(build_stat_layout(&labels.routes, "DRIVES"), row, 0, 3, 1);
