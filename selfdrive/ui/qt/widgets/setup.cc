@@ -221,7 +221,7 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
     font-weight: bold;
     background-color: #292929;
     border-radius: 40px;
-    padding: 40px;
+    padding: 30px;
   )");
 
   // set up API requests
