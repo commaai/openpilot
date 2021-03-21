@@ -1,7 +1,6 @@
 #include <QDebug>
 #include <QJsonDocument>
 #include <QJsonObject>
-// #include <QStackedLayout>
 #include <QVBoxLayout>
 
 #include "api.hpp"
