@@ -42,6 +42,11 @@ inline bool starts_with(const std::string &s, const std::string &prefix) {
   return s.compare(0, prefix.size(), prefix) == 0;
 }
 
+inline std::string rtrimmed(const std::string& s) {
+  size_t end = s.find_last_not_of(" \n\r\t\f\v");
+  return (end == std::string::npos) ? "" : s.substr(0, end + 1);
+}
+
 template <typename... Args>
 inline std::string string_format(const std::string& format, Args... args) {
   size_t size = snprintf(nullptr, 0, format.c_str(), args...) + 1;

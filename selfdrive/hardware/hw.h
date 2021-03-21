@@ -27,7 +27,7 @@ public:
 class HardwareEon : public HardwareNone {
 public:
   static std::string get_os_version() {
-    return "NEOS " + util::read_file("/VERSION");
+    return "NEOS " + util::rtrimmed(util::read_file("/VERSION"));
   };
 
   static void reboot() { std::system("reboot"); };
@@ -44,7 +44,7 @@ public:
 class HardwareTici : public HardwareNone {
 public:
   static std::string get_os_version() {
-    return "AGNOS " + util::read_file("/VERSION");
+    return "AGNOS " + util::rtrimmed(util::read_file("/VERSION"));
   };
 
   static void reboot() { std::system("sudo reboot"); };
