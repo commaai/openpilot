@@ -47,7 +47,7 @@ QByteArray CommaApi::rsa_sign(QByteArray data) {
   return sig;
 }
 
-QString CommaApi::create_jwt(QVector<QPair<QString, QJsonValue>> payloads, int expiry) {
+QString CommaApi::create_jwt(const std::map<QString, QJsonValue> *payloads, int expiry) {
   QString dongle_id = QString::fromStdString(Params().get("DongleId"));
 
   QJsonObject header;
@@ -60,8 +60,10 @@ QString CommaApi::create_jwt(QVector<QPair<QString, QJsonValue>> payloads, int e
   payload.insert("nbf", t);
   payload.insert("iat", t);
   payload.insert("exp", t + expiry);
-  for (auto load : payloads) {
-    payload.insert(load.first, load.second);
+  if (payloads) {
+    for (const auto& [name ,value] : *payloads) {
+      payload.insert(name, value);
+    }
   }
 
   auto b64_opts = QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals;
@@ -74,12 +76,8 @@ QString CommaApi::create_jwt(QVector<QPair<QString, QJsonValue>> payloads, int e
   return jwt;
 }
 
-QString CommaApi::create_jwt() {
-  return create_jwt(*(new QVector<QPair<QString, QJsonValue>>()));
-}
-
-RequestRepeater::RequestRepeater(QWidget* parent, QString requestURL, int period_seconds, QVector<QPair<QString, QJsonValue>> payloads, bool disableWithScreen)
-  : disableWithScreen(disableWithScreen), QObject(parent)  {
+RequestRepeater::RequestRepeater(QWidget* parent, QString requestURL, int period_seconds, const std::map<QString, QJsonValue>* payloads, bool disableWithScreen)
+    : disableWithScreen(disableWithScreen), QObject(parent) {
   networkAccessManager = new QNetworkAccessManager(this);
 
   reply = NULL;
@@ -94,7 +92,7 @@ RequestRepeater::RequestRepeater(QWidget* parent, QString requestURL, int period
   connect(networkTimer, SIGNAL(timeout()), this, SLOT(requestTimeout()));
 }
 
-void RequestRepeater::sendRequest(QString requestURL, QVector<QPair<QString, QJsonValue>> payloads){
+void RequestRepeater::sendRequest(QString requestURL, const std::map<QString, QJsonValue> *payloads){
   // No network calls onroad
   if(GLWindow::ui_state.scene.started){
     return;

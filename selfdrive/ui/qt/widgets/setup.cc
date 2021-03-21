@@ -37,9 +37,8 @@ void PairingQRWidget::refresh(){
     qrCode->setStyleSheet(R"(font-size: 60px;)");
     return;
   }
-  QVector<QPair<QString, QJsonValue>> payloads;
-  payloads.push_back(qMakePair(QString("pair"), true));
-  QString pairToken = CommaApi::create_jwt(payloads);
+  std::map<QString, QJsonValue> payloads{{"pair", true}};
+  QString pairToken = CommaApi::create_jwt(&payloads);
 
   QString qrString = IMEI + "--" + serial + "--" + pairToken;
   this->updateQrCode(qrString);
