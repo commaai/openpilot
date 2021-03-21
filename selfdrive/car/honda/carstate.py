@@ -219,7 +219,10 @@ class CarState(CarStateBase):
     if not self.CP.openpilotLongitudinalControl:
       self.brake_error = 0
     else:
-      self.brake_error = cp.vl["STANDSTILL"]['BRAKE_ERROR_1'] or cp.vl["STANDSTILL"]['BRAKE_ERROR_2']
+      if CP.carFingerprint == CAR.CLARITY:
+          self.brake_error = cp.vl["BRAKE_ERROR"]['BRAKE_ERROR_1'] or cp.vl["BRAKE_ERROR"]['BRAKE_ERROR_2']
+      else:
+          self.brake_error = cp.vl["STANDSTILL"]['BRAKE_ERROR_1'] or cp.vl["STANDSTILL"]['BRAKE_ERROR_2']
     ret.espDisabled = cp.vl["VSA_STATUS"]['ESP_DISABLED'] != 0
 
     speed_factor = SPEED_FACTOR[self.CP.carFingerprint]
