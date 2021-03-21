@@ -6,7 +6,6 @@
 #ifndef QCOM
 #include "networking.hpp"
 #endif
-
 #include "settings.hpp"
 #include "widgets/input.hpp"
 #include "widgets/toggle.hpp"
@@ -18,8 +17,6 @@
 
 QWidget * toggles_panel() {
   QVBoxLayout *toggles_list = new QVBoxLayout();
-  toggles_list->setMargin(50);
-
   toggles_list->addWidget(new ToggleControl("OpenpilotEnabledToggle",
                                             "Enable openpilot",
                                             "Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off.",
@@ -45,16 +42,17 @@ QWidget * toggles_panel() {
                                             "Display speed in km/h instead of mp/h.",
                                             "../assets/offroad/icon_metric.png"
                                             ));
+
+                                            
   toggles_list->addWidget(new ToggleControl("CommunityFeaturesToggle",
                                             "Enable Community Features",
                                             "Use features from the open source community that are not maintained or supported by comma.ai and have not been confirmed to meet the standard safety model. These features include community supported cars and community supported hardware. Be extra cautious when using these features",
                                             "../assets/offroad/icon_shell.png"
                                             ));
-
   ToggleControl *record_toggle = new ToggleControl("RecordFront",
                                             "Record and Upload Driver Camera",
                                             "Upload data from the driver facing camera and help improve the driver monitoring algorithm.",
-                                            "../assets/offroad/icon_network.png");
+                                            "../assets/offroad/icon_network.png", false);
   toggles_list->addWidget(record_toggle);
 
   bool record_lock = Params().read_db_bool("RecordFrontLock");
@@ -70,7 +68,7 @@ QWidget * toggles_panel() {
 QWidget *device_panel() {
   QVBoxLayout *device_layout = new QVBoxLayout;
   device_layout->setMargin(100);
-  device_layout->setSpacing(30);
+  // device_layout->setSpacing(30);
 
   Params params = Params();
   std::vector<std::pair<std::string, std::string>> labels = {
@@ -91,7 +89,6 @@ QWidget *device_panel() {
   device_layout->addWidget(new ButtonControl("Driver camera view", "PREVIEW",
                                              "Preview the driver facing camera to help optimize device mounting position for best driver monitoring experience. (vehicle must be off)",
                                              [=]() { Params().write_db_value("IsDriverViewEnabled", "1", 1); }));
-
   // TODO: show current calibration values
   device_layout->addWidget(new ButtonControl("Reset Calibration", "RESET",
                                              "openpilot requires the device to be mounted within 4° left or right and within 5° up or down. openpilot is continuously calibrating, resetting is rarely required.",
@@ -99,7 +96,6 @@ QWidget *device_panel() {
                                                if (ConfirmationDialog::confirm("Are you sure you want to reset calibration?")) {
                                                  Params().delete_db_value("CalibrationParams");
                                                } }));
-
   // power buttons
 
   QPushButton *poweroff_btn = new QPushButton("Power Off");
@@ -127,7 +123,7 @@ QWidget *device_panel() {
       Params().write_db_value("DoUninstall", "1");
     }
   });
-
+  device_layout->addStretch();
   QWidget *widget = new QWidget;
   widget->setLayout(device_layout);
   widget->setStyleSheet(R"(
@@ -159,8 +155,10 @@ QWidget * developer_panel() {
 
   for (int i = 0; i < labels.size(); i++) {
     auto l = labels[i];
-    main_layout->addWidget(new LabelControl(QString::fromStdString(l.first), QString::fromStdString(l.second)));
+    bool has_bottom_line = i < (labels.size() - 1);
+    main_layout->addWidget(new LabelControl(QString::fromStdString(l.first), QString::fromStdString(l.second), "", has_bottom_line));
   }
+  main_layout->addStretch();
 
   QWidget *widget = new QWidget;
   widget->setLayout(main_layout);
@@ -186,6 +184,7 @@ QWidget * network_panel(QWidget * parent) {
   };
   for (auto &b : btns) {
     layout->addWidget(new ButtonControl(b.first, "OPEN", "", [=]() { std::system(b.second); }));
+    // layout->addWidget(horizontal_line());
   }
   layout->addStretch(1);
 

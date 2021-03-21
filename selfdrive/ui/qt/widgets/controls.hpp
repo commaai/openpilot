@@ -1,29 +1,31 @@
 #pragma once
 
-#include <QHBoxLayout>
-#include <QVBoxLayout>
 #include <QFrame>
+#include <QHBoxLayout>
 #include <QLabel>
 #include <QPushButton>
+#include <QVBoxLayout>
 
 #include "common/params.h"
 #include "toggle.hpp"
 
 class AbstractControl : public QFrame {
   Q_OBJECT
- public:
-  void setEnabled(bool enabled) {
-    title_label->setEnabled(enabled);
-    if (control_widget) {
-      control_widget->setEnabled(enabled);
-    }
-    if (desc_label) { 
-      desc_label->setEnabled(enabled);
-    }
-  }
-
  protected:
   AbstractControl(const QString &title, const QString &desc = "", const QString &icon = "", bool bottom_line = true);
+
+  void setControlWidget(QWidget *w) {
+    assert(control_widget == nullptr);
+    hboxLayout->addWidget(w);
+    control_widget = w;
+  }
+
+  QSize minimumSizeHint() const override {
+    QSize size = QFrame::minimumSizeHint();
+    size.setHeight(120);
+    return size;
+  };
+
   void mousePressEvent(QMouseEvent *event) override { pressed = true; }
   void mouseMoveEvent(QMouseEvent *event) override {
     if (pressed) dragging = true;
@@ -33,11 +35,6 @@ class AbstractControl : public QFrame {
       desc_label->setVisible(!desc_label->isVisible());
     }
     pressed = dragging = false;
-  }
-  void setControlWidget(QWidget *w) {
-    assert(control_widget == nullptr);
-    hboxLayout->addWidget(w);
-    control_widget = w;
   }
 
  private:
@@ -50,7 +47,8 @@ class AbstractControl : public QFrame {
 class LabelControl : public AbstractControl {
   Q_OBJECT
  public:
-  LabelControl(const QString &title, const QString &text, const QString &desc = "") : AbstractControl(title, desc) {
+  LabelControl(const QString &title, const QString &text, const QString &desc = "",
+               bool bottom_line = true) : AbstractControl(title, desc, "", bottom_line) {
     label.setText(text);
     label.setAlignment(Qt::AlignRight | Qt::AlignVCenter);
     setControlWidget(&label);
@@ -65,7 +63,8 @@ class ButtonControl : public AbstractControl {
   Q_OBJECT
  public:
   template <typename Functor>
-  ButtonControl(const QString &title, const QString &text, const QString &desc, Functor functor, const QString &icon = "") : AbstractControl(title, desc, icon) {
+  ButtonControl(const QString &title, const QString &text, const QString &desc, Functor functor,
+                const QString &icon = "", bool bottom_line = true) : AbstractControl(title, desc, icon, bottom_line) {
     btn.setText(text);
     btn.setStyleSheet(R"(padding: 0; height: 80px; border-radius: 15px;background-color: #393939;font-size: 30px;min-width: 220px; max-width: 220px;)");
     QObject::connect(&btn, &QPushButton::released, functor);
@@ -80,7 +79,8 @@ class ButtonControl : public AbstractControl {
 class ToggleControl : public AbstractControl {
   Q_OBJECT
  public:
-  ToggleControl(const QString &param, const QString &title, const QString &desc, const QString &icon) : AbstractControl(title, desc, icon) {
+  ToggleControl(const QString &param, const QString &title, const QString &desc, const QString &icon,
+                bool bottom_line = true) : AbstractControl(title, desc, icon, bottom_line) {
     toggle.setFixedSize(150, 100);
     // set initial state from param
     if (Params().read_db_bool(param.toStdString().c_str())) {
@@ -92,6 +92,8 @@ class ToggleControl : public AbstractControl {
     });
     setControlWidget(&toggle);
   }
+
+  void setEnabled(bool enabled) { toggle.setEnabled(enabled); }
 
  private:
   Toggle toggle;

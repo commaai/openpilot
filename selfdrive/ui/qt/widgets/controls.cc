@@ -10,7 +10,6 @@
 
 AbstractControl::AbstractControl(const QString &title, const QString &desc, const QString &icon, bool bottom_line) : QFrame() {
   hboxLayout = new QHBoxLayout;
-  hboxLayout->setContentsMargins(0, 15, 0, 15);
   hboxLayout->setSpacing(50);
   // left icon
   if (!icon.isEmpty()) {
@@ -22,23 +21,23 @@ AbstractControl::AbstractControl(const QString &title, const QString &desc, cons
   }
   // title
   title_label = new QLabel(title);
-  title_label->setStyleSheet(R"(font-size: 50px;)");
+  title_label->setStyleSheet("font-size: 50px;");
   hboxLayout->addWidget(title_label);
 
   QVBoxLayout *vboxLayout = new QVBoxLayout(this);
+  vboxLayout->setContentsMargins(0, 0, 0, 0);
   vboxLayout->addLayout(hboxLayout);
-  vboxLayout->addStretch();
-
+  
   // description
   if (!desc.isEmpty()) {
     desc_label = new QLabel(desc);
-    desc_label->setContentsMargins(40, 15, 40, 15);
-    desc_label->setStyleSheet(R"(font-size: 40px;color:grey)");
+    desc_label->setContentsMargins(40, 0, 40, 0);
+    desc_label->setStyleSheet("font-size: 40px;color:grey");
     desc_label->setWordWrap(true);
     desc_label->setVisible(false);
+    vboxLayout->addStretch();
     vboxLayout->addWidget(desc_label);
   }
-
   if (bottom_line) {
     vboxLayout->addWidget(horizontal_line());
   }
