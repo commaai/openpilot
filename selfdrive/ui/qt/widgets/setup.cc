@@ -24,7 +24,7 @@ PairingQRWidget::PairingQRWidget(QWidget* parent) : QWidget(parent) {
   QTimer* timer = new QTimer(this);
   timer->start(30 * 1000);
   connect(timer, SIGNAL(timeout()), this, SLOT(refresh()));
-  refresh(); // don't wait for the first refresh
+  refresh(); // Not waiting for the first refresh
 }
 
 void PairingQRWidget::refresh(){
@@ -48,7 +48,7 @@ void PairingQRWidget::refresh(){
 void PairingQRWidget::updateQrCode(QString text) {
   QrCode qr = QrCode::encodeText(text.toUtf8().data(), QrCode::Ecc::LOW);
   qint32 sz = qr.getSize();
-  // make the image larger so we can have a white border
+  // We make the image larger so we can have a white border
   QImage im(sz + 2, sz + 2, QImage::Format_RGB32);
   QRgb black = qRgb(0, 0, 0);
   QRgb white = qRgb(255, 255, 255);
@@ -71,39 +71,32 @@ void PairingQRWidget::updateQrCode(QString text) {
 
 PrimeUserWidget::PrimeUserWidget(QWidget* parent) : QWidget(parent) {
   mainLayout = new QVBoxLayout;
-
   QLabel* commaPrime = new QLabel("COMMA PRIME");
-  mainLayout->addWidget(commaPrime, 0, Qt::AlignTop);
+  commaPrime->setStyleSheet(R"(
+    font-size: 60px;
+  )");
+  mainLayout->addWidget(commaPrime);
 
-  username = new QLabel();
-  mainLayout->addWidget(username, 0, Qt::AlignTop);
+  username = new QLabel("");
+  mainLayout->addWidget(username);
 
-  mainLayout->addSpacing(100);
+  mainLayout->addSpacing(200);
 
   QLabel* commaPoints = new QLabel("COMMA POINTS");
   commaPoints->setStyleSheet(R"(
+    font-size: 60px;
     color: #b8b8b8;
   )");
-  mainLayout->addWidget(commaPoints, 0, Qt::AlignTop);
+  mainLayout->addWidget(commaPoints);
 
-  points = new QLabel();
-  mainLayout->addWidget(points, 0, Qt::AlignTop);
+  points = new QLabel("");
+  mainLayout->addWidget(points);
 
   setLayout(mainLayout);
-  setStyleSheet(R"(
-    QLabel {
-      font-size: 60px;
-      font-weight: 500;
-    }
-  )");
-
-  // set up API requests
   QString dongleId = QString::fromStdString(Params().get("DongleId"));
-  if (!dongleId.length()) {
-    return;
-  }
   QString url = "https://api.commadotai.com/v1/devices/" + dongleId + "/owner";
   RequestRepeater* repeater = new RequestRepeater(this, url, 6);
+
   QObject::connect(repeater, SIGNAL(receivedResponse(QString)), this, SLOT(replyFinished(QString)));
 }
 
@@ -113,13 +106,12 @@ void PrimeUserWidget::replyFinished(QString response) {
     qDebug() << "JSON Parse failed on getting username and points";
     return;
   }
-
   QJsonObject json = doc.object();
-  QString points_str = QString::number(json["points"].toInt());
   QString username_str = json["username"].toString();
   if (username_str.length()) {
     username_str = "@" + username_str;
   }
+  QString points_str = QString::number(json["points"].toInt());
 
   username->setText(username_str);
   points->setText(points_str);
@@ -127,23 +119,29 @@ void PrimeUserWidget::replyFinished(QString response) {
 
 PrimeAdWidget::PrimeAdWidget(QWidget* parent) : QWidget(parent) {
   QVBoxLayout* vlayout = new QVBoxLayout;
-  vlayout->setSpacing(15);
 
-  vlayout->addWidget(new QLabel("Upgrade now"), 1, Qt::AlignTop);
+  QLabel* upgradeNow = new QLabel("Upgrade now");
+  vlayout->addWidget(upgradeNow);
 
-  QLabel* description = new QLabel("Become a comma prime member in the comma connect app and get premium features!");
+  QLabel* description = new QLabel("Become a comma prime member in the comma app and get premium features!");
   description->setStyleSheet(R"(
     font-size: 50px;
     color: #b8b8b8;
   )");
   description->setWordWrap(true);
-  vlayout->addWidget(description, 2, Qt::AlignTop);
+  vlayout->addWidget(description);
+
+  vlayout->addSpacing(50);
 
   QVector<QString> features = {"✓ REMOTE ACCESS", "✓ 14 DAYS OF STORAGE", "✓ DEVELOPER PERKS"};
-  for (auto &f: features) {
-    QLabel* feature = new QLabel(f);
-    feature->setStyleSheet(R"(font-size: 40px;)");
-    vlayout->addWidget(feature, 0, Qt::AlignBottom);
+  for (auto featureContent : features) {
+    QLabel* feature = new QLabel(featureContent);
+    feature->setStyleSheet(R"(
+      font-size: 40px;
+    )");
+
+    vlayout->addWidget(feature);
+    vlayout->addSpacing(15);
   }
 
   setLayout(vlayout);
@@ -200,11 +198,11 @@ SetupWidget::SetupWidget(QWidget* parent) : QWidget(parent) {
   q->setLayout(qrLayout);
   mainLayout->addWidget(q);
 
-  primeAd = new PrimeAdWidget;
+  PrimeAdWidget* primeAd = new PrimeAdWidget;
   mainLayout->addWidget(primeAd);
 
-  primeUser = new PrimeUserWidget;
-  mainLayout->addWidget(primeUser);
+  PrimeUserWidget* primeUserWidget = new PrimeUserWidget;
+  mainLayout->addWidget(primeUserWidget);
 
   background->setLayout(mainLayout);
   background->setStyleSheet(R"(
@@ -214,13 +212,7 @@ SetupWidget::SetupWidget(QWidget* parent) : QWidget(parent) {
     }
   )");
   backgroundLayout->addWidget(background);
-
   setLayout(backgroundLayout);
-  setStyleSheet(R"(
-    font-size: 90px;
-    font-weight: bold;
-    background-color: #292929;
-  )");
 
   QString dongleId = QString::fromStdString(Params().get("DongleId"));
   QString url = "https://api.commadotai.com/v1.1/devices/" + dongleId + "/";
@@ -233,6 +225,10 @@ SetupWidget::SetupWidget(QWidget* parent) : QWidget(parent) {
 void SetupWidget::parseError(QString response) {
   showQr = false;
   mainLayout->setCurrentIndex(0);
+  setStyleSheet(R"(
+    font-size: 90px;
+    background-color: #000000;
+  )");
 }
 
 void SetupWidget::showQrCode(){
@@ -247,6 +243,14 @@ void SetupWidget::replyFinished(QString response) {
     return;
   }
 
+  if (mainLayout->currentIndex() == 0) { // If we are still on the blank widget
+    setStyleSheet(R"(
+      font-size: 90px;
+      font-weight: bold;
+      background-color: #292929;
+    )");
+  }
+
   QJsonObject json = doc.object();
   bool is_paired = json["is_paired"].toBool();
   bool is_prime = json["prime"].toBool();
@@ -255,9 +259,9 @@ void SetupWidget::replyFinished(QString response) {
     mainLayout->setCurrentIndex(1 + showQr);
   } else if (is_paired && !is_prime) {
     showQr = false;
-    mainLayout->setCurrentWidget(primeAd);
+    mainLayout->setCurrentIndex(3);
   } else if (is_paired && is_prime) {
     showQr = false;
-    mainLayout->setCurrentWidget(primeUser);
+    mainLayout->setCurrentIndex(4);
   }
 }
