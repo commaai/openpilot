@@ -21,7 +21,7 @@ protected:
 private:
   int currentIndex = 0;
   QImage image;
-  
+
   // Array of bounding rects for the a given training guide step.
   static inline constexpr QRect boundingBox[] = {
       {QPoint{250, 750}, QPoint{930, 900}},
