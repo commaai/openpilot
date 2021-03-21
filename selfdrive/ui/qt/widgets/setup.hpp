@@ -41,7 +41,7 @@ public:
   explicit PrimeAdWidget(QWidget* parent = 0);
 };
 
-class SetupWidget : public QWidget {
+class SetupWidget : public QFrame {
   Q_OBJECT
 
 public:

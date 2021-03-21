@@ -152,17 +152,11 @@ PrimeAdWidget::PrimeAdWidget(QWidget* parent) : QWidget(parent) {
 }
 
 
-SetupWidget::SetupWidget(QWidget* parent) : QWidget(parent) {
-  QVBoxLayout* backgroundLayout = new QVBoxLayout;
-  backgroundLayout->setMargin(25);
-
-  QFrame* background = new QFrame;
-
+SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
   mainLayout = new QStackedLayout;
 
   QWidget* blankWidget = new QWidget;
   mainLayout->addWidget(blankWidget);
-
 
   // Unpaired, registration prompt layout
 
@@ -197,6 +191,8 @@ SetupWidget::SetupWidget(QWidget* parent) : QWidget(parent) {
   // Pairing QR code layout
 
   QVBoxLayout* qrLayout = new QVBoxLayout;
+  qrLayout->setMargin(0);
+  qrLayout->setSpacing(0);
 
   QLabel* qrLabel = new QLabel("Scan with comma connect!");
   qrLabel->setWordWrap(true);
@@ -207,7 +203,7 @@ SetupWidget::SetupWidget(QWidget* parent) : QWidget(parent) {
   )");
   qrLayout->addWidget(qrLabel, 0, Qt::AlignTop);
 
-  qrLayout->addWidget(new PairingQRWidget);
+  qrLayout->addWidget(new PairingQRWidget, 1);
 
   QWidget* q = new QWidget;
   q->setLayout(qrLayout);
@@ -219,18 +215,13 @@ SetupWidget::SetupWidget(QWidget* parent) : QWidget(parent) {
   primeUser = new PrimeUserWidget;
   mainLayout->addWidget(primeUser);
 
-  background->setLayout(mainLayout);
-  background->setStyleSheet(R"(
-    border-radius: 40px;
-    padding: 40px;
-  )");
-  backgroundLayout->addWidget(background);
-
-  setLayout(backgroundLayout);
+  setLayout(mainLayout);
   setStyleSheet(R"(
     font-size: 90px;
     font-weight: bold;
     background-color: #292929;
+    border-radius: 40px;
+    padding: 40px;
   )");
 
   // set up API requests
@@ -265,10 +256,10 @@ void SetupWidget::replyFinished(QString response) {
 
   if (!is_paired) {
     mainLayout->setCurrentIndex(1 + showQr);
-  } else if (is_paired && !is_prime) {
+  } else if (!is_prime) {
     showQr = false;
     mainLayout->setCurrentWidget(primeAd);
-  } else if (is_paired && is_prime) {
+  } else {
     showQr = false;
     mainLayout->setCurrentWidget(primeUser);
   }
