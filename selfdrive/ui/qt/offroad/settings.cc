@@ -19,9 +19,8 @@
 #include "widgets/toggle.hpp"
 #include "widgets/offroad_alerts.hpp"
 
-#include "common/params.h"
-#include "common/util.h"
-
+#include "selfdrive/common/params.h"
+#include "selfdrive/common/util.h"
 #include "selfdrive/hardware/hw.h"
 
 QFrame* horizontal_line(QWidget* parent = 0){
@@ -45,17 +44,19 @@ QWidget* labelWidget(QString labelName, QString labelContent){
 
 ParamsToggle::ParamsToggle(QString param, QString title, QString description, QString icon_path, QWidget *parent): QFrame(parent) , param(param) {
   QHBoxLayout *layout = new QHBoxLayout;
+  layout->setMargin(0);
   layout->setSpacing(50);
 
   // Parameter image
+  const int img_size = 80;
   if (icon_path.length()) {
     QPixmap pix(icon_path);
     QLabel *icon = new QLabel();
-    icon->setPixmap(pix.scaledToWidth(80, Qt::SmoothTransformation));
+    icon->setPixmap(pix.scaledToWidth(img_size, Qt::SmoothTransformation));
     icon->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
     layout->addWidget(icon);
   } else {
-    layout->addSpacing(80);
+    layout->addSpacing(img_size);
   }
 
   // Name of the parameter
