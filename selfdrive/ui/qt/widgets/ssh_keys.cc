@@ -61,30 +61,33 @@ void SshControl::refresh() {
 
 void SshControl::getUserKeys(QString username){
   QString url = "https://github.com/" + username + ".keys";
-  aborted = false;
   reply = manager->get(QNetworkRequest(QUrl(url)));
   connect(reply, SIGNAL(finished()), this, SLOT(parseResponse()));
   networkTimer->start();
 }
 
 void SshControl::timeout(){
-  aborted = true;
   reply->abort();
 }
 
 void SshControl::parseResponse(){
-  if (!aborted) {
+  QString err = "";
+  if (reply->error() != QNetworkReply::OperationCanceledError) {
     networkTimer->stop();
     QString response = reply->readAll();
     if (reply->error() == QNetworkReply::NoError && response.length()) {
       Params().write_db_value("GithubSshKeys", response.toStdString());
     } else if(reply->error() == QNetworkReply::NoError){
-      //emit failedResponse("Username " + usernameGitHub + " has no keys on GitHub");
+      err = "Username '" + username + "' has no keys on GitHub";
     } else {
-      //emit failedResponse("Username " + usernameGitHub + " doesn't exist");
+      err = "Username '" + username + "' doesn't exist on GitHub";
     }
   } else {
-    emit failedResponse("Request timed out");
+    err = "Request timed out";
+  }
+
+  if (err.length()) {
+    ConfirmationDialog::alert(err);
   }
 
   refresh();
