@@ -74,10 +74,10 @@ class ToggleControl : public AbstractControl {
 
 public:
   ToggleControl(const QString &title, const QString &desc = "", const QString &icon = "", const bool state = false) : AbstractControl(title, desc, icon) {
+    toggle.setFixedSize(150, 100);
     if (state) {
       toggle.togglePosition();
     }
-    toggle.setFixedSize(150, 100);
     hlayout->addWidget(&toggle);
     QObject::connect(&toggle, &Toggle::stateChanged, this, &ToggleControl::toggleFlipped);
   }
