@@ -12,6 +12,12 @@
 
 // ********** settings window + top-level panels **********
 
+class DevicePanel : public QWidget {
+  Q_OBJECT
+public:
+  explicit DevicePanel(QWidget* parent = nullptr);
+};
+
 class DeveloperPanel : public QFrame {
   Q_OBJECT
 public:
