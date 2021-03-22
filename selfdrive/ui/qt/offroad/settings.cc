@@ -18,6 +18,8 @@
 
 QWidget * toggles_panel() {
   QVBoxLayout *toggles_list = new QVBoxLayout();
+
+  toggles_list->setMargin(50);
   toggles_list->addWidget(new ToggleControl("OpenpilotEnabledToggle",
                                             "Enable openpilot",
                                             "Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off.",
@@ -66,9 +68,7 @@ QWidget * toggles_panel() {
 
   QWidget *widget = new QWidget;
   widget->setLayout(toggles_list);
-  ScrollControl *scroll = new ScrollControl();
-  scroll->setWidget(widget);
-  return scroll;
+  return widget;
 }
 
 QWidget * device_panel() {
@@ -140,9 +140,7 @@ QWidget * device_panel() {
       background-color: #393939;
     }
   )");
-  ScrollControl *scroll = new ScrollControl();
-  scroll->setWidget(widget);
-  return scroll;
+  return widget;
 }
 
 DeveloperPanel::DeveloperPanel(QWidget* parent) : QFrame(parent) {
@@ -187,12 +185,12 @@ QWidget * network_panel(QWidget * parent) {
   // simple wifi + tethering buttons
   std::vector<std::pair<const char*, const char*>> btns = {
     {"WiFi Settings", "am start -n com.android.settings/.wifi.WifiPickerActivity \
-                            -a android.net.wifi.PICK_WIFI_NETWORK \
+                       -a android.net.wifi.PICK_WIFI_NETWORK \
+                       --ez extra_prefs_show_button_bar true \
+                       --es extra_prefs_set_next_text ''"},
+    {"Tethering Settings", "am start -n com.android.settings/.TetherSettings \
                             --ez extra_prefs_show_button_bar true \
                             --es extra_prefs_set_next_text ''"},
-    {"Tethering Settings", "am start -n com.android.settings/.TetherSettings \
-                                 --ez extra_prefs_show_button_bar true \
-                                 --es extra_prefs_set_next_text ''"},
   };
   for (auto &b : btns) {
     layout->addWidget(new ButtonControl(b.first, "OPEN", "", [=]() { std::system(b.second); }));

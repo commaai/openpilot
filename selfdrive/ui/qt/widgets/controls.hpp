@@ -9,9 +9,12 @@
 #include "common/params.h"
 #include "toggle.hpp"
 
+QFrame *horizontal_line(QWidget *parent = nullptr);
+
 class AbstractControl : public QFrame {
   Q_OBJECT
- protected:
+
+protected:
   AbstractControl(const QString &title, const QString &desc = "", const QString &icon = "");
 
   void setControlWidget(QWidget *w) {
@@ -37,7 +40,7 @@ class AbstractControl : public QFrame {
     pressed = dragging = false;
   }
 
- private:
+private:
   bool pressed = false, dragging = false;
   QHBoxLayout *hboxLayout = nullptr;
   QLabel *title_label = nullptr, *desc_label = nullptr;
@@ -46,7 +49,8 @@ class AbstractControl : public QFrame {
 
 class LabelControl : public AbstractControl {
   Q_OBJECT
- public:
+
+public:
   LabelControl(const QString &title, const QString &text, const QString &desc = "") : AbstractControl(title, desc, "") {
     label.setText(text);
     label.setAlignment(Qt::AlignRight | Qt::AlignVCenter);
@@ -54,13 +58,14 @@ class LabelControl : public AbstractControl {
   }
   void setText(const QString &text) { label.setText(text); }
 
- private:
+private:
   QLabel label;
 };
 
 class ButtonControl : public AbstractControl {
   Q_OBJECT
- public:
+
+public:
   template <typename Functor>
   ButtonControl(const QString &title, const QString &text, const QString &desc, Functor functor, const QString &icon = "") : AbstractControl(title, desc, icon) {
     btn.setText(text);
@@ -76,7 +81,8 @@ class ButtonControl : public AbstractControl {
 
 class ToggleControl : public AbstractControl {
   Q_OBJECT
- public:
+
+public:
   ToggleControl(const QString &param, const QString &title, const QString &desc, const QString &icon) : AbstractControl(title, desc, icon) {
     toggle.setFixedSize(150, 100);
     // set initial state from param
@@ -95,17 +101,3 @@ class ToggleControl : public AbstractControl {
  private:
   Toggle toggle;
 };
-
-class ScrollControl : public QScrollArea {
-  Q_OBJECT
- public:
-  ScrollControl() : QScrollArea() {
-    setStyleSheet(R"(background-color: transparent;)");
-    setWidgetResizable(true);
-    setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    QScroller::grabGesture(this, QScroller::TouchGesture);
-  }
-};
-
-QFrame *horizontal_line(QWidget *parent = nullptr);
