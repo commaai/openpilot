@@ -43,6 +43,7 @@ private:
 
   QTextEdit *terms_text;
   QWidget *terms_screen();
+  QWidget *terms_screen2();
   QWidget *training_screen();
 
 signals:

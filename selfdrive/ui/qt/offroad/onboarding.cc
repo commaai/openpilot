@@ -13,6 +13,9 @@
 #include "home.hpp"
 #include "util.h"
 
+#include <QQuickView>
+//#include <QQuickWidget>
+
 
 void TrainingGuide::mouseReleaseEvent(QMouseEvent *e) {
   int leftOffset = (geometry().width()-1620)/2;
@@ -51,6 +54,13 @@ void TrainingGuide::paintEvent(QPaintEvent *event) {
   QRect rect(image.rect());
   rect.moveCenter(devRect.center());
   painter.drawImage(rect.topLeft(), image);
+}
+
+QWidget* OnboardingWindow::terms_screen2() {
+  QQuickView *view = new QQuickView;
+  QWidget* container = QWidget::createWindowContainer(view, 0);
+  view->setSource(QUrl::fromLocalFile("qt/offroad/terms.qml"));
+  return container;
 }
 
 
@@ -142,7 +152,7 @@ OnboardingWindow::OnboardingWindow(QWidget *parent) : QStackedWidget(parent) {
   current_terms_version = params.get("TermsVersion", false);
   current_training_version = params.get("TrainingVersion", false);
 
-  addWidget(terms_screen());
+  addWidget(terms_screen2());
 
   TrainingGuide* tr = new TrainingGuide(this);
   connect(tr, &TrainingGuide::completedTraining, [=](){
