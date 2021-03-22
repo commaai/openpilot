@@ -293,11 +293,6 @@ QWidget * network_panel(QWidget * parent) {
 }
 
 
-void SettingsWindow::setActivePanel() {
-  auto *btn = qobject_cast<QPushButton *>(nav_btns->checkedButton());
-  panel_layout->setCurrentWidget(panels[btn->text()]);
-}
-
 SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   // setup two main layouts
   QVBoxLayout *sidebar_layout = new QVBoxLayout();
@@ -319,17 +314,17 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   QObject::connect(close_btn, SIGNAL(released()), this, SIGNAL(closeSettings()));
 
   // setup panels
-  panels = {
-    {"Developer", developer_panel()},
+  QPair<QString, QWidget *> panels[] = {
     {"Device", device_panel()},
     {"Network", network_panel(this)},
     {"Toggles", toggles_panel()},
+    {"Developer", developer_panel()},
   };
 
   sidebar_layout->addSpacing(45);
   nav_btns = new QButtonGroup();
-  for (auto &panel : panels) {
-    QPushButton *btn = new QPushButton(panel.first);
+  for (auto &[name, panel] : panels) {
+    QPushButton *btn = new QPushButton(name);
     btn->setCheckable(true);
     btn->setStyleSheet(R"(
       * {
@@ -348,9 +343,9 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
 
     nav_btns->addButton(btn);
     sidebar_layout->addWidget(btn, 0, Qt::AlignRight);
-    panel_layout->addWidget(panel.second);
-    QObject::connect(btn, SIGNAL(released()), this, SLOT(setActivePanel()));
-    QObject::connect(btn, &QPushButton::released, [=](){emit sidebarPressed();});
+
+    panel_layout->addWidget(panel);
+    QObject::connect(btn, &QPushButton::released, [=, w = panel]() { panel_layout->setCurrentWidget(w); });
   }
   qobject_cast<QPushButton *>(nav_btns->buttons()[0])->setChecked(true);
   sidebar_layout->setContentsMargins(50, 50, 100, 50);
