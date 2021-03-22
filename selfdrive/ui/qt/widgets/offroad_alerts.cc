@@ -59,13 +59,6 @@ OffroadAlert::OffroadAlert(QWidget* parent) : QFrame(parent) {
     }
   )");
   main_layout->setMargin(50);
-
-  QFile inFile("../controls/lib/alerts_offroad.json");
-  bool ret = inFile.open(QIODevice::ReadOnly | QIODevice::Text);
-  assert(ret);
-  QJsonDocument doc = QJsonDocument::fromJson(inFile.readAll());
-  assert(!doc.isNull());
-  alert_keys = doc.object().keys();
 }
 
 void OffroadAlert::refresh() {
@@ -80,12 +73,18 @@ void OffroadAlert::refresh() {
   QVBoxLayout *layout = new QVBoxLayout;
 
   if (updateAvailable) {
+    QLabel *title = new QLabel("Update Available");
+    title->setStyleSheet(R"(
+      font-size: 72px;
+    )");
+    layout->addWidget(title, 0, Qt::AlignLeft | Qt::AlignTop);
+
     QString release_notes = QString::fromStdString(Params().get("ReleaseNotes"));
     QLabel *body = new QLabel(release_notes);
     body->setStyleSheet(R"(
       font-size: 48px;
     )");
-    layout->addWidget(body, 0, Qt::AlignLeft | Qt::AlignTop);
+    layout->addWidget(body, 1, Qt::AlignLeft | Qt::AlignTop);
   } else {
     // TODO: paginate the alerts
     for (const auto &alert : alerts) {
@@ -110,7 +109,20 @@ void OffroadAlert::refresh() {
 
 void OffroadAlert::parse_alerts() {
   alerts.clear();
-  for (const QString &key : alert_keys) {
+
+  // TODO: only read this once
+  QFile inFile("../controls/lib/alerts_offroad.json");
+  inFile.open(QIODevice::ReadOnly | QIODevice::Text);
+  QByteArray data = inFile.readAll();
+  inFile.close();
+
+  QJsonDocument doc = QJsonDocument::fromJson(data);
+  if (doc.isNull()) {
+    qDebug() << "Parse failed";
+  }
+
+  QJsonObject json = doc.object();
+  for (const QString &key : json.keys()) {
     std::vector<char> bytes = Params().read_db_bytes(key.toStdString().c_str());
 
     if (bytes.size()) {

@@ -111,24 +111,22 @@ OffroadHome::OffroadHome(QWidget* parent) : QWidget(parent) {
   main_layout->addWidget(alert_notification, 0, Qt::AlignTop | Qt::AlignRight);
 
   // main content
-  //main_layout->addSpacing(25);
   center_layout = new QStackedLayout();
 
   QHBoxLayout* statsAndSetup = new QHBoxLayout();
 
   DriveStats* drive = new DriveStats;
   drive->setFixedSize(800, 800);
-  statsAndSetup->addWidget(drive, 0, Qt::AlignLeft | Qt::AlignTop);
+  statsAndSetup->addWidget(drive, 0, Qt::AlignLeft);
 
   SetupWidget* setup = new SetupWidget;
   setup->setFixedSize(700, 700);
 
-  statsAndSetup->addWidget(setup, 0, Qt::AlignRight | Qt::AlignTop);
+  statsAndSetup->addWidget(setup, 0, Qt::AlignRight);
 
   QWidget* statsAndSetupWidget = new QWidget();
   statsAndSetupWidget->setLayout(statsAndSetup);
-  statsAndSetupWidget->setSizePolicy(sp_retain);
-  statsAndSetupWidget->setStyleSheet(R"(background-color: red;)");
+  statsAndSetupWidget->setFixedSize(1500, 800);
 
   center_layout->addWidget(statsAndSetupWidget);
 
