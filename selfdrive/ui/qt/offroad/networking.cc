@@ -3,7 +3,6 @@
 #include <QLabel>
 #include <QPixmap>
 #include <QPushButton>
-#include <QLineEdit>
 #include <QRandomGenerator>
 #include <algorithm>
 
@@ -36,6 +35,7 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QWidget(parent), s
   s = new QStackedLayout;
 
   QLabel* warning = new QLabel("Network manager is inactive!");
+  warning->setAlignment(Qt::AlignCenter);
   warning->setStyleSheet(R"(font-size: 65px;)");
 
   s->addWidget(warning);
@@ -157,7 +157,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   if (wifi->tetheringEnabled()) {
     toggle_switch->togglePosition();
   }
-  QObject::connect(toggle_switch, SIGNAL(stateChanged(int)), this, SLOT(toggleTethering(int)));
+  QObject::connect(toggle_switch, SIGNAL(stateChanged(bool)), this, SLOT(toggleTethering(int)));
   vlayout->addWidget(layoutToWidget(tetheringToggleLayout, this), 0);
   vlayout->addWidget(horizontal_line(), 0);
 
@@ -190,24 +190,10 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   vlayout->addWidget(horizontal_line(), 0);
   vlayout->addWidget(new SshControl());
 
-  // //Disconnect or delete connections
-  // QHBoxLayout* dangerZone = new QHBoxLayout(this);
-  // QPushButton* disconnect = new QPushButton("Disconnect from WiFi", this);
-  // dangerZone->addWidget(disconnect);
-  // QPushButton* deleteAll = new QPushButton("DELETE ALL NETWORKS", this);
-  // dangerZone->addWidget(deleteAll);
-  // vlayout->addWidget(layoutToWidget(dangerZone, this));
-
   // vlayout to widget
   QWidget* settingsWidget = layoutToWidget(vlayout, this);
   settingsWidget->setStyleSheet("margin-left: 40px; margin-right: 40px;");
   s->addWidget(settingsWidget);
-
-  /*
-  ssh = new SSH;
-  connect(ssh, &SSH::closeSSHSettings, [=](){s->setCurrentWidget(settingsWidget);});
-  s->addWidget(ssh);
-  */
 
   setLayout(s);
 }
@@ -217,7 +203,7 @@ void AdvancedNetworking::refresh(){
   update();
 }
 
-void AdvancedNetworking::toggleTethering(int enable) {
+void AdvancedNetworking::toggleTethering(bool enable) {
   if (enable) {
     wifi->enableTethering();
   } else {

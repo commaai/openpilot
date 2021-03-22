@@ -59,7 +59,7 @@ signals:
   void backPress();
 
 public slots:
-  void toggleTethering(int enable);
+  void toggleTethering(bool enable);
   void toggleSSH(bool enable);
   void refresh();
 };
