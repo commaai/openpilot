@@ -42,6 +42,14 @@ public:
       brightness_control.close();
     }
   };
+
+  static bool get_ssh_enabled() {
+    return std::system("getprop persist.neos.ssh | grep -qF '1'") == 0;
+  };
+  static void set_ssh_enabled(bool enabled) {
+    std::string cmd = util::string_format("setprop persist.neos.ssh %d", enabled ? 1 : 0);
+    std::system(cmd.c_str());
+  };
 };
 
 class HardwareTici : public HardwareNone {
