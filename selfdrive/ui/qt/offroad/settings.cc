@@ -315,10 +315,10 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
 
   // setup panels
   QPair<QString, QWidget *> panels[] = {
-    {"Developer", developer_panel()},
     {"Device", device_panel()},
     {"Network", network_panel(this)},
     {"Toggles", toggles_panel()},
+    {"Developer", developer_panel()},
   };
 
   sidebar_layout->addSpacing(45);
@@ -346,7 +346,6 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
 
     panel_layout->addWidget(panel);
     QObject::connect(btn, &QPushButton::released, [=, w = panel]() { panel_layout->setCurrentWidget(w); });
-    QObject::connect(btn, &QPushButton::released, [=]() { emit sidebarPressed(); });
   }
   qobject_cast<QPushButton *>(nav_btns->buttons()[0])->setChecked(true);
   sidebar_layout->setContentsMargins(50, 50, 100, 50);
