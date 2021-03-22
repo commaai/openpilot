@@ -60,7 +60,7 @@ signals:
 
 public slots:
   void toggleTethering(int enable);
-  void toggleSSH(int enable);
+  void toggleSSH(bool enable);
   void refresh();
 };
 

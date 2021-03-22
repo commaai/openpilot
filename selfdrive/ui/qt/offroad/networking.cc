@@ -8,6 +8,7 @@
 #include <algorithm>
 
 #include "common/params.h"
+#include "hardware/hw.h"
 #include "networking.hpp"
 #include "util.h"
 
@@ -197,7 +198,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   enableSSHLayout->addWidget(new QLabel("Enable SSH", this));
   toggle_switch_SSH = new Toggle(this);
   toggle_switch_SSH->setFixedSize(150, 100);
-  if (isSSHEnabled()) {
+  if (Hardware::get_ssh_enabled()) {
     toggle_switch_SSH->togglePosition();
   }
   QObject::connect(toggle_switch_SSH, SIGNAL(stateChanged(int)), this, SLOT(toggleSSH(int)));
@@ -235,13 +236,9 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   setLayout(s);
 }
 
-bool AdvancedNetworking::isSSHEnabled(){
-  return Params().get("SshEnabled") == "1";
-}
-
 void AdvancedNetworking::refresh(){
   ipLabel->setText(wifi->ipv4_address);
-  if (toggle_switch_SSH->on != isSSHEnabled()) {
+  if (toggle_switch_SSH->on != Hardware::get_ssh_enabled()) {
     toggle_switch_SSH->togglePosition();
   }
   // Qt can be lazy
@@ -257,8 +254,8 @@ void AdvancedNetworking::toggleTethering(int enable) {
   editPasswordButton->setEnabled(!enable);
 }
 
-void AdvancedNetworking::toggleSSH(int enable) {
-  Params().write_db_value("SshEnabled", QString::number(enable).toStdString());
+void AdvancedNetworking::toggleSSH(bool enable) {
+  Hardware::set_ssh_enabled(enable);
 }
 
 
