@@ -92,9 +92,14 @@ QWidget * device_panel() {
                              QString::fromStdString(l.second)));
   }
 
+  device_layout->addWidget(horizontal_line());
+
   device_layout->addWidget(new ButtonControl("Driver camera view", "PREVIEW",
                                              "Preview the driver facing camera to help optimize device mounting position for best driver monitoring experience. (vehicle must be off)",
                                              [=]() { Params().write_db_value("IsDriverViewEnabled", "1", 1); }));
+
+  device_layout->addWidget(horizontal_line());
+
   // TODO: show current calibration values
   device_layout->addWidget(new ButtonControl("Reset Calibration", "RESET",
                                              "openpilot requires the device to be mounted within 4° left or right and within 5° up or down. openpilot is continuously calibrating, resetting is rarely required.",
