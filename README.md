@@ -169,6 +169,7 @@ Community Maintained Cars and Features
 | Nissan    | Leaf 2018-20                  | ProPILOT          | Stock            | 0mph               | 0mph         |
 | Nissan    | Rogue 2018-19                 | ProPILOT          | Stock            | 0mph               | 0mph         |
 | Nissan    | X-Trail 2017                  | ProPILOT          | Stock            | 0mph               | 0mph         |
+| Skoda     | Superb III B8 2015-2019       | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Subaru    | Ascent 2019                   | EyeSight          | Stock            | 0mph               | 0mph         |
 | Subaru    | Crosstrek 2018-19             | EyeSight          | Stock            | 0mph               | 0mph         |
 | Subaru    | Forester 2019-20              | EyeSight          | Stock            | 0mph               | 0mph         |
