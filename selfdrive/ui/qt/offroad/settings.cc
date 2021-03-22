@@ -203,6 +203,15 @@ QWidget * network_panel(QWidget * parent) {
     layout->addWidget(new ButtonControl(b.first, "OPEN", "", [=]() { std::system(b.second); }));
   }
 
+  // SSH key management
+
+  ToggleControl *ssh_toggle = new ToggleControl("Enable SSH", "", "", Hardware::get_ssh_enabled());
+  layout->addWidget(ssh_toggle);
+
+  QObject::connect(ssh_toggle, &ToggleControl::toggleFlipped, [=](bool state) {
+    Hardware::set_ssh_enabled(state);
+  });
+
   layout->addStretch(1);
 
   QWidget *w = new QWidget;
