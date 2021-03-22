@@ -12,7 +12,7 @@
 class AbstractControl : public QFrame {
   Q_OBJECT
  protected:
-  AbstractControl(const QString &title, const QString &desc = "", const QString &icon = "", bool bottom_line = true);
+  AbstractControl(const QString &title, const QString &desc = "", const QString &icon = "");
 
   void setControlWidget(QWidget *w) {
     assert(control_widget == nullptr);
@@ -47,8 +47,7 @@ class AbstractControl : public QFrame {
 class LabelControl : public AbstractControl {
   Q_OBJECT
  public:
-  LabelControl(const QString &title, const QString &text, const QString &desc = "",
-               bool bottom_line = true) : AbstractControl(title, desc, "", bottom_line) {
+  LabelControl(const QString &title, const QString &text, const QString &desc = "") : AbstractControl(title, desc, "") {
     label.setText(text);
     label.setAlignment(Qt::AlignRight | Qt::AlignVCenter);
     setControlWidget(&label);
@@ -63,8 +62,7 @@ class ButtonControl : public AbstractControl {
   Q_OBJECT
  public:
   template <typename Functor>
-  ButtonControl(const QString &title, const QString &text, const QString &desc, Functor functor,
-                const QString &icon = "", bool bottom_line = true) : AbstractControl(title, desc, icon, bottom_line) {
+  ButtonControl(const QString &title, const QString &text, const QString &desc, Functor functor, const QString &icon = "") : AbstractControl(title, desc, icon) {
     btn.setText(text);
     btn.setStyleSheet(R"(padding: 0; height: 80px; border-radius: 15px;background-color: #393939;font-size: 30px;min-width: 220px; max-width: 220px;)");
     QObject::connect(&btn, &QPushButton::released, functor);
@@ -79,8 +77,7 @@ class ButtonControl : public AbstractControl {
 class ToggleControl : public AbstractControl {
   Q_OBJECT
  public:
-  ToggleControl(const QString &param, const QString &title, const QString &desc, const QString &icon,
-                bool bottom_line = true) : AbstractControl(title, desc, icon, bottom_line) {
+  ToggleControl(const QString &param, const QString &title, const QString &desc, const QString &icon) : AbstractControl(title, desc, icon) {
     toggle.setFixedSize(150, 100);
     // set initial state from param
     if (Params().read_db_bool(param.toStdString().c_str())) {

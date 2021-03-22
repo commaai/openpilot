@@ -8,7 +8,7 @@
   return line;
 }
 
-AbstractControl::AbstractControl(const QString &title, const QString &desc, const QString &icon, bool bottom_line) : QFrame() {
+AbstractControl::AbstractControl(const QString &title, const QString &desc, const QString &icon) : QFrame() {
   hboxLayout = new QHBoxLayout;
   hboxLayout->setSpacing(50);
   // left icon
@@ -37,8 +37,5 @@ AbstractControl::AbstractControl(const QString &title, const QString &desc, cons
     desc_label->setVisible(false);
     vboxLayout->addStretch();
     vboxLayout->addWidget(desc_label);
-  }
-  if (bottom_line) {
-    vboxLayout->addWidget(horizontal_line());
   }
 }
