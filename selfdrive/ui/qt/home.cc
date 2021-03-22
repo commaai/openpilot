@@ -190,6 +190,9 @@ void OffroadHome::refresh() {
   alert_notification->setStyleSheet(style);
 }
 
+
+// GLWindow: the onroad UI
+
 static void handle_display_state(UIState* s, bool user_input) {
   static int awake_timeout = 0;
   awake_timeout = std::max(awake_timeout - 1, 0);
@@ -202,8 +205,6 @@ static void handle_display_state(UIState* s, bool user_input) {
   }
 }
 
-
-// GLWindow: the onroad UI
 
 GLWindow::GLWindow(QWidget* parent) : QOpenGLWidget(parent) {
   timer = new QTimer(this);
