@@ -6,11 +6,13 @@ import requests
 import threading
 import time
 import traceback
+from pathlib import Path
 
 from cereal import log
 import cereal.messaging as messaging
 from common.api import Api
 from common.params import Params
+from selfdrive.hardware import TICI
 from selfdrive.loggerd.xattr_cache import getxattr, setxattr
 from selfdrive.loggerd.config import ROOT
 from selfdrive.swaglog import cloudlog
@@ -197,6 +199,9 @@ def uploader_fn(exit_event):
   if dongle_id is None:
     cloudlog.info("uploader missing dongle_id")
     raise Exception("uploader can't start without dongle id")
+
+  if TICI and not Path("/data/media").is_mount():
+    cloudlog.debug("NVME not mounted")
 
   sm = messaging.SubMaster(['deviceState'])
   uploader = Uploader(dongle_id, ROOT)
