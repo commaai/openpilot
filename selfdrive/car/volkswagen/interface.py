@@ -25,7 +25,7 @@ class CarInterface(CarInterfaceBase):
     # VW port is a community feature, since we don't own one to test
     ret.communityFeature = True
 
-    if candidate in [CAR.GOLF, CAR.AUDI_A3]:
+    if candidate in [CAR.GOLF, CAR.AUDI_A3, CAR.SKODA_SUPERB_B8]:
       # Set common MQB parameters that will apply globally
       ret.carName = "volkswagen"
       ret.radarOffCan = True

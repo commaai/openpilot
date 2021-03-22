@@ -207,7 +207,7 @@ routes = {
   },
   "c75a59efa0ecd502|2021-03-11--20-52-55": {
     'carFingerprint': HYUNDAI.KIA_SELTOS,
-    'enableCamera': True,  
+    'enableCamera': True,
   },
   "5b7c365c50084530|2020-04-15--16-13-24": {
     'carFingerprint': HYUNDAI.SONATA,
@@ -443,6 +443,10 @@ routes = {
   },
   "07667b885add75fd|2021-01-23--19-48-42": {
     'carFingerprint': VOLKSWAGEN.AUDI_A3,
+    'enableCamera': True,
+  },
+  "c65dd238d105a170|2021-03-21--02-47-29": {
+    'carFingerprint': VOLKSWAGEN.SKODA_SUPERB_B8,
     'enableCamera': True,
   },
   "3c8f0c502e119c1c|2020-06-30--12-58-02": {
