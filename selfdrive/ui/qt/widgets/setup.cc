@@ -242,7 +242,7 @@ void SetupWidget::parseError(QString response) {
 
 void SetupWidget::showQrCode(){
   showQr = true;
-  mainLayout->setCurrentIndex(2);
+  mainLayout->setCurrentIndex(1);
 }
 
 void SetupWidget::replyFinished(QString response) {
