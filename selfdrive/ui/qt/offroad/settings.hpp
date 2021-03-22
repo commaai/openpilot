@@ -3,9 +3,22 @@
 #include <QWidget>
 #include <QFrame>
 #include <QTimer>
+#include <QLabel>
 #include <QPushButton>
 #include <QButtonGroup>
 #include <QStackedLayout>
+
+#include "selfdrive/ui/qt/widgets/controls.hpp"
+
+class DeveloperPanel : public QFrame {
+  Q_OBJECT
+public:
+  explicit DeveloperPanel(QWidget* parent = nullptr);
+
+protected:
+  void showEvent(QShowEvent *event) override;
+  QList<LabelControl *> labels;
+};
 
 class SettingsWindow : public QFrame {
   Q_OBJECT

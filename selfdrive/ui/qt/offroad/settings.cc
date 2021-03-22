@@ -15,6 +15,7 @@
 #include "common/util.h"
 #include "selfdrive/hardware/hw.h"
 
+
 QWidget * toggles_panel() {
   QVBoxLayout *toggles_list = new QVBoxLayout();
   toggles_list->addWidget(new ToggleControl("OpenpilotEnabledToggle",
@@ -80,7 +81,8 @@ QWidget * device_panel() {
   //}
 
   for (auto &l : labels) {
-    device_layout->addWidget(new LabelControl(QString::fromStdString(l.first), QString::fromStdString(l.second)));
+    device_layout->addWidget(new LabelControl(QString::fromStdString(l.first),
+                             QString::fromStdString(l.second)));
   }
 
   device_layout->addWidget(new ButtonControl("Driver camera view", "PREVIEW",
@@ -136,13 +138,17 @@ QWidget * device_panel() {
   return scroll;
 }
 
-QWidget * developer_panel() {
-  QVBoxLayout *main_layout = new QVBoxLayout;
+DeveloperPanel::DeveloperPanel(QWidget* parent) : QFrame(parent) {
+  QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setMargin(100);
+  setLayout(main_layout);
+  setStyleSheet(R"(QLabel {font-size: 50px;})");
+}
 
+void DeveloperPanel::showEvent(QShowEvent *event) {
   Params params = Params();
   std::string brand = params.read_db_bool("Passive") ? "dashcam" : "openpilot";
-  std::vector<std::pair<std::string, std::string>> labels = {
+  QList<QPair<std::string, std::string>> dev_params = {
     {"Version", brand + " v" + params.get("Version", false)},
     {"Git Branch", params.get("GitBranch", false)},
     {"Git Commit", params.get("GitCommit", false).substr(0, 10)},
@@ -150,15 +156,18 @@ QWidget * developer_panel() {
     {"OS Version", Hardware::get_os_version()},
   };
 
-  for (int i = 0; i < labels.size(); i++) {
-    auto l = labels[i];
-    bool has_bottom_line = i < (labels.size() - 1);
-    main_layout->addWidget(new LabelControl(QString::fromStdString(l.first), QString::fromStdString(l.second), "", has_bottom_line));
+  for (int i = 0; i < dev_params.size(); i++) {
+    const auto &[name, value] = dev_params[i];
+    if (labels.size() > i) {
+      labels[i]->setText(QString::fromStdString(value));
+    } else {
+      bool has_bottom_line = i < (dev_params.size() - 1);
+      labels.push_back(new LabelControl(QString::fromStdString(name),
+                                        QString::fromStdString(value),
+                                        "", has_bottom_line));
+      layout()->addWidget(labels[i]);
+    }
   }
-
-  QWidget *widget = new QWidget;
-  widget->setLayout(main_layout);
-  return widget;
 }
 
 QWidget * network_panel(QWidget * parent) {
@@ -216,7 +225,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
     {"Device", device_panel()},
     {"Network", network_panel(this)},
     {"Toggles", toggles_panel()},
-    {"Developer", developer_panel()},
+    {"Developer", new DeveloperPanel()},
   };
 
   sidebar_layout->addSpacing(45);
