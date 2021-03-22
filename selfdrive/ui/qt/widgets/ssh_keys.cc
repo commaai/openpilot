@@ -24,9 +24,15 @@ SshControl::SshControl() : AbstractControl("SSH Keys", "", "") {
   hlayout->addWidget(&btn);
 
   QObject::connect(&btn, &QPushButton::released, [=]() {
-    username = InputDialog::getText("Enter your GitHub username", 1);
-    if (username.length() > 0) {
-      getUserKeys(username);
+    if (btn.text() == "ADD") {
+      username = InputDialog::getText("Enter your GitHub username", 1);
+      if (username.length() > 0) {
+        getUserKeys(username);
+      }
+      btn.setEnabled(false);
+    } else {
+      Params().delete_db_value("GithubSshKeys");
+      refresh();
     }
   });
 
@@ -39,7 +45,7 @@ SshControl::SshControl() : AbstractControl("SSH Keys", "", "") {
 
   refresh();
 
-  // TODO: add desription
+  // TODO: add desription through AbstractControl
   //QLabel* wallOfText = new QLabel("Warning: This grants SSH access to all public keys in your GitHub settings. Never enter a GitHub username other than your own. A Comma employee will NEVER ask you to add their GitHub username.");
 }
 
@@ -50,10 +56,10 @@ void SshControl::refresh() {
   } else {
     btn.setText("ADD");
   }
+  btn.setEnabled(true);
 }
 
 void SshControl::getUserKeys(QString username){
-  qDebug() << "getting keys for " << username;
   QString url = "https://github.com/" + username + ".keys";
   aborted = false;
   reply = manager->get(QNetworkRequest(QUrl(url)));
