@@ -112,7 +112,6 @@ void InputDialog::setMinLength(int length){
 }
 
 
-
 ConfirmationDialog::ConfirmationDialog(QString prompt_text, QString confirm_text, QString cancel_text,
                                        QWidget *parent):QDialog(parent) {
   setWindowFlags(Qt::Popup);
@@ -131,13 +130,17 @@ ConfirmationDialog::ConfirmationDialog(QString prompt_text, QString confirm_text
   btn_layout->addStretch(1);
   layout->addLayout(btn_layout);
 
-  QPushButton* cancel_btn = new QPushButton(cancel_text);
-  btn_layout->addWidget(cancel_btn, 0, Qt::AlignRight);
-  QObject::connect(cancel_btn, SIGNAL(released()), this, SLOT(reject()));
+  if (cancel_text.length()) {
+    QPushButton* cancel_btn = new QPushButton(cancel_text);
+    btn_layout->addWidget(cancel_btn, 0, Qt::AlignRight);
+    QObject::connect(cancel_btn, SIGNAL(released()), this, SLOT(reject()));
+  }
 
-  QPushButton* confirm_btn = new QPushButton(confirm_text);
-  btn_layout->addWidget(confirm_btn, 0, Qt::AlignRight);
-  QObject::connect(confirm_btn, SIGNAL(released()), this, SLOT(accept()));
+  if (confirm_text.length()) {
+    QPushButton* confirm_btn = new QPushButton(confirm_text);
+    btn_layout->addWidget(confirm_btn, 0, Qt::AlignRight);
+    QObject::connect(confirm_btn, SIGNAL(released()), this, SLOT(accept()));
+  }
 
   setFixedSize(900, 350);
   setStyleSheet(R"(
@@ -156,6 +159,11 @@ ConfirmationDialog::ConfirmationDialog(QString prompt_text, QString confirm_text
   )");
 
   setLayout(layout);
+}
+
+bool ConfirmationDialog::alert(const QString prompt_text) {
+  ConfirmationDialog d = ConfirmationDialog(prompt_text, "Ok", "");
+  return d.exec();
 }
 
 bool ConfirmationDialog::confirm(const QString prompt_text) {

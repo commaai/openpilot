@@ -27,6 +27,7 @@ protected:
   QLabel *title_label;
 };
 
+// widget to display a value
 class LabelControl : public AbstractControl {
   Q_OBJECT
 
@@ -42,6 +43,7 @@ private:
   QLabel label;
 };
 
+// widget for a button with a label
 class ButtonControl : public AbstractControl {
   Q_OBJECT
 
@@ -51,13 +53,13 @@ public:
     btn.setText(text);
     btn.setStyleSheet(R"(
       padding: 0;
-      border-radius: 40px;
-      font-size: 30px;
+      border-radius: 50px;
+      font-size: 40px;
       font-weight: 500;
       color: #E4E4E4;
       background-color: #393939;
     )");
-    btn.setFixedSize(200, 80);
+    btn.setFixedSize(250, 100);
     QObject::connect(&btn, &QPushButton::released, functor);
     hlayout->addWidget(&btn);
   }
@@ -71,21 +73,37 @@ class ToggleControl : public AbstractControl {
   Q_OBJECT
 
 public:
-  ToggleControl(const QString &param, const QString &title, const QString &desc, const QString &icon) : AbstractControl(title, desc, icon) {
+  ToggleControl(const QString &title, const QString &desc = "", const QString &icon = "", const bool state = false) : AbstractControl(title, desc, icon) {
     toggle.setFixedSize(150, 100);
-    // set initial state from param
-    if (Params().read_db_bool(param.toStdString().c_str())) {
+    if (state) {
       toggle.togglePosition();
     }
-    QObject::connect(&toggle, &Toggle::stateChanged, [=](int state) {
-      char value = state ? '1' : '0';
-      Params().write_db_value(param.toStdString().c_str(), &value, 1);
-    });
     hlayout->addWidget(&toggle);
+    QObject::connect(&toggle, &Toggle::stateChanged, this, &ToggleControl::toggleFlipped);
   }
 
   void setEnabled(bool enabled) { toggle.setEnabled(enabled); }
 
-private:
+signals:
+  void toggleFlipped(bool state);
+
+protected:
   Toggle toggle;
+};
+
+// widget to toggle params
+class ParamControl : public ToggleControl {
+  Q_OBJECT
+
+public:
+  ParamControl(const QString &param, const QString &title, const QString &desc, const QString &icon) : ToggleControl(title, desc, icon) {
+    // set initial state from param
+    if (Params().read_db_bool(param.toStdString().c_str())) {
+      toggle.togglePosition();
+    }
+    QObject::connect(this, &ToggleControl::toggleFlipped, [=](int state) {
+      char value = state ? '1' : '0';
+      Params().write_db_value(param.toStdString().c_str(), &value, 1);
+    });
+  }
 };

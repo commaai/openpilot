@@ -10,6 +10,8 @@
 
 #include "selfdrive/ui/qt/widgets/controls.hpp"
 
+// ********** settings window + top-level panels **********
+
 class DeveloperPanel : public QFrame {
   Q_OBJECT
 public:
