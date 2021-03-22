@@ -155,7 +155,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   if (wifi->tetheringEnabled()) {
     toggle_switch->togglePosition();
   }
-  QObject::connect(toggle_switch, SIGNAL(stateChanged(bool)), this, SLOT(toggleTethering(int)));
+  QObject::connect(toggle_switch, SIGNAL(stateChanged(bool)), this, SLOT(toggleTethering(bool)));
   vlayout->addWidget(layoutToWidget(tetheringToggleLayout, this), 0);
   vlayout->addWidget(horizontal_line(), 0);
 
