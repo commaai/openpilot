@@ -188,26 +188,28 @@ QWidget * network_panel(QWidget * parent) {
   layout->setMargin(100);
   layout->setSpacing(30);
 
-  // TODO: can probably use the ndk for this
   // simple wifi + tethering buttons
-  std::vector<std::pair<const char*, const char*>> btns = {
-    {"WiFi Settings", "am start -n com.android.settings/.wifi.WifiPickerActivity \
-                       -a android.net.wifi.PICK_WIFI_NETWORK \
-                       --ez extra_prefs_show_button_bar true \
-                       --es extra_prefs_set_next_text ''"},
-    {"Tethering Settings", "am start -n com.android.settings/.TetherSettings \
-                            --ez extra_prefs_show_button_bar true \
-                            --es extra_prefs_set_next_text ''"},
-  };
-  for (auto &b : btns) {
-    layout->addWidget(new ButtonControl(b.first, "OPEN", "", [=]() { std::system(b.second); }));
-  }
+  const char* launch_wifi = "am start -n com.android.settings/.wifi.WifiPickerActivity \
+                             -a android.net.wifi.PICK_WIFI_NETWORK \
+                             --ez extra_prefs_show_button_bar true \
+                             --es extra_prefs_set_next_text ''";
+  layout->addWidget(new ButtonControl("WiFi Settings", "OPEN", "",
+                                      [=]() { std::system(launch_wifi); }));
+
+  layout->addWidget(horizontal_line());
+
+  const char* launch_tethering = "am start -n com.android.settings/.TetherSettings \
+                                  --ez extra_prefs_show_button_bar true \
+                                  --es extra_prefs_set_next_text ''";
+  layout->addWidget(new ButtonControl("Tethering Settings", "OPEN", "",
+                                      [=]() { std::system(launch_tethering); }));
+
+  layout->addWidget(horizontal_line());
 
   // SSH key management
 
   ToggleControl *ssh_toggle = new ToggleControl("Enable SSH", "", "", Hardware::get_ssh_enabled());
   layout->addWidget(ssh_toggle);
-
   QObject::connect(ssh_toggle, &ToggleControl::toggleFlipped, [=](bool state) {
     Hardware::set_ssh_enabled(state);
   });
