@@ -1,10 +1,11 @@
 #pragma once
 
+#include <QImage>
 #include <QWidget>
-#include <QStackedWidget>
+#include <QScroller>
 #include <QTextEdit>
 #include <QMouseEvent>
-#include <QImage>
+#include <QStackedWidget>
 
 #include "selfdrive/common/params.h"
 
@@ -44,6 +45,7 @@ private:
   QTextEdit *terms_text;
   QWidget *terms_screen();
   QWidget *training_screen();
+  QScroller *scroller;
 
 signals:
   void onboardingDone();

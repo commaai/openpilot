@@ -82,6 +82,16 @@ QWidget* OnboardingWindow::terms_screen() {
 
   // TODO: tune the scrolling
   auto sb = terms_text->verticalScrollBar();
+  QScrollerProperties sp;
+
+  sp.setScrollMetric(QScrollerProperties::DragStartDistance, 0.001);
+  sp.setScrollMetric(QScrollerProperties::DecelerationFactor, 0.3);
+  sp.setScrollMetric(QScrollerProperties::DragVelocitySmoothingFactor, 0.5);
+  sp.setScrollMetric(QScrollerProperties::MaximumVelocity, 1.0);
+
+  scroller = QScroller::scroller(terms_text);
+  scroller->setScrollerProperties(sp);
+
 #ifdef QCOM2
   sb->setStyleSheet(R"(
     QScrollBar {
@@ -97,7 +107,7 @@ QWidget* OnboardingWindow::terms_screen() {
     }
   )");
 #else
-  QScroller::grabGesture(terms_text, QScroller::TouchGesture);
+  scroller->grabGesture(terms_text, QScroller::TouchGesture);
   terms_text->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 #endif
 
