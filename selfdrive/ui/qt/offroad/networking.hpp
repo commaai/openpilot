@@ -48,7 +48,7 @@ public:
 private:
   QLabel* ipLabel;
   QPushButton* editPasswordButton;
-  SSH* ssh;
+  //SSH* ssh;
   Toggle* toggle_switch_SSH;
 
   WifiManager* wifi = nullptr;

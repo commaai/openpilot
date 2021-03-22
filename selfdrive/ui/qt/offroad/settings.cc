@@ -11,6 +11,7 @@
 #include "widgets/toggle.hpp"
 #include "widgets/offroad_alerts.hpp"
 #include "widgets/controls.hpp"
+#include "widgets/ssh_keys.hpp"
 #include "common/params.h"
 #include "common/util.h"
 #include "selfdrive/hardware/hw.h"
@@ -213,6 +214,10 @@ QWidget * network_panel(QWidget * parent) {
   QObject::connect(ssh_toggle, &ToggleControl::toggleFlipped, [=](bool state) {
     Hardware::set_ssh_enabled(state);
   });
+
+  layout->addWidget(horizontal_line());
+
+  layout->addWidget(new SshControl());
 
   layout->addStretch(1);
 

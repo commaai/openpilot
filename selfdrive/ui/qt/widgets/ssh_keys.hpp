@@ -8,17 +8,18 @@
 #include <QTimer>
 #include <QNetworkAccessManager>
 #include <QStackedLayout>
-#include "widgets/input.hpp"
 
-class SSH : public QWidget {
+#include "widgets/input.hpp"
+#include "widgets/controls.hpp"
+
+class SshControl : public AbstractControl {
   Q_OBJECT
 
 public:
-  explicit SSH(QWidget* parent = 0);
+  SshControl();
 
 private:
-  QStackedLayout* slayout;
-  InputDialog* dialog;
+  QPushButton btn;
   QNetworkAccessManager* manager;
 
   QString usernameGitHub;
@@ -27,7 +28,6 @@ private:
   bool aborted;
 
 signals:
-  void closeSSHSettings();
   void NoSSHAdded();
   void SSHAdded();
   void failedResponse(QString errorString);
@@ -35,8 +35,7 @@ signals:
 
 private slots:
   void checkForSSHKey();
-  void getSSHKeys();
+  void getSSHKeys(QString username);
   void timeout();
   void parseResponse();
 };
-
