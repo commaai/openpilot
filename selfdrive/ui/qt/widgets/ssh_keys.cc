@@ -11,8 +11,8 @@
 
 
 SshControl::SshControl() : AbstractControl("SSH Keys", "", "") {
-  // init widget
-  btn.setText("EDIT");
+  // setup widget
+  btn.setFixedSize(200, 80);
   btn.setStyleSheet(R"(
     padding: 0;
     border-radius: 40px;
@@ -21,8 +21,14 @@ SshControl::SshControl() : AbstractControl("SSH Keys", "", "") {
     color: #E4E4E4;
     background-color: #393939;
   )");
-  btn.setFixedSize(200, 80);
   hlayout->addWidget(&btn);
+
+  QObject::connect(&btn, &QPushButton::released, [=]() {
+    username = InputDialog::getText("Enter your GitHub username", 1);
+    if (username.length() > 0) {
+      getUserKeys(username);
+    }
+  });
 
   // setup networking
   manager = new QNetworkAccessManager(this);
@@ -31,20 +37,23 @@ SshControl::SshControl() : AbstractControl("SSH Keys", "", "") {
   networkTimer->setInterval(5000);
   connect(networkTimer, SIGNAL(timeout()), this, SLOT(timeout()));
 
+  refresh();
+
   // TODO: add desription
   //QLabel* wallOfText = new QLabel("Warning: This grants SSH access to all public keys in your GitHub settings. Never enter a GitHub username other than your own. A Comma employee will NEVER ask you to add their GitHub username.");
 }
 
-void SshControl::checkForSSHKey(){
+void SshControl::refresh() {
   QString param = QString::fromStdString(Params().get("GithubSshKeys"));
   if (param.length()) {
-    emit SSHAdded();
+    btn.setText("REMOVE");
   } else {
-    emit NoSSHAdded();
+    btn.setText("ADD");
   }
 }
 
-void SshControl::getSSHKeys(QString username){
+void SshControl::getUserKeys(QString username){
+  qDebug() << "getting keys for " << username;
   QString url = "https://github.com/" + username + ".keys";
   aborted = false;
   reply = manager->get(QNetworkRequest(QUrl(url)));
@@ -63,7 +72,6 @@ void SshControl::parseResponse(){
     QString response = reply->readAll();
     if (reply->error() == QNetworkReply::NoError && response.length()) {
       Params().write_db_value("GithubSshKeys", response.toStdString());
-      emit gotSSHKeys();
     } else if(reply->error() == QNetworkReply::NoError){
       //emit failedResponse("Username " + usernameGitHub + " has no keys on GitHub");
     } else {
@@ -73,6 +81,7 @@ void SshControl::parseResponse(){
     emit failedResponse("Request timed out");
   }
 
+  refresh();
   reply->deleteLater();
   reply = nullptr;
 }

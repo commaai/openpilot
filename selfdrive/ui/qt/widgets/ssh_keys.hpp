@@ -20,22 +20,21 @@ public:
 
 private:
   QPushButton btn;
+  QString username;
+
+  // networking
+  bool aborted;
+  QTimer* networkTimer;
+  QNetworkReply* reply;
   QNetworkAccessManager* manager;
 
-  QString usernameGitHub;
-  QNetworkReply* reply;
-  QTimer* networkTimer;
-  bool aborted;
+  void refresh();
+  void getUserKeys(QString username);
 
 signals:
-  void NoSSHAdded();
-  void SSHAdded();
   void failedResponse(QString errorString);
-  void gotSSHKeys();
 
 private slots:
-  void checkForSSHKey();
-  void getSSHKeys(QString username);
   void timeout();
   void parseResponse();
 };
