@@ -17,4 +17,6 @@ For doing development work on device, it's recommended to use [SSH agent forward
 
 ## Notes
 
+The public keys are only fetched from your GitHub account once. In order to update your device's authorized keys, you'll need to re-enter your GitHub username.
+
 See the [community wiki](https://github.com/commaai/openpilot/wiki/SSH) for more detailed instructions and information.
