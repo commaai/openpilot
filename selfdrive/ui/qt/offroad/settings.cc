@@ -158,7 +158,8 @@ QWidget * device_panel() {
   //}
 
   for (auto &l : labels) {
-    device_layout->addWidget(labelWidget(QString::fromStdString(l.first), QString::fromStdString(l.second)), 0, Qt::AlignTop);
+    device_layout->addWidget(labelWidget(QString::fromStdString(l.first),
+                             QString::fromStdString(l.second)), 0, Qt::AlignTop);
   }
 
   QPushButton* dcam_view = new QPushButton("Driver camera view");
@@ -222,6 +223,7 @@ QWidget * device_panel() {
 DeveloperPanel::DeveloperPanel(QWidget* parent) : QFrame(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setMargin(100);
+  setLayout(main_layout);
   setStyleSheet(R"(QLabel {font-size: 50px;})");
 }
 
@@ -236,21 +238,20 @@ void DeveloperPanel::showEvent(QShowEvent *event) {
     {"OS Version", Hardware::get_os_version()},
   };
 
-  bool do_initialize = labels.isEmpty();
   for (int i = 0; i < dev_params.size(); i++) {
     const auto &[name, value] = dev_params[i];
-    if (do_initialize) {
+    if (labels.size() > i) {
+      labels[i]->setText(QString::fromStdString(value));
+    } else {
       QLabel *label = nullptr;
       layout()->addWidget(labelWidget(name, QString::fromStdString(value), &label));
-      if (i < (dev_params.size() - 1)) { layout()->addWidget(horizontal_line()); }
+      if (i < (dev_params.size() - 1)) {
+        layout()->addWidget(horizontal_line());
+      }
       labels.push_back(label);
-    } else {
-      labels[i]->setText(QString::fromStdString(value));
     }
   }
 }
-
-QWidget *developer_panel() { return new DeveloperPanel(); }
 
 QWidget * network_panel(QWidget * parent) {
 #ifdef QCOM
@@ -321,7 +322,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
 
   // setup panels
   panels = {
-    {"Developer", developer_panel()},
+    {"Developer", new DeveloperPanel()},
     {"Device", device_panel()},
     {"Network", network_panel(this)},
     {"Toggles", toggles_panel()},
