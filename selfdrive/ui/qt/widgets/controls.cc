@@ -16,6 +16,7 @@ QFrame *horizontal_line(QWidget *parent) {
 
 AbstractControl::AbstractControl(const QString &title, const QString &desc, const QString &icon) : QFrame() {
   hlayout = new QHBoxLayout;
+  hlayout->setMargin(0);
   hlayout->setSpacing(50);
 
   // left icon
