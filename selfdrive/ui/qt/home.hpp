@@ -94,7 +94,4 @@ protected:
 private:
   OffroadHome* home;
   QStackedLayout* layout;
-
-private slots:
-  void setVisibility(bool offroad);
 };
