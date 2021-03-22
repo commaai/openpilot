@@ -69,7 +69,15 @@ public:
   template <typename Functor>
   ButtonControl(const QString &title, const QString &text, const QString &desc, Functor functor, const QString &icon = "") : AbstractControl(title, desc, icon) {
     btn.setText(text);
-    btn.setStyleSheet(R"(padding: 0; height: 80px; border-radius: 15px;background-color: #393939;font-size: 30px;min-width: 220px; max-width: 220px;)");
+    btn.setStyleSheet(R"(
+      padding: 0;
+      border-radius: 40px;
+      font-size: 30px;
+      font-weight: 500;
+      color: #E4E4E4;
+      background-color: #393939;
+    )");
+    btn.setFixedSize(200, 80);
     QObject::connect(&btn, &QPushButton::released, functor);
     setControlWidget(&btn);
   }

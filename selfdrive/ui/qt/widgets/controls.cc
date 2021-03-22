@@ -29,11 +29,11 @@ AbstractControl::AbstractControl(const QString &title, const QString &desc, cons
 
   // title
   title_label = new QLabel(title);
-  title_label->setStyleSheet("font-size: 50px;");
+  title_label->setStyleSheet("font-size: 50px; font-weight: 400;");
   hboxLayout->addWidget(title_label);
 
   QVBoxLayout *vboxLayout = new QVBoxLayout(this);
-  vboxLayout->setContentsMargins(0, 0, 0, 0);
+  vboxLayout->setMargin(0);
   vboxLayout->addLayout(hboxLayout);
 
 #if 0 // TODO: enable this when scrolling works on all platforms
