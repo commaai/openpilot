@@ -173,10 +173,11 @@ void DeveloperPanel::showEvent(QShowEvent *event) {
 
   for (int i = 0; i < dev_params.size(); i++) {
     const auto &[name, value] = dev_params[i];
+    QString val = QString::fromStdString(value).trimmed();
     if (labels.size() > i) {
-      labels[i]->setText(QString::fromStdString(value));
+      labels[i]->setText(val);
     } else {
-      labels.push_back(new LabelControl(name, QString::fromStdString(value).trimmed()));
+      labels.push_back(new LabelControl(name, val));
       layout()->addWidget(labels[i]);
       if (i < (dev_params.size() - 1)) {
         layout()->addWidget(horizontal_line());
