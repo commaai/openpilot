@@ -1,15 +1,9 @@
 #pragma once
 
-#include <QWidget>
-#include <QButtonGroup>
-#include <QVBoxLayout>
-#include <QStackedWidget>
-#include <QPushButton>
 #include <QTimer>
+#include <QPushButton>
 #include <QNetworkAccessManager>
-#include <QStackedLayout>
 
-#include "widgets/input.hpp"
 #include "widgets/controls.hpp"
 
 class SshControl : public AbstractControl {
@@ -23,7 +17,6 @@ private:
   QString username;
 
   // networking
-  bool aborted;
   QTimer* networkTimer;
   QNetworkReply* reply;
   QNetworkAccessManager* manager;

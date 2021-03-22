@@ -1,14 +1,8 @@
-#include <QHBoxLayout>
-#include <QLabel>
-#include <QPushButton>
-#include <QState>
-#include <QStateMachine>
 #include <QNetworkReply>
 
-#include "widgets/ssh_keys.hpp"
 #include "widgets/input.hpp"
+#include "widgets/ssh_keys.hpp"
 #include "common/params.h"
-
 
 SshControl::SshControl() : AbstractControl("SSH Keys", "", "") {
   // setup widget
@@ -27,9 +21,9 @@ SshControl::SshControl() : AbstractControl("SSH Keys", "", "") {
     if (btn.text() == "ADD") {
       username = InputDialog::getText("Enter your GitHub username", 1);
       if (username.length() > 0) {
+        btn.setEnabled(false);
         getUserKeys(username);
       }
-      btn.setEnabled(false);
     } else {
       Params().delete_db_value("GithubSshKeys");
       refresh();
@@ -46,7 +40,7 @@ SshControl::SshControl() : AbstractControl("SSH Keys", "", "") {
   refresh();
 
   // TODO: add desription through AbstractControl
-  //QLabel* wallOfText = new QLabel("Warning: This grants SSH access to all public keys in your GitHub settings. Never enter a GitHub username other than your own. A Comma employee will NEVER ask you to add their GitHub username.");
+  //QLabel("Warning: This grants SSH access to all public keys in your GitHub settings. Never enter a GitHub username other than your own. A Comma employee will NEVER ask you to add their GitHub username.");
 }
 
 void SshControl::refresh() {
@@ -61,7 +55,17 @@ void SshControl::refresh() {
 
 void SshControl::getUserKeys(QString username){
   QString url = "https://github.com/" + username + ".keys";
-  reply = manager->get(QNetworkRequest(QUrl(url)));
+  
+  QNetworkRequest request;
+  request.setUrl(QUrl(url));
+#ifdef QCOM
+  QSslConfiguration ssl = QSslConfiguration::defaultConfiguration();
+  ssl.setCaCertificates(QSslCertificate::fromPath("/usr/etc/tls/cert.pem",
+                        QSsl::Pem, QRegExp::Wildcard));
+  request.setSslConfiguration(ssl);
+#endif
+
+  reply = manager->get(request);
   connect(reply, SIGNAL(finished()), this, SLOT(parseResponse()));
   networkTimer->start();
 }
