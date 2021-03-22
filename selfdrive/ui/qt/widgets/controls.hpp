@@ -17,23 +17,14 @@ class AbstractControl : public QFrame {
 protected:
   AbstractControl(const QString &title, const QString &desc = "", const QString &icon = "");
 
-  void setControlWidget(QWidget *w) {
-    assert(control_widget == nullptr);
-    hboxLayout->addWidget(w);
-    control_widget = w;
-  }
-
   QSize minimumSizeHint() const override {
     QSize size = QFrame::minimumSizeHint();
     size.setHeight(120);
     return size;
   };
 
-private:
-  QHBoxLayout *hboxLayout;
+  QHBoxLayout *hlayout;
   QLabel *title_label;
-  QLabel *desc_label;
-  QWidget *control_widget = nullptr;
 };
 
 class LabelControl : public AbstractControl {
@@ -43,7 +34,7 @@ public:
   LabelControl(const QString &title, const QString &text, const QString &desc = "") : AbstractControl(title, desc, "") {
     label.setText(text);
     label.setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-    setControlWidget(&label);
+    hlayout->addWidget(&label);
   }
   void setText(const QString &text) { label.setText(text); }
 
@@ -68,7 +59,7 @@ public:
     )");
     btn.setFixedSize(200, 80);
     QObject::connect(&btn, &QPushButton::released, functor);
-    setControlWidget(&btn);
+    hlayout->addWidget(&btn);
   }
   void setText(const QString &text) { btn.setText(text); }
 
@@ -90,7 +81,7 @@ public:
       char value = state ? '1' : '0';
       Params().write_db_value(param.toStdString().c_str(), &value, 1);
     });
-    setControlWidget(&toggle);
+    hlayout->addWidget(&toggle);
   }
 
   void setEnabled(bool enabled) { toggle.setEnabled(enabled); }

@@ -15,8 +15,8 @@ QFrame *horizontal_line(QWidget *parent) {
 }
 
 AbstractControl::AbstractControl(const QString &title, const QString &desc, const QString &icon) : QFrame() {
-  hboxLayout = new QHBoxLayout;
-  hboxLayout->setSpacing(50);
+  hlayout = new QHBoxLayout;
+  hlayout->setSpacing(50);
 
   // left icon
   if (!icon.isEmpty()) {
@@ -24,28 +24,13 @@ AbstractControl::AbstractControl(const QString &title, const QString &desc, cons
     QLabel *icon = new QLabel();
     icon->setPixmap(pix.scaledToWidth(80, Qt::SmoothTransformation));
     icon->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
-    hboxLayout->addWidget(icon);
+    hlayout->addWidget(icon);
   }
 
   // title
   title_label = new QLabel(title);
   title_label->setStyleSheet("font-size: 50px; font-weight: 400;");
-  hboxLayout->addWidget(title_label);
+  hlayout->addWidget(title_label);
 
-  QVBoxLayout *vboxLayout = new QVBoxLayout(this);
-  vboxLayout->setMargin(0);
-  vboxLayout->addLayout(hboxLayout);
-
-#if 0 // TODO: enable this when scrolling works on all platforms
-  // description
-  if (!desc.isEmpty()) {
-    desc_label = new QLabel(desc);
-    desc_label->setContentsMargins(40, 20, 40, 20);
-    desc_label->setStyleSheet("font-size: 40px; color:grey");
-    desc_label->setWordWrap(true);
-    desc_label->setVisible(false);
-    vboxLayout->addStretch();
-    vboxLayout->addWidget(desc_label);
-  }
-#endif
+  setLayout(hlayout);
 }
