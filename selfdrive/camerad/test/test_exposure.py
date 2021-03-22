@@ -61,7 +61,7 @@ class TestCamerad(unittest.TestCase):
 
       passed += int(res)
       time.sleep(2)
-
+    print(passed)
     self.assertTrue(passed >= REPEAT)
 
 if __name__ == "__main__":
