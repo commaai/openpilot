@@ -158,14 +158,10 @@ PrimeAdWidget::PrimeAdWidget(QWidget* parent) : QWidget(parent) {
 SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
   mainLayout = new QStackedLayout;
 
-  QWidget* blankWidget = new QWidget;
-  //blankWidget->setStyleSheet(R"background-color: transparent;");
-  mainLayout->addWidget(blankWidget);
-
   // Unpaired, registration prompt layout
 
   QVBoxLayout* finishRegistationLayout = new QVBoxLayout;
-  finishRegistationLayout ->setMargin(30);
+  finishRegistationLayout->setMargin(30);
 
   QLabel* registrationDescription = new QLabel("Pair your device with the comma connect app");
   registrationDescription->setWordWrap(true);
@@ -220,7 +216,7 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
 
   setLayout(mainLayout);
   setStyleSheet(R"(
-    QFrame {
+    SetupWidget {
       background-color: #292929;
     }
     * {
@@ -246,7 +242,7 @@ void SetupWidget::parseError(QString response) {
 
 void SetupWidget::showQrCode(){
   showQr = true;
-  mainLayout->setCurrentIndex(2);
+  mainLayout->setCurrentIndex(1);
 }
 
 void SetupWidget::replyFinished(QString response) {
@@ -261,7 +257,7 @@ void SetupWidget::replyFinished(QString response) {
   bool is_prime = json["prime"].toBool();
 
   if (!is_paired) {
-    mainLayout->setCurrentIndex(1 + showQr);
+    mainLayout->setCurrentIndex(showQr);
   } else if (!is_prime) {
     showQr = false;
     mainLayout->setCurrentWidget(primeAd);

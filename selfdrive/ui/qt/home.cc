@@ -6,11 +6,8 @@
 
 #include <QDateTime>
 #include <QHBoxLayout>
-#include <QLayout>
 #include <QMouseEvent>
-#include <QStackedLayout>
 #include <QVBoxLayout>
-#include <QWidget>
 
 #include "common/params.h"
 #include "common/timing.h"
@@ -31,37 +28,28 @@
 // HomeWindow: the container for the offroad (OffroadHome) and onroad (GLWindow) UIs
 
 HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
-  layout = new QGridLayout;
-  layout->setMargin(0);
+  layout = new QStackedLayout();
+  layout->setStackingMode(QStackedLayout::StackAll);
 
   // onroad UI
   glWindow = new GLWindow(this);
-  layout->addWidget(glWindow, 0, 0);
+  layout->addWidget(glWindow);
 
   // draw offroad UI on top of onroad UI
   home = new OffroadHome();
-  layout->addWidget(home, 0, 0);
+  layout->addWidget(home);
 
-  QObject::connect(glWindow, SIGNAL(offroadTransition(bool)), this, SLOT(setVisibility(bool)));
+  QObject::connect(glWindow, SIGNAL(offroadTransition(bool)), home, SLOT(setVisible(bool)));
   QObject::connect(glWindow, SIGNAL(offroadTransition(bool)), this, SIGNAL(offroadTransition(bool)));
   QObject::connect(glWindow, SIGNAL(screen_shutoff()), this, SIGNAL(closeSettings()));
   QObject::connect(this, SIGNAL(openSettings()), home, SLOT(refresh()));
 
   setLayout(layout);
-  setStyleSheet(R"(
-    * {
-      color: white;
-    }
-  )");
-}
-
-void HomeWindow::setVisibility(bool offroad) {
-  home->setVisible(offroad);
 }
 
 void HomeWindow::mousePressEvent(QMouseEvent* e) {
   UIState* ui_state = &glWindow->ui_state;
-  if (GLWindow::ui_state.scene.started && GLWindow::ui_state.scene.driver_view) {
+  if (GLWindow::ui_state.scene.driver_view) {
     Params().write_db_value("IsDriverViewEnabled", "0", 1);
     return;
   }
@@ -73,7 +61,7 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
     emit openSettings();
   }
 
-  // Vision click
+  // Handle sidebar collapsing
   if (ui_state->scene.started && (e->x() >= ui_state->viz_rect.x - bdr_s)) {
     ui_state->sidebar_collapsed = !ui_state->sidebar_collapsed;
   }
@@ -112,11 +100,11 @@ OffroadHome::OffroadHome(QWidget* parent) : QWidget(parent) {
 
   DriveStats* drive = new DriveStats;
   drive->setFixedSize(800, 800);
-  statsAndSetup->addWidget(drive, 0, Qt::AlignLeft);
+  statsAndSetup->addWidget(drive);
 
   SetupWidget* setup = new SetupWidget;
-  setup->setFixedSize(700, 700);
-  statsAndSetup->addWidget(setup, 0, Qt::AlignRight);
+  //setup->setFixedSize(700, 700);
+  statsAndSetup->addWidget(setup);
 
   QWidget* statsAndSetupWidget = new QWidget();
   statsAndSetupWidget->setLayout(statsAndSetup);
@@ -137,7 +125,11 @@ OffroadHome::OffroadHome(QWidget* parent) : QWidget(parent) {
   timer->start(10 * 1000);
 
   setLayout(main_layout);
-  setStyleSheet(R"(background-color: none;)");
+  setStyleSheet(R"(
+    * {
+     color: white;
+    }
+  )");
 }
 
 void OffroadHome::openAlerts() {

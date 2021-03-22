@@ -1,6 +1,5 @@
 #pragma once
 
-#include <QGridLayout>
 #include <QLabel>
 #include <QOpenGLFunctions>
 #include <QOpenGLWidget>
@@ -65,7 +64,6 @@ public:
 private:
   QTimer* timer;
 
-  // offroad home screen widgets
   QLabel* date;
   QStackedLayout* center_layout;
   OffroadAlert* alerts_widget;
@@ -85,17 +83,14 @@ public:
   GLWindow* glWindow;
 
 signals:
-  void offroadTransition(bool offroad);
   void openSettings();
   void closeSettings();
+  void offroadTransition(bool offroad);
 
 protected:
   void mousePressEvent(QMouseEvent* e) override;
 
 private:
-  QGridLayout* layout;
   OffroadHome* home;
-
-private slots:
-  void setVisibility(bool offroad);
+  QStackedLayout* layout;
 };
