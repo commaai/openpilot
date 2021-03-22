@@ -94,7 +94,7 @@ QWidget * device_panel() {
 
   device_layout->addWidget(horizontal_line());
 
-  device_layout->addWidget(new ButtonControl("Driver camera view", "PREVIEW",
+  device_layout->addWidget(new ButtonControl("Driver Camera", "PREVIEW",
                                              "Preview the driver facing camera to help optimize device mounting position for best driver monitoring experience. (vehicle must be off)",
                                              [=]() { Params().write_db_value("IsDriverViewEnabled", "1", 1); }));
 
