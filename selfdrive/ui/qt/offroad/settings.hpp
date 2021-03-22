@@ -8,24 +8,7 @@
 #include <QButtonGroup>
 #include <QStackedLayout>
 
-#include "selfdrive/ui/qt/widgets/toggle.hpp"
-
-// *** settings widgets ***
-
-class ParamsToggle : public QFrame {
-  Q_OBJECT
-
-public:
-  explicit ParamsToggle(QString param, QString title, QString description,
-                        QString icon, QWidget *parent = 0);
-  Toggle *toggle;
-
-private:
-  QString param;
-
-public slots:
-  void checkboxClicked(int state);
-};
+#include "selfdrive/ui/qt/widgets/controls.hpp"
 
 class DeveloperPanel : public QFrame {
   Q_OBJECT
@@ -34,10 +17,8 @@ public:
 
 protected:
   void showEvent(QShowEvent *event) override;
-  QList<QLabel *> labels;
+  QList<LabelControl *> labels;
 };
-
-// *** settings window ***
 
 class SettingsWindow : public QFrame {
   Q_OBJECT
