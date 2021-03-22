@@ -122,25 +122,27 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
                                              }));
 
   // power buttons
+  QHBoxLayout *power_layout = new QHBoxLayout();
+  power_layout->setSpacing(30);
+
+  QPushButton *reboot_btn = new QPushButton("Reboot");
+  power_layout->addWidget(reboot_btn);
+  QObject::connect(reboot_btn, &QPushButton::released, [=]() {
+    if (ConfirmationDialog::confirm("Are you sure you want to reboot?")) {
+      Hardware::reboot();
+    }
+  });
 
   QPushButton *poweroff_btn = new QPushButton("Power Off");
   poweroff_btn->setStyleSheet("background-color: #E22C2C;");
-  device_layout->addWidget(poweroff_btn, Qt::AlignBottom);
+  power_layout->addWidget(poweroff_btn);
   QObject::connect(poweroff_btn, &QPushButton::released, [=]() {
     if (ConfirmationDialog::confirm("Are you sure you want to power off?")) {
       Hardware::poweroff();
     }
   });
 
-  device_layout->addSpacing(20);
-
-  QPushButton *reboot_btn = new QPushButton("Reboot");
-  device_layout->addWidget(reboot_btn, Qt::AlignBottom);
-  QObject::connect(reboot_btn, &QPushButton::released, [=]() {
-    if (ConfirmationDialog::confirm("Are you sure you want to reboot?")) {
-      Hardware::reboot();
-    }
-  });
+  device_layout->addLayout(power_layout);
 
   setLayout(device_layout);
   setStyleSheet(R"(
