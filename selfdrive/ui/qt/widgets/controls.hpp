@@ -54,7 +54,7 @@ public:
     btn.setStyleSheet(R"(
       padding: 0;
       border-radius: 50px;
-      font-size: 40px;
+      font-size: 35px;
       font-weight: 500;
       color: #E4E4E4;
       background-color: #393939;

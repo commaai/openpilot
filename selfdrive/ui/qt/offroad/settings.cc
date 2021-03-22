@@ -110,9 +110,21 @@ QWidget * device_panel() {
                                                }
                                              }));
 
+  device_layout->addWidget(horizontal_line());
+
+  QString brand = params.read_db_bool("Passive") ? "dashcam" : "openpilot";
+  device_layout->addWidget(new ButtonControl("Uninstall " + brand, "UNINSTALL",
+                                             "",
+                                             [=]() {
+                                               if (ConfirmationDialog::confirm("Are you srue you want to uninstall?")) {
+                                                 Params().write_db_value("DoUninstall", "1");
+                                               }
+                                             }));
+
   // power buttons
 
   QPushButton *poweroff_btn = new QPushButton("Power Off");
+  poweroff_btn->setStyleSheet("background-color: #E22C2C;");
   device_layout->addWidget(poweroff_btn, Qt::AlignBottom);
   QObject::connect(poweroff_btn, &QPushButton::released, [=]() {
     if (ConfirmationDialog::confirm("Are you sure you want to power off?")) {
@@ -120,21 +132,13 @@ QWidget * device_panel() {
     }
   });
 
-  device_layout->addWidget(horizontal_line(), Qt::AlignBottom);
+  device_layout->addSpacing(20);
 
   QPushButton *reboot_btn = new QPushButton("Reboot");
   device_layout->addWidget(reboot_btn, Qt::AlignBottom);
   QObject::connect(reboot_btn, &QPushButton::released, [=]() {
     if (ConfirmationDialog::confirm("Are you sure you want to reboot?")) {
       Hardware::reboot();
-    }
-  });
-
-  QPushButton *uninstall_btn = new QPushButton("Uninstall openpilot");
-  device_layout->addWidget(uninstall_btn);
-  QObject::connect(uninstall_btn, &QPushButton::released, [=]() {
-    if (ConfirmationDialog::confirm("Are you sure you want to uninstall?")) {
-      Params().write_db_value("DoUninstall", "1");
     }
   });
 
