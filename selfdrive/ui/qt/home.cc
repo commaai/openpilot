@@ -6,11 +6,8 @@
 
 #include <QDateTime>
 #include <QHBoxLayout>
-#include <QLayout>
 #include <QMouseEvent>
-#include <QStackedLayout>
 #include <QVBoxLayout>
-#include <QWidget>
 
 #include "common/params.h"
 #include "common/timing.h"
@@ -52,7 +49,7 @@ HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
 
 void HomeWindow::mousePressEvent(QMouseEvent* e) {
   UIState* ui_state = &glWindow->ui_state;
-  if (GLWindow::ui_state.scene.started && GLWindow::ui_state.scene.driver_view) {
+  if (GLWindow::ui_state.scene.driver_view) {
     Params().write_db_value("IsDriverViewEnabled", "0", 1);
     return;
   }
@@ -64,7 +61,7 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
     emit openSettings();
   }
 
-  // Vision click
+  // Handle sidebar collapsing
   if (ui_state->scene.started && (e->x() >= ui_state->viz_rect.x - bdr_s)) {
     ui_state->sidebar_collapsed = !ui_state->sidebar_collapsed;
   }
@@ -103,11 +100,11 @@ OffroadHome::OffroadHome(QWidget* parent) : QWidget(parent) {
 
   DriveStats* drive = new DriveStats;
   drive->setFixedSize(800, 800);
-  statsAndSetup->addWidget(drive, 0, Qt::AlignLeft);
+  statsAndSetup->addWidget(drive);
 
   SetupWidget* setup = new SetupWidget;
-  setup->setFixedSize(700, 700);
-  statsAndSetup->addWidget(setup, 0, Qt::AlignRight);
+  //setup->setFixedSize(700, 700);
+  statsAndSetup->addWidget(setup);
 
   QWidget* statsAndSetupWidget = new QWidget();
   statsAndSetupWidget->setLayout(statsAndSetup);
@@ -129,9 +126,6 @@ OffroadHome::OffroadHome(QWidget* parent) : QWidget(parent) {
 
   setLayout(main_layout);
   setStyleSheet(R"(
-    OffroadHome {
-      background-color: red;
-    }
     * {
      color: white;
     }
