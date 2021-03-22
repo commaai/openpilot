@@ -47,7 +47,7 @@ QByteArray CommaApi::rsa_sign(QByteArray data) {
   return sig;
 }
 
-QString CommaApi::create_jwt(const std::map<QString, QJsonValue> *payloads, int expiry) {
+QString CommaApi::create_jwt(const QMap<QString, QJsonValue> *payloads, int expiry) {
   QString dongle_id = QString::fromStdString(Params().get("DongleId"));
 
   QJsonObject header;
@@ -61,8 +61,10 @@ QString CommaApi::create_jwt(const std::map<QString, QJsonValue> *payloads, int 
   payload.insert("iat", t);
   payload.insert("exp", t + expiry);
   if (payloads) {
-    for (const auto& [name ,value] : *payloads) {
-      payload.insert(name, value);
+    auto it = payloads->constBegin();
+    while (it != payloads->constEnd()) {
+      payload.insert(it.key(), it.value());
+      ++it;
     }
   }
 
@@ -76,7 +78,7 @@ QString CommaApi::create_jwt(const std::map<QString, QJsonValue> *payloads, int 
   return jwt;
 }
 
-RequestRepeater::RequestRepeater(QWidget* parent, QString requestURL, int period_seconds, const std::map<QString, QJsonValue>* payloads, bool disableWithScreen)
+RequestRepeater::RequestRepeater(QWidget* parent, QString requestURL, int period_seconds, const QMap<QString, QJsonValue>* payloads, bool disableWithScreen)
     : disableWithScreen(disableWithScreen), QObject(parent) {
   networkAccessManager = new QNetworkAccessManager(this);
 
@@ -92,7 +94,7 @@ RequestRepeater::RequestRepeater(QWidget* parent, QString requestURL, int period
   connect(networkTimer, SIGNAL(timeout()), this, SLOT(requestTimeout()));
 }
 
-void RequestRepeater::sendRequest(QString requestURL, const std::map<QString, QJsonValue> *payloads){
+void RequestRepeater::sendRequest(QString requestURL, const QMap<QString, QJsonValue> *payloads){
   // No network calls onroad
   if(GLWindow::ui_state.scene.started){
     return;

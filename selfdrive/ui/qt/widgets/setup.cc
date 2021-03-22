@@ -37,7 +37,7 @@ void PairingQRWidget::refresh(){
     qrCode->setStyleSheet(R"(font-size: 60px;)");
     return;
   }
-  std::map<QString, QJsonValue> payloads{{"pair", true}};
+  QMap<QString, QJsonValue> payloads{{"pair", true}};
   QString pairToken = CommaApi::create_jwt(&payloads);
 
   QString qrString = IMEI + "--" + serial + "--" + pairToken;
