@@ -1,6 +1,12 @@
 openpilot tools
 ============
 
+SSH
+============
+
+Connecting to your comma device using [SSH](ssh/README.md)
+
+
 System requirements
 ============
 
@@ -64,7 +70,6 @@ Review video and log data from routes and stream CAN messages to your device.
 -------------
 
 Use a joystick to control your car.
-
 
 
 Welcomed contributions
