@@ -7,20 +7,20 @@
 
 SshControl::SshControl() : AbstractControl("SSH Keys", "", "") {
   // setup widget
-  btn.setFixedSize(200, 80);
   btn.setStyleSheet(R"(
     padding: 0;
-    border-radius: 40px;
-    font-size: 30px;
+    border-radius: 50px;
+    font-size: 40px;
     font-weight: 500;
     color: #E4E4E4;
     background-color: #393939;
   )");
+  btn.setFixedSize(250, 100);
   hlayout->addWidget(&btn);
 
   QObject::connect(&btn, &QPushButton::released, [=]() {
     if (btn.text() == "ADD") {
-      username = InputDialog::getText("Enter your GitHub username", 1);
+      username = InputDialog::getText("Enter your GitHub username");
       if (username.length() > 0) {
         btn.setText("LOADING");
         btn.setEnabled(false);

@@ -53,13 +53,13 @@ public:
     btn.setText(text);
     btn.setStyleSheet(R"(
       padding: 0;
-      border-radius: 40px;
-      font-size: 30px;
+      border-radius: 50px;
+      font-size: 40px;
       font-weight: 500;
       color: #E4E4E4;
       background-color: #393939;
     )");
-    btn.setFixedSize(200, 80);
+    btn.setFixedSize(250, 100);
     QObject::connect(&btn, &QPushButton::released, functor);
     hlayout->addWidget(&btn);
   }
