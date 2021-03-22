@@ -106,7 +106,9 @@ QWidget * device_panel() {
                                              [=]() {
                                                if (ConfirmationDialog::confirm("Are you sure you want to reset calibration?")) {
                                                  Params().delete_db_value("CalibrationParams");
-                                               } }));
+                                               }
+                                             }));
+
   // power buttons
 
   QPushButton *poweroff_btn = new QPushButton("Power Off");

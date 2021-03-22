@@ -29,21 +29,10 @@ protected:
     return size;
   };
 
-  void mousePressEvent(QMouseEvent *event) override { pressed = true; }
-  void mouseMoveEvent(QMouseEvent *event) override {
-    if (pressed) dragging = true;
-  }
-  void mouseReleaseEvent(QMouseEvent *event) override {
-    if (!dragging && desc_label) {
-      desc_label->setVisible(!desc_label->isVisible());
-    }
-    pressed = dragging = false;
-  }
-
 private:
-  bool pressed = false, dragging = false;
-  QHBoxLayout *hboxLayout = nullptr;
-  QLabel *title_label = nullptr, *desc_label = nullptr;
+  QHBoxLayout *hboxLayout;
+  QLabel *title_label;
+  QLabel *desc_label;
   QWidget *control_widget = nullptr;
 };
 
@@ -83,7 +72,7 @@ public:
   }
   void setText(const QString &text) { btn.setText(text); }
 
- private:
+private:
   QPushButton btn;
 };
 
@@ -106,6 +95,6 @@ public:
 
   void setEnabled(bool enabled) { toggle.setEnabled(enabled); }
 
- private:
+private:
   Toggle toggle;
 };
