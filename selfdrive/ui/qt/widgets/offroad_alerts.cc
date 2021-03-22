@@ -80,18 +80,12 @@ void OffroadAlert::refresh() {
   QVBoxLayout *layout = new QVBoxLayout;
 
   if (updateAvailable) {
-    QLabel *title = new QLabel("Update Available");
-    title->setStyleSheet(R"(
-      font-size: 72px;
-    )");
-    layout->addWidget(title, 0, Qt::AlignLeft | Qt::AlignTop);
-
     QString release_notes = QString::fromStdString(Params().get("ReleaseNotes"));
     QLabel *body = new QLabel(release_notes);
     body->setStyleSheet(R"(
       font-size: 48px;
     )");
-    layout->addWidget(body, 1, Qt::AlignLeft | Qt::AlignTop);
+    layout->addWidget(body, 0, Qt::AlignLeft | Qt::AlignTop);
   } else {
     // TODO: paginate the alerts
     for (const auto &alert : alerts) {
