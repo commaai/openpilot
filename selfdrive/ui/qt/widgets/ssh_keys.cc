@@ -4,6 +4,7 @@
 #include "widgets/ssh_keys.hpp"
 #include "common/params.h"
 
+
 SshControl::SshControl() : AbstractControl("SSH Keys", "", "") {
   // setup widget
   btn.setFixedSize(200, 80);
@@ -21,6 +22,7 @@ SshControl::SshControl() : AbstractControl("SSH Keys", "", "") {
     if (btn.text() == "ADD") {
       username = InputDialog::getText("Enter your GitHub username", 1);
       if (username.length() > 0) {
+        btn.setText("LOADING");
         btn.setEnabled(false);
         getUserKeys(username);
       }
@@ -55,7 +57,7 @@ void SshControl::refresh() {
 
 void SshControl::getUserKeys(QString username){
   QString url = "https://github.com/" + username + ".keys";
-  
+
   QNetworkRequest request;
   request.setUrl(QUrl(url));
 #ifdef QCOM

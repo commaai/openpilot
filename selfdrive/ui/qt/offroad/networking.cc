@@ -132,14 +132,6 @@ void Networking::wrongPassword(QString ssid) {
   }
 }
 
-QFrame* hline(QWidget* parent = 0){
-  QFrame* line = new QFrame(parent);
-  line->setFrameShape(QFrame::StyledPanel);
-  line->setStyleSheet("margin-left: 40px; margin-right: 40px; border-width: 1px; border-bottom-style: solid; border-color: gray;");
-  line->setFixedHeight(2);
-  return line;
-}
-
 // AdvancedNetworking functions
 
 AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWidget(parent), wifi(wifi){
@@ -167,7 +159,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   }
   QObject::connect(toggle_switch, SIGNAL(stateChanged(int)), this, SLOT(toggleTethering(int)));
   vlayout->addWidget(layoutToWidget(tetheringToggleLayout, this), 0);
-  vlayout->addWidget(hline(), 0);
+  vlayout->addWidget(horizontal_line(), 0);
 
   // Change tethering password
   QHBoxLayout *tetheringPassword = new QHBoxLayout;
@@ -182,7 +174,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   });
   tetheringPassword->addWidget(editPasswordButton, 1, Qt::AlignRight);
   vlayout->addWidget(layoutToWidget(tetheringPassword, this), 0);
-  vlayout->addWidget(hline(), 0);
+  vlayout->addWidget(horizontal_line(), 0);
 
   // IP adress
   QHBoxLayout* IPlayout = new QHBoxLayout;
@@ -191,30 +183,12 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   ipLabel->setStyleSheet("color: #aaaaaa");
   IPlayout->addWidget(ipLabel, 0, Qt::AlignRight);
   vlayout->addWidget(layoutToWidget(IPlayout, this), 0);
-  vlayout->addWidget(hline(), 0);
-
-  // Enable SSH
-  QHBoxLayout* enableSSHLayout = new QHBoxLayout(this);
-  enableSSHLayout->addWidget(new QLabel("Enable SSH", this));
-  toggle_switch_SSH = new Toggle(this);
-  toggle_switch_SSH->setFixedSize(150, 100);
-  if (Hardware::get_ssh_enabled()) {
-    toggle_switch_SSH->togglePosition();
-  }
-  QObject::connect(toggle_switch_SSH, SIGNAL(stateChanged(int)), this, SLOT(toggleSSH(int)));
-  enableSSHLayout->addWidget(toggle_switch_SSH);
-  vlayout->addWidget(layoutToWidget(enableSSHLayout, this));
-  vlayout->addWidget(hline(), 0);
+  vlayout->addWidget(horizontal_line(), 0);
 
   // SSH keys
-  QHBoxLayout* authSSHLayout = new QHBoxLayout(this);
-  authSSHLayout->addWidget(new QLabel("SSH keys", this));
-  QPushButton* editAuthSSHButton = new QPushButton("EDIT", this);
-  editAuthSSHButton->setFixedWidth(500);
-  //connect(editAuthSSHButton, &QPushButton::released, [=](){s->setCurrentWidget(ssh);});
-  authSSHLayout->addWidget(editAuthSSHButton);
-  vlayout->addWidget(layoutToWidget(authSSHLayout, this));
-  vlayout->addSpacing(50);
+  vlayout->addWidget(new SshToggle());
+  vlayout->addWidget(horizontal_line(), 0);
+  vlayout->addWidget(new SshControl());
 
   // //Disconnect or delete connections
   // QHBoxLayout* dangerZone = new QHBoxLayout(this);
@@ -240,11 +214,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
 
 void AdvancedNetworking::refresh(){
   ipLabel->setText(wifi->ipv4_address);
-  if (toggle_switch_SSH->on != Hardware::get_ssh_enabled()) {
-    toggle_switch_SSH->togglePosition();
-  }
-  // Qt can be lazy
-  repaint();
+  update();
 }
 
 void AdvancedNetworking::toggleTethering(int enable) {
@@ -326,7 +296,7 @@ void WifiUI::refresh() {
       vlayout->addLayout(hlayout, 1);
       // Don't add the last horizontal line
       if (page * networks_per_page <= i+1 && i+1 < (page + 1) * networks_per_page && i+1 < wifi->seen_networks.size()) {
-        vlayout->addWidget(hline(), 0);
+        vlayout->addWidget(horizontal_line(), 0);
       }
     }
     i++;

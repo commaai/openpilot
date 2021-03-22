@@ -184,7 +184,7 @@ void DeveloperPanel::showEvent(QShowEvent *event) {
 }
 
 QWidget * network_panel(QWidget * parent) {
-#ifndef QCOM
+#ifdef QCOM
   QVBoxLayout *layout = new QVBoxLayout;
   layout->setMargin(100);
   layout->setSpacing(30);
@@ -208,15 +208,8 @@ QWidget * network_panel(QWidget * parent) {
   layout->addWidget(horizontal_line());
 
   // SSH key management
-
-  ToggleControl *ssh_toggle = new ToggleControl("Enable SSH", "", "", Hardware::get_ssh_enabled());
-  layout->addWidget(ssh_toggle);
-  QObject::connect(ssh_toggle, &ToggleControl::toggleFlipped, [=](bool state) {
-    Hardware::set_ssh_enabled(state);
-  });
-
+  layout->addWidget(new SshToggle());
   layout->addWidget(horizontal_line());
-
   layout->addWidget(new SshControl());
 
   layout->addStretch(1);
