@@ -22,6 +22,9 @@ public:
   static void reboot() {};
   static void poweroff() {};
   static void set_brightness(int percent) {};
+
+  static bool get_ssh_enabled() { return false; };
+  static void set_ssh_enabled(bool enabled) {};
 };
 
 class HardwareEon : public HardwareNone {
@@ -38,6 +41,14 @@ public:
       brightness_control << (int)(percent * (255/100.)) << "\n";
       brightness_control.close();
     }
+  };
+
+  static bool get_ssh_enabled() {
+    return std::system("getprop persist.neos.ssh | grep -qF '1'") == 0;
+  };
+  static void set_ssh_enabled(bool enabled) {
+    std::string cmd = util::string_format("setprop persist.neos.ssh %d", enabled ? 1 : 0);
+    std::system(cmd.c_str());
   };
 };
 
@@ -56,5 +67,7 @@ public:
       brightness_control.close();
     }
   };
-};
 
+  static bool get_ssh_enabled() { return Params().read_db_bool("SshEnabled"); };
+  static void set_ssh_enabled(bool enabled) { Params().write_db_value("SshEnabled", (enabled ? "1" : "0")); };
+};
