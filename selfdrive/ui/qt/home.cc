@@ -83,6 +83,7 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
 // OffroadHome: the offroad home page
 
 OffroadHome::OffroadHome(QWidget* parent) : QWidget(parent) {
+
   QVBoxLayout* main_layout = new QVBoxLayout();
   main_layout->setContentsMargins(sbr_w + 50, 50, 50, 50);
 
@@ -98,27 +99,36 @@ OffroadHome::OffroadHome(QWidget* parent) : QWidget(parent) {
   version->setStyleSheet(R"(font-size: 55px;)");
   header_layout->addWidget(version, 0, Qt::AlignTop | Qt::AlignRight);
 
-  main_layout->addLayout(header_layout);
+  main_layout->addLayout(header_layout, 0);
 
   alert_notification = new QPushButton();
   QObject::connect(alert_notification, SIGNAL(released()), this, SLOT(openAlerts()));
 
+  QSizePolicy sp_retain = alert_notification->sizePolicy();
+  sp_retain.setRetainSizeWhenHidden(true);
+  alert_notification->setSizePolicy(sp_retain);
+
+  main_layout->addWidget(alert_notification, 0, Qt::AlignTop | Qt::AlignRight);
+
   // main content
-  main_layout->addSpacing(25);
+  //main_layout->addSpacing(25);
   center_layout = new QStackedLayout();
 
-  QGridLayout* statsAndSetup = new QGridLayout();
+  QHBoxLayout* statsAndSetup = new QHBoxLayout();
 
   DriveStats* drive = new DriveStats;
   drive->setFixedSize(800, 800);
-  statsAndSetup->addWidget(drive, 0, Qt::AlignLeft);
+  statsAndSetup->addWidget(drive, 0, Qt::AlignLeft | Qt::AlignTop);
 
   SetupWidget* setup = new SetupWidget;
   setup->setFixedSize(700, 700);
-  statsAndSetup->addWidget(setup, 0, Qt::AlignRight);
+
+  statsAndSetup->addWidget(setup, 0, Qt::AlignRight | Qt::AlignTop);
 
   QWidget* statsAndSetupWidget = new QWidget();
   statsAndSetupWidget->setLayout(statsAndSetup);
+  statsAndSetupWidget->setSizePolicy(sp_retain);
+  statsAndSetupWidget->setStyleSheet(R"(background-color: red;)");
 
   center_layout->addWidget(statsAndSetupWidget);
 
@@ -127,7 +137,7 @@ OffroadHome::OffroadHome(QWidget* parent) : QWidget(parent) {
   center_layout->addWidget(alerts_widget);
   center_layout->setAlignment(alerts_widget, Qt::AlignCenter);
 
-  main_layout->addLayout(center_layout, 1);
+  main_layout->addLayout(center_layout, 0);
 
   // set up refresh timer
   timer = new QTimer(this);
