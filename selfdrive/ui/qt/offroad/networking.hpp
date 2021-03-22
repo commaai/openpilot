@@ -43,7 +43,6 @@ class AdvancedNetworking : public QWidget {
   Q_OBJECT
 public:
   explicit AdvancedNetworking(QWidget* parent = 0, WifiManager* wifi = 0);
-  QStackedLayout* s;
 
 private:
   QLabel* ipLabel;

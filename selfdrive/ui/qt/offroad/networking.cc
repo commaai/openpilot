@@ -135,9 +135,9 @@ void Networking::wrongPassword(QString ssid) {
 // AdvancedNetworking functions
 
 AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWidget(parent), wifi(wifi){
-  s = new QStackedLayout; // mainPage, SSH settings
 
   QVBoxLayout* vlayout = new QVBoxLayout;
+  vlayout->setMargin(40);
 
   // Back button
   QHBoxLayout* backLayout = new QHBoxLayout;
@@ -190,12 +190,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   vlayout->addWidget(horizontal_line(), 0);
   vlayout->addWidget(new SshControl());
 
-  // vlayout to widget
-  QWidget* settingsWidget = layoutToWidget(vlayout, this);
-  settingsWidget->setStyleSheet("margin-left: 40px; margin-right: 40px;");
-  s->addWidget(settingsWidget);
-
-  setLayout(s);
+  setLayout(vlayout);
 }
 
 void AdvancedNetworking::refresh(){
