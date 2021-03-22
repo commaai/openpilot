@@ -3,7 +3,7 @@
 #include "widgets/input.hpp"
 #include "widgets/ssh_keys.hpp"
 #include "common/params.h"
-
+#include "api.hpp"
 
 SshControl::SshControl() : AbstractControl("SSH Keys", "Warning: This grants SSH access to all public keys in your GitHub settings. Never enter a GitHub username other than your own. A comma employee will NEVER ask you to add their GitHub username.", "") {
   // setup widget
@@ -32,13 +32,6 @@ SshControl::SshControl() : AbstractControl("SSH Keys", "Warning: This grants SSH
     }
   });
 
-  // setup networking
-  manager = new QNetworkAccessManager(this);
-  networkTimer = new QTimer(this);
-  networkTimer->setSingleShot(true);
-  networkTimer->setInterval(5000);
-  connect(networkTimer, SIGNAL(timeout()), this, SLOT(timeout()));
-
   refresh();
 }
 
@@ -52,48 +45,22 @@ void SshControl::refresh() {
   btn.setEnabled(true);
 }
 
-void SshControl::getUserKeys(QString username){
+void SshControl::getUserKeys(QString username) {
   QString url = "https://github.com/" + username + ".keys";
-
-  QNetworkRequest request;
-  request.setUrl(QUrl(url));
-#ifdef QCOM
-  QSslConfiguration ssl = QSslConfiguration::defaultConfiguration();
-  ssl.setCaCertificates(QSslCertificate::fromPath("/usr/etc/tls/cert.pem",
-                        QSsl::Pem, QRegExp::Wildcard));
-  request.setSslConfiguration(ssl);
-#endif
-
-  reply = manager->get(request);
-  connect(reply, SIGNAL(finished()), this, SLOT(parseResponse()));
-  networkTimer->start();
-}
-
-void SshControl::timeout(){
-  reply->abort();
-}
-
-void SshControl::parseResponse(){
-  QString err = "";
-  if (reply->error() != QNetworkReply::OperationCanceledError) {
-    networkTimer->stop();
-    QString response = reply->readAll();
-    if (reply->error() == QNetworkReply::NoError && response.length()) {
-      Params().write_db_value("GithubSshKeys", response.toStdString());
-    } else if(reply->error() == QNetworkReply::NoError){
-      err = "Username '" + username + "' has no keys on GitHub";
+  TimeoutRequest::get(this, url, 5000, nullptr, [=](const QString &resp, bool err) {
+    QString errmsg = "";
+    if (err) {
+      errmsg = resp;
     } else {
-      err = "Username '" + username + "' doesn't exist on GitHub";
+      if (resp.length()) {
+        Params().write_db_value("GithubSshKeys", resp.toStdString());
+      } else {
+        errmsg = "Username '" + username + "' doesn't exist or has no keys on GitHub";
+      }
     }
-  } else {
-    err = "Request timed out";
-  }
-
-  if (err.length()) {
-    ConfirmationDialog::alert(err);
-  }
-
-  refresh();
-  reply->deleteLater();
-  reply = nullptr;
+    if (errmsg.length()) {
+      ConfirmationDialog::alert(errmsg);
+    }
+    refresh();
+  });
 }

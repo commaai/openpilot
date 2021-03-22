@@ -2,7 +2,6 @@
 
 #include <QTimer>
 #include <QPushButton>
-#include <QNetworkAccessManager>
 
 #include "widgets/controls.hpp"
 #include "selfdrive/hardware/hw.h"
@@ -29,19 +28,6 @@ public:
 private:
   QPushButton btn;
   QString username;
-
-  // networking
-  QTimer* networkTimer;
-  QNetworkReply* reply;
-  QNetworkAccessManager* manager;
-
   void refresh();
   void getUserKeys(QString username);
-
-signals:
-  void failedResponse(QString errorString);
-
-private slots:
-  void timeout();
-  void parseResponse();
 };

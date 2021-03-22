@@ -13,6 +13,5 @@ private:
   QVBoxLayout* vlayout;
 
 private slots:
-  void parseError(QString response);
-  void parseResponse(QString response);
+  void parseResponse(const QString &response, bool err);
 };

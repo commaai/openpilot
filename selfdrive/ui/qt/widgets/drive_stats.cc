@@ -44,15 +44,15 @@ QLayout* build_stat(QString name, int stat) {
   return layout;
 }
 
-void DriveStats::parseError(QString response) {
+void DriveStats::parseResponse(const QString &response, bool err) {
+  if (err) {
+    clearLayouts(vlayout);
+    vlayout->addWidget(new QLabel("No Internet connection"), 0, Qt::AlignCenter);
+    return;
+  }
+  QString resp = response.trimmed();
   clearLayouts(vlayout);
-  vlayout->addWidget(new QLabel("No Internet connection"), 0, Qt::AlignCenter);
-}
-
-void DriveStats::parseResponse(QString response) {
-  response.chop(1);
-  clearLayouts(vlayout);
-  QJsonDocument doc = QJsonDocument::fromJson(response.toUtf8());
+  QJsonDocument doc = QJsonDocument::fromJson(resp.toUtf8());
   if (doc.isNull()) {
     qDebug() << "JSON Parse failed on getting past drives statistics";
     return;
@@ -98,7 +98,6 @@ DriveStats::DriveStats(QWidget* parent) : QWidget(parent) {
   // TODO: do we really need to update this frequently?
   QString dongleId = QString::fromStdString(Params().get("DongleId"));
   QString url = "https://api.commadotai.com/v1.1/devices/" + dongleId + "/stats";
-  RequestRepeater* repeater = new RequestRepeater(this, url, 13);
-  QObject::connect(repeater, SIGNAL(receivedResponse(QString)), this, SLOT(parseResponse(QString)));
-  QObject::connect(repeater, SIGNAL(failedResponse(QString)), this, SLOT(parseError(QString)));
+  RequestRepeater* repeater = new RequestRepeater(this, "ApiCacheDriveStats",url, 20, 15000);
+  QObject::connect(repeater, SIGNAL(finished(const QString&, bool)), this, SLOT(parseResponse(const QString, bool)));
 }

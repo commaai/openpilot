@@ -15,6 +15,7 @@ cdef enum TxType:
 
 keys = {
   b"AccessToken": [TxType.CLEAR_ON_MANAGER_START],
+  b"ApiCacheDriveStats": [TxType.PERSISTENT],
   b"AthenadPid": [TxType.PERSISTENT],
   b"CalibrationParams": [TxType.PERSISTENT],
   b"CarBatteryCapacity": [TxType.PERSISTENT],

@@ -3,12 +3,9 @@
 #include <QCryptographicHash>
 #include <QJsonValue>
 #include <QNetworkReply>
-#include <QNetworkRequest>
-#include <QPair>
 #include <QString>
-#include <QVector>
 #include <QWidget>
-
+#include <QTimer>
 #include <atomic>
 #include <openssl/bio.h>
 #include <openssl/pem.h>
@@ -19,36 +16,43 @@ class CommaApi : public QObject {
 
 public:
   static QByteArray rsa_sign(QByteArray data);
-  static QString create_jwt(QVector<QPair<QString, QJsonValue>> payloads, int expiry=3600);
-  static QString create_jwt();
-
-private:
-  QNetworkAccessManager* networkAccessManager;
+  static QString create_jwt(const QMap<QString, QJsonValue> *payloads = nullptr, int expiry=3600);
 };
 
-/**
- * Makes repeated requests to the request endpoint.
- */
-class RequestRepeater : public QObject {
+class TimeoutRequest : public QObject {
   Q_OBJECT
-
 public:
-  explicit RequestRepeater(QWidget* parent, QString requestURL, int period = 10, QVector<QPair<QString, QJsonValue>> payloads = *(new QVector<QPair<QString, QJsonValue>>()), bool disableWithScreen = true);
-  bool active = true;
+  explicit TimeoutRequest(QObject *parent, int timeout_ms);
+  void send(const QString &url, const QMap<QString, QString> *headers = nullptr);
+
+  template <typename Functor>
+  static void get(QObject *parent, const QString &url, int timeout_ms, const QMap<QString, QString> *headers, Functor functor) {
+    TimeoutRequest *req = new TimeoutRequest(parent, timeout_ms);
+    QObject::connect(req, &TimeoutRequest::finished, [=](const QString &resp, bool err) {
+      functor(resp, err);
+      req->deleteLater();
+    });
+    req->send(url, headers);
+  }
+signals:
+  void finished(const QString &response, bool err);
 
 private:
-  bool disableWithScreen;
-  QNetworkReply* reply;
-  QNetworkAccessManager* networkAccessManager;
-  QTimer* networkTimer;
-  std::atomic<bool> aborted = false; // Not 100% sure we need atomic
-  void sendRequest(QString requestURL, QVector<QPair<QString, QJsonValue>> payloads);
+  QNetworkReply *reply = nullptr;
+  QTimer networkTimer;
+  static inline QSslConfiguration *ssl = nullptr;
+  static inline QNetworkAccessManager networkAccessManager;
+};
 
-private slots:
-  void requestTimeout();
-  void requestFinished();
-
+class RequestRepeater : public QObject {
+  Q_OBJECT
+public:
+  explicit RequestRepeater(QObject *parent, const QString &cache_key, const QString &url, int period_seconds,
+                           int timeout_ms, bool stop_on_success = false, const QMap<QString, QJsonValue> *payloads = nullptr, bool disableWithScreen = true);
+  bool active = true;
 signals:
-  void receivedResponse(QString response);
-  void failedResponse(QString errorString);
+  void finished(const QString &response, bool err);
+
+private:
+  TimeoutRequest request;
 };

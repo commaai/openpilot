@@ -3,11 +3,7 @@
 #include <QFile>
 #include <QJsonDocument>
 #include <QJsonObject>
-#include <QNetworkReply>
 #include <QNetworkRequest>
-#include <QString>
-#include <QWidget>
-#include <QTimer>
 #include <QRandomGenerator>
 
 #include "api.hpp"
@@ -47,7 +43,7 @@ QByteArray CommaApi::rsa_sign(QByteArray data) {
   return sig;
 }
 
-QString CommaApi::create_jwt(QVector<QPair<QString, QJsonValue>> payloads, int expiry) {
+QString CommaApi::create_jwt(const QMap<QString, QJsonValue> *payloads, int expiry) {
   QString dongle_id = QString::fromStdString(Params().get("DongleId"));
 
   QJsonObject header;
@@ -60,8 +56,12 @@ QString CommaApi::create_jwt(QVector<QPair<QString, QJsonValue>> payloads, int e
   payload.insert("nbf", t);
   payload.insert("iat", t);
   payload.insert("exp", t + expiry);
-  for (auto load : payloads) {
-    payload.insert(load.first, load.second);
+  if (payloads) {
+    auto it = payloads->constBegin();
+    while (it != payloads->constEnd()) {
+      payload.insert(it.key(), it.value());
+      ++it;
+    }
   }
 
   auto b64_opts = QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals;
@@ -74,76 +74,81 @@ QString CommaApi::create_jwt(QVector<QPair<QString, QJsonValue>> payloads, int e
   return jwt;
 }
 
-QString CommaApi::create_jwt() {
-  return create_jwt(*(new QVector<QPair<QString, QJsonValue>>()));
-}
-
-RequestRepeater::RequestRepeater(QWidget* parent, QString requestURL, int period_seconds, QVector<QPair<QString, QJsonValue>> payloads, bool disableWithScreen)
-  : disableWithScreen(disableWithScreen), QObject(parent)  {
-  networkAccessManager = new QNetworkAccessManager(this);
-
-  reply = NULL;
-
-  QTimer* timer = new QTimer(this);
-  QObject::connect(timer, &QTimer::timeout, [=](){sendRequest(requestURL, payloads);});
-  timer->start(period_seconds * 1000);
-
-  networkTimer = new QTimer(this);
-  networkTimer->setSingleShot(true);
-  networkTimer->setInterval(20000);
-  connect(networkTimer, SIGNAL(timeout()), this, SLOT(requestTimeout()));
-}
-
-void RequestRepeater::sendRequest(QString requestURL, QVector<QPair<QString, QJsonValue>> payloads){
-  // No network calls onroad
-  if(GLWindow::ui_state.scene.started){
-    return;
-  }
-  if (!active || (!GLWindow::ui_state.awake && disableWithScreen)) {
-    return;
-  }
-  if(reply != NULL){
-    return;
-  }
-
-  aborted = false;
-  QString token = CommaApi::create_jwt(payloads);
-  QNetworkRequest request;
-  request.setUrl(QUrl(requestURL));
-  request.setRawHeader(QByteArray("Authorization"), ("JWT " + token).toUtf8());
-
+TimeoutRequest::TimeoutRequest(QObject *parent, int timeout_ms) : networkTimer(this), QObject(parent) {
+  networkTimer.setSingleShot(true);
+  networkTimer.setInterval(timeout_ms);
+  connect(&networkTimer, &QTimer::timeout, [=] {
+    reply->abort();
+  });
 #ifdef QCOM
-  QSslConfiguration ssl = QSslConfiguration::defaultConfiguration();
-  ssl.setCaCertificates(QSslCertificate::fromPath("/usr/etc/tls/cert.pem",
-                        QSsl::Pem, QRegExp::Wildcard));
-  request.setSslConfiguration(ssl);
-#endif
-
-  reply = networkAccessManager->get(request);
-
-  networkTimer->start();
-  connect(reply, SIGNAL(finished()), this, SLOT(requestFinished()));
-}
-
-void RequestRepeater::requestTimeout(){
-  aborted = true;
-  reply->abort();
-}
-
-// This function should always emit something
-void RequestRepeater::requestFinished(){
-  if (!aborted) {
-    networkTimer->stop();
-    QString response = reply->readAll();
-    if (reply->error() == QNetworkReply::NoError) {
-      emit receivedResponse(response);
-    } else {
-      qDebug() << reply->errorString();
-      emit failedResponse(reply->errorString());
-    }
-  } else {
-    emit failedResponse("network timeout");
+  if (!ssl) {
+    ssl = new QSslConfiguration(QSslConfiguration::defaultConfiguration());
+    ssl->setCaCertificates(QSslCertificate::fromPath("/usr/etc/tls/cert.pem", QSsl::Pem, QRegExp::Wildcard));
   }
-  reply->deleteLater();
-  reply = NULL;
+#endif
+};
+
+void TimeoutRequest::send(const QString &url, const QMap<QString, QString> *headers) {
+  if (reply != nullptr) return;
+
+  QUrl requestUrl(url);
+  QNetworkRequest request(requestUrl);
+  if (requestUrl.scheme() == "https" && ssl) {
+    request.setSslConfiguration(*ssl);
+  }
+  if (headers) {
+    auto it = headers->constBegin();
+    while (it != headers->constEnd()) {
+      request.setRawHeader(it.key().toUtf8(), it.value().toUtf8());
+      ++it;
+    }
+  }
+
+  reply = networkAccessManager.get(request);
+  networkTimer.start();
+  QObject::connect(reply, &QNetworkReply::finished, [=]() {
+    if (networkTimer.isActive()) {
+      networkTimer.stop();
+      if (reply->error() == QNetworkReply::NoError) {
+        emit finished(reply->readAll(), false);
+      } else {
+        qDebug() << reply->errorString();
+        emit finished(reply->errorString(), true);
+      }
+    } else {
+      emit finished("network timeout", true);
+    }
+    reply->deleteLater();
+    reply = nullptr;
+  });
+}
+
+RequestRepeater::RequestRepeater(QObject *parent, const QString &cache_key, const QString &url, int period_seconds, int timeout_ms,
+                                 bool stop_on_success, const QMap<QString, QJsonValue> *payloads, bool disableWithScreen) : request(parent, timeout_ms) {
+  if (!cache_key.isEmpty()) {
+    if (std::string cached_resp = Params().get(cache_key.toStdString()); !cached_resp.empty()) {
+      QTimer::singleShot(0, [=] { emit finished(QString::fromStdString(cached_resp), false); });
+    }
+  }
+
+  QObject::connect(&request, &TimeoutRequest::finished, [=](const QString &response, bool err) {
+    if (!err && !cache_key.isEmpty()) {
+      Params().write_db_value(cache_key.toStdString(), response.toStdString());
+    }
+    emit finished(response, err);
+  });
+
+  QTimer *timer = new QTimer(this);
+  timer->start(period_seconds * 1000);
+  QObject::connect(timer, &QTimer::timeout, [=]() {
+    // No network calls onroad
+    if (GLWindow::ui_state.scene.started) {
+      return;
+    }
+    if (!active || (!GLWindow::ui_state.awake && disableWithScreen)) {
+      return;
+    }
+    QMap<QString, QString> headers{{"Authorization", "JWT " + CommaApi::create_jwt(payloads)}};
+    request.send(url, &headers);
+  });
 }
