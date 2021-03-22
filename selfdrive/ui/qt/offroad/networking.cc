@@ -140,12 +140,10 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   vlayout->setMargin(40);
 
   // Back button
-  QHBoxLayout* backLayout = new QHBoxLayout;
   QPushButton* back = new QPushButton("Back");
   back->setFixedSize(500, 100);
   connect(back, &QPushButton::released, [=](){emit backPress();});
-  backLayout->addWidget(back, 0, Qt::AlignLeft);
-  vlayout->addWidget(layoutToWidget(backLayout, this), 0, Qt::AlignLeft);
+  vlayout->addWidget(back, 0, Qt::AlignLeft);
 
   // Enable tethering layout
   QHBoxLayout* tetheringToggleLayout = new QHBoxLayout;
@@ -205,10 +203,6 @@ void AdvancedNetworking::toggleTethering(bool enable) {
     wifi->disableTethering();
   }
   editPasswordButton->setEnabled(!enable);
-}
-
-void AdvancedNetworking::toggleSSH(bool enable) {
-  Hardware::set_ssh_enabled(enable);
 }
 
 
