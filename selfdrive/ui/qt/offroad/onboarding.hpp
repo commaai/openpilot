@@ -2,7 +2,6 @@
 
 #include <QImage>
 #include <QWidget>
-#include <QScroller>
 #include <QTextEdit>
 #include <QMouseEvent>
 #include <QStackedWidget>
@@ -45,7 +44,6 @@ private:
   QTextEdit *terms_text;
   QWidget *terms_screen();
   QWidget *training_screen();
-  QScroller *scroller;
 
 signals:
   void onboardingDone();
