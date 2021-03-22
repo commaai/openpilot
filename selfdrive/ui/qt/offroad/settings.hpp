@@ -3,6 +3,7 @@
 #include <QWidget>
 #include <QFrame>
 #include <QTimer>
+#include <QLabel>
 #include <QPushButton>
 #include <QButtonGroup>
 #include <QStackedLayout>
@@ -26,6 +27,15 @@ public slots:
   void checkboxClicked(int state);
 };
 
+class DeveloperPanel : public QFrame {
+  Q_OBJECT
+public:
+  explicit DeveloperPanel(QWidget* parent = nullptr);
+
+protected:
+  void showEvent(QShowEvent *event) override;
+  QList<QLabel *> labels;
+};
 
 // *** settings window ***
 
