@@ -37,5 +37,5 @@ private:
   QPropertyAnimation *_anim = nullptr;
 
 signals:
-  void stateChanged(int new_state);
+  void stateChanged(bool new_state);
 };

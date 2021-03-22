@@ -183,7 +183,7 @@ void DeveloperPanel::showEvent(QShowEvent *event) {
 }
 
 QWidget * network_panel(QWidget * parent) {
-#ifdef QCOM
+#ifndef QCOM
   QVBoxLayout *layout = new QVBoxLayout;
   layout->setMargin(100);
   layout->setSpacing(30);
@@ -202,6 +202,7 @@ QWidget * network_panel(QWidget * parent) {
   for (auto &b : btns) {
     layout->addWidget(new ButtonControl(b.first, "OPEN", "", [=]() { std::system(b.second); }));
   }
+
   layout->addStretch(1);
 
   QWidget *w = new QWidget;
