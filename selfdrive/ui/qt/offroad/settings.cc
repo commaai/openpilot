@@ -72,7 +72,7 @@ QWidget * toggles_panel() {
   return widget;
 }
 
-QWidget * device_panel() {
+DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
   QVBoxLayout *device_layout = new QVBoxLayout;
   device_layout->setMargin(100);
 
@@ -116,7 +116,7 @@ QWidget * device_panel() {
   device_layout->addWidget(new ButtonControl("Uninstall " + brand, "UNINSTALL",
                                              "",
                                              [=]() {
-                                               if (ConfirmationDialog::confirm("Are you srue you want to uninstall?")) {
+                                               if (ConfirmationDialog::confirm("Are you sure you want to uninstall?")) {
                                                  Params().write_db_value("DoUninstall", "1");
                                                }
                                              }));
@@ -142,9 +142,8 @@ QWidget * device_panel() {
     }
   });
 
-  QWidget *widget = new QWidget;
-  widget->setLayout(device_layout);
-  widget->setStyleSheet(R"(
+  setLayout(device_layout);
+  setStyleSheet(R"(
     QPushButton {
       padding: 0;
       height: 120px;
@@ -152,7 +151,6 @@ QWidget * device_panel() {
       background-color: #393939;
     }
   )");
-  return widget;
 }
 
 DeveloperPanel::DeveloperPanel(QWidget* parent) : QFrame(parent) {
@@ -178,7 +176,7 @@ void DeveloperPanel::showEvent(QShowEvent *event) {
     if (labels.size() > i) {
       labels[i]->setText(QString::fromStdString(value));
     } else {
-      labels.push_back(new LabelControl(name, QString::fromStdString(value)));
+      labels.push_back(new LabelControl(name, QString::fromStdString(value).trimmed()));
       layout()->addWidget(labels[i]);
       if (i < (dev_params.size() - 1)) {
         layout()->addWidget(horizontal_line());
@@ -248,7 +246,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
 
   // setup panels
   QPair<QString, QWidget *> panels[] = {
-    {"Device", device_panel()},
+    {"Device", new DevicePanel(this)},
     {"Network", network_panel(this)},
     {"Toggles", toggles_panel()},
     {"Developer", new DeveloperPanel()},
@@ -278,7 +276,9 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
     sidebar_layout->addWidget(btn, 0, Qt::AlignRight);
 
     panel_layout->addWidget(panel);
-    QObject::connect(btn, &QPushButton::released, [=, w = panel]() { panel_layout->setCurrentWidget(w); });
+    QObject::connect(btn, &QPushButton::released, [=, w = panel]() {
+      panel_layout->setCurrentWidget(w);
+    });
   }
   qobject_cast<QPushButton *>(nav_btns->buttons()[0])->setChecked(true);
   sidebar_layout->setContentsMargins(50, 50, 100, 50);
