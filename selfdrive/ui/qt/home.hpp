@@ -1,6 +1,5 @@
 #pragma once
 
-#include <QGridLayout>
 #include <QLabel>
 #include <QOpenGLFunctions>
 #include <QOpenGLWidget>
@@ -93,8 +92,8 @@ protected:
   void mousePressEvent(QMouseEvent* e) override;
 
 private:
-  QGridLayout* layout;
   OffroadHome* home;
+  QStackedLayout* layout;
 
 private slots:
   void setVisibility(bool offroad);

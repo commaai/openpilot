@@ -31,16 +31,16 @@
 // HomeWindow: the container for the offroad (OffroadHome) and onroad (GLWindow) UIs
 
 HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
-  layout = new QGridLayout;
-  layout->setMargin(0);
+  layout = new QStackedLayout();
+  layout->setStackingMode(QStackedLayout::StackAll);
 
   // onroad UI
   glWindow = new GLWindow(this);
-  layout->addWidget(glWindow, 0, 0);
+  layout->addWidget(glWindow);
 
   // draw offroad UI on top of onroad UI
   home = new OffroadHome();
-  layout->addWidget(home, 0, 0);
+  layout->addWidget(home);
 
   QObject::connect(glWindow, SIGNAL(offroadTransition(bool)), this, SLOT(setVisibility(bool)));
   QObject::connect(glWindow, SIGNAL(offroadTransition(bool)), this, SIGNAL(offroadTransition(bool)));
@@ -48,11 +48,6 @@ HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
   QObject::connect(this, SIGNAL(openSettings()), home, SLOT(refresh()));
 
   setLayout(layout);
-  setStyleSheet(R"(
-    * {
-      color: white;
-    }
-  )");
 }
 
 void HomeWindow::setVisibility(bool offroad) {
@@ -137,7 +132,14 @@ OffroadHome::OffroadHome(QWidget* parent) : QWidget(parent) {
   timer->start(10 * 1000);
 
   setLayout(main_layout);
-  setStyleSheet(R"(background-color: none;)");
+  setStyleSheet(R"(
+    OffroadHome {
+      background-color: red;
+    }
+    * {
+     color: white;
+    }
+  )");
 }
 
 void OffroadHome::openAlerts() {
