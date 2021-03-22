@@ -37,14 +37,19 @@ int fresh_clone() {
   err = std::system("mv /data/tmppilot /data/openpilot");
   if (err) return 1;
 
-#ifdef SSH_KEYS
+#ifdef INTERNAL
   err = std::system("mkdir -p /data/params/d/");
   if (err) return 1;
 
   std::ofstream param;
-  param.open("/data/params/d/GithubSshKeys");
-  param << SSH_KEYS;
+  param.open("/data/params/d/RecordFrontLock");
+  param << "1";
   param.close();
+
+  std::ofstream keys_param;
+  keys_param.open("/data/params/d/GithubSshKeys");
+  keys_param << SSH_KEYS;
+  keys_param.close();
 #endif
 
   return 0;

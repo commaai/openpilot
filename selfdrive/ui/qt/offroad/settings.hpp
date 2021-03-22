@@ -3,28 +3,22 @@
 #include <QWidget>
 #include <QFrame>
 #include <QTimer>
+#include <QLabel>
 #include <QPushButton>
 #include <QButtonGroup>
 #include <QStackedLayout>
 
-// *** settings widgets ***
+#include "selfdrive/ui/qt/widgets/controls.hpp"
 
-class ParamsToggle : public QFrame {
+class DeveloperPanel : public QFrame {
   Q_OBJECT
-
 public:
-  explicit ParamsToggle(QString param, QString title, QString description,
-                        QString icon, QWidget *parent = 0);
+  explicit DeveloperPanel(QWidget* parent = nullptr);
 
-private:
-  QString param;
-
-public slots:
-  void checkboxClicked(int state);
+protected:
+  void showEvent(QShowEvent *event) override;
+  QList<LabelControl *> labels;
 };
-
-
-// *** settings window ***
 
 class SettingsWindow : public QFrame {
   Q_OBJECT
@@ -34,16 +28,11 @@ public:
 
 signals:
   void closeSettings();
-  void sidebarPressed();
 
 private:
   QPushButton *sidebar_alert_widget;
   QWidget *sidebar_widget;
-  std::map<QString, QWidget *> panels;
   QButtonGroup *nav_btns;
   QStackedLayout *panel_layout;
   QFrame* panel_frame;
-
-public slots:
-  void setActivePanel();
 };

@@ -115,6 +115,7 @@ void InputDialog::setMinLength(int length){
 
 ConfirmationDialog::ConfirmationDialog(QString prompt_text, QString confirm_text, QString cancel_text,
                                        QWidget *parent):QDialog(parent) {
+  setWindowFlags(Qt::Popup);
   layout = new QVBoxLayout();
   layout->setMargin(25);
 

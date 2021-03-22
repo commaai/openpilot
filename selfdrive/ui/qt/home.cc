@@ -93,8 +93,9 @@ OffroadHome::OffroadHome(QWidget* parent) : QWidget(parent) {
   date->setStyleSheet(R"(font-size: 55px;)");
   header_layout->addWidget(date, 0, Qt::AlignTop | Qt::AlignLeft);
 
-  QLabel* version = new QLabel(QString::fromStdString("openpilot v" + Params().get("Version")));
-  version->setStyleSheet(R"(font-size: 45px;)");
+  std::string brand = Params().read_db_bool("Passive") ? "dashcam" : "openpilot";
+  QLabel* version = new QLabel(QString::fromStdString(brand + " v" + Params().get("Version")));
+  version->setStyleSheet(R"(font-size: 55px;)");
   header_layout->addWidget(version, 0, Qt::AlignTop | Qt::AlignRight);
 
   main_layout->addLayout(header_layout);
@@ -109,12 +110,12 @@ OffroadHome::OffroadHome(QWidget* parent) : QWidget(parent) {
   QGridLayout* statsAndSetup = new QGridLayout();
 
   DriveStats* drive = new DriveStats;
-  drive->setFixedSize(1000, 800);
-  statsAndSetup->addWidget(drive, 0, 0);
+  drive->setFixedSize(800, 800);
+  statsAndSetup->addWidget(drive, 0, Qt::AlignLeft);
 
   SetupWidget* setup = new SetupWidget;
-  statsAndSetup->addWidget(setup, 0, 1);
-  statsAndSetup->addWidget(alert_notification, 0, 1, Qt::AlignTop | Qt::AlignRight);
+  setup->setFixedSize(700, 700);
+  statsAndSetup->addWidget(setup, 0, Qt::AlignRight);
 
   QWidget* statsAndSetupWidget = new QWidget();
   statsAndSetupWidget->setLayout(statsAndSetup);

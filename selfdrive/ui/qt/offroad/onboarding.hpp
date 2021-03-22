@@ -2,9 +2,11 @@
 
 #include <QWidget>
 #include <QStackedWidget>
-#include <QStackedLayout>
 #include <QTextEdit>
 #include <QMouseEvent>
+#include <QImage>
+
+#include "selfdrive/common/params.h"
 
 class TrainingGuide : public QFrame {
   Q_OBJECT
@@ -14,10 +16,11 @@ public:
 
 protected:
   void mouseReleaseEvent(QMouseEvent* e) override;
+  void paintEvent(QPaintEvent *event) override;
 
 private:
   int currentIndex = 0;
-  QStackedLayout* slayout;
+  QImage image;
 
   // Vector of bounding boxes for the a given training guide step. (minx, maxx, miny, maxy)
   QVector<QVector<int>> boundingBox {{250, 930, 750, 900}, {280, 1280, 650, 950}, {330, 1130, 590, 900}, {910, 1580, 500, 1000}, {1180, 1300, 630, 720}, {290, 1050, 590, 960}, 
@@ -34,6 +37,7 @@ public:
   explicit OnboardingWindow(QWidget *parent = 0);
 
 private:
+  Params params;
   std::string current_terms_version;
   std::string current_training_version;
 
