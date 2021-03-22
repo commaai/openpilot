@@ -20,43 +20,43 @@ QWidget * toggles_panel() {
   QVBoxLayout *toggles_list = new QVBoxLayout();
 
   toggles_list->setMargin(50);
-  toggles_list->addWidget(new ToggleControl("OpenpilotEnabledToggle",
+  toggles_list->addWidget(new ParamControl("OpenpilotEnabledToggle",
                                             "Enable openpilot",
                                             "Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off.",
                                             "../assets/offroad/icon_openpilot.png"
                                               ));
   toggles_list->addWidget(horizontal_line());
-  toggles_list->addWidget(new ToggleControl("LaneChangeEnabled",
+  toggles_list->addWidget(new ParamControl("LaneChangeEnabled",
                                             "Enable Lane Change Assist",
                                             "Perform assisted lane changes with openpilot by checking your surroundings for safety, activating the turn signal and gently nudging the steering wheel towards your desired lane. openpilot is not capable of checking if a lane change is safe. You must continuously observe your surroundings to use this feature.",
                                             "../assets/offroad/icon_road.png"
                                               ));
   toggles_list->addWidget(horizontal_line());
-  toggles_list->addWidget(new ToggleControl("IsLdwEnabled",
+  toggles_list->addWidget(new ParamControl("IsLdwEnabled",
                                             "Enable Lane Departure Warnings",
                                             "Receive alerts to steer back into the lane when your vehicle drifts over a detected lane line without a turn signal activated while driving over 31mph (50kph).",
                                             "../assets/offroad/icon_warning.png"
                                               ));
   toggles_list->addWidget(horizontal_line());
-  toggles_list->addWidget(new ToggleControl("IsRHD",
+  toggles_list->addWidget(new ParamControl("IsRHD",
                                             "Enable Right-Hand Drive",
                                             "Allow openpilot to obey left-hand traffic conventions and perform driver monitoring on right driver seat.",
                                             "../assets/offroad/icon_openpilot_mirrored.png"
                                             ));
   toggles_list->addWidget(horizontal_line());
-  toggles_list->addWidget(new ToggleControl("IsMetric",
+  toggles_list->addWidget(new ParamControl("IsMetric",
                                             "Use Metric System",
                                             "Display speed in km/h instead of mp/h.",
                                             "../assets/offroad/icon_metric.png"
                                             ));
   toggles_list->addWidget(horizontal_line());
-  toggles_list->addWidget(new ToggleControl("CommunityFeaturesToggle",
+  toggles_list->addWidget(new ParamControl("CommunityFeaturesToggle",
                                             "Enable Community Features",
                                             "Use features from the open source community that are not maintained or supported by comma.ai and have not been confirmed to meet the standard safety model. These features include community supported cars and community supported hardware. Be extra cautious when using these features",
                                             "../assets/offroad/icon_shell.png"
                                             ));
 
-  ToggleControl *record_toggle = new ToggleControl("RecordFront",
+  ParamControl *record_toggle = new ParamControl("RecordFront",
                                             "Record and Upload Driver Camera",
                                             "Upload data from the driver facing camera and help improve the driver monitoring algorithm.",
                                             "../assets/offroad/icon_network.png");

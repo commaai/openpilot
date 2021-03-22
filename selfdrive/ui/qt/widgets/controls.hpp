@@ -67,11 +67,11 @@ private:
   QPushButton btn;
 };
 
-class ToggleControl : public AbstractControl {
+class ParamControl : public AbstractControl {
   Q_OBJECT
 
 public:
-  ToggleControl(const QString &param, const QString &title, const QString &desc, const QString &icon) : AbstractControl(title, desc, icon) {
+  ParamControl(const QString &param, const QString &title, const QString &desc, const QString &icon) : AbstractControl(title, desc, icon) {
     toggle.setFixedSize(150, 100);
     // set initial state from param
     if (Params().read_db_bool(param.toStdString().c_str())) {
