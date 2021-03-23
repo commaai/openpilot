@@ -37,11 +37,10 @@ def manager_init(spinner=None):
     ("HasAcceptedTerms", "0"),
     ("HasCompletedSetup", "0"),
     ("IsUploadRawEnabled", "1"),
-    ("IsLdwEnabled", "1"),
+    ("IsLdwEnabled", "0"),
     ("LastUpdateTime", datetime.datetime.utcnow().isoformat().encode('utf8')),
     ("OpenpilotEnabledToggle", "1"),
     ("VisionRadarToggle", "0"),
-    ("LaneChangeEnabled", "1"),
     ("IsDriverViewEnabled", "0"),
   ]
 
