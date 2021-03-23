@@ -79,18 +79,19 @@ OffroadHome::OffroadHome(QWidget* parent) : QWidget(parent) {
 
   date = new QLabel();
   date->setStyleSheet(R"(font-size: 55px;)");
-  header_layout->addWidget(date, 0, Qt::AlignTop | Qt::AlignLeft);
+  header_layout->addWidget(date, 0, Qt::AlignHCenter | Qt::AlignLeft);
+
+  alert_notification = new QPushButton();
+  alert_notification->setVisible(false);
+  QObject::connect(alert_notification, SIGNAL(released()), this, SLOT(openAlerts()));
+  header_layout->addWidget(alert_notification, 0, Qt::AlignHCenter | Qt::AlignRight);
 
   std::string brand = Params().read_db_bool("Passive") ? "dashcam" : "openpilot";
   QLabel* version = new QLabel(QString::fromStdString(brand + " v" + Params().get("Version")));
   version->setStyleSheet(R"(font-size: 55px;)");
-  header_layout->addWidget(version, 0, Qt::AlignTop | Qt::AlignRight);
+  header_layout->addWidget(version, 0, Qt::AlignHCenter | Qt::AlignRight);
 
   main_layout->addLayout(header_layout);
-
-  alert_notification = new QPushButton();
-  QObject::connect(alert_notification, SIGNAL(released()), this, SLOT(openAlerts()));
-  main_layout->addWidget(alert_notification, 0, Qt::AlignTop | Qt::AlignRight);
 
   // main content
   main_layout->addSpacing(25);
