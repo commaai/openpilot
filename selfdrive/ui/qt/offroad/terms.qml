@@ -1,4 +1,4 @@
-import QtQuick 2.7
+import QtQuick 2.0
 
 Item {
 	id: root
@@ -21,7 +21,7 @@ Item {
 		flickableDirection: Flickable.VerticalFlick
 		clip: true
 
-    onMovementEnded: root.qmlSignal("Hello")
+    onAtYEndChanged: root.qmlSignal("Hello")
 
 		Text {
 			// HTML like markup can also be used

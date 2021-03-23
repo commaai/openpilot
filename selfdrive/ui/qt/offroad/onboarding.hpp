@@ -31,6 +31,23 @@ signals:
   void completedTraining();
 };
 
+
+class TermsPage : public QFrame {
+  Q_OBJECT
+
+public:
+  explicit TermsPage(QWidget *parent = 0);
+
+private:
+  QPushButton *accept_btn;
+
+public slots:
+  void enable_accept();
+
+signals:
+  void acceptedTerms();
+};
+
 class OnboardingWindow : public QStackedWidget {
   Q_OBJECT
 
@@ -42,10 +59,6 @@ private:
   std::string current_terms_version;
   std::string current_training_version;
 
-  //TODO: Remove this (access through .widget(index))
-  QPushButton *accept_btn;
-  QObject* flickable;
-
   QTextEdit *terms_text;
   QWidget *terms_screen();
   QWidget *terms_screen2();
@@ -56,5 +69,4 @@ signals:
 
 public slots:
   void updateActiveScreen();
-  void accept_buttons();
 };
