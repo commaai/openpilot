@@ -278,6 +278,16 @@ void GLWindow::timerUpdate() {
 
   handle_display_state(&ui_state, false);
 
+  // scale volume with speed
+#ifdef QCOM
+  const float vol_max = 1.0;
+  const float vol_min = 0.5;
+#else
+  const float vol_max = 0.45;
+  const float vol_min = 0.45;
+#endif
+  util::map_val(ui_state.scene.car_state.getVEgo(), 0.f, 20.f, vol_min, vol_max);
+
   ui_update(&ui_state);
   repaint();
   watchdog_kick();
