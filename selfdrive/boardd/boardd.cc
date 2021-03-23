@@ -150,7 +150,7 @@ bool usb_connect() {
   } else { return false; }
 
   // get panda serial
-  if (auto serial = panda->get_serial(); serial) {
+  if (auto serial = tmp_panda->get_serial(); serial) {
     params.put("PandaDongleId", *serial);
     LOGW("panda serial: %s", serial->c_str());
   } else { return false; }
