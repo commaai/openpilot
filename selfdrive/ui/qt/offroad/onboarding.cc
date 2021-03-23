@@ -38,7 +38,7 @@ void TrainingGuide::mouseReleaseEvent(QMouseEvent *e) {
   }
 }
 
-TrainingGuide::TrainingGuide(QWidget* parent) {
+TrainingGuide::TrainingGuide(QWidget* parent) : QFrame(parent){
   image.load("../assets/training/step0.jpg");
 }
 
@@ -54,20 +54,11 @@ void TrainingGuide::paintEvent(QPaintEvent *event) {
   painter.drawImage(rect.topLeft(), image);
 }
 
-void OnboardingWindow::accept_buttons(){
-	if(flickable->property("atYEnd").toInt()){
-		accept_btn->setText("Accept");
-		accept_btn->setEnabled(true);
-	}
-  return;
-}
-
-QWidget* OnboardingWindow::terms_screen2() {
+TermsPage::TermsPage(QWidget *parent) : QFrame(parent){
 
   QVBoxLayout *main_layout = new QVBoxLayout;
   main_layout->setContentsMargins(20, 20, 20, 20);
   main_layout->setSpacing(20);
-
 
   QQuickView *view = new QQuickView;
   QWidget* text = QWidget::createWindowContainer(view, 0);
@@ -86,18 +77,14 @@ QWidget* OnboardingWindow::terms_screen2() {
   accept_btn->setEnabled(false);
   buttons->addWidget(accept_btn);
   QObject::connect(accept_btn, &QPushButton::released, [=]() {
-    Params().write_db_value("HasAcceptedTerms", current_terms_version);
-    updateActiveScreen();
+		emit acceptedTerms();
   });
 
   QObject *obj = (QObject*)view->rootObject();
-  flickable = obj->findChild<QObject*>("flickArea");
+  QObject::connect(obj, SIGNAL(qmlSignal(QVariant)), SLOT(enable_accept()));
 
-  QObject::connect(obj, SIGNAL(qmlSignal(QVariant)), SLOT(accept_buttons()));
-
-  QWidget *widget = new QWidget;
-  widget->setLayout(main_layout);
-  widget->setStyleSheet(R"(
+  setLayout(main_layout);
+  setStyleSheet(R"(
     * {
       font-size: 50px;
     }
@@ -107,10 +94,13 @@ QWidget* OnboardingWindow::terms_screen2() {
       background-color: #292929;
     }
   )");
-
-  return widget;
 }
 
+void TermsPage::enable_accept(){
+	accept_btn->setText("Accept");
+	accept_btn->setEnabled(true);
+  return;
+}
 
 QWidget* OnboardingWindow::terms_screen() {
   QVBoxLayout *main_layout = new QVBoxLayout;
@@ -200,7 +190,13 @@ OnboardingWindow::OnboardingWindow(QWidget *parent) : QStackedWidget(parent) {
   current_terms_version = params.get("TermsVersion", false);
   current_training_version = params.get("TrainingVersion", false);
 
-  addWidget(terms_screen2());
+	TermsPage* terms = new TermsPage(this);
+  addWidget(terms);
+
+	connect(terms, &TermsPage::acceptedTerms, [=](){
+    Params().write_db_value("HasAcceptedTerms", current_terms_version);
+    updateActiveScreen();
+	});
 
   TrainingGuide* tr = new TrainingGuide(this);
   connect(tr, &TrainingGuide::completedTraining, [=](){
