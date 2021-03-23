@@ -22,6 +22,7 @@ from selfdrive.car.hyundai.values import CAR as HYUNDAI
 from selfdrive.car.nissan.values import CAR as NISSAN
 from selfdrive.car.mazda.values import CAR as MAZDA
 from selfdrive.car.subaru.values import CAR as SUBARU
+from selfdrive.car.tesla.values import CAR as TESLA
 from selfdrive.car.toyota.values import CAR as TOYOTA
 from selfdrive.car.volkswagen.values import CAR as VOLKSWAGEN
 
@@ -251,6 +252,10 @@ routes = {
   },
   "50c6c9b85fd1ff03|2020-10-26--17-56-06": {
     'carFingerprint': HYUNDAI.KIA_NIRO_EV,
+    'enableCamera': True,
+  },
+  "c7e9ec2908b06d23|2021-03-21--23-40-19": {
+    'carFingerprint': TESLA.AP1_MODELS,
     'enableCamera': True,
   },
   "f7b6be73e3dfd36c|2019-05-12--18-07-16": {
