@@ -12,12 +12,12 @@ if [ -z "$TEST_DIR" ]; then
   exit 1
 fi
 
-# setup jenkins device if not setup yet
+# setup jenkins device
 if [ ! -d "$SOURCE_DIR" ]; then
   # write continue.sh
   CONTINUE_FILE="/data/data/com.termux/files/continue.sh"
   echo "#!/usr/bin/bash" > $CONTINUE_FILE
-  echo ""wpa_cli IFNAME=wlan0 SCAN >> $CONTINUE_FILE
+  echo "wpa_cli IFNAME=wlan0 SCAN" >> $CONTINUE_FILE
   echo "sleep infinity" >> $CONTINUE_FILE
 
   # write SSH keys
