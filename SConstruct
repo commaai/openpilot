@@ -264,7 +264,7 @@ Export('envCython')
 
 # Qt build environment
 qt_env = env.Clone()
-qt_modules = ["Widgets", "Gui", "Core", "Network", "Concurrent", "Multimedia", "Quick"]
+qt_modules = ["Widgets", "Gui", "Core", "Network", "Concurrent", "Multimedia", "Quick", "Qml"]
 if arch != "aarch64":
   qt_modules += ["DBus", "WebEngine", "WebEngineWidgets"]
 
