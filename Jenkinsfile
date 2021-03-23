@@ -130,8 +130,6 @@ pipeline {
                       ["onroad tests", "cd selfdrive/test/ && ./test_onroad.py"],
                       ["build devel", "cd release && CI_PUSH=${env.CI_PUSH} ./build_devel.sh"],
                       ["test car interfaces", "cd selfdrive/car/tests/ && ./test_car_interfaces.py"],
-                      ["test spinner build", "cd selfdrive/ui/spinner && make clean && make"],
-                      ["test text window build", "cd selfdrive/ui/text && make clean && make"],
                     ])
                   }
                 }

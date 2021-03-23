@@ -3,7 +3,8 @@
 #include <cstdlib>
 #include <fstream>
 
-#include <common/util.h>
+#include "common/util.h"
+#include "common/params.h"
 
 #ifdef QCOM
 #define Hardware HardwareEon
