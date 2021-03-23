@@ -152,6 +152,7 @@ void OffroadHome::refresh() {
 
   alerts_widget->refresh();
   if (!alerts_widget->alerts.size() && !alerts_widget->updateAvailable) {
+    emit closeAlerts();
     alert_notification->setVisible(false);
     return;
   }
@@ -163,6 +164,9 @@ void OffroadHome::refresh() {
     alert_notification->setText(QString::number(alerts) + " ALERT" + (alerts == 1 ? "" : "S"));
   }
 
+  if (!alert_notification->isVisible() && !first_refresh) {
+    emit openAlerts();
+  }
   alert_notification->setVisible(true);
 
   // Red background for alerts, blue for update available
