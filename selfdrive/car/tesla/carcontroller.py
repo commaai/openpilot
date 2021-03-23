@@ -86,7 +86,7 @@ class CarController():
     if not enabled and bool(CS.out.cruiseState.enabled):
       cruise_cancel = True
       can_sends.append(self.tesla_can.create_action_request(CS.msg_stw_actn_req, cruise_cancel, CANBUS.chassis))
-      #can_sends.append(self.tesla_can.create_action_request(CS.msg_stw_actn_req, cruise_cancel, CANBUS.autopilot))
+      can_sends.append(self.tesla_can.create_action_request(CS.msg_stw_actn_req, cruise_cancel, CANBUS.autopilot))
       
 
     # TODO: HUD control: Autopilot Status, (Status2 also needed for long control),
