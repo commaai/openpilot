@@ -1,4 +1,4 @@
-import QtQuick 2.3
+import QtQuick 2.7
 
 Item {
 	id: root
@@ -23,6 +23,8 @@ Item {
 			// HTML like markup can also be used
 			id: helpText
 			width: 1920
+			padding: 50
+
 			text: '<!DOCTYPE html>
 
 						<head>
