@@ -128,7 +128,9 @@ RequestRepeater::RequestRepeater(QObject *parent, const QString &cache_key, cons
                                  bool stop_on_success, const QMap<QString, QJsonValue> *payloads, bool disableWithScreen) : request(parent, timeout_ms) {
   if (!cache_key.isEmpty()) {
     if (std::string cached_resp = Params().get(cache_key.toStdString()); !cached_resp.empty()) {
-      QTimer::singleShot(0, [=] { emit finished(QString::fromStdString(cached_resp), false); });
+      QTimer::singleShot(0, [=] {
+        emit finished(QString::fromStdString(cached_resp), false);
+      });
     }
   }
 
