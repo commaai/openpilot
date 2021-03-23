@@ -42,6 +42,10 @@ private:
   std::string current_terms_version;
   std::string current_training_version;
 
+  //TODO: Remove this (access through .widget(index))
+  QPushButton *accept_btn;
+  QObject* flickable;
+
   QTextEdit *terms_text;
   QWidget *terms_screen();
   QWidget *terms_screen2();

@@ -55,14 +55,10 @@ void TrainingGuide::paintEvent(QPaintEvent *event) {
 }
 
 void OnboardingWindow::accept_buttons(){
-  /*
-  if(QQmlProperty::read(flick, "atYEnd").toBool()){
-    accept_btn->setText("Accept");
-    accept_btn->setEnabled(true);
-  }
-  return;
-  */
-  printf("asdf\n");
+	if(flickable->property("atYEnd").toInt()){
+		accept_btn->setText("Accept");
+		accept_btn->setEnabled(true);
+	}
   return;
 }
 
@@ -86,7 +82,7 @@ QWidget* OnboardingWindow::terms_screen2() {
   buttons->addWidget(new QPushButton("Decline"));
   buttons->addSpacing(50);
 
-  QPushButton *accept_btn = new QPushButton("Scroll to accept");
+  accept_btn = new QPushButton("Scroll to accept");
   accept_btn->setEnabled(false);
   buttons->addWidget(accept_btn);
   QObject::connect(accept_btn, &QPushButton::released, [=]() {
@@ -95,7 +91,7 @@ QWidget* OnboardingWindow::terms_screen2() {
   });
 
   QObject *obj = (QObject*)view->rootObject();
-  //QObject *flick = obj->findChild<QObject*>("flickArea");
+  flickable = obj->findChild<QObject*>("flickArea");
 
   QObject::connect(obj, SIGNAL(qmlSignal(QVariant)), SLOT(accept_buttons()));
 
