@@ -5,6 +5,7 @@
 #include <QJsonObject>
 #include <QJsonDocument>
 #include <QDebug>
+#include <algorithm>
 
 #include "offroad_alerts.hpp"
 #include "common/params.h"
@@ -69,10 +70,17 @@ OffroadAlert::OffroadAlert(QWidget* parent) : QFrame(parent) {
 }
 
 void OffroadAlert::refresh() {
-  parse_alerts();
-  cleanStackedWidget(alerts_stack);
+  bool update_avl = Params().read_db_bool("UpdateAvailable");
+  std::vector<Alert> parsed_alerts = parse_alerts();
+ 
+  if (updateAvailable == update_avl && std::equal(std::begin(alerts), std::end(alerts), std::begin(parsed_alerts))) {
+    return;
+  }
 
-  updateAvailable = Params().read_db_bool("UpdateAvailable");
+  updateAvailable = update_avl;
+  alerts = parsed_alerts;
+
+  cleanStackedWidget(alerts_stack);
   reboot_btn->setVisible(updateAvailable);
 
   QVBoxLayout *layout = new QVBoxLayout;
@@ -97,15 +105,16 @@ void OffroadAlert::refresh() {
   alerts_stack->addWidget(w);
 }
 
-void OffroadAlert::parse_alerts() {
-  alerts.clear();
+std::vector<Alert> OffroadAlert::parse_alerts() {
+  std::vector<Alert> ret;
   for (const QString &key : alert_keys) {
     std::vector<char> bytes = Params().read_db_bytes(key.toStdString().c_str());
     if (bytes.size()) {
       QJsonDocument doc_par = QJsonDocument::fromJson(QByteArray(bytes.data(), bytes.size()));
       QJsonObject obj = doc_par.object();
       Alert alert = {obj.value("text").toString(), obj.value("severity").toInt()};
-      alerts.push_back(alert);
+      ret.push_back(alert);
     }
   }
+  return ret;
 }
