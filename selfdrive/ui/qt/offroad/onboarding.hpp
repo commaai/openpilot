@@ -4,6 +4,7 @@
 #include <QStackedWidget>
 #include <QTextEdit>
 #include <QMouseEvent>
+#include <QPushButton>
 #include <QImage>
 
 #include "selfdrive/common/params.h"
@@ -51,4 +52,5 @@ signals:
 
 public slots:
   void updateActiveScreen();
+  void accept_buttons();
 };

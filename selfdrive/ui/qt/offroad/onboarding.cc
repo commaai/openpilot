@@ -2,7 +2,6 @@
 #include <QString>
 #include <QScroller>
 #include <QScrollBar>
-#include <QPushButton>
 #include <QGridLayout>
 #include <QVBoxLayout>
 #include <QDesktopWidget>
@@ -14,8 +13,7 @@
 #include "util.h"
 
 #include <QQuickView>
-//#include <QQuickWidget>
-
+#include <QQmlProperty>
 
 void TrainingGuide::mouseReleaseEvent(QMouseEvent *e) {
   int leftOffset = (geometry().width()-1620)/2;
@@ -56,11 +54,65 @@ void TrainingGuide::paintEvent(QPaintEvent *event) {
   painter.drawImage(rect.topLeft(), image);
 }
 
+void OnboardingWindow::accept_buttons(){
+  /*
+  if(QQmlProperty::read(flick, "atYEnd").toBool()){
+    accept_btn->setText("Accept");
+    accept_btn->setEnabled(true);
+  }
+  return;
+  */
+  printf("asdf\n");
+  return;
+}
+
 QWidget* OnboardingWindow::terms_screen2() {
+
+  QVBoxLayout *main_layout = new QVBoxLayout;
+  main_layout->setContentsMargins(20, 20, 20, 20);
+  main_layout->setSpacing(20);
+
+
   QQuickView *view = new QQuickView;
-  QWidget* container = QWidget::createWindowContainer(view, 0);
+  QWidget* text = QWidget::createWindowContainer(view, 0);
   view->setSource(QUrl::fromLocalFile("qt/offroad/terms.qml"));
-  return container;
+
+  main_layout->addWidget(text);
+
+  // TODO: add decline page
+  QHBoxLayout* buttons = new QHBoxLayout;
+  main_layout->addLayout(buttons);
+
+  buttons->addWidget(new QPushButton("Decline"));
+  buttons->addSpacing(50);
+
+  QPushButton *accept_btn = new QPushButton("Scroll to accept");
+  accept_btn->setEnabled(false);
+  buttons->addWidget(accept_btn);
+  QObject::connect(accept_btn, &QPushButton::released, [=]() {
+    Params().write_db_value("HasAcceptedTerms", current_terms_version);
+    updateActiveScreen();
+  });
+
+  QObject *obj = (QObject*)view->rootObject();
+  //QObject *flick = obj->findChild<QObject*>("flickArea");
+
+  QObject::connect(obj, SIGNAL(qmlSignal(QVariant)), SLOT(accept_buttons()));
+
+  QWidget *widget = new QWidget;
+  widget->setLayout(main_layout);
+  widget->setStyleSheet(R"(
+    * {
+      font-size: 50px;
+    }
+    QPushButton {
+      padding: 50px;
+      border-radius: 10px;
+      background-color: #292929;
+    }
+  )");
+
+  return widget;
 }
 
 
