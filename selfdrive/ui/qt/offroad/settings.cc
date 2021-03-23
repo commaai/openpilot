@@ -58,8 +58,8 @@ QWidget * toggles_panel() {
   toggles_list->addWidget(record_toggle);
   toggles_list->addWidget(horizontal_line());
   toggles_list->addWidget(new ParamControl("EndToEndToggle",
-                                            "Set openpilot free 🥬",
-                                            "Enable laneless mode, in laneless mode openpilot will drive how it thinks a human would. Experimental.",
+                                            "Disable lanelines 🥬",
+                                            "In this mode openpilot will ignore lanelines and just drive how it thinks a human would. Experimental.",
                                             "../assets/offroad/icon_road.png"));
 
   bool record_lock = Params().read_db_bool("RecordFrontLock");
