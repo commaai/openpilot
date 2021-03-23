@@ -3,12 +3,13 @@ import QtQuick 2.7
 Item {
 	id: root
 	width: 1920
-	height: 1080
+	height: 870
+  signal qmlSignal(variant msg)
 
 	Rectangle {
 			color: "black"
 			width: 1920
-			height: 1080
+      height: 870
 	}
 
 	Flickable {
@@ -19,11 +20,12 @@ Item {
 		flickableDirection: Flickable.VerticalFlick
 		clip: true
 
+    onMovementStarted: root.qmlSignal("Hello")
+
 		Text {
 			// HTML like markup can also be used
 			id: helpText
 			width: 1920
-			padding: 50
 
 			text: '<!DOCTYPE html>
 
