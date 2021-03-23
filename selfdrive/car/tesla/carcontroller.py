@@ -2,7 +2,6 @@ from common.numpy_fast import clip, interp
 from selfdrive.car.tesla.teslacan import TeslaCAN
 from opendbc.can.packer import CANPacker
 from selfdrive.car.tesla.values import CANBUS, CarControllerParams, CAR
-from selfdrive.controls.lib.longitudinal_planner import calc_cruise_accel_limits,limit_accel_in_turns
 import cereal.messaging as messaging
 
 def _is_present(lead):
@@ -67,14 +66,14 @@ class CarController():
       #TODO: see what works best for these
       test_accel_limits = [-2*self.a_target,2*self.a_target]
       test_jerk_limits = [-4*self.a_target,4*self.a_target]
-      if _is_present(self.lead_1):
-        following = self.lead_1.status and self.lead_1.dRel < 45.0 and self.lead_1.vLeadK > CS.out.vEgo and self.lead_1.aLeadK > 0.0
+      #if _is_present(self.lead_1):
+      #  following = self.lead_1.status and self.lead_1.dRel < 45.0 and self.lead_1.vLeadK > CS.out.vEgo and self.lead_1.aLeadK > 0.0
       
       #we now create the DAS_control for AP1 or DAS_longControl for AP2
       if self.CP.carFingerprint == CAR.AP2_MODELS:
-        can_sends.append(self.tesla_can.create_ap2_long_control(self.v_target, accel_limits_turns, jerk_limits, self.long_control_counter))
+        can_sends.append(self.tesla_can.create_ap2_long_control(self.v_target, tesla_accel_limits, tesla_jerk_limits, self.long_control_counter))
       if self.CP.carFingerprint == CAR.AP1_MODELS:
-        can_sends.append(self.tesla_can.create_ap1_long_control(self.v_target, test_accel_limits, test_jerk_limits, self.long_control_counter))
+        can_sends.append(self.tesla_can.create_ap1_long_control(self.v_target, tesla_accel_limits, tesla_jerk_limits, self.long_control_counter))
       self.long_control_counter = (self.long_control_counter + 1) % 8
      
     if (hands_on_fault):

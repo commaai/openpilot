@@ -2,7 +2,7 @@ import copy
 import crcmod
 from opendbc.can.can_define import CANDefine
 from selfdrive.car.tesla.values import CANBUS
-from common.numpy_fast import clip, interp
+from common.numpy_fast import clip
 
 
 class TeslaCAN:
@@ -36,7 +36,7 @@ class TeslaCAN:
     }
     return self.packer.make_can_msg("DAS_lanes", CANBUS.chassis, values)
 
-  def create_telemetry_road_info(rLineType, rLineQual, rLineColor, lLineType,lLineQual, lLineColor, alcaState):
+  def create_telemetry_road_info(self, rLineType, rLineQual, rLineColor, lLineType,lLineQual, lLineColor, alcaState):
     #alcaState -1 alca to left, 1 alca to right, 0 no alca now
     values = {
       "DAS_telemetryMultiplexer" : 0,
