@@ -45,7 +45,7 @@ class CarInterface(CarInterfaceBase):
       ret.centerToFront = ret.wheelbase * 0.5
       ret.steerRatio = 13.5
       ret.safetyParam = 1 + 2 # has AP, ACC
-      ret.openpilotLongitudinalControl = False
+      ret.openpilotLongitudinalControl = True
       ret.communityFeature = True
     else:
       raise ValueError(f"Unsupported car: {candidate}")

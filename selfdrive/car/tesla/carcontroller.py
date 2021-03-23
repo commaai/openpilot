@@ -64,8 +64,8 @@ class CarController():
         self.a_target = 1
       following = False
       #TODO: see what works best for these
-      test_accel_limits = [-2*self.a_target,2*self.a_target]
-      test_jerk_limits = [-4*self.a_target,4*self.a_target]
+      tesla_accel_limits = [-2*self.a_target,self.a_target]
+      tesla_jerk_limits = [-4*self.a_target,2*self.a_target]
       #if _is_present(self.lead_1):
       #  following = self.lead_1.status and self.lead_1.dRel < 45.0 and self.lead_1.vLeadK > CS.out.vEgo and self.lead_1.aLeadK > 0.0
       
@@ -75,6 +75,11 @@ class CarController():
       if self.CP.carFingerprint == CAR.AP1_MODELS:
         can_sends.append(self.tesla_can.create_ap1_long_control(self.v_target, tesla_accel_limits, tesla_jerk_limits, self.long_control_counter))
       self.long_control_counter = (self.long_control_counter + 1) % 8
+    
+    if not enabled:
+      self.v_target = CS.out.vEgo
+      self.a_target = 1
+      self.long_control_counter = 0
      
     if (hands_on_fault):
       enabled = False
