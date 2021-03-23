@@ -13,8 +13,6 @@ RELEASES.md
 SAFETY.md
 site_scons/site_tools/cython.py
 
-apk/ai.comma*.apk
-
 common/.gitignore
 common/__init__.py
 common/gpio.py
@@ -266,7 +264,6 @@ selfdrive/hardware/__init__.py
 selfdrive/hardware/base.py
 selfdrive/hardware/hw.h
 selfdrive/hardware/eon/__init__.py
-selfdrive/hardware/eon/apk.py
 selfdrive/hardware/eon/hardware.py
 selfdrive/hardware/tici/__init__.py
 selfdrive/hardware/tici/hardware.py
