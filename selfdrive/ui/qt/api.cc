@@ -106,6 +106,7 @@ void TimeoutRequest::send(const QString &url, const QMap<QString, QString> *head
 
   reply = networkAccessManager.get(request);
   networkTimer.start();
+
   QObject::connect(reply, &QNetworkReply::finished, [=]() {
     if (networkTimer.isActive()) {
       networkTimer.stop();
