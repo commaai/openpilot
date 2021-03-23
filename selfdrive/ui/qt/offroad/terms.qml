@@ -14,13 +14,14 @@ Item {
 
 	Flickable {
 		id: flickArea
+    objectName: "flickArea"
 		anchors.fill: parent
 		contentHeight: helpText.height
 		contentWidth: helpText.width
 		flickableDirection: Flickable.VerticalFlick
 		clip: true
 
-    onMovementStarted: root.qmlSignal("Hello")
+    onMovementEnded: root.qmlSignal("Hello")
 
 		Text {
 			// HTML like markup can also be used
