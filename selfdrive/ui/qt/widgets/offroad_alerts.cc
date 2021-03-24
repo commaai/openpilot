@@ -1,6 +1,6 @@
 #include <QFile>
-#include <QHBoxLayout>
 #include <QVBoxLayout>
+#include <QHBoxLayout>
 #include <QJsonObject>
 #include <QJsonDocument>
 #include <QDebug>
@@ -62,15 +62,16 @@ OffroadAlert::OffroadAlert(QWidget* parent) : QFrame(parent) {
 }
 
 void OffroadAlert::refresh() {
-  parse_alerts();
   updateAvailable = Params().read_db_bool("UpdateAvailable");
-  reboot_btn->setVisible(updateAvailable);
+  if (!updateAvailable) parse_alerts();
 
   labels.resize(updateAvailable ? 1 : alerts.size());
   for (auto &l : labels) { 
     if (!l) l = std::make_unique<QLabel>();
     alert_widget->layout()->addWidget(l.get());
   }
+
+  reboot_btn->setVisible(updateAvailable);
   if (updateAvailable) {
     labels[0]->setStyleSheet(R"(font-size: 48px;)");
     labels[0]->setText(QString::fromStdString(Params().get("ReleaseNotes")));
