@@ -264,4 +264,3 @@ class CarInterface(CarInterfaceBase):
                                c.hudControl.rightLaneVisible, c.hudControl.leftLaneDepart, c.hudControl.rightLaneDepart)
     self.frame += 1
     return can_sends
-  
