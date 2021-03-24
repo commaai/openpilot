@@ -357,6 +357,7 @@ Export('common', 'gpucommon', 'visionipc')
 # Build openpilot
 
 SConscript(['cereal/SConscript'])
+SConscript(['panda/board/SConscript'])
 SConscript(['opendbc/can/SConscript'])
 
 SConscript(['phonelibs/SConscript'])

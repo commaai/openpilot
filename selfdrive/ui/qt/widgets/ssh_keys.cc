@@ -5,7 +5,7 @@
 #include "common/params.h"
 
 
-SshControl::SshControl() : AbstractControl("SSH Keys", "", "") {
+SshControl::SshControl() : AbstractControl("SSH Keys", "Warning: This grants SSH access to all public keys in your GitHub settings. Never enter a GitHub username other than your own. A comma employee will NEVER ask you to add their GitHub username.", "") {
   // setup widget
   btn.setStyleSheet(R"(
     padding: 0;
@@ -40,9 +40,6 @@ SshControl::SshControl() : AbstractControl("SSH Keys", "", "") {
   connect(networkTimer, SIGNAL(timeout()), this, SLOT(timeout()));
 
   refresh();
-
-  // TODO: add desription through AbstractControl
-  //QLabel("Warning: This grants SSH access to all public keys in your GitHub settings. Never enter a GitHub username other than your own. A Comma employee will NEVER ask you to add their GitHub username.");
 }
 
 void SshControl::refresh() {

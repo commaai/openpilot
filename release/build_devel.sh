@@ -64,16 +64,6 @@ git commit -a -m "openpilot v$VERSION release"
 # Run build
 SCONS_CACHE=1 scons -j3
 
-echo "[-] testing panda build T=$SECONDS"
-pushd panda/board/
-make bin
-popd
-
-echo "[-] testing pedal build T=$SECONDS"
-pushd panda/board/pedal
-make obj/comma.bin
-popd
-
 if [ ! -z "$CI_PUSH" ]; then
   echo "[-] Pushing to $CI_PUSH T=$SECONDS"
   git remote set-url origin git@github.com:commaai/openpilot.git
