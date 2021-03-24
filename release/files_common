@@ -13,8 +13,6 @@ RELEASES.md
 SAFETY.md
 site_scons/site_tools/cython.py
 
-apk/ai.comma*.apk
-
 common/.gitignore
 common/__init__.py
 common/gpio.py
@@ -267,7 +265,6 @@ selfdrive/hardware/base.h
 selfdrive/hardware/base.py
 selfdrive/hardware/hw.h
 selfdrive/hardware/eon/__init__.py
-selfdrive/hardware/eon/apk.py
 selfdrive/hardware/eon/hardware.h
 selfdrive/hardware/eon/hardware.py
 selfdrive/hardware/tici/__init__.py
@@ -344,13 +341,6 @@ selfdrive/ui/*.hpp
 selfdrive/ui/ui
 selfdrive/ui/text
 selfdrive/ui/spinner
-selfdrive/ui/android/spinner/Makefile
-selfdrive/ui/android/spinner/spinner
-selfdrive/ui/android/spinner/spinner.c
-
-selfdrive/ui/android/text/Makefile
-selfdrive/ui/android/text/text
-selfdrive/ui/android/text/text.cc
 
 selfdrive/ui/qt/*.cc
 selfdrive/ui/qt/*.hpp
@@ -358,9 +348,6 @@ selfdrive/ui/qt/offroad/*.cc
 selfdrive/ui/qt/offroad/*.hpp
 selfdrive/ui/qt/widgets/*.cc
 selfdrive/ui/qt/widgets/*.hpp
-
-selfdrive/ui/android/*.cc
-selfdrive/ui/android/*.hpp
 
 selfdrive/camerad/SConscript
 selfdrive/camerad/main.cc

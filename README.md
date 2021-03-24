@@ -312,7 +312,6 @@ And [follow us on Twitter](https://twitter.com/comma_ai).
 Directory Structure
 ------
     .
-    ├── apk                 # The apk files used for the UI
     ├── cereal              # The messaging spec and libs used for all logs
     ├── common              # Library like functionality we've developed here
     ├── installer/updater   # Manages auto-updates of openpilot
