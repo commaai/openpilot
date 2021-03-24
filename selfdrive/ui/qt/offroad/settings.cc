@@ -302,7 +302,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   // setup panel scrolling
   QScroller *scroller = QScroller::scroller(panel_frame);
   auto sp = scroller->scrollerProperties();
-  sp.setScrollMetric(QScrollerProperties::FrameRate, QScrollerProperties::Fps20);
+  sp.setScrollMetric(QScrollerProperties::FrameRate, QVariant::fromValue<QScrollerProperties::FrameRates>(QScrollerProperties::Fps30));
   sp.setScrollMetric(QScrollerProperties::VerticalOvershootPolicy, QVariant::fromValue<QScrollerProperties::OvershootPolicy>(QScrollerProperties::OvershootAlwaysOff));
   scroller->setScrollerProperties(sp);
   scroller->grabGesture(panel_frame->viewport(), QScroller::LeftMouseButtonGesture);
