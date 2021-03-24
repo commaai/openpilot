@@ -15,6 +15,7 @@
 #include <QQuickView>
 #include <QQmlProperty>
 #include <QQuickWidget>
+#include <QQmlContext>
 
 void TrainingGuide::mouseReleaseEvent(QMouseEvent *e) {
   int leftOffset = (geometry().width()-1620)/2;
@@ -61,8 +62,10 @@ TermsPage::TermsPage(QWidget *parent) : QFrame(parent){
   main_layout->setContentsMargins(40, 40, 40, 40);
   main_layout->setSpacing(40);
 
-  QQuickWidget *text = new QQuickWidget;
-  text->setSource(QUrl::fromLocalFile("qt/offroad/terms.qml"));
+  QQuickWidget *text = new QQuickWidget(QUrl::fromLocalFile("qt/offroad/terms.qml"), this);
+  text->setResizeMode(QQuickWidget::SizeRootObjectToView);
+  text->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+  text->rootContext()->setContextProperty("font_size", 12);
 
   main_layout->addWidget(text);
 

@@ -2,14 +2,11 @@ import QtQuick 2.0
 
 Item {
 	id: root
-	width: 1920
-	height: 840
   signal qmlSignal(variant msg)
 
 	Rectangle {
 			color: "black"
-			width: parent.width
-      height: parent.height
+      anchors.fill: parent
 	}
 
 	Flickable {
@@ -23,14 +20,13 @@ Item {
     maximumFlickVelocity: 10000.0
     pixelAligned: true
 
-
     onAtYEndChanged: root.qmlSignal("Hello")
 
 		Text {
 			// HTML like markup can also be used
 			id: helpText
-			width: 1800
-			font.pointSize: 12
+      width: flickArea.width
+			font.pointSize: font_size
 			textFormat: Text.RichText
       color: "white"
 			wrapMode: Text.Wrap
