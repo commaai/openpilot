@@ -15,7 +15,7 @@ QFrame *horizontal_line(QWidget *parent) {
 }
 
 AbstractControl::AbstractControl(const QString &title, const QString &desc, const QString &icon, QWidget *parent) : QFrame(parent) {
-  QVBoxLayout *vlayout = new QVBoxLayout(this);
+  QVBoxLayout *vlayout = new QVBoxLayout();
 
   vlayout->setContentsMargins(0, 25, 0, 25);
   vlayout->setSpacing(0);
@@ -51,4 +51,6 @@ AbstractControl::AbstractControl(const QString &title, const QString &desc, cons
       description->setVisible(!description->isVisible());
     });
   }
+
+  setLayout(vlayout);
 }

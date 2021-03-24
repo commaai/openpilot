@@ -319,9 +319,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   sidebar_widget->setLayout(sidebar_layout);
   sidebar_widget->setFixedWidth(500);
   settings_layout->addWidget(sidebar_widget);
-
   settings_layout->addWidget(panel_widget);
-
 
   setLayout(settings_layout);
   setStyleSheet(R"(
