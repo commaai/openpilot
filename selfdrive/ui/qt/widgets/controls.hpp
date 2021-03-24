@@ -15,16 +15,17 @@ class AbstractControl : public QFrame {
   Q_OBJECT
 
 protected:
-  AbstractControl(const QString &title, const QString &desc = "", const QString &icon = "");
+  AbstractControl(const QString &title, const QString &desc = "", const QString &icon = "", QWidget *parent = nullptr);
 
   QSize minimumSizeHint() const override {
     QSize size = QFrame::minimumSizeHint();
-    size.setHeight(120);
+    size.setHeight(150);
     return size;
   };
 
   QHBoxLayout *hlayout;
-  QLabel *title_label;
+  QPushButton *title_label;
+  QLabel *description = nullptr;
 };
 
 // widget to display a value
@@ -32,7 +33,7 @@ class LabelControl : public AbstractControl {
   Q_OBJECT
 
 public:
-  LabelControl(const QString &title, const QString &text, const QString &desc = "") : AbstractControl(title, desc, "") {
+  LabelControl(const QString &title, const QString &text, const QString &desc = "", QWidget *parent = nullptr) : AbstractControl(title, desc, "", parent) {
     label.setText(text);
     label.setAlignment(Qt::AlignRight | Qt::AlignVCenter);
     hlayout->addWidget(&label);
@@ -49,7 +50,7 @@ class ButtonControl : public AbstractControl {
 
 public:
   template <typename Functor>
-  ButtonControl(const QString &title, const QString &text, const QString &desc, Functor functor, const QString &icon = "") : AbstractControl(title, desc, icon) {
+  ButtonControl(const QString &title, const QString &text, const QString &desc, Functor functor, const QString &icon = "", QWidget *parent = nullptr) : AbstractControl(title, desc, icon, parent) {
     btn.setText(text);
     btn.setStyleSheet(R"(
       padding: 0;
@@ -73,7 +74,7 @@ class ToggleControl : public AbstractControl {
   Q_OBJECT
 
 public:
-  ToggleControl(const QString &title, const QString &desc = "", const QString &icon = "", const bool state = false) : AbstractControl(title, desc, icon) {
+  ToggleControl(const QString &title, const QString &desc = "", const QString &icon = "", const bool state = false, QWidget *parent = nullptr) : AbstractControl(title, desc, icon, parent) {
     toggle.setFixedSize(150, 100);
     if (state) {
       toggle.togglePosition();
@@ -96,7 +97,7 @@ class ParamControl : public ToggleControl {
   Q_OBJECT
 
 public:
-  ParamControl(const QString &param, const QString &title, const QString &desc, const QString &icon) : ToggleControl(title, desc, icon) {
+  ParamControl(const QString &param, const QString &title, const QString &desc, const QString &icon, QWidget *parent = nullptr) : ToggleControl(title, desc, icon, parent) {
     // set initial state from param
     if (Params().read_db_bool(param.toStdString().c_str())) {
       toggle.togglePosition();
