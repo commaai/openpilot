@@ -223,8 +223,7 @@ function launch {
   tmux capture-pane -pq -S-1000 > /tmp/launch_log
 
   # start manager
-  cd selfdrive/manager
-  ./build.py && ./manager.py
+  ./selfdrive/manager/start.sh
 
   # if broken, keep on screen error
   while true; do sleep 1; done
