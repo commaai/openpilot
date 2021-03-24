@@ -90,8 +90,7 @@ TermsPage::TermsPage(QWidget *parent) : QFrame(parent){
   });
 
   QObject *obj = (QObject*)text->rootObject();
-  QObject::connect(obj, SIGNAL(qmlSignal()), SLOT(enable_accept()));
-
+  QObject::connect(obj, SIGNAL(qmlSignal()), SLOT(enableAccept()));
   setLayout(main_layout);
   setStyleSheet(R"(
     * {
@@ -105,7 +104,7 @@ TermsPage::TermsPage(QWidget *parent) : QFrame(parent){
   )");
 }
 
-void TermsPage::enable_accept(){
+void TermsPage::enableAccept(){
   accept_btn->setText("Accept");
   accept_btn->setEnabled(true);
   return;

@@ -42,7 +42,7 @@ private:
   QPushButton *accept_btn;
 
 public slots:
-  void enable_accept();
+  void enableAccept();
 
 signals:
   void acceptedTerms();
