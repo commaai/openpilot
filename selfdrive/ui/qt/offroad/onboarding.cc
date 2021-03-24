@@ -1,21 +1,19 @@
 #include <QLabel>
 #include <QString>
+#include <QPainter>
 #include <QScroller>
 #include <QScrollBar>
 #include <QGridLayout>
 #include <QVBoxLayout>
+#include <QQmlContext>
+#include <QQuickWidget>
 #include <QDesktopWidget>
-#include <QPainter>
 
 #include "common/params.h"
 #include "onboarding.hpp"
 #include "home.hpp"
 #include "util.h"
 
-#include <QQuickView>
-#include <QQmlProperty>
-#include <QQuickWidget>
-#include <QQmlContext>
 
 void TrainingGuide::mouseReleaseEvent(QMouseEvent *e) {
   int leftOffset = (geometry().width()-1620)/2;
@@ -66,6 +64,14 @@ TermsPage::TermsPage(QWidget *parent) : QFrame(parent){
   text->setResizeMode(QQuickWidget::SizeRootObjectToView);
   text->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
   text->rootContext()->setContextProperty("font_size", 12);
+
+  QFile inputFile("../assets/offroad/tc.html");
+  inputFile.open(QIODevice::ReadOnly);
+  QTextStream in(&inputFile);
+  QString tc_html = in.readAll();
+  inputFile.close();
+
+  text->rootContext()->setContextProperty("tc_html", tc_html);
 
   main_layout->addWidget(text);
 
