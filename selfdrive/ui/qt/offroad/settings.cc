@@ -71,19 +71,27 @@ QWidget * toggles_panel() {
   return widget;
 }
 
-static QString getCurrentCalibration() {
-  const auto &scene = GLWindow::ui_state.scene;
-  // if calib_status is not UNCALIBRATED(0)
-  if (scene.calib_status != 0) {
-    double pitch = scene.rpy_list[1] * (180 / M_PI);
-    double yaw = scene.rpy_list[2] * (180 / M_PI);
-    const char *up_down = pitch > 0 ? "up" : "down";
-    const char *left_right = yaw > 0 ? "right" : "left";
-    return QString("Your device is pointed %1° %2 and %3° %4.")
-        .arg(QString::number(std::abs(pitch), 'g', 1), up_down,
-             QString::number(std::abs(yaw), 'g', 1), left_right);
-  }
-  return "";
+static ButtonControl *resetCalibControl() {
+  const QString resetCalibDesc = "openpilot requires the device to be mounted within 4° left or right and within 5° up or down. openpilot is continuously calibrating, resetting is rarely required.";
+  ButtonControl *control = new ButtonControl("Reset Calibration", "RESET", resetCalibDesc, [=]() {
+    if (ConfirmationDialog::confirm("Are you sure you want to reset calibration?")) {
+      Params().delete_db_value("CalibrationParams");
+    }
+  });
+  QObject::connect(control, &ButtonControl::showDescription, [=] {
+    QString desc = resetCalibDesc;
+    // if calib_status is not UNCALIBRATED(0)
+    if (GLWindow::ui_state.scene.calib_status != 0) {
+      const auto &rpy = GLWindow::ui_state.scene.rpy_list;
+      double pitch = std::abs(rpy[1] * (180 / M_PI));
+      double yaw = std::abs(rpy[2] * (180 / M_PI));
+      desc += "\n" + QString("Your device is pointed %1° %2 and %3° %4.")
+                         .arg(QString::number(pitch, 'g', 1), rpy[1] > 0 ? "up" : "down",
+                              QString::number(yaw, 'g', 1), rpy[2] > 0 ? "right" : "left");
+    }
+    control->setDescription(desc);
+  });
+  return control;
 }
 
 DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
