@@ -72,7 +72,7 @@ QWidget * toggles_panel() {
 
 DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
   QVBoxLayout *device_layout = new QVBoxLayout;
-  device_layout->setMargin(100);
+  // device_layout->setMargin(100);
 
   Params params = Params();
   std::vector<std::pair<std::string, std::string>> labels = {
@@ -166,7 +166,7 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
 
 DeveloperPanel::DeveloperPanel(QWidget* parent) : QFrame(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
-  main_layout->setMargin(100);
+  // main_layout->setMargin(100);
   setLayout(main_layout);
   setStyleSheet(R"(QLabel {font-size: 50px;})");
 }
