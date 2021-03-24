@@ -193,6 +193,7 @@ void OffroadHome::refresh() {
 static void handle_display_state(UIState* s, bool user_input) {
   static int awake_timeout = 0;
   awake_timeout = std::max(awake_timeout - 1, 0);
+  qDebug() << "timeout " << awake_timeout;
 
   constexpr float accel_samples = 5*UI_FREQ;
   static float accel_prev = 0., gyro_prev = 0.;
@@ -209,8 +210,8 @@ static void handle_display_state(UIState* s, bool user_input) {
 
   if (should_wake) {
     awake_timeout = 30 * UI_FREQ;
-  } else if (awake_timeout == 0) {
-    s->awake = false;
+  } else if (awake_timeout > 0) {
+    should_wake = true;
   }
 
   // handle state transition
