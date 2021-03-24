@@ -18,7 +18,8 @@
 
 
 QWidget * toggles_panel() {
-  QVBoxLayout *toggles_list = new QVBoxLayout();
+  QWidget *widget = new QFrame();
+  QVBoxLayout *toggles_list = new QVBoxLayout(widget);
 
   toggles_list->addWidget(new ParamControl("OpenpilotEnabledToggle",
                                             "Enable openpilot",
@@ -64,8 +65,6 @@ QWidget * toggles_panel() {
   bool record_lock = Params().read_db_bool("RecordFrontLock");
   record_toggle->setEnabled(!record_lock);
 
-  QWidget *widget = new QWidget;
-  widget->setLayout(toggles_list);
   return widget;
 }
 
@@ -149,6 +148,7 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
       Hardware::poweroff();
     }
   });
+
   device_layout->addLayout(power_layout);
 
   setStyleSheet(R"(
@@ -236,6 +236,10 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   QVBoxLayout *sidebar_layout = new QVBoxLayout();
   sidebar_layout->setMargin(0);
   panel_widget = new QStackedWidget();
+  panel_widget->setStyleSheet(R"(
+      border-radius: 30px;
+      background-color: #292929;
+    )");
 
   // close button
   QPushButton *close_btn = new QPushButton("X");
@@ -285,9 +289,8 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
     nav_btns->addButton(btn);
     sidebar_layout->addWidget(btn, 0, Qt::AlignRight);
 
-    panel->setContentsMargins(100, 50, 100, 50);
+    panel->setContentsMargins(80, 25, 80, 25);
     QScrollArea *panel_frame = new QScrollArea;
-    panel_frame->setStyleSheet("border:none;background-color: black;");
     panel_frame->setWidget(panel);
     panel_frame->setWidgetResizable(true);
     panel_frame->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -316,11 +319,8 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   sidebar_widget->setFixedWidth(500);
   settings_layout->addWidget(sidebar_widget);
 
-  // panel_frame->setStyleSheet(R"(
-  //   border-radius: 30px;
-  //   background-color: #292929;
-  // )");
   settings_layout->addWidget(panel_widget);
+
 
   setLayout(settings_layout);
   setStyleSheet(R"(
