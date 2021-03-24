@@ -20,12 +20,12 @@ Item {
     Text {
       id: helpText
       width: flickArea.width
-      font.pointSize: font_size
+      font.pixelSize: font_size
       textFormat: Text.RichText
       color: "white"
       wrapMode: Text.Wrap
 
-      text: tc_html
+      text: text_view
     }
   }
 }

@@ -65,15 +65,16 @@ TermsPage::TermsPage(QWidget *parent) : QFrame(parent){
   text->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
   text->setAttribute(Qt::WA_AlwaysStackOnTop);
   text->setClearColor(Qt::transparent);
-  text->rootContext()->setContextProperty("font_size", 12);
+
+  text->rootContext()->setContextProperty("font_size", 14);
 
   QFile inputFile("../assets/offroad/tc.html");
   inputFile.open(QIODevice::ReadOnly);
   QTextStream in(&inputFile);
-  QString tc_html = in.readAll();
+  QString text_view = in.readAll();
   inputFile.close();
 
-  text->rootContext()->setContextProperty("tc_html", tc_html);
+  text->rootContext()->setContextProperty("text_view", text_view);
 
   main_layout->addWidget(text);
 
