@@ -14,6 +14,7 @@
 
 #include <QQuickView>
 #include <QQmlProperty>
+#include <QQuickWidget>
 
 void TrainingGuide::mouseReleaseEvent(QMouseEvent *e) {
   int leftOffset = (geometry().width()-1620)/2;
@@ -60,9 +61,8 @@ TermsPage::TermsPage(QWidget *parent) : QFrame(parent){
   main_layout->setContentsMargins(20, 20, 20, 20);
   main_layout->setSpacing(20);
 
-  QQuickView *view = new QQuickView;
-  QWidget* text = QWidget::createWindowContainer(view, 0);
-  view->setSource(QUrl::fromLocalFile("qt/offroad/terms.qml"));
+  QQuickWidget *text = new QQuickWidget;
+  text->setSource(QUrl::fromLocalFile("qt/offroad/terms.qml"));
 
   main_layout->addWidget(text);
 
@@ -80,7 +80,7 @@ TermsPage::TermsPage(QWidget *parent) : QFrame(parent){
 		emit acceptedTerms();
   });
 
-  QObject *obj = (QObject*)view->rootObject();
+  QObject *obj = (QObject*)text->rootObject();
   QObject::connect(obj, SIGNAL(qmlSignal(QVariant)), SLOT(enable_accept()));
 
   setLayout(main_layout);
