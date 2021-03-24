@@ -14,7 +14,7 @@ QFrame *horizontal_line(QWidget *parent) {
   return line;
 }
 
-AbstractControl::AbstractControl(const QString &title, const QString &desc, const QString &icon) : QFrame() {
+AbstractControl::AbstractControl(const QString &title, const QString &desc, const QString &icon, QWidget *parent) : QFrame(parent) {
   QVBoxLayout *vlayout = new QVBoxLayout();
 
   hlayout = new QHBoxLayout;

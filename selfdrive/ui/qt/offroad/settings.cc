@@ -288,16 +288,17 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   sidebar_widget->setFixedWidth(500);
   settings_layout->addWidget(sidebar_widget);
 
-
-  panel_frame = new QFrame;
-  panel_frame->setLayout(panel_layout);
+  QWidget *pw = new QWidget(this);
+  pw->setLayout(panel_layout);
+  panel_frame = new QScrollArea;
+  //panel_frame->setLayout(panel_layout);
+  panel_frame->setWidget(pw);
+  panel_frame->setWidgetResizable(true);
+  panel_frame->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   panel_frame->setStyleSheet(R"(
-    QFrame {
+    * {
       border-radius: 30px;
       background-color: #292929;
-    }
-    * {
-      background-color: none;
     }
   )");
   settings_layout->addWidget(panel_frame);

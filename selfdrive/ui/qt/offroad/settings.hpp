@@ -7,6 +7,7 @@
 #include <QPushButton>
 #include <QButtonGroup>
 #include <QStackedLayout>
+#include <QScrollArea>
 
 #include "selfdrive/ui/qt/widgets/controls.hpp"
 
@@ -42,5 +43,5 @@ private:
   QWidget *sidebar_widget;
   QButtonGroup *nav_btns;
   QStackedLayout *panel_layout;
-  QFrame* panel_frame;
+  QScrollArea *panel_frame;
 };
