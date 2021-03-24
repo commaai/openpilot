@@ -513,7 +513,6 @@ panda/__init__.py
 panda/VERSION
 panda/board/**
 panda/certs/**
-panda/common/**
 panda/crypto/**
 panda/python/**
 
