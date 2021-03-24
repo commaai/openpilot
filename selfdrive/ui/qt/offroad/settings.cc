@@ -225,7 +225,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   // setup two main layouts
   QVBoxLayout *sidebar_layout = new QVBoxLayout();
   sidebar_layout->setMargin(0);
-  panel_layout = new QStackedLayout();
+  panel_widget = new QStackedWidget();
 
   // close button
   QPushButton *close_btn = new QPushButton("X");
@@ -272,9 +272,9 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
     nav_btns->addButton(btn);
     sidebar_layout->addWidget(btn, 0, Qt::AlignRight);
 
-    panel_layout->addWidget(panel);
+    panel_widget->addWidget(panel);
     QObject::connect(btn, &QPushButton::released, [=, w = panel]() {
-      panel_layout->setCurrentWidget(w);
+      panel_widget->setCurrentWidget(w);
     });
   }
   qobject_cast<QPushButton *>(nav_btns->buttons()[0])->setChecked(true);
@@ -288,18 +288,14 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   sidebar_widget->setFixedWidth(500);
   settings_layout->addWidget(sidebar_widget);
 
-  QWidget *pw = new QWidget(this);
-  pw->setLayout(panel_layout);
   panel_frame = new QScrollArea;
-  //panel_frame->setLayout(panel_layout);
-  panel_frame->setWidget(pw);
+  panel_frame->setWidget(panel_widget);
   panel_frame->setWidgetResizable(true);
   panel_frame->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+  panel_frame->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   panel_frame->setStyleSheet(R"(
-    * {
-      border-radius: 30px;
-      background-color: #292929;
-    }
+    border-radius: 30px;
+    background-color: #292929;
   )");
   settings_layout->addWidget(panel_frame);
 
