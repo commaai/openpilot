@@ -10,59 +10,50 @@ if arch == 'aarch64':
   libs += ['log', 'utils', 'gui', 'ui', 'CB', 'gsl', 'adreno_utils',
            'cutils', 'uuid']
 
-if arch == 'aarch64' and "QT" not in os.environ:
-  libs += ['EGL', 'GLESv3', 'gnustl_shared', 'hardware', 'OpenSLES', 'cutils', 'uuid']
-  linkflags = ['-Wl,-rpath=/system/lib64,-rpath=/system/comma/usr/lib']
+qt_base_libs = qt_env["LIBS"] + libs + ["pthread"]
+if arch == "Darwin":
+  del qt_base_libs[qt_base_libs.index('OpenCL')]
+  qt_env['FRAMEWORKS'] += ['OpenCL']
 
-  src += ["android/ui.cc", "android/sl_sound.cc"]
-  env.Program('_ui', src,
-    LINKFLAGS=linkflags,
-    LIBS=libs)
-else:
-  qt_base_libs = qt_env["LIBS"] + libs + ["pthread"]
-  if arch == "Darwin":
-    del qt_base_libs[qt_base_libs.index('OpenCL')]
-    qt_env['FRAMEWORKS'] += ['OpenCL']
+widgets_src = ["qt/widgets/input.cc", "qt/widgets/drive_stats.cc",
+               "qt/widgets/ssh_keys.cc", "qt/widgets/toggle.cc", "qt/widgets/controls.cc", "qt/qt_sound.cc",
+               "qt/widgets/offroad_alerts.cc", "qt/widgets/setup.cc", "qt/widgets/keyboard.cc",
+               "#phonelibs/qrcode/QrCode.cc"]
+if arch != 'aarch64':
+  widgets_src += ["qt/offroad/networking.cc", "qt/offroad/wifiManager.cc"]
 
-  widgets_src = ["qt/widgets/input.cc", "qt/widgets/drive_stats.cc",
-                 "qt/widgets/ssh_keys.cc", "qt/widgets/toggle.cc", "qt/widgets/controls.cc", "qt/qt_sound.cc",
-                 "qt/widgets/offroad_alerts.cc", "qt/widgets/setup.cc", "qt/widgets/keyboard.cc",
-                 "#phonelibs/qrcode/QrCode.cc"]
+widgets = qt_env.Library("qt_widgets", widgets_src, LIBS=qt_base_libs)
+qt_libs = qt_base_libs + [widgets]
 
-  if arch != 'aarch64':
-    widgets_src += ["qt/offroad/networking.cc", "qt/offroad/wifiManager.cc"]
+# spinner and text window
+qt_env.Program("qt/text", ["qt/text.cc"], LIBS=qt_base_libs)
+qt_env.Program("qt/spinner", ["qt/spinner.cc"], LIBS=qt_base_libs)
 
-  widgets = qt_env.Library("qt_widgets", widgets_src, LIBS=qt_base_libs)
-  qt_libs = qt_base_libs + [widgets]
+# build main UI
+qt_src = ["qt/ui.cc", "qt/window.cc", "qt/home.cc", "qt/api.cc", "qt/offroad/settings.cc",
+          "qt/offroad/onboarding.cc"] + src
+qt_env.Program("_ui", qt_src, LIBS=qt_libs)
 
-  qt_src = ["qt/ui.cc", "qt/window.cc", "qt/home.cc", "qt/api.cc", "qt/offroad/settings.cc",
-            "qt/offroad/onboarding.cc"] + src
-  qt_env.Program("_ui", qt_src, LIBS=qt_libs)
+# setup, factory resetter, and installer
+if arch != 'aarch64' and "BUILD_SETUP" in os.environ:
+  qt_env.Program("qt/setup/reset", ["qt/setup/reset.cc"], LIBS=qt_libs)
+  qt_env.Program("qt/setup/setup", ["qt/setup/setup.cc"], LIBS=qt_libs + ['curl', 'common', 'json11'])
+  qt_env.Program("qt/setup/wifi", ["qt/setup/wifi.cc"], LIBS=qt_libs + ['common', 'json11'])
 
-  # spinner and text window
-  qt_env.Program("qt/text", ["qt/text.cc"], LIBS=qt_base_libs)
-  qt_env.Program("qt/spinner", ["qt/spinner.cc"], LIBS=qt_base_libs)
+  installers = [
+    ("openpilot", "master"),
+    #("openpilot_test", "release3-staging"),
+    #("openpilot_internal", "master"),
+    #("dashcam", "dashcam3-staging"),
+    #("dashcam_test", "dashcam3-staging"),
+  ]
+  for name, branch in installers:
+    d = {'BRANCH': f"'\"{branch}\"'"}
+    if "internal" in name:
+      d['INTERNAL'] = "1"
 
-  # build setup, factory resetter, and installer
-  if "BUILD_SETUP" in os.environ:
-    qt_env.Program("qt/setup/reset", ["qt/setup/reset.cc"], LIBS=qt_libs)
-    qt_env.Program("qt/setup/setup", ["qt/setup/setup.cc"], LIBS=qt_libs + ['curl', 'common', 'json11'])
-    qt_env.Program("qt/setup/wifi", ["qt/setup/wifi.cc"], LIBS=qt_libs + ['common', 'json11'])
-
-    installers = [
-      ("openpilot", "master"),
-      #("openpilot_test", "release3-staging"),
-      #("openpilot_internal", "master"),
-      #("dashcam", "dashcam3-staging"),
-      #("dashcam_test", "dashcam3-staging"),
-    ]
-    for name, branch in installers:
-      d = {'BRANCH': f"'\"{branch}\"'"}
-      if "internal" in name:
-        d['INTERNAL'] = "1"
-
-        import requests
-        r = requests.get("https://github.com/commaci2.keys")
-        r.raise_for_status()
-        d['SSH_KEYS'] = f'\\"{r.text.strip()}\\"'
-      qt_env.Program(f"qt/setup/installer_{name}", ["qt/setup/installer.cc"], LIBS=qt_libs, CPPDEFINES=d)
+      import requests
+      r = requests.get("https://github.com/commaci2.keys")
+      r.raise_for_status()
+      d['SSH_KEYS'] = f'\\"{r.text.strip()}\\"'
+    qt_env.Program(f"qt/setup/installer_{name}", ["qt/setup/installer.cc"], LIBS=qt_libs, CPPDEFINES=d)

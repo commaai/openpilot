@@ -5,6 +5,7 @@
 #include <QApplication>
 
 #include "qt_window.hpp"
+#include "selfdrive/hardware/hw.h"
 
 int main(int argc, char *argv[]) {
   QApplication a(argc, argv);
@@ -21,7 +22,7 @@ int main(int argc, char *argv[]) {
 #ifdef __aarch64__
   btn->setText("Reboot");
   QObject::connect(btn, &QPushButton::released, [=]() {
-    std::system("sudo reboot");
+    Hardware::reboot();
   });
 #else
   btn->setText("Exit");
@@ -32,6 +33,7 @@ int main(int argc, char *argv[]) {
   window.setLayout(layout);
   window.setStyleSheet(R"(
     * {
+      outline: none;
       color: white;
       background-color: black;
       font-size: 60px;

@@ -3,7 +3,6 @@
 *.onnx filter=lfs diff=lfs merge=lfs -text
 *.pb filter=lfs diff=lfs merge=lfs -text
 *.bin filter=lfs diff=lfs merge=lfs -text
-*.apk filter=lfs diff=lfs merge=lfs -text
 *.jpg filter=lfs diff=lfs merge=lfs -text
 *.ipynb filter=nbstripout -diff
 external/ffmpeg/bin/ffmpeg_cuda filter=lfs diff=lfs merge=lfs -text
@@ -39,6 +38,7 @@ third_party/acados/*/t_renderer filter=lfs diff=lfs merge=lfs -text
 third_party/qt5/larch64/bin/lrelease filter=lfs diff=lfs merge=lfs -text
 third_party/qt5/larch64/bin/lupdate filter=lfs diff=lfs merge=lfs -text
 third_party/catch2/include/catch2/catch.hpp filter=lfs diff=lfs merge=lfs -text
+*.apk filter=lfs diff=lfs merge=lfs -text
 *.apkpatch filter=lfs diff=lfs merge=lfs -text
 *.jar filter=lfs diff=lfs merge=lfs -text
 *.pdf filter=lfs diff=lfs merge=lfs -text
