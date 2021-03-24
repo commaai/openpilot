@@ -20,7 +20,7 @@
 QWidget * toggles_panel() {
   QVBoxLayout *toggles_list = new QVBoxLayout();
 
-  toggles_list->setMargin(50);
+  // toggles_list->setMargin(50);
   toggles_list->addWidget(new ParamControl("OpenpilotEnabledToggle",
                                             "Enable openpilot",
                                             "Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off.",
@@ -71,8 +71,7 @@ QWidget * toggles_panel() {
 }
 
 DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
-  QVBoxLayout *device_layout = new QVBoxLayout;
-  // device_layout->setMargin(100);
+  QVBoxLayout *device_layout = new QVBoxLayout(this);
 
   Params params = Params();
   std::vector<std::pair<std::string, std::string>> labels = {
@@ -129,7 +128,8 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
                                                  Params().write_db_value("DoUninstall", "1");
                                                }
                                              }));
-
+  device_layout->addWidget(horizontal_line());
+  device_layout->addStretch();
   // power buttons
   QHBoxLayout *power_layout = new QHBoxLayout();
   power_layout->setSpacing(30);
@@ -150,10 +150,8 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
       Hardware::poweroff();
     }
   });
-
   device_layout->addLayout(power_layout);
 
-  setLayout(device_layout);
   setStyleSheet(R"(
     QPushButton {
       padding: 0;
@@ -166,7 +164,6 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
 
 DeveloperPanel::DeveloperPanel(QWidget* parent) : QFrame(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
-  // main_layout->setMargin(100);
   setLayout(main_layout);
   setStyleSheet(R"(QLabel {font-size: 50px;})");
 }
@@ -200,7 +197,7 @@ void DeveloperPanel::showEvent(QShowEvent *event) {
 QWidget * network_panel(QWidget * parent) {
 #ifdef QCOM
   QVBoxLayout *layout = new QVBoxLayout;
-  layout->setMargin(100);
+  // layout->setMargin(100);
   layout->setSpacing(30);
 
   // simple wifi + tethering buttons
@@ -289,6 +286,8 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
 
     nav_btns->addButton(btn);
     sidebar_layout->addWidget(btn, 0, Qt::AlignRight);
+
+    panel->setContentsMargins(100, 100, 100, 100);
     QScrollArea *panel_frame = new QScrollArea;
     panel_frame->setStyleSheet("background-color: transparent;");
     panel_frame->setWidget(panel);

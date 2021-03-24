@@ -48,6 +48,6 @@ AbstractControl::AbstractControl(const QString &title, const QString &desc, cons
       description->setVisible(!description->isVisible());
     });
     vlayout->addWidget(description);
-    vlayout->addStretch();
   }
+  vlayout->addStretch();
 }
