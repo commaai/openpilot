@@ -71,6 +71,26 @@ QWidget * toggles_panel() {
   return widget;
 }
 
+static QString getCurrentCalibration() {
+  QString params = QString::fromStdString(Params().get("CalibrationParams"));
+  if (!params.isEmpty()) {
+    QJsonDocument doc = QJsonDocument::fromJson(params.toUtf8());
+    if (!doc.isNull()) {
+      QJsonArray array = doc.object()["calib_radians"].toArray();
+      if (array.size() == 3) {
+        double pitch = array[1].toDouble() * (180 / M_PI);
+        double yaw = array[2].toDouble() * (180 / M_PI);
+        const char *up_down = pitch > 0 ? "up" : "down";
+        const char *left_right = yaw > 0 ? "right" : "left";
+        return QString("Your device is pointed %1° %2 and %3° %4.")
+            .arg(QString::number(std::abs(pitch), 'g', 1), up_down,
+                 QString::number(std::abs(yaw), 'g', 1), left_right);
+      }
+    }
+  }
+  return "";
+}
+
 DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
   QVBoxLayout *device_layout = new QVBoxLayout;
 
