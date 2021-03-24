@@ -3,13 +3,13 @@ import QtQuick 2.0
 Item {
 	id: root
 	width: 1920
-	height: 870
+	height: 840
   signal qmlSignal(variant msg)
 
 	Rectangle {
 			color: "black"
-			width: 1920
-      height: 870
+			width: parent.width
+      height: parent.height
 	}
 
 	Flickable {
@@ -19,14 +19,20 @@ Item {
 		contentHeight: helpText.height
 		contentWidth: helpText.width
 		flickableDirection: Flickable.VerticalFlick
-		clip: true
+    flickDeceleration: 7500.0
+    maximumFlickVelocity: 10000.0
+
 
     onAtYEndChanged: root.qmlSignal("Hello")
 
 		Text {
 			// HTML like markup can also be used
 			id: helpText
-			width: 1920
+			width: 1800
+			font.pointSize: 12
+			textFormat: Text.RichText
+      color: "white"
+			wrapMode: Text.Wrap
 
 			text: '<!DOCTYPE html>
 
@@ -73,13 +79,6 @@ Item {
 							<p>If you have any questions about these Terms, please contact us at support@comma.ai.</p>
 						</body>
 						</html>'
-
-			// This could also be written font { pointSize: 14 }. Both syntaxes are valid.
-			font.pointSize: 24
-
-			textFormat: Text.RichText
-			color: "white"
-			wrapMode: Text.Wrap
 		}
 	}
 }

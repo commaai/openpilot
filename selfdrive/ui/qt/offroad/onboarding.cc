@@ -58,8 +58,8 @@ void TrainingGuide::paintEvent(QPaintEvent *event) {
 TermsPage::TermsPage(QWidget *parent) : QFrame(parent){
 
   QVBoxLayout *main_layout = new QVBoxLayout;
-  main_layout->setContentsMargins(20, 20, 20, 20);
-  main_layout->setSpacing(20);
+  main_layout->setContentsMargins(40, 40, 40, 40);
+  main_layout->setSpacing(40);
 
   QQuickWidget *text = new QQuickWidget;
   text->setSource(QUrl::fromLocalFile("qt/offroad/terms.qml"));
