@@ -7,13 +7,9 @@ from selfdrive.swaglog import cloudlog
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from panda.python.uds import CanClient, IsoTpMessage, FUNCTIONAL_ADDRS, get_rx_addr_for_tx_addr
 
-class RX_OFFSET:
-  DEFAULT = 0x8
-  VOLKSWAGEN = 0x6a
-
 
 class IsoTpParallelQuery():
-  def __init__(self, sendcan, logcan, bus, addrs, request, response, response_offset=RX_OFFSET.DEFAULT, functional_addr=False, debug=False):
+  def __init__(self, sendcan, logcan, bus, addrs, request, response, response_offset, functional_addr=False, debug=False):
     self.sendcan = sendcan
     self.logcan = logcan
     self.bus = bus

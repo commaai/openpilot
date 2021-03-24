@@ -8,7 +8,7 @@ from tqdm import tqdm
 import panda.python.uds as uds
 from cereal import car
 from selfdrive.car.fingerprints import FW_VERSIONS, get_attr_from_cars
-from selfdrive.car.isotp_parallel_query import IsoTpParallelQuery, RX_OFFSET
+from selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
 from selfdrive.car.toyota.values import CAR as TOYOTA
 from selfdrive.swaglog import cloudlog
 
@@ -65,6 +65,8 @@ VOLKSWAGEN_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 
 OBD_VERSION_REQUEST = b'\x09\x04'
 OBD_VERSION_RESPONSE = b'\x49\x04'
 
+DEFAULT_RX_OFFSET = 0x8
+VOLKSWAGEN_RX_OFFSET = 0x6a
 
 # brand, request, response, response offset
 REQUESTS = [
@@ -73,58 +75,58 @@ REQUESTS = [
     "hyundai",
     [HYUNDAI_VERSION_REQUEST_SHORT],
     [HYUNDAI_VERSION_RESPONSE],
-    RX_OFFSET.DEFAULT,
+    DEFAULT_RX_OFFSET,
   ),
   (
     "hyundai",
     [HYUNDAI_VERSION_REQUEST_LONG],
     [HYUNDAI_VERSION_RESPONSE],
-    RX_OFFSET.DEFAULT,
+    DEFAULT_RX_OFFSET,
   ),
   (
     "hyundai",
     [HYUNDAI_VERSION_REQUEST_MULTI],
     [HYUNDAI_VERSION_RESPONSE],
-    RX_OFFSET.DEFAULT,
+    DEFAULT_RX_OFFSET,
   ),
   # Honda
   (
     "honda",
     [UDS_VERSION_REQUEST],
     [UDS_VERSION_RESPONSE],
-    RX_OFFSET.DEFAULT,
+    DEFAULT_RX_OFFSET,
   ),
   # Toyota
   (
     "toyota",
     [SHORT_TESTER_PRESENT_REQUEST, TOYOTA_VERSION_REQUEST],
     [SHORT_TESTER_PRESENT_RESPONSE, TOYOTA_VERSION_RESPONSE],
-    RX_OFFSET.DEFAULT,
+    DEFAULT_RX_OFFSET,
   ),
   (
     "toyota",
     [SHORT_TESTER_PRESENT_REQUEST, OBD_VERSION_REQUEST],
     [SHORT_TESTER_PRESENT_RESPONSE, OBD_VERSION_RESPONSE],
-    RX_OFFSET.DEFAULT,
+    DEFAULT_RX_OFFSET,
   ),
   (
     "toyota",
     [TESTER_PRESENT_REQUEST, DEFAULT_DIAGNOSTIC_REQUEST, EXTENDED_DIAGNOSTIC_REQUEST, UDS_VERSION_REQUEST],
     [TESTER_PRESENT_RESPONSE, DEFAULT_DIAGNOSTIC_RESPONSE, EXTENDED_DIAGNOSTIC_RESPONSE, UDS_VERSION_RESPONSE],
-    RX_OFFSET.DEFAULT,
+    DEFAULT_RX_OFFSET,
   ),
   # Volkswagen
   (
     "volkswagen",
     [VOLKSWAGEN_VERSION_REQUEST_MULTI],
     [VOLKSWAGEN_VERSION_RESPONSE],
-    RX_OFFSET.VOLKSWAGEN,
+    VOLKSWAGEN_RX_OFFSET,
   ),
   (
     "volkswagen",
     [VOLKSWAGEN_VERSION_REQUEST_MULTI],
     [VOLKSWAGEN_VERSION_RESPONSE],
-    RX_OFFSET.DEFAULT,
+    DEFAULT_RX_OFFSET,
   ),
 ]
 
