@@ -217,6 +217,7 @@ static void handle_display_state(UIState* s, bool user_input) {
   if (s->awake != should_wake) {
     s->awake = should_wake;
     Hardware::set_display_power(s->awake);
+    LOGD("setting display power %d", s->awake);
   }
 }
 

@@ -3,7 +3,15 @@
 #include <cstdlib>
 #include <fstream>
 
-#include <common/util.h>
+// qcom
+#include <ui/DisplayInfo.h>
+#include <gui/ISurfaceComposer.h>
+#include <gui/Surface.h>
+#include <gui/SurfaceComposerClient.h>
+#include <hardware/hwcomposer_defs.h>
+
+#include "common/util.h"
+#include "common/params.h"
 
 #ifdef QCOM
 #define Hardware HardwareEon
@@ -13,6 +21,7 @@
 #define Hardware HardwareNone
 #endif
 
+//using namespace android;
 
 // no-op base hw class
 class HardwareNone {
@@ -48,6 +57,10 @@ public:
       brightness_control << (int)(percent * (255/100.)) << "\n";
       brightness_control.close();
     }
+  };
+  static void set_display_power(bool on) {
+    auto dtoken = android::SurfaceComposerClient::getBuiltInDisplay(android::ISurfaceComposer::eDisplayIdMain);
+    android::SurfaceComposerClient::setDisplayPowerMode(dtoken, on ? HWC_POWER_MODE_NORMAL : HWC_POWER_MODE_OFF);
   };
 
   static bool get_ssh_enabled() {
