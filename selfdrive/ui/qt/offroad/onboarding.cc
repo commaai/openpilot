@@ -86,7 +86,7 @@ TermsPage::TermsPage(QWidget *parent) : QFrame(parent){
   accept_btn->setEnabled(false);
   buttons->addWidget(accept_btn);
   QObject::connect(accept_btn, &QPushButton::released, [=]() {
-		emit acceptedTerms();
+    emit acceptedTerms();
   });
 
   QObject *obj = (QObject*)text->rootObject();
@@ -106,8 +106,8 @@ TermsPage::TermsPage(QWidget *parent) : QFrame(parent){
 }
 
 void TermsPage::enable_accept(){
-	accept_btn->setText("Accept");
-	accept_btn->setEnabled(true);
+  accept_btn->setText("Accept");
+  accept_btn->setEnabled(true);
   return;
 }
 
@@ -129,13 +129,13 @@ OnboardingWindow::OnboardingWindow(QWidget *parent) : QStackedWidget(parent) {
   current_terms_version = params.get("TermsVersion", false);
   current_training_version = params.get("TrainingVersion", false);
 
-	TermsPage* terms = new TermsPage(this);
+  TermsPage* terms = new TermsPage(this);
   addWidget(terms);
 
-	connect(terms, &TermsPage::acceptedTerms, [=](){
+  connect(terms, &TermsPage::acceptedTerms, [=](){
     Params().write_db_value("HasAcceptedTerms", current_terms_version);
     updateActiveScreen();
-	});
+  });
 
   TrainingGuide* tr = new TrainingGuide(this);
   connect(tr, &TrainingGuide::completedTraining, [=](){

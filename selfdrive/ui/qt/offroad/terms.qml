@@ -1,39 +1,39 @@
 import QtQuick 2.0
 
 Item {
-	id: root
+  id: root
   signal qmlSignal(variant msg)
 
-	Rectangle {
-			color: "black"
+  Rectangle {
+      color: "black"
       anchors.fill: parent
-	}
+  }
 
-	Flickable {
-		id: flickArea
+  Flickable {
+    id: flickArea
     objectName: "flickArea"
-		anchors.fill: parent
-		contentHeight: helpText.height
-		contentWidth: helpText.width
-		flickableDirection: Flickable.VerticalFlick
+    anchors.fill: parent
+    contentHeight: helpText.height
+    contentWidth: helpText.width
+    flickableDirection: Flickable.VerticalFlick
     flickDeceleration: 7500.0
     maximumFlickVelocity: 10000.0
     pixelAligned: true
 
     onAtYEndChanged: root.qmlSignal("Hello")
 
-		Text {
-			// HTML like markup can also be used
-			id: helpText
+    Text {
+      // HTML like markup can also be used
+      id: helpText
       width: flickArea.width
-			font.pointSize: font_size
-			textFormat: Text.RichText
+      font.pointSize: font_size
+      textFormat: Text.RichText
       color: "white"
-			wrapMode: Text.Wrap
+      wrapMode: Text.Wrap
 
       text: tc_html
-		}
-	}
+    }
+  }
 }
 
 
