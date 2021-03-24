@@ -193,7 +193,6 @@ void OffroadHome::refresh() {
 static void handle_display_state(UIState* s, bool user_input) {
   static int awake_timeout = 0;
   awake_timeout = std::max(awake_timeout - 1, 0);
-  qDebug() << "timeout " << awake_timeout;
 
   constexpr float accel_samples = 5*UI_FREQ;
   static float accel_prev = 0., gyro_prev = 0.;
@@ -217,9 +216,7 @@ static void handle_display_state(UIState* s, bool user_input) {
   // handle state transition
   if (s->awake != should_wake) {
     s->awake = should_wake;
-    //int display_mode = s->awake ? HWC_POWER_MODE_NORMAL : HWC_POWER_MODE_OFF;
-    //LOGW("setting display mode %d", display_mode);
-    //fb->set_power(display_mode);
+    Hardware::set_display_power(s->awake);
   }
 }
 
