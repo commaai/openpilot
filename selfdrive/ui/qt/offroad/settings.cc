@@ -293,6 +293,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   panel_frame->setWidgetResizable(true);
   panel_frame->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   panel_frame->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+  QScroller::grabGesture(panel_frame->viewport(), QScroller::LeftMouseButtonGesture);
   panel_frame->setStyleSheet(R"(
     border-radius: 30px;
     background-color: #292929;
