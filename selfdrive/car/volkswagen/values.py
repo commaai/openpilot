@@ -51,13 +51,8 @@ MQB_LDW_MESSAGES = {
 }
 
 class CAR:
-  GOLF = "VOLKSWAGEN GOLF"
-  AUDI_A3 = "AUDI A3"
-
-MQB_CARS = {
-  CAR.GOLF,                 # Chassis AU, 2013-2020, includes Golf, Alltrack, Sportwagen, GTI, GTI TCR, GTE, GTD, Clubsport, Golf R, e-Golf
-  CAR.AUDI_A3               # Chassis 8V, 2013-2019, includes A3, A3 e-tron, A3 g-tron, S3, RS3
-}
+  GOLF = "VOLKSWAGEN GOLF"              # Chassis AU, 2013-2020, includes Golf, Alltrack, Sportwagen, GTI, GTI TCR, GTE, GTD, Clubsport, Golf R, e-Golf
+  AUDI_A3 = "AUDI A3"                   # Chassis 8V, 2013-2019, includes A3, A3 e-tron, A3 g-tron, S3, RS3
 
 FINGERPRINTS = {
   CAR.GOLF: [{
