@@ -28,7 +28,7 @@ AbstractControl::AbstractControl(const QString &title, const QString &desc, cons
     QPixmap pix(icon);
     QLabel *icon = new QLabel();
     icon->setPixmap(pix.scaledToWidth(80, Qt::SmoothTransformation));
-    icon->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSigitzePolicy::Fixed));
+    icon->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
     hlayout->addWidget(icon);
   }
 
