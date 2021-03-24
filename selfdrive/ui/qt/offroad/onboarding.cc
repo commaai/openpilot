@@ -66,7 +66,7 @@ TermsPage::TermsPage(QWidget *parent) : QFrame(parent){
   text->setAttribute(Qt::WA_AlwaysStackOnTop);
   text->setClearColor(Qt::transparent);
 
-  text->rootContext()->setContextProperty("font_size", 14);
+  text->rootContext()->setContextProperty("font_size", 55);
 
   QString text_view = util::read_file("../assets/offroad/tc.html").c_str();
   text->rootContext()->setContextProperty("text_view", text_view);
