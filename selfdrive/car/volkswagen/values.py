@@ -71,33 +71,33 @@ FINGERPRINTS = {
 FW_VERSIONS = {
   CAR.AUDI_A3: {
     (Ecu.engine, 0x7e0, None): [
-      b'\xf1\x875G0906259L \xf1\x890002',  # 2017 Audi A3 Prestige (CNTC)
+      b'\xf1\x875G0906259L \xf1\x890002',
     ],
     (Ecu.transmission, 0x7e1, None): [
-      b'\xf1\x870D9300013B \xf1\x894931',  # 2017 Audi A3 Prestige (DQ250)
+      b'\xf1\x870D9300013B \xf1\x894931',
     ],
     (Ecu.srs, 0x715, None): [
-      b'\xf1\x875Q0959655J \xf1\x890830\xf1\x82\023121111111211--261117141112231291163221',  # 2017 Audi A3 Prestige
+      b'\xf1\x875Q0959655J \xf1\x890830\xf1\x82\023121111111211--261117141112231291163221',
     ],
     (Ecu.eps, 0x712, None): [
-      b'\xf1\x875Q0909144T \xf1\x891072\xf1\x82\00521G00807A1',  # 2017 Audi A3 Prestige
+      b'\xf1\x875Q0909144T \xf1\x891072\xf1\x82\00521G00807A1',
     ],
     (Ecu.fwdRadar, 0x757, None): [
-      b'\xf1\x875Q0907572G \xf1\x890571',  # 2017 Audi A3 Prestige
+      b'\xf1\x875Q0907572G \xf1\x890571',
     ],
   },
   CAR.GOLF: {
     (Ecu.engine, 0x7e0, None): [
-      b'\xf1\x878V0906259P \xf1\x890001',  # 2018 Golf R (DJJA)
+      b'\xf1\x878V0906259P \xf1\x890001',
     ],
     (Ecu.transmission, 0x7e1, None): [
-      b'\xf1\x870GC300012A \xf1\x891403',  # 2018 Golf R (DQ381)
+      b'\xf1\x870GC300012A \xf1\x891403',
     ],
     (Ecu.srs, 0x715, None): [
-      b'\xf1\x875Q0959655J \xf1\x890830\xf1\x82\x13271212111312--071104171838103891131211',  # 2018 Golf R
+      b'\xf1\x875Q0959655J \xf1\x890830\xf1\x82\x13271212111312--071104171838103891131211',
     ],
     (Ecu.eps, 0x712, None): [
-      b'\xf1\x873Q0909144L \xf1\x895081\xf1\x82\x0571A0JA15A1',  # 2018 Golf R (progressive ratio)
+      b'\xf1\x873Q0909144L \xf1\x895081\xf1\x82\x0571A0JA15A1',
     ],
     (Ecu.fwdRadar, 0x757, None): [
       b'\xf1\x875Q0907572J \xf1\x890654',
