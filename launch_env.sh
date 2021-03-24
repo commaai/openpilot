@@ -11,7 +11,7 @@ if [ -z "$REQUIRED_NEOS_VERSION" ]; then
 fi
 
 if [ -z "$AGNOS_VERSION" ]; then
-  export AGNOS_VERSION="0.10"
+  export AGNOS_VERSION="0.11"
 fi
 
 if [ -z "$PASSIVE" ]; then
