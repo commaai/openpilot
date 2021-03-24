@@ -289,9 +289,22 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
 
     nav_btns->addButton(btn);
     sidebar_layout->addWidget(btn, 0, Qt::AlignRight);
+    QScrollArea *panel_frame = new QScrollArea;
+    panel_frame->setStyleSheet("background-color: transparent;");
+    panel_frame->setWidget(panel);
+    panel_frame->setWidgetResizable(true);
+    panel_frame->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    panel_frame->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    QScroller *scroller = QScroller::scroller(panel_frame);
+    auto sp = scroller->scrollerProperties();
+    sp.setScrollMetric(QScrollerProperties::FrameRate, QVariant::fromValue<QScrollerProperties::FrameRates>(QScrollerProperties::Fps30));
+    sp.setScrollMetric(QScrollerProperties::VerticalOvershootPolicy, QVariant::fromValue<QScrollerProperties::OvershootPolicy>(QScrollerProperties::OvershootAlwaysOff));
+    scroller->setScrollerProperties(sp);
+    scroller->grabGesture(panel_frame->viewport(), QScroller::LeftMouseButtonGesture);
 
-    panel_widget->addWidget(panel);
-    QObject::connect(btn, &QPushButton::released, [=, w = panel]() {
+    panel_widget->addWidget(panel_frame);
+
+    QObject::connect(btn, &QPushButton::released, [=, w = panel_frame]() {
       panel_widget->setCurrentWidget(w);
     });
   }
@@ -306,24 +319,11 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   sidebar_widget->setFixedWidth(500);
   settings_layout->addWidget(sidebar_widget);
 
-  panel_frame = new QScrollArea;
-  panel_frame->setWidget(panel_widget);
-  panel_frame->setWidgetResizable(true);
-  panel_frame->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-  panel_frame->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-  panel_frame->setStyleSheet(R"(
-    border-radius: 30px;
-    background-color: #292929;
-  )");
-  settings_layout->addWidget(panel_frame);
-
-  // setup panel scrolling
-  QScroller *scroller = QScroller::scroller(panel_frame);
-  auto sp = scroller->scrollerProperties();
-  sp.setScrollMetric(QScrollerProperties::FrameRate, QVariant::fromValue<QScrollerProperties::FrameRates>(QScrollerProperties::Fps30));
-  sp.setScrollMetric(QScrollerProperties::VerticalOvershootPolicy, QVariant::fromValue<QScrollerProperties::OvershootPolicy>(QScrollerProperties::OvershootAlwaysOff));
-  scroller->setScrollerProperties(sp);
-  scroller->grabGesture(panel_frame->viewport(), QScroller::LeftMouseButtonGesture);
+  // panel_frame->setStyleSheet(R"(
+  //   border-radius: 30px;
+  //   background-color: #292929;
+  // )");
+  settings_layout->addWidget(panel_widget);
 
   setLayout(settings_layout);
   setStyleSheet(R"(
