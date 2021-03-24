@@ -76,11 +76,6 @@ class Calibrator():
 
     if param_put and calibration_params:
       try:
-        msg = log.Event.from_bytes(calibration_params)
-        rpy_init = list(msg.liveCalibration.rpyCalib)
-        valid_blocks = msg.liveCalibration.validBlocks
-      except (ValueError, capnp.lib.capnp.KjException):
-        # TODO: remove this when offroad can read capnp
         calibration_params = json.loads(calibration_params)
         rpy_init = calibration_params["calib_radians"]
         valid_blocks = calibration_params['valid_blocks']
