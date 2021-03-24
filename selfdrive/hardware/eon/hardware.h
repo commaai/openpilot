@@ -3,9 +3,7 @@
 #include <cstdlib>
 #include <fstream>
 
-#include <ui/DisplayInfo.h>
 #include <gui/ISurfaceComposer.h>
-#include <gui/Surface.h>
 #include <gui/SurfaceComposerClient.h>
 #include <hardware/hwcomposer_defs.h>
 
