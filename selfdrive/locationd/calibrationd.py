@@ -11,7 +11,7 @@ import copy
 import json
 import numpy as np
 import cereal.messaging as messaging
-from cereal import car, log
+from cereal import car
 from common.params import Params, put_nonblocking
 from common.transformations.model import model_height
 from common.transformations.camera import get_view_frame_from_road_frame
