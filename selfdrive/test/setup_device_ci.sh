@@ -12,8 +12,18 @@ if [ -z "$TEST_DIR" ]; then
   exit 1
 fi
 
+# setup jenkins device
 if [ ! -d "$SOURCE_DIR" ]; then
-  git clone https://github.com/commaai/openpilot.git "$SOURCE_DIR"
+  # write continue.sh
+  CONTINUE_FILE="/data/data/com.termux/files/continue.sh"
+  echo "#!/usr/bin/bash" > $CONTINUE_FILE
+  echo "wpa_cli IFNAME=wlan0 SCAN" >> $CONTINUE_FILE
+  echo "sleep infinity" >> $CONTINUE_FILE
+
+  # write SSH keys
+  curl "https://github.com/commaci2.keys" > /data/params/d/GithubSshKeys
+
+  git clone --depth 1 https://github.com/commaai/openpilot.git "$SOURCE_DIR"
 fi
 
 # clear scons cache dirs that haven't been written to in one day
