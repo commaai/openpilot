@@ -38,13 +38,13 @@ signals:
   void emitText(QString text);
 };
 
-
 class ConfirmationDialog : public QDialog {
   Q_OBJECT
 
 public:
   explicit ConfirmationDialog(QString prompt_text, QString confirm_text = "Ok",
                               QString cancel_text = "Cancel", QWidget* parent = 0);
+  static bool alert(QString prompt_text);
   static bool confirm(QString prompt_text);
 
 private:

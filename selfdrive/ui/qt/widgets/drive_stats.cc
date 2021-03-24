@@ -25,6 +25,7 @@ void clearLayouts(QLayout* layout) {
 
 QLayout* build_stat(QString name, int stat) {
   QVBoxLayout* layout = new QVBoxLayout;
+  layout->setMargin(0);
 
   QLabel* metric = new QLabel(QString("%1").arg(stat));
   metric->setStyleSheet(R"(
@@ -64,6 +65,7 @@ void DriveStats::parseResponse(QString response) {
   auto week = json["week"].toObject();
 
   QGridLayout* gl = new QGridLayout();
+  gl->setMargin(0);
 
   int all_distance = all["distance"].toDouble() * (metric ? MILE_TO_KM : 1);
   gl->addWidget(new QLabel("ALL TIME"), 0, 0, 1, 3);
@@ -84,6 +86,7 @@ void DriveStats::parseResponse(QString response) {
 
 DriveStats::DriveStats(QWidget* parent) : QWidget(parent) {
   vlayout = new QVBoxLayout(this);
+  vlayout->setMargin(0);
   setLayout(vlayout);
   setStyleSheet(R"(
     QLabel {
@@ -92,6 +95,7 @@ DriveStats::DriveStats(QWidget* parent) : QWidget(parent) {
     }
   )");
 
+  // TODO: do we really need to update this frequently?
   QString dongleId = QString::fromStdString(Params().get("DongleId"));
   QString url = "https://api.commadotai.com/v1.1/devices/" + dongleId + "/stats";
   RequestRepeater* repeater = new RequestRepeater(this, url, 13);

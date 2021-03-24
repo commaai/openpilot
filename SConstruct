@@ -266,7 +266,7 @@ Export('envCython')
 qt_env = env.Clone()
 qt_modules = ["Widgets", "Gui", "Core", "Network", "Concurrent", "Multimedia"]
 if arch != "aarch64":
-  qt_modules += ["DBus", "WebEngine", "WebEngineWidgets"]
+  qt_modules += ["DBus"]
 
 qt_libs = []
 if arch == "Darwin":
@@ -357,6 +357,7 @@ Export('common', 'gpucommon', 'visionipc')
 # Build openpilot
 
 SConscript(['cereal/SConscript'])
+SConscript(['panda/board/SConscript'])
 SConscript(['opendbc/can/SConscript'])
 
 SConscript(['phonelibs/SConscript'])

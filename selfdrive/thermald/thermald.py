@@ -208,6 +208,10 @@ def thermald_thread():
         no_panda_cnt = 0
         startup_conditions["ignition"] = pandaState.pandaState.ignitionLine or pandaState.pandaState.ignitionCan
 
+      startup_conditions["hardware_supported"] = pandaState.pandaState.pandaType not in [log.PandaState.PandaType.whitePanda,
+                                                                                         log.PandaState.PandaType.greyPanda]
+      set_offroad_alert_if_changed("Offroad_HardwareUnsupported", not startup_conditions["hardware_supported"])
+
       # Setup fan handler on first connect to panda
       if handle_fan is None and pandaState.pandaState.pandaType != log.PandaState.PandaType.unknown:
         is_uno = pandaState.pandaState.pandaType == log.PandaState.PandaType.uno
@@ -346,10 +350,6 @@ def thermald_thread():
     # controls will warn with CPU above 95 or battery above 60
     startup_conditions["device_temp_good"] = thermal_status < ThermalStatus.danger
     set_offroad_alert_if_changed("Offroad_TemperatureTooHigh", (not startup_conditions["device_temp_good"]))
-
-    startup_conditions["hardware_supported"] = pandaState is not None and pandaState.pandaState.pandaType not in [log.PandaState.PandaType.whitePanda,
-                                                                                                   log.PandaState.PandaType.greyPanda]
-    set_offroad_alert_if_changed("Offroad_HardwareUnsupported", pandaState is not None and not startup_conditions["hardware_supported"])
 
     # Handle offroad/onroad transition
     should_start = all(startup_conditions.values())

@@ -195,7 +195,7 @@ jobs:
       run: eval "$BUILD"
     - name: Run unit tests
       run: |
-        ${{ env.RUN }} "scons -j$(nproc) && \
+        ${{ env.RUN }} "scons -j$(nproc) --test && \
                         coverage run selfdrive/test/test_fingerprints.py && \
                         $UNIT_TEST common && \
                         $UNIT_TEST opendbc/can && \
@@ -207,7 +207,8 @@ jobs:
                         $UNIT_TEST selfdrive/locationd && \
                         $UNIT_TEST selfdrive/athena && \
                         $UNIT_TEST selfdrive/thermald && \
-                        $UNIT_TEST tools/lib/tests"
+                        $UNIT_TEST tools/lib/tests && \
+                        ./selfdrive/camerad/test/ae_gray_test"
     - name: Upload coverage to Codecov
       run: bash <(curl -s https://codecov.io/bash) -v -F unit_tests
 

@@ -37,7 +37,6 @@ IGNORE_PROCESSES = set(["rtshield", "uploader", "deleter", "loggerd", "logmessag
 ThermalStatus = log.DeviceState.ThermalStatus
 State = log.ControlsState.OpenpilotState
 PandaType = log.PandaState.PandaType
-LongitudinalPlanSource = log.LongitudinalPlan.LongitudinalPlanSource
 Desire = log.LateralPlan.Desire
 LaneChangeState = log.LateralPlan.LaneChangeState
 LaneChangeDirection = log.LateralPlan.LaneChangeDirection
@@ -135,6 +134,7 @@ class Controls:
     self.sm['driverMonitoringState'].events = []
     self.sm['driverMonitoringState'].awarenessStatus = 1.
     self.sm['driverMonitoringState'].faceDetected = False
+    self.sm['liveParameters'].valid = True
 
     self.startup_event = get_startup_event(car_recognized, controller_available)
 
@@ -206,14 +206,17 @@ class Controls:
 
     if self.can_rcv_error or (not CS.canValid and self.sm.frame > 5 / DT_CTRL):
       self.events.add(EventName.canError)
-    if (self.sm['pandaState'].safetyModel != self.CP.safetyModel and self.sm.frame > 2 / DT_CTRL) or \
-      self.mismatch_counter >= 200:
+
+    safety_mismatch = self.sm['pandaState'].safetyModel != self.CP.safetyModel
+    safety_mismatch = safety_mismatch or self.sm['pandaState'].safetyParam != self.CP.safetyParam
+    if (safety_mismatch and self.sm.frame > 2 / DT_CTRL) or self.mismatch_counter >= 200:
       self.events.add(EventName.controlsMismatch)
+
+    if not self.sm['liveParameters'].valid:
+      self.events.add(EventName.vehicleModelInvalid)
 
     if len(self.sm['radarState'].radarErrors):
       self.events.add(EventName.radarFault)
-    elif not self.sm.valid['liveParameters']:
-      self.events.add(EventName.vehicleModelInvalid)
     elif not self.sm.all_alive_and_valid():
       self.events.add(EventName.commIssue)
       if not self.logged_comm_issue:

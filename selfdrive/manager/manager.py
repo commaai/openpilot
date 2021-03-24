@@ -30,6 +30,7 @@ def manager_init(spinner=None):
 
   default_params = [
     ("CommunityFeaturesToggle", "0"),
+    ("EndToEndToggle", "0"),
     ("CompletedTrainingVersion", "0"),
     ("IsRHD", "0"),
     ("IsMetric", "0"),
@@ -37,13 +38,15 @@ def manager_init(spinner=None):
     ("HasAcceptedTerms", "0"),
     ("HasCompletedSetup", "0"),
     ("IsUploadRawEnabled", "1"),
-    ("IsLdwEnabled", "1"),
+    ("IsLdwEnabled", "0"),
     ("LastUpdateTime", datetime.datetime.utcnow().isoformat().encode('utf8')),
     ("OpenpilotEnabledToggle", "1"),
     ("VisionRadarToggle", "0"),
-    ("LaneChangeEnabled", "1"),
     ("IsDriverViewEnabled", "0"),
   ]
+
+  if params.get("RecordFrontLock", encoding='utf-8') == "1":
+    params.put("RecordFront", "1")
 
   # set unset params
   for k, v in default_params:
