@@ -17,7 +17,7 @@ QFrame *horizontal_line(QWidget *parent) {
 AbstractControl::AbstractControl(const QString &title, const QString &desc, const QString &icon, QWidget *parent) : QFrame(parent) {
   QVBoxLayout *vlayout = new QVBoxLayout();
 
-  vlayout->setContentsMargins(0, 25, 0, 25);
+  vlayout->setContentsMargins(0, 20, 0, 20);
   vlayout->setSpacing(0);
   hlayout = new QHBoxLayout;
   hlayout->setMargin(0);
@@ -28,7 +28,7 @@ AbstractControl::AbstractControl(const QString &title, const QString &desc, cons
     QPixmap pix(icon);
     QLabel *icon = new QLabel();
     icon->setPixmap(pix.scaledToWidth(80, Qt::SmoothTransformation));
-    icon->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
+    icon->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSigitzePolicy::Fixed));
     hlayout->addWidget(icon);
   }
 
