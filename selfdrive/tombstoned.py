@@ -115,7 +115,6 @@ def report_tombstone_android(fn, client):
   crashlog_dir = os.path.join(ROOT, "crash")
   mkdirs_exists_ok(crashlog_dir)
 
-  # Files could be on different filesystems, copy, then delete
   shutil.copy(fn, os.path.join(crashlog_dir, new_fn))
 
 
