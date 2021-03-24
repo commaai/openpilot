@@ -222,7 +222,6 @@ static void handle_display_state(UIState* s, bool user_input) {
   }
 }
 
-
 GLWindow::GLWindow(QWidget* parent) : QOpenGLWidget(parent) {
   timer = new QTimer(this);
   QObject::connect(timer, SIGNAL(timeout()), this, SLOT(timerUpdate()));
