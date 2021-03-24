@@ -173,8 +173,8 @@ Community Maintained Cars and Features
 | Subaru    | Crosstrek 2018-19             | EyeSight          | Stock            | 0mph               | 0mph         |
 | Subaru    | Forester 2019-20              | EyeSight          | Stock            | 0mph               | 0mph         |
 | Subaru    | Impreza 2017-19               | EyeSight          | Stock            | 0mph               | 0mph         |
-| Tesla | Model S 2014-2016 | AutoPilot HW1 | Stock | 0mph | 0mph |
-| Tesla | Model S 2016-2019 | AutoPilot HW2 | Stock | 0mph | 0mph |
+| Tesla     | Model S 2014-2016             | AutoPilot HW1     | Stock            | 0mph               | 0mph         |
+| Tesla     | Model S 2016-2019             | AutoPilot HW2     | Stock            | 0mph               | 0mph         |
 | Volkswagen| Golf 2015-19                  | Driver Assistance | Stock            | 0mph               | 0mph         |
 
 <sup>1</sup>Requires an [OBD-II car harness](https://comma.ai/shop/products/comma-car-harness) and [community built ASCM harness](https://github.com/commaai/openpilot/wiki/GM#hardware). ***NOTE: disconnecting the ASCM disables Automatic Emergency Braking (AEB).*** <br />
