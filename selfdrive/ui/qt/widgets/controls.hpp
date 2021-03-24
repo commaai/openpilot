@@ -17,6 +17,10 @@ class AbstractControl : public QFrame {
 protected:
   AbstractControl(const QString &title, const QString &desc = "", const QString &icon = "");
 
+  void mousePressEvent(QMouseEvent *event) override {
+    description->setVisible(!description->isVisible());
+  }
+
   QSize minimumSizeHint() const override {
     QSize size = QFrame::minimumSizeHint();
     size.setHeight(120);
@@ -25,6 +29,7 @@ protected:
 
   QHBoxLayout *hlayout;
   QLabel *title_label;
+  QLabel *description;
 };
 
 // widget to display a value

@@ -15,6 +15,8 @@ QFrame *horizontal_line(QWidget *parent) {
 }
 
 AbstractControl::AbstractControl(const QString &title, const QString &desc, const QString &icon) : QFrame() {
+  QVBoxLayout *vlayout = new QVBoxLayout();
+
   hlayout = new QHBoxLayout;
   hlayout->setMargin(0);
   hlayout->setSpacing(50);
@@ -33,5 +35,17 @@ AbstractControl::AbstractControl(const QString &title, const QString &desc, cons
   title_label->setStyleSheet("font-size: 50px; font-weight: 400;");
   hlayout->addWidget(title_label);
 
-  setLayout(hlayout);
+  vlayout->addLayout(hlayout);
+
+  // description
+  if (!desc.isEmpty()) {
+    description = new QLabel(desc);
+    description->setContentsMargins(40, 20, 40, 20);
+    description->setStyleSheet("font-size: 40px; color:grey");
+    description->setWordWrap(true);
+    description->setVisible(false);
+    vlayout->addWidget(description);
+  }
+
+  setLayout(vlayout);
 }
