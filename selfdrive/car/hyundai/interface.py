@@ -145,9 +145,9 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
     elif candidate == CAR.KIA_SELTOS:
       ret.lateralTuning.pid.kf = 0.00005
-      ret.mass = 1310. + STD_CARGO_KG
-      ret.wheelbase = 2.6
-      ret.steerRatio = 13.73  # Spec
+      ret.mass = 1337. + STD_CARGO_KG
+      ret.wheelbase = 2.63
+      ret.steerRatio = 14
       tire_stiffness_factor = 0.5
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
