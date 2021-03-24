@@ -3,7 +3,6 @@
 #include <QFrame>
 #include <QPushButton>
 #include <QStringList>
-#include <QVBoxLayout>
 #include <QLabel>
 #include <memory>
 #include <vector>

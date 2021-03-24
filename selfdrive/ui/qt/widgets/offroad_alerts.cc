@@ -1,5 +1,6 @@
 #include <QFile>
 #include <QHBoxLayout>
+#include <QVBoxLayout>
 #include <QJsonObject>
 #include <QJsonDocument>
 #include <QDebug>
@@ -12,10 +13,10 @@ OffroadAlert::OffroadAlert(QWidget* parent) : QFrame(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout();
   main_layout->setMargin(25);
 
+  // alert widget
   alert_widget = new QWidget();
-  QVBoxLayout *layout = new QVBoxLayout(alert_widget);
-  layout->setSpacing(20);
-
+  QVBoxLayout *alert_layout = new QVBoxLayout(alert_widget);
+  alert_layout->setSpacing(20);
   main_layout->addWidget(alert_widget, 1);
 
   // bottom footer
@@ -86,13 +87,12 @@ void OffroadAlert::refresh() {
 
 void OffroadAlert::parse_alerts() {
   alerts.clear();
+  Params params;
   for (const QString &key : alert_keys) {
-    std::vector<char> bytes = Params().read_db_bytes(key.toStdString().c_str());
-    if (bytes.size()) {
+    if (auto bytes = params.read_db_bytes(key.toStdString().c_str()); bytes.size()) {
       QJsonDocument doc_par = QJsonDocument::fromJson(QByteArray(bytes.data(), bytes.size()));
       QJsonObject obj = doc_par.object();
-      Alert alert = {obj.value("text").toString(), obj.value("severity").toInt()};
-      alerts.push_back(alert);
+      alerts.push_back({obj.value("text").toString(), obj.value("severity").toInt()});
     }
   }
 }
