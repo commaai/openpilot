@@ -20,8 +20,8 @@ AbstractControl::AbstractControl(const QString &title, const QString &desc, cons
   vlayout->setContentsMargins(0, 25, 0, 25);
   vlayout->setSpacing(0);
   hlayout = new QHBoxLayout;
-  hlayout->setContentsMargins(0, 0, 0, 0);
-  hlayout->setSpacing(50);
+  hlayout->setMargin(0);
+  hlayout->setSpacing(25);
 
   // left icon
   if (!icon.isEmpty()) {
@@ -34,7 +34,7 @@ AbstractControl::AbstractControl(const QString &title, const QString &desc, cons
 
   // title
   title_label = new QPushButton(title);
-  title_label->setStyleSheet("font-size: 50px; font-weight: 400; text-align: left; background:none");
+  title_label->setStyleSheet("font-size: 50px; font-weight: 400; text-align: left; background: none; border: none;");
   hlayout->addWidget(title_label);
 
   vlayout->addLayout(hlayout);
@@ -46,9 +46,9 @@ AbstractControl::AbstractControl(const QString &title, const QString &desc, cons
     description->setStyleSheet("font-size: 40px; color:grey");
     description->setWordWrap(true);
     description->setVisible(false);
+    vlayout->addWidget(description);
     connect(title_label, &QPushButton::clicked, [=]() {
       description->setVisible(!description->isVisible());
     });
-    vlayout->addWidget(description);
   }
 }

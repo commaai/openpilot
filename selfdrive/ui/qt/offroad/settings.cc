@@ -18,8 +18,7 @@
 
 
 QWidget * toggles_panel() {
-  QWidget *widget = new QFrame();
-  QVBoxLayout *toggles_list = new QVBoxLayout(widget);
+  QVBoxLayout *toggles_list = new QVBoxLayout();
 
   toggles_list->addWidget(new ParamControl("OpenpilotEnabledToggle",
                                             "Enable openpilot",
@@ -65,11 +64,13 @@ QWidget * toggles_panel() {
   bool record_lock = Params().read_db_bool("RecordFrontLock");
   record_toggle->setEnabled(!record_lock);
 
+  QWidget *widget = new QWidget;
+  widget->setLayout(toggles_list);
   return widget;
 }
 
 DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
-  QVBoxLayout *device_layout = new QVBoxLayout(this);
+  QVBoxLayout *device_layout = new QVBoxLayout;
 
   Params params = Params();
   std::vector<std::pair<std::string, std::string>> labels = {
@@ -126,8 +127,7 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
                                                  Params().write_db_value("DoUninstall", "1");
                                                }
                                              }));
-  device_layout->addWidget(horizontal_line());
-  device_layout->addStretch();
+
   // power buttons
   QHBoxLayout *power_layout = new QHBoxLayout();
   power_layout->setSpacing(30);
@@ -151,6 +151,7 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
 
   device_layout->addLayout(power_layout);
 
+  setLayout(device_layout);
   setStyleSheet(R"(
     QPushButton {
       padding: 0;
@@ -289,7 +290,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
     nav_btns->addButton(btn);
     sidebar_layout->addWidget(btn, 0, Qt::AlignRight);
 
-    panel->setContentsMargins(80, 25, 80, 25);
+    panel->setContentsMargins(50, 25, 50, 25);
     QScrollArea *panel_frame = new QScrollArea;
     panel_frame->setWidget(panel);
     panel_frame->setWidgetResizable(true);
