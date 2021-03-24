@@ -88,7 +88,7 @@ class SwagLogFileFormatter(SwagFormatter):
     return k, v
 
   def format(self, record):
-    if type(record) == str:
+    if isinstance(record, str):
       v = json.loads(record)
     else:
       v = self.format_dict(record)
