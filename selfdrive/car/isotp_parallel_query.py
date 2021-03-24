@@ -9,7 +9,7 @@ from panda.python.uds import CanClient, IsoTpMessage, FUNCTIONAL_ADDRS, get_rx_a
 
 
 class IsoTpParallelQuery():
-  def __init__(self, sendcan, logcan, bus, addrs, request, response, response_offset, functional_addr=False, debug=False):
+  def __init__(self, sendcan, logcan, bus, addrs, request, response, response_offset=0x8, functional_addr=False, debug=False):
     self.sendcan = sendcan
     self.logcan = logcan
     self.bus = bus
