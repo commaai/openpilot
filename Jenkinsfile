@@ -127,7 +127,6 @@ pipeline {
                       ["build devel", "cd release && ./build_devel.sh"],
                       ["test athena", "nosetests -s selfdrive/athena/tests/test_athenad_old.py"],
                       ["test manager", "python selfdrive/manager/test/test_manager.py"],
-                      ["onroad tests", "cd selfdrive/test/ && ./test_onroad.py"],
                       ["test car interfaces", "cd selfdrive/car/tests/ && ./test_car_interfaces.py"],
                       ["test spinner build", "cd selfdrive/ui/spinner && make clean && make"],
                       ["test text window build", "cd selfdrive/ui/text && make clean && make"],
@@ -149,6 +148,7 @@ pipeline {
                   steps {
                     phone_steps("eon", [
                       ["build", "SCONS_CACHE=1 scons -j4"],
+                      ["onroad tests", "cd selfdrive/test/ && ./test_onroad.py"],
                       ["test sounds", "nosetests -s selfdrive/test/test_sounds.py"],
                       ["test boardd loopback", "nosetests -s selfdrive/boardd/tests/test_boardd_loopback.py"],
                       ["test loggerd", "python selfdrive/loggerd/tests/test_loggerd.py"],
