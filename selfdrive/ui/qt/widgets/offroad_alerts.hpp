@@ -13,7 +13,6 @@ struct Alert {
   int severity;
 };
 
-
 class OffroadAlert : public QFrame {
   Q_OBJECT
 

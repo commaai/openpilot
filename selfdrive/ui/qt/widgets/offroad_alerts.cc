@@ -1,6 +1,4 @@
 #include <QFile>
-#include <QLabel>
-#include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QJsonObject>
 #include <QJsonDocument>
