@@ -60,7 +60,7 @@ TermsPage::TermsPage(QWidget *parent) : QFrame(parent){
   main_layout->setContentsMargins(40, 40, 40, 40);
   main_layout->setSpacing(40);
 
-  QQuickWidget *text = new QQuickWidget(QUrl::fromLocalFile("qt/offroad/terms.qml"), this);
+  QQuickWidget *text = new QQuickWidget(QUrl::fromLocalFile("qt/offroad/text_view.qml"), this);
   text->setResizeMode(QQuickWidget::SizeRootObjectToView);
   text->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
   text->rootContext()->setContextProperty("font_size", 12);
