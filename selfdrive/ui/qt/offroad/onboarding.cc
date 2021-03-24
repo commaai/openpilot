@@ -68,12 +68,7 @@ TermsPage::TermsPage(QWidget *parent) : QFrame(parent){
 
   text->rootContext()->setContextProperty("font_size", 14);
 
-  QFile inputFile("../assets/offroad/tc.html");
-  inputFile.open(QIODevice::ReadOnly);
-  QTextStream in(&inputFile);
-  QString text_view = in.readAll();
-  inputFile.close();
-
+  QString text_view = util::read_file("../assets/offroad/tc.html").c_str();
   text->rootContext()->setContextProperty("text_view", text_view);
 
   main_layout->addWidget(text);
