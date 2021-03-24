@@ -11,7 +11,6 @@
 
 OffroadAlert::OffroadAlert(QWidget* parent) : QFrame(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout();
-  main_layout->setMargin(25);
 
   // alert widget
   alert_widget = new QWidget();
