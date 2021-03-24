@@ -1,7 +1,6 @@
 #pragma once
 
 #include <QFrame>
-#include <QStackedWidget>
 #include <QPushButton>
 #include <QStringList>
 #include <QVBoxLayout>
@@ -22,10 +21,9 @@ public:
   bool updateAvailable;
 
 private:
+  QWidget *alert_widget;
   QStringList alert_keys;
-  QStackedWidget *alerts_stack;
   QPushButton *reboot_btn;
-  QVBoxLayout *layout;
   std::vector<std::unique_ptr<QLabel>> labels;
   void parse_alerts();
 

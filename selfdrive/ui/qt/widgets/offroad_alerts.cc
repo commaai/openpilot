@@ -12,8 +12,11 @@ OffroadAlert::OffroadAlert(QWidget* parent) : QFrame(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout();
   main_layout->setMargin(25);
 
-  alerts_stack = new QStackedWidget();
-  main_layout->addWidget(alerts_stack, 1);
+  alert_widget = new QWidget();
+  QVBoxLayout *layout = new QVBoxLayout(alert_widget);
+  layout->setSpacing(20);
+
+  main_layout->addWidget(alert_widget, 1);
 
   // bottom footer
   QHBoxLayout *footer_layout = new QHBoxLayout();
@@ -50,12 +53,6 @@ OffroadAlert::OffroadAlert(QWidget* parent) : QFrame(parent) {
   )");
   main_layout->setMargin(50);
 
-  layout = new QVBoxLayout;
-  layout->setSpacing(20);
-  QWidget *w = new QWidget();
-  w->setLayout(layout);
-  alerts_stack->addWidget(w);
-
   QFile inFile("../controls/lib/alerts_offroad.json");
   bool ret = inFile.open(QIODevice::ReadOnly | QIODevice::Text);
   assert(ret);
@@ -72,7 +69,7 @@ void OffroadAlert::refresh() {
   labels.resize(updateAvailable ? 1 : alerts.size());
   for (auto &l : labels) { 
     if (!l) l = std::make_unique<QLabel>();
-    layout->addWidget(l.get());
+    alert_widget->layout()->addWidget(l.get());
   }
   if (updateAvailable) {
     labels[0]->setStyleSheet(R"(font-size: 48px;)");
