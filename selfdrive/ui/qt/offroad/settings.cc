@@ -286,10 +286,9 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
 
     nav_btns->addButton(btn);
     sidebar_layout->addWidget(btn, 0, Qt::AlignRight);
-
     panel->setContentsMargins(100, 50, 100, 50);
     QScrollArea *panel_frame = new QScrollArea;
-    panel_frame->setStyleSheet("background-color: transparent;");
+    panel_frame->setStyleSheet("border:none;background-color: black;");
     panel_frame->setWidget(panel);
     panel_frame->setWidgetResizable(true);
     panel_frame->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
