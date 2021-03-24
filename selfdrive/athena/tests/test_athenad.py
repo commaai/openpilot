@@ -178,9 +178,9 @@ class TestAthenadMethods(unittest.TestCase):
     thread = threading.Thread(target=athenad.jsonrpc_handler, args=(end_event,))
     thread.daemon = True
     thread.start()
-    athenad.payload_queue.put_nowait(json.dumps({"method": "echo", "params": ["hello"], "jsonrpc": "2.0", "id": 0}))
+    athenad.recv_queue.put_nowait(json.dumps({"method": "echo", "params": ["hello"], "jsonrpc": "2.0", "id": 0}))
     try:
-      resp = athenad.response_queue.get(timeout=3)
+      resp = athenad.send_queue.get(timeout=3)
       self.assertDictEqual(resp.data, {'result': 'hello', 'id': 0, 'jsonrpc': '2.0'})
     finally:
       end_event.set()
