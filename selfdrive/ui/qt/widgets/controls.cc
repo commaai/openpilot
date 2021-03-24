@@ -31,8 +31,8 @@ AbstractControl::AbstractControl(const QString &title, const QString &desc, cons
   }
 
   // title
-  title_label = new QLabel(title);
-  title_label->setStyleSheet("font-size: 50px; font-weight: 400;");
+  title_label = new QPushButton(title);
+  title_label->setStyleSheet("font-size: 50px; font-weight: 400; text-align: left; background: none;");
   hlayout->addWidget(title_label);
 
   vlayout->addLayout(hlayout);
@@ -45,6 +45,10 @@ AbstractControl::AbstractControl(const QString &title, const QString &desc, cons
     description->setWordWrap(true);
     description->setVisible(false);
     vlayout->addWidget(description);
+
+    connect(title_label, &QPushButton::clicked, [=]() {
+      description->setVisible(!description->isVisible());
+    });
   }
 
   setLayout(vlayout);

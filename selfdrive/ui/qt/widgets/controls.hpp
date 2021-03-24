@@ -17,11 +17,13 @@ class AbstractControl : public QFrame {
 protected:
   AbstractControl(const QString &title, const QString &desc = "", const QString &icon = "", QWidget *parent = nullptr);
 
+  /*
   void mousePressEvent(QMouseEvent *event) override {
     if (description != nullptr) {
       description->setVisible(!description->isVisible());
     }
   }
+  */
 
   QSize minimumSizeHint() const override {
     QSize size = QFrame::minimumSizeHint();
@@ -30,7 +32,7 @@ protected:
   };
 
   QHBoxLayout *hlayout;
-  QLabel *title_label;
+  QPushButton *title_label;
   QLabel *description = nullptr;
 };
 
