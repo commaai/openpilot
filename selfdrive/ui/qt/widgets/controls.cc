@@ -47,6 +47,8 @@ AbstractControl::AbstractControl(const QString &title, const QString &desc, cons
     description->setWordWrap(true);
     description->setVisible(false);
     vlayout->addWidget(description);
+    vlayout->addStretch();
+
     connect(title_label, &QPushButton::clicked, [=]() {
       description->setVisible(!description->isVisible());
     });
