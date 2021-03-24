@@ -21,6 +21,7 @@ Item {
 		flickableDirection: Flickable.VerticalFlick
     flickDeceleration: 7500.0
     maximumFlickVelocity: 10000.0
+    pixelAligned: true
 
 
     onAtYEndChanged: root.qmlSignal("Hello")
