@@ -50,13 +50,17 @@ QWidget * toggles_panel() {
                                             "Use features from the open source community that are not maintained or supported by comma.ai and have not been confirmed to meet the standard safety model. These features include community supported cars and community supported hardware. Be extra cautious when using these features",
                                             "../assets/offroad/icon_shell.png"
                                             ));
-
+  toggles_list->addWidget(horizontal_line());
   ParamControl *record_toggle = new ParamControl("RecordFront",
                                             "Record and Upload Driver Camera",
                                             "Upload data from the driver facing camera and help improve the driver monitoring algorithm.",
                                             "../assets/offroad/icon_network.png");
-  toggles_list->addWidget(horizontal_line());
   toggles_list->addWidget(record_toggle);
+  toggles_list->addWidget(horizontal_line());
+  toggles_list->addWidget(new ParamControl("EndToEndToggle",
+                                           "Ignore lanelines (Experimental)",
+                                           "In this mode openpilot will ignore lanelines and just drive how it thinks a human would.",
+                                           "../assets/offroad/icon_road.png"));
 
   bool record_lock = Params().read_db_bool("RecordFrontLock");
   record_toggle->setEnabled(!record_lock);
