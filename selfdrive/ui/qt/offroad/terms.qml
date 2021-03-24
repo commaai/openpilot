@@ -5,8 +5,8 @@ Item {
   signal qmlSignal()
 
   Rectangle {
-      color: "black"
-      anchors.fill: parent
+    color: "black"
+    anchors.fill: parent
   }
 
   Flickable {
