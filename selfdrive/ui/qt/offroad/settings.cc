@@ -73,7 +73,8 @@ QWidget * toggles_panel() {
 
 static QString getCurrentCalibration() {
   const auto &scene = GLWindow::ui_state.scene;
-  if (scene.rpy_list[1] != 0. || scene.rpy_list[2] != 0.) {
+  // if calib_status is not UNCALIBRATED(0)
+  if (scene.calib_status != 0) {
     double pitch = scene.rpy_list[1] * (180 / M_PI);
     double yaw = scene.rpy_list[2] * (180 / M_PI);
     const char *up_down = pitch > 0 ? "up" : "down";

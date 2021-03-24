@@ -130,6 +130,7 @@ typedef struct UIScene {
   vertex_data lead_vertices[2];
 
   // liveCalibration
+  int8_t calib_status = 0;
   std::array<float, 3> rpy_list;
 
   float light_sensor, accel_sensor, gyro_sensor;

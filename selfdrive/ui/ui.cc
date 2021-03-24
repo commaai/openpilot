@@ -153,8 +153,10 @@ static void update_sockets(UIState *s) {
   }
   if (sm.updated("liveCalibration")) {
     scene.world_objects_visible = true;
-    auto rpy_list = sm["liveCalibration"].getLiveCalibration().getRpyCalib();
+    const auto live_calib = sm["liveCalibration"].getLiveCalibration();
+    auto rpy_list = live_calib.getRpyCalib();
     scene.rpy_list = { rpy_list[0], rpy_list[1], rpy_list[2]};
+    scene.calib_status = live_calib.getCalStatus();
     Eigen::Vector3d rpy;
     rpy << rpy_list[0], rpy_list[1], rpy_list[2];
     Eigen::Matrix3d device_from_calib = euler2rot(rpy);
