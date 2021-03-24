@@ -82,24 +82,8 @@ QWidget* OnboardingWindow::terms_screen() {
 
   // TODO: tune the scrolling
   auto sb = terms_text->verticalScrollBar();
-#ifdef QCOM2
-  sb->setStyleSheet(R"(
-    QScrollBar {
-      width: 150px;
-      background: grey;
-    }
-    QScrollBar::handle {
-      background-color: white;
-    }
-    QScrollBar::add-line, QScrollBar::sub-line{
-      width: 0;
-      height: 0;
-    }
-  )");
-#else
   QScroller::grabGesture(terms_text, QScroller::TouchGesture);
   terms_text->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-#endif
 
   QObject::connect(sb, &QScrollBar::valueChanged, [sb, accept_btn]() {
     if (sb->value() == sb->maximum()){
