@@ -128,7 +128,6 @@ class Calibrator():
 
     write_this_cycle = (self.idx == 0) and (self.block_idx % (INPUTS_WANTED//5) == 5)
     if self.param_put and write_this_cycle:
-      # TODO: change to raw bytes when offroad can read capnp
       cal_params = {"calib_radians": list(self.rpy),
                     "valid_blocks": int(self.valid_blocks)}
       put_nonblocking("CalibrationParams", json.dumps(cal_params).encode('utf8'))
