@@ -292,7 +292,6 @@ static void update_params(UIState *s) {
 
   if (frame % (5*UI_FREQ) == 0) {
     read_param(&scene.is_metric, "IsMetric");
-    read_param(&scene.end_to_end, "EndToEndToggle");
   } else if (frame % (6*UI_FREQ) == 0) {
     scene.athenaStatus = NET_DISCONNECTED;
     uint64_t last_ping = 0;
@@ -341,6 +340,7 @@ static void update_status(UIState *s) {
       s->scene.started_frame = s->sm->frame;
 
       read_param(&s->scene.is_rhd, "IsRHD");
+      read_param(&scene.end_to_end, "EndToEndToggle");
       s->active_app = cereal::UiLayoutState::App::NONE;
       s->sidebar_collapsed = true;
       s->scene.alert_size = cereal::ControlsState::AlertSize::NONE;
