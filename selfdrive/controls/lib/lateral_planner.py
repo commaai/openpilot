@@ -1,6 +1,7 @@
 import os
 import math
 import numpy as np
+from common.params import Params
 from common.realtime import sec_since_boot, DT_MDL
 from common.numpy_fast import interp, clip
 from selfdrive.swaglog import cloudlog
@@ -53,6 +54,7 @@ class LateralPlanner():
 
     self.setup_mpc()
     self.solution_invalid_cnt = 0
+    self.use_lanelines = Params().get('EndToEndToggle') != b'1'
     self.lane_change_state = LaneChangeState.off
     self.lane_change_direction = LaneChangeDirection.none
     self.lane_change_timer = 0.0
@@ -158,7 +160,10 @@ class LateralPlanner():
     if self.desire == log.LateralPlan.Desire.laneChangeRight or self.desire == log.LateralPlan.Desire.laneChangeLeft:
       self.LP.lll_prob *= self.lane_change_ll_prob
       self.LP.rll_prob *= self.lane_change_ll_prob
-    d_path_xyz = self.LP.get_d_path(v_ego, self.t_idxs, self.path_xyz)
+    if self.use_lanelines:
+      d_path_xyz = self.LP.get_d_path(v_ego, self.t_idxs, self.path_xyz)
+    else:
+      d_path_xyz = self.path_xyz
     y_pts = np.interp(v_ego * self.t_idxs[:MPC_N + 1], np.linalg.norm(d_path_xyz, axis=1), d_path_xyz[:,1])
     heading_pts = np.interp(v_ego * self.t_idxs[:MPC_N + 1], np.linalg.norm(self.path_xyz, axis=1), self.plan_yaw)
     self.y_pts = y_pts

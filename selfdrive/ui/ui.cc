@@ -340,6 +340,7 @@ static void update_status(UIState *s) {
       s->scene.started_frame = s->sm->frame;
 
       read_param(&s->scene.is_rhd, "IsRHD");
+      read_param(&s->scene.end_to_end, "EndToEndToggle");
       s->active_app = cereal::UiLayoutState::App::NONE;
       s->sidebar_collapsed = true;
       s->scene.alert_size = cereal::ControlsState::AlertSize::NONE;
