@@ -53,18 +53,18 @@ class CarInterface(CarInterfaceBase):
 
       ret.centerToFront = ret.wheelbase * 0.45
 
-    ret.enableCamera = True  # Stock camera detection doesn't apply to VW
+      if 0xAD in fingerprint[0]:
+        # Getriebe_11 detected: traditional automatic or DSG gearbox
+        ret.transmissionType = TransmissionType.automatic
+      elif 0x187 in fingerprint[0]:
+        # EV_Gearshift detected: e-Golf or similar direct-drive electric
+        ret.transmissionType = TransmissionType.direct
+      else:
+        # No trans message at all, must be a true stick-shift manual
+        ret.transmissionType = TransmissionType.manual
+      cloudlog.info("Detected transmission type: %s", ret.transmissionType)
 
-    if 0xAD in fingerprint[0]:
-      # Getriebe_11 detected: traditional automatic or DSG gearbox
-      ret.transmissionType = TransmissionType.automatic
-    elif 0x187 in fingerprint[0]:
-      # EV_Gearshift detected: e-Golf or similar direct-drive electric
-      ret.transmissionType = TransmissionType.direct
-    else:
-      # No trans message at all, must be a true stick-shift manual
-      ret.transmissionType = TransmissionType.manual
-    cloudlog.info("Detected transmission type: %s", ret.transmissionType)
+    ret.enableCamera = True  # Stock camera detection doesn't apply to VW
 
     # TODO: get actual value, for now starting with reasonable value for
     # civic and scaling by mass and wheelbase
