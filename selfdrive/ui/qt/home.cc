@@ -9,6 +9,7 @@
 #include <QMouseEvent>
 #include <QVBoxLayout>
 
+#include "common/util.h"
 #include "common/params.h"
 #include "common/timing.h"
 #include "common/swaglog.h"
