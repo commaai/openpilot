@@ -10,14 +10,6 @@
 #include "common/params.h"
 #include "selfdrive/hardware/hw.h"
 
-void cleanStackedWidget(QStackedWidget* swidget) {
-  while(swidget->count() > 0) {
-    QWidget *w = swidget->widget(0);
-    swidget->removeWidget(w);
-    w->deleteLater();
-  }
-}
-
 OffroadAlert::OffroadAlert(QWidget* parent) : QFrame(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout();
   main_layout->setMargin(25);
@@ -60,6 +52,12 @@ OffroadAlert::OffroadAlert(QWidget* parent) : QFrame(parent) {
   )");
   main_layout->setMargin(50);
 
+  layout = new QVBoxLayout;
+  layout->setSpacing(20);
+  QWidget *w = new QWidget();
+  w->setLayout(layout);
+  alerts_stack->addWidget(w);
+
   QFile inFile("../controls/lib/alerts_offroad.json");
   bool ret = inFile.open(QIODevice::ReadOnly | QIODevice::Text);
   assert(ret);
@@ -70,31 +68,25 @@ OffroadAlert::OffroadAlert(QWidget* parent) : QFrame(parent) {
 
 void OffroadAlert::refresh() {
   parse_alerts();
-  cleanStackedWidget(alerts_stack);
-
   updateAvailable = Params().read_db_bool("UpdateAvailable");
   reboot_btn->setVisible(updateAvailable);
 
-  QVBoxLayout *layout = new QVBoxLayout;
-  layout->setSpacing(20);
-
+  labels.resize(updateAvailable ? 1 : alerts.size());
+  for (auto &l : labels) { 
+    if (!l) l = std::make_unique<QLabel>();
+    layout->addWidget(l.get());
+  }
   if (updateAvailable) {
-    QLabel *body = new QLabel(QString::fromStdString(Params().get("ReleaseNotes")));
-    body->setStyleSheet(R"(font-size: 48px;)");
-    layout->addWidget(body, 0, Qt::AlignLeft | Qt::AlignTop);
+    labels[0]->setStyleSheet(R"(font-size: 48px;)");
+    labels[0]->setText(QString::fromStdString(Params().get("ReleaseNotes")));
   } else {
-    for (const auto &alert : alerts) {
-      QLabel *l = new QLabel(alert.text);
-      l->setMargin(60);
-      l->setWordWrap(true);
-      l->setStyleSheet("background-color: " + QString(alert.severity ? "#E22C2C" : "#292929"));
-      layout->addWidget(l, 0, Qt::AlignTop);
+    for (int i = 0; i < alerts.size(); ++i) {
+      labels[i]->setText(alerts[i].text);
+      labels[i]->setStyleSheet("background-color: " + QString(alerts[i].severity ? "#E22C2C" : "#292929"));
+      labels[i]->setMargin(60);
+      labels[i]->setWordWrap(true);
     }
   }
-
-  QWidget *w = new QWidget();
-  w->setLayout(layout);
-  alerts_stack->addWidget(w);
 }
 
 void OffroadAlert::parse_alerts() {
