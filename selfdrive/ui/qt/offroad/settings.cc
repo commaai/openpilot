@@ -20,7 +20,6 @@
 QWidget * toggles_panel() {
   QVBoxLayout *toggles_list = new QVBoxLayout();
 
-  // toggles_list->setMargin(50);
   toggles_list->addWidget(new ParamControl("OpenpilotEnabledToggle",
                                             "Enable openpilot",
                                             "Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off.",
@@ -197,7 +196,6 @@ void DeveloperPanel::showEvent(QShowEvent *event) {
 QWidget * network_panel(QWidget * parent) {
 #ifdef QCOM
   QVBoxLayout *layout = new QVBoxLayout;
-  // layout->setMargin(100);
   layout->setSpacing(30);
 
   // simple wifi + tethering buttons
@@ -286,6 +284,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
 
     nav_btns->addButton(btn);
     sidebar_layout->addWidget(btn, 0, Qt::AlignRight);
+
     panel->setContentsMargins(100, 50, 100, 50);
     QScrollArea *panel_frame = new QScrollArea;
     panel_frame->setStyleSheet("border:none;background-color: black;");

@@ -17,12 +17,6 @@ class AbstractControl : public QFrame {
 protected:
   AbstractControl(const QString &title, const QString &desc = "", const QString &icon = "", QWidget *parent = nullptr);
 
-  QSize minimumSizeHint() const override {
-    QSize size = QFrame::minimumSizeHint();
-    size.setHeight(120);
-    return size;
-  };
-
   QHBoxLayout *hlayout;
   QPushButton *title_label;
   QLabel *description = nullptr;
