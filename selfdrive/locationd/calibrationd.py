@@ -7,7 +7,6 @@ and the image input into the neural network is not corrected for roll.
 '''
 
 import os
-import capnp
 import copy
 import json
 import numpy as np
