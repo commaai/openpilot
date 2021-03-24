@@ -83,11 +83,11 @@ static ButtonControl *resetCalibControl() {
     // if calib_status is not UNCALIBRATED(0)
     if (GLWindow::ui_state.scene.calib_status != 0) {
       const auto &rpy = GLWindow::ui_state.scene.rpy_list;
-      double pitch = std::abs(rpy[1] * (180 / M_PI));
-      double yaw = std::abs(rpy[2] * (180 / M_PI));
+      double pitch = std::abs(rpy(1) * (180 / M_PI));
+      double yaw = std::abs(rpy(2) * (180 / M_PI));
       desc += "\n" + QString("Your device is pointed %1° %2 and %3° %4.")
-                         .arg(QString::number(pitch, 'g', 1), rpy[1] > 0 ? "up" : "down",
-                              QString::number(yaw, 'g', 1), rpy[2] > 0 ? "right" : "left");
+                         .arg(QString::number(pitch, 'g', 1), rpy(1) > 0 ? "up" : "down",
+                              QString::number(yaw, 'g', 1), rpy(2) > 0 ? "right" : "left");
     }
     control->setDescription(desc);
   });

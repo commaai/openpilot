@@ -3,7 +3,6 @@ import json
 import random
 import unittest
 
-import cereal.messaging as messaging
 from common.params import Params
 from selfdrive.locationd.calibrationd import Calibrator
 

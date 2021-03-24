@@ -28,7 +28,6 @@
 #include "qt/sound.hpp"
 #include "visionipc.h"
 #include "visionipc_client.h"
-#include <array>
 
 #define COLOR_BLACK nvgRGBA(0, 0, 0, 255)
 #define COLOR_BLACK_ALPHA(x) nvgRGBA(0, 0, 0, x)
@@ -131,7 +130,7 @@ typedef struct UIScene {
 
   // liveCalibration
   int8_t calib_status = 0;
-  std::array<float, 3> rpy_list;
+  Eigen::Vector3d rpy_list;
 
   float light_sensor, accel_sensor, gyro_sensor;
   bool started, ignition, is_metric, longitudinal_control, end_to_end;
