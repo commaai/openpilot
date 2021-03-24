@@ -4,11 +4,6 @@ Item {
   id: root
   signal qmlSignal()
 
-  Rectangle {
-    color: "black"
-    anchors.fill: parent
-  }
-
   Flickable {
     id: flickArea
     objectName: "flickArea"
@@ -23,7 +18,6 @@ Item {
     onAtYEndChanged: root.qmlSignal()
 
     Text {
-      // HTML like markup can also be used
       id: helpText
       width: flickArea.width
       font.pointSize: font_size

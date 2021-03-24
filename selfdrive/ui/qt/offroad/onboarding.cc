@@ -63,6 +63,8 @@ TermsPage::TermsPage(QWidget *parent) : QFrame(parent){
   QQuickWidget *text = new QQuickWidget(QUrl::fromLocalFile("qt/offroad/text_view.qml"), this);
   text->setResizeMode(QQuickWidget::SizeRootObjectToView);
   text->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+  text->setAttribute(Qt::WA_AlwaysStackOnTop);
+  text->setClearColor(Qt::transparent);
   text->rootContext()->setContextProperty("font_size", 12);
 
   QFile inputFile("../assets/offroad/tc.html");
