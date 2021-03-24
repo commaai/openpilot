@@ -2,7 +2,7 @@ import QtQuick 2.0
 
 Item {
   id: root
-  signal qmlSignal(variant msg)
+  signal qmlSignal()
 
   Rectangle {
       color: "black"
@@ -20,7 +20,7 @@ Item {
     maximumFlickVelocity: 10000.0
     pixelAligned: true
 
-    onAtYEndChanged: root.qmlSignal("Hello")
+    onAtYEndChanged: root.qmlSignal()
 
     Text {
       // HTML like markup can also be used

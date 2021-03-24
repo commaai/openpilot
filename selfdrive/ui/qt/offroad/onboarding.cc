@@ -90,7 +90,7 @@ TermsPage::TermsPage(QWidget *parent) : QFrame(parent){
   });
 
   QObject *obj = (QObject*)text->rootObject();
-  QObject::connect(obj, SIGNAL(qmlSignal(QVariant)), SLOT(enable_accept()));
+  QObject::connect(obj, SIGNAL(qmlSignal()), SLOT(enable_accept()));
 
   setLayout(main_layout);
   setStyleSheet(R"(
