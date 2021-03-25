@@ -29,6 +29,7 @@ common/params_pyx.pyx
 common/xattr.py
 common/profiler.py
 common/basedir.py
+common/dict_helpers.py
 common/filter_simple.py
 common/stat_live.py
 common/spinner.py
