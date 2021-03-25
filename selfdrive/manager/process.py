@@ -106,18 +106,17 @@ class ManagerProcess(ABC):
     if self.proc is None:
       return
 
-    if not self.sigint_sent:
-      cloudlog.info(f"killing {self.name}")
+    if self.proc.exitcode is None:
+      if not self.sigint_sent:
+        self.sigint_sent = True
 
-      if self.proc.exitcode is None:
+        cloudlog.info(f"killing {self.name}")
         sig = signal.SIGKILL if self.sigkill else signal.SIGINT
         self.signal(sig)
-        self.sigint_sent = True
 
         if not block:
           return
 
-    if self.proc.exitcode is None:
       join_process(self.proc, 5)
 
       # If process failed to die send SIGKILL or reboot
