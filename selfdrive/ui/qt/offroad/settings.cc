@@ -91,36 +91,35 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
                              QString::fromStdString(l.second)));
   }
 
-  device_layout->addWidget(horizontal_line());
+  QList<ButtonControl*> buttons;
 
-  device_layout->addWidget(new ButtonControl("Driver Camera", "PREVIEW",
-                                             "Preview the driver facing camera to help optimize device mounting position for best driver monitoring experience. (vehicle must be off)",
-                                             [=]() { Params().write_db_value("IsDriverViewEnabled", "1", 1); }));
+  buttons.append(new ButtonControl("Driver Camera", "PREVIEW",
+                                   "Preview the driver facing camera to help optimize device mounting position for best driver monitoring experience. (vehicle must be off)",
+                                   [=]() { Params().write_db_value("IsDriverViewEnabled", "1", 1); }));
 
-  device_layout->addWidget(horizontal_line());
-
-  // TODO: show current calibration values
-  ButtonControl *reset_calibration = new ButtonControl("Reset Calibration", "RESET",
-                                "openpilot requires the device to be mounted within 4° left or right and within 5° up or down. openpilot is continuously calibrating, resetting is rarely required.",
-                                [=]() {
-                                  if (ConfirmationDialog::confirm("Are you sure you want to reset calibration?")) {
-                                    Params().delete_db_value("CalibrationParams");
-                                  }
-                                });
-  QObject::connect(parent, SIGNAL(toggleButtons(bool)), reset_calibration, SLOT(toggleButton(bool)));
-  device_layout->addWidget(reset_calibration);
-
-
-  device_layout->addWidget(horizontal_line());
+  buttons.append(new ButtonControl("Reset Calibration", "RESET",
+                                   "openpilot requires the device to be mounted within 4° left or right and within 5° up or down. openpilot is continuously calibrating, resetting is rarely required.",
+                                    [=]() {
+                                      if (ConfirmationDialog::confirm("Are you sure you want to reset calibration?")) {
+                                        Params().delete_db_value("CalibrationParams");
+                                      }
+                                    }));
 
   QString brand = params.read_db_bool("Passive") ? "dashcam" : "openpilot";
-  device_layout->addWidget(new ButtonControl("Uninstall " + brand, "UNINSTALL",
-                                             "",
-                                             [=]() {
-                                               if (ConfirmationDialog::confirm("Are you sure you want to uninstall?")) {
-                                                 Params().write_db_value("DoUninstall", "1");
-                                               }
-                                             }));
+  buttons.append(new ButtonControl("Uninstall " + brand, "UNINSTALL",
+                                   "",
+                                   [=]() {
+                                     if (ConfirmationDialog::confirm("Are you sure you want to uninstall?")) {
+                                       Params().write_db_value("DoUninstall", "1");
+                                     }
+                                   }));
+
+
+  for(auto btn : buttons){
+    device_layout->addWidget(horizontal_line());
+    QObject::connect(parent, SIGNAL(toggleButtons(bool)), btn, SLOT(toggleButton(bool)));
+    device_layout->addWidget(btn);
+  }
 
   // power buttons
   QHBoxLayout *power_layout = new QHBoxLayout();
