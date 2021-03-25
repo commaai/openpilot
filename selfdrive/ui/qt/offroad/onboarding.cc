@@ -41,6 +41,7 @@ void TrainingGuide::mouseReleaseEvent(QMouseEvent *e) {
 void TrainingGuide::reset(){
   currentIndex = 0;
   image.load("../assets/training/step0.jpg");
+  Params().delete_db_value("CompletedTrainingVersion");
 }
 
 TrainingGuide::TrainingGuide(QWidget* parent) : QFrame(parent){
@@ -60,7 +61,6 @@ void TrainingGuide::paintEvent(QPaintEvent *event) {
 }
 
 TermsPage::TermsPage(QWidget *parent) : QFrame(parent){
-
   QVBoxLayout *main_layout = new QVBoxLayout;
   main_layout->setMargin(40);
   main_layout->setSpacing(40);
@@ -120,7 +120,6 @@ void OnboardingWindow::updateActiveScreen() {
   if (!accepted_terms) {
     setCurrentIndex(0);
   } else if (!training_done) {
-    emit resetTrainingGuide();
     setCurrentIndex(1);
   } else {
     emit onboardingDone();

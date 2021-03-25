@@ -114,7 +114,6 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
                                              "Review the rules, features, and limitations of openpilot",
                                              [=]() {
                                                if (ConfirmationDialog::confirm("Are you sure you want to review the training guide?")) {
-                                                 Params().delete_db_value("CompletedTrainingVersion");
                                                  emit reviewTrainingGuide();
                                                }
                                              }));

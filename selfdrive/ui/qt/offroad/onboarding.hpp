@@ -64,7 +64,6 @@ private:
 
 signals:
   void onboardingDone();
-  void resetTrainingGuide();
 
 public slots:
   void updateActiveScreen();
