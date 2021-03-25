@@ -5,7 +5,6 @@
 #include <QVBoxLayout>
 #include <QStackedWidget>
 #include <QPushButton>
-#include <QTimer>
 
 #include "wifiManager.hpp"
 #include "widgets/input.hpp"
@@ -27,14 +26,11 @@ private:
   bool tetheringEnabled;
 
 signals:
-  void openKeyboard();
-  void closeKeyboard();
   void connectToNetwork(Network n);
 
 public slots:
   void handleButton(QAbstractButton* m_button);
   void refresh();
-
   void prevPage();
   void nextPage();
 };
@@ -43,24 +39,17 @@ class AdvancedNetworking : public QWidget {
   Q_OBJECT
 public:
   explicit AdvancedNetworking(QWidget* parent = 0, WifiManager* wifi = 0);
-  QStackedLayout* s;
 
 private:
   QLabel* ipLabel;
   QPushButton* editPasswordButton;
-  SSH* ssh;
-  Toggle* toggle_switch_SSH;
-
   WifiManager* wifi = nullptr;
-
-  bool isSSHEnabled();
 
 signals:
   void backPress();
 
 public slots:
-  void toggleTethering(int enable);
-  void toggleSSH(int enable);
+  void toggleTethering(bool enable);
   void refresh();
 };
 

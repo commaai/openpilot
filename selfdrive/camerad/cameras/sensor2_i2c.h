@@ -32,8 +32,8 @@ struct i2c_random_wr_payload init_array_ar0231[] = {
   {0x340C, 0x802}, // 2 // 0000 0000 0010
 
   // Readout timing
-  {0x300C, 0x074B}, // LINE_LENGTH_PCK
-  {0x300A, 0x085E}, // FRAME_LENGTH_LINES
+  {0x300C, 0x07B9}, // LINE_LENGTH_PCK
+  {0x300A, 0x07E7}, // FRAME_LENGTH_LINES
   {0x3042, 0x0000}, // EXTRA_DELAY
 
   // Readout Settings

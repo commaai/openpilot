@@ -58,11 +58,9 @@ git status
 git commit -a -m "openpilot v$VERSION release"
 
 # Build panda firmware
-pushd panda/board/
-make obj/panda.bin
-mv obj/panda.bin /tmp/panda.bin
-make clean
-mv /tmp/panda.bin obj/panda.bin
+pushd panda/
+scons
+mv board/obj/panda.bin.signed /tmp/panda.bin.signed
 popd
 
 # Build
@@ -79,7 +77,12 @@ find . -name '*.o' -delete
 find . -name '*.os' -delete
 find . -name '*.pyc' -delete
 find . -name '__pycache__' -delete
+rm -rf panda/board panda/certs panda/crypto
 rm -rf .sconsign.dblite Jenkinsfile release/ apk/
+
+# Move back signed panda fw
+mkdir -p panda/board/obj
+mv /tmp/panda.bin.signed panda/board/obj/panda.bin.signed
 
 # Restore phonelibs
 git checkout phonelibs/

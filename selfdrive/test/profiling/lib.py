@@ -1,4 +1,5 @@
 from collections import defaultdict
+from cereal.services import service_list
 import cereal.messaging as messaging
 import capnp
 
@@ -45,6 +46,7 @@ class SubMaster(messaging.SubMaster):
     self.valid = {s: True for s in services}
     self.logMonoTime = {}
     self.sock = {}
+    self.freq = {}
 
     # TODO: specify multiple triggers for service like plannerd that poll on more than one service
     cur_msgs = []
@@ -55,8 +57,10 @@ class SubMaster(messaging.SubMaster):
       if msg.which() == trigger:
         self.msgs.append(cur_msgs)
         cur_msgs = []
+    self.msgs = list(reversed(self.msgs))
 
     for s in services:
+      self.freq[s] = service_list[s].frequency
       try:
         data = messaging.new_message(s)
       except capnp.lib.capnp.KjException:

@@ -2,8 +2,11 @@
 
 #include <cstdio>
 #include <csignal>
+#include <cassert>
 #include <cstring>
-#include <cstdlib>
+#include <unistd.h>
+#include <fcntl.h>
+
 #include <string>
 #include <memory>
 #include <atomic>
@@ -11,9 +14,7 @@
 #include <fstream>
 #include <thread>
 #include <chrono>
-#include <cassert>
-#include <unistd.h>
-#include <fcntl.h>
+#include <algorithm>
 
 #ifndef sighandler_t
 typedef void (*sighandler_t)(int sig);
@@ -37,6 +38,19 @@ int set_realtime_priority(int level);
 int set_core_affinity(int core);
 
 namespace util {
+
+// ***** math helpers *****
+
+// map x from [a1, a2] to [b1, b2]
+template<typename T>
+T map_val(T x, T a1, T a2, T b1, T b2) {
+  x = std::clamp(x, a1, a2);
+  T ra = a2 - a1;
+  T rb = b2 - b1;
+  return (x - a1)*rb / ra + b1;
+}
+
+// ***** string helpers *****
 
 inline bool starts_with(const std::string &s, const std::string &prefix) {
   return s.compare(0, prefix.size(), prefix) == 0;

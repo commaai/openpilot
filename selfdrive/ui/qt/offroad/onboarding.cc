@@ -1,10 +1,12 @@
 #include <QLabel>
 #include <QString>
+#include <QPainter>
 #include <QScroller>
 #include <QScrollBar>
-#include <QPushButton>
 #include <QGridLayout>
 #include <QVBoxLayout>
+#include <QQmlContext>
+#include <QQuickWidget>
 #include <QDesktopWidget>
 
 #include "common/params.h"
@@ -19,54 +21,57 @@ void TrainingGuide::mouseReleaseEvent(QMouseEvent *e) {
   int mousey = e->y();
 
   // Check for restart
-  if (currentIndex == boundingBox.size()-1) {
-    if (1050 <= mousex && mousex <= 1500 && 773 <= mousey && mousey <= 954){
-      slayout->setCurrentIndex(0);
-      currentIndex = 0;
-      return;
-    }
+  if (currentIndex == (boundingBox.size() - 1) && 1050 <= mousex && mousex <= 1500 &&
+      773 <= mousey && mousey <= 954) {
+    currentIndex = 0;
+  } else if (boundingBox[currentIndex][0] <= mousex && mousex <= boundingBox[currentIndex][1] &&
+             boundingBox[currentIndex][2] <= mousey && mousey <= boundingBox[currentIndex][3]) {
+    currentIndex += 1;
   }
 
-  if (boundingBox[currentIndex][0] <= mousex && mousex <= boundingBox[currentIndex][1] && boundingBox[currentIndex][2] <= mousey && mousey <= boundingBox[currentIndex][3]) {
-    slayout->setCurrentIndex(++currentIndex);
-  }
   if (currentIndex >= boundingBox.size()) {
     emit completedTraining();
     return;
+  } else {
+    image.load("../assets/training/step" + QString::number(currentIndex) + ".jpg");
+    update();
   }
 }
 
-TrainingGuide::TrainingGuide(QWidget* parent) {
-  QHBoxLayout* hlayout = new QHBoxLayout;
-
-  slayout = new QStackedLayout(this);
-  for (int i = 0; i < boundingBox.size(); i++) {
-    QWidget* w = new QWidget;
-    w->setStyleSheet(".QWidget {background-image: url(../assets/training/step" + QString::number(i) + ".jpg);}");
-    w->setFixedSize(1620, 1080);
-    slayout->addWidget(w);
-  }
-
-  QWidget* sw = new QWidget();
-  sw->setLayout(slayout);
-  hlayout->addWidget(sw, 1, Qt::AlignCenter);
-  setLayout(hlayout);
-  setStyleSheet(R"(
-    background-color: #072339;
-  )");
+TrainingGuide::TrainingGuide(QWidget* parent) : QFrame(parent){
+  image.load("../assets/training/step0.jpg");
 }
 
+void TrainingGuide::paintEvent(QPaintEvent *event) {
+  QPainter painter(this);
 
-QWidget* OnboardingWindow::terms_screen() {
+  QRect devRect(0, 0, painter.device()->width(), painter.device()->height());
+  QBrush bgBrush("#072339");
+  painter.fillRect(devRect, bgBrush);
+
+  QRect rect(image.rect());
+  rect.moveCenter(devRect.center());
+  painter.drawImage(rect.topLeft(), image);
+}
+
+TermsPage::TermsPage(QWidget *parent) : QFrame(parent){
+
   QVBoxLayout *main_layout = new QVBoxLayout;
-  main_layout->setContentsMargins(40, 20, 40, 0);
+  main_layout->setMargin(40);
+  main_layout->setSpacing(40);
 
-  QString terms_html = QString::fromStdString(util::read_file("../assets/offroad/tc.html"));
-  terms_text = new QTextEdit();
-  terms_text->setReadOnly(true);
-  terms_text->setTextInteractionFlags(Qt::NoTextInteraction);
-  terms_text->setHtml(terms_html);
-  main_layout->addWidget(terms_text);
+  QQuickWidget *text = new QQuickWidget(QUrl::fromLocalFile("qt/offroad/text_view.qml"), this);
+  text->setResizeMode(QQuickWidget::SizeRootObjectToView);
+  text->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+  text->setAttribute(Qt::WA_AlwaysStackOnTop);
+  text->setClearColor(Qt::transparent);
+
+  text->rootContext()->setContextProperty("font_size", 55);
+
+  QString text_view = util::read_file("../assets/offroad/tc.html").c_str();
+  text->rootContext()->setContextProperty("text_view", text_view);
+
+  main_layout->addWidget(text);
 
   // TODO: add decline page
   QHBoxLayout* buttons = new QHBoxLayout;
@@ -75,41 +80,17 @@ QWidget* OnboardingWindow::terms_screen() {
   buttons->addWidget(new QPushButton("Decline"));
   buttons->addSpacing(50);
 
-  QPushButton *accept_btn = new QPushButton("Scroll to accept");
+  accept_btn = new QPushButton("Scroll to accept");
   accept_btn->setEnabled(false);
   buttons->addWidget(accept_btn);
   QObject::connect(accept_btn, &QPushButton::released, [=]() {
-    Params().write_db_value("HasAcceptedTerms", current_terms_version);
-    updateActiveScreen();
+    emit acceptedTerms();
   });
 
-  // TODO: tune the scrolling
-  auto sb = terms_text->verticalScrollBar();
-#ifdef QCOM2
-  sb->setStyleSheet(R"(
-    QScrollBar {
-      width: 150px;
-      background: grey;
-    }
-    QScrollBar::handle {
-      background-color: white;
-    }
-    QScrollBar::add-line, QScrollBar::sub-line{
-      width: 0;
-      height: 0;
-    }
-  )");
-#else
-  QScroller::grabGesture(terms_text, QScroller::TouchGesture);
-  terms_text->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-#endif
-  QObject::connect(sb, &QScrollBar::valueChanged, [sb, accept_btn]() {
-    accept_btn->setEnabled(accept_btn->isEnabled() || (sb->value() == sb->maximum()));
-  });
-
-  QWidget *widget = new QWidget;
-  widget->setLayout(main_layout);
-  widget->setStyleSheet(R"(
+  QObject *obj = (QObject*)text->rootObject();
+  QObject::connect(obj, SIGNAL(qmlSignal()), SLOT(enableAccept()));
+  setLayout(main_layout);
+  setStyleSheet(R"(
     * {
       font-size: 50px;
     }
@@ -119,15 +100,18 @@ QWidget* OnboardingWindow::terms_screen() {
       background-color: #292929;
     }
   )");
+}
 
-  return widget;
+void TermsPage::enableAccept(){
+  accept_btn->setText("Accept");
+  accept_btn->setEnabled(true);
+  return;
 }
 
 void OnboardingWindow::updateActiveScreen() {
-  Params params = Params();
-
   bool accepted_terms = params.get("HasAcceptedTerms", false).compare(current_terms_version) == 0;
   bool training_done = params.get("CompletedTrainingVersion", false).compare(current_training_version) == 0;
+
   if (!accepted_terms) {
     setCurrentIndex(0);
   } else if (!training_done) {
@@ -138,19 +122,17 @@ void OnboardingWindow::updateActiveScreen() {
 }
 
 OnboardingWindow::OnboardingWindow(QWidget *parent) : QStackedWidget(parent) {
-  Params params = Params();
+  params = Params();
   current_terms_version = params.get("TermsVersion", false);
   current_training_version = params.get("TrainingVersion", false);
-  bool accepted_terms = params.get("HasAcceptedTerms", false).compare(current_terms_version) == 0;
-  bool training_done = params.get("CompletedTrainingVersion", false).compare(current_training_version) == 0;
 
-  // TODO: fix this, training guide is slow
-  // Don't initialize widgets unless neccesary.
-  if (accepted_terms && training_done) {
-    return;
-  }
+  TermsPage* terms = new TermsPage(this);
+  addWidget(terms);
 
-  addWidget(terms_screen());
+  connect(terms, &TermsPage::acceptedTerms, [=](){
+    Params().write_db_value("HasAcceptedTerms", current_terms_version);
+    updateActiveScreen();
+  });
 
   TrainingGuide* tr = new TrainingGuide(this);
   connect(tr, &TrainingGuide::completedTraining, [=](){

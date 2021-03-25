@@ -12,9 +12,7 @@ from common.basedir import BASEDIR
 from common.params import Params
 from common.spinner import Spinner
 from common.text_window import TextWindow
-from selfdrive.hardware import EON, HARDWARE
-from selfdrive.hardware.eon.apk import (pm_apply_packages, start_offroad,
-                                        update_apks)
+from selfdrive.hardware import HARDWARE
 from selfdrive.manager.build import MAX_BUILD_PROGRESS, PREBUILT
 from selfdrive.manager.helpers import unblock_stdout
 from selfdrive.manager.process import ensure_running
@@ -30,6 +28,7 @@ def manager_init(spinner=None):
 
   default_params = [
     ("CommunityFeaturesToggle", "0"),
+    ("EndToEndToggle", "0"),
     ("CompletedTrainingVersion", "0"),
     ("IsRHD", "0"),
     ("IsMetric", "0"),
@@ -37,13 +36,15 @@ def manager_init(spinner=None):
     ("HasAcceptedTerms", "0"),
     ("HasCompletedSetup", "0"),
     ("IsUploadRawEnabled", "1"),
-    ("IsLdwEnabled", "1"),
+    ("IsLdwEnabled", "0"),
     ("LastUpdateTime", datetime.datetime.utcnow().isoformat().encode('utf8')),
     ("OpenpilotEnabledToggle", "1"),
     ("VisionRadarToggle", "0"),
-    ("LaneChangeEnabled", "1"),
     ("IsDriverViewEnabled", "0"),
   ]
+
+  if params.get("RecordFrontLock", encoding='utf-8') == "1":
+    params.put("RecordFront", "1")
 
   # set unset params
   for k, v in default_params:
@@ -56,9 +57,6 @@ def manager_init(spinner=None):
 
   if params.get("Passive") is None:
     raise Exception("Passive must be set to continue")
-
-  if EON:
-    update_apks()
 
   os.umask(0)  # Make sure we can create files with 777 permissions
 
@@ -86,13 +84,6 @@ def manager_init(spinner=None):
   crash.bind_user(id=dongle_id)
   crash.bind_extra(version=version, dirty=dirty, device=HARDWARE.get_device_type())
 
-  # ensure shared libraries are readable by apks
-  if EON:
-    os.chmod(BASEDIR, 0o755)
-    os.chmod("/dev/shm", 0o777)
-    os.chmod(os.path.join(BASEDIR, "cereal"), 0o755)
-    os.chmod(os.path.join(BASEDIR, "cereal", "libmessaging_shared.so"), 0o755)
-
 
 def manager_prepare(spinner=None):
   # build all processes
@@ -107,9 +98,6 @@ def manager_prepare(spinner=None):
 
 
 def manager_cleanup():
-  if EON:
-    pm_apply_packages('disable')
-
   for p in managed_processes.values():
     p.stop()
 
@@ -128,11 +116,6 @@ def manager_thread(spinner=None):
     ignore.append("pandad")
   if os.getenv("BLOCK") is not None:
     ignore += os.getenv("BLOCK").split(",")
-
-  # start offroad
-  if EON and "QT" not in os.environ:
-    pm_apply_packages('enable')
-    start_offroad()
 
   ensure_running(managed_processes.values(), started=False, not_run=ignore)
   if spinner:  # close spinner when ui has started

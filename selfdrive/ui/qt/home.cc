@@ -6,12 +6,10 @@
 
 #include <QDateTime>
 #include <QHBoxLayout>
-#include <QLayout>
 #include <QMouseEvent>
-#include <QStackedLayout>
 #include <QVBoxLayout>
-#include <QWidget>
 
+#include "common/util.h"
 #include "common/params.h"
 #include "common/timing.h"
 #include "common/swaglog.h"
@@ -31,37 +29,28 @@
 // HomeWindow: the container for the offroad (OffroadHome) and onroad (GLWindow) UIs
 
 HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
-  layout = new QGridLayout;
-  layout->setMargin(0);
+  layout = new QStackedLayout();
+  layout->setStackingMode(QStackedLayout::StackAll);
 
   // onroad UI
   glWindow = new GLWindow(this);
-  layout->addWidget(glWindow, 0, 0);
+  layout->addWidget(glWindow);
 
   // draw offroad UI on top of onroad UI
   home = new OffroadHome();
-  layout->addWidget(home, 0, 0);
+  layout->addWidget(home);
 
-  QObject::connect(glWindow, SIGNAL(offroadTransition(bool)), this, SLOT(setVisibility(bool)));
+  QObject::connect(glWindow, SIGNAL(offroadTransition(bool)), home, SLOT(setVisible(bool)));
   QObject::connect(glWindow, SIGNAL(offroadTransition(bool)), this, SIGNAL(offroadTransition(bool)));
   QObject::connect(glWindow, SIGNAL(screen_shutoff()), this, SIGNAL(closeSettings()));
   QObject::connect(this, SIGNAL(openSettings()), home, SLOT(refresh()));
 
   setLayout(layout);
-  setStyleSheet(R"(
-    * {
-      color: white;
-    }
-  )");
-}
-
-void HomeWindow::setVisibility(bool offroad) {
-  home->setVisible(offroad);
 }
 
 void HomeWindow::mousePressEvent(QMouseEvent* e) {
   UIState* ui_state = &glWindow->ui_state;
-  if (GLWindow::ui_state.scene.started && GLWindow::ui_state.scene.driver_view) {
+  if (GLWindow::ui_state.scene.driver_view) {
     Params().write_db_value("IsDriverViewEnabled", "0", 1);
     return;
   }
@@ -73,7 +62,7 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
     emit openSettings();
   }
 
-  // Vision click
+  // Handle sidebar collapsing
   if (ui_state->scene.started && (e->x() >= ui_state->viz_rect.x - bdr_s)) {
     ui_state->sidebar_collapsed = !ui_state->sidebar_collapsed;
   }
@@ -91,17 +80,19 @@ OffroadHome::OffroadHome(QWidget* parent) : QWidget(parent) {
 
   date = new QLabel();
   date->setStyleSheet(R"(font-size: 55px;)");
-  header_layout->addWidget(date, 0, Qt::AlignTop | Qt::AlignLeft);
-
-  QLabel* version = new QLabel(QString::fromStdString("openpilot v" + Params().get("Version")));
-  version->setStyleSheet(R"(font-size: 45px;)");
-  header_layout->addWidget(version, 0, Qt::AlignTop | Qt::AlignRight);
-
-  main_layout->addLayout(header_layout);
+  header_layout->addWidget(date, 0, Qt::AlignHCenter | Qt::AlignLeft);
 
   alert_notification = new QPushButton();
+  alert_notification->setVisible(false);
   QObject::connect(alert_notification, SIGNAL(released()), this, SLOT(openAlerts()));
-  main_layout->addWidget(alert_notification, 0, Qt::AlignTop | Qt::AlignRight);
+  header_layout->addWidget(alert_notification, 0, Qt::AlignHCenter | Qt::AlignRight);
+
+  std::string brand = Params().read_db_bool("Passive") ? "dashcam" : "openpilot";
+  QLabel* version = new QLabel(QString::fromStdString(brand + " v" + Params().get("Version")));
+  version->setStyleSheet(R"(font-size: 55px;)");
+  header_layout->addWidget(version, 0, Qt::AlignHCenter | Qt::AlignRight);
+
+  main_layout->addLayout(header_layout);
 
   // main content
   main_layout->addSpacing(25);
@@ -110,10 +101,11 @@ OffroadHome::OffroadHome(QWidget* parent) : QWidget(parent) {
   QHBoxLayout* statsAndSetup = new QHBoxLayout();
 
   DriveStats* drive = new DriveStats;
-  drive->setFixedSize(1000, 800);
+  drive->setFixedSize(800, 800);
   statsAndSetup->addWidget(drive);
 
   SetupWidget* setup = new SetupWidget;
+  //setup->setFixedSize(700, 700);
   statsAndSetup->addWidget(setup);
 
   QWidget* statsAndSetupWidget = new QWidget();
@@ -135,7 +127,11 @@ OffroadHome::OffroadHome(QWidget* parent) : QWidget(parent) {
   timer->start(10 * 1000);
 
   setLayout(main_layout);
-  setStyleSheet(R"(background-color: none;)");
+  setStyleSheet(R"(
+    * {
+     color: white;
+    }
+  )");
 }
 
 void OffroadHome::openAlerts() {
@@ -158,6 +154,7 @@ void OffroadHome::refresh() {
 
   alerts_widget->refresh();
   if (!alerts_widget->alerts.size() && !alerts_widget->updateAvailable) {
+    emit closeAlerts();
     alert_notification->setVisible(false);
     return;
   }
@@ -169,6 +166,9 @@ void OffroadHome::refresh() {
     alert_notification->setText(QString::number(alerts) + " ALERT" + (alerts == 1 ? "" : "S"));
   }
 
+  if (!alert_notification->isVisible() && !first_refresh) {
+    emit openAlerts();
+  }
   alert_notification->setVisible(true);
 
   // Red background for alerts, blue for update available
@@ -188,20 +188,39 @@ void OffroadHome::refresh() {
   alert_notification->setStyleSheet(style);
 }
 
+
+// GLWindow: the onroad UI
+
 static void handle_display_state(UIState* s, bool user_input) {
   static int awake_timeout = 0;
   awake_timeout = std::max(awake_timeout - 1, 0);
 
-  if (user_input || s->scene.ignition || s->scene.started) {
-    s->awake = true;
+  constexpr float accel_samples = 5*UI_FREQ;
+  static float accel_prev = 0., gyro_prev = 0.;
+
+  bool should_wake = s->scene.started || s->scene.ignition || user_input;
+  if (!should_wake) {
+    // tap detection while display is off
+    bool accel_trigger = abs(s->scene.accel_sensor - accel_prev) > 0.2;
+    bool gyro_trigger = abs(s->scene.gyro_sensor - gyro_prev) > 0.15;
+    should_wake = accel_trigger && gyro_trigger;
+    gyro_prev = s->scene.gyro_sensor;
+    accel_prev = (accel_prev * (accel_samples - 1) + s->scene.accel_sensor) / accel_samples;
+  }
+
+  if (should_wake) {
     awake_timeout = 30 * UI_FREQ;
-  } else if (awake_timeout == 0) {
-    s->awake = false;
+  } else if (awake_timeout > 0) {
+    should_wake = true;
+  }
+
+  // handle state transition
+  if (s->awake != should_wake) {
+    s->awake = should_wake;
+    Hardware::set_display_power(s->awake);
+    LOGD("setting display power %d", s->awake);
   }
 }
-
-
-// GLWindow: the onroad UI
 
 GLWindow::GLWindow(QWidget* parent) : QOpenGLWidget(parent) {
   timer = new QTimer(this);
@@ -282,6 +301,10 @@ void GLWindow::timerUpdate() {
   }
 
   handle_display_state(&ui_state, false);
+
+  // scale volume with speed
+  sound.volume = util::map_val(ui_state.scene.car_state.getVEgo(), 0.f, 20.f,
+                               Hardware::MIN_VOLUME, Hardware::MAX_VOLUME);
 
   ui_update(&ui_state);
   repaint();
