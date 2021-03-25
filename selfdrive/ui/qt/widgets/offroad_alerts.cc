@@ -72,7 +72,7 @@ void OffroadAlert::refresh() {
   parse_alerts();
   cleanStackedWidget(alerts_stack);
 
-  updateAvailable = Params().read_db_bool("UpdateAvailable");
+  updateAvailable = Params().getBool("UpdateAvailable");
   reboot_btn->setVisible(updateAvailable);
 
   QVBoxLayout *layout = new QVBoxLayout;
@@ -100,7 +100,7 @@ void OffroadAlert::refresh() {
 void OffroadAlert::parse_alerts() {
   alerts.clear();
   for (const QString &key : alert_keys) {
-    std::vector<char> bytes = Params().read_db_bytes(key.toStdString().c_str());
+    std::string bytes = Params().get(key.toStdString().c_str());
     if (bytes.size()) {
       QJsonDocument doc_par = QJsonDocument::fromJson(QByteArray(bytes.data(), bytes.size()));
       QJsonObject obj = doc_par.object();

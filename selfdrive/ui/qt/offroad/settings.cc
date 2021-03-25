@@ -62,7 +62,7 @@ QWidget * toggles_panel() {
                                            "In this mode openpilot will ignore lanelines and just drive how it thinks a human would.",
                                            "../assets/offroad/icon_road.png"));
 
-  bool record_lock = Params().read_db_bool("RecordFrontLock");
+  bool record_lock = Params().getBool("RecordFrontLock");
   record_toggle->setEnabled(!record_lock);
 
   QWidget *widget = new QWidget;
@@ -95,7 +95,7 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
 
   device_layout->addWidget(new ButtonControl("Driver Camera", "PREVIEW",
                                              "Preview the driver facing camera to help optimize device mounting position for best driver monitoring experience. (vehicle must be off)",
-                                             [=]() { Params().write_db_value("IsDriverViewEnabled", "1", 1); }));
+                                             [=]() { Params().put("IsDriverViewEnabled", true); }));
 
   device_layout->addWidget(horizontal_line());
 
@@ -104,18 +104,18 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
                                              "openpilot requires the device to be mounted within 4° left or right and within 5° up or down. openpilot is continuously calibrating, resetting is rarely required.",
                                              [=]() {
                                                if (ConfirmationDialog::confirm("Are you sure you want to reset calibration?")) {
-                                                 Params().delete_db_value("CalibrationParams");
+                                                 Params().remove("CalibrationParams");
                                                }
                                              }));
 
   device_layout->addWidget(horizontal_line());
 
-  QString brand = params.read_db_bool("Passive") ? "dashcam" : "openpilot";
+  QString brand = params.getBool("Passive") ? "dashcam" : "openpilot";
   device_layout->addWidget(new ButtonControl("Uninstall " + brand, "UNINSTALL",
                                              "",
                                              [=]() {
                                                if (ConfirmationDialog::confirm("Are you sure you want to uninstall?")) {
-                                                 Params().write_db_value("DoUninstall", "1");
+                                                 Params().put("DoUninstall", true);
                                                }
                                              }));
 
@@ -162,7 +162,7 @@ DeveloperPanel::DeveloperPanel(QWidget* parent) : QFrame(parent) {
 
 void DeveloperPanel::showEvent(QShowEvent *event) {
   Params params = Params();
-  std::string brand = params.read_db_bool("Passive") ? "dashcam" : "openpilot";
+  std::string brand = params.getBool("Passive") ? "dashcam" : "openpilot";
   QList<QPair<QString, std::string>> dev_params = {
     {"Version", brand + " v" + params.get("Version", false)},
     {"Git Branch", params.get("GitBranch", false)},

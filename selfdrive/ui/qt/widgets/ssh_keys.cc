@@ -27,7 +27,7 @@ SshControl::SshControl() : AbstractControl("SSH Keys", "Warning: This grants SSH
         getUserKeys(username);
       }
     } else {
-      Params().delete_db_value("GithubSshKeys");
+      Params().remove("GithubSshKeys");
       refresh();
     }
   });
@@ -79,7 +79,7 @@ void SshControl::parseResponse(){
     networkTimer->stop();
     QString response = reply->readAll();
     if (reply->error() == QNetworkReply::NoError && response.length()) {
-      Params().write_db_value("GithubSshKeys", response.toStdString());
+      Params().put("GithubSshKeys", response.toStdString());
     } else if(reply->error() == QNetworkReply::NoError){
       err = "Username '" + username + "' has no keys on GitHub";
     } else {

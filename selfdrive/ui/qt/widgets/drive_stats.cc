@@ -58,7 +58,7 @@ void DriveStats::parseResponse(QString response) {
     return;
   }
 
-  bool metric = Params().read_db_bool("IsMetric");
+  bool metric = Params().getBool("IsMetric");
 
   QJsonObject json = doc.object();
   auto all = json["all"].toObject();

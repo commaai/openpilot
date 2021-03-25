@@ -20,19 +20,6 @@
 #include "common/util.h"
 
 
-#if defined(QCOM) || defined(QCOM2)
-const std::string default_params_path = "/data/params";
-#else
-const std::string default_params_path = util::getenv_default("HOME", "/.comma/params", "/data/params");
-#endif
-
-#if defined(QCOM) || defined(QCOM2)
-const std::string persistent_params_path = "/persist/comma/params";
-#else
-const std::string persistent_params_path = default_params_path;
-#endif
-
-
 volatile sig_atomic_t params_do_exit = 0;
 void params_sig_handler(int signal) {
   params_do_exit = 1;
@@ -78,20 +65,20 @@ static int ensure_dir_exists(std::string path) {
   return mkdir_p(path.c_str());
 }
 
-
-Params::Params(bool persistent_param){
-  params_path = persistent_param ? persistent_params_path : default_params_path;
+Params::Params(bool persistent_param) {
+#if defined(QCOM) || defined(QCOM2)
+  params_path = !persistent_param ? "/data/params" : "/persist/comma/params";
+#else
+  static const std::string env_home = getenv("HOME");
+  params_path = !env_home.empty() ? env_home + "/.comma/params" : "/data/params";
+#endif
 }
 
 Params::Params(std::string path) {
   params_path = path;
 }
 
-int Params::write_db_value(std::string key, std::string dat){
-  return write_db_value(key.c_str(), dat.c_str(), dat.length());
-}
-
-int Params::write_db_value(const char* key, const char* value, size_t value_size) {
+int Params::put(const std::string &key, const char *value, size_t value_size) {
   // Information about safely and atomically writing a file: https://lwn.net/Articles/457667/
   // 1) Create temp file
   // 2) Write data to temp file
@@ -213,7 +200,7 @@ cleanup:
   return result;
 }
 
-int Params::delete_db_value(std::string key) {
+int Params::remove(const std::string &key) {
   int lock_fd = -1;
   int result;
   std::string path;
@@ -251,55 +238,30 @@ cleanup:
   return result;
 }
 
-std::string Params::get(std::string key, bool block){
-  char* value;
-  size_t size;
-  int r;
-
-  if (block) {
-    r = read_db_value_blocking((const char*)key.c_str(), &value, &size);
+std::string Params::get(const std::string &key, bool block) {
+  if (!block) {
+    return util::read_file(keyFile(key));
   } else {
-    r = read_db_value((const char*)key.c_str(), &value, &size);
-  }
+    // blocking read until successful
+    params_do_exit = 0;
+    void (*prev_handler_sigint)(int) = std::signal(SIGINT, params_sig_handler);
+    void (*prev_handler_sigterm)(int) = std::signal(SIGTERM, params_sig_handler);
 
-  if (r == 0){
-    std::string s(value, size);
-    free(value);
-    return s;
-  } else {
-    return "";
-  }
-}
-
-int Params::read_db_value(const char* key, char** value, size_t* value_sz) {
-  std::string path = params_path + "/d/" + std::string(key);
-  *value = static_cast<char*>(read_file(path.c_str(), value_sz));
-  if (*value == NULL) {
-    return -22;
-  }
-  return 0;
-}
-
-int Params::read_db_value_blocking(const char* key, char** value, size_t* value_sz) {
-  params_do_exit = 0;
-  void (*prev_handler_sigint)(int) = std::signal(SIGINT, params_sig_handler);
-  void (*prev_handler_sigterm)(int) = std::signal(SIGTERM, params_sig_handler);
-
-  while (!params_do_exit) {
-    const int result = read_db_value(key, value, value_sz);
-    if (result == 0) {
-      break;
-    } else {
-      util::sleep_for(100); // 0.1 s
+    std::string value;
+    while (!params_do_exit) {
+      if (value = util::read_file(keyFile(key)); value.size() > 0) {
+        break;
+      }
+      util::sleep_for(100);  // 0.1 s
     }
-  }
 
-  std::signal(SIGINT, prev_handler_sigint);
-  std::signal(SIGTERM, prev_handler_sigterm);
-  return params_do_exit; // Return 0 if we had no interrupt
+    std::signal(SIGINT, prev_handler_sigint);
+    std::signal(SIGTERM, prev_handler_sigterm);
+    return value;
+  }
 }
 
-int Params::read_db_all(std::map<std::string, std::string> *params) {
+int Params::getAll(std::map<std::string, std::string> *params) {
   int err = 0;
 
   std::string lock_path = params_path + "/.lock";
@@ -333,21 +295,4 @@ int Params::read_db_all(std::map<std::string, std::string> *params) {
 
   close(lock_fd);
   return 0;
-}
-
-std::vector<char> Params::read_db_bytes(const char* param_name) {
-  std::vector<char> bytes;
-  char* value;
-  size_t sz;
-  int result = read_db_value(param_name, &value, &sz);
-  if (result == 0) {
-    bytes.assign(value, value+sz);
-    free(value);
-  }
-  return bytes;
-}
-
-bool Params::read_db_bool(const char* param_name) {
-  std::vector<char> bytes = read_db_bytes(param_name);
-  return bytes.size() > 0 and bytes[0] == '1';
 }

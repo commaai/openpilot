@@ -51,7 +51,7 @@ HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
 void HomeWindow::mousePressEvent(QMouseEvent* e) {
   UIState* ui_state = &glWindow->ui_state;
   if (GLWindow::ui_state.scene.driver_view) {
-    Params().write_db_value("IsDriverViewEnabled", "0", 1);
+    Params().put("IsDriverViewEnabled", false);
     return;
   }
 
@@ -87,7 +87,7 @@ OffroadHome::OffroadHome(QWidget* parent) : QWidget(parent) {
   QObject::connect(alert_notification, SIGNAL(released()), this, SLOT(openAlerts()));
   header_layout->addWidget(alert_notification, 0, Qt::AlignHCenter | Qt::AlignRight);
 
-  std::string brand = Params().read_db_bool("Passive") ? "dashcam" : "openpilot";
+  std::string brand = Params().getBool("Passive") ? "dashcam" : "openpilot";
   QLabel* version = new QLabel(QString::fromStdString(brand + " v" + Params().get("Version")));
   version->setStyleSheet(R"(font-size: 55px;)");
   header_layout->addWidget(version, 0, Qt::AlignHCenter | Qt::AlignRight);
@@ -229,12 +229,8 @@ GLWindow::GLWindow(QWidget* parent) : QOpenGLWidget(parent) {
   backlight_timer = new QTimer(this);
   QObject::connect(backlight_timer, SIGNAL(timeout()), this, SLOT(backlightUpdate()));
 
-  int result = read_param(&brightness_b, "BRIGHTNESS_B", true);
-  result += read_param(&brightness_m, "BRIGHTNESS_M", true);
-  if (result != 0) {
-    brightness_b = 10.0;
-    brightness_m = 0.1;
-  }
+  brightness_b = Params(true).get<float>("BRIGHTNESS_B").value_or(10.0);
+  brightness_m = Params(true).get<float>("BRIGHTNESS_M").value_or(0.1);
   smooth_brightness = BACKLIGHT_OFFROAD;
 }
 
