@@ -13,6 +13,7 @@ from common.filter_simple import FirstOrderFilter
 from common.numpy_fast import clip, interp
 from common.params import Params
 from common.realtime import DT_TRML, sec_since_boot
+from common.dict_helpers import strip_deprecated_keys
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
 from selfdrive.hardware import EON, TICI, HARDWARE
 from selfdrive.loggerd.config import get_available_percent
@@ -417,9 +418,9 @@ def thermald_thread():
       location = messaging.recv_sock(location_sock)
       cloudlog.event("STATUS_PACKET",
                      count=count,
-                     pandaState=(pandaState.to_dict() if pandaState else None),
-                     location=(location.gpsLocationExternal.to_dict() if location else None),
-                     deviceState=msg.to_dict())
+                     pandaState=(strip_deprecated_keys(pandaState.to_dict()) if pandaState else None),
+                     location=(strip_deprecated_keys(location.gpsLocationExternal.to_dict()) if location else None),
+                     deviceState=strip_deprecated_keys(msg.to_dict()))
 
     count += 1
 

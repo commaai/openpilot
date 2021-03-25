@@ -41,13 +41,9 @@ echo "#define COMMA_VERSION \"$VERSION-release\"" > selfdrive/common/version.h
 git commit -m "openpilot v$VERSION"
 
 # Build signed panda firmware
-pushd panda/board/
-cp -r /tmp/pandaextra /data/openpilot/
-RELEASE=1 make obj/panda.bin
-mv obj/panda.bin /tmp/panda.bin
-make clean
-mv /tmp/panda.bin obj/panda.bin.signed
-rm -rf /data/openpilot/pandaextra
+pushd panda/
+CERT=/tmp/pandaextra/certs/release RELEASE=1 scons
+mv board/obj/panda.bin.signed /tmp/panda.bin.signed
 popd
 
 # Build stuff
@@ -65,7 +61,12 @@ find . -name '*.o' -delete
 find . -name '*.os' -delete
 find . -name '*.pyc' -delete
 find . -name '__pycache__' -delete
+rm -rf panda/board panda/certs panda/crypto
 rm -rf .sconsign.dblite Jenkinsfile release/
+
+# Move back signed panda fw
+mkdir -p panda/board/obj
+mv /tmp/panda.bin.signed panda/board/obj/panda.bin.signed
 
 # Restore phonelibs
 git checkout phonelibs/

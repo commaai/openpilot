@@ -2,6 +2,7 @@
 
 MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   main_layout = new QStackedLayout;
+  main_layout->setMargin(0);
 
   homeWindow = new HomeWindow(this);
   main_layout->addWidget(homeWindow);
@@ -12,8 +13,6 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   onboardingWindow = new OnboardingWindow(this);
   main_layout->addWidget(onboardingWindow);
 
-  main_layout->setMargin(0);
-  setLayout(main_layout);
   QObject::connect(homeWindow, SIGNAL(openSettings()), this, SLOT(openSettings()));
   QObject::connect(homeWindow, SIGNAL(closeSettings()), this, SLOT(closeSettings()));
   QObject::connect(homeWindow, SIGNAL(offroadTransition(bool)), this, SLOT(offroadTransition(bool)));
@@ -25,6 +24,7 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   onboardingWindow->updateActiveScreen();
 
   // no outline to prevent the focus rectangle
+  setLayout(main_layout);
   setStyleSheet(R"(
     * {
       font-family: Inter;

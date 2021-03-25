@@ -9,6 +9,10 @@ source "$BASEDIR/launch_env.sh"
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 
 function two_init {
+
+  export QT_QPA_EGLFS_PHYSICAL_WIDTH=151
+  export QT_QPA_EGLFS_PHYSICAL_HEIGHT=74
+
   # Wifi scan
   wpa_cli IFNAME=wlan0 SCAN
 

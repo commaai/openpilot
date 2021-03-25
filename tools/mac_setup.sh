@@ -20,6 +20,7 @@ brew "openssl"
 brew "pyenv"
 brew "qt@5"
 brew "zeromq"
+cask "gcc-arm-embedded"
 EOS
 
 if [[ $SHELL == "/bin/zsh" ]]; then

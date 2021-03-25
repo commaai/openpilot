@@ -264,9 +264,9 @@ Export('envCython')
 
 # Qt build environment
 qt_env = env.Clone()
-qt_modules = ["Widgets", "Gui", "Core", "Network", "Concurrent", "Multimedia"]
+qt_modules = ["Widgets", "Gui", "Core", "Network", "Concurrent", "Multimedia", "Quick", "Qml", "QuickWidgets"]
 if arch != "aarch64":
-  qt_modules += ["DBus", "WebEngine", "WebEngineWidgets"]
+  qt_modules += ["DBus"]
 
 qt_libs = []
 if arch == "Darwin":
@@ -307,6 +307,9 @@ qt_flags = [
   "-DQT_NO_DEBUG",
   "-DQT_WIDGETS_LIB",
   "-DQT_GUI_LIB",
+  "-DQT_QUICK_LIB",
+  "-DQT_QUICKWIDGETS_LIB",
+  "-DQT_QML_LIB",
   "-DQT_CORE_LIB"
 ]
 qt_env['CXXFLAGS'] += qt_flags
@@ -357,6 +360,7 @@ Export('common', 'gpucommon', 'visionipc')
 # Build openpilot
 
 SConscript(['cereal/SConscript'])
+SConscript(['panda/board/SConscript'])
 SConscript(['opendbc/can/SConscript'])
 
 SConscript(['phonelibs/SConscript'])

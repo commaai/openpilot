@@ -5,13 +5,11 @@ import json
 import numpy as np
 
 import cereal.messaging as messaging
-from cereal import car, log
+from cereal import car
 from common.params import Params, put_nonblocking
 from selfdrive.locationd.models.car_kf import CarKalman, ObservationKind, States
 from selfdrive.locationd.models.constants import GENERATED_DIR
 from selfdrive.swaglog import cloudlog
-
-KalmanStatus = log.LiveLocationKalman.Status
 
 
 class ParamsLearner:
@@ -38,9 +36,10 @@ class ParamsLearner:
 
       yaw_rate = msg.angularVelocityCalibrated.value[2]
       yaw_rate_std = msg.angularVelocityCalibrated.std[2]
+      yaw_rate_valid = msg.angularVelocityCalibrated.valid
 
       if self.active:
-        if msg.inputsOK and msg.posenetOK and msg.status == KalmanStatus.valid:
+        if msg.inputsOK and msg.posenetOK and yaw_rate_valid:
           self.kf.predict_and_observe(t,
                                       ObservationKind.ROAD_FRAME_YAW_RATE,
                                       np.array([[[-yaw_rate]]]),
@@ -89,9 +88,10 @@ def main(sm=None, pm=None):
       params = None
 
   try:
-    if params is not None and not all((
-        abs(params.get('angleOffsetAverageDeg')) < 10.0,
-        min_sr <= params['steerRatio'] <= max_sr)):
+    angle_offset_sane = abs(params.get('angleOffsetAverageDeg')) < 10.0
+    steer_ratio_sane = min_sr <= params['steerRatio'] <= max_sr
+    params_sane = angle_offset_sane and steer_ratio_sane
+    if params is not None and not params_sane:
       cloudlog.info(f"Invalid starting values found {params}")
       params = None
   except Exception as e:

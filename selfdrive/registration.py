@@ -7,6 +7,7 @@ import jwt
 from datetime import datetime, timedelta
 from common.api import api_get
 from common.params import Params
+from common.spinner import Spinner
 from common.file_helpers import mkdirs_exists_ok
 from common.basedir import PERSIST
 from selfdrive.hardware import HARDWARE
@@ -15,7 +16,7 @@ from selfdrive.version import version, terms_version, training_version, get_git_
                               get_git_branch, get_git_remote
 
 
-def register(spinner=None):
+def register(show_spinner=False):
   params = Params()
   params.put("Version", version)
   params.put("TermsVersion", terms_version)
@@ -51,7 +52,8 @@ def register(spinner=None):
   needs_registration = needs_registration or dongle_id is None
 
   if needs_registration:
-    if spinner is not None:
+    if show_spinner:
+      spinner = Spinner()
       spinner.update("registering device")
 
     # Create registration token, in the future, this key will make JWTs directly
@@ -85,7 +87,11 @@ def register(spinner=None):
         cloudlog.exception("failed to authenticate")
         time.sleep(1)
 
+    if show_spinner:
+      spinner.close()
+
   return dongle_id
+
 
 if __name__ == "__main__":
   print(register())

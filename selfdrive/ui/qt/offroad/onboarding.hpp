@@ -4,7 +4,10 @@
 #include <QStackedWidget>
 #include <QTextEdit>
 #include <QMouseEvent>
+#include <QPushButton>
 #include <QImage>
+
+#include "selfdrive/common/params.h"
 
 class TrainingGuide : public QFrame {
   Q_OBJECT
@@ -28,6 +31,23 @@ signals:
   void completedTraining();
 };
 
+
+class TermsPage : public QFrame {
+  Q_OBJECT
+
+public:
+  explicit TermsPage(QWidget *parent = 0);
+
+private:
+  QPushButton *accept_btn;
+
+public slots:
+  void enableAccept();
+
+signals:
+  void acceptedTerms();
+};
+
 class OnboardingWindow : public QStackedWidget {
   Q_OBJECT
 
@@ -35,12 +55,9 @@ public:
   explicit OnboardingWindow(QWidget *parent = 0);
 
 private:
+  Params params;
   std::string current_terms_version;
   std::string current_training_version;
-
-  QTextEdit *terms_text;
-  QWidget *terms_screen();
-  QWidget *training_screen();
 
 signals:
   void onboardingDone();

@@ -27,7 +27,7 @@ class TestPlotJuggler(unittest.TestCase):
 
     # Wait max 60 seconds for the "Done reading Rlog data" signal from the plugin
     output = "\n"
-    with Timeout(60, error_msg=output):
+    with Timeout(120, error_msg=output):
       while output.splitlines()[-1] != "Done reading Rlog data":
         output += p.stderr.readline().decode("utf-8")
 
