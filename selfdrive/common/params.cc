@@ -110,6 +110,18 @@ static bool ensure_params_path(const std::string &param_path, const std::string 
   return chmod(key_path.c_str(), 0777) == 0;
 }
 
+class LockFile {
+public:  
+  int lock(const std::string& lock_file, int operation) {
+    assert(fd_ == -1);
+    fd_ = open(lock_file.c_str(), O_CREAT, 0775);
+    if (fd_ < 0) return -1;
+    return flock(fd_, operation);
+  }
+  ~LockFile() { if (fd_ != -1) close(fd_); }
+  int fd_ = -1;
+};
+
 Params::Params(bool persistent_param) : Params(persistent_param ? persistent_params_path : default_params_path) {}
 
 Params::Params(const std::string &path) : params_path(path) {
@@ -126,7 +138,7 @@ int Params::put(const char* key, const char* value, size_t value_size) {
   // 4) rename the temp file to the real name
   // 5) fsync() the containing directory
 
-  int lock_fd = -1;
+  LockFile lock_file;
   int tmp_fd = -1;
   int result;
   std::string path;
@@ -142,15 +154,11 @@ int Params::put(const char* key, const char* value, size_t value_size) {
     goto cleanup;
   }
 
-  // Build lock path
-  path = params_path + "/.lock";
-  lock_fd = open(path.c_str(), O_CREAT, 0775);
-
   // Build key path
   path = params_path + "/d/" + std::string(key);
 
   // Take lock.
-  result = flock(lock_fd, LOCK_EX);
+  result = lock_file.lock(params_path + "/.lock", LOCK_EX);
   if (result < 0) {
     goto cleanup;
   }
@@ -181,10 +189,6 @@ int Params::put(const char* key, const char* value, size_t value_size) {
   }
 
 cleanup:
-  // Release lock.
-  if (lock_fd >= 0) {
-    close(lock_fd);
-  }
   if (tmp_fd >= 0) {
     if (result < 0) {
       remove(tmp_path.c_str());
@@ -195,41 +199,20 @@ cleanup:
 }
 
 int Params::remove(const char *key) {
-  int lock_fd = -1;
-  int result;
-  std::string path;
-
-  // Build lock path, and open lockfile
-  path = params_path + "/.lock";
-  lock_fd = open(path.c_str(), O_CREAT, 0775);
-
-  // Take lock.
-  result = flock(lock_fd, LOCK_EX);
-  if (result < 0) {
-    goto cleanup;
+  LockFile lock_file;
+  if (lock_file.lock(params_path + "/.lock", LOCK_EX) < 0) {
+    return -1;
   }
-
   // Delete value.
-  path = params_path + "/d/" + key;
-  result = ::remove(path.c_str());
+  std::string path = params_path + "/d/" + key;
+  int result = ::remove(path.c_str());
   if (result != 0) {
     result = ERR_NO_VALUE;
-    goto cleanup;
+    return result;
   }
-
   // fsync parent directory
   path = params_path + "/d";
-  result = fsync_dir(path.c_str());
-  if (result < 0) {
-    goto cleanup;
-  }
-
-cleanup:
-  // Release lock.
-  if (lock_fd >= 0) {
-    close(lock_fd);
-  }
-  return result;
+  return fsync_dir(path.c_str());
 }
 
 std::string Params::get(const char *key, bool block) {
@@ -257,23 +240,14 @@ std::string Params::get(const char *key, bool block) {
 }
 
 int Params::read_db_all(std::map<std::string, std::string> *params) {
-  int err = 0;
-
-  std::string lock_path = params_path + "/.lock";
-
-  int lock_fd = open(lock_path.c_str(), 0);
-  if (lock_fd < 0) return -1;
-
-  err = flock(lock_fd, LOCK_SH);
-  if (err < 0) {
-    close(lock_fd);
-    return err;
+  LockFile lock_file;
+  if (lock_file.lock(params_path + "/.lock", LOCK_SH) < 0) {
+    return -1;
   }
 
   std::string key_path = params_path + "/d";
   DIR *d = opendir(key_path.c_str());
   if (!d) {
-    close(lock_fd);
     return -1;
   }
 
@@ -287,7 +261,5 @@ int Params::read_db_all(std::map<std::string, std::string> *params) {
   }
 
   closedir(d);
-
-  close(lock_fd);
   return 0;
 }
