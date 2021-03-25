@@ -164,7 +164,8 @@ def init_overlay() -> None:
 
   cloudlog.info("preparing new safe staging area")
 
-  Params().put("UpdateAvailable", "0")
+  params = Params()
+  params.put("UpdateAvailable", "0")
   set_consistent_flag(False)
   dismount_overlay()
   if os.path.isdir(STAGING_ROOT):
