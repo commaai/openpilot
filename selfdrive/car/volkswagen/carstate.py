@@ -256,14 +256,11 @@ class CarState(CarStateBase):
 class MqbExtraSignals:
   # Additional signal and message lists to dynamically add for optional or bus-portable controllers
   acc_radar = ([
-    ("ACC_Status_ACC", "ACC_06", 0),                # ACC engagement status
-    ("ACC_Typ", "ACC_06", 0),                       # ACC type (follow to stop, stop&go)
     ("ACC_Wunschgeschw", "ACC_02", 0),              # ACC set speed
     ("AWV2_Freigabe", "ACC_10", 0),                 # FCW brake jerk release
     ("ANB_Teilbremsung_Freigabe", "ACC_10", 0),     # AEB partial braking release
     ("ANB_Zielbremsung_Freigabe", "ACC_10", 0),     # AEB target braking release
   ], [
-    ("ACC_06", 50),                                 # From J428 ACC radar control module
     ("ACC_10", 50),                                 # From J428 ACC radar control module
     ("ACC_02", 17),                                 # From J428 ACC radar control module
   ])
