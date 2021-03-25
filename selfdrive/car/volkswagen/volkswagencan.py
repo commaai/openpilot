@@ -27,8 +27,8 @@ def create_mqb_hud_control(packer, bus, hca_enabled, steering_pressed, hud_alert
   values = {
     "LDW_Status_LED_gelb": 1 if hca_enabled and steering_pressed else 0,
     "LDW_Status_LED_gruen": 1 if hca_enabled and not steering_pressed else 0,
-    "LDW_SW_Info_links": left_lane_hud,
-    "LDW_SW_Info_rechts": right_lane_hud,
+    "LDW_Lernmodus_links": left_lane_hud,
+    "LDW_Lernmodus_rechts": right_lane_hud,
     "LDW_Texte": hud_alert,
     "LDW_SW_Warnung_links": ldw_lane_warning_left,
     "LDW_SW_Warnung_rechts": ldw_lane_warning_right,
