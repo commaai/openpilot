@@ -28,6 +28,7 @@ keys = {
   b"DisableUpdates": [TxType.PERSISTENT],
   b"DoUninstall": [TxType.CLEAR_ON_MANAGER_START],
   b"DongleId": [TxType.PERSISTENT],
+  b"GitDiff": [TxType.PERSISTENT],
   b"GitBranch": [TxType.PERSISTENT],
   b"GitCommit": [TxType.PERSISTENT],
   b"GitRemote": [TxType.PERSISTENT],
