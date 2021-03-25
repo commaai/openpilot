@@ -117,7 +117,7 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
 
   for(auto btn : buttons){
     device_layout->addWidget(horizontal_line());
-    QObject::connect(parent, SIGNAL(toggleButtons(bool)), btn, SLOT(toggleButton(bool)));
+    QObject::connect(parent, SIGNAL(enableButtons(bool)), btn, SLOT(setEnabled(bool)));
     device_layout->addWidget(btn);
   }
 
