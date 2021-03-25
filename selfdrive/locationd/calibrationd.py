@@ -7,11 +7,12 @@ and the image input into the neural network is not corrected for roll.
 '''
 
 import os
+import capnp
 import copy
 import json
 import numpy as np
 import cereal.messaging as messaging
-from cereal import car
+from cereal import car, log
 from common.params import Params, put_nonblocking
 from common.transformations.model import model_height
 from common.transformations.camera import get_view_frame_from_road_frame
@@ -75,6 +76,11 @@ class Calibrator():
 
     if param_put and calibration_params:
       try:
+        msg = log.Event.from_bytes(calibration_params)
+        rpy_init = list(msg.liveCalibration.rpyCalib)
+        valid_blocks = msg.liveCalibration.validBlocks
+      except (ValueError, capnp.lib.capnp.KjException):
+        # TODO: remove this after next release
         calibration_params = json.loads(calibration_params)
         rpy_init = calibration_params["calib_radians"]
         valid_blocks = calibration_params['valid_blocks']
@@ -128,9 +134,7 @@ class Calibrator():
 
     write_this_cycle = (self.idx == 0) and (self.block_idx % (INPUTS_WANTED//5) == 5)
     if self.param_put and write_this_cycle:
-      cal_params = {"calib_radians": list(self.rpy),
-                    "valid_blocks": int(self.valid_blocks)}
-      put_nonblocking("CalibrationParams", json.dumps(cal_params).encode('utf8'))
+      put_nonblocking("CalibrationParams", self.get_msg().to_bytes())
 
   def handle_v_ego(self, v_ego):
     self.v_ego = v_ego
