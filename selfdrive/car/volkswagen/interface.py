@@ -46,7 +46,7 @@ class CarInterface(CarInterfaceBase):
         ret.transmissionType = TransmissionType.manual
       cloudlog.info("Detected transmission type: %s", ret.transmissionType)
 
-      if 0x31e in fingerprint[1]:  # TSK_07 powertrain/convenience CAN message, we're hooked up at the CAN gateway
+      if 0x107 in fingerprint[1]:  # Motor_04 powertrain CAN message, we're hooked up at the CAN gateway
         ret.networkLocation = NetworkLocation.gateway
       else:  # We're hooked up at the LKAS camera
         ret.networkLocation = NetworkLocation.fwdCamera
