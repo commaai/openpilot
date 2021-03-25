@@ -50,9 +50,13 @@ MQB_LDW_MESSAGES = {
   "laneAssistDeactivated": 10,          # "Lane Assist deactivated." silent with persistent icon afterward
 }
 
+# Check the 7th and 8th characters of the VIN before adding a new CAR. If the
+# chassis code is already listed below, don't add a new CAR, just add to the
+# FW_VERSIONS for that existing CAR.
+
 class CAR:
-  GOLF = "VOLKSWAGEN GOLF"              # Chassis AU, 2013-2020, includes Golf, Alltrack, Sportwagen, GTI, GTI TCR, GTE, GTD, Clubsport, Golf R, e-Golf
-  AUDI_A3 = "AUDI A3"                   # Chassis 8V, 2013-2019, includes A3, A3 e-tron, A3 g-tron, S3, RS3
+  GOLF = "VOLKSWAGEN GOLF"              # Chassis 5G/AU/BA/BE, Mk7 VW Golf and variants
+  AUDI_A3 = "AUDI A3"                   # Chassis 8V/FF, Mk3 Audi A3 and variants
 
 FINGERPRINTS = {
   CAR.GOLF: [{
