@@ -14,6 +14,7 @@ public:
   Params(bool persistent_param = false);
   Params(std::string path);
 
+  int remove(const std::string& key);
   int getAll(std::map<std::string, std::string> *params);
   std::string get(const std::string& key, bool block = false);
 
@@ -42,6 +43,4 @@ public:
       return put(param_name, v.c_str(), v.length());
     }
   }
-  
-  int remove(const std::string& key);
 };
