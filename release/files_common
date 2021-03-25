@@ -348,6 +348,7 @@ selfdrive/ui/qt/offroad/*.cc
 selfdrive/ui/qt/offroad/*.hpp
 selfdrive/ui/qt/widgets/*.cc
 selfdrive/ui/qt/widgets/*.hpp
+selfdrive/ui/qt/spinner_aarch64
 
 selfdrive/camerad/SConscript
 selfdrive/camerad/main.cc
