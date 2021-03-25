@@ -1,5 +1,4 @@
 import os
-from time import time
 from pathlib import Path
 import logging
 from logging.handlers import BaseRotatingHandler
@@ -7,6 +6,7 @@ from logging.handlers import BaseRotatingHandler
 import zmq
 
 from common.logging_extra import SwagLogger, SwagFormatter, SwagLogFileFormatter
+from common.realtime import sec_since_boot
 from selfdrive.hardware import PC
 
 if PC:
@@ -28,12 +28,15 @@ class SwaglogRotatingFileHandler(BaseRotatingHandler):
     self.max_bytes = max_bytes
     self.backup_count = backup_count
     self.log_files = self.get_existing_logfiles()
+    log_indexes = [f.split(".")[-1] for f in self.log_files]
+    self.last_file_idx = max([int(i) for i in log_indexes if i.isdigit()] or [-1])
     self.last_rollover = None
     self.doRollover()
 
   def _open(self):
-    self.last_rollover = time()
-    next_filename = f"{self.base_filename}.{self.last_rollover}"
+    self.last_rollover = sec_since_boot()
+    self.last_file_idx += 1
+    next_filename = f"{self.base_filename}.{self.last_file_idx:010}"
     stream = open(next_filename, self.mode, encoding=self.encoding)
     self.log_files.insert(0, next_filename)
     return stream
@@ -49,7 +52,7 @@ class SwaglogRotatingFileHandler(BaseRotatingHandler):
 
   def shouldRollover(self, record):
     size_exceeded = self.max_bytes > 0 and self.stream.tell() >= self.max_bytes
-    time_exceeded = self.interval > 0 and self.last_rollover + self.interval <= time()
+    time_exceeded = self.interval > 0 and self.last_rollover + self.interval <= sec_since_boot()
     return size_exceeded or time_exceeded
 
   def doRollover(self):
