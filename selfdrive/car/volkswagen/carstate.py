@@ -232,30 +232,33 @@ class CarState(CarStateBase):
 
     if CP.networkLocation == NetworkLocation.fwdCamera:
       # Extended CAN devices other than the camera are here on CANBUS.pt
-      signals += MQB_SIGNALS.FWDRADAR[0] + MQB_SIGNALS.BSM[0]
-      checks += MQB_SIGNALS.FWDRADAR[1]  # FIXME: Add bsm conditional and checks[] when we have solid autodetection
+      # TODO: Add bsm checks[] when we have solid autodetection
+      signals += MqbExtraSignals.acc_radar[0] + MqbExtraSignals.bsm[0]
+      checks += MqbExtraSignals.acc_radar[1]
 
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, CANBUS.pt)
 
   @staticmethod
   def get_cam_can_parser(CP):
 
-    signals = MQB_SIGNALS.FWDCAMERA[0]  # FIXME: Add fwdCamera conditional and checks[] when we have solid autodetection
+    # TODO: Add fwd_camera checks[] when we have solid autodetection
+    signals = MqbExtraSignals.lkas_camera[0]
     checks = []
 
     if CP.networkLocation == NetworkLocation.gateway:
       # Extended CAN devices other than the camera are here on CANBUS.cam
-      signals += MQB_SIGNALS.FWDRADAR[0] + MQB_SIGNALS.BSM[0]
-      checks += MQB_SIGNALS.FWDRADAR[1]  # FIXME: Add bsm conditional and checks[] when we have solid autodetection
+      # TODO: Add bsm checks[] when we have solid autodetection
+      signals += MqbExtraSignals.acc_radar[0] + MqbExtraSignals.bsm[0]
+      checks += MqbExtraSignals.acc_radar
 
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, CANBUS.cam)
 
-class MQB_SIGNALS:
+class MqbExtraSignals:
   # Additional signal and message lists to dynamically add for optional or bus-portable controllers
-  FWDRADAR = ([
+  acc_radar = ([
     ("ACC_Status_ACC", "ACC_06", 0),                # ACC engagement status
     ("ACC_Typ", "ACC_06", 0),                       # ACC type (follow to stop, stop&go)
-    ("SetSpeed", "ACC_02", 0),                      # ACC set speed
+    ("ACC_Wunschgeschw", "ACC_02", 0),              # ACC set speed
     ("AWV2_Freigabe", "ACC_10", 0),                 # FCW brake jerk release
     ("ANB_Teilbremsung_Freigabe", "ACC_10", 0),     # AEB partial braking release
     ("ANB_Zielbremsung_Freigabe", "ACC_10", 0),     # AEB target braking release
@@ -264,7 +267,7 @@ class MQB_SIGNALS:
     ("ACC_10", 50),                                 # From J428 ACC radar control module
     ("ACC_02", 17),                                 # From J428 ACC radar control module
   ])
-  FWDCAMERA = ([
+  lkas_camera = ([
     ("LDW_SW_Warnung_links", "LDW_02", 0),          # Blind spot in warning mode on left side due to lane departure
     ("LDW_SW_Warnung_rechts", "LDW_02", 0),         # Blind spot in warning mode on right side due to lane departure
     ("LDW_Seite_DLCTLC", "LDW_02", 0),              # Direction of most likely lane departure (left or right)
@@ -273,7 +276,7 @@ class MQB_SIGNALS:
   ], [
     ("LDW_02", 10),                                 # From R242 Driver assistance camera
   ])
-  BSM = ([
+  bsm = ([
     ("SWA_Infostufe_SWA_li", "SWA_01", 0),          # Blind spot object info, left
     ("SWA_Warnung_SWA_li", "SWA_01", 0),            # Blind spot object warning, left
     ("SWA_Infostufe_SWA_re", "SWA_01", 0),          # Blind spot object info, right
