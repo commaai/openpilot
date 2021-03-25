@@ -256,14 +256,15 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   QObject::connect(close_btn, SIGNAL(released()), this, SIGNAL(closeSettings()));
 
   // setup panels
+  DevicePanel *device = new DevicePanel(this);
+  QObject::connect(device, SIGNAL(reviewTrainingGuide()), this, SIGNAL(reviewTrainingGuide()));
+
   QPair<QString, QWidget *> panels[] = {
-    {"Device", new DevicePanel(this)},
+    {"Device", device},
     {"Network", network_panel(this)},
     {"Toggles", toggles_panel()},
     {"Developer", new DeveloperPanel()},
   };
-
-  QObject::connect(panels[0].second, SIGNAL(reviewTrainingGuide()), this, SIGNAL(reviewTrainingGuide()));
 
   sidebar_layout->addSpacing(45);
   nav_btns = new QButtonGroup();
