@@ -68,6 +68,7 @@ class ManagerProcess(ABC):
   last_watchdog_time = 0
   watchdog_max_dt = None
   watchdog_seen = False
+  sigint_sent = False
 
   @abstractmethod
   def prepare(self):
@@ -101,16 +102,22 @@ class ManagerProcess(ABC):
     else:
       self.watchdog_seen = True
 
-  def stop(self, retry=True):
+  def stop(self, retry=True, block=True):
     if self.proc is None:
       return
 
-    cloudlog.info(f"killing {self.name}")
+    if not self.sigint_sent:
+      cloudlog.info(f"killing {self.name}")
+
+      if self.proc.exitcode is None:
+        sig = signal.SIGKILL if self.sigkill else signal.SIGINT
+        self.signal(sig)
+        self.sigint_sent = True
+
+        if not block:
+          return
 
     if self.proc.exitcode is None:
-      sig = signal.SIGKILL if self.sigkill else signal.SIGINT
-      self.signal(sig)
-
       join_process(self.proc, 5)
 
       # If process failed to die send SIGKILL or reboot
@@ -183,6 +190,7 @@ class NativeProcess(ManagerProcess):
     self.proc = Process(name=self.name, target=nativelauncher, args=(self.cmdline, cwd))
     self.proc.start()
     self.watchdog_seen = False
+    self.sigint_sent = False
 
 
 class PythonProcess(ManagerProcess):
@@ -209,6 +217,7 @@ class PythonProcess(ManagerProcess):
     self.proc = Process(name=self.name, target=launcher, args=(self.module,))
     self.proc.start()
     self.watchdog_seen = False
+    self.sigint_sent = False
 
 
 class DaemonProcess(ManagerProcess):
@@ -248,7 +257,7 @@ class DaemonProcess(ManagerProcess):
 
     params.put(self.param_name, str(proc.pid))
 
-  def stop(self, retry=True):
+  def stop(self, retry=True, block=True):
     pass
 
 
@@ -256,12 +265,11 @@ def ensure_running(procs, started, driverview=False, not_run=None):
   if not_run is None:
     not_run = []
 
-  # TODO: can we do this in parallel?
   for p in procs:
     if p.name in not_run:
-      p.stop()
+      p.stop(block=False)
     elif not p.enabled:
-      p.stop()
+      p.stop(block=False)
     elif p.persistent:
       p.start()
     elif p.driverview and driverview:
@@ -269,7 +277,7 @@ def ensure_running(procs, started, driverview=False, not_run=None):
     elif started:
       p.start()
     else:
-      p.stop()
+      p.stop(block=False)
 
     p.check_watchdog(started)
 
