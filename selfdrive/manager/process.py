@@ -108,11 +108,11 @@ class ManagerProcess(ABC):
 
     if self.proc.exitcode is None:
       if not self.shutting_down:
-        self.shutting_down = True
 
         cloudlog.info(f"killing {self.name}")
         sig = signal.SIGKILL if self.sigkill else signal.SIGINT
         self.signal(sig)
+        self.shutting_down = True
 
         if not block:
           return
