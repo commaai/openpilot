@@ -1,9 +1,19 @@
 #pragma once
 
+#include <vector>
+
 #include <QFrame>
 #include <QString>
+#include <QWidget>
 #include <QStackedLayout>
 #include <QAbstractButton>
+
+class KeyboardLayout : public QWidget {
+  Q_OBJECT
+
+public:
+ explicit KeyboardLayout(QWidget* parent, const std::vector<QVector<QString>>& layout);
+};
 
 class Keyboard : public QFrame {
   Q_OBJECT

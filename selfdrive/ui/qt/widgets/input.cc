@@ -3,7 +3,7 @@
 #include "input.hpp"
 #include "qt_window.hpp"
 
-InputDialog::InputDialog(const QString &prompt_text, QWidget *parent):QDialog(parent) {
+InputDialog::InputDialog(const QString &prompt_text, QWidget *parent) : QDialog(parent) {
   layout = new QVBoxLayout();
   layout->setContentsMargins(50, 50, 50, 50);
   layout->setSpacing(20);

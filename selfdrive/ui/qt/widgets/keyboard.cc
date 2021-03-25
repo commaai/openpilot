@@ -3,24 +3,22 @@
 #include <QHBoxLayout>
 #include <QPushButton>
 #include <QButtonGroup>
+#include <QStackedLayout>
 
 #include "keyboard.hpp"
 
 const int DEFAULT_STRETCH = 1;
 const int SPACEBAR_STRETCH = 3;
 
-
-template <size_t rows, size_t cols>
-static QWidget *keyboardWidget(QWidget *parent, QString (&layout)[rows][cols]) {
-  QWidget *widget = new QWidget(parent);
+KeyboardLayout::KeyboardLayout(QWidget* parent, const std::vector<QVector<QString>>& layout) : QWidget(parent) {
   QVBoxLayout* vlayout = new QVBoxLayout;
   vlayout->setMargin(0);
   vlayout->setSpacing(35);
 
-  QButtonGroup* btn_group = new QButtonGroup(widget);
+  QButtonGroup* btn_group = new QButtonGroup(this);
   QObject::connect(btn_group, SIGNAL(buttonClicked(QAbstractButton*)), parent, SLOT(handleButton(QAbstractButton*)));
 
-  for (int i = 0; i < rows; ++i) {
+  for (const auto &s : layout) {
     QHBoxLayout *hlayout = new QHBoxLayout;
     hlayout->setSpacing(25);
 
@@ -28,14 +26,11 @@ static QWidget *keyboardWidget(QWidget *parent, QString (&layout)[rows][cols]) {
       hlayout->addSpacing(90);
     }
 
-    for (int j = 0; j < cols; ++j) {
-      const QString &c  = layout[i][j];
-      if (c.isEmpty()) break;
-
-      QPushButton* btn = new QPushButton(c);
+    for (const QString &p : s) {
+      QPushButton* btn = new QPushButton(p);
       btn->setFixedHeight(135);
       btn_group->addButton(btn);
-      hlayout->addWidget(btn, c == "  " ? SPACEBAR_STRETCH : DEFAULT_STRETCH);
+      hlayout->addWidget(btn, p == QString("  ") ? SPACEBAR_STRETCH : DEFAULT_STRETCH);
     }
 
     if (vlayout->count() == 1) {
@@ -45,7 +40,7 @@ static QWidget *keyboardWidget(QWidget *parent, QString (&layout)[rows][cols]) {
     vlayout->addLayout(hlayout);
   }
 
-  widget->setStyleSheet(R"(
+  setStyleSheet(R"(
     * {
       outline: none;
     }
@@ -61,50 +56,48 @@ static QWidget *keyboardWidget(QWidget *parent, QString (&layout)[rows][cols]) {
       background-color: #000000;
     }
   )");
-  widget->setLayout(vlayout);
-  return widget;
+  setLayout(vlayout);
 }
-
-// lowercase
-static QString lowercase[][10] = {
-    {"q","w","e","r","t","y","u","i","o","p"},
-    {"a","s","d","f","g","h","j","k","l"},
-    {"⇧","z","x","c","v","b","n","m","⌫"},
-    {"123","  ","⏎"},
-};
-
-// uppercase
-static QString uppercase[][10] = {
-    {"Q","W","E","R","T","Y","U","I","O","P"},
-    {"A","S","D","F","G","H","J","K","L"},
-    {"↑","Z","X","C","V","B","N","M","⌫"},
-    {"123","  ","⏎"},
-};
-
-// numbers + specials
-static QString numbers[][10] = {
-    {"1","2","3","4","5","6","7","8","9","0"},
-    {"-","/",":",";","(",")","$","&&","@","\""},
-    {"#+=",".",",","?","!","`","⌫"},
-    {"ABC","  ","⏎"},
-};
-
-// extra specials
-static QString specials[][10] = {
-    {"[","]","{","}","#","%","^","*","+","="},
-    {"_","\\","|","~","<",">","€","£","¥","•"},
-    {"123",".",",","?","!","`","⌫"},
-    {"ABC","  ","⏎"},
-};
 
 Keyboard::Keyboard(QWidget *parent) : QFrame(parent) {
   main_layout = new QStackedLayout;
   main_layout->setMargin(0);
 
-  main_layout->addWidget(keyboardWidget(this, lowercase));
-  main_layout->addWidget(keyboardWidget(this, uppercase));
-  main_layout->addWidget(keyboardWidget(this, numbers));
-  main_layout->addWidget(keyboardWidget(this, specials));
+  // lowercase
+  std::vector<QVector<QString>> lowercase = {
+    {"q","w","e","r","t","y","u","i","o","p"},
+    {"a","s","d","f","g","h","j","k","l"},
+    {"⇧","z","x","c","v","b","n","m","⌫"},
+    {"123","  ","⏎"},
+  };
+  main_layout->addWidget(new KeyboardLayout(this, lowercase));
+
+  // uppercase
+  std::vector<QVector<QString>> uppercase = {
+    {"Q","W","E","R","T","Y","U","I","O","P"},
+    {"A","S","D","F","G","H","J","K","L"},
+    {"↑","Z","X","C","V","B","N","M","⌫"},
+    {"123","  ","⏎"},
+  };
+  main_layout->addWidget(new KeyboardLayout(this, uppercase));
+
+  // numbers + specials
+  std::vector<QVector<QString>> numbers = {
+    {"1","2","3","4","5","6","7","8","9","0"},
+    {"-","/",":",";","(",")","$","&&","@","\""},
+    {"#+=",".",",","?","!","`","⌫"},
+    {"ABC","  ","⏎"},
+  };
+  main_layout->addWidget(new KeyboardLayout(this, numbers));
+
+  // extra specials
+  std::vector<QVector<QString>> specials = {
+    {"[","]","{","}","#","%","^","*","+","="},
+    {"_","\\","|","~","<",">","€","£","¥","•"},
+    {"123",".",",","?","!","`","⌫"},
+    {"ABC","  ","⏎"},
+  };
+  main_layout->addWidget(new KeyboardLayout(this, specials));
 
   setLayout(main_layout);
   main_layout->setCurrentIndex(0);
