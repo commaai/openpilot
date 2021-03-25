@@ -182,6 +182,9 @@ class NativeProcess(ManagerProcess):
 
   def start(self):
     if self.proc is not None:
+      # In case we only tried a non blocking stop we need to make sure the process dies
+      if self.sigint_sent:
+        self.stop()
       return
 
     cwd = os.path.join(BASEDIR, self.cwd)
@@ -210,6 +213,9 @@ class PythonProcess(ManagerProcess):
 
   def start(self):
     if self.proc is not None:
+      # In case we only tried a non blocking stop we need to make sure the process dies
+      if self.sigint_sent:
+        self.stop()
       return
 
     cloudlog.info("starting python %s" % self.module)
