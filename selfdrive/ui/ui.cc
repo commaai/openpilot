@@ -55,7 +55,7 @@ static void ui_init_vision(UIState *s) {
 
 void ui_init(UIState *s) {
   s->sm = new SubMaster({
-    "modelV2", "controlsState", "uiLayoutState", "liveCalibration", "radarState", "deviceState", "liveLocationKalman",
+    "modelV2", "controlsState", "liveCalibration", "radarState", "deviceState", "liveLocationKalman",
     "pandaState", "carParams", "driverState", "driverMonitoringState", "sensorEvents", "carState", "ubloxGnss",
 #ifdef QCOM2
     "roadCameraState",
@@ -177,11 +177,6 @@ static void update_sockets(UIState *s) {
   }
   if (sm.updated("modelV2")) {
     update_model(s, sm["modelV2"].getModelV2());
-  }
-  if (sm.updated("uiLayoutState")) {
-    auto data = sm["uiLayoutState"].getUiLayoutState();
-    s->active_app = data.getActiveApp();
-    s->sidebar_collapsed = data.getSidebarCollapsed();
   }
   if (sm.updated("deviceState")) {
     scene.deviceState = sm["deviceState"].getDeviceState();
@@ -341,13 +336,11 @@ static void update_status(UIState *s) {
 
       read_param(&s->scene.is_rhd, "IsRHD");
       read_param(&s->scene.end_to_end, "EndToEndToggle");
-      s->active_app = cereal::UiLayoutState::App::NONE;
       s->sidebar_collapsed = true;
       s->scene.alert_size = cereal::ControlsState::AlertSize::NONE;
       s->vipc_client = s->scene.driver_view ? s->vipc_client_front : s->vipc_client_rear;
     } else {
       s->status = STATUS_OFFROAD;
-      s->active_app = cereal::UiLayoutState::App::HOME;
       s->sidebar_collapsed = false;
       s->sound->stop();
       s->vipc_client->connected = false;

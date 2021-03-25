@@ -9,7 +9,7 @@ public:
   Toggle(QWidget* parent = nullptr);
   void togglePosition();
   bool on;
-  int animation_duration = 250;
+  int animation_duration = 150;
   int immediateOffset = 0;
   int offset_circle() const {
     return _x_circle;
