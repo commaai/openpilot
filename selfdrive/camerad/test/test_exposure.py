@@ -49,11 +49,11 @@ class TestCamerad(unittest.TestCase):
       rpic, dpic = get_snapshots(frame="roadCameraState", front_frame="driverCameraState")
 
       res = self._is_exposure_okay(rpic)
-      res &= self._is_exposure_okay(dpic)
+      res = res and self._is_exposure_okay(dpic)
 
       if TICI:
         wpic, _ = get_snapshots(frame="wideRoadCameraState")
-        res &= self._is_exposure_okay(wpic)
+        res = res and self._is_exposure_okay(wpic)
 
       if passed > 0 and not res:
         passed = -passed # fails test if any failure after first sus
