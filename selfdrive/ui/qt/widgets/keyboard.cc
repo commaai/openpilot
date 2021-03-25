@@ -10,7 +10,7 @@
 const int DEFAULT_STRETCH = 1;
 const int SPACEBAR_STRETCH = 3;
 
-KeyboardLayout::KeyboardLayout(QWidget *parent, std::vector<QVector<QString>> layout) : QWidget(parent) {
+KeyboardLayout::KeyboardLayout(QWidget* parent, const std::vector<QVector<QString>>& layout) : QWidget(parent) {
   QVBoxLayout* vlayout = new QVBoxLayout;
   vlayout->setMargin(0);
   vlayout->setSpacing(35);
