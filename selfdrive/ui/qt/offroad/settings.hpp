@@ -37,6 +37,7 @@ public:
 
 signals:
   void closeSettings();
+  void toggleButtons(bool disabled);
 
 private:
   QPushButton *sidebar_alert_widget;

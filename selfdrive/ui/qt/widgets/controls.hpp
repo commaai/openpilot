@@ -66,6 +66,9 @@ public:
   }
   void setText(const QString &text) { btn.setText(text); }
 
+public slots:
+  void toggleButton(bool disabled) { btn.setEnabled(!btn.isEnabled()); };
+
 private:
   QPushButton btn;
 };

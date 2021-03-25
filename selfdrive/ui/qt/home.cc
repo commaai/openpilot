@@ -291,6 +291,8 @@ void GLWindow::timerUpdate() {
     makeCurrent();
   }
 
+  ui_state.scene.started = false;
+
   if (ui_state.scene.started != onroad) {
     onroad = ui_state.scene.started;
     emit offroadTransition(!onroad);
