@@ -25,7 +25,7 @@ class CarInterface(CarInterfaceBase):
     # VW port is a community feature, since we don't own one to test
     ret.communityFeature = True
 
-    if True:  # Diff reduction with ongoing community development
+    if True:  # pylint: disable=using-constant-test
       # Set common MQB parameters that will apply globally
       ret.carName = "volkswagen"
       ret.radarOffCan = True
