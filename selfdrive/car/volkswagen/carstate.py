@@ -249,7 +249,7 @@ class CarState(CarStateBase):
       # Extended CAN devices other than the camera are here on CANBUS.cam
       # TODO: Add bsm checks[] when we have solid autodetection
       signals += MqbExtraSignals.acc_radar[0] + MqbExtraSignals.bsm[0]
-      checks += MqbExtraSignals.acc_radar
+      checks += MqbExtraSignals.acc_radar[1]
 
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, CANBUS.cam)
 
