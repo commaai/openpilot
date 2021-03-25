@@ -9,6 +9,7 @@
 #include <QMouseEvent>
 #include <QVBoxLayout>
 
+#include "common/util.h"
 #include "common/params.h"
 #include "common/timing.h"
 #include "common/swaglog.h"
@@ -194,14 +195,32 @@ static void handle_display_state(UIState* s, bool user_input) {
   static int awake_timeout = 0;
   awake_timeout = std::max(awake_timeout - 1, 0);
 
-  if (user_input || s->scene.ignition || s->scene.started) {
-    s->awake = true;
+  constexpr float accel_samples = 5*UI_FREQ;
+  static float accel_prev = 0., gyro_prev = 0.;
+
+  bool should_wake = s->scene.started || s->scene.ignition || user_input;
+  if (!should_wake) {
+    // tap detection while display is off
+    bool accel_trigger = abs(s->scene.accel_sensor - accel_prev) > 0.2;
+    bool gyro_trigger = abs(s->scene.gyro_sensor - gyro_prev) > 0.15;
+    should_wake = accel_trigger && gyro_trigger;
+    gyro_prev = s->scene.gyro_sensor;
+    accel_prev = (accel_prev * (accel_samples - 1) + s->scene.accel_sensor) / accel_samples;
+  }
+
+  if (should_wake) {
     awake_timeout = 30 * UI_FREQ;
-  } else if (awake_timeout == 0) {
-    s->awake = false;
+  } else if (awake_timeout > 0) {
+    should_wake = true;
+  }
+
+  // handle state transition
+  if (s->awake != should_wake) {
+    s->awake = should_wake;
+    Hardware::set_display_power(s->awake);
+    LOGD("setting display power %d", s->awake);
   }
 }
-
 
 GLWindow::GLWindow(QWidget* parent) : QOpenGLWidget(parent) {
   timer = new QTimer(this);
