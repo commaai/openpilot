@@ -53,19 +53,17 @@ public:
   ButtonControl(const QString &title, const QString &text, const QString &desc, Functor functor, const QString &icon = "", QWidget *parent = nullptr) : AbstractControl(title, desc, icon, parent) {
     btn.setText(text);
     btn.setStyleSheet(R"(
-			* {
-				padding: 0;
-				border-radius: 50px;
-				font-size: 35px;
-				font-weight: 500;
-				color: #E4E4E4;
-			}
-			QPushButton {
-				background-color: #393939;
-			}
-			QPushButton:disabled {
-				background-color: #191919;
-			}
+      QPushButton {
+        padding: 0;
+        border-radius: 50px;
+        font-size: 35px;
+        font-weight: 500;
+        color: #E4E4E4;
+        background-color: #393939;
+      }
+      QPushButton:disabled {
+        background-color: #191919;
+      }
     )");
     btn.setFixedSize(250, 100);
     QObject::connect(&btn, &QPushButton::released, functor);
