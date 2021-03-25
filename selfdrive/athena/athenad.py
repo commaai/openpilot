@@ -254,7 +254,7 @@ def takeSnapshot():
     raise Exception("not available while camerad is started")
 
 
-def get_logs_to_send_sorted(curr_time, last_scan):
+def get_logs_to_send_sorted(curr_time):
   # TODO: scan once then use inotify to detect file creation/deletion
   logs = []
   for log_entry in os.listdir(SWAGLOG_DIR):
@@ -297,7 +297,7 @@ def log_handler(end_event):
 
       curr_time = int(time.time())
       if curr_time - last_scan > 10:
-        log_files = get_logs_to_send_sorted(curr_time, last_scan)
+        log_files = get_logs_to_send_sorted(curr_time)
         last_scan = curr_time
 
       # never send last log file because it is the active log
