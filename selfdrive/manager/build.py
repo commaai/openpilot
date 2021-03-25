@@ -14,7 +14,7 @@ from selfdrive.swaglog import add_logentries_handler, cloudlog
 from selfdrive.version import dirty
 
 TOTAL_SCONS_NODES = 1225
-MAX_BUILD_PROGRESS = 70
+MAX_BUILD_PROGRESS = 100
 PREBUILT = os.path.exists(os.path.join(BASEDIR, 'prebuilt'))
 
 
