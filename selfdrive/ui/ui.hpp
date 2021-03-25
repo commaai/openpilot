@@ -157,7 +157,6 @@ typedef struct UIState {
   Sound *sound;
   UIStatus status;
   UIScene scene;
-  cereal::UiLayoutState::App active_app;
 
   // graphics
   std::unique_ptr<GLShader> gl_shader;

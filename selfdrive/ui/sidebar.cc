@@ -16,13 +16,11 @@ static void draw_background(UIState *s) {
 }
 
 static void draw_settings_button(UIState *s) {
-  const float alpha = s->active_app == cereal::UiLayoutState::App::SETTINGS ? 1.0f : 0.65f;
-  ui_draw_image(s, settings_btn, "button_settings", alpha);
+  ui_draw_image(s, settings_btn, "button_settings", 0.65f);
 }
 
 static void draw_home_button(UIState *s) {
-  const float alpha = s->active_app == cereal::UiLayoutState::App::HOME ? 1.0f : 0.65f;
-  ui_draw_image(s, home_btn, "button_home", alpha);
+  ui_draw_image(s, home_btn, "button_home", 1.0f);
 }
 
 static void draw_network_strength(UIState *s) {
@@ -34,14 +32,6 @@ static void draw_network_strength(UIState *s) {
       {cereal::DeviceState::NetworkStrength::GREAT, 5}};
   const int img_idx = s->scene.deviceState.getNetworkType() == cereal::DeviceState::NetworkType::NONE ? 0 : network_strength_map[s->scene.deviceState.getNetworkStrength()];
   ui_draw_image(s, {58, 196, 176, 27}, util::string_format("network_%d", img_idx).c_str(), 1.0f);
-}
-
-static void draw_battery_icon(UIState *s) {
-  const char *battery_img = s->scene.deviceState.getBatteryStatus() == "Charging" ? "battery_charging" : "battery";
-  const Rect rect = {160, 255, 76, 36};
-  ui_fill_rect(s->vg, {rect.x + 6, rect.y + 5,
-              int((rect.w - 19) * s->scene.deviceState.getBatteryPercent() * 0.01), rect.h - 11}, COLOR_WHITE);
-  ui_draw_image(s, rect, battery_img, 1.0f);
 }
 
 static void draw_network_type(UIState *s) {
@@ -150,7 +140,6 @@ void ui_draw_sidebar(UIState *s) {
   draw_settings_button(s);
   draw_home_button(s);
   draw_network_strength(s);
-  draw_battery_icon(s);
   draw_network_type(s);
   draw_temp_metric(s);
   draw_panda_metric(s);
