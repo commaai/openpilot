@@ -254,13 +254,14 @@ FW_VERSIONS = {
       b'\x00\x00d\x95\x1f@ \x0f',
     ],
     (Ecu.engine, 0x7e0, None): [
-      b'\xb4+@p\a',
-      b'\xab\"@@\a',
       b'\xa0\x62\x41\x71\x07',
       b'\xa0*@q\a',
+      b'\xab\"@@\a',
       b'\xab*@@\a',
-      b'\xb5q\xe0@\a',
+      b'\xab\"@s\a',
       b'\xb4"@0\a',
+      b'\xb4+@p\a',
+      b'\xb5q\xe0@\a',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xbd\xfb\xe0\x80\x00',
@@ -269,7 +270,9 @@ FW_VERSIONS = {
       b'\xbf\xf2@\x80\x00',
       b'\xbe\xf2@p\x00',
       b'\xbc\xaf\xe0`\x00',
-      b'\xbd\xf2@`\x00',
+    ],
+    (Ecu.fwdRadar, 0x7d0, None): [
+      b'\xf1\x00\x00\x00\x00',
     ],
   },
   # Outback with reversed driver torque signal
