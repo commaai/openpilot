@@ -20,8 +20,6 @@ from selfdrive.swaglog import add_logentries_handler, cloudlog
 from selfdrive.version import dirty, version
 
 
-PREPAREONLY = os.getenv("PREPAREONLY") is not None
-
 def manager_init():
   params = Params()
   params.manager_start()
@@ -150,15 +148,17 @@ def manager_thread():
 
 
 def main():
+  prepare_only = os.getenv("PREPAREONLY") is not None
+
   manager_init()
 
   # Start ui early so prepare can happen in the background
-  if not PREPAREONLY:
+  if not prepare_only:
     managed_processes['ui'].start()
 
   manager_prepare()
 
-  if PREPAREONLY:
+  if prepare_only:
     return
 
   # SystemExit on sigterm
