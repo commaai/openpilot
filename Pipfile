@@ -94,7 +94,6 @@ tqdm = "*"
 Cython = "*"
 PyYAML = "*"
 websocket_client = "*"
-Logentries = {git = "https://github.com/commaai/le_python.git",ref = "feaeacb48f7f4bdb02c0a8fc092326d4e101b7f2"}
 urllib3 = "*"
 gunicorn = "*"
 utm = "*"

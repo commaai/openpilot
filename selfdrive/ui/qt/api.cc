@@ -15,8 +15,6 @@
 #include "common/params.h"
 #include "common/util.h"
 
-#include <QSslSocket>
-
 #if defined(QCOM) || defined(QCOM2)
 const std::string private_key_path = "/persist/comma/id_rsa";
 #else
@@ -95,18 +93,11 @@ RequestRepeater::RequestRepeater(QWidget* parent, QString requestURL, int period
 }
 
 void RequestRepeater::sendRequest(QString requestURL, QVector<QPair<QString, QJsonValue>> payloads){
-  // No network calls onroad
-  if(GLWindow::ui_state.scene.started){
-    return;
-  }
-  if (!active || (!GLWindow::ui_state.awake && disableWithScreen)) {
-    return;
-  }
-  if(reply != NULL){
+  if (GLWindow::ui_state.scene.started || !active || reply != NULL ||
+      (!GLWindow::ui_state.awake && disableWithScreen)) {
     return;
   }
 
-  aborted = false;
   QString token = CommaApi::create_jwt(payloads);
   QNetworkRequest request;
   request.setUrl(QUrl(requestURL));
@@ -126,13 +117,12 @@ void RequestRepeater::sendRequest(QString requestURL, QVector<QPair<QString, QJs
 }
 
 void RequestRepeater::requestTimeout(){
-  aborted = true;
   reply->abort();
 }
 
 // This function should always emit something
 void RequestRepeater::requestFinished(){
-  if (!aborted) {
+  if (reply->error() != QNetworkReply::OperationCanceledError) {
     networkTimer->stop();
     QString response = reply->readAll();
     if (reply->error() == QNetworkReply::NoError) {

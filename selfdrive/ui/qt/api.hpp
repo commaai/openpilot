@@ -41,7 +41,6 @@ private:
   QNetworkReply* reply;
   QNetworkAccessManager* networkAccessManager;
   QTimer* networkTimer;
-  std::atomic<bool> aborted = false; // Not 100% sure we need atomic
   void sendRequest(QString requestURL, QVector<QPair<QString, QJsonValue>> payloads);
 
 private slots:
