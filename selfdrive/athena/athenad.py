@@ -259,9 +259,6 @@ def get_logs_to_send_sorted(curr_time):
   logs = []
   for log_entry in os.listdir(SWAGLOG_DIR):
     log_path = os.path.join(SWAGLOG_DIR, log_entry)
-    # file without an extension is always the active log file
-    if log_entry == "swaglog":
-      continue
     try:
       time_sent = int.from_bytes(getxattr(log_path, LOG_ATTR_NAME), sys.byteorder)
     except (ValueError, TypeError):
@@ -269,8 +266,9 @@ def get_logs_to_send_sorted(curr_time):
     # assume send failed and we lost the response if sent more than one hour ago
     if not time_sent or curr_time - time_sent > 3600:
       logs.append(log_entry)
-
-  return sorted(logs, reverse=True)
+  # return logs in order they should be sent
+  # excluding most recent (active) log file
+  return sorted(logs[:-1])
 
 
 def log_handler(end_event):
@@ -301,8 +299,8 @@ def log_handler(end_event):
         last_scan = curr_time
 
       # never send last log file because it is the active log
-      # and only send one log file at a time
-      if len(log_files) <= 1 or not log_send_queue.empty():
+      # and only send one log file at a time (most recent first)
+      if not len(log_files) or not log_send_queue.empty():
         continue
 
       log_entry = log_files.pop()
