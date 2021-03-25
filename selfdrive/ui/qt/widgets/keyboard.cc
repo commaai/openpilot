@@ -3,22 +3,24 @@
 #include <QHBoxLayout>
 #include <QPushButton>
 #include <QButtonGroup>
-#include <QStackedLayout>
 
 #include "keyboard.hpp"
 
 const int DEFAULT_STRETCH = 1;
 const int SPACEBAR_STRETCH = 3;
 
-KeyboardLayout::KeyboardLayout(QWidget *parent, std::vector<QVector<QString>> layout) : QWidget(parent) {
+
+template <size_t rows, size_t cols>
+static QWidget *keyboardWidget(QWidget *parent, QString (&layout)[rows][cols]) {
+  QWidget *widget = new QWidget(parent);
   QVBoxLayout* vlayout = new QVBoxLayout;
   vlayout->setMargin(0);
   vlayout->setSpacing(35);
 
-  QButtonGroup* btn_group = new QButtonGroup(this);
+  QButtonGroup* btn_group = new QButtonGroup(widget);
   QObject::connect(btn_group, SIGNAL(buttonClicked(QAbstractButton*)), parent, SLOT(handleButton(QAbstractButton*)));
 
-  for (const auto &s : layout) {
+  for (int i = 0; i < rows; ++i) {
     QHBoxLayout *hlayout = new QHBoxLayout;
     hlayout->setSpacing(25);
 
@@ -26,11 +28,14 @@ KeyboardLayout::KeyboardLayout(QWidget *parent, std::vector<QVector<QString>> la
       hlayout->addSpacing(90);
     }
 
-    for (const QString &p : s) {
-      QPushButton* btn = new QPushButton(p);
+    for (int j = 0; j < cols; ++j) {
+      const QString &c  = layout[i][j];
+      if (c.isEmpty()) break;
+
+      QPushButton* btn = new QPushButton(c);
       btn->setFixedHeight(135);
       btn_group->addButton(btn);
-      hlayout->addWidget(btn, p == QString("  ") ? SPACEBAR_STRETCH : DEFAULT_STRETCH);
+      hlayout->addWidget(btn, c == "  " ? SPACEBAR_STRETCH : DEFAULT_STRETCH);
     }
 
     if (vlayout->count() == 1) {
@@ -40,7 +45,7 @@ KeyboardLayout::KeyboardLayout(QWidget *parent, std::vector<QVector<QString>> la
     vlayout->addLayout(hlayout);
   }
 
-  setStyleSheet(R"(
+  widget->setStyleSheet(R"(
     * {
       outline: none;
     }
@@ -56,48 +61,50 @@ KeyboardLayout::KeyboardLayout(QWidget *parent, std::vector<QVector<QString>> la
       background-color: #000000;
     }
   )");
-  setLayout(vlayout);
+  widget->setLayout(vlayout);
+  return widget;
 }
+
+// lowercase
+static QString lowercase[][10] = {
+    {"q","w","e","r","t","y","u","i","o","p"},
+    {"a","s","d","f","g","h","j","k","l"},
+    {"⇧","z","x","c","v","b","n","m","⌫"},
+    {"123","  ","⏎"},
+};
+
+// uppercase
+static QString uppercase[][10] = {
+    {"Q","W","E","R","T","Y","U","I","O","P"},
+    {"A","S","D","F","G","H","J","K","L"},
+    {"↑","Z","X","C","V","B","N","M","⌫"},
+    {"123","  ","⏎"},
+};
+
+// numbers + specials
+static QString numbers[][10] = {
+    {"1","2","3","4","5","6","7","8","9","0"},
+    {"-","/",":",";","(",")","$","&&","@","\""},
+    {"#+=",".",",","?","!","`","⌫"},
+    {"ABC","  ","⏎"},
+};
+
+// extra specials
+static QString specials[][10] = {
+    {"[","]","{","}","#","%","^","*","+","="},
+    {"_","\\","|","~","<",">","€","£","¥","•"},
+    {"123",".",",","?","!","`","⌫"},
+    {"ABC","  ","⏎"},
+};
 
 Keyboard::Keyboard(QWidget *parent) : QFrame(parent) {
   main_layout = new QStackedLayout;
   main_layout->setMargin(0);
 
-  // lowercase
-  std::vector<QVector<QString>> lowercase = {
-    {"q","w","e","r","t","y","u","i","o","p"},
-    {"a","s","d","f","g","h","j","k","l"},
-    {"⇧","z","x","c","v","b","n","m","⌫"},
-    {"123","  ","⏎"},
-  };
-  main_layout->addWidget(new KeyboardLayout(this, lowercase));
-
-  // uppercase
-  std::vector<QVector<QString>> uppercase = {
-    {"Q","W","E","R","T","Y","U","I","O","P"},
-    {"A","S","D","F","G","H","J","K","L"},
-    {"↑","Z","X","C","V","B","N","M","⌫"},
-    {"123","  ","⏎"},
-  };
-  main_layout->addWidget(new KeyboardLayout(this, uppercase));
-
-  // numbers + specials
-  std::vector<QVector<QString>> numbers = {
-    {"1","2","3","4","5","6","7","8","9","0"},
-    {"-","/",":",";","(",")","$","&&","@","\""},
-    {"#+=",".",",","?","!","`","⌫"},
-    {"ABC","  ","⏎"},
-  };
-  main_layout->addWidget(new KeyboardLayout(this, numbers));
-
-  // extra specials
-  std::vector<QVector<QString>> specials = {
-    {"[","]","{","}","#","%","^","*","+","="},
-    {"_","\\","|","~","<",">","€","£","¥","•"},
-    {"123",".",",","?","!","`","⌫"},
-    {"ABC","  ","⏎"},
-  };
-  main_layout->addWidget(new KeyboardLayout(this, specials));
+  main_layout->addWidget(keyboardWidget(this, lowercase));
+  main_layout->addWidget(keyboardWidget(this, uppercase));
+  main_layout->addWidget(keyboardWidget(this, numbers));
+  main_layout->addWidget(keyboardWidget(this, specials));
 
   setLayout(main_layout);
   main_layout->setCurrentIndex(0);
