@@ -68,7 +68,7 @@ class ManagerProcess(ABC):
   last_watchdog_time = 0
   watchdog_max_dt = None
   watchdog_seen = False
-  sigint_sent = False
+  shutting_down = False
 
   @abstractmethod
   def prepare(self):
@@ -107,8 +107,8 @@ class ManagerProcess(ABC):
       return
 
     if self.proc.exitcode is None:
-      if not self.sigint_sent:
-        self.sigint_sent = True
+      if not self.shutting_down:
+        self.shutting_down = True
 
         cloudlog.info(f"killing {self.name}")
         sig = signal.SIGKILL if self.sigkill else signal.SIGINT
@@ -140,6 +140,7 @@ class ManagerProcess(ABC):
     cloudlog.info(f"{self.name} is dead with {ret}")
 
     if self.proc.exitcode is not None:
+      self.shutting_down = False
       self.proc = None
 
     return ret
@@ -181,10 +182,11 @@ class NativeProcess(ManagerProcess):
     pass
 
   def start(self):
-    if self.proc is not None:
-      # In case we only tried a non blocking stop we need to make sure the process dies
-      if self.sigint_sent:
+    # In case we only tried a non blocking stop we need to stop it before restarting
+    if self.shutting_down:
         self.stop()
+
+    if self.proc is not None:
       return
 
     cwd = os.path.join(BASEDIR, self.cwd)
@@ -192,7 +194,7 @@ class NativeProcess(ManagerProcess):
     self.proc = Process(name=self.name, target=nativelauncher, args=(self.cmdline, cwd))
     self.proc.start()
     self.watchdog_seen = False
-    self.sigint_sent = False
+    self.shutting_down = False
 
 
 class PythonProcess(ManagerProcess):
@@ -212,17 +214,18 @@ class PythonProcess(ManagerProcess):
       importlib.import_module(self.module)
 
   def start(self):
-    if self.proc is not None:
-      # In case we only tried a non blocking stop we need to make sure the process dies
-      if self.sigint_sent:
+    # In case we only tried a non blocking stop we need to stop it before restarting
+    if self.shutting_down:
         self.stop()
+
+    if self.proc is not None:
       return
 
     cloudlog.info("starting python %s" % self.module)
     self.proc = Process(name=self.name, target=launcher, args=(self.module,))
     self.proc.start()
     self.watchdog_seen = False
-    self.sigint_sent = False
+    self.shutting_down = False
 
 
 class DaemonProcess(ManagerProcess):
