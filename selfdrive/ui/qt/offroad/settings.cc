@@ -110,6 +110,17 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
 
   device_layout->addWidget(horizontal_line());
 
+  device_layout->addWidget(new ButtonControl("Review Training Guide", "REVIEW",
+                                             "Review the rules, features, and limitations of openpilot",
+                                             [=]() {
+                                               if (ConfirmationDialog::confirm("Are you sure you want to review the training guide?")) {
+                                                 Params().delete_db_value("CompletedTrainingVersion");
+                                                 emit reviewTrainingGuide();
+                                               }
+                                             }));
+
+  device_layout->addWidget(horizontal_line());
+
   QString brand = params.read_db_bool("Passive") ? "dashcam" : "openpilot";
   device_layout->addWidget(new ButtonControl("Uninstall " + brand, "UNINSTALL",
                                              "",
@@ -252,6 +263,8 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
     {"Toggles", toggles_panel()},
     {"Developer", new DeveloperPanel()},
   };
+
+  QObject::connect(panels[0].second, SIGNAL(reviewTrainingGuide()), this, SIGNAL(reviewTrainingGuide()));
 
   sidebar_layout->addSpacing(45);
   nav_btns = new QButtonGroup();
