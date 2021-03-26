@@ -461,6 +461,10 @@ routes = {
     'carFingerprint': VOLKSWAGEN.SKODA_KODIAQ_MK1,
     'enableCamera': True,
   },
+  "026b6d18fba6417f|2021-03-26--09-17-04": {
+    'carFingerprint': VOLKSWAGEN.SKODA_SCALA_MK1,
+    'enableCamera': True,
+  },
   "3c8f0c502e119c1c|2020-06-30--12-58-02": {
     'carFingerprint': SUBARU.ASCENT,
     'enableCamera': True,
