@@ -1,11 +1,10 @@
 #pragma once
 
-#include <QTimer>
 #include <QPushButton>
-#include <QNetworkAccessManager>
 
 #include "widgets/controls.hpp"
 #include "selfdrive/hardware/hw.h"
+#include "api.hpp"
 
 // SSH enable toggle
 class SshToggle : public ToggleControl {
@@ -31,18 +30,7 @@ private:
   QString username;
   QLabel username_label;
 
-  // networking
-  QTimer* networkTimer;
-  QNetworkReply* reply;
-  QNetworkAccessManager* manager;
-
   void refresh();
   void getUserKeys(QString username);
-
-signals:
-  void failedResponse(QString errorString);
-
-private slots:
-  void timeout();
-  void parseResponse();
+  void handleResponse(TimeoutRequest *request, const QString &resp, bool err);
 };

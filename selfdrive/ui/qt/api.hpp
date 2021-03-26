@@ -28,18 +28,20 @@ private:
 /**
  * Makes repeated requests to the request endpoint.
  */
-class RequestRepeater : public QObject {
+class TimeoutRequest : public QObject {
   Q_OBJECT
 
 public:
-  explicit RequestRepeater(QWidget* parent, QString requestURL, int period = 10, const QString &cache_key = "", bool disableWithScreen = true);
+  explicit TimeoutRequest(QWidget* parent, const QString &requestURL, const QString &cache_key = "", int timeout_second = 20, QVector<QPair<QString, QJsonValue>> payloads = *(new QVector<QPair<QString, QJsonValue>>()), bool disableWithScreen = true);
+  void setRepeatPeriod(int repeat_period_second);
   bool active = true;
 
 private:
   bool disableWithScreen;
-  QNetworkReply* reply;
-  QNetworkAccessManager* networkAccessManager;
-  QTimer* networkTimer;
+  QNetworkReply* reply = nullptr;
+  QNetworkAccessManager* networkAccessManager = nullptr;
+  QTimer* networkTimer = nullptr;
+  QTimer* repeatTimer = nullptr;
   QString cache_key;
   void sendRequest(QString requestURL);
 
@@ -48,7 +50,7 @@ private slots:
   void requestFinished();
 
 signals:
-  void receivedResponse(QString response);
-  void failedResponse(QString errorString);
-  void timeoutResponse(QString errorString);
+  void receivedResponse(const QString &response);
+  void failedResponse(const QString &errorString);
+  void timeoutResponse(const QString &errorString);
 };

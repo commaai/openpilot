@@ -76,15 +76,12 @@ RequestRepeater::RequestRepeater(QWidget* parent, QString requestURL, int period
   : disableWithScreen(disableWithScreen), cache_key(cache_key), QObject(parent)  {
   networkAccessManager = new QNetworkAccessManager(this);
 
-  reply = NULL;
-
-  QTimer* timer = new QTimer(this);
-  QObject::connect(timer, &QTimer::timeout, [=](){sendRequest(requestURL);});
-  timer->start(period_seconds * 1000);
+  repeatTimer = new QTimer(this);
+  QObject::connect(repeatTimer, &QTimer::timeout, [=](){sendRequest(requestURL, payloads);});
 
   networkTimer = new QTimer(this);
   networkTimer->setSingleShot(true);
-  networkTimer->setInterval(20000);
+  networkTimer->setInterval(timeout_second * 1000);
   connect(networkTimer, SIGNAL(timeout()), this, SLOT(requestTimeout()));
 
   if (!cache_key.isEmpty()) {
@@ -92,9 +89,15 @@ RequestRepeater::RequestRepeater(QWidget* parent, QString requestURL, int period
       QTimer::singleShot(0, [=]() { emit receivedResponse(QString::fromStdString(cached_resp)); });
     }
   }
+
+  sendRequest(requestURL, payloads);
 }
 
-void RequestRepeater::sendRequest(QString requestURL){
+void TimeoutRequest::setRepeatPeriod(int repeat_period_second) {
+  repeatTimer->start(repeat_period_second * 1000);
+}
+
+void TimeoutRequest::sendRequest(const QString& requestURL, QVector<QPair<QString, QJsonValue>> payloads) {
   if (GLWindow::ui_state.scene.started || !active || reply != NULL ||
       (!GLWindow::ui_state.awake && disableWithScreen)) {
     return;
@@ -118,12 +121,12 @@ void RequestRepeater::sendRequest(QString requestURL){
   connect(reply, SIGNAL(finished()), this, SLOT(requestFinished()));
 }
 
-void RequestRepeater::requestTimeout(){
+void TimeoutRequest::requestTimeout(){
   reply->abort();
 }
 
 // This function should always emit something
-void RequestRepeater::requestFinished(){
+void TimeoutRequest::requestFinished(){
   if (reply->error() != QNetworkReply::OperationCanceledError) {
     networkTimer->stop();
     QString response = reply->readAll();
