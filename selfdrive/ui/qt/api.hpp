@@ -51,4 +51,5 @@ private slots:
 signals:
   void receivedResponse(QString response);
   void failedResponse(QString errorString);
+  void timeoutResponse(QString errorString);
 };
