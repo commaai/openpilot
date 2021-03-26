@@ -18,7 +18,7 @@ PROCS = [
   ("./loggerd", 45.0),
   ("selfdrive.locationd.locationd", 35.0),
   ("selfdrive.controls.plannerd", 20.0),
-  ("./_ui", 15.0),
+  ("./_ui", 30.0), # TODO put back to 15% after fixing cpu usage playing sounds
   ("selfdrive.locationd.paramsd", 12.0),
   ("./camerad", 7.07),
   ("./_sensord", 6.17),
