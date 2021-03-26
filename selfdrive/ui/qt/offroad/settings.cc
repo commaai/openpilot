@@ -100,13 +100,15 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
   device_layout->addWidget(horizontal_line());
 
   // TODO: show current calibration values
-  device_layout->addWidget(new ButtonControl("Reset Calibration", "RESET",
+  ButtonControl* reset_calibration = new ButtonControl("Reset Calibration", "RESET",
                                              "openpilot requires the device to be mounted within 4° left or right and within 5° up or down. openpilot is continuously calibrating, resetting is rarely required.",
                                              [=]() {
                                                if (ConfirmationDialog::confirm("Are you sure you want to reset calibration?")) {
                                                  Params().delete_db_value("CalibrationParams");
                                                }
-                                             }));
+                                             });
+
+  device_layout->addWidget(reset_calibration);
 
   device_layout->addWidget(horizontal_line());
 
