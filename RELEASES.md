@@ -1,5 +1,10 @@
 Version 0.8.3 (2021-XX-XX)
 ========================
+ * New model
+   * Trained on new diverse dataset from 2000+ users from 30+ countries
+   * Trained with improved segnet from the comma-pencil community project
+   * 🥬 Dramatically improved end-to-end lateral performance 🥬
+ * Toggle added to disable the use of lanelines
  * NEOS update: update packages and support for new UI
  * New offroad UI based on Qt
  * Default SSH key only used for setup
