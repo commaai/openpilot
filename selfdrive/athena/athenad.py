@@ -77,7 +77,7 @@ def jsonrpc_handler(end_event):
   while not end_event.is_set():
     try:
       data = recv_queue.get(timeout=1)
-      if "method" in data and "params" in data:
+      if "method" in data:
         response = JSONRPCResponseManager.handle(data, dispatcher)
         send_queue.put_nowait(response.json)
       elif "result" in data and "id" in data:
