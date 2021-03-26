@@ -141,7 +141,6 @@ FW_VERSIONS = {
     (Ecu.fwdRadar, 0x757, None): [
       b'\xf1\x875Q0907572N \xf1\x890681',
       b'\xf1\x875Q0907572R \xf1\x890771',
-      b'\xf1\x875Q0907572R \xf1\x890771',
     ],
   },
   CAR.TIGUAN_MK2: {
