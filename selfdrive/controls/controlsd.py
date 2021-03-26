@@ -158,7 +158,8 @@ class Controls:
 
     # Handle startup event
     if self.startup_event is not None:
-      self.events.add(self.startup_event)
+      static = self.startup_event in [EventName.carUnrecognized, EventName.startupNoCar, EventName.startupNoControl]
+      self.events.add(self.startup_event, static=static)
       self.startup_event = None
 
     # Create events for battery, temperature, disk space, and memory
