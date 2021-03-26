@@ -33,7 +33,7 @@ void TrainingGuide::mouseReleaseEvent(QMouseEvent *e) {
 
 void TrainingGuide::showEvent(QShowEvent *event) {
   currentIndex = 0;
-  image.load("../assets/training/step" + QString::fromStdString(std::string(getenv("X"))) + ".png");
+  image.load("../assets/training/step0.png");
 }
 
 void TrainingGuide::paintEvent(QPaintEvent *event) {
