@@ -1,9 +1,9 @@
 Version 0.8.3 (2021-XX-XX)
 ========================
  * New model
- ** Trained on new diverse dataset from 2000+ users from 30+ countries
- ** Trained with improved segnet from comma-pencil
- ** 🥬 Dramatically improved end-to-end lateral performance 🥬
+   * Trained on new diverse dataset from 2000+ users from 30+ countries
+   * Trained with improved segnet from comma-pencil
+   * 🥬 Dramatically improved end-to-end lateral performance 🥬
  * NEOS update: update packages and support for new UI
  * New offroad UI based on Qt
  * Default SSH key only used for setup
