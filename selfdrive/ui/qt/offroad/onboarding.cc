@@ -12,7 +12,7 @@
 
 
 void TrainingGuide::mouseReleaseEvent(QMouseEvent *e) {
-  qDebug() << e->x() << ", " << e->y();
+  //qDebug() << e->x() << ", " << e->y();
 
   // Check for restart
   if (currentIndex == (boundingBox.size() - 1) && 200 <= e->x() && e->x() <= 920 &&
