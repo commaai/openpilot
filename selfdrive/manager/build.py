@@ -13,7 +13,7 @@ from common.text_window import TextWindow
 from selfdrive.swaglog import cloudlog, add_file_handler
 from selfdrive.version import dirty
 
-TOTAL_SCONS_NODES = 1225
+TOTAL_SCONS_NODES = 2405
 MAX_BUILD_PROGRESS = 100
 PREBUILT = os.path.exists(os.path.join(BASEDIR, 'prebuilt'))
 
