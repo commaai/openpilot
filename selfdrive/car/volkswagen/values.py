@@ -159,10 +159,8 @@ FW_VERSIONS = {
     ],
     (Ecu.eps, 0x712, None): [
       b'\xf1\x875Q0909144T \xf1\x891072\xf1\x82\00521G00807A1',
-      b'\xf1\x875Q0909144T \xf1\x891072\xf1\x82\x0521G00807A1',
     ],
     (Ecu.fwdRadar, 0x757, None): [
-      b'\xf1\x875Q0907572G \xf1\x890571',
       b'\xf1\x875Q0907572G \xf1\x890571',
     ],
   },
