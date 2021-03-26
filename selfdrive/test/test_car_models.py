@@ -445,6 +445,10 @@ routes = {
     'carFingerprint': VOLKSWAGEN.JETTA_MK7,
     'enableCamera': True,
   },
+  "4d134e099430fba2|2021-03-26--00-26-06": {
+    'carFingerprint': VOLKSWAGEN.PASSAT_MK8,
+    'enableCamera': True,
+  },
   "2cef8a0b898f331a|2021-03-25--20-13-57": {
     'carFingerprint': VOLKSWAGEN.TIGUAN_MK2,
     'enableCamera': True,
@@ -453,8 +457,16 @@ routes = {
     'carFingerprint': VOLKSWAGEN.AUDI_A3_MK3,
     'enableCamera': True,
   },
+  "8f205bdd11bcbb65|2021-03-26--01-00-17": {
+    'carFingerprint': VOLKSWAGEN.SEAT_ATECA_MK1,
+    'enableCamera': True,
+  },
   "90434ff5d7c8d603|2021-03-15--12-07-31": {
     'carFingerprint': VOLKSWAGEN.SKODA_KODIAQ_MK1,
+    'enableCamera': True,
+  },
+  "026b6d18fba6417f|2021-03-26--09-17-04": {
+    'carFingerprint': VOLKSWAGEN.SKODA_SCALA_MK1,
     'enableCamera': True,
   },
   "3c8f0c502e119c1c|2020-06-30--12-58-02": {
