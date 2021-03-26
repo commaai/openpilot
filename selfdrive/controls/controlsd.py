@@ -144,6 +144,8 @@ class Controls:
       self.events.add(EventName.communityFeatureDisallowed, static=True)
     if not car_recognized:
       self.events.add(EventName.carUnrecognized, static=True)
+    elif self.read_only:
+      self.events.add(EventName.dashcamMode, static=True)
 
     # controlsd is driven by can recv, expected at 100Hz
     self.rk = Ratekeeper(100, print_delay_threshold=None)
@@ -158,8 +160,7 @@ class Controls:
 
     # Handle startup event
     if self.startup_event is not None:
-      static = self.startup_event in [EventName.carUnrecognized, EventName.startupNoCar, EventName.startupNoControl]
-      self.events.add(self.startup_event, static=static)
+      self.events.add(self.startup_event)
       self.startup_event = None
 
     # Create events for battery, temperature, disk space, and memory
