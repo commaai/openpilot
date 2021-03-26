@@ -1,12 +1,8 @@
 #include <QLabel>
-#include <QString>
 #include <QPainter>
-#include <QScroller>
-#include <QScrollBar>
-#include <QGridLayout>
 #include <QVBoxLayout>
-#include <QQmlContext>
 #include <QQuickWidget>
+#include <QQmlContext>
 #include <QDesktopWidget>
 
 #include "common/params.h"
@@ -31,14 +27,14 @@ void TrainingGuide::mouseReleaseEvent(QMouseEvent *e) {
 
   if (currentIndex >= boundingBox.size()) {
     emit completedTraining();
-    return;
   } else {
     image.load("../assets/training/step" + QString::number(currentIndex) + ".jpg");
     update();
   }
 }
 
-TrainingGuide::TrainingGuide(QWidget* parent) : QFrame(parent){
+void TrainingGuide::showEvent(QShowEvent *event) {
+  currentIndex = 0;
   image.load("../assets/training/step0.jpg");
 }
 
@@ -142,6 +138,7 @@ OnboardingWindow::OnboardingWindow(QWidget *parent) : QStackedWidget(parent) {
     updateActiveScreen();
   });
   addWidget(tr);
+
 
   setStyleSheet(R"(
     * {
