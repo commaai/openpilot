@@ -107,7 +107,7 @@ PrimeUserWidget::PrimeUserWidget(QWidget* parent) : QWidget(parent) {
 
   // TODO: only send the request when widget is shown
   QString url = "https://api.commadotai.com/v1/devices/" + dongleId + "/owner";
-  RequestRepeater* repeater = new RequestRepeater(this, url, 6);
+  RequestRepeater* repeater = new RequestRepeater(this, url, 6, "ApiCache_Owner");
   QObject::connect(repeater, SIGNAL(receivedResponse(QString)), this, SLOT(replyFinished(QString)));
 }
 
@@ -239,7 +239,7 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
   // set up API requests
   QString dongleId = QString::fromStdString(Params().get("DongleId"));
   QString url = "https://api.commadotai.com/v1.1/devices/" + dongleId + "/";
-  RequestRepeater* repeater = new RequestRepeater(this, url, 5);
+  RequestRepeater* repeater = new RequestRepeater(this, url, 5, "ApiCache_Device");
 
   QObject::connect(repeater, SIGNAL(receivedResponse(QString)), this, SLOT(replyFinished(QString)));
   QObject::connect(repeater, SIGNAL(failedResponse(QString)), this, SLOT(parseError(QString)));

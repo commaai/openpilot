@@ -138,6 +138,9 @@ void RequestRepeater::requestFinished(){
       }
       emit receivedResponse(response);
     } else {
+      if (!cache_key.isEmpty()) {
+        Params().delete_db_value(cache_key.toStdString());
+      }
       emit failedResponse(reply->errorString());
     }
   } else {
