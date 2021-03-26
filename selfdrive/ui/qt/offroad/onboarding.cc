@@ -1,12 +1,8 @@
 #include <QLabel>
-#include <QString>
 #include <QPainter>
-#include <QScroller>
-#include <QScrollBar>
-#include <QGridLayout>
 #include <QVBoxLayout>
-#include <QQmlContext>
 #include <QQuickWidget>
+#include <QQmlContext>
 #include <QDesktopWidget>
 
 #include "common/params.h"
@@ -31,19 +27,14 @@ void TrainingGuide::mouseReleaseEvent(QMouseEvent *e) {
 
   if (currentIndex >= boundingBox.size()) {
     emit completedTraining();
-    return;
   } else {
     image.load("../assets/training/step" + QString::number(currentIndex) + ".jpg");
     update();
   }
 }
 
-void TrainingGuide::reset(){
+void TrainingGuide::showEvent(QShowEvent *event) {
   currentIndex = 0;
-  image.load("../assets/training/step0.jpg");
-}
-
-TrainingGuide::TrainingGuide(QWidget* parent) : QFrame(parent){
   image.load("../assets/training/step0.jpg");
 }
 
@@ -120,7 +111,6 @@ void OnboardingWindow::updateActiveScreen() {
   if (!accepted_terms) {
     setCurrentIndex(0);
   } else if (!training_done) {
-    emit resetTrainingGuide();
     setCurrentIndex(1);
   } else {
     emit onboardingDone();
@@ -145,7 +135,6 @@ OnboardingWindow::OnboardingWindow(QWidget *parent) : QStackedWidget(parent) {
     Params().write_db_value("CompletedTrainingVersion", current_training_version);
     updateActiveScreen();
   });
-  connect(this, SIGNAL(resetTrainingGuide()), tr, SLOT(reset()));
   addWidget(tr);
 
 
