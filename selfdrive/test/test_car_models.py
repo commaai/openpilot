@@ -453,6 +453,10 @@ routes = {
     'carFingerprint': VOLKSWAGEN.AUDI_A3,
     'enableCamera': True,
   },
+  "8f205bdd11bcbb65|2021-03-26--01-00-17": {
+    'carFingerprint': VOLKSWAGEN.SEAT_ATECA_MK1,
+    'enableCamera': True,
+  },
   "90434ff5d7c8d603|2021-03-15--12-07-31": {
     'carFingerprint': VOLKSWAGEN.SKODA_KODIAQ_MK1,
     'enableCamera': True,
