@@ -77,10 +77,20 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 1715 + STD_CARGO_KG
       ret.wheelbase = 2.74
 
+    elif candidate == CAR.SEAT_ATECA_MK1:
+      # Averages of all 5F Ateca variants
+      ret.mass = 1900 + STD_CARGO_KG
+      ret.wheelbase = 2.64
+
     elif candidate == CAR.SKODA_KODIAQ_MK1:
       # Averages of all 5N Kodiaq variants
       ret.mass = 1569 + STD_CARGO_KG
       ret.wheelbase = 2.79
+
+    elif candidate == CAR.SKODA_SCALA_MK1:
+      # Averages of all NW Scala variants
+      ret.mass = 1192 + STD_CARGO_KG
+      ret.wheelbase = 2.65
 
     ret.centerToFront = ret.wheelbase * 0.45
 

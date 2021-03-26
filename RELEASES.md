@@ -10,7 +10,7 @@ Version 0.8.3 (2021-XX-XX)
  * Default SSH key only used for setup
  * Kia Ceed 2019 support thanks to ZanZaD13!
  * Kia Seltos 2021 support thanks to speedking456!
- * Skoda Kodiaq 2018 support thanks to jyoung8607!
+ * Škoda Kodiaq 2018 support thanks to jyoung8607!
  * Volkswagen Tiguan 2020 support thanks to jyoung8607!
  * Volkswagen Jetta 2018-2021 support thanks to jyoung8607!
 
