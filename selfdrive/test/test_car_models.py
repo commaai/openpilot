@@ -450,7 +450,7 @@ routes = {
     'enableCamera': True,
   },
   "07667b885add75fd|2021-01-23--19-48-42": {
-    'carFingerprint': VOLKSWAGEN.AUDI_A3,
+    'carFingerprint': VOLKSWAGEN.AUDI_A3_MK3,
     'enableCamera': True,
   },
   "90434ff5d7c8d603|2021-03-15--12-07-31": {
