@@ -25,41 +25,46 @@ class CarInterface(CarInterfaceBase):
     # VW port is a community feature, since we don't own one to test
     ret.communityFeature = True
 
-    if candidate in [CAR.GOLF, CAR.AUDI_A3]:
+    if True:  # pylint: disable=using-constant-test
       # Set common MQB parameters that will apply globally
       ret.carName = "volkswagen"
       ret.radarOffCan = True
       ret.safetyModel = car.CarParams.SafetyModel.volkswagen
+      ret.steerActuatorDelay = 0.05
 
-      # Additional common MQB parameters that may be overridden per-vehicle
-      ret.steerRateCost = 1.0
-      ret.steerActuatorDelay = 0.05  # Hopefully all MQB racks are similar here
-      ret.steerLimitTimer = 0.4
+      if 0xAD in fingerprint[0]:
+        # Getriebe_11 detected: traditional automatic or DSG gearbox
+        ret.transmissionType = TransmissionType.automatic
+      elif 0x187 in fingerprint[0]:
+        # EV_Gearshift detected: e-Golf or similar direct-drive electric
+        ret.transmissionType = TransmissionType.direct
+      else:
+        # No trans message at all, must be a true stick-shift manual
+        ret.transmissionType = TransmissionType.manual
+      cloudlog.info("Detected transmission type: %s", ret.transmissionType)
 
-      ret.lateralTuning.pid.kpBP = [0.]
-      ret.lateralTuning.pid.kiBP = [0.]
+    # Global tuning defaults, can be overridden per-vehicle
 
+    ret.steerRateCost = 1.0
+    ret.steerLimitTimer = 0.4
+    ret.steerRatio = 15.6  # Let the params learner figure this out
+    tire_stiffness_factor = 1.0  # Let the params learner figure this out
+    ret.lateralTuning.pid.kpBP = [0.]
+    ret.lateralTuning.pid.kiBP = [0.]
+    ret.lateralTuning.pid.kf = 0.00006
+    ret.lateralTuning.pid.kpV = [0.6]
+    ret.lateralTuning.pid.kiV = [0.2]
+
+    # Per-chassis tuning values, override tuning defaults here if desired
+
+    if candidate in [CAR.AUDI_A3, CAR.GOLF]:
+      # Temporarily carry forward old tuning values while we test vehicle identification
       ret.mass = 1500 + STD_CARGO_KG
       ret.wheelbase = 2.64
-      ret.centerToFront = ret.wheelbase * 0.45
-      ret.steerRatio = 15.6
-      ret.lateralTuning.pid.kf = 0.00006
-      ret.lateralTuning.pid.kpV = [0.6]
-      ret.lateralTuning.pid.kiV = [0.2]
-      tire_stiffness_factor = 1.0
+
+    ret.centerToFront = ret.wheelbase * 0.45
 
     ret.enableCamera = True  # Stock camera detection doesn't apply to VW
-
-    if 0xAD in fingerprint[0]:
-      # Getriebe_11 detected: traditional automatic or DSG gearbox
-      ret.transmissionType = TransmissionType.automatic
-    elif 0x187 in fingerprint[0]:
-      # EV_Gearshift detected: e-Golf or similar direct-drive electric
-      ret.transmissionType = TransmissionType.direct
-    else:
-      # No trans message at all, must be a true stick-shift manual
-      ret.transmissionType = TransmissionType.manual
-    cloudlog.info("Detected transmission type: %s", ret.transmissionType)
 
     # TODO: get actual value, for now starting with reasonable value for
     # civic and scaling by mass and wheelbase

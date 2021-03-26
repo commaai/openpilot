@@ -1,12 +1,8 @@
 #include <QLabel>
-#include <QString>
 #include <QPainter>
-#include <QScroller>
-#include <QScrollBar>
-#include <QGridLayout>
 #include <QVBoxLayout>
-#include <QQmlContext>
 #include <QQuickWidget>
+#include <QQmlContext>
 #include <QDesktopWidget>
 
 #include "common/params.h"
@@ -31,14 +27,14 @@ void TrainingGuide::mouseReleaseEvent(QMouseEvent *e) {
 
   if (currentIndex >= boundingBox.size()) {
     emit completedTraining();
-    return;
   } else {
     image.load("../assets/training/step" + QString::number(currentIndex) + ".jpg");
     update();
   }
 }
 
-TrainingGuide::TrainingGuide(QWidget* parent) : QFrame(parent){
+void TrainingGuide::showEvent(QShowEvent *event) {
+  currentIndex = 0;
   image.load("../assets/training/step0.jpg");
 }
 
@@ -60,7 +56,7 @@ TermsPage::TermsPage(QWidget *parent) : QFrame(parent){
   main_layout->setMargin(40);
   main_layout->setSpacing(40);
 
-  QQuickWidget *text = new QQuickWidget(QUrl::fromLocalFile("qt/offroad/text_view.qml"), this);
+  QQuickWidget *text = new QQuickWidget(this);
   text->setResizeMode(QQuickWidget::SizeRootObjectToView);
   text->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
   text->setAttribute(Qt::WA_AlwaysStackOnTop);
@@ -70,6 +66,8 @@ TermsPage::TermsPage(QWidget *parent) : QFrame(parent){
 
   QString text_view = util::read_file("../assets/offroad/tc.html").c_str();
   text->rootContext()->setContextProperty("text_view", text_view);
+
+  text->setSource(QUrl::fromLocalFile("qt/offroad/text_view.qml"));
 
   main_layout->addWidget(text);
 
@@ -140,6 +138,7 @@ OnboardingWindow::OnboardingWindow(QWidget *parent) : QStackedWidget(parent) {
     updateActiveScreen();
   });
   addWidget(tr);
+
 
   setStyleSheet(R"(
     * {
