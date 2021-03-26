@@ -194,7 +194,7 @@ Community Maintained Cars and Features
 <sup>1</sup>Requires an [OBD-II car harness](https://comma.ai/shop/products/comma-car-harness) and [community built ASCM harness](https://github.com/commaai/openpilot/wiki/GM#hardware). ***NOTE: disconnecting the ASCM disables Automatic Emergency Braking (AEB).*** <br />
 <sup>2</sup>Only includes the MQB Passat sold outside of North America. The NMS Passat made in Chattanooga TN is not yet supported.
 
-<sup>2</sup> Requires a custom Nidec harness (requires what is CAN0/2 on the Nidec harness to be made passtrhough, and the additional CAN pair on the Clarity be made CAN0/2), as well as a custom Proxy Panda either at the camera, or the gateway located behind the glovebox.
+<sup>2</sup> Requires a custom Nidec harness (requires what is CAN0/2 on the Nidec harness to be made pass-through, and the additional CAN pair on the Clarity be made CAN0/2), as well as a custom Proxy Panda either at the camera, or the gateway located behind the glovebox.
 
 Although it's not upstream, there's a community of people getting openpilot to run on Tesla's [here](https://tinkla.us/)
 
