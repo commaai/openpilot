@@ -226,6 +226,11 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
     }
   )");
 
+  // Retain size while hidden
+  QSizePolicy sp_retain = sizePolicy();
+  sp_retain.setRetainSizeWhenHidden(true);
+  setSizePolicy(sp_retain);
+
   // set up API requests
   QString dongleId = QString::fromStdString(Params().get("DongleId"));
   QString url = "https://api.commadotai.com/v1.1/devices/" + dongleId + "/";
@@ -233,9 +238,11 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
 
   QObject::connect(repeater, SIGNAL(receivedResponse(QString)), this, SLOT(replyFinished(QString)));
   QObject::connect(repeater, SIGNAL(failedResponse(QString)), this, SLOT(parseError(QString)));
+  hide(); // Only show when first request comes back
 }
 
 void SetupWidget::parseError(QString response) {
+  show();
   showQr = false;
   mainLayout->setCurrentIndex(0);
 }
@@ -246,6 +253,7 @@ void SetupWidget::showQrCode(){
 }
 
 void SetupWidget::replyFinished(QString response) {
+  show();
   QJsonDocument doc = QJsonDocument::fromJson(response.toUtf8());
   if (doc.isNull()) {
     qDebug() << "JSON Parse failed on getting pairing and prime status";
