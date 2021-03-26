@@ -11,6 +11,9 @@ export GIT_BRANCH=${env.GIT_BRANCH}
 export GIT_COMMIT=${env.GIT_COMMIT}
 
 source ~/.bash_profile
+if [ -f /TICI ]; then
+  source /etc/profile
+fi
 
 ln -snf ${env.TEST_DIR} /data/pythonpath
 
