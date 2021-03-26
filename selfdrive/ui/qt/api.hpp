@@ -42,7 +42,6 @@ private:
   QNetworkAccessManager* networkAccessManager;
   QTimer* networkTimer;
   QString cache_key;
-  std::atomic<bool> aborted = false; // Not 100% sure we need atomic
   void sendRequest(QString requestURL, QVector<QPair<QString, QJsonValue>> payloads);
 
 private slots:

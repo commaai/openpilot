@@ -374,7 +374,7 @@ void ui_draw(UIState *s) {
     s->viz_rect.w -= sbr_w;
   }
 
-  const bool draw_alerts = s->scene.started && s->active_app == cereal::UiLayoutState::App::NONE;
+  const bool draw_alerts = s->scene.started;
   const bool draw_vision = draw_alerts && s->vipc_client->connected;
 
   // GL drawing functions
