@@ -441,12 +441,20 @@ routes = {
     'carFingerprint': VOLKSWAGEN.GOLF,
     'enableCamera': True,
   },
+  "58a7d3b707987d65|2021-03-25--17-26-37": {
+    'carFingerprint': VOLKSWAGEN.JETTA_MK7,
+    'enableCamera': True,
+  },
   "2cef8a0b898f331a|2021-03-25--20-13-57": {
     'carFingerprint': VOLKSWAGEN.TIGUAN_MK2,
     'enableCamera': True,
   },
   "07667b885add75fd|2021-01-23--19-48-42": {
     'carFingerprint': VOLKSWAGEN.AUDI_A3,
+    'enableCamera': True,
+  },
+  "90434ff5d7c8d603|2021-03-15--12-07-31": {
+    'carFingerprint': VOLKSWAGEN.SKODA_KODIAQ_MK1,
     'enableCamera': True,
   },
   "3c8f0c502e119c1c|2020-06-30--12-58-02": {

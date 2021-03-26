@@ -62,10 +62,20 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 1500 + STD_CARGO_KG
       ret.wheelbase = 2.64
 
-    if candidate == CAR.TIGUAN_MK2:
+    elif candidate == CAR.JETTA_MK7:
+      # Averages of all BU Jetta variants
+      ret.mass = 1328 + STD_CARGO_KG
+      ret.wheelbase = 2.71
+
+    elif candidate == CAR.TIGUAN_MK2:
       # Average of SWB and LWB variants
       ret.mass = 1715 + STD_CARGO_KG
       ret.wheelbase = 2.74
+
+    elif candidate == CAR.SKODA_KODIAQ_MK1:
+      # Averages of all 5N Kodiaq variants
+      ret.mass = 1569 + STD_CARGO_KG
+      ret.wheelbase = 2.79
 
     ret.centerToFront = ret.wheelbase * 0.45
 
