@@ -445,6 +445,10 @@ routes = {
     'carFingerprint': VOLKSWAGEN.JETTA_MK7,
     'enableCamera': True,
   },
+  "4d134e099430fba2|2021-03-26--00-26-06": {
+    'carFingerprint': VOLKSWAGEN.PASSAT_MK8,
+    'enableCamera': True,
+  },
   "2cef8a0b898f331a|2021-03-25--20-13-57": {
     'carFingerprint': VOLKSWAGEN.TIGUAN_MK2,
     'enableCamera': True,
