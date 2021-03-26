@@ -58,7 +58,7 @@ QWidget * toggles_panel() {
   toggles_list->addWidget(record_toggle);
   toggles_list->addWidget(horizontal_line());
   toggles_list->addWidget(new ParamControl("EndToEndToggle",
-                                           "Ignore lanelines (Experimental)",
+                                           "\U0001f96c Disable use of lanelines (Alpha) \U0001f96c",
                                            "In this mode openpilot will ignore lanelines and just drive how it thinks a human would.",
                                            "../assets/offroad/icon_road.png"));
 
@@ -104,6 +104,17 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
                                         Params().delete_db_value("CalibrationParams");
                                       }
                                     }));
+
+  device_layout->addWidget(new ButtonControl("Review Training Guide", "REVIEW",
+                                             "Review the rules, features, and limitations of openpilot",
+                                             [=]() {
+                                               if (ConfirmationDialog::confirm("Are you sure you want to review the training guide?")) {
+                                                 Params().delete_db_value("CompletedTrainingVersion");
+                                                 emit reviewTrainingGuide();
+                                               }
+                                             }));
+
+  device_layout->addWidget(horizontal_line());
 
   QString brand = params.read_db_bool("Passive") ? "dashcam" : "openpilot";
   buttons.append(new ButtonControl("Uninstall " + brand, "UNINSTALL",
@@ -248,8 +259,11 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   QObject::connect(close_btn, SIGNAL(released()), this, SIGNAL(closeSettings()));
 
   // setup panels
+  DevicePanel *device = new DevicePanel(this);
+  QObject::connect(device, SIGNAL(reviewTrainingGuide()), this, SIGNAL(reviewTrainingGuide()));
+
   QPair<QString, QWidget *> panels[] = {
-    {"Device", new DevicePanel(this)},
+    {"Device", device},
     {"Network", network_panel(this)},
     {"Toggles", toggles_panel()},
     {"Developer", new DeveloperPanel()},

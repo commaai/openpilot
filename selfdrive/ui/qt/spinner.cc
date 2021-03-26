@@ -43,6 +43,7 @@ Spinner::Spinner(QWidget *parent) {
   progress_bar->setRange(5, 100);
   progress_bar->setTextVisible(false);
   progress_bar->setVisible(false);
+  progress_bar->setFixedHeight(20);
   main_layout->addWidget(progress_bar, 1, 0, Qt::AlignHCenter);
 
   setLayout(main_layout);
@@ -56,7 +57,6 @@ Spinner::Spinner(QWidget *parent) {
     }
     QProgressBar {
       background-color: #373737;
-      height: 20px;
       width: 1000px;
       border solid white;
       border-radius: 10px;

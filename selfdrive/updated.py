@@ -164,7 +164,8 @@ def init_overlay() -> None:
 
   cloudlog.info("preparing new safe staging area")
 
-  Params().put("UpdateAvailable", "0")
+  params = Params()
+  params.put("UpdateAvailable", "0")
   set_consistent_flag(False)
   dismount_overlay()
   if os.path.isdir(STAGING_ROOT):
@@ -195,6 +196,10 @@ def init_overlay() -> None:
     run(["sudo", "chmod", "755", os.path.join(OVERLAY_METADATA, "work")])
   else:
     run(mount_cmd)
+
+  git_diff = run(["git", "diff"], OVERLAY_MERGED, low_priority=True)
+  params.put("GitDiff", git_diff)
+  cloudlog.info(f"git diff output:\n{git_diff}")
 
 
 def finalize_update() -> None:
