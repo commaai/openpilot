@@ -133,16 +133,18 @@ void RequestRepeater::requestFinished(){
     QString response = reply->readAll();
     if (reply->error() == QNetworkReply::NoError) {
       // save to cache
-      if (!cache_key.isEmpty()) { 
-        Params().write_db_value(cache_key.toStdString(), response.toStdString()); 
+      if (!cache_key.isEmpty()) {
+        Params().write_db_value(cache_key.toStdString(), response.toStdString());
       }
       emit receivedResponse(response);
     } else {
-      qDebug() << reply->errorString();
+      if (!cache_key.isEmpty()) {
+        Params().delete_db_value(cache_key.toStdString());
+      }
       emit failedResponse(reply->errorString());
     }
   } else {
-    emit failedResponse("network timeout");
+    emit timeoutResponse("timeout");
   }
   reply->deleteLater();
   reply = NULL;

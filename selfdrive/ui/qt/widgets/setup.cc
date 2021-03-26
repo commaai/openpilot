@@ -3,7 +3,7 @@
 #include <QJsonObject>
 #include <QLabel>
 #include <QPushButton>
-#include <QStackedLayout>
+#include <QStackedWidget>
 #include <QTimer>
 #include <QVBoxLayout>
 
@@ -107,7 +107,7 @@ PrimeUserWidget::PrimeUserWidget(QWidget* parent) : QWidget(parent) {
 
   // TODO: only send the request when widget is shown
   QString url = "https://api.commadotai.com/v1/devices/" + dongleId + "/owner";
-  RequestRepeater* repeater = new RequestRepeater(this, url, 6);
+  RequestRepeater* repeater = new RequestRepeater(this, url, 6, "ApiCache_Owner");
   QObject::connect(repeater, SIGNAL(receivedResponse(QString)), this, SLOT(replyFinished(QString)));
 }
 
@@ -156,7 +156,7 @@ PrimeAdWidget::PrimeAdWidget(QWidget* parent) : QWidget(parent) {
 
 
 SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
-  mainLayout = new QStackedLayout;
+  mainLayout = new QStackedWidget;
 
   // Unpaired, registration prompt layout
 
@@ -214,7 +214,12 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
   primeUser = new PrimeUserWidget;
   mainLayout->addWidget(primeUser);
 
-  setLayout(mainLayout);
+  mainLayout->setCurrentWidget(primeAd);
+
+  QVBoxLayout *layout = new QVBoxLayout;
+  layout->addWidget(mainLayout);
+  setLayout(layout);
+
   setStyleSheet(R"(
     SetupWidget {
       background-color: #292929;
@@ -226,16 +231,23 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
     }
   )");
 
+  // Retain size while hidden
+  QSizePolicy sp_retain = sizePolicy();
+  sp_retain.setRetainSizeWhenHidden(true);
+  setSizePolicy(sp_retain);
+
   // set up API requests
   QString dongleId = QString::fromStdString(Params().get("DongleId"));
   QString url = "https://api.commadotai.com/v1.1/devices/" + dongleId + "/";
-  RequestRepeater* repeater = new RequestRepeater(this, url, 5);
+  RequestRepeater* repeater = new RequestRepeater(this, url, 5, "ApiCache_Device");
 
   QObject::connect(repeater, SIGNAL(receivedResponse(QString)), this, SLOT(replyFinished(QString)));
   QObject::connect(repeater, SIGNAL(failedResponse(QString)), this, SLOT(parseError(QString)));
+  hide(); // Only show when first request comes back
 }
 
 void SetupWidget::parseError(QString response) {
+  show();
   showQr = false;
   mainLayout->setCurrentIndex(0);
 }
@@ -246,6 +258,7 @@ void SetupWidget::showQrCode(){
 }
 
 void SetupWidget::replyFinished(QString response) {
+  show();
   QJsonDocument doc = QJsonDocument::fromJson(response.toUtf8());
   if (doc.isNull()) {
     qDebug() << "JSON Parse failed on getting pairing and prime status";
