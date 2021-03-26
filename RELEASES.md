@@ -2,7 +2,7 @@ Version 0.8.3 (2021-XX-XX)
 ========================
  * New model
    * Trained on new diverse dataset from 2000+ users from 30+ countries
-   * Trained with improved segnet from comma-pencil
+   * Trained with improved segnet from [comma-pencil](https://github.com/commaai/comma10k)
    * 🥬 Dramatically improved end-to-end lateral performance 🥬
  * NEOS update: update packages and support for new UI
  * New offroad UI based on Qt
