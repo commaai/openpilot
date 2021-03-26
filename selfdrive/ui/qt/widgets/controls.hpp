@@ -14,6 +14,9 @@ QFrame *horizontal_line(QWidget *parent = nullptr);
 class AbstractControl : public QFrame {
   Q_OBJECT
 
+public slots:
+  void resetState();
+
 protected:
   AbstractControl(const QString &title, const QString &desc = "", const QString &icon = "", QWidget *parent = nullptr);
 

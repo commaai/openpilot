@@ -95,7 +95,7 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
 
   device_layout->addWidget(new ButtonControl("Driver Camera", "PREVIEW",
                                              "Preview the driver facing camera to help optimize device mounting position for best driver monitoring experience. (vehicle must be off)",
-                                             [=]() { Params().write_db_value("IsDriverViewEnabled", "1", 1); }));
+                                             [=]() { Params().write_db_value("IsDriverViewEnabled", "1", 1); }, "", this));
 
   device_layout->addWidget(horizontal_line());
 
@@ -106,20 +106,10 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
                                                if (ConfirmationDialog::confirm("Are you sure you want to reset calibration?")) {
                                                  Params().delete_db_value("CalibrationParams");
                                                }
-                                             });
+                                             }, "", this);
 
+  QObject::connect(parent, SIGNAL(closeSettings()), reset_calibration, SLOT(resetState()));
   device_layout->addWidget(reset_calibration);
-
-  device_layout->addWidget(horizontal_line());
-
-  device_layout->addWidget(new ButtonControl("Review Training Guide", "REVIEW",
-                                             "Review the rules, features, and limitations of openpilot",
-                                             [=]() {
-                                               if (ConfirmationDialog::confirm("Are you sure you want to review the training guide?")) {
-                                                 Params().delete_db_value("CompletedTrainingVersion");
-                                                 emit reviewTrainingGuide();
-                                               }
-                                             }));
 
   device_layout->addWidget(horizontal_line());
 
@@ -130,7 +120,7 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
                                                if (ConfirmationDialog::confirm("Are you sure you want to uninstall?")) {
                                                  Params().write_db_value("DoUninstall", "1");
                                                }
-                                             }));
+                                             }, "", this));
 
   // power buttons
   QHBoxLayout *power_layout = new QHBoxLayout();
@@ -259,15 +249,13 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   QObject::connect(close_btn, SIGNAL(released()), this, SIGNAL(closeSettings()));
 
   // setup panels
-  DevicePanel *device = new DevicePanel(this);
-  QObject::connect(device, SIGNAL(reviewTrainingGuide()), this, SIGNAL(reviewTrainingGuide()));
-
   QPair<QString, QWidget *> panels[] = {
-    {"Device", device},
+    {"Device", new DevicePanel(this)},
     {"Network", network_panel(this)},
     {"Toggles", toggles_panel()},
     {"Developer", new DeveloperPanel()},
   };
+
 
   sidebar_layout->addSpacing(45);
   nav_btns = new QButtonGroup();

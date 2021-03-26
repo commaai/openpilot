@@ -14,6 +14,11 @@ QFrame *horizontal_line(QWidget *parent) {
   return line;
 }
 
+void AbstractControl::resetState(){
+  if(description->isVisible())
+    description->setVisible(false);
+}
+
 AbstractControl::AbstractControl(const QString &title, const QString &desc, const QString &icon, QWidget *parent) : QFrame(parent) {
   QVBoxLayout *vlayout = new QVBoxLayout();
   vlayout->setMargin(0);
@@ -47,10 +52,12 @@ AbstractControl::AbstractControl(const QString &title, const QString &desc, cons
     description->setVisible(false);
     vlayout->addWidget(description);
 
+    //connect(parent, SIGNAL(resetSettings()), this, SLOT(resetState()));
     connect(title_label, &QPushButton::clicked, [=]() {
       description->setVisible(!description->isVisible());
     });
-  }
 
-  setLayout(vlayout);
+    setLayout(vlayout);
+  }
 }
+
