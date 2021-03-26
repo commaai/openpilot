@@ -60,7 +60,7 @@ TermsPage::TermsPage(QWidget *parent) : QFrame(parent){
   main_layout->setMargin(40);
   main_layout->setSpacing(40);
 
-  QQuickWidget *text = new QQuickWidget(QUrl::fromLocalFile("qt/offroad/text_view.qml"), this);
+  QQuickWidget *text = new QQuickWidget(this);
   text->setResizeMode(QQuickWidget::SizeRootObjectToView);
   text->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
   text->setAttribute(Qt::WA_AlwaysStackOnTop);
@@ -70,6 +70,8 @@ TermsPage::TermsPage(QWidget *parent) : QFrame(parent){
 
   QString text_view = util::read_file("../assets/offroad/tc.html").c_str();
   text->rootContext()->setContextProperty("text_view", text_view);
+
+  text->setSource(QUrl::fromLocalFile("qt/offroad/text_view.qml"));
 
   main_layout->addWidget(text);
 
