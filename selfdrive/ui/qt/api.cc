@@ -45,7 +45,7 @@ QByteArray CommaApi::rsa_sign(QByteArray data) {
   return sig;
 }
 
-QString CommaApi::create_jwt(QVector<QPair<QString, QJsonValue>> payloads, int expiry) {
+QString CommaApi::create_jwt(QVector<QPair<QString, QJsonValue>> *payloads, int expiry) {
   QString dongle_id = QString::fromStdString(Params().get("DongleId"));
 
   QJsonObject header;
@@ -58,8 +58,10 @@ QString CommaApi::create_jwt(QVector<QPair<QString, QJsonValue>> payloads, int e
   payload.insert("nbf", t);
   payload.insert("iat", t);
   payload.insert("exp", t + expiry);
-  for (auto load : payloads) {
-    payload.insert(load.first, load.second);
+  if (payloads != nullptr) {
+    for (auto load : *payloads) {
+      payload.insert(load.first, load.second);
+    }
   }
 
   auto b64_opts = QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals;
@@ -72,12 +74,9 @@ QString CommaApi::create_jwt(QVector<QPair<QString, QJsonValue>> payloads, int e
   return jwt;
 }
 
-QString CommaApi::create_jwt() {
-  return create_jwt(*(new QVector<QPair<QString, QJsonValue>>()));
-}
-
-RequestRepeater::RequestRepeater(QWidget* parent, QString requestURL, int period_seconds, const QString &cache_key, QVector<QPair<QString, QJsonValue>> payloads, bool disableWithScreen)
-  : disableWithScreen(disableWithScreen), cache_key(cache_key), QObject(parent)  {
+RequestRepeater::RequestRepeater(QWidget* parent, QString requestURL, int period_seconds, const QString& cache_key,
+                                 QVector<QPair<QString, QJsonValue>> *payloads, bool disableWithScreen)
+    : disableWithScreen(disableWithScreen), cache_key(cache_key), QObject(parent) {
   networkAccessManager = new QNetworkAccessManager(this);
 
   reply = NULL;
@@ -98,7 +97,7 @@ RequestRepeater::RequestRepeater(QWidget* parent, QString requestURL, int period
   }
 }
 
-void RequestRepeater::sendRequest(QString requestURL, QVector<QPair<QString, QJsonValue>> payloads){
+void RequestRepeater::sendRequest(QString requestURL, QVector<QPair<QString, QJsonValue>> *payloads){
   if (GLWindow::ui_state.scene.started || !active || reply != NULL ||
       (!GLWindow::ui_state.awake && disableWithScreen)) {
     return;

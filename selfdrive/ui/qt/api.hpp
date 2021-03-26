@@ -19,8 +19,7 @@ class CommaApi : public QObject {
 
 public:
   static QByteArray rsa_sign(QByteArray data);
-  static QString create_jwt(QVector<QPair<QString, QJsonValue>> payloads, int expiry=3600);
-  static QString create_jwt();
+  static QString create_jwt(QVector<QPair<QString, QJsonValue>> *payloads = nullptr, int expiry=3600);
 
 private:
   QNetworkAccessManager* networkAccessManager;
@@ -33,8 +32,9 @@ class RequestRepeater : public QObject {
   Q_OBJECT
 
 public:
-  explicit RequestRepeater(QWidget* parent, QString requestURL, int period = 10, const QString &cache_key = "", QVector<QPair<QString, QJsonValue>> payloads = *(new QVector<QPair<QString, QJsonValue>>()), bool disableWithScreen = true);
-  bool active = true;
+ explicit RequestRepeater(QWidget* parent, QString requestURL, int period = 10, const QString& cache_key = "",
+                          QVector<QPair<QString, QJsonValue>> *payloads = nullptr, bool disableWithScreen = true);
+ bool active = true;
 
 private:
   bool disableWithScreen;
@@ -42,7 +42,7 @@ private:
   QNetworkAccessManager* networkAccessManager;
   QTimer* networkTimer;
   QString cache_key;
-  void sendRequest(QString requestURL, QVector<QPair<QString, QJsonValue>> payloads);
+  void sendRequest(QString requestURL, QVector<QPair<QString, QJsonValue>> *payloads);
 
 private slots:
   void requestTimeout();
