@@ -68,6 +68,8 @@ FINGERPRINTS = {
   }],
 }
 
+IGNORED_FINGERPRINTS = [CAR.TIGUAN_MK2]
+
 FW_VERSIONS = {
   CAR.AUDI_A3: {
     (Ecu.engine, 0x7e0, None): [
