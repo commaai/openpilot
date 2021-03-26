@@ -167,19 +167,19 @@ FW_VERSIONS = {
   },
   CAR.SEAT_ATECA_MK1: {
     (Ecu.engine, 0x7e0, None): [
-      b'\xf1\x8704E906027KA\xf1\x893749',  # 2018 SEAT Ateca (CZEA)
+      b'\xf1\x8704E906027KA\xf1\x893749',
     ],
     (Ecu.transmission, 0x7e1, None): [
-      b'\xf1\x870D9300014S \xf1\x895202',  # 2018 SEAT Ateca (DQ250)
+      b'\xf1\x870D9300014S \xf1\x895202',
     ],
     (Ecu.srs, 0x715, None): [
-      b'\xf1\x873Q0959655BH\xf1\x890703\xf1\x82\0161212001211001305121211052900',  # 2018 SEAT Ateca
+      b'\xf1\x873Q0959655BH\xf1\x890703\xf1\x82\0161212001211001305121211052900',
     ],
     (Ecu.eps, 0x712, None): [
-      b'\xf1\x873Q0909144L \xf1\x895081\xf1\x82\00571N60511A1',  # 2018 SEAT Ateca
+      b'\xf1\x873Q0909144L \xf1\x895081\xf1\x82\00571N60511A1',
     ],
     (Ecu.fwdRadar, 0x757, None): [
-      b'\xf1\x872Q0907572M \xf1\x890233',  # 2018 SEAT Ateca
+      b'\xf1\x872Q0907572M \xf1\x890233',
     ],
   },
   CAR.SKODA_KODIAQ_MK1: {
