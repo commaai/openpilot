@@ -67,6 +67,11 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 1328 + STD_CARGO_KG
       ret.wheelbase = 2.71
 
+    elif candidate == CAR.PASSAT_MK8:
+      # Averages of all 3C Passat variants
+      ret.mass = 1551 + STD_CARGO_KG
+      ret.wheelbase = 2.79
+
     elif candidate == CAR.TIGUAN_MK2:
       # Average of SWB and LWB variants
       ret.mass = 1715 + STD_CARGO_KG
