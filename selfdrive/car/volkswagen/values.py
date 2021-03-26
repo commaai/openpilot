@@ -257,7 +257,7 @@ FW_VERSIONS = {
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x8704L906026KB\xf1\x894071',
     ],
-    (Ecu.transmission, 0x7e1, None): [],  # Only onboarded Superb is a manual
+    # Only onboarded Superb so far is a manual (Ecu.transmission, 0x7e1, None): [],
     (Ecu.srs, 0x715, None): [
       b'\xf1\x875Q0959655BH\xf1\x890336\xf1\x82\02331310031313100313131013141319331413100',
     ],
