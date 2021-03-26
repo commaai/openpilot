@@ -62,6 +62,11 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 1500 + STD_CARGO_KG
       ret.wheelbase = 2.64
 
+    if candidate == CAR.TIGUAN_MK2:
+      # Average of SWB and LWB variants
+      ret.mass = 1715 + STD_CARGO_KG
+      ret.wheelbase = 2.74
+
     ret.centerToFront = ret.wheelbase * 0.45
 
     ret.enableCamera = True  # Stock camera detection doesn't apply to VW
