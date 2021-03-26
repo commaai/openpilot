@@ -62,7 +62,7 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 1500 + STD_CARGO_KG
       ret.wheelbase = 2.64
 
-    if candidate in [CAR.TIGUAN_MK2]:
+    if candidate == CAR.TIGUAN_MK2:
       # Average of SWB and LWB variants
       ret.mass = 1715 + STD_CARGO_KG
       ret.wheelbase = 2.74
