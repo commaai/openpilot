@@ -207,14 +207,14 @@ def uploader_fn(exit_event):
   backoff = 0.1
   while not exit_event.is_set():
     sm.update(0)
+    offroad = params.get("IsOffroad") == b'1'
     network_type = sm['deviceState'].networkType if not force_wifi else NetworkType.wifi
     if network_type == NetworkType.none:
-      cloudlog.debug("upload waiting for network connection")
-      time.sleep(10)
+      if allow_sleep:
+        time.sleep(60 if offroad else 5)
       continue
 
     on_wifi = network_type == NetworkType.wifi
-    offroad = params.get("IsOffroad") == b'1'
     allow_raw_upload = params.get("IsUploadRawEnabled") != b"0"
 
     d = uploader.next_file_to_upload(with_raw=allow_raw_upload and on_wifi and offroad)
