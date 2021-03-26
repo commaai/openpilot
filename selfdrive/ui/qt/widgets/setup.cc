@@ -3,7 +3,7 @@
 #include <QJsonObject>
 #include <QLabel>
 #include <QPushButton>
-#include <QStackedLayout>
+#include <QStackedWidget>
 #include <QTimer>
 #include <QVBoxLayout>
 
@@ -156,7 +156,7 @@ PrimeAdWidget::PrimeAdWidget(QWidget* parent) : QWidget(parent) {
 
 
 SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
-  mainLayout = new QStackedLayout;
+  mainLayout = new QStackedWidget;
 
   // Unpaired, registration prompt layout
 
@@ -214,7 +214,12 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
   primeUser = new PrimeUserWidget;
   mainLayout->addWidget(primeUser);
 
-  setLayout(mainLayout);
+  mainLayout->setCurrentWidget(primeAd);
+
+  QVBoxLayout *layout = new QVBoxLayout;
+  layout->addWidget(mainLayout);
+  setLayout(layout);
+
   setStyleSheet(R"(
     SetupWidget {
       background-color: #292929;
