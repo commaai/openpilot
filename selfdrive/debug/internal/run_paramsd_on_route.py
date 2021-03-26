@@ -63,6 +63,7 @@ if __name__ == "__main__":
   print(params)
   learner = ParamsLearner(CP, params['steerRatio'], params['stiffnessFactor'], math.radians(params['angleOffsetAverageDeg']))
   msgs = [m for m in tqdm(msgs) if m.which() in ('liveLocationKalman', 'carState', 'liveParameters')]
+  msgs = sorted(msgs, key=lambda m: m.logMonoTime)
 
   ts = []
   ts_log = []
