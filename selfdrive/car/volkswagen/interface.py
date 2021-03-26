@@ -92,6 +92,11 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 1192 + STD_CARGO_KG
       ret.wheelbase = 2.65
 
+    elif candidate == CAR.SKODA_SUPERB_MK3:
+      # Averages of all 3V/NP Scala variants
+      ret.mass = 1505 + STD_CARGO_KG
+      ret.wheelbase = 2.84
+
     ret.centerToFront = ret.wheelbase * 0.45
 
     ret.enableCamera = True  # Stock camera detection doesn't apply to VW
