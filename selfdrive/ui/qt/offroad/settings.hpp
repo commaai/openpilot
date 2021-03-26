@@ -17,8 +17,6 @@ class DevicePanel : public QWidget {
   Q_OBJECT
 public:
   explicit DevicePanel(QWidget* parent = nullptr);
-signals:
-  void reviewTrainingGuide();
 };
 
 class DeveloperPanel : public QFrame {
@@ -39,7 +37,6 @@ public:
 
 signals:
   void closeSettings();
-  void reviewTrainingGuide();
 
 private:
   QPushButton *sidebar_alert_widget;

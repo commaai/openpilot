@@ -15,8 +15,7 @@ QFrame *horizontal_line(QWidget *parent) {
 }
 
 void AbstractControl::resetState(){
-  if(description->isVisible())
-    description->setVisible(false);
+  description->setVisible(false);
 }
 
 AbstractControl::AbstractControl(const QString &title, const QString &desc, const QString &icon, QWidget *parent) : QFrame(parent) {
@@ -52,7 +51,6 @@ AbstractControl::AbstractControl(const QString &title, const QString &desc, cons
     description->setVisible(false);
     vlayout->addWidget(description);
 
-    //connect(parent, SIGNAL(resetSettings()), this, SLOT(resetState()));
     connect(title_label, &QPushButton::clicked, [=]() {
       description->setVisible(!description->isVisible());
     });
