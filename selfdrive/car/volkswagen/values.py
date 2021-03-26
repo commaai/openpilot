@@ -55,8 +55,9 @@ MQB_LDW_MESSAGES = {
 # FW_VERSIONS for that existing CAR.
 
 class CAR:
-  GOLF = "VOLKSWAGEN GOLF"              # Chassis 5G/AU/BA/BE, Mk7 VW Golf and variants
-  AUDI_A3 = "AUDI A3"                   # Chassis 8V/FF, Mk3 Audi A3 and variants
+  GOLF = "VOLKSWAGEN GOLF"                    # Chassis 5G/AU/BA/BE, Mk7 VW Golf and variants
+  TIGUAN_MK2 = "VOLKSWAGEN TIGUAN 2ND GEN"    # Chassis AD/BW, Mk2 VW Tiguan and variants
+  AUDI_A3 = "AUDI A3"                         # Chassis 8V/FF, Mk3 Audi A3 and variants
 
 FINGERPRINTS = {
   CAR.GOLF: [{
@@ -101,10 +102,28 @@ FW_VERSIONS = {
     (Ecu.fwdRadar, 0x757, None): [
       b'\xf1\x875Q0907572J \xf1\x890654',
     ],
-  }
+  },
+  CAR.TIGUAN_MK2: {
+    (Ecu.engine, 0x7e0, None): [
+      b'\xf1\x8783A907115B \xf1\x890005',
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+      b'\xf1\x8709G927158DT\xf1\x893698',
+    ],
+    (Ecu.srs, 0x715, None): [
+      b'\xf1\x875Q0959655BM\xf1\x890403\xf1\x82\02316143231313500314641011750179333423100',
+    ],
+    (Ecu.eps, 0x712, None): [
+      b'\xf1\x875QM909144C \xf1\x891082\xf1\x82\00521A60804A1',
+    ],
+    (Ecu.fwdRadar, 0x757, None): [
+      b'\xf1\x872Q0907572R \xf1\x890372',
+    ],
+  },
 }
 
 DBC = {
   CAR.GOLF: dbc_dict('vw_mqb_2010', None),
+  CAR.TIGUAN_MK2: dbc_dict('vw_mqb_2010', None),
   CAR.AUDI_A3: dbc_dict('vw_mqb_2010', None),
 }
