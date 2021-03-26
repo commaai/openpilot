@@ -197,8 +197,8 @@ class DriverStatus():
 
     self.driver_distracted = (self._is_driver_distracted(self.pose, self.blink) > 0 and
                               driver_state.faceProb > _FACE_THRESHOLD and self.pose.low_std) or \
-                             (driver_state.distractedPose > _E2E_POS_THRESHOLD or driver_state.distractedEyes > _E2E_POS_THRESHOLD) and \
-                              (self.face_detected and not self.face_partial)
+                             ((driver_state.distractedPose > _E2E_POS_THRESHOLD or driver_state.distractedEyes > _E2E_POS_THRESHOLD) and
+                              (self.face_detected and not self.face_partial))
     self.driver_distraction_filter.update(self.driver_distracted)
 
     # update offseter
