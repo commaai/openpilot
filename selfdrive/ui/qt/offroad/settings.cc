@@ -323,6 +323,10 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   )");
   settings_layout->addWidget(panel_frame);
 
+	QObject::connect(this, &SettingsWindow::closeSettings, [this]() {
+		panel_frame->verticalScrollBar()->setValue(0);
+	});
+
   // setup panel scrolling
   QScroller *scroller = QScroller::scroller(panel_frame);
   auto sp = scroller->scrollerProperties();
