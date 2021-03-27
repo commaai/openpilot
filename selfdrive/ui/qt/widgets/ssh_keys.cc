@@ -1,5 +1,5 @@
 #include <QNetworkReply>
-
+#include <QHBoxLayout>
 #include "widgets/input.hpp"
 #include "widgets/ssh_keys.hpp"
 #include "common/params.h"
@@ -7,6 +7,15 @@
 
 SshControl::SshControl() : AbstractControl("SSH Keys", "Warning: This grants SSH access to all public keys in your GitHub settings. Never enter a GitHub username other than your own. A comma employee will NEVER ask you to add their GitHub username.", "") {
   // setup widget
+  QWidget *widget = new QWidget;
+  QHBoxLayout *hl = new QHBoxLayout(widget);
+  hl->setContentsMargins(0, 0, 0, 0);
+  hl->setSpacing(30);
+
+  username_label.setAlignment(Qt::AlignVCenter | Qt::AlignRight);
+  username_label.setStyleSheet("color: #aaaaaa");
+  hl->addWidget(&username_label);
+
   btn.setStyleSheet(R"(
     padding: 0;
     border-radius: 50px;
@@ -16,7 +25,9 @@ SshControl::SshControl() : AbstractControl("SSH Keys", "Warning: This grants SSH
     background-color: #393939;
   )");
   btn.setFixedSize(250, 100);
-  hlayout->addWidget(&btn);
+  hl->addWidget(&btn);
+
+  hlayout->addWidget(widget);
 
   QObject::connect(&btn, &QPushButton::released, [=]() {
     if (btn.text() == "ADD") {
@@ -27,6 +38,7 @@ SshControl::SshControl() : AbstractControl("SSH Keys", "Warning: This grants SSH
         getUserKeys(username);
       }
     } else {
+      Params().delete_db_value("GithubUserName");
       Params().delete_db_value("GithubSshKeys");
       refresh();
     }
@@ -43,12 +55,14 @@ SshControl::SshControl() : AbstractControl("SSH Keys", "Warning: This grants SSH
 }
 
 void SshControl::refresh() {
+  username = QString::fromStdString(Params().get("GithubUserName"));
   QString param = QString::fromStdString(Params().get("GithubSshKeys"));
   if (param.length()) {
     btn.setText("REMOVE");
   } else {
     btn.setText("ADD");
   }
+  username_label.setText(username);
   btn.setEnabled(true);
 }
 
@@ -79,6 +93,7 @@ void SshControl::parseResponse(){
     networkTimer->stop();
     QString response = reply->readAll();
     if (reply->error() == QNetworkReply::NoError && response.length()) {
+      Params().write_db_value("GithubUserName", username.toStdString());
       Params().write_db_value("GithubSshKeys", response.toStdString());
     } else if(reply->error() == QNetworkReply::NoError){
       err = "Username '" + username + "' has no keys on GitHub";
