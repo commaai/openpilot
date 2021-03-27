@@ -82,6 +82,8 @@ def jsonrpc_handler(end_event):
         send_queue.put_nowait(response.json)
       elif "result" in data and "id" in data:
         log_recv_queue.put_nowait(data)
+      else:
+        raise Exception("not a valid request or response")
     except queue.Empty:
       pass
     except Exception as e:
