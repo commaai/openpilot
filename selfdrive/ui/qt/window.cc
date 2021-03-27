@@ -17,6 +17,7 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   QObject::connect(homeWindow, SIGNAL(closeSettings()), this, SLOT(closeSettings()));
   QObject::connect(homeWindow, SIGNAL(offroadTransition(bool)), this, SLOT(offroadTransition(bool)));
   QObject::connect(settingsWindow, SIGNAL(closeSettings()), this, SLOT(closeSettings()));
+  QObject::connect(settingsWindow, SIGNAL(reviewTrainingGuide()), this, SLOT(reviewTrainingGuide()));
 
   // start at onboarding
   main_layout->setCurrentWidget(onboardingWindow);
@@ -45,6 +46,11 @@ void MainWindow::openSettings() {
 
 void MainWindow::closeSettings() {
   main_layout->setCurrentWidget(homeWindow);
+}
+
+void MainWindow::reviewTrainingGuide() {
+  main_layout->setCurrentWidget(onboardingWindow);
+  onboardingWindow->updateActiveScreen();
 }
 
 bool MainWindow::eventFilter(QObject *obj, QEvent *event){
