@@ -91,44 +91,44 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
                              QString::fromStdString(l.second)));
   }
 
-  device_layout->addWidget(horizontal_line());
+	QList<ButtonControl*> buttons;
 
-  device_layout->addWidget(new ButtonControl("Driver Camera", "PREVIEW",
-                                             "Preview the driver facing camera to help optimize device mounting position for best driver monitoring experience. (vehicle must be off)",
-                                             [=]() { Params().write_db_value("IsDriverViewEnabled", "1", 1); }, "", this));
-
-  device_layout->addWidget(horizontal_line());
+  buttons.append(new ButtonControl("Driver Camera", "PREVIEW",
+																	 "Preview the driver facing camera to help optimize device mounting position for best driver monitoring experience. (vehicle must be off)",
+																	 [=]() { Params().write_db_value("IsDriverViewEnabled", "1", 1); }, "", this));
 
   // TODO: show current calibration values
-  ButtonControl* reset_calibration = new ButtonControl("Reset Calibration", "RESET",
-                                             "openpilot requires the device to be mounted within 4° left or right and within 5° up or down. openpilot is continuously calibrating, resetting is rarely required.",
-                                             [=]() {
-                                               if (ConfirmationDialog::confirm("Are you sure you want to reset calibration?")) {
-                                                 Params().delete_db_value("CalibrationParams");
-                                               }
-                                             }, "", this);
-  QObject::connect(parent, SIGNAL(closeSettings()), reset_calibration, SLOT(resetState()));
-  device_layout->addWidget(reset_calibration);
+  buttons.append(new ButtonControl("Reset Calibration", "RESET",
+																	 "openpilot requires the device to be mounted within 4° left or right and within 5° up or down. openpilot is continuously calibrating, resetting is rarely required.",
+																	 [=]() {
+																		 if (ConfirmationDialog::confirm("Are you sure you want to reset calibration?")) {
+																			 Params().delete_db_value("CalibrationParams");
+																		 }
+																	 }, "", this));
 
-  device_layout->addWidget(horizontal_line());
-
-  device_layout->addWidget(new ButtonControl("Review Training Guide", "REVIEW",
-                                             "Review the rules, features, and limitations of openpilot",
-                                             [=]() {
-                                               if (ConfirmationDialog::confirm("Are you sure you want to review the training guide?")) {
-                                                 Params().delete_db_value("CompletedTrainingVersion");
-                                                 emit reviewTrainingGuide();
-                                               }
-                                             }));
+  buttons.append(new ButtonControl("Review Training Guide", "REVIEW",
+																	 "Review the rules, features, and limitations of openpilot",
+																	 [=]() {
+																		 if (ConfirmationDialog::confirm("Are you sure you want to review the training guide?")) {
+																			 Params().delete_db_value("CompletedTrainingVersion");
+																			 emit reviewTrainingGuide();
+																		 }
+																	 }));
 
   QString brand = params.read_db_bool("Passive") ? "dashcam" : "openpilot";
-  device_layout->addWidget(new ButtonControl("Uninstall " + brand, "UNINSTALL",
-                                             "",
-                                             [=]() {
-                                               if (ConfirmationDialog::confirm("Are you sure you want to uninstall?")) {
-                                                 Params().write_db_value("DoUninstall", "1");
-                                               }
-                                             }, "", this));
+  buttons.append(new ButtonControl("Uninstall " + brand, "UNINSTALL",
+																	 "",
+																	 [=]() {
+																		 if (ConfirmationDialog::confirm("Are you sure you want to uninstall?")) {
+																			 Params().write_db_value("DoUninstall", "1");
+																		 }
+																	 }, "", this));
+
+	for(auto btn : buttons){
+		device_layout->addWidget(horizontal_line());
+		QObject::connect(parent, SIGNAL(closeSettings()), btn, SLOT(resetState()));
+		device_layout->addWidget(btn);
+	}
 
   // power buttons
   QHBoxLayout *power_layout = new QHBoxLayout();

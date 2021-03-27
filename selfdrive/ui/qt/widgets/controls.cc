@@ -19,6 +19,7 @@ void AbstractControl::resetState(){
 }
 
 AbstractControl::AbstractControl(const QString &title, const QString &desc, const QString &icon, QWidget *parent) : QFrame(parent) {
+
   QVBoxLayout *vlayout = new QVBoxLayout();
   vlayout->setMargin(0);
 
@@ -42,9 +43,10 @@ AbstractControl::AbstractControl(const QString &title, const QString &desc, cons
 
   vlayout->addLayout(hlayout);
 
+  description = new QLabel(desc);
+
   // description
   if (!desc.isEmpty()) {
-    description = new QLabel(desc);
     description->setContentsMargins(40, 20, 40, 20);
     description->setStyleSheet("font-size: 40px; color:grey");
     description->setWordWrap(true);
@@ -54,8 +56,7 @@ AbstractControl::AbstractControl(const QString &title, const QString &desc, cons
     connect(title_label, &QPushButton::clicked, [=]() {
       description->setVisible(!description->isVisible());
     });
-
-    setLayout(vlayout);
   }
+  setLayout(vlayout);
 }
 
