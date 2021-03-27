@@ -106,6 +106,7 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
 																		 }
 																	 }, "", this));
 
+
   buttons.append(new ButtonControl("Review Training Guide", "REVIEW",
 																	 "Review the rules, features, and limitations of openpilot",
 																	 [=]() {
@@ -123,7 +124,6 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
 																			 Params().write_db_value("DoUninstall", "1");
 																		 }
 																	 }, "", this));
-
 	for(auto btn : buttons){
 		device_layout->addWidget(horizontal_line());
 		QObject::connect(parent, SIGNAL(closeSettings()), btn, SLOT(resetState()));
@@ -292,10 +292,15 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
     sidebar_layout->addWidget(btn, 0, Qt::AlignRight);
 
     panel_widget->addWidget(panel);
+		if(name == "Device"){
+			QObject::connect(this, SIGNAL(closeSettings()), btn, SLOT(click()));
+		}
+
     QObject::connect(btn, &QPushButton::released, [=, w = panel]() {
       panel_widget->setCurrentWidget(w);
     });
   }
+
   qobject_cast<QPushButton *>(nav_btns->buttons()[0])->setChecked(true);
   sidebar_layout->setContentsMargins(50, 50, 100, 50);
 
