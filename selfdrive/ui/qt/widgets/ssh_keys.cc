@@ -60,6 +60,7 @@ void SshControl::refresh() {
     username_label.setText(QString::fromStdString(Params().get("GithubUserName")));
     btn.setText("REMOVE");
   } else {
+    username_label.setText("");
     btn.setText("ADD");
   }
   btn.setEnabled(true);
