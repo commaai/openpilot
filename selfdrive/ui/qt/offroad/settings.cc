@@ -249,6 +249,8 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   sidebar_layout->setMargin(0);
   panel_widget = new QStackedWidget();
 
+	panel_widget->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
+
   // close button
   QPushButton *close_btn = new QPushButton("X");
   close_btn->setStyleSheet(R"(
@@ -298,6 +300,8 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
     nav_btns->addButton(btn);
     sidebar_layout->addWidget(btn, 0, Qt::AlignRight);
 
+		//panel->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+
     panel_widget->addWidget(panel);
 		if(name == "Device"){
 			QObject::connect(this, SIGNAL(closeSettings()), btn, SLOT(click()));
@@ -305,6 +309,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
 
     QObject::connect(btn, &QPushButton::released, [=, w = panel]() {
       panel_widget->setCurrentWidget(w);
+			//panel_widget->resize(panel_widget->minimumSizeHint());
     });
   }
 
