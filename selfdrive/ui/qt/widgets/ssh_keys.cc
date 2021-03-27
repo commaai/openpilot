@@ -55,14 +55,13 @@ SshControl::SshControl() : AbstractControl("SSH Keys", "Warning: This grants SSH
 }
 
 void SshControl::refresh() {
-  username = QString::fromStdString(Params().get("GithubUserName"));
   QString param = QString::fromStdString(Params().get("GithubSshKeys"));
   if (param.length()) {
+    username_label.setText(QString::fromStdString(Params().get("GithubUserName")));
     btn.setText("REMOVE");
   } else {
     btn.setText("ADD");
   }
-  username_label.setText(username);
   btn.setEnabled(true);
 }
 
