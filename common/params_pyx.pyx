@@ -15,6 +15,9 @@ cdef enum TxType:
 
 keys = {
   b"AccessToken": [TxType.CLEAR_ON_MANAGER_START],
+  b"ApiCache_DriveStats": [TxType.PERSISTENT],
+  b"ApiCache_Device": [TxType.PERSISTENT],
+  b"ApiCache_Owner": [TxType.PERSISTENT],
   b"AthenadPid": [TxType.PERSISTENT],
   b"CalibrationParams": [TxType.PERSISTENT],
   b"CarBatteryCapacity": [TxType.PERSISTENT],
@@ -28,6 +31,7 @@ keys = {
   b"DisableUpdates": [TxType.PERSISTENT],
   b"DoUninstall": [TxType.CLEAR_ON_MANAGER_START],
   b"DongleId": [TxType.PERSISTENT],
+  b"GitDiff": [TxType.PERSISTENT],
   b"GitBranch": [TxType.PERSISTENT],
   b"GitCommit": [TxType.PERSISTENT],
   b"GitRemote": [TxType.PERSISTENT],

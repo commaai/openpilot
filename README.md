@@ -169,13 +169,21 @@ Community Maintained Cars and Features
 | Nissan    | Leaf 2018-20                  | ProPILOT          | Stock            | 0mph               | 0mph         |
 | Nissan    | Rogue 2018-19                 | ProPILOT          | Stock            | 0mph               | 0mph         |
 | Nissan    | X-Trail 2017                  | ProPILOT          | Stock            | 0mph               | 0mph         |
+| SEAT      | Ateca 2018                    | Driver Assistance | Stock            | 0mph               | 0mph         |
+| Škoda     | Kodiaq 2018                   | Driver Assistance | Stock            | 0mph               | 0mph         |
+| Škoda     | Scala 2020                    | Driver Assistance | Stock            | 0mph               | 0mph         |
+| Škoda     | Superb 2018                   | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Subaru    | Ascent 2019                   | EyeSight          | Stock            | 0mph               | 0mph         |
 | Subaru    | Crosstrek 2018-19             | EyeSight          | Stock            | 0mph               | 0mph         |
 | Subaru    | Forester 2019-20              | EyeSight          | Stock            | 0mph               | 0mph         |
 | Subaru    | Impreza 2017-19               | EyeSight          | Stock            | 0mph               | 0mph         |
+| Volkswagen| Jetta 2018-21                 | Driver Assistance | Stock            | 0mph               | 0mph         |
+| Volkswagen| Passat 2016-17<sup>2</sup>    | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| Golf 2015-19                  | Driver Assistance | Stock            | 0mph               | 0mph         |
+| Volkswagen| Tiguan 2020                   | Driver Assistance | Stock            | 0mph               | 0mph         |
 
 <sup>1</sup>Requires an [OBD-II car harness](https://comma.ai/shop/products/comma-car-harness) and [community built ASCM harness](https://github.com/commaai/openpilot/wiki/GM#hardware). ***NOTE: disconnecting the ASCM disables Automatic Emergency Braking (AEB).*** <br />
+<sup>2</sup>Only includes the MQB Passat sold outside of North America. The NMS Passat made in Chattanooga TN is not yet supported.
 
 Although it's not upstream, there's a community of people getting openpilot to run on Tesla's [here](https://tinkla.us/)
 
@@ -312,7 +320,6 @@ And [follow us on Twitter](https://twitter.com/comma_ai).
 Directory Structure
 ------
     .
-    ├── apk                 # The apk files used for the UI
     ├── cereal              # The messaging spec and libs used for all logs
     ├── common              # Library like functionality we've developed here
     ├── installer/updater   # Manages auto-updates of openpilot

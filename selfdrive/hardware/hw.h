@@ -1,5 +1,7 @@
 #pragma once
 
+#include "selfdrive/hardware/base.h"
+
 #ifdef QCOM
 #include "selfdrive/hardware/eon/hardware.h"
 #define Hardware HardwareEon
