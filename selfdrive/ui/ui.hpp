@@ -96,8 +96,8 @@ typedef struct {
 
 typedef struct UIScene {
 
-  int dfButtonStatus;
-  int lsButtonStatus;
+  int dfButtonStatus = 0;
+  int lsButtonStatus = 0;
   bool mlButtonEnabled;
 
   mat3 view_from_calib;
