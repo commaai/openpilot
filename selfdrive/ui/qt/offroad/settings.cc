@@ -15,7 +15,7 @@
 #include "common/params.h"
 #include "common/util.h"
 #include "selfdrive/hardware/hw.h"
-
+#include "home.hpp"
 
 QWidget * toggles_panel() {
   QVBoxLayout *toggles_list = new QVBoxLayout();
@@ -86,7 +86,10 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
 
   offroad_btns.append(new ButtonControl("Driver Camera", "PREVIEW",
                                    "Preview the driver facing camera to help optimize device mounting position for best driver monitoring experience. (vehicle must be off)",
-                                   [=]() { Params().write_db_value("IsDriverViewEnabled", "1", 1); }));
+                                   [=]() { 
+                                      Params().write_db_value("IsDriverViewEnabled", "1", 1);
+                                      GLWindow::ui_state.scene.driver_view = true; }
+                                    ));
 
   offroad_btns.append(new ButtonControl("Reset Calibration", "RESET",
                                    "openpilot requires the device to be mounted within 4° left or right and within 5° up or down. openpilot is continuously calibrating, resetting is rarely required.", [=]() {
