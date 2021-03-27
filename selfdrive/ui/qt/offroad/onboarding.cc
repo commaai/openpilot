@@ -12,30 +12,28 @@
 
 
 void TrainingGuide::mouseReleaseEvent(QMouseEvent *e) {
-  int leftOffset = (geometry().width()-1620)/2;
-  int mousex = e->x()-leftOffset;
-  int mousey = e->y();
+  //qDebug() << e->x() << ", " << e->y();
 
   // Check for restart
-  if (currentIndex == (boundingBox.size() - 1) && 1050 <= mousex && mousex <= 1500 &&
-      773 <= mousey && mousey <= 954) {
+  if (currentIndex == (boundingBox.size() - 1) && 200 <= e->x() && e->x() <= 920 &&
+      760 <= e->y() && e->y() <= 960) {
     currentIndex = 0;
-  } else if (boundingBox[currentIndex][0] <= mousex && mousex <= boundingBox[currentIndex][1] &&
-             boundingBox[currentIndex][2] <= mousey && mousey <= boundingBox[currentIndex][3]) {
+  } else if (boundingBox[currentIndex][0] <= e->x() && e->x() <= boundingBox[currentIndex][1] &&
+             boundingBox[currentIndex][2] <= e->y() && e->y() <= boundingBox[currentIndex][3]) {
     currentIndex += 1;
   }
 
   if (currentIndex >= boundingBox.size()) {
     emit completedTraining();
   } else {
-    image.load("../assets/training/step" + QString::number(currentIndex) + ".jpg");
+    image.load("../assets/training/step" + QString::number(currentIndex) + ".png");
     update();
   }
 }
 
 void TrainingGuide::showEvent(QShowEvent *event) {
   currentIndex = 0;
-  image.load("../assets/training/step0.jpg");
+  image.load("../assets/training/step0.png");
 }
 
 void TrainingGuide::paintEvent(QPaintEvent *event) {
