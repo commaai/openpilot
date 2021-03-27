@@ -175,7 +175,7 @@ void DeveloperPanel::showEvent(QShowEvent *event) {
   Params params = Params();
   std::string brand = params.read_db_bool("Passive") ? "dashcam" : "openpilot";
   QList<QPair<QString, std::string>> dev_params = {
-    {"Version", brand + " v" + params.get("Version", false)},
+    {"Version", brand + " v" + params.get("Version", false).substr(0, 14)},
     {"Git Branch", params.get("GitBranch", false)},
     {"Git Commit", params.get("GitCommit", false).substr(0, 10)},
     {"Panda Firmware", params.get("PandaFirmwareHex", false)},
