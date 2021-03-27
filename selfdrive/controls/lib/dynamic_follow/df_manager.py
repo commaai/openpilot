@@ -1,4 +1,5 @@
 import cereal.messaging as messaging
+from common.op_params import opParams
 from selfdrive.controls.lib.dynamic_follow.support import dfProfiles
 from common.realtime import sec_since_boot
 
@@ -14,9 +15,8 @@ class dfReturn:
 
 
 class dfManager:
-  def __init__(self, op_params, is_df=False):
-    self.op_params = op_params
-    self.is_df = is_df
+  def __init__(self):
+    self.op_params = opParams()
     self.df_profiles = dfProfiles()
     self.sm = messaging.SubMaster(['dynamicFollowButton', 'dynamicFollowData'])
     self.button_updated = False

@@ -68,7 +68,6 @@ class LongControl():
     self.last_output_gb = 0.0
 
     self.op_params = opParams()
-    self.enable_dg = self.op_params.get('dynamic_gas')
     self.dynamic_gas = DynamicGas(CP, candidate)
 
   def reset(self, v_pid):
@@ -82,7 +81,7 @@ class LongControl():
     gas_max = interp(CS.vEgo, CP.gasMaxBP, CP.gasMaxV)
     brake_max = interp(CS.vEgo, CP.brakeMaxBP, CP.brakeMaxV)
 
-    if self.enable_dg:
+    if self.op_params.get('dynamic_gas'):
       gas_max = self.dynamic_gas.update(CS, extras)
 
     # Update state machine

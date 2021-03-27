@@ -7,11 +7,6 @@ from selfdrive.swaglog import cloudlog
 from selfdrive.car.interfaces import CarInterfaceBase
 from common.op_params import opParams
 
-op_params = opParams()
-use_lqr = op_params.get('use_lqr')
-prius_use_pid = False  # op_params.get('prius_use_pid')
-corollaTSS2_use_indi = False  # op_params.get('corollaTSS2_use_indi')
-rav4TSS2_use_indi = op_params.get('rav4TSS2_use_indi')
 EventName = car.CarEvent.EventName
 
 
@@ -22,6 +17,12 @@ class CarInterface(CarInterfaceBase):
 
   @staticmethod
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), has_relay=False, car_fw=[]):  # pylint: disable=dangerous-default-value
+    op_params = opParams()
+    use_lqr = op_params.get('use_lqr')
+    prius_use_pid = False  # op_params.get('prius_use_pid')
+    corollaTSS2_use_indi = False  # op_params.get('corollaTSS2_use_indi')
+    rav4TSS2_use_indi = op_params.get('rav4TSS2_use_indi')
+
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint, has_relay)
 
     ret.carName = "toyota"

@@ -109,7 +109,6 @@ class LatPIDController():
 class LongPIDController:
   def __init__(self, k_p, k_i, k_d, k_f=1., pos_limit=None, neg_limit=None, rate=100, sat_limit=0.8, convert=None):
     self.op_params = opParams()
-    self.enable_long_derivative = self.op_params.get('enable_long_derivative')
     self._k_p = k_p  # proportional gain
     self._k_i = k_i  # integral gain
     self._k_d = k_d  # derivative gain
@@ -186,7 +185,7 @@ class LongPIDController:
               not freeze_integrator:
         self.id = i
 
-    if self.enable_long_derivative:
+    if self.op_params.get('enable_long_derivative'):
       if abs(setpoint - self.last_setpoint) / self.rate < self.max_accel_d:  # if setpoint isn't changing much
         d = self.k_d * (error - self.last_error)
         if (self.id > 0 and self.id + d >= 0) or (self.id < 0 and self.id + d <= 0):  # if changing integral doesn't make it cross zero

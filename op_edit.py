@@ -24,36 +24,38 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
 
   def run_init(self):
     if self.username is None:
-      self.success('\nWelcome to the opParams command line editor!', sleep_time=0)
-      self.prompt('Parameter \'username\' is missing! Would you like to add your Discord username for easier crash debugging?')
+      self.success('\nWelcome to the {}opParams{} command line editor!'.format(COLORS.CYAN, COLORS.SUCCESS), sleep_time=0)
+      self.prompt('Would you like to add your Discord username for easier crash debugging for the fork owner?')
+      self.prompt('Your username is only used for reaching out if a crash occurs.')
 
       username_choice = self.input_with_options(['Y', 'n', 'don\'t ask again'], default='n')[0]
       if username_choice == 0:
-        self.prompt('Please enter your Discord username so the developers can reach out if a crash occurs:')
+        self.prompt('Enter a unique identifer/Discord username:')
         username = ''
         while username == '':
           username = input('>> ').strip()
-        self.success('Thanks! Saved your Discord username\n'
-                     'Edit the \'username\' parameter at any time to update', sleep_time=1.0)
         self.op_params.put('username', username)
         self.username = username
+        self.success('Thanks! Saved your username\n'
+                     'Edit the \'username\' parameter at any time to update', sleep_time=1.5)
       elif username_choice == 2:
         self.op_params.put('username', False)
         self.info('Got it, bringing you into opEdit\n'
                   'Edit the \'username\' parameter at any time to update', sleep_time=1.0)
     else:
-      self.success('\nWelcome to the opParams command line editor, {}!'.format(self.username), sleep_time=0)
+      self.success('\nWelcome to the {}opParams{} command line editor, {}!'.format(COLORS.CYAN, COLORS.SUCCESS, self.username), sleep_time=0)
 
     self.run_loop()
 
   def run_loop(self):
     while True:
       if not self.live_tuning:
-        self.info('Here are your parameters:', end='\n', sleep_time=0)
+        self.info('Here are all your parameters:', sleep_time=0)
+        self.info('(non-static params update while driving)', end='\n', sleep_time=0)
       else:
         self.info('Here are your live parameters:', sleep_time=0)
-        self.info('(changes take effect within {} seconds)'.format(self.op_params.read_frequency), end='\n', sleep_time=0)
-      self.params = self.op_params.get(force_live=True)
+        self.info('(changes take effect within a second)', end='\n', sleep_time=0)
+      self.params = self.op_params.get(force_update=True)
       if self.live_tuning:  # only display live tunable params
         self.params = {k: v for k, v in self.params.items() if self.op_params.fork_params[k].live}
 
@@ -70,12 +72,12 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
           v = '{} ... {}'.format(str(v)[:30], str(v)[-15:])
         values_list.append(v)
 
-      live = [COLORS.INFO + '(live!)' + COLORS.ENDC if self.op_params.fork_params[k].live else '' for k in self.params]
+      static = [COLORS.INFO + '(static)' + COLORS.ENDC if self.op_params.fork_params[k].static else '' for k in self.params]
 
       to_print = []
       blue_gradient = [33, 39, 45, 51, 87]
       for idx, param in enumerate(self.params):
-        line = '{}. {}: {}  {}'.format(idx + 1, param, values_list[idx], live[idx])
+        line = '{}. {}: {}  {}'.format(idx + 1, param, values_list[idx], static[idx])
         if idx == self.last_choice and self.last_choice is not None:
           line = COLORS.OKGREEN + line
         else:
@@ -83,7 +85,7 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
           line = COLORS.BASE(_color) + line
         to_print.append(line)
 
-      extras = {'l': ('Toggle live tuning', COLORS.WARNING),
+      extras = {'l': ('Toggle live params', COLORS.WARNING),
                 'e': ('Exit opEdit', COLORS.PINK)}
 
       to_print += ['---'] + ['{}. {}'.format(ext_col + e, ext_txt + COLORS.ENDC) for e, (ext_txt, ext_col) in extras.items()]
@@ -137,14 +139,18 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
       param_info = self.op_params.fork_params[chosen_key]
 
       old_value = self.params[chosen_key]
-      if param_info.live:
+      if not param_info.static:
         self.info2('Chosen parameter: {}{} (live!)'.format(chosen_key, COLORS.BASE(207)), sleep_time=0)
       else:
-        self.info2('Chosen parameter: {}'.format(chosen_key), sleep_time=0)
+        self.info2('Chosen parameter: {}{} (static)'.format(chosen_key, COLORS.BASE(207)), sleep_time=0)
 
       to_print = []
       if param_info.has_description:
         to_print.append(COLORS.OKGREEN + '>>  Description: {}'.format(param_info.description.replace('\n', '\n  > ')) + COLORS.ENDC)
+      if param_info.static:
+        to_print.append(COLORS.WARNING + '>>  A reboot is required for changes to this parameter!' + COLORS.ENDC)
+      if not param_info.static and not param_info.live:
+        to_print.append(COLORS.WARNING + '>>  Changes take effect within 10 seconds for this parameter!' + COLORS.ENDC)
       if param_info.has_allowed_types:
         to_print.append(COLORS.RED + '>>  Allowed types: {}'.format(', '.join([at.__name__ for at in param_info.allowed_types])) + COLORS.ENDC)
 
@@ -175,7 +181,7 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
           self.error('The type of data you entered ({}) is not allowed with this parameter!'.format(type(new_value).__name__))
           continue
 
-        if param_info.live:  # stay in live tuning interface
+        if not param_info.static:  # stay in live tuning interface
           self.op_params.put(chosen_key, new_value)
           self.success('Saved {} with value: {}! (type: {})'.format(chosen_key, new_value, type(new_value).__name__))
         else:  # else ask to save and break

@@ -126,6 +126,8 @@ python op_edit.py  # or ./op_edit.py
 
 [**To see what features opEdit has, click me!**](/OPEDIT_FEATURES.md)
 
+🆕 All params now update live while driving, and params that are marked with `static` need a reboot of the device, or ignition.
+
 Here are the main parameters you can change with this fork:
 - **Tuning params**:
   - `camera_offset` **`(live!)`**: Your camera offset to use in lane_planner.py. Helps fix lane hugging

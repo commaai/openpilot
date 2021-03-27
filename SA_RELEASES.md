@@ -7,6 +7,8 @@ Stock Additions v0.6.6 - 2020-02-27 (0.8.2)
  * Roadtrip profile is now stock longitudinal for smoother road trips
    * No dynamic follow distance modiciations, all stock
  * Add color corrections button, PR by ihsakashi
+ * More parameters now update while driving.
+   * If the param isn't marked with "static" you no longer have to reboot
 
 Stock Additions v0.6.5 - 2020-12-07 (0.8)
 ===

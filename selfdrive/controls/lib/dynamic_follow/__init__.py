@@ -58,7 +58,7 @@ class DynamicFollow:
     self.mpc_id = mpc_id
     self.op_params = opParams()
     self.df_profiles = dfProfiles()
-    self.df_manager = dfManager(self.op_params)
+    self.df_manager = dfManager()
     self.dmc_v_rel = DistanceModController(k_i=0.042, k_d=0.08, x_clip=[-1, 0, 0.66], mods=[1.15, 1., 0.95])
     self.dmc_a_rel = DistanceModController(k_i=0.042 * 1.05, k_d=0.08, x_clip=[-1, 0, 0.33], mods=[1.15, 1., 0.98])  # a_lead loop is 5% faster
 
