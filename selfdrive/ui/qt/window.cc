@@ -1,8 +1,6 @@
 #include "window.hpp"
 #include "selfdrive/hardware/hw.h"
 
-#include <QList>
-
 MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   main_layout = new QStackedLayout;
   main_layout->setMargin(0);
@@ -68,7 +66,6 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event){
   if (HardwareEon::launched_activity && filter_events.contains(event->type())) {
     HardwareEon::check_activity();
     if (HardwareEon::launched_activity) {
-      qDebug() << "rejecting touch";
       return true;
     }
   }
