@@ -1,3 +1,5 @@
+#include <cstdlib>
+
 #include "window.hpp"
 
 MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
@@ -54,8 +56,28 @@ void MainWindow::reviewTrainingGuide() {
 }
 
 bool MainWindow::eventFilter(QObject *obj, QEvent *event){
+  // wake screen on tap
   if (event->type() == QEvent::MouseButtonPress) {
     homeWindow->glWindow->wake();
   }
+
+  // filter out touches when in android activity
+#ifdef QCOM
+  switch(event->type()) {
+    case QEvent::MouseButtonPress:
+    case QEvent::MouseMove:
+    case QEvent::TouchBegin:
+    case QEvent::TouchUpdate:
+    case QEvent::TouchEnd: {
+      int ret = std::system("dumpsys SurfaceFlinger --list | grep -Fq 'com.android.settings'");
+      if (ret == 0) qDebug() << "rejecting touch";
+      return ret == 0;
+    }
+    default:
+      break;
+      //qDebug() << event->type();
+  }
+#endif
+
   return false;
 }
