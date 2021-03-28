@@ -1,10 +1,7 @@
-#include <cstdlib>
-
 #include "window.hpp"
+#include "selfdrive/hardware/hw.h"
 
-#ifdef QCOM
-#include "selfdrive/hardware/eon/hardware.h"
-#endif
+#include <QList>
 
 MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   main_layout = new QStackedLayout;
@@ -65,26 +62,16 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event){
     homeWindow->glWindow->wake();
   }
 
-  // filter out touches when in android activity
+  // filter out touches while in android activity
 #ifdef QCOM
-  if (HardwareEon::launched_activity) {
-    switch(event->type()) {
-      case QEvent::MouseButtonPress:
-      case QEvent::MouseMove:
-      case QEvent::TouchBegin:
-      case QEvent::TouchUpdate:
-      case QEvent::TouchEnd: {
-        HardwareEon::check_activity();
-        if (HardwareEon::launched_activity) {
-          qDebug() << "rejecting touch";
-          return true;
-        }
-      }
-      default:
-        break;
+  const QList<QEvent::Type> filter_events = {QEvent::MouseButtonPress, QEvent::MouseMove, QEvent::TouchBegin, QEvent::TouchUpdate, QEvent::TouchEnd};
+  if (HardwareEon::launched_activity && filter_events.contains(event->type())) {
+    HardwareEon::check_activity();
+    if (HardwareEon::launched_activity) {
+      qDebug() << "rejecting touch";
+      return true;
     }
   }
 #endif
-
   return false;
 }

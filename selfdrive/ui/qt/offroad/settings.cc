@@ -3,12 +3,9 @@
 #include <sstream>
 #include <cassert>
 
-#ifdef QCOM
-#include "selfdrive/hardware/eon/hardware.h"
-#else
+#ifndef QCOM
 #include "networking.hpp"
 #endif
-
 #include "settings.hpp"
 #include "widgets/input.hpp"
 #include "widgets/toggle.hpp"

@@ -41,7 +41,6 @@ public:
     std::system(cmd.c_str());
   };
 
-
   // android only
   inline static bool launched_activity = false;
   static void check_activity() {
@@ -58,8 +57,7 @@ public:
     launched_activity = true;
   }
   static void launch_wifi() {
-    launch_activity("com.android.settings/.wifi.WifiPickerActivity",
-                    "-a android.net.wifi.PICK_WIFI_NETWORK");
+    launch_activity("com.android.settings/.wifi.WifiPickerActivity", "-a android.net.wifi.PICK_WIFI_NETWORK");
   }
   static void launch_tethering() {
     launch_activity("com.android.settings/.TetherSettings");
