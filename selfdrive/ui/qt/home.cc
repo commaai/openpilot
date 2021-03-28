@@ -233,29 +233,27 @@ GLWindow::GLWindow(QWidget* parent) : QOpenGLWidget(parent) {
   ui_state.fb_h = vwp_h;
   ui_init(&ui_state);
 
-  thread = new QThread;
   ui_updater = new UIUpdater(&ui_state, this);
-  ui_updater->moveToThread(thread);
-  connect(thread, &QThread::finished, ui_updater, &QObject::deleteLater);
-  connect(this, &GLWindow::renderRequested, ui_updater, &UIUpdater::update);
   connect(ui_updater, &UIUpdater::contextWanted, this, &GLWindow::grabContext);
   connect(ui_updater, SIGNAL(offroadTransition(bool)), this, SIGNAL(offroadTransition(bool)));
 
   connect(this, &QOpenGLWidget::aboutToCompose, [=] { ui_updater->renderMutex_.lock(); });
-  connect(this, &QOpenGLWidget::frameSwapped, [=] { ui_updater->renderMutex_.unlock(); emit renderRequested(); });
+  connect(this, &QOpenGLWidget::frameSwapped, [=] { ui_updater->renderMutex_.unlock();});
   connect(this, &QOpenGLWidget::aboutToResize, [=] { ui_updater->renderMutex_.lock(); });
   connect(this, &QOpenGLWidget::resized, [=] { ui_updater->renderMutex_.unlock(); });
-
-  thread->start();
 
   wake();
 }
 
 GLWindow::~GLWindow() {
-    ui_updater->prepareExit();
-    thread->quit();
-    thread->wait();
-    delete thread;
+  ui_updater->prepareExit();
+  ui_updater->quit();
+  ui_updater->wait();
+  delete ui_updater;
+}
+
+void GLWindow::initializeGL() {
+  ui_updater->start();
 }
 
 void GLWindow::backlightUpdate() {
@@ -286,26 +284,26 @@ void GLWindow::wake() {
 }
 
 void GLWindow::grabContext() {
-  ui_updater->renderMutex_.lock();
-  QMutexLocker lock(&ui_updater->grabMutex_);
-  context()->moveToThread(thread);
-  ui_updater->grabCond_.wakeAll();
-  ui_updater->renderMutex_.unlock();
+  std::lock_guard render_lk(ui_updater->renderMutex_);
+  std::unique_lock grab_lk(ui_updater->grabMutex_);
+  context()->moveToThread(ui_updater);
+  ui_updater->grabCond_.notify_all();
 }
 
 // ui thread
 
-UIUpdater::UIUpdater(GLWindow* w) : glWidget_(w) {}
+UIUpdater::UIUpdater(UIState* s, GLWindow* w) : glWidget_(w), ui_state_(s), QThread(w) {}
 
 void UIUpdater::draw() {
   QOpenGLContext* ctx = glWidget_->context();
-  grabMutex_.lock();
-  emit contextWanted();
-  grabCond_.wait(&grabMutex_);
-  QMutexLocker lock(&renderMutex_);
-  grabMutex_.unlock();
-
-  assert(ctx->thread() == QThread::currentThread());
+  {
+    // grab OpenGL context from gui thread
+    std::unique_lock lk(grabMutex_);
+    emit contextWanted();
+    grabCond_.wait(lk, [=] { return ctx->thread() == QThread::currentThread() || exiting_ == true; });
+    if (exiting_) return;
+  }
+  std::lock_guard lk(renderMutex_);
 
   // Make the context (and an offscreen surface) current for this thread. The
   // QOpenGLWidget's fbo is bound in the context.
@@ -329,39 +327,40 @@ void UIUpdater::draw() {
   QMetaObject::invokeMethod(glWidget_, "update");
 }
 
-void UIUpdater::update() {
-  if (exiting_) return;
+void UIUpdater::run() {
+  while (!exiting_) {
 
-  if (!ui_state_->scene.started) {
-    util::sleep_for(50);
-  }
+    if (!ui_state_->scene.started) {
+      util::sleep_for(50);
+    }
 
-  double u1 = millis_since_boot();
+    double u1 = millis_since_boot();
 
-  ui_update(ui_state_);
+    ui_update(ui_state_);
 
-  if (ui_state_->scene.started != glWidget_->onroad) {
-    glWidget_->onroad = ui_state_->scene.started;
-    emit offroadTransition(!glWidget_->onroad);
-  }
+    if (ui_state_->scene.started != glWidget_->onroad) {
+      glWidget_->onroad = ui_state_->scene.started;
+      emit offroadTransition(!glWidget_->onroad);
+    }
 
-  // Don't waste resources on drawing in case screen is off
-  handle_display_state(ui_state_, false);
-  if (!ui_state_->awake) {
-    return;
-  }
+    // Don't waste resources on drawing in case screen is off
+    handle_display_state(ui_state_, false);
+    if (!ui_state_->awake) {
+      continue;
+    }
 
-  glWidget_->backlightUpdate();
+    glWidget_->backlightUpdate();
 
-  // scale volume with speed
-  ui_state_->sound->setVolume(util::map_val(ui_state_->scene.car_state.getVEgo(), 0.f, 20.f,
-                                           Hardware::MIN_VOLUME, Hardware::MAX_VOLUME));
+    // scale volume with speed
+    ui_state_->sound->setVolume(util::map_val(ui_state_->scene.car_state.getVEgo(), 0.f, 20.f,
+                                            Hardware::MIN_VOLUME, Hardware::MAX_VOLUME));
 
-  draw();
+    draw();
 
-  double u2 = millis_since_boot();
-  if (!ui_state_->scene.driver_view && (u2 - u1 > 66)) {
-    // warn on sub 15fps
-    LOGW("slow frame(%llu) time: %.2f", ui_state_->sm->frame, u2 - u1);
+    double u2 = millis_since_boot();
+    if (!ui_state_->scene.driver_view && (u2 - u1 > 66)) {
+      // warn on sub 15fps
+      LOGW("slow frame(%llu) time: %.2f", ui_state_->sm->frame, u2 - u1);
+    }
   }
 }
