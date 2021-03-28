@@ -233,7 +233,7 @@ GLWindow::GLWindow(QWidget* parent) : QOpenGLWidget(parent) {
   ui_state.fb_h = vwp_h;
   ui_init(&ui_state);
 
-  ui_updater = new UIUpdater(&ui_state, this);
+  ui_updater = new UIUpdater(this);
   connect(ui_updater, &UIUpdater::contextWanted, this, &GLWindow::grabContext);
   connect(ui_updater, SIGNAL(offroadTransition(bool)), this, SIGNAL(offroadTransition(bool)));
 
@@ -292,7 +292,7 @@ void GLWindow::grabContext() {
 
 // ui thread
 
-UIUpdater::UIUpdater(UIState* s, GLWindow* w) : glWidget_(w), ui_state_(s), QThread(w) {}
+UIUpdater::UIUpdater(GLWindow* w) : glWidget_(w), QThread(w) {}
 
 void UIUpdater::draw() {
   QOpenGLContext* ctx = glWidget_->context();
@@ -313,6 +313,10 @@ void UIUpdater::draw() {
     inited_ = true;
     initializeOpenGLFunctions();
     ui_nvg_init(s);
+    std::cout << "OpenGL version: " << glGetString(GL_VERSION) << std::endl;
+    std::cout << "OpenGL vendor: " << glGetString(GL_VENDOR) << std::endl;
+    std::cout << "OpenGL renderer: " << glGetString(GL_RENDERER) << std::endl;
+    std::cout << "OpenGL language version: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
   }
 
   update_vision(s);
@@ -328,39 +332,40 @@ void UIUpdater::draw() {
 }
 
 void UIUpdater::run() {
+  UIState *s = &glWidget_->ui_state;
   while (!exiting_) {
 
-    if (!ui_state_->scene.started) {
+    if (!s->scene.started) {
       util::sleep_for(50);
     }
 
     double u1 = millis_since_boot();
 
-    ui_update(ui_state_);
+    ui_update(s);
 
-    if (ui_state_->scene.started != glWidget_->onroad) {
-      glWidget_->onroad = ui_state_->scene.started;
+    if (s->scene.started != glWidget_->onroad) {
+      glWidget_->onroad = s->scene.started;
       emit offroadTransition(!glWidget_->onroad);
     }
 
     // Don't waste resources on drawing in case screen is off
-    handle_display_state(ui_state_, false);
-    if (!ui_state_->awake) {
+    handle_display_state(s, false);
+    if (!s->awake) {
       continue;
     }
 
     glWidget_->backlightUpdate();
 
     // scale volume with speed
-    ui_state_->sound->setVolume(util::map_val(ui_state_->scene.car_state.getVEgo(), 0.f, 20.f,
+    s->sound->setVolume(util::map_val(s->scene.car_state.getVEgo(), 0.f, 20.f,
                                             Hardware::MIN_VOLUME, Hardware::MAX_VOLUME));
 
     draw();
 
     double u2 = millis_since_boot();
-    if (!ui_state_->scene.driver_view && (u2 - u1 > 66)) {
+    if (!s->scene.driver_view && (u2 - u1 > 66)) {
       // warn on sub 15fps
-      LOGW("slow frame(%llu) time: %.2f", ui_state_->sm->frame, u2 - u1);
+      LOGW("slow frame(%llu) time: %.2f", s->sm->frame, u2 - u1);
     }
   }
 }
