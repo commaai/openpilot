@@ -150,20 +150,6 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 0.5
       ret.steerActuatorDelay = 0.1
       
-      #ret.lateralTuning.pid.kf = 0.00005
-      #ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
-      #ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
-      
-      #ret.lateralTuning.init('indi')
-      #ret.lateralTuning.indi.innerLoopGainBP = [0.]
-      #ret.lateralTuning.indi.innerLoopGainV = [4.4]
-      #ret.lateralTuning.indi.outerLoopGainBP = [0.]
-      #ret.lateralTuning.indi.outerLoopGainV = [3.]
-      #ret.lateralTuning.indi.timeConstantBP = [0.]
-      #ret.lateralTuning.indi.timeConstantV = [1.4]
-      #ret.lateralTuning.indi.actuatorEffectivenessBP = [0.]
-      #ret.lateralTuning.indi.actuatorEffectivenessV = [1.8]
-      
       ret.lateralTuning.init('lqr')
 
       ret.lateralTuning.lqr.scale = 1500.0
@@ -175,7 +161,6 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.lqr.k = [-110.73572306, 451.22718255]
       ret.lateralTuning.lqr.l = [0.3233671, 0.3185757]
       ret.lateralTuning.lqr.dcGain = 0.002237852961363602
-      
     elif candidate in [CAR.KIA_OPTIMA, CAR.KIA_OPTIMA_H]:
       ret.lateralTuning.pid.kf = 0.00005
       ret.mass = 3558. * CV.LB_TO_KG
