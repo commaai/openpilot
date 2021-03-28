@@ -9,7 +9,7 @@ SshControl::SshControl() : AbstractControl("SSH Keys", "Warning: This grants SSH
   // setup widget
   QWidget *widget = new QWidget;
   QHBoxLayout *hl = new QHBoxLayout(widget);
-  hl->setContentsMargins(0, 0, 0, 0);
+  hl->setMargin(0);
   hl->setSpacing(30);
 
   username_label.setAlignment(Qt::AlignVCenter | Qt::AlignRight);
