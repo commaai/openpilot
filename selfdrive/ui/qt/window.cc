@@ -2,6 +2,10 @@
 
 #include "window.hpp"
 
+#ifdef QCOM
+#include "selfdrive/hardware/eon/hardware.h"
+#endif
+
 MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   main_layout = new QStackedLayout;
   main_layout->setMargin(0);
@@ -63,16 +67,15 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event){
 
   // filter out touches when in android activity
 #ifdef QCOM
-  if (launchedActivity) {
+  if (HardwareEon::launched_activity) {
     switch(event->type()) {
       case QEvent::MouseButtonPress:
       case QEvent::MouseMove:
       case QEvent::TouchBegin:
       case QEvent::TouchUpdate:
       case QEvent::TouchEnd: {
-        int ret = std::system("dumpsys SurfaceFlinger --list | grep -Fq 'com.android.settings'");
-        launchedActivity = ret == 0;
-        if (launchedActivity) {
+        HardwareEon::check_activity();
+        if (HardwareEon::launched_activity) {
           qDebug() << "rejecting touch";
           return true;
         }
