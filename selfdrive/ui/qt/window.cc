@@ -63,19 +63,23 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event){
 
   // filter out touches when in android activity
 #ifdef QCOM
-  switch(event->type()) {
-    case QEvent::MouseButtonPress:
-    case QEvent::MouseMove:
-    case QEvent::TouchBegin:
-    case QEvent::TouchUpdate:
-    case QEvent::TouchEnd: {
-      int ret = std::system("dumpsys SurfaceFlinger --list | grep -Fq 'com.android.settings'");
-      if (ret == 0) qDebug() << "rejecting touch";
-      return ret == 0;
+  if (launchedActivity) {
+    switch(event->type()) {
+      case QEvent::MouseButtonPress:
+      case QEvent::MouseMove:
+      case QEvent::TouchBegin:
+      case QEvent::TouchUpdate:
+      case QEvent::TouchEnd: {
+        int ret = std::system("dumpsys SurfaceFlinger --list | grep -Fq 'com.android.settings'");
+        launchedActivity = ret == 0;
+        if (launchedActivity) {
+          qDebug() << "rejecting touch";
+          return true;
+        }
+      }
+      default:
+        break;
     }
-    default:
-      break;
-      //qDebug() << event->type();
   }
 #endif
 

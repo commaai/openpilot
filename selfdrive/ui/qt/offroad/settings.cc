@@ -12,6 +12,7 @@
 #include "widgets/offroad_alerts.hpp"
 #include "widgets/controls.hpp"
 #include "widgets/ssh_keys.hpp"
+#include "qt/window.hpp"
 #include "common/params.h"
 #include "common/util.h"
 #include "selfdrive/hardware/hw.h"
@@ -204,22 +205,22 @@ QWidget * network_panel(QWidget * parent) {
   layout->setSpacing(30);
 
   // simple wifi + tethering buttons
-  const char* launch_wifi = "am start -n com.android.settings/.wifi.WifiPickerActivity \
-                             -a android.net.wifi.PICK_WIFI_NETWORK \
-                             --ez extra_prefs_show_button_bar true \
-                             --es extra_prefs_set_next_text ''";
-  layout->addWidget(new ButtonControl("WiFi Settings", "OPEN", "",
-                                      [=]() { std::system(launch_wifi); }));
-
-  layout->addWidget(horizontal_line());
-
-  const char* launch_tethering = "am start -n com.android.settings/.TetherSettings \
-                                  --ez extra_prefs_show_button_bar true \
-                                  --es extra_prefs_set_next_text ''";
-  layout->addWidget(new ButtonControl("Tethering Settings", "OPEN", "",
-                                      [=]() { std::system(launch_tethering); }));
-
-  layout->addWidget(horizontal_line());
+  std::vector<std::pair<std::string, std::string>> btns = {
+    {"WiFi Settings", "-n com.android.settings/.wifi.WifiPickerActivity -a android.net.wifi.PICK_WIFI_NETWORK"},
+    {"Tethering Settings", "-n com.android.settings/.TetherSettings"},
+  };
+  for (auto &b : btns) {
+    layout->addWidget(new ButtonControl(QString::fromStdString(b.first), "OPEN", "", [=]() {
+      if (!MainWindow::launchedActivity) {
+        std::string cmd = "am start " + b.second +
+                          " --ez extra_prefs_show_button_bar true \
+                           --es extra_prefs_set_next_text ''";
+        std::system(cmd.c_str());
+      }
+      MainWindow::launchedActivity = true;
+    }));
+    layout->addWidget(horizontal_line());
+  }
 
   // SSH key management
   layout->addWidget(new SshToggle());

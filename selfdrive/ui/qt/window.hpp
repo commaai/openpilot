@@ -16,6 +16,8 @@ protected:
 public:
   explicit MainWindow(QWidget *parent = 0);
 
+  inline static bool launchedActivity = false;
+
 private:
   QStackedLayout *main_layout;
   HomeWindow *homeWindow;
