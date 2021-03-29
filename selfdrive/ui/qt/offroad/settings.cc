@@ -80,6 +80,10 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
   device_layout->addWidget(new LabelControl("Dongle ID", dongle));
   device_layout->addWidget(horizontal_line());
 
+  QString serial = QString::fromStdString(params.get("HardwareSerial", false));
+  device_layout->addWidget(new LabelControl("Serial", serial));
+  device_layout->addWidget(horizontal_line());
+
   QList<ButtonControl*> buttons;
 
   buttons.append(new ButtonControl("Driver Camera", "PREVIEW",
