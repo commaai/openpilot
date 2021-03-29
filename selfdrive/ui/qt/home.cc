@@ -362,7 +362,7 @@ void UIUpdater::update() {
 
   handle_display_state(s, false);
   if (s->awake != prev_awake_) {
-    !s->awake ? timer_.start(50) : timer_.stop();
+    s->awake ? timer_.stop() : timer_.start(50);
     prev_awake_ = s->awake;
   }
 

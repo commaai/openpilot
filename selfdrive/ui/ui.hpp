@@ -129,7 +129,8 @@ typedef struct UIScene {
   vertex_data lead_vertices[2];
 
   float light_sensor, accel_sensor, gyro_sensor;
-  bool started, ignition, is_metric, longitudinal_control, end_to_end;
+  bool ignition, is_metric, longitudinal_control, end_to_end;
+  std::atomic<bool> started;
   uint64_t started_frame;
 } UIScene;
 
