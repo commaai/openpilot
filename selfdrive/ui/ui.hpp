@@ -25,7 +25,7 @@
 #include "common/params.h"
 #include "common/glutil.h"
 #include "common/transformations/orientation.hpp"
-#include "sound.hpp"
+#include "qt/sound.hpp"
 #include "visionipc.h"
 #include "visionipc_client.h"
 

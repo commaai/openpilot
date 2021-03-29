@@ -73,23 +73,15 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
   QVBoxLayout *device_layout = new QVBoxLayout;
 
   Params params = Params();
-  std::vector<std::pair<std::string, std::string>> labels = {
-    {"Dongle ID", params.get("DongleId", false)},
-  };
 
-  // get serial number
-  //std::string cmdline = util::read_file("/proc/cmdline");
-  //auto delim = cmdline.find("serialno=");
-  //if (delim != std::string::npos) {
-  //  labels.push_back({"Serial", cmdline.substr(delim, cmdline.find(" ", delim))});
-  //}
-
-  for (auto &l : labels) {
-    device_layout->addWidget(new LabelControl(QString::fromStdString(l.first),
-                             QString::fromStdString(l.second)));
-  }
-
+  QString dongle = QString::fromStdString(params.get("DongleId", false));
+  device_layout->addWidget(new LabelControl("Dongle ID", dongle));
   device_layout->addWidget(horizontal_line());
+
+  QString serial = QString::fromStdString(params.get("HardwareSerial", false));
+  device_layout->addWidget(new LabelControl("Serial", serial));
+  device_layout->addWidget(horizontal_line());
+
 
   device_layout->addWidget(new ButtonControl("Driver Camera", "PREVIEW",
                                              "Preview the driver facing camera to help optimize device mounting position for best driver monitoring experience. (vehicle must be off)",
@@ -199,22 +191,13 @@ QWidget * network_panel(QWidget * parent) {
   QVBoxLayout *layout = new QVBoxLayout;
   layout->setSpacing(30);
 
-  // simple wifi + tethering buttons
-  const char* launch_wifi = "am start -n com.android.settings/.wifi.WifiPickerActivity \
-                             -a android.net.wifi.PICK_WIFI_NETWORK \
-                             --ez extra_prefs_show_button_bar true \
-                             --es extra_prefs_set_next_text ''";
+  // wifi + tethering buttons
   layout->addWidget(new ButtonControl("WiFi Settings", "OPEN", "",
-                                      [=]() { std::system(launch_wifi); }));
-
+                                      [=]() { HardwareEon::launch_wifi(); }));
   layout->addWidget(horizontal_line());
 
-  const char* launch_tethering = "am start -n com.android.settings/.TetherSettings \
-                                  --ez extra_prefs_show_button_bar true \
-                                  --es extra_prefs_set_next_text ''";
   layout->addWidget(new ButtonControl("Tethering Settings", "OPEN", "",
-                                      [=]() { std::system(launch_tethering); }));
-
+                                      [=]() { HardwareEon::launch_tethering(); }));
   layout->addWidget(horizontal_line());
 
   // SSH key management
