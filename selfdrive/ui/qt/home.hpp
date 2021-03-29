@@ -9,7 +9,7 @@
 #include <QTimer>
 #include <QWidget>
 
-#include "qt_sound.hpp"
+#include "sound.hpp"
 #include "ui/ui.hpp"
 #include "widgets/offroad_alerts.hpp"
 
@@ -38,7 +38,7 @@ private:
   QTimer* timer;
   QTimer* backlight_timer;
 
-  QtSound sound;
+  Sound sound;
 
   bool onroad = true;
   double prev_draw_t = 0;

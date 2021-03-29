@@ -321,7 +321,7 @@ void GLWindow::paintGL() {
 
     double cur_draw_t = millis_since_boot();
     double dt = cur_draw_t - prev_draw_t;
-    if (dt > 66 && onroad){
+    if (dt > 66 && onroad && !ui_state.scene.driver_view) {
       // warn on sub 15fps
       LOGW("slow frame(%llu) time: %.2f", ui_state.sm->frame, dt);
     }

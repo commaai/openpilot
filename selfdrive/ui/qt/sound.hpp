@@ -1,5 +1,7 @@
 #pragma once
+
 #include <map>
+#include <QSoundEffect>
 #include "cereal/gen/cpp/log.capnp.h"
 
 typedef cereal::CarControl::HUDControl::AudibleAlert AudibleAlert;
@@ -18,8 +20,11 @@ static std::map<AudibleAlert, std::pair<const char *, int>> sound_map {
 
 class Sound {
 public:
-  virtual ~Sound() {}
-  virtual bool play(AudibleAlert alert) = 0;
-  virtual void stop() = 0;
-  virtual void setVolume(int volume) = 0;
+  Sound();
+  void play(AudibleAlert alert);
+  void stop();
+  float volume = 0;
+
+private:
+  std::map<AudibleAlert, QSoundEffect> sounds;
 };
