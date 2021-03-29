@@ -82,7 +82,6 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
 
   QString serial = QString::fromStdString(params.get("HardwareSerial", false));
   device_layout->addWidget(new LabelControl("Serial", serial));
-  device_layout->addWidget(horizontal_line());
 
   QList<ButtonControl*> buttons;
 
@@ -98,7 +97,7 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
                                       }
                                     }));
 
-  device_layout->addWidget(new ButtonControl("Review Training Guide", "REVIEW",
+  buttons.append(new ButtonControl("Review Training Guide", "REVIEW",
                                              "Review the rules, features, and limitations of openpilot",
                                              [=]() {
                                                if (ConfirmationDialog::confirm("Are you sure you want to review the training guide?")) {
@@ -106,8 +105,6 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
                                                  emit reviewTrainingGuide();
                                                }
                                              }));
-
-  device_layout->addWidget(horizontal_line());
 
   QString brand = params.read_db_bool("Passive") ? "dashcam" : "openpilot";
   buttons.append(new ButtonControl("Uninstall " + brand, "UNINSTALL",
