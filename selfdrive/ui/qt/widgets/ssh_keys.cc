@@ -6,15 +6,13 @@
 
 
 SshControl::SshControl() : AbstractControl("SSH Keys", "Warning: This grants SSH access to all public keys in your GitHub settings. Never enter a GitHub username other than your own. A comma employee will NEVER ask you to add their GitHub username.", "") {
-  // setup widget
-  QWidget *widget = new QWidget;
-  QHBoxLayout *hl = new QHBoxLayout(widget);
-  hl->setMargin(0);
-  hl->setSpacing(30);
 
-  username_label.setAlignment(Qt::AlignVCenter | Qt::AlignRight);
+  // setup widget
+  hlayout->addStretch(1);
+
+  username_label.setAlignment(Qt::AlignVCenter);
   username_label.setStyleSheet("color: #aaaaaa");
-  hl->addWidget(&username_label);
+  hlayout->addWidget(&username_label);
 
   btn.setStyleSheet(R"(
     padding: 0;
@@ -25,9 +23,7 @@ SshControl::SshControl() : AbstractControl("SSH Keys", "Warning: This grants SSH
     background-color: #393939;
   )");
   btn.setFixedSize(250, 100);
-  hl->addWidget(&btn);
-
-  hlayout->addWidget(widget);
+  hlayout->addWidget(&btn);
 
   QObject::connect(&btn, &QPushButton::released, [=]() {
     if (btn.text() == "ADD") {
