@@ -32,5 +32,4 @@ private:
 
   void refresh();
   void getUserKeys(QString username);
-  void handleResponse(TimeoutRequest *request, const QString &resp, bool err);
 };

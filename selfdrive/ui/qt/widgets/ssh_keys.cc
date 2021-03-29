@@ -56,31 +56,19 @@ void SshControl::refresh() {
 }
 
 void SshControl::getUserKeys(QString username){
-  QString url = "https://github.com/" + username + ".keys";
-  TimeoutRequest *request = new TimeoutRequest(this, url);
-
-  QObject::connect(request, &TimeoutRequest::receivedResponse, [=](const QString &resp) {
-    handleResponse(request, resp, false);
-  });
-  QObject::connect(request, &TimeoutRequest::failedResponse, [=](const QString &resp) {
-    handleResponse(request, "Username '" + username + "' doesn't exist on GitHub", true);
-  });
-  QObject::connect(request, &TimeoutRequest::timeoutResponse, [=](const QString &resp) {
-    handleResponse(request, "Request timed out", true);
-  });
-}
-
-void SshControl::handleResponse(TimeoutRequest *request, const QString &resp, bool err) {
-  if (!err) {
+  const QString url = "https://github.com/" + username + ".keys";
+  auto [err, resp] = httpGet(url, 20000);
+  if (err == QNetworkReply::NoError) {
     if (!resp.isEmpty()) {
       Params().write_db_value("GithubUsername", username.toStdString());
       Params().write_db_value("GithubSshKeys", resp.toStdString());
     } else {
       ConfirmationDialog::alert("Username '" + username + "' has no keys on GitHub");
     }
+  } else if (err == QNetworkReply::TimeoutError) {
+    ConfirmationDialog::alert("Request timed out");
   } else {
-    ConfirmationDialog::alert(resp);
+    ConfirmationDialog::alert("Username '" + username + "' doesn't exist on GitHub");
   }
-  request->deleteLater();
   refresh();
 }

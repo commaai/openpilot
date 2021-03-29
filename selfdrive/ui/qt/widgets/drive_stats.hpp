@@ -1,7 +1,7 @@
 #pragma once
 
 #include <QLabel>
-
+#include <QNetworkReply>
 class DriveStats : public QWidget {
   Q_OBJECT
 
@@ -14,5 +14,5 @@ private:
   } all_, week_;
 
 private slots:
-  void parseResponse(const QString& response);
+  void parseResponse(QNetworkReply::NetworkError err, const QString& response);
 };

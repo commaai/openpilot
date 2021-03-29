@@ -104,12 +104,13 @@ PrimeUserWidget::PrimeUserWidget(QWidget* parent) : QWidget(parent) {
   }
 
   QString url = "https://api.commadotai.com/v1/devices/" + dongleId + "/owner";
-  TimeoutRequest* repeater = new TimeoutRequest(this, url, "ApiCache_Owner");
-  repeater->setRepeatPeriod(6);
-  QObject::connect(repeater, SIGNAL(receivedResponse(const QString&)), this, SLOT(replyFinished(const QString&)));
+  RequestRepeater* repeater = new RequestRepeater(this, url, 6, "ApiCache_Owner");
+  QObject::connect(repeater, SIGNAL(receivedResponse(QNetworkReply::NetworkError, const QString&)), this, SLOT(replyFinished(QNetworkReply::NetworkError, const QString&)));
 }
 
-void PrimeUserWidget::replyFinished(const QString& response) {
+void PrimeUserWidget::replyFinished(QNetworkReply::NetworkError err, const QString& response) {
+  if (err != QNetworkReply::NoError) return;
+
   QJsonDocument doc = QJsonDocument::fromJson(response.toUtf8());
   if (doc.isNull()) {
     qDebug() << "JSON Parse failed on getting username and points";
@@ -237,17 +238,9 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
   // set up API requests
   QString dongleId = QString::fromStdString(Params().get("DongleId"));
   QString url = "https://api.commadotai.com/v1.1/devices/" + dongleId + "/";
-  TimeoutRequest* repeater = new TimeoutRequest(this, url, "ApiCache_Device");
-  repeater->setRepeatPeriod(5);
-  QObject::connect(repeater, SIGNAL(receivedResponse(const QString&)), this, SLOT(replyFinished(const QString&)));
-  QObject::connect(repeater, SIGNAL(failedResponse(const QString&)), this, SLOT(parseError(const QString&)));
+  RequestRepeater* repeater = new RequestRepeater(this, url, 5, "ApiCache_Device");
+  QObject::connect(repeater, SIGNAL(receivedResponse(QNetworkReply::NetworkError, const QString&)), this, SLOT(replyFinished(QNetworkReply::NetworkError, const QString&)));
   hide(); // Only show when first request comes back
-}
-
-void SetupWidget::parseError(const QString& response) {
-  show();
-  showQr = false;
-  mainLayout->setCurrentIndex(0);
 }
 
 void SetupWidget::showQrCode(){
@@ -255,7 +248,15 @@ void SetupWidget::showQrCode(){
   mainLayout->setCurrentIndex(1);
 }
 
-void SetupWidget::replyFinished(const QString& response) {
+void SetupWidget::replyFinished(QNetworkReply::NetworkError err, const QString& response) {
+  if (err != QNetworkReply::NoError) {
+    if (err != QNetworkReply::TimeoutError) {
+      show();
+      showQr = false;
+      mainLayout->setCurrentIndex(0);
+    }
+    return;
+  }
   show();
   QJsonDocument doc = QJsonDocument::fromJson(response.toUtf8());
   if (doc.isNull()) {

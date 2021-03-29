@@ -9,7 +9,7 @@
 #include <QWidget>
 #include <QTimer>
 #include <QRandomGenerator>
-
+#include <QEventLoop>
 #include "api.hpp"
 #include "home.hpp"
 #include "common/params.h"
@@ -72,79 +72,74 @@ QString CommaApi::create_jwt(QVector<QPair<QString, QJsonValue>> payloads, int e
   return jwt;
 }
 
-RequestRepeater::RequestRepeater(QWidget* parent, QString requestURL, int period_seconds, const QString &cache_key, bool disableWithScreen)
+QString CommaApi::create_jwt() {
+  return create_jwt(*(new QVector<QPair<QString, QJsonValue>>()));
+}
+
+std::pair<QNetworkReply::NetworkError, QString> httpGet(const QString& url, int timeout_ms, QMap<QString, QString>* headers) {
+  QNetworkRequest request(QUrl{url});
+  if (headers) {
+    auto it = headers->constBegin();
+    while (it != headers->constEnd()) {
+      request.setRawHeader(it.key().toUtf8(), it.value().toUtf8());
+      ++it;
+    }
+  }
+#ifdef QCOM
+  QSslConfiguration ssl = QSslConfiguration::defaultConfiguration();
+  ssl.setCaCertificates(QSslCertificate::fromPath("/usr/etc/tls/cert.pem", QSsl::Pem, QRegExp::Wildcard));
+  request.setSslConfiguration(ssl);
+#endif
+
+  QEventLoop loop;
+
+  QNetworkAccessManager nam;
+  QNetworkReply* reply = nam.get(request);
+  QObject::connect(reply, SIGNAL(finished()), &loop, SLOT(quit()), Qt::DirectConnection);
+
+  QTimer timer;
+  timer.setSingleShot(true);
+  QObject::connect(&timer, SIGNAL(timeout()), &loop, SLOT(quit()));
+  timer.start(timeout_ms);
+
+  loop.exec();
+
+  QNetworkReply::NetworkError err = timer.isActive() ? QNetworkReply::TimeoutError : reply->error();
+  return std::make_pair(err, reply->readAll());
+}
+
+RequestRepeater::RequestRepeater(QWidget* parent, QString requestURL, int period_seconds, const QString &cache_key, QVector<QPair<QString, QJsonValue>> payloads, bool disableWithScreen)
   : disableWithScreen(disableWithScreen), cache_key(cache_key), QObject(parent)  {
-  networkAccessManager = new QNetworkAccessManager(this);
-
-  repeatTimer = new QTimer(this);
-  QObject::connect(repeatTimer, &QTimer::timeout, [=](){sendRequest(requestURL, payloads);});
-
-  networkTimer = new QTimer(this);
-  networkTimer->setSingleShot(true);
-  networkTimer->setInterval(timeout_second * 1000);
-  connect(networkTimer, SIGNAL(timeout()), this, SLOT(requestTimeout()));
-
   if (!cache_key.isEmpty()) {
     if (std::string cached_resp = Params().get(cache_key.toStdString()); !cached_resp.empty()) {
-      QTimer::singleShot(0, [=]() { emit receivedResponse(QString::fromStdString(cached_resp)); });
+      QTimer::singleShot(0, [=]() { emit receivedResponse(QNetworkReply::NoError, QString::fromStdString(cached_resp)); });
     }
   }
 
   sendRequest(requestURL, payloads);
+  
+  repeatTimer = new QTimer(this);
+  QObject::connect(repeatTimer, &QTimer::timeout, [=](){sendRequest(requestURL, payloads);});
+  repeatTimer->start(period_seconds * 1000);
 }
 
-void TimeoutRequest::setRepeatPeriod(int repeat_period_second) {
-  repeatTimer->start(repeat_period_second * 1000);
-}
-
-void TimeoutRequest::sendRequest(const QString& requestURL, QVector<QPair<QString, QJsonValue>> payloads) {
-  if (GLWindow::ui_state.scene.started || !active || reply != NULL ||
+void RequestRepeater::sendRequest(const QString& requestURL, QVector<QPair<QString, QJsonValue>> payloads) {
+  if (GLWindow::ui_state.scene.started || !active || sending ||
       (!GLWindow::ui_state.awake && disableWithScreen)) {
     return;
   }
 
-  QString token = CommaApi::create_jwt();
-  QNetworkRequest request;
-  request.setUrl(QUrl(requestURL));
-  request.setRawHeader(QByteArray("Authorization"), ("JWT " + token).toUtf8());
-
-#ifdef QCOM
-  QSslConfiguration ssl = QSslConfiguration::defaultConfiguration();
-  ssl.setCaCertificates(QSslCertificate::fromPath("/usr/etc/tls/cert.pem",
-                        QSsl::Pem, QRegExp::Wildcard));
-  request.setSslConfiguration(ssl);
-#endif
-
-  reply = networkAccessManager->get(request);
-
-  networkTimer->start();
-  connect(reply, SIGNAL(finished()), this, SLOT(requestFinished()));
-}
-
-void TimeoutRequest::requestTimeout(){
-  reply->abort();
-}
-
-// This function should always emit something
-void TimeoutRequest::requestFinished(){
-  if (reply->error() != QNetworkReply::OperationCanceledError) {
-    networkTimer->stop();
-    QString response = reply->readAll();
-    if (reply->error() == QNetworkReply::NoError) {
-      // save to cache
-      if (!cache_key.isEmpty()) {
-        Params().put(cache_key.toStdString(), response.toStdString());
-      }
-      emit receivedResponse(response);
-    } else {
-      if (!cache_key.isEmpty()) {
-        Params().remove(cache_key.toStdString());
-      }
-      emit failedResponse(reply->errorString());
+  sending = true;
+  QString token = CommaApi::create_jwt(payloads);
+  QMap<QString, QString> headers{{"Authorization", "JWT " + token}};
+  auto[err, resp] = httpGet(requestURL, 20000, &headers);
+  if (!cache_key.isEmpty()) {
+    if (err == QNetworkReply::NoError) {
+      Params().write_db_value(cache_key.toStdString(), resp.toStdString());
+    } else if (err != QNetworkReply::TimeoutError) {
+      Params().delete_db_value(cache_key.toStdString());
     }
-  } else {
-    emit timeoutResponse("timeout");
   }
-  reply->deleteLater();
-  reply = NULL;
+  emit receivedResponse(err, resp);
+  sending = false;
 }

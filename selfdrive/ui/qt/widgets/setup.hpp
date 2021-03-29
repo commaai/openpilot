@@ -4,7 +4,7 @@
 #include <QStackedWidget>
 #include <QVBoxLayout>
 #include <QWidget>
-
+#include <QNetworkReply>
 #include "api.hpp"
 
 class PairingQRWidget : public QWidget {
@@ -33,7 +33,7 @@ private:
   CommaApi* api;
 
 private slots:
-  void replyFinished(const QString& response);
+  void replyFinished(QNetworkReply::NetworkError err, const QString& response);
 };
 
 class PrimeAdWidget : public QWidget {
@@ -56,7 +56,6 @@ private:
   bool showQr = false;
 
 private slots:
-  void parseError(const QString& response);
-  void replyFinished(const QString& response);
+  void replyFinished(QNetworkReply::NetworkError err, const QString& response);
   void showQrCode();
 };

@@ -22,7 +22,9 @@ static QLayout* build_stat_layout(QLabel** metric, const QString& name) {
   return layout;
 }
 
-void DriveStats::parseResponse(const QString& response) {
+void DriveStats::parseResponse(QNetworkReply::NetworkError err, const QString& response) {
+  if (err != QNetworkReply::NoError) return;
+
   QJsonDocument doc = QJsonDocument::fromJson(response.trimmed().toUtf8());
   if (doc.isNull()) {
     qDebug() << "JSON Parse failed on getting past drives statistics";
@@ -64,7 +66,6 @@ DriveStats::DriveStats(QWidget* parent) : QWidget(parent) {
   // TODO: do we really need to update this frequently?
   QString dongleId = QString::fromStdString(Params().get("DongleId"));
   QString url = "https://api.commadotai.com/v1.1/devices/" + dongleId + "/stats";
-  TimeoutRequest* repeater = new TimeoutRequest(this, url, "ApiCache_DriveStats");
-  repeater->setRepeatPeriod(13);
-  QObject::connect(repeater, SIGNAL(receivedResponse(const QString&)), this, SLOT(parseResponse(const QString&)));
+  RequestRepeater* repeater = new RequestRepeater(this, url, 13, "ApiCache_DriveStats");
+  QObject::connect(repeater, SIGNAL(receivedResponse(QNetworkReply::NetworkError, const QString&)), this, SLOT(parseResponse(QNetworkReply::NetworkError, const QString&)));
 }
