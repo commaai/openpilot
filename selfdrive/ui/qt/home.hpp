@@ -1,16 +1,14 @@
 #pragma once
 
-#include <mutex>
-#include <condition_variable>
+#include <QMutex>
+#include <QWaitCondition>
 #include <QLabel>
 #include <QOpenGLFunctions>
 #include <QOpenGLWidget>
 #include <QPushButton>
 #include <QStackedLayout>
-#include <QStackedWidget>
 #include <QThread>
 #include <QTimer>
-#include <QVector3D>
 #include <QWidget>
 
 #include "sound.hpp"
@@ -20,8 +18,9 @@
 
 class GLWindow;
 
-class UIUpdater : public QThread, protected QOpenGLFunctions {
+class UIUpdater : public QObject, protected QOpenGLFunctions {
   Q_OBJECT
+
 public:
   UIUpdater(GLWindow* w);
   void prepareExit() {
@@ -29,17 +28,20 @@ public:
     grabCond_.notify_all();
   }
 
-  std::mutex renderMutex_, grabMutex_;
-  std::condition_variable grabCond_;
+  QMutex renderMutex_, grabMutex_;
+  QWaitCondition grabCond_;
 
 signals:
   void contextWanted();
   void offroadTransition(bool);
 
+public slots:
+  void update();
+
 private:
-  void run() override;
   void draw();
-  bool inited_ = false, exiting_ = false;
+  bool inited_ = false, exiting_ = false, prev_awake_ = false;
+  QTimer timer_;
   GLWindow* glWidget_;
 };
 
@@ -60,12 +62,12 @@ public slots:
   void grabContext();
 
 protected:
-  void initializeGL() override;
   void resizeGL(int w, int h) override;
   void resizeEvent(QResizeEvent* event) override {}
   void paintEvent(QPaintEvent* event) override {}
 
 private:
+  QThread *thread;
   UIUpdater* ui_updater;
   Sound sound;
   // TODO: make a nice abstraction to handle embedded device stuff
@@ -77,6 +79,7 @@ private:
 signals:
   void offroadTransition(bool offroad);
   void screen_shutoff();
+  void renderRequested();
 };
 
 // offroad home screen

@@ -1,7 +1,6 @@
 #include <cmath>
 #include <fstream>
 #include <iostream>
-#include <thread>
 #include <exception>
 
 #include <QDateTime>
@@ -233,27 +232,32 @@ GLWindow::GLWindow(QWidget* parent) : QOpenGLWidget(parent) {
   ui_state.fb_h = vwp_h;
   ui_init(&ui_state);
 
+  wake();
+
+  thread = new QThread;
   ui_updater = new UIUpdater(this);
+  ui_updater->moveToThread(thread);
+  connect(thread, &QThread::finished, ui_updater, &QObject::deleteLater);
+
+  connect(this, &GLWindow::renderRequested, ui_updater, &UIUpdater::update);
   connect(ui_updater, &UIUpdater::contextWanted, this, &GLWindow::grabContext);
   connect(ui_updater, SIGNAL(offroadTransition(bool)), this, SIGNAL(offroadTransition(bool)));
-
   connect(this, &QOpenGLWidget::aboutToCompose, [=] { ui_updater->renderMutex_.lock(); });
-  connect(this, &QOpenGLWidget::frameSwapped, [=] { ui_updater->renderMutex_.unlock();});
+  connect(this, &QOpenGLWidget::frameSwapped, [=] {
+    ui_updater->renderMutex_.unlock();
+    emit renderRequested();
+  });
   connect(this, &QOpenGLWidget::aboutToResize, [=] { ui_updater->renderMutex_.lock(); });
   connect(this, &QOpenGLWidget::resized, [=] { ui_updater->renderMutex_.unlock(); });
 
-  wake();
+  thread->start();
 }
 
 GLWindow::~GLWindow() {
   ui_updater->prepareExit();
-  ui_updater->quit();
-  ui_updater->wait();
-  delete ui_updater;
-}
-
-void GLWindow::initializeGL() {
-  ui_updater->start();
+  thread->quit();
+  thread->wait();
+  delete thread;
 }
 
 void GLWindow::backlightUpdate() {
@@ -284,30 +288,24 @@ void GLWindow::wake() {
 }
 
 void GLWindow::grabContext() {
-  std::lock_guard render_lk(ui_updater->renderMutex_);
-  std::unique_lock grab_lk(ui_updater->grabMutex_);
-  context()->moveToThread(ui_updater);
-  ui_updater->grabCond_.notify_all();
+  ui_updater->renderMutex_.lock();
+  QMutexLocker lock(&ui_updater->grabMutex_);
+  context()->moveToThread(thread);
+  ui_updater->grabCond_.wakeAll();
+  ui_updater->renderMutex_.unlock();
 }
 
-// ui thread
+// UIUpdater
 
-UIUpdater::UIUpdater(GLWindow* w) : glWidget_(w), QThread(w) {}
+UIUpdater::UIUpdater(GLWindow* w) : glWidget_(w), timer_(this) {
+  connect(&timer_, &QTimer::timeout, this, &UIUpdater::update);
+}
 
 void UIUpdater::draw() {
-  QOpenGLContext* ctx = glWidget_->context();
-  {
-    // grab OpenGL context from gui thread
-    std::unique_lock lk(grabMutex_);
-    emit contextWanted();
-    grabCond_.wait(lk, [=] { return ctx->thread() == QThread::currentThread() || exiting_ == true; });
-    if (exiting_) return;
-  }
-  std::lock_guard lk(renderMutex_);
-
   // Make the context (and an offscreen surface) current for this thread. The
   // QOpenGLWidget's fbo is bound in the context.
   glWidget_->makeCurrent();
+
   UIState *s = &glWidget_->ui_state;
   if (!inited_) {
     inited_ = true;
@@ -325,47 +323,65 @@ void UIUpdater::draw() {
   // Make no context current on this thread and move the QOpenGLWidget's
   // context back to the gui thread.
   glWidget_->doneCurrent();
-  ctx->moveToThread(qGuiApp->thread());
+  glWidget_->context()->moveToThread(qGuiApp->thread());
   // Schedule composition. Note that this will use QueuedConnection, meaning
   // that update() will be invoked on the gui thread.
   QMetaObject::invokeMethod(glWidget_, "update");
 }
 
-void UIUpdater::run() {
+void UIUpdater::update() {
+  if (exiting_) {
+    return;
+  }
+
+  // Grab the context.
+  grabMutex_.lock();
+  emit contextWanted();
+  grabCond_.wait(&grabMutex_);
+  QMutexLocker lock(&renderMutex_);
+  grabMutex_.unlock();
+
+  if (exiting_) {
+    return;
+  }
+
   UIState *s = &glWidget_->ui_state;
-  while (!exiting_) {
 
-    if (!s->scene.started) {
-      util::sleep_for(50);
-    }
+  if (!s->scene.started && s->awake) {
+    util::sleep_for(50);
+  }
 
-    double u1 = millis_since_boot();
+  double u1 = millis_since_boot();
 
-    ui_update(s);
+  ui_update(s);
 
-    if (s->scene.started != glWidget_->onroad) {
-      glWidget_->onroad = s->scene.started;
-      emit offroadTransition(!glWidget_->onroad);
-    }
+  if (s->scene.started != glWidget_->onroad) {
+    glWidget_->onroad = s->scene.started;
+    emit offroadTransition(!glWidget_->onroad);
+  }
 
-    // Don't waste resources on drawing in case screen is off
-    handle_display_state(s, false);
-    if (!s->awake) {
-      continue;
-    }
+  handle_display_state(s, false);
+  if (s->awake != prev_awake_) {
+    !s->awake ? timer_.start(50) : timer_.stop();
+    prev_awake_ = s->awake;
+  }
 
-    glWidget_->backlightUpdate();
+  // Don't waste resources on drawing in case screen is off
+  if (!s->awake) {
+    return;
+  }
 
-    // scale volume with speed
-    s->sound->setVolume(util::map_val(s->scene.car_state.getVEgo(), 0.f, 20.f,
-                                            Hardware::MIN_VOLUME, Hardware::MAX_VOLUME));
+  glWidget_->backlightUpdate();
 
-    draw();
+  // scale volume with speed
+  s->sound->setVolume(util::map_val(s->scene.car_state.getVEgo(), 0.f, 20.f,
+                                    Hardware::MIN_VOLUME, Hardware::MAX_VOLUME));
 
-    double u2 = millis_since_boot();
-    if (!s->scene.driver_view && (u2 - u1 > 66)) {
-      // warn on sub 15fps
-      LOGW("slow frame(%llu) time: %.2f", s->sm->frame, u2 - u1);
-    }
+  draw();
+
+  double u2 = millis_since_boot();
+  if (!s->scene.driver_view && (u2 - u1 > 66)) {
+    // warn on sub 15fps
+    LOGW("slow frame(%llu) time: %.2f", s->sm->frame, u2 - u1);
   }
 }
