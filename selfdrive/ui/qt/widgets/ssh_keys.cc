@@ -3,6 +3,7 @@
 #include "widgets/input.hpp"
 #include "widgets/ssh_keys.hpp"
 #include "common/params.h"
+#include "api.hpp"
 
 
 SshControl::SshControl() : AbstractControl("SSH Keys", "Warning: This grants SSH access to all public keys in your GitHub settings. Never enter a GitHub username other than your own. A comma employee will NEVER ask you to add their GitHub username.", "") {
@@ -56,7 +57,7 @@ void SshControl::refresh() {
 }
 
 void SshControl::getUserKeys(QString username){
-  const QString url = "https://github.com/" + username + ".keys";
+  QString url = "https://github.com/" + username + ".keys";
   auto [err, resp] = httpGet(url, 20000);
   if (err == QNetworkReply::NoError) {
     if (!resp.isEmpty()) {

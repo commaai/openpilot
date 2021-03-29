@@ -1,7 +1,8 @@
 #pragma once
 
 #include <QLabel>
-#include <QNetworkReply>
+#include "api.hpp"
+
 class DriveStats : public QWidget {
   Q_OBJECT
 

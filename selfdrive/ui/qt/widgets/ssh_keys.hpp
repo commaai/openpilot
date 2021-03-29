@@ -4,7 +4,6 @@
 
 #include "widgets/controls.hpp"
 #include "selfdrive/hardware/hw.h"
-#include "api.hpp"
 
 // SSH enable toggle
 class SshToggle : public ToggleControl {

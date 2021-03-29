@@ -249,15 +249,15 @@ void SetupWidget::showQrCode(){
 }
 
 void SetupWidget::replyFinished(QNetworkReply::NetworkError err, const QString& response) {
+  show();
   if (err != QNetworkReply::NoError) {
     if (err != QNetworkReply::TimeoutError) {
-      show();
       showQr = false;
       mainLayout->setCurrentIndex(0);
     }
     return;
   }
-  show();
+
   QJsonDocument doc = QJsonDocument::fromJson(response.toUtf8());
   if (doc.isNull()) {
     qDebug() << "JSON Parse failed on getting pairing and prime status";

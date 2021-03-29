@@ -4,7 +4,6 @@
 #include <QStackedWidget>
 #include <QVBoxLayout>
 #include <QWidget>
-#include <QNetworkReply>
 #include "api.hpp"
 
 class PairingQRWidget : public QWidget {

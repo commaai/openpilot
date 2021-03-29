@@ -3,7 +3,6 @@
 #include <QJsonObject>
 #include <QVBoxLayout>
 
-#include "api.hpp"
 #include "common/params.h"
 #include "drive_stats.hpp"
 

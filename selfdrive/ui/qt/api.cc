@@ -79,10 +79,8 @@ QString CommaApi::create_jwt() {
 std::pair<QNetworkReply::NetworkError, QString> httpGet(const QString& url, int timeout_ms, QMap<QString, QString>* headers) {
   QNetworkRequest request(QUrl{url});
   if (headers) {
-    auto it = headers->constBegin();
-    while (it != headers->constEnd()) {
+    for (auto it = headers->constBegin(); it != headers->constEnd(); ++it) {
       request.setRawHeader(it.key().toUtf8(), it.value().toUtf8());
-      ++it;
     }
   }
 #ifdef QCOM
@@ -108,8 +106,8 @@ std::pair<QNetworkReply::NetworkError, QString> httpGet(const QString& url, int 
   return std::make_pair(err, reply->readAll());
 }
 
-RequestRepeater::RequestRepeater(QWidget* parent, QString requestURL, int period_seconds, const QString &cache_key, QVector<QPair<QString, QJsonValue>> payloads, bool disableWithScreen)
-  : disableWithScreen(disableWithScreen), cache_key(cache_key), QObject(parent)  {
+RequestRepeater::RequestRepeater(QWidget* parent, QString requestURL, int period_seconds, const QString& cache_key, QVector<QPair<QString, QJsonValue>> payloads, bool disableWithScreen)
+    : disableWithScreen(disableWithScreen), cache_key(cache_key), sending(false), QObject(parent) {
   if (!cache_key.isEmpty()) {
     if (std::string cached_resp = Params().get(cache_key.toStdString()); !cached_resp.empty()) {
       QTimer::singleShot(0, [=]() { emit receivedResponse(QNetworkReply::NoError, QString::fromStdString(cached_resp)); });
@@ -117,9 +115,9 @@ RequestRepeater::RequestRepeater(QWidget* parent, QString requestURL, int period
   }
 
   sendRequest(requestURL, payloads);
-  
-  repeatTimer = new QTimer(this);
-  QObject::connect(repeatTimer, &QTimer::timeout, [=](){sendRequest(requestURL, payloads);});
+
+  QTimer *repeatTimer = new QTimer(this);
+  QObject::connect(repeatTimer, &QTimer::timeout, [=]() { sendRequest(requestURL, payloads); });
   repeatTimer->start(period_seconds * 1000);
 }
 
@@ -130,9 +128,8 @@ void RequestRepeater::sendRequest(const QString& requestURL, QVector<QPair<QStri
   }
 
   sending = true;
-  QString token = CommaApi::create_jwt(payloads);
-  QMap<QString, QString> headers{{"Authorization", "JWT " + token}};
-  auto[err, resp] = httpGet(requestURL, 20000, &headers);
+  QMap<QString, QString> headers{{"Authorization", "JWT " + CommaApi::create_jwt(payloads)}};
+  auto [err, resp] = httpGet(requestURL, 20000, &headers);
   if (!cache_key.isEmpty()) {
     if (err == QNetworkReply::NoError) {
       Params().write_db_value(cache_key.toStdString(), resp.toStdString());
