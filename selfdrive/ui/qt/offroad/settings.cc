@@ -75,23 +75,15 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
   device_layout->setMargin(100);
 
   Params params = Params();
-  std::vector<std::pair<std::string, std::string>> labels = {
-    {"Dongle ID", params.get("DongleId", false)},
-  };
 
-  // get serial number
-  //std::string cmdline = util::read_file("/proc/cmdline");
-  //auto delim = cmdline.find("serialno=");
-  //if (delim != std::string::npos) {
-  //  labels.push_back({"Serial", cmdline.substr(delim, cmdline.find(" ", delim))});
-  //}
-
-  for (auto &l : labels) {
-    device_layout->addWidget(new LabelControl(QString::fromStdString(l.first),
-                             QString::fromStdString(l.second)));
-  }
-
+  QString dongle = QString::fromStdString(params.get("DongleId", false));
+  device_layout->addWidget(new LabelControl("Dongle ID", dongle));
   device_layout->addWidget(horizontal_line());
+
+  QString serial = QString::fromStdString(params.get("HardwareSerial", false));
+  device_layout->addWidget(new LabelControl("Serial", serial));
+  device_layout->addWidget(horizontal_line());
+
 
   device_layout->addWidget(new ButtonControl("Driver Camera", "PREVIEW",
                                              "Preview the driver facing camera to help optimize device mounting position for best driver monitoring experience. (vehicle must be off)",
