@@ -39,7 +39,7 @@ public:
 
 signals:
   void closeSettings();
-  void offroadTransitions(bool offroad);
+  void offroadTransition(bool offroad);
   void reviewTrainingGuide();
 
 private:
