@@ -130,58 +130,58 @@ Supported Cars
 Community Maintained Cars and Features
 ------
 
-| Make      | Model (US Market Reference)   | Supported Package | ACC              | No ACC accel below | No ALC below |
-| ----------| ------------------------------| ------------------| -----------------| -------------------| -------------|
-| Audi      | A3 2014, 2017                 | Driver Assistance | Stock            | 0mph               | 0mph         |
-| Audi      | A3 Sportback e-tron 2017-18   | Driver Assistance | Stock            | 0mph               | 0mph         |
-| Buick     | Regal 2018<sup>1</sup>        | Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
-| Cadillac  | ATS 2018<sup>1</sup>          | Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
-| Chevrolet | Malibu 2017<sup>1</sup>       | Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
-| Chevrolet | Volt 2017-18<sup>1</sup>      | Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
-| Chrysler  | Pacifica 2017-18              | Adaptive Cruise   | Stock            | 0mph               | 9mph         |
-| Chrysler  | Pacifica 2020                 | Adaptive Cruise   | Stock            | 0mph               | 39mph        |
-| Chrysler  | Pacifica Hybrid 2017-18       | Adaptive Cruise   | Stock            | 0mph               | 9mph         |
-| Chrysler  | Pacifica Hybrid 2019-21       | Adaptive Cruise   | Stock            | 0mph               | 39mph        |
-| Genesis   | G70 2018                      | All               | Stock            | 0mph               | 0mph         |
-| Genesis   | G80 2018                      | All               | Stock            | 0mph               | 0mph         |
-| Genesis   | G90 2018                      | All               | Stock            | 0mph               | 0mph         |
-| GMC       | Acadia 2018<sup>1</sup>       | Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
-| Holden    | Astra 2017<sup>1</sup>        | Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
-| Hyundai   | Elantra 2017-19               | SCC + LKAS        | Stock            | 19mph              | 34mph        |
-| Hyundai   | Genesis 2015-16               | SCC + LKAS        | Stock            | 19mph              | 37mph        |
-| Hyundai   | Ioniq Electric 2019           | SCC + LKAS        | Stock            | 0mph               | 32mph        |
-| Hyundai   | Ioniq Electric 2020           | SCC + LKAS        | Stock            | 0mph               | 0mph         |
-| Hyundai   | Kona 2020                     | SCC + LKAS        | Stock            | 0mph               | 0mph         |
-| Hyundai   | Kona EV 2019                  | SCC + LKAS        | Stock            | 0mph               | 0mph         |
-| Hyundai   | Santa Fe 2019-20              | All               | Stock            | 0mph               | 0mph         |
-| Hyundai   | Sonata 2018-2019              | SCC + LKAS        | Stock            | 0mph               | 0mph         |
-| Hyundai   | Veloster 2019                 | SCC + LKAS        | Stock            | 5mph               | 0mph         |
-| Jeep      | Grand Cherokee 2016-18        | Adaptive Cruise   | Stock            | 0mph               | 9mph         |
-| Jeep      | Grand Cherokee 2019-20        | Adaptive Cruise   | Stock            | 0mph               | 39mph        |
-| Kia       | Forte 2018-19, 2021           | SCC + LKAS        | Stock            | 0mph               | 0mph         |
-| Kia       | Niro EV 2020                  | SCC + LKAS        | Stock            | 0mph               | 0mph         |
-| Kia       | Optima 2017                   | SCC + LKAS        | Stock            | 0mph               | 32mph        |
-| Kia       | Optima 2019                   | SCC + LKAS        | Stock            | 0mph               | 0mph         |
-| Kia       | Seltos 2021                   | SCC + LKAS        | Stock            | 0mph               | 0mph         |
-| Kia       | Sorento 2018                  | SCC + LKAS        | Stock            | 0mph               | 0mph         |
-| Kia       | Stinger 2018                  | SCC + LKAS        | Stock            | 0mph               | 0mph         |
-| Kia       | Ceed 2019                     | SCC + LKAS        | Stock            | 0mph               | 0mph         |
-| Nissan    | Altima 2020                   | ProPILOT          | Stock            | 0mph               | 0mph         |
-| Nissan    | Leaf 2018-20                  | ProPILOT          | Stock            | 0mph               | 0mph         |
-| Nissan    | Rogue 2018-19                 | ProPILOT          | Stock            | 0mph               | 0mph         |
-| Nissan    | X-Trail 2017                  | ProPILOT          | Stock            | 0mph               | 0mph         |
-| SEAT      | Ateca 2018                    | Driver Assistance | Stock            | 0mph               | 0mph         |
-| Škoda     | Kodiaq 2018                   | Driver Assistance | Stock            | 0mph               | 0mph         |
-| Škoda     | Scala 2020                    | Driver Assistance | Stock            | 0mph               | 0mph         |
-| Škoda     | Superb 2018                   | Driver Assistance | Stock            | 0mph               | 0mph         |
-| Subaru    | Ascent 2019                   | EyeSight          | Stock            | 0mph               | 0mph         |
-| Subaru    | Crosstrek 2018-19             | EyeSight          | Stock            | 0mph               | 0mph         |
-| Subaru    | Forester 2019-20              | EyeSight          | Stock            | 0mph               | 0mph         |
-| Subaru    | Impreza 2017-19               | EyeSight          | Stock            | 0mph               | 0mph         |
-| Volkswagen| Jetta 2018-21                 | Driver Assistance | Stock            | 0mph               | 0mph         |
-| Volkswagen| Passat 2016-17<sup>2</sup>    | Driver Assistance | Stock            | 0mph               | 0mph         |
-| Volkswagen| Golf 2015-19                  | Driver Assistance | Stock            | 0mph               | 0mph         |
-| Volkswagen| Tiguan 2020                   | Driver Assistance | Stock            | 0mph               | 0mph         |
+| Make      | Model (US Market Reference)   | Supported Package   | ACC              | No ACC accel below | No ALC below |
+| ----------| ------------------------------| --------------------| -----------------| -------------------| -------------|
+| Audi      | A3 2014, 2017                 | Prestige / Adv.Tech | Stock            | 0mph               | 0mph         |
+| Audi      | A3 Sportback e-tron 2017-18   | Prestige / Adv.Tech | Stock            | 0mph               | 0mph         |
+| Buick     | Regal 2018<sup>1</sup>        | Adaptive Cruise     | openpilot        | 0mph               | 7mph         |
+| Cadillac  | ATS 2018<sup>1</sup>          | Adaptive Cruise     | openpilot        | 0mph               | 7mph         |
+| Chevrolet | Malibu 2017<sup>1</sup>       | Adaptive Cruise     | openpilot        | 0mph               | 7mph         |
+| Chevrolet | Volt 2017-18<sup>1</sup>      | Adaptive Cruise     | openpilot        | 0mph               | 7mph         |
+| Chrysler  | Pacifica 2017-18              | Adaptive Cruise     | Stock            | 0mph               | 9mph         |
+| Chrysler  | Pacifica 2020                 | Adaptive Cruise     | Stock            | 0mph               | 39mph        |
+| Chrysler  | Pacifica Hybrid 2017-18       | Adaptive Cruise     | Stock            | 0mph               | 9mph         |
+| Chrysler  | Pacifica Hybrid 2019-21       | Adaptive Cruise     | Stock            | 0mph               | 39mph        |
+| Genesis   | G70 2018                      | All                 | Stock            | 0mph               | 0mph         |
+| Genesis   | G80 2018                      | All                 | Stock            | 0mph               | 0mph         |
+| Genesis   | G90 2018                      | All                 | Stock            | 0mph               | 0mph         |
+| GMC       | Acadia 2018<sup>1</sup>       | Adaptive Cruise     | openpilot        | 0mph               | 7mph         |
+| Holden    | Astra 2017<sup>1</sup>        | Adaptive Cruise     | openpilot        | 0mph               | 7mph         |
+| Hyundai   | Elantra 2017-19               | SCC + LKAS          | Stock            | 19mph              | 34mph        |
+| Hyundai   | Genesis 2015-16               | SCC + LKAS          | Stock            | 19mph              | 37mph        |
+| Hyundai   | Ioniq Electric 2019           | SCC + LKAS          | Stock            | 0mph               | 32mph        |
+| Hyundai   | Ioniq Electric 2020           | SCC + LKAS          | Stock            | 0mph               | 0mph         |
+| Hyundai   | Kona 2020                     | SCC + LKAS          | Stock            | 0mph               | 0mph         |
+| Hyundai   | Kona EV 2019                  | SCC + LKAS          | Stock            | 0mph               | 0mph         |
+| Hyundai   | Santa Fe 2019-20              | All                 | Stock            | 0mph               | 0mph         |
+| Hyundai   | Sonata 2018-2019              | SCC + LKAS          | Stock            | 0mph               | 0mph         |
+| Hyundai   | Veloster 2019                 | SCC + LKAS          | Stock            | 5mph               | 0mph         |
+| Jeep      | Grand Cherokee 2016-18        | Adaptive Cruise     | Stock            | 0mph               | 9mph         |
+| Jeep      | Grand Cherokee 2019-20        | Adaptive Cruise     | Stock            | 0mph               | 39mph        |
+| Kia       | Forte 2018-19, 2021           | SCC + LKAS          | Stock            | 0mph               | 0mph         |
+| Kia       | Niro EV 2020                  | SCC + LKAS          | Stock            | 0mph               | 0mph         |
+| Kia       | Optima 2017                   | SCC + LKAS          | Stock            | 0mph               | 32mph        |
+| Kia       | Optima 2019                   | SCC + LKAS          | Stock            | 0mph               | 0mph         |
+| Kia       | Seltos 2021                   | SCC + LKAS          | Stock            | 0mph               | 0mph         |
+| Kia       | Sorento 2018                  | SCC + LKAS          | Stock            | 0mph               | 0mph         |
+| Kia       | Stinger 2018                  | SCC + LKAS          | Stock            | 0mph               | 0mph         |
+| Kia       | Ceed 2019                     | SCC + LKAS          | Stock            | 0mph               | 0mph         |
+| Nissan    | Altima 2020                   | ProPILOT            | Stock            | 0mph               | 0mph         |
+| Nissan    | Leaf 2018-20                  | ProPILOT            | Stock            | 0mph               | 0mph         |
+| Nissan    | Rogue 2018-19                 | ProPILOT            | Stock            | 0mph               | 0mph         |
+| Nissan    | X-Trail 2017                  | ProPILOT            | Stock            | 0mph               | 0mph         |
+| SEAT      | Ateca 2018                    | Driver Assistance   | Stock            | 0mph               | 0mph         |
+| Škoda     | Kodiaq 2018                   | Driver Assistance   | Stock            | 0mph               | 0mph         |
+| Škoda     | Scala 2020                    | Driver Assistance   | Stock            | 0mph               | 0mph         |
+| Škoda     | Superb 2018                   | Driver Assistance   | Stock            | 0mph               | 0mph         |
+| Subaru    | Ascent 2019                   | EyeSight            | Stock            | 0mph               | 0mph         |
+| Subaru    | Crosstrek 2018-19             | EyeSight            | Stock            | 0mph               | 0mph         |
+| Subaru    | Forester 2019-20              | EyeSight            | Stock            | 0mph               | 0mph         |
+| Subaru    | Impreza 2017-19               | EyeSight            | Stock            | 0mph               | 0mph         |
+| Volkswagen| Jetta 2018-21                 | Driver Assistance   | Stock            | 0mph               | 0mph         |
+| Volkswagen| Passat 2016-17<sup>2</sup>    | Driver Assistance   | Stock            | 0mph               | 0mph         |
+| Volkswagen| Golf 2015-19                  | Driver Assistance   | Stock            | 0mph               | 0mph         |
+| Volkswagen| Tiguan 2020                   | Driver Assistance   | Stock            | 0mph               | 0mph         |
 
 <sup>1</sup>Requires an [OBD-II car harness](https://comma.ai/shop/products/comma-car-harness) and [community built ASCM harness](https://github.com/commaai/openpilot/wiki/GM#hardware). ***NOTE: disconnecting the ASCM disables Automatic Emergency Braking (AEB).*** <br />
 <sup>2</sup>Only includes the MQB Passat sold outside of North America. The NMS Passat made in Chattanooga TN is not yet supported.
