@@ -66,7 +66,6 @@ TogglesPanel::TogglesPanel(QWidget *parent) {
 
 	for(auto toggle : toggles){
 		toggles_list->addWidget(horizontal_line());
-		//QObject::connect(parent, SIGNAL(closeSettings()), toggle, SLOT(resetState()));
 		toggles_list->addWidget(toggle);
 	}
 
@@ -123,7 +122,6 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
   for(auto &btn : offroad_btns){
     device_layout->addWidget(horizontal_line());
     QObject::connect(parent, SIGNAL(offroadTransition(bool)), btn, SLOT(setEnabled(bool)));
-    //QObject::connect(this, SIGNAL(resetState()), btn, SLOT(resetState()));
     device_layout->addWidget(btn);
   }
 
@@ -281,8 +279,15 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
     nav_btns->addButton(btn);
     sidebar_layout->addWidget(btn, 0, Qt::AlignRight);
 
-    if((name == "Device") || (name == "Toggles"))
+    //TODO: make all panels support resetState()
+    if((name == "Device") || (name == "Toggles")){
       QObject::connect(this, SIGNAL(closeSettings()), panel, SIGNAL(resetState()));
+    }
+
+    for(auto &[name2, panel2] : panels){
+      if(name2 == "Device" || name2 == "Toggles")
+      QObject::connect(btn, SIGNAL(released()), panel2, SIGNAL(resetState()));
+    }
 
     panel_widget->addWidget(panel);
 		if(name == "Device"){
