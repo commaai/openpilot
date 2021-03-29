@@ -82,60 +82,48 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
   device_layout->setMargin(100);
 
   Params params = Params();
-  std::vector<std::pair<std::string, std::string>> labels = {
-    {"Dongle ID", params.get("DongleId", false)},
-  };
 
-  // get serial number
-  //std::string cmdline = util::read_file("/proc/cmdline");
-  //auto delim = cmdline.find("serialno=");
-  //if (delim != std::string::npos) {
-  //  labels.push_back({"Serial", cmdline.substr(delim, cmdline.find(" ", delim))});
-  //}
+  QString dongle = QString::fromStdString(params.get("DongleId", false));
+  device_layout->addWidget(new LabelControl("Dongle ID", dongle));
+  device_layout->addWidget(horizontal_line());
 
-  for (auto &l : labels) {
-    device_layout->addWidget(new LabelControl(QString::fromStdString(l.first),
-                             QString::fromStdString(l.second)));
-  }
+  QString serial = QString::fromStdString(params.get("HardwareSerial", false));
+  device_layout->addWidget(new LabelControl("Serial", serial));
 
-	QList<ButtonControl*> buttons;
+  // offroad-only buttons
+  QList<ButtonControl*> offroad_btns;
 
-  buttons.append(new ButtonControl("Driver Camera", "PREVIEW",
-																	 "Preview the driver facing camera to help optimize device mounting position for best driver monitoring experience. (vehicle must be off)",
-																	 [=]() { Params().write_db_value("IsDriverViewEnabled", "1", 1); }, "", this));
+  offroad_btns.append(new ButtonControl("Driver Camera", "PREVIEW",
+                                   "Preview the driver facing camera to help optimize device mounting position for best driver monitoring experience. (vehicle must be off)",
+                                   [=]() { Params().write_db_value("IsDriverViewEnabled", "1", 1); }));
 
-  // TODO: show current calibration values
-  buttons.append(new ButtonControl("Reset Calibration", "RESET",
-																	 "openpilot requires the device to be mounted within 4° left or right and within 5° up or down. openpilot is continuously calibrating, resetting is rarely required.",
-																	 [=]() {
-																		 if (ConfirmationDialog::confirm("Are you sure you want to reset calibration?")) {
-																			 Params().delete_db_value("CalibrationParams");
-																		 }
-																	 }, "", this));
+  offroad_btns.append(new ButtonControl("Reset Calibration", "RESET",
+                                   "openpilot requires the device to be mounted within 4° left or right and within 5° up or down. openpilot is continuously calibrating, resetting is rarely required.", [=]() {
+    if (ConfirmationDialog::confirm("Are you sure you want to reset calibration?")) {
+      Params().delete_db_value("CalibrationParams");
+    }
+  }));
 
-
-  buttons.append(new ButtonControl("Review Training Guide", "REVIEW",
-																	 "Review the rules, features, and limitations of openpilot",
-																	 [=]() {
-																		 if (ConfirmationDialog::confirm("Are you sure you want to review the training guide?")) {
-																			 Params().delete_db_value("CompletedTrainingVersion");
-																			 emit reviewTrainingGuide();
-																		 }
-																	 }));
+  offroad_btns.append(new ButtonControl("Review Training Guide", "REVIEW",
+                                        "Review the rules, features, and limitations of openpilot", [=]() {
+    if (ConfirmationDialog::confirm("Are you sure you want to review the training guide?")) {
+      Params().delete_db_value("CompletedTrainingVersion");
+      emit reviewTrainingGuide();
+    }
+  }));
 
   QString brand = params.read_db_bool("Passive") ? "dashcam" : "openpilot";
-  buttons.append(new ButtonControl("Uninstall " + brand, "UNINSTALL",
-																	 "",
-																	 [=]() {
-																		 if (ConfirmationDialog::confirm("Are you sure you want to uninstall?")) {
-																			 Params().write_db_value("DoUninstall", "1");
-																		 }
-																	 }, "", this));
-	for(auto btn : buttons){
-		device_layout->addWidget(horizontal_line());
-		QObject::connect(parent, SIGNAL(closeSettings()), btn, SLOT(resetState()));
-		device_layout->addWidget(btn);
-	}
+  offroad_btns.append(new ButtonControl("Uninstall " + brand, "UNINSTALL", "", [=]() {
+    if (ConfirmationDialog::confirm("Are you sure you want to uninstall?")) {
+      Params().write_db_value("DoUninstall", "1");
+    }
+  }));
+
+  for(auto &btn : offroad_btns){
+    device_layout->addWidget(horizontal_line());
+    QObject::connect(parent, SIGNAL(offroadTransition(bool)), btn, SLOT(setEnabled(bool)));
+    device_layout->addWidget(btn);
+  }
 
   // power buttons
   QHBoxLayout *power_layout = new QHBoxLayout();
@@ -182,7 +170,7 @@ void DeveloperPanel::showEvent(QShowEvent *event) {
   Params params = Params();
   std::string brand = params.read_db_bool("Passive") ? "dashcam" : "openpilot";
   QList<QPair<QString, std::string>> dev_params = {
-    {"Version", brand + " v" + params.get("Version", false)},
+    {"Version", brand + " v" + params.get("Version", false).substr(0, 14)},
     {"Git Branch", params.get("GitBranch", false)},
     {"Git Commit", params.get("GitCommit", false).substr(0, 10)},
     {"Panda Firmware", params.get("PandaFirmwareHex", false)},
@@ -210,22 +198,13 @@ QWidget * network_panel(QWidget * parent) {
   layout->setMargin(100);
   layout->setSpacing(30);
 
-  // simple wifi + tethering buttons
-  const char* launch_wifi = "am start -n com.android.settings/.wifi.WifiPickerActivity \
-                             -a android.net.wifi.PICK_WIFI_NETWORK \
-                             --ez extra_prefs_show_button_bar true \
-                             --es extra_prefs_set_next_text ''";
+  // wifi + tethering buttons
   layout->addWidget(new ButtonControl("WiFi Settings", "OPEN", "",
-                                      [=]() { std::system(launch_wifi); }));
-
+                                      [=]() { HardwareEon::launch_wifi(); }));
   layout->addWidget(horizontal_line());
 
-  const char* launch_tethering = "am start -n com.android.settings/.TetherSettings \
-                                  --ez extra_prefs_show_button_bar true \
-                                  --es extra_prefs_set_next_text ''";
   layout->addWidget(new ButtonControl("Tethering Settings", "OPEN", "",
-                                      [=]() { std::system(launch_tethering); }));
-
+                                      [=]() { HardwareEon::launch_tethering(); }));
   layout->addWidget(horizontal_line());
 
   // SSH key management

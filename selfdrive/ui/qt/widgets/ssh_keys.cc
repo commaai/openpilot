@@ -1,12 +1,19 @@
 #include <QNetworkReply>
-
+#include <QHBoxLayout>
 #include "widgets/input.hpp"
 #include "widgets/ssh_keys.hpp"
 #include "common/params.h"
 
 
 SshControl::SshControl() : AbstractControl("SSH Keys", "Warning: This grants SSH access to all public keys in your GitHub settings. Never enter a GitHub username other than your own. A comma employee will NEVER ask you to add their GitHub username.", "") {
+
   // setup widget
+  hlayout->addStretch(1);
+
+  username_label.setAlignment(Qt::AlignVCenter);
+  username_label.setStyleSheet("color: #aaaaaa");
+  hlayout->addWidget(&username_label);
+
   btn.setStyleSheet(R"(
     padding: 0;
     border-radius: 50px;
@@ -27,6 +34,7 @@ SshControl::SshControl() : AbstractControl("SSH Keys", "Warning: This grants SSH
         getUserKeys(username);
       }
     } else {
+      Params().delete_db_value("GithubUsername");
       Params().delete_db_value("GithubSshKeys");
       refresh();
     }
@@ -45,8 +53,10 @@ SshControl::SshControl() : AbstractControl("SSH Keys", "Warning: This grants SSH
 void SshControl::refresh() {
   QString param = QString::fromStdString(Params().get("GithubSshKeys"));
   if (param.length()) {
+    username_label.setText(QString::fromStdString(Params().get("GithubUsername")));
     btn.setText("REMOVE");
   } else {
+    username_label.setText("");
     btn.setText("ADD");
   }
   btn.setEnabled(true);
@@ -79,6 +89,7 @@ void SshControl::parseResponse(){
     networkTimer->stop();
     QString response = reply->readAll();
     if (reply->error() == QNetworkReply::NoError && response.length()) {
+      Params().write_db_value("GithubUsername", username.toStdString());
       Params().write_db_value("GithubSshKeys", response.toStdString());
     } else if(reply->error() == QNetworkReply::NoError){
       err = "Username '" + username + "' has no keys on GitHub";
