@@ -1,7 +1,5 @@
 #pragma once
 
-#include <QMutex>
-#include <QWaitCondition>
 #include <QLabel>
 #include <QOpenGLFunctions>
 #include <QOpenGLWidget>
@@ -16,36 +14,9 @@
 #include "common/util.h"
 #include "widgets/offroad_alerts.hpp"
 
-class GLWindow;
-
-class UIUpdater : public QObject, protected QOpenGLFunctions {
-  Q_OBJECT
-
-public:
-  UIUpdater(GLWindow* w);
-  void prepareExit() {
-    exiting_ = true;
-    grabCond_.notify_all();
-  }
-
-  QMutex renderMutex_, grabMutex_;
-  QWaitCondition grabCond_;
-
-signals:
-  void contextWanted();
-  void offroadTransition(bool);
-
-public slots:
-  void update();
-
-private:
-  void draw();
-  bool inited_ = false, exiting_ = false, prev_awake_ = false;
-  QTimer timer_;
-  GLWindow* glWidget_;
-};
-
 // container window for onroad NVG UI
+class UIUpdater;
+
 class GLWindow : public QOpenGLWidget {
   Q_OBJECT
 
@@ -53,13 +24,13 @@ public:
   using QOpenGLWidget::QOpenGLWidget;
   explicit GLWindow(QWidget* parent = 0);
   void wake();
-  ~GLWindow();
   void backlightUpdate();
   inline static UIState ui_state = {0};
   bool onroad = true;
 
-public slots:
-  void grabContext();
+signals:
+  void offroadTransition(bool offroad);
+  void screen_shutoff();
 
 protected:
   void resizeGL(int w, int h) override;
@@ -67,7 +38,6 @@ protected:
   void paintEvent(QPaintEvent* event) override {}
 
 private:
-  QThread *thread;
   UIUpdater* ui_updater;
   Sound sound;
   // TODO: make a nice abstraction to handle embedded device stuff
@@ -121,4 +91,24 @@ protected:
 private:
   OffroadHome* home;
   QStackedLayout* layout;
+};
+
+class UIUpdater : public QThread, protected QOpenGLFunctions {
+  Q_OBJECT
+
+public:
+  UIUpdater(GLWindow* w);
+  void pause();
+  void resume();
+
+signals:
+  void offroadTransition(bool);
+  void needUpdate();
+
+private:
+  void update();
+  void draw();
+  bool inited_ = false, prev_awake_ = false, is_updating_ = false;;
+  QTimer timer_;
+  GLWindow* glWindow_;
 };
