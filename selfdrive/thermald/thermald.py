@@ -193,16 +193,17 @@ def thermald_thread():
   thermal_config = HARDWARE.get_thermal_config()
 
   # CPR3 logging
-  base_path = "/sys/kernel/debug/cpr3-regulator/"
-  cpr_files = [p for p in Path(base_path).glob("**/*") if p.is_file()]
-  cpr_data = {}
-  for cf in cpr_files:
-    with open(cf, "r") as f:
-      try:
-        cpr_data[str(cf)] = f.read().strip()
-      except Exception:
-        pass
-  cloudlog.event("CPR", data=cpr_data)
+  if EON:
+    base_path = "/sys/kernel/debug/cpr3-regulator/"
+    cpr_files = [p for p in Path(base_path).glob("**/*") if p.is_file()]
+    cpr_data = {}
+    for cf in cpr_files:
+      with open(cf, "r") as f:
+        try:
+          cpr_data[str(cf)] = f.read().strip()
+        except Exception:
+          pass
+    cloudlog.event("CPR", data=cpr_data)
 
   while 1:
     pandaState = messaging.recv_sock(pandaState_sock, wait=True)
