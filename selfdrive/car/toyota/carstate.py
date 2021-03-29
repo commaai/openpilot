@@ -28,7 +28,7 @@ class CarState(CarStateBase):
     ret.seatbeltUnlatched = cp.vl["SEATS_DOORS"]['SEATBELT_DRIVER_UNLATCHED'] != 0
 
     ret.brakePressed = cp.vl["BRAKE_MODULE"]['BRAKE_PRESSED'] != 0
-    ret.brakeLights = bool(cp.vl["ESP_CONTROL"]['BRAKE_LIGHTS_ACC'] or ret.brakePressed)
+    ret.brakeLights = bool(cp.vl["ESP_CONTROL"]['BRAKE_LIGHTS_ACC'] or cp.vl["PCM_CRUISE"]['STANDSTILL_ON'] or ret.brakePressed)
     if self.CP.enableGasInterceptor:
       ret.gas = (cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS'] + cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS2']) / 2.
       ret.gasPressed = ret.gas > 15
@@ -129,6 +129,7 @@ class CarState(CarStateBase):
       ("STEER_RATE", "STEER_ANGLE_SENSOR", 0),
       ("CRUISE_ACTIVE", "PCM_CRUISE", 0),
       ("CRUISE_STATE", "PCM_CRUISE", 0),
+      ("STANDSTILL_ON", "PCM_CRUISE", 0),
       ("GAS_RELEASED", "PCM_CRUISE", 1),
       ("STEER_TORQUE_DRIVER", "STEER_TORQUE_SENSOR", 0),
       ("STEER_TORQUE_EPS", "STEER_TORQUE_SENSOR", 0),

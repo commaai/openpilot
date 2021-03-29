@@ -10,33 +10,33 @@ from opendbc.can.packer import CANPacker
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
 
-def accel_hysteresis(accel, accel_steady, enabled):
-
-  # for small accel oscillations within ACCEL_HYST_GAP, don't change the accel command
-  if not enabled:
-    # send 0 when disabled, otherwise acc faults
-    accel_steady = 0.
-  elif accel > accel_steady + CarControllerParams.ACCEL_HYST_GAP:
-    accel_steady = accel - CarControllerParams.ACCEL_HYST_GAP
-  elif accel < accel_steady - CarControllerParams.ACCEL_HYST_GAP:
-    accel_steady = accel + CarControllerParams.ACCEL_HYST_GAP
-  accel = accel_steady
-
-  return accel, accel_steady
-
-
 def coast_accel(speed):  # given a speed, output coasting acceleration
-  points = [[0.0, 0.03], [.166, .424], [.335, .568],
-            [.731, .440], [1.886, 0.262], [2.809, -0.207],
-            [3.443, -0.249], [MIN_ACC_SPEED, -0.145]]
+  points = [[0.01, 0.3], [.21, .425], [.3107, .535], [.431, .555],
+            [.777, .438], [1.928, 0.265], [2.66, -0.179],
+            [3.336, -0.250], [MIN_ACC_SPEED, -0.145]]
   return interp(speed, *zip(*points))
 
 
-def compute_gb_pedal(accel, speed):
-  _a3, _a4, _a5, _offset, _e1, _e2, _e3, _e4, _e5, _e6, _e7, _e8 = [-0.07264304340456754, -0.007522016704006004, 0.16234124452228196, 0.0029096574419830296, 1.1674372321165579e-05, -0.008010070095545522, -5.834025253616562e-05, 0.04722441060805912, 0.001887454016549489, -0.0014370672920621269, -0.007577594283906699, 0.01943515032956308]
-  speed_part = (_e5 * accel + _e6) * speed ** 2 + (_e7 * accel + _e8) * speed
-  accel_part = ((_e1 * speed + _e2) * accel ** 5 + (_e3 * speed + _e4) * accel ** 4 + _a3 * accel ** 3 + _a4 * accel ** 2 + _a5 * accel)
-  return speed_part + accel_part + _offset
+def compute_gb_pedal(accel, speed, braking):
+  def accel_to_gas(a_ego, v_ego):
+    _a3, _a4, _a5, _a6, _a7, _a8, _s1, _s2, _s3, _s4, _offset = [-0.0034109221270790142, -0.02989942810035373, 0.002005326552420498, 0.1356381902353583, 0.0014222019070588158, 0.008436894892099946,
+                                                                 0.0009439048033890968, -0.0017786568461504919, 0.002986433642380856, 0.021810785976030644, -0.007020501995388009]
+    speed_part = (_s1 * a_ego + _s2) * v_ego ** 2 + (_s3 * a_ego + _s4) * v_ego
+    accel_part = (_a7 * v_ego + _a8) * a_ego ** 4 + (_a3 * v_ego + _a4) * a_ego ** 3 + _a5 * a_ego ** 2 + _a6 * a_ego
+    ret = speed_part + accel_part + _offset
+    return ret
+
+  coast = coast_accel(speed)
+  spread = 0.2
+
+  if accel >= coast:
+    gas = accel_to_gas(accel, speed)
+    x = accel - coast  # start at 0 when at coast accel
+    if spread > x >= 0:  # ramp up gas output using s-shaped curve from coast accel to coast + spread
+      gas *= 1 / (1 + (x / (spread - x)) ** -3) if x != 0 else 0
+    return gas if not braking else gas / 2.0  # while car is braking reduce gas output
+
+  return 0.
 
 
 class CarController():
@@ -64,17 +64,17 @@ class CarController():
 
     # gas and brake
     apply_gas = 0.
-    apply_accel = actuators.gas - actuators.brake
+    apply_accel = (actuators.gas - actuators.brake) * CarControllerParams.ACCEL_SCALE
 
     if CS.CP.enableGasInterceptor and enabled and CS.out.vEgo < MIN_ACC_SPEED:
       # converts desired acceleration to gas percentage for pedal
       # +0.06 offset to reduce ABS pump usage when applying very small gas
-      if apply_accel * CarControllerParams.ACCEL_SCALE > coast_accel(CS.out.vEgo):
-        apply_gas = clip(compute_gb_pedal(apply_accel * CarControllerParams.ACCEL_SCALE, CS.out.vEgo), 0., 1.)
-      apply_accel = 0.06 - actuators.brake
+      apply_gas = compute_gb_pedal(apply_accel, CS.out.vEgo, CS.out.brakeLights)
+      if apply_accel > 0 and CS.out.vEgo <= CS.CP.minSpeedCan:  # increase accel to release brake quicker todo: might not be needed, test with and without in similar situations
+        apply_accel *= 2
 
-    apply_accel, self.accel_steady = accel_hysteresis(apply_accel, self.accel_steady, enabled)
-    apply_accel = clip(apply_accel * CarControllerParams.ACCEL_SCALE, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
+    apply_accel = clip(apply_accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX) if enabled else 0.
+    apply_gas = clip(apply_gas, 0., 1.)
 
     # steer torque
     new_steer = int(round(actuators.steer * CarControllerParams.STEER_MAX))
@@ -131,7 +131,7 @@ class CarController():
       else:
         can_sends.append(create_accel_command(self.packer, 0, pcm_cancel_cmd, False, lead))
 
-    if (frame % 2 == 0) and (CS.CP.enableGasInterceptor):
+    if frame % 2 == 0 and CS.CP.enableGasInterceptor:
       # send exactly zero if apply_gas is zero. Interceptor will send the max between read value and apply_gas.
       # This prevents unexpected pedal range rescaling
       can_sends.append(create_gas_command(self.packer, apply_gas, frame//2))
