@@ -43,6 +43,7 @@ sudo apt-get update && sudo apt-get install -y \
     opencl-headers \
     python-dev \
     python3-pip \
+    qml-module-qtquick2 \
     qt5-default \
     qtmultimedia5-dev \
     qtwebengine5-dev \
