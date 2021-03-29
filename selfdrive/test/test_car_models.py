@@ -437,8 +437,8 @@ routes = {
     'enableCamera': True,
     'enableDsu': False,
   },
-  "76b83eb0245de90e|2019-10-20--15-42-29": {
-    'carFingerprint': VOLKSWAGEN.GOLF,
+  "cae14e88932eb364|2021-03-26--14-43-28": {
+    'carFingerprint': VOLKSWAGEN.GOLF_MK7,
     'enableCamera': True,
   },
   "58a7d3b707987d65|2021-03-25--17-26-37": {
