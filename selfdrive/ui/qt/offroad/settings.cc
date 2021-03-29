@@ -64,6 +64,7 @@ QWidget * toggles_panel() {
   bool record_lock = Params().read_db_bool("RecordFrontLock");
   record_toggle->setEnabled(!record_lock);
 
+  //toggles_list->addStretch(1);
   QWidget *widget = new QWidget;
   widget->setLayout(toggles_list);
   return widget;
@@ -217,9 +218,9 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   sidebar_layout->setMargin(0);
   panel_widget = new QStackedWidget();
   panel_widget->setStyleSheet(R"(
-      border-radius: 30px;
-      background-color: #292929;
-    )");
+    border-radius: 30px;
+    background-color: #292929;
+  )");
 
   // close button
   QPushButton *close_btn = new QPushButton("X");
@@ -252,7 +253,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
     QPushButton *btn = new QPushButton(name);
     btn->setCheckable(true);
     btn->setStyleSheet(R"(
-      * {
+      QPushButton {
         color: grey;
         border: none;
         background: none;
