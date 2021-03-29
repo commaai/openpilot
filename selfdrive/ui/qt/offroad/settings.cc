@@ -83,42 +83,38 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
   QString serial = QString::fromStdString(params.get("HardwareSerial", false));
   device_layout->addWidget(new LabelControl("Serial", serial));
 
-  QList<ButtonControl*> buttons;
+  // offroad-only buttons
+  QList<ButtonControl*> offroad_btns;
 
-  buttons.append(new ButtonControl("Driver Camera", "PREVIEW",
+  offroad_btns.append(new ButtonControl("Driver Camera", "PREVIEW",
                                    "Preview the driver facing camera to help optimize device mounting position for best driver monitoring experience. (vehicle must be off)",
                                    [=]() { Params().write_db_value("IsDriverViewEnabled", "1", 1); }));
 
-  buttons.append(new ButtonControl("Reset Calibration", "RESET",
-                                   "openpilot requires the device to be mounted within 4° left or right and within 5° up or down. openpilot is continuously calibrating, resetting is rarely required.",
-                                    [=]() {
-                                      if (ConfirmationDialog::confirm("Are you sure you want to reset calibration?")) {
-                                        Params().delete_db_value("CalibrationParams");
-                                      }
-                                    }));
+  offroad_btns.append(new ButtonControl("Reset Calibration", "RESET",
+                                   "openpilot requires the device to be mounted within 4° left or right and within 5° up or down. openpilot is continuously calibrating, resetting is rarely required.", [=]() {
+    if (ConfirmationDialog::confirm("Are you sure you want to reset calibration?")) {
+      Params().delete_db_value("CalibrationParams");
+    }
+  }));
 
-  buttons.append(new ButtonControl("Review Training Guide", "REVIEW",
-                                             "Review the rules, features, and limitations of openpilot",
-                                             [=]() {
-                                               if (ConfirmationDialog::confirm("Are you sure you want to review the training guide?")) {
-                                                 Params().delete_db_value("CompletedTrainingVersion");
-                                                 emit reviewTrainingGuide();
-                                               }
-                                             }));
+  offroad_btns.append(new ButtonControl("Review Training Guide", "REVIEW",
+                                        "Review the rules, features, and limitations of openpilot", [=]() {
+    if (ConfirmationDialog::confirm("Are you sure you want to review the training guide?")) {
+      Params().delete_db_value("CompletedTrainingVersion");
+      emit reviewTrainingGuide();
+    }
+  }));
 
   QString brand = params.read_db_bool("Passive") ? "dashcam" : "openpilot";
-  buttons.append(new ButtonControl("Uninstall " + brand, "UNINSTALL",
-                                   "",
-                                   [=]() {
-                                     if (ConfirmationDialog::confirm("Are you sure you want to uninstall?")) {
-                                       Params().write_db_value("DoUninstall", "1");
-                                     }
-                                   }));
+  offroad_btns.append(new ButtonControl("Uninstall " + brand, "UNINSTALL", "", [=]() {
+    if (ConfirmationDialog::confirm("Are you sure you want to uninstall?")) {
+      Params().write_db_value("DoUninstall", "1");
+    }
+  }));
 
-
-  for(auto btn : buttons){
+  for(auto &btn : offroad_btns){
     device_layout->addWidget(horizontal_line());
-    QObject::connect(parent, SIGNAL(enableButtons(bool)), btn, SLOT(setEnabled(bool)));
+    QObject::connect(parent, SIGNAL(offroadTransitions(bool)), btn, SLOT(setEnabled(bool)));
     device_layout->addWidget(btn);
   }
 
