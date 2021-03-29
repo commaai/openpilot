@@ -42,7 +42,7 @@ git commit -m "openpilot v$VERSION"
 
 # Build signed panda firmware
 pushd panda/
-CERT=/tmp/pandaextra/certs/release RELEASE=1 scons
+CERT=/tmp/pandaextra/certs/release RELEASE=1 scons -u .
 mv board/obj/panda.bin.signed /tmp/panda.bin.signed
 popd
 
@@ -63,6 +63,7 @@ find . -name '*.pyc' -delete
 find . -name '__pycache__' -delete
 rm -rf panda/board panda/certs panda/crypto
 rm -rf .sconsign.dblite Jenkinsfile release/
+rm models/supercombo.dlc
 
 # Move back signed panda fw
 mkdir -p panda/board/obj
