@@ -16,7 +16,7 @@ if arch == "Darwin":
   qt_env['FRAMEWORKS'] += ['OpenCL']
 
 widgets_src = ["qt/widgets/input.cc", "qt/widgets/drive_stats.cc",
-               "qt/widgets/ssh_keys.cc", "qt/widgets/toggle.cc", "qt/widgets/controls.cc", "qt/qt_sound.cc",
+               "qt/widgets/ssh_keys.cc", "qt/widgets/toggle.cc", "qt/widgets/controls.cc", "qt/sound.cc",
                "qt/widgets/offroad_alerts.cc", "qt/widgets/setup.cc", "qt/widgets/keyboard.cc",
                "#phonelibs/qrcode/QrCode.cc"]
 if arch != 'aarch64':
