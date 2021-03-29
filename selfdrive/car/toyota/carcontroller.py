@@ -30,10 +30,10 @@ def compute_gb_pedal(accel, speed, braking):
 
   if accel >= coast:
     gas = accel_to_gas(accel, speed)
-    x = accel - coast  # start at 0 when at coast accel
-    if spread > x >= 0:  # ramp up gas output using s-shaped curve from coast accel to coast + spread
+    x = accel - coast  # start at 0 from coast accel
+    if spread > x >= 0:  # ramp up gas output smoothly from coast accel to coast + spread
       gas *= 1 / (1 + (x / (spread - x)) ** -3) if x != 0 else 0
-    return gas if not braking else gas / 2.0  # while car is braking reduce gas output
+    return gas if not braking else gas / 2.0
   return 0.
 
 
