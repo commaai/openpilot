@@ -346,13 +346,11 @@ selfdrive/ui/spinner
 
 selfdrive/ui/qt/*.cc
 selfdrive/ui/qt/*.hpp
-selfdrive/ui/qt/*.qml
 selfdrive/ui/qt/offroad/*.cc
 selfdrive/ui/qt/offroad/*.hpp
 selfdrive/ui/qt/offroad/*.qml
 selfdrive/ui/qt/widgets/*.cc
 selfdrive/ui/qt/widgets/*.hpp
-selfdrive/ui/qt/widgets/*.qml
 selfdrive/ui/qt/spinner_aarch64
 selfdrive/ui/qt/text_aarch64
 
