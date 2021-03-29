@@ -279,7 +279,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
 
     QScroller *scroller = QScroller::scroller(panel_frame->viewport());
     auto sp = scroller->scrollerProperties();
-    sp.setScrollMetric(QScrollerProperties::FrameRate, QVariant::fromValue<QScrollerProperties::FrameRates>(QScrollerProperties::Fps60));
+
     sp.setScrollMetric(QScrollerProperties::VerticalOvershootPolicy, QVariant::fromValue<QScrollerProperties::OvershootPolicy>(QScrollerProperties::OvershootAlwaysOff));
 
     scroller->grabGesture(panel_frame->viewport(), QScroller::LeftMouseButtonGesture);
