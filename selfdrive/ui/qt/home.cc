@@ -223,9 +223,9 @@ static void handle_display_state(UIState* s, bool user_input) {
   }
 }
 
-GLWindow::GLWindow(QWidget* parent) : QOpenGLWidget(parent) {
-  brightness_b = Params(true).get<float>("BRIGHTNESS_B").value_or(10.0);
-  brightness_m = Params(true).get<float>("BRIGHTNESS_M").value_or(0.1);
+GLWindow::GLWindow(QWidget* parent) : brightness_filter(BACKLIGHT_OFFROAD, BACKLIGHT_TS, BACKLIGHT_DT), QOpenGLWidget(parent) {
+  brightness_b = Params().get<float>("BRIGHTNESS_B").value_or(10.0);
+  brightness_m = Params().get<float>("BRIGHTNESS_M").value_or(0.1);
 
   ui_state.sound = &sound;
   ui_state.fb_w = vwp_w;
