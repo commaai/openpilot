@@ -19,8 +19,7 @@ def coast_accel(speed):  # given a speed, output coasting acceleration
 
 def compute_gb_pedal(accel, speed, braking):
   def accel_to_gas(a_ego, v_ego):
-    _a3, _a4, _a5, _a6, _a7, _a8, _s1, _s2, _s3, _s4, _offset = [-0.0034109221270790142, -0.02989942810035373, 0.002005326552420498, 0.1356381902353583, 0.0014222019070588158, 0.008436894892099946,
-                                                                 0.0009439048033890968, -0.0017786568461504919, 0.002986433642380856, 0.021810785976030644, -0.007020501995388009]
+    _a3, _a4, _a5, _a6, _a7, _a8, _s1, _s2, _s3, _s4, _offset = [-0.0034109221270790142, -0.02989942810035373, 0.002005326552420498, 0.1356381902353583, 0.0014222019070588158, 0.008436894892099946, 0.0009439048033890968, -0.0017786568461504919, 0.002986433642380856, 0.021810785976030644, -0.007020501995388009]
     speed_part = (_s1 * a_ego + _s2) * v_ego ** 2 + (_s3 * a_ego + _s4) * v_ego
     accel_part = (_a7 * v_ego + _a8) * a_ego ** 4 + (_a3 * v_ego + _a4) * a_ego ** 3 + _a5 * a_ego ** 2 + _a6 * a_ego
     ret = speed_part + accel_part + _offset
@@ -35,7 +34,6 @@ def compute_gb_pedal(accel, speed, braking):
     if spread > x >= 0:  # ramp up gas output using s-shaped curve from coast accel to coast + spread
       gas *= 1 / (1 + (x / (spread - x)) ** -3) if x != 0 else 0
     return gas if not braking else gas / 2.0  # while car is braking reduce gas output
-
   return 0.
 
 
@@ -69,12 +67,11 @@ class CarController():
     if CS.CP.enableGasInterceptor and enabled and CS.out.vEgo < MIN_ACC_SPEED:
       # converts desired acceleration to gas percentage for pedal
       # +0.06 offset to reduce ABS pump usage when applying very small gas
-      apply_gas = compute_gb_pedal(apply_accel, CS.out.vEgo, CS.out.brakeLights)
+      apply_gas = clip(compute_gb_pedal(apply_accel, CS.out.vEgo, CS.out.brakeLights), 0., 1.)
       if apply_accel > 0 and CS.out.vEgo <= CS.CP.minSpeedCan:  # increase accel to release brake quicker todo: might not be needed, test with and without in similar situations
         apply_accel *= 2
 
     apply_accel = clip(apply_accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX) if enabled else 0.
-    apply_gas = clip(apply_gas, 0., 1.)
 
     # steer torque
     new_steer = int(round(actuators.steer * CarControllerParams.STEER_MAX))
