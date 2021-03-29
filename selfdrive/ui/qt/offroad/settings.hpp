@@ -13,12 +13,21 @@
 
 // ********** settings window + top-level panels **********
 
+class TogglesPanel : public QWidget {
+  Q_OBJECT
+public:
+  explicit TogglesPanel(QWidget* parent = nullptr);
+signals:
+  void resetState();
+};
+
 class DevicePanel : public QWidget {
   Q_OBJECT
 public:
   explicit DevicePanel(QWidget* parent = nullptr);
 signals:
   void reviewTrainingGuide();
+  void resetState();
 };
 
 class DeveloperPanel : public QFrame {
@@ -39,8 +48,9 @@ public:
 
 signals:
   void closeSettings();
-  void offroadTransition(bool offroad);
   void reviewTrainingGuide();
+  void offroadTransition(bool offroad);
+  void resetState();
 
 private:
   QPushButton *sidebar_alert_widget;

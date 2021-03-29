@@ -19,8 +19,6 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   QObject::connect(settingsWindow, SIGNAL(closeSettings()), this, SLOT(closeSettings()));
   QObject::connect(settingsWindow, SIGNAL(reviewTrainingGuide()), this, SLOT(reviewTrainingGuide()));
 
-  QObject::connect(settingsWindow, &QWidget::show, this, [=]() { printf("hidden!\n"); });
-
   // start at onboarding
   main_layout->setCurrentWidget(onboardingWindow);
   QObject::connect(onboardingWindow, SIGNAL(onboardingDone()), this, SLOT(closeSettings()));

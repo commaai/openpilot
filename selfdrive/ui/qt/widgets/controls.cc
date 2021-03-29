@@ -19,13 +19,16 @@ void AbstractControl::resetState(){
 }
 
 AbstractControl::AbstractControl(const QString &title, const QString &desc, const QString &icon, QWidget *parent) : QFrame(parent) {
-
   QVBoxLayout *vlayout = new QVBoxLayout();
   vlayout->setMargin(0);
 
   hlayout = new QHBoxLayout;
   hlayout->setMargin(0);
   hlayout->setSpacing(50);
+
+  if(parent != nullptr){
+    QObject::connect(parent, SIGNAL(resetState()), this, SLOT(resetState()));
+  }
 
   // left icon
   if (!icon.isEmpty()) {
