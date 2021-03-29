@@ -110,16 +110,19 @@ static bool ensure_params_path(const std::string &param_path, const std::string 
   return chmod(key_path.c_str(), 0777) == 0;
 }
 
-class LockFile {
-public:  
-  int lock(const std::string& lock_file, int operation) {
-    assert(fd_ == -1);
-    fd_ = open(lock_file.c_str(), O_CREAT, 0775);
+class FileLock {
+ public:
+  FileLock(const std::string& file_name) : fn_(file_name) {}
+  int try_lock(int operation) {
+    fd_ = open(fn_.c_str(), O_CREAT, 0775);
     if (fd_ < 0) return -1;
     return flock(fd_, operation);
   }
-  ~LockFile() { if (fd_ != -1) close(fd_); }
+  ~FileLock() {
+    if (fd_ != -1) close(fd_);
+  }
   int fd_ = -1;
+  std::string fn_;
 };
 
 Params::Params(bool persistent_param) : Params(persistent_param ? persistent_params_path : default_params_path) {}
@@ -138,7 +141,7 @@ int Params::put(const char* key, const char* value, size_t value_size) {
   // 4) rename the temp file to the real name
   // 5) fsync() the containing directory
 
-  LockFile lock_file;
+  FileLock file_lock(params_path + "/.lock");
   int tmp_fd = -1;
   int result;
   std::string path;
@@ -158,7 +161,7 @@ int Params::put(const char* key, const char* value, size_t value_size) {
   path = params_path + "/d/" + std::string(key);
 
   // Take lock.
-  result = lock_file.lock(params_path + "/.lock", LOCK_EX);
+  result = file_lock.try_lock(LOCK_EX);
   if (result < 0) {
     goto cleanup;
   }
@@ -240,8 +243,8 @@ std::string Params::get(const char *key, bool block) {
 }
 
 int Params::read_db_all(std::map<std::string, std::string> *params) {
-  LockFile lock_file;
-  if (lock_file.lock(params_path + "/.lock", LOCK_SH) < 0) {
+  FileLock file_lock(params_path + "/.lock");
+  if (file_lock.try_lock(LOCK_SH) < 0) {
     return -1;
   }
 
