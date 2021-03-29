@@ -12,14 +12,15 @@
 
 
 void TrainingGuide::mouseReleaseEvent(QMouseEvent *e) {
-  //qDebug() << e->x() << ", " << e->y();
+  QPoint touch = QPoint(e->x(), e->y()) - imageCorner;
+  //qDebug() << touch.x() << ", " << touch.y();
 
   // Check for restart
-  if (currentIndex == (boundingBox.size() - 1) && 200 <= e->x() && e->x() <= 920 &&
-      760 <= e->y() && e->y() <= 960) {
+  if (currentIndex == (boundingBox.size() - 1) && 200 <= touch.x() && touch.x() <= 920 &&
+      760 <= touch.y() && touch.y() <= 960) {
     currentIndex = 0;
-  } else if (boundingBox[currentIndex][0] <= e->x() && e->x() <= boundingBox[currentIndex][1] &&
-             boundingBox[currentIndex][2] <= e->y() && e->y() <= boundingBox[currentIndex][3]) {
+  } else if (boundingBox[currentIndex][0] <= touch.x() && touch.x() <= boundingBox[currentIndex][1] &&
+             boundingBox[currentIndex][2] <= touch.y() && touch.y() <= boundingBox[currentIndex][3]) {
     currentIndex += 1;
   }
 
@@ -39,17 +40,17 @@ void TrainingGuide::showEvent(QShowEvent *event) {
 void TrainingGuide::paintEvent(QPaintEvent *event) {
   QPainter painter(this);
 
-  QRect devRect(0, 0, painter.device()->width(), painter.device()->height());
-  QBrush bgBrush("#072339");
-  painter.fillRect(devRect, bgBrush);
+  QRect bg(0, 0, painter.device()->width(), painter.device()->height());
+  QBrush bgBrush("#000000");
+  painter.fillRect(bg, bgBrush);
 
   QRect rect(image.rect());
-  rect.moveCenter(devRect.center());
+  rect.moveCenter(bg.center());
   painter.drawImage(rect.topLeft(), image);
+  imageCorner = rect.topLeft();
 }
 
 TermsPage::TermsPage(QWidget *parent) : QFrame(parent){
-
   QVBoxLayout *main_layout = new QVBoxLayout;
   main_layout->setMargin(40);
   main_layout->setSpacing(40);
