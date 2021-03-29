@@ -75,21 +75,10 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
   device_layout->setMargin(100);
 
   Params params = Params();
-  std::vector<std::pair<std::string, std::string>> labels = {
-    {"Dongle ID", params.get("DongleId", false)},
-  };
 
-  // get serial number
-  //std::string cmdline = util::read_file("/proc/cmdline");
-  //auto delim = cmdline.find("serialno=");
-  //if (delim != std::string::npos) {
-  //  labels.push_back({"Serial", cmdline.substr(delim, cmdline.find(" ", delim))});
-  //}
-
-  for (auto &l : labels) {
-    device_layout->addWidget(new LabelControl(QString::fromStdString(l.first),
-                             QString::fromStdString(l.second)));
-  }
+  QString dongle = QString::fromStdString(params.get("DongleId", false));
+  device_layout->addWidget(new LabelControl("Dongle ID", dongle));
+  device_layout->addWidget(horizontal_line());
 
   QList<ButtonControl*> buttons;
 
