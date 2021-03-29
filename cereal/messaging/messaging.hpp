@@ -120,3 +120,21 @@ public:
 private:
   std::map<std::string, PubSocket *> sockets_;
 };
+
+class AlignedBuffer {
+public:
+  kj::ArrayPtr<const capnp::word> align(const char *data, const size_t size) {
+    words_size = size / sizeof(capnp::word) + 1;
+    if (aligned_buf.size() < words_size) {
+      aligned_buf = kj::heapArray<capnp::word>(words_size < 512 ? 512 : words_size);
+    }
+    memcpy(aligned_buf.begin(), data, size);
+    return aligned_buf.slice(0, words_size);
+  }
+  inline kj::ArrayPtr<const capnp::word> align(Message *m) {
+    return align(m->getData(), m->getSize());
+  }
+private:
+  kj::Array<capnp::word> aligned_buf;
+  size_t words_size;
+};

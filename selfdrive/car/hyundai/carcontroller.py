@@ -45,7 +45,7 @@ class CarController():
   def update(self, enabled, CS, frame, actuators, pcm_cancel_cmd, visual_alert,
              left_lane, right_lane, left_lane_depart, right_lane_depart):
     # Steering Torque
-    new_steer = actuators.steer * self.p.STEER_MAX
+    new_steer = int(round(actuators.steer * self.p.STEER_MAX))
     apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, self.p)
     self.steer_rate_limited = new_steer != apply_steer
 
@@ -75,13 +75,14 @@ class CarController():
       can_sends.append(create_clu11(self.packer, frame, CS.clu11, Buttons.CANCEL))
     elif CS.out.cruiseState.standstill:
       # send resume at a max freq of 10Hz
-      if (frame - self.last_resume_frame)*DT_CTRL > 0.1:
+      if (frame - self.last_resume_frame) * DT_CTRL > 0.1:
         # send 25 messages at a time to increases the likelihood of resume being accepted
         can_sends.extend([create_clu11(self.packer, frame, CS.clu11, Buttons.RES_ACCEL)] * 25)
         self.last_resume_frame = frame
 
     # 20 Hz LFA MFA message
-    if frame % 5 == 0 and self.car_fingerprint in [CAR.SONATA, CAR.PALISADE, CAR.IONIQ, CAR.KIA_NIRO_EV, CAR.IONIQ_EV_2020]:
+    if frame % 5 == 0 and self.car_fingerprint in [CAR.SONATA, CAR.PALISADE, CAR.IONIQ, CAR.KIA_NIRO_EV,
+                                                   CAR.IONIQ_EV_2020, CAR.KIA_CEED, CAR.KIA_SELTOS]:
       can_sends.append(create_lfahda_mfc(self.packer, enabled))
 
     return can_sends

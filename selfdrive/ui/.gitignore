@@ -1,0 +1,9 @@
+moc_*
+*.moc
+
+qt/text
+qt/spinner
+qt/setup/setup
+qt/setup/reset
+qt/setup/wifi
+qt/setup/installer*

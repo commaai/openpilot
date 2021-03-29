@@ -99,8 +99,8 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     fanMalfunction @91;
     cameraMalfunction @92;
     gpsMalfunction @94;
-    startupOneplus @82;
     processNotRunning @95;
+    dashcamMode @96;
 
     radarCanErrorDEPRECATED @15;
     radarCommIssueDEPRECATED @67;
@@ -120,6 +120,7 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     focusRecoverActiveDEPRECATED @86;
     neosUpdateRequiredDEPRECATED @88;
     modelLagWarningDEPRECATED @93;
+    startupOneplusDEPRECATED @82;
   }
 }
 
@@ -372,11 +373,11 @@ struct CarParams {
   brakeMaxV @16 :List(Float32);
 
   # things about the car in the manual
-  mass @17 :Float32;             # [kg] running weight
-  wheelbase @18 :Float32;        # [m] distance from rear to front axle
-  centerToFront @19 :Float32;   # [m] GC distance to front axle
-  steerRatio @20 :Float32;       # [] ratio between front wheels and steering wheel angles
-  steerRatioRear @21 :Float32;  # [] rear steering ratio wrt front steering (usually 0)
+  mass @17 :Float32;            # [kg] curb weight: all fluids no cargo
+  wheelbase @18 :Float32;       # [m] distance from rear axle to front axle
+  centerToFront @19 :Float32;   # [m] distance from center of mass to front axle
+  steerRatio @20 :Float32;      # [] ratio of steering wheel angle to front wheel angle
+  steerRatioRear @21 :Float32;  # [] ratio of steering wheel angle to rear wheel angle (usually 0)
 
   # things we can derive
   rotationalInertia @22 :Float32;    # [kg*m2] body rotational inertia

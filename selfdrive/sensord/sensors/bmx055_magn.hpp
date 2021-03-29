@@ -1,4 +1,5 @@
 #pragma once
+#include <tuple>
 
 #include "sensors/i2c_sensor.hpp"
 
@@ -14,9 +15,22 @@
 #define BMX055_MAGN_I2C_REG_REPXY     0x51
 #define BMX055_MAGN_I2C_REG_REPZ      0x52
 
-#define BMX055_MAGN_I2C_REG_DIG_X1    0x5D
-#define BMX055_MAGN_I2C_REG_DIG_Z4    0x62
-#define BMX055_MAGN_I2C_REG_DIG_Z2    0x68
+#define BMX055_MAGN_I2C_REG_DIG_X1       0x5D
+#define BMX055_MAGN_I2C_REG_DIG_Y1       0x5E
+#define BMX055_MAGN_I2C_REG_DIG_Z4_LSB   0x62
+#define BMX055_MAGN_I2C_REG_DIG_Z4_MSB   0x63
+#define BMX055_MAGN_I2C_REG_DIG_X2       0x64
+#define BMX055_MAGN_I2C_REG_DIG_Y2       0x65
+#define BMX055_MAGN_I2C_REG_DIG_Z2_LSB   0x68
+#define BMX055_MAGN_I2C_REG_DIG_Z2_MSB   0x69
+#define BMX055_MAGN_I2C_REG_DIG_Z1_LSB   0x6A
+#define BMX055_MAGN_I2C_REG_DIG_Z1_MSB   0x6B
+#define BMX055_MAGN_I2C_REG_DIG_XYZ1_LSB 0x6C
+#define BMX055_MAGN_I2C_REG_DIG_XYZ1_MSB 0x6D
+#define BMX055_MAGN_I2C_REG_DIG_Z3_LSB   0x6E
+#define BMX055_MAGN_I2C_REG_DIG_Z3_MSB   0x6F
+#define BMX055_MAGN_I2C_REG_DIG_XY2      0x70
+#define BMX055_MAGN_I2C_REG_DIG_XY1      0x71
 
 // Constants
 #define BMX055_MAGN_CHIP_ID     0x32
@@ -40,6 +54,8 @@ struct trim_data_t {
 class BMX055_Magn : public I2CSensor{
   uint8_t get_device_address() {return BMX055_MAGN_I2C_ADDR;}
   trim_data_t trim_data = {0};
+  bool perform_self_test();
+  bool parse_xyz(uint8_t buffer[8], int16_t *x, int16_t *y, int16_t *z);
 public:
   BMX055_Magn(I2CBus *bus);
   int init();

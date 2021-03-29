@@ -9,7 +9,7 @@ const int VOLKSWAGEN_DRIVER_TORQUE_FACTOR = 3;
 
 // Safety-relevant CAN messages for the Volkswagen MQB platform
 #define MSG_ESP_19      0x0B2   // RX from ABS, for wheel speeds
-#define MSG_EPS_01      0x09F   // RX from EPS, for driver steering torque
+#define MSG_LH_EPS_03   0x09F   // RX from EPS, for driver steering torque
 #define MSG_ESP_05      0x106   // RX from ABS, for brake switch state
 #define MSG_TSK_06      0x120   // RX from ECU, for ACC status from drivetrain coordinator
 #define MSG_MOTOR_20    0x121   // RX from ECU, for driver throttle input
@@ -23,7 +23,7 @@ const int VOLKSWAGEN_MQB_TX_MSGS_LEN = sizeof(VOLKSWAGEN_MQB_TX_MSGS) / sizeof(V
 
 AddrCheckStruct volkswagen_mqb_rx_checks[] = {
   {.msg = {{MSG_ESP_19, 0, 8, .check_checksum = false, .max_counter = 0U,  .expected_timestep = 10000U}}},
-  {.msg = {{MSG_EPS_01, 0, 8, .check_checksum = true,  .max_counter = 15U, .expected_timestep = 10000U}}},
+  {.msg = {{MSG_LH_EPS_03, 0, 8, .check_checksum = true,  .max_counter = 15U, .expected_timestep = 10000U}}},
   {.msg = {{MSG_ESP_05, 0, 8, .check_checksum = true,  .max_counter = 15U, .expected_timestep = 20000U}}},
   {.msg = {{MSG_TSK_06, 0, 8, .check_checksum = true,  .max_counter = 15U, .expected_timestep = 20000U}}},
   {.msg = {{MSG_MOTOR_20, 0, 8, .check_checksum = true,  .max_counter = 15U, .expected_timestep = 20000U}}},
@@ -86,7 +86,7 @@ static uint8_t volkswagen_mqb_compute_crc(CAN_FIFOMailBox_TypeDef *to_push) {
 
   uint8_t counter = volkswagen_mqb_get_counter(to_push);
   switch(addr) {
-    case MSG_EPS_01:
+    case MSG_LH_EPS_03:
       crc ^= (uint8_t[]){0xF5,0xF5,0xF5,0xF5,0xF5,0xF5,0xF5,0xF5,0xF5,0xF5,0xF5,0xF5,0xF5,0xF5,0xF5,0xF5}[counter];
       break;
     case MSG_ESP_05:
@@ -156,9 +156,9 @@ static int volkswagen_mqb_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     }
 
     // Update driver input torque samples
-    // Signal: EPS_01.Driver_Strain (absolute torque)
-    // Signal: EPS_01.Driver_Strain_VZ (direction)
-    if (addr == MSG_EPS_01) {
+    // Signal: LH_EPS_03.EPS_Lenkmoment (absolute torque)
+    // Signal: LH_EPS_03.EPS_VZ_Lenkmoment (direction)
+    if (addr == MSG_LH_EPS_03) {
       int torque_driver_new = GET_BYTE(to_push, 5) | ((GET_BYTE(to_push, 6) & 0x1F) << 8);
       int sign = (GET_BYTE(to_push, 6) & 0x80) >> 7;
       if (sign == 1) {

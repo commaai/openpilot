@@ -15,6 +15,7 @@
 #include <bitset>
 #include <thread>
 #include <atomic>
+#include <unordered_map>
 
 #include <libusb-1.0/libusb.h>
 
@@ -25,6 +26,7 @@
 #include "common/swaglog.h"
 #include "common/timing.h"
 #include "messaging.hpp"
+#include "locationd/ublox_msg.h"
 
 #include "panda.h"
 #include "pigeon.h"
@@ -97,11 +99,8 @@ void safety_setter_thread() {
   }
   LOGW("got %d bytes CarParams", params.size());
 
-  // format for board, make copy due to alignment issues, will be freed on out of scope
-  auto amsg = kj::heapArray<capnp::word>((params.size() / sizeof(capnp::word)) + 1);
-  memcpy(amsg.begin(), params.data(), params.size());
-
-  capnp::FlatArrayMessageReader cmsg(amsg);
+  AlignedBuffer aligned_buf;
+  capnp::FlatArrayMessageReader cmsg(aligned_buf.align(params.data(), params.size()));
   cereal::CarParams::Reader car_params = cmsg.getRoot<cereal::CarParams>();
   cereal::CarParams::SafetyModel safety_model = car_params.getSafetyModel();
 
@@ -199,6 +198,7 @@ void can_recv(PubMaster &pm) {
 void can_send_thread(bool fake_send) {
   LOGD("start send thread");
 
+  AlignedBuffer aligned_buf;
   Context * context = Context::create();
   SubSocket * subscriber = SubSocket::create(context, "sendcan");
   assert(subscriber != NULL);
@@ -215,10 +215,7 @@ void can_send_thread(bool fake_send) {
       continue;
     }
 
-    auto amsg = kj::heapArray<capnp::word>((msg->getSize() / sizeof(capnp::word)) + 1);
-    memcpy(amsg.begin(), msg->getData(), msg->getSize());
-
-    capnp::FlatArrayMessageReader cmsg(amsg);
+    capnp::FlatArrayMessageReader cmsg(aligned_buf.align(msg));
     cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
 
     //Dont send if older than 1 second
@@ -358,7 +355,7 @@ void panda_state_thread(bool spoofing_started) {
     ps.setIgnitionCan(pandaState.ignition_can);
     ps.setControlsAllowed(pandaState.controls_allowed);
     ps.setGasInterceptorDetected(pandaState.gas_interceptor_detected);
-    ps.setHasGps(panda->is_pigeon);
+    ps.setHasGps(true);
     ps.setCanRxErrs(pandaState.can_rx_errs);
     ps.setCanSendErrs(pandaState.can_send_errs);
     ps.setCanFwdErrs(pandaState.can_fwd_errs);
@@ -366,6 +363,7 @@ void panda_state_thread(bool spoofing_started) {
     ps.setPandaType(panda->hw_type);
     ps.setUsbPowerMode(cereal::PandaState::UsbPowerMode(pandaState.usb_power_mode));
     ps.setSafetyModel(cereal::CarParams::SafetyModel(pandaState.safety_model));
+    ps.setSafetyParam(pandaState.safety_param);
     ps.setFanSpeedRpm(fan_speed_rpm);
     ps.setFaultStatus(cereal::PandaState::FaultStatus(pandaState.fault_status));
     ps.setPowerSaveEnabled((bool)(pandaState.power_save_enabled));
@@ -467,36 +465,70 @@ static void pigeon_publish_raw(PubMaster &pm, const std::string &dat) {
 }
 
 void pigeon_thread() {
-  if (!panda->is_pigeon) { return; };
-
-  // ubloxRaw = 8042
   PubMaster pm({"ubloxRaw"});
   bool ignition_last = false;
 
 #ifdef QCOM2
-  Pigeon * pigeon = Pigeon::connect("/dev/ttyHS0");
+  Pigeon *pigeon = Pigeon::connect("/dev/ttyHS0");
 #else
-  Pigeon * pigeon = Pigeon::connect(panda);
+  Pigeon *pigeon = Pigeon::connect(panda);
 #endif
+
+  std::unordered_map<char, uint64_t> last_recv_time;
+  std::unordered_map<char, int64_t> cls_max_dt = {
+    {(char)ublox::CLASS_NAV, int64_t(250000000ULL)}, // 0.25s
+    {(char)ublox::CLASS_RXM, int64_t(250000000ULL)}, // 0.25s
+  };
 
   while (!do_exit && panda->connected) {
     bool need_reset = false;
     std::string recv = pigeon->receive();
-    if (recv.length() > 0) {
-      if (recv[0] == (char)0x00){
-        if (ignition) {
-          LOGW("received invalid ublox message while onroad, resetting panda GPS");
-          need_reset = true;
+
+    // Parse message header
+    if (ignition && recv.length() >= 3) {
+      if (recv[0] == (char)ublox::PREAMBLE1 && recv[1] == (char)ublox::PREAMBLE2){
+        const char msg_cls = recv[2];
+        uint64_t t = nanos_since_boot();
+        if (t > last_recv_time[msg_cls]){
+          last_recv_time[msg_cls] = t;
         }
-      } else {
-        pigeon_publish_raw(pm, recv);
       }
+    }
+
+    // Check based on message frequency
+    for (const auto& [msg_cls, max_dt] : cls_max_dt) {
+      int64_t dt = (int64_t)nanos_since_boot() - (int64_t)last_recv_time[msg_cls];
+      if (ignition_last && ignition && dt > max_dt) {
+        LOG("ublox receive timeout, msg class: 0x%02x, dt %llu", msg_cls, dt);
+        // TODO: turn on reset after verification of logs
+        // need_reset = true;
+      }
+    }
+
+    // Check based on null bytes
+    if (ignition && recv.length() > 0 && recv[0] == (char)0x00){
+      need_reset = true;
+      LOGW("received invalid ublox message while onroad, resetting panda GPS");
+    }
+
+    if (recv.length() > 0){
+      pigeon_publish_raw(pm, recv);
     }
 
     // init pigeon on rising ignition edge
     // since it was turned off in low power mode
     if((ignition && !ignition_last) || need_reset) {
       pigeon->init();
+
+      // Set receive times to current time
+      uint64_t t = nanos_since_boot() + 10000000000ULL; // Give ublox 10 seconds to start
+      for (const auto& [msg_cls, dt] : cls_max_dt) {
+        last_recv_time[msg_cls] = t;
+      }
+    } else if (!ignition && ignition_last) {
+      // power off on falling edge of ignition
+      LOGD("powering off pigeon\n");
+      pigeon->set_power(false);
     }
 
     ignition_last = ignition;

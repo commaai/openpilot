@@ -76,3 +76,6 @@ class Pc(HardwareBase):
 
   def get_thermal_config(self):
     return ThermalConfig(cpu=((None,), 1), gpu=((None,), 1), mem=(None, 1), bat=(None, 1), ambient=(None, 1))
+
+  def set_screen_brightness(self, percentage):
+    pass

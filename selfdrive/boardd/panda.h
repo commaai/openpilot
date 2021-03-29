@@ -33,6 +33,7 @@ struct __attribute__((packed)) health_t {
   uint8_t car_harness_status;
   uint8_t usb_power_mode;
   uint8_t safety_model;
+  int16_t safety_param;
   uint8_t fault_status;
   uint8_t power_save_enabled;
 };
@@ -54,7 +55,6 @@ class Panda {
 
   std::atomic<bool> connected = true;
   cereal::PandaState::PandaType hw_type = cereal::PandaState::PandaType::UNKNOWN;
-  bool is_pigeon = false;
   bool has_rtc = false;
 
   // HW communication

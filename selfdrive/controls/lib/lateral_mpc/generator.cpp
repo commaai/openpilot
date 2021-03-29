@@ -1,8 +1,8 @@
+#include <math.h>
 #include <acado_code_generation.hpp>
 #include "common/modeldata.h"
 
-#define PI 3.1415926536
-#define deg2rad(d) (d/180.0*PI)
+#define deg2rad(d) (d/180.0*M_PI)
 
 const int N_steps = 16;
 using namespace std;
@@ -23,7 +23,7 @@ int main( )
   OnlineData rotation_radius;
 
   Control curvature_rate;
-  
+
 
   // Equations of motion
   f << dot(xx) == v_ego * cos(psi) - rotation_radius * sin(psi) * (v_ego * curvature);

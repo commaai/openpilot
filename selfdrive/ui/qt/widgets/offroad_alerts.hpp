@@ -3,6 +3,7 @@
 #include <QFrame>
 #include <QStackedWidget>
 #include <QPushButton>
+#include <QStringList>
 
 struct Alert {
   QString text;
@@ -15,6 +16,7 @@ class OffroadAlert : public QFrame {
 public:
   explicit OffroadAlert(QWidget *parent = 0);
   QVector<Alert> alerts;
+  QStringList alert_keys;
   bool updateAvailable;
 
 private:

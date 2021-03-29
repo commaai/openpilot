@@ -11,11 +11,7 @@
 
 #define ANALOG_GAIN_MAX_IDX 10 // 0xF is bypass
 #define EXPOSURE_TIME_MIN 2 // with HDR, fastest ss
-#define EXPOSURE_TIME_MAX 1757 // with HDR, slowest ss
-
-#define HLC_THRESH 222
-#define HLC_A 80
-#define HISTO_CEIL_K 5
+#define EXPOSURE_TIME_MAX 1904 // with HDR, slowest ss
 
 #define EF_LOWPASS_K 0.35
 
@@ -23,7 +19,8 @@
 
 typedef struct CameraState {
   CameraInfo ci;
-
+  
+  std::mutex exp_lock;
   float analog_gain_frac;
   uint16_t analog_gain;
   bool dc_gain_enabled;
@@ -83,8 +80,3 @@ typedef struct MultiCameraState {
   SubMaster *sm;
   PubMaster *pm;
 } MultiCameraState;
-
-void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_id, cl_context ctx);
-void cameras_open(MultiCameraState *s);
-void cameras_run(MultiCameraState *s);
-void camera_autoexposure(CameraState *s, float grey_frac);

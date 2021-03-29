@@ -1,144 +1,110 @@
-#include <QLabel>
-#include <QPushButton>
-#include <QState>
-#include <QStateMachine>
 #include <QNetworkReply>
-
-#include "common/params.h"
+#include <QHBoxLayout>
+#include "widgets/input.hpp"
 #include "widgets/ssh_keys.hpp"
-#include "widgets/input_field.hpp"
+#include "common/params.h"
 
-SSH::SSH(QWidget* parent) : QWidget(parent){
-  // init variables
+
+SshControl::SshControl() : AbstractControl("SSH Keys", "Warning: This grants SSH access to all public keys in your GitHub settings. Never enter a GitHub username other than your own. A comma employee will NEVER ask you to add their GitHub username.", "") {
+
+  // setup widget
+  hlayout->addStretch(1);
+
+  username_label.setAlignment(Qt::AlignVCenter);
+  username_label.setStyleSheet("color: #aaaaaa");
+  hlayout->addWidget(&username_label);
+
+  btn.setStyleSheet(R"(
+    padding: 0;
+    border-radius: 50px;
+    font-size: 35px;
+    font-weight: 500;
+    color: #E4E4E4;
+    background-color: #393939;
+  )");
+  btn.setFixedSize(250, 100);
+  hlayout->addWidget(&btn);
+
+  QObject::connect(&btn, &QPushButton::released, [=]() {
+    if (btn.text() == "ADD") {
+      username = InputDialog::getText("Enter your GitHub username");
+      if (username.length() > 0) {
+        btn.setText("LOADING");
+        btn.setEnabled(false);
+        getUserKeys(username);
+      }
+    } else {
+      Params().delete_db_value("GithubUsername");
+      Params().delete_db_value("GithubSshKeys");
+      refresh();
+    }
+  });
+
+  // setup networking
   manager = new QNetworkAccessManager(this);
   networkTimer = new QTimer(this);
   networkTimer->setSingleShot(true);
   networkTimer->setInterval(5000);
   connect(networkTimer, SIGNAL(timeout()), this, SLOT(timeout()));
 
-  // Layout on entering
-  QVBoxLayout* main_layout = new QVBoxLayout;
-  main_layout->setMargin(50);
-
-  QPushButton* exitButton = new QPushButton("BACK", this);
-  exitButton->setFixedSize(500, 100);
-  main_layout->addWidget(exitButton, 0, Qt::AlignLeft | Qt::AlignTop);
-  connect(exitButton, SIGNAL(released()), this, SIGNAL(closeSSHSettings()));
-
-  QLabel* wallOfText = new QLabel("Warning: This grants SSH access to all public keys in your GitHub settings. Never enter a GitHub username other than your own.");
-  wallOfText->setAlignment(Qt::AlignHCenter);
-  wallOfText->setWordWrap(true);
-  wallOfText->setStyleSheet(R"(font-size: 60px;)");
-  main_layout->addWidget(wallOfText, 0);
-
-  QPushButton* actionButton = new QPushButton;
-  actionButton->setFixedHeight(100);
-  main_layout->addWidget(actionButton, 0, Qt::AlignBottom);
-
-  setStyleSheet(R"(
-    QPushButton {
-      font-size: 60px;
-      margin: 0px;
-      padding: 15px;
-      border-radius: 25px;
-      color: #dddddd;
-      background-color: #444444;
-    }
-  )");
-  setLayout(main_layout);
-
-  // Initialize the state machine and states
-  QStateMachine* state = new QStateMachine(this);
-  QState* initialState = new QState(); //State when entering the widget
-  QState* initialStateNoGithub = new QState(); //Starting state, key not connected
-  QState* initialStateConnected = new QState(); //Starting state, ssh connected
-  QState* removeSSH_State = new QState(); // State when user wants to remove the SSH keys
-  QState* loadingState = new QState(); // State while waiting for the network response
-
-  // Adding states to the state machine and adding the transitions
-  state->addState(initialState);
-  connect(initialState, &QState::entered, [=](){
-    checkForSSHKey();
-  });
-  initialState->addTransition(this, &SSH::NoSSHAdded, initialStateNoGithub);
-  initialState->addTransition(this, &SSH::SSHAdded, initialStateConnected);
-
-  state->addState(initialStateConnected);
-  connect(initialStateConnected, &QState::entered, [=](){
-    actionButton->setText("Clear SSH keys");
-    actionButton->setStyleSheet(R"(background-color: #750c0c;)");
-  });
-  initialStateConnected->addTransition(actionButton, &QPushButton::released, removeSSH_State);
-
-  state->addState(removeSSH_State);
-  connect(removeSSH_State, &QState::entered, [=](){
-    Params().delete_db_value("GithubSshKeys");
-  });
-  removeSSH_State->addTransition(removeSSH_State, &QState::entered, initialState);
-
-  state->addState(initialStateNoGithub);
-  connect(initialStateNoGithub, &QState::entered, [=](){
-    actionButton->setText("Link GitHub SSH keys");
-    actionButton->setStyleSheet(R"(background-color: #444444;)");
-  });
-  initialStateNoGithub->addTransition(actionButton, &QPushButton::released, loadingState);
-
-  state->addState(loadingState);
-  connect(loadingState, &QState::entered, [=](){
-    QString user = InputDialog::getText("Enter your GitHub username");
-    if (user.size()) {
-      getSSHKeys(user);
-    }
-  });
-  connect(this, &SSH::failedResponse, [=](QString message){
-    QString user = InputDialog::getText(message);
-    if (user.size()) {
-      getSSHKeys(user);
-    }
-  });
-  loadingState->addTransition(loadingState, &QState::entered, initialState);
-  loadingState->addTransition(this, &SSH::failedResponse, initialState);
-  loadingState->addTransition(this, &SSH::gotSSHKeys, initialState);
-
-  state->setInitialState(initialState);
-  state->start();
+  refresh();
 }
 
-void SSH::checkForSSHKey(){
-  QString SSHKey = QString::fromStdString(Params().get("GithubSshKeys"));
-  if (SSHKey.length()) {
-    emit SSHAdded();
+void SshControl::refresh() {
+  QString param = QString::fromStdString(Params().get("GithubSshKeys"));
+  if (param.length()) {
+    username_label.setText(QString::fromStdString(Params().get("GithubUsername")));
+    btn.setText("REMOVE");
   } else {
-    emit NoSSHAdded();
+    username_label.setText("");
+    btn.setText("ADD");
   }
+  btn.setEnabled(true);
 }
 
-void SSH::getSSHKeys(QString username){
+void SshControl::getUserKeys(QString username){
   QString url = "https://github.com/" + username + ".keys";
-  aborted = false;
-  reply = manager->get(QNetworkRequest(QUrl(url)));
+
+  QNetworkRequest request;
+  request.setUrl(QUrl(url));
+#ifdef QCOM
+  QSslConfiguration ssl = QSslConfiguration::defaultConfiguration();
+  ssl.setCaCertificates(QSslCertificate::fromPath("/usr/etc/tls/cert.pem",
+                        QSsl::Pem, QRegExp::Wildcard));
+  request.setSslConfiguration(ssl);
+#endif
+
+  reply = manager->get(request);
   connect(reply, SIGNAL(finished()), this, SLOT(parseResponse()));
   networkTimer->start();
 }
 
-void SSH::timeout(){
-  aborted = true;
+void SshControl::timeout(){
   reply->abort();
 }
 
-void SSH::parseResponse(){
-  if (!aborted) {
+void SshControl::parseResponse(){
+  QString err = "";
+  if (reply->error() != QNetworkReply::OperationCanceledError) {
     networkTimer->stop();
     QString response = reply->readAll();
     if (reply->error() == QNetworkReply::NoError && response.length()) {
+      Params().write_db_value("GithubUsername", username.toStdString());
       Params().write_db_value("GithubSshKeys", response.toStdString());
-      emit gotSSHKeys();
+    } else if(reply->error() == QNetworkReply::NoError){
+      err = "Username '" + username + "' has no keys on GitHub";
     } else {
-      emit failedResponse("Username doesn't exist");
+      err = "Username '" + username + "' doesn't exist on GitHub";
     }
   } else {
-    emit failedResponse("Request timed out");
+    err = "Request timed out";
   }
+
+  if (err.length()) {
+    ConfirmationDialog::alert(err);
+  }
+
+  refresh();
   reply->deleteLater();
-  reply = NULL;
+  reply = nullptr;
 }

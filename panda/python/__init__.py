@@ -7,7 +7,6 @@ import usb1
 import os
 import time
 import traceback
-import subprocess
 import sys
 from .dfu import PandaDFU  # pylint: disable=import-error
 from .flash_release import flash_release  # noqa pylint: disable=import-error
@@ -19,16 +18,9 @@ from .isotp import isotp_send, isotp_recv  # pylint: disable=import-error
 __version__ = '0.0.9'
 
 BASEDIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../")
+DEFAULT_FW_FN = os.path.join(BASEDIR, "board", "obj", "panda.bin.signed")
 
 DEBUG = os.getenv("PANDADEBUG") is not None
-
-# *** wifi mode ***
-def build_st(target, mkfile="Makefile", clean=True):
-  from panda import BASEDIR
-
-  clean_cmd = "make -f %s clean" % mkfile if clean else ":"
-  cmd = 'cd %s && %s && make -f %s %s' % (os.path.join(BASEDIR, "board"), clean_cmd, mkfile, target)
-  _ = subprocess.check_output(cmd, stderr=subprocess.STDOUT, shell=True)
 
 def parse_can_buffer(dat):
   ret = []
@@ -184,7 +176,6 @@ class Panda(object):
               if self._serial is None or this_serial == self._serial:
                 self._serial = this_serial
                 print("opening device", self._serial, hex(device.getProductID()))
-                time.sleep(1)
                 self.bootstub = device.getProductID() == 0xddee
                 self.legacy = (device.getbcdDevice() != 0x2300)
                 self._handle = device.open()
@@ -267,22 +258,11 @@ class Panda(object):
     except Exception:
       pass
 
-  def flash(self, fn=None, code=None, reconnect=True):
+  def flash(self, fn=DEFAULT_FW_FN, code=None, reconnect=True):
     print("flash: main version is " + self.get_version())
     if not self.bootstub:
       self.reset(enter_bootstub=True)
     assert(self.bootstub)
-
-    if fn is None and code is None:
-      if self.legacy:
-        fn = "obj/comma.bin"
-        print("building legacy st code")
-        build_st(fn, "Makefile.legacy")
-      else:
-        fn = "obj/panda.bin"
-        print("building panda st code")
-        build_st(fn)
-      fn = os.path.join(BASEDIR, "board", fn)
 
     if code is None:
       with open(fn, "rb") as f:

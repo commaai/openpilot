@@ -21,6 +21,21 @@ struct LiveUI @0xc08240f996aefced {
   awarenessStatus @3 :Float32;
 }
 
+struct UiLayoutState @0x88dcce08ad29dda0 {
+  activeApp @0 :App;
+  sidebarCollapsed @1 :Bool;
+  mapEnabled @2 :Bool;
+  mockEngaged @3 :Bool;
+
+  enum App @0x9917470acf94d285 {
+    home @0;
+    music @1;
+    nav @2;
+    settings @3;
+    none @4;
+  }
+}
+
 struct OrbslamCorrection @0x8afd33dc9b35e1aa {
   correctionMonoTime @0 :UInt64;
   prePositionECEF @1 :List(Float64);

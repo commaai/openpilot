@@ -16,3 +16,4 @@ examples/output.csv
 .vscode*
 nosetests.xml
 .mypy_cache/
+.sconsign.dblite

@@ -6,11 +6,13 @@ import requests
 import threading
 import time
 import traceback
+from pathlib import Path
 
 from cereal import log
 import cereal.messaging as messaging
 from common.api import Api
 from common.params import Params
+from selfdrive.hardware import TICI
 from selfdrive.loggerd.xattr_cache import getxattr, setxattr
 from selfdrive.loggerd.config import ROOT
 from selfdrive.swaglog import cloudlog
@@ -125,10 +127,10 @@ class Uploader():
       url_resp_json = json.loads(url_resp.text)
       url = url_resp_json['url']
       headers = url_resp_json['headers']
-      cloudlog.info("upload_url v1.3 %s %s", url, str(headers))
+      cloudlog.debug("upload_url v1.3 %s %s", url, str(headers))
 
       if fake_upload:
-        cloudlog.info("*** WARNING, THIS IS A FAKE UPLOAD TO %s ***" % url)
+        cloudlog.debug("*** WARNING, THIS IS A FAKE UPLOAD TO %s ***" % url)
 
         class FakeResponse():
           def __init__(self):
@@ -162,7 +164,7 @@ class Uploader():
 
     cloudlog.event("upload", key=key, fn=fn, sz=sz)
 
-    cloudlog.info("checking %r with size %r", key, sz)
+    cloudlog.debug("checking %r with size %r", key, sz)
 
     if sz == 0:
       try:
@@ -172,10 +174,10 @@ class Uploader():
         cloudlog.event("uploader_setxattr_failed", exc=self.last_exc, key=key, fn=fn, sz=sz)
       success = True
     else:
-      cloudlog.info("uploading %r", fn)
+      cloudlog.debug("uploading %r", fn)
       stat = self.normal_upload(key, fn)
       if stat is not None and stat.status_code in (200, 201, 412):
-        cloudlog.event("upload_success" if stat.status_code != 412 else "upload_ignored", key=key, fn=fn, sz=sz)
+        cloudlog.event("upload_success" if stat.status_code != 412 else "upload_ignored", key=key, fn=fn, sz=sz, debug=True)
         try:
           # tag file as uploaded
           setxattr(fn, UPLOAD_ATTR_NAME, UPLOAD_ATTR_VALUE)
@@ -183,14 +185,12 @@ class Uploader():
           cloudlog.event("uploader_setxattr_failed", exc=self.last_exc, key=key, fn=fn, sz=sz)
         success = True
       else:
-        cloudlog.event("upload_failed", stat=stat, exc=self.last_exc, key=key, fn=fn, sz=sz)
+        cloudlog.event("upload_failed", stat=stat, exc=self.last_exc, key=key, fn=fn, sz=sz, debug=True)
         success = False
 
     return success
 
 def uploader_fn(exit_event):
-  cloudlog.info("uploader_fn")
-
   params = Params()
   dongle_id = params.get("DongleId").decode('utf8')
 
@@ -198,14 +198,23 @@ def uploader_fn(exit_event):
     cloudlog.info("uploader missing dongle_id")
     raise Exception("uploader can't start without dongle id")
 
+  if TICI and not Path("/data/media").is_mount():
+    cloudlog.debug("NVME not mounted")
+
   sm = messaging.SubMaster(['deviceState'])
   uploader = Uploader(dongle_id, ROOT)
 
   backoff = 0.1
   while not exit_event.is_set():
     sm.update(0)
-    on_wifi = force_wifi or sm['deviceState'].networkType == NetworkType.wifi
     offroad = params.get("IsOffroad") == b'1'
+    network_type = sm['deviceState'].networkType if not force_wifi else NetworkType.wifi
+    if network_type == NetworkType.none:
+      if allow_sleep:
+        time.sleep(60 if offroad else 5)
+      continue
+
+    on_wifi = network_type == NetworkType.wifi
     allow_raw_upload = params.get("IsUploadRawEnabled") != b"0"
 
     d = uploader.next_file_to_upload(with_raw=allow_raw_upload and on_wifi and offroad)
@@ -216,13 +225,12 @@ def uploader_fn(exit_event):
 
     key, fn = d
 
-    cloudlog.event("uploader_netcheck", is_on_wifi=on_wifi)
-    cloudlog.info("to upload %r", d)
+    cloudlog.debug("upload %r over %s", d, network_type)
     success = uploader.upload(key, fn)
     if success:
       backoff = 0.1
     elif allow_sleep:
-      cloudlog.info("backoff %r", backoff)
+      cloudlog.info("upload backoff %r", backoff)
       time.sleep(backoff + random.uniform(0, backoff))
       backoff = min(backoff*2, 120)
     cloudlog.info("upload done, success=%r", success)

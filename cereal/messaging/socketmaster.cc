@@ -39,7 +39,7 @@ struct SubMaster::SubMessage {
   uint64_t rcv_time = 0, rcv_frame = 0;
   void *allocated_msg_reader = nullptr;
   capnp::FlatArrayMessageReader *msg_reader = nullptr;
-  kj::Array<capnp::word> buf;
+  AlignedBuffer aligned_buf;
   cereal::Event::Reader event;
 };
 
@@ -56,8 +56,7 @@ SubMaster::SubMaster(const std::initializer_list<const char *> &service_list, co
       .socket = socket,
       .freq = serv->frequency,
       .ignore_alive = inList(ignore_alive, name),
-      .allocated_msg_reader = malloc(sizeof(capnp::FlatArrayMessageReader)),
-      .buf = kj::heapArray<capnp::word>(1024)};
+      .allocated_msg_reader = malloc(sizeof(capnp::FlatArrayMessageReader))};
     messages_[socket] = m;
     services_[name] = m;
   }
@@ -75,17 +74,11 @@ int SubMaster::update(int timeout) {
     if (msg == nullptr) continue;
 
     SubMessage *m = messages_.at(s);
-    const size_t size = (msg->getSize() / sizeof(capnp::word)) + 1;
-    if (m->buf.size() < size) {
-      m->buf = kj::heapArray<capnp::word>(size);
-    }
-    memcpy(m->buf.begin(), msg->getData(), msg->getSize());
-    delete msg;
-
     if (m->msg_reader) {
       m->msg_reader->~FlatArrayMessageReader();
     }
-    m->msg_reader = new (m->allocated_msg_reader) capnp::FlatArrayMessageReader(kj::ArrayPtr<capnp::word>(m->buf.begin(), size));
+    m->msg_reader = new (m->allocated_msg_reader) capnp::FlatArrayMessageReader(m->aligned_buf.align(msg));
+    delete msg;
     m->event = m->msg_reader->getRoot<cereal::Event>();
     m->updated = true;
     m->rcv_time = current_time;

@@ -41,6 +41,7 @@
 #define SAFETY_HYUNDAI_COMMUNITY 24U
 
 uint16_t current_safety_mode = SAFETY_SILENT;
+int16_t current_safety_param = 0;
 const safety_hooks *current_hooks = &nooutput_hooks;
 
 int safety_rx_hook(CAN_FIFOMailBox_TypeDef *to_push){
@@ -291,7 +292,8 @@ int set_safety_hooks(uint16_t mode, int16_t param) {
   for (int i = 0; i < hook_config_count; i++) {
     if (safety_hook_registry[i].id == mode) {
       current_hooks = safety_hook_registry[i].hooks;
-      current_safety_mode = safety_hook_registry[i].id;
+      current_safety_mode = mode;
+      current_safety_param = param;
       set_status = 0;  // set
     }
 

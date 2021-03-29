@@ -1,4 +1,5 @@
 import os
+import logging
 from bisect import bisect_right
 
 import numpy as np
@@ -157,7 +158,7 @@ def gen_code(folder, name, f_sym, dt_sym, x_sym, obs_eqs, dim_x, dim_err, eskf_p
 
 class EKF_sym():
   def __init__(self, folder, name, Q, x_initial, P_initial, dim_main, dim_main_err,  # pylint: disable=dangerous-default-value
-               N=0, dim_augment=0, dim_augment_err=0, maha_test_kinds=[], global_vars=None, max_rewind_age=1.0):
+               N=0, dim_augment=0, dim_augment_err=0, maha_test_kinds=[], global_vars=None, max_rewind_age=1.0, logger=logging):
     """Generates process function and all observation functions for the kalman filter."""
     self.msckf = N > 0
     self.N = N
@@ -165,6 +166,8 @@ class EKF_sym():
     self.dim_augment_err = dim_augment_err
     self.dim_main = dim_main
     self.dim_main_err = dim_main_err
+
+    self.logger = logger
 
     # state
     x_initial = x_initial.reshape((-1, 1))
@@ -381,7 +384,7 @@ class EKF_sym():
     # rewind
     if self.filter_time is not None and t < self.filter_time:
       if len(self.rewind_t) == 0 or t < self.rewind_t[0] or t < self.rewind_t[-1] - self.max_rewind_age:
-        print("observation too old at %.3f with filter at %.3f, ignoring" % (t, self.filter_time))
+        self.logger.error("observation too old at %.3f with filter at %.3f, ignoring" % (t, self.filter_time))
         return None
       rewound = self.rewind(t)
     else:
@@ -502,7 +505,7 @@ class EKF_sym():
 
       # TODO If nullspace isn't the dimension we want
       if A.shape[1] + He.shape[1] != A.shape[0]:
-        print('Warning: null space projection failed, measurement ignored')
+        self.logger.warning('Warning: null space projection failed, measurement ignored')
         return x, P, np.zeros(A.shape[0] - He.shape[1])
 
     # if using eskf

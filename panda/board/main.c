@@ -58,6 +58,7 @@ struct __attribute__((packed)) health_t {
   uint8_t car_harness_status_pkt;
   uint8_t usb_power_mode_pkt;
   uint8_t safety_mode_pkt;
+  int16_t safety_param_pkt;
   uint8_t fault_status_pkt;
   uint8_t power_save_enabled_pkt;
 };
@@ -179,6 +180,7 @@ int get_health_pkt(void *dat) {
   health->car_harness_status_pkt = car_harness_status;
   health->usb_power_mode_pkt = usb_power_mode;
   health->safety_mode_pkt = (uint8_t)(current_safety_mode);
+  health->safety_param_pkt = current_safety_param;
   health->power_save_enabled_pkt = (uint8_t)(power_save_status == POWER_SAVE_STATUS_ENABLED);
 
   health->fault_status_pkt = fault_status;
