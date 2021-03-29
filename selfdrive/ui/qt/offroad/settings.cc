@@ -275,6 +275,8 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
     panel_frame->setWidgetResizable(true);
     panel_frame->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     panel_frame->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    panel_frame->setStyleSheet("background-color:transparent;");
+
     QScroller *scroller = QScroller::scroller(panel_frame);
     auto sp = scroller->scrollerProperties();
     sp.setScrollMetric(QScrollerProperties::FrameRate, QVariant::fromValue<QScrollerProperties::FrameRates>(QScrollerProperties::Fps30));
