@@ -38,7 +38,7 @@ SshControl::SshControl() : AbstractControl("SSH Keys", "Warning: This grants SSH
         getUserKeys(username);
       }
     } else {
-      Params().delete_db_value("GithubUserName");
+      Params().delete_db_value("GithubUsername");
       Params().delete_db_value("GithubSshKeys");
       refresh();
     }
@@ -57,7 +57,7 @@ SshControl::SshControl() : AbstractControl("SSH Keys", "Warning: This grants SSH
 void SshControl::refresh() {
   QString param = QString::fromStdString(Params().get("GithubSshKeys"));
   if (param.length()) {
-    username_label.setText(QString::fromStdString(Params().get("GithubUserName")));
+    username_label.setText(QString::fromStdString(Params().get("GithubUsername")));
     btn.setText("REMOVE");
   } else {
     username_label.setText("");
@@ -93,7 +93,7 @@ void SshControl::parseResponse(){
     networkTimer->stop();
     QString response = reply->readAll();
     if (reply->error() == QNetworkReply::NoError && response.length()) {
-      Params().write_db_value("GithubUserName", username.toStdString());
+      Params().write_db_value("GithubUsername", username.toStdString());
       Params().write_db_value("GithubSshKeys", response.toStdString());
     } else if(reply->error() == QNetworkReply::NoError){
       err = "Username '" + username + "' has no keys on GitHub";
