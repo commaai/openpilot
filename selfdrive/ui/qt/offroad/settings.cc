@@ -64,7 +64,6 @@ QWidget * toggles_panel() {
   bool record_lock = Params().read_db_bool("RecordFrontLock");
   record_toggle->setEnabled(!record_lock);
 
-  //toggles_list->addStretch(1);
   QWidget *widget = new QWidget;
   widget->setLayout(toggles_list);
   return widget;
