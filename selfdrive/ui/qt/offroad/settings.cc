@@ -20,7 +20,6 @@
 QWidget * toggles_panel() {
   QVBoxLayout *toggles_list = new QVBoxLayout();
 
-  toggles_list->setMargin(50);
   toggles_list->addWidget(new ParamControl("OpenpilotEnabledToggle",
                                             "Enable openpilot",
                                             "Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off.",
@@ -72,7 +71,6 @@ QWidget * toggles_panel() {
 
 DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
   QVBoxLayout *device_layout = new QVBoxLayout;
-  device_layout->setMargin(100);
 
   Params params = Params();
 
@@ -154,7 +152,6 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
 
 DeveloperPanel::DeveloperPanel(QWidget* parent) : QFrame(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
-  main_layout->setMargin(100);
   setLayout(main_layout);
   setStyleSheet(R"(QLabel {font-size: 50px;})");
 }
@@ -188,7 +185,6 @@ void DeveloperPanel::showEvent(QShowEvent *event) {
 QWidget * network_panel(QWidget * parent) {
 #ifdef QCOM
   QVBoxLayout *layout = new QVBoxLayout;
-  layout->setMargin(100);
   layout->setSpacing(30);
 
   // wifi + tethering buttons
@@ -220,6 +216,10 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   QVBoxLayout *sidebar_layout = new QVBoxLayout();
   sidebar_layout->setMargin(0);
   panel_widget = new QStackedWidget();
+  panel_widget->setStyleSheet(R"(
+    border-radius: 30px;
+    background-color: #292929;
+  )");
 
   // close button
   QPushButton *close_btn = new QPushButton("X");
@@ -252,7 +252,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
     QPushButton *btn = new QPushButton(name);
     btn->setCheckable(true);
     btn->setStyleSheet(R"(
-      * {
+      QPushButton {
         color: grey;
         border: none;
         background: none;
@@ -269,8 +269,24 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
     nav_btns->addButton(btn);
     sidebar_layout->addWidget(btn, 0, Qt::AlignRight);
 
-    panel_widget->addWidget(panel);
-    QObject::connect(btn, &QPushButton::released, [=, w = panel]() {
+    panel->setContentsMargins(50, 25, 50, 25);
+    QScrollArea *panel_frame = new QScrollArea;
+    panel_frame->setWidget(panel);
+    panel_frame->setWidgetResizable(true);
+    panel_frame->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    panel_frame->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    panel_frame->setStyleSheet("background-color:transparent;");
+
+    QScroller *scroller = QScroller::scroller(panel_frame);
+    auto sp = scroller->scrollerProperties();
+    sp.setScrollMetric(QScrollerProperties::FrameRate, QVariant::fromValue<QScrollerProperties::FrameRates>(QScrollerProperties::Fps30));
+    sp.setScrollMetric(QScrollerProperties::VerticalOvershootPolicy, QVariant::fromValue<QScrollerProperties::OvershootPolicy>(QScrollerProperties::OvershootAlwaysOff));
+    scroller->setScrollerProperties(sp);
+    scroller->grabGesture(panel_frame->viewport(), QScroller::LeftMouseButtonGesture);
+
+    panel_widget->addWidget(panel_frame);
+
+    QObject::connect(btn, &QPushButton::released, [=, w = panel_frame]() {
       panel_widget->setCurrentWidget(w);
     });
   }
@@ -284,25 +300,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   sidebar_widget->setLayout(sidebar_layout);
   sidebar_widget->setFixedWidth(500);
   settings_layout->addWidget(sidebar_widget);
-
-  panel_frame = new QScrollArea;
-  panel_frame->setWidget(panel_widget);
-  panel_frame->setWidgetResizable(true);
-  panel_frame->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-  panel_frame->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-  panel_frame->setStyleSheet(R"(
-    border-radius: 30px;
-    background-color: #292929;
-  )");
-  settings_layout->addWidget(panel_frame);
-
-  // setup panel scrolling
-  QScroller *scroller = QScroller::scroller(panel_frame);
-  auto sp = scroller->scrollerProperties();
-  sp.setScrollMetric(QScrollerProperties::FrameRate, QVariant::fromValue<QScrollerProperties::FrameRates>(QScrollerProperties::Fps30));
-  sp.setScrollMetric(QScrollerProperties::VerticalOvershootPolicy, QVariant::fromValue<QScrollerProperties::OvershootPolicy>(QScrollerProperties::OvershootAlwaysOff));
-  scroller->setScrollerProperties(sp);
-  scroller->grabGesture(panel_frame->viewport(), QScroller::LeftMouseButtonGesture);
+  settings_layout->addWidget(panel_widget);
 
   setLayout(settings_layout);
   setStyleSheet(R"(
