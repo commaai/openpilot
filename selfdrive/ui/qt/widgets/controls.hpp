@@ -62,7 +62,7 @@ public:
         background-color: #393939;
       }
       QPushButton:disabled {
-        background-color: #191919;
+        color: #33E4E4E4;
       }
     )");
     btn.setFixedSize(250, 100);
