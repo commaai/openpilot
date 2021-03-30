@@ -16,17 +16,16 @@
 #include "common/util.h"
 #include "selfdrive/hardware/hw.h"
 
-//TODO: lets make this a class, consistency
 TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *toggles_list = new QVBoxLayout();
   toggles_list->setMargin(50);
 
-	QList<ParamControl*> toggles;
+  QList<ParamControl*> toggles;
 
   toggles.append(new ParamControl("OpenpilotEnabledToggle",
-																 "Enable openpilot",
-																 "Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off.",
-																 "../assets/offroad/icon_openpilot.png",
+                                  "Enable openpilot",
+                                  "Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off.",
+                                  "../assets/offroad/icon_openpilot.png",
 																 this));
   toggles.append(new ParamControl("IsLdwEnabled",
 																 "Enable Lane Departure Warnings",
