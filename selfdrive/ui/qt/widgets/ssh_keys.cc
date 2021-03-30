@@ -61,8 +61,8 @@ void SshControl::getUserKeys(QString username){
   auto [err, resp] = httpGet(url, 20000);
   if (err == QNetworkReply::NoError) {
     if (!resp.isEmpty()) {
-      Params().write_db_value("GithubUsername", username.toStdString());
-      Params().write_db_value("GithubSshKeys", resp.toStdString());
+      Params().put("GithubUsername", username.toStdString());
+      Params().put("GithubSshKeys", resp.toStdString());
     } else {
       ConfirmationDialog::alert("Username '" + username + "' has no keys on GitHub");
     }

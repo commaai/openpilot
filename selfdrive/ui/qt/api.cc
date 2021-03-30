@@ -102,7 +102,7 @@ std::pair<QNetworkReply::NetworkError, QString> httpGet(const QString& url, int 
 
   loop.exec();
 
-  QNetworkReply::NetworkError err = timer.isActive() ? QNetworkReply::TimeoutError : reply->error();
+  QNetworkReply::NetworkError err = timer.isActive() ? reply->error() : QNetworkReply::TimeoutError;
   return std::make_pair(err, reply->readAll());
 }
 
@@ -132,9 +132,9 @@ void RequestRepeater::sendRequest(const QString& requestURL, QVector<QPair<QStri
   auto [err, resp] = httpGet(requestURL, 20000, &headers);
   if (!cache_key.isEmpty()) {
     if (err == QNetworkReply::NoError) {
-      Params().write_db_value(cache_key.toStdString(), resp.toStdString());
+      Params().put(cache_key.toStdString(), resp.toStdString());
     } else if (err != QNetworkReply::TimeoutError) {
-      Params().delete_db_value(cache_key.toStdString());
+      Params().remove(cache_key.toStdString());
     }
   }
   emit receivedResponse(err, resp);
