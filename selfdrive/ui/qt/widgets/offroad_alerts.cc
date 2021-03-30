@@ -1,4 +1,3 @@
-#include <QFile>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QJsonObject>
@@ -6,16 +5,15 @@
 
 #include "offroad_alerts.hpp"
 #include "selfdrive/hardware/hw.h"
+#include "selfdrive/common/util.h"
 
 OffroadAlert::OffroadAlert(QWidget* parent) : QFrame(parent) {
   QVBoxLayout *layout = new QVBoxLayout();
   layout->setMargin(50);
 
   // setup labels for each alert
-  QFile inFile("../controls/lib/alerts_offroad.json");
-  bool ret = inFile.open(QIODevice::ReadOnly | QIODevice::Text);
-  assert(ret);
-  QJsonObject obj = QJsonDocument::fromJson(inFile.readAll()).object();
+  QString json = QString::fromStdString(util::read_file("../controls/lib/alerts_offroad.json"));
+  QJsonObject obj = QJsonDocument::fromJson(json.toUtf8()).object();
   for (auto &k : obj.keys()) {
     QLabel *l = new QLabel(this);
     alerts[k.toStdString()] = l;
@@ -85,12 +83,13 @@ void OffroadAlert::updateAlerts() {
   updateAvailable = params.read_db_bool("UpdateAvailable");
   for (const auto& [key, label] : alerts) {
     auto bytes = params.read_db_bytes(key.c_str());
-    label->setText("");
     if (bytes.size()) {
       QJsonDocument doc_par = QJsonDocument::fromJson(QByteArray(bytes.data(), bytes.size()));
       QJsonObject obj = doc_par.object();
       label->setText(obj.value("text").toString());
       alertCount++;
+    } else {
+      label->setText("");
     }
   }
 }
