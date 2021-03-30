@@ -119,7 +119,7 @@ class FileLock {
     return flock(fd_, operation);
   }
   ~FileLock() {
-    if (fd_ != -1) close(fd_);
+    if (fd_ >= 0) close(fd_);
   }
   int fd_ = -1;
   std::string fn_;
