@@ -28,5 +28,5 @@ public:
   static void set_display_power(bool on) {};
 
   static bool get_ssh_enabled() { return Params().getBool("SshEnabled"); };
-  static void set_ssh_enabled(bool enabled) { Params().put("SshEnabled", (enabled ? "1" : "0")); };
+  static void set_ssh_enabled(bool enabled) { Params().putBool("SshEnabled", enabled); };
 };
