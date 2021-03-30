@@ -49,6 +49,7 @@ static int fsync_dir(const char* path){
   return result;
 }
 
+// TODO: replace by std::filesystem::create_directories
 static int mkdir_p(std::string path) {
   char * _path = (char *)path.c_str();
 
