@@ -396,6 +396,11 @@ void ui_draw(UIState *s) {
   if (draw_alerts && s->scene.alert_size != cereal::ControlsState::AlertSize::NONE) {
     ui_draw_vision_alert(s);
   }
+
+  if (s->scene.driver_view && !s->vipc_client->connected) {
+    nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
+    ui_draw_text(s, s->viz_rect.centerX(), s->viz_rect.centerY(), "Please wait for camera to start", 40 * 2.5, COLOR_WHITE, "sans-bold");
+  }
   nvgEndFrame(s->vg);
   glDisable(GL_BLEND);
 }
