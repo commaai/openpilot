@@ -81,6 +81,5 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event){
     }
   }
 #endif
-
   return false;
 }
