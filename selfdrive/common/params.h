@@ -54,5 +54,3 @@ public:
     return put(key, val ? "1" : "0", 1);
   }
 };
-
-extern Params g_params;

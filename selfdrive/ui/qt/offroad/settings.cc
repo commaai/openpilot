@@ -61,7 +61,7 @@ QWidget * toggles_panel() {
                                            "In this mode openpilot will ignore lanelines and just drive how it thinks a human would.",
                                            "../assets/offroad/icon_road.png"));
 
-  bool record_lock = g_params.getBool("RecordFrontLock");
+  bool record_lock = Params().getBool("RecordFrontLock");
   record_toggle->setEnabled(!record_lock);
 
   QWidget *widget = new QWidget;
@@ -72,11 +72,13 @@ QWidget * toggles_panel() {
 DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
   QVBoxLayout *device_layout = new QVBoxLayout;
 
-  QString dongle = QString::fromStdString(g_params.get("DongleId", false));
+  Params params = Params();
+
+  QString dongle = QString::fromStdString(params.get("DongleId", false));
   device_layout->addWidget(new LabelControl("Dongle ID", dongle));
   device_layout->addWidget(horizontal_line());
 
-  QString serial = QString::fromStdString(g_params.get("HardwareSerial", false));
+  QString serial = QString::fromStdString(params.get("HardwareSerial", false));
   device_layout->addWidget(new LabelControl("Serial", serial));
 
   // offroad-only buttons
@@ -85,29 +87,29 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
   offroad_btns.append(new ButtonControl("Driver Camera", "PREVIEW",
                                    "Preview the driver facing camera to help optimize device mounting position for best driver monitoring experience. (vehicle must be off)",
                                    [=]() { 
-                                      g_params.putBool("IsDriverViewEnabled", true);
+                                      Params().putBool("IsDriverViewEnabled", true);
                                       GLWindow::ui_state.scene.driver_view = true; }
                                     ));
 
   offroad_btns.append(new ButtonControl("Reset Calibration", "RESET",
                                    "openpilot requires the device to be mounted within 4° left or right and within 5° up or down. openpilot is continuously calibrating, resetting is rarely required.", [=]() {
     if (ConfirmationDialog::confirm("Are you sure you want to reset calibration?")) {
-      g_params.remove("CalibrationParams");
+      Params().remove("CalibrationParams");
     }
   }));
 
   offroad_btns.append(new ButtonControl("Review Training Guide", "REVIEW",
                                         "Review the rules, features, and limitations of openpilot", [=]() {
     if (ConfirmationDialog::confirm("Are you sure you want to review the training guide?")) {
-      g_params.remove("CompletedTrainingVersion");
+      Params().remove("CompletedTrainingVersion");
       emit reviewTrainingGuide();
     }
   }));
 
-  QString brand = g_params.getBool("Passive") ? "dashcam" : "openpilot";
+  QString brand = params.getBool("Passive") ? "dashcam" : "openpilot";
   offroad_btns.append(new ButtonControl("Uninstall " + brand, "UNINSTALL", "", [=]() {
     if (ConfirmationDialog::confirm("Are you sure you want to uninstall?")) {
-      g_params.putBool("DoUninstall", true);
+      Params().putBool("DoUninstall", true);
     }
   }));
 
@@ -158,12 +160,13 @@ DeveloperPanel::DeveloperPanel(QWidget* parent) : QFrame(parent) {
 }
 
 void DeveloperPanel::showEvent(QShowEvent *event) {
-  std::string brand = g_params.getBool("Passive") ? "dashcam" : "openpilot";
+  Params params = Params();
+  std::string brand = params.getBool("Passive") ? "dashcam" : "openpilot";
   QList<QPair<QString, std::string>> dev_params = {
-    {"Version", brand + " v" + g_params.get("Version", false).substr(0, 14)},
-    {"Git Branch", g_params.get("GitBranch", false)},
-    {"Git Commit", g_params.get("GitCommit", false).substr(0, 10)},
-    {"Panda Firmware", g_params.get("PandaFirmwareHex", false)},
+    {"Version", brand + " v" + params.get("Version", false).substr(0, 14)},
+    {"Git Branch", params.get("GitBranch", false)},
+    {"Git Commit", params.get("GitCommit", false).substr(0, 10)},
+    {"Panda Firmware", params.get("PandaFirmwareHex", false)},
     {"OS Version", Hardware::get_os_version()},
   };
 

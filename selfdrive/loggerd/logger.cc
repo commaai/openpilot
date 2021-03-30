@@ -98,13 +98,14 @@ kj::Array<capnp::word> logger_build_init_data() {
   init.setDirty(!getenv("CLEAN"));
 
   // log params
-  init.setGitCommit(g_params.get("GitCommit"));
-  init.setGitBranch(g_params.get("GitBranch"));
-  init.setGitRemote(g_params.get("GitRemote"));
-  init.setPassive(g_params.getBool("Passive"));
+  Params params = Params();
+  init.setGitCommit(params.get("GitCommit"));
+  init.setGitBranch(params.get("GitBranch"));
+  init.setGitRemote(params.get("GitRemote"));
+  init.setPassive(params.getBool("Passive"));
   {
     std::map<std::string, std::string> params_map;
-    g_params.read_db_all(&params_map);
+    params.read_db_all(&params_map);
     auto lparams = init.initParams().initEntries(params_map.size());
     int i = 0;
     for (auto& kv : params_map) {

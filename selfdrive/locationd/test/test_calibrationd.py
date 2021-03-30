@@ -15,7 +15,7 @@ class TestCalibrationd(unittest.TestCase):
     b = random.randint(1, 10)
     cal_params = {"calib_radians": r,
                   "valid_blocks": b}
-    g_params.put("CalibrationParams", json.dumps(cal_params).encode('utf8'))
+    Params().put("CalibrationParams", json.dumps(cal_params).encode('utf8'))
     c = Calibrator(param_put=True)
 
     self.assertEqual(r, c.rpy)
@@ -25,7 +25,7 @@ class TestCalibrationd(unittest.TestCase):
     msg = messaging.new_message('liveCalibration')
     msg.liveCalibration.validBlocks = random.randint(1, 10)
     msg.liveCalibration.rpyCalib = [random.random() for _ in range(3)]
-    g_params.put("CalibrationParams", msg.to_bytes())
+    Params().put("CalibrationParams", msg.to_bytes())
     c = Calibrator(param_put=True)
 
     self.assertEqual(list(msg.liveCalibration.rpyCalib), c.rpy)

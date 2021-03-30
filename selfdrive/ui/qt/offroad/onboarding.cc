@@ -106,8 +106,8 @@ void TermsPage::enableAccept(){
 }
 
 void OnboardingWindow::updateActiveScreen() {
-  bool accepted_terms = g_params.get("HasAcceptedTerms", false).compare(current_terms_version) == 0;
-  bool training_done = g_params.get("CompletedTrainingVersion", false).compare(current_training_version) == 0;
+  bool accepted_terms = params.get("HasAcceptedTerms", false).compare(current_terms_version) == 0;
+  bool training_done = params.get("CompletedTrainingVersion", false).compare(current_training_version) == 0;
 
   if (!accepted_terms) {
     setCurrentIndex(0);
@@ -119,20 +119,21 @@ void OnboardingWindow::updateActiveScreen() {
 }
 
 OnboardingWindow::OnboardingWindow(QWidget *parent) : QStackedWidget(parent) {
-  current_terms_version = g_params.get("TermsVersion", false);
-  current_training_version = g_params.get("TrainingVersion", false);
+  params = Params();
+  current_terms_version = params.get("TermsVersion", false);
+  current_training_version = params.get("TrainingVersion", false);
 
   TermsPage* terms = new TermsPage(this);
   addWidget(terms);
 
   connect(terms, &TermsPage::acceptedTerms, [=](){
-    g_params.put("HasAcceptedTerms", current_terms_version);
+    Params().put("HasAcceptedTerms", current_terms_version);
     updateActiveScreen();
   });
 
   TrainingGuide* tr = new TrainingGuide(this);
   connect(tr, &TrainingGuide::completedTraining, [=](){
-    g_params.put("CompletedTrainingVersion", current_training_version);
+    Params().put("CompletedTrainingVersion", current_training_version);
     updateActiveScreen();
   });
   addWidget(tr);

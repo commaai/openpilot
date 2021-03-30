@@ -36,7 +36,7 @@ void DriveStats::parseResponse(QString response) {
     labels.hours->setText(QString::number((int)(obj["minutes"].toDouble() / 60)));
   };
 
-  bool metric = g_params.getBool("IsMetric");
+  bool metric = Params().getBool("IsMetric");
   QJsonObject json = doc.object();
   update(json["all"].toObject(), all_, metric);
   update(json["week"].toObject(), week_, metric);
@@ -51,7 +51,7 @@ DriveStats::DriveStats(QWidget* parent) : QWidget(parent) {
     gl->addLayout(build_stat_layout(&labels.hours, "HOURS"), row, 2, 3, 1);
   };
 
-  const char* distance_unit = g_params.getBool("IsMetric") ? "KM" : "MILES";
+  const char* distance_unit = Params().getBool("IsMetric") ? "KM" : "MILES";
   QGridLayout* gl = new QGridLayout();
   gl->setMargin(0);
   gl->addWidget(new QLabel("ALL TIME"), 0, 0, 1, 3);
@@ -63,7 +63,7 @@ DriveStats::DriveStats(QWidget* parent) : QWidget(parent) {
   vlayout->addLayout(gl);
 
   // TODO: do we really need to update this frequently?
-  QString dongleId = QString::fromStdString(g_params.get("DongleId"));
+  QString dongleId = QString::fromStdString(Params().get("DongleId"));
   QString url = "https://api.commadotai.com/v1.1/devices/" + dongleId + "/stats";
   RequestRepeater* repeater = new RequestRepeater(this, url, 13, "ApiCache_DriveStats");
   QObject::connect(repeater, SIGNAL(receivedResponse(QString)), this, SLOT(parseResponse(QString)));

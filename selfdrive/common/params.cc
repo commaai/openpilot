@@ -282,5 +282,3 @@ int Params::read_db_all(std::map<std::string, std::string> *params) {
   close(lock_fd);
   return 0;
 }
-
-Params g_params;

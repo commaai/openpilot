@@ -16,6 +16,7 @@ public:
   bool updateAvailable;
 
 private:
+  Params params;
   QLabel releaseNotes;
   std::map<std::string, QLabel*> alerts;
   QPushButton rebootBtn;

@@ -272,11 +272,12 @@ static void update_alert(UIState *s) {
 static void update_params(UIState *s) {
   const uint64_t frame = s->sm->frame;
   UIScene &scene = s->scene;
+  Params params;
   if (frame % (5*UI_FREQ) == 0) {
-    scene.is_metric = g_params.getBool("IsMetric");
+    scene.is_metric = params.getBool("IsMetric");
   } else if (frame % (6*UI_FREQ) == 0) {
     scene.athenaStatus = NET_DISCONNECTED;
-    if (auto last_ping = g_params.get<float>("LastAthenaPingTime"); last_ping) {
+    if (auto last_ping = params.get<float>("LastAthenaPingTime"); last_ping) {
       scene.athenaStatus = nanos_since_boot() - *last_ping < 70e9 ? NET_CONNECTED : NET_ERROR;
     }
   }
@@ -320,8 +321,8 @@ static void update_status(UIState *s) {
       s->status = STATUS_DISENGAGED;
       s->scene.started_frame = s->sm->frame;
 
-      s->scene.is_rhd = g_params.getBool("IsRHD");
-      s->scene.end_to_end = g_params.getBool("EndToEndToggle");
+      s->scene.is_rhd = Params().getBool("IsRHD");
+      s->scene.end_to_end = Params().getBool("EndToEndToggle");
       s->sidebar_collapsed = true;
       s->scene.alert_size = cereal::ControlsState::AlertSize::NONE;
       s->vipc_client = s->scene.driver_view ? s->vipc_client_front : s->vipc_client_rear;
