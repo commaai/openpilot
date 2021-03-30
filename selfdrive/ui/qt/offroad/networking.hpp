@@ -38,7 +38,7 @@ public:
   explicit AdvancedNetworking(QWidget* parent = 0, WifiManager* wifi = 0);
 
 private:
-  QLabel* ipLabel;
+  LabelControl* ipLabel;
   QPushButton* editPasswordButton;
   WifiManager* wifi = nullptr;
 
