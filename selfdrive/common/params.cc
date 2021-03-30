@@ -10,11 +10,11 @@
 #include <dirent.h>
 #include <sys/file.h>
 #include <sys/stat.h>
+#include <mutex>
 #include <csignal>
 #include <string.h>
 
 #include "common/util.h"
-#include "common/swaglog.h"
 
 #define HANDLE_EINTR(x)                                       \
   ({                                                          \
@@ -123,21 +123,19 @@ class FileLock {
  public:
   FileLock(const std::string& file_name, int op) : fn_(file_name), op_(op) {}
 
-  int lock() {
+  void lock() {
     // keep trying if open() gets interrupted by a signal
     fd_ = HANDLE_EINTR(open(fn_.c_str(), O_CREAT, 0775));
     if (fd_ < 0) {
-      LOGE("Failed to open lock file, errno=%d", errno);
-      return -1;
+      throw std::runtime_error(util::string_format("Failed to open lock file, errno:%d", errno));
     }
 
     // keep trying if flock() gets interrupted by a signal
     int err = HANDLE_EINTR(flock(fd_, op_));
     if (err < 0) {
       close(fd_);
-      LOGE("Failed to lock file, errno=%d", errno);
+      throw std::runtime_error(util::string_format("Failed to lock file, errno:%d", errno));
     }
-    return err;
   }
 
   void unlock() {
@@ -233,10 +231,7 @@ cleanup:
 
 int Params::remove(const char *key) {
   FileLock file_lock(params_path + "/.lock", LOCK_EX);
-  if (file_lock.lock() < 0) {
-    return -1;
-  }
-
+  std::lock_guard<FileLock> lk(file_lock);
   // Delete value.
   std::string path = params_path + "/d/" + key;
   int result = ::remove(path.c_str());
@@ -275,9 +270,7 @@ std::string Params::get(const char *key, bool block) {
 
 int Params::read_db_all(std::map<std::string, std::string> *params) {
   FileLock file_lock(params_path + "/.lock", LOCK_SH);
-  if (file_lock.lock() < 0) {
-    return -1;
-  }
+  std::lock_guard<FileLock> lk(file_lock);
 
   std::string key_path = params_path + "/d";
   DIR *d = opendir(key_path.c_str());
