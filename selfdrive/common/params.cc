@@ -93,7 +93,7 @@ static bool ensure_params_path(const std::string &param_path, const std::string 
       return false;
     }
 
-    std::string link_path = util::string_format("%s.link", tmp_dir);
+    std::string link_path = std::string(tmp_dir) + ".link";
     return chmod(tmp_dir, 0777) == 0 &&
            symlink(tmp_dir, link_path.c_str()) == 0 &&
            rename(link_path.c_str(), key_path.c_str()) == 0;
