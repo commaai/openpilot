@@ -139,7 +139,14 @@ class FileLock {
   }
 
   void unlock() {
-    if (fd_ >= 0) close(fd_);
+    if (fd_ >= 0) {
+      close(fd_);
+      fd_ = -1;
+    }
+  }
+
+  ~FileLock() {
+    unlock();
   }
 
 private:
