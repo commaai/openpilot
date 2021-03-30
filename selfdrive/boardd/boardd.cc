@@ -166,7 +166,7 @@ bool usb_connect() {
 
     if (!time_valid(sys_time) && time_valid(rtc_time)) {
       LOGE("System time wrong, setting from RTC %d-%02d-%02d %02d:%02d:%02d",
-        rtc_time.tm_year, rtc_time.tm_mon, rtc_time.tm_mday,
+        rtc_time.tm_year + 1900, rtc_time.tm_mon + 1, rtc_time.tm_mday,
         rtc_time.tm_hour, rtc_time.tm_min, rtc_time.tm_sec);
 
       setenv("TZ","UTC",1);
@@ -335,7 +335,7 @@ void panda_state_thread(bool spoofing_started) {
       if (time_valid(sys_time)){
         panda->set_rtc(sys_time);
         LOGW("Updating panda RTC: %d-%02d-%02d %02d:%02d:%02d",
-          sys_time.tm_year, sys_time.tm_mon, sys_time.tm_mday,
+          sys_time.tm_year + 1900, sys_time.tm_mon + 1, sys_time.tm_mday,
           sys_time.tm_hour, sys_time.tm_min, sys_time.tm_sec);
       }
     }
