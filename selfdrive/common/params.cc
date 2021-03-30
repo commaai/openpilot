@@ -127,14 +127,14 @@ class FileLock {
     // keep trying if open() gets interrupted by a signal
     fd_ = HANDLE_EINTR(open(fn_.c_str(), O_CREAT, 0775));
     if (fd_ < 0) {
-      throw std::runtime_error("Failed to open lock file");
+      throw std::runtime_error(util::string_format("Failed to open lock file, errno:%d", errno));
     }
 
     // keep trying if flock() gets interrupted by a signal
     int err = HANDLE_EINTR(flock(fd_, op_));
     if (err < 0) {
       close(fd_);
-      throw std::runtime_error("Failed to lock file");
+      throw std::runtime_error(util::string_format("Failed to lock file, errno:%d", errno));
     }
   }
 
