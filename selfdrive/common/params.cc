@@ -80,17 +80,18 @@ static bool ensure_symlink(const std::string &param_path, const std::string &key
     // Ensure permissions are correct in case we didn't create the symlink
     return chmod(key_path.c_str(), 0777) == 0;
   } else {
-    // Create temp folder
+    // 1. Create temp folder
     std::string tmp_path = param_path + "/.tmp_XXXXXX";
     char *tmp_dir = mkdtemp((char *)tmp_path.c_str());
     if (tmp_dir == NULL) return false;
 
+    // 2. Set permissions
+    // 3. Symlink it to temp link
+    // 4. Move symlink to <params>/d
     char link_path[FILENAME_MAX] = {};
     snprintf(link_path, sizeof(link_path), "%s.link", tmp_dir);
     return chmod(tmp_dir, 0777) == 0 &&
-           // Symlink it to temp link
            symlink(tmp_dir, link_path) == 0 &&
-           // Move symlink to <params>/d
            rename(link_path, key_path.c_str()) == 0;
   }
 }
