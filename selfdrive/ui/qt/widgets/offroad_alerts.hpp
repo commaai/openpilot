@@ -1,30 +1,26 @@
 #pragma once
+#include <map>
 
 #include <QFrame>
 #include <QPushButton>
-#include <QStringList>
 #include <QLabel>
-#include <memory>
-#include <vector>
-struct Alert {
-  QString text;
-  int severity;
-};
+
+#include "common/params.h"
 
 class OffroadAlert : public QFrame {
   Q_OBJECT
 
 public:
   explicit OffroadAlert(QWidget *parent = 0);
-  QVector<Alert> alerts;
+  int alertCount = 0;
   bool updateAvailable;
 
 private:
-  QWidget *alert_widget;
-  QStringList alert_keys;
-  QPushButton *reboot_btn;
-  std::vector<std::unique_ptr<QLabel>> labels;
-  void parse_alerts();
+  Params params;
+  QLabel releaseNotes;
+  std::map<std::string, QLabel*> alerts;
+  QPushButton rebootBtn;
+  void updateAlerts();
 
 signals:
   void closeAlerts();

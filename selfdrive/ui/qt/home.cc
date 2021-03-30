@@ -153,7 +153,7 @@ void OffroadHome::refresh() {
   // update alerts
 
   alerts_widget->refresh();
-  if (!alerts_widget->alerts.size() && !alerts_widget->updateAvailable) {
+  if (!alerts_widget->alertCount && !alerts_widget->updateAvailable) {
     emit closeAlerts();
     alert_notification->setVisible(false);
     return;
@@ -162,7 +162,7 @@ void OffroadHome::refresh() {
   if (alerts_widget->updateAvailable) {
     alert_notification->setText("UPDATE");
   } else {
-    int alerts = alerts_widget->alerts.size();
+    int alerts = alerts_widget->alertCount;
     alert_notification->setText(QString::number(alerts) + " ALERT" + (alerts == 1 ? "" : "S"));
   }
 
