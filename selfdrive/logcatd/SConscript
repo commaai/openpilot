@@ -1,0 +1,6 @@
+Import('env', 'cereal', 'messaging', 'arch')
+
+if arch == "aarch64":
+  env.Program('logcatd', 'logcatd_android.cc', LIBS=[cereal, messaging, 'cutils', 'zmq', 'capnp', 'kj'])
+else:
+  env.Program('logcatd', 'logcatd_systemd.cc', LIBS=[cereal, messaging, 'zmq', 'capnp', 'kj', 'systemd', 'json11'])

@@ -1,0 +1,4 @@
+Import('env')
+
+env.Library('json11', ['json11/json11.cpp'])
+env.Append(CPPPATH=[Dir('json11')])

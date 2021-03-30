@@ -1,0 +1,4 @@
+Import('envCython')
+
+envCython.Program('clock.so', 'clock.pyx')
+envCython.Program('params_pyx.so', 'params_pyx.pyx')

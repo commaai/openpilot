@@ -1,0 +1,79 @@
+C++ interface to fast hierarchical clustering algorithms
+========================================================
+
+This is a simplified C++ interface to fast implementations of hierarchical
+clustering by Daniel Müllner. The original library with interfaces to R
+and Python is described in:
+
+Daniel Müllner: "fastcluster: Fast Hierarchical, Agglomerative Clustering
+Routines for R and Python." Journal of Statistical Software 53 (2013),
+no. 9, pp. 1–18, http://www.jstatsoft.org/v53/i09/
+
+
+Usage of the library
+--------------------
+
+For using the library, the following source files are needed:
+
+fastcluster_dm.cpp, fastcluster_R_dm.cpp
+   original code by Daniel Müllner
+   these are included by fastcluster.cpp via #include, and therefore
+   need not be compiled to object code
+
+fastcluster.[h|cpp]
+   simplified C++ interface
+   fastcluster.cpp is the only file that must be compiled
+
+The library provides the clustering function *hclust_fast* for
+creating the dendrogram information in an encoding as used by the
+R function *hclust*. For a description of the parameters, see fastcluster.h.
+Its parameter *method* can be one of
+
+HCLUST_METHOD_SINGLE
+  single link with the minimum spanning tree algorithm (Rohlf, 1973)
+
+HHCLUST_METHOD_COMPLETE
+  complete link with the nearest-neighbor-chain algorithm (Murtagh, 1984)
+
+HCLUST_METHOD_AVERAGE
+  complete link with the nearest-neighbor-chain algorithm (Murtagh, 1984)
+
+HCLUST_METHOD_MEDIAN
+  median link with the generic algorithm (Müllner, 2011)
+
+For splitting the dendrogram into clusters, the two functions *cutree_k*
+and *cutree_cdist* are provided.
+
+Note that output parameters must be allocated beforehand, e.g.
+  int* merge = new int[2*(npoints-1)];
+For a complete usage example, see lines 135-142 of demo.cpp.
+
+
+Demonstration program
+---------------------
+
+A simple demo is implemented in demo.cpp, which can be compiled and run with
+
+   make
+   ./hclust-demo -m complete lines.csv
+
+It creates two clusters of line segments such that the segment angle between
+line segments of different clusters have a maximum (cosine) dissimilarity.
+For visualizing the result, plotresult.r can be used as follows
+(requires R <https://r-project.org> to be installed):
+
+  ./hclust-demo -m complete lines.csv | Rscript plotresult.r
+
+
+Authors & Copyright
+-------------------
+
+Daniel Müllner, 2011, <http://danifold.net>
+Christoph Dalitz, 2018, <http://www.hsnr.de/ipattern/>
+
+
+License
+-------
+
+This code is provided under a BSD-style license.
+See the file LICENSE for details.

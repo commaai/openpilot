@@ -1,0 +1,25 @@
+Import('env', 'envCython', 'cereal')
+
+import os
+from opendbc.can.process_dbc import process
+
+dbcs = []
+for x in sorted(os.listdir('../')):
+  if x.endswith(".dbc"):
+    def compile_dbc(target, source, env):
+      process(source[0].path, target[0].path)
+    in_fn = [os.path.join('../', x), 'dbc_template.cc']
+    out_fn = os.path.join('dbc_out', x.replace(".dbc", ".cc"))
+    dbc = env.Command(out_fn, in_fn, compile_dbc)
+    dbcs.append(dbc)
+
+libdbc = env.SharedLibrary('libdbc', ["dbc.cc", "parser.cc", "packer.cc", "common.cc"]+dbcs, LIBS=["capnp", "kj"])
+
+# Build packer and parser
+lenv = envCython.Clone()
+lenv["LINKFLAGS"] += [libdbc[0].get_labspath()]
+parser = lenv.Program('parser_pyx.so', 'parser_pyx.pyx')
+packer = lenv.Program('packer_pyx.so', 'packer_pyx.pyx')
+
+lenv.Depends(parser, libdbc)
+lenv.Depends(packer, libdbc)
