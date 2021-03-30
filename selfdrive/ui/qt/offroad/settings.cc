@@ -77,7 +77,6 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
 
 DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
   QVBoxLayout *device_layout = new QVBoxLayout;
-  device_layout->setMargin(100);
 
   QObject::connect(parent, SIGNAL(closeSettings()), this, SIGNAL(resetState()));
 
@@ -161,7 +160,6 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
 
 DeveloperPanel::DeveloperPanel(QWidget* parent) : QFrame(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
-  main_layout->setMargin(100);
   setLayout(main_layout);
   setStyleSheet(R"(QLabel {font-size: 50px;})");
 }
@@ -195,7 +193,6 @@ void DeveloperPanel::showEvent(QShowEvent *event) {
 QWidget * network_panel(QWidget * parent) {
 #ifdef QCOM
   QVBoxLayout *layout = new QVBoxLayout;
-  layout->setMargin(100);
   layout->setSpacing(30);
 
   // wifi + tethering buttons
@@ -227,6 +224,10 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   QVBoxLayout *sidebar_layout = new QVBoxLayout();
   sidebar_layout->setMargin(0);
   panel_widget = new QStackedWidget();
+  panel_widget->setStyleSheet(R"(
+    border-radius: 30px;
+    background-color: #292929;
+  )");
 
   sidebar_layout->addStretch(1);
 
@@ -262,7 +263,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
     QPushButton *btn = new QPushButton(name);
     btn->setCheckable(true);
     btn->setStyleSheet(R"(
-      * {
+      QPushButton {
         color: grey;
         border: none;
         background: none;
@@ -297,6 +298,26 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
     QObject::connect(btn, &QPushButton::released, [=, w = panel]() {
       panel_widget->setCurrentWidget(w);
     });
+
+/*
+    panel->setContentsMargins(50, 25, 50, 25);
+    QScrollArea *panel_frame = new QScrollArea;
+    panel_frame->setWidget(panel);
+    panel_frame->setWidgetResizable(true);
+    panel_frame->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    panel_frame->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    panel_frame->setStyleSheet("background-color:transparent;");
+
+    QScroller *scroller = QScroller::scroller(panel_frame->viewport());
+    auto sp = scroller->scrollerProperties();
+
+    sp.setScrollMetric(QScrollerProperties::VerticalOvershootPolicy, QVariant::fromValue<QScrollerProperties::OvershootPolicy>(QScrollerProperties::OvershootAlwaysOff));
+
+    scroller->grabGesture(panel_frame->viewport(), QScroller::LeftMouseButtonGesture);
+    scroller->setScrollerProperties(sp);
+
+    panel_widget->addWidget(panel_frame);
+*/
   }
 
   qobject_cast<QPushButton *>(nav_btns->buttons()[0])->setChecked(true);
@@ -310,29 +331,14 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   sidebar_widget->setFixedWidth(500);
   settings_layout->addWidget(sidebar_widget);
 
-  panel_frame = new QScrollArea;
-  panel_frame->setWidget(panel_widget);
-  panel_frame->setWidgetResizable(true);
-  panel_frame->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-  panel_frame->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-  panel_frame->setStyleSheet(R"(
-    border-radius: 30px;
-    background-color: #292929;
-  )");
-  settings_layout->addWidget(panel_frame);
-
+/*
 	QObject::connect(this, &SettingsWindow::closeSettings, [this]() {
 		panel_frame->verticalScrollBar()->setValue(0);
 	});
+*/
 
   // setup panel scrolling
-  QScroller *scroller = QScroller::scroller(panel_frame);
-  auto sp = scroller->scrollerProperties();
-  sp.setScrollMetric(QScrollerProperties::FrameRate, QVariant::fromValue<QScrollerProperties::FrameRates>(QScrollerProperties::Fps30));
-  sp.setScrollMetric(QScrollerProperties::VerticalOvershootPolicy, QVariant::fromValue<QScrollerProperties::OvershootPolicy>(QScrollerProperties::OvershootAlwaysOff));
-  scroller->setScrollerProperties(sp);
-  scroller->grabGesture(panel_frame->viewport(), QScroller::LeftMouseButtonGesture);
-
+  settings_layout->addWidget(panel_widget);
   setLayout(settings_layout);
   setStyleSheet(R"(
     * {
