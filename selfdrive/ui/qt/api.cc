@@ -134,12 +134,12 @@ void RequestRepeater::requestFinished(){
     if (reply->error() == QNetworkReply::NoError) {
       // save to cache
       if (!cache_key.isEmpty()) {
-        Params().write_db_value(cache_key.toStdString(), response.toStdString());
+        Params().put(cache_key.toStdString(), response.toStdString());
       }
       emit receivedResponse(response);
     } else {
       if (!cache_key.isEmpty()) {
-        Params().delete_db_value(cache_key.toStdString());
+        Params().remove(cache_key.toStdString());
       }
       emit failedResponse(reply->errorString());
     }

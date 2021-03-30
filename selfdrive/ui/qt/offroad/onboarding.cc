@@ -127,13 +127,13 @@ OnboardingWindow::OnboardingWindow(QWidget *parent) : QStackedWidget(parent) {
   addWidget(terms);
 
   connect(terms, &TermsPage::acceptedTerms, [=](){
-    Params().write_db_value("HasAcceptedTerms", current_terms_version);
+    Params().put("HasAcceptedTerms", current_terms_version);
     updateActiveScreen();
   });
 
   TrainingGuide* tr = new TrainingGuide(this);
   connect(tr, &TrainingGuide::completedTraining, [=](){
-    Params().write_db_value("CompletedTrainingVersion", current_training_version);
+    Params().put("CompletedTrainingVersion", current_training_version);
     updateActiveScreen();
   });
   addWidget(tr);
