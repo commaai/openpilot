@@ -57,10 +57,10 @@ class CarInterface(CarInterfaceBase):
 
     # Per-chassis tuning values, override tuning defaults here if desired
 
-    if candidate == CAR.GOLF:
-      # Temporarily carry forward old tuning values while we test vehicle identification
-      ret.mass = 1500 + STD_CARGO_KG
-      ret.wheelbase = 2.64
+    if candidate == CAR.GOLF_MK7:
+      # Averages of all AU Golf variants
+      ret.mass = 1397 + STD_CARGO_KG
+      ret.wheelbase = 2.62
 
     elif candidate == CAR.JETTA_MK7:
       # Averages of all BU Jetta variants

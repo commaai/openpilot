@@ -39,6 +39,7 @@ public:
 
 signals:
   void closeSettings();
+  void offroadTransition(bool offroad);
   void reviewTrainingGuide();
 
 private:
@@ -46,5 +47,4 @@ private:
   QWidget *sidebar_widget;
   QButtonGroup *nav_btns;
   QStackedWidget *panel_widget;
-  QScrollArea *panel_frame;
 };

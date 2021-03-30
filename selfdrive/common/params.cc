@@ -11,9 +11,6 @@
 #include <sys/file.h>
 #include <sys/stat.h>
 
-#include <map>
-#include <string>
-#include <iostream>
 #include <csignal>
 #include <string.h>
 
@@ -83,15 +80,11 @@ Params::Params(bool persistent_param){
   params_path = persistent_param ? persistent_params_path : default_params_path;
 }
 
-Params::Params(std::string path) {
+Params::Params(const std::string &path) {
   params_path = path;
 }
 
-int Params::write_db_value(std::string key, std::string dat){
-  return write_db_value(key.c_str(), dat.c_str(), dat.length());
-}
-
-int Params::write_db_value(const char* key, const char* value, size_t value_size) {
+int Params::put(const char* key, const char* value, size_t value_size) {
   // Information about safely and atomically writing a file: https://lwn.net/Articles/457667/
   // 1) Create temp file
   // 2) Write data to temp file
@@ -213,7 +206,7 @@ cleanup:
   return result;
 }
 
-int Params::delete_db_value(std::string key) {
+int Params::remove(const char *key) {
   int lock_fd = -1;
   int result;
   std::string path;
@@ -230,7 +223,7 @@ int Params::delete_db_value(std::string key) {
 
   // Delete value.
   path = params_path + "/d/" + key;
-  result = remove(path.c_str());
+  result = ::remove(path.c_str());
   if (result != 0) {
     result = ERR_NO_VALUE;
     goto cleanup;
@@ -251,52 +244,28 @@ cleanup:
   return result;
 }
 
-std::string Params::get(std::string key, bool block){
-  char* value;
-  size_t size;
-  int r;
-
-  if (block) {
-    r = read_db_value_blocking((const char*)key.c_str(), &value, &size);
+std::string Params::get(const char *key, bool block) {
+  std::string path = params_path + "/d/" + key;
+  if (!block) {
+    return util::read_file(path);
   } else {
-    r = read_db_value((const char*)key.c_str(), &value, &size);
-  }
+    // blocking read until successful
+    params_do_exit = 0;
+    void (*prev_handler_sigint)(int) = std::signal(SIGINT, params_sig_handler);
+    void (*prev_handler_sigterm)(int) = std::signal(SIGTERM, params_sig_handler);
 
-  if (r == 0){
-    std::string s(value, size);
-    free(value);
-    return s;
-  } else {
-    return "";
-  }
-}
-
-int Params::read_db_value(const char* key, char** value, size_t* value_sz) {
-  std::string path = params_path + "/d/" + std::string(key);
-  *value = static_cast<char*>(read_file(path.c_str(), value_sz));
-  if (*value == NULL) {
-    return -22;
-  }
-  return 0;
-}
-
-int Params::read_db_value_blocking(const char* key, char** value, size_t* value_sz) {
-  params_do_exit = 0;
-  void (*prev_handler_sigint)(int) = std::signal(SIGINT, params_sig_handler);
-  void (*prev_handler_sigterm)(int) = std::signal(SIGTERM, params_sig_handler);
-
-  while (!params_do_exit) {
-    const int result = read_db_value(key, value, value_sz);
-    if (result == 0) {
-      break;
-    } else {
-      util::sleep_for(100); // 0.1 s
+    std::string value;
+    while (!params_do_exit) {
+      if (value = util::read_file(path); !value.empty()) {
+        break;
+      }
+      util::sleep_for(100);  // 0.1 s
     }
-  }
 
-  std::signal(SIGINT, prev_handler_sigint);
-  std::signal(SIGTERM, prev_handler_sigterm);
-  return params_do_exit; // Return 0 if we had no interrupt
+    std::signal(SIGINT, prev_handler_sigint);
+    std::signal(SIGTERM, prev_handler_sigterm);
+    return value;
+  }
 }
 
 int Params::read_db_all(std::map<std::string, std::string> *params) {
@@ -333,21 +302,4 @@ int Params::read_db_all(std::map<std::string, std::string> *params) {
 
   close(lock_fd);
   return 0;
-}
-
-std::vector<char> Params::read_db_bytes(const char* param_name) {
-  std::vector<char> bytes;
-  char* value;
-  size_t sz;
-  int result = read_db_value(param_name, &value, &sz);
-  if (result == 0) {
-    bytes.assign(value, value+sz);
-    free(value);
-  }
-  return bytes;
-}
-
-bool Params::read_db_bool(const char* param_name) {
-  std::vector<char> bytes = read_db_bytes(param_name);
-  return bytes.size() > 0 and bytes[0] == '1';
 }
