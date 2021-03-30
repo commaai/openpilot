@@ -344,8 +344,6 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   sidebar_widget->setFixedWidth(500);
   settings_layout->addWidget(sidebar_widget);
 
-
-
   // setup panel scrolling
   settings_layout->addWidget(panel_widget);
   setLayout(settings_layout);
