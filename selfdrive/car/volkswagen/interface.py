@@ -77,10 +77,10 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 1715 + STD_CARGO_KG
       ret.wheelbase = 2.74
 
-    elif candidate == CAR.AUDI_A3:
-      # Temporarily carry forward old tuning values while we test vehicle identification
-      ret.mass = 1500 + STD_CARGO_KG
-      ret.wheelbase = 2.64
+    elif candidate == CAR.AUDI_A3_MK3:
+      # Averages of all 8V A3 variants
+      ret.mass = 1335 + STD_CARGO_KG
+      ret.wheelbase = 2.61
 
     elif candidate == CAR.SEAT_ATECA_MK1:
       # Averages of all 5F Ateca variants
