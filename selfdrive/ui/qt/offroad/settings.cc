@@ -277,12 +277,13 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
     panel_frame->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     panel_frame->setStyleSheet("background-color:transparent;");
 
-    QScroller *scroller = QScroller::scroller(panel_frame);
+    QScroller *scroller = QScroller::scroller(panel_frame->viewport());
     auto sp = scroller->scrollerProperties();
-    sp.setScrollMetric(QScrollerProperties::FrameRate, QVariant::fromValue<QScrollerProperties::FrameRates>(QScrollerProperties::Fps30));
+
     sp.setScrollMetric(QScrollerProperties::VerticalOvershootPolicy, QVariant::fromValue<QScrollerProperties::OvershootPolicy>(QScrollerProperties::OvershootAlwaysOff));
-    scroller->setScrollerProperties(sp);
+
     scroller->grabGesture(panel_frame->viewport(), QScroller::LeftMouseButtonGesture);
+    scroller->setScrollerProperties(sp);
 
     panel_widget->addWidget(panel_frame);
 
