@@ -160,13 +160,18 @@ bool usb_connect() {
 #endif
 
   if (tmp_panda->has_rtc){
+    setenv("TZ","UTC",1);
     struct tm sys_time = get_time();
     struct tm rtc_time = tmp_panda->get_rtc();
 
     if (!time_valid(sys_time) && time_valid(rtc_time)) {
-      LOGE("System time wrong, setting from RTC");
+      LOGE("System time wrong, setting from RTC. "
+           "System: %d-%02d-%02d %02d:%02d:%02d RTC: %d-%02d-%02d %02d:%02d:%02d",
+           sys_time.tm_year + 1900, sys_time.tm_mon + 1, sys_time.tm_mday,
+           sys_time.tm_hour, sys_time.tm_min, sys_time.tm_sec,
+           rtc_time.tm_year + 1900, rtc_time.tm_mon + 1, rtc_time.tm_mday,
+           rtc_time.tm_hour, rtc_time.tm_min, rtc_time.tm_sec);
 
-      setenv("TZ","UTC",1);
       const struct timeval tv = {mktime(&rtc_time), 0};
       settimeofday(&tv, 0);
     }
@@ -328,9 +333,23 @@ void panda_state_thread(bool spoofing_started) {
     // Write to rtc once per minute when no ignition present
     if ((panda->has_rtc) && !ignition && (no_ignition_cnt % 120 == 1)){
       // Write time to RTC if it looks reasonable
+      setenv("TZ","UTC",1);
       struct tm sys_time = get_time();
+
       if (time_valid(sys_time)){
-        panda->set_rtc(sys_time);
+        struct tm rtc_time = panda->get_rtc();
+        double seconds = difftime(mktime(&rtc_time), mktime(&sys_time));
+
+        if (std::abs(seconds) > 1.1) {
+          panda->set_rtc(sys_time);
+          LOGW("Updating panda RTC. dt = %.2f "
+               "System: %d-%02d-%02d %02d:%02d:%02d RTC: %d-%02d-%02d %02d:%02d:%02d",
+               seconds,
+               sys_time.tm_year + 1900, sys_time.tm_mon + 1, sys_time.tm_mday,
+               sys_time.tm_hour, sys_time.tm_min, sys_time.tm_sec,
+               rtc_time.tm_year + 1900, rtc_time.tm_mon + 1, rtc_time.tm_mday,
+               rtc_time.tm_hour, rtc_time.tm_min, rtc_time.tm_sec);
+        }
       }
     }
 
