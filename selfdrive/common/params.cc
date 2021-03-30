@@ -70,42 +70,40 @@ static int mkdir_p(std::string path) {
   return 0;
 }
 
-static int ensure_dir_exists(std::string path) {
-  // TODO: replace by std::filesystem::create_directories
-  return util::file_exists(path) ? 0 : mkdir_p(path.c_str());
-}
+static bool ensure_params_path(const std::string &param_path, const std::string &key_path) {
+  // Make sure params path exists
+  if (!util::file_exists(param_path) && mkdir_p(param_path) != 0) {
+    return false;
+  }
 
-static bool ensure_symlink(const std::string &param_path, const std::string &key_path) {
+  // See if the symlink exists, otherwise create it
   if (util::file_exists(key_path)) {
     // Ensure permissions are correct in case we didn't create the symlink
     return chmod(key_path.c_str(), 0777) == 0;
   } else {
-    // 1. Create temp folder
+    // 1) Create temp folder
+    // 2) Set permissions
+    // 3) Symlink it to temp link
+    // 4) Move symlink to <params>/d
+
     std::string tmp_path = param_path + "/.tmp_XXXXXX";
     char *tmp_dir = mkdtemp((char *)tmp_path.c_str());
-    if (tmp_dir == NULL) return false;
+    if (tmp_dir == NULL) {
+      return false;
+    }
 
-    // 2. Set permissions
-    // 3. Symlink it to temp link
-    // 4. Move symlink to <params>/d
-    char link_path[FILENAME_MAX] = {};
-    snprintf(link_path, sizeof(link_path), "%s.link", tmp_dir);
+    std::string link_path = util::string_format("%s.link", tmp_dir);
     return chmod(tmp_dir, 0777) == 0 &&
-           symlink(tmp_dir, link_path) == 0 &&
-           rename(link_path, key_path.c_str()) == 0;
+           symlink(tmp_dir, link_path.c_str()) == 0 &&
+           rename(link_path.c_str(), key_path.c_str()) == 0;
   }
 }
 
 Params::Params(bool persistent_param) : Params(persistent_param ? persistent_params_path : default_params_path) {}
 
 Params::Params(const std::string &path) : params_path(path) {
-  // Make sure params path exists
-  if (ensure_dir_exists(params_path) < 0) {
+  if (!ensure_params_path(params_path, params_path + "/d")) {
     throw std::runtime_error(util::string_format("Failed to create params path, errno=%d", errno));
-  }
-  // See if the symlink exists, otherwise create it
-  if (!ensure_symlink(params_path, params_path + "/d")) {
-    throw std::runtime_error(util::string_format("Failed to create params symlink, errno=%d", errno));
   }
 }
 
