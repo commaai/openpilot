@@ -188,8 +188,6 @@ class CarState(CarStateBase):
       ("KBI_Handbremse", "Kombi_01", 0),            # Manual handbrake applied
       ("TSK_Status", "TSK_06", 0),                  # ACC engagement status from drivetrain coordinator
       ("TSK_Fahrzeugmasse_02", "Motor_16", 0),      # Estimated vehicle mass from drivetrain coordinator
-      ("ACC_Status_ACC", "ACC_06", 0),              # ACC engagement status
-      ("ACC_Typ", "ACC_06", 0),                     # ACC type (follow to stop, stop&go)
       ("ACC_Wunschgeschw", "ACC_02", 0),            # ACC set speed
       ("AWV2_Freigabe", "ACC_10", 0),               # FCW brake jerk release
       ("ANB_Teilbremsung_Freigabe", "ACC_10", 0),   # AEB partial braking release
@@ -218,7 +216,6 @@ class CarState(CarStateBase):
       ("ESP_19", 100),      # From J104 ABS/ESP controller
       ("ESP_05", 50),       # From J104 ABS/ESP controller
       ("ESP_21", 50),       # From J104 ABS/ESP controller
-      ("ACC_06", 50),       # From J428 ACC radar control module
       ("ACC_10", 50),       # From J428 ACC radar control module
       ("Motor_20", 50),     # From J623 Engine control module
       ("TSK_06", 50),       # From J623 Engine control module
