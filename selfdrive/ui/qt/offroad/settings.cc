@@ -290,16 +290,10 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
         QObject::connect(btn, SIGNAL(released()), panel2, SIGNAL(resetState()));
     }
 
-    panel_widget->addWidget(panel);
 		if(name == "Device"){
 			QObject::connect(this, SIGNAL(closeSettings()), btn, SLOT(click()));
 		}
 
-    QObject::connect(btn, &QPushButton::released, [=, w = panel]() {
-      panel_widget->setCurrentWidget(w);
-    });
-
-/*
     panel->setContentsMargins(50, 25, 50, 25);
     QScrollArea *panel_frame = new QScrollArea;
     panel_frame->setWidget(panel);
@@ -317,7 +311,14 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
     scroller->setScrollerProperties(sp);
 
     panel_widget->addWidget(panel_frame);
-*/
+
+    QObject::connect(btn, &QPushButton::released, [=, w = panel_frame]() {
+      panel_widget->setCurrentWidget(w);
+    });
+
+    QObject::connect(this, &SettingsWindow::closeSettings, [panel_frame]() {
+      panel_frame->verticalScrollBar()->setValue(0);
+    });
   }
 
   qobject_cast<QPushButton *>(nav_btns->buttons()[0])->setChecked(true);
@@ -331,11 +332,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   sidebar_widget->setFixedWidth(500);
   settings_layout->addWidget(sidebar_widget);
 
-/*
-	QObject::connect(this, &SettingsWindow::closeSettings, [this]() {
-		panel_frame->verticalScrollBar()->setValue(0);
-	});
-*/
+
 
   // setup panel scrolling
   settings_layout->addWidget(panel_widget);
