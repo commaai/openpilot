@@ -50,19 +50,19 @@ static void draw_chevron(UIState *s, float x, float y, float sz, NVGcolor fillCo
   nvgFill(s->vg);
 }
 
-static void ui_draw_circle_image(const UIState *s, int x, int y, int size, const char *image, NVGcolor color, float img_alpha, int img_y = 0) {
-  const int img_size = size * 1.5;
+static void ui_draw_circle_image(const UIState *s, int center_x, int center_y, int radius, const char *image, NVGcolor color, float img_alpha) {
   nvgBeginPath(s->vg);
-  nvgCircle(s->vg, x, y + (bdr_s * 1.5), size);
+  nvgCircle(s->vg, center_x, center_y, radius);
   nvgFillColor(s->vg, color);
   nvgFill(s->vg);
-  ui_draw_image(s, {x - (img_size / 2), img_y ? img_y : y - (size / 4), img_size, img_size}, image, img_alpha);
+  const int img_size = radius * 1.5;
+  ui_draw_image(s, {center_x - (img_size / 2), center_y - (img_size / 2), img_size, img_size}, image, img_alpha);
 }
 
-static void ui_draw_circle_image(const UIState *s, int x, int y, int size, const char *image, bool active) {
+static void ui_draw_circle_image(const UIState *s, int center_x, int center_y, int radius, const char *image, bool active) {
   float bg_alpha = active ? 0.3f : 0.1f;
   float img_alpha = active ? 1.0f : 0.15f;
-  ui_draw_circle_image(s, x, y, size, image, nvgRGBA(0, 0, 0, (255 * bg_alpha)), img_alpha);
+  ui_draw_circle_image(s, center_x, center_y, radius, image, nvgRGBA(0, 0, 0, (255 * bg_alpha)), img_alpha);
 }
 
 static void draw_lead(UIState *s, int idx) {
@@ -215,18 +215,18 @@ static void ui_draw_vision_speed(UIState *s) {
 static void ui_draw_vision_event(UIState *s) {
   if (s->scene.controls_state.getEngageable()) {
     // draw steering wheel
-    const int bg_wheel_size = 96;
-    const int bg_wheel_x = s->viz_rect.right() - bg_wheel_size - bdr_s * 2;
-    const int bg_wheel_y = s->viz_rect.y + (bg_wheel_size / 2) + (bdr_s * 1.5);
-    ui_draw_circle_image(s, bg_wheel_x, bg_wheel_y, bg_wheel_size, "wheel", bg_colors[s->status], 1.0f, bg_wheel_y - 25);
+    const int radius = 96;
+    const int center_x = s->viz_rect.right() - radius - bdr_s * 2;
+    const int center_y = s->viz_rect.y + radius  + (bdr_s * 1.5);
+    ui_draw_circle_image(s, center_x, center_y, radius, "wheel", bg_colors[s->status], 1.0f);
   }
 }
 
 static void ui_draw_vision_face(UIState *s) {
-  const int face_size = 96;
-  const int face_x = (s->viz_rect.x + face_size + (bdr_s * 2));
-  const int face_y = (s->viz_rect.bottom() - footer_h + ((footer_h - face_size) / 2));
-  ui_draw_circle_image(s, face_x, face_y, face_size, "driver_face", s->scene.dmonitoring_state.getIsActiveMode());
+  const int radius = 96;
+  const int center_x = s->viz_rect.x + radius + (bdr_s * 2);
+  const int center_y = s->viz_rect.bottom() - footer_h / 2;
+  ui_draw_circle_image(s, center_x, center_y, radius, "driver_face", s->scene.dmonitoring_state.getIsActiveMode());
 }
 
 static void ui_draw_driver_view(UIState *s) {
@@ -266,10 +266,10 @@ static void ui_draw_driver_view(UIState *s) {
   }
 
   // draw face icon
-  const int face_size = 85;
-  const int icon_x = is_rhd ? rect.right() - face_size - bdr_s * 2 : rect.x + face_size + bdr_s * 2;
-  const int icon_y = rect.bottom() - face_size - bdr_s * 2.5;
-  ui_draw_circle_image(s, icon_x, icon_y, face_size, "driver_face", face_detected);
+  const int face_radius = 85;
+  const int center_x = is_rhd ? rect.right() - face_radius - bdr_s * 2 : rect.x + face_radius + bdr_s * 2;
+  const int center_y = rect.bottom() - face_radius - bdr_s * 2.5;
+  ui_draw_circle_image(s, center_x, center_y, face_radius, "driver_face", face_detected);
 }
 
 static void ui_draw_vision_header(UIState *s) {
