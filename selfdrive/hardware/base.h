@@ -4,11 +4,18 @@
 #include <fstream>
 
 
+enum HardwareDeviceType {
+  PC,
+  EON,
+  TICI
+};
+
 // no-op base hw class
 class HardwareNone {
 public:
   static constexpr float MAX_VOLUME = 0;
   static constexpr float MIN_VOLUME = 0;
+  static constexpr HardwareDeviceType device_type = PC;
 
   static std::string get_os_version() { return "openpilot for PC"; };
 
