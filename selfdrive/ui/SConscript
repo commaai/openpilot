@@ -1,37 +1,34 @@
 import os
-Import('env', 'qt_env', 'arch', 'common', 'messaging', 'gpucommon', 'visionipc',
+Import('qt_env', 'arch', 'common', 'messaging', 'gpucommon', 'visionipc',
        'cereal', 'transformations')
 
-src = ['ui.cc', 'paint.cc', 'sidebar.cc', '#phonelibs/nanovg/nanovg.c']
-libs = [gpucommon, common, 'zmq', 'capnp', 'kj', 'm', 'OpenCL', 'ssl', 'crypto',
-        cereal, messaging, visionipc, transformations]
-
+base_libs = [gpucommon, common, 'zmq', 'capnp', 'kj', 'm', 'OpenCL', 'ssl', 'crypto', 'pthread',
+             cereal, messaging, visionipc, transformations] + qt_env["LIBS"]
 if arch == 'aarch64':
-  libs += ['log', 'utils', 'gui', 'ui', 'CB', 'gsl', 'adreno_utils',
-           'cutils', 'uuid']
+  base_libs += ['log', 'utils', 'gui', 'ui', 'CB', 'gsl', 'adreno_utils', 'cutils', 'uuid']
 
-qt_base_libs = qt_env["LIBS"] + libs + ["pthread"]
 if arch == "Darwin":
-  del qt_base_libs[qt_base_libs.index('OpenCL')]
+  del base_libs[base_libs.index('OpenCL')]
   qt_env['FRAMEWORKS'] += ['OpenCL']
 
-widgets_src = ["qt/widgets/input.cc", "qt/widgets/drive_stats.cc",
-               "qt/widgets/ssh_keys.cc", "qt/widgets/toggle.cc", "qt/widgets/controls.cc", "qt/sound.cc",
+widgets_src = ["qt/widgets/input.cc", "qt/widgets/drive_stats.cc", "qt/sound.cc",
+               "qt/widgets/ssh_keys.cc", "qt/widgets/toggle.cc", "qt/widgets/controls.cc",
                "qt/widgets/offroad_alerts.cc", "qt/widgets/setup.cc", "qt/widgets/keyboard.cc",
                "#phonelibs/qrcode/QrCode.cc"]
 if arch != 'aarch64':
   widgets_src += ["qt/offroad/networking.cc", "qt/offroad/wifiManager.cc"]
 
-widgets = qt_env.Library("qt_widgets", widgets_src, LIBS=qt_base_libs)
-qt_libs = qt_base_libs + [widgets]
+widgets = qt_env.Library("qt_widgets", widgets_src, LIBS=base_libs)
+qt_libs = base_libs + [widgets]
 
 # spinner and text window
-qt_env.Program("qt/text", ["qt/text.cc"], LIBS=qt_base_libs)
-qt_env.Program("qt/spinner", ["qt/spinner.cc"], LIBS=qt_base_libs)
+qt_env.Program("qt/text", ["qt/text.cc"], LIBS=base_libs)
+qt_env.Program("qt/spinner", ["qt/spinner.cc"], LIBS=base_libs)
 
 # build main UI
-qt_src = ["qt/ui.cc", "qt/window.cc", "qt/home.cc", "qt/api.cc", "qt/offroad/settings.cc",
-          "qt/offroad/onboarding.cc"] + src
+qt_src = ["main.cc", "ui.cc", "paint.cc", "sidebar.cc", "#phonelibs/nanovg/nanovg.c",
+          "qt/window.cc", "qt/home.cc", "qt/api.cc", "qt/offroad/settings.cc",
+          "qt/offroad/onboarding.cc"]
 qt_env.Program("_ui", qt_src, LIBS=qt_libs)
 
 # setup, factory resetter, and installer

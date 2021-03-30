@@ -11,6 +11,7 @@
 
 #include "sound.hpp"
 #include "ui/ui.hpp"
+#include "common/util.h"
 #include "widgets/offroad_alerts.hpp"
 
 // container window for onroad NVG UI
@@ -46,8 +47,8 @@ private:
   // TODO: make a nice abstraction to handle embedded device stuff
   float brightness_b = 0;
   float brightness_m = 0;
-  float smooth_brightness = 0;
   float last_brightness = 0;
+  FirstOrderFilter brightness_filter;
 
 public slots:
   void timerUpdate();
