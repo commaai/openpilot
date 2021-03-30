@@ -78,11 +78,12 @@ static bool ensure_params_path(const std::string &param_path, const std::string 
   }
 
   // See if the symlink exists, otherwise create it
-  if (util::file_exists(key_path)) {
-    // Ensure permissions are correct in case we didn't create the symlink
-    return chmod(key_path.c_str(), 0777) == 0;
-  } else {
-    // Create temp folder
+  if (!util::file_exists(key_path)) {
+    // 1) Create temp folder
+    // 2) Set permissions
+    // 3) Symlink it to temp link
+    // 4) Move symlink to <params>/d
+
     std::string tmp_path = param_path + "/.tmp_XXXXXX";
     // this should be OK since mkdtemp just replaces characters in place
     char *tmp_dir = mkdtemp((char *)tmp_path.c_str());
@@ -90,37 +91,30 @@ static bool ensure_params_path(const std::string &param_path, const std::string 
       return false;
     }
 
-    // Set permissions
     if (chmod(tmp_dir, 0777) != 0) {
       return false;
     }
 
-    // Symlink it to temp link
     std::string link_path = std::string(tmp_dir) + ".link";
     if (symlink(tmp_dir, link_path.c_str()) != 0) {
       return false;
     }
 
-    // Move symlink to <params>/d
-    if (rename(link_path.c_str(), key_path.c_str()) != 0) {
-      // it has been created by other
-      if (errno == EEXIST) {
-        // Ensure permissions are correct
-        chmod(key_path.c_str(), 0777);
-      } else {
-        return false;
-      }
+    // don't return false if it has been created by other
+    if (rename(link_path.c_str(), key_path.c_str()) != 0 && errno != EEXIST) {
+      return false;
     }
-
-    return true;
   }
+
+  // Ensure permissions are correct in case we didn't create the symlink
+  return chmod(key_path.c_str(), 0777) == 0;
 }
 
 Params::Params(bool persistent_param) : Params(persistent_param ? persistent_params_path : default_params_path) {}
 
 Params::Params(const std::string &path) : params_path(path) {
   if (!ensure_params_path(params_path, params_path + "/d")) {
-    throw std::runtime_error(util::string_format("Failed to create params path, errno=%d", errno));
+    throw std::runtime_error(util::string_format("Failed to ensure params path, errno=%d", errno));
   }
 }
 
