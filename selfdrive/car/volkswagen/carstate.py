@@ -16,7 +16,7 @@ class CarState(CarStateBase):
       self.shifter_values = can_define.dv["EV_Gearshift"]['GearPosition']
     self.buttonStates = BUTTON_STATES.copy()
 
-  def update(self, pt_cp, trans_type):
+  def update(self, pt_cp, cam_cp, trans_type):
     ret = car.CarState.new_message()
     # Update vehicle speed and acceleration from ABS wheel speeds.
     ret.wheelSpeeds.fl = pt_cp.vl["ESP_19"]['ESP_VL_Radgeschw_02'] * CV.KPH_TO_MS
