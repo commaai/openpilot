@@ -115,8 +115,6 @@ class FileLock {
   FileLock(const std::string& file_name, int op) : fn_(file_name), op_(op) {}
 
   void lock() {
-    int err = -1;
-    
     // keep trying if open() gets interrupted by a signal
     while ((fd_ = open(fn_.c_str(), O_CREAT, 0775)) < 0 && errno == EINTR) {};
 
@@ -125,9 +123,11 @@ class FileLock {
     }
 
     // keep trying if flock() gets interrupted by a signal
+    int err = -1;
     while ((err = flock(fd_, op_)) < 0 && errno == EINTR) {}
 
     if (err != 0) {
+      close(fd_);
       throw std::runtime_error("Failed to lock file");
     }
   }
