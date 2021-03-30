@@ -64,4 +64,3 @@ AbstractControl::AbstractControl(const QString &title, const QString &desc, cons
   setLayout(vlayout);
   setStyleSheet("background-color: transparent;");
 }
-

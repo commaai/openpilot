@@ -268,7 +268,6 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
     {"Developer", new DeveloperPanel()},
   };
 
-
   sidebar_layout->addSpacing(45);
   nav_btns = new QButtonGroup();
   for (auto &[name, panel] : panels) {
