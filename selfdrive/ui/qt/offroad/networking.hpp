@@ -39,7 +39,7 @@ public:
 
 private:
   LabelControl* ipLabel;
-  QPushButton* editPasswordButton;
+  ButtonControl* editPasswordButton;
   WifiManager* wifi = nullptr;
 
 signals:

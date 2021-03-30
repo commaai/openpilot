@@ -2,12 +2,8 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QPixmap>
-#include <algorithm>
 
-#include "common/params.h"
-#include "hardware/hw.h"
 #include "networking.hpp"
-#include "util.h"
 
 void clearLayout(QLayout* layout) {
   while (QLayoutItem* item = layout->takeAt(0)) {
@@ -131,6 +127,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
 
   QVBoxLayout* vlayout = new QVBoxLayout;
   vlayout->setMargin(40);
+  vlayout->setSpacing(20);
 
   // Back button
   QPushButton* back = new QPushButton("Back");
@@ -145,16 +142,16 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   vlayout->addWidget(horizontal_line(), 0);
 
   // Change tethering password
-  ButtonControl *tetheringPassword = new ButtonControl("Tethering Password", "EDIT", "", [=](){
+  editPasswordButton = new ButtonControl("Tethering Password", "EDIT", "", [=](){
     QString pass = InputDialog::getText("Enter new tethering password", 8);
     if (pass.size()) {
       wifi->changeTetheringPassword(pass);
     }
   });
-  vlayout->addWidget(tetheringPassword, 0);
+  vlayout->addWidget(editPasswordButton, 0);
   vlayout->addWidget(horizontal_line(), 0);
 
-  // IP adress
+  // IP address
   ipLabel = new LabelControl("IP Address", wifi->ipv4_address);
   vlayout->addWidget(ipLabel, 0);
   vlayout->addWidget(horizontal_line(), 0);
@@ -164,6 +161,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   vlayout->addWidget(horizontal_line(), 0);
   vlayout->addWidget(new SshControl());
 
+  vlayout->addStretch(1);
   setLayout(vlayout);
 }
 
@@ -209,14 +207,9 @@ void WifiUI::refresh() {
     QHBoxLayout *hlayout = new QHBoxLayout;
     hlayout->addSpacing(50);
 
-    QString ssid = QString::fromUtf8(network.ssid);
-    if(ssid.length() > 20){
-      ssid = ssid.left(20 - 3) + "…";
-    }
-
-    QLabel *ssid_label = new QLabel(ssid);
+    QLabel *ssid_label = new QLabel(QString::fromUtf8(network.ssid));
     ssid_label->setStyleSheet("font-size: 55px;");
-    hlayout->addWidget(ssid_label, 0, Qt::AlignLeft);
+    hlayout->addWidget(ssid_label, 1, Qt::AlignLeft);
 
     // TODO: don't use images for this
     // strength indicator
