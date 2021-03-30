@@ -113,9 +113,13 @@ static bool ensure_params_path(const std::string &param_path, const std::string 
 class FileLock {
  public:
   FileLock(const std::string& file_name, int op) : fn_(file_name), op_(op) {}
+
   void lock() {
     int err = -1;
-    fd_ = open(fn_.c_str(), O_CREAT, 0775);
+    
+    // keep trying if open() gets interrupted by a signal
+    while ((fd_ = open(fn_.c_str(), O_CREAT, 0775)) < 0 && errno == EINTR) {};
+
     if (fd_ < 0) {
       throw std::runtime_error("Failed to open lock file");
     }
@@ -127,6 +131,7 @@ class FileLock {
       throw std::runtime_error("Failed to lock file");
     }
   }
+
   void unlock() {
     if (fd_ >= 0) close(fd_);
   }
