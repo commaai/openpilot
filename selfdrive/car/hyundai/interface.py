@@ -148,7 +148,6 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.63
       ret.steerRatio = 15.81
       tire_stiffness_factor = 0.5
-      ret.steerActuatorDelay = 0.95
       
       ret.lateralTuning.init('lqr')
 
