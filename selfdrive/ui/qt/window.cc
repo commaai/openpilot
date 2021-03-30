@@ -28,7 +28,11 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
       if(widget->metaObject()->className() != QString("MainWindow")) {
         widget->close();
       }
+
     }
+#ifdef QCOM
+	hardware.eon.close_activites();
+#endif
   });
 
 
