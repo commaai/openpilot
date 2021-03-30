@@ -9,7 +9,7 @@
 
 class Params {
 private:
-  std::string params_path;
+  const std::string params_path;
 
 public:
   Params(bool persistent_param = false);
