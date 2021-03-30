@@ -80,9 +80,9 @@ void OffroadAlert::refresh() {
 
 void OffroadAlert::updateAlerts() {
   alertCount = 0;
-  updateAvailable = params.read_db_bool("UpdateAvailable");
+  updateAvailable = params.getBool("UpdateAvailable");
   for (const auto& [key, label] : alerts) {
-    auto bytes = params.read_db_bytes(key.c_str());
+    auto bytes = params.get(key.c_str());
     if (bytes.size()) {
       QJsonDocument doc_par = QJsonDocument::fromJson(QByteArray(bytes.data(), bytes.size()));
       QJsonObject obj = doc_par.object();

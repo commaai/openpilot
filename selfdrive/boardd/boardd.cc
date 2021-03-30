@@ -71,12 +71,11 @@ void safety_setter_thread() {
       return;
     };
 
-    std::vector<char> value_vin = Params().read_db_bytes("CarVin");
+    std::string value_vin = Params().get("CarVin");
     if (value_vin.size() > 0) {
       // sanity check VIN format
       assert(value_vin.size() == 17);
-      std::string str_vin(value_vin.begin(), value_vin.end());
-      LOGW("got CarVin %s", str_vin.c_str());
+      LOGW("got CarVin %s", value_vin.c_str());
       break;
     }
     util::sleep_for(100);
@@ -85,7 +84,7 @@ void safety_setter_thread() {
   // VIN query done, stop listening to OBDII
   panda->set_safety_model(cereal::CarParams::SafetyModel::NO_OUTPUT);
 
-  std::vector<char> params;
+  std::string params;
   LOGW("waiting for params to set safety model");
   while (true) {
     if (do_exit || !panda->connected){
@@ -93,7 +92,7 @@ void safety_setter_thread() {
       return;
     };
 
-    params = Params().read_db_bytes("CarParams");
+    params = Params().get("CarParams");
     if (params.size() > 0) break;
     util::sleep_for(100);
   }
@@ -133,7 +132,7 @@ bool usb_connect() {
   }
 
   if (auto fw_sig = tmp_panda->get_firmware_version(); fw_sig) {
-    params.write_db_value("PandaFirmware", (const char *)fw_sig->data(), fw_sig->size());
+    params.put("PandaFirmware", (const char *)fw_sig->data(), fw_sig->size());
 
     // Convert to hex for offroad
     char fw_sig_hex_buf[16] = {0};
@@ -143,13 +142,13 @@ bool usb_connect() {
       fw_sig_hex_buf[2*i+1] = NIBBLE_TO_HEX((uint8_t)fw_sig_buf[i] & 0xF);
     }
 
-    params.write_db_value("PandaFirmwareHex", fw_sig_hex_buf, 16);
+    params.put("PandaFirmwareHex", fw_sig_hex_buf, 16);
     LOGW("fw signature: %.*s", 16, fw_sig_hex_buf);
   } else { return false; }
 
   // get panda serial
   if (auto serial = tmp_panda->get_serial(); serial) {
-    params.write_db_value("PandaDongleId", serial->c_str(), serial->length());
+    params.put("PandaDongleId", serial->c_str(), serial->length());
     LOGW("panda serial: %s", serial->c_str());
   } else { return false; }
 
@@ -313,9 +312,9 @@ void panda_state_thread(bool spoofing_started) {
 
     // clear VIN, CarParams, and set new safety on car start
     if (ignition && !ignition_last) {
-      int result = params.delete_db_value("CarVin");
+      int result = params.remove("CarVin");
       assert((result == 0) || (result == ERR_NO_VALUE));
-      result = params.delete_db_value("CarParams");
+      result = params.remove("CarParams");
       assert((result == 0) || (result == ERR_NO_VALUE));
 
       if (!safety_setter_thread_running) {

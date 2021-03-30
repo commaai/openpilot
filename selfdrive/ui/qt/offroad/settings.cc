@@ -61,7 +61,7 @@ QWidget * toggles_panel() {
                                            "In this mode openpilot will ignore lanelines and just drive how it thinks a human would.",
                                            "../assets/offroad/icon_road.png"));
 
-  bool record_lock = Params().read_db_bool("RecordFrontLock");
+  bool record_lock = Params().getBool("RecordFrontLock");
   record_toggle->setEnabled(!record_lock);
 
   QWidget *widget = new QWidget;
@@ -87,29 +87,29 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
   offroad_btns.append(new ButtonControl("Driver Camera", "PREVIEW",
                                    "Preview the driver facing camera to help optimize device mounting position for best driver monitoring experience. (vehicle must be off)",
                                    [=]() { 
-                                      Params().write_db_value("IsDriverViewEnabled", "1", 1);
+                                      Params().putBool("IsDriverViewEnabled", true);
                                       GLWindow::ui_state.scene.driver_view = true; }
                                     ));
 
   offroad_btns.append(new ButtonControl("Reset Calibration", "RESET",
                                    "openpilot requires the device to be mounted within 4° left or right and within 5° up or down. openpilot is continuously calibrating, resetting is rarely required.", [=]() {
     if (ConfirmationDialog::confirm("Are you sure you want to reset calibration?")) {
-      Params().delete_db_value("CalibrationParams");
+      Params().remove("CalibrationParams");
     }
   }));
 
   offroad_btns.append(new ButtonControl("Review Training Guide", "REVIEW",
                                         "Review the rules, features, and limitations of openpilot", [=]() {
     if (ConfirmationDialog::confirm("Are you sure you want to review the training guide?")) {
-      Params().delete_db_value("CompletedTrainingVersion");
+      Params().remove("CompletedTrainingVersion");
       emit reviewTrainingGuide();
     }
   }));
 
-  QString brand = params.read_db_bool("Passive") ? "dashcam" : "openpilot";
+  QString brand = params.getBool("Passive") ? "dashcam" : "openpilot";
   offroad_btns.append(new ButtonControl("Uninstall " + brand, "UNINSTALL", "", [=]() {
     if (ConfirmationDialog::confirm("Are you sure you want to uninstall?")) {
-      Params().write_db_value("DoUninstall", "1");
+      Params().putBool("DoUninstall", true);
     }
   }));
 
@@ -161,7 +161,7 @@ DeveloperPanel::DeveloperPanel(QWidget* parent) : QFrame(parent) {
 
 void DeveloperPanel::showEvent(QShowEvent *event) {
   Params params = Params();
-  std::string brand = params.read_db_bool("Passive") ? "dashcam" : "openpilot";
+  std::string brand = params.getBool("Passive") ? "dashcam" : "openpilot";
   QList<QPair<QString, std::string>> dev_params = {
     {"Version", brand + " v" + params.get("Version", false).substr(0, 14)},
     {"Git Branch", params.get("GitBranch", false)},
