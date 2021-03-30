@@ -114,9 +114,14 @@ class FileLock {
  public:
   FileLock(const std::string& file_name) : fn_(file_name) {}
   int lock(int operation) {
+    int err = -1;
     fd_ = open(fn_.c_str(), O_CREAT, 0775);
-    if (fd_ < 0) return -1;
-    return flock(fd_, operation);
+    if (fd_ < 0) return err;
+
+    // keep trying if flock() gets interrupted by a signal
+    while ((err = flock(fd_, operation)) < 0 && errno == EINTR) {}
+
+    return err;
   }
   ~FileLock() {
     if (fd_ >= 0) close(fd_);
