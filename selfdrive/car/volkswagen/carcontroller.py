@@ -119,7 +119,9 @@ class CarController():
 
       can_sends.append(volkswagencan.create_mqb_hud_control(self.packer_pt, CANBUS.pt, hcaEnabled,
                                                             CS.out.steeringPressed, hud_alert, leftLaneVisible,
-                                                            rightLaneVisible))
+                                                            rightLaneVisible, CS.ldw_lane_warning_left,
+                                                            CS.ldw_lane_warning_right, CS.ldw_side_dlc_tlc,
+                                                            CS.ldw_dlc, CS.ldw_tlc))
 
     #--------------------------------------------------------------------------
     #                                                                         #
