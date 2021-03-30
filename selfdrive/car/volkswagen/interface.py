@@ -127,7 +127,7 @@ class CarInterface(CarInterfaceBase):
     self.cp.update_strings(can_strings)
     self.cp_cam.update_strings(can_strings)
 
-    ret = self.CS.update(self.cp, self.CP.transmissionType)
+    ret = self.CS.update(self.cp, self.cp_cam, self.CP.transmissionType)
     ret.canValid = self.cp.can_valid and self.cp_cam.can_valid
     ret.steeringRateLimited = self.CC.steer_rate_limited if self.CC is not None else False
 
@@ -167,7 +167,6 @@ class CarInterface(CarInterfaceBase):
   def apply(self, c):
     can_sends = self.CC.update(c.enabled, self.CS, self.frame, c.actuators,
                    c.hudControl.visualAlert,
-                   c.hudControl.audibleAlert,
                    c.hudControl.leftLaneVisible,
                    c.hudControl.rightLaneVisible)
     self.frame += 1
