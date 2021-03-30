@@ -59,11 +59,11 @@ class CAR:
   JETTA_MK7 = "VOLKSWAGEN JETTA 7TH GEN"      # Chassis BU, Mk7 Jetta
   PASSAT_MK8 = "VOLKSWAGEN PASSAT 8TH GEN"    # Chassis 3G, Mk8 Passat and variants
   TIGUAN_MK2 = "VOLKSWAGEN TIGUAN 2ND GEN"    # Chassis AD/BW, Mk2 VW Tiguan and variants
+  AUDI_A3_MK3 = "AUDI A3 3RD GEN"             # Chassis 8V/FF, Mk3 Audi A3 and variants
   SEAT_ATECA_MK1 = "SEAT ATECA 1ST GEN"       # Chassis 5F, Mk1 SEAT Ateca and CUPRA Ateca
   SKODA_KODIAQ_MK1 = "SKODA KODIAQ 1ST GEN"   # Chassis NS, Mk1 Skoda Kodiaq
   SKODA_SCALA_MK1 = "SKODA SCALA 1ST GEN"     # Chassis NW, Mk1 Skoda Scala and Skoda Kamiq
   SKODA_SUPERB_MK3 = "SKODA SUPERB 3RD GEN"   # Chassis 3V/NP, Mk3 Skoda Superb and variants
-  AUDI_A3 = "AUDI A3"                         # Chassis 8V/FF, Mk3 Audi A3 and variants
 
 FINGERPRINTS = {
   CAR.GOLF_MK7: [{
@@ -78,7 +78,7 @@ FINGERPRINTS = {
   CAR.TIGUAN_MK2: [{
     64: 8, 134: 8, 159: 8, 173: 8, 178: 8, 253: 8, 257: 8, 260: 8, 262: 8, 278: 8, 279: 8, 283: 8, 286: 8, 288: 8, 289: 8, 290: 8, 294: 8, 299: 8, 302: 8, 346: 8, 376: 8, 418: 8, 427: 8, 573: 8, 679: 8, 681: 8, 684: 8, 695: 8, 779: 8, 780: 8, 783: 8, 787: 8, 788: 8, 789: 8, 792: 8, 795: 8, 804: 8, 806: 8, 807: 8, 808: 8, 809: 8, 828: 8, 870: 8, 879: 8, 884: 8, 888: 8, 891: 8, 896: 8, 897: 8, 898: 8, 901: 8, 913: 8, 917: 8, 919: 8, 949: 8, 958: 8, 960: 4, 981: 8, 987: 8, 988: 8, 991: 8, 997: 8, 1000: 8, 1019: 8, 1122: 8, 1123: 8, 1124: 8, 1153: 8, 1156: 8, 1157: 8, 1158: 8, 1162: 8, 1175: 8, 1312: 8, 1343: 8, 1385: 8, 1413: 8, 1440: 5, 1471: 4, 1514: 8, 1515: 8, 1520: 8, 1600: 8, 1601: 8, 1603: 8, 1605: 8, 1624: 8, 1626: 8, 1629: 8, 1631: 8, 1635: 8, 1646: 8, 1648: 8, 1712: 6, 1714: 8, 1716: 8, 1717: 8, 1719: 8, 1720: 8, 1721: 8
   }],
-  CAR.AUDI_A3: [{
+  CAR.AUDI_A3_MK3: [{
     64: 8, 134: 8, 159: 8, 173: 8, 178: 8, 253: 8, 257: 8, 260: 8, 262: 8, 278: 8, 279: 8, 283: 8, 285: 8, 286: 8, 288: 8, 289: 8, 290: 8, 294: 8, 295: 8, 299: 8, 302: 8, 346: 8, 418: 8, 427: 8, 506: 8, 679: 8, 681: 8, 695: 8, 779: 8, 780: 8, 783: 8, 787: 8, 788: 8, 789: 8, 792: 8, 802: 8, 804: 8, 806: 8, 807: 8, 808: 8, 809: 8, 846: 8, 847: 8, 870: 8, 896: 8, 897: 8, 898: 8, 901: 8, 917: 8, 919: 8, 949: 8, 958: 8, 960: 4, 981: 8, 987: 8, 988: 8, 991: 8, 997: 8, 1000: 8, 1019: 8, 1122: 8, 1123: 8, 1124: 8, 1153: 8, 1162: 8, 1175: 8, 1312: 8, 1385: 8, 1413: 8, 1440: 5, 1514: 8, 1515: 8, 1520: 8, 1600: 8, 1601: 8, 1603: 8, 1624: 8, 1629: 8, 1631: 8, 1646: 8, 1648: 8, 1712: 6, 1714: 8, 1716: 8, 1717: 8, 1719: 8, 1720: 8, 1721: 8, 1792: 8, 1872: 8, 1976: 8, 1977: 8, 1982: 8, 1985: 8
   }],
   CAR.SEAT_ATECA_MK1: [{
@@ -98,23 +98,6 @@ FINGERPRINTS = {
 IGNORED_FINGERPRINTS = [CAR.JETTA_MK7, CAR.PASSAT_MK8, CAR.TIGUAN_MK2, CAR.SEAT_ATECA_MK1, CAR.SKODA_KODIAQ_MK1, CAR.SKODA_SCALA_MK1, CAR.SKODA_SUPERB_MK3]
 
 FW_VERSIONS = {
-  CAR.AUDI_A3: {
-    (Ecu.engine, 0x7e0, None): [
-      b'\xf1\x875G0906259L \xf1\x890002',
-    ],
-    (Ecu.transmission, 0x7e1, None): [
-      b'\xf1\x870D9300013B \xf1\x894931',
-    ],
-    (Ecu.srs, 0x715, None): [
-      b'\xf1\x875Q0959655J \xf1\x890830\xf1\x82\023121111111211--261117141112231291163221',
-    ],
-    (Ecu.eps, 0x712, None): [
-      b'\xf1\x875Q0909144T \xf1\x891072\xf1\x82\00521G00807A1',
-    ],
-    (Ecu.fwdRadar, 0x757, None): [
-      b'\xf1\x875Q0907572G \xf1\x890571',
-    ],
-  },
   CAR.GOLF_MK7: {
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x8704E906016A \xf1\x897697',
@@ -254,6 +237,33 @@ FW_VERSIONS = {
       b'\xf1\x872Q0907572R \xf1\x890372',
     ],
   },
+  CAR.AUDI_A3_MK3: {
+    (Ecu.engine, 0x7e0, None): [
+      b'\xf1\x878V0906264B \xf1\x890003',
+      b'\xf1\x875G0906259L \xf1\x890002',
+      b'\xf1\x8704E906023AN\xf1\x893695',
+      b'\xf1\x8704E906023BL\xf1\x895190',
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+      b'\xf1\x870CW300048  \xf1\x895201',
+      b'\xf1\x870D9300013B \xf1\x894931',
+      b'\xf1\x870DD300046A \xf1\x891602',
+      b'\xf1\x870DD300046G \xf1\x891601',
+    ],
+    (Ecu.srs, 0x715, None): [
+      b'\xf1\x875Q0959655N \xf1\x890361\xf1\x82\0211212001112111104110411111521159114',
+      b'\xf1\x875Q0959655J \xf1\x890830\xf1\x82\023121111111211--261117141112231291163221',
+      b'\xf1\x875Q0959655J \xf1\x890830\xf1\x82\x13121111111111--341117141212231291163221',
+    ],
+    (Ecu.eps, 0x712, None): [
+      b'\xf1\x875Q0909144P \xf1\x891043\xf1\x82\00503G00803A0',
+      b'\xf1\x875Q0909144T \xf1\x891072\xf1\x82\00521G00807A1',
+    ],
+    (Ecu.fwdRadar, 0x757, None): [
+      b'\xf1\x875Q0907572D \xf1\x890304\xf1\x82\00101',
+      b'\xf1\x875Q0907572G \xf1\x890571',
+    ],
+  },
   CAR.SEAT_ATECA_MK1: {
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x8704E906027KA\xf1\x893749',
@@ -330,7 +340,7 @@ DBC = {
   CAR.JETTA_MK7: dbc_dict('vw_mqb_2010', None),
   CAR.PASSAT_MK8: dbc_dict('vw_mqb_2010', None),
   CAR.TIGUAN_MK2: dbc_dict('vw_mqb_2010', None),
-  CAR.AUDI_A3: dbc_dict('vw_mqb_2010', None),
+  CAR.AUDI_A3_MK3: dbc_dict('vw_mqb_2010', None),
   CAR.SEAT_ATECA_MK1: dbc_dict('vw_mqb_2010', None),
   CAR.SKODA_KODIAQ_MK1: dbc_dict('vw_mqb_2010', None),
   CAR.SKODA_SCALA_MK1: dbc_dict('vw_mqb_2010', None),
