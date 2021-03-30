@@ -19,8 +19,7 @@ OffroadAlert::OffroadAlert(QWidget* parent) : QFrame(parent) {
   for (auto &k : obj.keys()) {
     QLabel *l = new QLabel(this);
     alerts[k.toStdString()] = l;
-    //int severity = obj[k]["severity"].toInt();
-    int severity = 0;
+    int severity = obj[k].toObject()["severity"].toInt();
 
     l->setMargin(60);
     l->setWordWrap(true);
@@ -40,13 +39,13 @@ OffroadAlert::OffroadAlert(QWidget* parent) : QFrame(parent) {
 
   QPushButton *dismiss_btn = new QPushButton("Dismiss");
   dismiss_btn->setFixedSize(400, 125);
-  footer_layout->addWidget(dismiss_btn, 0, Qt::AlignLeft);
+  footer_layout->addWidget(dismiss_btn, 0, Qt::AlignBottom | Qt::AlignLeft);
   QObject::connect(dismiss_btn, SIGNAL(released()), this, SIGNAL(closeAlerts()));
 
   rebootBtn.setText("Reboot and Update");
   rebootBtn.setFixedSize(600, 125);
   rebootBtn.setVisible(false);
-  footer_layout->addWidget(&rebootBtn, 0, Qt::AlignRight);
+  footer_layout->addWidget(&rebootBtn, 0, Qt::AlignBottom | Qt::AlignRight);
   QObject::connect(&rebootBtn, &QPushButton::released, [=]() { Hardware::reboot(); });
 
   setLayout(layout);
@@ -70,21 +69,20 @@ OffroadAlert::OffroadAlert(QWidget* parent) : QFrame(parent) {
 }
 
 void OffroadAlert::refresh() {
-  updateAvailable = params.read_db_bool("UpdateAvailable");
   updateAlerts();
 
-  releaseNotes.setVisible(updateAvailable);
   rebootBtn.setVisible(updateAvailable);
-  if (updateAvailable) {
-    releaseNotes.setText(QString::fromStdString(params.get("ReleaseNotes")));
-  }
+  releaseNotes.setVisible(updateAvailable);
+  releaseNotes.setText(QString::fromStdString(params.get("ReleaseNotes")));
 
   for (const auto& [k, label] : alerts) {
-    label->setVisible(!updateAvailable);
+    label->setVisible(!updateAvailable && !label->text().isEmpty());
   }
 }
 
 void OffroadAlert::updateAlerts() {
+  alertCount = 0;
+  updateAvailable = params.read_db_bool("UpdateAvailable");
   for (const auto& [key, label] : alerts) {
     auto bytes = params.read_db_bytes(key.c_str());
     label->setText("");
@@ -92,6 +90,7 @@ void OffroadAlert::updateAlerts() {
       QJsonDocument doc_par = QJsonDocument::fromJson(QByteArray(bytes.data(), bytes.size()));
       QJsonObject obj = doc_par.object();
       label->setText(obj.value("text").toString());
+      alertCount++;
     }
   }
 }
