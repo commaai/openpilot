@@ -113,8 +113,7 @@ public:
       toggle.togglePosition();
     }
     QObject::connect(this, &ToggleControl::toggleFlipped, [=](int state) {
-      char value = state ? '1' : '0';
-      Params().put(param.toStdString().c_str(), &value, 1);
+      Params().putBool(param.toStdString().c_str(), (bool)state);
     });
   }
 };

@@ -51,7 +51,7 @@ HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
 void HomeWindow::mousePressEvent(QMouseEvent* e) {
   UIState* ui_state = &glWindow->ui_state;
   if (GLWindow::ui_state.scene.driver_view) {
-    Params().put("IsDriverViewEnabled", "0", 1);
+    Params().putBool("IsDriverViewEnabled", false);
     GLWindow::ui_state.scene.driver_view = false;
     return;
   }

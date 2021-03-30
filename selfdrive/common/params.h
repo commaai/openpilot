@@ -40,7 +40,7 @@ public:
   }
 
   inline bool getBool(const char *key) {
-    return get<bool>(key).value_or(false);
+    return get(key) == "1";
   }
 
   // write a value
@@ -48,5 +48,9 @@ public:
 
   inline int put(const std::string &key, const std::string &val) {
     return put(key.c_str(), val.data(), val.size());
+  }
+
+  inline int putBool(const char *key, bool val) {
+    return put(key, val ? "1" : "0", 1);
   }
 };

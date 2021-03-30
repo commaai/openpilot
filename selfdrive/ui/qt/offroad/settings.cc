@@ -87,7 +87,7 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
   offroad_btns.append(new ButtonControl("Driver Camera", "PREVIEW",
                                    "Preview the driver facing camera to help optimize device mounting position for best driver monitoring experience. (vehicle must be off)",
                                    [=]() { 
-                                      Params().put("IsDriverViewEnabled", "1", 1);
+                                      Params().putBool("IsDriverViewEnabled", true);
                                       GLWindow::ui_state.scene.driver_view = true; }
                                     ));
 
@@ -109,7 +109,7 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
   QString brand = params.getBool("Passive") ? "dashcam" : "openpilot";
   offroad_btns.append(new ButtonControl("Uninstall " + brand, "UNINSTALL", "", [=]() {
     if (ConfirmationDialog::confirm("Are you sure you want to uninstall?")) {
-      Params().put("DoUninstall", "1");
+      Params().putBool("DoUninstall", true);
     }
   }));
 
