@@ -165,7 +165,10 @@ bool usb_connect() {
     struct tm rtc_time = tmp_panda->get_rtc();
 
     if (!time_valid(sys_time) && time_valid(rtc_time)) {
-      LOGE("System time wrong, setting from RTC %d-%02d-%02d %02d:%02d:%02d",
+      LOGE("System time wrong, setting from RTC."
+           "System: %d-%02d-%02d %02d:%02d:%02d RTC: %d-%02d-%02d %02d:%02d:%02d",
+        sys_time.tm_year + 1900, sys_time.tm_mon + 1, sys_time.tm_mday,
+        sys_time.tm_hour, sys_time.tm_min, sys_time.tm_sec,
         rtc_time.tm_year + 1900, rtc_time.tm_mon + 1, rtc_time.tm_mday,
         rtc_time.tm_hour, rtc_time.tm_min, rtc_time.tm_sec);
 
@@ -333,10 +336,16 @@ void panda_state_thread(bool spoofing_started) {
       // Write time to RTC if it looks reasonable
       struct tm sys_time = get_time();
       if (time_valid(sys_time)){
+
+        struct tm rtc_time = panda->get_rtc();
         panda->set_rtc(sys_time);
-        LOGW("Updating panda RTC: %d-%02d-%02d %02d:%02d:%02d",
+
+        LOGW("Updating panda RTC"
+            "System: %d-%02d-%02d %02d:%02d:%02d RTC: %d-%02d-%02d %02d:%02d:%02d",
           sys_time.tm_year + 1900, sys_time.tm_mon + 1, sys_time.tm_mday,
-          sys_time.tm_hour, sys_time.tm_min, sys_time.tm_sec);
+          sys_time.tm_hour, sys_time.tm_min, sys_time.tm_sec,
+          rtc_time.tm_year + 1900, rtc_time.tm_mon + 1, rtc_time.tm_mday,
+          rtc_time.tm_hour, rtc_time.tm_min, rtc_time.tm_sec);
       }
     }
 
