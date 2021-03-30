@@ -341,7 +341,7 @@ void panda_state_thread(bool spoofing_started) {
         struct tm rtc_time = panda->get_rtc();
         double seconds = difftime(mktime(&rtc_time), mktime(&sys_time));
 
-        if (std::abs(seconds) > 0.5) {
+        if (std::abs(seconds) > 1.1) {
           panda->set_rtc(sys_time);
           LOGW("Updating panda RTC. dt = %.2f "
                "System: %d-%02d-%02d %02d:%02d:%02d RTC: %d-%02d-%02d %02d:%02d:%02d",
