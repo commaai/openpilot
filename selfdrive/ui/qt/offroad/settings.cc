@@ -26,42 +26,43 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "Enable openpilot",
                                   "Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off.",
                                   "../assets/offroad/icon_openpilot.png",
-                                 this));
+                                  this));
   toggles.append(new ParamControl("IsLdwEnabled",
-                                 "Enable Lane Departure Warnings",
-                                 "Receive alerts to steer back into the lane when your vehicle drifts over a detected lane line without a turn signal activated while driving over 31mph (50kph).",
-                                 "../assets/offroad/icon_warning.png",
-                                 this));
+                                  "Enable Lane Departure Warnings",
+                                  "Receive alerts to steer back into the lane when your vehicle drifts over a detected lane line without a turn signal activated while driving over 31mph (50kph).",
+                                  "../assets/offroad/icon_warning.png",
+                                  this));
 
   toggles.append(new ParamControl("IsRHD",
-                                 "Enable Right-Hand Drive",
-                                 "Allow openpilot to obey left-hand traffic conventions and perform driver monitoring on right driver seat.",
-                                 "../assets/offroad/icon_openpilot_mirrored.png",
-                                 this));
+                                  "Enable Right-Hand Drive",
+                                  "Allow openpilot to obey left-hand traffic conventions and perform driver monitoring on right driver seat.",
+                                  "../assets/offroad/icon_openpilot_mirrored.png",
+                                  this));
 
   toggles.append(new ParamControl("IsMetric",
-                                 "Use Metric System",
-                                 "Display speed in km/h instead of mp/h.",
-                                 "../assets/offroad/icon_metric.png",
-                                 this));
+                                  "Use Metric System",
+                                  "Display speed in km/h instead of mp/h.",
+                                  "../assets/offroad/icon_metric.png",
+                                  this));
 
   toggles.append(new ParamControl("CommunityFeaturesToggle",
-                                 "Enable Community Features",
-                                 "Use features from the open source community that are not maintained or supported by comma.ai and have not been confirmed to meet the standard safety model. These features include community supported cars and community supported hardware. Be extra cautious when using these features",
-                                 "../assets/offroad/icon_shell.png",
-                                 this));
+                                  "Enable Community Features",
+                                  "Use features from the open source community that are not maintained or supported by comma.ai and have not been confirmed to meet the standard safety model. These features include community supported cars and community supported hardware. Be extra cautious when using these features",
+                                  "../assets/offroad/icon_shell.png",
+                                  this));
 
   ParamControl *record_toggle = new ParamControl("RecordFront",
                                                  "Record and Upload Driver Camera",
                                                  "Upload data from the driver facing camera and help improve the driver monitoring algorithm.",
-                                                 "../assets/offroad/icon_network.png", this);
+                                                 "../assets/offroad/icon_network.png",
+                                                 this);
   toggles.append(record_toggle);
 
   toggles.append(new ParamControl("EndToEndToggle",
-                                 "\U0001f96c Disable use of lanelines (Alpha) \U0001f96c",
-                                 "In this mode openpilot will ignore lanelines and just drive how it thinks a human would.",
-                                 "../assets/offroad/icon_road.png",
-                                 this));
+                                  "\U0001f96c Disable use of lanelines (Alpha) \U0001f96c",
+                                  "In this mode openpilot will ignore lanelines and just drive how it thinks a human would.",
+                                  "../assets/offroad/icon_road.png",
+                                  this));
 
   for(auto toggle : toggles){
     toggles_list->addWidget(horizontal_line());
@@ -92,30 +93,42 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
   QList<ButtonControl*> offroad_btns;
 
   offroad_btns.append(new ButtonControl("Driver Camera", "PREVIEW",
-                                   "Preview the driver facing camera to help optimize device mounting position for best driver monitoring experience. (vehicle must be off)",
-                                   [=]() { Params().write_db_value("IsDriverViewEnabled", "1", 1); }, "", this));
+                                        "Preview the driver facing camera to help optimize device mounting position for best driver monitoring experience. (vehicle must be off)",
+                                        [=]() { Params().write_db_value("IsDriverViewEnabled", "1", 1); },
+                                        "",
+                                        this));
 
   offroad_btns.append(new ButtonControl("Reset Calibration", "RESET",
-                                   "openpilot requires the device to be mounted within 4° left or right and within 5° up or down. openpilot is continuously calibrating, resetting is rarely required.", [=]() {
-    if (ConfirmationDialog::confirm("Are you sure you want to reset calibration?")) {
-      Params().delete_db_value("CalibrationParams");
-    }
-  }, "", this));
+                                        "openpilot requires the device to be mounted within 4° left or right and within 5° up or down. openpilot is continuously calibrating, resetting is rarely required.",
+                                        [=]() {
+                                          if (ConfirmationDialog::confirm("Are you sure you want to reset calibration?")) {
+                                            Params().delete_db_value("CalibrationParams");
+                                          }
+                                        },
+                                        "",
+                                        this));
 
   offroad_btns.append(new ButtonControl("Review Training Guide", "REVIEW",
-                                        "Review the rules, features, and limitations of openpilot", [=]() {
-    if (ConfirmationDialog::confirm("Are you sure you want to review the training guide?")) {
-      Params().delete_db_value("CompletedTrainingVersion");
-      emit reviewTrainingGuide();
-    }
-  }, "", this));
+                                        "Review the rules, features, and limitations of openpilot",
+                                        [=]() {
+                                          if (ConfirmationDialog::confirm("Are you sure you want to review the training guide?")) {
+                                            Params().delete_db_value("CompletedTrainingVersion");
+                                            emit reviewTrainingGuide();
+                                          }
+                                        },
+                                        "",
+                                        this));
 
   QString brand = params.read_db_bool("Passive") ? "dashcam" : "openpilot";
-  offroad_btns.append(new ButtonControl("Uninstall " + brand, "UNINSTALL", "", [=]() {
-    if (ConfirmationDialog::confirm("Are you sure you want to uninstall?")) {
-      Params().write_db_value("DoUninstall", "1");
-    }
-  }, "", this));
+  offroad_btns.append(new ButtonControl("Uninstall " + brand, "UNINSTALL",
+                                        "",
+                                        [=]() {
+                                          if (ConfirmationDialog::confirm("Are you sure you want to uninstall?")) {
+                                            Params().write_db_value("DoUninstall", "1");
+                                          }
+                                        },
+                                        "",
+                                        this));
 
   for(auto &btn : offroad_btns){
     device_layout->addWidget(horizontal_line());
