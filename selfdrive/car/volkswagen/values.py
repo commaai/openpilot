@@ -237,27 +237,6 @@ FW_VERSIONS = {
       b'\xf1\x872Q0907572R \xf1\x890372',
     ],
   },
-  [
-      ( ecu = engine,
-        fwVersion = "\xf1\x8704L997022N \xf1\x899459",
-        address = 2016,
-        subAddress = 0 ),
-      ( ecu = transmission,
-        fwVersion = "\xf1\x870D9300041N \xf1\x894512",
-        address = 2017,
-        subAddress = 0 ),
-      ( ecu = eps,
-        fwVersion = "\xf1\x875Q0909144R \xf1\x891061\xf1\x82\00516G00804A1",
-        address = 1810,
-        subAddress = 0 ),
-      ( ecu = fwdRadar,
-        fwVersion = "\xf1\x875Q0907572D \xf1\x890304\xf1\x82\00101",
-        address = 1879,
-        subAddress = 0 ),
-      ( ecu = srs,
-        fwVersion = "\xf1\x875Q0959655J \xf1\x890825\xf1\x82\023111112111111--171115141112221291163221",
-        address = 1813,
-        subAddress = 0 ) ]
   CAR.AUDI_A3_MK3: {
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x878V0906264B \xf1\x890003',
