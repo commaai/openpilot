@@ -56,6 +56,7 @@ AbstractControl::AbstractControl(const QString &title, const QString &desc, cons
     description->setVisible(false);
     vlayout->addWidget(description);
 
+    connect(title_label, SIGNAL(clicked()), parent, SIGNAL(resetState()));
     connect(title_label, &QPushButton::clicked, [=]() {
       description->setVisible(!description->isVisible());
     });
