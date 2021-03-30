@@ -223,7 +223,7 @@ static void handle_display_state(UIState* s, bool user_input) {
   }
 }
 
-GLWindow::GLWindow(QWidget* parent) : QOpenGLWidget(parent) {
+GLWindow::GLWindow(QWidget* parent) : brightness_filter(BACKLIGHT_OFFROAD, BACKLIGHT_TS, BACKLIGHT_DT), QOpenGLWidget(parent) {
   timer = new QTimer(this);
   QObject::connect(timer, SIGNAL(timeout()), this, SLOT(timerUpdate()));
 
@@ -236,7 +236,6 @@ GLWindow::GLWindow(QWidget* parent) : QOpenGLWidget(parent) {
     brightness_b = 10.0;
     brightness_m = 0.1;
   }
-  smooth_brightness = BACKLIGHT_OFFROAD;
 }
 
 GLWindow::~GLWindow() {
@@ -265,16 +264,12 @@ void GLWindow::initializeGL() {
 
 void GLWindow::backlightUpdate() {
   // Update brightness
-  float k = (BACKLIGHT_DT / BACKLIGHT_TS) / (1.0f + BACKLIGHT_DT / BACKLIGHT_TS);
-
   float clipped_brightness = std::min(100.0f, (ui_state.scene.light_sensor * brightness_m) + brightness_b);
   if (!ui_state.scene.started) {
     clipped_brightness = BACKLIGHT_OFFROAD;
   }
 
-  smooth_brightness = clipped_brightness * k + smooth_brightness * (1.0f - k);
-
-  int brightness = smooth_brightness;
+  int brightness = brightness_filter.update(clipped_brightness);
   if (!ui_state.awake) {
     brightness = 0;
     emit screen_shutoff();
