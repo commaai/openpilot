@@ -10,7 +10,7 @@
 #include <dirent.h>
 #include <sys/file.h>
 #include <sys/stat.h>
-
+#include <mutex>
 #include <csignal>
 #include <string.h>
 
@@ -112,22 +112,28 @@ static bool ensure_params_path(const std::string &param_path, const std::string 
 
 class FileLock {
  public:
-  FileLock(const std::string& file_name) : fn_(file_name) {}
-  int lock(int operation) {
+  FileLock(const std::string& file_name, int op) : fn_(file_name), op_(op) {}
+  void lock() {
     int err = -1;
     fd_ = open(fn_.c_str(), O_CREAT, 0775);
-    if (fd_ < 0) return err;
+    if (fd_ < 0) {
+      throw std::runtime_error("Failed to open lock file");
+    }
 
     // keep trying if flock() gets interrupted by a signal
-    while ((err = flock(fd_, operation)) < 0 && errno == EINTR) {}
+    while ((err = flock(fd_, op_)) < 0 && errno == EINTR) {}
 
-    return err;
+    if (err != 0) {
+      throw std::runtime_error("Failed to lock file");
+    }
   }
-  ~FileLock() {
+  void unlock() {
     if (fd_ >= 0) close(fd_);
   }
-  
+
+private:
   int fd_ = -1;
+  int op_;
   std::string fn_;
 };
 
@@ -147,7 +153,7 @@ int Params::put(const char* key, const char* value, size_t value_size) {
   // 4) rename the temp file to the real name
   // 5) fsync() the containing directory
 
-  FileLock file_lock(params_path + "/.lock");
+  FileLock file_lock(params_path + "/.lock", LOCK_EX);
   int tmp_fd = -1;
   int result;
   std::string path;
@@ -167,10 +173,7 @@ int Params::put(const char* key, const char* value, size_t value_size) {
   path = params_path + "/d/" + std::string(key);
 
   // Take lock.
-  result = file_lock.lock(LOCK_EX);
-  if (result < 0) {
-    goto cleanup;
-  }
+  file_lock.lock();
 
   // change permissions to 0666 for apks
   result = fchmod(tmp_fd, 0666);
@@ -198,6 +201,7 @@ int Params::put(const char* key, const char* value, size_t value_size) {
   }
 
 cleanup:
+  file_lock.unlock();
   if (tmp_fd >= 0) {
     if (result < 0) {
       remove(tmp_path.c_str());
@@ -208,10 +212,8 @@ cleanup:
 }
 
 int Params::remove(const char *key) {
-  FileLock file_lock(params_path + "/.lock");
-  if (file_lock.lock(LOCK_EX) < 0) {
-    return -1;
-  }
+  FileLock file_lock(params_path + "/.lock", LOCK_EX);
+  std::lock_guard<FileLock> lk(file_lock);
   // Delete value.
   std::string path = params_path + "/d/" + key;
   int result = ::remove(path.c_str());
@@ -249,10 +251,8 @@ std::string Params::get(const char *key, bool block) {
 }
 
 int Params::read_db_all(std::map<std::string, std::string> *params) {
-  FileLock file_lock(params_path + "/.lock");
-  if (file_lock.lock(LOCK_SH) < 0) {
-    return -1;
-  }
+  FileLock file_lock(params_path + "/.lock", LOCK_SH);
+  std::lock_guard<FileLock> lk(file_lock);
 
   std::string key_path = params_path + "/d";
   DIR *d = opendir(key_path.c_str());
