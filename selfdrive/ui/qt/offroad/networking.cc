@@ -2,8 +2,6 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QPixmap>
-#include <QPushButton>
-#include <QRandomGenerator>
 #include <algorithm>
 
 #include "common/params.h"
@@ -61,9 +59,9 @@ void Networking::attemptInitialization(){
 
   if (show_advanced) {
     QPushButton* advancedSettings = new QPushButton("Advanced");
-    advancedSettings->setStyleSheet(R"(margin-right: 30px)");
+    advancedSettings->setStyleSheet("margin-right: 30px;");
     advancedSettings->setFixedSize(350, 100);
-    connect(advancedSettings, &QPushButton::released, [=](){s->setCurrentWidget(an);});
+    connect(advancedSettings, &QPushButton::released, [=](){ s->setCurrentWidget(an); });
     vlayout->addSpacing(10);
     vlayout->addWidget(advancedSettings, 0, Qt::AlignRight);
     vlayout->addSpacing(10);
@@ -239,10 +237,7 @@ void WifiUI::refresh() {
     }
 
     QLabel *ssid_label = new QLabel(ssid);
-    ssid_label->setStyleSheet(R"(
-      font-size: 55px;
-    )");
-    ssid_label->setFixedWidth(this->width()*0.5);
+    ssid_label->setStyleSheet("font-size: 55px;");
     hlayout->addWidget(ssid_label, 0, Qt::AlignLeft);
 
     // TODO: don't use images for this
@@ -270,12 +265,6 @@ void WifiUI::refresh() {
     i++;
   }
   vlayout->addStretch(3);
-
-
-  // Setup buttons for pagination
-  QHBoxLayout *prev_next_buttons = new QHBoxLayout;
-
-  vlayout->addLayout(prev_next_buttons, 2);
 }
 
 void WifiUI::handleButton(QAbstractButton* button) {
