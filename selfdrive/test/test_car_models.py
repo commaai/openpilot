@@ -453,7 +453,7 @@ routes = {
     'carFingerprint': VOLKSWAGEN.TIGUAN_MK2,
     'enableCamera': True,
   },
-  "4634226ed41b59ea|2021-03-26--14-14-18": {
+  "07667b885add75fd|2021-01-23--19-48-42": {
     'carFingerprint': VOLKSWAGEN.AUDI_A3_MK3,
     'enableCamera': True,
   },
