@@ -45,7 +45,7 @@ void params_sig_handler(int signal) {
 }
 
 static int fsync_dir(const char* path){
-  int fd = open(path, O_RDONLY, 0755);
+  int fd = HANDLE_EINTR(open(path, O_RDONLY, 0755));
   if (fd < 0){
     return -1;
   }
@@ -174,7 +174,7 @@ int Params::put(const char* key, const char* value, size_t value_size) {
   // Write value to temp.
   tmp_path = params_path + "/.tmp_value_XXXXXX";
   tmp_fd = mkstemp((char*)tmp_path.c_str());
-  bytes_written = write(tmp_fd, value, value_size);
+  bytes_written = HANDLE_EINTR(write(tmp_fd, value, value_size));
   if (bytes_written < 0 || (size_t)bytes_written != value_size) {
     result = -20;
     goto cleanup;
