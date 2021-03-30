@@ -202,8 +202,8 @@ cleanup:
 }
 
 int Params::remove(const char *key) {
-  LockFile lock_file;
-  if (lock_file.lock(params_path + "/.lock", LOCK_EX) < 0) {
+  FileLock file_lock;
+  if (file_lock.lock(params_path + "/.lock", LOCK_EX) < 0) {
     return -1;
   }
   // Delete value.
