@@ -88,6 +88,7 @@ static bool ensure_params_path(const std::string &param_path, const std::string 
     // 4) Move symlink to <params>/d
 
     std::string tmp_path = param_path + "/.tmp_XXXXXX";
+    // this should be OK since mkdtemp just replaces characters in place
     char *tmp_dir = mkdtemp((char *)tmp_path.c_str());
     if (tmp_dir == NULL) {
       return false;
