@@ -218,7 +218,6 @@ WifiUI::WifiUI(QWidget *parent, WifiManager* wifi) : QWidget(parent), wifi(wifi)
   vlayout->setSpacing(25);
 
   setLayout(vlayout);
-  page = 0;
 }
 
 void WifiUI::refresh() {
@@ -229,50 +228,44 @@ void WifiUI::refresh() {
   connectButtons = new QButtonGroup(this); // TODO check if this is a leak
   QObject::connect(connectButtons, SIGNAL(buttonClicked(QAbstractButton*)), this, SLOT(handleButton(QAbstractButton*)));
 
-  int networks_per_page = height() / 180;
-
   int i = 0;
-  int pageCount = (wifi->seen_networks.size() - 1) / networks_per_page;
-  page = std::max(0, std::min(page, pageCount));
   for (Network &network : wifi->seen_networks) {
     QHBoxLayout *hlayout = new QHBoxLayout;
-    if (page * networks_per_page <= i && i < (page + 1) * networks_per_page) {
-      // SSID
-      hlayout->addSpacing(50);
-      QString ssid = QString::fromUtf8(network.ssid);
-      if(ssid.length() > 20){
-        ssid = ssid.left(20 - 3) + "…";
-      }
+    // SSID
+    hlayout->addSpacing(50);
+    QString ssid = QString::fromUtf8(network.ssid);
+    if(ssid.length() > 20){
+      ssid = ssid.left(20 - 3) + "…";
+    }
 
-      QLabel *ssid_label = new QLabel(ssid);
-      ssid_label->setStyleSheet(R"(
-        font-size: 55px;
-      )");
-      ssid_label->setFixedWidth(this->width()*0.5);
-      hlayout->addWidget(ssid_label, 0, Qt::AlignLeft);
+    QLabel *ssid_label = new QLabel(ssid);
+    ssid_label->setStyleSheet(R"(
+      font-size: 55px;
+    )");
+    ssid_label->setFixedWidth(this->width()*0.5);
+    hlayout->addWidget(ssid_label, 0, Qt::AlignLeft);
 
-      // TODO: don't use images for this
-      // strength indicator
-      unsigned int strength_scale = network.strength / 17;
-      QPixmap pix("../assets/images/network_" + QString::number(strength_scale) + ".png");
-      QLabel *icon = new QLabel();
-      icon->setPixmap(pix.scaledToWidth(100, Qt::SmoothTransformation));
-      icon->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
-      hlayout->addWidget(icon, 0, Qt::AlignRight);
+    // TODO: don't use images for this
+    // strength indicator
+    unsigned int strength_scale = network.strength / 17;
+    QPixmap pix("../assets/images/network_" + QString::number(strength_scale) + ".png");
+    QLabel *icon = new QLabel();
+    icon->setPixmap(pix.scaledToWidth(100, Qt::SmoothTransformation));
+    icon->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
+    hlayout->addWidget(icon, 0, Qt::AlignRight);
 
-      // connect button
-      QPushButton* btn = new QPushButton(network.security_type == SecurityType::UNSUPPORTED ? "Unsupported" : (network.connected == ConnectedType::CONNECTED ? "Connected" : (network.connected == ConnectedType::CONNECTING ? "Connecting" : "Connect")));
-      btn->setDisabled(network.connected == ConnectedType::CONNECTED || network.connected == ConnectedType::CONNECTING || network.security_type == SecurityType::UNSUPPORTED);
-      btn->setFixedWidth(350);
-      hlayout->addWidget(btn, 0, Qt::AlignRight);
+    // connect button
+    QPushButton* btn = new QPushButton(network.security_type == SecurityType::UNSUPPORTED ? "Unsupported" : (network.connected == ConnectedType::CONNECTED ? "Connected" : (network.connected == ConnectedType::CONNECTING ? "Connecting" : "Connect")));
+    btn->setDisabled(network.connected == ConnectedType::CONNECTED || network.connected == ConnectedType::CONNECTING || network.security_type == SecurityType::UNSUPPORTED);
+    btn->setFixedWidth(350);
+    hlayout->addWidget(btn, 0, Qt::AlignRight);
 
-      connectButtons->addButton(btn, i);
+    connectButtons->addButton(btn, i);
 
-      vlayout->addLayout(hlayout, 1);
-      // Don't add the last horizontal line
-      if (page * networks_per_page <= i+1 && i+1 < (page + 1) * networks_per_page && i+1 < wifi->seen_networks.size()) {
-        vlayout->addWidget(horizontal_line(), 0);
-      }
+    vlayout->addLayout(hlayout, 1);
+    // Don't add the last horizontal line
+    if (i+1 < wifi->seen_networks.size()) {
+      vlayout->addWidget(horizontal_line(), 0);
     }
     i++;
   }
@@ -282,16 +275,6 @@ void WifiUI::refresh() {
   // Setup buttons for pagination
   QHBoxLayout *prev_next_buttons = new QHBoxLayout;
 
-  QPushButton* prev = new QPushButton("Previous");
-  prev->setEnabled(page);
-  QObject::connect(prev, SIGNAL(released()), this, SLOT(prevPage()));
-  prev_next_buttons->addWidget(prev);
-
-  QPushButton* next = new QPushButton("Next");
-  next->setEnabled(wifi->seen_networks.size() > (page + 1) * networks_per_page);
-  QObject::connect(next, SIGNAL(released()), this, SLOT(nextPage()));
-  prev_next_buttons->addWidget(next);
-
   vlayout->addLayout(prev_next_buttons, 2);
 }
 
@@ -299,14 +282,4 @@ void WifiUI::handleButton(QAbstractButton* button) {
   QPushButton* btn = static_cast<QPushButton*>(button);
   Network n = wifi->seen_networks[connectButtons->id(btn)];
   emit connectToNetwork(n);
-}
-
-void WifiUI::prevPage() {
-  page--;
-  refresh();
-}
-
-void WifiUI::nextPage() {
-  page++;
-  refresh();
 }

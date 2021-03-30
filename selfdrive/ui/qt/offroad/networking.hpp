@@ -15,7 +15,6 @@ class WifiUI : public QWidget {
   Q_OBJECT
 
 public:
-  int page;
   explicit WifiUI(QWidget *parent = 0, WifiManager* wifi = 0);
 
 private:
@@ -29,10 +28,8 @@ signals:
   void connectToNetwork(Network n);
 
 public slots:
-  void handleButton(QAbstractButton* m_button);
   void refresh();
-  void prevPage();
-  void nextPage();
+  void handleButton(QAbstractButton* m_button);
 };
 
 class AdvancedNetworking : public QWidget {
