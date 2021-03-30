@@ -113,7 +113,7 @@ static bool ensure_params_path(const std::string &param_path, const std::string 
 class FileLock {
  public:
   FileLock(const std::string& file_name) : fn_(file_name) {}
-  int try_lock(int operation) {
+  int lock(int operation) {
     fd_ = open(fn_.c_str(), O_CREAT, 0775);
     if (fd_ < 0) return -1;
     return flock(fd_, operation);
@@ -121,6 +121,7 @@ class FileLock {
   ~FileLock() {
     if (fd_ >= 0) close(fd_);
   }
+  
   int fd_ = -1;
   std::string fn_;
 };
@@ -161,7 +162,7 @@ int Params::put(const char* key, const char* value, size_t value_size) {
   path = params_path + "/d/" + std::string(key);
 
   // Take lock.
-  result = file_lock.try_lock(LOCK_EX);
+  result = file_lock.lock(LOCK_EX);
   if (result < 0) {
     goto cleanup;
   }
@@ -202,8 +203,8 @@ cleanup:
 }
 
 int Params::remove(const char *key) {
-  FileLock file_lock;
-  if (file_lock.lock(params_path + "/.lock", LOCK_EX) < 0) {
+  FileLock file_lock(params_path + "/.lock");
+  if (file_lock.lock(LOCK_EX) < 0) {
     return -1;
   }
   // Delete value.
@@ -244,7 +245,7 @@ std::string Params::get(const char *key, bool block) {
 
 int Params::read_db_all(std::map<std::string, std::string> *params) {
   FileLock file_lock(params_path + "/.lock");
-  if (file_lock.try_lock(LOCK_SH) < 0) {
+  if (file_lock.lock(LOCK_SH) < 0) {
     return -1;
   }
 
