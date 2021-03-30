@@ -25,7 +25,7 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
 
   QObject::connect(homeWindow, &HomeWindow::closeSettings, [=]() {
     for(auto widget : QApplication::topLevelWidgets()){
-      if(widget->metaObject()->className() != QString("MainWindow")){
+			if(widget->metaObject()->className() != QString("MainWindow")) {
 				widget->close();
 			}
     }
