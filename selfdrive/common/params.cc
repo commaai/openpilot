@@ -16,6 +16,15 @@
 
 #include "common/util.h"
 
+#define HANDLE_EINTR(x)                                       \
+  ({                                                          \
+    decltype(x) ret;                                          \
+    int try_cnt = 0;                                          \
+    do {                                                      \
+      ret = (x);                                              \
+    } while (ret == -1 && errno == EINTR && try_cnt++ < 100); \
+    ret;                                                      \
+  })
 
 #if defined(QCOM) || defined(QCOM2)
 const std::string default_params_path = "/data/params";
@@ -116,17 +125,14 @@ class FileLock {
 
   void lock() {
     // keep trying if open() gets interrupted by a signal
-    while ((fd_ = open(fn_.c_str(), O_CREAT, 0775)) < 0 && errno == EINTR) {};
-
+    fd_ = HANDLE_EINTR(open(fn_.c_str(), O_CREAT, 0775));
     if (fd_ < 0) {
       throw std::runtime_error("Failed to open lock file");
     }
 
     // keep trying if flock() gets interrupted by a signal
-    int err = -1;
-    while ((err = flock(fd_, op_)) < 0 && errno == EINTR) {}
-
-    if (err != 0) {
+    int err = HANDLE_EINTR(flock(fd_, op_));
+    if (err < 0) {
       close(fd_);
       throw std::runtime_error("Failed to lock file");
     }
