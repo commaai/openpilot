@@ -199,7 +199,8 @@ static void handle_display_state(UIState* s, bool user_input) {
   constexpr float accel_samples = 5*UI_FREQ;
   static float accel_prev = 0., gyro_prev = 0.;
 
-  bool should_wake = s->scene.started || s->scene.ignition || user_input;
+  bool should_wake = s->scene.started || s->scene.ignition ||
+                     user_input || Hardware::device_type == cereal::InitData::DeviceType::PC;
   if (!should_wake) {
     // tap detection while display is off
     bool accel_trigger = abs(s->scene.accel_sensor - accel_prev) > 0.2;
