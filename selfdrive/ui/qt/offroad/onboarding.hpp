@@ -76,7 +76,6 @@ public:
   explicit OnboardingWindow(QWidget *parent = 0);
 
 private:
-  Params params;
   std::string current_terms_version;
   std::string current_training_version;
 

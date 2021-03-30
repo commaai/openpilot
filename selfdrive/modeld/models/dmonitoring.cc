@@ -25,7 +25,7 @@ void dmonitoring_init(DMonitoringModelState* s) {
 
   int runtime = USE_DSP_RUNTIME;
   s->m = new DefaultRunModel(model_path, &s->output[0], OUTPUT_SIZE, runtime);
-  s->is_rhd = Params().getBool("IsRHD");
+  s->is_rhd = g_params.getBool("IsRHD");
 }
 
 template <class T>

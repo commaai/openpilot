@@ -28,8 +28,8 @@ PairingQRWidget::PairingQRWidget(QWidget* parent) : QWidget(parent) {
 }
 
 void PairingQRWidget::refresh(){
-  QString IMEI = QString::fromStdString(Params().get("IMEI"));
-  QString serial = QString::fromStdString(Params().get("HardwareSerial"));
+  QString IMEI = QString::fromStdString(g_params.get("IMEI"));
+  QString serial = QString::fromStdString(g_params.get("HardwareSerial"));
 
   if (std::min(IMEI.length(), serial.length()) <= 5) {
     qrCode->setText("Error getting serial: contact support");
@@ -100,7 +100,7 @@ PrimeUserWidget::PrimeUserWidget(QWidget* parent) : QWidget(parent) {
   )");
 
   // set up API requests
-  QString dongleId = QString::fromStdString(Params().get("DongleId"));
+  QString dongleId = QString::fromStdString(g_params.get("DongleId"));
   if (!dongleId.length()) {
     return;
   }
@@ -237,7 +237,7 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
   setSizePolicy(sp_retain);
 
   // set up API requests
-  QString dongleId = QString::fromStdString(Params().get("DongleId"));
+  QString dongleId = QString::fromStdString(g_params.get("DongleId"));
   QString url = "https://api.commadotai.com/v1.1/devices/" + dongleId + "/";
   RequestRepeater* repeater = new RequestRepeater(this, url, 5, "ApiCache_Device");
 

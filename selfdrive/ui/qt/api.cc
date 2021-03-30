@@ -46,7 +46,7 @@ QByteArray CommaApi::rsa_sign(QByteArray data) {
 }
 
 QString CommaApi::create_jwt(QVector<QPair<QString, QJsonValue>> payloads, int expiry) {
-  QString dongle_id = QString::fromStdString(Params().get("DongleId"));
+  QString dongle_id = QString::fromStdString(g_params.get("DongleId"));
 
   QJsonObject header;
   header.insert("alg", "RS256");
@@ -92,7 +92,7 @@ RequestRepeater::RequestRepeater(QWidget* parent, QString requestURL, int period
   connect(networkTimer, SIGNAL(timeout()), this, SLOT(requestTimeout()));
 
   if (!cache_key.isEmpty()) {
-    if (std::string cached_resp = Params().get(cache_key.toStdString()); !cached_resp.empty()) {
+    if (std::string cached_resp = g_params.get(cache_key.toStdString()); !cached_resp.empty()) {
       QTimer::singleShot(0, [=]() { emit receivedResponse(QString::fromStdString(cached_resp)); });
     }
   }
@@ -134,12 +134,12 @@ void RequestRepeater::requestFinished(){
     if (reply->error() == QNetworkReply::NoError) {
       // save to cache
       if (!cache_key.isEmpty()) {
-        Params().put(cache_key.toStdString(), response.toStdString());
+        g_params.put(cache_key.toStdString(), response.toStdString());
       }
       emit receivedResponse(response);
     } else {
       if (!cache_key.isEmpty()) {
-        Params().remove(cache_key.toStdString());
+        g_params.remove(cache_key.toStdString());
       }
       emit failedResponse(reply->errorString());
     }

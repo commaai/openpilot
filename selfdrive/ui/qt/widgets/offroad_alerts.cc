@@ -71,7 +71,7 @@ void OffroadAlert::refresh() {
 
   rebootBtn.setVisible(updateAvailable);
   releaseNotes.setVisible(updateAvailable);
-  releaseNotes.setText(QString::fromStdString(params.get("ReleaseNotes")));
+  releaseNotes.setText(QString::fromStdString(g_params.get("ReleaseNotes")));
 
   for (const auto& [k, label] : alerts) {
     label->setVisible(!updateAvailable && !label->text().isEmpty());
@@ -80,9 +80,9 @@ void OffroadAlert::refresh() {
 
 void OffroadAlert::updateAlerts() {
   alertCount = 0;
-  updateAvailable = params.getBool("UpdateAvailable");
+  updateAvailable = g_params.getBool("UpdateAvailable");
   for (const auto& [key, label] : alerts) {
-    auto bytes = params.get(key.c_str());
+    auto bytes = g_params.get(key.c_str());
     if (bytes.size()) {
       QJsonDocument doc_par = QJsonDocument::fromJson(QByteArray(bytes.data(), bytes.size()));
       QJsonObject obj = doc_par.object();

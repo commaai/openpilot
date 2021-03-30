@@ -71,7 +71,7 @@ void safety_setter_thread() {
       return;
     };
 
-    std::string value_vin = Params().get("CarVin");
+    std::string value_vin = g_params.get("CarVin");
     if (value_vin.size() > 0) {
       // sanity check VIN format
       assert(value_vin.size() == 17);
@@ -92,7 +92,7 @@ void safety_setter_thread() {
       return;
     };
 
-    params = Params().get("CarParams");
+    params = g_params.get("CarParams");
     if (params.size() > 0) break;
     util::sleep_for(100);
   }
@@ -125,14 +125,12 @@ bool usb_connect() {
     return false;
   }
 
-  Params params = Params();
-
   if (getenv("BOARDD_LOOPBACK")) {
     tmp_panda->set_loopback(true);
   }
 
   if (auto fw_sig = tmp_panda->get_firmware_version(); fw_sig) {
-    params.put("PandaFirmware", (const char *)fw_sig->data(), fw_sig->size());
+    g_params.put("PandaFirmware", (const char *)fw_sig->data(), fw_sig->size());
 
     // Convert to hex for offroad
     char fw_sig_hex_buf[16] = {0};
@@ -142,13 +140,13 @@ bool usb_connect() {
       fw_sig_hex_buf[2*i+1] = NIBBLE_TO_HEX((uint8_t)fw_sig_buf[i] & 0xF);
     }
 
-    params.put("PandaFirmwareHex", fw_sig_hex_buf, 16);
+    g_params.put("PandaFirmwareHex", fw_sig_hex_buf, 16);
     LOGW("fw signature: %.*s", 16, fw_sig_hex_buf);
   } else { return false; }
 
   // get panda serial
   if (auto serial = tmp_panda->get_serial(); serial) {
-    params.put("PandaDongleId", serial->c_str(), serial->length());
+    g_params.put("PandaDongleId", serial->c_str(), serial->length());
     LOGW("panda serial: %s", serial->c_str());
   } else { return false; }
 
@@ -270,7 +268,6 @@ void panda_state_thread(bool spoofing_started) {
 
   uint32_t no_ignition_cnt = 0;
   bool ignition_last = false;
-  Params params = Params();
 
   // Broadcast empty pandaState message when panda is not yet connected
   while (!do_exit && !panda) {
@@ -317,9 +314,9 @@ void panda_state_thread(bool spoofing_started) {
 
     // clear VIN, CarParams, and set new safety on car start
     if (ignition && !ignition_last) {
-      int result = params.remove("CarVin");
+      int result = g_params.remove("CarVin");
       assert((result == 0) || (result == ERR_NO_VALUE));
-      result = params.remove("CarParams");
+      result = g_params.remove("CarParams");
       assert((result == 0) || (result == ERR_NO_VALUE));
 
       if (!safety_setter_thread_running) {
