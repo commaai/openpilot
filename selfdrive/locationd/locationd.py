@@ -12,7 +12,7 @@ from common.transformations.orientation import ecef_euler_from_ned, \
                                                quat_from_euler, euler_from_rot, \
                                                rot_from_quat, rot_from_euler
 from rednose.helpers import KalmanError
-from selfdrive.locationd.models.live_kf import LiveKalman, States, ObservationKind
+from selfdrive.locationd.models.live_kf_kf import LiveKalman, States, ObservationKind
 from selfdrive.locationd.models.constants import GENERATED_DIR
 from selfdrive.swaglog import cloudlog
 

@@ -3,7 +3,7 @@ Import('env', 'arch')
 templates = Glob('#rednose/templates/*')
 
 sympy_helpers = "#rednose/helpers/sympy_helpers.py"
-ekf_sym = "#rednose/helpers/ekf_sym.py"
+ekf_sym = "#rednose/helpers/ekf_sym_old.py"
 
 to_build = {
     'live': ('live_kf.py', 'generated'),
