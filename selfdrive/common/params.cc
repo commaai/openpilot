@@ -72,7 +72,7 @@ static int mkdir_p(std::string path) {
 
 static int ensure_dir_exists(std::string path) {
   // TODO: replace by std::filesystem::create_directories
-  return mkdir_p(path.c_str());
+  return util::file_exists(path) ? 0 : mkdir_p(path.c_str());
 }
 
 
