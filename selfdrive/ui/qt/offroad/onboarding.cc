@@ -12,46 +12,45 @@
 
 
 void TrainingGuide::mouseReleaseEvent(QMouseEvent *e) {
-  int leftOffset = (geometry().width()-1620)/2;
-  int mousex = e->x()-leftOffset;
-  int mousey = e->y();
+  QPoint touch = QPoint(e->x(), e->y()) - imageCorner;
+  //qDebug() << touch.x() << ", " << touch.y();
 
   // Check for restart
-  if (currentIndex == (boundingBox.size() - 1) && 1050 <= mousex && mousex <= 1500 &&
-      773 <= mousey && mousey <= 954) {
+  if (currentIndex == (boundingBox.size() - 1) && 200 <= touch.x() && touch.x() <= 920 &&
+      760 <= touch.y() && touch.y() <= 960) {
     currentIndex = 0;
-  } else if (boundingBox[currentIndex][0] <= mousex && mousex <= boundingBox[currentIndex][1] &&
-             boundingBox[currentIndex][2] <= mousey && mousey <= boundingBox[currentIndex][3]) {
+  } else if (boundingBox[currentIndex][0] <= touch.x() && touch.x() <= boundingBox[currentIndex][1] &&
+             boundingBox[currentIndex][2] <= touch.y() && touch.y() <= boundingBox[currentIndex][3]) {
     currentIndex += 1;
   }
 
   if (currentIndex >= boundingBox.size()) {
     emit completedTraining();
   } else {
-    image.load("../assets/training/step" + QString::number(currentIndex) + ".jpg");
+    image.load("../assets/training/step" + QString::number(currentIndex) + ".png");
     update();
   }
 }
 
 void TrainingGuide::showEvent(QShowEvent *event) {
   currentIndex = 0;
-  image.load("../assets/training/step0.jpg");
+  image.load("../assets/training/step0.png");
 }
 
 void TrainingGuide::paintEvent(QPaintEvent *event) {
   QPainter painter(this);
 
-  QRect devRect(0, 0, painter.device()->width(), painter.device()->height());
-  QBrush bgBrush("#072339");
-  painter.fillRect(devRect, bgBrush);
+  QRect bg(0, 0, painter.device()->width(), painter.device()->height());
+  QBrush bgBrush("#000000");
+  painter.fillRect(bg, bgBrush);
 
   QRect rect(image.rect());
-  rect.moveCenter(devRect.center());
+  rect.moveCenter(bg.center());
   painter.drawImage(rect.topLeft(), image);
+  imageCorner = rect.topLeft();
 }
 
 TermsPage::TermsPage(QWidget *parent) : QFrame(parent){
-
   QVBoxLayout *main_layout = new QVBoxLayout;
   main_layout->setMargin(40);
   main_layout->setSpacing(40);

@@ -29,6 +29,7 @@ public:
 private:
   QPushButton btn;
   QString username;
+  QLabel username_label;
 
   // networking
   QTimer* networkTimer;

@@ -180,10 +180,15 @@ class TestAthenadMethods(unittest.TestCase):
     thread.daemon = True
     thread.start()
     try:
+      # with params
       athenad.recv_queue.put_nowait(json.dumps({"method": "echo", "params": ["hello"], "jsonrpc": "2.0", "id": 0}))
       resp = athenad.send_queue.get(timeout=3)
       self.assertDictEqual(json.loads(resp), {'result': 'hello', 'id': 0, 'jsonrpc': '2.0'})
-
+      # without params
+      athenad.recv_queue.put_nowait(json.dumps({"method": "getNetworkType", "jsonrpc": "2.0", "id": 0}))
+      resp = athenad.send_queue.get(timeout=3)
+      self.assertDictEqual(json.loads(resp), {'result': 1, 'id': 0, 'jsonrpc': '2.0'})
+      # log forwarding
       athenad.recv_queue.put_nowait(json.dumps({'result': {'success': 1}, 'id': 0, 'jsonrpc': '2.0'}))
       resp = athenad.log_recv_queue.get(timeout=3)
       self.assertDictEqual(json.loads(resp), {'result': {'success': 1}, 'id': 0, 'jsonrpc': '2.0'})

@@ -336,6 +336,7 @@ selfdrive/test/helpers.py
 selfdrive/test/setup_device_ci.sh
 selfdrive/test/test_fingerprints.py
 
+selfdrive/ui/.gitignore
 selfdrive/ui/SConscript
 selfdrive/ui/*.cc
 selfdrive/ui/*.hpp
@@ -347,6 +348,7 @@ selfdrive/ui/qt/*.cc
 selfdrive/ui/qt/*.hpp
 selfdrive/ui/qt/offroad/*.cc
 selfdrive/ui/qt/offroad/*.hpp
+selfdrive/ui/qt/offroad/*.qml
 selfdrive/ui/qt/widgets/*.cc
 selfdrive/ui/qt/widgets/*.hpp
 selfdrive/ui/qt/spinner_aarch64
