@@ -114,6 +114,7 @@ void InputDialog::setMinLength(int length){
 
 ConfirmationDialog::ConfirmationDialog(const QString &prompt_text, const QString &confirm_text, const QString &cancel_text,
                                        QWidget *parent):QDialog(parent) {
+
   setWindowFlags(Qt::Popup);
   layout = new QVBoxLayout();
   layout->setMargin(25);
@@ -161,13 +162,13 @@ ConfirmationDialog::ConfirmationDialog(const QString &prompt_text, const QString
   setLayout(layout);
 }
 
-bool ConfirmationDialog::alert(const QString &prompt_text) {
-  ConfirmationDialog d = ConfirmationDialog(prompt_text, "Ok", "");
+bool ConfirmationDialog::alert(const QString &prompt_text, QWidget* parent) {
+  ConfirmationDialog d = ConfirmationDialog(prompt_text, "Ok", "", parent);
   return d.exec();
 }
 
-bool ConfirmationDialog::confirm(const QString &prompt_text) {
-  ConfirmationDialog d = ConfirmationDialog(prompt_text);
+bool ConfirmationDialog::confirm(const QString &prompt_text, QWidget* parent) {
+  ConfirmationDialog d = ConfirmationDialog(prompt_text, "Ok", "Cancel", parent);
   return d.exec();
 }
 

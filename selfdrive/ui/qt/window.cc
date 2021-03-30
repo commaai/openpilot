@@ -23,19 +23,6 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
 
   QObject::connect(homeWindow, SIGNAL(closeSettings()), settingsWindow, SIGNAL(closeSettings()));
 
-  QObject::connect(homeWindow, &HomeWindow::closeSettings, [=]() {
-    for(auto widget : QApplication::topLevelWidgets()){
-      if(widget->metaObject()->className() != QString("MainWindow")) {
-        widget->close();
-      }
-
-    }
-#ifdef QCOM
-	hardware.eon.close_activites();
-#endif
-  });
-
-
   // start at onboarding
   main_layout->setCurrentWidget(onboardingWindow);
   QObject::connect(onboardingWindow, SIGNAL(onboardingDone()), this, SLOT(closeSettings()));

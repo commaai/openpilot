@@ -215,6 +215,7 @@ QWidget * network_panel(QWidget * parent) {
 }
 
 SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
+
   // setup two main layouts
   QVBoxLayout *sidebar_layout = new QVBoxLayout();
   sidebar_layout->setMargin(0);
@@ -317,3 +318,16 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
     }
   )");
 }
+
+void SettingsWindow::hideEvent(QHideEvent* event){
+
+  for(auto widget : QApplication::topLevelWidgets()){
+    if(widget->metaObject()->className() != QString("MainWindow")){
+      widget->close();
+    }
+  }
+#ifdef QCOM
+  hardware.eon.close_activities();
+#endif
+}
+
