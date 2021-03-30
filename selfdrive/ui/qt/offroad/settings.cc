@@ -17,7 +17,7 @@
 #include "selfdrive/hardware/hw.h"
 
 //TODO: lets make this a class, consistency
-TogglesPanel::TogglesPanel(QWidget *parent) {
+TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *toggles_list = new QVBoxLayout();
   toggles_list->setMargin(50);
 
@@ -286,7 +286,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
 
     for(auto &[name2, panel2] : panels){
       if(name2 == "Device" || name2 == "Toggles")
-      QObject::connect(btn, SIGNAL(released()), panel2, SIGNAL(resetState()));
+        QObject::connect(btn, SIGNAL(released()), panel2, SIGNAL(resetState()));
     }
 
     panel_widget->addWidget(panel);
