@@ -300,11 +300,11 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
       if(name2 == "Device" || name2 == "Toggles")
         QObject::connect(btn, SIGNAL(released()), panel2, SIGNAL(resetState()));
     }
-
+/*
     if(name == "Device"){
       QObject::connect(this, SIGNAL(closeSettings()), btn, SLOT(click()));
     }
-
+*/
     panel->setContentsMargins(50, 25, 50, 25);
     QScrollArea *panel_frame = new QScrollArea;
     panel_frame->setWidget(panel);
@@ -331,6 +331,14 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
       panel_frame->verticalScrollBar()->setValue(0);
     });
   }
+
+  QObject::connect(this, &SettingsWindow::closeSettings, [=]() {
+    panel_widget->setCurrentIndex(0);
+    for(auto button : nav_btns->buttons()){
+      button->setChecked(false);
+    }
+    nav_btns->buttons()[0]->setChecked(true);
+  });
 
   qobject_cast<QPushButton *>(nav_btns->buttons()[0])->setChecked(true);
   sidebar_layout->setContentsMargins(50, 50, 100, 50);

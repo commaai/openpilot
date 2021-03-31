@@ -47,10 +47,10 @@ public:
   explicit SettingsWindow(QWidget *parent = 0);
 
 signals:
-  void resetState();
   void closeSettings();
   void reviewTrainingGuide();
   void offroadTransition(bool offroad);
+  void resetState();
 
 private:
   QPushButton *sidebar_alert_widget;
