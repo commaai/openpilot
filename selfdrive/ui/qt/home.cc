@@ -262,7 +262,7 @@ void GLWindow::backlightUpdate() {
   }
 
   if (brightness != last_brightness) {
-    std::thread{Hardware::set_brightness, brightness}.detach();
+    Hardware::set_brightness(brightness);
   }
   last_brightness = brightness;
 }
