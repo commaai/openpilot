@@ -21,6 +21,14 @@ signals:
   void resetState();
 };
 
+class NetworkPanel : public QWidget {
+  Q_OBJECT
+public:
+  explicit NetworkPanel(QWidget* parent = nullptr);
+signals:
+  void resetState();
+};
+
 class DevicePanel : public QWidget {
   Q_OBJECT
 public:
@@ -38,6 +46,9 @@ public:
 protected:
   void showEvent(QShowEvent *event) override;
   QList<LabelControl *> labels;
+
+signals:
+  void resetState();
 };
 
 class SettingsWindow : public QFrame {

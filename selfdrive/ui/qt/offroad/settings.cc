@@ -202,8 +202,8 @@ void DeveloperPanel::showEvent(QShowEvent *event) {
   }
 }
 
-QWidget * network_panel(QWidget * parent) {
 #ifdef QCOM
+NetworkPanel::NetworkPanel(QWidget *parent) : QWidget(parent){
   QVBoxLayout *layout = new QVBoxLayout;
   layout->setSpacing(30);
 
@@ -223,13 +223,9 @@ QWidget * network_panel(QWidget * parent) {
 
   layout->addStretch(1);
 
-  QWidget *w = new QWidget;
-  w->setLayout(layout);
-#else
-  Networking *w = new Networking(parent);
-#endif
-  return w;
+  setLayout(layout);
 }
+#endif
 
 SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   // setup two main layouts
@@ -261,9 +257,15 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   DevicePanel *device = new DevicePanel(this);
   QObject::connect(device, SIGNAL(reviewTrainingGuide()), this, SIGNAL(reviewTrainingGuide()));
 
+#ifdef QCOM
+  NetworkPanel *network_panel = new NetworkPanel(this);
+#else
+  Networking *network_panel = new Networking(this);
+#endif
+
   QPair<QString, QWidget *> panels[] = {
     {"Device", device},
-    {"Network", network_panel(this)},
+    {"Network", network_panel},
     {"Toggles", new TogglesPanel(this)},
     {"Developer", new DeveloperPanel()},
   };
@@ -300,11 +302,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
       if(name2 == "Device" || name2 == "Toggles")
         QObject::connect(btn, SIGNAL(released()), panel2, SIGNAL(resetState()));
     }
-/*
-    if(name == "Device"){
-      QObject::connect(this, SIGNAL(closeSettings()), btn, SLOT(click()));
-    }
-*/
+
     panel->setContentsMargins(50, 25, 50, 25);
     QScrollArea *panel_frame = new QScrollArea;
     panel_frame->setWidget(panel);

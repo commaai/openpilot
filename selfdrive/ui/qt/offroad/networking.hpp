@@ -56,6 +56,9 @@ class Networking : public QWidget {
 public:
   explicit Networking(QWidget* parent = 0, bool show_advanced = true);
 
+signals:
+  void resetState();
+
 private:
   QStackedLayout* s = nullptr; // nm_warning, wifiScreen, advanced
   QWidget* wifiScreen = nullptr;
