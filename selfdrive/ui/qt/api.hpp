@@ -30,7 +30,7 @@ class RequestRepeater : public QObject {
   Q_OBJECT
 
 public:
-  explicit RequestRepeater(QWidget* parent, const QString &requestURL, int period = 10, const QString &cache_key = "",  bool disableWithScreen = true);
+  explicit RequestRepeater(QWidget* parent, const QString &requestURL, int period = 10, const QString &cache_key = "", bool disableWithScreen = true);
   bool active = true;
 
 private:
