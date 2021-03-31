@@ -184,6 +184,16 @@ pipeline {
                   }
                 }
 
+                stage('Tici camerad') {
+                  steps {
+                    phone_steps("tici-party", [
+                      ["build", "SCONS_CACHE=1 scons -j16"],
+                      ["test camerad", "python selfdrive/camerad/test/test_camerad.py"],
+                      ["test exposure", "python selfdrive/camerad/test/test_exposure.py"],
+                    ])
+                  }
+                }
+
               }
             }
           }
