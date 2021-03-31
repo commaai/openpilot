@@ -48,23 +48,22 @@ HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
 }
 
 void HomeWindow::mousePressEvent(QMouseEvent* e) {
-  UIState* ui_state = &UIUpdater::ui_state;
-  if (UIUpdater::ui_state.scene.driver_view) {
+  if (uiState()->scene.driver_view) {
     Params().putBool("IsDriverViewEnabled", false);
-    UIUpdater::ui_state.scene.driver_view = false;
+    uiState()->scene.driver_view = false;
     return;
   }
 
   glWindow->wake();
 
   // Settings button click
-  if (!ui_state->sidebar_collapsed && settings_btn.ptInRect(e->x(), e->y())) {
+  if (!uiState()->sidebar_collapsed && settings_btn.ptInRect(e->x(), e->y())) {
     emit openSettings();
   }
 
   // Handle sidebar collapsing
-  if (ui_state->scene.started && (e->x() >= ui_state->viz_rect.x - bdr_s)) {
-    ui_state->sidebar_collapsed = !ui_state->sidebar_collapsed;
+  if (uiState()->scene.started && (e->x() >= uiState()->viz_rect.x - bdr_s)) {
+    uiState()->sidebar_collapsed = !uiState()->sidebar_collapsed;
   }
 }
 
@@ -246,7 +245,7 @@ void GLWindow::resizeGL(int w, int h) {
 }
 
 void GLWindow::wake() {
-  handle_display_state(&UIUpdater::ui_state, true);
+  handle_display_state(uiState(), true);
 }
 
 // UIUpdater

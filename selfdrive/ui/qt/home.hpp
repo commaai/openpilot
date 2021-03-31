@@ -111,3 +111,7 @@ private:
   float last_brightness = 0;
   FirstOrderFilter brightness_filter;
 };
+
+inline UIState *uiState() {
+  return &UIUpdater::ui_state;
+}
