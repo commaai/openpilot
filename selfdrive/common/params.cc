@@ -175,8 +175,6 @@ int Params::put(const char* key, const char* value, size_t value_size) {
       break;
     }
 
-    // change permissions to 0666 for apks
-    if ((result = fchmod(tmp_fd, 0666)) < 0) break;
     // fsync to force persist the changes.
     if ((result = fsync(tmp_fd)) < 0) break;
 
