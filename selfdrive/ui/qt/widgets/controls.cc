@@ -52,13 +52,14 @@ AbstractControl::AbstractControl(const QString &title, const QString &desc, cons
     vlayout->addWidget(description);
 
     if(parent != nullptr){
-      QObject::connect(parent, SIGNAL(resetState()), this, SLOT(resetState()));
+      connect(parent, SIGNAL(resetState()), this, SLOT(resetState()));
       connect(title_label, SIGNAL(clicked()), parent, SIGNAL(resetState()));
     }
     connect(title_label, &QPushButton::clicked, [=]() {
       description->setVisible(!description->isVisible());
     });
   }
+
   setLayout(vlayout);
   setStyleSheet("background-color: transparent;");
 }
