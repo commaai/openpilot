@@ -255,17 +255,13 @@ int Params::read_db_all(std::map<std::string, std::string> *params) {
 
   std::string key_path = params_path + "/d";
   DIR *d = opendir(key_path.c_str());
-  if (!d) {
-    return -1;
-  }
+  if (!d) return -1;
 
   struct dirent *de = NULL;
   while ((de = readdir(d))) {
-    if (!isalnum(de->d_name[0])) continue;
-    std::string key = std::string(de->d_name);
-    std::string value = util::read_file(key_path + "/" + key);
-
-    (*params)[key] = value;
+    if (isalnum(de->d_name[0])) {
+      (*params)[de->d_name] = util::read_file(key_path + "/" + de->d_name);
+    }
   }
 
   closedir(d);
