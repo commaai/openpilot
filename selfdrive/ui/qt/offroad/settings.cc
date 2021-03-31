@@ -19,7 +19,6 @@
 
 TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *toggles_list = new QVBoxLayout();
-  toggles_list->setMargin(50);
 
   QList<ParamControl*> toggles;
 
@@ -237,8 +236,6 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
     border-radius: 30px;
     background-color: #292929;
   )");
-
-  sidebar_layout->addStretch(1);
 
   // close button
   QPushButton *close_btn = new QPushButton("X");
