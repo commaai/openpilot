@@ -438,7 +438,7 @@ routes = {
     'enableDsu': False,
   },
   "9b36accae406390e|2021-03-30--10-41-38": {
-    'carFingerprint': TOYOTA.MIRAI_TSS2,
+    'carFingerprint': TOYOTA.MIRAI,
     'enableCamera': True,
     'enableDsu': False,
     'fingerprintSource': 'fixed',
