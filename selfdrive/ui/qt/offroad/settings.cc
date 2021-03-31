@@ -294,14 +294,10 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
     nav_btns->addButton(btn);
     sidebar_layout->addWidget(btn, 0, Qt::AlignRight);
 
-    //TODO: make all panels support resetState()
-    if((name == "Device") || (name == "Toggles")){
-      QObject::connect(this, SIGNAL(closeSettings()), panel, SIGNAL(resetState()));
-    }
+    QObject::connect(this, SIGNAL(closeSettings()), panel, SIGNAL(resetState()));
 
     for(auto &[name2, panel2] : panels){
-      if(name2 == "Device" || name2 == "Toggles")
-        QObject::connect(btn, SIGNAL(released()), panel2, SIGNAL(resetState()));
+      QObject::connect(btn, SIGNAL(released()), panel2, SIGNAL(resetState()));
     }
 
     panel->setContentsMargins(50, 25, 50, 25);
