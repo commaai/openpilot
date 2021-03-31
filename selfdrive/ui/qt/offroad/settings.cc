@@ -327,7 +327,7 @@ void SettingsWindow::hideEvent(QHideEvent* event){
     }
   }
 #ifdef QCOM
-  hardware.eon.close_activities();
+  HardwareEon::close_activities();
 #endif
 }
 
