@@ -26,10 +26,6 @@ AbstractControl::AbstractControl(const QString &title, const QString &desc, cons
   hlayout->setMargin(0);
   hlayout->setSpacing(20);
 
-  if(parent != nullptr){
-    QObject::connect(parent, SIGNAL(resetState()), this, SLOT(resetState()));
-  }
-
   // left icon
   if (!icon.isEmpty()) {
     QPixmap pix(icon);
@@ -46,16 +42,18 @@ AbstractControl::AbstractControl(const QString &title, const QString &desc, cons
 
   vlayout->addLayout(hlayout);
 
-  description = new QLabel(desc);
-
   // description
   if (!desc.isEmpty()) {
+    description = new QLabel(desc);
     description->setContentsMargins(40, 20, 40, 20);
     description->setStyleSheet("font-size: 40px; color:grey");
     description->setWordWrap(true);
     description->setVisible(false);
     vlayout->addWidget(description);
 
+    if(parent != nullptr){
+      QObject::connect(parent, SIGNAL(resetState()), this, SLOT(resetState()));
+    }
     connect(title_label, SIGNAL(clicked()), parent, SIGNAL(resetState()));
     connect(title_label, &QPushButton::clicked, [=]() {
       description->setVisible(!description->isVisible());
