@@ -294,7 +294,7 @@ static void update_params(UIState *s) {
   }
 }
 
-static void update_vision(UIState *s) {
+void update_vision(UIState *s) {
   if (!s->vipc_client->connected && s->scene.started) {
     if (s->vipc_client->connect(false)){
       ui_init_vision(s);
@@ -353,5 +353,4 @@ void ui_update(UIState *s) {
   update_state(s);
   update_status(s);
   update_alert(s);
-  update_vision(s);
 }

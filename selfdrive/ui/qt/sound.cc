@@ -23,3 +23,7 @@ void Sound::stop() {
     }
   }
 }
+
+void Sound::setVolume(int volume) {
+  this->volume = volume;
+}

@@ -96,7 +96,7 @@ typedef struct UIScene {
   bool world_objects_visible;
 
   bool is_rhd;
-  bool driver_view;
+  std::atomic<bool> driver_view;
 
   std::string alert_text1;
   std::string alert_text2;
@@ -151,7 +151,6 @@ typedef struct UIState {
   SubMaster *sm;
 
   Sound *sound;
-  UIStatus status;
   UIScene scene;
 
   // graphics
@@ -162,9 +161,10 @@ typedef struct UIState {
   mat4 rear_frame_mat, front_frame_mat;
 
   // device state
-  bool awake;
+  std::atomic<bool> awake;
+  std::atomic<UIStatus> status;
+  std::atomic<bool> sidebar_collapsed;
 
-  bool sidebar_collapsed;
   Rect video_rect, viz_rect;
   float car_space_transform[6];
   bool wide_camera;

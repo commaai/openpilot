@@ -1,12 +1,16 @@
 #pragma once
 
 #include <QLabel>
+#include <QMutex>
 #include <QOpenGLFunctions>
 #include <QOpenGLWidget>
 #include <QPushButton>
 #include <QStackedLayout>
 #include <QStackedWidget>
+#include <QThread>
 #include <QTimer>
+#include <QVector3D>
+#include <QWaitCondition>
 #include <QWidget>
 
 #include "sound.hpp"
@@ -14,8 +18,35 @@
 #include "common/util.h"
 #include "widgets/offroad_alerts.hpp"
 
+class GLWindow;
+
+class UIUpdater : public QObject, protected QOpenGLFunctions {
+  Q_OBJECT
+public:
+  UIUpdater(GLWindow* w);
+  void prepareExit() {
+    exiting_ = true;
+    grabCond_.wakeAll();
+  }
+
+  QMutex renderMutex_, grabMutex_;
+  QWaitCondition grabCond_;
+
+signals:
+  void contextWanted();
+  void offroadTransition(bool);
+
+public slots:
+  void update();
+
+private:
+  void draw();
+  bool inited_ = false, exiting_ = false;
+  GLWindow* glWidget_;
+};
+
 // container window for onroad NVG UI
-class GLWindow : public QOpenGLWidget, protected QOpenGLFunctions {
+class GLWindow : public QOpenGLWidget {
   Q_OBJECT
 
 public:
@@ -23,36 +54,34 @@ public:
   explicit GLWindow(QWidget* parent = 0);
   void wake();
   ~GLWindow();
-
+  void backlightUpdate();
   inline static UIState ui_state = {0};
+  bool onroad = true;
 
 signals:
-  void offroadTransition(bool offroad);
-  void screen_shutoff();
+  void renderRequested();
+
+public slots:
+  void grabContext();
 
 protected:
-  void initializeGL() override;
   void resizeGL(int w, int h) override;
-  void paintGL() override;
+  void resizeEvent(QResizeEvent* event) override {}
+  void paintEvent(QPaintEvent* event) override {}
 
 private:
-  QTimer* timer;
-  QTimer* backlight_timer;
-
+  QThread* thread;
+  UIUpdater* ui_updater;
   Sound sound;
-
-  bool onroad = true;
-  double prev_draw_t = 0;
-
   // TODO: make a nice abstraction to handle embedded device stuff
   float brightness_b = 0;
   float brightness_m = 0;
   float last_brightness = 0;
   FirstOrderFilter brightness_filter;
 
-public slots:
-  void timerUpdate();
-  void backlightUpdate();
+signals:
+  void offroadTransition(bool offroad);
+  void screen_shutoff();
 };
 
 // offroad home screen

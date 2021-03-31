@@ -220,43 +220,42 @@ static void handle_display_state(UIState* s, bool user_input) {
   if (s->awake != should_wake) {
     s->awake = should_wake;
     Hardware::set_display_power(s->awake);
-    LOGD("setting display power %d", s->awake);
+    LOGD("setting display power %d", s->awake.load());
   }
 }
 
-GLWindow::GLWindow(QWidget* parent) : brightness_filter(BACKLIGHT_OFFROAD, BACKLIGHT_TS, BACKLIGHT_DT), QOpenGLWidget(parent) {
-  timer = new QTimer(this);
-  QObject::connect(timer, SIGNAL(timeout()), this, SLOT(timerUpdate()));
-
-  backlight_timer = new QTimer(this);
-  QObject::connect(backlight_timer, SIGNAL(timeout()), this, SLOT(backlightUpdate()));
-
+GLWindow::GLWindow(QWidget* parent) : QOpenGLWidget(parent) {
   brightness_b = Params(true).get<float>("BRIGHTNESS_B").value_or(10.0);
   brightness_m = Params(true).get<float>("BRIGHTNESS_M").value_or(0.1);
-}
-
-GLWindow::~GLWindow() {
-  makeCurrent();
-  doneCurrent();
-}
-
-void GLWindow::initializeGL() {
-  initializeOpenGLFunctions();
-  std::cout << "OpenGL version: " << glGetString(GL_VERSION) << std::endl;
-  std::cout << "OpenGL vendor: " << glGetString(GL_VENDOR) << std::endl;
-  std::cout << "OpenGL renderer: " << glGetString(GL_RENDERER) << std::endl;
-  std::cout << "OpenGL language version: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
 
   ui_state.sound = &sound;
   ui_state.fb_w = vwp_w;
   ui_state.fb_h = vwp_h;
   ui_init(&ui_state);
 
-  wake();
+  thread = new QThread;
+  ui_updater = new UIUpdater(&ui_state, this);
+  ui_updater->moveToThread(thread);
+  connect(thread, &QThread::finished, ui_updater, &QObject::deleteLater);
+  connect(this, &GLWindow::renderRequested, ui_updater, &UIUpdater::update);
+  connect(ui_updater, &UIUpdater::contextWanted, this, &GLWindow::grabContext);
+  connect(ui_updater, SIGNAL(offroadTransition(bool)), this, SIGNAL(offroadTransition(bool)));
 
-  prev_draw_t = millis_since_boot();
-  timer->start(1000 / UI_FREQ);
-  backlight_timer->start(BACKLIGHT_DT * 1000);
+  connect(this, &QOpenGLWidget::aboutToCompose, [=] { ui_updater->renderMutex_.lock(); });
+  connect(this, &QOpenGLWidget::frameSwapped, [=] { ui_updater->renderMutex_.unlock(); emit renderRequested(); });
+  connect(this, &QOpenGLWidget::aboutToResize, [=] { ui_updater->renderMutex_.lock(); });
+  connect(this, &QOpenGLWidget::resized, [=] { ui_updater->renderMutex_.unlock(); });
+
+  thread->start();
+
+  wake();
+}
+
+GLWindow::~GLWindow() {
+    ui_updater->prepareExit();
+    thread->quit();
+    thread->wait();
+    delete thread;
 }
 
 void GLWindow::backlightUpdate() {
@@ -278,50 +277,91 @@ void GLWindow::backlightUpdate() {
   last_brightness = brightness;
 }
 
-void GLWindow::timerUpdate() {
-  // Connecting to visionIPC requires opengl to be current
-  if (!ui_state.vipc_client->connected){
-    makeCurrent();
-  }
-
-  if (ui_state.scene.started != onroad) {
-    onroad = ui_state.scene.started;
-    emit offroadTransition(!onroad);
-
-    // Change timeout to 0 when onroad, this will call timerUpdate continously.
-    // This puts visionIPC in charge of update frequency, reducing video latency
-    timer->start(onroad ? 0 : 1000 / UI_FREQ);
-  }
-
-  handle_display_state(&ui_state, false);
-
-  // scale volume with speed
-  sound.volume = util::map_val(ui_state.scene.car_state.getVEgo(), 0.f, 20.f,
-                               Hardware::MIN_VOLUME, Hardware::MAX_VOLUME);
-
-  ui_update(&ui_state);
-  if(GLWindow::ui_state.awake){
-    repaint();
-  }
-  watchdog_kick();
-}
-
 void GLWindow::resizeGL(int w, int h) {
   std::cout << "resize " << w << "x" << h << std::endl;
 }
 
-void GLWindow::paintGL() {
-  ui_draw(&ui_state);
-
-  double cur_draw_t = millis_since_boot();
-  double dt = cur_draw_t - prev_draw_t;
-  if (dt > 66 && onroad && !ui_state.scene.driver_view) {
-    // warn on sub 15fps
-    LOGW("slow frame(%llu) time: %.2f", ui_state.sm->frame, dt);
-  }
-  prev_draw_t = cur_draw_t;
-}
-
 void GLWindow::wake() {
   handle_display_state(&ui_state, true);
+}
+
+void GLWindow::grabContext() {
+  ui_updater->renderMutex_.lock();
+  QMutexLocker lock(&ui_updater->grabMutex_);
+  context()->moveToThread(thread);
+  ui_updater->grabCond_.wakeAll();
+  ui_updater->renderMutex_.unlock();
+}
+
+// ui thread
+
+UIUpdater::UIUpdater(GLWindow* w) : glWidget_(w) {}
+
+void UIUpdater::draw() {
+  QOpenGLContext* ctx = glWidget_->context();
+  grabMutex_.lock();
+  emit contextWanted();
+  grabCond_.wait(&grabMutex_);
+  QMutexLocker lock(&renderMutex_);
+  grabMutex_.unlock();
+
+  assert(ctx->thread() == QThread::currentThread());
+
+  // Make the context (and an offscreen surface) current for this thread. The
+  // QOpenGLWidget's fbo is bound in the context.
+  glWidget_->makeCurrent();
+  UIState *s = &glWidget_->ui_state;
+  if (!inited_) {
+    inited_ = true;
+    initializeOpenGLFunctions();
+    ui_nvg_init(s);
+  }
+
+  update_vision(s);
+  ui_draw(s);
+
+  // Make no context current on this thread and move the QOpenGLWidget's
+  // context back to the gui thread.
+  glWidget_->doneCurrent();
+  ctx->moveToThread(qGuiApp->thread());
+  // Schedule composition. Note that this will use QueuedConnection, meaning
+  // that update() will be invoked on the gui thread.
+  QMetaObject::invokeMethod(glWidget_, "update");
+}
+
+void UIUpdater::update() {
+  if (exiting_) return;
+
+  if (!ui_state_->scene.started) {
+    util::sleep_for(50);
+  }
+
+  double u1 = millis_since_boot();
+
+  ui_update(ui_state_);
+
+  if (ui_state_->scene.started != glWidget_->onroad) {
+    glWidget_->onroad = ui_state_->scene.started;
+    emit offroadTransition(!glWidget_->onroad);
+  }
+
+  // Don't waste resources on drawing in case screen is off
+  handle_display_state(ui_state_, false);
+  if (!ui_state_->awake) {
+    return;
+  }
+
+  glWidget_->backlightUpdate();
+
+  // scale volume with speed
+  ui_state_->sound->setVolume(util::map_val(ui_state_->scene.car_state.getVEgo(), 0.f, 20.f,
+                                           Hardware::MIN_VOLUME, Hardware::MAX_VOLUME));
+
+  draw();
+
+  double u2 = millis_since_boot();
+  if (!ui_state_->scene.driver_view && (u2 - u1 > 66)) {
+    // warn on sub 15fps
+    LOGW("slow frame(%llu) time: %.2f", ui_state_->sm->frame, u2 - u1);
+  }
 }
