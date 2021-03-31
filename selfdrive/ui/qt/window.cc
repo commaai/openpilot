@@ -62,7 +62,7 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event){
     homeWindow->glWindow->wake();
   }
 
-	// filter out touches while in android activity
+  // filter out touches while in android activity
 #ifdef QCOM
   const QList<QEvent::Type> filter_events = {QEvent::MouseButtonPress, QEvent::MouseMove, QEvent::TouchBegin, QEvent::TouchUpdate, QEvent::TouchEnd};
   if (HardwareEon::launched_activity && filter_events.contains(event->type())) {
