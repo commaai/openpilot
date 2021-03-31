@@ -175,59 +175,38 @@ int Params::put(const char* key, const char* value, size_t value_size) {
   // 4) rename the temp file to the real name
   // 5) fsync() the containing directory
 
-  int tmp_fd = -1;
-  int result;
-  std::string path;
-  std::string tmp_path;
-  ssize_t bytes_written;
+  std::string tmp_path = params_path + "/.tmp_value_XXXXXX";
+  int tmp_fd = mkstemp((char*)tmp_path.c_str());
+  if (tmp_fd < 0) return -1;
 
-  FileLock file_lock(params_path + "/.lock", LOCK_EX);
-  std::lock_guard<FileLock> lk(file_lock);
-
-  // Write value to temp.
-  tmp_path = params_path + "/.tmp_value_XXXXXX";
-  tmp_fd = mkstemp((char*)tmp_path.c_str());
-  bytes_written = HANDLE_EINTR(write(tmp_fd, value, value_size));
-  if (bytes_written < 0 || (size_t)bytes_written != value_size) {
-    result = -20;
-    goto cleanup;
-  }
-
-  // Build key path
-  path = params_path + "/d/" + std::string(key);
-
-  // change permissions to 0666 for apks
-  result = fchmod(tmp_fd, 0666);
-  if (result < 0) {
-    goto cleanup;
-  }
-
-  // fsync to force persist the changes.
-  result = fsync(tmp_fd);
-  if (result < 0) {
-    goto cleanup;
-  }
-
-  // Move temp into place.
-  result = rename(tmp_path.c_str(), path.c_str());
-  if (result < 0) {
-    goto cleanup;
-  }
-
-  // fsync parent directory
-  path = params_path + "/d";
-  result = fsync_dir(path.c_str());
-  if (result < 0) {
-    goto cleanup;
-  }
-
-cleanup:
-  if (tmp_fd >= 0) {
-    if (result < 0) {
-      remove(tmp_path.c_str());
+  int result = -1;
+  do {
+    // Write value to temp.
+    ssize_t bytes_written = HANDLE_EINTR(write(tmp_fd, value, value_size));
+    if (bytes_written < 0 || (size_t)bytes_written != value_size) {
+      result = -20;
+      break;
     }
-    close(tmp_fd);
-  }
+
+    // change permissions to 0666 for apks
+    if ((result = fchmod(tmp_fd, 0666)) < 0) break;
+    // fsync to force persist the changes.
+    if ((result = fsync(tmp_fd)) < 0) break;
+
+    FileLock file_lock(params_path + "/.lock", LOCK_EX);
+    std::lock_guard<FileLock> lk(file_lock);
+
+    // Move temp into place.
+    std::string path = params_path + "/d/" + std::string(key);
+    if ((result = rename(tmp_path.c_str(), path.c_str())) < 0) break;
+
+    // fsync parent directory
+    path = params_path + "/d";
+    result = fsync_dir(path.c_str());
+  } while(0);
+
+  close(tmp_fd);
+  remove(tmp_path.c_str());
   return result;
 }
 
