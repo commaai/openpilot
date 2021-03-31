@@ -161,3 +161,19 @@ struct unique_fd {
   operator int() const { return fd_; }
   int fd_;
 };
+
+class FirstOrderFilter {
+public:
+  FirstOrderFilter(float x0, float ts, float dt) {
+    k_ = (dt / ts) / (1.0 + dt / ts);
+    x_ = x0;
+  }
+  inline float update(float x) {
+    x_ = (1. - k_) * x_ + k_ * x;
+    return x_;
+  }
+  inline void reset(float x) { x_ = x; }
+
+private:
+  float x_, k_;
+};

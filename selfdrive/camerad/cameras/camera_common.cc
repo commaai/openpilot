@@ -352,7 +352,7 @@ void common_process_driver_camera(SubMaster *sm, PubMaster *pm, CameraState *c, 
   const CameraBuf *b = &c->buf;
 
   static int x_min = 0, x_max = 0, y_min = 0, y_max = 0;
-  static const bool is_rhd = Params().read_db_bool("IsRHD");
+  static const bool is_rhd = Params().getBool("IsRHD");
 
   // auto exposure
   if (cnt % 3 == 0) {

@@ -70,7 +70,7 @@ void model_init(ModelState* s, cl_device_id device_id, cl_context context) {
 #endif
 
 #ifdef TRAFFIC_CONVENTION
-  const int idx = Params().read_db_bool("IsRHD") ? 1 : 0;
+  const int idx = Params().getBool("IsRHD") ? 1 : 0;
   s->traffic_convention[idx] = 1.0;
   s->m->addTrafficConvention(s->traffic_convention, TRAFFIC_CONVENTION_LEN);
 #endif
