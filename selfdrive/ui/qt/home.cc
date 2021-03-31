@@ -242,6 +242,10 @@ GLWindow::GLWindow(QWidget* parent) : brightness_filter(BACKLIGHT_OFFROAD, BACKL
   ui_updater->start();
 }
 
+GLWindow::~GLWindow() {
+  ui_updater->exit();
+}
+
 void GLWindow::backlightUpdate() {
   // Update brightness
   float clipped_brightness = std::min(100.0f, (ui_state.scene.light_sensor * brightness_m) + brightness_b);

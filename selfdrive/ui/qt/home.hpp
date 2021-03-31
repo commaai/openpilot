@@ -23,6 +23,7 @@ class GLWindow : public QOpenGLWidget {
 public:
   using QOpenGLWidget::QOpenGLWidget;
   explicit GLWindow(QWidget* parent = 0);
+  ~GLWindow();
   void wake();
   void backlightUpdate();
   inline static UIState ui_state = {0};
