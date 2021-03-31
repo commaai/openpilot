@@ -2,6 +2,7 @@
 
 #include "input.hpp"
 #include "qt_window.hpp"
+#include "selfdrive/ui/qt/offroad/settings.hpp"
 
 InputDialog::InputDialog(const QString &prompt_text, QWidget *parent) : QDialog(parent) {
   layout = new QVBoxLayout();
@@ -111,12 +112,13 @@ void InputDialog::setMinLength(int length){
   minLength = length;
 }
 
-
 ConfirmationDialog::ConfirmationDialog(const QString &prompt_text, const QString &confirm_text, const QString &cancel_text,
                                        QWidget *parent):QDialog(parent) {
   setWindowFlags(Qt::Popup);
   layout = new QVBoxLayout();
   layout->setMargin(25);
+
+  connect(parent, SIGNAL(closeDialogs()), this, SLOT(close()));
 
   prompt = new QLabel(prompt_text, this);
   prompt->setWordWrap(true);
@@ -161,13 +163,17 @@ ConfirmationDialog::ConfirmationDialog(const QString &prompt_text, const QString
   setLayout(layout);
 }
 
-bool ConfirmationDialog::alert(const QString &prompt_text) {
-  ConfirmationDialog d = ConfirmationDialog(prompt_text, "Ok", "");
+void ConfirmationDialog::hideEvent(QHideEvent *event){
+  close();
+}
+
+bool ConfirmationDialog::alert(const QString &prompt_text, QWidget *parent) {
+  ConfirmationDialog d = ConfirmationDialog(prompt_text, "Ok", "", parent);
   return d.exec();
 }
 
-bool ConfirmationDialog::confirm(const QString &prompt_text) {
-  ConfirmationDialog d = ConfirmationDialog(prompt_text);
+bool ConfirmationDialog::confirm(const QString &prompt_text, QWidget *parent) {
+  ConfirmationDialog d = ConfirmationDialog(prompt_text, "Ok", "Cancel", parent);
   return d.exec();
 }
 

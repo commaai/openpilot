@@ -93,14 +93,14 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
 
   offroad_btns.append(new ButtonControl("Reset Calibration", "RESET",
                                    "openpilot requires the device to be mounted within 4° left or right and within 5° up or down. openpilot is continuously calibrating, resetting is rarely required.", [=]() {
-    if (ConfirmationDialog::confirm("Are you sure you want to reset calibration?")) {
+    if (ConfirmationDialog::confirm("Are you sure you want to reset calibration?", this)) {
       Params().remove("CalibrationParams");
     }
   }));
 
   offroad_btns.append(new ButtonControl("Review Training Guide", "REVIEW",
                                         "Review the rules, features, and limitations of openpilot", [=]() {
-    if (ConfirmationDialog::confirm("Are you sure you want to review the training guide?")) {
+    if (ConfirmationDialog::confirm("Are you sure you want to review the training guide?", this)) {
       Params().remove("CompletedTrainingVersion");
       emit reviewTrainingGuide();
     }
@@ -108,7 +108,7 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
 
   QString brand = params.getBool("Passive") ? "dashcam" : "openpilot";
   offroad_btns.append(new ButtonControl("Uninstall " + brand, "UNINSTALL", "", [=]() {
-    if (ConfirmationDialog::confirm("Are you sure you want to uninstall?")) {
+    if (ConfirmationDialog::confirm("Are you sure you want to uninstall?", this)) {
       Params().putBool("DoUninstall", true);
     }
   }));
@@ -126,7 +126,7 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
   QPushButton *reboot_btn = new QPushButton("Reboot");
   power_layout->addWidget(reboot_btn);
   QObject::connect(reboot_btn, &QPushButton::released, [=]() {
-    if (ConfirmationDialog::confirm("Are you sure you want to reboot?")) {
+    if (ConfirmationDialog::confirm("Are you sure you want to reboot?", this)) {
       Hardware::reboot();
     }
   });
@@ -135,7 +135,7 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
   poweroff_btn->setStyleSheet("background-color: #E22C2C;");
   power_layout->addWidget(poweroff_btn);
   QObject::connect(poweroff_btn, &QPushButton::released, [=]() {
-    if (ConfirmationDialog::confirm("Are you sure you want to power off?")) {
+    if (ConfirmationDialog::confirm("Are you sure you want to power off?", this)) {
       Hardware::poweroff();
     }
   });
@@ -319,12 +319,6 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
 }
 
 void SettingsWindow::hideEvent(QHideEvent* event){
-
-  for(auto widget : QApplication::topLevelWidgets()){
-    if(widget->metaObject()->className() != QString("MainWindow")){
-      widget->close();
-    }
-  }
 #ifdef QCOM
   HardwareEon::close_activities();
 #endif

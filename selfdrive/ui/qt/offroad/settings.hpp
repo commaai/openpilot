@@ -17,8 +17,11 @@ class DevicePanel : public QWidget {
   Q_OBJECT
 public:
   explicit DevicePanel(QWidget* parent = nullptr);
+protected:
+  void hideEvent(QHideEvent* event) { emit closeDialogs(); };
 signals:
   void reviewTrainingGuide();
+  void closeDialogs();
 };
 
 class DeveloperPanel : public QFrame {
