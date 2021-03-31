@@ -437,6 +437,12 @@ routes = {
     'enableCamera': True,
     'enableDsu': False,
   },
+  "9b36accae406390e|2021-03-30--10-41-38": {
+    'carFingerprint': TOYOTA.MIRAI,
+    'enableCamera': True,
+    'enableDsu': False,
+    'fingerprintSource': 'fixed',
+  },
   "cae14e88932eb364|2021-03-26--14-43-28": {
     'carFingerprint': VOLKSWAGEN.GOLF_MK7,
     'enableCamera': True,
