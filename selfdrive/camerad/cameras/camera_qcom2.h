@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <pthread.h>
 
+#include "common/util.h"
 #include "camera_common.h"
 #include "media/cam_req_mgr.h"
 
@@ -18,6 +19,7 @@
 #define DEBAYER_LOCAL_WORKSIZE 16
 
 typedef struct CameraState {
+  MultiCameraState *multi_cam_state;
   CameraInfo ci;
   
   std::mutex exp_lock;
@@ -29,18 +31,10 @@ typedef struct CameraState {
   int exposure_time_max;
   float ef_filtered;
 
-  int device_iommu;
-  int cdm_iommu;
-
-  int video0_fd;
-  int video1_fd;
-  int isp_fd;
-
-  int sensor_fd;
-  int csiphy_fd;
+  unique_fd sensor_fd;
+  unique_fd csiphy_fd;
 
   int camera_num;
-
 
   uint32_t session_handle;
 
@@ -67,9 +61,12 @@ typedef struct CameraState {
 typedef struct MultiCameraState {
   int device;
 
-  int video0_fd;
-  int video1_fd;
-  int isp_fd;
+  unique_fd video0_fd;
+  unique_fd video1_fd;
+  unique_fd isp_fd;
+  int device_iommu;
+  int cdm_iommu;
+
 
   CameraState road_cam;
   CameraState wide_road_cam;
