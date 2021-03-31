@@ -223,10 +223,7 @@ static void handle_display_state(UIState* s, bool user_input) {
   }
 }
 
-GLWindow::GLWindow(QWidget* parent) : brightness_filter(BACKLIGHT_OFFROAD, BACKLIGHT_TS, BACKLIGHT_DT), QOpenGLWidget(parent) {
-  brightness_b = Params().get<float>("BRIGHTNESS_B").value_or(10.0);
-  brightness_m = Params().get<float>("BRIGHTNESS_M").value_or(0.1);
-
+GLWindow::GLWindow(QWidget* parent) : QOpenGLWidget(parent) {
   ui_state.sound = &sound;
   ui_state.fb_w = vwp_w;
   ui_state.fb_h = vwp_h;
@@ -237,6 +234,7 @@ GLWindow::GLWindow(QWidget* parent) : brightness_filter(BACKLIGHT_OFFROAD, BACKL
   ui_updater = new UIUpdater(this);
   ui_updater->moveToThread(ui_updater);
   connect(ui_updater, SIGNAL(offroadTransition(bool)), this, SIGNAL(offroadTransition(bool)));
+  connect(ui_updater, SIGNAL(screen_shutoff()), this, SIGNAL(screen_shutoff()));
 
   connect(this, &GLWindow::aboutToCompose, ui_updater, &UIUpdater::pause, Qt::BlockingQueuedConnection);
   connect(this, &GLWindow::frameSwapped, ui_updater, &UIUpdater::resume, Qt::DirectConnection);
@@ -248,8 +246,42 @@ GLWindow::~GLWindow() {
   ui_updater->exit();
 }
 
-void GLWindow::backlightUpdate() {
-  // Update brightness
+void GLWindow::resizeGL(int w, int h) {
+  std::cout << "resize " << w << "x" << h << std::endl;
+}
+
+void GLWindow::wake() {
+  handle_display_state(&ui_state, true);
+}
+
+// UIUpdater
+
+UIUpdater::UIUpdater(GLWindow* w) : QThread(), glWindow_(w), asleep_timer_(this), brightness_filter(BACKLIGHT_OFFROAD, BACKLIGHT_TS, BACKLIGHT_DT) {
+  brightness_b = Params().get<float>("BRIGHTNESS_B").value_or(10.0);
+  brightness_m = Params().get<float>("BRIGHTNESS_M").value_or(0.1);
+
+  connect(&asleep_timer_, &QTimer::timeout, this, &UIUpdater::update);
+  connect(this, &UIUpdater::frameSwapped, this, &UIUpdater::update, Qt::QueuedConnection);
+}
+
+void UIUpdater::pause() {
+  if (!is_updating_) return;
+
+  is_updating_ = false;
+  glWindow_->context()->moveToThread(glWindow_->thread());
+}
+
+void UIUpdater::resume() {
+  if (is_updating_) return;
+
+  glWindow_->context()->moveToThread(this);
+  is_updating_ = true;
+  emit frameSwapped();
+}
+
+void UIUpdater::backlightUpdate() {
+  UIState &ui_state = glWindow_->ui_state;
+
   float clipped_brightness = std::min(100.0f, (ui_state.scene.light_sensor * brightness_m) + brightness_b);
   if (!ui_state.scene.started) {
     clipped_brightness = BACKLIGHT_OFFROAD;
@@ -267,34 +299,32 @@ void GLWindow::backlightUpdate() {
   last_brightness = brightness;
 }
 
-void GLWindow::resizeGL(int w, int h) {
-  std::cout << "resize " << w << "x" << h << std::endl;
-}
-
-void GLWindow::wake() {
-  handle_display_state(&ui_state, true);
-}
-
-// UIUpdater
-
-UIUpdater::UIUpdater(GLWindow* w) : QThread(), glWindow_(w), asleep_timer_(this) {
-  connect(&asleep_timer_, &QTimer::timeout, this, &UIUpdater::update);
-  connect(this, &UIUpdater::needUpdate, this, &UIUpdater::update, Qt::QueuedConnection);
-}
-
-void UIUpdater::pause() {
+void UIUpdater::draw() {
   if (!is_updating_) return;
 
-  is_updating_ = false;
-  glWindow_->context()->moveToThread(glWindow_->thread());
-}
+  // Make the context (and an offscreen surface) current for this thread. The
+  // QOpenGLWidget's fbo is bound in the context.
+  glWindow_->makeCurrent();
 
-void UIUpdater::resume() {
-  if (is_updating_) return;
+  UIState *s = &glWindow_->ui_state;
+  if (!inited_) {
+    inited_ = true;
+    initializeOpenGLFunctions();
+    ui_nvg_init(s);
+    std::cout << "OpenGL version: " << glGetString(GL_VERSION) << std::endl;
+    std::cout << "OpenGL vendor: " << glGetString(GL_VENDOR) << std::endl;
+    std::cout << "OpenGL renderer: " << glGetString(GL_RENDERER) << std::endl;
+    std::cout << "OpenGL language version: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
+  }
 
-  glWindow_->context()->moveToThread(this);
-  is_updating_ = true;
-  emit needUpdate();
+  ui_update_vision(s);
+  ui_draw(s);
+
+  // context back to the gui thread.
+  glWindow_->doneCurrent();
+  // Schedule composition. Note that this will use QueuedConnection, meaning
+  // that update() will be invoked on the gui thread.
+  QMetaObject::invokeMethod(glWindow_, "update");
 }
 
 void UIUpdater::update() {
@@ -324,7 +354,7 @@ void UIUpdater::update() {
     return;
   }
 
-  glWindow_->backlightUpdate();
+  backlightUpdate();
 
   // scale volume with speed
   s->sound->setVolume(util::map_val(s->scene.car_state.getVEgo(), 0.f, 20.f,
@@ -337,32 +367,4 @@ void UIUpdater::update() {
     // warn on sub 15fps
     LOGW("slow frame(%llu) time: %.2f", s->sm->frame, u2 - u1);
   }
-}
-
-void UIUpdater::draw() {
-  if (!is_updating_) return;
-
-  // Make the context (and an offscreen surface) current for this thread. The
-  // QOpenGLWidget's fbo is bound in the context.
-  glWindow_->makeCurrent();
-
-  UIState *s = &glWindow_->ui_state;
-  if (!inited_) {
-    inited_ = true;
-    initializeOpenGLFunctions();
-    ui_nvg_init(s);
-    std::cout << "OpenGL version: " << glGetString(GL_VERSION) << std::endl;
-    std::cout << "OpenGL vendor: " << glGetString(GL_VENDOR) << std::endl;
-    std::cout << "OpenGL renderer: " << glGetString(GL_RENDERER) << std::endl;
-    std::cout << "OpenGL language version: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
-  }
-
-  ui_update_vision(s);
-  ui_draw(s);
-
-  // context back to the gui thread.
-  glWindow_->doneCurrent();
-  // Schedule composition. Note that this will use QueuedConnection, meaning
-  // that update() will be invoked on the gui thread.
-  QMetaObject::invokeMethod(glWindow_, "update");
 }

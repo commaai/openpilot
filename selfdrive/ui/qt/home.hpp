@@ -25,7 +25,6 @@ public:
   explicit GLWindow(QWidget* parent = 0);
   ~GLWindow();
   void wake();
-  void backlightUpdate();
   inline static UIState ui_state = {0};
 
 signals:
@@ -40,11 +39,6 @@ protected:
 private:
   UIUpdater* ui_updater;
   Sound sound;
-  // TODO: make a nice abstraction to handle embedded device stuff
-  float brightness_b = 0;
-  float brightness_m = 0;
-  float last_brightness = 0;
-  FirstOrderFilter brightness_filter;
 };
 
 // offroad home screen
@@ -98,14 +92,22 @@ public:
 
 signals:
   void offroadTransition(bool);
-  void needUpdate();
+  void screen_shutoff();
+  void frameSwapped();
 
 private:
   void update();
   void draw();
+  void backlightUpdate();
 
   bool inited_ = false, is_updating_ = false;
   bool prev_awake_ = false, prev_onroad_ = false;
   QTimer asleep_timer_;
   GLWindow* glWindow_;
+
+  // TODO: make a nice abstraction to handle embedded device stuff
+  float brightness_b = 0;
+  float brightness_m = 0;
+  float last_brightness = 0;
+  FirstOrderFilter brightness_filter;
 };
