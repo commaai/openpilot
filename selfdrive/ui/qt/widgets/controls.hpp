@@ -64,7 +64,7 @@ public:
         color: #E4E4E4;
         background-color: #393939;
       }
-      QPushButton::disabled {
+      QPushButton:disabled {
         color: #33E4E4E4;
       }
     )");
