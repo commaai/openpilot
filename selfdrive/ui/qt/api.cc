@@ -76,14 +76,14 @@ QString CommaApi::create_jwt() {
   return create_jwt(*(new QVector<QPair<QString, QJsonValue>>()));
 }
 
-RequestRepeater::RequestRepeater(QWidget* parent, QString requestURL, int period_seconds, const QString &cache_key, QVector<QPair<QString, QJsonValue>> payloads, bool disableWithScreen)
+RequestRepeater::RequestRepeater(QWidget* parent, QString requestURL, int period_seconds, const QString &cache_key, bool disableWithScreen)
   : disableWithScreen(disableWithScreen), cache_key(cache_key), QObject(parent)  {
   networkAccessManager = new QNetworkAccessManager(this);
 
   reply = NULL;
 
   QTimer* timer = new QTimer(this);
-  QObject::connect(timer, &QTimer::timeout, [=](){sendRequest(requestURL, payloads);});
+  QObject::connect(timer, &QTimer::timeout, [=](){sendRequest(requestURL);});
   timer->start(period_seconds * 1000);
 
   networkTimer = new QTimer(this);
@@ -98,13 +98,13 @@ RequestRepeater::RequestRepeater(QWidget* parent, QString requestURL, int period
   }
 }
 
-void RequestRepeater::sendRequest(QString requestURL, QVector<QPair<QString, QJsonValue>> payloads){
+void RequestRepeater::sendRequest(QString requestURL){
   if (GLWindow::ui_state.scene.started || !active || reply != NULL ||
       (!GLWindow::ui_state.awake && disableWithScreen)) {
     return;
   }
 
-  QString token = CommaApi::create_jwt(payloads);
+  QString token = CommaApi::create_jwt({});
   QNetworkRequest request;
   request.setUrl(QUrl(requestURL));
   request.setRawHeader(QByteArray("Authorization"), ("JWT " + token).toUtf8());
