@@ -48,22 +48,23 @@ HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
 }
 
 void HomeWindow::mousePressEvent(QMouseEvent* e) {
-  if (uiState()->scene.driver_view) {
+  UIState* ui_state = uiState();
+  if (ui_state->scene.driver_view) {
     Params().putBool("IsDriverViewEnabled", false);
-    uiState()->scene.driver_view = false;
+    ui_state->scene.driver_view = false;
     return;
   }
 
   glWindow->wake();
 
   // Settings button click
-  if (!uiState()->sidebar_collapsed && settings_btn.ptInRect(e->x(), e->y())) {
+  if (!ui_state->sidebar_collapsed && settings_btn.ptInRect(e->x(), e->y())) {
     emit openSettings();
   }
 
   // Handle sidebar collapsing
-  if (uiState()->scene.started && (e->x() >= uiState()->viz_rect.x - bdr_s)) {
-    uiState()->sidebar_collapsed = !uiState()->sidebar_collapsed;
+  if (ui_state->scene.started && (e->x() >= ui_state->viz_rect.x - bdr_s)) {
+    ui_state->sidebar_collapsed = !ui_state->sidebar_collapsed;
   }
 }
 
@@ -303,19 +304,18 @@ void UIUpdater::draw() {
   // QOpenGLWidget's fbo is bound in the context.
   glWindow_->makeCurrent();
 
-  UIState *s = &ui_state;
   if (!inited_) {
     inited_ = true;
     initializeOpenGLFunctions();
-    ui_nvg_init(s);
+    ui_nvg_init(&ui_state);
     std::cout << "OpenGL version: " << glGetString(GL_VERSION) << std::endl;
     std::cout << "OpenGL vendor: " << glGetString(GL_VENDOR) << std::endl;
     std::cout << "OpenGL renderer: " << glGetString(GL_RENDERER) << std::endl;
     std::cout << "OpenGL language version: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
   }
 
-  ui_update_vision(s);
-  ui_draw(s);
+  ui_update_vision(&ui_state);
+  ui_draw(&ui_state);
 
   // context back to the gui thread.
   glWindow_->doneCurrent();

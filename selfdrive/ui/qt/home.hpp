@@ -22,8 +22,8 @@ class GLWindow : public QOpenGLWidget {
 
 public:
   explicit GLWindow(QWidget* parent = 0);
-  ~GLWindow();
   void wake();
+  ~GLWindow();
 
 signals:
   void offroadTransition(bool offroad);
