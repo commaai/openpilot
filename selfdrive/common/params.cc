@@ -171,12 +171,14 @@ int Params::put(const char* key, const char* value, size_t value_size) {
   // 4) rename the temp file to the real name
   // 5) fsync() the containing directory
 
-  FileLock file_lock(params_path + "/.lock", LOCK_EX);
   int tmp_fd = -1;
   int result;
   std::string path;
   std::string tmp_path;
   ssize_t bytes_written;
+
+  FileLock file_lock(params_path + "/.lock", LOCK_EX);
+  std::lock_guard<FileLock> lk(file_lock);
 
   // Write value to temp.
   tmp_path = params_path + "/.tmp_value_XXXXXX";
@@ -189,9 +191,6 @@ int Params::put(const char* key, const char* value, size_t value_size) {
 
   // Build key path
   path = params_path + "/d/" + std::string(key);
-
-  // Take lock.
-  file_lock.lock();
 
   // change permissions to 0666 for apks
   result = fchmod(tmp_fd, 0666);
@@ -219,7 +218,6 @@ int Params::put(const char* key, const char* value, size_t value_size) {
   }
 
 cleanup:
-  file_lock.unlock();
   if (tmp_fd >= 0) {
     if (result < 0) {
       remove(tmp_path.c_str());
