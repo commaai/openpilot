@@ -351,7 +351,7 @@ void UIUpdater::draw() {
     std::cout << "OpenGL language version: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
   }
 
-  update_vision(s);
+  ui_update_vision(s);
   ui_draw(s);
 
   // context back to the gui thread.

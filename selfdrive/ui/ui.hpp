@@ -174,3 +174,4 @@ typedef struct UIState {
 
 void ui_init(UIState *s);
 void ui_update(UIState *s);
+void ui_update_vision(UIState *s);

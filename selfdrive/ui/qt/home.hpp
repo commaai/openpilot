@@ -45,11 +45,6 @@ private:
   float brightness_m = 0;
   float last_brightness = 0;
   FirstOrderFilter brightness_filter;
-
-signals:
-  void offroadTransition(bool offroad);
-  void screen_shutoff();
-  void renderRequested();
 };
 
 // offroad home screen
