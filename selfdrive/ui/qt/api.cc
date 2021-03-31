@@ -106,7 +106,7 @@ std::pair<QNetworkReply::NetworkError, QString> httpGet(const QString& url, int 
   return std::make_pair(err, reply->readAll());
 }
 
-RequestRepeater::RequestRepeater(QWidget* parent, QString requestURL, int period_seconds, const QString& cache_key, QVector<QPair<QString, QJsonValue>> payloads, bool disableWithScreen)
+RequestRepeater::RequestRepeater(QWidget* parent, const QString &requestURL, int period_seconds, const QString& cache_key, bool disableWithScreen)
     : disableWithScreen(disableWithScreen), cache_key(cache_key), sending(false), QObject(parent) {
   if (!cache_key.isEmpty()) {
     if (std::string cached_resp = Params().get(cache_key.toStdString()); !cached_resp.empty()) {
@@ -114,21 +114,21 @@ RequestRepeater::RequestRepeater(QWidget* parent, QString requestURL, int period
     }
   }
 
-  sendRequest(requestURL, payloads);
-
   QTimer *repeatTimer = new QTimer(this);
-  QObject::connect(repeatTimer, &QTimer::timeout, [=]() { sendRequest(requestURL, payloads); });
+  QObject::connect(repeatTimer, &QTimer::timeout, [=]() { sendRequest(requestURL); });
   repeatTimer->start(period_seconds * 1000);
+
+  sendRequest(requestURL);
 }
 
-void RequestRepeater::sendRequest(const QString& requestURL, QVector<QPair<QString, QJsonValue>> payloads) {
+void RequestRepeater::sendRequest(const QString& requestURL) {
   if (GLWindow::ui_state.scene.started || !active || sending ||
       (!GLWindow::ui_state.awake && disableWithScreen)) {
     return;
   }
 
   sending = true;
-  QMap<QString, QString> headers{{"Authorization", "JWT " + CommaApi::create_jwt(payloads)}};
+  QMap<QString, QString> headers{{"Authorization", "JWT " + CommaApi::create_jwt({})}};
   auto [err, resp] = httpGet(requestURL, 20000, &headers);
   if (!cache_key.isEmpty()) {
     if (err == QNetworkReply::NoError) {

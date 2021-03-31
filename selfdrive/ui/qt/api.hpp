@@ -30,13 +30,13 @@ class RequestRepeater : public QObject {
   Q_OBJECT
 
 public:
-  explicit RequestRepeater(QWidget* parent, QString requestURL, int period = 10, const QString &cache_key = "", QVector<QPair<QString, QJsonValue>> payloads = *(new QVector<QPair<QString, QJsonValue>>()), bool disableWithScreen = true);
+  explicit RequestRepeater(QWidget* parent, const QString &requestURL, int period = 10, const QString &cache_key = "",  bool disableWithScreen = true);
   bool active = true;
 
 private:
   bool disableWithScreen, sending;
   QString cache_key;
-  void sendRequest(QString requestURL);
+  void sendRequest(const QString &requestURL);
 
 signals:
   void receivedResponse(QNetworkReply::NetworkError, const QString &response);
