@@ -21,11 +21,9 @@ class GLWindow : public QOpenGLWidget {
   Q_OBJECT
 
 public:
-  using QOpenGLWidget::QOpenGLWidget;
   explicit GLWindow(QWidget* parent = 0);
   ~GLWindow();
   void wake();
-  inline static UIState ui_state = {0};
 
 signals:
   void offroadTransition(bool offroad);
@@ -38,7 +36,6 @@ protected:
 
 private:
   UIUpdater* ui_updater;
-  Sound sound;
 };
 
 // offroad home screen
@@ -89,6 +86,7 @@ public:
   UIUpdater(GLWindow* w);
   void pause();
   void resume();
+  inline static UIState ui_state = {};
 
 signals:
   void offroadTransition(bool);
@@ -99,6 +97,8 @@ private:
   void update();
   void draw();
   void backlightUpdate();
+
+  Sound sound;
 
   bool inited_ = false, is_updating_ = false;
   bool prev_awake_ = false, prev_onroad_ = false;

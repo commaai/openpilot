@@ -48,10 +48,10 @@ HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
 }
 
 void HomeWindow::mousePressEvent(QMouseEvent* e) {
-  UIState* ui_state = &glWindow->ui_state;
-  if (GLWindow::ui_state.scene.driver_view) {
+  UIState* ui_state = &UIUpdater::ui_state;
+  if (UIUpdater::ui_state.scene.driver_view) {
     Params().putBool("IsDriverViewEnabled", false);
-    GLWindow::ui_state.scene.driver_view = false;
+    UIUpdater::ui_state.scene.driver_view = false;
     return;
   }
 
@@ -224,13 +224,6 @@ static void handle_display_state(UIState* s, bool user_input) {
 }
 
 GLWindow::GLWindow(QWidget* parent) : QOpenGLWidget(parent) {
-  ui_state.sound = &sound;
-  ui_state.fb_w = vwp_w;
-  ui_state.fb_h = vwp_h;
-  ui_init(&ui_state);
-
-  wake();
-
   ui_updater = new UIUpdater(this);
   ui_updater->moveToThread(ui_updater);
   connect(ui_updater, SIGNAL(offroadTransition(bool)), this, SIGNAL(offroadTransition(bool)));
@@ -240,6 +233,8 @@ GLWindow::GLWindow(QWidget* parent) : QOpenGLWidget(parent) {
   connect(this, &GLWindow::frameSwapped, ui_updater, &UIUpdater::resume, Qt::DirectConnection);
   connect(this, &GLWindow::aboutToResize, ui_updater, &UIUpdater::pause, Qt::BlockingQueuedConnection);
   ui_updater->start();
+
+  wake();
 }
 
 GLWindow::~GLWindow() {
@@ -251,7 +246,7 @@ void GLWindow::resizeGL(int w, int h) {
 }
 
 void GLWindow::wake() {
-  handle_display_state(&ui_state, true);
+  handle_display_state(&UIUpdater::ui_state, true);
 }
 
 // UIUpdater
@@ -259,6 +254,11 @@ void GLWindow::wake() {
 UIUpdater::UIUpdater(GLWindow* w) : QThread(), glWindow_(w), asleep_timer_(this), brightness_filter(BACKLIGHT_OFFROAD, BACKLIGHT_TS, BACKLIGHT_DT) {
   brightness_b = Params().get<float>("BRIGHTNESS_B").value_or(10.0);
   brightness_m = Params().get<float>("BRIGHTNESS_M").value_or(0.1);
+
+  ui_state.sound = &sound;
+  ui_state.fb_w = vwp_w;
+  ui_state.fb_h = vwp_h;
+  ui_init(&ui_state);
 
   connect(&asleep_timer_, &QTimer::timeout, this, &UIUpdater::update);
   connect(this, &UIUpdater::frameSwapped, this, &UIUpdater::update, Qt::QueuedConnection);
@@ -280,8 +280,6 @@ void UIUpdater::resume() {
 }
 
 void UIUpdater::backlightUpdate() {
-  UIState &ui_state = glWindow_->ui_state;
-
   float clipped_brightness = std::min(100.0f, (ui_state.scene.light_sensor * brightness_m) + brightness_b);
   if (!ui_state.scene.started) {
     clipped_brightness = BACKLIGHT_OFFROAD;
@@ -306,7 +304,7 @@ void UIUpdater::draw() {
   // QOpenGLWidget's fbo is bound in the context.
   glWindow_->makeCurrent();
 
-  UIState *s = &glWindow_->ui_state;
+  UIState *s = &ui_state;
   if (!inited_) {
     inited_ = true;
     initializeOpenGLFunctions();
@@ -328,7 +326,7 @@ void UIUpdater::draw() {
 }
 
 void UIUpdater::update() {
-  UIState *s = &glWindow_->ui_state;
+  UIState *s = &ui_state;
 
   if (!s->scene.started && s->awake) {
     util::sleep_for(50);
