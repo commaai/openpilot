@@ -27,7 +27,6 @@ public:
   void wake();
   void backlightUpdate();
   inline static UIState ui_state = {0};
-  bool onroad = true;
 
 signals:
   void offroadTransition(bool offroad);
@@ -104,7 +103,9 @@ signals:
 private:
   void update();
   void draw();
-  bool inited_ = false, prev_awake_ = false, is_updating_ = false;;
-  QTimer timer_;
+
+  bool inited_ = false, is_updating_ = false;
+  bool prev_awake_ = false, prev_onroad_ = false;
+  QTimer asleep_timer_;
   GLWindow* glWindow_;
 };

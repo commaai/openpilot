@@ -236,6 +236,8 @@ GLWindow::GLWindow(QWidget* parent) : brightness_filter(BACKLIGHT_OFFROAD, BACKL
 
   ui_updater = new UIUpdater(this);
   ui_updater->moveToThread(ui_updater);
+  connect(ui_updater, SIGNAL(offroadTransition(bool)), this, SIGNAL(offroadTransition(bool)));
+
   connect(this, &GLWindow::aboutToCompose, ui_updater, &UIUpdater::pause, Qt::BlockingQueuedConnection);
   connect(this, &GLWindow::frameSwapped, ui_updater, &UIUpdater::resume, Qt::DirectConnection);
   connect(this, &GLWindow::aboutToResize, ui_updater, &UIUpdater::pause, Qt::BlockingQueuedConnection);
@@ -275,8 +277,8 @@ void GLWindow::wake() {
 
 // UIUpdater
 
-UIUpdater::UIUpdater(GLWindow* w) : QThread(), glWindow_(w), timer_(this) {
-  connect(&timer_, &QTimer::timeout, this, &UIUpdater::update);
+UIUpdater::UIUpdater(GLWindow* w) : QThread(), glWindow_(w), asleep_timer_(this) {
+  connect(&asleep_timer_, &QTimer::timeout, this, &UIUpdater::update);
   connect(this, &UIUpdater::needUpdate, this, &UIUpdater::update, Qt::QueuedConnection);
 }
 
@@ -306,14 +308,14 @@ void UIUpdater::update() {
 
   ui_update(s);
 
-  if (s->scene.started != glWindow_->onroad) {
-    glWindow_->onroad = s->scene.started;
-    emit offroadTransition(!glWindow_->onroad);
+  if (s->scene.started != prev_onroad_) {
+    prev_onroad_ = s->scene.started;
+    emit offroadTransition(!prev_onroad_);
   }
 
   handle_display_state(s, false);
   if (s->awake != prev_awake_) {
-    s->awake ? timer_.stop() : timer_.start(50);
+    s->awake ? asleep_timer_.stop() : asleep_timer_.start(50);
     prev_awake_ = s->awake;
   }
 
@@ -360,7 +362,7 @@ void UIUpdater::draw() {
 
   // context back to the gui thread.
   glWindow_->doneCurrent();
-  // // Schedule composition. Note that this will use QueuedConnection, meaning
-  // // that update() will be invoked on the gui thread.
+  // Schedule composition. Note that this will use QueuedConnection, meaning
+  // that update() will be invoked on the gui thread.
   QMetaObject::invokeMethod(glWindow_, "update");
 }
