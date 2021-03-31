@@ -26,6 +26,8 @@
     ret;                                                      \
   })
 
+namespace {
+
 #if defined(QCOM) || defined(QCOM2)
 const std::string default_params_path = "/data/params";
 #else
@@ -44,7 +46,7 @@ void params_sig_handler(int signal) {
   params_do_exit = 1;
 }
 
-static int fsync_dir(const char* path){
+int fsync_dir(const char* path){
   int fd = HANDLE_EINTR(open(path, O_RDONLY, 0755));
   if (fd < 0){
     return -1;
@@ -59,7 +61,7 @@ static int fsync_dir(const char* path){
 }
 
 // TODO: replace by std::filesystem::create_directories
-static int mkdir_p(std::string path) {
+int mkdir_p(std::string path) {
   char * _path = (char *)path.c_str();
 
   mode_t prev_mask = umask(0);
@@ -80,7 +82,7 @@ static int mkdir_p(std::string path) {
   return 0;
 }
 
-static bool ensure_params_path(const std::string &param_path, const std::string &key_path) {
+bool ensure_params_path(const std::string &param_path, const std::string &key_path) {
   // Make sure params path exists
   if (!util::file_exists(param_path) && mkdir_p(param_path) != 0) {
     return false;
@@ -154,6 +156,8 @@ private:
   int op_;
   std::string fn_;
 };
+
+} // namespace
 
 Params::Params(bool persistent_param) : Params(persistent_param ? persistent_params_path : default_params_path) {}
 
