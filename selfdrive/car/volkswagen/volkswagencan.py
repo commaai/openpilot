@@ -15,18 +15,22 @@ def create_mqb_steering_control(packer, bus, apply_steer, idx, lkas_enabled):
   }
   return packer.make_can_msg("HCA_01", bus, values, idx)
 
-def create_mqb_hud_control(packer, bus, hca_enabled, steering_pressed, hud_alert, left_lane_visible, right_lane_visible,
-                           ldw_lane_warning_left, ldw_lane_warning_right, ldw_side_dlc_tlc, ldw_dlc, ldw_tlc):
-  if hca_enabled:
-    left_lane_hud = 3 if left_lane_visible else 1
-    right_lane_hud = 3 if right_lane_visible else 1
-  else:
+def create_mqb_hud_control(packer, bus, enabled, steering_pressed, hud_alert, left_lane_visible, right_lane_visible,
+                           ldw_lane_warning_left, ldw_lane_warning_right, ldw_side_dlc_tlc, ldw_dlc, ldw_tlc,
+                           left_lane_depart, right_lane_depart):
+  if enabled:
     left_lane_hud = 2 if left_lane_visible else 1
     right_lane_hud = 2 if right_lane_visible else 1
+  else:
+    left_lane_hud = 0
+    right_lane_hud = 0
+
+  left_lane_hud = 3 if left_lane_depart else left_lane_hud
+  right_lane_hud = 3 if right_lane_depart else right_lane_hud
 
   values = {
-    "LDW_Status_LED_gelb": 1 if hca_enabled and steering_pressed else 0,
-    "LDW_Status_LED_gruen": 1 if hca_enabled and not steering_pressed else 0,
+    "LDW_Status_LED_gelb": 1 if enabled and steering_pressed else 0,
+    "LDW_Status_LED_gruen": 1 if enabled and not steering_pressed else 0,
     "LDW_Lernmodus_links": left_lane_hud,
     "LDW_Lernmodus_rechts": right_lane_hud,
     "LDW_Texte": hud_alert,

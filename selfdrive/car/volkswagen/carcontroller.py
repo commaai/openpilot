@@ -1,4 +1,5 @@
 from cereal import car
+from common.params import Params
 from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.volkswagen import volkswagencan
 from selfdrive.car.volkswagen.values import DBC, CANBUS, MQB_LDW_MESSAGES, BUTTON_STATES, CarControllerParams
@@ -18,9 +19,11 @@ class CarController():
     self.graMsgStartFramePrev = 0
     self.graMsgBusCounterPrev = 0
 
+    self.use_lanelines = Params().get('EndToEndToggle') != b'1'
+
     self.steer_rate_limited = False
 
-  def update(self, enabled, CS, frame, actuators, visual_alert, left_lane_visible, right_lane_visible):
+  def update(self, enabled, CS, frame, actuators, visual_alert, left_lane_visible, right_lane_visible, left_lane_depart, right_lane_depart):
     """ Controls thread """
 
     P = CarControllerParams
@@ -110,18 +113,20 @@ class CarController():
     # filters LDW_02 from the factory camera and OP emits LDW_02 at 10Hz.
 
     if frame % P.LDW_STEP == 0:
-      hcaEnabled = True if enabled and not CS.out.standstill else False
-
       if visual_alert == car.CarControl.HUDControl.VisualAlert.steerRequired:
         hud_alert = MQB_LDW_MESSAGES["laneAssistTakeOverSilent"]
       else:
         hud_alert = MQB_LDW_MESSAGES["none"]
 
-      can_sends.append(volkswagencan.create_mqb_hud_control(self.packer_pt, CANBUS.pt, hcaEnabled,
+      left_lane_visible = (left_lane_visible and not CS.out.standstill) if self.use_lanelines else True
+      right_lane_visible = (right_lane_visible and not CS.out.standstill) if self.use_lanelines else True
+
+      can_sends.append(volkswagencan.create_mqb_hud_control(self.packer_pt, CANBUS.pt, enabled,
                                                             CS.out.steeringPressed, hud_alert, left_lane_visible,
                                                             right_lane_visible, CS.ldw_lane_warning_left,
                                                             CS.ldw_lane_warning_right, CS.ldw_side_dlc_tlc,
-                                                            CS.ldw_dlc, CS.ldw_tlc))
+                                                            CS.ldw_dlc, CS.ldw_tlc,
+                                                            left_lane_depart, right_lane_depart))
 
     #--------------------------------------------------------------------------
     #                                                                         #
