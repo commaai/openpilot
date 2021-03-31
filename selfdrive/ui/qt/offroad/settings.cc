@@ -215,7 +215,6 @@ QWidget * network_panel(QWidget * parent) {
 }
 
 SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
-
   // setup two main layouts
   QVBoxLayout *sidebar_layout = new QVBoxLayout();
   sidebar_layout->setMargin(0);
