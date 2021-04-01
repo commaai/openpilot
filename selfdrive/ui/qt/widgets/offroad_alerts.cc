@@ -36,9 +36,13 @@ OffroadAlert::OffroadAlert(QWidget* parent) : QFrame(parent) {
   releaseNotes.setWordWrap(true);
   releaseNotes.setVisible(false);
   releaseNotes.setStyleSheet("font-size: 48px;");
-  layout->addWidget(new ScrollView(&releaseNotes));
+  releaseNotes.setAlignment(Qt::AlignTop);
 
-  layout->addWidget(new ScrollView(alerts_widget));
+  releaseNotesScroll = new ScrollView(&releaseNotes);
+  layout->addWidget(releaseNotesScroll);
+
+  alertsScroll = new ScrollView(alerts_widget);
+  layout->addWidget(alertsScroll);
 
   // bottom footer, dismiss + reboot buttons
   QHBoxLayout *footer_layout = new QHBoxLayout();
@@ -79,11 +83,12 @@ void OffroadAlert::refresh() {
   updateAlerts();
 
   rebootBtn.setVisible(updateAvailable);
-  releaseNotes.setVisible(updateAvailable);
+  releaseNotesScroll->setVisible(updateAvailable);
   releaseNotes.setText(QString::fromStdString(params.get("ReleaseNotes")));
 
+  alertsScroll->setVisible(!updateAvailable);
   for (const auto& [k, label] : alerts) {
-    label->setVisible(!updateAvailable && !label->text().isEmpty());
+    label->setVisible(!label->text().isEmpty());
   }
 }
 
