@@ -14,10 +14,13 @@ int main(int argc, char *argv[]) {
   setMainWindow(&window);
 
   QVBoxLayout *layout = new QVBoxLayout();
-  layout->setContentsMargins(125, 125, 125, 125);
+  layout->setMargin(100);
 
   // TODO: make this scroll
-  ScrollView *scroll = new ScrollView(new QLabel(argv[1]));
+  QLabel *lab = new QLabel(argv[1]);
+  lab->setWordWrap(true);
+  ScrollView *scroll = new ScrollView(lab);
+  scroll->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
   layout->addWidget(scroll, 0, Qt::AlignTop);
 
 
