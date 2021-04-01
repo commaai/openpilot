@@ -1,14 +1,18 @@
 #!/usr/bin/env python3
 
 import sys
-
 import numpy as np
-import sympy as sp
 
-# from selfdrive.swaglog import cloudlog
+from selfdrive.swaglog import cloudlog
 from selfdrive.locationd.models.constants import ObservationKind
-from rednose.helpers.ekf_sym_old import gen_code
-from rednose.helpers.sympy_helpers import euler_rotate, quat_matrix_r, quat_rotate
+
+if __name__ == '__main__':  # Generating sympy
+  import sympy as sp
+  from rednose.helpers.sympy_helpers import euler_rotate, quat_matrix_r, quat_rotate
+  from rednose.helpers.ekf_sym_gen import gen_code
+else:
+  from rednose.helpers.ekf_sym_pyx import EKF_sym  # pylint: disable=no-name-in-module
+  from rednose.helpers.ekf_sym_py import EKF_sym as EKF_sym2
 
 EARTH_GM = 3.986005e14  # m^3/s^2 (gravitational constant * mass of earth)
 
@@ -191,6 +195,107 @@ class LiveKalman():
                [h_imu_frame_sym, ObservationKind.IMU_FRAME, None]]
 
     gen_code(generated_dir, name, f_sym, dt, state_sym, obs_eqs, dim_state, dim_state_err, eskf_params)
+
+  def __init__(self, generated_dir):
+    self.dim_state = self.initial_x.shape[0]
+    self.dim_state_err = self.initial_P_diag.shape[0]
+
+    self.obs_noise = {ObservationKind.ODOMETRIC_SPEED: np.atleast_2d(0.2**2),
+                      ObservationKind.PHONE_GYRO: np.diag([0.025**2, 0.025**2, 0.025**2]),
+                      ObservationKind.PHONE_ACCEL: np.diag([.5**2, .5**2, .5**2]),
+                      ObservationKind.CAMERA_ODO_ROTATION: np.diag([0.05**2, 0.05**2, 0.05**2]),
+                      ObservationKind.IMU_FRAME: np.diag([0.05**2, 0.05**2, 0.05**2]),
+                      ObservationKind.NO_ROT: np.diag([0.00025**2, 0.00025**2, 0.00025**2]),
+                      ObservationKind.ECEF_POS: np.diag([5**2, 5**2, 5**2]),
+                      ObservationKind.ECEF_VEL: np.diag([.5**2, .5**2, .5**2]),
+                      ObservationKind.ECEF_ORIENTATION_FROM_GPS: np.diag([.2**2, .2**2, .2**2, .2**2])}
+
+    # init filter
+    self.filter = EKF_sym(generated_dir, self.name, self.Q, self.initial_x, np.diag(self.initial_P_diag), self.dim_state, self.dim_state_err, max_rewind_age=0.2, logger=cloudlog)
+    self.filter2 = EKF_sym2(generated_dir, self.name, self.Q, self.initial_x, np.diag(self.initial_P_diag), self.dim_state, self.dim_state_err, max_rewind_age=0.2, logger=cloudlog)
+
+  @property
+  def x(self):
+    assert(self.filter.get_state().shape == self.filter2.get_state().shape)
+    assert(np.allclose(self.filter.get_state(), self.filter2.get_state()))
+    return self.filter.get_state()
+
+  @property
+  def t(self):
+    assert(np.allclose(self.filter.get_filter_time(), self.filter2.get_filter_time()))
+    return self.filter.get_filter_time()
+
+  @property
+  def P(self):
+    assert(np.allclose(self.filter.get_covs(), self.filter2.get_covs()))
+    return self.filter.get_covs()
+
+  def rts_smooth(self, estimates):
+    return self.filter.rts_smooth(estimates, norm_quats=True)
+
+  def init_state(self, state, covs_diag=None, covs=None, filter_time=None):
+    if covs_diag is not None:
+      P = np.diag(covs_diag)
+    elif covs is not None:
+      P = covs
+    else:
+      P = self.P
+    self.filter.init_state(state, P, filter_time)
+    self.filter2.init_state(state, P, filter_time)
+
+  def predict_and_observe(self, t, kind, meas, R=None):
+    if len(meas) > 0:
+      meas = np.atleast_2d(meas)
+    if kind == ObservationKind.CAMERA_ODO_TRANSLATION:
+      r = self.predict_and_update_odo_trans(meas, t, kind)
+    elif kind == ObservationKind.CAMERA_ODO_ROTATION:
+      r = self.predict_and_update_odo_rot(meas, t, kind)
+    elif kind == ObservationKind.ODOMETRIC_SPEED:
+      r = self.predict_and_update_odo_speed(meas, t, kind)
+    else:
+      if R is None:
+        R = self.get_R(kind, len(meas))
+      elif len(R.shape) == 2:
+        R = R[None]
+      r = self.filter.predict_and_update_batch(t, kind, meas, R)
+      self.filter2.predict_and_update_batch(t, kind, meas, R)
+
+    self.filter.normalize_state(States.ECEF_ORIENTATION.start, States.ECEF_ORIENTATION.stop)
+    self.filter2.normalize_state(States.ECEF_ORIENTATION.start, States.ECEF_ORIENTATION.stop)
+    return r
+
+  def get_R(self, kind, n):
+    obs_noise = self.obs_noise[kind]
+    dim = obs_noise.shape[0]
+    R = np.zeros((n, dim, dim))
+    for i in range(n):
+      R[i, :, :] = obs_noise
+    return R
+
+  def predict_and_update_odo_speed(self, speed, t, kind):
+    z = np.array(speed)
+    R = np.zeros((len(speed), 1, 1))
+    for i, _ in enumerate(z):
+      R[i, :, :] = np.diag([0.2**2])
+    self.filter2.predict_and_update_batch(t, kind, z, R)
+    return self.filter.predict_and_update_batch(t, kind, z, R)
+
+  def predict_and_update_odo_trans(self, trans, t, kind):
+    z = trans[:, :3]
+    R = np.zeros((len(trans), 3, 3))
+    for i, _ in enumerate(z):
+        R[i, :, :] = np.diag(trans[i, 3:]**2)
+    self.filter2.predict_and_update_batch(t, kind, z, R)
+    return self.filter.predict_and_update_batch(t, kind, z, R)
+
+  def predict_and_update_odo_rot(self, rot, t, kind):
+    z = rot[:, :3]
+    R = np.zeros((len(rot), 3, 3))
+    for i, _ in enumerate(z):
+        R[i, :, :] = np.diag(rot[i, 3:]**2)
+    self.filter2.predict_and_update_batch(t, kind, z, R)
+    return self.filter.predict_and_update_batch(t, kind, z, R)
+
 
 if __name__ == "__main__":
   generated_dir = sys.argv[2]

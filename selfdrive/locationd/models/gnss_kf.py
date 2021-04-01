@@ -5,7 +5,8 @@ from typing import List
 import numpy as np
 import sympy as sp
 
-from rednose.helpers.ekf_sym_old import EKF_sym, gen_code
+from rednose.helpers.ekf_sym_gen import gen_code
+from rednose.helpers.ekf_sym_py import EKF_sym
 from selfdrive.locationd.models.constants import ObservationKind
 from selfdrive.locationd.models.loc_kf import parse_pr, parse_prr
 
@@ -125,11 +126,11 @@ class GNSSKalman():
 
   @property
   def x(self):
-    return self.filter.state()
+    return self.filter.get_state()
 
   @property
   def P(self):
-    return self.filter.covs()
+    return self.filter.get_covs()
 
   def predict(self, t):
     return self.filter.predict(t)
@@ -143,7 +144,7 @@ class GNSSKalman():
     elif covs is not None:
       P = covs
     else:
-      P = self.filter.covs()
+      P = self.filter.get_covs()
     self.filter.init_state(state, P, filter_time)
 
   def predict_and_observe(self, t, kind, data):

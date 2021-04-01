@@ -12,8 +12,7 @@ from common.transformations.orientation import ecef_euler_from_ned, \
                                                quat_from_euler, euler_from_rot, \
                                                rot_from_quat, rot_from_euler
 from rednose.helpers import KalmanError
-from selfdrive.locationd.models.live_kf_kf import LiveKalman, States, ObservationKind
-from selfdrive.locationd.models.live_kf_old import LiveKalman as LiveKalman2
+from selfdrive.locationd.models.live_kf import LiveKalman, States, ObservationKind
 from selfdrive.locationd.models.constants import GENERATED_DIR
 from selfdrive.swaglog import cloudlog
 
@@ -57,7 +56,6 @@ class Localizer():
       disabled_logs = []
 
     self.kf = LiveKalman(GENERATED_DIR)
-    self.kf2 = LiveKalman2(GENERATED_DIR)
     self.reset_kalman()
     self.max_age = .1  # seconds
     self.disabled_logs = disabled_logs
@@ -72,8 +70,6 @@ class Localizer():
     self.car_speed = 0
     self.posenet_stds = 10*np.ones((POSENET_STD_HIST))
 
-    assert(np.allclose(self.kf.x, self.kf2.x))
-    assert(np.allclose(self.kf.P, self.kf2.P))
     self.converter = coord.LocalCoord.from_ecef(self.kf.x[States.ECEF_POS])
 
     self.unix_timestamp_millis = 0
@@ -151,8 +147,6 @@ class Localizer():
     return fix
 
   def liveLocationMsg(self):
-    assert(np.allclose(self.kf.x, self.kf2.x))
-    assert(np.allclose(self.kf.P, self.kf2.P))
     fix = self.msg_from_state(self.converter, self.calib_from_device, self.H, self.kf.x, self.kf.P, self.calibrated)
     # experimentally found these values, no false positives in 20k minutes of driving
     old_mean, new_mean = np.mean(self.posenet_stds[:POSENET_STD_HIST//2]), np.mean(self.posenet_stds[POSENET_STD_HIST//2:])
@@ -177,7 +171,6 @@ class Localizer():
   def update_kalman(self, time, kind, meas, R=None):
     try:
       self.kf.predict_and_observe(time, kind, meas, R)
-      self.kf2.predict_and_observe(time, kind, meas, R)
     except KalmanError:
       cloudlog.error("Error in predict and observe, kalman reset")
       self.reset_kalman()
@@ -197,8 +190,6 @@ class Localizer():
 
     #self.time = GPSTime.from_datetime(datetime.utcfromtimestamp(log.timestamp*1e-3))
     self.unix_timestamp_millis = log.timestamp
-    assert(np.allclose(self.kf.x, self.kf2.x))
-    assert(np.allclose(self.kf.P, self.kf2.P))
     gps_est_error = np.sqrt((self.kf.x[0] - ecef_pos[0])**2 +
                             (self.kf.x[1] - ecef_pos[1])**2 +
                             (self.kf.x[2] - ecef_pos[2])**2)
@@ -288,7 +279,6 @@ class Localizer():
     if init_pos is not None:
       init_x[:3] = init_pos
     self.kf.init_state(init_x, covs=np.diag(LiveKalman.initial_P_diag), filter_time=current_time)
-    self.kf2.init_state(init_x, covs=np.diag(LiveKalman.initial_P_diag), filter_time=current_time)
 
     self.observation_buffer = []
 

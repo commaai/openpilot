@@ -1,37 +1,50 @@
-Import('env', 'arch')
+Import('env', 'envCython', 'arch')
 
 templates = Glob('#rednose/templates/*')
-
 sympy_helpers = "#rednose/helpers/sympy_helpers.py"
-ekf_sym = "#rednose/helpers/ekf_sym_old.py"
+ekf_sym_gen = "#rednose/helpers/ekf_sym_gen.py"
+ekf_sym_pyx = "#rednose/helpers/ekf_sym_pyx.pyx"
+ekf_sym_cc = "#rednose/helpers/ekf_sym.cc"
+common_ekf = "#rednose/helpers/common_ekf.cc"
 
 to_build = {
-    'live': ('live_kf.py', 'generated'),
-    'car': ('car_kf.py', 'generated'),
+    'live': ('live_kf.py', 'generated', True),
+    'car': ('car_kf.py', 'generated', True),
 }
 
 if arch != "aarch64":
     to_build.update({
-        'gnss': ('gnss_kf.py', 'generated'),
-        'loc_4': ('loc_kf.py', 'generated'),
-        'pos_computer_4': ('#rednose/helpers/lst_sq_computer.py', 'generated'),
-        'pos_computer_5': ('#rednose/helpers/lst_sq_computer.py', 'generated'),
-        'feature_handler_5': ('#rednose/helpers/feature_handler.py', 'generated'),
-        'lane': ('#xx/pipeline/lib/ekf/lane_kf.py', 'generated'),
+        'gnss': ('gnss_kf.py', 'generated', True),
+        'loc_4': ('loc_kf.py', 'generated', True),
+        'pos_computer_4': ('#rednose/helpers/lst_sq_computer.py', 'generated', False),
+        'pos_computer_5': ('#rednose/helpers/lst_sq_computer.py', 'generated', False),
+        'feature_handler_5': ('#rednose/helpers/feature_handler.py', 'generated', False),
+        'lane': ('#xx/pipeline/lib/ekf/lane_kf.py', 'generated', True),
     })
 
 found = {}
 
-for target, (command, generated_folder) in to_build.items():
+for target, (command, generated_folder, use_cpp) in to_build.items():
     if File(command).exists():
-        found[target] = (command, generated_folder)
+        found[target] = (command, generated_folder, use_cpp)
 
-for target, (command, generated_folder) in found.items():
+lib_target = [common_ekf]
+for target, (command, generated_folder, use_cpp) in found.items():
     target_files = File([f'{generated_folder}/{target}.cpp', f'{generated_folder}/{target}.h'])
     command_file = File(command)
 
     env.Command(target_files,
-                [templates, command_file, sympy_helpers, ekf_sym],
+                [command_file, templates, sympy_helpers, ekf_sym_gen],
                 command_file.get_abspath() + " " + target + " " + Dir(generated_folder).get_abspath())
 
-    env.SharedLibrary(f'{generated_folder}/' + target, target_files[0])
+    if use_cpp:
+        lib_target.append(target_files[0])
+    else:
+        env.SharedLibrary(f'{generated_folder}/' + target, target_files[0])
+
+env.SharedLibrary(f'{generated_folder}/kf', lib_target)
+
+envCython.Program('#rednose/helpers/ekf_sym_pyx.so',
+    [ekf_sym_pyx, ekf_sym_cc, common_ekf],
+    LIBS=["kf"],
+    LIBPATH=["generated/"])
