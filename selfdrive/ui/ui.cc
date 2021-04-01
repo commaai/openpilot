@@ -10,6 +10,7 @@
 #include <sys/mman.h>
 #include "json11.hpp"
 #include <fstream>
+#include <algorithm>
 
 #include "common/util.h"
 #include "common/swaglog.h"
@@ -41,6 +42,13 @@ void sa_init(UIState *s, bool full_init) {
     dynamic_follow = dynamic_follow.substr(1, dynamic_follow.find_last_of('"') - 1);
     std::cout << "set dfButtonStatus to " << dynamic_follow << std::endl;
     s->scene.dfButtonStatus = DF_TO_IDX[dynamic_follow];
+  }
+  std::string model_laneless = util::read_file("/data/community/params/model_laneless");
+  if (model_laneless != "") {
+    model_laneless.erase(std::remove(model_laneless.begin(), model_laneless.end(), '\n'), model_laneless.end());  // strips whitespace and newline
+    model_laneless.erase(std::remove(model_laneless.begin(), model_laneless.end(), ' '), model_laneless.end());
+    s->scene.end_to_end = model_laneless == "true";
+    std::cout << "model_laneless is " << s->scene.end_to_end << std::endl;
   }
 //  std::string lane_speed_alerts = util::read_file("/data/community/params/lane_speed_alerts");
 //  if (lane_speed_alerts != "") {
