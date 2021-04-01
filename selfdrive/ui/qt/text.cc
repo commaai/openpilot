@@ -6,7 +6,6 @@
 
 #include "qt_window.hpp"
 #include "selfdrive/hardware/hw.h"
-#include "widgets/scroller.hpp"
 
 int main(int argc, char *argv[]) {
   QApplication a(argc, argv);
@@ -14,15 +13,10 @@ int main(int argc, char *argv[]) {
   setMainWindow(&window);
 
   QVBoxLayout *layout = new QVBoxLayout();
-  layout->setMargin(100);
+  layout->setContentsMargins(125, 125, 125, 125);
 
   // TODO: make this scroll
-  QLabel *lab = new QLabel(argv[1]);
-  lab->setWordWrap(true);
-  ScrollView *scroll = new ScrollView(lab);
-  scroll->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-  layout->addWidget(scroll, 0, Qt::AlignTop);
-
+  layout->addWidget(new QLabel(argv[1]), 0, Qt::AlignTop);
 
   QPushButton *btn = new QPushButton();
 #ifdef __aarch64__
