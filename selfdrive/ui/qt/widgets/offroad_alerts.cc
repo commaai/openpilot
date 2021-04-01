@@ -32,13 +32,13 @@ OffroadAlert::OffroadAlert(QWidget* parent) : QFrame(parent) {
     alerts_layout->addWidget(l);
   }
 
-  layout->addWidget(new ScrollView(alerts_widget));
-
   // release notes
   releaseNotes.setWordWrap(true);
   releaseNotes.setVisible(false);
   releaseNotes.setStyleSheet("font-size: 48px;");
   layout->addWidget(&releaseNotes);
+
+  layout->addWidget(new ScrollView(alerts_widget));
 
   // bottom footer, dismiss + reboot buttons
   QHBoxLayout *footer_layout = new QHBoxLayout();
