@@ -10,6 +10,7 @@
 #include "widgets/input.hpp"
 #include "widgets/toggle.hpp"
 #include "widgets/offroad_alerts.hpp"
+#include "widgets/scrollview.hpp"
 #include "widgets/controls.hpp"
 #include "widgets/ssh_keys.hpp"
 #include "common/params.h"
@@ -17,7 +18,6 @@
 #include "selfdrive/hardware/hw.h"
 #include "home.hpp"
 
-#include "widgets/scroller.hpp"
 
 QWidget * toggles_panel() {
   QVBoxLayout *toggles_list = new QVBoxLayout();

@@ -6,7 +6,6 @@
 #include "offroad_alerts.hpp"
 #include "selfdrive/hardware/hw.h"
 #include "selfdrive/common/util.h"
-#include "widgets/scroller.hpp"
 
 OffroadAlert::OffroadAlert(QWidget* parent) : QFrame(parent) {
   QVBoxLayout *layout = new QVBoxLayout();

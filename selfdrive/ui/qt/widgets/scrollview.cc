@@ -1,4 +1,4 @@
-#include "scroller.hpp"
+#include "scrollview.hpp"
 
 ScrollView::ScrollView(QWidget *area){
   setWidget(area);
