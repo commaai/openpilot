@@ -26,8 +26,8 @@ if [ ! -d "$SOURCE_DIR" ]; then
   git clone --depth 1 https://github.com/commaai/openpilot.git "$SOURCE_DIR"
 fi
 
-# clear scons cache dirs that haven't been written to in one day
-#cd /tmp && find -name 'scons_cache_*' -type d -maxdepth 1 -mtime +1 -exec rm -rf '{}' \;
+# clear stale build cache
+find /tmp/scons_cache/* -mtime +2 -exec ls '{}' \;
 
 # this can get really big on the CI devices
 rm -rf /data/core
