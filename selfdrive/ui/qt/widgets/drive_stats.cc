@@ -36,7 +36,7 @@ void DriveStats::parseResponse(QString response) {
     labels.hours->setText(QString::number((int)(obj["minutes"].toDouble() / 60)));
   };
 
-  bool metric = Params().read_db_bool("IsMetric");
+  bool metric = Params().getBool("IsMetric");
   QJsonObject json = doc.object();
   update(json["all"].toObject(), all_, metric);
   update(json["week"].toObject(), week_, metric);
@@ -51,7 +51,7 @@ DriveStats::DriveStats(QWidget* parent) : QWidget(parent) {
     gl->addLayout(build_stat_layout(&labels.hours, "HOURS"), row, 2, 3, 1);
   };
 
-  const char* distance_unit = Params().read_db_bool("IsMetric") ? "KM" : "MILES";
+  const char* distance_unit = Params().getBool("IsMetric") ? "KM" : "MILES";
   QGridLayout* gl = new QGridLayout();
   gl->setMargin(0);
   gl->addWidget(new QLabel("ALL TIME"), 0, 0, 1, 3);

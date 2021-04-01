@@ -20,7 +20,7 @@ class CarController():
 
     self.steer_rate_limited = False
 
-  def update(self, enabled, CS, frame, actuators, visual_alert, audible_alert, leftLaneVisible, rightLaneVisible):
+  def update(self, enabled, CS, frame, actuators, visual_alert, left_lane_visible, right_lane_visible):
     """ Controls thread """
 
     P = CarControllerParams
@@ -118,8 +118,10 @@ class CarController():
         hud_alert = MQB_LDW_MESSAGES["none"]
 
       can_sends.append(volkswagencan.create_mqb_hud_control(self.packer_pt, CANBUS.pt, hcaEnabled,
-                                                            CS.out.steeringPressed, hud_alert, leftLaneVisible,
-                                                            rightLaneVisible))
+                                                            CS.out.steeringPressed, hud_alert, left_lane_visible,
+                                                            right_lane_visible, CS.ldw_lane_warning_left,
+                                                            CS.ldw_lane_warning_right, CS.ldw_side_dlc_tlc,
+                                                            CS.ldw_dlc, CS.ldw_tlc))
 
     #--------------------------------------------------------------------------
     #                                                                         #

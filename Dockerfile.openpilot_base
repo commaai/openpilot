@@ -8,7 +8,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     bzip2 \
     ca-certificates \
     capnproto \
-    libcapnp-dev \
     clang \
     cmake \
     cppcheck \
@@ -19,17 +18,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     iputils-ping \
     libarchive-dev \
     libbz2-dev \
+    libcapnp-dev \
     libcurl4-openssl-dev \
     libeigen3-dev \
     libffi-dev \
-    libglew-dev \
     libgles2-mesa-dev \
+    libglew-dev \
     libglib2.0-0 \
     liblzma-dev \
     libomp-dev \
     libopencv-dev \
-    libssl-dev \
     libsqlite3-dev \
+    libssl-dev \
     libsystemd-dev \
     libusb-1.0-0-dev \
     libzmq3-dev \
@@ -38,6 +38,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ocl-icd-opencl-dev \
     opencl-headers \
     python-dev \
+    qml-module-qtquick2 \
     qt5-default \
     qtmultimedia5-dev \
     qtwebengine5-dev \

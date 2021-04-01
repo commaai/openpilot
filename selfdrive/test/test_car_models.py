@@ -437,8 +437,14 @@ routes = {
     'enableCamera': True,
     'enableDsu': False,
   },
-  "76b83eb0245de90e|2019-10-20--15-42-29": {
-    'carFingerprint': VOLKSWAGEN.GOLF,
+  "9b36accae406390e|2021-03-30--10-41-38": {
+    'carFingerprint': TOYOTA.MIRAI,
+    'enableCamera': True,
+    'enableDsu': False,
+    'fingerprintSource': 'fixed',
+  },
+  "cae14e88932eb364|2021-03-26--14-43-28": {
+    'carFingerprint': VOLKSWAGEN.GOLF_MK7,
     'enableCamera': True,
   },
   "58a7d3b707987d65|2021-03-25--17-26-37": {
@@ -454,7 +460,7 @@ routes = {
     'enableCamera': True,
   },
   "07667b885add75fd|2021-01-23--19-48-42": {
-    'carFingerprint': VOLKSWAGEN.AUDI_A3,
+    'carFingerprint': VOLKSWAGEN.AUDI_A3_MK3,
     'enableCamera': True,
   },
   "8f205bdd11bcbb65|2021-03-26--01-00-17": {

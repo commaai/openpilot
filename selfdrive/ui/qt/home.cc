@@ -51,7 +51,8 @@ HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
 void HomeWindow::mousePressEvent(QMouseEvent* e) {
   UIState* ui_state = &glWindow->ui_state;
   if (GLWindow::ui_state.scene.driver_view) {
-    Params().write_db_value("IsDriverViewEnabled", "0", 1);
+    Params().putBool("IsDriverViewEnabled", false);
+    GLWindow::ui_state.scene.driver_view = false;
     return;
   }
 
@@ -87,7 +88,7 @@ OffroadHome::OffroadHome(QWidget* parent) : QWidget(parent) {
   QObject::connect(alert_notification, SIGNAL(released()), this, SLOT(openAlerts()));
   header_layout->addWidget(alert_notification, 0, Qt::AlignHCenter | Qt::AlignRight);
 
-  std::string brand = Params().read_db_bool("Passive") ? "dashcam" : "openpilot";
+  std::string brand = Params().getBool("Passive") ? "dashcam" : "openpilot";
   QLabel* version = new QLabel(QString::fromStdString(brand + " v" + Params().get("Version")));
   version->setStyleSheet(R"(font-size: 55px;)");
   header_layout->addWidget(version, 0, Qt::AlignHCenter | Qt::AlignRight);
@@ -153,7 +154,7 @@ void OffroadHome::refresh() {
   // update alerts
 
   alerts_widget->refresh();
-  if (!alerts_widget->alerts.size() && !alerts_widget->updateAvailable) {
+  if (!alerts_widget->alertCount && !alerts_widget->updateAvailable) {
     emit closeAlerts();
     alert_notification->setVisible(false);
     return;
@@ -162,7 +163,7 @@ void OffroadHome::refresh() {
   if (alerts_widget->updateAvailable) {
     alert_notification->setText("UPDATE");
   } else {
-    int alerts = alerts_widget->alerts.size();
+    int alerts = alerts_widget->alertCount;
     alert_notification->setText(QString::number(alerts) + " ALERT" + (alerts == 1 ? "" : "S"));
   }
 
@@ -222,20 +223,15 @@ static void handle_display_state(UIState* s, bool user_input) {
   }
 }
 
-GLWindow::GLWindow(QWidget* parent) : QOpenGLWidget(parent) {
+GLWindow::GLWindow(QWidget* parent) : brightness_filter(BACKLIGHT_OFFROAD, BACKLIGHT_TS, BACKLIGHT_DT), QOpenGLWidget(parent) {
   timer = new QTimer(this);
   QObject::connect(timer, SIGNAL(timeout()), this, SLOT(timerUpdate()));
 
   backlight_timer = new QTimer(this);
   QObject::connect(backlight_timer, SIGNAL(timeout()), this, SLOT(backlightUpdate()));
 
-  int result = read_param(&brightness_b, "BRIGHTNESS_B", true);
-  result += read_param(&brightness_m, "BRIGHTNESS_M", true);
-  if (result != 0) {
-    brightness_b = 10.0;
-    brightness_m = 0.1;
-  }
-  smooth_brightness = BACKLIGHT_OFFROAD;
+  brightness_b = Params(true).get<float>("BRIGHTNESS_B").value_or(10.0);
+  brightness_m = Params(true).get<float>("BRIGHTNESS_M").value_or(0.1);
 }
 
 GLWindow::~GLWindow() {
@@ -264,16 +260,12 @@ void GLWindow::initializeGL() {
 
 void GLWindow::backlightUpdate() {
   // Update brightness
-  float k = (BACKLIGHT_DT / BACKLIGHT_TS) / (1.0f + BACKLIGHT_DT / BACKLIGHT_TS);
-
   float clipped_brightness = std::min(100.0f, (ui_state.scene.light_sensor * brightness_m) + brightness_b);
   if (!ui_state.scene.started) {
     clipped_brightness = BACKLIGHT_OFFROAD;
   }
 
-  smooth_brightness = clipped_brightness * k + smooth_brightness * (1.0f - k);
-
-  int brightness = smooth_brightness;
+  int brightness = brightness_filter.update(clipped_brightness);
   if (!ui_state.awake) {
     brightness = 0;
     emit screen_shutoff();
@@ -321,7 +313,7 @@ void GLWindow::paintGL() {
 
     double cur_draw_t = millis_since_boot();
     double dt = cur_draw_t - prev_draw_t;
-    if (dt > 66 && onroad){
+    if (dt > 66 && onroad && !ui_state.scene.driver_view) {
       // warn on sub 15fps
       LOGW("slow frame(%llu) time: %.2f", ui_state.sm->frame, dt);
     }
