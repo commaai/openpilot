@@ -28,7 +28,7 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
       self.prompt('Would you like to add your Discord username for easier crash debugging for the fork owner?')
       self.prompt('Your username is only used for reaching out if a crash occurs.')
 
-      username_choice = self.input_with_options(['Y', 'n', 'don\'t ask again'], default='n')[0]
+      username_choice = self.input_with_options(['Y', 'N', 'don\'t ask again'], default='n')[0]
       if username_choice == 0:
         self.prompt('Enter a unique identifer/Discord username:')
         username = ''
@@ -62,12 +62,7 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
       values_list = []
       for k, v in self.params.items():
         if len(str(v)) < 20:
-          v_color = ''
-          if type(v) in self.type_colors:
-            v_color = self.type_colors[type(v)]
-            if isinstance(v, bool):
-              v_color = v_color[v]
-          v = '{}{}{}'.format(v_color, v, COLORS.ENDC)
+          v = self.color_from_type(v)
         else:
           v = '{} ... {}'.format(str(v)[:30], str(v)[-15:])
         values_list.append(v)
@@ -153,6 +148,7 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
         to_print.append(COLORS.WARNING + '>>  Changes take effect within 10 seconds for this parameter!' + COLORS.ENDC)
       if param_info.has_allowed_types:
         to_print.append(COLORS.RED + '>>  Allowed types: {}'.format(', '.join([at.__name__ for at in param_info.allowed_types])) + COLORS.ENDC)
+      to_print.append(COLORS.WARNING + '>>  Default value: {}'.format(self.color_from_type(param_info.default_value)) + COLORS.ENDC)
 
       if to_print:
         print('\n{}\n'.format('\n'.join(to_print)))
@@ -161,13 +157,7 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
         self.change_param_list(old_value, param_info, chosen_key)  # TODO: need to merge the code in this function with the below to reduce redundant code
         return
 
-      v_color = ''
-      if type(old_value) in self.type_colors:
-        v_color = self.type_colors[type(old_value)]
-        if isinstance(old_value, bool):
-          v_color = v_color[old_value]
-
-      self.info('Current value: {}{}{} (type: {})'.format(v_color, old_value, COLORS.INFO, type(old_value).__name__), sleep_time=0)
+      self.info('Current value: {}{} (type: {})'.format(self.color_from_type(old_value), COLORS.INFO, type(old_value).__name__), sleep_time=0)
 
       while True:
         self.prompt('\nEnter your new value (enter to exit):')
@@ -183,12 +173,12 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
 
         if not param_info.static:  # stay in live tuning interface
           self.op_params.put(chosen_key, new_value)
-          self.success('Saved {} with value: {}! (type: {})'.format(chosen_key, new_value, type(new_value).__name__))
+          self.success('Saved {} with value: {}{}! (type: {})'.format(chosen_key, self.color_from_type(new_value), COLORS.SUCCESS, type(new_value).__name__))
         else:  # else ask to save and break
-          print('\nOld value: {} (type: {})'.format(old_value, type(old_value).__name__))
-          print('New value: {} (type: {})'.format(new_value, type(new_value).__name__))
+          self.warning('\nOld value: {}{} (type: {})'.format(self.color_from_type(old_value), COLORS.WARNING, type(old_value).__name__))
+          self.success('New value: {}{} (type: {})'.format(self.color_from_type(new_value), COLORS.OKGREEN, type(new_value).__name__), sleep_time=0)
           self.prompt('\nDo you want to save this?')
-          if self.input_with_options(['Y', 'n'], 'n')[0] == 0:
+          if self.input_with_options(['Y', 'N'], 'N')[0] == 0:
             self.op_params.put(chosen_key, new_value)
             self.success('Saved!')
           else:
@@ -225,8 +215,17 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
         old_value[choice_idx] = new_value
 
         self.op_params.put(chosen_key, old_value)
-        self.success('Saved {} with value: {}! (type: {})'.format(chosen_key, new_value, type(new_value).__name__), end='\n')
+        self.success('Saved {} with value: {}{}! (type: {})'.format(chosen_key, self.color_from_type(new_value), COLORS.SUCCESS, type(new_value).__name__), end='\n')
         break
+
+  def color_from_type(self, v):
+    v_color = ''
+    if type(v) in self.type_colors:
+      v_color = self.type_colors[type(v)]
+      if isinstance(v, bool):
+        v_color = v_color[v]
+    v = '{}{}{}'.format(v_color, v, COLORS.ENDC)
+    return v
 
   def cyan(self, msg, end=''):
     msg = self.str_color(msg, style='cyan')
@@ -235,6 +234,10 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
 
   def prompt(self, msg, end=''):
     msg = self.str_color(msg, style='prompt')
+    print(msg, flush=True, end='\n' + end)
+
+  def warning(self, msg, end=''):
+    msg = self.str_color(msg, style='warning')
     print(msg, flush=True, end='\n' + end)
 
   def info(self, msg, sleep_time=None, end=''):
@@ -281,8 +284,10 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
       style = COLORS.INFO
     elif style == 'cyan':
       style = COLORS.CYAN
+    elif style == 'warning':
+      style = COLORS.WARNING
     elif isinstance(style, int):
-      style = COLORS.BASE(86)
+      style = COLORS.BASE(style)
 
     if surround:
       msg = '{}--------\n{}\n{}--------{}'.format(style, msg, COLORS.ENDC + style, COLORS.ENDC)
