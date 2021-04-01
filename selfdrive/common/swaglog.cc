@@ -89,8 +89,7 @@ void log(int levelnum, const char* filename, int lineno, const char* func, const
     printf("%s: %s\n", filename, msg);
   }
   char levelnum_c = levelnum;
-  zmq_send(s.sock, &levelnum_c, 1, ZMQ_NOBLOCK | ZMQ_SNDMORE);
-  zmq_send(s.sock, log_s.c_str(), log_s.length(), ZMQ_NOBLOCK);
+  zmq_send(s.sock, (levelnum_c + log_s).c_str(), log_s.length() + 1, ZMQ_NOBLOCK);
 }
 
 void cloudlog_e(int levelnum, const char* filename, int lineno, const char* func,

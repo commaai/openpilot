@@ -1,3 +1,7 @@
+Version 0.8.4 (2021-XX-XX)
+========================
+ * Toyota Mirai 2021 support
+
 Version 0.8.3 (2021-04-01)
 ========================
  * New model
