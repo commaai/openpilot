@@ -6,10 +6,16 @@
 #include "offroad_alerts.hpp"
 #include "selfdrive/hardware/hw.h"
 #include "selfdrive/common/util.h"
+#include "widgets/scroller.hpp"
 
 OffroadAlert::OffroadAlert(QWidget* parent) : QFrame(parent) {
   QVBoxLayout *layout = new QVBoxLayout();
   layout->setMargin(50);
+  layout->setSpacing(30);
+
+  QWidget *alerts_widget = new QWidget;
+  QVBoxLayout *alerts_layout = new QVBoxLayout;
+  alerts_widget->setLayout(alerts_layout);
 
   // setup labels for each alert
   QString json = QString::fromStdString(util::read_file("../controls/lib/alerts_offroad.json"));
@@ -23,10 +29,13 @@ OffroadAlert::OffroadAlert(QWidget* parent) : QFrame(parent) {
     l->setWordWrap(true);
     l->setStyleSheet("background-color: " + QString(severity ? "#E22C2C" : "#292929"));
     l->setVisible(false);
-    layout->addWidget(l);
+    alerts_layout->addWidget(l);
   }
 
+  layout->addWidget(new ScrollView(alerts_widget));
+
   // release notes
+  releaseNotes.setWordWrap(true);
   releaseNotes.setVisible(false);
   releaseNotes.setStyleSheet("font-size: 48px;");
   layout->addWidget(&releaseNotes);
