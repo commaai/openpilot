@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import os
 import math
+import collections
 from cereal import car, log
 from common.numpy_fast import clip
 from common.realtime import sec_since_boot, config_realtime_process, Priority, Ratekeeper, DT_CTRL
@@ -29,6 +30,7 @@ LDW_MIN_SPEED = 31 * CV.MPH_TO_MS
 LANE_DEPARTURE_THRESHOLD = 0.1
 STEER_ANGLE_SATURATION_TIMEOUT = 1.0 / DT_CTRL
 STEER_ANGLE_SATURATION_THRESHOLD = 2.5  # Degrees
+DESIRE_INDICES = [i + j for i in range(0, 32, 8) for j in (1, 2, 5, 6)]
 
 SIMULATION = "SIMULATION" in os.environ
 NOSENSOR = "NOSENSOR" in os.environ
@@ -41,6 +43,31 @@ Desire = log.LateralPlan.Desire
 LaneChangeState = log.LateralPlan.LaneChangeState
 LaneChangeDirection = log.LateralPlan.LaneChangeDirection
 EventName = car.CarEvent.EventName
+
+
+def interp(p, a, b):
+  return p * a + (1 - p) * b
+
+def threshold_mse(x, threshold, gt=True):
+  error = x - threshold if gt else threshold - x
+  return error * error if error > 0 else 0
+
+def append_to_rings(data, buffer_2s, buffer_10s):
+  if len(buffer_2s) == buffer_2s.maxlen:
+    data_2s = buffer_2s.popleft()
+  else:
+    data_2s = None
+
+  if len(buffer_10s) == buffer_10s.maxlen:
+    data_10s = buffer_10s.popleft()
+  else:
+    data_10s = None
+
+  buffer_2s.append(data)
+  if data_2s is not None:
+    buffer_10s.append(data_2s)
+
+  return data_2s, data_10s
 
 
 class Controls:
@@ -150,6 +177,17 @@ class Controls:
     # controlsd is driven by can recv, expected at 100Hz
     self.rk = Ratekeeper(100, print_delay_threshold=None)
     self.prof = Profiler(False)  # off by default
+
+    # Keep a running history of modelV2.meta states for the disengage alert
+    self.engaged_10s = collections.deque(maxlen=10*20)
+    self.steering_10s = collections.deque(maxlen=10*20)
+    self.engaged_2s = collections.deque(maxlen=50)
+    self.steering_2s = collections.deque(maxlen=50)
+
+    self.rolling_engaged_prob = 0
+    self.rolling_steering_prob = 0
+    self.engaged_threshold_mse = 0
+    self.steering_threshold_mse = 0
 
   def update_events(self, CS):
     """Compute carEvents from carState"""
@@ -261,6 +299,38 @@ class Controls:
     if CS.brakePressed and self.sm['longitudinalPlan'].vTargetFuture >= STARTING_TARGET_SPEED \
       and self.CP.openpilotLongitudinalControl and CS.vEgo < 0.3:
       self.events.add(EventName.noTarget)
+
+    # Update the ring buffers for disengage alerts
+    meta = self.sm['modelV2'].meta
+    engaged_2s, engaged_10s = append_to_rings(meta.engagedProb, self.engaged_2s, self.engaged_10s)
+    steering_2s, steering_10s = append_to_rings(meta.steerOverrideProb, self.steering_2s, self.steering_10s)
+
+    # Update the threshold means
+    if engaged_2s is not None and steering_2s is not None:
+      self.engaged_threshold_mse += threshold_mse(engaged_2s, 0.8, gt=False)
+      self.steering_threshold_mse += threshold_mse(steering_2s, 0.2, gt=True)
+    if engaged_10s is not None and steering_10s is not None:
+      self.engaged_threshold_mse -= threshold_mse(engaged_10s, 0.8, gt=False)
+      self.steering_threshold_mse -= threshold_mse(steering_10s, 0.2, gt=True)
+
+    # Update desire and rolling engaged/steering probabilities
+    max_desire = max([meta.desirePrediction[i] for i in DESIRE_INDICES])
+    if max_desire > 0.05:
+      self.last_desire_frame = self.sm.frame
+
+    self.rolling_engaged_prob = interp(.8, self.rolling_engaged_prob, meta.engagedProb)
+    self.rolling_steering_prob = interp(.8, self.rolling_steering_prob, meta.steerOverrideProb)
+
+    # Check if we're over the threshold
+    if engaged_10s is not None and steering_10s is not None:
+      steering_diff_2s = meta.steerOverrideProb - steering_2s
+      no_desire = self.last_desire_frame < self.sm.frame - 40
+      no_blinkers = self.last_blinker_frame < self.sm.frame - 60
+      high_disengage_prob = self.rolling_engaged_prob < 0.3 and self.rolling_steering_prob > 0.8 and steering_diff_2s > 0.4
+      low_history_noise = self.engaged_threshold_mse / len(self.engaged_10s) < 0.005 and \
+                          self.steering_threshold_mse / len(self.steering_10s) < 0.005
+      if self.active and no_desire and no_blinkers and high_disengage_prob and low_history_noise:
+        self.events.add(EventName.disengageProbSpike)
 
   def data_sample(self):
     """Receive data from sockets and update carState"""
