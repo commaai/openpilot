@@ -7,7 +7,7 @@ Ecu = car.CarParams.Ecu
 # Steer torque limits
 class CarControllerParams:
   def __init__(self, CP):
-    if CP.carFingerprint in [CAR.SONATA, CAR.PALISADE, CAR.SANTA_FE, CAR.VELOSTER, CAR.GENESIS_G70, CAR.IONIQ_EV_2020, CAR.KIA_SELTOS]:
+    if CP.carFingerprint in [CAR.SONATA, CAR.PALISADE, CAR.SANTA_FE, CAR.VELOSTER, CAR.GENESIS_G70, CAR.IONIQ_EV_2020, CAR.KIA_CEED, CAR.KIA_SELTOS]:
       self.STEER_MAX = 384
     else:
       self.STEER_MAX = 255
@@ -268,11 +268,11 @@ FW_VERSIONS = {
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x81606G3051\x00\x00\x00\x00\x00\x00\x00\x00',
-      b'\xf1\x81606EA051\x00\x00\x00\x00\x00\x00\x00\x00',      
+      b'\xf1\x81606EA051\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.eps, 0x7d4, None): [
       b'\xf1\x00TM  MDPS C 1.00 1.01 56340-S2000 9129',
-      b'\xf1\x00TM  MDPS C 1.00 1.00 56340-S2000 8409',      
+      b'\xf1\x00TM  MDPS C 1.00 1.00 56340-S2000 8409',
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00TM  MFC  AT USA LHD 1.00 1.00 99211-S2000 180409',
@@ -380,6 +380,7 @@ FW_VERSIONS = {
     (Ecu.fwdRadar, 0x7D0, None): [
       b'\xf1\x00DEev SCC F-CUP      1.00 1.03 96400-Q4100         \xf1\xa01.03',
       b'\xf1\x00DEev SCC F-CUP      1.00 1.00 99110-Q4000         \xf1\xa01.00',
+      b'\xf1\x8799110Q4500\xf1\000DEev SCC F-CUP      1.00 1.00 99110-Q4500         \xf1\xa01.00',
     ],
     (Ecu.esp, 0x7D1, None): [
       b'\xf1\xa01.06',
@@ -392,6 +393,7 @@ FW_VERSIONS = {
     (Ecu.fwdCamera, 0x7C4, None): [
       b'\xf1\x00DEE MFC  AT USA LHD 1.00 1.03 95740-Q4000 180821',
       b'\xf1\x00DEE MFC  AT EUR LHD 1.00 1.00 99211-Q4000 191211',
+      b'\xf1\000DEE MFC  AT EUR LHD 1.00 1.00 99211-Q4100 200706',
     ],
   },
   CAR.KIA_SELTOS: {

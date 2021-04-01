@@ -22,6 +22,7 @@ protected:
 
 private:
   QImage image;
+  QPoint imageCorner;
   int currentIndex = 0;
 
   // Bounding boxes for the a given training guide step

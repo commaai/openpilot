@@ -1,7 +1,7 @@
 #include <QApplication>
 
-#include "window.hpp"
-#include "qt_window.hpp"
+#include "qt/window.hpp"
+#include "qt/qt_window.hpp"
 
 int main(int argc, char *argv[]) {
   QSurfaceFormat fmt;
