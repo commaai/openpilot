@@ -6,6 +6,7 @@
 
 #include "qt_window.hpp"
 #include "selfdrive/hardware/hw.h"
+#include "widgets/scroller.hpp"
 
 int main(int argc, char *argv[]) {
   QApplication a(argc, argv);
@@ -16,7 +17,9 @@ int main(int argc, char *argv[]) {
   layout->setContentsMargins(125, 125, 125, 125);
 
   // TODO: make this scroll
-  layout->addWidget(new QLabel(argv[1]), 0, Qt::AlignTop);
+  ScrollView *scroll = new ScrollView(new QLabel(argv[1]));
+  layout->addWidget(scroll, 0, Qt::AlignTop);
+
 
   QPushButton *btn = new QPushButton();
 #ifdef __aarch64__
