@@ -14,7 +14,7 @@ if arch == "Darwin":
 widgets_src = ["qt/widgets/input.cc", "qt/widgets/drive_stats.cc", "qt/sound.cc",
                "qt/widgets/ssh_keys.cc", "qt/widgets/toggle.cc", "qt/widgets/controls.cc",
                "qt/widgets/offroad_alerts.cc", "qt/widgets/setup.cc", "qt/widgets/keyboard.cc",
-               "#phonelibs/qrcode/QrCode.cc"]
+               "qt/widgets/scrollview.cc", "#phonelibs/qrcode/QrCode.cc"]
 if arch != 'aarch64':
   widgets_src += ["qt/offroad/networking.cc", "qt/offroad/wifiManager.cc"]
 
@@ -22,7 +22,7 @@ widgets = qt_env.Library("qt_widgets", widgets_src, LIBS=base_libs)
 qt_libs = base_libs + [widgets]
 
 # spinner and text window
-qt_env.Program("qt/text", ["qt/text.cc"], LIBS=base_libs)
+qt_env.Program("qt/text", ["qt/text.cc"], LIBS=qt_libs)
 qt_env.Program("qt/spinner", ["qt/spinner.cc"], LIBS=base_libs)
 
 # build main UI
