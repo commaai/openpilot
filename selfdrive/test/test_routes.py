@@ -1,20 +1,5 @@
 #!/usr/bin/env python3
-import os
-import signal
-import subprocess
-import sys
-import time
-from typing import List, cast
-
-import requests
-
-import cereal.messaging as messaging
-from selfdrive.manager.process_config import managed_processes
-from cereal import car
-from common.basedir import BASEDIR
-from common.params import Params
 from selfdrive.car.chrysler.values import CAR as CHRYSLER
-from selfdrive.car.fingerprints import all_known_cars
 from selfdrive.car.ford.values import CAR as FORD
 from selfdrive.car.gm.values import CAR as GM
 from selfdrive.car.honda.values import CAR as HONDA
@@ -25,41 +10,31 @@ from selfdrive.car.subaru.values import CAR as SUBARU
 from selfdrive.car.toyota.values import CAR as TOYOTA
 from selfdrive.car.volkswagen.values import CAR as VOLKSWAGEN
 
-os.environ['NOCRASH'] = '1'
-
-
-def wait_for_sockets(socks, timeout=10.0):
-  sm = messaging.SubMaster(socks)
-  t = time.time()
-
-  recvd = []
-  while time.time() - t < timeout and len(recvd) < len(socks):
-    sm.update()
-    for s in socks:
-      if s not in recvd and sm.updated[s]:
-        recvd.append(s)
-  return recvd
-
-
-def get_route_log(route_name):
-  log_path = os.path.join("/tmp", "%s--0--%s" % (route_name.replace("|", "_"), "rlog.bz2"))
-
-  if not os.path.isfile(log_path):
-    log_url = "https://commadataci.blob.core.windows.net/openpilotci/%s/0/%s" % (route_name.replace("|", "/"), "rlog.bz2")
-
-    # if request fails, try again once and let it throw exception if fails again
-    try:
-      r = requests.get(log_url, timeout=15)
-    except Exception:
-      r = requests.get(log_url, timeout=15)
-
-    if r.status_code == 200:
-      with open(log_path, "wb") as f:
-        f.write(r.content)
-    else:
-      print("failed to download test log %s" % route_name)
-      sys.exit(-1)
-
+# TODO: add routes for these cars
+non_tested_cars = [
+  CHRYSLER.JEEP_CHEROKEE,
+  CHRYSLER.JEEP_CHEROKEE_2019,
+  CHRYSLER.PACIFICA_2018,
+  CHRYSLER.PACIFICA_2018_HYBRID,
+  CHRYSLER.PACIFICA_2020,
+  GM.CADILLAC_ATS,
+  GM.HOLDEN_ASTRA,
+  GM.MALIBU,
+  HONDA.CRV,
+  HONDA.RIDGELINE,
+  HYUNDAI.ELANTRA,
+  HYUNDAI.ELANTRA_GT_I30,
+  HYUNDAI.GENESIS_G90,
+  HYUNDAI.KIA_FORTE,
+  HYUNDAI.KIA_OPTIMA_H,
+  HYUNDAI.KONA_EV,
+  TOYOTA.CAMRYH,
+  TOYOTA.CHR,
+  TOYOTA.CHRH,
+  TOYOTA.HIGHLANDER,
+  TOYOTA.HIGHLANDERH,
+  TOYOTA.HIGHLANDERH_TSS2,
+]
 
 routes = {
   "420a8e183f1aed48|2020-03-05--07-15-29": {
@@ -95,7 +70,6 @@ routes = {
   "0e7a2ba168465df5|2020-10-18--14-14-22": {
     'carFingerprint': HONDA.ACURA_RDX_3G,
     'enableCamera': True,
-    'fingerprintSource': 'fixed',
   },
   "a74b011b32b51b56|2020-07-26--17-09-36": {
     'carFingerprint': HONDA.CIVIC,
@@ -104,7 +78,6 @@ routes = {
   "a859a044a447c2b0|2020-03-03--18-42-45": {
     'carFingerprint': HONDA.CRV_EU,
     'enableCamera': True,
-    'fingerprintSource': 'fixed',
   },
   "232585b7784c1af4|2019-04-08--14-12-14": {
     'carFingerprint': HONDA.CRV_HYBRID,
@@ -117,7 +90,6 @@ routes = {
   "03be5f2fd5c508d1|2020-04-19--18-44-15": {
     'carFingerprint': HONDA.HRV,
     'enableCamera': True,
-    'fingerprintSource': 'fixed',
   },
   "2ac95059f70d76eb|2018-02-05--15-03-29": {
     'carFingerprint': HONDA.ACURA_ILX,
@@ -154,12 +126,10 @@ routes = {
   "d83f36766f8012a5|2020-02-05--18-42-21": {
     'carFingerprint': HONDA.CIVIC_BOSCH_DIESEL,
     'enableCamera': True,
-    'fingerprintSource': 'fixed',
   },
   "fb51d190ddfd8a90|2020-02-25--14-43-43": {
     'carFingerprint': HONDA.INSIGHT,
     'enableCamera': True,
-    'fingerprintSource': 'fixed',
   },
   "07d37d27996096b6|2020-03-04--21-57-27": {
     'carFingerprint': HONDA.PILOT,
@@ -262,19 +232,16 @@ routes = {
     'carFingerprint': TOYOTA.CAMRY,
     'enableCamera': True,
     'enableDsu': False,
-    'fingerprintSource': 'fixed',
   },
   "3456ad0cd7281b24|2020-12-13--17-45-56": {
     'carFingerprint': TOYOTA.CAMRY_TSS2,
     'enableCamera': True,
     'enableDsu': False,
-    'fingerprintSource': 'fixed',
   },
   "ffccc77938ddbc44|2021-01-04--16-55-41": {
     'carFingerprint': TOYOTA.CAMRYH_TSS2,
     'enableCamera': True,
     'enableDsu': False,
-    'fingerprintSource': 'fixed',
   },
   "f7b6be73e3dfd36c|2019-05-11--22-34-20": {
     'carFingerprint': TOYOTA.AVALON,
@@ -334,7 +301,6 @@ routes = {
     'enableCamera': True,
     'enableDsu': True,
     'enableGasInterceptor': False,
-    'fingerprintSource': 'fixed',
   },
   "cdf2f7de565d40ae|2019-04-25--03-53-41": {
     'carFingerprint': TOYOTA.RAV4_TSS2,
@@ -344,7 +310,6 @@ routes = {
   "7e34a988419b5307|2019-12-18--19-13-30": {
     'carFingerprint': TOYOTA.RAV4H_TSS2,
     'enableCamera': True,
-    'fingerprintSource': 'fixed'
   },
   "e6a24be49a6cd46e|2019-10-29--10-52-42": {
     'carFingerprint': TOYOTA.LEXUS_ES_TSS2,
@@ -389,12 +354,10 @@ routes = {
   "01b22eb2ed121565|2020-02-02--11-25-51": {
     'carFingerprint': TOYOTA.LEXUS_RX_TSS2,
     'enableCamera': True,
-    'fingerprintSource': 'fixed',
   },
   "b74758c690a49668|2020-05-20--15-58-57": {
     'carFingerprint': TOYOTA.LEXUS_RXH_TSS2,
     'enableCamera': True,
-    'fingerprintSource': 'fixed',
   },
   "ec429c0f37564e3c|2020-02-01--17-28-12": {
     'carFingerprint': TOYOTA.LEXUS_NXH,
@@ -441,7 +404,6 @@ routes = {
     'carFingerprint': TOYOTA.MIRAI,
     'enableCamera': True,
     'enableDsu': False,
-    'fingerprintSource': 'fixed',
   },
   "cae14e88932eb364|2021-03-26--14-43-28": {
     'carFingerprint': VOLKSWAGEN.GOLF_MK7,
@@ -545,9 +507,6 @@ routes = {
   },
 }
 
-passive_routes: List[str] = [
-]
-
 forced_dashcam_routes = [
   # Ford fusion
   "f1b4c567731f4a1b|2018-04-18--11-29-37",
@@ -559,127 +518,3 @@ forced_dashcam_routes = [
   # Mazda3
   "74f1038827005090|2020-08-26--20-05-50",
 ]
-
-# TODO: add routes for these cars
-non_tested_cars = [
-  CHRYSLER.JEEP_CHEROKEE,
-  CHRYSLER.JEEP_CHEROKEE_2019,
-  CHRYSLER.PACIFICA_2018,
-  CHRYSLER.PACIFICA_2018_HYBRID,
-  CHRYSLER.PACIFICA_2020,
-  GM.CADILLAC_ATS,
-  GM.HOLDEN_ASTRA,
-  GM.MALIBU,
-  HONDA.CRV,
-  HONDA.RIDGELINE,
-  HYUNDAI.ELANTRA,
-  HYUNDAI.ELANTRA_GT_I30,
-  HYUNDAI.GENESIS_G90,
-  HYUNDAI.KIA_FORTE,
-  HYUNDAI.KIA_OPTIMA_H,
-  HYUNDAI.KONA_EV,
-  TOYOTA.CAMRYH,
-  TOYOTA.CHR,
-  TOYOTA.CHRH,
-  TOYOTA.HIGHLANDER,
-  TOYOTA.HIGHLANDERH,
-  TOYOTA.HIGHLANDERH_TSS2,
-]
-
-if __name__ == "__main__":
-
-  tested_procs = ["controlsd", "radard", "plannerd"]
-  tested_socks = ["radarState", "controlsState", "carState", "longitudinalPlan"]
-
-  tested_cars = [keys["carFingerprint"] for route, keys in routes.items()]
-  for car_model in all_known_cars():
-    if car_model not in tested_cars:
-      print("***** WARNING: %s not tested *****" % car_model)
-
-      # TODO: skip these for now, but make sure any new ports get routes
-      if car_model not in non_tested_cars:
-        print("TEST FAILED: Missing route for car '%s'" % car_model)
-        sys.exit(1)
-
-  print("Preparing processes")
-  for p in tested_procs:
-    managed_processes[p].prepare()
-
-  results = {}
-  for route, checks in routes.items():
-    get_route_log(route)
-
-    params = Params()
-    params.clear_all()
-    params.manager_start()
-    params.put("OpenpilotEnabledToggle", "1")
-    params.put("CommunityFeaturesToggle", "1")
-    params.put("Passive", "1" if route in passive_routes else "0")
-
-    os.environ['SKIP_FW_QUERY'] = "1"
-    if checks.get('fingerprintSource', None) == 'fixed':
-      os.environ['FINGERPRINT'] = cast(str, checks['carFingerprint'])
-    else:
-      os.environ['FINGERPRINT'] = ""
-
-    print("testing ", route, " ", checks['carFingerprint'])
-    print("Starting processes")
-    for p in tested_procs:
-      managed_processes[p].start()
-
-    # Start unlogger
-    print("Start unlogger")
-    unlogger_cmd = [os.path.join(BASEDIR, 'tools/replay/unlogger.py'), route, '/tmp']
-    disable_socks = 'frame,roadEncodeIdx,plan,lateralPlan,liveLongitudinalMpc,radarState,controlsState,liveTracks,liveMpc,sendcan,carState,carControl,carEvents,carParams'
-    unlogger = subprocess.Popen(unlogger_cmd + ['--disable', disable_socks, '--no-interactive'], preexec_fn=os.setsid)  # pylint: disable=subprocess-popen-preexec-fn
-
-    print("Check sockets")
-    extra_socks = []
-    has_camera = checks.get('enableCamera', False)
-    if (route not in passive_routes) and (route not in forced_dashcam_routes) and has_camera:
-      extra_socks.append("sendcan")
-    if route not in passive_routes:
-      extra_socks.append("lateralPlan")
-
-    recvd_socks = wait_for_sockets(tested_socks + extra_socks, timeout=30)
-    failures = [s for s in tested_socks + extra_socks if s not in recvd_socks]
-
-    print("Check if everything is running")
-    for p in tested_procs:
-      proc = managed_processes[p].proc
-      if not proc or not proc.is_alive:
-        failures.append(p)
-      managed_processes[p].stop()
-    os.killpg(os.getpgid(unlogger.pid), signal.SIGTERM)
-
-    sockets_ok = len(failures) == 0
-    params_ok = True
-
-    try:
-      car_params = car.CarParams.from_bytes(params.get("CarParams"))
-      for k, v in checks.items():
-        if not v == getattr(car_params, k):
-          params_ok = False
-          failures.append(k)
-    except Exception:
-      params_ok = False
-
-    if sockets_ok and params_ok:
-      print("Success")
-      results[route] = True, failures
-    else:
-      print("Failure")
-      results[route] = False, failures
-      break
-
-  # put back not passive to not leave the params in an unintended state
-  Params().put("Passive", "0")
-
-  for route in results:
-    print(results[route])
-
-  if not all(passed for passed, _ in results.values()):
-    print("TEST FAILED")
-    sys.exit(1)
-  else:
-    print("TEST SUCCESSFUL")
