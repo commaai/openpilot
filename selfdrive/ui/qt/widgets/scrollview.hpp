@@ -7,5 +7,5 @@ class ScrollView : public QScrollArea {
   Q_OBJECT
 
 public:
-  explicit ScrollView(QWidget *area = nullptr);
+  explicit ScrollView(QWidget *w = nullptr, QWidget *parent = nullptr);
 };

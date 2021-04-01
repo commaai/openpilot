@@ -41,10 +41,10 @@ OffroadAlert::OffroadAlert(QWidget* parent) : QFrame(parent) {
   releaseNotes.setStyleSheet("font-size: 48px;");
   releaseNotes.setAlignment(Qt::AlignTop);
 
-  releaseNotesScroll = new ScrollView(&releaseNotes);
+  releaseNotesScroll = new ScrollView(&releaseNotes, this);
   layout->addWidget(releaseNotesScroll);
 
-  alertsScroll = new ScrollView(alerts_widget);
+  alertsScroll = new ScrollView(alerts_widget, this);
   layout->addWidget(alertsScroll);
 
   // bottom footer, dismiss + reboot buttons

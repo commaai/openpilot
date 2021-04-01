@@ -276,7 +276,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
 
     panel->setContentsMargins(50, 25, 50, 25);
 
-    ScrollView *panel_frame = new ScrollView(panel);
+    ScrollView *panel_frame = new ScrollView(panel, this);
     panel_widget->addWidget(panel_frame);
 
     QObject::connect(btn, &QPushButton::released, [=, w = panel_frame]() {
