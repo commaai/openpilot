@@ -105,7 +105,7 @@ class LateralPlanner():
 
     # Lane change logic
     one_blinker = sm['carState'].leftBlinker != sm['carState'].rightBlinker
-    below_lane_change_speed = v_ego < self.op_params.get('alca_min_speed') * CV.MPH_TO_MS
+    below_lane_change_speed = v_ego < 1
 
     if sm['carState'].leftBlinker:
       self.lane_change_direction = LaneChangeDirection.left
@@ -119,7 +119,7 @@ class LateralPlanner():
       torque_applied = sm['carState'].steeringPressed and \
                        ((sm['carState'].steeringTorque > 0 and self.lane_change_direction == LaneChangeDirection.left) or
                         (sm['carState'].steeringTorque < 0 and self.lane_change_direction == LaneChangeDirection.right))
-      if not self.op_params.get('alca_nudge_required'):
+      if v_ego >= self.op_params.get('alca_no_nudge_speed') * CV.MPH_TO_MS:
         torque_applied = True
 
       blindspot_detected = ((sm['carState'].leftBlindspot and self.lane_change_direction == LaneChangeDirection.left) or

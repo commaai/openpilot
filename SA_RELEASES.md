@@ -9,6 +9,7 @@ Stock Additions v0.6.6 - 2020-02-27 (0.8.2)
  * Add color corrections button, PR by ihsakashi
  * More parameters now update while driving.
    * If the param isn't marked with "static" you no longer have to reboot
+ * Parameter `alca_no_nudge_speed` controls the speed at which lane changes go from needing a nudge to "nudgeless"
 
 Stock Additions v0.6.5 - 2020-12-07 (0.8)
 ===
