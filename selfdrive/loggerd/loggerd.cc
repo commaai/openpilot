@@ -265,7 +265,7 @@ int main(int argc, char** argv) {
   logger_init(&s.logger, "rlog", true);
   loggerd_logger_next();
 
-  const bool record_front = Params().read_db_bool("RecordFront");
+  const bool record_front = Params().getBool("RecordFront");
   // setup messaging
   std::map<SubSocket *, SocketState *> sockets;
   Context *ctx = Context::create();
