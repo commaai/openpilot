@@ -195,6 +195,8 @@ Community Maintained Cars and Features
 
 Although it's not upstream, there's a community of people getting openpilot to run on Tesla's [here](https://tinkla.us/)
 
+There are some Honda/Acura with Honda Sensing/AcuraWatch Plus that are not currently supported use a dedicated serial data lines for its steering control messages.  These cars can with work with openpilot using additional hardware with minor software modifications.  A Community Maintained upstream is planned.  The current list of 'serial steering' cars is the 2016/2017 Accord, 15-20 Acura MDX, and 15-20 Acura TLX.  Join the #topic-serial-steering channel on discord with questions.  
+
 Community Maintained Cars and Features are not verified by comma to meet our [safety model](SAFETY.md). Be extra cautious using them. They are only available after enabling the toggle in `Settings->Developer->Enable Community Features`.
 
 To promote a car from community maintained, it must meet a few requirements. We must own one from the brand, we must sell the harness for it, has full ISO26262 in both panda and openpilot, there must be a path forward for longitudinal control, it must have AEB still enabled, and it must support fingerprinting 2.0
