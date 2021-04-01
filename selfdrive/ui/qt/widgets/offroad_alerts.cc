@@ -36,7 +36,7 @@ OffroadAlert::OffroadAlert(QWidget* parent) : QFrame(parent) {
   releaseNotes.setWordWrap(true);
   releaseNotes.setVisible(false);
   releaseNotes.setStyleSheet("font-size: 48px;");
-  layout->addWidget(&releaseNotes);
+  layout->addWidget(new ScrollView(&releaseNotes));
 
   layout->addWidget(new ScrollView(alerts_widget));
 
