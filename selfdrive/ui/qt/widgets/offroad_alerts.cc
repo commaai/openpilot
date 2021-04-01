@@ -15,6 +15,8 @@ OffroadAlert::OffroadAlert(QWidget* parent) : QFrame(parent) {
 
   QWidget *alerts_widget = new QWidget;
   QVBoxLayout *alerts_layout = new QVBoxLayout;
+  alerts_layout->setMargin(0);
+  alerts_layout->setSpacing(30);
   alerts_widget->setLayout(alerts_layout);
 
   // setup labels for each alert
@@ -31,6 +33,8 @@ OffroadAlert::OffroadAlert(QWidget* parent) : QFrame(parent) {
     l->setVisible(false);
     alerts_layout->addWidget(l);
   }
+
+  alerts_layout->addStretch(1);
 
   // release notes
   releaseNotes.setWordWrap(true);
