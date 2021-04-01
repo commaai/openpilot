@@ -357,8 +357,10 @@ int main(int argc, char** argv) {
     qlog_states[sock] = {.counter = 0, .freq = it.decimation};
   }
 
-  // init logger
+  // init and open logger
   logger_init(&s.logger, "rlog", true);
+  int err = logger_next(&s.logger, LOG_ROOT.c_str(), s.segment_path, sizeof(s.segment_path), &s.rotate_segment);
+  assert(err == 0);
 
   // init encoders
   pthread_mutex_init(&s.rotate_lock, NULL);
@@ -389,7 +391,6 @@ int main(int argc, char** argv) {
   double last_rotate_tms = millis_since_boot();
   double last_camera_seen_tms = millis_since_boot();
   while (!do_exit) {
-    // TODO: fix msgs from the first poll getting dropped
     // poll for new messages on all sockets
     for (auto sock : poller->poll(1000)) {
 
@@ -443,26 +444,22 @@ int main(int argc, char** argv) {
       delete last_msg;
     }
 
-    bool new_segment = s.logger.part == -1;
-    if (s.logger.part > -1) {
-      double tms = millis_since_boot();
-      if (tms - last_camera_seen_tms <= NO_CAMERA_PATIENCE && encoder_threads.size() > 0) {
-        new_segment = true;
-        for (auto &r : s.rotate_state) {
-          // this *should* be redundant on tici since all camera frames are synced
-          new_segment &= (((r.stream_frame_id >= r.last_rotate_frame_id + SEGMENT_LENGTH * MAIN_FPS) &&
-                          (!r.should_rotate) && (r.initialized)) ||
-                          (!r.enabled));
+    bool new_segment = false;
+    double tms = millis_since_boot();
+    if (tms - last_camera_seen_tms <= NO_CAMERA_PATIENCE && encoder_threads.size() > 0) {
+      new_segment = true;
+      for (auto &r : s.rotate_state) {
+        // this *should* be redundant on tici since all camera frames are synced
+        new_segment &= (((r.stream_frame_id >= r.last_rotate_frame_id + SEGMENT_LENGTH * MAIN_FPS) &&
+                         (!r.should_rotate) && (r.initialized)) ||
+                        (!r.enabled));
 #ifndef QCOM2
-          break; // only look at fcamera frame id if not QCOM2
+        break;  // only look at fcamera frame id if not QCOM2
 #endif
-        }
-      } else {
-        if (tms - last_rotate_tms > SEGMENT_LENGTH * 1000) {
-          new_segment = true;
-          LOGW("no camera packet seen. auto rotated");
-        }
       }
+    } else if (tms - last_rotate_tms > SEGMENT_LENGTH * 1000) {
+      new_segment = true;
+      LOGW("no camera packet seen. auto rotated");
     }
 
     // rotate to new segment
