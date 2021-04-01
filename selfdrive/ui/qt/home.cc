@@ -21,6 +21,7 @@
 #include "qt_window.hpp"
 #include "widgets/drive_stats.hpp"
 #include "widgets/setup.hpp"
+#include "widgets/scroller.hpp"
 
 #define BACKLIGHT_DT 0.25
 #define BACKLIGHT_TS 2.00
@@ -116,7 +117,7 @@ OffroadHome::OffroadHome(QWidget* parent) : QWidget(parent) {
 
   alerts_widget = new OffroadAlert();
   QObject::connect(alerts_widget, SIGNAL(closeAlerts()), this, SLOT(closeAlerts()));
-  center_layout->addWidget(alerts_widget);
+  center_layout->addWidget(new ScrollView(alerts_widget));
   center_layout->setAlignment(alerts_widget, Qt::AlignCenter);
 
   main_layout->addLayout(center_layout, 1);
