@@ -15,4 +15,3 @@ GoodScrollArea::GoodScrollArea(QWidget *area){
   scroller->grabGesture(this->viewport(), QScroller::TouchGesture);
   scroller->setScrollerProperties(sp);
 }
-
