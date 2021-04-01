@@ -3,9 +3,9 @@
 #include <QScroller>
 #include <QScrollArea>
 
-class GoodScrollArea : public QScrollArea {
+class ScrollView : public QScrollArea {
   Q_OBJECT
 
 public:
-  explicit GoodScrollArea(QWidget *area = nullptr);
+  explicit ScrollView(QWidget *area = nullptr);
 };

@@ -1,6 +1,6 @@
 #include "scroller.hpp"
 
-GoodScrollArea::GoodScrollArea(QWidget *area){
+ScrollView::ScrollView(QWidget *area){
   setWidget(area);
   setWidgetResizable(true);
   setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
