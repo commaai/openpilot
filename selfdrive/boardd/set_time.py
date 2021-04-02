@@ -13,6 +13,7 @@ if __name__ == "__main__":
     print("No panda found")
     exit()
 
+  # Set system time from panda RTC time
   dat = dev.controlRead(REQUEST_IN, 0xa0, 0, 0, 8)
   a = struct.unpack("HBBBBBB", dat)
   d = datetime.datetime(a[0], a[1], a[2], a[4], a[5], a[6])
