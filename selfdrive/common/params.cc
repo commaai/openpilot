@@ -11,9 +11,6 @@
 #include <sys/file.h>
 #include <sys/stat.h>
 
-#include <map>
-#include <string>
-#include <iostream>
 #include <csignal>
 #include <string.h>
 
@@ -52,6 +49,7 @@ static int fsync_dir(const char* path){
   return result;
 }
 
+// TODO: replace by std::filesystem::create_directories
 static int mkdir_p(std::string path) {
   char * _path = (char *)path.c_str();
 
@@ -73,25 +71,54 @@ static int mkdir_p(std::string path) {
   return 0;
 }
 
-static int ensure_dir_exists(std::string path) {
-  // TODO: replace by std::filesystem::create_directories
-  return mkdir_p(path.c_str());
+static bool ensure_params_path(const std::string &param_path, const std::string &key_path) {
+  // Make sure params path exists
+  if (!util::file_exists(param_path) && mkdir_p(param_path) != 0) {
+    return false;
+  }
+
+  // See if the symlink exists, otherwise create it
+  if (!util::file_exists(key_path)) {
+    // 1) Create temp folder
+    // 2) Set permissions
+    // 3) Symlink it to temp link
+    // 4) Move symlink to <params>/d
+
+    std::string tmp_path = param_path + "/.tmp_XXXXXX";
+    // this should be OK since mkdtemp just replaces characters in place
+    char *tmp_dir = mkdtemp((char *)tmp_path.c_str());
+    if (tmp_dir == NULL) {
+      return false;
+    }
+
+    if (chmod(tmp_dir, 0777) != 0) {
+      return false;
+    }
+
+    std::string link_path = std::string(tmp_dir) + ".link";
+    if (symlink(tmp_dir, link_path.c_str()) != 0) {
+      return false;
+    }
+
+    // don't return false if it has been created by other
+    if (rename(link_path.c_str(), key_path.c_str()) != 0 && errno != EEXIST) {
+      return false;
+    }
+  }
+
+  // Ensure permissions are correct in case we didn't create the symlink
+  return chmod(key_path.c_str(), 0777) == 0;
 }
 
+Params::Params(bool persistent_param) : Params(persistent_param ? persistent_params_path : default_params_path) {}
 
-Params::Params(bool persistent_param){
-  params_path = persistent_param ? persistent_params_path : default_params_path;
+Params::Params(const std::string &path) : params_path(path) {
+  if (!ensure_params_path(params_path, params_path + "/d")) {
+    throw std::runtime_error(util::string_format("Failed to ensure params path, errno=%d", errno));
+  }
 }
 
-Params::Params(std::string path) {
-  params_path = path;
-}
-
-int Params::write_db_value(std::string key, std::string dat){
-  return write_db_value(key.c_str(), dat.c_str(), dat.length());
-}
-
-int Params::write_db_value(const char* key, const char* value, size_t value_size) {
+int Params::put(const char* key, const char* value, size_t value_size) {
   // Information about safely and atomically writing a file: https://lwn.net/Articles/457667/
   // 1) Create temp file
   // 2) Write data to temp file
@@ -105,52 +132,6 @@ int Params::write_db_value(const char* key, const char* value, size_t value_size
   std::string path;
   std::string tmp_path;
   ssize_t bytes_written;
-
-  // Make sure params path exists
-  result = ensure_dir_exists(params_path);
-  if (result < 0) {
-    goto cleanup;
-  }
-
-  // See if the symlink exists, otherwise create it
-  path = params_path + "/d";
-  struct stat st;
-  if (stat(path.c_str(), &st) == -1) {
-    // Create temp folder
-    path = params_path + "/.tmp_XXXXXX";
-
-    char *t = mkdtemp((char*)path.c_str());
-    if (t == NULL){
-      goto cleanup;
-    }
-    std::string tmp_dir(t);
-
-    // Set permissions
-    result = chmod(tmp_dir.c_str(), 0777);
-    if (result < 0) {
-      goto cleanup;
-    }
-
-    // Symlink it to temp link
-    tmp_path = tmp_dir + ".link";
-    result = symlink(tmp_dir.c_str(), tmp_path.c_str());
-    if (result < 0) {
-      goto cleanup;
-    }
-
-    // Move symlink to <params>/d
-    path = params_path + "/d";
-    result = rename(tmp_path.c_str(), path.c_str());
-    if (result < 0) {
-      goto cleanup;
-    }
-  } else {
-    // Ensure permissions are correct in case we didn't create the symlink
-    result = chmod(path.c_str(), 0777);
-    if (result < 0) {
-      goto cleanup;
-    }
-  }
 
   // Write value to temp.
   tmp_path = params_path + "/.tmp_value_XXXXXX";
@@ -213,7 +194,7 @@ cleanup:
   return result;
 }
 
-int Params::delete_db_value(std::string key) {
+int Params::remove(const char *key) {
   int lock_fd = -1;
   int result;
   std::string path;
@@ -230,7 +211,7 @@ int Params::delete_db_value(std::string key) {
 
   // Delete value.
   path = params_path + "/d/" + key;
-  result = remove(path.c_str());
+  result = ::remove(path.c_str());
   if (result != 0) {
     result = ERR_NO_VALUE;
     goto cleanup;
@@ -251,52 +232,28 @@ cleanup:
   return result;
 }
 
-std::string Params::get(std::string key, bool block){
-  char* value;
-  size_t size;
-  int r;
-
-  if (block) {
-    r = read_db_value_blocking((const char*)key.c_str(), &value, &size);
+std::string Params::get(const char *key, bool block) {
+  std::string path = params_path + "/d/" + key;
+  if (!block) {
+    return util::read_file(path);
   } else {
-    r = read_db_value((const char*)key.c_str(), &value, &size);
-  }
+    // blocking read until successful
+    params_do_exit = 0;
+    void (*prev_handler_sigint)(int) = std::signal(SIGINT, params_sig_handler);
+    void (*prev_handler_sigterm)(int) = std::signal(SIGTERM, params_sig_handler);
 
-  if (r == 0){
-    std::string s(value, size);
-    free(value);
-    return s;
-  } else {
-    return "";
-  }
-}
-
-int Params::read_db_value(const char* key, char** value, size_t* value_sz) {
-  std::string path = params_path + "/d/" + std::string(key);
-  *value = static_cast<char*>(read_file(path.c_str(), value_sz));
-  if (*value == NULL) {
-    return -22;
-  }
-  return 0;
-}
-
-int Params::read_db_value_blocking(const char* key, char** value, size_t* value_sz) {
-  params_do_exit = 0;
-  void (*prev_handler_sigint)(int) = std::signal(SIGINT, params_sig_handler);
-  void (*prev_handler_sigterm)(int) = std::signal(SIGTERM, params_sig_handler);
-
-  while (!params_do_exit) {
-    const int result = read_db_value(key, value, value_sz);
-    if (result == 0) {
-      break;
-    } else {
-      util::sleep_for(100); // 0.1 s
+    std::string value;
+    while (!params_do_exit) {
+      if (value = util::read_file(path); !value.empty()) {
+        break;
+      }
+      util::sleep_for(100);  // 0.1 s
     }
-  }
 
-  std::signal(SIGINT, prev_handler_sigint);
-  std::signal(SIGTERM, prev_handler_sigterm);
-  return params_do_exit; // Return 0 if we had no interrupt
+    std::signal(SIGINT, prev_handler_sigint);
+    std::signal(SIGTERM, prev_handler_sigterm);
+    return value;
+  }
 }
 
 int Params::read_db_all(std::map<std::string, std::string> *params) {
@@ -333,21 +290,4 @@ int Params::read_db_all(std::map<std::string, std::string> *params) {
 
   close(lock_fd);
   return 0;
-}
-
-std::vector<char> Params::read_db_bytes(const char* param_name) {
-  std::vector<char> bytes;
-  char* value;
-  size_t sz;
-  int result = read_db_value(param_name, &value, &sz);
-  if (result == 0) {
-    bytes.assign(value, value+sz);
-    free(value);
-  }
-  return bytes;
-}
-
-bool Params::read_db_bool(const char* param_name) {
-  std::vector<char> bytes = read_db_bytes(param_name);
-  return bytes.size() > 0 and bytes[0] == '1';
 }

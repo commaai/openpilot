@@ -10,6 +10,13 @@
 OffroadAlert::OffroadAlert(QWidget* parent) : QFrame(parent) {
   QVBoxLayout *layout = new QVBoxLayout();
   layout->setMargin(50);
+  layout->setSpacing(30);
+
+  QWidget *alerts_widget = new QWidget;
+  QVBoxLayout *alerts_layout = new QVBoxLayout;
+  alerts_layout->setMargin(0);
+  alerts_layout->setSpacing(30);
+  alerts_widget->setLayout(alerts_layout);
 
   // setup labels for each alert
   QString json = QString::fromStdString(util::read_file("../controls/lib/alerts_offroad.json"));
@@ -23,13 +30,22 @@ OffroadAlert::OffroadAlert(QWidget* parent) : QFrame(parent) {
     l->setWordWrap(true);
     l->setStyleSheet("background-color: " + QString(severity ? "#E22C2C" : "#292929"));
     l->setVisible(false);
-    layout->addWidget(l);
+    alerts_layout->addWidget(l);
   }
 
+  alerts_layout->addStretch(1);
+
   // release notes
+  releaseNotes.setWordWrap(true);
   releaseNotes.setVisible(false);
   releaseNotes.setStyleSheet("font-size: 48px;");
-  layout->addWidget(&releaseNotes);
+  releaseNotes.setAlignment(Qt::AlignTop);
+
+  releaseNotesScroll = new ScrollView(&releaseNotes, this);
+  layout->addWidget(releaseNotesScroll);
+
+  alertsScroll = new ScrollView(alerts_widget, this);
+  layout->addWidget(alertsScroll);
 
   // bottom footer, dismiss + reboot buttons
   QHBoxLayout *footer_layout = new QHBoxLayout();
@@ -70,19 +86,20 @@ void OffroadAlert::refresh() {
   updateAlerts();
 
   rebootBtn.setVisible(updateAvailable);
-  releaseNotes.setVisible(updateAvailable);
+  releaseNotesScroll->setVisible(updateAvailable);
   releaseNotes.setText(QString::fromStdString(params.get("ReleaseNotes")));
 
+  alertsScroll->setVisible(!updateAvailable);
   for (const auto& [k, label] : alerts) {
-    label->setVisible(!updateAvailable && !label->text().isEmpty());
+    label->setVisible(!label->text().isEmpty());
   }
 }
 
 void OffroadAlert::updateAlerts() {
   alertCount = 0;
-  updateAvailable = params.read_db_bool("UpdateAvailable");
+  updateAvailable = params.getBool("UpdateAvailable");
   for (const auto& [key, label] : alerts) {
-    auto bytes = params.read_db_bytes(key.c_str());
+    auto bytes = params.get(key.c_str());
     if (bytes.size()) {
       QJsonDocument doc_par = QJsonDocument::fromJson(QByteArray(bytes.data(), bytes.size()));
       QJsonObject obj = doc_par.object();
