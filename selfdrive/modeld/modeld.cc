@@ -69,7 +69,7 @@ void calibration_thread() {
 void run_model(ModelState &model, VisionIpcClient &vipc_client) {
   // messaging
   PubMaster pm({"modelV2", "cameraOdometry"});
-  SubMaster sm({"lateralPlan", "roadCameraState"});
+  SubMaster sm({"lateralPlan", "roadCameraState", "controlsState", "carState"});
 
   // setup filter to track dropped frames
   FirstOrderFilter frame_dropped_filter(0., 10., 1. / MODEL_FREQ);

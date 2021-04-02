@@ -60,14 +60,10 @@ uint64_t history_size = 0;
 
 // #define DUMP_YUV
 
-float smooth(float p, float a, float b) {
-  return p * a + (1 - p) * b;
-}
-
-float threshold_mse(float x, float threshold, bool gt) {
-  float error = gt ? x - threshold : threshold - x;
-  return error > 0 ? error * error : 0;
-}
+float squared(float x) { return x * x; }
+float smooth(float p, float a, float b) { return p * a + (1 - p) * b; }
+float mse_above_threshold(float x, float threshold) { return x > threshold ? squared(x - threshold) : 0; }
+float mse_below_threshold(float x, float threshold) { return x < threshold ? squared(x - threshold) : 0; }
 
 void model_init(ModelState* s, cl_device_id device_id, cl_context context) {
   frame_init(&s->frame, MODEL_WIDTH, MODEL_HEIGHT, device_id, context);
@@ -195,8 +191,8 @@ void fill_disengage(SubMaster &sm, cereal::ModelDataV2::MetaData::Builder meta) 
 
   // Wait for the history buffer to fill up
   if (history_size < 200) {
-    engaged_threshold_mse += threshold_mse(engaged_prob, 0.8, false);
-    steering_threshold_mse += threshold_mse(steering_prob, 0.2, true);
+    engaged_threshold_mse += mse_below_threshold(engaged_prob, 0.8);
+    steering_threshold_mse += mse_above_threshold(steering_prob, 0.2);
   }
   if (history_size < 250) {
     meta.setDisengageProbSpike(false);
@@ -240,10 +236,10 @@ void fill_disengage(SubMaster &sm, cereal::ModelDataV2::MetaData::Builder meta) 
   steering_history[250-1] = steering_prob;
 
   // Update the threshold means
-  engaged_threshold_mse += threshold_mse(engaged_2s, 0.8, false);
-  steering_threshold_mse += threshold_mse(steering_2s, 0.2, true);
-  engaged_threshold_mse -= threshold_mse(engaged_10s, 0.8, false);
-  steering_threshold_mse -= threshold_mse(steering_10s, 0.2, true);
+  engaged_threshold_mse += mse_below_threshold(engaged_2s, 0.8);
+  steering_threshold_mse += mse_above_threshold(steering_2s, 0.2);
+  engaged_threshold_mse -= mse_below_threshold(engaged_10s, 0.8);
+  steering_threshold_mse -= mse_above_threshold(steering_10s, 0.2);
 
   // Update rolling engaged/steering probabilities
   rolling_engaged_prob = smooth(.8, rolling_engaged_prob, engaged_prob);
