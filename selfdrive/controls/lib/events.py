@@ -751,4 +751,11 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
     ET.NO_ENTRY: NoEntryAlert("Cruise Fault: Restart the Car"),
   },
 
+  EventName.disengageProbSpike: {
+    ET.WARNING: Alert(
+      "KEEP EYES ON ROAD",
+      "Anomaly detected on the road",
+      AlertStatus.userPrompt, AlertSize.mid,
+      Priority.MID, VisualAlert.steerRequired, AudibleAlert.chimeWarning1, .4, 2., 1.),
+  },
 }
