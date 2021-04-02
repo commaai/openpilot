@@ -20,8 +20,8 @@
 
 
 // id of the video capturing device
-#define ROAD_CAMERA_ID 1
-#define DRIVER_CAMERA_ID 2
+const int ROAD_CAMERA_ID = getenv("ROADCAM_ID") ? atoi(getenv("ROADCAM_ID")) : 1;
+const int DRIVER_CAMERA_ID = getenv("DRIVERCAM_ID") ? atoi(getenv("DRIVERCAM_ID")) : 2;
 
 #define FRAME_WIDTH  1164
 #define FRAME_HEIGHT 874
