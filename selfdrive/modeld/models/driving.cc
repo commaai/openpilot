@@ -55,6 +55,7 @@ float engaged_threshold_mse = 0;
 float steering_threshold_mse = 0;
 uint64_t last_desire_frame = 0;
 uint64_t last_blinker_frame = 0;
+uint64_t last_steering_frame = 0;
 uint64_t history_size = 0;
 
 // #define DUMP_YUV
@@ -205,7 +206,7 @@ void fill_disengage(SubMaster &sm, cereal::ModelDataV2::MetaData::Builder meta) 
     return;
   }
 
-  // Update desire and blinker state
+  // Update desire, blinker, and steering state
   float max_desire = 0;
   int indices[] = {1,2,5,6};
   for (int i = 0; i < 32; i += 8) {
@@ -216,11 +217,15 @@ void fill_disengage(SubMaster &sm, cereal::ModelDataV2::MetaData::Builder meta) 
       }
     }
   }
+
   if (max_desire > 0.05) {
     last_desire_frame = sm.frame;
   }
   if (left_blinker || right_blinker) {
     last_blinker_frame = sm.frame;
+  }
+  if (steering_pressed) {
+    last_steering_frame = sm.frame;
   }
 
   // Update the history buffers
@@ -248,9 +253,10 @@ void fill_disengage(SubMaster &sm, cereal::ModelDataV2::MetaData::Builder meta) 
   float steering_diff_2s = steering_prob - steering_2s;
   bool no_desire = last_desire_frame < sm.frame - 40;
   bool no_blinkers = last_blinker_frame < sm.frame - 60;
+  bool no_steering = last_steering_frame < sm.frame - 40;
   bool high_disengage_prob = rolling_engaged_prob < 0.3 && rolling_steering_prob > 0.8 && steering_diff_2s > 0.4;
   bool low_history_noise = engaged_threshold_mse / 200 < 0.005 && steering_threshold_mse / 200 < 0.005;
-  meta.setDisengageProbSpike(active && !steering_pressed && no_desire && no_blinkers && high_disengage_prob && low_history_noise);
+  meta.setDisengageProbSpike(active && no_desire && no_blinkers && no_steering && high_disengage_prob && low_history_noise);
 }
 
 void fill_meta(SubMaster &sm, cereal::ModelDataV2::MetaData::Builder meta, const float *meta_data) {
