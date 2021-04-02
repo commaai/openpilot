@@ -20,7 +20,8 @@ docker run --net=host\
   --rm \
   -it \
   --gpus all \
-  --device=/dev/dri \
+  --device=/dev/dri:/dev/dri \
+  --device=/dev/input:/dev/input \
   -v /tmp/.X11-unix:/tmp/.X11-unix \
   --shm-size 1G \
   -e DISPLAY=$DISPLAY \
