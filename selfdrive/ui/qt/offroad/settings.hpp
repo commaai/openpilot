@@ -18,10 +18,17 @@ class DevicePanel : public QWidget {
 public:
   explicit DevicePanel(QWidget* parent = nullptr);
 protected:
-  void hideEvent(QHideEvent* event) { emit closeDialogs(); };
+  void hideEvent(QHideEvent* event) {
+    QList<QWidget*> children = findChildren<QWidget *>();
+
+    for(auto w : children){
+      if(w->metaObject()->className() == QString("ConfirmationDialog")){
+        w->close();
+      }
+    }
+  };
 signals:
   void reviewTrainingGuide();
-  void closeDialogs();
 };
 
 class DeveloperPanel : public QFrame {

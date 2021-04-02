@@ -47,9 +47,6 @@ public:
   static bool alert(const QString &prompt_text, QWidget *parent = 0);
   static bool confirm(const QString &prompt_text, QWidget *parent = 0);
 
-protected:
-  void hideEvent(QHideEvent *event);
-
 private:
   QLabel *prompt;
   QVBoxLayout *layout;

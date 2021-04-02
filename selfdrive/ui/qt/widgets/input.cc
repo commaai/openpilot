@@ -118,8 +118,6 @@ ConfirmationDialog::ConfirmationDialog(const QString &prompt_text, const QString
   layout = new QVBoxLayout();
   layout->setMargin(25);
 
-  connect(parent, SIGNAL(closeDialogs()), this, SLOT(close()));
-
   prompt = new QLabel(prompt_text, this);
   prompt->setWordWrap(true);
   prompt->setAlignment(Qt::AlignHCenter);
@@ -161,10 +159,6 @@ ConfirmationDialog::ConfirmationDialog(const QString &prompt_text, const QString
   )");
 
   setLayout(layout);
-}
-
-void ConfirmationDialog::hideEvent(QHideEvent *event){
-  close();
 }
 
 bool ConfirmationDialog::alert(const QString &prompt_text, QWidget *parent) {
