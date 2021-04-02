@@ -6,6 +6,7 @@
 #include <QLabel>
 
 #include "common/params.h"
+#include "widgets/scrollview.hpp"
 
 class OffroadAlert : public QFrame {
   Q_OBJECT
@@ -21,6 +22,9 @@ private:
   std::map<std::string, QLabel*> alerts;
   QPushButton rebootBtn;
   void updateAlerts();
+
+  ScrollView *releaseNotesScroll;
+  ScrollView *alertsScroll;
 
 signals:
   void closeAlerts();

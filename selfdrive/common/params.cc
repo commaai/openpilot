@@ -49,6 +49,7 @@ static int fsync_dir(const char* path){
   return result;
 }
 
+// TODO: replace by std::filesystem::create_directories
 static int mkdir_p(std::string path) {
   char * _path = (char *)path.c_str();
 
@@ -70,18 +71,51 @@ static int mkdir_p(std::string path) {
   return 0;
 }
 
-static int ensure_dir_exists(std::string path) {
-  // TODO: replace by std::filesystem::create_directories
-  return mkdir_p(path.c_str());
+static bool ensure_params_path(const std::string &param_path, const std::string &key_path) {
+  // Make sure params path exists
+  if (!util::file_exists(param_path) && mkdir_p(param_path) != 0) {
+    return false;
+  }
+
+  // See if the symlink exists, otherwise create it
+  if (!util::file_exists(key_path)) {
+    // 1) Create temp folder
+    // 2) Set permissions
+    // 3) Symlink it to temp link
+    // 4) Move symlink to <params>/d
+
+    std::string tmp_path = param_path + "/.tmp_XXXXXX";
+    // this should be OK since mkdtemp just replaces characters in place
+    char *tmp_dir = mkdtemp((char *)tmp_path.c_str());
+    if (tmp_dir == NULL) {
+      return false;
+    }
+
+    if (chmod(tmp_dir, 0777) != 0) {
+      return false;
+    }
+
+    std::string link_path = std::string(tmp_dir) + ".link";
+    if (symlink(tmp_dir, link_path.c_str()) != 0) {
+      return false;
+    }
+
+    // don't return false if it has been created by other
+    if (rename(link_path.c_str(), key_path.c_str()) != 0 && errno != EEXIST) {
+      return false;
+    }
+  }
+
+  // Ensure permissions are correct in case we didn't create the symlink
+  return chmod(key_path.c_str(), 0777) == 0;
 }
 
+Params::Params(bool persistent_param) : Params(persistent_param ? persistent_params_path : default_params_path) {}
 
-Params::Params(bool persistent_param){
-  params_path = persistent_param ? persistent_params_path : default_params_path;
-}
-
-Params::Params(const std::string &path) {
-  params_path = path;
+Params::Params(const std::string &path) : params_path(path) {
+  if (!ensure_params_path(params_path, params_path + "/d")) {
+    throw std::runtime_error(util::string_format("Failed to ensure params path, errno=%d", errno));
+  }
 }
 
 int Params::put(const char* key, const char* value, size_t value_size) {
@@ -98,52 +132,6 @@ int Params::put(const char* key, const char* value, size_t value_size) {
   std::string path;
   std::string tmp_path;
   ssize_t bytes_written;
-
-  // Make sure params path exists
-  result = ensure_dir_exists(params_path);
-  if (result < 0) {
-    goto cleanup;
-  }
-
-  // See if the symlink exists, otherwise create it
-  path = params_path + "/d";
-  struct stat st;
-  if (stat(path.c_str(), &st) == -1) {
-    // Create temp folder
-    path = params_path + "/.tmp_XXXXXX";
-
-    char *t = mkdtemp((char*)path.c_str());
-    if (t == NULL){
-      goto cleanup;
-    }
-    std::string tmp_dir(t);
-
-    // Set permissions
-    result = chmod(tmp_dir.c_str(), 0777);
-    if (result < 0) {
-      goto cleanup;
-    }
-
-    // Symlink it to temp link
-    tmp_path = tmp_dir + ".link";
-    result = symlink(tmp_dir.c_str(), tmp_path.c_str());
-    if (result < 0) {
-      goto cleanup;
-    }
-
-    // Move symlink to <params>/d
-    path = params_path + "/d";
-    result = rename(tmp_path.c_str(), path.c_str());
-    if (result < 0) {
-      goto cleanup;
-    }
-  } else {
-    // Ensure permissions are correct in case we didn't create the symlink
-    result = chmod(path.c_str(), 0777);
-    if (result < 0) {
-      goto cleanup;
-    }
-  }
 
   // Write value to temp.
   tmp_path = params_path + "/.tmp_value_XXXXXX";
