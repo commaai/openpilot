@@ -9,6 +9,7 @@
 #include "common/params.h"
 #include "driving.h"
 #include "clutil.h"
+#include "util.h"
 
 constexpr int DESIRE_PRED_SIZE = 32;
 constexpr int OTHER_META_SIZE = 4;
@@ -46,7 +47,48 @@ constexpr int OUTPUT_SIZE =  POSE_IDX + POSE_SIZE;
   constexpr int TEMPORAL_SIZE = 0;
 #endif
 
+// Keep a running history of meta states for the disengage alert
+auto engaged_10s_buffer = RingBuffer<float, 10*20>();
+auto steering_10s_buffer = RingBuffer<float, 10*20>();
+auto engaged_2s_buffer = RingBuffer<float, 50>();
+auto steering_2s_buffer = RingBuffer<float, 50>();
+
+float rolling_engaged_prob = 0;
+float rolling_steering_prob = 0;
+float engaged_threshold_mse = 0;
+float steering_threshold_mse = 0;
+uint64_t last_desire_frame = 0;
+uint64_t last_blinker_frame = 0;
+
 // #define DUMP_YUV
+
+float interp(float p, float a, float b) {
+  return p * a + (1 - p) * b;
+}
+
+float threshold_mse(float x, float threshold, bool gt) {
+  float error = gt ? x - threshold : threshold - x;
+  return error > 0 ? error * error : 0;
+}
+
+void append_to_rings(RingBuffer<float, 50> buffer_2s, RingBuffer<float, 10*20> buffer_10s, float data, float* data_2s, float* data_10s) {
+  if (buffer_2s.full()) {
+    *data_2s = buffer_2s.pop();
+  } else {
+    *data_2s = NAN;
+  }
+
+  if (buffer_10s.full()) {
+    *data_10s = buffer_10s.pop();
+  } else {
+    *data_10s = NAN;
+  }
+
+  buffer_2s.push(data);
+  if (!isnan(*data_2s)) {
+    buffer_10s.push(*data_2s);
+  }
+}
 
 void model_init(ModelState* s, cl_device_id device_id, cl_context context) {
   frame_init(&s->frame, MODEL_WIDTH, MODEL_HEIGHT, device_id, context);
@@ -163,7 +205,68 @@ void fill_lead_v2(cereal::ModelDataV2::LeadDataV2::Builder lead, const float *le
   lead.setXyvaStd(xyva_stds_arr);
 }
 
-void fill_meta(cereal::ModelDataV2::MetaData::Builder meta, const float *meta_data) {
+void fill_disengage(SubMaster &sm, cereal::ModelDataV2::MetaData::Builder meta) {
+  float engaged_prob = meta.getEngagedProb();
+  float steering_prob = meta.getSteerOverrideProb();
+  auto desire_probs = meta.getDesirePrediction();
+  bool active = sm["controlsState"].getControlsState().getActive();
+  bool left_blinker = sm["carState"].getCarState().getLeftBlinker();
+  bool right_blinker = sm["carState"].getCarState().getRightBlinker();
+  bool steering_pressed = sm["carState"].getCarState().getSteeringPressed();
+
+  // Update the ring buffers for disengage alerts
+  float engaged_2s, engaged_10s, steering_2s, steering_10s;
+  append_to_rings(engaged_2s_buffer, engaged_10s_buffer, engaged_prob, &engaged_2s, &engaged_10s);
+  append_to_rings(steering_2s_buffer, steering_10s_buffer, steering_prob, &steering_2s, &steering_10s);
+
+  // Update the threshold means
+  if (!isnan(engaged_2s) && !isnan(steering_2s)) {
+    engaged_threshold_mse += threshold_mse(engaged_2s, 0.8, false);
+    steering_threshold_mse += threshold_mse(steering_2s, 0.2, true);
+  }
+  if (!isnan(engaged_10s) && !isnan(steering_10s)) {
+    engaged_threshold_mse -= threshold_mse(engaged_10s, 0.8, false);
+    steering_threshold_mse -= threshold_mse(steering_10s, 0.2, true);
+  }
+
+  // Update desire and blinker state
+  float max_desire = 0;
+  int indices[] = {1,2,5,6};
+  for (int i = 0; i < 32; i += 8) {
+    for (int j = 0; j < sizeof(indices) / sizeof(int); j++) {
+      int idx = i + indices[j];
+      if (desire_probs[idx] > max_desire) {
+        max_desire = desire_probs[idx];
+      }
+    }
+  }
+  if (max_desire > 0.05) {
+    last_desire_frame = sm.frame;
+  }
+  if (left_blinker || right_blinker) {
+    last_blinker_frame = sm.frame;
+  }
+
+  // Update rolling engaged/steering probabilities
+  rolling_engaged_prob = interp(.8, rolling_engaged_prob, engaged_prob);
+  rolling_steering_prob = interp(.8, rolling_steering_prob, steering_prob);
+
+  // Check if we're over the threshold
+  bool disengage_prob_spike = false;
+  if (!isnan(engaged_10s) && !isnan(steering_10s)) {
+    float steering_diff_2s = steering_prob - steering_2s;
+    bool no_desire = last_desire_frame < sm.frame - 40;
+    bool no_blinkers = last_blinker_frame < sm.frame - 60;
+    bool high_disengage_prob = rolling_engaged_prob < 0.3 && rolling_steering_prob > 0.8 && steering_diff_2s > 0.4;
+    bool low_history_noise = engaged_threshold_mse / engaged_10s_buffer.size() < 0.005 &&
+                             steering_threshold_mse / steering_10s_buffer.size() < 0.005;
+    disengage_prob_spike = active && !steering_pressed && no_desire && no_blinkers && high_disengage_prob && low_history_noise;
+  }
+
+  meta.setDisengageProbSpike(disengage_prob_spike);
+}
+
+void fill_meta(SubMaster &sm, cereal::ModelDataV2::MetaData::Builder meta, const float *meta_data) {
   float desire_state_softmax[DESIRE_LEN];
   float desire_pred_softmax[4*DESIRE_LEN];
   softmax(&meta_data[0], desire_state_softmax, DESIRE_LEN);
@@ -177,6 +280,7 @@ void fill_meta(cereal::ModelDataV2::MetaData::Builder meta, const float *meta_da
   meta.setBrakeDisengageProb(sigmoid(meta_data[DESIRE_LEN + 2]));
   meta.setSteerOverrideProb(sigmoid(meta_data[DESIRE_LEN + 3]));
   meta.setDesirePrediction(desire_pred_softmax);
+  fill_disengage(sm, meta);
 }
 
 void fill_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const float * data,
@@ -216,7 +320,7 @@ void fill_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const float * data,
   xyzt.setT(t_arr);
 }
 
-void fill_model(cereal::ModelDataV2::Builder &framed, const ModelDataRaw &net_outputs) {
+void fill_model(SubMaster &sm, cereal::ModelDataV2::Builder &framed, const ModelDataRaw &net_outputs) {
   // plan
   const float *best_plan = get_plan_data(net_outputs.plan);
   float plan_t_arr[TRAJECTORY_SIZE];
@@ -251,7 +355,7 @@ void fill_model(cereal::ModelDataV2::Builder &framed, const ModelDataRaw &net_ou
   framed.setRoadEdgeStds(road_edge_stds_arr);
 
   // meta
-  fill_meta(framed.initMeta(), net_outputs.meta);
+  fill_meta(sm, framed.initMeta(), net_outputs.meta);
 
   // leads
   auto leads = framed.initLeads(LEAD_MHP_SELECTION);
@@ -261,7 +365,7 @@ void fill_model(cereal::ModelDataV2::Builder &framed, const ModelDataRaw &net_ou
   }
 }
 
-void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id, float frame_drop,
+void model_publish(PubMaster &pm, SubMaster &sm, uint32_t vipc_frame_id, uint32_t frame_id, float frame_drop,
                    const ModelDataRaw &net_outputs, uint64_t timestamp_eof,
                    float model_execution_time, kj::ArrayPtr<const float> raw_pred) {
   const uint32_t frame_age = (frame_id > vipc_frame_id) ? (frame_id - vipc_frame_id) : 0;
@@ -275,7 +379,7 @@ void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id, flo
   if (send_raw_pred) {
     framed.setRawPredictions(raw_pred.asBytes());
   }
-  fill_model(framed, net_outputs);
+  fill_model(sm, framed, net_outputs);
   pm.send("modelV2", msg);
 }
 

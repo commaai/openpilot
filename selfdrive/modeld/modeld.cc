@@ -116,10 +116,10 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client) {
         frame_dropped_filter.reset(0);
         frames_dropped = 0.;
       }
-      
+
       float frame_drop_ratio = frames_dropped / (1 + frames_dropped);
 
-      model_publish(pm, extra.frame_id, frame_id, frame_drop_ratio, model_buf, extra.timestamp_eof, model_execution_time,
+      model_publish(pm, sm, extra.frame_id, frame_id, frame_drop_ratio, model_buf, extra.timestamp_eof, model_execution_time,
                     kj::ArrayPtr<const float>(model.output.data(), model.output.size()));
       posenet_publish(pm, extra.frame_id, vipc_dropped_frames, model_buf, extra.timestamp_eof);
 

@@ -177,3 +177,42 @@ public:
 private:
   float x_, k_;
 };
+
+// Ring buffer implementation from https://www.approxion.com/circular-adventures-vii-a-ring-buffer-implementation/
+template<typename T, int N>
+class RingBuffer {
+public:
+  RingBuffer() { clear(); }
+  bool empty() const { return head == tail; }
+  bool full() const { return size() == maxlen(); }
+  size_t maxlen() const { return N; }
+  size_t size() const {
+    return head >= tail ? head - tail : BUFSIZE - (tail - head);
+  }
+  void clear() {
+    tail = head = 0U;
+  }
+  void push(const T& item) {
+    buffer[head] = item;
+    advance(head);
+    if (head == tail) {
+      advance(tail); // Drop oldest entry, keep the rest
+    }
+  }
+  const T& pop() {
+    assert(!empty());
+    size_t old_tail = tail;
+    advance(tail);
+    return buffer[old_tail];
+  }
+
+private:
+  static const size_t BUFSIZE = N + 1U;
+  T buffer[BUFSIZE];
+  size_t head;
+  size_t tail;
+
+  void advance(size_t& value) {
+    value = (value + 1) % BUFSIZE;
+  }
+};
