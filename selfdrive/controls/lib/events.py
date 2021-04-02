@@ -171,7 +171,7 @@ class EngagementAlert(Alert):
 class NormalPermanentAlert(Alert):
   def __init__(self, alert_text_1, alert_text_2):
     super().__init__(alert_text_1, alert_text_2,
-                     AlertStatus.normal, AlertSize.mid,
+                     AlertStatus.normal, AlertSize.mid if len(alert_text_2) else AlertSize.small,
                      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
 
 # ********** alert callback functions **********
@@ -642,9 +642,10 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
                                audible_alert=AudibleAlert.chimeDisengage),
   },
 
-  EventName.controlsFailed: {
-    ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("Controls Failed"),
-    ET.NO_ENTRY: NoEntryAlert("Controls Failed"),
+  EventName.accFaulted: {
+    ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("Cruise Faulted"),
+    ET.PERMANENT: NormalPermanentAlert("Cruise Faulted", ""),
+    ET.NO_ENTRY: NoEntryAlert("Cruise Faulted"),
   },
 
   EventName.controlsMismatch: {
