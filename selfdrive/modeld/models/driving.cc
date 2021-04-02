@@ -9,7 +9,6 @@
 #include "common/params.h"
 #include "driving.h"
 #include "clutil.h"
-#include "util.h"
 
 constexpr int DESIRE_PRED_SIZE = 32;
 constexpr int OTHER_META_SIZE = 4;
@@ -48,46 +47,25 @@ constexpr int OUTPUT_SIZE =  POSE_IDX + POSE_SIZE;
 #endif
 
 // Keep a running history of meta states for the disengage alert
-auto engaged_10s_buffer = RingBuffer<float, 10*20>();
-auto steering_10s_buffer = RingBuffer<float, 10*20>();
-auto engaged_2s_buffer = RingBuffer<float, 50>();
-auto steering_2s_buffer = RingBuffer<float, 50>();
-
+float engaged_history[250];
+float steering_history[250];
 float rolling_engaged_prob = 0;
 float rolling_steering_prob = 0;
 float engaged_threshold_mse = 0;
 float steering_threshold_mse = 0;
 uint64_t last_desire_frame = 0;
 uint64_t last_blinker_frame = 0;
+uint64_t history_size = 0;
 
 // #define DUMP_YUV
 
-float interp(float p, float a, float b) {
+float smooth(float p, float a, float b) {
   return p * a + (1 - p) * b;
 }
 
 float threshold_mse(float x, float threshold, bool gt) {
   float error = gt ? x - threshold : threshold - x;
   return error > 0 ? error * error : 0;
-}
-
-void append_to_rings(RingBuffer<float, 50> buffer_2s, RingBuffer<float, 10*20> buffer_10s, float data, float* data_2s, float* data_10s) {
-  if (buffer_2s.full()) {
-    *data_2s = buffer_2s.pop();
-  } else {
-    *data_2s = NAN;
-  }
-
-  if (buffer_10s.full()) {
-    *data_10s = buffer_10s.pop();
-  } else {
-    *data_10s = NAN;
-  }
-
-  buffer_2s.push(data);
-  if (!isnan(*data_2s)) {
-    buffer_10s.push(*data_2s);
-  }
 }
 
 void model_init(ModelState* s, cl_device_id device_id, cl_context context) {
@@ -214,19 +192,17 @@ void fill_disengage(SubMaster &sm, cereal::ModelDataV2::MetaData::Builder meta) 
   bool right_blinker = sm["carState"].getCarState().getRightBlinker();
   bool steering_pressed = sm["carState"].getCarState().getSteeringPressed();
 
-  // Update the ring buffers for disengage alerts
-  float engaged_2s, engaged_10s, steering_2s, steering_10s;
-  append_to_rings(engaged_2s_buffer, engaged_10s_buffer, engaged_prob, &engaged_2s, &engaged_10s);
-  append_to_rings(steering_2s_buffer, steering_10s_buffer, steering_prob, &steering_2s, &steering_10s);
-
-  // Update the threshold means
-  if (!isnan(engaged_2s) && !isnan(steering_2s)) {
-    engaged_threshold_mse += threshold_mse(engaged_2s, 0.8, false);
-    steering_threshold_mse += threshold_mse(steering_2s, 0.2, true);
+  // Wait for the history buffer to fill up
+  if (history_size < 200) {
+    engaged_threshold_mse += threshold_mse(engaged_prob, 0.8, false);
+    steering_threshold_mse += threshold_mse(steering_prob, 0.2, true);
   }
-  if (!isnan(engaged_10s) && !isnan(steering_10s)) {
-    engaged_threshold_mse -= threshold_mse(engaged_10s, 0.8, false);
-    steering_threshold_mse -= threshold_mse(steering_10s, 0.2, true);
+  if (history_size < 250) {
+    meta.setDisengageProbSpike(false);
+    engaged_history[history_size] = engaged_prob;
+    steering_history[history_size] = steering_prob;
+    history_size += 1;
+    return;
   }
 
   // Update desire and blinker state
@@ -247,23 +223,34 @@ void fill_disengage(SubMaster &sm, cereal::ModelDataV2::MetaData::Builder meta) 
     last_blinker_frame = sm.frame;
   }
 
+  // Update the history buffers
+  float engaged_2s = engaged_history[200];
+  float steering_2s = steering_history[200];
+  float engaged_10s = engaged_history[0];
+  float steering_10s = steering_history[0];
+
+  memmove(engaged_history, engaged_history+1, (250-1)*sizeof(float));
+  memmove(steering_history, steering_history+1, (250-1)*sizeof(float));
+  engaged_history[250-1] = engaged_prob;
+  steering_history[250-1] = steering_prob;
+
+  // Update the threshold means
+  engaged_threshold_mse += threshold_mse(engaged_2s, 0.8, false);
+  steering_threshold_mse += threshold_mse(steering_2s, 0.2, true);
+  engaged_threshold_mse -= threshold_mse(engaged_10s, 0.8, false);
+  steering_threshold_mse -= threshold_mse(steering_10s, 0.2, true);
+
   // Update rolling engaged/steering probabilities
-  rolling_engaged_prob = interp(.8, rolling_engaged_prob, engaged_prob);
-  rolling_steering_prob = interp(.8, rolling_steering_prob, steering_prob);
+  rolling_engaged_prob = smooth(.8, rolling_engaged_prob, engaged_prob);
+  rolling_steering_prob = smooth(.8, rolling_steering_prob, steering_prob);
 
   // Check if we're over the threshold
-  bool disengage_prob_spike = false;
-  if (!isnan(engaged_10s) && !isnan(steering_10s)) {
-    float steering_diff_2s = steering_prob - steering_2s;
-    bool no_desire = last_desire_frame < sm.frame - 40;
-    bool no_blinkers = last_blinker_frame < sm.frame - 60;
-    bool high_disengage_prob = rolling_engaged_prob < 0.3 && rolling_steering_prob > 0.8 && steering_diff_2s > 0.4;
-    bool low_history_noise = engaged_threshold_mse / engaged_10s_buffer.size() < 0.005 &&
-                             steering_threshold_mse / steering_10s_buffer.size() < 0.005;
-    disengage_prob_spike = active && !steering_pressed && no_desire && no_blinkers && high_disengage_prob && low_history_noise;
-  }
-
-  meta.setDisengageProbSpike(disengage_prob_spike);
+  float steering_diff_2s = steering_prob - steering_2s;
+  bool no_desire = last_desire_frame < sm.frame - 40;
+  bool no_blinkers = last_blinker_frame < sm.frame - 60;
+  bool high_disengage_prob = rolling_engaged_prob < 0.3 && rolling_steering_prob > 0.8 && steering_diff_2s > 0.4;
+  bool low_history_noise = engaged_threshold_mse / 200 < 0.005 && steering_threshold_mse / 200 < 0.005;
+  meta.setDisengageProbSpike(active && !steering_pressed && no_desire && no_blinkers && high_disengage_prob && low_history_noise);
 }
 
 void fill_meta(SubMaster &sm, cereal::ModelDataV2::MetaData::Builder meta, const float *meta_data) {
