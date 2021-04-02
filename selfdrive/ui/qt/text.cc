@@ -49,6 +49,7 @@ int main(int argc, char *argv[]) {
       padding-left: 100px;
       border: 2px solid white;
       border-radius: 20px;
+      margin-right: 20px;
     }
   )");
 
