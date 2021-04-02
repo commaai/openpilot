@@ -68,9 +68,6 @@ class CarController():
       # converts desired acceleration to gas percentage for pedal
       # +0.06 offset to reduce ABS pump usage when applying very small gas
       apply_gas = clip(compute_gb_pedal(apply_accel, CS.out.vEgo, CS.out.brakeLights), 0., 1.)
-      if apply_accel > 0 and CS.out.vEgo <= CS.CP.minSpeedCan:  # increase accel to release brake quicker todo: might not be needed, test with and without in similar situations
-        apply_accel *= 2
-
     apply_accel = clip(apply_accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX) if enabled else 0.
 
     # steer torque
