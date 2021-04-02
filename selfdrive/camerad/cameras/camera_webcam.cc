@@ -70,9 +70,8 @@ void camera_init(VisionIpcServer * v, CameraState *s, int camera_id, unsigned in
 }
 
 void run_camera(CameraState *s, cv::VideoCapture &video_cap, float *ts) {
-  if (!video_cap.isOpened()) {
-    assert(0);
-  }
+  assert(video_cap.isOpened());
+
   cv::Size size(s->ci.frame_width, s->ci.frame_height);
   const cv::Mat transform = cv::Mat(3, 3, CV_32F, ts);
   uint32_t frame_id = 0;
