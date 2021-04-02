@@ -17,6 +17,7 @@ OffroadAlert::OffroadAlert(QWidget* parent) : QFrame(parent) {
   alerts_layout->setMargin(0);
   alerts_layout->setSpacing(30);
   alerts_widget->setLayout(alerts_layout);
+  alerts_widget->setStyleSheet("background-color: transparent;");
 
   // setup labels for each alert
   QString json = QString::fromStdString(util::read_file("../controls/lib/alerts_offroad.json"));
