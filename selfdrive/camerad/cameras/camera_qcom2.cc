@@ -24,10 +24,10 @@
 
 #include "sensor2_i2c.h"
 
-#define FRAME_WIDTH  1928
-#define FRAME_HEIGHT 1208
+#define FRAME_WIDTH  1936
+#define FRAME_HEIGHT 1096
 //#define FRAME_STRIDE 1936 // for 8 bit output
-#define FRAME_STRIDE 2416  // for 10 bit output
+#define FRAME_STRIDE 2432  // for 10 bit output
 
 #define MIPI_SETTLE_CNT 33  // Calculated by camera_freqs.py
 
@@ -240,7 +240,7 @@ void sensors_init(int video0_fd, int sensor_fd, int camera_num) {
   probe->op_code = 3;   // don't care?
   probe->cmd_type = CAMERA_SENSOR_CMD_TYPE_PROBE;
   probe->reg_addr = 0x3000; //0x300a; //0x300b;
-  probe->expected_data = 0x354; //0x7750; //0x885a;
+  probe->expected_data = 0x0956; //0x7750; //0x885a;
   probe->data_mask = 0;
 
   //buf_desc[1].size = buf_desc[1].length = 148;
@@ -788,15 +788,15 @@ static void camera_open(CameraState *s) {
 }
 
 void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
-  camera_init(s, v, &s->road_cam, CAMERA_ID_AR0231, 1, 20, device_id, ctx,
+  /*camera_init(s, v, &s->road_cam, CAMERA_ID_AR0231, 1, 20, device_id, ctx,
               VISION_STREAM_RGB_BACK, VISION_STREAM_YUV_BACK); // swap left/right
-  printf("road camera initted \n");
+  printf("road camera initted \n");*/
   camera_init(s, v, &s->wide_road_cam, CAMERA_ID_AR0231, 0, 20, device_id, ctx,
               VISION_STREAM_RGB_WIDE, VISION_STREAM_YUV_WIDE);
   printf("wide road camera initted \n");
-  camera_init(s, v, &s->driver_cam, CAMERA_ID_AR0231, 2, 20, device_id, ctx,
+  /*camera_init(s, v, &s->driver_cam, CAMERA_ID_AR0231, 2, 20, device_id, ctx,
               VISION_STREAM_RGB_FRONT, VISION_STREAM_YUV_FRONT);
-  printf("driver camera initted \n");
+  printf("driver camera initted \n");*/
 
   s->sm = new SubMaster({"driverState"});
   s->pm = new PubMaster({"roadCameraState", "driverCameraState", "wideRoadCameraState", "thumbnail"});
@@ -843,12 +843,12 @@ void cameras_open(MultiCameraState *s) {
   ret = ioctl(s->video0_fd, VIDIOC_SUBSCRIBE_EVENT, &sub);
   printf("req mgr subscribe: %d\n", ret);
 
-  camera_open(&s->road_cam);
-  printf("road camera opened \n");
+  /*camera_open(&s->road_cam);
+  printf("road camera opened \n");*/
   camera_open(&s->wide_road_cam);
   printf("wide road camera opened \n");
-  camera_open(&s->driver_cam);
-  printf("driver camera opened \n");
+  /*camera_open(&s->driver_cam);
+  printf("driver camera opened \n");*/
 }
 
 static void camera_close(CameraState *s) {
@@ -894,9 +894,9 @@ static void camera_close(CameraState *s) {
 }
 
 void cameras_close(MultiCameraState *s) {
-  camera_close(&s->road_cam);
+  //camera_close(&s->road_cam);
   camera_close(&s->wide_road_cam);
-  camera_close(&s->driver_cam);
+  //camera_close(&s->driver_cam);
 
   delete s->sm;
   delete s->pm;
@@ -1124,9 +1124,9 @@ void cameras_run(MultiCameraState *s) {
   // start devices
   LOG("-- Starting devices");
   int start_reg_len = sizeof(start_reg_array) / sizeof(struct i2c_random_wr_payload);
-  sensors_i2c(&s->road_cam, start_reg_array, start_reg_len, CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
+  //sensors_i2c(&s->road_cam, start_reg_array, start_reg_len, CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
   sensors_i2c(&s->wide_road_cam, start_reg_array, start_reg_len, CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
-  sensors_i2c(&s->driver_cam, start_reg_array, start_reg_len, CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
+  //sensors_i2c(&s->driver_cam, start_reg_array, start_reg_len, CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
 
   // poll events
   LOG("-- Dequeueing Video events");
@@ -1147,6 +1147,7 @@ void cameras_run(MultiCameraState *s) {
 
     struct v4l2_event ev = {0};
     ret = ioctl(fds[0].fd, VIDIOC_DQEVENT, &ev);
+    printf("Got event\n");
     if (ev.type == 0x8000000) {
       struct cam_req_mgr_message *event_data = (struct cam_req_mgr_message *)ev.u.data;
       // LOGD("v4l2 event: sess_hdl %d, link_hdl %d, frame_id %d, req_id %lld, timestamp 0x%llx, sof_status %d\n", event_data->session_hdl, event_data->u.frame_msg.link_hdl, event_data->u.frame_msg.frame_id, event_data->u.frame_msg.request_id, event_data->u.frame_msg.timestamp, event_data->u.frame_msg.sof_status);
