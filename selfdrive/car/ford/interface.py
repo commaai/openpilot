@@ -61,7 +61,7 @@ class CarInterface(CarInterfaceBase):
     events = self.create_common_events(ret)
 
     if self.CS.lkas_state not in [2, 3] and ret.vEgo > 13. * CV.MPH_TO_MS and ret.cruiseState.enabled:
-      events.add(car.CarEvent.EventName.steerTempUnavailableMute)
+      events.add(car.CarEvent.EventName.steerTempUnavailable)
 
     ret.events = events.to_msg()
 
