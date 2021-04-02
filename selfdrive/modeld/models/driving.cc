@@ -46,9 +46,14 @@ constexpr int OUTPUT_SIZE =  POSE_IDX + POSE_SIZE;
   constexpr int TEMPORAL_SIZE = 0;
 #endif
 
+constexpr int FPS = 20;
+constexpr int HISTORY_MAXLEN = 10*FPS + 50;
+constexpr float ENGAGED_THRESHOLD = 0.8;
+constexpr float STEERING_THRESHOLD = 0.2;
+
 // Keep a running history of meta states for the disengage alert
-float engaged_history[250];
-float steering_history[250];
+float engaged_history[HISTORY_MAXLEN];
+float steering_history[HISTORY_MAXLEN];
 float rolling_engaged_prob = 0;
 float rolling_steering_prob = 0;
 float engaged_threshold_mse = 0;
@@ -190,11 +195,11 @@ void fill_disengage(SubMaster &sm, cereal::ModelDataV2::MetaData::Builder meta) 
   bool steering_pressed = sm["carState"].getCarState().getSteeringPressed();
 
   // Wait for the history buffer to fill up
-  if (history_size < 200) {
-    engaged_threshold_mse += mse_below_threshold(engaged_prob, 0.8);
-    steering_threshold_mse += mse_above_threshold(steering_prob, 0.2);
+  if (history_size < 10*FPS) {
+    engaged_threshold_mse += mse_below_threshold(engaged_prob, ENGAGED_THRESHOLD);
+    steering_threshold_mse += mse_above_threshold(steering_prob, STEERING_THRESHOLD);
   }
-  if (history_size < 250) {
+  if (history_size < HISTORY_MAXLEN) {
     meta.setDisengageProbSpike(false);
     engaged_history[history_size] = engaged_prob;
     steering_history[history_size] = steering_prob;
@@ -225,21 +230,21 @@ void fill_disengage(SubMaster &sm, cereal::ModelDataV2::MetaData::Builder meta) 
   }
 
   // Update the history buffers
-  float engaged_2s = engaged_history[200];
-  float steering_2s = steering_history[200];
+  float engaged_2s = engaged_history[10*FPS];
+  float steering_2s = steering_history[10*FPS];
   float engaged_10s = engaged_history[0];
   float steering_10s = steering_history[0];
 
-  memmove(engaged_history, engaged_history+1, (250-1)*sizeof(float));
-  memmove(steering_history, steering_history+1, (250-1)*sizeof(float));
-  engaged_history[250-1] = engaged_prob;
-  steering_history[250-1] = steering_prob;
+  memmove(engaged_history, engaged_history+1, (HISTORY_MAXLEN-1)*sizeof(float));
+  memmove(steering_history, steering_history+1, (HISTORY_MAXLEN-1)*sizeof(float));
+  engaged_history[HISTORY_MAXLEN-1] = engaged_prob;
+  steering_history[HISTORY_MAXLEN-1] = steering_prob;
 
   // Update the threshold means
-  engaged_threshold_mse += mse_below_threshold(engaged_2s, 0.8);
-  steering_threshold_mse += mse_above_threshold(steering_2s, 0.2);
-  engaged_threshold_mse -= mse_below_threshold(engaged_10s, 0.8);
-  steering_threshold_mse -= mse_above_threshold(steering_10s, 0.2);
+  engaged_threshold_mse += mse_below_threshold(engaged_2s, ENGAGED_THRESHOLD);
+  steering_threshold_mse += mse_above_threshold(steering_2s, STEERING_THRESHOLD);
+  engaged_threshold_mse -= mse_below_threshold(engaged_10s, ENGAGED_THRESHOLD);
+  steering_threshold_mse -= mse_above_threshold(steering_10s, STEERING_THRESHOLD);
 
   // Update rolling engaged/steering probabilities
   rolling_engaged_prob = smooth(.8, rolling_engaged_prob, engaged_prob);
@@ -247,11 +252,11 @@ void fill_disengage(SubMaster &sm, cereal::ModelDataV2::MetaData::Builder meta) 
 
   // Check if we're over the threshold
   float steering_diff_2s = steering_prob - steering_2s;
-  bool no_desire = last_desire_frame < sm.frame - 40;
-  bool no_blinkers = last_blinker_frame < sm.frame - 60;
-  bool no_steering = last_steering_frame < sm.frame - 40;
+  bool no_desire = last_desire_frame < sm.frame - 2*FPS;
+  bool no_blinkers = last_blinker_frame < sm.frame - 3*FPS;
+  bool no_steering = last_steering_frame < sm.frame - 2*FPS;
   bool high_disengage_prob = rolling_engaged_prob < 0.3 && rolling_steering_prob > 0.8 && steering_diff_2s > 0.4;
-  bool low_history_noise = engaged_threshold_mse / 200 < 0.005 && steering_threshold_mse / 200 < 0.005;
+  bool low_history_noise = engaged_threshold_mse / 10*FPS < 0.005 && steering_threshold_mse / 10*FPS < 0.005;
   meta.setDisengageProbSpike(active && no_desire && no_blinkers && no_steering && high_disengage_prob && low_history_noise);
 }
 
