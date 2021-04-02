@@ -159,22 +159,22 @@ void cameras_close(MultiCameraState *s) {
   camera_close(&s->driver_cam);
 }
 
-void process_driver_camera(MultiCameraState *s, CameraState *c, PubMaster *pm, int cnt) {
+void process_driver_camera(MultiCameraState *s, CameraState *c, PubMaster &pm, int cnt) {
   MessageBuilder msg;
   auto framed = msg.initEvent().initDriverCameraState();
   framed.setFrameType(cereal::FrameData::FrameType::FRONT);
   fill_frame_data(framed, c->buf.cur_frame_data);
-  pm->send("driverCameraState", msg);
+  pm.send("driverCameraState", msg);
 }
 
-void process_road_camera(MultiCameraState *s, CameraState *c, PubMaster *pm, int cnt) {
+void process_road_camera(MultiCameraState *s, CameraState *c, PubMaster &pm, int cnt) {
   const CameraBuf *b = &c->buf;
   MessageBuilder msg;
   auto framed = msg.initEvent().initRoadCameraState();
   fill_frame_data(framed, b->cur_frame_data);
   framed.setImage(kj::arrayPtr((const uint8_t *)b->cur_yuv_buf->addr, b->cur_yuv_buf->len));
   framed.setTransform(b->yuv_transform.v);
-  pm->send("roadCameraState", msg);
+  pm.send("roadCameraState", msg);
 }
 
 void cameras_run(MultiCameraState *s) {

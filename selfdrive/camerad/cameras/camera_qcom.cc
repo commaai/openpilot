@@ -1080,7 +1080,7 @@ static void setup_self_recover(CameraState *c, const uint16_t *lapres, size_t la
 }
 
 // called by processing_thread
-void process_road_camera(MultiCameraState *s, CameraState *c, PubMaster *pm, int cnt) {
+void process_road_camera(MultiCameraState *s, CameraState *c, PubMaster &pm, int cnt) {
   const CameraBuf *b = &c->buf;
   const int roi_id = cnt % std::size(s->lapres);  // rolling roi
   s->lapres[roi_id] = s->lap_conv->Update(b->q, (uint8_t *)b->cur_rgb_buf->addr, roi_id);
@@ -1097,7 +1097,7 @@ void process_road_camera(MultiCameraState *s, CameraState *c, PubMaster *pm, int
   framed.setRecoverState(s->road_cam.self_recover);
   framed.setSharpnessScore(s->lapres);
   framed.setTransform(b->yuv_transform.v);
-  pm->send("roadCameraState", msg);
+  pm.send("roadCameraState", msg);
 
   if (cnt % 3 == 0) {
     const int x = 290, y = 322, width = 560, height = 314;

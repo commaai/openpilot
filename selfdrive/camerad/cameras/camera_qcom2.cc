@@ -1050,7 +1050,7 @@ static void ae_thread(MultiCameraState *s) {
 }
 
 // called by processing_thread
-void process_road_camera(MultiCameraState *s, CameraState *c, PubMaster *pm, int cnt) {
+void process_road_camera(MultiCameraState *s, CameraState *c, PubMaster &pm, int cnt) {
   const CameraBuf *b = &c->buf;
 
   MessageBuilder msg;
@@ -1062,7 +1062,7 @@ void process_road_camera(MultiCameraState *s, CameraState *c, PubMaster *pm, int
   if (c == &s->road_cam) {
     framed.setTransform(b->yuv_transform.v);
   }
-  pm->send(c == &s->road_cam ? "roadCameraState" : "wideRoadCameraState", msg);
+  pm.send(c == &s->road_cam ? "roadCameraState" : "wideRoadCameraState", msg);
 
   if (cnt % 3 == 0) {
     const auto [x, y, w, h] = (c == &s->wide_road_cam) ? std::tuple(96, 250, 1734, 524) : std::tuple(96, 160, 1734, 986);

@@ -337,7 +337,7 @@ void *processing_thread(MultiCameraState *cameras, CameraState *cs, process_thre
   while (!do_exit) {
     if (!cs->buf.acquire()) continue;
 
-    callback(cameras, cs, &pm, cnt);
+    callback(cameras, cs, pm, cnt);
 
     if (cs == &(cameras->road_cam) && cnt % 100 == 3) {
       // this takes 10ms???
@@ -401,5 +401,5 @@ void common_process_driver_camera(SubMaster *sm, PubMaster *pm, CameraState *c, 
   if (env_send_driver) {
     framed.setImage(get_frame_image(&c->buf));
   }
-  pm->send("driverCameraState", msg);
+  pm.send("driverCameraState", msg);
 }
