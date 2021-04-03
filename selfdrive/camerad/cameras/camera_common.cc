@@ -348,73 +348,53 @@ std::thread start_process_thread(MultiCameraState *cameras, CameraState *cs, pro
   return std::thread(processing_thread, cameras, cs, callback);
 }
 
-void common_process_driver_camera(SubMaster *sm, PubMaster *pm, CameraState *c, int cnt) {
-  const CameraBuf *b = &c->buf;
-
-  static int x_min = 0, x_max = 0, y_min = 0, y_max = 0;
+static void driver_cam_auto_exposure(CameraState *c, SubMaster &sm) {
   static const bool is_rhd = Params().getBool("IsRHD");
-
-  // auto exposure
-  if (cnt % 3 == 0) {
-    if (sm->update(0) > 0 && sm->updated("driverState")) {
-      auto state = (*sm)["driverState"].getDriverState();
-      // set driver camera metering target
-      if (state.getFaceProb() > 0.4) {
-        auto face_position = state.getFacePosition();
+  struct ExpRect {int x1, x2, x_skip, y1, y2, y_skip;};
+  const CameraBuf *b = &c->buf;
 #ifndef QCOM2
-        int frame_width = b->rgb_width;
-        int frame_height = b->rgb_height;
+  bool hist_ceil = false, hl_weighted = false;
+  int analog_gain = -1;
+  const int x_offset = 0, y_offset = 0;
+  const int frame_width = b->rgb_width, frame_height = b->rgb_height;
+  const ExpRect def_rect = {is_rhd ? 0 : b->rgb_width * 3 / 5, is_rhd ? b->rgb_width * 2 / 5 : b->rgb_width, 2,
+                         b->rgb_height / 3, b->rgb_height, 1};
 #else
-        int frame_width = 668;
-        int frame_height = frame_width / 1.33;
+  bool hist_ceil = true, hl_weighted = true;
+  int analog_gain = (int)c->analog_gain;
+  const int x_offset = 630, y_offset = 156;
+  const int frame_width = 668, frame_height = frame_width / 1.33;
+  const ExpRect def_rect = {96, 1832, 2, 242, 1148, 4};
 #endif
-        int x_offset = is_rhd ? 0 : frame_width - (0.5 * frame_height);
-        x_offset += (face_position[0] * (is_rhd ? -1.0 : 1.0) + 0.5) * (0.5 * frame_height);
-        int y_offset = (face_position[1] + 0.5) * frame_height;
-#ifdef QCOM2
-        x_offset += 630;
-        y_offset += 156;
-#endif
-        x_min = std::max(0, x_offset - 72);
-        x_max = std::min(b->rgb_width - 1, x_offset + 72);
-        y_min = std::max(0, y_offset - 72);
-        y_max = std::min(b->rgb_height - 1, y_offset + 72);
-      } else {  // use default setting if no face
-        x_min = x_max = y_min = y_max = 0;
-      }
-    }
 
-    int skip = 1;
-    // use driver face crop for AE
-    if (x_max == 0) {
-      // default setting
-#ifndef QCOM2
-      x_min = is_rhd ? 0 : b->rgb_width * 3 / 5;
-      x_max = is_rhd ? b->rgb_width * 2 / 5 : b->rgb_width;
-      y_min = b->rgb_height / 3;
-      y_max = b->rgb_height;
-#else
-      x_min = 96;
-      x_max = 1832;
-      y_min = 242;
-      y_max = 1148;
-      skip = 4;
-#endif
+  static ExpRect rect = def_rect;
+  // use driver face crop for AE
+  if (sm.updated("driverState")) {
+    if (auto state = sm["driverState"].getDriverState(); state.getFaceProb() > 0.4) {
+      auto face_position = state.getFacePosition();
+      int x = is_rhd ? 0 : frame_width - (0.5 * frame_height);
+      x += (face_position[0] * (is_rhd ? -1.0 : 1.0) + 0.5) * (0.5 * frame_height) + x_offset;
+      int y = (face_position[1] + 0.5) * frame_height + y_offset;
+      rect = {std::max(0, x - 72), std::min(b->rgb_width - 1, x + 72), 2,
+              std::max(0, y - 72), std::min(b->rgb_height - 1, y + 72), 1};
+    } else {
+      rect = def_rect;
     }
-
-#ifdef QCOM2
-    camera_autoexposure(c, set_exposure_target(b, x_min, x_max, 2, y_min, y_max, skip, (int)c->analog_gain, true, true));
-#else
-    camera_autoexposure(c, set_exposure_target(b, x_min, x_max, 2, y_min, y_max, skip, -1, false, false));
-#endif
   }
 
+  camera_autoexposure(c, set_exposure_target(b, rect.x1, rect.x2, rect.x_skip, rect.y1, rect.y2, rect.y_skip, analog_gain, hist_ceil, hl_weighted));
+}
+
+void common_process_driver_camera(SubMaster *sm, PubMaster *pm, CameraState *c, int cnt) {
+  if (cnt % 3 == 0) {
+    driver_cam_auto_exposure(c, *sm);
+  }
   MessageBuilder msg;
   auto framed = msg.initEvent().initDriverCameraState();
   framed.setFrameType(cereal::FrameData::FrameType::FRONT);
-  fill_frame_data(framed, b->cur_frame_data);
+  fill_frame_data(framed, c->buf.cur_frame_data);
   if (env_send_driver) {
-    framed.setImage(get_frame_image(b));
+    framed.setImage(get_frame_image(&c->buf));
   }
   pm->send("driverCameraState", msg);
 }
