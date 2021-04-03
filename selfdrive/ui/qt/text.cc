@@ -14,12 +14,12 @@ int main(int argc, char *argv[]) {
   setMainWindow(&window);
 
   QGridLayout *layout = new QGridLayout;
-  layout->setMargin(100);
+  layout->setMargin(50);
 
-  // TODO: make this scroll
-  QLabel *lab = new QLabel(argv[1]);
-  lab->setWordWrap(true);
-  ScrollView *scroll = new ScrollView(lab);
+  QLabel *label = new QLabel(argv[1]);
+  label->setWordWrap(true);
+  label->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
+  ScrollView *scroll = new ScrollView(label);
   scroll->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
   layout->addWidget(scroll, 0, 0, Qt::AlignTop);
 
