@@ -1,7 +1,6 @@
 #!/bin/bash -e
 
-
-sudo apt-get update && sudo apt-get install -y \
+sudo apt-get update && sudo apt-get install -y --no-install-recommends \
     autoconf \
     build-essential \
     bzip2 \
@@ -88,17 +87,6 @@ pyenv rehash
 eval "$(pyenv init -)"
 
 # **** in python env ****
-
-# upgrade pip
 pip install --upgrade pip==20.2.4
-
-# install pipenv
 pip install pipenv==2020.8.13
-
-# pipenv setup (in openpilot dir)
 pipenv install --dev --system --deploy
-
-# for loggerd to work on ubuntu
-# TODO: PC should log somewhere else
-#sudo mkdir -p /data/media/0/realdata
-#sudo chown $USER /data/media/0/realdata
