@@ -206,6 +206,9 @@ class Controls:
                                                  LaneChangeState.laneChangeFinishing]:
       self.events.add(EventName.laneChange)
 
+    if self.sm['lateralPlan'].laneChangeState == LaneChangeState.belowSpeed:
+      self.events.add(EventName.belowSteerSpeed)
+
     if self.can_rcv_error or (not CS.canValid and self.sm.frame > 5 / DT_CTRL):
       self.events.add(EventName.canError)
 

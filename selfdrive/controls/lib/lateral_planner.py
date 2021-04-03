@@ -29,6 +29,7 @@ DESIRES = {
     LaneChangeState.preLaneChange: log.LateralPlan.Desire.none,
     LaneChangeState.laneChangeStarting: log.LateralPlan.Desire.none,
     LaneChangeState.laneChangeFinishing: log.LateralPlan.Desire.none,
+    LaneChangeState.belowSpeed : log.LateralPlan.Desire.none,
   },
   LaneChangeDirection.left: {
     LaneChangeState.off: log.LateralPlan.Desire.none,
@@ -122,7 +123,11 @@ class LateralPlanner():
       if self.lane_change_state == LaneChangeState.off and one_blinker and not self.prev_one_blinker and not below_lane_change_speed:
         self.lane_change_state = LaneChangeState.preLaneChange
         self.lane_change_ll_prob = 1.0
-
+      
+      # below speed
+      elif below_lane_change_speed:
+        self.lane_change_state = LaneChangeState.belowSpeed
+        
       # pre
       elif self.lane_change_state == LaneChangeState.preLaneChange:
         if not one_blinker or below_lane_change_speed:
