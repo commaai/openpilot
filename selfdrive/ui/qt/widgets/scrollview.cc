@@ -23,9 +23,9 @@ ScrollView::ScrollView(QWidget *w, QWidget *parent) : QScrollArea(parent){
     QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
       height: 0px;
     }
-		QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
-			background: none;
-		}
+    QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+      background: none;
+    }
   )";
 
   verticalScrollBar()->setStyleSheet(style);
