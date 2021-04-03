@@ -324,14 +324,8 @@ static void do_autoexposure(CameraState *s, float grey_frac) {
 }
 
 static void sensors_init(MultiCameraState *s) {
-  unique_fd sensorinit_fd;
-  sensorinit_fd = open("/dev/v4l-subdev11", O_RDWR | O_NONBLOCK);
-  assert(sensorinit_fd >= 0);
-
-  // init road camera sensor
-
-  struct msm_camera_sensor_slave_info slave_info = {0};
-  slave_info = (struct msm_camera_sensor_slave_info){
+  msm_camera_sensor_slave_info slave_infos[2] = {
+  (msm_camera_sensor_slave_info){ // road camera
     .sensor_name = "imx298",
     .eeprom_name = "sony_imx298",
     .actuator_name = "dw9800w",
@@ -366,15 +360,8 @@ static void sensors_init(MultiCameraState *s) {
     .is_init_params_valid = 0,
     .sensor_init_params = {.modes_supported = 1, .position = BACK_CAMERA_B, .sensor_mount_angle = 90},
     .output_format = MSM_SENSOR_BAYER,
-  };
-  slave_info.power_setting_array.power_setting = &slave_info.power_setting_array.power_setting_a[0];
-  slave_info.power_setting_array.power_down_setting = &slave_info.power_setting_array.power_down_setting_a[0];
-  sensor_init_cfg_data sensor_init_cfg = {.cfgtype = CFG_SINIT_PROBE, .cfg.setting = &slave_info};
-  int err = cam_ioctl(sensorinit_fd, VIDIOC_MSM_SENSOR_INIT_CFG, &sensor_init_cfg, "sensor init cfg (road camera)");
-  assert(err >= 0);
-
-  struct msm_camera_sensor_slave_info slave_info2 = {0};
-  slave_info2 = (struct msm_camera_sensor_slave_info){
+  },
+  (msm_camera_sensor_slave_info){ // driver camera
     .sensor_name = "ov8865_sunny",
     .eeprom_name = "ov8865_plus",
     .actuator_name = "",
@@ -407,13 +394,17 @@ static void sensors_init(MultiCameraState *s) {
     .is_init_params_valid = 0,
     .sensor_init_params = {.modes_supported = 1, .position = FRONT_CAMERA_B, .sensor_mount_angle = 270},
     .output_format = MSM_SENSOR_BAYER,
-  };
-  slave_info2.power_setting_array.power_setting = &slave_info2.power_setting_array.power_setting_a[0];
-  slave_info2.power_setting_array.power_down_setting = &slave_info2.power_setting_array.power_down_setting_a[0];
-  sensor_init_cfg.cfgtype = CFG_SINIT_PROBE;
-  sensor_init_cfg.cfg.setting = &slave_info2;
-  err = cam_ioctl(sensorinit_fd, VIDIOC_MSM_SENSOR_INIT_CFG, &sensor_init_cfg, "sensor init cfg (driver camera)");
-  assert(err >= 0);
+  }};
+
+  unique_fd sensorinit_fd = open("/dev/v4l-subdev11", O_RDWR | O_NONBLOCK);
+  assert(sensorinit_fd >= 0);
+  for (auto &info : slave_infos) {
+    info.power_setting_array.power_setting = &info.power_setting_array.power_setting_a[0];
+    info.power_setting_array.power_down_setting = &info.power_setting_array.power_down_setting_a[0];
+    sensor_init_cfg_data sensor_init_cfg = {.cfgtype = CFG_SINIT_PROBE, .cfg.setting = &info};
+    int err = cam_ioctl(sensorinit_fd, VIDIOC_MSM_SENSOR_INIT_CFG, &sensor_init_cfg, "sensor init cfg");
+    assert(err >= 0);
+  }
 }
 
 static void camera_open(CameraState *s, bool is_road_cam) {
