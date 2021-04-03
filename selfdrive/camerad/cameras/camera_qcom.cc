@@ -100,10 +100,10 @@ int sensor_write_regs(CameraState *s, struct msm_camera_i2c_reg_array* arr, size
   return ioctl(s->sensor_fd, VIDIOC_MSM_SENSOR_CFG, &cfg_data);
 }
 
-static int imx298_apply_exposure(CameraState *s, int gain, int integ_lines, int frame_length) {
+static int imx298_apply_exposure(CameraState *s, int gain, int integ_lines, uint32_t frame_length) {
   int analog_gain = std::min(gain, 448);
   s->digital_gain = gain > 448 ? (512.0/(512-(gain))) / 8.0 : 1.0;
-  //printf("%5d/%5d %5d %f\n", s->cur_integ_lines, s->cur_frame_length, analog_gain, s->digital_gain);
+  //printf("%5d/%5d %5d %f\n", s->cur_integ_lines, s->frame_length, analog_gain, s->digital_gain);
 
   struct msm_camera_i2c_reg_array reg_array[] = {
     // REG_HOLD
@@ -130,7 +130,7 @@ static int imx298_apply_exposure(CameraState *s, int gain, int integ_lines, int 
   return sensor_write_regs(s, reg_array, ARRAYSIZE(reg_array), MSM_CAMERA_I2C_BYTE_DATA);
 }
 
-static int ov8865_apply_exposure(CameraState *s, int gain, int integ_lines, int frame_length) {
+static int ov8865_apply_exposure(CameraState *s, int gain, int integ_lines, uint32_t frame_length) {
   //printf("driver camera: %d %d %d\n", gain, integ_lines, frame_length);
   int coarse_gain_bitmap, fine_gain_bitmap;
 
@@ -177,9 +177,9 @@ static void camera_init(VisionIpcServer *v, CameraState *s, int camera_id, int c
   assert(s->ci.frame_width != 0);
 
   s->pixel_clock = pixel_clock;
-  s->line_length_pclk = line_length_pclk;
   s->max_gain = max_gain;
   s->fps = fps;
+  s->frame_length = s->pixel_clock / line_length_pclk / s->fps;
   s->self_recover = 0;
 
   s->apply_exposure = (camera_id == CAMERA_ID_IMX298) ? imx298_apply_exposure : ov8865_apply_exposure;
@@ -235,18 +235,15 @@ void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_i
 
 static void set_exposure(CameraState *s, float exposure_frac, float gain_frac) {
   int err = 0;
-
-  uint32_t frame_length = s->pixel_clock / s->line_length_pclk / s->fps;
-
   uint32_t gain = s->cur_gain;
   uint32_t integ_lines = s->cur_integ_lines;
 
   if (exposure_frac >= 0) {
-    exposure_frac = std::clamp(exposure_frac, 2.0f / frame_length, 1.0f);
-    integ_lines = frame_length * exposure_frac;
+    exposure_frac = std::clamp(exposure_frac, 2.0f / s->frame_length, 1.0f);
+    integ_lines = s->frame_length * exposure_frac;
 
     // See page 79 of the datasheet, this is the max allowed (-1 for phase adjust)
-    integ_lines = std::min(integ_lines, frame_length-11);
+    integ_lines = std::min(integ_lines, s->frame_length - 11);
   }
 
   if (gain_frac >= 0) {
@@ -263,19 +260,15 @@ static void set_exposure(CameraState *s, float exposure_frac, float gain_frac) {
     gain = (s->max_gain/510) * (512 - 512/(256*gain_frac));
   }
 
-  if (gain != s->cur_gain
-    || integ_lines != s->cur_integ_lines
-    || frame_length != s->cur_frame_length) {
-
+  if (gain != s->cur_gain || integ_lines != s->cur_integ_lines) {
     if (s->apply_exposure == ov8865_apply_exposure) {
       gain = 800 * gain_frac; // ISO
     }
-    err = s->apply_exposure(s, gain, integ_lines, frame_length);
+    err = s->apply_exposure(s, gain, integ_lines, s->frame_length);
     if (err == 0) {
       std::lock_guard lk(s->frame_info_lock);
       s->cur_gain = gain;
       s->cur_integ_lines = integ_lines;
-      s->cur_frame_length = frame_length;
     } else {
       LOGE("camera %d apply_exposure err: %d", s->camera_num, err);
     }
@@ -297,9 +290,8 @@ static void do_autoexposure(CameraState *s, float grey_frac) {
     const float gain_frac_min = 0.015625;
     const float gain_frac_max = 1.0;
     // exposure time limits
-    uint32_t frame_length = s->pixel_clock / s->line_length_pclk / s->fps;
     const uint32_t exposure_time_min = 16;
-    const uint32_t exposure_time_max = frame_length - 11; // copied from set_exposure()
+    const uint32_t exposure_time_max = s->frame_length - 11; // copied from set_exposure()
 
     float cur_gain_frac = s->cur_gain_frac;
     float exposure_factor = pow(1.05, (target_grey - grey_frac) / 0.05);
@@ -1179,7 +1171,7 @@ void cameras_run(MultiCameraState *s) {
         c->frame_metadata[c->frame_metadata_idx] = (FrameMetadata){
             .frame_id = isp_event_data->frame_id,
             .timestamp_eof = timestamp,
-            .frame_length = (uint32_t)c->cur_frame_length,
+            .frame_length = (uint32_t)c->frame_length,
             .integ_lines = (uint32_t)c->cur_integ_lines,
             .global_gain = (uint32_t)c->cur_gain,
             .lens_pos = c->cur_lens_pos,
