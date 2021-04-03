@@ -60,6 +60,7 @@ class LateralPlanner():
     self.use_lanelines = Params().get('EndToEndToggle') != b'1'
     self.lane_change_state = LaneChangeState.off
     self.lane_change_direction = LaneChangeDirection.none
+    self.below_speed = LaneChangeState.belowSpeed
     self.lane_change_timer = 0.0
     self.lane_change_ll_prob = 1.0
     self.prev_one_blinker = False
