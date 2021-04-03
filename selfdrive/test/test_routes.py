@@ -21,7 +21,6 @@ non_tested_cars = [
   GM.HOLDEN_ASTRA,
   GM.MALIBU,
   HONDA.CRV,
-  HONDA.RIDGELINE,
   HYUNDAI.ELANTRA,
   HYUNDAI.ELANTRA_GT_I30,
   HYUNDAI.GENESIS_G90,
@@ -145,6 +144,10 @@ routes = {
   },
   "f34a60d68d83b1e5|2020-10-06--14-35-55": {
     'carFingerprint': HONDA.ACURA_RDX,
+    'enableCamera': True,
+  },
+  "54fd8451b3974762|2021-04-01--14-50-10": {
+    'carFingerprint': HONDA.RIDGELINE,
     'enableCamera': True,
   },
   "6fe86b4e410e4c37|2020-07-22--16-27-13": {
