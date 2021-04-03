@@ -27,23 +27,23 @@ DESIRES = {
   LaneChangeDirection.none: {
     LaneChangeState.off: log.LateralPlan.Desire.none,
     LaneChangeState.preLaneChange: log.LateralPlan.Desire.none,
+    LaneChangeState.belowSpeed: log.LateralPlan.Desire.none,
     LaneChangeState.laneChangeStarting: log.LateralPlan.Desire.none,
     LaneChangeState.laneChangeFinishing: log.LateralPlan.Desire.none,
-    LaneChangeState.belowSpeed : log.LateralPlan.Desire.none,
   },
   LaneChangeDirection.left: {
     LaneChangeState.off: log.LateralPlan.Desire.none,
     LaneChangeState.preLaneChange: log.LateralPlan.Desire.none,
     LaneChangeState.laneChangeStarting: log.LateralPlan.Desire.laneChangeLeft,
     LaneChangeState.laneChangeFinishing: log.LateralPlan.Desire.laneChangeLeft,
-    LaneChangeState.belowSpeed : log.LateralPlan.Desire.none,
+    LaneChangeState.belowSpeed: log.LateralPlan.Desire.none,
   },
   LaneChangeDirection.right: {
     LaneChangeState.off: log.LateralPlan.Desire.none,
     LaneChangeState.preLaneChange: log.LateralPlan.Desire.none,
+    LaneChangeState.belowSpeed: log.LateralPlan.Desire.none,
     LaneChangeState.laneChangeStarting: log.LateralPlan.Desire.laneChangeRight,
     LaneChangeState.laneChangeFinishing: log.LateralPlan.Desire.laneChangeRight,
-    LaneChangeState.belowSpeed : log.LateralPlan.Desire.none,
   },
 }
 
@@ -60,7 +60,6 @@ class LateralPlanner():
     self.use_lanelines = Params().get('EndToEndToggle') != b'1'
     self.lane_change_state = LaneChangeState.off
     self.lane_change_direction = LaneChangeDirection.none
-    self.below_speed = LaneChangeState.belowSpeed
     self.lane_change_timer = 0.0
     self.lane_change_ll_prob = 1.0
     self.prev_one_blinker = False
@@ -128,7 +127,7 @@ class LateralPlanner():
         self.lane_change_ll_prob = 1.0
       
       # below speed
-      elif below_lane_change_speed:
+      elif self.lane_change_state == LaneChangeState.off and one_blinker and not self.prev_one_blinker and below_lane_change_speed:
         self.lane_change_state = LaneChangeState.belowSpeed
         
       # pre
@@ -155,7 +154,7 @@ class LateralPlanner():
         elif self.lane_change_ll_prob > 0.99:
           self.lane_change_state = LaneChangeState.off
 
-    if self.lane_change_state in [LaneChangeState.off, LaneChangeState.preLaneChange]:
+    if self.lane_change_state in [LaneChangeState.belowSpeed, LaneChangeState.off, LaneChangeState.preLaneChange]:
       self.lane_change_timer = 0.0
     else:
       self.lane_change_timer += DT_MDL
