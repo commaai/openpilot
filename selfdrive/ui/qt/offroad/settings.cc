@@ -10,12 +10,14 @@
 #include "widgets/input.hpp"
 #include "widgets/toggle.hpp"
 #include "widgets/offroad_alerts.hpp"
+#include "widgets/scrollview.hpp"
 #include "widgets/controls.hpp"
 #include "widgets/ssh_keys.hpp"
 #include "common/params.h"
 #include "common/util.h"
 #include "selfdrive/hardware/hw.h"
 #include "home.hpp"
+
 
 QWidget * toggles_panel() {
   QVBoxLayout *toggles_list = new QVBoxLayout();
@@ -273,21 +275,8 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
     sidebar_layout->addWidget(btn, 0, Qt::AlignRight);
 
     panel->setContentsMargins(50, 25, 50, 25);
-    QScrollArea *panel_frame = new QScrollArea;
-    panel_frame->setWidget(panel);
-    panel_frame->setWidgetResizable(true);
-    panel_frame->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    panel_frame->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    panel_frame->setStyleSheet("background-color:transparent;");
 
-    QScroller *scroller = QScroller::scroller(panel_frame->viewport());
-    auto sp = scroller->scrollerProperties();
-
-    sp.setScrollMetric(QScrollerProperties::VerticalOvershootPolicy, QVariant::fromValue<QScrollerProperties::OvershootPolicy>(QScrollerProperties::OvershootAlwaysOff));
-
-    scroller->grabGesture(panel_frame->viewport(), QScroller::LeftMouseButtonGesture);
-    scroller->setScrollerProperties(sp);
-
+    ScrollView *panel_frame = new ScrollView(panel, this);
     panel_widget->addWidget(panel_frame);
 
     QObject::connect(btn, &QPushButton::released, [=, w = panel_frame]() {
