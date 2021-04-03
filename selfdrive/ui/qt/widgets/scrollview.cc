@@ -10,7 +10,7 @@ ScrollView::ScrollView(QWidget *w, QWidget *parent) : QScrollArea(parent){
 
   QString style = R"(
     QScrollBar:vertical {
-      border: 0px solid #999999;
+      border: none;
       background:transparent;
       width:10px;
       margin: 0;
