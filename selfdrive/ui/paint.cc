@@ -222,6 +222,15 @@ static void ui_draw_vision_event(UIState *s) {
   }
 }
 
+static void ui_draw_vision_lane_change_ready(UIState *s) {
+  if (s->scene.controls_state.getEngageable() && s->scene.car_state.getVEgo() >= 20) {
+    const int radius = 96;
+    const int center_x = s->viz_rect.right() - radius - bdr_s * 2;
+    const int center_y = s->viz_rect.y + radius  + (bdr_s * 1.5) + 255;
+    ui_draw_circle_image(s, center_x, center_y, radius, "lane_change_ready", 1.0f);
+  }
+}
+
 static void ui_draw_vision_face(UIState *s) {
   const int radius = 96;
   const int center_x = s->viz_rect.x + radius + (bdr_s * 2);
@@ -283,6 +292,7 @@ static void ui_draw_vision_header(UIState *s) {
   ui_draw_vision_maxspeed(s);
   ui_draw_vision_speed(s);
   ui_draw_vision_event(s);
+  ui_draw_vision_lane_change_ready(s);
 }
 
 static void ui_draw_vision_footer(UIState *s) {
@@ -528,6 +538,7 @@ void ui_nvg_init(UIState *s) {
       {"button_home", "../assets/images/button_home.png"},
       {"battery", "../assets/images/battery.png"},
       {"battery_charging", "../assets/images/battery_charging.png"},
+      {"lane_change_ready", "../assets/img_lane_change_ready.png"},
       {"network_0", "../assets/images/network_0.png"},
       {"network_1", "../assets/images/network_1.png"},
       {"network_2", "../assets/images/network_2.png"},
