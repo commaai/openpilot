@@ -39,7 +39,7 @@ class UpdaterWidnow : public QStackedWidget {
   Q_OBJECT
 public:
   UpdaterWidnow(QWidget *parent = nullptr);
-
+  virtual ~UpdaterWidnow();
 private:
   QWidget *confirmationPage();
   QWidget *progressPage();

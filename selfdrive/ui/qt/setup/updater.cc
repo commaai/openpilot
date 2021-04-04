@@ -103,7 +103,6 @@ bool check_battery() {
 }
 
 bool check_space() {
-  return true;
   struct statvfs stat;
   if (statvfs("/data/", &stat) != 0) {
     return false;
@@ -118,9 +117,10 @@ UpdaterThread::UpdaterThread(QObject *parent) : QThread(parent) {}
 
 void UpdaterThread::checkBattery() {
   if (!check_battery()) {
-    int battery_cap;
+    int battery_cap = 0;
     do {
-      emit lowBattery(battery_capacity());
+      battery_cap = battery_capacity();
+      emit lowBattery(battery_cap);
       util::sleep_for(1000);
     } while (battery_cap < min_battery_cap);
   }
@@ -391,8 +391,12 @@ UpdaterWidnow::UpdaterWidnow(QWidget *parent) : thread(this), QStackedWidget(par
   });
   connect(&thread, &UpdaterThread::lowBattery, [=](int battery_cap) {
     setCurrentIndex(2);
-    batteryContext->setText(QString("Current battery charge: %1 %%").arg(battery_cap));
+    batteryContext->setText(QString("Current battery charge: %1 %").arg(battery_cap));
   });
+}
+
+UpdaterWidnow::~UpdaterWidnow() {
+  thread.exit();
 }
 
 QWidget *UpdaterWidnow::progressPage() {
