@@ -4,14 +4,15 @@
 #include <sys/statvfs.h>
 
 #include <QApplication>
+#include <QCryptographicHash>
+#include <QFile>
+#include <QFileInfo>
 #include <QHBoxLayout>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QTimer>
 #include <QVBoxLayout>
-#include <QCryptographicHash>
-#include <QJsonDocument>
-#include <QFileInfo>
-#include <QJsonObject>
-#include <QFile>
+#include <fstream>
 #include "common/util.h"
 #include "qt_window.hpp"
 
@@ -81,7 +82,8 @@ bool check_battery() {
   return bat_cap > 35 || (current_now < 0 && bat_cap > 10);
 }
 
-bool check_space() { return true;
+bool check_space() {
+  return true;
   struct statvfs stat;
   if (statvfs("/data/", &stat) != 0) {
     return false;
@@ -90,7 +92,7 @@ bool check_space() { return true;
   return space > 2000000000ULL;  // 2GB
 }
 
-static void start_settings_activity(const char* name) {
+static void start_settings_activity(const char *name) {
   char launch_cmd[1024];
   snprintf(launch_cmd, sizeof(launch_cmd),
            "am start -W --ez :settings:show_fragment_as_subsetting true -n 'com.android.settings/.%s'", name);
@@ -101,7 +103,8 @@ static void start_settings_activity(const char* name) {
 
 UpdaterThread::UpdaterThread(QObject *parent) : QThread(parent) {}
 
-void UpdaterThread::checkBattery() { return;
+void UpdaterThread::checkBattery() {
+  return;
   if (!check_battery()) {
     int battery_cap = 0;
     do {
@@ -131,37 +134,13 @@ void UpdaterThread::run() {
     // flash recovery
     emit progressText("Flashing recovery...");
 
-    FILE *flash_file = fopen(recovery_fn.toStdString().c_str(), "rb");
-    if (!flash_file) {
-      emit error("failed to open recovery file");
+    std::ifstream src(recovery_fn.toStdString(), std::ios::binary);
+    std::ofstream dest(RECOVERY_DEV, std::ios::binary);
+    dest << src.rdbuf();
+    if (!src || !dest) {
+      emit error("failed to flash recovery: write failed");
       return;
     }
-
-    FILE *recovery_dev = fopen(RECOVERY_DEV, "w+b");
-    if (!recovery_dev) {
-      fclose(flash_file);
-      emit error("failed to flash recovery");
-      return;
-    }
-
-    const size_t buf_size = 4096;
-    std::unique_ptr<char[]> buffer(new char[buf_size]);
-
-    while (true) {
-      size_t bytes_read = fread(buffer.get(), 1, buf_size, flash_file);
-      if (!bytes_read) break;
-
-      size_t bytes_written = fwrite(buffer.get(), 1, bytes_read, recovery_dev);
-      if (bytes_read != bytes_written) {
-        fclose(recovery_dev);
-        fclose(flash_file);
-        emit error("failed to flash recovery: write failed");
-        return;
-      }
-    }
-
-    fclose(recovery_dev);
-    fclose(flash_file);
 
     emit progressText("Verifying flash...");
     QString new_recovery_hash = sha256_file(RECOVERY_DEV, recovery_len);
