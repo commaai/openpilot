@@ -25,13 +25,13 @@ private:
   void run() override;
   void checkBattery();
   bool download_stage();
-  bool download_file(const std::string &url, const std::string &out_fn);
-  std::string download(const std::string &url, const std::string &hash, const std::string &name);
+  bool download_file(const QString &url, const QString &out_fn);
+  QString download(const QString &url, const QString &hash, const QString &name);
   int download_file_xferinfo(curl_off_t dltotal, curl_off_t dlno, curl_off_t ultotal, curl_off_t ulnow);
 
   CURL *curl = nullptr;
-  std::string recovery_hash;
-  std::string recovery_fn, ota_fn;
+  QString recovery_hash;
+  QString recovery_fn, ota_fn;
   size_t recovery_len;
 };
 

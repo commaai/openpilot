@@ -1,6 +1,5 @@
 #include "updater.hpp"
 
-#include <openssl/sha.h>
 #include <sys/stat.h>
 #include <sys/statvfs.h>
 
@@ -8,10 +7,12 @@
 #include <QHBoxLayout>
 #include <QTimer>
 #include <QVBoxLayout>
-#include <memory>
-
+#include <QCryptographicHash>
+#include <QJsonDocument>
+#include <QFileInfo>
+#include <QJsonObject>
+#include <QFile>
 #include "common/util.h"
-#include "json11.hpp"
 #include "qt_window.hpp"
 
 #define USER_AGENT "NEOSUpdater-0.2"
@@ -24,50 +25,29 @@ const char *manifest_url = MANIFEST_URL_NEOS;
 #define RECOVERY_DEV "/dev/block/bootdevice/by-name/recovery"
 #define RECOVERY_COMMAND "/cache/recovery/command"
 
-#define UPDATE_DIR "/data/neoupdate"
+// #define UPDATE_DIR "/data/neoupdate"
+#define UPDATE_DIR "/home/deanlee/neoupdate"
 #define MIN_BATTERY_CAP 35
 
-std::string sha256_file(std::string fn, size_t limit = 0) {
-  SHA256_CTX ctx;
-  SHA256_Init(&ctx);
+QString sha256_file(const QString &fn, size_t limit = 0) {
+  QCryptographicHash crypto(QCryptographicHash::Sha256);
+  QFile file(fn);
+  if (!file.open(QFile::ReadOnly)) return "";
 
-  FILE *file = fopen(fn.c_str(), "rb");
-  if (!file) return "";
-
-  const size_t buf_size = 8192;
-  std::unique_ptr<char[]> buffer(new char[buf_size]);
-
-  bool read_limit = (limit != 0);
-  while (true) {
-    size_t read_size = buf_size;
-    if (read_limit) read_size = std::min(read_size, limit);
-    size_t bytes_read = fread(buffer.get(), 1, read_size, file);
-    if (!bytes_read) break;
-
-    SHA256_Update(&ctx, buffer.get(), bytes_read);
-
-    if (read_limit) {
-      limit -= bytes_read;
-      if (limit == 0) break;
-    }
+  while (!file.atEnd()) {
+    crypto.addData(file.read(8192));
   }
-
-  uint8_t hash[SHA256_DIGEST_LENGTH];
-  SHA256_Final(hash, &ctx);
-
-  fclose(file);
-
-  return util::tohex(hash, sizeof(hash));
+  return crypto.result().toHex();
 }
 
 size_t download_string_write(void *ptr, size_t size, size_t nmeb, void *up) {
   size_t sz = size * nmeb;
-  ((std::string *)up)->append((char *)ptr, sz);
+  ((QByteArray *)up)->append((const char *)ptr, sz);
   return sz;
 }
 
-std::string download_string(CURL *curl, std::string url) {
-  std::string os;
+QString download_string(CURL *curl, std::string url) {
+  QByteArray os;
   curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
   curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
   curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 0);
@@ -101,7 +81,7 @@ bool check_battery() {
   return bat_cap > 35 || (current_now < 0 && bat_cap > 10);
 }
 
-bool check_space() {
+bool check_space() { return true;
   struct statvfs stat;
   if (statvfs("/data/", &stat) != 0) {
     return false;
@@ -121,7 +101,7 @@ static void start_settings_activity(const char* name) {
 
 UpdaterThread::UpdaterThread(QObject *parent) : QThread(parent) {}
 
-void UpdaterThread::checkBattery() {
+void UpdaterThread::checkBattery() { return;
   if (!check_battery()) {
     int battery_cap = 0;
     do {
@@ -147,11 +127,11 @@ void UpdaterThread::run() {
 
   checkBattery();
 
-  if (!recovery_fn.empty()) {
+  if (!recovery_fn.isEmpty()) {
     // flash recovery
     emit progressText("Flashing recovery...");
 
-    FILE *flash_file = fopen(recovery_fn.c_str(), "rb");
+    FILE *flash_file = fopen(recovery_fn.toStdString().c_str(), "rb");
     if (!flash_file) {
       emit error("failed to open recovery file");
       return;
@@ -184,8 +164,8 @@ void UpdaterThread::run() {
     fclose(flash_file);
 
     emit progressText("Verifying flash...");
-    std::string new_recovery_hash = sha256_file(RECOVERY_DEV, recovery_len);
-    qInfo() << "new recovery hash: " << new_recovery_hash.c_str();
+    QString new_recovery_hash = sha256_file(RECOVERY_DEV, recovery_len);
+    qInfo() << "new recovery hash: " << new_recovery_hash;
 
     if (new_recovery_hash != recovery_hash) {
       emit error("recovery flash corrupted");
@@ -199,7 +179,7 @@ void UpdaterThread::run() {
     emit error("failed to reboot into recovery");
     return;
   }
-  fprintf(cmd_file, "--update_package=%s\n", ota_fn.c_str());
+  fprintf(cmd_file, "--update_package=%s\n", ota_fn.toStdString().c_str());
   fclose(cmd_file);
 
   emit progressText("Rebooting");
@@ -227,40 +207,39 @@ bool UpdaterThread::download_stage() {
   mkdir(UPDATE_DIR, 0777);
 
   emit progressText("Finding latest version...");
-  std::string manifest_s = download_string(curl, manifest_url);
-  qInfo() << "manifest: " << manifest_s.c_str();
+  QString manifest_s = download_string(curl, manifest_url);
+  qInfo() << "manifest: " << manifest_s;
 
-  std::string err;
-  auto manifest = json11::Json::parse(manifest_s, err);
-  if (manifest.is_null() || !err.empty()) {
+  // parse maiifest
+  QJsonDocument doc = QJsonDocument::fromJson(manifest_s.toUtf8());
+  if (doc.isNull()) {
     emit error("failed to load update manifest");
     return false;
   }
+  QJsonObject json = doc.object();
+  QString ota_url = json["ota_url"].toString();
+  QString ota_hash = json["ota_hash"].toString();
+  QString recovery_url = json["recovery_url"].toString();
+  recovery_hash = json["recovery_hash"].toString();
+  recovery_len = json["recovery_len"].toInt();
 
-  std::string ota_url = manifest["ota_url"].string_value();
-  std::string ota_hash = manifest["ota_hash"].string_value();
-
-  std::string recovery_url = manifest["recovery_url"].string_value();
-  recovery_hash = manifest["recovery_hash"].string_value();
-  recovery_len = manifest["recovery_len"].int_value();
-
-  if (ota_url.empty() || ota_hash.empty()) {
+  if (ota_url.isEmpty() || ota_hash.isEmpty()) {
     emit error("invalid update manifest");
     return false;
   }
 
   // ** handle recovery download **
-  if (recovery_url.empty() || recovery_hash.empty() || recovery_len == 0) {
+  if (recovery_url.isEmpty() || recovery_hash.isEmpty() || recovery_len == 0) {
     emit progressText("Skipping recovery flash...");
   } else {
     // only download the recovery if it differs from what's flashed
     emit progressText("Checking recovery...");
-    std::string existing_recovery_hash = sha256_file(RECOVERY_DEV, recovery_len);
-    qInfo() << "existing recovery hash: " << existing_recovery_hash.c_str();
+    QString existing_recovery_hash = sha256_file(RECOVERY_DEV, recovery_len);
+    qInfo() << "existing recovery hash: " << existing_recovery_hash;
 
     if (existing_recovery_hash != recovery_hash) {
       recovery_fn = download(recovery_url, recovery_hash, "recovery");
-      if (recovery_fn.empty()) {
+      if (recovery_fn.isEmpty()) {
         // error'd
         return false;
       }
@@ -269,7 +248,7 @@ bool UpdaterThread::download_stage() {
 
   // ** handle ota download **
   ota_fn = download(ota_url, ota_hash, "update");
-  return !ota_fn.empty();
+  return !ota_fn.isEmpty();
 }
 
 int UpdaterThread::download_file_xferinfo(curl_off_t dltotal, curl_off_t dlno, curl_off_t ultotal, curl_off_t ulnow) {
@@ -283,19 +262,19 @@ int UpdaterThread::download_file_xferinfo(curl_off_t dltotal, curl_off_t dlno, c
   return 0;
 };
 
-bool UpdaterThread::download_file(const std::string &url, const std::string &out_fn) {
-  FILE *of = fopen(out_fn.c_str(), "ab");
+bool UpdaterThread::download_file(const QString &url, const QString &out_fn) {
+  FILE *of = fopen(out_fn.toStdString().c_str(), "ab");
   assert(of);
   fseek(of, 0, SEEK_END);
 
   int tries = 4;
   bool ret = false;
   long last_resume_from = 0;
-
+  std::string url_string = url.toStdString();
   while (true) {
     long resume_from = ftell(of);
 
-    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+    curl_easy_setopt(curl, CURLOPT_URL, url_string.c_str());
     curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
     curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 0);
     curl_easy_setopt(curl, CURLOPT_USERAGENT, USER_AGENT);
@@ -315,7 +294,7 @@ bool UpdaterThread::download_file(const std::string &url, const std::string &out
     // double content_length = 0.0;
     // curl_easy_getinfo(curl, CURLINFO_CONTENT_LENGTH_DOWNLOAD, &content_length);
 
-    printf("download %s res %d, code %ld, resume from %ld\n", url.c_str(), res, response_code, resume_from);
+    qInfo() << QString("download %1 res %2, code %3, resume from %4\n").arg(url).arg(res).arg(response_code).arg(resume_from);
     if (res == CURLE_OK) {
       ret = true;
       break;
@@ -337,26 +316,27 @@ bool UpdaterThread::download_file(const std::string &url, const std::string &out
   return ret;
 }
 
-std::string UpdaterThread::download(const std::string &url, const std::string &hash, const std::string &name) {
-  std::string out_fn = UPDATE_DIR "/" + util::base_name(url);
+QString UpdaterThread::download(const QString &url, const QString &hash, const QString &name) {
+  QFileInfo fi(url);
+  QString out_fn = UPDATE_DIR "/" + fi.fileName();
 
   // start or resume downloading if hash doesn't match
-  std::string fn_hash = sha256_file(out_fn);
+  QString fn_hash = sha256_file(out_fn);
   if (hash.compare(fn_hash) != 0) {
-    emit progressText(QString("Downloading %1 ...").arg(QString::fromStdString(name)));
+    emit progressText(QString("Downloading %1 ...").arg(name));
     bool r = download_file(url, out_fn);
     if (!r) {
-      emit error(QString("failed to download %1").arg(QString::fromStdString(name)));
-      unlink(out_fn.c_str());
+      emit error(QString("failed to download %1").arg(name));
+      unlink(out_fn.toStdString().c_str());
       return "";
     }
     fn_hash = sha256_file(out_fn);
   };
-  emit progressText(QString("Verifying %1 ...").arg(QString::fromStdString(name)));
-  printf("got %s hash: %s\n", name.c_str(), hash.c_str());
+  emit progressText(QString("Verifying %1 ...").arg(name));
+  qInfo() << QString("got %1 hash: %2").arg(name).arg(hash);
   if (fn_hash != hash) {
-    emit error(QString("%1 was corrupt").arg(QString::fromStdString(name)));
-    unlink(out_fn.c_str());
+    emit error(QString("%1 was corrupt").arg(name));
+    unlink(out_fn.toStdString().c_str());
     return "";
   }
   return out_fn;
