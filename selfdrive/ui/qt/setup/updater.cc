@@ -69,24 +69,17 @@ size_t download_string_write(void *ptr, size_t size, size_t nmeb, void *up) {
 
 std::string download_string(CURL *curl, std::string url) {
   std::string os;
-
   curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
   curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
   curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 0);
   curl_easy_setopt(curl, CURLOPT_USERAGENT, USER_AGENT);
   curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1);
   curl_easy_setopt(curl, CURLOPT_RESUME_FROM, 0);
-
   curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 1);
-
   curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, download_string_write);
   curl_easy_setopt(curl, CURLOPT_WRITEDATA, &os);
   CURLcode res = curl_easy_perform(curl);
-  if (res != CURLE_OK) {
-    return "";
-  }
-
-  return os;
+  return res == CURLE_OK ? os : "";
 }
 
 size_t download_file_write(void *ptr, size_t size, size_t nmeb, void *up) {
@@ -136,9 +129,10 @@ void UpdaterThread::checkBattery() {
 void UpdaterThread::run() {
   curl = curl_easy_init();
   qInfo() << "run_stages start";
-  // ** download update **
+
   checkBattery();
 
+  // ** download update **
   bool sucess = download_stage();
   if (!sucess) {
     return;
@@ -247,13 +241,7 @@ bool UpdaterThread::download_stage() {
 
   // ** handle ota download **
   ota_fn = download(ota_url, ota_hash, "update");
-  if (ota_fn.empty()) {
-    //error'd
-    return false;
-  }
-
-  // download sucessful
-  return true;
+  return !ota_fn.empty();
 }
 
 int UpdaterThread::download_file_xferinfo(curl_off_t dltotal, curl_off_t dlno, curl_off_t ultotal, curl_off_t ulnow) {
@@ -270,14 +258,11 @@ int UpdaterThread::download_file_xferinfo(curl_off_t dltotal, curl_off_t dlno, c
 bool UpdaterThread::download_file(const std::string &url, const std::string &out_fn) {
   FILE *of = fopen(out_fn.c_str(), "ab");
   assert(of);
-
-  long last_resume_from = 0;
-
   fseek(of, 0, SEEK_END);
 
   int tries = 4;
-
   bool ret = false;
+  long last_resume_from = 0;
 
   while (true) {
     long resume_from = ftell(of);
@@ -288,12 +273,9 @@ bool UpdaterThread::download_file(const std::string &url, const std::string &out
     curl_easy_setopt(curl, CURLOPT_USERAGENT, USER_AGENT);
     curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1);
     curl_easy_setopt(curl, CURLOPT_RESUME_FROM, resume_from);
-
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, download_file_write);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, of);
-
     curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0);
-
     curl_easy_setopt(curl, CURLOPT_XFERINFODATA, this);
     curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, &UpdaterThread::download_file_xferinfo);
 
@@ -415,7 +397,7 @@ UpdaterWidnow::UpdaterWidnow(QWidget *parent) : thread(this), QStackedWidget(par
 
 QWidget *UpdaterWidnow::progressPage() {
   QWidget *w = new QWidget();
-  QVBoxLayout *vl = new QVBoxLayout();
+  QVBoxLayout *vl = new QVBoxLayout(w);
   progressTitle = textLabel("", 80);
   vl->addWidget(progressTitle);
   vl->addStretch();
@@ -437,14 +419,12 @@ QWidget *UpdaterWidnow::progressPage() {
   desc->setStyleSheet("font-size:50px;");
   vl->addWidget(desc);
   vl->addStretch();
-
-  w->setLayout(vl);
   return w;
 }
 
 QWidget *UpdaterWidnow::batteryPage() {
   QWidget *w = new QWidget();
-  QVBoxLayout *vl = new QVBoxLayout();
+  QVBoxLayout *vl = new QVBoxLayout(w);
   vl->addWidget(textLabel("Low Battery", 80));
   vl->addStretch();
   vl->addWidget(textLabel("Please connect EON to your charger. Update will continue once EON battery reaches 35%.", 50));
@@ -452,14 +432,12 @@ QWidget *UpdaterWidnow::batteryPage() {
   batteryContext = textLabel("", 50);
   vl->addWidget(batteryContext);
   vl->addStretch();
-
-  w->setLayout(vl);
   return w;
 }
 
 QWidget *UpdaterWidnow::confirmationPage() {
   QWidget *w = new QWidget();
-  QVBoxLayout *vl = new QVBoxLayout();
+  QVBoxLayout *vl = new QVBoxLayout(w);
   vl->addWidget(textLabel("An update to NEOS is required.", 80));
   vl->addStretch();
   vl->addWidget(textLabel("Your device will now be reset and upgraded. You may want to connect to wifi as download is around 1 GB. Existing data on device should not be lost.", 50));
@@ -478,14 +456,12 @@ QWidget *UpdaterWidnow::confirmationPage() {
   btnLayout->addWidget(continueBtn);
 
   vl->addLayout(btnLayout);
-
-  w->setLayout(vl);
   return w;
 }
 
 QWidget *UpdaterWidnow::errPage() {
   QWidget *w = new QWidget();
-  QVBoxLayout *vl = new QVBoxLayout();
+  QVBoxLayout *vl = new QVBoxLayout(w);
   vl->addWidget(textLabel("There was an error", 80));
   vl->addStretch();
 
@@ -501,8 +477,6 @@ QWidget *UpdaterWidnow::errPage() {
   });
   btnLayout->addWidget(rebootBtn);
   vl->addLayout(btnLayout);
-
-  w->setLayout(vl);
   return w;
 }
 

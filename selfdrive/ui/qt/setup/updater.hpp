@@ -12,22 +12,23 @@
 
 class UpdaterThread : public QThread {
   Q_OBJECT
- public:
+public:
   UpdaterThread(QObject *parent);
 
- signals:
+signals:
   void progressText(const QString &);
   void progressPos(int);
   void error(const QString &);
   void lowBattery(int);
 
- private:
+private:
+  void run() override;
   void checkBattery();
   bool download_stage();
   bool download_file(const std::string &url, const std::string &out_fn);
-  void run() override;
   std::string download(const std::string &url, const std::string &hash, const std::string &name);
   int download_file_xferinfo(curl_off_t dltotal, curl_off_t dlno, curl_off_t ultotal, curl_off_t ulnow);
+
   CURL *curl = nullptr;
   std::string recovery_hash;
   std::string recovery_fn, ota_fn;
@@ -36,17 +37,18 @@ class UpdaterThread : public QThread {
 
 class UpdaterWidnow : public QStackedWidget {
   Q_OBJECT
- public:
+public:
   UpdaterWidnow(QWidget *parent = nullptr);
 
- private:
+private:
+  QWidget *confirmationPage();
+  QWidget *progressPage();
+  QWidget *errPage();
+  QWidget *batteryPage();
+
   UpdaterThread thread;
   QLabel *progressTitle;
   QLabel *errLabel;
   QLabel *batteryContext;
   QProgressBar *progress_bar;
-  QWidget *confirmationPage();
-  QWidget *progressPage();
-  QWidget *errPage();
-  QWidget *batteryPage();
 };

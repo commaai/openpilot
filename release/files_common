@@ -463,9 +463,7 @@ phonelibs/android_hardware_libhardware/**
 phonelibs/android_system_core/**
 
 installer/updater/updater
-installer/updater/updater.cc
 installer/updater/update.json
-installer/updater/Makefile
 
 scripts/update_now.sh
 scripts/stop_updater.sh
