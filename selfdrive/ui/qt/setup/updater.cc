@@ -231,6 +231,7 @@ int UpdaterThread::download_file_xferinfo(curl_off_t dltotal, curl_off_t dlno, c
     float progress_frac = ((float)dlno / dltotal) * 100;
     if ((progress_frac - prev_val) > 0.5) {
       emit progressPos(progress_frac);
+      prev_val = progress_frac;
     }
   }
   return 0;
