@@ -199,7 +199,7 @@ def uploader_fn(exit_event):
     raise Exception("uploader can't start without dongle id")
 
   if TICI and not Path("/data/media").is_mount():
-    cloudlog.debug("NVME not mounted")
+    cloudlog.warning("NVME not mounted")
 
   sm = messaging.SubMaster(['deviceState'])
   uploader = Uploader(dongle_id, ROOT)

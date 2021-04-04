@@ -280,7 +280,7 @@ jobs:
       uses: actions/cache@v2
       with:
         path: /tmp/comma_download_cache
-        key: ${{ hashFiles('.github/workflows/test.yaml', 'selfdrive/test/test_car_models.py') }}
+        key: ${{ hashFiles('.github/workflows/test.yaml', 'selfdrive/test/test_routes.py') }}
     - name: Build Docker image
       run: eval "$BUILD"
     - name: Test car models

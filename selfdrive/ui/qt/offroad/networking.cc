@@ -4,6 +4,7 @@
 #include <QPixmap>
 
 #include "networking.hpp"
+#include "widgets/scrollview.hpp"
 
 void clearLayout(QLayout* layout) {
   while (QLayoutItem* item = layout->takeAt(0)) {
@@ -57,9 +58,9 @@ void Networking::attemptInitialization(){
     vlayout->addSpacing(10);
   }
 
-  wifiWidget = new WifiUI(0, wifi);
+  wifiWidget = new WifiUI(this, wifi);
   connect(wifiWidget, SIGNAL(connectToNetwork(Network)), this, SLOT(connectToNetwork(Network)));
-  vlayout->addWidget(wifiWidget, 1);
+  vlayout->addWidget(new ScrollView(wifiWidget, this), 1);
 
   QWidget* wifiScreen = new QWidget(this);
   wifiScreen->setLayout(vlayout);
