@@ -8,20 +8,16 @@ import unittest
 
 from common.basedir import BASEDIR
 
-UPDATER_PATH = os.path.join(BASEDIR, "installer/updater")
+UPDATER_PATH = os.path.join(BASEDIR, "selfdrive/ui/qt/setup")
 UPDATER = os.path.join(UPDATER_PATH, "updater")
 UPDATE_MANIFEST = os.path.join(UPDATER_PATH, "update.json")
-
+UPDATE_DIR = "/data/neoupdate"
 
 class TestUpdater(unittest.TestCase):
 
   @classmethod
   def setUpClass(cls):
-    # test that the updater builds
-    cls.assertTrue(f"cd {UPDATER_PATH} && make clean && make", "updater failed to build")
-
-    # restore the checked-in version, since that's what actually runs on devices
-    os.system(f"git reset --hard {UPDATER_PATH}")
+    pass
 
   def setUp(self):
     self._clear_dir()
@@ -30,8 +26,8 @@ class TestUpdater(unittest.TestCase):
     self._clear_dir()
 
   def _clear_dir(self):
-    if os.path.isdir("/data/neoupdate"):
-      shutil.rmtree("/data/neoupdate")
+    if os.path.isdir(UPDATE_DIR):
+      shutil.rmtree(UPDATE_DIR)
 
   def _assert_ok(self, cmd, msg=None):
     self.assertTrue(os.system(cmd) == 0, msg)
@@ -61,8 +57,8 @@ class TestUpdater(unittest.TestCase):
     self._assert_ok(f"{UPDATER} bgcache 'file://{UPDATE_MANIFEST}'")
 
     # write some random bytes
-    for f in os.listdir("/data/neoupdate"):
-      with open(os.path.join("/data/neoupdate", f), "ab") as f:
+    for f in os.listdir(UPDATE_DIR):
+      with open(os.path.join(UPDATE_DIR, f), "ab") as f:
         f.write(b"\xab"*20)
 
     # this attempt should fail, then it unlinks

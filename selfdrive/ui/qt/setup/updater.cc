@@ -133,8 +133,7 @@ void UpdaterThread::run() {
   checkBattery();
 
   // ** download update **
-  bool sucess = download_stage();
-  if (!sucess) {
+  if (!download_stage()) {
     return;
   }
 
