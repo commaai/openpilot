@@ -26,8 +26,7 @@ const char *manifest_url = MANIFEST_URL_NEOS;
 #define RECOVERY_DEV "/dev/block/bootdevice/by-name/recovery"
 #define RECOVERY_COMMAND "/cache/recovery/command"
 
-// #define UPDATE_DIR "/data/neoupdate"
-#define UPDATE_DIR "/home/deanlee/neoupdate"
+#define UPDATE_DIR "/data/neoupdate"
 #define MIN_BATTERY_CAP 35
 
 QString sha256_file(const QString &fn, size_t limit = 0) {
@@ -83,7 +82,6 @@ bool check_battery() {
 }
 
 bool check_space() {
-  return true;
   struct statvfs stat;
   if (statvfs("/data/", &stat) != 0) {
     return false;
@@ -104,7 +102,6 @@ static void start_settings_activity(const char *name) {
 UpdaterThread::UpdaterThread(QObject *parent) : QThread(parent) {}
 
 void UpdaterThread::checkBattery() {
-  return;
   if (!check_battery()) {
     int battery_cap = 0;
     do {
@@ -120,16 +117,13 @@ void UpdaterThread::run() {
   qInfo() << "run_stages start";
 
   checkBattery();
-
   // ** download update **
   if (!download_stage()) {
     return;
   }
 
-  // ** install update **
-
   checkBattery();
-
+  // ** install update **
   if (!recovery_fn.isEmpty()) {
     // flash recovery
     emit progressText("Flashing recovery...");
@@ -226,6 +220,7 @@ bool UpdaterThread::download_stage() {
   }
 
   // ** handle ota download **
+  emit progressPos(0);
   ota_fn = download(ota_url, ota_hash, "update");
   return !ota_fn.isEmpty();
 }

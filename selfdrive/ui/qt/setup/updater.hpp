@@ -8,7 +8,6 @@
 #include <QPushButton>
 #include <QStackedWidget>
 #include <QThread>
-#include <string>
 
 class UpdaterThread : public QThread {
   Q_OBJECT
