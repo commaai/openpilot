@@ -43,8 +43,8 @@ public:
 private:
   QWidget *confirmationPage();
   QWidget *progressPage();
-  QWidget *errPage();
   QWidget *batteryPage();
+  QWidget *errPage();
 
   UpdaterThread thread;
   QLabel *progressTitle;

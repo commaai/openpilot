@@ -427,6 +427,34 @@ UpdaterWidnow::~UpdaterWidnow() {
   thread.exit();
 }
 
+QWidget *UpdaterWidnow::confirmationPage() {
+  QWidget *w = new QWidget();
+  QVBoxLayout *vl = new QVBoxLayout(w);
+  vl->addWidget(textLabel("An update to NEOS is required.", 80));
+  vl->addStretch();
+  vl->addWidget(textLabel("Your device will now be reset and upgraded. You may want to connect to wifi as download is around 1 GB. Existing data on device should not be lost.", 50));
+  vl->addStretch();
+
+  // buttons
+  QHBoxLayout *btnLayout = new QHBoxLayout();
+  btnLayout->setSpacing(100);
+  QPushButton *wifiBtn = new QPushButton("Connect to WiFi");
+  QObject::connect(wifiBtn, &QPushButton::released, [=] {
+    start_settings_activity("Settings$WifiSettingsActivity");
+  });
+  btnLayout->addWidget(wifiBtn);
+
+  QPushButton *continueBtn = new QPushButton("Continue");
+  QObject::connect(continueBtn, &QPushButton::released, [=] {
+    setCurrentIndex(1);
+    thread.start();
+  });
+  btnLayout->addWidget(continueBtn);
+
+  vl->addLayout(btnLayout);
+  return w;
+}
+
 QWidget *UpdaterWidnow::progressPage() {
   QWidget *w = new QWidget();
   QVBoxLayout *vl = new QVBoxLayout(w);
@@ -464,34 +492,6 @@ QWidget *UpdaterWidnow::batteryPage() {
   batteryContext = textLabel("", 50);
   vl->addWidget(batteryContext);
   vl->addStretch();
-  return w;
-}
-
-QWidget *UpdaterWidnow::confirmationPage() {
-  QWidget *w = new QWidget();
-  QVBoxLayout *vl = new QVBoxLayout(w);
-  vl->addWidget(textLabel("An update to NEOS is required.", 80));
-  vl->addStretch();
-  vl->addWidget(textLabel("Your device will now be reset and upgraded. You may want to connect to wifi as download is around 1 GB. Existing data on device should not be lost.", 50));
-  vl->addStretch();
-
-  // buttons
-  QHBoxLayout *btnLayout = new QHBoxLayout();
-  btnLayout->setSpacing(100);
-  QPushButton *wifiBtn = new QPushButton("Connect to WiFi");
-  QObject::connect(wifiBtn, &QPushButton::released, [=] {
-    start_settings_activity("Settings$WifiSettingsActivity");
-  });
-  btnLayout->addWidget(wifiBtn);
-
-  QPushButton *continueBtn = new QPushButton("Continue");
-  QObject::connect(continueBtn, &QPushButton::released, [=] {
-    setCurrentIndex(1);
-    thread.start();
-  });
-  btnLayout->addWidget(continueBtn);
-
-  vl->addLayout(btnLayout);
   return w;
 }
 
