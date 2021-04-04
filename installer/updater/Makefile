@@ -12,13 +12,6 @@ WARN_FLAGS = -Werror=implicit-function-declaration \
 CFLAGS = -std=gnu11 -g -fPIC -O2 $(WARN_FLAGS)
 CXXFLAGS = -std=c++1z -g -fPIC -O2 $(WARN_FLAGS)
 
-CURL_FLAGS = -I$(PHONELIBS)/curl/include
-CURL_LIBS = $(PHONELIBS)/curl/lib/libcurl.a \
-            $(PHONELIBS)/zlib/lib/libz.a
-
-BORINGSSL_FLAGS = -I$(PHONELIBS)/boringssl/include
-BORINGSSL_LIBS = $(PHONELIBS)/boringssl/lib/libssl_static.a \
-                 $(PHONELIBS)/boringssl/lib/libcrypto_static.a \
 
 NANOVG_FLAGS = -I$(PHONELIBS)/nanovg
 
@@ -46,9 +39,11 @@ updater: updater.o $(OBJS)
 	@echo "[ LINK ] $@"
 	$(CXX) $(CPPFLAGS) -fPIC -o 'updater' $^ \
     $(FRAMEBUFFER_LIBS) \
-    $(CURL_LIBS) \
-    $(BORINGSSL_LIBS) \
     -L/system/vendor/lib64 \
+    -L/usr/lib \
+    -lcurl \
+    -lssl \
+    -lcrypto \
     $(OPENGL_LIBS) \
     -lcutils -lm -llog
 	strip updater
@@ -65,17 +60,6 @@ opensans_semibold.ttf.o: ../../selfdrive/assets/fonts/opensans_semibold.ttf
 	@echo "[ bin2o ] $@"
 	cd '$(dir $<)' && ld -r -b binary '$(notdir $<)' -o '$(abspath $@)'
 
-%.o: %.c
-	mkdir -p $(@D)
-	@echo "[ CC ] $@"
-	$(CC) $(CPPFLAGS) $(CFLAGS) \
-          -I../.. \
-          -I$(PHONELIBS)/android_frameworks_native/include \
-          -I$(PHONELIBS)/android_system_core/include \
-          -I$(PHONELIBS)/android_hardware_libhardware/include \
-          $(NANOVG_FLAGS) \
-          -c -o '$@' '$<'
-
 %.o: %.cc
 	mkdir -p $(@D)
 	@echo "[ CXX ] $@"
@@ -87,10 +71,7 @@ opensans_semibold.ttf.o: ../../selfdrive/assets/fonts/opensans_semibold.ttf
            -I$(PHONELIBS)/android_hardware_libhardware/include \
            $(NANOVG_FLAGS) \
            $(JSON11_FLAGS) \
-           $(CURL_FLAGS) \
-           $(BORINGSSL_FLAGS) \
            -c -o '$@' '$<'
-
 
 .PHONY: clean
 clean:
