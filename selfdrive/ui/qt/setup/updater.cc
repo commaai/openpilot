@@ -16,7 +16,7 @@
 #include "common/util.h"
 #include "qt_window.hpp"
 
-#define USER_AGENT "NEOSUpdater-0.2"
+#define USER_AGENT "NEOSUpdater-0.3"
 
 #define MANIFEST_URL_NEOS_STAGING "https://github.com/commaai/eon-neos/raw/master/update.staging.json"
 #define MANIFEST_URL_NEOS_LOCAL "http://192.168.5.1:8000/neosupdate/update.local.json"
