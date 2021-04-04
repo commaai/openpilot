@@ -25,8 +25,7 @@ const char *manifest_url = MANIFEST_URL_NEOS;
 #define RECOVERY_COMMAND "/cache/recovery/command"
 
 #define UPDATE_DIR "/data/neoupdate"
-
-const int min_battery_cap = 35;
+#define MIN_BATTERY_CAP 35
 
 std::string sha256_file(std::string fn, size_t limit = 0) {
   SHA256_CTX ctx;
@@ -111,6 +110,13 @@ bool check_space() {
   return space > 2000000000ULL;  // 2GB
 }
 
+static void start_settings_activity(const char* name) {
+  char launch_cmd[1024];
+  snprintf(launch_cmd, sizeof(launch_cmd),
+           "am start -W --ez :settings:show_fragment_as_subsetting true -n 'com.android.settings/.%s'", name);
+  system(launch_cmd);
+}
+
 // UpdaterThread
 
 UpdaterThread::UpdaterThread(QObject *parent) : QThread(parent) {}
@@ -122,7 +128,7 @@ void UpdaterThread::checkBattery() {
       battery_cap = battery_capacity();
       emit lowBattery(battery_cap);
       util::sleep_for(1000);
-    } while (battery_cap < min_battery_cap);
+    } while (battery_cap < MIN_BATTERY_CAP);
   }
 }
 
@@ -147,7 +153,7 @@ void UpdaterThread::run() {
 
     FILE *flash_file = fopen(recovery_fn.c_str(), "rb");
     if (!flash_file) {
-      emit error("failed to flash recovery");
+      emit error("failed to open recovery file");
       return;
     }
 
@@ -186,6 +192,29 @@ void UpdaterThread::run() {
       return;
     }
   }
+
+  // write arguments to recovery
+  FILE *cmd_file = fopen(RECOVERY_COMMAND, "wb");
+  if (!cmd_file) {
+    emit error("failed to reboot into recovery");
+    return;
+  }
+  fprintf(cmd_file, "--update_package=%s\n", ota_fn.c_str());
+  fclose(cmd_file);
+
+  emit progressText("Rebooting");
+
+  // remove the continue.sh so we come back into the setup.
+  // maybe we should go directly into the installer, but what if we don't come back with internet? :/
+  //unlink("/data/data/com.termux/files/continue.sh");
+
+  // TODO: this should be generic between android versions
+  // IPowerManager.reboot(confirm=false, reason="recovery", wait=true)
+  system("service call power 16 i32 0 s16 recovery i32 1");
+  while (1) pause();
+
+  // execl("/system/bin/reboot", "recovery");
+  // set_error("failed to reboot into recovery");
 }
 
 bool UpdaterThread::download_stage() {
@@ -450,7 +479,11 @@ QWidget *UpdaterWidnow::confirmationPage() {
   QHBoxLayout *btnLayout = new QHBoxLayout();
   btnLayout->setSpacing(100);
   QPushButton *wifiBtn = new QPushButton("Connect to WiFi");
+  QObject::connect(wifiBtn, &QPushButton::released, [=] {
+    start_settings_activity("Settings$WifiSettingsActivity");
+  });
   btnLayout->addWidget(wifiBtn);
+
   QPushButton *continueBtn = new QPushButton("Continue");
   QObject::connect(continueBtn, &QPushButton::released, [=] {
     setCurrentIndex(1);
@@ -477,6 +510,8 @@ QWidget *UpdaterWidnow::errPage() {
   btnLayout->setSpacing(100);
   QPushButton *rebootBtn = new QPushButton("Reboot");
   QObject::connect(rebootBtn, &QPushButton::released, [=] {
+    // reboot
+    system("service call power 16 i32 0 i32 0 i32 1");
   });
   btnLayout->addWidget(rebootBtn);
   vl->addLayout(btnLayout);
