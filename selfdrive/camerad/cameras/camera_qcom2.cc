@@ -196,6 +196,13 @@ void sensors_i2c(struct CameraState *s, struct i2c_random_wr_payload* dat, int l
   munmap(pkt, size);
   release_fd(s->multi_cam_state->video0_fd, cam_packet_handle);
 }
+static cam_cmd_power *power_set_wait(cam_cmd_power *power, int16_t delay_ms) {
+  cam_cmd_unconditional_wait *unconditional_wait = (cam_cmd_unconditional_wait *)((char *)power + (sizeof(struct cam_cmd_power) + (power->count - 1) * sizeof(struct cam_power_settings)));
+  unconditional_wait->cmd_type = CAMERA_SENSOR_CMD_TYPE_WAIT;
+  unconditional_wait->delay = delay_ms;
+  unconditional_wait->op_code = CAMERA_SENSOR_WAIT_OP_SW_UCND;
+  return (struct cam_cmd_power *)(unconditional_wait + 1);
+};
 
 void sensors_init(int video0_fd, int sensor_fd, int camera_num) {
   uint32_t cam_packet_handle = 0;
@@ -246,11 +253,8 @@ void sensors_init(int video0_fd, int sensor_fd, int camera_num) {
   //buf_desc[1].size = buf_desc[1].length = 148;
   buf_desc[1].size = buf_desc[1].length = 196;
   buf_desc[1].type = CAM_CMD_BUF_I2C;
-  struct cam_cmd_power *power = (struct cam_cmd_power *)alloc_w_mmu_hdl(video0_fd, buf_desc[1].size, (uint32_t*)&buf_desc[1].mem_handle);
-  memset(power, 0, buf_desc[1].size);
-  struct cam_cmd_unconditional_wait *unconditional_wait;
-
-  //void *ptr = power;
+  struct cam_cmd_power *power_settings = (struct cam_cmd_power *)alloc_w_mmu_hdl(video0_fd, buf_desc[1].size, (uint32_t*)&buf_desc[1].mem_handle);
+  memset(power_settings, 0, buf_desc[1].size);
   // 7750
   /*power->count = 2;
   power->cmd_type = CAMERA_SENSOR_CMD_TYPE_PWR_UP;
@@ -259,45 +263,28 @@ void sensors_init(int video0_fd, int sensor_fd, int camera_num) {
   power = (void*)power + (sizeof(struct cam_cmd_power) + (power->count-1)*sizeof(struct cam_power_settings));*/
 
   // 885a
+  struct cam_cmd_power *power = power_settings;
   power->count = 4;
   power->cmd_type = CAMERA_SENSOR_CMD_TYPE_PWR_UP;
   power->power_settings[0].power_seq_type = 3; // clock??
   power->power_settings[1].power_seq_type = 1; // analog
   power->power_settings[2].power_seq_type = 2; // digital
   power->power_settings[3].power_seq_type = 8; // reset low
-  power = (struct cam_cmd_power *)((char*)power + (sizeof(struct cam_cmd_power) + (power->count-1)*sizeof(struct cam_power_settings)));
-
-  unconditional_wait = (struct cam_cmd_unconditional_wait *)power;
-  unconditional_wait->cmd_type = CAMERA_SENSOR_CMD_TYPE_WAIT;
-  unconditional_wait->delay = 5;
-  unconditional_wait->op_code = CAMERA_SENSOR_WAIT_OP_SW_UCND;
-  power = (struct cam_cmd_power *)((char*)power + sizeof(struct cam_cmd_unconditional_wait));
+  power = power_set_wait(power, 5);
 
   // set clock
   power->count = 1;
   power->cmd_type = CAMERA_SENSOR_CMD_TYPE_PWR_UP;
   power->power_settings[0].power_seq_type = 0;
   power->power_settings[0].config_val_low = 24000000; //Hz
-  power = (struct cam_cmd_power *)((char*)power + (sizeof(struct cam_cmd_power) + (power->count-1)*sizeof(struct cam_power_settings)));
-
-  unconditional_wait = (struct cam_cmd_unconditional_wait *)power;
-  unconditional_wait->cmd_type = CAMERA_SENSOR_CMD_TYPE_WAIT;
-  unconditional_wait->delay = 10; // ms
-  unconditional_wait->op_code = CAMERA_SENSOR_WAIT_OP_SW_UCND;
-  power = (struct cam_cmd_power *)((char*)power + sizeof(struct cam_cmd_unconditional_wait));
+  power = power_set_wait(power, 10);
 
   // 8,1 is this reset?
   power->count = 1;
   power->cmd_type = CAMERA_SENSOR_CMD_TYPE_PWR_UP;
   power->power_settings[0].power_seq_type = 8;
   power->power_settings[0].config_val_low = 1;
-  power = (struct cam_cmd_power *)((char*)power + (sizeof(struct cam_cmd_power) + (power->count-1)*sizeof(struct cam_power_settings)));
-
-  unconditional_wait = (struct cam_cmd_unconditional_wait *)power;
-  unconditional_wait->cmd_type = CAMERA_SENSOR_CMD_TYPE_WAIT;
-  unconditional_wait->delay = 100; // ms
-  unconditional_wait->op_code = CAMERA_SENSOR_WAIT_OP_SW_UCND;
-  power = (struct cam_cmd_power *)((char*)power + sizeof(struct cam_cmd_unconditional_wait));
+  power = power_set_wait(power, 100);
 
   // probe happens here
 
@@ -306,39 +293,21 @@ void sensors_init(int video0_fd, int sensor_fd, int camera_num) {
   power->cmd_type = CAMERA_SENSOR_CMD_TYPE_PWR_DOWN;
   power->power_settings[0].power_seq_type = 0;
   power->power_settings[0].config_val_low = 0;
-  power = (struct cam_cmd_power *)((char*)power + (sizeof(struct cam_cmd_power) + (power->count-1)*sizeof(struct cam_power_settings)));
-
-  unconditional_wait = (struct cam_cmd_unconditional_wait *)power;
-  unconditional_wait->cmd_type = CAMERA_SENSOR_CMD_TYPE_WAIT;
-  unconditional_wait->delay = 1;
-  unconditional_wait->op_code = CAMERA_SENSOR_WAIT_OP_SW_UCND;
-  power = (struct cam_cmd_power *)((char*)power + sizeof(struct cam_cmd_unconditional_wait));
+  power = power_set_wait(power, 1);
 
   // reset high
   power->count = 1;
   power->cmd_type = CAMERA_SENSOR_CMD_TYPE_PWR_DOWN;
   power->power_settings[0].power_seq_type = 8;
   power->power_settings[0].config_val_low = 1;
-  power = (struct cam_cmd_power *)((char*)power + (sizeof(struct cam_cmd_power) + (power->count-1)*sizeof(struct cam_power_settings)));
-
-  unconditional_wait = (struct cam_cmd_unconditional_wait *)power;
-  unconditional_wait->cmd_type = CAMERA_SENSOR_CMD_TYPE_WAIT;
-  unconditional_wait->delay = 1;
-  unconditional_wait->op_code = CAMERA_SENSOR_WAIT_OP_SW_UCND;
-  power = (struct cam_cmd_power *)((char*)power + sizeof(struct cam_cmd_unconditional_wait));
+  power = power_set_wait(power, 1);
 
   // reset low
   power->count = 1;
   power->cmd_type = CAMERA_SENSOR_CMD_TYPE_PWR_DOWN;
   power->power_settings[0].power_seq_type = 8;
   power->power_settings[0].config_val_low = 0;
-  power = (struct cam_cmd_power *)((char*)power + (sizeof(struct cam_cmd_power) + (power->count-1)*sizeof(struct cam_power_settings)));
-
-  unconditional_wait = (struct cam_cmd_unconditional_wait *)power;
-  unconditional_wait->cmd_type = CAMERA_SENSOR_CMD_TYPE_WAIT;
-  unconditional_wait->delay = 1;
-  unconditional_wait->op_code = CAMERA_SENSOR_WAIT_OP_SW_UCND;
-  power = (struct cam_cmd_power *)((char*)power + sizeof(struct cam_cmd_unconditional_wait));
+  power = power_set_wait(power, 1);
 
   // 7750
   /*power->count = 1;
@@ -352,7 +321,6 @@ void sensors_init(int video0_fd, int sensor_fd, int camera_num) {
   power->power_settings[0].power_seq_type = 2;
   power->power_settings[1].power_seq_type = 1;
   power->power_settings[2].power_seq_type = 3;
-  power = (struct cam_cmd_power *)((char*)power + (sizeof(struct cam_cmd_power) + (power->count-1)*sizeof(struct cam_power_settings)));
 
   LOGD("probing the sensor");
   int ret = cam_control(sensor_fd, CAM_SENSOR_PROBE_CMD, (void *)(uintptr_t)cam_packet_handle, 0);
@@ -360,7 +328,7 @@ void sensors_init(int video0_fd, int sensor_fd, int camera_num) {
 
   munmap(i2c_info, buf_desc[0].size);
   release_fd(video0_fd, buf_desc[0].mem_handle);
-  munmap(power, buf_desc[1].size);
+  munmap(power_settings, buf_desc[1].size);
   release_fd(video0_fd, buf_desc[1].mem_handle);
   munmap(pkt, size);
   release_fd(video0_fd, cam_packet_handle);
