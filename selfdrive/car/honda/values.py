@@ -758,8 +758,8 @@ FW_VERSIONS = {
     (Ecu.srs, 0x18da53f1, None): [
       b'77959-TLA-G220\x00\x00',
       b'77959-TLA-C320\x00\x00',
-      b'77959-TLA-H240\x00\x00',
       b'77959-TLA-C420\x00\x00',
+      b'77959-TLA-H240\x00\x00',
     ],
   },
   CAR.FIT: {
