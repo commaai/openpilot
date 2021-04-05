@@ -223,7 +223,7 @@ static void ui_draw_vision_event(UIState *s) {
 }
 
 static void ui_draw_vision_lane_change_ready(UIState *s) {
-  if (s->scene.controls_state.getEngageable() && s->scene.car_state.getVEgo() >= 20.1168) {
+  if (s->scene.controls_state.getEnabled() && s->scene.car_state.getVEgo() >= 20.1168) {
     const int radius = 96;
     const int center_x = s->viz_rect.right() - radius - bdr_s * 2;
     const int center_y = s->viz_rect.y + radius  + (bdr_s * 1.5) + 255;
