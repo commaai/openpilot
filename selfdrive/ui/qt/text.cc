@@ -24,6 +24,7 @@ int main(int argc, char *argv[]) {
   scroll->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
   layout->addWidget(scroll, 0, 0, Qt::AlignTop);
 
+  // Scroll to the bottom
   QObject::connect(scroll->verticalScrollBar(), &QAbstractSlider::rangeChanged, [=](){
     scroll->verticalScrollBar()->setValue(scroll->verticalScrollBar()->maximum());
   });
