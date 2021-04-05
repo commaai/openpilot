@@ -124,7 +124,7 @@ const LogCameraInfo qcam_info = {
     .is_h265 = false,
     .downscale = true,
     .frame_width = IS_TICI ? 526 : 480,
-    .frame_height =IS_TICI ?  330 : 360, // keep pixel count the same?
+    .frame_height =IS_TICI ? 330 : 360, // keep pixel count the same?
 };
 
 class RotateState {
