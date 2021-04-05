@@ -11,6 +11,7 @@ VisualAlert = car.CarControl.HUDControl.VisualAlert
 
 
 def accel_hysteresis(accel, accel_steady, enabled):
+
   # for small accel oscillations within ACCEL_HYST_GAP, don't change the accel command
   if not enabled:
     # send 0 when disabled, otherwise acc faults
