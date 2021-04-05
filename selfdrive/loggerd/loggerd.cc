@@ -52,8 +52,8 @@ const int DCAM_BITRATE = IS_TICI ? 10000000 : 2500000;
 
 ExitHandler do_exit;
 
-typedef cereal::EncodeIndex::Builder (cereal::Event::Builder::*initEncodeIndexFunc)();
-typedef cereal::FrameData::Reader (cereal::Event::Reader::*getFrameDataFunc)() const;
+typedef cereal::EncodeIndex::Builder (cereal::Event::Builder::*initEncodeIdxFunc)();
+typedef cereal::FrameData::Reader (cereal::Event::Reader::*getCameraStateFunc)() const;
 
 typedef struct LogCameraInfo {
   const char* filename;
@@ -68,8 +68,8 @@ typedef struct LogCameraInfo {
   bool has_qcamera;
   bool enabled;
   cereal::EncodeIndex::Type edix_type;
-  initEncodeIndexFunc initEncoderIndex;
-  getFrameDataFunc getFrameData;
+  initEncodeIdxFunc initEncoderIdx;
+  getCameraStateFunc getCameraState;
 } LogCameraInfo;
 
 LogCameraInfo cameras_logged[] = {
@@ -84,8 +84,8 @@ LogCameraInfo cameras_logged[] = {
     .has_qcamera = true,
     .enabled = true,
     .edix_type = cereal::EncodeIndex::Type::FULL_H_E_V_C,
-    .initEncoderIndex = &cereal::Event::Builder::initRoadEncodeIdx,
-    .getFrameData = &cereal::Event::Reader::getRoadCameraState,
+    .initEncoderIdx = &cereal::Event::Builder::initRoadEncodeIdx,
+    .getCameraState = &cereal::Event::Reader::getRoadCameraState,
   },
   {
     .stream_type = VISION_STREAM_YUV_FRONT,
@@ -98,8 +98,8 @@ LogCameraInfo cameras_logged[] = {
     .has_qcamera = false,
     .enabled = (IS_TICI || IS_EON) && Params().getBool("RecordFront"),
     .edix_type = IS_TICI ? cereal::EncodeIndex::Type::FULL_H_E_V_C : cereal::EncodeIndex::Type::FRONT,
-    .initEncoderIndex = &cereal::Event::Builder::initDriverEncodeIdx,
-    .getFrameData = &cereal::Event::Reader::getDriverCameraState,
+    .initEncoderIdx = &cereal::Event::Builder::initDriverEncodeIdx,
+    .getCameraState = &cereal::Event::Reader::getDriverCameraState,
   },
   {
     .stream_type = VISION_STREAM_YUV_WIDE,
@@ -112,8 +112,8 @@ LogCameraInfo cameras_logged[] = {
     .has_qcamera = false,
     .enabled = IS_TICI,
     .edix_type = cereal::EncodeIndex::Type::FULL_H_E_V_C,
-    .initEncoderIndex = &cereal::Event::Builder::initWideRoadEncodeIdx,
-    .getFrameData = &cereal::Event::Reader::getWideRoadCameraState,
+    .initEncoderIdx = &cereal::Event::Builder::initWideRoadEncodeIdx,
+    .getCameraState = &cereal::Event::Reader::getWideRoadCameraState,
   },
 };
 
@@ -289,7 +289,7 @@ void encoder_thread(int cam_idx, RotateState &rotate_state) {
         if (i == 0 && out_id != -1) {
           // publish encode index
           MessageBuilder msg;
-          auto eidx = (msg.initEvent().*cam_info.initEncoderIndex)();
+          auto eidx = (msg.initEvent().*cam_info.initEncoderIdx)();
           eidx.setType(cam_info.edix_type);
           eidx.setFrameId(extra.frame_id);
           eidx.setTimestampSof(extra.timestamp_sof);
@@ -423,7 +423,7 @@ int main(int argc, char** argv) {
           // only process last frame
           RotateState *r = *it; 
           capnp::FlatArrayMessageReader cmsg(aligned_buf.align(last_msg));
-          r->setLogFrameId((cmsg.getRoot<cereal::Event>().*r->ci->getFrameData)().getFrameId());
+          r->setLogFrameId((cmsg.getRoot<cereal::Event>().*r->ci->getCameraState)().getFrameId());
           last_camera_seen_tms = millis_since_boot();
         }
       }
