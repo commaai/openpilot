@@ -362,6 +362,7 @@ int main(int argc, char** argv) {
     for (const auto& ci : cameras_logged) {
       if (ci.enabled && strcmp(it.name, ci.frame_packet_name) == 0) {
         s.rotate_state.push_back(new RotateState(&ci, sock));
+        break;
       }
     }
     qlog_states[sock] = {.counter = 0, .freq = it.decimation};
