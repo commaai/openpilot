@@ -340,12 +340,12 @@ int main(int argc, char** argv) {
   // setup messaging
   s.ctx = Context::create();
   Poller * poller = Poller::create();
-  std::map<SubSocket *, SocketState*> sockets;
+  std::map<SubSocket*, SocketState*> sockets;
   // subscribe to all socks
   for (const auto& it : services) {
     if (!it.should_log) continue;
 
-    SubSocket * sock = SubSocket::create(s.ctx, it.name);
+    SubSocket *sock = SubSocket::create(s.ctx, it.name);
     assert(sock != NULL);
     sockets[sock] = new SocketState(sock, it.decimation);
 
@@ -384,7 +384,7 @@ int main(int argc, char** argv) {
     auto it = std::find_if(std::begin(s.rotate_state), std::end(s.rotate_state), [s=sock_state](const auto &rs) {
       return rs.fpkt_sock == s && rs.enabled;
     });
-    if (!it) {
+    if (it == std::end(s.rotate_state)) {
       poller->registerSocket(sock);
     }
   }
