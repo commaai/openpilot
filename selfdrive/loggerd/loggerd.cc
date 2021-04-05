@@ -389,112 +389,13 @@ int main(int argc, char** argv) {
     }
   }
 
-<<<<<<< HEAD
-  // init logger
-  logger_init(&s.logger, "rlog", true);
-
-  // init encoders
-  pthread_mutex_init(&s.rotate_lock, NULL);
-
-  // TODO: create these threads dynamically on frame packet presence
-  std::vector<std::thread> encoder_threads;
-  encoder_threads.push_back(std::thread(encoder_thread, LOG_CAMERA_ID_FCAMERA));
-  s.rotate_state[LOG_CAMERA_ID_FCAMERA].enabled = true;
-
-#if defined(QCOM) || defined(QCOM2)
-  bool record_front = Params().getBool("RecordFront");
-  if (record_front) {
-    encoder_threads.push_back(std::thread(encoder_thread, LOG_CAMERA_ID_DCAMERA));
-    s.rotate_state[LOG_CAMERA_ID_DCAMERA].enabled = true;
-  }
-
-#ifdef QCOM2
-  encoder_threads.push_back(std::thread(encoder_thread, LOG_CAMERA_ID_ECAMERA));
-  s.rotate_state[LOG_CAMERA_ID_ECAMERA].enabled = true;
-#endif
-#endif
-
-<<<<<<< HEAD
-  uint64_t msg_count = 0;
-  uint64_t bytes_count = 0;
-  AlignedBuffer aligned_buf;
-
-  double start_ts = seconds_since_boot();
-=======
->>>>>>> log frame message in encoder
-=======
->>>>>>> continue
   double last_rotate_tms = millis_since_boot();
   s.last_camera_seen_tms = millis_since_boot();
   while (!do_exit) {
     // TODO: fix msgs from the first poll getting dropped
     // poll for new messages on all sockets
     for (auto sock : poller->poll(1000)) {
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-
-      // drain socket
-      Message * last_msg = nullptr;
-      while (!do_exit) {
-        Message * msg = sock->receive(true);
-        if (!msg){
-          break;
-        }
-        delete last_msg;
-        last_msg = msg;
-
-        QlogState& qs = qlog_states[sock];
-        logger_log(&s.logger, (uint8_t*)msg->getData(), msg->getSize(), qs.counter == 0 && qs.freq != -1);
-        if (qs.freq != -1) {
-          qs.counter = (qs.counter + 1) % qs.freq;
-        }
-
-        bytes_count += msg->getSize();
-        if ((++msg_count % 1000) == 0) {
-          double ts = seconds_since_boot();
-          LOGD("%lu messages, %.2f msg/sec, %.2f KB/sec", msg_count, msg_count * 1.0 / (ts - start_ts), bytes_count * 0.001 / (ts - start_ts));
-        }
-      }
-
-      if (last_msg) {
-        int fpkt_id = -1;
-        for (int cid = 0; cid <=MAX_CAM_IDX; cid++) {
-          if (sock == s.rotate_state[cid].fpkt_sock) {
-            fpkt_id=cid;
-            break;
-          }
-        }
-        if (fpkt_id >= 0) {
-          // track camera frames to sync to encoder
-          // only process last frame
-          capnp::FlatArrayMessageReader cmsg(aligned_buf.align(last_msg));
-          cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
-
-          if (fpkt_id == LOG_CAMERA_ID_FCAMERA) {
-            s.rotate_state[fpkt_id].setLogFrameId(event.getRoadCameraState().getFrameId());
-          } else if (fpkt_id == LOG_CAMERA_ID_DCAMERA) {
-            s.rotate_state[fpkt_id].setLogFrameId(event.getDriverCameraState().getFrameId());
-          } else if (fpkt_id == LOG_CAMERA_ID_ECAMERA) {
-            s.rotate_state[fpkt_id].setLogFrameId(event.getWideRoadCameraState().getFrameId());
-          }
-          last_camera_seen_tms = millis_since_boot();
-        }
-      }
-      delete last_msg;
-=======
-      drain_socket(s.logger.cur_handle, sock, qlog_states[sock]);
->>>>>>> log frame message in encoder
-=======
-      socket_states.at(sock).log(s.logger.cur_handle);
->>>>>>> struct QlogState to class SocketState
-=======
-      socket_states.at(sock)->log(s.logger.cur_handle);
->>>>>>> continue
-=======
       sockets.at(sock)->log(s.logger.cur_handle);
->>>>>>> cleanup
     }
 
     bool new_segment = s.logger.part == -1;
