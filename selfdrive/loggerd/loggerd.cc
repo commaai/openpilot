@@ -135,7 +135,7 @@ public:
   std::atomic<int> cur_seg = -1;
   const LogCameraInfo *ci;
 
-  RotateState(const LogCameraInfo *cam_info) : ci(cam_info) {};
+  RotateState(const LogCameraInfo *cam_info, SubSocket *sock) : ci(cam_info), fpkt_sock(sock) {};
 
   void waitLogThread() {
     std::unique_lock<std::mutex> lk(fid_lock);
@@ -339,11 +339,6 @@ int main(int argc, char** argv) {
 
   clear_locks();
 
-  // init rotate stats
-  for (const auto &ci : cameras_logged) {
-    if (ci.enabled) s.rotate_state.push_back(new RotateState(&ci));
-  }
-
   // setup messaging
   typedef struct QlogState {
     int counter, freq;
@@ -363,9 +358,10 @@ int main(int argc, char** argv) {
     poller->registerSocket(sock);
     socks.push_back(sock);
 
-    for (auto& r : s.rotate_state) {
-      if (strcmp(it.name, r->ci->frame_packet_name) == 0) {
-        r->fpkt_sock = sock;
+    // init rotate state
+    for (const auto& ci : cameras_logged) {
+      if (ci.enabled && strcmp(it.name, ci.frame_packet_name) == 0) {
+        s.rotate_state.push_back(new RotateState(&ci, sock));
       }
     }
     qlog_states[sock] = {.counter = 0, .freq = it.decimation};
