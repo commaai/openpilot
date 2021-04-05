@@ -54,6 +54,7 @@ ExitHandler do_exit;
 
 typedef cereal::EncodeIndex::Builder (cereal::Event::Builder::*initEncodeIndexFunc)();
 typedef cereal::FrameData::Reader (cereal::Event::Reader::*getFrameDataFunc)() const;
+
 typedef struct LogCameraInfo {
   const char* filename;
   const char* frame_packet_name;
@@ -334,7 +335,6 @@ void clear_locks() {
 } // namespace
 
 int main(int argc, char** argv) {
-
   setpriority(PRIO_PROCESS, 0, -12);
 
   clear_locks();
