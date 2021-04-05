@@ -98,7 +98,7 @@ LogCameraInfo cameras_logged[] = {
     .enabled = (IS_TICI || IS_EON) && Params().getBool("RecordFront"),
     .edix_type = IS_TICI ? cereal::EncodeIndex::Type::FULL_H_E_V_C : cereal::EncodeIndex::Type::FRONT,
     .initEncoderIndex = &cereal::Event::Builder::initDriverEncodeIdx,
-    .getFrameData = &cereal::Event::Reader::getWideRoadCameraState,
+    .getFrameData = &cereal::Event::Reader::getDriverCameraState,
   },
   {
     .stream_type = VISION_STREAM_YUV_WIDE,
@@ -112,7 +112,7 @@ LogCameraInfo cameras_logged[] = {
     .enabled = IS_TICI,
     .edix_type = cereal::EncodeIndex::Type::FULL_H_E_V_C,
     .initEncoderIndex = &cereal::Event::Builder::initWideRoadEncodeIdx,
-    .getFrameData = &cereal::Event::Reader::getDriverCameraState,
+    .getFrameData = &cereal::Event::Reader::getWideRoadCameraState,
   },
 };
 
