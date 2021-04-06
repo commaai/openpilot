@@ -716,10 +716,10 @@ static void camera_open(CameraState *s) {
   LOG("-- Configuring sensor");
   sensors_i2c(s, init_array_ar0231, sizeof(init_array_ar0231)/sizeof(struct i2c_random_wr_payload),
     CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
-  //sensors_i2c(s, start_reg_array, sizeof(start_reg_array)/sizeof(struct i2c_random_wr_payload),
-    //CAM_SENSOR_PACKET_OPCODE_SENSOR_STREAMON);
-  //sensors_i2c(s, stop_reg_array, sizeof(stop_reg_array)/sizeof(struct i2c_random_wr_payload),
-    //CAM_SENSOR_PACKET_OPCODE_SENSOR_STREAMOFF);
+  sensors_i2c(s, start_reg_array, sizeof(start_reg_array)/sizeof(struct i2c_random_wr_payload),
+    CAM_SENSOR_PACKET_OPCODE_SENSOR_STREAMON);
+  sensors_i2c(s, stop_reg_array, sizeof(stop_reg_array)/sizeof(struct i2c_random_wr_payload),
+    CAM_SENSOR_PACKET_OPCODE_SENSOR_STREAMOFF);
 
   // config csiphy
   LOG("-- Config CSI PHY");
@@ -788,15 +788,15 @@ static void camera_open(CameraState *s) {
 }
 
 void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
-  /*camera_init(s, v, &s->road_cam, CAMERA_ID_AR0231, 1, 20, device_id, ctx,
+  camera_init(s, v, &s->road_cam, CAMERA_ID_AR0231, 1, 20, device_id, ctx,
               VISION_STREAM_RGB_BACK, VISION_STREAM_YUV_BACK); // swap left/right
-  printf("road camera initted \n");*/
+  printf("road camera initted \n");
   camera_init(s, v, &s->wide_road_cam, CAMERA_ID_AR0231, 0, 20, device_id, ctx,
               VISION_STREAM_RGB_WIDE, VISION_STREAM_YUV_WIDE);
   printf("wide road camera initted \n");
-  /*camera_init(s, v, &s->driver_cam, CAMERA_ID_AR0231, 2, 20, device_id, ctx,
+  camera_init(s, v, &s->driver_cam, CAMERA_ID_AR0231, 2, 20, device_id, ctx,
               VISION_STREAM_RGB_FRONT, VISION_STREAM_YUV_FRONT);
-  printf("driver camera initted \n");*/
+  printf("driver camera initted \n");
 
   s->sm = new SubMaster({"driverState"});
   s->pm = new PubMaster({"roadCameraState", "driverCameraState", "wideRoadCameraState", "thumbnail"});
@@ -843,12 +843,12 @@ void cameras_open(MultiCameraState *s) {
   ret = ioctl(s->video0_fd, VIDIOC_SUBSCRIBE_EVENT, &sub);
   printf("req mgr subscribe: %d\n", ret);
 
-  /*camera_open(&s->road_cam);
-  printf("road camera opened \n");*/
+  camera_open(&s->road_cam);
+  printf("road camera opened \n");
   camera_open(&s->wide_road_cam);
   printf("wide road camera opened \n");
-  /*camera_open(&s->driver_cam);
-  printf("driver camera opened \n");*/
+  camera_open(&s->driver_cam);
+  printf("driver camera opened \n");
 }
 
 static void camera_close(CameraState *s) {
@@ -894,9 +894,9 @@ static void camera_close(CameraState *s) {
 }
 
 void cameras_close(MultiCameraState *s) {
-  //camera_close(&s->road_cam);
+  camera_close(&s->road_cam);
   camera_close(&s->wide_road_cam);
-  //camera_close(&s->driver_cam);
+  camera_close(&s->driver_cam);
 
   delete s->sm;
   delete s->pm;

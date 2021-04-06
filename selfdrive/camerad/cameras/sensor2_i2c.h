@@ -1,23 +1,24 @@
-struct i2c_random_wr_payload start_reg_array[] = {{0x301A, 0x00C}};
-struct i2c_random_wr_payload stop_reg_array[] = {{0x301A, 0x008}};
+struct i2c_random_wr_payload start_reg_array[] = {{0x301A, 0x000C}};
+struct i2c_random_wr_payload stop_reg_array[] = {{0x301A, 0x0008}};
 
 struct i2c_random_wr_payload init_array_ar0231[] = {
-  {0x301A, 0x0018}, // RESET_REGISTER
+  {0x301A, 0x0058}, // RESET_REGISTER
 
   // CLOCK Settings
-  {0x302A, 0x0006}, // VT_PIX_CLK_DIV
-  {0x302C, 0x0701}, // VT_SYS_CLK_DIV
-  {0x302E, 0x0002}, // PRE_PLL_CLK_DIV
-  {0x3030, 0x0028}, // PLL_MULTIPLIER
-  {0x3036, 0x000A}, // OP_WORD_CLK_DIV
-  {0x3038, 0x0001}, // OP_SYS_CLK_DIV
+  //{0x302A, 0x0006}, // VT_PIX_CLK_DIV
+  //{0x302C, 0x0701}, // VT_SYS_CLK_DIV
+  //{0x302E, 5}, // PRE_PLL_CLK_DIV
+  //{0x3030, 75}, // PLL_MULTIPLIER
+  //{0x3036, 0x0006}, // OP_WORD_CLK_DIV
+  //{0x3038, 0x0002}, // OP_SYS_CLK_DIV
+  //{0x31DC, 0x1FA0}, // VCO_DIV
 
   // FORMAT
   {0x3040, 0xC000}, // READ_MODE
-  {0x3004, 0x0000}, // X_ADDR_START_
-  {0x3008, 0x07D1}, // X_ADDR_END_
-  {0x3002, 0x0000}, // Y_ADDR_START_
-  {0x3006, 0x04AB}, // Y_ADDR_END_
+  {0x3004, 0x000A}, // X_ADDR_START_
+  {0x3008, 0x0809}, // X_ADDR_END_
+  {0x3002, 0x0004}, // Y_ADDR_START_
+  {0x3006, 0x0503}, // Y_ADDR_END_
   //{0x3032, 0x0000}, // SCALING_MODE
   {0x30A2, 0x0001}, // X_ODD_INC_
   {0x30A6, 0x0001}, // Y_ODD_INC_
@@ -27,14 +28,13 @@ struct i2c_random_wr_payload init_array_ar0231[] = {
   {0x30BA, 0x1122}, // DIGITAL_CTRL
 
   // SLAV* MODE
-  //{0x30CE, 0x0120},
-  //{0x340A, 0xE6}, // E6 // 0000 1110 0110
-  //{0x340C, 0x802}, // 2 // 0000 0000 0010
+  {0x340A, 0x00C0}, // GPIO_CONTROL1
+  {0x340C, 0x0002}, // GPIO_CONTROL2
 
   // Readout timing
-  {0x300C, 0x0730}, // LINE_LENGTH_PCK    // not sure
-  {0x300A, 0x0476}, // FRAME_LENGTH_LINES // not sure
-  {0x3042, 0x0000}, // EXTRA_DELAY
+  {0x300C, 1672}, // LINE_LENGTH_PCK    // not sure
+  {0x300A, 1346}, // FRAME_LENGTH_LINES // not sure
+  //{0x3042, 0x0000}, // EXTRA_DELAY
 
   // Readout Settings
   {0x31AE, 0x0204}, // SERIAL_FORMAT, 4-lane MIPI
@@ -47,9 +47,10 @@ struct i2c_random_wr_payload init_array_ar0231[] = {
   {0x3348, 0x0111}, // MIPI_F2_VDT_VC
   {0x334C, 0x0211}, // MIPI_F3_VDT_VC
   {0x3350, 0x0311}, // MIPI_F4_VDT_VC*/
-  {0x31B0, 0x0053}, // FRAME_PREAMBLE
-  {0x31B2, 0x003B}, // LINE_PREAMBLE
-  {0x301A, 0x001C}, // RESET_REGISTER
+  {0x31B0, 0x0033}, // FRAME_PREAMBLE
+  {0x31B2, 0x0020}, // LINE_PREAMBLE
+  //{0x31D0, 0x0000}, // COMPANDING
+  //{0x301A, 0x001C}, // RESET_REGISTER
 
   // Noise Corrections
   /*{0x3092, 0x0C24}, // ROW_NOISE_CONTROL
