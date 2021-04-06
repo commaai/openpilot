@@ -3,6 +3,12 @@
 #include "qt/window.hpp"
 #include "qt/qt_window.hpp"
 
+#include <QThread>
+
+#include "FrameReader.hpp"
+#include "replay/replay.hpp"
+#include "replay/Unlogger.hpp"
+
 int main(int argc, char *argv[]) {
   QSurfaceFormat fmt;
 #ifdef __APPLE__
@@ -22,5 +28,21 @@ int main(int argc, char *argv[]) {
   MainWindow w;
   setMainWindow(&w);
   a.installEventFilter(&w);
+
+// ========================
+  QString route(argv[1]);
+  route = route.replace("|", "/");
+  if (route == "") {
+    printf("usage %s: <route>\n", argv[0]);
+    exit(0);
+  }
+
+  int seek = QString(argv[2]).toInt();
+  int use_api = QString::compare(QString("use_api"), route, Qt::CaseInsensitive) == 0;
+
+	Replay *replay = new Replay(route, seek, use_api);
+	replay->use_api = replay->use_api;
+// ========================
+
   return a.exec();
 }
