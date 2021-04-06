@@ -716,10 +716,10 @@ static void camera_open(CameraState *s) {
   LOG("-- Configuring sensor");
   sensors_i2c(s, init_array_ar0231, sizeof(init_array_ar0231)/sizeof(struct i2c_random_wr_payload),
     CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
-  sensors_i2c(s, start_reg_array, sizeof(start_reg_array)/sizeof(struct i2c_random_wr_payload),
-    CAM_SENSOR_PACKET_OPCODE_SENSOR_STREAMON);
-  sensors_i2c(s, stop_reg_array, sizeof(stop_reg_array)/sizeof(struct i2c_random_wr_payload),
-    CAM_SENSOR_PACKET_OPCODE_SENSOR_STREAMOFF);
+  //sensors_i2c(s, start_reg_array, sizeof(start_reg_array)/sizeof(struct i2c_random_wr_payload),
+    //CAM_SENSOR_PACKET_OPCODE_SENSOR_STREAMON);
+  //sensors_i2c(s, stop_reg_array, sizeof(stop_reg_array)/sizeof(struct i2c_random_wr_payload),
+    //CAM_SENSOR_PACKET_OPCODE_SENSOR_STREAMOFF);
 
   // config csiphy
   LOG("-- Config CSI PHY");
@@ -1124,9 +1124,9 @@ void cameras_run(MultiCameraState *s) {
   // start devices
   LOG("-- Starting devices");
   int start_reg_len = sizeof(start_reg_array) / sizeof(struct i2c_random_wr_payload);
-  //sensors_i2c(&s->road_cam, start_reg_array, start_reg_len, CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
+  sensors_i2c(&s->road_cam, start_reg_array, start_reg_len, CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
   sensors_i2c(&s->wide_road_cam, start_reg_array, start_reg_len, CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
-  //sensors_i2c(&s->driver_cam, start_reg_array, start_reg_len, CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
+  sensors_i2c(&s->driver_cam, start_reg_array, start_reg_len, CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
 
   // poll events
   LOG("-- Dequeueing Video events");
@@ -1147,7 +1147,6 @@ void cameras_run(MultiCameraState *s) {
 
     struct v4l2_event ev = {0};
     ret = ioctl(fds[0].fd, VIDIOC_DQEVENT, &ev);
-    printf("Got event\n");
     if (ev.type == 0x8000000) {
       struct cam_req_mgr_message *event_data = (struct cam_req_mgr_message *)ev.u.data;
       // LOGD("v4l2 event: sess_hdl %d, link_hdl %d, frame_id %d, req_id %lld, timestamp 0x%llx, sof_status %d\n", event_data->session_hdl, event_data->u.frame_msg.link_hdl, event_data->u.frame_msg.frame_id, event_data->u.frame_msg.request_id, event_data->u.frame_msg.timestamp, event_data->u.frame_msg.sof_status);
