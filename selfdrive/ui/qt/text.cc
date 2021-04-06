@@ -1,5 +1,6 @@
 #include <QLabel>
 #include <QWidget>
+#include <QScrollBar>
 #include <QPushButton>
 #include <QVBoxLayout>
 #include <QApplication>
@@ -22,6 +23,11 @@ int main(int argc, char *argv[]) {
   ScrollView *scroll = new ScrollView(label);
   scroll->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
   layout->addWidget(scroll, 0, 0, Qt::AlignTop);
+
+  // Scroll to the bottom
+  QObject::connect(scroll->verticalScrollBar(), &QAbstractSlider::rangeChanged, [=](){
+    scroll->verticalScrollBar()->setValue(scroll->verticalScrollBar()->maximum());
+  });
 
   QPushButton *btn = new QPushButton();
 #ifdef __aarch64__
