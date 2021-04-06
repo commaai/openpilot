@@ -1,5 +1,4 @@
 from cereal import car
-from common.params import Params
 from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.volkswagen import volkswagencan
 from selfdrive.car.volkswagen.values import DBC, CANBUS, MQB_LDW_MESSAGES, BUTTON_STATES, CarControllerParams
@@ -18,8 +17,6 @@ class CarController():
     self.graMsgSentCount = 0
     self.graMsgStartFramePrev = 0
     self.graMsgBusCounterPrev = 0
-
-    self.use_lanelines = Params().get('EndToEndToggle') != b'1'
 
     self.steer_rate_limited = False
 
@@ -118,14 +115,12 @@ class CarController():
       else:
         hud_alert = MQB_LDW_MESSAGES["none"]
 
-      left_lane_visible = (left_lane_visible and not CS.out.standstill) if self.use_lanelines else True
-      right_lane_visible = (right_lane_visible and not CS.out.standstill) if self.use_lanelines else True
 
       can_sends.append(volkswagencan.create_mqb_hud_control(self.packer_pt, CANBUS.pt, enabled,
                                                             CS.out.steeringPressed, hud_alert, left_lane_visible,
                                                             right_lane_visible, CS.ldw_lane_warning_left,
                                                             CS.ldw_lane_warning_right, CS.ldw_side_dlc_tlc,
-                                                            CS.ldw_dlc, CS.ldw_tlc,
+                                                            CS.ldw_dlc, CS.ldw_tlc, CS.out.standstill,
                                                             left_lane_depart, right_lane_depart))
 
     #--------------------------------------------------------------------------
