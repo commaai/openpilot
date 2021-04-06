@@ -383,9 +383,7 @@ int main(int argc, char** argv) {
         new_segment = true;
         for (auto &r : s.rotate_state) {
           // this *should* be redundant on tici since all camera frames are synced
-          new_segment &= (((r.segment_frame_cnt >= SEGMENT_LENGTH * MAIN_FPS) &&
-                          (!r.should_rotate)) ||
-                          (!r.enabled));
+          new_segment &= (r.segment_frame_cnt >= SEGMENT_LENGTH * MAIN_FPS && !r.should_rotate) || !r.enabled;
 #ifndef QCOM2
           break; // only look at fcamera frame id if not QCOM2
 #endif
