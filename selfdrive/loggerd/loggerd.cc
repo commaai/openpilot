@@ -128,7 +128,8 @@ private:
 class RotateState {
 public:
   SocketState* fpkt_sock;
-  uint32_t stream_frame_id, last_rotate_frame_id;
+  uint32_t stream_frame_id;
+  std::atomic<uint32_t> last_rotate_frame_id;
   bool enabled, should_rotate, initialized;
   std::atomic<bool> rotating;
   std::atomic<int> cur_seg;
@@ -136,33 +137,16 @@ public:
   RotateState() : fpkt_sock(nullptr), stream_frame_id(0),
                   last_rotate_frame_id(UINT32_MAX), enabled(false), should_rotate(false), initialized(false), rotating(false), cur_seg(-1) {};
 
-  void cancelWait() {
-    cv.notify_one();
-  }
-
-  void setStreamFrameId(uint32_t frame_id) {
-    fid_lock.lock();
-    stream_frame_id = frame_id;
-    fid_lock.unlock();
-    cv.notify_one();
-  }
-
   void rotate() {
     if (enabled) {
-      std::unique_lock<std::mutex> lk(fid_lock);
       should_rotate = true;
       last_rotate_frame_id = stream_frame_id;
     }
   }
 
   void finish_rotate() {
-    std::unique_lock<std::mutex> lk(fid_lock);
     should_rotate = false;
   }
-
-private:
-  std::mutex fid_lock;
-  std::condition_variable cv;
 };
 
 struct LoggerdState {
@@ -267,7 +251,7 @@ void encoder_thread(int cam_idx) {
         }
       }
 
-      rotate_state.setStreamFrameId(extra.frame_id);
+      rotate_state.stream_frame_id = extra.frame_id;
 
       // log frame socket
       rotate_state.fpkt_sock->log(lh);
@@ -436,7 +420,6 @@ int main(int argc, char** argv) {
   }
 
   LOGW("closing encoders");
-  for (auto &r : s.rotate_state) r.cancelWait();
   for (auto &t : encoder_threads) t.join();
 
   LOGW("closing logger");
