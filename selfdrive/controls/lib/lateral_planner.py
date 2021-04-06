@@ -92,6 +92,7 @@ class LateralPlanner():
     self.LP.parse_model(sm['modelV2'])
     if len(md.position.x) == TRAJECTORY_SIZE and len(md.orientation.x) == TRAJECTORY_SIZE:
       self.path_xyz = np.column_stack([md.position.x, md.position.y, md.position.z])
+      self.path_xyz_stds = np.column_stack([md.position.xStd, md.position.yStd, md.position.zStd])
       self.t_idxs = np.array(md.position.t)
       self.plan_yaw = list(md.orientation.z)
 
@@ -161,8 +162,10 @@ class LateralPlanner():
       self.LP.lll_prob *= self.lane_change_ll_prob
       self.LP.rll_prob *= self.lane_change_ll_prob
     if self.use_lanelines:
+      std_cost_mult = np.clip(abs(self.path_xyz[0,1]/self.path_xyz_stds[0,1]), 0.5, 5.0)
       d_path_xyz = self.LP.get_d_path(v_ego, self.t_idxs, self.path_xyz)
     else:
+      std_cost_mult = 1.0
       d_path_xyz = self.path_xyz
     y_pts = np.interp(v_ego * self.t_idxs[:MPC_N + 1], np.linalg.norm(d_path_xyz, axis=1), d_path_xyz[:,1])
     heading_pts = np.interp(v_ego * self.t_idxs[:MPC_N + 1], np.linalg.norm(self.path_xyz, axis=1), self.plan_yaw)
@@ -170,7 +173,7 @@ class LateralPlanner():
 
     assert len(y_pts) == MPC_N + 1
     assert len(heading_pts) == MPC_N + 1
-    self.libmpc.set_weights(MPC_COST_LAT.PATH, 0.0, CP.steerRateCost)
+    self.libmpc.set_weights(std_cost_mult*MPC_COST_LAT.PATH, 0.0, CP.steerRateCost)
     self.libmpc.run_mpc(self.cur_state, self.mpc_solution,
                         float(v_ego),
                         CAR_ROTATION_RADIUS,
