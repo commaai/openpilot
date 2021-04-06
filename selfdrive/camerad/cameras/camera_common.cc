@@ -353,7 +353,8 @@ std::thread start_process_thread(MultiCameraState *cameras, CameraState *cs, pro
   return std::thread(processing_thread, cameras, cs, callback);
 }
 
-static void driver_cam_auto_exposure(CameraState *c, SubMaster &sm) {
+static void driver_cam_auto_exposure(CameraState *c) {
+  static SubMaster sm({"driverState"});
   static const bool is_rhd = Params().getBool("IsRHD");
   struct ExpRect {int x1, x2, x_skip, y1, y2, y_skip;};
   const CameraBuf *b = &c->buf;
@@ -374,7 +375,7 @@ static void driver_cam_auto_exposure(CameraState *c, SubMaster &sm) {
 
   static ExpRect rect = def_rect;
   // use driver face crop for AE
-  if (sm.updated("driverState")) {
+  if (sm.update(0) > 0 && sm.updated("driverState")) {
     if (auto state = sm["driverState"].getDriverState(); state.getFaceProb() > 0.4) {
       auto face_position = state.getFacePosition();
       int x = is_rhd ? 0 : frame_width - (0.5 * frame_height);
@@ -391,9 +392,8 @@ static void driver_cam_auto_exposure(CameraState *c, SubMaster &sm) {
 }
 
 void common_process_driver_camera(MultiCameraState *cameras, CameraState *c, PubMaster &pm, int cnt) {
-  static SubMaster sm({"driverState"});
   if (cnt % 3 == 0) {
-    driver_cam_auto_exposure(c, sm);
+    driver_cam_auto_exposure(c);
   }
   MessageBuilder msg;
   auto framed = msg.initEvent().initDriverCameraState();
