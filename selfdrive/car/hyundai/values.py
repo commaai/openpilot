@@ -203,6 +203,7 @@ FW_VERSIONS = {
       b'\xf1\x00DN89110-L0000         \xaa\xaa\xaa\xaa\xaa\xaa\xaa     \xf1\xa01.00\xaa\xaa\xaa\xaa\xaa\xaa\xaa\x00\x00\x00',
       b'\xf1\x00DN8 1.00 99110-L0000         \xaa\xaa\xaa\xaa\xaa\xaa\xaa     \xf1\xa01.00\xaa\xaa\xaa',
       b'\xf1\xa01.00',
+      b'\xf1\000DN8_ SCC F-CUP      1.00 1.00 99110-L0000         ',
     ],
     (Ecu.esp, 0x7d1, None): [
       b'\xf1\x00DN ESC \x01 102\x19\x04\x13 58910-L1300\xf1\xa01.02',
@@ -212,6 +213,7 @@ FW_VERSIONS = {
       b'\xf1\x8758910-L0100\xf1\x00DN ESC \a 106 \a\x01 58910-L0100\xf1\xa01.06',
       b'\xf1\x00DN ESC \a 106 \a\x01 58910-L0100',
       b'\xf1\x00DN ESC \x07 104\x19\x08\x01 58910-L0100',
+      b'\xf1\x8758910-L0100\xf1\000DN ESC \a 106 \a\001 58910-L0100\xf1\xa01.06',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'HM6M2_0a0_BD0',
@@ -219,6 +221,7 @@ FW_VERSIONS = {
       b'\xf1\x87391162M003\xf1\xa00240',
       b'HM6M1_0a0_F00',
       b'\xf1\x81HM6M1_0a0_F00',
+      b'\xf1\x82DNCVN5GMCCXXXF0A',
     ],
     (Ecu.eps, 0x7d4, None): [
       b'\xf1\x8756310-L1010\xf1\x00DN8 MDPS C 1.00 1.03 56310-L1010 4DNDC103\xf1\xa01.03',
@@ -227,17 +230,20 @@ FW_VERSIONS = {
       b'\xf1\x87\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xf1\x00DN8 MDPS C 1.00 1.01 \x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 4DNAC101\xf1\xa01.01',
       b'\xf1\x00DN8 MDPS C 1.00 1.01 56310L0010\x00 4DNAC101',
       b'\xf1\x00DN8 MDPS C 1.00 1.01 \x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 4DNAC101',
+      b'\xf1\x8756310L0010\000\xf1\000DN8 MDPS C 1.00 1.01 56310L0010\000 4DNAC101\xf1\xa01.01',
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00DN8 MFC  AT KOR LHD 1.00 1.02 99211-L1000 190422',
       b'\xf1\x00DN8 MFC  AT USA LHD 1.00 1.00 99211-L0000 190716',
       b'\xf1\x00DN8 MFC  AT USA LHD 1.00 1.01 99211-L0000 191016',
+      b'\xf1\000DN8 MFC  AT USA LHD 1.00 1.01 99211-L0000 191016',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x00HT6TA260BLHT6TA800A1TDN8C20KS4\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'\xf1\x00bcsh8p54  U903\x00\x00\x00\x00\x00\x00SDN8T16NB0z{\xd4v',
       b'\xf1\x00HT6WA250BLHT6WA910A1SDN8G25NB1\x00\x00\x00\x00\x00\x00\x96\xa1\xf1\x92',
       b'\xf1\x00HT6WA250BLHT6WA910A1SDN8G25NB1\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'\xf1\x87SALDBA7077724GJ3\x98\x88\x88\x88ww\x97ygwvwww\x87ww\x88\x87x\x87_\xfd\xff\xba\x99o\xff\x99\001\xf1\x89HT6WA910A1\xf1\x82SDN8G25NB1\000\000\000\000\000\000',
     ],
   },
   CAR.SONATA_LF: {
