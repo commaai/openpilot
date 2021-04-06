@@ -129,8 +129,8 @@ class RotateState {
 public:
   SocketState* fpkt_sock;
   std::atomic<uint32_t> segment_frame_cnt;
-  bool enabled, should_rotate, initialized;
-  std::atomic<bool> rotating;
+  bool enabled, initialized;
+  std::atomic<bool> rotating, should_rotate;
   std::atomic<int> cur_seg;
 
   RotateState() : fpkt_sock(nullptr), segment_frame_cnt(0), enabled(false),
