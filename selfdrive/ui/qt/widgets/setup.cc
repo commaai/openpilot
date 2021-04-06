@@ -103,7 +103,6 @@ PrimeUserWidget::PrimeUserWidget(QWidget* parent) : QWidget(parent) {
     return;
   }
 
-  // TODO: only send the request when widget is shown
   QString url = "https://api.commadotai.com/v1/devices/" + dongleId + "/owner";
   RequestRepeater* repeater = new RequestRepeater(this, url, 6, "ApiCache_Owner");
   QObject::connect(repeater, SIGNAL(receivedResponse(QString)), this, SLOT(replyFinished(QString)));
@@ -190,7 +189,7 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
 
   QVBoxLayout* qrLayout = new QVBoxLayout;
 
-  qrLayout->addSpacing(40);
+  qrLayout->addSpacing(30);
   QLabel* qrLabel = new QLabel("Scan with comma connect!");
   qrLabel->setWordWrap(true);
   qrLabel->setAlignment(Qt::AlignHCenter);
