@@ -72,10 +72,6 @@ QString CommaApi::create_jwt(QVector<QPair<QString, QJsonValue>> payloads, int e
   return jwt;
 }
 
-QString CommaApi::create_jwt() {
-  return create_jwt(*(new QVector<QPair<QString, QJsonValue>>()));
-}
-
 RequestRepeater::RequestRepeater(QWidget* parent, QString requestURL, int period_seconds, const QString &cache_key, bool disableWithScreen)
   : disableWithScreen(disableWithScreen), cache_key(cache_key), QObject(parent)  {
   networkAccessManager = new QNetworkAccessManager(this);
@@ -104,7 +100,7 @@ void RequestRepeater::sendRequest(QString requestURL){
     return;
   }
 
-  QString token = CommaApi::create_jwt({});
+  QString token = CommaApi::create_jwt();
   QNetworkRequest request;
   request.setUrl(QUrl(requestURL));
   request.setRawHeader(QByteArray("Authorization"), ("JWT " + token).toUtf8());
