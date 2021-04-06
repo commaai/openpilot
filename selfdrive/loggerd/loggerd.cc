@@ -128,19 +128,18 @@ private:
 class RotateState {
 public:
   SocketState* fpkt_sock;
-  uint32_t stream_frame_id;
-  std::atomic<uint32_t> last_rotate_frame_id;
+  std::atomic<uint32_t> segment_frame_cnt;
   bool enabled, should_rotate, initialized;
   std::atomic<bool> rotating;
   std::atomic<int> cur_seg;
 
-  RotateState() : fpkt_sock(nullptr), stream_frame_id(0),
-                  last_rotate_frame_id(UINT32_MAX), enabled(false), should_rotate(false), initialized(false), rotating(false), cur_seg(-1) {};
+  RotateState() : fpkt_sock(nullptr), segment_frame_cnt(0), enabled(false),
+         should_rotate(false), initialized(false), rotating(false), cur_seg(-1) { };
 
   void rotate() {
     if (enabled) {
       should_rotate = true;
-      last_rotate_frame_id = stream_frame_id;
+      segment_frame_cnt = 0;
     }
   }
 
@@ -217,11 +216,6 @@ void encoder_thread(int cam_idx) {
         if (rotate_state.should_rotate) {
           LOGW("camera %d rotate encoder to %s", cam_idx, s.segment_path);
 
-          if (!rotate_state.initialized) {
-            rotate_state.last_rotate_frame_id = extra.frame_id - 1;
-            rotate_state.initialized = true;
-          }
-
           // get new logger handle for new segment
           if (lh) {
             lh_close(lh);
@@ -251,7 +245,7 @@ void encoder_thread(int cam_idx) {
         }
       }
 
-      rotate_state.stream_frame_id = extra.frame_id;
+      ++rotate_state.segment_frame_cnt;
 
       // log frame socket
       rotate_state.fpkt_sock->log(lh);
@@ -389,8 +383,8 @@ int main(int argc, char** argv) {
         new_segment = true;
         for (auto &r : s.rotate_state) {
           // this *should* be redundant on tici since all camera frames are synced
-          new_segment &= (((r.stream_frame_id >= r.last_rotate_frame_id + SEGMENT_LENGTH * MAIN_FPS) &&
-                          (!r.should_rotate) && (r.initialized)) ||
+          new_segment &= (((r.segment_frame_cnt >= SEGMENT_LENGTH * MAIN_FPS) &&
+                          (!r.should_rotate)) ||
                           (!r.enabled));
 #ifndef QCOM2
           break; // only look at fcamera frame id if not QCOM2
