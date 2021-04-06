@@ -127,24 +127,15 @@ private:
 
 class RotateState {
 public:
-  SocketState* fpkt_sock;
-  std::atomic<uint32_t> segment_frame_cnt;
-  bool enabled, initialized;
-  std::atomic<bool> rotating, should_rotate;
-  std::atomic<int> cur_seg;
-
-  RotateState() : fpkt_sock(nullptr), segment_frame_cnt(0), enabled(false),
-         should_rotate(false), initialized(false), rotating(false), cur_seg(-1) { };
+  SocketState *fpkt_sock = nullptr;
+  std::atomic<uint32_t> segment_frame_cnt = 0;
+  bool enabled = false, initialized = false;
+  std::atomic<bool> rotating = false, should_rotate = false;
+  std::atomic<int> cur_seg = -1;
 
   void rotate() {
-    if (enabled) {
-      should_rotate = true;
-      segment_frame_cnt = 0;
-    }
-  }
-
-  void finish_rotate() {
-    should_rotate = false;
+    should_rotate = true;
+    segment_frame_cnt = 0;
   }
 };
 
@@ -241,7 +232,7 @@ void encoder_thread(int cam_idx) {
              while(r.enabled && r.cur_seg != s.rotate_segment && !do_exit) util::sleep_for(5);
           }
           rotate_state.rotating = false;
-          rotate_state.finish_rotate();
+          rotate_state.should_rotate = false;
         }
       }
 
