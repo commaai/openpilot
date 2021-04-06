@@ -146,15 +146,15 @@ class CarInterface(CarInterfaceBase):
     elif candidate == CAR.KIA_SELTOS:
       ret.mass = 1337. + STD_CARGO_KG
       ret.wheelbase = 2.63
-      ret.steerRatio = 14.4
-      tire_stiffness_factor = 0.5
+      ret.steerRatio = 14.56
+      tire_stiffness_factor = 1
       ret.steerActuatorDelay = 0.096
       
       ret.lateralTuning.init('indi')
       ret.lateralTuning.indi.innerLoopGainBP = [0.]
       ret.lateralTuning.indi.innerLoopGainV = [4.]
       ret.lateralTuning.indi.outerLoopGainBP = [0.]
-      ret.lateralTuning.indi.outerLoopGainV = [3.05]
+      ret.lateralTuning.indi.outerLoopGainV = [3.]
       ret.lateralTuning.indi.timeConstantBP = [0.]
       ret.lateralTuning.indi.timeConstantV = [1.4]
       ret.lateralTuning.indi.actuatorEffectivenessBP = [0.]
