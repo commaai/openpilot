@@ -63,6 +63,7 @@ class LateralPlanner():
     self.desire = log.LateralPlan.Desire.none
 
     self.path_xyz = np.zeros((TRAJECTORY_SIZE,3))
+    self.path_xyz_stds = np.zeros((TRAJECTORY_SIZE,3))
     self.plan_yaw = np.zeros((TRAJECTORY_SIZE,))
     self.t_idxs = np.arange(TRAJECTORY_SIZE)
     self.y_pts = np.zeros(TRAJECTORY_SIZE)
@@ -92,9 +93,10 @@ class LateralPlanner():
     self.LP.parse_model(sm['modelV2'])
     if len(md.position.x) == TRAJECTORY_SIZE and len(md.orientation.x) == TRAJECTORY_SIZE:
       self.path_xyz = np.column_stack([md.position.x, md.position.y, md.position.z])
-      self.path_xyz_stds = np.column_stack([md.position.xStd, md.position.yStd, md.position.zStd])
       self.t_idxs = np.array(md.position.t)
       self.plan_yaw = list(md.orientation.z)
+    if len(md.orientation.xStd) == TRAJECTORY_SIZE:
+      self.path_xyz_stds = np.column_stack([md.position.xStd, md.position.yStd, md.position.zStd])
 
     # Lane change logic
     one_blinker = sm['carState'].leftBlinker != sm['carState'].rightBlinker
