@@ -731,6 +731,7 @@ FW_VERSIONS = {
     (Ecu.gateway, 0x18daeff1, None): [
       b'38897-TMA-H110\x00\x00',
       b'38897-TPG-A110\x00\x00',
+      b'38897-TPG-A210\x00\x00',
     ],
     (Ecu.shiftByWire, 0x18da0bf1, None): [
       b'54008-TMB-H510\x00\x00',
@@ -757,6 +758,7 @@ FW_VERSIONS = {
     (Ecu.srs, 0x18da53f1, None): [
       b'77959-TLA-G220\x00\x00',
       b'77959-TLA-C320\x00\x00',
+      b'77959-TLA-C420\x00\x00',
       b'77959-TLA-H240\x00\x00',
     ],
   },
