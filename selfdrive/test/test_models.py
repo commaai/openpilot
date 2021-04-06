@@ -9,7 +9,7 @@ from parameterized import parameterized_class
 from cereal import log, car
 from selfdrive.car.fingerprints import all_known_cars
 from selfdrive.car.car_helpers import interfaces
-from selfdrive.test.test_car_models import routes, non_tested_cars
+from selfdrive.test.test_routes import routes, non_tested_cars
 from selfdrive.test.openpilotci import get_url
 from tools.lib.logreader import LogReader
 

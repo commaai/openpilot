@@ -100,6 +100,7 @@ OffroadHome::OffroadHome(QWidget* parent) : QWidget(parent) {
   center_layout = new QStackedLayout();
 
   QHBoxLayout* statsAndSetup = new QHBoxLayout();
+  statsAndSetup->setMargin(0);
 
   DriveStats* drive = new DriveStats;
   drive->setFixedSize(800, 800);

@@ -9,6 +9,6 @@ assignees: ''
 **Checklist**
 
 - [ ] added to README
-- [ ] test route added to [test_car_models](../../selfdrive/test/test_car_models.py)
+- [ ] test route added to [test_routes.py](../../selfdrive/test/test_routes.py)
 - [ ] route with openpilot:
 - [ ] route with stock system:

@@ -10,12 +10,14 @@
 #include "widgets/input.hpp"
 #include "widgets/toggle.hpp"
 #include "widgets/offroad_alerts.hpp"
+#include "widgets/scrollview.hpp"
 #include "widgets/controls.hpp"
 #include "widgets/ssh_keys.hpp"
 #include "common/params.h"
 #include "common/util.h"
 #include "selfdrive/hardware/hw.h"
 #include "home.hpp"
+
 
 QWidget * toggles_panel() {
   QVBoxLayout *toggles_list = new QVBoxLayout();
@@ -91,12 +93,34 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
                                       GLWindow::ui_state.scene.driver_view = true; }
                                     ));
 
-  offroad_btns.append(new ButtonControl("Reset Calibration", "RESET",
-                                   "openpilot requires the device to be mounted within 4° left or right and within 5° up or down. openpilot is continuously calibrating, resetting is rarely required.", [=]() {
+  QString resetCalibDesc = "openpilot requires the device to be mounted within 4° left or right and within 5° up or down. openpilot is continuously calibrating, resetting is rarely required.";
+  ButtonControl *resetCalibBtn = new ButtonControl("Reset Calibration", "RESET", resetCalibDesc, [=]() {
     if (ConfirmationDialog::confirm("Are you sure you want to reset calibration?")) {
       Params().remove("CalibrationParams");
     }
-  }));
+  });
+  connect(resetCalibBtn, &ButtonControl::showDescription, [=]() {
+    QString desc = resetCalibDesc;
+    std::string calib_bytes = Params().get("CalibrationParams");
+    if (!calib_bytes.empty()) {
+      try {
+        AlignedBuffer aligned_buf;
+        capnp::FlatArrayMessageReader cmsg(aligned_buf.align(calib_bytes.data(), calib_bytes.size()));
+        auto calib = cmsg.getRoot<cereal::Event>().getLiveCalibration();
+        if (calib.getCalStatus() != 0) {
+          double pitch = calib.getRpyCalib()[1] * (180 / M_PI);
+          double yaw = calib.getRpyCalib()[2] * (180 / M_PI);
+          desc += QString(" Your device is pointed %1° %2 and %3° %4.")
+                                .arg(QString::number(std::abs(pitch), 'g', 1), pitch > 0 ? "up" : "down",
+                                     QString::number(std::abs(yaw), 'g', 1), yaw > 0 ? "right" : "left");
+        }
+      } catch (kj::Exception) {
+        qInfo() << "invalid CalibrationParams";
+      }
+    }
+    resetCalibBtn->setDescription(desc);
+  });
+  offroad_btns.append(resetCalibBtn);
 
   offroad_btns.append(new ButtonControl("Review Training Guide", "REVIEW",
                                         "Review the rules, features, and limitations of openpilot", [=]() {
@@ -273,21 +297,8 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
     sidebar_layout->addWidget(btn, 0, Qt::AlignRight);
 
     panel->setContentsMargins(50, 25, 50, 25);
-    QScrollArea *panel_frame = new QScrollArea;
-    panel_frame->setWidget(panel);
-    panel_frame->setWidgetResizable(true);
-    panel_frame->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    panel_frame->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    panel_frame->setStyleSheet("background-color:transparent;");
 
-    QScroller *scroller = QScroller::scroller(panel_frame->viewport());
-    auto sp = scroller->scrollerProperties();
-
-    sp.setScrollMetric(QScrollerProperties::VerticalOvershootPolicy, QVariant::fromValue<QScrollerProperties::OvershootPolicy>(QScrollerProperties::OvershootAlwaysOff));
-
-    scroller->grabGesture(panel_frame->viewport(), QScroller::LeftMouseButtonGesture);
-    scroller->setScrollerProperties(sp);
-
+    ScrollView *panel_frame = new ScrollView(panel, this);
     panel_widget->addWidget(panel_frame);
 
     QObject::connect(btn, &QPushButton::released, [=, w = panel_frame]() {
