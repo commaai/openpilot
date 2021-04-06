@@ -19,12 +19,16 @@
 #pragma clang diagnostic pop
 
 
-extern ExitHandler do_exit;
+// id of the video capturing device
+const int ROAD_CAMERA_ID = getenv("ROADCAM_ID") ? atoi(getenv("ROADCAM_ID")) : 1;
+const int DRIVER_CAMERA_ID = getenv("DRIVERCAM_ID") ? atoi(getenv("DRIVERCAM_ID")) : 2;
 
 #define FRAME_WIDTH  1164
 #define FRAME_HEIGHT 874
 #define FRAME_WIDTH_FRONT  1152
 #define FRAME_HEIGHT_FRONT 864
+
+extern ExitHandler do_exit;
 
 namespace {
 
@@ -48,6 +52,7 @@ CameraInfo cameras_supported[CAMERA_ID_MAX] = {
 };
 
 void camera_open(CameraState *s, bool rear) {
+  // empty
 }
 
 void camera_close(CameraState *s) {
@@ -64,23 +69,42 @@ void camera_init(VisionIpcServer * v, CameraState *s, int camera_id, unsigned in
   s->buf.init(device_id, ctx, s, v, FRAME_BUF_COUNT, rgb_type, yuv_type);
 }
 
-static void* road_camera_thread(void *arg) {
-  int err;
+void run_camera(CameraState *s, cv::VideoCapture &video_cap, float *ts) {
+  assert(video_cap.isOpened());
 
+  cv::Size size(s->ci.frame_width, s->ci.frame_height);
+  const cv::Mat transform = cv::Mat(3, 3, CV_32F, ts);
+  uint32_t frame_id = 0;
+  size_t buf_idx = 0;
+
+  while (!do_exit) {
+    cv::Mat frame_mat, transformed_mat;
+    video_cap >> frame_mat;
+    cv::warpPerspective(frame_mat, transformed_mat, transform, size, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 0);
+
+    s->buf.camera_bufs_metadata[buf_idx] = {.frame_id = frame_id};
+
+    auto &buf = s->buf.camera_bufs[buf_idx];
+    int transformed_size = transformed_mat.total() * transformed_mat.elemSize();
+    CL_CHECK(clEnqueueWriteBuffer(buf.copy_q, buf.buf_cl, CL_TRUE, 0, transformed_size, transformed_mat.data, 0, NULL, NULL));
+
+    s->buf.queue(buf_idx);
+
+    ++frame_id;
+    buf_idx = (buf_idx + 1) % FRAME_BUF_COUNT;
+  }
+}
+
+static void road_camera_thread(CameraState *s) {
   set_thread_name("webcam_road_camera_thread");
-  CameraState *s = (CameraState*)arg;
 
-  cv::VideoCapture cap_road(1); // road
+  cv::VideoCapture cap_road(ROAD_CAMERA_ID, cv::CAP_V4L2); // road
   cap_road.set(cv::CAP_PROP_FRAME_WIDTH, 853);
   cap_road.set(cv::CAP_PROP_FRAME_HEIGHT, 480);
   cap_road.set(cv::CAP_PROP_FPS, s->fps);
   cap_road.set(cv::CAP_PROP_AUTOFOCUS, 0); // off
   cap_road.set(cv::CAP_PROP_FOCUS, 0); // 0 - 255?
   // cv::Rect roi_rear(160, 0, 960, 720);
-
-  cv::Size size;
-  size.height = s->ci.frame_height;
-  size.width = s->ci.frame_width;
 
   // transforms calculation see tools/webcam/warp_vis.py
   float ts[9] = {1.50330396, 0.0, -59.40969163,
@@ -90,73 +114,16 @@ static void* road_camera_thread(void *arg) {
   // float ts[9] = {-1.50330396, 0.0, 1223.4,
   //                 0.0, -1.50330396, 797.8,
   //                 0.0, 0.0, 1.0};
-  const cv::Mat transform = cv::Mat(3, 3, CV_32F, ts);
 
-  if (!cap_road.isOpened()) {
-    err = 1;
-  }
-
-  uint32_t frame_id = 0;
-  size_t buf_idx = 0;
-  while (!do_exit) {
-    cv::Mat frame_mat;
-    cv::Mat transformed_mat;
-
-    cap_road >> frame_mat;
-
-    // int rows = frame_mat.rows;
-    // int cols = frame_mat.cols;
-    // printf("Raw Rear, R=%d, C=%d\n", rows, cols);
-
-    cv::warpPerspective(frame_mat, transformed_mat, transform, size, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 0);
-
-    int transformed_size = transformed_mat.total() * transformed_mat.elemSize();
-
-    s->buf.camera_bufs_metadata[buf_idx] = {
-      .frame_id = frame_id,
-    };
-
-    cl_command_queue q = s->buf.camera_bufs[buf_idx].copy_q;
-    cl_mem yuv_cl = s->buf.camera_bufs[buf_idx].buf_cl;
-
-    cl_event map_event;
-    void *yuv_buf = (void *)CL_CHECK_ERR(clEnqueueMapBuffer(q, yuv_cl, CL_TRUE,
-                                                CL_MAP_WRITE, 0, transformed_size,
-                                                0, NULL, &map_event, &err));
-    clWaitForEvents(1, &map_event);
-    clReleaseEvent(map_event);
-    memcpy(yuv_buf, transformed_mat.data, transformed_size);
-
-    CL_CHECK(clEnqueueUnmapMemObject(q, yuv_cl, yuv_buf, 0, NULL, &map_event));
-    clWaitForEvents(1, &map_event);
-    clReleaseEvent(map_event);
-
-    s->buf.queue(buf_idx);
-
-    frame_id += 1;
-    frame_mat.release();
-    transformed_mat.release();
-
-
-    buf_idx = (buf_idx + 1) % FRAME_BUF_COUNT;
-  }
-
-  cap_road.release();
-  return NULL;
+  run_camera(s, cap_road, ts);
 }
 
 void driver_camera_thread(CameraState *s) {
-  int err;
-
-  cv::VideoCapture cap_driver(2); // driver
+  cv::VideoCapture cap_driver(DRIVER_CAMERA_ID, cv::CAP_V4L2); // driver
   cap_driver.set(cv::CAP_PROP_FRAME_WIDTH, 853);
   cap_driver.set(cv::CAP_PROP_FRAME_HEIGHT, 480);
   cap_driver.set(cv::CAP_PROP_FPS, s->fps);
   // cv::Rect roi_front(320, 0, 960, 720);
-
-  cv::Size size;
-  size.height = s->ci.frame_height;
-  size.width = s->ci.frame_width;
 
   // transforms calculation see tools/webcam/warp_vis.py
   float ts[9] = {1.42070485, 0.0, -30.16740088,
@@ -166,58 +133,7 @@ void driver_camera_thread(CameraState *s) {
   // float ts[9] = {-1.42070485, 0.0, 1182.2,
   //                 0.0, -1.42070485, 773.0,
   //                 0.0, 0.0, 1.0};
-  const cv::Mat transform = cv::Mat(3, 3, CV_32F, ts);
-
-  if (!cap_driver.isOpened()) {
-    err = 1;
-  }
-
-  uint32_t frame_id = 0;
-  size_t buf_idx = 0;
-
-  while (!do_exit) {
-    cv::Mat frame_mat;
-    cv::Mat transformed_mat;
-
-    cap_driver >> frame_mat;
-
-    // int rows = frame_mat.rows;
-    // int cols = frame_mat.cols;
-    // printf("Raw Front, R=%d, C=%d\n", rows, cols);
-
-    cv::warpPerspective(frame_mat, transformed_mat, transform, size, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 0);
-
-    int transformed_size = transformed_mat.total() * transformed_mat.elemSize();
-
-    s->buf.camera_bufs_metadata[buf_idx] = {
-      .frame_id = frame_id,
-    };
-
-    cl_command_queue q = s->buf.camera_bufs[buf_idx].copy_q;
-    cl_mem yuv_cl = s->buf.camera_bufs[buf_idx].buf_cl;
-    cl_event map_event;
-    void *yuv_buf = (void *)CL_CHECK_ERR(clEnqueueMapBuffer(q, yuv_cl, CL_TRUE,
-                                                CL_MAP_WRITE, 0, transformed_size,
-                                                0, NULL, &map_event, &err));
-    clWaitForEvents(1, &map_event);
-    clReleaseEvent(map_event);
-    memcpy(yuv_buf, transformed_mat.data, transformed_size);
-
-    CL_CHECK(clEnqueueUnmapMemObject(q, yuv_cl, yuv_buf, 0, NULL, &map_event));
-    clWaitForEvents(1, &map_event);
-    clReleaseEvent(map_event);
-
-    s->buf.queue(buf_idx);
-
-    frame_id += 1;
-    frame_mat.release();
-    transformed_mat.release();
-
-    buf_idx = (buf_idx + 1) % FRAME_BUF_COUNT;
-  }
-
-  cap_driver.release();
-  return;
+  run_camera(s, cap_driver, ts);
 }
 
 }  // namespace
@@ -235,7 +151,6 @@ void camera_autoexposure(CameraState *s, float grey_frac) {}
 void cameras_open(MultiCameraState *s) {
   // LOG("*** open driver camera ***");
   camera_open(&s->driver_cam, false);
-
   // LOG("*** open road camera ***");
   camera_open(&s->road_cam, true);
 }
