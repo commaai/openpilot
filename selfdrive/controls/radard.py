@@ -188,7 +188,7 @@ def radard_thread(sm=None, pm=None, can_sock=None):
   if can_sock is None:
     can_sock = messaging.sub_sock('can')
   if sm is None:
-    sm = messaging.SubMaster(['modelV2', 'carState'])
+    sm = messaging.SubMaster(['modelV2', 'carState'], check_average_freq=False)  # Can't check average frequency, since radar is slower than carState
   if pm is None:
     pm = messaging.PubMaster(['radarState', 'liveTracks'])
 
