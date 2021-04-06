@@ -12,7 +12,6 @@ if __name__ == '__main__':  # Generating sympy
   from rednose.helpers.ekf_sym_gen import gen_code
 else:
   from rednose.helpers.ekf_sym_pyx import EKF_sym  # pylint: disable=no-name-in-module
-  from rednose.helpers.ekf_sym_py import EKF_sym as EKF_sym2
 
 EARTH_GM = 3.986005e14  # m^3/s^2 (gravitational constant * mass of earth)
 
@@ -212,22 +211,17 @@ class LiveKalman():
 
     # init filter
     self.filter = EKF_sym(generated_dir, self.name, self.Q, self.initial_x, np.diag(self.initial_P_diag), self.dim_state, self.dim_state_err, max_rewind_age=0.2, logger=cloudlog)
-    self.filter2 = EKF_sym2(generated_dir, self.name, self.Q, self.initial_x, np.diag(self.initial_P_diag), self.dim_state, self.dim_state_err, max_rewind_age=0.2, logger=cloudlog)
 
   @property
   def x(self):
-    assert(self.filter.get_state().shape == self.filter2.get_state().shape)
-    assert(np.allclose(self.filter.get_state(), self.filter2.get_state()))
     return self.filter.get_state()
 
   @property
   def t(self):
-    assert(np.allclose(self.filter.get_filter_time(), self.filter2.get_filter_time()))
     return self.filter.get_filter_time()
 
   @property
   def P(self):
-    assert(np.allclose(self.filter.get_covs(), self.filter2.get_covs()))
     return self.filter.get_covs()
 
   def rts_smooth(self, estimates):
@@ -241,7 +235,6 @@ class LiveKalman():
     else:
       P = self.P
     self.filter.init_state(state, P, filter_time)
-    self.filter2.init_state(state, P, filter_time)
 
   def predict_and_observe(self, t, kind, meas, R=None):
     if len(meas) > 0:
@@ -258,10 +251,8 @@ class LiveKalman():
       elif len(R.shape) == 2:
         R = R[None]
       r = self.filter.predict_and_update_batch(t, kind, meas, R)
-      self.filter2.predict_and_update_batch(t, kind, meas, R)
 
     self.filter.normalize_state(States.ECEF_ORIENTATION.start, States.ECEF_ORIENTATION.stop)
-    self.filter2.normalize_state(States.ECEF_ORIENTATION.start, States.ECEF_ORIENTATION.stop)
     return r
 
   def get_R(self, kind, n):
@@ -277,7 +268,6 @@ class LiveKalman():
     R = np.zeros((len(speed), 1, 1))
     for i, _ in enumerate(z):
       R[i, :, :] = np.diag([0.2**2])
-    self.filter2.predict_and_update_batch(t, kind, z, R)
     return self.filter.predict_and_update_batch(t, kind, z, R)
 
   def predict_and_update_odo_trans(self, trans, t, kind):
@@ -285,7 +275,6 @@ class LiveKalman():
     R = np.zeros((len(trans), 3, 3))
     for i, _ in enumerate(z):
         R[i, :, :] = np.diag(trans[i, 3:]**2)
-    self.filter2.predict_and_update_batch(t, kind, z, R)
     return self.filter.predict_and_update_batch(t, kind, z, R)
 
   def predict_and_update_odo_rot(self, rot, t, kind):
@@ -293,7 +282,6 @@ class LiveKalman():
     R = np.zeros((len(rot), 3, 3))
     for i, _ in enumerate(z):
         R[i, :, :] = np.diag(rot[i, 3:]**2)
-    self.filter2.predict_and_update_batch(t, kind, z, R)
     return self.filter.predict_and_update_batch(t, kind, z, R)
 
 
