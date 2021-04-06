@@ -63,7 +63,7 @@ class LateralPlanner():
     self.desire = log.LateralPlan.Desire.none
 
     self.path_xyz = np.zeros((TRAJECTORY_SIZE,3))
-    self.path_xyz_stds = np.zeros((TRAJECTORY_SIZE,3))
+    self.path_xyz_stds = np.ones((TRAJECTORY_SIZE,3))
     self.plan_yaw = np.zeros((TRAJECTORY_SIZE,))
     self.t_idxs = np.arange(TRAJECTORY_SIZE)
     self.y_pts = np.zeros(TRAJECTORY_SIZE)
