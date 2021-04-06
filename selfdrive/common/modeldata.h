@@ -27,9 +27,10 @@ const mat3 fcam_intrinsic_matrix = (mat3){{
   0.0,   0.0,   1.0
 }};
 
+// without unwarp, focal length is for center portion only
 const mat3 ecam_intrinsic_matrix = (mat3){{
-  567.0, 0.0, 1928.0/2,
-  0.0, 567.0, 1208.0/2,
+  620.0, 0.0, 1928.0/2,
+  0.0, 620.0, 1208.0/2,
   0.0,   0.0,   1.0
 }};
 #else
