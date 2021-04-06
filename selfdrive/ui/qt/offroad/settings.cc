@@ -67,7 +67,7 @@ QWidget * toggles_panel() {
   toggles_list->addWidget(horizontal_line());
   toggles_list->addWidget(new ParamControl("EnableWideCamera",
                                            "Enable use of Wide Angle Camera",
-                                           "Use wqide angle camera for driving and ui. Only takes effect after reboot.",
+                                           "Use wide angle camera for driving and ui. Only takes effect after reboot.",
                                            "../assets/offroad/icon_openpilot.png"));
 #endif
 
