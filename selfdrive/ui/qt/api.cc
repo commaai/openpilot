@@ -72,10 +72,6 @@ QString CommaApi::create_jwt(QVector<QPair<QString, QJsonValue>> payloads, int e
   return jwt;
 }
 
-QString CommaApi::create_jwt() {
-  return create_jwt(*(new QVector<QPair<QString, QJsonValue>>()));
-}
-
 std::pair<QNetworkReply::NetworkError, QString> httpGet(const QString& url, int timeout_ms, QMap<QString, QString>* headers) {
   QNetworkRequest request(QUrl{url});
   if (headers) {
