@@ -193,12 +193,9 @@ void encoder_thread(int cam_idx) {
 #endif
       }
 
-      // rotate logger and all encoders to new segment
+      // Trigger rotation
       if (new_segment) {
         pthread_mutex_lock(&s.rotate_lock);
-
-
-        // rotate encoders
         for (auto &r : s.rotate_state) r.rotate();
         pthread_mutex_unlock(&s.rotate_lock);
       }
