@@ -58,10 +58,11 @@ void ui_init(UIState *s) {
   s->scene.started = false;
   s->status = STATUS_OFFROAD;
 
-  ui_nvg_init(s);
 
   s->last_frame = nullptr;
   s->wide_camera = Params().getBool("EnableWideCamera");
+
+  ui_nvg_init(s);
 
   s->vipc_client_rear = new VisionIpcClient("camerad", s->wide_camera ? VISION_STREAM_RGB_WIDE : VISION_STREAM_RGB_BACK, true);
   s->vipc_client_front = new VisionIpcClient("camerad", VISION_STREAM_RGB_FRONT, true);
