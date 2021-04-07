@@ -14,7 +14,7 @@ from rednose.helpers.kalmanfilter import KalmanFilter
 if __name__ == '__main__':  # Generating sympy
   from rednose.helpers.ekf_sym import gen_code
 else:
-  from rednose.helpers.ekf_sym_pyx import EKF_sym  # pylint: disable=no-name-in-module
+  from rednose.helpers.ekf_sym_pyx import EKF_sym  # pylint: disable=no-name-in-module, import-error
 
 
 i = 0
