@@ -19,4 +19,6 @@ For doing development work on device, it's recommended to use [SSH agent forward
 
 The public keys are only fetched from your GitHub account once. In order to update your device's authorized keys, you'll need to re-enter your GitHub username.
 
+The `id_rsa` key in this directory only works while your device is in the setup state with no software installed. After installation, that default key will be removed.
+
 See the [community wiki](https://github.com/commaai/openpilot/wiki/SSH) for more detailed instructions and information.

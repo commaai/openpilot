@@ -1,9 +1,9 @@
-Host EON-smays
+Host comma-smays
   HostName 192.168.5.11
-  Port 8022
-  IdentityFile key/id_rsa
+  Port 22
+  IdentityFile id_rsa
 
-Host EON-wifi
+Host comma-tether
   HostName 192.168.43.1
-  Port 8022
-  IdentityFile key/id_rsa
+  Port 22
+  IdentityFile id_rsa

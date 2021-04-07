@@ -48,7 +48,7 @@ public:
   explicit SettingsWindow(QWidget *parent = 0);
 
 protected:
-  void hideEvent(QHideEvent* event);
+  void hideEvent(QHideEvent *event);
 
 signals:
   void closeSettings();
