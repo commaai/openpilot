@@ -9,6 +9,7 @@ from selfdrive.controls.lib.lateral_mpc import libmpc_py
 from selfdrive.controls.lib.drive_helpers import MPC_COST_LAT, MPC_N, CAR_ROTATION_RADIUS
 from selfdrive.controls.lib.lane_planner import LanePlanner, TRAJECTORY_SIZE
 from selfdrive.config import Conversions as CV
+from selfdrive.hardware import TICI
 import cereal.messaging as messaging
 from cereal import log
 
@@ -47,14 +48,17 @@ DESIRES = {
 
 class LateralPlanner():
   def __init__(self, CP):
-    self.LP = LanePlanner()
+    params = Params()
+
+    wide_camera = (params.get('EnableWideCamera') == b'1') if TICI else False
+    self.LP = LanePlanner(wide_camera)
 
     self.last_cloudlog_t = 0
     self.steer_rate_cost = CP.steerRateCost
 
     self.setup_mpc()
     self.solution_invalid_cnt = 0
-    self.use_lanelines = not Params().get_bool('EndToEndToggle')
+    self.use_lanelines = not params.get_bool('EndToEndToggle')
     self.lane_change_state = LaneChangeState.off
     self.lane_change_direction = LaneChangeDirection.none
     self.lane_change_timer = 0.0
