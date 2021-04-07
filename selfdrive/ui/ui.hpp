@@ -167,7 +167,7 @@ typedef struct UIState {
   bool sidebar_collapsed;
   Rect video_rect, viz_rect;
   float car_space_transform[6];
-  bool wide_camera;
+  bool wide_camera = false;
   float zoom;
 } UIState;
 
