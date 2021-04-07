@@ -214,7 +214,7 @@ class LiveKalman():
 
   @property
   def x(self):
-    return self.filter.get_state()
+    return self.filter.state()
 
   @property
   def t(self):
@@ -222,7 +222,7 @@ class LiveKalman():
 
   @property
   def P(self):
-    return self.filter.get_covs()
+    return self.filter.covs()
 
   def rts_smooth(self, estimates):
     return self.filter.rts_smooth(estimates, norm_quats=True)
@@ -233,7 +233,7 @@ class LiveKalman():
     elif covs is not None:
       P = covs
     else:
-      P = self.filter.get_covs()
+      P = self.filter.covs()
     self.filter.init_state(state, P, filter_time)
 
   def predict_and_observe(self, t, kind, meas, R=None):

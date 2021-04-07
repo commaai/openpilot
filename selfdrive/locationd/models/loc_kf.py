@@ -388,7 +388,7 @@ class LocKalman():
 
   @property
   def x(self):
-    return self.filter.get_state()
+    return self.filter.state()
 
   @property
   def t(self):
@@ -396,7 +396,7 @@ class LocKalman():
 
   @property
   def P(self):
-    return self.filter.get_covs()
+    return self.filter.covs()
 
   def predict(self, t):
     return self.filter.predict(t)
@@ -423,7 +423,7 @@ class LocKalman():
     elif covs is not None:
       P = covs
     else:
-      P = self.filter.get_covs()
+      P = self.filter.covs()
     state, P = self.pad_augmented(state, P)
     self.filter.init_state(state, P, filter_time)
 
@@ -449,7 +449,7 @@ class LocKalman():
     else:
       r = self.filter.predict_and_update_batch(t, kind, data, self.get_R(kind, len(data)))
     # Normalize quats
-    quat_norm = np.linalg.norm(self.filter.get_state()[3:7])
+    quat_norm = np.linalg.norm(self.filter.state()[3:7])
     # Should not continue if the quats behave this weirdly
     if not 0.1 < quat_norm < 10:
       raise RuntimeError("Sir! The filter's gone all wobbly!")

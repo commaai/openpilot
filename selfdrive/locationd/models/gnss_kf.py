@@ -125,11 +125,11 @@ class GNSSKalman():
 
   @property
   def x(self):
-    return self.filter.get_state()
+    return self.filter.state()
 
   @property
   def P(self):
-    return self.filter.get_covs()
+    return self.filter.covs()
 
   def predict(self, t):
     return self.filter.predict(t)
@@ -143,7 +143,7 @@ class GNSSKalman():
     elif covs is not None:
       P = covs
     else:
-      P = self.filter.get_covs()
+      P = self.filter.covs()
     self.filter.init_state(state, P, filter_time)
 
   def predict_and_observe(self, t, kind, data):
