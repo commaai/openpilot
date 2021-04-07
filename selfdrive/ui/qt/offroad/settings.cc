@@ -63,6 +63,14 @@ QWidget * toggles_panel() {
                                            "In this mode openpilot will ignore lanelines and just drive how it thinks a human would.",
                                            "../assets/offroad/icon_road.png"));
 
+#ifdef QCOM2
+  toggles_list->addWidget(horizontal_line());
+  toggles_list->addWidget(new ParamControl("EnableWideCamera",
+                                           "Enable use of Wide Angle Camera",
+                                           "Use wide angle camera for driving and ui. Only takes effect after reboot.",
+                                           "../assets/offroad/icon_openpilot.png"));
+#endif
+
   bool record_lock = Params().getBool("RecordFrontLock");
   record_toggle->setEnabled(!record_lock);
 
@@ -88,7 +96,7 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
 
   offroad_btns.append(new ButtonControl("Driver Camera", "PREVIEW",
                                    "Preview the driver facing camera to help optimize device mounting position for best driver monitoring experience. (vehicle must be off)",
-                                   [=]() { 
+                                   [=]() {
                                       Params().putBool("IsDriverViewEnabled", true);
                                       GLWindow::ui_state.scene.driver_view = true; }
                                     ));
