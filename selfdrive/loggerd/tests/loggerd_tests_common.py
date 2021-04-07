@@ -68,6 +68,10 @@ class MockParams():
     else:
       return val
 
+  def get_bool(self, k):
+    val = self.params[k]
+    return (val == b'1')
+
 class UploaderTestCase(unittest.TestCase):
   f_type = "UNKNOWN"
 
