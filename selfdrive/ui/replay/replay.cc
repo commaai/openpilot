@@ -25,6 +25,12 @@ Replay::Replay(QString route_, int seek, int use_api_) : route(route_), use_api(
 
 	// add the first segment
   addSegment(seek/60);
+
+  cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
+  cl_context context = CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id, NULL, NULL, &err));
+
+  vipc_server = new VisionIpcServer("camerad", device_id, context);
+  vipc_server->create_buffers(VisionStreamType::VISION_STREAM_RGB_BACK, 4, true, 1164, 874);
 }
 
 bool Replay::addSegment(int i){
@@ -57,3 +63,6 @@ bool Replay::addSegment(int i){
   return false;
 }
 
+void Replay::replay(){
+  vipc_server->start_listener();
+}
