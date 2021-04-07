@@ -33,12 +33,18 @@ def get_snapshots(frame="roadCameraState", front_frame="driverCameraState"):
   frame_sizes = [eon_f_frame_size, eon_d_frame_size, leon_d_frame_size, tici_f_frame_size]
   frame_sizes = {w * h: (w, h) for (w, h) in frame_sizes}
 
-  sm = messaging.SubMaster([frame, front_frame])
+  sockets = []
+  if frame is not None:
+    sockets.append(frame)
+  if front_frame is not None:
+    sockets.append(front_frame)
+
+  sm = messaging.SubMaster(sockets)
   while min(sm.logMonoTime.values()) == 0:
     sm.update()
 
-  rear = extract_image(sm[frame].image, frame_sizes)
-  front = extract_image(sm[front_frame].image, frame_sizes)
+  rear = extract_image(sm[frame].image, frame_sizes) if frame is not None else None
+  front = extract_image(sm[front_frame].image, frame_sizes) if front_frame is not None else None
   return rear, front
 
 
@@ -68,13 +74,17 @@ def snapshot():
   env = os.environ.copy()
   env["SEND_ROAD"] = "1"
   env["SEND_WIDE_ROAD"] = "1"
-  env["SEND_DRIVER"] = "1"
+
+  if front_camera_allowed:
+    env["SEND_DRIVER"] = "1"
+
   proc = subprocess.Popen(os.path.join(BASEDIR, "selfdrive/camerad/camerad"),
                           cwd=os.path.join(BASEDIR, "selfdrive/camerad"), env=env)
   time.sleep(3.0)
 
   frame = "wideRoadCameraState" if TICI else "roadCameraState"
-  rear, front = get_snapshots(frame)
+  front_frame = "driverCameraState" if front_camera_allowed else None
+  rear, front = get_snapshots(frame, front_frame)
 
   proc.send_signal(signal.SIGINT)
   proc.communicate()
