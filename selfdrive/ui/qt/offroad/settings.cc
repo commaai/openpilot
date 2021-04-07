@@ -335,4 +335,3 @@ void SettingsWindow::hideEvent(QHideEvent *event){
 #endif
 }
 
-
