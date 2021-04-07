@@ -8,7 +8,9 @@ def run_mpc(v_ref=30., x_init=0., y_init=0., psi_init=0., curvature_init=0.,
             lane_width=3.6, poly_shift=0.):
 
   libmpc = libmpc_py.libmpc
-  libmpc.init(1.0, 1.0, 1.0)
+  libmpc.init()
+  libmpc.set_weights(1., 1., 1.)
+
 
   mpc_solution = libmpc_py.ffi.new("log_t *")
 
