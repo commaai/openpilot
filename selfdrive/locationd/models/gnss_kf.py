@@ -5,8 +5,7 @@ from typing import List
 import numpy as np
 import sympy as sp
 
-from rednose.helpers.ekf_sym_gen import gen_code
-from rednose.helpers.ekf_sym_py import EKF_sym
+from rednose.helpers.ekf_sym import EKF_sym, gen_code
 from selfdrive.locationd.models.constants import ObservationKind
 from selfdrive.locationd.models.loc_kf import parse_pr, parse_prr
 

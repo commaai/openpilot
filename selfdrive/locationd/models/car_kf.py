@@ -9,16 +9,15 @@ import sympy as sp
 from selfdrive.locationd.models.constants import ObservationKind
 from selfdrive.swaglog import cloudlog
 
+from rednose.helpers.kalmanfilter import KalmanFilter
+
 if __name__ == '__main__':  # Generating sympy
-  from rednose.helpers.ekf_sym_gen import gen_code
+  from rednose.helpers.ekf_sym import gen_code
 else:
   from rednose.helpers.ekf_sym_pyx import EKF_sym  # pylint: disable=no-name-in-module
 
-from rednose.helpers.kalmanfilter import KalmanFilter
-
 
 i = 0
-
 
 def _slice(n):
   global i

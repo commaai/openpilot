@@ -9,7 +9,7 @@ from selfdrive.locationd.models.constants import ObservationKind
 if __name__ == '__main__':  # Generating sympy
   import sympy as sp
   from rednose.helpers.sympy_helpers import euler_rotate, quat_matrix_r, quat_rotate
-  from rednose.helpers.ekf_sym_gen import gen_code
+  from rednose.helpers.ekf_sym import gen_code
 else:
   from rednose.helpers.ekf_sym_pyx import EKF_sym  # pylint: disable=no-name-in-module
 
@@ -204,7 +204,7 @@ class LiveKalman():
                       ObservationKind.PHONE_ACCEL: np.diag([.5**2, .5**2, .5**2]),
                       ObservationKind.CAMERA_ODO_ROTATION: np.diag([0.05**2, 0.05**2, 0.05**2]),
                       ObservationKind.IMU_FRAME: np.diag([0.05**2, 0.05**2, 0.05**2]),
-                      ObservationKind.NO_ROT: np.diag([0.00025**2, 0.00025**2, 0.00025**2]),
+                      ObservationKind.NO_ROT: np.diag([0.005**2, 0.005**2, 0.005**2]),
                       ObservationKind.ECEF_POS: np.diag([5**2, 5**2, 5**2]),
                       ObservationKind.ECEF_VEL: np.diag([.5**2, .5**2, .5**2]),
                       ObservationKind.ECEF_ORIENTATION_FROM_GPS: np.diag([.2**2, .2**2, .2**2, .2**2])}
@@ -233,7 +233,7 @@ class LiveKalman():
     elif covs is not None:
       P = covs
     else:
-      P = self.P
+      P = self.filter.get_covs()
     self.filter.init_state(state, P, filter_time)
 
   def predict_and_observe(self, t, kind, meas, R=None):
