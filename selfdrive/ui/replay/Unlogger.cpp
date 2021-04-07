@@ -14,16 +14,7 @@
 #include <stdint.h>
 #include <time.h>
 
-static inline uint64_t nanos_since_boot() {
-  struct timespec t;
-  #ifdef __APPLE__
-    clock_gettime(CLOCK_REALTIME, &t);
-  #else
-    clock_gettime(CLOCK_BOOTTIME, &t);
-  #endif
-  return t.tv_sec * 1000000000ULL + t.tv_nsec;
-}
-
+#include "common/timing.h"
 
 Unlogger::Unlogger(Events *events_, QReadWriteLock* events_lock_, QMap<int, FrameReader*> *frs_, int seek)
   : events(events_), events_lock(events_lock_), frs(frs_) {
@@ -174,9 +165,12 @@ void Unlogger::process() {
             if (frs->find(pp.first) != frs->end()) {
               auto frm = (*frs)[pp.first];
               auto data = frm->get(pp.second);
-              if (data != NULL) {
-                fr.setImage(kj::arrayPtr(data, frm->getRGBSize()));
-              }
+
+							VisionBuf *buf = vipc_server->get_buffer(VisionStreamType::VISION_STREAM_RGB_BACK);
+							memcpy(buf->addr, data, frm->getRGBSize());
+							VisionIpcBufExtra extra = {};
+
+							vipc_server->send(buf, &extra, false);
             }
           }
         }
