@@ -50,13 +50,13 @@ def get_snapshots(frame="roadCameraState", front_frame="driverCameraState"):
 
 def snapshot():
   params = Params()
-  front_camera_allowed = int(params.get("RecordFront"))
+  front_camera_allowed = params.get_bool("RecordFront")
 
-  if params.get("IsOffroad") != b"1" or params.get("IsTakingSnapshot") == b"1":
+  if (not params.get_bool("IsOffroad")) or params.get_bool("IsTakingSnapshot"):
     print("Already taking snapshot")
     return None, None
 
-  params.put("IsTakingSnapshot", "1")
+  params.put_bool("IsTakingSnapshot", True)
   set_offroad_alert("Offroad_IsTakingSnapshot", True)
   time.sleep(2.0)  # Give thermald time to read the param, or if just started give camerad time to start
 
@@ -65,7 +65,7 @@ def snapshot():
     subprocess.check_call(["pgrep", "camerad"])
 
     print("Camerad already running")
-    params.put("IsTakingSnapshot", "0")
+    params.put_bool("IsTakingSnapshot", False)
     params.delete("Offroad_IsTakingSnapshot")
     return None, None
   except subprocess.CalledProcessError:
@@ -89,7 +89,7 @@ def snapshot():
   proc.send_signal(signal.SIGINT)
   proc.communicate()
 
-  params.put("IsTakingSnapshot", "0")
+  params.put_bool("IsTakingSnapshot", False)
   set_offroad_alert("Offroad_IsTakingSnapshot", False)
 
   if not front_camera_allowed:

@@ -192,7 +192,7 @@ class Uploader():
 
 def uploader_fn(exit_event):
   params = Params()
-  dongle_id = params.get("DongleId").decode('utf8')
+  dongle_id = params.get("DongleId", encoding='utf8')
 
   if dongle_id is None:
     cloudlog.info("uploader missing dongle_id")
@@ -207,7 +207,7 @@ def uploader_fn(exit_event):
   backoff = 0.1
   while not exit_event.is_set():
     sm.update(0)
-    offroad = params.get("IsOffroad") == b'1'
+    offroad = params.get_bool("IsOffroad")
     network_type = sm['deviceState'].networkType if not force_wifi else NetworkType.wifi
     if network_type == NetworkType.none:
       if allow_sleep:
@@ -215,7 +215,7 @@ def uploader_fn(exit_event):
       continue
 
     on_wifi = network_type == NetworkType.wifi
-    allow_raw_upload = params.get("IsUploadRawEnabled") != b"0"
+    allow_raw_upload = params.get_bool("IsUploadRawEnabled")
 
     d = uploader.next_file_to_upload(with_raw=allow_raw_upload and on_wifi and offroad)
     if d is None:  # Nothing to upload

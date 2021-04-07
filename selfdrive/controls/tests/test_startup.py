@@ -45,9 +45,9 @@ class TestStartup(unittest.TestCase):
 
     params = Params()
     params.clear_all()
-    params.put("Passive", b"0")
-    params.put("OpenpilotEnabledToggle", b"1")
-    params.put("CommunityFeaturesToggle", b"1" if toggle_enabled else b"0")
+    params.put_bool("Passive", False)
+    params.put_bool("OpenpilotEnabledToggle", True)
+    params.put_bool("CommunityFeaturesToggle", toggle_enabled)
 
     time.sleep(2) # wait for controlsd to be ready
 

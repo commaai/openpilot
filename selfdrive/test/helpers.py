@@ -11,11 +11,10 @@ def set_params_enabled():
   from common.params import Params
   params = Params()
   params.put("HasAcceptedTerms", terms_version)
-  params.put("HasCompletedSetup", "1")
-  params.put("OpenpilotEnabledToggle", "1")
-  params.put("CommunityFeaturesToggle", "1")
-  params.put("Passive", "0")
   params.put("CompletedTrainingVersion", training_version)
+  params.put_bool("OpenpilotEnabledToggle", True)
+  params.put_bool("CommunityFeaturesToggle", True)
+  params.put_bool("Passive", False)
 
 
 def phone_only(x):
