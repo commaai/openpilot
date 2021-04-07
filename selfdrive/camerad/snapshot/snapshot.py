@@ -77,6 +77,7 @@ def snapshot():
 
   if front_camera_allowed:
     env["SEND_DRIVER"] = "1"
+
   proc = subprocess.Popen(os.path.join(BASEDIR, "selfdrive/camerad/camerad"),
                           cwd=os.path.join(BASEDIR, "selfdrive/camerad"), env=env)
   time.sleep(3.0)
