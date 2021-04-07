@@ -363,7 +363,7 @@ def thermald_thread():
         cloudlog.event("Startup blocked", startup_conditions=startup_conditions)
 
       if should_start_prev or (count == 0):
-        params.put("IsOffroad", "1")
+        params.put_bool("IsOffroad", True)
         if TICI and DISABLE_LTE_ONROAD:
           os.system("sudo systemctl start --no-block lte")
 

@@ -119,7 +119,7 @@ def set_params(new_version: bool, failed_count: int, exception: Optional[str]) -
       params.put("ReleaseNotes", r + b"\n")
     except Exception:
       params.put("ReleaseNotes", "")
-    params.put("UpdateAvailable", "1")
+    params.put_bool("UpdateAvailable", True)
 
 
 def setup_git_options(cwd: str) -> None:
@@ -165,7 +165,7 @@ def init_overlay() -> None:
   cloudlog.info("preparing new safe staging area")
 
   params = Params()
-  params.put("UpdateAvailable", "0")
+  params.put_bool("UpdateAvailable", False)
   set_consistent_flag(False)
   dismount_overlay()
   if os.path.isdir(STAGING_ROOT):

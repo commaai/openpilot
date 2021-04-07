@@ -39,7 +39,6 @@ keys = {
   b"GithubUsername": [TxType.PERSISTENT],
   b"HardwareSerial": [TxType.PERSISTENT],
   b"HasAcceptedTerms": [TxType.PERSISTENT],
-  b"HasCompletedSetup": [TxType.PERSISTENT],
   b"IsDriverViewEnabled": [TxType.CLEAR_ON_MANAGER_START],
   b"IMEI": [TxType.PERSISTENT],
   b"IsLdwEnabled": [TxType.PERSISTENT],

@@ -174,7 +174,7 @@ class TestPowerMonitoring(unittest.TestCase):
     BATT_VOLTAGE = 4
     BATT_CURRENT = 0 # To stop shutting down for other reasons
     TEST_TIME = 100
-    params.put("DisablePowerDown", b"1")
+    params.put_bool("DisablePowerDown", True)
     with pm_patch("HARDWARE.get_battery_voltage", BATT_VOLTAGE * 1e6), pm_patch("HARDWARE.get_battery_current", BATT_CURRENT * 1e6), \
     pm_patch("HARDWARE.get_battery_status", "Discharging"), pm_patch("HARDWARE.get_current_power_draw", None):
       pm = PowerMonitoring()
