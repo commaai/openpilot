@@ -40,7 +40,7 @@ def main():
   while True:
     time.sleep(60)
 
-    is_onroad = params.get("IsOffroad") != b"1"
+    is_onroad = not params.get_bool("IsOffroad")
     if is_onroad:
       continue
 

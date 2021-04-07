@@ -242,9 +242,6 @@ class CarState(CarStateBase):
 
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, CANBUS.pt)
 
-  # A single signal is monitored from the camera CAN bus, and then ignored,
-  # so the presence of CAN traffic can be verified with cam_cp.valid.
-
   @staticmethod
   def get_cam_can_parser(CP):
 

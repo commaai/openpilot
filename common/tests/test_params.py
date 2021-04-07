@@ -65,6 +65,15 @@ class TestParams(unittest.TestCase):
     with self.assertRaises(UnknownKeyName):
       self.params.get("swag")
 
+    with self.assertRaises(UnknownKeyName):
+      self.params.get_bool("swag")
+
+    with self.assertRaises(UnknownKeyName):
+      self.params.put("swag", "abc")
+
+    with self.assertRaises(UnknownKeyName):
+      self.params.put_bool("swag", True)
+
   def test_params_permissions(self):
     permissions = stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IWGRP | stat.S_IROTH | stat.S_IWOTH
 
@@ -76,6 +85,22 @@ class TestParams(unittest.TestCase):
     assert self.params.get("CarParams") is None
     self.params.delete("CarParams")
     assert self.params.get("CarParams") is None
+
+  def test_get_bool(self):
+    self.params.delete("IsMetric")
+    self.assertFalse(self.params.get_bool("IsMetric"))
+
+    self.params.put_bool("IsMetric", True)
+    self.assertTrue(self.params.get_bool("IsMetric"))
+
+    self.params.put_bool("IsMetric", False)
+    self.assertFalse(self.params.get_bool("IsMetric"))
+
+    self.params.put("IsMetric", "1")
+    self.assertTrue(self.params.get_bool("IsMetric"))
+
+    self.params.put("IsMetric", "0")
+    self.assertFalse(self.params.get_bool("IsMetric"))
 
   def test_put_non_blocking_with_get_block(self):
     q = Params(self.tmpdir)
