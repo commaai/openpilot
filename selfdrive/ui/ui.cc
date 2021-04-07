@@ -60,6 +60,7 @@ void ui_init(UIState *s) {
 
 
   s->last_frame = nullptr;
+  s->wide_camera = false;
 
 #ifdef QCOM2
   s->wide_camera = Params().getBool("EnableWideCamera");
