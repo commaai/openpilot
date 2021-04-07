@@ -208,9 +208,6 @@ void encoder_thread(int cam_idx) {
       if (new_segment) {
         pthread_mutex_lock(&s.rotate_lock);
 
-        int err = logger_next(&s.logger, LOG_ROOT.c_str(), s.segment_path, sizeof(s.segment_path), &s.rotate_segment);
-        assert(err == 0);
-        LOGW("rotated to %s", s.segment_path);
 
         // rotate encoders
         for (auto &r : s.rotate_state) r.rotate();
@@ -233,19 +230,25 @@ void encoder_thread(int cam_idx) {
             rotate_state.initialized = true;
           }
 
-          // get new logger handle for new segment
-          if (lh) {
-            lh_close(lh);
-          }
-          lh = logger_get_handle(&s.logger);
 
           // wait for all to start rotating
+          LOGW("camera %d waiting for all encoders to start rotating", cam_idx);
           rotate_state.rotating = true;
           for(auto &r : s.rotate_state) {
              while(r.enabled && !r.rotating && !do_exit) util::sleep_for(5);
           }
+          LOGW("camera %d done waiting", cam_idx);
 
           pthread_mutex_lock(&s.rotate_lock);
+
+          // First camera takes care of rotating the log
+          if (cam_idx == 0){
+            int err = logger_next(&s.logger, LOG_ROOT.c_str(), s.segment_path, sizeof(s.segment_path), &s.rotate_segment);
+            assert(err == 0);
+            LOGW("rotated to %s", s.segment_path);
+          }
+
+          LOGW("camera %d rotating", cam_idx);
           for (auto &e : encoders) {
             e->encoder_close();
             e->encoder_open(s.segment_path);
@@ -254,11 +257,20 @@ void encoder_thread(int cam_idx) {
           pthread_mutex_unlock(&s.rotate_lock);
 
           // wait for all to finish rotating
+          LOGW("camera %d waiting for all encoders to finish rotating", cam_idx);
           for(auto &r : s.rotate_state) {
              while(r.enabled && r.cur_seg != s.rotate_segment && !do_exit) util::sleep_for(5);
           }
+          LOGW("camera %d done waiting", cam_idx);
+
           rotate_state.rotating = false;
           rotate_state.finish_rotate();
+
+          // get new logger handle for new segment
+          if (lh) {
+            lh_close(lh);
+          }
+          lh = logger_get_handle(&s.logger);
         }
       }
 
