@@ -2,9 +2,11 @@
 
 #include <QThread>
 #include <QReadWriteLock>
+#include "clutil.h"
 #include "messaging.hpp"
 #include "FileReader.hpp"
 #include "FrameReader.hpp"
+#include "visionipc_server.h"
 
 class Unlogger : public QObject {
 Q_OBJECT
@@ -29,5 +31,7 @@ Q_OBJECT
     uint64_t tc = 0;
     uint64_t seek_request = 0;
     bool paused = false;
+
+    VisionIpcServer *vipc_server;
 };
 

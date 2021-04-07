@@ -5,13 +5,10 @@
 #include <QJsonObject>
 #include <QJsonDocument>
 
-#include "zmq.hpp"
-#include "clutil.h"
 #include "Unlogger.hpp"
 #include "FileReader.hpp"
 #include "FrameReader.hpp"
 #include "visionipc_server.h"
-#include "cameras/camera_frame_stream.h"
 
 class Replay : public QObject {
 
@@ -34,7 +31,5 @@ private:
 
 	QMap<int, LogReader*> lrs;
 	QMap<int, FrameReader*> frs;
-
-  VisionIpcServer *vipc_server;
 };
 
