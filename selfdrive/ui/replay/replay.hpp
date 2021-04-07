@@ -1,3 +1,5 @@
+#pragma once
+
 #include <QFile>
 #include <QJsonArray>
 #include <QJsonObject>
@@ -7,7 +9,7 @@
 #include "FrameReader.hpp"
 #include "FileReader.hpp"
 
-class Replay{
+class Replay : public QObject {
 
 public:
 	Replay(QString route_, int seek, int use_api);
