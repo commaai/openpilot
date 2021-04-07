@@ -49,7 +49,9 @@ public:
   }
 
   static void close_activities() {
-    std::system("pm disable com.android.settings && pm enable com.android.settings");
+    if(launched_activity){
+      std::system("pm disable com.android.settings && pm enable com.android.settings");
+    }
   }
 
   static void launch_activity(std::string activity, std::string opts = "") {

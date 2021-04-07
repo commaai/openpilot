@@ -331,9 +331,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
 
 void SettingsWindow::hideEvent(QHideEvent *event){
 #ifdef QCOM
-  if(HardwareEon::launched_activity){
-    HardwareEon::close_activities();
-  }
+  HardwareEon::close_activities();
 #endif
 }
 
