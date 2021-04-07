@@ -194,6 +194,8 @@ void encoder_thread(int cam_idx) {
       }
 
       // Decide if we should rotate
+      pthread_mutex_lock(&s.rotate_lock);
+
       bool new_segment = true;
       for (auto &r : s.rotate_state) {
         new_segment &= (((r.stream_frame_id >= r.last_rotate_frame_id + SEGMENT_LENGTH * MAIN_FPS) &&
@@ -206,10 +208,13 @@ void encoder_thread(int cam_idx) {
 
       // Trigger rotation
       if (new_segment) {
-        pthread_mutex_lock(&s.rotate_lock);
+        int err = logger_next(&s.logger, LOG_ROOT.c_str(), s.segment_path, sizeof(s.segment_path), &s.rotate_segment);
+        assert(err == 0);
+        LOGW("rotated to %s", s.segment_path);
+
         for (auto &r : s.rotate_state) r.rotate();
-        pthread_mutex_unlock(&s.rotate_lock);
       }
+      pthread_mutex_unlock(&s.rotate_lock);
 
       // check if this encoder needs to rotate
       {
@@ -227,7 +232,6 @@ void encoder_thread(int cam_idx) {
             rotate_state.initialized = true;
           }
 
-
           // wait for all to start rotating
           LOGW("camera %d waiting for all encoders to start rotating", cam_idx);
           rotate_state.rotating = true;
@@ -237,14 +241,6 @@ void encoder_thread(int cam_idx) {
           LOGW("camera %d done waiting", cam_idx);
 
           pthread_mutex_lock(&s.rotate_lock);
-
-          // First camera takes care of rotating the log
-          if (cam_idx == 0){
-            int err = logger_next(&s.logger, LOG_ROOT.c_str(), s.segment_path, sizeof(s.segment_path), &s.rotate_segment);
-            assert(err == 0);
-            LOGW("rotated to %s", s.segment_path);
-          }
-
           LOGW("camera %d rotating", cam_idx);
           for (auto &e : encoders) {
             e->encoder_close();
