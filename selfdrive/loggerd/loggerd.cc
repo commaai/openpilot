@@ -135,6 +135,8 @@ struct LoggerdState {
   int rotate_segment;
   pthread_mutex_t rotate_lock;
   RotateState rotate_state[LOG_CAMERA_ID_MAX-1];
+
+  std::atomic<double> last_camera_seen_tms, last_rotate_tms;
 };
 LoggerdState s;
 
@@ -185,6 +187,9 @@ void encoder_thread(int cam_idx) {
       // Decide if we should rotate
       pthread_mutex_lock(&s.rotate_lock);
 
+      double tms = millis_since_boot();
+      s.last_camera_seen_tms = tms;
+
       bool new_segment = true;
       for (auto &r : s.rotate_state) {
         new_segment &= (((r.stream_frame_id >= r.last_rotate_frame_id + SEGMENT_LENGTH * MAIN_FPS) &&
@@ -202,6 +207,8 @@ void encoder_thread(int cam_idx) {
         LOGW("rotated to %s", s.segment_path);
 
         for (auto &r : s.rotate_state) r.rotate();
+
+        s.last_rotate_tms = tms;
       }
       pthread_mutex_unlock(&s.rotate_lock);
 
@@ -355,6 +362,16 @@ int main(int argc, char** argv) {
   // init encoders
   pthread_mutex_init(&s.rotate_lock, NULL);
 
+  int err = logger_next(&s.logger, LOG_ROOT.c_str(), s.segment_path, sizeof(s.segment_path), &s.rotate_segment);
+  assert(err == 0);
+  LOGW("logging to %s", s.segment_path);
+
+  // Trigger first rotate for all the encoders
+  for (auto &r : s.rotate_state) r.rotate();
+  double tms = millis_since_boot();
+  s.last_rotate_tms = tms;
+  s.last_camera_seen_tms = tms;
+
   // TODO: create these threads dynamically on frame packet presence
   std::vector<std::thread> encoder_threads;
   encoder_threads.push_back(std::thread(encoder_thread, LOG_CAMERA_ID_FCAMERA));
@@ -373,12 +390,7 @@ int main(int argc, char** argv) {
   uint64_t bytes_count = 0;
   AlignedBuffer aligned_buf;
 
-  int err = logger_next(&s.logger, LOG_ROOT.c_str(), s.segment_path, sizeof(s.segment_path), &s.rotate_segment);
-  assert(err == 0);
-  LOGW("logging to %s", s.segment_path);
 
-  // Trigger first roate for all the encoders
-  for (auto &r : s.rotate_state) r.rotate();
 
   double start_ts = seconds_since_boot();
   while (!do_exit) {
@@ -409,7 +421,22 @@ int main(int argc, char** argv) {
       }
     }
 
-    // TODO: rotate if camera frames time out
+
+    pthread_mutex_lock(&s.rotate_lock);
+    tms = millis_since_boot();
+    if ((tms - s.last_camera_seen_tms > NO_CAMERA_PATIENCE) || (encoder_threads.size() == 0)) {
+      if (tms - s.last_rotate_tms > SEGMENT_LENGTH * 1000) {
+        LOGW("no camera packet seen. auto rotating");
+
+        int err = logger_next(&s.logger, LOG_ROOT.c_str(), s.segment_path, sizeof(s.segment_path), &s.rotate_segment);
+        assert(err == 0);
+        LOGW("rotated to %s", s.segment_path);
+        for (auto &r : s.rotate_state) r.rotate();
+
+        s.last_rotate_tms = tms;
+      }
+    }
+    pthread_mutex_unlock(&s.rotate_lock);
   }
 
   LOGW("closing encoders");
