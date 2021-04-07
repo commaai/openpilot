@@ -33,7 +33,7 @@ def manager_init():
   ]
 
   if params.get_bool("RecordFrontLock"):
-    params.put_bool("RecordFront", False)
+    params.put_bool("RecordFront", True)
 
   # set unset params
   for k, v in default_params:
