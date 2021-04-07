@@ -55,8 +55,8 @@ class Controls:
 
     self.sm = sm
     if self.sm is None:
-      ignore = ['ubloxRaw', 'driverCameraState', 'managerState'] if SIMULATION else None
-      self.sm = messaging.SubMaster(['deviceState', 'pandaState', 'modelV2', 'liveCalibration', 'ubloxRaw',
+      ignore = ['driverCameraState', 'managerState'] if SIMULATION else None
+      self.sm = messaging.SubMaster(['deviceState', 'pandaState', 'modelV2', 'liveCalibration',
                                      'driverMonitoringState', 'longitudinalPlan', 'lateralPlan', 'liveLocationKalman',
                                      'roadCameraState', 'driverCameraState', 'managerState', 'liveParameters', 'radarState'], ignore_alive=ignore)
 
@@ -73,11 +73,11 @@ class Controls:
 
     # read params
     params = Params()
-    self.is_metric = params.get("IsMetric", encoding='utf8') == "1"
-    self.is_ldw_enabled = params.get("IsLdwEnabled", encoding='utf8') == "1"
-    community_feature_toggle = params.get("CommunityFeaturesToggle", encoding='utf8') == "1"
-    openpilot_enabled_toggle = params.get("OpenpilotEnabledToggle", encoding='utf8') == "1"
-    passive = params.get("Passive", encoding='utf8') == "1" or not openpilot_enabled_toggle
+    self.is_metric = params.get_bool("IsMetric")
+    self.is_ldw_enabled = params.get_bool("IsLdwEnabled")
+    community_feature_toggle = params.get_bool("CommunityFeaturesToggle")
+    openpilot_enabled_toggle = params.get_bool("OpenpilotEnabledToggle")
+    passive = params.get_bool("Passive") or not openpilot_enabled_toggle
 
     # detect sound card presence and ensure successful init
     sounds_available = HARDWARE.get_sound_card_online()

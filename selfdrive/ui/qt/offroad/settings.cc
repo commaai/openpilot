@@ -63,6 +63,14 @@ QWidget * toggles_panel() {
                                            "In this mode openpilot will ignore lanelines and just drive how it thinks a human would.",
                                            "../assets/offroad/icon_road.png"));
 
+#ifdef QCOM2
+  toggles_list->addWidget(horizontal_line());
+  toggles_list->addWidget(new ParamControl("EnableWideCamera",
+                                           "Enable use of Wide Angle Camera",
+                                           "Use wide angle camera for driving and ui. Only takes effect after reboot.",
+                                           "../assets/offroad/icon_openpilot.png"));
+#endif
+
   bool record_lock = Params().getBool("RecordFrontLock");
   record_toggle->setEnabled(!record_lock);
 
@@ -88,17 +96,39 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
 
   offroad_btns.append(new ButtonControl("Driver Camera", "PREVIEW",
                                    "Preview the driver facing camera to help optimize device mounting position for best driver monitoring experience. (vehicle must be off)",
-                                   [=]() { 
+                                   [=]() {
                                       Params().putBool("IsDriverViewEnabled", true);
                                       GLWindow::ui_state.scene.driver_view = true; }
                                     ));
 
-  offroad_btns.append(new ButtonControl("Reset Calibration", "RESET",
-                                   "openpilot requires the device to be mounted within 4° left or right and within 5° up or down. openpilot is continuously calibrating, resetting is rarely required.", [=]() {
+  QString resetCalibDesc = "openpilot requires the device to be mounted within 4° left or right and within 5° up or down. openpilot is continuously calibrating, resetting is rarely required.";
+  ButtonControl *resetCalibBtn = new ButtonControl("Reset Calibration", "RESET", resetCalibDesc, [=]() {
     if (ConfirmationDialog::confirm("Are you sure you want to reset calibration?")) {
       Params().remove("CalibrationParams");
     }
-  }));
+  });
+  connect(resetCalibBtn, &ButtonControl::showDescription, [=]() {
+    QString desc = resetCalibDesc;
+    std::string calib_bytes = Params().get("CalibrationParams");
+    if (!calib_bytes.empty()) {
+      try {
+        AlignedBuffer aligned_buf;
+        capnp::FlatArrayMessageReader cmsg(aligned_buf.align(calib_bytes.data(), calib_bytes.size()));
+        auto calib = cmsg.getRoot<cereal::Event>().getLiveCalibration();
+        if (calib.getCalStatus() != 0) {
+          double pitch = calib.getRpyCalib()[1] * (180 / M_PI);
+          double yaw = calib.getRpyCalib()[2] * (180 / M_PI);
+          desc += QString(" Your device is pointed %1° %2 and %3° %4.")
+                                .arg(QString::number(std::abs(pitch), 'g', 1), pitch > 0 ? "up" : "down",
+                                     QString::number(std::abs(yaw), 'g', 1), yaw > 0 ? "right" : "left");
+        }
+      } catch (kj::Exception) {
+        qInfo() << "invalid CalibrationParams";
+      }
+    }
+    resetCalibBtn->setDescription(desc);
+  });
+  offroad_btns.append(resetCalibBtn);
 
   offroad_btns.append(new ButtonControl("Review Training Guide", "REVIEW",
                                         "Review the rules, features, and limitations of openpilot", [=]() {
@@ -306,3 +336,10 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
     }
   )");
 }
+
+void SettingsWindow::hideEvent(QHideEvent *event){
+#ifdef QCOM
+  HardwareEon::close_activities();
+#endif
+}
+
