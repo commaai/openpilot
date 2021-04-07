@@ -3,8 +3,8 @@ from common.numpy_fast import clip
 from selfdrive.car import apply_toyota_steer_torque_limits, create_gas_command, make_can_msg
 from selfdrive.car.toyota.toyotacan import create_steer_command, create_ui_command, \
                                            create_accel_command, create_acc_cancel_command, \
-                                           create_fcw_command
-from selfdrive.car.toyota.values import Ecu, CAR, STATIC_MSGS, NO_STOP_TIMER_CAR, CarControllerParams
+                                           create_fcw_command, create_lta_steer_command
+from selfdrive.car.toyota.values import Ecu, CAR, STATIC_MSGS, NO_STOP_TIMER_CAR, TSS2_CAR, CarControllerParams
 from opendbc.can.packer import CANPacker
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
@@ -99,6 +99,8 @@ class CarController():
     # on consecutive messages
     if Ecu.fwdCamera in self.fake_ecus:
       can_sends.append(create_steer_command(self.packer, apply_steer, apply_steer_req, frame))
+      if frame % 2 == 0 and CS.CP.carFingerprint in TSS2_CAR:
+        can_sends.append(create_lta_steer_command(self.packer, 0, 0, frame // 2))
 
       # LTA mode. Set ret.steerControlType = car.CarParams.SteerControlType.angle and whitelist 0x191 in the panda
       # if frame % 2 == 0:
