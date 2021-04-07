@@ -358,14 +358,16 @@ Export('common', 'gpucommon', 'visionipc')
 
 # Build rednose library and ekf models
 
-rednose_generated_folder = '#selfdrive/locationd/models/generated'
-rednose_to_build = {
-  'live': ('#selfdrive/locationd/models/live_kf.py', True),
-  'car': ('#selfdrive/locationd/models/car_kf.py', True),
+rednose = {
+  'generated_folder': '#selfdrive/locationd/models/generated',
+  'to_build': {
+    'live': ('#selfdrive/locationd/models/live_kf.py', True),
+    'car': ('#selfdrive/locationd/models/car_kf.py', True),
+  },
 }
 
 if arch != "aarch64":
-  rednose_to_build.update({
+  rednose['to_build'].update({
     'gnss': ('#selfdrive/locationd/models/gnss_kf.py', False),
     'loc_4': ('#selfdrive/locationd/models/loc_kf.py', False),
     'pos_computer_4': ('#rednose/helpers/lst_sq_computer.py', False),
@@ -374,7 +376,7 @@ if arch != "aarch64":
     'lane': ('#xx/pipeline/lib/ekf/lane_kf.py', False),
   })
 
-Export('rednose_to_build', 'rednose_generated_folder')
+Export('rednose')
 SConscript(['rednose/SConscript'])
 
 # Build openpilot
