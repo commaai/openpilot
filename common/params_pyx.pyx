@@ -39,7 +39,6 @@ keys = {
   b"GithubUsername": [TxType.PERSISTENT],
   b"HardwareSerial": [TxType.PERSISTENT],
   b"HasAcceptedTerms": [TxType.PERSISTENT],
-  b"HasCompletedSetup": [TxType.PERSISTENT],
   b"IsDriverViewEnabled": [TxType.CLEAR_ON_MANAGER_START],
   b"IMEI": [TxType.PERSISTENT],
   b"IsLdwEnabled": [TxType.PERSISTENT],
@@ -118,13 +117,16 @@ cdef class Params:
   def panda_disconnect(self):
     self.clear_all(TxType.CLEAR_ON_PANDA_DISCONNECT)
 
-  def get(self, key, block=False, encoding=None):
+  def check_key(self, key):
     key = ensure_bytes(key)
 
     if key not in keys:
       raise UnknownKeyName(key)
 
-    cdef string k = key
+    return key
+
+  def get(self, key, block=False, encoding=None):
+    cdef string k = self.check_key(key)
     cdef bool b = block
 
     cdef string val
@@ -144,6 +146,10 @@ cdef class Params:
     else:
       return val
 
+  def get_bool(self, key):
+    cdef string k = self.check_key(key)
+    return self.p.getBool(k)
+
   def put(self, key, dat):
     """
     Warning: This function blocks until the param is written to disk!
@@ -151,17 +157,18 @@ cdef class Params:
     Use the put_nonblocking helper function in time sensitive code, but
     in general try to avoid writing params as much as possible.
     """
-    key = ensure_bytes(key)
     dat = ensure_bytes(dat)
 
-    if key not in keys:
-      raise UnknownKeyName(key)
+    cdef string k = self.check_key(key)
+    self.p.put(k, dat)
 
-    self.p.put(key, dat)
+  def put_bool(self, key, val):
+    cdef string k = self.check_key(key)
+    self.p.putBool(k, val)
 
   def delete(self, key):
-    key = ensure_bytes(key)
-    self.p.remove(key)
+    cdef string k = self.check_key(key)
+    self.p.remove(k)
 
 
 def put_nonblocking(key, val, d=None):
