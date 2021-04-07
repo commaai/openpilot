@@ -596,6 +596,11 @@ void ui_nvg_init(UIState *s) {
   auto intrinsic_matrix = s->wide_camera ? ecam_intrinsic_matrix : fcam_intrinsic_matrix;
 
   s->zoom = zoom / intrinsic_matrix.v[0];
+
+  if (s->wide_camera) {
+    s->zoom *= 0.5;
+  }
+
   s->video_rect = Rect{bdr_s, bdr_s, s->fb_w - 2 * bdr_s, s->fb_h - 2 * bdr_s};
   float zx = s->zoom * 2 * intrinsic_matrix.v[2] / s->video_rect.w;
   float zy = s->zoom * 2 * intrinsic_matrix.v[5] / s->video_rect.h;
