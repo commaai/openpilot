@@ -54,7 +54,7 @@ class LateralPlanner():
 
     self.setup_mpc()
     self.solution_invalid_cnt = 0
-    self.use_lanelines = Params().get('EndToEndToggle') != b'1'
+    self.use_lanelines = not Params().get_bool('EndToEndToggle')
     self.lane_change_state = LaneChangeState.off
     self.lane_change_direction = LaneChangeDirection.none
     self.lane_change_timer = 0.0

@@ -332,7 +332,7 @@ def fetch_update(wait_helper: WaitTimeHelper) -> bool:
 def main():
   params = Params()
 
-  if params.get("DisableUpdates") == b"1":
+  if params.get_bool("DisableUpdates"):
     raise RuntimeError("updates are disabled by the DisableUpdates param")
 
   if EON and os.geteuid() != 0:
@@ -370,7 +370,7 @@ def main():
 
     # Don't run updater while onroad or if the time's wrong
     time_wrong = datetime.datetime.utcnow().year < 2019
-    is_onroad = params.get("IsOffroad") != b"1"
+    is_onroad = not params.get_bool("IsOffroad")
     if is_onroad or time_wrong:
       wait_helper.sleep(30)
       cloudlog.info("not running updater, not offroad")

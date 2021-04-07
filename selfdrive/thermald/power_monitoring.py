@@ -164,8 +164,8 @@ class PowerMonitoring:
     disable_charging |= (self.car_voltage_mV < (VBATT_PAUSE_CHARGING * 1e3))
     disable_charging |= (self.car_battery_capacity_uWh <= 0)
     disable_charging &= (not pandaState.pandaState.ignitionLine and not pandaState.pandaState.ignitionCan)
-    disable_charging &= (self.params.get("DisablePowerDown") != b"1")
-    disable_charging |= (self.params.get("ForcePowerDown") == b"1")
+    disable_charging &= (not self.params.get_bool("DisablePowerDown"))
+    disable_charging |= self.params.get_bool("ForcePowerDown")
     return disable_charging
 
   # See if we need to shutdown
