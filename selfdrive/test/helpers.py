@@ -24,7 +24,9 @@ def phone_only(x):
     return x
 
 
-def with_processes(processes, init_time=0):
+def with_processes(processes, init_time=0, ignore_stopped=None):
+  ignore_stopped = [] if ignore_stopped is None else ignore_stopped
+
   def wrapper(func):
     @wraps(func)
     def wrap(*args, **kwargs):
@@ -39,7 +41,7 @@ def with_processes(processes, init_time=0):
       try:
         func(*args, **kwargs)
         # assert processes are still started
-        assert all(managed_processes[name].proc.exitcode is None for name in processes)
+        assert all(managed_processes[name].proc.exitcode is None for name in processes if name not in ignore_stopped)
       finally:
         for p in processes:
           managed_processes[p].stop()
