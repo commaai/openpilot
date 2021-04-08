@@ -386,8 +386,6 @@ int main(int argc, char** argv) {
   uint64_t bytes_count = 0;
   AlignedBuffer aligned_buf;
 
-
-
   double start_ts = seconds_since_boot();
   while (!do_exit) {
     // TODO: fix msgs from the first poll getting dropped
