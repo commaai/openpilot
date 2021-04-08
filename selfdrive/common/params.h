@@ -39,6 +39,10 @@ public:
     return iss.fail() ? std::nullopt : std::optional(value);
   }
 
+  inline bool getBool(const std::string &key) {
+    return getBool(key.c_str());
+  }
+
   inline bool getBool(const char *key) {
     return get(key) == "1";
   }
@@ -52,5 +56,9 @@ public:
 
   inline int putBool(const char *key, bool val) {
     return put(key, val ? "1" : "0", 1);
+  }
+
+  inline int putBool(const std::string &key, bool val) {
+    return putBool(key.c_str(), val);
   }
 };
