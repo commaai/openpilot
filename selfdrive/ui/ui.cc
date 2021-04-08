@@ -142,7 +142,7 @@ static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
 
 static void update_sockets(UIState *s){
   SubMaster &sm = *(s->sm);
-  return sm.update(0);
+  sm.update(0);
 }
 
 static void update_state(UIState *s) {
