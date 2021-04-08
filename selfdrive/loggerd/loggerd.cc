@@ -195,7 +195,6 @@ void encoder_thread(int cam_idx) {
 
       // Decide if we should rotate
       pthread_mutex_lock(&s.rotate_lock);
-
       s.last_camera_seen_tms = millis_since_boot();
 
       bool new_segment = true;
@@ -208,10 +207,7 @@ void encoder_thread(int cam_idx) {
 #endif
       }
 
-      // Trigger rotation
-      if (new_segment) {
-        trigger_rotate();
-      }
+      if (new_segment) trigger_rotate();
       pthread_mutex_unlock(&s.rotate_lock);
 
       // check if this encoder needs to rotate
