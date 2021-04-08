@@ -146,13 +146,12 @@ routes = {
     'carFingerprint': HONDA.ACURA_RDX,
     'enableCamera': True,
   },
-<<<<<<< HEAD:selfdrive/test/test_routes.py
   "54fd8451b3974762|2021-04-01--14-50-10": {
     'carFingerprint': HONDA.RIDGELINE,
-=======
+    'enableCamera': True,
+  },
   "69efe97e70c1db84|2021-03-21--00-44-11": {
     'carFingerprint': HONDA.CLARITY,
->>>>>>> clarity test route:selfdrive/test/test_car_models.py
     'enableCamera': True,
   },
   "6fe86b4e410e4c37|2020-07-22--16-27-13": {
