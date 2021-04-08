@@ -141,6 +141,10 @@ else:
   ccflags = []
   ldflags = []
 
+# no --as-needed on mac linker
+if arch != "Darwin":
+  ldflags += ["-Wl,--as-needed"]
+
 # change pythonpath to this
 lenv["PYTHONPATH"] = Dir("#").path
 
@@ -193,7 +197,7 @@ env = Environment(
 
   CC='clang',
   CXX='clang++',
-  LINKFLAGS=["-Wl,--as-needed"]+ldflags,
+  LINKFLAGS=ldflags,
 
   RPATH=rpath,
 
