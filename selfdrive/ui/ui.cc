@@ -140,9 +140,9 @@ static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
   update_line_data(s, model_position, 0.5, 1.22, &scene.track_vertices, max_idx);
 }
 
-static void update_sockets(UIState *s){
+static int update_sockets(UIState *s){
   SubMaster &sm = *(s->sm);
-  sm.update(0);
+  return sm.update(0);
 }
 
 static void update_state(UIState *s) {
@@ -349,8 +349,9 @@ static void update_status(UIState *s) {
 
 void ui_update(UIState *s) {
   update_params(s);
-  update_sockets(s);
-  update_state(s);
+  if(update_sockets(s) != 0){
+    update_state(s);
+  }
   update_status(s);
   update_alert(s);
   update_vision(s);
