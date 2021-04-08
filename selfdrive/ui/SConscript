@@ -33,7 +33,8 @@ qt_env.Program("_ui", qt_src, LIBS=qt_libs)
 
 # setup, factory resetter, and installer
 if arch != 'aarch64' and "BUILD_SETUP" in os.environ:
-  qt_env.Program("qt/setup/reset", ["qt/setup/reset.cc"], LIBS=qt_libs)
+  lf = qt_env["LINKFLAGS"] + ["-Wl,--as-needed"]
+  qt_env.Program("qt/setup/reset", ["qt/setup/reset.cc"], LIBS=qt_libs, LINKFLAGS=lf)
   qt_env.Program("qt/setup/setup", ["qt/setup/setup.cc"], LIBS=qt_libs + ['curl', 'common', 'json11'])
   qt_env.Program("qt/setup/wifi", ["qt/setup/wifi.cc"], LIBS=qt_libs + ['common', 'json11'])
 
