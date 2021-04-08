@@ -21,9 +21,11 @@ if arch != 'aarch64':
 widgets = qt_env.Library("qt_widgets", widgets_src, LIBS=base_libs)
 qt_libs = base_libs + [widgets]
 
+lflags = qt_env["LINKFLAGS"] + ["-Wl,--as-needed"]
+
 # spinner and text window
-qt_env.Program("qt/text", ["qt/text.cc"], LIBS=qt_libs)
-qt_env.Program("qt/spinner", ["qt/spinner.cc"], LIBS=base_libs)
+qt_env.Program("qt/text", ["qt/text.cc"], LIBS=qt_libs, LINKFLAGS=lflags)
+qt_env.Program("qt/spinner", ["qt/spinner.cc"], LIBS=base_libs, LINKFLAGS=lflags)
 
 # build main UI
 qt_src = ["main.cc", "ui.cc", "paint.cc", "sidebar.cc", "#phonelibs/nanovg/nanovg.c",
@@ -33,9 +35,8 @@ qt_env.Program("_ui", qt_src, LIBS=qt_libs)
 
 # setup, factory resetter, and installer
 if arch != 'aarch64' and "BUILD_SETUP" in os.environ:
-  lf = qt_env["LINKFLAGS"] + ["-Wl,--as-needed"]
-  qt_env.Program("qt/setup/reset", ["qt/setup/reset.cc"], LIBS=qt_libs, LINKFLAGS=lf)
-  qt_env.Program("qt/setup/setup", ["qt/setup/setup.cc"], LIBS=qt_libs + ['curl', 'common', 'json11'])
+  qt_env.Program("qt/setup/reset", ["qt/setup/reset.cc"], LIBS=qt_libs, LINKFLAGS=lflags)
+  qt_env.Program("qt/setup/setup", ["qt/setup/setup.cc"], LIBS=qt_libs + ['curl', 'common', 'json11'], LINKFLAGS=lflags)
   qt_env.Program("qt/setup/wifi", ["qt/setup/wifi.cc"], LIBS=qt_libs + ['common', 'json11'])
 
   installers = [
