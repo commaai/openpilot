@@ -16,6 +16,7 @@ from common.timeout import Timeout
 from selfdrive.hardware import EON, TICI
 from selfdrive.loggerd.config import ROOT
 from selfdrive.test.helpers import with_processes
+from selfdrive.manager.process_config import managed_processes
 from tools.lib.logreader import LogReader
 
 SEGMENT_LENGTH = 2
@@ -60,12 +61,12 @@ class TestEncoder(unittest.TestCase):
       shutil.rmtree(ROOT)
 
   def _get_latest_segment_path(self):
-    last_route = sorted(Path(ROOT).iterdir(), key=os.path.getmtime)[-1]
+    last_route = sorted(Path(ROOT).iterdir())[-1]
     return os.path.join(ROOT, last_route)
 
   # TODO: this should run faster than real time
   @parameterized.expand([(True, ), (False, )])
-  @with_processes(['camerad', 'sensord', 'loggerd'], init_time=3)
+  @with_processes(['camerad', 'sensord', 'loggerd'], init_time=3, ignore_stopped=['loggerd'])
   def test_log_rotation(self, record_front):
     Params().put("RecordFront", str(int(record_front)))
 
@@ -132,11 +133,13 @@ class TestEncoder(unittest.TestCase):
         self.assertEqual(min(counts), expected_frames)
       shutil.rmtree(f"{route_prefix_path}--{i}")
 
-    for i in trange(num_segments):
+    for i in trange(num_segments + 1):
       # poll for next segment
       with Timeout(int(SEGMENT_LENGTH*2), error_msg=f"timed out waiting for segment {i}"):
-        while int(self._get_latest_segment_path().rsplit("--", 1)[1]) <= i:
+        while Path(f"{route_prefix_path}--{i}") not in Path(ROOT).iterdir():
           time.sleep(0.1)
+
+    managed_processes['loggerd'].stop()
 
     for i in trange(num_segments):
       check_seg(i)
