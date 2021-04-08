@@ -21,7 +21,7 @@ if arch != 'aarch64':
 widgets = qt_env.Library("qt_widgets", widgets_src, LIBS=base_libs)
 qt_libs = base_libs + [widgets]
 
-lflags = qt_env["LINKFLAGS"] + ["-Wl,--as-needed"]
+lflags = qt_env["LINKFLAGS"] + ["-Wl,--as-needed", "-Wl,--start-group"]
 
 # spinner and text window
 qt_env.Program("qt/text", ["qt/text.cc"], LIBS=qt_libs, LINKFLAGS=lflags)
