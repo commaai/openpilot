@@ -193,7 +193,7 @@ Community Maintained Cars and Features
 <sup>1</sup>Requires an [OBD-II car harness](https://comma.ai/shop/products/comma-car-harness) and [community built ASCM harness](https://github.com/commaai/openpilot/wiki/GM#hardware). ***NOTE: disconnecting the ASCM disables Automatic Emergency Braking (AEB).*** <br />
 <sup>2</sup>Only includes the MQB Passat sold outside of North America. The NMS Passat made in Chattanooga TN is not yet supported.
 
-Although it's not upstream, there's a community of people getting openpilot to run on Tesla's [here](https://tinkla.us/)
+Although it's not upstream, the community has openpilot running on other makes and models. See the 'Community Supported Models' section of each make [here](https://wiki.comma.ai/)
 
 Community Maintained Cars and Features are not verified by comma to meet our [safety model](SAFETY.md). Be extra cautious using them. They are only available after enabling the toggle in `Settings->Developer->Enable Community Features`.
 
