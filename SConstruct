@@ -193,7 +193,7 @@ env = Environment(
 
   CC='clang',
   CXX='clang++',
-  LINKFLAGS=ldflags,
+  LINKFLAGS=["-Wl,--as-needed"]+ldflags,
 
   RPATH=rpath,
 

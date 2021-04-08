@@ -2,9 +2,10 @@ Import('env', 'arch', 'cereal', 'messaging', 'common', 'visionipc', 'gpucommon')
 
 
 logger_lib = env.Library('logger', ["logger.cc"])
-libs = [logger_lib, 'zmq', 'capnp', 'kj', 'z',
+libs = [logger_lib, common, cereal, messaging, visionipc,
+        'zmq', 'capnp', 'kj', 'z',
         'avformat', 'avcodec', 'swscale', 'avutil',
-        'yuv', 'bz2', 'OpenCL', common, cereal, messaging, visionipc]
+        'yuv', 'bz2', 'OpenCL']
 
 src = ['loggerd.cc']
 if arch in ["aarch64", "larch64"]:

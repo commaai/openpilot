@@ -2,8 +2,8 @@ import os
 Import('qt_env', 'arch', 'common', 'messaging', 'gpucommon', 'visionipc',
        'cereal', 'transformations')
 
-base_libs = qt_env["LIBS"] + [gpucommon, common, 'zmq', 'capnp', 'kj', 'm', 'OpenCL', 'ssl', 'crypto', 'pthread',
-                              cereal, messaging, visionipc, transformations]
+base_libs = qt_env["LIBS"] + [gpucommon, common, cereal, messaging, visionipc, transformations, 'zmq',
+                              'capnp', 'kj', 'm', 'OpenCL', 'ssl', 'crypto', 'pthread']
 if arch == 'aarch64':
   base_libs += ['log', 'utils', 'gui', 'ui', 'CB', 'gsl', 'adreno_utils', 'cutils', 'uuid']
 
@@ -19,13 +19,11 @@ if arch != 'aarch64':
   widgets_src += ["qt/offroad/networking.cc", "qt/offroad/wifiManager.cc"]
 
 widgets = qt_env.Library("qt_widgets", widgets_src, LIBS=base_libs)
-qt_libs = base_libs + [widgets]
-
-lflags = qt_env["LINKFLAGS"] + ["-Wl,--as-needed", "-Wl,--start-group"]
+qt_libs = [widgets] + base_libs
 
 # spinner and text window
-qt_env.Program("qt/text", ["qt/text.cc"], LIBS=qt_libs, LINKFLAGS=lflags)
-qt_env.Program("qt/spinner", ["qt/spinner.cc"], LIBS=base_libs, LINKFLAGS=lflags)
+qt_env.Program("qt/text", ["qt/text.cc"], LIBS=qt_libs)
+qt_env.Program("qt/spinner", ["qt/spinner.cc"], LIBS=base_libs)
 
 # build main UI
 qt_src = ["main.cc", "ui.cc", "paint.cc", "sidebar.cc", "#phonelibs/nanovg/nanovg.c",
@@ -35,8 +33,8 @@ qt_env.Program("_ui", qt_src, LIBS=qt_libs)
 
 # setup, factory resetter, and installer
 if arch != 'aarch64' and "BUILD_SETUP" in os.environ:
-  qt_env.Program("qt/setup/reset", ["qt/setup/reset.cc"], LIBS=qt_libs, LINKFLAGS=lflags)
-  qt_env.Program("qt/setup/setup", ["qt/setup/setup.cc"], LIBS=qt_libs + ['curl', 'common', 'json11'], LINKFLAGS=lflags)
+  qt_env.Program("qt/setup/reset", ["qt/setup/reset.cc"], LIBS=qt_libs)
+  qt_env.Program("qt/setup/setup", ["qt/setup/setup.cc"], LIBS=qt_libs + ['curl', 'common', 'json11'])
   qt_env.Program("qt/setup/wifi", ["qt/setup/wifi.cc"], LIBS=qt_libs + ['common', 'json11'])
 
   installers = [
