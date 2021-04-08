@@ -21,7 +21,7 @@
 #include "common/version.h"
 #include "messaging.hpp"
 #include "logger.h"
-
+extern ExitHandler do_exit;
 
 // ***** logging helpers *****
 
@@ -120,10 +120,18 @@ kj::Array<capnp::word> logger_build_init_data() {
 
 std::string logger_get_route_name() {
   char route_name[64] = {'\0'};
-  time_t rawtime = time(NULL);
-  struct tm timeinfo;
-  localtime_r(&rawtime, &timeinfo);
-  strftime(route_name, sizeof(route_name), "%Y-%m-%d--%H-%M-%S", &timeinfo);
+  while (!do_exit) {
+    time_t rawtime = time(NULL);
+    struct tm timeinfo;
+    localtime_r(&rawtime, &timeinfo);
+    if ((timeinfo.tm_year + 1900) > 2021) {
+      strftime(route_name, sizeof(route_name), "%Y-%m-%d--%H-%M-%S", &timeinfo);
+      break;
+    }
+
+    // time is wrong, wait getting from RTC
+    util::sleep_for(10); // 10 ms
+  }
   return route_name;
 }
 
