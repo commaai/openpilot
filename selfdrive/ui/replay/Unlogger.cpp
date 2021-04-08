@@ -72,7 +72,7 @@ Unlogger::Unlogger(Events *events_, QReadWriteLock* events_lock_, QMap<int, Fram
 
 void Unlogger::process() {
 
-	vipc_server->start_listener();
+  vipc_server->start_listener();
 
   qDebug() << "hello from unlogger thread";
   while (events->size() == 0) {
@@ -166,11 +166,11 @@ void Unlogger::process() {
               auto frm = (*frs)[pp.first];
               auto data = frm->get(pp.second);
 
-							VisionBuf *buf = vipc_server->get_buffer(VisionStreamType::VISION_STREAM_RGB_BACK);
-							memcpy(buf->addr, data, frm->getRGBSize());
-							VisionIpcBufExtra extra = {};
+              VisionBuf *buf = vipc_server->get_buffer(VisionStreamType::VISION_STREAM_RGB_BACK);
+              memcpy(buf->addr, data, frm->getRGBSize());
+              VisionIpcBufExtra extra = {};
 
-							vipc_server->send(buf, &extra, false);
+              vipc_server->send(buf, &extra, false);
             }
           }
         }

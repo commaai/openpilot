@@ -23,7 +23,7 @@ Replay::Replay(QString route_, int seek, int use_api_) : route(route_), use_api(
     this->log_paths = sett2.value("logs").toArray();
   }
 
-	// add the first segment
+  // add the first segment
   addSegment(seek/60);
 }
 
@@ -37,7 +37,6 @@ bool Replay::addSegment(int i){
     } else {
       QString log_fn = this->log_paths.at(i).toString();
       lrs.insert(i, new LogReader(log_fn, &events, &events_lock, &unlogger->eidx));
-
     }
 
     lrs[i]->moveToThread(thread);

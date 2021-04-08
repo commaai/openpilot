@@ -13,23 +13,23 @@
 class Replay : public QObject {
 
 public:
-	Replay(QString route_, int seek, int use_api);
+  Replay(QString route_, int seek, int use_api);
   void replay();
-	bool addSegment(int i);
-	QJsonArray camera_paths;
-	QJsonArray log_paths;
-	int use_api;
+  bool addSegment(int i);
+  QJsonArray camera_paths;
+  QJsonArray log_paths;
+  int use_api;
 
 protected:
-	Unlogger *unlogger;
+  Unlogger *unlogger;
 
 private:
-	QString route;
+  QString route;
 
-	QReadWriteLock events_lock;
-	Events events;
+  QReadWriteLock events_lock;
+  Events events;
 
-	QMap<int, LogReader*> lrs;
-	QMap<int, FrameReader*> frs;
+  QMap<int, LogReader*> lrs;
+  QMap<int, FrameReader*> frs;
 };
 
