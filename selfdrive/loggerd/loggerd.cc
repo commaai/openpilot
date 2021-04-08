@@ -102,7 +102,7 @@ public:
   std::atomic<int> cur_seg;
 
   RotateState() : fpkt_sock(nullptr), stream_frame_id(0),
-                  last_rotate_frame_id(UINT32_MAX), enabled(false), should_rotate(false), initialized(false), rotating(false), cur_seg(-1) {};
+                  last_rotate_frame_id(UINT32_MAX), enabled(false), should_rotate(true), initialized(false), rotating(false), cur_seg(-1) {};
 
 
   void setStreamFrameId(uint32_t frame_id) {
