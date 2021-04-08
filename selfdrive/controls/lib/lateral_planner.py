@@ -1,7 +1,6 @@
 import os
 import math
 import numpy as np
-from common.params import Params
 from common.realtime import sec_since_boot, DT_MDL
 from common.numpy_fast import interp, clip
 from selfdrive.swaglog import cloudlog
@@ -9,7 +8,6 @@ from selfdrive.controls.lib.lateral_mpc import libmpc_py
 from selfdrive.controls.lib.drive_helpers import MPC_COST_LAT, MPC_N, CAR_ROTATION_RADIUS
 from selfdrive.controls.lib.lane_planner import LanePlanner, TRAJECTORY_SIZE
 from selfdrive.config import Conversions as CV
-from selfdrive.hardware import TICI
 import cereal.messaging as messaging
 from cereal import log
 
@@ -47,14 +45,8 @@ DESIRES = {
 
 
 class LateralPlanner():
-  def __init__(self, CP, use_lanelines=None):
-    params = Params()
-
-    if use_lanelines is None:
-      self.use_lanelines = not params.get_bool('EndToEndToggle')
-    else:
-      self.use_lanelines = use_lanelines
-    wide_camera = (params.get('EnableWideCamera') == b'1') if TICI else False
+  def __init__(self, CP, use_lanelines=True, wide_camera=False):
+    self.use_lanelines = use_lanelines
     self.LP = LanePlanner(wide_camera)
 
     self.last_cloudlog_t = 0
