@@ -47,10 +47,13 @@ DESIRES = {
 
 
 class LateralPlanner():
-  def __init__(self, CP):
+  def __init__(self, CP, use_lanelines=None):
     params = Params()
 
-    self.use_lanelines = not params.get_bool('EndToEndToggle')
+    if use_lanelines is None:
+      self.use_lanelines = not params.get_bool('EndToEndToggle')
+    else:
+      self.use_lanelines = use_lanelines
     wide_camera = (params.get('EnableWideCamera') == b'1') if TICI else False
     self.LP = LanePlanner(wide_camera)
 
