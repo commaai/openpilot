@@ -16,10 +16,10 @@ from tools.lib.logreader import LogReader
 PROCS = [
   ("selfdrive.controls.controlsd", 47.0),
   ("./loggerd", 45.0),
-  ("selfdrive.locationd.locationd", 35.0),
+  ("selfdrive.locationd.locationd", 32.8),
   ("selfdrive.controls.plannerd", 20.0),
   ("./_ui", 15.0),
-  ("selfdrive.locationd.paramsd", 12.0),
+  ("selfdrive.locationd.paramsd", 9.1),
   ("./camerad", 7.07),
   ("./_sensord", 6.17),
   ("selfdrive.controls.radard", 5.67),
