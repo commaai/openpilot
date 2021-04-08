@@ -154,11 +154,10 @@ LoggerdState s;
 static void trigger_rotate() {
   int err = logger_next(&s.logger, LOG_ROOT.c_str(), s.segment_path, sizeof(s.segment_path), &s.rotate_segment);
   assert(err == 0);
-  LOGW("rotated to %s", s.segment_path);
 
   for (auto &r : s.rotate_state) r.rotate();
-
   s.last_rotate_tms = millis_since_boot();
+  LOGW("rotated to %s", s.segment_path);
 }
 
 void encoder_thread(int cam_idx) {
@@ -429,7 +428,6 @@ int main(int argc, char** argv) {
         delete msg;
       }
     }
-
 
     pthread_mutex_lock(&s.rotate_lock);
     double tms = millis_since_boot();
