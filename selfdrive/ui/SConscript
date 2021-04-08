@@ -2,8 +2,8 @@ import os
 Import('qt_env', 'arch', 'common', 'messaging', 'gpucommon', 'visionipc',
        'cereal', 'transformations')
 
-base_libs = qt_env["LIBS"] + [gpucommon, common, 'zmq', 'capnp', 'kj', 'm', 'OpenCL', 'ssl', 'crypto', 'pthread',
-                              cereal, messaging, visionipc, transformations]
+base_libs = [gpucommon, common, cereal, messaging, visionipc, transformations, 'zmq',
+             'capnp', 'kj', 'm', 'OpenCL', 'ssl', 'crypto', 'pthread'] + qt_env["LIBS"]
 if arch == 'aarch64':
   base_libs += ['log', 'utils', 'gui', 'ui', 'CB', 'gsl', 'adreno_utils', 'cutils', 'uuid']
 
@@ -19,7 +19,7 @@ if arch != 'aarch64':
   widgets_src += ["qt/offroad/networking.cc", "qt/offroad/wifiManager.cc"]
 
 widgets = qt_env.Library("qt_widgets", widgets_src, LIBS=base_libs)
-qt_libs = base_libs + [widgets]
+qt_libs = [widgets] + base_libs
 
 # spinner and text window
 qt_env.Program("qt/text", ["qt/text.cc"], LIBS=qt_libs)
