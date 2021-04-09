@@ -45,7 +45,7 @@ EventName = car.CarEvent.EventName
 
 class Controls:
   def __init__(self, sm=None, pm=None, can_sock=None):
-    config_realtime_process(3, Priority.CTRL_HIGH)
+    config_realtime_process(7 if TICI else 3, Priority.CTRL_HIGH)
 
     # Setup sockets
     self.pm = pm

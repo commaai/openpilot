@@ -571,7 +571,12 @@ int main() {
   // set process priority and affinity
   err = set_realtime_priority(54);
   LOG("set priority returns %d", err);
+
+#ifdef QCOM2
+  err = set_core_affinity(7);
+#else
   err = set_core_affinity(3);
+#endif
   LOG("set affinity returns %d", err);
 
   panda_set_power(true);
