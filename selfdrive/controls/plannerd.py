@@ -16,9 +16,10 @@ def plannerd_thread(sm=None, pm=None):
   cloudlog.info("plannerd is waiting for CarParams")
   params = Params()
   CP = car.CarParams.from_bytes(params.get("CarParams", block=True))
-  use_lanelines = not params.get_bool('EndToEndToggle')
-  wide_camera = (params.get('EnableWideCamera') == b'1') if TICI else False
   cloudlog.info("plannerd got CarParams: %s", CP.carName)
+
+  use_lanelines = not params.get_bool('EndToEndToggle')
+  wide_camera = params.get_bool('EnableWideCamera') if TICI else False
 
   longitudinal_planner = Planner(CP)
   lateral_planner = LateralPlanner(CP, use_lanelines=use_lanelines, wide_camera=wide_camera)
