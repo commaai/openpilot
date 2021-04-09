@@ -108,7 +108,9 @@ class TestOnroad(unittest.TestCase):
       cls.segments = []
       with Timeout(300, "timed out waiting for logs"):
         while len(cls.segments) < 3:
-          new_paths = set(logger_root.iterdir()) - initial_segments
+          new_paths = set()
+          if logger_root.exists():
+            new_paths = set(logger_root.iterdir()) - initial_segments
           segs = [p for p in new_paths if "--" in str(p)]
           cls.segments = sorted(segs, key=lambda s: int(str(s).rsplit('--')[-1]))
           time.sleep(5)
