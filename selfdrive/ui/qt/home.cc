@@ -311,7 +311,6 @@ void GLWindow::resizeGL(int w, int h) {
 }
 
 void GLWindow::paintGL() {
-  printf("paint gl\n");
   ui_draw(&ui_state);
 
   double cur_draw_t = millis_since_boot();
