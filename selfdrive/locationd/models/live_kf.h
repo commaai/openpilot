@@ -82,26 +82,10 @@
 
 using namespace EKFS;
 
-Eigen::Map<Eigen::VectorXd> get_mapvec(Eigen::VectorXd& vec) {
-  return Eigen::Map<Eigen::VectorXd>(vec.data(), vec.rows(), vec.cols());
-}
-Eigen::Map<MatrixXdr> get_mapmat(MatrixXdr& mat) {
-  return Eigen::Map<MatrixXdr>(mat.data(), mat.rows(), mat.cols());
-}
-std::vector<Eigen::Map<Eigen::VectorXd>> get_vec_mapvec(std::vector<Eigen::VectorXd>& vec_vec) {
-  std::vector<Eigen::Map<Eigen::VectorXd>> res;
-  for (Eigen::VectorXd& vec : vec_vec) {
-    res.push_back(get_mapvec(vec));
-  }
-  return res;
-}
-std::vector<Eigen::Map<MatrixXdr>> get_vec_mapmat(std::vector<MatrixXdr>& mat_vec) {
-  std::vector<Eigen::Map<MatrixXdr>> res;
-  for (MatrixXdr& mat : mat_vec) {
-    res.push_back(get_mapmat(mat));
-  }
-  return res;
-}
+Eigen::Map<Eigen::VectorXd> get_mapvec(Eigen::VectorXd& vec);
+Eigen::Map<MatrixXdr> get_mapmat(MatrixXdr& mat);
+std::vector<Eigen::Map<Eigen::VectorXd>> get_vec_mapvec(std::vector<Eigen::VectorXd>& vec_vec);
+std::vector<Eigen::Map<MatrixXdr>> get_vec_mapmat(std::vector<MatrixXdr>& mat_vec);
 
 class LiveKalman {
 public:
@@ -118,6 +102,9 @@ public:
   std::optional<Estimate> predict_and_update_odo_trans(std::vector<Eigen::VectorXd> trans, double t, int kind);
   std::optional<Estimate> predict_and_update_odo_rot(std::vector<Eigen::VectorXd> rot, double t, int kind);
 
+  Eigen::VectorXd get_initial_x();
+  MatrixXdr get_initial_P();
+
 private:
   std::string name = "live";
 
@@ -127,7 +114,7 @@ private:
   int dim_state_err;
 
   Eigen::VectorXd initial_x;
-  Eigen::VectorXd initial_P_diag;
+  MatrixXdr initial_P;
   MatrixXdr Q;  // process noise
   std::unordered_map<int, MatrixXdr> obs_noise;
 };

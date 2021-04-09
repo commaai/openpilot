@@ -3,6 +3,27 @@
 using namespace EKFS;
 using namespace Eigen;
 
+Eigen::Map<Eigen::VectorXd> get_mapvec(Eigen::VectorXd& vec) {
+  return Eigen::Map<Eigen::VectorXd>(vec.data(), vec.rows(), vec.cols());
+}
+Eigen::Map<MatrixXdr> get_mapmat(MatrixXdr& mat) {
+  return Eigen::Map<MatrixXdr>(mat.data(), mat.rows(), mat.cols());
+}
+std::vector<Eigen::Map<Eigen::VectorXd>> get_vec_mapvec(std::vector<Eigen::VectorXd>& vec_vec) {
+  std::vector<Eigen::Map<Eigen::VectorXd>> res;
+  for (Eigen::VectorXd& vec : vec_vec) {
+    res.push_back(get_mapvec(vec));
+  }
+  return res;
+}
+std::vector<Eigen::Map<MatrixXdr>> get_vec_mapmat(std::vector<MatrixXdr>& mat_vec) {
+  std::vector<Eigen::Map<MatrixXdr>> res;
+  for (MatrixXdr& mat : mat_vec) {
+    res.push_back(get_mapmat(mat));
+  }
+  return res;
+}
+
 LiveKalman::LiveKalman() {
   this->dim_state = 23;
   this->dim_state_err = 22;
@@ -17,16 +38,16 @@ LiveKalman::LiveKalman() {
                       0.0, 0.0, 0.0,
                       0.0, 0.0, 0.0;
 
-  this->initial_P_diag = VectorXd(this->dim_state_err);
-  this->initial_P_diag << 1e16, 1e16, 1e16,
-                          1e6, 1e6, 1e6,
-                          1e4, 1e4, 1e4,
-                          std::pow(1.0, 2), std::pow(1.0, 2), std::pow(1.0, 2),
-                          std::pow(0.05, 2), std::pow(0.05, 2), std::pow(0.05, 2),
-                          std::pow(0.02, 2),
-                          std::pow(1.0, 2), std::pow(1.0, 2), std::pow(1.0, 2),
-                          std::pow(0.01, 2), std::pow(0.01, 2), std::pow(0.01, 2);
-  MatrixXdr initial_P = this->initial_P_diag.asDiagonal();
+  VectorXd initial_P_diag(this->dim_state_err);
+  initial_P_diag << 1e16, 1e16, 1e16,
+                    1e6, 1e6, 1e6,
+                    1e4, 1e4, 1e4,
+                    std::pow(1.0, 2), std::pow(1.0, 2), std::pow(1.0, 2),
+                    std::pow(0.05, 2), std::pow(0.05, 2), std::pow(0.05, 2),
+                    std::pow(0.02, 2),
+                    std::pow(1.0, 2), std::pow(1.0, 2), std::pow(1.0, 2),
+                    std::pow(0.01, 2), std::pow(0.01, 2), std::pow(0.01, 2);
+  this->initial_P = initial_P_diag.asDiagonal();
 
   VectorXd Q_diag(this->dim_state_err);
   Q_diag << std::pow(0.03, 2), std::pow(0.03, 2), std::pow(0.03, 2),
@@ -129,6 +150,10 @@ std::optional<Estimate> LiveKalman::predict_and_update_odo_rot(std::vector<Vecto
   return this->filter->predict_and_update_batch(t, kind, get_vec_mapvec(z), get_vec_mapmat(R));
 }
 
-int main() {
-  return 0;
+Eigen::VectorXd LiveKalman::get_initial_x() {
+  return this->initial_x;
+}
+
+MatrixXdr LiveKalman::get_initial_P() {
+  return this->initial_P;
 }
