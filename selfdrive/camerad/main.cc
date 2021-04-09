@@ -21,5 +21,8 @@ int main(int argc, char *argv[]) {
 #endif
 
   CameraServer s;
-  s.start();
+  cameras_init(&s);
+  cameras_open(&s);
+  s.vipc_server->start_listener();
+  cameras_run(&s);
 }

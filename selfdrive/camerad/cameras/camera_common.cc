@@ -438,11 +438,3 @@ CameraServerBase::~CameraServerBase() {
   delete pm;
   CL_CHECK(clReleaseContext(context));
 }
-
-void CameraServerBase::start() {
-  CameraServer *s = dynamic_cast<CameraServer *>(this);
-  cameras_init(s);
-  cameras_open(s);
-  vipc_server->start_listener();
-  cameras_run(s);
-}
