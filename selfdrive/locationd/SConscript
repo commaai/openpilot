@@ -13,5 +13,6 @@ env.Program("ubloxd", ["ubloxd.cc", "ublox_msg.cc", "generated/ubx.cpp", "genera
 lenv = env.Clone()
 ekf_sym_cc = env.Object("#rednose/helpers/ekf_sym.cc")
 lenv["LIBPATH"] += [libkf[0].get_dir().get_abspath()]
-locationd = lenv.Program("locationd", ["locationd.cc", "models/live_kf.cc", ekf_sym_cc], LIBS=loc_libs + [libkf])
+lenv["RPATH"] += [libkf[0].get_dir().get_abspath()]
+locationd = lenv.Program("locationd", ["locationd.cc", "models/live_kf.cc", ekf_sym_cc], LIBS=loc_libs + ['kf'])
 lenv.Depends(locationd, libkf)

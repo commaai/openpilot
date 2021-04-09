@@ -3,6 +3,8 @@
 using namespace EKFS;
 using namespace Eigen;
 
+ExitHandler do_exit;
+
 Localizer::Localizer() {
   this->kf = std::make_shared<LiveKalman>();
   this->reset_kalman();
@@ -118,8 +120,38 @@ void Localizer::update_kalman(double t, int kind, std::vector<Eigen::VectorXd> m
   }
 }
 
-void Localizer::handle_event(double current_time, cereal::Event::Reader& event) {
+void Localizer::handle_sensors(double current_time, const capnp::List<cereal::SensorEventData, capnp::Kind::STRUCT>::Reader& event) {
+  std::cout << "recv sensors" << std::endl;
+}
 
+//   def handle_sensors(self, current_time, log):
+//     # TODO does not yet account for double sensor readings in the log
+//     for sensor_reading in log:
+//       sensor_time = 1e-9 * sensor_reading.timestamp
+//       # TODO: handle messages from two IMUs at the same time
+//       if sensor_reading.source == SensorSource.lsm6ds3:
+//         continue
+
+//       # Gyro Uncalibrated
+//       if sensor_reading.sensor == 5 and sensor_reading.type == 16:
+//         self.gyro_counter += 1
+//         if self.gyro_counter % SENSOR_DECIMATION == 0:
+//           v = sensor_reading.gyroUncalibrated.v
+//           self.update_kalman(sensor_time, ObservationKind.PHONE_GYRO, [-v[2], -v[1], -v[0]])
+
+//       # Accelerometer
+//       if sensor_reading.sensor == 1 and sensor_reading.type == 1:
+//         # check if device fell, estimate 10 for g
+//         # 40m/s**2 is a good filter for falling detection, no false positives in 20k minutes of driving
+//         self.device_fell = self.device_fell or (np.linalg.norm(np.array(sensor_reading.acceleration.v) - np.array([10, 0, 0])) > 40)
+
+//         self.acc_counter += 1
+//         if self.acc_counter % SENSOR_DECIMATION == 0:
+//           v = sensor_reading.acceleration.v
+//           self.update_kalman(sensor_time, ObservationKind.PHONE_ACCEL, [-v[2], -v[1], -v[0]])
+
+void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::Reader& event) {
+  std::cout << "recv gps" << std::endl;
 }
 
 //   def handle_gps(self, current_time, log):
@@ -157,6 +189,10 @@ void Localizer::handle_event(double current_time, cereal::Event::Reader& event) 
 //     self.update_kalman(current_time, ObservationKind.ECEF_POS, ecef_pos, R=ecef_pos_R)
 //     self.update_kalman(current_time, ObservationKind.ECEF_VEL, ecef_vel, R=ecef_vel_R)
 
+void Localizer::handle_car_state(double current_time, const cereal::CarState::Reader& event) {
+  std::cout << "recv carstate" << std::endl;
+}
+
 //   def handle_car_state(self, current_time, log):
 //     self.speed_counter += 1
 
@@ -165,6 +201,10 @@ void Localizer::handle_event(double current_time, cereal::Event::Reader& event) 
 //       self.car_speed = abs(log.vEgo)
 //       if log.vEgo == 0:
 //         self.update_kalman(current_time, ObservationKind.NO_ROT, [0, 0, 0])
+
+void Localizer::handle_cam_odo(double current_time, const cereal::CameraOdometry::Reader& event) {
+  std::cout << "recv cam odo" << std::endl;
+}
 
 //   def handle_cam_odo(self, current_time, log):
 //     self.cam_counter += 1
@@ -184,31 +224,9 @@ void Localizer::handle_event(double current_time, cereal::Event::Reader& event) 
 //                          ObservationKind.CAMERA_ODO_TRANSLATION,
 //                          np.concatenate([trans_device, 10*trans_device_std]))
 
-//   def handle_sensors(self, current_time, log):
-//     # TODO does not yet account for double sensor readings in the log
-//     for sensor_reading in log:
-//       sensor_time = 1e-9 * sensor_reading.timestamp
-//       # TODO: handle messages from two IMUs at the same time
-//       if sensor_reading.source == SensorSource.lsm6ds3:
-//         continue
-
-//       # Gyro Uncalibrated
-//       if sensor_reading.sensor == 5 and sensor_reading.type == 16:
-//         self.gyro_counter += 1
-//         if self.gyro_counter % SENSOR_DECIMATION == 0:
-//           v = sensor_reading.gyroUncalibrated.v
-//           self.update_kalman(sensor_time, ObservationKind.PHONE_GYRO, [-v[2], -v[1], -v[0]])
-
-//       # Accelerometer
-//       if sensor_reading.sensor == 1 and sensor_reading.type == 1:
-//         # check if device fell, estimate 10 for g
-//         # 40m/s**2 is a good filter for falling detection, no false positives in 20k minutes of driving
-//         self.device_fell = self.device_fell or (np.linalg.norm(np.array(sensor_reading.acceleration.v) - np.array([10, 0, 0])) > 40)
-
-//         self.acc_counter += 1
-//         if self.acc_counter % SENSOR_DECIMATION == 0:
-//           v = sensor_reading.acceleration.v
-//           self.update_kalman(sensor_time, ObservationKind.PHONE_ACCEL, [-v[2], -v[1], -v[0]])
+void Localizer::handle_live_calib(double current_time, const cereal::LiveCalibrationData::Reader& event) {
+  std::cout << "recv live calib" << std::endl;
+}
 
 //   def handle_live_calib(self, current_time, log):
 //     if len(log.rpyCalib):
@@ -225,7 +243,7 @@ void Localizer::reset_kalman(double current_time) {  // TODO nan ?
 void Localizer::reset_kalman(double current_time, Eigen::VectorXd init_orient, Eigen::VectorXd init_pos) {
   // too nonlinear to init on completely wrong
   VectorXd init_x = this->kf->get_initial_x();
-  VectorXd init_P = this->kf->get_initial_P();
+  MatrixXdr init_P = this->kf->get_initial_P();
   init_x.segment<4>(3) = init_orient;
   init_x.head(3) = init_pos;
 
@@ -245,38 +263,54 @@ int Localizer::locationd_thread() {
 
   Params params;
 
-  while (true) {
-    sm.update();
+  while (!do_exit) {
+    sm.update(); // TODO timeout?
     for (const char* service : service_list) {
       if (sm.updated(service) && sm.valid(service)) {
-        this->handle_event(sm.rcv_time(service) * 1e-9, sm[service]);  // TODO rcv_frame?
+        cereal::Event::Reader& event = sm[service];
+        double t = sm.rcv_time(service) * 1e-9;
+
+        if (event.isSensorEvents()) {
+          this->handle_sensors(t, event.getSensorEvents());
+        } else if (event.isGpsLocationExternal()) {
+          this->handle_gps(t, event.getGpsLocationExternal());
+        } else if (event.isCarState()) {
+          this->handle_car_state(t, event.getCarState());
+        } else if (event.isCameraOdometry()) {
+          this->handle_cam_odo(t, event.getCameraOdometry());
+        } else if (event.isLiveCalibration()) {
+          this->handle_live_calib(t, event.getLiveCalibration());
+        } else {
+          std::cout << "invalid event" << std::endl;
+        }
       }
     }
 
-    if (sm.updated("cameraOdometry")) {
-      double t = sm.rcv_time("cameraOdometry") * 1e-9;  // TODO rcv_frame?
+//     if (sm.updated("cameraOdometry")) {
+//       double t = sm.rcv_time("cameraOdometry") * 1e-9;  // TODO rcv_frame?
 
-      MessageBuilder msg_builder;
-      auto evnt = msg_builder.initEvent();
-      evnt.setLogMonoTime(t);
-      auto liveLoc = msg_builder.initEvent().initLiveLocationKalman();
-      //liveLoc.setLiveLocationKalman(this->liveLocationMsg());
-      liveLoc.setInputsOK(sm.allAliveAndValid());
-      liveLoc.setSensorsOK(sm.alive("sensorEvents") && sm.valid("sensorEvents"));
-      liveLoc.setGpsOK((t / 1e9) - this->last_gps_fix < 1.0);
-      pm.send("liveLocationKalman", msg_builder);
+//       MessageBuilder msg_builder;
+//       auto evnt = msg_builder.initEvent();
+//       evnt.setLogMonoTime(t);
+//       auto liveLoc = msg_builder.initEvent().initLiveLocationKalman();
+//       //liveLoc.setLiveLocationKalman(this->liveLocationMsg());
+//       liveLoc.setInputsOK(sm.allAliveAndValid());
+//       liveLoc.setSensorsOK(sm.alive("sensorEvents") && sm.valid("sensorEvents"));
+//       liveLoc.setGpsOK((t / 1e9) - this->last_gps_fix < 1.0);
+//       pm.send("liveLocationKalman", msg_builder);
 
-// TODO:
-//       if sm.frame % 1200 == 0 and msg.liveLocationKalman.gpsOK:  # once a minute
-//         location = {
-//           'latitude': msg.liveLocationKalman.positionGeodetic.value[0],
-//           'longitude': msg.liveLocationKalman.positionGeodetic.value[1],
-//           'altitude': msg.liveLocationKalman.positionGeodetic.value[2],
-//         }
-//         params.put("LastGPSPosition", json.dumps(location))
+// // TODO:
+// //       if sm.frame % 1200 == 0 and msg.liveLocationKalman.gpsOK:  # once a minute
+// //         location = {
+// //           'latitude': msg.liveLocationKalman.positionGeodetic.value[0],
+// //           'longitude': msg.liveLocationKalman.positionGeodetic.value[1],
+// //           'altitude': msg.liveLocationKalman.positionGeodetic.value[2],
+// //         }
+// //         params.put("LastGPSPosition", json.dumps(location))
 
-    }
+//     }
   }
+  return 0;
 }
 
 int main() {

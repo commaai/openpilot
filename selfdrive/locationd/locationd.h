@@ -7,6 +7,7 @@
 
 #include "messaging.hpp"
 #include "common/params.h"
+#include "common/util.h"
 #include "common/swaglog.h"
 #include "common/timing.h"
 #include "common/transformations/coordinates.hpp"
@@ -32,7 +33,11 @@ public:
   static cereal::LiveLocationKalman msg_from_state(/*converter, */MatrixXdr calib_from_device, //H,
       Eigen::VectorXd predicted_state, MatrixXdr predicted_cov, bool calibrated);
 
-  void handle_event(double current_time, cereal::Event::Reader& event);
+  void handle_sensors(double current_time, const capnp::List<cereal::SensorEventData, capnp::Kind::STRUCT>::Reader& event);
+  void handle_gps(double current_time, const cereal::GpsLocationData::Reader& event);
+  void handle_car_state(double current_time, const cereal::CarState::Reader& event);
+  void handle_cam_odo(double current_time, const cereal::CameraOdometry::Reader& event);
+  void handle_live_calib(double current_time, const cereal::LiveCalibrationData::Reader& event);
 
 private:
   std::shared_ptr<LiveKalman> kf;
