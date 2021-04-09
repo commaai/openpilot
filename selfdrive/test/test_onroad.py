@@ -89,7 +89,10 @@ class TestOnroad(unittest.TestCase):
     os.environ['FINGERPRINT'] = "TOYOTA COROLLA TSS2 2019"
     set_params_enabled()
 
-    initial_segments = set(Path(ROOT).iterdir())
+    logger_root = Path(ROOT)
+    initial_segments = set()
+    if logger_root.exists():
+      initial_segments = set(Path(ROOT).iterdir())
 
     # start manager and run openpilot for a minute
     try:
@@ -105,7 +108,7 @@ class TestOnroad(unittest.TestCase):
       cls.segments = []
       with Timeout(300, "timed out waiting for logs"):
         while len(cls.segments) < 3:
-          new_paths = set(Path(ROOT).iterdir()) - initial_segments
+          new_paths = set(logger_root.iterdir()) - initial_segments
           segs = [p for p in new_paths if "--" in str(p)]
           cls.segments = sorted(segs, key=lambda s: int(str(s).rsplit('--')[-1]))
           time.sleep(5)
