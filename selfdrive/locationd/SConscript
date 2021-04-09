@@ -1,4 +1,4 @@
-Import('env', 'common', 'cereal', 'messaging', 'libkf')
+Import('env', 'common', 'cereal', 'messaging', 'libkf', 'transformations')
 
 loc_libs = [cereal, messaging, 'zmq', common, 'capnp', 'kj', 'kaitai', 'pthread']
 
@@ -14,5 +14,5 @@ lenv = env.Clone()
 ekf_sym_cc = env.Object("#rednose/helpers/ekf_sym.cc")
 lenv["LIBPATH"] += [libkf[0].get_dir().get_abspath()]
 lenv["RPATH"] += [libkf[0].get_dir().get_abspath()]
-locationd = lenv.Program("locationd", ["locationd.cc", "models/live_kf.cc", ekf_sym_cc], LIBS=loc_libs + ['kf'])
+locationd = lenv.Program("locationd", ["locationd.cc", "models/live_kf.cc", ekf_sym_cc], LIBS=loc_libs + [transformations, 'kf'])
 lenv.Depends(locationd, libkf)

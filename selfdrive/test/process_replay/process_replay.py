@@ -286,7 +286,7 @@ CONFIGS = [
   ProcessConfig(
     proc_name="locationd",
     pub_sub={
-      "cameraOdometry": [], # TODO ["liveLocationKalman"],
+      "cameraOdometry": ["liveLocationKalman"],
       "sensorEvents": [], "gpsLocationExternal": [], "liveCalibration": [], "carState": [],
     },
     ignore=["logMonoTime", "valid"],

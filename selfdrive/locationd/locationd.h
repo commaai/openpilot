@@ -11,14 +11,20 @@
 #include "common/swaglog.h"
 #include "common/timing.h"
 #include "common/transformations/coordinates.hpp"
+#include "common/transformations/orientation.hpp"
 
 #include "models/live_kf.h"
+
+#define DEG2RAD(x) ((x) * M_PI / 180.0)
+#define RAD2DEG(x) ((x) * 180.0 / M_PI)
 
 #define VISION_DECIMATION 1 // 2
 #define SENSOR_DECIMATION 1 // 10
 #define POSENET_STD_HIST 40
 
 Eigen::VectorXd floatlist_to_vector(const capnp::List<float, capnp::Kind::PRIMITIVE>::Reader& floatlist);
+Eigen::VectorXd quat2vector(const Eigen::Quaterniond& quat);
+Eigen::Quaterniond vector2quat(const Eigen::VectorXd& vec);
 
 class Localizer {
 public:
@@ -55,11 +61,12 @@ private:
   int posenet_invalid_count = 0;
   int car_speed = 0;
   Eigen::VectorXd posenet_stds;
+  int posenet_stds_i = 0;
 
-//     self.converter = coord.LocalCoord.from_ecef(self.kf.x[States.ECEF_POS])
+  std::shared_ptr<LocalCoord> converter;
 
   int unix_timestamp_millis = 0;
-  int last_gps_fix = 0;
+  double last_gps_fix = 0;
   bool device_fell = false;
 
   int gyro_counter = 0;

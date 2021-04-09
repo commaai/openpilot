@@ -95,6 +95,7 @@ public:
   void init_state(Eigen::VectorXd& state, MatrixXdr& covs, double filter_time);
   void init_state(Eigen::VectorXd& state, double filter_time);
 
+  Eigen::VectorXd get_x();
   std::vector<MatrixXdr> get_R(int kind, int n);
 
   std::optional<Estimate> predict_and_observe(double t, int kind, std::vector<Eigen::VectorXd> meas, std::vector<MatrixXdr> R = {});

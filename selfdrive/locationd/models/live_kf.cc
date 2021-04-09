@@ -91,6 +91,10 @@ void LiveKalman::init_state(VectorXd& state, double filter_time) {
   this->filter->init_state(get_mapvec(state), get_mapmat(covs), filter_time);
 }
 
+VectorXd LiveKalman::get_x() {
+  return this->filter->state();
+}
+
 std::vector<MatrixXdr> LiveKalman::get_R(int kind, int n) {
   std::vector<MatrixXdr> R;
   for (int i = 0; i < n; i++) {

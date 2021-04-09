@@ -22,7 +22,7 @@ procs = [
   PythonProcess("controlsd", "selfdrive.controls.controlsd"),
   PythonProcess("deleter", "selfdrive.loggerd.deleter", persistent=True),
   PythonProcess("dmonitoringd", "selfdrive.monitoring.dmonitoringd", enabled=(not PC or WEBCAM), driverview=True),
-  #PythonProcess("locationd", "selfdrive.locationd.locationd"),
+  # PythonProcess("locationd", "selfdrive.locationd.locationd"),
   NativeProcess("locationd", "selfdrive/locationd", ["./locationd"]),
   PythonProcess("logmessaged", "selfdrive.logmessaged", persistent=True),
   PythonProcess("pandad", "selfdrive.pandad", persistent=True),
