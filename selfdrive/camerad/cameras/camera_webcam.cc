@@ -183,10 +183,7 @@ CameraServer::~CameraServer() {
 void CameraServer::run() {
   start_process_thread(&road_cam, process_road_camera);
   start_process_thread(&driver_cam, process_driver_camera);
-
-  std::thread t_rear = std::thread(road_camera_thread, &road_cam);
+  camera_threads.push_back(std::thread(road_camera_thread, &road_cam));
   set_thread_name("webcam_thread");
   driver_camera_thread(&driver_cam);
-
-  t_rear.join();
 }

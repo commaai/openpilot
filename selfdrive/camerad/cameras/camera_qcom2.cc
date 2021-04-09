@@ -1081,7 +1081,7 @@ CameraServer::~CameraServer() {
 
 void CameraServer::run() {
   LOG("-- Starting threads");
-  std::thread thread = std::thread(ae_thread, this);
+  camera_threads.push_back(std::thread(ae_thread, this));
   start_process_thread(&road_cam, process_road_camera);
   start_process_thread(&driver_cam, process_driver_camera);
   start_process_thread(&wide_road_cam, process_road_camera);
@@ -1131,5 +1131,4 @@ void CameraServer::run() {
   }
 
   LOG(" ************** STOPPING **************");
-  thread.join();
 }

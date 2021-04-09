@@ -1122,9 +1122,9 @@ CameraServer::~CameraServer() {
 }
 
 void CameraServer::run() {
-  std::thread thread = std::thread(ops_thread, this);
-  start_process_thread(&road_cam, process_road_camera));
-  start_process_thread(&driver_cam, process_driver_camera));
+  camera_threads.push_back(std::thread(ops_thread, this));
+  start_process_thread(&road_cam, process_road_camera);
+  start_process_thread(&driver_cam, process_driver_camera);
 
   CameraState* cameras[2] = {&road_cam, &driver_cam};
 
@@ -1187,5 +1187,4 @@ void CameraServer::run() {
   }
 
   LOG(" ************** STOPPING **************");
-  thread.join();
 }

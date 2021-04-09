@@ -442,5 +442,5 @@ void CameraServerBase::start() {
 }
 
 void CameraServerBase::start_process_thread(CameraState *cs, process_thread_cb callback) {
-  camera_threads.push_back(std::thread(processing_thread, dynamic_cast<CameraServer*>(this), cs, callback));
+  camera_threads.push_back(std::thread(processing_thread, (CameraServer*)(this), cs, callback));
 }
