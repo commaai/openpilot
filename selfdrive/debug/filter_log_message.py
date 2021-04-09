@@ -49,7 +49,7 @@ if __name__ == "__main__":
   logs = None
   if len(args.route):
     r = Route(args.route[0])
-    logs = r.log_paths()  # TODO: switch to qlogs when logs are in there
+    logs = r.qlog_paths()
 
   if len(args.route) == 2 and logs:
     n = int(args.route[1])
