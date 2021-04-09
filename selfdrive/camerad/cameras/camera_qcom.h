@@ -88,7 +88,9 @@ typedef struct CameraState {
 
 class CameraServer : public CameraServerBase {
 public:
-  CameraServer() : CameraServerBase() {}
+  CameraServer();
+  ~CameraServer();
+  void run() override;
 
   unique_fd ispif_fd;
   unique_fd msmcfg_fd;

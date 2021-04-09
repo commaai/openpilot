@@ -355,10 +355,6 @@ void *processing_thread(CameraServer *server, CameraState *cs, process_thread_cb
   return NULL;
 }
 
-std::thread start_process_thread(CameraServer *server, CameraState *cs, process_thread_cb callback) {
-  return std::thread(processing_thread, server, cs, callback);
-}
-
 static void driver_cam_auto_exposure(CameraState *c, SubMaster &sm) {
   static const bool is_rhd = Params().getBool("IsRHD");
   struct ExpRect {int x1, x2, x_skip, y1, y2, y_skip;};
@@ -437,4 +433,14 @@ CameraServerBase::~CameraServerBase() {
   delete sm;
   delete pm;
   CL_CHECK(clReleaseContext(context));
+}
+
+void CameraServerBase::start() {
+  vipc_server->start_listener();
+  run();
+  for (auto &t : camera_threads) t.join();
+}
+
+void CameraServerBase::start_process_thread(CameraState *cs, process_thread_cb callback) {
+  camera_threads.push_back(std::thread(processing_thread, dynamic_cast<CameraServer*>(this), cs, callback));
 }

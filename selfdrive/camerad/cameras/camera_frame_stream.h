@@ -16,7 +16,9 @@ typedef struct CameraState {
 
 class CameraServer : public CameraServerBase {
 public:
-  CameraServer() : CameraServerBase() {}
+  CameraServer();
+  void run() override;
+
   CameraState road_cam;
   CameraState driver_cam;
 };

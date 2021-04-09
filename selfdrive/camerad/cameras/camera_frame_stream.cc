@@ -73,19 +73,18 @@ void run_frame_stream(CameraState &camera, const char* frame_pkt) {
 
 }  // namespace
 
-void cameras_init(CameraServer *s) {
-  camera_init(s, &s->road_cam, CAMERA_ID_IMX298, 20);
-  camera_init(s, &s->driver_cam, CAMERA_ID_OV8865, 10);
-}
-
-void cameras_open(CameraServer *s) {}
-void cameras_close(CameraServer *s) {}
 void camera_autoexposure(CameraState *s, float grey_frac) {}
 void process_road_camera(CameraServer *s, CameraState *c, int cnt) {}
 
-void cameras_run(CameraServer *s) {
-  std::thread t = start_process_thread(s, &s->road_cam, process_road_camera);
+// CameraServer
+
+CameraServer::CameraServer() : CameraServerBase() {
+  camera_init(this, &road_cam, CAMERA_ID_IMX298, 20);
+  camera_init(this, &driver_cam, CAMERA_ID_OV8865, 10);
+}
+
+void CameraServer::run() {
+  start_process_thread(&road_cam, process_road_camera);
   set_thread_name("frame_streaming");
-  run_frame_stream(s->road_cam, "roadCameraState");
-  t.join();
+  run_frame_stream(road_cam, "roadCameraState");
 }

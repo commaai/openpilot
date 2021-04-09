@@ -943,7 +943,6 @@ void cameras_open(CameraServer *s) {
   camera_open(&s->road_cam, true);
 
   if (getenv("CAMERA_TEST")) {
-    cameras_close(s);
     exit(0);
   }
 
@@ -1104,13 +1103,30 @@ void process_road_camera(CameraServer *s, CameraState *c, int cnt) {
   }
 }
 
-void cameras_run(CameraServer *s) {
-  std::vector<std::thread> threads;
-  threads.push_back(std::thread(ops_thread, s));
-  threads.push_back(start_process_thread(s, &s->road_cam, process_road_camera));
-  threads.push_back(start_process_thread(s, &s->driver_cam, process_driver_camera));
+// CameraServer
 
-  CameraState* cameras[2] = {&s->road_cam, &s->driver_cam};
+CameraServer::CameraServer() : CameraServerBase() {
+  cameras_init(this);
+  cameras_open(this);
+}
+
+CameraServer::~CameraServer() {
+  camera_close(&road_cam);
+  camera_close(&driver_cam);
+  for (int i = 0; i < FRAME_BUF_COUNT; i++) {
+    focus_bufs[i].free();
+    stats_bufs[i].free();
+  }
+
+  delete lap_conv;
+}
+
+void CameraServer::run() {
+  std::thread thread = std::thread(ops_thread, this);
+  start_process_thread(&road_cam, process_road_camera));
+  start_process_thread(&driver_cam, process_driver_camera));
+
+  CameraState* cameras[2] = {&road_cam, &driver_cam};
 
   while (!do_exit) {
     struct pollfd fds[2] = {{.fd = cameras[0]->isp_fd, .events = POLLPRI},
@@ -1171,19 +1187,5 @@ void cameras_run(CameraServer *s) {
   }
 
   LOG(" ************** STOPPING **************");
-
-  for (auto &t : threads) t.join();
-
-  cameras_close(s);
-}
-
-void cameras_close(CameraServer *s) {
-  camera_close(&s->road_cam);
-  camera_close(&s->driver_cam);
-  for (int i = 0; i < FRAME_BUF_COUNT; i++) {
-    s->focus_bufs[i].free();
-    s->stats_bufs[i].free();
-  }
-
-  delete s->lap_conv;
+  thread.join();
 }

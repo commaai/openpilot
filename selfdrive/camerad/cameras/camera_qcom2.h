@@ -59,7 +59,10 @@ typedef struct CameraState {
 
 class CameraServer : public CameraServerBase {
 public:
-  CameraServer() : CameraServerBase() {}
+  CameraServer();
+  ~CameraServer();
+  void run() override;
+
   int device;
 
   unique_fd video0_fd;

@@ -151,11 +151,6 @@ void cameras_open(CameraServer *s) {
   camera_open(&s->road_cam, true);
 }
 
-void cameras_close(CameraServer *s) {
-  camera_close(&s->road_cam);
-  camera_close(&s->driver_cam);
-}
-
 void process_driver_camera(CameraServer *s, CameraState *c, int cnt) {
   MessageBuilder msg;
   auto framed = msg.initEvent().initDriverCameraState();
@@ -174,18 +169,24 @@ void process_road_camera(CameraServer *s, CameraState *c, int cnt) {
   s->pm->send("roadCameraState", msg);
 }
 
-void cameras_run(CameraServer *s) {
-  std::vector<std::thread> threads;
-  threads.push_back(start_process_thread(s, &s->road_cam, process_road_camera));
-  threads.push_back(start_process_thread(s, &s->driver_cam, process_driver_camera));
+// CameraServer
+CameraServer::CameraServer() : CameraServerBase() {
+  cameras_init(this);
+  cameras_open(this);
+}
 
-  std::thread t_rear = std::thread(road_camera_thread, &s->road_cam);
+CameraServer::~CameraServer() {
+  camera_close(&road_cam);
+  camera_close(&driver_cam);
+}
+
+void CameraServer::run() {
+  start_process_thread(&road_cam, process_road_camera);
+  start_process_thread(&driver_cam, process_driver_camera);
+
+  std::thread t_rear = std::thread(road_camera_thread, &road_cam);
   set_thread_name("webcam_thread");
-  driver_camera_thread(&s->driver_cam);
+  driver_camera_thread(&driver_cam);
 
   t_rear.join();
-
-  for (auto &t : threads) t.join();
-
-  cameras_close(s);
 }
