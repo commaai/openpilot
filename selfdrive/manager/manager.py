@@ -42,7 +42,7 @@ def manager_init():
 
   # is this dashcam?
   if os.getenv("PASSIVE") is not None:
-    params.put("Passive", str(int(os.getenv("PASSIVE"))))
+    params.put_bool("Passive", bool(int(os.getenv("PASSIVE"))))
 
   if params.get("Passive") is None:
     raise Exception("Passive must be set to continue")
