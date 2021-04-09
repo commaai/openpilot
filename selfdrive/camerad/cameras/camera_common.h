@@ -89,6 +89,8 @@ class CameraServerBase {
 public:
   CameraServerBase();
   virtual ~CameraServerBase();
+  void start();
+
   cl_device_id device_id;
   cl_context context;
   VisionIpcServer *vipc_server;
