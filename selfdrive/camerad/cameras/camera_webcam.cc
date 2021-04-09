@@ -3,7 +3,6 @@
 #include <unistd.h>
 #include <assert.h>
 #include <string.h>
-#include <pthread.h>
 
 #include "common/util.h"
 #include "common/timing.h"
@@ -59,14 +58,14 @@ void camera_close(CameraState *s) {
   // empty
 }
 
-void camera_init(VisionIpcServer * v, CameraState *s, int camera_id, unsigned int fps, cl_device_id device_id, cl_context ctx, VisionStreamType rgb_type, VisionStreamType yuv_type) {
+void camera_init(MultiCameraState *cameras, CameraState *s, int camera_id, unsigned int fps) {
   assert(camera_id < ARRAYSIZE(cameras_supported));
   s->ci = cameras_supported[camera_id];
   assert(s->ci.frame_width != 0);
 
   s->camera_num = camera_id;
   s->fps = fps;
-  s->buf.init(device_id, ctx, s, v, FRAME_BUF_COUNT, rgb_type, yuv_type);
+  s->buf.init(cameras, s, FRAME_BUF_COUNT);
 }
 
 void run_camera(CameraState *s, cv::VideoCapture &video_cap, float *ts) {
@@ -138,12 +137,9 @@ void driver_camera_thread(CameraState *s) {
 
 }  // namespace
 
-void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
-  camera_init(v, &s->road_cam, CAMERA_ID_LGC920, 20, device_id, ctx,
-              VISION_STREAM_RGB_BACK, VISION_STREAM_YUV_BACK);
-  camera_init(v, &s->driver_cam, CAMERA_ID_LGC615, 10, device_id, ctx,
-              VISION_STREAM_RGB_FRONT, VISION_STREAM_YUV_FRONT);
-  s->pm = new PubMaster({"roadCameraState", "driverCameraState", "thumbnail"});
+void cameras_init(MultiCameraState *s) {
+  camera_init(s, &s->road_cam, CAMERA_ID_LGC920, 20);
+  camera_init(s, &s->driver_cam, CAMERA_ID_LGC615, 10);
 }
 
 void camera_autoexposure(CameraState *s, float grey_frac) {}
@@ -158,7 +154,6 @@ void cameras_open(MultiCameraState *s) {
 void cameras_close(MultiCameraState *s) {
   camera_close(&s->road_cam);
   camera_close(&s->driver_cam);
-  delete s->pm;
 }
 
 void process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) {

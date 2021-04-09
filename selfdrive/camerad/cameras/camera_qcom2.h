@@ -2,7 +2,6 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include <pthread.h>
 
 #include "common/util.h"
 #include "camera_common.h"
@@ -58,7 +57,9 @@ typedef struct CameraState {
   CameraBuf buf;
 } CameraState;
 
-typedef struct MultiCameraState {
+class MultiCameraState : public MultiCameraStateBase {
+public:
+  MultiCameraState() : MultiCameraStateBase() {}
   int device;
 
   unique_fd video0_fd;
@@ -73,7 +74,4 @@ typedef struct MultiCameraState {
   CameraState driver_cam;
 
   pthread_mutex_t isp_lock;
-
-  SubMaster *sm;
-  PubMaster *pm;
-} MultiCameraState;
+};

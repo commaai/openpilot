@@ -34,14 +34,14 @@ CameraInfo cameras_supported[CAMERA_ID_MAX] = {
   },
 };
 
-void camera_init(VisionIpcServer * v, CameraState *s, int camera_id, unsigned int fps, cl_device_id device_id, cl_context ctx, VisionStreamType rgb_type, VisionStreamType yuv_type) {
+void camera_init(MultiCameraState *cameras, CameraState *s, int camera_id, unsigned int fps) {
   assert(camera_id < ARRAYSIZE(cameras_supported));
   s->ci = cameras_supported[camera_id];
   assert(s->ci.frame_width != 0);
 
   s->camera_num = camera_id;
   s->fps = fps;
-  s->buf.init(device_id, ctx, s, v, FRAME_BUF_COUNT, rgb_type, yuv_type);
+  s->buf.init(cameras, s, FRAME_BUF_COUNT);
 }
 
 void run_frame_stream(CameraState &camera, const char* frame_pkt) {
@@ -73,11 +73,9 @@ void run_frame_stream(CameraState &camera, const char* frame_pkt) {
 
 }  // namespace
 
-void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
-  camera_init(v, &s->road_cam, CAMERA_ID_IMX298, 20, device_id, ctx,
-              VISION_STREAM_RGB_BACK, VISION_STREAM_YUV_BACK);
-  camera_init(v, &s->driver_cam, CAMERA_ID_OV8865, 10, device_id, ctx,
-              VISION_STREAM_RGB_FRONT, VISION_STREAM_YUV_FRONT);
+void cameras_init(MultiCameraState *s) {
+  camera_init(s, &s->road_cam, CAMERA_ID_IMX298, 20);
+  camera_init(s, &s->driver_cam, CAMERA_ID_OV8865, 10);
 }
 
 void cameras_open(MultiCameraState *s) {}
