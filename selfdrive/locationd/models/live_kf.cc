@@ -124,7 +124,7 @@ std::optional<Estimate> LiveKalman::predict_and_observe(double t, int kind, std:
 
 std::optional<Estimate> LiveKalman::predict_and_update_odo_speed(std::vector<VectorXd> speed, double t, int kind) {
   std::vector<MatrixXdr> R;
-  std::fill(R.begin(), R.end(), (MatrixXdr(1, 1) << std::pow(0.2, 2)).finished().asDiagonal());
+  R.assign(speed.size(), (MatrixXdr(1, 1) << std::pow(0.2, 2)).finished().asDiagonal());
   return this->filter->predict_and_update_batch(t, kind, get_vec_mapvec(speed), get_vec_mapmat(R));
 }
 

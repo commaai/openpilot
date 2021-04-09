@@ -14,10 +14,11 @@
 
 #include "models/live_kf.h"
 
-#define VISION_DECIMATION 2
-#define SENSOR_DECIMATION 10
+#define VISION_DECIMATION 1 // 2
+#define SENSOR_DECIMATION 1 // 10
 #define POSENET_STD_HIST 40
 
+Eigen::VectorXd floatlist_to_vector(const capnp::List<float, capnp::Kind::PRIMITIVE>::Reader& floatlist);
 
 class Localizer {
 public:
@@ -33,11 +34,11 @@ public:
   static cereal::LiveLocationKalman msg_from_state(/*converter, */MatrixXdr calib_from_device, //H,
       Eigen::VectorXd predicted_state, MatrixXdr predicted_cov, bool calibrated);
 
-  void handle_sensors(double current_time, const capnp::List<cereal::SensorEventData, capnp::Kind::STRUCT>::Reader& event);
-  void handle_gps(double current_time, const cereal::GpsLocationData::Reader& event);
-  void handle_car_state(double current_time, const cereal::CarState::Reader& event);
-  void handle_cam_odo(double current_time, const cereal::CameraOdometry::Reader& event);
-  void handle_live_calib(double current_time, const cereal::LiveCalibrationData::Reader& event);
+  void handle_sensors(double current_time, const capnp::List<cereal::SensorEventData, capnp::Kind::STRUCT>::Reader& log);
+  void handle_gps(double current_time, const cereal::GpsLocationData::Reader& log);
+  void handle_car_state(double current_time, const cereal::CarState::Reader& log);
+  void handle_cam_odo(double current_time, const cereal::CameraOdometry::Reader& log);
+  void handle_live_calib(double current_time, const cereal::LiveCalibrationData::Reader& log);
 
 private:
   std::shared_ptr<LiveKalman> kf;
@@ -52,7 +53,6 @@ private:
 //     self.H = get_H()
 
   int posenet_invalid_count = 0;
-  int posenet_speed = 0;
   int car_speed = 0;
   Eigen::VectorXd posenet_stds;
 

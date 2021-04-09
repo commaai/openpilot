@@ -5,6 +5,14 @@ using namespace Eigen;
 
 ExitHandler do_exit;
 
+VectorXd floatlist_to_vector(const capnp::List<float, capnp::Kind::PRIMITIVE>::Reader& floatlist) {
+  VectorXd res(floatlist.size());
+  for (int i = 0; i < floatlist.size(); i++) {
+    res[i] = floatlist[i];
+  }
+  return res;
+}
+
 Localizer::Localizer() {
   this->kf = std::make_shared<LiveKalman>();
   this->reset_kalman();
@@ -120,7 +128,7 @@ void Localizer::update_kalman(double t, int kind, std::vector<Eigen::VectorXd> m
   }
 }
 
-void Localizer::handle_sensors(double current_time, const capnp::List<cereal::SensorEventData, capnp::Kind::STRUCT>::Reader& event) {
+void Localizer::handle_sensors(double current_time, const capnp::List<cereal::SensorEventData, capnp::Kind::STRUCT>::Reader& log) {
   std::cout << "recv sensors" << std::endl;
 }
 
@@ -150,7 +158,7 @@ void Localizer::handle_sensors(double current_time, const capnp::List<cereal::Se
 //           v = sensor_reading.acceleration.v
 //           self.update_kalman(sensor_time, ObservationKind.PHONE_ACCEL, [-v[2], -v[1], -v[0]])
 
-void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::Reader& event) {
+void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::Reader& log) {
   std::cout << "recv gps" << std::endl;
 }
 
@@ -189,42 +197,39 @@ void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::R
 //     self.update_kalman(current_time, ObservationKind.ECEF_POS, ecef_pos, R=ecef_pos_R)
 //     self.update_kalman(current_time, ObservationKind.ECEF_VEL, ecef_vel, R=ecef_vel_R)
 
-void Localizer::handle_car_state(double current_time, const cereal::CarState::Reader& event) {
-  std::cout << "recv carstate" << std::endl;
+void Localizer::handle_car_state(double current_time, const cereal::CarState::Reader& log) {
+  this->speed_counter += 1;
+
+  if (this->speed_counter % SENSOR_DECIMATION == 0) {
+    this->update_kalman(current_time, KIND_ODOMETRIC_SPEED, { (VectorXd(1) << log.getVEgo()).finished() });
+    this->car_speed = abs(log.getVEgo());
+    if (log.getVEgo() == 0.0) {
+      this->update_kalman(current_time, KIND_NO_ROT, { (VectorXd(3) << 0.0, 0.0, 0.0).finished() });
+    }
+  }
 }
 
-//   def handle_car_state(self, current_time, log):
-//     self.speed_counter += 1
+void Localizer::handle_cam_odo(double current_time, const cereal::CameraOdometry::Reader& log) {
+  this->cam_counter += 1;
 
-//     if self.speed_counter % SENSOR_DECIMATION == 0:
-//       self.update_kalman(current_time, ObservationKind.ODOMETRIC_SPEED, [log.vEgo])
-//       self.car_speed = abs(log.vEgo)
-//       if log.vEgo == 0:
-//         self.update_kalman(current_time, ObservationKind.NO_ROT, [0, 0, 0])
+  if (this->cam_counter % VISION_DECIMATION == 0) {
+    VectorXd rot_device = this->device_from_calib * floatlist_to_vector(log.getRot());
+    VectorXd rot_device_std = (this->device_from_calib * floatlist_to_vector(log.getRotStd())) * 10.0;
+    this->update_kalman(current_time, KIND_CAMERA_ODO_ROTATION,
+      { (VectorXd(rot_device.rows() + rot_device_std.rows()) << rot_device, rot_device_std).finished() });
 
-void Localizer::handle_cam_odo(double current_time, const cereal::CameraOdometry::Reader& event) {
-  std::cout << "recv cam odo" << std::endl;
+    VectorXd trans_device = this->device_from_calib * floatlist_to_vector(log.getTrans());
+    VectorXd trans_device_std = this->device_from_calib * floatlist_to_vector(log.getTransStd());
+    //this->posenet_stds[:-1] = this->posenet_stds[1:]
+    //this->posenet_stds[-1] = trans_device_std[0]
+
+    trans_device_std *= 10.0;
+    this->update_kalman(current_time, KIND_CAMERA_ODO_TRANSLATION,
+      { (VectorXd(trans_device.rows() + trans_device_std.rows()) << trans_device, trans_device_std).finished() });
+  }
 }
 
-//   def handle_cam_odo(self, current_time, log):
-//     self.cam_counter += 1
-
-//     if self.cam_counter % VISION_DECIMATION == 0:
-//       rot_device = self.device_from_calib.dot(log.rot)
-//       rot_device_std = self.device_from_calib.dot(log.rotStd)
-//       self.update_kalman(current_time,
-//                          ObservationKind.CAMERA_ODO_ROTATION,
-//                          np.concatenate([rot_device, 10*rot_device_std]))
-//       trans_device = self.device_from_calib.dot(log.trans)
-//       trans_device_std = self.device_from_calib.dot(log.transStd)
-//       self.posenet_speed = np.linalg.norm(trans_device)
-//       self.posenet_stds[:-1] = self.posenet_stds[1:]
-//       self.posenet_stds[-1] = trans_device_std[0]
-//       self.update_kalman(current_time,
-//                          ObservationKind.CAMERA_ODO_TRANSLATION,
-//                          np.concatenate([trans_device, 10*trans_device_std]))
-
-void Localizer::handle_live_calib(double current_time, const cereal::LiveCalibrationData::Reader& event) {
+void Localizer::handle_live_calib(double current_time, const cereal::LiveCalibrationData::Reader& log) {
   std::cout << "recv live calib" << std::endl;
 }
 
@@ -267,19 +272,19 @@ int Localizer::locationd_thread() {
     sm.update(); // TODO timeout?
     for (const char* service : service_list) {
       if (sm.updated(service) && sm.valid(service)) {
-        cereal::Event::Reader& event = sm[service];
+        cereal::Event::Reader& log = sm[service];
         double t = sm.rcv_time(service) * 1e-9;
 
-        if (event.isSensorEvents()) {
-          this->handle_sensors(t, event.getSensorEvents());
-        } else if (event.isGpsLocationExternal()) {
-          this->handle_gps(t, event.getGpsLocationExternal());
-        } else if (event.isCarState()) {
-          this->handle_car_state(t, event.getCarState());
-        } else if (event.isCameraOdometry()) {
-          this->handle_cam_odo(t, event.getCameraOdometry());
-        } else if (event.isLiveCalibration()) {
-          this->handle_live_calib(t, event.getLiveCalibration());
+        if (log.isSensorEvents()) {
+          this->handle_sensors(t, log.getSensorEvents());
+        } else if (log.isGpsLocationExternal()) {
+          this->handle_gps(t, log.getGpsLocationExternal());
+        } else if (log.isCarState()) {
+          this->handle_car_state(t, log.getCarState());
+        } else if (log.isCameraOdometry()) {
+          this->handle_cam_odo(t, log.getCameraOdometry());
+        } else if (log.isLiveCalibration()) {
+          this->handle_live_calib(t, log.getLiveCalibration());
         } else {
           std::cout << "invalid event" << std::endl;
         }
@@ -290,9 +295,8 @@ int Localizer::locationd_thread() {
 //       double t = sm.rcv_time("cameraOdometry") * 1e-9;  // TODO rcv_frame?
 
 //       MessageBuilder msg_builder;
-//       auto evnt = msg_builder.initEvent();
-//       evnt.setLogMonoTime(t);
 //       auto liveLoc = msg_builder.initEvent().initLiveLocationKalman();
+//       liveLoc.setLiveLocaitonMonoTime(t);
 //       //liveLoc.setLiveLocationKalman(this->liveLocationMsg());
 //       liveLoc.setInputsOK(sm.allAliveAndValid());
 //       liveLoc.setSensorsOK(sm.alive("sensorEvents") && sm.valid("sensorEvents"));
