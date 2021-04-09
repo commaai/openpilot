@@ -15,6 +15,7 @@
 #include <string.h>
 
 #include "common/util.h"
+#include "common/swaglog.h"
 
 // keep trying if x gets interrupted by a signal
 #define HANDLE_EINTR(x)                                       \
@@ -129,11 +130,12 @@ class FileLock {
   void lock() {
     fd_ = HANDLE_EINTR(open(fn_.c_str(), O_CREAT, 0775));
     if (fd_ < 0) {
-      throw std::runtime_error(util::string_format("Failed to open lock file %s, errno=%d", fn_.c_str(), errno));
+      LOGE("Failed to open lock file %s, errno=%d", fn_.c_str(), errno);
+      return;
     }
     if (HANDLE_EINTR(flock(fd_, op_)) < 0) {
       close(fd_);
-      throw std::runtime_error(util::string_format("Failed to lock file %s, errno=%d", fn_.c_str(), errno));
+      LOGE("Failed to lock file %s, errno=%d", fn_.c_str(), errno);
     }
   }
 
