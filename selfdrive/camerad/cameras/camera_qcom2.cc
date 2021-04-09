@@ -512,7 +512,7 @@ void enqueue_req_multi(struct CameraState *s, int start, int n, bool dp) {
 
 // ******************* camera *******************
 
-static void camera_init(MultiCameraState *multi_cam_state, CameraState *s, int camera_id, int camera_num, unsigned int fps) {
+static void camera_init(CameraServer *multi_cam_state, CameraState *s, int camera_id, int camera_num, unsigned int fps) {
   LOGD("camera init %d", camera_num);
   s->multi_cam_state = multi_cam_state;
   assert(camera_id < ARRAYSIZE(cameras_supported));
@@ -755,7 +755,7 @@ static void camera_open(CameraState *s) {
   enqueue_req_multi(s, 1, FRAME_BUF_COUNT, 0);
 }
 
-void cameras_init(MultiCameraState *s) {
+void cameras_init(CameraServer *s) {
   camera_init(s, &s->road_cam, CAMERA_ID_AR0231, 1, 20); // swap left/right
   printf("road camera initted \n");
   camera_init(s, &s->wide_road_cam, CAMERA_ID_AR0231, 0, 20);
@@ -764,7 +764,7 @@ void cameras_init(MultiCameraState *s) {
   printf("driver camera initted \n");
 }
 
-void cameras_open(MultiCameraState *s) {
+void cameras_open(CameraServer *s) {
   int ret;
 
   LOG("-- Opening devices");
@@ -855,7 +855,7 @@ static void camera_close(CameraState *s) {
   LOGD("destroyed session: %d", ret);
 }
 
-void cameras_close(MultiCameraState *s) {
+void cameras_close(CameraServer *s) {
   camera_close(&s->road_cam);
   camera_close(&s->wide_road_cam);
   camera_close(&s->driver_cam);
@@ -1025,7 +1025,7 @@ void camera_autoexposure(CameraState *s, float grey_frac) {
   cam_exp[s->camera_num].store(tmp);
 }
 
-static void ae_thread(MultiCameraState *s) {
+static void ae_thread(CameraServer *s) {
   CameraState *c_handles[3] = {&s->wide_road_cam, &s->road_cam, &s->driver_cam};
 
   int op_id_last[3] = {0};
@@ -1046,12 +1046,12 @@ static void ae_thread(MultiCameraState *s) {
   }
 }
 
-void process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) {
+void process_driver_camera(CameraServer *s, CameraState *c, int cnt) {
   common_process_driver_camera(s->sm, s->pm, c, cnt);
 }
 
 // called by processing_thread
-void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
+void process_road_camera(CameraServer *s, CameraState *c, int cnt) {
   const CameraBuf *b = &c->buf;
 
   MessageBuilder msg;
@@ -1072,7 +1072,7 @@ void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
   }
 }
 
-void cameras_run(MultiCameraState *s) {
+void cameras_run(CameraServer *s) {
   LOG("-- Starting threads");
   std::vector<std::thread> threads;
   threads.push_back(std::thread(ae_thread, s));

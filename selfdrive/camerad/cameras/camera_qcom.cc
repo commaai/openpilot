@@ -163,7 +163,7 @@ static int ov8865_apply_exposure(CameraState *s, int gain, int integ_lines, uint
   return sensor_write_regs(s, reg_array, ARRAYSIZE(reg_array), MSM_CAMERA_I2C_BYTE_DATA);
 }
 
-static void camera_init(MultiCameraState *cameras, CameraState *s, int camera_id, int camera_num,
+static void camera_init(CameraServer *server, CameraState *s, int camera_id, int camera_num,
                         uint32_t pixel_clock, uint32_t line_length_pclk, uint32_t max_gain, uint32_t fps) {
   s->camera_num = camera_num;
   s->camera_id = camera_id;
@@ -179,10 +179,10 @@ static void camera_init(MultiCameraState *cameras, CameraState *s, int camera_id
   s->self_recover = 0;
 
   s->apply_exposure = (camera_id == CAMERA_ID_IMX298) ? imx298_apply_exposure : ov8865_apply_exposure;
-  s->buf.init(cameras, s, FRAME_BUF_COUNT, camera_release_buffer);
+  s->buf.init(server, s, FRAME_BUF_COUNT, camera_release_buffer);
 }
 
-void cameras_init(MultiCameraState *s) {
+void cameras_init(CameraServer *s) {
   char project_name[1024] = {0};
   property_get("ro.boot.project_name", project_name, "");
   assert(strlen(project_name) == 0);
@@ -314,7 +314,7 @@ static void do_autoexposure(CameraState *s, float grey_frac) {
   }
 }
 
-static void sensors_init(MultiCameraState *s) {
+static void sensors_init(CameraServer *s) {
   msm_camera_sensor_slave_info slave_infos[2] = {
   (msm_camera_sensor_slave_info){ // road camera
     .sensor_name = "imx298",
@@ -900,7 +900,7 @@ static void driver_camera_start(CameraState *s) {
   LOG("sensor start regs: %d", err);
 }
 
-void cameras_open(MultiCameraState *s) {
+void cameras_open(CameraServer *s) {
   struct msm_ispif_param_data ispif_params = {
     .num = 4,
     .entries = {
@@ -1025,7 +1025,7 @@ static FrameMetadata get_frame_metadata(CameraState *s, uint32_t frame_id) {
   };
 }
 
-static void ops_thread(MultiCameraState *s) {
+static void ops_thread(CameraServer *s) {
   int last_road_cam_op_id = 0;
   int last_driver_cam_op_id = 0;
 
@@ -1073,12 +1073,12 @@ static void setup_self_recover(CameraState *c, const uint16_t *lapres, size_t la
   c->self_recover.store(self_recover);
 }
 
-void process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) {
+void process_driver_camera(CameraServer *s, CameraState *c, int cnt) {
   common_process_driver_camera(s->sm, s->pm, c, cnt);
 }
 
 // called by processing_thread
-void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
+void process_road_camera(CameraServer *s, CameraState *c, int cnt) {
   const CameraBuf *b = &c->buf;
   const int roi_id = cnt % std::size(s->lapres);  // rolling roi
   s->lapres[roi_id] = s->lap_conv->Update(b->q, (uint8_t *)b->cur_rgb_buf->addr, roi_id);
@@ -1104,7 +1104,7 @@ void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
   }
 }
 
-void cameras_run(MultiCameraState *s) {
+void cameras_run(CameraServer *s) {
   std::vector<std::thread> threads;
   threads.push_back(std::thread(ops_thread, s));
   threads.push_back(start_process_thread(s, &s->road_cam, process_road_camera));
@@ -1177,7 +1177,7 @@ void cameras_run(MultiCameraState *s) {
   cameras_close(s);
 }
 
-void cameras_close(MultiCameraState *s) {
+void cameras_close(CameraServer *s) {
   camera_close(&s->road_cam);
   camera_close(&s->driver_cam);
   for (int i = 0; i < FRAME_BUF_COUNT; i++) {

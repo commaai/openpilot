@@ -14,9 +14,9 @@ typedef struct CameraState {
   CameraBuf buf;
 } CameraState;
 
-class MultiCameraState : public MultiCameraStateBase {
+class CameraServer : public CameraServerBase {
 public:
-  MultiCameraState() : MultiCameraStateBase() {}
+  CameraServer() : CameraServerBase() {}
   CameraState road_cam;
   CameraState driver_cam;
 };

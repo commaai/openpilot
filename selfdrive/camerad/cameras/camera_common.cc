@@ -44,12 +44,12 @@ static cl_program build_debayer_program(cl_device_id device_id, cl_context conte
 #endif
 }
 
-void CameraBuf::init(MultiCameraState* cameras, CameraState *s, int frame_cnt, release_cb release_callback) {
-  vipc_server = cameras->vipc_server;
-  if (s == &cameras->road_cam) {
+void CameraBuf::init(CameraServer* server, CameraState *s, int frame_cnt, release_cb release_callback) {
+  vipc_server = server->vipc_server;
+  if (s == &server->road_cam) {
     this->rgb_type = VISION_STREAM_RGB_BACK;
     this->yuv_type = VISION_STREAM_YUV_BACK;
-  } else if (s == &cameras->driver_cam) {
+  } else if (s == &server->driver_cam) {
     this->rgb_type = VISION_STREAM_RGB_FRONT;
     this->yuv_type = VISION_STREAM_YUV_FRONT;
   } else {
@@ -70,7 +70,7 @@ void CameraBuf::init(MultiCameraState* cameras, CameraState *s, int frame_cnt, r
 
   for (int i = 0; i < frame_buf_count; i++) {
     camera_bufs[i].allocate(frame_size);
-    camera_bufs[i].init_cl(cameras->device_id, cameras->context);
+    camera_bufs[i].init_cl(server->device_id, server->context);
   }
 
   rgb_width = ci->frame_width;
@@ -90,18 +90,18 @@ void CameraBuf::init(MultiCameraState* cameras, CameraState *s, int frame_cnt, r
   vipc_server->create_buffers(yuv_type, YUV_COUNT, false, rgb_width, rgb_height);
 
   if (ci->bayer) {
-    cl_program prg_debayer = build_debayer_program(cameras->device_id, cameras->context, ci, this, s);
+    cl_program prg_debayer = build_debayer_program(server->device_id, server->context, ci, this, s);
     krnl_debayer = CL_CHECK_ERR(clCreateKernel(prg_debayer, "debayer10", &err));
     CL_CHECK(clReleaseProgram(prg_debayer));
   }
 
-  rgb_to_yuv_init(&rgb_to_yuv_state, cameras->context, cameras->device_id, rgb_width, rgb_height, rgb_stride);
+  rgb_to_yuv_init(&rgb_to_yuv_state, server->context, server->device_id, rgb_width, rgb_height, rgb_stride);
 
 #ifdef __APPLE__
-  q = CL_CHECK_ERR(clCreateCommandQueue(cameras->context, cameras->device_id, 0, &err));
+  q = CL_CHECK_ERR(clCreateCommandQueue(server->context, server->device_id, 0, &err));
 #else
   const cl_queue_properties props[] = {0};  //CL_QUEUE_PRIORITY_KHR, CL_QUEUE_PRIORITY_HIGH_KHR, 0};
-  q = CL_CHECK_ERR(clCreateCommandQueueWithProperties(cameras->context, cameras->device_id, props, &err));
+  q = CL_CHECK_ERR(clCreateCommandQueueWithProperties(server->context, server->device_id, props, &err));
 #endif
 }
 
@@ -328,11 +328,11 @@ float set_exposure_target(const CameraBuf *b, int x_start, int x_end, int x_skip
 
 extern ExitHandler do_exit;
 
-void *processing_thread(MultiCameraState *cameras, CameraState *cs, process_thread_cb callback) {
+void *processing_thread(CameraServer *server, CameraState *cs, process_thread_cb callback) {
   const char *thread_name = nullptr;
-  if (cs == &cameras->road_cam) {
+  if (cs == &server->road_cam) {
     thread_name = "RoadCamera";
-  } else if (cs == &cameras->driver_cam) {
+  } else if (cs == &server->driver_cam) {
     thread_name = "DriverCamera";
   } else {
     thread_name = "WideRoadCamera";
@@ -343,11 +343,11 @@ void *processing_thread(MultiCameraState *cameras, CameraState *cs, process_thre
   while (!do_exit) {
     if (!cs->buf.acquire()) continue;
 
-    callback(cameras, cs, cnt);
+    callback(server, cs, cnt);
 
-    if (cs == &(cameras->road_cam) && cameras->pm && cnt % 100 == 3) {
+    if (cs == &(server->road_cam) && server->pm && cnt % 100 == 3) {
       // this takes 10ms???
-      publish_thumbnail(cameras->pm, &(cs->buf));
+      publish_thumbnail(server->pm, &(cs->buf));
     }
     cs->buf.release();
     ++cnt;
@@ -355,8 +355,8 @@ void *processing_thread(MultiCameraState *cameras, CameraState *cs, process_thre
   return NULL;
 }
 
-std::thread start_process_thread(MultiCameraState *cameras, CameraState *cs, process_thread_cb callback) {
-  return std::thread(processing_thread, cameras, cs, callback);
+std::thread start_process_thread(CameraServer *server, CameraState *cs, process_thread_cb callback) {
+  return std::thread(processing_thread, server, cs, callback);
 }
 
 static void driver_cam_auto_exposure(CameraState *c, SubMaster &sm) {
@@ -410,9 +410,9 @@ void common_process_driver_camera(SubMaster *sm, PubMaster *pm, CameraState *c, 
   pm->send("driverCameraState", msg);
 }
 
-// MultiCameraStateBase
+// CameraServerBase
 
-MultiCameraStateBase::MultiCameraStateBase() {
+CameraServerBase::CameraServerBase() {
   device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
   // TODO: do this for QCOM2 too
 #if defined(QCOM)
@@ -432,7 +432,7 @@ MultiCameraStateBase::MultiCameraStateBase() {
   vipc_server = new VisionIpcServer("camerad", device_id, context);
 }
 
-MultiCameraStateBase::~MultiCameraStateBase() {
+CameraServerBase::~CameraServerBase() {
   delete vipc_server;
   delete sm;
   delete pm;

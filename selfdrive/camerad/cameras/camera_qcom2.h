@@ -18,7 +18,7 @@
 #define DEBAYER_LOCAL_WORKSIZE 16
 
 typedef struct CameraState {
-  MultiCameraState *multi_cam_state;
+  CameraServer *multi_cam_state;
   CameraInfo ci;
   
   std::mutex exp_lock;
@@ -57,9 +57,9 @@ typedef struct CameraState {
   CameraBuf buf;
 } CameraState;
 
-class MultiCameraState : public MultiCameraStateBase {
+class CameraServer : public CameraServerBase {
 public:
-  MultiCameraState() : MultiCameraStateBase() {}
+  CameraServer() : CameraServerBase() {}
   int device;
 
   unique_fd video0_fd;

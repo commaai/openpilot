@@ -58,14 +58,14 @@ void camera_close(CameraState *s) {
   // empty
 }
 
-void camera_init(MultiCameraState *cameras, CameraState *s, int camera_id, unsigned int fps) {
+void camera_init(CameraServer *server, CameraState *s, int camera_id, unsigned int fps) {
   assert(camera_id < ARRAYSIZE(cameras_supported));
   s->ci = cameras_supported[camera_id];
   assert(s->ci.frame_width != 0);
 
   s->camera_num = camera_id;
   s->fps = fps;
-  s->buf.init(cameras, s, FRAME_BUF_COUNT);
+  s->buf.init(server, s, FRAME_BUF_COUNT);
 }
 
 void run_camera(CameraState *s, cv::VideoCapture &video_cap, float *ts) {
@@ -137,26 +137,26 @@ void driver_camera_thread(CameraState *s) {
 
 }  // namespace
 
-void cameras_init(MultiCameraState *s) {
+void cameras_init(CameraServer *s) {
   camera_init(s, &s->road_cam, CAMERA_ID_LGC920, 20);
   camera_init(s, &s->driver_cam, CAMERA_ID_LGC615, 10);
 }
 
 void camera_autoexposure(CameraState *s, float grey_frac) {}
 
-void cameras_open(MultiCameraState *s) {
+void cameras_open(CameraServer *s) {
   // LOG("*** open driver camera ***");
   camera_open(&s->driver_cam, false);
   // LOG("*** open road camera ***");
   camera_open(&s->road_cam, true);
 }
 
-void cameras_close(MultiCameraState *s) {
+void cameras_close(CameraServer *s) {
   camera_close(&s->road_cam);
   camera_close(&s->driver_cam);
 }
 
-void process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) {
+void process_driver_camera(CameraServer *s, CameraState *c, int cnt) {
   MessageBuilder msg;
   auto framed = msg.initEvent().initDriverCameraState();
   framed.setFrameType(cereal::FrameData::FrameType::FRONT);
@@ -164,7 +164,7 @@ void process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) {
   s->pm->send("driverCameraState", msg);
 }
 
-void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
+void process_road_camera(CameraServer *s, CameraState *c, int cnt) {
   const CameraBuf *b = &c->buf;
   MessageBuilder msg;
   auto framed = msg.initEvent().initRoadCameraState();
@@ -174,7 +174,7 @@ void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
   s->pm->send("roadCameraState", msg);
 }
 
-void cameras_run(MultiCameraState *s) {
+void cameras_run(CameraServer *s) {
   std::vector<std::thread> threads;
   threads.push_back(start_process_thread(s, &s->road_cam, process_road_camera));
   threads.push_back(start_process_thread(s, &s->driver_cam, process_driver_camera));

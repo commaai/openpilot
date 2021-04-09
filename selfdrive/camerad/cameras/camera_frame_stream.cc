@@ -34,14 +34,14 @@ CameraInfo cameras_supported[CAMERA_ID_MAX] = {
   },
 };
 
-void camera_init(MultiCameraState *cameras, CameraState *s, int camera_id, unsigned int fps) {
+void camera_init(CameraServer *server, CameraState *s, int camera_id, unsigned int fps) {
   assert(camera_id < ARRAYSIZE(cameras_supported));
   s->ci = cameras_supported[camera_id];
   assert(s->ci.frame_width != 0);
 
   s->camera_num = camera_id;
   s->fps = fps;
-  s->buf.init(cameras, s, FRAME_BUF_COUNT);
+  s->buf.init(server, s, FRAME_BUF_COUNT);
 }
 
 void run_frame_stream(CameraState &camera, const char* frame_pkt) {
@@ -73,17 +73,17 @@ void run_frame_stream(CameraState &camera, const char* frame_pkt) {
 
 }  // namespace
 
-void cameras_init(MultiCameraState *s) {
+void cameras_init(CameraServer *s) {
   camera_init(s, &s->road_cam, CAMERA_ID_IMX298, 20);
   camera_init(s, &s->driver_cam, CAMERA_ID_OV8865, 10);
 }
 
-void cameras_open(MultiCameraState *s) {}
-void cameras_close(MultiCameraState *s) {}
+void cameras_open(CameraServer *s) {}
+void cameras_close(CameraServer *s) {}
 void camera_autoexposure(CameraState *s, float grey_frac) {}
-void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {}
+void process_road_camera(CameraServer *s, CameraState *c, int cnt) {}
 
-void cameras_run(MultiCameraState *s) {
+void cameras_run(CameraServer *s) {
   std::thread t = start_process_thread(s, &s->road_cam, process_road_camera);
   set_thread_name("frame_streaming");
   run_frame_stream(s->road_cam, "roadCameraState");

@@ -20,9 +20,9 @@ int main(int argc, char *argv[]) {
   set_core_affinity(6);
 #endif
 
-  MultiCameraState cameras;
-  cameras_init(&cameras);
-  cameras_open(&cameras);
-  cameras.vipc_server->start_listener();
-  cameras_run(&cameras);
+  CameraServer s;
+  cameras_init(&s);
+  cameras_open(&s);
+  s.vipc_server->start_listener();
+  cameras_run(&s);
 }

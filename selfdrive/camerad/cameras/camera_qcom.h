@@ -86,9 +86,9 @@ typedef struct CameraState {
 } CameraState;
 
 
-class MultiCameraState : public MultiCameraStateBase {
+class CameraServer : public CameraServerBase {
 public:
-  MultiCameraState() : MultiCameraStateBase() {}
+  CameraServer() : CameraServerBase() {}
 
   unique_fd ispif_fd;
   unique_fd msmcfg_fd;
