@@ -13,7 +13,7 @@ os.environ['FAKEUPLOAD'] = "1"
 
 # TODO: make eon fast
 MAX_STARTUP_TIME = 30 if EON else 15
-ALL_PROCESSES = [p.name for p in managed_processes.values() if (type(p) is not DaemonProcess) and (p.name not in ['updated', 'pandad'])]
+ALL_PROCESSES = [p.name for p in managed_processes.values() if (type(p) is not DaemonProcess) and p.enabled and (p.name not in ['updated', 'pandad'])]
 
 
 class TestManager(unittest.TestCase):
@@ -45,9 +45,12 @@ class TestManager(unittest.TestCase):
     time.sleep(30)
 
     for p in reversed(ALL_PROCESSES):
+      state = managed_processes[p].get_process_state_msg()
+      self.assertTrue(state.running, f"{p} not running")
+
       exit_code = managed_processes[p].stop(retry=False)
-      if (not EON and p == 'ui') or (EON and p == 'logcatd'):
-        # TODO: make Qt UI exit gracefully and fix OMX encoder exiting
+      if (p == 'ui') or (EON and p == 'logcatd'):
+        # TODO: make Qt UI exit gracefully
         continue
 
       # Make sure the process is actually dead
