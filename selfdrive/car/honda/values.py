@@ -50,7 +50,7 @@ class CAR:
   ODYSSEY = "HONDA ODYSSEY 2018 EX-L"
   ODYSSEY_CHN = "HONDA ODYSSEY 2019 EXCLUSIVE CHN"
   ACURA_RDX = "ACURA RDX 2018 ACURAWATCH PLUS"
-  ACURA_RDX_3G = "ACURA RDX 2020 TECH"
+  ACURA_RDX_3G = "ACURA RDX GEN 3 (2019 - 2021)"
   PILOT = "HONDA PILOT 2017 TOURING"
   PILOT_2019 = "HONDA PILOT 2019 ELITE"
   RIDGELINE = "HONDA RIDGELINE 2017 BLACK EDITION"
@@ -940,45 +940,56 @@ FW_VERSIONS = {
       b'37805-5YF-A420\x00\x00',
       b'37805-5YF-A430\x00\x00',
       b'37805-5YF-C210\x00\x00',
+      b'37805-5YF-A330\000\000',
     ],
     (Ecu.vsa, 0x18da28f1, None): [
       b'57114-TJB-A040\x00\x00',
+      b'57114-TJB-A040\000\000',
     ],
     (Ecu.fwdRadar, 0x18dab0f1, None): [
       b'36802-TJB-A040\x00\x00',
       b'36802-TJB-A050\x00\x00',
+      b'36802-TJB-A040\000\000',
     ],
     (Ecu.fwdCamera, 0x18dab5f1, None): [
       b'36161-TJB-A040\x00\x00',
+      b'36161-TJB-A040\000\000'
     ],
     (Ecu.shiftByWire, 0x18da0bf1, None): [
       b'54008-TJB-A520\x00\x00',
+      b'54008-TJB-A520\000\000',
     ],
     (Ecu.transmission, 0x18da1ef1, None): [
       b'28102-5YK-A700\x00\x00',
       b'28102-5YK-A711\x00\x00',
+      b'28102-5YL-A700\000\000',
     ],
     (Ecu.combinationMeter, 0x18da60f1, None): [
       b'78109-TJB-AB10\x00\x00',
       b'78109-TJB-AD10\x00\x00',
       b'78109-TJB-AF10\x00\x00',
       b'78109-TJB-AW10\x00\x00',
+      b'78109-TJC-AA10\000\000',
     ],
     (Ecu.srs, 0x18da53f1, None): [
       b'77959-TJB-A040\x00\x00',
       b'77959-TJB-A210\x00\x00',
+      b'77959-TJB-A040\000\000',
     ],
     (Ecu.electricBrakeBooster, 0x18da2bf1, None): [
       b'46114-TJB-A050\x00\x00',
       b'46114-TJB-A060\x00\x00',
+      b'46114-TJB-A060\000\000',
     ],
     (Ecu.gateway, 0x18daeff1, None): [
       b'38897-TJB-A110\x00\x00',
       b'38897-TJB-A120\x00\x00',
+      b'38897-TJB-A110\000\000',
     ],
     (Ecu.eps, 0x18da30f1, None): [
       b'39990-TJB-A030\x00\x00',
       b'39990-TJB-A040\x00\x00',
+      b'39990-TJB-A130\000\000'
     ],
   },
   CAR.RIDGELINE: {
