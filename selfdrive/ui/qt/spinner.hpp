@@ -8,7 +8,7 @@
 #include <QVariantAnimation>
 #include <QOpenGLWidget>
 
-constexpr int spinner_fps = 20;
+constexpr int spinner_fps = 30;
 constexpr QSize spinner_size = QSize(360, 360);
 
 class TrackWidget : public QOpenGLWidget {
@@ -20,9 +20,7 @@ private:
   void paintEvent(QPaintEvent *event) override;
   std::array<QPixmap, spinner_fps> track_imgs;
   QPixmap comma_img;
-  struct Animation : public QVariantAnimation {
-    void updateCurrentValue(const QVariant &) {}
-  } m_anim;
+  QVariantAnimation m_anim;
 };
 
 class Spinner : public QWidget {

@@ -54,7 +54,7 @@ void TrackWidget::paintEvent(QPaintEvent *event) {
 Spinner::Spinner(QWidget *parent) {
   QGridLayout *main_layout = new QGridLayout();
   main_layout->setSpacing(0);
-  main_layout->setContentsMargins(200, 200, 200, 200);
+  main_layout->setMargin(200);
 
   main_layout->addWidget(new TrackWidget(), 0, 0, Qt::AlignHCenter | Qt::AlignVCenter);
 
@@ -71,7 +71,12 @@ Spinner::Spinner(QWidget *parent) {
 
   setLayout(main_layout);
   setStyleSheet(R"(
-    background-color:#000;
+    Spinner {
+      background-color: black;
+    }
+    * {
+      background-color: transparent;
+    }
     QLabel {
       color: white;
       font-size: 80px;
