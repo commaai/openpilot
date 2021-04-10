@@ -17,21 +17,30 @@ if __name__ == '__main__':
     voltage_average = (0, 0)  # average, count
     current_average = (0, 0)
     power_average = (0, 0)
+    power_total_average = (0, 0)
     while sample_time is None or time.monotonic() - start_time < sample_time:
       with open("/sys/bus/i2c/devices/0-0040/hwmon/hwmon1/in1_input") as f:
-        voltage = int(f.read()) / 1000.
+        voltage_total = int(f.read()) / 1000.
 
       with open("/sys/bus/i2c/devices/0-0040/hwmon/hwmon1/curr1_input") as f:
-        current = int(f.read())
+        current_total = int(f.read())
+
+      with open("/sys/class/power_supply/bms/voltage_now") as f:
+        voltage = int(f.read()) / 1e6   # volts
+
+      with open("/sys/class/power_supply/bms/current_now") as f:
+        current = int(f.read()) / 1e3   # ma
 
       power = voltage*current
+      power_total = voltage_total*current_total
 
       # compute averages
       voltage_average = average(voltage_average, voltage)
       current_average = average(current_average, current)
       power_average = average(power_average, power)
+      power_total_average = average(power_total_average, power_total)
 
-      print("%.2f volts %12.2f ma %12.2f mW" % (voltage, current, power))
+      print("%12.2f mW %12.2f mW %12.2f mW" % (power, power_total, power_total-power))
       time.sleep(0.25)
   finally:
     stop_time = time.monotonic()
@@ -39,6 +48,6 @@ if __name__ == '__main__':
     voltage = voltage_average[0]
     current = current_average[0]
     power = power_average[0]
-    print("%.2f volts %12.2f ma %12.2f mW" % (voltage, current, power))
+    print("%.2f volts %12.2f ma %12.2f mW %12.2f mW" % (voltage, current, power, power_total))
     print("  {:.2f} Seconds     {} samples".format(stop_time - start_time, voltage_average[1]))
     print("----------------------------------------------------------------")

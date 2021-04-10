@@ -940,6 +940,7 @@ FW_VERSIONS = {
       b'37805-5YF-A420\x00\x00',
       b'37805-5YF-A430\x00\x00',
       b'37805-5YF-C210\x00\x00',
+      b'37805-5YF-A330\x00\x00',
     ],
     (Ecu.vsa, 0x18da28f1, None): [
       b'57114-TJB-A040\x00\x00',
@@ -957,12 +958,14 @@ FW_VERSIONS = {
     (Ecu.transmission, 0x18da1ef1, None): [
       b'28102-5YK-A700\x00\x00',
       b'28102-5YK-A711\x00\x00',
+      b'28102-5YL-A700\x00\x00',
     ],
     (Ecu.combinationMeter, 0x18da60f1, None): [
       b'78109-TJB-AB10\x00\x00',
       b'78109-TJB-AD10\x00\x00',
       b'78109-TJB-AF10\x00\x00',
       b'78109-TJB-AW10\x00\x00',
+      b'78109-TJC-AA10\x00\x00',
     ],
     (Ecu.srs, 0x18da53f1, None): [
       b'77959-TJB-A040\x00\x00',
@@ -979,6 +982,7 @@ FW_VERSIONS = {
     (Ecu.eps, 0x18da30f1, None): [
       b'39990-TJB-A030\x00\x00',
       b'39990-TJB-A040\x00\x00',
+      b'39990-TJB-A130\x00\x00'
     ],
   },
   CAR.RIDGELINE: {

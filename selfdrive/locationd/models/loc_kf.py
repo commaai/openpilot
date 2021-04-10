@@ -392,7 +392,7 @@ class LocKalman():
 
   @property
   def t(self):
-    return self.filter.filter_time
+    return self.filter.get_filter_time()
 
   @property
   def P(self):
@@ -449,15 +449,15 @@ class LocKalman():
     else:
       r = self.filter.predict_and_update_batch(t, kind, data, self.get_R(kind, len(data)))
     # Normalize quats
-    quat_norm = np.linalg.norm(self.filter.x[3:7, 0])
+    quat_norm = np.linalg.norm(self.filter.state()[3:7])
     # Should not continue if the quats behave this weirdly
     if not 0.1 < quat_norm < 10:
       raise RuntimeError("Sir! The filter's gone all wobbly!")
-    self.filter.x[3:7, 0] = self.filter.x[3:7, 0] / quat_norm
+    self.filter.normalize_state(3, 7)
     for i in range(self.N):
       d1 = self.dim_main
       d3 = self.dim_augment
-      self.filter.x[d1 + d3 * i + 3:d1 + d3 * i + 7] /= np.linalg.norm(self.filter.x[d1 + i * d3 + 3:d1 + i * d3 + 7, 0])
+      self.filter.normalize_state(d1 + d3 * i + 3, d1 + d3 * i + 7)
     return r
 
   def get_R(self, kind, n):
@@ -528,7 +528,7 @@ class LocKalman():
     poses = self.x[self.dim_main:].reshape((-1, 7))
     times = tracks.reshape((len(tracks), self.N + 1, 4))[:, :, 0]
     good_counter = 0
-    if times.any() and np.allclose(times[0, :-1], self.filter.augment_times, rtol=1e-6):
+    if times.any() and np.allclose(times[0, :-1], self.filter.get_augment_times(), rtol=1e-6):
       for i, track in enumerate(tracks):
         img_positions = track.reshape((self.N + 1, 4))[:, 2:]
 

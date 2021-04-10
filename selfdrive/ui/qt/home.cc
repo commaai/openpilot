@@ -300,7 +300,9 @@ void GLWindow::timerUpdate() {
                                Hardware::MIN_VOLUME, Hardware::MAX_VOLUME);
 
   ui_update(&ui_state);
-  repaint();
+  if(GLWindow::ui_state.awake){
+    repaint();
+  }
   watchdog_kick();
 }
 
@@ -309,17 +311,15 @@ void GLWindow::resizeGL(int w, int h) {
 }
 
 void GLWindow::paintGL() {
-  if(GLWindow::ui_state.awake){
-    ui_draw(&ui_state);
+  ui_draw(&ui_state);
 
-    double cur_draw_t = millis_since_boot();
-    double dt = cur_draw_t - prev_draw_t;
-    if (dt > 66 && onroad && !ui_state.scene.driver_view) {
-      // warn on sub 15fps
-      LOGW("slow frame(%llu) time: %.2f", ui_state.sm->frame, dt);
-    }
-    prev_draw_t = cur_draw_t;
+  double cur_draw_t = millis_since_boot();
+  double dt = cur_draw_t - prev_draw_t;
+  if (dt > 66 && onroad && !ui_state.scene.driver_view) {
+    // warn on sub 15fps
+    LOGW("slow frame(%llu) time: %.2f", ui_state.sm->frame, dt);
   }
+  prev_draw_t = cur_draw_t;
 }
 
 void GLWindow::wake() {
