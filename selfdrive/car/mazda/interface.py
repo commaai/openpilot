@@ -21,7 +21,7 @@ class CarInterface(CarInterfaceBase):
     ret.carName = "mazda"
     ret.safetyModel = car.CarParams.SafetyModel.mazda
 
-    ret.dashcamOnly = True
+    ret.dashcamOnly = False
 
     ret.radarOffCan = True
 
