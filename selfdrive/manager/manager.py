@@ -133,6 +133,7 @@ def manager_thread():
     msg.managerState.processes = [p.get_process_state_msg() for p in managed_processes.values()]
     pm.send('managerState', msg)
 
+    # TODO: let UI handle this
     # Exit main loop when uninstall is needed
     if params.get_bool("DoUninstall"):
       break
@@ -143,7 +144,7 @@ def main():
 
   manager_init()
 
-  # Start ui early so prepare can happen in the background
+  # Start UI early so prepare can happen in the background
   if not prepare_only:
     managed_processes['ui'].start()
 
