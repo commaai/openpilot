@@ -13,6 +13,7 @@ import json
 import numpy as np
 import cereal.messaging as messaging
 from cereal import car, log
+from selfdrive.hardware import TICI
 from common.params import Params, put_nonblocking
 from common.transformations.model import model_height
 from common.transformations.camera import get_view_frame_from_road_frame
@@ -63,7 +64,7 @@ class Calibrator():
     # Read saved calibration
     params = Params()
     calibration_params = params.get("CalibrationParams")
-
+    self.wide_camera = TICI and params.get_bool('EnableWideCamera')
     rpy_init = RPY_INIT
     valid_blocks = 0
 
@@ -149,9 +150,12 @@ class Calibrator():
     self.old_rpy_weight = min(0.0, self.old_rpy_weight - 1/SMOOTH_CYCLES)
 
     straight_and_fast = ((self.v_ego > MIN_SPEED_FILTER) and (trans[0] > MIN_SPEED_FILTER) and (abs(rot[2]) < MAX_YAW_RATE_FILTER))
-    certain_if_calib = ((np.arctan2(trans_std[1], trans[0]) < MAX_VEL_ANGLE_STD) or
+    if self.wide_camera:
+      angle_std_threshold = 4*MAX_VEL_ANGLE_STD
+    else:
+      angle_std_threshold = MAX_VEL_ANGLE_STD
+    certain_if_calib = ((np.arctan2(trans_std[1], trans[0]) < angle_std_threshold) or
                         (self.valid_blocks < INPUTS_NEEDED))
-
     if not (straight_and_fast and certain_if_calib):
       return None
 
