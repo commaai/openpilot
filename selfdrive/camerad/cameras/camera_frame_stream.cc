@@ -74,7 +74,6 @@ void run_frame_stream(CameraState &camera, const char* frame_pkt) {
 }  // namespace
 
 void camera_autoexposure(CameraState *s, float grey_frac) {}
-void process_road_camera(CameraServer *s, CameraState *c, int cnt) {}
 
 // CameraServer
 
@@ -84,7 +83,7 @@ CameraServer::CameraServer() : CameraServerBase() {
 }
 
 void CameraServer::run() {
-  start_process_thread(&road_cam, process_road_camera);
+  start_process_thread(&road_cam, true);
   set_thread_name("frame_streaming");
   run_frame_stream(road_cam, "roadCameraState");
 }

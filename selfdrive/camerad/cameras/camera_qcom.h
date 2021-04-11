@@ -91,6 +91,7 @@ public:
   CameraServer();
   ~CameraServer();
   void run() override;
+  void process_camera(CameraState *c, cereal::FrameData::Builder& framed, uint32_t cnt) override;
 
   unique_fd ispif_fd;
   unique_fd msmcfg_fd;

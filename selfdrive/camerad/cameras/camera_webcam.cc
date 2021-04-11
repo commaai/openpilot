@@ -151,25 +151,8 @@ void cameras_open(CameraServer *s) {
   camera_open(&s->road_cam, true);
 }
 
-void process_driver_camera(CameraServer *s, CameraState *c, int cnt) {
-  MessageBuilder msg;
-  auto framed = msg.initEvent().initDriverCameraState();
-  framed.setFrameType(cereal::FrameData::FrameType::FRONT);
-  fill_frame_data(framed, c->buf.cur_frame_data);
-  s->pm->send("driverCameraState", msg);
-}
-
-void process_road_camera(CameraServer *s, CameraState *c, int cnt) {
-  const CameraBuf *b = &c->buf;
-  MessageBuilder msg;
-  auto framed = msg.initEvent().initRoadCameraState();
-  fill_frame_data(framed, b->cur_frame_data);
-  framed.setImage(kj::arrayPtr((const uint8_t *)b->cur_yuv_buf->addr, b->cur_yuv_buf->len));
-  framed.setTransform(b->yuv_transform.v);
-  s->pm->send("roadCameraState", msg);
-}
-
 // CameraServer
+
 CameraServer::CameraServer() : CameraServerBase() {
   cameras_init(this);
   cameras_open(this);
@@ -181,8 +164,8 @@ CameraServer::~CameraServer() {
 }
 
 void CameraServer::run() {
-  start_process_thread(&road_cam, process_road_camera);
-  start_process_thread(&driver_cam, process_driver_camera);
+  start_process_thread(&road_cam);
+  start_process_thread(&driver_cam);
   camera_threads.push_back(std::thread(road_camera_thread, &road_cam));
   set_thread_name("webcam_thread");
   driver_camera_thread(&driver_cam);

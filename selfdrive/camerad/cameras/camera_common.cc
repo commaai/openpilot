@@ -289,14 +289,16 @@ static void publish_thumbnail(PubMaster *pm, const CameraBuf *b) {
   free(thumbnail_buffer);
 }
 
-float set_exposure_target(const CameraBuf *b, int x_start, int x_end, int x_skip, int y_start, int y_end, int y_skip, int analog_gain, bool hist_ceil, bool hl_weighted) {
+struct ExpRect {int x1, x2, x_skip, y1, y2, y_skip;};
+
+float set_exposure_target(const CameraBuf *b, const ExpRect &rect, int analog_gain, bool hist_ceil, bool hl_weighted) {
   const uint8_t *pix_ptr = b->cur_yuv_buf->y;
   uint32_t lum_binning[256] = {0};
   unsigned int lum_total = 0;
-  for (int y = y_start; y < y_end; y += y_skip) {
-    for (int x = x_start; x < x_end; x += x_skip) {
+  for (int y = rect.y1; y < rect.y2; y += rect.y_skip) {
+    for (int x = rect.x1; x < rect.x2; x += rect.x_skip) {
       uint8_t lum = pix_ptr[(y * b->rgb_width) + x];
-      if (hist_ceil && lum < 80 && lum_binning[lum] > HISTO_CEIL_K * (y_end - y_start) * (x_end - x_start) / x_skip / y_skip / 256) {
+      if (hist_ceil && lum < 80 && lum_binning[lum] > HISTO_CEIL_K * (rect.y2 - rect.y1) * (rect.x2 - rect.x1) / rect.x_skip / rect.y_skip / 256) {
         continue;
       }
       lum_binning[lum]++;
@@ -328,36 +330,19 @@ float set_exposure_target(const CameraBuf *b, int x_start, int x_end, int x_skip
 
 extern ExitHandler do_exit;
 
-void *processing_thread(CameraServer *server, CameraState *cs, process_thread_cb callback) {
-  const char *thread_name = nullptr;
-  if (cs == &server->road_cam) {
-    thread_name = "RoadCamera";
-  } else if (cs == &server->driver_cam) {
-    thread_name = "DriverCamera";
-  } else {
-    thread_name = "WideRoadCamera";
-  }
-  set_thread_name(thread_name);
-
-  uint32_t cnt = 0;
-  while (!do_exit) {
-    if (!cs->buf.acquire()) continue;
-
-    callback(server, cs, cnt);
-
-    if (cs == &(server->road_cam) && server->pm && cnt % 100 == 3) {
-      // this takes 10ms???
-      publish_thumbnail(server->pm, &(cs->buf));
-    }
-    cs->buf.release();
-    ++cnt;
-  }
-  return NULL;
+static void road_cam_auto_exposure(CameraState *c) {
+#ifndef QCOM2
+  const ExpRect rect = {290, 850, 1, 322, 636, 1};
+#else
+  const ExpRect = (c == &s->wide_road_cam) ? {96, 1830, 2, 250, 774, 2}
+                                           : {96, 1830, 2, 160, 1146, 2};
+#endif
+  camera_autoexposure(c, set_exposure_target(&c->buf, rect, -1, false, false));
 }
 
-static void driver_cam_auto_exposure(CameraState *c, SubMaster &sm) {
+static void driver_cam_auto_exposure(CameraState *c) {
   static const bool is_rhd = Params().getBool("IsRHD");
-  struct ExpRect {int x1, x2, x_skip, y1, y2, y_skip;};
+  static  SubMaster sm({"driverState"});
   const CameraBuf *b = &c->buf;
 #ifndef QCOM2
   bool hist_ceil = false, hl_weighted = false;
@@ -389,21 +374,7 @@ static void driver_cam_auto_exposure(CameraState *c, SubMaster &sm) {
     }
   }
 
-  camera_autoexposure(c, set_exposure_target(b, rect.x1, rect.x2, rect.x_skip, rect.y1, rect.y2, rect.y_skip, analog_gain, hist_ceil, hl_weighted));
-}
-
-void common_process_driver_camera(SubMaster *sm, PubMaster *pm, CameraState *c, int cnt) {
-  if (cnt % 3 == 0) {
-    driver_cam_auto_exposure(c, *sm);
-  }
-  MessageBuilder msg;
-  auto framed = msg.initEvent().initDriverCameraState();
-  framed.setFrameType(cereal::FrameData::FrameType::FRONT);
-  fill_frame_data(framed, c->buf.cur_frame_data);
-  if (env_send_driver) {
-    framed.setImage(get_frame_image(&c->buf));
-  }
-  pm->send("driverCameraState", msg);
+  camera_autoexposure(c, set_exposure_target(b, rect, analog_gain, hist_ceil, hl_weighted));
 }
 
 // CameraServerBase
@@ -418,7 +389,6 @@ CameraServerBase::CameraServerBase() {
   context = CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id, NULL, NULL, &err));
 #endif
 
-  sm = new SubMaster({"driverState"});
   pm = new PubMaster({"roadCameraState", "driverCameraState", "thumbnail"
 #ifdef QCOM2
     , "wideRoadCameraState"
@@ -430,7 +400,6 @@ CameraServerBase::CameraServerBase() {
 
 CameraServerBase::~CameraServerBase() {
   delete vipc_server;
-  delete sm;
   delete pm;
   CL_CHECK(clReleaseContext(context));
 }
@@ -441,6 +410,67 @@ void CameraServerBase::start() {
   for (auto &t : camera_threads) t.join();
 }
 
-void CameraServerBase::start_process_thread(CameraState *cs, process_thread_cb callback) {
-  camera_threads.push_back(std::thread(processing_thread, (CameraServer*)(this), cs, callback));
+void CameraServerBase::start_process_thread(CameraState *cs, bool is_frame_stream) {
+  camera_threads.push_back(std::thread(&CameraServerBase::process_camera_thread, this, cs, is_frame_stream));
+}
+
+void CameraServerBase::process_camera_thread(CameraState *cs, bool is_frame_stream) {
+  // TODO remove this in CameraState
+  CameraServer *server = (CameraServer *)this;
+  const char *pub_name = nullptr, *thread_name = nullptr;
+  bool set_image = false, set_transform = false;
+  bool pub_thumbnail = false;
+  ::cereal::FrameData::Builder (cereal::Event::Builder::*init_cam_state_func)() = nullptr;
+  if (cs == &server->road_cam) {
+    thread_name = "RoadCamera";
+    pub_name = "roadCameraState";
+    set_image = getenv("SEND_ROAD") != NULL;
+    pub_thumbnail = set_transform = true;
+    init_cam_state_func = &cereal::Event::Builder::initRoadCameraState;
+  } else if (cs == &server->driver_cam) {
+    thread_name = "DriverCamera";
+    pub_name = "driverCameraState";
+    set_image = getenv("SEND_DRIVER") != NULL;
+    init_cam_state_func = &cereal::Event::Builder::initDriverCameraState;
+  } else {
+    thread_name = "WideRoadCamera";
+    pub_name = "wideRoadCameraState";
+    set_image = getenv("SEND_WIDE_ROAD") != NULL;
+    init_cam_state_func = &cereal::Event::Builder::initWideRoadCameraState;
+  }
+  set_thread_name(thread_name);
+
+  uint32_t cnt = 0;
+  while (!do_exit) {
+    if (!cs->buf.acquire()) continue;
+
+    if (!is_frame_stream) {
+      MessageBuilder msg;
+      cereal::FrameData::Builder framed = (msg.initEvent().*init_cam_state_func)();
+      fill_frame_data(framed, cs->buf.cur_frame_data);
+      if (set_image) {
+        framed.setImage(get_frame_image(&cs->buf));
+      }
+      if (set_transform) {
+        framed.setTransform(cs->buf.yuv_transform.v);
+      }
+
+      if (cnt % 3 == 0) {
+        cs == &server->road_cam ? road_cam_auto_exposure(cs)
+                                : driver_cam_auto_exposure(cs);
+      }
+
+      process_camera(cs, framed, cnt);
+
+      pm->send(pub_name, msg);
+
+      if (pub_thumbnail && cnt % 100 == 3) {
+        // this takes 10ms???
+        publish_thumbnail(pm, &(cs->buf));
+      }
+    }
+
+    cs->buf.release();
+    ++cnt;
+  }
 }

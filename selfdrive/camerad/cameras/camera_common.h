@@ -88,7 +88,6 @@ typedef struct CameraExpInfo {
 class CameraServer;
 struct CameraState;
 
-typedef void (*process_thread_cb)(CameraServer *s, CameraState *c, int cnt);
 class CameraServerBase {
 public:
   CameraServerBase();
@@ -98,13 +97,16 @@ public:
   cl_device_id device_id;
   cl_context context;
   VisionIpcServer *vipc_server;
-  SubMaster *sm;
   PubMaster *pm;
 
 protected:
-  virtual void run() {}
-  void start_process_thread(CameraState *cs, process_thread_cb callback);
+  virtual void run() = 0;
+  virtual void process_camera(CameraState *cs, cereal::FrameData::Builder& framed, uint32_t cnt) {}
+  void start_process_thread(CameraState *cs, bool is_frame_stream = false);
   std::vector<std::thread> camera_threads;
+
+private:
+  void process_camera_thread(CameraState *cs, bool is_frame_stream);
 };
 
 class CameraBuf {
@@ -143,8 +145,5 @@ public:
   void queue(size_t buf_idx);
 };
 
-void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &frame_data);
-kj::Array<uint8_t> get_frame_image(const CameraBuf *b);
 float set_exposure_target(const CameraBuf *b, int x_start, int x_end, int x_skip, int y_start, int y_end, int y_skip, int analog_gain, bool hist_ceil, bool hl_weighted);
-void common_process_driver_camera(SubMaster *sm, PubMaster *pm, CameraState *c, int cnt);
 void camera_autoexposure(CameraState *s, float grey_frac);
