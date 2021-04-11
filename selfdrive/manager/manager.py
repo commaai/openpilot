@@ -11,6 +11,7 @@ import selfdrive.crash as crash
 from common.basedir import BASEDIR
 from common.params import Params
 from common.text_window import TextWindow
+from selfdrive.boardd.set_time import set_time
 from selfdrive.hardware import HARDWARE
 from selfdrive.manager.helpers import unblock_stdout
 from selfdrive.manager.process import ensure_running
@@ -89,6 +90,9 @@ def manager_cleanup():
 def manager_thread():
   cloudlog.info("manager start")
   cloudlog.info({"environ": os.environ})
+
+  # update system time from panda
+  set_time()
 
   # save boot log
   subprocess.call("./bootlog", cwd=os.path.join(BASEDIR, "selfdrive/loggerd"))
