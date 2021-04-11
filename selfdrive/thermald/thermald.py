@@ -348,6 +348,8 @@ def thermald_thread():
 
     # Handle offroad/onroad transition
     should_start = all(startup_conditions.values())
+    if params.get("IgnitionOverride") is not None:
+      should_start = params.get_bool("IgnitionOverride")
     if should_start:
       if not should_start_prev:
         params.delete("IsOffroad")
