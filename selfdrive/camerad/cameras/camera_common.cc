@@ -278,14 +278,14 @@ static void publish_thumbnail(PubMaster *pm, const CameraBuf *b) {
   free(thumbnail_buffer);
 }
 
-float set_exposure_target(const CameraBuf *b, int x_start, int x_end, int x_skip, int y_start, int y_end, int y_skip, int analog_gain, bool hist_ceil, bool hl_weighted) {
+float set_exposure_target(const CameraBuf *b, const ExpRect &rect, int analog_gain, bool hist_ceil, bool hl_weighted) {
   const uint8_t *pix_ptr = b->cur_yuv_buf->y;
   uint32_t lum_binning[256] = {0};
   unsigned int lum_total = 0;
-  for (int y = y_start; y < y_end; y += y_skip) {
-    for (int x = x_start; x < x_end; x += x_skip) {
+  for (int y = rect.y1; y < rect.y2; y += rect.y_skip) {
+    for (int x = rect.x1; x < rect.x2; x += rect.x_skip) {
       uint8_t lum = pix_ptr[(y * b->rgb_width) + x];
-      if (hist_ceil && lum < 80 && lum_binning[lum] > HISTO_CEIL_K * (y_end - y_start) * (x_end - x_start) / x_skip / y_skip / 256) {
+      if (hist_ceil && lum < 80 && lum_binning[lum] > HISTO_CEIL_K * (rect.y2 - rect.y1) * (rect.x2 - rect.x1) / rect.x_skip / rect.y_skip / 256) {
         continue;
       }
       lum_binning[lum]++;
@@ -348,9 +348,22 @@ std::thread start_process_thread(MultiCameraState *cameras, CameraState *cs, pro
   return std::thread(processing_thread, cameras, cs, callback);
 }
 
-static void driver_cam_auto_exposure(CameraState *c, SubMaster &sm) {
+void road_cam_auto_exposure(CameraState *c) {
+#ifndef QCOM2
+  const ExpRect rect = {290, 850, 1, 322, 636, 1};
+  int analog_gain = -1;
+#else
+  const ExpRect = (c == &s->wide_road_cam) ? {96, 1830, 2, 250, 774, 2}
+                                           : {96, 1830, 2, 160, 1146, 2};
+  int analog_gain = (int)c->analog_gain;
+#endif
+  camera_autoexposure(c, set_exposure_target(&c->buf, rect, analog_gain, false, false));
+}
+
+static void driver_cam_auto_exposure(CameraState *c) {
   static const bool is_rhd = Params().getBool("IsRHD");
-  struct ExpRect {int x1, x2, x_skip, y1, y2, y_skip;};
+  static SubMaster sm({"driverState"});
+  
   const CameraBuf *b = &c->buf;
 #ifndef QCOM2
   bool hist_ceil = false, hl_weighted = false;
@@ -382,12 +395,12 @@ static void driver_cam_auto_exposure(CameraState *c, SubMaster &sm) {
     }
   }
 
-  camera_autoexposure(c, set_exposure_target(b, rect.x1, rect.x2, rect.x_skip, rect.y1, rect.y2, rect.y_skip, analog_gain, hist_ceil, hl_weighted));
+  camera_autoexposure(c, set_exposure_target(b, rect, analog_gain, hist_ceil, hl_weighted));
 }
 
-void common_process_driver_camera(SubMaster *sm, PubMaster *pm, CameraState *c, int cnt) {
+void common_process_driver_camera(PubMaster *pm, CameraState *c, int cnt) {
   if (cnt % 3 == 0) {
-    driver_cam_auto_exposure(c, *sm);
+    driver_cam_auto_exposure(c);
   }
   MessageBuilder msg;
   auto framed = msg.initEvent().initDriverCameraState();

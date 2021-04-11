@@ -766,7 +766,6 @@ void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_i
               VISION_STREAM_RGB_FRONT, VISION_STREAM_YUV_FRONT);
   printf("driver camera initted \n");
 
-  s->sm = new SubMaster({"driverState"});
   s->pm = new PubMaster({"roadCameraState", "driverCameraState", "wideRoadCameraState", "thumbnail"});
 }
 
@@ -866,7 +865,6 @@ void cameras_close(MultiCameraState *s) {
   camera_close(&s->wide_road_cam);
   camera_close(&s->driver_cam);
 
-  delete s->sm;
   delete s->pm;
 }
 
@@ -1056,7 +1054,7 @@ static void ae_thread(MultiCameraState *s) {
 }
 
 void process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) {
-  common_process_driver_camera(s->sm, s->pm, c, cnt);
+  common_process_driver_camera(s->pm, c, cnt);
 }
 
 // called by processing_thread
@@ -1075,9 +1073,7 @@ void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
   s->pm->send(c == &s->road_cam ? "roadCameraState" : "wideRoadCameraState", msg);
 
   if (cnt % 3 == 0) {
-    const auto [x, y, w, h] = (c == &s->wide_road_cam) ? std::tuple(96, 250, 1734, 524) : std::tuple(96, 160, 1734, 986);
-    const int skip = 2;
-    camera_autoexposure(c, set_exposure_target(b, x, x + w, skip, y, y + h, skip, (int)c->analog_gain, true, true));
+    road_cam_auto_exposure(c);
   }
 }
 
