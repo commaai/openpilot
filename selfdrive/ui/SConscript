@@ -39,10 +39,10 @@ if arch != 'aarch64' and "BUILD_SETUP" in os.environ:
 
   installers = [
     ("openpilot", "master"),
-    #("openpilot_test", "release3-staging"),
-    #("openpilot_internal", "master"),
-    #("dashcam", "dashcam3-staging"),
-    #("dashcam_test", "dashcam3-staging"),
+    ("openpilot_test", "release3-staging"),
+    ("openpilot_internal", "master"),
+    ("dashcam", "dashcam3-staging"),
+    ("dashcam_test", "dashcam3-staging"),
   ]
   for name, branch in installers:
     d = {'BRANCH': f"'\"{branch}\"'"}
@@ -53,4 +53,5 @@ if arch != 'aarch64' and "BUILD_SETUP" in os.environ:
       r = requests.get("https://github.com/commaci2.keys")
       r.raise_for_status()
       d['SSH_KEYS'] = f'\\"{r.text.strip()}\\"'
-    qt_env.Program(f"qt/setup/installer_{name}", ["qt/setup/installer.cc"], LIBS=qt_libs, CPPDEFINES=d)
+    obj = qt_env.Object(f"qt/setup/installer_{name}.o", ["qt/setup/installer.cc"], CPPDEFINES=d)
+    qt_env.Program(f"qt/setup/installer_{name}", obj, LIBS=qt_libs, CPPDEFINES=d)
