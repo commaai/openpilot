@@ -333,6 +333,7 @@ selfdrive/test/__init__.py
 selfdrive/test/helpers.py
 selfdrive/test/setup_device_ci.sh
 selfdrive/test/test_fingerprints.py
+selfdrive/test/test_onroad.py
 
 selfdrive/ui/.gitignore
 selfdrive/ui/SConscript
