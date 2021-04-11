@@ -333,6 +333,7 @@ selfdrive/test/__init__.py
 selfdrive/test/helpers.py
 selfdrive/test/setup_device_ci.sh
 selfdrive/test/test_fingerprints.py
+selfdrive/test/test_onroad.py
 
 selfdrive/ui/.gitignore
 selfdrive/ui/SConscript
@@ -426,9 +427,6 @@ selfdrive/monitoring/driver_monitor.py
 
 selfdrive/assets
 selfdrive/assets/fonts/*.ttf
-
-selfdrive/tests/__init__.py
-selfdrive/tests/test_onroad.py
 
 phonelibs/SConscript
 
