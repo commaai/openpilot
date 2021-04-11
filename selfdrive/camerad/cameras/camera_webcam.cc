@@ -60,7 +60,7 @@ void camera_close(CameraState *s) {
 }
 
 void camera_init(VisionIpcServer * v, CameraState *s, int camera_id, unsigned int fps, cl_device_id device_id, cl_context ctx, VisionStreamType rgb_type, VisionStreamType yuv_type) {
-  assert(camera_id < ARRAYSIZE(cameras_supported));
+  assert(camera_id < std::size(cameras_supported));
   s->ci = cameras_supported[camera_id];
   assert(s->ci.frame_width != 0);
 
