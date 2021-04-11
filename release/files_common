@@ -427,6 +427,9 @@ selfdrive/monitoring/driver_monitor.py
 selfdrive/assets
 selfdrive/assets/fonts/*.ttf
 
+selfdrive/tests/__init__.py
+selfdrive/tests/test_onroad.py
+
 phonelibs/SConscript
 
 phonelibs/nanovg/*.c
