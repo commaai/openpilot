@@ -123,7 +123,7 @@ pipeline {
                 stage('Devel Tests') {
                   steps {
                     phone_steps("eon-build", [
-                      ["build devel", "cd release && SCONS_CACHE=1 ./build_devel.sh"],
+                      ["build devel", "cd release && SCONS_CACHE=1 DEVEL_TEST=1 ./build_devel.sh"],
                       ["test manager", "python selfdrive/manager/test/test_manager.py"],
                       ["onroad tests", "cd selfdrive/test/ && ./test_onroad.py"],
                       ["test car interfaces", "cd selfdrive/car/tests/ && ./test_car_interfaces.py"],
