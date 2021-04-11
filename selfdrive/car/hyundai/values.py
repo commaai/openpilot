@@ -7,7 +7,7 @@ Ecu = car.CarParams.Ecu
 # Steer torque limits
 class CarControllerParams:
   def __init__(self, CP):
-    if CP.carFingerprint in [CAR.SONATA, CAR.PALISADE, CAR.SANTA_FE, CAR.VELOSTER, CAR.GENESIS_G70, CAR.IONIQ_EV_2020, CAR.KIA_CEED]:
+    if CP.carFingerprint in [CAR.SONATA, CAR.PALISADE, CAR.SANTA_FE, CAR.VELOSTER, CAR.GENESIS_G70, CAR.IONIQ_EV_2020, CAR.KIA_CEED, CAR.KIA_SELTOS]:
       self.STEER_MAX = 384
     else:
       self.STEER_MAX = 255
@@ -271,11 +271,11 @@ FW_VERSIONS = {
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x81606G3051\x00\x00\x00\x00\x00\x00\x00\x00',
-      b'\xf1\x81606EA051\x00\x00\x00\x00\x00\x00\x00\x00',      
+      b'\xf1\x81606EA051\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.eps, 0x7d4, None): [
       b'\xf1\x00TM  MDPS C 1.00 1.01 56340-S2000 9129',
-      b'\xf1\x00TM  MDPS C 1.00 1.00 56340-S2000 8409',      
+      b'\xf1\x00TM  MDPS C 1.00 1.00 56340-S2000 8409',
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00TM  MFC  AT USA LHD 1.00 1.00 99211-S2000 180409',
