@@ -122,20 +122,12 @@ pipeline {
               parallel {
                 stage('Devel Tests') {
                   steps {
-                    script {
-                      phone_steps("eon-build", [
-                        ["build devel", "cd release && SCONS_CACHE=1 ./build_devel.sh"],
-                        ["test manager", "python selfdrive/manager/test/test_manager.py"],
-                        ["onroad tests", "cd selfdrive/test/ && ./test_onroad.py"],
-                        ["test car interfaces", "cd selfdrive/car/tests/ && ./test_car_interfaces.py"],
-                      ])
-
-                      if (env.BRANCH_NAME == 'master') {
-                        phone_steps("eon-build", [
-                          ["push devel", "cd release && CI_PUSH='masetr-ci' ./build_devel.sh"],
-                        ])
-                      }
-                    }
+                    phone_steps("eon-build", [
+                      ["build devel", "cd release && SCONS_CACHE=1 ./build_devel.sh"],
+                      ["test manager", "python selfdrive/manager/test/test_manager.py"],
+                      ["onroad tests", "cd selfdrive/test/ && ./test_onroad.py"],
+                      ["test car interfaces", "cd selfdrive/car/tests/ && ./test_car_interfaces.py"],
+                    ])
                   }
                 }
 
