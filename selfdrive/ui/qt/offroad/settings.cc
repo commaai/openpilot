@@ -31,7 +31,7 @@ QWidget * toggles_panel() {
   toggles_list->addWidget(new ParamControl("IsLdwEnabled",
                                             "Enable Lane Departure Warnings",
                                             "Receive alerts to steer back into the lane when your vehicle drifts over a detected lane line without a turn signal activated while driving over 31mph (50kph).",
-                                            "../assets/offroad/icon_warning.png"
+                                            "../assets/offroad/icon_ldws.png"
                                               ));
   toggles_list->addWidget(horizontal_line());
   toggles_list->addWidget(new ParamControl("IsRHD",
@@ -49,7 +49,7 @@ QWidget * toggles_panel() {
   toggles_list->addWidget(new ParamControl("CommunityFeaturesToggle",
                                             "Enable Community Features",
                                             "Use features from the open source community that are not maintained or supported by comma.ai and have not been confirmed to meet the standard safety model. These features include community supported cars and community supported hardware. Be extra cautious when using these features",
-                                            "../assets/offroad/icon_shell.png"
+                                            "../assets/offroad/icon_discord.png"
                                             ));
   toggles_list->addWidget(horizontal_line());
   ParamControl *record_toggle = new ParamControl("RecordFront",
@@ -59,9 +59,9 @@ QWidget * toggles_panel() {
   toggles_list->addWidget(record_toggle);
   toggles_list->addWidget(horizontal_line());
   toggles_list->addWidget(new ParamControl("EndToEndToggle",
-                                           "\U0001f96c Disable use of lanelines (Alpha) \U0001f96c",
+                                           "Disable use of lanelines (Alpha)",
                                            "In this mode openpilot will ignore lanelines and just drive how it thinks a human would.",
-                                           "../assets/offroad/icon_road.png"));
+                                           "../assets/offroad/icon_kale.png"));
 
 #ifdef QCOM2
   toggles_list->addWidget(horizontal_line());
