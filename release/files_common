@@ -77,8 +77,6 @@ selfdrive/rtshield.py
 selfdrive/athena/__init__.py
 selfdrive/athena/athenad.py
 selfdrive/athena/manage_athenad.py
-selfdrive/athena/tests/__init__.py
-selfdrive/athena/tests/test_athenad_old.py
 
 selfdrive/boardd/.gitignore
 selfdrive/boardd/SConscript

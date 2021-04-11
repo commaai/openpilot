@@ -83,7 +83,6 @@ pipeline {
         }
       }
 
-
       stages {
 
         /*
@@ -122,17 +121,22 @@ pipeline {
             stage('parallel tests') {
               parallel {
                 stage('Devel Build') {
-                  environment {
-                    CI_PUSH = "${env.BRANCH_NAME == 'master' ? 'master-ci' : ' '}"
-                  }
                   steps {
-                    phone_steps("eon-build", [
-                      ["build devel", "cd release && SCONS_CACHE=1 ./build_devel.sh"],
-                      ["test athena", "nosetests -s selfdrive/athena/tests/test_athenad_old.py"],
-                      ["test manager", "python selfdrive/manager/test/test_manager.py"],
-                      ["test car interfaces", "cd selfdrive/car/tests/ && ./test_car_interfaces.py"],
-                      ["push devel", "cd release && CI_PUSH=${env.CI_PUSH} ./build_devel.sh"],
-                    ])
+                    script {
+                      phone_steps("eon-build", [
+                        ["build devel", "cd release && SCONS_CACHE=1 ./build_devel.sh"],
+                        ["test athena", "nosetests -s selfdrive/athena/tests/test_athenad_old.py"],
+                        ["test manager", "python selfdrive/manager/test/test_manager.py"],
+                        ["onroad tests", "cd selfdrive/test/ && ./test_onroad.py"],
+                        ["test car interfaces", "cd selfdrive/car/tests/ && ./test_car_interfaces.py"],
+                      ])
+
+                      if (env.BRANCH_NAME == 'master') {
+                        phone_steps("eon-build", [
+                          ["push devel", "cd release && CI_PUSH='masetr-ci' ./build_devel.sh"],
+                        ])
+                      }
+                    }
                   }
                 }
 
@@ -149,7 +153,6 @@ pipeline {
                   steps {
                     phone_steps("eon", [
                       ["build", "SCONS_CACHE=1 scons -j4"],
-                      ["onroad tests", "cd selfdrive/test/ && ./test_onroad.py"],
                       ["test sounds", "nosetests -s selfdrive/test/test_sounds.py"],
                       ["test boardd loopback", "nosetests -s selfdrive/boardd/tests/test_boardd_loopback.py"],
                       ["test loggerd", "python selfdrive/loggerd/tests/test_loggerd.py"],
