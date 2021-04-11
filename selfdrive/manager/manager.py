@@ -22,6 +22,10 @@ from selfdrive.version import dirty, version
 
 
 def manager_init():
+
+  # update system time from panda
+  set_time()
+
   params = Params()
   params.manager_start()
 
@@ -90,9 +94,6 @@ def manager_cleanup():
 def manager_thread():
   cloudlog.info("manager start")
   cloudlog.info({"environ": os.environ})
-
-  # update system time from panda
-  set_time()
 
   # save boot log
   subprocess.call("./bootlog", cwd=os.path.join(BASEDIR, "selfdrive/loggerd"))
