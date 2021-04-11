@@ -120,12 +120,11 @@ pipeline {
           stages {
             stage('parallel tests') {
               parallel {
-                stage('Devel Build') {
+                stage('Devel Tests') {
                   steps {
                     script {
                       phone_steps("eon-build", [
                         ["build devel", "cd release && SCONS_CACHE=1 ./build_devel.sh"],
-                        ["test athena", "nosetests -s selfdrive/athena/tests/test_athenad_old.py"],
                         ["test manager", "python selfdrive/manager/test/test_manager.py"],
                         ["onroad tests", "cd selfdrive/test/ && ./test_onroad.py"],
                         ["test car interfaces", "cd selfdrive/car/tests/ && ./test_car_interfaces.py"],
@@ -153,6 +152,7 @@ pipeline {
                   steps {
                     phone_steps("eon", [
                       ["build", "SCONS_CACHE=1 scons -j4"],
+                      ["test athena", "nosetests -s selfdrive/athena/tests/test_athenad_old.py"],
                       ["test sounds", "nosetests -s selfdrive/test/test_sounds.py"],
                       ["test boardd loopback", "nosetests -s selfdrive/boardd/tests/test_boardd_loopback.py"],
                       ["test loggerd", "python selfdrive/loggerd/tests/test_loggerd.py"],
@@ -199,6 +199,18 @@ pipeline {
 
               }
             }
+
+            stage('Push master-ci') {
+              when {
+                branch 'master'
+              }
+              steps {
+                phone_steps("eon-build", [
+                  ["push devel", "cd release && CI_PUSH='masetr-ci' ./build_devel.sh"],
+                ])
+              }
+            }
+
           }
 
           post {
