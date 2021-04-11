@@ -5,25 +5,23 @@ import json
 import numpy as np
 
 import cereal.messaging as messaging
-from cereal import car, log
+from cereal import car
 from common.params import Params, put_nonblocking
 from selfdrive.locationd.models.car_kf import CarKalman, ObservationKind, States
 from selfdrive.locationd.models.constants import GENERATED_DIR
 from selfdrive.swaglog import cloudlog
-
-KalmanStatus = log.LiveLocationKalman.Status
 
 
 class ParamsLearner:
   def __init__(self, CP, steer_ratio, stiffness_factor, angle_offset):
     self.kf = CarKalman(GENERATED_DIR, steer_ratio, stiffness_factor, angle_offset)
 
-    self.kf.filter.set_mass(CP.mass)  # pylint: disable=no-member
-    self.kf.filter.set_rotational_inertia(CP.rotationalInertia)  # pylint: disable=no-member
-    self.kf.filter.set_center_to_front(CP.centerToFront)  # pylint: disable=no-member
-    self.kf.filter.set_center_to_rear(CP.wheelbase - CP.centerToFront)  # pylint: disable=no-member
-    self.kf.filter.set_stiffness_front(CP.tireStiffnessFront)  # pylint: disable=no-member
-    self.kf.filter.set_stiffness_rear(CP.tireStiffnessRear)  # pylint: disable=no-member
+    self.kf.filter.set_global("mass", CP.mass)
+    self.kf.filter.set_global("rotational_inertia", CP.rotationalInertia)
+    self.kf.filter.set_global("center_to_front", CP.centerToFront)
+    self.kf.filter.set_global("center_to_rear", CP.wheelbase - CP.centerToFront)
+    self.kf.filter.set_global("stiffness_front", CP.tireStiffnessFront)
+    self.kf.filter.set_global("stiffness_rear", CP.tireStiffnessRear)
 
     self.active = False
 
@@ -38,14 +36,15 @@ class ParamsLearner:
 
       yaw_rate = msg.angularVelocityCalibrated.value[2]
       yaw_rate_std = msg.angularVelocityCalibrated.std[2]
+      yaw_rate_valid = msg.angularVelocityCalibrated.valid
 
       if self.active:
-        if msg.inputsOK and msg.posenetOK and msg.status == KalmanStatus.valid:
+        if msg.inputsOK and msg.posenetOK and yaw_rate_valid:
           self.kf.predict_and_observe(t,
                                       ObservationKind.ROAD_FRAME_YAW_RATE,
-                                      np.array([[[-yaw_rate]]]),
+                                      np.array([[-yaw_rate]]),
                                       np.array([np.atleast_2d(yaw_rate_std**2)]))
-        self.kf.predict_and_observe(t, ObservationKind.ANGLE_OFFSET_FAST, np.array([[[0]]]))
+        self.kf.predict_and_observe(t, ObservationKind.ANGLE_OFFSET_FAST, np.array([[0]]))
 
     elif which == 'carState':
       self.steering_angle = msg.steeringAngleDeg
@@ -56,12 +55,12 @@ class ParamsLearner:
       self.active = self.speed > 5 and in_linear_region
 
       if self.active:
-        self.kf.predict_and_observe(t, ObservationKind.STEER_ANGLE, np.array([[[math.radians(msg.steeringAngleDeg)]]]))
-        self.kf.predict_and_observe(t, ObservationKind.ROAD_FRAME_X_SPEED, np.array([[[self.speed]]]))
+        self.kf.predict_and_observe(t, ObservationKind.STEER_ANGLE, np.array([[math.radians(msg.steeringAngleDeg)]]))
+        self.kf.predict_and_observe(t, ObservationKind.ROAD_FRAME_X_SPEED, np.array([[self.speed]]))
 
     if not self.active:
       # Reset time when stopped so uncertainty doesn't grow
-      self.kf.filter.filter_time = t
+      self.kf.filter.set_filter_time(t)
       self.kf.filter.reset_rewind()
 
 
@@ -89,9 +88,10 @@ def main(sm=None, pm=None):
       params = None
 
   try:
-    if params is not None and not all((
-        abs(params.get('angleOffsetAverageDeg')) < 10.0,
-        min_sr <= params['steerRatio'] <= max_sr)):
+    angle_offset_sane = abs(params.get('angleOffsetAverageDeg')) < 10.0
+    steer_ratio_sane = min_sr <= params['steerRatio'] <= max_sr
+    params_sane = angle_offset_sane and steer_ratio_sane
+    if params is not None and not params_sane:
       cloudlog.info(f"Invalid starting values found {params}")
       params = None
   except Exception as e:

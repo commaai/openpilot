@@ -20,12 +20,13 @@ docker run --net=host\
   --rm \
   -it \
   --gpus all \
-  --device=/dev/dri \
+  --device=/dev/dri:/dev/dri \
+  --device=/dev/input:/dev/input \
   -v /tmp/.X11-unix:/tmp/.X11-unix \
   --shm-size 1G \
   -e DISPLAY=$DISPLAY \
   -e QT_X11_NO_MITSHM=1 \
   -w "$OPENPILOT_DIR/tools/sim" \
   $EXTRA_ARGS \
-  commaai/openpilot-sim:latest \
+  ghcr.io/commaai/openpilot-sim:latest \
   /bin/bash -c "./tmux_script.sh $*"

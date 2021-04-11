@@ -60,15 +60,17 @@ QWidget * Setup::build_page(QString title, QWidget *content, bool next, bool pre
 
   QHBoxLayout *nav_layout = new QHBoxLayout();
 
-  QPushButton *back_btn = new QPushButton("Back");
-  nav_layout->addWidget(back_btn, 0, Qt::AlignBottom | Qt::AlignLeft);
-  QObject::connect(back_btn, SIGNAL(released()), this, SLOT(prevPage()));
-  back_btn->setVisible(prev);
+  if (prev) {
+    QPushButton *back_btn = new QPushButton("Back");
+    nav_layout->addWidget(back_btn, 1, Qt::AlignBottom | Qt::AlignLeft);
+    QObject::connect(back_btn, SIGNAL(released()), this, SLOT(prevPage()));
+  }
 
-  QPushButton *continue_btn = new QPushButton("Continue");
-  nav_layout->addWidget(continue_btn, 0, Qt::AlignBottom | Qt::AlignRight);
-  QObject::connect(continue_btn, SIGNAL(released()), this, SLOT(nextPage()));
-  continue_btn->setVisible(next);
+  if (next) {
+    QPushButton *continue_btn = new QPushButton("Continue");
+    nav_layout->addWidget(continue_btn, 0, Qt::AlignBottom | Qt::AlignRight);
+    QObject::connect(continue_btn, SIGNAL(released()), this, SLOT(nextPage()));
+  }
 
   main_layout->addLayout(nav_layout, 0);
 

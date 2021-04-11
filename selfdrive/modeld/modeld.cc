@@ -7,6 +7,7 @@
 #include "common/swaglog.h"
 #include "common/clutil.h"
 #include "common/util.h"
+#include "common/params.h"
 
 #include "models/driving.h"
 #include "messaging.hpp"
@@ -17,7 +18,7 @@ bool live_calib_seen;
 mat3 cur_transform;
 std::mutex transform_lock;
 
-void calibration_thread() {
+void calibration_thread(bool wide_camera) {
   set_thread_name("calibration");
   set_realtime_priority(50);
 
@@ -35,7 +36,7 @@ void calibration_thread() {
     -1.09890110e-03, 0.00000000e+00, 2.81318681e-01,
     -1.84808520e-20, 9.00738606e-04,-4.28751576e-02;
 
-  Eigen::Matrix<float, 3, 3> fcam_intrinsics = Eigen::Matrix<float, 3, 3, Eigen::RowMajor>(fcam_intrinsic_matrix.v);
+  Eigen::Matrix<float, 3, 3> cam_intrinsics = Eigen::Matrix<float, 3, 3, Eigen::RowMajor>(wide_camera ? ecam_intrinsic_matrix.v : fcam_intrinsic_matrix.v);
   const mat3 yuv_transform = get_model_yuv_transform();
 
   while (!do_exit) {
@@ -47,7 +48,7 @@ void calibration_thread() {
         extrinsic_matrix_eigen(i / 4, i % 4) = extrinsic_matrix[i];
       }
 
-      auto camera_frame_from_road_frame = fcam_intrinsics * extrinsic_matrix_eigen;
+      auto camera_frame_from_road_frame = cam_intrinsics * extrinsic_matrix_eigen;
       Eigen::Matrix<float, 3, 3> camera_frame_from_ground;
       camera_frame_from_ground.col(0) = camera_frame_from_road_frame.col(0);
       camera_frame_from_ground.col(1) = camera_frame_from_road_frame.col(1);
@@ -72,10 +73,7 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client) {
   SubMaster sm({"lateralPlan", "roadCameraState"});
 
   // setup filter to track dropped frames
-  const float dt = 1. / MODEL_FREQ;
-  const float ts = 10.0;  // filter time constant (s)
-  const float frame_filter_k = (dt / ts) / (1. + dt / ts);
-  float frames_dropped = 0;
+  FirstOrderFilter frame_dropped_filter(0., 10., 1. / MODEL_FREQ);
 
   uint32_t frame_id = 0, last_vipc_frame_id = 0;
   double last = 0;
@@ -114,8 +112,12 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client) {
 
       // tracked dropped frames
       uint32_t vipc_dropped_frames = extra.frame_id - last_vipc_frame_id - 1;
-      frames_dropped = (1. - frame_filter_k) * frames_dropped + frame_filter_k * (float)std::min(vipc_dropped_frames, 10U);
-      if (run_count < 10) frames_dropped = 0;  // let frame drops warm up
+      float frames_dropped = frame_dropped_filter.update((float)std::min(vipc_dropped_frames, 10U));
+      if (run_count < 10) { // let frame drops warm up
+        frame_dropped_filter.reset(0);
+        frames_dropped = 0.;
+      }
+
       float frame_drop_ratio = frames_dropped / (1 + frames_dropped);
 
       model_publish(pm, extra.frame_id, frame_id, frame_drop_ratio, model_buf, extra.timestamp_eof, model_execution_time,
@@ -139,8 +141,14 @@ int main(int argc, char **argv) {
   set_core_affinity(4);
 #endif
 
+  bool wide_camera = false;
+
+#ifdef QCOM2
+  wide_camera = Params().getBool("EnableWideCamera");
+#endif
+
   // start calibration thread
-  std::thread thread = std::thread(calibration_thread);
+  std::thread thread = std::thread(calibration_thread, wide_camera);
 
   // cl init
   cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
@@ -151,7 +159,7 @@ int main(int argc, char **argv) {
   model_init(&model, device_id, context);
   LOGW("models loaded, modeld starting");
 
-  VisionIpcClient vipc_client = VisionIpcClient("camerad", VISION_STREAM_YUV_BACK, true, device_id, context);
+  VisionIpcClient vipc_client = VisionIpcClient("camerad", wide_camera ? VISION_STREAM_YUV_WIDE : VISION_STREAM_YUV_BACK, true, device_id, context);
   while (!do_exit && !vipc_client.connect(false)) {
     util::sleep_for(100);
   }

@@ -141,6 +141,10 @@ else:
   ccflags = []
   ldflags = []
 
+# no --as-needed on mac linker
+if arch != "Darwin":
+  ldflags += ["-Wl,--as-needed"]
+
 # change pythonpath to this
 lenv["PYTHONPATH"] = Dir("#").path
 
@@ -264,9 +268,9 @@ Export('envCython')
 
 # Qt build environment
 qt_env = env.Clone()
-qt_modules = ["Widgets", "Gui", "Core", "Network", "Concurrent", "Multimedia"]
+qt_modules = ["Widgets", "Gui", "Core", "Network", "Concurrent", "Multimedia", "Quick", "Qml", "QuickWidgets"]
 if arch != "aarch64":
-  qt_modules += ["DBus", "WebEngine", "WebEngineWidgets"]
+  qt_modules += ["DBus"]
 
 qt_libs = []
 if arch == "Darwin":
@@ -307,6 +311,9 @@ qt_flags = [
   "-DQT_NO_DEBUG",
   "-DQT_WIDGETS_LIB",
   "-DQT_GUI_LIB",
+  "-DQT_QUICK_LIB",
+  "-DQT_QUICKWIDGETS_LIB",
+  "-DQT_QML_LIB",
   "-DQT_CORE_LIB"
 ]
 qt_env['CXXFLAGS'] += qt_flags
@@ -323,12 +330,8 @@ if GetOption("clazy"):
   qt_env['CXX'] = 'clazy'
   qt_env['ENV']['CLAZY_IGNORE_DIRS'] = qt_dirs[0]
   qt_env['ENV']['CLAZY_CHECKS'] = ','.join(checks)
-Export('qt_env')
 
-
-# still needed for apks
-zmq = 'zmq'
-Export('env', 'arch', 'real_arch', 'zmq', 'SHARED', 'USE_WEBCAM', 'QCOM_REPLAY')
+Export('env', 'qt_env', 'arch', 'real_arch', 'SHARED', 'USE_WEBCAM', 'QCOM_REPLAY')
 
 # cereal and messaging are shared with the system
 SConscript(['cereal/SConscript'])
@@ -353,10 +356,33 @@ else:
 
 Export('common', 'gpucommon', 'visionipc')
 
+# Build rednose library and ekf models
+
+rednose_config = {
+  'generated_folder': '#selfdrive/locationd/models/generated',
+  'to_build': {
+    'live': ('#selfdrive/locationd/models/live_kf.py', True),
+    'car': ('#selfdrive/locationd/models/car_kf.py', True),
+  },
+}
+
+if arch != "aarch64":
+  rednose_config['to_build'].update({
+    'gnss': ('#selfdrive/locationd/models/gnss_kf.py', True),
+    'loc_4': ('#selfdrive/locationd/models/loc_kf.py', True),
+    'pos_computer_4': ('#rednose/helpers/lst_sq_computer.py', False),
+    'pos_computer_5': ('#rednose/helpers/lst_sq_computer.py', False),
+    'feature_handler_5': ('#rednose/helpers/feature_handler.py', False),
+    'lane': ('#xx/pipeline/lib/ekf/lane_kf.py', True),
+  })
+
+Export('rednose_config')
+SConscript(['rednose/SConscript'])
 
 # Build openpilot
 
 SConscript(['cereal/SConscript'])
+SConscript(['panda/board/SConscript'])
 SConscript(['opendbc/can/SConscript'])
 
 SConscript(['phonelibs/SConscript'])
@@ -380,7 +406,6 @@ SConscript(['selfdrive/clocksd/SConscript'])
 SConscript(['selfdrive/loggerd/SConscript'])
 
 SConscript(['selfdrive/locationd/SConscript'])
-SConscript(['selfdrive/locationd/models/SConscript'])
 SConscript(['selfdrive/sensord/SConscript'])
 SConscript(['selfdrive/ui/SConscript'])
 

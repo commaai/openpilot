@@ -1,6 +1,5 @@
 #pragma once
 
-#include <QGridLayout>
 #include <QLabel>
 #include <QOpenGLFunctions>
 #include <QOpenGLWidget>
@@ -10,8 +9,9 @@
 #include <QTimer>
 #include <QWidget>
 
-#include "qt_sound.hpp"
+#include "sound.hpp"
 #include "ui/ui.hpp"
+#include "common/util.h"
 #include "widgets/offroad_alerts.hpp"
 
 // container window for onroad NVG UI
@@ -39,7 +39,7 @@ private:
   QTimer* timer;
   QTimer* backlight_timer;
 
-  QtSound sound;
+  Sound sound;
 
   bool onroad = true;
   double prev_draw_t = 0;
@@ -47,8 +47,8 @@ private:
   // TODO: make a nice abstraction to handle embedded device stuff
   float brightness_b = 0;
   float brightness_m = 0;
-  float smooth_brightness = 0;
   float last_brightness = 0;
+  FirstOrderFilter brightness_filter;
 
 public slots:
   void timerUpdate();
@@ -65,7 +65,6 @@ public:
 private:
   QTimer* timer;
 
-  // offroad home screen widgets
   QLabel* date;
   QStackedLayout* center_layout;
   OffroadAlert* alerts_widget;
@@ -85,17 +84,14 @@ public:
   GLWindow* glWindow;
 
 signals:
-  void offroadTransition(bool offroad);
   void openSettings();
   void closeSettings();
+  void offroadTransition(bool offroad);
 
 protected:
   void mousePressEvent(QMouseEvent* e) override;
 
 private:
-  QGridLayout* layout;
   OffroadHome* home;
-
-private slots:
-  void setVisibility(bool offroad);
+  QStackedLayout* layout;
 };

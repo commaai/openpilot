@@ -1,7 +1,8 @@
 #pragma once
 
 #include <QLabel>
-#include <QStackedLayout>
+#include <QStackedWidget>
+#include <QVBoxLayout>
 #include <QWidget>
 
 #include "api.hpp"
@@ -41,15 +42,17 @@ public:
   explicit PrimeAdWidget(QWidget* parent = 0);
 };
 
-class SetupWidget : public QWidget {
+class SetupWidget : public QFrame {
   Q_OBJECT
 
 public:
   explicit SetupWidget(QWidget* parent = 0);
 
 private:
-  QStackedLayout* mainLayout;
+  QStackedWidget* mainLayout;
   CommaApi* api;
+  PrimeAdWidget *primeAd;
+  PrimeUserWidget *primeUser;
   bool showQr = false;
 
 private slots:

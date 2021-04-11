@@ -1,37 +1,50 @@
 #include <QLabel>
 #include <QWidget>
+#include <QScrollBar>
 #include <QPushButton>
 #include <QVBoxLayout>
 #include <QApplication>
 
 #include "qt_window.hpp"
+#include "selfdrive/hardware/hw.h"
+#include "widgets/scrollview.hpp"
 
 int main(int argc, char *argv[]) {
   QApplication a(argc, argv);
   QWidget window;
   setMainWindow(&window);
 
-  QVBoxLayout *layout = new QVBoxLayout();
-  layout->setContentsMargins(125, 125, 125, 125);
+  QGridLayout *layout = new QGridLayout;
+  layout->setMargin(50);
 
-  // TODO: make this scroll
-  layout->addWidget(new QLabel(argv[1]), 0, Qt::AlignTop);
+  QLabel *label = new QLabel(argv[1]);
+  label->setWordWrap(true);
+  label->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
+  ScrollView *scroll = new ScrollView(label);
+  scroll->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+  layout->addWidget(scroll, 0, 0, Qt::AlignTop);
+
+  // Scroll to the bottom
+  QObject::connect(scroll->verticalScrollBar(), &QAbstractSlider::rangeChanged, [=](){
+    scroll->verticalScrollBar()->setValue(scroll->verticalScrollBar()->maximum());
+  });
 
   QPushButton *btn = new QPushButton();
 #ifdef __aarch64__
   btn->setText("Reboot");
   QObject::connect(btn, &QPushButton::released, [=]() {
-    std::system("sudo reboot");
+    Hardware::reboot();
   });
 #else
   btn->setText("Exit");
   QObject::connect(btn, SIGNAL(released()), &a, SLOT(quit()));
 #endif
-  layout->addWidget(btn, 0, Qt::AlignRight);
+  layout->addWidget(btn, 0, 0, Qt::AlignRight | Qt::AlignBottom);
 
   window.setLayout(layout);
   window.setStyleSheet(R"(
     * {
+      outline: none;
       color: white;
       background-color: black;
       font-size: 60px;
@@ -42,6 +55,7 @@ int main(int argc, char *argv[]) {
       padding-left: 100px;
       border: 2px solid white;
       border-radius: 20px;
+      margin-right: 40px;
     }
   )");
 

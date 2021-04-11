@@ -1,8 +1,9 @@
 #pragma once
+
 #include <stddef.h>
 #include <map>
 #include <string>
-#include <vector>
+#include <sstream>
 
 #define ERR_NO_VALUE -33
 
@@ -12,35 +13,52 @@ private:
 
 public:
   Params(bool persistent_param = false);
-  Params(std::string path);
+  Params(const std::string &path);
 
-  int write_db_value(std::string key, std::string dat);
-  int write_db_value(const char* key, const char* value, size_t value_size);
+  // Delete a value
+  int remove(const char *key);
+  inline int remove(const std::string &key) {
+    return remove (key.c_str());
+  }
 
-  // Reads a value from the params database.
-  // Inputs:
-  //  key: The key to read.
-  //  value: A pointer where a newly allocated string containing the db value will
-  //         be written.
-  //  value_sz: A pointer where the size of value will be written. Does not
-  //            include the NULL terminator.
-  //  persistent_param: Boolean indicating if the param store in the /persist partition is to be used.
-  //                    e.g. for sensor calibration files. Will not be cleared after wipe or re-install.
-  //
-  // Returns: Negative on failure, otherwise 0.
-  int read_db_value(const char* key, char** value, size_t* value_sz);
-
-  // Delete a value from the params database.
-  // Inputs are the same as read_db_value, without value and value_sz.
-  int delete_db_value(std::string key);
-
-  // Reads a value from the params database, blocking until successful.
-  // Inputs are the same as read_db_value.
-  int read_db_value_blocking(const char* key, char** value, size_t* value_sz);
-
+  // read all values
   int read_db_all(std::map<std::string, std::string> *params);
-  std::vector<char> read_db_bytes(const char* param_name);
-  bool read_db_bool(const char* param_name);
 
-  std::string get(std::string key, bool block=false);
+  // read a value
+  std::string get(const char *key, bool block = false);
+
+  inline std::string get(const std::string &key, bool block = false) {
+    return get(key.c_str(), block);
+  }
+
+  template <class T>
+  std::optional<T> get(const char *key, bool block = false) {
+    std::istringstream iss(get(key, block));
+    T value{};
+    iss >> value;
+    return iss.fail() ? std::nullopt : std::optional(value);
+  }
+
+  inline bool getBool(const std::string &key) {
+    return getBool(key.c_str());
+  }
+
+  inline bool getBool(const char *key) {
+    return get(key) == "1";
+  }
+
+  // write a value
+  int put(const char* key, const char* val, size_t value_size);
+
+  inline int put(const std::string &key, const std::string &val) {
+    return put(key.c_str(), val.data(), val.size());
+  }
+
+  inline int putBool(const char *key, bool val) {
+    return put(key, val ? "1" : "0", 1);
+  }
+
+  inline int putBool(const std::string &key, bool val) {
+    return putBool(key.c_str(), val);
+  }
 };

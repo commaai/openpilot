@@ -338,9 +338,9 @@ def python_replay_process(cfg, lr):
   params = Params()
   params.clear_all()
   params.manager_start()
-  params.put("OpenpilotEnabledToggle", "1")
-  params.put("Passive", "0")
-  params.put("CommunityFeaturesToggle", "1")
+  params.put_bool("OpenpilotEnabledToggle", True)
+  params.put_bool("Passive", False)
+  params.put_bool("CommunityFeaturesToggle", True)
 
   os.environ['NO_RADAR_SLEEP'] = "1"
   os.environ['SKIP_FW_QUERY'] = "1"

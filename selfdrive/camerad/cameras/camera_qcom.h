@@ -35,7 +35,7 @@
 
 typedef struct CameraState CameraState;
 
-typedef int (*camera_apply_exposure_func)(CameraState *s, int gain, int integ_lines, int frame_length);
+typedef int (*camera_apply_exposure_func)(CameraState *s, int gain, int integ_lines, uint32_t frame_length);
 
 typedef struct StreamState {
   struct msm_isp_buf_request buf_request;
@@ -67,10 +67,10 @@ typedef struct CameraState {
 
   // exposure
   uint32_t pixel_clock, line_length_pclk;
-  uint32_t max_gain;
+  uint32_t frame_length;
+  unsigned int max_gain;
   float cur_exposure_frac, cur_gain_frac;
   int cur_gain, cur_integ_lines;
-  int cur_frame_length;
   std::atomic<float> digital_gain;
   camera_apply_exposure_func apply_exposure;
 

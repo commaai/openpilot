@@ -9,6 +9,7 @@ source "$BASEDIR/launch_env.sh"
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 
 function two_init {
+
   # Wifi scan
   wpa_cli IFNAME=wlan0 SCAN
 
