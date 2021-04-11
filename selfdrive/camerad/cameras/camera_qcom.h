@@ -86,22 +86,24 @@ typedef struct CameraState {
 } CameraState;
 
 
-typedef struct MultiCameraState {
+class CameraServer : public CameraServerBase {
+public:
+  CameraServer();
+  ~CameraServer();
+  void run() override;
+
   unique_fd ispif_fd;
   unique_fd msmcfg_fd;
   unique_fd v4l_fd;
-  uint16_t lapres[(ROI_X_MAX-ROI_X_MIN+1)*(ROI_Y_MAX-ROI_Y_MIN+1)];
+  uint16_t lapres[(ROI_X_MAX-ROI_X_MIN+1)*(ROI_Y_MAX-ROI_Y_MIN+1)] = {};
+  LapConv *lap_conv = nullptr;
 
-  VisionBuf focus_bufs[FRAME_BUF_COUNT];
-  VisionBuf stats_bufs[FRAME_BUF_COUNT];
+  VisionBuf focus_bufs[FRAME_BUF_COUNT] = {};
+  VisionBuf stats_bufs[FRAME_BUF_COUNT] = {};
 
-  CameraState road_cam;
-  CameraState driver_cam;
-
-  SubMaster *sm;
-  PubMaster *pm;
-  LapConv *lap_conv;
-} MultiCameraState;
+  CameraState road_cam = {};
+  CameraState driver_cam = {};
+};
 
 void actuator_move(CameraState *s, uint16_t target);
 int sensor_write_regs(CameraState *s, struct msm_camera_i2c_reg_array* arr, size_t size, int data_type);

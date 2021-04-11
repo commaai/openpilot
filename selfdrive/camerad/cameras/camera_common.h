@@ -93,8 +93,26 @@ typedef struct CameraExpInfo {
   float grey_frac;
 } CameraExpInfo;
 
-struct MultiCameraState;
+class CameraServer;
 struct CameraState;
+typedef void (*process_thread_cb)(CameraServer *s, CameraState *c, int cnt);
+
+class CameraServerBase {
+public:
+  CameraServerBase();
+  virtual ~CameraServerBase();
+  void start();
+
+  cl_device_id device_id;
+  cl_context context;
+  VisionIpcServer *vipc_server;
+  PubMaster *pm;
+
+protected:
+  virtual void run() = 0;
+  void start_process_thread(CameraState *cs, process_thread_cb callback);
+  std::vector<std::thread> camera_threads;
+};
 
 class CameraBuf {
 private:
@@ -126,22 +144,14 @@ public:
 
   CameraBuf() = default;
   ~CameraBuf();
-  void init(cl_device_id device_id, cl_context context, CameraState *s, VisionIpcServer * v, int frame_cnt, VisionStreamType rgb_type, VisionStreamType yuv_type, release_cb release_callback=nullptr);
+  void init(CameraServer *server, CameraState *s, int frame_cnt, release_cb release_callback=nullptr);
   bool acquire();
   void release();
   void queue(size_t buf_idx);
 };
 
-typedef void (*process_thread_cb)(MultiCameraState *s, CameraState *c, int cnt);
-
 void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &frame_data);
 kj::Array<uint8_t> get_frame_image(const CameraBuf *b);
 float set_exposure_target(const CameraBuf *b, int x_start, int x_end, int x_skip, int y_start, int y_end, int y_skip);
-std::thread start_process_thread(MultiCameraState *cameras, CameraState *cs, process_thread_cb callback);
-void common_process_driver_camera(SubMaster *sm, PubMaster *pm, CameraState *c, int cnt);
-
-void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_id, cl_context ctx);
-void cameras_open(MultiCameraState *s);
-void cameras_run(MultiCameraState *s);
-void cameras_close(MultiCameraState *s);
+void common_process_driver_camera(PubMaster *pm, CameraState *c, int cnt);
 void camera_autoexposure(CameraState *s, float grey_frac);

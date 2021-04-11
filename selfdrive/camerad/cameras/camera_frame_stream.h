@@ -1,13 +1,6 @@
 #pragma once
 
-#define CL_USE_DEPRECATED_OPENCL_1_2_APIS
-#ifdef __APPLE__
-#include <OpenCL/cl.h>
-#else
-#include <CL/cl.h>
-#endif
-
-#include "camera_common.h"
+#include "selfdrive/camerad/cameras/camera_common.h"
 
 #define FRAME_BUF_COUNT 16
 
@@ -21,10 +14,11 @@ typedef struct CameraState {
   CameraBuf buf;
 } CameraState;
 
-typedef struct MultiCameraState {
-  CameraState road_cam;
-  CameraState driver_cam;
+class CameraServer : public CameraServerBase {
+public:
+  CameraServer();
+  void run() override;
 
-  SubMaster *sm;
-  PubMaster *pm;
-} MultiCameraState;
+  CameraState road_cam = {};
+  CameraState driver_cam = {};
+};

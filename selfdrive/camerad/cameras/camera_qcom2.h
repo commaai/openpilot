@@ -12,7 +12,7 @@
 #define FRAME_BUF_COUNT 4
 #define DEBAYER_LOCAL_WORKSIZE 16
 typedef struct CameraState {
-  MultiCameraState *multi_cam_state;
+  CameraServer *multi_cam_state;
   CameraInfo ci;
 
   std::mutex exp_lock;
@@ -55,22 +55,21 @@ typedef struct CameraState {
   CameraBuf buf;
 } CameraState;
 
-typedef struct MultiCameraState {
-  int device;
+class CameraServer : public CameraServerBase {
+public:
+  CameraServer();
+  ~CameraServer();
+  void run() override;
 
+  int device = -1;
   unique_fd video0_fd;
   unique_fd video1_fd;
   unique_fd isp_fd;
-  int device_iommu;
-  int cdm_iommu;
-
-
-  CameraState road_cam;
-  CameraState wide_road_cam;
-  CameraState driver_cam;
-
+  int device_iommu = -1;
+  int cdm_iommu = -1;
   pthread_mutex_t isp_lock;
 
-  SubMaster *sm;
-  PubMaster *pm;
-} MultiCameraState;
+  CameraState road_cam = {};
+  CameraState wide_road_cam = {};
+  CameraState driver_cam = {};
+};
