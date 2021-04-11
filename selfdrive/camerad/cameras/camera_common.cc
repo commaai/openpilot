@@ -289,8 +289,6 @@ static void publish_thumbnail(PubMaster *pm, const CameraBuf *b) {
   free(thumbnail_buffer);
 }
 
-struct ExpRect {int x1, x2, x_skip, y1, y2, y_skip;};
-
 float set_exposure_target(const CameraBuf *b, const ExpRect &rect, int analog_gain, bool hist_ceil, bool hl_weighted) {
   const uint8_t *pix_ptr = b->cur_yuv_buf->y;
   uint32_t lum_binning[256] = {0};

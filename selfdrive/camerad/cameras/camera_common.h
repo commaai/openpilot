@@ -145,5 +145,6 @@ public:
   void queue(size_t buf_idx);
 };
 
-float set_exposure_target(const CameraBuf *b, int x_start, int x_end, int x_skip, int y_start, int y_end, int y_skip, int analog_gain, bool hist_ceil, bool hl_weighted);
+struct ExpRect {int x1, x2, x_skip, y1, y2, y_skip;};
+float set_exposure_target(const CameraBuf *b, const ExpRect& rect,  int analog_gain, bool hist_ceil, bool hl_weighted);
 void camera_autoexposure(CameraState *s, float grey_frac);
