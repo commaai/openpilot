@@ -3,7 +3,7 @@
 #include "input.hpp"
 #include "qt_window.hpp"
 
-InputDialog::InputDialog(QString prompt_text, QWidget *parent):QDialog(parent) {
+InputDialog::InputDialog(const QString &prompt_text, QWidget *parent) : QDialog(parent) {
   layout = new QVBoxLayout();
   layout->setContentsMargins(50, 50, 50, 50);
   layout->setSpacing(20);
@@ -43,7 +43,7 @@ InputDialog::InputDialog(QString prompt_text, QWidget *parent):QDialog(parent) {
   layout->addWidget(line, 1, Qt::AlignTop);
 
   k = new Keyboard(this);
-  QObject::connect(k, SIGNAL(emitButton(QString)), this, SLOT(handleInput(QString)));
+  QObject::connect(k, SIGNAL(emitButton(const QString&)), this, SLOT(handleInput(const QString&)));
   layout->addWidget(k, 2, Qt::AlignBottom);
 
   setStyleSheet(R"(
@@ -56,7 +56,7 @@ InputDialog::InputDialog(QString prompt_text, QWidget *parent):QDialog(parent) {
   setLayout(layout);
 }
 
-QString InputDialog::getText(const QString prompt, int minLength) {
+QString InputDialog::getText(const QString &prompt, int minLength) {
   InputDialog d = InputDialog(prompt);
   d.setMinLength(minLength);
   const int ret = d.exec();
@@ -76,7 +76,7 @@ void InputDialog::show(){
   setMainWindow(this);
 }
 
-void InputDialog::handleInput(QString s) {
+void InputDialog::handleInput(const QString &s) {
   if (!QString::compare(s,"⌫")) {
     line->backspace();
   }
@@ -100,7 +100,7 @@ void InputDialog::handleInput(QString s) {
   line->insert(s.left(1));
 }
 
-void InputDialog::setMessage(QString message, bool clearInputField){
+void InputDialog::setMessage(const QString &message, bool clearInputField){
   label->setText(message);
   if (clearInputField){
     line->setText("");
@@ -112,7 +112,7 @@ void InputDialog::setMinLength(int length){
 }
 
 
-ConfirmationDialog::ConfirmationDialog(QString prompt_text, QString confirm_text, QString cancel_text,
+ConfirmationDialog::ConfirmationDialog(const QString &prompt_text, const QString &confirm_text, const QString &cancel_text,
                                        QWidget *parent):QDialog(parent) {
   setWindowFlags(Qt::Popup);
   layout = new QVBoxLayout();
@@ -161,12 +161,12 @@ ConfirmationDialog::ConfirmationDialog(QString prompt_text, QString confirm_text
   setLayout(layout);
 }
 
-bool ConfirmationDialog::alert(const QString prompt_text) {
+bool ConfirmationDialog::alert(const QString &prompt_text) {
   ConfirmationDialog d = ConfirmationDialog(prompt_text, "Ok", "");
   return d.exec();
 }
 
-bool ConfirmationDialog::confirm(const QString prompt_text) {
+bool ConfirmationDialog::confirm(const QString &prompt_text) {
   ConfirmationDialog d = ConfirmationDialog(prompt_text);
   return d.exec();
 }

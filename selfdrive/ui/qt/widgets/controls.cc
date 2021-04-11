@@ -16,10 +16,11 @@ QFrame *horizontal_line(QWidget *parent) {
 
 AbstractControl::AbstractControl(const QString &title, const QString &desc, const QString &icon, QWidget *parent) : QFrame(parent) {
   QVBoxLayout *vlayout = new QVBoxLayout();
+  vlayout->setMargin(0);
 
   hlayout = new QHBoxLayout;
   hlayout->setMargin(0);
-  hlayout->setSpacing(50);
+  hlayout->setSpacing(20);
 
   // left icon
   if (!icon.isEmpty()) {
@@ -32,7 +33,7 @@ AbstractControl::AbstractControl(const QString &title, const QString &desc, cons
 
   // title
   title_label = new QPushButton(title);
-  title_label->setStyleSheet("font-size: 50px; font-weight: 400; text-align: left; background: none;");
+  title_label->setStyleSheet("font-size: 50px; font-weight: 400; text-align: left;");
   hlayout->addWidget(title_label);
 
   vlayout->addLayout(hlayout);
@@ -47,9 +48,13 @@ AbstractControl::AbstractControl(const QString &title, const QString &desc, cons
     vlayout->addWidget(description);
 
     connect(title_label, &QPushButton::clicked, [=]() {
+      if (!description->isVisible()) {
+        emit showDescription();
+      }
       description->setVisible(!description->isVisible());
     });
   }
 
   setLayout(vlayout);
+  setStyleSheet("background-color: transparent;");
 }

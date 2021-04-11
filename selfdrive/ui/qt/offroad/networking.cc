@@ -2,14 +2,9 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QPixmap>
-#include <QPushButton>
-#include <QRandomGenerator>
-#include <algorithm>
 
-#include "common/params.h"
-#include "hardware/hw.h"
 #include "networking.hpp"
-#include "util.h"
+#include "widgets/scrollview.hpp"
 
 void clearLayout(QLayout* layout) {
   while (QLayoutItem* item = layout->takeAt(0)) {
@@ -21,12 +16,6 @@ void clearLayout(QLayout* layout) {
     }
     delete item;
   }
-}
-
-QWidget* layoutToWidget(QLayout* l, QWidget* parent){
-  QWidget* q = new QWidget(parent);
-  q->setLayout(l);
-  return q;
 }
 
 // Networking functions
@@ -61,19 +50,20 @@ void Networking::attemptInitialization(){
 
   if (show_advanced) {
     QPushButton* advancedSettings = new QPushButton("Advanced");
-    advancedSettings->setStyleSheet(R"(margin-right: 30px)");
+    advancedSettings->setStyleSheet("margin-right: 30px;");
     advancedSettings->setFixedSize(350, 100);
-    connect(advancedSettings, &QPushButton::released, [=](){s->setCurrentWidget(an);});
+    connect(advancedSettings, &QPushButton::released, [=](){ s->setCurrentWidget(an); });
     vlayout->addSpacing(10);
     vlayout->addWidget(advancedSettings, 0, Qt::AlignRight);
     vlayout->addSpacing(10);
   }
 
-  wifiWidget = new WifiUI(0, wifi);
+  wifiWidget = new WifiUI(this, wifi);
   connect(wifiWidget, SIGNAL(connectToNetwork(Network)), this, SLOT(connectToNetwork(Network)));
-  vlayout->addWidget(wifiWidget, 1);
+  vlayout->addWidget(new ScrollView(wifiWidget, this), 1);
 
-  wifiScreen = layoutToWidget(vlayout, this);
+  QWidget* wifiScreen = new QWidget(this);
+  wifiScreen->setLayout(vlayout);
   s->addWidget(wifiScreen);
 
   an = new AdvancedNetworking(this, wifi);
@@ -138,6 +128,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
 
   QVBoxLayout* vlayout = new QVBoxLayout;
   vlayout->setMargin(40);
+  vlayout->setSpacing(20);
 
   // Back button
   QPushButton* back = new QPushButton("Back");
@@ -146,41 +137,24 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   vlayout->addWidget(back, 0, Qt::AlignLeft);
 
   // Enable tethering layout
-  QHBoxLayout* tetheringToggleLayout = new QHBoxLayout;
-  tetheringToggleLayout->addWidget(new QLabel("Enable tethering"));
-  Toggle* toggle_switch = new Toggle;
-  toggle_switch->setFixedSize(150, 100);
-  tetheringToggleLayout->addWidget(toggle_switch);
-  tetheringToggleLayout->addSpacing(40);
-  if (wifi->tetheringEnabled()) {
-    toggle_switch->togglePosition();
-  }
-  QObject::connect(toggle_switch, SIGNAL(stateChanged(bool)), this, SLOT(toggleTethering(bool)));
-  vlayout->addWidget(layoutToWidget(tetheringToggleLayout, this), 0);
+  ToggleControl *tetheringToggle = new ToggleControl("Enable Tethering", "", "", wifi->tetheringEnabled());
+  vlayout->addWidget(tetheringToggle);
+  QObject::connect(tetheringToggle, SIGNAL(toggleFlipped(bool)), this, SLOT(toggleTethering(bool)));
   vlayout->addWidget(horizontal_line(), 0);
 
   // Change tethering password
-  QHBoxLayout *tetheringPassword = new QHBoxLayout;
-  tetheringPassword->addWidget(new QLabel("Edit tethering password"), 1);
-  editPasswordButton = new QPushButton("EDIT");
-  editPasswordButton->setFixedWidth(500);
-  connect(editPasswordButton, &QPushButton::released, [=](){
+  editPasswordButton = new ButtonControl("Tethering Password", "EDIT", "", [=](){
     QString pass = InputDialog::getText("Enter new tethering password", 8);
     if (pass.size()) {
       wifi->changeTetheringPassword(pass);
     }
   });
-  tetheringPassword->addWidget(editPasswordButton, 1, Qt::AlignRight);
-  vlayout->addWidget(layoutToWidget(tetheringPassword, this), 0);
+  vlayout->addWidget(editPasswordButton, 0);
   vlayout->addWidget(horizontal_line(), 0);
 
-  // IP adress
-  QHBoxLayout* IPlayout = new QHBoxLayout;
-  IPlayout->addWidget(new QLabel("IP address"), 0);
-  ipLabel = new QLabel(wifi->ipv4_address);
-  ipLabel->setStyleSheet("color: #aaaaaa");
-  IPlayout->addWidget(ipLabel, 0, Qt::AlignRight);
-  vlayout->addWidget(layoutToWidget(IPlayout, this), 0);
+  // IP address
+  ipLabel = new LabelControl("IP Address", wifi->ipv4_address);
+  vlayout->addWidget(ipLabel, 0);
   vlayout->addWidget(horizontal_line(), 0);
 
   // SSH keys
@@ -188,6 +162,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   vlayout->addWidget(horizontal_line(), 0);
   vlayout->addWidget(new SshControl());
 
+  vlayout->addStretch(1);
   setLayout(vlayout);
 }
 
@@ -218,7 +193,6 @@ WifiUI::WifiUI(QWidget *parent, WifiManager* wifi) : QWidget(parent), wifi(wifi)
   vlayout->setSpacing(25);
 
   setLayout(vlayout);
-  page = 0;
 }
 
 void WifiUI::refresh() {
@@ -229,84 +203,44 @@ void WifiUI::refresh() {
   connectButtons = new QButtonGroup(this); // TODO check if this is a leak
   QObject::connect(connectButtons, SIGNAL(buttonClicked(QAbstractButton*)), this, SLOT(handleButton(QAbstractButton*)));
 
-  int networks_per_page = height() / 180;
-
   int i = 0;
-  int pageCount = (wifi->seen_networks.size() - 1) / networks_per_page;
-  page = std::max(0, std::min(page, pageCount));
   for (Network &network : wifi->seen_networks) {
     QHBoxLayout *hlayout = new QHBoxLayout;
-    if (page * networks_per_page <= i && i < (page + 1) * networks_per_page) {
-      // SSID
-      hlayout->addSpacing(50);
-      QString ssid = QString::fromUtf8(network.ssid);
-      if(ssid.length() > 20){
-        ssid = ssid.left(20 - 3) + "…";
-      }
+    hlayout->addSpacing(50);
 
-      QLabel *ssid_label = new QLabel(ssid);
-      ssid_label->setStyleSheet(R"(
-        font-size: 55px;
-      )");
-      ssid_label->setFixedWidth(this->width()*0.5);
-      hlayout->addWidget(ssid_label, 0, Qt::AlignLeft);
+    QLabel *ssid_label = new QLabel(QString::fromUtf8(network.ssid));
+    ssid_label->setStyleSheet("font-size: 55px;");
+    hlayout->addWidget(ssid_label, 1, Qt::AlignLeft);
 
-      // TODO: don't use images for this
-      // strength indicator
-      unsigned int strength_scale = network.strength / 17;
-      QPixmap pix("../assets/images/network_" + QString::number(strength_scale) + ".png");
-      QLabel *icon = new QLabel();
-      icon->setPixmap(pix.scaledToWidth(100, Qt::SmoothTransformation));
-      icon->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
-      hlayout->addWidget(icon, 0, Qt::AlignRight);
+    // TODO: don't use images for this
+    // strength indicator
+    unsigned int strength_scale = network.strength / 17;
+    QPixmap pix("../assets/images/network_" + QString::number(strength_scale) + ".png");
+    QLabel *icon = new QLabel();
+    icon->setPixmap(pix.scaledToWidth(100, Qt::SmoothTransformation));
+    icon->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
+    hlayout->addWidget(icon, 0, Qt::AlignRight);
 
-      // connect button
-      QPushButton* btn = new QPushButton(network.security_type == SecurityType::UNSUPPORTED ? "Unsupported" : (network.connected == ConnectedType::CONNECTED ? "Connected" : (network.connected == ConnectedType::CONNECTING ? "Connecting" : "Connect")));
-      btn->setDisabled(network.connected == ConnectedType::CONNECTED || network.connected == ConnectedType::CONNECTING || network.security_type == SecurityType::UNSUPPORTED);
-      btn->setFixedWidth(350);
-      hlayout->addWidget(btn, 0, Qt::AlignRight);
+    // connect button
+    QPushButton* btn = new QPushButton(network.security_type == SecurityType::UNSUPPORTED ? "Unsupported" : (network.connected == ConnectedType::CONNECTED ? "Connected" : (network.connected == ConnectedType::CONNECTING ? "Connecting" : "Connect")));
+    btn->setDisabled(network.connected == ConnectedType::CONNECTED || network.connected == ConnectedType::CONNECTING || network.security_type == SecurityType::UNSUPPORTED);
+    btn->setFixedWidth(350);
+    hlayout->addWidget(btn, 0, Qt::AlignRight);
 
-      connectButtons->addButton(btn, i);
+    connectButtons->addButton(btn, i);
 
-      vlayout->addLayout(hlayout, 1);
-      // Don't add the last horizontal line
-      if (page * networks_per_page <= i+1 && i+1 < (page + 1) * networks_per_page && i+1 < wifi->seen_networks.size()) {
-        vlayout->addWidget(horizontal_line(), 0);
-      }
+    vlayout->addLayout(hlayout, 1);
+    // Don't add the last horizontal line
+    if (i+1 < wifi->seen_networks.size()) {
+      vlayout->addWidget(horizontal_line(), 0);
     }
     i++;
   }
   vlayout->addStretch(3);
-
-
-  // Setup buttons for pagination
-  QHBoxLayout *prev_next_buttons = new QHBoxLayout;
-
-  QPushButton* prev = new QPushButton("Previous");
-  prev->setEnabled(page);
-  QObject::connect(prev, SIGNAL(released()), this, SLOT(prevPage()));
-  prev_next_buttons->addWidget(prev);
-
-  QPushButton* next = new QPushButton("Next");
-  next->setEnabled(wifi->seen_networks.size() > (page + 1) * networks_per_page);
-  QObject::connect(next, SIGNAL(released()), this, SLOT(nextPage()));
-  prev_next_buttons->addWidget(next);
-
-  vlayout->addLayout(prev_next_buttons, 2);
 }
 
 void WifiUI::handleButton(QAbstractButton* button) {
   QPushButton* btn = static_cast<QPushButton*>(button);
   Network n = wifi->seen_networks[connectButtons->id(btn)];
   emit connectToNetwork(n);
-}
-
-void WifiUI::prevPage() {
-  page--;
-  refresh();
-}
-
-void WifiUI::nextPage() {
-  page++;
-  refresh();
 }

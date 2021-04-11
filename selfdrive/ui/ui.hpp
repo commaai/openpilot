@@ -25,7 +25,7 @@
 #include "common/params.h"
 #include "common/glutil.h"
 #include "common/transformations/orientation.hpp"
-#include "sound.hpp"
+#include "qt/sound.hpp"
 #include "visionipc.h"
 #include "visionipc_client.h"
 
@@ -74,11 +74,7 @@ typedef enum UIStatus {
 } UIStatus;
 
 static std::map<UIStatus, NVGcolor> bg_colors = {
-#ifndef QT_GUI_LIB
-  {STATUS_OFFROAD, nvgRGBA(0x07, 0x23, 0x39, 0xf1)},
-#else
   {STATUS_OFFROAD, nvgRGBA(0x0, 0x0, 0x0, 0xff)},
-#endif
   {STATUS_DISENGAGED, nvgRGBA(0x17, 0x33, 0x49, 0xc8)},
   {STATUS_ENGAGED, nvgRGBA(0x17, 0x86, 0x44, 0xf1)},
   {STATUS_WARNING, nvgRGBA(0xDA, 0x6F, 0x25, 0xf1)},
@@ -157,7 +153,6 @@ typedef struct UIState {
   Sound *sound;
   UIStatus status;
   UIScene scene;
-  cereal::UiLayoutState::App active_app;
 
   // graphics
   std::unique_ptr<GLShader> gl_shader;
@@ -172,32 +167,9 @@ typedef struct UIState {
   bool sidebar_collapsed;
   Rect video_rect, viz_rect;
   float car_space_transform[6];
+  bool wide_camera;
+  float zoom;
 } UIState;
 
 void ui_init(UIState *s);
 void ui_update(UIState *s);
-
-int write_param_float(float param, const char* param_name, bool persistent_param = false);
-template <class T>
-int read_param(T* param, const char *param_name, bool persistent_param = false){
-  T param_orig = *param;
-  char *value;
-  size_t sz;
-
-  int result = Params(persistent_param).read_db_value(param_name, &value, &sz);
-  if (result == 0){
-    std::string s = std::string(value, sz); // value is not null terminated
-    free(value);
-
-    // Parse result
-    std::istringstream iss(s);
-    iss >> *param;
-
-    // Restore original value if parsing failed
-    if (iss.fail()) {
-      *param = param_orig;
-      result = -1;
-    }
-  }
-  return result;
-}

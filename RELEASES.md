@@ -1,10 +1,20 @@
-Version 0.8.3 (2021-XX-XX)
+Version 0.8.4 (2021-XX-XX)
 ========================
+ * Toyota Mirai 2021 support
+
+Version 0.8.3 (2021-04-01)
+========================
+ * New model
+   * Trained on new diverse dataset from 2000+ users from 30+ countries
+   * Trained with improved segnet from the comma-pencil community project
+   * 🥬 Dramatically improved end-to-end lateral performance 🥬
+ * Toggle added to disable the use of lanelines
  * NEOS update: update packages and support for new UI
  * New offroad UI based on Qt
  * Default SSH key only used for setup
  * Kia Ceed 2019 support thanks to ZanZaD13!
  * Kia Seltos 2021 support thanks to speedking456!
+ * Added support for many Volkswagen and Škoda models thanks to jyoung8607!
 
 Version 0.8.2 (2021-02-26)
 ========================

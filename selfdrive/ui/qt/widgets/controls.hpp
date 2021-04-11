@@ -14,12 +14,20 @@ QFrame *horizontal_line(QWidget *parent = nullptr);
 class AbstractControl : public QFrame {
   Q_OBJECT
 
+public:
+  void setDescription(const QString &desc) {
+    if(description) description->setText(desc);
+  }
+
+signals:
+  void showDescription();
+
 protected:
   AbstractControl(const QString &title, const QString &desc = "", const QString &icon = "", QWidget *parent = nullptr);
 
   QSize minimumSizeHint() const override {
     QSize size = QFrame::minimumSizeHint();
-    size.setHeight(150);
+    size.setHeight(120);
     return size;
   };
 
@@ -53,18 +61,28 @@ public:
   ButtonControl(const QString &title, const QString &text, const QString &desc, Functor functor, const QString &icon = "", QWidget *parent = nullptr) : AbstractControl(title, desc, icon, parent) {
     btn.setText(text);
     btn.setStyleSheet(R"(
-      padding: 0;
-      border-radius: 50px;
-      font-size: 35px;
-      font-weight: 500;
-      color: #E4E4E4;
-      background-color: #393939;
+      QPushButton {
+        padding: 0;
+        border-radius: 50px;
+        font-size: 35px;
+        font-weight: 500;
+        color: #E4E4E4;
+        background-color: #393939;
+      }
+      QPushButton:disabled {
+        color: #33E4E4E4;
+      }
     )");
     btn.setFixedSize(250, 100);
     QObject::connect(&btn, &QPushButton::released, functor);
     hlayout->addWidget(&btn);
   }
   void setText(const QString &text) { btn.setText(text); }
+
+public slots:
+  void setEnabled(bool enabled) {
+    btn.setEnabled(enabled);
+  };
 
 private:
   QPushButton btn;
@@ -99,12 +117,11 @@ class ParamControl : public ToggleControl {
 public:
   ParamControl(const QString &param, const QString &title, const QString &desc, const QString &icon, QWidget *parent = nullptr) : ToggleControl(title, desc, icon, parent) {
     // set initial state from param
-    if (Params().read_db_bool(param.toStdString().c_str())) {
+    if (Params().getBool(param.toStdString().c_str())) {
       toggle.togglePosition();
     }
     QObject::connect(this, &ToggleControl::toggleFlipped, [=](int state) {
-      char value = state ? '1' : '0';
-      Params().write_db_value(param.toStdString().c_str(), &value, 1);
+      Params().putBool(param.toStdString().c_str(), (bool)state);
     });
   }
 };

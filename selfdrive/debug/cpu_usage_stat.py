@@ -31,9 +31,6 @@ PRINT_INTERVAL = 5
 SLEEP_INTERVAL = 0.2
 
 monitored_proc_names = [
-  # offroad APK
-  'ai.comma.plus.offroad',
-
   # android procs
   'SurfaceFlinger', 'sensors.qcom'
 ] + list(managed_processes.keys())

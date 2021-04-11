@@ -11,6 +11,9 @@ export GIT_BRANCH=${env.GIT_BRANCH}
 export GIT_COMMIT=${env.GIT_COMMIT}
 
 source ~/.bash_profile
+if [ -f /TICI ]; then
+  source /etc/profile
+fi
 
 ln -snf ${env.TEST_DIR} /data/pythonpath
 
@@ -151,7 +154,6 @@ pipeline {
                       ["test boardd loopback", "nosetests -s selfdrive/boardd/tests/test_boardd_loopback.py"],
                       ["test loggerd", "python selfdrive/loggerd/tests/test_loggerd.py"],
                       ["test encoder", "python selfdrive/loggerd/tests/test_encoder.py"],
-                      ["test camerad", "python selfdrive/camerad/test/test_camerad.py"],
                       ["test logcatd", "python selfdrive/logcatd/tests/test_logcatd_android.py"],
                       //["test updater", "python installer/updater/test_updater.py"],
                     ])
@@ -167,8 +169,27 @@ pipeline {
                       ["build", "SCONS_CACHE=1 scons -j16"],
                       ["test loggerd", "python selfdrive/loggerd/tests/test_loggerd.py"],
                       ["test encoder", "LD_LIBRARY_PATH=/usr/local/lib python selfdrive/loggerd/tests/test_encoder.py"],
-                      ["test camerad", "python selfdrive/camerad/test/test_camerad.py"],
                       //["build release3-staging", "cd release && PUSH=${env.R3_PUSH} ./build_release3.sh"],
+                    ])
+                  }
+                }
+
+                stage('camerad') {
+                  steps {
+                    phone_steps("eon-party", [
+                      ["build", "SCONS_CACHE=1 scons -j16"],
+                      ["test camerad", "python selfdrive/camerad/test/test_camerad.py"],
+                      ["test exposure", "python selfdrive/camerad/test/test_exposure.py"],
+                    ])
+                  }
+                }
+
+                stage('Tici camerad') {
+                  steps {
+                    phone_steps("tici-party", [
+                      ["build", "SCONS_CACHE=1 scons -j16"],
+                      ["test camerad", "python selfdrive/camerad/test/test_camerad.py"],
+                      ["test exposure", "python selfdrive/camerad/test/test_exposure.py"],
                     ])
                   }
                 }

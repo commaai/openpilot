@@ -16,12 +16,12 @@ class ParamsLearner:
   def __init__(self, CP, steer_ratio, stiffness_factor, angle_offset):
     self.kf = CarKalman(GENERATED_DIR, steer_ratio, stiffness_factor, angle_offset)
 
-    self.kf.filter.set_mass(CP.mass)  # pylint: disable=no-member
-    self.kf.filter.set_rotational_inertia(CP.rotationalInertia)  # pylint: disable=no-member
-    self.kf.filter.set_center_to_front(CP.centerToFront)  # pylint: disable=no-member
-    self.kf.filter.set_center_to_rear(CP.wheelbase - CP.centerToFront)  # pylint: disable=no-member
-    self.kf.filter.set_stiffness_front(CP.tireStiffnessFront)  # pylint: disable=no-member
-    self.kf.filter.set_stiffness_rear(CP.tireStiffnessRear)  # pylint: disable=no-member
+    self.kf.filter.set_global("mass", CP.mass)
+    self.kf.filter.set_global("rotational_inertia", CP.rotationalInertia)
+    self.kf.filter.set_global("center_to_front", CP.centerToFront)
+    self.kf.filter.set_global("center_to_rear", CP.wheelbase - CP.centerToFront)
+    self.kf.filter.set_global("stiffness_front", CP.tireStiffnessFront)
+    self.kf.filter.set_global("stiffness_rear", CP.tireStiffnessRear)
 
     self.active = False
 
@@ -42,9 +42,9 @@ class ParamsLearner:
         if msg.inputsOK and msg.posenetOK and yaw_rate_valid:
           self.kf.predict_and_observe(t,
                                       ObservationKind.ROAD_FRAME_YAW_RATE,
-                                      np.array([[[-yaw_rate]]]),
+                                      np.array([[-yaw_rate]]),
                                       np.array([np.atleast_2d(yaw_rate_std**2)]))
-        self.kf.predict_and_observe(t, ObservationKind.ANGLE_OFFSET_FAST, np.array([[[0]]]))
+        self.kf.predict_and_observe(t, ObservationKind.ANGLE_OFFSET_FAST, np.array([[0]]))
 
     elif which == 'carState':
       self.steering_angle = msg.steeringAngleDeg
@@ -55,12 +55,12 @@ class ParamsLearner:
       self.active = self.speed > 5 and in_linear_region
 
       if self.active:
-        self.kf.predict_and_observe(t, ObservationKind.STEER_ANGLE, np.array([[[math.radians(msg.steeringAngleDeg)]]]))
-        self.kf.predict_and_observe(t, ObservationKind.ROAD_FRAME_X_SPEED, np.array([[[self.speed]]]))
+        self.kf.predict_and_observe(t, ObservationKind.STEER_ANGLE, np.array([[math.radians(msg.steeringAngleDeg)]]))
+        self.kf.predict_and_observe(t, ObservationKind.ROAD_FRAME_X_SPEED, np.array([[self.speed]]))
 
     if not self.active:
       # Reset time when stopped so uncertainty doesn't grow
-      self.kf.filter.filter_time = t
+      self.kf.filter.set_filter_time(t)
       self.kf.filter.reset_rewind()
 
 

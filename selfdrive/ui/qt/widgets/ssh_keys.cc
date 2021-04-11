@@ -1,16 +1,23 @@
 #include <QNetworkReply>
-
+#include <QHBoxLayout>
 #include "widgets/input.hpp"
 #include "widgets/ssh_keys.hpp"
 #include "common/params.h"
 
 
 SshControl::SshControl() : AbstractControl("SSH Keys", "Warning: This grants SSH access to all public keys in your GitHub settings. Never enter a GitHub username other than your own. A comma employee will NEVER ask you to add their GitHub username.", "") {
+
   // setup widget
+  hlayout->addStretch(1);
+
+  username_label.setAlignment(Qt::AlignVCenter);
+  username_label.setStyleSheet("color: #aaaaaa");
+  hlayout->addWidget(&username_label);
+
   btn.setStyleSheet(R"(
     padding: 0;
     border-radius: 50px;
-    font-size: 40px;
+    font-size: 35px;
     font-weight: 500;
     color: #E4E4E4;
     background-color: #393939;
@@ -27,7 +34,8 @@ SshControl::SshControl() : AbstractControl("SSH Keys", "Warning: This grants SSH
         getUserKeys(username);
       }
     } else {
-      Params().delete_db_value("GithubSshKeys");
+      Params().remove("GithubUsername");
+      Params().remove("GithubSshKeys");
       refresh();
     }
   });
@@ -45,8 +53,10 @@ SshControl::SshControl() : AbstractControl("SSH Keys", "Warning: This grants SSH
 void SshControl::refresh() {
   QString param = QString::fromStdString(Params().get("GithubSshKeys"));
   if (param.length()) {
+    username_label.setText(QString::fromStdString(Params().get("GithubUsername")));
     btn.setText("REMOVE");
   } else {
+    username_label.setText("");
     btn.setText("ADD");
   }
   btn.setEnabled(true);
@@ -79,7 +89,8 @@ void SshControl::parseResponse(){
     networkTimer->stop();
     QString response = reply->readAll();
     if (reply->error() == QNetworkReply::NoError && response.length()) {
-      Params().write_db_value("GithubSshKeys", response.toStdString());
+      Params().put("GithubUsername", username.toStdString());
+      Params().put("GithubSshKeys", response.toStdString());
     } else if(reply->error() == QNetworkReply::NoError){
       err = "Username '" + username + "' has no keys on GitHub";
     } else {
