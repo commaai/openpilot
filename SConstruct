@@ -181,6 +181,7 @@ env = Environment(
     "#phonelibs/snpe/include",
     "#phonelibs/nanovg",
     "#phonelibs/qrcode",
+    "#phonelibs",
     "#selfdrive/boardd",
     "#selfdrive/common",
     "#selfdrive/camerad",
