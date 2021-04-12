@@ -23,6 +23,8 @@ from selfdrive.swaglog import cloudlog
 from sympy.utilities.lambdify import lambdify
 from rednose.helpers.sympy_helpers import euler_rotate
 
+np.set_printoptions(suppress=True)
+
 SensorSource = log.SensorEventData.SensorSource
 
 
@@ -304,6 +306,8 @@ def locationd_thread(sm, pm, disabled_logs=None):
   params = Params()
   localizer = Localizer(disabled_logs=disabled_logs)
 
+  fp = open('/home/batman/openpilot/selfdrive/locationd/test_locationd_cpp_out.txt', 'r')
+
   while True:
     sm.update()
 
@@ -320,6 +324,10 @@ def locationd_thread(sm, pm, disabled_logs=None):
           localizer.handle_cam_odo(t, sm[sock])
         elif sock == "liveCalibration":
           localizer.handle_live_calib(t, sm[sock])
+
+        cpp_kfx = np.fromstring(fp.readline(), dtype=np.double, sep=',')
+        print(sock, t, localizer.kf.x)
+        assert(np.allclose(cpp_kfx, localizer.kf.x))
 
     if sm.updated['cameraOdometry']:
       t = sm.logMonoTime['cameraOdometry']

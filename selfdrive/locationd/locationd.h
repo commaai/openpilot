@@ -1,5 +1,8 @@
 #pragma once
 
+#include <iostream>
+#include <fstream>
+#include <iomanip>
 #include <string>
 #include <memory>
 
@@ -18,8 +21,8 @@
 #define DEG2RAD(x) ((x) * M_PI / 180.0)
 #define RAD2DEG(x) ((x) * 180.0 / M_PI)
 
-#define VISION_DECIMATION 1 // 2
-#define SENSOR_DECIMATION 1 // 10
+#define VISION_DECIMATION 2
+#define SENSOR_DECIMATION 10
 #define POSENET_STD_HIST 40
 
 Eigen::VectorXd floatlist_to_vector(const capnp::List<float, capnp::Kind::PRIMITIVE>::Reader& floatlist);

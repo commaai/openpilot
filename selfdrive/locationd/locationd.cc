@@ -5,6 +5,9 @@ using namespace Eigen;
 
 ExitHandler do_exit;
 
+IOFormat fmt(FullPrecision, 0, ", ", ",\n", "[", "]", "[", "]");
+IOFormat fmt_row(FullPrecision, 0, ", ", ", ", "", "", "", "");
+
 VectorXd floatlist_to_vector(const capnp::List<float, capnp::Kind::PRIMITIVE>::Reader& floatlist) {
   VectorXd res(floatlist.size());
   for (int i = 0; i < floatlist.size(); i++) {
@@ -158,7 +161,7 @@ void Localizer::handle_sensors(double current_time, const capnp::List<cereal::Se
 
     // Gyro Uncalibrated
     if (sensor_reading.getSensor() == 5 && sensor_reading.getType() == 16) {
-      this->gyro_counter += 1;
+      this->gyro_counter++;
       if (this->gyro_counter % SENSOR_DECIMATION == 0) {
         auto v = sensor_reading.getGyroUncalibrated().getV();
         this->update_kalman(sensor_time, KIND_PHONE_GYRO, { (VectorXd(3) << -v[2], -v[1], -v[0]).finished() });
@@ -173,7 +176,7 @@ void Localizer::handle_sensors(double current_time, const capnp::List<cereal::Se
       // 40m/s**2 is a good filter for falling detection, no false positives in 20k minutes of driving
       this->device_fell |= (floatlist_to_vector(v) - (VectorXd(3) << 10.0, 0.0, 0.0).finished()).norm() > 40;
 
-      this->acc_counter += 1;
+      this->acc_counter++;
       if (this->acc_counter % SENSOR_DECIMATION == 0) {
         this->update_kalman(sensor_time, KIND_PHONE_ACCEL, { (VectorXd(3) << -v[2], -v[1], -v[0]).finished() });
       }
@@ -186,8 +189,6 @@ void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::R
   if (log.getFlags() % 2 == 0) {
     return;
   }
-
-  Quaterniond(Vector4d(1.0, 0.0, 0.0, 0.0));
 
   this->last_gps_fix = current_time;
 
@@ -209,17 +210,21 @@ void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::R
   VectorXd orientation_ned_gps = (VectorXd(3) << 0.0, 0.0, DEG2RAD(log.getBearingDeg())).finished();
   VectorXd orientation_error = (orientation_ned - orientation_ned_gps).array() - M_PI;
   for (int i = 0; i < orientation_error.size(); i++) {
-    orientation_error(i) = std::fmod(orientation_error(i), 2.0 * M_PI) - M_PI;
+    orientation_error(i) = std::fmod(orientation_error(i), 2.0 * M_PI);
+    if (orientation_error(i) < 0.0) {
+      orientation_error(i) += 2.0 * M_PI;
+    }
+    orientation_error(i) -= M_PI;
   }
   VectorXd initial_pose_ecef_quat = quat2vector(euler2quat(ecef_euler_from_ned({ ecef_pos(0), ecef_pos(1), ecef_pos(2) }, orientation_ned_gps)));
 
   if (ecef_vel.norm() > 5.0 && orientation_error.norm() > 1.0) {
     std::cout << "Locationd vs ubloxLocation orientation difference too large, kalman reset" << std::endl;
-    this->reset_kalman(NAN, ecef_pos, initial_pose_ecef_quat);
+    this->reset_kalman(NAN, initial_pose_ecef_quat, ecef_pos);
     this->update_kalman(current_time, KIND_ECEF_ORIENTATION_FROM_GPS, { initial_pose_ecef_quat });
   } else if (gps_est_error > 50.0) {
     std::cout << "Locationd vs ubloxLocation position difference too large, kalman reset" << std::endl;
-    this->reset_kalman(NAN, ecef_pos, initial_pose_ecef_quat);
+    this->reset_kalman(NAN, initial_pose_ecef_quat, ecef_pos);
   }
 
   this->update_kalman(current_time, KIND_ECEF_POS, { ecef_pos }, { ecef_pos_R });
@@ -228,7 +233,7 @@ void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::R
 
 
 void Localizer::handle_car_state(double current_time, const cereal::CarState::Reader& log) {
-  this->speed_counter += 1;
+  this->speed_counter++;
 
   if (this->speed_counter % SENSOR_DECIMATION == 0) {
     this->update_kalman(current_time, KIND_ODOMETRIC_SPEED, { (VectorXd(1) << log.getVEgo()).finished() });
@@ -240,8 +245,7 @@ void Localizer::handle_car_state(double current_time, const cereal::CarState::Re
 }
 
 void Localizer::handle_cam_odo(double current_time, const cereal::CameraOdometry::Reader& log) {
-  std::cout << "recv cam_odo" << std::endl;
-  this->cam_counter += 1;
+  this->cam_counter++;
 
   if (this->cam_counter % VISION_DECIMATION == 0) {
     // TODO len of vectors is always 3
@@ -299,13 +303,16 @@ int Localizer::locationd_thread() {
 
   Params params;
 
+  std::ofstream myfile;
+  myfile.open("test_locationd_cpp_out.txt", std::ios::out | std::ios::trunc);
+
   while (!do_exit) {
     bool updatedCameraOdometry = false;
     sm.update(); // TODO timeout?
     for (const char* service : service_list) {
       if (sm.updated(service) && sm.valid(service)) {
         cereal::Event::Reader& log = sm[service];
-        double t = sm.rcv_time(service) * 1e-9;
+        double t = log.getLogMonoTime() * 1e-9;
 
         if (log.isSensorEvents()) {
           this->handle_sensors(t, log.getSensorEvents());
@@ -321,11 +328,11 @@ int Localizer::locationd_thread() {
         } else {
           std::cout << "invalid event" << std::endl;
         }
+        myfile << this->kf->get_x().format(fmt_row) << std::endl;
       }
     }
 
     if (updatedCameraOdometry) {
-      std::cout << "sending" << std::endl;
       double t = sm.rcv_time("cameraOdometry") * 1e-9;  // TODO rcv_frame?
 
       MessageBuilder msg_builder;
@@ -336,7 +343,6 @@ int Localizer::locationd_thread() {
       liveLoc.setSensorsOK(sm.alive("sensorEvents") && sm.valid("sensorEvents"));
       liveLoc.setGpsOK((t / 1e9) - this->last_gps_fix < 1.0);
       pm.send("liveLocationKalman", msg_builder);
-      std::cout << "sent" << std::endl;
 
 // TODO:
 //       if sm.frame % 1200 == 0 and msg.liveLocationKalman.gpsOK:  # once a minute
