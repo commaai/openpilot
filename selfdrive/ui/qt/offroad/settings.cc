@@ -52,6 +52,12 @@ QWidget * toggles_panel() {
                                             "../assets/offroad/icon_shell.png"
                                             ));
   toggles_list->addWidget(horizontal_line());
+  toggles_list->addWidget(new ParamControl("IsUploadRawEnabled",
+                                           "Upload Raw Logs",
+                                           "Upload full logs and full resolution video by default while on WiFi. If not enabled, individual logs can be requested for upload.",
+                                           "../assets/offroad/icon_network.png"
+                                           ));
+  toggles_list->addWidget(horizontal_line());
   ParamControl *record_toggle = new ParamControl("RecordFront",
                                             "Record and Upload Driver Camera",
                                             "Upload data from the driver facing camera and help improve the driver monitoring algorithm.",
