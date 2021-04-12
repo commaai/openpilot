@@ -29,6 +29,7 @@ common/params_pyx.pyx
 common/xattr.py
 common/profiler.py
 common/basedir.py
+common/dict_helpers.py
 common/filter_simple.py
 common/stat_live.py
 common/spinner.py
@@ -280,14 +281,12 @@ selfdrive/locationd/__init__.py
 selfdrive/locationd/.gitignore
 selfdrive/locationd/SConscript
 selfdrive/locationd/ubloxd.cc
-selfdrive/locationd/ubloxd_main.cc
 selfdrive/locationd/ublox_msg.cc
 selfdrive/locationd/ublox_msg.h
 
 selfdrive/locationd/locationd.py
 selfdrive/locationd/paramsd.py
 selfdrive/locationd/models/.gitignore
-selfdrive/locationd/models/SConscript
 selfdrive/locationd/models/live_kf.py
 selfdrive/locationd/models/car_kf.py
 selfdrive/locationd/models/constants.py
@@ -334,7 +333,9 @@ selfdrive/test/__init__.py
 selfdrive/test/helpers.py
 selfdrive/test/setup_device_ci.sh
 selfdrive/test/test_fingerprints.py
+selfdrive/test/test_onroad.py
 
+selfdrive/ui/.gitignore
 selfdrive/ui/SConscript
 selfdrive/ui/*.cc
 selfdrive/ui/*.hpp
@@ -346,8 +347,11 @@ selfdrive/ui/qt/*.cc
 selfdrive/ui/qt/*.hpp
 selfdrive/ui/qt/offroad/*.cc
 selfdrive/ui/qt/offroad/*.hpp
+selfdrive/ui/qt/offroad/*.qml
 selfdrive/ui/qt/widgets/*.cc
 selfdrive/ui/qt/widgets/*.hpp
+selfdrive/ui/qt/spinner_aarch64
+selfdrive/ui/qt/text_aarch64
 
 selfdrive/camerad/SConscript
 selfdrive/camerad/main.cc

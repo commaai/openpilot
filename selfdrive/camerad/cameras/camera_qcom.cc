@@ -34,6 +34,13 @@ const uint16_t INFINITY_DAC = 364;
 
 extern ExitHandler do_exit;
 
+static int cam_ioctl(int fd, unsigned long int request, void *arg, const char *log_msg = nullptr) {
+  int err = ioctl(fd, request, arg);
+  if (err != 0 && log_msg) {
+    LOG(util::string_format("%s: %d", log_msg, err).c_str());
+  }
+  return err;
+}
 // global var for AE/AF ops
 std::atomic<CameraExpInfo> road_cam_exp{{0}};
 std::atomic<CameraExpInfo> driver_cam_exp{{0}};
@@ -93,10 +100,10 @@ int sensor_write_regs(CameraState *s, struct msm_camera_i2c_reg_array* arr, size
   return ioctl(s->sensor_fd, VIDIOC_MSM_SENSOR_CFG, &cfg_data);
 }
 
-static int imx298_apply_exposure(CameraState *s, int gain, int integ_lines, int frame_length) {
+static int imx298_apply_exposure(CameraState *s, int gain, int integ_lines, uint32_t frame_length) {
   int analog_gain = std::min(gain, 448);
   s->digital_gain = gain > 448 ? (512.0/(512-(gain))) / 8.0 : 1.0;
-  //printf("%5d/%5d %5d %f\n", s->cur_integ_lines, s->cur_frame_length, analog_gain, s->digital_gain);
+  //printf("%5d/%5d %5d %f\n", s->cur_integ_lines, s->frame_length, analog_gain, s->digital_gain);
 
   struct msm_camera_i2c_reg_array reg_array[] = {
     // REG_HOLD
@@ -123,7 +130,7 @@ static int imx298_apply_exposure(CameraState *s, int gain, int integ_lines, int 
   return sensor_write_regs(s, reg_array, ARRAYSIZE(reg_array), MSM_CAMERA_I2C_BYTE_DATA);
 }
 
-static int ov8865_apply_exposure(CameraState *s, int gain, int integ_lines, int frame_length) {
+static int ov8865_apply_exposure(CameraState *s, int gain, int integ_lines, uint32_t frame_length) {
   //printf("driver camera: %d %d %d\n", gain, integ_lines, frame_length);
   int coarse_gain_bitmap, fine_gain_bitmap;
 
@@ -170,9 +177,9 @@ static void camera_init(VisionIpcServer *v, CameraState *s, int camera_id, int c
   assert(s->ci.frame_width != 0);
 
   s->pixel_clock = pixel_clock;
-  s->line_length_pclk = line_length_pclk;
   s->max_gain = max_gain;
   s->fps = fps;
+  s->frame_length = s->pixel_clock / line_length_pclk / s->fps;
   s->self_recover = 0;
 
   s->apply_exposure = (camera_id == CAMERA_ID_IMX298) ? imx298_apply_exposure : ov8865_apply_exposure;
@@ -228,18 +235,15 @@ void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_i
 
 static void set_exposure(CameraState *s, float exposure_frac, float gain_frac) {
   int err = 0;
-
-  uint32_t frame_length = s->pixel_clock / s->line_length_pclk / s->fps;
-
   uint32_t gain = s->cur_gain;
   uint32_t integ_lines = s->cur_integ_lines;
 
   if (exposure_frac >= 0) {
-    exposure_frac = std::clamp(exposure_frac, 2.0f / frame_length, 1.0f);
-    integ_lines = frame_length * exposure_frac;
+    exposure_frac = std::clamp(exposure_frac, 2.0f / s->frame_length, 1.0f);
+    integ_lines = s->frame_length * exposure_frac;
 
     // See page 79 of the datasheet, this is the max allowed (-1 for phase adjust)
-    integ_lines = std::min(integ_lines, frame_length-11);
+    integ_lines = std::min(integ_lines, s->frame_length - 11);
   }
 
   if (gain_frac >= 0) {
@@ -256,19 +260,15 @@ static void set_exposure(CameraState *s, float exposure_frac, float gain_frac) {
     gain = (s->max_gain/510) * (512 - 512/(256*gain_frac));
   }
 
-  if (gain != s->cur_gain
-    || integ_lines != s->cur_integ_lines
-    || frame_length != s->cur_frame_length) {
-
+  if (gain != s->cur_gain || integ_lines != s->cur_integ_lines) {
     if (s->apply_exposure == ov8865_apply_exposure) {
       gain = 800 * gain_frac; // ISO
     }
-    err = s->apply_exposure(s, gain, integ_lines, frame_length);
+    err = s->apply_exposure(s, gain, integ_lines, s->frame_length);
     if (err == 0) {
       std::lock_guard lk(s->frame_info_lock);
       s->cur_gain = gain;
       s->cur_integ_lines = integ_lines;
-      s->cur_frame_length = frame_length;
     } else {
       LOGE("camera %d apply_exposure err: %d", s->camera_num, err);
     }
@@ -290,9 +290,8 @@ static void do_autoexposure(CameraState *s, float grey_frac) {
     const float gain_frac_min = 0.015625;
     const float gain_frac_max = 1.0;
     // exposure time limits
-    uint32_t frame_length = s->pixel_clock / s->line_length_pclk / s->fps;
     const uint32_t exposure_time_min = 16;
-    const uint32_t exposure_time_max = frame_length - 11; // copied from set_exposure()
+    const uint32_t exposure_time_max = s->frame_length - 11; // copied from set_exposure()
 
     float cur_gain_frac = s->cur_gain_frac;
     float exposure_factor = pow(1.05, (target_grey - grey_frac) / 0.05);
@@ -325,14 +324,8 @@ static void do_autoexposure(CameraState *s, float grey_frac) {
 }
 
 static void sensors_init(MultiCameraState *s) {
-  unique_fd sensorinit_fd;
-  sensorinit_fd = open("/dev/v4l-subdev11", O_RDWR | O_NONBLOCK);
-  assert(sensorinit_fd >= 0);
-
-  // init road camera sensor
-
-  struct msm_camera_sensor_slave_info slave_info = {0};
-  slave_info = (struct msm_camera_sensor_slave_info){
+  msm_camera_sensor_slave_info slave_infos[2] = {
+  (msm_camera_sensor_slave_info){ // road camera
     .sensor_name = "imx298",
     .eeprom_name = "sony_imx298",
     .actuator_name = "dw9800w",
@@ -367,16 +360,8 @@ static void sensors_init(MultiCameraState *s) {
     .is_init_params_valid = 0,
     .sensor_init_params = {.modes_supported = 1, .position = BACK_CAMERA_B, .sensor_mount_angle = 90},
     .output_format = MSM_SENSOR_BAYER,
-  };
-  slave_info.power_setting_array.power_setting = &slave_info.power_setting_array.power_setting_a[0];
-  slave_info.power_setting_array.power_down_setting = &slave_info.power_setting_array.power_down_setting_a[0];
-  sensor_init_cfg_data sensor_init_cfg = {.cfgtype = CFG_SINIT_PROBE, .cfg.setting = &slave_info};
-  int err = ioctl(sensorinit_fd, VIDIOC_MSM_SENSOR_INIT_CFG, &sensor_init_cfg);
-  LOG("sensor init cfg (road camera): %d", err);
-  assert(err >= 0);
-
-  struct msm_camera_sensor_slave_info slave_info2 = {0};
-  slave_info2 = (struct msm_camera_sensor_slave_info){
+  },
+  (msm_camera_sensor_slave_info){ // driver camera
     .sensor_name = "ov8865_sunny",
     .eeprom_name = "ov8865_plus",
     .actuator_name = "",
@@ -409,14 +394,17 @@ static void sensors_init(MultiCameraState *s) {
     .is_init_params_valid = 0,
     .sensor_init_params = {.modes_supported = 1, .position = FRONT_CAMERA_B, .sensor_mount_angle = 270},
     .output_format = MSM_SENSOR_BAYER,
-  };
-  slave_info2.power_setting_array.power_setting = &slave_info2.power_setting_array.power_setting_a[0];
-  slave_info2.power_setting_array.power_down_setting = &slave_info2.power_setting_array.power_down_setting_a[0];
-  sensor_init_cfg.cfgtype = CFG_SINIT_PROBE;
-  sensor_init_cfg.cfg.setting = &slave_info2;
-  err = ioctl(sensorinit_fd, VIDIOC_MSM_SENSOR_INIT_CFG, &sensor_init_cfg);
-  LOG("sensor init cfg (driver camera): %d", err);
-  assert(err >= 0);
+  }};
+
+  unique_fd sensorinit_fd = open("/dev/v4l-subdev11", O_RDWR | O_NONBLOCK);
+  assert(sensorinit_fd >= 0);
+  for (auto &info : slave_infos) {
+    info.power_setting_array.power_setting = &info.power_setting_array.power_setting_a[0];
+    info.power_setting_array.power_down_setting = &info.power_setting_array.power_down_setting_a[0];
+    sensor_init_cfg_data sensor_init_cfg = {.cfgtype = CFG_SINIT_PROBE, .cfg.setting = &info};
+    int err = cam_ioctl(sensorinit_fd, VIDIOC_MSM_SENSOR_INIT_CFG, &sensor_init_cfg, "sensor init cfg");
+    assert(err >= 0);
+  }
 }
 
 static void camera_open(CameraState *s, bool is_road_cam) {
@@ -463,23 +451,19 @@ static void camera_open(CameraState *s, bool is_road_cam) {
   struct msm_camera_csi_lane_params csi_lane_params = {0};
   csi_lane_params.csi_lane_mask = 0x1f;
   csiphy_cfg_data csiphy_cfg_data = { .cfg.csi_lane_params = &csi_lane_params, .cfgtype = CSIPHY_RELEASE};
-  int err = ioctl(s->csiphy_fd, VIDIOC_MSM_CSIPHY_IO_CFG, &csiphy_cfg_data);
-  LOG("release csiphy: %d", err);
+  int err = cam_ioctl(s->csiphy_fd, VIDIOC_MSM_CSIPHY_IO_CFG, &csiphy_cfg_data, "release csiphy");
 
   // CSID: release csid
   csid_cfg_data.cfgtype = CSID_RELEASE;
-  err = ioctl(s->csid_fd, VIDIOC_MSM_CSID_IO_CFG, &csid_cfg_data);
-  LOG("release csid: %d", err);
+  cam_ioctl(s->csid_fd, VIDIOC_MSM_CSID_IO_CFG, &csid_cfg_data, "release csid");
 
   // SENSOR: send power down
   struct sensorb_cfg_data sensorb_cfg_data = {.cfgtype = CFG_POWER_DOWN};
-  err = ioctl(s->sensor_fd, VIDIOC_MSM_SENSOR_CFG, &sensorb_cfg_data);
-  LOG("sensor power down: %d", err);
+  cam_ioctl(s->sensor_fd, VIDIOC_MSM_SENSOR_CFG, &sensorb_cfg_data, "sensor power down");
 
   // actuator powerdown
   actuator_cfg_data.cfgtype = CFG_ACTUATOR_POWERDOWN;
-  err = ioctl(s->actuator_fd, VIDIOC_MSM_ACTUATOR_CFG, &actuator_cfg_data);
-  LOG("actuator powerdown: %d", err);
+  cam_ioctl(s->actuator_fd, VIDIOC_MSM_ACTUATOR_CFG, &actuator_cfg_data, "actuator powerdown");
 
   // reset isp
   // struct msm_vfe_axi_halt_cmd halt_cmd = {
@@ -508,13 +492,11 @@ static void camera_open(CameraState *s, bool is_road_cam) {
 
   // CSID: init csid
   csid_cfg_data.cfgtype = CSID_INIT;
-  err = ioctl(s->csid_fd, VIDIOC_MSM_CSID_IO_CFG, &csid_cfg_data);
-  LOG("init csid: %d", err);
+  cam_ioctl(s->csid_fd, VIDIOC_MSM_CSID_IO_CFG, &csid_cfg_data, "init csid");
 
   // CSIPHY: init csiphy
   csiphy_cfg_data = {.cfgtype = CSIPHY_INIT};
-  err = ioctl(s->csiphy_fd, VIDIOC_MSM_CSIPHY_IO_CFG, &csiphy_cfg_data);
-  LOG("init csiphy: %d", err);
+  cam_ioctl(s->csiphy_fd, VIDIOC_MSM_CSIPHY_IO_CFG, &csiphy_cfg_data, "init csiphy");
 
   // SENSOR: stop stream
   struct msm_camera_i2c_reg_setting stop_settings = {
@@ -526,13 +508,11 @@ static void camera_open(CameraState *s, bool is_road_cam) {
   };
   sensorb_cfg_data.cfgtype = CFG_SET_STOP_STREAM_SETTING;
   sensorb_cfg_data.cfg.setting = &stop_settings;
-  err = ioctl(s->sensor_fd, VIDIOC_MSM_SENSOR_CFG, &sensorb_cfg_data);
-  LOG("stop stream: %d", err);
+  cam_ioctl(s->sensor_fd, VIDIOC_MSM_SENSOR_CFG, &sensorb_cfg_data, "stop stream");
 
   // SENSOR: send power up
   sensorb_cfg_data = {.cfgtype = CFG_POWER_UP};
-  err = ioctl(s->sensor_fd, VIDIOC_MSM_SENSOR_CFG, &sensorb_cfg_data);
-  LOG("sensor power up: %d", err);
+  cam_ioctl(s->sensor_fd, VIDIOC_MSM_SENSOR_CFG, &sensorb_cfg_data, "sensor power up");
 
   // **** configure the sensor ****
 
@@ -549,12 +529,10 @@ static void camera_open(CameraState *s, bool is_road_cam) {
   if (is_road_cam) {
     // init the actuator
     actuator_cfg_data.cfgtype = CFG_ACTUATOR_POWERUP;
-    err = ioctl(s->actuator_fd, VIDIOC_MSM_ACTUATOR_CFG, &actuator_cfg_data);
-    LOG("actuator powerup: %d", err);
+    cam_ioctl(s->actuator_fd, VIDIOC_MSM_ACTUATOR_CFG, &actuator_cfg_data, "actuator powerup");
 
     actuator_cfg_data.cfgtype = CFG_ACTUATOR_INIT;
-    err = ioctl(s->actuator_fd, VIDIOC_MSM_ACTUATOR_CFG, &actuator_cfg_data);
-    LOG("actuator init: %d", err);
+    cam_ioctl(s->actuator_fd, VIDIOC_MSM_ACTUATOR_CFG, &actuator_cfg_data, "actuator init");
 
     struct msm_actuator_reg_params_t actuator_reg_params[] = {
       {
@@ -605,8 +583,7 @@ static void camera_open(CameraState *s, bool is_road_cam) {
       },
     };
 
-    err = ioctl(s->actuator_fd, VIDIOC_MSM_ACTUATOR_CFG, &actuator_cfg_data);
-    LOG("actuator set info: %d", err);
+    cam_ioctl(s->actuator_fd, VIDIOC_MSM_ACTUATOR_CFG, &actuator_cfg_data, "actuator set info");
   }
 
   if (s->camera_id == CAMERA_ID_IMX298) {
@@ -624,8 +601,7 @@ static void camera_open(CameraState *s, bool is_road_cam) {
   }
   csiphy_cfg_data.cfgtype = CSIPHY_CFG;
   csiphy_cfg_data.cfg.csiphy_params = &csiphy_params;
-  err = ioctl(s->csiphy_fd, VIDIOC_MSM_CSIPHY_IO_CFG, &csiphy_cfg_data);
-  LOG("csiphy configure: %d", err);
+  cam_ioctl(s->csiphy_fd, VIDIOC_MSM_CSIPHY_IO_CFG, &csiphy_cfg_data, "csiphy configure");
 
   // CSID: configure csid
 #define CSI_STATS 0x35
@@ -648,13 +624,11 @@ static void camera_open(CameraState *s, bool is_road_cam) {
 
   csid_cfg_data.cfgtype = CSID_CFG;
   csid_cfg_data.cfg.csid_params = &csid_params;
-  err = ioctl(s->csid_fd, VIDIOC_MSM_CSID_IO_CFG, &csid_cfg_data);
-  LOG("csid configure: %d", err);
+  cam_ioctl(s->csid_fd, VIDIOC_MSM_CSID_IO_CFG, &csid_cfg_data, "csid configure");
 
   // ISP: SMMU_ATTACH
   msm_vfe_smmu_attach_cmd smmu_attach_cmd = {.security_mode = 0, .iommu_attach_mode = IOMMU_ATTACH};
-  err = ioctl(s->isp_fd, VIDIOC_MSM_ISP_SMMU_ATTACH, &smmu_attach_cmd);
-  LOG("isp smmu attach: %d", err);
+  cam_ioctl(s->isp_fd, VIDIOC_MSM_ISP_SMMU_ATTACH, &smmu_attach_cmd, "isp smmu attach");
 
   // ******************* STREAM RAW *****************************
 
@@ -714,8 +688,7 @@ static void camera_open(CameraState *s, bool is_road_cam) {
     ss->buf_request.num_buf = FRAME_BUF_COUNT;
     ss->buf_request.buf_type = ISP_PRIVATE_BUF;
     ss->buf_request.handle = 0;
-    err = ioctl(s->isp_fd, VIDIOC_MSM_ISP_REQUEST_BUF, &ss->buf_request);
-    LOG("isp request buf: %d", err);
+    cam_ioctl(s->isp_fd, VIDIOC_MSM_ISP_REQUEST_BUF, &ss->buf_request, "isp request buf");
     LOG("got buf handle: 0x%x", ss->buf_request.handle);
 
     // ENQUEUE all buffers
@@ -734,16 +707,14 @@ static void camera_open(CameraState *s, bool is_road_cam) {
     update_cmd.update_info[0].user_stream_id = ss->stream_req.stream_id;
     update_cmd.update_info[0].stream_handle = ss->stream_req.axi_stream_handle;
     update_cmd.update_type = UPDATE_STREAM_ADD_BUFQ;
-    err = ioctl(s->isp_fd, VIDIOC_MSM_ISP_UPDATE_STREAM, &update_cmd);
-    LOG("isp update stream: %d", err);
+    cam_ioctl(s->isp_fd, VIDIOC_MSM_ISP_UPDATE_STREAM, &update_cmd, "isp update stream");
   }
 
   LOG("******** START STREAMS ********");
 
   sub.id = 0;
   sub.type = 0x1ff;
-  err = ioctl(s->isp_fd, VIDIOC_SUBSCRIBE_EVENT, &sub);
-  LOG("isp subscribe: %d", err);
+  cam_ioctl(s->isp_fd, VIDIOC_SUBSCRIBE_EVENT, &sub, "isp subscribe");
 
   // ISP: START_STREAM
   s->stream_cfg.cmd = START_STREAM;
@@ -751,8 +722,7 @@ static void camera_open(CameraState *s, bool is_road_cam) {
   for (int i = 0; i < s->stream_cfg.num_streams; i++) {
     s->stream_cfg.stream_handle[i] = s->ss[i].stream_req.axi_stream_handle;
   }
-  err = ioctl(s->isp_fd, VIDIOC_MSM_ISP_CFG_STREAM, &s->stream_cfg);
-  LOG("isp start stream: %d", err);
+  cam_ioctl(s->isp_fd, VIDIOC_MSM_ISP_CFG_STREAM, &s->stream_cfg, "isp start stream");
 }
 
 static void road_camera_start(CameraState *s) {
@@ -775,8 +745,7 @@ static void road_camera_start(CameraState *s) {
     .pos = {INFINITY_DAC, 0},
     .delay = {0,}
   };
-  err = ioctl(s->actuator_fd, VIDIOC_MSM_ACTUATOR_CFG, &actuator_cfg_data);
-  LOG("actuator set pos: %d", err);
+  cam_ioctl(s->actuator_fd, VIDIOC_MSM_ACTUATOR_CFG, &actuator_cfg_data, "actuator set pos");
 
   // TODO: confirm this isn't needed
   /*memset(&actuator_cfg_data, 0, sizeof(actuator_cfg_data));
@@ -994,16 +963,13 @@ void cameras_open(MultiCameraState *s) {
 
   // ISPIF: setup
   ispif_cfg_data = {.cfg_type = ISPIF_INIT, .csid_version = 0x30050000 /* CSID_VERSION_V35*/};
-  err = ioctl(s->ispif_fd, VIDIOC_MSM_ISPIF_CFG, &ispif_cfg_data);
-  LOG("ispif setup: %d", err);
+  cam_ioctl(s->ispif_fd, VIDIOC_MSM_ISPIF_CFG, &ispif_cfg_data, "ispif setup");
 
   ispif_cfg_data = {.cfg_type = ISPIF_CFG, .params = ispif_params};
-  err = ioctl(s->ispif_fd, VIDIOC_MSM_ISPIF_CFG, &ispif_cfg_data);
-  LOG("ispif cfg: %d", err);
+  cam_ioctl(s->ispif_fd, VIDIOC_MSM_ISPIF_CFG, &ispif_cfg_data, "ispif cfg");
 
   ispif_cfg_data.cfg_type = ISPIF_START_FRAME_BOUNDARY;
-  err = ioctl(s->ispif_fd, VIDIOC_MSM_ISPIF_CFG, &ispif_cfg_data);
-  LOG("ispif start_frame_boundary: %d", err);
+  cam_ioctl(s->ispif_fd, VIDIOC_MSM_ISPIF_CFG, &ispif_cfg_data, "ispif start_frame_boundary");
 
   driver_camera_start(&s->driver_cam);
   road_camera_start(&s->road_cam);
@@ -1013,20 +979,17 @@ void cameras_open(MultiCameraState *s) {
 static void camera_close(CameraState *s) {
   // ISP: STOP_STREAM
   s->stream_cfg.cmd = STOP_STREAM;
-  int err = ioctl(s->isp_fd, VIDIOC_MSM_ISP_CFG_STREAM, &s->stream_cfg);
-  LOG("isp stop stream: %d", err);
+  cam_ioctl(s->isp_fd, VIDIOC_MSM_ISP_CFG_STREAM, &s->stream_cfg, "isp stop stream");
 
   for (int i = 0; i < 3; i++) {
     StreamState *ss = &s->ss[i];
     if (ss->stream_req.axi_stream_handle != 0) {
-      err = ioctl(s->isp_fd, VIDIOC_MSM_ISP_RELEASE_BUF, &ss->buf_request);
-      LOG("isp release buf: %d", err);
+      cam_ioctl(s->isp_fd, VIDIOC_MSM_ISP_RELEASE_BUF, &ss->buf_request, "isp release buf");
 
       struct msm_vfe_axi_stream_release_cmd stream_release = {
         .stream_handle = ss->stream_req.axi_stream_handle,
       };
-      err = ioctl(s->isp_fd, VIDIOC_MSM_ISP_RELEASE_STREAM, &stream_release);
-      LOG("isp release stream: %d", err);
+      cam_ioctl(s->isp_fd, VIDIOC_MSM_ISP_RELEASE_STREAM, &stream_release, "isp release stream");
     }
   }
 }
@@ -1199,7 +1162,7 @@ void cameras_run(MultiCameraState *s) {
         c->frame_metadata[c->frame_metadata_idx] = (FrameMetadata){
             .frame_id = isp_event_data->frame_id,
             .timestamp_eof = timestamp,
-            .frame_length = (uint32_t)c->cur_frame_length,
+            .frame_length = (uint32_t)c->frame_length,
             .integ_lines = (uint32_t)c->cur_integ_lines,
             .global_gain = (uint32_t)c->cur_gain,
             .lens_pos = c->cur_lens_pos,

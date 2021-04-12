@@ -10,20 +10,13 @@
 #include "ui.hpp"
 #include "paint.hpp"
 
-
-int write_param_float(float param, const char* param_name, bool persistent_param) {
-  char s[16];
-  int size = snprintf(s, sizeof(s), "%f", param);
-  return Params(persistent_param).write_db_value(param_name, s, size < sizeof(s) ? size : sizeof(s));
-}
-
 // Projects a point in car to space to the corresponding point in full frame
 // image space.
 static bool calib_frame_to_full_frame(const UIState *s, float in_x, float in_y, float in_z, vertex_data *out) {
   const float margin = 500.0f;
   const vec3 pt = (vec3){{in_x, in_y, in_z}};
   const vec3 Ep = matvecmul3(s->scene.view_from_calib, pt);
-  const vec3 KEp = matvecmul3(fcam_intrinsic_matrix, Ep);
+  const vec3 KEp = matvecmul3(s->wide_camera ? ecam_intrinsic_matrix : fcam_intrinsic_matrix, Ep);
 
   // Project.
   float x = KEp.v[0] / KEp.v[2];
@@ -65,10 +58,17 @@ void ui_init(UIState *s) {
   s->scene.started = false;
   s->status = STATUS_OFFROAD;
 
-  ui_nvg_init(s);
 
   s->last_frame = nullptr;
-  s->vipc_client_rear = new VisionIpcClient("camerad", VISION_STREAM_RGB_BACK, true);
+  s->wide_camera = false;
+
+#ifdef QCOM2
+  s->wide_camera = Params().getBool("EnableWideCamera");
+#endif
+
+  ui_nvg_init(s);
+
+  s->vipc_client_rear = new VisionIpcClient("camerad", s->wide_camera ? VISION_STREAM_RGB_WIDE : VISION_STREAM_RGB_BACK, true);
   s->vipc_client_front = new VisionIpcClient("camerad", VISION_STREAM_RGB_FRONT, true);
   s->vipc_client = s->vipc_client_rear;
 }
@@ -205,11 +205,6 @@ static void update_sockets(UIState *s) {
   }
   if (sm.updated("driverMonitoringState")) {
     scene.dmonitoring_state = sm["driverMonitoringState"].getDriverMonitoringState();
-    if(!scene.driver_view && !scene.ignition) {
-      read_param(&scene.driver_view, "IsDriverViewEnabled");
-    }
-  } else if ((sm.frame - sm.rcv_frame("driverMonitoringState")) > UI_FREQ/2) {
-    scene.driver_view = false;
   }
   if (sm.updated("sensorEvents")) {
     for (auto sensor : sm["sensorEvents"].getSensorEvents()) {
@@ -284,14 +279,13 @@ static void update_alert(UIState *s) {
 static void update_params(UIState *s) {
   const uint64_t frame = s->sm->frame;
   UIScene &scene = s->scene;
-
+  Params params;
   if (frame % (5*UI_FREQ) == 0) {
-    read_param(&scene.is_metric, "IsMetric");
+    scene.is_metric = params.getBool("IsMetric");
   } else if (frame % (6*UI_FREQ) == 0) {
     scene.athenaStatus = NET_DISCONNECTED;
-    uint64_t last_ping = 0;
-    if (read_param(&last_ping, "LastAthenaPingTime") == 0) {
-      scene.athenaStatus = nanos_since_boot() - last_ping < 70e9 ? NET_CONNECTED : NET_ERROR;
+    if (auto last_ping = params.get<float>("LastAthenaPingTime"); last_ping) {
+      scene.athenaStatus = nanos_since_boot() - *last_ping < 70e9 ? NET_CONNECTED : NET_ERROR;
     }
   }
 }
@@ -334,8 +328,8 @@ static void update_status(UIState *s) {
       s->status = STATUS_DISENGAGED;
       s->scene.started_frame = s->sm->frame;
 
-      read_param(&s->scene.is_rhd, "IsRHD");
-      read_param(&s->scene.end_to_end, "EndToEndToggle");
+      s->scene.is_rhd = Params().getBool("IsRHD");
+      s->scene.end_to_end = Params().getBool("EndToEndToggle");
       s->sidebar_collapsed = true;
       s->scene.alert_size = cereal::ControlsState::AlertSize::NONE;
       s->vipc_client = s->scene.driver_view ? s->vipc_client_front : s->vipc_client_rear;

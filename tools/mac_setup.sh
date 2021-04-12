@@ -7,6 +7,11 @@ if [[ $(command -v brew) == "" ]]; then
 fi
 
 brew bundle --file=- <<-EOS
+brew "cmake"
+brew "zlib"
+brew "bzip2"
+brew "rust"
+brew "rustup-init"
 brew "capnp"
 brew "coreutils"
 brew "eigen"
@@ -29,8 +34,24 @@ elif [[ $SHELL == "/bin/bash" ]]; then
   RC_FILE="$HOME/.bash_profile"
 fi
 
+# Build requirements for macOS
+# https://github.com/pyenv/pyenv/issues/1740
+# https://github.com/pyca/cryptography/blob/main/docs/installation.rst
+rustup-init -y
+
+export LDFLAGS="$LDFLAGS -L/usr/local/opt/zlib/lib"
+export LDFLAGS="$LDFLAGS -L/usr/local/opt/bzip2/lib"
+export LDFLAGS="$LDFLAGS -L/usr/local/opt/openssl@1.1/lib"
+export CPPFLAGS="$CPPFLAGS -I/usr/local/opt/zlib/include"
+export CPPFLAGS="$CPPFLAGS -I/usr/local/opt/bzip2/include"
+export CPPFLAGS="$CPPFLAGS -I/usr/local/opt/openssl@1.1/include"
+export PATH="$PATH:/usr/local/opt/openssl@1.1/bin"
+export PATH="$PATH:/usr/local/bin"
+
+# OpenPilot environment variables
 if [ -z "$OPENPILOT_ENV" ] && [ -n "$RC_FILE" ] && [ -z "$CI" ]; then
   OP_DIR=$(git rev-parse --show-toplevel)
+  echo "export PATH=\"\$PATH:$HOME/.cargo/bin\"" >> $RC_FILE
   echo "source $OP_DIR/tools/openpilot_env.sh" >> $RC_FILE
   source $RC_FILE
   echo "Added openpilot_env to RC file: $RC_FILE"

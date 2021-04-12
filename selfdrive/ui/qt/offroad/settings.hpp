@@ -17,6 +17,8 @@ class DevicePanel : public QWidget {
   Q_OBJECT
 public:
   explicit DevicePanel(QWidget* parent = nullptr);
+signals:
+  void reviewTrainingGuide();
 };
 
 class DeveloperPanel : public QFrame {
@@ -35,13 +37,17 @@ class SettingsWindow : public QFrame {
 public:
   explicit SettingsWindow(QWidget *parent = 0);
 
+protected:
+  void hideEvent(QHideEvent *event);
+
 signals:
   void closeSettings();
+  void offroadTransition(bool offroad);
+  void reviewTrainingGuide();
 
 private:
   QPushButton *sidebar_alert_widget;
   QWidget *sidebar_widget;
   QButtonGroup *nav_btns;
   QStackedWidget *panel_widget;
-  QScrollArea *panel_frame;
 };

@@ -26,4 +26,5 @@ public slots:
   void offroadTransition(bool offroad);
   void openSettings();
   void closeSettings();
+  void reviewTrainingGuide();
 };
