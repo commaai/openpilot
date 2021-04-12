@@ -34,7 +34,7 @@ class CarState(CarStateBase):
     ret.steeringTorque = cp.vl["MDPS12"]['CR_Mdps_StrColTq']
     ret.steeringTorqueEps = cp.vl["MDPS12"]['CR_Mdps_OutTq']
     ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD
-    ret.steerWarning = cp.vl["MDPS12"]['CF_Mdps_ToiUnavail'] != 0
+    ret.steerWarning = cp.vl["MDPS12"]['CF_Mdps_ToiUnavail'] != 0 or cp.vl["MDPS12"]['CF_Mdps_ToiFlt'] != 0
 
     # cruise state
     if self.CP.openpilotLongitudinalControl:
@@ -194,7 +194,7 @@ class CarState(CarStateBase):
       ("CR_Mdps_StrColTq", "MDPS12", 0),
       ("CF_Mdps_ToiActive", "MDPS12", 0),
       ("CF_Mdps_ToiUnavail", "MDPS12", 0),
-      ("CF_Mdps_FailStat", "MDPS12", 0),
+      ("CF_Mdps_ToiFlt", "MDPS12", 0),
       ("CR_Mdps_OutTq", "MDPS12", 0),
 
       ("SAS_Angle", "SAS11", 0),

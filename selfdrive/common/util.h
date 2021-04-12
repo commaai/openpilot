@@ -20,8 +20,6 @@
 typedef void (*sighandler_t)(int sig);
 #endif
 
-#define ARRAYSIZE(x) (sizeof(x)/sizeof(x[0]))
-
 #undef ALIGN
 #define ALIGN(x, align) (((x) + (align)-1) & ~((align)-1))
 

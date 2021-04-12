@@ -362,8 +362,13 @@ void panda_state_thread(bool spoofing_started) {
     ps.setUptime(pandaState.uptime);
 
 #ifdef QCOM2
+    double read_time = millis_since_boot();
     ps.setVoltage(std::stoi(util::read_file("/sys/class/hwmon/hwmon1/in1_input")));
     ps.setCurrent(std::stoi(util::read_file("/sys/class/hwmon/hwmon1/curr1_input")));
+    read_time = millis_since_boot() - read_time;
+    if (read_time > 50) {
+      LOGW("reading hwmon took %lfms", read_time);
+    }
 #else
     ps.setVoltage(pandaState.voltage);
     ps.setCurrent(pandaState.current);
@@ -566,7 +571,12 @@ int main() {
   // set process priority and affinity
   err = set_realtime_priority(54);
   LOG("set priority returns %d", err);
+
+#ifdef QCOM2
+  err = set_core_affinity(7);
+#else
   err = set_core_affinity(3);
+#endif
   LOG("set affinity returns %d", err);
 
   panda_set_power(true);

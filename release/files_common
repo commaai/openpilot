@@ -281,7 +281,6 @@ selfdrive/locationd/__init__.py
 selfdrive/locationd/.gitignore
 selfdrive/locationd/SConscript
 selfdrive/locationd/ubloxd.cc
-selfdrive/locationd/ubloxd_main.cc
 selfdrive/locationd/ublox_msg.cc
 selfdrive/locationd/ublox_msg.h
 
@@ -334,6 +333,7 @@ selfdrive/test/__init__.py
 selfdrive/test/helpers.py
 selfdrive/test/setup_device_ci.sh
 selfdrive/test/test_fingerprints.py
+selfdrive/test/test_onroad.py
 
 selfdrive/ui/.gitignore
 selfdrive/ui/SConscript
