@@ -2,7 +2,7 @@ import os
 Import('qt_env', 'arch', 'common', 'messaging', 'gpucommon', 'visionipc',
        'cereal', 'transformations')
 
-base_libs = [gpucommon, common, cereal, messaging, visionipc, transformations, 'zmq',
+base_libs = [gpucommon, common, messaging, cereal, visionipc, transformations, 'zmq',
              'capnp', 'kj', 'm', 'OpenCL', 'ssl', 'crypto', 'pthread'] + qt_env["LIBS"]
 if arch == 'aarch64':
   base_libs += ['log', 'utils', 'gui', 'ui', 'CB', 'gsl', 'adreno_utils', 'cutils', 'uuid']
