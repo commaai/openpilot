@@ -54,7 +54,7 @@ QWidget * toggles_panel() {
   toggles_list->addWidget(horizontal_line());
   toggles_list->addWidget(new ParamControl("IsUploadRawEnabled",
                                            "Upload Raw Logs",
-                                           "Upload full logs and full resolution video by default while on WiFi. If not enabled, individual logs can be requested for upload.",
+                                           "Upload full logs and full resolution video by default while on WiFi. If not enabled, individual logs can be marked for upload at my.comma.ai/useradmin.",
                                            "../assets/offroad/icon_network.png"
                                            ));
   toggles_list->addWidget(horizontal_line());
