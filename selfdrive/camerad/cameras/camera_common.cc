@@ -105,7 +105,7 @@ CameraBuf::~CameraBuf() {
 }
 
 bool CameraBuf::acquire() {
-  if (!safe_queue.try_pop(cur_buf_idx, 50)) return false;
+  if (!safe_queue.try_pop(cur_buf_idx, 1)) return false;
 
   if (camera_bufs_metadata[cur_buf_idx].frame_id == -1) {
     LOGE("no frame data? wtf");
