@@ -58,12 +58,7 @@ inline std::string string_format(const std::string& format, Args... args) {
   return std::string(buf.get(), buf.get() + size - 1);
 }
 
-inline std::string read_file(const std::string &fn) {
-  std::ifstream t(fn);
-  std::stringstream buffer;
-  buffer << t.rdbuf();
-  return buffer.str();
-}
+std::string read_file(const std::string &fn);
 
 inline std::string tohex(const uint8_t* buf, size_t buf_size) {
   std::unique_ptr<char[]> hexbuf(new char[buf_size*2+1]);

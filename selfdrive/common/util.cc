@@ -11,33 +11,6 @@
 #include <sched.h>
 #endif // __linux__
 
-void* read_file(const char* path, size_t* out_len) {
-  FILE* f = fopen(path, "r");
-  if (!f) {
-    return NULL;
-  }
-  fseek(f, 0, SEEK_END);
-  long f_len = ftell(f);
-  rewind(f);
-
-  char* buf = (char*)malloc(f_len);
-  assert(buf);
-
-  size_t num_read = fread(buf, f_len, 1, f);
-  fclose(f);
-
-  if (num_read != 1) {
-    free(buf);
-    return NULL;
-  }
-
-  if (out_len) {
-    *out_len = f_len;
-  }
-
-  return buf;
-}
-
 int write_file(const char* path, const void* data, size_t size, int flags, mode_t mode) {
   int fd = open(path, flags, mode);
   if (fd == -1) {
@@ -81,3 +54,19 @@ int set_core_affinity(int core) {
   return -1;
 #endif
 }
+
+namespace util {
+
+std::string read_file(const std::string& fn) {
+  std::ifstream ifs(fn, std::ios::binary | std::ios::ate);
+  if (ifs) {
+    std::ifstream::pos_type pos = ifs.tellg();
+    std::string result(pos, '\0');
+    ifs.seekg(0, std::ios::beg);
+    ifs.read(result.data(), pos);
+    if (ifs) return result;
+  }
+  return {};
+}
+
+}  // namespace util
