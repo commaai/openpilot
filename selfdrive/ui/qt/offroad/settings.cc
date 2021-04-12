@@ -61,7 +61,7 @@ QWidget * toggles_panel() {
   ParamControl *record_toggle = new ParamControl("RecordFront",
                                             "Record and Upload Driver Camera",
                                             "Upload data from the driver facing camera and help improve the driver monitoring algorithm.",
-                                            "../assets/offroad/icon_network.png");
+                                            "../assets/offroad/icon_monitoring.png");
   toggles_list->addWidget(record_toggle);
   toggles_list->addWidget(horizontal_line());
   toggles_list->addWidget(new ParamControl("EndToEndToggle",
