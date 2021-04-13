@@ -25,7 +25,6 @@ public:
   using QOpenGLWidget::QOpenGLWidget;
   explicit GLWindow(QWidget* parent = 0);
   void wake();
-  ~GLWindow();
 
 signals:
   void offroadTransition(bool offroad);

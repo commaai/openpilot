@@ -69,7 +69,6 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
   }
 }
 
-
 // OffroadHome: the offroad home page
 
 OffroadHome::OffroadHome(QWidget* parent) : QWidget(parent) {
@@ -220,7 +219,7 @@ static void handle_display_state(UIState* s, bool user_input) {
   if (s->awake != should_wake) {
     s->awake = should_wake;
     Hardware::set_display_power(s->awake);
-    LOGD("setting display power %d", s->awake);
+    LOGD("setting display power %d", s->awake.load());
   }
 }
 
@@ -237,12 +236,10 @@ GLWindow::GLWindow(QWidget* parent) : brightness_filter(BACKLIGHT_OFFROAD, BACKL
   connect(this, &GLWindow::frameSwapped, ui_updater, &UIUpdater::resume, Qt::DirectConnection);
   connect(this, &GLWindow::aboutToResize, ui_updater, &UIUpdater::pause, Qt::BlockingQueuedConnection);
   ui_updater->start();
-  backlight_timer->start(BACKLIGHT_DT * 1000);
 
   wake();
-}
 
-GLWindow::~GLWindow() {
+  backlight_timer->start(BACKLIGHT_DT * 1000);
 }
 
 void GLWindow::backlightUpdate() {
