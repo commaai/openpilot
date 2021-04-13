@@ -38,10 +38,6 @@
 #define HLC_A 80
 #define HISTO_CEIL_K 5
 
-const bool env_send_driver = getenv("SEND_DRIVER") != NULL;
-const bool env_send_road = getenv("SEND_ROAD") != NULL;
-const bool env_send_wide_road = getenv("SEND_WIDE_ROAD") != NULL;
-
 typedef void (*release_cb)(void *cookie, int buf_idx);
 
 typedef struct CameraInfo {
@@ -95,7 +91,7 @@ typedef struct CameraExpInfo {
 
 class CameraServer;
 struct CameraState;
-typedef void (*process_thread_cb)(CameraServer *s, CameraState *c, int cnt);
+typedef void (*process_thread_cb)(CameraServer *s, CameraState *c, cereal::FrameData::Builder &framed, int cnt);
 
 class CameraServerBase {
 public:
@@ -110,8 +106,10 @@ public:
 
 protected:
   virtual void run() = 0;
-  void start_process_thread(CameraState *cs, process_thread_cb callback);
+  void start_process_thread(CameraState *cs, process_thread_cb callback = nullptr, bool is_frame_stream = false);
   std::vector<std::thread> camera_threads;
+private:
+  void process_camera(CameraState *cs, process_thread_cb callback, bool is_frame_stream);
 };
 
 class CameraBuf {
@@ -150,8 +148,5 @@ public:
   void queue(size_t buf_idx);
 };
 
-void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &frame_data);
-kj::Array<uint8_t> get_frame_image(const CameraBuf *b);
 float set_exposure_target(const CameraBuf *b, int x_start, int x_end, int x_skip, int y_start, int y_end, int y_skip);
-void common_process_driver_camera(PubMaster *pm, CameraState *c, int cnt);
 void camera_autoexposure(CameraState *s, float grey_frac);
