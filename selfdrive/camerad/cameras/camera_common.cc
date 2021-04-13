@@ -360,9 +360,8 @@ void road_cam_auto_exposure(CameraState *c) {
   camera_autoexposure(c, set_exposure_target(&c->buf, rect, analog_gain, false, false));
 }
 
-static void driver_cam_auto_exposure(CameraState *c) {
+static void driver_cam_auto_exposure(CameraState *c, SubMaster &sm) {
   static const bool is_rhd = Params().getBool("IsRHD");
-  static SubMaster sm({"driverState"});
   
   const CameraBuf *b = &c->buf;
 #ifndef QCOM2
@@ -399,8 +398,11 @@ static void driver_cam_auto_exposure(CameraState *c) {
 }
 
 void common_process_driver_camera(PubMaster *pm, CameraState *c, int cnt) {
+  static SubMaster sm({"driverState"});
+
   if (cnt % 3 == 0) {
-    driver_cam_auto_exposure(c);
+    sm.update(0);
+    driver_cam_auto_exposure(c, sm);
   }
   MessageBuilder msg;
   auto framed = msg.initEvent().initDriverCameraState();
