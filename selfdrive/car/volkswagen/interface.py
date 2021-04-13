@@ -1,6 +1,7 @@
 from cereal import car
+from selfdrive.config import Conversions as CV
 from selfdrive.swaglog import cloudlog
-from selfdrive.car.volkswagen.values import CAR, BUTTON_STATES, TransmissionType, GearShifter
+from selfdrive.car.volkswagen.values import CAR, PQ_CARS, BUTTON_STATES, TransmissionType, GearShifter
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
 from selfdrive.car.interfaces import CarInterfaceBase
 
@@ -24,11 +25,23 @@ class CarInterface(CarInterfaceBase):
 
     # VW port is a community feature, since we don't own one to test
     ret.communityFeature = True
+    ret.carName = "volkswagen"
+    ret.radarOffCan = True
 
-    if True:  # pylint: disable=using-constant-test
+    if candidate in PQ_CARS:
+      # Set common PQ35/PQ46/NMS parameters that will apply globally
+      ret.safetyModel = car.CarParams.SafetyModel.volkswagenPq
+      ret.steerActuatorDelay = 0.05
+
+      if 0x440 in fingerprint[0]:
+        # Getriebe_1 detected: traditional automatic or DSG gearbox
+        ret.transmissionType = TransmissionType.automatic
+      else:
+        # No trans message at all, must be a true stick-shift manual
+        ret.transmissionType = TransmissionType.manual
+      cloudlog.info("Detected transmission type: %s", ret.transmissionType)
+    else:
       # Set common MQB parameters that will apply globally
-      ret.carName = "volkswagen"
-      ret.radarOffCan = True
       ret.safetyModel = car.CarParams.SafetyModel.volkswagen
       ret.steerActuatorDelay = 0.05
 
@@ -57,7 +70,13 @@ class CarInterface(CarInterfaceBase):
 
     # Per-chassis tuning values, override tuning defaults here if desired
 
-    if candidate == CAR.GOLF_MK7:
+    if candidate == CAR.GOLF_MK6:
+      # Averages of all 1K/5K/AJ Golf variants
+      ret.mass = 1379 + STD_CARGO_KG
+      ret.wheelbase = 2.58
+      ret.minSteerSpeed = 50 * CV.MPH_TO_MS  # May be higher/lower depending on model-year
+
+    elif candidate == CAR.GOLF_MK7:
       # Averages of all AU Golf variants
       ret.mass = 1397 + STD_CARGO_KG
       ret.wheelbase = 2.62

@@ -6,7 +6,8 @@ Ecu = car.CarParams.Ecu
 
 class CarControllerParams:
   HCA_STEP = 2                   # HCA_01 message frequency 50Hz
-  LDW_STEP = 10                  # LDW_02 message frequency 10Hz
+  MQB_LDW_STEP = 10              # LDW_02 message frequency 10Hz on MQB
+  PQ_LDW_STEP = 5                # LDW message frequency 20Hz on PQ35/PQ46/NMS
   GRA_ACC_STEP = 3               # GRA_ACC_01 message frequency 33Hz
 
   GRA_VBP_STEP = 100             # Send ACC virtual button presses once a second
@@ -55,6 +56,7 @@ MQB_LDW_MESSAGES = {
 # FW_VERSIONS for that existing CAR.
 
 class CAR:
+  GOLF_MK6 = "VOLKSWAGEN GOLF 6TH GEN"        # Chassis 1K/5K/AJ, includes Mk6 Golf and variants, or 5th gen with retrofits
   GOLF_MK7 = "VOLKSWAGEN GOLF 7TH GEN"        # Chassis 5G/AU/BA/BE, Mk7 VW Golf and variants
   JETTA_MK7 = "VOLKSWAGEN JETTA 7TH GEN"      # Chassis BU, Mk7 Jetta
   PASSAT_MK8 = "VOLKSWAGEN PASSAT 8TH GEN"    # Chassis 3G, Mk8 Passat and variants
@@ -65,7 +67,14 @@ class CAR:
   SKODA_SCALA_MK1 = "SKODA SCALA 1ST GEN"     # Chassis NW, Mk1 Skoda Scala and Skoda Kamiq
   SKODA_SUPERB_MK3 = "SKODA SUPERB 3RD GEN"   # Chassis 3V/NP, Mk3 Skoda Superb and variants
 
+# All PQ35/PQ46/NMS platform CARs should be on this list
+
+PQ_CARS = [CAR.GOLF_MK6]
+
 FINGERPRINTS = {
+  CAR.GOLF_MK6: [{
+    80: 4, 194: 8, 208: 6, 416: 8, 640: 8, 644: 6, 648: 8, 672: 8, 800: 8, 896: 8, 906: 4, 912: 8, 914: 8, 919: 8, 928: 8, 976: 6, 978: 7, 1056: 8, 1152: 8, 1160: 8, 1164: 8, 1184: 8, 1192: 8, 1306: 8, 1312: 8, 1344: 8, 1360: 8, 1386: 8, 1392: 5, 1394: 1, 1408: 8, 1416: 8, 1420: 8, 1423: 8, 1440: 8, 1488: 8, 1490: 8, 1500: 8, 1504: 8, 1654: 2, 1824: 7, 1827: 7, 2000: 8
+  }],
   CAR.GOLF_MK7: [{
     64: 8, 134: 8, 159: 8, 173: 8, 178: 8, 253: 8, 257: 8, 260: 8, 262: 8, 264: 8, 278: 8, 279: 8, 283: 8, 286: 8, 288: 8, 289: 8, 290: 8, 294: 8, 299: 8, 302: 8, 346: 8, 385: 8, 418: 8, 427: 8, 668: 8, 679: 8, 681: 8, 695: 8, 779: 8, 780: 8, 783: 8, 792: 8, 795: 8, 804: 8, 806: 8, 807: 8, 808: 8, 809: 8, 870: 8, 896: 8, 897: 8, 898: 8, 901: 8, 917: 8, 919: 8, 927: 8, 949: 8, 958: 8, 960: 4, 981: 8, 987: 8, 988: 8, 991: 8, 997: 8, 1000: 8, 1019: 8, 1120: 8, 1122: 8, 1123: 8, 1124: 8, 1153: 8, 1162: 8, 1175: 8, 1312: 8, 1385: 8, 1413: 8, 1440: 5, 1514: 8, 1515: 8, 1520: 8, 1529: 8, 1600: 8, 1601: 8, 1603: 8, 1605: 8, 1624: 8, 1626: 8, 1629: 8, 1631: 8, 1646: 8, 1648: 8, 1712: 6, 1714: 8, 1716: 8, 1717: 8, 1719: 8, 1720: 8, 1721: 8
   }],
@@ -378,6 +387,7 @@ FW_VERSIONS = {
 }
 
 DBC = {
+  CAR.GOLF_MK6: dbc_dict('vw_golf_mk4', None),
   CAR.GOLF_MK7: dbc_dict('vw_mqb_2010', None),
   CAR.JETTA_MK7: dbc_dict('vw_mqb_2010', None),
   CAR.PASSAT_MK8: dbc_dict('vw_mqb_2010', None),
