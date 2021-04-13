@@ -25,8 +25,8 @@ Quaterniond vector2quat(const VectorXd& vec) {
 }
 
 void initMeasurement(cereal::LiveLocationKalman::Measurement::Builder meas, const VectorXd& val, const VectorXd& std, bool valid) {
-  meas.setValue(kj::arrayPtr(val.data(), sizeof(double) * val.size()));
-  meas.setStd(kj::arrayPtr(std.data(), sizeof(double) * std.size()));
+  meas.setValue(kj::arrayPtr(val.data(), val.size()));
+  meas.setStd(kj::arrayPtr(std.data(), std.size()));
   meas.setValid(valid);
 }
 
@@ -54,7 +54,7 @@ Localizer::Localizer() {
   }
 }
 
-void Localizer::liveLocationMsg(cereal::LiveLocationKalman::Builder fix) {
+void Localizer::liveLocationMsg(cereal::LiveLocationKalman::Builder& fix) {
   VectorXd predicted_state = this->kf->get_x();
   MatrixXdr predicted_cov = this->kf->get_P();
   VectorXd predicted_std = predicted_cov.diagonal().array().sqrt();
@@ -116,68 +116,68 @@ void Localizer::liveLocationMsg(cereal::LiveLocationKalman::Builder fix) {
   // write measurements to msg
   // TODO initMeasurement(fix.initPositionGeodetic(), fix_pos_geo_vec, nans, true);
   auto positionGeodetic = fix.initPositionGeodetic();
-  positionGeodetic.setValue(kj::arrayPtr(fix_pos_geo_vec.data(), sizeof(double) * 3));
-  positionGeodetic.setStd(kj::arrayPtr(nans.data(), sizeof(double) * 3));
+  positionGeodetic.setValue(kj::arrayPtr(fix_pos_geo_vec.data(), 3));
+  positionGeodetic.setStd(kj::arrayPtr(nans.data(), 3));
   positionGeodetic.setValid(true);
 
   auto positionECEF = fix.initPositionECEF();
-  positionECEF.setValue(kj::arrayPtr(fix_ecef.data(), sizeof(double) * 3));
-  positionECEF.setStd(kj::arrayPtr(fix_ecef_std.data(), sizeof(double) * 3));
+  positionECEF.setValue(kj::arrayPtr(fix_ecef.data(), 3));
+  positionECEF.setStd(kj::arrayPtr(fix_ecef_std.data(), 3));
   positionECEF.setValid(true);
 
   auto velocityECEF = fix.initVelocityECEF();
-  velocityECEF.setValue(kj::arrayPtr(vel_ecef.data(), sizeof(double) * 3));
-  velocityECEF.setStd(kj::arrayPtr(vel_ecef_std.data(), sizeof(double) * 3));
+  velocityECEF.setValue(kj::arrayPtr(vel_ecef.data(), 3));
+  velocityECEF.setStd(kj::arrayPtr(vel_ecef_std.data(), 3));
   velocityECEF.setValid(true);
 
   auto velocityNED = fix.initVelocityNED();
-  velocityNED.setValue(kj::arrayPtr(ned_vel.data(), sizeof(double) * 3));
-  velocityNED.setStd(kj::arrayPtr(nans.data(), sizeof(double) * 3));
+  velocityNED.setValue(kj::arrayPtr(ned_vel.data(), 3));
+  velocityNED.setStd(kj::arrayPtr(nans.data(), 3));
   velocityNED.setValid(true);
 
   auto velocityDevice = fix.initVelocityDevice();
-  velocityDevice.setValue(kj::arrayPtr(vel_device.data(), sizeof(double) * 3));
-  velocityDevice.setStd(kj::arrayPtr(vel_device_std.data(), sizeof(double) * 3));
+  velocityDevice.setValue(kj::arrayPtr(vel_device.data(), 3));
+  velocityDevice.setStd(kj::arrayPtr(vel_device_std.data(), 3));
   velocityDevice.setValid(true);
 
   auto accelerationDevice = fix.initAccelerationDevice();
-  accelerationDevice.setValue(kj::arrayPtr(accDevice.data(), sizeof(double) * 3));
-  accelerationDevice.setStd(kj::arrayPtr(accDeviceErr.data(), sizeof(double) * 3));
+  accelerationDevice.setValue(kj::arrayPtr(accDevice.data(), 3));
+  accelerationDevice.setStd(kj::arrayPtr(accDeviceErr.data(), 3));
   accelerationDevice.setValid(true);
 
   auto orientationECEF = fix.initOrientationECEF();
-  orientationECEF.setValue(kj::arrayPtr(orientation_ecef.data(), sizeof(double) * 3));
-  orientationECEF.setStd(kj::arrayPtr(orientation_ecef_std.data(), sizeof(double) * 3));
+  orientationECEF.setValue(kj::arrayPtr(orientation_ecef.data(), 3));
+  orientationECEF.setStd(kj::arrayPtr(orientation_ecef_std.data(), 3));
   orientationECEF.setValid(true);
 
   auto calibratedOrientationECEF = fix.initCalibratedOrientationECEF();
-  calibratedOrientationECEF.setValue(kj::arrayPtr(calibrated_orientation_ecef.data(), sizeof(double) * 3));
-  calibratedOrientationECEF.setStd(kj::arrayPtr(nans.data(), sizeof(double) * 3));
+  calibratedOrientationECEF.setValue(kj::arrayPtr(calibrated_orientation_ecef.data(), 3));
+  calibratedOrientationECEF.setStd(kj::arrayPtr(nans.data(), 3));
   calibratedOrientationECEF.setValid(this->calibrated);
 
   auto orientationNED = fix.initOrientationNED();
-  orientationNED.setValue(kj::arrayPtr(orientation_ned.data(), sizeof(double) * 3));
-  orientationNED.setStd(kj::arrayPtr(nans.data(), sizeof(double) * 3));
+  orientationNED.setValue(kj::arrayPtr(orientation_ned.data(), 3));
+  orientationNED.setStd(kj::arrayPtr(nans.data(), 3));
   orientationNED.setValid(true);
 
   auto angularVelocityDevice = fix.initAngularVelocityDevice();
-  angularVelocityDevice.setValue(kj::arrayPtr(angVelocityDevice.data(), sizeof(double) * 3));
-  angularVelocityDevice.setStd(kj::arrayPtr(angVelocityDeviceErr.data(), sizeof(double) * 3));
+  angularVelocityDevice.setValue(kj::arrayPtr(angVelocityDevice.data(), 3));
+  angularVelocityDevice.setStd(kj::arrayPtr(angVelocityDeviceErr.data(), 3));
   angularVelocityDevice.setValid(true);
 
   auto velocityCalibrated = fix.initVelocityCalibrated();
-  velocityCalibrated.setValue(kj::arrayPtr(vel_calib.data(), sizeof(double) * 3));
-  velocityCalibrated.setStd(kj::arrayPtr(vel_calib_std.data(), sizeof(double) * 3));
+  velocityCalibrated.setValue(kj::arrayPtr(vel_calib.data(), 3));
+  velocityCalibrated.setStd(kj::arrayPtr(vel_calib_std.data(), 3));
   velocityCalibrated.setValid(this->calibrated);
 
   auto angularVelocityCalibrated = fix.initAngularVelocityCalibrated();
-  angularVelocityCalibrated.setValue(kj::arrayPtr(ang_vel_calib.data(), sizeof(double) * 3));
-  angularVelocityCalibrated.setStd(kj::arrayPtr(ang_vel_calib_std.data(), sizeof(double) * 3));
+  angularVelocityCalibrated.setValue(kj::arrayPtr(ang_vel_calib.data(), 3));
+  angularVelocityCalibrated.setStd(kj::arrayPtr(ang_vel_calib_std.data(), 3));
   angularVelocityCalibrated.setValid(this->calibrated);
 
   auto accelerationCalibrated = fix.initAccelerationCalibrated();
-  accelerationCalibrated.setValue(kj::arrayPtr(acc_calib.data(), sizeof(double) * 3));
-  accelerationCalibrated.setStd(kj::arrayPtr(acc_calib_std.data(), sizeof(double) * 3));
+  accelerationCalibrated.setValue(kj::arrayPtr(acc_calib.data(), 3));
+  accelerationCalibrated.setStd(kj::arrayPtr(acc_calib_std.data(), 3));
   accelerationCalibrated.setValid(this->calibrated);
 
   // experimentally found these values, no false positives in 20k minutes of driving
@@ -397,7 +397,7 @@ int Localizer::locationd_thread() {
     }
 
     if (updatedCameraOdometry) {
-      double t = sm.rcv_time("cameraOdometry") * 1e-9; // TODO correct?
+      double t = sm["cameraOdometry"].getLogMonoTime();
 
       MessageBuilder msg_builder;
       auto evt = msg_builder.initEvent();

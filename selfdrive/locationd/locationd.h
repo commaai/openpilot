@@ -41,7 +41,7 @@ public:
   void reset_kalman(double current_time = NAN);
   void reset_kalman(double current_time, Eigen::VectorXd init_orient, Eigen::VectorXd init_pos);
 
-  void liveLocationMsg(cereal::LiveLocationKalman::Builder fix);
+  void liveLocationMsg(cereal::LiveLocationKalman::Builder& fix);
 
   void handle_sensors(double current_time, const capnp::List<cereal::SensorEventData, capnp::Kind::STRUCT>::Reader& log);
   void handle_gps(double current_time, const cereal::GpsLocationData::Reader& log);
@@ -66,7 +66,7 @@ private:
 
   std::shared_ptr<LocalCoord> converter;
 
-  int unix_timestamp_millis = 0;
+  int64_t unix_timestamp_millis = 0;
   double last_gps_fix = 0;
   bool device_fell = false;
 
