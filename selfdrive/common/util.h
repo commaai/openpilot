@@ -57,7 +57,7 @@ inline std::string string_format(const std::string& format, Args... args) {
 
 std::string read_file(const std::string &fn);
 
-int write_file(const char* path, const void* data, size_t size, int flags=O_WRONLY, mode_t mode=0777);
+int write_file(const char* path, const void* data, size_t size, int flags = O_WRONLY, mode_t mode = 0777);
 
 inline std::string tohex(const uint8_t* buf, size_t buf_size) {
   std::unique_ptr<char[]> hexbuf(new char[buf_size*2+1]);
