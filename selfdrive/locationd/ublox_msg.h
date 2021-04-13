@@ -42,9 +42,7 @@ class UbloxMsgParser {
     inline bool valid();
     inline bool valid_so_far();
 
-    // TODO: also add constellation as key
-    // std::unordered_map<int, MessageBuilder> builders;
-    // std::unordered_map<int, cereal::UbloxGnss::Ephemeris::Builder> events;
+    std::unordered_map<int, std::unordered_map<int, std::string>> gps_subframes;
 
     size_t bytes_in_parse_buf = 0;
     uint8_t msg_parse_buf[ublox::UBLOX_HEADER_SIZE + ublox::UBLOX_MAX_MSG_SIZE];

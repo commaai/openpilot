@@ -160,7 +160,6 @@ kj::Array<capnp::word> UbloxMsgParser::gen_rxm_sfrbx(ubx_t::rxm_sfrbx_t *msg) {
   auto body = *msg->body();
 
   if (msg->gnss_id() == ubx_t::gnss_type_t::GNSS_TYPE_GPS) {
-
     // GPS subframes are packed into 10x 4 bytes, each containing 3 actual bytes
     // We will first need to separate the data from the padding and parity
     assert(body.size() == 10);
@@ -174,24 +173,21 @@ kj::Array<capnp::word> UbloxMsgParser::gen_rxm_sfrbx(ubx_t::rxm_sfrbx_t *msg) {
       subframe_data.push_back(word >> 0);
     }
 
+    // Collect subframes in vector and parse when we have all the parts
     kaitai::kstream stream(subframe_data);
     gps_t subframe(&stream);
     int subframe_id = subframe.how()->subframe_id();
 
-    switch (subframe_id) {
-    case 1:
-      break;
-    case 2:
-      break;
-    case 3:
-      break;
-    case 4:
-      break;
-    case 5:
-      break;
-    default:
-      LOGE("Unknow GPS subframe id %d", subframe_id);
-      break;
+    if (subframe_id == 1) gps_subframes[msg->sv_id()].clear();
+    gps_subframes[msg->sv_id()][subframe_id] = subframe_data;
+
+    if (gps_subframes[msg->sv_id()].size() == 5) {
+      MessageBuilder msg_builder;
+      auto eph = msg_builder.initEvent().initUbloxGnss().initEphemeris();
+      eph.setSvId(msg->sv_id());
+
+      // TODO: parse all subframes and set ephemeris data
+      return capnp::messageToFlatArray(msg_builder);
     }
   }
   return kj::Array<capnp::word>();
