@@ -1,14 +1,17 @@
 #!/usr/bin/env python3
 
 import sys
-
 import numpy as np
-import sympy as sp
 
 from selfdrive.swaglog import cloudlog
 from selfdrive.locationd.models.constants import ObservationKind
-from rednose.helpers.ekf_sym import EKF_sym, gen_code
-from rednose.helpers.sympy_helpers import euler_rotate, quat_matrix_r, quat_rotate
+
+if __name__ == '__main__':  # Generating sympy
+  import sympy as sp
+  from rednose.helpers.sympy_helpers import euler_rotate, quat_matrix_r, quat_rotate
+  from rednose.helpers.ekf_sym import gen_code
+else:
+  from rednose.helpers.ekf_sym_pyx import EKF_sym  # pylint: disable=no-name-in-module, import-error
 
 EARTH_GM = 3.986005e14  # m^3/s^2 (gravitational constant * mass of earth)
 
@@ -215,7 +218,7 @@ class LiveKalman():
 
   @property
   def t(self):
-    return self.filter.filter_time
+    return self.filter.get_filter_time()
 
   @property
   def P(self):
@@ -249,10 +252,7 @@ class LiveKalman():
         R = R[None]
       r = self.filter.predict_and_update_batch(t, kind, meas, R)
 
-    # Normalize quats
-    quat_norm = np.linalg.norm(self.filter.x[3:7, 0])
-    self.filter.x[States.ECEF_ORIENTATION, 0] = self.filter.x[States.ECEF_ORIENTATION, 0] / quat_norm
-
+    self.filter.normalize_state(States.ECEF_ORIENTATION.start, States.ECEF_ORIENTATION.stop)
     return r
 
   def get_R(self, kind, n):

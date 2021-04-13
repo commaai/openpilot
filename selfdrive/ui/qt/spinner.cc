@@ -6,34 +6,57 @@
 #include <QTransform>
 #include <QGridLayout>
 #include <QApplication>
-
+#include <QPainter>
 #include "spinner.hpp"
 #include "qt_window.hpp"
+
+// TrackWidget
+
+TrackWidget::TrackWidget(QWidget *parent) {
+  setFixedSize(spinner_size);
+  setAutoFillBackground(false);
+
+  comma_img = QPixmap("../assets/img_spinner_comma.png").scaled(spinner_size, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+
+  // pre-compute all the track imgs. make this a gif instead?
+  QTransform transform;
+  QPixmap track_img = QPixmap("../assets/img_spinner_track.png").scaled(spinner_size, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+  for (auto &img : track_imgs) {
+    img = track_img.transformed(transform.rotate(360/spinner_fps), Qt::SmoothTransformation);
+  }
+
+  m_anim.setDuration(1000);
+  m_anim.setStartValue(0);
+  m_anim.setEndValue(int(track_imgs.size() -1));
+  m_anim.setLoopCount(-1);
+  m_anim.start();
+  connect(&m_anim, SIGNAL(valueChanged(QVariant)), SLOT(update()));
+}
+
+void TrackWidget::paintEvent(QPaintEvent *event) {
+  QPainter painter(this);
+  QRect bg(0, 0, painter.device()->width(), painter.device()->height());
+  QBrush bgBrush("#000000");
+  painter.fillRect(bg, bgBrush);
+
+  int track_idx = m_anim.currentValue().toInt();
+  QRect rect(track_imgs[track_idx].rect());
+  rect.moveCenter(bg.center());
+  painter.drawPixmap(rect.topLeft(), track_imgs[track_idx]);
+
+  rect = comma_img.rect();
+  rect.moveCenter(bg.center());
+  painter.drawPixmap(rect.topLeft(), comma_img);
+}
+
+// Spinner
 
 Spinner::Spinner(QWidget *parent) {
   QGridLayout *main_layout = new QGridLayout();
   main_layout->setSpacing(0);
-  main_layout->setContentsMargins(200, 200, 200, 200);
+  main_layout->setMargin(200);
 
-  comma = new QLabel();
-  comma->setPixmap(QPixmap("../assets/img_spinner_comma.png").scaled(spinner_size, Qt::KeepAspectRatio, Qt::SmoothTransformation));
-  comma->setFixedSize(spinner_size);
-  main_layout->addWidget(comma, 0, 0, Qt::AlignHCenter | Qt::AlignVCenter);
-
-  track = new QLabel();
-  track->setFixedSize(spinner_size);
-  main_layout->addWidget(track, 0, 0, Qt::AlignHCenter | Qt::AlignVCenter);
-
-  // pre-compute all the track imgs. make this a gif instead?
-  track_idx = 0;
-  QTransform transform;
-  QPixmap track_img = QPixmap("../assets/img_spinner_track.png").scaled(spinner_size, Qt::KeepAspectRatio, Qt::SmoothTransformation);
-  for (auto &img : track_imgs) {
-    QPixmap r = track_img.transformed(transform.rotate(360/spinner_fps), Qt::SmoothTransformation);
-    int x = (r.width() - track->width()) / 2;
-    int y = (r.height() - track->height()) / 2;
-    img = r.copy(x, y, track->width(), track->height());
-  }
+  main_layout->addWidget(new TrackWidget(), 0, 0, Qt::AlignHCenter | Qt::AlignVCenter);
 
   text = new QLabel();
   text->setVisible(false);
@@ -51,6 +74,9 @@ Spinner::Spinner(QWidget *parent) {
     Spinner {
       background-color: black;
     }
+    * {
+      background-color: transparent;
+    }
     QLabel {
       color: white;
       font-size: 80px;
@@ -67,17 +93,8 @@ Spinner::Spinner(QWidget *parent) {
     }
   )");
 
-  rotate_timer = new QTimer(this);
-  rotate_timer->start(1000./spinner_fps);
-  QObject::connect(rotate_timer, SIGNAL(timeout()), this, SLOT(rotate()));
-
   notifier = new QSocketNotifier(fileno(stdin), QSocketNotifier::Read);
   QObject::connect(notifier, SIGNAL(activated(int)), this, SLOT(update(int)));
-};
-
-void Spinner::rotate() {
-  track_idx = (track_idx+1) % track_imgs.size();
-  track->setPixmap(track_imgs[track_idx]);
 };
 
 void Spinner::update(int n) {
