@@ -19,10 +19,6 @@
 typedef void (*sighandler_t)(int sig);
 #endif
 
-// Reads a file into a newly allocated buffer.
-// Returns NULL on failure, the result must be freed by the caller.
-void* read_file(const char* path, size_t* out_len);
-
 void set_thread_name(const char* name);
 
 int set_realtime_priority(int level);
