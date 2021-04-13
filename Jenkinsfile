@@ -111,9 +111,13 @@ pipeline {
 
         stage('On-device Tests') {
           agent {
-            dockerfile {
+            docker {
+              /*
               filename 'Dockerfile.ondevice_ci'
               args "--privileged -v /dev:/dev --shm-size=1G --user=root"
+              */
+              image 'python:3.7.3'
+              args '--user=root'
             }
           }
 
@@ -155,6 +159,7 @@ pipeline {
                   }
                 }
 
+                /*
                 stage('Power Consumption Tests') {
                   steps {
                     lock(resource: "", label: "c2-zookeeper", inversePrecedence: true, variable: 'device_ip', quantity: 1) {
@@ -173,6 +178,7 @@ pipeline {
                     }
                   }
                 }
+                */
 
                 stage('Tici Build') {
                   environment {
