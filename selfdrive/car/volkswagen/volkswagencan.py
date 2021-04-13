@@ -26,9 +26,9 @@ def create_mqb_hud_control(packer, bus, enabled, steering_pressed, hud_alert, le
 
   # not using standstill right now
 
-
   # since the LDW_Status_LED already indicates whether OP is enabled or not, we can always show the lane visibility.
   # this does differ from stock where it would always be 0 if LKAS is disabled, but this should be less distracting and users should use the status LED as a visual indicator of OP enabled ment state instead of the absence or presence of lane lines.
+  # as OP will notify users of LDW regardless of enablement state, this should provide the best user experience and users shouldn't go from 0/1 directly to 3.
   left_lane_hud = 2 if left_lane_visible else 1
   right_lane_hud = 2 if right_lane_visible else 1
 
