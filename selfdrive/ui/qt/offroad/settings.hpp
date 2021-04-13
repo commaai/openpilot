@@ -13,25 +13,24 @@
 
 // ********** settings window + top-level panels **********
 
-class DevicePanel : public QWidget {
+class Panel : public QFrame {
+  Q_OBJECT
+public:
+  explicit Panel(QWidget *parent=nullptr);
+protected:
+  void hideEvent(QHideEvent* event);
+};
+
+
+class DevicePanel : public Panel {
   Q_OBJECT
 public:
   explicit DevicePanel(QWidget* parent = nullptr);
-protected:
-  void hideEvent(QHideEvent* event) {
-    QList<QWidget*> children = findChildren<QWidget *>();
-
-    for(auto w : children){
-      if(w->metaObject()->className() == QString("ConfirmationDialog")){
-        w->close();
-      }
-    }
-  };
 signals:
   void reviewTrainingGuide();
 };
 
-class DeveloperPanel : public QFrame {
+class DeveloperPanel : public Panel {
   Q_OBJECT
 public:
   explicit DeveloperPanel(QWidget* parent = nullptr);

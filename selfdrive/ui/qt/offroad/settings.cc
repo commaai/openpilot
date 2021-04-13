@@ -85,8 +85,24 @@ QWidget * toggles_panel() {
   return widget;
 }
 
-DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
+Panel::Panel(QWidget *parent) : QFrame(parent) {
+}
+
+void Panel::hideEvent(QHideEvent *event){
+  QList<QWidget*> children = findChildren<QWidget *>();
+
+  for(auto w : children){
+    if(w->metaObject()->superClass()->className() == QString("QDialog")){
+      w->close();
+    }
+  }
+}
+
+
+DevicePanel::DevicePanel(QWidget* parent) : Panel(parent) {
   QVBoxLayout *device_layout = new QVBoxLayout;
+
+  device_layout->setMargin(50);
 
   Params params = Params();
 
@@ -109,7 +125,7 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
 
   QString resetCalibDesc = "openpilot requires the device to be mounted within 4° left or right and within 5° up or down. openpilot is continuously calibrating, resetting is rarely required.";
   ButtonControl *resetCalibBtn = new ButtonControl("Reset Calibration", "RESET", resetCalibDesc, [=]() {
-    if (ConfirmationDialog::confirm("Are you sure you want to reset calibration?")) {
+    if (ConfirmationDialog::confirm("Are you sure you want to reset calibration?", this)) {
       Params().remove("CalibrationParams");
     }
   });
@@ -192,7 +208,7 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
   )");
 }
 
-DeveloperPanel::DeveloperPanel(QWidget* parent) : QFrame(parent) {
+DeveloperPanel::DeveloperPanel(QWidget* parent) : Panel(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   setLayout(main_layout);
   setStyleSheet(R"(QLabel {font-size: 50px;})");
