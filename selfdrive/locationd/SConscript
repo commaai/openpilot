@@ -2,4 +2,9 @@ Import('env', 'common', 'cereal', 'messaging')
 
 loc_libs = [cereal, messaging, 'zmq', common, 'capnp', 'kj', 'kaitai', 'pthread']
 
-env.Program("ubloxd", ["ubloxd.cc", "ublox_msg.cc", "generated/ubx.cc"], LIBS=loc_libs)
+
+if GetOption('kaitai'):
+  generated = Dir('generated').srcnode().abspath
+  env.Command(['generated/ubx.cpp', 'generated/ubx.h'], 'ubx.ksy', f"kaitai-struct-compiler --target cpp_stl --outdir {generated} $SOURCES")
+
+env.Program("ubloxd", ["ubloxd.cc", "ublox_msg.cc", "generated/ubx.cpp"], LIBS=loc_libs)

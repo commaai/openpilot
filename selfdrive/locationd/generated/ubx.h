@@ -1,4 +1,3 @@
-
 #ifndef UBX_H_
 #define UBX_H_
 
@@ -42,8 +41,8 @@ public:
         };
 
         enum antenna_power_t {
-            ANTENNA_POWER_OFF = 0,
-            ANTENNA_POWER_ON = 1,
+            ANTENNA_POWER_FALSE = 0,
+            ANTENNA_POWER_TRUE = 1,
             ANTENNA_POWER_DONTKNOW = 2
         };
 

@@ -1,4 +1,3 @@
-
 // This is a generated file! Please edit source .ksy file and use kaitai-struct-compiler to rebuild
 
 #include "ubx.h"
@@ -267,6 +266,8 @@ void ubx_t::nav_pvt_t::_read() {
     m_vel_d = m__io->read_s4le();
     m_g_speed = m__io->read_s4le();
     m_head_mot = m__io->read_s4le();
+    m_s_acc = m__io->read_s4le();
+    m_head_acc = m__io->read_u4le();
     m_p_dop = m__io->read_u2le();
     m_flags3 = m__io->read_u1();
     m_reserved1 = m__io->read_bytes(5);

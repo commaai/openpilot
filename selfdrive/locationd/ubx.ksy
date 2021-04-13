@@ -9,7 +9,7 @@ seq:
   - id: length
     type: u2
   - id: body
-    type: 
+    type:
       switch-on: msg_type
       cases:
         0x0107: nav_pvt
@@ -71,7 +71,7 @@ types:
         0: off
         1: on
         2: dontknow
-        
+
   mon_hw2:
     seq:
       - id: ofs_i
@@ -95,14 +95,14 @@ types:
         type: u4
       - id: reserved3
         size: 4
-        
+
     enums:
       config_source:
         113: rom
         111: otp
         112: config_pins
         102: flash
-        
+
   rxm_rawx:
     seq:
       - id: rcv_tow
@@ -222,4 +222,3 @@ types:
         type: s2
       - id: mag_acc
         type: u2
-      
