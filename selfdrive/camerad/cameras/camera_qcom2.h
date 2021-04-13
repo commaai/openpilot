@@ -74,5 +74,6 @@ typedef struct MultiCameraState {
 
   pthread_mutex_t isp_lock;
 
+  SubMaster *sm;
   PubMaster *pm;
 } MultiCameraState;
