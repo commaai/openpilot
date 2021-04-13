@@ -25,9 +25,9 @@ void ubx_t::_read() {
     m_length = m__io->read_u2le();
     n_body = true;
     switch (msg_type()) {
-    case 263: {
+    case 2569: {
         n_body = false;
-        m_body = new nav_pvt_t(m__io, this, m__root);
+        m_body = new mon_hw_t(m__io, this, m__root);
         break;
     }
     case 533: {
@@ -35,14 +35,19 @@ void ubx_t::_read() {
         m_body = new rxm_rawx_t(m__io, this, m__root);
         break;
     }
-    case 2569: {
+    case 531: {
         n_body = false;
-        m_body = new mon_hw_t(m__io, this, m__root);
+        m_body = new rxm_sfrbx_t(m__io, this, m__root);
         break;
     }
     case 2571: {
         n_body = false;
         m_body = new mon_hw2_t(m__io, this, m__root);
+        break;
+    }
+    case 263: {
+        n_body = false;
+        m_body = new nav_pvt_t(m__io, this, m__root);
         break;
     }
     }
@@ -60,77 +65,6 @@ void ubx_t::_clean_up() {
     }
     if (f_checksum) {
     }
-}
-
-ubx_t::mon_hw_t::mon_hw_t(kaitai::kstream* p__io, ubx_t* p__parent, ubx_t* p__root) : kaitai::kstruct(p__io) {
-    m__parent = p__parent;
-    m__root = p__root;
-
-    try {
-        _read();
-    } catch(...) {
-        _clean_up();
-        throw;
-    }
-}
-
-void ubx_t::mon_hw_t::_read() {
-    m_pin_sel = m__io->read_u4le();
-    m_pin_bank = m__io->read_u4le();
-    m_pin_dir = m__io->read_u4le();
-    m_pin_val = m__io->read_u4le();
-    m_noise_per_ms = m__io->read_u2le();
-    m_agc_cnt = m__io->read_u2le();
-    m_a_status = static_cast<ubx_t::mon_hw_t::antenna_status_t>(m__io->read_u1());
-    m_a_power = static_cast<ubx_t::mon_hw_t::antenna_power_t>(m__io->read_u1());
-    m_flags = m__io->read_u1();
-    m_reserved1 = m__io->read_bytes(1);
-    m_used_mask = m__io->read_u4le();
-    m_vp = m__io->read_bytes(17);
-    m_jam_ind = m__io->read_u1();
-    m_reserved2 = m__io->read_bytes(2);
-    m_pin_irq = m__io->read_u4le();
-    m_pull_h = m__io->read_u4le();
-    m_pull_l = m__io->read_u4le();
-}
-
-ubx_t::mon_hw_t::~mon_hw_t() {
-    _clean_up();
-}
-
-void ubx_t::mon_hw_t::_clean_up() {
-}
-
-ubx_t::mon_hw2_t::mon_hw2_t(kaitai::kstream* p__io, ubx_t* p__parent, ubx_t* p__root) : kaitai::kstruct(p__io) {
-    m__parent = p__parent;
-    m__root = p__root;
-
-    try {
-        _read();
-    } catch(...) {
-        _clean_up();
-        throw;
-    }
-}
-
-void ubx_t::mon_hw2_t::_read() {
-    m_ofs_i = m__io->read_s1();
-    m_mag_i = m__io->read_u1();
-    m_ofs_q = m__io->read_s1();
-    m_mag_q = m__io->read_u1();
-    m_cfg_source = static_cast<ubx_t::mon_hw2_t::config_source_t>(m__io->read_u1());
-    m_reserved1 = m__io->read_bytes(3);
-    m_low_lev_cfg = m__io->read_u4le();
-    m_reserved2 = m__io->read_bytes(8);
-    m_post_status = m__io->read_u4le();
-    m_reserved3 = m__io->read_bytes(4);
-}
-
-ubx_t::mon_hw2_t::~mon_hw2_t() {
-    _clean_up();
-}
-
-void ubx_t::mon_hw2_t::_clean_up() {
 }
 
 ubx_t::rxm_rawx_t::rxm_rawx_t(kaitai::kstream* p__io, ubx_t* p__parent, ubx_t* p__root) : kaitai::kstruct(p__io) {
@@ -208,7 +142,7 @@ void ubx_t::rxm_rawx_t::meas_t::_read() {
     m_pr_mes = m__io->read_f8le();
     m_cp_mes = m__io->read_f8le();
     m_do_mes = m__io->read_f4le();
-    m_gnss_id = m__io->read_u1();
+    m_gnss_id = static_cast<ubx_t::gnss_type_t>(m__io->read_u1());
     m_sv_id = m__io->read_u1();
     m_reserved2 = m__io->read_bytes(1);
     m_freq_id = m__io->read_u1();
@@ -226,6 +160,46 @@ ubx_t::rxm_rawx_t::meas_t::~meas_t() {
 }
 
 void ubx_t::rxm_rawx_t::meas_t::_clean_up() {
+}
+
+ubx_t::rxm_sfrbx_t::rxm_sfrbx_t(kaitai::kstream* p__io, ubx_t* p__parent, ubx_t* p__root) : kaitai::kstruct(p__io) {
+    m__parent = p__parent;
+    m__root = p__root;
+    m_body = 0;
+
+    try {
+        _read();
+    } catch(...) {
+        _clean_up();
+        throw;
+    }
+}
+
+void ubx_t::rxm_sfrbx_t::_read() {
+    m_gnss_id = static_cast<ubx_t::gnss_type_t>(m__io->read_u1());
+    m_sv_id = m__io->read_u1();
+    m_reserved1 = m__io->read_bytes(1);
+    m_freq_id = m__io->read_u1();
+    m_num_words = m__io->read_u1();
+    m_reserved2 = m__io->read_bytes(1);
+    m_version = m__io->read_u1();
+    m_reserved3 = m__io->read_bytes(1);
+    int l_body = num_words();
+    m_body = new std::vector<uint32_t>();
+    m_body->reserve(l_body);
+    for (int i = 0; i < l_body; i++) {
+        m_body->push_back(m__io->read_u4le());
+    }
+}
+
+ubx_t::rxm_sfrbx_t::~rxm_sfrbx_t() {
+    _clean_up();
+}
+
+void ubx_t::rxm_sfrbx_t::_clean_up() {
+    if (m_body) {
+        delete m_body; m_body = 0;
+    }
 }
 
 ubx_t::nav_pvt_t::nav_pvt_t(kaitai::kstream* p__io, ubx_t* p__parent, ubx_t* p__root) : kaitai::kstruct(p__io) {
@@ -281,6 +255,77 @@ ubx_t::nav_pvt_t::~nav_pvt_t() {
 }
 
 void ubx_t::nav_pvt_t::_clean_up() {
+}
+
+ubx_t::mon_hw2_t::mon_hw2_t(kaitai::kstream* p__io, ubx_t* p__parent, ubx_t* p__root) : kaitai::kstruct(p__io) {
+    m__parent = p__parent;
+    m__root = p__root;
+
+    try {
+        _read();
+    } catch(...) {
+        _clean_up();
+        throw;
+    }
+}
+
+void ubx_t::mon_hw2_t::_read() {
+    m_ofs_i = m__io->read_s1();
+    m_mag_i = m__io->read_u1();
+    m_ofs_q = m__io->read_s1();
+    m_mag_q = m__io->read_u1();
+    m_cfg_source = static_cast<ubx_t::mon_hw2_t::config_source_t>(m__io->read_u1());
+    m_reserved1 = m__io->read_bytes(3);
+    m_low_lev_cfg = m__io->read_u4le();
+    m_reserved2 = m__io->read_bytes(8);
+    m_post_status = m__io->read_u4le();
+    m_reserved3 = m__io->read_bytes(4);
+}
+
+ubx_t::mon_hw2_t::~mon_hw2_t() {
+    _clean_up();
+}
+
+void ubx_t::mon_hw2_t::_clean_up() {
+}
+
+ubx_t::mon_hw_t::mon_hw_t(kaitai::kstream* p__io, ubx_t* p__parent, ubx_t* p__root) : kaitai::kstruct(p__io) {
+    m__parent = p__parent;
+    m__root = p__root;
+
+    try {
+        _read();
+    } catch(...) {
+        _clean_up();
+        throw;
+    }
+}
+
+void ubx_t::mon_hw_t::_read() {
+    m_pin_sel = m__io->read_u4le();
+    m_pin_bank = m__io->read_u4le();
+    m_pin_dir = m__io->read_u4le();
+    m_pin_val = m__io->read_u4le();
+    m_noise_per_ms = m__io->read_u2le();
+    m_agc_cnt = m__io->read_u2le();
+    m_a_status = static_cast<ubx_t::mon_hw_t::antenna_status_t>(m__io->read_u1());
+    m_a_power = static_cast<ubx_t::mon_hw_t::antenna_power_t>(m__io->read_u1());
+    m_flags = m__io->read_u1();
+    m_reserved1 = m__io->read_bytes(1);
+    m_used_mask = m__io->read_u4le();
+    m_vp = m__io->read_bytes(17);
+    m_jam_ind = m__io->read_u1();
+    m_reserved2 = m__io->read_bytes(2);
+    m_pin_irq = m__io->read_u4le();
+    m_pull_h = m__io->read_u4le();
+    m_pull_l = m__io->read_u4le();
+}
+
+ubx_t::mon_hw_t::~mon_hw_t() {
+    _clean_up();
+}
+
+void ubx_t::mon_hw_t::_clean_up() {
 }
 
 uint16_t ubx_t::checksum() {

@@ -1,9 +1,12 @@
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 #include <unistd.h>
-#include <math.h>
+#include <cmath>
 #include <ctime>
 #include <chrono>
+#include <iostream>
+#include <cassert>
+#include <unordered_map>
 
 #include "common/swaglog.h"
 
@@ -102,6 +105,9 @@ std::pair<std::string, kj::Array<capnp::word>> UbloxMsgParser::gen_msg() {
   case 0x0107:
     return {"gpsLocationExternal", gen_nav_pvt(static_cast<ubx_t::nav_pvt_t*>(body))};
     break;
+  case 0x0213:
+    return {"ubloxGnss", gen_rxm_sfrbx(static_cast<ubx_t::rxm_sfrbx_t*>(body))};
+    break;
   case 0x0215:
     return {"ubloxGnss", gen_rxm_rawx(static_cast<ubx_t::rxm_rawx_t*>(body))};
     break;
@@ -147,6 +153,48 @@ kj::Array<capnp::word> UbloxMsgParser::gen_nav_pvt(ubx_t::nav_pvt_t *msg) {
   gpsLoc.setBearingAccuracyDeg(msg->head_acc() * 1e-05);
   return capnp::messageToFlatArray(msg_builder);
 
+}
+
+
+kj::Array<capnp::word> UbloxMsgParser::gen_rxm_sfrbx(ubx_t::rxm_sfrbx_t *msg) {
+  auto body = *msg->body();
+
+  if (msg->gnss_id() == ubx_t::gnss_type_t::GNSS_TYPE_GPS) {
+
+    // GPS subframes are packed into 10x 4 bytes, each containing 3 actual bytes
+    // We will first need to separate the data from the padding and parity
+    assert(body.size() == 10);
+
+    std::string subframe_data;
+    subframe_data.reserve(30);
+    for (uint32_t word : body) {
+      word = word >> 6; // TODO: Verify parity
+      subframe_data.push_back(word >> 16);
+      subframe_data.push_back(word >> 8);
+      subframe_data.push_back(word >> 0);
+    }
+
+    kaitai::kstream stream(subframe_data);
+    gps_t subframe(&stream);
+    int subframe_id = subframe.how()->subframe_id();
+
+    switch (subframe_id) {
+    case 1:
+      break;
+    case 2:
+      break;
+    case 3:
+      break;
+    case 4:
+      break;
+    case 5:
+      break;
+    default:
+      LOGE("Unknow GPS subframe id %d", subframe_id);
+      break;
+    }
+  }
+  return kj::Array<capnp::word>();
 }
 
 kj::Array<capnp::word> UbloxMsgParser::gen_rxm_rawx(ubx_t::rxm_rawx_t *msg) {

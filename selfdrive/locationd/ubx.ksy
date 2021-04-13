@@ -13,6 +13,7 @@ seq:
       switch-on: msg_type
       cases:
         0x0107: nav_pvt
+        0x0213: rxm_sfrbx
         0x0215: rxm_rawx
         0x0a09: mon_hw
         0x0a0b: mon_hw2
@@ -103,6 +104,30 @@ types:
         112: config_pins
         102: flash
 
+  rxm_sfrbx:
+    seq:
+      - id: gnss_id
+        type: u1
+        enum: gnss_type
+      - id: sv_id
+        type: u1
+      - id: reserved1
+        size: 1
+      - id: freq_id
+        type: u1
+      - id: num_words
+        type: u1
+      - id: reserved2
+        size: 1
+      - id: version
+        type: u1
+      - id: reserved3
+        size: 1
+      - id: body
+        type: u4
+        repeat: expr
+        repeat-expr: num_words
+
   rxm_rawx:
     seq:
       - id: rcv_tow
@@ -133,6 +158,7 @@ types:
             type: f4
           - id: gnss_id
             type: u1
+            enum: gnss_type
           - id: sv_id
             type: u1
           - id: reserved2
@@ -222,3 +248,12 @@ types:
         type: s2
       - id: mag_acc
         type: u2
+enums:
+  gnss_type:
+    0: gps
+    1: sbas
+    2: galileo
+    3: beidou
+    4: imes
+    5: qzss
+    6: glonass

@@ -5,6 +5,8 @@ loc_libs = [cereal, messaging, 'zmq', common, 'capnp', 'kj', 'kaitai', 'pthread'
 
 if GetOption('kaitai'):
   generated = Dir('generated').srcnode().abspath
-  env.Command(['generated/ubx.cpp', 'generated/ubx.h'], 'ubx.ksy', f"kaitai-struct-compiler --target cpp_stl --outdir {generated} $SOURCES")
+  cmd = f"kaitai-struct-compiler --target cpp_stl --outdir {generated} $SOURCES"
+  env.Command(['generated/ubx.cpp', 'generated/ubx.h'], 'ubx.ksy', cmd)
+  env.Command(['generated/gps.cpp', 'generated/gps.h'], 'gps.ksy', cmd)
 
-env.Program("ubloxd", ["ubloxd.cc", "ublox_msg.cc", "generated/ubx.cpp"], LIBS=loc_libs)
+env.Program("ubloxd", ["ubloxd.cc", "ublox_msg.cc", "generated/ubx.cpp", "generated/gps.cpp"], LIBS=loc_libs)
