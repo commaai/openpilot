@@ -84,7 +84,7 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
     CL_CHECK(clReleaseProgram(prg_debayer));
   }
 
-  rgb_to_yuv_init(&rgb_to_yuv_state, context, device_id, rgb_width, rgb_height, rgb_stride);
+  rgb2yuv = std::make_unique<Rgb2Yuv>(context, device_id, rgb_width, rgb_height, rgb_stride);
 
 #ifdef __APPLE__
   q = CL_CHECK_ERR(clCreateCommandQueue(context, device_id, 0, &err));
@@ -99,7 +99,6 @@ CameraBuf::~CameraBuf() {
     camera_bufs[i].free();
   }
 
-  if (rgb_to_yuv_state.rgb_to_yuv_krnl) rgb_to_yuv_destroy(&rgb_to_yuv_state);
   if (krnl_debayer) CL_CHECK(clReleaseKernel(krnl_debayer));
   if (q) CL_CHECK(clReleaseCommandQueue(q));
 }
@@ -114,7 +113,6 @@ bool CameraBuf::acquire() {
   }
 
   cur_frame_data = camera_bufs_metadata[cur_buf_idx];
-
   cur_rgb_buf = vipc_server->get_buffer(rgb_type);
 
   cl_event debayer_event;
@@ -151,7 +149,7 @@ bool CameraBuf::acquire() {
   CL_CHECK(clReleaseEvent(debayer_event));
 
   cur_yuv_buf = vipc_server->get_buffer(yuv_type);
-  rgb_to_yuv_queue(&rgb_to_yuv_state, q, cur_rgb_buf->buf_cl, cur_yuv_buf->buf_cl);
+  rgb2yuv->queue(q, cur_rgb_buf->buf_cl, cur_yuv_buf->buf_cl);
 
   VisionIpcBufExtra extra = {
                         cur_frame_data.frame_id,

@@ -218,7 +218,7 @@ pipeline {
               }
               steps {
                 phone_steps("eon-build", [
-                  ["push devel", "cd release && CI_PUSH='masetr-ci' ./build_devel.sh"],
+                  ["push devel", "cd release && CI_PUSH='master-ci' ./build_devel.sh"],
                 ])
               }
             }
