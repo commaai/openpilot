@@ -385,6 +385,7 @@ static void driver_cam_auto_exposure(CameraState *c, SubMaster &sm) {
 
 void common_process_driver_camera(SubMaster *sm, PubMaster *pm, CameraState *c, int cnt) {
   if (cnt % 3 == 0) {
+    sm->update(0);
     driver_cam_auto_exposure(c, *sm);
   }
   MessageBuilder msg;
