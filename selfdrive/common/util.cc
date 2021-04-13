@@ -11,16 +11,6 @@
 #include <sched.h>
 #endif // __linux__
 
-int write_file(const char* path, const void* data, size_t size, int flags, mode_t mode) {
-  int fd = open(path, flags, mode);
-  if (fd == -1) {
-    return -1;
-  }
-  ssize_t n = write(fd, data, size);
-  close(fd);
-  return (n >= 0 && (size_t)n == size) ? 0 : -1;
-}
-
 void set_thread_name(const char* name) {
 #ifdef __linux__
   // pthread_setname_np is dumb (fails instead of truncates)
@@ -67,7 +57,17 @@ std::string read_file(const std::string& fn) {
     ifs.read(result.data(), pos);
     if (ifs) return result;
   }
-  return {};
+  return "";
+}
+
+int write_file(const char* path, const void* data, size_t size, int flags, mode_t mode) {
+  int fd = open(path, flags, mode);
+  if (fd == -1) {
+    return -1;
+  }
+  ssize_t n = write(fd, data, size);
+  close(fd);
+  return (n >= 0 && (size_t)n == size) ? 0 : -1;
 }
 
 }  // namespace util
