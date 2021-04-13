@@ -465,4 +465,12 @@ class CarState(CarStateBase):
 
   @staticmethod
   def get_pq_cam_can_parser(CP):
-    return None
+    # TODO: Need to monitor LKAS camera, if present, for TLC/DLC/warning signals for passthru to SWA
+    signals = []
+    checks = []
+
+    # FIXME: ignoring ACC signals until we detect its presence and bus location
+    #   signals += [("ACA_V_Wunsch", "ACC_GRA_Anziege", 0)]  # ACC set speed
+    #   checks += [("ACC_GRA_Anziege", 25)]  # From J428 ACC radar control module
+
+    return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, CANBUS.cam)

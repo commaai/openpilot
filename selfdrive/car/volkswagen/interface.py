@@ -145,15 +145,10 @@ class CarInterface(CarInterfaceBase):
     # The camera CAN has no signals we use at this time, but we process it
     # anyway so we can test connectivity with can_valid
     self.cp.update_strings(can_strings)
-    if self.cp_cam is not None:
-      self.cp_cam.update_strings(can_strings)
+    self.cp_cam.update_strings(can_strings)
 
     ret = self.CS.update(self.cp, self.cp_cam, self.CP.transmissionType)
-
-    ret.canValid = self.cp.can_valid
-    if self.cp_cam is not None:
-      ret.canValid = ret.canValid and self.cp_cam.can_valid
-
+    ret.canValid = self.cp.can_valid and self.cp_cam.can_valid
     ret.steeringRateLimited = self.CC.steer_rate_limited if self.CC is not None else False
 
     # TODO: add a field for this to carState, car interface code shouldn't write params
