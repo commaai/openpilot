@@ -20,9 +20,6 @@
 typedef void (*sighandler_t)(int sig);
 #endif
 
-#undef ALIGN
-#define ALIGN(x, align) (((x) + (align)-1) & ~((align)-1))
-
 // Reads a file into a newly allocated buffer.
 //
 // Returns NULL on failure, otherwise the NULL-terminated file contents.
