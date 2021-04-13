@@ -13,8 +13,11 @@
 class gps_t : public kaitai::kstruct {
 
 public:
-    class tlm_t;
+    class subframe_1_t;
+    class subframe_3_t;
     class how_t;
+    class tlm_t;
+    class subframe_2_t;
 
     gps_t(kaitai::kstream* p__io, kaitai::kstruct* p__parent = 0, gps_t* p__root = 0);
 
@@ -25,32 +28,82 @@ private:
 public:
     ~gps_t();
 
-    class tlm_t : public kaitai::kstruct {
+    class subframe_1_t : public kaitai::kstruct {
 
     public:
 
-        tlm_t(kaitai::kstream* p__io, gps_t* p__parent = 0, gps_t* p__root = 0);
+        subframe_1_t(kaitai::kstream* p__io, gps_t* p__parent = 0, gps_t* p__root = 0);
 
     private:
         void _read();
         void _clean_up();
 
     public:
-        ~tlm_t();
+        ~subframe_1_t();
 
     private:
-        std::string m_magic;
-        uint64_t m_tlm;
-        bool m_integrity_status;
-        bool m_reserved;
+        uint64_t m_week_no;
+        uint64_t m_code;
+        uint64_t m_sv_accuracy;
+        uint64_t m_sv_health;
+        uint64_t m_iodc_msb;
+        bool m_l2_p_data_flag;
+        uint64_t m_reserved1;
+        uint64_t m_reserved2;
+        uint64_t m_reserved3;
+        uint64_t m_reserved4;
+        int8_t m_t_gd;
+        uint8_t m_iodc_lsb;
+        uint16_t m_t_oc;
+        int8_t m_af_2;
+        int16_t m_af_1;
+        uint64_t m_af_0;
+        uint64_t m_reserved5;
         gps_t* m__root;
         gps_t* m__parent;
 
     public:
-        std::string magic() const { return m_magic; }
-        uint64_t tlm() const { return m_tlm; }
-        bool integrity_status() const { return m_integrity_status; }
-        bool reserved() const { return m_reserved; }
+        uint64_t week_no() const { return m_week_no; }
+        uint64_t code() const { return m_code; }
+        uint64_t sv_accuracy() const { return m_sv_accuracy; }
+        uint64_t sv_health() const { return m_sv_health; }
+        uint64_t iodc_msb() const { return m_iodc_msb; }
+        bool l2_p_data_flag() const { return m_l2_p_data_flag; }
+        uint64_t reserved1() const { return m_reserved1; }
+        uint64_t reserved2() const { return m_reserved2; }
+        uint64_t reserved3() const { return m_reserved3; }
+        uint64_t reserved4() const { return m_reserved4; }
+        int8_t t_gd() const { return m_t_gd; }
+        uint8_t iodc_lsb() const { return m_iodc_lsb; }
+        uint16_t t_oc() const { return m_t_oc; }
+        int8_t af_2() const { return m_af_2; }
+        int16_t af_1() const { return m_af_1; }
+        uint64_t af_0() const { return m_af_0; }
+        uint64_t reserved5() const { return m_reserved5; }
+        gps_t* _root() const { return m__root; }
+        gps_t* _parent() const { return m__parent; }
+    };
+
+    class subframe_3_t : public kaitai::kstruct {
+
+    public:
+
+        subframe_3_t(kaitai::kstream* p__io, gps_t* p__parent = 0, gps_t* p__root = 0);
+
+    private:
+        void _read();
+        void _clean_up();
+
+    public:
+        ~subframe_3_t();
+
+    private:
+        uint8_t m_test;
+        gps_t* m__root;
+        gps_t* m__parent;
+
+    public:
+        uint8_t test() const { return m_test; }
         gps_t* _root() const { return m__root; }
         gps_t* _parent() const { return m__parent; }
     };
@@ -87,15 +140,99 @@ public:
         gps_t* _parent() const { return m__parent; }
     };
 
+    class tlm_t : public kaitai::kstruct {
+
+    public:
+
+        tlm_t(kaitai::kstream* p__io, gps_t* p__parent = 0, gps_t* p__root = 0);
+
+    private:
+        void _read();
+        void _clean_up();
+
+    public:
+        ~tlm_t();
+
+    private:
+        std::string m_magic;
+        uint64_t m_tlm;
+        bool m_integrity_status;
+        bool m_reserved;
+        gps_t* m__root;
+        gps_t* m__parent;
+
+    public:
+        std::string magic() const { return m_magic; }
+        uint64_t tlm() const { return m_tlm; }
+        bool integrity_status() const { return m_integrity_status; }
+        bool reserved() const { return m_reserved; }
+        gps_t* _root() const { return m__root; }
+        gps_t* _parent() const { return m__parent; }
+    };
+
+    class subframe_2_t : public kaitai::kstruct {
+
+    public:
+
+        subframe_2_t(kaitai::kstream* p__io, gps_t* p__parent = 0, gps_t* p__root = 0);
+
+    private:
+        void _read();
+        void _clean_up();
+
+    public:
+        ~subframe_2_t();
+
+    private:
+        uint8_t m_iode;
+        int16_t m_c_rs;
+        int16_t m_delta_n;
+        int32_t m_m_0;
+        int16_t m_c_uc;
+        int32_t m_e;
+        int16_t m_c_us;
+        uint32_t m_sqrt_a;
+        uint16_t m_t_oe;
+        bool m_fit_interval_flag;
+        uint64_t m_aoda;
+        uint64_t m_reserved;
+        gps_t* m__root;
+        gps_t* m__parent;
+
+    public:
+        uint8_t iode() const { return m_iode; }
+        int16_t c_rs() const { return m_c_rs; }
+        int16_t delta_n() const { return m_delta_n; }
+        int32_t m_0() const { return m_m_0; }
+        int16_t c_uc() const { return m_c_uc; }
+        int32_t e() const { return m_e; }
+        int16_t c_us() const { return m_c_us; }
+        uint32_t sqrt_a() const { return m_sqrt_a; }
+        uint16_t t_oe() const { return m_t_oe; }
+        bool fit_interval_flag() const { return m_fit_interval_flag; }
+        uint64_t aoda() const { return m_aoda; }
+        uint64_t reserved() const { return m_reserved; }
+        gps_t* _root() const { return m__root; }
+        gps_t* _parent() const { return m__parent; }
+    };
+
 private:
     tlm_t* m_tlm;
     how_t* m_how;
+    kaitai::kstruct* m_body;
+    bool n_body;
+
+public:
+    bool _is_null_body() { body(); return n_body; };
+
+private:
     gps_t* m__root;
     kaitai::kstruct* m__parent;
 
 public:
     tlm_t* tlm() const { return m_tlm; }
     how_t* how() const { return m_how; }
+    kaitai::kstruct* body() const { return m_body; }
     gps_t* _root() const { return m__root; }
     kaitai::kstruct* _parent() const { return m__parent; }
 };

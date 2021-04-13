@@ -12,6 +12,7 @@
 
 #include "ublox_msg.h"
 
+const double gpsPi = 3.1415926535898;
 #define UBLOX_MSG_SIZE(hdr) (*(uint16_t *)&hdr[4])
 
 inline static bool bit_to_bool(uint8_t val, int shifts) {
@@ -185,6 +186,36 @@ kj::Array<capnp::word> UbloxMsgParser::gen_rxm_sfrbx(ubx_t::rxm_sfrbx_t *msg) {
       MessageBuilder msg_builder;
       auto eph = msg_builder.initEvent().initUbloxGnss().initEphemeris();
       eph.setSvId(msg->sv_id());
+
+      // Subframe 1
+      {
+        kaitai::kstream stream(gps_subframes[msg->sv_id()][1]);
+        gps_t subframe(&stream);
+        gps_t::subframe_1_t* subframe_1 = static_cast<gps_t::subframe_1_t*>(subframe.body());
+
+        eph.setGpsWeek(subframe_1->week_no());
+        eph.setTgd(subframe_1->t_gd() * pow(2, -31));
+        eph.setToc(subframe_1->t_oc() * pow(2, 4));
+        eph.setAf2(subframe_1->af_2() * pow(2, -55));
+        eph.setAf1(subframe_1->af_1() * pow(2, -43));
+        // TODO: Fix sign in af_0
+        eph.setAf0(subframe_1->af_0() * pow(2, -31));
+      }
+
+      // Subframe 2
+      {
+        kaitai::kstream stream(gps_subframes[msg->sv_id()][2]);
+        gps_t subframe(&stream);
+        gps_t::subframe_2_t* subframe_2 = static_cast<gps_t::subframe_2_t*>(subframe.body());
+
+        eph.setCrs(subframe_2->c_rs() * pow(2, -5));
+        eph.setDeltaN(subframe_2->delta_n() * pow(2, -43) * gpsPi);
+        eph.setM0(subframe_2->m_0() * pow(2, -31) * gpsPi);
+        eph.setCuc(subframe_2->c_uc() * pow(2, -29));
+        eph.setCus(subframe_2->c_us() * pow(2, -29));
+        eph.setA(pow(subframe_2->sqrt_a() * pow(2, -19), 2.0));
+        eph.setToe(subframe_2->t_oe() * pow(2, 4));
+      }
 
       // TODO: parse all subframes and set ephemeris data
       return capnp::messageToFlatArray(msg_builder);
