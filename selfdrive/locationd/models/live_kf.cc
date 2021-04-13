@@ -95,6 +95,10 @@ VectorXd LiveKalman::get_x() {
   return this->filter->state();
 }
 
+MatrixXdr LiveKalman::get_P() {
+  return this->filter->covs();
+}
+
 std::vector<MatrixXdr> LiveKalman::get_R(int kind, int n) {
   std::vector<MatrixXdr> R;
   for (int i = 0; i < n; i++) {
@@ -160,4 +164,11 @@ Eigen::VectorXd LiveKalman::get_initial_x() {
 
 MatrixXdr LiveKalman::get_initial_P() {
   return this->initial_P;
+}
+
+MatrixXdr LiveKalman::H(VectorXd in) {
+  assert(in.size() == 6);
+  Matrix<double, 3, 6, Eigen::RowMajor> res;
+  this->filter->get_extra_routine("H")(in.data(), res.data());
+  return res;
 }

@@ -193,7 +193,12 @@ class LiveKalman():
                [h_phone_rot_sym, ObservationKind.CAMERA_ODO_ROTATION, None],
                [h_imu_frame_sym, ObservationKind.IMU_FRAME, None]]
 
-    gen_code(generated_dir, name, f_sym, dt, state_sym, obs_eqs, dim_state, dim_state_err, eskf_params)
+    # this returns a sympy routine for the jacobian of the observation function of the local vel
+    in_vec = sp.MatrixSymbol('in_vec', 6, 1)  # roll, pitch, yaw, vx, vy, vz
+    h = euler_rotate(in_vec[0], in_vec[1], in_vec[2]).T*(sp.Matrix([in_vec[3], in_vec[4], in_vec[5]]))
+    extra_routines = [('H', h.jacobian(in_vec), [in_vec])]
+
+    gen_code(generated_dir, name, f_sym, dt, state_sym, obs_eqs, dim_state, dim_state_err, eskf_params, extra_routines=extra_routines)
 
   def __init__(self, generated_dir):
     self.dim_state = self.initial_x.shape[0]

@@ -9,6 +9,9 @@ struct ECEF {
 
 struct NED {
   double n, e, d;
+  Eigen::Vector3d to_vector(){
+    return Eigen::Vector3d(n, e, d);
+  }
 };
 
 struct Geodetic {

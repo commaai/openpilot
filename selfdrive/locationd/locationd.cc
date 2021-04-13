@@ -8,7 +8,7 @@ ExitHandler do_exit;
 IOFormat fmt(FullPrecision, 0, ", ", ",\n", "[", "]", "[", "]");
 IOFormat fmt_row(FullPrecision, 0, ", ", ", ", "", "", "", "");
 
-VectorXd floatlist_to_vector(const capnp::List<float, capnp::Kind::PRIMITIVE>::Reader& floatlist) {
+VectorXd floatlist2vector(const capnp::List<float, capnp::Kind::PRIMITIVE>::Reader& floatlist) {
   VectorXd res(floatlist.size());
   for (int i = 0; i < floatlist.size(); i++) {
     res[i] = floatlist[i];
@@ -17,13 +17,17 @@ VectorXd floatlist_to_vector(const capnp::List<float, capnp::Kind::PRIMITIVE>::R
 }
 
 VectorXd quat2vector(const Quaterniond& quat) {
-  VectorXd res(4);
-  res << quat.w(), quat.x(), quat.y(), quat.z();
-  return res;
+  return Vector4d(quat.w(), quat.x(), quat.y(), quat.z());
 }
 
 Quaterniond vector2quat(const VectorXd& vec) {
   return Quaterniond(vec(0), vec(1), vec(2), vec(3));
+}
+
+void initMeasurement(cereal::LiveLocationKalman::Measurement::Builder meas, const VectorXd& val, const VectorXd& std, bool valid) {
+  meas.setValue(kj::arrayPtr(val.data(), sizeof(double) * val.size()));
+  meas.setStd(kj::arrayPtr(std.data(), sizeof(double) * std.size()));
+  meas.setValid(valid);
 }
 
 Localizer::Localizer() {
@@ -35,109 +39,168 @@ Localizer::Localizer() {
   this->device_from_calib = MatrixXdr::Identity(3, 3);
   this->calib_from_device = MatrixXdr::Identity(3, 3);
 
-  this->posenet_stds = VectorXd(POSENET_STD_HIST);
-  for (int i = 0; i < POSENET_STD_HIST; i++) {
-    this->posenet_stds[i] = 10.0;
+  this->posenet_stds_old = VectorXd(POSENET_STD_HIST_HALF);
+  this->posenet_stds_new = VectorXd(POSENET_STD_HIST_HALF);
+  for (int i = 0; i < POSENET_STD_HIST_HALF; i++) {
+    this->posenet_stds_old[i] = 10.0;
+    this->posenet_stds_new[i] = 10.0;
   }
 
-//     self.H = get_H()
+  VectorXd ecef_pos = this->kf->get_x().segment<STATE_ECEF_POS_LEN>(STATE_ECEF_POS_START);
+  this->converter = std::make_shared<LocalCoord>((ECEF) { .x = ecef_pos[0], .y = ecef_pos[1], .z = ecef_pos[2] });
 
-  VectorXd ecef_pos = this->kf->get_x().segment<STATE_ECEF_POS_END - STATE_ECEF_POS_START>(STATE_ECEF_POS_START);
-  ECEF ecef = { ecef_pos[0], ecef_pos[1], ecef_pos[2] };
-  this->converter = std::make_shared<LocalCoord>(ecef);
+  if (std::getenv("PROCESS_REPLAY")) {
+    this->send_on_all = true;
+  }
 }
 
-//   @staticmethod
-//   def msg_from_state(converter, calib_from_device, H, predicted_state, predicted_cov, calibrated):
-//     predicted_std = np.sqrt(np.diagonal(predicted_cov))
+void Localizer::liveLocationMsg(cereal::LiveLocationKalman::Builder fix) {
+  VectorXd predicted_state = this->kf->get_x();
+  MatrixXdr predicted_cov = this->kf->get_P();
+  VectorXd predicted_std = predicted_cov.diagonal().array().sqrt();
 
-//     fix_ecef = predicted_state[States.ECEF_POS]
-//     fix_ecef_std = predicted_std[States.ECEF_POS_ERR]
-//     vel_ecef = predicted_state[States.ECEF_VELOCITY]
-//     vel_ecef_std = predicted_std[States.ECEF_VELOCITY_ERR]
-//     fix_pos_geo = coord.ecef2geodetic(fix_ecef)
-//     #fix_pos_geo_std = np.abs(coord.ecef2geodetic(fix_ecef + fix_ecef_std) - fix_pos_geo)
-//     orientation_ecef = euler_from_quat(predicted_state[States.ECEF_ORIENTATION])
-//     orientation_ecef_std = predicted_std[States.ECEF_ORIENTATION_ERR]
-//     device_from_ecef = rot_from_quat(predicted_state[States.ECEF_ORIENTATION]).T
-//     calibrated_orientation_ecef = euler_from_rot(calib_from_device.dot(device_from_ecef))
+  VectorXd fix_ecef = predicted_state.segment<STATE_ECEF_POS_LEN>(STATE_ECEF_POS_START);
+  VectorXd fix_ecef_std = predicted_std.segment<STATE_ECEF_POS_ERR_LEN>(STATE_ECEF_POS_ERR_START);
+  VectorXd vel_ecef = predicted_state.segment<STATE_ECEF_VELOCITY_LEN>(STATE_ECEF_VELOCITY_START);
+  VectorXd vel_ecef_std = predicted_std.segment<STATE_ECEF_VELOCITY_ERR_LEN>(STATE_ECEF_VELOCITY_ERR_START);
+  Geodetic fix_pos_geo = ecef2geodetic((ECEF) { .x = fix_ecef(0), .y = fix_ecef(1), .z = fix_ecef(2) });
+  VectorXd fix_pos_geo_vec = (VectorXd(3) << fix_pos_geo.lat, fix_pos_geo.lon, fix_pos_geo.alt).finished();
+  //fix_pos_geo_std = np.abs(coord.ecef2geodetic(fix_ecef + fix_ecef_std) - fix_pos_geo)
+  VectorXd orientation_ecef = quat2euler(vector2quat(predicted_state.segment<STATE_ECEF_ORIENTATION_LEN>(STATE_ECEF_ORIENTATION_START)));
+  VectorXd orientation_ecef_std = predicted_std.segment<STATE_ECEF_ORIENTATION_ERR_LEN>(STATE_ECEF_ORIENTATION_ERR_START);
+  MatrixXdr device_from_ecef = quat2rot(vector2quat(predicted_state.segment<STATE_ECEF_ORIENTATION_LEN>(STATE_ECEF_ORIENTATION_START))).transpose();
+  VectorXd calibrated_orientation_ecef = rot2euler(this->calib_from_device * device_from_ecef);
 
-//     acc_calib = calib_from_device.dot(predicted_state[States.ACCELERATION])
-//     acc_calib_std = np.sqrt(np.diagonal(calib_from_device.dot(
-//       predicted_cov[States.ACCELERATION_ERR, States.ACCELERATION_ERR]).dot(
-//         calib_from_device.T)))
-//     ang_vel_calib = calib_from_device.dot(predicted_state[States.ANGULAR_VELOCITY])
-//     ang_vel_calib_std = np.sqrt(np.diagonal(calib_from_device.dot(
-//       predicted_cov[States.ANGULAR_VELOCITY_ERR, States.ANGULAR_VELOCITY_ERR]).dot(
-//         calib_from_device.T)))
+  VectorXd acc_calib = this->calib_from_device * predicted_state.segment<STATE_ACCELERATION_LEN>(STATE_ACCELERATION_START);
+  VectorXd acc_calib_std = ((this->calib_from_device * predicted_cov.block<STATE_ACCELERATION_ERR_LEN, STATE_ACCELERATION_ERR_LEN>(STATE_ACCELERATION_ERR_START, STATE_ACCELERATION_ERR_START)) * this->calib_from_device.transpose()).diagonal().array().sqrt();
+  VectorXd ang_vel_calib = this->calib_from_device * predicted_state.segment<STATE_ANGULAR_VELOCITY_LEN>(STATE_ANGULAR_VELOCITY_START);
 
-//     vel_device = device_from_ecef.dot(vel_ecef)
-//     device_from_ecef_eul = euler_from_quat(predicted_state[States.ECEF_ORIENTATION]).T
-//     idxs = list(range(States.ECEF_ORIENTATION_ERR.start, States.ECEF_ORIENTATION_ERR.stop)) + \
-//            list(range(States.ECEF_VELOCITY_ERR.start, States.ECEF_VELOCITY_ERR.stop))
-//     condensed_cov = predicted_cov[idxs][:, idxs]
-//     HH = H(*list(np.concatenate([device_from_ecef_eul, vel_ecef])))
-//     vel_device_cov = HH.dot(condensed_cov).dot(HH.T)
-//     vel_device_std = np.sqrt(np.diagonal(vel_device_cov))
+  MatrixXdr vel_angular_err = predicted_cov.block<STATE_ANGULAR_VELOCITY_ERR_LEN, STATE_ANGULAR_VELOCITY_ERR_LEN>(STATE_ANGULAR_VELOCITY_ERR_START, STATE_ANGULAR_VELOCITY_ERR_START);
+  VectorXd ang_vel_calib_std = ((this->calib_from_device * vel_angular_err) * this->calib_from_device.transpose()).diagonal().array().sqrt();
 
-//     vel_calib = calib_from_device.dot(vel_device)
-//     vel_calib_std = np.sqrt(np.diagonal(calib_from_device.dot(
-//       vel_device_cov).dot(calib_from_device.T)))
+  VectorXd vel_device = device_from_ecef * vel_ecef;
+  VectorXd device_from_ecef_eul = quat2euler(vector2quat(predicted_state.segment<STATE_ECEF_ORIENTATION_LEN>(STATE_ECEF_ORIENTATION_START))).transpose();
+  MatrixXdr condensed_cov(STATE_ECEF_ORIENTATION_ERR_LEN + STATE_ECEF_VELOCITY_ERR_LEN, STATE_ECEF_ORIENTATION_ERR_LEN + STATE_ECEF_VELOCITY_ERR_LEN);
+  condensed_cov.topLeftCorner<STATE_ECEF_ORIENTATION_ERR_LEN, STATE_ECEF_ORIENTATION_ERR_LEN>() =
+    predicted_cov.block<STATE_ECEF_ORIENTATION_ERR_LEN, STATE_ECEF_ORIENTATION_ERR_LEN>(STATE_ECEF_ORIENTATION_ERR_START, STATE_ECEF_ORIENTATION_ERR_START);
+  condensed_cov.topRightCorner<STATE_ECEF_ORIENTATION_ERR_LEN, STATE_ECEF_VELOCITY_ERR_LEN>() =
+    predicted_cov.block<STATE_ECEF_ORIENTATION_ERR_LEN, STATE_ECEF_VELOCITY_ERR_LEN>(STATE_ECEF_ORIENTATION_ERR_START, STATE_ECEF_VELOCITY_ERR_START);
+  condensed_cov.bottomRightCorner<STATE_ECEF_VELOCITY_ERR_LEN, STATE_ECEF_VELOCITY_ERR_LEN>() =
+    predicted_cov.block<STATE_ECEF_VELOCITY_ERR_LEN, STATE_ECEF_VELOCITY_ERR_LEN>(STATE_ECEF_VELOCITY_ERR_START, STATE_ECEF_VELOCITY_ERR_START);
+  condensed_cov.bottomLeftCorner<STATE_ECEF_VELOCITY_ERR_LEN, STATE_ECEF_ORIENTATION_ERR_LEN>() =
+    predicted_cov.block<STATE_ECEF_VELOCITY_ERR_LEN, STATE_ECEF_ORIENTATION_ERR_LEN>(STATE_ECEF_VELOCITY_ERR_START, STATE_ECEF_ORIENTATION_ERR_START);
+  VectorXd H_input(device_from_ecef_eul.size() + vel_ecef.size());
+  H_input << device_from_ecef_eul, vel_ecef;
+  MatrixXdr HH = this->kf->H(H_input);
+  MatrixXdr vel_device_cov = (HH * condensed_cov) * HH.transpose();
+  VectorXd vel_device_std = vel_device_cov.diagonal().array().sqrt();
 
-//     orientation_ned = ned_euler_from_ecef(fix_ecef, orientation_ecef)
-//     #orientation_ned_std = ned_euler_from_ecef(fix_ecef, orientation_ecef + orientation_ecef_std) - orientation_ned
-//     ned_vel = converter.ecef2ned(fix_ecef + vel_ecef) - converter.ecef2ned(fix_ecef)
-//     #ned_vel_std = self.converter.ecef2ned(fix_ecef + vel_ecef + vel_ecef_std) - self.converter.ecef2ned(fix_ecef + vel_ecef)
+  VectorXd vel_calib = this->calib_from_device * vel_device;
+  VectorXd vel_calib_std = ((this->calib_from_device * vel_device_cov) * this->calib_from_device.transpose()).diagonal().array().sqrt();
 
-//     fix = messaging.log.LiveLocationKalman.new_message()
+  ECEF fix_ecef_ecef = (ECEF) { .x = fix_ecef(0), .y = fix_ecef(1), .z = fix_ecef(2) };
+  VectorXd orientation_ned = ned_euler_from_ecef(fix_ecef_ecef, orientation_ecef);
+  //orientation_ned_std = ned_euler_from_ecef(fix_ecef, orientation_ecef + orientation_ecef_std) - orientation_ned
+  VectorXd nextfix_ecef = fix_ecef + vel_ecef;
+  VectorXd ned_vel = this->converter->ecef2ned((ECEF) { .x = nextfix_ecef(0), .y = nextfix_ecef(1), .z = nextfix_ecef(2) }).to_vector() - converter->ecef2ned(fix_ecef_ecef).to_vector();
+  //ned_vel_std = self.converter->ecef2ned(fix_ecef + vel_ecef + vel_ecef_std) - self.converter->ecef2ned(fix_ecef + vel_ecef)
 
-//     # write measurements to msg
-//     measurements = [
-//       # measurement field, value, std, valid
-//       (fix.positionGeodetic, fix_pos_geo, np.nan*np.zeros(3), True),
-//       (fix.positionECEF, fix_ecef, fix_ecef_std, True),
-//       (fix.velocityECEF, vel_ecef, vel_ecef_std, True),
-//       (fix.velocityNED, ned_vel, np.nan*np.zeros(3), True),
-//       (fix.velocityDevice, vel_device, vel_device_std, True),
-//       (fix.accelerationDevice, predicted_state[States.ACCELERATION], predicted_std[States.ACCELERATION_ERR], True),
-//       (fix.orientationECEF, orientation_ecef, orientation_ecef_std, True),
-//       (fix.calibratedOrientationECEF, calibrated_orientation_ecef, np.nan*np.zeros(3), calibrated),
-//       (fix.orientationNED, orientation_ned, np.nan*np.zeros(3), True),
-//       (fix.angularVelocityDevice, predicted_state[States.ANGULAR_VELOCITY], predicted_std[States.ANGULAR_VELOCITY_ERR], True),
-//       (fix.velocityCalibrated, vel_calib, vel_calib_std, calibrated),
-//       (fix.angularVelocityCalibrated, ang_vel_calib, ang_vel_calib_std, calibrated),
-//       (fix.accelerationCalibrated, acc_calib, acc_calib_std, calibrated),
-//     ]
+  VectorXd accDevice = predicted_state.segment<STATE_ACCELERATION_LEN>(STATE_ACCELERATION_START);
+  VectorXd accDeviceErr = predicted_std.segment<STATE_ACCELERATION_ERR_LEN>(STATE_ACCELERATION_ERR_START);
 
-//     for field, value, std, valid in measurements:
-//       # TODO: can we write the lists faster?
-//       field.value = to_float(value)
-//       field.std = to_float(std)
-//       field.valid = valid
+  VectorXd angVelocityDevice = predicted_state.segment<STATE_ANGULAR_VELOCITY_LEN>(STATE_ANGULAR_VELOCITY_START);
+  VectorXd angVelocityDeviceErr = predicted_std.segment<STATE_ANGULAR_VELOCITY_ERR_LEN>(STATE_ANGULAR_VELOCITY_ERR_START);
 
-//     return fix
+  VectorXd nans = (VectorXd(3) << NAN, NAN, NAN).finished();
 
-//   def liveLocationMsg(self):
-//     fix = self.msg_from_state(self.converter, self.calib_from_device, self.H, self.kf.x, self.kf.P, self.calibrated)
-//     # experimentally found these values, no false positives in 20k minutes of driving
-//     old_mean, new_mean = np.mean(self.posenet_stds[:POSENET_STD_HIST//2]), np.mean(self.posenet_stds[POSENET_STD_HIST//2:])
-//     std_spike = new_mean/old_mean > 4 and new_mean > 7
+  // write measurements to msg
+  // TODO initMeasurement(fix.initPositionGeodetic(), fix_pos_geo_vec, nans, true);
+  auto positionGeodetic = fix.initPositionGeodetic();
+  positionGeodetic.setValue(kj::arrayPtr(fix_pos_geo_vec.data(), sizeof(double) * 3));
+  positionGeodetic.setStd(kj::arrayPtr(nans.data(), sizeof(double) * 3));
+  positionGeodetic.setValid(true);
 
-//     fix.posenetOK = not (std_spike and self.car_speed > 5)
-//     fix.deviceStable = not self.device_fell
-//     self.device_fell = False
+  auto positionECEF = fix.initPositionECEF();
+  positionECEF.setValue(kj::arrayPtr(fix_ecef.data(), sizeof(double) * 3));
+  positionECEF.setStd(kj::arrayPtr(fix_ecef_std.data(), sizeof(double) * 3));
+  positionECEF.setValid(true);
 
-//     #fix.gpsWeek = self.time.week
-//     #fix.gpsTimeOfWeek = self.time.tow
-//     fix.unixTimestampMillis = self.unix_timestamp_millis
+  auto velocityECEF = fix.initVelocityECEF();
+  velocityECEF.setValue(kj::arrayPtr(vel_ecef.data(), sizeof(double) * 3));
+  velocityECEF.setStd(kj::arrayPtr(vel_ecef_std.data(), sizeof(double) * 3));
+  velocityECEF.setValid(true);
 
-//     if np.linalg.norm(fix.positionECEF.std) < 50 and self.calibrated:
-//       fix.status = 'valid'
-//     elif np.linalg.norm(fix.positionECEF.std) < 50:
-//       fix.status = 'uncalibrated'
-//     else:
-//       fix.status = 'uninitialized'
-//     return fix
+  auto velocityNED = fix.initVelocityNED();
+  velocityNED.setValue(kj::arrayPtr(ned_vel.data(), sizeof(double) * 3));
+  velocityNED.setStd(kj::arrayPtr(nans.data(), sizeof(double) * 3));
+  velocityNED.setValid(true);
+
+  auto velocityDevice = fix.initVelocityDevice();
+  velocityDevice.setValue(kj::arrayPtr(vel_device.data(), sizeof(double) * 3));
+  velocityDevice.setStd(kj::arrayPtr(vel_device_std.data(), sizeof(double) * 3));
+  velocityDevice.setValid(true);
+
+  auto accelerationDevice = fix.initAccelerationDevice();
+  accelerationDevice.setValue(kj::arrayPtr(accDevice.data(), sizeof(double) * 3));
+  accelerationDevice.setStd(kj::arrayPtr(accDeviceErr.data(), sizeof(double) * 3));
+  accelerationDevice.setValid(true);
+
+  auto orientationECEF = fix.initOrientationECEF();
+  orientationECEF.setValue(kj::arrayPtr(orientation_ecef.data(), sizeof(double) * 3));
+  orientationECEF.setStd(kj::arrayPtr(orientation_ecef_std.data(), sizeof(double) * 3));
+  orientationECEF.setValid(true);
+
+  auto calibratedOrientationECEF = fix.initCalibratedOrientationECEF();
+  calibratedOrientationECEF.setValue(kj::arrayPtr(calibrated_orientation_ecef.data(), sizeof(double) * 3));
+  calibratedOrientationECEF.setStd(kj::arrayPtr(nans.data(), sizeof(double) * 3));
+  calibratedOrientationECEF.setValid(this->calibrated);
+
+  auto orientationNED = fix.initOrientationNED();
+  orientationNED.setValue(kj::arrayPtr(orientation_ned.data(), sizeof(double) * 3));
+  orientationNED.setStd(kj::arrayPtr(nans.data(), sizeof(double) * 3));
+  orientationNED.setValid(true);
+
+  auto angularVelocityDevice = fix.initAngularVelocityDevice();
+  angularVelocityDevice.setValue(kj::arrayPtr(angVelocityDevice.data(), sizeof(double) * 3));
+  angularVelocityDevice.setStd(kj::arrayPtr(angVelocityDeviceErr.data(), sizeof(double) * 3));
+  angularVelocityDevice.setValid(true);
+
+  auto velocityCalibrated = fix.initVelocityCalibrated();
+  velocityCalibrated.setValue(kj::arrayPtr(vel_calib.data(), sizeof(double) * 3));
+  velocityCalibrated.setStd(kj::arrayPtr(vel_calib_std.data(), sizeof(double) * 3));
+  velocityCalibrated.setValid(this->calibrated);
+
+  auto angularVelocityCalibrated = fix.initAngularVelocityCalibrated();
+  angularVelocityCalibrated.setValue(kj::arrayPtr(ang_vel_calib.data(), sizeof(double) * 3));
+  angularVelocityCalibrated.setStd(kj::arrayPtr(ang_vel_calib_std.data(), sizeof(double) * 3));
+  angularVelocityCalibrated.setValid(this->calibrated);
+
+  auto accelerationCalibrated = fix.initAccelerationCalibrated();
+  accelerationCalibrated.setValue(kj::arrayPtr(acc_calib.data(), sizeof(double) * 3));
+  accelerationCalibrated.setStd(kj::arrayPtr(acc_calib_std.data(), sizeof(double) * 3));
+  accelerationCalibrated.setValid(this->calibrated);
+
+  // experimentally found these values, no false positives in 20k minutes of driving
+  double old_mean = this->posenet_stds_old.mean();
+  double new_mean = this->posenet_stds_new.mean();
+  bool std_spike = (new_mean / old_mean > 4.0 && new_mean > 7.0);
+
+  fix.setPosenetOK(!(std_spike && this->car_speed > 5.0));
+  fix.setDeviceStable(!this->device_fell);
+  this->device_fell = false;
+
+  //fix.setGpsWeek(this->time.week);
+  //fix.setGpsTimeOfWeek(this->time.tow);
+  fix.setUnixTimestampMillis(this->unix_timestamp_millis);
+
+  if (fix_ecef_std.norm() < 50.0 && this->calibrated) {
+    fix.setStatus(cereal::LiveLocationKalman::Status::VALID);
+  } else if (fix_ecef_std.norm() < 50.0) {
+    fix.setStatus(cereal::LiveLocationKalman::Status::UNCALIBRATED);
+  } else {
+    fix.setStatus(cereal::LiveLocationKalman::Status::UNINITIALIZED);
+  }
+}
 
 void Localizer::update_kalman(double t, int kind, std::vector<VectorXd> meas, std::vector<MatrixXdr> R) {
   try {
@@ -174,7 +237,7 @@ void Localizer::handle_sensors(double current_time, const capnp::List<cereal::Se
 
       // check if device fell, estimate 10 for g
       // 40m/s**2 is a good filter for falling detection, no false positives in 20k minutes of driving
-      this->device_fell |= (floatlist_to_vector(v) - (VectorXd(3) << 10.0, 0.0, 0.0).finished()).norm() > 40;
+      this->device_fell |= (floatlist2vector(v) - (VectorXd(3) << 10.0, 0.0, 0.0).finished()).norm() > 40;
 
       this->acc_counter++;
       if (this->acc_counter % SENSOR_DECIMATION == 0) {
@@ -205,7 +268,7 @@ void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::R
   this->unix_timestamp_millis = log.getTimestamp();
   double gps_est_error = (this->kf->get_x().head(3) - ecef_pos).norm();
 
-  VectorXd orientation_ecef = quat2euler(vector2quat(this->kf->get_x().segment<STATE_ECEF_ORIENTATION_END - STATE_ECEF_ORIENTATION_START>(STATE_ECEF_ORIENTATION_START)));
+  VectorXd orientation_ecef = quat2euler(vector2quat(this->kf->get_x().segment<STATE_ECEF_ORIENTATION_LEN>(STATE_ECEF_ORIENTATION_START)));
   VectorXd orientation_ned = ned_euler_from_ecef({ ecef_pos(0), ecef_pos(1), ecef_pos(2) }, orientation_ecef);
   VectorXd orientation_ned_gps = (VectorXd(3) << 0.0, 0.0, DEG2RAD(log.getBearingDeg())).finished();
   VectorXd orientation_error = (orientation_ned - orientation_ned_gps).array() - M_PI;
@@ -249,16 +312,17 @@ void Localizer::handle_cam_odo(double current_time, const cereal::CameraOdometry
 
   if (this->cam_counter % VISION_DECIMATION == 0) {
     // TODO len of vectors is always 3
-    VectorXd rot_device = this->device_from_calib * floatlist_to_vector(log.getRot());
-    VectorXd rot_device_std = (this->device_from_calib * floatlist_to_vector(log.getRotStd())) * 10.0;
+    VectorXd rot_device = this->device_from_calib * floatlist2vector(log.getRot());
+    VectorXd rot_device_std = (this->device_from_calib * floatlist2vector(log.getRotStd())) * 10.0;
     this->update_kalman(current_time, KIND_CAMERA_ODO_ROTATION,
       { (VectorXd(rot_device.rows() + rot_device_std.rows()) << rot_device, rot_device_std).finished() });
 
-    VectorXd trans_device = this->device_from_calib * floatlist_to_vector(log.getTrans());
-    VectorXd trans_device_std = this->device_from_calib * floatlist_to_vector(log.getTransStd());
+    VectorXd trans_device = this->device_from_calib * floatlist2vector(log.getTrans());
+    VectorXd trans_device_std = this->device_from_calib * floatlist2vector(log.getTransStd());
 
-    this->posenet_stds[this->posenet_stds_i] = trans_device_std[0];
-    this->posenet_stds_i = (this->posenet_stds_i + 1) % POSENET_STD_HIST;
+    this->posenet_stds_old[this->posenet_stds_i] = this->posenet_stds_new[this->posenet_stds_i];
+    this->posenet_stds_new[this->posenet_stds_i] = trans_device_std[0];
+    this->posenet_stds_i = (this->posenet_stds_i + 1) % POSENET_STD_HIST_HALF;
 
     trans_device_std *= 10.0;
     this->update_kalman(current_time, KIND_CAMERA_ODO_TRANSLATION,
@@ -268,7 +332,7 @@ void Localizer::handle_cam_odo(double current_time, const cereal::CameraOdometry
 
 void Localizer::handle_live_calib(double current_time, const cereal::LiveCalibrationData::Reader& log) {
   if (log.getRpyCalib().size() > 0) {
-    this->calib = floatlist_to_vector(log.getRpyCalib());
+    this->calib = floatlist2vector(log.getRpyCalib());
     this->device_from_calib = euler2rot(this->calib);
     this->calib_from_device = this->device_from_calib.transpose();
     this->calibrated = log.getCalStatus() == 1;
@@ -333,12 +397,13 @@ int Localizer::locationd_thread() {
     }
 
     if (updatedCameraOdometry) {
-      double t = sm.rcv_time("cameraOdometry") * 1e-9;  // TODO rcv_frame?
+      double t = sm.rcv_time("cameraOdometry") * 1e-9; // TODO correct?
 
       MessageBuilder msg_builder;
-      auto liveLoc = msg_builder.initEvent().initLiveLocationKalman();
-      //liveLoc.setLiveLocationMonoTime(t);
-      //liveLoc.setLiveLocationKalman(this->liveLocationMsg());
+      auto evt = msg_builder.initEvent();
+      evt.setLogMonoTime(t);
+      auto liveLoc = evt.initLiveLocationKalman();
+      this->liveLocationMsg(liveLoc);
       liveLoc.setInputsOK(sm.allAliveAndValid());
       liveLoc.setSensorsOK(sm.alive("sensorEvents") && sm.valid("sensorEvents"));
       liveLoc.setGpsOK((t / 1e9) - this->last_gps_fix < 1.0);
@@ -353,6 +418,10 @@ int Localizer::locationd_thread() {
 //         }
 //         params.put("LastGPSPosition", json.dumps(location))
 
+    } else if (this->send_on_all) {
+      MessageBuilder msg_builder;
+      msg_builder.initEvent();
+      pm.send("liveLocationKalman", msg_builder);
     }
   }
   return 0;

@@ -113,6 +113,7 @@ class Localizer():
     vel_device_std = np.sqrt(np.diagonal(vel_device_cov))
 
     vel_calib = calib_from_device.dot(vel_device)
+    print(calib_from_device.shape, vel_device_cov.shape, condensed_cov.shape, HH.shape)
     vel_calib_std = np.sqrt(np.diagonal(calib_from_device.dot(
       vel_device_cov).dot(calib_from_device.T)))
 
@@ -202,6 +203,10 @@ class Localizer():
     orientation_ned_gps = np.array([0, 0, np.radians(log.bearingDeg)])
     orientation_error = np.mod(orientation_ned - orientation_ned_gps - np.pi, 2*np.pi) - np.pi
     initial_pose_ecef_quat = quat_from_euler(ecef_euler_from_ned(ecef_pos, orientation_ned_gps))
+
+    print(np.linalg.norm(ecef_vel), np.linalg.norm(orientation_error))
+    print(orientation_error)
+
     if np.linalg.norm(ecef_vel) > 5 and np.linalg.norm(orientation_error) > 1:
       cloudlog.error("Locationd vs ubloxLocation orientation difference too large, kalman reset")
       self.reset_kalman(init_pos=ecef_pos, init_orient=initial_pose_ecef_quat)
