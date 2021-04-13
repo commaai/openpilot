@@ -74,7 +74,7 @@ class CarInterface(CarInterfaceBase):
       # Averages of all 1K/5K/AJ Golf variants
       ret.mass = 1379 + STD_CARGO_KG
       ret.wheelbase = 2.58
-      ret.minSteerSpeed = 50 * CV.MPH_TO_MS  # May be higher/lower depending on model-year
+      ret.minSteerSpeed = 50 * CV.KPH_TO_MS  # May be lower depending on model-year/EPS FW
 
     elif candidate == CAR.GOLF_MK7:
       # Averages of all AU Golf variants
@@ -178,6 +178,8 @@ class CarInterface(CarInterfaceBase):
       events.add(EventName.parkBrake)
     if self.CS.steeringFault:
       events.add(EventName.steerTempUnavailable)
+    if ret.vEgo < self.CP.minSteerSpeed:
+      events.add(car.CarEvent.EventName.belowSteerSpeed)
 
     ret.events = events.to_msg()
     ret.buttonEvents = buttonEvents
