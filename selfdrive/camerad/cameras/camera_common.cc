@@ -98,7 +98,7 @@ void CameraBuf::init(CameraServer* server, CameraState *s, int frame_cnt, releas
     CL_CHECK(clReleaseProgram(prg_debayer));
   }
 
-  rgb2yuv = std::make_unique<Rgb2Yuv>(context, device_id, rgb_width, rgb_height, rgb_stride);
+  rgb2yuv = std::make_unique<Rgb2Yuv>(server->context, server->device_id, rgb_width, rgb_height, rgb_stride);
 
 #ifdef __APPLE__
   q = CL_CHECK_ERR(clCreateCommandQueue(server->context, server->device_id, 0, &err));
