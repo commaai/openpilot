@@ -66,8 +66,6 @@ void ui_init(UIState *s) {
   s->wide_camera = Params().getBool("EnableWideCamera");
 #endif
 
-  ui_nvg_init(s);
-
   s->vipc_client_rear = new VisionIpcClient("camerad", s->wide_camera ? VISION_STREAM_RGB_WIDE : VISION_STREAM_RGB_BACK, true);
   s->vipc_client_front = new VisionIpcClient("camerad", VISION_STREAM_RGB_FRONT, true);
   s->vipc_client = s->vipc_client_rear;

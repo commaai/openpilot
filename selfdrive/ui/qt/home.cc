@@ -1,6 +1,7 @@
 #include <cmath>
 #include <fstream>
 #include <iostream>
+#include <thread>
 #include <exception>
 
 #include <QDateTime>
@@ -48,7 +49,7 @@ HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
 }
 
 void HomeWindow::mousePressEvent(QMouseEvent* e) {
-  UIState* ui_state = uiState();
+  UIState *ui_state = uiState();
   if (ui_state->scene.driver_view) {
     Params().putBool("IsDriverViewEnabled", false);
     ui_state->scene.driver_view = false;
@@ -219,26 +220,49 @@ static void handle_display_state(UIState* s, bool user_input) {
   if (s->awake != should_wake) {
     s->awake = should_wake;
     Hardware::set_display_power(s->awake);
-    LOGD("setting display power %d", s->awake.load());
+    LOGD("setting display power %d", s->awake);
   }
 }
 
-GLWindow::GLWindow(QWidget* parent) : QOpenGLWidget(parent) {
+GLWindow::GLWindow(QWidget* parent) : brightness_filter(BACKLIGHT_OFFROAD, BACKLIGHT_TS, BACKLIGHT_DT), QOpenGLWidget(parent) {
+  backlight_timer = new QTimer(this);
+  QObject::connect(backlight_timer, SIGNAL(timeout()), this, SLOT(backlightUpdate()));
+
+  brightness_b = Params(true).get<float>("BRIGHTNESS_B").value_or(10.0);
+  brightness_m = Params(true).get<float>("BRIGHTNESS_M").value_or(0.1);
+
   ui_updater = new UIUpdater(this);
   ui_updater->moveToThread(ui_updater);
-  connect(ui_updater, SIGNAL(offroadTransition(bool)), this, SIGNAL(offroadTransition(bool)));
-  connect(ui_updater, SIGNAL(screen_shutoff()), this, SIGNAL(screen_shutoff()));
-
   connect(this, &GLWindow::aboutToCompose, ui_updater, &UIUpdater::pause, Qt::BlockingQueuedConnection);
   connect(this, &GLWindow::frameSwapped, ui_updater, &UIUpdater::resume, Qt::DirectConnection);
   connect(this, &GLWindow::aboutToResize, ui_updater, &UIUpdater::pause, Qt::BlockingQueuedConnection);
   ui_updater->start();
+  backlight_timer->start(BACKLIGHT_DT * 1000);
 
   wake();
 }
 
 GLWindow::~GLWindow() {
-  ui_updater->exit();
+}
+
+void GLWindow::backlightUpdate() {
+  // Update brightness
+  UIState &ui_state = *uiState();
+  float clipped_brightness = std::min(100.0f, (ui_state.scene.light_sensor * brightness_m) + brightness_b);
+  if (!ui_state.scene.started) {
+    clipped_brightness = BACKLIGHT_OFFROAD;
+  }
+
+  int brightness = brightness_filter.update(clipped_brightness);
+  if (!ui_state.awake) {
+    brightness = 0;
+    emit screen_shutoff();
+  }
+
+  if (brightness != last_brightness) {
+    std::thread{Hardware::set_brightness, brightness}.detach();
+  }
+  last_brightness = brightness;
 }
 
 void GLWindow::resizeGL(int w, int h) {
@@ -251,14 +275,11 @@ void GLWindow::wake() {
 
 // UIUpdater
 
-UIUpdater::UIUpdater(GLWindow* w) : QThread(), glWindow_(w), asleep_timer_(this), brightness_filter(BACKLIGHT_OFFROAD, BACKLIGHT_TS, BACKLIGHT_DT) {
-  brightness_b = Params().get<float>("BRIGHTNESS_B").value_or(10.0);
-  brightness_m = Params().get<float>("BRIGHTNESS_M").value_or(0.1);
-
-  ui_state.sound = &sound;
-  ui_state.fb_w = vwp_w;
-  ui_state.fb_h = vwp_h;
-  ui_init(&ui_state);
+UIUpdater::UIUpdater(GLWindow* w) : QThread(), glWindow_(w), asleep_timer_(this) {
+  ui_state_.sound = &sound;
+  ui_state_.fb_w = vwp_w;
+  ui_state_.fb_h = vwp_h;
+  ui_init(&ui_state_);
 
   connect(&asleep_timer_, &QTimer::timeout, this, &UIUpdater::update);
   connect(this, &UIUpdater::frameSwapped, this, &UIUpdater::update, Qt::QueuedConnection);
@@ -279,24 +300,6 @@ void UIUpdater::resume() {
   emit frameSwapped();
 }
 
-void UIUpdater::backlightUpdate() {
-  float clipped_brightness = std::min(100.0f, (ui_state.scene.light_sensor * brightness_m) + brightness_b);
-  if (!ui_state.scene.started) {
-    clipped_brightness = BACKLIGHT_OFFROAD;
-  }
-
-  int brightness = brightness_filter.update(clipped_brightness);
-  if (!ui_state.awake) {
-    brightness = 0;
-    emit screen_shutoff();
-  }
-
-  if (brightness != last_brightness) {
-    Hardware::set_brightness(brightness);
-  }
-  last_brightness = brightness;
-}
-
 void UIUpdater::draw() {
   if (!is_updating_) return;
 
@@ -307,15 +310,15 @@ void UIUpdater::draw() {
   if (!inited_) {
     inited_ = true;
     initializeOpenGLFunctions();
-    ui_nvg_init(&ui_state);
+    ui_nvg_init(&ui_state_);
     std::cout << "OpenGL version: " << glGetString(GL_VERSION) << std::endl;
     std::cout << "OpenGL vendor: " << glGetString(GL_VENDOR) << std::endl;
     std::cout << "OpenGL renderer: " << glGetString(GL_RENDERER) << std::endl;
     std::cout << "OpenGL language version: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
   }
 
-  ui_update_vision(&ui_state);
-  ui_draw(&ui_state);
+  ui_update_vision(&ui_state_);
+  ui_draw(&ui_state_);
 
   // context back to the gui thread.
   glWindow_->doneCurrent();
@@ -325,43 +328,39 @@ void UIUpdater::draw() {
 }
 
 void UIUpdater::update() {
-  UIState *s = &ui_state;
+  if (!ui_state_.scene.started && ui_state_.awake) {
+    util::sleep_for(1000 / UI_FREQ);
+  }
+  double prev_draw_t = millis_since_boot();
 
-  if (!s->scene.started && s->awake) {
-    util::sleep_for(50);
+  ui_update(&ui_state_);
+
+  if (ui_state_.scene.started != onroad_) {
+    onroad_  = ui_state_.scene.started;
+    emit glWindow_->offroadTransition(!onroad_);
   }
 
-  double u1 = millis_since_boot();
-
-  ui_update(s);
-
-  if (s->scene.started != prev_onroad_) {
-    prev_onroad_ = s->scene.started;
-    emit offroadTransition(!prev_onroad_);
+  handle_display_state(&ui_state_, false);
+  if (ui_state_.awake != prev_awake_) {
+    ui_state_.awake ? asleep_timer_.stop() : asleep_timer_.start(1000 / UI_FREQ);
+    prev_awake_ = ui_state_.awake;
   }
-
-  handle_display_state(s, false);
-  if (s->awake != prev_awake_) {
-    s->awake ? asleep_timer_.stop() : asleep_timer_.start(50);
-    prev_awake_ = s->awake;
-  }
-
+  
   // Don't waste resources on drawing in case screen is off
-  if (!s->awake) {
+  if (!ui_state_.awake) {
     return;
   }
 
-  backlightUpdate();
-
   // scale volume with speed
-  s->sound->setVolume(util::map_val(s->scene.car_state.getVEgo(), 0.f, 20.f,
-                                    Hardware::MIN_VOLUME, Hardware::MAX_VOLUME));
+  sound.volume = util::map_val(ui_state_.scene.car_state.getVEgo(), 0.f, 20.f,
+                               Hardware::MIN_VOLUME, Hardware::MAX_VOLUME);
 
   draw();
 
-  double u2 = millis_since_boot();
-  if (!s->scene.driver_view && (u2 - u1 > 66)) {
+  double dt = millis_since_boot() - prev_draw_t;
+  if (dt > 66 && onroad_ && !ui_state_.scene.driver_view) {
     // warn on sub 15fps
-    LOGW("slow frame(%llu) time: %.2f", s->sm->frame, u2 - u1);
+    LOGW("slow frame(%llu) time: %.2f", ui_state_.sm->frame, dt);
   }
+  watchdog_kick();
 }

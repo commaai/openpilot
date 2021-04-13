@@ -152,6 +152,7 @@ typedef struct UIState {
   SubMaster *sm;
 
   Sound *sound;
+  UIStatus status;
   UIScene scene;
 
   // graphics
@@ -163,7 +164,6 @@ typedef struct UIState {
 
   // device state
   std::atomic<bool> awake;
-  std::atomic<UIStatus> status;
   std::atomic<bool> sidebar_collapsed;
 
   Rect video_rect, viz_rect;

@@ -5,22 +5,24 @@
 #include <QOpenGLWidget>
 #include <QPushButton>
 #include <QStackedLayout>
-#include <QThread>
+#include <QStackedWidget>
 #include <QTimer>
 #include <QWidget>
+#include <QThread>
 
 #include "sound.hpp"
 #include "ui/ui.hpp"
 #include "common/util.h"
 #include "widgets/offroad_alerts.hpp"
 
-// container window for onroad NVG UI
 class UIUpdater;
 
+// container window for onroad NVG UI
 class GLWindow : public QOpenGLWidget {
   Q_OBJECT
 
 public:
+  using QOpenGLWidget::QOpenGLWidget;
   explicit GLWindow(QWidget* parent = 0);
   void wake();
   ~GLWindow();
@@ -35,7 +37,18 @@ protected:
   void paintEvent(QPaintEvent* event) override {}
 
 private:
-  UIUpdater* ui_updater;
+  QTimer* backlight_timer;
+
+  // TODO: make a nice abstraction to handle embedded device stuff
+  float brightness_b = 0;
+  float brightness_m = 0;
+  float last_brightness = 0;
+  FirstOrderFilter brightness_filter;
+
+  UIUpdater *ui_updater;
+
+public slots:
+  void backlightUpdate();
 };
 
 // offroad home screen
@@ -79,6 +92,7 @@ private:
   QStackedLayout* layout;
 };
 
+
 class UIUpdater : public QThread, protected QOpenGLFunctions {
   Q_OBJECT
 
@@ -86,32 +100,23 @@ public:
   UIUpdater(GLWindow* w);
   void pause();
   void resume();
-  inline static UIState ui_state = {};
 
 signals:
-  void offroadTransition(bool);
-  void screen_shutoff();
   void frameSwapped();
 
 private:
   void update();
   void draw();
-  void backlightUpdate();
 
-  Sound sound;
-
-  bool inited_ = false, is_updating_ = false;
-  bool prev_awake_ = false, prev_onroad_ = false;
+  bool prev_awake_ = false, inited_ = false, is_updating_ = false, onroad_ = true;
   QTimer asleep_timer_;
   GLWindow* glWindow_;
-
-  // TODO: make a nice abstraction to handle embedded device stuff
-  float brightness_b = 0;
-  float brightness_m = 0;
-  float last_brightness = 0;
-  FirstOrderFilter brightness_filter;
+  inline static UIState ui_state_ = {0};
+  Sound sound;
+  
+  friend UIState *uiState();
 };
 
 inline UIState *uiState() {
-  return &UIUpdater::ui_state;
+  return &UIUpdater::ui_state_;
 }

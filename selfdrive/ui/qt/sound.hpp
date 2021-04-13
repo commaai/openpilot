@@ -23,9 +23,8 @@ public:
   Sound();
   void play(AudibleAlert alert);
   void stop();
-  void setVolume(int volume);
+  float volume = 0;
 
 private:
   std::map<AudibleAlert, QSoundEffect> sounds;
-  float volume = 0;
 };
