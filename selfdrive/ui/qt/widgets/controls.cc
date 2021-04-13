@@ -38,7 +38,6 @@ AbstractControl::AbstractControl(const QString &title, const QString &desc, cons
 
   vlayout->addLayout(hlayout);
 
-
   // description
   if (!desc.isEmpty()) {
     description = new QLabel(desc);
