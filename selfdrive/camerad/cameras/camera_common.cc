@@ -408,10 +408,6 @@ CameraServerBase::~CameraServerBase() {
   CL_CHECK(clReleaseContext(context));
 }
 
-void CameraServerBase::start_process_thread(CameraState *cs, process_thread_cb callback, bool is_frame_stream) {
-  camera_threads.push_back(std::thread(&CameraServerBase::process_camera, this, cs, callback, is_frame_stream));
-}
-
 void CameraServerBase::start() {
   vipc_server->start_listener();
   run();
@@ -419,7 +415,11 @@ void CameraServerBase::start() {
   for (auto &t : camera_threads) t.join();
 }
 
-extern ExitHandler do_exit;
+void CameraServerBase::start_process_thread(CameraState *cs, process_thread_cb callback, bool is_frame_stream) {
+  camera_threads.push_back(std::thread(&CameraServerBase::process_camera, this, cs, callback, is_frame_stream));
+}
+
+ExitHandler do_exit;
 
 void CameraServerBase::process_camera(CameraState *cs, process_thread_cb callback, bool is_frame_stream) {
   const char *thread_name = nullptr;
@@ -458,7 +458,7 @@ void CameraServerBase::process_camera(CameraState *cs, process_thread_cb callbac
       MessageBuilder msg;
       cereal::FrameData::Builder framed = (msg.initEvent().*init_cam_state_func)();
 
-      // fill FrameData
+      // fill and send FrameData
       fill_frame_data(framed, cs->buf.cur_frame_data);
       if (set_transform) {
         framed.setTransform(cs->buf.yuv_transform.v);

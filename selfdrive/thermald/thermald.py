@@ -377,7 +377,7 @@ def thermald_thread():
       set_offroad_alert_if_changed("Offroad_NvmeMissing", (not Path("/data/media").is_mount()))
 
     # Handle offroad/onroad transition
-    should_start = True#all(startup_conditions.values())
+    should_start = all(startup_conditions.values())
     if should_start != should_start_prev or (count == 0):
       params.put_bool("IsOnroad", should_start)
       params.put_bool("IsOffroad", not should_start)

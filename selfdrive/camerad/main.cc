@@ -11,8 +11,6 @@
 #include "selfdrive/camerad/cameras/camera_frame_stream.h"
 #endif
 
-ExitHandler do_exit;
-
 int main(int argc, char *argv[]) {
   set_realtime_priority(53);
   if (Hardware::EON()) {

@@ -108,6 +108,7 @@ protected:
   virtual void run() = 0;
   void start_process_thread(CameraState *cs, process_thread_cb callback = nullptr, bool is_frame_stream = false);
   std::vector<std::thread> camera_threads;
+
 private:
   void process_camera(CameraState *cs, process_thread_cb callback, bool is_frame_stream);
 };
