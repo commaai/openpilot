@@ -369,7 +369,7 @@ static void driver_cam_auto_exposure(CameraState *c, SubMaster &sm) {
 
   static ExpRect rect = def_rect;
   // use driver face crop for AE
-  if (sm.update(0) > 0 && sm.updated("driverState")) {
+  if (sm.updated("driverState")) {
     if (auto state = sm["driverState"].getDriverState(); state.getFaceProb() > 0.4) {
       auto face_position = state.getFacePosition();
       int x = is_rhd ? 0 : frame_width - (0.5 * frame_height);
@@ -387,6 +387,7 @@ static void driver_cam_auto_exposure(CameraState *c, SubMaster &sm) {
 
 void common_process_driver_camera(SubMaster *sm, PubMaster *pm, CameraState *c, int cnt) {
   if (cnt % 3 == 0) {
+    sm->update(0);
     driver_cam_auto_exposure(c, *sm);
   }
   MessageBuilder msg;
