@@ -68,10 +68,10 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
 
 #ifdef QCOM2
   toggles.append(new ParamControl("EnableWideCamera",
-                                   "Enable use of Wide Angle Camera",
-                                   "Use wide angle camera for driving and ui. Only takes effect after reboot.",
-                                   "../assets/offroad/icon_openpilot.png",
-                                   this));
+                                  "Enable use of Wide Angle Camera",
+                                  "Use wide angle camera for driving and ui. Only takes effect after reboot.",
+                                  "../assets/offroad/icon_openpilot.png",
+                                  this));
 #endif
 
   bool record_lock = Params().getBool("RecordFrontLock");
