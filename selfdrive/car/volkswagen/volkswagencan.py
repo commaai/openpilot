@@ -21,7 +21,7 @@ def create_mqb_hud_control(packer, bus, enabled, steering_pressed, hud_alert, le
   # Lane color reference:
   # 0 (LKAS disabled) - nothing 
   # 1 (LKAS enabled, no lane detected) - gray 
-  # 2 (LKAS enabled, lane detected) - green on VW, green or white on Audi depending on year or virtual cockpit.  On a color MFD on a 2015 A3 TDI it is white, virtual cockpict on a 2018 A3 e-Tron its green. 
+  # 2 (LKAS enabled, lane detected) - green on VW, green or white on Audi depending on year or virtual cockpit.  On a color MFD on a 2015 A3 TDI it is white, virtual cockpit on a 2018 A3 e-Tron its green. 
   # 3 (LKAS enabled, lane departure detected) - green with arrow on VW, red on Audi 
 
   # not using standstill state right now, though we may want to do something with this if there's too much jitter at a stop to just freeze lane visibility.
