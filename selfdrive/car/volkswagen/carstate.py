@@ -227,7 +227,7 @@ class CarState(CarStateBase):
 
     # Update ACC radar status.
     ret.cruiseState.available = bool(pt_cp.vl["GRA_Neu"]['GRA_Hauptschalt'])
-    ret.cruiseState.enabled = True if pt_cp.vl["Motor_2"]['GRA_Status'] in [1, 2] else False
+    ret.cruiseState.enabled = pt_cp.vl["Motor_2"]['GRA_Status'] in [1, 2]
 
     # Update ACC setpoint. When the setpoint reads as 255, the driver has not
     # yet established an ACC setpoint, so treat it as zero.
@@ -254,6 +254,7 @@ class CarState(CarStateBase):
     self.graTypHauptschalter = False
     self.graButtonTypeInfo = False
     self.graTipStufe2 = False
+
     # Pick up the GRA_ACC_01 CAN message counter so we can sync to it for
     # later cruise-control button spamming.
     # FIXME: will need msg counter and checksum algo to spoof GRA_neu
