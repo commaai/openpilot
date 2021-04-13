@@ -9,6 +9,7 @@
 #include <QTimer>
 #include <QWidget>
 #include <QThread>
+#include <QMutex>
 
 #include "sound.hpp"
 #include "ui/ui.hpp"
@@ -22,9 +23,11 @@ class GLWindow : public QOpenGLWidget {
   Q_OBJECT
 
 public:
-  using QOpenGLWidget::QOpenGLWidget;
   explicit GLWindow(QWidget* parent = 0);
   void wake();
+  ~GLWindow();
+
+  QMutex renderMutex;
 
 signals:
   void offroadTransition(bool offroad);
@@ -97,22 +100,17 @@ class UIUpdater : public QThread, protected QOpenGLFunctions {
 
 public:
   UIUpdater(GLWindow* w);
-  void pause();
-  void resume();
-
-signals:
-  void frameSwapped();
+  bool exit_ = false;
 
 private:
-  void update();
+  void run() override;
   void draw();
 
-  bool prev_awake_ = false, inited_ = false, is_updating_ = false, onroad_ = true;
-  QTimer asleep_timer_;
+  bool inited_ = false,  onroad_ = true;
   GLWindow* glWindow_;
-  inline static UIState ui_state_ = {0};
   Sound sound;
-  
+  inline static UIState ui_state_ = {0};
+
   friend UIState *uiState();
 };
 

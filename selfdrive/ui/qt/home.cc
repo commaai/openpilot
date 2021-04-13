@@ -69,6 +69,7 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
   }
 }
 
+
 // OffroadHome: the offroad home page
 
 OffroadHome::OffroadHome(QWidget* parent) : QWidget(parent) {
@@ -232,14 +233,22 @@ GLWindow::GLWindow(QWidget* parent) : brightness_filter(BACKLIGHT_OFFROAD, BACKL
 
   ui_updater = new UIUpdater(this);
   ui_updater->moveToThread(ui_updater);
-  connect(this, &GLWindow::aboutToCompose, ui_updater, &UIUpdater::pause, Qt::BlockingQueuedConnection);
-  connect(this, &GLWindow::frameSwapped, ui_updater, &UIUpdater::resume, Qt::DirectConnection);
-  connect(this, &GLWindow::aboutToResize, ui_updater, &UIUpdater::pause, Qt::BlockingQueuedConnection);
+  connect(this, &GLWindow::aboutToCompose, [=] {  renderMutex.lock(); });
+  connect(this, &GLWindow::frameSwapped, [=] {
+    context()->moveToThread(ui_updater);
+    renderMutex.unlock();
+  });
   ui_updater->start();
 
   wake();
 
   backlight_timer->start(BACKLIGHT_DT * 1000);
+}
+
+GLWindow::~GLWindow() {
+  ui_updater->exit_ = true;
+  ui_updater->wait();
+  delete ui_updater;
 }
 
 void GLWindow::backlightUpdate() {
@@ -272,34 +281,24 @@ void GLWindow::wake() {
 
 // UIUpdater
 
-UIUpdater::UIUpdater(GLWindow* w) : QThread(), glWindow_(w), asleep_timer_(this) {
+UIUpdater::UIUpdater(GLWindow* w) : QThread(), glWindow_(w) {
   ui_state_.sound = &sound;
   ui_state_.fb_w = vwp_w;
   ui_state_.fb_h = vwp_h;
   ui_init(&ui_state_);
-
-  connect(&asleep_timer_, &QTimer::timeout, this, &UIUpdater::update);
-  connect(this, &UIUpdater::frameSwapped, this, &UIUpdater::update, Qt::QueuedConnection);
-}
-
-void UIUpdater::pause() {
-  if (!is_updating_) return;
-
-  is_updating_ = false;
-  glWindow_->context()->moveToThread(glWindow_->thread());
-}
-
-void UIUpdater::resume() {
-  if (is_updating_) return;
-
-  glWindow_->context()->moveToThread(this);
-  is_updating_ = true;
-  emit frameSwapped();
 }
 
 void UIUpdater::draw() {
-  if (!is_updating_) return;
-
+  QOpenGLContext* ctx = glWindow_->context();
+  if (!ctx) { 
+    // QOpenGLWidget not yet initialized
+    return;
+  }
+  
+  QMutexLocker lock(&glWindow_->renderMutex);
+  if (ctx->thread() != this) {
+    return;
+  }
   // Make the context (and an offscreen surface) current for this thread. The
   // QOpenGLWidget's fbo is bound in the context.
   glWindow_->makeCurrent();
@@ -319,45 +318,44 @@ void UIUpdater::draw() {
 
   // context back to the gui thread.
   glWindow_->doneCurrent();
+  ctx->moveToThread(glWindow_->thread());
   // Schedule composition. Note that this will use QueuedConnection, meaning
   // that update() will be invoked on the gui thread.
   QMetaObject::invokeMethod(glWindow_, "update");
 }
 
-void UIUpdater::update() {
-  if (!ui_state_.scene.started && ui_state_.awake) {
-    util::sleep_for(1000 / UI_FREQ);
+void UIUpdater::run() {
+  while (!exit_) {
+    if (!ui_state_.scene.started) {
+      util::sleep_for(1000 / UI_FREQ);
+    }
+    double prev_draw_t = millis_since_boot();
+
+    ui_update(&ui_state_);
+
+    if (ui_state_.scene.started != onroad_) {
+      onroad_  = ui_state_.scene.started;
+      emit glWindow_->offroadTransition(!onroad_);
+    }
+
+    handle_display_state(&ui_state_, false);
+    
+    // Don't waste resources on drawing in case screen is off
+    if (!ui_state_.awake) {
+      continue;
+    }
+
+    // scale volume with speed
+    sound.volume = util::map_val(ui_state_.scene.car_state.getVEgo(), 0.f, 20.f,
+                                Hardware::MIN_VOLUME, Hardware::MAX_VOLUME);
+
+    draw();
+
+    double dt = millis_since_boot() - prev_draw_t;
+    if (dt > 66 && onroad_ && !ui_state_.scene.driver_view) {
+      // warn on sub 15fps
+      LOGW("slow frame(%llu) time: %.2f", ui_state_.sm->frame, dt);
+    }
+    watchdog_kick();
   }
-  double prev_draw_t = millis_since_boot();
-
-  ui_update(&ui_state_);
-
-  if (ui_state_.scene.started != onroad_) {
-    onroad_  = ui_state_.scene.started;
-    emit glWindow_->offroadTransition(!onroad_);
-  }
-
-  handle_display_state(&ui_state_, false);
-  if (ui_state_.awake != prev_awake_) {
-    ui_state_.awake ? asleep_timer_.stop() : asleep_timer_.start(1000 / UI_FREQ);
-    prev_awake_ = ui_state_.awake;
-  }
-  
-  // Don't waste resources on drawing in case screen is off
-  if (!ui_state_.awake) {
-    return;
-  }
-
-  // scale volume with speed
-  sound.volume = util::map_val(ui_state_.scene.car_state.getVEgo(), 0.f, 20.f,
-                               Hardware::MIN_VOLUME, Hardware::MAX_VOLUME);
-
-  draw();
-
-  double dt = millis_since_boot() - prev_draw_t;
-  if (dt > 66 && onroad_ && !ui_state_.scene.driver_view) {
-    // warn on sub 15fps
-    LOGW("slow frame(%llu) time: %.2f", ui_state_.sm->frame, dt);
-  }
-  watchdog_kick();
 }
