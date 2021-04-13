@@ -205,6 +205,11 @@ class Tici(HardwareBase):
     # amplifier, 100mW at idle
     write_amplifier_reg(0x51, 0b0 if enabled else 0b1, 7, 0b10000000)
 
+    # offline big cluster, leave core 4 online for boardd
+    for i in range(5, 8):
+      # TODO: fix permissions with udev
+      val = "0" if enabled else "1"
+      os.system(f"sudo su -c 'echo {val} > /sys/devices/system/cpu/cpu{i}/online'")
 
 if __name__ == "__main__":
   import sys
