@@ -319,7 +319,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
       panel_widget->setCurrentWidget(w);
     });
   }
-  qobject_cast<QPushButton *>(nav_btns->buttons()[0])->setChecked(true);
+  nav_btns->buttons()[0]->setChecked(true);
   sidebar_layout->setContentsMargins(50, 50, 100, 50);
 
   // main settings layout, sidebar + main panel
@@ -347,5 +347,7 @@ void SettingsWindow::hideEvent(QHideEvent *event){
 #ifdef QCOM
   HardwareEon::close_activities();
 #endif
+  panel_widget->setCurrentIndex(0);
+  nav_btns->buttons()[0]->setChecked(true);
 }
 
