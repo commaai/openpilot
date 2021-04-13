@@ -78,10 +78,8 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
   record_toggle->setEnabled(!record_lock);
 
   for(ParamControl *toggle : toggles){
-    if(toggles_list->count() != 0){
-      toggles_list->addWidget(horizontal_line());
-    }
     toggles_list->addWidget(toggle);
+    toggles_list->addWidget(horizontal_line());
   }
 
   setLayout(toggles_list);
@@ -286,7 +284,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
     {"Device", device},
     {"Network", network_panel(this)},
     {"Toggles", new TogglesPanel(this)},
-    {"Developer", new DeveloperPanel()},
+    {"Developer", new DeveloperPanel(this)},
   };
 
   sidebar_layout->addSpacing(45);
@@ -321,6 +319,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
       panel_widget->setCurrentWidget(w);
     });
   }
+  nav_btns->buttons()[0]->setChecked(true);
   sidebar_layout->setContentsMargins(50, 50, 100, 50);
 
   // main settings layout, sidebar + main panel
@@ -348,6 +347,8 @@ void SettingsWindow::hideEvent(QHideEvent *event){
 #ifdef QCOM
   HardwareEon::close_activities();
 #endif
+  panel_widget->setCurrentIndex(0);
+  nav_btns->buttons()[0]->setChecked(true);
 }
 
 void SettingsWindow::showEvent(QShowEvent *event){

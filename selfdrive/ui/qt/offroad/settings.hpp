@@ -45,6 +45,7 @@ public:
 
 protected:
   void hideEvent(QHideEvent *event);
+  void showEvent(QShowEvent *event);
 
 signals:
   void closeSettings();
