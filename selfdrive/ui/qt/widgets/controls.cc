@@ -38,10 +38,10 @@ AbstractControl::AbstractControl(const QString &title, const QString &desc, cons
 
   vlayout->addLayout(hlayout);
 
-  description = new QLabel(desc);
 
   // description
   if (!desc.isEmpty()) {
+    description = new QLabel(desc);
     description->setContentsMargins(40, 20, 40, 20);
     description->setStyleSheet("font-size: 40px; color:grey");
     description->setWordWrap(true);
@@ -61,5 +61,7 @@ AbstractControl::AbstractControl(const QString &title, const QString &desc, cons
 }
 
 void AbstractControl::hideEvent(QHideEvent *e){
-  description->hide();
+  if(description != nullptr){
+    description->hide();
+  }
 }
