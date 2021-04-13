@@ -186,7 +186,7 @@ void CameraBuf::queue(size_t buf_idx) {
 
 // common functions
 
-void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &frame_data) {
+static void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &frame_data) {
   framed.setFrameId(frame_data.frame_id);
   framed.setTimestampEof(frame_data.timestamp_eof);
   framed.setTimestampSof(frame_data.timestamp_sof);
@@ -318,7 +318,7 @@ float set_exposure_target(const CameraBuf *b, int x_start, int x_end, int x_skip
   return lum_med / 256.0;
 }
 
-void road_cam_auto_exposure(CameraState *c) {
+static void road_cam_auto_exposure(CameraState *c) {
 #ifndef QCOM2
   const ExpRect rect = {290, 850, 1, 322, 636, 1};
   int analog_gain = -1;
@@ -422,10 +422,8 @@ void CameraServerBase::start_process_thread(CameraState *cs, process_thread_cb c
 ExitHandler do_exit;
 
 void CameraServerBase::process_camera(CameraState *cs, process_thread_cb callback, bool is_frame_stream) {
-  const char *thread_name = nullptr;
   CameraServer *server = (CameraServer *)this;
-
-  const char *cam_state_name = nullptr;
+  const char *thread_name, *cam_state_name;
   bool set_image = false, set_transform = false, pub_thumbnail = false;
   ::cereal::FrameData::Builder (cereal::Event::Builder::*init_cam_state_func)() = nullptr;
 
