@@ -60,14 +60,15 @@ std::string read_file(const std::string& fn) {
       if (ifs) {
         return result;
       }
-    } else {
-      // handle files created on read, e.g. procfs
-      std::stringstream buffer;
-      buffer << ifs.rdbuf();
-      return buffer.str();
     }
   }
-  return "";
+  ifs.close();
+
+  // fallback for files created on read, e.g. procfs
+  std::ifstream f(fn);
+  std::stringstream buffer;
+  buffer << f.rdbuf();
+  return buffer.str();
 }
 
 int write_file(const char* path, const void* data, size_t size, int flags, mode_t mode) {
