@@ -111,7 +111,17 @@ gps_t::subframe_3_t::subframe_3_t(kaitai::kstream* p__io, gps_t* p__parent, gps_
 }
 
 void gps_t::subframe_3_t::_read() {
-    m_test = m__io->read_u1();
+    m_c_ic = m__io->read_s2be();
+    m_omega_0 = m__io->read_s4be();
+    m_c_is = m__io->read_s2be();
+    m_i_0 = m__io->read_s4be();
+    m_c_rc = m__io->read_s2be();
+    m_omega = m__io->read_s4be();
+    m_omega_dot = m__io->read_bits_int_be(24);
+    m__io->align_to_byte();
+    m_iode = m__io->read_u1();
+    m_idot = m__io->read_bits_int_be(14);
+    m_reserved = m__io->read_bits_int_be(2);
 }
 
 gps_t::subframe_3_t::~subframe_3_t() {

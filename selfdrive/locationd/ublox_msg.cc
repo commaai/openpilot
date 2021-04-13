@@ -212,9 +212,30 @@ kj::Array<capnp::word> UbloxMsgParser::gen_rxm_sfrbx(ubx_t::rxm_sfrbx_t *msg) {
         eph.setDeltaN(subframe_2->delta_n() * pow(2, -43) * gpsPi);
         eph.setM0(subframe_2->m_0() * pow(2, -31) * gpsPi);
         eph.setCuc(subframe_2->c_uc() * pow(2, -29));
+        eph.setEcc(subframe_2->e() * pow(2, -33));
         eph.setCus(subframe_2->c_us() * pow(2, -29));
         eph.setA(pow(subframe_2->sqrt_a() * pow(2, -19), 2.0));
         eph.setToe(subframe_2->t_oe() * pow(2, 4));
+      }
+
+      // Subframe 3
+      {
+        kaitai::kstream stream(gps_subframes[msg->sv_id()][3]);
+        gps_t subframe(&stream);
+        gps_t::subframe_3_t* subframe_3 = static_cast<gps_t::subframe_3_t*>(subframe.body());
+
+        eph.setCic(subframe_3->c_ic() * pow(2, -29));
+        eph.setOmega0(subframe_3->omega_0() * pow(2, -31) * gpsPi);
+        eph.setCis(subframe_3->c_is() * pow(2, -29));
+        eph.setI0(subframe_3->i_0() * pow(2, -31) * gpsPi);
+        eph.setCrc(subframe_3->c_rc() * pow(2, -5));
+        // TODO: Why is omega slightly different?
+        eph.setOmega(subframe_3->omega() * pow(2, -31) * gpsPi);
+        // TODO: Fix sign for omega dot
+        eph.setOmegaDot(subframe_3->omega_dot() * pow(2, -43) * gpsPi);
+        eph.setIode(subframe_3->iode());
+        // TODO: Fix sign for idot
+        eph.setIDot(subframe_3->idot() * pow(2, -43) * gpsPi);
       }
 
       // TODO: parse all subframes and set ephemeris data

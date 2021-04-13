@@ -118,5 +118,30 @@ types:
 
   subframe_3:
     seq:
-      - id: test
+      # Word 3 & 4
+      - id: c_ic
+        type: s2
+      - id: omega_0
+        type: s4
+      # Word 5 & 6
+      - id: c_is
+        type: s2
+      - id: i_0
+        type: s4
+      # Word 7 & 8
+      - id: c_rc
+        type: s2
+      - id: omega
+        type: s4
+      # Word 9
+      - id: omega_dot
+        type: b24
+      # Word 10
+      - id: iode
         type: u1
+      - id: idot
+        type: b14
+      - id: reserved
+        type: b2
+
+

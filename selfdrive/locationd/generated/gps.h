@@ -98,12 +98,30 @@ public:
         ~subframe_3_t();
 
     private:
-        uint8_t m_test;
+        int16_t m_c_ic;
+        int32_t m_omega_0;
+        int16_t m_c_is;
+        int32_t m_i_0;
+        int16_t m_c_rc;
+        int32_t m_omega;
+        uint64_t m_omega_dot;
+        uint8_t m_iode;
+        uint64_t m_idot;
+        uint64_t m_reserved;
         gps_t* m__root;
         gps_t* m__parent;
 
     public:
-        uint8_t test() const { return m_test; }
+        int16_t c_ic() const { return m_c_ic; }
+        int32_t omega_0() const { return m_omega_0; }
+        int16_t c_is() const { return m_c_is; }
+        int32_t i_0() const { return m_i_0; }
+        int16_t c_rc() const { return m_c_rc; }
+        int32_t omega() const { return m_omega; }
+        uint64_t omega_dot() const { return m_omega_dot; }
+        uint8_t iode() const { return m_iode; }
+        uint64_t idot() const { return m_idot; }
+        uint64_t reserved() const { return m_reserved; }
         gps_t* _root() const { return m__root; }
         gps_t* _parent() const { return m__parent; }
     };
