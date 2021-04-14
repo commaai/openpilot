@@ -164,7 +164,7 @@ Community Maintained Cars and Features
 | Kia       | Optima 2017                   | SCC + LKAS        | Stock            | 0mph               | 32mph        |
 | Kia       | Optima 2019                   | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Kia       | Seltos 2021                   | SCC + LKAS        | Stock            | 0mph               | 0mph         |
-| Kia       | Sorento 2018                  | SCC + LKAS        | Stock            | 0mph               | 0mph         |
+| Kia       | Sorento 2018-19               | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Kia       | Stinger 2018                  | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Kia       | Ceed 2019                     | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Nissan    | Altima 2020                   | ProPILOT          | Stock            | 0mph               | 0mph         |
