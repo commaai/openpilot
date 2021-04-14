@@ -229,7 +229,6 @@ kj::Array<capnp::word> UbloxMsgParser::gen_rxm_sfrbx(ubx_t::rxm_sfrbx_t *msg) {
         eph.setCis(subframe_3->c_is() * pow(2, -29));
         eph.setI0(subframe_3->i_0() * pow(2, -31) * gpsPi);
         eph.setCrc(subframe_3->c_rc() * pow(2, -5));
-        // TODO: Why is omega slightly different?
         eph.setOmega(subframe_3->omega() * pow(2, -31) * gpsPi);
         // TODO: Fix sign for omega dot
         eph.setOmegaDot(subframe_3->omega_dot() * pow(2, -43) * gpsPi);
