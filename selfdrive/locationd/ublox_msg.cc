@@ -198,7 +198,6 @@ kj::Array<capnp::word> UbloxMsgParser::gen_rxm_sfrbx(ubx_t::rxm_sfrbx_t *msg) {
         eph.setToc(subframe_1->t_oc() * pow(2, 4));
         eph.setAf2(subframe_1->af_2() * pow(2, -55));
         eph.setAf1(subframe_1->af_1() * pow(2, -43));
-        // TODO: Fix sign in af_0
         eph.setAf0(subframe_1->af_0() * pow(2, -31));
       }
 
@@ -230,14 +229,11 @@ kj::Array<capnp::word> UbloxMsgParser::gen_rxm_sfrbx(ubx_t::rxm_sfrbx_t *msg) {
         eph.setI0(subframe_3->i_0() * pow(2, -31) * gpsPi);
         eph.setCrc(subframe_3->c_rc() * pow(2, -5));
         eph.setOmega(subframe_3->omega() * pow(2, -31) * gpsPi);
-        // TODO: Fix sign for omega dot
         eph.setOmegaDot(subframe_3->omega_dot() * pow(2, -43) * gpsPi);
         eph.setIode(subframe_3->iode());
-        // TODO: Fix sign for idot
         eph.setIDot(subframe_3->idot() * pow(2, -43) * gpsPi);
       }
 
-      // TODO: parse all subframes and set ephemeris data
       return capnp::messageToFlatArray(msg_builder);
     }
   }

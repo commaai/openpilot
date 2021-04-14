@@ -80,10 +80,15 @@ types:
       - id: af_1
         type: s2
       # Word 10
-      - id: af_0
-        type: b22
+      - id: af_0_sign
+        type: b1
+      - id: af_0_value
+        type: b21
       - id: reserved5
         type: b2
+    instances:
+      af_0:
+        value: 'af_0_sign ? (af_0_value - (1 << 21)) : af_0_value'
   subframe_2:
     seq:
       # Word 3
@@ -134,14 +139,23 @@ types:
       - id: omega
         type: s4
       # Word 9
-      - id: omega_dot
-        type: b24
+      - id: omega_dot_sign
+        type: b1
+      - id: omega_dot_value
+        type: b23
       # Word 10
       - id: iode
         type: u1
-      - id: idot
-        type: b14
+      - id: idot_sign
+        type: b1
+      - id: idot_value
+        type: b13
       - id: reserved
         type: b2
+    instances:
+      omega_dot:
+        value: 'omega_dot_sign ? (omega_dot_value - (1 << 23)) : omega_dot_value'
+      idot:
+        value: 'idot_sign ? (idot_value.as<s4> - (1 << 13)) : idot_value'
 
 

@@ -42,6 +42,13 @@ public:
         ~subframe_1_t();
 
     private:
+        bool f_af_0;
+        int32_t m_af_0;
+
+    public:
+        int32_t af_0();
+
+    private:
         uint64_t m_week_no;
         uint64_t m_code;
         uint64_t m_sv_accuracy;
@@ -57,7 +64,8 @@ public:
         uint16_t m_t_oc;
         int8_t m_af_2;
         int16_t m_af_1;
-        uint64_t m_af_0;
+        bool m_af_0_sign;
+        uint64_t m_af_0_value;
         uint64_t m_reserved5;
         gps_t* m__root;
         gps_t* m__parent;
@@ -78,7 +86,8 @@ public:
         uint16_t t_oc() const { return m_t_oc; }
         int8_t af_2() const { return m_af_2; }
         int16_t af_1() const { return m_af_1; }
-        uint64_t af_0() const { return m_af_0; }
+        bool af_0_sign() const { return m_af_0_sign; }
+        uint64_t af_0_value() const { return m_af_0_value; }
         uint64_t reserved5() const { return m_reserved5; }
         gps_t* _root() const { return m__root; }
         gps_t* _parent() const { return m__parent; }
@@ -98,15 +107,31 @@ public:
         ~subframe_3_t();
 
     private:
+        bool f_omega_dot;
+        int32_t m_omega_dot;
+
+    public:
+        int32_t omega_dot();
+
+    private:
+        bool f_idot;
+        int32_t m_idot;
+
+    public:
+        int32_t idot();
+
+    private:
         int16_t m_c_ic;
         int32_t m_omega_0;
         int16_t m_c_is;
         int32_t m_i_0;
         int16_t m_c_rc;
         int32_t m_omega;
-        uint64_t m_omega_dot;
+        bool m_omega_dot_sign;
+        uint64_t m_omega_dot_value;
         uint8_t m_iode;
-        uint64_t m_idot;
+        bool m_idot_sign;
+        uint64_t m_idot_value;
         uint64_t m_reserved;
         gps_t* m__root;
         gps_t* m__parent;
@@ -118,9 +143,11 @@ public:
         int32_t i_0() const { return m_i_0; }
         int16_t c_rc() const { return m_c_rc; }
         int32_t omega() const { return m_omega; }
-        uint64_t omega_dot() const { return m_omega_dot; }
+        bool omega_dot_sign() const { return m_omega_dot_sign; }
+        uint64_t omega_dot_value() const { return m_omega_dot_value; }
         uint8_t iode() const { return m_iode; }
-        uint64_t idot() const { return m_idot; }
+        bool idot_sign() const { return m_idot_sign; }
+        uint64_t idot_value() const { return m_idot_value; }
         uint64_t reserved() const { return m_reserved; }
         gps_t* _root() const { return m__root; }
         gps_t* _parent() const { return m__parent; }

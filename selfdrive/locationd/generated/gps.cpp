@@ -61,6 +61,7 @@ void gps_t::_clean_up() {
 gps_t::subframe_1_t::subframe_1_t(kaitai::kstream* p__io, gps_t* p__parent, gps_t* p__root) : kaitai::kstruct(p__io) {
     m__parent = p__parent;
     m__root = p__root;
+    f_af_0 = false;
 
     try {
         _read();
@@ -87,7 +88,8 @@ void gps_t::subframe_1_t::_read() {
     m_t_oc = m__io->read_u2be();
     m_af_2 = m__io->read_s1();
     m_af_1 = m__io->read_s2be();
-    m_af_0 = m__io->read_bits_int_be(22);
+    m_af_0_sign = m__io->read_bits_int_be(1);
+    m_af_0_value = m__io->read_bits_int_be(21);
     m_reserved5 = m__io->read_bits_int_be(2);
 }
 
@@ -98,9 +100,19 @@ gps_t::subframe_1_t::~subframe_1_t() {
 void gps_t::subframe_1_t::_clean_up() {
 }
 
+int32_t gps_t::subframe_1_t::af_0() {
+    if (f_af_0)
+        return m_af_0;
+    m_af_0 = ((af_0_sign()) ? ((af_0_value() - (1 << 21))) : (af_0_value()));
+    f_af_0 = true;
+    return m_af_0;
+}
+
 gps_t::subframe_3_t::subframe_3_t(kaitai::kstream* p__io, gps_t* p__parent, gps_t* p__root) : kaitai::kstruct(p__io) {
     m__parent = p__parent;
     m__root = p__root;
+    f_omega_dot = false;
+    f_idot = false;
 
     try {
         _read();
@@ -117,10 +129,12 @@ void gps_t::subframe_3_t::_read() {
     m_i_0 = m__io->read_s4be();
     m_c_rc = m__io->read_s2be();
     m_omega = m__io->read_s4be();
-    m_omega_dot = m__io->read_bits_int_be(24);
+    m_omega_dot_sign = m__io->read_bits_int_be(1);
+    m_omega_dot_value = m__io->read_bits_int_be(23);
     m__io->align_to_byte();
     m_iode = m__io->read_u1();
-    m_idot = m__io->read_bits_int_be(14);
+    m_idot_sign = m__io->read_bits_int_be(1);
+    m_idot_value = m__io->read_bits_int_be(13);
     m_reserved = m__io->read_bits_int_be(2);
 }
 
@@ -129,6 +143,22 @@ gps_t::subframe_3_t::~subframe_3_t() {
 }
 
 void gps_t::subframe_3_t::_clean_up() {
+}
+
+int32_t gps_t::subframe_3_t::omega_dot() {
+    if (f_omega_dot)
+        return m_omega_dot;
+    m_omega_dot = ((omega_dot_sign()) ? ((omega_dot_value() - (1 << 23))) : (omega_dot_value()));
+    f_omega_dot = true;
+    return m_omega_dot;
+}
+
+int32_t gps_t::subframe_3_t::idot() {
+    if (f_idot)
+        return m_idot;
+    m_idot = ((idot_sign()) ? ((static_cast<int32_t>(idot_value()) - (1 << 13))) : (idot_value()));
+    f_idot = true;
+    return m_idot;
 }
 
 gps_t::how_t::how_t(kaitai::kstream* p__io, gps_t* p__parent, gps_t* p__root) : kaitai::kstruct(p__io) {
