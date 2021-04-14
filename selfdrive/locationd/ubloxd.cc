@@ -41,10 +41,14 @@ int main() {
       size_t bytes_consumed_this_time = 0U;
       if(parser.add_data(data + bytes_consumed, (uint32_t)(len - bytes_consumed), bytes_consumed_this_time)) {
 
-        auto msg = parser.gen_msg();
-        if (msg.second.size() > 0) {
-          auto bytes = msg.second.asBytes();
-          pm.send(msg.first.c_str(), bytes.begin(), bytes.size());
+        try {
+          auto msg = parser.gen_msg();
+          if (msg.second.size() > 0) {
+            auto bytes = msg.second.asBytes();
+            pm.send(msg.first.c_str(), bytes.begin(), bytes.size());
+          }
+        } catch (const std::exception& e) {
+          LOGE("Error parsing ublox message %s", e.what());
         }
 
         parser.reset();
