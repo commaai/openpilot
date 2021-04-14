@@ -237,8 +237,6 @@ kj::Array<capnp::word> UbloxMsgParser::gen_rxm_sfrbx(ubx_t::rxm_sfrbx_t *msg) {
         gps_t subframe(&stream);
         gps_t::subframe_4_t* subframe_4 = static_cast<gps_t::subframe_4_t*>(subframe.body());
 
-        LOGE("Subframe 4 %d %d %d", msg->sv_id(), subframe_4->data_id(), subframe_4->page_id());
-
         // This is page 18, why is the page id 56?
         if (subframe_4->data_id() == 1 && subframe_4->page_id() == 56) {
           auto iono = static_cast<gps_t::subframe_4_t::ionosphere_data_t*>(subframe_4->body());
@@ -246,18 +244,13 @@ kj::Array<capnp::word> UbloxMsgParser::gen_rxm_sfrbx(ubx_t::rxm_sfrbx_t *msg) {
           double a1 = iono->a1() * pow(2, -27);
           double a2 = iono->a2() * pow(2, -24);
           double a3 = iono->a3() * pow(2, -24);
+          eph.setIonoAlpha({a0, a1, a2, a3});
 
           double b0 = iono->b0() * pow(2, 11);
           double b1 = iono->b1() * pow(2, 14);
           double b2 = iono->b2() * pow(2, 16);
           double b3 = iono->b3() * pow(2, 16);
-
-          eph.setIonoAlpha({a0, a1, a2, a3});
           eph.setIonoBeta({b0, b1, b2, b3});
-
-          LOGE("%.4f %.4f %.4f %.4f %.4f %.4f %.4f %.4f ",
-          a0, a1, a2, a3,
-          b0, b1, b2, b3);
         }
       }
 
