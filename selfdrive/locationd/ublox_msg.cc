@@ -59,7 +59,7 @@ class EphemerisData {
       int i_0 = (GET_FIELD_S(subframes[3][2+2], 8, 6) << 24) | GET_FIELD_U(
         subframes[3][2+3], 24, 6);
       int c_rc = GET_FIELD_S(subframes[3][2+4], 16, 14);
-      int w = (GET_FIELD_S(subframes[3][2+4], 8, 6) << 24) | GET_FIELD_U(subframes[3][5], 24, 6);
+      int w = (GET_FIELD_S(subframes[3][2+4], 8, 6) << 24) | GET_FIELD_U(subframes[3][2+5], 24, 6);
       int omega_dot = GET_FIELD_S(subframes[3][2+6], 24, 6);
       int idot = GET_FIELD_S(subframes[3][2+7], 14, 8);
 
