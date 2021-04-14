@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import gc
 import math
 
 import json
@@ -65,6 +66,8 @@ class ParamsLearner:
 
 
 def main(sm=None, pm=None):
+  gc.disable()
+
   if sm is None:
     sm = messaging.SubMaster(['liveLocationKalman', 'carState'], poll=['liveLocationKalman'])
   if pm is None:
