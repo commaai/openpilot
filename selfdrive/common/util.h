@@ -10,7 +10,6 @@
 #include <string>
 #include <memory>
 #include <atomic>
-#include <sstream>
 #include <fstream>
 #include <thread>
 #include <chrono>
@@ -19,13 +18,6 @@
 #ifndef sighandler_t
 typedef void (*sighandler_t)(int sig);
 #endif
-
-// Reads a file into a newly allocated buffer.
-//
-// Returns NULL on failure, otherwise the NULL-terminated file contents.
-// The result must be freed by the caller.
-void* read_file(const char* path, size_t* out_len);
-int write_file(const char* path, const void* data, size_t size, int flags=O_WRONLY, mode_t mode=0777);
 
 void set_thread_name(const char* name);
 
@@ -59,12 +51,9 @@ inline std::string string_format(const std::string& format, Args... args) {
   return std::string(buf.get(), buf.get() + size - 1);
 }
 
-inline std::string read_file(const std::string &fn) {
-  std::ifstream t(fn);
-  std::stringstream buffer;
-  buffer << t.rdbuf();
-  return buffer.str();
-}
+std::string read_file(const std::string &fn);
+
+int write_file(const char* path, const void* data, size_t size, int flags = O_WRONLY, mode_t mode = 0777);
 
 inline std::string tohex(const uint8_t* buf, size_t buf_size) {
   std::unique_ptr<char[]> hexbuf(new char[buf_size*2+1]);

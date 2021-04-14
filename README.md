@@ -169,7 +169,7 @@ Community Maintained Cars and Features
 | Kia       | Ceed 2019                     | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Nissan    | Altima 2020                   | ProPILOT          | Stock            | 0mph               | 0mph         |
 | Nissan    | Leaf 2018-20                  | ProPILOT          | Stock            | 0mph               | 0mph         |
-| Nissan    | Rogue 2018-19                 | ProPILOT          | Stock            | 0mph               | 0mph         |
+| Nissan    | Rogue 2018-20                 | ProPILOT          | Stock            | 0mph               | 0mph         |
 | Nissan    | X-Trail 2017                  | ProPILOT          | Stock            | 0mph               | 0mph         |
 | SEAT      | Ateca 2018                    | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Škoda     | Kodiaq 2018                   | Driver Assistance | Stock            | 0mph               | 0mph         |
