@@ -15,6 +15,7 @@ seq:
         1: subframe_1
         2: subframe_2
         3: subframe_3
+        4: subframe_4
 types:
   tlm:
    seq:
@@ -154,3 +155,35 @@ types:
         value: 'omega_dot_sign ? (omega_dot_value - (1 << 23)) : omega_dot_value'
       idot:
         value: 'idot_sign ? (idot_value - (1 << 13)) : idot_value'
+  subframe_4:
+    seq:
+      # Word 3
+      - id: data_id
+        type: b2
+      - id: page_id
+        type: b6
+      - id: body
+        type:
+          switch-on: page_id
+          cases:
+            56: ionosphere_data
+    types:
+      ionosphere_data:
+        seq:
+          - id: a0
+            type: s1
+          - id: a1
+            type: s1
+          - id: a2
+            type: s1
+          - id: a3
+            type: s1
+          - id: b0
+            type: s1
+          - id: b1
+            type: s1
+          - id: b2
+            type: s1
+          - id: b3
+            type: s1
+

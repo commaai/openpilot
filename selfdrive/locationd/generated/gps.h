@@ -15,6 +15,7 @@ class gps_t : public kaitai::kstruct {
 public:
     class subframe_1_t;
     class subframe_3_t;
+    class subframe_4_t;
     class how_t;
     class tlm_t;
     class subframe_2_t;
@@ -149,6 +150,79 @@ public:
         bool idot_sign() const { return m_idot_sign; }
         uint64_t idot_value() const { return m_idot_value; }
         uint64_t reserved() const { return m_reserved; }
+        gps_t* _root() const { return m__root; }
+        gps_t* _parent() const { return m__parent; }
+    };
+
+    class subframe_4_t : public kaitai::kstruct {
+
+    public:
+        class ionosphere_data_t;
+
+        subframe_4_t(kaitai::kstream* p__io, gps_t* p__parent = 0, gps_t* p__root = 0);
+
+    private:
+        void _read();
+        void _clean_up();
+
+    public:
+        ~subframe_4_t();
+
+        class ionosphere_data_t : public kaitai::kstruct {
+
+        public:
+
+            ionosphere_data_t(kaitai::kstream* p__io, gps_t::subframe_4_t* p__parent = 0, gps_t* p__root = 0);
+
+        private:
+            void _read();
+            void _clean_up();
+
+        public:
+            ~ionosphere_data_t();
+
+        private:
+            int8_t m_a0;
+            int8_t m_a1;
+            int8_t m_a2;
+            int8_t m_a3;
+            int8_t m_b0;
+            int8_t m_b1;
+            int8_t m_b2;
+            int8_t m_b3;
+            gps_t* m__root;
+            gps_t::subframe_4_t* m__parent;
+
+        public:
+            int8_t a0() const { return m_a0; }
+            int8_t a1() const { return m_a1; }
+            int8_t a2() const { return m_a2; }
+            int8_t a3() const { return m_a3; }
+            int8_t b0() const { return m_b0; }
+            int8_t b1() const { return m_b1; }
+            int8_t b2() const { return m_b2; }
+            int8_t b3() const { return m_b3; }
+            gps_t* _root() const { return m__root; }
+            gps_t::subframe_4_t* _parent() const { return m__parent; }
+        };
+
+    private:
+        uint64_t m_data_id;
+        uint64_t m_page_id;
+        ionosphere_data_t* m_body;
+        bool n_body;
+
+    public:
+        bool _is_null_body() { body(); return n_body; };
+
+    private:
+        gps_t* m__root;
+        gps_t* m__parent;
+
+    public:
+        uint64_t data_id() const { return m_data_id; }
+        uint64_t page_id() const { return m_page_id; }
+        ionosphere_data_t* body() const { return m_body; }
         gps_t* _root() const { return m__root; }
         gps_t* _parent() const { return m__parent; }
     };

@@ -37,6 +37,11 @@ void gps_t::_read() {
         m_body = new subframe_3_t(m__io, this, m__root);
         break;
     }
+    case 4: {
+        n_body = false;
+        m_body = new subframe_4_t(m__io, this, m__root);
+        break;
+    }
     }
 }
 
@@ -159,6 +164,74 @@ int32_t gps_t::subframe_3_t::idot() {
     m_idot = ((idot_sign()) ? ((idot_value() - (1 << 13))) : (idot_value()));
     f_idot = true;
     return m_idot;
+}
+
+gps_t::subframe_4_t::subframe_4_t(kaitai::kstream* p__io, gps_t* p__parent, gps_t* p__root) : kaitai::kstruct(p__io) {
+    m__parent = p__parent;
+    m__root = p__root;
+
+    try {
+        _read();
+    } catch(...) {
+        _clean_up();
+        throw;
+    }
+}
+
+void gps_t::subframe_4_t::_read() {
+    m_data_id = m__io->read_bits_int_be(2);
+    m_page_id = m__io->read_bits_int_be(6);
+    m__io->align_to_byte();
+    n_body = true;
+    switch (page_id()) {
+    case 56: {
+        n_body = false;
+        m_body = new ionosphere_data_t(m__io, this, m__root);
+        break;
+    }
+    }
+}
+
+gps_t::subframe_4_t::~subframe_4_t() {
+    _clean_up();
+}
+
+void gps_t::subframe_4_t::_clean_up() {
+    if (!n_body) {
+        if (m_body) {
+            delete m_body; m_body = 0;
+        }
+    }
+}
+
+gps_t::subframe_4_t::ionosphere_data_t::ionosphere_data_t(kaitai::kstream* p__io, gps_t::subframe_4_t* p__parent, gps_t* p__root) : kaitai::kstruct(p__io) {
+    m__parent = p__parent;
+    m__root = p__root;
+
+    try {
+        _read();
+    } catch(...) {
+        _clean_up();
+        throw;
+    }
+}
+
+void gps_t::subframe_4_t::ionosphere_data_t::_read() {
+    m_a0 = m__io->read_s1();
+    m_a1 = m__io->read_s1();
+    m_a2 = m__io->read_s1();
+    m_a3 = m__io->read_s1();
+    m_b0 = m__io->read_s1();
+    m_b1 = m__io->read_s1();
+    m_b2 = m__io->read_s1();
+    m_b3 = m__io->read_s1();
+}
+
+gps_t::subframe_4_t::ionosphere_data_t::~ionosphere_data_t() {
+    _clean_up();
+}
+
+void gps_t::subframe_4_t::ionosphere_data_t::_clean_up() {
 }
 
 gps_t::how_t::how_t(kaitai::kstream* p__io, gps_t* p__parent, gps_t* p__root) : kaitai::kstruct(p__io) {
