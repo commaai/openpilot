@@ -79,7 +79,6 @@ bool UbloxMsgParser::add_data(const uint8_t *incoming_data, uint32_t incoming_da
 
   // Validate msg format, detect invalid header and invalid checksum.
   while(!valid_so_far() && bytes_in_parse_buf != 0) {
-    //LOGD("Drop corrupt data, remained in buf: %u", bytes_in_parse_buf);
     // Corrupted msg, drop a byte.
     bytes_in_parse_buf -= 1;
     if(bytes_in_parse_buf > 0)
@@ -101,8 +100,7 @@ std::pair<std::string, kj::Array<capnp::word>> UbloxMsgParser::gen_msg() {
   ubx_t ubx_message(&stream);
   auto body = ubx_message.body();
 
-  switch (ubx_message.msg_type())
-  {
+  switch (ubx_message.msg_type()) {
   case 0x0107:
     return {"gpsLocationExternal", gen_nav_pvt(static_cast<ubx_t::nav_pvt_t*>(body))};
     break;
@@ -153,7 +151,6 @@ kj::Array<capnp::word> UbloxMsgParser::gen_nav_pvt(ubx_t::nav_pvt_t *msg) {
   gpsLoc.setSpeedAccuracy(msg->s_acc() * 1e-03);
   gpsLoc.setBearingAccuracyDeg(msg->head_acc() * 1e-05);
   return capnp::messageToFlatArray(msg_builder);
-
 }
 
 
@@ -174,7 +171,7 @@ kj::Array<capnp::word> UbloxMsgParser::gen_rxm_sfrbx(ubx_t::rxm_sfrbx_t *msg) {
       subframe_data.push_back(word >> 0);
     }
 
-    // Collect subframes in vector and parse when we have all the parts
+    // Collect subframes in map and parse when we have all the parts
     kaitai::kstream stream(subframe_data);
     gps_t subframe(&stream);
     int subframe_id = subframe.how()->subframe_id();
@@ -252,7 +249,6 @@ kj::Array<capnp::word> UbloxMsgParser::gen_rxm_rawx(ubx_t::rxm_rawx_t *msg) {
   auto measurements = *msg->measurements();
   for(int8_t i = 0; i < msg->num_meas(); i++) {
     mb[i].setSvId(measurements[i]->sv_id());
-    // mb[i].setSigId(measurements[i]->sig_id()); // reserved2
     mb[i].setPseudorange(measurements[i]->pr_mes());
     mb[i].setCarrierCycles(measurements[i]->cp_mes());
     mb[i].setDoppler(measurements[i]->do_mes());
@@ -260,9 +256,9 @@ kj::Array<capnp::word> UbloxMsgParser::gen_rxm_rawx(ubx_t::rxm_rawx_t *msg) {
     mb[i].setGlonassFrequencyIndex(measurements[i]->freq_id());
     mb[i].setLocktime(measurements[i]->lock_time());
     mb[i].setCno(measurements[i]->cno());
-    mb[i].setPseudorangeStdev(0.01*(pow(2, (measurements[i]->pr_stdev() & 15)))); // weird scaling, might be wrong
-    mb[i].setCarrierPhaseStdev(0.004*(measurements[i]->cp_stdev() & 15));
-    mb[i].setDopplerStdev(0.002*(pow(2, (measurements[i]->do_stdev() & 15)))); // weird scaling, might be wrong
+    mb[i].setPseudorangeStdev(0.01 * (pow(2, (measurements[i]->pr_stdev() & 15)))); // weird scaling, might be wrong
+    mb[i].setCarrierPhaseStdev(0.004 * (measurements[i]->cp_stdev() & 15));
+    mb[i].setDopplerStdev(0.002 * (pow(2, (measurements[i]->do_stdev() & 15)))); // weird scaling, might be wrong
 
     auto ts = mb[i].initTrackingStatus();
     auto trk_stat = measurements[i]->trk_stat();

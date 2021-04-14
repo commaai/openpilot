@@ -1,3 +1,4 @@
+# https://www.gps.gov/technical/icwg/IS-GPS-200E.pdf
 meta:
   id: gps
   endian: be
@@ -37,9 +38,6 @@ types:
         type: b3
       - id: reserved
         type: b2
-
-  # https://www.gps.gov/technical/icwg/IS-GPS-200E.pdf
-  # Page 77
   subframe_1:
     seq:
       # Word 3
@@ -120,7 +118,6 @@ types:
         type: b5
       - id: reserved
         type: b2
-
   subframe_3:
     seq:
       # Word 3 & 4
@@ -157,5 +154,3 @@ types:
         value: 'omega_dot_sign ? (omega_dot_value - (1 << 23)) : omega_dot_value'
       idot:
         value: 'idot_sign ? (idot_value - (1 << 13)) : idot_value'
-
-
