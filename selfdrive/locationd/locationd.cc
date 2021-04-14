@@ -241,7 +241,7 @@ void Localizer::handle_car_state(double current_time, const cereal::CarState::Re
 
   if (this->speed_counter % SENSOR_DECIMATION == 0) {
     this->update_kalman(current_time, KIND_ODOMETRIC_SPEED, { (VectorXd(1) << log.getVEgo()).finished() });
-    this->car_speed = abs(log.getVEgo());
+    this->car_speed = std::abs(log.getVEgo());
     if (log.getVEgo() == 0.0) {
       this->update_kalman(current_time, KIND_NO_ROT, { Vector3d(0.0, 0.0, 0.0) });
     }
