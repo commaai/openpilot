@@ -223,11 +223,6 @@ void encoder_thread(int cam_idx) {
 
       // check if this encoder needs to rotate
       {
-        pthread_mutex_lock(&s.rotate_lock);
-        pthread_mutex_unlock(&s.rotate_lock);
-
-        if (do_exit) break;
-
         // rotate the encoder if the logger is on a newer segment
         if (rotate_state.should_rotate) {
           LOGW("camera %d rotate encoder to %s", cam_idx, s.segment_path);
