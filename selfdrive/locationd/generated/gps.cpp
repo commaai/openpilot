@@ -156,7 +156,7 @@ int32_t gps_t::subframe_3_t::omega_dot() {
 int32_t gps_t::subframe_3_t::idot() {
     if (f_idot)
         return m_idot;
-    m_idot = ((idot_sign()) ? ((static_cast<int32_t>(idot_value()) - (1 << 13))) : (idot_value()));
+    m_idot = ((idot_sign()) ? ((idot_value() - (1 << 13))) : (idot_value()));
     f_idot = true;
     return m_idot;
 }

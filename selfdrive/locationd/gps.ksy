@@ -156,6 +156,6 @@ types:
       omega_dot:
         value: 'omega_dot_sign ? (omega_dot_value - (1 << 23)) : omega_dot_value'
       idot:
-        value: 'idot_sign ? (idot_value.as<s4> - (1 << 13)) : idot_value'
+        value: 'idot_sign ? (idot_value - (1 << 13)) : idot_value'
 
 
