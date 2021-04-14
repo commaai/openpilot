@@ -89,6 +89,7 @@ selfdrive/boardd/panda.cc
 selfdrive/boardd/panda.h
 selfdrive/boardd/pigeon.cc
 selfdrive/boardd/pigeon.h
+selfdrive/boardd/set_time.py
 
 selfdrive/car/__init__.py
 selfdrive/car/car_helpers.py
