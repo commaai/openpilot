@@ -11,7 +11,7 @@ if GetOption('kaitai'):
 env.Program("ubloxd", ["ubloxd.cc", "ublox_msg.cc", "generated/ubx.cpp", "generated/gps.cpp"], LIBS=loc_libs)
 
 lenv = env.Clone()
-ekf_sym_cc = env.Object("#rednose/helpers/ekf_sym.cc")
+ekf_sym_cc = env.Object(target="#rednose/helpers/ekf_sym.2.o", source="#rednose/helpers/ekf_sym.cc")
 lenv["LIBPATH"] += [libkf[0].get_dir().get_abspath()]
 lenv["RPATH"] += [libkf[0].get_dir().get_abspath()]
 locationd = lenv.Program("locationd", ["locationd.cc", "models/live_kf.cc", ekf_sym_cc], LIBS=loc_libs + [transformations, 'kf'])

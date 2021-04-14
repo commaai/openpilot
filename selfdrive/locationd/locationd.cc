@@ -16,7 +16,7 @@ VectorXd floatlist2vector(const capnp::List<float, capnp::Kind::PRIMITIVE>::Read
   return res;
 }
 
-VectorXd quat2vector(const Quaterniond& quat) {
+Vector4d quat2vector(const Quaterniond& quat) {
   return Vector4d(quat.w(), quat.x(), quat.y(), quat.z());
 }
 
@@ -34,17 +34,12 @@ Localizer::Localizer() {
   this->kf = std::make_shared<LiveKalman>();
   this->reset_kalman();
 
-  this->calib = VectorXd(3);
-  this->calib << 0.0, 0.0, 0.0;
+  this->calib = Vector3d(0.0, 0.0, 0.0);
   this->device_from_calib = MatrixXdr::Identity(3, 3);
   this->calib_from_device = MatrixXdr::Identity(3, 3);
 
-  this->posenet_stds_old = VectorXd(POSENET_STD_HIST_HALF);
-  this->posenet_stds_new = VectorXd(POSENET_STD_HIST_HALF);
-  for (int i = 0; i < POSENET_STD_HIST_HALF; i++) {
-    this->posenet_stds_old[i] = 10.0;
-    this->posenet_stds_new[i] = 10.0;
-  }
+  this->posenet_stds_old = VectorXd::Constant(POSENET_STD_HIST_HALF, 10.0);
+  this->posenet_stds_new = VectorXd::Constant(POSENET_STD_HIST_HALF, 10.0);
 
   VectorXd ecef_pos = this->kf->get_x().segment<STATE_ECEF_POS_LEN>(STATE_ECEF_POS_START);
   this->converter = std::make_shared<LocalCoord>((ECEF) { .x = ecef_pos[0], .y = ecef_pos[1], .z = ecef_pos[2] });
@@ -65,7 +60,7 @@ void Localizer::liveLocationMsg(cereal::LiveLocationKalman::Builder& fix) {
   VectorXd vel_ecef = predicted_state.segment<STATE_ECEF_VELOCITY_LEN>(STATE_ECEF_VELOCITY_START);
   VectorXd vel_ecef_std = predicted_std.segment<STATE_ECEF_VELOCITY_ERR_LEN>(STATE_ECEF_VELOCITY_ERR_START);
   Geodetic fix_pos_geo = ecef2geodetic(fix_ecef_ecef);
-  VectorXd fix_pos_geo_vec = (VectorXd(3) << fix_pos_geo.lat, fix_pos_geo.lon, fix_pos_geo.alt).finished();
+  VectorXd fix_pos_geo_vec = Vector3d(fix_pos_geo.lat, fix_pos_geo.lon, fix_pos_geo.alt);
   //fix_pos_geo_std = np.abs(coord.ecef2geodetic(fix_ecef + fix_ecef_std) - fix_pos_geo)
   VectorXd orientation_ecef = quat2euler(vector2quat(predicted_state.segment<STATE_ECEF_ORIENTATION_LEN>(STATE_ECEF_ORIENTATION_START)));
   VectorXd orientation_ecef_std = predicted_std.segment<STATE_ECEF_ORIENTATION_ERR_LEN>(STATE_ECEF_ORIENTATION_ERR_START);
@@ -111,7 +106,7 @@ void Localizer::liveLocationMsg(cereal::LiveLocationKalman::Builder& fix) {
   VectorXd angVelocityDevice = predicted_state.segment<STATE_ANGULAR_VELOCITY_LEN>(STATE_ANGULAR_VELOCITY_START);
   VectorXd angVelocityDeviceErr = predicted_std.segment<STATE_ANGULAR_VELOCITY_ERR_LEN>(STATE_ANGULAR_VELOCITY_ERR_START);
 
-  VectorXd nans = (VectorXd(3) << NAN, NAN, NAN).finished();
+  Vector3d nans = Vector3d(NAN, NAN, NAN);
 
   // write measurements to msg
   initMeasurement(fix.initPositionGeodetic(), fix_pos_geo_vec, nans, true);
@@ -175,7 +170,7 @@ void Localizer::handle_sensors(double current_time, const capnp::List<cereal::Se
       this->gyro_counter++;
       if (this->gyro_counter % SENSOR_DECIMATION == 0) {
         auto v = sensor_reading.getGyroUncalibrated().getV();
-        this->update_kalman(sensor_time, KIND_PHONE_GYRO, { (VectorXd(3) << -v[2], -v[1], -v[0]).finished() });
+        this->update_kalman(sensor_time, KIND_PHONE_GYRO, { Vector3d(-v[2], -v[1], -v[0]) });
       }
     }
 
@@ -185,11 +180,11 @@ void Localizer::handle_sensors(double current_time, const capnp::List<cereal::Se
 
       // check if device fell, estimate 10 for g
       // 40m/s**2 is a good filter for falling detection, no false positives in 20k minutes of driving
-      this->device_fell |= (floatlist2vector(v) - (VectorXd(3) << 10.0, 0.0, 0.0).finished()).norm() > 40;
+      this->device_fell |= (floatlist2vector(v) - Vector3d(10.0, 0.0, 0.0)).norm() > 40.0;
 
       this->acc_counter++;
       if (this->acc_counter % SENSOR_DECIMATION == 0) {
-        this->update_kalman(sensor_time, KIND_PHONE_ACCEL, { (VectorXd(3) << -v[2], -v[1], -v[0]).finished() });
+        this->update_kalman(sensor_time, KIND_PHONE_ACCEL, { Vector3d(-v[2], -v[1], -v[0]) });
       }
     }
   }
@@ -208,17 +203,15 @@ void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::R
 
   VectorXd ecef_pos = this->converter->ned2ecef({ 0.0, 0.0, 0.0 }).to_vector();
   VectorXd ecef_vel = this->converter->ned2ecef({ log.getVNED()[0], log.getVNED()[1], log.getVNED()[2] }).to_vector() - ecef_pos;
-  double vertical_accuracy = std::pow(3.0 * log.getVerticalAccuracy(), 2);
-  MatrixXdr ecef_pos_R = (Vector3d() << vertical_accuracy, vertical_accuracy, vertical_accuracy).finished().asDiagonal();
-  double speed_accuracy = std::pow(log.getSpeedAccuracy(), 2);
-  MatrixXdr ecef_vel_R = (Vector3d() << speed_accuracy, speed_accuracy, speed_accuracy).finished().asDiagonal();
+  MatrixXdr ecef_pos_R = Vector3d::Constant(std::pow(3.0 * log.getVerticalAccuracy(), 2)).asDiagonal();
+  MatrixXdr ecef_vel_R = Vector3d::Constant(std::pow(log.getSpeedAccuracy(), 2)).asDiagonal();
 
   this->unix_timestamp_millis = log.getTimestamp();
   double gps_est_error = (this->kf->get_x().head(3) - ecef_pos).norm();
 
   VectorXd orientation_ecef = quat2euler(vector2quat(this->kf->get_x().segment<STATE_ECEF_ORIENTATION_LEN>(STATE_ECEF_ORIENTATION_START)));
   VectorXd orientation_ned = ned_euler_from_ecef({ ecef_pos(0), ecef_pos(1), ecef_pos(2) }, orientation_ecef);
-  VectorXd orientation_ned_gps = (VectorXd(3) << 0.0, 0.0, DEG2RAD(log.getBearingDeg())).finished();
+  VectorXd orientation_ned_gps = Vector3d(0.0, 0.0, DEG2RAD(log.getBearingDeg()));
   VectorXd orientation_error = (orientation_ned - orientation_ned_gps).array() - M_PI;
   for (int i = 0; i < orientation_error.size(); i++) {
     orientation_error(i) = std::fmod(orientation_error(i), 2.0 * M_PI);
@@ -250,7 +243,7 @@ void Localizer::handle_car_state(double current_time, const cereal::CarState::Re
     this->update_kalman(current_time, KIND_ODOMETRIC_SPEED, { (VectorXd(1) << log.getVEgo()).finished() });
     this->car_speed = abs(log.getVEgo());
     if (log.getVEgo() == 0.0) {
-      this->update_kalman(current_time, KIND_NO_ROT, { (VectorXd(3) << 0.0, 0.0, 0.0).finished() });
+      this->update_kalman(current_time, KIND_NO_ROT, { Vector3d(0.0, 0.0, 0.0) });
     }
   }
 }
@@ -311,7 +304,8 @@ int Localizer::locationd_thread() {
   const std::initializer_list<const char *> service_list =
       { "gpsLocationExternal", "sensorEvents", "cameraOdometry", "liveCalibration", "carState" };
   SubMaster sm(service_list, nullptr, { "gpsLocationExternal" });
-  PubMaster pm({ "liveLocationKalman", "testAck" });
+  const std::initializer_list<const char *> send_list = { "liveLocationKalman", "testAck" };
+  PubMaster pm(send_list);
 
   Params params;
 

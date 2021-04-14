@@ -302,7 +302,7 @@ def locationd_thread(sm, pm, disabled_logs=None):
     socks = ['gpsLocationExternal', 'sensorEvents', 'cameraOdometry', 'liveCalibration', 'carState']
     sm = messaging.SubMaster(socks, ignore_alive=['gpsLocationExternal'], ignore_avg_freq=['sensorEvents'])
   if pm is None:
-    pm = messaging.PubMaster(['liveLocationKalman'])
+    pm = messaging.PubMaster(['liveLocationKalman', 'testAck'])
 
   params = Params()
   localizer = Localizer(disabled_logs=disabled_logs)
@@ -344,6 +344,8 @@ def locationd_thread(sm, pm, disabled_logs=None):
           'altitude': msg.liveLocationKalman.positionGeodetic.value[2],
         }
         params.put("LastGPSPosition", json.dumps(location))
+    else:
+      pm.send('testAck', messaging.new_message('liveLocationKalman'))
 
 
 def main(sm=None, pm=None):

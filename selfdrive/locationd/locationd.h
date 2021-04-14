@@ -27,7 +27,7 @@
 #define POSENET_STD_HIST_HALF 20
 
 Eigen::VectorXd floatlist_to_vector(const capnp::List<float, capnp::Kind::PRIMITIVE>::Reader& floatlist);
-Eigen::VectorXd quat2vector(const Eigen::Quaterniond& quat);
+Eigen::Vector4d quat2vector(const Eigen::Quaterniond& quat);
 Eigen::Quaterniond vector2quat(const Eigen::VectorXd& vec);
 void initMeasurement(cereal::LiveLocationKalman::Measurement::Builder& meas, const Eigen::VectorXd& val, const Eigen::VectorXd& std, bool valid);
 
