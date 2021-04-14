@@ -113,7 +113,6 @@ class Localizer():
     vel_device_std = np.sqrt(np.diagonal(vel_device_cov))
 
     vel_calib = calib_from_device.dot(vel_device)
-    print(calib_from_device.shape, vel_device_cov.shape, condensed_cov.shape, HH.shape)
     vel_calib_std = np.sqrt(np.diagonal(calib_from_device.dot(
       vel_device_cov).dot(calib_from_device.T)))
 
@@ -203,9 +202,6 @@ class Localizer():
     orientation_ned_gps = np.array([0, 0, np.radians(log.bearingDeg)])
     orientation_error = np.mod(orientation_ned - orientation_ned_gps - np.pi, 2*np.pi) - np.pi
     initial_pose_ecef_quat = quat_from_euler(ecef_euler_from_ned(ecef_pos, orientation_ned_gps))
-
-    print(np.linalg.norm(ecef_vel), np.linalg.norm(orientation_error))
-    print(orientation_error)
 
     if np.linalg.norm(ecef_vel) > 5 and np.linalg.norm(orientation_error) > 1:
       cloudlog.error("Locationd vs ubloxLocation orientation difference too large, kalman reset")
@@ -311,8 +307,6 @@ def locationd_thread(sm, pm, disabled_logs=None):
   params = Params()
   localizer = Localizer(disabled_logs=disabled_logs)
 
-  fp = open('/home/batman/openpilot/selfdrive/locationd/test_locationd_cpp_out.txt', 'r')
-
   while True:
     sm.update()
 
@@ -329,10 +323,6 @@ def locationd_thread(sm, pm, disabled_logs=None):
           localizer.handle_cam_odo(t, sm[sock])
         elif sock == "liveCalibration":
           localizer.handle_live_calib(t, sm[sock])
-
-        cpp_kfx = np.fromstring(fp.readline(), dtype=np.double, sep=',')
-        print(sock, t, localizer.kf.x)
-        assert(np.allclose(cpp_kfx, localizer.kf.x))
 
     if sm.updated['cameraOdometry']:
       t = sm.logMonoTime['cameraOdometry']

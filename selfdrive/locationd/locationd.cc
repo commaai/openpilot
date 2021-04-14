@@ -60,10 +60,11 @@ void Localizer::liveLocationMsg(cereal::LiveLocationKalman::Builder& fix) {
   VectorXd predicted_std = predicted_cov.diagonal().array().sqrt();
 
   VectorXd fix_ecef = predicted_state.segment<STATE_ECEF_POS_LEN>(STATE_ECEF_POS_START);
+  ECEF fix_ecef_ecef = { .x = fix_ecef(0), .y = fix_ecef(1), .z = fix_ecef(2) };
   VectorXd fix_ecef_std = predicted_std.segment<STATE_ECEF_POS_ERR_LEN>(STATE_ECEF_POS_ERR_START);
   VectorXd vel_ecef = predicted_state.segment<STATE_ECEF_VELOCITY_LEN>(STATE_ECEF_VELOCITY_START);
   VectorXd vel_ecef_std = predicted_std.segment<STATE_ECEF_VELOCITY_ERR_LEN>(STATE_ECEF_VELOCITY_ERR_START);
-  Geodetic fix_pos_geo = ecef2geodetic((ECEF) { .x = fix_ecef(0), .y = fix_ecef(1), .z = fix_ecef(2) });
+  Geodetic fix_pos_geo = ecef2geodetic(fix_ecef_ecef);
   VectorXd fix_pos_geo_vec = (VectorXd(3) << fix_pos_geo.lat, fix_pos_geo.lon, fix_pos_geo.alt).finished();
   //fix_pos_geo_std = np.abs(coord.ecef2geodetic(fix_ecef + fix_ecef_std) - fix_pos_geo)
   VectorXd orientation_ecef = quat2euler(vector2quat(predicted_state.segment<STATE_ECEF_ORIENTATION_LEN>(STATE_ECEF_ORIENTATION_START)));
@@ -98,7 +99,6 @@ void Localizer::liveLocationMsg(cereal::LiveLocationKalman::Builder& fix) {
   VectorXd vel_calib = this->calib_from_device * vel_device;
   VectorXd vel_calib_std = ((this->calib_from_device * vel_device_cov) * this->calib_from_device.transpose()).diagonal().array().sqrt();
 
-  ECEF fix_ecef_ecef = (ECEF) { .x = fix_ecef(0), .y = fix_ecef(1), .z = fix_ecef(2) };
   VectorXd orientation_ned = ned_euler_from_ecef(fix_ecef_ecef, orientation_ecef);
   //orientation_ned_std = ned_euler_from_ecef(fix_ecef, orientation_ecef + orientation_ecef_std) - orientation_ned
   VectorXd nextfix_ecef = fix_ecef + vel_ecef;
@@ -114,71 +114,19 @@ void Localizer::liveLocationMsg(cereal::LiveLocationKalman::Builder& fix) {
   VectorXd nans = (VectorXd(3) << NAN, NAN, NAN).finished();
 
   // write measurements to msg
-  // TODO initMeasurement(fix.initPositionGeodetic(), fix_pos_geo_vec, nans, true);
-  auto positionGeodetic = fix.initPositionGeodetic();
-  positionGeodetic.setValue(kj::arrayPtr(fix_pos_geo_vec.data(), 3));
-  positionGeodetic.setStd(kj::arrayPtr(nans.data(), 3));
-  positionGeodetic.setValid(true);
-
-  auto positionECEF = fix.initPositionECEF();
-  positionECEF.setValue(kj::arrayPtr(fix_ecef.data(), 3));
-  positionECEF.setStd(kj::arrayPtr(fix_ecef_std.data(), 3));
-  positionECEF.setValid(true);
-
-  auto velocityECEF = fix.initVelocityECEF();
-  velocityECEF.setValue(kj::arrayPtr(vel_ecef.data(), 3));
-  velocityECEF.setStd(kj::arrayPtr(vel_ecef_std.data(), 3));
-  velocityECEF.setValid(true);
-
-  auto velocityNED = fix.initVelocityNED();
-  velocityNED.setValue(kj::arrayPtr(ned_vel.data(), 3));
-  velocityNED.setStd(kj::arrayPtr(nans.data(), 3));
-  velocityNED.setValid(true);
-
-  auto velocityDevice = fix.initVelocityDevice();
-  velocityDevice.setValue(kj::arrayPtr(vel_device.data(), 3));
-  velocityDevice.setStd(kj::arrayPtr(vel_device_std.data(), 3));
-  velocityDevice.setValid(true);
-
-  auto accelerationDevice = fix.initAccelerationDevice();
-  accelerationDevice.setValue(kj::arrayPtr(accDevice.data(), 3));
-  accelerationDevice.setStd(kj::arrayPtr(accDeviceErr.data(), 3));
-  accelerationDevice.setValid(true);
-
-  auto orientationECEF = fix.initOrientationECEF();
-  orientationECEF.setValue(kj::arrayPtr(orientation_ecef.data(), 3));
-  orientationECEF.setStd(kj::arrayPtr(orientation_ecef_std.data(), 3));
-  orientationECEF.setValid(true);
-
-  auto calibratedOrientationECEF = fix.initCalibratedOrientationECEF();
-  calibratedOrientationECEF.setValue(kj::arrayPtr(calibrated_orientation_ecef.data(), 3));
-  calibratedOrientationECEF.setStd(kj::arrayPtr(nans.data(), 3));
-  calibratedOrientationECEF.setValid(this->calibrated);
-
-  auto orientationNED = fix.initOrientationNED();
-  orientationNED.setValue(kj::arrayPtr(orientation_ned.data(), 3));
-  orientationNED.setStd(kj::arrayPtr(nans.data(), 3));
-  orientationNED.setValid(true);
-
-  auto angularVelocityDevice = fix.initAngularVelocityDevice();
-  angularVelocityDevice.setValue(kj::arrayPtr(angVelocityDevice.data(), 3));
-  angularVelocityDevice.setStd(kj::arrayPtr(angVelocityDeviceErr.data(), 3));
-  angularVelocityDevice.setValid(true);
-
-  auto velocityCalibrated = fix.initVelocityCalibrated();
-  velocityCalibrated.setValue(kj::arrayPtr(vel_calib.data(), 3));
-  velocityCalibrated.setStd(kj::arrayPtr(vel_calib_std.data(), 3));
-  velocityCalibrated.setValid(this->calibrated);
-
-  auto angularVelocityCalibrated = fix.initAngularVelocityCalibrated();
-  angularVelocityCalibrated.setValue(kj::arrayPtr(ang_vel_calib.data(), 3));
-  angularVelocityCalibrated.setStd(kj::arrayPtr(ang_vel_calib_std.data(), 3));
-  angularVelocityCalibrated.setValid(this->calibrated);
-
-  auto accelerationCalibrated = fix.initAccelerationCalibrated();
-  accelerationCalibrated.setValue(kj::arrayPtr(acc_calib.data(), 3));
-  accelerationCalibrated.setStd(kj::arrayPtr(acc_calib_std.data(), 3));
-  accelerationCalibrated.setValid(this->calibrated);
+  initMeasurement(fix.initPositionGeodetic(), fix_pos_geo_vec, nans, true);
+  initMeasurement(fix.initPositionECEF(), fix_ecef, fix_ecef_std, true);
+  initMeasurement(fix.initVelocityECEF(), vel_ecef, vel_ecef_std, true);
+  initMeasurement(fix.initVelocityNED(), ned_vel, nans, true);
+  initMeasurement(fix.initVelocityDevice(), vel_device, vel_device_std, true);
+  initMeasurement(fix.initAccelerationDevice(), accDevice, accDeviceErr, true);
+  initMeasurement(fix.initOrientationECEF(), orientation_ecef, orientation_ecef_std, true);
+  initMeasurement(fix.initCalibratedOrientationECEF(), calibrated_orientation_ecef, nans, this->calibrated);
+  initMeasurement(fix.initOrientationNED(), orientation_ned, nans, true);
+  initMeasurement(fix.initAngularVelocityDevice(), angVelocityDevice, angVelocityDeviceErr, true);
+  initMeasurement(fix.initVelocityCalibrated(), vel_calib, vel_calib_std, this->calibrated);
+  initMeasurement(fix.initAngularVelocityCalibrated(), ang_vel_calib, ang_vel_calib_std, this->calibrated);
+  initMeasurement(fix.initAccelerationCalibrated(), acc_calib, acc_calib_std, this->calibrated);
 
   // experimentally found these values, no false positives in 20k minutes of driving
   double old_mean = this->posenet_stds_old.mean();
@@ -363,12 +311,9 @@ int Localizer::locationd_thread() {
   const std::initializer_list<const char *> service_list =
       { "gpsLocationExternal", "sensorEvents", "cameraOdometry", "liveCalibration", "carState" };
   SubMaster sm(service_list, nullptr, { "gpsLocationExternal" });
-  PubMaster pm({ "liveLocationKalman" });
+  PubMaster pm({ "liveLocationKalman", "testAck" });
 
   Params params;
-
-  std::ofstream myfile;
-  myfile.open("test_locationd_cpp_out.txt", std::ios::out | std::ios::trunc);
 
   while (!do_exit) {
     bool updatedCameraOdometry = false;
@@ -392,12 +337,11 @@ int Localizer::locationd_thread() {
         } else {
           std::cout << "invalid event" << std::endl;
         }
-        myfile << this->kf->get_x().format(fmt_row) << std::endl;
       }
     }
 
     if (updatedCameraOdometry) {
-      double t = sm["cameraOdometry"].getLogMonoTime();
+      uint64_t t = sm["cameraOdometry"].getLogMonoTime();
 
       MessageBuilder msg_builder;
       auto evt = msg_builder.initEvent();
@@ -409,19 +353,15 @@ int Localizer::locationd_thread() {
       liveLoc.setGpsOK((t / 1e9) - this->last_gps_fix < 1.0);
       pm.send("liveLocationKalman", msg_builder);
 
-// TODO:
-//       if sm.frame % 1200 == 0 and msg.liveLocationKalman.gpsOK:  # once a minute
-//         location = {
-//           'latitude': msg.liveLocationKalman.positionGeodetic.value[0],
-//           'longitude': msg.liveLocationKalman.positionGeodetic.value[1],
-//           'altitude': msg.liveLocationKalman.positionGeodetic.value[2],
-//         }
-//         params.put("LastGPSPosition", json.dumps(location))
-
+      if (sm.frame % 1200 == 0 && liveLoc.getGpsOK()) {  // once a minute
+        std::string lastGPSPosJSON = util::string_format("{\"latitude\": %.15f, \"longitude\": %.15f, \"altitude\": %.15f}",
+          liveLoc.getPositionGeodetic().getValue()[0], liveLoc.getPositionGeodetic().getValue()[1], liveLoc.getPositionGeodetic().getValue()[2]);
+        params.put("LastGPSPosition", lastGPSPosJSON);
+      }
     } else if (this->send_on_all) {
       MessageBuilder msg_builder;
       msg_builder.initEvent();
-      pm.send("liveLocationKalman", msg_builder);
+      pm.send("testAck", msg_builder);
     }
   }
   return 0;
