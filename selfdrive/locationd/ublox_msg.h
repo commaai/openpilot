@@ -3,6 +3,7 @@
 #include <string>
 #include <cstdint>
 #include <memory>
+#include <unordered_map>
 
 #include "messaging.hpp"
 #include "generated/ubx.h"
