@@ -40,7 +40,7 @@ void FrameBuffer::swap() {
 bool set_brightness(int brightness) {
   char bright[64];
   snprintf(bright, sizeof(bright), "%d", brightness);
-  return 0 == write_file("/sys/class/leds/lcd-backlight/brightness", bright, strlen(bright));
+  return 0 == util::write_file("/sys/class/leds/lcd-backlight/brightness", bright, strlen(bright));
 }
 
 void FrameBuffer::set_power(int mode) {

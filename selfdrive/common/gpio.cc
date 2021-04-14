@@ -15,7 +15,7 @@ int gpio_init(int pin_nr, bool output){
     return -1;
   }
   const char *value = output ? "out" : "in";
-  return write_file(pin_dir_path, (void*)value, strlen(value));
+  return util::write_file(pin_dir_path, (void*)value, strlen(value));
 }
 
 int gpio_set(int pin_nr, bool high){
@@ -25,5 +25,5 @@ int gpio_set(int pin_nr, bool high){
   if(pin_val_path_len <= 0){
     return -1;
   }
-  return write_file(pin_val_path, (void*)(high ? "1" : "0"), 1);
+  return util::write_file(pin_val_path, (void*)(high ? "1" : "0"), 1);
 }

@@ -51,6 +51,11 @@ echo "[-] copying files T=$SECONDS"
 cd $SOURCE_DIR
 cp -pR --parents $(cat release/files_common) $TARGET_DIR/
 
+# test files
+if [ ! -z "$DEVEL_TEST" ]; then
+  cp -pR --parents tools/ $TARGET_DIR/
+fi
+
 # in the directory
 cd $TARGET_DIR
 

@@ -71,6 +71,7 @@ pyprof2calltree = "*"
 pre-commit = "*"
 mypy = "*"
 parameterized = "*"
+ft4222 = "*"
 
 [packages]
 atomicwrites = "*"

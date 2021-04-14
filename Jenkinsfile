@@ -83,7 +83,6 @@ pipeline {
         }
       }
 
-
       stages {
 
         /*
@@ -113,6 +112,10 @@ pipeline {
         stage('On-device Tests') {
           agent {
             docker {
+              /*
+              filename 'Dockerfile.ondevice_ci'
+              args "--privileged -v /dev:/dev --shm-size=1G --user=root"
+              */
               image 'python:3.7.3'
               args '--user=root'
             }
@@ -121,17 +124,12 @@ pipeline {
           stages {
             stage('parallel tests') {
               parallel {
-                stage('Devel Build') {
-                  environment {
-                    CI_PUSH = "${env.BRANCH_NAME == 'master' ? 'master-ci' : ' '}"
-                  }
+                stage('Devel Tests') {
                   steps {
                     phone_steps("eon-build", [
-                      ["build", "SCONS_CACHE=1 scons -j4"],
-                      ["test athena", "nosetests -s selfdrive/athena/tests/test_athenad_old.py"],
+                      ["build devel", "cd release && SCONS_CACHE=1 DEVEL_TEST=1 ./build_devel.sh"],
                       ["test manager", "python selfdrive/manager/test/test_manager.py"],
                       ["onroad tests", "cd selfdrive/test/ && ./test_onroad.py"],
-                      ["build devel", "cd release && CI_PUSH=${env.CI_PUSH} ./build_devel.sh"],
                       ["test car interfaces", "cd selfdrive/car/tests/ && ./test_car_interfaces.py"],
                     ])
                   }
@@ -150,6 +148,7 @@ pipeline {
                   steps {
                     phone_steps("eon", [
                       ["build", "SCONS_CACHE=1 scons -j4"],
+                      ["test athena", "nosetests -s selfdrive/athena/tests/test_athenad_old.py"],
                       ["test sounds", "nosetests -s selfdrive/test/test_sounds.py"],
                       ["test boardd loopback", "nosetests -s selfdrive/boardd/tests/test_boardd_loopback.py"],
                       ["test loggerd", "python selfdrive/loggerd/tests/test_loggerd.py"],
@@ -160,6 +159,27 @@ pipeline {
                   }
                 }
 
+                /*
+                stage('Power Consumption Tests') {
+                  steps {
+                    lock(resource: "", label: "c2-zookeeper", inversePrecedence: true, variable: 'device_ip', quantity: 1) {
+                      timeout(time: 60, unit: 'MINUTES') {
+                        sh script: "/home/batman/tools/zookeeper/enable_and_wait.py $device_ip 120", label: "turn on device"
+                        phone(device_ip, "git checkout", readFile("selfdrive/test/setup_device_ci.sh"),)
+                        phone(device_ip, "build", "SCONS_CACHE=1 scons -j4 && sync")
+                        sh script: "/home/batman/tools/zookeeper/disable.py $device_ip", label: "turn off device"
+                        sh script: "/home/batman/tools/zookeeper/enable_and_wait.py $device_ip 120", label: "turn on device"
+                        sh script: "/home/batman/tools/zookeeper/check_consumption.py 60 3", label: "idle power consumption after boot"
+                        sh script: "/home/batman/tools/zookeeper/ignition.py 1", label: "go onroad"
+                        sh script: "/home/batman/tools/zookeeper/check_consumption.py 60 10", label: "onroad power consumption"
+                        sh script: "/home/batman/tools/zookeeper/ignition.py 0", label: "go offroad"
+                        sh script: "/home/batman/tools/zookeeper/check_consumption.py 60 2", label: "idle power consumption offroad"
+                      }
+                    }
+                  }
+                }
+                */
+
                 stage('Tici Build') {
                   environment {
                     R3_PUSH = "${env.BRANCH_NAME == 'master' ? '1' : ' '}"
@@ -169,6 +189,7 @@ pipeline {
                       ["build", "SCONS_CACHE=1 scons -j16"],
                       ["test loggerd", "python selfdrive/loggerd/tests/test_loggerd.py"],
                       ["test encoder", "LD_LIBRARY_PATH=/usr/local/lib python selfdrive/loggerd/tests/test_encoder.py"],
+                      ["onroad tests", "cd selfdrive/test/ && ./test_onroad.py"],
                       //["build release3-staging", "cd release && PUSH=${env.R3_PUSH} ./build_release3.sh"],
                     ])
                   }
@@ -196,6 +217,18 @@ pipeline {
 
               }
             }
+
+            stage('Push master-ci') {
+              when {
+                branch 'master'
+              }
+              steps {
+                phone_steps("eon-build", [
+                  ["push devel", "cd release && CI_PUSH='master-ci' ./build_devel.sh"],
+                ])
+              }
+            }
+
           }
 
           post {

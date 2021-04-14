@@ -105,3 +105,7 @@ class HardwareBase:
   @abstractmethod
   def set_screen_brightness(self, percentage):
     pass
+
+  @abstractmethod
+  def set_power_save(self, enabled):
+    pass
