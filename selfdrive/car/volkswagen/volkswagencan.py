@@ -24,12 +24,6 @@ def create_mqb_hud_control(packer, bus, enabled, steering_pressed, hud_alert, le
   # 2 (LKAS enabled, lane detected) - light gray on VW, green or white on Audi depending on year or virtual cockpit.  On a color MFD on a 2015 A3 TDI it is white, virtual cockpit on a 2018 A3 e-Tron its green. 
   # 3 (LKAS enabled, lane departure detected) - white on VW, red on Audi 
 
-  # not using standstill state right now, though we may want to do something with this if there's too much jitter at a stop to just freeze lane visibility.
-
-  # since the LDW_Status_LED already indicates whether OP is enabled or not, we can always show the lane visibility.
-  # this does differ from stock where it would always be 0 if LKAS is disabled, but this should be less distracting and users should use the status LED as a visual indicator of OP enabled ment state instead of the absence or presence of lane lines.
-  # as OP will notify users of LDW regardless of enablement state, this should provide the best user experience and users shouldn't go from 0/1 directly to 3.
-
   values = {
     "LDW_Status_LED_gelb": 1 if enabled and steering_pressed else 0,
     "LDW_Status_LED_gruen": 1 if enabled and not steering_pressed else 0,
