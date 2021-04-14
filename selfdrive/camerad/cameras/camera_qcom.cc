@@ -127,7 +127,7 @@ static int imx298_apply_exposure(CameraState *s, int gain, int integ_lines, uint
     // REG_HOLD
     {0x104,0x0,0},
   };
-  return sensor_write_regs(s, reg_array, ARRAYSIZE(reg_array), MSM_CAMERA_I2C_BYTE_DATA);
+  return sensor_write_regs(s, reg_array, std::size(reg_array), MSM_CAMERA_I2C_BYTE_DATA);
 }
 
 static int ov8865_apply_exposure(CameraState *s, int gain, int integ_lines, uint32_t frame_length) {
@@ -137,7 +137,7 @@ static int ov8865_apply_exposure(CameraState *s, int gain, int integ_lines, uint
   // get bitmaps from iso
   static const int gains[] = {0, 100, 200, 400, 800};
   int i;
-  for (i = 1; i < ARRAYSIZE(gains); i++) {
+  for (i = 1; i < std::size(gains); i++) {
     if (gain >= gains[i - 1] && gain < gains[i])
       break;
   }
@@ -162,7 +162,7 @@ static int ov8865_apply_exposure(CameraState *s, int gain, int integ_lines, uint
 
     //{0x104,0x0,0},
   };
-  return sensor_write_regs(s, reg_array, ARRAYSIZE(reg_array), MSM_CAMERA_I2C_BYTE_DATA);
+  return sensor_write_regs(s, reg_array, std::size(reg_array), MSM_CAMERA_I2C_BYTE_DATA);
 }
 
 static void camera_init(VisionIpcServer *v, CameraState *s, int camera_id, int camera_num,
@@ -172,7 +172,7 @@ static void camera_init(VisionIpcServer *v, CameraState *s, int camera_id, int c
   s->camera_num = camera_num;
   s->camera_id = camera_id;
 
-  assert(camera_id < ARRAYSIZE(cameras_supported));
+  assert(camera_id < std::size(cameras_supported));
   s->ci = cameras_supported[camera_id];
   assert(s->ci.frame_width != 0);
 
@@ -501,7 +501,7 @@ static void camera_open(CameraState *s, bool is_road_cam) {
   // SENSOR: stop stream
   struct msm_camera_i2c_reg_setting stop_settings = {
     .reg_setting = stop_reg_array,
-    .size = ARRAYSIZE(stop_reg_array),
+    .size = std::size(stop_reg_array),
     .addr_type = MSM_CAMERA_I2C_WORD_ADDR,
     .data_type = MSM_CAMERA_I2C_BYTE_DATA,
     .delay = 0
@@ -518,9 +518,9 @@ static void camera_open(CameraState *s, bool is_road_cam) {
 
   // SENSOR: send i2c configuration
   if (s->camera_id == CAMERA_ID_IMX298) {
-    err = sensor_write_regs(s, init_array_imx298, ARRAYSIZE(init_array_imx298), MSM_CAMERA_I2C_BYTE_DATA);
+    err = sensor_write_regs(s, init_array_imx298, std::size(init_array_imx298), MSM_CAMERA_I2C_BYTE_DATA);
   } else if (s->camera_id == CAMERA_ID_OV8865) {
-    err = sensor_write_regs(s, init_array_ov8865, ARRAYSIZE(init_array_ov8865), MSM_CAMERA_I2C_BYTE_DATA);
+    err = sensor_write_regs(s, init_array_ov8865, std::size(init_array_ov8865), MSM_CAMERA_I2C_BYTE_DATA);
   } else {
     assert(false);
   }
@@ -587,7 +587,7 @@ static void camera_open(CameraState *s, bool is_road_cam) {
   }
 
   if (s->camera_id == CAMERA_ID_IMX298) {
-    err = sensor_write_regs(s, mode_setting_array_imx298, ARRAYSIZE(mode_setting_array_imx298), MSM_CAMERA_I2C_BYTE_DATA);
+    err = sensor_write_regs(s, mode_setting_array_imx298, std::size(mode_setting_array_imx298), MSM_CAMERA_I2C_BYTE_DATA);
     LOG("sensor setup: %d", err);
   }
 
@@ -728,7 +728,7 @@ static void camera_open(CameraState *s, bool is_road_cam) {
 static void road_camera_start(CameraState *s) {
   set_exposure(s, 1.0, 1.0);
 
-  int err = sensor_write_regs(s, start_reg_array, ARRAYSIZE(start_reg_array), MSM_CAMERA_I2C_BYTE_DATA);
+  int err = sensor_write_regs(s, start_reg_array, std::size(start_reg_array), MSM_CAMERA_I2C_BYTE_DATA);
   LOG("sensor start regs: %d", err);
 
   int inf_step = 512 - INFINITY_DAC;
@@ -905,7 +905,7 @@ void camera_autoexposure(CameraState *s, float grey_frac) {
 
 static void driver_camera_start(CameraState *s) {
   set_exposure(s, 1.0, 1.0);
-  int err = sensor_write_regs(s, start_reg_array, ARRAYSIZE(start_reg_array), MSM_CAMERA_I2C_BYTE_DATA);
+  int err = sensor_write_regs(s, start_reg_array, std::size(start_reg_array), MSM_CAMERA_I2C_BYTE_DATA);
   LOG("sensor start regs: %d", err);
 }
 
@@ -1124,7 +1124,7 @@ void cameras_run(MultiCameraState *s) {
   while (!do_exit) {
     struct pollfd fds[2] = {{.fd = cameras[0]->isp_fd, .events = POLLPRI},
                             {.fd = cameras[1]->isp_fd, .events = POLLPRI}};
-    int ret = poll(fds, ARRAYSIZE(fds), 1000);
+    int ret = poll(fds, std::size(fds), 1000);
     if (ret < 0) {
       if (errno == EINTR || errno == EAGAIN) continue;
       LOGE("poll failed (%d - %d)", ret, errno);

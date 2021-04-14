@@ -11,6 +11,7 @@ import selfdrive.crash as crash
 from common.basedir import BASEDIR
 from common.params import Params
 from common.text_window import TextWindow
+from selfdrive.boardd.set_time import set_time
 from selfdrive.hardware import HARDWARE
 from selfdrive.manager.helpers import unblock_stdout
 from selfdrive.manager.process import ensure_running
@@ -21,6 +22,10 @@ from selfdrive.version import dirty, version
 
 
 def manager_init():
+
+  # update system time from panda
+  set_time(cloudlog)
+
   params = Params()
   params.manager_start()
 
@@ -42,7 +47,7 @@ def manager_init():
 
   # is this dashcam?
   if os.getenv("PASSIVE") is not None:
-    params.put("Passive", str(int(os.getenv("PASSIVE"))))
+    params.put_bool("Passive", bool(int(os.getenv("PASSIVE"))))
 
   if params.get("Passive") is None:
     raise Exception("Passive must be set to continue")
@@ -133,6 +138,7 @@ def manager_thread():
     msg.managerState.processes = [p.get_process_state_msg() for p in managed_processes.values()]
     pm.send('managerState', msg)
 
+    # TODO: let UI handle this
     # Exit main loop when uninstall is needed
     if params.get_bool("DoUninstall"):
       break
@@ -143,7 +149,7 @@ def main():
 
   manager_init()
 
-  # Start ui early so prepare can happen in the background
+  # Start UI early so prepare can happen in the background
   if not prepare_only:
     managed_processes['ui'].start()
 

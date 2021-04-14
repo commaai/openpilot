@@ -6,13 +6,18 @@ from typing import Any, Dict
 import numpy as np
 import sympy as sp
 
-from rednose import KalmanFilter
-from rednose.helpers.ekf_sym import EKF_sym, gen_code
 from selfdrive.locationd.models.constants import ObservationKind
 from selfdrive.swaglog import cloudlog
 
-i = 0
+from rednose.helpers.kalmanfilter import KalmanFilter
 
+if __name__ == '__main__':  # Generating sympy
+  from rednose.helpers.ekf_sym import gen_code
+else:
+  from rednose.helpers.ekf_sym_pyx import EKF_sym  # pylint: disable=no-name-in-module, import-error
+
+
+i = 0
 
 def _slice(n):
   global i
@@ -149,7 +154,8 @@ class CarKalman(KalmanFilter):
     x_init[States.ANGLE_OFFSET] = angle_offset
 
     # init filter
-    self.filter = EKF_sym(generated_dir, self.name, self.Q, self.initial_x, self.P_initial, dim_state, dim_state_err, global_vars=self.global_vars, logger=cloudlog)
+    global_var_names = [x.name for x in self.global_vars]  # pylint: disable=no-member
+    self.filter = EKF_sym(generated_dir, self.name, self.Q, self.initial_x, self.P_initial, dim_state, dim_state_err, global_vars=global_var_names, logger=cloudlog)
 
 
 if __name__ == "__main__":
