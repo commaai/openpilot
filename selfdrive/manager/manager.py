@@ -24,7 +24,7 @@ from selfdrive.version import dirty, version
 def manager_init():
 
   # update system time from panda
-  set_time()
+  set_time(cloudlog)
 
   params = Params()
   params.manager_start()
