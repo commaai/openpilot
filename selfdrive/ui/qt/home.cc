@@ -289,14 +289,10 @@ UIUpdater::UIUpdater(GLWindow* w) : QThread(), glWindow_(w) {
 }
 
 void UIUpdater::draw() {
-  QOpenGLContext* ctx = glWindow_->context();
-  if (!ctx) { 
-    // QOpenGLWidget not yet initialized
-    return;
-  }
-  
   QMutexLocker lock(&renderMutex);
-  if (ctx->thread() != this) {
+  QOpenGLContext* ctx = glWindow_->context();
+  if (!ctx || ctx->thread() != this) {
+    // QOpenGLWidget not yet initialized or context not in thread
     return;
   }
   // Make the context (and an offscreen surface) current for this thread. The
@@ -326,7 +322,7 @@ void UIUpdater::draw() {
 
 void UIUpdater::run() {
   while (!exit_) {
-    if (!ui_state_.scene.started) {
+    if (!ui_state_.scene.started || !glWindow_->isVisible()) {
       util::sleep_for(1000 / UI_FREQ);
     }
     double prev_draw_t = millis_since_boot();
@@ -341,7 +337,7 @@ void UIUpdater::run() {
     handle_display_state(&ui_state_, false);
     
     // Don't waste resources on drawing in case screen is off
-    if (!ui_state_.awake) {
+    if (!ui_state_.awake || !glWindow_->isVisible()) {
       continue;
     }
 
