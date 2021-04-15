@@ -72,6 +72,12 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "Use wide angle camera for driving and ui. Only takes effect after reboot.",
                                   "../assets/offroad/icon_openpilot.png",
                                   this));
+  toggles.append(new ParamControl("EnableLteOnroad",
+                                  "Enable LTE while onroad",
+                                  "",
+                                  "../assets/offroad/icon_network.png",
+                                  this));
+
 #endif
 
   bool record_lock = Params().getBool("RecordFrontLock");
