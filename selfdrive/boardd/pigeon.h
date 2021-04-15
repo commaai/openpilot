@@ -12,6 +12,8 @@ class Pigeon {
   virtual ~Pigeon(){};
 
   void init();
+  bool wait_for_ack();
+  bool send_with_ack(std::string cmd);
   virtual void set_baud(int baud) = 0;
   virtual void send(const std::string &s) = 0;
   virtual std::string receive() = 0;
