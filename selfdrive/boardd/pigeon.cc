@@ -37,10 +37,10 @@ Pigeon * Pigeon::connect(const char * tty){
   return pigeon;
 }
 
-bool wait_for_ublox_ack(Pigeon * pigeon){
+bool Pigeon::wait_for_ack(){
   std::string s;
   while (!do_exit){
-    s += pigeon->receive();
+    s += receive();
 
     if (s.find(ack) != std::string::npos){
       LOGD("Received ACK from ublox");
@@ -60,7 +60,7 @@ bool wait_for_ublox_ack(Pigeon * pigeon){
 
 bool Pigeon::send_with_ack(std::string cmd){
   send(cmd);
-  return wait_for_ublox_ack(this);
+  return wait_for_ack();
 }
 
 void Pigeon::init() {
