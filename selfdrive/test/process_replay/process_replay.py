@@ -413,6 +413,7 @@ def cpp_replay_process(cfg, lr):
   all_msgs = sorted(lr, key=lambda msg: msg.logMonoTime)
   pub_msgs = [msg for msg in all_msgs if msg.which() in list(cfg.pub_sub.keys())]
 
+  os.environ['PROCESS_REPLAY'] = "1"
   managed_processes[cfg.proc_name].prepare()
   managed_processes[cfg.proc_name].start()
 
