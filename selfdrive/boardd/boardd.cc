@@ -31,8 +31,6 @@
 #include "panda.h"
 #include "pigeon.h"
 
-using namespace std::string_literals;
-
 #define MAX_IR_POWER 0.5f
 #define MIN_IR_POWER 0.0f
 #define CUTOFF_IL 200
