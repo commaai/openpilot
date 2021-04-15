@@ -142,10 +142,18 @@ def match_fw_to_car_fuzzy(fw_versions_dict):
   that were matched uniquely to that specific car. If multiple ECUs uniquely match to different cars
   the match is rejected."""
 
+  # These ECUs are known to be shared between models (EPS only between hybrid/ICE version)
+  # Getting this exactly right isn't crucial, but excluding camera and radar makes it almost
+  # impossible to get 3 matching versions, even if two models with shared parts are released at the same
+  # time and only one is in our database.
+  exclude_types = [Ecu.fwdCamera, Ecu.fwdRadar, Ecu.eps]
+
   # Build lookup table from (addr, subaddr, fw) to list of candidate cars
   all_fw_versions = defaultdict(list)
   for candidate, fw_by_addr in FW_VERSIONS.items():
     for addr, fws in fw_by_addr.items():
+      if addr[0] in exclude_types:
+        continue
       for f in fws:
         all_fw_versions[(addr[1], addr[2], f)].append(candidate)
 
