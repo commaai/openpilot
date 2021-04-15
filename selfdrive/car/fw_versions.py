@@ -2,6 +2,7 @@
 import struct
 import traceback
 from typing import Any
+from collections import defaultdict
 
 from tqdm import tqdm
 
@@ -136,7 +137,43 @@ def chunks(l, n=128):
     yield l[i:i + n]
 
 
-def match_fw_to_car(fw_versions):
+def match_fw_to_car_fuzzy(fw_versions):
+  """Do a fuzzy FW match. This function will return a match, and the number of firmware version
+  that were matched uniquely to that specific car. If multiple ECUs uniquely match to different cars
+  the match is rejected."""
+
+  # Build lookup table from (addr, subaddr, fw) to list of candidate cars
+  all_fw_versions = defaultdict(list)
+  for candidate, fw_by_addr in FW_VERSIONS.items():
+    for addr, fws in fw_by_addr.items():
+      for f in fws:
+        all_fw_versions[(addr[1], addr[2], f)].append(candidate)
+
+  fw_versions_dict = {}
+  for fw in fw_versions:
+    addr = fw.address
+    sub_addr = fw.subAddress if fw.subAddress != 0 else None
+    fw_versions_dict[(addr, sub_addr)] = fw.fwVersion
+
+  match_count = 0
+  candidate = None
+
+  for addr, version in fw_versions_dict.items():
+    # All cars that have this FW response on the specified address
+    candidates = all_fw_versions[(addr[0], addr[1], version)]
+
+    if len(candidates) == 1:
+      match_count += 1
+      if candidate is None:
+        candidate = candidates[0]
+      # We uniquely matched two different cars. No fuzzy match possible
+      elif candidate != candidates[0]:
+        return 0, None
+
+  return match_count, candidate
+
+
+def match_fw_to_car(fw_versions, allow_fuzzy=True):
   candidates = FW_VERSIONS
   invalid = []
 
@@ -167,8 +204,15 @@ def match_fw_to_car(fw_versions):
         invalid.append(candidate)
         break
 
-  return set(candidates.keys()) - set(invalid)
+  matches = set(candidates.keys()) - set(invalid)
 
+  if allow_fuzzy and len(matches) == 0:
+    match_count, candidate = match_fw_to_car_fuzzy(fw_versions)
+    if candidate is not None and match_count >= 3:
+      cloudlog.error(f"Fingerprinted {candidate} using fuzzy match. {match_count} matching ECUs")
+      matches = set([candidate])
+
+  return matches
 
 def get_fw_versions(logcan, sendcan, bus, extra=None, timeout=0.1, debug=False, progress=False):
   ecu_types = {}

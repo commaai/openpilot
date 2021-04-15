@@ -19,6 +19,7 @@ from selfdrive.car.hyundai.values import FINGERPRINTS as HYUNDAI_FINGERPRINTS
 from selfdrive.car.volkswagen.values import FINGERPRINTS as VW_FINGERPRINTS
 
 SUPPORTED_CARS = list(TOYOTA_FINGERPRINTS.keys()) + list(HONDA_FINGERPRINTS.keys()) + list(HYUNDAI_FINGERPRINTS.keys())+ list(VW_FINGERPRINTS.keys())
+FUZZY = 'FUZZY' in os.environ
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description='Run FW fingerprint on Qlog of route or list of routes')
@@ -50,7 +51,7 @@ if __name__ == "__main__":
 
       for msg in lr:
         if msg.which() == "pandaState":
-          if msg.pandaState.pandaType not in ['uno', 'blackPanda']:
+          if msg.pandaState.pandaType not in ['uno', 'blackPanda', 'dos']:
             dongles.append(dongle_id)
             break
 
@@ -70,7 +71,7 @@ if __name__ == "__main__":
           if live_fingerprint not in SUPPORTED_CARS:
             break
 
-          candidates = match_fw_to_car(car_fw)
+          candidates = match_fw_to_car(car_fw, allow_fuzzy=FUZZY)
           if (len(candidates) == 1) and (list(candidates)[0] == live_fingerprint):
             good += 1
             print("Correct", live_fingerprint, dongle_id)
