@@ -27,8 +27,6 @@ public:
   void wake();
   ~GLWindow();
 
-  QMutex renderMutex;
-
 signals:
   void offroadTransition(bool offroad);
   void screen_shutoff();
@@ -108,10 +106,12 @@ private:
 
   bool inited_ = false,  onroad_ = true;
   GLWindow* glWindow_;
+  QMutex renderMutex;
   Sound sound;
   inline static UIState ui_state_ = {0};
 
   friend UIState *uiState();
+  friend class GLWindow;
 };
 
 inline UIState *uiState() {

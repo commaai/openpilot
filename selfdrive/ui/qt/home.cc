@@ -233,10 +233,10 @@ GLWindow::GLWindow(QWidget* parent) : brightness_filter(BACKLIGHT_OFFROAD, BACKL
 
   ui_updater = new UIUpdater(this);
   ui_updater->moveToThread(ui_updater);
-  connect(this, &GLWindow::aboutToCompose, [=] {  renderMutex.lock(); });
+  connect(this, &GLWindow::aboutToCompose, [=] {  ui_updater->renderMutex.lock(); });
   connect(this, &GLWindow::frameSwapped, [=] {
     context()->moveToThread(ui_updater);
-    renderMutex.unlock();
+    ui_updater->renderMutex.unlock();
   });
   ui_updater->start();
 
@@ -295,7 +295,7 @@ void UIUpdater::draw() {
     return;
   }
   
-  QMutexLocker lock(&glWindow_->renderMutex);
+  QMutexLocker lock(&renderMutex);
   if (ctx->thread() != this) {
     return;
   }
