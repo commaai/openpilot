@@ -349,7 +349,7 @@ def thermald_thread():
     if should_start != should_start_prev or (count == 0):
       params.put_bool("IsOffroad", not should_start)
       HARDWARE.set_power_save(not should_start)
-      if TICI:
+      if TICI and not params.get_bool("EnableLteOnroad"):
         fxn = "stop" if should_start else "start"
         os.system(f"sudo systemctl {fxn} --no-block lte")
 
