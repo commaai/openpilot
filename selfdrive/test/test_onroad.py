@@ -41,9 +41,9 @@ PROCS = {
 
 if TICI:
   PROCS.update({
-    "./loggerd": 55.0,
+    "./loggerd": 60.0,
     "selfdrive.controls.controlsd": 26.0,
-    "./camerad": 20.0,
+    "./camerad": 25.0,
     "selfdrive.locationd.locationd": 21.0,
     "selfdrive.controls.plannerd": 12.0,
     "selfdrive.locationd.paramsd": 5.0,

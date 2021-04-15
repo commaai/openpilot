@@ -5,7 +5,6 @@
 from selfdrive.locationd.test import ublox
 import struct
 
-panda = True
 baudrate = 460800
 rate = 100  # send new data every 100ms
 
@@ -15,17 +14,12 @@ def configure_ublox(dev):
   dev.configure_port(port=ublox.PORT_USB, inMask=1, outMask=1)  # enable only UBX on USB
   dev.configure_port(port=0, inMask=0, outMask=0)  # disable DDC
 
-  if panda:
-    payload = struct.pack('<BBHIIHHHBB', 1, 0, 0, 2240, baudrate, 1, 1, 0, 0, 0)
-    dev.configure_poll(ublox.CLASS_CFG, ublox.MSG_CFG_PRT, payload)  # enable UART
-  else:
-    payload = struct.pack('<BBHIIHHHBB', 1, 0, 0, 2240, baudrate, 0, 0, 0, 0, 0)
-    dev.configure_poll(ublox.CLASS_CFG, ublox.MSG_CFG_PRT, payload)  # disable UART
+  payload = struct.pack('<BBHIIHHHBB', 1, 0, 0, 2240, baudrate, 1, 1, 0, 0, 0)
+  dev.configure_poll(ublox.CLASS_CFG, ublox.MSG_CFG_PRT, payload)  # enable UART
 
   dev.configure_port(port=4, inMask=0, outMask=0)  # disable SPI
   dev.configure_poll_port()
   dev.configure_poll_port(ublox.PORT_SERIAL1)
-  dev.configure_poll_port(ublox.PORT_SERIAL2)
   dev.configure_poll_port(ublox.PORT_USB)
   dev.configure_solution_rate(rate_ms=rate)
 
@@ -65,7 +59,7 @@ if __name__ == "__main__":
   class Device:
     def write(self, s):
       d = '"{}"s'.format(''.join('\\x{:02X}'.format(b) for b in s))
-      print(f"send({d});")
+      print(f"    if (!send_with_ack({d})) continue;")
 
   dev = ublox.UBlox(Device(), baudrate=baudrate)
   configure_ublox(dev)
