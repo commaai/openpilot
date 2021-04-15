@@ -28,49 +28,12 @@ LiveKalman::LiveKalman() {
   this->dim_state = 23;
   this->dim_state_err = 22;
 
-  this->initial_x = VectorXd(this->dim_state);
-  this->initial_x << -2.7e6, 4.2e6, 3.8e6,
-                      1.0, 0.0, 0.0, 0.0,
-                      0.0, 0.0, 0.0,
-                      0.0, 0.0, 0.0,
-                      0.0, 0.0, 0.0,
-                      1.0,
-                      0.0, 0.0, 0.0,
-                      0.0, 0.0, 0.0;
-
-  VectorXd initial_P_diag(this->dim_state_err);
-  initial_P_diag << 1e16, 1e16, 1e16,
-                    1e6, 1e6, 1e6,
-                    1e4, 1e4, 1e4,
-                    std::pow(1.0, 2), std::pow(1.0, 2), std::pow(1.0, 2),
-                    std::pow(0.05, 2), std::pow(0.05, 2), std::pow(0.05, 2),
-                    std::pow(0.02, 2),
-                    std::pow(1.0, 2), std::pow(1.0, 2), std::pow(1.0, 2),
-                    std::pow(0.01, 2), std::pow(0.01, 2), std::pow(0.01, 2);
-  this->initial_P = initial_P_diag.asDiagonal();
-
-  VectorXd Q_diag(this->dim_state_err);
-  Q_diag << std::pow(0.03, 2), std::pow(0.03, 2), std::pow(0.03, 2),
-            std::pow(0.001, 2), std::pow(0.001, 2), std::pow(0.001, 2),
-            std::pow(0.01, 2), std::pow(0.01, 2), std::pow(0.01, 2),
-            std::pow(0.1, 2), std::pow(0.1, 2), std::pow(0.1, 2),
-            std::pow(0.005 / 100, 2), std::pow(0.005 / 100, 2), std::pow(0.005 / 100, 2),
-            std::pow(0.02 / 100, 2),
-            std::pow(3.0, 2), std::pow(3.0, 2), std::pow(3.0, 2),
-            std::pow(0.05 / 60, 2), std::pow(0.05 / 60, 2), std::pow(0.05 / 60, 2);
-  this->Q = Q_diag.asDiagonal();
-
-  this->obs_noise = {  // TODO? create two large diagional matrices
-    { KIND_ODOMETRIC_SPEED, (VectorXd(1) << std::pow(0.2, 2)).finished().asDiagonal() },
-    { KIND_PHONE_GYRO, (VectorXd(3) << std::pow(0.025, 2), std::pow(0.025, 2), std::pow(0.025, 2)).finished().asDiagonal() },
-    { KIND_PHONE_ACCEL, (VectorXd(3) << std::pow(0.5, 2), std::pow(0.5, 2), std::pow(0.5, 2)).finished().asDiagonal() },
-    { KIND_CAMERA_ODO_ROTATION, (VectorXd(3) << std::pow(0.05, 2), std::pow(0.05, 2), std::pow(0.05, 2)).finished().asDiagonal() },
-    { KIND_IMU_FRAME, (VectorXd(3) << std::pow(0.05, 2), std::pow(0.05, 2), std::pow(0.05, 2)).finished().asDiagonal() },
-    { KIND_NO_ROT, (VectorXd(3) << std::pow(0.005, 2), std::pow(0.005, 2), std::pow(0.005, 2)).finished().asDiagonal() },
-    { KIND_ECEF_POS, (VectorXd(3) << std::pow(5.0, 2), std::pow(5.0, 2), std::pow(5.0, 2)).finished().asDiagonal() },
-    { KIND_ECEF_VEL, (VectorXd(3) << std::pow(0.5, 2), std::pow(0.5, 2), std::pow(0.5, 2)).finished().asDiagonal() },
-    { KIND_ECEF_ORIENTATION_FROM_GPS, (VectorXd(4) << std::pow(0.2, 2), std::pow(0.2, 2), std::pow(0.2, 2), std::pow(0.2, 2)).finished().asDiagonal() },
-  };
+  this->initial_x = live_initial_x;
+  this->initial_P = live_initial_P_diag.asDiagonal();
+  this->Q = live_Q_diag.asDiagonal();
+  for (auto& pair : live_obs_noise_diag) {
+    this->obs_noise[pair.first] = pair.second.asDiagonal();
+  }
 
   // init filter
   this->filter = std::make_shared<EKFSym>(this->name, get_mapmat(this->Q), get_mapvec(this->initial_x), get_mapmat(initial_P),

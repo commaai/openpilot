@@ -18,7 +18,7 @@ from tools.lib.logreader import LogReader
 PROCS = {
   "selfdrive.controls.controlsd": 50.0,
   "./loggerd": 45.0,
-  "./locationd": 3.3,
+  "./locationd": 3.5,
   "selfdrive.controls.plannerd": 20.0,
   "./_ui": 15.0,
   "selfdrive.locationd.paramsd": 9.1,
@@ -44,7 +44,7 @@ if TICI:
     "./loggerd": 60.0,
     "selfdrive.controls.controlsd": 26.0,
     "./camerad": 25.0,
-    "./locationd": 2.1,
+    "./locationd": 3.2,
     "selfdrive.controls.plannerd": 12.0,
     "selfdrive.locationd.paramsd": 5.0,
     "./_dmonitoringmodeld": 10.0,

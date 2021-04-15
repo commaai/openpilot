@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import sys
+import os
 import numpy as np
 
 from selfdrive.swaglog import cloudlog
@@ -8,12 +9,19 @@ from selfdrive.locationd.models.constants import ObservationKind
 
 if __name__ == '__main__':  # Generating sympy
   import sympy as sp
+  import inspect
   from rednose.helpers.sympy_helpers import euler_rotate, quat_matrix_r, quat_rotate
   from rednose.helpers.ekf_sym import gen_code
 else:
   from rednose.helpers.ekf_sym_pyx import EKF_sym  # pylint: disable=no-name-in-module, import-error
 
 EARTH_GM = 3.986005e14  # m^3/s^2 (gravitational constant * mass of earth)
+
+
+def numpy2eigenstring(arr):
+  assert(len(arr.shape) == 1)
+  arr_str = np.array2string(arr, precision=20, separator=',')[1:-1].replace(' ', '').replace('\n', '')
+  return f"(Eigen::VectorXd({len(arr)}) << {arr_str}).finished()"
 
 
 class States():
@@ -60,14 +68,24 @@ class LiveKalman():
                              (0.01)**2, (0.01)**2, (0.01)**2])
 
   # process noise
-  Q = np.diag([0.03**2, 0.03**2, 0.03**2,
-               0.001**2, 0.001**2, 0.001**2,
-               0.01**2, 0.01**2, 0.01**2,
-               0.1**2, 0.1**2, 0.1**2,
-               (0.005 / 100)**2, (0.005 / 100)**2, (0.005 / 100)**2,
-               (0.02 / 100)**2,
-               3**2, 3**2, 3**2,
-               (0.05 / 60)**2, (0.05 / 60)**2, (0.05 / 60)**2])
+  Q_diag = np.array([0.03**2, 0.03**2, 0.03**2,
+                     0.001**2, 0.001**2, 0.001**2,
+                     0.01**2, 0.01**2, 0.01**2,
+                     0.1**2, 0.1**2, 0.1**2,
+                     (0.005 / 100)**2, (0.005 / 100)**2, (0.005 / 100)**2,
+                     (0.02 / 100)**2,
+                     3**2, 3**2, 3**2,
+                     (0.05 / 60)**2, (0.05 / 60)**2, (0.05 / 60)**2])
+
+  obs_noise_diag = {ObservationKind.ODOMETRIC_SPEED: np.array([0.2**2]),
+                    ObservationKind.PHONE_GYRO: np.array([0.025**2, 0.025**2, 0.025**2]),
+                    ObservationKind.PHONE_ACCEL: np.array([.5**2, .5**2, .5**2]),
+                    ObservationKind.CAMERA_ODO_ROTATION: np.array([0.05**2, 0.05**2, 0.05**2]),
+                    ObservationKind.IMU_FRAME: np.array([0.05**2, 0.05**2, 0.05**2]),
+                    ObservationKind.NO_ROT: np.array([0.005**2, 0.005**2, 0.005**2]),
+                    ObservationKind.ECEF_POS: np.array([5**2, 5**2, 5**2]),
+                    ObservationKind.ECEF_VEL: np.array([.5**2, .5**2, .5**2]),
+                    ObservationKind.ECEF_ORIENTATION_FROM_GPS: np.array([.2**2, .2**2, .2**2, .2**2])}
 
   @staticmethod
   def generate_code(generated_dir):
@@ -200,22 +218,41 @@ class LiveKalman():
 
     gen_code(generated_dir, name, f_sym, dt, state_sym, obs_eqs, dim_state, dim_state_err, eskf_params, extra_routines=extra_routines)
 
+    # write constants to extra header file for use in cpp
+    live_kf_header = "#pragma once\n\n"
+    live_kf_header += "#include <unordered_map>\n"
+    live_kf_header += "#include <eigen3/Eigen/Dense>\n\n"
+    for state, slc in inspect.getmembers(States, lambda x: type(x) == slice):
+      assert(slc.step is None)  # unsupported
+      live_kf_header += f'#define STATE_{state}_START {slc.start}\n'
+      live_kf_header += f'#define STATE_{state}_END {slc.stop}\n'
+      live_kf_header += f'#define STATE_{state}_LEN {slc.stop - slc.start}\n'
+    live_kf_header += "\n"
+
+    for kind, val in inspect.getmembers(ObservationKind, lambda x: type(x) == int):
+      live_kf_header += f'#define KIND_{kind} {val}\n'
+    live_kf_header += "\n"
+
+    live_kf_header += f"static const Eigen::VectorXd live_initial_x = {numpy2eigenstring(LiveKalman.initial_x)};\n"
+    live_kf_header += f"static const Eigen::VectorXd live_initial_P_diag = {numpy2eigenstring(LiveKalman.initial_P_diag)};\n"
+    live_kf_header += f"static const Eigen::VectorXd live_Q_diag = {numpy2eigenstring(LiveKalman.Q_diag)};\n"
+    live_kf_header += "static const std::unordered_map<int, Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> live_obs_noise_diag = {\n"
+    for kind, noise in LiveKalman.obs_noise_diag.items():
+      live_kf_header += f"  {{ {kind}, {numpy2eigenstring(noise)} }},\n"
+    live_kf_header += "};\n\n"
+
+    open(os.path.join(generated_dir, "live_kf_constants.h"), 'w').write(live_kf_header)
+
   def __init__(self, generated_dir):
     self.dim_state = self.initial_x.shape[0]
     self.dim_state_err = self.initial_P_diag.shape[0]
 
-    self.obs_noise = {ObservationKind.ODOMETRIC_SPEED: np.atleast_2d(0.2**2),
-                      ObservationKind.PHONE_GYRO: np.diag([0.025**2, 0.025**2, 0.025**2]),
-                      ObservationKind.PHONE_ACCEL: np.diag([.5**2, .5**2, .5**2]),
-                      ObservationKind.CAMERA_ODO_ROTATION: np.diag([0.05**2, 0.05**2, 0.05**2]),
-                      ObservationKind.IMU_FRAME: np.diag([0.05**2, 0.05**2, 0.05**2]),
-                      ObservationKind.NO_ROT: np.diag([0.005**2, 0.005**2, 0.005**2]),
-                      ObservationKind.ECEF_POS: np.diag([5**2, 5**2, 5**2]),
-                      ObservationKind.ECEF_VEL: np.diag([.5**2, .5**2, .5**2]),
-                      ObservationKind.ECEF_ORIENTATION_FROM_GPS: np.diag([.2**2, .2**2, .2**2, .2**2])}
+    self.obs_noise = {}
+    for kind, noise_diag in self.obs_noise_diag.items():
+      self.obs_noise[kind] = np.diag(noise_diag)
 
     # init filter
-    self.filter = EKF_sym(generated_dir, self.name, self.Q, self.initial_x, np.diag(self.initial_P_diag), self.dim_state, self.dim_state_err, max_rewind_age=0.2, logger=cloudlog)
+    self.filter = EKF_sym(generated_dir, self.name, np.diag(self.Q_diag), self.initial_x, np.diag(self.initial_P_diag), self.dim_state, self.dim_state_err, max_rewind_age=0.2, logger=cloudlog)
 
   @property
   def x(self):
