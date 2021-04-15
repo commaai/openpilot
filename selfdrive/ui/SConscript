@@ -38,12 +38,10 @@ replay_libs = ['avutil', 'avcodec', 'avformat', 'swscale', 'bz2']
 qt_env.Program("_ui", qt_src, LIBS=qt_libs + replay_libs)
 
 # build headless replay
-replay_src = ["replay/main.cc", "ui.cc", "paint.cc", "sidebar.cc", "#phonelibs/nanovg/nanovg.c",
-          "qt/window.cc", "qt/home.cc", "qt/api.cc", "qt/offroad/settings.cc",
-          "qt/offroad/onboarding.cc", "replay/Unlogger.cpp", "../../tools/clib/FrameReader.cpp",
-          "replay/FileReader.cpp", "replay/replay.cc"]
+replay_src = ["replay/main.cc", "replay/replay.cc", "replay/Unlogger.cpp",
+              "../../tools/clib/FrameReader.cpp", "replay/FileReader.cpp"]
 
-qt_env.Program("replay/_replay", replay_src, LIBS=qt_libs + replay_libs)
+qt_env.Program("replay/replay", replay_src, LIBS=qt_libs + replay_libs)
 
 # setup, factory resetter, and installer
 if arch != 'aarch64' and "BUILD_SETUP" in os.environ:
