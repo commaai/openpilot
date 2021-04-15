@@ -137,7 +137,7 @@ def chunks(l, n=128):
     yield l[i:i + n]
 
 
-def match_fw_to_car_fuzzy(fw_versions):
+def match_fw_to_car_fuzzy(fw_versions_dict):
   """Do a fuzzy FW match. This function will return a match, and the number of firmware version
   that were matched uniquely to that specific car. If multiple ECUs uniquely match to different cars
   the match is rejected."""
@@ -149,15 +149,8 @@ def match_fw_to_car_fuzzy(fw_versions):
       for f in fws:
         all_fw_versions[(addr[1], addr[2], f)].append(candidate)
 
-  fw_versions_dict = {}
-  for fw in fw_versions:
-    addr = fw.address
-    sub_addr = fw.subAddress if fw.subAddress != 0 else None
-    fw_versions_dict[(addr, sub_addr)] = fw.fwVersion
-
   match_count = 0
   candidate = None
-
   for addr, version in fw_versions_dict.items():
     # All cars that have this FW response on the specified address
     candidates = all_fw_versions[(addr[0], addr[1], version)]
@@ -207,7 +200,7 @@ def match_fw_to_car(fw_versions, allow_fuzzy=True):
   matches = set(candidates.keys()) - set(invalid)
 
   if allow_fuzzy and len(matches) == 0:
-    match_count, candidate = match_fw_to_car_fuzzy(fw_versions)
+    match_count, candidate = match_fw_to_car_fuzzy(fw_versions_dict)
     if candidate is not None and match_count >= 3:
       cloudlog.error(f"Fingerprinted {candidate} using fuzzy match. {match_count} matching ECUs")
       matches = set([candidate])
