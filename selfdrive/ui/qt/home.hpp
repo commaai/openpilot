@@ -10,6 +10,7 @@
 #include <QWidget>
 #include <QThread>
 #include <QMutex>
+#include <QWaitCondition>
 
 #include "sound.hpp"
 #include "ui/ui.hpp"
@@ -26,6 +27,7 @@ public:
   explicit GLWindow(QWidget* parent = 0);
   void wake();
   ~GLWindow();
+  std::atomic<bool> frameSwapped_ = false;
 
 signals:
   void offroadTransition(bool offroad);
@@ -48,6 +50,7 @@ private:
 
 public slots:
   void backlightUpdate();
+  void moveContextToThread();
 };
 
 // offroad home screen
@@ -97,15 +100,21 @@ class UIUpdater : public QThread, protected QOpenGLFunctions {
 
 public:
   UIUpdater(GLWindow* w);
-  bool exit_ = false;
+  
+signals:
+  void contextWanted();
 
 private:
   void run() override;
   void draw();
 
-  bool inited_ = false,  onroad_ = true;
+  bool inited_ = false, onroad_ = true, exit_ = false;
   GLWindow* glWindow_;
-  QMutex renderMutex;
+
+  QMutex renderMutex_;
+  QMutex grabMutex_;
+  QWaitCondition grabCond_;
+
   Sound sound;
   inline static UIState ui_state_ = {0};
 

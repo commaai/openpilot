@@ -233,15 +233,15 @@ GLWindow::GLWindow(QWidget* parent) : brightness_filter(BACKLIGHT_OFFROAD, BACKL
 
   ui_updater = new UIUpdater(this);
   ui_updater->moveToThread(ui_updater);
-  connect(this, &GLWindow::aboutToCompose, [=] {  ui_updater->renderMutex.lock(); });
-  connect(this, &GLWindow::frameSwapped, [=] {
-    context()->moveToThread(ui_updater);
-    ui_updater->renderMutex.unlock();
+  connect(this, &GLWindow::aboutToCompose, [=] {  ui_updater->renderMutex_.lock(); });
+  connect(this, &GLWindow::frameSwapped, [=] { 
+    ui_updater->renderMutex_.unlock(); 
+    frameSwapped_=true;
   });
+  connect(ui_updater, &UIUpdater::contextWanted, this, &GLWindow::moveContextToThread);
   ui_updater->start();
 
   wake();
-
   backlight_timer->start(BACKLIGHT_DT * 1000);
 }
 
@@ -275,6 +275,14 @@ void GLWindow::wake() {
   handle_display_state(uiState(), true);
 }
 
+void GLWindow::moveContextToThread() {
+  ui_updater->renderMutex_.lock();
+  QMutexLocker lock(&ui_updater->grabMutex_);
+  context()->moveToThread(ui_updater);
+  ui_updater->grabCond_.wakeAll();
+  ui_updater->renderMutex_.unlock();
+}
+
 // UIUpdater
 
 UIUpdater::UIUpdater(GLWindow* w) : QThread(), glWindow_(w) {
@@ -285,12 +293,20 @@ UIUpdater::UIUpdater(GLWindow* w) : QThread(), glWindow_(w) {
 }
 
 void UIUpdater::draw() {
-  QMutexLocker lock(&renderMutex);
-  QOpenGLContext* ctx = glWindow_->context();
-  if (!ctx || ctx->thread() != this) {
-    // QOpenGLWidget not yet initialized or context not in thread
+  if (!glWindow_->frameSwapped_) {
+    // the frame buffer has not been created yet.
     return;
   }
+
+  // move the context to this thread.
+  if (exit_) return;
+  grabMutex_.lock();
+  emit contextWanted();
+  grabCond_.wait(&grabMutex_);
+  QMutexLocker lock(&renderMutex_);
+  grabMutex_.unlock();
+  if (exit_) return;
+
   // Make the context (and an offscreen surface) current for this thread. The
   // QOpenGLWidget's fbo is bound in the context.
   glWindow_->makeCurrent();
@@ -310,7 +326,7 @@ void UIUpdater::draw() {
 
   // context back to the gui thread.
   glWindow_->doneCurrent();
-  ctx->moveToThread(glWindow_->thread());
+  glWindow_->context()->moveToThread(glWindow_->thread());
   // Schedule composition. Note that this will use QueuedConnection, meaning
   // that update() will be invoked on the gui thread.
   QMetaObject::invokeMethod(glWindow_, "update");
