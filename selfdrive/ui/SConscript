@@ -37,6 +37,11 @@ replay_libs = ['avutil', 'avcodec', 'avformat', 'swscale', 'bz2']
 
 qt_env.Program("_ui", qt_src, LIBS=qt_libs + replay_libs)
 
+# build headless replay
+replay_src = ["replay/main.cc", "replay/replay.cc", "replay/Unlogger.cpp", "replay/FileReader.cpp", "#tools/clib/FrameReader.cpp"]
+
+qt_env.Program("replay/_replay", replay_src, LIBS=qt_libs + replay_libs)
+
 # setup, factory resetter, and installer
 if arch != 'aarch64' and "BUILD_SETUP" in os.environ:
   qt_env.Program("qt/setup/reset", ["qt/setup/reset.cc"], LIBS=qt_libs)

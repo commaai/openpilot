@@ -10,7 +10,7 @@
 #include "FrameReader.hpp"
 #include "visionipc_server.h"
 
-class Replay : public QObject {
+class Replay : public QWidget {
 
 public:
   Replay(QString route_, int seek, int use_api);

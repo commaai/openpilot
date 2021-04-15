@@ -171,6 +171,10 @@ void Unlogger::process() {
               VisionIpcBufExtra extra = {};
 
               vipc_server->send(buf, &extra, false);
+
+              if(data != NULL){
+                fr.setImage(kj::arrayPtr(data, frm->getRGBSize()));
+              }
             }
           }
         }
