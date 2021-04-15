@@ -32,7 +32,6 @@ signals:
   void screen_shutoff();
 
 protected:
-  void resizeGL(int w, int h) override;
   void resizeEvent(QResizeEvent* event) override {}
   void paintEvent(QPaintEvent* event) override {}
 

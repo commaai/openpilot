@@ -271,10 +271,6 @@ void GLWindow::backlightUpdate() {
   last_brightness = brightness;
 }
 
-void GLWindow::resizeGL(int w, int h) {
-  std::cout << "resize " << w << "x" << h << std::endl;
-}
-
 void GLWindow::wake() {
   handle_display_state(uiState(), true);
 }
