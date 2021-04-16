@@ -163,7 +163,7 @@ typedef struct UIState {
   mat4 rear_frame_mat, front_frame_mat;
 
   // device state
-  std::atomic<bool> awake;
+  bool awake;
   std::atomic<bool> sidebar_collapsed;
 
   Rect video_rect, viz_rect;

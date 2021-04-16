@@ -107,8 +107,10 @@ signals:
 private:
   void run() override;
   void draw();
+  void handle_display_state();
 
   bool inited_ = false, onroad_ = true, exit_ = false;
+  std::atomic<bool> user_input_;
   GLWindow* glWindow_;
 
   QMutex renderMutex_;

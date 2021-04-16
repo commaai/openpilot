@@ -193,37 +193,6 @@ void OffroadHome::refresh() {
 
 // GLWindow: the onroad UI
 
-static void handle_display_state(UIState* s, bool user_input) {
-  static int awake_timeout = 0;
-  awake_timeout = std::max(awake_timeout - 1, 0);
-
-  constexpr float accel_samples = 5*UI_FREQ;
-  static float accel_prev = 0., gyro_prev = 0.;
-
-  bool should_wake = s->scene.started || s->scene.ignition || user_input;
-  if (!should_wake) {
-    // tap detection while display is off
-    bool accel_trigger = abs(s->scene.accel_sensor - accel_prev) > 0.2;
-    bool gyro_trigger = abs(s->scene.gyro_sensor - gyro_prev) > 0.15;
-    should_wake = accel_trigger && gyro_trigger;
-    gyro_prev = s->scene.gyro_sensor;
-    accel_prev = (accel_prev * (accel_samples - 1) + s->scene.accel_sensor) / accel_samples;
-  }
-
-  if (should_wake) {
-    awake_timeout = 30 * UI_FREQ;
-  } else if (awake_timeout > 0) {
-    should_wake = true;
-  }
-
-  // handle state transition
-  if (s->awake != should_wake) {
-    s->awake = should_wake;
-    Hardware::set_display_power(s->awake);
-    LOGD("setting display power %d", s->awake.load());
-  }
-}
-
 GLWindow::GLWindow(QWidget* parent) : brightness_filter(BACKLIGHT_OFFROAD, BACKLIGHT_TS, BACKLIGHT_DT), QOpenGLWidget(parent) {
   backlight_timer = new QTimer(this);
   QObject::connect(backlight_timer, SIGNAL(timeout()), this, SLOT(backlightUpdate()));
@@ -241,7 +210,6 @@ GLWindow::GLWindow(QWidget* parent) : brightness_filter(BACKLIGHT_OFFROAD, BACKL
   connect(ui_updater, &UIUpdater::contextWanted, this, &GLWindow::moveContextToThread);
   ui_updater->start();
 
-  wake();
   backlight_timer->start(BACKLIGHT_DT * 1000);
 }
 
@@ -272,7 +240,7 @@ void GLWindow::backlightUpdate() {
 }
 
 void GLWindow::wake() {
-  handle_display_state(uiState(), true);
+  ui_updater->user_input_ = true;
 }
 
 void GLWindow::moveContextToThread() {
@@ -332,7 +300,42 @@ void UIUpdater::draw() {
   QMetaObject::invokeMethod(glWindow_, "update");
 }
 
+void UIUpdater::handle_display_state() {
+  static int awake_timeout = 0;
+  awake_timeout = std::max(awake_timeout - 1, 0);
+
+  UIState *s = &ui_state_;
+  constexpr float accel_samples = 5*UI_FREQ;
+  static float accel_prev = 0., gyro_prev = 0.;
+
+  bool should_wake = s->scene.started || s->scene.ignition || user_input_;
+  if (!should_wake) {
+    // tap detection while display is off
+    bool accel_trigger = abs(s->scene.accel_sensor - accel_prev) > 0.2;
+    bool gyro_trigger = abs(s->scene.gyro_sensor - gyro_prev) > 0.15;
+    should_wake = accel_trigger && gyro_trigger;
+    gyro_prev = s->scene.gyro_sensor;
+    accel_prev = (accel_prev * (accel_samples - 1) + s->scene.accel_sensor) / accel_samples;
+  }
+
+  if (should_wake) {
+    awake_timeout = 30 * UI_FREQ;
+    if (user_input_) user_input_ = false;
+  } else if (awake_timeout > 0) {
+    should_wake = true;
+  }
+
+  // handle state transition
+  if (s->awake != should_wake) {
+    s->awake = should_wake;
+    Hardware::set_display_power(s->awake);
+    LOGD("setting display power %d", s->awake);
+  }
+}
+
 void UIUpdater::run() {
+  Hardware::set_display_power(true);
+
   while (!exit_) {
     if (!ui_state_.scene.started || !glWindow_->isVisible()) {
       util::sleep_for(1000 / UI_FREQ);
@@ -346,7 +349,7 @@ void UIUpdater::run() {
       emit glWindow_->offroadTransition(!onroad_);
     }
 
-    handle_display_state(&ui_state_, false);
+    handle_display_state();
     
     // Don't waste resources on drawing in case screen is off
     if (!ui_state_.awake || !glWindow_->isVisible()) {
