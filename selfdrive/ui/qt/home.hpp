@@ -17,7 +17,7 @@
 #include "common/util.h"
 #include "widgets/offroad_alerts.hpp"
 
-class UIUpdater;
+class UIThread;
 
 // container window for onroad NVG UI
 class GLWindow : public QOpenGLWidget {
@@ -32,25 +32,18 @@ public:
 signals:
   void offroadTransition(bool offroad);
   void screen_shutoff();
+  void mousePressed(int x, int y);
+  void openSettings();
+
+public slots:
+  void moveContextToThread();
 
 protected:
   void resizeEvent(QResizeEvent* event) override {}
   void paintEvent(QPaintEvent* event) override {}
 
 private:
-  QTimer* backlight_timer;
-
-  // TODO: make a nice abstraction to handle embedded device stuff
-  float brightness_b = 0;
-  float brightness_m = 0;
-  float last_brightness = 0;
-  FirstOrderFilter brightness_filter;
-
-  UIUpdater *ui_updater;
-
-public slots:
-  void backlightUpdate();
-  void moveContextToThread();
+  UIThread *ui_thread;
 };
 
 // offroad home screen
@@ -95,22 +88,19 @@ private:
 };
 
 
-class UIUpdater : public QThread, protected QOpenGLFunctions {
+class UIThread : public QThread, protected QOpenGLFunctions {
   Q_OBJECT
 
 public:
-  UIUpdater(GLWindow* w);
+  UIThread(GLWindow* w);
   
-signals:
-  void contextWanted();
-
 private:
   void run() override;
   void draw();
-  void handle_display_state();
+  void handle_display_state(bool user_input);
+  void backlightUpdate();
 
-  bool inited_ = false, onroad_ = true, exit_ = false;
-  std::atomic<bool> user_input_;
+  bool inited_ = false, onroad_ = true, exit_ = false, prev_awake_ = true;
   GLWindow* glWindow_;
 
   QMutex renderMutex_;
@@ -120,10 +110,22 @@ private:
   Sound sound;
   inline static UIState ui_state_ = {0};
 
+  // TODO: make a nice abstraction to handle embedded device stuff
+  float brightness_b_ = 0;
+  float brightness_m_ = 0;
+  float last_brightness_ = 0;
+  FirstOrderFilter brightness_filter_;
+
+signals:
+  void contextWanted();
+
+private slots:
+  void mousePressed(int x, int y);
+
   friend UIState *uiState();
   friend class GLWindow;
 };
 
 inline UIState *uiState() {
-  return &UIUpdater::ui_state_;
+  return &UIThread::ui_state_;
 }

@@ -22,7 +22,7 @@
 #include "widgets/drive_stats.hpp"
 #include "widgets/setup.hpp"
 
-#define BACKLIGHT_DT 0.25
+#define BACKLIGHT_DT 1 / UI_FREQ
 #define BACKLIGHT_TS 2.00
 #define BACKLIGHT_OFFROAD 50
 
@@ -43,30 +43,14 @@ HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
   QObject::connect(glWindow, SIGNAL(offroadTransition(bool)), home, SLOT(setVisible(bool)));
   QObject::connect(glWindow, SIGNAL(offroadTransition(bool)), this, SIGNAL(offroadTransition(bool)));
   QObject::connect(glWindow, SIGNAL(screen_shutoff()), this, SIGNAL(closeSettings()));
+  QObject::connect(glWindow, SIGNAL(openSettings()), this, SIGNAL(openSettings()));
   QObject::connect(this, SIGNAL(openSettings()), home, SLOT(refresh()));
 
   setLayout(layout);
 }
 
 void HomeWindow::mousePressEvent(QMouseEvent* e) {
-  UIState *ui_state = uiState();
-  if (ui_state->scene.driver_view) {
-    Params().putBool("IsDriverViewEnabled", false);
-    ui_state->scene.driver_view = false;
-    return;
-  }
-
-  glWindow->wake();
-
-  // Settings button click
-  if (!ui_state->sidebar_collapsed && settings_btn.ptInRect(e->x(), e->y())) {
-    emit openSettings();
-  }
-
-  // Handle sidebar collapsing
-  if (ui_state->scene.started && (e->x() >= ui_state->viz_rect.x - bdr_s)) {
-    ui_state->sidebar_collapsed = !ui_state->sidebar_collapsed;
-  }
+  emit glWindow->mousePressed(e->x(), e->y());
 }
 
 
@@ -193,74 +177,121 @@ void OffroadHome::refresh() {
 
 // GLWindow: the onroad UI
 
-GLWindow::GLWindow(QWidget* parent) : brightness_filter(BACKLIGHT_OFFROAD, BACKLIGHT_TS, BACKLIGHT_DT), QOpenGLWidget(parent) {
-  backlight_timer = new QTimer(this);
-  QObject::connect(backlight_timer, SIGNAL(timeout()), this, SLOT(backlightUpdate()));
-
-  brightness_b = Params(true).get<float>("BRIGHTNESS_B").value_or(10.0);
-  brightness_m = Params(true).get<float>("BRIGHTNESS_M").value_or(0.1);
-
-  ui_updater = new UIUpdater(this);
-  ui_updater->moveToThread(ui_updater);
-  connect(this, &GLWindow::aboutToCompose, [=] {  ui_updater->renderMutex_.lock(); });
+GLWindow::GLWindow(QWidget* parent) : QOpenGLWidget(parent) {
+  ui_thread = new UIThread(this);
+  ui_thread->moveToThread(ui_thread);
+  connect(this, &GLWindow::aboutToCompose, [=] {  ui_thread->renderMutex_.lock(); });
   connect(this, &GLWindow::frameSwapped, [=] { 
-    ui_updater->renderMutex_.unlock(); 
+    ui_thread->renderMutex_.unlock(); 
     frameSwapped_=true;
   });
-  connect(ui_updater, &UIUpdater::contextWanted, this, &GLWindow::moveContextToThread);
-  ui_updater->start();
-
-  backlight_timer->start(BACKLIGHT_DT * 1000);
+  connect(this, &GLWindow::mousePressed, ui_thread, &UIThread::mousePressed);
+  connect(ui_thread, &UIThread::contextWanted, this, &GLWindow::moveContextToThread);
+  ui_thread->start();
 }
 
 GLWindow::~GLWindow() {
-  ui_updater->exit_ = true;
-  ui_updater->wait();
-  delete ui_updater;
-}
-
-void GLWindow::backlightUpdate() {
-  // Update brightness
-  UIState &ui_state = *uiState();
-  float clipped_brightness = std::min(100.0f, (ui_state.scene.light_sensor * brightness_m) + brightness_b);
-  if (!ui_state.scene.started) {
-    clipped_brightness = BACKLIGHT_OFFROAD;
-  }
-
-  int brightness = brightness_filter.update(clipped_brightness);
-  if (!ui_state.awake) {
-    brightness = 0;
-    emit screen_shutoff();
-  }
-
-  if (brightness != last_brightness) {
-    std::thread{Hardware::set_brightness, brightness}.detach();
-  }
-  last_brightness = brightness;
+  ui_thread->exit_ = true;
+  ui_thread->wait();
+  delete ui_thread;
 }
 
 void GLWindow::wake() {
-  ui_updater->user_input_ = true;
+  emit mousePressed(0, 0); 
 }
 
 void GLWindow::moveContextToThread() {
-  ui_updater->renderMutex_.lock();
-  QMutexLocker lock(&ui_updater->grabMutex_);
-  context()->moveToThread(ui_updater);
-  ui_updater->grabCond_.wakeAll();
-  ui_updater->renderMutex_.unlock();
+  ui_thread->renderMutex_.lock();
+  QMutexLocker lock(&ui_thread->grabMutex_);
+  context()->moveToThread(ui_thread);
+  ui_thread->grabCond_.wakeAll();
+  ui_thread->renderMutex_.unlock();
 }
 
-// UIUpdater
+// UIThread
 
-UIUpdater::UIUpdater(GLWindow* w) : QThread(), glWindow_(w) {
+UIThread::UIThread(GLWindow* w) : QThread(), glWindow_(w), brightness_filter_(BACKLIGHT_OFFROAD, BACKLIGHT_TS, BACKLIGHT_DT) {
+  brightness_b_ = Params(true).get<float>("brightness_b").value_or(10.0);
+  brightness_m_ = Params(true).get<float>("brightness_m").value_or(0.1);
+
   ui_state_.sound = &sound;
   ui_state_.fb_w = vwp_w;
   ui_state_.fb_h = vwp_h;
   ui_init(&ui_state_);
 }
 
-void UIUpdater::draw() {
+void UIThread::handle_display_state(bool user_input) {
+  static int awake_timeout = 0;
+  awake_timeout = std::max(awake_timeout - 1, 0);
+
+  UIState *s = &ui_state_;
+  constexpr float accel_samples = 5*UI_FREQ;
+  static float accel_prev = 0., gyro_prev = 0.;
+
+  bool should_wake = s->scene.started || s->scene.ignition || user_input;
+  if (!should_wake) {
+    // tap detection while display is off
+    bool accel_trigger = abs(s->scene.accel_sensor - accel_prev) > 0.2;
+    bool gyro_trigger = abs(s->scene.gyro_sensor - gyro_prev) > 0.15;
+    should_wake = accel_trigger && gyro_trigger;
+    gyro_prev = s->scene.gyro_sensor;
+    accel_prev = (accel_prev * (accel_samples - 1) + s->scene.accel_sensor) / accel_samples;
+  }
+
+  if (should_wake) {
+    awake_timeout = 30 * UI_FREQ;
+  } else if (awake_timeout > 0) {
+    should_wake = true;
+  }
+
+  // handle state transition
+  if (s->awake != should_wake) {
+    s->awake = should_wake;
+    Hardware::set_display_power(s->awake);
+    LOGD("setting display power %d", s->awake);
+  }
+}
+
+void UIThread::mousePressed(int x, int y) {
+  if (ui_state_.scene.driver_view) {
+    Params().putBool("IsDriverViewEnabled", false);
+    ui_state_.scene.driver_view = false;
+    return;
+  }
+
+  handle_display_state(true);
+
+  // Settings button click
+  if (!ui_state_.sidebar_collapsed && settings_btn.ptInRect(x, y)) {
+    emit glWindow_->openSettings();
+  }
+
+  // Handle sidebar collapsing
+  if (ui_state_.scene.started && (x >= ui_state_.viz_rect.x - bdr_s)) {
+    ui_state_.sidebar_collapsed = !ui_state_.sidebar_collapsed;
+  }
+}
+
+void UIThread::backlightUpdate() {
+  // Update brightness
+  float clipped_brightness = std::min(100.0f, (ui_state_.scene.light_sensor * brightness_m_) + brightness_b_);
+  if (!ui_state_.scene.started) {
+    clipped_brightness = BACKLIGHT_OFFROAD;
+  }
+
+  int brightness = brightness_filter_.update(clipped_brightness);
+  if (!ui_state_.awake) {
+    brightness = 0;
+  }
+
+  if (brightness != last_brightness_) {
+    Hardware::set_brightness(brightness);
+  }
+  last_brightness_ = brightness;
+}
+
+
+void UIThread::draw() {
   if (!glWindow_->frameSwapped_) {
     // the frame buffer has not been created yet.
     return;
@@ -300,43 +331,12 @@ void UIUpdater::draw() {
   QMetaObject::invokeMethod(glWindow_, "update");
 }
 
-void UIUpdater::handle_display_state() {
-  static int awake_timeout = 0;
-  awake_timeout = std::max(awake_timeout - 1, 0);
-
-  UIState *s = &ui_state_;
-  constexpr float accel_samples = 5*UI_FREQ;
-  static float accel_prev = 0., gyro_prev = 0.;
-
-  bool should_wake = s->scene.started || s->scene.ignition || user_input_;
-  if (!should_wake) {
-    // tap detection while display is off
-    bool accel_trigger = abs(s->scene.accel_sensor - accel_prev) > 0.2;
-    bool gyro_trigger = abs(s->scene.gyro_sensor - gyro_prev) > 0.15;
-    should_wake = accel_trigger && gyro_trigger;
-    gyro_prev = s->scene.gyro_sensor;
-    accel_prev = (accel_prev * (accel_samples - 1) + s->scene.accel_sensor) / accel_samples;
-  }
-
-  if (should_wake) {
-    awake_timeout = 30 * UI_FREQ;
-    if (user_input_) user_input_ = false;
-  } else if (awake_timeout > 0) {
-    should_wake = true;
-  }
-
-  // handle state transition
-  if (s->awake != should_wake) {
-    s->awake = should_wake;
-    Hardware::set_display_power(s->awake);
-    LOGD("setting display power %d", s->awake);
-  }
-}
-
-void UIUpdater::run() {
-  Hardware::set_display_power(true);
+void UIThread::run() {
+  handle_display_state(true);
 
   while (!exit_) {
+    QCoreApplication::processEvents();
+
     if (!ui_state_.scene.started || !glWindow_->isVisible()) {
       util::sleep_for(1000 / UI_FREQ);
     }
@@ -349,8 +349,15 @@ void UIUpdater::run() {
       emit glWindow_->offroadTransition(!onroad_);
     }
 
-    handle_display_state();
+    handle_display_state(false);
     
+    backlightUpdate();
+
+    if (!ui_state_.awake && ui_state_.awake != prev_awake_) {
+      emit glWindow_->screen_shutoff();
+    }
+    prev_awake_ = ui_state_.awake;
+
     // Don't waste resources on drawing in case screen is off
     if (!ui_state_.awake || !glWindow_->isVisible()) {
       continue;

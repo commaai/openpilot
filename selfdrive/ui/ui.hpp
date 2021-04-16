@@ -164,8 +164,8 @@ typedef struct UIState {
 
   // device state
   bool awake;
-  std::atomic<bool> sidebar_collapsed;
 
+  bool sidebar_collapsed;
   Rect video_rect, viz_rect;
   float car_space_transform[6];
   bool wide_camera;
