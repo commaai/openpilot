@@ -48,19 +48,7 @@ Unlogger::Unlogger(Events *events_, QReadWriteLock* events_lock_, QMap<int, Fram
 
     qDebug() << name.c_str();
 
-    for (auto field: capnp::Schema::from<cereal::Event>().getFields()) {
-      std::string tname = field.getProto().getName();
-
-      if (tname == name) {
-        // TODO: I couldn't figure out how to get the which, only the index, hence this hack
-        int type = field.getIndex();
-        if (type > 67) type--; // valid
-        type--; // logMonoTime
-
-        //qDebug() << "here" << tname.c_str() << type << cereal::Event::CONTROLS_STATE;
-        socks.insert(type, sock);
-      }
-    }
+    socks.insert(name, sock);
   }
 
   cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
@@ -127,8 +115,14 @@ void Unlogger::process() {
         last_elapsed = tc;
       }
 
-      auto e = *eit;
-      auto type = e.which();
+      cereal::Event::Reader e = *eit;
+
+      capnp::DynamicStruct::Reader e_ds = static_cast<capnp::DynamicStruct::Reader>(e);
+      std::string type;
+      KJ_IF_MAYBE(e_, e_ds.which()){
+        type = e_->getProto().getName();
+      }
+
       uint64_t tm = e.getLogMonoTime();
       auto it = socks.find(type);
       tc = tm;
@@ -147,14 +141,8 @@ void Unlogger::process() {
           //qDebug() << "sleeping" << us_behind << etime << timer.nsecsElapsed();
         }
 
-        capnp::MallocMessageBuilder msg;
-        msg.setRoot(e);
-
-        auto ee = msg.getRoot<cereal::Event>();
-        ee.setLogMonoTime(nanos_since_boot());
-
-        if (e.which() == cereal::Event::ROAD_CAMERA_STATE) {
-          auto fr = msg.getRoot<cereal::Event>().getRoadCameraState();
+        if (type == "roadCameraState") {
+          auto fr = e.getRoadCameraState();
 
           // TODO: better way?
           auto it = eidx.find(fr.getFrameId());
@@ -175,6 +163,8 @@ void Unlogger::process() {
           }
         }
 
+        capnp::MallocMessageBuilder msg;
+        msg.setRoot(e);
         auto words = capnp::messageToFlatArray(msg);
         auto bytes = words.asBytes();
 

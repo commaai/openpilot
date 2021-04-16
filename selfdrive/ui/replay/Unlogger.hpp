@@ -26,7 +26,7 @@ Q_OBJECT
     Events *events;
     QReadWriteLock *events_lock;
     QMap<int, FrameReader*> *frs;
-    QMap<int, PubSocket*> socks;
+    QMap<std::string, PubSocket*> socks;
     Context *ctx;
     uint64_t tc = 0;
     uint64_t seek_request = 0;
