@@ -26,7 +26,7 @@ def accel_hysteresis(accel, accel_steady, enabled):
 
 
 def coast_accel(speed: float) -> float:  # given a speed, output coasting acceleration
-  points = [[0.01, 0.3], [.21, .425], [.3107, .535], [.431, .555],
+  points = [[0.01, 0.0], [.21, .425], [.3107, .535], [.431, .555],
             [.777, .438], [1.928, 0.265], [2.66, -0.179],
             [3.336, -0.250], [MIN_ACC_SPEED, -0.145]]
   return interp(speed, *zip(*points))
@@ -40,12 +40,14 @@ def compute_gb_pedal(accel: float, speed: float, braking: bool) -> float:
     return speed_part + accel_part + _offset
 
   gas = 0.
-  if accel > (coast := coast_accel(speed)):
+  coast = coast_accel(speed)
+  coast_spread = 0.1
+
+  if accel > coast - coast_spread:
     gas = accel_to_gas(accel, speed)
 
-    coast_spread = interp(speed, [0, MIN_ACC_SPEED], [0.2, 0.3])
     if accel < coast + coast_spread:  # ramp up gas output smoothly from coast accel to coast + spread
-      gas *= interp(accel, [coast, coast + coast_spread], [0, 1]) ** 2
+      gas *= interp(accel, [coast - coast_spread, coast + coast_spread], [0, 1]) ** 2
 
   return gas if not braking else gas / 2.0  # give car chance to release brakes when resuming
 
