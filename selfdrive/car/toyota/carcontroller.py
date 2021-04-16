@@ -25,33 +25,29 @@ def accel_hysteresis(accel, accel_steady, enabled):
   return accel, accel_steady
 
 
-def coast_accel(speed):  # given a speed, output coasting acceleration
+def coast_accel(speed: float) -> float:  # given a speed, output coasting acceleration
   points = [[0.01, 0.3], [.21, .425], [.3107, .535], [.431, .555],
             [.777, .438], [1.928, 0.265], [2.66, -0.179],
             [3.336, -0.250], [MIN_ACC_SPEED, -0.145]]
   return interp(speed, *zip(*points))
 
 
-def compute_gb_pedal(accel, speed, braking):
+def compute_gb_pedal(accel: float, speed: float, braking: bool) -> float:
   def accel_to_gas(a_ego, v_ego):
-    _a3, _a4, _a5, _a6, _a7, _a8, _s1, _s2, _s3, _s4, _offset = [-0.0034109221270790142, -0.02989942810035373,
-    0.002005326552420498, 0.1356381902353583, 0.0014222019070588158, 0.008436894892099946, 0.0009439048033890968,
-    -0.0017786568461504919, 0.002986433642380856, 0.021810785976030644, -0.007020501995388009]
-    speed_part = (_s1 * a_ego + _s2) * v_ego ** 2 + (_s3 * a_ego + _s4) * v_ego
-    accel_part = (_a7 * v_ego + _a8) * a_ego ** 4 + (_a3 * v_ego + _a4) * a_ego ** 3 + _a5 * a_ego ** 2 + _a6 * a_ego
-    ret = speed_part + accel_part + _offset
-    return ret
+    _a3, _a4, _a5, _a6, _a7, _a9, _s1, _s2, _s3, _offset = [0.002377321579025474, 0.07381215915662231, -0.007963770877144415, 0.15947881013161083, -0.010037975860880363, -0.1334422448911381, 0.0019638460320592194, -0.0018659661194108225, 0.021688122969402018, 0.027007983705385548]
+    speed_part = (_s1 * a_ego + _s2) * v_ego ** 2 + _s3 * v_ego
+    accel_part = _a7 * a_ego ** 4 + (_a3 * v_ego + _a4) * a_ego ** 3 + (_a5 * v_ego + _a9) * a_ego ** 2 + _a6 * a_ego
+    return speed_part + accel_part + _offset
 
-  coast = coast_accel(speed)
-  spread = 0.2
-
-  if accel >= coast:
+  gas = 0.
+  if accel > (coast := coast_accel(speed)):
     gas = accel_to_gas(accel, speed)
-    x = accel - coast  # start at 0 from coast accel
-    if spread > x >= 0:  # ramp up gas output smoothly from coast accel to coast + spread
-      gas *= 1 / (1 + (x / (spread - x)) ** -3) if x != 0 else 0
-    return gas if not braking else gas / 2.0
-  return 0.
+
+    coast_spread = interp(speed, [0, MIN_ACC_SPEED], [0.2, 0.3])
+    if accel < coast + coast_spread:  # ramp up gas output smoothly from coast accel to coast + spread
+      gas *= interp(accel, [coast, coast + coast_spread], [0, 1]) ** 2
+
+  return gas if not braking else gas / 2.0  # give car chance to release brakes when resuming
 
 
 class CarController():
