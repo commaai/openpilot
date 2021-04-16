@@ -5,9 +5,6 @@ using namespace Eigen;
 
 ExitHandler do_exit;
 
-IOFormat fmt(FullPrecision, 0, ", ", ",\n", "[", "]", "[", "]");
-IOFormat fmt_row(FullPrecision, 0, ", ", ", ", "", "", "", "");
-
 VectorXd floatlist2vector(const capnp::List<float, capnp::Kind::PRIMITIVE>::Reader& floatlist) {
   VectorXd res(floatlist.size());
   for (int i = 0; i < floatlist.size(); i++) {
@@ -43,10 +40,6 @@ Localizer::Localizer() {
 
   VectorXd ecef_pos = this->kf->get_x().segment<STATE_ECEF_POS_LEN>(STATE_ECEF_POS_START);
   this->converter = std::make_shared<LocalCoord>((ECEF) { .x = ecef_pos[0], .y = ecef_pos[1], .z = ecef_pos[2] });
-
-  if (std::getenv("PROCESS_REPLAY")) {
-    this->send_on_all = true;
-  }
 }
 
 void Localizer::liveLocationMsg(cereal::LiveLocationKalman::Builder& fix) {
@@ -145,16 +138,6 @@ void Localizer::liveLocationMsg(cereal::LiveLocationKalman::Builder& fix) {
   }
 }
 
-void Localizer::update_kalman(double t, int kind, std::vector<VectorXd> meas, std::vector<MatrixXdr> R) {
-  try {
-    this->kf->predict_and_observe(t, kind, meas, R);
-  }
-  catch (std::exception e) {  // TODO specify exception
-    std::cout << "Error in predict and observe, kalman reset" << std::endl;  // TODO cloudlog
-    this->reset_kalman();
-  }
-}
-
 void Localizer::handle_sensors(double current_time, const capnp::List<cereal::SensorEventData, capnp::Kind::STRUCT>::Reader& log) {
   // TODO does not yet account for double sensor readings in the log
   for (int i = 0; i < log.size(); i++) {
@@ -170,7 +153,7 @@ void Localizer::handle_sensors(double current_time, const capnp::List<cereal::Se
       this->gyro_counter++;
       if (this->gyro_counter % SENSOR_DECIMATION == 0) {
         auto v = sensor_reading.getGyroUncalibrated().getV();
-        this->update_kalman(sensor_time, KIND_PHONE_GYRO, { Vector3d(-v[2], -v[1], -v[0]) });
+        this->kf->predict_and_observe(sensor_time, KIND_PHONE_GYRO, { Vector3d(-v[2], -v[1], -v[0]) });
       }
     }
 
@@ -184,7 +167,7 @@ void Localizer::handle_sensors(double current_time, const capnp::List<cereal::Se
 
       this->acc_counter++;
       if (this->acc_counter % SENSOR_DECIMATION == 0) {
-        this->update_kalman(sensor_time, KIND_PHONE_ACCEL, { Vector3d(-v[2], -v[1], -v[0]) });
+        this->kf->predict_and_observe(sensor_time, KIND_PHONE_ACCEL, { Vector3d(-v[2], -v[1], -v[0]) });
       }
     }
   }
@@ -225,14 +208,14 @@ void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::R
   if (ecef_vel.norm() > 5.0 && orientation_error.norm() > 1.0) {
     std::cout << "Locationd vs ubloxLocation orientation difference too large, kalman reset" << std::endl;
     this->reset_kalman(NAN, initial_pose_ecef_quat, ecef_pos);
-    this->update_kalman(current_time, KIND_ECEF_ORIENTATION_FROM_GPS, { initial_pose_ecef_quat });
+    this->kf->predict_and_observe(current_time, KIND_ECEF_ORIENTATION_FROM_GPS, { initial_pose_ecef_quat });
   } else if (gps_est_error > 50.0) {
     std::cout << "Locationd vs ubloxLocation position difference too large, kalman reset" << std::endl;
     this->reset_kalman(NAN, initial_pose_ecef_quat, ecef_pos);
   }
 
-  this->update_kalman(current_time, KIND_ECEF_POS, { ecef_pos }, { ecef_pos_R });
-  this->update_kalman(current_time, KIND_ECEF_VEL, { ecef_vel }, { ecef_vel_R });
+  this->kf->predict_and_observe(current_time, KIND_ECEF_POS, { ecef_pos }, { ecef_pos_R });
+  this->kf->predict_and_observe(current_time, KIND_ECEF_VEL, { ecef_vel }, { ecef_vel_R });
 }
 
 
@@ -240,10 +223,10 @@ void Localizer::handle_car_state(double current_time, const cereal::CarState::Re
   this->speed_counter++;
 
   if (this->speed_counter % SENSOR_DECIMATION == 0) {
-    this->update_kalman(current_time, KIND_ODOMETRIC_SPEED, { (VectorXd(1) << log.getVEgo()).finished() });
+    this->kf->predict_and_observe(current_time, KIND_ODOMETRIC_SPEED, { (VectorXd(1) << log.getVEgo()).finished() });
     this->car_speed = std::abs(log.getVEgo());
     if (log.getVEgo() == 0.0) {
-      this->update_kalman(current_time, KIND_NO_ROT, { Vector3d(0.0, 0.0, 0.0) });
+      this->kf->predict_and_observe(current_time, KIND_NO_ROT, { Vector3d(0.0, 0.0, 0.0) });
     }
   }
 }
@@ -252,10 +235,9 @@ void Localizer::handle_cam_odo(double current_time, const cereal::CameraOdometry
   this->cam_counter++;
 
   if (this->cam_counter % VISION_DECIMATION == 0) {
-    // TODO len of vectors is always 3
     VectorXd rot_device = this->device_from_calib * floatlist2vector(log.getRot());
     VectorXd rot_device_std = (this->device_from_calib * floatlist2vector(log.getRotStd())) * 10.0;
-    this->update_kalman(current_time, KIND_CAMERA_ODO_ROTATION,
+    this->kf->predict_and_observe(current_time, KIND_CAMERA_ODO_ROTATION,
       { (VectorXd(rot_device.rows() + rot_device_std.rows()) << rot_device, rot_device_std).finished() });
 
     VectorXd trans_device = this->device_from_calib * floatlist2vector(log.getTrans());
@@ -266,7 +248,7 @@ void Localizer::handle_cam_odo(double current_time, const cereal::CameraOdometry
     this->posenet_stds_i = (this->posenet_stds_i + 1) % POSENET_STD_HIST_HALF;
 
     trans_device_std *= 10.0;
-    this->update_kalman(current_time, KIND_CAMERA_ODO_TRANSLATION,
+    this->kf->predict_and_observe(current_time, KIND_CAMERA_ODO_TRANSLATION,
       { (VectorXd(trans_device.rows() + trans_device_std.rows()) << trans_device, trans_device_std).finished() });
   }
 }
@@ -280,7 +262,7 @@ void Localizer::handle_live_calib(double current_time, const cereal::LiveCalibra
   }
 }
 
-void Localizer::reset_kalman(double current_time) {  // TODO nan ?
+void Localizer::reset_kalman(double current_time) {
   VectorXd init_x = this->kf->get_initial_x();
   this->reset_kalman(current_time, init_x.segment<4>(3), init_x.head(3));
 }
@@ -304,14 +286,13 @@ int Localizer::locationd_thread() {
   const std::initializer_list<const char *> service_list =
       { "gpsLocationExternal", "sensorEvents", "cameraOdometry", "liveCalibration", "carState" };
   SubMaster sm(service_list, nullptr, { "gpsLocationExternal" });
-  const std::initializer_list<const char *> send_list = { "liveLocationKalman", "testAck" };
-  PubMaster pm(send_list);
+  PubMaster pm({ "liveLocationKalman" });
 
   Params params;
 
   while (!do_exit) {
     bool updatedCameraOdometry = false;
-    sm.update(); // TODO timeout?
+    sm.update();
     for (const char* service : service_list) {
       if (sm.updated(service) && sm.valid(service)) {
         cereal::Event::Reader& log = sm[service];
@@ -352,10 +333,6 @@ int Localizer::locationd_thread() {
           liveLoc.getPositionGeodetic().getValue()[0], liveLoc.getPositionGeodetic().getValue()[1], liveLoc.getPositionGeodetic().getValue()[2]);
         params.put("LastGPSPosition", lastGPSPosJSON);
       }
-    } else if (this->send_on_all) {
-      MessageBuilder msg_builder;
-      msg_builder.initEvent();
-      pm.send("testAck", msg_builder);
     }
   }
   return 0;

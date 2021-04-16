@@ -383,7 +383,7 @@ def python_replay_process(cfg, lr):
       recv_socks, should_recv = cfg.should_recv_callback(msg, CP, cfg, fsm)
     else:
       recv_socks = [s for s in cfg.pub_sub[msg.which()] if
-                      (fsm.frame + 1) % int(service_list[msg.which()].frequency / service_list[s].frequency) == 0 ]
+                      (fsm.frame + 1) % int(service_list[msg.which()].frequency / service_list[s].frequency) == 0]
       should_recv = bool(len(recv_socks))
 
     if msg.which() == 'can':
@@ -406,14 +406,12 @@ def python_replay_process(cfg, lr):
 
 def cpp_replay_process(cfg, lr):
   sub_sockets = [s for _, sub in cfg.pub_sub.items() for s in sub]  # We get responses here
-  sub_sockets.append('testAck')
   pm = messaging.PubMaster(cfg.pub_sub.keys())
   sockets = {s: messaging.sub_sock(s, timeout=1000) for s in sub_sockets}
 
   all_msgs = sorted(lr, key=lambda msg: msg.logMonoTime)
   pub_msgs = [msg for msg in all_msgs if msg.which() in list(cfg.pub_sub.keys())]
 
-  os.environ['PROCESS_REPLAY'] = "1"
   managed_processes[cfg.proc_name].prepare()
   managed_processes[cfg.proc_name].start()
 

@@ -37,7 +37,6 @@ public:
 
   int locationd_thread();
 
-  void update_kalman(double t, int kind, std::vector<Eigen::VectorXd> meas, std::vector<MatrixXdr> R = {});
   void reset_kalman(double current_time = NAN);
   void reset_kalman(double current_time, Eigen::VectorXd init_orient, Eigen::VectorXd init_pos);
 
@@ -51,8 +50,6 @@ public:
 
 private:
   std::shared_ptr<LiveKalman> kf;
-
-  bool send_on_all = false;
 
   Eigen::VectorXd calib;
   MatrixXdr device_from_calib;
