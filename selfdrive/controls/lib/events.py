@@ -211,7 +211,7 @@ def wrong_car_mode_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: boo
 def startup_fuzzy_fingerprint_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> Alert:
   return Alert(
     "WARNING: No exact match on car model",
-    f"Closest match: {CP.carFingerprint}",
+    f"Closest match: {CP.carFingerprint.title()}",
     AlertStatus.userPrompt, AlertSize.mid,
     Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 15.)
 
