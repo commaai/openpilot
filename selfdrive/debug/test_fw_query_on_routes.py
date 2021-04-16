@@ -71,7 +71,7 @@ if __name__ == "__main__":
           if live_fingerprint not in SUPPORTED_CARS:
             break
 
-          candidates = match_fw_to_car(car_fw, allow_fuzzy=FUZZY)
+          _, candidates = match_fw_to_car(car_fw, allow_fuzzy=FUZZY)
           if (len(candidates) == 1) and (list(candidates)[0] == live_fingerprint):
             good += 1
             print("Correct", live_fingerprint, dongle_id)

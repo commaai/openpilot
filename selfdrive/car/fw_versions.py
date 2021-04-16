@@ -177,6 +177,7 @@ def match_fw_to_car_fuzzy(fw_versions_dict):
 def match_fw_to_car(fw_versions, allow_fuzzy=True):
   candidates = FW_VERSIONS
   invalid = []
+  exact_match = True
 
   fw_versions_dict = {}
   for fw in fw_versions:
@@ -212,8 +213,10 @@ def match_fw_to_car(fw_versions, allow_fuzzy=True):
     if candidate is not None and match_count >= 3:
       cloudlog.error(f"Fingerprinted {candidate} using fuzzy match. {match_count} matching ECUs")
       matches = set([candidate])
+      exact_match = False
 
-  return matches
+  return exact_match, matches
+
 
 def get_fw_versions(logcan, sendcan, bus, extra=None, timeout=0.1, debug=False, progress=False):
   ecu_types = {}
@@ -309,7 +312,7 @@ if __name__ == "__main__":
 
   t = time.time()
   fw_vers = get_fw_versions(logcan, sendcan, 1, extra=extra, debug=args.debug, progress=True)
-  candidates = match_fw_to_car(fw_vers)
+  _, candidates = match_fw_to_car(fw_vers)
 
   print()
   print("Found FW versions")
