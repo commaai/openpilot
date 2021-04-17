@@ -9,8 +9,8 @@
 #include <QTimer>
 #include <QWidget>
 #include <QThread>
-#include <QMutex>
-#include <QWaitCondition>
+#include <mutex>
+#include <condition_variable>
 
 #include "sound.hpp"
 #include "ui/ui.hpp"
@@ -103,10 +103,8 @@ private:
   bool inited_ = false, onroad_ = true, exit_ = false, prev_awake_ = true;
   GLWindow* glWindow_;
 
-  QMutex renderMutex_;
-  QMutex grabMutex_;
-  QWaitCondition grabCond_;
-
+  std::mutex renderMutex_;
+  std::condition_variable grabCond_;
   Sound sound;
   inline static UIState ui_state_ = {0};
 

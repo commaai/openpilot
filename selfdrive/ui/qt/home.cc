@@ -201,11 +201,9 @@ void GLWindow::wake() {
 }
 
 void GLWindow::moveContextToThread() {
-  ui_thread->renderMutex_.lock();
-  QMutexLocker lock(&ui_thread->grabMutex_);
+  std::unique_lock lk(ui_thread->renderMutex_);
   context()->moveToThread(ui_thread);
-  ui_thread->grabCond_.wakeAll();
-  ui_thread->renderMutex_.unlock();
+  ui_thread->grabCond_.notify_one();
 }
 
 // UIThread
@@ -298,12 +296,9 @@ void UIThread::draw() {
   }
 
   // move the context to this thread.
-  if (exit_) return;
-  grabMutex_.lock();
+  std::unique_lock lk(renderMutex_);
   emit contextWanted();
-  grabCond_.wait(&grabMutex_);
-  QMutexLocker lock(&renderMutex_);
-  grabMutex_.unlock();
+  grabCond_.wait(lk, [=]{return glWindow_->context()->thread() == this || exit_; });
   if (exit_) return;
 
   // Make the context (and an offscreen surface) current for this thread. The
