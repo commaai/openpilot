@@ -18,7 +18,6 @@
 #include "widgets/offroad_alerts.hpp"
 
 class UIThread;
-
 // container window for onroad NVG UI
 class GLWindow : public QOpenGLWidget {
   Q_OBJECT
@@ -34,8 +33,6 @@ public slots:
 protected:
   void resizeEvent(QResizeEvent* event) override {}
   void paintEvent(QPaintEvent* event) override {}
-
-private:
   UIThread *ui_thread;
 };
 
@@ -48,7 +45,6 @@ public:
 
 private:
   QTimer* timer;
-
   QLabel* date;
   QStackedLayout* center_layout;
   OffroadAlert* alerts_widget;
@@ -69,15 +65,12 @@ public:
 signals:
   void mousePressed(int x, int y);
 
-protected:
-  void mousePressEvent(QMouseEvent* e) override;
-
 private:
+  void mousePressEvent(QMouseEvent* e) override;
   OffroadHome* home;
   GLWindow* glWindow;
   QStackedLayout* layout;
 };
-
 
 class UIThread : public QThread, protected QOpenGLFunctions {
   Q_OBJECT
@@ -85,7 +78,7 @@ class UIThread : public QThread, protected QOpenGLFunctions {
 public:
   UIThread(GLWindow* w);
   bool onroad() const { return onroad_; }
-  bool awake() const { return awake_;}
+  bool awake() const { return awake_; }
 
 signals:
   void offroadTransition(bool offroad);
@@ -110,7 +103,7 @@ private:
   std::mutex renderMutex_;
   std::condition_variable grabCond_;
   Sound sound;
-  UIState ui_state_ = {0};
+  UIState ui_state_ = {};
 
   // TODO: make a nice abstraction to handle embedded device stuff
   float brightness_b_ = 0;
@@ -120,6 +113,7 @@ private:
   inline static UIThread *ui_thread_;
   friend class GLWindow;
   friend UIThread *uiThread(); 
+
 signals:
   void contextWanted();
 };

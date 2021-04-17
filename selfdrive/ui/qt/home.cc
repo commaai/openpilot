@@ -188,6 +188,7 @@ GLWindow::GLWindow(QWidget* parent) : QOpenGLWidget(parent) {
 
 GLWindow::~GLWindow() {
   ui_thread->exit_ = true;
+  ui_thread->grabCond_.notify_one();
   ui_thread->wait();
   delete ui_thread;
 }
@@ -291,10 +292,8 @@ void UIThread::driverViewEnabled() {
 }
 
 void UIThread::draw() {
-  if (!glWindow_->frameSwapped_) {
-    // the frame buffer has not been created yet.
-    return;
-  }
+  // return if the frame buffer has not been created yet 
+  if (!glWindow_->frameSwapped_) return;
 
   // move the context to this thread.
   std::unique_lock lk(renderMutex_);
@@ -302,8 +301,6 @@ void UIThread::draw() {
   grabCond_.wait(lk, [=] { return glWindow_->context()->thread() == this || exit_; });
   if (exit_) return;
 
-  // Make the context (and an offscreen surface) current for this thread. The
-  // QOpenGLWidget's fbo is bound in the context.
   glWindow_->makeCurrent();
 
   if (!inited_) {
@@ -322,8 +319,7 @@ void UIThread::draw() {
   // context back to the gui thread.
   glWindow_->doneCurrent();
   glWindow_->context()->moveToThread(glWindow_->thread());
-  // Schedule composition. Note that this will use QueuedConnection, meaning
-  // that update() will be invoked on the gui thread.
+  // Schedule composition.update() will be invoked on the gui thread.
   QMetaObject::invokeMethod(glWindow_, "update");
 }
 
@@ -331,29 +327,24 @@ void UIThread::run() {
   handle_display_state(true);
 
   while (!exit_) {
-    QCoreApplication::processEvents();
-
     if (!ui_state_.scene.started || !glWindow_->isVisible()) {
       util::sleep_for(1000 / UI_FREQ);
     }
     double prev_draw_t = millis_since_boot();
 
+    QCoreApplication::processEvents();
     ui_update(&ui_state_);
+    handle_display_state(false);
+    backlightUpdate();
 
     if (ui_state_.scene.started != onroad_) {
       onroad_  = ui_state_.scene.started;
       emit offroadTransition(!onroad_);
     }
-
-    handle_display_state(false);
-    
-    backlightUpdate();
-
-    if (!ui_state_.awake && ui_state_.awake != awake_) {
-      emit screen_shutoff();
+    if (ui_state_.awake != awake_) {
+      awake_ = ui_state_.awake;
+      if (!ui_state_.awake) emit screen_shutoff();
     }
-    awake_ = ui_state_.awake;
-
     // Don't waste resources on drawing in case screen is off
     if (!ui_state_.awake || !glWindow_->isVisible()) {
       continue;
@@ -361,8 +352,7 @@ void UIThread::run() {
 
     // scale volume with speed
     sound.volume = util::map_val(ui_state_.scene.car_state.getVEgo(), 0.f, 20.f,
-                                Hardware::MIN_VOLUME, Hardware::MAX_VOLUME);
-
+                                 Hardware::MIN_VOLUME, Hardware::MAX_VOLUME);
     draw();
 
     double dt = millis_since_boot() - prev_draw_t;

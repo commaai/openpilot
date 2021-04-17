@@ -57,8 +57,6 @@ void ui_init(UIState *s) {
 
   s->scene.started = false;
   s->status = STATUS_OFFROAD;
-
-
   s->last_frame = nullptr;
   s->wide_camera = false;
 
