@@ -45,14 +45,14 @@ HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
   QObject::connect(glWindow, SIGNAL(screen_shutoff()), this, SIGNAL(closeSettings()));
   QObject::connect(glWindow, SIGNAL(openSettings()), this, SIGNAL(openSettings()));
   QObject::connect(this, SIGNAL(openSettings()), home, SLOT(refresh()));
+  QObject::connect(this, SIGNAL(mousePressed(int, int)), uiThread(), SLOT(mousePressed(int, int)));
 
   setLayout(layout);
 }
 
 void HomeWindow::mousePressEvent(QMouseEvent* e) {
-  emit glWindow->mousePressed(e->x(), e->y());
+  emit mousePressed(e->x(), e->y());
 }
-
 
 // OffroadHome: the offroad home page
 
@@ -185,7 +185,6 @@ GLWindow::GLWindow(QWidget* parent) : QOpenGLWidget(parent) {
     ui_thread->renderMutex_.unlock(); 
     frameSwapped_=true;
   });
-  connect(this, &GLWindow::mousePressed, ui_thread, &UIThread::mousePressed);
   connect(ui_thread, &UIThread::contextWanted, this, &GLWindow::moveContextToThread);
   ui_thread->start();
 }
@@ -194,10 +193,6 @@ GLWindow::~GLWindow() {
   ui_thread->exit_ = true;
   ui_thread->wait();
   delete ui_thread;
-}
-
-void GLWindow::wake() {
-  emit mousePressed(0, 0); 
 }
 
 void GLWindow::moveContextToThread() {
@@ -209,6 +204,7 @@ void GLWindow::moveContextToThread() {
 // UIThread
 
 UIThread::UIThread(GLWindow* w) : QThread(), glWindow_(w), brightness_filter_(BACKLIGHT_OFFROAD, BACKLIGHT_TS, BACKLIGHT_DT) {
+  ui_thread_ = this,
   brightness_b_ = Params(true).get<float>("brightness_b").value_or(10.0);
   brightness_m_ = Params(true).get<float>("brightness_m").value_or(0.1);
 
@@ -250,6 +246,10 @@ void UIThread::handle_display_state(bool user_input) {
   }
 }
 
+void UIThread::wake() {
+  handle_display_state(true);
+}
+
 void UIThread::mousePressed(int x, int y) {
   if (ui_state_.scene.driver_view) {
     Params().putBool("IsDriverViewEnabled", false);
@@ -288,6 +288,10 @@ void UIThread::backlightUpdate() {
   last_brightness_ = brightness;
 }
 
+void UIThread::driverViewEnabled() {
+  Params().putBool("IsDriverViewEnabled", true);
+  ui_state_.scene.driver_view = true;
+}
 
 void UIThread::draw() {
   if (!glWindow_->frameSwapped_) {
@@ -298,7 +302,7 @@ void UIThread::draw() {
   // move the context to this thread.
   std::unique_lock lk(renderMutex_);
   emit contextWanted();
-  grabCond_.wait(lk, [=]{return glWindow_->context()->thread() == this || exit_; });
+  grabCond_.wait(lk, [=] { return glWindow_->context()->thread() == this || exit_; });
   if (exit_) return;
 
   // Make the context (and an offscreen surface) current for this thread. The
@@ -348,10 +352,10 @@ void UIThread::run() {
     
     backlightUpdate();
 
-    if (!ui_state_.awake && ui_state_.awake != prev_awake_) {
+    if (!ui_state_.awake && ui_state_.awake != awake_) {
       emit glWindow_->screen_shutoff();
     }
-    prev_awake_ = ui_state_.awake;
+    awake_ = ui_state_.awake;
 
     // Don't waste resources on drawing in case screen is off
     if (!ui_state_.awake || !glWindow_->isVisible()) {

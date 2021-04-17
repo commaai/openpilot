@@ -96,7 +96,7 @@ typedef struct UIScene {
   bool world_objects_visible;
 
   bool is_rhd;
-  std::atomic<bool> driver_view;
+  bool driver_view;
 
   std::string alert_text1;
   std::string alert_text2;
@@ -129,8 +129,7 @@ typedef struct UIScene {
   vertex_data lead_vertices[2];
 
   float light_sensor, accel_sensor, gyro_sensor;
-  bool ignition, is_metric, longitudinal_control, end_to_end;
-  std::atomic<bool> started;
+  bool started, ignition, is_metric, longitudinal_control, end_to_end;
   uint64_t started_frame;
 } UIScene;
 

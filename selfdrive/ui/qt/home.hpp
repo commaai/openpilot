@@ -25,14 +25,12 @@ class GLWindow : public QOpenGLWidget {
 
 public:
   explicit GLWindow(QWidget* parent = 0);
-  void wake();
   ~GLWindow();
   std::atomic<bool> frameSwapped_ = false;
 
 signals:
   void offroadTransition(bool offroad);
   void screen_shutoff();
-  void mousePressed(int x, int y);
   void openSettings();
 
 public slots:
@@ -72,18 +70,19 @@ class HomeWindow : public QWidget {
 
 public:
   explicit HomeWindow(QWidget* parent = 0);
-  GLWindow* glWindow;
 
 signals:
   void openSettings();
   void closeSettings();
   void offroadTransition(bool offroad);
+  void mousePressed(int x, int y);
 
 protected:
   void mousePressEvent(QMouseEvent* e) override;
 
 private:
   OffroadHome* home;
+  GLWindow* glWindow;
   QStackedLayout* layout;
 };
 
@@ -93,37 +92,39 @@ class UIThread : public QThread, protected QOpenGLFunctions {
 
 public:
   UIThread(GLWindow* w);
+  bool onroad() const { return onroad_; }
+  bool awake() const { return awake_;}
+
+public slots:
+  void driverViewEnabled();
+  void mousePressed(int x, int y);
+  void wake();
   
 private:
   void run() override;
   void draw();
-  void handle_display_state(bool user_input);
   void backlightUpdate();
+  void handle_display_state(bool user_input);
 
-  bool inited_ = false, onroad_ = true, exit_ = false, prev_awake_ = true;
+  bool inited_ = false, exit_ = false;
+  std::atomic<bool> onroad_ = true, awake_ = true;
   GLWindow* glWindow_;
 
   std::mutex renderMutex_;
   std::condition_variable grabCond_;
   Sound sound;
-  inline static UIState ui_state_ = {0};
+  UIState ui_state_ = {0};
 
   // TODO: make a nice abstraction to handle embedded device stuff
   float brightness_b_ = 0;
   float brightness_m_ = 0;
   float last_brightness_ = 0;
   FirstOrderFilter brightness_filter_;
-
+  inline static UIThread *ui_thread_;
+  friend class GLWindow;
+  friend UIThread *uiThread(); 
 signals:
   void contextWanted();
-
-private slots:
-  void mousePressed(int x, int y);
-
-  friend UIState *uiState();
-  friend class GLWindow;
 };
 
-inline UIState *uiState() {
-  return &UIThread::ui_state_;
-}
+inline UIThread* uiThread() { return UIThread::ui_thread_; }

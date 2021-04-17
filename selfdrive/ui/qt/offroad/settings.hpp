@@ -19,6 +19,7 @@ public:
   explicit DevicePanel(QWidget* parent = nullptr);
 signals:
   void reviewTrainingGuide();
+  void driverViewEnabled();
 };
 
 class TogglesPanel : public QWidget {
