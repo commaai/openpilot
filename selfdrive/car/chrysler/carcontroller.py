@@ -13,6 +13,7 @@ class CarController():
     self.car_fingerprint = CP.carFingerprint
     self.gone_fast_yet = False
     self.steer_rate_limited = False
+    self.wheel_button_counter_prev = 0
 
     self.packer = CANPacker(dbc_name)
 
@@ -45,10 +46,14 @@ class CarController():
     can_sends = []
 
     #*** control msgs ***
+    
+    wheel_button_counter_change = CS.wheel_button_counter != self.wheel_button_counter_prev
+    if wheel_button_counter_change:
+      self.wheel_button_counter_prev = CS.wheel_button_counter
 
-    if pcm_cancel_cmd:
+    if pcm_cancel_cmd and (self.ccframe % 10 < 5) and wheel_button_counter_change:
       # TODO: would be better to start from frame_2b3
-      new_msg = create_wheel_buttons(self.packer, self.ccframe, cancel=True)
+      new_msg = create_wheel_buttons(self.packer, CS.wheel_button_counter + 1, cancel=True)
       can_sends.append(new_msg)
 
     # LKAS_HEARTBIT is forwarded by Panda so no need to send it here.
