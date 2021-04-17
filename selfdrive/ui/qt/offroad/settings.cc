@@ -162,7 +162,7 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
 
   for(auto &btn : offroad_btns){
     device_layout->addWidget(horizontal_line());
-    QObject::connect(parent, SIGNAL(offroadTransition(bool)), btn, SLOT(setEnabled(bool)));
+    QObject::connect(uiThread(), SIGNAL(offroadTransition(bool)), btn, SLOT(setEnabled(bool)));
     device_layout->addWidget(btn);
   }
 

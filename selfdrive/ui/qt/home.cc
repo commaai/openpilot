@@ -40,11 +40,8 @@ HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
   home = new OffroadHome();
   layout->addWidget(home);
 
-  QObject::connect(glWindow, SIGNAL(offroadTransition(bool)), home, SLOT(setVisible(bool)));
-  QObject::connect(glWindow, SIGNAL(offroadTransition(bool)), this, SIGNAL(offroadTransition(bool)));
-  QObject::connect(glWindow, SIGNAL(screen_shutoff()), this, SIGNAL(closeSettings()));
-  QObject::connect(glWindow, SIGNAL(openSettings()), this, SIGNAL(openSettings()));
-  QObject::connect(this, SIGNAL(openSettings()), home, SLOT(refresh()));
+  QObject::connect(uiThread(), SIGNAL(offroadTransition(bool)), home, SLOT(setVisible(bool)));
+  QObject::connect(uiThread(), SIGNAL(openSettings()), home, SLOT(refresh()));
   QObject::connect(this, SIGNAL(mousePressed(int, int)), uiThread(), SLOT(mousePressed(int, int)));
 
   setLayout(layout);
@@ -261,7 +258,7 @@ void UIThread::mousePressed(int x, int y) {
 
   // Settings button click
   if (!ui_state_.sidebar_collapsed && settings_btn.ptInRect(x, y)) {
-    emit glWindow_->openSettings();
+    emit openSettings();
   }
 
   // Handle sidebar collapsing
@@ -345,7 +342,7 @@ void UIThread::run() {
 
     if (ui_state_.scene.started != onroad_) {
       onroad_  = ui_state_.scene.started;
-      emit glWindow_->offroadTransition(!onroad_);
+      emit offroadTransition(!onroad_);
     }
 
     handle_display_state(false);
@@ -353,7 +350,7 @@ void UIThread::run() {
     backlightUpdate();
 
     if (!ui_state_.awake && ui_state_.awake != awake_) {
-      emit glWindow_->screen_shutoff();
+      emit screen_shutoff();
     }
     awake_ = ui_state_.awake;
 

@@ -14,10 +14,9 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   onboardingWindow = new OnboardingWindow(this);
   main_layout->addWidget(onboardingWindow);
 
-  QObject::connect(homeWindow, SIGNAL(openSettings()), this, SLOT(openSettings()));
-  QObject::connect(homeWindow, SIGNAL(closeSettings()), this, SLOT(closeSettings()));
-  QObject::connect(homeWindow, SIGNAL(offroadTransition(bool)), this, SLOT(offroadTransition(bool)));
-  QObject::connect(homeWindow, SIGNAL(offroadTransition(bool)), settingsWindow, SIGNAL(offroadTransition(bool)));
+  QObject::connect(uiThread(), SIGNAL(openSettings()), this, SLOT(openSettings()));
+  QObject::connect(uiThread(), SIGNAL(screen_shutoff()), this, SLOT(closeSettings()));
+  QObject::connect(uiThread(), SIGNAL(offroadTransition(bool)), this, SLOT(offroadTransition(bool)));
   QObject::connect(settingsWindow, SIGNAL(closeSettings()), this, SLOT(closeSettings()));
   QObject::connect(settingsWindow, SIGNAL(reviewTrainingGuide()), this, SLOT(reviewTrainingGuide()));
 

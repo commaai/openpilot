@@ -28,11 +28,6 @@ public:
   ~GLWindow();
   std::atomic<bool> frameSwapped_ = false;
 
-signals:
-  void offroadTransition(bool offroad);
-  void screen_shutoff();
-  void openSettings();
-
 public slots:
   void moveContextToThread();
 
@@ -72,9 +67,6 @@ public:
   explicit HomeWindow(QWidget* parent = 0);
 
 signals:
-  void openSettings();
-  void closeSettings();
-  void offroadTransition(bool offroad);
   void mousePressed(int x, int y);
 
 protected:
@@ -94,6 +86,11 @@ public:
   UIThread(GLWindow* w);
   bool onroad() const { return onroad_; }
   bool awake() const { return awake_;}
+
+signals:
+  void offroadTransition(bool offroad);
+  void openSettings();
+  void screen_shutoff();
 
 public slots:
   void driverViewEnabled();
