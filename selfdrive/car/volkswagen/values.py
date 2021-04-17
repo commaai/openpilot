@@ -238,18 +238,23 @@ FW_VERSIONS = {
   },
   CAR.TIGUAN_MK2: {
     (Ecu.engine, 0x7e0, None): [
+      b'\xf1\x8704L906026HR\xf1\x895174',
       b'\xf1\x8783A907115B \xf1\x890005',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x8709G927158DT\xf1\x893698',
+      b'\xf1\x870DL300045R \xf1\x892001',
     ],
     (Ecu.srs, 0x715, None): [
+      b'\xf1\x875Q0959655BJ\xf1\x890336\xf1\x82\02331310031333334313132013730379333423100',
       b'\xf1\x875Q0959655BM\xf1\x890403\xf1\x82\02316143231313500314641011750179333423100',
     ],
     (Ecu.eps, 0x712, None): [
+      b'\xf1\x875Q0909143P \xf1\x892051\xf1\x820527A6060705',
       b'\xf1\x875QM909144C \xf1\x891082\xf1\x82\00521A60804A1',
     ],
     (Ecu.fwdRadar, 0x757, None): [
+      b'\xf1\x872Q0907572M \xf1\x890233',
       b'\xf1\x872Q0907572R \xf1\x890372',
     ],
   },
