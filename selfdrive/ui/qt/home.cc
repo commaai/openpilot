@@ -177,10 +177,12 @@ void OffroadHome::refresh() {
 GLWindow::GLWindow(QWidget* parent) : QOpenGLWidget(parent) {
   ui_thread = new UIThread(this);
   ui_thread->moveToThread(ui_thread);
-  connect(this, &GLWindow::aboutToCompose, [=] {  ui_thread->renderMutex_.lock(); });
-  connect(this, &GLWindow::frameSwapped, [=] { 
-    ui_thread->renderMutex_.unlock(); 
-    frameSwapped_=true;
+  connect(this, &QOpenGLWidget::aboutToResize, [=] {  ui_thread->renderMutex_.lock(); });
+  connect(this, &QOpenGLWidget::resized, [=] {  ui_thread->renderMutex_.unlock(); });
+  connect(this, &GLWindow::aboutToCompose, [=] { ui_thread->renderMutex_.lock(); });
+  connect(this, &GLWindow::frameSwapped, [=] {
+    ui_thread->renderMutex_.unlock();
+    frameSwapped_ = true;
   });
   connect(ui_thread, &UIThread::contextWanted, this, &GLWindow::moveContextToThread);
   ui_thread->start();

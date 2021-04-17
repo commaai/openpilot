@@ -31,7 +31,6 @@ public slots:
   void moveContextToThread();
 
 protected:
-  void resizeEvent(QResizeEvent* event) override {}
   void paintEvent(QPaintEvent* event) override {}
   UIThread *ui_thread;
 };
