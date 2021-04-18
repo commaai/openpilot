@@ -326,7 +326,7 @@ int main(int argc, char** argv) {
         new_segment = true;
       }
     }
-    if (new_segment) {
+    if (new_segment && !do_exit) {
       trigger_rotate();
     }
   }
