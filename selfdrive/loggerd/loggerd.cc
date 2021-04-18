@@ -46,7 +46,7 @@ const int DCAM_BITRATE = Hardware::TICI() ? MAIN_BITRATE : 2500000;
 
 #define NO_CAMERA_PATIENCE 500 // fall back to time-based rotation if all cameras are dead
 
-constexpr int MAIN_FPS = 20;
+const int MAIN_FPS = 20;
 const int MAIN_BITRATE = IS_TICI ? 10000000 : 5000000;
 const int DCAM_BITRATE = IS_TICI ? 10000000 : 2500000;
 const int NO_CAMERA_PATIENCE = 500; // fall back to time-based rotation if all cameras are dead
@@ -170,15 +170,12 @@ void encoder_thread(const LogCameraInfo *ci, int cam_idx) {
     if (encoders.empty()) {
       VisionBuf buf_info = vipc_client.buffers[0];
       LOGD("encoder init %dx%d", buf_info.width, buf_info.height);
-
       // main encoder
       encoders.push_back(new Encoder(cam_info.filename, buf_info.width, buf_info.height,
                                      cam_info.fps, cam_info.bitrate, cam_info.is_h265, cam_info.downscale));
-
       // qcamera encoder
       if (cam_info.has_qcamera) {
-        encoders.push_back(new Encoder(qcam_info.filename,
-                                       qcam_info.frame_width, qcam_info.frame_height,
+        encoders.push_back(new Encoder(qcam_info.filename, qcam_info.frame_width, qcam_info.frame_height,
                                        qcam_info.fps, qcam_info.bitrate, qcam_info.is_h265, qcam_info.downscale));
       }
     }
@@ -186,9 +183,8 @@ void encoder_thread(const LogCameraInfo *ci, int cam_idx) {
     while (!do_exit) {
       VisionIpcBufExtra extra;
       VisionBuf* buf = vipc_client.recv(&extra);
-      if (buf == nullptr){
-        continue;
-      }
+      if (buf == nullptr) continue;
+
       s.last_camera_seen_tms = millis_since_boot();
 
       // Decide if we should rotate
