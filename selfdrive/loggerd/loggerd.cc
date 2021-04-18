@@ -296,14 +296,12 @@ int main(int argc, char** argv) {
   while (!do_exit) {
     // poll for new messages on all sockets
     for (auto sock : poller->poll(1000)) {
+      QlogState& qs = qlog_states[sock];
       // drain socket
       while (!do_exit) {
         Message * msg = sock->receive(true);
-        if (!msg){
-          break;
-        }
+        if (!msg) break;
 
-        QlogState& qs = qlog_states[sock];
         logger_log(&s.logger, (uint8_t*)msg->getData(), msg->getSize(), qs.counter == 0 && qs.freq != -1);
         if (qs.freq != -1) {
           qs.counter = (qs.counter + 1) % qs.freq;
