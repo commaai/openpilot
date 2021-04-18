@@ -177,7 +177,7 @@ void encoder_thread(int cam_idx) {
         segment_frame_cnt = 0;
         LOGW("camera %d rotate encoder to %s", cam_idx, s.segment_path);
         for (auto &e : encoders) {
-           e->encoder_close();
+          e->encoder_close();
           e->encoder_open(s.segment_path);
         }
         if (lh) {
