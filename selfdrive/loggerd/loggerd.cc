@@ -46,12 +46,32 @@ const int DCAM_BITRATE = Hardware::TICI() ? MAIN_BITRATE : 2500000;
 
 #define NO_CAMERA_PATIENCE 500 // fall back to time-based rotation if all cameras are dead
 
+constexpr int MAIN_FPS = 20;
+const int MAIN_BITRATE = IS_TICI ? 10000000 : 5000000;
+const int DCAM_BITRATE = IS_TICI ? 10000000 : 2500000;
+const int NO_CAMERA_PATIENCE = 500; // fall back to time-based rotation if all cameras are dead
 const int SEGMENT_LENGTH = getenv("LOGGERD_TEST") ? atoi(getenv("LOGGERD_SEGMENT_LENGTH")) : 60;
 
 ExitHandler do_exit;
 
-LogCameraInfo cameras_logged[LOG_CAMERA_ID_MAX] = {
-  [LOG_CAMERA_ID_FCAMERA] = {
+typedef cereal::EncodeIndex::Builder (cereal::Event::Builder::*initEncodeIdxFunc)();
+typedef struct LogCameraInfo {
+  const char* filename;
+  const char* frame_packet_name;
+  VisionStreamType stream_type;
+  int frame_width, frame_height;
+  int fps;
+  int bitrate;
+  bool is_h265;
+  bool downscale;
+  bool has_qcamera;
+  cereal::EncodeIndex::Type edix_type;
+  initEncodeIdxFunc initEncoderIdx;
+  bool enabled;
+} LogCameraInfo;
+
+LogCameraInfo cameras_logged[] = {
+  {
     .stream_type = VISION_STREAM_YUV_BACK,
     .filename = "fcamera.hevc",
     .frame_packet_name = "roadCameraState",
@@ -59,9 +79,12 @@ LogCameraInfo cameras_logged[LOG_CAMERA_ID_MAX] = {
     .bitrate = MAIN_BITRATE,
     .is_h265 = true,
     .downscale = false,
-    .has_qcamera = true
+    .has_qcamera = true,
+    .edix_type = cereal::EncodeIndex::Type::FULL_H_E_V_C,
+    .initEncoderIdx = &cereal::Event::Builder::initRoadEncodeIdx,
+    .enabled = true,
   },
-  [LOG_CAMERA_ID_DCAMERA] = {
+  {
     .stream_type = VISION_STREAM_YUV_FRONT,
     .filename = "dcamera.hevc",
     .frame_packet_name = "driverCameraState",
@@ -69,9 +92,12 @@ LogCameraInfo cameras_logged[LOG_CAMERA_ID_MAX] = {
     .bitrate = DCAM_BITRATE,
     .is_h265 = true,
     .downscale = false,
-    .has_qcamera = false
+    .has_qcamera = false,
+    .edix_type = IS_TICI ? cereal::EncodeIndex::Type::FULL_H_E_V_C : cereal::EncodeIndex::Type::FRONT,
+    .initEncoderIdx = &cereal::Event::Builder::initDriverEncodeIdx,
+    .enabled = (IS_TICI || IS_EON) && Params().getBool("RecordFront"),
   },
-  [LOG_CAMERA_ID_ECAMERA] = {
+  {
     .stream_type = VISION_STREAM_YUV_WIDE,
     .filename = "ecamera.hevc",
     .frame_packet_name = "wideRoadCameraState",
@@ -79,9 +105,14 @@ LogCameraInfo cameras_logged[LOG_CAMERA_ID_MAX] = {
     .bitrate = MAIN_BITRATE,
     .is_h265 = true,
     .downscale = false,
-    .has_qcamera = false
+    .has_qcamera = false,
+    .edix_type = cereal::EncodeIndex::Type::FULL_H_E_V_C,
+    .initEncoderIdx = &cereal::Event::Builder::initWideRoadEncodeIdx,
+    .enabled = IS_TICI,
   },
-  [LOG_CAMERA_ID_QCAMERA] = {
+};
+
+LogCameraInfo qcam_info = {
     .filename = "qcamera.ts",
     .fps = MAIN_FPS,
     .bitrate = 256000,
@@ -120,9 +151,8 @@ static void trigger_rotate() {
   LOGW("rotated to %s", s.segment_path);
 }
 
-void encoder_thread(int cam_idx) {
-  assert(cam_idx < LOG_CAMERA_ID_MAX-1);
-  LogCameraInfo &cam_info = cameras_logged[cam_idx];
+void encoder_thread(const LogCameraInfo *ci, int cam_idx) {
+  const LogCameraInfo &cam_info = *ci;
   set_thread_name(cam_info.filename);
 
   int cnt = 0, cur_seg = -1;
@@ -147,7 +177,6 @@ void encoder_thread(int cam_idx) {
 
       // qcamera encoder
       if (cam_info.has_qcamera) {
-        LogCameraInfo &qcam_info = cameras_logged[LOG_CAMERA_ID_QCAMERA];
         encoders.push_back(new Encoder(qcam_info.filename,
                                        qcam_info.frame_width, qcam_info.frame_height,
                                        qcam_info.fps, qcam_info.bitrate, qcam_info.is_h265, qcam_info.downscale));
@@ -193,25 +222,17 @@ void encoder_thread(int cam_idx) {
         if (i == 0 && out_id != -1) {
           // publish encode index
           MessageBuilder msg;
-          // this is really ugly
-          auto eidx = cam_idx == LOG_CAMERA_ID_DCAMERA ? msg.initEvent().initDriverEncodeIdx() :
-                     (cam_idx == LOG_CAMERA_ID_ECAMERA ? msg.initEvent().initWideRoadEncodeIdx() : msg.initEvent().initRoadEncodeIdx());
+          auto eidx = (msg.initEvent().*cam_info.initEncoderIdx)();
+          eidx.setType(cam_info.edix_type);
           eidx.setFrameId(extra.frame_id);
           eidx.setTimestampSof(extra.timestamp_sof);
           eidx.setTimestampEof(extra.timestamp_eof);
-          if (Hardware::TICI()) {
-            eidx.setType(cereal::EncodeIndex::Type::FULL_H_E_V_C);
-          } else {
-            eidx.setType(cam_idx == LOG_CAMERA_ID_DCAMERA ? cereal::EncodeIndex::Type::FRONT : cereal::EncodeIndex::Type::FULL_H_E_V_C);
-          }
           eidx.setEncodeId(cnt);
           eidx.setSegmentNum(cur_seg);
           eidx.setSegmentId(out_id);
-          if (lh) {
-            // TODO: this should read cereal/services.h for qlog decimation
-            auto bytes = msg.toBytes();
-            lh_log(lh, bytes.begin(), bytes.size(), true);
-          }
+          // TODO: this should read cereal/services.h for qlog decimation
+          auto bytes = msg.toBytes();
+          lh_log(lh, bytes.begin(), bytes.size(), true);
         }
       }
       segment_frame_cnt++;
@@ -275,17 +296,12 @@ int main(int argc, char** argv) {
 
   // init encoders
   s.last_camera_seen_tms = millis_since_boot();
-  // TODO: create these threads dynamically on frame packet presence
   std::vector<std::thread> encoder_threads;
-  encoder_threads.push_back(std::thread(encoder_thread, LOG_CAMERA_ID_FCAMERA));
-  s.max_waiting += 1;
-
-  if (!Hardware::PC() && Params().getBool("RecordFront")) {
-    encoder_threads.push_back(std::thread(encoder_thread, LOG_CAMERA_ID_DCAMERA));
-  }
-  if (Hardware::TICI()) {
-    encoder_threads.push_back(std::thread(encoder_thread, LOG_CAMERA_ID_ECAMERA));
-    s.rotate_state[LOG_CAMERA_ID_ECAMERA].enabled = true;
+  for (int i = 0; i < std::size(cameras_logged); ++i) {
+    if (cameras_logged[i].enabled) {
+      encoder_threads.push_back(std::thread(encoder_thread, &cameras_logged[i], i));
+      s.max_waiting += (cameras_logged[i].bitrate == MAIN_BITRATE);
+    }
   }
 
   uint64_t msg_count = 0;
