@@ -9,4 +9,9 @@ export PASSIVE="0"
 export NOBOARD="1"
 export SIMULATION="1"
 
-./launch_openpilot.sh
+tmux new -d -s htop
+tmux send-keys "./launch_openpilot.sh" ENTER
+tmux neww
+tmux send-keys "PYTHONPATH=$(pwd) python tools/sim/bridge.py" ENTER
+tmux a
+
