@@ -146,7 +146,7 @@ def build_fw_dict(fw_versions):
   return fw_versions_dict
 
 
-def match_fw_to_car_fuzzy(fw_versions_dict):
+def match_fw_to_car_fuzzy(fw_versions_dict, log=True, exclude=None):
   """Do a fuzzy FW match. This function will return a match, and the number of firmware version
   that were matched uniquely to that specific car. If multiple ECUs uniquely match to different cars
   the match is rejected."""
@@ -160,6 +160,9 @@ def match_fw_to_car_fuzzy(fw_versions_dict):
   # Build lookup table from (addr, subaddr, fw) to list of candidate cars
   all_fw_versions = defaultdict(list)
   for candidate, fw_by_addr in FW_VERSIONS.items():
+    if candidate == exclude:
+      continue
+
     for addr, fws in fw_by_addr.items():
       if addr[0] in exclude_types:
         continue
@@ -180,8 +183,9 @@ def match_fw_to_car_fuzzy(fw_versions_dict):
       elif candidate != candidates[0]:
         return set()
 
-  if match_count >= 3:
-    cloudlog.error(f"Fingerprinted {candidate} using fuzzy match. {match_count} matching ECUs")
+  if match_count >= 2:
+    if log:
+      cloudlog.error(f"Fingerprinted {candidate} using fuzzy match. {match_count} matching ECUs")
     return set([candidate])
   else:
     return set()

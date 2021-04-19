@@ -47,6 +47,9 @@ if __name__ == "__main__":
     route = route.rstrip()
     dongle_id, time = route.split('|')
 
+    if dongle_id in dongles:
+      continue
+
     if NO_API:
       qlog_path = f"cd:/{dongle_id}/{time}/0/qlog.bz2"
     else:
@@ -56,16 +59,13 @@ if __name__ == "__main__":
     if qlog_path is None:
       continue
 
-    if dongle_id in dongles:
-      continue
-
     try:
       lr = LogReader(qlog_path)
+      dongles.append(dongle_id)
 
       for msg in lr:
         if msg.which() == "pandaState":
           if msg.pandaState.pandaType not in ['uno', 'blackPanda', 'dos']:
-            dongles.append(dongle_id)
             break
 
         elif msg.which() == "carParams":
@@ -75,7 +75,6 @@ if __name__ == "__main__":
           if len(car_fw) == 0:
             break
 
-          dongles.append(dongle_id)
           live_fingerprint = msg.carParams.carFingerprint
 
           if args.car is not None:
