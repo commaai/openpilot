@@ -21,7 +21,7 @@ from selfdrive.manager.process_config import managed_processes
 NUMPY_TOLERANCE = 1e-7
 CI = "CI" in os.environ
 
-ProcessConfig = namedtuple('ProcessConfig', ['proc_name', 'pub_sub', 'ignore', 'init_callback', 'should_recv_callback', 'tolerance'])
+ProcessConfig = namedtuple('ProcessConfig', ['proc_name', 'pub_sub', 'ignore', 'init_callback', 'should_recv_callback', 'tolerance', 'fake_pubsubmaster'])
 
 
 def wait_for_event(evt):
@@ -233,6 +233,7 @@ CONFIGS = [
     init_callback=fingerprint,
     should_recv_callback=None,
     tolerance=NUMPY_TOLERANCE,
+    fake_pubsubmaster=True,
   ),
   ProcessConfig(
     proc_name="radard",
@@ -244,6 +245,7 @@ CONFIGS = [
     init_callback=get_car_params,
     should_recv_callback=radar_rcv_callback,
     tolerance=None,
+    fake_pubsubmaster=True,
   ),
   ProcessConfig(
     proc_name="plannerd",
@@ -255,6 +257,7 @@ CONFIGS = [
     init_callback=get_car_params,
     should_recv_callback=None,
     tolerance=None,
+    fake_pubsubmaster=True,
   ),
   ProcessConfig(
     proc_name="calibrationd",
@@ -266,6 +269,7 @@ CONFIGS = [
     init_callback=get_car_params,
     should_recv_callback=calibration_rcv_callback,
     tolerance=None,
+    fake_pubsubmaster=True,
   ),
   ProcessConfig(
     proc_name="dmonitoringd",
@@ -277,6 +281,7 @@ CONFIGS = [
     init_callback=get_car_params,
     should_recv_callback=None,
     tolerance=NUMPY_TOLERANCE,
+    fake_pubsubmaster=True,
   ),
   ProcessConfig(
     proc_name="locationd",
@@ -288,6 +293,7 @@ CONFIGS = [
     init_callback=get_car_params,
     should_recv_callback=None,
     tolerance=NUMPY_TOLERANCE,
+    fake_pubsubmaster=False,
   ),
   ProcessConfig(
     proc_name="paramsd",
@@ -299,6 +305,7 @@ CONFIGS = [
     init_callback=get_car_params,
     should_recv_callback=None,
     tolerance=NUMPY_TOLERANCE,
+    fake_pubsubmaster=True,
   ),
   ProcessConfig(
     proc_name="ubloxd",
@@ -309,13 +316,13 @@ CONFIGS = [
     init_callback=None,
     should_recv_callback=ublox_rcv_callback,
     tolerance=None,
+    fake_pubsubmaster=False,
   ),
 ]
 
 
 def replay_process(cfg, lr):
-  proc = managed_processes[cfg.proc_name]
-  if isinstance(proc, PythonProcess):
+  if cfg.fake_pubsubmaster:
     return python_replay_process(cfg, lr)
   else:
     return cpp_replay_process(cfg, lr)
@@ -416,11 +423,15 @@ def cpp_replay_process(cfg, lr):
 
   for msg in tqdm(pub_msgs, disable=CI):
     pm.send(msg.which(), msg.as_builder())
-    resp_sockets = sub_sockets if cfg.should_recv_callback is None else cfg.should_recv_callback(msg)
+    resp_sockets = cfg.pub_sub[msg.which()] if cfg.should_recv_callback is None else cfg.should_recv_callback(msg)
     for s in resp_sockets:
       response = messaging.recv_one(sockets[s])
       if response is not None:
         log_msgs.append(response)
+
+    if not len(resp_sockets):
+      while not pm.all_readers_updated(msg.which()):
+        time.sleep(0)
 
   managed_processes[cfg.proc_name].stop()
   return log_msgs
