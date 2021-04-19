@@ -98,15 +98,3 @@ std::vector<std::pair<std::string, cereal::Event::Reader>> Replay::getMessages()
 
   return messages;
 }
-
-// What to do after Quiz:
-// 1. get all events from earliest time in Events
-// 2. put it in a pair with the time and the vector of this events <name, evnt>
-// 3. return this and use it to update the submaster
-// 4. repeat every time timerUPdate is called
-
-
-
-
-
-
