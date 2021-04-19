@@ -1,8 +1,6 @@
 #pragma once
 
-#include <iostream>
 #include <fstream>
-#include <iomanip>
 #include <string>
 #include <memory>
 
@@ -25,11 +23,6 @@
 #define SENSOR_DECIMATION 10
 
 #define POSENET_STD_HIST_HALF 20
-
-Eigen::VectorXd floatlist_to_vector(const capnp::List<float, capnp::Kind::PRIMITIVE>::Reader& floatlist);
-Eigen::Vector4d quat2vector(const Eigen::Quaterniond& quat);
-Eigen::Quaterniond vector2quat(const Eigen::VectorXd& vec);
-void initMeasurement(cereal::LiveLocationKalman::Measurement::Builder& meas, const Eigen::VectorXd& val, const Eigen::VectorXd& std, bool valid);
 
 class Localizer {
 public:
@@ -55,7 +48,7 @@ public:
   void handle_live_calib(double current_time, const cereal::LiveCalibrationData::Reader& log);
 
 private:
-  std::shared_ptr<LiveKalman> kf;
+  std::unique_ptr<LiveKalman> kf;
 
   Eigen::VectorXd calib;
   MatrixXdr device_from_calib;
@@ -63,11 +56,9 @@ private:
   bool calibrated = false;
 
   int car_speed = 0;
-  Eigen::VectorXd posenet_stds_old;
-  Eigen::VectorXd posenet_stds_new;
-  int posenet_stds_i = 0;
+  std::deque<double> posenet_stds;
 
-  std::shared_ptr<LocalCoord> converter;
+  std::unique_ptr<LocalCoord> converter;
 
   int64_t unix_timestamp_millis = 0;
   double last_gps_fix = 0;

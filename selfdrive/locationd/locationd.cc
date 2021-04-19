@@ -5,7 +5,7 @@ using namespace Eigen;
 
 ExitHandler do_exit;
 
-VectorXd floatlist2vector(const capnp::List<float, capnp::Kind::PRIMITIVE>::Reader& floatlist) {
+static VectorXd floatlist2vector(const capnp::List<float, capnp::Kind::PRIMITIVE>::Reader& floatlist) {
   VectorXd res(floatlist.size());
   for (int i = 0; i < floatlist.size(); i++) {
     res[i] = floatlist[i];
@@ -13,33 +13,34 @@ VectorXd floatlist2vector(const capnp::List<float, capnp::Kind::PRIMITIVE>::Read
   return res;
 }
 
-Vector4d quat2vector(const Quaterniond& quat) {
+static Vector4d quat2vector(const Quaterniond& quat) {
   return Vector4d(quat.w(), quat.x(), quat.y(), quat.z());
 }
 
-Quaterniond vector2quat(const VectorXd& vec) {
+static Quaterniond vector2quat(const VectorXd& vec) {
   return Quaterniond(vec(0), vec(1), vec(2), vec(3));
 }
 
-void initMeasurement(cereal::LiveLocationKalman::Measurement::Builder meas, const VectorXd& val, const VectorXd& std, bool valid) {
+static void initMeasurement(cereal::LiveLocationKalman::Measurement::Builder meas, const VectorXd& val, const VectorXd& std, bool valid) {
   meas.setValue(kj::arrayPtr(val.data(), val.size()));
   meas.setStd(kj::arrayPtr(std.data(), std.size()));
   meas.setValid(valid);
 }
 
 Localizer::Localizer() {
-  this->kf = std::make_shared<LiveKalman>();
+  this->kf = std::make_unique<LiveKalman>();
   this->reset_kalman();
 
   this->calib = Vector3d(0.0, 0.0, 0.0);
   this->device_from_calib = MatrixXdr::Identity(3, 3);
   this->calib_from_device = MatrixXdr::Identity(3, 3);
 
-  this->posenet_stds_old = VectorXd::Constant(POSENET_STD_HIST_HALF, 10.0);
-  this->posenet_stds_new = VectorXd::Constant(POSENET_STD_HIST_HALF, 10.0);
+  for (int i = 0; i < POSENET_STD_HIST_HALF * 2; i++) {
+    this->posenet_stds.push_back(10.0);
+  }
 
   VectorXd ecef_pos = this->kf->get_x().segment<STATE_ECEF_POS_LEN>(STATE_ECEF_POS_START);
-  this->converter = std::make_shared<LocalCoord>((ECEF) { .x = ecef_pos[0], .y = ecef_pos[1], .z = ecef_pos[2] });
+  this->converter = std::make_unique<LocalCoord>((ECEF) { .x = ecef_pos[0], .y = ecef_pos[1], .z = ecef_pos[2] });
 }
 
 void Localizer::buildLiveLocation(cereal::LiveLocationKalman::Builder& fix) {
@@ -115,9 +116,19 @@ void Localizer::buildLiveLocation(cereal::LiveLocationKalman::Builder& fix) {
   initMeasurement(fix.initAngularVelocityCalibrated(), ang_vel_calib, ang_vel_calib_std, this->calibrated);
   initMeasurement(fix.initAccelerationCalibrated(), acc_calib, acc_calib_std, this->calibrated);
 
+  double old_mean = 0.0, new_mean = 0.0;
+  int i = 0;
+  for (double x : this->posenet_stds) {
+    if (i < POSENET_STD_HIST_HALF) {
+      old_mean += x;
+    } else {
+      new_mean += x;
+    }
+    i++;
+  }
+  old_mean /= POSENET_STD_HIST_HALF;
+  new_mean /= POSENET_STD_HIST_HALF;
   // experimentally found these values, no false positives in 20k minutes of driving
-  double old_mean = this->posenet_stds_old.mean();
-  double new_mean = this->posenet_stds_new.mean();
   bool std_spike = (new_mean / old_mean > 4.0 && new_mean > 7.0);
 
   fix.setPosenetOK(!(std_spike && this->car_speed > 5.0));
@@ -188,7 +199,7 @@ void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::R
   this->last_gps_fix = current_time;
 
   Geodetic geodetic = { log.getLatitude(), log.getLongitude(), log.getAltitude() };
-  this->converter = std::make_shared<LocalCoord>(geodetic);
+  this->converter = std::make_unique<LocalCoord>(geodetic);
 
   VectorXd ecef_pos = this->converter->ned2ecef({ 0.0, 0.0, 0.0 }).to_vector();
   VectorXd ecef_vel = this->converter->ned2ecef({ log.getVNED()[0], log.getVNED()[1], log.getVNED()[2] }).to_vector() - ecef_pos;
@@ -212,11 +223,11 @@ void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::R
   VectorXd initial_pose_ecef_quat = quat2vector(euler2quat(ecef_euler_from_ned({ ecef_pos(0), ecef_pos(1), ecef_pos(2) }, orientation_ned_gps)));
 
   if (ecef_vel.norm() > 5.0 && orientation_error.norm() > 1.0) {
-    std::cout << "Locationd vs ubloxLocation orientation difference too large, kalman reset" << std::endl;
+    LOGE("Locationd vs ubloxLocation orientation difference too large, kalman reset");
     this->reset_kalman(NAN, initial_pose_ecef_quat, ecef_pos);
     this->kf->predict_and_observe(current_time, KIND_ECEF_ORIENTATION_FROM_GPS, { initial_pose_ecef_quat });
   } else if (gps_est_error > 50.0) {
-    std::cout << "Locationd vs ubloxLocation position difference too large, kalman reset" << std::endl;
+    LOGE("Locationd vs ubloxLocation position difference too large, kalman reset");
     this->reset_kalman(NAN, initial_pose_ecef_quat, ecef_pos);
   }
 
@@ -248,9 +259,8 @@ void Localizer::handle_cam_odo(double current_time, const cereal::CameraOdometry
     VectorXd trans_device = this->device_from_calib * floatlist2vector(log.getTrans());
     VectorXd trans_device_std = this->device_from_calib * floatlist2vector(log.getTransStd());
 
-    this->posenet_stds_old[this->posenet_stds_i] = this->posenet_stds_new[this->posenet_stds_i];
-    this->posenet_stds_new[this->posenet_stds_i] = trans_device_std[0];
-    this->posenet_stds_i = (this->posenet_stds_i + 1) % POSENET_STD_HIST_HALF;
+    this->posenet_stds.pop_front();
+    this->posenet_stds.push_back(trans_device_std[0]);
 
     trans_device_std *= 10.0;
     this->kf->predict_and_observe(current_time, KIND_CAMERA_ODO_TRANSLATION,
@@ -308,8 +318,6 @@ void Localizer::handle_msg(const cereal::Event::Reader& log) {
     this->handle_cam_odo(t, log.getCameraOdometry());
   } else if (log.isLiveCalibration()) {
     this->handle_live_calib(t, log.getLiveCalibration());
-  } else {
-    std::cout << "invalid event" << std::endl;
   }
 }
 
@@ -355,7 +363,7 @@ int Localizer::locationd_thread() {
             VectorXd posGeo = this->getPositionGeodetic();
             std::string lastGPSPosJSON = util::string_format(
               "{\"latitude\": %.15f, \"longitude\": %.15f, \"altitude\": %.15f}", posGeo(0), posGeo(1), posGeo(2));
-            params.put("LastGPSPosition", lastGPSPosJSON);
+            params.put("LastGPSPosition", lastGPSPosJSON);  // TODO write async
           }
         }
       }
