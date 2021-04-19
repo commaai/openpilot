@@ -7,6 +7,7 @@ import os
 import traceback
 from tqdm import tqdm
 from tools.lib.logreader import LogReader
+from tools.lib.route import Route
 from selfdrive.car.fw_versions import match_fw_to_car_exact, match_fw_to_car_fuzzy, build_fw_dict
 from selfdrive.car.toyota.values import FW_VERSIONS as TOYOTA_FW_VERSIONS
 from selfdrive.car.honda.values import FW_VERSIONS as HONDA_FW_VERSIONS
@@ -18,6 +19,7 @@ from selfdrive.car.honda.values import FINGERPRINTS as HONDA_FINGERPRINTS
 from selfdrive.car.hyundai.values import FINGERPRINTS as HYUNDAI_FINGERPRINTS
 from selfdrive.car.volkswagen.values import FINGERPRINTS as VW_FINGERPRINTS
 
+NO_API = "NO_API" in os.environ
 SUPPORTED_CARS = list(TOYOTA_FINGERPRINTS.keys()) + list(HONDA_FINGERPRINTS.keys()) + list(HYUNDAI_FINGERPRINTS.keys())+ list(VW_FINGERPRINTS.keys())
 
 if __name__ == "__main__":
@@ -34,14 +36,25 @@ if __name__ == "__main__":
   mismatches = defaultdict(list)
 
   not_fingerprinted = 0
+  solved_by_fuzzy = 0
+
   good_exact = 0
   wrong_fuzzy = 0
+  good_fuzzy = 0
 
   dongles = []
   for route in tqdm(routes):
     route = route.rstrip()
     dongle_id, time = route.split('|')
-    qlog_path = f"cd:/{dongle_id}/{time}/0/qlog.bz2"
+
+    if NO_API:
+      qlog_path = f"cd:/{dongle_id}/{time}/0/qlog.bz2"
+    else:
+      route = Route(route)
+      qlog_path = route.qlog_paths()[0]
+
+    if qlog_path is None:
+      continue
 
     if dongle_id in dongles:
       continue
@@ -85,6 +98,8 @@ if __name__ == "__main__":
                 wrong_fuzzy += 1
                 print(f"{dongle_id}|{time}")
                 print("Fuzzy match wrong! Fuzzy:", fuzzy_matches, "Live:", live_fingerprint)
+              else:
+                good_fuzzy += 1
             break
 
           print(f"{dongle_id}|{time}")
@@ -127,6 +142,14 @@ if __name__ == "__main__":
 
           print()
           not_fingerprinted += 1
+
+          if len(fuzzy_matches) == 1:
+            if list(fuzzy_matches)[0] == live_fingerprint:
+              solved_by_fuzzy += 1
+            else:
+              wrong_fuzzy += 1
+              print("Fuzzy match wrong! Fuzzy:", fuzzy_matches, "Live:", live_fingerprint)
+
           break
     except Exception:
       traceback.print_exc()
@@ -134,12 +157,6 @@ if __name__ == "__main__":
       break
 
   print()
-  print(f"Number of dongle ids checked: {len(dongles)}")
-  print(f"Fingerprinted:                {good_exact}")
-  print(f"Not fingerprinted:            {not_fingerprinted}")
-  print(f"Wrong fuzzy matches:          {wrong_fuzzy}")
-  print()
-
   # Print FW versions that need to be added seperated out by car and address
   for car, m in mismatches.items():
     print(car)
@@ -153,3 +170,15 @@ if __name__ == "__main__":
         print(f"    {v},")
       print("  ]")
     print()
+
+  print()
+  print(f"Number of dongle ids checked: {len(dongles)}")
+  print(f"Fingerprinted:                {good_exact}")
+  print(f"Not fingerprinted:            {not_fingerprinted}")
+  print(f"  of which had a fuzzy match: {solved_by_fuzzy}")
+
+  print()
+  print(f"Correct fuzzy matches:        {good_fuzzy}")
+  print(f"Wrong fuzzy matches:          {wrong_fuzzy}")
+  print()
+
