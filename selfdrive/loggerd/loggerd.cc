@@ -269,7 +269,8 @@ int main(int argc, char** argv) {
 
   // setup messaging
   typedef struct QlogState {
-    int counter, freq;
+    int freq;
+    uint32_t counter;
   } QlogState;
   std::map<SubSocket*, QlogState> qlog_states;
 
@@ -291,7 +292,6 @@ int main(int argc, char** argv) {
   trigger_rotate();
 
   // init encoders
-  s.last_camera_seen_tms = millis_since_boot();
   std::vector<std::thread> encoder_threads;
   for (int i = 0; i < std::size(cameras_logged); ++i) {
     if (cameras_logged[i].enabled) {
@@ -304,36 +304,29 @@ int main(int argc, char** argv) {
   uint64_t bytes_count = 0;
   AlignedBuffer aligned_buf;
 
-  double start_ts = seconds_since_boot();
+  double start_tms = s.last_camera_seen_tms = millis_since_boot();
   while (!do_exit) {
     // poll for new messages on all sockets
     for (auto sock : poller->poll(1000)) {
-      QlogState& qs = qlog_states[sock];
-      // drain socket
-      while (!do_exit) {
-        Message * msg = sock->receive(true);
-        if (!msg) break;
-
-        logger_log(&s.logger, (uint8_t*)msg->getData(), msg->getSize(), qs.counter == 0 && qs.freq != -1);
-        if (qs.freq != -1) {
-          qs.counter = (qs.counter + 1) % qs.freq;
-        }
-
+      QlogState &qs = qlog_states[sock];
+      Message *msg = nullptr;
+      while (!do_exit && (msg = sock->receive(true))) {
+        const bool in_qlog = qs.freq != -1 && (qs.counter++ % qs.freq == 0);
+        logger_log(&s.logger, (uint8_t *)msg->getData(), msg->getSize(), in_qlog);
         bytes_count += msg->getSize();
-        if ((++msg_count % 1000) == 0) {
-          double ts = seconds_since_boot();
-          LOGD("%lu messages, %.2f msg/sec, %.2f KB/sec", msg_count, msg_count * 1.0 / (ts - start_ts), bytes_count * 0.001 / (ts - start_ts));
-        }
-
         delete msg;
+
+        if ((++msg_count % 1000) == 0) {
+          double seconds = (millis_since_boot() - start_tms) / 1000.0;
+          LOGD("%lu messages, %.2f msg/sec, %.2f KB/sec", msg_count, msg_count / seconds, bytes_count * 0.001 / seconds);
+        }
       }
     }
 
     bool new_segment = (s.waiting_rotate == s.max_waiting);
     if (!new_segment) {
       double tms = millis_since_boot();
-      if ((tms - s.last_rotate_tms) > SEGMENT_LENGTH * 1000 &&
-          (tms - s.last_camera_seen_tms) > NO_CAMERA_PATIENCE) {
+      if ((tms - s.last_rotate_tms) > SEGMENT_LENGTH * 1000 && (tms - s.last_camera_seen_tms) > NO_CAMERA_PATIENCE) {
         LOGW("no camera packet seen. auto rotating");
         new_segment = true;
       }
