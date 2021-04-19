@@ -137,6 +137,15 @@ def chunks(l, n=128):
     yield l[i:i + n]
 
 
+def build_fw_dict(fw_versions):
+  fw_versions_dict = {}
+  for fw in fw_versions:
+    addr = fw.address
+    sub_addr = fw.subAddress if fw.subAddress != 0 else None
+    fw_versions_dict[(addr, sub_addr)] = fw.fwVersion
+  return fw_versions_dict
+
+
 def match_fw_to_car_fuzzy(fw_versions_dict):
   """Do a fuzzy FW match. This function will return a match, and the number of firmware version
   that were matched uniquely to that specific car. If multiple ECUs uniquely match to different cars
@@ -174,16 +183,13 @@ def match_fw_to_car_fuzzy(fw_versions_dict):
   return match_count, candidate
 
 
-def match_fw_to_car(fw_versions, allow_fuzzy=True):
-  candidates = FW_VERSIONS
+def match_fw_to_car_exact(fw_versions_dict):
+  """Do an exact FW match. Returns all cars that match the given
+  FW versions for a list of "essential" ECUs. If an ECU is not considered
+  essential the FW version can be missing to get a fingerprint, but if it's present it
+  needs to match the database."""
   invalid = []
-  exact_match = True
-
-  fw_versions_dict = {}
-  for fw in fw_versions:
-    addr = fw.address
-    sub_addr = fw.subAddress if fw.subAddress != 0 else None
-    fw_versions_dict[(addr, sub_addr)] = fw.fwVersion
+  candidates = FW_VERSIONS
 
   for candidate, fws in candidates.items():
     for ecu, expected_versions in fws.items():
@@ -194,11 +200,11 @@ def match_fw_to_car(fw_versions, allow_fuzzy=True):
       if ecu_type == Ecu.esp and candidate in [TOYOTA.RAV4, TOYOTA.COROLLA, TOYOTA.HIGHLANDER] and found_version is None:
         continue
 
-      # TODO: on some toyota, the engine can show on two different addresses
+      # On some Toyota models, the engine can show on two different addresses
       if ecu_type == Ecu.engine and candidate in [TOYOTA.COROLLA_TSS2, TOYOTA.CHR, TOYOTA.LEXUS_IS, TOYOTA.AVALON] and found_version is None:
         continue
 
-      # ignore non essential ecus
+      # Ignore non essential ecus
       if ecu_type not in ESSENTIAL_ECUS and found_version is None:
         continue
 
@@ -206,8 +212,14 @@ def match_fw_to_car(fw_versions, allow_fuzzy=True):
         invalid.append(candidate)
         break
 
-  matches = set(candidates.keys()) - set(invalid)
+  return set(candidates.keys()) - set(invalid)
 
+
+def match_fw_to_car(fw_versions, allow_fuzzy=True):
+  fw_versions_dict = build_fw_dict(fw_versions)
+  matches = match_fw_to_car_exact(fw_versions_dict)
+
+  exact_match = True
   if allow_fuzzy and len(matches) == 0:
     match_count, candidate = match_fw_to_car_fuzzy(fw_versions_dict)
     if candidate is not None and match_count >= 3:
