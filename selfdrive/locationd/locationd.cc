@@ -42,7 +42,7 @@ Localizer::Localizer() {
   this->converter = std::make_shared<LocalCoord>((ECEF) { .x = ecef_pos[0], .y = ecef_pos[1], .z = ecef_pos[2] });
 }
 
-void Localizer::liveLocationMsg(cereal::LiveLocationKalman::Builder& fix) {
+void Localizer::buildLiveLocation(cereal::LiveLocationKalman::Builder& fix) {
   VectorXd predicted_state = this->kf->get_x();
   MatrixXdr predicted_cov = this->kf->get_P();
   VectorXd predicted_std = predicted_cov.diagonal().array().sqrt();
@@ -52,8 +52,7 @@ void Localizer::liveLocationMsg(cereal::LiveLocationKalman::Builder& fix) {
   VectorXd fix_ecef_std = predicted_std.segment<STATE_ECEF_POS_ERR_LEN>(STATE_ECEF_POS_ERR_START);
   VectorXd vel_ecef = predicted_state.segment<STATE_ECEF_VELOCITY_LEN>(STATE_ECEF_VELOCITY_START);
   VectorXd vel_ecef_std = predicted_std.segment<STATE_ECEF_VELOCITY_ERR_LEN>(STATE_ECEF_VELOCITY_ERR_START);
-  Geodetic fix_pos_geo = ecef2geodetic(fix_ecef_ecef);
-  VectorXd fix_pos_geo_vec = Vector3d(fix_pos_geo.lat, fix_pos_geo.lon, fix_pos_geo.alt);
+  VectorXd fix_pos_geo_vec = this->getPositionGeodetic();
   //fix_pos_geo_std = np.abs(coord.ecef2geodetic(fix_ecef + fix_ecef_std) - fix_pos_geo)
   VectorXd orientation_ecef = quat2euler(vector2quat(predicted_state.segment<STATE_ECEF_ORIENTATION_LEN>(STATE_ECEF_ORIENTATION_START)));
   VectorXd orientation_ecef_std = predicted_std.segment<STATE_ECEF_ORIENTATION_ERR_LEN>(STATE_ECEF_ORIENTATION_ERR_START);
@@ -138,6 +137,13 @@ void Localizer::liveLocationMsg(cereal::LiveLocationKalman::Builder& fix) {
   }
 }
 
+VectorXd Localizer::getPositionGeodetic() {
+  VectorXd fix_ecef = this->kf->get_x().segment<STATE_ECEF_POS_LEN>(STATE_ECEF_POS_START);
+  ECEF fix_ecef_ecef = { .x = fix_ecef(0), .y = fix_ecef(1), .z = fix_ecef(2) };
+  Geodetic fix_pos_geo = ecef2geodetic(fix_ecef_ecef);
+  return Vector3d(fix_pos_geo.lat, fix_pos_geo.lon, fix_pos_geo.alt);
+}
+
 void Localizer::handle_sensors(double current_time, const capnp::List<cereal::SensorEventData, capnp::Kind::STRUCT>::Reader& log) {
   // TODO does not yet account for double sensor readings in the log
   for (int i = 0; i < log.size(); i++) {
@@ -218,14 +224,13 @@ void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::R
   this->kf->predict_and_observe(current_time, KIND_ECEF_VEL, { ecef_vel }, { ecef_vel_R });
 }
 
-
 void Localizer::handle_car_state(double current_time, const cereal::CarState::Reader& log) {
   this->speed_counter++;
 
   if (this->speed_counter % SENSOR_DECIMATION == 0) {
     this->kf->predict_and_observe(current_time, KIND_ODOMETRIC_SPEED, { (VectorXd(1) << log.getVEgo()).finished() });
     this->car_speed = std::abs(log.getVEgo());
-    if (log.getVEgo() == 0.0) {
+    if (log.getVEgo() == 0.0) {  // TODO probably never really 0.0
       this->kf->predict_and_observe(current_time, KIND_NO_ROT, { Vector3d(0.0, 0.0, 0.0) });
     }
   }
@@ -282,6 +287,45 @@ void Localizer::reset_kalman(double current_time, VectorXd init_orient, VectorXd
   this->cam_counter = 0;
 }
 
+void Localizer::handle_msg_bytes(const char *data, const size_t size) {
+  AlignedBuffer aligned_buf;
+
+  capnp::FlatArrayMessageReader cmsg(aligned_buf.align(data, size));
+  cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
+
+  this->handle_msg(event);
+}
+
+void Localizer::handle_msg(const cereal::Event::Reader& log) {
+  double t = log.getLogMonoTime() * 1e-9;
+  if (log.isSensorEvents()) {
+    this->handle_sensors(t, log.getSensorEvents());
+  } else if (log.isGpsLocationExternal()) {
+    this->handle_gps(t, log.getGpsLocationExternal());
+  } else if (log.isCarState()) {
+    this->handle_car_state(t, log.getCarState());
+  } else if (log.isCameraOdometry()) {
+    this->handle_cam_odo(t, log.getCameraOdometry());
+  } else if (log.isLiveCalibration()) {
+    this->handle_live_calib(t, log.getLiveCalibration());
+  } else {
+    std::cout << "invalid event" << std::endl;
+  }
+}
+
+kj::ArrayPtr<capnp::byte> Localizer::getMessageBytes(MessageBuilder& msg_builder, uint64_t logMonoTime,
+  bool inputsOK, bool sensorsOK, bool gpsOK)
+{
+  cereal::Event::Builder evt = msg_builder.initEvent();
+  evt.setLogMonoTime(logMonoTime);
+  cereal::LiveLocationKalman::Builder liveLoc = evt.initLiveLocationKalman();
+  this->buildLiveLocation(liveLoc);
+  liveLoc.setInputsOK(inputsOK);
+  liveLoc.setSensorsOK(sensorsOK);
+  liveLoc.setGpsOK(gpsOK);
+  return msg_builder.toBytes();
+}
+
 int Localizer::locationd_thread() {
   const std::initializer_list<const char *> service_list =
       { "gpsLocationExternal", "sensorEvents", "cameraOdometry", "liveCalibration", "carState" };
@@ -291,47 +335,29 @@ int Localizer::locationd_thread() {
   Params params;
 
   while (!do_exit) {
-    bool updatedCameraOdometry = false;
     sm.update();
     for (const char* service : service_list) {
       if (sm.updated(service) && sm.valid(service)) {
-        cereal::Event::Reader& log = sm[service];
-        double t = log.getLogMonoTime() * 1e-9;
+        const cereal::Event::Reader log = sm[service];
+        this->handle_msg(log);
 
-        if (log.isSensorEvents()) {
-          this->handle_sensors(t, log.getSensorEvents());
-        } else if (log.isGpsLocationExternal()) {
-          this->handle_gps(t, log.getGpsLocationExternal());
-        } else if (log.isCarState()) {
-          this->handle_car_state(t, log.getCarState());
-        } else if (log.isCameraOdometry()) {
-          this->handle_cam_odo(t, log.getCameraOdometry());
-          updatedCameraOdometry = true;
-        } else if (log.isLiveCalibration()) {
-          this->handle_live_calib(t, log.getLiveCalibration());
-        } else {
-          std::cout << "invalid event" << std::endl;
+        if (log.isCameraOdometry()) {
+          uint64_t logMonoTime = log.getLogMonoTime();
+          bool inputsOK = sm.allAliveAndValid();
+          bool sensorsOK = sm.alive("sensorEvents") && sm.valid("sensorEvents");
+          bool gpsOK = (logMonoTime / 1e9) - this->last_gps_fix < 1.0;
+
+          MessageBuilder msg_builder;
+          kj::ArrayPtr<capnp::byte> bytes = this->getMessageBytes(msg_builder, logMonoTime, inputsOK, sensorsOK, gpsOK);
+          pm.send("liveLocationKalman", bytes.begin(), bytes.size());
+
+          if (sm.frame % 1200 == 0 && gpsOK) {  // once a minute
+            VectorXd posGeo = this->getPositionGeodetic();
+            std::string lastGPSPosJSON = util::string_format(
+              "{\"latitude\": %.15f, \"longitude\": %.15f, \"altitude\": %.15f}", posGeo(0), posGeo(1), posGeo(2));
+            params.put("LastGPSPosition", lastGPSPosJSON);
+          }
         }
-      }
-    }
-
-    if (updatedCameraOdometry) {
-      uint64_t t = sm["cameraOdometry"].getLogMonoTime();
-
-      MessageBuilder msg_builder;
-      auto evt = msg_builder.initEvent();
-      evt.setLogMonoTime(t);
-      auto liveLoc = evt.initLiveLocationKalman();
-      this->liveLocationMsg(liveLoc);
-      liveLoc.setInputsOK(sm.allAliveAndValid());
-      liveLoc.setSensorsOK(sm.alive("sensorEvents") && sm.valid("sensorEvents"));
-      liveLoc.setGpsOK((t / 1e9) - this->last_gps_fix < 1.0);
-      pm.send("liveLocationKalman", msg_builder);
-
-      if (sm.frame % 1200 == 0 && liveLoc.getGpsOK()) {  // once a minute
-        std::string lastGPSPosJSON = util::string_format("{\"latitude\": %.15f, \"longitude\": %.15f, \"altitude\": %.15f}",
-          liveLoc.getPositionGeodetic().getValue()[0], liveLoc.getPositionGeodetic().getValue()[1], liveLoc.getPositionGeodetic().getValue()[2]);
-        params.put("LastGPSPosition", lastGPSPosJSON);
       }
     }
   }

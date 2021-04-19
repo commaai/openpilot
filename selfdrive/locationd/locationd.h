@@ -40,8 +40,14 @@ public:
   void reset_kalman(double current_time = NAN);
   void reset_kalman(double current_time, Eigen::VectorXd init_orient, Eigen::VectorXd init_pos);
 
-  void liveLocationMsg(cereal::LiveLocationKalman::Builder& fix);
+  kj::ArrayPtr<capnp::byte> getMessageBytes(MessageBuilder& msg_builder, uint64_t logMonoTime,
+    bool inputsOK, bool sensorsOK, bool gpsOK);
+  void buildLiveLocation(cereal::LiveLocationKalman::Builder& fix);
 
+  Eigen::VectorXd getPositionGeodetic();
+
+  void handle_msg_bytes(const char *data, const size_t size);
+  void handle_msg(const cereal::Event::Reader& log);
   void handle_sensors(double current_time, const capnp::List<cereal::SensorEventData, capnp::Kind::STRUCT>::Reader& log);
   void handle_gps(double current_time, const cereal::GpsLocationData::Reader& log);
   void handle_car_state(double current_time, const cereal::CarState::Reader& log);
