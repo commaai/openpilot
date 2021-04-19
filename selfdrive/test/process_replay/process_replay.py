@@ -432,6 +432,7 @@ def cpp_replay_process(cfg, lr):
     if not len(resp_sockets):
       while not pm.all_readers_updated(msg.which()):
         time.sleep(0)
+      time.sleep(0.0001)
 
   managed_processes[cfg.proc_name].stop()
   return log_msgs
