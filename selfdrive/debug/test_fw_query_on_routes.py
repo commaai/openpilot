@@ -7,7 +7,7 @@ import os
 import traceback
 from tqdm import tqdm
 from tools.lib.logreader import LogReader
-from selfdrive.car.fw_versions import match_fw_to_car
+from selfdrive.car.fw_versions import match_fw_to_car_exact, match_fw_to_car_fuzzy, build_fw_dict
 from selfdrive.car.toyota.values import FW_VERSIONS as TOYOTA_FW_VERSIONS
 from selfdrive.car.honda.values import FW_VERSIONS as HONDA_FW_VERSIONS
 from selfdrive.car.hyundai.values import FW_VERSIONS as HYUNDAI_FW_VERSIONS
@@ -19,7 +19,6 @@ from selfdrive.car.hyundai.values import FINGERPRINTS as HYUNDAI_FINGERPRINTS
 from selfdrive.car.volkswagen.values import FINGERPRINTS as VW_FINGERPRINTS
 
 SUPPORTED_CARS = list(TOYOTA_FINGERPRINTS.keys()) + list(HONDA_FINGERPRINTS.keys()) + list(HYUNDAI_FINGERPRINTS.keys())+ list(VW_FINGERPRINTS.keys())
-FUZZY = 'FUZZY' in os.environ
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description='Run FW fingerprint on Qlog of route or list of routes')
@@ -34,8 +33,9 @@ if __name__ == "__main__":
 
   mismatches = defaultdict(list)
 
-  wrong = 0
-  good = 0
+  not_fingerprinted = 0
+  good_exact = 0
+  wrong_fuzzy = 0
 
   dongles = []
   for route in tqdm(routes):
@@ -71,15 +71,26 @@ if __name__ == "__main__":
           if live_fingerprint not in SUPPORTED_CARS:
             break
 
-          _, candidates = match_fw_to_car(car_fw, allow_fuzzy=FUZZY)
-          if (len(candidates) == 1) and (list(candidates)[0] == live_fingerprint):
-            good += 1
-            print("Correct", live_fingerprint, dongle_id)
+          fw_versions_dict = build_fw_dict(car_fw)
+          exact_matches = match_fw_to_car_exact(fw_versions_dict)
+          fuzzy_matches = match_fw_to_car_fuzzy(fw_versions_dict)
+
+          if (len(exact_matches) == 1) and (list(exact_matches)[0] == live_fingerprint):
+            good_exact += 1
+            print(f"Correct! Live: {live_fingerprint} - Fuzzy: {fuzzy_matches}")
+
+            # Check if fuzzy match was correct
+            if len(fuzzy_matches) == 1:
+              if list(fuzzy_matches)[0] != live_fingerprint:
+                wrong_fuzzy += 1
+                print(f"{dongle_id}|{time}")
+                print("Fuzzy match wrong! Fuzzy:", fuzzy_matches, "Live:", live_fingerprint)
             break
 
           print(f"{dongle_id}|{time}")
           print("Old style:", live_fingerprint, "Vin", msg.carParams.carVin)
-          print("New style:", candidates)
+          print("New style (exact):", exact_matches)
+          print("New style (fuzzy):", fuzzy_matches)
 
           for version in car_fw:
             subaddr = None if version.subAddress == 0 else hex(version.subAddress)
@@ -115,15 +126,18 @@ if __name__ == "__main__":
                 mismatches[live_fingerprint].append(mismatch)
 
           print()
-          wrong += 1
+          not_fingerprinted += 1
           break
     except Exception:
       traceback.print_exc()
     except KeyboardInterrupt:
       break
 
-  print(f"Fingerprinted: {good} - Not fingerprinted: {wrong}")
+  print()
   print(f"Number of dongle ids checked: {len(dongles)}")
+  print(f"Fingerprinted:                {good_exact}")
+  print(f"Not fingerprinted:            {not_fingerprinted}")
+  print(f"Wrong fuzzy matches:          {wrong_fuzzy}")
   print()
 
   # Print FW versions that need to be added seperated out by car and address

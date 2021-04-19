@@ -178,9 +178,13 @@ def match_fw_to_car_fuzzy(fw_versions_dict):
         candidate = candidates[0]
       # We uniquely matched two different cars. No fuzzy match possible
       elif candidate != candidates[0]:
-        return 0, None
+        return set()
 
-  return match_count, candidate
+  if match_count >= 3:
+    cloudlog.error(f"Fingerprinted {candidate} using fuzzy match. {match_count} matching ECUs")
+    return set([candidate])
+  else:
+    return set()
 
 
 def match_fw_to_car_exact(fw_versions_dict):
@@ -221,10 +225,10 @@ def match_fw_to_car(fw_versions, allow_fuzzy=True):
 
   exact_match = True
   if allow_fuzzy and len(matches) == 0:
-    match_count, candidate = match_fw_to_car_fuzzy(fw_versions_dict)
-    if candidate is not None and match_count >= 3:
-      cloudlog.error(f"Fingerprinted {candidate} using fuzzy match. {match_count} matching ECUs")
-      matches = set([candidate])
+    matches = match_fw_to_car_fuzzy(fw_versions_dict)
+
+    # Fuzzy match found
+    if len(matches) == 1:
       exact_match = False
 
   return exact_match, matches
