@@ -348,24 +348,24 @@ int Localizer::locationd_thread() {
       if (sm.updated(service) && sm.valid(service)) {
         const cereal::Event::Reader log = sm[service];
         this->handle_msg(log);
+      }
+    }
 
-        if (log.isCameraOdometry()) {
-          uint64_t logMonoTime = log.getLogMonoTime();
-          bool inputsOK = sm.allAliveAndValid();
-          bool sensorsOK = sm.alive("sensorEvents") && sm.valid("sensorEvents");
-          bool gpsOK = (logMonoTime / 1e9) - this->last_gps_fix < 1.0;
+    if (sm.updated("cameraOdometry")) {
+      uint64_t logMonoTime = sm["cameraOdometry"].getLogMonoTime();
+      bool inputsOK = sm.allAliveAndValid();
+      bool sensorsOK = sm.alive("sensorEvents") && sm.valid("sensorEvents");
+      bool gpsOK = (logMonoTime / 1e9) - this->last_gps_fix < 1.0;
 
-          MessageBuilder msg_builder;
-          kj::ArrayPtr<capnp::byte> bytes = this->getMessageBytes(msg_builder, logMonoTime, inputsOK, sensorsOK, gpsOK);
-          pm.send("liveLocationKalman", bytes.begin(), bytes.size());
+      MessageBuilder msg_builder;
+      kj::ArrayPtr<capnp::byte> bytes = this->getMessageBytes(msg_builder, logMonoTime, inputsOK, sensorsOK, gpsOK);
+      pm.send("liveLocationKalman", bytes.begin(), bytes.size());
 
-          if (sm.frame % 1200 == 0 && gpsOK) {  // once a minute
-            VectorXd posGeo = this->getPositionGeodetic();
-            std::string lastGPSPosJSON = util::string_format(
-              "{\"latitude\": %.15f, \"longitude\": %.15f, \"altitude\": %.15f}", posGeo(0), posGeo(1), posGeo(2));
-            params.put("LastGPSPosition", lastGPSPosJSON);  // TODO write async
-          }
-        }
+      if (sm.frame % 1200 == 0 && gpsOK) {  // once a minute
+        VectorXd posGeo = this->getPositionGeodetic();
+        std::string lastGPSPosJSON = util::string_format(
+          "{\"latitude\": %.15f, \"longitude\": %.15f, \"altitude\": %.15f}", posGeo(0), posGeo(1), posGeo(2));
+        params.put("LastGPSPosition", lastGPSPosJSON);  // TODO write async
       }
     }
   }
