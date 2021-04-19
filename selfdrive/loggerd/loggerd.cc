@@ -56,18 +56,13 @@ ExitHandler do_exit;
 
 typedef cereal::EncodeIndex::Builder (cereal::Event::Builder::*initEncodeIdxFunc)();
 typedef struct LogCameraInfo {
-  const char* filename;
-  const char* frame_packet_name;
+  const char *filename, *frame_packet_name;
   VisionStreamType stream_type;
   int frame_width, frame_height;
-  int fps;
-  int bitrate;
-  bool is_h265;
-  bool downscale;
-  bool has_qcamera;
+  int fps, bitrate;
+  bool is_h265, downscale, has_qcamera, enabled;
   cereal::EncodeIndex::Type edix_type;
   initEncodeIdxFunc initEncoderIdx;
-  bool enabled;
 } LogCameraInfo;
 
 LogCameraInfo cameras_logged[] = {
@@ -78,7 +73,6 @@ LogCameraInfo cameras_logged[] = {
     .fps = MAIN_FPS,
     .bitrate = MAIN_BITRATE,
     .is_h265 = true,
-    .downscale = false,
     .has_qcamera = true,
     .edix_type = cereal::EncodeIndex::Type::FULL_H_E_V_C,
     .initEncoderIdx = &cereal::Event::Builder::initRoadEncodeIdx,
@@ -91,7 +85,6 @@ LogCameraInfo cameras_logged[] = {
     .fps = MAIN_FPS, // on EONs, more compressed this way
     .bitrate = DCAM_BITRATE,
     .is_h265 = true,
-    .downscale = false,
     .has_qcamera = false,
     .edix_type = IS_TICI ? cereal::EncodeIndex::Type::FULL_H_E_V_C : cereal::EncodeIndex::Type::FRONT,
     .initEncoderIdx = &cereal::Event::Builder::initDriverEncodeIdx,
@@ -104,14 +97,12 @@ LogCameraInfo cameras_logged[] = {
     .fps = MAIN_FPS,
     .bitrate = MAIN_BITRATE,
     .is_h265 = true,
-    .downscale = false,
     .has_qcamera = false,
     .edix_type = cereal::EncodeIndex::Type::FULL_H_E_V_C,
     .initEncoderIdx = &cereal::Event::Builder::initWideRoadEncodeIdx,
     .enabled = IS_TICI,
   },
 };
-
 LogCameraInfo qcam_info = {
     .filename = "qcamera.ts",
     .fps = MAIN_FPS,
@@ -137,7 +128,7 @@ struct LoggerdState {
 };
 LoggerdState s;
 
-static void trigger_rotate() {
+void trigger_rotate() {
   {
     std::unique_lock lk(s.rotate_lock);
     int segment = -1;
@@ -185,11 +176,10 @@ void encoder_thread(const LogCameraInfo *ci, int cam_idx) {
       if (buf == nullptr) continue;
 
       s.last_camera_seen_tms = millis_since_boot();
-
       // Decide if we should rotate
       if ((cnt > 0 && (cnt % (SEGMENT_LENGTH * MAIN_FPS)) == 0) && cam_info.bitrate == MAIN_BITRATE) {
         ++s.waiting_rotate;
-        // wait logger rotated to new segment
+        // wait logger rotate to new segment
         std::unique_lock lk(s.rotate_lock);
         s.rotate_cv.wait(lk, [&] { return s.rotate_segment != cur_seg || do_exit; });
       }
@@ -273,7 +263,6 @@ int main(int argc, char** argv) {
 
   s.ctx = Context::create();
   Poller * poller = Poller::create();
-
   // subscribe to all socks
   for (const auto& it : services) {
     if (!it.should_log) continue;
@@ -300,7 +289,6 @@ int main(int argc, char** argv) {
   uint64_t msg_count = 0;
   uint64_t bytes_count = 0;
   AlignedBuffer aligned_buf;
-
   double start_tms = s.last_camera_seen_tms = millis_since_boot();
   while (!do_exit) {
     // poll for new messages on all sockets
