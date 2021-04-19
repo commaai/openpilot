@@ -17,6 +17,8 @@ Q_OBJECT
     void setPause(bool pause) { paused = pause; }
     void togglePause() { paused = !paused; }
     QMap<int, QPair<int, int> > eidx;
+
+    VisionIpcServer *vipc_server;
   public slots:
     void process();
   signals:
@@ -32,6 +34,6 @@ Q_OBJECT
     uint64_t seek_request = 0;
     bool paused = false;
 
-    VisionIpcServer *vipc_server;
+    //VisionIpcServer *vipc_server;
 };
 

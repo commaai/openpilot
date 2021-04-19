@@ -5,6 +5,8 @@
 #include <QJsonObject>
 #include <QJsonDocument>
 
+#include <capnp/dynamic.h>
+
 #include "Unlogger.hpp"
 #include "FileReader.hpp"
 #include "FrameReader.hpp"
@@ -14,7 +16,8 @@ class Replay : public QObject {
 
 public:
   Replay(QString route_, int seek, int use_api);
-  void replay();
+  void stream(int seek);
+  std::vector<std::pair<std::string, cereal::Event::Reader>> getMessages();
   bool addSegment(int i);
   QJsonArray camera_paths;
   QJsonArray log_paths;

@@ -16,7 +16,7 @@ int main(int argc, char *argv[]){
 	int use_api = QString::compare(QString("use_api"), route, Qt::CaseInsensitive) == 0;
 
 	Replay *replay = new Replay(route, seek, use_api);
-	replay->replay();
+	replay->stream(seek);
 
   return a.exec();
 }

@@ -1,11 +1,7 @@
 #include "replay.hpp"
 
 Replay::Replay(QString route_, int seek, int use_api_) : route(route_), use_api(use_api_){
-  QThread* thread = new QThread;
   unlogger = new Unlogger(&events, &events_lock, &frs, seek);
-  unlogger->moveToThread(thread);
-  QObject::connect(thread, SIGNAL (started()), unlogger, SLOT (process()));
-  thread->start();
 
   if (use_api) {
     QString settings;
@@ -22,12 +18,12 @@ Replay::Replay(QString route_, int seek, int use_api_) : route(route_), use_api(
     this->camera_paths = sett2.value("camera").toArray();
     this->log_paths = sett2.value("logs").toArray();
   }
-
-  // add the first segment
-  addSegment(seek/60);
 }
 
 bool Replay::addSegment(int i){
+
+  //unlogger->vipc_server->start_listener();
+
   if (lrs.find(i) == lrs.end()) {
     QString fn = QString("http://data.comma.life/%1/%2/rlog.bz2").arg(route).arg(i);
 
@@ -56,5 +52,61 @@ bool Replay::addSegment(int i){
   return false;
 }
 
-void Replay::replay(){
+void Replay::stream(int seek){
+  QThread* thread = new QThread;
+  unlogger->moveToThread(thread);
+  QObject::connect(thread, SIGNAL (started()), unlogger, SLOT (process()));
+  thread->start();
+
+  addSegment(seek/60);
 }
+
+std::vector<std::pair<std::string, cereal::Event::Reader>> Replay::getMessages(){
+
+  std::vector<std::pair<std::string, cereal::Event::Reader>> messages;
+  for(auto i = 0 ; i < 8 ; i++){
+    auto first = (events.begin()+1).key();
+
+    for(auto e : events.values(first)){
+      capnp::DynamicStruct::Reader e_ds = static_cast<capnp::DynamicStruct::Reader>(e);
+      std::string type;
+      KJ_IF_MAYBE(e_, e_ds.which()){
+        type = e_->getProto().getName();
+      }
+      messages.push_back({type, e});
+      if(type == "roadCameraState"){
+        auto fr = e.getRoadCameraState();
+        auto it = unlogger->eidx.find(fr.getFrameId());
+
+        if(it != unlogger->eidx.end()) {
+          auto pp = *it;
+          if (frs.find(pp.first) != frs.end()) {
+            auto frm = (frs)[pp.first];
+            auto data = frm->get(pp.second);
+
+            VisionBuf *buf = unlogger->vipc_server->get_buffer(VisionStreamType::VISION_STREAM_RGB_BACK);
+            memcpy(buf->addr, data, frm->getRGBSize());
+            VisionIpcBufExtra extra = {};
+
+            unlogger->vipc_server->send(buf, &extra, false);
+          }
+        }
+      }
+    }
+    events.remove(first);
+  }
+
+  return messages;
+}
+
+// What to do after Quiz:
+// 1. get all events from earliest time in Events
+// 2. put it in a pair with the time and the vector of this events <name, evnt>
+// 3. return this and use it to update the submaster
+// 4. repeat every time timerUPdate is called
+
+
+
+
+
+
