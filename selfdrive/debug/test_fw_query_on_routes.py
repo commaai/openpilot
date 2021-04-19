@@ -157,7 +157,7 @@ if __name__ == "__main__":
 
   print()
   # Print FW versions that need to be added seperated out by car and address
-  for car, m in mismatches.items():
+  for car, m in sorted(mismatches.items()):
     print(car)
     addrs = defaultdict(list)
     for (addr, sub_addr, version) in m:
