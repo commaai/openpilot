@@ -1,5 +1,4 @@
 #include "replay.hpp"
-#include "common/timing.h"
 
 Replay::Replay(QString route_, int seek, int use_api_) : route(route_), use_api(use_api_){
   unlogger = new Unlogger(&events, &events_lock, &frs, seek);
