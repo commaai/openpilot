@@ -13,6 +13,7 @@ import cereal.messaging as messaging
 from cereal import car, log
 from cereal.services import service_list
 from common.params import Params
+from selfdrive.car.fingerprints import FW_VERSIONS
 from selfdrive.car.car_helpers import get_car
 from selfdrive.manager.process import PythonProcess
 from selfdrive.manager.process_config import managed_processes
@@ -350,11 +351,15 @@ def python_replay_process(cfg, lr):
   params.put_bool("CommunityFeaturesToggle", True)
 
   os.environ['NO_RADAR_SLEEP'] = "1"
-  os.environ['SKIP_FW_QUERY'] = "1"
+  os.environ['SKIP_FW_QUERY'] = ""
   os.environ['FINGERPRINT'] = ""
   for msg in lr:
     if msg.which() == 'carParams':
-      os.environ['FINGERPRINT'] = msg.carParams.carFingerprint
+      if len(msg.carParams.carFw) and (msg.carParams.carFingerprint in FW_VERSIONS):
+        params.put("CarParamsCache", msg.carParams.as_builder().to_bytes())
+      else:
+        os.environ['SKIP_FW_QUERY'] = "1"
+        os.environ['FINGERPRINT'] = msg.carParams.carFingerprint
 
   assert(type(managed_processes[cfg.proc_name]) is PythonProcess)
   managed_processes[cfg.proc_name].prepare()
