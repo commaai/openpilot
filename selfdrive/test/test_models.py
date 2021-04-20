@@ -42,6 +42,7 @@ ignore_carstate_check = [
   "CHRYSLER PACIFICA HYBRID 2017",
 ]
 
+#@parameterized_class(('car_model'), [("TOYOTA COROLLA TSS2 2019",), ])
 @parameterized_class(('car_model'), [(car,) for car in all_known_cars()])
 class TestCarModel(unittest.TestCase):
 
@@ -152,13 +153,13 @@ class TestCarModel(unittest.TestCase):
     self.assertFalse(len(failed_addrs), f"panda safety RX check failed: {failed_addrs}")
 
   def test_panda_safety_carstate(self):
-    if self.car_params.dashcamOnly:
+    if self.CP.dashcamOnly:
       self.skipTest("no need to check panda safety for dashcamOnly")
     if self.car_model in ignore_carstate_check:
       self.skipTest("see comments in test_models.py")
 
     safety = libpandasafety_py.libpandasafety
-    set_status = safety.set_safety_hooks(self.car_params.safetyModel.raw, self.car_params.safetyParam)
+    set_status = safety.set_safety_hooks(self.CP.safetyModel.raw, self.CP.safetyParam)
     self.assertEqual(0, set_status)
 
     checks = defaultdict(lambda: 0)
@@ -181,7 +182,7 @@ class TestCarModel(unittest.TestCase):
     failed_checks = {k: v for k, v in checks.items() if v > 5}
 
     # TODO: the panda and openpilot thresholds should match
-    if "gasPressed" in failed_checks and self.car_params.enableGasInterceptor:
+    if "gasPressed" in failed_checks and self.CP.enableGasInterceptor:
       if failed_checks['gasPressed'] < 150:
         del failed_checks['gasPressed']
     self.assertFalse(len(failed_checks), f"panda safety doesn't agree with CarState: {failed_checks}")
