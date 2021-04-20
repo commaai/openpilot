@@ -289,12 +289,15 @@ selfdrive/locationd/generated/ubx.h
 selfdrive/locationd/generated/gps.cpp
 selfdrive/locationd/generated/gps.h
 
-selfdrive/locationd/locationd.py
+selfdrive/locationd/locationd.h
+selfdrive/locationd/locationd.cc
 selfdrive/locationd/paramsd.py
 selfdrive/locationd/models/.gitignore
 selfdrive/locationd/models/live_kf.py
 selfdrive/locationd/models/car_kf.py
 selfdrive/locationd/models/constants.py
+selfdrive/locationd/models/live_kf.h
+selfdrive/locationd/models/live_kf.cc
 
 selfdrive/locationd/calibrationd.py
 

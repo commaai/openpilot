@@ -1,7 +1,6 @@
-Import('env', 'common', 'cereal', 'messaging')
+Import('env', 'common', 'cereal', 'messaging', 'libkf', 'transformations')
 
 loc_libs = [cereal, messaging, 'zmq', common, 'capnp', 'kj', 'kaitai', 'pthread']
-
 
 if GetOption('kaitai'):
   generated = Dir('generated').srcnode().abspath
@@ -10,3 +9,10 @@ if GetOption('kaitai'):
   env.Command(['generated/gps.cpp', 'generated/gps.h'], 'gps.ksy', cmd)
 
 env.Program("ubloxd", ["ubloxd.cc", "ublox_msg.cc", "generated/ubx.cpp", "generated/gps.cpp"], LIBS=loc_libs)
+
+ekf_sym_cc = env.Object("#rednose/helpers/ekf_sym.cc")
+lenv = env.Clone()
+lenv["_LIBFLAGS"] += f' {libkf[0].get_labspath()}'
+locationd = lenv.Program("locationd", ["locationd.cc", "models/live_kf.cc", ekf_sym_cc],
+                         LIBS=loc_libs + transformations)
+lenv.Depends(locationd, libkf)
