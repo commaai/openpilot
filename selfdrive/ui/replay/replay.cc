@@ -19,13 +19,9 @@ Replay::Replay(QString route_, int seek, int use_api_) : route(route_), use_api(
     this->camera_paths = sett2.value("camera").toArray();
     this->log_paths = sett2.value("logs").toArray();
   }
-
-  t0 = events.begin().key();
-  iterator = events.lowerBound(t0);
 }
 
 bool Replay::addSegment(int i){
-
   if (lrs.find(i) == lrs.end()) {
     QString fn = QString("http://data.comma.life/%1/%2/rlog.bz2").arg(route).arg(i);
 
