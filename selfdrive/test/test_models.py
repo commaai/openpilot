@@ -3,7 +3,7 @@
 import os
 import importlib
 import unittest
-from collections import Counter
+from collections import defaultdict, Counter
 from parameterized import parameterized_class
 
 from cereal import log, car
@@ -35,6 +35,11 @@ ignore_can_valid = [
   "HONDA ACCORD 2018 SPORT 2T",
   "HONDA INSIGHT 2019 TOURING",
   "HONDA ACCORD 2018 HYBRID TOURING",
+]
+
+ignore_carstate_check = [
+  # TODO: chrysler gas state in panda also checks wheel speed, refactor so it's only gas
+  "CHRYSLER PACIFICA HYBRID 2017",
 ]
 
 @parameterized_class(('car_model'), [(car,) for car in all_known_cars()])
@@ -128,7 +133,7 @@ class TestCarModel(unittest.TestCase):
         error_cnt += car.RadarData.Error.canError in radar_data.errors
     self.assertLess(error_cnt, 20)
 
-  def test_panda_safety_rx(self):
+  def test_panda_safety_rx_valid(self):
     if self.CP.dashcamOnly:
       self.skipTest("no need to check panda safety for dashcamOnly")
 
@@ -146,6 +151,40 @@ class TestCarModel(unittest.TestCase):
           failed_addrs[hex(msg.address)] += 1
     self.assertFalse(len(failed_addrs), f"panda safety RX check failed: {failed_addrs}")
 
+  def test_panda_safety_carstate(self):
+    if self.car_params.dashcamOnly:
+      self.skipTest("no need to check panda safety for dashcamOnly")
+    if self.car_model in ignore_carstate_check:
+      self.skipTest("see comments in test_models.py")
+
+    safety = libpandasafety_py.libpandasafety
+    set_status = safety.set_safety_hooks(self.car_params.safetyModel.raw, self.car_params.safetyParam)
+    self.assertEqual(0, set_status)
+
+    checks = defaultdict(lambda: 0)
+    CC = car.CarControl.new_message()
+    for can in self.can_msgs:
+      for msg in can.can:
+        if msg.src >= 128:
+          continue
+        to_send = package_can_msg([msg.address, 0, msg.dat, msg.src])
+        safety.safety_rx_hook(to_send)
+      CS = self.CI.update(CC, (can.as_builder().to_bytes(),))
+
+      # TODO: check steering state
+      # check that openpilot and panda safety agree on the car's state
+      checks['gasPressed'] += CS.gasPressed != safety.get_gas_pressed_prev()
+      checks['brakePressed'] += CS.brakePressed != safety.get_brake_pressed_prev()
+      checks['controlsAllowed'] += not CS.cruiseState.enabled and safety.get_controls_allowed()
+
+    # TODO: there should be no tolerance
+    failed_checks = {k: v for k, v in checks.items() if v > 5}
+
+    # TODO: the panda and openpilot thresholds should match
+    if "gasPressed" in failed_checks and self.car_params.enableGasInterceptor:
+      if failed_checks['gasPressed'] < 150:
+        del failed_checks['gasPressed']
+    self.assertFalse(len(failed_checks), f"panda safety doesn't agree with CarState: {failed_checks}")
 
 if __name__ == "__main__":
   unittest.main()
