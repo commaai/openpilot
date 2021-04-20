@@ -350,11 +350,15 @@ def python_replay_process(cfg, lr):
   params.put_bool("CommunityFeaturesToggle", True)
 
   os.environ['NO_RADAR_SLEEP'] = "1"
-  os.environ['SKIP_FW_QUERY'] = "1"
+  os.environ['SKIP_FW_QUERY'] = ""
   os.environ['FINGERPRINT'] = ""
   for msg in lr:
     if msg.which() == 'carParams':
-      os.environ['FINGERPRINT'] = msg.carParams.carFingerprint
+      if len(msg.carParams.carFw):
+        params.put("CarParamsCache", msg.carParams.as_builder().to_bytes())
+      else:
+        os.environ['SKIP_FW_QUERY'] = "1"
+        os.environ['FINGERPRINT'] = msg.carParams.carFingerprint
 
   assert(type(managed_processes[cfg.proc_name]) is PythonProcess)
   managed_processes[cfg.proc_name].prepare()
