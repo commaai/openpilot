@@ -1,11 +1,18 @@
+#pragma once
+
+#include <QString>
 #include <iostream>
+
+#include "api.hpp"
 
 class Route {
 
 public:
-  Route(std::string route_name);
+  Route(QString route_name);
+
+  void _get_segments_remote();
+
 
 private:
-  std::string route_name;
-
+  QString route_name;
 };
