@@ -13,6 +13,7 @@ import cereal.messaging as messaging
 from cereal import car, log
 from cereal.services import service_list
 from common.params import Params
+from selfdrive.car.fingerprints import FW_VERSIONS
 from selfdrive.car.car_helpers import get_car
 from selfdrive.manager.process import PythonProcess
 from selfdrive.manager.process_config import managed_processes
@@ -354,7 +355,7 @@ def python_replay_process(cfg, lr):
   os.environ['FINGERPRINT'] = ""
   for msg in lr:
     if msg.which() == 'carParams':
-      if len(msg.carParams.carFw):
+      if len(msg.carParams.carFw) and (msg.carParams.carFingerprint in FW_VERSIONS):
         params.put("CarParamsCache", msg.carParams.as_builder().to_bytes())
       else:
         os.environ['SKIP_FW_QUERY'] = "1"
