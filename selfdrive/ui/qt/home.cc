@@ -231,14 +231,13 @@ GLWindow::GLWindow(QWidget* parent) : brightness_filter(BACKLIGHT_OFFROAD, BACKL
   backlight_timer = new QTimer(this);
   QObject::connect(backlight_timer, SIGNAL(timeout()), this, SLOT(backlightUpdate()));
 
-  QString temp_const_route("0982d79ebb0de295|2021-01-17--17-13-08");
-  //QString temp_const_route("3a5d6ac1c23e5536/2019-10-29--10-06-58");
+  //QString temp_const_route("0982d79ebb0de295|2021-01-17--17-13-08");
+  QString temp_const_route("3a5d6ac1c23e5536/2019-10-29--10-06-58");
   temp_const_route = temp_const_route.replace("|", "/");
   int seek = 0;
   int use_api = 0;
   replay = new Replay(temp_const_route, seek, use_api);
-  replay->addSegment(0);
-  replay->stream(seek);
+  replay->stream(seek, ui_state.sm);
 
   brightness_b = Params(true).get<float>("BRIGHTNESS_B").value_or(10.0);
   brightness_m = Params(true).get<float>("BRIGHTNESS_M").value_or(0.1);
@@ -311,8 +310,6 @@ void GLWindow::timerUpdate() {
 
   ui_state.replay = false;
   if(ui_state.replay){
-    std::vector<std::pair<std::string, cereal::Event::Reader>> messages = replay->getMessages();
-    ui_state.sm->update_msgs(nanos_since_boot(), messages);
   }
 
   ui_update(&ui_state);

@@ -16,8 +16,7 @@ class Replay : public QObject {
 
 public:
   Replay(QString route_, int seek, int use_api);
-  void stream(int seek);
-  std::vector<std::pair<std::string, cereal::Event::Reader>> getMessages();
+  void stream(int seek, SubMaster *sm = nullptr);
   bool addSegment(int i);
   QJsonArray camera_paths;
   QJsonArray log_paths;

@@ -1,4 +1,5 @@
 #include "replay.hpp"
+#include "common/timing.h"
 
 Replay::Replay(QString route_, int seek, int use_api_) : route(route_), use_api(use_api_){
   unlogger = new Unlogger(&events, &events_lock, &frs, seek);
@@ -18,11 +19,12 @@ Replay::Replay(QString route_, int seek, int use_api_) : route(route_), use_api(
     this->camera_paths = sett2.value("camera").toArray();
     this->log_paths = sett2.value("logs").toArray();
   }
+
+  t0 = events.begin().key();
+  iterator = events.lowerBound(t0);
 }
 
 bool Replay::addSegment(int i){
-
-  //unlogger->vipc_server->start_listener();
 
   if (lrs.find(i) == lrs.end()) {
     QString fn = QString("http://data.comma.life/%1/%2/rlog.bz2").arg(route).arg(i);
@@ -52,49 +54,13 @@ bool Replay::addSegment(int i){
   return false;
 }
 
-void Replay::stream(int seek){
+void Replay::stream(int seek, SubMaster *sm){
   QThread* thread = new QThread;
   unlogger->moveToThread(thread);
-  QObject::connect(thread, SIGNAL (started()), unlogger, SLOT (process()));
+  QObject::connect(thread, &QThread::started, [=](){
+		unlogger->process(sm);
+	});
   thread->start();
 
   addSegment(seek/60);
-}
-
-std::vector<std::pair<std::string, cereal::Event::Reader>> Replay::getMessages(){
-
-  std::vector<std::pair<std::string, cereal::Event::Reader>> messages;
-  for(auto i = 0 ; i < 8 ; i++){
-    auto first = (events.begin()+1).key();
-
-    for(auto e : events.values(first)){
-      capnp::DynamicStruct::Reader e_ds = static_cast<capnp::DynamicStruct::Reader>(e);
-      std::string type;
-      KJ_IF_MAYBE(e_, e_ds.which()){
-        type = e_->getProto().getName();
-      }
-      messages.push_back({type, e});
-      if(type == "roadCameraState"){
-        auto fr = e.getRoadCameraState();
-        auto it = unlogger->eidx.find(fr.getFrameId());
-
-        if(it != unlogger->eidx.end()) {
-          auto pp = *it;
-          if (frs.find(pp.first) != frs.end()) {
-            auto frm = (frs)[pp.first];
-            auto data = frm->get(pp.second);
-
-            VisionBuf *buf = unlogger->vipc_server->get_buffer(VisionStreamType::VISION_STREAM_RGB_BACK);
-            memcpy(buf->addr, data, frm->getRGBSize());
-            VisionIpcBufExtra extra = {};
-
-            unlogger->vipc_server->send(buf, &extra, false);
-          }
-        }
-      }
-    }
-    events.remove(first);
-  }
-
-  return messages;
 }

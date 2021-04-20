@@ -58,7 +58,7 @@ Unlogger::Unlogger(Events *events_, QReadWriteLock* events_lock_, QMap<int, Fram
   vipc_server->create_buffers(VisionStreamType::VISION_STREAM_RGB_BACK, 4, true, 1164, 874);
 }
 
-void Unlogger::process() {
+void Unlogger::process(SubMaster *sm) {
 
   vipc_server->start_listener();
 
@@ -163,13 +163,20 @@ void Unlogger::process() {
           }
         }
 
-        capnp::MallocMessageBuilder msg;
-        msg.setRoot(e);
-        auto words = capnp::messageToFlatArray(msg);
-        auto bytes = words.asBytes();
+        if(sm == nullptr){
+          capnp::MallocMessageBuilder msg;
+          msg.setRoot(e);
+          auto words = capnp::messageToFlatArray(msg);
+          auto bytes = words.asBytes();
 
-        // TODO: Can PubSocket take a const char?
-        (*it)->send((char*)bytes.begin(), bytes.size());
+          // TODO: Can PubSocket take a const char?
+          (*it)->send((char*)bytes.begin(), bytes.size());
+        }
+        else{
+          std::vector<std::pair<std::string, cereal::Event::Reader>> messages;
+          messages.push_back({type, e});
+          sm->update_msgs(nanos_since_boot(), messages);
+        }
       }
       ++eit;
     }

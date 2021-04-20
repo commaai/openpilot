@@ -18,9 +18,8 @@ Q_OBJECT
     void togglePause() { paused = !paused; }
     QMap<int, QPair<int, int> > eidx;
 
-    VisionIpcServer *vipc_server;
   public slots:
-    void process();
+    void process(SubMaster *sm = nullptr);
   signals:
     void elapsed();
     void finished();
@@ -34,6 +33,6 @@ Q_OBJECT
     uint64_t seek_request = 0;
     bool paused = false;
 
-    //VisionIpcServer *vipc_server;
+    VisionIpcServer *vipc_server;
 };
 
