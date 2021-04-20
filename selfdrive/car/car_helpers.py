@@ -13,7 +13,7 @@ from cereal import car
 EventName = car.CarEvent.EventName
 
 
-def get_startup_event(car_recognized, controller_available):
+def get_startup_event(car_recognized, controller_available, fuzzy_fingerprint):
   if comma_remote and tested_branch:
     event = EventName.startup
   else:
@@ -23,6 +23,8 @@ def get_startup_event(car_recognized, controller_available):
     event = EventName.startupNoCar
   elif car_recognized and not controller_available:
     event = EventName.startupNoControl
+  elif car_recognized and fuzzy_fingerprint:
+    event = EventName.startupFuzzyFingerprint
   return event
 
 
@@ -104,10 +106,10 @@ def fingerprint(logcan, sendcan):
       _, vin = get_vin(logcan, sendcan, bus)
       car_fw = get_fw_versions(logcan, sendcan, bus)
 
-    fw_candidates = match_fw_to_car(car_fw)
+    exact_fw_match, fw_candidates = match_fw_to_car(car_fw)
   else:
     vin = VIN_UNKNOWN
-    fw_candidates, car_fw = set(), []
+    exact_fw_match, fw_candidates, car_fw = True, set(), []
 
   cloudlog.warning("VIN %s", vin)
   Params().put("CarVin", vin)
@@ -152,23 +154,25 @@ def fingerprint(logcan, sendcan):
 
     frame += 1
 
+  exact_match = True
   source = car.CarParams.FingerprintSource.can
 
   # If FW query returns exactly 1 candidate, use it
   if len(fw_candidates) == 1:
     car_fingerprint = list(fw_candidates)[0]
     source = car.CarParams.FingerprintSource.fw
+    exact_match = exact_fw_match
 
   if fixed_fingerprint:
     car_fingerprint = fixed_fingerprint
     source = car.CarParams.FingerprintSource.fixed
 
   cloudlog.warning("fingerprinted %s", car_fingerprint)
-  return car_fingerprint, finger, vin, car_fw, source
+  return car_fingerprint, finger, vin, car_fw, source, exact_match
 
 
 def get_car(logcan, sendcan):
-  candidate, fingerprints, vin, car_fw, source = fingerprint(logcan, sendcan)
+  candidate, fingerprints, vin, car_fw, source, exact_match = fingerprint(logcan, sendcan)
 
   if candidate is None:
     cloudlog.warning("car doesn't match any fingerprints: %r", fingerprints)
@@ -179,5 +183,6 @@ def get_car(logcan, sendcan):
   car_params.carVin = vin
   car_params.carFw = car_fw
   car_params.fingerprintSource = source
+  car_params.fuzzyFingerprint = not exact_match
 
   return CarInterface(car_params, CarController, CarState), car_params

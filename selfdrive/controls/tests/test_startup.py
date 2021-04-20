@@ -9,11 +9,23 @@ from common.params import Params
 from selfdrive.boardd.boardd_api_impl import can_list_to_can_capnp # pylint: disable=no-name-in-module,import-error
 from selfdrive.car.fingerprints import _FINGERPRINTS
 from selfdrive.car.hyundai.values import CAR as HYUNDAI
+from selfdrive.car.toyota.values import CAR as TOYOTA
 from selfdrive.car.mazda.values import CAR as MAZDA
 from selfdrive.controls.lib.events import EVENT_NAME
 from selfdrive.test.helpers import with_processes
 
 EventName = car.CarEvent.EventName
+Ecu = car.CarParams.Ecu
+
+COROLLA_TSS2_FW_VERSIONS = [
+  (Ecu.engine, 0x700, None, b'\x01896630ZG5000\x00\x00\x00\x00'),
+  (Ecu.eps, 0x7a1, None, b'\x018965B1255000\x00\x00\x00\x00'),
+  (Ecu.esp, 0x7b0, None, b'\x01F152602280\x00\x00\x00\x00\x00\x00'),
+  (Ecu.fwdRadar, 0x750, 0xf, b'\x018821F3301100\x00\x00\x00\x00'),
+  (Ecu.fwdCamera, 0x750, 0x6d, b'\x028646F12010D0\x00\x00\x00\x008646G26011A0\x00\x00\x00\x00'),
+]
+COROLLA_TSS2_FW_VERSIONS_FUZZY = COROLLA_TSS2_FW_VERSIONS[:-1] + [(Ecu.fwdCamera, 0x750, 0x6d, b'xxxxxx')]
+
 
 class TestStartup(unittest.TestCase):
 
@@ -21,23 +33,30 @@ class TestStartup(unittest.TestCase):
     # TODO: test EventName.startup for release branches
 
     # officially supported car
-    (EventName.startupMaster, HYUNDAI.SONATA, False),
-    (EventName.startupMaster, HYUNDAI.SONATA, True),
+    (EventName.startupMaster, HYUNDAI.SONATA, False, None),
+    (EventName.startupMaster, HYUNDAI.SONATA, True, None),
+
+    # offically supported car, FW query
+    (EventName.startupMaster, TOYOTA.COROLLA_TSS2, False, COROLLA_TSS2_FW_VERSIONS),
 
     # community supported car
-    (EventName.startupMaster, HYUNDAI.KIA_STINGER, True),
-    (EventName.communityFeatureDisallowed, HYUNDAI.KIA_STINGER, False),
+    (EventName.startupMaster, HYUNDAI.KIA_STINGER, True, None),
+    (EventName.communityFeatureDisallowed, HYUNDAI.KIA_STINGER, False, None),
 
     # dashcamOnly car
-    (EventName.startupNoControl, MAZDA.CX5, True),
-    (EventName.startupNoControl, MAZDA.CX5, False),
+    (EventName.startupNoControl, MAZDA.CX5, True, None),
+    (EventName.startupNoControl, MAZDA.CX5, False, None),
 
     # unrecognized car
-    (EventName.startupNoCar, None, True),
-    (EventName.startupNoCar, None, False),
+    (EventName.startupNoCar, None, True, None),
+    (EventName.startupNoCar, None, False, None),
+
+    # fuzzy match
+    (EventName.startupFuzzyFingerprint, TOYOTA.COROLLA_TSS2, True, COROLLA_TSS2_FW_VERSIONS_FUZZY),
+    (EventName.communityFeatureDisallowed, TOYOTA.COROLLA_TSS2, False, COROLLA_TSS2_FW_VERSIONS_FUZZY),
   ])
   @with_processes(['controlsd'])
-  def test_startup_alert(self, expected_event, car, toggle_enabled):
+  def test_startup_alert(self, expected_event, car_model, toggle_enabled, fw_versions):
 
     # TODO: this should be done without any real sockets
     controls_sock = messaging.sub_sock("controlsState")
@@ -49,6 +68,24 @@ class TestStartup(unittest.TestCase):
     params.put_bool("OpenpilotEnabledToggle", True)
     params.put_bool("CommunityFeaturesToggle", toggle_enabled)
 
+    # Build capnn version of FW array
+    if fw_versions is not None:
+      car_fw = []
+      cp = car.CarParams.new_message()
+      for ecu, addr, subaddress, version in fw_versions:
+        f = car.CarParams.CarFw.new_message()
+        f.ecu = ecu
+        f.address = addr
+        f.fwVersion = version
+
+        if subaddress is not None:
+          f.subAddress = subaddress
+
+        car_fw.append(f)
+      cp.carVin = "1" * 17
+      cp.carFw = car_fw
+      params.put("CarParamsCache", cp.to_bytes())
+
     time.sleep(2) # wait for controlsd to be ready
 
     msg = messaging.new_message('pandaState')
@@ -56,10 +93,10 @@ class TestStartup(unittest.TestCase):
     pm.send('pandaState', msg)
 
     # fingerprint
-    if car is None:
+    if (car_model is None) or (fw_versions is not None):
       finger = {addr: 1 for addr in range(1, 100)}
     else:
-      finger = _FINGERPRINTS[car][0]
+      finger = _FINGERPRINTS[car_model][0]
 
     for _ in range(500):
       msgs = [[addr, 0, b'\x00'*length, 0] for addr, length in finger.items()]
@@ -70,10 +107,10 @@ class TestStartup(unittest.TestCase):
       if len(msgs):
         event_name = msgs[0].controlsState.alertType.split("/")[0]
         self.assertEqual(EVENT_NAME[expected_event], event_name,
-                         f"expected {EVENT_NAME[expected_event]} for '{car}', got {event_name}")
+                         f"expected {EVENT_NAME[expected_event]} for '{car_model}', got {event_name}")
         break
     else:
-      self.fail(f"failed to fingerprint {car}")
+      self.fail(f"failed to fingerprint {car_model}")
 
 if __name__ == "__main__":
   unittest.main()
