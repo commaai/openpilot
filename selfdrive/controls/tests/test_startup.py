@@ -17,14 +17,16 @@ from selfdrive.test.helpers import with_processes
 EventName = car.CarEvent.EventName
 Ecu = car.CarParams.Ecu
 
-COROLLA_TSS2_FW_VERSIONS = [
-  (Ecu.engine, 0x700, None, b'\x01896630ZG5000\x00\x00\x00\x00'),
-  (Ecu.eps, 0x7a1, None, b'\x018965B1255000\x00\x00\x00\x00'),
-  (Ecu.esp, 0x7b0, None, b'\x01F152602280\x00\x00\x00\x00\x00\x00'),
-  (Ecu.fwdRadar, 0x750, 0xf, b'\x018821F3301100\x00\x00\x00\x00'),
-  (Ecu.fwdCamera, 0x750, 0x6d, b'\x028646F12010D0\x00\x00\x00\x008646G26011A0\x00\x00\x00\x00'),
+COROLLA_FW_VERSIONS = [
+    (Ecu.engine, 0x7e0, None, b'\x0230ZC2000\x00\x00\x00\x00\x00\x00\x00\x0050212000\x00\x00\x00\x00\x00\x00\x00\x00'),
+    (Ecu.esp, 0x7b0, None, b'F152602190\x00\x00\x00\x00\x00\x00'),
+    (Ecu.eps, 0x7a1, None, b'8965B02181\x00\x00\x00\x00\x00\x00'),
+    (Ecu.fwdRadar, 0x750, 0xf, b'8821F4702100\x00\x00\x00\x00'),
+    (Ecu.fwdCamera, 0x750, 0x6d, b'8646F0201101\x00\x00\x00\x00'),
+    (Ecu.dsu, 0x791, None, b'881510201100\x00\x00\x00\x00'),
 ]
-COROLLA_TSS2_FW_VERSIONS_FUZZY = COROLLA_TSS2_FW_VERSIONS[:-1] + [(Ecu.fwdCamera, 0x750, 0x6d, b'xxxxxx')]
+COROLLA_FW_VERSIONS_FUZZY = COROLLA_FW_VERSIONS[:-1] + [(Ecu.dsu, 0x791, None, b'xxxxxx')]
+COROLLA_FW_VERSIONS_NO_DSU = COROLLA_FW_VERSIONS[:-1]
 
 
 class TestStartup(unittest.TestCase):
@@ -37,7 +39,11 @@ class TestStartup(unittest.TestCase):
     (EventName.startupMaster, HYUNDAI.SONATA, True, None),
 
     # offically supported car, FW query
-    (EventName.startupMaster, TOYOTA.COROLLA_TSS2, False, COROLLA_TSS2_FW_VERSIONS),
+    (EventName.startupMaster, TOYOTA.COROLLA, False, COROLLA_FW_VERSIONS),
+
+    # DSU unplugged
+    (EventName.startupMaster, TOYOTA.COROLLA, True, COROLLA_FW_VERSIONS_NO_DSU),
+    (EventName.communityFeatureDisallowed, TOYOTA.COROLLA, False, COROLLA_FW_VERSIONS_NO_DSU),
 
     # community supported car
     (EventName.startupMaster, HYUNDAI.KIA_STINGER, True, None),
@@ -52,8 +58,8 @@ class TestStartup(unittest.TestCase):
     (EventName.startupNoCar, None, False, None),
 
     # fuzzy match
-    (EventName.startupFuzzyFingerprint, TOYOTA.COROLLA_TSS2, True, COROLLA_TSS2_FW_VERSIONS_FUZZY),
-    (EventName.communityFeatureDisallowed, TOYOTA.COROLLA_TSS2, False, COROLLA_TSS2_FW_VERSIONS_FUZZY),
+    (EventName.startupFuzzyFingerprint, TOYOTA.COROLLA, True, COROLLA_FW_VERSIONS_FUZZY),
+    (EventName.communityFeatureDisallowed, TOYOTA.COROLLA, False, COROLLA_FW_VERSIONS_FUZZY),
   ])
   @with_processes(['controlsd'])
   def test_startup_alert(self, expected_event, car_model, toggle_enabled, fw_versions):
