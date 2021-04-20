@@ -44,7 +44,6 @@ if TICI:
     "./loggerd": 60.0,
     "selfdrive.controls.controlsd": 26.0,
     "./camerad": 25.0,
-    "./locationd": 3.2,
     "selfdrive.controls.plannerd": 12.0,
     "selfdrive.locationd.paramsd": 5.0,
     "./_dmonitoringmodeld": 10.0,

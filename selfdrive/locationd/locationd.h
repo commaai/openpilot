@@ -13,11 +13,9 @@
 #include "common/timing.h"
 #include "common/transformations/coordinates.hpp"
 #include "common/transformations/orientation.hpp"
+#include "selfdrive/sensord/sensors/constants.hpp"
 
 #include "models/live_kf.h"
-
-#define DEG2RAD(x) ((x) * M_PI / 180.0)
-#define RAD2DEG(x) ((x) * 180.0 / M_PI)
 
 #define VISION_DECIMATION 2
 #define SENSOR_DECIMATION 10
@@ -33,11 +31,11 @@ public:
   void reset_kalman(double current_time = NAN);
   void reset_kalman(double current_time, Eigen::VectorXd init_orient, Eigen::VectorXd init_pos);
 
-  kj::ArrayPtr<capnp::byte> getMessageBytes(MessageBuilder& msg_builder, uint64_t logMonoTime,
+  kj::ArrayPtr<capnp::byte> get_message_bytes(MessageBuilder& msg_builder, uint64_t logMonoTime,
     bool inputsOK, bool sensorsOK, bool gpsOK);
-  void buildLiveLocation(cereal::LiveLocationKalman::Builder& fix);
+  void build_live_location(cereal::LiveLocationKalman::Builder& fix);
 
-  Eigen::VectorXd getPositionGeodetic();
+  Eigen::VectorXd get_position_geodetic();
 
   void handle_msg_bytes(const char *data, const size_t size);
   void handle_msg(const cereal::Event::Reader& log);

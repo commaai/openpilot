@@ -6,9 +6,11 @@ using namespace Eigen;
 Eigen::Map<Eigen::VectorXd> get_mapvec(Eigen::VectorXd& vec) {
   return Eigen::Map<Eigen::VectorXd>(vec.data(), vec.rows(), vec.cols());
 }
+
 Eigen::Map<MatrixXdr> get_mapmat(MatrixXdr& mat) {
   return Eigen::Map<MatrixXdr>(mat.data(), mat.rows(), mat.cols());
 }
+
 std::vector<Eigen::Map<Eigen::VectorXd>> get_vec_mapvec(std::vector<Eigen::VectorXd>& vec_vec) {
   std::vector<Eigen::Map<Eigen::VectorXd>> res;
   for (Eigen::VectorXd& vec : vec_vec) {
@@ -16,6 +18,7 @@ std::vector<Eigen::Map<Eigen::VectorXd>> get_vec_mapvec(std::vector<Eigen::Vecto
   }
   return res;
 }
+
 std::vector<Eigen::Map<MatrixXdr>> get_vec_mapmat(std::vector<MatrixXdr>& mat_vec) {
   std::vector<Eigen::Map<MatrixXdr>> res;
   for (MatrixXdr& mat : mat_vec) {
@@ -37,7 +40,7 @@ LiveKalman::LiveKalman() {
 
   // init filter
   this->filter = std::make_shared<EKFSym>(this->name, get_mapmat(this->Q), get_mapvec(this->initial_x), get_mapmat(initial_P),
-      this->dim_state, this->dim_state_err, 0, 0, 0, std::vector<int>(), std::vector<std::string>(), 0.2);
+    this->dim_state, this->dim_state_err, 0, 0, 0, std::vector<int>(), std::vector<std::string>(), 0.2);
 }
 
 void LiveKalman::init_state(VectorXd& state, VectorXd& covs_diag, double filter_time) {
@@ -73,13 +76,13 @@ std::vector<MatrixXdr> LiveKalman::get_R(int kind, int n) {
 std::optional<Estimate> LiveKalman::predict_and_observe(double t, int kind, std::vector<VectorXd> meas, std::vector<MatrixXdr> R) {
   std::optional<Estimate> r;
   switch (kind) {
-  case KIND_CAMERA_ODO_TRANSLATION:
+  case OBSERVATION_CAMERA_ODO_TRANSLATION:
     r = this->predict_and_update_odo_trans(meas, t, kind);
     break;
-  case KIND_CAMERA_ODO_ROTATION:
+  case OBSERVATION_CAMERA_ODO_ROTATION:
     r = this->predict_and_update_odo_rot(meas, t, kind);
     break;
-  case KIND_ODOMETRIC_SPEED:
+  case OBSERVATION_ODOMETRIC_SPEED:
     r = this->predict_and_update_odo_speed(meas, t, kind);
     break;
   default:

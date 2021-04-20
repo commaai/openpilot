@@ -226,7 +226,7 @@ class LiveKalman():
     live_kf_header += "\n"
 
     for kind, val in inspect.getmembers(ObservationKind, lambda x: type(x) == int):
-      live_kf_header += f'#define KIND_{kind} {val}\n'
+      live_kf_header += f'#define OBSERVATION_{kind} {val}\n'
     live_kf_header += "\n"
 
     live_kf_header += f"static const Eigen::VectorXd live_initial_x = {numpy2eigenstring(LiveKalman.initial_x)};\n"
