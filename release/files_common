@@ -291,7 +291,6 @@ selfdrive/locationd/generated/gps.h
 
 selfdrive/locationd/locationd.h
 selfdrive/locationd/locationd.cc
-selfdrive/locationd/liblocationd.cc
 selfdrive/locationd/paramsd.py
 selfdrive/locationd/models/.gitignore
 selfdrive/locationd/models/live_kf.py
