@@ -1,4 +1,4 @@
-Import('env', 'common', 'cereal', 'messaging', 'libkf', 'transformations')
+Import('arch', 'env', 'common', 'cereal', 'messaging', 'libkf', 'transformations')
 
 loc_libs = [cereal, messaging, 'zmq', common, 'capnp', 'kj', 'kaitai', 'pthread']
 
@@ -16,3 +16,9 @@ lenv["_LIBFLAGS"] += f' {libkf[0].get_labspath()}'
 locationd = lenv.Program("locationd", ["locationd.cc", "models/live_kf.cc", ekf_sym_cc],
                          LIBS=loc_libs + transformations)
 lenv.Depends(locationd, libkf)
+
+if arch != "aarch64":
+  ekf_sym_cc2 = env.SharedObject("#rednose/helpers/ekf_sym.cc")
+  liblocationd = lenv.SharedLibrary("liblocationd", ["liblocationd.cc", "locationd.cc", "models/live_kf.cc", ekf_sym_cc2],
+                                    LIBS=loc_libs + transformations)
+  lenv.Depends(liblocationd, libkf)
