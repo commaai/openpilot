@@ -10,23 +10,6 @@
 #include "messaging.hpp"
 #include "panda.h"
 
-void panda_set_power(bool power){
-#ifdef QCOM2
-  int err = 0;
-
-  err += gpio_init(GPIO_STM_RST_N, true);
-  err += gpio_init(GPIO_STM_BOOT0, true);
-
-  err += gpio_set(GPIO_STM_RST_N, true);
-  err += gpio_set(GPIO_STM_BOOT0, false);
-
-  util::sleep_for(100); // 100 ms
-
-  err += gpio_set(GPIO_STM_RST_N, !power);
-  assert(err == 0);
-#endif
-}
-
 Panda::Panda(){
   // init libusb
   int err = libusb_init(&ctx);

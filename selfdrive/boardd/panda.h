@@ -39,8 +39,6 @@ struct __attribute__((packed)) health_t {
 };
 
 
-void panda_set_power(bool power);
-
 class Panda {
  private:
   libusb_context *ctx = NULL;

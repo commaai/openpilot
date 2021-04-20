@@ -578,8 +578,6 @@ int main() {
 #endif
   LOG("set affinity returns %d", err);
 
-  panda_set_power(true);
-
   while (!do_exit){
     std::vector<std::thread> threads;
     threads.push_back(std::thread(panda_state_thread, getenv("STARTED") != nullptr));
