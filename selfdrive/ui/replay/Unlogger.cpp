@@ -91,11 +91,6 @@ void Unlogger::process(SubMaster *sm) {
 
     auto eit = events->lowerBound(t0);
     while (eit != events->end()) {
-
-      if(loading_segment && (time_to_end > 20.0)){
-        loading_segment = false;
-      }
-
       while (paused) {
         QThread::usleep(1000);
         t0 = eit->getLogMonoTime();
@@ -185,15 +180,16 @@ void Unlogger::process(SubMaster *sm) {
       }
       ++eit;
 
-      time_to_end = ((events->lastKey() - eit.key())/1e9);
-
+      float time_to_end = ((events->lastKey() - eit.key())/1e9);
       printf("%f\n", time_to_end);
 
-      if((time_to_end < 10.0) && !loading_segment){
-        loading_segment = true;
+      if((time_to_end < 50.0) && !signalsBlocked()){
         emit loadSegment();
+        blockSignals(true);
       }
-
+      else if (time_to_end > 60.0 && signalsBlocked()){
+        blockSignals(false);
+      }
     }
   }
 }

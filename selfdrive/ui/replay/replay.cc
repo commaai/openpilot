@@ -45,6 +45,7 @@ bool Replay::addSegment(int i){
       QString camera_fn = this->camera_paths.at(i).toString();
       frs.insert(i, new FrameReader(qPrintable(camera_fn)));
     }
+
     return true;
   }
   return false;
