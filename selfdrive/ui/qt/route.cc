@@ -3,6 +3,7 @@
 #include <QDebug>
 
 Route::Route(QString route_name_) : route_name(route_name_){
+	_get_segments_remote();
 }
 
 void Route::_get_segments_remote(){
@@ -28,6 +29,8 @@ void Route::parseResponse(QString response){
   for(int i = 0 ; i < cams.size() ; i++){
     segments.append(new RouteSegment(i, logs[i].toString(), cams[i].toString()));
   }
+
+	emit doneParsing();
 }
 
 QList<QString> Route::log_paths() {

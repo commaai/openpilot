@@ -30,4 +30,7 @@ public slots:
 private:
   QString route_name;
   QList<RouteSegment*> segments;
+
+signals:
+  void doneParsing();
 };
