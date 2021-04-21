@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import os
 import json
 import random
 import unittest
@@ -14,6 +15,8 @@ from selfdrive.manager.process_config import managed_processes
 SENSOR_DECIMATION = 10
 VISION_DECIMATION = 2
 
+LIBLOCATIOND_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '../liblocationd.so'))
+
 random.seed(123489234)
 
 
@@ -23,11 +26,10 @@ class TestLocationdLib(unittest.TestCase):
 Localizer_t localizer_init();
 void localizer_get_message_bytes(Localizer_t localizer, uint64_t logMonoTime, bool inputsOK, bool sensorsOK, bool gpsOK, char *buff, size_t buff_size);
 void localizer_handle_msg_bytes(Localizer_t localizer, const char *data, size_t size);'''
-    localizer_bin = '/home/batman/openpilot/selfdrive/locationd/liblocationd.so'
 
     self.ffi = FFI()
     self.ffi.cdef(header)
-    self.lib = self.ffi.dlopen(localizer_bin)
+    self.lib = self.ffi.dlopen(LIBLOCATIOND_PATH)
 
     self.localizer = self.lib.localizer_init()
 
