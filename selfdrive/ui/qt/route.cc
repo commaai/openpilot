@@ -23,4 +23,11 @@ void Route::parseResponse(QString response){
 
 	auto cams = doc["cameras"].toArray();
 	auto logs = doc["logs"].toArray();
+
+	for(int i = 0 ; i < cams.size() ; i++){
+		segments.append(new RouteSegment(i, logs[i].toString(), cams[i].toString()));
+	}
+
+	for(auto i = 0 ; i < cams.size() ; i++)
+		qDebug() << segments[i]->log_path;
 }
