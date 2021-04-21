@@ -34,7 +34,14 @@ QList<QString> Route::log_paths() {
 	QList<QString> paths;
 	for(auto &seg : segments){
 		paths.append(seg->log_path);
-		qDebug() << seg->log_path;
+	}
+	return paths;
+}
+
+QList<QString> Route::camera_paths() {
+	QList<QString> paths;
+	for(auto &seg : segments){
+		paths.append(seg->camera_path);
 	}
 	return paths;
 }

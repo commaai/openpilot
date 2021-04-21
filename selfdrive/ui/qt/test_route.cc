@@ -9,7 +9,6 @@ int main(int argc, char* argv[]){
   test->_get_segments_remote();
 
   auto logs = test->log_paths();
-
   for(auto &log : logs){
     qDebug() << log;
   }
