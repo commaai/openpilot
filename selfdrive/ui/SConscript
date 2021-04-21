@@ -25,14 +25,14 @@ qt_libs = [widgets] + base_libs
 qt_env.Program("qt/text", ["qt/text.cc"], LIBS=qt_libs)
 qt_env.Program("qt/spinner", ["qt/spinner.cc"], LIBS=base_libs)
 
-# route test
-qt_env.Program("qt/route_test", ["qt/test_route.cc", "qt/route.cc"], LIBS=qt_libs + base_libs)
-
 # build main UI
 qt_src = ["main.cc", "ui.cc", "paint.cc", "sidebar.cc", "#phonelibs/nanovg/nanovg.c",
           "qt/window.cc", "qt/home.cc", "qt/api.cc", "qt/offroad/settings.cc",
-          "qt/offroad/onboarding.cc", "qt/route.cc"]
+          "qt/offroad/onboarding.cc"]
 qt_env.Program("_ui", qt_src, LIBS=qt_libs)
+
+# route test
+qt_env.Program("qt/route_test", ["qt/test_route.cc", "qt/route.cc", "qt/api.cc", "#phonelibs/nanovg/nanovg.c"], LIBS=qt_libs + base_libs)
 
 # setup, factory resetter, and installer
 if arch != 'aarch64' and "BUILD_SETUP" in os.environ:

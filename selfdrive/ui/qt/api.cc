@@ -95,10 +95,13 @@ RequestRepeater::RequestRepeater(QWidget* parent, QString requestURL, int period
 }
 
 void RequestRepeater::sendRequest(QString requestURL){
+
+  /*
   if (GLWindow::ui_state.scene.started || !active || reply != NULL ||
       (!GLWindow::ui_state.awake && disableWithScreen)) {
     return;
   }
+  */
 
   QString token = CommaApi::create_jwt();
   QNetworkRequest request;
