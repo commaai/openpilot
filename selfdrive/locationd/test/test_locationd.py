@@ -11,6 +11,9 @@ from common.params import Params
 
 from selfdrive.manager.process_config import managed_processes
 
+SENSOR_DECIMATION = 10
+VISION_DECIMATION = 2
+
 random.seed(123489234)
 
 
@@ -35,9 +38,9 @@ void localizer_handle_msg_bytes(Localizer_t localizer, const char *data, size_t 
     bytstr = msg_builder.to_bytes()
     self.lib.localizer_handle_msg_bytes(self.localizer, self.ffi.from_buffer(bytstr), len(bytstr))
 
-  def localizer_get_msg_dict(self, t=0, inputsOK=True, sensorsOK=True, gpsOK=True):
+  def localizer_get_msg(self, t=0, inputsOK=True, sensorsOK=True, gpsOK=True):
     self.lib.localizer_get_message_bytes(self.localizer, t, inputsOK, sensorsOK, gpsOK, self.ffi.addressof(self.msg_buff, 0), self.buff_size)
-    return log.Event.from_bytes(self.ffi.buffer(self.msg_buff), nesting_limit=self.buff_size // 8).to_dict()
+    return log.Event.from_bytes(self.ffi.buffer(self.msg_buff), nesting_limit=self.buff_size // 8)
 
   def test_liblocalizer(self):
     msg = messaging.new_message('liveCalibration')
@@ -45,34 +48,63 @@ void localizer_handle_msg_bytes(Localizer_t localizer, const char *data, size_t 
     msg.liveCalibration.rpyCalib = [random.random() for _ in range(3)]
 
     self.localizer_handle_msg(msg)
-    liveloc = self.localizer_get_msg_dict()
+    liveloc = self.localizer_get_msg()
     self.assertTrue(liveloc is not None)
 
   def test_device_fell(self):
     msg = messaging.new_message('sensorEvents', 1)
-    msg.sensorEvents[0].sensor = 4
-    msg.sensorEvents[0].type = 0x10
+    msg.sensorEvents[0].sensor = 1
+    msg.sensorEvents[0].type = 1
     msg.sensorEvents[0].init('acceleration')
-    msg.sensorEvents[0].acceleration.v = [0.0, 0.0, 0.0]
+    msg.sensorEvents[0].acceleration.v = [10.0, 0.0, 0.0]  # zero with gravity
     self.localizer_handle_msg(msg)
-    self.localizer_get_msg_dict()
 
-  def test_gyro_uncalibrated(self):
+    ret = self.localizer_get_msg()
+    self.assertTrue(ret.liveLocationKalman.deviceStable)
+
     msg = messaging.new_message('sensorEvents', 1)
-    msg.sensorEvents[0].sensor = 5
-    msg.sensorEvents[0].type = 0x10
-    msg.sensorEvents[0].init('gyroUncalibrated')
-    msg.sensorEvents[0].gyroUncalibrated.v = [0.0, 0.0, 0.0]
+    msg.sensorEvents[0].sensor = 1
+    msg.sensorEvents[0].type = 1
+    msg.sensorEvents[0].init('acceleration')
+    msg.sensorEvents[0].acceleration.v = [50.1, 0.0, 0.0]  # more than 40 m/s**2
     self.localizer_handle_msg(msg)
-    self.localizer_get_msg_dict()
 
+    ret = self.localizer_get_msg()
+    self.assertFalse(ret.liveLocationKalman.deviceStable)
+
+  def test_posenet_spike(self):
+    for _ in range(SENSOR_DECIMATION):
+      msg = messaging.new_message('carState')
+      msg.carState.vEgo = 6.0  # more than 5 m/s
+      self.localizer_handle_msg(msg)
+
+    ret = self.localizer_get_msg()
+    self.assertTrue(ret.liveLocationKalman.posenetOK)
+
+    for _ in range(20 * VISION_DECIMATION):  # size of hist_old
+      msg = messaging.new_message('cameraOdometry')
+      msg.cameraOdometry.rot = [0.0, 0.0, 0.0]
+      msg.cameraOdometry.rotStd = [0.0, 0.0, 0.0]
+      msg.cameraOdometry.trans = [0.0, 0.0, 0.0]
+      msg.cameraOdometry.transStd = [2.0, 0.0, 0.0]
+      self.localizer_handle_msg(msg)
+
+    for _ in range(20 * VISION_DECIMATION):  # size of hist_new
+      msg = messaging.new_message('cameraOdometry')
+      msg.cameraOdometry.rot = [0.0, 0.0, 0.0]
+      msg.cameraOdometry.rotStd = [0.0, 0.0, 0.0]
+      msg.cameraOdometry.trans = [0.0, 0.0, 0.0]
+      msg.cameraOdometry.transStd = [8.1, 0.0, 0.0]  # more than 4 times larger
+      self.localizer_handle_msg(msg)
+
+    ret = self.localizer_get_msg()
+    self.assertFalse(ret.liveLocationKalman.posenetOK)
 
 class TestLocationdProc(unittest.TestCase):
   MAX_WAITS = 1000
 
   def setUp(self):
     self.pm = messaging.PubMaster({'gpsLocationExternal', 'cameraOdometry'})
-    # sockets = {s: messaging.sub_sock(s, timeout=1000) for s in sub_sockets}
 
     managed_processes['locationd'].prepare()
     managed_processes['locationd'].start()
@@ -112,7 +144,6 @@ class TestLocationdProc(unittest.TestCase):
     for _ in range(250):  # params is only written so often
       msg = messaging.new_message('cameraOdometry')
       msg.logMonoTime = 0
-      msg.cameraOdometry.frameId = 1200
       msg.cameraOdometry.rot = [0.0, 0.0, 0.0]
       msg.cameraOdometry.rotStd = [0.0, 0.0, 0.0]
       msg.cameraOdometry.trans = [0.0, 0.0, 0.0]
