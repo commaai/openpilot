@@ -351,7 +351,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       Priority.LOWEST, VisualAlert.steerRequired, AudibleAlert.none, .0, .0, .1),
   },
 
-  EventName.steeringTempUnavailableUserOverride: {
+  EventName.steerTempUnavailableUserOverride: {
     ET.WARNING: Alert(
       "Steering Temporarily Unavailable",
       "",
