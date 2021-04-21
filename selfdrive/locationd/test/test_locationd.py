@@ -9,10 +9,12 @@ from cereal import log
 import cereal.messaging as messaging
 from common.params import Params
 
-random.seed(123489)
+from selfdrive.manager.process_config import managed_processes
+
+random.seed(123489234)
 
 
-class TestLocationd(unittest.TestCase):
+class TestLocationdLib(unittest.TestCase):
   def setUp(self):
     header = '''typedef ...* Localizer_t;
 Localizer_t localizer_init();
@@ -46,36 +48,6 @@ void localizer_handle_msg_bytes(Localizer_t localizer, const char *data, size_t 
     liveloc = self.localizer_get_msg_dict()
     self.assertTrue(liveloc is not None)
 
-  def test_params_gps(self):
-    lat = 30 + (random.random() * 10.0)
-    lon = -70 + (random.random() * 10.0)
-    alt = 5 + (random.random() * 10.0)
-
-    msg = messaging.new_message('gpsLocationExternal')
-    msg.gpsLocationExternal.latitude = lat
-    msg.gpsLocationExternal.longitude = lon
-    msg.gpsLocationExternal.altitude = alt
-
-    self.localizer_handle_msg(msg)
-
-    for _ in range(1200):  # params is only written so often
-      msg = messaging.new_message('cameraOdometry')
-      msg.cameraOdometry.frameId = 1200
-      msg.cameraOdometry.rot = [0.0, 0.0, 0.0]
-      msg.cameraOdometry.rotStd = [0.0, 0.0, 0.0]
-      msg.cameraOdometry.trans = [0.0, 0.0, 0.0]
-      msg.cameraOdometry.transStd = [0.0, 0.0, 0.0]
-      self.localizer_handle_msg(msg)
-
-    time.sleep(1)  # wait for async params write
-
-    lastGPS = json.loads(Params().get('LastGPSPosition'))
-    print(lastGPS)
-
-    self.assertEqual(lastGPS['latitude'], lat)
-    self.assertEqual(lastGPS['longitude'], lon)
-    self.assertEqual(lastGPS['altitude'], alt)
-
   def test_device_fell(self):
     msg = messaging.new_message('sensorEvents', 1)
     msg.sensorEvents[0].sensor = 4
@@ -93,6 +65,67 @@ void localizer_handle_msg_bytes(Localizer_t localizer, const char *data, size_t 
     msg.sensorEvents[0].gyroUncalibrated.v = [0.0, 0.0, 0.0]
     self.localizer_handle_msg(msg)
     self.localizer_get_msg_dict()
+
+
+class TestLocationdProc(unittest.TestCase):
+  MAX_WAITS = 1000
+
+  def setUp(self):
+    self.pm = messaging.PubMaster({'gpsLocationExternal', 'cameraOdometry'})
+    # sockets = {s: messaging.sub_sock(s, timeout=1000) for s in sub_sockets}
+
+    managed_processes['locationd'].prepare()
+    managed_processes['locationd'].start()
+
+    time.sleep(1)
+
+  def tearDown(self):
+    managed_processes['locationd'].stop()
+
+  def send_msg(self, msg):
+    self.pm.send(msg.which(), msg)
+    waits_left = self.MAX_WAITS
+    while waits_left and not self.pm.all_readers_updated(msg.which()):
+      time.sleep(0)
+      waits_left -= 1
+    time.sleep(0.0001)
+
+  def test_params_gps(self):
+    # first reset params
+    Params().put('LastGPSPosition', json.dumps({"latitude": 0.0, "longitude": 0.0, "altitude": 0.0}))
+
+    lat = 30 + (random.random() * 10.0)
+    lon = -70 + (random.random() * 10.0)
+    alt = 5 + (random.random() * 10.0)
+
+    for _ in range(1000):  # because of kalman filter, send often
+      msg = messaging.new_message('gpsLocationExternal')
+      msg.logMonoTime = 0
+      msg.gpsLocationExternal.flags = 1
+      msg.gpsLocationExternal.verticalAccuracy = 0.0
+      msg.gpsLocationExternal.vNED = [0.0, 0.0, 0.0]
+      msg.gpsLocationExternal.latitude = lat
+      msg.gpsLocationExternal.longitude = lon
+      msg.gpsLocationExternal.altitude = alt
+      self.send_msg(msg)
+
+    for _ in range(250):  # params is only written so often
+      msg = messaging.new_message('cameraOdometry')
+      msg.logMonoTime = 0
+      msg.cameraOdometry.frameId = 1200
+      msg.cameraOdometry.rot = [0.0, 0.0, 0.0]
+      msg.cameraOdometry.rotStd = [0.0, 0.0, 0.0]
+      msg.cameraOdometry.trans = [0.0, 0.0, 0.0]
+      msg.cameraOdometry.transStd = [0.0, 0.0, 0.0]
+      self.send_msg(msg)
+
+    time.sleep(1)  # wait for async params write
+
+    lastGPS = json.loads(Params().get('LastGPSPosition'))
+
+    self.assertAlmostEqual(lastGPS['latitude'], lat, places=3)
+    self.assertAlmostEqual(lastGPS['longitude'], lon, places=3)
+    self.assertAlmostEqual(lastGPS['altitude'], alt, places=3)
 
 
 if __name__ == "__main__":
