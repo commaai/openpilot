@@ -181,16 +181,13 @@ void Unlogger::process(SubMaster *sm) {
       ++eit;
 
       float time_to_end = ((events->lastKey() - eit.key())/1e9);
-      printf("%f\n", time_to_end);
 
-      if((time_to_end < 50.0) && !signalsBlocked()){
+      if(time_to_end < 50.0){
         emit loadSegment();
         blockSignals(true);
+        continue;
       }
-      else if (time_to_end > 60.0 && signalsBlocked()){
-        blockSignals(false);
-      }
+      blockSignals(false);
     }
   }
 }
-
