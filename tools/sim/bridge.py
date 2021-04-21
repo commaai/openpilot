@@ -29,7 +29,7 @@ REPEAT_COUNTER = 5
 PRINT_DECIMATION = 100
 STEER_RATIO = 15.
 
-pm = messaging.PubMaster(['roadCameraState', 'sensorEvents', 'can'])
+pm = messaging.PubMaster(['roadCameraState', 'sensorEvents', 'can', "gpsLocationExternal"])
 sm = messaging.SubMaster(['carControl','controlsState'])
 
 class VehicleState:
@@ -92,13 +92,17 @@ def panda_state_function():
     pm.send('pandaState', dat)
     time.sleep(0.5)
 
-def fake_gps():
-  # TODO: read GPS from CARLA
-  pm = messaging.PubMaster(['gpsLocationExternal'])
-  while 1:
-    dat = messaging.new_message('gpsLocationExternal')
-    pm.send('gpsLocationExternal', dat)
-    time.sleep(0.01)
+def gps_callback(gps):
+  dat = messaging.new_message('gpsLocationExternal')
+
+  dat.gpsLocationExternal = {
+    "latitude": gps.latitude,
+    "longitude": gps.longitude,
+    "altitude": gps.altitude,
+    "source": 5, # external, copied from log.capnp
+  }
+
+  pm.send('gpsLocationExternal', dat)
 
 def fake_driver_monitoring():
   pm = messaging.PubMaster(['driverState','driverMonitoringState'])
@@ -180,6 +184,10 @@ def bridge(q):
   imu = world.spawn_actor(imu_bp, transform, attach_to=vehicle)
   imu.listen(imu_callback)
 
+  gps_bp = blueprint_library.find('sensor.other.gnss')
+  gps = world.spawn_actor(gps_bp, transform, attach_to=vehicle)
+  gps.listen(gps_callback)
+
   def destroy():
     print("clean exit")
     imu.destroy()
@@ -194,7 +202,6 @@ def bridge(q):
   # launch fake car threads
   threading.Thread(target=panda_state_function).start()
   threading.Thread(target=fake_driver_monitoring).start()
-  threading.Thread(target=fake_gps).start()
   threading.Thread(target=can_function_runner, args=(vehicle_state,)).start()
 
   # can loop
