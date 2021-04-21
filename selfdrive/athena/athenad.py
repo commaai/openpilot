@@ -411,8 +411,7 @@ def backoff(retries):
 
 def main():
   params = Params()
-  dongle_id = params.get("DongleId").decode('utf-8')
-
+  dongle_id = params.get("DongleId", encoding='utf-8')
   crash.bind_user(id=dongle_id)
   crash.bind_extra(dirty=dirty, origin=origin, branch=branch, commit=commit,
                    device=HARDWARE.get_device_type())
