@@ -22,26 +22,26 @@ void Route::parseResponse(QString response){
     return;
   }
 
-	auto cams = doc["cameras"].toArray();
-	auto logs = doc["logs"].toArray();
+  auto cams = doc["cameras"].toArray();
+  auto logs = doc["logs"].toArray();
 
-	for(int i = 0 ; i < cams.size() ; i++){
-		segments.append(new RouteSegment(i, logs[i].toString(), cams[i].toString()));
-	}
+  for(int i = 0 ; i < cams.size() ; i++){
+    segments.append(new RouteSegment(i, logs[i].toString(), cams[i].toString()));
+  }
 }
 
 QList<QString> Route::log_paths() {
-	QList<QString> paths;
-	for(auto &seg : segments){
-		paths.append(seg->log_path);
-	}
-	return paths;
+  QList<QString> paths;
+  for(auto &seg : segments){
+    paths.append(seg->log_path);
+  }
+  return paths;
 }
 
 QList<QString> Route::camera_paths() {
-	QList<QString> paths;
-	for(auto &seg : segments){
-		paths.append(seg->camera_path);
-	}
-	return paths;
+  QList<QString> paths;
+  for(auto &seg : segments){
+    paths.append(seg->camera_path);
+  }
+  return paths;
 }
