@@ -182,7 +182,7 @@ void Unlogger::process(SubMaster *sm) {
 
       float time_to_end = ((events->lastKey() - eit.key())/1e9);
 
-      if(time_to_end < 50.0){
+      if(time_to_end < 10.0){
         emit loadSegment();
         blockSignals(true);
         continue;
