@@ -17,8 +17,6 @@ VISION_DECIMATION = 2
 
 LIBLOCATIOND_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '../liblocationd.so'))
 
-random.seed(123489234)
-
 
 class TestLocationdLib(unittest.TestCase):
   def setUp(self):
@@ -106,6 +104,8 @@ class TestLocationdProc(unittest.TestCase):
   MAX_WAITS = 1000
 
   def setUp(self):
+    random.seed(123489234)
+
     self.pm = messaging.PubMaster({'gpsLocationExternal', 'cameraOdometry'})
 
     managed_processes['locationd'].prepare()
