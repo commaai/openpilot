@@ -6,8 +6,6 @@
 
 #include "coordinates.hpp"
 
-#define DEG2RAD(x) ((x) * M_PI / 180.0)
-#define RAD2DEG(x) ((x) * 180.0 / M_PI)
 
 
 double a = 6378137; // lgtm [cpp/short-global-name]
