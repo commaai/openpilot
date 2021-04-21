@@ -2,6 +2,7 @@
 
 Replay::Replay(QString route_, int seek, int use_api_) : route(route_), use_api(use_api_){
   unlogger = new Unlogger(&events, &events_lock, &frs, seek);
+  seg_add = 0;
 
   if (use_api) {
     QString settings;
@@ -57,5 +58,8 @@ void Replay::stream(int seek, SubMaster *sm){
 	});
   thread->start();
 
-  addSegment(seek/60);
+  addSegment(seg_add);
+  QObject::connect(unlogger, &Unlogger::loadSegment, [=](){
+    addSegment(++seg_add);
+  });
 }

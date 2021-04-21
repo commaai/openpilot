@@ -33,5 +33,7 @@ private:
 
   QMap<int, LogReader*> lrs;
   QMap<int, FrameReader*> frs;
+
+  int seg_add;
 };
 

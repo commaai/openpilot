@@ -23,6 +23,7 @@ Q_OBJECT
   signals:
     void elapsed();
     void finished();
+    void loadSegment();
   private:
     Events *events;
     QReadWriteLock *events_lock;
@@ -32,6 +33,9 @@ Q_OBJECT
     uint64_t tc = 0;
     uint64_t seek_request = 0;
     bool paused = false;
+
+    bool loading_segment = false;
+    float time_to_end;
 
     VisionIpcServer *vipc_server;
 };
