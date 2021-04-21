@@ -21,6 +21,8 @@ class Route : public QWidget {
 public:
   Route(QString route_name);
   void _get_segments_remote();
+  QList<QString> log_paths();
+  QList<QString> camera_paths();
 
 public slots:
   void parseResponse(QString response);

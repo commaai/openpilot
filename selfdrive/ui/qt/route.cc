@@ -6,6 +6,7 @@ Route::Route(QString route_name_) : route_name(route_name_){
 }
 
 void Route::_get_segments_remote(){
+	segments.clear();
   QString url = QString("https://api.commadotai.com/v1/route/" + route_name + "/files");
 
   RequestRepeater *repeater = new RequestRepeater(nullptr, url, 2, "ApiCache_Route");
@@ -27,7 +28,13 @@ void Route::parseResponse(QString response){
 	for(int i = 0 ; i < cams.size() ; i++){
 		segments.append(new RouteSegment(i, logs[i].toString(), cams[i].toString()));
 	}
+}
 
-	for(auto i = 0 ; i < cams.size() ; i++)
-		qDebug() << segments[i]->log_path;
+QList<QString> Route::log_paths() {
+	QList<QString> paths;
+	for(auto &seg : segments){
+		paths.append(seg->log_path);
+		qDebug() << seg->log_path;
+	}
+	return paths;
 }
