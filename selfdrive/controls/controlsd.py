@@ -489,8 +489,8 @@ class Controls:
       can_sends = self.CI.apply(CC)
       self.pm.send('sendcan', can_list_to_can_capnp(can_sends, msgtype='sendcan', valid=CS.canValid))
 
-    force_decel = (self.sm['driverMonitoringState'].awarenessStatus < 0.) or \
-                  (self.state == State.softDisabling)
+    force_decel = (self.sm['driverMonitoringState'].awarenessStatus < 0. or
+                   self.state == State.softDisabling or CS.seatbeltUnlatched or CS.doorOpen)
 
     # Curvature & Steering angle
     params = self.sm['liveParameters']
