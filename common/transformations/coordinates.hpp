@@ -1,5 +1,8 @@
 #pragma once
 
+#define DEG2RAD(x) ((x) * M_PI / 180.0)
+#define RAD2DEG(x) ((x) * 180.0 / M_PI)
+
 struct ECEF {
   double x, y, z;
   Eigen::Vector3d to_vector(){
@@ -9,6 +12,9 @@ struct ECEF {
 
 struct NED {
   double n, e, d;
+  Eigen::Vector3d to_vector(){
+    return Eigen::Vector3d(n, e, d);
+  }
 };
 
 struct Geodetic {
