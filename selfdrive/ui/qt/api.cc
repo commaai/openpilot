@@ -126,6 +126,7 @@ void HttpRequest::requestTimeout(){
   reply->abort();
 }
 
+// This function should always emit something
 void HttpRequest::requestFinished(){
   if (reply->error() != QNetworkReply::OperationCanceledError) {
     networkTimer->stop();
