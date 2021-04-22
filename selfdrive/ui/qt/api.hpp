@@ -34,7 +34,6 @@ class HttpRequest : public QObject {
 
 public:
   explicit HttpRequest(QWidget* parent, QString requestURL, const QString &cache_key = "", int period = 0, bool disableWithScreen = true);
-  bool active = true;
 
 private:
   bool disableWithScreen;

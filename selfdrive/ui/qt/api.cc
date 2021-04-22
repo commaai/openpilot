@@ -98,7 +98,7 @@ HttpRequest::HttpRequest(QWidget *parent, QString requestURL, const QString &cac
 }
 
 void HttpRequest::sendRequest(QString requestURL){
-  if (GLWindow::ui_state.scene.started || !active || reply != NULL ||
+  if (GLWindow::ui_state.scene.started || reply != NULL ||
       (!GLWindow::ui_state.awake && disableWithScreen)) {
     return;
   }
