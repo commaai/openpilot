@@ -3,9 +3,9 @@
 #include <QJsonObject>
 #include <QVBoxLayout>
 
-#include "api.hpp"
 #include "common/params.h"
 #include "drive_stats.hpp"
+#include "request_repeater.hpp"
 
 const double MILE_TO_KM = 1.60934;
 
@@ -65,6 +65,7 @@ DriveStats::DriveStats(QWidget* parent) : QWidget(parent) {
   // TODO: do we really need to update this frequently?
   QString dongleId = QString::fromStdString(Params().get("DongleId"));
   QString url = "https://api.commadotai.com/v1.1/devices/" + dongleId + "/stats";
-  HttpRequest *repeater = new HttpRequest(this, url, "ApiCache_DriveStats", 13);
+  //HttpRequest *repeater = new HttpRequest(this, url, "ApiCache_DriveStats", 13);
+  RequestRepeater *repeater = new RequestRepeater(this, url, "ApiCache_DriveStats", 13);
   QObject::connect(repeater, SIGNAL(receivedResponse(QString)), this, SLOT(parseResponse(QString)));
 }

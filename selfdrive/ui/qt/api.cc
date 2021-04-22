@@ -11,7 +11,6 @@
 #include <QRandomGenerator>
 
 #include "api.hpp"
-#include "home.hpp"
 #include "common/params.h"
 #include "common/util.h"
 
@@ -73,7 +72,7 @@ QString CommaApi::create_jwt(QVector<QPair<QString, QJsonValue>> payloads, int e
 }
 
 
-HttpRequest::HttpRequest(QWidget *parent, QString requestURL, const QString &cache_key, int period_seconds, bool disableWithScreen) : cache_key(cache_key), QObject(parent), disableWithScreen(disableWithScreen) {
+HttpRequest::HttpRequest(QWidget *parent, QString requestURL, const QString &cache_key) : cache_key(cache_key), QObject(parent) {
   networkAccessManager = new QNetworkAccessManager(this);
   reply = NULL;
 
@@ -82,13 +81,7 @@ HttpRequest::HttpRequest(QWidget *parent, QString requestURL, const QString &cac
   networkTimer->setInterval(20000);
   connect(networkTimer, SIGNAL(timeout()), this, SLOT(requestTimeout()));
 
-  if(period_seconds <= 0){
-    sendRequest(requestURL);
-  } else {
-    QTimer* timer = new QTimer(this);
-    QObject::connect(timer, &QTimer::timeout, [=](){sendRequest(requestURL);});
-    timer->start(period_seconds * 1000);
-  }
+  sendRequest(requestURL);
 
   if (!cache_key.isEmpty()) {
     if (std::string cached_resp = Params().get(cache_key.toStdString()); !cached_resp.empty()) {
@@ -98,11 +91,6 @@ HttpRequest::HttpRequest(QWidget *parent, QString requestURL, const QString &cac
 }
 
 void HttpRequest::sendRequest(QString requestURL){
-  if (GLWindow::ui_state.scene.started || reply != NULL ||
-      (!GLWindow::ui_state.awake && disableWithScreen)) {
-    return;
-  }
-
   QString token = CommaApi::create_jwt();
   QNetworkRequest request;
   request.setUrl(QUrl(requestURL));
