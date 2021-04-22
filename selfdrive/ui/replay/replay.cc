@@ -51,6 +51,18 @@ bool Replay::addSegment(int i){
   return false;
 }
 
+void Replay::trimSegment(int n){
+  event_sizes.enqueue(events.size() - event_sizes.last());
+  auto first = events.begin();
+
+  for(int i = 0 ; i < n ; i++){
+    int remove = event_sizes.dequeue();
+    for(int j = 0 ; j < remove ; j++){
+      first = events.erase(first);
+    }
+  }
+}
+
 void Replay::stream(int seek, SubMaster *sm){
   QThread* thread = new QThread;
   unlogger->moveToThread(thread);
@@ -62,5 +74,6 @@ void Replay::stream(int seek, SubMaster *sm){
   addSegment(seg_add);
   QObject::connect(unlogger, &Unlogger::loadSegment, [=](){
     addSegment(++seg_add);
+    trimSegment(seg_add > 1);
   });
 }

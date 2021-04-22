@@ -34,9 +34,6 @@ Q_OBJECT
     uint64_t seek_request = 0;
     bool paused = false;
 
-    bool loading_segment = false;
-    float time_to_end;
-
     VisionIpcServer *vipc_server;
 };
 
