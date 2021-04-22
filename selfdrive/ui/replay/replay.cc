@@ -1,23 +1,16 @@
 #include "replay.hpp"
 
-Replay::Replay(QString route_, int seek, int use_api_) : route(route_), use_api(use_api_){
+Replay::Replay(QString route_, int seek) : route(route_) {
   unlogger = new Unlogger(&events, &events_lock, &frs, seek);
   seg_add = 0;
 
-  if (use_api) {
-    http = new HttpRequest(this, "https://api.commadotai.com/v1/route/" + route.replace("/", "|") + "/files", "HttpRequest_Test");
-    QObject::connect(http, SIGNAL(receivedResponse(QString)), this, SLOT(parseResponse(QString)));
-    return;
-  }
-  // add first segment
-  addSegment(0);
+  http = new HttpRequest(this, "https://api.commadotai.com/v1/route/" + route.replace("/", "|") + "/files", "Route_HttpRequest");
+  QObject::connect(http, SIGNAL(receivedResponse(QString)), this, SLOT(parseResponse(QString)));
 }
 
 void Replay::parseResponse(QString response){
   response = response.trimmed();
   QJsonDocument doc = QJsonDocument::fromJson(response.toUtf8());
-
-  qDebug() << response;
 
   if (doc.isNull()) {
     qDebug() << "JSON Parse failed on getting past drives statistics";
@@ -33,30 +26,18 @@ void Replay::parseResponse(QString response){
 
 bool Replay::addSegment(int i){
   if (lrs.find(i) == lrs.end()) {
-    QString fn = QString("http://data.comma.life/%1/%2/rlog.bz2").arg(route).arg(i);
 
     QThread* thread = new QThread;
-    if (!use_api) {
-      lrs.insert(i, new LogReader(fn, &events, &events_lock, &unlogger->eidx));
-    } else {
-      QString log_fn = this->log_paths.at(i).toString();
-      qDebug() << log_fn;
-      lrs.insert(i, new LogReader(log_fn, &events, &events_lock, &unlogger->eidx));
-    }
+
+    QString log_fn = this->log_paths.at(i).toString();
+    lrs.insert(i, new LogReader(log_fn, &events, &events_lock, &unlogger->eidx));
 
     lrs[i]->moveToThread(thread);
     QObject::connect(thread, SIGNAL (started()), lrs[i], SLOT (process()));
     thread->start();
 
-    QString frn = QString("http://data.comma.life/%1/%2/fcamera.hevc").arg(route).arg(i);
-
-    if (!use_api) {
-      frs.insert(i, new FrameReader(qPrintable(frn)));
-    } else {
-      QString camera_fn = this->camera_paths.at(i).toString();
-      frs.insert(i, new FrameReader(qPrintable(camera_fn)));
-    }
-
+    QString camera_fn = this->camera_paths.at(i).toString();
+    frs.insert(i, new FrameReader(qPrintable(camera_fn)));
     return true;
   }
   return false;

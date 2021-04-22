@@ -18,13 +18,12 @@ class Replay : public QWidget {
   Q_OBJECT
 
 public:
-  Replay(QString route_, int seek, int use_api);
+  Replay(QString route_, int seek);
   void stream(int seek, SubMaster *sm = nullptr);
   bool addSegment(int i);
   void trimSegment(int n);
   QJsonArray camera_paths;
   QJsonArray log_paths;
-  int use_api;
 
   QQueue<int> event_sizes;
 

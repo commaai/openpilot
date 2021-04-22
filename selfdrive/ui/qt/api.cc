@@ -98,10 +98,12 @@ HttpRequest::HttpRequest(QWidget *parent, QString requestURL, const QString &cac
 }
 
 void HttpRequest::sendRequest(QString requestURL){
+  /*
   if (GLWindow::ui_state.scene.started || !active || reply != NULL ||
       (!GLWindow::ui_state.awake && disableWithScreen)) {
     return;
   }
+  */
 
   QString token = CommaApi::create_jwt();
   QNetworkRequest request;
