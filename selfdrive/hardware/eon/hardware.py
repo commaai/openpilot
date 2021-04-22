@@ -81,7 +81,7 @@ class Android(HardwareBase):
 
   def get_serial(self):
     ret = getprop("ro.serialno")
-    if ret == "":
+    if len(ret) == 0:
       ret = "cccccccc"
     return ret
 

@@ -18,8 +18,9 @@ from selfdrive.manager.process import ensure_running
 from selfdrive.manager.process_config import managed_processes
 from selfdrive.registration import register
 from selfdrive.swaglog import cloudlog, add_file_handler
-from selfdrive.version import dirty, version, origin, branch, commit
-
+from selfdrive.version import dirty, version, origin, branch, commit, \
+                              terms_version, training_version, \
+                              get_git_branch, get_git_remote
 
 def manager_init():
 
@@ -63,6 +64,14 @@ def manager_init():
     pass
   except PermissionError:
     print("WARNING: failed to make /dev/shm")
+
+  # set version params
+  params.put("Version", version)
+  params.put("TermsVersion", terms_version)
+  params.put("TrainingVersion", training_version)
+  params.put("GitCommit", commit)
+  params.put("GitBranch", get_git_branch(default=""))
+  params.put("GitRemote", get_git_remote(default=""))
 
   # set dongle id
   reg_res = register(show_spinner=True)
