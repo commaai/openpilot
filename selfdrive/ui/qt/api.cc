@@ -76,13 +76,13 @@ QString CommaApi::create_jwt(QVector<QPair<QString, QJsonValue>> payloads, int e
 HttpRequest::HttpRequest(QWidget *parent, QString requestURL, const QString &cache_key) : cache_key(cache_key), QObject(parent) {
   networkAccessManager = new QNetworkAccessManager(this);
   reply = NULL;
-  sendRequest(requestURL);
-
 
   networkTimer = new QTimer(this);
   networkTimer->setSingleShot(true);
   networkTimer->setInterval(20000);
   connect(networkTimer, SIGNAL(timeout()), this, SLOT(requestTimeout()));
+
+  sendRequest(requestURL);
 
   if (!cache_key.isEmpty()) {
     if (std::string cached_resp = Params().get(cache_key.toStdString()); !cached_resp.empty()) {
@@ -107,7 +107,7 @@ void HttpRequest::sendRequest(QString requestURL){
 
   reply = networkAccessManager->get(request);
 
-  //networkTimer->start();
+  networkTimer->start();
   connect(reply, SIGNAL(finished()), this, SLOT(requestFinished()));
 }
 
