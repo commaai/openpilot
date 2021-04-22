@@ -26,7 +26,7 @@ private:
 };
 
 /**
- * Makes individual or repeated requests to the request endpoint.
+ * Makes request to the request endpoint.
  */
 
 class HttpRequest : public QObject {
