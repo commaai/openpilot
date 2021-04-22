@@ -5,20 +5,28 @@ Replay::Replay(QString route_, int seek, int use_api_) : route(route_), use_api(
   seg_add = 0;
 
   if (use_api) {
-    QString settings;
-    QFile file;
-    file.setFileName("routes.json");
-    file.open(QIODevice::ReadOnly | QIODevice::Text);
-    settings = file.readAll();
-    file.close();
-
-    QJsonDocument sd = QJsonDocument::fromJson(settings.toUtf8());
-    qWarning() << sd.isNull(); // <- print false :)
-    QJsonObject sett2 = sd.object();
-
-    this->camera_paths = sett2.value("camera").toArray();
-    this->log_paths = sett2.value("logs").toArray();
+    HttpRequest *http = new HttpRequest(this, "https://api.commadotai.com/v1/route/" + route.replace("/", "|") + "/files", "HttpRequest_Test");
+    QObject::connect(http, SIGNAL(receivedResponse(QString)), this, SLOT(parseResponse(QString)));
+    return;
   }
+  // add first segment
+  addSegment(0);
+}
+
+void Replay::parseResponse(QString response){
+  response = response.trimmed();
+  QJsonDocument doc = QJsonDocument::fromJson(response.toUtf8());
+
+	if (doc.isNull()) {
+		qDebug() << "JSON Parse failed on getting past drives statistics";
+		return;
+	}
+
+  camera_paths = doc["cameras"].toArray();
+  log_paths = doc["logs"].toArray();
+
+  // add first segment
+  addSegment(0);
 }
 
 bool Replay::addSegment(int i){
@@ -30,6 +38,7 @@ bool Replay::addSegment(int i){
       lrs.insert(i, new LogReader(fn, &events, &events_lock, &unlogger->eidx));
     } else {
       QString log_fn = this->log_paths.at(i).toString();
+      qDebug() << log_fn;
       lrs.insert(i, new LogReader(log_fn, &events, &events_lock, &unlogger->eidx));
     }
 
@@ -71,7 +80,6 @@ void Replay::stream(int seek, SubMaster *sm){
 	});
   thread->start();
 
-  addSegment(seg_add);
   QObject::connect(unlogger, &Unlogger::loadSegment, [=](){
     addSegment(++seg_add);
     trimSegment(seg_add > 1);

@@ -28,6 +28,30 @@ private:
 /**
  * Makes repeated requests to the request endpoint.
  */
+
+class HttpRequest : public QObject {
+  Q_OBJECT
+
+public:
+  explicit HttpRequest(QWidget* parent, QString requestURL, const QString &cache_key = "");
+
+private:
+  QNetworkReply *reply;
+  QNetworkAccessManager *networkAccessManager;
+  QTimer *networkTimer;
+  QString cache_key;
+  void sendRequest(QString requestURL);
+
+private slots:
+  void requestTimeout();
+  void requestFinished();
+
+signals:
+  void receivedResponse(QString response);
+  void failedResponse(QString errorString);
+  void timeoutResponse(QString errorString);
+};
+
 class RequestRepeater : public QObject {
   Q_OBJECT
 

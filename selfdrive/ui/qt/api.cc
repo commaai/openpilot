@@ -72,6 +72,74 @@ QString CommaApi::create_jwt(QVector<QPair<QString, QJsonValue>> payloads, int e
   return jwt;
 }
 
+
+HttpRequest::HttpRequest(QWidget *parent, QString requestURL, const QString &cache_key) : cache_key(cache_key), QObject(parent) {
+  networkAccessManager = new QNetworkAccessManager(this);
+  reply = NULL;
+  sendRequest(requestURL);
+
+
+  networkTimer = new QTimer(this);
+  networkTimer->setSingleShot(true);
+  networkTimer->setInterval(20000);
+  connect(networkTimer, SIGNAL(timeout()), this, SLOT(requestTimeout()));
+/*
+  if (!cache_key.isEmpty()) {
+    if (std::string cached_resp = Params().get(cache_key.toStdString()); !cached_resp.empty()) {
+      QTimer::singleShot(0, [=]() { emit receivedResponse(QString::fromStdString(cached_resp)); });
+    }
+  }
+*/
+}
+
+void HttpRequest::sendRequest(QString requestURL){
+
+  QString token = CommaApi::create_jwt();
+  QNetworkRequest request;
+  request.setUrl(QUrl(requestURL));
+  request.setRawHeader(QByteArray("Authorization"), ("JWT " + token).toUtf8());
+
+#ifdef QCOM
+  QSslConfiguration ssl = QSslConfiguration::defaultConfiguration();
+  ssl.setCaCertificates(QSslCertificate::fromPath("/usr/etc/tls/cert.pem",
+                        QSsl::Pem, QRegExp::Wildcard));
+  request.setSslConfiguration(ssl);
+#endif
+
+  reply = networkAccessManager->get(request);
+
+  //networkTimer->start();
+  connect(reply, SIGNAL(finished()), this, SLOT(requestFinished()));
+}
+
+void HttpRequest::requestTimeout(){
+  reply->abort();
+}
+
+void HttpRequest::requestFinished(){
+  if (reply->error() != QNetworkReply::OperationCanceledError) {
+    networkTimer->stop();
+    QString response = reply->readAll();
+
+    if (reply->error() == QNetworkReply::NoError) {
+      // save to cache
+      if (!cache_key.isEmpty()) {
+        Params().put(cache_key.toStdString(), response.toStdString());
+      }
+      emit receivedResponse(response);
+    } else {
+      if (!cache_key.isEmpty()) {
+        Params().remove(cache_key.toStdString());
+      }
+      emit failedResponse(reply->errorString());
+    }
+  } else {
+    emit timeoutResponse("timeout");
+  }
+  reply->deleteLater();
+  reply = NULL;
+}
+
 RequestRepeater::RequestRepeater(QWidget* parent, QString requestURL, int period_seconds, const QString &cache_key, bool disableWithScreen)
   : disableWithScreen(disableWithScreen), cache_key(cache_key), QObject(parent)  {
   networkAccessManager = new QNetworkAccessManager(this);

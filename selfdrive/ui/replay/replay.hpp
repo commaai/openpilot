@@ -8,12 +8,14 @@
 
 #include <capnp/dynamic.h>
 
+#include "../qt/api.hpp"
 #include "Unlogger.hpp"
 #include "FileReader.hpp"
 #include "FrameReader.hpp"
 #include "visionipc_server.h"
 
-class Replay : public QObject {
+class Replay : public QWidget {
+  Q_OBJECT
 
 public:
   Replay(QString route_, int seek, int use_api);
@@ -25,6 +27,9 @@ public:
   int use_api;
 
   QQueue<int> event_sizes;
+
+public slots:
+  void parseResponse(QString response);
 
 protected:
   Unlogger *unlogger;
