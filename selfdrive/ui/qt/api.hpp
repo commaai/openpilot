@@ -33,7 +33,7 @@ class HttpRequest : public QObject {
   Q_OBJECT
 
 public:
-  explicit HttpRequest(QWidget* parent, QString requestURL, const QString &cache_key = "", bool disableWithScreen = true);
+  explicit HttpRequest(QWidget* parent, QString requestURL, const QString &cache_key = "", int period = 0, bool disableWithScreen = true);
   bool active = true;
 
 private:
@@ -41,31 +41,6 @@ private:
   QNetworkReply *reply;
   QNetworkAccessManager *networkAccessManager;
   QTimer *networkTimer;
-  QString cache_key;
-  void sendRequest(QString requestURL);
-
-private slots:
-  void requestTimeout();
-  void requestFinished();
-
-signals:
-  void receivedResponse(QString response);
-  void failedResponse(QString errorString);
-  void timeoutResponse(QString errorString);
-};
-
-class RequestRepeater : public QObject {
-  Q_OBJECT
-
-public:
-  explicit RequestRepeater(QWidget* parent, QString requestURL, int period = 10, const QString &cache_key = "", bool disableWithScreen = true);
-  bool active = true;
-
-private:
-  bool disableWithScreen;
-  QNetworkReply* reply;
-  QNetworkAccessManager* networkAccessManager;
-  QTimer* networkTimer;
   QString cache_key;
   void sendRequest(QString requestURL);
 

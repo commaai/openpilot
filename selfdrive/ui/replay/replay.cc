@@ -5,7 +5,7 @@ Replay::Replay(QString route_, int seek, int use_api_) : route(route_), use_api(
   seg_add = 0;
 
   if (use_api) {
-    HttpRequest *http = new HttpRequest(this, "https://api.commadotai.com/v1/route/" + route.replace("/", "|") + "/files", "HttpRequest_Test");
+    http = new HttpRequest(this, "https://api.commadotai.com/v1/route/" + route.replace("/", "|") + "/files", "HttpRequest_Test");
     QObject::connect(http, SIGNAL(receivedResponse(QString)), this, SLOT(parseResponse(QString)));
     return;
   }
@@ -16,6 +16,8 @@ Replay::Replay(QString route_, int seek, int use_api_) : route(route_), use_api(
 void Replay::parseResponse(QString response){
   response = response.trimmed();
   QJsonDocument doc = QJsonDocument::fromJson(response.toUtf8());
+
+  qDebug() << response;
 
 	if (doc.isNull()) {
 		qDebug() << "JSON Parse failed on getting past drives statistics";

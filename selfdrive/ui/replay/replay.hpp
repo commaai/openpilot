@@ -42,6 +42,7 @@ private:
 
   QMap<int, LogReader*> lrs;
   QMap<int, FrameReader*> frs;
+  HttpRequest *http;
 
   int seg_add;
 };

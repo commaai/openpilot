@@ -65,6 +65,6 @@ DriveStats::DriveStats(QWidget* parent) : QWidget(parent) {
   // TODO: do we really need to update this frequently?
   QString dongleId = QString::fromStdString(Params().get("DongleId"));
   QString url = "https://api.commadotai.com/v1.1/devices/" + dongleId + "/stats";
-  RequestRepeater* repeater = new RequestRepeater(this, url, 13, "ApiCache_DriveStats");
+  HttpRequest *repeater = new HttpRequest(this, url, "ApiCache_DriveStats", 13);
   QObject::connect(repeater, SIGNAL(receivedResponse(QString)), this, SLOT(parseResponse(QString)));
 }
