@@ -76,7 +76,7 @@ void Replay::stream(int seek, SubMaster *sm){
   QThread* thread = new QThread;
   unlogger->moveToThread(thread);
   QObject::connect(thread, &QThread::started, [=](){
-		unlogger->process(sm);
+    unlogger->process(sm);
 	});
   thread->start();
 

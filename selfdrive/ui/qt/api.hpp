@@ -33,9 +33,11 @@ class HttpRequest : public QObject {
   Q_OBJECT
 
 public:
-  explicit HttpRequest(QWidget* parent, QString requestURL, const QString &cache_key = "");
+  explicit HttpRequest(QWidget* parent, QString requestURL, const QString &cache_key = "", bool disableWithScreen = true);
+  bool active = true;
 
 private:
+  bool disableWithScreen;
   QNetworkReply *reply;
   QNetworkAccessManager *networkAccessManager;
   QTimer *networkTimer;
