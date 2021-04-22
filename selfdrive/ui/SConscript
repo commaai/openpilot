@@ -28,22 +28,24 @@ qt_env.Program("qt/spinner", ["qt/spinner.cc"], LIBS=base_libs)
 # build main UI
 qt_src = ["main.cc", "ui.cc", "paint.cc", "sidebar.cc", "#phonelibs/nanovg/nanovg.c",
           "qt/window.cc", "qt/home.cc", "qt/api.cc", "qt/offroad/settings.cc",
-          "qt/offroad/onboarding.cc", "replay/Unlogger.cpp", "../../tools/clib/FrameReader.cpp",
-          "replay/FileReader.cpp", "replay/replay.cc"]
+          "qt/offroad/onboarding.cc"]
 
 qt_env['CPPPATH'] += ["#tools/clib"]
 qt_env['CXXFLAGS'] += ["-Wno-deprecated-declarations"]
-replay_libs = ['avutil', 'avcodec', 'avformat', 'swscale', 'bz2']
 
-qt_env.Program("_ui", qt_src, LIBS=qt_libs + replay_libs)
+qt_env.Program("_ui", qt_src, LIBS=qt_libs)
 
-if arch == 'aarch64':
-  # build headless replay
-  replay_src = ["replay/main.cc", "replay/replay.cc", "replay/Unlogger.cpp",
-                "../../tools/clib/FrameReader.cpp", "replay/FileReader.cpp",
-                "qt/api.cc", "#phonelibs/nanovg/nanovg.c"]
+# build headless replay
+if arch == 'x86_64':
+  replay_lib_src = ["replay/replay.cc", "replay/Unlogger.cpp",
+                "../../tools/clib/FrameReader.cpp", "replay/FileReader.cpp"]
+  replay_libs = ['avutil', 'avcodec', 'avformat', 'swscale', 'bz2']
+  replay = qt_env.Library("qt_replay", replay_lib_src, LIBS=base_libs)
+  replay = [replay] + base_libs + replay_libs
 
-  qt_env.Program("replay/replay", replay_src, LIBS=qt_libs + replay_libs)
+  replay_src = ["replay/main.cc", "qt/api.cc",
+                "#phonelibs/nanovg/nanovg.c"]
+  qt_env.Program("replay/replay", replay_src, LIBS=qt_libs + replay)
 
 # setup, factory resetter, and installer
 if arch != 'aarch64' and "BUILD_SETUP" in os.environ:
