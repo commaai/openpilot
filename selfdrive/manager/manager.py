@@ -18,7 +18,7 @@ from selfdrive.manager.process import ensure_running
 from selfdrive.manager.process_config import managed_processes
 from selfdrive.registration import register
 from selfdrive.swaglog import cloudlog, add_file_handler
-from selfdrive.version import dirty, version
+from selfdrive.version import dirty, version, origin, branch, commit
 
 
 def manager_init():
@@ -78,7 +78,8 @@ def manager_init():
   cloudlog.bind_global(dongle_id=dongle_id, version=version, dirty=dirty,
                        device=HARDWARE.get_device_type())
   crash.bind_user(id=dongle_id)
-  crash.bind_extra(version=version, dirty=dirty, device=HARDWARE.get_device_type())
+  crash.bind_extra(dirty=dirty, origin=origin, branch=branch, commit=commit,
+                   device=HARDWARE.get_device_type())
 
 
 def manager_prepare():

@@ -29,6 +29,8 @@ from selfdrive.hardware import HARDWARE, PC
 from selfdrive.loggerd.config import ROOT
 from selfdrive.loggerd.xattr_cache import getxattr, setxattr
 from selfdrive.swaglog import cloudlog, SWAGLOG_DIR
+import selfdrive.crash as crash
+from selfdrive.version import dirty, origin, branch, commit
 
 ATHENA_HOST = os.getenv('ATHENA_HOST', 'wss://athena.comma.ai')
 HANDLER_THREADS = int(os.getenv('HANDLER_THREADS', "4"))
@@ -409,7 +411,11 @@ def backoff(retries):
 
 def main():
   params = Params()
-  dongle_id = params.get("DongleId").decode('utf-8')
+  dongle_id = params.get("DongleId", encoding='utf-8')
+  crash.bind_user(id=dongle_id)
+  crash.bind_extra(dirty=dirty, origin=origin, branch=branch, commit=commit,
+                   device=HARDWARE.get_device_type())
+
   ws_uri = ATHENA_HOST + "/ws/v2/" + dongle_id
 
   api = Api(dongle_id)
@@ -427,7 +433,9 @@ def main():
     except (KeyboardInterrupt, SystemExit):
       break
     except Exception:
+      crash.capture_exception()
       cloudlog.exception("athenad.main.exception")
+
       conn_retries += 1
       params.delete("LastAthenaPingTime")
 
