@@ -171,8 +171,7 @@ void Unlogger::process(SubMaster *sm) {
 
           // TODO: Can PubSocket take a const char?
           (*it)->send((char*)bytes.begin(), bytes.size());
-        }
-        else{
+        } else{
           std::vector<std::pair<std::string, cereal::Event::Reader>> messages;
           messages.push_back({type, e});
           sm->update_msgs(nanos_since_boot(), messages);
