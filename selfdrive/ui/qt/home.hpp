@@ -12,7 +12,6 @@
 #include "sound.hpp"
 #include "ui/ui.hpp"
 #include "common/util.h"
-#include "replay/replay.hpp"
 #include "widgets/offroad_alerts.hpp"
 
 // container window for onroad NVG UI
@@ -39,7 +38,6 @@ protected:
 private:
   QTimer* timer;
   QTimer* backlight_timer;
-  Replay* replay;
 
   Sound sound;
 

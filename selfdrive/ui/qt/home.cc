@@ -299,7 +299,6 @@ void GLWindow::timerUpdate() {
   sound.volume = util::map_val(ui_state.scene.car_state.getVEgo(), 0.f, 20.f,
                                Hardware::MIN_VOLUME, Hardware::MAX_VOLUME);
 
-
   ui_update(&ui_state);
   if(GLWindow::ui_state.awake){
     repaint();
