@@ -77,6 +77,9 @@ def manager_init():
 
   cloudlog.bind_global(dongle_id=dongle_id, version=version, dirty=dirty,
                        device=HARDWARE.get_device_type())
+
+  if not (dongle_id is None or os.getenv("NOLOG") or os.getenv("NOCRASH") or PC):
+    crash.init()
   crash.bind_user(id=dongle_id)
   crash.bind_extra(dirty=dirty, origin=origin, branch=branch, commit=commit,
                    device=HARDWARE.get_device_type())
