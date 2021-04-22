@@ -3,12 +3,6 @@
 #include "qt/window.hpp"
 #include "qt/qt_window.hpp"
 
-#include <QThread>
-
-#include "FrameReader.hpp"
-#include "replay/replay.hpp"
-#include "replay/Unlogger.hpp"
-
 int main(int argc, char *argv[]) {
   QSurfaceFormat fmt;
 #ifdef __APPLE__
@@ -28,6 +22,5 @@ int main(int argc, char *argv[]) {
   MainWindow w;
   setMainWindow(&w);
   a.installEventFilter(&w);
-
   return a.exec();
 }
