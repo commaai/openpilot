@@ -8,7 +8,7 @@
 
 #include <capnp/dynamic.h>
 
-#include "../qt/api.hpp"
+#include "qt/api.hpp"
 #include "Unlogger.hpp"
 #include "FileReader.hpp"
 #include "FrameReader.hpp"
