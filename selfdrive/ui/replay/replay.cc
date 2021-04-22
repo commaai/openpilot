@@ -19,10 +19,10 @@ void Replay::parseResponse(QString response){
 
   qDebug() << response;
 
-	if (doc.isNull()) {
-		qDebug() << "JSON Parse failed on getting past drives statistics";
-		return;
-	}
+  if (doc.isNull()) {
+    qDebug() << "JSON Parse failed on getting past drives statistics";
+    return;
+  }
 
   camera_paths = doc["cameras"].toArray();
   log_paths = doc["logs"].toArray();
@@ -79,7 +79,7 @@ void Replay::stream(int seek, SubMaster *sm){
   unlogger->moveToThread(thread);
   QObject::connect(thread, &QThread::started, [=](){
     unlogger->process(sm);
-	});
+  });
   thread->start();
 
   QObject::connect(unlogger, &Unlogger::loadSegment, [=](){
