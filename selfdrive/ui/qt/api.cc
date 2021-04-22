@@ -83,13 +83,12 @@ HttpRequest::HttpRequest(QWidget *parent, QString requestURL, const QString &cac
   networkTimer->setSingleShot(true);
   networkTimer->setInterval(20000);
   connect(networkTimer, SIGNAL(timeout()), this, SLOT(requestTimeout()));
-/*
+
   if (!cache_key.isEmpty()) {
     if (std::string cached_resp = Params().get(cache_key.toStdString()); !cached_resp.empty()) {
       QTimer::singleShot(0, [=]() { emit receivedResponse(QString::fromStdString(cached_resp)); });
     }
   }
-*/
 }
 
 void HttpRequest::sendRequest(QString requestURL){
