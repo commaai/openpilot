@@ -66,10 +66,11 @@ def register(show_spinner=False):
 
         if resp.status_code == 402:
           cloudlog.info("Uknown serial number while trying to register device")
-          dongle_id = "UnofficialDevice"
+          dongle_id = None
         else:
           dongleauth = json.loads(resp.text)
           dongle_id = dongleauth["dongle_id"]
+          params.put("DongleId", dongle_id)
         break
       except Exception:
         cloudlog.exception("failed to authenticate")
@@ -78,7 +79,6 @@ def register(show_spinner=False):
     if show_spinner:
       spinner.close()
 
-  params.put("DongleId", dongle_id)
   return dongle_id
 
 
