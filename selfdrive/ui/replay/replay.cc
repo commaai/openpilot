@@ -13,7 +13,7 @@ void Replay::parseResponse(QString response){
   QJsonDocument doc = QJsonDocument::fromJson(response.toUtf8());
 
   if (doc.isNull()) {
-    qDebug() << "JSON Parse failed on getting past drives statistics";
+    qDebug() << "JSON Parse failed";
     return;
   }
 
