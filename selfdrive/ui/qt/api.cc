@@ -84,8 +84,7 @@ HttpRequest::HttpRequest(QWidget *parent, QString requestURL, const QString &cac
 
   if(period_seconds <= 0){
     sendRequest(requestURL);
-  }
-  else{
+  } else{
     QTimer* timer = new QTimer(this);
     QObject::connect(timer, &QTimer::timeout, [=](){sendRequest(requestURL);});
     timer->start(period_seconds * 1000);
