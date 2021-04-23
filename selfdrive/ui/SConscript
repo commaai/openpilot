@@ -64,7 +64,7 @@ if arch == 'x86_64':
   qt_env['CXXFLAGS'] += ["-Wno-deprecated-declarations"]
 
   replay_lib_src = ["replay/replay.cc", "replay/Unlogger.cpp",
-                "#tools/clib/FrameReader.cpp", "replay/FileReader.cpp"]
+                    "#tools/clib/FrameReader.cpp", "replay/FileReader.cpp"]
   replay_libs = ['avutil', 'avcodec', 'avformat', 'swscale', 'bz2']
   replay = qt_env.Library("qt_replay", replay_lib_src, LIBS=base_libs)
   replay = [replay] + replay_libs + qt_libs
