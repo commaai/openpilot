@@ -239,9 +239,9 @@ void Localizer::handle_car_state(double current_time, const cereal::CarState::Re
   this->speed_counter++;
 
   if (this->speed_counter % SENSOR_DECIMATION == 0) {
-    this->kf->predict_and_observe(current_time, OBSERVATION_ODOMETRIC_SPEED, { (VectorXd(1) << log.getVEgo()).finished() });
+    this->kf->predict_and_observe(current_time, OBSERVATION_ODOMETRIC_SPEED, { (VectorXd(1) << log.getVEgoRaw()).finished() });
     this->car_speed = std::abs(log.getVEgo());
-    if (log.getVEgo() == 0.0) {  // TODO probably never really 0.0
+    if (this->car_speed < 1e-3) {
       this->kf->predict_and_observe(current_time, OBSERVATION_NO_ROT, { Vector3d(0.0, 0.0, 0.0) });
     }
   }
