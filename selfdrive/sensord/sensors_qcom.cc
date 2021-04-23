@@ -198,7 +198,7 @@ void sensor_loop() {
 
       // Check whether to go into low power mode at 5Hz
       if (frame % 20 == 0) {
-        sm.update(0)
+        sm.update(0);
         bool offroad = !sm["deviceState"].getDeviceState().getStarted();
         if (low_power_mode != offroad) {
           for (auto &s : sensors) {
