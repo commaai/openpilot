@@ -288,8 +288,9 @@ void encoder_thread(int cam_idx) {
           eidx.setSegmentNum(rotate_state.cur_seg);
           eidx.setSegmentId(out_id);
           if (lh) {
+            // TODO: this should read cereal/services.h for qlog decimation
             auto bytes = msg.toBytes();
-            lh_log(lh, bytes.begin(), bytes.size(), false);
+            lh_log(lh, bytes.begin(), bytes.size(), true);
           }
         }
       }
