@@ -18,7 +18,7 @@ from selfdrive.manager.process import ensure_running
 from selfdrive.manager.process_config import managed_processes
 from selfdrive.registration import register
 from selfdrive.swaglog import cloudlog, add_file_handler
-from selfdrive.version import dirty, version, origin, branch, commit, \
+from selfdrive.version import dirty, get_git_commit, version, origin, branch, commit, \
                               terms_version, training_version, \
                               get_git_branch, get_git_remote
 
@@ -69,7 +69,7 @@ def manager_init():
   params.put("Version", version)
   params.put("TermsVersion", terms_version)
   params.put("TrainingVersion", training_version)
-  params.put("GitCommit", commit)
+  params.put("GitCommit", get_git_commit(default=""))
   params.put("GitBranch", get_git_branch(default=""))
   params.put("GitRemote", get_git_remote(default=""))
 
