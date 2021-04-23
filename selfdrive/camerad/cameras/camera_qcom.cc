@@ -851,11 +851,13 @@ static void parse_autofocus(CameraState *s, uint8_t *d) {
 
 static std::optional<float> get_accel_z(SubMaster *sm) {
   sm->update(0);
-  for (auto event : (*sm)["sensorEvents"].getSensorEvents()) {
-    if (event.which() == cereal::SensorEventData::ACCELERATION) {
-      if (auto v = event.getAcceleration().getV(); v.size() >= 3)
-        return -v[2];
-      break;
+  if(sm->updated("sensorEvents")){
+    for (auto event : (*sm)["sensorEvents"].getSensorEvents()) {
+      if (event.which() == cereal::SensorEventData::ACCELERATION) {
+        if (auto v = event.getAcceleration().getV(); v.size() >= 3)
+          return -v[2];
+        break;
+      }
     }
   }
   return std::nullopt;
