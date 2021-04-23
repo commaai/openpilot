@@ -41,27 +41,29 @@ void calibration_thread(bool wide_camera) {
 
   while (!do_exit) {
     sm.update(100);
-    auto extrinsic_matrix = sm["liveCalibration"].getLiveCalibration().getExtrinsicMatrix();
-    Eigen::Matrix<float, 3, 4> extrinsic_matrix_eigen;
-    for (int i = 0; i < 4*3; i++){
-      extrinsic_matrix_eigen(i / 4, i % 4) = extrinsic_matrix[i];
-    }
+    if(sm.updated("liveCalibration")){
+      auto extrinsic_matrix = sm["liveCalibration"].getLiveCalibration().getExtrinsicMatrix();
+      Eigen::Matrix<float, 3, 4> extrinsic_matrix_eigen;
+      for (int i = 0; i < 4*3; i++){
+        extrinsic_matrix_eigen(i / 4, i % 4) = extrinsic_matrix[i];
+      }
 
-    auto camera_frame_from_road_frame = cam_intrinsics * extrinsic_matrix_eigen;
-    Eigen::Matrix<float, 3, 3> camera_frame_from_ground;
-    camera_frame_from_ground.col(0) = camera_frame_from_road_frame.col(0);
-    camera_frame_from_ground.col(1) = camera_frame_from_road_frame.col(1);
-    camera_frame_from_ground.col(2) = camera_frame_from_road_frame.col(3);
+      auto camera_frame_from_road_frame = cam_intrinsics * extrinsic_matrix_eigen;
+      Eigen::Matrix<float, 3, 3> camera_frame_from_ground;
+      camera_frame_from_ground.col(0) = camera_frame_from_road_frame.col(0);
+      camera_frame_from_ground.col(1) = camera_frame_from_road_frame.col(1);
+      camera_frame_from_ground.col(2) = camera_frame_from_road_frame.col(3);
 
-    auto warp_matrix = camera_frame_from_ground * ground_from_medmodel_frame;
-    mat3 transform = {};
-    for (int i=0; i<3*3; i++) {
-      transform.v[i] = warp_matrix(i / 3, i % 3);
+      auto warp_matrix = camera_frame_from_ground * ground_from_medmodel_frame;
+      mat3 transform = {};
+      for (int i=0; i<3*3; i++) {
+        transform.v[i] = warp_matrix(i / 3, i % 3);
+      }
+      mat3 model_transform = matmul3(yuv_transform, transform);
+      std::lock_guard lk(transform_lock);
+      cur_transform = model_transform;
+      live_calib_seen = true;
     }
-    mat3 model_transform = matmul3(yuv_transform, transform);
-    std::lock_guard lk(transform_lock);
-    cur_transform = model_transform;
-    live_calib_seen = true;
   }
 }
 
