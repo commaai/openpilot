@@ -40,8 +40,8 @@ void calibration_thread(bool wide_camera) {
   const mat3 yuv_transform = get_model_yuv_transform();
 
   while (!do_exit) {
-    if (sm.update(100) > 0){
-
+    sm.update(100);
+    if(sm.updated("liveCalibration")){
       auto extrinsic_matrix = sm["liveCalibration"].getLiveCalibration().getExtrinsicMatrix();
       Eigen::Matrix<float, 3, 4> extrinsic_matrix_eigen;
       for (int i = 0; i < 4*3; i++){
@@ -90,11 +90,10 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client) {
     const bool run_model_this_iter = live_calib_seen;
     transform_lock.unlock();
 
-    if (sm.update(0) > 0) {
-      // TODO: path planner timeout?
-      desire = ((int)sm["lateralPlan"].getLateralPlan().getDesire());
-      frame_id = sm["roadCameraState"].getRoadCameraState().getFrameId();
-    }
+    // TODO: path planner timeout?
+    sm.update(0);
+    desire = ((int)sm["lateralPlan"].getLateralPlan().getDesire());
+    frame_id = sm["roadCameraState"].getRoadCameraState().getFrameId();
 
     if (run_model_this_iter) {
       run_count++;
