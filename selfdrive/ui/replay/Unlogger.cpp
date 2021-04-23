@@ -163,7 +163,7 @@ void Unlogger::process(SubMaster *sm) {
           }
         }
 
-        if(sm == nullptr){
+        if (sm == nullptr){
           capnp::MallocMessageBuilder msg;
           msg.setRoot(e);
           auto words = capnp::messageToFlatArray(msg);
@@ -181,7 +181,7 @@ void Unlogger::process(SubMaster *sm) {
 
       float time_to_end = ((events->lastKey() - eit.key())/1e9);
 
-      if(time_to_end < 10.0){
+      if (time_to_end < 10.0){
         emit loadSegment();
         blockSignals(true);
         continue;
