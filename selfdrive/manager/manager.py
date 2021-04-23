@@ -75,10 +75,9 @@ def manager_init():
 
   # set dongle id
   dongle_id = register(show_spinner=True)
-  if dongle_id is None:
-    dongle_id = "UnofficialDevice"
+  if dongle_id is not None:
+    os.environ['DONGLE_ID'] = dongle_id  # Needed for swaglog
 
-  os.environ['DONGLE_ID'] = dongle_id  # Needed for swaglog
   if not dirty:
     os.environ['CLEAN'] = '1'
 
