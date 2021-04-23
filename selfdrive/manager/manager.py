@@ -18,8 +18,9 @@ from selfdrive.manager.process import ensure_running
 from selfdrive.manager.process_config import managed_processes
 from selfdrive.registration import register
 from selfdrive.swaglog import cloudlog, add_file_handler
-from selfdrive.version import dirty, version, origin, branch, commit
-
+from selfdrive.version import dirty, version, origin, branch, commit, \
+                              terms_version, training_version, \
+                              get_git_branch, get_git_remote
 
 def manager_init():
 
@@ -64,13 +65,18 @@ def manager_init():
   except PermissionError:
     print("WARNING: failed to make /dev/shm")
 
+  # set version params
+  params.put("Version", version)
+  params.put("TermsVersion", terms_version)
+  params.put("TrainingVersion", training_version)
+  params.put("GitCommit", commit)
+  params.put("GitBranch", get_git_branch(default=""))
+  params.put("GitRemote", get_git_remote(default=""))
+
   # set dongle id
-  reg_res = register(show_spinner=True)
-  if reg_res:
-    dongle_id = reg_res
-  else:
-    raise Exception("server registration failed")
-  os.environ['DONGLE_ID'] = dongle_id  # Needed for swaglog and loggerd
+  dongle_id = register(show_spinner=True)
+  if dongle_id is not None:
+    os.environ['DONGLE_ID'] = dongle_id  # Needed for swaglog
 
   if not dirty:
     os.environ['CLEAN'] = '1'
@@ -101,7 +107,11 @@ def manager_thread():
   # save boot log
   subprocess.call("./bootlog", cwd=os.path.join(BASEDIR, "selfdrive/loggerd"))
 
+  params = Params()
+
   ignore = []
+  if params.get("DongleId") is None:
+    ignore += ["uploader", "manage_athenad"]
   if os.getenv("NOBOARD") is not None:
     ignore.append("pandad")
   if os.getenv("BLOCK") is not None:
@@ -110,7 +120,6 @@ def manager_thread():
   ensure_running(managed_processes.values(), started=False, not_run=ignore)
 
   started_prev = False
-  params = Params()
   sm = messaging.SubMaster(['deviceState'])
   pm = messaging.PubMaster(['managerState'])
 
