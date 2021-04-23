@@ -47,6 +47,11 @@ void camera_init(VisionIpcServer * v, CameraState *s, int camera_id, unsigned in
 void run_frame_stream(CameraState &camera, const char* frame_pkt) {
   SubMaster sm({frame_pkt});
 
+  printf("%s\n", frame_pkt);
+  printf("%s\n", frame_pkt);
+  printf("%s\n", frame_pkt);
+  printf("%s\n", frame_pkt);
+
   size_t buf_idx = 0;
   while (!do_exit) {
     sm.update(1000);
