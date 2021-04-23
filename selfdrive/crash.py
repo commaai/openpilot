@@ -1,5 +1,4 @@
 """Install exception handler for process crash."""
-import os
 import sys
 import capnp
 
