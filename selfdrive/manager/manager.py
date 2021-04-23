@@ -108,7 +108,11 @@ def manager_thread():
   # save boot log
   subprocess.call("./bootlog", cwd=os.path.join(BASEDIR, "selfdrive/loggerd"))
 
+  params = Params()
+
   ignore = []
+  if params.get("DongleId") is None:
+    ignore += ["uploader", "manage_athenad"]
   if os.getenv("NOBOARD") is not None:
     ignore.append("pandad")
   if os.getenv("BLOCK") is not None:
@@ -117,7 +121,6 @@ def manager_thread():
   ensure_running(managed_processes.values(), started=False, not_run=ignore)
 
   started_prev = False
-  params = Params()
   sm = messaging.SubMaster(['deviceState'])
   pm = messaging.PubMaster(['managerState'])
 
