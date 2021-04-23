@@ -8,6 +8,7 @@ import traceback
 
 import cereal.messaging as messaging
 import selfdrive.crash as crash
+from cereal import log
 from common.basedir import BASEDIR
 from common.params import Params
 from common.text_window import TextWindow
@@ -21,6 +22,9 @@ from selfdrive.swaglog import cloudlog, add_file_handler
 from selfdrive.version import dirty, get_git_commit, version, origin, branch, commit, \
                               terms_version, training_version, \
                               get_git_branch, get_git_remote
+
+ThermalStatus = log.DeviceState.ThermalStatus
+
 
 def manager_init():
 
@@ -130,7 +134,7 @@ def manager_thread():
     sm.update()
     not_run = ignore[:]
 
-    if sm['deviceState'].freeSpacePercent < 5:
+    if sm['deviceState'].freeSpacePercent < 5 or sm['deviceState'].thermalStatus >= ThermalStatus.red:
       not_run.append("loggerd")
 
     started = sm['deviceState'].started
