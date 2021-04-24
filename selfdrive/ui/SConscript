@@ -65,9 +65,6 @@ if arch == 'x86_64':
 
   replay_lib_src = ["replay/replay.cc", "replay/Unlogger.cpp",
                     "#tools/clib/FrameReader.cpp", "replay/FileReader.cpp"]
-  replay_libs = ['avutil', 'avcodec', 'avformat', 'swscale', 'bz2']
-  replay = qt_env.Library("qt_replay", replay_lib_src, LIBS=base_libs)
-  replay = [replay] + replay_libs + qt_libs
-
-  replay_src = ["replay/main.cc"]
-  qt_env.Program("replay/replay", replay_src, LIBS=qt_libs + replay)
+  replay_lib = qt_env.Library("qt_replay", replay_lib_src, LIBS=base_libs)
+  replay_libs = qt_libs + ['avutil', 'avcodec', 'avformat', 'swscale', 'bz2', replay_lib]
+  qt_env.Program("replay/replay", ["replay/main.cc"], LIBS=replay_libs)
