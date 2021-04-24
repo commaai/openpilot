@@ -148,7 +148,6 @@ void Unlogger::process(SubMaster *sm) {
         if (type == "roadCameraState") {
           auto fr = e.getRoadCameraState();
 
-          // TODO: better way?
           auto it_ = eidx.find(fr.getFrameId());
           if (it_ != eidx.end()) {
             auto pp = *it_;
