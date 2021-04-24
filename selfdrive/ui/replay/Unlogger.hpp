@@ -35,6 +35,6 @@ Q_OBJECT
     bool paused = false;
     bool loading_segment = false;
 
-    VisionIpcServer *vipc_server;
+    VisionIpcServer *vipc_server = nullptr;
 };
 
