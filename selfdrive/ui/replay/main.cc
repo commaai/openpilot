@@ -12,9 +12,7 @@ int main(int argc, char *argv[]){
     return 1;
   }
 
-  int seek = QString(argv[2]).toInt();
-
-  Replay *replay = new Replay(route, seek);
+  Replay *replay = new Replay(route, 0);
   replay->stream(seek);
 
   return a.exec();
