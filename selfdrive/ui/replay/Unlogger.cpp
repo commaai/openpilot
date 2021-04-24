@@ -175,7 +175,6 @@ void Unlogger::process(SubMaster *sm) {
           auto words = capnp::messageToFlatArray(msg);
           auto bytes = words.asBytes();
 
-          // TODO: Can PubSocket take a const char?
           (*it)->send((char*)bytes.begin(), bytes.size());
         } else{
           std::vector<std::pair<std::string, cereal::Event::Reader>> messages;
