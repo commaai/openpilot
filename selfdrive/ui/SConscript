@@ -59,7 +59,7 @@ if arch != 'aarch64' and "BUILD_SETUP" in os.environ:
     qt_env.Program(f"qt/setup/installer_{name}", obj, LIBS=qt_libs, CPPDEFINES=d)
 
 # build headless replay
-if arch == 'x86_64':
+if arch == 'x86_64' and os.path.exists(Dir("#tools/").get_abspath()):
   qt_env['CPPPATH'] += ["#tools/clib"]
   qt_env['CXXFLAGS'] += ["-Wno-deprecated-declarations"]
 
