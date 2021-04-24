@@ -14,7 +14,8 @@ if arch == "Darwin":
 widgets_src = ["qt/widgets/input.cc", "qt/widgets/drive_stats.cc", "qt/sound.cc",
                "qt/widgets/ssh_keys.cc", "qt/widgets/toggle.cc", "qt/widgets/controls.cc",
                "qt/widgets/offroad_alerts.cc", "qt/widgets/setup.cc", "qt/widgets/keyboard.cc",
-               "qt/widgets/scrollview.cc", "#phonelibs/qrcode/QrCode.cc"]
+               "qt/widgets/scrollview.cc", "#phonelibs/qrcode/QrCode.cc", "qt/api.cc",
+               "qt/request_repeater.cc"]
 if arch != 'aarch64':
   widgets_src += ["qt/offroad/networking.cc", "qt/offroad/wifiManager.cc"]
 
@@ -26,9 +27,10 @@ qt_env.Program("qt/text", ["qt/text.cc"], LIBS=qt_libs)
 qt_env.Program("qt/spinner", ["qt/spinner.cc"], LIBS=base_libs)
 
 # build main UI
-qt_src = ["main.cc", "ui.cc", "paint.cc", "sidebar.cc", "#phonelibs/nanovg/nanovg.c",
-          "qt/window.cc", "qt/home.cc", "qt/api.cc", "qt/offroad/settings.cc",
-          "qt/offroad/onboarding.cc"]
+qt_src = ["main.cc", "ui.cc", "paint.cc", "sidebar.cc",
+          "qt/window.cc", "qt/home.cc", "qt/offroad/settings.cc",
+          "qt/offroad/onboarding.cc", "#phonelibs/nanovg/nanovg.c"]
+
 qt_env.Program("_ui", qt_src, LIBS=qt_libs)
 
 # setup, factory resetter, and installer
@@ -55,3 +57,15 @@ if arch != 'aarch64' and "BUILD_SETUP" in os.environ:
       d['SSH_KEYS'] = f'\\"{r.text.strip()}\\"'
     obj = qt_env.Object(f"qt/setup/installer_{name}.o", ["qt/setup/installer.cc"], CPPDEFINES=d)
     qt_env.Program(f"qt/setup/installer_{name}", obj, LIBS=qt_libs, CPPDEFINES=d)
+
+# build headless replay
+if arch == 'x86_64':
+  qt_env['CPPPATH'] += ["#tools/clib"]
+  qt_env['CXXFLAGS'] += ["-Wno-deprecated-declarations"]
+
+  replay_lib_src = ["replay/replay.cc", "replay/Unlogger.cpp",
+                    "replay/FileReader.cpp", "#tools/clib/FrameReader.cpp"]
+
+  replay_lib = qt_env.Library("qt_replay", replay_lib_src, LIBS=base_libs)
+  replay_libs = [replay_lib, 'avutil', 'avcodec', 'avformat', 'swscale', 'bz2'] + qt_libs
+  qt_env.Program("replay/replay", ["replay/main.cc"], LIBS=replay_libs)
