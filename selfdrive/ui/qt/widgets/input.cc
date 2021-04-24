@@ -2,7 +2,6 @@
 
 #include "input.hpp"
 #include "qt_window.hpp"
-#include "selfdrive/ui/qt/offroad/settings.hpp"
 
 InputDialog::InputDialog(const QString &prompt_text, QWidget *parent) : QDialog(parent) {
   layout = new QVBoxLayout();

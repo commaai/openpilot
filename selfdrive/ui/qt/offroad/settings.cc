@@ -97,10 +97,8 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
   setLayout(toggles_list);
 }
 
-DevicePanel::DevicePanel(QWidget* parent) : QFrame(parent) {
+DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
   QVBoxLayout *device_layout = new QVBoxLayout;
-
-  device_layout->setMargin(50);
 
   Params params = Params();
 
@@ -361,8 +359,8 @@ void SettingsWindow::hideEvent(QHideEvent *event){
   HardwareEon::close_activities();
 #endif
 
+  // TODO: this should be handled by the Dialog classes
   QList<QWidget*> children = findChildren<QWidget *>();
-
   for(auto &w : children){
     if(w->metaObject()->superClass()->className() == QString("QDialog")){
       w->close();
