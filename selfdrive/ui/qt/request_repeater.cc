@@ -1,6 +1,6 @@
 #include "request_repeater.hpp"
 
-RequestRepeater::RequestRepeater(QWidget *parent, QString requestURL, const QString &cache_key, int period_seconds, bool disableWithScreen) :
+RequestRepeater::RequestRepeater(QObject *parent, QString requestURL, const QString &cache_key, int period_seconds, bool disableWithScreen) :
   HttpRequest(parent, requestURL, cache_key), disableWithScreen(disableWithScreen) {
   QTimer* timer = new QTimer(this);
   QObject::connect(timer, &QTimer::timeout, [=](){

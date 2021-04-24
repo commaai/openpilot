@@ -33,7 +33,7 @@ class HttpRequest : public QObject {
   Q_OBJECT
 
 public:
-  explicit HttpRequest(QWidget* parent, QString requestURL, const QString &cache_key = "");
+  explicit HttpRequest(QObject* parent, QString requestURL, const QString &cache_key = "");
   QNetworkReply *reply;
   void sendRequest(QString requestURL);
 

@@ -72,7 +72,7 @@ QString CommaApi::create_jwt(QVector<QPair<QString, QJsonValue>> payloads, int e
 }
 
 
-HttpRequest::HttpRequest(QWidget *parent, QString requestURL, const QString &cache_key) : cache_key(cache_key), QObject(parent) {
+HttpRequest::HttpRequest(QObject *parent, QString requestURL, const QString &cache_key) : cache_key(cache_key), QObject(parent) {
   networkAccessManager = new QNetworkAccessManager(this);
   reply = NULL;
 
