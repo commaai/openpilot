@@ -75,7 +75,7 @@ def register(show_spinner=False):
         break
       except Exception:
         cloudlog.exception("failed to authenticate")
-        backoff = max(backoff + 1, 15)
+        backoff = min(backoff + 1, 15)
         time.sleep(backoff)
 
     if show_spinner:
