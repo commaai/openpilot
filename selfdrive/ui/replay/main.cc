@@ -13,7 +13,7 @@ int main(int argc, char *argv[]){
   }
 
   Replay *replay = new Replay(route, 0);
-  replay->stream(seek);
+  replay->stream(0);
 
   return a.exec();
 }
