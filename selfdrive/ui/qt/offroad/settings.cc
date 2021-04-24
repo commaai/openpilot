@@ -97,21 +97,7 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
   setLayout(toggles_list);
 }
 
-Panel::Panel(QWidget *parent) : QFrame(parent) {
-}
-
-void Panel::hideEvent(QHideEvent *event){
-  QList<QWidget*> children = findChildren<QWidget *>();
-
-  for(auto w : children){
-    if(w->metaObject()->superClass()->className() == QString("QDialog")){
-      w->close();
-    }
-  }
-}
-
-
-DevicePanel::DevicePanel(QWidget* parent) : Panel(parent) {
+DevicePanel::DevicePanel(QWidget* parent) : QFrame(parent) {
   QVBoxLayout *device_layout = new QVBoxLayout;
 
   device_layout->setMargin(50);
@@ -219,7 +205,7 @@ DevicePanel::DevicePanel(QWidget* parent) : Panel(parent) {
   )");
 }
 
-DeveloperPanel::DeveloperPanel(QWidget* parent) : Panel(parent) {
+DeveloperPanel::DeveloperPanel(QWidget* parent) : QFrame(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   setLayout(main_layout);
   setStyleSheet(R"(QLabel {font-size: 50px;})");
@@ -374,6 +360,14 @@ void SettingsWindow::hideEvent(QHideEvent *event){
 #ifdef QCOM
   HardwareEon::close_activities();
 #endif
+
+  QList<QWidget*> children = findChildren<QWidget *>();
+
+  for(auto &w : children){
+    if(w->metaObject()->superClass()->className() == QString("QDialog")){
+      w->close();
+    }
+  }
 }
 
 void SettingsWindow::showEvent(QShowEvent *event){

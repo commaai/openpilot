@@ -13,16 +13,7 @@
 
 // ********** settings window + top-level panels **********
 
-class Panel : public QFrame {
-  Q_OBJECT
-public:
-  explicit Panel(QWidget *parent=nullptr);
-protected:
-  void hideEvent(QHideEvent* event);
-};
-
-
-class DevicePanel : public Panel {
+class DevicePanel : public QFrame {
   Q_OBJECT
 public:
   explicit DevicePanel(QWidget* parent = nullptr);
