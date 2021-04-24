@@ -20,7 +20,7 @@ class Replay : public QObject {
 public:
   Replay(QString route_, int seek);
   void stream(int seek, SubMaster *sm = nullptr);
-  bool addSegment(int i);
+  void addSegment(int i);
   void trimSegment(int n);
   QJsonArray camera_paths;
   QJsonArray log_paths;
@@ -43,6 +43,6 @@ private:
   QMap<int, FrameReader*> frs;
   HttpRequest *http;
 
-  int seg_add;
+  int current_segment;
 };
 

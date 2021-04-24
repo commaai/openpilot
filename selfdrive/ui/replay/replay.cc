@@ -2,7 +2,7 @@
 
 Replay::Replay(QString route_, int seek) : route(route_) {
   unlogger = new Unlogger(&events, &events_lock, &frs, seek);
-  seg_add = 0;
+  current_segment = 0;
 
   http = new HttpRequest(this, "https://api.commadotai.com/v1/route/" + route + "/files");
   QObject::connect(http, SIGNAL(receivedResponse(QString)), this, SLOT(parseResponse(QString)));
@@ -24,23 +24,22 @@ void Replay::parseResponse(QString response){
   addSegment(0);
 }
 
-bool Replay::addSegment(int i){
-  if (lrs.find(i) == lrs.end()) {
-
-    QThread* thread = new QThread;
-
-    QString log_fn = this->log_paths.at(i).toString();
-    lrs.insert(i, new LogReader(log_fn, &events, &events_lock, &unlogger->eidx));
-
-    lrs[i]->moveToThread(thread);
-    QObject::connect(thread, SIGNAL (started()), lrs[i], SLOT (process()));
-    thread->start();
-
-    QString camera_fn = this->camera_paths.at(i).toString();
-    frs.insert(i, new FrameReader(qPrintable(camera_fn)));
-    return true;
+void Replay::addSegment(int i){
+  if (lrs.find(i) != lrs.end()) {
+    return;
   }
-  return false;
+
+  QThread* thread = new QThread;
+
+  QString log_fn = this->log_paths.at(i).toString();
+  lrs.insert(i, new LogReader(log_fn, &events, &events_lock, &unlogger->eidx));
+
+  lrs[i]->moveToThread(thread);
+  QObject::connect(thread, SIGNAL (started()), lrs[i], SLOT (process()));
+  thread->start();
+
+  QString camera_fn = this->camera_paths.at(i).toString();
+  frs.insert(i, new FrameReader(qPrintable(camera_fn)));
 }
 
 void Replay::trimSegment(int n){
@@ -64,8 +63,8 @@ void Replay::stream(SubMaster *sm){
   thread->start();
 
   QObject::connect(unlogger, &Unlogger::loadSegment, [=](){
-    addSegment(++seg_add);
-    if (seg_add > 1) {
+    addSegment(++current_segment);
+    if (current_segment > 1) {
       trimSegment(1);
     }
   });
