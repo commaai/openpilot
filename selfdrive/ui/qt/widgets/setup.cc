@@ -24,7 +24,10 @@ PairingQRWidget::PairingQRWidget(QWidget* parent) : QWidget(parent) {
   QTimer* timer = new QTimer(this);
   timer->start(30 * 1000);
   connect(timer, SIGNAL(timeout()), this, SLOT(refresh()));
-  refresh(); // don't wait for the first refresh
+}
+
+void PairingQRWidget::showEvent(QShowEvent *event){
+  refresh();
 }
 
 void PairingQRWidget::refresh(){

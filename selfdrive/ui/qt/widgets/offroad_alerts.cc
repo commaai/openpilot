@@ -8,33 +8,17 @@
 #include "selfdrive/common/util.h"
 
 OffroadAlert::OffroadAlert(QWidget* parent) : QFrame(parent) {
-  QVBoxLayout *layout = new QVBoxLayout();
+  QVBoxLayout *layout = new QVBoxLayout;
   layout->setMargin(50);
   layout->setSpacing(30);
 
-  QWidget *alerts_widget = new QWidget;
-  QVBoxLayout *alerts_layout = new QVBoxLayout;
+  QWidget *alerts_widget = new QWidget(this);
+  alerts_layout = new QVBoxLayout;
   alerts_layout->setMargin(0);
   alerts_layout->setSpacing(30);
+  alerts_layout->addStretch(1);
   alerts_widget->setLayout(alerts_layout);
   alerts_widget->setStyleSheet("background-color: transparent;");
-
-  // setup labels for each alert
-  QString json = QString::fromStdString(util::read_file("../controls/lib/alerts_offroad.json"));
-  QJsonObject obj = QJsonDocument::fromJson(json.toUtf8()).object();
-  for (auto &k : obj.keys()) {
-    QLabel *l = new QLabel(this);
-    alerts[k.toStdString()] = l;
-    int severity = obj[k].toObject()["severity"].toInt();
-
-    l->setMargin(60);
-    l->setWordWrap(true);
-    l->setStyleSheet("background-color: " + QString(severity ? "#E22C2C" : "#292929"));
-    l->setVisible(false);
-    alerts_layout->addWidget(l);
-  }
-
-  alerts_layout->addStretch(1);
 
   // release notes
   releaseNotes.setWordWrap(true);
@@ -80,10 +64,26 @@ OffroadAlert::OffroadAlert(QWidget* parent) : QFrame(parent) {
       background-color: white;
     }
   )");
-
 }
 
 void OffroadAlert::refresh() {
+  if (alerts.empty()) {
+    // setup labels for each alert
+    QString json = QString::fromStdString(util::read_file("../controls/lib/alerts_offroad.json"));
+    QJsonObject obj = QJsonDocument::fromJson(json.toUtf8()).object();
+    for (auto &k : obj.keys()) {
+      QLabel *l = new QLabel(this);
+      alerts[k.toStdString()] = l;
+      int severity = obj[k].toObject()["severity"].toInt();
+
+      l->setMargin(60);
+      l->setWordWrap(true);
+      l->setStyleSheet("background-color: " + QString(severity ? "#E22C2C" : "#292929"));
+      l->setVisible(false);
+      alerts_layout->addWidget(l);
+    }
+  }
+
   updateAlerts();
 
   rebootBtn.setVisible(updateAvailable);
