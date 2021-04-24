@@ -89,6 +89,7 @@ selfdrive/boardd/panda.cc
 selfdrive/boardd/panda.h
 selfdrive/boardd/pigeon.cc
 selfdrive/boardd/pigeon.h
+selfdrive/boardd/set_time.py
 
 selfdrive/car/__init__.py
 selfdrive/car/car_helpers.py
@@ -283,13 +284,20 @@ selfdrive/locationd/SConscript
 selfdrive/locationd/ubloxd.cc
 selfdrive/locationd/ublox_msg.cc
 selfdrive/locationd/ublox_msg.h
+selfdrive/locationd/generated/ubx.cpp
+selfdrive/locationd/generated/ubx.h
+selfdrive/locationd/generated/gps.cpp
+selfdrive/locationd/generated/gps.h
 
-selfdrive/locationd/locationd.py
+selfdrive/locationd/locationd.h
+selfdrive/locationd/locationd.cc
 selfdrive/locationd/paramsd.py
 selfdrive/locationd/models/.gitignore
 selfdrive/locationd/models/live_kf.py
 selfdrive/locationd/models/car_kf.py
 selfdrive/locationd/models/constants.py
+selfdrive/locationd/models/live_kf.h
+selfdrive/locationd/models/live_kf.cc
 
 selfdrive/locationd/calibrationd.py
 
@@ -447,6 +455,9 @@ phonelibs/qpoases/**
 
 phonelibs/qrcode/*.cc
 phonelibs/qrcode/*.hpp
+
+phonelibs/kaitai/*.h
+phonelibs/kaitai/*.cpp
 
 phonelibs/libyuv/include/**
 phonelibs/libyuv/lib/**

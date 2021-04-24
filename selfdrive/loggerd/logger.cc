@@ -91,10 +91,6 @@ kj::Array<capnp::word> logger_build_init_data() {
   }
 #endif
 
-  const char* dongle_id = getenv("DONGLE_ID");
-  if (dongle_id) {
-    init.setDongleId(std::string(dongle_id));
-  }
   init.setDirty(!getenv("CLEAN"));
 
   // log params
@@ -103,6 +99,7 @@ kj::Array<capnp::word> logger_build_init_data() {
   init.setGitBranch(params.get("GitBranch"));
   init.setGitRemote(params.get("GitRemote"));
   init.setPassive(params.getBool("Passive"));
+  init.setDongleId(params.get("DongleId"));
   {
     std::map<std::string, std::string> params_map;
     params.read_db_all(&params_map);

@@ -174,6 +174,7 @@ def thermald_thread():
   if EON:
     base_path = "/sys/kernel/debug/cpr3-regulator/"
     cpr_files = [p for p in Path(base_path).glob("**/*") if p.is_file()]
+    cpr_files = ["/sys/kernel/debug/regulator/pm8994_s11/voltage"] + cpr_files
     cpr_data = {}
     for cf in cpr_files:
       with open(cf, "r") as f:
@@ -349,7 +350,7 @@ def thermald_thread():
     if should_start != should_start_prev or (count == 0):
       params.put_bool("IsOffroad", not should_start)
       HARDWARE.set_power_save(not should_start)
-      if TICI:
+      if TICI and not params.get_bool("EnableLteOnroad"):
         fxn = "stop" if should_start else "start"
         os.system(f"sudo systemctl {fxn} --no-block lte")
 

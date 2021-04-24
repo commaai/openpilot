@@ -32,16 +32,11 @@ namespace {
 
 #if defined(QCOM) || defined(QCOM2)
 const std::string default_params_path = "/data/params";
-#else
-const std::string default_params_path = util::getenv_default("HOME", "/.comma/params", "/data/params");
-#endif
-
-#if defined(QCOM) || defined(QCOM2)
 const std::string persistent_params_path = "/persist/comma/params";
 #else
+const std::string default_params_path = util::getenv_default("HOME", "/.comma/params", "/data/params");
 const std::string persistent_params_path = default_params_path;
 #endif
-
 
 volatile sig_atomic_t params_do_exit = 0;
 void params_sig_handler(int signal) {

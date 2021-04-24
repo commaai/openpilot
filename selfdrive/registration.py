@@ -12,25 +12,16 @@ from common.file_helpers import mkdirs_exists_ok
 from common.basedir import PERSIST
 from selfdrive.hardware import HARDWARE
 from selfdrive.swaglog import cloudlog
-from selfdrive.version import version, terms_version, training_version, get_git_commit, \
-                              get_git_branch, get_git_remote
 
 
 def register(show_spinner=False):
   params = Params()
-  params.put("Version", version)
-  params.put("TermsVersion", terms_version)
-  params.put("TrainingVersion", training_version)
-
-  params.put("GitCommit", get_git_commit(default=""))
-  params.put("GitBranch", get_git_branch(default=""))
-  params.put("GitRemote", get_git_remote(default=""))
   params.put("SubscriberInfo", HARDWARE.get_subscriber_info())
 
   IMEI = params.get("IMEI", encoding='utf8')
   HardwareSerial = params.get("HardwareSerial", encoding='utf8')
-
-  needs_registration = (None in [IMEI, HardwareSerial])
+  dongle_id = params.get("DongleId", encoding='utf8')
+  needs_registration = None in (IMEI, HardwareSerial, dongle_id)
 
   # create a key for auth
   # your private key is kept on your device persist partition and never sent to our servers
@@ -43,13 +34,6 @@ def register(show_spinner=False):
     assert os.system("openssl rsa -in "+PERSIST+"/comma/id_rsa.tmp -pubout -out "+PERSIST+"/comma/id_rsa.tmp.pub") == 0
     os.rename(PERSIST+"/comma/id_rsa.tmp", PERSIST+"/comma/id_rsa")
     os.rename(PERSIST+"/comma/id_rsa.tmp.pub", PERSIST+"/comma/id_rsa.pub")
-
-  # make key readable by app users (ai.comma.plus.offroad)
-  os.chmod(PERSIST+'/comma/', 0o755)
-  os.chmod(PERSIST+'/comma/id_rsa', 0o744)
-
-  dongle_id = params.get("DongleId", encoding='utf8')
-  needs_registration = needs_registration or dongle_id is None
 
   if needs_registration:
     if show_spinner:
@@ -79,9 +63,14 @@ def register(show_spinner=False):
         cloudlog.info("getting pilotauth")
         resp = api_get("v2/pilotauth/", method='POST', timeout=15,
                        imei=imei1, imei2=imei2, serial=serial, public_key=public_key, register_token=register_token)
-        dongleauth = json.loads(resp.text)
-        dongle_id = dongleauth["dongle_id"]
-        params.put("DongleId", dongle_id)
+
+        if resp.status_code == 402:
+          cloudlog.info("Uknown serial number while trying to register device")
+          dongle_id = None
+        else:
+          dongleauth = json.loads(resp.text)
+          dongle_id = dongleauth["dongle_id"]
+          params.put("DongleId", dongle_id)
         break
       except Exception:
         cloudlog.exception("failed to authenticate")

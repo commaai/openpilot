@@ -16,9 +16,9 @@ from tools.lib.logreader import LogReader
 
 # Baseline CPU usage by process
 PROCS = {
-  "selfdrive.controls.controlsd": 47.0,
+  "selfdrive.controls.controlsd": 50.0,
   "./loggerd": 45.0,
-  "selfdrive.locationd.locationd": 32.8,
+  "./locationd": 3.5,
   "selfdrive.controls.plannerd": 20.0,
   "./_ui": 15.0,
   "selfdrive.locationd.paramsd": 9.1,
@@ -41,10 +41,9 @@ PROCS = {
 
 if TICI:
   PROCS.update({
-    "./loggerd": 55.0,
+    "./loggerd": 60.0,
     "selfdrive.controls.controlsd": 26.0,
-    "./camerad": 20.0,
-    "selfdrive.locationd.locationd": 21.0,
+    "./camerad": 25.0,
     "selfdrive.controls.plannerd": 12.0,
     "selfdrive.locationd.paramsd": 5.0,
     "./_dmonitoringmodeld": 10.0,

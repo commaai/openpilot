@@ -4,7 +4,6 @@ import sys
 from typing import Any, Dict
 
 import numpy as np
-import sympy as sp
 
 from selfdrive.locationd.models.constants import ObservationKind
 from selfdrive.swaglog import cloudlog
@@ -12,6 +11,7 @@ from selfdrive.swaglog import cloudlog
 from rednose.helpers.kalmanfilter import KalmanFilter
 
 if __name__ == '__main__':  # Generating sympy
+  import sympy as sp
   from rednose.helpers.ekf_sym import gen_code
 else:
   from rednose.helpers.ekf_sym_pyx import EKF_sym  # pylint: disable=no-name-in-module, import-error
@@ -75,12 +75,12 @@ class CarKalman(KalmanFilter):
   }
 
   global_vars = [
-    sp.Symbol('mass'),
-    sp.Symbol('rotational_inertia'),
-    sp.Symbol('center_to_front'),
-    sp.Symbol('center_to_rear'),
-    sp.Symbol('stiffness_front'),
-    sp.Symbol('stiffness_rear'),
+    'mass',
+    'rotational_inertia',
+    'center_to_front',
+    'center_to_rear',
+    'stiffness_front',
+    'stiffness_rear',
   ]
 
   @staticmethod
@@ -89,7 +89,8 @@ class CarKalman(KalmanFilter):
     name = CarKalman.name
 
     # globals
-    m, j, aF, aR, cF_orig, cR_orig = CarKalman.global_vars
+    global_vars = [sp.Symbol(name) for name in CarKalman.global_vars]
+    m, j, aF, aR, cF_orig, cR_orig = global_vars
 
     # make functions and jacobians with sympy
     # state variables
@@ -143,7 +144,7 @@ class CarKalman(KalmanFilter):
       [sp.Matrix([x]), ObservationKind.STIFFNESS, None],
     ]
 
-    gen_code(generated_dir, name, f_sym, dt, state_sym, obs_eqs, dim_state, dim_state, global_vars=CarKalman.global_vars)
+    gen_code(generated_dir, name, f_sym, dt, state_sym, obs_eqs, dim_state, dim_state, global_vars=global_vars)
 
   def __init__(self, generated_dir, steer_ratio=15, stiffness_factor=1, angle_offset=0):  # pylint: disable=super-init-not-called
     dim_state = self.initial_x.shape[0]
@@ -154,8 +155,7 @@ class CarKalman(KalmanFilter):
     x_init[States.ANGLE_OFFSET] = angle_offset
 
     # init filter
-    global_var_names = [x.name for x in self.global_vars]  # pylint: disable=no-member
-    self.filter = EKF_sym(generated_dir, self.name, self.Q, self.initial_x, self.P_initial, dim_state, dim_state_err, global_vars=global_var_names, logger=cloudlog)
+    self.filter = EKF_sym(generated_dir, self.name, self.Q, self.initial_x, self.P_initial, dim_state, dim_state_err, global_vars=self.global_vars, logger=cloudlog)
 
 
 if __name__ == "__main__":
