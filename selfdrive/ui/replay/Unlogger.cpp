@@ -151,9 +151,9 @@ void Unlogger::process(SubMaster *sm) {
           auto fr = e.getRoadCameraState();
 
           // TODO: better way?
-          auto it = eidx.find(fr.getFrameId());
-          if (it != eidx.end()) {
-            auto pp = *it;
+          auto it_ = eidx.find(fr.getFrameId());
+          if (it_ != eidx.end()) {
+            auto pp = *it_;
             //qDebug() << fr.getRoadCameraStateId() << pp;
 
             if (frs->find(pp.first) != frs->end()) {
