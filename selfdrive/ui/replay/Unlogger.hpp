@@ -33,6 +33,7 @@ Q_OBJECT
     uint64_t tc = 0;
     uint64_t seek_request = 0;
     bool paused = false;
+    bool loading_segment = false;
 
     VisionIpcServer *vipc_server;
 };
