@@ -56,7 +56,6 @@ void ui_init(UIState *s) {
   });
 
   s->scene.started = false;
-  s->replay = false;
   s->status = STATUS_OFFROAD;
 
 
@@ -350,9 +349,7 @@ static void update_status(UIState *s) {
 
 void ui_update(UIState *s) {
   update_params(s);
-  if(!s->replay){
-    update_sockets(s);
-  }
+  update_sockets(s);
   update_state(s);
   update_status(s);
   update_alert(s);
