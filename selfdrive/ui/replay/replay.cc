@@ -65,6 +65,8 @@ void Replay::stream(int seek, SubMaster *sm){
 
   QObject::connect(unlogger, &Unlogger::loadSegment, [=](){
     addSegment(++seg_add);
-    trimSegment(seg_add > 1);
+    if (seg_add > 1) {
+      trimSegment(1);
+    }
   });
 }
