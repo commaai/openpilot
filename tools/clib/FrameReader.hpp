@@ -32,8 +32,8 @@ public:
   void cacherThread();
 
   //TODO: get this from the actual frame
-	int width = 1164;
-	int height = 874;
+  int width = 1164;
+  int height = 874;
 
 private:
   AVFormatContext *pFormatCtx = NULL;
