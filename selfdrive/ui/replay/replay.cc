@@ -4,7 +4,7 @@ Replay::Replay(QString route_, int seek) : route(route_) {
   unlogger = new Unlogger(&events, &events_lock, &frs, seek);
   seg_add = 0;
 
-  http = new HttpRequest(this, "https://api.commadotai.com/v1/route/" + route.replace("/", "|") + "/files", "Route_HttpRequest");
+  http = new HttpRequest(this, "https://api.commadotai.com/v1/route/" + route + "/files", "Route_HttpRequest");
   QObject::connect(http, SIGNAL(receivedResponse(QString)), this, SLOT(parseResponse(QString)));
 }
 
