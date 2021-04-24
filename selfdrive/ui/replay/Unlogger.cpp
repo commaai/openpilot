@@ -50,12 +50,6 @@ Unlogger::Unlogger(Events *events_, QReadWriteLock* events_lock_, QMap<int, Fram
 
     socks.insert(name, sock);
   }
-
-  //cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
-  //cl_context context = CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id, NULL, NULL, &err));
-
-  //vipc_server = new VisionIpcServer("camerad", device_id, context);
-  //vipc_server->create_buffers(VisionStreamType::VISION_STREAM_RGB_BACK, 4, true, 1164, 874);
 }
 
 void Unlogger::process(SubMaster *sm) {
