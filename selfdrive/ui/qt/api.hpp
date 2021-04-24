@@ -26,22 +26,21 @@ private:
 };
 
 /**
- * Makes repeated requests to the request endpoint.
+ * Makes a request to the request endpoint.
  */
-class RequestRepeater : public QObject {
+
+class HttpRequest : public QObject {
   Q_OBJECT
 
 public:
-  explicit RequestRepeater(QWidget* parent, QString requestURL, int period = 10, const QString &cache_key = "", bool disableWithScreen = true);
-  bool active = true;
+  explicit HttpRequest(QObject* parent, QString requestURL, const QString &cache_key = "");
+  QNetworkReply *reply;
+  void sendRequest(QString requestURL);
 
 private:
-  bool disableWithScreen;
-  QNetworkReply* reply;
-  QNetworkAccessManager* networkAccessManager;
-  QTimer* networkTimer;
+  QNetworkAccessManager *networkAccessManager;
+  QTimer *networkTimer;
   QString cache_key;
-  void sendRequest(QString requestURL);
 
 private slots:
   void requestTimeout();

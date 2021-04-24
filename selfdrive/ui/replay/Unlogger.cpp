@@ -14,16 +14,7 @@
 #include <stdint.h>
 #include <time.h>
 
-static inline uint64_t nanos_since_boot() {
-  struct timespec t;
-  #ifdef __APPLE__
-    clock_gettime(CLOCK_REALTIME, &t);
-  #else
-    clock_gettime(CLOCK_BOOTTIME, &t);
-  #endif
-  return t.tv_sec * 1000000000ULL + t.tv_nsec;
-}
-
+#include "common/timing.h"
 
 Unlogger::Unlogger(Events *events_, QReadWriteLock* events_lock_, QMap<int, FrameReader*> *frs_, int seek)
   : events(events_), events_lock(events_lock_), frs(frs_) {
@@ -57,23 +48,12 @@ Unlogger::Unlogger(Events *events_, QReadWriteLock* events_lock_, QMap<int, Fram
 
     qDebug() << name.c_str();
 
-    for (auto field: capnp::Schema::from<cereal::Event>().getFields()) {
-      std::string tname = field.getProto().getName();
-
-      if (tname == name) {
-        // TODO: I couldn't figure out how to get the which, only the index, hence this hack
-        int type = field.getIndex();
-        if (type > 67) type--; // valid
-        type--; // logMonoTime
-
-        //qDebug() << "here" << tname.c_str() << type << cereal::Event::CONTROLS_STATE;
-        socks.insert(type, sock);
-      }
-    }
+    socks.insert(name, sock);
   }
 }
 
-void Unlogger::process() {
+void Unlogger::process(SubMaster *sm) {
+
   qDebug() << "hello from unlogger thread";
   while (events->size() == 0) {
     qDebug() << "waiting for events";
@@ -103,6 +83,12 @@ void Unlogger::process() {
 
     auto eit = events->lowerBound(t0);
     while (eit != events->end()) {
+
+      float time_to_end = ((events->lastKey() - eit.key())/1e9);
+      if (loading_segment && (time_to_end > 20.0)){
+        loading_segment = false;
+      }
+
       while (paused) {
         QThread::usleep(1000);
         t0 = eit->getLogMonoTime();
@@ -127,8 +113,14 @@ void Unlogger::process() {
         last_elapsed = tc;
       }
 
-      auto e = *eit;
-      auto type = e.which();
+      cereal::Event::Reader e = *eit;
+
+      capnp::DynamicStruct::Reader e_ds = static_cast<capnp::DynamicStruct::Reader>(e);
+      std::string type;
+      KJ_IF_MAYBE(e_, e_ds.which()){
+        type = e_->getProto().getName();
+      }
+
       uint64_t tm = e.getLogMonoTime();
       auto it = socks.find(type);
       tc = tm;
@@ -147,39 +139,56 @@ void Unlogger::process() {
           //qDebug() << "sleeping" << us_behind << etime << timer.nsecsElapsed();
         }
 
-        capnp::MallocMessageBuilder msg;
-        msg.setRoot(e);
+        if (type == "roadCameraState") {
+          auto fr = e.getRoadCameraState();
 
-        auto ee = msg.getRoot<cereal::Event>();
-        ee.setLogMonoTime(nanos_since_boot());
-
-        if (e.which() == cereal::Event::ROAD_CAMERA_STATE) {
-          auto fr = msg.getRoot<cereal::Event>().getRoadCameraState();
-
-          // TODO: better way?
-          auto it = eidx.find(fr.getFrameId());
-          if (it != eidx.end()) {
-            auto pp = *it;
+          auto it_ = eidx.find(fr.getFrameId());
+          if (it_ != eidx.end()) {
+            auto pp = *it_;
             //qDebug() << fr.getRoadCameraStateId() << pp;
 
             if (frs->find(pp.first) != frs->end()) {
               auto frm = (*frs)[pp.first];
               auto data = frm->get(pp.second);
-              if (data != NULL) {
-                fr.setImage(kj::arrayPtr(data, frm->getRGBSize()));
+
+              if (vipc_server == nullptr) {
+                cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
+                cl_context context = CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id, NULL, NULL, &err));
+
+                vipc_server = new VisionIpcServer("camerad", device_id, context);
+                vipc_server->create_buffers(VisionStreamType::VISION_STREAM_RGB_BACK, 4, true, frm->width, frm->height);
+
+                vipc_server->start_listener();
               }
+
+              VisionBuf *buf = vipc_server->get_buffer(VisionStreamType::VISION_STREAM_RGB_BACK);
+              memcpy(buf->addr, data, frm->getRGBSize());
+              VisionIpcBufExtra extra = {};
+
+              vipc_server->send(buf, &extra, false);
             }
           }
         }
 
-        auto words = capnp::messageToFlatArray(msg);
-        auto bytes = words.asBytes();
+        if (sm == nullptr){
+          capnp::MallocMessageBuilder msg;
+          msg.setRoot(e);
+          auto words = capnp::messageToFlatArray(msg);
+          auto bytes = words.asBytes();
 
-        // TODO: Can PubSocket take a const char?
-        (*it)->send((char*)bytes.begin(), bytes.size());
+          (*it)->send((char*)bytes.begin(), bytes.size());
+        } else{
+          std::vector<std::pair<std::string, cereal::Event::Reader>> messages;
+          messages.push_back({type, e});
+          sm->update_msgs(nanos_since_boot(), messages);
+        }
       }
       ++eit;
+
+      if (time_to_end < 10.0 && !loading_segment){
+        loading_segment = true;
+        emit loadSegment();
+      }
     }
   }
 }
-
