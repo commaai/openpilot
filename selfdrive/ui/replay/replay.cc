@@ -55,7 +55,7 @@ void Replay::trimSegment(int n){
   }
 }
 
-void Replay::stream(int seek, SubMaster *sm){
+void Replay::stream(SubMaster *sm){
   QThread* thread = new QThread;
   unlogger->moveToThread(thread);
   QObject::connect(thread, &QThread::started, [=](){
