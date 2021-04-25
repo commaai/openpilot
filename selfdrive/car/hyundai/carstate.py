@@ -125,7 +125,7 @@ class CarState(CarStateBase):
       ret.stockAeb = cp.vl["SCC12"]['AEB_CmdAct'] != 0
       ret.stockFcw = cp.vl["SCC12"]['CF_VSM_Warn'] == 2
 
-    if self.CP.carFingerprint in FEATURES["use_bsm"]:
+    if self.CP.enableBsm:
       ret.leftBlindspot = cp.vl["LCA11"]["CF_Lca_IndLeft"] != 0
       ret.rightBlindspot = cp.vl["LCA11"]["CF_Lca_IndRight"] != 0
 
@@ -225,7 +225,7 @@ class CarState(CarStateBase):
         ("SCC12", 50),
       ]
 
-    if CP.carFingerprint in FEATURES["use_bsm"]:
+    if CP.enableBsm:
       signals += [
         ("CF_Lca_IndLeft", "LCA11", 0),
         ("CF_Lca_IndRight", "LCA11", 0),
