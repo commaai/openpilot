@@ -110,10 +110,13 @@ class CarState(CarStateBase):
 
     checks = [
       # sig_address, frequency
+      ("Dash_State", 1),
+      ("BSD_RCTA", 17),
       ("Throttle", 100),
       ("Dashlights", 10),
       ("Brake_Pedal", 50),
       ("Wheel_Speeds", 50),
+      ("BodyInfo", 50),
       ("Transmission", 100),
       ("Steering_Torque", 50),
     ]
