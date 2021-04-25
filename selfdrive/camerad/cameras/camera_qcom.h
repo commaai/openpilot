@@ -84,6 +84,7 @@ typedef struct CameraState {
   uint16_t cur_lens_pos;
   int16_t focus[NUM_FOCUS];
   uint8_t confidence[NUM_FOCUS];
+  uint16_t infinity_dac;
 } CameraState;
 
 
