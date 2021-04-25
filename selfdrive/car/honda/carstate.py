@@ -22,41 +22,43 @@ def calc_cruise_offset(offset, speed):
 def get_can_signals(CP):
   # this function generates lists for signal, messages and initial values
   signals = [
-      ("XMISSION_SPEED", "ENGINE_DATA", 0),
-      ("WHEEL_SPEED_FL", "WHEEL_SPEEDS", 0),
-      ("WHEEL_SPEED_FR", "WHEEL_SPEEDS", 0),
-      ("WHEEL_SPEED_RL", "WHEEL_SPEEDS", 0),
-      ("WHEEL_SPEED_RR", "WHEEL_SPEEDS", 0),
-      ("STEER_ANGLE", "STEERING_SENSORS", 0),
-      ("STEER_ANGLE_RATE", "STEERING_SENSORS", 0),
-      ("MOTOR_TORQUE", "STEER_MOTOR_TORQUE", 0),
-      ("STEER_TORQUE_SENSOR", "STEER_STATUS", 0),
-      ("LEFT_BLINKER", "SCM_FEEDBACK", 0),
-      ("RIGHT_BLINKER", "SCM_FEEDBACK", 0),
-      ("GEAR", "GEARBOX", 0),
-      ("SEATBELT_DRIVER_LAMP", "SEATBELT_STATUS", 1),
-      ("SEATBELT_DRIVER_LATCHED", "SEATBELT_STATUS", 0),
-      ("BRAKE_PRESSED", "POWERTRAIN_DATA", 0),
-      ("BRAKE_SWITCH", "POWERTRAIN_DATA", 0),
-      ("CRUISE_BUTTONS", "SCM_BUTTONS", 0),
-      ("ESP_DISABLED", "VSA_STATUS", 1),
-      ("USER_BRAKE", "VSA_STATUS", 0),
-      ("BRAKE_HOLD_ACTIVE", "VSA_STATUS", 0),
-      ("STEER_STATUS", "STEER_STATUS", 5),
-      ("GEAR_SHIFTER", "GEARBOX", 0),
-      ("PEDAL_GAS", "POWERTRAIN_DATA", 0),
-      ("CRUISE_SETTING", "SCM_BUTTONS", 0),
-      ("ACC_STATUS", "POWERTRAIN_DATA", 0),
+    ("XMISSION_SPEED", "ENGINE_DATA", 0),
+    ("WHEEL_SPEED_FL", "WHEEL_SPEEDS", 0),
+    ("WHEEL_SPEED_FR", "WHEEL_SPEEDS", 0),
+    ("WHEEL_SPEED_RL", "WHEEL_SPEEDS", 0),
+    ("WHEEL_SPEED_RR", "WHEEL_SPEEDS", 0),
+    ("STEER_ANGLE", "STEERING_SENSORS", 0),
+    ("STEER_ANGLE_RATE", "STEERING_SENSORS", 0),
+    ("MOTOR_TORQUE", "STEER_MOTOR_TORQUE", 0),
+    ("STEER_TORQUE_SENSOR", "STEER_STATUS", 0),
+    ("LEFT_BLINKER", "SCM_FEEDBACK", 0),
+    ("RIGHT_BLINKER", "SCM_FEEDBACK", 0),
+    ("GEAR", "GEARBOX", 0),
+    ("SEATBELT_DRIVER_LAMP", "SEATBELT_STATUS", 1),
+    ("SEATBELT_DRIVER_LATCHED", "SEATBELT_STATUS", 0),
+    ("BRAKE_PRESSED", "POWERTRAIN_DATA", 0),
+    ("BRAKE_SWITCH", "POWERTRAIN_DATA", 0),
+    ("CRUISE_BUTTONS", "SCM_BUTTONS", 0),
+    ("ESP_DISABLED", "VSA_STATUS", 1),
+    ("USER_BRAKE", "VSA_STATUS", 0),
+    ("BRAKE_HOLD_ACTIVE", "VSA_STATUS", 0),
+    ("STEER_STATUS", "STEER_STATUS", 5),
+    ("GEAR_SHIFTER", "GEARBOX", 0),
+    ("PEDAL_GAS", "POWERTRAIN_DATA", 0),
+    ("CRUISE_SETTING", "SCM_BUTTONS", 0),
+    ("ACC_STATUS", "POWERTRAIN_DATA", 0),
   ]
 
   checks = [
-      ("ENGINE_DATA", 100),
-      ("WHEEL_SPEEDS", 50),
-      ("STEERING_SENSORS", 100),
-      ("SEATBELT_STATUS", 10),
-      ("CRUISE", 10),
-      ("POWERTRAIN_DATA", 100),
-      ("VSA_STATUS", 50),
+    ("ENGINE_DATA", 100),
+    ("WHEEL_SPEEDS", 50),
+    ("STEERING_SENSORS", 100),
+    ("SEATBELT_STATUS", 10),
+    ("CRUISE", 10),
+    ("POWERTRAIN_DATA", 100),
+    ("VSA_STATUS", 50),
+    ("STEER_STATUS", 100),
+    ("STEER_MOTOR_TORQUE", 50),
   ]
 
   if CP.carFingerprint == CAR.ODYSSEY_CHN:
@@ -84,12 +86,19 @@ def get_can_signals(CP):
     if CP.carFingerprint not in (CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_HYBRID, CAR.INSIGHT):
       signals += [("BRAKE_PRESSED", "BRAKE_MODULE", 0)]
       checks += [("BRAKE_MODULE", 50)]
-    signals += [("CAR_GAS", "GAS_PEDAL_2", 0),
-                ("MAIN_ON", "SCM_FEEDBACK", 0),
-                ("CRUISE_CONTROL_LABEL", "ACC_HUD", 0),
-                ("EPB_STATE", "EPB_STATUS", 0),
-                ("CRUISE_SPEED", "ACC_HUD", 0)]
-    checks += [("GAS_PEDAL_2", 100)]
+
+    signals += [
+      ("CAR_GAS", "GAS_PEDAL_2", 0),
+      ("MAIN_ON", "SCM_FEEDBACK", 0),
+      ("CRUISE_CONTROL_LABEL", "ACC_HUD", 0),
+      ("EPB_STATE", "EPB_STATUS", 0),
+      ("CRUISE_SPEED", "ACC_HUD", 0)
+    ]
+    checks += [
+      ("ACC_HUD", 10),
+      ("EPB_STATUS", 50),
+      ("GAS_PEDAL_2", 100),
+    ]
     if CP.openpilotLongitudinalControl:
       signals += [("BRAKE_ERROR_1", "STANDSTILL", 1),
                   ("BRAKE_ERROR_2", "STANDSTILL", 1)]
@@ -119,7 +128,10 @@ def get_can_signals(CP):
                 ("DOOR_OPEN_RL", "DOORS_STATUS", 1),
                 ("DOOR_OPEN_RR", "DOORS_STATUS", 1),
                 ("WHEELS_MOVING", "STANDSTILL", 1)]
-    checks += [("DOORS_STATUS", 3)]
+    checks += [
+      ("DOORS_STATUS", 3),
+      ("STANDSTILL", 50),
+    ]
 
   if CP.carFingerprint == CAR.CIVIC:
     signals += [("CAR_GAS", "GAS_PEDAL_2", 0),
@@ -343,9 +355,17 @@ class CarState(CarStateBase):
   def get_cam_can_parser(CP):
     signals = []
 
+    # all hondas except CRV, RDX and 2019 Odyssey@China use 0xe4 for steering
+    checks = [(0xe4, 100)]
+    if CP.carFingerprint in [CAR.CRV, CAR.CRV_EU, CAR.ACURA_RDX, CAR.ODYSSEY_CHN]:
+      checks = [(0x194, 100)]
+
     if CP.carFingerprint in HONDA_BOSCH:
       signals += [("ACCEL_COMMAND", "ACC_CONTROL", 0),
                   ("AEB_STATUS", "ACC_CONTROL", 0)]
+      checks += [
+        ("ACC_CONTROL", 50),
+      ]
     else:
       signals += [("COMPUTER_BRAKE", "BRAKE_COMMAND", 0),
                   ("AEB_REQ_1", "BRAKE_COMMAND", 0),
@@ -356,23 +376,17 @@ class CarState(CarStateBase):
                   ("FCM_PROBLEM", "ACC_HUD", 0),
                   ("ICONS", "ACC_HUD", 0)]
 
-    # all hondas except CRV, RDX and 2019 Odyssey@China use 0xe4 for steering
-    checks = [(0xe4, 100)]
-    if CP.carFingerprint in [CAR.CRV, CAR.CRV_EU, CAR.ACURA_RDX, CAR.ODYSSEY_CHN]:
-      checks = [(0x194, 100)]
-
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2)
 
   @staticmethod
   def get_body_can_parser(CP):
-    signals = []
-    checks = []
-
     if CP.carFingerprint == CAR.CRV_5G:
-      signals += [("BSM_ALERT", "BSM_STATUS_RIGHT", 0),
+      signals = [("BSM_ALERT", "BSM_STATUS_RIGHT", 0),
                   ("BSM_ALERT", "BSM_STATUS_LEFT", 0)]
-
+      checks = [
+        ("BSM_STATUS_LEFT", 0), # TODO: get frequency
+        ("BSM_STATUS_RIGHT", 0), # TODO: get frequency
+      ]
       bus_body = 0 # B-CAN is forwarded to ACC-CAN radar side (CAN 0 on fake ethernet port)
       return CANParser(DBC[CP.carFingerprint]['body'], signals, checks, bus_body)
-
     return None
