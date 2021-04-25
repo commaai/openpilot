@@ -58,7 +58,7 @@ def get_can_signals(CP):
     ("POWERTRAIN_DATA", 100),
     ("VSA_STATUS", 50),
     ("STEER_STATUS", 100),
-    ("STEER_MOTOR_TORQUE", 50),
+    ("STEER_MOTOR_TORQUE", 0), # TODO: not on every car
   ]
 
   if CP.carFingerprint == CAR.ODYSSEY_CHN:
@@ -173,7 +173,7 @@ def get_can_signals(CP):
     signals += [("MAIN_ON", "SCM_BUTTONS", 0),
                 ("CAR_GAS", "GAS_PEDAL_2", 0)]
     checks += [
-      ("GAS_PEDAL_2", 100),
+      ("GAS_PEDAL_2", 0),  # TODO: fix this freq, seems this signal isn't present at all on some models
     ]
   elif CP.carFingerprint == CAR.ODYSSEY_CHN:
     signals += [("MAIN_ON", "SCM_BUTTONS", 0),
@@ -380,7 +380,7 @@ class CarState(CarStateBase):
       signals += [("ACCEL_COMMAND", "ACC_CONTROL", 0),
                   ("AEB_STATUS", "ACC_CONTROL", 0)]
       checks += [
-        ("ACC_CONTROL", 50),
+        ("ACC_CONTROL", 0), # TODO: fix freq, this seems to be on the wrong bus
       ]
     else:
       signals += [("COMPUTER_BRAKE", "BRAKE_COMMAND", 0),
