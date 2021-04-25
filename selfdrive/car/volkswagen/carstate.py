@@ -219,7 +219,9 @@ class CarState(CarStateBase):
       ("ACC_10", 50),       # From J428 ACC radar control module
       ("Motor_20", 50),     # From J623 Engine control module
       ("TSK_06", 50),       # From J623 Engine control module
+      ("ESP_02", 50),
       ("GRA_ACC_01", 33),   # From J??? steering wheel control buttons
+      ("SWA_01", 20),
       ("ACC_02", 17),       # From J428 ACC radar control module
       ("Gateway_72", 10),   # From J533 CAN gateway (aggregated data)
       ("Motor_14", 10),     # From J623 Engine control module

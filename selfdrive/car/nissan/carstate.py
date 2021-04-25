@@ -98,7 +98,7 @@ class CarState(CarStateBase):
                         cp.vl["DOORS_LIGHTS"]["DOOR_OPEN_FR"],
                         cp.vl["DOORS_LIGHTS"]["DOOR_OPEN_FL"]])
 
-    #ret.espDisabled = bool(cp.vl["ESP"]["ESP_DISABLED"])
+    ret.espDisabled = bool(cp.vl["ESP"]["ESP_DISABLED"])
 
     can_gear = int(cp.vl["GEARBOX"]["GEAR_SHIFTER"])
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(can_gear, None))
