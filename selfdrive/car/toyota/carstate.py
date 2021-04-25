@@ -4,7 +4,7 @@ from opendbc.can.can_define import CANDefine
 from selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
 from selfdrive.config import Conversions as CV
-from selfdrive.car.toyota.values import CAR, DBC, STEER_THRESHOLD, TSS2_CAR, NO_STOP_TIMER_CAR
+from selfdrive.car.toyota.values import CAR, DBC, STEER_THRESHOLD, NO_STOP_TIMER_CAR
 
 
 class CarState(CarStateBase):
@@ -97,7 +97,7 @@ class CarState(CarStateBase):
     # 2 is standby, 10 is active. TODO: check that everything else is really a faulty state
     self.steer_state = cp.vl["EPS_STATUS"]['LKA_STATE']
 
-    if self.CP.carFingerprint in TSS2_CAR:
+    if self.CP.enableBsm:
       ret.leftBlindspot = (cp.vl["BSM"]['L_ADJACENT'] == 1) or (cp.vl["BSM"]['L_APPROACHING'] == 1)
       ret.rightBlindspot = (cp.vl["BSM"]['R_ADJACENT'] == 1) or (cp.vl["BSM"]['R_APPROACHING'] == 1)
 
@@ -139,7 +139,7 @@ class CarState(CarStateBase):
     checks = [
       ("GEAR_PACKET", 1),
       ("LIGHT_STALK", 1),
-      ("STEERING_LEVERS", 1),
+      ("STEERING_LEVERS", 0.15),
       ("SEATS_DOORS", 3),
       ("ESP_CONTROL", 3),
       ("EPS_STATUS", 25),
@@ -167,14 +167,16 @@ class CarState(CarStateBase):
       signals.append(("INTERCEPTOR_GAS2", "GAS_SENSOR", 0))
       checks.append(("GAS_SENSOR", 50))
 
-    if CP.carFingerprint in TSS2_CAR:
+    if CP.enableBsm:
       signals += [
         ("L_ADJACENT", "BSM", 0),
         ("L_APPROACHING", "BSM", 0),
         ("R_ADJACENT", "BSM", 0),
         ("R_APPROACHING", "BSM", 0),
       ]
-      checks += [("BSM", 1)]
+      checks += [
+        ("BSM", 1)
+      ]
 
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
 
