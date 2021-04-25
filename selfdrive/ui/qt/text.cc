@@ -14,6 +14,9 @@ int main(int argc, char *argv[]) {
   QWidget window;
   setMainWindow(&window);
 
+  Hardware::set_display_power(true);
+  Hardware::set_brightness(65);
+
   QGridLayout *layout = new QGridLayout;
   layout->setMargin(50);
 

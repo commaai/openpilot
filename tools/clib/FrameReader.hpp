@@ -30,14 +30,16 @@ public:
   int getRGBSize() { return width*height*3; }
   void loaderThread();
   void cacherThread();
+
+  //TODO: get this from the actual frame
+  int width = 1164;
+  int height = 874;
+
 private:
   AVFormatContext *pFormatCtx = NULL;
   AVCodecContext *pCodecCtx = NULL;
 
 	struct SwsContext *sws_ctx = NULL;
-
-	int width = 1164;
-	int height = 874;
 
   std::vector<AVPacket *> pkts;
 

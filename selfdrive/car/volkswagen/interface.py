@@ -104,7 +104,8 @@ class CarInterface(CarInterfaceBase):
 
     ret.centerToFront = ret.wheelbase * 0.45
 
-    ret.enableCamera = True  # Stock camera detection doesn't apply to VW
+    ret.enableCamera = True
+    ret.enableBsm = 0x30F in fingerprint[0]
 
     # TODO: get actual value, for now starting with reasonable value for
     # civic and scaling by mass and wheelbase

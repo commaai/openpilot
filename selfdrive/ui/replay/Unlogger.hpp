@@ -2,9 +2,11 @@
 
 #include <QThread>
 #include <QReadWriteLock>
+#include "clutil.h"
 #include "messaging.hpp"
 #include "FileReader.hpp"
 #include "FrameReader.hpp"
+#include "visionipc_server.h"
 
 class Unlogger : public QObject {
 Q_OBJECT
@@ -15,19 +17,24 @@ Q_OBJECT
     void setPause(bool pause) { paused = pause; }
     void togglePause() { paused = !paused; }
     QMap<int, QPair<int, int> > eidx;
+
   public slots:
-    void process();
+    void process(SubMaster *sm = nullptr);
   signals:
     void elapsed();
     void finished();
+    void loadSegment();
   private:
     Events *events;
     QReadWriteLock *events_lock;
     QMap<int, FrameReader*> *frs;
-    QMap<int, PubSocket*> socks;
+    QMap<std::string, PubSocket*> socks;
     Context *ctx;
     uint64_t tc = 0;
     uint64_t seek_request = 0;
     bool paused = false;
+    bool loading_segment = false;
+
+    VisionIpcServer *vipc_server = nullptr;
 };
 

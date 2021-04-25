@@ -53,7 +53,7 @@ private:
   MatrixXdr calib_from_device;
   bool calibrated = false;
 
-  int car_speed = 0;
+  double car_speed = 0.0;
   std::deque<double> posenet_stds;
 
   std::unique_ptr<LocalCoord> converter;

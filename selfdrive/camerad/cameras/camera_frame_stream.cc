@@ -49,25 +49,26 @@ void run_frame_stream(CameraState &camera, const char* frame_pkt) {
 
   size_t buf_idx = 0;
   while (!do_exit) {
-    if (sm.update(1000) == 0) continue;
+    sm.update(1000);
+    if(sm.updated(frame_pkt)){
+      auto msg = static_cast<capnp::DynamicStruct::Reader>(sm[frame_pkt]);
+      auto frame = msg.get(frame_pkt).as<capnp::DynamicStruct>();
+      camera.buf.camera_bufs_metadata[buf_idx] = {
+        .frame_id = frame.get("frameId").as<uint32_t>(),
+        .timestamp_eof = frame.get("timestampEof").as<uint64_t>(),
+        .frame_length = frame.get("frameLength").as<unsigned>(),
+        .integ_lines = frame.get("integLines").as<unsigned>(),
+        .global_gain = frame.get("globalGain").as<unsigned>(),
+      };
 
-    auto msg = static_cast<capnp::DynamicStruct::Reader>(sm[frame_pkt]);
-    auto frame = msg.get(frame_pkt).as<capnp::DynamicStruct>();
-    camera.buf.camera_bufs_metadata[buf_idx] = {
-      .frame_id = frame.get("frameId").as<uint32_t>(),
-      .timestamp_eof = frame.get("timestampEof").as<uint64_t>(),
-      .frame_length = frame.get("frameLength").as<unsigned>(),
-      .integ_lines = frame.get("integLines").as<unsigned>(),
-      .global_gain = frame.get("globalGain").as<unsigned>(),
-    };
+      cl_command_queue q = camera.buf.camera_bufs[buf_idx].copy_q;
+      cl_mem yuv_cl = camera.buf.camera_bufs[buf_idx].buf_cl;
 
-    cl_command_queue q = camera.buf.camera_bufs[buf_idx].copy_q;
-    cl_mem yuv_cl = camera.buf.camera_bufs[buf_idx].buf_cl;
-
-    auto image = frame.get("image").as<capnp::Data>();
-    clEnqueueWriteBuffer(q, yuv_cl, CL_TRUE, 0, image.size(), image.begin(), 0, NULL, NULL);
-    camera.buf.queue(buf_idx);
-    buf_idx = (buf_idx + 1) % FRAME_BUF_COUNT;
+      auto image = frame.get("image").as<capnp::Data>();
+      clEnqueueWriteBuffer(q, yuv_cl, CL_TRUE, 0, image.size(), image.begin(), 0, NULL, NULL);
+      camera.buf.queue(buf_idx);
+      buf_idx = (buf_idx + 1) % FRAME_BUF_COUNT;
+    }
   }
 }
 
