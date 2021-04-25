@@ -138,20 +138,33 @@ def get_can_signals(CP):
                 ("MAIN_ON", "SCM_FEEDBACK", 0),
                 ("IMPERIAL_UNIT", "HUD_SETTING", 0),
                 ("EPB_STATE", "EPB_STATUS", 0)]
+    checks += [
+      ("HUD_SETTING", 50),
+      ("EPB_STATUS", 50),
+      ("GAS_PEDAL_2", 100),
+    ]
   elif CP.carFingerprint == CAR.ACURA_ILX:
     signals += [("CAR_GAS", "GAS_PEDAL_2", 0),
                 ("MAIN_ON", "SCM_BUTTONS", 0)]
+    checks += [
+      ("GAS_PEDAL_2", 100),
+    ]
   elif CP.carFingerprint in (CAR.CRV, CAR.CRV_EU, CAR.ACURA_RDX, CAR.PILOT_2019, CAR.RIDGELINE):
     signals += [("MAIN_ON", "SCM_BUTTONS", 0)]
   elif CP.carFingerprint == CAR.FIT:
     signals += [("CAR_GAS", "GAS_PEDAL_2", 0),
                 ("MAIN_ON", "SCM_BUTTONS", 0),
                 ("BRAKE_HOLD_ACTIVE", "VSA_STATUS", 0)]
+    checks += [
+      ("GAS_PEDAL_2", 100),
+    ]
   elif CP.carFingerprint == CAR.HRV:
     signals += [("CAR_GAS", "GAS_PEDAL", 0),
                 ("MAIN_ON", "SCM_BUTTONS", 0),
                 ("BRAKE_HOLD_ACTIVE", "VSA_STATUS", 0)]
-
+    checks += [
+      ("GAS_PEDAL", 100),
+    ]
   elif CP.carFingerprint == CAR.ODYSSEY:
     signals += [("MAIN_ON", "SCM_FEEDBACK", 0),
                 ("EPB_STATE", "EPB_STATUS", 0)]
@@ -159,6 +172,9 @@ def get_can_signals(CP):
   elif CP.carFingerprint == CAR.PILOT:
     signals += [("MAIN_ON", "SCM_BUTTONS", 0),
                 ("CAR_GAS", "GAS_PEDAL_2", 0)]
+    checks += [
+      ("GAS_PEDAL_2", 100),
+    ]
   elif CP.carFingerprint == CAR.ODYSSEY_CHN:
     signals += [("MAIN_ON", "SCM_BUTTONS", 0),
                 ("EPB_STATE", "EPB_STATUS", 0)]
@@ -375,6 +391,10 @@ class CarState(CarStateBase):
                   ("FCM_OFF_2", "ACC_HUD", 0),
                   ("FCM_PROBLEM", "ACC_HUD", 0),
                   ("ICONS", "ACC_HUD", 0)]
+      checks += [
+        ("ACC_HUD", 10),
+        ("BRAKE_COMMAND", 50),
+      ]
 
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2)
 
@@ -383,10 +403,12 @@ class CarState(CarStateBase):
     if CP.carFingerprint == CAR.CRV_5G:
       signals = [("BSM_ALERT", "BSM_STATUS_RIGHT", 0),
                   ("BSM_ALERT", "BSM_STATUS_LEFT", 0)]
+
+      # TODO: get freqs and enable enforce_checks
       checks = [
-        ("BSM_STATUS_LEFT", 0), # TODO: get frequency
-        ("BSM_STATUS_RIGHT", 0), # TODO: get frequency
+        #("BSM_STATUS_LEFT", 0),
+        #("BSM_STATUS_RIGHT", 0),
       ]
       bus_body = 0 # B-CAN is forwarded to ACC-CAN radar side (CAN 0 on fake ethernet port)
-      return CANParser(DBC[CP.carFingerprint]['body'], signals, checks, bus_body)
+      return CANParser(DBC[CP.carFingerprint]['body'], signals, checks, bus_body, enforce_checks=False)
     return None
