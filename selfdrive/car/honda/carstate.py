@@ -92,12 +92,15 @@ def get_can_signals(CP):
       ("MAIN_ON", "SCM_FEEDBACK", 0),
       ("CRUISE_CONTROL_LABEL", "ACC_HUD", 0),
       ("EPB_STATE", "EPB_STATUS", 0),
-      ("CRUISE_SPEED", "ACC_HUD", 0)
+      ("CRUISE_SPEED", "ACC_HUD", 0),
+      ("ACCEL_COMMAND", "ACC_CONTROL", 0),
+      ("AEB_STATUS", "ACC_CONTROL", 0),
     ]
     checks += [
       ("ACC_HUD", 10),
       ("EPB_STATUS", 50),
       ("GAS_PEDAL_2", 100),
+      ("ACC_CONTROL", 50),
     ]
     if CP.openpilotLongitudinalControl:
       signals += [("BRAKE_ERROR_1", "STANDSTILL", 1),
@@ -341,7 +344,7 @@ class CarState(CarStateBase):
     self.is_metric = not cp.vl["HUD_SETTING"]['IMPERIAL_UNIT'] if self.CP.carFingerprint in (CAR.CIVIC) else False
 
     if self.CP.carFingerprint in HONDA_BOSCH:
-      ret.stockAeb = bool(cp_cam.vl["ACC_CONTROL"]["AEB_STATUS"] and cp_cam.vl["ACC_CONTROL"]["ACCEL_COMMAND"] < -1e-5)
+      ret.stockAeb = bool(cp.vl["ACC_CONTROL"]["AEB_STATUS"] and cp.vl["ACC_CONTROL"]["ACCEL_COMMAND"] < -1e-5)
     else:
       ret.stockAeb = bool(cp_cam.vl["BRAKE_COMMAND"]["AEB_REQ_1"] and cp_cam.vl["BRAKE_COMMAND"]["COMPUTER_BRAKE"] > 1e-5)
 
@@ -376,13 +379,7 @@ class CarState(CarStateBase):
     if CP.carFingerprint in [CAR.CRV, CAR.CRV_EU, CAR.ACURA_RDX, CAR.ODYSSEY_CHN]:
       checks = [(0x194, 100)]
 
-    if CP.carFingerprint in HONDA_BOSCH:
-      signals += [("ACCEL_COMMAND", "ACC_CONTROL", 0),
-                  ("AEB_STATUS", "ACC_CONTROL", 0)]
-      checks += [
-        ("ACC_CONTROL", 0), # TODO: fix freq, this seems to be on the wrong bus
-      ]
-    else:
+    if CP.carFingerprint not in HONDA_BOSCH:
       signals += [("COMPUTER_BRAKE", "BRAKE_COMMAND", 0),
                   ("AEB_REQ_1", "BRAKE_COMMAND", 0),
                   ("FCW", "BRAKE_COMMAND", 0),
