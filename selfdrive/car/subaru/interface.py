@@ -27,6 +27,7 @@ class CarInterface(CarInterfaceBase):
     ret.dashcamOnly = candidate in PREGLOBAL_CARS
 
     ret.enableCamera = True
+    ret.enableBsm = 0x228 in fingerprint[0]
 
     ret.steerRateCost = 0.7
     ret.steerLimitTimer = 0.4
