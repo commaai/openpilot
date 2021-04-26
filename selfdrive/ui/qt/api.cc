@@ -45,6 +45,16 @@ QByteArray CommaApi::rsa_sign(QByteArray data) {
 }
 
 QString CommaApi::create_jwt(QVector<QPair<QString, QJsonValue>> payloads, int expiry) {
+
+  QString jwt;
+
+#ifndef QCOM
+  QString token_json = QString(util::read_file(util::getenv_default("HOME", "/.comma/auth.json", "/.comma/auth.json")).c_str());
+  QJsonDocument json_d = QJsonDocument::fromJson(token_json.toUtf8());
+  jwt = json_d["access_token"].toString();
+  return jwt;
+#endif
+
   QString dongle_id = QString::fromStdString(Params().get("DongleId"));
 
   QJsonObject header;
@@ -62,7 +72,7 @@ QString CommaApi::create_jwt(QVector<QPair<QString, QJsonValue>> payloads, int e
   }
 
   auto b64_opts = QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals;
-  QString jwt = QJsonDocument(header).toJson(QJsonDocument::Compact).toBase64(b64_opts) + '.' +
+  jwt = QJsonDocument(header).toJson(QJsonDocument::Compact).toBase64(b64_opts) + '.' +
                 QJsonDocument(payload).toJson(QJsonDocument::Compact).toBase64(b64_opts);
 
   auto hash = QCryptographicHash::hash(jwt.toUtf8(), QCryptographicHash::Sha256);
