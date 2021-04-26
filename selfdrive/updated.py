@@ -36,6 +36,7 @@ from typing import List, Tuple, Optional
 
 from common.basedir import BASEDIR
 from common.params import Params
+from common.realtime import sec_since_boot
 from selfdrive.hardware import EON, TICI, HARDWARE
 from selfdrive.swaglog import cloudlog
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
@@ -285,6 +286,9 @@ def check_for_update() -> Tuple[bool, bool]:
     git_fetch_output = run(["git", "fetch", "--dry-run"], OVERLAY_MERGED, low_priority=True)
     return True, check_git_fetch_result(git_fetch_output)
   except subprocess.CalledProcessError:
+    last_ping = Params().get("LastAthenaPingTime")
+    if last_ping is not None and sec_since_boot() - float(last_ping)/1e9 < 70:
+      raise
     return False, False
 
 
