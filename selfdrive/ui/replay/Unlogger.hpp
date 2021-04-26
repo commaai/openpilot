@@ -31,6 +31,7 @@ Q_OBJECT
     QMap<std::string, PubSocket*> socks;
     Context *ctx;
     uint64_t tc = 0;
+    float last_print = 0;
     uint64_t seek_request = 0;
     bool paused = false;
     bool loading_segment = false;

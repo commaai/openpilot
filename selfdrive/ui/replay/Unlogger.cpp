@@ -1,3 +1,4 @@
+#include <cmath>
 #include <string>
 #include <vector>
 #include <capnp/dynamic.h>
@@ -126,6 +127,13 @@ void Unlogger::process(SubMaster *sm) {
       tc = tm;
       if (it != socks.end()) {
         long etime = tm-t0;
+
+        float timestamp = etime/1e9;
+        if(std::abs(timestamp-last_print) > 5.0){
+          last_print = timestamp;
+          printf("at %f\n", last_print);
+        }
+
         long rtime = timer.nsecsElapsed() - t0r;
         long us_behind = ((etime-rtime)*1e-3)+0.5;
         if (us_behind > 0) {
