@@ -129,9 +129,9 @@ void Unlogger::process(SubMaster *sm) {
         long etime = tm-t0;
 
         float timestamp = etime/1e9;
-        if(std::abs(timestamp-printed_at) > 5.0){
-          printed_at = timestamp;
-          printf("at %f\n", printed_at);
+        if(std::abs(timestamp-last_print) > 5.0){
+          last_print = timestamp;
+          printf("at %f\n", last_print);
         }
 
         long rtime = timer.nsecsElapsed() - t0r;
