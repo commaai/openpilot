@@ -185,7 +185,7 @@ static int imx179_s5k3p8sp_apply_exposure(CameraState *s, int gain, int integ_li
 
     {0x104,0x0,0},
   };
-  int err = sensor_write_regs(s, reg_array, ARRAYSIZE(reg_array), MSM_CAMERA_I2C_BYTE_DATA);
+  int err = sensor_write_regs(s, reg_array, std::size(reg_array), MSM_CAMERA_I2C_BYTE_DATA);
   if (err != 0) {
     LOGE("apply_exposure err %d", err);
   }
@@ -460,8 +460,8 @@ static void imx298_ois_calibration(int ois_fd, uint8_t* eeprom) {
   };
 
 
-  struct msm_camera_i2c_seq_reg_array ois_reg_settings[ARRAYSIZE(ois_registers)] = {{0}};
-  for (int i=0; i<ARRAYSIZE(ois_registers); i++) {
+  struct msm_camera_i2c_seq_reg_array ois_reg_settings[std::size(ois_registers)] = {{0}};
+  for (int i=0; i<std::size(ois_registers); i++) {
     ois_reg_settings[i].reg_addr = ois_registers[i][0];
     ois_reg_settings[i].reg_data[0] = ois_registers[i][1] & 0xff;
     ois_reg_settings[i].reg_data[1] = (ois_registers[i][1] >> 8) & 0xff;
@@ -469,7 +469,7 @@ static void imx298_ois_calibration(int ois_fd, uint8_t* eeprom) {
   }
   struct msm_camera_i2c_seq_reg_setting ois_reg_setting = {
     .reg_setting = &ois_reg_settings[0],
-    .size = ARRAYSIZE(ois_reg_settings),
+    .size = std::size(ois_reg_settings),
     .addr_type = MSM_CAMERA_I2C_WORD_ADDR,
     .delay = 0,
   };
