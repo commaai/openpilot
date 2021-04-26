@@ -3,7 +3,7 @@
 Replay::Replay(QString route_, int seek) : route(route_) {
   unlogger = new Unlogger(&events, &events_lock, &frs, seek);
   current_segment = 0;
-	bool create_jwt = true;
+  bool create_jwt = true;
 
 #ifndef QCOM
   create_jwt = false;
