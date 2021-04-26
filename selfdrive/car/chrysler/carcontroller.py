@@ -51,7 +51,7 @@ class CarController():
     if wheel_button_counter_change:
       self.wheel_button_counter_prev = CS.wheel_button_counter
 
-    if pcm_cancel_cmd and (self.ccframe % 10 < 5) and wheel_button_counter_change:
+    if pcm_cancel_cmd and wheel_button_counter_change:
       # TODO: would be better to start from frame_2b3
       new_msg = create_wheel_buttons(self.packer, CS.wheel_button_counter + 1, cancel=True)
       can_sends.append(new_msg)
