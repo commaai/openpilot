@@ -129,6 +129,7 @@ void HttpRequest::requestFinished(){
       if (!cache_key.isEmpty()) {
         Params().remove(cache_key.toStdString());
       }
+      qDebug() << reply->errorString();
       emit failedResponse(reply->errorString());
     }
   } else {
