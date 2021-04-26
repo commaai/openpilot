@@ -6,9 +6,9 @@ Replay::Replay(QString route_, int seek) : route(route_) {
 	QString jwt = "";
 
 #ifndef QCOM
-	QString token_json = QString(util::read_file(util::getenv_default("HOME", "/.comma/auth.json", "/.comma/auth.json")).c_str());
-	QJsonDocument json_d = QJsonDocument::fromJson(token_json.toUtf8());
-	jwt = json_d["access_token"].toString();
+  QString token_json = QString(util::read_file(util::getenv_default("HOME", "/.comma/auth.json", "/.comma/auth.json")).c_str());
+  QJsonDocument json_d = QJsonDocument::fromJson(token_json.toUtf8());
+  jwt = json_d["access_token"].toString();
 #endif
 
   http = new HttpRequest(this, "https://api.commadotai.com/v1/route/" + route + "/files", "", jwt);
