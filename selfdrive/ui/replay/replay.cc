@@ -6,7 +6,7 @@ Replay::Replay(QString route_, int seek) : route(route_) {
 	bool create_jwt = true;
 
 #ifndef QCOM
-	create_jwt = false;
+  create_jwt = false;
 #endif
 
   http = new HttpRequest(this, "https://api.commadotai.com/v1/route/" + route + "/files", "", create_jwt);
