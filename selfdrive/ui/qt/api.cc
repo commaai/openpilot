@@ -72,7 +72,7 @@ QString CommaApi::create_jwt(QVector<QPair<QString, QJsonValue>> payloads, int e
 }
 
 
-HttpRequest::HttpRequest(QObject *parent, QString requestURL, const QString &cache_key, bool create_jwt) : cache_key(cache_key), QObject(parent) {
+HttpRequest::HttpRequest(QObject *parent, QString requestURL, const QString &cache_key, bool create_jwt_) : cache_key(cache_key), create_jwt(create_jwt_), QObject(parent) {
   networkAccessManager = new QNetworkAccessManager(this);
   reply = NULL;
 
@@ -81,7 +81,7 @@ HttpRequest::HttpRequest(QObject *parent, QString requestURL, const QString &cac
   networkTimer->setInterval(20000);
   connect(networkTimer, SIGNAL(timeout()), this, SLOT(requestTimeout()));
 
-  sendRequest(requestURL, create_jwt);
+  sendRequest(requestURL);
 
   if (!cache_key.isEmpty()) {
     if (std::string cached_resp = Params().get(cache_key.toStdString()); !cached_resp.empty()) {
@@ -90,7 +90,8 @@ HttpRequest::HttpRequest(QObject *parent, QString requestURL, const QString &cac
   }
 }
 
-void HttpRequest::sendRequest(QString requestURL, bool create_jwt){
+void HttpRequest::sendRequest(QString requestURL){
+	QString token;
   if(create_jwt) {
     token = CommaApi::create_jwt();
   } else {

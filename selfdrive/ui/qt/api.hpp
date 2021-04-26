@@ -33,15 +33,15 @@ class HttpRequest : public QObject {
   Q_OBJECT
 
 public:
-  explicit HttpRequest(QObject* parent, QString requestURL, const QString &cache_key = "", bool create_jwt=true);
+  explicit HttpRequest(QObject* parent, QString requestURL, const QString &cache_key = "", bool create_jwt_=true);
   QNetworkReply *reply;
-  void sendRequest(QString requestURL, bool create_jwt=true);
+  void sendRequest(QString requestURL);
 
 private:
   QNetworkAccessManager *networkAccessManager;
   QTimer *networkTimer;
   QString cache_key;
-  QString token;
+  bool create_jwt;
 
 private slots:
   void requestTimeout();
