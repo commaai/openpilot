@@ -10,10 +10,11 @@
 
 #include "qt/api.hpp"
 #include "Unlogger.hpp"
-#include "common/util.h"
 #include "FileReader.hpp"
 #include "FrameReader.hpp"
 #include "visionipc_server.h"
+
+#include "common/util.h"
 
 class Replay : public QObject {
   Q_OBJECT

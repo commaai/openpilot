@@ -5,7 +5,7 @@ Replay::Replay(QString route_, int seek) : route(route_) {
   current_segment = 0;
   bool create_jwt = true;
 
-#ifndef QCOM
+#if !defined(QCOM) && !defined(QCOM2)
   create_jwt = false;
 #endif
 
