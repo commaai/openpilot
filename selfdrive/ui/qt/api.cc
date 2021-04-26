@@ -91,7 +91,7 @@ HttpRequest::HttpRequest(QObject *parent, QString requestURL, const QString &cac
 }
 
 void HttpRequest::sendRequest(QString requestURL){
-	QString token;
+  QString token;
   if(create_jwt) {
     token = CommaApi::create_jwt();
   } else {
