@@ -5,7 +5,7 @@ RequestRepeater::RequestRepeater(QObject *parent, QString requestURL, const QStr
   QTimer* timer = new QTimer(this);
   QObject::connect(timer, &QTimer::timeout, [=](){
     if (!GLWindow::ui_state.scene.started && reply == NULL && (GLWindow::ui_state.awake || !disableWithScreen)) {
-      sendRequest(requestURL, false);
+      sendRequest(requestURL);
     }
   });
   timer->start(period_seconds * 1000);

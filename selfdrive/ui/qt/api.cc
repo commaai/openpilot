@@ -44,18 +44,7 @@ QByteArray CommaApi::rsa_sign(QByteArray data) {
   return sig;
 }
 
-QString CommaApi::create_jwt(QVector<QPair<QString, QJsonValue>> payloads, int expiry, bool use_json) {
-  QString jwt;
-
-#ifndef QCOM
-  if(use_json) {
-    QString token_json = QString(util::read_file(util::getenv_default("HOME", "/.comma/auth.json", "/.comma/auth.json")).c_str());
-    QJsonDocument json_d = QJsonDocument::fromJson(token_json.toUtf8());
-    jwt = json_d["access_token"].toString();
-    return jwt;
-  }
-#endif
-
+QString CommaApi::create_jwt(QVector<QPair<QString, QJsonValue>> payloads, int expiry) {
   QString dongle_id = QString::fromStdString(Params().get("DongleId"));
 
   QJsonObject header;
@@ -73,7 +62,7 @@ QString CommaApi::create_jwt(QVector<QPair<QString, QJsonValue>> payloads, int e
   }
 
   auto b64_opts = QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals;
-  jwt = QJsonDocument(header).toJson(QJsonDocument::Compact).toBase64(b64_opts) + '.' +
+  QString jwt = QJsonDocument(header).toJson(QJsonDocument::Compact).toBase64(b64_opts) + '.' +
                 QJsonDocument(payload).toJson(QJsonDocument::Compact).toBase64(b64_opts);
 
   auto hash = QCryptographicHash::hash(jwt.toUtf8(), QCryptographicHash::Sha256);
@@ -83,7 +72,7 @@ QString CommaApi::create_jwt(QVector<QPair<QString, QJsonValue>> payloads, int e
 }
 
 
-HttpRequest::HttpRequest(QObject *parent, QString requestURL, const QString &cache_key, bool json_token) : cache_key(cache_key), QObject(parent) {
+HttpRequest::HttpRequest(QObject *parent, QString requestURL, const QString &cache_key, QString token_) : cache_key(cache_key), token(token_), QObject(parent) {
   networkAccessManager = new QNetworkAccessManager(this);
   reply = NULL;
 
@@ -92,7 +81,7 @@ HttpRequest::HttpRequest(QObject *parent, QString requestURL, const QString &cac
   networkTimer->setInterval(20000);
   connect(networkTimer, SIGNAL(timeout()), this, SLOT(requestTimeout()));
 
-  sendRequest(requestURL, json_token);
+  sendRequest(requestURL);
 
   if (!cache_key.isEmpty()) {
     if (std::string cached_resp = Params().get(cache_key.toStdString()); !cached_resp.empty()) {
@@ -101,8 +90,10 @@ HttpRequest::HttpRequest(QObject *parent, QString requestURL, const QString &cac
   }
 }
 
-void HttpRequest::sendRequest(QString requestURL, bool json_token){
-  QString token = CommaApi::create_jwt({}, 3600, json_token);
+void HttpRequest::sendRequest(QString requestURL){
+  if(token == "") {
+    token = CommaApi::create_jwt();
+  }
   QNetworkRequest request;
   request.setUrl(QUrl(requestURL));
   request.setRawHeader(QByteArray("Authorization"), ("JWT " + token).toUtf8());
