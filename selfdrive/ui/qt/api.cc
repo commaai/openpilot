@@ -95,7 +95,7 @@ void HttpRequest::sendRequest(QString requestURL){
   if(create_jwt) {
     token = CommaApi::create_jwt();
   } else {
-    QString token_json = QString(util::read_file(util::getenv_default("HOME", "/.comma/auth.json", "/.comma/auth.json")).c_str());
+    QString token_json = QString::fromStdString(util::read_file(util::getenv_default("HOME", "/.comma/auth.json", "/.comma/auth.json")));
     QJsonDocument json_d = QJsonDocument::fromJson(token_json.toUtf8());
     token = json_d["access_token"].toString();
   }
