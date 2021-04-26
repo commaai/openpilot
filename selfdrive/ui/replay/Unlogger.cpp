@@ -126,6 +126,13 @@ void Unlogger::process(SubMaster *sm) {
       tc = tm;
       if (it != socks.end()) {
         long etime = tm-t0;
+
+        float timestamp = etime/1e9;
+        if((timestamp-printed_at) * (timestamp-printed_at) > 25.0){
+          printed_at = timestamp;
+          printf("at %f\n", printed_at);
+        }
+
         long rtime = timer.nsecsElapsed() - t0r;
         long us_behind = ((etime-rtime)*1e-3)+0.5;
         if (us_behind > 0) {
