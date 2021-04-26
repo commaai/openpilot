@@ -1,6 +1,6 @@
 #include "replay.hpp"
 
-Replay::Replay(QString route_, int seek) : route(route_) {
+Replay::Replay(QString route_, int seek_) : route(route_), seek(seek_) {
   unlogger = new Unlogger(&events, &events_lock, &frs, seek);
   current_segment = 0;
 
@@ -21,7 +21,7 @@ void Replay::parseResponse(QString response){
   log_paths = doc["logs"].toArray();
 
   // add first segment
-  addSegment(0);
+  addSegment(seek/60);
 }
 
 void Replay::addSegment(int i){

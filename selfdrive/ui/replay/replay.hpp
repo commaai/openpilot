@@ -35,6 +35,7 @@ protected:
 
 private:
   QString route;
+  int seek;
 
   QReadWriteLock events_lock;
   Events events;
