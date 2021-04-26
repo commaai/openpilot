@@ -45,7 +45,6 @@ QByteArray CommaApi::rsa_sign(QByteArray data) {
 }
 
 QString CommaApi::create_jwt(QVector<QPair<QString, QJsonValue>> payloads, int expiry) {
-
   QString jwt;
 
 #ifndef QCOM
