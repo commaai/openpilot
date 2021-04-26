@@ -3,15 +3,13 @@
 Replay::Replay(QString route_, int seek) : route(route_) {
   unlogger = new Unlogger(&events, &events_lock, &frs, seek);
   current_segment = 0;
-	QString jwt = "";
+	bool create_jwt = true;
 
 #ifndef QCOM
-  QString token_json = QString(util::read_file(util::getenv_default("HOME", "/.comma/auth.json", "/.comma/auth.json")).c_str());
-  QJsonDocument json_d = QJsonDocument::fromJson(token_json.toUtf8());
-  jwt = json_d["access_token"].toString();
+	create_jwt = false;
 #endif
 
-  http = new HttpRequest(this, "https://api.commadotai.com/v1/route/" + route + "/files", "", jwt);
+  http = new HttpRequest(this, "https://api.commadotai.com/v1/route/" + route + "/files", "", create_jwt);
   QObject::connect(http, SIGNAL(receivedResponse(QString)), this, SLOT(parseResponse(QString)));
 }
 

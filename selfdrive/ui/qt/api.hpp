@@ -33,9 +33,9 @@ class HttpRequest : public QObject {
   Q_OBJECT
 
 public:
-  explicit HttpRequest(QObject* parent, QString requestURL, const QString &cache_key = "", QString token_="");
+  explicit HttpRequest(QObject* parent, QString requestURL, const QString &cache_key = "", bool create_jwt=true);
   QNetworkReply *reply;
-  void sendRequest(QString requestURL);
+  void sendRequest(QString requestURL, bool create_jwt=true);
 
 private:
   QNetworkAccessManager *networkAccessManager;

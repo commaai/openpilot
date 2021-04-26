@@ -72,7 +72,7 @@ QString CommaApi::create_jwt(QVector<QPair<QString, QJsonValue>> payloads, int e
 }
 
 
-HttpRequest::HttpRequest(QObject *parent, QString requestURL, const QString &cache_key, QString token_) : cache_key(cache_key), token(token_), QObject(parent) {
+HttpRequest::HttpRequest(QObject *parent, QString requestURL, const QString &cache_key, bool create_jwt) : cache_key(cache_key), QObject(parent) {
   networkAccessManager = new QNetworkAccessManager(this);
   reply = NULL;
 
@@ -81,7 +81,7 @@ HttpRequest::HttpRequest(QObject *parent, QString requestURL, const QString &cac
   networkTimer->setInterval(20000);
   connect(networkTimer, SIGNAL(timeout()), this, SLOT(requestTimeout()));
 
-  sendRequest(requestURL);
+  sendRequest(requestURL, create_jwt);
 
   if (!cache_key.isEmpty()) {
     if (std::string cached_resp = Params().get(cache_key.toStdString()); !cached_resp.empty()) {
@@ -90,10 +90,15 @@ HttpRequest::HttpRequest(QObject *parent, QString requestURL, const QString &cac
   }
 }
 
-void HttpRequest::sendRequest(QString requestURL){
-  if(token == "") {
+void HttpRequest::sendRequest(QString requestURL, bool create_jwt){
+  if(create_jwt) {
     token = CommaApi::create_jwt();
+  } else {
+    QString token_json = QString(util::read_file(util::getenv_default("HOME", "/.comma/auth.json", "/.comma/auth.json")).c_str());
+    QJsonDocument json_d = QJsonDocument::fromJson(token_json.toUtf8());
+    token = json_d["access_token"].toString();
   }
+
   QNetworkRequest request;
   request.setUrl(QUrl(requestURL));
   request.setRawHeader(QByteArray("Authorization"), ("JWT " + token).toUtf8());
