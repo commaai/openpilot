@@ -1,3 +1,4 @@
+#include <cmath>
 #include <string>
 #include <vector>
 #include <capnp/dynamic.h>
@@ -128,7 +129,7 @@ void Unlogger::process(SubMaster *sm) {
         long etime = tm-t0;
 
         float timestamp = etime/1e9;
-        if((timestamp-printed_at) * (timestamp-printed_at) > 25.0){
+        if(std::abs(timestamp-printed_at) > 5.0){
           printed_at = timestamp;
           printf("at %f\n", printed_at);
         }
