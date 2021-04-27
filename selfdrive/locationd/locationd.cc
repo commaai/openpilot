@@ -17,7 +17,7 @@ static Vector4d quat2vector(const Quaterniond& quat) {
   return Vector4d(quat.w(), quat.x(), quat.y(), quat.z());
 }
 
-static Quaterniond vector2quat(const VectorXd& vec) {
+static Quaterniond vector2quat(const Vector4d& vec) {
   return Quaterniond(vec(0), vec(1), vec(2), vec(3));
 }
 
@@ -33,7 +33,7 @@ static MatrixXdr rotate_cov(const MatrixXdr& rot_matrix, const MatrixXdr& cov_in
   return ((rot_matrix *  cov_in) * rot_matrix.transpose());
 }
 
-static VectorXd rotate_std(const MatrixXdr& rot_matrix, const VectorXd& std_in) {
+static Vector3d rotate_std(const MatrixXdr& rot_matrix, const Vector3d& std_in) {
   // Stds cannot be rotated like values, only covariances can be rotated
   return rotate_cov(rot_matrix, std_in.array().square().matrix().asDiagonal()).diagonal().array().sqrt();
 }
@@ -50,7 +50,7 @@ Localizer::Localizer() {
     this->posenet_stds.push_back(10.0);
   }
 
-  VectorXd ecef_pos = this->kf->get_x().segment<STATE_ECEF_POS_LEN>(STATE_ECEF_POS_START);
+  Vector3d ecef_pos = this->kf->get_x().segment<STATE_ECEF_POS_LEN>(STATE_ECEF_POS_START);
   this->converter = std::make_unique<LocalCoord>((ECEF) { .x = ecef_pos[0], .y = ecef_pos[1], .z = ecef_pos[2] });
 }
 
@@ -59,28 +59,28 @@ void Localizer::build_live_location(cereal::LiveLocationKalman::Builder& fix) {
   MatrixXdr predicted_cov = this->kf->get_P();
   VectorXd predicted_std = predicted_cov.diagonal().array().sqrt();
 
-  VectorXd fix_ecef = predicted_state.segment<STATE_ECEF_POS_LEN>(STATE_ECEF_POS_START);
+  Vector3d fix_ecef = predicted_state.segment<STATE_ECEF_POS_LEN>(STATE_ECEF_POS_START);
   ECEF fix_ecef_ecef = { .x = fix_ecef(0), .y = fix_ecef(1), .z = fix_ecef(2) };
-  VectorXd fix_ecef_std = predicted_std.segment<STATE_ECEF_POS_ERR_LEN>(STATE_ECEF_POS_ERR_START);
-  VectorXd vel_ecef = predicted_state.segment<STATE_ECEF_VELOCITY_LEN>(STATE_ECEF_VELOCITY_START);
-  VectorXd vel_ecef_std = predicted_std.segment<STATE_ECEF_VELOCITY_ERR_LEN>(STATE_ECEF_VELOCITY_ERR_START);
-  VectorXd fix_pos_geo_vec = this->get_position_geodetic();
+  Vector3d fix_ecef_std = predicted_std.segment<STATE_ECEF_POS_ERR_LEN>(STATE_ECEF_POS_ERR_START);
+  Vector3d vel_ecef = predicted_state.segment<STATE_ECEF_VELOCITY_LEN>(STATE_ECEF_VELOCITY_START);
+  Vector3d vel_ecef_std = predicted_std.segment<STATE_ECEF_VELOCITY_ERR_LEN>(STATE_ECEF_VELOCITY_ERR_START);
+  Vector3d fix_pos_geo_vec = this->get_position_geodetic();
   //fix_pos_geo_std = np.abs(coord.ecef2geodetic(fix_ecef + fix_ecef_std) - fix_pos_geo)
-  VectorXd orientation_ecef = quat2euler(vector2quat(predicted_state.segment<STATE_ECEF_ORIENTATION_LEN>(STATE_ECEF_ORIENTATION_START)));
-  VectorXd orientation_ecef_std = predicted_std.segment<STATE_ECEF_ORIENTATION_ERR_LEN>(STATE_ECEF_ORIENTATION_ERR_START);
+  Vector3d orientation_ecef = quat2euler(vector2quat(predicted_state.segment<STATE_ECEF_ORIENTATION_LEN>(STATE_ECEF_ORIENTATION_START)));
+  Vector3d orientation_ecef_std = predicted_std.segment<STATE_ECEF_ORIENTATION_ERR_LEN>(STATE_ECEF_ORIENTATION_ERR_START);
   MatrixXdr device_from_ecef = quat2rot(vector2quat(predicted_state.segment<STATE_ECEF_ORIENTATION_LEN>(STATE_ECEF_ORIENTATION_START))).transpose();
-  VectorXd calibrated_orientation_ecef = rot2euler(this->calib_from_device * device_from_ecef);
+  Vector3d calibrated_orientation_ecef = rot2euler(this->calib_from_device * device_from_ecef);
 
-  VectorXd acc_calib = this->calib_from_device * predicted_state.segment<STATE_ACCELERATION_LEN>(STATE_ACCELERATION_START);
+  Vector3d acc_calib = this->calib_from_device * predicted_state.segment<STATE_ACCELERATION_LEN>(STATE_ACCELERATION_START);
   MatrixXdr acc_calib_cov = predicted_cov.block<STATE_ACCELERATION_ERR_LEN, STATE_ACCELERATION_ERR_LEN>(STATE_ACCELERATION_ERR_START, STATE_ACCELERATION_ERR_START);
-  VectorXd acc_calib_std = rotate_cov(this->calib_from_device, acc_calib_cov).diagonal().array().sqrt();
-  VectorXd ang_vel_calib = this->calib_from_device * predicted_state.segment<STATE_ANGULAR_VELOCITY_LEN>(STATE_ANGULAR_VELOCITY_START);
+  Vector3d acc_calib_std = rotate_cov(this->calib_from_device, acc_calib_cov).diagonal().array().sqrt();
+  Vector3d ang_vel_calib = this->calib_from_device * predicted_state.segment<STATE_ANGULAR_VELOCITY_LEN>(STATE_ANGULAR_VELOCITY_START);
 
   MatrixXdr vel_angular_cov = predicted_cov.block<STATE_ANGULAR_VELOCITY_ERR_LEN, STATE_ANGULAR_VELOCITY_ERR_LEN>(STATE_ANGULAR_VELOCITY_ERR_START, STATE_ANGULAR_VELOCITY_ERR_START);
-  VectorXd ang_vel_calib_std = rotate_cov(this->calib_from_device, vel_angular_cov).diagonal().array().sqrt();
+  Vector3d ang_vel_calib_std = rotate_cov(this->calib_from_device, vel_angular_cov).diagonal().array().sqrt();
 
-  VectorXd vel_device = device_from_ecef * vel_ecef;
-  VectorXd device_from_ecef_eul = quat2euler(vector2quat(predicted_state.segment<STATE_ECEF_ORIENTATION_LEN>(STATE_ECEF_ORIENTATION_START))).transpose();
+  Vector3d vel_device = device_from_ecef * vel_ecef;
+  Vector3d device_from_ecef_eul = quat2euler(vector2quat(predicted_state.segment<STATE_ECEF_ORIENTATION_LEN>(STATE_ECEF_ORIENTATION_START))).transpose();
   MatrixXdr condensed_cov(STATE_ECEF_ORIENTATION_ERR_LEN + STATE_ECEF_VELOCITY_ERR_LEN, STATE_ECEF_ORIENTATION_ERR_LEN + STATE_ECEF_VELOCITY_ERR_LEN);
   condensed_cov.topLeftCorner<STATE_ECEF_ORIENTATION_ERR_LEN, STATE_ECEF_ORIENTATION_ERR_LEN>() =
     predicted_cov.block<STATE_ECEF_ORIENTATION_ERR_LEN, STATE_ECEF_ORIENTATION_ERR_LEN>(STATE_ECEF_ORIENTATION_ERR_START, STATE_ECEF_ORIENTATION_ERR_START);
@@ -94,22 +94,22 @@ void Localizer::build_live_location(cereal::LiveLocationKalman::Builder& fix) {
   H_input << device_from_ecef_eul, vel_ecef;
   MatrixXdr HH = this->kf->H(H_input);
   MatrixXdr vel_device_cov = (HH * condensed_cov) * HH.transpose();
-  VectorXd vel_device_std = vel_device_cov.diagonal().array().sqrt();
+  Vector3d vel_device_std = vel_device_cov.diagonal().array().sqrt();
 
-  VectorXd vel_calib = this->calib_from_device * vel_device;
-  VectorXd vel_calib_std = rotate_cov(this->calib_from_device, vel_device_cov).diagonal().array().sqrt();
+  Vector3d vel_calib = this->calib_from_device * vel_device;
+  Vector3d vel_calib_std = rotate_cov(this->calib_from_device, vel_device_cov).diagonal().array().sqrt();
 
-  VectorXd orientation_ned = ned_euler_from_ecef(fix_ecef_ecef, orientation_ecef);
+  Vector3d orientation_ned = ned_euler_from_ecef(fix_ecef_ecef, orientation_ecef);
   //orientation_ned_std = ned_euler_from_ecef(fix_ecef, orientation_ecef + orientation_ecef_std) - orientation_ned
-  VectorXd nextfix_ecef = fix_ecef + vel_ecef;
-  VectorXd ned_vel = this->converter->ecef2ned((ECEF) { .x = nextfix_ecef(0), .y = nextfix_ecef(1), .z = nextfix_ecef(2) }).to_vector() - converter->ecef2ned(fix_ecef_ecef).to_vector();
+  Vector3d nextfix_ecef = fix_ecef + vel_ecef;
+  Vector3d ned_vel = this->converter->ecef2ned((ECEF) { .x = nextfix_ecef(0), .y = nextfix_ecef(1), .z = nextfix_ecef(2) }).to_vector() - converter->ecef2ned(fix_ecef_ecef).to_vector();
   //ned_vel_std = self.converter->ecef2ned(fix_ecef + vel_ecef + vel_ecef_std) - self.converter->ecef2ned(fix_ecef + vel_ecef)
 
-  VectorXd accDevice = predicted_state.segment<STATE_ACCELERATION_LEN>(STATE_ACCELERATION_START);
-  VectorXd accDeviceErr = predicted_std.segment<STATE_ACCELERATION_ERR_LEN>(STATE_ACCELERATION_ERR_START);
+  Vector3d accDevice = predicted_state.segment<STATE_ACCELERATION_LEN>(STATE_ACCELERATION_START);
+  Vector3d accDeviceErr = predicted_std.segment<STATE_ACCELERATION_ERR_LEN>(STATE_ACCELERATION_ERR_START);
 
-  VectorXd angVelocityDevice = predicted_state.segment<STATE_ANGULAR_VELOCITY_LEN>(STATE_ANGULAR_VELOCITY_START);
-  VectorXd angVelocityDeviceErr = predicted_std.segment<STATE_ANGULAR_VELOCITY_ERR_LEN>(STATE_ANGULAR_VELOCITY_ERR_START);
+  Vector3d angVelocityDevice = predicted_state.segment<STATE_ANGULAR_VELOCITY_LEN>(STATE_ANGULAR_VELOCITY_START);
+  Vector3d angVelocityDeviceErr = predicted_std.segment<STATE_ANGULAR_VELOCITY_ERR_LEN>(STATE_ANGULAR_VELOCITY_ERR_START);
 
   Vector3d nans = Vector3d(NAN, NAN, NAN);
 
@@ -160,8 +160,8 @@ void Localizer::build_live_location(cereal::LiveLocationKalman::Builder& fix) {
   }
 }
 
-VectorXd Localizer::get_position_geodetic() {
-  VectorXd fix_ecef = this->kf->get_x().segment<STATE_ECEF_POS_LEN>(STATE_ECEF_POS_START);
+Vector3d Localizer::get_position_geodetic() {
+  Vector3d fix_ecef = this->kf->get_x().segment<STATE_ECEF_POS_LEN>(STATE_ECEF_POS_START);
   ECEF fix_ecef_ecef = { .x = fix_ecef(0), .y = fix_ecef(1), .z = fix_ecef(2) };
   Geodetic fix_pos_geo = ecef2geodetic(fix_ecef_ecef);
   return Vector3d(fix_pos_geo.lat, fix_pos_geo.lon, fix_pos_geo.alt);
@@ -207,18 +207,18 @@ void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::R
   Geodetic geodetic = { log.getLatitude(), log.getLongitude(), log.getAltitude() };
   this->converter = std::make_unique<LocalCoord>(geodetic);
 
-  VectorXd ecef_pos = this->converter->ned2ecef({ 0.0, 0.0, 0.0 }).to_vector();
-  VectorXd ecef_vel = this->converter->ned2ecef({ log.getVNED()[0], log.getVNED()[1], log.getVNED()[2] }).to_vector() - ecef_pos;
+  Vector3d ecef_pos = this->converter->ned2ecef({ 0.0, 0.0, 0.0 }).to_vector();
+  Vector3d ecef_vel = this->converter->ned2ecef({ log.getVNED()[0], log.getVNED()[1], log.getVNED()[2] }).to_vector() - ecef_pos;
   MatrixXdr ecef_pos_R = Vector3d::Constant(std::pow(3.0 * log.getVerticalAccuracy(), 2)).asDiagonal();
   MatrixXdr ecef_vel_R = Vector3d::Constant(std::pow(log.getSpeedAccuracy(), 2)).asDiagonal();
 
   this->unix_timestamp_millis = log.getTimestamp();
   double gps_est_error = (this->kf->get_x().head(3) - ecef_pos).norm();
 
-  VectorXd orientation_ecef = quat2euler(vector2quat(this->kf->get_x().segment<STATE_ECEF_ORIENTATION_LEN>(STATE_ECEF_ORIENTATION_START)));
-  VectorXd orientation_ned = ned_euler_from_ecef({ ecef_pos(0), ecef_pos(1), ecef_pos(2) }, orientation_ecef);
-  VectorXd orientation_ned_gps = Vector3d(0.0, 0.0, DEG2RAD(log.getBearingDeg()));
-  VectorXd orientation_error = (orientation_ned - orientation_ned_gps).array() - M_PI;
+  Vector3d orientation_ecef = quat2euler(vector2quat(this->kf->get_x().segment<STATE_ECEF_ORIENTATION_LEN>(STATE_ECEF_ORIENTATION_START)));
+  Vector3d orientation_ned = ned_euler_from_ecef({ ecef_pos(0), ecef_pos(1), ecef_pos(2) }, orientation_ecef);
+  Vector3d orientation_ned_gps = Vector3d(0.0, 0.0, DEG2RAD(log.getBearingDeg()));
+  Vector3d orientation_error = (orientation_ned - orientation_ned_gps).array() - M_PI;
   for (int i = 0; i < orientation_error.size(); i++) {
     orientation_error(i) = std::fmod(orientation_error(i), 2.0 * M_PI);
     if (orientation_error(i) < 0.0) {
@@ -226,7 +226,7 @@ void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::R
     }
     orientation_error(i) -= M_PI;
   }
-  VectorXd initial_pose_ecef_quat = quat2vector(euler2quat(ecef_euler_from_ned({ ecef_pos(0), ecef_pos(1), ecef_pos(2) }, orientation_ned_gps)));
+  Vector4d initial_pose_ecef_quat = quat2vector(euler2quat(ecef_euler_from_ned({ ecef_pos(0), ecef_pos(1), ecef_pos(2) }, orientation_ned_gps)));
 
   if (ecef_vel.norm() > 5.0 && orientation_error.norm() > 1.0) {
     LOGE("Locationd vs ubloxLocation orientation difference too large, kalman reset");
@@ -250,11 +250,11 @@ void Localizer::handle_car_state(double current_time, const cereal::CarState::Re
 }
 
 void Localizer::handle_cam_odo(double current_time, const cereal::CameraOdometry::Reader& log) {
-  VectorXd rot_device = this->device_from_calib * floatlist2vector(log.getRot());
-  VectorXd trans_device = this->device_from_calib * floatlist2vector(log.getTrans());
+  Vector3d rot_device = this->device_from_calib * floatlist2vector(log.getRot());
+  Vector3d trans_device = this->device_from_calib * floatlist2vector(log.getTrans());
 
-  VectorXd rot_calib_std = floatlist2vector(log.getRotStd());
-  VectorXd trans_calib_std = floatlist2vector(log.getTransStd());
+  Vector3d rot_calib_std = floatlist2vector(log.getRotStd());
+  Vector3d trans_calib_std = floatlist2vector(log.getTransStd());
 
   this->posenet_stds.pop_front();
   this->posenet_stds.push_back(trans_calib_std[0]);
@@ -262,13 +262,13 @@ void Localizer::handle_cam_odo(double current_time, const cereal::CameraOdometry
   // Multiply by 10 to avoid to high certainty in kalman filter because of temporally correlated noise
   trans_calib_std *= 10.0;
   rot_calib_std *= 10.0;
-  VectorXd rot_device_std = rotate_std(this->device_from_calib, rot_calib_std);
-  VectorXd trans_device_std = rotate_std(this->device_from_calib, trans_calib_std);
+  Vector3d rot_device_std = rotate_std(this->device_from_calib, rot_calib_std);
+  Vector3d trans_device_std = rotate_std(this->device_from_calib, trans_calib_std);
 
   this->kf->predict_and_observe(current_time, OBSERVATION_CAMERA_ODO_ROTATION,
-    { (VectorXd(rot_device.rows() + rot_device_std.rows()) << rot_device, rot_device_std).finished() });
+    { (Vector3d(rot_device.rows() + rot_device_std.rows()) << rot_device, rot_device_std).finished() });
   this->kf->predict_and_observe(current_time, OBSERVATION_CAMERA_ODO_TRANSLATION,
-    { (VectorXd(trans_device.rows() + trans_device_std.rows()) << trans_device, trans_device_std).finished() });
+    { (Vector3d(trans_device.rows() + trans_device_std.rows()) << trans_device, trans_device_std).finished() });
 }
 
 void Localizer::handle_live_calib(double current_time, const cereal::LiveCalibrationData::Reader& log) {
@@ -285,7 +285,7 @@ void Localizer::reset_kalman(double current_time) {
   this->reset_kalman(current_time, init_x.segment<4>(3), init_x.head(3));
 }
 
-void Localizer::reset_kalman(double current_time, VectorXd init_orient, VectorXd init_pos) {
+void Localizer::reset_kalman(double current_time, VectorXd init_orient, Vector3d init_pos) {
   // too nonlinear to init on completely wrong
   VectorXd init_x = this->kf->get_initial_x();
   MatrixXdr init_P = this->kf->get_initial_P();
@@ -360,7 +360,7 @@ int Localizer::locationd_thread() {
       pm.send("liveLocationKalman", bytes.begin(), bytes.size());
 
       if (sm.frame % 1200 == 0 && gpsOK) {  // once a minute
-        VectorXd posGeo = this->get_position_geodetic();
+        Vector3d posGeo = this->get_position_geodetic();
         std::string lastGPSPosJSON = util::string_format(
           "{\"latitude\": %.15f, \"longitude\": %.15f, \"altitude\": %.15f}", posGeo(0), posGeo(1), posGeo(2));
 
