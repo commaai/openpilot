@@ -20,8 +20,13 @@ void Replay::parseResponse(QString response){
   camera_paths = doc["cameras"].toArray();
   log_paths = doc["logs"].toArray();
 
-  // add first segment
-  addSegment(seek/60);
+  // add first window:
+  for(int i = 0 ; i < 3 ; i++) {
+    int ind = seek/60 + i;
+    if (ind < camera_paths.size()) {
+      addSegment(seek/60 + i);
+    }
+  }
 }
 
 void Replay::addSegment(int i){
@@ -64,8 +69,6 @@ void Replay::stream(SubMaster *sm){
 
   QObject::connect(unlogger, &Unlogger::loadSegment, [=](){
     addSegment(++current_segment);
-    if (current_segment > 1) {
-      trimSegment(1);
-    }
+    trimSegment(1);
   });
 }
