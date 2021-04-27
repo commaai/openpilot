@@ -27,6 +27,17 @@ static void init_measurement(cereal::LiveLocationKalman::Measurement::Builder me
   meas.setValid(valid);
 }
 
+
+static MatrixXdr rotate_cov(const MatrixXdr& rot_matrix, const MatrixXdr& cov_in) {
+  // To rotate a covariance matrix, the cov matrix needs to multiplied left and right by the transform matrix
+  return ((rot_matrix *  cov_in) * rot_matrix.transpose());
+}
+
+static VectorXd rotate_std(const MatrixXdr& rot_matrix, const VectorXd& std_in) {
+  // Stds cannot be rotated like values, only covariances can be rotated
+  return rotate_cov(rot_matrix, std_in.array().square().matrix().asDiagonal()).diagonal().array().sqrt();
+}
+
 Localizer::Localizer() {
   this->kf = std::make_unique<LiveKalman>();
   this->reset_kalman();
@@ -61,11 +72,12 @@ void Localizer::build_live_location(cereal::LiveLocationKalman::Builder& fix) {
   VectorXd calibrated_orientation_ecef = rot2euler(this->calib_from_device * device_from_ecef);
 
   VectorXd acc_calib = this->calib_from_device * predicted_state.segment<STATE_ACCELERATION_LEN>(STATE_ACCELERATION_START);
-  VectorXd acc_calib_std = ((this->calib_from_device * predicted_cov.block<STATE_ACCELERATION_ERR_LEN, STATE_ACCELERATION_ERR_LEN>(STATE_ACCELERATION_ERR_START, STATE_ACCELERATION_ERR_START)) * this->calib_from_device.transpose()).diagonal().array().sqrt();
+  MatrixXdr acc_calib_cov = predicted_cov.block<STATE_ACCELERATION_ERR_LEN, STATE_ACCELERATION_ERR_LEN>(STATE_ACCELERATION_ERR_START, STATE_ACCELERATION_ERR_START);
+  VectorXd acc_calib_std = rotate_cov(this->calib_from_device, acc_calib_cov).diagonal().array().sqrt();
   VectorXd ang_vel_calib = this->calib_from_device * predicted_state.segment<STATE_ANGULAR_VELOCITY_LEN>(STATE_ANGULAR_VELOCITY_START);
 
-  MatrixXdr vel_angular_err = predicted_cov.block<STATE_ANGULAR_VELOCITY_ERR_LEN, STATE_ANGULAR_VELOCITY_ERR_LEN>(STATE_ANGULAR_VELOCITY_ERR_START, STATE_ANGULAR_VELOCITY_ERR_START);
-  VectorXd ang_vel_calib_std = ((this->calib_from_device * vel_angular_err) * this->calib_from_device.transpose()).diagonal().array().sqrt();
+  MatrixXdr vel_angular_cov = predicted_cov.block<STATE_ANGULAR_VELOCITY_ERR_LEN, STATE_ANGULAR_VELOCITY_ERR_LEN>(STATE_ANGULAR_VELOCITY_ERR_START, STATE_ANGULAR_VELOCITY_ERR_START);
+  VectorXd ang_vel_calib_std = rotate_cov(this->calib_from_device, vel_angular_cov).diagonal().array().sqrt();
 
   VectorXd vel_device = device_from_ecef * vel_ecef;
   VectorXd device_from_ecef_eul = quat2euler(vector2quat(predicted_state.segment<STATE_ECEF_ORIENTATION_LEN>(STATE_ECEF_ORIENTATION_START))).transpose();
@@ -85,7 +97,7 @@ void Localizer::build_live_location(cereal::LiveLocationKalman::Builder& fix) {
   VectorXd vel_device_std = vel_device_cov.diagonal().array().sqrt();
 
   VectorXd vel_calib = this->calib_from_device * vel_device;
-  VectorXd vel_calib_std = ((this->calib_from_device * vel_device_cov) * this->calib_from_device.transpose()).diagonal().array().sqrt();
+  VectorXd vel_calib_std = rotate_cov(this->calib_from_device, vel_device_cov).diagonal().array().sqrt();
 
   VectorXd orientation_ned = ned_euler_from_ecef(fix_ecef_ecef, orientation_ecef);
   //orientation_ned_std = ned_euler_from_ecef(fix_ecef, orientation_ecef + orientation_ecef_std) - orientation_ned
@@ -239,20 +251,22 @@ void Localizer::handle_car_state(double current_time, const cereal::CarState::Re
 
 void Localizer::handle_cam_odo(double current_time, const cereal::CameraOdometry::Reader& log) {
   VectorXd rot_device = this->device_from_calib * floatlist2vector(log.getRot());
-  VectorXd rot_calib_std = 10.0 * floatlist2vector(log.getRotStd());
-  VectorXd rot_device_std = ((this->device_from_calib *  rot_calib_std.array().square().matrix().asDiagonal()) * this->device_from_calib.transpose()).diagonal().array().sqrt();
-  this->kf->predict_and_observe(current_time, OBSERVATION_CAMERA_ODO_ROTATION,
-    { (VectorXd(rot_device.rows() + rot_device_std.rows()) << rot_device, rot_device_std).finished() });
-
   VectorXd trans_device = this->device_from_calib * floatlist2vector(log.getTrans());
+
+  VectorXd rot_calib_std = floatlist2vector(log.getRotStd());
   VectorXd trans_calib_std = floatlist2vector(log.getTransStd());
 
   this->posenet_stds.pop_front();
   this->posenet_stds.push_back(trans_calib_std[0]);
 
+  // Multiply by 10 to avoid to high certainty in kalman filter because of temporally correlated noise
   trans_calib_std *= 10.0;
-  VectorXd trans_device_std = ((this->device_from_calib *  trans_calib_std.array().square().matrix().asDiagonal()) * this->device_from_calib.transpose()).diagonal().array().sqrt();
+  rot_calib_std *= 10.0;
+  VectorXd rot_device_std = rotate_std(this->device_from_calib, rot_calib_std);
+  VectorXd trans_device_std = rotate_std(this->device_from_calib, trans_calib_std);
 
+  this->kf->predict_and_observe(current_time, OBSERVATION_CAMERA_ODO_ROTATION,
+    { (VectorXd(rot_device.rows() + rot_device_std.rows()) << rot_device, rot_device_std).finished() });
   this->kf->predict_and_observe(current_time, OBSERVATION_CAMERA_ODO_TRANSLATION,
     { (VectorXd(trans_device.rows() + trans_device_std.rows()) << trans_device, trans_device_std).finished() });
 }
