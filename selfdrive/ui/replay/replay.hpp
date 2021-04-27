@@ -6,6 +6,8 @@
 #include <QJsonObject>
 #include <QJsonDocument>
 
+#include <QEventLoop>
+
 #include <capnp/dynamic.h>
 
 #include "qt/api.hpp"
@@ -16,7 +18,7 @@
 
 #include "common/util.h"
 
-class Replay : public QObject {
+class Replay : public QWidget {
   Q_OBJECT
 
 public:
@@ -31,11 +33,13 @@ public:
 
 public slots:
   void parseResponse(QString response);
+  void keyPressEvent(QKeyEvent *e);
 
 protected:
   Unlogger *unlogger;
 
 private:
+  int current_segment;
   QString route;
   int seek;
 
@@ -46,6 +50,5 @@ private:
   QMap<int, FrameReader*> frs;
   HttpRequest *http;
 
-  int current_segment;
+  QEventLoop *loop;
 };
-

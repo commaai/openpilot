@@ -41,17 +41,18 @@ private:
   QString file;
 };
 
-typedef QMultiMap<uint64_t, cereal::Event::Reader> Events;
+typedef QMultiMap<uint64_t, QPair<int, cereal::Event::Reader>> Events;
 
 class LogReader : public FileReader {
 Q_OBJECT
 public:
-  LogReader(const QString& file, Events *, QReadWriteLock* events_lock_, QMap<int, QPair<int, int> > *eidx_);
+  LogReader(const QString& file, Events *, QReadWriteLock* events_lock_, QMap<int, QPair<int, int> > *eidx_, int seg_num_);
   ~LogReader();
 
   void readyRead();
   void done() { is_done = true; };
   bool is_done = false;
+  int seg_num;
 
 private:
   bz_stream bStream;

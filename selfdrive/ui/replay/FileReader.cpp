@@ -46,8 +46,8 @@ FileReader::~FileReader() {
 
 }
 
-LogReader::LogReader(const QString& file, Events *events_, QReadWriteLock* events_lock_, QMap<int, QPair<int, int> > *eidx_) :
-    FileReader(file), events(events_), events_lock(events_lock_), eidx(eidx_) {
+LogReader::LogReader(const QString& file, Events *events_, QReadWriteLock* events_lock_, QMap<int, QPair<int, int> > *eidx_, int seg_num_) :
+    FileReader(file), events(events_), events_lock(events_lock_), eidx(eidx_), seg_num(seg_num_) {
   bStream.next_in = NULL;
   bStream.avail_in = 0;
   bStream.bzalloc = NULL;
@@ -94,7 +94,7 @@ void LogReader::mergeEvents(int dled) {
       amsg = kj::arrayPtr(cmsg.getEnd(), amsg.end());
 
       cereal::Event::Reader event = tmsg->getRoot<cereal::Event>();
-      events_local.insert(event.getLogMonoTime(), event);
+      events_local.insert(event.getLogMonoTime(), {seg_num, event});
 
       // hack
       // TODO: rewrite with callback

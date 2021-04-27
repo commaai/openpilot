@@ -1,13 +1,18 @@
 #include "replay.hpp"
+#include <QKeyEvent>
 
 Replay::Replay(QString route_, int seek_) : route(route_), seek(seek_) {
   unlogger = new Unlogger(&events, &events_lock, &frs, seek);
   current_segment = 0;
   bool create_jwt = true;
 
+  setFocusPolicy(Qt::StrongFocus);
+
 #if !defined(QCOM) && !defined(QCOM2)
   create_jwt = false;
 #endif
+
+  loop = new QEventLoop();
 
   http = new HttpRequest(this, "https://api.commadotai.com/v1/route/" + route + "/files", "", create_jwt);
   QObject::connect(http, SIGNAL(receivedResponse(QString)), this, SLOT(parseResponse(QString)));
@@ -42,7 +47,7 @@ void Replay::addSegment(int i){
   QThread* thread = new QThread;
 
   QString log_fn = this->log_paths.at(i).toString();
-  lrs.insert(i, new LogReader(log_fn, &events, &events_lock, &unlogger->eidx));
+  lrs.insert(i, new LogReader(log_fn, &events, &events_lock, &unlogger->eidx, i));
 
   lrs[i]->moveToThread(thread);
   QObject::connect(thread, SIGNAL (started()), lrs[i], SLOT (process()));
@@ -51,18 +56,18 @@ void Replay::addSegment(int i){
   QString camera_fn = this->camera_paths.at(i).toString();
   frs.insert(i, new FrameReader(qPrintable(camera_fn)));
 }
-
 void Replay::trimSegment(int n){
-  event_sizes.enqueue(events.size() - event_sizes.last());
-  auto first = events.begin();
-
-  for(int i = 0 ; i < n ; i++){
-    int remove = event_sizes.dequeue();
-    for(int j = 0 ; j < remove ; j++){
-      first = events.erase(first);
-    }
+/*
+  auto first = events.lowerBound(0);
+  while((*first).first < current_segment) {
+    first++;
+    printf("%d\n", (*first).first);
   }
+  printf("%d\n", (*first).first);
+  return;
+*/
 }
+
 
 void Replay::stream(SubMaster *sm){
   QThread* thread = new QThread;
@@ -71,9 +76,16 @@ void Replay::stream(SubMaster *sm){
     unlogger->process(sm);
   });
   thread->start();
+  loop->exec();
 
   QObject::connect(unlogger, &Unlogger::loadSegment, [=](){
     addSegment(++current_segment);
     trimSegment(1);
   });
 }
+
+void Replay::keyPressEvent(QKeyEvent *e){
+  printf("fal;dskjfa;sljkfd\n");
+}
+
+
