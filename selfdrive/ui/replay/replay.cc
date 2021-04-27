@@ -1,5 +1,6 @@
 #include "replay.hpp"
 #include <termios.h>
+#include <iostream>
 
 int getch(void) {
   int ch;
@@ -102,10 +103,13 @@ void Replay::stream(SubMaster *sm){
 }
 
 void Replay::updateSeek(){
+	char c;
   while(1){
-    char c = getch();
+    c = getch();
     if(c == '\n'){
-      printf("a;lskfjads;lfkj\n");
+			printf("Enter seek request: ");
+			std::cin >> seek;
+			getch(); // remove \n from entering seek
     }
   }
 }
