@@ -26,13 +26,13 @@ public:
   int locationd_thread();
 
   void reset_kalman(double current_time = NAN);
-  void reset_kalman(double current_time, Eigen::VectorXd init_orient, Eigen::Vector3d init_pos);
+  void reset_kalman(double current_time, Eigen::VectorXd init_orient, Eigen::VectorXd init_pos);
 
   kj::ArrayPtr<capnp::byte> get_message_bytes(MessageBuilder& msg_builder, uint64_t logMonoTime,
     bool inputsOK, bool sensorsOK, bool gpsOK);
   void build_live_location(cereal::LiveLocationKalman::Builder& fix);
 
-  Eigen::Vector3d get_position_geodetic();
+  Eigen::VectorXd get_position_geodetic();
 
   void handle_msg_bytes(const char *data, const size_t size);
   void handle_msg(const cereal::Event::Reader& log);
@@ -45,7 +45,7 @@ public:
 private:
   std::unique_ptr<LiveKalman> kf;
 
-  Eigen::Vector3d calib;
+  Eigen::VectorXd calib;
   MatrixXdr device_from_calib;
   MatrixXdr calib_from_device;
   bool calibrated = false;
