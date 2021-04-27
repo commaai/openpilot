@@ -109,6 +109,8 @@ void Replay::updateSeek(){
     if(c == '\n'){
 			printf("Enter seek request: ");
 			std::cin >> seek;
+			current_segment = seek/60;
+			unlogger->setSeekRequest(seek*1e9);
 			getch(); // remove \n from entering seek
     }
   }

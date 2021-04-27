@@ -60,16 +60,16 @@ void Unlogger::process(SubMaster *sm) {
     QThread::sleep(1);
   }
   qDebug() << "got events";
-
+/*
   // TODO: hack
   if (seek_request != 0) {
-    seek_request += events->begin().key();
+    seek_request += events->firstKey();
     while (events->lowerBound(seek_request) == events->end()) {
       qDebug() << "waiting for desired time";
       QThread::sleep(1);
     }
   }
-
+*/
   QElapsedTimer timer;
   timer.start();
 
@@ -83,9 +83,6 @@ void Unlogger::process(SubMaster *sm) {
 
     auto eit = events->lowerBound(t0);
     while (eit != events->end()) {
-
-      //printf("%d\n", events->size());
-
       float time_to_end = ((events->lastKey() - eit.key())/1e9);
       if (loading_segment && (time_to_end > 80.0)){
         loading_segment = false;
@@ -98,14 +95,18 @@ void Unlogger::process(SubMaster *sm) {
       }
 
       if (seek_request != 0) {
-        t0 = seek_request;
+        t0 = seek_request + events->firstKey();
         qDebug() << "seeking to" << t0;
         t0r = timer.nsecsElapsed();
         eit = events->lowerBound(t0);
         seek_request = 0;
         if (eit == events->end()) {
           qWarning() << "seek off end";
-          break;
+          loading_segment = true;
+          emit loadSegment();
+          while(eit == events->end()) {
+            eit = events->lowerBound(t0);
+          }
         }
       }
 
@@ -129,7 +130,8 @@ void Unlogger::process(SubMaster *sm) {
       if (it != socks.end()) {
         long etime = tm-t0;
 
-        float timestamp = etime/1e9;
+        //float timestamp = etime/1e9;
+        float timestamp = (tm - events->firstKey())/1e9;
         if(std::abs(timestamp-last_print) > 5.0){
           last_print = timestamp;
           printf("at %f\n", last_print);
