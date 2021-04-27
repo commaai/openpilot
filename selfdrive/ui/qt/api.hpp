@@ -19,7 +19,7 @@ class CommaApi : public QObject {
 
 public:
   static QByteArray rsa_sign(QByteArray data);
-  static QString create_jwt(QVector<QPair<QString, QJsonValue>> payloads = {}, int expiry=3600);
+  static QString create_jwt(QVector<QPair<QString, QJsonValue>> payloads = {}, int expiry = 3600);
 
 private:
   QNetworkAccessManager* networkAccessManager;
@@ -33,7 +33,7 @@ class HttpRequest : public QObject {
   Q_OBJECT
 
 public:
-  explicit HttpRequest(QObject* parent, QString requestURL, const QString &cache_key = "");
+  explicit HttpRequest(QObject* parent, QString requestURL, const QString &cache_key = "", bool create_jwt_ = true);
   QNetworkReply *reply;
   void sendRequest(QString requestURL);
 
@@ -41,6 +41,7 @@ private:
   QNetworkAccessManager *networkAccessManager;
   QTimer *networkTimer;
   QString cache_key;
+  bool create_jwt;
 
 private slots:
   void requestTimeout();

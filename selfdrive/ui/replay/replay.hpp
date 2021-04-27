@@ -14,6 +14,8 @@
 #include "FrameReader.hpp"
 #include "visionipc_server.h"
 
+#include "common/util.h"
+
 class Replay : public QObject {
   Q_OBJECT
 

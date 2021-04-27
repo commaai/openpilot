@@ -3,8 +3,13 @@
 Replay::Replay(QString route_, int seek) : route(route_) {
   unlogger = new Unlogger(&events, &events_lock, &frs, seek);
   current_segment = 0;
+  bool create_jwt = true;
 
-  http = new HttpRequest(this, "https://api.commadotai.com/v1/route/" + route + "/files");
+#if !defined(QCOM) && !defined(QCOM2)
+  create_jwt = false;
+#endif
+
+  http = new HttpRequest(this, "https://api.commadotai.com/v1/route/" + route + "/files", "", create_jwt);
   QObject::connect(http, SIGNAL(receivedResponse(QString)), this, SLOT(parseResponse(QString)));
 }
 
