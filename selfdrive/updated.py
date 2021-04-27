@@ -36,7 +36,6 @@ from typing import List, Tuple, Optional
 
 from common.basedir import BASEDIR
 from common.params import Params
-from common.realtime import sec_since_boot
 from selfdrive.hardware import EON, TICI, HARDWARE
 from selfdrive.swaglog import cloudlog
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
