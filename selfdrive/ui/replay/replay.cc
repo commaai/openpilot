@@ -1,11 +1,26 @@
 #include "replay.hpp"
+#include <termios.h>
+
+int getch(void) {
+  int ch;
+  struct termios oldt;
+  struct termios newt;
+
+  tcgetattr(STDIN_FILENO, &oldt);
+  newt = oldt;
+  newt.c_lflag &= ~(ICANON | ECHO);
+
+  tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+  ch = getchar();
+  tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+
+  return ch;
+}
 
 Replay::Replay(QString route_, int seek_) : route(route_), seek(seek_) {
   unlogger = new Unlogger(&events, &events_lock, &frs, seek);
   current_segment = 0;
   bool create_jwt = true;
-
-  setFocusPolicy(Qt::StrongFocus);
 
 #if !defined(QCOM) && !defined(QCOM2)
   create_jwt = false;
@@ -74,14 +89,23 @@ void Replay::stream(SubMaster *sm){
   });
   thread->start();
 
+  QThread *seek_thread = new QThread;
+  QObject::connect(seek_thread, &QThread::started, [=](){
+    updateSeek();
+  });
+  seek_thread->start();
+
   QObject::connect(unlogger, &Unlogger::loadSegment, [=](){
     addSegment(++current_segment);
     trimSegment(1);
   });
 }
 
-void Replay::keyPressEvent(QKeyEvent *e){
-  if(e->key() == Qt::Key_Return){
-    printf("Enter pressed!\n");
+void Replay::updateSeek(){
+  while(1){
+    char c = getch();
+    if(c == '\n'){
+      printf("a;lskfjads;lfkj\n");
+    }
   }
 }

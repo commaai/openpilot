@@ -13,7 +13,6 @@ int main(int argc, char *argv[]){
 
   Replay *replay = new Replay(route, 0);
   replay->stream();
-  replay->show();
 
   return a.exec();
 }

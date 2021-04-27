@@ -2,7 +2,6 @@
 
 #include <QFile>
 #include <QQueue>
-#include <QKeyEvent>
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QJsonDocument>
@@ -32,7 +31,7 @@ public:
 
 public slots:
   void parseResponse(QString response);
-  void keyPressEvent(QKeyEvent *e);
+  void updateSeek();
 
 protected:
   Unlogger *unlogger;
