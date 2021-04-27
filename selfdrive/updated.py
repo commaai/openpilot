@@ -288,7 +288,7 @@ def check_for_update() -> Tuple[bool, bool]:
   except subprocess.CalledProcessError:
     # check for internet
     if fetch_output is not None and fetch_output.startswith("fatal: unable to access") and \
-       "Could not resolve host:" in fetch_output: # pylint: disable=unsupported-membership-test
+       "Could not resolve host:" in fetch_output: # pylint: disable=E1135
       return False, False
 
     raise
