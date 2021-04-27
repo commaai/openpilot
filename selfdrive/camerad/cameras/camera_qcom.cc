@@ -472,7 +472,7 @@ static void imx298_ois_calibration(int ois_fd, uint8_t* eeprom) {
     .delay = 0,
   };
   msm_ois_cfg_data cfg = {.cfgtype = CFG_OIS_I2C_WRITE_SEQ_TABLE, .cfg.settings = &ois_reg_setting};
-  int err = cam_ioctl(ois_fd, VIDIOC_MSM_OIS_CFG, &cfg, "ois reg calibration");
+  cam_ioctl(ois_fd, VIDIOC_MSM_OIS_CFG, &cfg, "ois reg calibration");
 }
 
 static void sensors_init(MultiCameraState *s) {
