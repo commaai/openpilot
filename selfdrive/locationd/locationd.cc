@@ -167,11 +167,8 @@ void Localizer::handle_sensors(double current_time, const capnp::List<cereal::Se
 
     // Gyro Uncalibrated
     if (sensor_reading.getSensor() == SENSOR_GYRO_UNCALIBRATED && sensor_reading.getType() == SENSOR_TYPE_GYROSCOPE_UNCALIBRATED) {
-      this->gyro_counter++;
-      if (this->gyro_counter % SENSOR_DECIMATION == 0) {
-        auto v = sensor_reading.getGyroUncalibrated().getV();
-        this->kf->predict_and_observe(sensor_time, OBSERVATION_PHONE_GYRO, { Vector3d(-v[2], -v[1], -v[0]) });
-      }
+      auto v = sensor_reading.getGyroUncalibrated().getV();
+      this->kf->predict_and_observe(sensor_time, OBSERVATION_PHONE_GYRO, { Vector3d(-v[2], -v[1], -v[0]) });
     }
 
     // Accelerometer
@@ -182,10 +179,7 @@ void Localizer::handle_sensors(double current_time, const capnp::List<cereal::Se
       // 40m/s**2 is a good filter for falling detection, no false positives in 20k minutes of driving
       this->device_fell |= (floatlist2vector(v) - Vector3d(10.0, 0.0, 0.0)).norm() > 40.0;
 
-      this->acc_counter++;
-      if (this->acc_counter % SENSOR_DECIMATION == 0) {
-        this->kf->predict_and_observe(sensor_time, OBSERVATION_PHONE_ACCEL, { Vector3d(-v[2], -v[1], -v[0]) });
-      }
+      this->kf->predict_and_observe(sensor_time, OBSERVATION_PHONE_ACCEL, { Vector3d(-v[2], -v[1], -v[0]) });
     }
   }
 }
@@ -236,39 +230,31 @@ void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::R
 }
 
 void Localizer::handle_car_state(double current_time, const cereal::CarState::Reader& log) {
-  this->speed_counter++;
-
-  if (this->speed_counter % SENSOR_DECIMATION == 0) {
-    this->kf->predict_and_observe(current_time, OBSERVATION_ODOMETRIC_SPEED, { (VectorXd(1) << log.getVEgoRaw()).finished() });
-    this->car_speed = std::abs(log.getVEgo());
-    if (this->car_speed < 1e-3) {
-      this->kf->predict_and_observe(current_time, OBSERVATION_NO_ROT, { Vector3d(0.0, 0.0, 0.0) });
-    }
+  this->kf->predict_and_observe(current_time, OBSERVATION_ODOMETRIC_SPEED, { (VectorXd(1) << log.getVEgoRaw()).finished() });
+  this->car_speed = std::abs(log.getVEgo());
+  if (this->car_speed < 1e-3) {
+    this->kf->predict_and_observe(current_time, OBSERVATION_NO_ROT, { Vector3d(0.0, 0.0, 0.0) });
   }
 }
 
 void Localizer::handle_cam_odo(double current_time, const cereal::CameraOdometry::Reader& log) {
-  this->cam_counter++;
+  VectorXd rot_device = this->device_from_calib * floatlist2vector(log.getRot());
+  VectorXd rot_calib_std = 10.0 * floatlist2vector(log.getRotStd());
+  VectorXd rot_device_std = ((this->device_from_calib *  rot_calib_std.array().square().matrix().asDiagonal()) * this->device_from_calib.transpose()).diagonal().array().sqrt();
+  this->kf->predict_and_observe(current_time, OBSERVATION_CAMERA_ODO_ROTATION,
+    { (VectorXd(rot_device.rows() + rot_device_std.rows()) << rot_device, rot_device_std).finished() });
 
-  if (this->cam_counter % VISION_DECIMATION == 0) {
-    VectorXd rot_device = this->device_from_calib * floatlist2vector(log.getRot());
-    VectorXd rot_calib_std = 10.0 * floatlist2vector(log.getRotStd());
-    VectorXd rot_device_std = ((this->device_from_calib *  rot_calib_std.array().square().matrix().asDiagonal()) * this->device_from_calib.transpose()).diagonal().array().sqrt();
-    this->kf->predict_and_observe(current_time, OBSERVATION_CAMERA_ODO_ROTATION,
-      { (VectorXd(rot_device.rows() + rot_device_std.rows()) << rot_device, rot_device_std).finished() });
+  VectorXd trans_device = this->device_from_calib * floatlist2vector(log.getTrans());
+  VectorXd trans_calib_std = floatlist2vector(log.getTransStd());
 
-    VectorXd trans_device = this->device_from_calib * floatlist2vector(log.getTrans());
-    VectorXd trans_calib_std = floatlist2vector(log.getTransStd());
+  this->posenet_stds.pop_front();
+  this->posenet_stds.push_back(trans_calib_std[0]);
 
-    this->posenet_stds.pop_front();
-    this->posenet_stds.push_back(trans_calib_std[0]);
+  trans_calib_std *= 10.0;
+  VectorXd trans_device_std = ((this->device_from_calib *  trans_calib_std.array().square().matrix().asDiagonal()) * this->device_from_calib.transpose()).diagonal().array().sqrt();
 
-    trans_calib_std *= 10.0;
-    VectorXd trans_device_std = ((this->device_from_calib *  trans_calib_std.array().square().matrix().asDiagonal()) * this->device_from_calib.transpose()).diagonal().array().sqrt();
-
-    this->kf->predict_and_observe(current_time, OBSERVATION_CAMERA_ODO_TRANSLATION,
-      { (VectorXd(trans_device.rows() + trans_device_std.rows()) << trans_device, trans_device_std).finished() });
-  }
+  this->kf->predict_and_observe(current_time, OBSERVATION_CAMERA_ODO_TRANSLATION,
+    { (VectorXd(trans_device.rows() + trans_device_std.rows()) << trans_device, trans_device_std).finished() });
 }
 
 void Localizer::handle_live_calib(double current_time, const cereal::LiveCalibrationData::Reader& log) {
@@ -293,11 +279,6 @@ void Localizer::reset_kalman(double current_time, VectorXd init_orient, VectorXd
   init_x.head(3) = init_pos;
 
   this->kf->init_state(init_x, init_P, current_time);
-
-  this->gyro_counter = 0;
-  this->acc_counter = 0;
-  this->speed_counter = 0;
-  this->cam_counter = 0;
 }
 
 void Localizer::handle_msg_bytes(const char *data, const size_t size) {
