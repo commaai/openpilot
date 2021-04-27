@@ -287,7 +287,8 @@ def check_for_update() -> Tuple[bool, bool]:
     return True, check_git_fetch_result(fetch_output)
   except subprocess.CalledProcessError:
     # check for internet
-    if fetch_output is not None and fetch_output.startswith("fatal: unable to access") and "Could not resolve host:" in fetch_output:
+    if fetch_output is not None and fetch_output.startswith("fatal: unable to access") and \
+       "Could not resolve host:" in fetch_output: # pylint: disable=unsupported-membership-test
       return False, False
 
     raise
