@@ -252,17 +252,20 @@ void Localizer::handle_cam_odo(double current_time, const cereal::CameraOdometry
 
   if (this->cam_counter % VISION_DECIMATION == 0) {
     VectorXd rot_device = this->device_from_calib * floatlist2vector(log.getRot());
-    VectorXd rot_device_std = (this->device_from_calib * floatlist2vector(log.getRotStd())) * 10.0;
+    VectorXd rot_calib_std = 10.0 * floatlist2vector(log.getRotStd());
+    VectorXd rot_device_std = ((this->device_from_calib *  rot_calib_std.array().square().matrix().asDiagonal()) * this->device_from_calib.transpose()).diagonal().array().sqrt();
     this->kf->predict_and_observe(current_time, OBSERVATION_CAMERA_ODO_ROTATION,
       { (VectorXd(rot_device.rows() + rot_device_std.rows()) << rot_device, rot_device_std).finished() });
 
     VectorXd trans_device = this->device_from_calib * floatlist2vector(log.getTrans());
-    VectorXd trans_device_std = this->device_from_calib * floatlist2vector(log.getTransStd());
+    VectorXd trans_calib_std = floatlist2vector(log.getTransStd());
 
     this->posenet_stds.pop_front();
-    this->posenet_stds.push_back(trans_device_std[0]);
+    this->posenet_stds.push_back(trans_calib_std[0]);
 
-    trans_device_std *= 10.0;
+    trans_calib_std *= 10.0;
+    VectorXd trans_device_std = ((this->device_from_calib *  trans_calib_std.array().square().matrix().asDiagonal()) * this->device_from_calib.transpose()).diagonal().array().sqrt();
+
     this->kf->predict_and_observe(current_time, OBSERVATION_CAMERA_ODO_TRANSLATION,
       { (VectorXd(trans_device.rows() + trans_device_std.rows()) << trans_device, trans_device_std).finished() });
   }
