@@ -96,11 +96,6 @@ class Controls:
     if self.read_only:
       self.CP.safetyModel = car.CarParams.SafetyModel.noOutput
 
-    # Write CarParams for radard and boardd safety mode
-    cp_bytes = self.CP.to_bytes()
-    params.put("CarParams", cp_bytes)
-    put_nonblocking("CarParamsCache", cp_bytes)
-
     self.CC = car.CarControl.new_message()
     self.AM = AlertManager()
     self.events = Events()
@@ -117,6 +112,7 @@ class Controls:
     elif self.CP.lateralTuning.which() == 'lqr':
       self.LaC = LatControlLQR(self.CP)
 
+    self.initialized = False
     self.state = State.disabled
     self.enabled = False
     self.active = False
@@ -167,6 +163,9 @@ class Controls:
     if self.startup_event is not None:
       self.events.add(self.startup_event)
       self.startup_event = None
+
+    if not self.initialized:
+      self.events.add(EventName.controlsInitializing)
 
     # Create events for battery, temperature, disk space, and memory
     if self.sm['deviceState'].batteryPercent < 1 and self.sm['deviceState'].chargingError:
@@ -276,6 +275,15 @@ class Controls:
     CS = self.CI.update(self.CC, can_strs)
 
     self.sm.update(0)
+
+    if not self.initialized:
+      if CS.canValid and self.sm.all_alive_and_valid():
+        self.initialized = True
+
+        # Write CarParams for radard and boardd safety mode
+        cp_bytes = self.CP.to_bytes()
+        Params().put("CarParams", cp_bytes)
+        put_nonblocking("CarParamsCache", cp_bytes)
 
     # Check for CAN timeout
     if not can_strs:
