@@ -2,11 +2,10 @@
 
 #include <QFile>
 #include <QQueue>
+#include <QKeyEvent>
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QJsonDocument>
-
-#include <QEventLoop>
 
 #include <capnp/dynamic.h>
 
@@ -49,6 +48,4 @@ private:
   QMap<int, LogReader*> lrs;
   QMap<int, FrameReader*> frs;
   HttpRequest *http;
-
-  QEventLoop *loop;
 };

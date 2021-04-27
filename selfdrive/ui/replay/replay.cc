@@ -1,5 +1,4 @@
 #include "replay.hpp"
-#include <QKeyEvent>
 
 Replay::Replay(QString route_, int seek_) : route(route_), seek(seek_) {
   unlogger = new Unlogger(&events, &events_lock, &frs, seek);
@@ -11,8 +10,6 @@ Replay::Replay(QString route_, int seek_) : route(route_), seek(seek_) {
 #if !defined(QCOM) && !defined(QCOM2)
   create_jwt = false;
 #endif
-
-  loop = new QEventLoop();
 
   http = new HttpRequest(this, "https://api.commadotai.com/v1/route/" + route + "/files", "", create_jwt);
   QObject::connect(http, SIGNAL(receivedResponse(QString)), this, SLOT(parseResponse(QString)));
@@ -76,7 +73,6 @@ void Replay::stream(SubMaster *sm){
     unlogger->process(sm);
   });
   thread->start();
-  loop->exec();
 
   QObject::connect(unlogger, &Unlogger::loadSegment, [=](){
     addSegment(++current_segment);
@@ -85,7 +81,7 @@ void Replay::stream(SubMaster *sm){
 }
 
 void Replay::keyPressEvent(QKeyEvent *e){
-  printf("fal;dskjfa;sljkfd\n");
+  if(e->key() == Qt::Key_Return){
+    printf("Enter pressed!\n");
+  }
 }
-
-
