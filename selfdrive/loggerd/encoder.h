@@ -1,7 +1,5 @@
 #pragma once
 
-#include <cstdint>
-
 class VideoEncoder {
 public:
   virtual ~VideoEncoder() {}

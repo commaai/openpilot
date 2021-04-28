@@ -2,7 +2,6 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include <pthread.h>
 
 #include "common/util.h"
 #include "camera_common.h"

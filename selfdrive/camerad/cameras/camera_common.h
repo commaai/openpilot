@@ -1,19 +1,13 @@
 #pragma once
 
-#include <stdlib.h>
-#include <stdbool.h>
-#include <stdint.h>
 #include <memory>
 #include <thread>
 #include "common/mat.h"
-#include "common/swaglog.h"
 #include "common/queue.h"
 #include "visionbuf.h"
-#include "common/visionimg.h"
 #include "messaging.hpp"
 #include "transforms/rgb_to_yuv.h"
 
-#include "visionipc.h"
 #include "visionipc_server.h"
 
 #define CAMERA_ID_IMX298 0

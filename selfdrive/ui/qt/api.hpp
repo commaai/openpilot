@@ -1,18 +1,10 @@
 #pragma once
 
-#include <QCryptographicHash>
-#include <QJsonValue>
 #include <QNetworkReply>
-#include <QNetworkRequest>
 #include <QPair>
 #include <QString>
 #include <QVector>
-#include <QWidget>
-
-#include <atomic>
-#include <openssl/bio.h>
-#include <openssl/pem.h>
-#include <openssl/rsa.h>
+#include <QTimer>
 
 class CommaApi : public QObject {
   Q_OBJECT

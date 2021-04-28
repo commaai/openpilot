@@ -1,5 +1,4 @@
-#ifndef SNPEMODEL_H
-#define SNPEMODEL_H
+#pragma once
 
 #include <SNPE/SNPE.hpp>
 #include <SNPE/SNPEBuilder.hpp>
@@ -63,6 +62,4 @@ private:
   float *desire;
   std::unique_ptr<zdl::DlSystem::IUserBuffer> desireBuffer;
 };
-
-#endif
 

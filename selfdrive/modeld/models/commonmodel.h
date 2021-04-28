@@ -1,14 +1,7 @@
 #pragma once
-#define CL_USE_DEPRECATED_OPENCL_1_2_APIS
-#ifdef __APPLE__
-#include <OpenCL/cl.h>
-#else
-#include <CL/cl.h>
-#endif
 
-#include <float.h>
-#include <stdlib.h>
-#include "common/mat.h"
+#define CL_USE_DEPRECATED_OPENCL_1_2_APIS
+#include "common/clutil.h"
 #include "transforms/transform.h"
 #include "transforms/loadyuv.h"
 

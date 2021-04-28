@@ -1,15 +1,11 @@
 #pragma once
 
-#include <ctime>
-#include <cstdint>
-#include <pthread.h>
 #include <mutex>
 #include <vector>
 #include <optional>
 
 #include <libusb-1.0/libusb.h>
 
-#include "cereal/gen/cpp/car.capnp.h"
 #include "cereal/gen/cpp/log.capnp.h"
 
 // double the FIFO size

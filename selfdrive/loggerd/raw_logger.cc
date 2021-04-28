@@ -1,11 +1,6 @@
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 
-#include <cstdio>
-#include <cstdlib>
 #include <cassert>
-
-#include <fcntl.h>
-#include <unistd.h>
 
 #define __STDC_CONSTANT_MACROS
 

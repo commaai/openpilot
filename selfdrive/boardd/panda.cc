@@ -1,9 +1,3 @@
-#include <stdexcept>
-#include <cassert>
-#include <iostream>
-#include <vector>
-#include <unistd.h>
-
 #include "common/swaglog.h"
 #include "common/gpio.h"
 #include "common/util.h"

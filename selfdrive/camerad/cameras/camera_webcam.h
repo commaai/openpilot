@@ -1,7 +1,5 @@
 #pragma once
 
-#include <stdbool.h>
-
 #ifdef __APPLE__
 #include <OpenCL/cl.h>
 #else

@@ -1,7 +1,5 @@
 #pragma once
 
-#include <inttypes.h>
-#include <stdbool.h>
 #include "clutil.h"
 
 typedef struct {

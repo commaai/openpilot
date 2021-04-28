@@ -1,11 +1,5 @@
 #pragma once
 
-#include <cstdio>
-#include <cstdlib>
-
-#include <string>
-#include <vector>
-
 extern "C" {
 #include <libavutil/imgutils.h>
 #include <libavcodec/avcodec.h>

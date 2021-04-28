@@ -2,7 +2,6 @@
 #include <math.h>
 #include <algorithm>
 #include "commonmodel.h"
-#include "common/clutil.h"
 #include "common/mat.h"
 #include "common/timing.h"
 

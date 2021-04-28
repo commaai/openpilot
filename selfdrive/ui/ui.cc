@@ -1,7 +1,4 @@
-#include <iostream>
-#include <stdio.h>
 #include <cmath>
-#include <unistd.h>
 #include <assert.h>
 
 #include "common/util.h"

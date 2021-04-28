@@ -1,9 +1,5 @@
 #pragma once
 
-#include <stdint.h>
-#include <stdbool.h>
-#include <pthread.h>
-#include <memory>
 #include <atomic>
 #include "messaging.hpp"
 
@@ -14,7 +10,6 @@
 
 #include "visionbuf.h"
 
-#include "common/mat.h"
 #include "common/util.h"
 #include "imgproc/utils.h"
 

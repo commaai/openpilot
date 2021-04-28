@@ -1,9 +1,5 @@
 #pragma once
 
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-
 #ifdef __APPLE__
 #include <OpenCL/cl.h>
 #else

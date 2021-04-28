@@ -1,8 +1,5 @@
 #include "camera_frame_stream.h"
 
-#include <unistd.h>
-#include <cassert>
-
 #include <capnp/dynamic.h>
 
 #include "messaging.hpp"

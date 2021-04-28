@@ -1,8 +1,5 @@
-#include <stdlib.h>
-#include <stdio.h>
 #include <assert.h>
 #include <string>
-
 #include "glutil.h"
 
 static GLuint load_shader(GLenum shaderType, const char *src) {

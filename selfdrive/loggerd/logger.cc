@@ -1,17 +1,7 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <stdbool.h>
-#include <string.h>
 #include <assert.h>
-#include <time.h>
 #include <errno.h>
-#include <unistd.h>
 #include <sys/stat.h>
 
-#include <iostream>
-#include <fstream>
-#include <streambuf>
 #ifdef QCOM
 #include <cutils/properties.h>
 #endif

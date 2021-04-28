@@ -1,6 +1,3 @@
-#include <stdio.h>
-#include <string.h>
-#include <math.h>
 #include <map>
 #include "common/util.h"
 #include "paint.hpp"

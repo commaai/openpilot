@@ -12,7 +12,6 @@
 #include <sys/stat.h>
 #include <mutex>
 #include <csignal>
-#include <string.h>
 
 #include "common/util.h"
 #include "common/swaglog.h"

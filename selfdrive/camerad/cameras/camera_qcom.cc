@@ -1,25 +1,20 @@
-#include <stdio.h>
-#include <stdbool.h>
 #include <assert.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <math.h>
 #include <poll.h>
 #include <sys/ioctl.h>
-#include <atomic>
 #include <algorithm>
 
 #include <linux/media.h>
 
 #include <cutils/properties.h>
 
-#include <pthread.h>
 #include "msmb_isp.h"
 #include "msmb_ispif.h"
 #include "msmb_camera.h"
 #include "msm_cam_sensor.h"
 
-#include "common/util.h"
 #include "common/timing.h"
 #include "common/swaglog.h"
 #include "common/params.h"

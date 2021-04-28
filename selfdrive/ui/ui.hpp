@@ -15,7 +15,6 @@
 #include <map>
 #include <memory>
 #include <string>
-#include <sstream>
 
 #include "nanovg.h"
 
@@ -26,7 +25,6 @@
 #include "common/glutil.h"
 #include "common/transformations/orientation.hpp"
 #include "qt/sound.hpp"
-#include "visionipc.h"
 #include "visionipc_client.h"
 
 #define COLOR_BLACK nvgRGBA(0, 0, 0, 255)

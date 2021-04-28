@@ -1,7 +1,6 @@
 #include <algorithm>
 #include <set>
 #include <stdlib.h>
-#include <iostream>
 
 #include "common/params.h"
 #include "common/swaglog.h"

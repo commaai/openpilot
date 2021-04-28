@@ -1,5 +1,4 @@
-#ifndef ONNXMODEL_H
-#define ONNXMODEL_H
+#pragma once
 
 #include <stdlib.h>
 #include "runmodel.h"
@@ -31,6 +30,3 @@ private:
   int pipein[2];
   int pipeout[2];
 };
-
-#endif
-

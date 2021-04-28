@@ -1,6 +1,3 @@
-#include <stdio.h>
-#include <stdint.h>
-#include <unistd.h>
 #include <sys/resource.h>
 #include <sys/time.h>
 
@@ -12,7 +9,6 @@
 #endif
 
 #include <cassert>
-#include <chrono>
 
 #include "messaging.hpp"
 #include "common/timing.h"

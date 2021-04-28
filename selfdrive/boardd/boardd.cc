@@ -1,17 +1,7 @@
-#include <stdio.h>
-#include <stdint.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <sched.h>
 #include <errno.h>
-#include <sys/cdefs.h>
-#include <sys/types.h>
-#include <sys/resource.h>
-
-#include <ctime>
-#include <cassert>
-#include <iostream>
-#include <algorithm>
 #include <bitset>
 #include <thread>
 #include <atomic>

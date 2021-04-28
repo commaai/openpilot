@@ -1,8 +1,5 @@
 #include "gpio.h"
 #include "util.h"
-#include <fcntl.h>
-#include <unistd.h>
-#include <string.h>
 
 // We assume that all pins have already been exported on boot,
 // and that we have permission to write to them.

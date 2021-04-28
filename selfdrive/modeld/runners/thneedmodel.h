@@ -21,4 +21,3 @@ private:
   float *trafficConvention;
   float *desire;
 };
-

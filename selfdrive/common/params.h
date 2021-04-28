@@ -1,6 +1,5 @@
 #pragma once
 
-#include <stddef.h>
 #include <map>
 #include <string>
 #include <sstream>

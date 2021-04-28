@@ -1,9 +1,7 @@
 #include "camera_webcam.h"
 
-#include <unistd.h>
 #include <assert.h>
 #include <string.h>
-#include <pthread.h>
 
 #include "common/util.h"
 #include "common/timing.h"

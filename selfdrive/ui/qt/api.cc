@@ -9,6 +9,12 @@
 #include <QWidget>
 #include <QTimer>
 #include <QRandomGenerator>
+#include <QCryptographicHash>
+#include <QJsonValue>
+
+#include <openssl/bio.h>
+#include <openssl/pem.h>
+#include <openssl/rsa.h>
 
 #include "api.hpp"
 #include "common/params.h"

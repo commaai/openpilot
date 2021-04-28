@@ -1,7 +1,5 @@
 #pragma once
 
-#include <stdint.h>
-#include <stddef.h>
 #include <vector>
 #include "clutil.h"
 

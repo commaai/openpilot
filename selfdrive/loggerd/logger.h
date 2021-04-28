@@ -1,8 +1,5 @@
 #pragma once
 
-#include <stdio.h>
-#include <stdint.h>
-#include <pthread.h>
 #include <memory>
 #include <bzlib.h>
 #include <kj/array.h>

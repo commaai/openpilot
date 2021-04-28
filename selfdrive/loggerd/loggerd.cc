@@ -1,12 +1,3 @@
-#include <cstdio>
-#include <cstdlib>
-#include <cstdint>
-#include <cassert>
-#include <unistd.h>
-#include <errno.h>
-#include <string.h>
-#include <inttypes.h>
-#include <pthread.h>
 #include <sys/resource.h>
 
 #include <string>
@@ -14,7 +5,6 @@
 #include <mutex>
 #include <condition_variable>
 #include <atomic>
-#include <random>
 
 #include <ftw.h>
 
@@ -27,7 +17,6 @@
 #include "messaging.hpp"
 #include "services.h"
 
-#include "visionipc.h"
 #include "visionipc_client.h"
 
 #include "encoder.h"

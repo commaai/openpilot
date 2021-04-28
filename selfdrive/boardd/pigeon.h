@@ -1,7 +1,7 @@
 #pragma once
+
 #include <string>
 #include <termios.h>
-
 
 #include "panda.h"
 

@@ -3,7 +3,7 @@
 #include "common/mat.h"
 #include "common/timing.h"
 #include "common/params.h"
-
+#include "common/util.h"
 #include <libyuv.h>
 
 #define MODEL_WIDTH 320

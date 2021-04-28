@@ -1,8 +1,4 @@
-#include <cassert>
-#include <unistd.h>
-#include <fcntl.h>
 #include <errno.h>
-#include <termios.h>
 
 #include "common/swaglog.h"
 #include "common/gpio.h"
