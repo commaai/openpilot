@@ -23,7 +23,6 @@ public:
   Replay(QString route_, int seek);
   void stream(SubMaster *sm = nullptr);
   void addSegment(int i);
-  void trimSegment(int n);
   QJsonArray camera_paths;
   QJsonArray log_paths;
 

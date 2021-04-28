@@ -47,18 +47,6 @@ void Replay::addSegment(int i){
   frs.insert(i, new FrameReader(qPrintable(camera_fn)));
 }
 
-void Replay::trimSegment(int n){
-  event_sizes.enqueue(events.size() - event_sizes.last());
-  auto first = events.begin();
-
-  for(int i = 0 ; i < n ; i++){
-    int remove = event_sizes.dequeue();
-    for(int j = 0 ; j < remove ; j++){
-      first = events.erase(first);
-    }
-  }
-}
-
 void Replay::stream(SubMaster *sm){
   QThread* thread = new QThread;
   unlogger->moveToThread(thread);
@@ -69,8 +57,5 @@ void Replay::stream(SubMaster *sm){
 
   QObject::connect(unlogger, &Unlogger::loadSegment, [=](){
     addSegment(++current_segment);
-    if (current_segment > 1) {
-      trimSegment(1);
-    }
   });
 }
