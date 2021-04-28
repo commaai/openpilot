@@ -10,7 +10,7 @@ from common.params import Params
 from common.spinner import Spinner
 from common.file_helpers import mkdirs_exists_ok
 from common.basedir import PERSIST
-from selfdrive.hardware import HARDWARE
+from selfdrive.hardware import HARDWARE, PC
 from selfdrive.swaglog import cloudlog
 
 
@@ -65,13 +65,14 @@ def register(show_spinner=False):
         resp = api_get("v2/pilotauth/", method='POST', timeout=15,
                        imei=imei1, imei2=imei2, serial=serial, public_key=public_key, register_token=register_token)
 
-        if resp.status_code == 402:
-          cloudlog.info("Uknown serial number while trying to register device")
+        if resp.status_code in (402, 403):
+          cloudlog.info(f"Unable to register device, got {resp.status_code}")
           dongle_id = None
+          if PC:
+            dongle_id = "UnofficialDevice"
         else:
           dongleauth = json.loads(resp.text)
           dongle_id = dongleauth["dongle_id"]
-          params.put("DongleId", dongle_id)
         break
       except Exception:
         cloudlog.exception("failed to authenticate")
@@ -81,6 +82,8 @@ def register(show_spinner=False):
     if show_spinner:
       spinner.close()
 
+  if dongle_id:
+    params.put("DongleId", dongle_id)
   return dongle_id
 
 
