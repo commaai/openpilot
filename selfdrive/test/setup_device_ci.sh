@@ -27,7 +27,7 @@ if [ ! -d "$SOURCE_DIR" ]; then
 fi
 
 # clear stale build cache
-find /tmp/scons_cache/* -mtime +2 -exec ls '{}' \; || true
+find /tmp/scons_cache/* -mtime +1 -exec rm -rf '{}' \; || true
 
 # this can get really big on the CI devices
 rm -rf /data/core
