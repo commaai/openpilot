@@ -54,6 +54,8 @@ Unlogger::Unlogger(Events *events_, QReadWriteLock* events_lock_, QMap<int, Fram
 
 void Unlogger::process(SubMaster *sm) {
 
+  active = true;
+
   qDebug() << "hello from unlogger thread";
   while (events->size() == 0) {
     qDebug() << "waiting for events";
@@ -72,19 +74,20 @@ void Unlogger::process(SubMaster *sm) {
     }
   }
 */
+
   QElapsedTimer timer;
   timer.start();
 
   uint64_t last_elapsed = 0;
 
   // loops
-  while (1) {
+  while (active) {
     uint64_t t0 = (events->begin()+1).key();
     uint64_t t0r = timer.nsecsElapsed();
     qDebug() << "unlogging at" << t0;
 
     auto eit = events->lowerBound(t0);
-    while (eit != events->end()) {
+    while ((eit != events->end()) && active) {
       float time_to_end = ((events->lastKey() - eit.key())/1e9);
       if (loading_segment && (time_to_end > 80.0)){
         loading_segment = false;
@@ -106,10 +109,9 @@ void Unlogger::process(SubMaster *sm) {
         if ((eit == events->end()) || (eit.key() - t0 > 30*1e9)) {
           qWarning() << "seek off end";
           while((eit == events->end()) || (eit.key() - t0 > 30*1e9)) {
-            printf("%d\n",(eit.key() - t0 > 30*1e9));
             eit = events->lowerBound(t0);
           }
-          emit trimSegments();
+          //emit trimSegments();
         }
       }
 

@@ -53,6 +53,7 @@ void Replay::parseResponse(QString response){
 }
 
 void Replay::addSegment(int i){
+  printf("GOT HERE\n");
   if (lrs.find(i) != lrs.end()) {
     return;
   }
@@ -60,6 +61,7 @@ void Replay::addSegment(int i){
   QThread* thread = new QThread;
 
   QString log_fn = this->log_paths.at(i).toString();
+  printf("SIZE: %d\n", log_paths.size());
   lrs.insert(i, new LogReader(log_fn, &events, &events_lock, &unlogger->eidx, i));
 
   lrs[i]->moveToThread(thread);
@@ -84,14 +86,14 @@ void Replay::trimSegment(){
 }
 
 void Replay::stream(SubMaster *sm){
-  QThread* thread = new QThread;
+  thread = new QThread;
   unlogger->moveToThread(thread);
   QObject::connect(thread, &QThread::started, [=](){
     unlogger->process(sm);
   });
   thread->start();
 
-  QThread *seek_thread = new QThread;
+  seek_thread = new QThread;
   QObject::connect(seek_thread, &QThread::started, [=](){
     updateSeek();
   });
@@ -99,11 +101,16 @@ void Replay::stream(SubMaster *sm){
 
   QObject::connect(unlogger, &Unlogger::loadSegment, [=](){
     addSegment(++current_segment);
-    trimSegment();
+    //trimSegment();
   });
   QObject::connect(unlogger, &Unlogger::trimSegments, [=](){
-    trimSegment();
+    //trimSegment();
   });
+}
+
+void Replay::stopStream(){
+  unlogger->setActive(false);
+  thread->quit();
 }
 
 void Replay::updateSeek(){
@@ -111,17 +118,30 @@ void Replay::updateSeek(){
   while(1){
     c = getch();
     if(c == '\n'){
+
+      fflush(stdin);
 			printf("Enter seek request: ");
 			std::cin >> seek;
+
+      stopStream();
+      events.clear();
+      lrs.clear();
+      frs.clear();
+      printf("Events size after clear : %d\n", events.size());
+
 			// Add 3 segment window for seek
 			for(int i = 0 ; i < 3 ; i++){
 				int ind = seek/60 - 1 + i;
+        /*
 				if(std::abs(ind - current_segment) > 1){
 					addSegment(ind);
 				}
+        */
+        addSegment(ind);
 			}
 			current_segment = seek/60;
 			unlogger->setSeekRequest(seek*1e9);
+      thread->start();
 			getch(); // remove \n from entering seek
     }
   }

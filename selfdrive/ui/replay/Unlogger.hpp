@@ -15,6 +15,7 @@ Q_OBJECT
     uint64_t getCurrentTime() { return tc; }
     void setSeekRequest(uint64_t seek_request_) { seek_request = seek_request_; }
     void setPause(bool pause) { paused = pause; }
+    void setActive(bool active_) { active = active_; }
     void togglePause() { paused = !paused; }
     QMap<int, QPair<int, int> > eidx;
 
@@ -37,6 +38,7 @@ Q_OBJECT
     uint64_t seek_request = 0;
     bool paused = false;
     bool loading_segment = false;
+    bool active = true;
 
     VisionIpcServer *vipc_server = nullptr;
 };

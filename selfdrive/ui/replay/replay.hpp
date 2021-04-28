@@ -22,6 +22,7 @@ class Replay : public QWidget {
 public:
   Replay(QString route_, int seek);
   void stream(SubMaster *sm = nullptr);
+  void stopStream();
   void addSegment(int i);
   void trimSegment();
   QJsonArray camera_paths;
@@ -40,6 +41,9 @@ private:
   int current_segment;
   QString route;
   int seek;
+
+  QThread *thread;
+  QThread *seek_thread;
 
   QReadWriteLock events_lock;
   Events events;
