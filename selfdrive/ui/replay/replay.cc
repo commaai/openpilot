@@ -122,14 +122,13 @@ void Replay::seekTime(int seek_){
     // Add 3 segment window for seek
     for(int i = 0 ; i < 3 ; i++){
       int ind = seek_/60 - 1 + i;
-      printf("IND IND : %d\n", ind);
       if((ind < camera_paths.size()) && (ind >= 0)){
         addSegment(ind);
       }
     }
     thread->start();
+    current_segment = seek_/60;
   }
-  current_segment = seek_/60;
   unlogger->setSeekRequest(seek_*1e9);
 }
 

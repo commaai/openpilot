@@ -87,10 +87,9 @@ void Unlogger::process(SubMaster *sm) {
     qDebug() << "unlogging at" << t0;
 
     auto eit = events->lowerBound(t0);
-    while((eit.key() - t0) > 1e9){
+    while(eit.key() - t0 > 1e9){
       eit = events->lowerBound(t0);
     }
-
 
     while ((eit != events->end()) && active) {
       float time_to_end = ((events->lastKey() - eit.key())/1e9);
@@ -105,7 +104,7 @@ void Unlogger::process(SubMaster *sm) {
         t0r = timer.nsecsElapsed();
       }
 
-      if (seek_request != 0) {
+      if (seek_request > 0) {
         t0 = seek_request + route_t0;
         qDebug() << "seeking to" << t0;
         t0r = timer.nsecsElapsed();
