@@ -82,7 +82,8 @@ def register(show_spinner=False):
     if show_spinner:
       spinner.close()
 
-  params.put("DongleId", dongle_id)
+  if dongle_id:
+    params.put("DongleId", dongle_id)
   return dongle_id
 
 
