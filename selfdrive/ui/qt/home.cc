@@ -27,16 +27,13 @@ HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
 
   onroad = new OnroadWindow(this);
   layout->addWidget(onroad);
-  
-  home = new OffroadHome(this);
-  layout->addWidget(home);
-
-  //QObject::connect(glWindow, SIGNAL(offroadTransition(bool)), &home, SLOT(setVisible(bool)));
-  //QObject::connect(glWindow, SIGNAL(offroadTransition(bool)), this, SIGNAL(offroadTransition(bool)));
-  //QObject::connect(glWindow, SIGNAL(screen_shutoff()), this, SIGNAL(closeSettings()));
-  QObject::connect(this, SIGNAL(openSettings()), home, SLOT(refresh()));
-
   QObject::connect(this, &HomeWindow::update, onroad, &OnroadWindow::update);
+  QObject::connect(this, &HomeWindow::displayPowerChanged, onroad, &OnroadWindow::setEnabled);
+  
+  home = new OffroadHome();
+  layout->addWidget(home);
+  QObject::connect(this, SIGNAL(openSettings()), home, SLOT(refresh()));
+  QObject::connect(this, &HomeWindow::offroadTransition, home, &OffroadHome::setVisible);
 
   setLayout(layout);
 }

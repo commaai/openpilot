@@ -355,8 +355,8 @@ QUIState::QUIState(QObject *parent) : QObject(parent) {
   ui_state.vipc_client_rear = new VisionIpcClient("camerad", ui_state.wide_camera ? VISION_STREAM_RGB_WIDE : VISION_STREAM_RGB_BACK, true);
   ui_state.vipc_client_front = new VisionIpcClient("camerad", VISION_STREAM_RGB_FRONT, true);
   ui_state.vipc_client = ui_state.vipc_client_rear;
-  
-  // setup update timer
+ 
+  // update timer
   timer = new QTimer(this);
   QObject::connect(timer, SIGNAL(timeout()), this, SLOT(update()));
   timer->start(0);
@@ -387,8 +387,6 @@ void QUIState::update() {
   emit uiUpdate(ui_state);
 }
 
-
-
 Device::Device(QObject *parent) : brightness_filter(BACKLIGHT_OFFROAD, BACKLIGHT_TS, BACKLIGHT_DT), QObject(parent) {
   brightness_b = Params(true).get<float>("BRIGHTNESS_B").value_or(10.0);
   brightness_m = Params(true).get<float>("BRIGHTNESS_M").value_or(0.1);
@@ -404,19 +402,22 @@ void Device::setAwake(bool on) {
     awake = on;
     Hardware::set_display_power(awake);
     LOGD("setting display power %d", awake);
+    emit displayPowerChanged(awake);
   }
 }
 
 void Device::updateBrightness(const UIState &s) {
   float clipped_brightness = std::min(100.0f, (s.scene.light_sensor * brightness_m) + brightness_b);
+  
+#ifdef QCOM2
   if (!s.scene.started) {
     clipped_brightness = BACKLIGHT_OFFROAD;
   }
+#endif
 
   int brightness = brightness_filter.update(clipped_brightness);
   if (!awake) {
     brightness = 0;
-    emit displayOff();
   }
 
   if (brightness != last_brightness) {

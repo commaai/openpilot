@@ -7,22 +7,23 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
 
   homeWindow = new HomeWindow(this);
   main_layout->addWidget(homeWindow);
+  QObject::connect(homeWindow, &HomeWindow::openSettings, this, &MainWindow::openSettings);
+  QObject::connect(homeWindow, &HomeWindow::closeSettings, this, &MainWindow::closeSettings);
+  QObject::connect(&qs, &QUIState::uiUpdate, homeWindow, &HomeWindow::update);
+  QObject::connect(&qs, &QUIState::offroadTransition, homeWindow, &HomeWindow::offroadTransition);
+  QObject::connect(&device, &Device::displayPowerChanged, homeWindow, &HomeWindow::displayPowerChanged);
 
   settingsWindow = new SettingsWindow(this);
   main_layout->addWidget(settingsWindow);
+  QObject::connect(settingsWindow, &SettingsWindow::closeSettings, this, &MainWindow::closeSettings);
+  QObject::connect(&qs, &QUIState::offroadTransition, settingsWindow, &SettingsWindow::offroadTransition);
+  QObject::connect(settingsWindow, SIGNAL(reviewTrainingGuide()), this, SLOT(reviewTrainingGuide()));
 
   onboardingWindow = new OnboardingWindow(this);
   main_layout->addWidget(onboardingWindow);
 
-  QObject::connect(homeWindow, SIGNAL(openSettings()), this, SLOT(openSettings()));
-  QObject::connect(homeWindow, SIGNAL(closeSettings()), this, SLOT(closeSettings()));
-  QObject::connect(homeWindow, SIGNAL(offroadTransition(bool)), this, SLOT(offroadTransition(bool)));
-  QObject::connect(homeWindow, SIGNAL(offroadTransition(bool)), settingsWindow, SIGNAL(offroadTransition(bool)));
-  QObject::connect(settingsWindow, SIGNAL(closeSettings()), this, SLOT(closeSettings()));
-  QObject::connect(settingsWindow, SIGNAL(reviewTrainingGuide()), this, SLOT(reviewTrainingGuide()));
-
-  // forward uiUpdate signal
-  QObject::connect(&qs, &QUIState::uiUpdate, homeWindow, &HomeWindow::update);
+  // MainWindow signals
+  QObject::connect(&qs, &QUIState::offroadTransition, this, &MainWindow::offroadTransition);
 
   // start at onboarding
   main_layout->setCurrentWidget(onboardingWindow);

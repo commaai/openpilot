@@ -44,8 +44,10 @@ public:
 signals:
   void openSettings();
   void closeSettings();
-  void offroadTransition(bool offroad);
 
+  // forwarded signals
+  void displayPowerChanged(bool on);
+  void offroadTransition(bool offroad);
   void update(const UIState &s);
 
 protected:

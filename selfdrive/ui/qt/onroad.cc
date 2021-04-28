@@ -34,13 +34,13 @@ void OnroadWindow::setEnabled(bool on) {
   enabled = on;
 }
 
-#include <QDebug>
 void OnroadWindow::update(const UIState &s) {
   // Connecting to visionIPC requires opengl to be current
   if (s.vipc_client->connected){
     makeCurrent();
   }
 
+  // TODO: hide instead?
   if(enabled) {
     repaint();
   }

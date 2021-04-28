@@ -220,7 +220,7 @@ private:
   void updateWakefulness(const UIState &s);
 
 signals:
-  void displayOff();
+  void displayPowerChanged(bool on);
 
 public slots:
   void setAwake(bool on);
