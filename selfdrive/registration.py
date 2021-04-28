@@ -36,9 +36,6 @@ def register(show_spinner=False):
     os.rename(PERSIST+"/comma/id_rsa.tmp.pub", PERSIST+"/comma/id_rsa.pub")
 
   if needs_registration:
-    if PC:
-      return "UnofficialDevice"
-
     if show_spinner:
       spinner = Spinner()
       spinner.update("registering device")
@@ -71,10 +68,11 @@ def register(show_spinner=False):
         if resp.status_code == 402:
           cloudlog.info("Uknown serial number while trying to register device")
           dongle_id = None
+          if PC:
+            dongle_id = "UnofficialDevice"
         else:
           dongleauth = json.loads(resp.text)
           dongle_id = dongleauth["dongle_id"]
-          params.put("DongleId", dongle_id)
         break
       except Exception:
         cloudlog.exception("failed to authenticate")
@@ -84,6 +82,7 @@ def register(show_spinner=False):
     if show_spinner:
       spinner.close()
 
+  params.put("DongleId", dongle_id)
   return dongle_id
 
 
