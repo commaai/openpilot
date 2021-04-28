@@ -71,7 +71,7 @@ void Replay::addSegment(int i){
 }
 
 void Replay::trimSegment(){
-	printf("%d\n", events.size());
+	printf("BEFORE TRIM : %d\n", events.size());
 	auto eit = events.begin();
 	while(eit != events.end()){
 		if(std::abs((*eit).first - current_segment) > 1){
@@ -80,9 +80,8 @@ void Replay::trimSegment(){
 		}
 		eit++;
 	}
-	printf("%d\n", events.size());
+	printf("AFTER TRIM : %d\n", events.size());
 }
-
 
 void Replay::stream(SubMaster *sm){
   QThread* thread = new QThread;
@@ -100,6 +99,9 @@ void Replay::stream(SubMaster *sm){
 
   QObject::connect(unlogger, &Unlogger::loadSegment, [=](){
     addSegment(++current_segment);
+    trimSegment();
+  });
+  QObject::connect(unlogger, &Unlogger::trimSegments, [=](){
     trimSegment();
   });
 }
@@ -120,7 +122,6 @@ void Replay::updateSeek(){
 			}
 			current_segment = seek/60;
 			unlogger->setSeekRequest(seek*1e9);
-			trimSegment();
 			getch(); // remove \n from entering seek
     }
   }

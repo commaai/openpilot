@@ -24,6 +24,7 @@ Q_OBJECT
     void elapsed();
     void finished();
     void loadSegment();
+    void trimSegments();
   private:
     Events *events;
     QReadWriteLock *events_lock;
