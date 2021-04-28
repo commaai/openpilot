@@ -53,7 +53,6 @@ void Replay::parseResponse(QString response){
 }
 
 void Replay::addSegment(int i){
-  printf("GOT HERE\n");
   if (lrs.find(i) != lrs.end()) {
     return;
   }
@@ -61,7 +60,6 @@ void Replay::addSegment(int i){
   QThread* thread = new QThread;
 
   QString log_fn = this->log_paths.at(i).toString();
-  printf("SIZE: %d\n", log_paths.size());
   lrs.insert(i, new LogReader(log_fn, &events, &events_lock, &unlogger->eidx, i));
 
   lrs[i]->moveToThread(thread);
@@ -100,7 +98,8 @@ void Replay::stream(SubMaster *sm){
   seek_thread->start();
 
   QObject::connect(unlogger, &Unlogger::loadSegment, [=](){
-    addSegment(++current_segment);
+    addSegment(current_segment + 2);
+    current_segment++;
     //trimSegment();
   });
   QObject::connect(unlogger, &Unlogger::trimSegments, [=](){
@@ -123,25 +122,22 @@ void Replay::updateSeek(){
 			printf("Enter seek request: ");
 			std::cin >> seek;
 
-      stopStream();
-      events.clear();
-      lrs.clear();
-      frs.clear();
-      printf("Events size after clear : %d\n", events.size());
+      if(std::abs(seek/60 - current_segment) > 1){
+        stopStream();
+        events.clear();
+        lrs.clear();
+        frs.clear();
+        printf("Events size after clear : %d\n", events.size());
 
-			// Add 3 segment window for seek
-			for(int i = 0 ; i < 3 ; i++){
-				int ind = seek/60 - 1 + i;
-        /*
-				if(std::abs(ind - current_segment) > 1){
-					addSegment(ind);
-				}
-        */
-        addSegment(ind);
-			}
+        // Add 3 segment window for seek
+        for(int i = 0 ; i < 3 ; i++){
+          int ind = seek/60 - 1 + i;
+          addSegment(ind);
+        }
+        thread->start();
+      }
 			current_segment = seek/60;
 			unlogger->setSeekRequest(seek*1e9);
-      thread->start();
 			getch(); // remove \n from entering seek
     }
   }
