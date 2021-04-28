@@ -65,8 +65,8 @@ def register(show_spinner=False):
         resp = api_get("v2/pilotauth/", method='POST', timeout=15,
                        imei=imei1, imei2=imei2, serial=serial, public_key=public_key, register_token=register_token)
 
-        if resp.status_code == 402:
-          cloudlog.info("Uknown serial number while trying to register device")
+        if resp.status_code in (402, 403):
+          cloudlog.info(f"Unable to register device, got {resp.status_code}")
           dongle_id = None
           if PC:
             dongle_id = "UnofficialDevice"
