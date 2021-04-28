@@ -103,9 +103,10 @@ void Unlogger::process(SubMaster *sm) {
         t0r = timer.nsecsElapsed();
         eit = events->lowerBound(t0);
         seek_request = 0;
-        if ((eit == events->end()) || (eit.key() - t0 > 1e9)) {
+        if ((eit == events->end()) || (eit.key() - t0 > 30*1e9)) {
           qWarning() << "seek off end";
-          while((eit == events->end()) || (eit.key() - t0 > 1e9)) {
+          while((eit == events->end()) || (eit.key() - t0 > 30*1e9)) {
+            printf("%d\n",(eit.key() - t0 > 30*1e9));
             eit = events->lowerBound(t0);
           }
           emit trimSegments();
