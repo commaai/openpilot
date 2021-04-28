@@ -20,7 +20,7 @@ int getch(void) {
 
 Replay::Replay(QString route_, int seek_) : route(route_), seek(seek_) {
   unlogger = new Unlogger(&events, &events_lock, &frs, seek);
-  current_segment = 0;
+  current_segment = seek/60;
   bool create_jwt = true;
 
 #if !defined(QCOM) && !defined(QCOM2)
@@ -45,9 +45,9 @@ void Replay::parseResponse(QString response){
 
   // add first window:
   for(int i = 0 ; i < 3 ; i++) {
-    int ind = seek/60 + i;
-    if (ind < camera_paths.size()) {
-      addSegment(seek/60 + i);
+    int ind = current_segment - 1 + i;
+    if ((ind < camera_paths.size()) && (ind >= 0)) {
+      addSegment(ind);
     }
   }
 }
@@ -127,12 +127,14 @@ void Replay::updateSeek(){
         events.clear();
         lrs.clear();
         frs.clear();
-        printf("Events size after clear : %d\n", events.size());
 
         // Add 3 segment window for seek
         for(int i = 0 ; i < 3 ; i++){
           int ind = seek/60 - 1 + i;
-          addSegment(ind);
+          printf("IND IND : %d\n", ind);
+          if((ind < camera_paths.size()) && (ind >= 0)){
+            addSegment(ind);
+          }
         }
         thread->start();
       }

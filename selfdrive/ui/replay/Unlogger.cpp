@@ -88,6 +88,9 @@ void Unlogger::process(SubMaster *sm) {
 
     auto eit = events->lowerBound(t0);
     while ((eit != events->end()) && active) {
+
+      //printf("%lu\n", events->firstKey());
+
       float time_to_end = ((events->lastKey() - eit.key())/1e9);
       if (loading_segment && (time_to_end > 80.0)){
         loading_segment = false;
@@ -106,9 +109,9 @@ void Unlogger::process(SubMaster *sm) {
         t0r = timer.nsecsElapsed();
         eit = events->lowerBound(t0);
         seek_request = 0;
-        if ((eit == events->end()) || (eit.key() - t0 > 30*1e9)) {
+        if ((eit == events->end()) || (eit.key() - t0 > 1e9)) {
           qWarning() << "seek off end";
-          while((eit == events->end()) || (eit.key() - t0 > 30*1e9)) {
+          while((eit == events->end()) || (eit.key() - t0 > 1e9)) {
             eit = events->lowerBound(t0);
           }
           //emit trimSegments();
