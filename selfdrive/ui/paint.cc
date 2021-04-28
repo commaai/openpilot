@@ -462,6 +462,10 @@ static const char frame_fragment_shader[] =
   "out vec4 colorOut;\n"
   "void main() {\n"
   "  colorOut = texture(uTexture, vTexCoord.xy);\n"
+#ifdef QCOM
+  "  vec3 dz = vec3(0.0627f, 0.0627f, 0.0627f);\n"
+  "  colorOut.rgb = ((vec3(1.0f, 1.0f, 1.0f) - dz) * colorOut.rgb / vec3(1.0f, 1.0f, 1.0f)) + dz;\n"
+#endif
   "}\n";
 
 static const mat4 device_transform = {{
