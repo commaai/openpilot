@@ -60,6 +60,8 @@ void Unlogger::process(SubMaster *sm) {
     QThread::sleep(1);
   }
   qDebug() << "got events";
+  route_t0 = events->firstKey();
+
 /*
   // TODO: hack
   if (seek_request != 0) {
@@ -86,6 +88,7 @@ void Unlogger::process(SubMaster *sm) {
       float time_to_end = ((events->lastKey() - eit.key())/1e9);
       if (loading_segment && (time_to_end > 80.0)){
         loading_segment = false;
+        route_t0 = events->firstKey();
       }
 
       while (paused) {
@@ -95,7 +98,7 @@ void Unlogger::process(SubMaster *sm) {
       }
 
       if (seek_request != 0) {
-        t0 = seek_request + events->firstKey();
+        t0 = seek_request + route_t0;
         qDebug() << "seeking to" << t0;
         t0r = timer.nsecsElapsed();
         eit = events->lowerBound(t0);
@@ -130,8 +133,7 @@ void Unlogger::process(SubMaster *sm) {
       if (it != socks.end()) {
         long etime = tm-t0;
 
-        //float timestamp = etime/1e9;
-        float timestamp = (tm - events->firstKey())/1e9;
+        float timestamp = (tm - route_t0)/1e9;
         if(std::abs(timestamp-last_print) > 5.0){
           last_print = timestamp;
           printf("at %f\n", last_print);

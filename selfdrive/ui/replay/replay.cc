@@ -69,16 +69,18 @@ void Replay::addSegment(int i){
   QString camera_fn = this->camera_paths.at(i).toString();
   frs.insert(i, new FrameReader(qPrintable(camera_fn)));
 }
-void Replay::trimSegment(int n){
-/*
-  auto first = events.lowerBound(0);
-  while((*first).first < current_segment) {
-    first++;
-    printf("%d\n", (*first).first);
-  }
-  printf("%d\n", (*first).first);
-  return;
-*/
+
+void Replay::trimSegment(){
+	printf("%d\n", events.size());
+	auto eit = events.begin();
+	while(eit != events.end()){
+		if(std::abs((*eit).first - current_segment) > 1){
+			eit = events.erase(eit);
+			continue;
+		}
+		eit++;
+	}
+	printf("%d\n", events.size());
 }
 
 
@@ -98,7 +100,7 @@ void Replay::stream(SubMaster *sm){
 
   QObject::connect(unlogger, &Unlogger::loadSegment, [=](){
     addSegment(++current_segment);
-    trimSegment(1);
+    trimSegment();
   });
 }
 
@@ -109,8 +111,16 @@ void Replay::updateSeek(){
     if(c == '\n'){
 			printf("Enter seek request: ");
 			std::cin >> seek;
+			// Add 3 segment window for seek
+			for(int i = 0 ; i < 3 ; i++){
+				int ind = seek/60 - 1 + i;
+				if(std::abs(ind - current_segment) > 1){
+					addSegment(ind);
+				}
+			}
 			current_segment = seek/60;
 			unlogger->setSeekRequest(seek*1e9);
+			trimSegment();
 			getch(); // remove \n from entering seek
     }
   }
