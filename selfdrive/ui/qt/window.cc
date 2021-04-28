@@ -58,7 +58,7 @@ void MainWindow::reviewTrainingGuide() {
 bool MainWindow::eventFilter(QObject *obj, QEvent *event){
   // wake screen on tap
   if (event->type() == QEvent::MouseButtonPress) {
-    homeWindow->glWindow->wake();
+    device.setAwake(true);
   }
 
   // filter out touches while in android activity

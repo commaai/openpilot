@@ -26,7 +26,6 @@ class MultiLogIterator(object):
   def _log_reader(self, i):
     if self._log_readers[i] is None and self._log_paths[i] is not None:
       log_path = self._log_paths[i]
-      print("LogReader:%s" % log_path)
       self._log_readers[i] = LogReader(log_path)
 
     return self._log_readers[i]

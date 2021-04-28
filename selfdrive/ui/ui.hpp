@@ -19,15 +19,20 @@
 
 #include "nanovg.h"
 
+#include "camerad/cameras/camera_common.h"
 #include "common/mat.h"
 #include "common/visionimg.h"
 #include "common/modeldata.h"
 #include "common/params.h"
 #include "common/glutil.h"
+#include "common/util.h"
 #include "common/transformations/orientation.hpp"
 #include "qt/sound.hpp"
 #include "visionipc.h"
 #include "visionipc_client.h"
+
+#include <QObject>
+#include <QTimer>
 
 #define COLOR_BLACK nvgRGBA(0, 0, 0, 255)
 #define COLOR_BLACK_ALPHA(x) nvgRGBA(0, 0, 0, x)
@@ -36,8 +41,6 @@
 #define COLOR_RED_ALPHA(x) nvgRGBA(201, 34, 49, x)
 #define COLOR_YELLOW nvgRGBA(218, 202, 37, 255)
 #define COLOR_RED nvgRGBA(201, 34, 49, 255)
-
-#define UI_BUF_COUNT 4
 
 typedef struct Rect {
   int x, y, w, h;
@@ -148,9 +151,9 @@ typedef struct UIState {
   // images
   std::map<std::string, int> images;
 
-  SubMaster *sm;
+  std::unique_ptr<SubMaster> sm;
 
-  Sound *sound;
+  std::unique_ptr<Sound> sound;
   UIStatus status;
   UIScene scene;
 
@@ -161,9 +164,6 @@ typedef struct UIState {
   GLuint frame_vao[2], frame_vbo[2], frame_ibo[2];
   mat4 rear_frame_mat, front_frame_mat;
 
-  // device state
-  bool awake;
-
   bool sidebar_collapsed;
   Rect video_rect, viz_rect;
   float car_space_transform[6];
@@ -171,5 +171,58 @@ typedef struct UIState {
   float zoom;
 } UIState;
 
-void ui_init(UIState *s);
-void ui_update(UIState *s);
+
+class QUIState : QObject {
+  Q_OBJECT
+
+public:
+  QUIState(QObject* parent = 0);
+
+  // TODO: get rid of this, only use signal
+  inline static UIState ui_state = {0};
+
+signals:
+  void uiUpdate(const UIState &s);
+  void offroadTransition(bool offroad);
+
+public slots:
+  void update();
+
+private:
+  QTimer *timer;
+  bool started_prev;
+};
+
+
+// device management class
+
+class Device : QObject {
+  Q_OBJECT
+
+public:
+  Device(QObject *parent = 0);
+  void wake();
+
+private:
+  // auto brightness
+  bool awake;
+  int awake_timeout = 0;
+  float accel_prev = 0;
+  float gyro_prev = 0;
+  float brightness_b = 0;
+  float brightness_m = 0;
+  float last_brightness = 0;
+  FirstOrderFilter brightness_filter;
+
+  QTimer *timer;
+
+  void updateBrightness(const UIState &s);
+  void updateWakefulness(const UIState &s);
+
+signals:
+  void displayOff();
+
+public slots:
+  void update(const UIState &s);
+  void setAwake(bool on);
+};

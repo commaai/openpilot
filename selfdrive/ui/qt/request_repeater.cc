@@ -4,7 +4,8 @@ RequestRepeater::RequestRepeater(QObject *parent, QString requestURL, const QStr
   HttpRequest(parent, requestURL, cache_key), disableWithScreen(disableWithScreen) {
   QTimer* timer = new QTimer(this);
   QObject::connect(timer, &QTimer::timeout, [=](){
-    if (!GLWindow::ui_state.scene.started && reply == NULL && (GLWindow::ui_state.awake || !disableWithScreen)) {
+    //if (!GLWindow::ui_state.scene.started && reply == NULL && (GLWindow::ui_state.awake || !disableWithScreen)) {
+    if (reply == NULL) {
       sendRequest(requestURL);
     }
   });

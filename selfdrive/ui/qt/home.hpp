@@ -21,14 +21,7 @@ class GLWindow : public QOpenGLWidget, protected QOpenGLFunctions {
 public:
   using QOpenGLWidget::QOpenGLWidget;
   explicit GLWindow(QWidget* parent = 0);
-  void wake();
   ~GLWindow();
-
-  inline static UIState ui_state = {0};
-
-signals:
-  void offroadTransition(bool offroad);
-  void screen_shutoff();
 
 protected:
   void initializeGL() override;
@@ -36,23 +29,10 @@ protected:
   void paintGL() override;
 
 private:
-  QTimer* timer;
-  QTimer* backlight_timer;
-
-  Sound sound;
-
-  bool onroad = true;
   double prev_draw_t = 0;
 
-  // TODO: make a nice abstraction to handle embedded device stuff
-  float brightness_b = 0;
-  float brightness_m = 0;
-  float last_brightness = 0;
-  FirstOrderFilter brightness_filter;
-
 public slots:
-  void timerUpdate();
-  void backlightUpdate();
+  void update(const UIState &s);
 };
 
 // offroad home screen

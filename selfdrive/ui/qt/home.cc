@@ -13,18 +13,12 @@
 #include "common/params.h"
 #include "common/timing.h"
 #include "common/swaglog.h"
-#include "common/watchdog.h"
 #include "selfdrive/hardware/hw.h"
 
 #include "home.hpp"
 #include "paint.hpp"
-#include "qt_window.hpp"
 #include "widgets/drive_stats.hpp"
 #include "widgets/setup.hpp"
-
-#define BACKLIGHT_DT 0.25
-#define BACKLIGHT_TS 2.00
-#define BACKLIGHT_OFFROAD 50
 
 // HomeWindow: the container for the offroad (OffroadHome) and onroad (GLWindow) UIs
 
@@ -42,30 +36,27 @@ HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
 
   QObject::connect(glWindow, SIGNAL(offroadTransition(bool)), home, SLOT(setVisible(bool)));
   QObject::connect(glWindow, SIGNAL(offroadTransition(bool)), this, SIGNAL(offroadTransition(bool)));
-  QObject::connect(glWindow, SIGNAL(screen_shutoff()), this, SIGNAL(closeSettings()));
+  //QObject::connect(glWindow, SIGNAL(screen_shutoff()), this, SIGNAL(closeSettings()));
   QObject::connect(this, SIGNAL(openSettings()), home, SLOT(refresh()));
 
   setLayout(layout);
 }
 
 void HomeWindow::mousePressEvent(QMouseEvent* e) {
-  UIState* ui_state = &glWindow->ui_state;
-  if (GLWindow::ui_state.scene.driver_view) {
+  if (QUIState::ui_state.scene.driver_view) {
     Params().putBool("IsDriverViewEnabled", false);
-    GLWindow::ui_state.scene.driver_view = false;
+    //GLWindow::QUIState::ui_state.scene.driver_view = false;
     return;
   }
 
-  glWindow->wake();
-
   // Settings button click
-  if (!ui_state->sidebar_collapsed && settings_btn.ptInRect(e->x(), e->y())) {
+  if (!QUIState::ui_state.sidebar_collapsed && settings_btn.ptInRect(e->x(), e->y())) {
     emit openSettings();
   }
 
   // Handle sidebar collapsing
-  if (ui_state->scene.started && (e->x() >= ui_state->viz_rect.x - bdr_s)) {
-    ui_state->sidebar_collapsed = !ui_state->sidebar_collapsed;
+  if (QUIState::ui_state.scene.started && (e->x() >= QUIState::ui_state.viz_rect.x - bdr_s)) {
+    QUIState::ui_state.sidebar_collapsed = !QUIState::ui_state.sidebar_collapsed;
   }
 }
 
@@ -193,46 +184,8 @@ void OffroadHome::refresh() {
 
 // GLWindow: the onroad UI
 
-static void handle_display_state(UIState* s, bool user_input) {
-  static int awake_timeout = 0;
-  awake_timeout = std::max(awake_timeout - 1, 0);
+GLWindow::GLWindow(QWidget* parent) : QOpenGLWidget(parent) {
 
-  constexpr float accel_samples = 5*UI_FREQ;
-  static float accel_prev = 0., gyro_prev = 0.;
-
-  bool should_wake = s->scene.started || s->scene.ignition || user_input;
-  if (!should_wake) {
-    // tap detection while display is off
-    bool accel_trigger = abs(s->scene.accel_sensor - accel_prev) > 0.2;
-    bool gyro_trigger = abs(s->scene.gyro_sensor - gyro_prev) > 0.15;
-    should_wake = accel_trigger && gyro_trigger;
-    gyro_prev = s->scene.gyro_sensor;
-    accel_prev = (accel_prev * (accel_samples - 1) + s->scene.accel_sensor) / accel_samples;
-  }
-
-  if (should_wake) {
-    awake_timeout = 30 * UI_FREQ;
-  } else if (awake_timeout > 0) {
-    should_wake = true;
-  }
-
-  // handle state transition
-  if (s->awake != should_wake) {
-    s->awake = should_wake;
-    Hardware::set_display_power(s->awake);
-    LOGD("setting display power %d", s->awake);
-  }
-}
-
-GLWindow::GLWindow(QWidget* parent) : brightness_filter(BACKLIGHT_OFFROAD, BACKLIGHT_TS, BACKLIGHT_DT), QOpenGLWidget(parent) {
-  timer = new QTimer(this);
-  QObject::connect(timer, SIGNAL(timeout()), this, SLOT(timerUpdate()));
-
-  backlight_timer = new QTimer(this);
-  QObject::connect(backlight_timer, SIGNAL(timeout()), this, SLOT(backlightUpdate()));
-
-  brightness_b = Params(true).get<float>("BRIGHTNESS_B").value_or(10.0);
-  brightness_m = Params(true).get<float>("BRIGHTNESS_M").value_or(0.1);
 }
 
 GLWindow::~GLWindow() {
@@ -247,63 +200,19 @@ void GLWindow::initializeGL() {
   std::cout << "OpenGL renderer: " << glGetString(GL_RENDERER) << std::endl;
   std::cout << "OpenGL language version: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
 
-  ui_state.sound = &sound;
-  ui_state.fb_w = vwp_w;
-  ui_state.fb_h = vwp_h;
-  ui_init(&ui_state);
-
-  wake();
+  ui_nvg_init(&QUIState::ui_state);
 
   prev_draw_t = millis_since_boot();
-  timer->start(1000 / UI_FREQ);
-  backlight_timer->start(BACKLIGHT_DT * 1000);
 }
 
-void GLWindow::backlightUpdate() {
-  // Update brightness
-  float clipped_brightness = std::min(100.0f, (ui_state.scene.light_sensor * brightness_m) + brightness_b);
-  if (!ui_state.scene.started) {
-    clipped_brightness = BACKLIGHT_OFFROAD;
-  }
-
-  int brightness = brightness_filter.update(clipped_brightness);
-  if (!ui_state.awake) {
-    brightness = 0;
-    emit screen_shutoff();
-  }
-
-  if (brightness != last_brightness) {
-    std::thread{Hardware::set_brightness, brightness}.detach();
-  }
-  last_brightness = brightness;
-}
-
-void GLWindow::timerUpdate() {
+void GLWindow::update(const UIState &s) {
   // Connecting to visionIPC requires opengl to be current
-  if (!ui_state.vipc_client->connected){
+  if (s.vipc_client->connected){
     makeCurrent();
   }
 
-  if (ui_state.scene.started != onroad) {
-    onroad = ui_state.scene.started;
-    emit offroadTransition(!onroad);
-
-    // Change timeout to 0 when onroad, this will call timerUpdate continously.
-    // This puts visionIPC in charge of update frequency, reducing video latency
-    timer->start(onroad ? 0 : 1000 / UI_FREQ);
-  }
-
-  handle_display_state(&ui_state, false);
-
-  // scale volume with speed
-  sound.volume = util::map_val(ui_state.scene.car_state.getVEgo(), 0.f, 20.f,
-                               Hardware::MIN_VOLUME, Hardware::MAX_VOLUME);
-
-  ui_update(&ui_state);
-  if(GLWindow::ui_state.awake){
-    repaint();
-  }
-  watchdog_kick();
+  //if(s.awake){
+  repaint();
 }
 
 void GLWindow::resizeGL(int w, int h) {
@@ -311,17 +220,14 @@ void GLWindow::resizeGL(int w, int h) {
 }
 
 void GLWindow::paintGL() {
-  ui_draw(&ui_state);
+  ui_draw(&QUIState::ui_state);
 
   double cur_draw_t = millis_since_boot();
   double dt = cur_draw_t - prev_draw_t;
-  if (dt > 66 && onroad && !ui_state.scene.driver_view) {
+  // TODO: check if onroad
+  if (dt > 66 && !QUIState::ui_state.scene.driver_view) {
     // warn on sub 15fps
-    LOGW("slow frame(%llu) time: %.2f", ui_state.sm->frame, dt);
+    LOGW("slow frame(%llu) time: %.2f", QUIState::ui_state.sm->frame, dt);
   }
   prev_draw_t = cur_draw_t;
-}
-
-void GLWindow::wake() {
-  handle_display_state(&ui_state, true);
 }
