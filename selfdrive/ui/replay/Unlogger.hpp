@@ -13,6 +13,7 @@ Q_OBJECT
   public:
     Unlogger(Events *events_, QReadWriteLock* events_lock_, QMap<int, FrameReader*> *frs_, int seek);
     uint64_t getCurrentTime() { return tc; }
+    uint64_t getRelativeCurrentTime() { return tc - route_t0; }
     void setSeekRequest(uint64_t seek_request_) { seek_request = seek_request_; }
     void setPause(bool pause) { paused = pause; }
     void setActive(bool active_) { active = active_; }

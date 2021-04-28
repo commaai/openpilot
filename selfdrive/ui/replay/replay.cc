@@ -112,35 +112,48 @@ void Replay::stopStream(){
   thread->quit();
 }
 
+void Replay::seekTime(int seek_){
+  if(std::abs(seek_/60 - current_segment) > 1){
+    stopStream();
+    events.clear();
+    lrs.clear();
+    frs.clear();
+
+    // Add 3 segment window for seek
+    for(int i = 0 ; i < 3 ; i++){
+      int ind = seek_/60 - 1 + i;
+      printf("IND IND : %d\n", ind);
+      if((ind < camera_paths.size()) && (ind >= 0)){
+        addSegment(ind);
+      }
+    }
+    thread->start();
+  }
+  current_segment = seek_/60;
+  unlogger->setSeekRequest(seek_*1e9);
+}
+
 void Replay::updateSeek(){
 	char c;
   while(1){
     c = getch();
     if(c == '\n'){
-
-      fflush(stdin);
 			printf("Enter seek request: ");
 			std::cin >> seek;
-
-      if(std::abs(seek/60 - current_segment) > 1){
-        stopStream();
-        events.clear();
-        lrs.clear();
-        frs.clear();
-
-        // Add 3 segment window for seek
-        for(int i = 0 ; i < 3 ; i++){
-          int ind = seek/60 - 1 + i;
-          printf("IND IND : %d\n", ind);
-          if((ind < camera_paths.size()) && (ind >= 0)){
-            addSegment(ind);
-          }
-        }
-        thread->start();
-      }
-			current_segment = seek/60;
-			unlogger->setSeekRequest(seek*1e9);
-			getch(); // remove \n from entering seek
+      seekTime(seek);
+      getch(); // remove \n from entering seek
+    } else if (c == 'm') {
+      unlogger->setSeekRequest(unlogger->getRelativeCurrentTime() + 60*1e9);
+    } else if (c == 'M') {
+      unlogger->setSeekRequest(unlogger->getRelativeCurrentTime() - 60*1e9);
+    } else if (c == 's') {
+      unlogger->setSeekRequest(unlogger->getRelativeCurrentTime() + 10*1e9);
+    } else if (c == 'S') {
+      unlogger->setSeekRequest(unlogger->getRelativeCurrentTime() - 10*1e9);
+    } else if (c == 'G') {
+      seekTime(0);
+    } else if (c == ' ') {
+      unlogger->togglePause();
     }
   }
 }

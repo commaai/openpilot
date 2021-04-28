@@ -25,10 +25,9 @@ public:
   void stopStream();
   void addSegment(int i);
   void trimSegment();
+  void seekTime(int seek_);
   QJsonArray camera_paths;
   QJsonArray log_paths;
-
-  QQueue<int> event_sizes;
 
 public slots:
   void parseResponse(QString response);
