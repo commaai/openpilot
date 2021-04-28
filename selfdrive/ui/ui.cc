@@ -13,6 +13,10 @@
 #include "paint.hpp"
 #include "qt_window.hpp"
 
+#define BACKLIGHT_DT 0.25
+#define BACKLIGHT_TS 2.00
+#define BACKLIGHT_OFFROAD 50
+
 
 // Projects a point in car to space to the corresponding point in full frame
 // image space.
@@ -323,11 +327,6 @@ static void update_status(UIState *s) {
   started_prev = s->scene.started;
 }
 
-void ui_update(UIState *s) {
-}
-
-
-
 
 QUIState::QUIState(QObject *parent) : QObject(parent) {
   ui_state.sm = std::make_unique<SubMaster, const std::initializer_list<const char *>>({
@@ -360,11 +359,16 @@ QUIState::QUIState(QObject *parent) : QObject(parent) {
   // setup update timer
   timer = new QTimer(this);
   QObject::connect(timer, SIGNAL(timeout()), this, SLOT(update()));
-  timer->start(1000 / UI_FREQ);
+  timer->start(0);
 }
 
 void QUIState::update() {
-  ui_update(&ui_state);
+  update_params(&ui_state);
+  update_sockets(&ui_state);
+  update_state(&ui_state);
+  update_status(&ui_state);
+  update_alert(&ui_state);
+  update_vision(&ui_state);
 
   if (ui_state.scene.started != started_prev) {
     started_prev = ui_state.scene.started;
@@ -375,13 +379,6 @@ void QUIState::update() {
     timer->start(ui_state.scene.started ? 0 : 1000 / UI_FREQ);
   }
 
-  update_params(&ui_state);
-  update_sockets(&ui_state);
-  update_state(&ui_state);
-  update_status(&ui_state);
-  update_alert(&ui_state);
-  update_vision(&ui_state);
-
   // scale volume with speed
   QUIState::ui_state.sound->volume = util::map_val(ui_state.scene.car_state.getVEgo(), 0.f, 20.f,
                                                    Hardware::MIN_VOLUME, Hardware::MAX_VOLUME);
@@ -390,10 +387,6 @@ void QUIState::update() {
   emit uiUpdate(ui_state);
 }
 
-
-#define BACKLIGHT_DT 0.25
-#define BACKLIGHT_TS 2.00
-#define BACKLIGHT_OFFROAD 50
 
 
 Device::Device(QObject *parent) : brightness_filter(BACKLIGHT_OFFROAD, BACKLIGHT_TS, BACKLIGHT_DT), QObject(parent) {

@@ -10,32 +10,11 @@
 #include <QWidget>
 
 #include "sound.hpp"
+#include "onroad.hpp"
 #include "ui/ui.hpp"
 #include "common/util.h"
 #include "widgets/offroad_alerts.hpp"
 
-// container window for onroad NVG UI
-class GLWindow : public QOpenGLWidget, protected QOpenGLFunctions {
-  Q_OBJECT
-
-public:
-  using QOpenGLWidget::QOpenGLWidget;
-  explicit GLWindow(QWidget* parent = 0);
-  ~GLWindow();
-
-protected:
-  void initializeGL() override;
-  void resizeGL(int w, int h) override;
-  void paintGL() override;
-
-private:
-  double prev_draw_t = 0;
-
-public slots:
-  void update(const UIState &s);
-};
-
-// offroad home screen
 class OffroadHome : public QWidget {
   Q_OBJECT
 
@@ -61,17 +40,19 @@ class HomeWindow : public QWidget {
 
 public:
   explicit HomeWindow(QWidget* parent = 0);
-  GLWindow* glWindow;
 
 signals:
   void openSettings();
   void closeSettings();
   void offroadTransition(bool offroad);
 
+  void update(const UIState &s);
+
 protected:
   void mousePressEvent(QMouseEvent* e) override;
 
 private:
-  OffroadHome* home;
-  QStackedLayout* layout;
+  OffroadHome *home;
+  OnroadWindow *onroad;
+  QStackedLayout *layout;
 };

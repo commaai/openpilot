@@ -172,7 +172,7 @@ typedef struct UIState {
 } UIState;
 
 
-class QUIState : QObject {
+class QUIState : public QObject {
   Q_OBJECT
 
 public:
@@ -185,7 +185,7 @@ signals:
   void uiUpdate(const UIState &s);
   void offroadTransition(bool offroad);
 
-public slots:
+private slots:
   void update();
 
 private:
@@ -196,7 +196,7 @@ private:
 
 // device management class
 
-class Device : QObject {
+class Device : public QObject {
   Q_OBJECT
 
 public:
@@ -223,6 +223,6 @@ signals:
   void displayOff();
 
 public slots:
-  void update(const UIState &s);
   void setAwake(bool on);
+  void update(const UIState &s);
 };
