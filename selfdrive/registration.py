@@ -10,7 +10,7 @@ from common.params import Params
 from common.spinner import Spinner
 from common.file_helpers import mkdirs_exists_ok
 from common.basedir import PERSIST
-from selfdrive.hardware import HARDWARE
+from selfdrive.hardware import HARDWARE, PC
 from selfdrive.swaglog import cloudlog
 
 
@@ -36,6 +36,9 @@ def register(show_spinner=False):
     os.rename(PERSIST+"/comma/id_rsa.tmp.pub", PERSIST+"/comma/id_rsa.pub")
 
   if needs_registration:
+    if PC:
+      return "UnofficialDevice"
+
     if show_spinner:
       spinner = Spinner()
       spinner.update("registering device")
