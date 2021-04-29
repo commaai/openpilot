@@ -18,13 +18,8 @@ void OnroadWindow::initializeGL() {
   std::cout << "OpenGL renderer: " << glGetString(GL_RENDERER) << std::endl;
   std::cout << "OpenGL language version: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
 
-  enabled = true;
   ui_nvg_init(&QUIState::ui_state);
   prev_draw_t = millis_since_boot();
-}
-
-void OnroadWindow::setEnabled(bool on) {
-  enabled = on;
 }
 
 void OnroadWindow::update(const UIState &s) {
@@ -33,10 +28,7 @@ void OnroadWindow::update(const UIState &s) {
     makeCurrent();
   }
 
-  // TODO: will hide do this?
-  if(enabled) {
-    repaint();
-  }
+  repaint();
 }
 
 void OnroadWindow::paintGL() {

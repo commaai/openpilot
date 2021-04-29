@@ -529,19 +529,8 @@ void ui_nvg_init(UIState *s) {
 
   // init images
   std::vector<std::pair<const char *, const char *>> images = {
-      {"wheel", "../assets/img_chffr_wheel.png"},
-      {"trafficSign_turn", "../assets/img_trafficSign_turn.png"},
-      {"driver_face", "../assets/img_driver_face.png"},
-      {"button_settings", "../assets/images/button_settings.png"},
-      {"button_home", "../assets/images/button_home.png"},
-      {"battery", "../assets/images/battery.png"},
-      {"battery_charging", "../assets/images/battery_charging.png"},
-      {"network_0", "../assets/images/network_0.png"},
-      {"network_1", "../assets/images/network_1.png"},
-      {"network_2", "../assets/images/network_2.png"},
-      {"network_3", "../assets/images/network_3.png"},
-      {"network_4", "../assets/images/network_4.png"},
-      {"network_5", "../assets/images/network_5.png"},
+    {"wheel", "../assets/img_chffr_wheel.png"},
+    {"driver_face", "../assets/img_driver_face.png"},
   };
   for (auto [name, file] : images) {
     s->images[name] = nvgCreateImage(s->vg, file, 1);
