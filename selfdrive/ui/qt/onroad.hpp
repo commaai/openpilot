@@ -20,10 +20,8 @@ protected:
   void initializeGL() override;
 
 private:
-  bool enabled;
   double prev_draw_t = 0;
 
 public slots:
-  void setEnabled(bool on);
   void update(const UIState &s);
 };
