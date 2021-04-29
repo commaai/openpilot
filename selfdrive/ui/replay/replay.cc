@@ -80,7 +80,7 @@ void Replay::stream(SubMaster *sm){
 
   seek_thread = new QThread;
   QObject::connect(seek_thread, &QThread::started, [=](){
-    updateSeek();
+    seekThread();
   });
   seek_thread->start();
 
@@ -130,7 +130,7 @@ void Replay::seekTime(int seek_){
   }
 }
 
-void Replay::updateSeek(){
+void Replay::seekThread(){
 	char c;
   while(1){
     c = getch();

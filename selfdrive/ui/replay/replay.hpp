@@ -31,7 +31,7 @@ public:
 
 public slots:
   void parseResponse(QString response);
-  void updateSeek();
+  void seekThread();
 
 protected:
   Unlogger *unlogger;
