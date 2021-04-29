@@ -314,12 +314,10 @@ static void update_status(UIState *s) {
 
       s->scene.is_rhd = Params().getBool("IsRHD");
       s->scene.end_to_end = Params().getBool("EndToEndToggle");
-      s->sidebar_collapsed = true;
       s->scene.alert_size = cereal::ControlsState::AlertSize::NONE;
       s->vipc_client = s->scene.driver_view ? s->vipc_client_front : s->vipc_client_rear;
     } else {
       s->status = STATUS_OFFROAD;
-      s->sidebar_collapsed = false;
       s->sound->stop();
       s->vipc_client->connected = false;
     }
