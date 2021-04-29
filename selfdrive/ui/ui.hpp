@@ -164,6 +164,8 @@ typedef struct UIState {
   GLuint frame_vao[2], frame_vbo[2], frame_ibo[2];
   mat4 rear_frame_mat, front_frame_mat;
 
+  bool awake;
+
   bool sidebar_collapsed;
   Rect video_rect, viz_rect;
   float car_space_transform[6];

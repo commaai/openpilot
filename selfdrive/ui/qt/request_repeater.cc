@@ -5,8 +5,7 @@ RequestRepeater::RequestRepeater(QObject *parent, QString requestURL, const QStr
   timer = new QTimer(this);
   timer->setTimerType(Qt::VeryCoarseTimer);
   QObject::connect(timer, &QTimer::timeout, [=](){
-    // TODO: add back screen awake check
-    if (!QUIState::ui_state.scene.started && reply == NULL) {
+    if (!QUIState::ui_state.scene.started && QUIState::ui_state.awake && reply == NULL) {
       sendRequest(requestURL);
     }
   });
