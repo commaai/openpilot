@@ -1,42 +1,33 @@
-#include <QtWidgets>
-
 #include "common/util.h"
 #include "sidebar.hpp"
 #include "qt_window.hpp"
 
-StatusWidget::StatusWidget(QString label, QString msg, QColor indicator, QWidget* parent) : QFrame(parent),
-_severity(indicator) { l_label = new QLabel(this);
-  l_label->setText(label);
-
-  QVBoxLayout* sw_layout = new QVBoxLayout();
-  sw_layout->setSpacing(0);
-
-  l_msg = new QLabel(this);
+StatusWidget::StatusWidget(QString label, QString msg, QColor c, QWidget* parent) : QFrame(parent) {
+  layout.setSpacing(0);
 
   if(msg.length() > 0){
-    sw_layout->setContentsMargins(50,24,16,24); //50l, 16r, 24 vertical
-    l_label->setStyleSheet(R"(font-size: 65px; font-weight: 500;)");
-    l_label->setAlignment(Qt::AlignLeft | Qt::AlignHCenter);
+    layout.setContentsMargins(50, 24, 16, 24);
+    status.setAlignment(Qt::AlignLeft | Qt::AlignHCenter);
+    status.setStyleSheet(R"(font-size: 65px; font-weight: 500;)");
 
-    l_msg->setText(msg);
-    l_msg->setStyleSheet(R"(font-size: 30px; font-weight: 400;)");
-    l_msg->setAlignment(Qt::AlignLeft | Qt::AlignHCenter);
+    substatus.setAlignment(Qt::AlignLeft | Qt::AlignHCenter);
+    substatus.setStyleSheet(R"(font-size: 30px; font-weight: 400;)");
 
-    sw_layout->addWidget(l_label, 0, Qt::AlignLeft);
-    sw_layout->addWidget(l_msg, 0, Qt::AlignLeft);
+    layout.addWidget(&status, 0, Qt::AlignLeft);
+    layout.addWidget(&substatus, 0, Qt::AlignLeft);
   } else {
-    sw_layout->setContentsMargins(40,24,16,24); //40l, 16r, 24 vertical
+    layout.setContentsMargins(40, 24, 16, 24);
 
-    l_label->setStyleSheet(R"(font-size: 30px; font-weight: 500;)");
-    l_label->setAlignment(Qt::AlignCenter);
-
-    sw_layout->addWidget(l_label, 0, Qt::AlignCenter);
+    status.setAlignment(Qt::AlignCenter);
+    status.setStyleSheet(R"(font-size: 30px; font-weight: 500;)");
+    layout.addWidget(&status, 0, Qt::AlignCenter);
   }
 
+  update(label, msg, c);
+
   setMinimumHeight(124);
-  setMaximumSize(sbr_w, vwp_h);
   setStyleSheet("background-color: transparent;");
-  setLayout(sw_layout);
+  setLayout(&layout);
 }
 
 void StatusWidget::paintEvent(QPaintEvent *e){
@@ -47,44 +38,30 @@ void StatusWidget::paintEvent(QPaintEvent *e){
   p.drawRoundedRect(QRectF(1.5, 1.5, size().width()-3, size().height()-3), 30, 30);
 
   p.setPen(Qt::NoPen);
-  p.setBrush(_severity);
+  p.setBrush(color);
   p.setClipRect(0,0,25+6,size().height()-6,Qt::ClipOperation::ReplaceClip);
   p.drawRoundedRect(QRectF(6, 6, size().width()-12, size().height()-12), 25, 25);
 }
 
-void StatusWidget::update(QString label, QString msg, int severity) {
-  l_label->setText(label);
-  l_msg->setText(msg);
-
-  QColor color;
-  if (severity == 0){
-    color = QColor(255, 255, 255);
-  } else if (severity == 1){
-    color = QColor(218, 202, 37);
-  } else if (severity > 1){
-    color = QColor(201, 34, 49);
-  }
-
-  _severity = color;
+void StatusWidget::update(QString label, QString msg, QColor c) {
+  status.setText(label);
+  substatus.setText(msg);
+  color = c;
   return;
 }
 
 SignalWidget::SignalWidget(QString text, int strength, QWidget* parent) : QFrame(parent), _strength(strength) {
+  layout.setSpacing(0);
+  layout.insertSpacing(0, 35);
+  layout.setContentsMargins(50, 20, 50, 20);
 
-  label = new QLabel(text, this);
-  label->setStyleSheet(R"(font-size: 35px; font-weight: 400;)");
-  label->setAlignment(Qt::AlignVCenter);
-  label->setFixedSize(100, 50);
+  label.setText(text);
+  label.setAlignment(Qt::AlignVCenter | Qt::AlignLeft);
+  layout.addWidget(&label);
+  label.setStyleSheet(R"(font-size: 35px; font-weight: 400;)");
 
-  QVBoxLayout* layout = new QVBoxLayout();
-  layout->setSpacing(0);
-  layout->insertSpacing(0, 35);
-  layout->setContentsMargins(50, 20, 50, 20);
-  layout->addWidget(label, 0, Qt::AlignVCenter | Qt::AlignLeft);
-
-  setMinimumHeight(120);
-  setLayout(layout);
   setFixedSize(177, 120);
+  setLayout(&layout);
 }
 
 void SignalWidget::paintEvent(QPaintEvent *e){
@@ -102,7 +79,7 @@ void SignalWidget::paintEvent(QPaintEvent *e){
 }
 
 void SignalWidget::update(QString text, int strength){
-  label->setText(text);
+  label.setText(text);
   _strength = strength;
 }
 
@@ -132,8 +109,8 @@ Sidebar::Sidebar(QWidget* parent) : QFrame(parent) {
   temp = new StatusWidget("0°C", "TEMP", QColor(255, 255, 255), this);
   layout->addWidget(temp, 0, Qt::AlignTop);
 
-  vehicle = new StatusWidget("NO\nPANDA", "", QColor(201, 34, 49), this);
-  layout->addWidget(vehicle, 0, Qt::AlignTop);
+  panda = new StatusWidget("NO\nPANDA", "", QColor(201, 34, 49), this);
+  layout->addWidget(panda, 0, Qt::AlignTop);
 
   connect = new StatusWidget("CONNECT\nOFFLINE", "",  QColor(218, 202, 37), this);
   layout->addWidget(connect, 0, Qt::AlignTop);
@@ -153,21 +130,21 @@ Sidebar::Sidebar(QWidget* parent) : QFrame(parent) {
 }
 
 void Sidebar::update(const UIState &s){
-  static std::map<NetStatus, std::pair<const char *, int>> connectivity_map = {
-    {NET_ERROR, {"CONNECT\nERROR", 2}},
-    {NET_CONNECTED, {"CONNECT\nONLINE", 0}},
-    {NET_DISCONNECTED, {"CONNECT\nOFFLINE", 1}},
+  static std::map<NetStatus, std::pair<QString, QColor>> connectivity_map = {
+    {NET_ERROR, {"CONNECT\nERROR", COLOR_DANGER}},
+    {NET_CONNECTED, {"CONNECT\nONLINE", COLOR_GOOD}},
+    {NET_DISCONNECTED, {"CONNECT\nOFFLINE", COLOR_WARNING}},
   };
   auto net_params = connectivity_map[s.scene.athenaStatus];
   connect->update(net_params.first, "", net_params.second);
 
-  static std::map<cereal::DeviceState::ThermalStatus, const int> temp_severity_map = {
-        {cereal::DeviceState::ThermalStatus::GREEN, 0},
-        {cereal::DeviceState::ThermalStatus::YELLOW, 1},
-        {cereal::DeviceState::ThermalStatus::RED, 2},
-        {cereal::DeviceState::ThermalStatus::DANGER, 3}};
-  std::string temp_val = std::to_string((int)s.scene.deviceState.getAmbientTempC()) + "°C";
-  temp->update(QString(temp_val.c_str()), "TEMP", temp_severity_map[s.scene.deviceState.getThermalStatus()]);
+  static std::map<cereal::DeviceState::ThermalStatus, QColor> temp_severity_map = {
+        {cereal::DeviceState::ThermalStatus::GREEN, COLOR_GOOD},
+        {cereal::DeviceState::ThermalStatus::YELLOW, COLOR_WARNING},
+        {cereal::DeviceState::ThermalStatus::RED, COLOR_DANGER},
+        {cereal::DeviceState::ThermalStatus::DANGER, COLOR_DANGER}};
+  QString temp_val = QString("%1 °C").arg((int)s.scene.deviceState.getAmbientTempC());
+  temp->update(temp_val, "TEMP", temp_severity_map[s.scene.deviceState.getThermalStatus()]);
 
   static std::map<cereal::DeviceState::NetworkType, const char *> network_type_map = {
       {cereal::DeviceState::NetworkType::NONE, "--"},
@@ -186,17 +163,17 @@ void Sidebar::update(const UIState &s){
   const int img_idx = s.scene.deviceState.getNetworkType() == cereal::DeviceState::NetworkType::NONE ? 0 : network_strength_map[s.scene.deviceState.getNetworkStrength()];
   signal->update(network_type, img_idx);
 
-  int panda_severity = 0;
-  std::string panda_message = "VEHICLE\nONLINE";
+  QColor panda_color = COLOR_GOOD;
+  QString panda_message = "VEHICLE\nONLINE";
   if (s.scene.pandaType == cereal::PandaState::PandaType::UNKNOWN) {
-    panda_severity = 2;
+    panda_color = COLOR_DANGER;
     panda_message = "NO\nPANDA";
   }
 #ifdef QCOM2
   else if (s.scene.started) {
-    panda_severity = s.scene.gpsOK ? 0 : 1;
+    panda_color = s.scene.gpsOK ? COLOR_GOOD : COLOR_WARNING;
     panda_message = util::string_format("SAT CNT\n%d", s.scene.satelliteCount);
   }
 #endif
-  vehicle->update(panda_message.c_str(), "", panda_severity);
+  panda->update(panda_message, "", panda_color);
 }

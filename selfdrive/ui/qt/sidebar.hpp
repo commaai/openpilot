@@ -1,9 +1,12 @@
 #pragma once
 
-#include <QFrame>
-#include <QLabel>
+#include <QtWidgets>
 
 #include <ui.hpp>
+
+#define COLOR_GOOD QColor(255, 255, 255)
+#define COLOR_WARNING QColor(218, 202, 37)
+#define COLOR_DANGER QColor(201, 34, 49)
 
 class SignalWidget : public QFrame {
   Q_OBJECT
@@ -11,33 +14,35 @@ class SignalWidget : public QFrame {
 public:
   SignalWidget(QString text, int strength, QWidget* parent = 0);
   void update(QString text, int strength);
-  QLabel* label;
+  QLabel label;
   int _strength = 0;
 
 protected:
   void paintEvent(QPaintEvent*) override;
 
 private:
-  float _dotspace = 37; //spacing between dots
-  float _top = 10;
-  float _dia = 28; //dot diameter
-};
+  QVBoxLayout layout;
 
+  const float _dotspace = 37; // spacing between dots
+  const float _top = 10;
+  const float _dia = 28; // dot diameter
+};
 
 class StatusWidget : public QFrame {
   Q_OBJECT
 
 public:
-  StatusWidget(QString label, QString msg, QColor color, QWidget* parent = 0);
-  void update(QString label, QString msg, int severity);
+  StatusWidget(QString label, QString msg, QColor c, QWidget* parent = 0);
+  void update(QString label, QString msg, QColor c);
 
 protected:
   void paintEvent(QPaintEvent*) override;
 
 private:
-  QColor _severity = QColor(218, 202, 37);
-  QLabel* l_label;
-  QLabel* l_msg;
+  QColor color = COLOR_WARNING;
+  QLabel status;
+  QLabel substatus;
+  QVBoxLayout layout;
 };
 
 class Sidebar : public QFrame {
@@ -55,6 +60,6 @@ public slots:
 private:
   SignalWidget *signal;
   StatusWidget *temp;
-  StatusWidget *vehicle;
+  StatusWidget *panda;
   StatusWidget *connect;
 };
