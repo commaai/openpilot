@@ -19,7 +19,7 @@ StatusWidget::StatusWidget(QString label, QString msg, QColor c, QWidget* parent
     layout.setContentsMargins(40, 24, 16, 24);
 
     status.setAlignment(Qt::AlignCenter);
-    status.setStyleSheet(R"(font-size: 30px; font-weight: 500;)");
+    status.setStyleSheet(R"(font-size: 38px; font-weight: 500;)");
     layout.addWidget(&status, 0, Qt::AlignCenter);
   }
 
@@ -60,7 +60,7 @@ SignalWidget::SignalWidget(QString text, int strength, QWidget* parent) : QFrame
   layout.addWidget(&label);
   label.setStyleSheet(R"(font-size: 35px; font-weight: 400;)");
 
-  setFixedSize(177, 120);
+  setFixedWidth(177);
   setLayout(&layout);
 }
 
@@ -85,15 +85,16 @@ void SignalWidget::update(QString text, int strength){
 
 Sidebar::Sidebar(QWidget* parent) : QFrame(parent) {
   QVBoxLayout* layout = new QVBoxLayout();
-  layout->setMargin(24);
-  layout->setSpacing(16);
+  layout->setMargin(25);
+  layout->setSpacing(25);
   setFixedSize(300, vwp_h);
+
+  layout->addSpacing(25);
 
   QImage image = QImageReader("../assets/images/button_home.png").read();
   QLabel *comma = new QLabel(this);
   comma->setPixmap(QPixmap::fromImage(image));
   comma->setAlignment(Qt::AlignCenter);
-  comma->setFixedSize(250, 250);
 
   QPushButton *s_btn = new QPushButton;
   s_btn->setStyleSheet(R"(
@@ -115,8 +116,9 @@ Sidebar::Sidebar(QWidget* parent) : QFrame(parent) {
   connect = new StatusWidget("CONNECT\nOFFLINE", "",  QColor(218, 202, 37), this);
   layout->addWidget(connect, 0, Qt::AlignTop);
 
+  layout->addWidget(comma, 0, Qt::AlignHCenter | Qt::AlignTop);
+
   layout->addStretch(1);
-  layout->addWidget(comma, 0, Qt::AlignHCenter | Qt::AlignVCenter);
 
   setStyleSheet(R"(
     Sidebar {
