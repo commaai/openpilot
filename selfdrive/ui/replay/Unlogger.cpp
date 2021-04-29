@@ -94,7 +94,6 @@ void Unlogger::process(SubMaster *sm) {
         t0r = timer.nsecsElapsed();
       }
 
-      //if (seek_request > 0) {
       if (seeking) {
         t0 = seek_request + route_t0 + 1;
         qDebug() << "seeking to" << t0;
