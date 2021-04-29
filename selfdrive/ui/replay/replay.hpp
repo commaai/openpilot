@@ -22,7 +22,6 @@ class Replay : public QObject {
 public:
   Replay(QString route_, int seek);
   void stream(SubMaster *sm = nullptr);
-  void stopStream();
   void addSegment(int i);
   void trimSegment(int seg_num);
   void seekTime(int seek_);

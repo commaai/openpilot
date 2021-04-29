@@ -105,11 +105,6 @@ void Replay::stream(SubMaster *sm){
   });
 }
 
-void Replay::stopStream(){
-  unlogger->setActive(false);
-  thread->quit();
-}
-
 void Replay::seekTime(int seek_){
   unlogger->setSeekRequest(seek_*1e9);
 
