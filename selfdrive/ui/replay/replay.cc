@@ -70,19 +70,6 @@ void Replay::addSegment(int i){
   frs.insert(i, new FrameReader(qPrintable(camera_fn)));
 }
 
-void Replay::trimSegment(){
-	printf("BEFORE TRIM : %d\n", events.size());
-	auto eit = events.begin();
-	while(eit != events.end()){
-		if(std::abs((*eit).first - current_segment) > 1){
-			eit = events.erase(eit);
-			continue;
-		}
-		eit++;
-	}
-	printf("AFTER TRIM : %d\n", events.size());
-}
-
 void Replay::stream(SubMaster *sm){
   thread = new QThread;
   unlogger->moveToThread(thread);
@@ -99,8 +86,8 @@ void Replay::stream(SubMaster *sm){
 
   QObject::connect(unlogger, &Unlogger::loadSegment, [=](){
     addSegment(current_segment + 2);
+    trimSegment(current_segment - 1);
     current_segment++;
-    //trimSegment();
   });
   QObject::connect(unlogger, &Unlogger::trimSegments, [=](){
     //trimSegment();
@@ -110,6 +97,23 @@ void Replay::stream(SubMaster *sm){
 void Replay::stopStream(){
   unlogger->setActive(false);
   thread->quit();
+}
+
+void Replay::trimSegment(int seg_num){
+
+  lrs.remove(seg_num);
+  frs.remove(seg_num);
+
+	printf("BEFORE TRIM : %d\n", events.size());
+	auto eit = events.begin();
+	while(eit != events.end()){
+		if((*eit).first == seg_num) {
+			eit = events.erase(eit);
+			continue;
+		}
+		eit++;
+	}
+	printf("AFTER TRIM : %d\n", events.size());
 }
 
 void Replay::seekTime(int seek_){
@@ -142,13 +146,13 @@ void Replay::updateSeek(){
       seekTime(seek);
       getch(); // remove \n from entering seek
     } else if (c == 'm') {
-      unlogger->setSeekRequest(unlogger->getRelativeCurrentTime() + 60*1e9);
+      seekTime((unlogger->getRelativeCurrentTime() + 60*1e9)/1e9);
     } else if (c == 'M') {
-      unlogger->setSeekRequest(unlogger->getRelativeCurrentTime() - 60*1e9);
+      seekTime((unlogger->getRelativeCurrentTime() - 60*1e9)/1e9);
     } else if (c == 's') {
-      unlogger->setSeekRequest(unlogger->getRelativeCurrentTime() + 10*1e9);
+      seekTime((unlogger->getRelativeCurrentTime() + 10*1e9)/1e9);
     } else if (c == 'S') {
-      unlogger->setSeekRequest(unlogger->getRelativeCurrentTime() - 10*1e9);
+      seekTime((unlogger->getRelativeCurrentTime() - 10*1e9)/1e9);
     } else if (c == 'G') {
       seekTime(0);
     } else if (c == ' ') {

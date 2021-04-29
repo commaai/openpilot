@@ -64,17 +64,6 @@ void Unlogger::process(SubMaster *sm) {
   qDebug() << "got events";
   route_t0 = events->firstKey();
 
-/*
-  // TODO: hack
-  if (seek_request != 0) {
-    seek_request += events->firstKey();
-    while (events->lowerBound(seek_request) == events->end()) {
-      qDebug() << "waiting for desired time";
-      QThread::sleep(1);
-    }
-  }
-*/
-
   QElapsedTimer timer;
   timer.start();
 
