@@ -132,24 +132,6 @@ void Replay::seekTime(int seek_){
     }
     current_segment = seek_/60;
   }
-/*
-  if(std::abs(seek_/60 - current_segment) > 1){
-    stopStream();
-    events.clear();
-    lrs.clear();
-    frs.clear();
-
-    // Add 3 segment window for seek
-    for(int i = 0 ; i < 3 ; i++){
-      int ind = seek_/60 - 1 + i;
-      if((ind < camera_paths.size()) && (ind >= 0)){
-        addSegment(ind);
-      }
-    }
-    thread->start();
-    current_segment = seek_/60;
-  }
-*/
 }
 
 void Replay::updateSeek(){
