@@ -15,20 +15,35 @@
 // HomeWindow: the container for the offroad and onroad UIs
 
 HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
-  layout = new QStackedLayout();
-  layout->setStackingMode(QStackedLayout::StackAll);
+  QHBoxLayout *layout = new QHBoxLayout(this);
+  layout->setMargin(0);
+  layout->setSpacing(0);
+
+  sidebar = new Sidebar(this);
+  layout->addWidget(sidebar);
+
+  slayout = new QStackedLayout();
+  layout->addLayout(slayout);
 
   onroad = new OnroadWindow(this);
-  layout->addWidget(onroad);
+  slayout->addWidget(onroad);
   QObject::connect(this, &HomeWindow::update, onroad, &OnroadWindow::update);
-  QObject::connect(this, &HomeWindow::displayPowerChanged, onroad, &OnroadWindow::setEnabled);
-  
+  // TODO: still needed?
+  //QObject::connect(this, &HomeWindow::displayPowerChanged, onroad, &OnroadWindow::setEnabled);
+
   home = new OffroadHome();
-  layout->addWidget(home);
+  slayout->addWidget(home);
   QObject::connect(this, &HomeWindow::openSettings, home, &OffroadHome::refresh);
-  QObject::connect(this, &HomeWindow::offroadTransition, home, &OffroadHome::setVisible);
 
   setLayout(layout);
+}
+
+void HomeWindow::offroadTransition(bool offroad) {
+  if (offroad) {
+    slayout->setCurrentWidget(home);
+  } else {
+    slayout->setCurrentWidget(onroad);
+  }
 }
 
 void HomeWindow::mousePressEvent(QMouseEvent* e) {
@@ -53,7 +68,7 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
 
 // OffroadHome: the offroad home page
 
-OffroadHome::OffroadHome(QWidget* parent) : QWidget(parent) {
+OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
   QVBoxLayout* main_layout = new QVBoxLayout();
   main_layout->setContentsMargins(sbr_w + 50, 50, 50, 50);
 
@@ -111,6 +126,9 @@ OffroadHome::OffroadHome(QWidget* parent) : QWidget(parent) {
 
   setLayout(main_layout);
   setStyleSheet(R"(
+    OffroadHome {
+      background-color: black;
+    }
     * {
      color: white;
     }

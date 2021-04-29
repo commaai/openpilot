@@ -1,6 +1,8 @@
 #pragma once
 
-#include <QtWidgets>
+#include <QFrame>
+#include <QLabel>
+
 #include <ui.hpp>
 
 class SignalWidget : public QFrame {
@@ -31,6 +33,7 @@ public:
 
 protected:
   void paintEvent(QPaintEvent*) override;
+
 private:
   QColor _severity = QColor(218, 202, 37);
   QLabel* l_label;
@@ -47,8 +50,8 @@ public slots:
   void update(UIState *s);
 
 private:
-  SignalWidget* signal;
-  StatusWidget* temp;
-  StatusWidget* vehicle;
-  StatusWidget* connect;
+  SignalWidget *signal;
+  StatusWidget *temp;
+  StatusWidget *vehicle;
+  StatusWidget *connect;
 };
