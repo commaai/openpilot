@@ -14,7 +14,10 @@ Q_OBJECT
     Unlogger(Events *events_, QReadWriteLock* events_lock_, QMap<int, FrameReader*> *frs_, int seek);
     uint64_t getCurrentTime() { return tc; }
     uint64_t getRelativeCurrentTime() { return tc - route_t0; }
-    void setSeekRequest(uint64_t seek_request_) { seek_request = seek_request_; }
+    void setSeekRequest(uint64_t seek_request_) {
+      seeking = true;
+      seek_request = seek_request_;
+    }
     void setPause(bool pause) { paused = pause; }
     void setActive(bool active_) { active = active_; }
     void togglePause() { paused = !paused; }
@@ -26,7 +29,6 @@ Q_OBJECT
     void elapsed();
     void finished();
     void loadSegment();
-    void trimSegments();
   private:
     Events *events;
     QReadWriteLock *events_lock;
@@ -37,6 +39,7 @@ Q_OBJECT
     uint64_t route_t0;
     float last_print = 0;
     uint64_t seek_request = 0;
+    bool seeking;
     bool paused = false;
     bool loading_segment = false;
     bool active = true;

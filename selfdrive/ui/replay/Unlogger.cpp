@@ -21,6 +21,7 @@ Unlogger::Unlogger(Events *events_, QReadWriteLock* events_lock_, QMap<int, Fram
   : events(events_), events_lock(events_lock_), frs(frs_) {
   ctx = Context::create();
   seek_request = seek*1e9;
+  seeking = (seek > 0);
 
   QStringList block = QString(getenv("BLOCK")).split(",");
   qDebug() << "blocklist" << block;
@@ -93,8 +94,9 @@ void Unlogger::process(SubMaster *sm) {
         t0r = timer.nsecsElapsed();
       }
 
-      if (seek_request > 0) {
-        t0 = seek_request + route_t0;
+      //if (seek_request > 0) {
+      if (seeking) {
+        t0 = seek_request + route_t0 + 1;
         qDebug() << "seeking to" << t0;
         t0r = timer.nsecsElapsed();
         eit = events->lowerBound(t0);
@@ -103,9 +105,10 @@ void Unlogger::process(SubMaster *sm) {
           qWarning() << "seek off end";
           while((eit == events->end()) || (eit.key() - t0 > 1e9)) {
             eit = events->lowerBound(t0);
+            QThread::sleep(1);
           }
-          //emit trimSegments();
         }
+        seeking = false;
       }
 
       if (abs(((long long)tc-(long long)last_elapsed)) > 50e6) {
@@ -195,7 +198,7 @@ void Unlogger::process(SubMaster *sm) {
 
       if (time_to_end < 60.0 && !loading_segment){
         loading_segment = true;
-        emit loadSegment();
+        //emit loadSegment();
       }
     }
   }

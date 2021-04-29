@@ -53,6 +53,8 @@ void Replay::parseResponse(QString response){
 }
 
 void Replay::addSegment(int i){
+  printf("ADDING : %d\n", i);
+
   if (lrs.find(i) != lrs.end()) {
     return;
   }
@@ -89,9 +91,6 @@ void Replay::stream(SubMaster *sm){
     trimSegment(current_segment - 1);
     current_segment++;
   });
-  QObject::connect(unlogger, &Unlogger::trimSegments, [=](){
-    //trimSegment();
-  });
 }
 
 void Replay::stopStream(){
@@ -100,11 +99,11 @@ void Replay::stopStream(){
 }
 
 void Replay::trimSegment(int seg_num){
+  printf("TRIMMING : %d\n", seg_num);
 
   lrs.remove(seg_num);
   frs.remove(seg_num);
 
-	printf("BEFORE TRIM : %d\n", events.size());
 	auto eit = events.begin();
 	while(eit != events.end()){
 		if((*eit).first == seg_num) {
@@ -113,10 +112,27 @@ void Replay::trimSegment(int seg_num){
 		}
 		eit++;
 	}
-	printf("AFTER TRIM : %d\n", events.size());
 }
 
 void Replay::seekTime(int seek_){
+  unlogger->setSeekRequest(seek_*1e9);
+
+  if(seek_/60 != current_segment) {
+    for(int i = 0 ; i < 3 ; i++) {
+      // add segments that don't overlap
+      int seek_ind = seek_/60 - 1 + i;
+      if(((current_segment + 1 < seek_ind) || (current_segment - 1 > seek_ind)) && (seek_ind >= 0)) {
+        addSegment(seek_ind);
+      }
+      // remove current segments that don't overlap
+      int cur_ind = current_segment - 1 + i;
+      if(((seek_/60 + 1 < cur_ind) || (seek_/60 - 1 > cur_ind)) && (cur_ind >= 0)) {
+        trimSegment(cur_ind);
+      }
+    }
+    current_segment = seek_/60;
+  }
+/*
   if(std::abs(seek_/60 - current_segment) > 1){
     stopStream();
     events.clear();
@@ -133,7 +149,7 @@ void Replay::seekTime(int seek_){
     thread->start();
     current_segment = seek_/60;
   }
-  unlogger->setSeekRequest(seek_*1e9);
+*/
 }
 
 void Replay::updateSeek(){
