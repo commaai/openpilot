@@ -311,20 +311,25 @@ FW_VERSIONS = {
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x8704E906027DD\xf1\x893123',
       b'\xf1\x875NA907115E \xf1\x890003',
+      b'\xf1\x8704L906026DE\xf1\x895418',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x870D9300043  \xf1\x895202',
       b'\xf1\x870DL300012M \xf1\x892107',
+      b'\xf1\x870DL300012N \xf1\x892110',
     ],
     (Ecu.srs, 0x715, None): [
       b'\xf1\x873Q0959655BJ\xf1\x890703\xf1\x82\0161213001211001205212111052100',
+      b'\xf1\x873Q0959655CQ\xf1\x890720\xf1\x82\x0e1213111211001205212112052111',
     ],
     (Ecu.eps, 0x712, None): [
       b'\xf1\x875Q0909143P \xf1\x892051\xf1\x820527T6050405',
       b'\xf1\x875Q0909143P \xf1\x892051\xf1\x820527T6060405',
+      b'\xf1\x875Q0910143C \xf1\x892211\xf1\x82\x0567T600G600',
     ],
     (Ecu.fwdRadar, 0x757, None): [
       b'\xf1\x872Q0907572R \xf1\x890372',
+      b'\xf1\x872Q0907572Q \xf1\x890342',
     ],
   },
   CAR.SKODA_SCALA_MK1: {
