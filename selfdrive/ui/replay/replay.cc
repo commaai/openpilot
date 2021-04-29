@@ -100,14 +100,14 @@ void Replay::trimSegment(int seg_num){
   lrs.remove(seg_num);
   frs.remove(seg_num);
 
-	auto eit = events.begin();
-	while(eit != events.end()){
-		if((*eit).first == seg_num) {
-			eit = events.erase(eit);
-			continue;
-		}
-		eit++;
-	}
+  auto eit = events.begin();
+  while(eit != events.end()){
+    if((*eit).first == seg_num) {
+      eit = events.erase(eit);
+      continue;
+    }
+    eit++;
+  }
 }
 
 void Replay::seekTime(int seek_){
@@ -131,12 +131,12 @@ void Replay::seekTime(int seek_){
 }
 
 void Replay::seekThread(){
-	char c;
+  char c;
   while(1){
     c = getch();
     if(c == '\n'){
-			printf("Enter seek request: ");
-			std::cin >> seek;
+      printf("Enter seek request: ");
+      std::cin >> seek;
       seekTime(seek);
       getch(); // remove \n from entering seek
     } else if (c == 'm') {
