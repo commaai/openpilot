@@ -85,7 +85,7 @@ void SignalWidget::update(QString text, int strength){
 Sidebar::Sidebar(QWidget* parent) : QFrame(parent) {
   QVBoxLayout* layout = new QVBoxLayout();
   layout->setContentsMargins(25, 50, 25, 50);
-  layout->setSpacing(25);
+  layout->setSpacing(35);
   setFixedSize(300, vwp_h);
 
   QPushButton *s_btn = new QPushButton;
