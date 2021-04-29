@@ -20,7 +20,7 @@ public:
 private:
   Device device;
   QUIState qs;
-  
+
   QStackedLayout *main_layout;
   HomeWindow *homeWindow;
   SettingsWindow *settingsWindow;

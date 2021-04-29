@@ -29,6 +29,7 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   device.setAwake(true, true);
   QObject::connect(&qs, &QUIState::uiUpdate, &device, &Device::update);
   QObject::connect(&qs, &QUIState::offroadTransition, this, &MainWindow::offroadTransition);
+  QObject::connect(&device, &Device::displayPowerChanged, this, &MainWindow::closeSettings);
 
   // no outline to prevent the focus rectangle
   setLayout(main_layout);

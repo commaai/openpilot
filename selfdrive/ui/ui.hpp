@@ -1,7 +1,7 @@
 #pragma once
-#include "messaging.hpp"
 
 #ifdef __APPLE__
+#include <QOpenGLFunctions>
 #include <OpenGL/gl3.h>
 #define NANOVG_GL3_IMPLEMENTATION
 #define nvgCreate nvgCreateGL3
@@ -27,9 +27,11 @@
 #include "common/glutil.h"
 #include "common/util.h"
 #include "common/transformations/orientation.hpp"
-#include "qt/sound.hpp"
+#include "messaging.hpp"
 #include "visionipc.h"
 #include "visionipc_client.h"
+
+#include "qt/sound.hpp"
 
 #include <QObject>
 #include <QTimer>
