@@ -53,8 +53,6 @@ void Replay::parseResponse(QString response){
 }
 
 void Replay::addSegment(int i){
-  printf("ADDING : %d\n", i);
-
   if (lrs.find(i) != lrs.end()) {
     return;
   }
@@ -99,8 +97,6 @@ void Replay::stopStream(){
 }
 
 void Replay::trimSegment(int seg_num){
-  printf("TRIMMING : %d\n", seg_num);
-
   lrs.remove(seg_num);
   frs.remove(seg_num);
 

@@ -82,8 +82,9 @@ void Unlogger::process(SubMaster *sm) {
     }
 
     while ((eit != events->end()) && active) {
-      float time_to_end = ((events->lastKey() - eit.key())/1e9);
-      if (loading_segment && (time_to_end > 80.0)){
+      float time_to_end = ((int)((eit.key() - route_t0)/(60*1e9)) + 1)*60 - (eit.key()-route_t0)/1e9;
+
+      if (loading_segment && (time_to_end > 10.0)){
         loading_segment = false;
         route_t0 = events->firstKey();
       }
@@ -96,6 +97,7 @@ void Unlogger::process(SubMaster *sm) {
 
       if (seeking) {
         t0 = seek_request + route_t0 + 1;
+        tc = t0;
         qDebug() << "seeking to" << t0;
         t0r = timer.nsecsElapsed();
         eit = events->lowerBound(t0);
@@ -195,9 +197,9 @@ void Unlogger::process(SubMaster *sm) {
       }
       ++eit;
 
-      if (time_to_end < 60.0 && !loading_segment){
+      if ((time_to_end < 5.0) && !loading_segment){
         loading_segment = true;
-        //emit loadSegment();
+        emit loadSegment();
       }
     }
   }
