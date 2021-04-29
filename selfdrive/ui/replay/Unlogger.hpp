@@ -42,7 +42,7 @@ Q_OBJECT
     bool seeking;
     bool paused = false;
     bool loading_segment = false;
-    bool active = true;
+    bool active = false;
 
     VisionIpcServer *vipc_server = nullptr;
 };
