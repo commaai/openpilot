@@ -7,8 +7,16 @@
 #include "common/util.h"
 #include "common/swaglog.h"
 #include "common/visionimg.h"
+#include "common/watchdog.h"
+#include "hardware/hw.h"
 #include "ui.hpp"
 #include "paint.hpp"
+#include "qt_window.hpp"
+
+#define BACKLIGHT_DT 0.25
+#define BACKLIGHT_TS 2.00
+#define BACKLIGHT_OFFROAD 50
+
 
 // Projects a point in car to space to the corresponding point in full frame
 // image space.
@@ -43,34 +51,6 @@ static void ui_init_vision(UIState *s) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
   }
   assert(glGetError() == GL_NO_ERROR);
-}
-
-
-void ui_init(UIState *s) {
-  s->sm = new SubMaster({
-    "modelV2", "controlsState", "liveCalibration", "radarState", "deviceState", "liveLocationKalman",
-    "pandaState", "carParams", "driverState", "driverMonitoringState", "sensorEvents", "carState", "ubloxGnss",
-#ifdef QCOM2
-    "roadCameraState",
-#endif
-  });
-
-  s->scene.started = false;
-  s->status = STATUS_OFFROAD;
-
-
-  s->last_frame = nullptr;
-  s->wide_camera = false;
-
-#ifdef QCOM2
-  s->wide_camera = Params().getBool("EnableWideCamera");
-#endif
-
-  ui_nvg_init(s);
-
-  s->vipc_client_rear = new VisionIpcClient("camerad", s->wide_camera ? VISION_STREAM_RGB_WIDE : VISION_STREAM_RGB_BACK, true);
-  s->vipc_client_front = new VisionIpcClient("camerad", VISION_STREAM_RGB_FRONT, true);
-  s->vipc_client = s->vipc_client_rear;
 }
 
 static int get_path_length_idx(const cereal::ModelDataV2::XYZTData::Reader &line, const float path_height) {
@@ -347,11 +327,121 @@ static void update_status(UIState *s) {
   started_prev = s->scene.started;
 }
 
-void ui_update(UIState *s) {
-  update_params(s);
-  update_sockets(s);
-  update_state(s);
-  update_status(s);
-  update_alert(s);
-  update_vision(s);
+
+QUIState::QUIState(QObject *parent) : QObject(parent) {
+  ui_state.sound = std::make_unique<Sound>();
+  ui_state.sm = std::make_unique<SubMaster, const std::initializer_list<const char *>>({
+    "modelV2", "controlsState", "liveCalibration", "radarState", "deviceState", "liveLocationKalman",
+    "pandaState", "carParams", "driverState", "driverMonitoringState", "sensorEvents", "carState", "ubloxGnss",
+#ifdef QCOM2
+    "roadCameraState",
+#endif
+  });
+
+  ui_state.fb_w = vwp_w;
+  ui_state.fb_h = vwp_h;
+  ui_state.scene.started = false;
+  ui_state.status = STATUS_OFFROAD;
+  ui_state.last_frame = nullptr;
+  ui_state.wide_camera = false;
+
+#ifdef QCOM2
+  ui_state.wide_camera = Params().getBool("EnableWideCamera");
+#endif
+
+  ui_state.vipc_client_rear = new VisionIpcClient("camerad", ui_state.wide_camera ? VISION_STREAM_RGB_WIDE : VISION_STREAM_RGB_BACK, true);
+  ui_state.vipc_client_front = new VisionIpcClient("camerad", VISION_STREAM_RGB_FRONT, true);
+  ui_state.vipc_client = ui_state.vipc_client_rear;
+
+  // update timer
+  timer = new QTimer(this);
+  QObject::connect(timer, SIGNAL(timeout()), this, SLOT(update()));
+  timer->start(0);
+}
+
+void QUIState::update() {
+  update_params(&ui_state);
+  update_sockets(&ui_state);
+  update_state(&ui_state);
+  update_status(&ui_state);
+  update_alert(&ui_state);
+  update_vision(&ui_state);
+
+  if (ui_state.scene.started != started_prev) {
+    started_prev = ui_state.scene.started;
+    emit offroadTransition(!ui_state.scene.started);
+
+    // Change timeout to 0 when onroad, this will call update continously.
+    // This puts visionIPC in charge of update frequency, reducing video latency
+    timer->start(ui_state.scene.started ? 0 : 1000 / UI_FREQ);
+  }
+
+  // scale volume with speed
+  QUIState::ui_state.sound->volume = util::map_val(ui_state.scene.car_state.getVEgo(), 0.f, 20.f,
+                                                   Hardware::MIN_VOLUME, Hardware::MAX_VOLUME);
+
+  watchdog_kick();
+  emit uiUpdate(ui_state);
+}
+
+Device::Device(QObject *parent) : brightness_filter(BACKLIGHT_OFFROAD, BACKLIGHT_TS, BACKLIGHT_DT), QObject(parent) {
+  brightness_b = Params(true).get<float>("BRIGHTNESS_B").value_or(10.0);
+  brightness_m = Params(true).get<float>("BRIGHTNESS_M").value_or(0.1);
+}
+
+void Device::update(const UIState &s) {
+  updateBrightness(s);
+  updateWakefulness(s);
+
+  // TODO: remove from UIState and use signals
+  QUIState::ui_state.awake = awake;
+}
+
+void Device::setAwake(bool on, bool reset) {
+  if (on != awake) {
+    awake = on;
+    Hardware::set_display_power(awake);
+    LOGD("setting display power %d", awake);
+    emit displayPowerChanged(awake);
+  }
+
+  if (reset) {
+    awake_timeout = 30 * UI_FREQ;
+  }
+}
+
+void Device::updateBrightness(const UIState &s) {
+  float clipped_brightness = std::min(100.0f, (s.scene.light_sensor * brightness_m) + brightness_b);
+
+#ifdef QCOM2
+  if (!s.scene.started) {
+    clipped_brightness = BACKLIGHT_OFFROAD;
+  }
+#endif
+
+  int brightness = brightness_filter.update(clipped_brightness);
+  if (!awake) {
+    brightness = 0;
+  }
+
+  if (brightness != last_brightness) {
+    std::thread{Hardware::set_brightness, brightness}.detach();
+  }
+  last_brightness = brightness;
+}
+
+void Device::updateWakefulness(const UIState &s) {
+  awake_timeout = std::max(awake_timeout - 1, 0);
+
+  bool should_wake = s.scene.started || s.scene.ignition;
+  if (!should_wake) {
+    // tap detection while display is off
+    bool accel_trigger = abs(s.scene.accel_sensor - accel_prev) > 0.2;
+    bool gyro_trigger = abs(s.scene.gyro_sensor - gyro_prev) > 0.15;
+    should_wake = accel_trigger && gyro_trigger;
+    gyro_prev = s.scene.gyro_sensor;
+    accel_prev = (accel_prev * (accel_samples - 1) + s.scene.accel_sensor) / accel_samples;
+  }
+
+  setAwake(awake_timeout, should_wake);
 }
