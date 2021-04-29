@@ -16,8 +16,7 @@
 #include "common/params.h"
 #include "common/util.h"
 #include "selfdrive/hardware/hw.h"
-#include "home.hpp"
-
+#include "ui.hpp"
 
 TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *toggles_list = new QVBoxLayout();
