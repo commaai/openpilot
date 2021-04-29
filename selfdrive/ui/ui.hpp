@@ -1,8 +1,8 @@
 #pragma once
 
 #ifdef __APPLE__
-#include <QOpenGLFunctions>
 #include <OpenGL/gl3.h>
+#include <QOpenGLFunctions>
 #define NANOVG_GL3_IMPLEMENTATION
 #define nvgCreate nvgCreateGL3
 #else
@@ -194,7 +194,7 @@ private slots:
 
 private:
   QTimer *timer;
-  bool started_prev;
+  bool started_prev = true;
 };
 
 
