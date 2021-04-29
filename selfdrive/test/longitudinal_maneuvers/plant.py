@@ -17,7 +17,7 @@ from selfdrive.boardd.boardd import can_list_to_can_capnp
 from opendbc.can.parser import CANParser
 from selfdrive.car.honda.interface import CarInterface
 
-from opendbc.can.parser import DBCParser
+from opendbc.can.dbc_pyx import DBCParser
 honda = DBCParser("honda_civic_touring_2016_can_generated")
 
 # Trick: set 0x201 (interceptor) in fingerprints for gas is controlled like if there was an interceptor
