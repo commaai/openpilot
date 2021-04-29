@@ -1,16 +1,18 @@
 #pragma once
 
+#include <QFrame>
 #include <QLabel>
 #include <QPushButton>
 #include <QStackedLayout>
 #include <QTimer>
 #include <QWidget>
 
+#include "sidebar.hpp"
 #include "onroad.hpp"
 #include "ui/ui.hpp"
 #include "widgets/offroad_alerts.hpp"
 
-class OffroadHome : public QWidget {
+class OffroadHome : public QFrame {
   Q_OBJECT
 
 public:
@@ -42,14 +44,17 @@ signals:
 
   // forwarded signals
   void displayPowerChanged(bool on);
-  void offroadTransition(bool offroad);
   void update(const UIState &s);
+
+public slots:
+  void offroadTransition(bool offroad);
 
 protected:
   void mousePressEvent(QMouseEvent* e) override;
 
 private:
+  Sidebar *sidebar;
   OffroadHome *home;
   OnroadWindow *onroad;
-  QStackedLayout *layout;
+  QStackedLayout *slayout;
 };

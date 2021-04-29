@@ -44,12 +44,9 @@ typedef struct Rect {
   }
 } Rect;
 
-const int sbr_w = 300;
 const int bdr_s = 30;
 const int header_h = 420;
 const int footer_h = 280;
-const Rect settings_btn = {50, 35, 200, 117};
-const Rect home_btn = {60, 1080 - 180 - 40, 180, 180};
 
 const int UI_FREQ = 20;   // Hz
 
@@ -157,7 +154,6 @@ typedef struct UIState {
 
   bool awake;
 
-  bool sidebar_collapsed;
   Rect video_rect, viz_rect;
   float car_space_transform[6];
   bool wide_camera;

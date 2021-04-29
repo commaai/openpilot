@@ -19,7 +19,6 @@
 #include "nanovg_gl.h"
 #include "nanovg_gl_utils.h"
 #include "paint.hpp"
-#include "sidebar.hpp"
 
 // TODO: this is also hardcoded in common/transformations/camera.py
 // TODO: choose based on frame input size
@@ -240,7 +239,6 @@ static void ui_draw_vision_face(UIState *s) {
 }
 
 static void ui_draw_driver_view(UIState *s) {
-  s->sidebar_collapsed = true;
   const bool is_rhd = s->scene.is_rhd;
   const int width = 4 * s->viz_rect.h / 3;
   const Rect rect = {s->viz_rect.centerX() - width / 2, s->viz_rect.y, width, s->viz_rect.h};  // x, y, w, h
@@ -377,12 +375,8 @@ static void ui_draw_background(UIState *s) {
   glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 }
 
-void ui_draw(UIState *s) {
-  s->viz_rect = Rect{bdr_s, bdr_s, s->fb_w - 2 * bdr_s, s->fb_h - 2 * bdr_s};
-  if (!s->sidebar_collapsed) {
-    s->viz_rect.x += sbr_w;
-    s->viz_rect.w -= sbr_w;
-  }
+void ui_draw(UIState *s, int w, int h) {
+  s->viz_rect = Rect{bdr_s, bdr_s, w - 2 * bdr_s, h - 2 * bdr_s};
 
   const bool draw_alerts = s->scene.started;
   const bool draw_vision = draw_alerts && s->vipc_client->connected;
@@ -398,7 +392,7 @@ void ui_draw(UIState *s) {
 
   // NVG drawing functions - should be no GL inside NVG frame
   nvgBeginFrame(s->vg, s->fb_w, s->fb_h, 1.0f);
-  ui_draw_sidebar(s);
+
   if (draw_vision) {
     ui_draw_vision(s);
   }
