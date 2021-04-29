@@ -44,7 +44,7 @@ void Replay::parseResponse(QString response){
   log_paths = doc["logs"].toArray();
 
   // add first window:
-  for(int i = 0 ; i < 3 ; i++) {
+  for(int i = 0; i < 3; i++) {
     int ind = current_segment - 1 + i;
     if ((ind < camera_paths.size()) && (ind >= 0)) {
       addSegment(ind);
