@@ -329,6 +329,7 @@ static void update_status(UIState *s) {
 
 
 QUIState::QUIState(QObject *parent) : QObject(parent) {
+  ui_state.sound = std::make_unique<Sound>();
   ui_state.sm = std::make_unique<SubMaster, const std::initializer_list<const char *>>({
     "modelV2", "controlsState", "liveCalibration", "radarState", "deviceState", "liveLocationKalman",
     "pandaState", "carParams", "driverState", "driverMonitoringState", "sensorEvents", "carState", "ubloxGnss",
@@ -337,16 +338,12 @@ QUIState::QUIState(QObject *parent) : QObject(parent) {
 #endif
   });
 
-  ui_state.sound = std::make_unique<Sound>();
-
-  ui_state.scene.started = false;
-  ui_state.status = STATUS_OFFROAD;
-
-  ui_state.last_frame = nullptr;
-  ui_state.wide_camera = false;
-
   ui_state.fb_w = vwp_w;
   ui_state.fb_h = vwp_h;
+  ui_state.scene.started = false;
+  ui_state.status = STATUS_OFFROAD;
+  ui_state.last_frame = nullptr;
+  ui_state.wide_camera = false;
 
 #ifdef QCOM2
   ui_state.wide_camera = Params().getBool("EnableWideCamera");
@@ -355,7 +352,7 @@ QUIState::QUIState(QObject *parent) : QObject(parent) {
   ui_state.vipc_client_rear = new VisionIpcClient("camerad", ui_state.wide_camera ? VISION_STREAM_RGB_WIDE : VISION_STREAM_RGB_BACK, true);
   ui_state.vipc_client_front = new VisionIpcClient("camerad", VISION_STREAM_RGB_FRONT, true);
   ui_state.vipc_client = ui_state.vipc_client_rear;
- 
+
   // update timer
   timer = new QTimer(this);
   QObject::connect(timer, SIGNAL(timeout()), this, SLOT(update()));
@@ -397,18 +394,22 @@ void Device::update(const UIState &s) {
   updateWakefulness(s);
 }
 
-void Device::setAwake(bool on) {
+void Device::setAwake(bool on, bool reset) {
   if (on != awake) {
     awake = on;
     Hardware::set_display_power(awake);
     LOGD("setting display power %d", awake);
     emit displayPowerChanged(awake);
   }
+
+  if (reset) {
+    awake_timeout = 30 * UI_FREQ;
+  }
 }
 
 void Device::updateBrightness(const UIState &s) {
   float clipped_brightness = std::min(100.0f, (s.scene.light_sensor * brightness_m) + brightness_b);
-  
+
 #ifdef QCOM2
   if (!s.scene.started) {
     clipped_brightness = BACKLIGHT_OFFROAD;
@@ -429,8 +430,6 @@ void Device::updateBrightness(const UIState &s) {
 void Device::updateWakefulness(const UIState &s) {
   awake_timeout = std::max(awake_timeout - 1, 0);
 
-  constexpr float accel_samples = 5*UI_FREQ;
-
   bool should_wake = s.scene.started || s.scene.ignition;
   if (!should_wake) {
     // tap detection while display is off
@@ -441,11 +440,5 @@ void Device::updateWakefulness(const UIState &s) {
     accel_prev = (accel_prev * (accel_samples - 1) + s.scene.accel_sensor) / accel_samples;
   }
 
-  if (should_wake) {
-    awake_timeout = 30 * UI_FREQ;
-  } else if (awake_timeout > 0) {
-    should_wake = true;
-  }
-
-  setAwake(should_wake);
+  setAwake(awake_timeout, should_wake);
 }

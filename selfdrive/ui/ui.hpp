@@ -204,6 +204,8 @@ public:
 
 private:
   // auto brightness
+  const float accel_samples = 5*UI_FREQ;
+
   bool awake;
   int awake_timeout = 0;
   float accel_prev = 0;
@@ -222,6 +224,6 @@ signals:
   void displayPowerChanged(bool on);
 
 public slots:
-  void setAwake(bool on);
+  void setAwake(bool on, bool reset);
   void update(const UIState &s);
 };
