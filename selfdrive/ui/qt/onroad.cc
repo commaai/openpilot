@@ -39,12 +39,8 @@ void OnroadWindow::update(const UIState &s) {
   }
 }
 
-void OnroadWindow::resizeGL(int w, int h) {
-  std::cout << "resize " << w << "x" << h << std::endl;
-}
-
 void OnroadWindow::paintGL() {
-  ui_draw(&QUIState::ui_state);
+  ui_draw(&QUIState::ui_state, width(), height());
 
   double cur_draw_t = millis_since_boot();
   double dt = cur_draw_t - prev_draw_t;

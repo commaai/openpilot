@@ -46,8 +46,11 @@ class Sidebar : public QFrame {
 public:
   explicit Sidebar(QWidget* parent = 0);
 
+signals:
+  void openSettings();
+
 public slots:
-  void update(UIState *s);
+  void update(const UIState &s);
 
 private:
   SignalWidget *signal;

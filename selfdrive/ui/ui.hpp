@@ -157,7 +157,6 @@ typedef struct UIState {
 
   bool awake;
 
-  bool sidebar_collapsed;
   Rect video_rect, viz_rect;
   float car_space_transform[6];
   bool wide_camera;

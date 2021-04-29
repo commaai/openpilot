@@ -21,6 +21,8 @@ HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
 
   sidebar = new Sidebar(this);
   layout->addWidget(sidebar);
+  QObject::connect(this, &HomeWindow::update, sidebar, &Sidebar::update);
+  QObject::connect(sidebar, &Sidebar::openSettings, this, &HomeWindow::openSettings);
 
   slayout = new QStackedLayout();
   layout->addLayout(slayout);
@@ -28,8 +30,6 @@ HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
   onroad = new OnroadWindow(this);
   slayout->addWidget(onroad);
   QObject::connect(this, &HomeWindow::update, onroad, &OnroadWindow::update);
-  // TODO: still needed?
-  //QObject::connect(this, &HomeWindow::displayPowerChanged, onroad, &OnroadWindow::setEnabled);
 
   home = new OffroadHome();
   slayout->addWidget(home);
@@ -44,6 +44,7 @@ void HomeWindow::offroadTransition(bool offroad) {
   } else {
     slayout->setCurrentWidget(onroad);
   }
+  sidebar->setVisible(offroad);
 }
 
 void HomeWindow::mousePressEvent(QMouseEvent* e) {
@@ -54,14 +55,9 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
     return;
   }
 
-  // Settings button click
-  if (!QUIState::ui_state.sidebar_collapsed && settings_btn.ptInRect(e->x(), e->y())) {
-    emit openSettings();
-  }
-
   // Handle sidebar collapsing
-  if (QUIState::ui_state.scene.started && (e->x() >= QUIState::ui_state.viz_rect.x - bdr_s)) {
-    QUIState::ui_state.sidebar_collapsed = !QUIState::ui_state.sidebar_collapsed;
+  if (childAt(e->pos()) == onroad) {
+    sidebar->setVisible(!sidebar->isVisible());
   }
 }
 
@@ -70,7 +66,7 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
 
 OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
   QVBoxLayout* main_layout = new QVBoxLayout();
-  main_layout->setContentsMargins(sbr_w + 50, 50, 50, 50);
+  main_layout->setMargin(50);
 
   // top header
   QHBoxLayout* header_layout = new QHBoxLayout();
