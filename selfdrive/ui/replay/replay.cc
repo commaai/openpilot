@@ -136,7 +136,16 @@ void Replay::seekThread(){
     c = getch();
     if(c == '\n'){
       printf("Enter seek request: ");
-      std::cin >> seek;
+      std::string request;
+      std::cin >> request;
+
+      if(request[0] == 's') {
+        request.erase(request.begin());
+        seek = std::stoi(request)*60;
+      } else {
+        seek = std::stoi(request);
+      }
+
       seekTime(seek);
       getch(); // remove \n from entering seek
     } else if (c == 'm') {
