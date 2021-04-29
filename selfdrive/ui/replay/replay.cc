@@ -70,6 +70,20 @@ void Replay::addSegment(int i){
   frs.insert(i, new FrameReader(qPrintable(camera_fn)));
 }
 
+void Replay::trimSegment(int seg_num){
+  lrs.remove(seg_num);
+  frs.remove(seg_num);
+
+  auto eit = events.begin();
+  while(eit != events.end()){
+    if((*eit).first == seg_num) {
+      eit = events.erase(eit);
+      continue;
+    }
+    eit++;
+  }
+}
+
 void Replay::stream(SubMaster *sm){
   thread = new QThread;
   unlogger->moveToThread(thread);
@@ -94,20 +108,6 @@ void Replay::stream(SubMaster *sm){
 void Replay::stopStream(){
   unlogger->setActive(false);
   thread->quit();
-}
-
-void Replay::trimSegment(int seg_num){
-  lrs.remove(seg_num);
-  frs.remove(seg_num);
-
-  auto eit = events.begin();
-  while(eit != events.end()){
-    if((*eit).first == seg_num) {
-      eit = events.erase(eit);
-      continue;
-    }
-    eit++;
-  }
 }
 
 void Replay::seekTime(int seek_){
