@@ -1,6 +1,7 @@
 Version 0.8.4 (2021-XX-XX)
 ========================
  * Toyota Mirai 2021 support
+ * Lexus NX 300 2020 support thanks to goesreallyfast!
 
 Version 0.8.3 (2021-04-01)
 ========================
