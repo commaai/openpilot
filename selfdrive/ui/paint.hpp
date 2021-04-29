@@ -1,4 +1,5 @@
 #pragma once
+
 #include "ui.hpp"
 
 void ui_draw(UIState *s);

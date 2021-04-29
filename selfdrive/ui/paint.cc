@@ -1,9 +1,19 @@
-#include "ui.hpp"
-
 #include <assert.h>
+#include <algorithm>
+
+#include "ui.hpp"
+#ifdef __APPLE__
+#include <OpenGL/gl3.h>
+#define NANOVG_GL3_IMPLEMENTATION
+#define nvgCreate nvgCreateGL3
+#else
+#include <GLES3/gl3.h>
+#define NANOVG_GLES3_IMPLEMENTATION
+#define nvgCreate nvgCreateGLES3
+#endif
+
 #include "common/util.h"
 #include "common/timing.h"
-#include <algorithm>
 
 #define NANOVG_GLES3_IMPLEMENTATION
 #include "nanovg_gl.h"

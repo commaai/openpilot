@@ -6,6 +6,7 @@
 #include "offroad/settings.hpp"
 #include "offroad/onboarding.hpp"
 #include "home.hpp"
+#include "../ui.hpp"
 
 class MainWindow : public QWidget {
   Q_OBJECT
@@ -17,6 +18,9 @@ public:
   explicit MainWindow(QWidget *parent = 0);
 
 private:
+  Device device;
+  QUIState qs;
+
   QStackedLayout *main_layout;
   HomeWindow *homeWindow;
   SettingsWindow *settingsWindow;
