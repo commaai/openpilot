@@ -398,7 +398,11 @@ void ui_draw(UIState *s) {
 
   // NVG drawing functions - should be no GL inside NVG frame
   nvgBeginFrame(s->vg, s->fb_w, s->fb_h, 1.0f);
+
+#ifndef QT_GUI_LIB
   ui_draw_sidebar(s);
+#endif
+
   if (draw_vision) {
     ui_draw_vision(s);
   }
