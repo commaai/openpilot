@@ -1,9 +1,3 @@
-#include <cmath>
-#include <fstream>
-#include <iostream>
-#include <thread>
-#include <exception>
-
 #include <QDateTime>
 #include <QHBoxLayout>
 #include <QMouseEvent>
@@ -15,7 +9,6 @@
 #include "common/swaglog.h"
 
 #include "home.hpp"
-#include "paint.hpp"
 #include "widgets/drive_stats.hpp"
 #include "widgets/setup.hpp"
 
@@ -32,16 +25,17 @@ HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
   
   home = new OffroadHome();
   layout->addWidget(home);
-  QObject::connect(this, SIGNAL(openSettings()), home, SLOT(refresh()));
+  QObject::connect(this, &HomeWindow::openSettings, home, &OffroadHome::refresh);
   QObject::connect(this, &HomeWindow::offroadTransition, home, &OffroadHome::setVisible);
 
   setLayout(layout);
 }
 
 void HomeWindow::mousePressEvent(QMouseEvent* e) {
+  // TODO: make a nice driver view widget
   if (QUIState::ui_state.scene.driver_view) {
     Params().putBool("IsDriverViewEnabled", false);
-    //GLWindow::QUIState::ui_state.scene.driver_view = false;
+    QUIState::QUIState::ui_state.scene.driver_view = false;
     return;
   }
 

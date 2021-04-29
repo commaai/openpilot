@@ -23,6 +23,7 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   main_layout->addWidget(onboardingWindow);
 
   // MainWindow signals
+  QObject::connect(&qs, &QUIState::uiUpdate, &device, &Device::update);
   QObject::connect(&qs, &QUIState::offroadTransition, this, &MainWindow::offroadTransition);
 
   // start at onboarding

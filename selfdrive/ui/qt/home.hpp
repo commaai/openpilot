@@ -1,18 +1,13 @@
 #pragma once
 
 #include <QLabel>
-#include <QOpenGLFunctions>
-#include <QOpenGLWidget>
 #include <QPushButton>
 #include <QStackedLayout>
-#include <QStackedWidget>
 #include <QTimer>
 #include <QWidget>
 
-#include "sound.hpp"
 #include "onroad.hpp"
 #include "ui/ui.hpp"
-#include "common/util.h"
 #include "widgets/offroad_alerts.hpp"
 
 class OffroadHome : public QWidget {

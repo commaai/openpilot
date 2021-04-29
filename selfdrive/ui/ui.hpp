@@ -201,7 +201,6 @@ class Device : public QObject {
 
 public:
   Device(QObject *parent = 0);
-  void wake();
 
 private:
   // auto brightness

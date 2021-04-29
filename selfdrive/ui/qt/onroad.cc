@@ -1,14 +1,7 @@
-#include <cmath>
-#include <fstream>
 #include <iostream>
-#include <thread>
-#include <exception>
 
-#include "common/util.h"
-#include "common/params.h"
 #include "common/timing.h"
 #include "common/swaglog.h"
-#include "selfdrive/hardware/hw.h"
 
 #include "paint.hpp"
 #include "onroad.hpp"
@@ -40,7 +33,7 @@ void OnroadWindow::update(const UIState &s) {
     makeCurrent();
   }
 
-  // TODO: hide instead?
+  // TODO: will hide do this?
   if(enabled) {
     repaint();
   }
@@ -56,9 +49,9 @@ void OnroadWindow::paintGL() {
   double cur_draw_t = millis_since_boot();
   double dt = cur_draw_t - prev_draw_t;
   // TODO: check if onroad
-  if (dt > 66 && !QUIState::ui_state.scene.driver_view) {
+  if (dt > 66 && QUIState::ui_state.scene.started && !QUIState::ui_state.scene.driver_view) {
     // warn on sub 15fps
-    LOGW("slow frame(%llu) time: %.2f", QUIState::ui_state.sm->frame, dt);
+    LOGW("slow frame time: %.2f", dt);
   }
   prev_draw_t = cur_draw_t;
 }
