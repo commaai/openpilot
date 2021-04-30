@@ -107,7 +107,6 @@ MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings) {
   // Routing
   QVariantMap parameters;
   parameters["mapbox.access_token"] = m_settings.accessToken();
-  parameters["mapbox.user_agent"] = "mapbox-maps-android";
 
   geoservice_provider = new QGeoServiceProvider("mapbox", parameters);
   routing_manager = geoservice_provider->routingManager();
