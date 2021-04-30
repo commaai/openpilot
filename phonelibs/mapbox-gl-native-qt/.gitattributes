@@ -1,0 +1,2 @@
+x86_64 filter=lfs diff=lfs merge=lfs -text
+larch64 filter=lfs diff=lfs merge=lfs -text

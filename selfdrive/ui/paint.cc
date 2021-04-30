@@ -542,7 +542,8 @@ void ui_nvg_init(UIState *s) {
     s->zoom *= 0.5;
   }
 
-  s->video_rect = Rect{bdr_s, bdr_s, s->fb_w - 2 * bdr_s, s->fb_h - 2 * bdr_s};
+  // s->video_rect = Rect{bdr_s, bdr_s, s->fb_w - 2 * bdr_s, s->fb_h - 2 * bdr_s};
+  s->video_rect = Rect{bdr_s, bdr_s, s->fb_w / 2, s->fb_h - 2 * bdr_s};
   float zx = s->zoom * 2 * intrinsic_matrix.v[2] / s->video_rect.w;
   float zy = s->zoom * 2 * intrinsic_matrix.v[5] / s->video_rect.h;
 
