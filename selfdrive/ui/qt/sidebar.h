@@ -12,8 +12,8 @@ class SignalWidget : public QFrame {
   Q_OBJECT
 
 public:
-  SignalWidget(QString text, int strength, QWidget* parent = 0);
-  void update(QString text, int strength);
+  SignalWidget(QWidget* parent = 0);
+  void update(const QString &text, int strength);
   QLabel label;
   int _strength = 0;
 
@@ -32,8 +32,8 @@ class StatusWidget : public QFrame {
   Q_OBJECT
 
 public:
-  StatusWidget(QString label, QString msg, QColor c, QWidget* parent = 0);
-  void update(QString label, QString msg, QColor c);
+  StatusWidget(QWidget* parent = 0, bool has_substatus = false);
+  void update(const QString &label, const QColor &c, const QString &msg = "");
 
 protected:
   void paintEvent(QPaintEvent*) override;
@@ -41,7 +41,7 @@ protected:
 private:
   QColor color = COLOR_WARNING;
   QLabel status;
-  QLabel substatus;
+  QLabel *substatus = nullptr;
   QVBoxLayout layout;
 };
 
