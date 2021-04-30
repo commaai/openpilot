@@ -46,8 +46,8 @@ FileReader::~FileReader() {
 
 }
 
-LogReader::LogReader(const QString& file, Events *events_, QReadWriteLock* events_lock_, QMap<int, QPair<int, int> > *eidx_, int seg_num_) :
-    FileReader(file), events(events_), events_lock(events_lock_), eidx(eidx_), seg_num(seg_num_) {
+LogReader::LogReader(const QString& file, Events *events_, QReadWriteLock* events_lock_, QMap<int, QPair<int, int> > *eidx_) :
+    FileReader(file), events(events_), events_lock(events_lock_), eidx(eidx_) {
   bStream.next_in = NULL;
   bStream.avail_in = 0;
   bStream.bzalloc = NULL;
