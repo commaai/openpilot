@@ -20,7 +20,7 @@ int getch(void) {
 
 Replay::Replay(QString route_, int seek_) : route(route_), seek(seek_) {
   unlogger = new Unlogger(&events, &events_lock, &frs, seek);
-  current_segment = -window_padding;
+  current_segment = -window_padding - 1;
   bool create_jwt = true;
 
 #if !defined(QCOM) && !defined(QCOM2)
@@ -100,25 +100,24 @@ void Replay::stream(SubMaster *sm){
 }
 
 void Replay::seekTime(int seek_){
-  if(unlogger->isSeeking()){
-    return;
-  }
-  unlogger->setSeekRequest(seek_*1e9);
+  if(!unlogger->isSeeking()){
+    unlogger->setSeekRequest(seek_*1e9);
 
-  if(seek_/60 != current_segment) {
-    for(int i = 0 ; i < 2*window_padding + 1 ; i++) {
-      // add segments that don't overlap
-      int seek_ind = seek_/60 - window_padding + i;
-      if(((current_segment + window_padding < seek_ind) || (current_segment - window_padding > seek_ind)) && (seek_ind >= 0)) {
-        addSegment(seek_ind);
+    if(seek_/60 != current_segment) {
+      for(int i = 0 ; i < 2*window_padding + 1 ; i++) {
+        // add segments that don't overlap
+        int seek_ind = seek_/60 - window_padding + i;
+        if(((current_segment + window_padding < seek_ind) || (current_segment - window_padding > seek_ind)) && (seek_ind >= 0)) {
+          addSegment(seek_ind);
+        }
+        // remove current segments that don't overlap
+        int cur_ind = current_segment - window_padding + i;
+        if(((seek_/60 + window_padding < cur_ind) || (seek_/60 - window_padding > cur_ind)) && (cur_ind >= 0)) {
+          trimSegment(cur_ind);
+        }
       }
-      // remove current segments that don't overlap
-      int cur_ind = current_segment - window_padding + i;
-      if(((seek_/60 + window_padding < cur_ind) || (seek_/60 - window_padding > cur_ind)) && (cur_ind >= 0)) {
-        trimSegment(cur_ind);
-      }
+      current_segment = seek_/60;
     }
-    current_segment = seek_/60;
   }
 }
 
