@@ -12,7 +12,7 @@
 #include "qt_window.hpp"
 #include "selfdrive/hardware/hw.h"
 
-TrackWidget::TrackWidget(QWidget *parent) : QOpenGLWidget(parent) {
+TrackWidget::TrackWidget(QWidget *parent) : QWidget(parent) {
   setFixedSize(spinner_size);
   setAutoFillBackground(false);
 

@@ -11,7 +11,7 @@
 constexpr int spinner_fps = 30;
 constexpr QSize spinner_size = QSize(360, 360);
 
-class TrackWidget : public QOpenGLWidget {
+class TrackWidget : public QWidget  {
   Q_OBJECT
 public:
   TrackWidget(QWidget *parent = nullptr);
