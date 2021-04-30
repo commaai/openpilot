@@ -281,12 +281,17 @@ def check_git_fetch_result(fetch_txt):
 
 def check_for_update() -> Tuple[bool, bool]:
   setup_git_options(OVERLAY_MERGED)
+  fetch_output = None
   try:
-    git_fetch_output = run(["git", "fetch", "--dry-run"], OVERLAY_MERGED, low_priority=True)
-    return True, check_git_fetch_result(git_fetch_output)
+    fetch_output = run(["git", "fetch", "--dry-run"], OVERLAY_MERGED, low_priority=True)
+    return True, check_git_fetch_result(fetch_output)
   except subprocess.CalledProcessError:
-    return False, False
+    # check for internet
+    if fetch_output is not None and fetch_output.startswith("fatal: unable to access") and \
+       "Could not resolve host:" in str(fetch_output):
+      return False, False
 
+    raise
 
 def fetch_update(wait_helper: WaitTimeHelper) -> bool:
   cloudlog.info("attempting git fetch inside staging overlay")
