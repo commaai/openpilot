@@ -96,6 +96,11 @@ class Controls:
     if self.read_only:
       self.CP.safetyModel = car.CarParams.SafetyModel.noOutput
 
+    # Write CarParams for radard
+    cp_bytes = self.CP.to_bytes()
+    params.put("CarParams", cp_bytes)
+    put_nonblocking("CarParamsCache", cp_bytes)
+
     self.CC = car.CarControl.new_message()
     self.AM = AlertManager()
     self.events = Events()
@@ -271,11 +276,7 @@ class Controls:
     if not self.initialized:
       if CS.canValid and self.sm.all_alive_and_valid():
         self.initialized = True
-
-        # Write CarParams for radard and boardd safety mode
-        cp_bytes = self.CP.to_bytes()
-        Params().put("CarParams", cp_bytes)
-        put_nonblocking("CarParamsCache", cp_bytes)
+        Params().put_bool("ControlsReady", True)
 
     # Check for CAN timeout
     if not can_strs:
