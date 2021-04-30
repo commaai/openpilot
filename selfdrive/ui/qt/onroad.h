@@ -14,8 +14,8 @@ public:
   OnroadAlerts(QWidget *parent = 0);
 
 private:
-  QLabel title, msg;
-  QVBoxLayout layout;
+  QLabel *title, *msg;
+  QVBoxLayout *layout;
 
 public slots:
   void update(const UIState &s);

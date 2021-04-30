@@ -36,36 +36,48 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
 // ***** onroad widgets *****
 
 OnroadAlerts::OnroadAlerts(QWidget *parent) : QFrame(parent) {
-  layout.setMargin(50);
-  layout.setSpacing(25);
+  layout = new QVBoxLayout(this);
+  layout->setSpacing(0);
+  layout->setMargin(10);
 
-  layout.addStretch(1);
+  title = new QLabel();
+  title->setAlignment(Qt::AlignCenter);
+  layout->addWidget(title, 0, Qt::AlignCenter);
 
-  title.setText("Be ready to take over at any time");
-  title.setWordWrap(true);
-  title.setStyleSheet("font-size: 60px;");
-  layout.addWidget(&title, 0, Qt::AlignHCenter | Qt::AlignBottom);
+  msg = new QLabel();
+  msg->setAlignment(Qt::AlignCenter);
+  layout->addWidget(msg, 0, Qt::AlignCenter);
 
-  msg.setText("Always keep hands on wheel and eyes on road");
-  msg.setStyleSheet("font-size: 50px;");
-  layout.addWidget(&msg, 0, Qt::AlignHCenter | Qt::AlignBottom);
-
-  setLayout(&layout);
-  setStyleSheet(R"(
-    color: white;
-    background-color: blue;
-  )");
+  setLayout(layout);
 }
 
 void OnroadAlerts::update(const UIState &s) {
-  /*
-  title.setText(QString::fromStdString(s.scene.alert_text1));
-  msg.setText(QString::fromStdString(s.scene.alert_text2));
-  */
+  if (s.scene.alert_size == cereal::ControlsState::AlertSize::SMALL) {
+    title->setStyleSheet("font-size: 80px; font-weight: 400;");
+  } else if (s.scene.alert_size == cereal::ControlsState::AlertSize::MID) {
+    msg->setStyleSheet("font-size: 70px; font-weight: 400;");
+    title->setStyleSheet("font-size: 80px; font-weight: 500;");
+  } else if (s.scene.alert_size == cereal::ControlsState::AlertSize::FULL) {
+    msg->setStyleSheet("font-size: 90px; font-weight: 400;");
+    title->setStyleSheet("font-size: 120px; font-weight: 500;");
+  }
+  title->setText(QString::fromStdString(s.scene.alert_text1));
+  msg->setText(QString::fromStdString(s.scene.alert_text2));
+  msg->setWordWrap(s.scene.alert_size == cereal::ControlsState::AlertSize::FULL);
+  title->setWordWrap(s.scene.alert_size == cereal::ControlsState::AlertSize::FULL);
+
+  static std::map<cereal::ControlsState::AlertSize, const int> alert_size_map = {
+      {cereal::ControlsState::AlertSize::SMALL, 241},
+      {cereal::ControlsState::AlertSize::MID, 390},
+      {cereal::ControlsState::AlertSize::FULL, s.fb_h}};
+  setFixedHeight(alert_size_map[s.scene.alert_size]);
+
+  setVisible(s.scene.alert_size != cereal::ControlsState::AlertSize::NONE);
 
   auto c = bg_colors[s.status];
+  float alpha = 0.375 * cos((millis_since_boot() / 1000) * 2 * M_PI * s.scene.alert_blinking_rate) + 0.625; 
   const QString style = "OnroadAlerts { background-color: rgba(%1, %2, %3, %4); } * { color: white }";
-  setStyleSheet(style.arg(c.r*255).arg(c.g*255).arg(c.b*255).arg(c.a*255));
+  setStyleSheet(style.arg(c.r*255).arg(c.g*255).arg(c.b*255).arg(c.a*alpha*255));
 }
 
 NvgWindow::~NvgWindow() {

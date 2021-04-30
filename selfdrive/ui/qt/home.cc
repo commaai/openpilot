@@ -56,7 +56,7 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
   }
 
   // Handle sidebar collapsing
-  if (onroad->isVisible() && e->x() > sidebar->width()) {
+  if (onroad->isVisible() && (!sidebar->isVisible() || e->x() > sidebar->width())) {
     sidebar->setVisible(!sidebar->isVisible());
   }
 }
