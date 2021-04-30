@@ -130,18 +130,10 @@ void Replay::stream(SubMaster *sm){
     seekRequestThread();
   });
   queue_thread->start();
-
-
-	// TODO: remove this later
-  QObject::connect(this, &Replay::loadSegment, [=](){
-    seekTime(current_segment*60 + 1);
-  });
 }
 
 void Replay::seekTime(int seek_){
-
-	// TODO: see if eidx also needs to be cleared
-
+  // TODO: see if eidx also needs to be cleared
   if(!seeking){
     if(seek >= 0){
       setSeekRequest(seek_*1e9);
@@ -345,8 +337,6 @@ void Replay::process(SubMaster *sm) {
       ++eit;
       if ((time_to_end < 60.0) && !loading_segment){
         loading_segment = true;
-				// TODO: swap these out later
-				//emit loadSegment();
         seek_queue.enqueue((current_segment+1)*60 + 1);
       }
     }
