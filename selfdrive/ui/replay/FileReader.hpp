@@ -41,7 +41,7 @@ private:
   QString file;
 };
 
-typedef QMultiMap<uint64_t, QPair<int, cereal::Event::Reader>> Events;
+typedef QMultiMap<uint64_t, cereal::Event::Reader> Events;
 
 class LogReader : public FileReader {
 Q_OBJECT

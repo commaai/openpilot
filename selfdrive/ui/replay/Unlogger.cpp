@@ -83,7 +83,6 @@ void Unlogger::process(SubMaster *sm) {
 
     while ((eit != events->end()) && active) {
       float time_to_end = ((int)((eit.key() - route_t0)/(60*1e9)) + 1)*60 - (eit.key()-route_t0)/1e9;
-
       if (loading_segment && (time_to_end > 10.0)){
         loading_segment = false;
         route_t0 = events->firstKey();
@@ -91,7 +90,7 @@ void Unlogger::process(SubMaster *sm) {
 
       while (paused) {
         QThread::usleep(1000);
-        t0 = (*eit).second.getLogMonoTime();
+        t0 = (*eit).getLogMonoTime();
         t0r = timer.nsecsElapsed();
       }
 
@@ -118,7 +117,7 @@ void Unlogger::process(SubMaster *sm) {
         last_elapsed = tc;
       }
 
-      cereal::Event::Reader e = (*eit).second;
+      cereal::Event::Reader e = (*eit);
 
       capnp::DynamicStruct::Reader e_ds = static_cast<capnp::DynamicStruct::Reader>(e);
       std::string type;

@@ -94,7 +94,7 @@ void LogReader::mergeEvents(int dled) {
       amsg = kj::arrayPtr(cmsg.getEnd(), amsg.end());
 
       cereal::Event::Reader event = tmsg->getRoot<cereal::Event>();
-      events_local.insert(event.getLogMonoTime(), {seg_num, event});
+      events_local.insert(event.getLogMonoTime(), event);
 
       // hack
       // TODO: rewrite with callback

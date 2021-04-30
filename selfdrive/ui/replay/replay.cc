@@ -70,7 +70,7 @@ void Replay::trimSegment(int seg_num){
 
   auto eit = events.begin();
   while(eit != events.end()){
-    if((*eit).first == seg_num) {
+    if(std::abs(eit.key()/1e9 - unlogger->getCurrentTime()/1e9) > window_padding*60.0){
       eit = events.erase(eit);
       continue;
     }
