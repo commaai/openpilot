@@ -141,8 +141,6 @@ void Replay::stream(SubMaster *sm){
 void Replay::seekTime(int seek_){
 
 	// TODO: see if eidx also needs to be cleared
-  //printf("%d\n", seek_);
-  //printf("%lu\n", route_t0);
 
   if(!seeking){
     if(seek >= 0){
@@ -219,6 +217,7 @@ void Replay::process(SubMaster *sm) {
     QThread::sleep(1);
   }
   qDebug() << "got events";
+
   route_t0 = events.firstKey();
 
   QElapsedTimer timer; timer.start();
@@ -259,11 +258,9 @@ void Replay::process(SubMaster *sm) {
         seeking = false;
       }
 
-      //float time_to_end = ((int)((eit.key() - route_t0)/(60*1e9)) + 1)*60 - (eit.key()-route_t0)/1e9;
       float time_to_end = (current_segment + 2)*60.0 - getRelativeCurrentTime()/1e9;
       if (loading_segment && (time_to_end > 80.0)){
         loading_segment = false;
-        route_t0 = events.firstKey();
       }
 
       cereal::Event::Reader e = (*eit);
@@ -345,7 +342,6 @@ void Replay::process(SubMaster *sm) {
       }
       ++eit;
       if ((time_to_end < 60.0) && !loading_segment){
-        printf("ININININ\n");
         loading_segment = true;
 				// TODO: swap these out later
 				//emit loadSegment();
