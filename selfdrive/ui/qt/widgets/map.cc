@@ -444,9 +444,10 @@ MapInstructions::MapInstructions(QWidget * parent) : QWidget(parent){
     lane_layout = new QHBoxLayout;
     layout->addLayout(lane_layout);
 
-    QWidget * w2 = new QWidget;
-    w2->setLayout(layout);
-    layout_outer->addWidget(w2);
+    QWidget * w = new QWidget;
+    w->setLayout(layout);
+    layout_outer->addWidget(w);
+    layout_outer->addLayout(layout);
   }
 
   setLayout(layout_outer);
@@ -480,6 +481,11 @@ void MapInstructions::updateDistance(float d){
 }
 
 void MapInstructions::updateInstructions(QMap<QString, QVariant> banner){
+  // Need multiple calls to adjustSize for it to properly resize
+  // seems like it takes a little bit of time for the images to change and
+  // the size can only be changed afterwards
+  adjustSize();
+
   if (banner == last_banner) return;
   QString primary_str, secondary_str;
 
