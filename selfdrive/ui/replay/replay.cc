@@ -80,8 +80,6 @@ void Replay::addSegment(int i){
     return;
   }
 
-  printf("ADDING %d\n", i);
-
   QThread* lr_thread = new QThread;
 
   QString log_fn = this->log_paths.at(i).toString();
@@ -96,8 +94,6 @@ void Replay::addSegment(int i){
 }
 
 void Replay::trimSegment(int seg_num){
-  printf("TRIMMING %d\n", seg_num);
-
   lrs.remove(seg_num);
   frs.remove(seg_num);
 
