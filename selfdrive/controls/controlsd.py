@@ -162,8 +162,10 @@ class Controls:
       self.events.add(self.startup_event)
       self.startup_event = None
 
+    # Don't add any more events if not initialized
     if not self.initialized:
       self.events.add(EventName.controlsInitializing)
+      return
 
     # Create events for battery, temperature, disk space, and memory
     if self.sm['deviceState'].batteryPercent < 1 and self.sm['deviceState'].chargingError:
@@ -273,10 +275,10 @@ class Controls:
 
     self.sm.update(0)
 
-    if not self.initialized:
-      if CS.canValid and self.sm.all_alive_and_valid():
-        self.initialized = True
-        Params().put_bool("ControlsReady", True)
+    all_valid = CS.canValid and self.sm.all_alive_and_valid()
+    if not self.initialized and (all_valid or self.sm.frame * DT_CTRL > 2.0):
+      self.initialized = True
+      Params().put_bool("ControlsReady", True)
 
     # Check for CAN timeout
     if not can_strs:
