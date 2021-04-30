@@ -86,6 +86,7 @@ private:
   QLabel *secondary;
   QLabel *icon_01;
   QHBoxLayout *lane_layout;
+  QMap<QString, QVariant> last_banner;
 
 public:
   MapInstructions(QWidget * parent=nullptr);

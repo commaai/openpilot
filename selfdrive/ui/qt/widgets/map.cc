@@ -126,6 +126,8 @@ MapWindow::~MapWindow() {
 }
 
 void MapWindow::timerUpdate() {
+  if (!isVisible()) return;
+
   // This doesn't work from initializeGL
   if (!m_map->layerExists("modelPathLayer")){
     QVariantMap modelPath;
@@ -459,6 +461,7 @@ void MapInstructions::updateDistance(float d){
 }
 
 void MapInstructions::updateInstructions(QMap<QString, QVariant> banner){
+  if (banner == last_banner) return;
   QString primary_str, secondary_str;
 
   auto p = banner["primary"].toMap();
@@ -539,4 +542,5 @@ void MapInstructions::updateInstructions(QMap<QString, QVariant> banner){
   secondary->setVisible(secondary_str.length() > 0);
   secondary->setText(secondary_str);
   adjustSize();
+  last_banner = banner;
 }
