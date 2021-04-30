@@ -135,6 +135,9 @@ class Controls:
     self.current_alert_types = [ET.PERMANENT]
     self.logged_comm_issue = False
 
+    # TODO: no longer necessary, aside from process replay
+    self.sm['liveParameters'].valid = True
+
     self.startup_event = get_startup_event(car_recognized, controller_available, fuzzy_fingerprint)
 
     if not sounds_available:
