@@ -72,7 +72,7 @@ void Replay::parseResponse(QString response){
   camera_paths = doc["cameras"].toArray();
   log_paths = doc["logs"].toArray();
 
-  seek_queue.enqueue(seek);
+  seek_queue.enqueue(QString::number(seek));
 }
 
 void Replay::addSegment(int i){
@@ -158,7 +158,31 @@ void Replay::seekTime(int seek_){
 void Replay::seekRequestThread() {
   while(1) {
     if(seek_queue.size() > 0 && !seeking) {
-      seekTime(seek_queue.dequeue());
+      int calculated_time = getRelativeCurrentTime()/1e9;
+      while(seek_queue.size() > 0) {
+        QString req = seek_queue.dequeue();
+        if (req == "m") {
+          calculated_time += 60;
+        } else if (req == "M") {
+          calculated_time -= 60;
+        } else if (req == "s") {
+          calculated_time += 10;
+        } else if (req == "S") {
+          calculated_time -= 10;
+        } else if (req == "Q") {
+          calculated_time = 0;
+        } else if (req == "move_window") {
+          calculated_time += 1;
+        } else {
+          if(req[0] == "#") {
+            req.remove(0, 1);
+            calculated_time = 60*req.toInt();
+            continue;
+          }
+          calculated_time = req.toInt();
+        }
+      }
+      seekTime(calculated_time);
     }
   }
 }
@@ -172,25 +196,18 @@ void Replay::seekThread(){
       std::string request;
       std::cin >> request;
 
-      if(request[0] == 's') {
-        request.erase(request.begin());
-        seek = std::stoi(request)*60;
-      } else {
-        seek = std::stoi(request);
-      }
-
-      seek_queue.enqueue(seek);
+      seek_queue.enqueue(request.c_str());
       getch(); // remove \n from entering seek
     } else if (c == 'm') {
-      seek_queue.enqueue((getRelativeCurrentTime() + 60*1e9)/1e9);
+      seek_queue.enqueue("m");
     } else if (c == 'M') {
-      seek_queue.enqueue((getRelativeCurrentTime() - 60*1e9)/1e9);
+      seek_queue.enqueue("M");
     } else if (c == 's') {
-      seek_queue.enqueue((getRelativeCurrentTime() + 10*1e9)/1e9);
+      seek_queue.enqueue("s");
     } else if (c == 'S') {
-      seek_queue.enqueue((getRelativeCurrentTime() - 10*1e9)/1e9);
+      seek_queue.enqueue("S");
     } else if (c == 'G') {
-      seek_queue.enqueue(0);
+      seek_queue.enqueue("G");
     } else if (c == ' ') {
       togglePause();
     }
@@ -243,6 +260,7 @@ void Replay::process(SubMaster *sm) {
             qDebug() << "stuck";
             eit = events.lowerBound(t0);
             QThread::sleep(1);
+            printf("%f\n", (eit.key() - t0)/1e9);
           }
         }
         seeking = false;
@@ -333,7 +351,7 @@ void Replay::process(SubMaster *sm) {
       ++eit;
       if ((time_to_end < 60.0) && !loading_segment){
         loading_segment = true;
-        seek_queue.enqueue((current_segment+1)*60 + 1);
+        seek_queue.enqueue("move_window");
       }
     }
   }

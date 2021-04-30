@@ -57,7 +57,7 @@ private:
   QThread *thread;
   QThread *seek_thread;
   QThread *queue_thread;
-  QQueue<int> seek_queue;
+  QQueue<QString> seek_queue;
   int window_padding = 1;
 
   uint64_t tc = 0;
