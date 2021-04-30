@@ -91,7 +91,11 @@ static QMapbox::CoordinatesCollections coordinate_list_to_collection(QList<QGeoC
 }
 
 MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings) {
-  sm = new SubMaster({"liveLocationKalman", "modelV2"});
+  if (DRAW_MODEL_PATH){
+    sm = new SubMaster({"liveLocationKalman", "modelV2"});
+  } else {
+    sm = new SubMaster({"liveLocationKalman"});
+  }
 
   timer = new QTimer(this);
   QObject::connect(timer, SIGNAL(timeout()), this, SLOT(timerUpdate()));
@@ -143,7 +147,7 @@ void MapWindow::timerUpdate() {
     nav["type"] = "line";
     nav["source"] = "navSource";
     m_map->addLayer(nav, "road-intersection");
-    m_map->setPaintProperty("navLayer", "line-color", QColor("#ed5e5e"));
+    m_map->setPaintProperty("navLayer", "line-color", QColor("#8cb3d1"));
     m_map->setPaintProperty("navLayer", "line-width", 7.5);
     m_map->setLayoutProperty("navLayer", "line-cap", "round");
   }
@@ -161,7 +165,6 @@ void MapWindow::timerUpdate() {
 
   sm->update(0);
   if (sm->updated("liveLocationKalman")) {
-    auto model = (*sm)["modelV2"].getModelV2();
     auto location = (*sm)["liveLocationKalman"].getLiveLocationKalman();
     auto pos = location.getPositionGeodetic();
     auto orientation = location.getOrientationNED();
@@ -174,7 +177,7 @@ void MapWindow::timerUpdate() {
     if (location.getStatus() == cereal::LiveLocationKalman::Status::VALID){
       last_position = coordinate;
 
-      if (shouldRecompute()){
+      if (sm->frame % 10 == 0 && shouldRecompute()){
         calculateRoute(nav_destination);
       }
 
@@ -230,6 +233,7 @@ void MapWindow::timerUpdate() {
 
       // Update model path
       if (DRAW_MODEL_PATH) {
+        auto model = (*sm)["modelV2"].getModelV2();
         auto path_points = model_to_collection(location.getCalibratedOrientationECEF(), location.getPositionECEF(), model.getPosition());
         QMapbox::Feature feature2(QMapbox::Feature::LineStringType, path_points, {}, {});
         QVariantMap modelPathSource;
@@ -424,7 +428,7 @@ MapInstructions::MapInstructions(QWidget * parent) : QWidget(parent){
     QVBoxLayout *layout = new QVBoxLayout;
 
     distance = new QLabel;
-    distance->setStyleSheet(R"(font-size: 75px;)");
+    distance->setStyleSheet(R"(font-size: 75px; )");
     layout->addWidget(distance);
 
     primary = new QLabel;
@@ -434,6 +438,7 @@ MapInstructions::MapInstructions(QWidget * parent) : QWidget(parent){
 
     secondary = new QLabel;
     secondary->setStyleSheet(R"(font-size: 40px;)");
+    secondary->setWordWrap(true);
     layout->addWidget(secondary);
 
     lane_layout = new QHBoxLayout;
@@ -448,6 +453,7 @@ MapInstructions::MapInstructions(QWidget * parent) : QWidget(parent){
   setStyleSheet(R"(
     * {
       color: white;
+      font-family: "Inter";
     }
   )");
 

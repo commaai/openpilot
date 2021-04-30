@@ -68,7 +68,6 @@ private:
   void calculateRoute(QMapbox::Coordinate destination);
   bool shouldRecompute();
 
-
 private slots:
   void timerUpdate();
   void routeCalculated(QGeoRouteReply *reply);
