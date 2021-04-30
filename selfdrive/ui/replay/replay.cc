@@ -44,8 +44,8 @@ void Replay::parseResponse(QString response){
   log_paths = doc["logs"].toArray();
 
   // add first window:
-  for(int i = 0; i < 3; i++) {
-    int ind = current_segment - 1 + i;
+  for(int i = 0; i < 2*window_padding + 1; i++) {
+    int ind = current_segment - window_padding + i;
     if ((ind < camera_paths.size()) && (ind >= 0)) {
       addSegment(ind);
     }
@@ -99,8 +99,8 @@ void Replay::stream(SubMaster *sm){
   seek_thread->start();
 
   QObject::connect(unlogger, &Unlogger::loadSegment, [=](){
-    addSegment(current_segment + 2);
-    trimSegment(current_segment - 1);
+    addSegment(current_segment + window_padding + 1);
+    trimSegment(current_segment - window_padding);
     current_segment++;
   });
 }
@@ -109,15 +109,15 @@ void Replay::seekTime(int seek_){
   unlogger->setSeekRequest(seek_*1e9);
 
   if(seek_/60 != current_segment) {
-    for(int i = 0 ; i < 3 ; i++) {
+    for(int i = 0 ; i < 2*window_padding + 1 ; i++) {
       // add segments that don't overlap
-      int seek_ind = seek_/60 - 1 + i;
-      if(((current_segment + 1 < seek_ind) || (current_segment - 1 > seek_ind)) && (seek_ind >= 0)) {
+      int seek_ind = seek_/60 - window_padding + i;
+      if(((current_segment + window_padding < seek_ind) || (current_segment - window_padding > seek_ind)) && (seek_ind >= 0)) {
         addSegment(seek_ind);
       }
       // remove current segments that don't overlap
-      int cur_ind = current_segment - 1 + i;
-      if(((seek_/60 + 1 < cur_ind) || (seek_/60 - 1 > cur_ind)) && (cur_ind >= 0)) {
+      int cur_ind = current_segment - window_padding + i;
+      if(((seek_/60 + window_padding < cur_ind) || (seek_/60 - window_padding > cur_ind)) && (cur_ind >= 0)) {
         trimSegment(cur_ind);
       }
     }

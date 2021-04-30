@@ -36,17 +36,18 @@ protected:
   Unlogger *unlogger;
 
 private:
-  int current_segment;
-  QString route;
   int seek;
+  QString route;
+  int current_segment;
 
   QThread *thread;
   QThread *seek_thread;
+  int window_padding = 1;
 
-  QReadWriteLock events_lock;
   Events events;
+  QReadWriteLock events_lock;
 
+  HttpRequest *http;
   QMap<int, LogReader*> lrs;
   QMap<int, FrameReader*> frs;
-  HttpRequest *http;
 };
