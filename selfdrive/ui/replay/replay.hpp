@@ -24,7 +24,7 @@ public:
   void stream(SubMaster *sm = nullptr);
   void addSegment(int i);
   void trimSegment(int seg_num);
-  void seekTime(int seek_);
+  void seekTime(int seek_, bool just_update = false);
   QJsonArray camera_paths;
   QJsonArray log_paths;
 

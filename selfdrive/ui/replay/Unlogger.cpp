@@ -81,12 +81,6 @@ void Unlogger::process(SubMaster *sm) {
     }
 
     while ((eit != events->end()) && active) {
-      float time_to_end = ((int)((eit.key() - route_t0)/(60*1e9)) + 1)*60 - (eit.key()-route_t0)/1e9;
-      if (loading_segment && (time_to_end > 10.0)){
-        loading_segment = false;
-        route_t0 = events->firstKey();
-      }
-
       while (paused) {
         QThread::usleep(1000);
         t0 = (*eit).getLogMonoTime();
@@ -109,6 +103,12 @@ void Unlogger::process(SubMaster *sm) {
           }
         }
         seeking = false;
+      }
+
+      float time_to_end = ((int)((eit.key() - route_t0)/(60*1e9)) + 1)*60 - (eit.key()-route_t0)/1e9;
+      if (loading_segment && (time_to_end > 10.0)){
+        loading_segment = false;
+        route_t0 = events->firstKey();
       }
 
       if (abs(((long long)tc-(long long)last_elapsed)) > 50e6) {

@@ -65,6 +65,11 @@ void Replay::addSegment(int i){
 }
 
 void Replay::trimSegment(int seg_num){
+
+  if (lrs.find(seg_num) == lrs.end()) {
+    return;
+  }
+
   lrs.remove(seg_num);
   frs.remove(seg_num);
 
@@ -93,15 +98,15 @@ void Replay::stream(SubMaster *sm){
   seek_thread->start();
 
   QObject::connect(unlogger, &Unlogger::loadSegment, [=](){
-    addSegment(current_segment + window_padding + 1);
-    trimSegment(current_segment - window_padding);
-    current_segment++;
+    seekTime(current_segment*60 + 1, true);
   });
 }
 
-void Replay::seekTime(int seek_){
+void Replay::seekTime(int seek_, bool just_update){
   if(!unlogger->isSeeking()){
-    unlogger->setSeekRequest(seek_*1e9);
+    if(seek >= 0 && !just_update){
+      unlogger->setSeekRequest(seek_*1e9);
+    }
 
     if(seek_/60 != current_segment) {
       for(int i = 0 ; i < 2*window_padding + 1 ; i++) {
