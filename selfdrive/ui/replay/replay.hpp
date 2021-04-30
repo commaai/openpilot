@@ -31,7 +31,7 @@ public:
   void stream(SubMaster *sm = nullptr);
   void addSegment(int i);
   void trimSegment(int seg_num);
-  void seekTime(int seek_, bool just_update = false);
+  void seekTime(int seek_);
   QJsonArray camera_paths;
   QJsonArray log_paths;
 
@@ -43,10 +43,10 @@ public:
 		seek_request = seek_request_;
 	}
 
-
 public slots:
-  void parseResponse(QString response);
   void seekThread();
+  void seekRequestThread();
+  void parseResponse(QString response);
   void process(SubMaster *sm = nullptr);
 
 signals:
@@ -59,6 +59,8 @@ private:
 
   QThread *thread;
   QThread *seek_thread;
+  QThread *queue_thread;
+  QQueue<int> seek_queue;
   int window_padding = 1;
 
   uint64_t tc = 0;

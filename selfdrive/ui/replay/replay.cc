@@ -72,13 +72,15 @@ void Replay::parseResponse(QString response){
   camera_paths = doc["cameras"].toArray();
   log_paths = doc["logs"].toArray();
 
-  seekTime(seek);
+  seek_queue.enqueue(seek);
 }
 
 void Replay::addSegment(int i){
   if (lrs.find(i) != lrs.end()) {
     return;
   }
+
+  printf("ADDING %d\n", i);
 
   QThread* lr_thread = new QThread;
 
@@ -94,6 +96,8 @@ void Replay::addSegment(int i){
 }
 
 void Replay::trimSegment(int seg_num){
+  printf("TRIMMING %d\n", seg_num);
+
   lrs.remove(seg_num);
   frs.remove(seg_num);
 
@@ -121,18 +125,27 @@ void Replay::stream(SubMaster *sm){
   });
   seek_thread->start();
 
+  queue_thread = new QThread;
+  QObject::connect(queue_thread, &QThread::started, [=](){
+    seekRequestThread();
+  });
+  queue_thread->start();
+
+
 	// TODO: remove this later
   QObject::connect(this, &Replay::loadSegment, [=](){
-    seekTime(current_segment*60 + 1, true);
+    seekTime(current_segment*60 + 1);
   });
 }
 
-void Replay::seekTime(int seek_, bool just_update){
+void Replay::seekTime(int seek_){
 
 	// TODO: see if eidx also needs to be cleared
+  //printf("%d\n", seek_);
+  //printf("%lu\n", route_t0);
 
   if(!seeking){
-    if(seek >= 0 && !just_update){
+    if(seek >= 0){
       setSeekRequest(seek_*1e9);
     }
 
@@ -154,6 +167,14 @@ void Replay::seekTime(int seek_, bool just_update){
   }
 }
 
+void Replay::seekRequestThread() {
+  while(1) {
+    if(seek_queue.size() > 0 && !seeking) {
+      seekTime(seek_queue.dequeue());
+    }
+  }
+}
+
 void Replay::seekThread(){
   char c;
   while(1){
@@ -170,18 +191,18 @@ void Replay::seekThread(){
         seek = std::stoi(request);
       }
 
-      seekTime(seek);
+      seek_queue.enqueue(seek);
       getch(); // remove \n from entering seek
     } else if (c == 'm') {
-      seekTime((getRelativeCurrentTime() + 60*1e9)/1e9);
+      seek_queue.enqueue((getRelativeCurrentTime() + 60*1e9)/1e9);
     } else if (c == 'M') {
-      seekTime((getRelativeCurrentTime() - 60*1e9)/1e9);
+      seek_queue.enqueue((getRelativeCurrentTime() - 60*1e9)/1e9);
     } else if (c == 's') {
-      seekTime((getRelativeCurrentTime() + 10*1e9)/1e9);
+      seek_queue.enqueue((getRelativeCurrentTime() + 10*1e9)/1e9);
     } else if (c == 'S') {
-      seekTime((getRelativeCurrentTime() - 10*1e9)/1e9);
+      seek_queue.enqueue((getRelativeCurrentTime() - 10*1e9)/1e9);
     } else if (c == 'G') {
-      seekTime(0);
+      seek_queue.enqueue(0);
     } else if (c == ' ') {
       togglePause();
     }
@@ -200,8 +221,7 @@ void Replay::process(SubMaster *sm) {
   qDebug() << "got events";
   route_t0 = events.firstKey();
 
-  QElapsedTimer timer;
-  timer.start();
+  QElapsedTimer timer; timer.start();
 
   // loops
   while (active) {
@@ -239,8 +259,9 @@ void Replay::process(SubMaster *sm) {
         seeking = false;
       }
 
-      float time_to_end = ((int)((eit.key() - route_t0)/(60*1e9)) + 1)*60 - (eit.key()-route_t0)/1e9;
-      if (loading_segment && (time_to_end > 10.0)){
+      //float time_to_end = ((int)((eit.key() - route_t0)/(60*1e9)) + 1)*60 - (eit.key()-route_t0)/1e9;
+      float time_to_end = (current_segment + 2)*60.0 - getRelativeCurrentTime()/1e9;
+      if (loading_segment && (time_to_end > 80.0)){
         loading_segment = false;
         route_t0 = events.firstKey();
       }
@@ -323,12 +344,12 @@ void Replay::process(SubMaster *sm) {
         }
       }
       ++eit;
-
-      if ((time_to_end < 5.0) && !loading_segment){
+      if ((time_to_end < 60.0) && !loading_segment){
+        printf("ININININ\n");
         loading_segment = true;
 				// TODO: swap these out later
-				emit loadSegment();
-				//seekTime(current_segment*60 + 1, true);
+				//emit loadSegment();
+        seek_queue.enqueue((current_segment+1)*60 + 1);
       }
     }
   }
