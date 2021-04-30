@@ -3,10 +3,13 @@
 
 #include "map.hpp"
 #include "common/util.h"
+#include "common/params.h"
 #include "common/transformations/coordinates.hpp"
 #include "common/transformations/orientation.hpp"
 
 #include <QDebug>
+#include <QJsonDocument>
+#include <QJsonObject>
 
 #define RAD2DEG(x) ((x) * 180.0 / M_PI)
 const int PAN_TIMEOUT = 100;
@@ -14,10 +17,6 @@ const bool DRAW_MODEL_PATH = false;
 const qreal REROUTE_DISTANCE = 25;
 const float METER_2_MILE = 0.000621371;
 const float METER_2_FOOT = 3.28084;
-
-// TODO: get from param
-// QMapbox::Coordinate nav_destination(32.71565912901338, -117.16380347622167);
-QMapbox::Coordinate nav_destination(51.997281919866296, 4.37224379909209);
 
 static void clearLayout(QLayout* layout) {
   while (QLayoutItem* item = layout->takeAt(0)) {
@@ -323,6 +322,21 @@ bool MapWindow::shouldRecompute(){
   // - Destination changed
   // - Distance to current segment
   // - Wrong direcection in segment
+  QString nav_destination_json = QString::fromStdString(Params().get("NavDestination"));
+  if (nav_destination_json.isEmpty()) return false;
+
+  QJsonDocument doc = QJsonDocument::fromJson(nav_destination_json.toUtf8());
+  if (doc.isNull()) return false;
+
+  QJsonObject json = doc.object();
+  if (json["latitude"].isDouble() && json["longitude"].isDouble()){
+    QMapbox::Coordinate new_destination(json["latitude"].toDouble(), json["longitude"].toDouble());
+    if (new_destination != nav_destination){
+      nav_destination = new_destination;
+      return true;
+    }
+  }
+
   if (!segment.isValid()){
     return true;
   }
