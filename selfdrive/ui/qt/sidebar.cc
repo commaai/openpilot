@@ -46,7 +46,11 @@ void StatusWidget::paintEvent(QPaintEvent *e){
 void StatusWidget::update(QString label, QString msg, QColor c) {
   status.setText(label);
   substatus.setText(msg);
-  color = c;
+
+  if (color != c) {
+    color = c;
+    repaint();
+  }
   return;
 }
 
