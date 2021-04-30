@@ -148,19 +148,21 @@ void Replay::seekTime(int seek_){
     }
 
     if(seek_/60 != current_segment) {
+      int last_segment = current_segment;
+      current_segment = seek_/60;
+
       for(int i = 0 ; i < 2*window_padding + 1 ; i++) {
         // add segments that don't overlap
         int seek_ind = seek_/60 - window_padding + i;
-        if(((current_segment + window_padding < seek_ind) || (current_segment - window_padding > seek_ind)) && (seek_ind >= 0)) {
+        if(((last_segment + window_padding < seek_ind) || (last_segment - window_padding > seek_ind)) && (seek_ind >= 0)) {
           addSegment(seek_ind);
         }
         // remove current segments that don't overlap
-        int cur_ind = current_segment - window_padding + i;
+        int cur_ind = last_segment - window_padding + i;
         if(((seek_/60 + window_padding < cur_ind) || (seek_/60 - window_padding > cur_ind)) && (cur_ind >= 0)) {
           trimSegment(cur_ind);
         }
       }
-      current_segment = seek_/60;
     }
   }
 }
