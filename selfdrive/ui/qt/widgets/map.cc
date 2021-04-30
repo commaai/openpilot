@@ -416,6 +416,7 @@ void MapWindow::pinchTriggered(QPinchGesture *gesture) {
 
 MapInstructions::MapInstructions(QWidget * parent) : QWidget(parent){
   QHBoxLayout *layout_outer = new QHBoxLayout;
+  layout_outer->setContentsMargins(11, 50, 11, 11);
   {
     QVBoxLayout *layout = new QVBoxLayout;
     icon_01 = new QLabel;
