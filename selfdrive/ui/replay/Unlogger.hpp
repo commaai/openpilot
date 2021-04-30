@@ -18,10 +18,12 @@ Q_OBJECT
       seeking = true;
       seek_request = seek_request_;
     }
+    bool isSeeking() { return seeking; }
     void setPause(bool pause) { paused = pause; }
     void setActive(bool active_) { active = active_; }
     void togglePause() { paused = !paused; }
     QMap<int, QPair<int, int> > eidx;
+
 
   public slots:
     void process(SubMaster *sm = nullptr);
@@ -39,10 +41,10 @@ Q_OBJECT
     uint64_t route_t0;
     float last_print = 0;
     uint64_t seek_request = 0;
-    bool seeking;
     bool paused = false;
-    bool loading_segment = false;
+    bool seeking = false;
     bool active = false;
+    bool loading_segment = false;
 
     VisionIpcServer *vipc_server = nullptr;
 };

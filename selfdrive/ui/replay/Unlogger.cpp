@@ -21,7 +21,6 @@ Unlogger::Unlogger(Events *events_, QReadWriteLock* events_lock_, QMap<int, Fram
   : events(events_), events_lock(events_lock_), frs(frs_) {
   ctx = Context::create();
   seek_request = seek*1e9;
-  seeking = (seek > 0);
 
   QStringList block = QString(getenv("BLOCK")).split(",");
   qDebug() << "blocklist" << block;
@@ -104,6 +103,7 @@ void Unlogger::process(SubMaster *sm) {
         if ((eit == events->end()) || (eit.key() - t0 > 1e9)) {
           qWarning() << "seek off end";
           while((eit == events->end()) || (eit.key() - t0 > 1e9)) {
+            qDebug() << "stuck";
             eit = events->lowerBound(t0);
             QThread::sleep(1);
           }

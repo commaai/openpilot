@@ -100,6 +100,9 @@ void Replay::stream(SubMaster *sm){
 }
 
 void Replay::seekTime(int seek_){
+  if(unlogger->isSeeking()){
+    return;
+  }
   unlogger->setSeekRequest(seek_*1e9);
 
   if(seek_/60 != current_segment) {
