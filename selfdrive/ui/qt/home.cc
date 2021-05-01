@@ -107,10 +107,6 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
 
   center_layout->addWidget(statsAndSetupWidget);
 
-  alerts_widget = new OffroadAlert();
-  QObject::connect(alerts_widget, &OffroadAlert::closeAlerts, this, &OffroadHome::closeAlerts);
-  center_layout->addWidget(alerts_widget);
-  center_layout->setAlignment(alerts_widget, Qt::AlignCenter);
 
   main_layout->addLayout(center_layout, 1);
 
@@ -132,6 +128,12 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
 }
 
 void OffroadHome::openAlerts() {
+  if (alerts_widget == nullptr) {
+    alerts_widget = new OffroadAlert(alert, this);
+    QObject::connect(alerts_widget, SIGNAL(closeAlerts()), this, SLOT(closeAlerts()));
+    center_layout->addWidget(alerts_widget);
+    center_layout->setAlignment(alerts_widget, Qt::AlignCenter);
+  }
   center_layout->setCurrentIndex(1);
 }
 
@@ -149,22 +151,26 @@ void OffroadHome::refresh() {
 
   // update alerts
 
-  alerts_widget->refresh();
-  if (!alerts_widget->alertCount && !alerts_widget->updateAvailable) {
-    emit closeAlerts();
+  alert.refresh();
+  if (!alert.hasAlerts()) {
+    if (alerts_widget != nullptr) {
+      closeAlerts();
+      alerts_widget->deleteLater();
+      alerts_widget = nullptr;
+    }
     alert_notification->setVisible(false);
     return;
   }
 
-  if (alerts_widget->updateAvailable) {
+  if (alert.updateAvailable) {
     alert_notification->setText("UPDATE");
   } else {
-    int alerts = alerts_widget->alertCount;
+    int alerts = alert.alertCount;
     alert_notification->setText(QString::number(alerts) + " ALERT" + (alerts == 1 ? "" : "S"));
   }
 
   if (!alert_notification->isVisible() && !first_refresh) {
-    emit openAlerts();
+    openAlerts();
   }
   alert_notification->setVisible(true);
 
@@ -179,8 +185,13 @@ void OffroadHome::refresh() {
     font-weight: 500;
     background-color: #E22C2C;
   )");
-  if (alerts_widget->updateAvailable) {
+  if (alert.updateAvailable) {
     style.replace("#E22C2C", "#364DEF");
   }
   alert_notification->setStyleSheet(style);
+
+  if (alerts_widget != nullptr) {
+    alerts_widget->updateAlerts(alert);
+  }
+  
 }

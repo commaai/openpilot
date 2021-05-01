@@ -4,31 +4,40 @@
 #include <QFrame>
 #include <QPushButton>
 #include <QLabel>
+#include <QVBoxLayout>
 
 #include "common/params.h"
 #include "widgets/scrollview.h"
+
+class Alert {
+public:
+  void refresh();
+  bool hasAlerts() { return updateAvailable || alertCount > 0;}
+  struct AlertMessage {
+    std::string key;
+    int severity;
+    QLabel *label;
+  };
+  Params params;
+  std::vector<AlertMessage> alerts;
+  int alertCount = 0;
+  bool updateAvailable = false;
+};
 
 class OffroadAlert : public QFrame {
   Q_OBJECT
 
 public:
-  explicit OffroadAlert(QWidget *parent = 0);
-  int alertCount = 0;
-  bool updateAvailable;
-
+  explicit OffroadAlert(const Alert &alert, QWidget *parent = 0);
+  void updateAlerts(const Alert &alert);
 private:
-  Params params;
   QLabel releaseNotes;
-  std::map<std::string, QLabel*> alerts;
   QPushButton rebootBtn;
-  void updateAlerts();
 
   ScrollView *releaseNotesScroll;
   ScrollView *alertsScroll;
+  QVBoxLayout *alerts_layout;
 
 signals:
   void closeAlerts();
-
-public slots:
-  void refresh();
 };

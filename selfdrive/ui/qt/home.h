@@ -23,7 +23,8 @@ private:
 
   QLabel* date;
   QStackedLayout* center_layout;
-  OffroadAlert* alerts_widget;
+  Alert alert;
+  OffroadAlert* alerts_widget = nullptr;
   QPushButton* alert_notification;
 
 public slots:

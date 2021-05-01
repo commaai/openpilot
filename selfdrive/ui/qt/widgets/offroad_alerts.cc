@@ -7,34 +7,59 @@
 #include "selfdrive/hardware/hw.h"
 #include "selfdrive/common/util.h"
 
-OffroadAlert::OffroadAlert(QWidget* parent) : QFrame(parent) {
+void Alert::refresh() {
+  if (alerts.empty()) {
+    QString json = QString::fromStdString(util::read_file("../controls/lib/alerts_offroad.json"));
+    QJsonObject obj = QJsonDocument::fromJson(json.toUtf8()).object();
+    for (auto &k : obj.keys()) {
+      auto &a = alerts.emplace_back();
+      a.key = k.toStdString();
+      a.severity = obj[k].toObject()["severity"].toInt();
+      a.label = nullptr;
+    }
+  }
+
+  alertCount = 0;
+  updateAvailable = params.getBool("UpdateAvailable");
+  for (auto &a : alerts) {
+    auto bytes = params.get(a.key);
+    if (!bytes.empty()) {
+      QJsonDocument doc_par = QJsonDocument::fromJson(QByteArray(bytes.data(), bytes.size()));
+      QJsonObject obj = doc_par.object();
+      if (a.label == nullptr) {
+        a.label = new QLabel();
+        a.label->setStyleSheet("background-color: " + QString(a.severity ? "#E22C2C" : "#292929"));
+        a.label->setMargin(60);
+        a.label->setWordWrap(true);
+      }
+      a.label->setText(obj.value("text").toString());
+      alertCount++;
+    } else {
+      if (a.label != nullptr) {
+        delete a.label;
+        a.label = nullptr;
+      }
+    }
+  }
+}
+
+OffroadAlert::OffroadAlert(const Alert &alert, QWidget* parent) : QFrame(parent) {
   QVBoxLayout *layout = new QVBoxLayout();
   layout->setMargin(50);
   layout->setSpacing(30);
 
   QWidget *alerts_widget = new QWidget;
-  QVBoxLayout *alerts_layout = new QVBoxLayout;
+  QVBoxLayout *vbMain = new QVBoxLayout();
+  alerts_widget->setLayout(vbMain);
+
+  alerts_layout = new QVBoxLayout;
   alerts_layout->setMargin(0);
   alerts_layout->setSpacing(30);
   alerts_widget->setLayout(alerts_layout);
   alerts_widget->setStyleSheet("background-color: transparent;");
 
-  // setup labels for each alert
-  QString json = QString::fromStdString(util::read_file("../controls/lib/alerts_offroad.json"));
-  QJsonObject obj = QJsonDocument::fromJson(json.toUtf8()).object();
-  for (auto &k : obj.keys()) {
-    QLabel *l = new QLabel(this);
-    alerts[k.toStdString()] = l;
-    int severity = obj[k].toObject()["severity"].toInt();
-
-    l->setMargin(60);
-    l->setWordWrap(true);
-    l->setStyleSheet("background-color: " + QString(severity ? "#E22C2C" : "#292929"));
-    l->setVisible(false);
-    alerts_layout->addWidget(l);
-  }
-
-  alerts_layout->addStretch(1);
+  vbMain->addLayout(alerts_layout);  
+  vbMain->addStretch(1);
 
   // release notes
   releaseNotes.setWordWrap(true);
@@ -81,33 +106,20 @@ OffroadAlert::OffroadAlert(QWidget* parent) : QFrame(parent) {
     }
   )");
 
+  updateAlerts(alert);
 }
 
-void OffroadAlert::refresh() {
-  updateAlerts();
-
-  rebootBtn.setVisible(updateAvailable);
-  releaseNotesScroll->setVisible(updateAvailable);
-  releaseNotes.setText(QString::fromStdString(params.get("ReleaseNotes")));
-
-  alertsScroll->setVisible(!updateAvailable);
-  for (const auto& [k, label] : alerts) {
-    label->setVisible(!label->text().isEmpty());
-  }
-}
-
-void OffroadAlert::updateAlerts() {
-  alertCount = 0;
-  updateAvailable = params.getBool("UpdateAvailable");
-  for (const auto& [key, label] : alerts) {
-    auto bytes = params.get(key.c_str());
-    if (bytes.size()) {
-      QJsonDocument doc_par = QJsonDocument::fromJson(QByteArray(bytes.data(), bytes.size()));
-      QJsonObject obj = doc_par.object();
-      label->setText(obj.value("text").toString());
-      alertCount++;
-    } else {
-      label->setText("");
+void OffroadAlert::updateAlerts(const Alert &alert) {
+  for (const auto &a : alert.alerts) {
+    if (a.label != nullptr && a.label->parent() == nullptr) {
+      alerts_layout->addWidget(a.label);
     }
   }
+
+  rebootBtn.setVisible(alert.updateAvailable);
+  releaseNotesScroll->setVisible(alert.updateAvailable);
+  if (alert.updateAvailable) {
+    releaseNotes.setText(QString::fromStdString(Params().get("ReleaseNotes")));
+  }
+  alertsScroll->setVisible(!alert.updateAvailable);
 }
