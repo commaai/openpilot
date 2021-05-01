@@ -76,7 +76,7 @@ selfdrive/rtshield.py
 selfdrive/athena/__init__.py
 selfdrive/athena/athenad.py
 selfdrive/athena/manage_athenad.py
-selfdrive/registration.py
+selfdrive/athena/registration.py
 
 selfdrive/boardd/.gitignore
 selfdrive/boardd/SConscript
