@@ -494,6 +494,7 @@ FW_VERSIONS = {
       b'37805-5AW-G720\x00\x00',
       b'37805-5AZ-E850\x00\x00',
       b'37805-5AZ-G740\x00\x00',
+      b'37805-5AZ-G840\x00\x00',
       b'37805-5BB-A530\x00\x00',
       b'37805-5BB-A540\x00\x00',
       b'37805-5BB-A630\x00\x00',
@@ -583,6 +584,7 @@ FW_VERSIONS = {
       b'78109-TGK-Z410\x00\x00',
       b'78109-TGL-G120\x00\x00',
       b'78109-TGL-G130\x00\x00',
+      b'78109-TGL-G230\x00\x00',
     ],
     (Ecu.fwdRadar, 0x18dab0f1, None): [
       b'36802-TBA-A150\x00\x00',
@@ -612,6 +614,9 @@ FW_VERSIONS = {
     (Ecu.gateway, 0x18daeff1, None): [
       b'38897-TBA-A110\x00\x00',
       b'38897-TBA-A020\x00\x00',
+    ],
+    (Ecu.electricBrakeBooster, 0x18da2bf1, None): [
+      b'39494-TGL-G030\x00\x00',
     ],
   },
   CAR.CIVIC_BOSCH_DIESEL: {
