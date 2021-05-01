@@ -250,7 +250,12 @@ struct Updater {
     b_y = 720;
     b_h = 220;
 
-    state = CONFIRMATION;
+    if (download_stage(true)) {
+      state = RUNNING;
+      update_thread_handle = std::thread(&Updater::run_stages, this);
+    } else {
+      state = CONFIRMATION;
+    }
   }
 
   int download_file_xferinfo(curl_off_t dltotal, curl_off_t dlno,
@@ -351,11 +356,15 @@ struct Updater {
     state = RUNNING;
   }
 
-  std::string download(std::string url, std::string hash, std::string name) {
+  std::string download(std::string url, std::string hash, std::string name, bool dry_run) {
     std::string out_fn = UPDATE_DIR "/" + util::base_name(url);
 
-    // start or resume downloading if hash doesn't match
     std::string fn_hash = sha256_file(out_fn);
+    if (dry_run) {
+      return (hash.compare(fn_hash) != 0) ? "" : out_fn;
+    }
+
+    // start or resume downloading if hash doesn't match
     if (hash.compare(fn_hash) != 0) {
       set_progress("Downloading " + name + "...");
       bool r = download_file(url, out_fn);
@@ -377,14 +386,14 @@ struct Updater {
     return out_fn;
   }
 
-  bool download_stage() {
+  bool download_stage(bool dry_run = false) {
     curl = curl_easy_init();
     assert(curl);
 
     // ** quick checks before download **
 
     if (!check_space()) {
-      set_error("2GB of free space required to update");
+      if (!dry_run) set_error("2GB of free space required to update");
       return false;
     }
 
@@ -432,7 +441,7 @@ struct Updater {
       printf("existing recovery hash: %s\n", existing_recovery_hash.c_str());
 
       if (existing_recovery_hash != recovery_hash) {
-        recovery_fn = download(recovery_url, recovery_hash, "recovery");
+        recovery_fn = download(recovery_url, recovery_hash, "recovery", dry_run);
         if (recovery_fn.empty()) {
           // error'd
           return false;
@@ -441,7 +450,7 @@ struct Updater {
     }
 
     // ** handle ota download **
-    ota_fn = download(ota_url, ota_hash, "update");
+    ota_fn = download(ota_url, ota_hash, "update", dry_run);
     if (ota_fn.empty()) {
       //error'd
       return false;
