@@ -10,12 +10,11 @@ Replay::Replay(QString route_, int seek) : route(route_) {
 #endif
 
   http = new HttpRequest(this, "https://api.commadotai.com/v1/route/" + route + "/files", "", create_jwt);
-  QObject::connect(http, SIGNAL(receivedResponse(QString)), this, SLOT(parseResponse(QString)));
+  QObject::connect(http, &HttpRequest::receivedResponse, this, &Replay::parseResponse);
 }
 
-void Replay::parseResponse(QString response){
-  response = response.trimmed();
-  QJsonDocument doc = QJsonDocument::fromJson(response.toUtf8());
+void Replay::parseResponse(const QString &response){
+  QJsonDocument doc = QJsonDocument::fromJson(response.trimmed().toUtf8());
 
   if (doc.isNull()) {
     qDebug() << "JSON Parse failed";
