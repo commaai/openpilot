@@ -19,14 +19,16 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   main_layout->addWidget(settingsWindow);
   QObject::connect(settingsWindow, &SettingsWindow::closeSettings, this, &MainWindow::closeSettings);
   QObject::connect(&qs, &QUIState::offroadTransition, settingsWindow, &SettingsWindow::offroadTransition);
-  QObject::connect(settingsWindow, &SettingsWindow::reviewTrainingGuide, this, &MainWindow::reviewTrainingGuide);
+  QObject::connect(settingsWindow, &SettingsWindow::reviewTrainingGuide, this, &MainWindow::viewTrainingGuide);
 
-  onboardingWindow = new OnboardingWindow(this);
-  main_layout->addWidget(onboardingWindow);
-
-  main_layout->setCurrentWidget(onboardingWindow);
-  QObject::connect(onboardingWindow, &OnboardingWindow::onboardingDone, this, &MainWindow::closeSettings);
-  onboardingWindow->updateActiveScreen();
+  Params params;
+  bool accepted_terms = params.get("HasAcceptedTerms") == params.get("TermsVersion");
+  bool training_done = params.get("CompletedTrainingVersion") == params.get("TrainingVersion");
+  if (!accepted_terms) {
+    viewTerms(training_done);
+  } else if (!training_done) {
+    viewTrainingGuide();
+  }
 
   device.setAwake(true, true);
   QObject::connect(&qs, &QUIState::uiUpdate, &device, &Device::update);
@@ -62,9 +64,35 @@ void MainWindow::closeSettings() {
   main_layout->setCurrentWidget(homeWindow);
 }
 
-void MainWindow::reviewTrainingGuide() {
-  main_layout->setCurrentWidget(onboardingWindow);
-  onboardingWindow->updateActiveScreen();
+void MainWindow::viewTerms(bool training_done) {
+  TermsPage *terms_page = new TermsPage(this);
+  main_layout->addWidget(terms_page);
+  main_layout->setCurrentWidget(terms_page);
+  connect(terms_page, &TermsPage::acceptedTerms, [=] {
+    Params params;
+    params.put("HasAcceptedTerms", params.get("TermsVersion"));
+    main_layout->removeWidget(terms_page);
+    terms_page->deleteLater();
+
+    if (!training_done) {
+      viewTrainingGuide();
+    } else {
+      main_layout->setCurrentWidget(homeWindow);
+    }
+  });
+}
+
+void MainWindow::viewTrainingGuide() {
+  TrainingGuide *tr = new TrainingGuide(this);
+  main_layout->addWidget(tr);
+  main_layout->setCurrentWidget(tr);
+  connect(tr, &TrainingGuide::completedTraining, [=] {
+    Params params;
+    params.put("CompletedTrainingVersion", params.get("TrainingVersion"));
+    main_layout->removeWidget(tr);
+    main_layout->setCurrentWidget(homeWindow);
+    tr->deleteLater();
+  });
 }
 
 bool MainWindow::eventFilter(QObject *obj, QEvent *event){

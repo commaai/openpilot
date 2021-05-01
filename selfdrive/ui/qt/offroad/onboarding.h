@@ -71,22 +71,3 @@ public slots:
 signals:
   void acceptedTerms();
 };
-
-class OnboardingWindow : public QStackedWidget {
-  Q_OBJECT
-
-public:
-  explicit OnboardingWindow(QWidget *parent = 0);
-
-private:
-  Params params;
-  std::string current_terms_version;
-  std::string current_training_version;
-
-signals:
-  void onboardingDone();
-  void resetTrainingGuide();
-
-public slots:
-  void updateActiveScreen();
-};

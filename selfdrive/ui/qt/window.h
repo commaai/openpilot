@@ -24,11 +24,12 @@ private:
   QStackedLayout *main_layout;
   HomeWindow *homeWindow;
   SettingsWindow *settingsWindow;
-  OnboardingWindow *onboardingWindow;
+
+  void viewTerms(bool traning_done);
 
 public slots:
   void offroadTransition(bool offroad);
   void openSettings();
   void closeSettings();
-  void reviewTrainingGuide();
+  void viewTrainingGuide();
 };

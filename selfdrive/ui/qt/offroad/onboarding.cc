@@ -91,61 +91,13 @@ void TermsPage::showEvent(QShowEvent *event) {
 
   setLayout(main_layout);
   setStyleSheet(R"(
-    QPushButton {
-      padding: 50px;
-      font-size: 50px;
-      border-radius: 10px;
-      background-color: #292929;
-    }
-  )");
-}
-
-void TermsPage::enableAccept(){
-  accept_btn->setText("Accept");
-  accept_btn->setEnabled(true);
-  return;
-}
-
-void OnboardingWindow::updateActiveScreen() {
-  bool accepted_terms = params.get("HasAcceptedTerms", false).compare(current_terms_version) == 0;
-  bool training_done = params.get("CompletedTrainingVersion", false).compare(current_training_version) == 0;
-
-  if (!accepted_terms) {
-    setCurrentIndex(0);
-  } else if (!training_done) {
-    setCurrentIndex(1);
-  } else {
-    emit onboardingDone();
-  }
-}
-
-OnboardingWindow::OnboardingWindow(QWidget *parent) : QStackedWidget(parent) {
-  params = Params();
-  current_terms_version = params.get("TermsVersion", false);
-  current_training_version = params.get("TrainingVersion", false);
-
-  TermsPage* terms = new TermsPage(this);
-  addWidget(terms);
-
-  connect(terms, &TermsPage::acceptedTerms, [=](){
-    Params().put("HasAcceptedTerms", current_terms_version);
-    updateActiveScreen();
-  });
-
-  TrainingGuide* tr = new TrainingGuide(this);
-  connect(tr, &TrainingGuide::completedTraining, [=](){
-    Params().put("CompletedTrainingVersion", current_training_version);
-    updateActiveScreen();
-  });
-  addWidget(tr);
-
-  setStyleSheet(R"(
     * {
       color: white;
       background-color: black;
     }
     QPushButton {
       padding: 50px;
+      font-size: 50px;
       border-radius: 30px;
       background-color: #292929;
     }
@@ -154,6 +106,9 @@ OnboardingWindow::OnboardingWindow(QWidget *parent) : QStackedWidget(parent) {
       background-color: #222222;
     }
   )");
+}
 
-  updateActiveScreen();
+void TermsPage::enableAccept(){
+  accept_btn->setText("Accept");
+  accept_btn->setEnabled(true);
 }
