@@ -75,7 +75,7 @@ void SshControl::getUserKeys(QString username){
 #endif
 
   reply = manager->get(request);
-  connect(reply, SIGNAL(finished()), this, SLOT(parseResponse()));
+  connect(reply, &QNetworkReply::finished, this, &SshControl::parseResponse);
   networkTimer->start();
 }
 

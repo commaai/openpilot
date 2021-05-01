@@ -289,7 +289,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
 
   // setup panels
   DevicePanel *device = new DevicePanel(this);
-  QObject::connect(device, SIGNAL(reviewTrainingGuide()), this, SIGNAL(reviewTrainingGuide()));
+  QObject::connect(device, &DevicePanel::reviewTrainingGuide, this, &SettingsWindow::reviewTrainingGuide);
 
   QPair<QString, QWidget *> panels[] = {
     {"Device", device},
