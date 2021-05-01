@@ -72,7 +72,7 @@ void Replay::parseResponse(QString response){
   camera_paths = doc["cameras"].toArray();
   log_paths = doc["logs"].toArray();
 
-  seek_queue.enqueue(QString::number(seek));
+  seek_queue.enqueue({false, seek});
 }
 
 void Replay::addSegment(int i){
@@ -160,26 +160,11 @@ void Replay::seekRequestThread() {
     if(seek_queue.size() > 0 && !seeking) {
       int calculated_time = getRelativeCurrentTime()/1e9;
       while(seek_queue.size() > 0) {
-        QString req = seek_queue.dequeue();
-        if (req == "m") {
-          calculated_time += 60;
-        } else if (req == "M") {
-          calculated_time -= 60;
-        } else if (req == "s") {
-          calculated_time += 10;
-        } else if (req == "S") {
-          calculated_time -= 10;
-        } else if (req == "Q") {
-          calculated_time = 0;
-        } else if (req == "move_window") {
-          calculated_time += 1;
+        auto add_val = seek_queue.dequeue();
+        if(add_val.first) {
+          calculated_time += add_val.second;
         } else {
-          if(req[0] == "#") {
-            req.remove(0, 1);
-            calculated_time = 60*req.toInt();
-            continue;
-          }
-          calculated_time = req.toInt();
+          calculated_time = add_val.second;
         }
       }
       seekTime(calculated_time);
@@ -196,18 +181,26 @@ void Replay::seekThread(){
       std::string request;
       std::cin >> request;
 
-      seek_queue.enqueue(request.c_str());
+      seek_queue.clear();
+
+      if(request[0] == '#') {
+        request.erase(0, 1);
+        seek_queue.enqueue({false, std::stoi(request)*60});
+        continue;
+      }
+      seek_queue.enqueue({false, std::stoi(request)});
       getch(); // remove \n from entering seek
     } else if (c == 'm') {
-      seek_queue.enqueue("m");
+      seek_queue.enqueue({true, 60});
     } else if (c == 'M') {
-      seek_queue.enqueue("M");
+      seek_queue.enqueue({true, -60});
     } else if (c == 's') {
-      seek_queue.enqueue("s");
+      seek_queue.enqueue({true, 10});
     } else if (c == 'S') {
-      seek_queue.enqueue("S");
+      seek_queue.enqueue({true, -10});
     } else if (c == 'G') {
-      seek_queue.enqueue("G");
+      seek_queue.clear();
+      seek_queue.enqueue({false, 0});
     } else if (c == ' ') {
       togglePause();
     }
@@ -351,7 +344,7 @@ void Replay::process(SubMaster *sm) {
       ++eit;
       if ((time_to_end < 60.0) && !loading_segment){
         loading_segment = true;
-        seek_queue.enqueue("move_window");
+        seek_queue.enqueue({true, 1});
       }
     }
   }
