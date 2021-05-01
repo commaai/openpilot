@@ -10,6 +10,7 @@
 #include <QWidget>
 
 #include <atomic>
+#include <memory>
 #include <openssl/bio.h>
 #include <openssl/pem.h>
 #include <openssl/rsa.h>
@@ -42,6 +43,7 @@ private:
   QTimer *networkTimer;
   QString cache_key;
   bool create_jwt;
+  inline static std::unique_ptr<QSslConfiguration> ssl;
 
 private slots:
   void requestTimeout();

@@ -73,6 +73,14 @@ QString CommaApi::create_jwt(QVector<QPair<QString, QJsonValue>> payloads, int e
 
 
 HttpRequest::HttpRequest(QObject *parent, const QString &requestURL, const QString &cache_key, bool create_jwt_) : cache_key(cache_key), create_jwt(create_jwt_), QObject(parent) {
+#ifdef QCOM
+  if (!ssl) {
+    ssl = std::make_unique<QSslConfiguration>(QSslConfiguration::defaultConfiguration());
+    ssl->setCaCertificates(QSslCertificate::fromPath("/usr/etc/tls/cert.pem",
+                                                     QSsl::Pem, QRegExp::Wildcard));
+  }
+#endif
+
   networkAccessManager = new QNetworkAccessManager(this);
   reply = NULL;
 
@@ -105,10 +113,7 @@ void HttpRequest::sendRequest(const QString &requestURL){
   request.setRawHeader(QByteArray("Authorization"), ("JWT " + token).toUtf8());
 
 #ifdef QCOM
-  QSslConfiguration ssl = QSslConfiguration::defaultConfiguration();
-  ssl.setCaCertificates(QSslCertificate::fromPath("/usr/etc/tls/cert.pem",
-                        QSsl::Pem, QRegExp::Wildcard));
-  request.setSslConfiguration(ssl);
+  request.setSslConfiguration(*ssl);
 #endif
 
   reply = networkAccessManager->get(request);
