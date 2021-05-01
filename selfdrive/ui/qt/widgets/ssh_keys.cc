@@ -1,7 +1,7 @@
-#include <QNetworkReply>
 #include <QHBoxLayout>
 #include "widgets/input.h"
 #include "widgets/ssh_keys.h"
+#include "api.hpp"
 #include "common/params.h"
 
 
@@ -27,7 +27,7 @@ SshControl::SshControl() : AbstractControl("SSH Keys", "Warning: This grants SSH
 
   QObject::connect(&btn, &QPushButton::released, [=]() {
     if (btn.text() == "ADD") {
-      username = InputDialog::getText("Enter your GitHub username");
+      QString username = InputDialog::getText("Enter your GitHub username");
       if (username.length() > 0) {
         btn.setText("LOADING");
         btn.setEnabled(false);
@@ -39,13 +39,6 @@ SshControl::SshControl() : AbstractControl("SSH Keys", "Warning: This grants SSH
       refresh();
     }
   });
-
-  // setup networking
-  manager = new QNetworkAccessManager(this);
-  networkTimer = new QTimer(this);
-  networkTimer->setSingleShot(true);
-  networkTimer->setInterval(5000);
-  connect(networkTimer, &QTimer::timeout, this, &SshControl::timeout);
 
   refresh();
 }
@@ -62,42 +55,29 @@ void SshControl::refresh() {
   btn.setEnabled(true);
 }
 
-void SshControl::getUserKeys(QString username){
-  QString url = "https://github.com/" + username + ".keys";
+void SshControl::getUserKeys(const QString &username) {
+  QEventLoop loop;
+  HttpRequest request(this, "https://github.com/" + username + ".keys", "", false);
 
-  QNetworkRequest request;
-  request.setUrl(QUrl(url));
-  reply = manager->get(request);
-  connect(reply, &QNetworkReply::finished, this, &SshControl::parseResponse);
-  networkTimer->start();
-}
-
-void SshControl::timeout(){
-  reply->abort();
-}
-
-void SshControl::parseResponse(){
-  QString err = "";
-  if (reply->error() != QNetworkReply::OperationCanceledError) {
-    networkTimer->stop();
-    QString response = reply->readAll();
-    if (reply->error() == QNetworkReply::NoError && response.length()) {
+  QObject::connect(&request, &HttpRequest::receivedResponse, [&](const QString &resp) {
+    loop.quit();
+    if (!resp.isEmpty()) {
+      Params params;
       params.put("GithubUsername", username.toStdString());
-      params.put("GithubSshKeys", response.toStdString());
-    } else if(reply->error() == QNetworkReply::NoError){
-      err = "Username '" + username + "' has no keys on GitHub";
+      params.put("GithubSshKeys", resp.toStdString());
     } else {
-      err = "Username '" + username + "' doesn't exist on GitHub";
+      ConfirmationDialog::alert("Username '" + username + "' has no keys on GitHub");
     }
-  } else {
-    err = "Request timed out";
-  }
+  });
+  QObject::connect(&request, &HttpRequest::failedResponse, [&] {
+    loop.quit();
+    ConfirmationDialog::alert("Username '" + username + "' doesn't exist on GitHub");
+  });
+  QObject::connect(&request, &HttpRequest::timeoutResponse, [&] {
+    loop.quit();
+    ConfirmationDialog::alert("Request timed out");
+  });
 
-  if (err.length()) {
-    ConfirmationDialog::alert(err);
-  }
-
+  loop.exec();
   refresh();
-  reply->deleteLater();
-  reply = nullptr;
 }
