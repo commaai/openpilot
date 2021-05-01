@@ -23,7 +23,7 @@ PairingQRWidget::PairingQRWidget(QWidget* parent) : QWidget(parent) {
 
   QTimer* timer = new QTimer(this);
   timer->start(30 * 1000);
-  connect(timer, SIGNAL(timeout()), this, SLOT(refresh()));
+  connect(timer, &QTimer::timeout, this, &PairingQRWidget::refresh);
   refresh(); // don't wait for the first refresh
 }
 
@@ -179,7 +179,7 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
     background: #585858;
   )");
   finishRegistationLayout->addWidget(finishButton);
-  QObject::connect(finishButton, SIGNAL(released()), this, SLOT(showQrCode()));
+  QObject::connect(finishButton, &QPushButton::released, this, &SetupWidget::showQrCode);
 
   QWidget* finishRegistration = new QWidget;
   finishRegistration->setLayout(finishRegistationLayout);

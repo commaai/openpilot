@@ -45,7 +45,7 @@ SshControl::SshControl() : AbstractControl("SSH Keys", "Warning: This grants SSH
   networkTimer = new QTimer(this);
   networkTimer->setSingleShot(true);
   networkTimer->setInterval(5000);
-  connect(networkTimer, SIGNAL(timeout()), this, SLOT(timeout()));
+  connect(networkTimer, &QTimer::timeout, this, &SshControl::timeout);
 
   refresh();
 }

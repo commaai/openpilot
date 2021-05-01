@@ -285,7 +285,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   close_btn->setFixedSize(200, 200);
   sidebar_layout->addSpacing(45);
   sidebar_layout->addWidget(close_btn, 0, Qt::AlignCenter);
-  QObject::connect(close_btn, SIGNAL(released()), this, SIGNAL(closeSettings()));
+  QObject::connect(close_btn, &QPushButton::released, this, &SettingsWindow::closeSettings);
 
   // setup panels
   DevicePanel *device = new DevicePanel(this);

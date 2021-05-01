@@ -31,7 +31,7 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QWidget(parent), s
   setLayout(s);
 
   QTimer* timer = new QTimer(this);
-  QObject::connect(timer, SIGNAL(timeout()), this, SLOT(refresh()));
+  QObject::connect(timer, &QTimer::timeout, this, &Networking::refresh);
   timer->start(5000);
   attemptInitialization();
 }
@@ -44,7 +44,7 @@ void Networking::attemptInitialization(){
     return;
   }
 
-  connect(wifi, SIGNAL(wrongPassword(QString)), this, SLOT(wrongPassword(QString)));
+  connect(wifi, &WifiManager::wrongPassword, this, &Networking::wrongPassword);
 
   QVBoxLayout* vlayout = new QVBoxLayout;
 
@@ -59,7 +59,7 @@ void Networking::attemptInitialization(){
   }
 
   wifiWidget = new WifiUI(this, wifi);
-  connect(wifiWidget, SIGNAL(connectToNetwork(Network)), this, SLOT(connectToNetwork(Network)));
+  connect(wifiWidget, &WifiUI::connectToNetwork, this, &Networking::connectToNetwork);
   vlayout->addWidget(new ScrollView(wifiWidget, this), 1);
 
   QWidget* wifiScreen = new QWidget(this);
@@ -139,7 +139,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   // Enable tethering layout
   ToggleControl *tetheringToggle = new ToggleControl("Enable Tethering", "", "", wifi->tetheringEnabled());
   vlayout->addWidget(tetheringToggle);
-  QObject::connect(tetheringToggle, SIGNAL(toggleFlipped(bool)), this, SLOT(toggleTethering(bool)));
+  QObject::connect(tetheringToggle, &ToggleControl::toggleFlipped, this, &AdvancedNetworking::toggleTethering);
   vlayout->addWidget(horizontal_line(), 0);
 
   // Change tethering password
@@ -201,7 +201,7 @@ void WifiUI::refresh() {
   clearLayout(vlayout);
 
   connectButtons = new QButtonGroup(this); // TODO check if this is a leak
-  QObject::connect(connectButtons, SIGNAL(buttonClicked(QAbstractButton*)), this, SLOT(handleButton(QAbstractButton*)));
+  QObject::connect(connectButtons, qOverload<QAbstractButton*>(&QButtonGroup::buttonClicked), this, &WifiUI::handleButton);
 
   int i = 0;
   for (Network &network : wifi->seen_networks) {
