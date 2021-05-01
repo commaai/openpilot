@@ -22,9 +22,8 @@ static QLayout* build_stat_layout(QLabel** metric, const QString& name) {
   return layout;
 }
 
-void DriveStats::parseResponse(QString response) {
-  response = response.trimmed();
-  QJsonDocument doc = QJsonDocument::fromJson(response.toUtf8());
+void DriveStats::parseResponse(const QString& response) {
+  QJsonDocument doc = QJsonDocument::fromJson(response.trimmed().toUtf8());
   if (doc.isNull()) {
     qDebug() << "JSON Parse failed on getting past drives statistics";
     return;
@@ -66,5 +65,5 @@ DriveStats::DriveStats(QWidget* parent) : QWidget(parent) {
   QString dongleId = QString::fromStdString(Params().get("DongleId"));
   QString url = "https://api.commadotai.com/v1.1/devices/" + dongleId + "/stats";
   RequestRepeater *repeater = new RequestRepeater(this, url, "ApiCache_DriveStats", 13);
-  QObject::connect(repeater, SIGNAL(receivedResponse(QString)), this, SLOT(parseResponse(QString)));
+  QObject::connect(repeater, &RequestRepeater::receivedResponse, this, &DriveStats::parseResponse);
 }
