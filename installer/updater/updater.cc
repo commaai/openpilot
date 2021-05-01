@@ -250,10 +250,11 @@ struct Updater {
     b_y = 720;
     b_h = 220;
 
-    state = CONFIRMATION;
-    if (download_stage(true)) { // TODO: check if cached
+    if (download_stage(true)) {
       state = RUNNING;
       update_thread_handle = std::thread(&Updater::run_stages, this);
+    } else {
+      state = CONFIRMATION;
     }
   }
 
@@ -392,7 +393,7 @@ struct Updater {
     // ** quick checks before download **
 
     if (!check_space()) {
-      set_error("2GB of free space required to update");
+      if (!dry_run) set_error("2GB of free space required to update");
       return false;
     }
 
