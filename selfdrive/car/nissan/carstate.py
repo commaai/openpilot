@@ -146,10 +146,13 @@ class CarState(CarStateBase):
 
     checks = [
       # sig_address, frequency
+      ("STEER_ANGLE_SENSOR", 100),
       ("WHEEL_SPEEDS_REAR", 50),
       ("WHEEL_SPEEDS_FRONT", 50),
-      ("STEER_ANGLE_SENSOR", 100),
+      ("ESP", 25),
+      ("GEARBOX", 25),
       ("DOORS_LIGHTS", 10),
+      ("LIGHTS", 10),
     ]
 
     if CP.carFingerprint in [CAR.ROGUE, CAR.XTRAIL, CAR.ALTIMA]:
@@ -201,6 +204,9 @@ class CarState(CarStateBase):
       checks += [
         ("BRAKE_PEDAL", 100),
         ("CRUISE_THROTTLE", 50),
+        ("CANCEL_MSG", 50),
+        ("HUD_SETTINGS", 25),
+        ("SEATBELT", 10),
       ]
 
     if CP.carFingerprint == CAR.ALTIMA:
@@ -241,6 +247,7 @@ class CarState(CarStateBase):
         ("CRUISE_ON", "PRO_PILOT", 0),
       ]
       checks = [
+        ("LKAS", 100),
         ("PRO_PILOT", 100),
       ]
     else:
@@ -327,7 +334,11 @@ class CarState(CarStateBase):
       ]
 
       checks = [
+        ("PROPILOT_HUD_INFO_MSG", 2),
+        ("LKAS_SETTINGS", 10),
         ("CRUISE_STATE", 50),
+        ("PROPILOT_HUD", 50),
+        ("LKAS", 100),
       ]
 
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2)
@@ -341,7 +352,9 @@ class CarState(CarStateBase):
       signals += [
         ("CRUISE_ON", "PRO_PILOT", 0),
       ]
-
+      checks += [
+        ("PRO_PILOT", 100),
+      ]
     elif CP.carFingerprint == CAR.ALTIMA:
       signals += [
         ("STEER_TORQUE_DRIVER", "STEER_TORQUE_SENSOR", 0),

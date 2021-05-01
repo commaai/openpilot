@@ -135,6 +135,9 @@ class CarInterface(CarInterfaceBase):
       ret.enableGasInterceptor = 0x201 in fingerprint[0]
       ret.openpilotLongitudinalControl = ret.enableCamera
 
+    if candidate == CAR.CRV_5G:
+      ret.enableBsm = 0x12f8bfa7 in fingerprint[0]
+
     cloudlog.warning("ECU Camera Simulated: %r", ret.enableCamera)
     cloudlog.warning("ECU Gas Interceptor: %r", ret.enableGasInterceptor)
 

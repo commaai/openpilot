@@ -405,6 +405,9 @@ def thermald_thread():
 
     # report to server once every 10 minutes
     if (count % int(600. / DT_TRML)) == 0:
+      if EON and started_ts is None and msg.deviceState.memoryUsagePercent > 40:
+        cloudlog.event("High offroad memory usage", mem=msg.deviceState.memoryUsagePercent)
+
       location = messaging.recv_sock(location_sock)
       cloudlog.event("STATUS_PACKET",
                      count=count,

@@ -106,7 +106,7 @@ routes = {
     'carFingerprint': HONDA.ACCORD_15,
     'enableCamera': True,
   },
-  "f1b4c567731f4a1b|2018-06-06--14-43-46": {
+  "a8e8bf6a3864361b|2021-04-20--12-09-18": {
     'carFingerprint': HONDA.ACCORD,
     'enableCamera': True,
   },
@@ -276,7 +276,7 @@ routes = {
     'enableCamera': True,
     'enableDsu': False,
   },
-  "56fb1c86a9a86404|2017-11-10--10-18-43": {
+  "d2525c22173da58b|2021-04-25--16-47-04": {
     'carFingerprint': TOYOTA.PRIUS,
     'enableCamera': True,
     'enableDsu': True,
@@ -369,6 +369,11 @@ routes = {
   },
   "964c09eb11ca8089|2020-11-03--22-04-00": {
     'carFingerprint': TOYOTA.LEXUS_NX,
+    'enableCamera': True,
+    'enableDsu': False,
+  },
+  "3fd5305f8b6ca765|2021-04-28--19-26-49": {
+    'carFingerprint': TOYOTA.LEXUS_NX_TSS2,
     'enableCamera': True,
     'enableDsu': False,
   },

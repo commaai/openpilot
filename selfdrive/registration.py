@@ -10,7 +10,7 @@ from common.params import Params
 from common.spinner import Spinner
 from common.file_helpers import mkdirs_exists_ok
 from common.basedir import PERSIST
-from selfdrive.hardware import HARDWARE
+from selfdrive.hardware import HARDWARE, PC
 from selfdrive.swaglog import cloudlog
 
 
@@ -43,7 +43,6 @@ def register(show_spinner=False):
     # Create registration token, in the future, this key will make JWTs directly
     private_key = open(PERSIST+"/comma/id_rsa").read()
     public_key = open(PERSIST+"/comma/id_rsa.pub").read()
-    register_token = jwt.encode({'register': True, 'exp': datetime.utcnow() + timedelta(hours=1)}, private_key, algorithm='RS256')
 
     # Block until we get the imei
     imei1, imei2 = None, None
@@ -58,27 +57,33 @@ def register(show_spinner=False):
     params.put("IMEI", imei1)
     params.put("HardwareSerial", serial)
 
+    backoff = 0
     while True:
       try:
+        register_token = jwt.encode({'register': True, 'exp': datetime.utcnow() + timedelta(hours=1)}, private_key, algorithm='RS256')
         cloudlog.info("getting pilotauth")
         resp = api_get("v2/pilotauth/", method='POST', timeout=15,
                        imei=imei1, imei2=imei2, serial=serial, public_key=public_key, register_token=register_token)
 
-        if resp.status_code == 402:
-          cloudlog.info("Uknown serial number while trying to register device")
+        if resp.status_code in (402, 403):
+          cloudlog.info(f"Unable to register device, got {resp.status_code}")
           dongle_id = None
+          if PC:
+            dongle_id = "UnofficialDevice"
         else:
           dongleauth = json.loads(resp.text)
           dongle_id = dongleauth["dongle_id"]
-          params.put("DongleId", dongle_id)
         break
       except Exception:
         cloudlog.exception("failed to authenticate")
-        time.sleep(1)
+        backoff = min(backoff + 1, 15)
+        time.sleep(backoff)
 
     if show_spinner:
       spinner.close()
 
+  if dongle_id:
+    params.put("DongleId", dongle_id)
   return dongle_id
 
 

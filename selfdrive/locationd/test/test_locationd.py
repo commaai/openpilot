@@ -12,8 +12,8 @@ from common.params import Params
 
 from selfdrive.manager.process_config import managed_processes
 
-SENSOR_DECIMATION = 10
-VISION_DECIMATION = 2
+SENSOR_DECIMATION = 1
+VISION_DECIMATION = 1
 
 LIBLOCATIOND_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '../liblocationd.so'))
 

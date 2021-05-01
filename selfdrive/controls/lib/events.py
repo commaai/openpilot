@@ -228,6 +228,10 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       Priority.LOW, VisualAlert.none, AudibleAlert.none, .1, .1, .1),
   },
 
+  EventName.controlsInitializing: {
+    ET.NO_ENTRY: NoEntryAlert("Controls Initializing"),
+  },
+
   EventName.startup: {
     ET.PERMANENT: Alert(
       "Be ready to take over at any time",
