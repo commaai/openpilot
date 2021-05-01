@@ -33,9 +33,9 @@ class HttpRequest : public QObject {
   Q_OBJECT
 
 public:
-  explicit HttpRequest(QObject* parent, QString requestURL, const QString &cache_key = "", bool create_jwt_ = true);
+  explicit HttpRequest(QObject* parent, const QString &requestURL, const QString &cache_key = "", bool create_jwt_ = true);
   QNetworkReply *reply;
-  void sendRequest(QString requestURL);
+  void sendRequest(const QString &requestURL);
 
 private:
   QNetworkAccessManager *networkAccessManager;
@@ -48,7 +48,7 @@ private slots:
   void requestFinished();
 
 signals:
-  void receivedResponse(QString response);
-  void failedResponse(QString errorString);
-  void timeoutResponse(QString errorString);
+  void receivedResponse(const QString &response);
+  void failedResponse(const QString &errorString);
+  void timeoutResponse(const QString &errorString);
 };

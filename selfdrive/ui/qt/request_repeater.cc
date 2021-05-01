@@ -1,6 +1,6 @@
 #include "request_repeater.hpp"
 
-RequestRepeater::RequestRepeater(QObject *parent, QString requestURL, const QString &cacheKey,
+RequestRepeater::RequestRepeater(QObject *parent, const QString &requestURL, const QString &cacheKey,
                                  int period) : HttpRequest(parent, requestURL, cacheKey) {
   timer = new QTimer(this);
   timer->setTimerType(Qt::VeryCoarseTimer);
