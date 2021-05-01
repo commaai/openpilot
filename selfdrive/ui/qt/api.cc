@@ -57,7 +57,7 @@ QString CommaApi::create_jwt(const QVector<QPair<QString, QJsonValue>> &payloads
   payload.insert("nbf", t);
   payload.insert("iat", t);
   payload.insert("exp", t + expiry);
-  for (auto load : payloads) {
+  for (auto &load : payloads) {
     payload.insert(load.first, load.second);
   }
 
