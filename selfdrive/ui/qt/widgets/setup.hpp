@@ -33,7 +33,7 @@ private:
   CommaApi* api;
 
 private slots:
-  void replyFinished(QString response);
+  void replyFinished(const QString &response);
 };
 
 class PrimeAdWidget : public QWidget {
@@ -56,7 +56,7 @@ private:
   bool showQr = false;
 
 private slots:
-  void parseError(QString response);
-  void replyFinished(QString response);
+  void parseError(const QString &response);
+  void replyFinished(const QString &response);
   void showQrCode();
 };
