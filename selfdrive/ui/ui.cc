@@ -353,7 +353,7 @@ QUIState::QUIState(QObject *parent) : QObject(parent) {
 
   // update timer
   timer = new QTimer(this);
-  QObject::connect(timer, SIGNAL(timeout()), this, SLOT(update()));
+  QObject::connect(timer, &QTimer::timeout, this, &QUIState::update);
   timer->start(0);
 }
 

@@ -55,7 +55,7 @@ OffroadAlert::OffroadAlert(QWidget* parent) : QFrame(parent) {
   QPushButton *dismiss_btn = new QPushButton("Dismiss");
   dismiss_btn->setFixedSize(400, 125);
   footer_layout->addWidget(dismiss_btn, 0, Qt::AlignBottom | Qt::AlignLeft);
-  QObject::connect(dismiss_btn, SIGNAL(released()), this, SIGNAL(closeAlerts()));
+  QObject::connect(dismiss_btn, &QPushButton::released, this, &OffroadAlert::closeAlerts);
 
   rebootBtn.setText("Reboot and Update");
   rebootBtn.setFixedSize(600, 125);

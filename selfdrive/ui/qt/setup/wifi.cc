@@ -22,7 +22,7 @@ WifiSetup::WifiSetup(QWidget *parent) {
   finish_btn->setFixedSize(400, 200);
   main_layout->addWidget(finish_btn, 0, Qt::AlignTop | Qt::AlignLeft);
 
-  QObject::connect(finish_btn, SIGNAL(released()), this, SLOT(finish()));
+  QObject::connect(finish_btn, &QPushButton::released, this, &WifiSetup::finish);
 
   QWidget* n = new Networking(this, true);
 
@@ -40,7 +40,7 @@ WifiSetup::WifiSetup(QWidget *parent) {
 
   setLayout(main_layout);
 
-  QObject::connect(this, SIGNAL(downloadFailed()), this, SLOT(nextPage()));
+  QObject::connect(this, &WifiSetup::downloadFailed, this, &WifiSetup::nextPage);
 
   setStyleSheet(R"(
     * {

@@ -25,8 +25,8 @@ InputDialog::InputDialog(const QString &prompt_text, QWidget *parent) : QDialog(
     background-color: #444444;
   )");
   header_layout->addWidget(cancel_btn, 0, Qt::AlignRight);
-  QObject::connect(cancel_btn, SIGNAL(released()), this, SLOT(reject()));
-  QObject::connect(cancel_btn, SIGNAL(released()), this, SIGNAL(cancel()));
+  QObject::connect(cancel_btn, &QPushButton::released, this, &InputDialog::reject);
+  QObject::connect(cancel_btn, &QPushButton::released, this, &InputDialog::cancel);
 
   layout->addLayout(header_layout);
 
@@ -43,7 +43,7 @@ InputDialog::InputDialog(const QString &prompt_text, QWidget *parent) : QDialog(
   layout->addWidget(line, 1, Qt::AlignTop);
 
   k = new Keyboard(this);
-  QObject::connect(k, SIGNAL(emitButton(const QString&)), this, SLOT(handleInput(const QString&)));
+  QObject::connect(k, &Keyboard::emitButton, this, &InputDialog::handleInput);
   layout->addWidget(k, 2, Qt::AlignBottom);
 
   setStyleSheet(R"(
@@ -132,13 +132,13 @@ ConfirmationDialog::ConfirmationDialog(const QString &prompt_text, const QString
   if (cancel_text.length()) {
     QPushButton* cancel_btn = new QPushButton(cancel_text);
     btn_layout->addWidget(cancel_btn, 0, Qt::AlignRight);
-    QObject::connect(cancel_btn, SIGNAL(released()), this, SLOT(reject()));
+    QObject::connect(cancel_btn, &QPushButton::released, this, &ConfirmationDialog::reject);
   }
 
   if (confirm_text.length()) {
     QPushButton* confirm_btn = new QPushButton(confirm_text);
     btn_layout->addWidget(confirm_btn, 0, Qt::AlignRight);
-    QObject::connect(confirm_btn, SIGNAL(released()), this, SLOT(accept()));
+    QObject::connect(confirm_btn, &QPushButton::released, this, &ConfirmationDialog::accept);
   }
 
   setFixedSize(900, 350);
