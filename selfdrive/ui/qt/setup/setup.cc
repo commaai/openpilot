@@ -63,13 +63,13 @@ QWidget * Setup::build_page(QString title, QWidget *content, bool next, bool pre
   if (prev) {
     QPushButton *back_btn = new QPushButton("Back");
     nav_layout->addWidget(back_btn, 1, Qt::AlignBottom | Qt::AlignLeft);
-    QObject::connect(back_btn, SIGNAL(released()), this, SLOT(prevPage()));
+    QObject::connect(back_btn, &QPushButton::released, this, &Setup::prevPage);
   }
 
   if (next) {
     QPushButton *continue_btn = new QPushButton("Continue");
     nav_layout->addWidget(continue_btn, 0, Qt::AlignBottom | Qt::AlignRight);
-    QObject::connect(continue_btn, SIGNAL(released()), this, SLOT(nextPage()));
+    QObject::connect(continue_btn, &QPushButton::released, this, &Setup:nextPage);
   }
 
   main_layout->addLayout(nav_layout, 0);
@@ -174,7 +174,7 @@ Setup::Setup(QWidget *parent) {
   addWidget(downloading());
   addWidget(download_failed());
 
-  QObject::connect(this, SIGNAL(downloadFailed()), this, SLOT(nextPage()));
+  QObject::connect(this, &Setup::downloadFailed, this, &Setup::nextPage);
 
   setStyleSheet(R"(
     * {

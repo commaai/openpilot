@@ -39,7 +39,7 @@ void Replay::addSegment(int i){
   lrs.insert(i, new LogReader(log_fn, &events, &events_lock, &unlogger->eidx));
 
   lrs[i]->moveToThread(thread);
-  QObject::connect(thread, SIGNAL (started()), lrs[i], SLOT (process()));
+  QObject::connect(thread, &QThread::started, lrs[i], &LogReader::process);
   thread->start();
 
   QString camera_fn = this->camera_paths.at(i).toString();

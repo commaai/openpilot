@@ -79,7 +79,7 @@ HttpRequest::HttpRequest(QObject *parent, const QString &requestURL, const QStri
   networkTimer = new QTimer(this);
   networkTimer->setSingleShot(true);
   networkTimer->setInterval(20000);
-  connect(networkTimer, SIGNAL(timeout()), this, SLOT(requestTimeout()));
+  connect(networkTimer, &QTimer::timeout, this, &HttpRequest::requestTimeout);
 
   sendRequest(requestURL);
 
@@ -114,7 +114,7 @@ void HttpRequest::sendRequest(const QString &requestURL){
   reply = networkAccessManager->get(request);
 
   networkTimer->start();
-  connect(reply, SIGNAL(finished()), this, SLOT(requestFinished()));
+  connect(reply, &QNetworkReply::finished, this, &HttpRequest::requestFinished);
 }
 
 void HttpRequest::requestTimeout(){
