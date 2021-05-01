@@ -13,7 +13,6 @@ from common.basedir import PERSIST
 from selfdrive.hardware import HARDWARE, PC
 from selfdrive.swaglog import cloudlog
 
-
 def register(show_spinner=False):
   params = Params()
   params.put("SubscriberInfo", HARDWARE.get_subscriber_info())
