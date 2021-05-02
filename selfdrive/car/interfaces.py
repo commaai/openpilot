@@ -41,6 +41,10 @@ class CarInterfaceBase():
     return 1.
 
   @staticmethod
+  def compute_torque(torque, speed):
+    return float(torque)
+
+  @staticmethod
   def compute_gb(accel, speed):
     raise NotImplementedError
 

@@ -11,6 +11,19 @@ EventName = car.CarEvent.EventName
 
 class CarInterface(CarInterfaceBase):
   @staticmethod
+  def compute_torque(torque, speed):
+    def std_feedforward(_speed):
+      return _speed ** 2
+
+    def acc_feedforward(_speed):
+      return 0.35189607550172824 * _speed ** 2 + 7.506201251644202 * _speed + 69.226826411091
+
+    # todo: find nicer way to avoid multiplier going to inf
+    speed = max(speed, 20 * CV.MPH_TO_MS)
+    torque_mult = acc_feedforward(speed) / std_feedforward(speed)
+    return float(torque) * torque_mult
+
+  @staticmethod
   def compute_gb(accel, speed):
     return float(accel) / CarControllerParams.ACCEL_SCALE
 
@@ -93,8 +106,9 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 18.27
       tire_stiffness_factor = 0.444  # not optimized yet
       ret.mass = 2860. * CV.LB_TO_KG + STD_CARGO_KG  # mean between normal and hybrid
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2], [0.05]]
-      ret.lateralTuning.pid.kf = 0.00003   # full torque for 20 deg at 80mph means 0.00007818594
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.08], [0.01]]
+      # todo: refit function on current kf
+      ret.lateralTuning.pid.kf = 0.00003 * 1.833   # full torque for 20 deg at 80mph means 0.00007818594
 
     elif candidate == CAR.LEXUS_RX:
       stop_and_go = True
