@@ -14,7 +14,7 @@ from selfdrive.hardware import HARDWARE, PC
 from selfdrive.swaglog import cloudlog
 
 
-def register(show_spinner=False):
+def register(show_spinner=False) -> str:
   params = Params()
   params.put("SubscriberInfo", HARDWARE.get_subscriber_info())
 
@@ -41,8 +41,9 @@ def register(show_spinner=False):
       spinner.update("registering device")
 
     # Create registration token, in the future, this key will make JWTs directly
-    private_key = open(PERSIST+"/comma/id_rsa").read()
-    public_key = open(PERSIST+"/comma/id_rsa.pub").read()
+    with open(PERSIST+"/comma/id_rsa.pub") as f1, open(PERSIST+"/comma/id_rsa") as f2:
+      public_key = f1.read()
+      private_key = f2.read()
 
     # Block until we get the imei
     imei1, imei2 = None, None

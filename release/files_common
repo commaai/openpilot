@@ -64,7 +64,6 @@ release/build_release2.sh
 selfdrive/version.py
 
 selfdrive/__init__.py
-selfdrive/registration.py
 selfdrive/config.py
 selfdrive/crash.py
 selfdrive/swaglog.py
@@ -77,6 +76,7 @@ selfdrive/rtshield.py
 selfdrive/athena/__init__.py
 selfdrive/athena/athenad.py
 selfdrive/athena/manage_athenad.py
+selfdrive/athena/registration.py
 
 selfdrive/boardd/.gitignore
 selfdrive/boardd/SConscript
