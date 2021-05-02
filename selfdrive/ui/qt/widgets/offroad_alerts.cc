@@ -48,9 +48,9 @@ OffroadAlert::OffroadAlert(const Alert &alert, QWidget* parent) : QFrame(parent)
   layout->setMargin(50);
   layout->setSpacing(30);
 
+  // alerts
   QWidget *alerts_widget = new QWidget;
-  QVBoxLayout *vbMain = new QVBoxLayout();
-  alerts_widget->setLayout(vbMain);
+  QVBoxLayout *vl = new QVBoxLayout(alerts_widget);
 
   alerts_layout = new QVBoxLayout;
   alerts_layout->setMargin(0);
@@ -58,8 +58,8 @@ OffroadAlert::OffroadAlert(const Alert &alert, QWidget* parent) : QFrame(parent)
   alerts_widget->setLayout(alerts_layout);
   alerts_widget->setStyleSheet("background-color: transparent;");
 
-  vbMain->addLayout(alerts_layout);  
-  vbMain->addStretch(1);
+  vl->addLayout(alerts_layout);  
+  vl->addStretch(1);
 
   // release notes
   releaseNotes.setWordWrap(true);

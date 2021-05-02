@@ -140,44 +140,28 @@ void OffroadHome::refresh() {
   if (!isVisible() && !first_refresh) {
     return;
   }
-
   date->setText(QDateTime::currentDateTime().toString("dddd, MMMM d"));
 
-  // update alerts
-
   alert.refresh();
-  if (!alert.hasAlerts()) {
+  if (!alert.alertCount && !alert.updateAvailable) {
     if (alerts_widget != nullptr) {
-      // delete alert widget
       closeAlerts();
+      // Delete alert widget
       alerts_widget->deleteLater();
       alerts_widget = nullptr;
     }
     alert_notification->setVisible(false);
     return;
-  } 
-  
+  }
+
+  // Update notification button
+
   if (alert.updateAvailable) {
     alert_notification->setText("UPDATE");
   } else {
     int alerts = alert.alertCount;
     alert_notification->setText(QString::number(alerts) + " ALERT" + (alerts == 1 ? "" : "S"));
   }
-
-  if (alerts_widget == nullptr) {
-    // create alert widget
-    alerts_widget = new OffroadAlert(alert, this);
-    QObject::connect(alerts_widget, &OffroadAlert::closeAlerts, this, &OffroadHome::closeAlerts);
-    center_layout->addWidget(alerts_widget);
-    center_layout->setAlignment(alerts_widget, Qt::AlignCenter);
-  }
-  alerts_widget->update(alert);
-
-  if (!alert_notification->isVisible() && !first_refresh) {
-    openAlerts();
-  }
-  alert_notification->setVisible(true);
-
   // Red background for alerts, blue for update available
   QString style = QString(R"(
     padding: 15px;
@@ -193,4 +177,19 @@ void OffroadHome::refresh() {
     style.replace("#E22C2C", "#364DEF");
   }
   alert_notification->setStyleSheet(style);
+  alert_notification->setVisible(true);
+
+  // Update alerts widget
+
+  if (alerts_widget == nullptr) {
+    // create alert widget
+    alerts_widget = new OffroadAlert(alert, this);
+    QObject::connect(alerts_widget, &OffroadAlert::closeAlerts, this, &OffroadHome::closeAlerts);
+    center_layout->addWidget(alerts_widget);
+    center_layout->setAlignment(alerts_widget, Qt::AlignCenter);
+    if (!first_refresh) {
+      openAlerts();
+    }
+  }
+  alerts_widget->update(alert);
 }
