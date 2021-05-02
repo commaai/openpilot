@@ -84,9 +84,6 @@ void Replay::addSegment(int i){
   QThread* lr_thread = new QThread;
 
   if((0 <= i) && (i < log_paths.size())) {
-    printf("in %d\n", i);
-    printf("in\n");
-    printf("in\n");
     QString log_fn = this->log_paths.at(i).toString();
     lrs.insert(i, new LogReader(log_fn, &events, &events_lock, &eidx));
 
