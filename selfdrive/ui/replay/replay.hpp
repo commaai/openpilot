@@ -21,6 +21,7 @@
 #include "common/util.h"
 #include "common/timing.h"
 #include "cereal/services.h"
+#include "camerad/cameras/camera_common.h"
 
 // TODO: figure out why logs don't donwload when this is QObject after removing Unlogger
 class Replay : public QWidget {
