@@ -251,11 +251,10 @@ routes = {
     'enableCamera': True,
     'enableDsu': False,
   },
-  "4e45c89c38e8ec4d|2021-05-02--02-49-28--15": {
+  "4e45c89c38e8ec4d|2021-05-02--02-49-28": {
     'carFingerprint': TOYOTA.COROLLA,
     'enableCamera': True,
     'enableDsu': True,
-    'enableGasInterceptor': True,
   },
   "5f5afb36036506e4|2019-05-14--02-09-54": {
     'carFingerprint': TOYOTA.COROLLA_TSS2,
