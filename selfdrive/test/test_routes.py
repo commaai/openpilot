@@ -35,7 +35,7 @@ non_tested_cars = [
   TOYOTA.HIGHLANDERH_TSS2,
 ]
 
-routes = {
+routes: dict = {
   "420a8e183f1aed48|2020-03-05--07-15-29": {
     'carFingerprint': CHRYSLER.PACIFICA_2017_HYBRID,
     'enableCamera': True,
@@ -251,20 +251,8 @@ routes = {
     'enableCamera': True,
     'enableDsu': False,
   },
-  "b0f5a01cf604185c|2018-01-26--00-54-32": {
+  "4e45c89c38e8ec4d|2021-05-02--02-49-28": {
     'carFingerprint': TOYOTA.COROLLA,
-    'enableCamera': True,
-    'enableDsu': True,
-  },
-  "b0f5a01cf604185c|2018-01-26--10-54-38": {
-    'carFingerprint': TOYOTA.COROLLA,
-    'enableCamera': True,
-    'enableDsu': False,
-  },
-  "b0f5a01cf604185c|2018-01-26--10-59-31": {
-    'carFingerprint': TOYOTA.COROLLA,
-    'enableCamera': False,
-    'enableDsu': False,
   },
   "5f5afb36036506e4|2019-05-14--02-09-54": {
     'carFingerprint': TOYOTA.COROLLA_TSS2,
