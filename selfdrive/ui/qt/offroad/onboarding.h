@@ -7,8 +7,6 @@
 #include <QTextEdit>
 #include <QWidget>
 
-#include "selfdrive/common/params.h"
-
 class TrainingGuide : public QFrame {
   Q_OBJECT
 
