@@ -35,25 +35,20 @@ non_tested_cars = [
   TOYOTA.HIGHLANDERH_TSS2,
 ]
 
-
-class TestRoute:
-  def __init__(self, route, car_fingerprint, *, enable_camera=True, enable_dsu=False):
-    self.route = route
-    self.car_fingerprint = car_fingerprint
-    self.enable_camera = enable_camera
-    self.enable_dsu = enable_dsu
-
-
-routes = [
-  TestRoute("420a8e183f1aed48|2020-03-05--07-15-29", CHRYSLER.PACIFICA_2017_HYBRID),
-  TestRoute("8190c7275a24557b|2020-01-29--08-33-58", CHRYSLER.PACIFICA_2019_HYBRID),  # 2020 model year
-  TestRoute("f1b4c567731f4a1b|2018-04-18--11-29-37", FORD.FUSION, enable_camera=False),
-  TestRoute("f1b4c567731f4a1b|2018-04-30--10-15-35", FORD.FUSION),
-  TestRoute("", ),
-]
-
 routes = {
-
+  "420a8e183f1aed48|2020-03-05--07-15-29": {
+    'carFingerprint': CHRYSLER.PACIFICA_2017_HYBRID,
+    'enableCamera': True,
+  },
+  "8190c7275a24557b|2020-01-29--08-33-58": {  # 2020 model year
+    'carFingerprint': CHRYSLER.PACIFICA_2019_HYBRID,
+    'enableCamera': True,
+  },
+  # This pacifica was removed because the fingerprint seemed from a Volt
+  "f1b4c567731f4a1b|2018-04-18--11-29-37": {
+    'carFingerprint': FORD.FUSION,
+    'enableCamera': False,
+  },
   "f1b4c567731f4a1b|2018-04-30--10-15-35": {
     'carFingerprint': FORD.FUSION,
     'enableCamera': True,
