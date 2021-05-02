@@ -40,7 +40,7 @@ WifiSetup::WifiSetup(QWidget *parent) {
 
   setLayout(main_layout);
 
-  QObject::connect(this, &WifiSetup::downloadFailed, this, &WifiSetup::nextPage);
+  // QObject::connect(this, &WifiSetup::downloadFailed, this, &WifiSetup::nextPage);
 
   setStyleSheet(R"(
     * {
