@@ -18,10 +18,10 @@ public:
     int severity;
     QLabel *label;
   };
-  Params params;
   std::vector<AlertMessage> alerts;
   int alertCount = 0;
   bool updateAvailable = false;
+  Params params;
 };
 
 class OffroadAlert : public QFrame {
@@ -29,15 +29,15 @@ class OffroadAlert : public QFrame {
 
 public:
   explicit OffroadAlert(const Alert &alert, QWidget *parent = 0);
-  void updateAlerts(const Alert &alert);
-private:
-  QLabel releaseNotes;
-  QPushButton rebootBtn;
-
-  ScrollView *releaseNotesScroll;
-  ScrollView *alertsScroll;
-  QVBoxLayout *alerts_layout;
+  void update(const Alert &alert);
 
 signals:
   void closeAlerts();
+
+private:
+  QLabel releaseNotes;
+  QPushButton rebootBtn;
+  ScrollView *releaseNotesScroll;
+  ScrollView *alertsScroll;
+  QVBoxLayout *alerts_layout;
 };

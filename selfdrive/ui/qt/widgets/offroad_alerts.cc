@@ -106,10 +106,10 @@ OffroadAlert::OffroadAlert(const Alert &alert, QWidget* parent) : QFrame(parent)
     }
   )");
 
-  updateAlerts(alert);
+  update(alert);
 }
 
-void OffroadAlert::updateAlerts(const Alert &alert) {
+void OffroadAlert::update(const Alert &alert) {
   for (const auto &a : alert.alerts) {
     if (a.label != nullptr && a.label->parent() == nullptr) {
       alerts_layout->addWidget(a.label);

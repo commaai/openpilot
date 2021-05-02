@@ -128,12 +128,6 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
 }
 
 void OffroadHome::openAlerts() {
-  if (alerts_widget == nullptr) {
-    alerts_widget = new OffroadAlert(alert, this);
-    QObject::connect(alerts_widget, SIGNAL(closeAlerts()), this, SLOT(closeAlerts()));
-    center_layout->addWidget(alerts_widget);
-    center_layout->setAlignment(alerts_widget, Qt::AlignCenter);
-  }
   center_layout->setCurrentIndex(1);
 }
 
@@ -154,20 +148,30 @@ void OffroadHome::refresh() {
   alert.refresh();
   if (!alert.hasAlerts()) {
     if (alerts_widget != nullptr) {
+      // delete alert widget
       closeAlerts();
       alerts_widget->deleteLater();
       alerts_widget = nullptr;
     }
     alert_notification->setVisible(false);
     return;
-  }
-
+  } 
+  
   if (alert.updateAvailable) {
     alert_notification->setText("UPDATE");
   } else {
     int alerts = alert.alertCount;
     alert_notification->setText(QString::number(alerts) + " ALERT" + (alerts == 1 ? "" : "S"));
   }
+
+  if (alerts_widget == nullptr) {
+    // create alert widget
+    alerts_widget = new OffroadAlert(alert, this);
+    QObject::connect(alerts_widget, &OffroadAlert::closeAlerts, this, &OffroadHome::closeAlerts);
+    center_layout->addWidget(alerts_widget);
+    center_layout->setAlignment(alerts_widget, Qt::AlignCenter);
+  }
+  alerts_widget->update(alert);
 
   if (!alert_notification->isVisible() && !first_refresh) {
     openAlerts();
@@ -189,9 +193,4 @@ void OffroadHome::refresh() {
     style.replace("#E22C2C", "#364DEF");
   }
   alert_notification->setStyleSheet(style);
-
-  if (alerts_widget != nullptr) {
-    alerts_widget->updateAlerts(alert);
-  }
-  
 }
