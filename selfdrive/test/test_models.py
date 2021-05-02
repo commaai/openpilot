@@ -24,7 +24,6 @@ ROUTES = {v['carFingerprint']: k for k, v in routes.items() if v['enableCamera']
 # TODO: get updated routes for these cars
 ignore_can_valid = [
   "ACURA ILX 2016 ACURAWATCH PLUS",
-  "TOYOTA COROLLA 2017",
   "LEXUS RX HYBRID 2017",
   "TOYOTA AVALON 2016",
   "HONDA PILOT 2019 ELITE",
