@@ -55,10 +55,8 @@ public:
 private:
   OnroadAlerts *alerts;
   NvgWindow *nvg;
-  QStackedLayout layout;
+  QStackedLayout *layout;
 
 signals:
   void update(const UIState &s);
 };
-
-

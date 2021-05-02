@@ -8,11 +8,12 @@
 
 
 OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
-  layout.setStackingMode(QStackedLayout::StackAll);
+  layout = new QStackedLayout();
+  layout->setStackingMode(QStackedLayout::StackAll);
 
   // old UI on bottom
   nvg = new NvgWindow(this);
-  layout.addWidget(nvg);
+  layout->addWidget(nvg);
   QObject::connect(this, &OnroadWindow::update, nvg, &NvgWindow::update);
 
   // hack to align the onroad alerts, better way to do this?
@@ -24,13 +25,13 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
 
   QWidget *w = new QWidget(this);
   w->setLayout(alerts_container);
-  layout.addWidget(w);
+  layout->addWidget(w);
   QObject::connect(this, &OnroadWindow::update, alerts, &OnroadAlerts::update);
 
   // alerts on top
-  layout.setCurrentWidget(w);
+  layout->setCurrentWidget(w);
 
-  setLayout(&layout);
+  setLayout(layout);
 }
 
 // ***** onroad widgets *****
@@ -42,13 +43,15 @@ OnroadAlerts::OnroadAlerts(QWidget *parent) : QFrame(parent) {
 
   title = new QLabel();
   title->setAlignment(Qt::AlignCenter);
-  title->setStyleSheet("font-size: 80px; font-weight: 400;");
-  layout->addWidget(title, 0, Qt::AlignCenter);
+  title->setStyleSheet("font-size: 80px; font-weight: 500;");
+  layout->addWidget(title, 2, Qt::AlignVCenter);
 
   msg = new QLabel();
   msg->setAlignment(Qt::AlignCenter);
   msg->setStyleSheet("font-size: 65px; font-weight: 400;");
-  layout->addWidget(msg, 0, Qt::AlignCenter);
+  layout->addWidget(msg, 0, Qt::AlignTop);
+
+  layout->addStretch(1);
 
   setLayout(layout);
   setStyleSheet("color: white;");
@@ -68,6 +71,7 @@ void OnroadAlerts::update(const UIState &s) {
   */
   title->setText(QString::fromStdString(s.scene.alert_text1));
   msg->setText(QString::fromStdString(s.scene.alert_text2));
+  msg->setVisible(!msg->text().isEmpty());
 
   static std::map<cereal::ControlsState::AlertSize, const int> alert_size_map = {
       {cereal::ControlsState::AlertSize::SMALL, 241},
