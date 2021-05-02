@@ -60,7 +60,7 @@ Replay::Replay(QString route_, SubMaster *sm_) : route(route_), sm(sm_) {
 #endif
 
   http = new HttpRequest(this, "https://api.commadotai.com/v1/route/" + route + "/files", "", create_jwt);
-  QObject::connect(http, SIGNAL(receivedResponse(QString)), this, SLOT(parseResponse(QString)));
+  QObject::connect(http, &HttpRequest::receivedResponse, this, &Replay::parseResponse);
 }
 
 void Replay::parseResponse(QString response){
@@ -90,7 +90,7 @@ void Replay::addSegment(int i){
     lrs.insert(i, new LogReader(log_fn, &events, &events_lock, &eidx));
 
     lrs[i]->moveToThread(lr_thread);
-    QObject::connect(lr_thread, SIGNAL (started()), lrs[i], SLOT (process()));
+    QObject::connect(lr_thread, &QThread::started, lrs[i], &LogReader::process);
     lr_thread->start();
 
     QString camera_fn = this->camera_paths.at(i).toString();
