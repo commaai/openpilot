@@ -13,7 +13,11 @@ class OnroadAlerts : public QFrame {
 public:
   OnroadAlerts(QWidget *parent = 0);
 
+protected:
+  void paintEvent(QPaintEvent*) override;
+
 private:
+  QColor bg;
   QLabel *title, *msg;
   QVBoxLayout *layout;
 
