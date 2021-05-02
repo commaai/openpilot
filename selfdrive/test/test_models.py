@@ -19,7 +19,7 @@ from panda.tests.safety.common import package_can_msg
 
 PandaType = log.PandaState.PandaType
 
-ROUTES = {v['carFingerprint']: k for k, v in routes.items() if v['enableCamera']}
+ROUTES = {r.car_fingerprint: r.route for r in routes if r.enable_camera}
 
 # TODO: get updated routes for these cars
 ignore_can_valid = [
