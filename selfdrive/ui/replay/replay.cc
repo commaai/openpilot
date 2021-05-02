@@ -211,9 +211,6 @@ void Replay::seekThread(){
 }
 
 void Replay::stream(SubMaster *sm) {
-
-  active = true;
-
   qDebug() << "hello from unlogger thread";
   while (events.size() == 0) {
     qDebug() << "waiting for events";
@@ -226,7 +223,7 @@ void Replay::stream(SubMaster *sm) {
   QElapsedTimer timer; timer.start();
 
   // loops
-  while (active) {
+  while (true) {
     uint64_t t0 = (events.begin()+1).key();
     uint64_t t0r = timer.nsecsElapsed();
     qDebug() << "unlogging at" << t0;
@@ -236,7 +233,7 @@ void Replay::stream(SubMaster *sm) {
       eit = events.lowerBound(t0);
     }
 
-    while ((eit != events.end()) && active) {
+    while ((eit != events.end())) {
       while (paused) {
         QThread::usleep(1000);
         t0 = (*eit).getLogMonoTime();

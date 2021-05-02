@@ -64,7 +64,6 @@ private:
   float last_print = 0;
   uint64_t route_t0;
   uint64_t seek_request = 0;
-  bool active = false;
   bool paused = false;
   bool seeking = false;
   bool loading_segment = false;
