@@ -16,8 +16,9 @@ int getch(void) {
   return ch;
 }
 
-Replay::Replay(QString route_, int seek_) : route(route_), seek(seek_) {
+Replay::Replay(QString route_) : route(route_) {
   ctx = Context::create();
+  seek = 0;
   seek_request = seek*1e9;
 
   QStringList block = QString(getenv("BLOCK")).split(",");
@@ -344,7 +345,7 @@ void Replay::process(SubMaster *sm) {
       ++eit;
       if ((time_to_end < 60.0) && !loading_segment){
         loading_segment = true;
-        seek_queue.enqueue({true, 1});
+        seek_queue.enqueue({true, 0});
       }
     }
   }

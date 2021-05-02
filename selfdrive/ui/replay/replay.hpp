@@ -27,7 +27,7 @@ class Replay : public QWidget {
   Q_OBJECT
 
 public:
-  Replay(QString route_, int seek);
+  Replay(QString route_);
   void stream(SubMaster *sm = nullptr);
   void addSegment(int i);
   void trimSegment(int seg_num);
