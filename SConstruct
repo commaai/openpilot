@@ -107,15 +107,17 @@ else:
   if arch == "Darwin":
     libpath = [
       "#phonelibs/libyuv/mac/lib",
-      "#cereal",
-      "#selfdrive/common",
       "/usr/local/lib",
+      "/opt/homebrew/lib",
       "/usr/local/opt/openssl/lib",
       "/System/Library/Frameworks/OpenGL.framework/Libraries",
     ]
     cflags += ["-DGL_SILENCE_DEPRECATION"]
     cxxflags += ["-DGL_SILENCE_DEPRECATION"]
-    cpppath += ["/usr/local/opt/openssl/include"]
+    cpppath += [
+      "/opt/homebrew/include",
+      "/usr/local/opt/openssl/include"
+    ]
   else:
     libpath = [
       "#phonelibs/snpe/x86_64-linux-clang",
@@ -279,7 +281,10 @@ if arch != "aarch64":
 
 qt_libs = []
 if arch == "Darwin":
-  qt_env['QTDIR'] = "/usr/local/opt/qt@5"
+  if real_arch == "arm64":
+    qt_env['QTDIR'] = "/opt/homebrew/opt/qt5"
+  else:
+    qt_env['QTDIR'] = "/usr/local/opt/qt@5"
   qt_dirs = [
     os.path.join(qt_env['QTDIR'], "include"),
   ]
