@@ -16,7 +16,7 @@ int getch(void) {
   return ch;
 }
 
-Replay::Replay(QString route_) : route(route_) {
+Replay::Replay(QString route_, SubMaster *sm_) : route(route_), sm(sm_) {
   ctx = Context::create();
   seek = 0;
   seek_request = seek*1e9;
@@ -27,27 +27,29 @@ Replay::Replay(QString route_) : route(route_) {
   QStringList allow = QString(getenv("ALLOW")).split(",");
   qDebug() << "allowlist" << allow;
 
-  for (const auto& it : services) {
-    std::string name = it.name;
-    if (allow[0].size() > 0 && !allow.contains(name.c_str())) {
-      qDebug() << "not allowing" << name.c_str();
-      continue;
+  if(sm == nullptr) {
+    for (const auto& it : services) {
+      std::string name = it.name;
+      if (allow[0].size() > 0 && !allow.contains(name.c_str())) {
+        qDebug() << "not allowing" << name.c_str();
+        continue;
+      }
+
+      if (block.contains(name.c_str())) {
+        qDebug() << "blocking" << name.c_str();
+        continue;
+      }
+
+      PubSocket *sock = PubSocket::create(ctx, name);
+      if (sock == NULL) {
+        qDebug() << "FAILED" << name.c_str();
+        continue;
+      }
+
+      qDebug() << name.c_str();
+
+      socks.insert(name, sock);
     }
-
-    if (block.contains(name.c_str())) {
-      qDebug() << "blocking" << name.c_str();
-      continue;
-    }
-
-    PubSocket *sock = PubSocket::create(ctx, name);
-    if (sock == NULL) {
-      qDebug() << "FAILED" << name.c_str();
-      continue;
-    }
-
-    qDebug() << name.c_str();
-
-    socks.insert(name, sock);
   }
 
   current_segment = -window_padding - 1;
@@ -114,7 +116,7 @@ void Replay::start(SubMaster *sm){
   thread = new QThread;
   this->moveToThread(thread);
   QObject::connect(thread, &QThread::started, [=](){
-    stream(sm);
+    stream();
   });
   thread->start();
 
@@ -210,7 +212,7 @@ void Replay::seekThread(){
   }
 }
 
-void Replay::stream(SubMaster *sm) {
+void Replay::stream() {
   qDebug() << "hello from unlogger thread";
   while (events.size() == 0) {
     qDebug() << "waiting for events";
