@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from typing import Dict
 from selfdrive.car.chrysler.values import CAR as CHRYSLER
 from selfdrive.car.ford.values import CAR as FORD
 from selfdrive.car.gm.values import CAR as GM
@@ -35,7 +36,7 @@ non_tested_cars = [
   TOYOTA.HIGHLANDERH_TSS2,
 ]
 
-routes = {
+routes: Dict = {
   "420a8e183f1aed48|2020-03-05--07-15-29": {
     'carFingerprint': CHRYSLER.PACIFICA_2017_HYBRID,
     'enableCamera': True,
