@@ -69,7 +69,7 @@ QWidget * Setup::build_page(QString title, QWidget *content, bool next, bool pre
   if (next) {
     QPushButton *continue_btn = new QPushButton("Continue");
     nav_layout->addWidget(continue_btn, 0, Qt::AlignBottom | Qt::AlignRight);
-    QObject::connect(continue_btn, &QPushButton::released, this, &Setup:nextPage);
+    QObject::connect(continue_btn, &QPushButton::released, this, &Setup::nextPage);
   }
 
   main_layout->addLayout(nav_layout, 0);

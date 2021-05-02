@@ -39,9 +39,6 @@ WifiSetup::WifiSetup(QWidget *parent) {
   main_layout->addWidget(q, 1);
 
   setLayout(main_layout);
-
-  QObject::connect(this, &WifiSetup::downloadFailed, this, &WifiSetup::nextPage);
-
   setStyleSheet(R"(
     * {
       background-color: black;
