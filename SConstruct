@@ -110,13 +110,15 @@ else:
       "/usr/local/lib",
       "/opt/homebrew/lib",
       "/usr/local/opt/openssl/lib",
+      "/opt/homebrew/opt/openssl/lib",
       "/System/Library/Frameworks/OpenGL.framework/Libraries",
     ]
     cflags += ["-DGL_SILENCE_DEPRECATION"]
     cxxflags += ["-DGL_SILENCE_DEPRECATION"]
     cpppath += [
       "/opt/homebrew/include",
-      "/usr/local/opt/openssl/include"
+      "/usr/local/opt/openssl/include",
+      "/opt/homebrew/opt/openssl/include"
     ]
   else:
     libpath = [
@@ -282,7 +284,7 @@ if arch != "aarch64":
 qt_libs = []
 if arch == "Darwin":
   if real_arch == "arm64":
-    qt_env['QTDIR'] = "/opt/homebrew/opt/qt5"
+    qt_env['QTDIR'] = "/opt/homebrew/opt/qt@5"
   else:
     qt_env['QTDIR'] = "/usr/local/opt/qt@5"
   qt_dirs = [
