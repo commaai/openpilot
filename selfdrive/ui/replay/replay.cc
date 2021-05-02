@@ -83,15 +83,20 @@ void Replay::addSegment(int i){
 
   QThread* lr_thread = new QThread;
 
-  QString log_fn = this->log_paths.at(i).toString();
-  lrs.insert(i, new LogReader(log_fn, &events, &events_lock, &eidx));
+  if((0 <= i) && (i < log_paths.size())) {
+    printf("in %d\n", i);
+    printf("in\n");
+    printf("in\n");
+    QString log_fn = this->log_paths.at(i).toString();
+    lrs.insert(i, new LogReader(log_fn, &events, &events_lock, &eidx));
 
-  lrs[i]->moveToThread(lr_thread);
-  QObject::connect(lr_thread, SIGNAL (started()), lrs[i], SLOT (process()));
-  lr_thread->start();
+    lrs[i]->moveToThread(lr_thread);
+    QObject::connect(lr_thread, SIGNAL (started()), lrs[i], SLOT (process()));
+    lr_thread->start();
 
-  QString camera_fn = this->camera_paths.at(i).toString();
-  frs.insert(i, new FrameReader(qPrintable(camera_fn)));
+    QString camera_fn = this->camera_paths.at(i).toString();
+    frs.insert(i, new FrameReader(qPrintable(camera_fn)));
+  }
 }
 
 void Replay::trimSegment(int seg_num){
