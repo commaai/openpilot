@@ -105,8 +105,9 @@ else:
   cpppath = []
 
   if arch == "Darwin":
+    yuv_dir = "mac" if real_arch != "arm64" else "mac_arm64"
     libpath = [
-      "#phonelibs/libyuv/mac/lib",
+      f"#phonelibs/libyuv/{yuv_dir}/lib",
       "/usr/local/lib",
       "/opt/homebrew/lib",
       "/usr/local/opt/openssl/lib",
