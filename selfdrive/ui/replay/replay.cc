@@ -220,7 +220,8 @@ void Replay::stream(SubMaster *sm) {
 
   route_t0 = events.firstKey();
 
-  QElapsedTimer timer; timer.start();
+  QElapsedTimer timer;
+  timer.start();
 
   // loops
   while (true) {
