@@ -64,7 +64,6 @@ class TestRegistration(unittest.TestCase):
       self.assertEqual(m.call_count, 1)
     self.assertEqual(self.params.get("DongleId", encoding='utf-8'), dongle)
 
-  # TODO: test different HW types
   def test_unregistered_pc(self):
     # no keys, no dongle id
     with mock.patch("selfdrive.athena.registration.api_get", autospec=True) as m, \
