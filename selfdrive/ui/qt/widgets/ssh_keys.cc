@@ -67,13 +67,6 @@ void SshControl::getUserKeys(QString username){
 
   QNetworkRequest request;
   request.setUrl(QUrl(url));
-#ifdef QCOM
-  QSslConfiguration ssl = QSslConfiguration::defaultConfiguration();
-  ssl.setCaCertificates(QSslCertificate::fromPath("/usr/etc/tls/cert.pem",
-                        QSsl::Pem, QRegExp::Wildcard));
-  request.setSslConfiguration(ssl);
-#endif
-
   reply = manager->get(request);
   connect(reply, &QNetworkReply::finished, this, &SshControl::parseResponse);
   networkTimer->start();
