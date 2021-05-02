@@ -110,11 +110,11 @@ void Replay::trimSegment(int seg_num){
   }
 }
 
-void Replay::stream(SubMaster *sm){
+void Replay::start(SubMaster *sm){
   thread = new QThread;
   this->moveToThread(thread);
   QObject::connect(thread, &QThread::started, [=](){
-    process(sm);
+    stream(sm);
   });
   thread->start();
 
@@ -210,7 +210,7 @@ void Replay::seekThread(){
   }
 }
 
-void Replay::process(SubMaster *sm) {
+void Replay::stream(SubMaster *sm) {
 
   active = true;
 

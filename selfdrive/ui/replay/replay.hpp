@@ -28,7 +28,7 @@ class Replay : public QWidget {
 
 public:
   Replay(QString route_);
-  void stream(SubMaster *sm = nullptr);
+  void start(SubMaster *sm = nullptr);
   void addSegment(int i);
   void trimSegment(int seg_num);
   void seekTime(int seek_);
@@ -47,7 +47,7 @@ public slots:
   void seekThread();
   void seekRequestThread();
   void parseResponse(QString response);
-  void process(SubMaster *sm = nullptr);
+  void stream(SubMaster *sm = nullptr);
 
 private:
   int seek;
