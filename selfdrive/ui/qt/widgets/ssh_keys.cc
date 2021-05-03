@@ -1,7 +1,7 @@
 #include <QHBoxLayout>
 #include "widgets/input.h"
 #include "widgets/ssh_keys.h"
-#include "api.hpp"
+#include "api.h"
 #include "common/params.h"
 
 
