@@ -166,6 +166,7 @@ void MapWindow::timerUpdate() {
     m_map->setLayoutProperty("carPosLayer", "icon-pitch-alignment", "map");
     m_map->setLayoutProperty("carPosLayer", "icon-image", "label-arrow");
     m_map->setLayoutProperty("carPosLayer", "icon-size", 0.5);
+    m_map->setLayoutProperty("carPosLayer", "icon-ignore-placement", true);
     m_map->setLayoutProperty("carPosLayer", "icon-allow-overlap", true);
   }
 
