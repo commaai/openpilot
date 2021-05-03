@@ -1,1 +1,1 @@
-from common.vision_defs_pyx import EON_ROAD_CAM_FRAME_SIZE, EON_DRIVER_CAM_FRAME_SIZE, ROAD_CAM_FRAME_SIZE, TICI_FRAME_SIZE, SCREEN_SIZE  # pylint: disable=no-name-in-module, import-error, disable=unused-import
+from common.vision_defs_pyx import EON_ROAD_CAM_FRAME_SIZE, EON_DRIVER_CAM_FRAME_SIZE, ROAD_CAM_FRAME_SIZE, TICI_FRAME_SIZE, SCREEN_SIZE  # noqa pylint: disable=no-name-in-module, import-error, disable=unused-import
