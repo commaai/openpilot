@@ -56,11 +56,8 @@ void SshControl::refresh() {
 }
 
 void SshControl::getUserKeys(const QString &username) {
-  QEventLoop loop;
-  HttpRequest request(this, "https://github.com/" + username + ".keys", "", false);
-
-  QObject::connect(&request, &HttpRequest::receivedResponse, [&](const QString &resp) {
-    loop.quit();
+  HttpRequest *request = new HttpRequest(this, "https://github.com/" + username + ".keys", "", false);
+  QObject::connect(request, &HttpRequest::receivedResponse, [=](const QString &resp) {
     if (!resp.isEmpty()) {
       Params params;
       params.put("GithubUsername", username.toStdString());
@@ -68,16 +65,17 @@ void SshControl::getUserKeys(const QString &username) {
     } else {
       ConfirmationDialog::alert("Username '" + username + "' has no keys on GitHub");
     }
+    refresh();
+    request->deleteLater();
   });
-  QObject::connect(&request, &HttpRequest::failedResponse, [&] {
-    loop.quit();
+  QObject::connect(request, &HttpRequest::failedResponse, [=] {
     ConfirmationDialog::alert("Username '" + username + "' doesn't exist on GitHub");
+    refresh();
+    request->deleteLater();
   });
-  QObject::connect(&request, &HttpRequest::timeoutResponse, [&] {
-    loop.quit();
+  QObject::connect(request, &HttpRequest::timeoutResponse, [=] {
     ConfirmationDialog::alert("Request timed out");
+    refresh();
+    request->deleteLater();
   });
-
-  loop.exec();
-  refresh();
 }
