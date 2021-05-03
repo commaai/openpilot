@@ -19,16 +19,12 @@
 #include "nanovg_gl.h"
 #include "nanovg_gl_utils.h"
 #include "paint.h"
+#include "selfdrive/hardware/hw.h"
 
 // TODO: this is also hardcoded in common/transformations/camera.py
 // TODO: choose based on frame input size
-#ifdef QCOM2
-const float y_offset = 150.0;
-const float zoom = 2912.8;
-#else
-const float y_offset = 0.0;
-const float zoom = 2138.5;
-#endif
+const float y_offset = Hardware::TICI() ? 150.0 : 0.0;
+const float zoom = Hardware::TICI() ? 2912.8 : 2138.5;
 
 static void ui_draw_text(const UIState *s, float x, float y, const char *string, float size, NVGcolor color, const char *font_name) {
   nvgFontFace(s->vg, font_name);

@@ -24,6 +24,7 @@
 #include "common/util.h"
 #include "modeldata.h"
 #include "imgproc/utils.h"
+#include "selfdrive/hardware/hw.h"
 
 static cl_program build_debayer_program(cl_device_id device_id, cl_context context, const CameraInfo *ci, const CameraBuf *b, const CameraState *s) {
   char args[4096];
@@ -35,11 +36,8 @@ static cl_program build_debayer_program(cl_device_id device_id, cl_context conte
            ci->frame_width, ci->frame_height, ci->frame_stride,
            b->rgb_width, b->rgb_height, b->rgb_stride,
            ci->bayer_flip, ci->hdr, s->camera_num);
-#ifdef QCOM2
-  return cl_program_from_file(context, device_id, "cameras/real_debayer.cl", args);
-#else
-  return cl_program_from_file(context, device_id, "cameras/debayer.cl", args);
-#endif
+  const char *cl_file = Hardware::TICI() ? "cameras/real_debayer.cl" : "cameras/debayer.cl";
+  return cl_program_from_file(context, device_id, cl_file, args);
 }
 
 void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s, VisionIpcServer * v, int frame_cnt, VisionStreamType rgb_type, VisionStreamType yuv_type, release_cb release_callback) {
@@ -64,13 +62,12 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
 
   rgb_width = ci->frame_width;
   rgb_height = ci->frame_height;
-#ifndef QCOM2
   // debayering does a 2x downscale
-  if (ci->bayer) {
+  if (Hardware::TICI() && ci->bayer) {
     rgb_width = ci->frame_width / 2;
     rgb_height = ci->frame_height / 2;
   }
-#endif
+
   yuv_transform = get_model_yuv_transform(ci->bayer);
 
   vipc_server->create_buffers(rgb_type, UI_BUF_COUNT, true, rgb_width, rgb_height);
