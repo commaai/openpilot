@@ -1,7 +1,7 @@
 #include <QNetworkReply>
 #include <QHBoxLayout>
-#include "widgets/input.hpp"
-#include "widgets/ssh_keys.hpp"
+#include "widgets/input.h"
+#include "widgets/ssh_keys.h"
 #include "common/params.h"
 
 

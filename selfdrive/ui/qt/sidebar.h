@@ -2,7 +2,7 @@
 
 #include <QtWidgets>
 
-#include <ui.hpp>
+#include <ui.h>
 
 #define COLOR_GOOD QColor(255, 255, 255)
 #define COLOR_WARNING QColor(218, 202, 37)

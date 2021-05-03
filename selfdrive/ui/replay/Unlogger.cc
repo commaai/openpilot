@@ -10,7 +10,7 @@
 #include "cereal/gen/cpp/legacy.capnp.c++"
 #include "cereal/services.h"
 
-#include "Unlogger.hpp"
+#include "Unlogger.h"
 
 #include <stdint.h>
 #include <time.h>

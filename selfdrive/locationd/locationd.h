@@ -13,7 +13,7 @@
 #include "common/timing.h"
 #include "common/transformations/coordinates.hpp"
 #include "common/transformations/orientation.hpp"
-#include "selfdrive/sensord/sensors/constants.hpp"
+#include "selfdrive/sensord/sensors/constants.h"
 
 #include "models/live_kf.h"
 

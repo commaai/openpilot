@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ui.hpp"
+#include "ui.h"
 
 void ui_draw(UIState *s, int w, int h);
 void ui_draw_image(const UIState *s, const Rect &r, const char *name, float alpha);

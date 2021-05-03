@@ -9,19 +9,19 @@
 #include "common/util.h"
 #include "common/swaglog.h"
 
-#include "sensors/sensor.hpp"
-#include "sensors/constants.hpp"
+#include "sensors/sensor.h"
+#include "sensors/constants.h"
 
-#include "sensors/bmx055_accel.hpp"
-#include "sensors/bmx055_gyro.hpp"
-#include "sensors/bmx055_magn.hpp"
-#include "sensors/bmx055_temp.hpp"
+#include "sensors/bmx055_accel.h"
+#include "sensors/bmx055_gyro.h"
+#include "sensors/bmx055_magn.h"
+#include "sensors/bmx055_temp.h"
 
-#include "sensors/lsm6ds3_accel.hpp"
-#include "sensors/lsm6ds3_gyro.hpp"
-#include "sensors/lsm6ds3_temp.hpp"
+#include "sensors/lsm6ds3_accel.h"
+#include "sensors/lsm6ds3_gyro.h"
+#include "sensors/lsm6ds3_temp.h"
 
-#include "sensors/light_sensor.hpp"
+#include "sensors/light_sensor.h"
 
 #define I2C_BUS_IMU 1
 

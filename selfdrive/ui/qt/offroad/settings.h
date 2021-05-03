@@ -9,7 +9,7 @@
 #include <QScrollArea>
 #include <QStackedWidget>
 
-#include "selfdrive/ui/qt/widgets/controls.hpp"
+#include "selfdrive/ui/qt/widgets/controls.h"
 
 // ********** settings window + top-level panels **********
 

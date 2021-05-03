@@ -1,7 +1,7 @@
 #pragma once
 
-#include "sensors/i2c_sensor.hpp"
-#include "sensors/bmx055_accel.hpp"
+#include "sensors/i2c_sensor.h"
+#include "sensors/bmx055_accel.h"
 
 
 class BMX055_Temp : public I2CSensor {

@@ -3,8 +3,8 @@
 #include <QLabel>
 #include <QPixmap>
 
-#include "networking.hpp"
-#include "widgets/scrollview.hpp"
+#include "networking.h"
+#include "widgets/scrollview.h"
 
 void clearLayout(QLayout* layout) {
   while (QLayoutItem* item = layout->takeAt(0)) {

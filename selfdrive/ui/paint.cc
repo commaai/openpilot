@@ -1,7 +1,7 @@
 #include <assert.h>
 #include <algorithm>
 
-#include "ui.hpp"
+#include "ui.h"
 #ifdef __APPLE__
 #include <OpenGL/gl3.h>
 #define NANOVG_GL3_IMPLEMENTATION
@@ -18,7 +18,7 @@
 #define NANOVG_GLES3_IMPLEMENTATION
 #include "nanovg_gl.h"
 #include "nanovg_gl_utils.h"
-#include "paint.hpp"
+#include "paint.h"
 
 // TODO: this is also hardcoded in common/transformations/camera.py
 // TODO: choose based on frame input size

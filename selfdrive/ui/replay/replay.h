@@ -8,9 +8,9 @@
 
 #include <capnp/dynamic.h>
 
-#include "qt/api.hpp"
-#include "Unlogger.hpp"
-#include "FileReader.hpp"
+#include "qt/api.h"
+#include "Unlogger.h"
+#include "FileReader.h"
 #include "FrameReader.hpp"
 #include "visionipc_server.h"
 

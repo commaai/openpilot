@@ -8,9 +8,9 @@
 #include <QVBoxLayout>
 
 #include "QrCode.hpp"
-#include "request_repeater.hpp"
+#include "request_repeater.h"
 #include "common/params.h"
-#include "setup.hpp"
+#include "setup.h"
 
 using qrcodegen::QrCode;
 

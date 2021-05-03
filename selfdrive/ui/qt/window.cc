@@ -1,4 +1,4 @@
-#include "window.hpp"
+#include "window.h"
 #include "selfdrive/hardware/hw.h"
 
 MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {

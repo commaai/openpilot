@@ -1,5 +1,5 @@
 #include <QUrl>
-#include "sound.hpp"
+#include "sound.h"
 
 Sound::Sound() {
   for (auto &kv : sound_map) {
