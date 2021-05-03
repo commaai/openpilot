@@ -17,9 +17,6 @@ int main(int argc, char *argv[]) {
 
 #ifdef QCOM
   QApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
-#endif
-
-#ifdef QCOM
   QSslConfiguration ssl = QSslConfiguration::defaultConfiguration();
   ssl.setCaCertificates(QSslCertificate::fromPath("/usr/etc/tls/cert.pem", QSsl::Pem, QRegExp::Wildcard));
   QSslConfiguration::setDefaultConfiguration(ssl);
