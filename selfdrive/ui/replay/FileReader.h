@@ -16,7 +16,7 @@
 #include "cereal/gen/cpp/log.capnp.h"
 
 #include <thread>
-#include "channel.hpp"
+#include "channel.h"
 
 class FileReader : public QObject {
   Q_OBJECT
