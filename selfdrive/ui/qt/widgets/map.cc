@@ -184,6 +184,7 @@ void MapWindow::timerUpdate() {
 
     if (location.getStatus() == cereal::LiveLocationKalman::Status::VALID){
       last_position = coordinate;
+      gps_ok = location.getGpsOK();
 
       if (sm->frame % 10 == 0 && shouldRecompute()){
         calculateRoute(nav_destination);
@@ -335,6 +336,9 @@ bool MapWindow::shouldRecompute(){
   // - Destination changed
   // - Distance to current segment
   // - Wrong direcection in segment
+
+  if (!gps_ok) return false; // Don't recompute when gps drifts in tunnels
+
   QString nav_destination_json = QString::fromStdString(Params().get("NavDestination"));
   if (nav_destination_json.isEmpty()) return false;
 

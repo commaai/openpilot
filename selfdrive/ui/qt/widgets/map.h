@@ -56,6 +56,7 @@ private:
   int zoom_counter = 0;
 
   // Route
+  bool gps_ok = false;
   bool has_route = false;
   QGeoServiceProvider *geoservice_provider;
   QGeoRoutingManager *routing_manager;
