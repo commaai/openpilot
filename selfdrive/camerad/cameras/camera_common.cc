@@ -347,20 +347,26 @@ static void driver_cam_auto_exposure(CameraState *c, SubMaster &sm) {
   static const bool is_rhd = Params().getBool("IsRHD");
   struct ExpRect {int x1, x2, x_skip, y1, y2, y_skip;};
   const CameraBuf *b = &c->buf;
-#ifndef QCOM2
+
   bool hist_ceil = false, hl_weighted = false;
+  int x_offset = 0, y_offset = 0;
+  int frame_width = b->rgb_width, frame_height = b->rgb_height;
+#ifndef QCOM2
   int analog_gain = -1;
-  const int x_offset = 0, y_offset = 0;
-  const int frame_width = b->rgb_width, frame_height = b->rgb_height;
-  const ExpRect def_rect = {is_rhd ? 0 : b->rgb_width * 3 / 5, is_rhd ? b->rgb_width * 2 / 5 : b->rgb_width, 2,
-                         b->rgb_height / 3, b->rgb_height, 1};
 #else
-  bool hist_ceil = true, hl_weighted = true;
-  int analog_gain = (int)c->analog_gain;
-  const int x_offset = 630, y_offset = 156;
-  const int frame_width = 668, frame_height = frame_width / 1.33;
-  const ExpRect def_rect = {96, 1832, 2, 242, 1148, 4};
+  int analog_gain = c->analog_gain;
 #endif
+
+  ExpRect def_rect;
+  if (!Hardware::TICI()) {
+    def_rect = {is_rhd ? 0 : b->rgb_width * 3 / 5, is_rhd ? b->rgb_width * 2 / 5 : b->rgb_width, 2,
+                b->rgb_height / 3, b->rgb_height, 1};
+  } else {
+    hist_ceil = hl_weighted = true;
+    x_offset = 630, y_offset = 156;
+    frame_width = 668, frame_height = frame_width / 1.33;
+    def_rect = {96, 1832, 2, 242, 1148, 4};
+  }
 
   static ExpRect rect = def_rect;
   // use driver face crop for AE

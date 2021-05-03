@@ -418,32 +418,36 @@ static const mat4 device_transform = {{
   0.0,  0.0, 0.0, 1.0,
 }};
 
-static const float driver_view_ratio = 1.333;
-#ifndef QCOM2
-// frame from 4/3 to 16/9 display
-static const mat4 driver_view_transform = {{
-  driver_view_ratio*(1080-2*bdr_s)/(1920-2*bdr_s),  0.0, 0.0, 0.0,
-  0.0,  1.0, 0.0, 0.0,
-  0.0,  0.0, 1.0, 0.0,
-  0.0,  0.0, 0.0, 1.0,
-}};
-#else
-// from dmonitoring.cc
-static const int full_width_tici = 1928;
-static const int full_height_tici = 1208;
-static const int adapt_width_tici = 668;
-static const int crop_x_offset = 32;
-static const int crop_y_offset = -196;
-static const float yscale = full_height_tici * driver_view_ratio / adapt_width_tici;
-static const float xscale = yscale*(1080-2*bdr_s)/(2160-2*bdr_s)*full_width_tici/full_height_tici;
+static mat4 get_driver_view_transform() {
+  const float driver_view_ratio = 1.333;
+  mat4 transform;
+  if (!Hardware::TICI()) {
+    // frame from 4/3 to 16/9 display
+    transform = (mat4){{
+      driver_view_ratio*(1080-2*bdr_s)/(1920-2*bdr_s),  0.0, 0.0, 0.0,
+      0.0,  1.0, 0.0, 0.0,
+      0.0,  0.0, 1.0, 0.0,
+      0.0,  0.0, 0.0, 1.0,
+    }};
+  } else {
+    // from dmonitoring.cc
+    static const int full_width_tici = 1928;
+    static const int full_height_tici = 1208;
+    static const int adapt_width_tici = 668;
+    static const int crop_x_offset = 32;
+    static const int crop_y_offset = -196;
+    static const float yscale = full_height_tici * driver_view_ratio / adapt_width_tici;
+    static const float xscale = yscale*(1080-2*bdr_s)/(2160-2*bdr_s)*full_width_tici/full_height_tici;
 
-static const mat4 driver_view_transform = {{
-  xscale,  0.0, 0.0, xscale*crop_x_offset/full_width_tici*2,
-  0.0,  yscale, 0.0, yscale*crop_y_offset/full_height_tici*2,
-  0.0,  0.0, 1.0, 0.0,
-  0.0,  0.0, 0.0, 1.0,
-}};
-#endif
+    transform = (mat4){{
+      xscale,  0.0, 0.0, xscale*crop_x_offset/full_width_tici*2,
+      0.0,  yscale, 0.0, yscale*crop_y_offset/full_height_tici*2,
+      0.0,  0.0, 1.0, 0.0,
+      0.0,  0.0, 0.0, 1.0,
+    }};
+  }
+  return transform;
+}
 
 void ui_nvg_init(UIState *s) {
   // init drawing
@@ -543,7 +547,7 @@ void ui_nvg_init(UIState *s) {
     0.0, 0.0, 0.0, 1.0,
   }};
 
-  s->front_frame_mat = matmul(device_transform, driver_view_transform);
+  s->front_frame_mat = matmul(device_transform, get_driver_view_transform());
   s->rear_frame_mat = matmul(device_transform, frame_transform);
 
   // Apply transformation such that video pixel coordinates match video
