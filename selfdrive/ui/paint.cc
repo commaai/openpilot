@@ -242,13 +242,9 @@ static void ui_draw_driver_view(UIState *s) {
 
   // blackout
   const int blackout_x_r = valid_rect.right();
-#ifndef QCOM2
-  const int blackout_w_r = rect.right() - valid_rect.right();
-  const int blackout_x_l = rect.x;
-#else
-  const int blackout_w_r = s->viz_rect.right() - valid_rect.right();
-  const int blackout_x_l = s->viz_rect.x;
-#endif
+  const Rect &blackout_rect = Hardware::TICI() ? rect : s->viz_rect;
+  const int blackout_w_r = blackout_rect.right() - valid_rect.right();
+  const int blackout_x_l = blackout_rect.x;
   const int blackout_w_l = valid_rect.x - blackout_x_l;
   ui_fill_rect(s->vg, {blackout_x_l, rect.y, blackout_w_l, rect.h}, COLOR_BLACK_ALPHA(144));
   ui_fill_rect(s->vg, {blackout_x_r, rect.y, blackout_w_r, rect.h}, COLOR_BLACK_ALPHA(144));
@@ -451,12 +447,9 @@ static const mat4 driver_view_transform = {{
 
 void ui_nvg_init(UIState *s) {
   // init drawing
-#ifdef QCOM
-  // on QCOM, we enable MSAA
-  s->vg = nvgCreate(0);
-#else
-  s->vg = nvgCreate(NVG_ANTIALIAS | NVG_STENCIL_STROKES | NVG_DEBUG);
-#endif
+
+  // on EON, we enable MSAA
+  s->vg = Hardware::EON() ? nvgCreate(0) : s->vg = nvgCreate(NVG_ANTIALIAS | NVG_STENCIL_STROKES | NVG_DEBUG);
   assert(s->vg);
 
   // init fonts

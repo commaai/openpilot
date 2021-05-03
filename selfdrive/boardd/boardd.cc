@@ -362,18 +362,18 @@ void panda_state_thread(bool spoofing_started) {
     auto ps = msg.initEvent().initPandaState();
     ps.setUptime(pandaState.uptime);
 
-#ifdef QCOM2
-    double read_time = millis_since_boot();
-    ps.setVoltage(std::stoi(util::read_file("/sys/class/hwmon/hwmon1/in1_input")));
-    ps.setCurrent(std::stoi(util::read_file("/sys/class/hwmon/hwmon1/curr1_input")));
-    read_time = millis_since_boot() - read_time;
-    if (read_time > 50) {
-      LOGW("reading hwmon took %lfms", read_time);
+    if (Hardware::TICI()) {
+      double read_time = millis_since_boot();
+      ps.setVoltage(std::stoi(util::read_file("/sys/class/hwmon/hwmon1/in1_input")));
+      ps.setCurrent(std::stoi(util::read_file("/sys/class/hwmon/hwmon1/curr1_input")));
+      read_time = millis_since_boot() - read_time;
+      if (read_time > 50) {
+        LOGW("reading hwmon took %lfms", read_time);
+      }
+    } else {
+      ps.setVoltage(pandaState.voltage);
+      ps.setCurrent(pandaState.current);
     }
-#else
-    ps.setVoltage(pandaState.voltage);
-    ps.setCurrent(pandaState.current);
-#endif
 
     ps.setIgnitionLine(pandaState.ignition_line);
     ps.setIgnitionCan(pandaState.ignition_can);
@@ -488,11 +488,7 @@ void pigeon_thread() {
   PubMaster pm({"ubloxRaw"});
   bool ignition_last = false;
 
-#ifdef QCOM2
-  Pigeon *pigeon = Pigeon::connect("/dev/ttyHS0");
-#else
-  Pigeon *pigeon = Pigeon::connect(panda);
-#endif
+  Pigeon *pigeon = Hardware::TICI() ? Pigeon::connect("/dev/ttyHS0") : Pigeon::connect(panda);
 
   std::unordered_map<char, uint64_t> last_recv_time;
   std::unordered_map<char, int64_t> cls_max_dt = {
