@@ -19,12 +19,11 @@ from panda.tests.safety.common import package_can_msg
 
 PandaType = log.PandaState.PandaType
 
-ROUTES = {v['carFingerprint']: k for k, v in routes.items() if v['enableCamera']}
+ROUTES = {v['carFingerprint']: k for k, v in routes.items() if 'enableCamera' not in v or v['enableCamera']}
 
 # TODO: get updated routes for these cars
 ignore_can_valid = [
   "ACURA ILX 2016 ACURAWATCH PLUS",
-  "TOYOTA COROLLA 2017",
   "LEXUS RX HYBRID 2017",
   "TOYOTA AVALON 2016",
   "HONDA PILOT 2019 ELITE",

@@ -29,7 +29,7 @@ public:
   QQueue<int> event_sizes;
 
 public slots:
-  void parseResponse(QString response);
+  void parseResponse(const QString &response);
 
 protected:
   Unlogger *unlogger;

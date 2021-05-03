@@ -94,7 +94,7 @@ Spinner::Spinner(QWidget *parent) {
   )");
 
   notifier = new QSocketNotifier(fileno(stdin), QSocketNotifier::Read);
-  QObject::connect(notifier, SIGNAL(activated(int)), this, SLOT(update(int)));
+  QObject::connect(notifier, &QSocketNotifier::activated, this, &Spinner::update);
 };
 
 void Spinner::update(int n) {

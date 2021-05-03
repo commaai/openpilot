@@ -17,13 +17,13 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   main_layout->addWidget(settingsWindow);
   QObject::connect(settingsWindow, &SettingsWindow::closeSettings, this, &MainWindow::closeSettings);
   QObject::connect(&qs, &QUIState::offroadTransition, settingsWindow, &SettingsWindow::offroadTransition);
-  QObject::connect(settingsWindow, SIGNAL(reviewTrainingGuide()), this, SLOT(reviewTrainingGuide()));
+  QObject::connect(settingsWindow, &SettingsWindow::reviewTrainingGuide, this, &MainWindow::reviewTrainingGuide);
 
   onboardingWindow = new OnboardingWindow(this);
   main_layout->addWidget(onboardingWindow);
 
   main_layout->setCurrentWidget(onboardingWindow);
-  QObject::connect(onboardingWindow, SIGNAL(onboardingDone()), this, SLOT(closeSettings()));
+  QObject::connect(onboardingWindow, &OnboardingWindow::onboardingDone, this, &MainWindow::closeSettings);
   onboardingWindow->updateActiveScreen();
 
   device.setAwake(true, true);

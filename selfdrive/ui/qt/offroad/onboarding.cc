@@ -80,9 +80,7 @@ TermsPage::TermsPage(QWidget *parent) : QFrame(parent){
   accept_btn = new QPushButton("Scroll to accept");
   accept_btn->setEnabled(false);
   buttons->addWidget(accept_btn);
-  QObject::connect(accept_btn, &QPushButton::released, [=]() {
-    emit acceptedTerms();
-  });
+  QObject::connect(accept_btn, &QPushButton::released, this, &TermsPage::acceptedTerms);
 
   QObject *obj = (QObject*)text->rootObject();
   QObject::connect(obj, SIGNAL(qmlSignal()), SLOT(enableAccept()));

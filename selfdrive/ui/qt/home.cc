@@ -77,7 +77,7 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
 
   alert_notification = new QPushButton();
   alert_notification->setVisible(false);
-  QObject::connect(alert_notification, SIGNAL(released()), this, SLOT(openAlerts()));
+  QObject::connect(alert_notification, &QPushButton::released, this, &OffroadHome::openAlerts);
   header_layout->addWidget(alert_notification, 0, Qt::AlignHCenter | Qt::AlignRight);
 
   std::string brand = Params().getBool("Passive") ? "dashcam" : "openpilot";
@@ -108,7 +108,7 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
   center_layout->addWidget(statsAndSetupWidget);
 
   alerts_widget = new OffroadAlert();
-  QObject::connect(alerts_widget, SIGNAL(closeAlerts()), this, SLOT(closeAlerts()));
+  QObject::connect(alerts_widget, &OffroadAlert::closeAlerts, this, &OffroadHome::closeAlerts);
   center_layout->addWidget(alerts_widget);
   center_layout->setAlignment(alerts_widget, Qt::AlignCenter);
 
@@ -116,7 +116,7 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
 
   // set up refresh timer
   timer = new QTimer(this);
-  QObject::connect(timer, SIGNAL(timeout()), this, SLOT(refresh()));
+  QObject::connect(timer, &QTimer::timeout, this, &OffroadHome::refresh);
   refresh();
   timer->start(10 * 1000);
 

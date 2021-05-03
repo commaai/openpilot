@@ -15,5 +15,5 @@ private:
   } all_, week_;
 
 private slots:
-  void parseResponse(QString response);
+  void parseResponse(const QString &response);
 };
