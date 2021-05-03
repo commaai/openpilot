@@ -24,8 +24,8 @@ const double X_IDXS[TRAJECTORY_SIZE] = { 0.    ,   0.1875,   0.75  ,   1.6875,  
 #include "common/mat.h"
 #ifdef QCOM2
 const mat3 fcam_intrinsic_matrix = (mat3){{
-  2648.0, 0.0, ROAD_CAM_FRAME_WIDTH/2.0,
-  0.0, 2648.0, ROAD_CAM_FRAME_HEIGHT/2.0,
+  ROAD_CAM_FOCAL_LENGTH, 0.0, ROAD_CAM_FRAME_WIDTH/2.0,
+  0.0, ROAD_CAM_FOCAL_LENGTH, ROAD_CAM_FRAME_HEIGHT/2.0,
   0.0,   0.0,   1.0
 }};
 
@@ -37,8 +37,8 @@ const mat3 ecam_intrinsic_matrix = (mat3){{
 }};
 #else
 const mat3 fcam_intrinsic_matrix = (mat3){{
-  910., 0., ROAD_CAM_FRAME_WIDTH/2.0,
-  0., 910., ROAD_CAM_FRAME_HEIGHT/2.0,
+  ROAD_CAM_FOCAL_LENGTH, 0., ROAD_CAM_FRAME_WIDTH/2.0,
+  0., ROAD_CAM_FOCAL_LENGTH, ROAD_CAM_FRAME_HEIGHT/2.0,
   0.,   0.,   1.
 }};
 
