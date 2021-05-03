@@ -5,7 +5,7 @@
 #include <QVBoxLayout>
 #include <QApplication>
 
-#include "qt_window.hpp"
+#include "qt_window.h"
 
 #define USERDATA "/dev/disk/by-partlabel/userdata"
 #define NVME "/dev/nvme0n1"

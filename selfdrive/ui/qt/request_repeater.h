@@ -1,5 +1,5 @@
-#include "api.hpp"
-#include "ui.hpp"
+#include "api.h"
+#include "ui.h"
 
 class RequestRepeater : public HttpRequest {
 public:

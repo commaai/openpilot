@@ -6,10 +6,10 @@
 #include <QVBoxLayout>
 #include <QApplication>
 
-#include "wifi.hpp"
-#include "offroad/networking.hpp"
-#include "widgets/input.hpp"
-#include "qt_window.hpp"
+#include "wifi.h"
+#include "offroad/networking.h"
+#include "widgets/input.h"
+#include "qt_window.h"
 
 void WifiSetup::finish() {
   qApp->exit();

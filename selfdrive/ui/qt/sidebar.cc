@@ -1,6 +1,6 @@
 #include "common/util.h"
-#include "sidebar.hpp"
-#include "qt_window.hpp"
+#include "sidebar.h"
+#include "qt_window.h"
 
 StatusWidget::StatusWidget(QString label, QString msg, QColor c, QWidget* parent) : QFrame(parent) {
   layout.setSpacing(0);

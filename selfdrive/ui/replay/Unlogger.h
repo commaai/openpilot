@@ -4,7 +4,7 @@
 #include <QReadWriteLock>
 #include "clutil.h"
 #include "messaging.hpp"
-#include "FileReader.hpp"
+#include "FileReader.h"
 #include "FrameReader.hpp"
 #include "visionipc_server.h"
 

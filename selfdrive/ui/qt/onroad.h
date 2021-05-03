@@ -4,7 +4,7 @@
 #include <QOpenGLWidget>
 #include <QTimer>
 
-#include "ui/ui.hpp"
+#include "ui/ui.h"
 
 // container window for the NVG UI
 class OnroadWindow : public QOpenGLWidget, protected QOpenGLFunctions {

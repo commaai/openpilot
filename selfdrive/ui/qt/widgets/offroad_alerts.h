@@ -6,7 +6,7 @@
 #include <QLabel>
 
 #include "common/params.h"
-#include "widgets/scrollview.hpp"
+#include "widgets/scrollview.h"
 
 class OffroadAlert : public QFrame {
   Q_OBJECT
