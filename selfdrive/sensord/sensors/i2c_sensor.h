@@ -3,8 +3,8 @@
 #include <cstdint>
 #include "cereal/gen/cpp/log.capnp.h"
 #include "common/i2c.h"
-#include "sensors/sensor.hpp"
-#include "sensors/constants.hpp"
+#include "sensors/sensor.h"
+#include "sensors/constants.h"
 
 int16_t read_12_bit(uint8_t lsb, uint8_t msb);
 int16_t read_16_bit(uint8_t lsb, uint8_t msb);

@@ -331,7 +331,7 @@ selfdrive/sensord/libdiag.h
 selfdrive/sensord/sensors_qcom.cc
 selfdrive/sensord/sensors_qcom2.cc
 selfdrive/sensord/sensors/*.cc
-selfdrive/sensord/sensors/*.hpp
+selfdrive/sensord/sensors/*.h
 selfdrive/sensord/sensord
 
 selfdrive/thermald/thermald.py
@@ -346,18 +346,18 @@ selfdrive/test/test_onroad.py
 selfdrive/ui/.gitignore
 selfdrive/ui/SConscript
 selfdrive/ui/*.cc
-selfdrive/ui/*.hpp
+selfdrive/ui/*.h
 selfdrive/ui/ui
 selfdrive/ui/text
 selfdrive/ui/spinner
 
 selfdrive/ui/qt/*.cc
-selfdrive/ui/qt/*.hpp
+selfdrive/ui/qt/*.h
 selfdrive/ui/qt/offroad/*.cc
-selfdrive/ui/qt/offroad/*.hpp
+selfdrive/ui/qt/offroad/*.h
 selfdrive/ui/qt/offroad/*.qml
 selfdrive/ui/qt/widgets/*.cc
-selfdrive/ui/qt/widgets/*.hpp
+selfdrive/ui/qt/widgets/*.h
 selfdrive/ui/qt/spinner_aarch64
 selfdrive/ui/qt/text_aarch64
 

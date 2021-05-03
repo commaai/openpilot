@@ -7,10 +7,10 @@
 #include <QTimer>
 #include <QWidget>
 
-#include "sidebar.hpp"
-#include "onroad.hpp"
-#include "ui/ui.hpp"
-#include "widgets/offroad_alerts.hpp"
+#include "sidebar.h"
+#include "onroad.h"
+#include "ui/ui.h"
+#include "widgets/offroad_alerts.h"
 
 class OffroadHome : public QFrame {
   Q_OBJECT

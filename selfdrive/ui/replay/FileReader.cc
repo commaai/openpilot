@@ -1,4 +1,4 @@
-#include "FileReader.hpp"
+#include "FileReader.h"
 #include "FrameReader.hpp"
 
 #include <QtNetwork>

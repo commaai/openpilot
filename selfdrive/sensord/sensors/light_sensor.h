@@ -1,5 +1,5 @@
 #pragma once
-#include "file_sensor.hpp"
+#include "file_sensor.h"
 
 class LightSensor : public FileSensor {
 public:

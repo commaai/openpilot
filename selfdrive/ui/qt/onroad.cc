@@ -3,8 +3,8 @@
 #include "common/timing.h"
 #include "common/swaglog.h"
 
-#include "onroad.hpp"
-#include "paint.hpp"
+#include "onroad.h"
+#include "paint.h"
 
 OnroadWindow::~OnroadWindow() {
   makeCurrent();

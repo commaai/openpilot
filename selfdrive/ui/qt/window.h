@@ -3,10 +3,10 @@
 #include <QWidget>
 #include <QStackedLayout>
 
-#include "offroad/settings.hpp"
-#include "offroad/onboarding.hpp"
-#include "home.hpp"
-#include "../ui.hpp"
+#include "offroad/settings.h"
+#include "offroad/onboarding.h"
+#include "home.h"
+#include "../ui.h"
 
 class MainWindow : public QWidget {
   Q_OBJECT

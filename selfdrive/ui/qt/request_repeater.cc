@@ -1,4 +1,4 @@
-#include "request_repeater.hpp"
+#include "request_repeater.h"
 
 RequestRepeater::RequestRepeater(QObject *parent, const QString &requestURL, const QString &cacheKey,
                                  int period) : HttpRequest(parent, requestURL, cacheKey) {

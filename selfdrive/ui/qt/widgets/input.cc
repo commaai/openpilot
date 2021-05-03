@@ -1,7 +1,7 @@
 #include <QPushButton>
 
-#include "input.hpp"
-#include "qt_window.hpp"
+#include "input.h"
+#include "qt_window.h"
 
 InputDialog::InputDialog(const QString &prompt_text, QWidget *parent) : QDialog(parent) {
   layout = new QVBoxLayout();

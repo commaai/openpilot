@@ -6,10 +6,10 @@
 #include <QVBoxLayout>
 #include <QApplication>
 
-#include "setup.hpp"
-#include "offroad/networking.hpp"
-#include "widgets/input.hpp"
-#include "qt_window.hpp"
+#include "setup.h"
+#include "offroad/networking.h"
+#include "widgets/input.h"
+#include "qt_window.h"
 
 #define USER_AGENT "AGNOSSetup-0.1"
 

@@ -2,7 +2,7 @@
 #include "common/swaglog.h"
 #include "common/timing.h"
 
-#include "bmx055_accel.hpp"
+#include "bmx055_accel.h"
 
 
 BMX055_Accel::BMX055_Accel(I2CBus *bus) : I2CSensor(bus) {}
