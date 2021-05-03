@@ -168,6 +168,7 @@ void MapWindow::timerUpdate() {
     m_map->setLayoutProperty("carPosLayer", "icon-size", 0.5);
     m_map->setLayoutProperty("carPosLayer", "icon-ignore-placement", true);
     m_map->setLayoutProperty("carPosLayer", "icon-allow-overlap", true);
+    m_map->setLayoutProperty("carPosLayer", "symbol-sort-key", 0);
   }
 
   sm->update(0);
