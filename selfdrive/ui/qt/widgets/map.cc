@@ -1,7 +1,7 @@
 #include <cmath>
 #include <eigen3/Eigen/Dense>
 
-#include "map.hpp"
+#include "map.h"
 #include "common/util.h"
 #include "common/params.h"
 #include "common/transformations/coordinates.hpp"
