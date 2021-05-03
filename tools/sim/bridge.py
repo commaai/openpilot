@@ -14,6 +14,7 @@ from common.realtime import Ratekeeper, DT_DMON
 from lib.can import can_function
 from selfdrive.car.honda.values import CruiseButtons
 from selfdrive.test.helpers import set_params_enabled
+from common.vision_defs import ROAD_CAM_FRAME_SIZE
 
 parser = argparse.ArgumentParser(description='Bridge between CARLA and openpilot.')
 parser.add_argument('--joystick', action='store_true')
@@ -24,7 +25,7 @@ parser.add_argument('--spawn_point', dest='num_selected_spawn_point',
 
 args = parser.parse_args()
 
-W, H = 1164, 874
+W, H = ROAD_CAM_FRAME_SIZE
 REPEAT_COUNTER = 5
 PRINT_DECIMATION = 100
 STEER_RATIO = 15.

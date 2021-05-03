@@ -2,6 +2,7 @@ import numpy as np
 
 import common.transformations.orientation as orient
 from selfdrive.hardware import TICI
+from common.vision_defs import EON_ROAD_CAM_FRAME_SIZE, EON_DRIVER_CAM_FRAME_SIZE, TICI_FRAME_SIZE
 
 ## -- hardcoded hardware params --
 eon_f_focal_length = 910.0
@@ -10,10 +11,10 @@ leon_d_focal_length = 650.0
 tici_f_focal_length = 2648.0
 tici_e_focal_length = tici_d_focal_length = 567.0 # probably wrong? magnification is not consistent across frame
 
-eon_f_frame_size = (1164, 874)
-eon_d_frame_size = (1152, 864)
+eon_f_frame_size = EON_ROAD_CAM_FRAME_SIZE
+eon_d_frame_size = EON_DRIVER_CAM_FRAME_SIZE
 leon_d_frame_size = (816, 612)
-tici_f_frame_size = tici_e_frame_size = tici_d_frame_size = (1928, 1208)
+tici_f_frame_size = tici_e_frame_size = tici_d_frame_size = TICI_FRAME_SIZE
 
 # aka 'K' aka camera_frame_from_view_frame
 eon_fcam_intrinsics = np.array([

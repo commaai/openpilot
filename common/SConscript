@@ -2,3 +2,4 @@ Import('envCython', 'common')
 
 envCython.Program('clock.so', 'clock.pyx')
 envCython.Program('params_pyx.so', 'params_pyx.pyx', LIBS=envCython['LIBS'] + [common, 'zmq'])
+envCython.Program('vision_defs_pyx.so', 'vision_defs_pyx.pyx')

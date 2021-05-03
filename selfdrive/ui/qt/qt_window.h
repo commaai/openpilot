@@ -2,7 +2,7 @@
 
 #include <QWidget>
 #include <QApplication>
-
+#include "common/vision_defs.h"
 #ifdef QCOM2
 #include <qpa/qplatformnativeinterface.h>
 #include <QPlatformSurfaceEvent>
@@ -10,15 +10,9 @@
 #endif
 
 
-#ifdef QCOM2
-  const int vwp_w = 2160, vwp_h = 1080;
-#else
-  const int vwp_w = 1920, vwp_h = 1080;
-#endif
-
 inline void setMainWindow(QWidget *w) {
   const float scale = getenv("SCALE") != NULL ? std::stof(getenv("SCALE")) : 1.0;
-  w->setFixedSize(vwp_w*scale, vwp_h*scale);
+  w->setFixedSize(SCREEN_WIDTH*scale, SCREEN_HEIGHT*scale);
   w->show();
 
 #ifdef QCOM2

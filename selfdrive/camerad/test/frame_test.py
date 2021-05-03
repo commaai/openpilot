@@ -2,10 +2,11 @@
 import numpy as np
 import cereal.messaging as messaging
 from PIL import ImageFont, ImageDraw, Image
+from common.vision_defs import ROAD_CAM_FRAME_SIZE
 
 font = ImageFont.truetype("arial", size=72)
 def get_frame(idx):
-  img = np.zeros((874, 1164, 3), np.uint8)
+  img = np.zeros((ROAD_CAM_FRAME_SIZE[1], ROAD_CAM_FRAME_SIZE[0], 3), np.uint8)
   img[100:400, 100:100+(idx % 10) * 100] = 255
 
   # big number

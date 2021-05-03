@@ -11,13 +11,13 @@ import numpy as np
 import cv2  # pylint: disable=import-error
 import sys
 import cereal.messaging as messaging
+from common.vision_defs import ROAD_CAM_FRAME_SIZE
 
 _BB_OFFSET = 0, 0
 _BB_TO_FULL_FRAME = np.asarray([[1., 0., _BB_OFFSET[0]], [0., 1., _BB_OFFSET[1]],
                                 [0., 0., 1.]])
 _FULL_FRAME_TO_BB = np.linalg.inv(_BB_TO_FULL_FRAME)
-_FULL_FRAME_SIZE = 1164, 874
-
+_FULL_FRAME_SIZE = ROAD_CAM_FRAME_SIZE
 
 def pygame_modules_have_loaded():
   return pygame.display.get_init() and pygame.font.get_init()

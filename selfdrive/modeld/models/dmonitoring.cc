@@ -3,7 +3,7 @@
 #include "common/mat.h"
 #include "common/timing.h"
 #include "common/params.h"
-
+#include "common/vision_defs.h"
 #include <libyuv.h>
 
 #define MODEL_WIDTH 320
@@ -61,12 +61,9 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
     crop_rect.x += width - crop_rect.w;
   }
 #else
-  const int full_width_tici = 1928;
-  const int full_height_tici = 1208;
-  const int adapt_width_tici = 668;
-  const int cropped_height = adapt_width_tici / 1.33;
-  Rect crop_rect = {full_width_tici / 2 - adapt_width_tici / 2,
-                    full_height_tici / 2 - cropped_height / 2 - 196,
+  const int cropped_height = adapt_width_tici / driver_view_ratio;
+  Rect crop_rect = {TICI_FRAME_WIDTH / 2 - adapt_width_tici / 2,
+                    TICI_FRAME_HEIGHT / 2 - cropped_height / 2 - 196,
                     cropped_height / 2,
                     cropped_height};
   if (!s->is_rhd) {

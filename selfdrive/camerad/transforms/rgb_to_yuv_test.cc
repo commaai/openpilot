@@ -13,7 +13,6 @@
 #include <unistd.h>
 #include <cassert>
 #include <cstdint>
-
 #ifdef ANDROID
 
 #define MAXE 0
@@ -32,6 +31,7 @@
 
 #include "clutil.h"
 #include "rgb_to_yuv.h"
+#include "common/vision_defs.h"
 
 
 static inline double millis_since_boot() {
@@ -112,8 +112,8 @@ int main(int argc, char** argv) {
     std::cout << "clCreateCommandQueueWithProperties error: " << err << std::endl;
   }
 
-  int width = 1164;
-  int height = 874;
+  int width = ROAD_CAM_FRAME_WIDTH;
+  int height = ROAD_CAM_FRAME_HEIGHT;
 
   int opt = 0;
   while ((opt = getopt(argc, argv, "f")) != -1)
@@ -122,8 +122,8 @@ int main(int argc, char** argv) {
         {
         case 'f':
           std::cout << "Using front camera dimensions" << std::endl;
-          int width = 1152;
-          int height = 846;
+          int width = EON_DRIVER_CAM_FRAME_WIDTH;
+          int height = EON_DRIVER_CAM_FRAME_HEIGHT;
         }
   }
 

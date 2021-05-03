@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 import numpy as np
-
+from common.vision_defs import EON_DRIVER_CAM_FRAME_SIZE
 # copied from common.transformations/camera.py
 eon_dcam_focal_length = 860.0  # pixels
 webcam_focal_length = 908.0  # pixels
 
 eon_dcam_intrinsics = np.array([
-  [eon_dcam_focal_length,   0,   1152/2.],
-  [  0,  eon_dcam_focal_length,  864/2.],
+  [eon_dcam_focal_length,   0,   EON_DRIVER_CAM_FRAME_SIZE[0]/2.],
+  [  0,  eon_dcam_focal_length,  EON_DRIVER_CAM_FRAME_SIZE[1]/2.],
   [  0,    0,     1]])
 
 webcam_intrinsics = np.array([
@@ -29,7 +29,7 @@ if __name__ == "__main__":
   while (True):
     ret, img = cap.read()
     if ret:
-      img = cv2.warpPerspective(img, trans_webcam_to_eon_front, (1152, 864), borderMode=cv2.BORDER_CONSTANT, borderValue=0)
-      img = img[:, -864//2:, :]
+      img = cv2.warpPerspective(img, trans_webcam_to_eon_front, EON_DRIVER_CAM_FRAME_SIZE, borderMode=cv2.BORDER_CONSTANT, borderValue=0)
+      img = img[:, -EON_DRIVER_CAM_FRAME_SIZE[1]//2:, :]
       cv2.imshow('preview', img)
       cv2.waitKey(10)

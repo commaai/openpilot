@@ -10,7 +10,7 @@
 #include <condition_variable>
 
 #include "channel.h"
-
+#include "common/vision_defs.h"
 // independent of QT, needs ffmpeg
 extern "C" {
 #include <libavcodec/avcodec.h>
@@ -32,8 +32,8 @@ public:
   void cacherThread();
 
   //TODO: get this from the actual frame
-  int width = 1164;
-  int height = 874;
+  int width = EON_ROAD_CAM_FRAME_WIDTH;
+  int height = EON_ROAD_CAM_FRAME_HEIGHT;
 
 private:
   AVFormatContext *pFormatCtx = NULL;

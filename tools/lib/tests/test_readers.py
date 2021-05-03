@@ -7,6 +7,7 @@ from collections import defaultdict
 import numpy as np
 from tools.lib.framereader import FrameReader
 from tools.lib.logreader import LogReader
+from common.vision_defs import ROAD_CAM_FRAME_SIZE
 
 
 class TestReaders(unittest.TestCase):
@@ -35,8 +36,8 @@ class TestReaders(unittest.TestCase):
   def test_framereader(self):
     def _check_data(f):
       self.assertEqual(f.frame_count, 1200)
-      self.assertEqual(f.w, 1164)
-      self.assertEqual(f.h, 874)
+      self.assertEqual(f.w, ROAD_CAM_FRAME_SIZE[0])
+      self.assertEqual(f.h, ROAD_CAM_FRAME_SIZE[1])
 
       frame_first_30 = f.get(0, 30)
       self.assertEqual(len(frame_first_30), 30)

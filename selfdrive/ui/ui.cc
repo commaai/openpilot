@@ -336,8 +336,8 @@ QUIState::QUIState(QObject *parent) : QObject(parent) {
 #endif
   });
 
-  ui_state.fb_w = vwp_w;
-  ui_state.fb_h = vwp_h;
+  ui_state.fb_w = SCREEN_WIDTH;
+  ui_state.fb_h = SCREEN_HEIGHT;
   ui_state.scene.started = false;
   ui_state.status = STATUS_OFFROAD;
   ui_state.last_frame = nullptr;
