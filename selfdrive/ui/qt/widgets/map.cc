@@ -17,6 +17,10 @@ const bool DRAW_MODEL_PATH = false;
 const qreal REROUTE_DISTANCE = 25;
 const float METER_2_MILE = 0.000621371;
 const float METER_2_FOOT = 3.28084;
+const float MAX_ZOOM = 17;
+const float MIN_ZOOM = 14;
+const float MAX_PITCH = 50;
+const float MIN_PITCH = 0;
 
 static void clearLayout(QLayout* layout) {
   while (QLayoutItem* item = layout->takeAt(0)) {
@@ -159,7 +163,9 @@ void MapWindow::timerUpdate() {
     carPos["type"] = "symbol";
     carPos["source"] = "carPosSource";
     m_map->addLayer(carPos);
+    m_map->setLayoutProperty("carPosLayer", "icon-pitch-alignment", "map");
     m_map->setLayoutProperty("carPosLayer", "icon-image", "label-arrow");
+    m_map->setLayoutProperty("carPosLayer", "icon-size", 0.5);
     m_map->setLayoutProperty("carPosLayer", "icon-ignore-placement", true);
   }
 
@@ -170,7 +176,7 @@ void MapWindow::timerUpdate() {
     auto orientation = location.getOrientationNED();
 
     float velocity = location.getVelocityCalibrated().getValue()[0];
-    static FirstOrderFilter velocity_filter(velocity, 15, 0.1);
+    static FirstOrderFilter velocity_filter(velocity, 10, 0.1);
 
     auto coordinate = QMapbox::Coordinate(pos.getValue()[0], pos.getValue()[1]);
 
@@ -200,6 +206,7 @@ void MapWindow::timerUpdate() {
           if (next_maneuver.isValid()){
             float next_maneuver_distance = next_maneuver.position().distanceTo(to_QGeoCoordinate(last_position));
             emit distanceChanged(next_maneuver_distance);
+            m_map->setPitch(MAX_PITCH); // TODO: smooth pitching based on maneuver distance
 
             if (next_maneuver_distance < REROUTE_DISTANCE && next_maneuver_distance > last_maneuver_distance){
               segment = next_segment;
@@ -217,8 +224,7 @@ void MapWindow::timerUpdate() {
       }
 
       if (zoom_counter == 0){
-        // Scale zoom between 16 and 19 based on speed
-        m_map->setZoom(19 - std::min(3.0f, velocity_filter.update(velocity) / 10));
+        m_map->setZoom(util::map_val<float>(velocity_filter.update(velocity), 0, 30, MAX_ZOOM, MIN_ZOOM));
       } else {
         zoom_counter--;
       }
@@ -256,7 +262,9 @@ void MapWindow::initializeGL() {
   m_map.reset(new QMapboxGL(nullptr, m_settings, size(), 1));
 
   // TODO: Get from last gps position param
-  m_map->setCoordinateZoom(last_position, 18);
+  m_map->setCoordinateZoom(last_position, MAX_ZOOM);
+  m_map->setMargins({0, 350, 0, 0});
+  m_map->setPitch(MIN_PITCH);
   m_map->setStyleUrl("mapbox://styles/pd0wm/cknuhcgvr0vs817o1akcx6pek"); // Larger fonts
 
   connect(m_map.data(), SIGNAL(needsRendering()), this, SLOT(update()));
@@ -264,7 +272,7 @@ void MapWindow::initializeGL() {
 }
 
 void MapWindow::paintGL() {
-  m_map->resize(size());
+  m_map->resize(size() / 2);
   m_map->setFramebufferObject(defaultFramebufferObject(), size());
   m_map->render();
 }

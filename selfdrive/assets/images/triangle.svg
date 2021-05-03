@@ -9,9 +9,9 @@
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    version="1.1"
    id="triangle-11"
-   width="37.669861"
-   height="44.330353"
-   viewBox="0 0 37.669861 44.330354"
+   width="75.758675"
+   height="89.153732"
+   viewBox="0 0 75.758675 89.153734"
    sodipodi:docname="triangle.svg"
    inkscape:version="0.92.5 (2060ec1f9f, 2020-04-08)">
   <metadata
@@ -36,21 +36,21 @@
      guidetolerance="10"
      inkscape:pageopacity="0"
      inkscape:pageshadow="2"
-     inkscape:window-width="2558"
+     inkscape:window-width="1278"
      inkscape:window-height="1418"
      id="namedview4"
      showgrid="false"
-     inkscape:zoom="21.454545"
-     inkscape:cx="20.795012"
-     inkscape:cy="16.945056"
-     inkscape:window-x="1200"
+     inkscape:zoom="3.7926636"
+     inkscape:cx="58.39757"
+     inkscape:cy="42.569591"
+     inkscape:window-x="2480"
      inkscape:window-y="0"
      inkscape:window-maximized="0"
      inkscape:current-layer="triangle-11" />
   <path
      id="rect3338"
-     d="m 18.899367,0.00151578 c -0.831637,-0.035377 -1.611991,0.550652 -2.040423,1.53212302 L 0.31722249,39.535972 c -0.9209601,2.108452 0.2938631,4.783067 1.96846551,4.794373 1.6746026,0.01137 13.99606,-12.1226 16.861282,-12.1226 2.86522,0 14.890414,12.122745 16.222162,12.1226 1.331747,-1.44e-4 1.615814,-0.67177 1.999688,-1.606734 0.383869,-0.934965 0.429256,-2.133414 -0.03123,-3.187639 L 29.066737,20.534806 20.795876,1.5336388 C 20.393497,0.61265268 19.679308,0.03575338 18.899367,0.00151578 Z"
+     d="m 38.008927,0.00304862 c -1.672524,-0.07115 -3.24191,1.10742798 -4.103539,3.08128498 L 0.63797357,79.511649 c -1.85216397,4.240355 0.59099403,9.61933 3.95882353,9.642068 3.3678291,0.02287 28.1477799,-24.380023 33.9100889,-24.380023 5.762307,0 29.946434,24.380314 32.624742,24.380023 2.678305,-2.9e-4 3.249598,-1.351011 4.021616,-3.231338 0.772007,-1.880328 0.863286,-4.290554 -0.06281,-6.41073 L 58.456744,41.297993 41.823037,3.0843336 C 41.013805,1.2321186 39.577483,0.07190362 38.008927,0.00304862 Z"
      inkscape:connector-curvature="0"
-     style="fill:#cccccc;stroke-width:4.85774708"
+     style="fill:#cccccc;stroke-width:9.76952076"
      sodipodi:nodetypes="ccczzzscccc" />
 </svg>
