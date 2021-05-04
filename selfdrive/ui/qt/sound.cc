@@ -18,7 +18,7 @@ void Sound::play(AudibleAlert alert) {
 void Sound::stop() {
   for (auto &kv : sounds) {
     // Only stop repeating sounds
-    if (kv.second.loopsRemaining() > 0) {
+    if (kv.second.loopsRemaining() == QSoundEffect::Infinite) {
       kv.second.stop();
     }
   }
