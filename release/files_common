@@ -183,6 +183,7 @@ selfdrive/debug/*.py
 selfdrive/common/SConscript
 selfdrive/common/version.h
 
+selfdrive/common/vision_defs.h
 selfdrive/common/framebuffer.h
 selfdrive/common/framebuffer.cc
 selfdrive/common/glutil.cc
