@@ -10,6 +10,10 @@ from cereal import log, car
 from selfdrive.car.fingerprints import all_known_cars
 from selfdrive.car.car_helpers import interfaces
 from selfdrive.car.honda.values import HONDA_BOSCH
+from selfdrive.car.honda.values import CAR as HONDA
+from selfdrive.car.toyota.values import CAR as TOYOTA
+from selfdrive.car.chrysler.values import CAR as CHRYSLER
+from selfdrive.car.hyundai.values import CAR as HYUNDAI
 from selfdrive.test.test_routes import routes, non_tested_cars
 from selfdrive.test.openpilotci import get_url
 from tools.lib.logreader import LogReader
@@ -23,27 +27,27 @@ ROUTES = {v['carFingerprint']: k for k, v in routes.items() if 'enableCamera' no
 
 # TODO: get updated routes for these cars
 ignore_can_valid = [
-  "ACURA ILX 2016 ACURAWATCH PLUS",
-  "LEXUS RX HYBRID 2017",
-  "TOYOTA AVALON 2016",
-  "HONDA PILOT 2019 ELITE",
-  "HYUNDAI SANTA FE LIMITED 2019",
+  HONDA.ACURA_ILX,
+  TOYOTA.LEXUS_RXH,
+  TOYOTA.AVALON,
+  HONDA.PILOT_2019,
+  HYUNDAI.SANTA_FE,
 
   # TODO: get new routes for these cars, current routes are from giraffe with different buses
-  "HONDA CR-V 2019 HYBRID",
-  "HONDA INSIGHT 2019 TOURING",
-  "HONDA ACCORD 2018 HYBRID TOURING",
+  HONDA.CRV_HYBRID,
+  HONDA.INSIGHT,
+  HONDA.ACCORDH,
 ]
 
 ignore_carstate_check = [
   # TODO: chrysler gas state in panda also checks wheel speed, refactor so it's only gas
-  "CHRYSLER PACIFICA HYBRID 2017",
+  CHRYSLER.PACIFICA_2017_HYBRID,
 
   # TODO: get new routes for these cars, current routes are from giraffe with different buses
-  "HONDA CR-V 2019 HYBRID",
-  "HONDA ACCORD 2018 SPORT 2T",
-  "HONDA INSIGHT 2019 TOURING",
-  "HONDA ACCORD 2018 HYBRID TOURING",
+  HONDA.CRV_HYBRID,
+  HONDA.ACCORD,
+  HONDA.INSIGHT,
+  HONDA.ACCORDH,
 ]
 
 @parameterized_class(('car_model'), [(car,) for car in all_known_cars()])

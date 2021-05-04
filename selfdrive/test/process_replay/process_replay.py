@@ -359,13 +359,21 @@ def python_replay_process(cfg, lr):
   os.environ['NO_RADAR_SLEEP'] = "1"
   os.environ['SKIP_FW_QUERY'] = ""
   os.environ['FINGERPRINT'] = ""
+
+  # TODO: remove after getting new route for civic & accord
+  migration = {
+    "HONDA CIVIC 2016 TOURING": "HONDA CIVIC 2016",
+    "HONDA ACCORD 2018 SPORT 2T": "HONDA ACCORD 2018 2T",
+  }
+
   for msg in lr:
     if msg.which() == 'carParams':
-      if len(msg.carParams.carFw) and (msg.carParams.carFingerprint in FW_VERSIONS):
+      car_fingerprint = migration.get(msg.carParams.carFingerprint, msg.carParams.carFingerprint)
+      if len(msg.carParams.carFw) and (car_fingerprint in FW_VERSIONS):
         params.put("CarParamsCache", msg.carParams.as_builder().to_bytes())
       else:
         os.environ['SKIP_FW_QUERY'] = "1"
-        os.environ['FINGERPRINT'] = msg.carParams.carFingerprint
+        os.environ['FINGERPRINT'] = car_fingerprint
 
   assert(type(managed_processes[cfg.proc_name]) is PythonProcess)
   managed_processes[cfg.proc_name].prepare()

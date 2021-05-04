@@ -57,7 +57,10 @@ class TermsPage : public QFrame {
   Q_OBJECT
 
 public:
-  explicit TermsPage(QWidget *parent = 0);
+  explicit TermsPage(QWidget *parent = 0) : QFrame(parent) {};
+
+protected:
+  void showEvent(QShowEvent *event) override;
 
 private:
   QPushButton *accept_btn;
