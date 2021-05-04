@@ -5,7 +5,7 @@
 
 #include <capnp/dynamic.h>
 
-#include "messaging.hpp"
+#include "messaging.h"
 #include "common/util.h"
 
 #define FRAME_WIDTH 1164

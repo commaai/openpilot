@@ -13,7 +13,7 @@
 #include "runners/run.h"
 
 #include <memory>
-#include "messaging.hpp"
+#include "messaging.h"
 
 constexpr int DESIRE_LEN = 8;
 constexpr int TRAFFIC_CONVENTION_LEN = 2;

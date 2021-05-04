@@ -13,7 +13,7 @@
 #include <functional>
 #include <unordered_map>
 
-#include "messaging.hpp"
+#include "messaging.h"
 
 #include "common/timing.h"
 #include "common/util.h"
