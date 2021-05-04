@@ -10,7 +10,7 @@
 #endif
 
 #include "selfdrive/common/clutil.h"
-#include "transforms/transform.h"
+#include "selfdrive/modeld/transforms/transform.h"
 
 typedef struct {
   int disable_model;

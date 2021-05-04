@@ -1,6 +1,6 @@
 #include "selfdrive/common/util.h"
 #include "sidebar.h"
-#include "qt_window.h"
+#include "selfdrive/ui/qt/qt_window.h"
 
 StatusWidget::StatusWidget(bool has_substatus, QWidget *parent) : QFrame(parent) {
   layout = new QVBoxLayout();

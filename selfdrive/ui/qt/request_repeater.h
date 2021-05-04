@@ -1,5 +1,5 @@
-#include "api.h"
-#include "ui.h"
+#include "selfdrive/ui/qt/api.h"
+#include "selfdrive/ui/ui.h"
 
 class RequestRepeater : public HttpRequest {
 public:

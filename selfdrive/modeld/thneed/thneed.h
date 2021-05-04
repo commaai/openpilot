@@ -6,7 +6,7 @@
 
 #include <stdlib.h>
 #include <stdint.h>
-#include "include/msm_kgsl.h"
+#include "selfdrive/modeld/thneed/include/msm_kgsl.h"
 #include <vector>
 #include <memory>
 #include <string>

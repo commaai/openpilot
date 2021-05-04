@@ -11,7 +11,7 @@
 #include "selfdrive/hardware/hw.h"
 #include "selfdrive/ui/qt/qt_window.h"
 #include "ui.h"
-#include "paint.h"
+#include "selfdrive/ui/paint.h"
 
 #define BACKLIGHT_DT 0.25
 #define BACKLIGHT_TS 2.00

@@ -14,10 +14,10 @@
 #include <cutils/properties.h>
 
 #include <pthread.h>
-#include "msmb_isp.h"
-#include "msmb_ispif.h"
-#include "msmb_camera.h"
-#include "msm_cam_sensor.h"
+#include "selfdrive/camerad/include/msmb_isp.h"
+#include "selfdrive/camerad/include/msmb_ispif.h"
+#include "selfdrive/camerad/include/msmb_camera.h"
+#include "selfdrive/camerad/include/msm_cam_sensor.h"
 
 #include "selfdrive/common/util.h"
 #include "selfdrive/common/timing.h"
@@ -25,7 +25,7 @@
 #include "selfdrive/common/params.h"
 #include "selfdrive/common/clutil.h"
 
-#include "sensor_i2c.h"
+#include "selfdrive/camerad/cameras/sensor_i2c.h"
 #include "camera_qcom.h"
 
 // leeco actuator (DW9800W H-Bridge Driver IC)

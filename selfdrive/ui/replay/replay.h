@@ -8,10 +8,10 @@
 
 #include <capnp/dynamic.h>
 
-#include "qt/api.h"
-#include "Unlogger.h"
-#include "FileReader.h"
-#include "FrameReader.h"
+#include "selfdrive/ui/qt/api.h"
+#include "selfdrive/ui/replay/Unlogger.h"
+#include "selfdrive/ui/replay/FileReader.h"
+#include "tools/clib/FrameReader.h"
 #include "cereal/visionipc/visionipc_server.h"
 
 #include "selfdrive/common/util.h"

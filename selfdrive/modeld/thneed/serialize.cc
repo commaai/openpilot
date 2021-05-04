@@ -1,7 +1,7 @@
 #include <set>
 #include <assert.h>
 #include "thneed.h"
-#include "json11.hpp"
+#include <json11.hpp>
 using namespace json11;
 
 extern map<cl_program, string> g_program_source;

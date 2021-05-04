@@ -38,10 +38,15 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
 
 // ***** onroad widgets *****
 
+<<<<<<< HEAD
 OnroadAlerts::OnroadAlerts(QWidget *parent) : QFrame(parent) {
   layout = new QVBoxLayout(this);
   layout->setSpacing(40);
   layout->setMargin(20);
+=======
+#include "onroad.h"
+#include "selfdrive/ui/paint.h"
+>>>>>>> continue
 
   title = new QLabel();
   title->setWordWrap(true);

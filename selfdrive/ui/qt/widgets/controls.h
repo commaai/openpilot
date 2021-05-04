@@ -7,7 +7,7 @@
 #include <QVBoxLayout>
 
 #include "selfdrive/common/params.h"
-#include "toggle.h"
+#include "selfdrive/ui/qt/widgets/toggle.h"
 
 QFrame *horizontal_line(QWidget *parent = nullptr);
 

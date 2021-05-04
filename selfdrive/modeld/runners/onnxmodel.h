@@ -2,7 +2,7 @@
 #define ONNXMODEL_H
 
 #include <stdlib.h>
-#include "runmodel.h"
+#include "selfdrive/modeld/runners/runmodel.h"
 
 class ONNXModel : public RunModel {
 public:

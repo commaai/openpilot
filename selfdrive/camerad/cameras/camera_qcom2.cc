@@ -15,12 +15,12 @@
 #include "selfdrive/common/swaglog.h"
 #include "camera_qcom2.h"
 
-#include "media/cam_defs.h"
-#include "media/cam_isp.h"
-#include "media/cam_isp_ife.h"
-#include "media/cam_sensor_cmn_header.h"
-#include "media/cam_sensor.h"
-#include "media/cam_sync.h"
+#include "selfdrive/camerad/include/media/cam_defs.h"
+#include "selfdrive/camerad/include/media/cam_isp.h"
+#include "selfdrive/camerad/include/media/cam_isp_ife.h"
+#include "selfdrive/camerad/include/media/cam_sensor_cmn_header.h"
+#include "selfdrive/camerad/include/media/cam_sensor.h"
+#include "selfdrive/camerad/include/media/cam_sync.h"
 
 #include "sensor2_i2c.h"
 

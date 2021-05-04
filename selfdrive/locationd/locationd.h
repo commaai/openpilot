@@ -15,7 +15,7 @@
 #include "common/transformations/orientation.hpp"
 #include "selfdrive/sensord/sensors/constants.h"
 
-#include "models/live_kf.h"
+#include "selfdrive/locationd/models/live_kf.h"
 
 #define VISION_DECIMATION 2
 #define SENSOR_DECIMATION 10

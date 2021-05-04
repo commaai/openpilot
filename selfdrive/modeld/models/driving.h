@@ -9,8 +9,8 @@
 #include "selfdrive/common/util.h"
 #include "selfdrive/common/modeldata.h"
 
-#include "commonmodel.h"
-#include "runners/run.h"
+#include "selfdrive/modeld/models/commonmodel.h"
+#include "selfdrive/modeld/runners/run.h"
 
 #include <memory>
 #include "cereal/messaging/messaging.h"

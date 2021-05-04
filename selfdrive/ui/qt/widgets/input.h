@@ -7,7 +7,7 @@
 #include <QLineEdit>
 #include <QVBoxLayout>
 
-#include "keyboard.h"
+#include "selfdrive/ui/qt/widgets/keyboard.h"
 
 class InputDialog : public QDialog {
   Q_OBJECT

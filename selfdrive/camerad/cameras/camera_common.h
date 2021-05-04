@@ -10,7 +10,7 @@
 #include "selfdrive/common/queue.h"
 #include "selfdrive/common/visionimg.h"
 #include "cereal/messaging/messaging.h"
-#include "transforms/rgb_to_yuv.h"
+#include "selfdrive/camerad/transforms/rgb_to_yuv.h"
 
 #include "cereal/visionipc/visionbuf.h"
 #include "cereal/visionipc/visionipc.h"

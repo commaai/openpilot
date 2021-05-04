@@ -6,10 +6,10 @@
 #include <QStackedWidget>
 #include <QPushButton>
 
-#include "wifiManager.h"
-#include "widgets/input.h"
-#include "widgets/ssh_keys.h"
-#include "widgets/toggle.h"
+#include "selfdrive/ui/qt/offroad/wifiManager.h"
+#include "selfdrive/ui/qt/widgets/input.h"
+#include "selfdrive/ui/qt/widgets/ssh_keys.h"
+#include "selfdrive/ui/qt/widgets/toggle.h"
 
 class WifiUI : public QWidget {
   Q_OBJECT

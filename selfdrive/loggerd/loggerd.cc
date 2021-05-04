@@ -29,13 +29,13 @@
 #include "cereal/visionipc/visionipc_client.h"
 #include "cereal/services.h"
 
-#include "logger.h"
-#include "encoder.h"
+#include "selfdrive/loggerd/logger.h"
+#include "selfdrive/loggerd/encoder.h"
 #if defined(QCOM) || defined(QCOM2)
-#include "omx_encoder.h"
+#include "selfdrive/loggerd/omx_encoder.h"
 #define Encoder OmxEncoder
 #else
-#include "raw_logger.h"
+#include "selfdrive/loggerd/raw_logger.h"
 #define Encoder RawLogger
 #endif
 

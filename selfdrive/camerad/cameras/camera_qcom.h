@@ -7,10 +7,10 @@
 #include <atomic>
 #include "cereal/messaging/messaging.h"
 
-#include "msmb_isp.h"
-#include "msmb_ispif.h"
-#include "msmb_camera.h"
-#include "msm_cam_sensor.h"
+#include "selfdrive/camerad/include/msmb_isp.h"
+#include "selfdrive/camerad/include/msmb_ispif.h"
+#include "selfdrive/camerad/include/msmb_camera.h"
+#include "selfdrive/camerad/include/msm_cam_sensor.h"
 
 #include "cereal/visionipc/visionbuf.h"
 

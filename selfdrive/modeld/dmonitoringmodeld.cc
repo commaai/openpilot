@@ -6,7 +6,7 @@
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/util.h"
 
-#include "models/dmonitoring.h"
+#include "selfdrive/modeld/models/dmonitoring.h"
 
 #ifndef PATH_MAX
 #include <linux/limits.h>

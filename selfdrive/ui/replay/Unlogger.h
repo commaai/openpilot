@@ -4,8 +4,8 @@
 #include <QReadWriteLock>
 #include "selfdrive/common/clutil.h"
 #include "cereal/messaging/messaging.h"
-#include "FileReader.h"
-#include "FrameReader.h"
+#include "selfdrive/ui/replay/FileReader.h"
+#include "tools/clib/FrameReader.h"
 #include "cereal/visionipc/visionipc_server.h"
 
 class Unlogger : public QObject {

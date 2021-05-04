@@ -20,7 +20,7 @@
 #include "selfdrive/common/params.h"
 #include "selfdrive/common/version.h"
 #include "cereal/messaging/messaging.h"
-#include "logger.h"
+#include "selfdrive/loggerd/logger.h"
 
 
 // ***** logging helpers *****

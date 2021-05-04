@@ -1,8 +1,8 @@
 #include <QApplication>
 #include <QSslConfiguration>
 
-#include "qt/window.h"
-#include "qt/qt_window.h"
+#include "selfdrive/ui/qt/window.h"
+#include "selfdrive/ui/qt/qt_window.h"
 
 int main(int argc, char *argv[]) {
   QSurfaceFormat fmt;

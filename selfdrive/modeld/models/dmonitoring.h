@@ -1,8 +1,8 @@
 #pragma once
 #include <vector>
 #include "selfdrive/common/util.h"
-#include "commonmodel.h"
-#include "runners/run.h"
+#include "selfdrive/modeld/models/commonmodel.h"
+#include "selfdrive/modeld/runners/run.h"
 #include "cereal/messaging/messaging.h"
 
 #define OUTPUT_SIZE 38

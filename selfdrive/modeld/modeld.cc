@@ -11,7 +11,7 @@
 #include "cereal/messaging/messaging.h"
 #include "cereal/visionipc/visionipc_client.h"
 
-#include "models/driving.h"
+#include "selfdrive/modeld/models/driving.h"
 
 ExitHandler do_exit;
 // globals

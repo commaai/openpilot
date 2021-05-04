@@ -1,5 +1,5 @@
 #include "FileReader.h"
-#include "FrameReader.h"
+#include "tools/clib/FrameReader.h"
 
 #include <QtNetwork>
 
