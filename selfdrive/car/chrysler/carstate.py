@@ -60,8 +60,8 @@ class CarState(CarStateBase):
 
     ret.genericToggle = bool(cp.vl["STEERING_LEVERS"]['HIGH_BEAM_FLASH'])
     
-    ret.leftBlindspot = 7 > cp.vl["BLIND_SPOT_WARNINGS"]['BLIND_SPOT_LEFT'] > 0
-    ret.rightBlindspot = 7 > cp.vl["BLIND_SPOT_WARNINGS"]['BLIND_SPOT_RIGHT'] > 0
+    ret.leftBlindspot = cp.vl["BLIND_SPOT_WARNINGS"]['BLIND_SPOT_LEFT'] == 1
+    ret.rightBlindspot = cp.vl["BLIND_SPOT_WARNINGS"]['BLIND_SPOT_RIGHT'] == 1
 
     self.lkas_counter = cp_cam.vl["LKAS_COMMAND"]['COUNTER']
     self.lkas_car_model = cp_cam.vl["LKAS_HUD"]['CAR_MODEL']
