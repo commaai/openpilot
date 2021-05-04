@@ -18,7 +18,7 @@ void Sound::play(AudibleAlert alert) {
 void Sound::stop() {
   for (auto &kv : sounds) {
     // Only stop repeating sounds
-    if (sound_map[kv.first].second) {
+    if (kv.second.loopsRemaining() > 0) {
       kv.second.stop();
     }
   }
