@@ -2,19 +2,18 @@
 # cython: language_level = 3
 from libcpp cimport bool
 from libcpp.string cimport string
-from common.params_pxd cimport Params as c_Params, ParamKeyType
+from common.params_pxd cimport Params as c_Params, ParamKeyType as c_ParamKeyType
 
 import os
 import threading
-from enum import Enum, unique
 from common.basedir import BASEDIR
 
 
-cdef class TxType:
-  PERSISTENT = ParamKeyType.PERSISTENT
-  CLEAR_ON_MANAGER_START = ParamKeyType.CLEAR_ON_MANAGER_START
-  CLEAR_ON_PANDA_DISCONNECT = ParamKeyType.CLEAR_ON_PANDA_DISCONNECT
-  ALL = ParamKeyType.ALL
+cdef class ParamKeyType:
+  PERSISTENT = c_ParamKeyType.PERSISTENT
+  CLEAR_ON_MANAGER_START = c_ParamKeyType.CLEAR_ON_MANAGER_START
+  CLEAR_ON_PANDA_DISCONNECT = c_ParamKeyType.CLEAR_ON_PANDA_DISCONNECT
+  ALL = c_ParamKeyType.ALL
 
 def ensure_bytes(v):
   if isinstance(v, str):
@@ -39,16 +38,16 @@ cdef class Params:
     del self.p
 
   def clear_all(self, tx_type=None):
-    if (tx_type == None):
-      tx_type = TxType.ALL
+    if tx_type is None:
+      tx_type = ParamKeyType.ALL
 
     self.p.clearAll(tx_type)
 
   def manager_start(self):
-    self.clearAll(TxType.CLEAR_ON_MANAGER_START)
+    self.clear_all(ParamKeyType.CLEAR_ON_MANAGER_START)
 
   def panda_disconnect(self):
-    self.clearAll(TxType.CLEAR_ON_PANDA_DISCONNECT)
+    self.clear_all(ParamKeyType.CLEAR_ON_PANDA_DISCONNECT)
 
   def check_key(self, key):
     key = ensure_bytes(key)
@@ -59,7 +58,7 @@ cdef class Params:
     return key
 
   def get(self, key, block=False, encoding=None):
-    cdef string k = self.checkKey(key)
+    cdef string k = self.check_key(key)
     cdef bool b = block
 
     cdef string val
@@ -80,7 +79,7 @@ cdef class Params:
       return val
 
   def get_bool(self, key):
-    cdef string k = self.checkKey(key)
+    cdef string k = self.check_key(key)
     return self.p.getBool(k)
 
   def put(self, key, dat):
@@ -90,16 +89,16 @@ cdef class Params:
     Use the put_nonblocking helper function in time sensitive code, but
     in general try to avoid writing params as much as possible.
     """
-    cdef string k = self.checkKey(key)
+    cdef string k = self.check_key(key)
     dat = ensure_bytes(dat)
     self.p.put(k, dat)
 
   def put_bool(self, key, val):
-    cdef string k = self.checkKey(key)
+    cdef string k = self.check_key(key)
     self.p.putBool(k, val)
 
   def delete(self, key):
-    cdef string k = self.checkKey(key)
+    cdef string k = self.check_key(key)
     self.p.remove(k)
 
 
