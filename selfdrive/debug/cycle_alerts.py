@@ -5,15 +5,19 @@
 
 import time
 
+from cereal import car
 import cereal.messaging as messaging
 from selfdrive.car.honda.interface import CarInterface
 from selfdrive.controls.lib.events import ET, EVENTS, Events
 from selfdrive.controls.lib.alertmanager import AlertManager
 
+EventName = car.CarEvent.EventName
 
 def cycle_alerts(duration=200, is_metric=False):
   alerts = list(EVENTS.keys())
   print(alerts)
+
+  alerts = [EventName.preDriverDistracted, EventName.promptDriverDistracted, EventName.driverDistracted]
 
   CP = CarInterface.get_params("HONDA CIVIC 2016 TOURING")
   sm = messaging.SubMaster(['deviceState', 'pandaState', 'roadCameraState', 'modelV2', 'liveCalibration',
