@@ -7,7 +7,7 @@
 #include "selfdrive/common/timing.h"
 #include "selfdrive/common/util.h"
 #include "selfdrive/common/visionipc.h"
-#include "selfdrive/loggerd/raw_logger.h".h "
+#include "selfdrive/loggerd/raw_logger.h"
 
 int main() {
   int err;
