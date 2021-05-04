@@ -14,7 +14,7 @@ public:
   float volume = 0;
 
 private:
-  std::map<AudibleAlert, std::pair<QString, int>> sound_map {
+  std::map<AudibleAlert, std::pair<QString, bool>> sound_map {
     // AudibleAlert, (file path, inf loop)
     {AudibleAlert::CHIME_DISENGAGE, {"../assets/sounds/disengaged.wav", false}},
     {AudibleAlert::CHIME_ENGAGE, {"../assets/sounds/engaged.wav", false}},
