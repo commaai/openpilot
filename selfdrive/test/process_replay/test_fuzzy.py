@@ -40,8 +40,7 @@ def get_strategy_for_events(event_types):
     'vEgo': st.floats(),
   })
 
-  a = st.one_of(*[get_event_union_strategy(r, n) for n in event_types])
-  return st.lists(a)
+  return st.lists(st.one_of(*[get_event_union_strategy(r, n) for n in event_types]))
 
 
 def get_strategy_for_process(process):
