@@ -38,8 +38,9 @@ class ParamsLearner:
       yaw_rate = msg.angularVelocityCalibrated.value[2]
       yaw_rate_std = msg.angularVelocityCalibrated.std[2]
       yaw_rate_valid = msg.angularVelocityCalibrated.valid
-      yaw_rate_valid = yaw_rate_valid and (not math.isnan(yaw_rate))
-      yaw_rate_valid = yaw_rate_valid and (not math.isnan(yaw_rate_std))
+      yaw_rate_valid = yaw_rate_valid and math.isfinite(yaw_rate)
+      yaw_rate_valid = yaw_rate_valid and math.isfinite(yaw_rate_std)
+      yaw_rate_valid = yaw_rate_valid and yaw_rate_std < 1e6
 
       if self.active:
         if msg.inputsOK and msg.posenetOK and yaw_rate_valid:
@@ -92,16 +93,18 @@ def main(sm=None, pm=None):
       cloudlog.info("Parameter learner found parameters for wrong car.")
       params = None
 
-  try:
-    angle_offset_sane = abs(params.get('angleOffsetAverageDeg')) < 10.0
-    steer_ratio_sane = min_sr <= params['steerRatio'] <= max_sr
-    params_sane = angle_offset_sane and steer_ratio_sane
-    if params is not None and not params_sane:
-      cloudlog.info(f"Invalid starting values found {params}")
+  # Check if starting values are sane
+  if params is not None:
+    try:
+      angle_offset_sane = abs(params.get('angleOffsetAverageDeg')) < 10.0
+      steer_ratio_sane = min_sr <= params['steerRatio'] <= max_sr
+      params_sane = angle_offset_sane and steer_ratio_sane
+      if not params_sane:
+        cloudlog.info(f"Invalid starting values found {params}")
+        params = None
+    except Exception as e:
+      cloudlog.info(f"Error reading params {params}: {str(e)}")
       params = None
-  except Exception as e:
-    cloudlog.info(f"Error reading params {params}: {str(e)}")
-    params = None
 
   # TODO: cache the params with the capnp struct
   if params is None:
@@ -129,10 +132,10 @@ def main(sm=None, pm=None):
 
     if sm.updated['liveLocationKalman']:
       x = learner.kf.x
-      if any(map(math.isnan, x)):
+      if not all(map(math.isfinite, x)):
         cloudlog.error("NaN in liveParameters estimate. Resetting to default values")
         learner = ParamsLearner(CP, CP.steerRatio, 1.0, 0.0)
-        continue
+        x = learner.kf.x
 
       msg = messaging.new_message('liveParameters')
       msg.logMonoTime = sm.logMonoTime['carState']

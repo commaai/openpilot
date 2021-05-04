@@ -19,7 +19,7 @@
 #include "common/swaglog.h"
 #include "common/params.h"
 #include "common/version.h"
-#include "messaging.hpp"
+#include "messaging.h"
 #include "logger.h"
 
 
@@ -102,7 +102,7 @@ kj::Array<capnp::word> logger_build_init_data() {
   init.setDongleId(params.get("DongleId"));
   {
     std::map<std::string, std::string> params_map;
-    params.read_db_all(&params_map);
+    params.readAll(&params_map);
     auto lparams = init.initParams().initEntries(params_map.size());
     int i = 0;
     for (auto& kv : params_map) {

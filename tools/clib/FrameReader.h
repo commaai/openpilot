@@ -9,7 +9,7 @@
 #include <list>
 #include <condition_variable>
 
-#include "channel.hpp"
+#include "channel.h"
 
 // independent of QT, needs ffmpeg
 extern "C" {

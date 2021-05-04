@@ -3,7 +3,7 @@
 #include <thread>
 #include <sys/resource.h>
 
-#include "messaging.hpp"
+#include "messaging.h"
 #include "common/i2c.h"
 #include "common/timing.h"
 #include "common/util.h"

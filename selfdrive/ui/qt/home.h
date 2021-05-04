@@ -18,6 +18,9 @@ class OffroadHome : public QFrame {
 public:
   explicit OffroadHome(QWidget* parent = 0);
 
+protected:
+  void showEvent(QShowEvent *event) override;
+
 private:
   QTimer* timer;
 

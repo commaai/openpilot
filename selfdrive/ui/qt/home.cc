@@ -61,7 +61,6 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
   }
 }
 
-
 // OffroadHome: the offroad home page
 
 OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
@@ -99,7 +98,6 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
   statsAndSetup->addWidget(drive);
 
   SetupWidget* setup = new SetupWidget;
-  //setup->setFixedSize(700, 700);
   statsAndSetup->addWidget(setup);
 
   QWidget* statsAndSetupWidget = new QWidget();
@@ -117,7 +115,6 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
   // set up refresh timer
   timer = new QTimer(this);
   QObject::connect(timer, &QTimer::timeout, this, &OffroadHome::refresh);
-  refresh();
   timer->start(10 * 1000);
 
   setLayout(main_layout);
@@ -129,6 +126,10 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
      color: white;
     }
   )");
+}
+
+void OffroadHome::showEvent(QShowEvent *event) {
+  refresh();
 }
 
 void OffroadHome::openAlerts() {

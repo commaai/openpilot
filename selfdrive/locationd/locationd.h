@@ -6,7 +6,7 @@
 
 #include <eigen3/Eigen/Dense>
 
-#include "messaging.hpp"
+#include "messaging.h"
 #include "common/params.h"
 #include "common/util.h"
 #include "common/swaglog.h"

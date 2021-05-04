@@ -3,7 +3,7 @@
 #include "common/util.h"
 #include "commonmodel.h"
 #include "runners/run.h"
-#include "messaging.hpp"
+#include "messaging.h"
 
 #define OUTPUT_SIZE 38
 

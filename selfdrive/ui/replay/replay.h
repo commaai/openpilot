@@ -11,7 +11,7 @@
 #include "qt/api.h"
 #include "Unlogger.h"
 #include "FileReader.h"
-#include "FrameReader.hpp"
+#include "FrameReader.h"
 #include "visionipc_server.h"
 
 #include "common/util.h"
