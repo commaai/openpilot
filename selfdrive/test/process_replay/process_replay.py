@@ -365,7 +365,11 @@ def python_replay_process(cfg, lr):
         params.put("CarParamsCache", msg.carParams.as_builder().to_bytes())
       else:
         os.environ['SKIP_FW_QUERY'] = "1"
-        os.environ['FINGERPRINT'] = msg.carParams.carFingerprint
+        # TODO: remove after getting new route for civic
+        if msg.carParams.carFingerprint == "HONDA CIVIC 2016 TOURING":
+          os.environ['FINGERPRINT'] = "HONDA CIVIC 2016"
+        else:
+          os.environ['FINGERPRINT'] = msg.carParams.carFingerprint
 
   assert(type(managed_processes[cfg.proc_name]) is PythonProcess)
   managed_processes[cfg.proc_name].prepare()
