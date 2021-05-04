@@ -1,12 +1,13 @@
+#include "bmx055_magn.h"
+
+#include <unistd.h>
+
+#include <algorithm>
 #include <cassert>
 #include <cstdio>
-#include <algorithm>
-#include <unistd.h>
 
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/util.h"
-
-#include "bmx055_magn.h"
 
 static int16_t compensate_x(trim_data_t trim_data, int16_t mag_data_x, uint16_t data_rhall) {
   uint16_t process_comp_x0 = data_rhall;

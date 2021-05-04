@@ -1,10 +1,10 @@
+#include "bmx055_temp.h"
+
 #include <cassert>
+
+#include "selfdrive/sensord/sensors/bmx055_accel.h"
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/timing.h"
-
-#include "bmx055_temp.h"
-#include "bmx055_accel.h"
-
 
 BMX055_Temp::BMX055_Temp(I2CBus *bus) : I2CSensor(bus) {}
 

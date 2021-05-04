@@ -20,13 +20,13 @@
 
 #include "cereal/gen/cpp/car.capnp.h"
 #include "cereal/messaging/messaging.h"
-#include "locationd/ublox_msg.h"
 #include "selfdrive/boardd/panda.h"
 #include "selfdrive/boardd/pigeon.h"
 #include "selfdrive/common/params.h"
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/timing.h"
 #include "selfdrive/common/util.h"
+#include "selfdrive/locationd/ublox_msg.h"
 
 #define MAX_IR_POWER 0.5f
 #define MIN_IR_POWER 0.0f

@@ -1,5 +1,6 @@
-#include <iostream>
 #include "i2c_sensor.h"
+
+#include <iostream>
 
 int16_t read_12_bit(uint8_t lsb, uint8_t msb){
   uint16_t combined = (uint16_t(msb) << 8) | uint16_t(lsb & 0xF0);

@@ -175,7 +175,6 @@ env = Environment(
 
   CPPPATH=cpppath + [
     "#",
-    "#selfdrive",
     "#phonelibs/catch2/include",
     "#phonelibs/bzip2",
     "#phonelibs/libyuv/include",
@@ -191,14 +190,6 @@ env = Environment(
     "#phonelibs/nanovg",
     "#phonelibs/qrcode",
     "#phonelibs",
-    "#selfdrive/boardd",
-    "#selfdrive/common",
-    "#selfdrive/camerad",
-    "#selfdrive/camerad/include",
-    "#selfdrive/loggerd/include",
-    "#selfdrive/modeld",
-    "#selfdrive/sensord",
-    "#selfdrive/ui",
     "#cereal",
     "#cereal/messaging",
     "#cereal/visionipc",
