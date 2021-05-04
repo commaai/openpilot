@@ -87,7 +87,9 @@ void OnroadAlerts::update(const UIState &s) {
         // car is started, but controls is lagging or died
         updateAlert("TAKE CONTROL IMMEDIATELY", "Controls Unresponsive", 0,
                     "controlsUnresponsive", cereal::ControlsState::AlertSize::FULL, AudibleAlert::CHIME_WARNING_REPEAT);
-        //s.status = STATUS_ALERT;
+
+        // TODO: clean this up once Qt handles the border
+        QUIState::ui_state.status = STATUS_ALERT;
       }
     }
   }
@@ -113,23 +115,18 @@ void OnroadAlerts::updateAlert(const QString &text1, const QString &text2, float
   msg->setText(text2);
   msg->setVisible(!msg->text().isEmpty());
 
-  // TODO: this is really slow
-  /*
-  if (s.scene.alert_size == cereal::ControlsState::AlertSize::SMALL) {
-  } else if (s.scene.alert_size == cereal::ControlsState::AlertSize::MID) {
-    //msg->setStyleSheet("font-size: 70px; font-weight: 400;");
-    //title->setStyleSheet("font-size: 80px; font-weight: 500;");
-  } else if (s.scene.alert_size == cereal::ControlsState::AlertSize::FULL) {
-    //msg->setStyleSheet("font-size: 90px; font-weight: 400;");
-    //title->setStyleSheet("font-size: 120px; font-weight: 500;");
+  if (size == cereal::ControlsState::AlertSize::SMALL) {
+    setFixedHeight(241);
+    title->setStyleSheet("font-size: 80px; font-weight: 500;");
+  } else if (size == cereal::ControlsState::AlertSize::MID) {
+    setFixedHeight(390);
+    msg->setStyleSheet("font-size: 70px; font-weight: 400;");
+    title->setStyleSheet("font-size: 80px; font-weight: 500;");
+  } else if (size == cereal::ControlsState::AlertSize::FULL) {
+    setFixedHeight(vwp_h);
+    msg->setStyleSheet("font-size: 90px; font-weight: 400;");
+    title->setStyleSheet("font-size: 120px; font-weight: 500;");
   }
-  */
-
-  static std::map<cereal::ControlsState::AlertSize, const int> alert_size_map = {
-      {cereal::ControlsState::AlertSize::SMALL, 241},
-      {cereal::ControlsState::AlertSize::MID, 390},
-      {cereal::ControlsState::AlertSize::FULL, vwp_h}};
-  setFixedHeight(alert_size_map[size]);
 
   setVisible(size != cereal::ControlsState::AlertSize::NONE);
 }
