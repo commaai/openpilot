@@ -99,8 +99,6 @@ class CarState(CarStateBase):
       ("COUNTER", "EPS_STATUS", -1),
       ("TRACTION_OFF", "TRACTION_BUTTON", 0),
       ("SEATBELT_DRIVER_UNLATCHED", "SEATBELT_STATUS", 0),
-      ("BLIND_SPOT_RIGHT", "BLIND_SPOT_WARNINGS", 0),
-      ("BLIND_SPOT_LEFT", "BLIND_SPOT_WARNINGS", 0),
     ]
 
     checks = [
@@ -119,6 +117,12 @@ class CarState(CarStateBase):
       ("DOORS", 1),
       ("TRACTION_BUTTON", 1),
     ]
+    if CP.enableBsm:
+      signals += [
+      ("BLIND_SPOT_RIGHT", "BLIND_SPOT_WARNINGS", 0),
+      ("BLIND_SPOT_LEFT", "BLIND_SPOT_WARNINGS", 0),
+    ]
+    checks += [("BLIND_SPOT_WARNINGS", 2)]
 
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
 
