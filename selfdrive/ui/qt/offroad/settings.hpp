@@ -41,7 +41,7 @@ class SettingsWindow : public QFrame {
   Q_OBJECT
 
 public:
-  explicit SettingsWindow(QWidget *parent = 0);
+  explicit SettingsWindow(QWidget *parent = 0) : QFrame(parent) {};
 
 protected:
   void hideEvent(QHideEvent *event);
