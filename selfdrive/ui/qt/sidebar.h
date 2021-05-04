@@ -14,14 +14,14 @@ class SignalWidget : public QFrame {
 public:
   SignalWidget(QWidget* parent = 0);
   void update(const QString &text, int strength);
-  QLabel label;
+  QLabel *label;
   int _strength = 0;
 
 protected:
   void paintEvent(QPaintEvent*) override;
 
 private:
-  QVBoxLayout layout;
+  QVBoxLayout *layout;
 
   const float _dotspace = 37; // spacing between dots
   const float _top = 10;
@@ -32,17 +32,17 @@ class StatusWidget : public QFrame {
   Q_OBJECT
 
 public:
-  StatusWidget(QWidget* parent = 0, bool has_substatus = false);
+  StatusWidget(bool has_substatus, QWidget* parent = 0);
   void update(const QString &label, const QColor &c, const QString &msg = "");
 
 protected:
   void paintEvent(QPaintEvent*) override;
 
 private:
-  QColor color = COLOR_WARNING;
-  QLabel status;
+  QLabel *status;
   QLabel *substatus = nullptr;
-  QVBoxLayout layout;
+  QColor color = COLOR_WARNING;
+  QVBoxLayout *layout;
 };
 
 class Sidebar : public QFrame {

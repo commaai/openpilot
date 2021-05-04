@@ -2,31 +2,34 @@
 #include "sidebar.h"
 #include "qt_window.h"
 
-StatusWidget::StatusWidget(QWidget *parent, bool has_substatus) : QFrame(parent) {
-  layout.setSpacing(0);
+StatusWidget::StatusWidget(bool has_substatus, QWidget *parent) : QFrame(parent) {
+  layout = new QVBoxLayout();
+  layout->setSpacing(0);
+
+  status = new QLabel(this);
 
   if (has_substatus) {
-    layout.setContentsMargins(50, 24, 16, 24);
-    status.setAlignment(Qt::AlignLeft | Qt::AlignHCenter);
-    status.setStyleSheet(R"(font-size: 65px; font-weight: 500;)");
+    layout->setContentsMargins(50, 24, 16, 24);
+    status->setAlignment(Qt::AlignLeft | Qt::AlignHCenter);
+    status->setStyleSheet(R"(font-size: 65px; font-weight: 500;)");
 
     substatus = new QLabel(this);
     substatus->setAlignment(Qt::AlignLeft | Qt::AlignHCenter);
     substatus->setStyleSheet(R"(font-size: 30px; font-weight: 400;)");
 
-    layout.addWidget(&status, 0, Qt::AlignLeft);
-    layout.addWidget(substatus, 0, Qt::AlignLeft);
+    layout->addWidget(status, 0, Qt::AlignLeft);
+    layout->addWidget(substatus, 0, Qt::AlignLeft);
   } else {
-    layout.setContentsMargins(40, 24, 16, 24);
+    layout->setContentsMargins(40, 24, 16, 24);
 
-    status.setAlignment(Qt::AlignCenter);
-    status.setStyleSheet(R"(font-size: 38px; font-weight: 500;)");
-    layout.addWidget(&status, 0, Qt::AlignCenter);
+    status->setAlignment(Qt::AlignCenter);
+    status->setStyleSheet(R"(font-size: 38px; font-weight: 500;)");
+    layout->addWidget(status, 0, Qt::AlignCenter);
   }
 
   setMinimumHeight(124);
   setStyleSheet("background-color: transparent;");
-  setLayout(&layout);
+  setLayout(layout);
 }
 
 void StatusWidget::paintEvent(QPaintEvent *e) {
@@ -43,7 +46,7 @@ void StatusWidget::paintEvent(QPaintEvent *e) {
 }
 
 void StatusWidget::update(const QString &label, const QColor &c, const QString &msg) {
-  status.setText(label);
+  status->setText(label);
   if (substatus != nullptr) {
     substatus->setText(msg);
   }
@@ -55,15 +58,17 @@ void StatusWidget::update(const QString &label, const QColor &c, const QString &
 }
 
 SignalWidget::SignalWidget(QWidget *parent) : QFrame(parent), _strength(0) {
-  layout.setMargin(0);
-  layout.setSpacing(0);
-  layout.insertSpacing(0, 45);
+  layout = new QVBoxLayout();
+  layout->setMargin(0);
+  layout->setSpacing(0);
+  layout->insertSpacing(0, 45);
 
-  layout.addWidget(&label, 0, Qt::AlignLeft);
-  label.setStyleSheet(R"(font-size: 35px; font-weight: 400;)");
+  label = new QLabel(this);
+  label->setStyleSheet(R"(font-size: 35px; font-weight: 400;)");
+  layout->addWidget(label, 0, Qt::AlignLeft);
 
   setFixedWidth(177);
-  setLayout(&layout);
+  setLayout(layout);
 }
 
 void SignalWidget::paintEvent(QPaintEvent *e) {
@@ -81,8 +86,11 @@ void SignalWidget::paintEvent(QPaintEvent *e) {
 }
 
 void SignalWidget::update(const QString &text, int strength) {
-  label.setText(text);
-  _strength = strength;
+  label->setText(text);
+  if (_strength != strength) {
+    _strength = strength;
+    repaint();
+  }
 }
 
 Sidebar::Sidebar(QWidget *parent) : QFrame(parent) {
@@ -102,13 +110,13 @@ Sidebar::Sidebar(QWidget *parent) : QFrame(parent) {
   signal = new SignalWidget(this);
   layout->addWidget(signal, 0, Qt::AlignTop | Qt::AlignHCenter);
 
-  temp = new StatusWidget(this, true);
+  temp = new StatusWidget(true, this);
   layout->addWidget(temp, 0, Qt::AlignTop);
 
-  panda = new StatusWidget(this);
+  panda = new StatusWidget(false, this);
   layout->addWidget(panda, 0, Qt::AlignTop);
 
-  connect = new StatusWidget(this);
+  connect = new StatusWidget(false, this);
   layout->addWidget(connect, 0, Qt::AlignTop);
 
   QImage image = QImageReader("../assets/images/button_home.png").read();
@@ -128,8 +136,6 @@ Sidebar::Sidebar(QWidget *parent) : QFrame(parent) {
     }
   )");
   setLayout(layout);
-
-  update(QUIState::ui_state);
 }
 
 void Sidebar::update(const UIState &s) {
