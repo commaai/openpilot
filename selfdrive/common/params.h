@@ -22,18 +22,19 @@ public:
   Params(bool persistent_param = false);
   Params(const std::string &path);
 
-  bool check_key(const std::string &key);
+  bool checkKey(const std::string &key);
+
   // Delete a value
   int remove(const char *key);
   inline int remove(const std::string &key) {
     return remove (key.c_str());
   }
-  void clear_all(ParamKeyType type);
+  void clearAll(ParamKeyType type);
 
   // read all values
-  int read_db_all(std::map<std::string, std::string> *params);
+  int readAll(std::map<std::string, std::string> *params);
 
-  // read a value
+  // helpers for reading values
   std::string get(const char *key, bool block = false);
 
   inline std::string get(const std::string &key, bool block = false) {
@@ -56,7 +57,7 @@ public:
     return get(key) == "1";
   }
 
-  // write a value
+  // helpers for writing values
   int put(const char* key, const char* val, size_t value_size);
 
   inline int put(const std::string &key, const std::string &val) {

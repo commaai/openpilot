@@ -42,24 +42,24 @@ cdef class Params:
     if (tx_type == None):
       tx_type = TxType.ALL
 
-    self.p.clear_all(tx_type)
+    self.p.clearAll(tx_type)
 
   def manager_start(self):
-    self.clear_all(TxType.CLEAR_ON_MANAGER_START)
+    self.clearAll(TxType.CLEAR_ON_MANAGER_START)
 
   def panda_disconnect(self):
-    self.clear_all(TxType.CLEAR_ON_PANDA_DISCONNECT)
+    self.clearAll(TxType.CLEAR_ON_PANDA_DISCONNECT)
 
   def check_key(self, key):
     key = ensure_bytes(key)
 
-    if not self.p.check_key(key):
+    if not self.p.checkKey(key):
       raise UnknownKeyName(key)
 
     return key
 
   def get(self, key, block=False, encoding=None):
-    cdef string k = self.check_key(key)
+    cdef string k = self.checkKey(key)
     cdef bool b = block
 
     cdef string val
@@ -80,7 +80,7 @@ cdef class Params:
       return val
 
   def get_bool(self, key):
-    cdef string k = self.check_key(key)
+    cdef string k = self.checkKey(key)
     return self.p.getBool(k)
 
   def put(self, key, dat):
@@ -90,16 +90,16 @@ cdef class Params:
     Use the put_nonblocking helper function in time sensitive code, but
     in general try to avoid writing params as much as possible.
     """
-    cdef string k = self.check_key(key)
+    cdef string k = self.checkKey(key)
     dat = ensure_bytes(dat)
     self.p.put(k, dat)
 
   def put_bool(self, key, val):
-    cdef string k = self.check_key(key)
+    cdef string k = self.checkKey(key)
     self.p.putBool(k, val)
 
   def delete(self, key):
-    cdef string k = self.check_key(key)
+    cdef string k = self.checkKey(key)
     self.p.remove(k)
 
 

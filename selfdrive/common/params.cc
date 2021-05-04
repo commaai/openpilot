@@ -225,7 +225,7 @@ Params::Params(const std::string &path) : params_path(path) {
   }
 }
 
-bool Params::check_key(const std::string &key) {
+bool Params::checkKey(const std::string &key) {
   return keys.find(key) != keys.end();
 }
 
@@ -310,7 +310,7 @@ std::string Params::get(const char *key, bool block) {
   }
 }
 
-int Params::read_db_all(std::map<std::string, std::string> *params) {
+int Params::readAll(std::map<std::string, std::string> *params) {
   FileLock file_lock(params_path + "/.lock", LOCK_SH);
   std::lock_guard<FileLock> lk(file_lock);
 
@@ -329,7 +329,7 @@ int Params::read_db_all(std::map<std::string, std::string> *params) {
   return 0;
 }
 
-void Params::clear_all(ParamKeyType key_type) {
+void Params::clearAll(ParamKeyType key_type) {
   for (auto &[key, type] : keys) {
     if (type & key_type) {
       remove(key);
