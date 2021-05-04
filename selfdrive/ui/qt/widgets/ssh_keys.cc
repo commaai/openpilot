@@ -34,8 +34,8 @@ SshControl::SshControl() : AbstractControl("SSH Keys", "Warning: This grants SSH
         getUserKeys(username);
       }
     } else {
-      Params().remove("GithubUsername");
-      Params().remove("GithubSshKeys");
+      params.remove("GithubUsername");
+      params.remove("GithubSshKeys");
       refresh();
     }
   });
@@ -51,9 +51,9 @@ SshControl::SshControl() : AbstractControl("SSH Keys", "Warning: This grants SSH
 }
 
 void SshControl::refresh() {
-  QString param = QString::fromStdString(Params().get("GithubSshKeys"));
+  QString param = QString::fromStdString(params.get("GithubSshKeys"));
   if (param.length()) {
-    username_label.setText(QString::fromStdString(Params().get("GithubUsername")));
+    username_label.setText(QString::fromStdString(params.get("GithubUsername")));
     btn.setText("REMOVE");
   } else {
     username_label.setText("");
@@ -82,8 +82,8 @@ void SshControl::parseResponse(){
     networkTimer->stop();
     QString response = reply->readAll();
     if (reply->error() == QNetworkReply::NoError && response.length()) {
-      Params().put("GithubUsername", username.toStdString());
-      Params().put("GithubSshKeys", response.toStdString());
+      params.put("GithubUsername", username.toStdString());
+      params.put("GithubSshKeys", response.toStdString());
     } else if(reply->error() == QNetworkReply::NoError){
       err = "Username '" + username + "' has no keys on GitHub";
     } else {
