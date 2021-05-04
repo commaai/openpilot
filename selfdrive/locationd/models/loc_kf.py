@@ -293,7 +293,7 @@ class LocKalman():
     h_acc_sym = imu_rot * (accel_scale[0] * (gravity + acceleration))
     h_phone_rot_sym = sp.Matrix([vroll, vpitch, vyaw])
 
-    speed = sp.sqrt(vx**2 + vy**2 + vz**2)
+    speed = sp.sqrt(vx**2 + vy**2 + vz**2 + .01)
     h_speed_sym = sp.Matrix([speed * odo_scale])
 
     # orb stuff
