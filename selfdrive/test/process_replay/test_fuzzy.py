@@ -11,7 +11,11 @@ from selfdrive.test.process_replay.process_replay import (CONFIGS,
                                                           replay_process)
 
 
-def get_strategies(event_types):
+def get_process_config(process):
+  return [cfg for cfg in CONFIGS if cfg.proc_name == process][0]
+
+
+def get_strategy_for_events(event_types):
   # TODO: generate automatically based on capnp definitions
 
   def get_std_event(r, name):
@@ -42,7 +46,7 @@ def get_strategies(event_types):
 
 def get_strategy_for_process(process):
   cfg = [cfg for cfg in CONFIGS if cfg.proc_name == process][0]
-  return get_strategies(cfg.pub_sub.keys())
+  return get_strategy_for_events(cfg.pub_sub.keys())
 
 
 def convert_to_lr(data):
@@ -52,17 +56,19 @@ def convert_to_lr(data):
   return r
 
 
+def assume_all_services_present(cfg, lr):
+  tps = Counter([m.which() for m in lr])
+  for p in cfg.pub_sub:
+    assume(tps[p] > 0)
+
+
 @given(get_strategy_for_process('paramsd'))
 @settings(deadline=1000)
 @seed(260777467434450485154004373463592546383)
 def test_paramsd(dat):
+  cfg = get_process_config('paramsd')
   lr = convert_to_lr(dat)
-
-  # Make sure every message is present once
-  tps = Counter([m.which() for m in lr])
-  cfg = [cfg for cfg in CONFIGS if cfg.proc_name == 'paramsd'][0]
-  for p in cfg.pub_sub:
-    assume(tps[p] > 0)
+  assume_all_services_present(cfg, lr)
   results = replay_process(cfg, lr, TOYOTA.COROLLA_TSS2)
 
   for r in results:
