@@ -8,10 +8,10 @@
 #define ERR_NO_VALUE -33
 
 enum ParamKeyType {
-  PERSISTENT = 0x2,
+  PERSISTENT = 0x02,
   CLEAR_ON_MANAGER_START = 0x04,
   CLEAR_ON_PANDA_DISCONNECT = 0x08,
-  ALL = 0x2 | 0x4 | 0x08
+  ALL = 0x02 | 0x04 | 0x08
 };
 
 class Params {
