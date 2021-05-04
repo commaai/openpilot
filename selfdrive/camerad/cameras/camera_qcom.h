@@ -5,7 +5,7 @@
 #include <pthread.h>
 #include <memory>
 #include <atomic>
-#include "messaging.hpp"
+#include "messaging.h"
 
 #include "msmb_isp.h"
 #include "msmb_ispif.h"

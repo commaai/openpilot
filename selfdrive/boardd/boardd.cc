@@ -25,7 +25,7 @@
 #include "common/params.h"
 #include "common/swaglog.h"
 #include "common/timing.h"
-#include "messaging.hpp"
+#include "messaging.h"
 #include "locationd/ublox_msg.h"
 
 #include "panda.h"

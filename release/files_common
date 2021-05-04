@@ -500,7 +500,7 @@ cereal/messaging/impl_msgq.hpp
 cereal/messaging/impl_zmq.cc
 cereal/messaging/impl_zmq.hpp
 cereal/messaging/messaging.cc
-cereal/messaging/messaging.hpp
+cereal/messaging/messaging.h
 cereal/messaging/messaging.pxd
 cereal/messaging/messaging_pyx.pyx
 cereal/messaging/msgq.cc

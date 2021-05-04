@@ -5,7 +5,7 @@
 #include <memory>
 #include <unordered_map>
 
-#include "messaging.hpp"
+#include "messaging.h"
 #include "generated/ubx.h"
 #include "generated/gps.h"
 
