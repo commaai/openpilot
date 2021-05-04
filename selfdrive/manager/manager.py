@@ -9,7 +9,7 @@ import traceback
 import cereal.messaging as messaging
 import selfdrive.crash as crash
 from common.basedir import BASEDIR
-from common.params import Params
+from common.params import Params, ParamKeyType
 from common.text_window import TextWindow
 from selfdrive.boardd.set_time import set_time
 from selfdrive.hardware import HARDWARE, PC, TICI
@@ -28,7 +28,7 @@ def manager_init():
   set_time(cloudlog)
 
   params = Params()
-  params.manager_start()
+  params.clear_all(ParamKeyType.CLEAR_ON_MANAGER_START)
 
   default_params = [
     ("CompletedTrainingVersion", "0"),

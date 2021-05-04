@@ -12,6 +12,7 @@ cdef extern from "selfdrive/common/params.h":
     PERSISTENT
     CLEAR_ON_MANAGER_START
     CLEAR_ON_PANDA_DISCONNECT
+    CLEAR_ON_IGNITION
     ALL
 
   cdef cppclass Params:

@@ -11,7 +11,8 @@ enum ParamKeyType {
   PERSISTENT = 0x02,
   CLEAR_ON_MANAGER_START = 0x04,
   CLEAR_ON_PANDA_DISCONNECT = 0x08,
-  ALL = 0x02 | 0x04 | 0x08
+  CLEAR_ON_IGNITION = 0x10,
+  ALL = 0x02 | 0x04 | 0x08 | 0x10
 };
 
 class Params {
