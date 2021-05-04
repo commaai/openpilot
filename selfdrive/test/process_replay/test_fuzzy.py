@@ -70,9 +70,7 @@ def test_paramsd(dat):
 
   for r in results:
     lp = r.liveParameters.to_dict()
-    if not all(map(math.isfinite, lp.values())):
-      print(lp)
-      assert False
+    assert all(map(math.isfinite, lp.values()))
 
 
 if __name__ == "__main__":
