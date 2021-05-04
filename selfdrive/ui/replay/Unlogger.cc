@@ -1,20 +1,20 @@
-#include <cmath>
-#include <string>
-#include <vector>
+#include "Unlogger.h"
+
 #include <capnp/dynamic.h>
 #include <capnp/schema.h>
 
+#include <cmath>
+#include <string>
+#include <vector>
+
 // include the dynamic struct
-#include "cereal/gen/cpp/log.capnp.c++"
-#include "cereal/gen/cpp/car.capnp.c++"
-#include "cereal/gen/cpp/legacy.capnp.c++"
-#include "cereal/services.h"
-
-#include "Unlogger.h"
-
 #include <stdint.h>
 #include <time.h>
 
+#include "cereal/gen/cpp/car.capnp.c++"
+#include "cereal/gen/cpp/legacy.capnp.c++"
+#include "cereal/gen/cpp/log.capnp.c++"
+#include "cereal/services.h"
 #include "selfdrive/common/timing.h"
 
 Unlogger::Unlogger(Events *events_, QReadWriteLock* events_lock_, QMap<int, FrameReader*> *frs_, int seek)

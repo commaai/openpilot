@@ -1,11 +1,14 @@
-#include "selfdrive/common/clutil.h"
+#include "clutil.h"
+
 #include <assert.h>
 #include <inttypes.h>
 #include <string.h>
 #include <sys/stat.h>
-#include <memory>
+
 #include <iostream>
+#include <memory>
 #include <vector>
+
 #include "selfdrive/common/util.h"
 
 namespace {  // helper functions

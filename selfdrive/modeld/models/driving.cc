@@ -1,14 +1,16 @@
 
-#include <string.h>
+#include "driving.h"
+
 #include <assert.h>
 #include <fcntl.h>
+#include <string.h>
 #include <unistd.h>
+
 #include <eigen3/Eigen/Dense>
 
-#include "selfdrive/common/timing.h"
-#include "selfdrive/common/params.h"
-#include "driving.h"
 #include "selfdrive/common/clutil.h"
+#include "selfdrive/common/params.h"
+#include "selfdrive/common/timing.h"
 
 constexpr int DESIRE_PRED_SIZE = 32;
 constexpr int OTHER_META_SIZE = 4;

@@ -1,8 +1,10 @@
 #pragma once
 
-#include <stdint.h>
 #include <stddef.h>
+#include <stdint.h>
+
 #include <vector>
+
 #include "selfdrive/common/clutil.h"
 
 #define NUM_SEGMENTS_X 8

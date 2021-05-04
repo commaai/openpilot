@@ -1,9 +1,10 @@
-#include <thread>
-#include <stdio.h>
-#include <poll.h>
 #include <assert.h>
-#include <unistd.h>
+#include <poll.h>
+#include <stdio.h>
 #include <sys/socket.h>
+#include <unistd.h>
+
+#include <thread>
 
 #if defined(QCOM) && !defined(QCOM_REPLAY)
 #include "selfdrive/camerad/cameras/camera_qcom.h"
@@ -17,11 +18,11 @@
 
 #include <libyuv.h>
 
+#include "cereal/visionipc/visionipc_server.h"
 #include "selfdrive/common/clutil.h"
 #include "selfdrive/common/params.h"
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/util.h"
-#include "cereal/visionipc/visionipc_server.h"
 
 ExitHandler do_exit;
 

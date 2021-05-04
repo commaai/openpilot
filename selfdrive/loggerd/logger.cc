@@ -1,27 +1,27 @@
+#include "logger.h"
+
+#include <assert.h>
+#include <errno.h>
+#include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
-#include <stdbool.h>
 #include <string.h>
-#include <assert.h>
-#include <time.h>
-#include <errno.h>
-#include <unistd.h>
 #include <sys/stat.h>
+#include <time.h>
+#include <unistd.h>
 
-#include <iostream>
 #include <fstream>
+#include <iostream>
 #include <streambuf>
 #ifdef QCOM
 #include <cutils/properties.h>
 #endif
 
-#include "selfdrive/common/swaglog.h"
-#include "selfdrive/common/params.h"
-#include "selfdrive/common/version.h"
 #include "cereal/messaging/messaging.h"
-#include "selfdrive/loggerd/logger.h"
-
+#include "selfdrive/common/params.h"
+#include "selfdrive/common/swaglog.h"
+#include "selfdrive/common/version.h"
 
 // ***** logging helpers *****
 

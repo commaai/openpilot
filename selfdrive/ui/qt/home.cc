@@ -1,14 +1,14 @@
+#include "home.h"
+
 #include <QDateTime>
 #include <QHBoxLayout>
 #include <QMouseEvent>
 #include <QVBoxLayout>
 
-#include "selfdrive/common/util.h"
 #include "selfdrive/common/params.h"
-#include "selfdrive/common/timing.h"
 #include "selfdrive/common/swaglog.h"
-
-#include "home.h"
+#include "selfdrive/common/timing.h"
+#include "selfdrive/common/util.h"
 #include "selfdrive/ui/qt/widgets/drive_stats.h"
 #include "selfdrive/ui/qt/widgets/setup.h"
 

@@ -1,24 +1,22 @@
 #pragma once
 
-#include <stdint.h>
-#include <stdbool.h>
 #include <pthread.h>
-#include <memory>
-#include <atomic>
-#include "cereal/messaging/messaging.h"
+#include <stdbool.h>
+#include <stdint.h>
 
+#include <atomic>
+#include <memory>
+
+#include "cereal/messaging/messaging.h"
+#include "cereal/visionipc/visionbuf.h"
+#include "selfdrive/camerad/cameras/camera_common.h"
+#include "selfdrive/camerad/imgproc/utils.h"
+#include "selfdrive/camerad/include/msm_cam_sensor.h"
+#include "selfdrive/camerad/include/msmb_camera.h"
 #include "selfdrive/camerad/include/msmb_isp.h"
 #include "selfdrive/camerad/include/msmb_ispif.h"
-#include "selfdrive/camerad/include/msmb_camera.h"
-#include "selfdrive/camerad/include/msm_cam_sensor.h"
-
-#include "cereal/visionipc/visionbuf.h"
-
 #include "selfdrive/common/mat.h"
 #include "selfdrive/common/util.h"
-#include "selfdrive/camerad/imgproc/utils.h"
-
-#include "camera_common.h"
 
 #define FRAME_BUF_COUNT 4
 #define METADATA_BUF_COUNT 4

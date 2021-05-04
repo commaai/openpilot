@@ -1,7 +1,10 @@
+#include "commonmodel.h"
+
 #include <assert.h>
 #include <math.h>
+
 #include <algorithm>
-#include "commonmodel.h"
+
 #include "selfdrive/common/clutil.h"
 #include "selfdrive/common/mat.h"
 #include "selfdrive/common/timing.h"

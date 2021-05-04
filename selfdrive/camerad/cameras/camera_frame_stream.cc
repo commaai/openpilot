@@ -1,9 +1,9 @@
 #include "camera_frame_stream.h"
 
-#include <unistd.h>
-#include <cassert>
-
 #include <capnp/dynamic.h>
+#include <unistd.h>
+
+#include <cassert>
 
 #include "cereal/messaging/messaging.h"
 #include "selfdrive/common/util.h"

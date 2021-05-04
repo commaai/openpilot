@@ -1,8 +1,10 @@
 #include <assert.h>
+
 #include <string>
+
+#include "cereal/messaging/messaging.h"
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/loggerd/logger.h"
-#include "cereal/messaging/messaging.h"
 
 static kj::Array<capnp::word> build_boot_log() {
   MessageBuilder msg;

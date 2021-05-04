@@ -1,11 +1,13 @@
-#include <algorithm>
-#include <set>
+#include "wifiManager.h"
+
 #include <stdlib.h>
+
+#include <algorithm>
 #include <iostream>
+#include <set>
 
 #include "selfdrive/common/params.h"
 #include "selfdrive/common/swaglog.h"
-#include "wifiManager.h"
 
 /**
  * We are using a NetworkManager DBUS API : https://developer.gnome.org/NetworkManager/1.26/spec.html

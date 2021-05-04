@@ -1,12 +1,11 @@
 #pragma once
 
-#include <vector>
-
+#include <QAbstractButton>
 #include <QFrame>
+#include <QStackedLayout>
 #include <QString>
 #include <QWidget>
-#include <QStackedLayout>
-#include <QAbstractButton>
+#include <vector>
 
 class KeyboardLayout : public QWidget {
   Q_OBJECT

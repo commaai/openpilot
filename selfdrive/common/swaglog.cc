@@ -2,19 +2,18 @@
 #define _GNU_SOURCE
 #endif
 
-#include <string>
-#include <string.h>
-#include <assert.h>
+#include "swaglog.h"
 
-#include <mutex>
+#include <assert.h>
+#include <string.h>
 #include <zmq.h>
 
 #include <json11.hpp>
+#include <mutex>
+#include <string>
 
 #include "selfdrive/common/util.h"
 #include "selfdrive/common/version.h"
-
-#include "selfdrive/common/swaglog.h"
 
 class LogState {
 public:

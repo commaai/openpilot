@@ -1,10 +1,13 @@
 #pragma clang diagnostic ignored "-Wexceptions"
 
-#include <cassert>
-#include <string.h>
-#include <stdlib.h>
-#include "selfdrive/common/util.h"
 #include "snpemodel.h"
+
+#include <stdlib.h>
+#include <string.h>
+
+#include <cassert>
+
+#include "selfdrive/common/util.h"
 
 void PrintErrorStringAndExit() {
   std::cerr << zdl::DlSystem::getLastErrorString() << std::endl;

@@ -2,8 +2,8 @@
 
 #include <QPushButton>
 
-#include "selfdrive/ui/qt/widgets/controls.h"
 #include "selfdrive/hardware/hw.h"
+#include "selfdrive/ui/qt/widgets/controls.h"
 
 // SSH enable toggle
 class SshToggle : public ToggleControl {

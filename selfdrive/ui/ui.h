@@ -8,6 +8,7 @@
 #include <sstream>
 #include <string>
 
+#include "nanovg.h"
 #include "cereal/messaging/messaging.h"
 #include "cereal/visionipc/visionipc.h"
 #include "cereal/visionipc/visionipc_client.h"

@@ -1,8 +1,8 @@
-#include <stdio.h>
 #include <stdint.h>
-#include <unistd.h>
+#include <stdio.h>
 #include <sys/resource.h>
 #include <sys/time.h>
+#include <unistd.h>
 
 // Apple doesn't have timerfd
 #ifdef __APPLE__

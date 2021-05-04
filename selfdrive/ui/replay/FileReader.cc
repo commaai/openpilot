@@ -1,7 +1,8 @@
 #include "FileReader.h"
-#include "tools/clib/FrameReader.h"
 
 #include <QtNetwork>
+
+#include "tools/clib/FrameReader.h"
 
 FileReader::FileReader(const QString& file_) : file(file_) {
 }

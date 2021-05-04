@@ -1,3 +1,5 @@
+#pragma once
+
 #include "selfdrive/ui/qt/api.h"
 #include "selfdrive/ui/ui.h"
 

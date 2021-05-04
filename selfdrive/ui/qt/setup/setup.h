@@ -1,8 +1,8 @@
-#include <QString>
-#include <QWidget>
 #include <QLineEdit>
 #include <QPushButton>
 #include <QStackedWidget>
+#include <QString>
+#include <QWidget>
 
 class Setup : public QStackedWidget {
   Q_OBJECT

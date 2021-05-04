@@ -1,14 +1,13 @@
-#include <string>
-
-#include <QWidget>
 #include <QApplication>
+#include <QWidget>
+#include <string>
 
 #ifdef QCOM2
 #include <qpa/qplatformnativeinterface.h>
-#include <QPlatformSurfaceEvent>
 #include <wayland-client-protocol.h>
-#endif
 
+#include <QPlatformSurfaceEvent>
+#endif
 
 #ifdef QCOM2
   const int vwp_w = 2160, vwp_h = 1080;

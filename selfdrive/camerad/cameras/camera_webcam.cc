@@ -1,23 +1,22 @@
 #include "camera_webcam.h"
 
-#include <unistd.h>
 #include <assert.h>
-#include <string.h>
 #include <pthread.h>
+#include <string.h>
+#include <unistd.h>
 
-#include "selfdrive/common/util.h"
-#include "selfdrive/common/timing.h"
 #include "selfdrive/common/clutil.h"
 #include "selfdrive/common/swaglog.h"
+#include "selfdrive/common/timing.h"
+#include "selfdrive/common/util.h"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wundefined-inline"
-#include <opencv2/opencv.hpp>
-#include <opencv2/highgui.hpp>
 #include <opencv2/core.hpp>
+#include <opencv2/highgui.hpp>
+#include <opencv2/opencv.hpp>
 #include <opencv2/videoio.hpp>
 #pragma clang diagnostic pop
-
 
 // id of the video capturing device
 const int ROAD_CAMERA_ID = getenv("ROADCAM_ID") ? atoi(getenv("ROADCAM_ID")) : 1;

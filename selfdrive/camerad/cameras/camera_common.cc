@@ -1,8 +1,9 @@
-#include <thread>
-#include <chrono>
-#include <stdio.h>
 #include <assert.h>
+#include <stdio.h>
 #include <unistd.h>
+
+#include <chrono>
+#include <thread>
 
 #if defined(QCOM) && !defined(QCOM_REPLAY)
 #include "selfdrive/camerad/cameras/camera_qcom.h"
@@ -14,16 +15,16 @@
 #include "selfdrive/camerad/cameras/camera_frame_stream.h"
 #endif
 
-#include "camera_common.h"
-#include <libyuv.h>
 #include <jpeglib.h>
+#include <libyuv.h>
 
+#include "camera_common.h"
+#include "selfdrive/camerad/imgproc/utils.h"
 #include "selfdrive/common/clutil.h"
+#include "selfdrive/common/modeldata.h"
 #include "selfdrive/common/params.h"
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/util.h"
-#include "selfdrive/common/modeldata.h"
-#include "selfdrive/camerad/imgproc/utils.h"
 
 static cl_program build_debayer_program(cl_device_id device_id, cl_context context, const CameraInfo *ci, const CameraBuf *b, const CameraState *s) {
   char args[4096];

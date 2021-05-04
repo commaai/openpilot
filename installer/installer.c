@@ -1,23 +1,21 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include <math.h>
-#include <unistd.h>
-#include <assert.h>
-#include <pthread.h>
-
-#include <sys/wait.h>
-#include <sys/stat.h>
-
-#include <GLES3/gl3.h>
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
+#include <GLES3/gl3.h>
+#include <assert.h>
+#include <math.h>
+#include <pthread.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/stat.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
-#include "selfdrive/common/util.h"
-#include "selfdrive/common/mat.h"
-#include "selfdrive/common/glutil.h"
 #include "selfdrive/common/framebuffer.h"
+#include "selfdrive/common/glutil.h"
+#include "selfdrive/common/mat.h"
 #include "selfdrive/common/spinner.h"
+#include "selfdrive/common/util.h"
 
 #ifndef BRAND
 #define BRAND openpilot

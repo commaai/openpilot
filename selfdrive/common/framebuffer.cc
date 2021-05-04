@@ -1,17 +1,16 @@
 #include "framebuffer.h"
-#include "selfdrive/common/util.h"
-#include <cstdio>
-#include <cassert>
 
-#include <ui/DisplayInfo.h>
-
+#include <EGL/eglext.h>
+#include <GLES2/gl2.h>
 #include <gui/ISurfaceComposer.h>
 #include <gui/Surface.h>
 #include <gui/SurfaceComposerClient.h>
+#include <ui/DisplayInfo.h>
 
+#include <cassert>
+#include <cstdio>
 
-#include <GLES2/gl2.h>
-#include <EGL/eglext.h>
+#include "selfdrive/common/util.h"
 
 #define BACKLIGHT_LEVEL 205
 

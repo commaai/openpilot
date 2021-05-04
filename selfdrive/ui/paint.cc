@@ -1,4 +1,7 @@
+#include "paint.h"
+
 #include <assert.h>
+
 #include <algorithm>
 
 #include "ui.h"
@@ -12,13 +15,12 @@
 #define nvgCreate nvgCreateGLES3
 #endif
 
-#include "selfdrive/common/util.h"
 #include "selfdrive/common/timing.h"
+#include "selfdrive/common/util.h"
 
 #define NANOVG_GLES3_IMPLEMENTATION
-#include "nanovg_gl.h"
-#include "nanovg_gl_utils.h"
-#include "paint.h"
+#include <nanovg_gl.h>
+#include <nanovg_gl_utils.h>
 
 // TODO: this is also hardcoded in common/transformations/camera.py
 // TODO: choose based on frame input size

@@ -1,15 +1,15 @@
-#include <iostream>
-#include <cassert>
-#include <csignal>
-#include <string>
-#include <map>
-
-#include <json11.hpp>
 #include <systemd/sd-journal.h>
 
+#include <cassert>
+#include <csignal>
+#include <iostream>
+#include <json11.hpp>
+#include <map>
+#include <string>
+
+#include "cereal/messaging/messaging.h"
 #include "selfdrive/common/timing.h"
 #include "selfdrive/common/util.h"
-#include "cereal/messaging/messaging.h"
 
 ExitHandler do_exit;
 int main(int argc, char *argv[]) {

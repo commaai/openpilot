@@ -1,16 +1,15 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <mutex>
-#include <eigen3/Eigen/Dense>
 
-#include "selfdrive/common/swaglog.h"
-#include "selfdrive/common/clutil.h"
-#include "selfdrive/common/util.h"
-#include "selfdrive/common/params.h"
+#include <eigen3/Eigen/Dense>
+#include <mutex>
 
 #include "cereal/messaging/messaging.h"
 #include "cereal/visionipc/visionipc_client.h"
-
+#include "selfdrive/common/clutil.h"
+#include "selfdrive/common/params.h"
+#include "selfdrive/common/swaglog.h"
+#include "selfdrive/common/util.h"
 #include "selfdrive/modeld/models/driving.h"
 
 ExitHandler do_exit;

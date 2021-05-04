@@ -1,25 +1,23 @@
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include <unistd.h>
-#include <assert.h>
-#include <sys/stat.h>
-#include <fcntl.h>
+#include "omx_encoder.h"
 
 #include <OMX_Component.h>
 #include <OMX_IndexExt.h>
-#include <OMX_VideoExt.h>
 #include <OMX_QCOMExtns.h>
-
+#include <OMX_VideoExt.h>
+#include <assert.h>
+#include <fcntl.h>
 #include <libyuv.h>
 #include <msm_media_info.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
-#include "selfdrive/common/util.h"
 #include "selfdrive/common/swaglog.h"
-
-#include "omx_encoder.h"
+#include "selfdrive/common/util.h"
 
 // Check the OMX error code and assert if an error occurred.
 #define OMX_CHECK(_expr)          \

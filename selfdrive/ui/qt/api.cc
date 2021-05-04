@@ -1,3 +1,5 @@
+#include "api.h"
+
 #include <QDateTime>
 #include <QDebug>
 #include <QFile>
@@ -5,12 +7,11 @@
 #include <QJsonObject>
 #include <QNetworkReply>
 #include <QNetworkRequest>
-#include <QString>
-#include <QWidget>
-#include <QTimer>
 #include <QRandomGenerator>
+#include <QString>
+#include <QTimer>
+#include <QWidget>
 
-#include "api.h"
 #include "selfdrive/common/params.h"
 #include "selfdrive/common/util.h"
 

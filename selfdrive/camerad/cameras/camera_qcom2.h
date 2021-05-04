@@ -1,12 +1,12 @@
 #pragma once
 
-#include <stdint.h>
-#include <stdbool.h>
 #include <pthread.h>
+#include <stdbool.h>
+#include <stdint.h>
 
-#include "selfdrive/common/util.h"
-#include "camera_common.h"
+#include "selfdrive/camerad/cameras/camera_common.h"
 #include "selfdrive/camerad/include/media/cam_req_mgr.h"
+#include "selfdrive/common/util.h"
 
 #define FRAME_BUF_COUNT 4
 

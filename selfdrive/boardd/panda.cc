@@ -1,14 +1,16 @@
-#include <stdexcept>
-#include <cassert>
-#include <iostream>
-#include <vector>
+#include "panda.h"
+
 #include <unistd.h>
 
-#include "selfdrive/common/swaglog.h"
-#include "selfdrive/common/gpio.h"
-#include "selfdrive/common/util.h"
+#include <cassert>
+#include <iostream>
+#include <stdexcept>
+#include <vector>
+
 #include "cereal/messaging/messaging.h"
-#include "panda.h"
+#include "selfdrive/common/gpio.h"
+#include "selfdrive/common/swaglog.h"
+#include "selfdrive/common/util.h"
 
 Panda::Panda(){
   // init libusb

@@ -3,8 +3,8 @@
 #include <cstdlib>
 #include <fstream>
 
-#include "selfdrive/common/util.h"
 #include "selfdrive/common/params.h"
+#include "selfdrive/common/util.h"
 #include "selfdrive/hardware/base.h"
 
 class HardwareTici : public HardwareNone {

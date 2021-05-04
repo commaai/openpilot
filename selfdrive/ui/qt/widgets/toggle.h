@@ -1,4 +1,5 @@
 #pragma once
+
 #include <QtWidgets>
 
 class Toggle : public QAbstractButton {

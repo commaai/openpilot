@@ -1,11 +1,11 @@
 #pragma once
 
-#include <QLabel>
-#include <QString>
-#include <QWidget>
 #include <QDialog>
+#include <QLabel>
 #include <QLineEdit>
+#include <QString>
 #include <QVBoxLayout>
+#include <QWidget>
 
 #include "selfdrive/ui/qt/widgets/keyboard.h"
 

@@ -1,13 +1,14 @@
 #pragma once
 
-#include <ctime>
-#include <cstdint>
-#include <pthread.h>
-#include <mutex>
-#include <vector>
-#include <optional>
-
 #include <libusb-1.0/libusb.h>
+#include <pthread.h>
+
+#include <atomic>
+#include <cstdint>
+#include <ctime>
+#include <mutex>
+#include <optional>
+#include <vector>
 
 #include "cereal/gen/cpp/car.capnp.h"
 #include "cereal/gen/cpp/log.capnp.h"

@@ -1,11 +1,11 @@
 #pragma once
 
-#include <cstdlib>
-#include <fstream>
-
 #include <gui/ISurfaceComposer.h>
 #include <gui/SurfaceComposerClient.h>
 #include <hardware/hwcomposer_defs.h>
+
+#include <cstdlib>
+#include <fstream>
 
 #include "selfdrive/common/util.h"
 #include "selfdrive/hardware/base.h"

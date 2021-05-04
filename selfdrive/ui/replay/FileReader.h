@@ -1,21 +1,19 @@
 #pragma once
 
-#include <QString>
-#include <QNetworkAccessManager>
-#include <QWidget>
-#include <QVector>
-#include <QMultiMap>
-#include <QElapsedTimer>
-#include <QReadWriteLock>
-
 #include <bzlib.h>
-
-#include <kj/io.h>
 #include <capnp/serialize.h>
+#include <kj/io.h>
+
+#include <QElapsedTimer>
+#include <QMultiMap>
+#include <QNetworkAccessManager>
+#include <QReadWriteLock>
+#include <QString>
+#include <QVector>
+#include <QWidget>
+#include <thread>
 
 #include "cereal/gen/cpp/log.capnp.h"
-
-#include <thread>
 #include "tools/clib/channel.h"
 
 class FileReader : public QObject {

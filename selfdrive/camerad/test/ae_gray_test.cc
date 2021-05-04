@@ -1,11 +1,13 @@
 // unittest for set_exposure_target
 
+#include "ae_gray_test.h"
+
 #include <assert.h>
-#include <cstring>
+
 #include <cmath>
+#include <cstring>
 
 #include "selfdrive/camerad/cameras/camera_common.h"
-#include "selfdrive/camerad/test/ae_gray_test.h"
 
 void camera_autoexposure(CameraState *s, float grey_frac) {}
 

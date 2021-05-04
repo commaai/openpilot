@@ -2,6 +2,7 @@
 
 #include <inttypes.h>
 #include <stdbool.h>
+
 #include "selfdrive/common/clutil.h"
 
 typedef struct {
