@@ -41,7 +41,7 @@ LiveKalman::LiveKalman() {
   // init filter
   this->filter = std::make_shared<EKFSym>(this->name, get_mapmat(this->Q), get_mapvec(this->initial_x),
     get_mapmat(initial_P),  this->dim_state, this->dim_state_err, 0, 0, 0, std::vector<int>(),
-    std::vector<int>(), std::vector<std::string>(), 0.2);
+    std::vector<int>{3}, std::vector<std::string>(), 0.2);
 }
 
 void LiveKalman::init_state(VectorXd& state, VectorXd& covs_diag, double filter_time) {
