@@ -5,7 +5,7 @@
 #include "clutil.h"
 #include "messaging.hpp"
 #include "FileReader.h"
-#include "FrameReader.hpp"
+#include "FrameReader.h"
 #include "visionipc_server.h"
 
 class Unlogger : public QObject {
