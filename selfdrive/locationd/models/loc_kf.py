@@ -382,11 +382,11 @@ class LocKalman():
       self.computer = LstSqComputer(generated_dir, N)
       self.max_tracks = max_tracks
 
-    self.normalize_idxs = [3,] + [(self.dim_main + i*self.dim_augment + 3)for i in range(self.N)]
+    self.quaternion_idxs = [3,] + [(self.dim_main + i*self.dim_augment + 3)for i in range(self.N)]
 
     # init filter
     self.filter = EKF_sym(generated_dir, name, Q, x_initial, P_initial, self.dim_main, self.dim_main_err,
-                          N, self.dim_augment, self.dim_augment_err, self.maha_test_kinds, self.normalize_idxs)
+                          N, self.dim_augment, self.dim_augment_err, self.maha_test_kinds, self.quaternion_idxs)
 
   @property
   def x(self):
