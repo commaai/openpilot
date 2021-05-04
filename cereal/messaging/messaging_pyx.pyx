@@ -149,3 +149,6 @@ cdef class PubSocket:
         raise MultiplePublishersError
       else:
         raise MessagingError
+
+  def all_readers_updated(self):
+    return self.socket.all_readers_updated()

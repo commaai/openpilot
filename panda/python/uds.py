@@ -240,7 +240,7 @@ _negative_response_codes = {
     0x31: 'request out of range',
     0x33: 'security access denied',
     0x35: 'invalid key',
-    0x36: 'exceed numebr of attempts',
+    0x36: 'exceed number of attempts',
     0x37: 'required time delay not expired',
     0x70: 'upload download not accepted',
     0x71: 'transfer data suspended',

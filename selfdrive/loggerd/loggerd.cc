@@ -24,7 +24,7 @@
 #include "common/util.h"
 #include "camerad/cameras/camera_common.h"
 #include "logger.h"
-#include "messaging.hpp"
+#include "messaging.h"
 #include "services.h"
 
 #include "visionipc.h"
@@ -288,8 +288,9 @@ void encoder_thread(int cam_idx) {
           eidx.setSegmentNum(rotate_state.cur_seg);
           eidx.setSegmentId(out_id);
           if (lh) {
+            // TODO: this should read cereal/services.h for qlog decimation
             auto bytes = msg.toBytes();
-            lh_log(lh, bytes.begin(), bytes.size(), false);
+            lh_log(lh, bytes.begin(), bytes.size(), true);
           }
         }
       }
@@ -369,7 +370,7 @@ int main(int argc, char** argv) {
   s.rotate_state[LOG_CAMERA_ID_FCAMERA].enabled = true;
 
 #if defined(QCOM) || defined(QCOM2)
-  bool record_front = Params().read_db_bool("RecordFront");
+  bool record_front = Params().getBool("RecordFront");
   if (record_front) {
     encoder_threads.push_back(std::thread(encoder_thread, LOG_CAMERA_ID_DCAMERA));
     s.rotate_state[LOG_CAMERA_ID_DCAMERA].enabled = true;

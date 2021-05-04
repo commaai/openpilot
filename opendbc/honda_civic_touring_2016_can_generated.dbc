@@ -346,6 +346,7 @@ BO_ 862 HIGHBEAM_CONTROL: 8 ADAS
  SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" XXX
 
 BO_ 884 STALK_STATUS: 8 XXX
+ SG_ DASHBOARD_ALERT : 39|8@0+ (1,0) [0|255] "" EON
  SG_ AUTO_HEADLIGHTS : 46|1@0+ (1,0) [0|1] "" EON
  SG_ HIGH_BEAM_HOLD : 47|1@0+ (1,0) [0|1] "" EON
  SG_ HIGH_BEAM_FLASH : 45|1@0+ (1,0) [0|1] "" EON
@@ -389,6 +390,7 @@ VAL_ 545 ECON_ON_2 0 "off" 3 "on" ;
 VAL_ 662 CRUISE_BUTTONS 7 "tbd" 6 "tbd" 5 "tbd" 4 "accel_res" 3 "decel_set" 2 "cancel" 1 "main" 0 "none" ;
 VAL_ 662 CRUISE_SETTING 3 "distance_adj" 2 "tbd" 1 "lkas_button" 0 "none" ;
 VAL_ 806 CMBS_BUTTON 3 "pressed" 0 "released" ;
+VAL_ 884 DASHBOARD_ALERT 0 "none" 51 "acc_problem" 55 "cmbs_problem" 75 "key_not_detected" 79 "fasten_seatbelt" 111 "lkas_problem" 131 "brake_system_problem" 132 "brake_hold_problem" 139 "tbd" 161 "door_open"
 VAL_ 891 WIPERS 4 "High" 2 "Low" 0 "Off" ;
 VAL_ 927 ACC_ALERTS 29 "esp_active_acc_canceled" 10 "b_pedal_applied" 9 "speed_too_low" 8 "speed_too_high" 7 "p_brake_applied" 6 "gear_no_d" 5 "seatbelt" 4 "too_steep_downhill" 3 "too_steep_uphill" 2 "too_close" 1 "no_vehicle_ahead" ;
 

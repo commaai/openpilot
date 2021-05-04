@@ -7,7 +7,7 @@ import sympy as sp
 from numpy import dot
 
 from rednose.helpers.sympy_helpers import sympy_into_c
-from rednose.helpers import (TEMPLATE_DIR, load_code, write_code)
+from rednose.helpers import TEMPLATE_DIR, load_code
 from rednose.helpers.chi2_lookup import chi2_ppf
 
 
@@ -27,7 +27,7 @@ def null(H, eps=1e-12):
 
 
 def gen_code(folder, name, f_sym, dt_sym, x_sym, obs_eqs, dim_x, dim_err, eskf_params=None, msckf_params=None,  # pylint: disable=dangerous-default-value
-             maha_test_kinds=[], global_vars=None):
+             maha_test_kinds=[], global_vars=None, extra_routines=[]):
   # optional state transition matrix, H modifier
   # and err_function if an error-state kalman filter (ESKF)
   # is desired. Best described in "Quaternion kinematics
@@ -91,6 +91,9 @@ def gen_code(folder, name, f_sym, dt_sym, x_sym, obs_eqs, dim_x, dim_err, eskf_p
   # collect sympy functions
   sympy_functions = []
 
+  # extra routines
+  sympy_functions += extra_routines
+
   # error functions
   sympy_functions.append(('err_fun', err_eqs[0], [err_eqs[1], err_eqs[2]]))
   sympy_functions.append(('inv_err_fun', inv_err_eqs[0], [inv_err_eqs[1], inv_err_eqs[2]]))
@@ -110,15 +113,26 @@ def gen_code(folder, name, f_sym, dt_sym, x_sym, obs_eqs, dim_x, dim_err, eskf_p
       sympy_functions.append(('He_%d' % kind, He_sym, [x_sym, ea_sym]))
 
   # Generate and wrap all th c code
-  header, code = sympy_into_c(sympy_functions, global_vars)
-  extra_header = "#define DIM %d\n" % dim_x
-  extra_header += "#define EDIM %d\n" % dim_err
-  extra_header += "#define MEDIM %d\n" % dim_main_err
-  extra_header += "typedef void (*Hfun)(double *, double *, double *);\n"
+  sympy_header, code = sympy_into_c(sympy_functions, global_vars)
 
-  extra_header += "\nvoid predict(double *x, double *P, double *Q, double dt);"
+  header = "#pragma once\n"
+  header += "#include \"rednose/helpers/common_ekf.h\"\n"
+  header += "extern \"C\" {\n"
 
-  extra_post = ""
+  pre_code = f"#include \"{name}.h\"\n"
+  pre_code += "\nnamespace {\n"
+  pre_code += "#define DIM %d\n" % dim_x
+  pre_code += "#define EDIM %d\n" % dim_err
+  pre_code += "#define MEDIM %d\n" % dim_main_err
+  pre_code += "typedef void (*Hfun)(double *, double *, double *);\n"
+
+  if global_vars is not None:
+    for var in global_vars:
+      pre_code += f"\ndouble {var.name};\n"
+      pre_code += f"\nvoid set_{var.name}(double x){{ {var.name} = x;}}\n"
+
+  post_code = "\n}\n" # namespace
+  post_code += "extern \"C\" {\n\n"
 
   for h_sym, kind, ea_sym, H_sym, He_sym in obs_eqs:
     if msckf and kind in feature_track_kinds:
@@ -129,31 +143,75 @@ def gen_code(folder, name, f_sym, dt_sym, x_sym, obs_eqs, dim_x, dim_err, eskf_p
       # ea_dim = 1 # not really dim of ea but makes c function work
     maha_thresh = chi2_ppf(0.95, int(h_sym.shape[0]))  # mahalanobis distance for outlier detection
     maha_test = kind in maha_test_kinds
-    extra_post += """
-      void update_%d(double *in_x, double *in_P, double *in_z, double *in_R, double *in_ea) {
-        update<%d,%d,%d>(in_x, in_P, h_%d, H_%d, %s, in_z, in_R, in_ea, MAHA_THRESH_%d);
-      }
-    """ % (kind, h_sym.shape[0], 3, maha_test, kind, kind, He_str, kind)
-    extra_header += "\nconst static double MAHA_THRESH_%d = %f;" % (kind, maha_thresh)
-    extra_header += "\nvoid update_%d(double *, double *, double *, double *, double *);" % kind
 
-  code += '\nextern "C"{\n' + extra_header + "\n}\n"
-  code += "\n" + open(os.path.join(TEMPLATE_DIR, "ekf_c.c")).read()
-  code += '\nextern "C"{\n' + extra_post + "\n}\n"
+    pre_code += f"const static double MAHA_THRESH_{kind} = {maha_thresh};\n"
 
+    header += f"void {name}_update_{kind}(double *in_x, double *in_P, double *in_z, double *in_R, double *in_ea);\n"
+    post_code += f"void {name}_update_{kind}(double *in_x, double *in_P, double *in_z, double *in_R, double *in_ea) {{\n"
+    post_code += f"  update<{h_sym.shape[0]}, 3, {int(maha_test)}>(in_x, in_P, h_{kind}, H_{kind}, {He_str}, in_z, in_R, in_ea, MAHA_THRESH_{kind});\n"
+    post_code += "}\n"
+
+  # For ffi loading of specific functions
+  for line in sympy_header.split("\n"):
+    if line.startswith("void "):  # sympy functions
+      func_call = line[5: line.index(')') + 1]
+      header += f"void {name}_{func_call};\n"
+      post_code += f"void {name}_{func_call} {{\n"
+      post_code += f"  {func_call.replace('double *', '').replace('double', '')};\n"
+      post_code += "}\n"
+  header += f"void {name}_predict(double *in_x, double *in_P, double *in_Q, double dt);\n"
+  post_code += f"void {name}_predict(double *in_x, double *in_P, double *in_Q, double dt) {{\n"
+  post_code += "  predict(in_x, in_P, in_Q, dt);\n"
+  post_code += "}\n"
   if global_vars is not None:
-    global_code = '\nextern "C"{\n'
     for var in global_vars:
-      global_code += f"\ndouble {var.name};\n"
-      global_code += f"\nvoid set_{var.name}(double x){{ {var.name} = x;}}\n"
-      extra_header += f"\nvoid set_{var.name}(double x);\n"
+      header += f"void {name}_set_{var.name}(double x);\n"
+      post_code += f"void {name}_set_{var.name}(double x) {{\n"
+      post_code += f"  set_{var.name}(x);\n"
+      post_code += "}\n"
 
-    global_code += '\n}\n'
-    code = global_code + code
+  post_code += "}\n\n" # extern c
 
-  header += "\n" + extra_header
+  funcs = ['f_fun', 'F_fun', 'err_fun', 'inv_err_fun', 'H_mod_fun', 'predict']
+  func_lists = {
+    'h': [kind for _, kind, _, _, _ in obs_eqs],
+    'H': [kind for _, kind, _, _, _ in obs_eqs],
+    'update': [kind for _, kind, _, _, _ in obs_eqs],
+    'He': [kind for _, kind, _, _, _ in obs_eqs if msckf and kind in feature_track_kinds],
+    'set': [var.name for var in global_vars] if global_vars is not None else [],
+  }
+  func_extra = [x[0] for x in extra_routines]
 
-  write_code(folder, name, code, header)
+  # For dynamic loading of specific functions
+  post_code += f"const EKF {name} = {{\n"
+  post_code += f"  .name = \"{name}\",\n"
+  post_code += f"  .kinds = {{ {', '.join([str(kind) for _, kind, _, _, _ in obs_eqs])} }},\n"
+  post_code += f"  .feature_kinds = {{ {', '.join([str(kind) for _, kind, _, _, _ in obs_eqs if msckf and kind in feature_track_kinds])} }},\n"
+  for func in funcs:
+    post_code += f"  .{func} = {name}_{func},\n"
+  for group, kinds in func_lists.items():
+    post_code += f"  .{group}s = {{\n"
+    for kind in kinds:
+      str_kind = f"\"{kind}\"" if type(kind) == str else kind
+      post_code += f"    {{ {str_kind}, {name}_{group}_{kind} }},\n"
+    post_code += "  },\n"
+  post_code += "  .extra_routines = {\n"
+  for f in func_extra:
+    post_code += f"    {{ \"{f}\", {name}_{f} }},\n"
+  post_code += "  },\n"
+  post_code += "};\n\n"
+  post_code += f"ekf_init({name});\n"
+
+  # merge code blocks
+  header += "}"
+  code = "\n".join([pre_code, code, open(os.path.join(TEMPLATE_DIR, "ekf_c.c")).read(), post_code])
+
+  # write to file
+  if not os.path.exists(folder):
+    os.mkdir(folder)
+
+  open(os.path.join(folder, f"{name}.h"), 'w').write(header)  # header is used for ffi import
+  open(os.path.join(folder, f"{name}.cpp"), 'w').write(code)
 
 
 class EKF_sym():
@@ -181,8 +239,6 @@ class EKF_sym():
     # tested for outlier rejection
     self.maha_test_kinds = maha_test_kinds
 
-    self.global_vars = global_vars
-
     # process noise
     self.Q = Q
 
@@ -193,25 +249,25 @@ class EKF_sym():
     self.rewind_obscache = []
     self.init_state(x_initial, P_initial, None)
 
-    ffi, lib = load_code(folder, name)
+    ffi, lib = load_code(folder, name, "kf")
     kinds, self.feature_track_kinds = [], []
     for func in dir(lib):
-      if func[:2] == 'h_':
-        kinds.append(int(func[2:]))
-      if func[:3] == 'He_':
-        self.feature_track_kinds.append(int(func[3:]))
+      if func[:len(name) + 3] == f'{name}_h_':
+        kinds.append(int(func[len(name) + 3:]))
+      if func[:len(name) + 4] == f'{name}_He_':
+        self.feature_track_kinds.append(int(func[len(name) + 4:]))
 
     # wrap all the sympy functions
-    def wrap_1lists(name):
-      func = eval("lib.%s" % name, {"lib": lib})  # pylint: disable=eval-used
+    def wrap_1lists(func_name):
+      func = eval(f"lib.{name}_{func_name}", {"lib": lib})  # pylint: disable=eval-used
 
       def ret(lst1, out):
         func(ffi.cast("double *", lst1.ctypes.data),
              ffi.cast("double *", out.ctypes.data))
       return ret
 
-    def wrap_2lists(name):
-      func = eval("lib.%s" % name, {"lib": lib})  # pylint: disable=eval-used
+    def wrap_2lists(func_name):
+      func = eval(f"lib.{name}_{func_name}", {"lib": lib})  # pylint: disable=eval-used
 
       def ret(lst1, lst2, out):
         func(ffi.cast("double *", lst1.ctypes.data),
@@ -219,8 +275,8 @@ class EKF_sym():
              ffi.cast("double *", out.ctypes.data))
       return ret
 
-    def wrap_1list_1float(name):
-      func = eval("lib.%s" % name, {"lib": lib})  # pylint: disable=eval-used
+    def wrap_1list_1float(func_name):
+      func = eval(f"lib.{name}_{func_name}", {"lib": lib})  # pylint: disable=eval-used
 
       def ret(lst1, fl, out):
         func(ffi.cast("double *", lst1.ctypes.data),
@@ -237,27 +293,28 @@ class EKF_sym():
 
     self.hs, self.Hs, self.Hes = {}, {}, {}
     for kind in kinds:
-      self.hs[kind] = wrap_2lists("h_%d" % kind)
-      self.Hs[kind] = wrap_2lists("H_%d" % kind)
+      self.hs[kind] = wrap_2lists(f"h_{kind}")
+      self.Hs[kind] = wrap_2lists(f"H_{kind}")
       if self.msckf and kind in self.feature_track_kinds:
-        self.Hes[kind] = wrap_2lists("He_%d" % kind)
+        self.Hes[kind] = wrap_2lists(f"He_{kind}")
 
-    if self.global_vars is not None:
-      for var in self.global_vars:
-        fun_name = f"set_{var.name}"
-        setattr(self, fun_name, getattr(lib, fun_name))
+    self.set_globals = {}
+    if global_vars is not None:
+      for global_var in global_vars:
+        self.set_globals[global_var] = getattr(lib, f"{name}_set_{global_var}")
 
     # wrap the C++ predict function
     def _predict_blas(x, P, dt):
-      lib.predict(ffi.cast("double *", x.ctypes.data),
-                  ffi.cast("double *", P.ctypes.data),
-                  ffi.cast("double *", self.Q.ctypes.data),
-                  ffi.cast("double", dt))
+      func = eval(f"lib.{name}_predict", {"lib": lib})  # pylint: disable=eval-used
+      func(ffi.cast("double *", x.ctypes.data),
+           ffi.cast("double *", P.ctypes.data),
+           ffi.cast("double *", self.Q.ctypes.data),
+           ffi.cast("double", dt))
       return x, P
 
     # wrap the C++ update function
     def fun_wrapper(f, kind):
-      f = eval("lib.%s" % f, {"lib": lib})  # pylint: disable=eval-used
+      f = eval(f"lib.{name}_{f}", {"lib": lib})  # pylint: disable=eval-used
 
       def _update_inner_blas(x, P, z, R, extra_args):
         f(ffi.cast("double *", x.ctypes.data),
@@ -333,6 +390,21 @@ class EKF_sym():
   def covs(self):
     return self.P
 
+  def set_filter_time(self, t):
+    self.filter_time = t
+
+  def get_filter_time(self):
+    return self.filter_time
+
+  def normalize_state(self, slice_start, slice_end_ex):
+    self.x[slice_start:slice_end_ex] /= np.linalg.norm(self.x[slice_start:slice_end_ex])
+
+  def get_augment_times(self):
+    return self.augment_times
+
+  def set_global(self, global_var, val):
+    self.set_globals[global_var](val)
+
   def rewind(self, t):
     # find where we are rewinding to
     idx = bisect_right(self.rewind_t, t)
@@ -401,11 +473,9 @@ class EKF_sym():
   def _predict_and_update_batch(self, t, kind, z, R, extra_args, augment=False):
     """The main kalman filter function
     Predicts the state and then updates a batch of observations
-
     dim_x: dimensionality of the state space
     dim_z: dimensionality of the observation and depends on kind
     n: number of observations
-
     Args:
       t                 (float): Time of observation
       kind                (int): Type of observation
@@ -570,7 +640,6 @@ class EKF_sym():
     '''
     Returns rts smoothed results of
     kalman filter estimates
-
     If the kalman state is augmented with
     old states only the main state is smoothed
     '''

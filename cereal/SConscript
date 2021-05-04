@@ -1,4 +1,4 @@
-Import('env', 'envCython', 'arch', 'zmq', 'QCOM_REPLAY')
+Import('env', 'envCython', 'arch', 'QCOM_REPLAY')
 
 import shutil
 
@@ -39,13 +39,6 @@ messaging_objects = env.SharedObject([
 
 messaging_lib = env.Library('messaging', messaging_objects)
 Depends('messaging/impl_zmq.cc', services_h)
-
-# note, this rebuilds the deps shared, zmq is statically linked to make APK happy
-# TODO: get APK to load system zmq to remove the static link
-if arch == "aarch64":
-  zmq_static = FindFile("libzmq.a", "/usr/lib")
-  shared_lib_shared_lib = [zmq_static, 'm', 'stdc++', "gnustl_shared", "kj", "capnp"]
-  env.SharedLibrary('messaging_shared', messaging_objects, LIBS=shared_lib_shared_lib)
 
 env.Program('messaging/bridge', ['messaging/bridge.cc'], LIBS=[messaging_lib, 'zmq'])
 Depends('messaging/bridge.cc', services_h)

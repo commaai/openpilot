@@ -3,6 +3,14 @@ import os
 from typing import Optional
 
 EON = os.path.isfile('/EON')
+RESERVED_PORT = 8022  # sshd
+STARTING_PORT = 8001
+
+
+def new_port(port: int):
+  port += STARTING_PORT
+  return port + 1 if port >= RESERVED_PORT else port
+
 
 class Service:
   def __init__(self, port: int, should_log: bool, frequency: float, decimation: Optional[int] = None):
@@ -11,55 +19,58 @@ class Service:
     self.frequency = frequency
     self.decimation = decimation
 
-service_list = {
-  "roadCameraState": Service(8002, True, 20., 1),
-  "sensorEvents": Service(8003, True, 100., 100),
-  "gpsNMEA": Service(8004, True, 9.),
-  "deviceState": Service(8005, True, 2., 1),
-  "can": Service(8006, True, 100.),
-  "controlsState": Service(8007, True, 100., 100),
-  "features": Service(8010, True, 0.),
-  "pandaState": Service(8011, True, 2., 1),
-  "radarState": Service(8012, True, 20., 5),
-  "roadEncodeIdx": Service(8015, True, 20., 1),
-  "liveTracks": Service(8016, True, 20.),
-  "sendcan": Service(8017, True, 100.),
-  "logMessage": Service(8018, True, 0.),
-  "liveCalibration": Service(8019, True, 4., 4),
-  "androidLog": Service(8020, True, 0., 1),
-  "carState": Service(8021, True, 100., 10),
-  "carControl": Service(8023, True, 100., 10),
-  "longitudinalPlan": Service(8024, True, 20., 2),
-  "liveLocation": Service(8025, True, 0., 1),
-  "procLog": Service(8031, True, 0.5),
-  "gpsLocationExternal": Service(8032, True, 10., 1),
-  "ubloxGnss": Service(8033, True, 10.),
-  "clocks": Service(8034, True, 1., 1),
-  "liveMpc": Service(8035, False, 20.),
-  "liveLongitudinalMpc": Service(8036, False, 20.),
-  "ubloxRaw": Service(8042, True, 20.),
-  "liveLocationKalman": Service(8054, True, 20., 2),
-  "uiLayoutState": Service(8060, True, 0.),
-  "liveParameters": Service(8064, True, 20., 2),
-  "cameraOdometry": Service(8066, True, 20., 5),
-  "lateralPlan": Service(8067, True, 20., 2),
-  "thumbnail": Service(8069, True, 0.2, 1),
-  "carEvents": Service(8070, True, 1., 1),
-  "carParams": Service(8071, True, 0.02, 1),
-  "driverCameraState": Service(8072, True, 10. if EON else 20., 1),
-  "driverEncodeIdx": Service(8061, True, 10. if EON else 20., 1),
-  "driverState": Service(8063, True, 10. if EON else 20., 1),
-  "driverMonitoringState": Service(8073, True, 10. if EON else 20., 1),
-  "offroadLayout": Service(8074, False, 0.),
-  "wideRoadEncodeIdx": Service(8075, True, 20., 1),
-  "wideRoadCameraState": Service(8076, True, 20., 1),
-  "modelV2": Service(8077, True, 20., 20),
-  "managerState": Service(8078, True, 2., 1),
 
-  "testModel": Service(8040, False, 0.),
-  "testLiveLocation": Service(8045, False, 0.),
-  "testJoystick": Service(8056, False, 0.),
+services = {
+  "roadCameraState": (True, 20., 1),  # should_log, frequency, decimation (optional)
+  "sensorEvents": (True, 100., 100),
+  "gpsNMEA": (True, 9.),
+  "deviceState": (True, 2., 1),
+  "can": (True, 100.),
+  "controlsState": (True, 100., 100),
+  "features": (True, 0.),
+  "pandaState": (True, 2., 1),
+  "radarState": (True, 20., 5),
+  "roadEncodeIdx": (True, 20., 1),
+  "liveTracks": (True, 20.),
+  "sendcan": (True, 100.),
+  "logMessage": (True, 0.),
+  "liveCalibration": (True, 4., 4),
+  "androidLog": (True, 0., 1),
+  "carState": (True, 100., 10),
+  "carControl": (True, 100., 10),
+  "longitudinalPlan": (True, 20., 2),
+  "liveLocation": (True, 0., 1),
+  "procLog": (True, 0.5),
+  "gpsLocationExternal": (True, 10., 1),
+  "ubloxGnss": (True, 10.),
+  "clocks": (True, 1., 1),
+  "liveMpc": (False, 20.),
+  "liveLongitudinalMpc": (False, 20.),
+  "ubloxRaw": (True, 20.),
+  "liveLocationKalman": (True, 20., 2),
+  "uiLayoutState": (True, 0.),
+  "liveParameters": (True, 20., 2),
+  "cameraOdometry": (True, 20., 5),
+  "lateralPlan": (True, 20., 2),
+  "thumbnail": (True, 0.2, 1),
+  "carEvents": (True, 1., 1),
+  "carParams": (True, 0.02, 1),
+  "driverCameraState": (True, 10. if EON else 20., 1),
+  "driverEncodeIdx": (True, 10. if EON else 20., 1),
+  "driverState": (True, 10. if EON else 20., 1),
+  "driverMonitoringState": (True, 10. if EON else 20., 1),
+  "offroadLayout": (False, 0.),
+  "wideRoadEncodeIdx": (True, 20., 1),
+  "wideRoadCameraState": (True, 20., 1),
+  "modelV2": (True, 20., 20),
+  "managerState": (True, 2., 1),
+
+  "testModel": (False, 0.),
+  "testLiveLocation": (False, 0.),
+  "testJoystick": (False, 0.),
 }
+service_list = {name: Service(new_port(idx), *vals) for  # type: ignore
+                idx, (name, vals) in enumerate(services.items())}
 
 
 def build_header():

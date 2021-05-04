@@ -7,7 +7,6 @@ typedef Eigen::Matrix<double, KDIM*2, 1> R1M;
 typedef Eigen::Matrix<double, 3, 1> O1M;
 typedef Eigen::Matrix<double, 3, 3, Eigen::RowMajor> M3D;
 
-extern "C" {
 void gauss_newton(double *in_x, double *in_poses, double *in_img_positions) {
 
   double res[KDIM*2] = {0};
@@ -50,5 +49,4 @@ void compute_pos(double *to_c, double *poses, double *img_positions, double *par
     O1M ecef_output(pos);
     ecef_output = rot*ecef_output + ecef_offset;
     memcpy(pos, ecef_output.data(), 3 * sizeof(double));
-}
 }

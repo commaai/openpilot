@@ -3,7 +3,7 @@
 #include <log/logprint.h>
 
 #include "common/util.h"
-#include "messaging.hpp"
+#include "messaging.h"
 
 int main() {
   ExitHandler do_exit;

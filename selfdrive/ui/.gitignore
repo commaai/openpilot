@@ -1,6 +1,7 @@
 moc_*
 *.moc
 
+replay/replay
 qt/text
 qt/spinner
 qt/setup/setup

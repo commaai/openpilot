@@ -1,6 +1,6 @@
-#include "messaging.hpp"
-#include "impl_zmq.hpp"
-#include "impl_msgq.hpp"
+#include "messaging.h"
+#include "impl_zmq.h"
+#include "impl_msgq.h"
 
 #ifdef __APPLE__
 const bool MUST_USE_ZMQ = true;

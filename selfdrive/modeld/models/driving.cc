@@ -70,7 +70,7 @@ void model_init(ModelState* s, cl_device_id device_id, cl_context context) {
 #endif
 
 #ifdef TRAFFIC_CONVENTION
-  const int idx = Params().read_db_bool("IsRHD") ? 1 : 0;
+  const int idx = Params().getBool("IsRHD") ? 1 : 0;
   s->traffic_convention[idx] = 1.0;
   s->m->addTrafficConvention(s->traffic_convention, TRAFFIC_CONVENTION_LEN);
 #endif
@@ -180,40 +180,39 @@ void fill_meta(cereal::ModelDataV2::MetaData::Builder meta, const float *meta_da
 }
 
 void fill_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const float * data,
-               int columns, int column_offset, float * plan_t_arr) {
+               int columns, int column_offset, float * plan_t_arr, bool fill_std) {
   float x_arr[TRAJECTORY_SIZE] = {};
   float y_arr[TRAJECTORY_SIZE] = {};
   float z_arr[TRAJECTORY_SIZE] = {};
-  //float x_std_arr[TRAJECTORY_SIZE];
-  //float y_std_arr[TRAJECTORY_SIZE];
-  //float z_std_arr[TRAJECTORY_SIZE];
+  float x_std_arr[TRAJECTORY_SIZE];
+  float y_std_arr[TRAJECTORY_SIZE];
+  float z_std_arr[TRAJECTORY_SIZE];
   float t_arr[TRAJECTORY_SIZE];
   for (int i=0; i<TRAJECTORY_SIZE; i++) {
     // column_offset == -1 means this data is X indexed not T indexed
     if (column_offset >= 0) {
       t_arr[i] = T_IDXS[i];
       x_arr[i] = data[i*columns + 0 + column_offset];
-      //x_std_arr[i] = data[columns*(TRAJECTORY_SIZE + i) + 0 + column_offset];
+      x_std_arr[i] = data[columns*(TRAJECTORY_SIZE + i) + 0 + column_offset];
     } else {
       t_arr[i] = plan_t_arr[i];
       x_arr[i] = X_IDXS[i];
-      //x_std_arr[i] = NAN;
+      x_std_arr[i] = NAN;
     }
     y_arr[i] = data[i*columns + 1 + column_offset];
-    //y_std_arr[i] = data[columns*(TRAJECTORY_SIZE + i) + 1 + column_offset];
+    y_std_arr[i] = data[columns*(TRAJECTORY_SIZE + i) + 1 + column_offset];
     z_arr[i] = data[i*columns + 2 + column_offset];
-    //z_std_arr[i] = data[columns*(TRAJECTORY_SIZE + i) + 2 + column_offset];
+    z_std_arr[i] = data[columns*(TRAJECTORY_SIZE + i) + 2 + column_offset];
   }
-  //kj::ArrayPtr<const float> x_std(x_std_arr, TRAJECTORY_SIZE);
-  //kj::ArrayPtr<const float> y_std(y_std_arr, TRAJECTORY_SIZE);
-  //kj::ArrayPtr<const float> z_std(z_std_arr, TRAJECTORY_SIZE);
   xyzt.setX(x_arr);
   xyzt.setY(y_arr);
   xyzt.setZ(z_arr);
-  //xyzt.setXStd(x_std);
-  //xyzt.setYStd(y_std);
-  //xyzt.setZStd(z_std);
   xyzt.setT(t_arr);
+  if (fill_std) {
+    xyzt.setXStd(x_std_arr);
+    xyzt.setYStd(y_std_arr);
+    xyzt.setZStd(z_std_arr);
+  }
 }
 
 void fill_model(cereal::ModelDataV2::Builder &framed, const ModelDataRaw &net_outputs) {
@@ -224,17 +223,17 @@ void fill_model(cereal::ModelDataV2::Builder &framed, const ModelDataRaw &net_ou
     plan_t_arr[i] = best_plan[i*PLAN_MHP_COLUMNS + 15];
   }
 
-  fill_xyzt(framed.initPosition(), best_plan, PLAN_MHP_COLUMNS, 0, plan_t_arr);
-  fill_xyzt(framed.initVelocity(), best_plan, PLAN_MHP_COLUMNS, 3, plan_t_arr);
-  fill_xyzt(framed.initOrientation(), best_plan, PLAN_MHP_COLUMNS, 9, plan_t_arr);
-  fill_xyzt(framed.initOrientationRate(), best_plan, PLAN_MHP_COLUMNS, 12, plan_t_arr);
+  fill_xyzt(framed.initPosition(), best_plan, PLAN_MHP_COLUMNS, 0, plan_t_arr, true);
+  fill_xyzt(framed.initVelocity(), best_plan, PLAN_MHP_COLUMNS, 3, plan_t_arr, false);
+  fill_xyzt(framed.initOrientation(), best_plan, PLAN_MHP_COLUMNS, 9, plan_t_arr, false);
+  fill_xyzt(framed.initOrientationRate(), best_plan, PLAN_MHP_COLUMNS, 12, plan_t_arr, false);
 
   // lane lines
   auto lane_lines = framed.initLaneLines(4);
   float lane_line_probs_arr[4];
   float lane_line_stds_arr[4];
   for (int i = 0; i < 4; i++) {
-    fill_xyzt(lane_lines[i], &net_outputs.lane_lines[i*TRAJECTORY_SIZE*2], 2, -1, plan_t_arr);
+    fill_xyzt(lane_lines[i], &net_outputs.lane_lines[i*TRAJECTORY_SIZE*2], 2, -1, plan_t_arr, false);
     lane_line_probs_arr[i] = sigmoid(net_outputs.lane_lines_prob[i]);
     lane_line_stds_arr[i] = exp(net_outputs.lane_lines[2*TRAJECTORY_SIZE*(4 + i)]);
   }
@@ -245,7 +244,7 @@ void fill_model(cereal::ModelDataV2::Builder &framed, const ModelDataRaw &net_ou
   auto road_edges = framed.initRoadEdges(2);
   float road_edge_stds_arr[2];
   for (int i = 0; i < 2; i++) {
-    fill_xyzt(road_edges[i], &net_outputs.road_edges[i*TRAJECTORY_SIZE*2], 2, -1, plan_t_arr);
+    fill_xyzt(road_edges[i], &net_outputs.road_edges[i*TRAJECTORY_SIZE*2], 2, -1, plan_t_arr, false);
     road_edge_stds_arr[i] = exp(net_outputs.road_edges[2*TRAJECTORY_SIZE*(2 + i)]);
   }
   framed.setRoadEdgeStds(road_edge_stds_arr);

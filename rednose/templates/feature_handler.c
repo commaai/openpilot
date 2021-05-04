@@ -1,4 +1,3 @@
-extern "C"{
 bool sane(double track [K + 1][5]) {
   double diffs_x [K-1];
   double diffs_y [K-1];
@@ -54,5 +53,4 @@ void merge_features(double *tracks, double *features, long long *empty_idxs) {
     }
   }
   memcpy(tracks, track_arr, (K+1) * 6000 * 5 * sizeof(double));
-}
 }
