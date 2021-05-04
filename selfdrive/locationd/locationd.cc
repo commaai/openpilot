@@ -376,6 +376,8 @@ int Localizer::locationd_thread() {
 }
 
 int main() {
+  setpriority(PRIO_PROCESS, 0, -20);
+
   Localizer localizer;
   return localizer.locationd_thread();
 }

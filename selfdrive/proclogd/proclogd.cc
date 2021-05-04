@@ -30,6 +30,8 @@ struct ProcCache {
 }
 
 int main() {
+  setpriority(PRIO_PROCESS, 0, -15);
+
   PubMaster publisher({"procLog"});
 
   double jiffy = sysconf(_SC_CLK_TCK);

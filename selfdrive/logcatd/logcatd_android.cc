@@ -6,8 +6,9 @@
 #include "messaging.h"
 
 int main() {
-  ExitHandler do_exit;
+  setpriority(PRIO_PROCESS, 0, -15);
 
+  ExitHandler do_exit;
   PubMaster pm({"androidLog"});
 
   log_time last_log_time = {};
