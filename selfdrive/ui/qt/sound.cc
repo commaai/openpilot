@@ -9,7 +9,7 @@ Sound::Sound() {
 }
 
 void Sound::play(AudibleAlert alert) {
-  int loops = sound_map[alert].second> ? QSoundEffect::Infinite : 0;
+  int loops = sound_map[alert].second ? QSoundEffect::Infinite : 0;
   sounds[alert].setLoopCount(loops);
   sounds[alert].setVolume(volume);
   sounds[alert].play();
