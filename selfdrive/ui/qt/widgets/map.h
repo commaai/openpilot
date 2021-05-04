@@ -22,7 +22,7 @@
 #include <QMap>
 #include <QPixmap>
 
-#include "messaging.hpp"
+#include "messaging.h"
 
 class MapWindow : public QOpenGLWidget {
   Q_OBJECT
