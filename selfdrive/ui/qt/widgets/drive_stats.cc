@@ -35,35 +35,35 @@ void DriveStats::parseResponse(const QString& response) {
     labels.hours->setText(QString::number((int)(obj["minutes"].toDouble() / 60)));
   };
 
-  bool metric = Params().getBool("IsMetric");
   QJsonObject json = doc.object();
   update(json["all"].toObject(), all_, metric);
   update(json["week"].toObject(), week_, metric);
 }
 
 DriveStats::DriveStats(QWidget* parent) : QWidget(parent) {
-  setStyleSheet("QLabel {font-size: 48px; font-weight: 500;}");
+  metric = Params().getBool("IsMetric");
+  QString distance_unit = metric ? "KM" : "MILES";
 
-  auto add_stats_layouts = [&](QGridLayout* gl, StatsLabels& labels, int row, const char* distance_unit) {
+  auto add_stats_layouts = [&](QGridLayout* gl, StatsLabels& labels, int row, const QString &distance_unit) {
     gl->addLayout(build_stat_layout(&labels.routes, "DRIVES"), row, 0, 3, 1);
     gl->addLayout(build_stat_layout(&labels.distance, distance_unit), row, 1, 3, 1);
     gl->addLayout(build_stat_layout(&labels.hours, "HOURS"), row, 2, 3, 1);
   };
 
-  const char* distance_unit = Params().getBool("IsMetric") ? "KM" : "MILES";
-  QGridLayout* gl = new QGridLayout();
+  QGridLayout* gl = new QGridLayout(this);
   gl->setMargin(0);
+
   gl->addWidget(new QLabel("ALL TIME"), 0, 0, 1, 3);
   add_stats_layouts(gl, all_, 1, distance_unit);
+
   gl->addWidget(new QLabel("PAST WEEK"), 6, 0, 1, 3);
   add_stats_layouts(gl, week_, 7, distance_unit);
 
-  QVBoxLayout* vlayout = new QVBoxLayout(this);
-  vlayout->addLayout(gl);
-
-  // TODO: do we really need to update this frequently?
   QString dongleId = QString::fromStdString(Params().get("DongleId"));
   QString url = "https://api.commadotai.com/v1.1/devices/" + dongleId + "/stats";
-  RequestRepeater *repeater = new RequestRepeater(this, url, "ApiCache_DriveStats", 13);
+  RequestRepeater *repeater = new RequestRepeater(this, url, "ApiCache_DriveStats", 30);
   QObject::connect(repeater, &RequestRepeater::receivedResponse, this, &DriveStats::parseResponse);
+
+  setLayout(gl);
+  setStyleSheet(R"(QLabel {font-size: 48px; font-weight: 500;})");
 }

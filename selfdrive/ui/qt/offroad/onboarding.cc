@@ -1,9 +1,9 @@
 #include <QLabel>
 #include <QPainter>
 #include <QVBoxLayout>
-#include <QQuickWidget>
-#include <QQmlContext>
 #include <QDesktopWidget>
+#include <QQmlContext>
+#include <QQuickWidget>
 
 #include "common/params.h"
 #include "onboarding.h"
@@ -50,7 +50,12 @@ void TrainingGuide::paintEvent(QPaintEvent *event) {
   imageCorner = rect.topLeft();
 }
 
-TermsPage::TermsPage(QWidget *parent) : QFrame(parent){
+void TermsPage::showEvent(QShowEvent *event) {
+  // late init, building QML widget takes 200ms
+  if (layout()) {
+    return;
+  }
+
   QVBoxLayout *main_layout = new QVBoxLayout;
   main_layout->setMargin(40);
   main_layout->setSpacing(40);
@@ -61,14 +66,16 @@ TermsPage::TermsPage(QWidget *parent) : QFrame(parent){
   text->setAttribute(Qt::WA_AlwaysStackOnTop);
   text->setClearColor(Qt::transparent);
 
-  text->rootContext()->setContextProperty("font_size", 55);
-
   QString text_view = util::read_file("../assets/offroad/tc.html").c_str();
   text->rootContext()->setContextProperty("text_view", text_view);
+  text->rootContext()->setContextProperty("font_size", 55);
 
   text->setSource(QUrl::fromLocalFile("qt/offroad/text_view.qml"));
 
   main_layout->addWidget(text);
+
+  QObject *obj = (QObject*)text->rootObject();
+  QObject::connect(obj, SIGNAL(qmlSignal()), SLOT(enableAccept()));
 
   // TODO: add decline page
   QHBoxLayout* buttons = new QHBoxLayout;
@@ -82,15 +89,11 @@ TermsPage::TermsPage(QWidget *parent) : QFrame(parent){
   buttons->addWidget(accept_btn);
   QObject::connect(accept_btn, &QPushButton::released, this, &TermsPage::acceptedTerms);
 
-  QObject *obj = (QObject*)text->rootObject();
-  QObject::connect(obj, SIGNAL(qmlSignal()), SLOT(enableAccept()));
   setLayout(main_layout);
   setStyleSheet(R"(
-    * {
-      font-size: 50px;
-    }
     QPushButton {
       padding: 50px;
+      font-size: 50px;
       border-radius: 10px;
       background-color: #292929;
     }
@@ -135,7 +138,6 @@ OnboardingWindow::OnboardingWindow(QWidget *parent) : QStackedWidget(parent) {
     updateActiveScreen();
   });
   addWidget(tr);
-
 
   setStyleSheet(R"(
     * {
