@@ -324,6 +324,8 @@ void panda_state_thread(bool spoofing_started) {
       assert((result == 0) || (result == ERR_NO_VALUE));
       result = params.remove("CarParams");
       assert((result == 0) || (result == ERR_NO_VALUE));
+      result = params.remove("ControlsReady");
+      assert((result == 0) || (result == ERR_NO_VALUE));
 
       if (!safety_setter_thread_running) {
         safety_setter_thread_running = true;
