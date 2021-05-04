@@ -1,6 +1,6 @@
 #include <QApplication>
 
-#include "replay.hpp"
+#include "replay.h"
 
 int main(int argc, char *argv[]){
   QApplication a(argc, argv);

@@ -24,7 +24,7 @@
 #include "common/util.h"
 #include "camerad/cameras/camera_common.h"
 #include "logger.h"
-#include "messaging.hpp"
+#include "messaging.h"
 #include "services.h"
 
 #include "visionipc.h"

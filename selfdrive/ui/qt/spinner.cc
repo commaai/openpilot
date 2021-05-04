@@ -8,8 +8,8 @@
 #include <QApplication>
 #include <QPainter>
 
-#include "spinner.hpp"
-#include "qt_window.hpp"
+#include "spinner.h"
+#include "qt_window.h"
 #include "selfdrive/hardware/hw.h"
 
 TrackWidget::TrackWidget(QWidget *parent) : QWidget(parent) {

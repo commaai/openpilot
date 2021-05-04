@@ -4,19 +4,19 @@
 #include <cassert>
 
 #ifndef QCOM
-#include "networking.hpp"
+#include "networking.h"
 #endif
-#include "settings.hpp"
-#include "widgets/input.hpp"
-#include "widgets/toggle.hpp"
-#include "widgets/offroad_alerts.hpp"
-#include "widgets/scrollview.hpp"
-#include "widgets/controls.hpp"
-#include "widgets/ssh_keys.hpp"
+#include "settings.h"
+#include "widgets/input.h"
+#include "widgets/toggle.h"
+#include "widgets/offroad_alerts.h"
+#include "widgets/scrollview.h"
+#include "widgets/controls.h"
+#include "widgets/ssh_keys.h"
 #include "common/params.h"
 #include "common/util.h"
 #include "selfdrive/hardware/hw.h"
-#include "ui.hpp"
+#include "ui.h"
 
 TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *toggles_list = new QVBoxLayout();

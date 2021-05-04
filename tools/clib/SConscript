@@ -4,5 +4,5 @@ env['CPPPATH'] += [get_paths()['include']]
 
 from Cython.Build import cythonize
 cythonize("cframereader.pyx")
-env.SharedLibrary(File('cframereader.so'), ['cframereader.cpp', 'FrameReader.cpp'], LIBS=['avformat', 'avcodec', 'avutil', 'swscale'])
+env.SharedLibrary(File('cframereader.so'), ['cframereader.cpp', 'FrameReader.cc'], LIBS=['avformat', 'avcodec', 'avutil', 'swscale'])
 

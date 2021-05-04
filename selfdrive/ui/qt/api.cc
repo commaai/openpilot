@@ -10,7 +10,7 @@
 #include <QTimer>
 #include <QRandomGenerator>
 
-#include "api.hpp"
+#include "api.h"
 #include "common/params.h"
 #include "common/util.h"
 

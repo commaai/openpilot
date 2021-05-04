@@ -3,7 +3,7 @@
 #include <QJsonObject>
 #include <QJsonDocument>
 
-#include "offroad_alerts.hpp"
+#include "offroad_alerts.h"
 #include "selfdrive/hardware/hw.h"
 #include "selfdrive/common/util.h"
 

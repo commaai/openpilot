@@ -7,7 +7,7 @@
 #include "common/swaglog.h"
 #include "common/gpio.h"
 #include "common/util.h"
-#include "messaging.hpp"
+#include "messaging.h"
 #include "panda.h"
 
 Panda::Panda(){

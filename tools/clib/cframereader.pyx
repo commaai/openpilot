@@ -1,7 +1,7 @@
 # distutils: language = c++
 # cython: language_level=3
 
-cdef extern from "FrameReader.hpp":
+cdef extern from "FrameReader.h":
   cdef cppclass CFrameReader "FrameReader":
     CFrameReader(const char *)
     char *get(int)

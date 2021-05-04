@@ -6,8 +6,8 @@
 #include <QQuickWidget>
 
 #include "common/params.h"
-#include "onboarding.hpp"
-#include "home.hpp"
+#include "onboarding.h"
+#include "home.h"
 #include "util.h"
 
 

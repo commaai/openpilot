@@ -19,7 +19,7 @@
 #include "common/swaglog.h"
 #include "common/params.h"
 #include "common/version.h"
-#include "messaging.hpp"
+#include "messaging.h"
 #include "logger.h"
 
 

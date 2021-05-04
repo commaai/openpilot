@@ -6,14 +6,14 @@
 
 #include <eigen3/Eigen/Dense>
 
-#include "messaging.hpp"
+#include "messaging.h"
 #include "common/params.h"
 #include "common/util.h"
 #include "common/swaglog.h"
 #include "common/timing.h"
 #include "common/transformations/coordinates.hpp"
 #include "common/transformations/orientation.hpp"
-#include "selfdrive/sensord/sensors/constants.hpp"
+#include "selfdrive/sensord/sensors/constants.h"
 
 #include "models/live_kf.h"
 

@@ -10,7 +10,7 @@
 #include "common/params.h"
 
 #include "models/driving.h"
-#include "messaging.hpp"
+#include "messaging.h"
 
 ExitHandler do_exit;
 // globals

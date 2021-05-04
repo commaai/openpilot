@@ -16,7 +16,7 @@
 #include <hardware/sensors.h>
 #include <utils/Timers.h>
 
-#include "messaging.hpp"
+#include "messaging.h"
 #include "common/timing.h"
 #include "common/util.h"
 #include "common/swaglog.h"

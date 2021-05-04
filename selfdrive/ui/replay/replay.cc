@@ -1,4 +1,4 @@
-#include "replay.hpp"
+#include "replay.h"
 
 Replay::Replay(QString route_, int seek) : route(route_) {
   unlogger = new Unlogger(&events, &events_lock, &frs, seek);

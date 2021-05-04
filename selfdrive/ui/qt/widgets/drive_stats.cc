@@ -4,8 +4,8 @@
 #include <QVBoxLayout>
 
 #include "common/params.h"
-#include "drive_stats.hpp"
-#include "request_repeater.hpp"
+#include "drive_stats.h"
+#include "request_repeater.h"
 
 const double MILE_TO_KM = 1.60934;
 

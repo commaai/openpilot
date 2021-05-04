@@ -2,8 +2,8 @@
 #include "common/swaglog.h"
 #include "common/timing.h"
 
-#include "bmx055_temp.hpp"
-#include "bmx055_accel.hpp"
+#include "bmx055_temp.h"
+#include "bmx055_accel.h"
 
 
 BMX055_Temp::BMX055_Temp(I2CBus *bus) : I2CSensor(bus) {}

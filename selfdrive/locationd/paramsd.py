@@ -38,6 +38,8 @@ class ParamsLearner:
       yaw_rate = msg.angularVelocityCalibrated.value[2]
       yaw_rate_std = msg.angularVelocityCalibrated.std[2]
       yaw_rate_valid = msg.angularVelocityCalibrated.valid
+      yaw_rate_valid = yaw_rate_valid and (not math.isnan(yaw_rate))
+      yaw_rate_valid = yaw_rate_valid and (not math.isnan(yaw_rate_std))
 
       if self.active:
         if msg.inputsOK and msg.posenetOK and yaw_rate_valid:
@@ -126,13 +128,17 @@ def main(sm=None, pm=None):
         learner.handle_log(t, which, sm[which])
 
     if sm.updated['liveLocationKalman']:
+      x = learner.kf.x
+      if any(map(math.isnan, x)):
+        cloudlog.error("NaN in liveParameters estimate. Resetting to default values")
+        learner = ParamsLearner(CP, CP.steerRatio, 1.0, 0.0)
+        continue
+
       msg = messaging.new_message('liveParameters')
       msg.logMonoTime = sm.logMonoTime['carState']
 
       msg.liveParameters.posenetValid = True
       msg.liveParameters.sensorValid = True
-
-      x = learner.kf.x
       msg.liveParameters.steerRatio = float(x[States.STEER_RATIO])
       msg.liveParameters.stiffnessFactor = float(x[States.STIFFNESS])
       msg.liveParameters.angleOffsetAverageDeg = math.degrees(x[States.ANGLE_OFFSET])

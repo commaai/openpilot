@@ -8,9 +8,9 @@
 #include "common/timing.h"
 #include "common/swaglog.h"
 
-#include "home.hpp"
-#include "widgets/drive_stats.hpp"
-#include "widgets/setup.hpp"
+#include "home.h"
+#include "widgets/drive_stats.h"
+#include "widgets/setup.h"
 
 // HomeWindow: the container for the offroad and onroad UIs
 

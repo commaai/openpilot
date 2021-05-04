@@ -1,7 +1,7 @@
 #include <iostream>
 #include <string>
 
-#include "file_sensor.hpp"
+#include "file_sensor.h"
 
 FileSensor::FileSensor(std::string filename) : file(filename) {
 }
