@@ -7,6 +7,13 @@
 
 #define ERR_NO_VALUE -33
 
+enum ParamKeyType {
+  PERSISTENT = 0x2,
+  CLEAR_ON_MANAGER_START = 0x04,
+  CLEAR_ON_PANDA_DISCONNECT = 0x08,
+  ALL = 0x2 | 0x4 | 0x08
+};
+
 class Params {
 private:
   std::string params_path;
@@ -15,11 +22,13 @@ public:
   Params(bool persistent_param = false);
   Params(const std::string &path);
 
+  bool check_key(const std::string &key);
   // Delete a value
   int remove(const char *key);
   inline int remove(const std::string &key) {
     return remove (key.c_str());
   }
+  void clear_all(ParamKeyType type);
 
   // read all values
   int read_db_all(std::map<std::string, std::string> *params);
