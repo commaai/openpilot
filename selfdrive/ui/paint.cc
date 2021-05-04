@@ -317,9 +317,7 @@ static void ui_draw_vision(UIState *s) {
     }
     // Set Speed, Current Speed, Status/Events
     ui_draw_vision_header(s);
-    if (scene->alert_size == cereal::ControlsState::AlertSize::NONE) {
-      ui_draw_vision_footer(s);
-    }
+    ui_draw_vision_footer(s);
   } else {
     ui_draw_driver_view(s);
   }
@@ -334,8 +332,7 @@ static void ui_draw_background(UIState *s) {
 void ui_draw(UIState *s, int w, int h) {
   s->viz_rect = Rect{bdr_s, bdr_s, w - 2 * bdr_s, h - 2 * bdr_s};
 
-  const bool draw_alerts = s->scene.started;
-  const bool draw_vision = draw_alerts && s->vipc_client->connected;
+  const bool draw_vision = s->scene.started && s->vipc_client->connected;
 
   // GL drawing functions
   ui_draw_background(s);

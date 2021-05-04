@@ -1,11 +1,11 @@
 #include <iostream>
 
-#include "common/timing.h"
-#include "common/swaglog.h"
-
-#include "onroad.h"
-#include "paint.h"
-
+#include "selfdrive/common/timing.h"
+#include "selfdrive/common/swaglog.h"
+#include "selfdrive/hardware/hw.h"
+#include "selfdrive/ui/paint.h"
+#include "selfdrive/ui/qt/onroad.h"
+#include "selfdrive/ui/qt/qt_window.h"
 
 OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   layout = new QStackedLayout();
@@ -55,9 +55,64 @@ OnroadAlerts::OnroadAlerts(QWidget *parent) : QFrame(parent) {
 
   setLayout(layout);
   setStyleSheet("color: white;");
+
+  // setup sounds
+  for (auto &kv : sound_map) {
+    auto path = QUrl::fromLocalFile(kv.second.first);
+    sounds[kv.first].setSource(path);
+  }
 }
 
 void OnroadAlerts::update(const UIState &s) {
+  SubMaster &sm = *(s.sm);
+  if (sm.updated("carState")) {
+    // scale volume with speed
+    volume = util::map_val(sm["carState"].getCarState().getVEgo(), 0.f, 20.f,
+                           Hardware::MIN_VOLUME, Hardware::MAX_VOLUME);
+  }
+  if (sm.updated("controlsState")) {
+    const cereal::ControlsState::Reader &cs = sm["controlsState"].getControlsState();
+    updateAlert(QString::fromStdString(cs.getAlertText1()), QString::fromStdString(cs.getAlertText2()),
+                cs.getAlertBlinkingRate(), cs.getAlertType(), cs.getAlertSize(), cs.getAlertSound());
+
+  } else {
+    // Handle controls timeout
+    if (s.scene.deviceState.getStarted() && (sm.frame - s.scene.started_frame) > 10 * UI_FREQ) {
+      const uint64_t cs_frame = sm.rcv_frame("controlsState");
+      if (cs_frame < s.scene.started_frame) {
+        // car is started, but controlsState hasn't been seen at all
+        updateAlert("openpilot Unavailable", "Waiting for controls to start", 0,
+                    "controlsWaiting", cereal::ControlsState::AlertSize::MID, AudibleAlert::NONE);
+      } else if ((sm.frame - cs_frame) > 5 * UI_FREQ) {
+        // car is started, but controls is lagging or died
+        updateAlert("TAKE CONTROL IMMEDIATELY", "Controls Unresponsive", 0,
+                    "controlsUnresponsive", cereal::ControlsState::AlertSize::FULL, AudibleAlert::CHIME_WARNING_REPEAT);
+        //s.status = STATUS_ALERT;
+      }
+    }
+  }
+
+  auto c = bg_colors[s.status];
+  float alpha = 0.375 * cos((millis_since_boot() / 1000) * 2 * M_PI * blinking_rate) + 0.625;
+  bg.setRgb(c.r*255, c.g*255, c.b*255, c.a*alpha*255);
+}
+
+void OnroadAlerts::updateAlert(const QString &text1, const QString &text2, float blink_rate,
+                               std::string type, cereal::ControlsState::AlertSize size, AudibleAlert sound) {
+
+  if (alert_type.compare(type) != 0) {
+    stopSounds();
+    if (sound != AudibleAlert::NONE) {
+      playSound(sound);
+    }
+  }
+  alert_type = type;
+  blinking_rate = blink_rate;
+
+  title->setText(text1);
+  msg->setText(text2);
+  msg->setVisible(!msg->text().isEmpty());
+
   // TODO: this is really slow
   /*
   if (s.scene.alert_size == cereal::ControlsState::AlertSize::SMALL) {
@@ -69,21 +124,30 @@ void OnroadAlerts::update(const UIState &s) {
     //title->setStyleSheet("font-size: 120px; font-weight: 500;");
   }
   */
-  title->setText(QString::fromStdString(s.scene.alert_text1));
-  msg->setText(QString::fromStdString(s.scene.alert_text2));
-  msg->setVisible(!msg->text().isEmpty());
 
   static std::map<cereal::ControlsState::AlertSize, const int> alert_size_map = {
       {cereal::ControlsState::AlertSize::SMALL, 241},
       {cereal::ControlsState::AlertSize::MID, 390},
-      {cereal::ControlsState::AlertSize::FULL, s.fb_h}};
-  setFixedHeight(alert_size_map[s.scene.alert_size]);
+      {cereal::ControlsState::AlertSize::FULL, vwp_h}};
+  setFixedHeight(alert_size_map[size]);
 
-  auto c = bg_colors[s.status];
-  float alpha = 0.375 * cos((millis_since_boot() / 1000) * 2 * M_PI * s.scene.alert_blinking_rate) + 0.625;
-  bg.setRgb(c.r*255, c.g*255, c.b*255, c.a*alpha*255);
+  setVisible(size != cereal::ControlsState::AlertSize::NONE);
+}
 
-  setVisible(s.scene.alert_size != cereal::ControlsState::AlertSize::NONE);
+void OnroadAlerts::playSound(AudibleAlert alert) {
+  int loops = sound_map[alert].second ? QSoundEffect::Infinite : 0;
+  sounds[alert].setLoopCount(loops);
+  sounds[alert].setVolume(volume);
+  sounds[alert].play();
+}
+
+void OnroadAlerts::stopSounds() {
+  for (auto &kv : sounds) {
+    // Only stop repeating sounds
+    if (kv.second.loopsRemaining() == QSoundEffect::Infinite) {
+      kv.second.stop();
+    }
+  }
 }
 
 void OnroadAlerts::paintEvent(QPaintEvent *event) {

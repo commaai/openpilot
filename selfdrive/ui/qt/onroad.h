@@ -1,9 +1,14 @@
 #pragma once
+#include <map>
 
+#include <QSoundEffect>
 #include <QtWidgets>
 
-#include "ui/ui.h"
+#include "cereal/gen/cpp/log.capnp.h"
+#include "selfdrive/ui/ui.h"
 
+
+typedef cereal::CarControl::HUDControl::AudibleAlert AudibleAlert;
 
 // ***** onroad widgets *****
 
@@ -20,6 +25,28 @@ private:
   QColor bg;
   QLabel *title, *msg;
   QVBoxLayout *layout;
+  void updateAlert(const QString &text1, const QString &text2, float blink_rate,
+                   std::string type, cereal::ControlsState::AlertSize size, AudibleAlert sound);
+
+  // sounds
+  std::map<AudibleAlert, std::pair<QString, bool>> sound_map {
+    // AudibleAlert, (file path, inf loop)
+    {AudibleAlert::CHIME_DISENGAGE, {"../assets/sounds/disengaged.wav", false}},
+    {AudibleAlert::CHIME_ENGAGE, {"../assets/sounds/engaged.wav", false}},
+    {AudibleAlert::CHIME_WARNING1, {"../assets/sounds/warning_1.wav", false}},
+    {AudibleAlert::CHIME_WARNING2, {"../assets/sounds/warning_2.wav", false}},
+    {AudibleAlert::CHIME_WARNING2_REPEAT, {"../assets/sounds/warning_2.wav", true}},
+    {AudibleAlert::CHIME_WARNING_REPEAT, {"../assets/sounds/warning_repeat.wav", true}},
+    {AudibleAlert::CHIME_ERROR, {"../assets/sounds/error.wav", false}},
+    {AudibleAlert::CHIME_PROMPT, {"../assets/sounds/error.wav", false}}
+  };
+  float volume = 0;
+  float blinking_rate = 0;
+  std::string alert_type;
+  std::map<AudibleAlert, QSoundEffect> sounds;
+
+  void playSound(AudibleAlert alert);
+  void stopSounds();
 
 public slots:
   void update(const UIState &s);

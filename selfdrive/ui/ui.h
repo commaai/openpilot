@@ -20,8 +20,6 @@
 #include "visionipc.h"
 #include "visionipc_client.h"
 
-#include "qt/sound.h"
-
 #include <QObject>
 #include <QTimer>
 
@@ -89,12 +87,6 @@ typedef struct UIScene {
   bool is_rhd;
   bool driver_view;
 
-  std::string alert_text1;
-  std::string alert_text2;
-  std::string alert_type;
-  float alert_blinking_rate;
-  cereal::ControlsState::AlertSize alert_size;
-
   cereal::PandaState::PandaType pandaType;
   NetStatus athenaStatus;
 
@@ -141,7 +133,6 @@ typedef struct UIState {
 
   std::unique_ptr<SubMaster> sm;
 
-  std::unique_ptr<Sound> sound;
   UIStatus status;
   UIScene scene;
 
