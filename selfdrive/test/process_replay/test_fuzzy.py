@@ -15,16 +15,16 @@ def get_process_config(process):
   return [cfg for cfg in CONFIGS if cfg.proc_name == process][0]
 
 
+def get_event_union_strategy(r, name):
+  return st.fixed_dictionaries({
+    'valid': st.booleans(),
+    'logMonoTime': st.integers(min_value=0, max_value=2**64-1),
+    name: r[name[0].upper() + name[1:]],
+  })
+
+
 def get_strategy_for_events(event_types):
   # TODO: generate automatically based on capnp definitions
-
-  def get_std_event(r, name):
-    return st.fixed_dictionaries({
-      'valid': st.booleans(),
-      'logMonoTime': st.integers(min_value=0, max_value=2**64-1),
-      name: r[name[0].upper() + name[1:]],
-    })
-
   r = {}
   r['liveLocationKalman.Measurement'] = st.fixed_dictionaries({
     'value': st.lists(st.floats(), min_size=3, max_size=3),
@@ -40,20 +40,16 @@ def get_strategy_for_events(event_types):
     'vEgo': st.floats(),
   })
 
-  a = st.one_of(*[get_std_event(r, n) for n in event_types])
+  a = st.one_of(*[get_event_union_strategy(r, n) for n in event_types])
   return st.lists(a)
 
 
 def get_strategy_for_process(process):
-  cfg = [cfg for cfg in CONFIGS if cfg.proc_name == process][0]
-  return get_strategy_for_events(cfg.pub_sub.keys())
+  return get_strategy_for_events(get_process_config(process).pub_sub.keys())
 
 
-def convert_to_lr(data):
-  r = []
-  for m in data:
-    r.append(log.Event.new_message(**m).as_reader())
-  return r
+def convert_to_lr(msgs):
+  return [log.Event.new_message(**m).as_reader() for m in msgs]
 
 
 def assume_all_services_present(cfg, lr):
