@@ -3,8 +3,8 @@
 #include "selfdrive/common/timing.h"
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/hardware/hw.h"
-#include "selfdrive/ui/paint.h"
 #include "selfdrive/ui/qt/onroad.h"
+#include "selfdrive/ui/paint.h"
 #include "selfdrive/ui/qt/qt_window.h"
 
 OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
@@ -57,6 +57,7 @@ OnroadAlerts::OnroadAlerts(QWidget *parent) : QFrame(parent) {
 
   setLayout(layout);
   setStyleSheet("color: white;");
+  setVisible(false);
 
   // setup sounds
   for (auto &kv : sound_map) {
@@ -76,7 +77,6 @@ void OnroadAlerts::update(const UIState &s) {
     const cereal::ControlsState::Reader &cs = sm["controlsState"].getControlsState();
     updateAlert(QString::fromStdString(cs.getAlertText1()), QString::fromStdString(cs.getAlertText2()),
                 cs.getAlertBlinkingRate(), cs.getAlertType(), cs.getAlertSize(), cs.getAlertSound());
-
   } else {
     // Handle controls timeout
     if (s.scene.deviceState.getStarted() && (sm.frame - s.scene.started_frame) > 10 * UI_FREQ) {
@@ -104,15 +104,17 @@ void OnroadAlerts::update(const UIState &s) {
 void OnroadAlerts::updateAlert(const QString &text1, const QString &text2, float blink_rate,
                                const std::string &type, cereal::ControlsState::AlertSize size, AudibleAlert sound) {
 
-  if (alert_type.compare(type) != 0) {
-    stopSounds();
-    if (sound != AudibleAlert::NONE) {
-      playSound(sound);
-    }
+  if (alert_type.compare(type) == 0) {
+    return;
   }
+
+  stopSounds();
+  if (sound != AudibleAlert::NONE) {
+    playSound(sound);
+  }
+
   alert_type = type;
   blinking_rate = blink_rate;
-
   title->setText(text1);
   msg->setText(text2);
   msg->setVisible(!msg->text().isEmpty());
