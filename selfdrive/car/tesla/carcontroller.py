@@ -14,7 +14,6 @@ class CarController():
     can_sends = []
 
     # Temp disable steering on a hands_on_fault, and allow for user override
-    # TODO: better user blending
     hands_on_fault = (CS.steer_warning == "EAC_ERROR_HANDS_ON" and CS.hands_on_level >= 3)
     lkas_enabled = enabled and (not hands_on_fault)
 
@@ -34,6 +33,10 @@ class CarController():
 
     self.last_angle = apply_angle
     can_sends.append(self.tesla_can.create_steering_control(apply_angle, lkas_enabled, frame))
+
+    # Cancel on user steering override, since there is no steering torque blending
+    if hands_on_fault:
+      cruise_cancel = True
 
     # Cancel when openpilot is not enabled anymore
     if not enabled and bool(CS.out.cruiseState.enabled):
