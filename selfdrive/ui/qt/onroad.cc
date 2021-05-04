@@ -38,20 +38,22 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
 
 OnroadAlerts::OnroadAlerts(QWidget *parent) : QFrame(parent) {
   layout = new QVBoxLayout(this);
-  layout->setSpacing(0);
-  layout->setMargin(10);
+  layout->setSpacing(25);
+  layout->setMargin(50);
 
   title = new QLabel();
+  title->setWordWrap(true);
   title->setAlignment(Qt::AlignCenter);
   title->setStyleSheet("font-size: 80px; font-weight: 500;");
-  layout->addWidget(title, 2, Qt::AlignVCenter);
+  layout->addWidget(title);
 
   msg = new QLabel();
   msg->setAlignment(Qt::AlignCenter);
   msg->setStyleSheet("font-size: 65px; font-weight: 400;");
-  layout->addWidget(msg, 0, Qt::AlignTop);
+  layout->addWidget(msg);
 
   layout->addStretch(1);
+  layout->insertStretch(0, 1);
 
   setLayout(layout);
   setStyleSheet("color: white;");
@@ -100,7 +102,7 @@ void OnroadAlerts::update(const UIState &s) {
 }
 
 void OnroadAlerts::updateAlert(const QString &text1, const QString &text2, float blink_rate,
-                               std::string type, cereal::ControlsState::AlertSize size, AudibleAlert sound) {
+                               const std::string &type, cereal::ControlsState::AlertSize size, AudibleAlert sound) {
 
   if (alert_type.compare(type) != 0) {
     stopSounds();
@@ -124,8 +126,9 @@ void OnroadAlerts::updateAlert(const QString &text1, const QString &text2, float
     title->setStyleSheet("font-size: 80px; font-weight: 500;");
   } else if (size == cereal::ControlsState::AlertSize::FULL) {
     setFixedHeight(vwp_h);
+    int title_size = (title->text().size() > 15) ? 120 : 100;
+    title->setStyleSheet(QString("font-size: %1px; font-weight: 500;").arg(title_size));
     msg->setStyleSheet("font-size: 90px; font-weight: 400;");
-    title->setStyleSheet("font-size: 120px; font-weight: 500;");
   }
 
   setVisible(size != cereal::ControlsState::AlertSize::NONE);

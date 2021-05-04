@@ -25,8 +25,9 @@ private:
   QColor bg;
   QLabel *title, *msg;
   QVBoxLayout *layout;
+
   void updateAlert(const QString &text1, const QString &text2, float blink_rate,
-                   std::string type, cereal::ControlsState::AlertSize size, AudibleAlert sound);
+                   const std::string &type, cereal::ControlsState::AlertSize size, AudibleAlert sound);
 
   // sounds
   std::map<AudibleAlert, std::pair<QString, bool>> sound_map {
