@@ -46,14 +46,12 @@ class CarState(CarStateBase):
     ret.steerWarning = self.steer_warning in ["EAC_ERROR_MAX_SPEED", "EAC_ERROR_MIN_SPEED", "EAC_ERROR_TMP_FAULT", "SNA"]  # TODO: not sure if this list is complete
 
     # Cruise state
-    autopilot_status = self.can_define.dv["AutopilotStatus"]["autopilotStatus"].get(int(cp_cam.vl["AutopilotStatus"]["autopilotStatus"]), None)
     cruise_state = self.can_define.dv["DI_state"]["DI_cruiseState"].get(int(cp.vl["DI_state"]["DI_cruiseState"]), None)
     speed_units = self.can_define.dv["DI_state"]["DI_speedUnits"].get(int(cp.vl["DI_state"]["DI_speedUnits"]), None)
 
     acc_enabled = (cruise_state in ["ENABLED", "STANDSTILL", "OVERRIDE", "PRE_FAULT", "PRE_CANCEL"])
-    autopilot_enabled = (autopilot_status in ["ACTIVE_1", "ACTIVE_2", "ACTIVE_NAVIGATE_ON_AUTOPILOT"])
 
-    ret.cruiseState.enabled = acc_enabled and not autopilot_enabled
+    ret.cruiseState.enabled = acc_enabled
     if speed_units == "KPH":
       ret.cruiseState.speed = cp.vl["DI_state"]["DI_digitalSpeed"] * CV.KPH_TO_MS
     elif speed_units == "MPH":
@@ -176,7 +174,6 @@ class CarState(CarStateBase):
   def get_cam_can_parser(CP):
     signals = [
       # sig_name, sig_address, default
-      ("autopilotStatus", "AutopilotStatus", 0),
     ]
     checks = [
       # sig_address, frequency
