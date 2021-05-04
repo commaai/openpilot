@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import math
+import numpy as np
 from collections import Counter
 
 import hypothesis.strategies as st
@@ -107,6 +107,15 @@ def assume_all_services_present(cfg, lr):
     assume(tps[p] > 0)
 
 
+def is_finite(d):
+  ret = True
+  for v in d.values():
+    if isinstance(v, dict):
+      ret = ret and is_finite(v)
+    else:
+      ret = ret and np.isfinite(v).all()
+  return ret
+
 @given(get_strategy_for_process('paramsd'))
 @settings(deadline=1000)
 @seed(260777467434450485154004373463592546383)
@@ -118,7 +127,7 @@ def test_paramsd(dat):
 
   for r in results:
     lp = r.liveParameters.to_dict()
-    assert all(map(math.isfinite, lp.values()))
+    assert is_finite(lp)
 
 
 @given(get_strategy_for_process('locationd'))
@@ -131,7 +140,7 @@ def test_locationd(dat):
 
   for r in results:
     lp = r.liveLocationKalman.to_dict()
-    assert all(map(math.isfinite, lp.values()))
+    assert is_finite(lp)
 
 
 if __name__ == "__main__":
