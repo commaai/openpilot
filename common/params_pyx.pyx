@@ -13,6 +13,7 @@ cdef class ParamKeyType:
   PERSISTENT = c_ParamKeyType.PERSISTENT
   CLEAR_ON_MANAGER_START = c_ParamKeyType.CLEAR_ON_MANAGER_START
   CLEAR_ON_PANDA_DISCONNECT = c_ParamKeyType.CLEAR_ON_PANDA_DISCONNECT
+  CLEAR_ON_IGNITION = c_ParamKeyType.CLEAR_ON_IGNITION
   ALL = c_ParamKeyType.ALL
 
 def ensure_bytes(v):
@@ -42,12 +43,6 @@ cdef class Params:
       tx_type = ParamKeyType.ALL
 
     self.p.clearAll(tx_type)
-
-  def manager_start(self):
-    self.clear_all(ParamKeyType.CLEAR_ON_MANAGER_START)
-
-  def panda_disconnect(self):
-    self.clear_all(ParamKeyType.CLEAR_ON_PANDA_DISCONNECT)
 
   def check_key(self, key):
     key = ensure_bytes(key)
