@@ -99,7 +99,7 @@ def main(sm=None, pm=None):
       angle_offset_sane = abs(params.get('angleOffsetAverageDeg')) < 10.0
       steer_ratio_sane = min_sr <= params['steerRatio'] <= max_sr
       params_sane = angle_offset_sane and steer_ratio_sane
-      if params is not None and not params_sane:
+      if not params_sane:
         cloudlog.info(f"Invalid starting values found {params}")
         params = None
     except Exception as e:
