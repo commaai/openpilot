@@ -1,5 +1,5 @@
 #include <cassert>
-#include "common/visionimg.h"
+#include "selfdrive/common/visionimg.h"
 
 #ifdef QCOM
 #include <system/graphics.h>

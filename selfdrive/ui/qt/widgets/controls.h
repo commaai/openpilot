@@ -6,7 +6,7 @@
 #include <QPushButton>
 #include <QVBoxLayout>
 
-#include "common/params.h"
+#include "selfdrive/common/params.h"
 #include "toggle.h"
 
 QFrame *horizontal_line(QWidget *parent = nullptr);

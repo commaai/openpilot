@@ -15,10 +15,10 @@
 #include <functional>
 #include <unordered_map>
 
-#include "messaging.h"
+#include "cereal/messaging/messaging.h"
 
-#include "common/timing.h"
-#include "common/util.h"
+#include "selfdrive/common/timing.h"
+#include "selfdrive/common/util.h"
 
 ExitHandler do_exit;
 

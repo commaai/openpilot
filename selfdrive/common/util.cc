@@ -1,7 +1,7 @@
 #include <errno.h>
 #include <sstream>
 
-#include "common/util.h"
+#include "util.h"
 
 #ifdef __linux__
 #include <sys/prctl.h>

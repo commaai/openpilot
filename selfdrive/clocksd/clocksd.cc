@@ -14,9 +14,9 @@
 #include <cassert>
 #include <chrono>
 
-#include "messaging.h"
-#include "common/timing.h"
-#include "common/util.h"
+#include "cereal/messaging/messaging.h"
+#include "selfdrive/common/timing.h"
+#include "selfdrive/common/util.h"
 
 ExitHandler do_exit;
 

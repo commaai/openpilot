@@ -1,4 +1,4 @@
-#include "common/params.h"
+#include "selfdrive/common/params.h"
 
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
@@ -14,8 +14,8 @@
 #include <csignal>
 #include <string.h>
 #include <unordered_map>
-#include "common/util.h"
-#include "common/swaglog.h"
+#include "selfdrive/common/util.h"
+#include "selfdrive/common/swaglog.h"
 
 // keep trying if x gets interrupted by a signal
 #define HANDLE_EINTR(x)                                       \

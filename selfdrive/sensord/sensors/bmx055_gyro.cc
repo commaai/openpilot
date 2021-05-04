@@ -1,6 +1,6 @@
 #include <cassert>
 #include <cmath>
-#include "common/swaglog.h"
+#include "selfdrive/common/swaglog.h"
 
 #include "bmx055_gyro.h"
 

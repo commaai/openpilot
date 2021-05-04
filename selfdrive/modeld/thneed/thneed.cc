@@ -5,8 +5,8 @@
 #include <string>
 #include <string.h>
 #include <errno.h>
-#include "common/timing.h"
-#include "common/clutil.h"
+#include "selfdrive/common/timing.h"
+#include "selfdrive/common/clutil.h"
 #include "thneed.h"
 
 //#define RUN_DISASSEMBLER

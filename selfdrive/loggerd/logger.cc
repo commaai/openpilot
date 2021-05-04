@@ -16,10 +16,10 @@
 #include <cutils/properties.h>
 #endif
 
-#include "common/swaglog.h"
-#include "common/params.h"
-#include "common/version.h"
-#include "messaging.h"
+#include "selfdrive/common/swaglog.h"
+#include "selfdrive/common/params.h"
+#include "selfdrive/common/version.h"
+#include "cereal/messaging/messaging.h"
 #include "logger.h"
 
 

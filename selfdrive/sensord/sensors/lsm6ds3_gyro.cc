@@ -1,7 +1,7 @@
 #include <cassert>
 #include <cmath>
-#include "common/swaglog.h"
-#include "common/timing.h"
+#include "selfdrive/common/swaglog.h"
+#include "selfdrive/common/timing.h"
 
 #include "lsm6ds3_gyro.h"
 

@@ -3,8 +3,8 @@
 #include <algorithm>
 #include <unistd.h>
 
-#include "common/swaglog.h"
-#include "common/util.h"
+#include "selfdrive/common/swaglog.h"
+#include "selfdrive/common/util.h"
 
 #include "bmx055_magn.h"
 

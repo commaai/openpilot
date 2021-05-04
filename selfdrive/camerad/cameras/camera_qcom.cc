@@ -19,11 +19,11 @@
 #include "msmb_camera.h"
 #include "msm_cam_sensor.h"
 
-#include "common/util.h"
-#include "common/timing.h"
-#include "common/swaglog.h"
-#include "common/params.h"
-#include "clutil.h"
+#include "selfdrive/common/util.h"
+#include "selfdrive/common/timing.h"
+#include "selfdrive/common/swaglog.h"
+#include "selfdrive/common/params.h"
+#include "selfdrive/common/clutil.h"
 
 #include "sensor_i2c.h"
 #include "camera_qcom.h"

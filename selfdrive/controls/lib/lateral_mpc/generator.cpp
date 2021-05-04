@@ -1,6 +1,6 @@
 #include <math.h>
 #include <acado_code_generation.hpp>
-#include "common/modeldata.h"
+#include "selfdrive/common/modeldata.h"
 
 #define deg2rad(d) (d/180.0*M_PI)
 

@@ -5,9 +5,9 @@
 #include <QVBoxLayout>
 #include <QApplication>
 
-#include "qt_window.h"
+#include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/hardware/hw.h"
-#include "widgets/scrollview.h"
+#include "selfdrive/ui/qt/widgets/scrollview.h"
 
 int main(int argc, char *argv[]) {
   QApplication a(argc, argv);

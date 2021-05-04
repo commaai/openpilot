@@ -2,9 +2,9 @@
 #include <cstdint>
 #include <unistd.h>
 
-#include "common/timing.h"
-#include "common/util.h"
-#include "common/watchdog.h"
+#include "selfdrive/common/timing.h"
+#include "selfdrive/common/util.h"
+#include "selfdrive/common/watchdog.h"
 
 const std::string watchdog_fn_prefix = "/dev/shm/wd_";  // + <pid>
 

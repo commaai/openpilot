@@ -11,8 +11,8 @@
 #include <QRandomGenerator>
 
 #include "api.h"
-#include "common/params.h"
-#include "common/util.h"
+#include "selfdrive/common/params.h"
+#include "selfdrive/common/util.h"
 
 #if defined(QCOM) || defined(QCOM2)
 const std::string private_key_path = "/persist/comma/id_rsa";

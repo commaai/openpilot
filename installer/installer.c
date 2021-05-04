@@ -13,11 +13,11 @@
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
 
-#include "common/util.h"
-#include "common/mat.h"
-#include "common/glutil.h"
-#include "common/framebuffer.h"
-#include "common/spinner.h"
+#include "selfdrive/common/util.h"
+#include "selfdrive/common/mat.h"
+#include "selfdrive/common/glutil.h"
+#include "selfdrive/common/framebuffer.h"
+#include "selfdrive/common/spinner.h"
 
 #ifndef BRAND
 #define BRAND openpilot

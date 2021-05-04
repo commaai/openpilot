@@ -5,25 +5,25 @@
 #include <unistd.h>
 
 #if defined(QCOM) && !defined(QCOM_REPLAY)
-#include "cameras/camera_qcom.h"
+#include "selfdrive/camerad/cameras/camera_qcom.h"
 #elif QCOM2
-#include "cameras/camera_qcom2.h"
+#include "selfdrive/camerad/cameras/camera_qcom2.h"
 #elif WEBCAM
-#include "cameras/camera_webcam.h"
+#include "selfdrive/camerad/cameras/camera_webcam.h"
 #else
-#include "cameras/camera_frame_stream.h"
+#include "selfdrive/camerad/cameras/camera_frame_stream.h"
 #endif
 
 #include "camera_common.h"
 #include <libyuv.h>
 #include <jpeglib.h>
 
-#include "clutil.h"
-#include "common/params.h"
-#include "common/swaglog.h"
-#include "common/util.h"
-#include "modeldata.h"
-#include "imgproc/utils.h"
+#include "selfdrive/common/clutil.h"
+#include "selfdrive/common/params.h"
+#include "selfdrive/common/swaglog.h"
+#include "selfdrive/common/util.h"
+#include "selfdrive/common/modeldata.h"
+#include "selfdrive/camerad/imgproc/utils.h"
 
 static cl_program build_debayer_program(cl_device_id device_id, cl_context context, const CameraInfo *ci, const CameraBuf *b, const CameraState *s) {
   char args[4096];

@@ -4,14 +4,14 @@
 #include <unistd.h>
 #include <assert.h>
 
-#include "common/util.h"
-#include "common/swaglog.h"
-#include "common/visionimg.h"
-#include "common/watchdog.h"
-#include "hardware/hw.h"
+#include "selfdrive/common/util.h"
+#include "selfdrive/common/swaglog.h"
+#include "selfdrive/common/visionimg.h"
+#include "selfdrive/common/watchdog.h"
+#include "selfdrive/hardware/hw.h"
+#include "selfdrive/ui/qt/qt_window.h"
 #include "ui.h"
 #include "paint.h"
-#include "qt_window.h"
 
 #define BACKLIGHT_DT 0.25
 #define BACKLIGHT_TS 2.00

@@ -16,8 +16,8 @@
 #include <libyuv.h>
 #include <msm_media_info.h>
 
-#include "common/util.h"
-#include "common/swaglog.h"
+#include "selfdrive/common/util.h"
+#include "selfdrive/common/swaglog.h"
 
 #include "omx_encoder.h"
 

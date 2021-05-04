@@ -2,11 +2,11 @@
 
 #include <QThread>
 #include <QReadWriteLock>
-#include "clutil.h"
-#include "messaging.h"
+#include "selfdrive/common/clutil.h"
+#include "cereal/messaging/messaging.h"
 #include "FileReader.h"
 #include "FrameReader.h"
-#include "visionipc_server.h"
+#include "cereal/visionipc/visionipc_server.h"
 
 class Unlogger : public QObject {
 Q_OBJECT

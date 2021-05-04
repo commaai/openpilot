@@ -2,9 +2,9 @@
 #include <stdlib.h>
 #include <sys/resource.h>
 
-#include "visionipc_client.h"
-#include "common/swaglog.h"
-#include "common/util.h"
+#include "cereal/visionipc/visionipc_client.h"
+#include "selfdrive/common/swaglog.h"
+#include "selfdrive/common/util.h"
 
 #include "models/dmonitoring.h"
 

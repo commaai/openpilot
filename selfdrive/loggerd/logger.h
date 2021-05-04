@@ -7,7 +7,7 @@
 #include <bzlib.h>
 #include <kj/array.h>
 #include <capnp/serialize.h>
-#include "common/util.h"
+#include "selfdrive/common/util.h"
 
 #if defined(QCOM) || defined(QCOM2)
 const std::string LOG_ROOT = "/data/media/0/realdata";

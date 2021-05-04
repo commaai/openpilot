@@ -8,8 +8,8 @@
 #include <QVBoxLayout>
 
 #include "QrCode.hpp"
-#include "request_repeater.h"
-#include "common/params.h"
+#include "selfdrive/ui/qt/request_repeater.h"
+#include "selfdrive/common/params.h"
 #include "setup.h"
 
 using qrcodegen::QrCode;

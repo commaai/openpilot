@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
-#include "common/swaglog.h"
+#include "selfdrive/common/swaglog.h"
 
 #define UNUSED(x) (void)(x)
 

@@ -11,8 +11,8 @@
 #include <math.h>
 #include <atomic>
 
-#include "common/util.h"
-#include "common/swaglog.h"
+#include "selfdrive/common/util.h"
+#include "selfdrive/common/swaglog.h"
 #include "camera_qcom2.h"
 
 #include "media/cam_defs.h"

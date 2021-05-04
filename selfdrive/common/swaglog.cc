@@ -11,10 +11,10 @@
 
 #include "json11.hpp"
 
-#include "common/util.h"
-#include "common/version.h"
+#include "selfdrive/common/util.h"
+#include "selfdrive/common/version.h"
 
-#include "swaglog.h"
+#include "selfdrive/common/swaglog.h"
 
 class LogState {
 public:

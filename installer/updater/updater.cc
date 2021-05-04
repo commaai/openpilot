@@ -29,9 +29,9 @@
 
 #include "json11.hpp"
 
-#include "common/framebuffer.h"
-#include "common/touch.h"
-#include "common/util.h"
+#include "selfdrive/common/framebuffer.h"
+#include "selfdrive/common/touch.h"
+#include "selfdrive/common/util.h"
 
 #define USER_AGENT "NEOSUpdater-0.2"
 

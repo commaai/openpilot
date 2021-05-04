@@ -12,8 +12,8 @@
 #define nvgCreate nvgCreateGLES3
 #endif
 
-#include "common/util.h"
-#include "common/timing.h"
+#include "selfdrive/common/util.h"
+#include "selfdrive/common/timing.h"
 
 #define NANOVG_GLES3_IMPLEMENTATION
 #include "nanovg_gl.h"

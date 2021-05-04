@@ -1,8 +1,8 @@
 #include <string.h>
 #include "dmonitoring.h"
-#include "common/mat.h"
-#include "common/timing.h"
-#include "common/params.h"
+#include "selfdrive/common/mat.h"
+#include "selfdrive/common/timing.h"
+#include "selfdrive/common/params.h"
 
 #include <libyuv.h>
 

@@ -21,11 +21,11 @@
 
 #include "cereal/gen/cpp/car.capnp.h"
 
-#include "common/util.h"
-#include "common/params.h"
-#include "common/swaglog.h"
-#include "common/timing.h"
-#include "messaging.h"
+#include "selfdrive/common/util.h"
+#include "selfdrive/common/params.h"
+#include "selfdrive/common/swaglog.h"
+#include "selfdrive/common/timing.h"
+#include "cereal/messaging/messaging.h"
 #include "locationd/ublox_msg.h"
 
 #include "panda.h"

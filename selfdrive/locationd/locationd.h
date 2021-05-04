@@ -6,11 +6,11 @@
 
 #include <eigen3/Eigen/Dense>
 
-#include "messaging.h"
-#include "common/params.h"
-#include "common/util.h"
-#include "common/swaglog.h"
-#include "common/timing.h"
+#include "cereal/messaging/messaging.h"
+#include "selfdrive/common/params.h"
+#include "selfdrive/common/util.h"
+#include "selfdrive/common/swaglog.h"
+#include "selfdrive/common/timing.h"
 #include "common/transformations/coordinates.hpp"
 #include "common/transformations/orientation.hpp"
 #include "selfdrive/sensord/sensors/constants.h"

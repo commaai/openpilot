@@ -17,11 +17,11 @@
 
 #include <libyuv.h>
 
-#include "clutil.h"
-#include "common/params.h"
-#include "common/swaglog.h"
-#include "common/util.h"
-#include "visionipc_server.h"
+#include "selfdrive/common/clutil.h"
+#include "selfdrive/common/params.h"
+#include "selfdrive/common/swaglog.h"
+#include "selfdrive/common/util.h"
+#include "cereal/visionipc/visionipc_server.h"
 
 ExitHandler do_exit;
 

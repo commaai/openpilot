@@ -5,18 +5,18 @@
 #include <pthread.h>
 #include <memory>
 #include <atomic>
-#include "messaging.h"
+#include "cereal/messaging/messaging.h"
 
 #include "msmb_isp.h"
 #include "msmb_ispif.h"
 #include "msmb_camera.h"
 #include "msm_cam_sensor.h"
 
-#include "visionbuf.h"
+#include "cereal/visionipc/visionbuf.h"
 
-#include "common/mat.h"
-#include "common/util.h"
-#include "imgproc/utils.h"
+#include "selfdrive/common/mat.h"
+#include "selfdrive/common/util.h"
+#include "selfdrive/camerad/imgproc/utils.h"
 
 #include "camera_common.h"
 

@@ -8,7 +8,7 @@
 #include <cassert>
 #include <unordered_map>
 
-#include "common/swaglog.h"
+#include "selfdrive/common/swaglog.h"
 
 #include "ublox_msg.h"
 

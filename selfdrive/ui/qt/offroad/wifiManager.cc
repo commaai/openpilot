@@ -3,8 +3,8 @@
 #include <stdlib.h>
 #include <iostream>
 
-#include "common/params.h"
-#include "common/swaglog.h"
+#include "selfdrive/common/params.h"
+#include "selfdrive/common/swaglog.h"
 #include "wifiManager.h"
 
 /**

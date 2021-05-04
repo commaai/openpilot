@@ -18,18 +18,18 @@
 
 #include <ftw.h>
 
-#include "common/timing.h"
-#include "common/params.h"
-#include "common/swaglog.h"
-#include "common/util.h"
-#include "camerad/cameras/camera_common.h"
+#include "selfdrive/common/timing.h"
+#include "selfdrive/common/params.h"
+#include "selfdrive/common/swaglog.h"
+#include "selfdrive/common/util.h"
+#include "selfdrive/camerad/cameras/camera_common.h"
+
+#include "cereal/messaging/messaging.h"
+#include "cereal/visionipc/visionipc.h"
+#include "cereal/visionipc/visionipc_client.h"
+#include "cereal/services.h"
+
 #include "logger.h"
-#include "messaging.h"
-#include "services.h"
-
-#include "visionipc.h"
-#include "visionipc_client.h"
-
 #include "encoder.h"
 #if defined(QCOM) || defined(QCOM2)
 #include "omx_encoder.h"

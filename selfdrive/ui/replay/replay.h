@@ -12,9 +12,9 @@
 #include "Unlogger.h"
 #include "FileReader.h"
 #include "FrameReader.h"
-#include "visionipc_server.h"
+#include "cereal/visionipc/visionipc_server.h"
 
-#include "common/util.h"
+#include "selfdrive/common/util.h"
 
 class Replay : public QObject {
   Q_OBJECT

@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <pthread.h>
 
-#include "common/util.h"
+#include "selfdrive/common/util.h"
 #include "camera_common.h"
 #include "media/cam_req_mgr.h"
 

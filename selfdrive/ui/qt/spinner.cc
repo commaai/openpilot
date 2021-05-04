@@ -9,7 +9,7 @@
 #include <QPainter>
 
 #include "spinner.h"
-#include "qt_window.h"
+#include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/hardware/hw.h"
 
 TrackWidget::TrackWidget(QWidget *parent) : QWidget(parent) {

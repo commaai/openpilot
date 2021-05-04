@@ -5,11 +5,11 @@
 #include <QQmlContext>
 #include <QQuickWidget>
 
-#include "common/params.h"
-#include "onboarding.h"
-#include "home.h"
-#include "util.h"
+#include "selfdrive/common/params.h"
+#include "selfdrive/ui/qt/home.h"
+#include "selfdrive/common/util.h"
 
+#include "onboarding.h"
 
 void TrainingGuide::mouseReleaseEvent(QMouseEvent *e) {
   QPoint touch = QPoint(e->x(), e->y()) - imageCorner;

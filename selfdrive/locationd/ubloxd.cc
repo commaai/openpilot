@@ -1,6 +1,6 @@
-#include "messaging.h"
-#include "common/util.h"
-#include "common/swaglog.h"
+#include "cereal/messaging/messaging.h"
+#include "selfdrive/common/util.h"
+#include "selfdrive/common/swaglog.h"
 
 #include "ublox_msg.h"
 #include "kaitai/kaitaistream.h"

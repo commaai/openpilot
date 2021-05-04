@@ -3,11 +3,11 @@
 #include <thread>
 #include <sys/resource.h>
 
-#include "messaging.h"
-#include "common/i2c.h"
-#include "common/timing.h"
-#include "common/util.h"
-#include "common/swaglog.h"
+#include "cereal/messaging/messaging.h"
+#include "selfdrive/common/i2c.h"
+#include "selfdrive/common/timing.h"
+#include "selfdrive/common/util.h"
+#include "selfdrive/common/swaglog.h"
 
 #include "sensors/sensor.h"
 #include "sensors/constants.h"

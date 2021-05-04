@@ -4,9 +4,9 @@
 #include <errno.h>
 #include <termios.h>
 
-#include "common/swaglog.h"
-#include "common/gpio.h"
-#include "common/util.h"
+#include "selfdrive/common/swaglog.h"
+#include "selfdrive/common/gpio.h"
+#include "selfdrive/common/util.h"
 
 #include "pigeon.h"
 

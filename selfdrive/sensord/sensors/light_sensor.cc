@@ -1,7 +1,7 @@
 #include <iostream>
 #include <string>
 
-#include "common/timing.h"
+#include "selfdrive/common/timing.h"
 
 #include "light_sensor.h"
 #include "constants.h"

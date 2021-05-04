@@ -9,7 +9,7 @@
 #include <CL/cl.h>
 #endif
 
-#include "clutil.h"
+#include "selfdrive/common/clutil.h"
 #include "transforms/transform.h"
 
 typedef struct {

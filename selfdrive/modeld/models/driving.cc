@@ -5,10 +5,10 @@
 #include <unistd.h>
 #include <eigen3/Eigen/Dense>
 
-#include "common/timing.h"
-#include "common/params.h"
+#include "selfdrive/common/timing.h"
+#include "selfdrive/common/params.h"
 #include "driving.h"
-#include "clutil.h"
+#include "selfdrive/common/clutil.h"
 
 constexpr int DESIRE_PRED_SIZE = 32;
 constexpr int OTHER_META_SIZE = 4;

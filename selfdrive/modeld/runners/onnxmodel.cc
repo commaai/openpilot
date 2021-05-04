@@ -7,8 +7,8 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdexcept>
-#include "common/util.h"
-#include "common/swaglog.h"
+#include "selfdrive/common/util.h"
+#include "selfdrive/common/swaglog.h"
 #include <cassert>
 
 

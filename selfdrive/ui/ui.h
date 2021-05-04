@@ -1,27 +1,25 @@
 #pragma once
 
+#include <QObject>
+#include <QTimer>
 #include <atomic>
 #include <map>
 #include <memory>
-#include <string>
 #include <sstream>
+#include <string>
 
-#include "nanovg.h"
-
-#include "camerad/cameras/camera_common.h"
-#include "common/mat.h"
-#include "common/visionimg.h"
-#include "common/modeldata.h"
-#include "common/params.h"
-#include "common/glutil.h"
-#include "common/util.h"
+#include "cereal/messaging/messaging.h"
+#include "cereal/visionipc/visionipc.h"
+#include "cereal/visionipc/visionipc_client.h"
 #include "common/transformations/orientation.hpp"
-#include "messaging.h"
-#include "visionipc.h"
-#include "visionipc_client.h"
-
-#include <QObject>
-#include <QTimer>
+#include "nanovg.h"
+#include "selfdrive/camerad/cameras/camera_common.h"
+#include "selfdrive/common/glutil.h"
+#include "selfdrive/common/mat.h"
+#include "selfdrive/common/modeldata.h"
+#include "selfdrive/common/params.h"
+#include "selfdrive/common/util.h"
+#include "selfdrive/common/visionimg.h"
 
 #define COLOR_BLACK nvgRGBA(0, 0, 0, 255)
 #define COLOR_BLACK_ALPHA(x) nvgRGBA(0, 0, 0, x)

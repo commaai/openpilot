@@ -5,8 +5,8 @@
 
 #include <capnp/dynamic.h>
 
-#include "messaging.h"
-#include "common/util.h"
+#include "cereal/messaging/messaging.h"
+#include "selfdrive/common/util.h"
 
 #define FRAME_WIDTH 1164
 #define FRAME_HEIGHT 874

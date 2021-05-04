@@ -5,10 +5,10 @@
 #include <string.h>
 #include <pthread.h>
 
-#include "common/util.h"
-#include "common/timing.h"
-#include "common/clutil.h"
-#include "common/swaglog.h"
+#include "selfdrive/common/util.h"
+#include "selfdrive/common/timing.h"
+#include "selfdrive/common/clutil.h"
+#include "selfdrive/common/swaglog.h"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wundefined-inline"

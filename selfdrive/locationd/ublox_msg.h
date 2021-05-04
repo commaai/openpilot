@@ -5,7 +5,7 @@
 #include <memory>
 #include <unordered_map>
 
-#include "messaging.h"
+#include "cereal/messaging/messaging.h"
 #include "generated/ubx.h"
 #include "generated/gps.h"
 
