@@ -57,7 +57,7 @@ def get_strategy_for_events(event_types):
     'version': st.just(1),
     'sensor': st.just(5),
     'type': st.just(16),  # BMX055
-    'timestamp': st.integers(min_value=0, max_value=2**64-1),
+    'timestamp': st.integers(min_value=0, max_value=2**63-1),
     'source': st.just(8),
     'gyroUncalibrated': r['SensorEventData.SensorVec'],
   })
@@ -65,7 +65,7 @@ def get_strategy_for_events(event_types):
     'version': st.just(1),
     'sensor': st.just(1),
     'type': st.just(1),  # BMX055
-    'timestamp': st.integers(min_value=0, max_value=2**64-1),
+    'timestamp': st.integers(min_value=0, max_value=2**63-1),
     'source': st.just(8),
     'acceleration': r['SensorEventData.SensorVec'],
   })
