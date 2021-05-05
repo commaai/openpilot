@@ -17,7 +17,7 @@ def get_process_config(process):
 
 def get_event_union_strategy(r, name):
   return st.fixed_dictionaries({
-    'valid': st.booleans(),
+    'valid': st.just(True),
     'logMonoTime': st.integers(min_value=0, max_value=2**64-1),
     name: r[name[0].upper() + name[1:]],
   })
@@ -34,7 +34,7 @@ def get_strategy_for_events(event_types, finite=False):
   r['liveLocationKalman.Measurement'] = st.fixed_dictionaries({
     'value': st.lists(floats(), min_size=3, max_size=3),
     'std': st.lists(floats(), min_size=3, max_size=3),
-    'valid': st.booleans(),
+    'valid': st.just(True),
   })
   r['LiveLocationKalman'] = st.fixed_dictionaries({
     'angularVelocityCalibrated': r['liveLocationKalman.Measurement'],
