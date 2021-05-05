@@ -59,6 +59,10 @@ class CarState(CarStateBase):
     ret.steerError = steer_state == 4 or (steer_state == 0 and ret.vEgo > self.CP.minSteerSpeed)
 
     ret.genericToggle = bool(cp.vl["STEERING_LEVERS"]['HIGH_BEAM_FLASH'])
+    
+    if self.CP.enableBsm:
+      ret.leftBlindspot = cp.vl["BLIND_SPOT_WARNINGS"]['BLIND_SPOT_LEFT'] == 1
+      ret.rightBlindspot = cp.vl["BLIND_SPOT_WARNINGS"]['BLIND_SPOT_RIGHT'] == 1
 
     self.lkas_counter = cp_cam.vl["LKAS_COMMAND"]['COUNTER']
     self.lkas_car_model = cp_cam.vl["LKAS_HUD"]['CAR_MODEL']
@@ -114,6 +118,13 @@ class CarState(CarStateBase):
       ("DOORS", 1),
       ("TRACTION_BUTTON", 1),
     ]
+
+    if CP.enableBsm:
+      signals += [
+        ("BLIND_SPOT_RIGHT", "BLIND_SPOT_WARNINGS", 0),
+        ("BLIND_SPOT_LEFT", "BLIND_SPOT_WARNINGS", 0),
+      ]
+      checks += [("BLIND_SPOT_WARNINGS", 2)]
 
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
 
