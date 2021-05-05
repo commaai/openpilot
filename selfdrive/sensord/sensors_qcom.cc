@@ -220,7 +220,7 @@ void sensor_loop() {
 }// Namespace end
 
 int main(int argc, char *argv[]) {
-  setpriority(PRIO_PROCESS, 0, -13);
+  setpriority(PRIO_PROCESS, 0, -18);
   signal(SIGPIPE, (sighandler_t)sigpipe_handler);
 
   sensor_loop();
