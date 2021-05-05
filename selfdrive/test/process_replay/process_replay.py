@@ -459,7 +459,7 @@ def cpp_replay_process(cfg, lr, fingerprint=None):
       else:
         log_msgs.append(response)
 
-    if not len(resp_sockets):
+    if not len(resp_sockets):  # We only need to wait if we didn't already wait for a response
       while not pm.all_readers_updated(msg.which()):
         time.sleep(0)
 
