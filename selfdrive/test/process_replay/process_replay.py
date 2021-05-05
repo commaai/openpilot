@@ -454,6 +454,11 @@ def cpp_replay_process(cfg, lr, fingerprint=None):
     resp_sockets = cfg.pub_sub[msg.which()] if cfg.should_recv_callback is None else cfg.should_recv_callback(msg)
     for s in resp_sockets:
       response = messaging.recv_one(sockets[s])
+
+      # Try once more after timeout is hit
+      if response is None:
+        response = messaging.recv_one_or_none(sockets[s])
+
       if response is None:
         print("Warning, no response received")
       else:
