@@ -1,14 +1,12 @@
 #pragma once
-#include <map>
 
 #include <QSoundEffect>
 #include <QtWidgets>
+#include <map>
 
-<<<<<<< HEAD
 #include "cereal/gen/cpp/log.capnp.h"
 #include "selfdrive/hardware/hw.h"
 #include "selfdrive/ui/ui.h"
-
 
 typedef cereal::CarControl::HUDControl::AudibleAlert AudibleAlert;
 
@@ -55,9 +53,6 @@ public slots:
   void update(const UIState &s);
   void offroadTransition(bool offroad);
 };
-=======
-#include "selfdrive/ui/ui.h"
->>>>>>> continue
 
 // container window for the NVG UI
 class NvgWindow : public QOpenGLWidget, protected QOpenGLFunctions {
