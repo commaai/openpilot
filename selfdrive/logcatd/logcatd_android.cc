@@ -1,3 +1,6 @@
+#include <sys/time.h>
+#include <sys/resource.h>
+
 #include <android/log.h>
 #include <log/logger.h>
 #include <log/logprint.h>
