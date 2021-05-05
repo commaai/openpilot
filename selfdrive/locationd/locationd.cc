@@ -288,6 +288,15 @@ void Localizer::reset_kalman(double current_time) {
   this->reset_kalman(current_time, init_x.segment<4>(3), init_x.head(3));
 }
 
+void Localizer::nan_check(double current_time) {
+  VectorXd state = this->kf->get_x();
+  MatrixXdr cov = this->kf->get_P();
+  if (state.array().isNaN().any() or cov.array().isNaN().any()) {
+    LOGE("NaNs detected, kalman reset");
+    this->reset_kalman(current_time);
+  }
+}
+
 void Localizer::reset_kalman(double current_time, VectorXd init_orient, VectorXd init_pos) {
   // too nonlinear to init on completely wrong
   VectorXd init_x = this->kf->get_initial_x();
@@ -320,6 +329,7 @@ void Localizer::handle_msg(const cereal::Event::Reader& log) {
   } else if (log.isLiveCalibration()) {
     this->handle_live_calib(t, log.getLiveCalibration());
   }
+  this->nan_check();
 }
 
 kj::ArrayPtr<capnp::byte> Localizer::get_message_bytes(MessageBuilder& msg_builder, uint64_t logMonoTime,
