@@ -132,15 +132,17 @@ def is_finite(d, exclude=[], prefix=""):  # pylint: disable=dangerous-default-va
   return ret
 
 
+def test_process(dat, name):
+  cfg = get_process_config(name)
+  lr = convert_to_lr(dat)
+  assume_all_services_present(cfg, lr)
+  return replay_process(cfg, lr, TOYOTA.COROLLA_TSS2)
+
+
 @given(get_strategy_for_process('paramsd'))
 @settings(deadline=1000)
 def test_paramsd(dat):
-  cfg = get_process_config('paramsd')
-  lr = convert_to_lr(dat)
-  assume_all_services_present(cfg, lr)
-  results = replay_process(cfg, lr, TOYOTA.COROLLA_TSS2)
-
-  for r in results:
+  for r in test_process(dat, 'paramsd'):
     lp = r.liveParameters.to_dict()
     assert is_finite(lp)
 
@@ -148,18 +150,13 @@ def test_paramsd(dat):
 @given(get_strategy_for_process('locationd', finite=True))
 @settings(deadline=10000)
 def test_locationd(dat):
-  cfg = get_process_config('locationd')
-  lr = convert_to_lr(dat)
-  assume_all_services_present(cfg, lr)
-  results = replay_process(cfg, lr, TOYOTA.COROLLA_TSS2)
-
   exclude = [
     'positionGeodetic.std',
     'velocityNED.std',
     'orientationNED.std',
     'calibratedOrientationECEF.std',
   ]
-  for r in results:
+  for r in test_process(dat, 'locationd'):
     lp = r.liveLocationKalman.to_dict()
     assert is_finite(lp, exclude)
 
