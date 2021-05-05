@@ -440,7 +440,8 @@ def cpp_replay_process(cfg, lr, fingerprint=None):
   managed_processes[cfg.proc_name].prepare()
   managed_processes[cfg.proc_name].start()
 
-  time.sleep(1)  # We give the process time to start
+  while not all(pm.all_readers_updated(s) for s in cfg.pub_sub.keys()):
+    time.sleep(0)
 
   log_msgs = []
   for s in sub_sockets:
@@ -448,16 +449,15 @@ def cpp_replay_process(cfg, lr, fingerprint=None):
 
   for msg in tqdm(pub_msgs, disable=CI):
     pm.send(msg.which(), msg.as_builder())
+
+    while not pm.all_readers_updated(msg.which()):
+      time.sleep(0)
+
     resp_sockets = cfg.pub_sub[msg.which()] if cfg.should_recv_callback is None else cfg.should_recv_callback(msg)
     for s in resp_sockets:
       response = messaging.recv_one(sockets[s])
       if response is not None:
         log_msgs.append(response)
-
-    if not len(resp_sockets):
-      while not pm.all_readers_updated(msg.which()):
-        time.sleep(0)
-      time.sleep(0.0001)
 
   managed_processes[cfg.proc_name].stop()
   return log_msgs
