@@ -76,9 +76,11 @@ class TestLoggerd(unittest.TestCase):
 
   def test_init_data_values(self):
     os.environ["CLEAN"] = random.choice(["0", "1"])
-    os.environ["DONGLE_ID"] = ''.join(random.choice(string.printable) for n in range(random.randint(1, 100)))
 
+    dongle  = ''.join(random.choice(string.printable) for n in range(random.randint(1, 100)))
     fake_params = [
+      # param, initData field, value
+      ("DongleId", "dongleId", dongle),
       ("GitCommit", "gitCommit", "commit"),
       ("GitBranch", "gitBranch", "branch"),
       ("GitRemote", "gitRemote", "remote"),
@@ -91,7 +93,6 @@ class TestLoggerd(unittest.TestCase):
     initData = lr[0].initData
 
     self.assertTrue(initData.dirty != bool(os.environ["CLEAN"]))
-    self.assertEqual(initData.dongleId, os.environ["DONGLE_ID"])
     self.assertEqual(initData.version, VERSION)
 
     if os.path.isfile("/proc/cmdline"):

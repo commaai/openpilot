@@ -80,8 +80,9 @@ class CarState(CarStateBase):
     # detection box is dynamic based on speed and road curvature.
     # Refer to VW Self Study Program 890253: Volkswagen Driver Assist Systems,
     # pages 32-35.
-    ret.leftBlindspot = bool(pt_cp.vl["SWA_01"]["SWA_Infostufe_SWA_li"]) or bool(pt_cp.vl["SWA_01"]["SWA_Warnung_SWA_li"])
-    ret.rightBlindspot = bool(pt_cp.vl["SWA_01"]["SWA_Infostufe_SWA_re"]) or bool(pt_cp.vl["SWA_01"]["SWA_Warnung_SWA_re"])
+    if self.CP.enableBsm:
+      ret.leftBlindspot = bool(pt_cp.vl["SWA_01"]["SWA_Infostufe_SWA_li"]) or bool(pt_cp.vl["SWA_01"]["SWA_Warnung_SWA_li"])
+      ret.rightBlindspot = bool(pt_cp.vl["SWA_01"]["SWA_Infostufe_SWA_re"]) or bool(pt_cp.vl["SWA_01"]["SWA_Warnung_SWA_re"])
 
     # Consume factory LDW data relevant for factory SWA (Lane Change Assist)
     # and capture it for forwarding to the blind spot radar controller
@@ -203,10 +204,6 @@ class CarState(CarStateBase):
       ("GRA_Tip_Stufe_2", "GRA_ACC_01", 0),         # unknown related to stalk type
       ("GRA_ButtonTypeInfo", "GRA_ACC_01", 0),      # unknown related to stalk type
       ("COUNTER", "GRA_ACC_01", 0),                 # GRA_ACC_01 CAN message counter
-      ("SWA_Infostufe_SWA_li", "SWA_01", 0),        # Blind spot object info, left
-      ("SWA_Warnung_SWA_li", "SWA_01", 0),          # Blind spot object warning, left
-      ("SWA_Infostufe_SWA_re", "SWA_01", 0),        # Blind spot object info, right
-      ("SWA_Warnung_SWA_re", "SWA_01", 0),          # Blind spot object warning, right
     ]
 
     checks = [
@@ -219,6 +216,7 @@ class CarState(CarStateBase):
       ("ACC_10", 50),       # From J428 ACC radar control module
       ("Motor_20", 50),     # From J623 Engine control module
       ("TSK_06", 50),       # From J623 Engine control module
+      ("ESP_02", 50),
       ("GRA_ACC_01", 33),   # From J??? steering wheel control buttons
       ("ACC_02", 17),       # From J428 ACC radar control module
       ("Gateway_72", 10),   # From J533 CAN gateway (aggregated data)
@@ -228,6 +226,17 @@ class CarState(CarStateBase):
       ("Motor_16", 2),      # From J623 Engine control module
       ("Einheiten_01", 1),  # From J??? not known if gateway, cluster, or BCM
     ]
+
+    if CP.enableBsm:
+      signals += [
+        ("SWA_Infostufe_SWA_li", "SWA_01", 0),        # Blind spot object info, left
+        ("SWA_Warnung_SWA_li", "SWA_01", 0),          # Blind spot object warning, left
+        ("SWA_Infostufe_SWA_re", "SWA_01", 0),        # Blind spot object info, right
+        ("SWA_Warnung_SWA_re", "SWA_01", 0),          # Blind spot object warning, right
+      ]
+      checks += [
+        ("SWA_01", 20),
+      ]
 
     if CP.transmissionType == TransmissionType.automatic:
       signals += [("GE_Fahrstufe", "Getriebe_11", 0)]  # Auto trans gear selector position

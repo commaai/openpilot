@@ -1,7 +1,8 @@
 #include <QApplication>
+#include <QSslConfiguration>
 
-#include "qt/window.hpp"
-#include "qt/qt_window.hpp"
+#include "qt/window.h"
+#include "qt/qt_window.h"
 
 int main(int argc, char *argv[]) {
   QSurfaceFormat fmt;
@@ -16,6 +17,12 @@ int main(int argc, char *argv[]) {
 
 #ifdef QCOM
   QApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
+#endif
+
+#ifdef QCOM
+  QSslConfiguration ssl = QSslConfiguration::defaultConfiguration();
+  ssl.setCaCertificates(QSslCertificate::fromPath("/usr/etc/tls/cert.pem", QSsl::Pem, QRegExp::Wildcard));
+  QSslConfiguration::setDefaultConfiguration(ssl);
 #endif
 
   QApplication a(argc, argv);

@@ -9,17 +9,18 @@ import traceback
 import cereal.messaging as messaging
 import selfdrive.crash as crash
 from common.basedir import BASEDIR
-from common.params import Params
+from common.params import Params, ParamKeyType
 from common.text_window import TextWindow
 from selfdrive.boardd.set_time import set_time
-from selfdrive.hardware import HARDWARE, TICI
+from selfdrive.hardware import HARDWARE, PC, TICI
 from selfdrive.manager.helpers import unblock_stdout
 from selfdrive.manager.process import ensure_running
 from selfdrive.manager.process_config import managed_processes
-from selfdrive.registration import register
+from selfdrive.athena.registration import register
 from selfdrive.swaglog import cloudlog, add_file_handler
-from selfdrive.version import dirty, version
-
+from selfdrive.version import dirty, get_git_commit, version, origin, branch, commit, \
+                              terms_version, training_version, comma_remote, \
+                              get_git_branch, get_git_remote
 
 def manager_init():
 
@@ -27,7 +28,7 @@ def manager_init():
   set_time(cloudlog)
 
   params = Params()
-  params.manager_start()
+  params.clear_all(ParamKeyType.CLEAR_ON_MANAGER_START)
 
   default_params = [
     ("CompletedTrainingVersion", "0"),
@@ -64,21 +65,34 @@ def manager_init():
   except PermissionError:
     print("WARNING: failed to make /dev/shm")
 
+  # set version params
+  params.put("Version", version)
+  params.put("TermsVersion", terms_version)
+  params.put("TrainingVersion", training_version)
+  params.put("GitCommit", get_git_commit(default=""))
+  params.put("GitBranch", get_git_branch(default=""))
+  params.put("GitRemote", get_git_remote(default=""))
+
   # set dongle id
   reg_res = register(show_spinner=True)
   if reg_res:
     dongle_id = reg_res
   else:
-    raise Exception("server registration failed")
-  os.environ['DONGLE_ID'] = dongle_id  # Needed for swaglog and loggerd
+    serial = params.get("HardwareSerial")
+    raise Exception(f"Registration failed for device {serial}")
+  os.environ['DONGLE_ID'] = dongle_id  # Needed for swaglog
 
   if not dirty:
     os.environ['CLEAN'] = '1'
 
   cloudlog.bind_global(dongle_id=dongle_id, version=version, dirty=dirty,
                        device=HARDWARE.get_device_type())
+
+  if comma_remote and not (os.getenv("NOLOG") or os.getenv("NOCRASH") or PC):
+    crash.init()
   crash.bind_user(id=dongle_id)
-  crash.bind_extra(version=version, dirty=dirty, device=HARDWARE.get_device_type())
+  crash.bind_extra(dirty=dirty, origin=origin, branch=branch, commit=commit,
+                   device=HARDWARE.get_device_type())
 
 
 def manager_prepare():
@@ -100,6 +114,8 @@ def manager_thread():
   # save boot log
   subprocess.call("./bootlog", cwd=os.path.join(BASEDIR, "selfdrive/loggerd"))
 
+  params = Params()
+
   ignore = []
   if os.getenv("NOBOARD") is not None:
     ignore.append("pandad")
@@ -109,7 +125,6 @@ def manager_thread():
   ensure_running(managed_processes.values(), started=False, not_run=ignore)
 
   started_prev = False
-  params = Params()
   sm = messaging.SubMaster(['deviceState'])
   pm = messaging.PubMaster(['managerState'])
 

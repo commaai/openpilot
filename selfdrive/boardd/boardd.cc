@@ -25,7 +25,7 @@
 #include "common/params.h"
 #include "common/swaglog.h"
 #include "common/timing.h"
-#include "messaging.hpp"
+#include "messaging.h"
 #include "locationd/ublox_msg.h"
 
 #include "panda.h"
@@ -63,6 +63,8 @@ void safety_setter_thread() {
   // diagnostic only is the default, needed for VIN query
   panda->set_safety_model(cereal::CarParams::SafetyModel::ELM327);
 
+  Params p = Params();
+
   // switch to SILENT when CarVin param is read
   while (true) {
     if (do_exit || !panda->connected){
@@ -70,7 +72,7 @@ void safety_setter_thread() {
       return;
     };
 
-    std::string value_vin = Params().get("CarVin");
+    std::string value_vin = p.get("CarVin");
     if (value_vin.size() > 0) {
       // sanity check VIN format
       assert(value_vin.size() == 17);
@@ -91,8 +93,10 @@ void safety_setter_thread() {
       return;
     };
 
-    params = Params().get("CarParams");
-    if (params.size() > 0) break;
+    if (p.getBool("ControlsReady")) {
+      params = p.get("CarParams");
+      if (params.size() > 0) break;
+    }
     util::sleep_for(100);
   }
   LOGW("got %d bytes CarParams", params.size());
@@ -316,10 +320,7 @@ void panda_state_thread(bool spoofing_started) {
 
     // clear VIN, CarParams, and set new safety on car start
     if (ignition && !ignition_last) {
-      int result = params.remove("CarVin");
-      assert((result == 0) || (result == ERR_NO_VALUE));
-      result = params.remove("CarParams");
-      assert((result == 0) || (result == ERR_NO_VALUE));
+      params.clearAll(CLEAR_ON_IGNITION);
 
       if (!safety_setter_thread_running) {
         safety_setter_thread_running = true;
@@ -577,8 +578,6 @@ int main() {
   err = set_core_affinity(3);
 #endif
   LOG("set affinity returns %d", err);
-
-  panda_set_power(true);
 
   while (!do_exit){
     std::vector<std::thread> threads;

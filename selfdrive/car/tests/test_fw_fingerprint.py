@@ -28,7 +28,8 @@ class TestFwFingerprint(unittest.TestCase):
         fw.append({"ecu": ecu_name, "fwVersion": random.choice(fw_versions),
                    "address": addr, "subAddress": 0 if sub_addr is None else sub_addr})
       CP.carFw = fw
-      self.assertFingerprints(match_fw_to_car(CP.carFw), car_model)
+      _, matches = match_fw_to_car(CP.carFw)
+      self.assertFingerprints(matches, car_model)
 
   def test_no_duplicate_fw_versions(self):
     passed = True

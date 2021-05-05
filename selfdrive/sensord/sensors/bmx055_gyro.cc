@@ -2,7 +2,7 @@
 #include <cmath>
 #include "common/swaglog.h"
 
-#include "bmx055_gyro.hpp"
+#include "bmx055_gyro.h"
 
 #define DEG2RAD(x) ((x) * M_PI / 180.0)
 

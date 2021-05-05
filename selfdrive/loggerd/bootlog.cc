@@ -2,7 +2,7 @@
 #include <string>
 #include "common/swaglog.h"
 #include "logger.h"
-#include "messaging.hpp"
+#include "messaging.h"
 
 static kj::Array<capnp::word> build_boot_log() {
   MessageBuilder msg;
