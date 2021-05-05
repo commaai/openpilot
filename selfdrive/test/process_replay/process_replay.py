@@ -22,12 +22,13 @@ from selfdrive.manager.process_config import managed_processes
 # Numpy gives different results based on CPU features after version 19
 NUMPY_TOLERANCE = 1e-7
 CI = "CI" in os.environ
+TIMEOUT = 15
 
 ProcessConfig = namedtuple('ProcessConfig', ['proc_name', 'pub_sub', 'ignore', 'init_callback', 'should_recv_callback', 'tolerance', 'fake_pubsubmaster'])
 
 
 def wait_for_event(evt):
-  if not evt.wait(15):
+  if not evt.wait(TIMEOUT):
     if threading.currentThread().getName() == "MainThread":
       # tested process likely died. don't let test just hang
       raise Exception("Timeout reached. Tested process likely crashed.")
