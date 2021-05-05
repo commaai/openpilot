@@ -51,6 +51,7 @@ private:
 
 public slots:
   void update(const UIState &s);
+  void offroadTransition(bool offroad);
 };
 
 // container window for the NVG UI
@@ -87,4 +88,5 @@ private:
 
 signals:
   void update(const UIState &s);
+  void offroadTransition(bool offroad);
 };

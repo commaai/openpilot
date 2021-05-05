@@ -18,6 +18,7 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
 
   alerts = new OnroadAlerts(this);
   QObject::connect(this, &OnroadWindow::update, alerts, &OnroadAlerts::update);
+  QObject::connect(this, &OnroadWindow::offroadTransition, alerts, &OnroadAlerts::offroadTransition);
 
   // hack to align the onroad alerts, better way to do this?
   QVBoxLayout *alerts_container = new QVBoxLayout(this);
@@ -101,6 +102,12 @@ void OnroadAlerts::update(const UIState &s) {
     float alpha = 0.375 * cos((millis_since_boot() / 1000) * 2 * M_PI * blinking_rate) + 0.625;
     bg.setRgb(c.r*255, c.g*255, c.b*255, c.a*alpha*255);
   }
+}
+
+void OnroadAlerts::offroadTransition(bool offroad) {
+  stopSounds();
+  setVisible(false);
+  alert_type = "";
 }
 
 void OnroadAlerts::updateAlert(const QString &text1, const QString &text2, float blink_rate,
