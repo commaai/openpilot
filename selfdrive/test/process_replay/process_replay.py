@@ -432,7 +432,6 @@ def python_replay_process(cfg, lr, fingerprint=None):
 def cpp_replay_process(cfg, lr, fingerprint=None):
   sub_sockets = [s for _, sub in cfg.pub_sub.items() for s in sub]  # We get responses here
   pm = messaging.PubMaster(cfg.pub_sub.keys())
-  sockets = {s: messaging.sub_sock(s, timeout=1000) for s in sub_sockets}
 
   all_msgs = sorted(lr, key=lambda msg: msg.logMonoTime)
   pub_msgs = [msg for msg in all_msgs if msg.which() in list(cfg.pub_sub.keys())]
@@ -444,6 +443,7 @@ def cpp_replay_process(cfg, lr, fingerprint=None):
     time.sleep(0)
 
   # Make sure all subscribers are connected
+  sockets = {s: messaging.sub_sock(s, timeout=1000) for s in sub_sockets}
   for s in sub_sockets:
     messaging.recv_one_or_none(sockets[s])
 
