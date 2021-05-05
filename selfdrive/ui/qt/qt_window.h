@@ -2,7 +2,7 @@
 
 #include <QWidget>
 #include <QApplication>
-#include "hardware/hw.h"
+#include "selfdrive/hardware/hw.h"
 #ifdef QCOM2
 #include <qpa/qplatformnativeinterface.h>
 #include <QPlatformSurfaceEvent>

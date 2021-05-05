@@ -431,13 +431,13 @@ static mat4 get_driver_view_transform() {
     }};
   } else {
     // from dmonitoring.cc
-    static const int full_width_tici = 1928;
-    static const int full_height_tici = 1208;
-    static const int adapt_width_tici = 668;
-    static const int crop_x_offset = 32;
-    static const int crop_y_offset = -196;
-    static const float yscale = full_height_tici * driver_view_ratio / adapt_width_tici;
-    static const float xscale = yscale*(1080-2*bdr_s)/(2160-2*bdr_s)*full_width_tici/full_height_tici;
+    const int full_width_tici = 1928;
+    const int full_height_tici = 1208;
+    const int adapt_width_tici = 668;
+    const int crop_x_offset = 32;
+    const int crop_y_offset = -196;
+    const float yscale = full_height_tici * driver_view_ratio / adapt_width_tici;
+    const float xscale = yscale*(1080-2*bdr_s)/(2160-2*bdr_s)*full_width_tici/full_height_tici;
 
     transform = (mat4){{
       xscale,  0.0, 0.0, xscale*crop_x_offset/full_width_tici*2,

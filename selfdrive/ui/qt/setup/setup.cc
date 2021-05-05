@@ -10,7 +10,7 @@
 #include "offroad/networking.h"
 #include "widgets/input.h"
 #include "qt_window.h"
-#include "hardware/hw.h"
+#include "selfdrive/hardware/hw.h"
 
 #define USER_AGENT "AGNOSSetup-0.1"
 

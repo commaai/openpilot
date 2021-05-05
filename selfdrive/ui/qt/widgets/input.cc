@@ -2,7 +2,7 @@
 
 #include "input.h"
 #include "qt_window.h"
-#include "hardware/hw.h"
+#include "selfdrive/hardware/hw.h"
 
 InputDialog::InputDialog(const QString &prompt_text, QWidget *parent) : QDialog(parent) {
   layout = new QVBoxLayout();
