@@ -449,19 +449,15 @@ def cpp_replay_process(cfg, lr, fingerprint=None):
     messaging.recv_one_or_none(sockets[s])
 
   log_msgs = []
-  for msg in tqdm(pub_msgs, disable=CI):
+  for i, msg in enumerate(tqdm(pub_msgs, disable=CI)):
     pm.send(msg.which(), msg.as_builder())
 
     resp_sockets = cfg.pub_sub[msg.which()] if cfg.should_recv_callback is None else cfg.should_recv_callback(msg)
     for s in resp_sockets:
       response = messaging.recv_one(sockets[s])
 
-      # Try once more after timeout is hit
       if response is None:
-        response = messaging.recv_one_or_none(sockets[s])
-
-      if response is None:
-        print("Warning, no response received")
+        print(f"Warning, no response received {i}")
       else:
         log_msgs.append(response)
 
