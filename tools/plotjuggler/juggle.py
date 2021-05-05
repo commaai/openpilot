@@ -39,7 +39,7 @@ def juggle_file(fn, dbc=None, layout=None):
 
 def juggle_route(route_name, segment_number, qlog, can, layout):
 
-  if route_name.startswith("http://") or route_name.startswith("https://"):
+  if route_name.startswith("http://") or route_name.startswith("https://") or os.path.isfile(route_name):
     logs = [route_name]
   else:
     r = Route(route_name)
