@@ -192,10 +192,8 @@ static void update_state(UIState *s) {
   }
   if (sm.updated("sensorEvents")) {
     for (auto sensor : sm["sensorEvents"].getSensorEvents()) {
-      if (!Hardware::TICI()) {
-        if (sensor.which() == cereal::SensorEventData::LIGHT) {
-          scene.light_sensor = sensor.getLight();
-        }
+      if (!Hardware::TICI() && sensor.which() == cereal::SensorEventData::LIGHT) {
+        scene.light_sensor = sensor.getLight();
       }
       if (!scene.started && sensor.which() == cereal::SensorEventData::ACCELERATION) {
         auto accel = sensor.getAcceleration().getV();

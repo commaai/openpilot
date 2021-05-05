@@ -11,8 +11,8 @@
 #include "selfdrive/hardware/hw.h"
 
 const std::string LOG_ROOT =
-    !Hardware::PC() ? "/data/media/0/realdata"
-                    : util::getenv_default("HOME", "/.comma/media/0/realdata", "/data/media/0/realdata");
+    Hardware::PC() ? util::getenv_default("HOME", "/.comma/media/0/realdata", "/data/media/0/realdata")
+                   : "/data/media/0/realdata";
 #define LOGGER_MAX_HANDLES 16
 
 class BZFile {

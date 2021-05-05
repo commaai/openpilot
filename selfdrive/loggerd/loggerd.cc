@@ -358,11 +358,9 @@ int main(int argc, char** argv) {
   encoder_threads.push_back(std::thread(encoder_thread, LOG_CAMERA_ID_FCAMERA));
   s.rotate_state[LOG_CAMERA_ID_FCAMERA].enabled = true;
 
-  if (!Hardware::PC()) {
-    if (Params().getBool("RecordFront")) {
-      encoder_threads.push_back(std::thread(encoder_thread, LOG_CAMERA_ID_DCAMERA));
-      s.rotate_state[LOG_CAMERA_ID_DCAMERA].enabled = true;
-    }
+  if (!Hardware::PC() && Params().getBool("RecordFront")) {
+    encoder_threads.push_back(std::thread(encoder_thread, LOG_CAMERA_ID_DCAMERA));
+    s.rotate_state[LOG_CAMERA_ID_DCAMERA].enabled = true;
   }
   if (Hardware::TICI()) {
     encoder_threads.push_back(std::thread(encoder_thread, LOG_CAMERA_ID_ECAMERA));

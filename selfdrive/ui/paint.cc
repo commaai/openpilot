@@ -242,7 +242,7 @@ static void ui_draw_driver_view(UIState *s) {
 
   // blackout
   const int blackout_x_r = valid_rect.right();
-  const Rect &blackout_rect = Hardware::TICI() ? rect : s->viz_rect;
+  const Rect &blackout_rect = Hardware::TICI() ? s->viz_rect : rect;
   const int blackout_w_r = blackout_rect.right() - valid_rect.right();
   const int blackout_x_l = blackout_rect.x;
   const int blackout_w_l = valid_rect.x - blackout_x_l;
@@ -421,15 +421,7 @@ static const mat4 device_transform = {{
 static mat4 get_driver_view_transform() {
   const float driver_view_ratio = 1.333;
   mat4 transform;
-  if (!Hardware::TICI()) {
-    // frame from 4/3 to 16/9 display
-    transform = (mat4){{
-      driver_view_ratio*(1080-2*bdr_s)/(1920-2*bdr_s),  0.0, 0.0, 0.0,
-      0.0,  1.0, 0.0, 0.0,
-      0.0,  0.0, 1.0, 0.0,
-      0.0,  0.0, 0.0, 1.0,
-    }};
-  } else {
+  if (Hardware::TICI()) {
     // from dmonitoring.cc
     const int full_width_tici = 1928;
     const int full_height_tici = 1208;
@@ -438,10 +430,18 @@ static mat4 get_driver_view_transform() {
     const int crop_y_offset = -196;
     const float yscale = full_height_tici * driver_view_ratio / adapt_width_tici;
     const float xscale = yscale*(1080-2*bdr_s)/(2160-2*bdr_s)*full_width_tici/full_height_tici;
-
     transform = (mat4){{
       xscale,  0.0, 0.0, xscale*crop_x_offset/full_width_tici*2,
       0.0,  yscale, 0.0, yscale*crop_y_offset/full_height_tici*2,
+      0.0,  0.0, 1.0, 0.0,
+      0.0,  0.0, 0.0, 1.0,
+    }};
+  
+  } else {
+     // frame from 4/3 to 16/9 display
+    transform = (mat4){{
+      driver_view_ratio*(1080-2*bdr_s)/(1920-2*bdr_s),  0.0, 0.0, 0.0,
+      0.0,  1.0, 0.0, 0.0,
       0.0,  0.0, 1.0, 0.0,
       0.0,  0.0, 0.0, 1.0,
     }};
@@ -453,7 +453,7 @@ void ui_nvg_init(UIState *s) {
   // init drawing
 
   // on EON, we enable MSAA
-  s->vg = Hardware::EON() ? nvgCreate(0) : s->vg = nvgCreate(NVG_ANTIALIAS | NVG_STENCIL_STROKES | NVG_DEBUG);
+  s->vg = Hardware::EON() ? nvgCreate(0) : nvgCreate(NVG_ANTIALIAS | NVG_STENCIL_STROKES | NVG_DEBUG);
   assert(s->vg);
 
   // init fonts
