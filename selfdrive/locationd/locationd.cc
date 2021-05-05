@@ -1,3 +1,6 @@
+#include <sys/time.h>
+#include <sys/resource.h>
+
 #include "locationd.h"
 
 using namespace EKFS;
