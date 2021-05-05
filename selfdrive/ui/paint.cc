@@ -199,7 +199,7 @@ static void ui_draw_vision_maxspeed(UIState *s) {
   const bool is_cruise_set = maxspeed != 0 && maxspeed != SET_SPEED_NA;
   if (is_cruise_set && !s->scene.is_metric) { maxspeed *= 0.6225; }
 
-  const Rect rect = {s->viz_rect.x + (bdr_s * 2), int(s->viz_rect.y + (bdr_s * 1.5)), 184, 202};
+  const Rect rect = {s->viz_rect.x, int(s->viz_rect.y), 184, 202};
   ui_fill_rect(s->vg, rect, COLOR_BLACK_ALPHA(100), 30.);
   ui_draw_rect(s->vg, rect, COLOR_WHITE_ALPHA(100), 10, 20.);
 
@@ -225,15 +225,16 @@ static void ui_draw_vision_event(UIState *s) {
   if (s->scene.controls_state.getEngageable()) {
     // draw steering wheel
     const int radius = 96;
-    const int center_x = s->viz_rect.right() - radius - bdr_s * 2;
-    const int center_y = s->viz_rect.y + radius  + (bdr_s * 1.5);
-    ui_draw_circle_image(s, center_x, center_y, radius, "wheel", bg_colors[s->status], 1.0f);
+    const int center_x = s->viz_rect.right() - radius;
+    const int center_y = s->viz_rect.y + radius;
+    const QColor c = bg_colors[s->status];
+    ui_draw_circle_image(s, center_x, center_y, radius, "wheel", nvgRGBA(c.red(), c.green(), c.blue(), c.alpha()), 1.0f);
   }
 }
 
 static void ui_draw_vision_face(UIState *s) {
   const int radius = 96;
-  const int center_x = s->viz_rect.x + radius + (bdr_s * 2);
+  const int center_x = s->viz_rect.x + radius;
   const int center_y = s->viz_rect.bottom() - footer_h / 2;
   ui_draw_circle_image(s, center_x, center_y, radius, "driver_face", s->scene.dmonitoring_state.getIsActiveMode());
 }
@@ -275,8 +276,8 @@ static void ui_draw_driver_view(UIState *s) {
 
   // draw face icon
   const int face_radius = 85;
-  const int center_x = is_rhd ? rect.right() - face_radius - bdr_s * 2 : rect.x + face_radius + bdr_s * 2;
-  const int center_y = rect.bottom() - face_radius - bdr_s * 2.5;
+  const int center_x = is_rhd ? rect.right() - face_radius : rect.x + face_radius;
+  const int center_y = rect.bottom() - face_radius;
   ui_draw_circle_image(s, center_x, center_y, face_radius, "driver_face", face_detected);
 }
 
@@ -321,19 +322,12 @@ static void ui_draw_vision(UIState *s) {
   }
 }
 
-static void ui_draw_background(UIState *s) {
-  const NVGcolor color = bg_colors[s->status];
-  glClearColor(color.r, color.g, color.b, 1.0);
-  glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-}
-
 void ui_draw(UIState *s, int w, int h) {
-  s->viz_rect = Rect{bdr_s, bdr_s, w - 2 * bdr_s, h - 2 * bdr_s};
+  s->viz_rect = Rect{0, 0, w, h};
 
   const bool draw_vision = s->scene.started && s->vipc_client->connected;
 
   // GL drawing functions
-  ui_draw_background(s);
   if (draw_vision) {
     ui_draw_vision_frame(s);
   }
@@ -543,7 +537,7 @@ void ui_nvg_init(UIState *s) {
     s->zoom *= 0.5;
   }
 
-  s->video_rect = Rect{bdr_s, bdr_s, s->fb_w - 2 * bdr_s, s->fb_h - 2 * bdr_s};
+  s->video_rect = Rect{0, 0, s->fb_w, s->fb_h};
   float zx = s->zoom * 2 * intrinsic_matrix.v[2] / s->video_rect.w;
   float zy = s->zoom * 2 * intrinsic_matrix.v[5] / s->video_rect.h;
 

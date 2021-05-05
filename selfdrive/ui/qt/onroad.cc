@@ -32,7 +32,23 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   // alerts on top
   layout->setCurrentWidget(w);
 
-  setLayout(layout);
+  QVBoxLayout *container = new QVBoxLayout();
+  container->setMargin(30);
+  container->addLayout(layout);
+  setLayout(container);
+}
+
+/*
+void OnroadWindow::update(const UIState &s) {
+
+}
+*/
+
+void OnroadWindow::paintEvent(QPaintEvent *event) {
+  QPainter p(this);
+  p.setBrush(QBrush(bg_colors[QUIState::ui_state.status]));
+  p.setPen(Qt::NoPen);
+  p.drawRect(rect());
 }
 
 // ***** onroad widgets *****
@@ -96,11 +112,9 @@ void OnroadAlerts::update(const UIState &s) {
     }
   }
 
-  if (isVisible()) {
-    auto c = bg_colors[s.status];
-    float alpha = 0.375 * cos((millis_since_boot() / 1000) * 2 * M_PI * blinking_rate) + 0.625;
-    bg.setRgb(c.r*255, c.g*255, c.b*255, c.a*alpha*255);
-  }
+  bg = bg_colors[s.status];
+  float a  = 0.375 * cos((millis_since_boot() / 1000) * 2 * M_PI * blinking_rate) + 0.625;
+  bg.setAlpha(a*255);
 }
 
 void OnroadAlerts::offroadTransition(bool offroad) {

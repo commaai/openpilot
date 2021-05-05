@@ -82,7 +82,12 @@ class OnroadWindow : public QWidget {
 public:
   OnroadWindow(QWidget* parent = 0);
 
+protected:
+  void paintEvent(QPaintEvent *event) override;
+
 private:
+  QColor bg;
+
   OnroadAlerts *alerts;
   NvgWindow *nvg;
   QStackedLayout *layout;
