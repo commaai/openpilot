@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import sys
+import unittest
 from collections import Counter
 
 import hypothesis.strategies as st
@@ -139,32 +140,32 @@ def test_process(dat, name):
   return replay_process(cfg, lr, TOYOTA.COROLLA_TSS2)
 
 
-@given(get_strategy_for_process('paramsd'))
-@settings(deadline=1000)
-def test_paramsd(dat):
-  for r in test_process(dat, 'paramsd'):
-    lp = r.liveParameters.to_dict()
-    assert is_finite(lp)
+class TestFuzzy(unittest.TestCase):
+  @given(get_strategy_for_process('paramsd'))
+  @settings(deadline=1000)
+  def test_paramsd(self, dat):
+    for r in test_process(dat, 'paramsd'):
+      lp = r.liveParameters.to_dict()
+      assert is_finite(lp)
 
-
-@given(get_strategy_for_process('locationd', finite=True))
-@settings(deadline=10000)
-def test_locationd(dat):
-  exclude = [
-    'positionGeodetic.std',
-    'velocityNED.std',
-    'orientationNED.std',
-    'calibratedOrientationECEF.std',
-  ]
-  for r in test_process(dat, 'locationd'):
-    lp = r.liveLocationKalman.to_dict()
-    assert is_finite(lp, exclude)
+  @given(get_strategy_for_process('locationd', finite=True))
+  @settings(deadline=10000)
+  def test_locationd(self, dat):
+    exclude = [
+      'positionGeodetic.std',
+      'velocityNED.std',
+      'orientationNED.std',
+      'calibratedOrientationECEF.std',
+    ]
+    for r in test_process(dat, 'locationd'):
+      lp = r.liveLocationKalman.to_dict()
+      assert is_finite(lp, exclude)
 
 
 if __name__ == "__main__":
   procs = {
-    'locationd': test_locationd,
-    'paramsd': test_paramsd,
+    'locationd': TestFuzzy().test_locationd,
+    'paramsd': TestFuzzy().test_paramsd,
   }
 
   if len(sys.argv) != 2:
