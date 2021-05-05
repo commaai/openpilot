@@ -340,8 +340,8 @@ kj::ArrayPtr<capnp::byte> Localizer::get_message_bytes(MessageBuilder& msg_build
 int Localizer::locationd_thread() {
   const std::initializer_list<const char *> service_list =
       { "gpsLocationExternal", "sensorEvents", "cameraOdometry", "liveCalibration", "carState" };
-  SubMaster sm(service_list, nullptr, { "gpsLocationExternal" });
   PubMaster pm({ "liveLocationKalman" });
+  SubMaster sm(service_list, nullptr, { "gpsLocationExternal" });
 
   Params params;
 

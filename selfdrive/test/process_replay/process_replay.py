@@ -443,10 +443,11 @@ def cpp_replay_process(cfg, lr, fingerprint=None):
   while not all(pm.all_readers_updated(s) for s in cfg.pub_sub.keys()):
     time.sleep(0)
 
-  log_msgs = []
+  # Make sure all subscribers are connected
   for s in sub_sockets:
     messaging.recv_one_or_none(sockets[s])
 
+  log_msgs = []
   for msg in tqdm(pub_msgs, disable=CI):
     pm.send(msg.which(), msg.as_builder())
 
