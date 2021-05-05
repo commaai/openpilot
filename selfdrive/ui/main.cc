@@ -19,7 +19,7 @@ int main(int argc, char *argv[]) {
   if (Hardware::EON()) {
     QApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
     QSslConfiguration ssl = QSslConfiguration::defaultConfiguration();
-    ssl.setCaCertificates(QSslCertificate::fromPath("/usr/etc/tls/cert.pem", QSsl::Pem, QRegExp::Wildcard));
+    ssl.setCaCertificates(QSslCertificate::fromPath("/usr/etc/tls/cert.pem"));
     QSslConfiguration::setDefaultConfiguration(ssl);
   }
 
