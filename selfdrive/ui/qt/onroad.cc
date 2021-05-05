@@ -40,17 +40,16 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
 OnroadAlerts::OnroadAlerts(QWidget *parent) : QFrame(parent) {
   layout = new QVBoxLayout(this);
   layout->setSpacing(25);
-  layout->setMargin(25);
+  layout->setMargin(20);
 
   title = new QLabel();
   title->setWordWrap(true);
   title->setAlignment(Qt::AlignCenter);
-  title->setStyleSheet("font-size: 80px; font-weight: 500;");
   layout->addWidget(title);
 
   msg = new QLabel();
+  msg->setWordWrap(true);
   msg->setAlignment(Qt::AlignCenter);
-  msg->setStyleSheet("font-size: 65px; font-weight: 400;");
   layout->addWidget(msg);
 
   layout->addStretch(1);
@@ -125,14 +124,14 @@ void OnroadAlerts::updateAlert(const QString &text1, const QString &text2, float
 
   if (size == cereal::ControlsState::AlertSize::SMALL) {
     setFixedHeight(241);
-    title->setStyleSheet("font-size: 80px; font-weight: 500;");
+    title->setStyleSheet("font-size: 70px; font-weight: 500;");
   } else if (size == cereal::ControlsState::AlertSize::MID) {
     setFixedHeight(390);
-    msg->setStyleSheet("font-size: 70px; font-weight: 400;");
+    msg->setStyleSheet("font-size: 65px; font-weight: 400;");
     title->setStyleSheet("font-size: 80px; font-weight: 500;");
   } else if (size == cereal::ControlsState::AlertSize::FULL) {
     setFixedHeight(vwp_h);
-    int title_size = (title->text().size() > 15) ? 120 : 100;
+    int title_size = (title->text().size() > 15) ? 130 : 110;
     title->setStyleSheet(QString("font-size: %1px; font-weight: 500;").arg(title_size));
     msg->setStyleSheet("font-size: 90px; font-weight: 400;");
   }
