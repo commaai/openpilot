@@ -275,7 +275,6 @@ static void update_status(UIState *s) {
       s->scene.end_to_end = Params().getBool("EndToEndToggle");
       s->vipc_client = s->scene.driver_view ? s->vipc_client_front : s->vipc_client_rear;
     } else {
-      s->status = STATUS_OFFROAD;
       s->vipc_client->connected = false;
     }
   }
@@ -295,7 +294,6 @@ QUIState::QUIState(QObject *parent) : QObject(parent) {
   ui_state.fb_w = vwp_w;
   ui_state.fb_h = vwp_h;
   ui_state.scene.started = false;
-  ui_state.status = STATUS_OFFROAD;
   ui_state.last_frame = nullptr;
   ui_state.wide_camera = false;
 

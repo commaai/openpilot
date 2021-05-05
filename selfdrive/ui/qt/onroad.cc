@@ -39,7 +39,7 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
 
 OnroadAlerts::OnroadAlerts(QWidget *parent) : QFrame(parent) {
   layout = new QVBoxLayout(this);
-  layout->setSpacing(25);
+  layout->setSpacing(40);
   layout->setMargin(20);
 
   title = new QLabel();
@@ -100,7 +100,6 @@ void OnroadAlerts::update(const UIState &s) {
     auto c = bg_colors[s.status];
     float alpha = 0.375 * cos((millis_since_boot() / 1000) * 2 * M_PI * blinking_rate) + 0.625;
     bg.setRgb(c.r*255, c.g*255, c.b*255, c.a*alpha*255);
-    repaint();
   }
 }
 
@@ -137,6 +136,7 @@ void OnroadAlerts::updateAlert(const QString &text1, const QString &text2, float
   }
 
   setVisible(size != cereal::ControlsState::AlertSize::NONE);
+  repaint();
 }
 
 void OnroadAlerts::playSound(AudibleAlert alert) {
