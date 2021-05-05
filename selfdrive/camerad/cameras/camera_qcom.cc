@@ -1,4 +1,4 @@
-#include "camera_qcom.h"
+#include "selfdrive/camerad/cameras/camera_qcom.h"
 
 #include <assert.h>
 #include <cutils/properties.h>

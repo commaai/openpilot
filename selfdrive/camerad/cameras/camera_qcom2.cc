@@ -1,5 +1,5 @@
 
-#include "camera_qcom2.h"
+#include "selfdrive/camerad/cameras/camera_qcom2.h"
 
 #include <assert.h>
 #include <errno.h>

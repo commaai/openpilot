@@ -1,4 +1,4 @@
-#include "camera_webcam.h"
+#include "selfdrive/camerad/cameras/camera_webcam.h"
 
 #include <assert.h>
 #include <pthread.h>

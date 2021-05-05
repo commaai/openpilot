@@ -1,4 +1,4 @@
-#include "pigeon.h"
+#include "selfdrive/boardd/pigeon.h"
 
 #include <errno.h>
 #include <fcntl.h>

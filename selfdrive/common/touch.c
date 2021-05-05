@@ -1,4 +1,4 @@
-#include "touch.h"
+#include "selfdrive/common/touch.h"
 
 #include <assert.h>
 #include <dirent.h>

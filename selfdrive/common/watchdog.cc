@@ -1,4 +1,4 @@
-#include "watchdog.h"
+#include "selfdrive/common/watchdog.h"
 
 #include <unistd.h>
 

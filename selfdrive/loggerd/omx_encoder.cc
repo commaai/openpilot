@@ -1,6 +1,6 @@
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 
-#include "omx_encoder.h"
+#include "selfdrive/loggerd/omx_encoder.h"
 
 #include <OMX_Component.h>
 #include <OMX_IndexExt.h>

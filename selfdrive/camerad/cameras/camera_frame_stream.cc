@@ -1,4 +1,4 @@
-#include "camera_frame_stream.h"
+#include "selfdrive/camerad/cameras/camera_frame_stream.h"
 
 #include <capnp/dynamic.h>
 #include <unistd.h>

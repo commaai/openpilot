@@ -1,4 +1,4 @@
-#include "params.h"
+#include "selfdrive/common/params.h"
 
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE

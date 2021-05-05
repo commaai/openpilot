@@ -1,4 +1,4 @@
-#include "camera_common.h"
+#include "selfdrive/camerad/cameras/camera_common.h"
 
 #include <assert.h>
 #include <jpeglib.h>

@@ -1,4 +1,4 @@
-#include "i2c.h"
+#include "selfdrive/common/i2c.h"
 
 #include <fcntl.h>
 #include <stdio.h>
