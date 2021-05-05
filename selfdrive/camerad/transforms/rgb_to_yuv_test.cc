@@ -27,13 +27,11 @@
 
 #endif
 
-#include <libyuv.h>
-
 #include <CL/cl.h>
 
+#include "libyuv.h"
+#include "selfdrive/camerad/transforms/rgb_to_yuv.h"
 #include "selfdrive/common/clutil.h"
-#include "rgb_to_yuv.h"
-
 
 static inline double millis_since_boot() {
   struct timespec t;

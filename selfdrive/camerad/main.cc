@@ -6,6 +6,14 @@
 
 #include <thread>
 
+#include "libyuv.h"
+
+#include "cereal/visionipc/visionipc_server.h"
+#include "selfdrive/common/clutil.h"
+#include "selfdrive/common/params.h"
+#include "selfdrive/common/swaglog.h"
+#include "selfdrive/common/util.h"
+
 #if defined(QCOM) && !defined(QCOM_REPLAY)
 #include "selfdrive/camerad/cameras/camera_qcom.h"
 #elif QCOM2
@@ -15,14 +23,6 @@
 #else
 #include "selfdrive/camerad/cameras/camera_frame_stream.h"
 #endif
-
-#include <libyuv.h>
-
-#include "cereal/visionipc/visionipc_server.h"
-#include "selfdrive/common/clutil.h"
-#include "selfdrive/common/params.h"
-#include "selfdrive/common/swaglog.h"
-#include "selfdrive/common/util.h"
 
 ExitHandler do_exit;
 

@@ -1,15 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/resource.h>
+#include <limits.h>
 
 #include "cereal/visionipc/visionipc_client.h"
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/util.h"
 #include "selfdrive/modeld/models/dmonitoring.h"
-
-#ifndef PATH_MAX
-#include <linux/limits.h>
-#endif
 
 ExitHandler do_exit;
 

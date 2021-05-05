@@ -8,15 +8,16 @@
 #include <string.h>
 #include <zmq.h>
 
-#include <json11.hpp>
 #include <mutex>
 #include <string>
+
+#include "json11.hpp"
 
 #include "selfdrive/common/util.h"
 #include "selfdrive/common/version.h"
 
 class LogState {
-public:
+ public:
   LogState() = default;
   ~LogState();
   std::mutex lock;

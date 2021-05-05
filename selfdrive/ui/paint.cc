@@ -4,7 +4,6 @@
 
 #include <algorithm>
 
-#include "ui.h"
 #ifdef __APPLE__
 #include <OpenGL/gl3.h>
 #define NANOVG_GL3_IMPLEMENTATION
@@ -15,12 +14,13 @@
 #define nvgCreate nvgCreateGLES3
 #endif
 
-#include "selfdrive/common/timing.h"
-#include "selfdrive/common/util.h"
-
 #define NANOVG_GLES3_IMPLEMENTATION
 #include <nanovg_gl.h>
 #include <nanovg_gl_utils.h>
+
+#include "selfdrive/common/timing.h"
+#include "selfdrive/common/util.h"
+#include "selfdrive/ui/ui.h"
 
 // TODO: this is also hardcoded in common/transformations/camera.py
 // TODO: choose based on frame input size

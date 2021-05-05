@@ -8,7 +8,6 @@
 #include <OMX_VideoExt.h>
 #include <assert.h>
 #include <fcntl.h>
-#include <libyuv.h>
 #include <msm_media_info.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -16,6 +15,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "libyuv.h"
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/util.h"
 
