@@ -43,9 +43,10 @@ def get_strategy_for_events(event_types, finite=False):
     'posenetOK': st.booleans(),
   })
   r['CarState'] = st.fixed_dictionaries({
-    'vEgo': floats(),
+    'vEgo': floats(width=32),
+    'vEgoRaw': floats(width=32),
     'steeringPressed': st.booleans(),
-    'steeringAngleDeg': floats(),
+    'steeringAngleDeg': floats(width=32),
   })
   r['CameraOdometry'] = st.fixed_dictionaries({
     'frameId': st.integers(min_value=0, max_value=2**32-1),
@@ -145,7 +146,7 @@ def test_paramsd(dat):
 
 
 @given(get_strategy_for_process('locationd', finite=True))
-@settings(deadline=1000)
+@settings(deadline=10000)
 def test_locationd(dat):
   cfg = get_process_config('locationd')
   lr = convert_to_lr(dat)
