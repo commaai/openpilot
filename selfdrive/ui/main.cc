@@ -16,7 +16,7 @@ int main(int argc, char *argv[]) {
 #endif
   QSurfaceFormat::setDefaultFormat(fmt);
 
-  if (Hardsare::EON()) {
+  if (Hardware::EON()) {
     QApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
     QSslConfiguration ssl = QSslConfiguration::defaultConfiguration();
     ssl.setCaCertificates(QSslCertificate::fromPath("/usr/etc/tls/cert.pem", QSsl::Pem, QRegExp::Wildcard));
