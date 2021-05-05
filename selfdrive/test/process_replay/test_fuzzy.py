@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-import numpy as np
+import sys
 from collections import Counter
 
 import hypothesis.strategies as st
-from hypothesis import assume, given, settings, seed
+import numpy as np
+from hypothesis import assume, given, settings
 
 from cereal import log
 from selfdrive.car.toyota.values import CAR as TOYOTA
@@ -132,7 +133,6 @@ def is_finite(d, exclude=[], prefix=""):  # pylint: disable=dangerous-default-va
 
 @given(get_strategy_for_process('paramsd'))
 @settings(deadline=1000)
-@seed(260777467434450485154004373463592546383)
 def test_paramsd(dat):
   cfg = get_process_config('paramsd')
   lr = convert_to_lr(dat)
@@ -145,7 +145,7 @@ def test_paramsd(dat):
 
 
 @given(get_strategy_for_process('locationd', finite=True))
-@settings(deadline=10000)
+@settings(deadline=1000)
 def test_locationd(dat):
   cfg = get_process_config('locationd')
   lr = convert_to_lr(dat)
@@ -164,5 +164,18 @@ def test_locationd(dat):
 
 
 if __name__ == "__main__":
-  test_locationd()  # pylint: disable=no-value-for-parameter
-  # test_paramsd()  # pylint: disable=no-value-for-parameter
+  procs = {
+    'locationd': test_locationd,
+    'paramsd': test_paramsd,
+  }
+
+  if len(sys.argv) != 2:
+    print("Usage: ./test_fuzzy.py <process name>")
+    sys.exit(0)
+
+  proc = sys.argv[1]
+  if proc not in procs:
+    print(f"{proc} not available")
+    sys.exit(0)
+  else:
+    procs[proc]()
