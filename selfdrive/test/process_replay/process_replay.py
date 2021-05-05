@@ -351,7 +351,6 @@ def python_replay_process(cfg, lr):
 
   params = Params()
   params.clear_all()
-  params.manager_start()
   params.put_bool("OpenpilotEnabledToggle", True)
   params.put_bool("Passive", False)
   params.put_bool("CommunityFeaturesToggle", True)

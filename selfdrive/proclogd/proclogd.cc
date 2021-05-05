@@ -1,5 +1,7 @@
 #include <unistd.h>
 #include <dirent.h>
+#include <sys/time.h>
+#include <sys/resource.h>
 
 #include <cstdio>
 #include <cstdlib>
@@ -30,6 +32,8 @@ struct ProcCache {
 }
 
 int main() {
+  setpriority(PRIO_PROCESS, 0, -15);
+
   PubMaster publisher({"procLog"});
 
   double jiffy = sysconf(_SC_CLK_TCK);

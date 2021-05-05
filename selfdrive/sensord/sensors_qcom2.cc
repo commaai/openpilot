@@ -93,6 +93,6 @@ int sensor_loop() {
 }
 
 int main(int argc, char *argv[]) {
-  setpriority(PRIO_PROCESS, 0, -13);
+  setpriority(PRIO_PROCESS, 0, -18);
   return sensor_loop();
 }

@@ -1,3 +1,6 @@
+#include <sys/time.h>
+#include <sys/resource.h>
+
 #include "locationd.h"
 
 using namespace EKFS;
@@ -376,6 +379,8 @@ int Localizer::locationd_thread() {
 }
 
 int main() {
+  setpriority(PRIO_PROCESS, 0, -20);
+
   Localizer localizer;
   return localizer.locationd_thread();
 }
