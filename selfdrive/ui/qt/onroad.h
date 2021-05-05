@@ -5,6 +5,7 @@
 #include <QtWidgets>
 
 #include "cereal/gen/cpp/log.capnp.h"
+#include "selfdrive/hardware/hw.h"
 #include "selfdrive/ui/ui.h"
 
 
@@ -41,7 +42,7 @@ private:
     {AudibleAlert::CHIME_ERROR, {"../assets/sounds/error.wav", false}},
     {AudibleAlert::CHIME_PROMPT, {"../assets/sounds/error.wav", false}}
   };
-  float volume = 0;
+  float volume = Hardware::MIN_VOLUME;
   float blinking_rate = 0;
   std::string alert_type;
   std::map<AudibleAlert, QSoundEffect> sounds;

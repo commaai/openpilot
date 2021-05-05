@@ -2,7 +2,6 @@
 
 #include "selfdrive/common/timing.h"
 #include "selfdrive/common/swaglog.h"
-#include "selfdrive/hardware/hw.h"
 #include "selfdrive/ui/qt/onroad.h"
 #include "selfdrive/ui/paint.h"
 #include "selfdrive/ui/qt/qt_window.h"
