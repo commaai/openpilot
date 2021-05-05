@@ -4,6 +4,7 @@ import os
 import sys
 import threading
 import time
+import signal
 from collections import namedtuple
 
 import capnp
@@ -465,5 +466,6 @@ def cpp_replay_process(cfg, lr, fingerprint=None):
       while not pm.all_readers_updated(msg.which()):
         time.sleep(0)
 
+  managed_processes[cfg.proc_name].signal(signal.SIGKILL)
   managed_processes[cfg.proc_name].stop()
   return log_msgs
