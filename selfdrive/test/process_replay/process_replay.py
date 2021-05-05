@@ -14,7 +14,7 @@ from cereal import car, log
 from cereal.services import service_list
 from common.params import Params
 from selfdrive.car.fingerprints import FW_VERSIONS
-from selfdrive.car.car_helpers import get_car
+from selfdrive.car.car_helpers import get_car, interfaces
 from selfdrive.manager.process import PythonProcess
 from selfdrive.manager.process_config import managed_processes
 
@@ -148,7 +148,7 @@ class FakePubMaster(messaging.PubMaster):
     return dat
 
 
-def fingerprint(msgs, fsm, can_sock):
+def fingerprint(msgs, fsm, can_sock, fingerprint):
   print("start fingerprinting")
   fsm.wait_on_getitem = True
 
@@ -172,14 +172,18 @@ def fingerprint(msgs, fsm, can_sock):
   print("finished fingerprinting")
 
 
-def get_car_params(msgs, fsm, can_sock):
-  can = FakeSocket(wait=False)
-  sendcan = FakeSocket(wait=False)
+def get_car_params(msgs, fsm, can_sock, fingerprint):
+  if fingerprint:
+    CarInterface, _, _ = interfaces[fingerprint]
+    CP = CarInterface.get_params(fingerprint)
+  else:
+    can = FakeSocket(wait=False)
+    sendcan = FakeSocket(wait=False)
 
-  canmsgs = [msg for msg in msgs if msg.which() == 'can']
-  for m in canmsgs[:300]:
-    can.send(m.as_builder().to_bytes())
-  _, CP = get_car(can, sendcan)
+    canmsgs = [msg for msg in msgs if msg.which() == 'can']
+    for m in canmsgs[:300]:
+      can.send(m.as_builder().to_bytes())
+    _, CP = get_car(can, sendcan)
   Params().put("CarParams", CP.to_bytes())
 
 def controlsd_rcv_callback(msg, CP, cfg, fsm):
@@ -328,14 +332,14 @@ CONFIGS = [
 ]
 
 
-def replay_process(cfg, lr):
+def replay_process(cfg, lr, fingerprint=None):
   if cfg.fake_pubsubmaster:
-    return python_replay_process(cfg, lr)
+    return python_replay_process(cfg, lr, fingerprint)
   else:
-    return cpp_replay_process(cfg, lr)
+    return cpp_replay_process(cfg, lr, fingerprint)
 
 
-def python_replay_process(cfg, lr):
+def python_replay_process(cfg, lr, fingerprint=None):
   sub_sockets = [s for _, sub in cfg.pub_sub.items() for s in sub]
   pub_sockets = [s for s in cfg.pub_sub.keys() if s != 'can']
 
@@ -356,8 +360,6 @@ def python_replay_process(cfg, lr):
   params.put_bool("CommunityFeaturesToggle", True)
 
   os.environ['NO_RADAR_SLEEP'] = "1"
-  os.environ['SKIP_FW_QUERY'] = ""
-  os.environ['FINGERPRINT'] = ""
 
   # TODO: remove after getting new route for civic & accord
   migration = {
@@ -365,14 +367,20 @@ def python_replay_process(cfg, lr):
     "HONDA ACCORD 2018 SPORT 2T": "HONDA ACCORD 2018 2T",
   }
 
-  for msg in lr:
-    if msg.which() == 'carParams':
-      car_fingerprint = migration.get(msg.carParams.carFingerprint, msg.carParams.carFingerprint)
-      if len(msg.carParams.carFw) and (car_fingerprint in FW_VERSIONS):
-        params.put("CarParamsCache", msg.carParams.as_builder().to_bytes())
-      else:
-        os.environ['SKIP_FW_QUERY'] = "1"
-        os.environ['FINGERPRINT'] = car_fingerprint
+  if fingerprint is not None:
+    os.environ['SKIP_FW_QUERY'] = "1"
+    os.environ['FINGERPRINT'] = fingerprint
+  else:
+    os.environ['SKIP_FW_QUERY'] = ""
+    os.environ['FINGERPRINT'] = ""
+    for msg in lr:
+      if msg.which() == 'carParams':
+        car_fingerprint = migration.get(msg.carParams.carFingerprint, msg.carParams.carFingerprint)
+        if len(msg.carParams.carFw) and (car_fingerprint in FW_VERSIONS):
+          params.put("CarParamsCache", msg.carParams.as_builder().to_bytes())
+        else:
+          os.environ['SKIP_FW_QUERY'] = "1"
+          os.environ['FINGERPRINT'] = car_fingerprint
 
   assert(type(managed_processes[cfg.proc_name]) is PythonProcess)
   managed_processes[cfg.proc_name].prepare()
@@ -385,7 +393,7 @@ def python_replay_process(cfg, lr):
   if cfg.init_callback is not None:
     if 'can' not in list(cfg.pub_sub.keys()):
       can_sock = None
-    cfg.init_callback(all_msgs, fsm, can_sock)
+    cfg.init_callback(all_msgs, fsm, can_sock, fingerprint)
 
   CP = car.CarParams.from_bytes(params.get("CarParams", block=True))
 
@@ -421,7 +429,7 @@ def python_replay_process(cfg, lr):
   return log_msgs
 
 
-def cpp_replay_process(cfg, lr):
+def cpp_replay_process(cfg, lr, fingerprint=None):
   sub_sockets = [s for _, sub in cfg.pub_sub.items() for s in sub]  # We get responses here
   pm = messaging.PubMaster(cfg.pub_sub.keys())
   sockets = {s: messaging.sub_sock(s, timeout=1000) for s in sub_sockets}

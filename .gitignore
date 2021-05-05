@@ -10,6 +10,7 @@ venv/
 .vscode*
 model2.png
 a.out
+.hypothesis
 
 *.dylib
 *.DSYM
