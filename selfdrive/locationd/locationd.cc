@@ -288,11 +288,10 @@ void Localizer::reset_kalman(double current_time) {
   this->reset_kalman(current_time, init_x.segment<4>(3), init_x.head(3));
 }
 
-void Localizer::nan_check(double current_time) {
-  VectorXd state = this->kf->get_x();
-  MatrixXdr cov = this->kf->get_P();
-  if (state.array().isNaN().any() or cov.array().isNaN().any()) {
-    LOGE("NaNs detected, kalman reset");
+void Localizer::finite_check(double current_time) {
+  bool all_finite = this->kf->get_x().array().isFinite().any() or this->kf->get_P().array().isFinite().any();
+  if (!all_finite){
+    LOGE("Non-finite values detected, kalman reset");
     this->reset_kalman(current_time);
   }
 }
@@ -329,7 +328,7 @@ void Localizer::handle_msg(const cereal::Event::Reader& log) {
   } else if (log.isLiveCalibration()) {
     this->handle_live_calib(t, log.getLiveCalibration());
   }
-  this->nan_check();
+  this->finite_check();
 }
 
 kj::ArrayPtr<capnp::byte> Localizer::get_message_bytes(MessageBuilder& msg_builder, uint64_t logMonoTime,
