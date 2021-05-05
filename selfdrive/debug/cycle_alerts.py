@@ -13,13 +13,14 @@ from selfdrive.controls.lib.alertmanager import AlertManager
 
 EventName = car.CarEvent.EventName
 
-def cycle_alerts(duration=200, is_metric=False):
+def cycle_alerts(duration=2000, is_metric=False):
   alerts = list(EVENTS.keys())
   print(alerts)
 
-  alerts = [EventName.preDriverDistracted, EventName.promptDriverDistracted, EventName.driverDistracted]
+  #alerts = [EventName.preDriverDistracted, EventName.promptDriverDistracted, EventName.driverDistracted]
+  alerts = [EventName.preLaneChangeLeft, EventName.preLaneChangeRight]
 
-  CP = CarInterface.get_params("HONDA CIVIC 2016 TOURING")
+  CP = CarInterface.get_params("HONDA CIVIC 2016")
   sm = messaging.SubMaster(['deviceState', 'pandaState', 'roadCameraState', 'modelV2', 'liveCalibration',
                             'driverMonitoringState', 'longitudinalPlan', 'lateralPlan', 'liveLocationKalman'])
 

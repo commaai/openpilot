@@ -48,6 +48,7 @@ signals:
   // forwarded signals
   void displayPowerChanged(bool on);
   void update(const UIState &s);
+  void offroadTransitionSignal(bool offroad);
 
 public slots:
   void offroadTransition(bool offroad);
