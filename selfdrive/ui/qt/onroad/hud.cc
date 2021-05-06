@@ -51,7 +51,7 @@ VisionOverlay::VisionOverlay(QWidget *parent) : QWidget(parent) {
       border-width: 8px;
       border-style: solid;
       border-radius: 20px;
-      border-color: rgba(255, 255, 255, 100);
+      border-color: rgb(150, 150, 150);
       background-color: rgba(0, 0, 0, 100);
     }
   )");
