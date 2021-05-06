@@ -27,6 +27,7 @@ private:
   QLabel *monitoring;
   QLabel *speed;
   QLabel *speed_unit;
+  QLabel *maxspeed;
 
   QColor bg;
   QVBoxLayout *layout;
@@ -115,4 +116,7 @@ private:
 signals:
   void update(const UIState &s);
   void offroadTransition(bool offroad);
+
+public slots:
+  void updateSlot(const UIState &s);
 };

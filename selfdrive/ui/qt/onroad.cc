@@ -37,6 +37,8 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   //layout->setCurrentWidget(w);
   layout->setCurrentWidget(vision);
 
+  QObject::connect(this, &OnroadWindow::update, this, &OnroadWindow::updateSlot);
+
   QVBoxLayout *container = new QVBoxLayout();
   container->setMargin(30);
   container->addLayout(layout);
@@ -45,26 +47,48 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
 
 void OnroadWindow::paintEvent(QPaintEvent *event) {
   QPainter p(this);
-  p.setBrush(QBrush(bg_colors[QUIState::ui_state.status]));
+  p.setBrush(QBrush(bg));
   p.setPen(Qt::NoPen);
   p.drawRect(rect());
+}
+
+void OnroadWindow::updateSlot(const UIState &s) {
+  auto c = bg_colors[s.status];
+  if (bg != c) {
+    bg = c;
+    repaint();
+  }
 }
 
 // ***** onroad widgets *****
 
 VisionOverlay::VisionOverlay(QWidget *parent) : QWidget(parent) {
   layout = new QVBoxLayout();
-  layout->setMargin(10);
+  layout->setMargin(50);
 
+  // ***** header *****
   QHBoxLayout *header = new QHBoxLayout();
   header->setMargin(0);
   header->setSpacing(0);
+
+  // max speed
+  maxspeed = new QLabel();
+  maxspeed->setFixedSize(180, 200);
+  maxspeed->setAlignment(Qt::AlignCenter);
+  maxspeed->setStyleSheet(R"(
+    font-size: 85px;
+    font-weight: 500;
+    border: 2px solid white;
+    border-radius: 20px;
+    background-color: rgba(0, 0, 0, 100);
+  )");
+  header->addWidget(maxspeed, 0, Qt::AlignLeft | Qt::AlignTop);
 
   // current speed
   QVBoxLayout *speed_layout = new QVBoxLayout();
   speed_layout->setMargin(0);
   speed_layout->setSpacing(0);
-  header->addLayout(speed_layout);
+  header->addLayout(speed_layout, 1);
 
   speed = new QLabel();
   speed->setStyleSheet("font-size: 180px; font-weight: 500;");
@@ -75,19 +99,26 @@ VisionOverlay::VisionOverlay(QWidget *parent) : QWidget(parent) {
   speed_unit->setStyleSheet("font-size: 70px; font-weight: 400; color: rgba(255, 255, 255, 200);");
   speed_layout->addWidget(speed_unit, 0, Qt::AlignHCenter | Qt::AlignTop);
 
-  /*
+  // engage-ability icon
   wheel = new QLabel();
-  header->addWidget(wheel, 0, Qt::AlignRight);
-  */
+  wheel->setFixedSize(200, 200);
+  wheel->setAlignment(Qt::AlignCenter);
+  wheel->setPixmap(QPixmap("../assets/img_chffr_wheel.png").scaledToWidth(150, Qt::SmoothTransformation));
+  wheel->setStyleSheet(R"(
+    border-radius: 100px;
+    background-color: rgba(0, 0, 0, 100);
+  )");
+  header->addWidget(wheel, 0, Qt::AlignRight | Qt::AlignTop);
 
   layout->addLayout(header);
   layout->addStretch(1);
 
-  // footer
+  // ***** footer *****
   QHBoxLayout *footer = new QHBoxLayout();
   footer->setMargin(0);
   footer->setSpacing(0);
 
+  // DM icon
   monitoring = new QLabel();
   monitoring->setFixedSize(200, 200);
   monitoring->setAlignment(Qt::AlignCenter);
@@ -112,19 +143,14 @@ VisionOverlay::VisionOverlay(QWidget *parent) : QWidget(parent) {
 }
 
 void VisionOverlay::update(const UIState &s) {
-  //SubMaster &sm = *(s.sm);
-
   auto v = s.scene.car_state.getVEgo() * (s.scene.is_metric ? 3.6 : 2.2369363);
   speed->setText(QString::number((int)v));
   speed_unit->setText(s.scene.is_metric ? "km/h" : "mph");
 
-  monitoring->setEnabled(s.scene.dmonitoring_state.getIsActiveMode());
+  auto max = s.scene.controls_state.getVCruise() * (s.scene.is_metric ? 1 : 0.6225);
+  maxspeed->setText(QString::number((int)max));
 
-  /*
-  bg = bg_colors[s.status];
-  float a  = 0.375 * cos((millis_since_boot() / 1000) * 2 * M_PI * blinking_rate) + 0.625;
-  bg.setAlpha(a*255);
-  */
+  monitoring->setEnabled(s.scene.dmonitoring_state.getIsActiveMode());
 }
 
 void VisionOverlay::paintEvent(QPaintEvent *event) {

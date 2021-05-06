@@ -199,7 +199,7 @@ static void ui_draw_vision_maxspeed(UIState *s) {
   const bool is_cruise_set = maxspeed != 0 && maxspeed != SET_SPEED_NA;
   if (is_cruise_set && !s->scene.is_metric) { maxspeed *= 0.6225; }
 
-  const Rect rect = {s->viz_rect.x, int(s->viz_rect.y), 184, 202};
+  const Rect rect = {s->viz_rect.x, s->viz_rect.y, 184, 202};
   ui_fill_rect(s->vg, rect, COLOR_BLACK_ALPHA(100), 30.);
   ui_draw_rect(s->vg, rect, COLOR_WHITE_ALPHA(100), 10, 20.);
 
@@ -289,9 +289,11 @@ static void ui_draw_vision_header(UIState *s) {
 
   ui_fill_rect(s->vg, {s->viz_rect.x, s->viz_rect.y, s->viz_rect.w, header_h}, gradient);
 
-  ui_draw_vision_maxspeed(s);
-  ui_draw_vision_speed(s);
-  ui_draw_vision_event(s);
+  if (false) {
+    ui_draw_vision_speed(s);
+    ui_draw_vision_maxspeed(s);
+    ui_draw_vision_event(s);
+  }
 }
 
 static void ui_draw_vision_frame(UIState *s) {
