@@ -446,7 +446,7 @@ def cpp_replay_process(cfg, lr, fingerprint=None):
     time.sleep(0)
 
   # Make sure all subscribers are connected
-  sockets = {s: messaging.sub_sock(s, timeout=1000) for s in sub_sockets}
+  sockets = {s: messaging.sub_sock(s, timeout=2000) for s in sub_sockets}
   for s in sub_sockets:
     messaging.recv_one_or_none(sockets[s])
 
