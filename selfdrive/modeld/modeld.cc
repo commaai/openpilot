@@ -1,8 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <eigen3/Eigen/Dense>
 #include <mutex>
+
+#include <eigen3/Eigen/Dense>
 
 #include "cereal/messaging/messaging.h"
 #include "cereal/visionipc/visionipc_client.h"

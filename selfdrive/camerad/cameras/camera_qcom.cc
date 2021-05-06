@@ -1,9 +1,7 @@
 #include "selfdrive/camerad/cameras/camera_qcom.h"
 
 #include <assert.h>
-#include <cutils/properties.h>
 #include <fcntl.h>
-#include <linux/media.h>
 #include <math.h>
 #include <poll.h>
 #include <pthread.h>
@@ -14,6 +12,9 @@
 
 #include <algorithm>
 #include <atomic>
+
+#include <cutils/properties.h>
+#include <linux/media.h>
 
 #include "selfdrive/camerad/cameras/sensor_i2c.h"
 #include "selfdrive/camerad/include/msm_cam_sensor.h"

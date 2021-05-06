@@ -1,5 +1,7 @@
 #pragma once
 
+#include <thread>
+
 #include <QElapsedTimer>
 #include <QMultiMap>
 #include <QNetworkAccessManager>
@@ -7,7 +9,6 @@
 #include <QString>
 #include <QVector>
 #include <QWidget>
-#include <thread>
 
 #include <bzlib.h>
 #include <capnp/serialize.h>

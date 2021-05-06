@@ -1,14 +1,14 @@
 #include "spinner.h"
 
 #include <stdio.h>
+#include <iostream>
+#include <string>
 
 #include <QApplication>
 #include <QGridLayout>
 #include <QPainter>
 #include <QString>
 #include <QTransform>
-#include <iostream>
-#include <string>
 
 #include "selfdrive/hardware/hw.h"
 #include "selfdrive/ui/qt/qt_window.h"
