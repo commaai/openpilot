@@ -72,17 +72,34 @@ VisionOverlay::VisionOverlay(QWidget *parent) : QWidget(parent) {
   header->setSpacing(0);
 
   // max speed
+  QVBoxLayout *maxspeed_layout = new QVBoxLayout();
+  maxspeed_layout->setMargin(20);
+
+  QLabel *max = new QLabel("MAX");
+  max->setAlignment(Qt::AlignCenter);
+  max->setStyleSheet("font-size: 40px; font-weight: 400;");
+  maxspeed_layout->addWidget(max, 0, Qt::AlignTop);
+
   maxspeed = new QLabel();
-  maxspeed->setFixedSize(180, 200);
   maxspeed->setAlignment(Qt::AlignCenter);
-  maxspeed->setStyleSheet(R"(
-    font-size: 85px;
-    font-weight: 500;
-    border: 2px solid white;
-    border-radius: 20px;
-    background-color: rgba(0, 0, 0, 100);
+  maxspeed->setStyleSheet("font-size: 85px; font-weight: 500;");
+  maxspeed_layout->addWidget(maxspeed, 0, Qt::AlignCenter);
+
+  QWidget *ms = new QWidget();
+  ms->setFixedSize(180, 200);
+  ms->setObjectName("MaxSpeedContainer");
+  ms->setLayout(maxspeed_layout);
+  ms->setStyleSheet(R"(
+    #MaxSpeedContainer {
+      border-width: 8px;
+      border-style: solid;
+      border-radius: 20px;
+      border-color: rgba(255, 255, 255, 200);
+      background-color: rgba(0, 0, 0, 100);
+    }
   )");
-  header->addWidget(maxspeed, 0, Qt::AlignLeft | Qt::AlignTop);
+
+  header->addWidget(ms, 0, Qt::AlignLeft | Qt::AlignTop);
 
   // current speed
   QVBoxLayout *speed_layout = new QVBoxLayout();

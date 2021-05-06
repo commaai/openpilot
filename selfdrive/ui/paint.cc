@@ -316,7 +316,7 @@ static void ui_draw_vision(UIState *s) {
     }
     // Set Speed, Current Speed, Status/Events
     ui_draw_vision_header(s);
-    if (s->scene.controls_state.getAlertSize() == cereal::ControlsState::AlertSize::NONE) {
+    if (false && s->scene.controls_state.getAlertSize() == cereal::ControlsState::AlertSize::NONE) {
       ui_draw_vision_face(s);
     }
   } else {
