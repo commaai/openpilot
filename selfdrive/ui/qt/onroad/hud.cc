@@ -68,7 +68,10 @@ VisionOverlay::VisionOverlay(QWidget *parent) : QWidget(parent) {
   speed->setStyleSheet("font-size: 180px; font-weight: 500;");
   speed_layout->addWidget(speed, 0, Qt::AlignHCenter);
 
-  // TODO: spacing too big, remove ascent/descent?
+  // remove ascent + descent from the speed label
+  QFontMetrics fm(QFont("Inter", 85));
+  speed->setFixedHeight(fm.boundingRect("123456789").height());
+
   speed_unit = new QLabel();
   speed_unit->setStyleSheet("font-size: 70px; font-weight: 400; color: rgba(255, 255, 255, 200);");
   speed_layout->addWidget(speed_unit, 0, Qt::AlignHCenter | Qt::AlignTop);
