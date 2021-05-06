@@ -7,7 +7,7 @@
 #include "cereal/visionipc/visionipc_server.h"
 #include "selfdrive/common/clutil.h"
 #include "selfdrive/ui/replay/filereader.h"
-#include "tools/clib/FrameReader.h"
+#include "tools/clib/framereader.h"
 
 class Unlogger : public QObject {
 Q_OBJECT

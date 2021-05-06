@@ -11,9 +11,9 @@
 #include "cereal/visionipc/visionipc_server.h"
 #include "selfdrive/common/util.h"
 #include "selfdrive/ui/qt/api.h"
-#include "selfdrive/ui/replay/filereader.h""
+#include "selfdrive/ui/replay/filereader.h"
 #include "selfdrive/ui/replay/unlogger.h"
-#include "tools/clib/FrameReader.h"
+#include "tools/clib/framereader.h"
 
 class Replay : public QObject {
   Q_OBJECT
