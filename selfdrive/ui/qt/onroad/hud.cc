@@ -105,10 +105,14 @@ VisionOverlay::VisionOverlay(QWidget *parent) : QWidget(parent) {
   setStyleSheet("color: white;");
 }
 
+void VisionOverlay::offroadTransition(bool offroad) {
+  metric = params.getBool("IsMetric");
+}
+
 void VisionOverlay::update(const UIState &s) {
-  auto v = s.scene.car_state.getVEgo() * (s.scene.is_metric ? 3.6 : 2.2369363);
+  auto v = s.scene.car_state.getVEgo() * (metric ? 3.6 : 2.2369363);
   speed->setText(QString::number((int)v));
-  speed_unit->setText(s.scene.is_metric ? "km/h" : "mph");
+  speed_unit->setText(metric ? "km/h" : "mph");
 
   // remove text's ascent + descent
   if (speed->minimumHeight() != speed->maximumHeight()) {
@@ -119,7 +123,7 @@ void VisionOverlay::update(const UIState &s) {
   const int SET_SPEED_NA = 255;
   auto vcruise = s.scene.controls_state.getVCruise();
   if (vcruise != 0 && vcruise != SET_SPEED_NA) {
-    auto max = vcruise * (s.scene.is_metric ? 1 : 0.6225);
+    auto max = vcruise * (metric ? 1 : 0.6225);
     maxspeed->setText(QString::number((int)max));
   } else {
     maxspeed->setText("N/A");

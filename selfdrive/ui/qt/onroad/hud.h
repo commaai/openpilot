@@ -1,10 +1,9 @@
 #pragma once
-#include <map>
 
 #include <QtWidgets>
 
+#include "selfdrive/common/params.h"
 #include "selfdrive/ui/ui.h"
-
 
 
 class StatusIcon : public QWidget {
@@ -44,6 +43,10 @@ private:
   QColor bg;
   QVBoxLayout *layout;
 
+  bool metric;
+  Params params;
+
 public slots:
   void update(const UIState &s);
+  void offroadTransition(bool offroad);
 };

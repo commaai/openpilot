@@ -17,6 +17,7 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
 
   VisionOverlay *vision = new VisionOverlay(this);
   QObject::connect(this, &OnroadWindow::update, vision, &VisionOverlay::update);
+  QObject::connect(this, &OnroadWindow::offroadTransition, vision, &VisionOverlay::offroadTransition);
   layout->addWidget(vision);
 
   OnroadAlerts *alerts = new OnroadAlerts(this);
