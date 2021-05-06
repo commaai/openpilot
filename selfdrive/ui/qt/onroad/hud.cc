@@ -1,4 +1,5 @@
 #include "selfdrive/ui/qt/onroad/hud.h"
+#include "selfdrive/ui/qt/widgets/layout.h"
 
 StatusIcon::StatusIcon(const QString &path, QWidget *parent) : QWidget(parent) {
   setFixedSize(radius, radius);
@@ -15,6 +16,7 @@ void StatusIcon::setBackground(const QColor bg, const float op) {
 
 void StatusIcon::paintEvent(QPaintEvent *e) {
   QPainter p(this);
+  p.setRenderHint(QPainter::Antialiasing);
   p.setPen(Qt::NoPen);
   p.setBrush(QBrush(background));
   p.drawEllipse(rect());
@@ -62,10 +64,9 @@ VisionOverlay::VisionOverlay(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *speed_layout = new QVBoxLayout();
   speed_layout->setMargin(0);
   speed_layout->setSpacing(0);
-  header->addLayout(speed_layout, 1);
 
   speed = new QLabel();
-  speed->setStyleSheet("font-size: 180px; font-weight: 500;");
+  speed->setStyleSheet("font-size: 180px; font-weight: 400;");
   speed_layout->addWidget(speed, 0, Qt::AlignHCenter);
 
   speed_unit = new QLabel();
@@ -76,6 +77,11 @@ VisionOverlay::VisionOverlay(QWidget *parent) : QWidget(parent) {
   wheel = new StatusIcon("../assets/img_chffr_wheel.png");
   header->addWidget(wheel, 0, Qt::AlignRight | Qt::AlignTop);
 
+  // header container
+  QStackedLayout *hc = new QStackedLayout();
+  hc->setStackingMode(QStackedLayout::StackAll);
+  hc->addWidget(new LayoutWidget(header));
+  hc->addWidget(new LayoutWidget(speed_layout));
 
   // ***** footer *****
   QHBoxLayout *footer = new QHBoxLayout();
@@ -91,7 +97,7 @@ VisionOverlay::VisionOverlay(QWidget *parent) : QWidget(parent) {
   // build container layout
   layout = new QVBoxLayout();
   layout->setMargin(40);
-  layout->addLayout(header);
+  layout->addLayout(hc);
   layout->addStretch(1);
   layout->addLayout(footer);
 
@@ -104,7 +110,7 @@ void VisionOverlay::update(const UIState &s) {
   speed->setText(QString::number((int)v));
   speed_unit->setText(s.scene.is_metric ? "km/h" : "mph");
 
-  // hack: remove ascent + descent
+  // remove text's ascent + descent
   if (speed->minimumHeight() != speed->maximumHeight()) {
     QFontMetrics fm(speed->font());
     speed->setFixedHeight(fm.tightBoundingRect("0123456789").height());

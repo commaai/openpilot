@@ -136,37 +136,34 @@ void OnroadAlerts::offroadTransition(bool offroad) {
 void OnroadAlerts::updateAlert(const QString &text1, const QString &text2, float blink_rate,
                                const std::string &type, cereal::ControlsState::AlertSize size, AudibleAlert sound) {
 
-  if (alert_type.compare(type) == 0) {
-    return;
-  }
-
-  stopSounds();
-  if (sound != AudibleAlert::NONE) {
-    playSound(sound);
-  }
-
-  alert_type = type;
-  blinking_rate = blink_rate;
   title->setText(text1);
   msg->setText(text2);
   msg->setVisible(!msg->text().isEmpty());
+  blinking_rate = blink_rate;
 
-  if (size == cereal::ControlsState::AlertSize::SMALL) {
-    setFixedHeight(241);
-    title->setStyleSheet("font-size: 70px; font-weight: 500;");
-  } else if (size == cereal::ControlsState::AlertSize::MID) {
-    setFixedHeight(390);
-    msg->setStyleSheet("font-size: 65px; font-weight: 400;");
-    title->setStyleSheet("font-size: 80px; font-weight: 500;");
-  } else if (size == cereal::ControlsState::AlertSize::FULL) {
-    setFixedHeight(vwp_h);
-    int title_size = (title->text().size() > 15) ? 130 : 110;
-    title->setStyleSheet(QString("font-size: %1px; font-weight: 500;").arg(title_size));
-    msg->setStyleSheet("font-size: 90px; font-weight: 400;");
+  if (alert_type.compare(type) != 0) {
+    if (size == cereal::ControlsState::AlertSize::SMALL) {
+      setFixedHeight(241);
+      title->setStyleSheet("font-size: 70px; font-weight: 500;");
+    } else if (size == cereal::ControlsState::AlertSize::MID) {
+      setFixedHeight(390);
+      msg->setStyleSheet("font-size: 65px; font-weight: 400;");
+      title->setStyleSheet("font-size: 80px; font-weight: 500;");
+    } else if (size == cereal::ControlsState::AlertSize::FULL) {
+      setFixedHeight(vwp_h);
+      int title_size = (title->text().size() > 15) ? 130 : 110;
+      title->setStyleSheet(QString("font-size: %1px; font-weight: 500;").arg(title_size));
+      msg->setStyleSheet("font-size: 90px; font-weight: 400;");
+    }
+    repaint();
+
+    stopSounds();
+    if (sound != AudibleAlert::NONE) {
+      playSound(sound);
+    }
   }
-
+  alert_type = type;
   setVisible(size != cereal::ControlsState::AlertSize::NONE);
-  repaint();
 }
 
 void OnroadAlerts::playSound(AudibleAlert alert) {
@@ -187,8 +184,8 @@ void OnroadAlerts::stopSounds() {
 
 void OnroadAlerts::paintEvent(QPaintEvent *event) {
   QPainter p(this);
-  p.setBrush(QBrush(bg));
   p.setPen(Qt::NoPen);
+  p.setBrush(QBrush(bg));
   p.drawRect(rect());
 }
 
