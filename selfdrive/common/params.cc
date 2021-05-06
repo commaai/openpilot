@@ -16,7 +16,7 @@
 #include <unordered_map>
 #include "common/util.h"
 #include "common/swaglog.h"
-#include "selfdrive/hardware/hw.h"
+
 // keep trying if x gets interrupted by a signal
 #define HANDLE_EINTR(x)                                       \
   ({                                                          \
@@ -30,8 +30,13 @@
 
 namespace {
 
-const std::string default_params_path = !Hardware::PC() ? "/data/params" : util::getenv_default("HOME", "/.comma/params", "/data/params");
-const std::string persistent_params_path = !Hardware::PC() ? "/persist/comma/params" : default_params_path;
+#if defined(QCOM) || defined(QCOM2)
+const std::string default_params_path = "/data/params";
+const std::string persistent_params_path = "/persist/comma/params";
+#else
+const std::string default_params_path = util::getenv_default("HOME", "/.comma/params", "/data/params");
+const std::string persistent_params_path = default_params_path;
+#endif
 
 volatile sig_atomic_t params_do_exit = 0;
 void params_sig_handler(int signal) {

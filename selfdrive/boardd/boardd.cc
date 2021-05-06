@@ -27,7 +27,6 @@
 #include "common/timing.h"
 #include "messaging.h"
 #include "locationd/ublox_msg.h"
-#include "selfdrive/hardware/hw.h"
 
 #include "panda.h"
 #include "pigeon.h"
@@ -362,18 +361,18 @@ void panda_state_thread(bool spoofing_started) {
     auto ps = msg.initEvent().initPandaState();
     ps.setUptime(pandaState.uptime);
 
-    if (Hardware::TICI()) {
-      double read_time = millis_since_boot();
-      ps.setVoltage(std::stoi(util::read_file("/sys/class/hwmon/hwmon1/in1_input")));
-      ps.setCurrent(std::stoi(util::read_file("/sys/class/hwmon/hwmon1/curr1_input")));
-      read_time = millis_since_boot() - read_time;
-      if (read_time > 50) {
-        LOGW("reading hwmon took %lfms", read_time);
-      }
-    } else {
-      ps.setVoltage(pandaState.voltage);
-      ps.setCurrent(pandaState.current);
+#ifdef QCOM2
+    double read_time = millis_since_boot();
+    ps.setVoltage(std::stoi(util::read_file("/sys/class/hwmon/hwmon1/in1_input")));
+    ps.setCurrent(std::stoi(util::read_file("/sys/class/hwmon/hwmon1/curr1_input")));
+    read_time = millis_since_boot() - read_time;
+    if (read_time > 50) {
+      LOGW("reading hwmon took %lfms", read_time);
     }
+#else
+    ps.setVoltage(pandaState.voltage);
+    ps.setCurrent(pandaState.current);
+#endif
 
     ps.setIgnitionLine(pandaState.ignition_line);
     ps.setIgnitionCan(pandaState.ignition_can);
@@ -418,14 +417,17 @@ void hardware_control_thread() {
   uint16_t prev_fan_speed = 999;
   uint16_t ir_pwr = 0;
   uint16_t prev_ir_pwr = 999;
+#if defined(QCOM) || defined(QCOM2)
   bool prev_charging_disabled = false;
+#endif
   unsigned int cnt = 0;
 
   while (!do_exit && panda->connected) {
     cnt++;
     sm.update(1000); // TODO: what happens if EINTR is sent while in sm.update?
 
-    if (!Hardware::PC() && sm.updated("deviceState")){
+#if defined(QCOM) || defined(QCOM2)
+    if (sm.updated("deviceState")){
       // Charging mode
       bool charging_disabled = sm["deviceState"].getDeviceState().getChargingDisabled();
       if (charging_disabled != prev_charging_disabled){
@@ -439,6 +441,7 @@ void hardware_control_thread() {
         prev_charging_disabled = charging_disabled;
       }
     }
+#endif
 
     // Other pandas don't have fan/IR to control
     if (panda->hw_type != cereal::PandaState::PandaType::UNO && panda->hw_type != cereal::PandaState::PandaType::DOS) continue;
@@ -488,7 +491,11 @@ void pigeon_thread() {
   PubMaster pm({"ubloxRaw"});
   bool ignition_last = false;
 
-  Pigeon *pigeon = Hardware::TICI() ? Pigeon::connect("/dev/ttyHS0") : Pigeon::connect(panda);
+#ifdef QCOM2
+  Pigeon *pigeon = Pigeon::connect("/dev/ttyHS0");
+#else
+  Pigeon *pigeon = Pigeon::connect(panda);
+#endif
 
   std::unordered_map<char, uint64_t> last_recv_time;
   std::unordered_map<char, int64_t> cls_max_dt = {
@@ -565,7 +572,11 @@ int main() {
   err = set_realtime_priority(54);
   LOG("set priority returns %d", err);
 
-  err = set_core_affinity(Hardware::TICI() ? 4 : 3);
+#ifdef QCOM2
+  err = set_core_affinity(4);
+#else
+  err = set_core_affinity(3);
+#endif
   LOG("set affinity returns %d", err);
 
   while (!do_exit){

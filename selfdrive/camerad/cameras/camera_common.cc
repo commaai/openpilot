@@ -24,7 +24,6 @@
 #include "common/util.h"
 #include "modeldata.h"
 #include "imgproc/utils.h"
-#include "selfdrive/hardware/hw.h"
 
 static cl_program build_debayer_program(cl_device_id device_id, cl_context context, const CameraInfo *ci, const CameraBuf *b, const CameraState *s) {
   char args[4096];
@@ -36,8 +35,11 @@ static cl_program build_debayer_program(cl_device_id device_id, cl_context conte
            ci->frame_width, ci->frame_height, ci->frame_stride,
            b->rgb_width, b->rgb_height, b->rgb_stride,
            ci->bayer_flip, ci->hdr, s->camera_num);
-  const char *cl_file = Hardware::TICI() ? "cameras/real_debayer.cl" : "cameras/debayer.cl";
-  return cl_program_from_file(context, device_id, cl_file, args);
+#ifdef QCOM2
+  return cl_program_from_file(context, device_id, "cameras/real_debayer.cl", args);
+#else
+  return cl_program_from_file(context, device_id, "cameras/debayer.cl", args);
+#endif
 }
 
 void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s, VisionIpcServer * v, int frame_cnt, VisionStreamType rgb_type, VisionStreamType yuv_type, release_cb release_callback) {
@@ -62,12 +64,13 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
 
   rgb_width = ci->frame_width;
   rgb_height = ci->frame_height;
+#ifndef QCOM2
   // debayering does a 2x downscale
-  if (Hardware::TICI() && ci->bayer) {
+  if (ci->bayer) {
     rgb_width = ci->frame_width / 2;
     rgb_height = ci->frame_height / 2;
   }
-
+#endif
   yuv_transform = get_model_yuv_transform(ci->bayer);
 
   vipc_server->create_buffers(rgb_type, UI_BUF_COUNT, true, rgb_width, rgb_height);
@@ -347,26 +350,20 @@ static void driver_cam_auto_exposure(CameraState *c, SubMaster &sm) {
   static const bool is_rhd = Params().getBool("IsRHD");
   struct ExpRect {int x1, x2, x_skip, y1, y2, y_skip;};
   const CameraBuf *b = &c->buf;
-
-  bool hist_ceil = false, hl_weighted = false;
-  int x_offset = 0, y_offset = 0;
-  int frame_width = b->rgb_width, frame_height = b->rgb_height;
 #ifndef QCOM2
+  bool hist_ceil = false, hl_weighted = false;
   int analog_gain = -1;
+  const int x_offset = 0, y_offset = 0;
+  const int frame_width = b->rgb_width, frame_height = b->rgb_height;
+  const ExpRect def_rect = {is_rhd ? 0 : b->rgb_width * 3 / 5, is_rhd ? b->rgb_width * 2 / 5 : b->rgb_width, 2,
+                         b->rgb_height / 3, b->rgb_height, 1};
 #else
-  int analog_gain = c->analog_gain;
+  bool hist_ceil = true, hl_weighted = true;
+  int analog_gain = (int)c->analog_gain;
+  const int x_offset = 630, y_offset = 156;
+  const int frame_width = 668, frame_height = frame_width / 1.33;
+  const ExpRect def_rect = {96, 1832, 2, 242, 1148, 4};
 #endif
-
-  ExpRect def_rect;
-  if (!Hardware::TICI()) {
-    def_rect = {is_rhd ? 0 : b->rgb_width * 3 / 5, is_rhd ? b->rgb_width * 2 / 5 : b->rgb_width, 2,
-                b->rgb_height / 3, b->rgb_height, 1};
-  } else {
-    hist_ceil = hl_weighted = true;
-    x_offset = 630, y_offset = 156;
-    frame_width = 668, frame_height = frame_width / 1.33;
-    def_rect = {96, 1832, 2, 242, 1148, 4};
-  }
 
   static ExpRect rect = def_rect;
   // use driver face crop for AE

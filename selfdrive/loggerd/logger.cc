@@ -20,7 +20,6 @@
 #include "common/params.h"
 #include "common/version.h"
 #include "messaging.h"
-#include "selfdrive/hardware/hw.h"
 #include "logger.h"
 
 
@@ -54,9 +53,9 @@ kj::Array<capnp::word> logger_build_init_data() {
   MessageBuilder msg;
   auto init = msg.initEvent().initInitData();
 
-  if (Hardware::EON()) {
+  if (util::file_exists("/EON")) {
     init.setDeviceType(cereal::InitData::DeviceType::NEO);
-  } else if (Hardware::TICI()) {
+  } else if (util::file_exists("/TICI")) {
     init.setDeviceType(cereal::InitData::DeviceType::TICI);
   } else {
     init.setDeviceType(cereal::InitData::DeviceType::PC);

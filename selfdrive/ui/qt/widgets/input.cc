@@ -2,7 +2,6 @@
 
 #include "input.h"
 #include "qt_window.h"
-#include "selfdrive/hardware/hw.h"
 
 InputDialog::InputDialog(const QString &prompt_text, QWidget *parent) : QDialog(parent) {
   layout = new QVBoxLayout();
@@ -173,8 +172,8 @@ bool ConfirmationDialog::confirm(const QString &prompt_text, QWidget *parent) {
 
 int ConfirmationDialog::exec() {
    // TODO: make this work without fullscreen
-  if (Hardware::TICI()) {
-    setMainWindow(this);
-  }
+#ifdef QCOM2
+  setMainWindow(this);
+#endif
   return QDialog::exec();
 }
