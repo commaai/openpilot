@@ -46,8 +46,10 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
 
 void OnroadWindow::paintEvent(QPaintEvent *event) {
   QPainter p(this);
+  QColor c = bg;
+  c.setAlpha(255);
   p.setPen(Qt::NoPen);
-  p.setBrush(QBrush(bg));
+  p.setBrush(QBrush(c));
   p.drawRect(rect());
 }
 
@@ -55,7 +57,6 @@ void OnroadWindow::updateSlot(const UIState &s) {
   auto c = bg_colors[s.status];
   if (bg != c) {
     bg = c;
-    bg.setAlpha(255);
     repaint();
   }
 }

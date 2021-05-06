@@ -193,52 +193,6 @@ static void ui_draw_world(UIState *s) {
   nvgResetScissor(s->vg);
 }
 
-static void ui_draw_vision_maxspeed(UIState *s) {
-  const int SET_SPEED_NA = 255;
-  float maxspeed = s->scene.controls_state.getVCruise();
-  const bool is_cruise_set = maxspeed != 0 && maxspeed != SET_SPEED_NA;
-  if (is_cruise_set && !s->scene.is_metric) { maxspeed *= 0.6225; }
-
-  const Rect rect = {s->viz_rect.x, s->viz_rect.y, 184, 202};
-  ui_fill_rect(s->vg, rect, COLOR_BLACK_ALPHA(100), 30.);
-  ui_draw_rect(s->vg, rect, COLOR_WHITE_ALPHA(100), 10, 20.);
-
-  nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
-  ui_draw_text(s, rect.centerX(), 148, "MAX", 26 * 2.5, COLOR_WHITE_ALPHA(is_cruise_set ? 200 : 100), "sans-regular");
-  if (is_cruise_set) {
-    const std::string maxspeed_str = std::to_string((int)std::nearbyint(maxspeed));
-    ui_draw_text(s, rect.centerX(), 242, maxspeed_str.c_str(), 48 * 2.5, COLOR_WHITE, "sans-bold");
-  } else {
-    ui_draw_text(s, rect.centerX(), 242, "N/A", 42 * 2.5, COLOR_WHITE_ALPHA(100), "sans-semibold");
-  }
-}
-
-static void ui_draw_vision_speed(UIState *s) {
-  const float speed = std::max(0.0, s->scene.car_state.getVEgo() * (s->scene.is_metric ? 3.6 : 2.2369363));
-  const std::string speed_str = std::to_string((int)std::nearbyint(speed));
-  nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
-  ui_draw_text(s, s->viz_rect.centerX(), 240, speed_str.c_str(), 96 * 2.5, COLOR_WHITE, "sans-bold");
-  ui_draw_text(s, s->viz_rect.centerX(), 320, s->scene.is_metric ? "km/h" : "mph", 36 * 2.5, COLOR_WHITE_ALPHA(200), "sans-regular");
-}
-
-static void ui_draw_vision_event(UIState *s) {
-  if (s->scene.controls_state.getEngageable()) {
-    // draw steering wheel
-    const int radius = 96;
-    const int center_x = s->viz_rect.right() - radius;
-    const int center_y = s->viz_rect.y + radius;
-    const QColor c = bg_colors[s->status];
-    ui_draw_circle_image(s, center_x, center_y, radius, "wheel", nvgRGBA(c.red(), c.green(), c.blue(), c.alpha()), 1.0f);
-  }
-}
-
-static void ui_draw_vision_face(UIState *s) {
-  const int radius = 96;
-  const int center_x = s->viz_rect.x + radius;
-  const int center_y = s->viz_rect.bottom() - footer_h / 2;
-  ui_draw_circle_image(s, center_x, center_y, radius, "driver_face", s->scene.dmonitoring_state.getIsActiveMode());
-}
-
 static void ui_draw_driver_view(UIState *s) {
   const bool is_rhd = s->scene.is_rhd;
   const int width = 4 * s->viz_rect.h / 3;
@@ -288,12 +242,6 @@ static void ui_draw_vision_header(UIState *s) {
                         nvgRGBAf(0,0,0,0.45), nvgRGBAf(0,0,0,0));
 
   ui_fill_rect(s->vg, {s->viz_rect.x, s->viz_rect.y, s->viz_rect.w, header_h}, gradient);
-
-  if (false) {
-    ui_draw_vision_speed(s);
-    ui_draw_vision_maxspeed(s);
-    ui_draw_vision_event(s);
-  }
 }
 
 static void ui_draw_vision_frame(UIState *s) {
@@ -314,11 +262,7 @@ static void ui_draw_vision(UIState *s) {
     if (scene->world_objects_visible) {
       ui_draw_world(s);
     }
-    // Set Speed, Current Speed, Status/Events
     ui_draw_vision_header(s);
-    if (false && s->scene.controls_state.getAlertSize() == cereal::ControlsState::AlertSize::NONE) {
-      ui_draw_vision_face(s);
-    }
   } else {
     ui_draw_driver_view(s);
   }
@@ -461,8 +405,6 @@ void ui_nvg_init(UIState *s) {
 
   // init fonts
   std::pair<const char *, const char *> fonts[] = {
-      {"sans-regular", "../assets/fonts/opensans_regular.ttf"},
-      {"sans-semibold", "../assets/fonts/opensans_semibold.ttf"},
       {"sans-bold", "../assets/fonts/opensans_bold.ttf"},
   };
   for (auto [name, file] : fonts) {
@@ -470,15 +412,8 @@ void ui_nvg_init(UIState *s) {
     assert(font_id >= 0);
   }
 
-  // init images
-  std::vector<std::pair<const char *, const char *>> images = {
-    {"wheel", "../assets/img_chffr_wheel.png"},
-    {"driver_face", "../assets/img_driver_face.png"},
-  };
-  for (auto [name, file] : images) {
-    s->images[name] = nvgCreateImage(s->vg, file, 1);
-    assert(s->images[name] != 0);
-  }
+  s->images["driver_face"] = nvgCreateImage(s->vg, "../assets/img_driver_face.png", 1);
+  assert(s->images["driver_face"] != 0);
 
   // init gl
   s->gl_shader = std::make_unique<GLShader>(frame_vertex_shader, frame_fragment_shader);

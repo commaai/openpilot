@@ -21,8 +21,8 @@ private:
   QColor background;
   QImage img;
 
-  const int radius = 200;
-  const int img_size = 150;
+  const int radius = 180;
+  const int img_size = 135;
 
 public slots:
   void setBackground(const QColor bg, const float op = 1.0);
