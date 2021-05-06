@@ -6,11 +6,10 @@
 
 #include <assert.h>
 #include <string.h>
-#include <zmq.h>
-
 #include <mutex>
 #include <string>
 
+#include <zmq.h>
 #include "json11.hpp"
 
 #include "selfdrive/common/util.h"

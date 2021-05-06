@@ -1,6 +1,3 @@
-#include <EGL/egl.h>
-#include <EGL/eglext.h>
-#include <GLES3/gl3.h>
 #include <assert.h>
 #include <math.h>
 #include <pthread.h>
@@ -10,6 +7,10 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <unistd.h>
+
+#include <EGL/egl.h>
+#include <EGL/eglext.h>
+#include <GLES3/gl3.h>
 
 #include "selfdrive/common/framebuffer.h"
 #include "selfdrive/common/glutil.h"

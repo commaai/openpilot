@@ -1,13 +1,14 @@
 #pragma once
 
-#include <bzlib.h>
-#include <capnp/serialize.h>
-#include <kj/array.h>
 #include <pthread.h>
 #include <stdint.h>
 #include <stdio.h>
 
 #include <memory>
+
+#include <bzlib.h>
+#include <capnp/serialize.h>
+#include <kj/array.h>
 
 #include "selfdrive/common/util.h"
 #include "selfdrive/common/swaglog.h"

@@ -1,12 +1,12 @@
 #pragma once
 
-#include <capnp/dynamic.h>
-
 #include <QFile>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QQueue>
+
+#include <capnp/dynamic.h>
 
 #include "cereal/visionipc/visionipc_server.h"
 #include "selfdrive/common/util.h"

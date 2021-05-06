@@ -1,12 +1,12 @@
 #pragma once
 
-#include <OMX_Component.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 
 #include <vector>
 
+#include <OMX_Component.h>
 extern "C" {
 #include <libavformat/avformat.h>
 }

@@ -1,14 +1,13 @@
 #include "selfdrive/camerad/cameras/camera_common.h"
 
 #include <assert.h>
-#include <jpeglib.h>
 #include <stdio.h>
 #include <unistd.h>
-
 #include <chrono>
 #include <thread>
 
 #include "libyuv.h"
+#include <jpeglib.h>
 
 #include "selfdrive/camerad/imgproc/utils.h"
 #include "selfdrive/common/clutil.h"

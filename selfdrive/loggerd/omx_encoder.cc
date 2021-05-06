@@ -2,20 +2,21 @@
 
 #include "selfdrive/loggerd/omx_encoder.h"
 
-#include <OMX_Component.h>
-#include <OMX_IndexExt.h>
-#include <OMX_QCOMExtns.h>
-#include <OMX_VideoExt.h>
 #include <assert.h>
 #include <fcntl.h>
-#include <msm_media_info.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include <OMX_Component.h>
+#include <OMX_IndexExt.h>
+#include <OMX_QCOMExtns.h>
+#include <OMX_VideoExt.h>
+#include <msm_media_info.h>
 #include "libyuv.h"
+
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/util.h"
 

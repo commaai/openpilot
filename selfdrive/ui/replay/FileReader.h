@@ -1,9 +1,5 @@
 #pragma once
 
-#include <bzlib.h>
-#include <capnp/serialize.h>
-#include <kj/io.h>
-
 #include <QElapsedTimer>
 #include <QMultiMap>
 #include <QNetworkAccessManager>
@@ -13,7 +9,11 @@
 #include <QWidget>
 #include <thread>
 
+#include <bzlib.h>
+#include <capnp/serialize.h>
+#include <kj/io.h>
 #include "cereal/gen/cpp/log.capnp.h"
+
 #include "tools/clib/channel.h"
 
 class FileReader : public QObject {

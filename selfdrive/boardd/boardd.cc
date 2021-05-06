@@ -1,5 +1,4 @@
 #include <errno.h>
-#include <libusb-1.0/libusb.h>
 #include <sched.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -17,6 +16,8 @@
 #include <iostream>
 #include <thread>
 #include <unordered_map>
+
+#include <libusb-1.0/libusb.h>
 
 #include "cereal/gen/cpp/car.capnp.h"
 #include "cereal/messaging/messaging.h"

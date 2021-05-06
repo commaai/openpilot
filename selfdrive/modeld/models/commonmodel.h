@@ -1,13 +1,14 @@
 #pragma once
+
+#include <float.h>
+#include <stdlib.h>
+
 #define CL_USE_DEPRECATED_OPENCL_1_2_APIS
 #ifdef __APPLE__
 #include <OpenCL/cl.h>
 #else
 #include <CL/cl.h>
 #endif
-
-#include <float.h>
-#include <stdlib.h>
 
 #include "selfdrive/common/mat.h"
 #include "selfdrive/modeld/transforms/loadyuv.h"

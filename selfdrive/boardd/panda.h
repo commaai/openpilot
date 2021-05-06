@@ -1,6 +1,5 @@
 #pragma once
 
-#include <libusb-1.0/libusb.h>
 #include <pthread.h>
 
 #include <atomic>
@@ -9,6 +8,8 @@
 #include <mutex>
 #include <optional>
 #include <vector>
+
+#include <libusb-1.0/libusb.h>
 
 #include "cereal/gen/cpp/car.capnp.h"
 #include "cereal/gen/cpp/log.capnp.h"
