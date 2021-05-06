@@ -245,9 +245,8 @@ void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::R
 }
 
 void Localizer::handle_car_state(double current_time, const cereal::CarState::Reader& log) {
-  //this->kf->predict_and_observe(current_time, OBSERVATION_ODOMETRIC_SPEED, { (VectorXd(1) << log.getVEgoRaw()).finished() });
   this->car_speed = std::abs(log.getVEgo());
-  if (this->car_speed < 1e-3) {
+  if (log.getStandstill()) {
     this->kf->predict_and_observe(current_time, OBSERVATION_NO_ROT, { Vector3d(0.0, 0.0, 0.0) });
   }
 }
