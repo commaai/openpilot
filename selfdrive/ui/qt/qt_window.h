@@ -1,6 +1,9 @@
+#pragma once
+
+#include <string>
+
 #include <QApplication>
 #include <QWidget>
-#include <string>
 
 #ifdef QCOM2
 #include <qpa/qplatformnativeinterface.h>

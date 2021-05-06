@@ -1,10 +1,11 @@
 #pragma once
 
+#include <map>
+
 #include <QFrame>
 #include <QLabel>
 #include <QPushButton>
 #include <QVBoxLayout>
-#include <map>
 
 #include "selfdrive/common/params.h"
 #include "selfdrive/ui/qt/widgets/scrollview.h"

@@ -1,12 +1,13 @@
 #include "setup.h"
 
-#include <curl/curl.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #include <QApplication>
 #include <QLabel>
 #include <QVBoxLayout>
+
+#include <curl/curl.h>
 
 #include "selfdrive/ui/qt/offroad/networking.h"
 #include "selfdrive/ui/qt/widgets/input.h"

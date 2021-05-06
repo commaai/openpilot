@@ -17,7 +17,7 @@
 #define USE_DSP_RUNTIME 2
 
 #ifdef USE_THNEED
-#include "thneed/thneed.h"
+#include "selfdrive/modeld/thneed/thneed.h"
 #endif
 
 class SNPEModel : public RunModel {

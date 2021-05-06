@@ -1,4 +1,4 @@
-#include "thneed.h"
+#include "selfdrive/modeld/thneed/thneed.h"
 
 #include <dlfcn.h>
 #include <errno.h>

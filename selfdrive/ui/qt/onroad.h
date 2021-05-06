@@ -1,8 +1,9 @@
 #pragma once
 
+#include <map>
+
 #include <QSoundEffect>
 #include <QtWidgets>
-#include <map>
 
 #include "cereal/gen/cpp/log.capnp.h"
 #include "selfdrive/hardware/hw.h"

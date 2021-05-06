@@ -1,6 +1,6 @@
 #pragma clang diagnostic ignored "-Wexceptions"
 
-#include "snpemodel.h"
+#include "selfdrive/modeld/runners/snpemodel.h"
 
 #include <stdlib.h>
 #include <string.h>
