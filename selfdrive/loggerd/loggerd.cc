@@ -43,12 +43,6 @@ namespace {
 constexpr int MAIN_FPS = 20;
 const int MAIN_BITRATE = Hardware::TICI() ? 10000000 : 5000000;
 const int DCAM_BITRATE = Hardware::TICI() ? MAIN_BITRATE : 2500000;
-
-#define NO_CAMERA_PATIENCE 500 // fall back to time-based rotation if all cameras are dead
-
-const int MAIN_FPS = 20;
-const int MAIN_BITRATE = IS_TICI ? 10000000 : 5000000;
-const int DCAM_BITRATE = IS_TICI ? 10000000 : 2500000;
 const int NO_CAMERA_PATIENCE = 500; // fall back to time-based rotation if all cameras are dead
 const int SEGMENT_LENGTH = getenv("LOGGERD_TEST") ? atoi(getenv("LOGGERD_SEGMENT_LENGTH")) : 60;
 
@@ -86,9 +80,9 @@ LogCameraInfo cameras_logged[] = {
     .bitrate = DCAM_BITRATE,
     .is_h265 = true,
     .has_qcamera = false,
-    .edix_type = IS_TICI ? cereal::EncodeIndex::Type::FULL_H_E_V_C : cereal::EncodeIndex::Type::FRONT,
+    .edix_type = Hardware::TICI() ? cereal::EncodeIndex::Type::FULL_H_E_V_C : cereal::EncodeIndex::Type::FRONT,
     .initEncoderIdx = &cereal::Event::Builder::initDriverEncodeIdx,
-    .enabled = (IS_TICI || IS_EON) && Params().getBool("RecordFront"),
+    .enabled = (Hardware::TICI() || Hardware::EON()) && Params().getBool("RecordFront"),
   },
   {
     .stream_type = VISION_STREAM_YUV_WIDE,
@@ -100,7 +94,7 @@ LogCameraInfo cameras_logged[] = {
     .has_qcamera = false,
     .edix_type = cereal::EncodeIndex::Type::FULL_H_E_V_C,
     .initEncoderIdx = &cereal::Event::Builder::initWideRoadEncodeIdx,
-    .enabled = IS_TICI,
+    .enabled = Hardware::TICI(),
   },
 };
 LogCameraInfo qcam_info = {
@@ -111,7 +105,6 @@ LogCameraInfo qcam_info = {
     .downscale = true,
     .frame_width = Hardware::TICI() ? 526 : 480,
     .frame_height = Hardware::TICI() ? 330 : 360 // keep pixel count the same?
-  },
 };
 
 struct LoggerdState {
