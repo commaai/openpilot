@@ -15,7 +15,6 @@ public:
   static constexpr float MAX_VOLUME = 1.0;
   static constexpr float MIN_VOLUME = 0.5;
 
-  static bool PC() { return false; }
   static bool EON() { return true; }
   static std::string get_os_version() {
     return "NEOS " + util::read_file("/VERSION");
