@@ -45,7 +45,7 @@ void localizer_handle_msg_bytes(Localizer_t localizer, const char *data, size_t 
   def test_liblocalizer(self):
     msg = messaging.new_message('liveCalibration')
     msg.liveCalibration.validBlocks = random.randint(1, 10)
-    msg.liveCalibration.rpyCalib = [random.random() for _ in range(3)]
+    msg.liveCalibration.rpyCalib = [random.random() / 10 for _ in range(3)]
 
     self.localizer_handle_msg(msg)
     liveloc = self.localizer_get_msg()
@@ -84,17 +84,17 @@ void localizer_handle_msg_bytes(Localizer_t localizer, const char *data, size_t 
     for _ in range(20 * VISION_DECIMATION):  # size of hist_old
       msg = messaging.new_message('cameraOdometry')
       msg.cameraOdometry.rot = [0.0, 0.0, 0.0]
-      msg.cameraOdometry.rotStd = [0.0, 0.0, 0.0]
+      msg.cameraOdometry.rotStd = [0.1, 0.1, 0.1]
       msg.cameraOdometry.trans = [0.0, 0.0, 0.0]
-      msg.cameraOdometry.transStd = [2.0, 0.0, 0.0]
+      msg.cameraOdometry.transStd = [2.0, 0.1, 0.1]
       self.localizer_handle_msg(msg)
 
     for _ in range(20 * VISION_DECIMATION):  # size of hist_new
       msg = messaging.new_message('cameraOdometry')
       msg.cameraOdometry.rot = [0.0, 0.0, 0.0]
-      msg.cameraOdometry.rotStd = [0.0, 0.0, 0.0]
+      msg.cameraOdometry.rotStd = [1.0, 1.0, 1.0]
       msg.cameraOdometry.trans = [0.0, 0.0, 0.0]
-      msg.cameraOdometry.transStd = [8.1, 0.0, 0.0]  # more than 4 times larger
+      msg.cameraOdometry.transStd = [10.1, 0.1, 0.1]  # more than 4 times larger
       self.localizer_handle_msg(msg)
 
     ret = self.localizer_get_msg()
@@ -136,7 +136,9 @@ class TestLocationdProc(unittest.TestCase):
       msg = messaging.new_message('gpsLocationExternal')
       msg.logMonoTime = 0
       msg.gpsLocationExternal.flags = 1
-      msg.gpsLocationExternal.verticalAccuracy = 0.0
+      msg.gpsLocationExternal.verticalAccuracy = 1.0
+      msg.gpsLocationExternal.speedAccuracy = 1.0
+      msg.gpsLocationExternal.bearingAccuracyDeg = 1.0
       msg.gpsLocationExternal.vNED = [0.0, 0.0, 0.0]
       msg.gpsLocationExternal.latitude = lat
       msg.gpsLocationExternal.longitude = lon
