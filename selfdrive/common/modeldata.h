@@ -39,7 +39,7 @@ const mat3 ecam_intrinsic_matrix =
                                0., 0., 0.}};
 
 static inline mat3 get_model_yuv_transform(bool bayer = true) {
-  float db_s = Hardware::TICI() ? 1.0 : 0.5; // debayering does a 2x downscale on TICI
+  float db_s = Hardware::TICI() ? 1.0 : 0.5; // debayering does a 2x downscale on EON
   const mat3 transform = (mat3){{
     1.0, 0.0, 0.0,
     0.0, 1.0, 0.0,
