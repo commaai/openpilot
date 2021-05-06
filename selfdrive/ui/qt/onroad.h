@@ -7,35 +7,12 @@
 #include "cereal/gen/cpp/log.capnp.h"
 #include "selfdrive/hardware/hw.h"
 #include "selfdrive/ui/ui.h"
+#include "selfdrive/ui/qt/onroad/hud.h"
 
 
 typedef cereal::CarControl::HUDControl::AudibleAlert AudibleAlert;
 
 // ***** onroad widgets *****
-
-class VisionOverlay : public QWidget {
-  Q_OBJECT
-
-public:
-  VisionOverlay(QWidget *parent = 0);
-
-protected:
-  void paintEvent(QPaintEvent*) override;
-
-private:
-  QLabel *wheel;
-  QLabel *monitoring;
-  QLabel *speed;
-  QLabel *speed_unit;
-  QLabel *maxspeed;
-
-  QColor bg;
-  QVBoxLayout *layout;
-
-public slots:
-  void update(const UIState &s);
-};
-
 
 class OnroadAlerts : public QWidget {
   Q_OBJECT

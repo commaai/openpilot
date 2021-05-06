@@ -30,12 +30,11 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   alerts_container->addWidget(alerts, 0, Qt::AlignBottom);
   QWidget *w = new QWidget(this);
   w->setLayout(alerts_container);
-
   layout->addWidget(w);
 
-  // alerts on top
-  //layout->setCurrentWidget(w);
-  layout->setCurrentWidget(vision);
+  // setup stacking order
+  w->raise();
+  vision->raise();
 
   QObject::connect(this, &OnroadWindow::update, this, &OnroadWindow::updateSlot);
 
@@ -61,123 +60,6 @@ void OnroadWindow::updateSlot(const UIState &s) {
 }
 
 // ***** onroad widgets *****
-
-VisionOverlay::VisionOverlay(QWidget *parent) : QWidget(parent) {
-  layout = new QVBoxLayout();
-  layout->setMargin(50);
-
-  // ***** header *****
-  QHBoxLayout *header = new QHBoxLayout();
-  header->setMargin(0);
-  header->setSpacing(0);
-
-  // max speed
-  QVBoxLayout *maxspeed_layout = new QVBoxLayout();
-  maxspeed_layout->setMargin(20);
-
-  QLabel *max = new QLabel("MAX");
-  max->setAlignment(Qt::AlignCenter);
-  max->setStyleSheet("font-size: 40px; font-weight: 400;");
-  maxspeed_layout->addWidget(max, 0, Qt::AlignTop);
-
-  maxspeed = new QLabel();
-  maxspeed->setAlignment(Qt::AlignCenter);
-  maxspeed->setStyleSheet("font-size: 85px; font-weight: 500;");
-  maxspeed_layout->addWidget(maxspeed, 0, Qt::AlignCenter);
-
-  QWidget *ms = new QWidget();
-  ms->setFixedSize(180, 200);
-  ms->setObjectName("MaxSpeedContainer");
-  ms->setLayout(maxspeed_layout);
-  ms->setStyleSheet(R"(
-    #MaxSpeedContainer {
-      border-width: 8px;
-      border-style: solid;
-      border-radius: 20px;
-      border-color: rgba(255, 255, 255, 200);
-      background-color: rgba(0, 0, 0, 100);
-    }
-  )");
-
-  header->addWidget(ms, 0, Qt::AlignLeft | Qt::AlignTop);
-
-  // current speed
-  QVBoxLayout *speed_layout = new QVBoxLayout();
-  speed_layout->setMargin(0);
-  speed_layout->setSpacing(0);
-  header->addLayout(speed_layout, 1);
-
-  speed = new QLabel();
-  speed->setStyleSheet("font-size: 180px; font-weight: 500;");
-  speed_layout->addWidget(speed, 0, Qt::AlignHCenter);
-
-  // TODO: spacing too big, remove ascent/descent?
-  speed_unit = new QLabel();
-  speed_unit->setStyleSheet("font-size: 70px; font-weight: 400; color: rgba(255, 255, 255, 200);");
-  speed_layout->addWidget(speed_unit, 0, Qt::AlignHCenter | Qt::AlignTop);
-
-  // engage-ability icon
-  wheel = new QLabel();
-  wheel->setFixedSize(200, 200);
-  wheel->setAlignment(Qt::AlignCenter);
-  wheel->setPixmap(QPixmap("../assets/img_chffr_wheel.png").scaledToWidth(150, Qt::SmoothTransformation));
-  wheel->setStyleSheet(R"(
-    border-radius: 100px;
-    background-color: rgba(0, 0, 0, 100);
-  )");
-  header->addWidget(wheel, 0, Qt::AlignRight | Qt::AlignTop);
-
-  layout->addLayout(header);
-  layout->addStretch(1);
-
-  // ***** footer *****
-  QHBoxLayout *footer = new QHBoxLayout();
-  footer->setMargin(0);
-  footer->setSpacing(0);
-
-  // DM icon
-  monitoring = new QLabel();
-  monitoring->setFixedSize(200, 200);
-  monitoring->setAlignment(Qt::AlignCenter);
-  monitoring->setPixmap(QPixmap("../assets/img_driver_face.png").scaledToWidth(150, Qt::SmoothTransformation));
-  monitoring->setStyleSheet(R"(
-    QLabel {
-      border-radius: 100px;
-      background-color: rgba(0, 0, 0, 100);
-    }
-    QLabel:disabled {
-      background-color: rgba(0, 0, 0, 20);
-    }
-  )");
-  monitoring->setDisabled(true);
-  footer->addWidget(monitoring, 0, Qt::AlignLeft);
-
-  layout->addStretch(1);
-  layout->addLayout(footer);
-
-  setLayout(layout);
-  setStyleSheet("color: white;");
-}
-
-void VisionOverlay::update(const UIState &s) {
-  auto v = s.scene.car_state.getVEgo() * (s.scene.is_metric ? 3.6 : 2.2369363);
-  speed->setText(QString::number((int)v));
-  speed_unit->setText(s.scene.is_metric ? "km/h" : "mph");
-
-  auto max = s.scene.controls_state.getVCruise() * (s.scene.is_metric ? 1 : 0.6225);
-  maxspeed->setText(QString::number((int)max));
-
-  monitoring->setEnabled(s.scene.dmonitoring_state.getIsActiveMode());
-}
-
-void VisionOverlay::paintEvent(QPaintEvent *event) {
-  /*
-  QPainter p(this);
-  p.setBrush(QBrush(bg));
-  p.setPen(Qt::NoPen);
-  p.drawRect(rect());
-  */
-}
 
 OnroadAlerts::OnroadAlerts(QWidget *parent) : QWidget(parent) {
   layout = new QVBoxLayout(this);
