@@ -1,11 +1,10 @@
 #include <string.h>
-#include <libyuv.h>
-#include "selfdrive/hardware/hw.h"
 #include "dmonitoring.h"
 #include "common/mat.h"
 #include "common/timing.h"
 #include "common/params.h"
 
+#include <libyuv.h>
 
 #define MODEL_WIDTH 320
 #define MODEL_HEIGHT 640
@@ -18,8 +17,12 @@
 #endif
 
 void dmonitoring_init(DMonitoringModelState* s) {
-  const char *model_path = Hardware::PC() ? "../../models/dmonitoring_model.dlc"
-                                          : "../../models/dmonitoring_model_q.dlc";
+#if defined(QCOM) || defined(QCOM2)
+  const char* model_path = "../../models/dmonitoring_model_q.dlc";
+#else
+  const char* model_path = "../../models/dmonitoring_model.dlc";
+#endif
+
   int runtime = USE_DSP_RUNTIME;
   s->m = new DefaultRunModel(model_path, &s->output[0], OUTPUT_SIZE, runtime);
   s->is_rhd = Params().getBool("IsRHD");
@@ -52,26 +55,24 @@ void crop_yuv(uint8_t *raw, int width, int height, uint8_t *y, uint8_t *u, uint8
 }
 
 DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_buf, int width, int height) {
-  Rect crop_rect;
-  if (Hardware::TICI()) {
-    const int full_width_tici = 1928;
-    const int full_height_tici = 1208;
-    const int adapt_width_tici = 668;
-    const int cropped_height = adapt_width_tici / 1.33;
-    crop_rect = {full_width_tici / 2 - adapt_width_tici / 2,
-                 full_height_tici / 2 - cropped_height / 2 - 196,
-                 cropped_height / 2,
-                 cropped_height};
-    if (!s->is_rhd) {
-      crop_rect.x += adapt_width_tici - crop_rect.w + 32;
-    }
-
-  } else {
-    crop_rect = {0, 0, height / 2, height};
-    if (!s->is_rhd) {
-      crop_rect.x += width - crop_rect.w;
-    }
+#ifndef QCOM2
+  Rect crop_rect = {0, 0, height / 2, height};
+  if (!s->is_rhd) {
+    crop_rect.x += width - crop_rect.w;
   }
+#else
+  const int full_width_tici = 1928;
+  const int full_height_tici = 1208;
+  const int adapt_width_tici = 668;
+  const int cropped_height = adapt_width_tici / 1.33;
+  Rect crop_rect = {full_width_tici / 2 - adapt_width_tici / 2,
+                    full_height_tici / 2 - cropped_height / 2 - 196,
+                    cropped_height / 2,
+                    cropped_height};
+  if (!s->is_rhd) {
+    crop_rect.x += adapt_width_tici - crop_rect.w + 32;
+  }
+#endif
 
   int resized_width = MODEL_WIDTH;
   int resized_height = MODEL_HEIGHT;

@@ -1,10 +1,14 @@
 #include "replay.h"
-#include "selfdrive/hardware/hw.h"
 
 Replay::Replay(QString route_, int seek) : route(route_) {
   unlogger = new Unlogger(&events, &events_lock, &frs, seek);
   current_segment = 0;
-  bool create_jwt = !Hardware::PC();
+  bool create_jwt = true;
+
+#if !defined(QCOM) && !defined(QCOM2)
+  create_jwt = false;
+#endif
+
   http = new HttpRequest(this, "https://api.commadotai.com/v1/route/" + route + "/files", "", create_jwt);
   QObject::connect(http, &HttpRequest::receivedResponse, this, &Replay::parseResponse);
 }

@@ -19,12 +19,16 @@
 #include "nanovg_gl.h"
 #include "nanovg_gl_utils.h"
 #include "paint.h"
-#include "selfdrive/hardware/hw.h"
 
 // TODO: this is also hardcoded in common/transformations/camera.py
 // TODO: choose based on frame input size
-const float y_offset = Hardware::TICI() ? 150.0 : 0.0;
-const float zoom = Hardware::TICI() ? 2912.8 : 2138.5;
+#ifdef QCOM2
+const float y_offset = 150.0;
+const float zoom = 2912.8;
+#else
+const float y_offset = 0.0;
+const float zoom = 2138.5;
+#endif
 
 static void ui_draw_text(const UIState *s, float x, float y, const char *string, float size, NVGcolor color, const char *font_name) {
   nvgFontFace(s->vg, font_name);
@@ -125,11 +129,11 @@ static void draw_frame(UIState *s) {
 
   if (s->last_frame) {
     glBindTexture(GL_TEXTURE_2D, s->texture[s->last_frame->idx]->frame_tex);
-    if (!Hardware::EON()) {
-      // this is handled in ion on QCOM
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, s->last_frame->width, s->last_frame->height,
-                   0, GL_RGB, GL_UNSIGNED_BYTE, s->last_frame->addr);
-    }
+#ifndef QCOM
+    // this is handled in ion on QCOM
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, s->last_frame->width, s->last_frame->height,
+                 0, GL_RGB, GL_UNSIGNED_BYTE, s->last_frame->addr);
+#endif
   }
 
   glUseProgram(s->gl_shader->prog);
@@ -242,9 +246,13 @@ static void ui_draw_driver_view(UIState *s) {
 
   // blackout
   const int blackout_x_r = valid_rect.right();
-  const Rect &blackout_rect = Hardware::TICI() ? s->viz_rect : rect;
-  const int blackout_w_r = blackout_rect.right() - valid_rect.right();
-  const int blackout_x_l = blackout_rect.x;
+#ifndef QCOM2
+  const int blackout_w_r = rect.right() - valid_rect.right();
+  const int blackout_x_l = rect.x;
+#else
+  const int blackout_w_r = s->viz_rect.right() - valid_rect.right();
+  const int blackout_x_l = s->viz_rect.x;
+#endif
   const int blackout_w_l = valid_rect.x - blackout_x_l;
   ui_fill_rect(s->vg, {blackout_x_l, rect.y, blackout_w_l, rect.h}, COLOR_BLACK_ALPHA(144));
   ui_fill_rect(s->vg, {blackout_x_r, rect.y, blackout_w_r, rect.h}, COLOR_BLACK_ALPHA(144));
@@ -418,42 +426,41 @@ static const mat4 device_transform = {{
   0.0,  0.0, 0.0, 1.0,
 }};
 
-static mat4 get_driver_view_transform() {
-  const float driver_view_ratio = 1.333;
-  mat4 transform;
-  if (Hardware::TICI()) {
-    // from dmonitoring.cc
-    const int full_width_tici = 1928;
-    const int full_height_tici = 1208;
-    const int adapt_width_tici = 668;
-    const int crop_x_offset = 32;
-    const int crop_y_offset = -196;
-    const float yscale = full_height_tici * driver_view_ratio / adapt_width_tici;
-    const float xscale = yscale*(1080-2*bdr_s)/(2160-2*bdr_s)*full_width_tici/full_height_tici;
-    transform = (mat4){{
-      xscale,  0.0, 0.0, xscale*crop_x_offset/full_width_tici*2,
-      0.0,  yscale, 0.0, yscale*crop_y_offset/full_height_tici*2,
-      0.0,  0.0, 1.0, 0.0,
-      0.0,  0.0, 0.0, 1.0,
-    }};
-  
-  } else {
-     // frame from 4/3 to 16/9 display
-    transform = (mat4){{
-      driver_view_ratio*(1080-2*bdr_s)/(1920-2*bdr_s),  0.0, 0.0, 0.0,
-      0.0,  1.0, 0.0, 0.0,
-      0.0,  0.0, 1.0, 0.0,
-      0.0,  0.0, 0.0, 1.0,
-    }};
-  }
-  return transform;
-}
+static const float driver_view_ratio = 1.333;
+#ifndef QCOM2
+// frame from 4/3 to 16/9 display
+static const mat4 driver_view_transform = {{
+  driver_view_ratio*(1080-2*bdr_s)/(1920-2*bdr_s),  0.0, 0.0, 0.0,
+  0.0,  1.0, 0.0, 0.0,
+  0.0,  0.0, 1.0, 0.0,
+  0.0,  0.0, 0.0, 1.0,
+}};
+#else
+// from dmonitoring.cc
+static const int full_width_tici = 1928;
+static const int full_height_tici = 1208;
+static const int adapt_width_tici = 668;
+static const int crop_x_offset = 32;
+static const int crop_y_offset = -196;
+static const float yscale = full_height_tici * driver_view_ratio / adapt_width_tici;
+static const float xscale = yscale*(1080-2*bdr_s)/(2160-2*bdr_s)*full_width_tici/full_height_tici;
+
+static const mat4 driver_view_transform = {{
+  xscale,  0.0, 0.0, xscale*crop_x_offset/full_width_tici*2,
+  0.0,  yscale, 0.0, yscale*crop_y_offset/full_height_tici*2,
+  0.0,  0.0, 1.0, 0.0,
+  0.0,  0.0, 0.0, 1.0,
+}};
+#endif
 
 void ui_nvg_init(UIState *s) {
   // init drawing
-
-  // on EON, we enable MSAA
-  s->vg = Hardware::EON() ? nvgCreate(0) : nvgCreate(NVG_ANTIALIAS | NVG_STENCIL_STROKES | NVG_DEBUG);
+#ifdef QCOM
+  // on QCOM, we enable MSAA
+  s->vg = nvgCreate(0);
+#else
+  s->vg = nvgCreate(NVG_ANTIALIAS | NVG_STENCIL_STROKES | NVG_DEBUG);
+#endif
   assert(s->vg);
 
   // init fonts
@@ -547,7 +554,7 @@ void ui_nvg_init(UIState *s) {
     0.0, 0.0, 0.0, 1.0,
   }};
 
-  s->front_frame_mat = matmul(device_transform, get_driver_view_transform());
+  s->front_frame_mat = matmul(device_transform, driver_view_transform);
   s->rear_frame_mat = matmul(device_transform, frame_transform);
 
   // Apply transformation such that video pixel coordinates match video
