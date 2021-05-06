@@ -13,12 +13,11 @@
 #include "api.h"
 #include "common/params.h"
 #include "common/util.h"
+#include "selfdrive/hardware/hw.h"
 
-#if defined(QCOM) || defined(QCOM2)
-const std::string private_key_path = "/persist/comma/id_rsa";
-#else
-const std::string private_key_path = util::getenv_default("HOME", "/.comma/persist/comma/id_rsa", "/persist/comma/id_rsa");
-#endif
+const std::string private_key_path =
+    Hardware::PC() ? util::getenv_default("HOME", "/.comma/persist/comma/id_rsa", "/persist/comma/id_rsa")
+                   : "/persist/comma/id_rsa";
 
 QByteArray CommaApi::rsa_sign(const QByteArray &data) {
   auto file = QFile(private_key_path.c_str());

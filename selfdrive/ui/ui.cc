@@ -8,7 +8,7 @@
 #include "common/swaglog.h"
 #include "common/visionimg.h"
 #include "common/watchdog.h"
-#include "hardware/hw.h"
+#include "selfdrive/hardware/hw.h"
 #include "ui.h"
 #include "paint.h"
 #include "qt_window.h"
@@ -192,11 +192,10 @@ static void update_state(UIState *s) {
   }
   if (sm.updated("sensorEvents")) {
     for (auto sensor : sm["sensorEvents"].getSensorEvents()) {
-      if (sensor.which() == cereal::SensorEventData::LIGHT) {
-#ifndef QCOM2
+      if (!Hardware::TICI() && sensor.which() == cereal::SensorEventData::LIGHT) {
         scene.light_sensor = sensor.getLight();
-#endif
-      } else if (!scene.started && sensor.which() == cereal::SensorEventData::ACCELERATION) {
+      }
+      if (!scene.started && sensor.which() == cereal::SensorEventData::ACCELERATION) {
         auto accel = sensor.getAcceleration().getV();
         if (accel.totalSize().wordCount){ // TODO: sometimes empty lists are received. Figure out why
           scene.accel_sensor = accel[2];
@@ -209,13 +208,11 @@ static void update_state(UIState *s) {
       }
     }
   }
-#ifdef QCOM2
-  if (sm.updated("roadCameraState")) {
+  if (Hardware::TICI() && sm.updated("roadCameraState")) {
     auto camera_state = sm["roadCameraState"].getRoadCameraState();
     float gain = camera_state.getGainFrac() * (camera_state.getGlobalGain() > 100 ? 2.5 : 1.0) / 10.0;
     scene.light_sensor = std::clamp<float>((1023.0 / 1757.0) * (1757.0 - camera_state.getIntegLines()) * (1.0 - gain), 0.0, 1023.0);
   }
-#endif
   scene.started = scene.deviceState.getStarted() || scene.driver_view;
 }
 
@@ -244,10 +241,8 @@ static void update_vision(UIState *s) {
     VisionBuf * buf = s->vipc_client->recv();
     if (buf != nullptr){
       s->last_frame = buf;
-    } else {
-#if defined(QCOM) || defined(QCOM2)
+    } else if (!Hardware::PC()) {
       LOGE("visionIPC receive timeout");
-#endif
     }
   }
 }
@@ -295,11 +290,7 @@ QUIState::QUIState(QObject *parent) : QObject(parent) {
   ui_state.fb_h = vwp_h;
   ui_state.scene.started = false;
   ui_state.last_frame = nullptr;
-  ui_state.wide_camera = false;
-
-#ifdef QCOM2
-  ui_state.wide_camera = Params().getBool("EnableWideCamera");
-#endif
+  ui_state.wide_camera = Hardware::TICI() ? Params().getBool("EnableWideCamera") : false;
 
   ui_state.vipc_client_rear = new VisionIpcClient("camerad", ui_state.wide_camera ? VISION_STREAM_RGB_WIDE : VISION_STREAM_RGB_BACK, true);
   ui_state.vipc_client_front = new VisionIpcClient("camerad", VISION_STREAM_RGB_FRONT, true);
@@ -359,12 +350,9 @@ void Device::setAwake(bool on, bool reset) {
 
 void Device::updateBrightness(const UIState &s) {
   float clipped_brightness = std::min(100.0f, (s.scene.light_sensor * brightness_m) + brightness_b);
-
-#ifdef QCOM2
-  if (!s.scene.started) {
+  if (Hardware::TICI() && !s.scene.started) {
     clipped_brightness = BACKLIGHT_OFFROAD;
   }
-#endif
 
   int brightness = brightness_filter.update(clipped_brightness);
   if (!awake) {
