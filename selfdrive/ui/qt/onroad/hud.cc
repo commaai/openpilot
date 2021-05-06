@@ -16,14 +16,13 @@ void StatusIcon::setBackground(const QColor bg, const float op) {
 void StatusIcon::paintEvent(QPaintEvent *e) {
   QPainter p(this);
   p.setPen(Qt::NoPen);
-  p.setOpacity(opacity);
   p.setBrush(QBrush(background));
   p.drawEllipse(rect());
+  p.setOpacity(opacity);
   p.drawImage((width() - img.width()) / 2, (height() - img.height()) / 2, img);
 }
 
 VisionOverlay::VisionOverlay(QWidget *parent) : QWidget(parent) {
-
   // ***** header *****
   QHBoxLayout *header = new QHBoxLayout();
   header->setMargin(0);
@@ -40,7 +39,7 @@ VisionOverlay::VisionOverlay(QWidget *parent) : QWidget(parent) {
 
   maxspeed = new QLabel();
   maxspeed->setAlignment(Qt::AlignCenter);
-  maxspeed->setStyleSheet("font-size: 85px; font-weight: 500;");
+  maxspeed->setStyleSheet("font-size: 78px; font-weight: 500;");
   maxspeed_layout->addWidget(maxspeed, 0, Qt::AlignCenter);
 
   QWidget *ms = new QWidget();
@@ -92,7 +91,7 @@ VisionOverlay::VisionOverlay(QWidget *parent) : QWidget(parent) {
 
   // build container layout
   layout = new QVBoxLayout();
-  layout->setMargin(50);
+  layout->setMargin(40);
   layout->addLayout(header);
   layout->addStretch(1);
   layout->addLayout(footer);
@@ -106,11 +105,18 @@ void VisionOverlay::update(const UIState &s) {
   speed->setText(QString::number((int)v));
   speed_unit->setText(s.scene.is_metric ? "km/h" : "mph");
 
-  auto max = s.scene.controls_state.getVCruise() * (s.scene.is_metric ? 1 : 0.6225);
-  maxspeed->setText(QString::number((int)max));
+  const int SET_SPEED_NA = 255;
+  auto vcruise = s.scene.controls_state.getVCruise();
+  if (vcruise != 0 && vcruise != SET_SPEED_NA) {
+    auto max = vcruise * (s.scene.is_metric ? 1 : 0.6225);
+    maxspeed->setText(QString::number((int)max));
+  } else {
+    maxspeed->setText("N/A");
+  }
 
   float dm_alpha = s.scene.dmonitoring_state.getIsActiveMode() ? 1.0 : 0.2;
-  monitoring->setBackground(QColor(0, 0, 0, 100), dm_alpha);
+  float alert_visible = s.scene.controls_state.getAlertSize() != cereal::ControlsState::AlertSize::NONE;
+  monitoring->setBackground(QColor(0, 0, 0, 70), alert_visible ? 0.0 : dm_alpha);
 
   float wheel_alpha = s.scene.controls_state.getEngageable() ? 1.0 : 0.0;
   wheel->setBackground(bg_colors[s.status], wheel_alpha);

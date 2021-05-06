@@ -33,8 +33,8 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   layout->addWidget(w);
 
   // setup stacking order
-  w->raise();
   vision->raise();
+  w->raise();
 
   QObject::connect(this, &OnroadWindow::update, this, &OnroadWindow::updateSlot);
 
@@ -46,8 +46,8 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
 
 void OnroadWindow::paintEvent(QPaintEvent *event) {
   QPainter p(this);
-  p.setBrush(QBrush(bg));
   p.setPen(Qt::NoPen);
+  p.setBrush(QBrush(bg));
   p.drawRect(rect());
 }
 
@@ -55,6 +55,7 @@ void OnroadWindow::updateSlot(const UIState &s) {
   auto c = bg_colors[s.status];
   if (bg != c) {
     bg = c;
+    bg.setAlpha(255);
     repaint();
   }
 }
