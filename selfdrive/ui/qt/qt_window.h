@@ -8,15 +8,13 @@
 #ifdef QCOM2
 #include <qpa/qplatformnativeinterface.h>
 #include <wayland-client-protocol.h>
-
 #include <QPlatformSurfaceEvent>
 #endif
 
-#ifdef QCOM2
-  const int vwp_w = 2160, vwp_h = 1080;
-#else
-  const int vwp_w = 1920, vwp_h = 1080;
-#endif
+#include "selfdrive/hardware/hw.h"
+
+const int vwp_w = Hardware::TICI() ? 2160 : 1920;
+const int vwp_h = 1080;
 
 inline void setMainWindow(QWidget *w) {
   const float scale = getenv("SCALE") != NULL ? std::stof(getenv("SCALE")) : 1.0;

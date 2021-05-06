@@ -14,6 +14,7 @@
 
 #include "selfdrive/common/util.h"
 #include "selfdrive/common/version.h"
+#include "selfdrive/hardware/hw.h"
 
 class LogState {
  public:
@@ -70,9 +71,9 @@ static void cloudlog_init() {
   s.ctx_j["dirty"] = !getenv("CLEAN");
 
   // device type
-  if (util::file_exists("/EON")) {
+  if (Hardware::EON()) {
     cloudlog_bind_locked("device", "eon");
-  } else if (util::file_exists("/TICI")) {
+  } else if (Hardware::TICI()) {
     cloudlog_bind_locked("device", "tici");
   } else {
     cloudlog_bind_locked("device", "pc");

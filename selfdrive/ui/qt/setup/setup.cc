@@ -9,6 +9,8 @@
 
 #include <curl/curl.h>
 
+#include "selfdrive/hardware/hw.h"
+
 #include "selfdrive/ui/qt/offroad/networking.h"
 #include "selfdrive/ui/qt/widgets/input.h"
 #include "selfdrive/ui/qt_window.h"
@@ -143,9 +145,9 @@ QWidget * Setup::download_failed() {
   QPushButton *reboot_btn = new QPushButton("Reboot");
   nav_layout->addWidget(reboot_btn, 0, Qt::AlignBottom | Qt::AlignLeft);
   QObject::connect(reboot_btn, &QPushButton::released, this, [=]() {
-#ifdef QCOM2
-    std::system("sudo reboot");
-#endif
+    if (Hardware::TICI()) {
+      std::system("sudo reboot");
+    }
   });
 
   QPushButton *restart_btn = new QPushButton("Start over");

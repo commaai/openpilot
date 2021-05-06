@@ -1,6 +1,8 @@
-#include "sidebar.h"
+#include "selfdrive/ui/qt/sidebar.h"
 
 #include "selfdrive/common/util.h"
+#include "selfdrive/hardware/hw.h"
+
 #include "selfdrive/ui/qt/qt_window.h"
 
 StatusWidget::StatusWidget(bool has_substatus, QWidget *parent) : QFrame(parent) {
@@ -179,11 +181,9 @@ void Sidebar::update(const UIState &s) {
     panda_color = COLOR_DANGER;
     panda_message = "NO\nPANDA";
   }
-#ifdef QCOM2
-  else if (s.scene.started) {
+  else if (Hardware::TICI() && s.scene.started) {
     panda_color = s.scene.gpsOK ? COLOR_GOOD : COLOR_WARNING;
     panda_message = QString("SAT CNT\n%1").arg(s.scene.satelliteCount);
   }
-#endif
   panda->update(panda_message, panda_color);
 }

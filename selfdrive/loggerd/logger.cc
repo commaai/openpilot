@@ -53,9 +53,9 @@ kj::Array<capnp::word> logger_build_init_data() {
   MessageBuilder msg;
   auto init = msg.initEvent().initInitData();
 
-  if (util::file_exists("/EON")) {
+  if (Hardware::EON()) {
     init.setDeviceType(cereal::InitData::DeviceType::NEO);
-  } else if (util::file_exists("/TICI")) {
+  } else if (Hardware::TICI()) {
     init.setDeviceType(cereal::InitData::DeviceType::TICI);
   } else {
     init.setDeviceType(cereal::InitData::DeviceType::PC);
