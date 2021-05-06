@@ -12,7 +12,6 @@ from selfdrive.car.volkswagen.values import CAR as VOLKSWAGEN
 
 # TODO: add routes for these cars
 non_tested_cars = [
-  CHRYSLER.JEEP_CHEROKEE,
   CHRYSLER.JEEP_CHEROKEE_2019,
   CHRYSLER.PACIFICA_2018,
   CHRYSLER.PACIFICA_2018_HYBRID,
@@ -36,6 +35,9 @@ non_tested_cars = [
 ]
 
 routes: dict = {
+  "0c94aa1e1296d7c6|2021-05-05--19-48-37": {
+    'carFingerprint': CHRYSLER.JEEP_CHEROKEE,
+  },
   "420a8e183f1aed48|2020-03-05--07-15-29": {
     'carFingerprint': CHRYSLER.PACIFICA_2017_HYBRID,
     'enableCamera': True,
