@@ -4,10 +4,10 @@
 #include <string>
 #include <vector>
 
-// include the dynamic struct
 #include <stdint.h>
 #include <time.h>
 
+// include the dynamic struct
 #include <capnp/dynamic.h>
 #include <capnp/schema.h>
 

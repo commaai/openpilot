@@ -1,4 +1,4 @@
-#include "FileReader.h"
+#include "selfdrive/ui/replay/filereader.h"
 
 #include <QtNetwork>
 

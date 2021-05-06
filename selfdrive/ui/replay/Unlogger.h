@@ -6,7 +6,7 @@
 #include "cereal/messaging/messaging.h"
 #include "cereal/visionipc/visionipc_server.h"
 #include "selfdrive/common/clutil.h"
-#include "selfdrive/ui/replay/FileReader.h"
+#include "selfdrive/ui/replay/filereader.h"
 #include "tools/clib/FrameReader.h"
 
 class Unlogger : public QObject {
