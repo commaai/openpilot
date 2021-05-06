@@ -9,7 +9,7 @@ void StatusIcon::setBackground(const QColor bg, const float op) {
   if (bg != background || op != opacity) {
     background = bg;
     opacity = op;
-    repaint();
+    update();
   }
 }
 
@@ -120,9 +120,9 @@ void VisionOverlay::update(const UIState &s) {
   }
 
   float dm_alpha = s.scene.dmonitoring_state.getIsActiveMode() ? 1.0 : 0.2;
-  float alert_visible = s.scene.controls_state.getAlertSize() != cereal::ControlsState::AlertSize::NONE;
-  monitoring->setBackground(QColor(0, 0, 0, 70), alert_visible ? 0.0 : dm_alpha);
+  monitoring->setVisible(s.scene.controls_state.getAlertSize() == cereal::ControlsState::AlertSize::NONE);
+  monitoring->setBackground(QColor(0, 0, 0, 70), dm_alpha);
 
-  float wheel_alpha = s.scene.controls_state.getEngageable() ? 1.0 : 0.0;
-  wheel->setBackground(bg_colors[s.status], wheel_alpha);
+  wheel->setBackground(bg_colors[s.status]);
+  wheel->setVisible(s.scene.controls_state.getEngageable());
 }
