@@ -20,39 +20,26 @@ const double X_IDXS[TRAJECTORY_SIZE] = { 0.    ,   0.1875,   0.75  ,   1.6875,  
 #ifdef __cplusplus
 
 #include "common/mat.h"
-#ifdef QCOM2
-const mat3 fcam_intrinsic_matrix = (mat3){{
-  2648.0, 0.0, 1928.0/2,
-  0.0, 2648.0, 1208.0/2,
-  0.0,   0.0,   1.0
-}};
+#include "selfdrive/hardware/hw.h"
+const mat3 fcam_intrinsic_matrix =
+    Hardware::TICI() ? (mat3){{2648.0, 0.0, 1928.0 / 2,
+                               0.0, 2648.0, 1208.0 / 2,
+                               0.0, 0.0, 1.0}}
+                     : (mat3){{910., 0., 1164.0 / 2,
+                               0., 910., 874.0 / 2,
+                               0., 0., 1.}};
 
 // without unwarp, focal length is for center portion only
-const mat3 ecam_intrinsic_matrix = (mat3){{
-  620.0, 0.0, 1928.0/2,
-  0.0, 620.0, 1208.0/2,
-  0.0,   0.0,   1.0
-}};
-#else
-const mat3 fcam_intrinsic_matrix = (mat3){{
-  910., 0., 1164.0/2,
-  0., 910., 874.0/2,
-  0.,   0.,   1.
-}};
-
-const mat3 ecam_intrinsic_matrix = (mat3){{
-  0., 0., 0.,
-  0., 0., 0.,
-  0., 0., 0.
-}};
-#endif
+const mat3 ecam_intrinsic_matrix =
+    Hardware::TICI() ? (mat3){{620.0, 0.0, 1928.0 / 2,
+                               0.0, 620.0, 1208.0 / 2,
+                               0.0, 0.0, 1.0}}
+                     : (mat3){{0., 0., 0.,
+                               0., 0., 0.,
+                               0., 0., 0.}};
 
 static inline mat3 get_model_yuv_transform(bool bayer = true) {
-#ifndef QCOM2
-  float db_s = 0.5; // debayering does a 2x downscale
-#else
-  float db_s = 1.0;
-#endif
+  float db_s = Hardware::TICI() ? 1.0 : 0.5; // debayering does a 2x downscale on EON
   const mat3 transform = (mat3){{
     1.0, 0.0, 0.0,
     0.0, 1.0, 0.0,
@@ -62,4 +49,3 @@ static inline mat3 get_model_yuv_transform(bool bayer = true) {
 }
 
 #endif
-
