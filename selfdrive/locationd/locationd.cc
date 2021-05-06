@@ -9,9 +9,10 @@ using namespace Eigen;
 ExitHandler do_exit;
 const double ACCEL_SANITY_CHECK = 100.0;  // m/s^2
 const double ROTATION_SANITY_CHECK = 10.0;  // rad/s
-const double TRANS_SANITY_CHECK = 100.0;  // m/s
+const double TRANS_SANITY_CHECK = 200.0;  // m/s
 const double CALIB_RPY_SANITY_CHECK = 0.5; // rad (+- 30 deg)
 const double ALTITUDE_SANITY_CHECK = 10000; // m
+const double MIN_STD_SANITY_CHECK = 1e-5; // m or rad
 
 static VectorXd floatlist2vector(const capnp::List<float, capnp::Kind::PRIMITIVE>::Reader& floatlist) {
   VectorXd res(floatlist.size());
@@ -287,7 +288,7 @@ void Localizer::handle_cam_odo(double current_time, const cereal::CameraOdometry
   VectorXd rot_calib_std = floatlist2vector(log.getRotStd());
   VectorXd trans_calib_std = floatlist2vector(log.getTransStd());
 
-  if ((rot_calib_std.minCoeff() <= 0) || (trans_calib_std.minCoeff() <= 0)){
+  if ((rot_calib_std.minCoeff() <= MIN_STD_SANITY_CHECK) || (trans_calib_std.minCoeff() <= MIN_STD_SANITY_CHECK)){
     return;
   }
 
