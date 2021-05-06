@@ -13,7 +13,30 @@ typedef cereal::CarControl::HUDControl::AudibleAlert AudibleAlert;
 
 // ***** onroad widgets *****
 
-class OnroadAlerts : public QFrame {
+class VisionOverlay : public QWidget {
+  Q_OBJECT
+
+public:
+  VisionOverlay(QWidget *parent = 0);
+
+protected:
+  void paintEvent(QPaintEvent*) override;
+
+private:
+  QLabel *wheel;
+  QLabel *monitoring;
+  QLabel *speed;
+  QLabel *speed_unit;
+
+  QColor bg;
+  QVBoxLayout *layout;
+
+public slots:
+  void update(const UIState &s);
+};
+
+
+class OnroadAlerts : public QWidget {
   Q_OBJECT
 
 public:
@@ -87,9 +110,6 @@ protected:
 
 private:
   QColor bg;
-
-  OnroadAlerts *alerts;
-  NvgWindow *nvg;
   QStackedLayout *layout;
 
 signals:

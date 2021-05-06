@@ -11,11 +11,15 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   layout->setStackingMode(QStackedLayout::StackAll);
 
   // old UI on bottom
-  nvg = new NvgWindow(this);
+  NvgWindow *nvg = new NvgWindow(this);
   layout->addWidget(nvg);
   QObject::connect(this, &OnroadWindow::update, nvg, &NvgWindow::update);
 
-  alerts = new OnroadAlerts(this);
+  VisionOverlay *vision = new VisionOverlay(this);
+  QObject::connect(this, &OnroadWindow::update, vision, &VisionOverlay::update);
+  layout->addWidget(vision);
+
+  OnroadAlerts *alerts = new OnroadAlerts(this);
   QObject::connect(this, &OnroadWindow::update, alerts, &OnroadAlerts::update);
   QObject::connect(this, &OnroadWindow::offroadTransition, alerts, &OnroadAlerts::offroadTransition);
 
@@ -30,19 +34,14 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   layout->addWidget(w);
 
   // alerts on top
-  layout->setCurrentWidget(w);
+  //layout->setCurrentWidget(w);
+  layout->setCurrentWidget(vision);
 
   QVBoxLayout *container = new QVBoxLayout();
   container->setMargin(30);
   container->addLayout(layout);
   setLayout(container);
 }
-
-/*
-void OnroadWindow::update(const UIState &s) {
-
-}
-*/
 
 void OnroadWindow::paintEvent(QPaintEvent *event) {
   QPainter p(this);
@@ -53,7 +52,91 @@ void OnroadWindow::paintEvent(QPaintEvent *event) {
 
 // ***** onroad widgets *****
 
-OnroadAlerts::OnroadAlerts(QWidget *parent) : QFrame(parent) {
+VisionOverlay::VisionOverlay(QWidget *parent) : QWidget(parent) {
+  layout = new QVBoxLayout();
+  layout->setMargin(10);
+
+  QHBoxLayout *header = new QHBoxLayout();
+  header->setMargin(0);
+  header->setSpacing(0);
+
+  // current speed
+  QVBoxLayout *speed_layout = new QVBoxLayout();
+  speed_layout->setMargin(0);
+  speed_layout->setSpacing(0);
+  header->addLayout(speed_layout);
+
+  speed = new QLabel();
+  speed->setStyleSheet("font-size: 180px; font-weight: 500;");
+  speed_layout->addWidget(speed, 0, Qt::AlignHCenter);
+
+  // TODO: spacing too big, remove ascent/descent?
+  speed_unit = new QLabel();
+  speed_unit->setStyleSheet("font-size: 70px; font-weight: 400; color: rgba(255, 255, 255, 200);");
+  speed_layout->addWidget(speed_unit, 0, Qt::AlignHCenter | Qt::AlignTop);
+
+  /*
+  wheel = new QLabel();
+  header->addWidget(wheel, 0, Qt::AlignRight);
+  */
+
+  layout->addLayout(header);
+  layout->addStretch(1);
+
+  // footer
+  QHBoxLayout *footer = new QHBoxLayout();
+  footer->setMargin(0);
+  footer->setSpacing(0);
+
+  monitoring = new QLabel();
+  monitoring->setFixedSize(200, 200);
+  monitoring->setAlignment(Qt::AlignCenter);
+  monitoring->setPixmap(QPixmap("../assets/img_driver_face.png").scaledToWidth(150, Qt::SmoothTransformation));
+  monitoring->setStyleSheet(R"(
+    QLabel {
+      border-radius: 100px;
+      background-color: rgba(0, 0, 0, 100);
+    }
+    QLabel:disabled {
+      background-color: rgba(0, 0, 0, 20);
+    }
+  )");
+  monitoring->setDisabled(true);
+  footer->addWidget(monitoring, 0, Qt::AlignLeft);
+
+  layout->addStretch(1);
+  layout->addLayout(footer);
+
+  setLayout(layout);
+  setStyleSheet("color: white;");
+}
+
+void VisionOverlay::update(const UIState &s) {
+  //SubMaster &sm = *(s.sm);
+
+  auto v = s.scene.car_state.getVEgo() * (s.scene.is_metric ? 3.6 : 2.2369363);
+  speed->setText(QString::number((int)v));
+  speed_unit->setText(s.scene.is_metric ? "km/h" : "mph");
+
+  monitoring->setEnabled(s.scene.dmonitoring_state.getIsActiveMode());
+
+  /*
+  bg = bg_colors[s.status];
+  float a  = 0.375 * cos((millis_since_boot() / 1000) * 2 * M_PI * blinking_rate) + 0.625;
+  bg.setAlpha(a*255);
+  */
+}
+
+void VisionOverlay::paintEvent(QPaintEvent *event) {
+  /*
+  QPainter p(this);
+  p.setBrush(QBrush(bg));
+  p.setPen(Qt::NoPen);
+  p.drawRect(rect());
+  */
+}
+
+OnroadAlerts::OnroadAlerts(QWidget *parent) : QWidget(parent) {
   layout = new QVBoxLayout(this);
   layout->setSpacing(40);
   layout->setMargin(20);
