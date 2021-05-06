@@ -51,7 +51,7 @@ VisionOverlay::VisionOverlay(QWidget *parent) : QWidget(parent) {
       border-width: 8px;
       border-style: solid;
       border-radius: 20px;
-      border-color: rgba(255, 255, 255, 200);
+      border-color: rgba(255, 255, 255, 100);
       background-color: rgba(0, 0, 0, 100);
     }
   )");
@@ -67,10 +67,6 @@ VisionOverlay::VisionOverlay(QWidget *parent) : QWidget(parent) {
   speed = new QLabel();
   speed->setStyleSheet("font-size: 180px; font-weight: 500;");
   speed_layout->addWidget(speed, 0, Qt::AlignHCenter);
-
-  // remove ascent + descent from the speed label
-  QFontMetrics fm(QFont("Inter", 85));
-  speed->setFixedHeight(fm.boundingRect("123456789").height());
 
   speed_unit = new QLabel();
   speed_unit->setStyleSheet("font-size: 70px; font-weight: 400; color: rgba(255, 255, 255, 200);");
@@ -107,6 +103,12 @@ void VisionOverlay::update(const UIState &s) {
   auto v = s.scene.car_state.getVEgo() * (s.scene.is_metric ? 3.6 : 2.2369363);
   speed->setText(QString::number((int)v));
   speed_unit->setText(s.scene.is_metric ? "km/h" : "mph");
+
+  // hack: remove ascent + descent
+  if (speed->minimumHeight() != speed->maximumHeight()) {
+    QFontMetrics fm(speed->font());
+    speed->setFixedHeight(fm.tightBoundingRect("0123456789").height());
+  }
 
   const int SET_SPEED_NA = 255;
   auto vcruise = s.scene.controls_state.getVCruise();
