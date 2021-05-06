@@ -7,11 +7,11 @@ using namespace EKFS;
 using namespace Eigen;
 
 ExitHandler do_exit;
-const double GYRO_SANITY_CHECK = 10.0;  // rad/s
 const double ACCEL_SANITY_CHECK = 100.0;  // m/s^2
-const double CAM_ROTATION_SANITY_CHECK = 10.0;  // rad/s
-const double CAM_TRANS_SANITY_CHECK = 100.0;  // m/s
+const double ROTATION_SANITY_CHECK = 10.0;  // rad/s
+const double TRANS_SANITY_CHECK = 100.0;  // m/s
 const double CALIB_RPY_SANITY_CHECK = 0.5; // rad (+- 30 deg)
+const double ALTITUDE_SANITY_CHECK = 10000; // m
 
 static VectorXd floatlist2vector(const capnp::List<float, capnp::Kind::PRIMITIVE>::Reader& floatlist) {
   VectorXd res(floatlist.size());
@@ -189,7 +189,7 @@ void Localizer::handle_sensors(double current_time, const capnp::List<cereal::Se
     if (sensor_reading.getSensor() == SENSOR_GYRO_UNCALIBRATED && sensor_reading.getType() == SENSOR_TYPE_GYROSCOPE_UNCALIBRATED) {
       auto v = sensor_reading.getGyroUncalibrated().getV();
       auto meas = Vector3d(-v[2], -v[1], -v[0]);
-      if (meas.norm() < GYRO_SANITY_CHECK) {
+      if (meas.norm() < ROTATION_SANITY_CHECK) {
         this->kf->predict_and_observe(sensor_time, OBSERVATION_PHONE_GYRO, { meas });
       }
     }
@@ -203,7 +203,7 @@ void Localizer::handle_sensors(double current_time, const capnp::List<cereal::Se
       this->device_fell |= (floatlist2vector(v) - Vector3d(10.0, 0.0, 0.0)).norm() > 40.0;
 
       auto meas = Vector3d(-v[2], -v[1], -v[0]);
-      if (meas.norm() < ACCEL_SANITY_CHECK){
+      if (meas.norm() < ACCEL_SANITY_CHECK) {
         this->kf->predict_and_observe(sensor_time, OBSERVATION_PHONE_ACCEL, { meas });
       }
     }
@@ -217,7 +217,15 @@ void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::R
   }
 
   // Sanity checks
-  if ((log.getVerticalAccuracy() <= 0) || (log.getSpeedAccuracy() <= 0) || (log.getBearingAccuracyDeg() <= 0)){
+  if ((log.getVerticalAccuracy() <= 0) || (log.getSpeedAccuracy() <= 0) || (log.getBearingAccuracyDeg() <= 0)) {
+    return;
+  }
+
+  if ((std::abs(log.getLatitude()) > 90) || (std::abs(log.getLongitude()) > 180) || (std::abs(log.getAltitude()) > ALTITUDE_SANITY_CHECK)) {
+    return;
+  }
+
+  if (floatlist2vector(log.getVNED()).norm() > TRANS_SANITY_CHECK){
     return;
   }
 
@@ -272,7 +280,7 @@ void Localizer::handle_cam_odo(double current_time, const cereal::CameraOdometry
   VectorXd rot_device = this->device_from_calib * floatlist2vector(log.getRot());
   VectorXd trans_device = this->device_from_calib * floatlist2vector(log.getTrans());
 
-  if ((rot_device.norm() > CAM_ROTATION_SANITY_CHECK) || (trans_device.norm() > CAM_TRANS_SANITY_CHECK)) {
+  if ((rot_device.norm() > ROTATION_SANITY_CHECK) || (trans_device.norm() > TRANS_SANITY_CHECK)) {
     return;
   }
 
@@ -283,7 +291,7 @@ void Localizer::handle_cam_odo(double current_time, const cereal::CameraOdometry
     return;
   }
 
-  if ((rot_calib_std.norm() > 10 * CAM_ROTATION_SANITY_CHECK) || (trans_calib_std.norm() > 10 * CAM_TRANS_SANITY_CHECK)) {
+  if ((rot_calib_std.norm() > 10 * ROTATION_SANITY_CHECK) || (trans_calib_std.norm() > 10 * TRANS_SANITY_CHECK)) {
     return;
   }
 
