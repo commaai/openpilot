@@ -14,11 +14,11 @@
 #include <OMX_IndexExt.h>
 #include <OMX_QCOMExtns.h>
 #include <OMX_VideoExt.h>
-#include <msm_media_info.h>
 #include "libyuv.h"
 
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/util.h"
+#include "selfdrive/loggerd/include/msm_media_info.h"
 
 // Check the OMX error code and assert if an error occurred.
 #define OMX_CHECK(_expr)          \
