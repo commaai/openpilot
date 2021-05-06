@@ -1,4 +1,4 @@
-#include "ui.h"
+#include "selfdrive/ui/ui.h"
 
 #include <assert.h>
 #include <stdio.h>

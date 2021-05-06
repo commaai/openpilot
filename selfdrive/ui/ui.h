@@ -1,19 +1,20 @@
 #pragma once
 
-#include <QObject>
-#include <QTimer>
 #include <atomic>
 #include <map>
 #include <memory>
 #include <sstream>
 #include <string>
 
+#include <QObject>
+#include <QTimer>
+
 #include "nanovg.h"
+
 #include "cereal/messaging/messaging.h"
 #include "cereal/visionipc/visionipc.h"
 #include "cereal/visionipc/visionipc_client.h"
 #include "common/transformations/orientation.hpp"
-#include "nanovg.h"
 #include "selfdrive/camerad/cameras/camera_common.h"
 #include "selfdrive/common/glutil.h"
 #include "selfdrive/common/mat.h"
