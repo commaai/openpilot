@@ -470,7 +470,7 @@ int main(int argc, char** argv) {
   LOGW("closing logger");
   logger_close(&s.logger, &do_exit);
 
-  if (do_exit.power_failure){
+  if (do_exit.powerFailure()){
     LOGE("power failure");
     sync();
   }

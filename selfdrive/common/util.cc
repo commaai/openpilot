@@ -2,6 +2,11 @@
 
 #include <errno.h>
 
+#include <atomic>
+#include <cassert>
+#include <csignal>
+#include <cstring>
+#include <fstream>
 #include <sstream>
 
 #ifdef __linux__
@@ -97,5 +102,63 @@ int write_file(const char* path, const void* data, size_t size, int flags, mode_
   return (n >= 0 && (size_t)n == size) ? 0 : -1;
 }
 
+std::string readlink(const std::string &path) {
+  char buff[4096];
+  ssize_t len = ::readlink(path.c_str(), buff, sizeof(buff)-1);
+  if (len != -1) {
+    buff[len] = '\0';
+    return std::string(buff);
+  }
+  return "";
+}
+
+std::string getenv_default(const char* env_var, const char * suffix, const char* default_val) {
+  const char* env_val = getenv(env_var);
+  if (env_val != NULL){
+    return std::string(env_val) + std::string(suffix);
+  } else {
+    return std::string(default_val);
+  }
+}
+
+bool file_exists(const std::string& fn) {
+  std::ifstream f(fn);
+  return f.good();
+}
 
 }  // namespace util
+
+
+// class ExitHandler
+
+struct ExitHandleHelper {
+  static void set_do_exit(int sig) {
+#ifndef __APPLE__
+    power_failure = (sig == SIGPWR);
+#endif
+    do_exit = true;
+  }
+  inline static std::atomic<bool> do_exit = false;
+  inline static std::atomic<bool> power_failure = false;
+};
+
+ExitHandler::ExitHandler() {
+  std::signal(SIGINT, (sighandler_t)ExitHandleHelper::set_do_exit);
+  std::signal(SIGTERM, (sighandler_t)ExitHandleHelper::set_do_exit);
+#ifndef __APPLE__
+  std::signal(SIGPWR, (sighandler_t)ExitHandleHelper::set_do_exit);
+#endif
+}
+
+ExitHandler::operator bool() { 
+  return ExitHandleHelper::do_exit; 
+}
+
+ExitHandler& ExitHandler::operator=(bool v) {
+  ExitHandleHelper::do_exit = v;
+  return *this;
+}
+
+bool ExitHandler::powerFailure() {
+  return ExitHandleHelper::power_failure;
+}

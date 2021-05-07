@@ -14,6 +14,12 @@
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/util.h"
 
+static std::string dir_name(std::string const &path) {
+  size_t pos = path.find_last_of("/");
+  if (pos == std::string::npos) return "";
+  return path.substr(0, pos);
+}
+
 ONNXModel::ONNXModel(const char *path, float *_output, size_t _output_size, int runtime) {
   output = _output;
   output_size = _output_size;
@@ -29,7 +35,7 @@ ONNXModel::ONNXModel(const char *path, float *_output, size_t _output_size, int 
   err = pipe(pipeout);
   assert(err == 0);
 
-  std::string exe_dir = util::dir_name(util::readlink("/proc/self/exe"));
+  std::string exe_dir = dir_name(util::readlink("/proc/self/exe"));
   std::string onnx_runner = exe_dir + "/runners/onnx_runner.py";
 
   proc_pid = fork();
