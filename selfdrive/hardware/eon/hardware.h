@@ -1,14 +1,14 @@
 #pragma once
 
-#include <gui/ISurfaceComposer.h>
-#include <gui/SurfaceComposerClient.h>
-#include <hardware/hwcomposer_defs.h>
-
 #include <cstdlib>
 #include <fstream>
 
 #include "selfdrive/common/util.h"
 #include "selfdrive/hardware/base.h"
+
+#include <gui/ISurfaceComposer.h>
+#include <gui/SurfaceComposerClient.h>
+#include <hardware/hwcomposer_defs.h>
 
 class Hardware : public HardwareBase {
  public:
@@ -32,7 +32,7 @@ class Hardware : public HardwareBase {
     }
   };
 
-  inline void set_display_power(bool on) const override {
+  inline static void set_display_power(bool on) {
     auto dtoken = android::SurfaceComposerClient::getBuiltInDisplay(android::ISurfaceComposer::eDisplayIdMain);
     android::SurfaceComposerClient::setDisplayPowerMode(dtoken, on ? HWC_POWER_MODE_NORMAL : HWC_POWER_MODE_OFF);
   };

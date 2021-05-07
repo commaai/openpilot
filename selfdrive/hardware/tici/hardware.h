@@ -16,14 +16,8 @@ class Hardware : public HardwareBase {
     road_cam_focal_len = 2648;
     wide_cam_focal_len = driver_cam_focal_len = 860;
     
-    road_cam_size[0] = 1928;
-    road_cam_size[1] = 1208;
-
-    driver_cam_size[0] = 1928;
-    driver_cam_size[1] = 1208;
-
-    wide_road_cam_size[0] = 1928;
-    wide_road_cam_size[1] = 1208;
+    road_cam_size[0] = driver_cam_size[0] = wide_road_cam_size[0] = 1928;
+    road_cam_size[1] = driver_cam_size[1] = wide_road_cam_size[1] = 1208;
 
     screen_size[0] = 2160;
     screen_size[1] = 1080;
@@ -38,13 +32,11 @@ class Hardware : public HardwareBase {
   void poweroff() const override { std::system("sudo poweroff"); }
   void set_brightness(int percent) const override {
     std::ofstream brightness_control("/sys/class/backlight/panel0-backlight/brightness");
-    if (brightness_control.is_open()) override {
+    if (brightness_control.is_open()) {
       brightness_control << (percent * (int)(1023/100.)) << "\n";
       brightness_control.close();
     }
   }
-  void set_display_power(bool on) const override {}
-
   bool get_ssh_enabled() const override { return Params().getBool("SshEnabled"); }
   void set_ssh_enabled(bool enabled) const override { Params().putBool("SshEnabled", enabled); }
 };

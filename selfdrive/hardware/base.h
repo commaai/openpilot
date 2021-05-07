@@ -21,7 +21,7 @@ public:
   virtual void reboot() const {}
   virtual void poweroff() const {}
   virtual void set_brightness(int percent) const {}
-  virtual void set_display_power(bool on) const {}
+  static void set_display_power(bool on) {}
 
   virtual bool get_ssh_enabled() const { return false; }
   virtual void set_ssh_enabled(bool enabled) const {}
