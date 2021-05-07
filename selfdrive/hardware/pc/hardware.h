@@ -2,7 +2,6 @@
 
 #include <cstdlib>
 
-#include "selfdrive/common/mat.h"
 #include "selfdrive/hardware/base.h"
 
 class Hardware : public HardwareBase {

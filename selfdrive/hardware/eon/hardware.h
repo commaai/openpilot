@@ -1,18 +1,18 @@
 #pragma once
 
-#include <cstdlib>
-#include <fstream>
-
 #include <gui/ISurfaceComposer.h>
 #include <gui/SurfaceComposerClient.h>
 #include <hardware/hwcomposer_defs.h>
+
+#include <cstdlib>
+#include <fstream>
 
 #include "selfdrive/common/util.h"
 #include "selfdrive/hardware/base.h"
 
 class Hardware : public HardwareBase {
-public:
-  HardwareEON() {
+ public:
+  Hardware() {
     MAX_VOLUME = 1.0;
     MIN_VOLUME = 0.5;
   }
@@ -27,17 +27,17 @@ public:
   void set_brightness(int percent) const override {
     std::ofstream brightness_control("/sys/class/leds/lcd-backlight/brightness");
     if (brightness_control.is_open()) {
-      brightness_control << (int)(percent * (255/100.)) << "\n";
+      brightness_control << (int)(percent * (255 / 100.)) << "\n";
       brightness_control.close();
     }
   };
-  
-  void set_display_power(bool on) const override{
+
+  void set_display_power(bool on) const override {
     auto dtoken = android::SurfaceComposerClient::getBuiltInDisplay(android::ISurfaceComposer::eDisplayIdMain);
     android::SurfaceComposerClient::setDisplayPowerMode(dtoken, on ? HWC_POWER_MODE_NORMAL : HWC_POWER_MODE_OFF);
   };
 
-  bool get_ssh_enabled() const override{
+  bool get_ssh_enabled() const override {
     return std::system("getprop persist.neos.ssh | grep -qF '1'") == 0;
   };
   void set_ssh_enabled(bool enabled) const override {
@@ -46,26 +46,24 @@ public:
   };
 
   // android only
-  void check_activity() const {
-    static bool launched_activity = false;
+  bool check_activity() const {
     int ret = std::system("dumpsys SurfaceFlinger --list | grep -Fq 'com.android.settings'");
-    launched_activity = ret == 0;
+    return ret == 0;
   }
 
   void close_activities() const {
-    if(launched_activity){
+    if (check_activity()) {
       std::system("pm disable com.android.settings && pm enable com.android.settings");
     }
   }
 
   void launch_activity(std::string activity, std::string opts = "") const {
-    if (!launched_activity) {
+    if (!check_activity()) {
       std::string cmd = "am start -n " + activity + " " + opts +
                         " --ez extra_prefs_show_button_bar true \
                          --es extra_prefs_set_next_text ''";
       std::system(cmd.c_str());
     }
-    launched_activity = true;
   }
   void launch_wifi() const {
     launch_activity("com.android.settings/.wifi.WifiPickerActivity", "-a android.net.wifi.PICK_WIFI_NETWORK");

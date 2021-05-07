@@ -1,8 +1,9 @@
 #pragma once
 
 #include <cstdlib>
-#include <fstream>
+#include <string>
 
+#include "selfdrive/common/mat.h"
 // no-op base hw class
 class HardwareBase {
 public:
