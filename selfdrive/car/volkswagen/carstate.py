@@ -407,6 +407,8 @@ class CarState(CarStateBase):
       ("Bremse_5", 50),           # From J104 ABS/ESP controller
       ("Motor_2", 50),            # From J623 Engine control module
       ("Lenkhilfe_2", 20),        # From J500 Steering Assist with integrated sensors
+      ("Bremse_1", 100),          # From J104 ABS/ESP controller
+      ("Gate_Komf_1", 10),        # From J533 CAN gateway
     ]
 
     if CP.transmissionType == TransmissionType.automatic:
