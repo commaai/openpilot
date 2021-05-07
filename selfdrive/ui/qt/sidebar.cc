@@ -19,11 +19,10 @@ void Sidebar::drawMetric(QPainter &p, const QString &label, const QString &val, 
   p.drawRoundedRect(QRect(rect.x() + 6, rect.y() + 6, 100, rect.height() - 12), 10, 10);
   p.setClipping(false);
 
-  p.setBrush(Qt::NoBrush);
-  p.setPen(QColor(0xff, 0xff, 0xff, 0x55));
-  QPen pen = p.pen();
+  QPen pen = QPen(QColor(0xff, 0xff, 0xff, 0x55));
   pen.setWidth(2);
   p.setPen(pen);
+  p.setBrush(Qt::NoBrush);
   p.drawRoundedRect(rect, 20, 20);
 
   p.setPen(QColor(0xff, 0xff, 0xff));
@@ -41,7 +40,7 @@ void Sidebar::drawMetric(QPainter &p, const QString &label, const QString &val, 
 
 Sidebar::Sidebar(QWidget *parent) : QFrame(parent) {
   home_img = QImage("../assets/images/button_home.png").scaled(180, 180, Qt::KeepAspectRatio, Qt::SmoothTransformation);
-  settings_img = QImage("../assets/images/button_settings.png").scaled(settings_btn.width(), settings_btn.height(), Qt::KeepAspectRatio, Qt::SmoothTransformation);;
+  settings_img = QImage("../assets/images/button_settings.png").scaled(settings_btn.width(), settings_btn.height(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);;
 
   setFixedWidth(300);
   setMinimumHeight(vwp_h);
@@ -103,7 +102,7 @@ void Sidebar::paintEvent(QPaintEvent *event) {
   p.drawImage(58, 196, signal_imgs[strength]);
   configFont(p, "opensans", 35, 400);
   p.setPen(QColor(0xff, 0xff, 0xff));
-  const QRect r = QRect(50, 255, 100, 40);
+  const QRect r = QRect(39, 245, 100, 40);
   p.drawText(r, Qt::AlignCenter, network_type[net_type]);
 
   // metrics
