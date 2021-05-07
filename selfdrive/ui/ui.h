@@ -48,12 +48,6 @@ const int footer_h = 280;
 
 const int UI_FREQ = 20;   // Hz
 
-typedef enum NetStatus {
-  NET_CONNECTED,
-  NET_DISCONNECTED,
-  NET_ERROR,
-} NetStatus;
-
 typedef enum UIStatus {
   STATUS_DISENGAGED,
   STATUS_ENGAGED,
@@ -86,7 +80,6 @@ typedef struct UIScene {
   bool driver_view;
 
   cereal::PandaState::PandaType pandaType;
-  NetStatus athenaStatus;
 
   cereal::DeviceState::Reader deviceState;
   cereal::RadarState::LeadData::Reader lead_data[2];
