@@ -408,15 +408,13 @@ class CarState(CarStateBase):
       ("Motor_2", 50),            # From J623 Engine control module
       ("Lenkhilfe_2", 20),        # From J500 Steering Assist with integrated sensors
       ("Bremse_1", 100),          # From J104 ABS/ESP controller
-      ("Gate_Komf_1", 10),        # From J533 CAN gateway
     ]
 
     if CP.transmissionType == TransmissionType.automatic:
       signals += [("Waehlhebelposition__Getriebe_1_", "Getriebe_1", 0)]  # Auto trans gear selector position
       checks += [("Getriebe_1", 100)]  # From J743 Auto transmission control module
     elif CP.transmissionType == TransmissionType.manual:
-      signals += [("Kupplungsschalter", "Motor_1", 0),  # Clutch switch
-                  ("GK1_Rueckfahr", "Gate_Komf_1", 0)]  # Reverse light from BCM
+      signals += [("Kupplungsschalter", "Motor_1", 0)]  # Clutch switch
       checks += [("Motor_1", 100)]  # From J623 Engine control module
 
     # FIXME: ignoring ACC signals until we detect its presence and bus location
