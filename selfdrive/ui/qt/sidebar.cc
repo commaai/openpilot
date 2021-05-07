@@ -3,36 +3,7 @@
 #include "qt_window.h"
 #include "selfdrive/hardware/hw.h"
 
-StatusWidget::StatusWidget(bool has_substatus, QWidget *parent) : QFrame(parent) {
-  layout = new QVBoxLayout();
-  layout->setSpacing(0);
-
-  status = new QLabel(this);
-
-  if (has_substatus) {
-    layout->setContentsMargins(50, 24, 16, 24);
-    status->setAlignment(Qt::AlignLeft | Qt::AlignHCenter);
-    status->setStyleSheet(R"(font-size: 65px; font-weight: 500;)");
-
-    substatus = new QLabel(this);
-    substatus->setAlignment(Qt::AlignLeft | Qt::AlignHCenter);
-    substatus->setStyleSheet(R"(font-size: 30px; font-weight: 400;)");
-
-    layout->addWidget(status, 0, Qt::AlignLeft);
-    layout->addWidget(substatus, 0, Qt::AlignLeft);
-  } else {
-    layout->setContentsMargins(40, 24, 16, 24);
-
-    status->setAlignment(Qt::AlignCenter);
-    status->setStyleSheet(R"(font-size: 38px; font-weight: 500;)");
-    layout->addWidget(status, 0, Qt::AlignCenter);
-  }
-
-  setMinimumHeight(124);
-  setStyleSheet("background-color: transparent;");
-  setLayout(layout);
-}
-
+/*
 void StatusWidget::paintEvent(QPaintEvent *e) {
   QPainter p(this);
   p.setRenderHint(QPainter::Antialiasing, true);
@@ -45,60 +16,11 @@ void StatusWidget::paintEvent(QPaintEvent *e) {
   p.setClipRect(0,0,25+6,size().height()-6,Qt::ClipOperation::ReplaceClip);
   p.drawRoundedRect(QRectF(6, 6, size().width()-12, size().height()-12), 25, 25);
 }
-
-void StatusWidget::update(const QString &label, const QColor &c, const QString &msg) {
-  status->setText(label);
-  if (substatus != nullptr) {
-    substatus->setText(msg);
-  }
-  if (color != c) {
-    color = c;
-    repaint();
-  }
-  return;
-}
-
-SignalWidget::SignalWidget(QWidget *parent) : QFrame(parent), _strength(0) {
-  layout = new QVBoxLayout();
-  layout->setMargin(0);
-  layout->setSpacing(0);
-  layout->insertSpacing(0, 45);
-
-  label = new QLabel(this);
-  label->setStyleSheet(R"(font-size: 35px; font-weight: 400;)");
-  layout->addWidget(label, 0, Qt::AlignLeft);
-
-  setFixedWidth(177);
-  setLayout(layout);
-}
-
-void SignalWidget::paintEvent(QPaintEvent *e) {
-  QPainter p(this);
-  p.setRenderHint(QPainter::Antialiasing, true);
-  p.setPen(Qt::NoPen);
-  p.setBrush(Qt::white);
-  for (int i = 0; i < 5; i++) {
-    if (i == _strength) {
-      p.setPen(Qt::NoPen);
-      p.setBrush(Qt::darkGray);
-    }
-    p.drawEllipse(QRectF(_dotspace * i, _top, _dia, _dia));
-  }
-}
-
-void SignalWidget::update(const QString &text, int strength) {
-  label->setText(text);
-  if (_strength != strength) {
-    _strength = strength;
-    repaint();
-  }
-}
+*/
 
 Sidebar::Sidebar(QWidget *parent) : QFrame(parent) {
+  /*
   QVBoxLayout *layout = new QVBoxLayout();
-  layout->setContentsMargins(25, 50, 25, 50);
-  layout->setSpacing(35);
-  setFixedSize(300, vwp_h);
 
   QPushButton *s_btn = new QPushButton;
   s_btn->setStyleSheet(R"(
@@ -108,38 +30,25 @@ Sidebar::Sidebar(QWidget *parent) : QFrame(parent) {
   layout->addWidget(s_btn, 0, Qt::AlignHCenter);
   QObject::connect(s_btn, &QPushButton::pressed, this, &Sidebar::openSettings);
 
-  signal = new SignalWidget(this);
-  layout->addWidget(signal, 0, Qt::AlignTop | Qt::AlignHCenter);
+  s_btn->move(50, 35);
+  */
 
-  temp = new StatusWidget(true, this);
-  layout->addWidget(temp, 0, Qt::AlignTop);
+  home_img.load("../assets/images/button_home.png");
+  settings_img.load("../assets/images/button_settings.png");
 
-  panda = new StatusWidget(false, this);
-  layout->addWidget(panda, 0, Qt::AlignTop);
+  setFixedWidth(300);
+  setMinimumHeight(vwp_h);
+  setStyleSheet("background-color: rgb(57, 57, 57);");
+}
 
-  connect = new StatusWidget(false, this);
-  layout->addWidget(connect, 0, Qt::AlignTop);
-
-  QImage image = QImageReader("../assets/images/button_home.png").read();
-  QLabel *comma = new QLabel(this);
-  comma->setPixmap(QPixmap::fromImage(image));
-  comma->setAlignment(Qt::AlignCenter);
-  layout->addWidget(comma, 1, Qt::AlignHCenter | Qt::AlignVCenter);
-
-  layout->addStretch(1);
-
-  setStyleSheet(R"(
-    Sidebar {
-      background-color: #393939;
-    }
-    * {
-      color: white;
-    }
-  )");
-  setLayout(layout);
+void Sidebar::mousePressEvent(QMouseEvent *event) {
+  if (settings_btn.contains(event->pos())) {
+    emit openSettings();
+  }
 }
 
 void Sidebar::update(const UIState &s) {
+  /*
   static std::map<NetStatus, std::pair<QString, QColor>> connectivity_map = {
       {NET_ERROR, {"CONNECT\nERROR", COLOR_DANGER}},
       {NET_CONNECTED, {"CONNECT\nONLINE", COLOR_GOOD}},
@@ -184,4 +93,41 @@ void Sidebar::update(const UIState &s) {
     panda_message = QString("SAT CNT\n%1").arg(s.scene.satelliteCount);
   }
   panda->update(panda_message, panda_color);
+  */
+
+  repaint();
+}
+
+void Sidebar::paintEvent(QPaintEvent *event) {
+  QPainter p(this);
+  p.setPen(Qt::NoPen);
+  p.setRenderHint(QPainter::Antialiasing);
+  p.setBrush(QBrush(QColor(0x39, 0x39, 0x39, 0xff)));
+
+  // draw settings button
+  p.setOpacity(0.65);
+  p.drawImage(settings_btn.x(), settings_btn.y(), settings_img);
+
+  // draw home button
+  p.setOpacity(1.0);
+  p.drawImage(60, 1080 - 180 - 40, home_img);
+
+  //p.setBrush(QBrush(QColor(0x39, 0x39, 0x39, 0xff)));
+
+  // network signal
+
+  // network type
+
+  // temperature
+
+
+  // panda
+
+
+
+  // connect
+
+
+  // home button
+
 }
