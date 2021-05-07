@@ -103,9 +103,9 @@ void Sidebar::paintEvent(QPaintEvent *event) {
 
   // network
   p.drawImage(58, 196, signal_imgs[strength]);
-  configFont(p, "opensans", 35, 400);
+  configFont(p, "Open Sans", 35, 400);
   p.setPen(QColor(0xff, 0xff, 0xff));
-  const QRect r = QRect(39, 245, 100, 40);
+  const QRect r = QRect(50, 245, 100, 50);
   p.drawText(r, Qt::AlignCenter, network_type[net_type]);
 
   // metrics
