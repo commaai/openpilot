@@ -9,4 +9,4 @@ Hardware
 #include "selfdrive/hardware/pc/hardware.h"
 #endif
 
-static inline Hardware HARDWARE;
+static inline const Hardware HARDWARE;
