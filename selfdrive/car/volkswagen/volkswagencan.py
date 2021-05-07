@@ -68,13 +68,14 @@ def create_pq_steering_control(packer, bus, apply_steer, idx, lkas_enabled):
   return packer.make_can_msg("HCA_1", bus, values)
 
 def create_pq_hud_control(packer, bus, hca_enabled, steering_pressed, hud_alert, left_lane_visible, right_lane_visible,
-                          ldw_lane_warning_left, ldw_lane_warning_right, ldw_side_dlc_tlc, ldw_dlc, ldw_tlc):
+                          ldw_lane_warning_left, ldw_lane_warning_right, ldw_side_dlc_tlc, ldw_dlc, ldw_tlc,
+                          standstill, left_lane_depart, right_lane_depart):
   if hca_enabled:
-    left_lane_hud = 3 if left_lane_visible else 1
-    right_lane_hud = 3 if right_lane_visible else 1
+    left_lane_hud = 3 if left_lane_depart else 1 + left_lane_visible
+    right_lane_hud = 3 if right_lane_depart else 1 + right_lane_visible
   else:
-    left_lane_hud = 2 if left_lane_visible else 1
-    right_lane_hud = 2 if right_lane_visible else 1
+    left_lane_hud = 0
+    right_lane_hud = 0
 
   values = {
     "Right_Lane_Status": right_lane_hud,

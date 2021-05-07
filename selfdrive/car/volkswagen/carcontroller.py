@@ -130,11 +130,11 @@ class CarController():
         hud_alert = MQB_LDW_MESSAGES["none"]
 
       can_sends.append(self.create_hud_control(self.packer_pt, CANBUS.pt, hcaEnabled,
-                                                            CS.out.steeringPressed, hud_alert, left_lane_visible,
-                                                            right_lane_visible, CS.ldw_lane_warning_left,
-                                                            CS.ldw_lane_warning_right, CS.ldw_side_dlc_tlc,
-                                                            CS.ldw_dlc, CS.ldw_tlc, CS.out.standstill,
-                                                            left_lane_depart, right_lane_depart))
+                                               CS.out.steeringPressed, hud_alert, left_lane_visible,
+                                               right_lane_visible, CS.ldw_lane_warning_left,
+                                               CS.ldw_lane_warning_right, CS.ldw_side_dlc_tlc,
+                                               CS.ldw_dlc, CS.ldw_tlc, CS.out.standstill,
+                                               left_lane_depart, right_lane_depart))
 
     #--------------------------------------------------------------------------
     #                                                                         #
