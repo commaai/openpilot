@@ -3,185 +3,116 @@
 #include "qt_window.h"
 #include "selfdrive/hardware/hw.h"
 
-StatusWidget::StatusWidget(bool has_substatus, QWidget *parent) : QFrame(parent) {
-  layout = new QVBoxLayout();
-  layout->setSpacing(0);
+void configFont(QPainter &p, QString family, int size, int weight) {
+  QFont f(family);
+  f.setPixelSize(size);
+  f.setWeight(weight);
+  p.setFont(f);
+}
 
-  status = new QLabel(this);
+void Sidebar::drawMetric(QPainter &p, const QString &label, const QString &val, QColor c, int y) {
+  const QRect rect = {30, y, 240, val.isEmpty() ? (label.contains("\n") ? 124 : 100) : 148};
 
-  if (has_substatus) {
-    layout->setContentsMargins(50, 24, 16, 24);
-    status->setAlignment(Qt::AlignLeft | Qt::AlignHCenter);
-    status->setStyleSheet(R"(font-size: 65px; font-weight: 500;)");
+  p.setPen(Qt::NoPen);
+  p.setBrush(QBrush(c));
+  p.setClipRect(rect.x() + 6, rect.y(), 18, rect.height(), Qt::ClipOperation::ReplaceClip);
+  p.drawRoundedRect(QRect(rect.x() + 6, rect.y() + 6, 100, rect.height() - 12), 10, 10);
+  p.setClipping(false);
 
-    substatus = new QLabel(this);
-    substatus->setAlignment(Qt::AlignLeft | Qt::AlignHCenter);
-    substatus->setStyleSheet(R"(font-size: 30px; font-weight: 400;)");
+  QPen pen = QPen(QColor(0xff, 0xff, 0xff, 0x55));
+  pen.setWidth(2);
+  p.setPen(pen);
+  p.setBrush(Qt::NoBrush);
+  p.drawRoundedRect(rect, 20, 20);
 
-    layout->addWidget(status, 0, Qt::AlignLeft);
-    layout->addWidget(substatus, 0, Qt::AlignLeft);
+  p.setPen(QColor(0xff, 0xff, 0xff));
+  if (val.isEmpty()) {
+    configFont(p, "Open Sans", 35, 500);
+    const QRect r = QRect(rect.x() + 35, rect.y(), rect.width() - 50, rect.height());
+    p.drawText(r, Qt::AlignCenter, label);
   } else {
-    layout->setContentsMargins(40, 24, 16, 24);
-
-    status->setAlignment(Qt::AlignCenter);
-    status->setStyleSheet(R"(font-size: 38px; font-weight: 500;)");
-    layout->addWidget(status, 0, Qt::AlignCenter);
-  }
-
-  setMinimumHeight(124);
-  setStyleSheet("background-color: transparent;");
-  setLayout(layout);
-}
-
-void StatusWidget::paintEvent(QPaintEvent *e) {
-  QPainter p(this);
-  p.setRenderHint(QPainter::Antialiasing, true);
-  p.setPen(QPen(QColor(0xb2b2b2), 3, Qt::SolidLine, Qt::FlatCap));
-  // origin at 1.5,1.5 because qt issues with pixel perfect borders
-  p.drawRoundedRect(QRectF(1.5, 1.5, size().width()-3, size().height()-3), 30, 30);
-
-  p.setPen(Qt::NoPen);
-  p.setBrush(color);
-  p.setClipRect(0,0,25+6,size().height()-6,Qt::ClipOperation::ReplaceClip);
-  p.drawRoundedRect(QRectF(6, 6, size().width()-12, size().height()-12), 25, 25);
-}
-
-void StatusWidget::update(const QString &label, const QColor &c, const QString &msg) {
-  status->setText(label);
-  if (substatus != nullptr) {
-    substatus->setText(msg);
-  }
-  if (color != c) {
-    color = c;
-    repaint();
-  }
-  return;
-}
-
-SignalWidget::SignalWidget(QWidget *parent) : QFrame(parent), _strength(0) {
-  layout = new QVBoxLayout();
-  layout->setMargin(0);
-  layout->setSpacing(0);
-  layout->insertSpacing(0, 45);
-
-  label = new QLabel(this);
-  label->setStyleSheet(R"(font-size: 35px; font-weight: 400;)");
-  layout->addWidget(label, 0, Qt::AlignLeft);
-
-  setFixedWidth(177);
-  setLayout(layout);
-}
-
-void SignalWidget::paintEvent(QPaintEvent *e) {
-  QPainter p(this);
-  p.setRenderHint(QPainter::Antialiasing, true);
-  p.setPen(Qt::NoPen);
-  p.setBrush(Qt::white);
-  for (int i = 0; i < 5; i++) {
-    if (i == _strength) {
-      p.setPen(Qt::NoPen);
-      p.setBrush(Qt::darkGray);
-    }
-    p.drawEllipse(QRectF(_dotspace * i, _top, _dia, _dia));
-  }
-}
-
-void SignalWidget::update(const QString &text, int strength) {
-  label->setText(text);
-  if (_strength != strength) {
-    _strength = strength;
-    repaint();
+    configFont(p, "Open Sans", 58, 500);
+    p.drawText(rect.x() + 50, rect.y() + 71, val);
+    configFont(p, "Open Sans", 35, 400);
+    p.drawText(rect.x() + 50, rect.y() + 50 + 77, label);
   }
 }
 
 Sidebar::Sidebar(QWidget *parent) : QFrame(parent) {
-  QVBoxLayout *layout = new QVBoxLayout();
-  layout->setContentsMargins(25, 50, 25, 50);
-  layout->setSpacing(35);
-  setFixedSize(300, vwp_h);
+  home_img = QImage("../assets/images/button_home.png").scaled(180, 180, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+  settings_img = QImage("../assets/images/button_settings.png").scaled(settings_btn.width(), settings_btn.height(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);;
 
-  QPushButton *s_btn = new QPushButton;
-  s_btn->setStyleSheet(R"(
-    border-image: url(../assets/images/button_settings.png);
-  )");
-  s_btn->setFixedSize(200, 117);
-  layout->addWidget(s_btn, 0, Qt::AlignHCenter);
-  QObject::connect(s_btn, &QPushButton::pressed, this, &Sidebar::openSettings);
+  setFixedWidth(300);
+  setMinimumHeight(vwp_h);
+  setStyleSheet("background-color: rgb(57, 57, 57);");
+}
 
-  signal = new SignalWidget(this);
-  layout->addWidget(signal, 0, Qt::AlignTop | Qt::AlignHCenter);
-
-  temp = new StatusWidget(true, this);
-  layout->addWidget(temp, 0, Qt::AlignTop);
-
-  panda = new StatusWidget(false, this);
-  layout->addWidget(panda, 0, Qt::AlignTop);
-
-  connect = new StatusWidget(false, this);
-  layout->addWidget(connect, 0, Qt::AlignTop);
-
-  QImage image = QImageReader("../assets/images/button_home.png").read();
-  QLabel *comma = new QLabel(this);
-  comma->setPixmap(QPixmap::fromImage(image));
-  comma->setAlignment(Qt::AlignCenter);
-  layout->addWidget(comma, 1, Qt::AlignHCenter | Qt::AlignVCenter);
-
-  layout->addStretch(1);
-
-  setStyleSheet(R"(
-    Sidebar {
-      background-color: #393939;
-    }
-    * {
-      color: white;
-    }
-  )");
-  setLayout(layout);
+void Sidebar::mousePressEvent(QMouseEvent *event) {
+  if (settings_btn.contains(event->pos())) {
+    emit openSettings();
+  }
 }
 
 void Sidebar::update(const UIState &s) {
-  static std::map<NetStatus, std::pair<QString, QColor>> connectivity_map = {
-      {NET_ERROR, {"CONNECT\nERROR", COLOR_DANGER}},
-      {NET_CONNECTED, {"CONNECT\nONLINE", COLOR_GOOD}},
-      {NET_DISCONNECTED, {"CONNECT\nOFFLINE", COLOR_WARNING}},
-  };
-  auto net_params = connectivity_map[s.scene.athenaStatus];
-  connect->update(net_params.first, net_params.second);
+  if (s.sm->frame % (6*UI_FREQ) == 0) {
+    connect_str = "OFFLINE";
+    connect_status = warning_color;
+    auto last_ping = params.get<float>("LastAthenaPingTime");
+    if (last_ping) {
+      bool online = nanos_since_boot() - *last_ping < 70e9;
+      connect_str = online ? "ONLINE" : "ERROR";
+      connect_status = online ? good_color : danger_color;
+    }
+    repaint();
+  }
 
-  static std::map<cereal::DeviceState::ThermalStatus, QColor> temp_severity_map = {
-      {cereal::DeviceState::ThermalStatus::GREEN, COLOR_GOOD},
-      {cereal::DeviceState::ThermalStatus::YELLOW, COLOR_WARNING},
-      {cereal::DeviceState::ThermalStatus::RED, COLOR_DANGER},
-      {cereal::DeviceState::ThermalStatus::DANGER, COLOR_DANGER}};
-  QString temp_val = QString("%1 °C").arg((int)s.scene.deviceState.getAmbientTempC());
-  temp->update(temp_val, temp_severity_map[s.scene.deviceState.getThermalStatus()], "TEMP");
+  net_type = s.scene.deviceState.getNetworkType();
+  strength = s.scene.deviceState.getNetworkStrength();
 
-  static std::map<cereal::DeviceState::NetworkType, const char *> network_type_map = {
-      {cereal::DeviceState::NetworkType::NONE, "--"},
-      {cereal::DeviceState::NetworkType::WIFI, "WiFi"},
-      {cereal::DeviceState::NetworkType::CELL2_G, "2G"},
-      {cereal::DeviceState::NetworkType::CELL3_G, "3G"},
-      {cereal::DeviceState::NetworkType::CELL4_G, "4G"},
-      {cereal::DeviceState::NetworkType::CELL5_G, "5G"}};
-  const char *network_type = network_type_map[s.scene.deviceState.getNetworkType()];
-  static std::map<cereal::DeviceState::NetworkStrength, int> network_strength_map = {
-      {cereal::DeviceState::NetworkStrength::UNKNOWN, 1},
-      {cereal::DeviceState::NetworkStrength::POOR, 2},
-      {cereal::DeviceState::NetworkStrength::MODERATE, 3},
-      {cereal::DeviceState::NetworkStrength::GOOD, 4},
-      {cereal::DeviceState::NetworkStrength::GREAT, 5}};
-  const int img_idx = s.scene.deviceState.getNetworkType() == cereal::DeviceState::NetworkType::NONE ? 0 : network_strength_map[s.scene.deviceState.getNetworkStrength()];
-  signal->update(network_type, img_idx);
+  temp_status = danger_color;
+  auto ts = s.scene.deviceState.getThermalStatus();
+  if (ts == cereal::DeviceState::ThermalStatus::GREEN) {
+    temp_status = good_color;
+  } else if (ts == cereal::DeviceState::ThermalStatus::YELLOW) {
+    temp_status = warning_color;
+  }
+  temp_val = (int)s.scene.deviceState.getAmbientTempC();
 
-  QColor panda_color = COLOR_GOOD;
-  QString panda_message = "VEHICLE\nONLINE";
+  panda_str = "VEHICLE\nONLINE";
+  panda_status = good_color;
   if (s.scene.pandaType == cereal::PandaState::PandaType::UNKNOWN) {
-    panda_color = COLOR_DANGER;
-    panda_message = "NO\nPANDA";
+    panda_status = danger_color;
+    panda_str = "NO\nPANDA";
+  } else if (Hardware::TICI() && s.scene.started) {
+    panda_str = QString("SAT CNT\n%1").arg(s.scene.satelliteCount);
+    panda_status = s.scene.gpsOK ? good_color : warning_color;
   }
-  else if (Hardware::TICI() && s.scene.started) {
-    panda_color = s.scene.gpsOK ? COLOR_GOOD : COLOR_WARNING;
-    panda_message = QString("SAT CNT\n%1").arg(s.scene.satelliteCount);
+
+  if (s.sm->updated("deviceState") || s.sm->updated("pandaState")) {
+    repaint();
   }
-  panda->update(panda_message, panda_color);
+}
+
+void Sidebar::paintEvent(QPaintEvent *event) {
+  QPainter p(this);
+  p.setPen(Qt::NoPen);
+  p.setRenderHint(QPainter::Antialiasing);
+
+  // static imgs
+  p.setOpacity(0.65);
+  p.drawImage(settings_btn.x(), settings_btn.y(), settings_img);
+  p.setOpacity(1.0);
+  p.drawImage(60, 1080 - 180 - 40, home_img);
+
+  // network
+  p.drawImage(58, 196, signal_imgs[strength]);
+  configFont(p, "Open Sans", 35, 400);
+  p.setPen(QColor(0xff, 0xff, 0xff));
+  const QRect r = QRect(50, 247, 100, 50);
+  p.drawText(r, Qt::AlignCenter, network_type[net_type]);
+
+  // metrics
+  drawMetric(p, "TEMP", QString("%1°C").arg(temp_val), temp_status, 338);
+  drawMetric(p, panda_str, "", panda_status, 518);
+  drawMetric(p, "CONNECT\n" + connect_str, "", connect_status, 676);
 }

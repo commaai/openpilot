@@ -32,6 +32,11 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   QObject::connect(&qs, &QUIState::offroadTransition, this, &MainWindow::offroadTransition);
   QObject::connect(&device, &Device::displayPowerChanged, this, &MainWindow::closeSettings);
 
+  // load fonts
+  QFontDatabase::addApplicationFont("../assets/fonts/opensans_regular.ttf");
+  QFontDatabase::addApplicationFont("../assets/fonts/opensans_bold.ttf");
+  QFontDatabase::addApplicationFont("../assets/fonts/opensans_semibold.ttf");
+
   // no outline to prevent the focus rectangle
   setLayout(main_layout);
   setStyleSheet(R"(
