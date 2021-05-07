@@ -3,38 +3,39 @@
 #include "qt_window.h"
 #include "selfdrive/hardware/hw.h"
 
-/*
-void StatusWidget::paintEvent(QPaintEvent *e) {
-  QPainter p(this);
-  p.setRenderHint(QPainter::Antialiasing, true);
-  p.setPen(QPen(QColor(0xb2b2b2), 3, Qt::SolidLine, Qt::FlatCap));
-  // origin at 1.5,1.5 because qt issues with pixel perfect borders
-  p.drawRoundedRect(QRectF(1.5, 1.5, size().width()-3, size().height()-3), 30, 30);
+void Sidebar::drawMetric(QPainter &p, const QString &label, const QString &val, QColor c, int y) {
+  const QRect rect = {30, y, 240, val.isEmpty() ? (label.contains("\n") ? 124 : 100) : 148};
 
   p.setPen(Qt::NoPen);
-  p.setBrush(color);
-  p.setClipRect(0,0,25+6,size().height()-6,Qt::ClipOperation::ReplaceClip);
-  p.drawRoundedRect(QRectF(6, 6, size().width()-12, size().height()-12), 25, 25);
+  p.setBrush(QBrush(c));
+  p.setClipRect(rect.x() + 6, rect.y(), 18, rect.height(), Qt::ClipOperation::ReplaceClip);
+  p.drawRoundedRect(QRect(rect.x() + 6, rect.y() + 6, 100, rect.height() - 12), 25, 25);
+  p.setClipping(false);
+
+  p.setBrush(Qt::NoBrush);
+  p.setPen(QColor(0xff, 0xff, 0xff, 0x55));
+  p.drawRoundedRect(rect, 20, 20);
+
+  p.setPen(QColor(0xff, 0xff, 0xff));
+  if (val.isEmpty()) {
+    const QFont vf = QFont("sans-bold", 24);
+    p.setFont(vf);
+    const QRect r = QRect(rect.x() + 35, rect.y() + (label.contains("\n") ? 40 : 50), rect.width() - 50, rect.height() - 50);
+    p.drawText(r, Qt::AlignCenter, label);
+  } else {
+    const QFont vf = QFont("sans-bold", 40);
+    p.setFont(vf);
+    p.drawText(rect.x() + 50, rect.y() + 50, val);
+
+    const QFont lf = QFont("sans-regular", 24);
+    p.setFont(lf);
+    p.drawText(rect.x() + 50, rect.y() + 50 + 66, label);
+  }
 }
-*/
 
 Sidebar::Sidebar(QWidget *parent) : QFrame(parent) {
-  /*
-  QVBoxLayout *layout = new QVBoxLayout();
-
-  QPushButton *s_btn = new QPushButton;
-  s_btn->setStyleSheet(R"(
-    border-image: url(../assets/images/button_settings.png);
-  )");
-  s_btn->setFixedSize(200, 117);
-  layout->addWidget(s_btn, 0, Qt::AlignHCenter);
-  QObject::connect(s_btn, &QPushButton::pressed, this, &Sidebar::openSettings);
-
-  s_btn->move(50, 35);
-  */
-
-  home_img.load("../assets/images/button_home.png");
-  settings_img.load("../assets/images/button_settings.png");
+  home_img = QImage("../assets/images/button_home.png").scaled(180, 180, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+  settings_img = QImage("../assets/images/button_settings.png").scaled(settings_btn.width(), settings_btn.height(), Qt::KeepAspectRatio, Qt::SmoothTransformation);;
 
   setFixedWidth(300);
   setMinimumHeight(vwp_h);
@@ -65,23 +66,6 @@ void Sidebar::update(const UIState &s) {
   QString temp_val = QString("%1 °C").arg((int)s.scene.deviceState.getAmbientTempC());
   temp->update(temp_val, temp_severity_map[s.scene.deviceState.getThermalStatus()], "TEMP");
 
-  static std::map<cereal::DeviceState::NetworkType, const char *> network_type_map = {
-      {cereal::DeviceState::NetworkType::NONE, "--"},
-      {cereal::DeviceState::NetworkType::WIFI, "WiFi"},
-      {cereal::DeviceState::NetworkType::CELL2_G, "2G"},
-      {cereal::DeviceState::NetworkType::CELL3_G, "3G"},
-      {cereal::DeviceState::NetworkType::CELL4_G, "4G"},
-      {cereal::DeviceState::NetworkType::CELL5_G, "5G"}};
-  const char *network_type = network_type_map[s.scene.deviceState.getNetworkType()];
-  static std::map<cereal::DeviceState::NetworkStrength, int> network_strength_map = {
-      {cereal::DeviceState::NetworkStrength::UNKNOWN, 1},
-      {cereal::DeviceState::NetworkStrength::POOR, 2},
-      {cereal::DeviceState::NetworkStrength::MODERATE, 3},
-      {cereal::DeviceState::NetworkStrength::GOOD, 4},
-      {cereal::DeviceState::NetworkStrength::GREAT, 5}};
-  const int img_idx = s.scene.deviceState.getNetworkType() == cereal::DeviceState::NetworkType::NONE ? 0 : network_strength_map[s.scene.deviceState.getNetworkStrength()];
-  signal->update(network_type, img_idx);
-
   QColor panda_color = COLOR_GOOD;
   QString panda_message = "VEHICLE\nONLINE";
   if (s.scene.pandaType == cereal::PandaState::PandaType::UNKNOWN) {
@@ -102,7 +86,10 @@ void Sidebar::paintEvent(QPaintEvent *event) {
   QPainter p(this);
   p.setPen(Qt::NoPen);
   p.setRenderHint(QPainter::Antialiasing);
-  p.setBrush(QBrush(QColor(0x39, 0x39, 0x39, 0xff)));
+
+  QFont font = QFont("opensans");
+  font.setPixelSize(48);
+  p.setFont(font);
 
   // draw settings button
   p.setOpacity(0.65);
@@ -112,22 +99,17 @@ void Sidebar::paintEvent(QPaintEvent *event) {
   p.setOpacity(1.0);
   p.drawImage(60, 1080 - 180 - 40, home_img);
 
-  //p.setBrush(QBrush(QColor(0x39, 0x39, 0x39, 0xff)));
-
-  // network signal
-
-  // network type
+  // network
+  p.drawImage(58, 196, signal_imgs[strength]);
+  p.setPen(QColor(0xff, 0xff, 0xff));
+  p.drawText(50, 273, network_type[net_type]);
 
   // temperature
-
+  drawMetric(p, "TEMP", "40°C", warning_color, 338);
 
   // panda
-
-
+  drawMetric(p, "VEHICLE\nONLINE", "", good_color, 518);
 
   // connect
-
-
-  // home button
-
+  drawMetric(p, "CONNECT\nOFFLINE", "", danger_color, 676);
 }
