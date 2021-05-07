@@ -7,15 +7,6 @@
 class Sidebar : public QFrame {
   Q_OBJECT
 
-  /*
-  Q_PROPERTY(QColor temp_status MEMBER temp_status NOTIFY statusChanged)
-  Q_PROPERTY(QColor panda_status MEMBER m_color NOTIFY statusChanged)
-  Q_PROPERTY(QColor connect_status MEMBER m_color NOTIFY statusChanged)
-  Q_PROPERTY(QString temp_str MEMBER temp_status NOTIFY statusChanged)
-  Q_PROPERTY(QSting panda_str MEMBER m_color NOTIFY statusChanged)
-  Q_PROPERTY(QString connect_str MEMBER m_color NOTIFY statusChanged)
-  */
-
 public:
   explicit Sidebar(QWidget* parent = 0);
 
@@ -65,4 +56,6 @@ private:
   QColor temp_status = warning_color;
   cereal::DeviceState::NetworkType net_type;
   cereal::DeviceState::NetworkStrength strength;
+
+  QFont opensans;
 };

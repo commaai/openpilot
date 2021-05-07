@@ -21,17 +21,20 @@ void Sidebar::drawMetric(QPainter &p, const QString &label, const QString &val, 
 
   p.setBrush(Qt::NoBrush);
   p.setPen(QColor(0xff, 0xff, 0xff, 0x55));
+  QPen pen = p.pen();
+  pen.setWidth(2);
+  p.setPen(pen);
   p.drawRoundedRect(rect, 20, 20);
 
   p.setPen(QColor(0xff, 0xff, 0xff));
   if (val.isEmpty()) {
-    configFont(p, "opensans", 35, 500);
+    configFont(p, "Open Sans", 38, 500);
     const QRect r = QRect(rect.x() + 35, rect.y(), rect.width() - 50, rect.height());
     p.drawText(r, Qt::AlignCenter, label);
   } else {
-    configFont(p, "opensans", 53, 500);
+    configFont(p, "Open Sans", 55, 500);
     p.drawText(rect.x() + 50, rect.y() + 71, val);
-    configFont(p, "opensans", 33, 400);
+    configFont(p, "Open Sans", 35, 400);
     p.drawText(rect.x() + 50, rect.y() + 50 + 77, label);
   }
 }
@@ -64,9 +67,10 @@ void Sidebar::update(const UIState &s) {
   }
 
   temp_status = danger_color;
-  if (s.scene.deviceState.getThermalStatus() == cereal::DeviceState::ThermalStatus::GREEN) {
+  auto ts = s.scene.deviceState.getThermalStatus();
+  if (ts == cereal::DeviceState::ThermalStatus::GREEN) {
     temp_status = good_color;
-  } else if (s.scene.deviceState.getThermalStatus() == cereal::DeviceState::ThermalStatus::YELLOW) {
+  } else if (ts == cereal::DeviceState::ThermalStatus::YELLOW) {
     temp_status = warning_color;
   }
   temp_val = (int)s.scene.deviceState.getAmbientTempC();
