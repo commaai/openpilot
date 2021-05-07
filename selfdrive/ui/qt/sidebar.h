@@ -2,7 +2,7 @@
 
 #include <QtWidgets>
 
-#include <ui.h>
+#include "selfdrive/ui/ui.h"
 
 class Sidebar : public QFrame {
   Q_OBJECT
@@ -12,8 +12,6 @@ public:
 
 signals:
   void openSettings();
-  void textChanged(QString s);
-  void statusChagned(QColor c);
 
 public slots:
   void update(const UIState &s);
@@ -56,6 +54,4 @@ private:
   QColor temp_status = warning_color;
   cereal::DeviceState::NetworkType net_type;
   cereal::DeviceState::NetworkStrength strength;
-
-  QFont opensans;
 };
