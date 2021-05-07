@@ -65,6 +65,9 @@ void Sidebar::update(const UIState &s) {
     }
   }
 
+  net_type = s.scene.deviceState.getNetworkType();
+  strength = s.scene.deviceState.getNetworkStrength();
+
   temp_status = danger_color;
   auto ts = s.scene.deviceState.getThermalStatus();
   if (ts == cereal::DeviceState::ThermalStatus::GREEN) {
