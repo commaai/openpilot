@@ -7,7 +7,7 @@ from cereal import log
 TRAJECTORY_SIZE = 33
 # camera offset is meters from center car to camera
 if EON:
-  CAMERA_OFFSET = 0.06
+  CAMERA_OFFSET = 0.09
   PATH_OFFSET = 0.0
 elif TICI:
   CAMERA_OFFSET = -0.04
