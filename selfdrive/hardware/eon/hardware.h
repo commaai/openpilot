@@ -32,7 +32,7 @@ class Hardware : public HardwareBase {
     }
   };
 
-  void set_display_power(bool on) const override {
+  inline void set_display_power(bool on) const override {
     auto dtoken = android::SurfaceComposerClient::getBuiltInDisplay(android::ISurfaceComposer::eDisplayIdMain);
     android::SurfaceComposerClient::setDisplayPowerMode(dtoken, on ? HWC_POWER_MODE_NORMAL : HWC_POWER_MODE_OFF);
   };

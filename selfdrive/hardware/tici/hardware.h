@@ -9,7 +9,7 @@
 
 class Hardware : public HardwareBase {
  public:
-  HardwareTici() {
+  Hardware() {
     MAX_VOLUME = 0.5;
     MIN_VOLUME = 0.4;
 
