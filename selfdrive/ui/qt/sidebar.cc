@@ -3,6 +3,13 @@
 #include "qt_window.h"
 #include "selfdrive/hardware/hw.h"
 
+void configFont(QPainter &p, QString family, int size, int weight) {
+  QFont f(family);
+  f.setPixelSize(size);
+  f.setWeight(weight);
+  p.setFont(f);
+}
+
 void Sidebar::drawMetric(QPainter &p, const QString &label, const QString &val, QColor c, int y) {
   const QRect rect = {30, y, 240, val.isEmpty() ? (label.contains("\n") ? 124 : 100) : 148};
 
@@ -18,17 +25,13 @@ void Sidebar::drawMetric(QPainter &p, const QString &label, const QString &val, 
 
   p.setPen(QColor(0xff, 0xff, 0xff));
   if (val.isEmpty()) {
-    const QFont vf = QFont("opensans", 26, 500);
-    p.setFont(vf);
+    configFont(p, "opensans", 35, 500);
     const QRect r = QRect(rect.x() + 35, rect.y(), rect.width() - 50, rect.height());
     p.drawText(r, Qt::AlignCenter, label);
   } else {
-    const QFont vf = QFont("opensans", 40, 500);
-    p.setFont(vf);
+    configFont(p, "opensans", 53, 500);
     p.drawText(rect.x() + 50, rect.y() + 71, val);
-
-    const QFont lf = QFont("sans-regular", 25);
-    p.setFont(lf);
+    configFont(p, "opensans", 33, 400);
     p.drawText(rect.x() + 50, rect.y() + 50 + 77, label);
   }
 }
@@ -86,28 +89,21 @@ void Sidebar::paintEvent(QPaintEvent *event) {
   p.setPen(Qt::NoPen);
   p.setRenderHint(QPainter::Antialiasing);
 
-  // draw settings button
+  // static imgs
   p.setOpacity(0.65);
   p.drawImage(settings_btn.x(), settings_btn.y(), settings_img);
-
-  // draw home button
   p.setOpacity(1.0);
   p.drawImage(60, 1080 - 180 - 40, home_img);
 
   // network
   p.drawImage(58, 196, signal_imgs[strength]);
-  
-  const QRect r = QRect(50, 255, 100, 40);
-  p.setFont(QFont("opensans", 26));
+  configFont(p, "opensans", 35, 400);
   p.setPen(QColor(0xff, 0xff, 0xff));
+  const QRect r = QRect(50, 255, 100, 40);
   p.drawText(r, Qt::AlignCenter, network_type[net_type]);
 
-  // temperature
+  // metrics
   drawMetric(p, "TEMP", QString("%1°C").arg(temp_val), warning_color, 338);
-
-  // panda
   drawMetric(p, panda_str, "", panda_status, 518);
-
-  // connect
   drawMetric(p, "CONNECT\n" + connect_str, "", connect_status, 676);
 }
