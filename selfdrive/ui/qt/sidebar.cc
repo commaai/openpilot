@@ -63,6 +63,7 @@ void Sidebar::update(const UIState &s) {
       connect_str = online ? "ONLINE" : "ERROR";
       connect_status = online ? good_color : danger_color;
     }
+    repaint();
   }
 
   net_type = s.scene.deviceState.getNetworkType();
@@ -87,7 +88,9 @@ void Sidebar::update(const UIState &s) {
     panda_status = s.scene.gpsOK ? good_color : warning_color;
   }
 
-  repaint();
+  if (s.sm->updated("deviceState") || s.sm->updated("pandaState")) {
+    repaint();
+  }
 }
 
 void Sidebar::paintEvent(QPaintEvent *event) {
