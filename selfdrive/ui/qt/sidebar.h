@@ -23,9 +23,6 @@ protected:
 private:
   void drawMetric(QPainter &p, const QString &label, const QString &val, QColor c, int y);
 
-  cereal::DeviceState::NetworkType net_type;
-  cereal::DeviceState::NetworkStrength strength;
-
   QImage home_img, settings_img;
   const QMap<cereal::DeviceState::NetworkType, QString> network_type = {
     {cereal::DeviceState::NetworkType::NONE, "--"},
@@ -47,4 +44,14 @@ private:
   const QColor good_color = QColor(255, 255, 255);
   const QColor warning_color = QColor(218, 202, 37);
   const QColor danger_color = QColor(201, 34, 49);
+
+  Params params;
+  QString connect_str = "OFFLINE";
+  QColor connect_status = warning_color;
+  QString panda_str = "NO\nPANDA";
+  QColor panda_status = warning_color;
+  int temp_val = 0;
+  QColor temp_status = warning_color;
+  cereal::DeviceState::NetworkType net_type;
+  cereal::DeviceState::NetworkStrength strength;
 };
