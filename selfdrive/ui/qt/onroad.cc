@@ -56,7 +56,7 @@ OnroadAlerts::OnroadAlerts(QWidget *parent) : QFrame(parent) {
   layout->insertStretch(0, 1);
 
   setLayout(layout);
-  setStyleSheet("color: white;");
+  setStyleSheet("color: white; font: Open Sans;");
   setVisible(false);
 
   // setup sounds
