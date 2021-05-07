@@ -45,9 +45,9 @@ void party(cl_device_id device_id, cl_context context) {
 
 int main(int argc, char *argv[]) {
   set_realtime_priority(53);
-  if (Hardware::EON()) {
+  if (HARDWARE.EON()) {
     set_core_affinity(2);
-  } else if (Hardware::TICI()) {
+  } else if (HARDWARE.TICI()) {
     set_core_affinity(6);
   }
 

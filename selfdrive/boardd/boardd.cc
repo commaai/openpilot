@@ -350,7 +350,7 @@ void panda_state_thread(bool spoofing_started) {
     auto ps = evt.initPandaState();
     ps.setUptime(pandaState.uptime);
 
-    if (Hardware::TICI()) {
+    if (HARDWARE.TICI()) {
       double read_time = millis_since_boot();
       ps.setVoltage(std::stoi(util::read_file("/sys/class/hwmon/hwmon1/in1_input")));
       ps.setCurrent(std::stoi(util::read_file("/sys/class/hwmon/hwmon1/curr1_input")));
@@ -415,7 +415,7 @@ void hardware_control_thread() {
     cnt++;
     sm.update(1000); // TODO: what happens if EINTR is sent while in sm.update?
 
-    if (!Hardware::PC() && sm.updated("deviceState")) {
+    if (!HARDWARE.PC() && sm.updated("deviceState")) {
       // Charging mode
       bool charging_disabled = sm["deviceState"].getDeviceState().getChargingDisabled();
       if (charging_disabled != prev_charging_disabled) {
@@ -478,7 +478,7 @@ void pigeon_thread() {
   PubMaster pm({"ubloxRaw"});
   bool ignition_last = false;
 
-  Pigeon *pigeon = Hardware::TICI() ? Pigeon::connect("/dev/ttyHS0") : Pigeon::connect(panda);
+  Pigeon *pigeon = HARDWARE.TICI() ? Pigeon::connect("/dev/ttyHS0") : Pigeon::connect(panda);
 
   std::unordered_map<char, uint64_t> last_recv_time;
   std::unordered_map<char, int64_t> cls_max_dt = {
@@ -556,7 +556,7 @@ int main() {
   err = set_realtime_priority(54);
   LOG("set priority returns %d", err);
 
-  err = set_core_affinity(Hardware::TICI() ? 4 : 3);
+  err = set_core_affinity(HARDWARE.TICI() ? 4 : 3);
   LOG("set affinity returns %d", err);
 
   while (!do_exit) {

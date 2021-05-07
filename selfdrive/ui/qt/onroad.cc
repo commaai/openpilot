@@ -78,7 +78,7 @@ void OnroadAlerts::updateState(const UIState &s) {
   if (sm.updated("carState")) {
     // scale volume with speed
     volume = util::map_val(sm["carState"].getCarState().getVEgo(), 0.f, 20.f,
-                           Hardware::MIN_VOLUME, Hardware::MAX_VOLUME);
+                           HARDWARE.MIN_VOLUME, HARDWARE.MAX_VOLUME);
   }
   if (sm["deviceState"].getDeviceState().getStarted()) {
     if (sm.updated("controlsState")) {
@@ -139,7 +139,7 @@ void OnroadAlerts::updateAlert(const QString &t1, const QString &t2, float blink
     msg->setStyleSheet("font-size: 65px; font-weight: 400;");
     title->setStyleSheet("font-size: 80px; font-weight: 500;");
   } else if (size == cereal::ControlsState::AlertSize::FULL) {
-    setFixedHeight(Hardware::screen_size[1]);
+    setFixedHeight(HARDWARE.screen_size[1]);
     int title_size = (title->text().size() > 15) ? 130 : 110;
     title->setStyleSheet(QString("font-size: %1px; font-weight: 500;").arg(title_size));
     msg->setStyleSheet("font-size: 90px; font-weight: 400;");

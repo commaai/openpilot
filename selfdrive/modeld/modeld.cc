@@ -37,7 +37,7 @@ void calibration_thread(bool wide_camera) {
     -1.09890110e-03, 0.00000000e+00, 2.81318681e-01,
     -1.84808520e-20, 9.00738606e-04,-4.28751576e-02;
 
-  Eigen::Matrix<float, 3, 3> cam_intrinsics = Eigen::Matrix<float, 3, 3, Eigen::RowMajor>(wide_camera ? ecam_intrinsic_matrix.v : Hardware::road_cam_intrinsic_matrix.v);
+  Eigen::Matrix<float, 3, 3> cam_intrinsics = Eigen::Matrix<float, 3, 3, Eigen::RowMajor>(wide_camera ? ecam_intrinsic_matrix.v : HARDWARE.road_cam_intrinsic_matrix().v);
   const mat3 yuv_transform = get_model_yuv_transform();
 
   while (!do_exit) {
@@ -134,12 +134,12 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client) {
 int main(int argc, char **argv) {
   set_realtime_priority(54);
 
-  if (Hardware::EON()) {
+  if (HARDWARE.EON()) {
     set_core_affinity(2);
-  } else if (Hardware::TICI()) {
+  } else if (HARDWARE.TICI()) {
     set_core_affinity(7);  
   }
-  bool wide_camera = Hardware::TICI() ? Params().getBool("EnableWideCamera") : false;
+  bool wide_camera = HARDWARE.TICI() ? Params().getBool("EnableWideCamera") : false;
 
   // start calibration thread
   std::thread thread = std::thread(calibration_thread, wide_camera);

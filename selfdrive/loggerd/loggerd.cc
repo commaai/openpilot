@@ -40,9 +40,9 @@
 namespace {
 
 constexpr int MAIN_FPS = 20;
-const int MAIN_BITRATE = Hardware::TICI() ? 10000000 : 5000000;
-const int MAX_CAM_IDX = Hardware::TICI() ? LOG_CAMERA_ID_ECAMERA : LOG_CAMERA_ID_DCAMERA;
-const int DCAM_BITRATE = Hardware::TICI() ? MAIN_BITRATE : 2500000;
+const int MAIN_BITRATE = HARDWARE.TICI() ? 10000000 : 5000000;
+const int MAX_CAM_IDX = HARDWARE.TICI() ? LOG_CAMERA_ID_ECAMERA : LOG_CAMERA_ID_DCAMERA;
+const int DCAM_BITRATE = HARDWARE.TICI() ? MAIN_BITRATE : 2500000;
 
 #define NO_CAMERA_PATIENCE 500 // fall back to time-based rotation if all cameras are dead
 
@@ -87,8 +87,8 @@ LogCameraInfo cameras_logged[LOG_CAMERA_ID_MAX] = {
     .bitrate = 256000,
     .is_h265 = false,
     .downscale = true,
-    .frame_width = Hardware::TICI() ? 526 : 480,
-    .frame_height = Hardware::TICI() ? 330 : 360 // keep pixel count the same?
+    .frame_width = HARDWARE.TICI() ? 526 : 480,
+    .frame_height = HARDWARE.TICI() ? 330 : 360 // keep pixel count the same?
   },
 };
 
@@ -267,7 +267,7 @@ void encoder_thread(int cam_idx) {
           eidx.setFrameId(extra.frame_id);
           eidx.setTimestampSof(extra.timestamp_sof);
           eidx.setTimestampEof(extra.timestamp_eof);
-          if (Hardware::TICI()) {
+          if (HARDWARE.TICI()) {
             eidx.setType(cereal::EncodeIndex::Type::FULL_H_E_V_C);
           } else {
             eidx.setType(cam_idx == LOG_CAMERA_ID_DCAMERA ? cereal::EncodeIndex::Type::FRONT : cereal::EncodeIndex::Type::FULL_H_E_V_C);
@@ -356,11 +356,11 @@ int main(int argc, char** argv) {
   encoder_threads.push_back(std::thread(encoder_thread, LOG_CAMERA_ID_FCAMERA));
   s.rotate_state[LOG_CAMERA_ID_FCAMERA].enabled = true;
 
-  if (!Hardware::PC() && Params().getBool("RecordFront")) {
+  if (!HARDWARE.PC() && Params().getBool("RecordFront")) {
     encoder_threads.push_back(std::thread(encoder_thread, LOG_CAMERA_ID_DCAMERA));
     s.rotate_state[LOG_CAMERA_ID_DCAMERA].enabled = true;
   }
-  if (Hardware::TICI()) {
+  if (HARDWARE.TICI()) {
     encoder_threads.push_back(std::thread(encoder_thread, LOG_CAMERA_ID_ECAMERA));
     s.rotate_state[LOG_CAMERA_ID_ECAMERA].enabled = true;
   }
@@ -437,7 +437,7 @@ int main(int argc, char** argv) {
           new_segment &= (((r.stream_frame_id >= r.last_rotate_frame_id + SEGMENT_LENGTH * MAIN_FPS) &&
                           (!r.should_rotate) && (r.initialized)) ||
                           (!r.enabled));
-          if (!Hardware::TICI()) break; // only look at fcamera frame id if not QCOM2
+          if (!HARDWARE.TICI()) break; // only look at fcamera frame id if not QCOM2
         }
       } else {
         if (tms - last_rotate_tms > SEGMENT_LENGTH * 1000) {

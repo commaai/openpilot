@@ -40,10 +40,7 @@ private:
     {AudibleAlert::CHIME_ERROR, {"../assets/sounds/error.wav", false}},
     {AudibleAlert::CHIME_PROMPT, {"../assets/sounds/error.wav", false}}
   };
-
-  QColor bg;
-  float volume = Hardware::MIN_VOLUME;
-  std::map<AudibleAlert, QSoundEffect> sounds;
+  float volume = HARDWARE.MIN_VOLUME;
   float blinking_rate = 0;
   QString text1, text2;
   std::string alert_type;

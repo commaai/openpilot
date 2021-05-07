@@ -14,8 +14,8 @@ int main(int argc, char *argv[]) {
   QWidget window;
   setMainWindow(&window);
 
-  Hardware::set_display_power(true);
-  Hardware::set_brightness(65);
+  HARDWARE.set_display_power(true);
+  HARDWARE.set_brightness(65);
 
   QGridLayout *main_layout = new QGridLayout(&window);
   main_layout->setMargin(50);
@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) {
 #ifdef __aarch64__
   btn->setText("Reboot");
   QObject::connect(btn, &QPushButton::released, [=]() {
-    Hardware::reboot();
+    HARDWARE.reboot();
   });
 #else
   btn->setText("Exit");

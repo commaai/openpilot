@@ -15,7 +15,7 @@
 
 inline void setMainWindow(QWidget *w) {
   const float scale = getenv("SCALE") != NULL ? std::stof(getenv("SCALE")) : 1.0;
-  w->setFixedSize(Hardware::screen_size[0]*scale, Hardware::screen_size[1]*scale);
+  w->setFixedSize(HARDWARE.screen_size[0]*scale, HARDWARE.screen_size[1]*scale);
   w->show();
 
 #ifdef QCOM2

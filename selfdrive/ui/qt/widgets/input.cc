@@ -171,7 +171,7 @@ bool ConfirmationDialog::confirm(const QString &prompt_text, QWidget *parent) {
 
 int ConfirmationDialog::exec() {
    // TODO: make this work without fullscreen
-  if (Hardware::TICI()) {
+  if (HARDWARE.TICI()) {
     setMainWindow(this);
   }
   return QDialog::exec();

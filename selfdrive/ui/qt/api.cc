@@ -17,7 +17,7 @@
 #include "selfdrive/hardware/hw.h"
 
 const std::string private_key_path =
-    Hardware::PC() ? util::getenv_default("HOME", "/.comma/persist/comma/id_rsa", "/persist/comma/id_rsa")
+    HARDWARE.PC() ? util::getenv_default("HOME", "/.comma/persist/comma/id_rsa", "/persist/comma/id_rsa")
                    : "/persist/comma/id_rsa";
 
 QByteArray CommaApi::rsa_sign(const QByteArray &data) {

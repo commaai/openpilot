@@ -38,7 +38,7 @@ static cl_program build_debayer_program(cl_device_id device_id, cl_context conte
            ci->frame_width, ci->frame_height, ci->frame_stride,
            b->rgb_width, b->rgb_height, b->rgb_stride,
            ci->bayer_flip, ci->hdr, s->camera_num);
-  const char *cl_file = Hardware::TICI() ? "cameras/real_debayer.cl" : "cameras/debayer.cl";
+  const char *cl_file = HARDWARE.TICI() ? "cameras/real_debayer.cl" : "cameras/debayer.cl";
   return cl_program_from_file(context, device_id, cl_file, args);
 }
 
@@ -65,7 +65,7 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
   rgb_width = ci->frame_width;
   rgb_height = ci->frame_height;
 
-  if (!Hardware::TICI() && ci->bayer) {
+  if (!HARDWARE.TICI() && ci->bayer) {
     // debayering does a 2x downscale
     rgb_width = ci->frame_width / 2;
     rgb_height = ci->frame_height / 2;
@@ -361,7 +361,7 @@ static void driver_cam_auto_exposure(CameraState *c, SubMaster &sm) {
 #endif
 
   ExpRect def_rect;
-  if (Hardware::TICI()) {
+  if (HARDWARE.TICI()) {
     hist_ceil = hl_weighted = true;
     x_offset = 630, y_offset = 156;
     frame_width = 668, frame_height = frame_width / 1.33;

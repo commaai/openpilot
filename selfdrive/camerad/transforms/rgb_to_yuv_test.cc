@@ -112,7 +112,7 @@ int main(int argc, char** argv) {
     std::cout << "clCreateCommandQueueWithProperties error: " << err << std::endl;
   }
 
-  auto[width, height] = Hardware::road_cam_size;
+  auto[width, height] = HARDWARE.road_cam_size;
 
   int opt = 0;
   while ((opt = getopt(argc, argv, "f")) != -1)
@@ -121,8 +121,8 @@ int main(int argc, char** argv) {
         {
         case 'f':
           std::cout << "Using front camera dimensions" << std::endl;
-          int width = Hardware::driver_cam_size[0];
-          int height = Hardware::driver_cam_size[1];
+          int width = HARDWARE.driver_cam_size[0];
+          int height = HARDWARE.driver_cam_size[1];
         }
   }
 

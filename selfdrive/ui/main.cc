@@ -9,7 +9,7 @@
 int main(int argc, char *argv[]) {
   setQtSurfaceFormat();
 
-  if (Hardware::EON()) {
+  if (HARDWARE.EON()) {
     QApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
     QSslConfiguration ssl = QSslConfiguration::defaultConfiguration();
     ssl.setCaCertificates(QSslCertificate::fromPath("/usr/etc/tls/cert.pem"));

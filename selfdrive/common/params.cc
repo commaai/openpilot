@@ -33,9 +33,9 @@
 
 namespace {
 
-const std::string default_params_path = Hardware::PC() ? util::getenv_default("HOME", "/.comma/params", "/data/params")
+const std::string default_params_path = HARDWARE.PC() ? util::getenv_default("HOME", "/.comma/params", "/data/params")
                                                        : "/data/params";
-const std::string persistent_params_path = Hardware::PC() ? default_params_path : "/persist/comma/params";
+const std::string persistent_params_path = HARDWARE.PC() ? default_params_path : "/persist/comma/params";
 
 volatile sig_atomic_t params_do_exit = 0;
 void params_sig_handler(int signal) {

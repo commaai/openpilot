@@ -115,7 +115,7 @@ static void draw_frame(UIState *s) {
 
   if (s->last_frame) {
     glBindTexture(GL_TEXTURE_2D, s->texture[s->last_frame->idx]->frame_tex);
-    if (!Hardware::EON()) {
+    if (!HARDWARE.EON()) {
       // this is handled in ion on QCOM
       glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, s->last_frame->width, s->last_frame->height,
                    0, GL_RGB, GL_UNSIGNED_BYTE, s->last_frame->addr);
@@ -370,7 +370,7 @@ void ui_nvg_init(UIState *s) {
   // init drawing
 
   // on EON, we enable MSAA
-  s->vg = Hardware::EON() ? nvgCreate(0) : nvgCreate(NVG_ANTIALIAS | NVG_STENCIL_STROKES | NVG_DEBUG);
+  s->vg = HARDWARE.EON() ? nvgCreate(0) : nvgCreate(NVG_ANTIALIAS | NVG_STENCIL_STROKES | NVG_DEBUG);
   assert(s->vg);
 
   // init fonts
