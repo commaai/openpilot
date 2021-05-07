@@ -285,8 +285,8 @@ QUIState::QUIState(QObject *parent) : QObject(parent) {
     "gpsLocationExternal", "roadCameraState",
   });
 
-  ui_state.fb_w = vwp_w;
-  ui_state.fb_h = vwp_h;
+  ui_state.fb_w = Hardware::screen_size[0];
+  ui_state.fb_h = Hardware::screen_size[1];
   ui_state.scene.started = false;
   ui_state.last_frame = nullptr;
   ui_state.wide_camera = Hardware::TICI() ? Params().getBool("EnableWideCamera") : false;

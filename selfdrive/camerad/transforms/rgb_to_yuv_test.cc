@@ -32,6 +32,7 @@
 #include "libyuv.h"
 #include "selfdrive/camerad/transforms/rgb_to_yuv.h"
 #include "selfdrive/common/clutil.h"
+#include "selfdrive/hardware/hw.h"
 
 static inline double millis_since_boot() {
   struct timespec t;
@@ -111,8 +112,7 @@ int main(int argc, char** argv) {
     std::cout << "clCreateCommandQueueWithProperties error: " << err << std::endl;
   }
 
-  int width = 1164;
-  int height = 874;
+  auto[width, height] = Hardware::road_cam_size;
 
   int opt = 0;
   while ((opt = getopt(argc, argv, "f")) != -1)
@@ -121,8 +121,8 @@ int main(int argc, char** argv) {
         {
         case 'f':
           std::cout << "Using front camera dimensions" << std::endl;
-          int width = 1152;
-          int height = 846;
+          int width = Hardware::driver_cam_size[0];
+          int height = Hardware::driver_cam_size[1];
         }
   }
 
