@@ -23,14 +23,6 @@ const double X_IDXS[TRAJECTORY_SIZE] = {
 
 #include "selfdrive/common/mat.h"
 #include "selfdrive/hardware/hw.h"
-const mat3 fcam_intrinsic_matrix =
-    Hardware::TICI() ? (mat3){{2648.0, 0.0, 1928.0 / 2,
-                               0.0, 2648.0, 1208.0 / 2,
-                               0.0, 0.0, 1.0}}
-                     : (mat3){{910., 0., 1164.0 / 2,
-                               0., 910., 874.0 / 2,
-                               0., 0., 1.}};
-
 // without unwarp, focal length is for center portion only
 const mat3 ecam_intrinsic_matrix =
     Hardware::TICI() ? (mat3){{620.0, 0.0, 1928.0 / 2,

@@ -4,7 +4,7 @@
 #include <fstream>
 
 // no-op base hw class
-class HardwareNone {
+class HardwareBase {
 public:
   static constexpr float MAX_VOLUME = 0;
   static constexpr float MIN_VOLUME = 0;

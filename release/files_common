@@ -276,6 +276,7 @@ selfdrive/hardware/tici/pins.py
 selfdrive/hardware/tici/agnos.py
 selfdrive/hardware/tici/agnos.json
 selfdrive/hardware/pc/__init__.py
+selfdrive/hardware/pc/hardware.h
 selfdrive/hardware/pc/hardware.py
 
 selfdrive/locationd/__init__.py
