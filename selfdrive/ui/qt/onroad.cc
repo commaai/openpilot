@@ -29,6 +29,10 @@ OnroadAlerts::OnroadAlerts(QWidget *parent) : QOpenGLWidget(parent) {
   setAttribute(Qt::WA_AlwaysStackOnTop);
   setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
+  QSurfaceFormat format = QSurfaceFormat::defaultFormat();
+  format.setSamples(4);
+  setFormat(format);
+
   // setup sounds
   for (auto &kv : sound_map) {
     auto path = QUrl::fromLocalFile(kv.second.first);
@@ -77,7 +81,7 @@ void OnroadAlerts::offroadTransition(bool offroad) {
   alert_type = "";
 }
 
-void OnroadAlerts::updateAlert(const QString &text1, const QString &text2, float blink_rate,
+void OnroadAlerts::updateAlert(const QString &t1, const QString &t2, float blink_rate,
                                const std::string &type, cereal::ControlsState::AlertSize size, AudibleAlert sound) {
 
   if (alert_type.compare(type) != 0) {
@@ -87,8 +91,8 @@ void OnroadAlerts::updateAlert(const QString &text1, const QString &text2, float
     }
   }
 
-  title = text1;
-  msg = text2;
+  text1 = t1;
+  text2 = t2;
   alert_size = size;
   alert_type = type;
   blinking_rate = blink_rate;
@@ -122,8 +126,11 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   p.endNativePainting();
 
-  const int h = alert_sizes[alert_size];
-  const QRect r = QRect(0, height() - h, width(), h);
+  int h = height();
+  if (alert_size != cereal::ControlsState::AlertSize::FULL) {
+    h = alert_size == cereal::ControlsState::AlertSize::SMALL ? 271 : 420;
+  }
+  QRect r = QRect(0, height() - h, width(), h);
 
   // draw background + gradient
   p.setPen(Qt::NoPen);
@@ -136,29 +143,27 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
   p.setBrush(QBrush(g));
   p.fillRect(r, g);
 
+  // remove sidebar
+  r = QRect(0, height() - h, width(), h - 30);
+
   // text
   const QPoint c = r.center();
   p.setPen(QColor(0xff, 0xff, 0xff));
-  p.setRenderHint(QPainter::Antialiasing, true);
+  p.setRenderHint(QPainter::Antialiasing);
   if (alert_size == cereal::ControlsState::AlertSize::SMALL) {
-    configFont(p, "Open Sans", 65, 600);
-    p.drawText(r, Qt::AlignCenter, title);
+    configFont(p, "Open Sans SemiBold", 74, 400);
+    p.drawText(r, Qt::AlignCenter, text1);
   } else if (alert_size == cereal::ControlsState::AlertSize::MID) {
-    configFont(p, "Open Sans", 70, 500);
-    p.drawText(QRect(0, c.y() - 45, width(), 90), Qt::AlignHCenter, title);
-    configFont(p, "Open Sans", 60, 400);
-    p.drawText(QRect(0, c.y() + 75, width(), 90), Qt::AlignHCenter, msg);
+    configFont(p, "Open Sans", 88, 600); // TODO: bold
+    p.drawText(QRect(0, c.y() - 125, width(), 110), Qt::AlignHCenter | Qt::AlignTop, text1);
+    configFont(p, "Open Sans", 64, 400);
+    p.drawText(QRect(0, c.y() + 21, width(), 90), Qt::AlignHCenter, text2);
   } else if (alert_size == cereal::ControlsState::AlertSize::FULL) {
-    /*
-    nvgFontSize(s->vg, (longAlert1?72:96)*2.5);
-    nvgFontFace(s->vg, "sans-bold");
-    nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
-    nvgTextBox(s->vg, rect.x, rect.y+(longAlert1?360:420), rect.w-60, scene->alert_text1.c_str(), NULL);
-    nvgFontSize(s->vg, 48*2.5);
-    nvgFontFace(s->vg,  "sans-regular");
-    nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BOTTOM);
-    nvgTextBox(s->vg, rect.x, rect.h-(longAlert1?300:360), rect.w-60, scene->alert_text2.c_str(), NULL);
-    */
+    bool l = text1.length() > 15;
+    configFont(p, "Open Sans", l ? 72 : 96, 700);
+    p.drawText(QRect(0, c.y() + (l ? 360 : 420), width(), 90), Qt::AlignHCenter, text1);
+    configFont(p, "Open Sans", 60, 400);
+    p.drawText(QRect(0, r.height() - (l ? 300 : 360), width(), 90), Qt::AlignHCenter, text2);
   }
 }
 

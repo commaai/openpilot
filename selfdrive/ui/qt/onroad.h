@@ -26,7 +26,7 @@ protected:
 private:
   void stopSounds();
   void playSound(AudibleAlert alert);
-  void updateAlert(const QString &text1, const QString &text2, float blink_rate,
+  void updateAlert(const QString &t1, const QString &t2, float blink_rate,
                    const std::string &type, cereal::ControlsState::AlertSize size, AudibleAlert sound);
 
   std::map<cereal::ControlsState::AlertSize, const int> alert_sizes = {
@@ -51,7 +51,7 @@ private:
   float volume = Hardware::MIN_VOLUME;
   std::map<AudibleAlert, QSoundEffect> sounds;
   float blinking_rate = 0;
-  QString title, msg;
+  QString text1, text2;
   std::string alert_type;
   cereal::ControlsState::AlertSize alert_size;
 
