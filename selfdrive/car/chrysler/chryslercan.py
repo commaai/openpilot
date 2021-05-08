@@ -52,6 +52,6 @@ def create_wheel_buttons(packer, counter, cancel=False):
   # WHEEL_BUTTONS (571) Message sent to cancel ACC.
   values = {
     "ACC_CANCEL": cancel,
-    "COUNTER": counter
+    "COUNTER": counter % 16
   }
   return packer.make_can_msg("WHEEL_BUTTONS", 0, values)
