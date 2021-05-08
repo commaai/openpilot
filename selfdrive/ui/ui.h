@@ -109,11 +109,11 @@ public:
 
   VisionIpcClient * vipc_client = nullptr;
   VisionIpcClient * vipc_client_front = nullptr;
-  VisionIpcClient * vipc_client_rear;
+  VisionIpcClient * vipc_client_rear = nullptr;
   VisionBuf * last_frame = nullptr;
 
   // framebuffer
-  int fb_w, fb_h;
+  int fb_w = 0, fb_h = 0;
 
   // NVG
   NVGcontext *vg = nullptr;
@@ -130,8 +130,8 @@ public:
   std::unique_ptr<GLShader> gl_shader;
   std::unique_ptr<EGLImageTexture> texture[UI_BUF_COUNT];
 
-  GLuint frame_vao[2], frame_vbo[2], frame_ibo[2];
-  mat4 rear_frame_mat, front_frame_mat;
+  GLuint frame_vao[2] = {}, frame_vbo[2] = {}, frame_ibo[2] = {};
+  mat4 rear_frame_mat = {}, front_frame_mat = {};
 
   bool awake = false;
 
