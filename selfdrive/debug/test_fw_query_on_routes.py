@@ -22,6 +22,12 @@ from selfdrive.car.volkswagen.values import FINGERPRINTS as VW_FINGERPRINTS
 NO_API = "NO_API" in os.environ
 SUPPORTED_CARS = list(TOYOTA_FINGERPRINTS.keys()) + list(HONDA_FINGERPRINTS.keys()) + list(HYUNDAI_FINGERPRINTS.keys())+ list(VW_FINGERPRINTS.keys())
 
+try:
+  from xx.pipeline.c.CarState import migration
+except ImportError:
+  migration = {}
+
+
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description='Run FW fingerprint on Qlog of route or list of routes')
   parser.add_argument('route', help='Route or file with list of routes')
@@ -76,6 +82,7 @@ if __name__ == "__main__":
             break
 
           live_fingerprint = msg.carParams.carFingerprint
+          live_fingerprint = migration.get(live_fingerprint, live_fingerprint)
 
           if args.car is not None:
             live_fingerprint = args.car

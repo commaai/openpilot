@@ -6,16 +6,10 @@
 // no-op base hw class
 class HardwareNone {
 public:
-  enum Type {
-    typePC,
-    typeEON,
-    typeTICI
-  };
-
   static constexpr float MAX_VOLUME = 0;
   static constexpr float MIN_VOLUME = 0;
 
-  static std::string get_os_version() { return "openpilot for PC"; }
+  static std::string get_os_version() { return ""; }
 
   static void reboot() {}
   static void poweroff() {}
@@ -24,9 +18,8 @@ public:
 
   static bool get_ssh_enabled() { return false; }
   static void set_ssh_enabled(bool enabled) {}
-  
-  static Type type() { return typePC; }
-  static bool PC() { return type() == typePC; }
-  static bool EON() { return type() == typeEON; }
-  static bool TICI() { return type() == typeTICI; }
+
+  static bool PC() { return false; }
+  static bool EON() { return false; }
+  static bool TICI() { return false; }
 };

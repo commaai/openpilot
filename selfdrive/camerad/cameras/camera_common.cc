@@ -63,8 +63,9 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
 
   rgb_width = ci->frame_width;
   rgb_height = ci->frame_height;
-  // debayering does a 2x downscale
-  if (Hardware::TICI() && ci->bayer) {
+
+  if (!Hardware::TICI() && ci->bayer) {
+    // debayering does a 2x downscale
     rgb_width = ci->frame_width / 2;
     rgb_height = ci->frame_height / 2;
   }
@@ -359,14 +360,14 @@ static void driver_cam_auto_exposure(CameraState *c, SubMaster &sm) {
 #endif
 
   ExpRect def_rect;
-  if (!Hardware::TICI()) {
-    def_rect = {is_rhd ? 0 : b->rgb_width * 3 / 5, is_rhd ? b->rgb_width * 2 / 5 : b->rgb_width, 2,
-                b->rgb_height / 3, b->rgb_height, 1};
-  } else {
+  if (Hardware::TICI()) {
     hist_ceil = hl_weighted = true;
     x_offset = 630, y_offset = 156;
     frame_width = 668, frame_height = frame_width / 1.33;
     def_rect = {96, 1832, 2, 242, 1148, 4};
+  } else {
+    def_rect = {is_rhd ? 0 : b->rgb_width * 3 / 5, is_rhd ? b->rgb_width * 2 / 5 : b->rgb_width, 2,
+                b->rgb_height / 3, b->rgb_height, 1};
   }
 
   static ExpRect rect = def_rect;

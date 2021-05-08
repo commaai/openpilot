@@ -4,7 +4,7 @@ import unittest
 
 import hypothesis.strategies as st
 import numpy as np
-from hypothesis import given, settings
+from hypothesis import given, settings, note
 
 from cereal import log
 from selfdrive.car.toyota.values import CAR as TOYOTA
@@ -48,8 +48,8 @@ def get_strategy_for_events(event_types, finite=False):
     'steeringAngleDeg': floats(width=32),
   })
   r['CameraOdometry'] = st.fixed_dictionaries({
-    'frameId': st.integers(min_value=0, max_value=2**32-1),
-    'timestampEof': st.integers(min_value=0, max_value=2**64-1),
+    'frameId': st.integers(min_value=0, max_value=2**32 - 1),
+    'timestampEof': st.integers(min_value=0, max_value=2**64 - 1),
     'trans': st.lists(floats(width=32), min_size=3, max_size=3),
     'rot': st.lists(floats(width=32), min_size=3, max_size=3),
     'transStd': st.lists(floats(width=32), min_size=3, max_size=3),
@@ -57,34 +57,34 @@ def get_strategy_for_events(event_types, finite=False):
   })
   r['SensorEventData.SensorVec'] = st.fixed_dictionaries({
     'v': st.lists(floats(width=32), min_size=3, max_size=3),
-    'status': st.integers(min_value=0, max_value=1),
+    'status': st.just(1),
   })
   r['SensorEventData_gyro'] = st.fixed_dictionaries({
     'version': st.just(1),
     'sensor': st.just(5),
-    'type': st.just(16),  # BMX055
-    'timestamp': st.integers(min_value=0, max_value=2**63-1),
-    'source': st.just(8),
+    'type': st.just(16),
+    'timestamp': st.integers(min_value=0, max_value=2**63 - 1),
+    'source': st.just(8),  # BMX055
     'gyroUncalibrated': r['SensorEventData.SensorVec'],
   })
   r['SensorEventData_accel'] = st.fixed_dictionaries({
     'version': st.just(1),
     'sensor': st.just(1),
-    'type': st.just(1),  # BMX055
-    'timestamp': st.integers(min_value=0, max_value=2**63-1),
-    'source': st.just(8),
+    'type': st.just(1),
+    'timestamp': st.integers(min_value=0, max_value=2**63 - 1),
+    'source': st.just(8),  # BMX055
     'acceleration': r['SensorEventData.SensorVec'],
   })
   r['SensorEvents'] = st.lists(st.one_of(r['SensorEventData_gyro'], r['SensorEventData_accel']), min_size=1)
   r['GpsLocationExternal'] = st.fixed_dictionaries({
-    'flags': st.integers(min_value=0, max_value=1),
+    'flags': st.just(1),
     'latitude': floats(),
     'longitude': floats(),
     'altitude': floats(),
     'speed': floats(width=32),
     'bearingDeg': floats(width=32),
     'accuracy': floats(width=32),
-    'timestamp': st.integers(min_value=0, max_value=2**63-1),
+    'timestamp': st.integers(min_value=0, max_value=2**63 - 1),
     'source': st.just(6),  # Ublox
     'vNED': st.lists(floats(width=32), min_size=3, max_size=3),
     'verticalAccuracy': floats(width=32),
@@ -115,10 +115,13 @@ def is_finite(d, exclude=[], prefix=""):  # pylint: disable=dangerous-default-va
       continue
 
     if isinstance(v, dict):
-      ret = ret and is_finite(v, exclude, name + ".")
+      if not is_finite(v, exclude, name + "."):
+        ret = False
     else:
       try:
-        ret = ret and np.isfinite(v).all()
+        if not np.isfinite(v).all():
+          note((name, v))
+          ret = False
       except TypeError:
         pass
 
@@ -137,8 +140,8 @@ class TestFuzzy(unittest.TestCase):
   @settings(deadline=1000)
   def test_paramsd(self, dat):
     for r in test_process(dat, 'paramsd'):
-      lp = r.liveParameters.to_dict()
-      assert is_finite(lp)
+      d = r.liveParameters.to_dict()
+      assert is_finite(d)
 
   @given(get_strategy_for_process('locationd', finite=True))
   @settings(deadline=1000)
@@ -150,8 +153,8 @@ class TestFuzzy(unittest.TestCase):
       'calibratedOrientationECEF.std',
     ]
     for r in test_process(dat, 'locationd'):
-      lp = r.liveLocationKalman.to_dict()
-      assert is_finite(lp, exclude)
+      d = r.liveLocationKalman.to_dict()
+      assert is_finite(d, exclude)
 
 
 if __name__ == "__main__":

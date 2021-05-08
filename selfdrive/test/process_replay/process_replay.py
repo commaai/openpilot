@@ -366,7 +366,7 @@ def python_replay_process(cfg, lr, fingerprint=None):
   # TODO: remove after getting new route for civic & accord
   migration = {
     "HONDA CIVIC 2016 TOURING": "HONDA CIVIC 2016",
-    "HONDA ACCORD 2018 SPORT 2T": "HONDA ACCORD 2018 2T",
+    "HONDA ACCORD 2018 SPORT 2T": "HONDA ACCORD 2T 2018",
   }
 
   if fingerprint is not None:
@@ -446,7 +446,7 @@ def cpp_replay_process(cfg, lr, fingerprint=None):
     time.sleep(0)
 
   # Make sure all subscribers are connected
-  sockets = {s: messaging.sub_sock(s, timeout=1000) for s in sub_sockets}
+  sockets = {s: messaging.sub_sock(s, timeout=2000) for s in sub_sockets}
   for s in sub_sockets:
     messaging.recv_one_or_none(sockets[s])
 

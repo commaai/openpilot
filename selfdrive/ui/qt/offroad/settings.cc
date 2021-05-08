@@ -50,7 +50,7 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "../assets/offroad/icon_shell.png",
                                   this));
 
-  if (Hardware::TICI()) {
+  if (!Hardware::TICI()) {
     toggles.append(new ParamControl("IsUploadRawEnabled",
                                     "Upload Raw Logs",
                                     "Upload full logs and full resolution video by default while on WiFi. If not enabled, individual logs can be marked for upload at my.comma.ai/useradmin.",
