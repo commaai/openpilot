@@ -2,13 +2,7 @@
 #include "sidebar.h"
 #include "qt_window.h"
 #include "selfdrive/hardware/hw.h"
-
-void configFont(QPainter &p, QString family, int size, int weight) {
-  QFont f(family);
-  f.setPixelSize(size);
-  f.setWeight(weight);
-  p.setFont(f);
-}
+#include "selfdrive/ui/qt/util.h"
 
 void Sidebar::drawMetric(QPainter &p, const QString &label, const QString &val, QColor c, int y) {
   const QRect rect = {30, y, 240, val.isEmpty() ? (label.contains("\n") ? 124 : 100) : 148};

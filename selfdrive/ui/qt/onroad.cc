@@ -4,7 +4,7 @@
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/ui/qt/onroad.h"
 #include "selfdrive/ui/paint.h"
-#include "selfdrive/ui/qt/qt_window.h"
+#include "selfdrive/ui/qt/util.h"
 
 OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   layout = new QStackedLayout();
@@ -18,46 +18,16 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   alerts = new OnroadAlerts(this);
   QObject::connect(this, &OnroadWindow::update, alerts, &OnroadAlerts::update);
   QObject::connect(this, &OnroadWindow::offroadTransition, alerts, &OnroadAlerts::offroadTransition);
-
-  // hack to align the onroad alerts, better way to do this?
-  QVBoxLayout *alerts_container = new QVBoxLayout(this);
-  alerts_container->setMargin(0);
-  alerts_container->addStretch(1);
-  alerts_container->addWidget(alerts, 0, Qt::AlignBottom);
-  QWidget *w = new QWidget(this);
-  w->setLayout(alerts_container);
-
-  layout->addWidget(w);
-
-  // alerts on top
-  layout->setCurrentWidget(w);
+  layout->addWidget(alerts);
 
   setLayout(layout);
 }
 
 // ***** onroad widgets *****
 
-OnroadAlerts::OnroadAlerts(QWidget *parent) : QFrame(parent) {
-  layout = new QVBoxLayout(this);
-  layout->setSpacing(40);
-  layout->setMargin(20);
-
-  title = new QLabel();
-  title->setWordWrap(true);
-  title->setAlignment(Qt::AlignCenter);
-  layout->addWidget(title);
-
-  msg = new QLabel();
-  msg->setWordWrap(true);
-  msg->setAlignment(Qt::AlignCenter);
-  layout->addWidget(msg);
-
-  layout->addStretch(1);
-  layout->insertStretch(0, 1);
-
-  setLayout(layout);
-  setStyleSheet("color: white; font: Open Sans;");
-  setVisible(false);
+OnroadAlerts::OnroadAlerts(QWidget *parent) : QOpenGLWidget(parent) {
+  setAttribute(Qt::WA_AlwaysStackOnTop);
+  setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
   // setup sounds
   for (auto &kv : sound_map) {
@@ -99,8 +69,6 @@ void OnroadAlerts::update(const UIState &s) {
   auto c = bg_colors[s.status];
   float alpha = 0.375 * cos((millis_since_boot() / 1000) * 2 * M_PI * blinking_rate) + 0.625;
   bg.setRgbF(c.r, c.g, c.b, c.a*alpha);
-
-  repaint();
 }
 
 void OnroadAlerts::offroadTransition(bool offroad) {
@@ -117,29 +85,16 @@ void OnroadAlerts::updateAlert(const QString &text1, const QString &text2, float
     if (sound != AudibleAlert::NONE) {
       playSound(sound);
     }
-
-    if (size == cereal::ControlsState::AlertSize::SMALL) {
-      setFixedHeight(241);
-      title->setStyleSheet("font-size: 70px; font-weight: 500;");
-    } else if (size == cereal::ControlsState::AlertSize::MID) {
-      setFixedHeight(390);
-      msg->setStyleSheet("font-size: 65px; font-weight: 400;");
-      title->setStyleSheet("font-size: 80px; font-weight: 500;");
-    } else if (size == cereal::ControlsState::AlertSize::FULL) {
-      setFixedHeight(vwp_h);
-      int title_size = (title->text().size() > 15) ? 130 : 110;
-      title->setStyleSheet(QString("font-size: %1px; font-weight: 500;").arg(title_size));
-      msg->setStyleSheet("font-size: 90px; font-weight: 400;");
-    }
   }
 
+  title = text1;
+  msg = text2;
+  alert_size = size;
   alert_type = type;
   blinking_rate = blink_rate;
-  title->setText(text1);
-  msg->setText(text2);
-  msg->setVisible(!msg->text().isEmpty());
 
   setVisible(size != cereal::ControlsState::AlertSize::NONE);
+  repaint();
 }
 
 void OnroadAlerts::playSound(AudibleAlert alert) {
@@ -160,16 +115,51 @@ void OnroadAlerts::stopSounds() {
 
 void OnroadAlerts::paintEvent(QPaintEvent *event) {
   QPainter p(this);
-  p.setPen(Qt::NoPen);
 
+  // setup transparent widget
+  p.beginNativePainting();
+  glClearColor(0.0, 0.0, 0.0, 0.0);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  p.endNativePainting();
+
+  const int h = alert_sizes[alert_size];
+  const QRect r = QRect(0, height() - h, width(), h);
+
+  // draw background + gradient
+  p.setPen(Qt::NoPen);
   p.setBrush(QBrush(bg));
-  p.drawRect(rect());
+  p.drawRect(r);
 
   QLinearGradient g(0, 0, 0, height());
   g.setColorAt(0, QColor::fromRgbF(0, 0, 0, 0.05));
   g.setColorAt(1, QColor::fromRgbF(0, 0, 0, 0.35));
   p.setBrush(QBrush(g));
-  p.fillRect(rect(), g);
+  p.fillRect(r, g);
+
+  // text
+  const QPoint c = r.center();
+  p.setPen(QColor(0xff, 0xff, 0xff));
+  p.setRenderHint(QPainter::Antialiasing, true);
+  if (alert_size == cereal::ControlsState::AlertSize::SMALL) {
+    configFont(p, "Open Sans", 65, 600);
+    p.drawText(r, Qt::AlignCenter, title);
+  } else if (alert_size == cereal::ControlsState::AlertSize::MID) {
+    configFont(p, "Open Sans", 70, 500);
+    p.drawText(QRect(0, c.y() - 45, width(), 90), Qt::AlignHCenter, title);
+    configFont(p, "Open Sans", 60, 400);
+    p.drawText(QRect(0, c.y() + 75, width(), 90), Qt::AlignHCenter, msg);
+  } else if (alert_size == cereal::ControlsState::AlertSize::FULL) {
+    /*
+    nvgFontSize(s->vg, (longAlert1?72:96)*2.5);
+    nvgFontFace(s->vg, "sans-bold");
+    nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
+    nvgTextBox(s->vg, rect.x, rect.y+(longAlert1?360:420), rect.w-60, scene->alert_text1.c_str(), NULL);
+    nvgFontSize(s->vg, 48*2.5);
+    nvgFontFace(s->vg,  "sans-regular");
+    nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BOTTOM);
+    nvgTextBox(s->vg, rect.x, rect.h-(longAlert1?300:360), rect.w-60, scene->alert_text2.c_str(), NULL);
+    */
+  }
 }
 
 NvgWindow::~NvgWindow() {

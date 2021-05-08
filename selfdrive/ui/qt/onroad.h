@@ -7,13 +7,14 @@
 #include "cereal/gen/cpp/log.capnp.h"
 #include "selfdrive/hardware/hw.h"
 #include "selfdrive/ui/ui.h"
+#include "selfdrive/ui/qt/qt_window.h"
 
 
 typedef cereal::CarControl::HUDControl::AudibleAlert AudibleAlert;
 
 // ***** onroad widgets *****
 
-class OnroadAlerts : public QFrame {
+class OnroadAlerts : public QOpenGLWidget {
   Q_OBJECT
 
 public:
@@ -23,14 +24,17 @@ protected:
   void paintEvent(QPaintEvent*) override;
 
 private:
-  QColor bg;
-  QLabel *title, *msg;
-  QVBoxLayout *layout;
-
+  void stopSounds();
+  void playSound(AudibleAlert alert);
   void updateAlert(const QString &text1, const QString &text2, float blink_rate,
                    const std::string &type, cereal::ControlsState::AlertSize size, AudibleAlert sound);
 
-  // sounds
+  std::map<cereal::ControlsState::AlertSize, const int> alert_sizes = {
+    {cereal::ControlsState::AlertSize::NONE, 0},
+    {cereal::ControlsState::AlertSize::SMALL, 241},
+    {cereal::ControlsState::AlertSize::MID, 390},
+    {cereal::ControlsState::AlertSize::FULL, vwp_h},
+  };
   std::map<AudibleAlert, std::pair<QString, bool>> sound_map {
     // AudibleAlert, (file path, inf loop)
     {AudibleAlert::CHIME_DISENGAGE, {"../assets/sounds/disengaged.wav", false}},
@@ -42,13 +46,14 @@ private:
     {AudibleAlert::CHIME_ERROR, {"../assets/sounds/error.wav", false}},
     {AudibleAlert::CHIME_PROMPT, {"../assets/sounds/error.wav", false}}
   };
-  float volume = Hardware::MIN_VOLUME;
-  float blinking_rate = 0;
-  std::string alert_type;
-  std::map<AudibleAlert, QSoundEffect> sounds;
 
-  void playSound(AudibleAlert alert);
-  void stopSounds();
+  QColor bg;
+  float volume = Hardware::MIN_VOLUME;
+  std::map<AudibleAlert, QSoundEffect> sounds;
+  float blinking_rate = 0;
+  QString title, msg;
+  std::string alert_type;
+  cereal::ControlsState::AlertSize alert_size;
 
 public slots:
   void update(const UIState &s);
