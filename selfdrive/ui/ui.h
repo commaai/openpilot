@@ -123,19 +123,19 @@ public:
 
   SubMaster sm;
 
-  UIStatus status = {};
+  UIStatus status = STATUS_DISENGAGED;
   UIScene scene = {};
 
   // graphics
   std::unique_ptr<GLShader> gl_shader;
-  std::unique_ptr<EGLImageTexture> texture[UI_BUF_COUNT];
+  std::unique_ptr<EGLImageTexture> texture[UI_BUF_COUNT] = {};
 
   GLuint frame_vao[2] = {}, frame_vbo[2] = {}, frame_ibo[2] = {};
   mat4 rear_frame_mat = {}, front_frame_mat = {};
 
   bool awake = false;
 
-  Rect video_rect, viz_rect = {};
+  Rect video_rect = {}, viz_rect = {};
   float car_space_transform[6] = {};
   bool wide_camera = false;
   float zoom = 0.;
