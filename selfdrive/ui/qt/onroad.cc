@@ -37,21 +37,22 @@ OnroadAlerts::OnroadAlerts(QWidget *parent) : QWidget(parent) {
   }
 }
 
-void OnroadAlerts::updateState(const UIState &s) {
-  SubMaster &sm = *(s.sm);
+void OnroadAlerts::update(const UIState &s) {
+  const SubMaster &sm = s.sm;
   if (sm.updated("carState")) {
     // scale volume with speed
     volume = util::map_val(sm["carState"].getCarState().getVEgo(), 0.f, 20.f,
                            Hardware::MIN_VOLUME, Hardware::MAX_VOLUME);
   }
-  if (s.scene.deviceState.getStarted()) {
-    if (sm.updated("controlsState")) {
-      const cereal::ControlsState::Reader &cs = sm["controlsState"].getControlsState();
-      updateAlert(QString::fromStdString(cs.getAlertText1()), QString::fromStdString(cs.getAlertText2()),
-                  cs.getAlertBlinkingRate(), cs.getAlertType(), cs.getAlertSize(), cs.getAlertSound());
-    } else if ((sm.frame - s.scene.started_frame) > 10 * UI_FREQ) {
-      // Handle controls timeout
-      if (sm.rcv_frame("controlsState") < s.scene.started_frame) {
+  if (sm.updated("controlsState")) {
+    const cereal::ControlsState::Reader &cs = sm["controlsState"].getControlsState();
+    updateAlert(QString::fromStdString(cs.getAlertText1()), QString::fromStdString(cs.getAlertText2()),
+                cs.getAlertBlinkingRate(), cs.getAlertType(), cs.getAlertSize(), cs.getAlertSound());
+  } else {
+    // Handle controls timeout
+    if (s.sm["deviceState"].getDeviceState().getStarted() && (sm.frame - s.scene.started_frame) > 10 * UI_FREQ) {
+      const uint64_t cs_frame = sm.rcv_frame("controlsState");
+      if (cs_frame < s.scene.started_frame) {
         // car is started, but controlsState hasn't been seen at all
         updateAlert("openpilot Unavailable", "Waiting for controls to start", 0,
                     "controlsWaiting", cereal::ControlsState::AlertSize::MID, AudibleAlert::NONE);

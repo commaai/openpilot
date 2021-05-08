@@ -81,12 +81,7 @@ typedef struct UIScene {
 
   cereal::PandaState::PandaType pandaType;
 
-  cereal::DeviceState::Reader deviceState;
-  cereal::RadarState::LeadData::Reader lead_data[2];
-  cereal::CarState::Reader car_state;
-  cereal::ControlsState::Reader controls_state;
-  cereal::DriverState::Reader driver_state;
-  cereal::DriverMonitoringState::Reader dmonitoring_state;
+  bool is_dmonitoring_active;
 
   // gps
   int satelliteCount;
@@ -107,25 +102,29 @@ typedef struct UIScene {
   uint64_t started_frame;
 } UIScene;
 
-typedef struct UIState {
-  VisionIpcClient * vipc_client;
-  VisionIpcClient * vipc_client_front;
+class UIState {
+public:
+  UIState();
+  ~UIState();
+
+  VisionIpcClient * vipc_client = nullptr;
+  VisionIpcClient * vipc_client_front = nullptr;
   VisionIpcClient * vipc_client_rear;
-  VisionBuf * last_frame;
+  VisionBuf * last_frame = nullptr;
 
   // framebuffer
   int fb_w, fb_h;
 
   // NVG
-  NVGcontext *vg;
+  NVGcontext *vg = nullptr;
 
   // images
   std::map<std::string, int> images;
 
-  std::unique_ptr<SubMaster> sm;
+  SubMaster sm;
 
-  UIStatus status;
-  UIScene scene;
+  UIStatus status = {};
+  UIScene scene = {};
 
   // graphics
   std::unique_ptr<GLShader> gl_shader;
@@ -134,13 +133,13 @@ typedef struct UIState {
   GLuint frame_vao[2], frame_vbo[2], frame_ibo[2];
   mat4 rear_frame_mat, front_frame_mat;
 
-  bool awake;
+  bool awake = false;
 
-  Rect video_rect, viz_rect;
-  float car_space_transform[6];
-  bool wide_camera;
-  float zoom;
-} UIState;
+  Rect video_rect, viz_rect = {};
+  float car_space_transform[6] = {};
+  bool wide_camera = false;
+  float zoom = 0.;
+};
 
 
 class QUIState : public QObject {
@@ -150,7 +149,7 @@ public:
   QUIState(QObject* parent = 0);
 
   // TODO: get rid of this, only use signal
-  inline static UIState ui_state = {0};
+  inline static UIState ui_state;
 
 signals:
   void uiUpdate(const UIState &s);
