@@ -38,6 +38,7 @@ class TestValgrind(unittest.TestCase):
   def extract_leak_sizes(self, log):
     if "All heap blocks were freed -- no leaks are possible" in log:
       return (0,0,0)
+
     log = log.replace(",","")  # fixes casting to int issue with large leaks
     err_lost1 = log.split("definitely lost: ")[1]
     err_lost2 = log.split("indirectly lost: ")[1]
