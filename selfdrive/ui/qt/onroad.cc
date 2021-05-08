@@ -96,11 +96,11 @@ void OnroadAlerts::update(const UIState &s) {
     }
   }
 
-  if (isVisible()) {
-    auto c = bg_colors[s.status];
-    float alpha = 0.375 * cos((millis_since_boot() / 1000) * 2 * M_PI * blinking_rate) + 0.625;
-    bg.setRgb(c.r*255, c.g*255, c.b*255, c.a*alpha*255);
-  }
+  auto c = bg_colors[s.status];
+  float alpha = 0.375 * cos((millis_since_boot() / 1000) * 2 * M_PI * blinking_rate) + 0.625;
+  bg.setRgbF(c.r, c.g, c.b, c.a*alpha);
+
+  repaint();
 }
 
 void OnroadAlerts::offroadTransition(bool offroad) {
@@ -112,13 +112,25 @@ void OnroadAlerts::offroadTransition(bool offroad) {
 void OnroadAlerts::updateAlert(const QString &text1, const QString &text2, float blink_rate,
                                const std::string &type, cereal::ControlsState::AlertSize size, AudibleAlert sound) {
 
-  if (alert_type.compare(type) == 0) {
-    return;
-  }
+  if (alert_type.compare(type) != 0) {
+    stopSounds();
+    if (sound != AudibleAlert::NONE) {
+      playSound(sound);
+    }
 
-  stopSounds();
-  if (sound != AudibleAlert::NONE) {
-    playSound(sound);
+    if (size == cereal::ControlsState::AlertSize::SMALL) {
+      setFixedHeight(241);
+      title->setStyleSheet("font-size: 70px; font-weight: 500;");
+    } else if (size == cereal::ControlsState::AlertSize::MID) {
+      setFixedHeight(390);
+      msg->setStyleSheet("font-size: 65px; font-weight: 400;");
+      title->setStyleSheet("font-size: 80px; font-weight: 500;");
+    } else if (size == cereal::ControlsState::AlertSize::FULL) {
+      setFixedHeight(vwp_h);
+      int title_size = (title->text().size() > 15) ? 130 : 110;
+      title->setStyleSheet(QString("font-size: %1px; font-weight: 500;").arg(title_size));
+      msg->setStyleSheet("font-size: 90px; font-weight: 400;");
+    }
   }
 
   alert_type = type;
@@ -127,22 +139,7 @@ void OnroadAlerts::updateAlert(const QString &text1, const QString &text2, float
   msg->setText(text2);
   msg->setVisible(!msg->text().isEmpty());
 
-  if (size == cereal::ControlsState::AlertSize::SMALL) {
-    setFixedHeight(241);
-    title->setStyleSheet("font-size: 70px; font-weight: 500;");
-  } else if (size == cereal::ControlsState::AlertSize::MID) {
-    setFixedHeight(390);
-    msg->setStyleSheet("font-size: 65px; font-weight: 400;");
-    title->setStyleSheet("font-size: 80px; font-weight: 500;");
-  } else if (size == cereal::ControlsState::AlertSize::FULL) {
-    setFixedHeight(vwp_h);
-    int title_size = (title->text().size() > 15) ? 130 : 110;
-    title->setStyleSheet(QString("font-size: %1px; font-weight: 500;").arg(title_size));
-    msg->setStyleSheet("font-size: 90px; font-weight: 400;");
-  }
-
   setVisible(size != cereal::ControlsState::AlertSize::NONE);
-  repaint();
 }
 
 void OnroadAlerts::playSound(AudibleAlert alert) {
@@ -163,9 +160,16 @@ void OnroadAlerts::stopSounds() {
 
 void OnroadAlerts::paintEvent(QPaintEvent *event) {
   QPainter p(this);
-  p.setBrush(QBrush(bg));
   p.setPen(Qt::NoPen);
+
+  p.setBrush(QBrush(bg));
   p.drawRect(rect());
+
+  QLinearGradient g(0, 0, 0, height());
+  g.setColorAt(0, QColor::fromRgbF(0, 0, 0, 0.05));
+  g.setColorAt(1, QColor::fromRgbF(0, 0, 0, 0.35));
+  p.setBrush(QBrush(g));
+  p.fillRect(rect(), g);
 }
 
 NvgWindow::~NvgWindow() {
