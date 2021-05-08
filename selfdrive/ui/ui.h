@@ -147,9 +147,7 @@ class QUIState : public QObject {
 
 public:
   QUIState(QObject* parent = 0);
-
-  // TODO: get rid of this, only use signal
-  inline static UIState ui_state;
+  inline static UIState *uiState() { return ui_; }
 
 signals:
   void uiUpdate(const UIState &s);
@@ -161,6 +159,9 @@ private slots:
 private:
   QTimer *timer;
   bool started_prev = true;
+  // TODO: get rid of this, only use signal
+  UIState ui_state;
+  inline static UIState *ui_ = nullptr;
 };
 
 

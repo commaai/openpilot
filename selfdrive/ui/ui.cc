@@ -267,6 +267,13 @@ UIState::UIState()
 #endif
           "modelV2", "controlsState", "liveCalibration", "radarState", "deviceState", "liveLocationKalman",
           "pandaState", "carParams", "driverState", "driverMonitoringState", "sensorEvents", "carState", "ubloxGnss"}) {
+  fb_w = vwp_w;
+  fb_h = vwp_h;
+  wide_camera = Hardware::TICI() ? Params().getBool("EnableWideCamera") : false;
+
+  vipc_client_rear = new VisionIpcClient("camerad", wide_camera ? VISION_STREAM_RGB_WIDE : VISION_STREAM_RGB_BACK, true);
+  vipc_client_front = new VisionIpcClient("camerad", VISION_STREAM_RGB_FRONT, true);
+  vipc_client = vipc_client_rear;
 }
 
 UIState::~UIState() {
@@ -274,16 +281,8 @@ UIState::~UIState() {
   delete vipc_client_front;
 }
 
-QUIState::QUIState(QObject *parent) : QObject(parent){
-  ui_state.fb_w = vwp_w;
-  ui_state.fb_h = vwp_h;
-  ui_state.scene.started = false;
-  ui_state.last_frame = nullptr;
-  ui_state.wide_camera = Hardware::TICI() ? Params().getBool("EnableWideCamera") : false;
-
-  ui_state.vipc_client_rear = new VisionIpcClient("camerad", ui_state.wide_camera ? VISION_STREAM_RGB_WIDE : VISION_STREAM_RGB_BACK, true);
-  ui_state.vipc_client_front = new VisionIpcClient("camerad", VISION_STREAM_RGB_FRONT, true);
-  ui_state.vipc_client = ui_state.vipc_client_rear;
+QUIState::QUIState(QObject *parent) : QObject(parent) {
+  ui_ = &ui_state;
 
   // update timer
   timer = new QTimer(this);
@@ -321,7 +320,7 @@ void Device::update(const UIState &s) {
   updateWakefulness(s);
 
   // TODO: remove from UIState and use signals
-  QUIState::ui_state.awake = awake;
+  QUIState::uiState()->awake = awake;
 }
 
 void Device::setAwake(bool on, bool reset) {

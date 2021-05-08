@@ -62,7 +62,7 @@ void OnroadAlerts::update(const UIState &s) {
                     "controlsUnresponsive", cereal::ControlsState::AlertSize::FULL, AudibleAlert::CHIME_WARNING_REPEAT);
 
         // TODO: clean this up once Qt handles the border
-        QUIState::ui_state.status = STATUS_ALERT;
+        QUIState::uiState()->status = STATUS_ALERT;
       }
     }
   }
@@ -182,7 +182,7 @@ void NvgWindow::initializeGL() {
   std::cout << "OpenGL renderer: " << glGetString(GL_RENDERER) << std::endl;
   std::cout << "OpenGL language version: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
 
-  ui_nvg_init(&QUIState::ui_state);
+  ui_nvg_init(QUIState::uiState());
   prev_draw_t = millis_since_boot();
 }
 
@@ -195,11 +195,11 @@ void NvgWindow::update(const UIState &s) {
 }
 
 void NvgWindow::paintGL() {
-  ui_draw(&QUIState::ui_state, width(), height());
+  ui_draw(QUIState::uiState(), width(), height());
 
   double cur_draw_t = millis_since_boot();
   double dt = cur_draw_t - prev_draw_t;
-  if (dt > 66 && !QUIState::ui_state.scene.driver_view) {
+  if (dt > 66 && !QUIState::uiState()->scene.driver_view) {
     // warn on sub 15fps
     LOGW("slow frame time: %.2f", dt);
   }
