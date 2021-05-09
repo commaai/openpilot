@@ -36,6 +36,9 @@ CONFIGS = [
 
 class TestValgrind(unittest.TestCase):
   def extract_leak_sizes(self, log):
+    if "All heap blocks were freed -- no leaks are possible" in log:
+      return (0,0,0)
+
     log = log.replace(",","")  # fixes casting to int issue with large leaks
     err_lost1 = log.split("definitely lost: ")[1]
     err_lost2 = log.split("indirectly lost: ")[1]
@@ -89,7 +92,7 @@ class TestValgrind(unittest.TestCase):
     self.done = True
 
   def test_config(self):
-    open(os.path.join(BASEDIR, "selfdrive/test/valgrind_logs.txt"), "w")
+    open(os.path.join(BASEDIR, "selfdrive/test/valgrind_logs.txt"), "w").close()
 
     for cfg in CONFIGS:
       self.done = False
