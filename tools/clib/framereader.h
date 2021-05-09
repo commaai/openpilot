@@ -9,7 +9,7 @@
 #include <list>
 #include <condition_variable>
 
-#include "channel.h"
+#include "tools/clib/channel.h"
 
 // independent of QT, needs ffmpeg
 extern "C" {

@@ -1,16 +1,18 @@
 #include <stdio.h>
 #include <stdlib.h>
+
 #include <mutex>
+
 #include <eigen3/Eigen/Dense>
 
-#include "visionipc_client.h"
-#include "common/swaglog.h"
-#include "common/clutil.h"
-#include "common/util.h"
-#include "common/params.h"
+#include "cereal/messaging/messaging.h"
+#include "cereal/visionipc/visionipc_client.h"
+#include "selfdrive/common/clutil.h"
+#include "selfdrive/common/params.h"
+#include "selfdrive/common/swaglog.h"
+#include "selfdrive/common/util.h"
 #include "selfdrive/hardware/hw.h"
-#include "models/driving.h"
-#include "messaging.h"
+#include "selfdrive/modeld/models/driving.h"
 
 ExitHandler do_exit;
 // globals

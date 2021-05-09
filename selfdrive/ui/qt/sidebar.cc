@@ -1,6 +1,7 @@
-#include "common/util.h"
-#include "sidebar.h"
-#include "qt_window.h"
+#include "selfdrive/ui/qt/sidebar.h"
+
+#include "selfdrive/ui/qt/qt_window.h"
+#include "selfdrive/common/util.h"
 #include "selfdrive/hardware/hw.h"
 
 void configFont(QPainter &p, QString family, int size, int weight) {

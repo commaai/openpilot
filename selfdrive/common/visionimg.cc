@@ -1,11 +1,12 @@
+#include "selfdrive/common/visionimg.h"
+
 #include <cassert>
-#include "common/visionimg.h"
 
 #ifdef QCOM
+#include <gralloc_priv.h>
 #include <system/graphics.h>
 #include <ui/GraphicBuffer.h>
 #include <ui/PixelFormat.h>
-#include <gralloc_priv.h>
 #define GL_GLEXT_PROTOTYPES
 #include <GLES2/gl2ext.h>
 using namespace android;

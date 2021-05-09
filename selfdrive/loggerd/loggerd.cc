@@ -1,41 +1,40 @@
-#include <cstdio>
-#include <cstdlib>
-#include <cstdint>
-#include <cassert>
-#include <unistd.h>
 #include <errno.h>
-#include <string.h>
+#include <ftw.h>
 #include <inttypes.h>
 #include <pthread.h>
+#include <string.h>
 #include <sys/resource.h>
+#include <unistd.h>
 
+#include <atomic>
+#include <cassert>
+#include <condition_variable>
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
+#include <mutex>
+#include <random>
 #include <string>
 #include <thread>
-#include <mutex>
-#include <condition_variable>
-#include <atomic>
-#include <random>
 
-#include <ftw.h>
-
-#include "common/timing.h"
-#include "common/params.h"
-#include "common/swaglog.h"
-#include "common/util.h"
-#include "camerad/cameras/camera_common.h"
-#include "logger.h"
-#include "messaging.h"
-#include "services.h"
+#include "cereal/messaging/messaging.h"
+#include "cereal/services.h"
+#include "cereal/visionipc/visionipc.h"
+#include "cereal/visionipc/visionipc_client.h"
+#include "selfdrive/camerad/cameras/camera_common.h"
+#include "selfdrive/common/params.h"
+#include "selfdrive/common/swaglog.h"
+#include "selfdrive/common/timing.h"
+#include "selfdrive/common/util.h"
 #include "selfdrive/hardware/hw.h"
-#include "visionipc.h"
-#include "visionipc_client.h"
 
-#include "encoder.h"
+#include "selfdrive/loggerd/encoder.h"
+#include "selfdrive/loggerd/logger.h"
 #if defined(QCOM) || defined(QCOM2)
-#include "omx_encoder.h"
+#include "selfdrive/loggerd/omx_encoder.h"
 #define Encoder OmxEncoder
 #else
-#include "raw_logger.h"
+#include "selfdrive/loggerd/raw_logger.h"
 #define Encoder RawLogger
 #endif
 

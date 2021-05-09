@@ -1,7 +1,8 @@
+#include "input.h"
+
 #include <QPushButton>
 
-#include "input.h"
-#include "qt_window.h"
+#include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/hardware/hw.h"
 
 InputDialog::InputDialog(const QString &prompt_text, QWidget *parent) : QDialog(parent) {

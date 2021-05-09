@@ -1,7 +1,7 @@
 #pragma once
 
-#include <QScroller>
 #include <QScrollArea>
+#include <QScroller>
 
 class ScrollView : public QScrollArea {
   Q_OBJECT

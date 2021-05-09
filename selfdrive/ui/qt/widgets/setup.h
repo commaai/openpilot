@@ -5,7 +5,7 @@
 #include <QVBoxLayout>
 #include <QWidget>
 
-#include "api.h"
+#include "selfdrive/ui/qt/api.h"
 
 class PairingQRWidget : public QWidget {
   Q_OBJECT

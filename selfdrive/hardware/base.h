@@ -3,7 +3,6 @@
 #include <cstdlib>
 #include <fstream>
 
-
 // no-op base hw class
 class HardwareNone {
 public:

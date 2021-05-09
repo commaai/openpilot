@@ -1,32 +1,31 @@
-#include <stdio.h>
-#include <stdbool.h>
+#include "selfdrive/camerad/cameras/camera_qcom.h"
+
 #include <assert.h>
-#include <unistd.h>
 #include <fcntl.h>
 #include <math.h>
 #include <poll.h>
+#include <pthread.h>
+#include <stdbool.h>
+#include <stdio.h>
 #include <sys/ioctl.h>
-#include <atomic>
-#include <algorithm>
+#include <unistd.h>
 
-#include <linux/media.h>
+#include <algorithm>
+#include <atomic>
 
 #include <cutils/properties.h>
+#include <linux/media.h>
 
-#include <pthread.h>
-#include "msmb_isp.h"
-#include "msmb_ispif.h"
-#include "msmb_camera.h"
-#include "msm_cam_sensor.h"
-
-#include "common/util.h"
-#include "common/timing.h"
-#include "common/swaglog.h"
-#include "common/params.h"
-#include "clutil.h"
-
-#include "sensor_i2c.h"
-#include "camera_qcom.h"
+#include "selfdrive/camerad/cameras/sensor_i2c.h"
+#include "selfdrive/camerad/include/msm_cam_sensor.h"
+#include "selfdrive/camerad/include/msmb_camera.h"
+#include "selfdrive/camerad/include/msmb_isp.h"
+#include "selfdrive/camerad/include/msmb_ispif.h"
+#include "selfdrive/common/clutil.h"
+#include "selfdrive/common/params.h"
+#include "selfdrive/common/swaglog.h"
+#include "selfdrive/common/timing.h"
+#include "selfdrive/common/util.h"
 
 // leeco actuator (DW9800W H-Bridge Driver IC)
 // from sniff
