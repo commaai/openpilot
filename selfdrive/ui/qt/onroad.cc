@@ -151,19 +151,19 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
   p.setPen(QColor(0xff, 0xff, 0xff));
   p.setRenderHint(QPainter::Antialiasing);
   if (alert_size == cereal::ControlsState::AlertSize::SMALL) {
-    configFont(p, "Open Sans SemiBold", 74, 400);
+    configFont(p, "Open Sans", 74, "SemiBold");
     p.drawText(r, Qt::AlignCenter, text1);
   } else if (alert_size == cereal::ControlsState::AlertSize::MID) {
-    configFont(p, "Open Sans", 88, 600);
+    configFont(p, "Open Sans", 88, "Bold");
     p.drawText(QRect(0, c.y() - 125, width(), 110), Qt::AlignHCenter | Qt::AlignTop, text1);
-    configFont(p, "Open Sans", 66, 400);
+    configFont(p, "Open Sans", 66, "Regular");
     p.drawText(QRect(0, c.y() + 21, width(), 90), Qt::AlignHCenter, text2);
   } else if (alert_size == cereal::ControlsState::AlertSize::FULL) {
     // TODO: offset from center to match old NVG UI, but why was it this way?
     bool l = text1.length() > 15;
-    configFont(p, "Open Sans", l ? 132 : 177, 600);
+    configFont(p, "Open Sans", l ? 132 : 177, "Bold");
     p.drawText(QRect(0, r.y() + (l ? 240 : 270), width() - 60, 350), Qt::AlignHCenter | Qt::TextWordWrap, text1);
-    configFont(p, "Open Sans", 88, 400);
+    configFont(p, "Open Sans", 88, "Regular");
     p.drawText(QRect(0, r.height() - (l ? 361 : 420), width() - 60, 300), Qt::AlignHCenter | Qt::TextWordWrap, text2);
   }
 }

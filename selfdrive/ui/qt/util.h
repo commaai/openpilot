@@ -2,9 +2,9 @@
 
 #include <QtWidgets>
 
-inline void configFont(QPainter &p, QString family, int size, int weight) {
+inline void configFont(QPainter &p, QString family, int size, const QString &style) {
   QFont f(family);
   f.setPixelSize(size);
-  f.setWeight(weight);
+  f.setStyleName(style);
   p.setFont(f);
 }
