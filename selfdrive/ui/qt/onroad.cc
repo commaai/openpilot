@@ -16,7 +16,7 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   QObject::connect(this, &OnroadWindow::update, nvg, &NvgWindow::update);
 
   alerts = new OnroadAlerts(this);
-  QObject::connect(this, &OnroadWindow::update, alerts, &OnroadAlerts::update);
+  QObject::connect(this, &OnroadWindow::update, alerts, &OnroadAlerts::updateState);
   QObject::connect(this, &OnroadWindow::offroadTransition, alerts, &OnroadAlerts::offroadTransition);
   layout->addWidget(alerts);
 
@@ -40,7 +40,7 @@ OnroadAlerts::OnroadAlerts(QWidget *parent) : QOpenGLWidget(parent) {
   }
 }
 
-void OnroadAlerts::update(const UIState &s) {
+void OnroadAlerts::updateState(const UIState &s) {
   SubMaster &sm = *(s.sm);
   if (sm.updated("carState")) {
     // scale volume with speed
@@ -77,7 +77,6 @@ void OnroadAlerts::update(const UIState &s) {
 
 void OnroadAlerts::offroadTransition(bool offroad) {
   stopSounds();
-  setVisible(false);
   alert_type = "";
 }
 
@@ -97,8 +96,7 @@ void OnroadAlerts::updateAlert(const QString &t1, const QString &t2, float blink
   alert_type = type;
   blinking_rate = blink_rate;
 
-  setVisible(size != cereal::ControlsState::AlertSize::NONE);
-  repaint();
+  update();
 }
 
 void OnroadAlerts::playSound(AudibleAlert alert) {
@@ -159,7 +157,7 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
     p.drawText(r, Qt::AlignCenter, text1);
   } else if (alert_size == cereal::ControlsState::AlertSize::MID) {
     configFont(p, "Open Sans", 88, "Bold");
-    p.drawText(QRect(0, c.y() - 125, width(), 110), Qt::AlignHCenter | Qt::AlignTop, text1);
+    p.drawText(QRect(0, c.y() - 125, width(), 150), Qt::AlignHCenter | Qt::AlignTop, text1);
     configFont(p, "Open Sans", 66, "Regular");
     p.drawText(QRect(0, c.y() + 21, width(), 90), Qt::AlignHCenter, text2);
   } else if (alert_size == cereal::ControlsState::AlertSize::FULL) {

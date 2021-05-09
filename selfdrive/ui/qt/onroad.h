@@ -56,7 +56,7 @@ private:
   cereal::ControlsState::AlertSize alert_size;
 
 public slots:
-  void update(const UIState &s);
+  void updateState(const UIState &s);
   void offroadTransition(bool offroad);
 };
 
