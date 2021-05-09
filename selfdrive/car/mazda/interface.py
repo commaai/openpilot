@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from cereal import car
 from selfdrive.config import Conversions as CV
-from selfdrive.car.mazda.values import CAR, LKAS_LIMITS
+from selfdrive.car.mazda.values import CAR, LKAS_LIMITS, STEER_LOCK_CAR
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
 from selfdrive.car.interfaces import CarInterfaceBase
 
@@ -21,7 +21,7 @@ class CarInterface(CarInterfaceBase):
     ret.carName = "mazda"
     ret.safetyModel = car.CarParams.SafetyModel.mazda
 
-    ret.dashcamOnly = True
+    ret.dashcamOnly = candidate in STEER_LOCK_CAR
 
     ret.radarOffCan = True
 
@@ -37,7 +37,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.19], [0.019]]
       ret.lateralTuning.pid.kf = 0.00006
-    elif candidate == CAR.CX9:
+    elif candidate in [CAR.CX9, CAR.CX9_2021]:
       ret.mass = 4217 * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 3.1
       ret.steerRatio = 17.6
