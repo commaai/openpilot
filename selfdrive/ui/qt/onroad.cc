@@ -154,16 +154,16 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
     configFont(p, "Open Sans SemiBold", 74, 400);
     p.drawText(r, Qt::AlignCenter, text1);
   } else if (alert_size == cereal::ControlsState::AlertSize::MID) {
-    configFont(p, "Open Sans", 88, 600); // TODO: bold
+    configFont(p, "Open Sans", 88, 600);
     p.drawText(QRect(0, c.y() - 125, width(), 110), Qt::AlignHCenter | Qt::AlignTop, text1);
-    configFont(p, "Open Sans", 64, 400);
+    configFont(p, "Open Sans", 66, 400);
     p.drawText(QRect(0, c.y() + 21, width(), 90), Qt::AlignHCenter, text2);
   } else if (alert_size == cereal::ControlsState::AlertSize::FULL) {
     bool l = text1.length() > 15;
-    configFont(p, "Open Sans", l ? 72 : 96, 700);
-    p.drawText(QRect(0, c.y() + (l ? 360 : 420), width(), 90), Qt::AlignHCenter, text1);
-    configFont(p, "Open Sans", 60, 400);
-    p.drawText(QRect(0, r.height() - (l ? 300 : 360), width(), 90), Qt::AlignHCenter, text2);
+    configFont(p, "Open Sans", l ? 72 : 177, 600);
+    p.drawText(QRect(0, r.y() + (l ? 360 : 270), width(), 350), Qt::AlignHCenter, text1);
+    configFont(p, "Open Sans", 88, 400);
+    p.drawText(QRect(0, r.height() - (l ? 300 : 423), width(), 300), Qt::AlignHCenter, text2);
   }
 }
 
