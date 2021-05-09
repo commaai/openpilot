@@ -1,28 +1,25 @@
-
-#include "selfdrive/camerad/cameras/camera_qcom2.h"
-
-#include <assert.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <math.h>
-#include <poll.h>
 #include <stdio.h>
 #include <string.h>
+#include <errno.h>
+#include <unistd.h>
+#include <assert.h>
+#include <fcntl.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
-#include <unistd.h>
-
+#include <poll.h>
+#include <math.h>
 #include <atomic>
 
-#include "selfdrive/camerad/cameras/sensor2_i2c.h"
-#include "selfdrive/camerad/include/media/cam_defs.h"
-#include "selfdrive/camerad/include/media/cam_isp.h"
-#include "selfdrive/camerad/include/media/cam_isp_ife.h"
-#include "selfdrive/camerad/include/media/cam_sensor.h"
-#include "selfdrive/camerad/include/media/cam_sensor_cmn_header.h"
-#include "selfdrive/camerad/include/media/cam_sync.h"
+#include "media/cam_defs.h"
+#include "media/cam_isp.h"
+#include "media/cam_isp_ife.h"
+#include "media/cam_sensor_cmn_header.h"
+#include "media/cam_sensor.h"
+#include "media/cam_sync.h"
+#include "sensor2_i2c.h"
+
 #include "selfdrive/common/swaglog.h"
-#include "selfdrive/common/util.h"
+#include "selfdrive/camerad/cameras/camera_qcom2.h"
 
 #define FRAME_WIDTH  1928
 #define FRAME_HEIGHT 1208

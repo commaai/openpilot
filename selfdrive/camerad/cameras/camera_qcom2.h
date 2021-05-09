@@ -1,11 +1,12 @@
 #pragma once
 
-#include <pthread.h>
-#include <stdbool.h>
 #include <stdint.h>
+#include <stdbool.h>
+#include <pthread.h>
+
+#include <media/cam_req_mgr.h>
 
 #include "selfdrive/camerad/cameras/camera_common.h"
-#include "selfdrive/camerad/include/media/cam_req_mgr.h"
 #include "selfdrive/common/util.h"
 
 #define FRAME_BUF_COUNT 4
@@ -21,7 +22,7 @@
 typedef struct CameraState {
   MultiCameraState *multi_cam_state;
   CameraInfo ci;
-  
+
   std::mutex exp_lock;
   float analog_gain_frac;
   uint16_t analog_gain;

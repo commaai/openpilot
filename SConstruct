@@ -83,6 +83,9 @@ if arch == "aarch64" or arch == "larch64":
       "#phonelibs/libyuv/larch64/lib",
       "/usr/lib/aarch64-linux-gnu"
     ]
+    cpppath += [
+      "#selfdrive/camerad/include",
+    ]
     cflags = ["-DQCOM2", "-mcpu=cortex-a57"]
     cxxflags = ["-DQCOM2", "-mcpu=cortex-a57"]
     rpath = ["/usr/local/lib"]
