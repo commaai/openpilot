@@ -219,14 +219,8 @@ static void update_state(UIState *s) {
 static void update_params(UIState *s) {
   const uint64_t frame = s->sm->frame;
   UIScene &scene = s->scene;
-  Params params;
   if (frame % (5*UI_FREQ) == 0) {
-    scene.is_metric = params.getBool("IsMetric");
-  } else if (frame % (6*UI_FREQ) == 0) {
-    scene.athenaStatus = NET_DISCONNECTED;
-    if (auto last_ping = params.get<float>("LastAthenaPingTime"); last_ping) {
-      scene.athenaStatus = nanos_since_boot() - *last_ping < 70e9 ? NET_CONNECTED : NET_ERROR;
-    }
+    scene.is_metric = Params().getBool("IsMetric");
   }
 }
 
