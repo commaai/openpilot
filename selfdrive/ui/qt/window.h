@@ -1,12 +1,12 @@
 #pragma once
 
-#include <QWidget>
 #include <QStackedLayout>
+#include <QWidget>
 
-#include "offroad/settings.h"
-#include "offroad/onboarding.h"
-#include "home.h"
-#include "../ui.h"
+#include "selfdrive/ui/qt/home.h"
+#include "selfdrive/ui/qt/offroad/onboarding.h"
+#include "selfdrive/ui/qt/offroad/settings.h"
+#include "selfdrive/ui/ui.h"
 
 class MainWindow : public QWidget {
   Q_OBJECT

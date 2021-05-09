@@ -1,13 +1,17 @@
 #pragma once
 
-#include <stdio.h>
-#include <stdint.h>
 #include <pthread.h>
+#include <stdint.h>
+#include <stdio.h>
+
 #include <memory>
+
 #include <bzlib.h>
-#include <kj/array.h>
 #include <capnp/serialize.h>
-#include "common/util.h"
+#include <kj/array.h>
+
+#include "selfdrive/common/util.h"
+#include "selfdrive/common/swaglog.h"
 #include "selfdrive/hardware/hw.h"
 
 const std::string LOG_ROOT =

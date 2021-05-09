@@ -1,21 +1,22 @@
 #pragma once
 
-#include <fstream>
-#include <string>
-#include <memory>
-
 #include <eigen3/Eigen/Dense>
+#include <fstream>
+#include <memory>
+#include <string>
 
-#include "messaging.h"
-#include "common/params.h"
-#include "common/util.h"
-#include "common/swaglog.h"
-#include "common/timing.h"
+#include "cereal/messaging/messaging.h"
 #include "common/transformations/coordinates.hpp"
 #include "common/transformations/orientation.hpp"
-#include "selfdrive/sensord/sensors/constants.h"
+#include "selfdrive/common/params.h"
+#include "selfdrive/common/swaglog.h"
+#include "selfdrive/common/timing.h"
+#include "selfdrive/common/util.h"
 
-#include "models/live_kf.h"
+#include "selfdrive/sensord/sensors/constants.h"
+#define VISION_DECIMATION 2
+#define SENSOR_DECIMATION 10
+#include "selfdrive/locationd/models/live_kf.h"
 
 #define POSENET_STD_HIST_HALF 20
 

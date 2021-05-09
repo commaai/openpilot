@@ -1,7 +1,8 @@
-#include "FileReader.h"
-#include "FrameReader.h"
+#include "selfdrive/ui/replay/filereader.h"
 
 #include <QtNetwork>
+
+#include "tools/clib/framereader.h"
 
 FileReader::FileReader(const QString& file_) : file(file_) {
 }

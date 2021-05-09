@@ -1,7 +1,8 @@
-#include <errno.h>
-#include <sstream>
+#include "selfdrive/common/util.h"
 
-#include "common/util.h"
+#include <errno.h>
+
+#include <sstream>
 
 #ifdef __linux__
 #include <sys/prctl.h>
@@ -10,7 +11,7 @@
 #define __USE_GNU
 #endif
 #include <sched.h>
-#endif // __linux__
+#endif  // __linux__
 
 void set_thread_name(const char* name) {
 #ifdef __linux__

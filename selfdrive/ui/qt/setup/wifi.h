@@ -1,7 +1,7 @@
-#include <QString>
-#include <QWidget>
 #include <QLineEdit>
 #include <QPushButton>
+#include <QString>
+#include <QWidget>
 
 class WifiSetup : public QWidget {
   Q_OBJECT

@@ -1,25 +1,24 @@
-#include <stdio.h>
+#include <assert.h>
+#include <cutils/log.h>
+#include <hardware/sensors.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
-#include <assert.h>
-#include <sys/time.h>
 #include <sys/cdefs.h>
-#include <sys/types.h>
 #include <sys/resource.h>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <utils/Timers.h>
 
 #include <map>
 #include <set>
 
-#include <cutils/log.h>
-#include <hardware/sensors.h>
-#include <utils/Timers.h>
-
-#include "messaging.h"
-#include "common/timing.h"
-#include "common/util.h"
-#include "common/swaglog.h"
+#include "cereal/messaging/messaging.h"
+#include "selfdrive/common/swaglog.h"
+#include "selfdrive/common/timing.h"
+#include "selfdrive/common/util.h"
 
 // ACCELEROMETER_UNCALIBRATED is only in Android O
 // https://developer.android.com/reference/android/hardware/Sensor.html#STRING_TYPE_ACCELEROMETER_UNCALIBRATED

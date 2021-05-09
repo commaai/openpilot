@@ -1,12 +1,12 @@
 #include <array>
 
 #include <QLabel>
-#include <QWidget>
+#include <QOpenGLWidget>
 #include <QPixmap>
 #include <QProgressBar>
 #include <QSocketNotifier>
 #include <QVariantAnimation>
-#include <QOpenGLWidget>
+#include <QWidget>
 
 constexpr int spinner_fps = 30;
 constexpr QSize spinner_size = QSize(360, 360);

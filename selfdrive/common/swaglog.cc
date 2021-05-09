@@ -2,22 +2,22 @@
 #define _GNU_SOURCE
 #endif
 
-#include <string>
-#include <string.h>
-#include <assert.h>
-
-#include <mutex>
-#include <zmq.h>
-
-#include "json11.hpp"
-
-#include "common/util.h"
-#include "common/version.h"
-#include "selfdrive/hardware/hw.h"
 #include "swaglog.h"
 
+#include <assert.h>
+#include <string.h>
+#include <mutex>
+#include <string>
+
+#include <zmq.h>
+#include "json11.hpp"
+
+#include "selfdrive/common/util.h"
+#include "selfdrive/common/version.h"
+#include "selfdrive/hardware/hw.h"
+
 class LogState {
-public:
+ public:
   LogState() = default;
   ~LogState();
   std::mutex lock;

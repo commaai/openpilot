@@ -1,20 +1,19 @@
 #pragma once
 
 #include <QFile>
-#include <QQueue>
 #include <QJsonArray>
-#include <QJsonObject>
 #include <QJsonDocument>
+#include <QJsonObject>
+#include <QQueue>
 
 #include <capnp/dynamic.h>
 
-#include "qt/api.h"
-#include "Unlogger.h"
-#include "FileReader.h"
-#include "FrameReader.h"
-#include "visionipc_server.h"
-
-#include "common/util.h"
+#include "cereal/visionipc/visionipc_server.h"
+#include "selfdrive/common/util.h"
+#include "selfdrive/ui/qt/api.h"
+#include "selfdrive/ui/replay/filereader.h"
+#include "selfdrive/ui/replay/unlogger.h"
+#include "tools/clib/framereader.h"
 
 class Replay : public QObject {
   Q_OBJECT

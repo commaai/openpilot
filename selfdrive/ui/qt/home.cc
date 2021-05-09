@@ -1,16 +1,16 @@
+#include "selfdrive/ui/qt/home.h"
+
 #include <QDateTime>
 #include <QHBoxLayout>
 #include <QMouseEvent>
 #include <QVBoxLayout>
 
-#include "common/util.h"
-#include "common/params.h"
-#include "common/timing.h"
-#include "common/swaglog.h"
-
-#include "home.h"
-#include "widgets/drive_stats.h"
-#include "widgets/setup.h"
+#include "selfdrive/common/params.h"
+#include "selfdrive/common/swaglog.h"
+#include "selfdrive/common/timing.h"
+#include "selfdrive/common/util.h"
+#include "selfdrive/ui/qt/widgets/drive_stats.h"
+#include "selfdrive/ui/qt/widgets/setup.h"
 
 // HomeWindow: the container for the offroad and onroad UIs
 

@@ -1,12 +1,13 @@
 #pragma once
 
-#include <QThread>
 #include <QReadWriteLock>
-#include "clutil.h"
-#include "messaging.h"
-#include "FileReader.h"
-#include "FrameReader.h"
-#include "visionipc_server.h"
+#include <QThread>
+
+#include "cereal/messaging/messaging.h"
+#include "cereal/visionipc/visionipc_server.h"
+#include "selfdrive/common/clutil.h"
+#include "selfdrive/ui/replay/filereader.h"
+#include "tools/clib/framereader.h"
 
 class Unlogger : public QObject {
 Q_OBJECT

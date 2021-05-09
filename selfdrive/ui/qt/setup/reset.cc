@@ -1,15 +1,14 @@
-#include <QLabel>
-#include <QWidget>
-#include <QPushButton>
-#include <QHBoxLayout>
-#include <QVBoxLayout>
 #include <QApplication>
+#include <QHBoxLayout>
+#include <QLabel>
+#include <QPushButton>
+#include <QVBoxLayout>
+#include <QWidget>
 
-#include "qt_window.h"
+#include "selfdrive/ui/qt/qt_window.h"
 
 #define USERDATA "/dev/disk/by-partlabel/userdata"
 #define NVME "/dev/nvme0n1"
-
 
 bool do_reset() {
   std::vector<const char*> cmds = {
