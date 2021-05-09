@@ -1,7 +1,6 @@
 #include <assert.h>
-#include "messaging.h"
-#include "selfcommon/util.h"
-#include "common/swaglog.h"
+
+#include <kaitai/kaitaistream.h>
 
 #include "cereal/messaging/messaging.h"
 #include "selfdrive/common/swaglog.h"
