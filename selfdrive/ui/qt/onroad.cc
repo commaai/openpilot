@@ -159,11 +159,12 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
     configFont(p, "Open Sans", 66, 400);
     p.drawText(QRect(0, c.y() + 21, width(), 90), Qt::AlignHCenter, text2);
   } else if (alert_size == cereal::ControlsState::AlertSize::FULL) {
+    // TODO: offset from center to match old NVG UI, but why was it this way?
     bool l = text1.length() > 15;
-    configFont(p, "Open Sans", l ? 72 : 177, 600);
-    p.drawText(QRect(0, r.y() + (l ? 360 : 270), width(), 350), Qt::AlignHCenter, text1);
+    configFont(p, "Open Sans", l ? 132 : 177, 600);
+    p.drawText(QRect(0, r.y() + (l ? 240 : 270), width() - 60, 350), Qt::AlignHCenter | Qt::TextWordWrap, text1);
     configFont(p, "Open Sans", 88, 400);
-    p.drawText(QRect(0, r.height() - (l ? 300 : 423), width(), 300), Qt::AlignHCenter, text2);
+    p.drawText(QRect(0, r.height() - (l ? 361 : 420), width() - 60, 300), Qt::AlignHCenter | Qt::TextWordWrap, text2);
   }
 }
 
