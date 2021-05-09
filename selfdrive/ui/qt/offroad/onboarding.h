@@ -1,11 +1,11 @@
 #pragma once
 
-#include <QWidget>
-#include <QStackedWidget>
-#include <QTextEdit>
+#include <QImage>
 #include <QMouseEvent>
 #include <QPushButton>
-#include <QImage>
+#include <QStackedWidget>
+#include <QTextEdit>
+#include <QWidget>
 
 #include "selfdrive/common/params.h"
 

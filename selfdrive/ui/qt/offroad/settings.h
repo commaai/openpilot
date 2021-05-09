@@ -1,13 +1,13 @@
 #pragma once
 
-#include <QWidget>
+#include <QButtonGroup>
 #include <QFrame>
-#include <QTimer>
 #include <QLabel>
 #include <QPushButton>
-#include <QButtonGroup>
 #include <QScrollArea>
 #include <QStackedWidget>
+#include <QTimer>
+#include <QWidget>
 
 #include "selfdrive/ui/qt/widgets/controls.h"
 

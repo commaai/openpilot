@@ -1,6 +1,7 @@
 #include <string.h>
-#include "thneed.h"
-#include "../runners/snpemodel.h"
+
+#include "selfdrive/modeld/runners/snpemodel.h"
+#include "selfdrive/modeld/thneed/thneed.h"
 
 #define TEMPORAL_SIZE 512
 #define DESIRE_LEN 8

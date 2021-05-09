@@ -1,37 +1,33 @@
+#include <sys/stat.h>
+#include <sys/statvfs.h>
+#include <unistd.h>
+
+#include <cassert>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <cassert>
-
-#include <unistd.h>
-#include <sys/stat.h>
-#include <sys/statvfs.h>
-
-#include <string>
-#include <sstream>
 #include <fstream>
 #include <iostream>
-#include <mutex>
 #include <memory>
+#include <mutex>
+#include <sstream>
+#include <string>
 #include <thread>
 
 #include <curl/curl.h>
 #include <openssl/sha.h>
-
-#include <GLES3/gl3.h>
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
-
+#include <GLES3/gl3.h>
 #include "nanovg.h"
 #define NANOVG_GLES3_IMPLEMENTATION
+#include "json11.hpp"
 #include "nanovg_gl.h"
 #include "nanovg_gl_utils.h"
 
-#include "json11.hpp"
-
-#include "common/framebuffer.h"
-#include "common/touch.h"
-#include "common/util.h"
+#include "selfdrive/common/framebuffer.h"
+#include "selfdrive/common/touch.h"
+#include "selfdrive/common/util.h"
 
 #define USER_AGENT "NEOSUpdater-0.2"
 

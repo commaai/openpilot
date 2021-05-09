@@ -1,17 +1,18 @@
 #pragma once
 
-#include <stdio.h>
-#include <stdint.h>
 #include <stdbool.h>
-#include <vector>
-#include <OMX_Component.h>
+#include <stdint.h>
+#include <stdio.h>
 
+#include <vector>
+
+#include <OMX_Component.h>
 extern "C" {
-  #include <libavformat/avformat.h>
+#include <libavformat/avformat.h>
 }
 
-#include "encoder.h"
-#include "common/queue.h"
+#include "selfdrive/common/queue.h"
+#include "selfdrive/loggerd/encoder.h"
 
 // OmxEncoder, lossey codec using hardware hevc
 class OmxEncoder : public VideoEncoder {

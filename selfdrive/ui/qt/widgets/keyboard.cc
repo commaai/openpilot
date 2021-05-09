@@ -1,11 +1,11 @@
+#include "keyboard.h"
+
+#include <QButtonGroup>
 #include <QDebug>
-#include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QPushButton>
-#include <QButtonGroup>
 #include <QStackedLayout>
-
-#include "keyboard.h"
+#include <QVBoxLayout>
 
 const int DEFAULT_STRETCH = 1;
 const int SPACEBAR_STRETCH = 3;

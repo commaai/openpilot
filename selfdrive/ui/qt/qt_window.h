@@ -1,13 +1,17 @@
+#pragma once
+
 #include <string>
 
-#include <QWidget>
 #include <QApplication>
-#include "selfdrive/hardware/hw.h"
+#include <QWidget>
+
 #ifdef QCOM2
 #include <qpa/qplatformnativeinterface.h>
-#include <QPlatformSurfaceEvent>
 #include <wayland-client-protocol.h>
+#include <QPlatformSurfaceEvent>
 #endif
+
+#include "selfdrive/hardware/hw.h"
 
 const int vwp_w = Hardware::TICI() ? 2160 : 1920;
 const int vwp_h = 1080;

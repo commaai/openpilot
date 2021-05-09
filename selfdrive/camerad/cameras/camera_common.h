@@ -1,20 +1,21 @@
 #pragma once
 
-#include <stdlib.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
+
 #include <memory>
 #include <thread>
-#include "common/mat.h"
-#include "common/swaglog.h"
-#include "common/queue.h"
-#include "visionbuf.h"
-#include "common/visionimg.h"
-#include "messaging.h"
-#include "transforms/rgb_to_yuv.h"
 
-#include "visionipc.h"
-#include "visionipc_server.h"
+#include "cereal/messaging/messaging.h"
+#include "cereal/visionipc/visionbuf.h"
+#include "cereal/visionipc/visionipc.h"
+#include "cereal/visionipc/visionipc_server.h"
+#include "selfdrive/camerad/transforms/rgb_to_yuv.h"
+#include "selfdrive/common/mat.h"
+#include "selfdrive/common/queue.h"
+#include "selfdrive/common/swaglog.h"
+#include "selfdrive/common/visionimg.h"
 
 #define CAMERA_ID_IMX298 0
 #define CAMERA_ID_IMX179 1

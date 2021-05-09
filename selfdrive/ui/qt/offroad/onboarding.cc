@@ -1,15 +1,15 @@
+#include "onboarding.h"
+
+#include <QDesktopWidget>
 #include <QLabel>
 #include <QPainter>
-#include <QVBoxLayout>
-#include <QDesktopWidget>
 #include <QQmlContext>
 #include <QQuickWidget>
+#include <QVBoxLayout>
 
-#include "common/params.h"
-#include "onboarding.h"
-#include "home.h"
-#include "util.h"
-
+#include "selfdrive/common/params.h"
+#include "selfdrive/common/util.h"
+#include "selfdrive/ui/qt/home.h"
 
 void TrainingGuide::mouseReleaseEvent(QMouseEvent *e) {
   QPoint touch = QPoint(e->x(), e->y()) - imageCorner;

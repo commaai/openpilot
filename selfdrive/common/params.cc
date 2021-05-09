@@ -1,22 +1,25 @@
-#include "common/params.h"
+#include "selfdrive/common/params.h"
 
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif  // _GNU_SOURCE
 
+#include <dirent.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
-#include <dirent.h>
+#include <string.h>
 #include <sys/file.h>
 #include <sys/stat.h>
-#include <mutex>
+#include <unistd.h>
+
 #include <csignal>
-#include <string.h>
+#include <mutex>
 #include <unordered_map>
-#include "common/util.h"
-#include "common/swaglog.h"
+
+#include "selfdrive/common/swaglog.h"
+#include "selfdrive/common/util.h"
 #include "selfdrive/hardware/hw.h"
+
 // keep trying if x gets interrupted by a signal
 #define HANDLE_EINTR(x)                                       \
   ({                                                          \

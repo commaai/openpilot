@@ -1,9 +1,11 @@
-#include <QHBoxLayout>
-#include "widgets/input.h"
-#include "widgets/ssh_keys.h"
-#include "api.h"
-#include "common/params.h"
+#include "ssh_keys.h"
 
+#include <QHBoxLayout>
+#include <QNetworkReply>
+
+#include "selfdrive/common/params.h"
+#include "selfdrive/ui/qt/api.h"
+#include "selfdrive/ui/qt/widgets/input.h"
 
 SshControl::SshControl() : AbstractControl("SSH Keys", "Warning: This grants SSH access to all public keys in your GitHub settings. Never enter a GitHub username other than your own. A comma employee will NEVER ask you to add their GitHub username.", "") {
 

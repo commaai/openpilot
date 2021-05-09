@@ -1,15 +1,16 @@
+#include "wifi.h"
+
+#include <curl/curl.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <curl/curl.h>
 
+#include <QApplication>
 #include <QLabel>
 #include <QVBoxLayout>
-#include <QApplication>
 
-#include "wifi.h"
-#include "offroad/networking.h"
-#include "widgets/input.h"
-#include "qt_window.h"
+#include "selfdrive/ui/qt/offroad/networking.h"
+#include "selfdrive/ui/qt/qt_window.h"
+#include "selfdrive/ui/qt/widgets/input.h"
 
 void WifiSetup::finish() {
   qApp->exit();

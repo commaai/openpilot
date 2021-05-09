@@ -1,28 +1,29 @@
-#include <thread>
-#include <stdio.h>
-#include <poll.h>
 #include <assert.h>
-#include <unistd.h>
+#include <poll.h>
+#include <stdio.h>
 #include <sys/socket.h>
+#include <unistd.h>
+
+#include <thread>
+
+#include "libyuv.h"
+
+#include "cereal/visionipc/visionipc_server.h"
+#include "selfdrive/common/clutil.h"
+#include "selfdrive/common/params.h"
+#include "selfdrive/common/swaglog.h"
+#include "selfdrive/common/util.h"
+#include "selfdrive/hardware/hw.h"
 
 #if defined(QCOM) && !defined(QCOM_REPLAY)
-#include "cameras/camera_qcom.h"
+#include "selfdrive/camerad/cameras/camera_qcom.h"
 #elif QCOM2
-#include "cameras/camera_qcom2.h"
+#include "selfdrive/camerad/cameras/camera_qcom2.h"
 #elif WEBCAM
-#include "cameras/camera_webcam.h"
+#include "selfdrive/camerad/cameras/camera_webcam.h"
 #else
-#include "cameras/camera_frame_stream.h"
+#include "selfdrive/camerad/cameras/camera_frame_stream.h"
 #endif
-
-#include <libyuv.h>
-
-#include "clutil.h"
-#include "common/params.h"
-#include "common/swaglog.h"
-#include "common/util.h"
-#include "visionipc_server.h"
-#include "selfdrive/hardware/hw.h"
 
 ExitHandler do_exit;
 

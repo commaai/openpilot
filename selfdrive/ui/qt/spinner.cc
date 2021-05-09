@@ -1,16 +1,17 @@
-#include <stdio.h>
-#include <string>
-#include <iostream>
+#include "spinner.h"
 
+#include <stdio.h>
+#include <iostream>
+#include <string>
+
+#include <QApplication>
+#include <QGridLayout>
+#include <QPainter>
 #include <QString>
 #include <QTransform>
-#include <QGridLayout>
-#include <QApplication>
-#include <QPainter>
 
-#include "spinner.h"
-#include "qt_window.h"
 #include "selfdrive/hardware/hw.h"
+#include "selfdrive/ui/qt/qt_window.h"
 
 TrackWidget::TrackWidget(QWidget *parent) : QWidget(parent) {
   setFixedSize(spinner_size);

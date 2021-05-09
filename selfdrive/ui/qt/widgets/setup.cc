@@ -1,3 +1,5 @@
+#include "setup.h"
+
 #include <QDebug>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -6,11 +8,10 @@
 #include <QStackedWidget>
 #include <QTimer>
 #include <QVBoxLayout>
+#include <QrCode.hpp>
 
-#include "QrCode.hpp"
-#include "request_repeater.h"
-#include "common/params.h"
-#include "setup.h"
+#include "selfdrive/common/params.h"
+#include "selfdrive/ui/qt/request_repeater.h"
 
 using qrcodegen::QrCode;
 

@@ -1,13 +1,13 @@
 #pragma once
 
-#include <string>
 #include <cstdint>
 #include <memory>
+#include <string>
 #include <unordered_map>
 
-#include "messaging.h"
-#include "generated/ubx.h"
-#include "generated/gps.h"
+#include "cereal/messaging/messaging.h"
+#include "selfdrive/locationd/generated/gps.h"
+#include "selfdrive/locationd/generated/ubx.h"
 
 // protocol constants
 namespace ublox {

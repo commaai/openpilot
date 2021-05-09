@@ -1,11 +1,12 @@
+#include "drive_stats.h"
+
 #include <QDebug>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QVBoxLayout>
 
-#include "common/params.h"
-#include "drive_stats.h"
-#include "request_repeater.h"
+#include "selfdrive/common/params.h"
+#include "selfdrive/ui/qt/request_repeater.h"
 
 const double MILE_TO_KM = 1.60934;
 
