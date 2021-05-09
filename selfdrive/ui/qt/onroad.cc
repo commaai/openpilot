@@ -132,16 +132,20 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
   }
   QRect r = QRect(0, height() - h, width(), h);
 
+  p.setCompositionMode(QPainter::CompositionMode_DestinationOver);
+
   // draw background + gradient
   p.setPen(Qt::NoPen);
   p.setBrush(QBrush(bg));
   p.drawRect(r);
 
-  QLinearGradient g(0, 0, 0, height());
+  QLinearGradient g(0, r.y(), 0, r.bottom());
   g.setColorAt(0, QColor::fromRgbF(0, 0, 0, 0.05));
   g.setColorAt(1, QColor::fromRgbF(0, 0, 0, 0.35));
   p.setBrush(QBrush(g));
   p.fillRect(r, g);
+
+  p.setCompositionMode(QPainter::CompositionMode_SourceOver);
 
   // remove sidebar
   r = QRect(0, height() - h, width(), h - 30);
@@ -149,7 +153,7 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
   // text
   const QPoint c = r.center();
   p.setPen(QColor(0xff, 0xff, 0xff));
-  p.setRenderHint(QPainter::Antialiasing);
+  p.setRenderHint(QPainter::TextAntialiasing);
   if (alert_size == cereal::ControlsState::AlertSize::SMALL) {
     configFont(p, "Open Sans", 74, "SemiBold");
     p.drawText(r, Qt::AlignCenter, text1);
