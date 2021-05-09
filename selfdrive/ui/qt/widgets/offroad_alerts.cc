@@ -83,6 +83,7 @@ void OffroadAlert::refresh() {
       l->setVisible(false);
       alerts_layout->addWidget(l);
     }
+    alerts_layout->addStretch(1);
   }
 
   updateAlerts();
