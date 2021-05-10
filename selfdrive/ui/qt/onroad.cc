@@ -123,10 +123,13 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   p.endNativePainting();
 
-  int h = height();
-  if (alert_size != cereal::ControlsState::AlertSize::FULL) {
-    h = alert_size == cereal::ControlsState::AlertSize::SMALL ? 271 : 420;
-  }
+  static std::map<cereal::ControlsState::AlertSize, const int> alert_sizes = {
+    {cereal::ControlsState::AlertSize::NONE, 0},
+    {cereal::ControlsState::AlertSize::SMALL, 271},
+    {cereal::ControlsState::AlertSize::MID, 420},
+    {cereal::ControlsState::AlertSize::FULL, height()},
+  };
+  int h = alert_sizes[alert_size];
   QRect r = QRect(0, height() - h, width(), h);
 
   p.setCompositionMode(QPainter::CompositionMode_DestinationOver);
@@ -144,7 +147,7 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
 
   p.setCompositionMode(QPainter::CompositionMode_SourceOver);
 
-  // remove sidebar
+  // remove bottom border
   r = QRect(0, height() - h, width(), h - 30);
 
   // text
