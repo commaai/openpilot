@@ -76,8 +76,7 @@ void OnroadAlerts::updateState(const UIState &s) {
 }
 
 void OnroadAlerts::offroadTransition(bool offroad) {
-  stopSounds();
-  alert_type = "";
+  updateAlert("", "", 0, "", cereal::ControlsState::AlertSize::NONE, AudibleAlert::NONE);
 }
 
 void OnroadAlerts::updateAlert(const QString &t1, const QString &t2, float blink_rate,

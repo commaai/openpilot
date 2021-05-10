@@ -46,6 +46,7 @@ void HomeWindow::offroadTransition(bool offroad) {
     slayout->setCurrentWidget(onroad);
   }
   sidebar->setVisible(offroad);
+  emit offroadTransitionSignal(offroad);
 }
 
 void HomeWindow::mousePressEvent(QMouseEvent* e) {
