@@ -1,11 +1,13 @@
 #pragma once
 
-#include <ctime>
-#include <cstdint>
 #include <pthread.h>
+
+#include <atomic>
+#include <cstdint>
+#include <ctime>
 #include <mutex>
-#include <vector>
 #include <optional>
+#include <vector>
 
 #include <libusb-1.0/libusb.h>
 
@@ -38,8 +40,6 @@ struct __attribute__((packed)) health_t {
   uint8_t power_save_enabled;
 };
 
-
-void panda_set_power(bool power);
 
 class Panda {
  private:

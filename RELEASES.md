@@ -1,6 +1,11 @@
-Version 0.8.4 (2021-XX-XX)
+Version 0.8.4 (2021-05-07)
 ========================
+ * Delay controls start until system is ready
+ * Fuzzy car identification, enabled with Community Features toggle
+ * Localizer optimized for significantly less CPU usage
+ * Retuned lateral control to be more aggressive when model is confident
  * Toyota Mirai 2021 support
+ * Lexus NX 300 2020 support thanks to goesreallyfast!
 
 Version 0.8.3 (2021-04-01)
 ========================

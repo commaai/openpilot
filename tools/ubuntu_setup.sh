@@ -23,7 +23,6 @@ sudo apt-get update && sudo apt-get install -y --no-install-recommends \
     libglfw3-dev \
     libglib2.0-0 \
     liblzma-dev \
-    libmysqlclient-dev \
     libomp-dev \
     libopencv-dev \
     libpng16-16 \
@@ -50,7 +49,10 @@ sudo apt-get update && sudo apt-get install -y --no-install-recommends \
     sudo \
     vim \
     wget \
-    gcc-arm-none-eabi
+    gcc-arm-none-eabi \
+    libqt5svg5-dev \
+    libqt5x11extras5-dev \
+    libreadline-dev
 
 # install git lfs
 if ! command -v "git-lfs" > /dev/null 2>&1; then
@@ -81,6 +83,7 @@ git submodule init
 git submodule update
 
 # install python
+PATH=$HOME/.pyenv/bin:$HOME/.pyenv/shims:$PATH
 pyenv install -s 3.8.5
 pyenv global 3.8.5
 pyenv rehash
@@ -90,3 +93,8 @@ eval "$(pyenv init -)"
 pip install --upgrade pip==20.2.4
 pip install pipenv==2020.8.13
 pipenv install --dev --system --deploy
+
+echo
+echo "----   FINISH OPENPILOT SETUP   ----"
+echo "Configure your active shell env by running:"
+echo "source ~/.bashrc"

@@ -19,7 +19,7 @@ SOUNDS = {
   AudibleAlert.chimePrompt: 173,
   AudibleAlert.chimeWarning1: 163,
   AudibleAlert.chimeWarning2: 216,
-  AudibleAlert.chimeWarning2Repeat: 346,
+  AudibleAlert.chimeWarning2Repeat: 470,
   AudibleAlert.chimeWarningRepeat: 468,
 }
 

@@ -1,9 +1,11 @@
 #pragma once
-#include <string>
+
 #include <termios.h>
 
+#include <atomic>
+#include <string>
 
-#include "panda.h"
+#include "selfdrive/boardd/panda.h"
 
 class Pigeon {
  public:

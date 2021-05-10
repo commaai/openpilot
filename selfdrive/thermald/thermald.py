@@ -12,7 +12,7 @@ import cereal.messaging as messaging
 from cereal import log
 from common.filter_simple import FirstOrderFilter
 from common.numpy_fast import clip, interp
-from common.params import Params
+from common.params import Params, ParamKeyType
 from common.realtime import DT_TRML, sec_since_boot
 from common.dict_helpers import strip_deprecated_keys
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
@@ -174,6 +174,7 @@ def thermald_thread():
   if EON:
     base_path = "/sys/kernel/debug/cpr3-regulator/"
     cpr_files = [p for p in Path(base_path).glob("**/*") if p.is_file()]
+    cpr_files = ["/sys/kernel/debug/regulator/pm8994_s11/voltage"] + cpr_files
     cpr_data = {}
     for cf in cpr_files:
       with open(cf, "r") as f:
@@ -221,7 +222,7 @@ def thermald_thread():
       if pandaState_prev is not None:
         if pandaState.pandaState.pandaType == log.PandaState.PandaType.unknown and \
           pandaState_prev.pandaState.pandaType != log.PandaState.PandaType.unknown:
-          params.panda_disconnect()
+          params.clear_all(ParamKeyType.CLEAR_ON_PANDA_DISCONNECT)
       pandaState_prev = pandaState
 
     # get_network_type is an expensive call. update every 10s
@@ -404,6 +405,9 @@ def thermald_thread():
 
     # report to server once every 10 minutes
     if (count % int(600. / DT_TRML)) == 0:
+      if EON and started_ts is None and msg.deviceState.memoryUsagePercent > 40:
+        cloudlog.event("High offroad memory usage", mem=msg.deviceState.memoryUsagePercent)
+
       location = messaging.recv_sock(location_sock)
       cloudlog.event("STATUS_PACKET",
                      count=count,
