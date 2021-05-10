@@ -1,15 +1,16 @@
 #include <cmath>
-#include <eigen3/Eigen/Dense>
-
-#include "map.h"
-#include "common/util.h"
-#include "common/params.h"
-#include "common/transformations/coordinates.hpp"
-#include "common/transformations/orientation.hpp"
 
 #include <QDebug>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <eigen3/Eigen/Dense>
+
+#include "selfdrive/common/util.h"
+#include "selfdrive/common/params.h"
+#include "common/transformations/coordinates.hpp"
+#include "common/transformations/orientation.hpp"
+#include "selfdrive/ui/qt/widgets/map.h"
+
 
 #define RAD2DEG(x) ((x) * 180.0 / M_PI)
 const int PAN_TIMEOUT = 100;

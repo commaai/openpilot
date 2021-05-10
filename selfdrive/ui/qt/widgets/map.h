@@ -22,7 +22,8 @@
 #include <QMap>
 #include <QPixmap>
 
-#include "messaging.h"
+#include "cereal/messaging/messaging.h"
+
 
 class MapWindow : public QOpenGLWidget {
   Q_OBJECT

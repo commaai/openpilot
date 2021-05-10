@@ -13,8 +13,24 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
 
   // old UI on bottom
   nvg = new NvgWindow(this);
-  layout->addWidget(nvg);
   QObject::connect(this, &OnroadWindow::update, nvg, &NvgWindow::update);
+
+  QString token = QString::fromStdString(Params().get("MapboxToken"));
+  QMapboxGLSettings settings;
+  settings.setCacheDatabasePath("/tmp/mbgl-cache.db");
+  settings.setCacheDatabaseMaximumSize(20 * 1024 * 1024);
+  settings.setAccessToken(token);
+  map = new MapWindow(settings);
+
+  QHBoxLayout* split = new QHBoxLayout();
+  split->setContentsMargins(0, 0, 0, 0);
+  split->setSpacing(0);
+  split->addWidget(nvg);
+  split->addWidget(map);
+
+  QWidget * split_wrapper = new QWidget;
+  split_wrapper->setLayout(split);
+  layout->addWidget(split_wrapper);
 
   alerts = new OnroadAlerts(this);
   QObject::connect(this, &OnroadWindow::update, alerts, &OnroadAlerts::updateState);
