@@ -47,19 +47,18 @@ void OnroadAlerts::updateState(const UIState &s) {
     volume = util::map_val(sm["carState"].getCarState().getVEgo(), 0.f, 20.f,
                            Hardware::MIN_VOLUME, Hardware::MAX_VOLUME);
   }
-  if (sm.updated("controlsState")) {
-    const cereal::ControlsState::Reader &cs = sm["controlsState"].getControlsState();
-    updateAlert(QString::fromStdString(cs.getAlertText1()), QString::fromStdString(cs.getAlertText2()),
-                cs.getAlertBlinkingRate(), cs.getAlertType(), cs.getAlertSize(), cs.getAlertSound());
-  } else {
-    // Handle controls timeout
-    if (s.scene.deviceState.getStarted() && (sm.frame - s.scene.started_frame) > 10 * UI_FREQ) {
-      const uint64_t cs_frame = sm.rcv_frame("controlsState");
-      if (cs_frame < s.scene.started_frame) {
+  if (s.scene.deviceState.getStarted()) {
+    if (sm.updated("controlsState")) {
+      const cereal::ControlsState::Reader &cs = sm["controlsState"].getControlsState();
+      updateAlert(QString::fromStdString(cs.getAlertText1()), QString::fromStdString(cs.getAlertText2()),
+                  cs.getAlertBlinkingRate(), cs.getAlertType(), cs.getAlertSize(), cs.getAlertSound());
+    } else if ((sm.frame - s.scene.started_frame) > 10 * UI_FREQ) {
+      // Handle controls timeout
+      if (sm.rcv_frame("controlsState") < s.scene.started_frame) {
         // car is started, but controlsState hasn't been seen at all
         updateAlert("openpilot Unavailable", "Waiting for controls to start", 0,
                     "controlsWaiting", cereal::ControlsState::AlertSize::MID, AudibleAlert::NONE);
-      } else if ((sm.frame - cs_frame) > 5 * UI_FREQ) {
+      } else if ((sm.frame - sm.rcv_frame("controlsState")) > 5 * UI_FREQ) {
         // car is started, but controls is lagging or died
         updateAlert("TAKE CONTROL IMMEDIATELY", "Controls Unresponsive", 0,
                     "controlsUnresponsive", cereal::ControlsState::AlertSize::FULL, AudibleAlert::CHIME_WARNING_REPEAT);
