@@ -262,7 +262,6 @@ void MapWindow::timerUpdate() {
 }
 
 void MapWindow::resizeGL(int w, int h) {
-  qDebug() << "resize map " << w << "x" << h;
   map_instructions->setFixedWidth(width());
 }
 

@@ -209,6 +209,10 @@ void NvgWindow::update(const UIState &s) {
   repaint();
 }
 
+void NvgWindow::resizeGL(int w, int h) {
+  ui_resize(&QUIState::ui_state, w, h);
+}
+
 void NvgWindow::paintGL() {
   ui_draw(&QUIState::ui_state, width(), height());
 
