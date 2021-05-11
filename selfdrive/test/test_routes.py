@@ -403,6 +403,10 @@ routes: dict = {
     'enableCamera': True,
     'enableDsu': False,
   },
+  "2c68dda277d887ac|2021-05-11--15-22-20": {
+    'carFingerprint': VOLKSWAGEN.ATLAS_MK1,
+    'enableCamera': True,
+  },
   "cae14e88932eb364|2021-03-26--14-43-28": {
     'carFingerprint': VOLKSWAGEN.GOLF_MK7,
     'enableCamera': True,
