@@ -45,12 +45,16 @@ sudo apt-get update && sudo apt-get install -y --no-install-recommends \
     qt5-default \
     qtmultimedia5-dev \
     qtwebengine5-dev \
+    qtlocation5-dev \
+    qtpositioning5-dev \
+    libqt5location5-plugin-mapboxgl \
+    libqt5sql5-sqlite \
+    libqt5svg5-dev \
     screen \
     sudo \
     vim \
     wget \
     gcc-arm-none-eabi \
-    libqt5svg5-dev \
     libqt5x11extras5-dev \
     libreadline-dev
 
