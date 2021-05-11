@@ -25,7 +25,7 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   split->setSpacing(0);
   split->addWidget(nvg);
 
-  #ifdef ENABLE_MAPS
+#ifdef ENABLE_MAPS
   QString token = QString::fromStdString(Params().get("MapboxToken"));
   if (!token.isEmpty()){
     QMapboxGLSettings settings;
@@ -35,7 +35,7 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
     map = new MapWindow(settings);
     split->addWidget(map);
   }
-  #endif
+#endif
 
   QWidget * split_wrapper = new QWidget;
   split_wrapper->setLayout(split);
