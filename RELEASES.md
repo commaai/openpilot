@@ -6,6 +6,7 @@ Version 0.8.4 (2021-05-17)
  * Retuned lateral control to be more aggressive when model is confident
  * Toyota Mirai 2021 support
  * Lexus NX 300 2020 support thanks to goesreallyfast!
+ * Volkswagen Atlas 2018-19 support thanks to jyoung8607!
 
 Version 0.8.3 (2021-04-01)
 ========================
