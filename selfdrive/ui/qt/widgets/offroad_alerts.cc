@@ -17,7 +17,6 @@ OffroadAlert::OffroadAlert(QWidget* parent) : QFrame(parent) {
   alerts_layout = new QVBoxLayout;
   alerts_layout->setMargin(0);
   alerts_layout->setSpacing(30);
-  alerts_layout->addStretch(1);
   alerts_widget->setLayout(alerts_layout);
   alerts_widget->setStyleSheet("background-color: transparent;");
 
