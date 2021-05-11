@@ -60,7 +60,7 @@ class NvgWindow : public QOpenGLWidget, protected QOpenGLFunctions {
 
 public:
   using QOpenGLWidget::QOpenGLWidget;
-  explicit NvgWindow(QWidget* parent = 0) : QOpenGLWidget(parent) {};
+  explicit NvgWindow(QWidget* parent = 0);
   ~NvgWindow();
 
 protected:

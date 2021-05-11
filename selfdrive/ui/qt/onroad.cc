@@ -25,6 +25,7 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   alerts->raise();
 
   setLayout(layout);
+  setAttribute(Qt::WA_OpaquePaintEvent);
 }
 
 // ***** onroad widgets *****
@@ -164,6 +165,11 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
     configFont(p, "Open Sans", 88, "Regular");
     p.drawText(QRect(0, r.height() - (l ? 361 : 420), width(), 300), Qt::AlignHCenter | Qt::TextWordWrap, text2);
   }
+}
+
+
+NvgWindow::NvgWindow(QWidget *parent) : QOpenGLWidget(parent) {
+  setAttribute(Qt::WA_OpaquePaintEvent);
 }
 
 NvgWindow::~NvgWindow() {
