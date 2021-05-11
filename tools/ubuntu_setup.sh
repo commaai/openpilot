@@ -47,7 +47,6 @@ sudo apt-get update && sudo apt-get install -y --no-install-recommends \
     qtwebengine5-dev \
     qtlocation5-dev \
     qtpositioning5-dev \
-    libqt5location5-plugin-mapboxgl \
     libqt5sql5-sqlite \
     libqt5svg5-dev \
     screen \

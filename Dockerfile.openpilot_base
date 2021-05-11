@@ -28,7 +28,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     liblzma-dev \
     libomp-dev \
     libopencv-dev \
-    libqt5location5-plugin-mapboxgl \
     libqt5sql5-sqlite \
     libqt5svg5-dev \
     libsqlite3-dev \
