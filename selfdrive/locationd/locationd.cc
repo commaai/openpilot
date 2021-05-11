@@ -181,7 +181,14 @@ void Localizer::handle_sensors(double current_time, const capnp::List<cereal::Se
   for (int i = 0; i < log.size(); i++) {
     const cereal::SensorEventData::Reader& sensor_reading = log[i];
     double sensor_time = 1e-9 * sensor_reading.getTimestamp();
-    // TODO: handle messages from two IMUs at the same time
+
+    // sensor time and log time should be close
+    if (abs(current_time - sensor_time) > 0.1) {
+      LOGE("Sensor reading ignored, sensor timestamp more than 100ms off from log time");
+      return;
+    }
+
+      // TODO: handle messages from two IMUs at the same time
     if (sensor_reading.getSource() == cereal::SensorEventData::SensorSource::LSM6DS3) {
       continue;
     }
@@ -337,6 +344,15 @@ void Localizer::finite_check(double current_time) {
   }
 }
 
+void Localizer::time_check(double current_time) {
+  double filter_time = this->kf->get_filter_time();
+  bool big_time_gap = !isnan(filter_time) && (current_time - filter_time > 10);
+  if (big_time_gap){
+    LOGE("Time gap of over 10s detected, kalman reset");
+    this->reset_kalman(current_time);
+  }
+}
+
 void Localizer::reset_kalman(double current_time, VectorXd init_orient, VectorXd init_pos) {
   // too nonlinear to init on completely wrong
   VectorXd init_x = this->kf->get_initial_x();
@@ -358,6 +374,7 @@ void Localizer::handle_msg_bytes(const char *data, const size_t size) {
 
 void Localizer::handle_msg(const cereal::Event::Reader& log) {
   double t = log.getLogMonoTime() * 1e-9;
+  this->time_check(t);
   if (log.isSensorEvents()) {
     this->handle_sensors(t, log.getSensorEvents());
   } else if (log.isGpsLocationExternal()) {
