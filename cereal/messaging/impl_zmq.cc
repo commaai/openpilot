@@ -7,7 +7,7 @@
 #include <zmq.h>
 
 #include "services.h"
-#include "impl_zmq.hpp"
+#include "impl_zmq.h"
 
 static int get_port(std::string endpoint) {
   int port = -1;
@@ -129,6 +129,11 @@ int ZMQPubSocket::sendMessage(Message *message){
 
 int ZMQPubSocket::send(char *data, size_t size){
   return zmq_send(sock, data, size, ZMQ_DONTWAIT);
+}
+
+bool ZMQPubSocket::all_readers_updated() {
+  assert(false); // TODO not implemented
+  return false;
 }
 
 ZMQPubSocket::~ZMQPubSocket(){

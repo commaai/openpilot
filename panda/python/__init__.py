@@ -179,7 +179,7 @@ class Panda(object):
                 self.bootstub = device.getProductID() == 0xddee
                 self.legacy = (device.getbcdDevice() != 0x2300)
                 self._handle = device.open()
-                if sys.platform not in ["win32", "cygwin", "msys"]:
+                if sys.platform not in ["win32", "cygwin", "msys", "darwin"]:
                   self._handle.setAutoDetachKernelDriver(True)
                 if claim:
                   self._handle.claimInterface(0)

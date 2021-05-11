@@ -1,15 +1,20 @@
 # must be build with scons
 from .messaging_pyx import Context, Poller, SubSocket, PubSocket  # pylint: disable=no-name-in-module, import-error
 from .messaging_pyx import MultiplePublishersError, MessagingError  # pylint: disable=no-name-in-module, import-error
+import os
 import capnp
 
 from typing import Optional, List, Union
+from collections import deque
 
 from cereal import log
 from cereal.services import service_list
 
 assert MultiplePublishersError
 assert MessagingError
+
+AVG_FREQ_HISTORY = 100
+SIMULATION = "SIMULATION" in os.environ
 
 # sec_since_boot is faster, but allow to run standalone too
 try:
@@ -126,12 +131,14 @@ def recv_one_retry(sock: SubSocket) -> capnp.lib.capnp._DynamicStructReader:
 
 class SubMaster():
   def __init__(self, services: List[str], poll: Optional[List[str]] = None,
-               ignore_alive: Optional[List[str]] = None, addr:str ="127.0.0.1"):
+               ignore_alive: Optional[List[str]] = None, ignore_avg_freq: Optional[List[str]] = None,
+               addr: str = "127.0.0.1"):
     self.frame = -1
     self.updated = {s: False for s in services}
     self.rcv_time = {s: 0. for s in services}
     self.rcv_frame = {s: 0 for s in services}
     self.alive = {s: False for s in services}
+    self.recv_dts = {s: deque([0.0] * AVG_FREQ_HISTORY, maxlen=AVG_FREQ_HISTORY) for s in services}
     self.sock = {}
     self.freq = {}
     self.data = {}
@@ -142,10 +149,8 @@ class SubMaster():
     self.non_polled_services = [s for s in services if poll is not None and
                                 len(poll) and s not in poll]
 
-    if ignore_alive is not None:
-      self.ignore_alive = ignore_alive
-    else:
-      self.ignore_alive = []
+    self.ignore_average_freq = [] if ignore_avg_freq is None else ignore_avg_freq
+    self.ignore_alive = [] if ignore_alive is None else ignore_alive
 
     for s in services:
       if addr is not None:
@@ -184,19 +189,33 @@ class SubMaster():
 
       s = msg.which()
       self.updated[s] = True
+
+      if self.rcv_time[s] > 1e-5 and self.freq[s] > 1e-5 and (s not in self.non_polled_services) \
+        and (s not in self.ignore_average_freq):
+        self.recv_dts[s].append(cur_time - self.rcv_time[s])
+
       self.rcv_time[s] = cur_time
       self.rcv_frame[s] = self.frame
       self.data[s] = getattr(msg, s)
       self.logMonoTime[s] = msg.logMonoTime
       self.valid[s] = msg.valid
 
-    for s in self.data:
-      # arbitrary small number to avoid float comparison. If freq is 0, we can skip the check
-      if self.freq[s] > 1e-5:
-        # alive if delay is within 10x the expected frequency
-        self.alive[s] = (cur_time - self.rcv_time[s]) < (10. / self.freq[s])
-      else:
+      if SIMULATION:
         self.alive[s] = True
+
+    if not SIMULATION:
+      for s in self.data:
+        # arbitrary small number to avoid float comparison. If freq is 0, we can skip the check
+        if self.freq[s] > 1e-5:
+          # alive if delay is within 10x the expected frequency
+          self.alive[s] = (cur_time - self.rcv_time[s]) < (10. / self.freq[s])
+
+          # alive if average frequency is higher than 90% of expected frequency
+          avg_dt = sum(self.recv_dts[s]) / AVG_FREQ_HISTORY
+          expected_dt = 1 / (self.freq[s] * 0.90)
+          self.alive[s] = self.alive[s] and (avg_dt < expected_dt)
+        else:
+          self.alive[s] = True
 
   def all_alive(self, service_list=None) -> bool:
     if service_list is None:  # check all
@@ -223,3 +242,6 @@ class PubMaster():
     if not isinstance(dat, bytes):
       dat = dat.to_bytes()
     self.sock[s].send(dat)
+
+  def all_readers_updated(self, s: str) -> bool:
+    return self.sock[s].all_readers_updated()

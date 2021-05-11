@@ -1,20 +1,21 @@
 #pragma once
 
-#include <stdlib.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
+
 #include <memory>
 #include <thread>
-#include "common/mat.h"
-#include "common/swaglog.h"
-#include "common/queue.h"
-#include "visionbuf.h"
-#include "common/visionimg.h"
-#include "messaging.hpp"
-#include "transforms/rgb_to_yuv.h"
 
-#include "visionipc.h"
-#include "visionipc_server.h"
+#include "cereal/messaging/messaging.h"
+#include "cereal/visionipc/visionbuf.h"
+#include "cereal/visionipc/visionipc.h"
+#include "cereal/visionipc/visionipc_server.h"
+#include "selfdrive/camerad/transforms/rgb_to_yuv.h"
+#include "selfdrive/common/mat.h"
+#include "selfdrive/common/queue.h"
+#include "selfdrive/common/swaglog.h"
+#include "selfdrive/common/visionimg.h"
 
 #define CAMERA_ID_IMX298 0
 #define CAMERA_ID_IMX179 1
@@ -94,7 +95,7 @@ private:
   CameraState *camera_state;
   cl_kernel krnl_debayer;
 
-  RGBToYUVState rgb_to_yuv_state;
+  std::unique_ptr<Rgb2Yuv> rgb2yuv;
 
   VisionStreamType rgb_type, yuv_type;
 

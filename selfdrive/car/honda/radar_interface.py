@@ -11,7 +11,7 @@ def _create_nidec_can_parser(car_fingerprint):
                 ['REL_SPEED'] * 16,
                 [0x400] + radar_messages[1:] * 4,
                 [0] + [255] * 16 + [1] * 16 + [0] * 16 + [0] * 16))
-  checks = list(zip([0x445], [20]))
+  checks = [(s[1], 20) for s in signals]
   return CANParser(DBC[car_fingerprint]['radar'], signals, checks, 1)
 
 

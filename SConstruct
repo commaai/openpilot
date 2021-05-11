@@ -13,6 +13,10 @@ AddOption('--test',
           action='store_true',
           help='build test files')
 
+AddOption('--kaitai',
+          action='store_true',
+          help='Regenerate kaitai struct parsers')
+
 AddOption('--asan',
           action='store_true',
           help='turn on ASAN')
@@ -79,6 +83,9 @@ if arch == "aarch64" or arch == "larch64":
       "#phonelibs/libyuv/larch64/lib",
       "/usr/lib/aarch64-linux-gnu"
     ]
+    cpppath += [
+      "#selfdrive/camerad/include",
+    ]
     cflags = ["-DQCOM2", "-mcpu=cortex-a57"]
     cxxflags = ["-DQCOM2", "-mcpu=cortex-a57"]
     rpath = ["/usr/local/lib"]
@@ -101,17 +108,22 @@ else:
   cpppath = []
 
   if arch == "Darwin":
+    yuv_dir = "mac" if real_arch != "arm64" else "mac_arm64"
     libpath = [
-      "#phonelibs/libyuv/mac/lib",
-      "#cereal",
-      "#selfdrive/common",
+      f"#phonelibs/libyuv/{yuv_dir}/lib",
       "/usr/local/lib",
+      "/opt/homebrew/lib",
       "/usr/local/opt/openssl/lib",
+      "/opt/homebrew/opt/openssl/lib",
       "/System/Library/Frameworks/OpenGL.framework/Libraries",
     ]
     cflags += ["-DGL_SILENCE_DEPRECATION"]
     cxxflags += ["-DGL_SILENCE_DEPRECATION"]
-    cpppath += ["/usr/local/opt/openssl/include"]
+    cpppath += [
+      "/opt/homebrew/include",
+      "/usr/local/opt/openssl/include",
+      "/opt/homebrew/opt/openssl/include"
+    ]
   else:
     libpath = [
       "#phonelibs/snpe/x86_64-linux-clang",
@@ -141,6 +153,10 @@ else:
   ccflags = []
   ldflags = []
 
+# no --as-needed on mac linker
+if arch != "Darwin":
+  ldflags += ["-Wl,--as-needed"]
+
 # change pythonpath to this
 lenv["PYTHONPATH"] = Dir("#").path
 
@@ -162,7 +178,6 @@ env = Environment(
 
   CPPPATH=cpppath + [
     "#",
-    "#selfdrive",
     "#phonelibs/catch2/include",
     "#phonelibs/bzip2",
     "#phonelibs/libyuv/include",
@@ -177,14 +192,7 @@ env = Environment(
     "#phonelibs/snpe/include",
     "#phonelibs/nanovg",
     "#phonelibs/qrcode",
-    "#selfdrive/boardd",
-    "#selfdrive/common",
-    "#selfdrive/camerad",
-    "#selfdrive/camerad/include",
-    "#selfdrive/loggerd/include",
-    "#selfdrive/modeld",
-    "#selfdrive/sensord",
-    "#selfdrive/ui",
+    "#phonelibs",
     "#cereal",
     "#cereal/messaging",
     "#cereal/visionipc",
@@ -270,7 +278,10 @@ if arch != "aarch64":
 
 qt_libs = []
 if arch == "Darwin":
-  qt_env['QTDIR'] = "/usr/local/opt/qt@5"
+  if real_arch == "arm64":
+    qt_env['QTDIR'] = "/opt/homebrew/opt/qt@5"
+  else:
+    qt_env['QTDIR'] = "/usr/local/opt/qt@5"
   qt_dirs = [
     os.path.join(qt_env['QTDIR'], "include"),
   ]
@@ -326,12 +337,8 @@ if GetOption("clazy"):
   qt_env['CXX'] = 'clazy'
   qt_env['ENV']['CLAZY_IGNORE_DIRS'] = qt_dirs[0]
   qt_env['ENV']['CLAZY_CHECKS'] = ','.join(checks)
-Export('qt_env')
 
-
-# still needed for apks
-zmq = 'zmq'
-Export('env', 'arch', 'real_arch', 'zmq', 'SHARED', 'USE_WEBCAM', 'QCOM_REPLAY')
+Export('env', 'qt_env', 'arch', 'real_arch', 'SHARED', 'USE_WEBCAM', 'QCOM_REPLAY')
 
 # cereal and messaging are shared with the system
 SConscript(['cereal/SConscript'])
@@ -356,6 +363,28 @@ else:
 
 Export('common', 'gpucommon', 'visionipc')
 
+# Build rednose library and ekf models
+
+rednose_config = {
+  'generated_folder': '#selfdrive/locationd/models/generated',
+  'to_build': {
+    'live': ('#selfdrive/locationd/models/live_kf.py', True, ['live_kf_constants.h']),
+    'car': ('#selfdrive/locationd/models/car_kf.py', True, []),
+  },
+}
+
+if arch != "aarch64":
+  rednose_config['to_build'].update({
+    'gnss': ('#selfdrive/locationd/models/gnss_kf.py', True, []),
+    'loc_4': ('#selfdrive/locationd/models/loc_kf.py', True, []),
+    'pos_computer_4': ('#rednose/helpers/lst_sq_computer.py', False, []),
+    'pos_computer_5': ('#rednose/helpers/lst_sq_computer.py', False, []),
+    'feature_handler_5': ('#rednose/helpers/feature_handler.py', False, []),
+    'lane': ('#xx/pipeline/lib/ekf/lane_kf.py', True, []),
+  })
+
+Export('rednose_config')
+SConscript(['rednose/SConscript'])
 
 # Build openpilot
 
@@ -384,15 +413,11 @@ SConscript(['selfdrive/clocksd/SConscript'])
 SConscript(['selfdrive/loggerd/SConscript'])
 
 SConscript(['selfdrive/locationd/SConscript'])
-SConscript(['selfdrive/locationd/models/SConscript'])
 SConscript(['selfdrive/sensord/SConscript'])
 SConscript(['selfdrive/ui/SConscript'])
 
 if arch != "Darwin":
   SConscript(['selfdrive/logcatd/SConscript'])
-
-if real_arch == "x86_64":
-  SConscript(['tools/nui/SConscript'])
 
 external_sconscript = GetOption('external_sconscript')
 if external_sconscript:

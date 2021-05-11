@@ -3,6 +3,7 @@
 .*.swo
 *.o
 *.so
+*.os
 *.d
 *.dump
 a.out

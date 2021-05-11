@@ -10,6 +10,7 @@ venv/
 .vscode*
 model2.png
 a.out
+.hypothesis
 
 *.dylib
 *.DSYM
@@ -59,6 +60,7 @@ notebooks
 xx
 hyperthneed
 panda_jungle
+provisioning
 
 .coverage*
 coverage.xml

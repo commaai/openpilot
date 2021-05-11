@@ -6,7 +6,7 @@ from libcpp.vector cimport vector
 from libcpp cimport bool
 
 
-cdef extern from "messaging.hpp":
+cdef extern from "messaging.h":
   cdef cppclass Context:
     @staticmethod
     Context * create()
@@ -31,6 +31,7 @@ cdef extern from "messaging.hpp":
     int connect(Context *, string)
     int sendMessage(Message *)
     int send(char *, size_t)
+    bool all_readers_updated()
 
   cdef cppclass Poller:
     @staticmethod

@@ -151,6 +151,5 @@ def sympy_into_c(sympy_functions, global_vars=None):
   c_header = '\n'.join(x for x in c_header.split("\n") if len(x) > 0 and x[0] != '#')
 
   c_code = '\n'.join(x for x in c_code.split("\n") if len(x) > 0 and x[0] != '#')
-  c_code = 'extern "C" {\n#include <math.h>\n' + c_code + "\n}\n"
 
   return c_header, c_code

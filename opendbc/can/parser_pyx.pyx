@@ -33,14 +33,14 @@ cdef class CANParser:
     bool can_valid
     int can_invalid_cnt
 
-  def __init__(self, dbc_name, signals, checks=None, bus=0):
+  def __init__(self, dbc_name, signals, checks=None, bus=0, enforce_checks=True):
     if checks is None:
       checks = []
     self.can_valid = True
     self.dbc_name = dbc_name
     self.dbc = dbc_lookup(dbc_name)
     if not self.dbc:
-      raise RuntimeError("Can't lookup" + dbc_name)
+      raise RuntimeError(f"Can't find DBC: {dbc_name}")
     self.vl = {}
     self.ts = {}
 
@@ -73,6 +73,14 @@ cdef class CANParser:
         name = c[0].encode('utf8')
         c = (self.msg_name_to_address[name], c[1])
         checks[i] = c
+
+    if enforce_checks:
+      checked_addrs = {c[0] for c in checks}
+      signal_addrs = {s[1] for s in signals}
+      unchecked = signal_addrs - checked_addrs
+      if len(unchecked):
+        err_msg = ', '.join(f"{self.address_to_msg_name[addr].decode()} ({hex(addr)})" for addr in unchecked)
+        raise RuntimeError(f"Unchecked addrs: {err_msg}")
 
     cdef vector[SignalParseOptions] signal_options_v
     cdef SignalParseOptions spo
@@ -107,7 +115,6 @@ cdef class CANParser:
     if valid:
         self.can_invalid_cnt = 0
     self.can_valid = self.can_invalid_cnt < CAN_INVALID_CNT
-
 
     for cv in can_values:
       # Cast char * directly to unicode
@@ -149,8 +156,8 @@ cdef class CANDefine():
     self.dbc_name = dbc_name
     self.dbc = dbc_lookup(dbc_name)
     if not self.dbc:
-      raise RuntimeError("Can't lookup" + dbc_name)
-      
+      raise RuntimeError(f"Can't find DBC: '{dbc_name}'")
+
     num_vals = self.dbc[0].num_vals
 
     address_to_msg_name = {}

@@ -34,7 +34,7 @@ class CarState(CarStateBase):
     ret.steeringTorque = cp.vl["MDPS12"]['CR_Mdps_StrColTq']
     ret.steeringTorqueEps = cp.vl["MDPS12"]['CR_Mdps_OutTq']
     ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD
-    ret.steerWarning = cp.vl["MDPS12"]['CF_Mdps_ToiUnavail'] != 0
+    ret.steerWarning = cp.vl["MDPS12"]['CF_Mdps_ToiUnavail'] != 0 or cp.vl["MDPS12"]['CF_Mdps_ToiFlt'] != 0
 
     # cruise state
     if self.CP.openpilotLongitudinalControl:
@@ -125,7 +125,7 @@ class CarState(CarStateBase):
       ret.stockAeb = cp.vl["SCC12"]['AEB_CmdAct'] != 0
       ret.stockFcw = cp.vl["SCC12"]['CF_VSM_Warn'] == 2
 
-    if self.CP.carFingerprint in FEATURES["use_bsm"]:
+    if self.CP.enableBsm:
       ret.leftBlindspot = cp.vl["LCA11"]["CF_Lca_IndLeft"] != 0
       ret.rightBlindspot = cp.vl["LCA11"]["CF_Lca_IndRight"] != 0
 
@@ -189,12 +189,10 @@ class CarState(CarStateBase):
       ("ESC_Off_Step", "TCS15", 0),
       ("AVH_LAMP", "TCS15", 0),
 
-      ("CF_Lvr_GearInf", "LVR11", 0),        # Transmission Gear (0 = N or P, 1-8 = Fwd, 14 = Rev)
-
       ("CR_Mdps_StrColTq", "MDPS12", 0),
       ("CF_Mdps_ToiActive", "MDPS12", 0),
       ("CF_Mdps_ToiUnavail", "MDPS12", 0),
-      ("CF_Mdps_FailStat", "MDPS12", 0),
+      ("CF_Mdps_ToiFlt", "MDPS12", 0),
       ("CR_Mdps_OutTq", "MDPS12", 0),
 
       ("SAS_Angle", "SAS11", 0),
@@ -215,6 +213,7 @@ class CarState(CarStateBase):
       ("CLU11", 50),
       ("ESP12", 100),
       ("CGW1", 10),
+      ("CGW2", 5),
       ("CGW4", 5),
       ("WHL_SPD11", 50),
       ("SAS11", 100),
@@ -226,7 +225,7 @@ class CarState(CarStateBase):
         ("SCC12", 50),
       ]
 
-    if CP.carFingerprint in FEATURES["use_bsm"]:
+    if CP.enableBsm:
       signals += [
         ("CF_Lca_IndLeft", "LCA11", 0),
         ("CF_Lca_IndRight", "LCA11", 0),
