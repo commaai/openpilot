@@ -60,7 +60,15 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
 
   // Handle sidebar collapsing
   if (onroad->isVisible() && (!sidebar->isVisible() || e->x() > sidebar->width())) {
-    sidebar->setVisible(!sidebar->isVisible());
+    // Hide map first if visible, then hide sidebar
+    if (onroad->map->isVisible()){
+      onroad->map->setVisible(false);
+    } else if (!sidebar->isVisible()) {
+      sidebar->setVisible(true);
+    } else {
+      sidebar->setVisible(false);
+      onroad->map->setVisible(true);
+    }
   }
 }
 

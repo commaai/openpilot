@@ -81,11 +81,11 @@ class OnroadWindow : public QWidget {
 
 public:
   OnroadWindow(QWidget* parent = 0);
+  MapWindow *map;
 
 private:
   OnroadAlerts *alerts;
   NvgWindow *nvg;
-  MapWindow *map;
   QStackedLayout *layout;
 
 signals:

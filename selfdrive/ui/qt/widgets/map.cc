@@ -199,6 +199,7 @@ void MapWindow::timerUpdate() {
           auto banner = attrs["mapbox.banner_instructions"].toList();
           if (banner.size()){
             // TOOD: Only show when traveled distanceAlongGeometry since the start
+            map_instructions->setVisible(true);
             emit instructionsChanged(banner[0].toMap());
           }
 
@@ -253,6 +254,9 @@ void MapWindow::timerUpdate() {
       }
     }
     update();
+  }
+  if (!segment.isValid()){
+    map_instructions->setVisible(false);
   }
 
 }
