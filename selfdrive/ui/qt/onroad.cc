@@ -160,9 +160,9 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
     // TODO: offset from center to match old NVG UI, but why was it this way?
     bool l = text1.length() > 15;
     configFont(p, "Open Sans", l ? 132 : 177, "Bold");
-    p.drawText(QRect(0, r.y() + (l ? 240 : 270), width() - 60, 350), Qt::AlignHCenter | Qt::TextWordWrap, text1);
+    p.drawText(QRect(0, r.y() + (l ? 240 : 270), width(), 350), Qt::AlignHCenter | Qt::TextWordWrap, text1);
     configFont(p, "Open Sans", 88, "Regular");
-    p.drawText(QRect(0, r.height() - (l ? 361 : 420), width() - 60, 300), Qt::AlignHCenter | Qt::TextWordWrap, text2);
+    p.drawText(QRect(0, r.height() - (l ? 361 : 420), width(), 300), Qt::AlignHCenter | Qt::TextWordWrap, text2);
   }
 }
 
