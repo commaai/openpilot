@@ -305,7 +305,7 @@ void QUIState::update() {
   update_status(&ui_state);
   update_vision(&ui_state);
 
-  if (ui_state.scene.started != started_prev) {
+  if (ui_state.scene.started != started_prev || ui_state.sm->frame == 1) {
     started_prev = ui_state.scene.started;
     emit offroadTransition(!ui_state.scene.started);
 
