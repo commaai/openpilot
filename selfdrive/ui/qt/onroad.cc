@@ -20,7 +20,8 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   QObject::connect(this, &OnroadWindow::offroadTransition, alerts, &OnroadAlerts::offroadTransition);
   layout->addWidget(alerts);
 
-  layout->setCurrentWidget(alerts);
+  // setup stacking order
+  alerts->raise();
 
   setLayout(layout);
 }
@@ -28,10 +29,6 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
 // ***** onroad widgets *****
 
 OnroadAlerts::OnroadAlerts(QWidget *parent) : QWidget(parent) {
-  setAttribute(Qt::WA_AlwaysStackOnTop);
-  setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-
-  // setup sounds
   for (auto &kv : sound_map) {
     auto path = QUrl::fromLocalFile(kv.second.first);
     sounds[kv.first].setSource(path);
@@ -67,9 +64,10 @@ void OnroadAlerts::updateState(const UIState &s) {
     }
   }
 
+  // TODO: add blinking back if performant
+  //float alpha = 0.375 * cos((millis_since_boot() / 1000) * 2 * M_PI * blinking_rate) + 0.625;
   auto c = bg_colors[s.status];
-  float alpha = 0.375 * cos((millis_since_boot() / 1000) * 2 * M_PI * blinking_rate) + 0.625;
-  bg.setRgbF(c.r, c.g, c.b, c.a*alpha);
+  bg.setRgbF(c.r, c.g, c.b, c.a);
 }
 
 void OnroadAlerts::offroadTransition(bool offroad) {
@@ -78,19 +76,22 @@ void OnroadAlerts::offroadTransition(bool offroad) {
 
 void OnroadAlerts::updateAlert(const QString &t1, const QString &t2, float blink_rate,
                                const std::string &type, cereal::ControlsState::AlertSize size, AudibleAlert sound) {
+  if (alert_type.compare(type) == 0 && text1.compare(t1) == 0) {
+    return;
+  }
+
+  stopSounds();
+  if (sound != AudibleAlert::NONE) {
+    playSound(sound);
+  }
 
   text1 = t1;
   text2 = t2;
+  alert_type = type;
   alert_size = size;
   blinking_rate = blink_rate;
-  if (alert_type.compare(type) != 0) {
-    stopSounds();
-    if (sound != AudibleAlert::NONE) {
-      playSound(sound);
-    }
-    update();
-  }
-  alert_type = type;
+
+  update();
 }
 
 void OnroadAlerts::playSound(AudibleAlert alert) {
@@ -112,14 +113,6 @@ void OnroadAlerts::stopSounds() {
 void OnroadAlerts::paintEvent(QPaintEvent *event) {
   QPainter p(this);
 
-  /*
-  // setup transparent widget
-  p.beginNativePainting();
-  glClearColor(0.0, 0.0, 0.0, 0.0);
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  p.endNativePainting();
-  */
-
   static std::map<cereal::ControlsState::AlertSize, const int> alert_sizes = {
     {cereal::ControlsState::AlertSize::NONE, 0},
     {cereal::ControlsState::AlertSize::SMALL, 271},
@@ -127,12 +120,16 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
     {cereal::ControlsState::AlertSize::FULL, height()},
   };
   int h = alert_sizes[alert_size];
-  QRect r = QRect(0, height() - h, width(), h);
+  if (h == 0) {
+    return;
+  }
 
-  p.setCompositionMode(QPainter::CompositionMode_DestinationOver);
+  QRect r = QRect(0, height() - h, width(), h);
 
   // draw background + gradient
   p.setPen(Qt::NoPen);
+  p.setCompositionMode(QPainter::CompositionMode_DestinationOver);
+
   p.setBrush(QBrush(bg));
   p.drawRect(r);
 
@@ -141,7 +138,6 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
   g.setColorAt(1, QColor::fromRgbF(0, 0, 0, 0.35));
   p.setBrush(QBrush(g));
   p.fillRect(r, g);
-
   p.setCompositionMode(QPainter::CompositionMode_SourceOver);
 
   // remove bottom border
