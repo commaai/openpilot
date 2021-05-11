@@ -1,6 +1,5 @@
 #pragma once
 
-
 #include <QGeoCoordinate>
 #include <QGeoManeuver>
 #include <QGeoRouteRequest>
@@ -14,7 +13,6 @@
 #include <QMapboxGL>
 #include <QMouseEvent>
 #include <QOpenGLWidget>
-#include <QPropertyAnimation>
 #include <QScopedPointer>
 #include <QString>
 #include <QtGlobal>

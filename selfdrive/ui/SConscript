@@ -29,7 +29,7 @@ if arch != 'aarch64':
 
 if maps:
   base_libs += ['qmapboxgl']
-  widgets_src += ["qt/widgets/map.cc"]
+  widgets_src += ["qt/widgets/map_helpers.cc", "qt/widgets/map.cc"]
 
 widgets = qt_env.Library("qt_widgets", widgets_src, LIBS=base_libs)
 qt_libs = [widgets] + base_libs
