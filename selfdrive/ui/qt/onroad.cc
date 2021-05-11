@@ -20,18 +20,16 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   QObject::connect(this, &OnroadWindow::offroadTransition, alerts, &OnroadAlerts::offroadTransition);
   layout->addWidget(alerts);
 
+  layout->setCurrentWidget(alerts);
+
   setLayout(layout);
 }
 
 // ***** onroad widgets *****
 
-OnroadAlerts::OnroadAlerts(QWidget *parent) : QOpenGLWidget(parent) {
+OnroadAlerts::OnroadAlerts(QWidget *parent) : QWidget(parent) {
   setAttribute(Qt::WA_AlwaysStackOnTop);
   setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-
-  QSurfaceFormat format = QSurfaceFormat::defaultFormat();
-  format.setSamples(4);
-  setFormat(format);
 
   // setup sounds
   for (auto &kv : sound_map) {
@@ -81,20 +79,18 @@ void OnroadAlerts::offroadTransition(bool offroad) {
 void OnroadAlerts::updateAlert(const QString &t1, const QString &t2, float blink_rate,
                                const std::string &type, cereal::ControlsState::AlertSize size, AudibleAlert sound) {
 
+  text1 = t1;
+  text2 = t2;
+  alert_size = size;
+  blinking_rate = blink_rate;
   if (alert_type.compare(type) != 0) {
     stopSounds();
     if (sound != AudibleAlert::NONE) {
       playSound(sound);
     }
+    update();
   }
-
-  text1 = t1;
-  text2 = t2;
-  alert_size = size;
   alert_type = type;
-  blinking_rate = blink_rate;
-
-  update();
 }
 
 void OnroadAlerts::playSound(AudibleAlert alert) {
@@ -116,11 +112,13 @@ void OnroadAlerts::stopSounds() {
 void OnroadAlerts::paintEvent(QPaintEvent *event) {
   QPainter p(this);
 
+  /*
   // setup transparent widget
   p.beginNativePainting();
   glClearColor(0.0, 0.0, 0.0, 0.0);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   p.endNativePainting();
+  */
 
   static std::map<cereal::ControlsState::AlertSize, const int> alert_sizes = {
     {cereal::ControlsState::AlertSize::NONE, 0},

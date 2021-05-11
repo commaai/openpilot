@@ -14,7 +14,7 @@ typedef cereal::CarControl::HUDControl::AudibleAlert AudibleAlert;
 
 // ***** onroad widgets *****
 
-class OnroadAlerts : public QOpenGLWidget {
+class OnroadAlerts : public QWidget {
   Q_OBJECT
 
 public:
