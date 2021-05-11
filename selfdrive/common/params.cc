@@ -184,7 +184,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"LastUpdateTime", PERSISTENT},
     {"LiveParameters", PERSISTENT},
     {"MapboxToken", PERSISTENT},
-    {"NavDestination", PERSISTENT}, // TODO: CLEAN_ON_MANAGER_START
+    {"NavDestination", PERSISTENT}, // TODO: CLEAR_ON_MANAGER_START
     {"OpenpilotEnabledToggle", PERSISTENT},
     {"PandaFirmware", CLEAR_ON_MANAGER_START | CLEAR_ON_PANDA_DISCONNECT},
     {"PandaFirmwareHex", CLEAR_ON_MANAGER_START | CLEAR_ON_PANDA_DISCONNECT},

@@ -38,6 +38,8 @@ private:
   QMapboxGLSettings m_settings;
   QScopedPointer<QMapboxGL> m_map;
 
+  void initLayers();
+
   void mousePressEvent(QMouseEvent *ev) final;
   void mouseMoveEvent(QMouseEvent *ev) final;
   void wheelEvent(QWheelEvent *ev) final;

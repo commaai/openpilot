@@ -5,6 +5,7 @@
 #include <QJsonObject>
 
 #include "selfdrive/common/util.h"
+#include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/params.h"
 #include "selfdrive/ui/qt/widgets/map_helpers.h"
 #include "selfdrive/ui/qt/widgets/map.h"
@@ -17,6 +18,7 @@ const float MAX_ZOOM = 17;
 const float MIN_ZOOM = 14;
 const float MAX_PITCH = 50;
 const float MIN_PITCH = 0;
+const float MAP_SCALE = 2;
 
 static void clearLayout(QLayout* layout) {
   while (QLayoutItem* item = layout->takeAt(0)) {
@@ -68,9 +70,7 @@ MapWindow::~MapWindow() {
   makeCurrent();
 }
 
-void MapWindow::timerUpdate() {
-  if (!isVisible()) return;
-
+void MapWindow::initLayers() {
   // This doesn't work from initializeGL
   if (!m_map->layerExists("modelPathLayer")){
     QVariantMap modelPath;
@@ -107,6 +107,12 @@ void MapWindow::timerUpdate() {
     m_map->setLayoutProperty("carPosLayer", "icon-allow-overlap", true);
     m_map->setLayoutProperty("carPosLayer", "symbol-sort-key", 0);
   }
+}
+
+void MapWindow::timerUpdate() {
+  if (!isVisible()) return;
+
+  initLayers();
 
   sm->update(0);
   if (sm->updated("liveLocationKalman")) {
@@ -215,7 +221,7 @@ void MapWindow::initializeGL() {
 }
 
 void MapWindow::paintGL() {
-  m_map->resize(size() / 2);
+  m_map->resize(size() / MAP_SCALE);
   m_map->setFramebufferObject(defaultFramebufferObject(), size());
   m_map->render();
 }
@@ -227,7 +233,7 @@ void MapWindow::calculateRoute(QMapbox::Coordinate destination) {
 }
 
 void MapWindow::routeCalculated(QGeoRouteReply *reply) {
-  qDebug() << "route update";
+  LOGW("new route calculated");
   if (reply->routes().size() != 0) {
     route = reply->routes().at(0);
     segment = route.firstRouteSegment();
@@ -245,14 +251,7 @@ void MapWindow::routeCalculated(QGeoRouteReply *reply) {
 }
 
 
-
-
 bool MapWindow::shouldRecompute(){
-  // Recompute based on some heuristics
-  // - Destination changed
-  // - Distance to current segment
-  // - Wrong direcection in segment
-
   if (!gps_ok) return false; // Don't recompute when gps drifts in tunnels
 
   QString nav_destination_json = QString::fromStdString(Params().get("NavDestination"));
@@ -284,10 +283,10 @@ bool MapWindow::shouldRecompute(){
     min_d = std::min(min_d, minimum_distance(a, b, cur));
   }
   return min_d > REROUTE_DISTANCE;
+
+  // TODO: Check for going wrong way in segment
 }
 
-
-// Events
 void MapWindow::mousePressEvent(QMouseEvent *ev) {
   m_lastPos = ev->localPos();
   ev->accept();
@@ -315,7 +314,7 @@ void MapWindow::wheelEvent(QWheelEvent *ev) {
       factor = factor > -1 ? factor : 1 / factor;
   }
 
-  m_map->scaleBy(1 + factor, ev->pos());
+  m_map->scaleBy(1 + factor, ev->pos() / MAP_SCALE);
   zoom_counter = PAN_TIMEOUT;
   ev->accept();
 }
@@ -339,7 +338,7 @@ void MapWindow::pinchTriggered(QPinchGesture *gesture) {
   QPinchGesture::ChangeFlags changeFlags = gesture->changeFlags();
   if (changeFlags & QPinchGesture::ScaleFactorChanged) {
     // TODO: figure out why gesture centerPoint doesn't work
-    m_map->scaleBy(gesture->scaleFactor(), {width() / 2.0, height() / 2.0});
+    m_map->scaleBy(gesture->scaleFactor(), {width() / 2.0 / MAP_SCALE, height() / 2.0 / MAP_SCALE});
     zoom_counter = PAN_TIMEOUT;
   }
 }
