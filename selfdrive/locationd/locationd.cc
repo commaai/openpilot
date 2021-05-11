@@ -347,7 +347,6 @@ void Localizer::finite_check(double current_time) {
 void Localizer::time_check(double current_time) {
   double filter_time = this->kf->get_filter_time();
   bool big_time_gap = isnan(filter_time) && (current_time - filter_time > 10);
-  std::cout <<  current_time - filter_time  << "\n";
   if (big_time_gap){
     LOGE("Time gap of over 10s detected, kalman reset");
     this->reset_kalman(current_time);
