@@ -117,6 +117,8 @@ def manager_thread():
   params = Params()
 
   ignore = []
+  if params.get("Offroad_UnofficialHardware") is not None:
+    ignore += ["manage_athenad", "uploader"]
   if os.getenv("NOBOARD") is not None:
     ignore.append("pandad")
   if os.getenv("BLOCK") is not None:

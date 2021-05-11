@@ -10,8 +10,12 @@ from common.params import Params
 from common.spinner import Spinner
 from common.file_helpers import mkdirs_exists_ok
 from common.basedir import PERSIST
-from selfdrive.hardware import HARDWARE, PC
+from selfdrive.controls.lib.alertmanager import set_offroad_alert
+from selfdrive.hardware import HARDWARE
 from selfdrive.swaglog import cloudlog
+
+
+UNREGISTERED_DONGLE_ID = "UnregisteredDevice"
 
 
 def register(show_spinner=False) -> str:
@@ -68,9 +72,7 @@ def register(show_spinner=False) -> str:
 
         if resp.status_code in (402, 403):
           cloudlog.info(f"Unable to register device, got {resp.status_code}")
-          dongle_id = None
-          if PC:
-            dongle_id = "UnofficialDevice"
+          dongle_id = UNREGISTERED_DONGLE_ID
         else:
           dongleauth = json.loads(resp.text)
           dongle_id = dongleauth["dongle_id"]
@@ -85,6 +87,7 @@ def register(show_spinner=False) -> str:
 
   if dongle_id:
     params.put("DongleId", dongle_id)
+    set_offroad_alert("Offroad_UnofficialHardware", dongle_id == UNREGISTERED_DONGLE_ID)
   return dongle_id
 
 
