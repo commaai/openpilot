@@ -1,5 +1,6 @@
 #pragma once
 
+
 #include <QGeoCoordinate>
 #include <QGeoManeuver>
 #include <QGeoRouteRequest>
@@ -23,7 +24,6 @@
 #include <QPixmap>
 
 #include "cereal/messaging/messaging.h"
-
 
 class MapWindow : public QOpenGLWidget {
   Q_OBJECT
