@@ -7,8 +7,7 @@
 #include "selfdrive/ui/paint.h"
 #include "selfdrive/ui/qt/util.h"
 
-#if defined(__linux__) || defined(QCOM2)
-#define ENABLE_MAPS
+#ifdef ENABLE_MAPS
 #include "selfdrive/ui/qt/widgets/map.h"
 #endif
 
