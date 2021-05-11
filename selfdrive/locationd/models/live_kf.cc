@@ -66,6 +66,10 @@ MatrixXdr LiveKalman::get_P() {
   return this->filter->covs();
 }
 
+double LiveKalman::get_filter_time() {
+  return this->filter->get_filter_time();
+}
+
 std::vector<MatrixXdr> LiveKalman::get_R(int kind, int n) {
   std::vector<MatrixXdr> R;
   for (int i = 0; i < n; i++) {
