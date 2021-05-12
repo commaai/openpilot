@@ -41,6 +41,11 @@ typedef struct Rect {
   }
 } Rect;
 
+// TODO: this is also hardcoded in common/transformations/camera.py
+// TODO: choose based on frame input size
+const float y_offset = Hardware::TICI() ? 150.0 : 0.0;
+const float zoom = Hardware::TICI() ? 2912.8 : 2138.5;
+
 const int bdr_s = 30;
 const int header_h = 420;
 const int footer_h = 280;
@@ -121,11 +126,7 @@ typedef struct UIState {
   UIScene scene;
 
   // graphics
-  std::unique_ptr<GLShader> gl_shader;
   std::unique_ptr<EGLImageTexture> texture[UI_BUF_COUNT];
-
-  GLuint frame_vao[2], frame_vbo[2], frame_ibo[2];
-  mat4 rear_frame_mat, front_frame_mat;
 
   bool awake;
 

@@ -8,7 +8,7 @@
 #include "cereal/gen/cpp/log.capnp.h"
 #include "selfdrive/hardware/hw.h"
 #include "selfdrive/ui/ui.h"
-#include "selfdrive/ui/qt/qt_window.h"
+#include "selfdrive/ui/qt/widgets/cameraview.h"
 
 typedef cereal::CarControl::HUDControl::AudibleAlert AudibleAlert;
 
@@ -54,27 +54,6 @@ public slots:
   void offroadTransition(bool offroad);
 };
 
-// container window for the NVG UI
-class NvgWindow : public QOpenGLWidget, protected QOpenGLFunctions {
-  Q_OBJECT
-
-public:
-  using QOpenGLWidget::QOpenGLWidget;
-  explicit NvgWindow(QWidget* parent = 0);
-  ~NvgWindow();
-
-protected:
-  void paintGL() override;
-  void initializeGL() override;
-  void resizeGL(int w, int h) override;
-
-private:
-  double prev_draw_t = 0;
-
-public slots:
-  void update(const UIState &s);
-};
-
 // container for all onroad widgets
 class OnroadWindow : public QWidget {
   Q_OBJECT
@@ -85,7 +64,7 @@ public:
 
 private:
   OnroadAlerts *alerts;
-  NvgWindow *nvg;
+  RoadView *nvg;
   QStackedLayout *layout;
 
 signals:
