@@ -433,6 +433,9 @@ def main():
       handle_long_poll(ws)
     except (KeyboardInterrupt, SystemExit):
       break
+    except (ConnectionError, TimeoutError):
+      conn_retries += 1
+      params.delete("LastAthenaPingTime")
     except Exception:
       crash.capture_exception()
       cloudlog.exception("athenad.main.exception")
