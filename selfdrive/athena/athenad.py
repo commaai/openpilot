@@ -17,7 +17,7 @@ from typing import Any
 
 import requests
 from jsonrpc import JSONRPCResponseManager, dispatcher
-from websocket import ABNF, WebSocketTimeoutException, create_connection
+from websocket import ABNF, WebSocketTimeoutException, WebSocketException, create_connection
 
 import cereal.messaging as messaging
 from cereal.services import service_list
@@ -433,7 +433,7 @@ def main():
       handle_long_poll(ws)
     except (KeyboardInterrupt, SystemExit):
       break
-    except (ConnectionError, TimeoutError):
+    except (ConnectionError, TimeoutError, WebSocketException):
       conn_retries += 1
       params.delete("LastAthenaPingTime")
     except Exception:
