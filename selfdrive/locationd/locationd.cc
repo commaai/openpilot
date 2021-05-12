@@ -180,6 +180,12 @@ void Localizer::handle_sensors(double current_time, const capnp::List<cereal::Se
   // TODO does not yet account for double sensor readings in the log
   for (int i = 0; i < log.size(); i++) {
     const cereal::SensorEventData::Reader& sensor_reading = log[i];
+
+    // Ignore empty readings (e.g. in case the magnetometer had no data ready)
+    if (sensor_reading.getTimestamp() == 0){
+      continue;
+    }
+
     double sensor_time = 1e-9 * sensor_reading.getTimestamp();
 
     // sensor time and log time should be close
