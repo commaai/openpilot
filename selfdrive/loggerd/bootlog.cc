@@ -12,11 +12,18 @@ static kj::Array<capnp::word> build_boot_log() {
 
   boot.setWallTimeNanos(nanos_since_epoch());
 
-  std::string lastKmsg = util::read_file("/sys/fs/pstore/console-ramoops");
-  boot.setLastKmsg(capnp::Data::Reader((const kj::byte*)lastKmsg.data(), lastKmsg.size()));
+  std::string pstore = "/sys/fs/pstore";
+  std::map<std::string, std::string> pstore_map;
+  util::read_files_in_dir(pstore, &pstore_map);
 
-  std::string lastPmsg = util::read_file("/sys/fs/pstore/pmsg-ramoops-0");
-  boot.setLastPmsg(capnp::Data::Reader((const kj::byte*)lastPmsg.data(), lastPmsg.size()));
+  auto lpstore = boot.initPstore().initEntries(pstore_map.size());
+  int i = 0;
+  for (auto& kv : pstore_map) {
+    auto lentry = lpstore[i];
+    lentry.setKey(kv.first);
+    lentry.setValue(capnp::Data::Reader((const kj::byte*)kv.second.data(), kv.second.size()));
+    i++;
+  }
 
   std::string launchLog = util::read_file("/tmp/launch_log");
   boot.setLaunchLog(capnp::Text::Reader(launchLog.data(), launchLog.size()));
