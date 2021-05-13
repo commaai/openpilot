@@ -50,6 +50,10 @@ constexpr int OUTPUT_SIZE =  POSE_IDX + POSE_SIZE;
   constexpr int TEMPORAL_SIZE = 0;
 #endif
 
+constexpr float FCW_THRESHOLD = 0.25;
+
+float prev_brake_5ms_prob = 0;
+
 // #define DUMP_YUV
 
 void model_init(ModelState* s, cl_device_id device_id, cl_context context) {
@@ -205,6 +209,9 @@ void fill_meta(cereal::ModelDataV2::MetaData::Builder meta, const float *meta_da
   meta.setBrake4msProbs(brake_4ms_sigmoid);
   meta.setBrake5msProbs(brake_5ms_sigmoid);
   meta.setDesirePrediction(desire_pred_softmax);
+  meta.setForwardCollisionDetected(prev_brake_5ms_prob > FCW_THRESHOLD && brake_5ms_sigmoid[0] > FCW_THRESHOLD);
+
+  prev_brake_5ms_prob = brake_5ms_sigmoid[0];
 }
 
 void fill_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const float * data,
