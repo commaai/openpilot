@@ -235,7 +235,8 @@ static void ui_draw_vision_face(UIState *s) {
   const int radius = 96;
   const int center_x = s->viz_rect.x + radius + (bdr_s * 2);
   const int center_y = s->viz_rect.bottom() - footer_h / 2;
-  ui_draw_circle_image(s, center_x, center_y, radius, "driver_face", s->scene.is_dmonitoring_active);
+  bool is_active = (*s->sm)["driverMonitoringState"].getDriverMonitoringState().getIsActiveMode();
+  ui_draw_circle_image(s, center_x, center_y, radius, "driver_face", is_active);
 }
 
 static void ui_draw_driver_view(UIState *s) {

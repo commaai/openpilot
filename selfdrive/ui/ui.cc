@@ -176,9 +176,6 @@ static void update_state(UIState *s) {
   if (sm.updated("carParams")) {
     scene.longitudinal_control = sm["carParams"].getCarParams().getOpenpilotLongitudinalControl();
   }
-  if (sm.updated("driverMonitoringState")) {
-    scene.is_dmonitoring_active = sm["driverMonitoringState"].getDriverMonitoringState().getIsActiveMode();
-  }
   if (sm.updated("sensorEvents")) {
     for (auto sensor : sm["sensorEvents"].getSensorEvents()) {
       if (!Hardware::TICI() && sensor.which() == cereal::SensorEventData::LIGHT) {
@@ -259,6 +256,7 @@ static void update_status(UIState *s) {
   }
   started_prev = s->scene.started;
 }
+
 
 QUIState::QUIState(QObject *parent) : QObject(parent) {
   ui_state.sm = std::make_unique<SubMaster, const std::initializer_list<const char *>>({

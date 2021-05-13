@@ -81,8 +81,6 @@ typedef struct UIScene {
 
   cereal::PandaState::PandaType pandaType;
 
-  bool is_dmonitoring_active;
-
   // gps
   int satelliteCount;
   bool gpsOK;
