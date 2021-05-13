@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+=======
+from selfdrive.test.longitudinal_maneuvers.plant import Plant
+>>>>>>> d2e297baa (vision only)
 import numpy as np
 from selfdrive.test.longitudinal_maneuvers.plant import Plant
 
@@ -28,7 +32,7 @@ class Maneuver():
       log = plant.step(speed_lead)
 
       d_rel = log['distance_lead'] - log['distance'] if self.lead_relevancy else 200.
-      v_rel = speed_lead - log['speed'] if self.lead_relevancy else 0.
+      v_rel = speeds_lead[0] - log['speed'] if self.lead_relevancy else 0.
       log['d_rel'] = d_rel
       log['v_rel'] = v_rel
 

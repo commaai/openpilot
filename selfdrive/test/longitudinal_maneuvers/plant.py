@@ -6,6 +6,7 @@ from cereal import log
 import cereal.messaging as messaging
 from common.realtime import Ratekeeper, DT_MDL
 from selfdrive.controls.lib.longcontrol import LongCtrlState
+from selfdrive.modeld.constants import T_IDXS
 
 
 class Plant():
@@ -15,7 +16,7 @@ class Plant():
     self.rate = 1. / DT_MDL
 
     if not Plant.messaging_initialized:
-      Plant.radar = messaging.pub_sock('radarState')
+      Plant.model = messaging.pub_sock('modelV2')
       Plant.controls_state = messaging.pub_sock('controlsState')
       Plant.car_state = messaging.pub_sock('carState')
       Plant.plan = messaging.sub_sock('longitudinalPlan')
@@ -42,7 +43,7 @@ class Plant():
   def step(self, v_lead=0.0):
     # ******** publish a fake model going straight and fake calibration ********
     # note that this is worst case for MPC, since model will delay long mpc by one time step
-    radar = messaging.new_message('radarState')
+    md = messaging.new_message('modelV2')
     control = messaging.new_message('controlsState')
     car_state = messaging.new_message('carState')
     a_lead = (v_lead - self.v_lead_prev)/self.ts
@@ -68,14 +69,26 @@ class Plant():
     lead.aLeadTau = float(1.5)
     lead.status = True
     lead.modelProb = prob
-    radar.radarState.leadOne = lead
-    radar.radarState.leadTwo = lead
+
+    md.modelV2.position.t = [float(t) for t in T_IDXS]
+    lead = log.ModelDataV2.LeadDataV3.new_message()
+    lead_x = [float(d_rel),]
+    for i in range(5):
+      lead_x.append(lead_x[-1] + 2.0*v_lead[i])
+    lead.x = [float(x) for x in lead_x]
+    lead.y = [0.0 for i in range(0,12,2)]
+    lead.v = [float(v) for v in v_lead]
+    lead.a = [0.0 for i in range(0,12,2)]
+
+    lead.prob = prob
+    md.modelV2.leads = [lead, lead]
+
 
 
     control.controlsState.longControlState = LongCtrlState.pid
     control.controlsState.vCruise = 130
     car_state.carState.vEgo = self.speed
-    Plant.radar.send(radar.to_bytes())
+    Plant.model.send(md.to_bytes())
     Plant.controls_state.send(control.to_bytes())
     Plant.car_state.send(car_state.to_bytes())
 
@@ -90,9 +103,19 @@ class Plant():
         fcw = plan.fcw
         break
     self.speed += self.ts*self.acceleration
-
-
     self.distance_lead = self.distance_lead + v_lead * self.ts
+
+    # ******** get controlsState messages for plotting ***
+    self.sm.update()
+    while True:
+      time.sleep(0.01)
+      if self.sm.updated['longitudinalPlan']:
+        plan = self.sm['longitudinalPlan']
+        self.speed = plan.speeds[5]
+        self.acceleration = plan.accels[5]
+        fcw = plan.fcw
+        break
+    self.distance_lead = self.distance_lead + v_lead[0] * self.ts
 
     # ******** run the car ********
     #print(self.distance, speed)
@@ -104,7 +127,7 @@ class Plant():
     # *** radar model ***
     if self.lead_relevancy:
       d_rel = np.maximum(0., self.distance_lead - self.distance)
-      v_rel = v_lead - self.speed
+      v_rel = v_lead[0] - self.speed
     else:
       d_rel = 200.
       v_rel = 0.
