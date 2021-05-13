@@ -115,17 +115,15 @@ void OnroadAlerts::stopSounds() {
 void OnroadAlerts::paintEvent(QPaintEvent *event) {
   QPainter p(this);
 
+  if (alert_size == cereal::ControlsState::AlertSize::NONE) {
+    return;
+  }
   static std::map<cereal::ControlsState::AlertSize, const int> alert_sizes = {
-    {cereal::ControlsState::AlertSize::NONE, 0},
     {cereal::ControlsState::AlertSize::SMALL, 271},
     {cereal::ControlsState::AlertSize::MID, 420},
     {cereal::ControlsState::AlertSize::FULL, height()},
   };
   int h = alert_sizes[alert_size];
-  if (h == 0) {
-    return;
-  }
-
   QRect r = QRect(0, height() - h, width(), h);
 
   // draw background + gradient
@@ -158,10 +156,9 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
     configFont(p, "Open Sans", 66, "Regular");
     p.drawText(QRect(0, c.y() + 21, width(), 90), Qt::AlignHCenter, text2);
   } else if (alert_size == cereal::ControlsState::AlertSize::FULL) {
-    // TODO: offset from center to match old NVG UI, but why was it this way?
     bool l = text1.length() > 15;
     configFont(p, "Open Sans", l ? 132 : 177, "Bold");
-    p.drawText(QRect(0, r.y() + (l ? 240 : 270), width(), 350), Qt::AlignHCenter | Qt::TextWordWrap, text1);
+    p.drawText(QRect(0, r.y() + (l ? 240 : 270), width(), 600), Qt::AlignHCenter | Qt::TextWordWrap, text1);
     configFont(p, "Open Sans", 88, "Regular");
     p.drawText(QRect(0, r.height() - (l ? 361 : 420), width(), 300), Qt::AlignHCenter | Qt::TextWordWrap, text2);
   }
