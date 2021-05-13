@@ -49,7 +49,7 @@ void Sidebar::mousePressEvent(QMouseEvent *event) {
 }
 
 void Sidebar::update(const UIState &s) {
-  if (s.sm.frame % (6*UI_FREQ) == 0) {
+  if (s.sm->frame % (6*UI_FREQ) == 0) {
     connect_str = "OFFLINE";
     connect_status = warning_color;
     auto last_ping = params.get<float>("LastAthenaPingTime");
@@ -61,7 +61,7 @@ void Sidebar::update(const UIState &s) {
     repaint();
   }
 
-  auto deviceState = s.sm["deviceState"].getDeviceState();
+  auto deviceState = (*s.sm)["deviceState"].getDeviceState();
   net_type = deviceState.getNetworkType();
   strength = deviceState.getNetworkStrength();
 
@@ -84,7 +84,7 @@ void Sidebar::update(const UIState &s) {
     panda_status = s.scene.gpsOK ? good_color : warning_color;
   }
 
-  if (s.sm.updated("deviceState") || s.sm.updated("pandaState")) {
+  if (s.sm->updated("deviceState") || s.sm->updated("pandaState")) {
     repaint();
   }
 }

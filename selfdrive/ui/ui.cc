@@ -113,7 +113,7 @@ static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
   }
 
   // update path
-  auto lead_one = s->sm["radarState"].getRadarState().getLeadOne();
+  auto lead_one = (*s->sm)["radarState"].getRadarState().getLeadOne();
   if (lead_one.getStatus()) {
     const float lead_d = lead_one.getDRel() * 2.;
     max_distance = std::clamp((float)(lead_d - fmin(lead_d * 0.35, 10.)), 0.0f, max_distance);
@@ -123,11 +123,11 @@ static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
 }
 
 static void update_sockets(UIState *s){
-  s->sm.update(0);
+  s->sm->update(0);
 }
 
 static void update_state(UIState *s) {
-  SubMaster &sm = s->sm;
+  SubMaster &sm = *(s->sm);
   UIScene &scene = s->scene;
 
   if (sm.updated("radarState")) {
@@ -161,7 +161,7 @@ static void update_state(UIState *s) {
     auto pandaState = sm["pandaState"].getPandaState();
     scene.pandaType = pandaState.getPandaType();
     scene.ignition = pandaState.getIgnitionLine() || pandaState.getIgnitionCan();
-  } else if ((s->sm.frame - s->sm.rcv_frame("pandaState")) > 5*UI_FREQ) {
+  } else if ((s->sm->frame - s->sm->rcv_frame("pandaState")) > 5*UI_FREQ) {
     scene.pandaType = cereal::PandaState::PandaType::UNKNOWN;
   }
   if (sm.updated("ubloxGnss")) {
@@ -206,7 +206,7 @@ static void update_state(UIState *s) {
 }
 
 static void update_params(UIState *s) {
-  const uint64_t frame = s->sm.frame;
+  const uint64_t frame = s->sm->frame;
   UIScene &scene = s->scene;
   if (frame % (5*UI_FREQ) == 0) {
     scene.is_metric = Params().getBool("IsMetric");
@@ -231,8 +231,8 @@ static void update_vision(UIState *s) {
 }
 
 static void update_status(UIState *s) {
-  if (s->scene.started && s->sm.updated("controlsState")) {
-    auto controls_state = s->sm["controlsState"].getControlsState();
+  if (s->scene.started && s->sm->updated("controlsState")) {
+    auto controls_state = (*s->sm)["controlsState"].getControlsState();
     auto alert_status = controls_state.getAlertStatus();
     if (alert_status == cereal::ControlsState::AlertStatus::USER_PROMPT) {
       s->status = STATUS_WARNING;
@@ -248,7 +248,7 @@ static void update_status(UIState *s) {
   if (s->scene.started != started_prev) {
     if (s->scene.started) {
       s->status = STATUS_DISENGAGED;
-      s->scene.started_frame = s->sm.frame;
+      s->scene.started_frame = s->sm->frame;
 
       s->scene.is_rhd = Params().getBool("IsRHD");
       s->scene.end_to_end = Params().getBool("EndToEndToggle");
@@ -260,29 +260,24 @@ static void update_status(UIState *s) {
   started_prev = s->scene.started;
 }
 
-UIState::UIState()
-    : sm({
-#ifdef QCOM2
-          "roadCameraState",
-#endif
-          "modelV2", "controlsState", "liveCalibration", "radarState", "deviceState", "liveLocationKalman",
-          "pandaState", "carParams", "driverState", "driverMonitoringState", "sensorEvents", "carState", "ubloxGnss"}) {
-  fb_w = vwp_w;
-  fb_h = vwp_h;
-  wide_camera = Hardware::TICI() ? Params().getBool("EnableWideCamera") : false;
-
-  vipc_client_rear = new VisionIpcClient("camerad", wide_camera ? VISION_STREAM_RGB_WIDE : VISION_STREAM_RGB_BACK, true);
-  vipc_client_front = new VisionIpcClient("camerad", VISION_STREAM_RGB_FRONT, true);
-  vipc_client = vipc_client_rear;
-}
-
-UIState::~UIState() {
-  delete vipc_client_rear;
-  delete vipc_client_front;
-}
-
 QUIState::QUIState(QObject *parent) : QObject(parent) {
-  ui_ = &ui_state;
+  ui_state.sm = std::make_unique<SubMaster, const std::initializer_list<const char *>>({
+    "modelV2", "controlsState", "liveCalibration", "radarState", "deviceState", "liveLocationKalman",
+    "pandaState", "carParams", "driverState", "driverMonitoringState", "sensorEvents", "carState", "ubloxGnss",
+#ifdef QCOM2
+    "roadCameraState",
+#endif
+  });
+
+  ui_state.fb_w = vwp_w;
+  ui_state.fb_h = vwp_h;
+  ui_state.scene.started = false;
+  ui_state.last_frame = nullptr;
+  ui_state.wide_camera = Hardware::TICI() ? Params().getBool("EnableWideCamera") : false;
+
+  ui_state.vipc_client_rear = new VisionIpcClient("camerad", ui_state.wide_camera ? VISION_STREAM_RGB_WIDE : VISION_STREAM_RGB_BACK, true);
+  ui_state.vipc_client_front = new VisionIpcClient("camerad", VISION_STREAM_RGB_FRONT, true);
+  ui_state.vipc_client = ui_state.vipc_client_rear;
 
   // update timer
   timer = new QTimer(this);
@@ -297,7 +292,7 @@ void QUIState::update() {
   update_status(&ui_state);
   update_vision(&ui_state);
 
-  if (ui_state.scene.started != started_prev || ui_state.sm.frame == 1) {
+  if (ui_state.scene.started != started_prev || ui_state.sm->frame == 1) {
     started_prev = ui_state.scene.started;
     emit offroadTransition(!ui_state.scene.started);
 
@@ -320,7 +315,7 @@ void Device::update(const UIState &s) {
   updateWakefulness(s);
 
   // TODO: remove from UIState and use signals
-  QUIState::uiState()->awake = awake;
+  QUIState::ui_state.awake = awake;
 }
 
 void Device::setAwake(bool on, bool reset) {

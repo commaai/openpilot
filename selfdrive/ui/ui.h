@@ -102,44 +102,40 @@ typedef struct UIScene {
   uint64_t started_frame;
 } UIScene;
 
-class UIState {
-public:
-  UIState();
-  ~UIState();
-
-  VisionIpcClient * vipc_client = nullptr;
-  VisionIpcClient * vipc_client_front = nullptr;
-  VisionIpcClient * vipc_client_rear = nullptr;
-  VisionBuf * last_frame = nullptr;
+typedef struct UIState {
+  VisionIpcClient * vipc_client;
+  VisionIpcClient * vipc_client_front;
+  VisionIpcClient * vipc_client_rear;
+  VisionBuf * last_frame;
 
   // framebuffer
-  int fb_w = 0, fb_h = 0;
+  int fb_w, fb_h;
 
   // NVG
-  NVGcontext *vg = nullptr;
+  NVGcontext *vg;
 
   // images
   std::map<std::string, int> images;
 
-  SubMaster sm;
+  std::unique_ptr<SubMaster> sm;
 
-  UIStatus status = STATUS_DISENGAGED;
-  UIScene scene = {};
+  UIStatus status;
+  UIScene scene;
 
   // graphics
   std::unique_ptr<GLShader> gl_shader;
-  std::unique_ptr<EGLImageTexture> texture[UI_BUF_COUNT] = {};
+  std::unique_ptr<EGLImageTexture> texture[UI_BUF_COUNT];
 
-  GLuint frame_vao[2] = {}, frame_vbo[2] = {}, frame_ibo[2] = {};
-  mat4 rear_frame_mat = {}, front_frame_mat = {};
+  GLuint frame_vao[2], frame_vbo[2], frame_ibo[2];
+  mat4 rear_frame_mat, front_frame_mat;
 
-  bool awake = false;
+  bool awake;
 
-  Rect video_rect = {}, viz_rect = {};
-  float car_space_transform[6] = {};
-  bool wide_camera = false;
-  float zoom = 0.;
-};
+  Rect video_rect, viz_rect;
+  float car_space_transform[6];
+  bool wide_camera;
+  float zoom;
+} UIState;
 
 
 class QUIState : public QObject {
@@ -147,7 +143,9 @@ class QUIState : public QObject {
 
 public:
   QUIState(QObject* parent = 0);
-  inline static UIState *uiState() { return ui_; }
+
+  // TODO: get rid of this, only use signal
+  inline static UIState ui_state = {0};
 
 signals:
   void uiUpdate(const UIState &s);
@@ -159,9 +157,6 @@ private slots:
 private:
   QTimer *timer;
   bool started_prev = true;
-  // TODO: get rid of this, only use signal
-  UIState ui_state;
-  inline static UIState *ui_ = nullptr;
 };
 
 

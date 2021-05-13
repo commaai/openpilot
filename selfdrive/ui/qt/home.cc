@@ -51,9 +51,9 @@ void HomeWindow::offroadTransition(bool offroad) {
 
 void HomeWindow::mousePressEvent(QMouseEvent* e) {
   // TODO: make a nice driver view widget
-  if (QUIState::uiState()->scene.driver_view) {
+  if (QUIState::ui_state.scene.driver_view) {
     Params().putBool("IsDriverViewEnabled", false);
-    QUIState::uiState()->scene.driver_view = false;
+    QUIState::ui_state.scene.driver_view = false;
     return;
   }
 

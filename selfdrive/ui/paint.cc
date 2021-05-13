@@ -180,7 +180,7 @@ static void ui_draw_world(UIState *s) {
 
   // Draw lead indicators if openpilot is handling longitudinal
   if (s->scene.longitudinal_control) {
-    auto radar_state = s->sm["radarState"].getRadarState();
+    auto radar_state = (*s->sm)["radarState"].getRadarState();
     auto lead_one = radar_state.getLeadOne();
     auto lead_two = radar_state.getLeadTwo();
     if (lead_one.getStatus()) {
@@ -195,7 +195,7 @@ static void ui_draw_world(UIState *s) {
 
 static void ui_draw_vision_maxspeed(UIState *s) {
   const int SET_SPEED_NA = 255;
-  float maxspeed = s->sm["controlsState"].getControlsState().getVCruise();
+  float maxspeed = (*s->sm)["controlsState"].getControlsState().getVCruise();
   const bool is_cruise_set = maxspeed != 0 && maxspeed != SET_SPEED_NA;
   if (is_cruise_set && !s->scene.is_metric) { maxspeed *= 0.6225; }
 
@@ -214,7 +214,7 @@ static void ui_draw_vision_maxspeed(UIState *s) {
 }
 
 static void ui_draw_vision_speed(UIState *s) {
-  const float speed = std::max(0.0, s->sm["carState"].getCarState().getVEgo() * (s->scene.is_metric ? 3.6 : 2.2369363));
+  const float speed = std::max(0.0, (*s->sm)["carState"].getCarState().getVEgo() * (s->scene.is_metric ? 3.6 : 2.2369363));
   const std::string speed_str = std::to_string((int)std::nearbyint(speed));
   nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
   ui_draw_text(s, s->viz_rect.centerX(), 240, speed_str.c_str(), 96 * 2.5, COLOR_WHITE, "sans-bold");
@@ -222,7 +222,7 @@ static void ui_draw_vision_speed(UIState *s) {
 }
 
 static void ui_draw_vision_event(UIState *s) {
-  if (s->sm["controlsState"].getControlsState().getEngageable()) {
+  if ((*s->sm)["controlsState"].getControlsState().getEngageable()) {
     // draw steering wheel
     const int radius = 96;
     const int center_x = s->viz_rect.right() - radius - bdr_s * 2;
@@ -253,7 +253,7 @@ static void ui_draw_driver_view(UIState *s) {
   ui_fill_rect(s->vg, {blackout_x_l, rect.y, blackout_w_l, rect.h}, COLOR_BLACK_ALPHA(144));
   ui_fill_rect(s->vg, {blackout_x_r, rect.y, blackout_w_r, rect.h}, COLOR_BLACK_ALPHA(144));
 
-  auto driver_state = s->sm["driverState"].getDriverState();
+  auto driver_state = (*s->sm)["driverState"].getDriverState();
   const bool face_detected = driver_state.getFaceProb() > 0.4;
   if (face_detected) {
     auto fxy_list = driver_state.getFacePosition();
@@ -310,7 +310,7 @@ static void ui_draw_vision(UIState *s) {
     }
     // Set Speed, Current Speed, Status/Events
     ui_draw_vision_header(s);
-    if (s->sm["controlsState"].getControlsState().getAlertSize() == cereal::ControlsState::AlertSize::NONE) {
+    if ((*s->sm)["controlsState"].getControlsState().getAlertSize() == cereal::ControlsState::AlertSize::NONE) {
       ui_draw_vision_face(s);
     }
   } else {

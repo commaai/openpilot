@@ -38,7 +38,7 @@ OnroadAlerts::OnroadAlerts(QWidget *parent) : QWidget(parent) {
 }
 
 void OnroadAlerts::updateState(const UIState &s) {
-  const SubMaster &sm = s.sm;
+  SubMaster &sm = *(s.sm);
   if (sm.updated("carState")) {
     // scale volume with speed
     volume = util::map_val(sm["carState"].getCarState().getVEgo(), 0.f, 20.f,
@@ -61,7 +61,7 @@ void OnroadAlerts::updateState(const UIState &s) {
                     "controlsUnresponsive", cereal::ControlsState::AlertSize::FULL, AudibleAlert::CHIME_WARNING_REPEAT);
 
         // TODO: clean this up once Qt handles the border
-        QUIState::uiState()->status = STATUS_ALERT;
+        QUIState::ui_state.status = STATUS_ALERT;
       }
     }
   }
@@ -181,7 +181,7 @@ void NvgWindow::initializeGL() {
   std::cout << "OpenGL renderer: " << glGetString(GL_RENDERER) << std::endl;
   std::cout << "OpenGL language version: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
 
-  ui_nvg_init(QUIState::uiState());
+  ui_nvg_init(&QUIState::ui_state);
   prev_draw_t = millis_since_boot();
 }
 
@@ -194,11 +194,11 @@ void NvgWindow::update(const UIState &s) {
 }
 
 void NvgWindow::paintGL() {
-  ui_draw(QUIState::uiState(), width(), height());
+  ui_draw(&QUIState::ui_state, width(), height());
 
   double cur_draw_t = millis_since_boot();
   double dt = cur_draw_t - prev_draw_t;
-  if (dt > 66 && !QUIState::uiState()->scene.driver_view) {
+  if (dt > 66 && !QUIState::ui_state.scene.driver_view) {
     // warn on sub 15fps
     LOGW("slow frame time: %.2f", dt);
   }
