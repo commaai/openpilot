@@ -14,6 +14,8 @@
 
 constexpr int DESIRE_PRED_SIZE = 32;
 constexpr int OTHER_META_SIZE = 32;
+constexpr int NUM_META_INTERVALS = 5;
+constexpr int META_STRIDE = 6;
 
 constexpr int MODEL_WIDTH = 512;
 constexpr int MODEL_HEIGHT = 256;
@@ -151,6 +153,12 @@ static const float *get_lead_data(const float *lead, int t_offset) {
 }
 
 
+void fill_sigmoid(const float *input, float *output, int len, int stride) {
+  for (int i=0; i<len; i++) {
+    output[i] = sigmoid(input[i*stride]);
+  }
+}
+
 void fill_lead_v2(cereal::ModelDataV2::LeadDataV2::Builder lead, const float *lead_data, const float *prob, int t_offset, float t) {
   const float *data = get_lead_data(lead_data, t_offset);
   lead.setProb(sigmoid(prob[t_offset]));
@@ -173,11 +181,29 @@ void fill_meta(cereal::ModelDataV2::MetaData::Builder meta, const float *meta_da
     softmax(&meta_data[DESIRE_LEN + OTHER_META_SIZE + i*DESIRE_LEN],
             &desire_pred_softmax[i*DESIRE_LEN], DESIRE_LEN);
   }
+
+  float gas_disengage_sigmoid[NUM_META_INTERVALS];
+  float brake_disengage_sigmoid[NUM_META_INTERVALS];
+  float steer_override_sigmoid[NUM_META_INTERVALS];
+  float brake_3ms_sigmoid[NUM_META_INTERVALS];
+  float brake_4ms_sigmoid[NUM_META_INTERVALS];
+  float brake_5ms_sigmoid[NUM_META_INTERVALS];
+
+  fill_sigmoid(&meta_data[DESIRE_LEN+1], gas_disengage_sigmoid, NUM_META_INTERVALS, META_STRIDE);
+  fill_sigmoid(&meta_data[DESIRE_LEN+2], brake_disengage_sigmoid, NUM_META_INTERVALS, META_STRIDE);
+  fill_sigmoid(&meta_data[DESIRE_LEN+3], steer_override_sigmoid, NUM_META_INTERVALS, META_STRIDE);
+  fill_sigmoid(&meta_data[DESIRE_LEN+4], brake_3ms_sigmoid, NUM_META_INTERVALS, META_STRIDE);
+  fill_sigmoid(&meta_data[DESIRE_LEN+5], brake_4ms_sigmoid, NUM_META_INTERVALS, META_STRIDE);
+  fill_sigmoid(&meta_data[DESIRE_LEN+6], brake_5ms_sigmoid, NUM_META_INTERVALS, META_STRIDE);
+
   meta.setDesireState(desire_state_softmax);
   meta.setEngagedProb(sigmoid(meta_data[DESIRE_LEN]));
-  meta.setGasDisengageProb(sigmoid(meta_data[DESIRE_LEN + 1]));
-  meta.setBrakeDisengageProb(sigmoid(meta_data[DESIRE_LEN + 2]));
-  meta.setSteerOverrideProb(sigmoid(meta_data[DESIRE_LEN + 3]));
+  meta.setGasDisengageProbs(gas_disengage_sigmoid);
+  meta.setBrakeDisengageProbs(brake_disengage_sigmoid);
+  meta.setSteerOverrideProbs(steer_override_sigmoid);
+  meta.setBrake3msProbs(brake_3ms_sigmoid);
+  meta.setBrake4msProbs(brake_4ms_sigmoid);
+  meta.setBrake5msProbs(brake_5ms_sigmoid);
   meta.setDesirePrediction(desire_pred_softmax);
 }
 
@@ -221,10 +247,16 @@ void fill_model(cereal::ModelDataV2::Builder &framed, const ModelDataRaw &net_ou
   // plan
   const float *best_plan = get_plan_data(net_outputs.plan);
   float plan_t_arr[TRAJECTORY_SIZE];
-  int tidx = 0;
-  for (int i=0; i<TRAJECTORY_SIZE; i++) {
-    for (; tidx < TRAJECTORY_SIZE - 1 && best_plan[tidx*PLAN_MHP_COLUMNS] < X_IDXS[i]; tidx++) {}
-    plan_t_arr[i] = T_IDXS[tidx];
+  for (int i=0, tidx=0; i<TRAJECTORY_SIZE; i++) {
+    for (; tidx < TRAJECTORY_SIZE - 1 && best_plan[(tidx+1)*PLAN_MHP_COLUMNS] < X_IDXS[i]; tidx++) {}
+    float current_x_val = best_plan[tidx*PLAN_MHP_COLUMNS];
+    float next_x_val = best_plan[(tidx+1)*PLAN_MHP_COLUMNS];
+    if (next_x_val < X_IDXS[i]) {
+      plan_t_arr[i] = NAN;
+    } else {
+      float p = (X_IDXS[i] - current_x_val) / (next_x_val - current_x_val);
+      plan_t_arr[i] = p * T_IDXS[tidx+1] + (1 - p) * T_IDXS[tidx];
+    }
   }
 
   fill_xyzt(framed.initPosition(), best_plan, PLAN_MHP_COLUMNS, 0, plan_t_arr, true);
