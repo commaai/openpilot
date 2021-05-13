@@ -62,26 +62,9 @@ def match_vision_to_cluster(v_ego, lead, clusters):
 
 def get_lead(v_ego, a_ego, ready, clusters, lead_msg, low_speed_override=True):
   # Determine leads, this is where the essential logic happens
-  if len(clusters) > 0 and ready and lead_msg.prob > .5:
-    cluster = match_vision_to_cluster(v_ego, lead_msg, clusters)
-  else:
-    cluster = None
-
   lead_dict = {'status': False}
-  if cluster is not None:
-    lead_dict = cluster.get_RadarState(lead_msg.prob)
-  elif (cluster is None) and ready and (lead_msg.prob > .5):
+  if ready and (lead_msg.prob > .5):
     lead_dict = Cluster().get_RadarState_from_vision(lead_msg, v_ego, a_ego)
-
-  if low_speed_override:
-    low_speed_clusters = [c for c in clusters if c.potential_low_speed_lead(v_ego)]
-    if len(low_speed_clusters) > 0:
-      closest_cluster = min(low_speed_clusters, key=lambda c: c.dRel)
-
-      # Only choose new cluster if it is actually closer than the previous one
-      if (not lead_dict['status']) or (closest_cluster.dRel < lead_dict['dRel']):
-        lead_dict = closest_cluster.get_RadarState()
-
   return lead_dict
 
 
