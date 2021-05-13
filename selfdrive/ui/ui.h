@@ -41,11 +41,6 @@ typedef struct Rect {
   }
 } Rect;
 
-// TODO: this is also hardcoded in common/transformations/camera.py
-// TODO: choose based on frame input size
-const float y_offset = Hardware::TICI() ? 150.0 : 0.0;
-const float zoom = Hardware::TICI() ? 2912.8 : 2138.5;
-
 const int bdr_s = 30;
 const int header_h = 420;
 const int footer_h = 280;
@@ -80,9 +75,6 @@ typedef struct UIScene {
   mat3 view_from_calib;
   bool world_objects_visible;
 
-  bool is_rhd;
-  bool driver_view;
-
   cereal::PandaState::PandaType pandaType;
 
   // gps
@@ -104,6 +96,23 @@ typedef struct UIScene {
   uint64_t started_frame;
 } UIScene;
 
+class UIVision {
+public:
+  UIVision(VisionStreamType stream_type);
+  ~UIVision();
+  void update();
+  void draw();
+  inline bool connected() const { return vipc_client->connected; }
+
+private:
+  VisionIpcClient *vipc_client = nullptr;
+  VisionBuf *last_frame = nullptr;
+  GLuint frame_vao, frame_vbo, frame_ibo;
+  mat4 frame_mat;
+  std::unique_ptr<EGLImageTexture> texture[UI_BUF_COUNT];
+  inline static std::unique_ptr<GLShader> gl_shader;
+};
+
 typedef struct UIState {
   VisionIpcClient * vipc_client;
   VisionIpcClient * vipc_client_front;
@@ -124,9 +133,6 @@ typedef struct UIState {
 
   UIStatus status;
   UIScene scene;
-
-  // graphics
-  std::unique_ptr<EGLImageTexture> texture[UI_BUF_COUNT];
 
   bool awake;
 

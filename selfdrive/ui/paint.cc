@@ -21,8 +21,14 @@
 #include "selfdrive/common/timing.h"
 #include "selfdrive/common/util.h"
 #include "selfdrive/hardware/hw.h"
+#include "selfdrive/ui/qt/qt_window.h"
 
 #include "selfdrive/ui/ui.h"
+
+// TODO: this is also hardcoded in common/transformations/camera.py
+// TODO: choose based on frame input size
+const float y_offset = Hardware::TICI() ? 150.0 : 0.0;
+const float zoom = Hardware::TICI() ? 2912.8 : 2138.5;
 
 static void ui_draw_text(const UIState *s, float x, float y, const char *string, float size, NVGcolor color, const char *font_name) {
   nvgFontFace(s->vg, font_name);
@@ -203,45 +209,6 @@ static void ui_draw_vision_face(UIState *s) {
   ui_draw_circle_image(s, center_x, center_y, radius, "driver_face", is_active);
 }
 
-static void ui_draw_driver_view(UIState *s) {
-  const bool is_rhd = s->scene.is_rhd;
-  const int width = 4 * s->viz_rect.h / 3;
-  const Rect rect = {s->viz_rect.centerX() - width / 2, s->viz_rect.y, width, s->viz_rect.h};  // x, y, w, h
-  const Rect valid_rect = {is_rhd ? rect.right() - rect.h / 2 : rect.x, rect.y, rect.h / 2, rect.h};
-
-  // blackout
-  const int blackout_x_r = valid_rect.right();
-  const Rect &blackout_rect = Hardware::TICI() ? s->viz_rect : rect;
-  const int blackout_w_r = blackout_rect.right() - valid_rect.right();
-  const int blackout_x_l = blackout_rect.x;
-  const int blackout_w_l = valid_rect.x - blackout_x_l;
-  ui_fill_rect(s->vg, {blackout_x_l, rect.y, blackout_w_l, rect.h}, COLOR_BLACK_ALPHA(144));
-  ui_fill_rect(s->vg, {blackout_x_r, rect.y, blackout_w_r, rect.h}, COLOR_BLACK_ALPHA(144));
-
-  auto driver_state = (*s->sm)["driverState"].getDriverState();
-  const bool face_detected = driver_state.getFaceProb() > 0.4;
-  if (face_detected) {
-    auto fxy_list = driver_state.getFacePosition();
-    float face_x = fxy_list[0];
-    float face_y = fxy_list[1];
-    int fbox_x = valid_rect.centerX() + (is_rhd ? face_x : -face_x) * valid_rect.w;
-    int fbox_y = valid_rect.centerY() + face_y * valid_rect.h;
-
-    float alpha = 0.2;
-    if (face_x = std::abs(face_x), face_y = std::abs(face_y); face_x <= 0.35 && face_y <= 0.4)
-      alpha = 0.8 - (face_x > face_y ? face_x : face_y) * 0.6 / 0.375;
-
-    const int box_size = 0.6 * rect.h / 2;
-    ui_draw_rect(s->vg, {fbox_x - box_size / 2, fbox_y - box_size / 2, box_size, box_size}, nvgRGBAf(1.0, 1.0, 1.0, alpha), 10, 35.);
-  }
-
-  // draw face icon
-  const int face_radius = 85;
-  const int center_x = is_rhd ? rect.right() - face_radius - bdr_s * 2 : rect.x + face_radius + bdr_s * 2;
-  const int center_y = rect.bottom() - face_radius - bdr_s * 2.5;
-  ui_draw_circle_image(s, center_x, center_y, face_radius, "driver_face", face_detected);
-}
-
 static void ui_draw_vision_header(UIState *s) {
   NVGpaint gradient = nvgLinearGradient(s->vg, s->viz_rect.x,
                         s->viz_rect.y+(header_h-(header_h/2.5)),
@@ -255,27 +222,46 @@ static void ui_draw_vision_header(UIState *s) {
   ui_draw_vision_event(s);
 }
 
+static void ui_draw_vision_frame(UIState *s) {
+  // Draw video frames
+  glEnable(GL_SCISSOR_TEST);
+  glViewport(s->video_rect.x, s->video_rect.y, s->video_rect.w, s->video_rect.h);
+  glScissor(s->viz_rect.x, s->viz_rect.y, s->viz_rect.w, s->viz_rect.h);
+  s->vision->draw();
+  glDisable(GL_SCISSOR_TEST);
+
+  glViewport(0, 0, s->fb_w, s->fb_h);
+}
+
 static void ui_draw_vision(UIState *s) {
   const UIScene *scene = &s->scene;
-  if (!scene->driver_view) {
-    // Draw augmented elements
-    if (scene->world_objects_visible) {
-      ui_draw_world(s);
-    }
-    // Set Speed, Current Speed, Status/Events
-    ui_draw_vision_header(s);
-    if ((*s->sm)["controlsState"].getControlsState().getAlertSize() == cereal::ControlsState::AlertSize::NONE) {
-      ui_draw_vision_face(s);
-    }
-  } else {
-    ui_draw_driver_view(s);
+  // Draw augmented elements
+  if (scene->world_objects_visible) {
+    ui_draw_world(s);
   }
+  // Set Speed, Current Speed, Status/Events
+  ui_draw_vision_header(s);
+  if ((*s->sm)["controlsState"].getControlsState().getAlertSize() == cereal::ControlsState::AlertSize::NONE) {
+    ui_draw_vision_face(s);
+  }
+}
+
+static void ui_draw_background(UIState *s) {
+  const NVGcolor color = bg_colors[s->status];
+  glClearColor(color.r, color.g, color.b, 1.0);
+  glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 }
 
 void ui_draw(UIState *s, int w, int h) {
   s->viz_rect = Rect{bdr_s, bdr_s, w - 2 * bdr_s, h - 2 * bdr_s};
 
-  const bool draw_vision = s->scene.started && s->vipc_client->connected;
+  const bool draw_vision = s->scene.started && s->vision && s->vision->connected();
+
+  // GL drawing functions
+  ui_draw_background(s);
+  if (draw_vision) {
+    ui_draw_vision_frame(s);
+  }
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glViewport(0, 0, s->fb_w, s->fb_h);
@@ -287,10 +273,6 @@ void ui_draw(UIState *s, int w, int h) {
     ui_draw_vision(s);
   }
 
-  if (s->scene.driver_view && !s->vipc_client->connected) {
-    nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
-    ui_draw_text(s, s->viz_rect.centerX(), s->viz_rect.centerY(), "Please wait for camera to start", 40 * 2.5, COLOR_WHITE, "sans-bold");
-  }
   nvgEndFrame(s->vg);
   glDisable(GL_BLEND);
 }
@@ -324,6 +306,78 @@ void ui_fill_rect(NVGcontext *vg, const Rect &r, const NVGcolor &color, float ra
 void ui_fill_rect(NVGcontext *vg, const Rect &r, const NVGpaint &paint, float radius) {
   fill_rect(vg, r, nullptr, &paint, radius);
 }
+
+static const char frame_vertex_shader[] =
+#ifdef NANOVG_GL3_IMPLEMENTATION
+  "#version 150 core\n"
+#else
+  "#version 300 es\n"
+#endif
+  "in vec4 aPosition;\n"
+  "in vec4 aTexCoord;\n"
+  "uniform mat4 uTransform;\n"
+  "out vec4 vTexCoord;\n"
+  "void main() {\n"
+  "  gl_Position = uTransform * aPosition;\n"
+  "  vTexCoord = aTexCoord;\n"
+  "}\n";
+
+static const char frame_fragment_shader[] =
+#ifdef NANOVG_GL3_IMPLEMENTATION
+  "#version 150 core\n"
+#else
+  "#version 300 es\n"
+#endif
+  "precision mediump float;\n"
+  "uniform sampler2D uTexture;\n"
+  "in vec4 vTexCoord;\n"
+  "out vec4 colorOut;\n"
+  "void main() {\n"
+  "  colorOut = texture(uTexture, vTexCoord.xy);\n"
+#ifdef QCOM
+  "  vec3 dz = vec3(0.0627f, 0.0627f, 0.0627f);\n"
+  "  colorOut.rgb = ((vec3(1.0f, 1.0f, 1.0f) - dz) * colorOut.rgb / vec3(1.0f, 1.0f, 1.0f)) + dz;\n"
+#endif
+  "}\n";
+
+static const mat4 device_transform = {{
+  1.0,  0.0, 0.0, 0.0,
+  0.0,  1.0, 0.0, 0.0,
+  0.0,  0.0, 1.0, 0.0,
+  0.0,  0.0, 0.0, 1.0,
+}};
+
+static mat4 get_driver_view_transform() {
+  const float driver_view_ratio = 1.333;
+  mat4 transform;
+  if (Hardware::TICI()) {
+    // from dmonitoring.cc
+    const int full_width_tici = 1928;
+    const int full_height_tici = 1208;
+    const int adapt_width_tici = 668;
+    const int crop_x_offset = 32;
+    const int crop_y_offset = -196;
+    const float yscale = full_height_tici * driver_view_ratio / adapt_width_tici;
+    const float xscale = yscale*(1080-2*bdr_s)/(2160-2*bdr_s)*full_width_tici/full_height_tici;
+    transform = (mat4){{
+      xscale,  0.0, 0.0, xscale*crop_x_offset/full_width_tici*2,
+      0.0,  yscale, 0.0, yscale*crop_y_offset/full_height_tici*2,
+      0.0,  0.0, 1.0, 0.0,
+      0.0,  0.0, 0.0, 1.0,
+    }};
+  
+  } else {
+     // frame from 4/3 to 16/9 display
+    transform = (mat4){{
+      driver_view_ratio*(1080-2*bdr_s)/(1920-2*bdr_s),  0.0, 0.0, 0.0,
+      0.0,  1.0, 0.0, 0.0,
+      0.0,  0.0, 1.0, 0.0,
+      0.0,  0.0, 0.0, 1.0,
+    }};
+  }
+  return transform;
+}
+
 void ui_nvg_init(UIState *s) {
   // init drawing
 
@@ -345,12 +399,16 @@ void ui_nvg_init(UIState *s) {
   // init images
   std::vector<std::pair<const char *, const char *>> images = {
     {"wheel", "../assets/img_chffr_wheel.png"},
-    {"driver_face", "../assets/img_driver_face.png"},
   };
   for (auto [name, file] : images) {
     s->images[name] = nvgCreateImage(s->vg, file, 1);
     assert(s->images[name] != 0);
   }
+
+  glViewport(0, 0, s->fb_w, s->fb_h);
+  glDisable(GL_DEPTH_TEST);
+  assert(glGetError() == GL_NO_ERROR);
+
 
   auto intrinsic_matrix = s->wide_camera ? ecam_intrinsic_matrix : fcam_intrinsic_matrix;
 
@@ -373,4 +431,120 @@ void ui_nvg_init(UIState *s) {
 
   nvgCurrentTransform(s->vg, s->car_space_transform);
   nvgResetTransform(s->vg);
+}
+
+UIVision::UIVision(VisionStreamType stream_type) {
+   // init gl
+  if (!gl_shader) {
+    gl_shader = std::make_unique<GLShader>(frame_vertex_shader, frame_fragment_shader);
+  }
+  GLint frame_pos_loc = glGetAttribLocation(gl_shader->prog, "aPosition");
+  GLint frame_texcoord_loc = glGetAttribLocation(gl_shader->prog, "aTexCoord");
+
+  auto [x1, x2, y1, y2] = stream_type == VISION_STREAM_RGB_FRONT ? std::tuple(0.f, 1.f, 1.f, 0.f) : std::tuple(1.f, 0.f, 1.f, 0.f);
+  const uint8_t frame_indicies[] = {0, 1, 2, 0, 2, 3};
+  const float frame_coords[4][4] = {
+    {-1.0, -1.0, x2, y1}, //bl
+    {-1.0,  1.0, x2, y2}, //tl
+    { 1.0,  1.0, x1, y2}, //tr
+    { 1.0, -1.0, x1, y1}, //br
+  };
+
+  glGenVertexArrays(1, &frame_vao);
+  glBindVertexArray(frame_vao);
+  glGenBuffers(1, &frame_vbo);
+  glBindBuffer(GL_ARRAY_BUFFER, frame_vbo);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(frame_coords), frame_coords, GL_STATIC_DRAW);
+  glEnableVertexAttribArray(frame_pos_loc);
+  glVertexAttribPointer(frame_pos_loc, 2, GL_FLOAT, GL_FALSE,
+                        sizeof(frame_coords[0]), (const void *)0);
+  glEnableVertexAttribArray(frame_texcoord_loc);
+  glVertexAttribPointer(frame_texcoord_loc, 2, GL_FLOAT, GL_FALSE,
+                        sizeof(frame_coords[0]), (const void *)(sizeof(float) * 2));
+  glGenBuffers(1, &frame_ibo);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, frame_ibo);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(frame_indicies), frame_indicies, GL_STATIC_DRAW);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+  glBindVertexArray(0);
+
+  if (stream_type == VISION_STREAM_RGB_FRONT) {
+    frame_mat = matmul(device_transform, get_driver_view_transform());
+  } else {
+    Rect video_rect = Rect{bdr_s, bdr_s, vwp_w - 2 * bdr_s, vwp_h - 2 * bdr_s};
+    auto intrinsic_matrix = stream_type == VISION_STREAM_RGB_WIDE ? ecam_intrinsic_matrix : fcam_intrinsic_matrix;
+    float zoom_ = zoom / intrinsic_matrix.v[0];
+    if (stream_type == VISION_STREAM_RGB_WIDE) {
+      zoom_ *= 0.5;
+    }
+    float zx = zoom_ * 2 * intrinsic_matrix.v[2] / video_rect.w;
+    float zy = zoom_ * 2 * intrinsic_matrix.v[5] / video_rect.h;
+
+    const mat4 frame_transform = {{
+      zx, 0.0, 0.0, 0.0,
+      0.0, zy, 0.0, -y_offset / video_rect.h * 2,
+      0.0, 0.0, 1.0, 0.0,
+      0.0, 0.0, 0.0, 1.0,
+    }};
+    frame_mat = matmul(device_transform, frame_transform);
+  }
+  vipc_client = new VisionIpcClient("camerad", stream_type, true);
+}
+
+UIVision::~UIVision() {
+  glDeleteVertexArrays(1, &frame_vao);
+  glDeleteBuffers(1, &frame_vbo);
+  glDeleteBuffers(1, &frame_ibo);
+  delete vipc_client;
+  LOGW("UIVision disconnected");
+}
+
+void UIVision::update() {
+  if (!vipc_client->connected && vipc_client->connect(false)) {
+    // init vision
+    for (int i = 0; i < vipc_client->num_buffers; i++) {
+      texture[i].reset(new EGLImageTexture(&vipc_client->buffers[i]));
+
+      glBindTexture(GL_TEXTURE_2D, texture[i]->frame_tex);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+      // BGR
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_BLUE);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
+      assert(glGetError() == GL_NO_ERROR);
+    }
+  }
+
+  if (vipc_client->connected) {
+    if (VisionBuf *buf = vipc_client->recv(); buf != nullptr) {
+      last_frame = buf;
+    } else if (!Hardware::PC()) {
+      LOGE("visionIPC receive timeout");
+    }
+  }
+}
+
+void UIVision::draw() {
+  glBindVertexArray(frame_vao);
+  glActiveTexture(GL_TEXTURE0);
+
+  if (last_frame) {
+    glBindTexture(GL_TEXTURE_2D, texture[last_frame->idx]->frame_tex);
+    if (!Hardware::EON()) {
+      // this is handled in ion on QCOM
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, last_frame->width, last_frame->height,
+                   0, GL_RGB, GL_UNSIGNED_BYTE, last_frame->addr);
+    }
+  }
+
+  glUseProgram(gl_shader->prog);
+  glUniform1i(gl_shader->getUniformLocation("uTexture"), 0);
+  glUniformMatrix4fv(gl_shader->getUniformLocation("uTransform"), 1, GL_TRUE, frame_mat.v);
+
+  assert(glGetError() == GL_NO_ERROR);
+  glEnableVertexAttribArray(0);
+  glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, (const void *)0);
+  glDisableVertexAttribArray(0);
+  glBindVertexArray(0);
 }

@@ -35,6 +35,31 @@ public slots:
   void refresh();
 };
 
+
+class DriverViewWindow : public QOpenGLWidget, protected QOpenGLFunctions {
+  Q_OBJECT
+
+public:
+  using QOpenGLWidget::QOpenGLWidget;
+  explicit DriverViewWindow(QWidget* parent = 0);
+  ~DriverViewWindow();
+
+protected:
+  void paintGL() override;
+  void initializeGL() override;
+
+protected slots:
+  void onTimeout();
+
+private:
+  std::unique_ptr<UIVision> vision;
+  QTimer *timer;
+  // NVGcontext *vg;
+  // int img_driver_face;
+  QImage face_img;
+  SubMaster sm;
+  bool is_rhd;
+};
 class HomeWindow : public QWidget {
   Q_OBJECT
 
@@ -49,9 +74,11 @@ signals:
   void displayPowerChanged(bool on);
   void update(const UIState &s);
   void offroadTransitionSignal(bool offroad);
+  void previewDriverCam();
 
 public slots:
   void offroadTransition(bool offroad);
+  void driverView();
 
 protected:
   void mousePressEvent(QMouseEvent* e) override;
@@ -60,5 +87,6 @@ private:
   Sidebar *sidebar;
   OffroadHome *home;
   OnroadWindow *onroad;
+  DriverViewWindow *driver_view = nullptr;
   QStackedLayout *slayout;
 };

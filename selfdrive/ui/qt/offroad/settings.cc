@@ -115,10 +115,7 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
 
   offroad_btns.append(new ButtonControl("Driver Camera", "PREVIEW",
                                         "Preview the driver facing camera to help optimize device mounting position for best driver monitoring experience. (vehicle must be off)",
-                                        [=]() {
-                                           Params().putBool("IsDriverViewEnabled", true);
-                                           QUIState::ui_state.scene.driver_view = true;
-                                        }, "", this));
+                                        [=]() { emit driverView(); }, "", this));
 
   QString resetCalibDesc = "openpilot requires the device to be mounted within 4° left or right and within 5° up or down. openpilot is continuously calibrating, resetting is rarely required.";
   ButtonControl *resetCalibBtn = new ButtonControl("Reset Calibration", "RESET", resetCalibDesc, [=]() {
@@ -298,6 +295,7 @@ void SettingsWindow::showEvent(QShowEvent *event) {
   // setup panels
   DevicePanel *device = new DevicePanel(this);
   QObject::connect(device, &DevicePanel::reviewTrainingGuide, this, &SettingsWindow::reviewTrainingGuide);
+  QObject::connect(device, &DevicePanel::driverView, this, &SettingsWindow::driverView);
 
   QPair<QString, QWidget *> panels[] = {
     {"Device", device},
