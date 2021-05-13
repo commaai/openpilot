@@ -327,6 +327,14 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       Priority.HIGHEST, VisualAlert.fcw, AudibleAlert.chimeWarningRepeat, 1., 2., 2.),
   },
 
+  EventName.modelFcw: {
+    ET.WARNING: Alert(
+      "BRAKE!",
+      "Model FCW: Risk of Collision",
+      AlertStatus.critical, AlertSize.full,
+      Priority.HIGHEST, VisualAlert.fcw, AudibleAlert.chimeWarningRepeat, 1., 2., 2.),
+  },
+
   EventName.ldw: {
     ET.PERMANENT: Alert(
       "TAKE CONTROL",

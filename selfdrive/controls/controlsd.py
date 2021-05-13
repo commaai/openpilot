@@ -253,8 +253,10 @@ class Controls:
       self.events.add(EventName.deviceFalling)
     if log.PandaState.FaultType.relayMalfunction in self.sm['pandaState'].faults:
       self.events.add(EventName.relayMalfunction)
-    if self.sm['longitudinalPlan'].fcw or self.sm['modelV2'].meta.forwardCollisionDetected:
+    if self.sm['longitudinalPlan'].fcw:
       self.events.add(EventName.fcw)
+    if self.sm['modelV2'].meta.forwardCollisionDetected:
+      self.events.add(EventName.modelFcw)
 
     if TICI and self.enable_lte_onroad:
       logs = messaging.drain_sock(self.log_sock, wait_for_one=False)

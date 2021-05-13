@@ -259,7 +259,7 @@ void fill_model(cereal::ModelDataV2::Builder &framed, const ModelDataRaw &net_ou
     float current_x_val = best_plan[tidx*PLAN_MHP_COLUMNS];
     float next_x_val = best_plan[(tidx+1)*PLAN_MHP_COLUMNS];
     if (next_x_val < X_IDXS[i]) {
-      plan_t_arr[i] = NAN;
+      plan_t_arr[i] = T_IDXS[TRAJECTORY_SIZE-1];
     } else {
       float p = (X_IDXS[i] - current_x_val) / (next_x_val - current_x_val);
       plan_t_arr[i] = p * T_IDXS[tidx+1] + (1 - p) * T_IDXS[tidx];
