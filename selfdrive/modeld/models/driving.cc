@@ -13,15 +13,15 @@
 #include "selfdrive/common/timing.h"
 
 constexpr int DESIRE_PRED_SIZE = 32;
-constexpr int OTHER_META_SIZE = 4;
+constexpr int OTHER_META_SIZE = 32;
 
 constexpr int MODEL_WIDTH = 512;
 constexpr int MODEL_HEIGHT = 256;
 constexpr int MODEL_FRAME_SIZE = MODEL_WIDTH * MODEL_HEIGHT * 3 / 2;
 
 constexpr int PLAN_MHP_N = 5;
-constexpr int PLAN_MHP_COLUMNS = 30;
-constexpr int PLAN_MHP_VALS = 30*33;
+constexpr int PLAN_MHP_COLUMNS = 15;
+constexpr int PLAN_MHP_VALS = 15*33;
 constexpr int PLAN_MHP_SELECTION = 1;
 constexpr int PLAN_MHP_GROUP_SIZE =  (2*PLAN_MHP_VALS + PLAN_MHP_SELECTION);
 
@@ -35,7 +35,7 @@ constexpr int POSE_SIZE = 12;
 constexpr int PLAN_IDX = 0;
 constexpr int LL_IDX = PLAN_IDX + PLAN_MHP_N*PLAN_MHP_GROUP_SIZE;
 constexpr int LL_PROB_IDX = LL_IDX + 4*2*2*33;
-constexpr int RE_IDX = LL_PROB_IDX + 4;
+constexpr int RE_IDX = LL_PROB_IDX + 8;
 constexpr int LEAD_IDX = RE_IDX + 2*2*2*33;
 constexpr int LEAD_PROB_IDX = LEAD_IDX + LEAD_MHP_N*(LEAD_MHP_GROUP_SIZE);
 constexpr int DESIRE_STATE_IDX = LEAD_PROB_IDX + 3;
@@ -221,8 +221,10 @@ void fill_model(cereal::ModelDataV2::Builder &framed, const ModelDataRaw &net_ou
   // plan
   const float *best_plan = get_plan_data(net_outputs.plan);
   float plan_t_arr[TRAJECTORY_SIZE];
+  int tidx = 0;
   for (int i=0; i<TRAJECTORY_SIZE; i++) {
-    plan_t_arr[i] = best_plan[i*PLAN_MHP_COLUMNS + 15];
+    for (; tidx < TRAJECTORY_SIZE - 1 && best_plan[tidx*PLAN_MHP_COLUMNS] < X_IDXS[i]; tidx++) {}
+    plan_t_arr[i] = T_IDXS[tidx];
   }
 
   fill_xyzt(framed.initPosition(), best_plan, PLAN_MHP_COLUMNS, 0, plan_t_arr, true);
@@ -236,7 +238,7 @@ void fill_model(cereal::ModelDataV2::Builder &framed, const ModelDataRaw &net_ou
   float lane_line_stds_arr[4];
   for (int i = 0; i < 4; i++) {
     fill_xyzt(lane_lines[i], &net_outputs.lane_lines[i*TRAJECTORY_SIZE*2], 2, -1, plan_t_arr, false);
-    lane_line_probs_arr[i] = sigmoid(net_outputs.lane_lines_prob[i]);
+    lane_line_probs_arr[i] = sigmoid(net_outputs.lane_lines_prob[i*2+1]);
     lane_line_stds_arr[i] = exp(net_outputs.lane_lines[2*TRAJECTORY_SIZE*(4 + i)]);
   }
   framed.setLaneLineProbs(lane_line_probs_arr);
