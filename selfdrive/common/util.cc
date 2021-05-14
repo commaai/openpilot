@@ -152,7 +152,7 @@ std::string dir_name(std::string const &path) {
 
 // class ExitHandler
 
-struct ExitHandleHelper {
+struct ExitHandlerHelper {
   static void set_do_exit(int sig) {
 #ifndef __APPLE__
     power_failure = (sig == SIGPWR);
@@ -164,22 +164,22 @@ struct ExitHandleHelper {
 };
 
 ExitHandler::ExitHandler() {
-  std::signal(SIGINT, (sighandler_t)ExitHandleHelper::set_do_exit);
-  std::signal(SIGTERM, (sighandler_t)ExitHandleHelper::set_do_exit);
+  std::signal(SIGINT, (sighandler_t)ExitHandlerHelper::set_do_exit);
+  std::signal(SIGTERM, (sighandler_t)ExitHandlerHelper::set_do_exit);
 #ifndef __APPLE__
-  std::signal(SIGPWR, (sighandler_t)ExitHandleHelper::set_do_exit);
+  std::signal(SIGPWR, (sighandler_t)ExitHandlerHelper::set_do_exit);
 #endif
 }
 
 ExitHandler::operator bool() { 
-  return ExitHandleHelper::do_exit; 
+  return ExitHandlerHelper::do_exit; 
 }
 
 ExitHandler& ExitHandler::operator=(bool v) {
-  ExitHandleHelper::do_exit = v;
+  ExitHandlerHelper::do_exit = v;
   return *this;
 }
 
 bool ExitHandler::powerFailure() {
-  return ExitHandleHelper::power_failure;
+  return ExitHandlerHelper::power_failure;
 }
