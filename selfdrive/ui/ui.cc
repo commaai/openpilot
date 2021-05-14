@@ -170,9 +170,6 @@ static void update_state(UIState *s) {
       scene.satelliteCount = data.getMeasurementReport().getNumMeas();
     }
   }
-  if (sm.updated("liveLocationKalman")) {
-    scene.gpsOK = sm["liveLocationKalman"].getLiveLocationKalman().getGpsOK();
-  }
   if (sm.updated("carParams")) {
     scene.longitudinal_control = sm["carParams"].getCarParams().getOpenpilotLongitudinalControl();
   }
