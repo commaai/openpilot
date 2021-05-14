@@ -40,7 +40,7 @@ Sidebar::Sidebar(QWidget *parent) : QFrame(parent) {
   connect(this, &Sidebar::valueChanged, [=] { update(); });
 
   setFixedWidth(300);
-  setMinimumHeight(vwp_h);
+  setMinimumHeight(HARDWARE.screen_size[1]);
   setStyleSheet("background-color: rgb(57, 57, 57);");
 }
 
