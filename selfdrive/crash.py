@@ -7,8 +7,12 @@ from sentry_sdk.integrations.threading import ThreadingIntegration
 
 def capture_exception(*args, **kwargs):
   cloudlog.error("crash", exc_info=kwargs.get('exc_info', 1))
-  sentry_sdk.capture_exception(*args, **kwargs)
-  sentry_sdk.flush()  # https://github.com/getsentry/sentry-python/issues/291
+
+  try:
+    sentry_sdk.capture_exception(*args, **kwargs)
+    sentry_sdk.flush()  # https://github.com/getsentry/sentry-python/issues/291
+  except Exception:
+    pass
 
 def bind_user(**kwargs):
   sentry_sdk.set_user(kwargs)
