@@ -367,9 +367,8 @@ msg_types = {
     'reserved4', 'reserved5'
   ]),
   (CLASS_CFG, MSG_CFG_ITMF):
-  UBloxDescriptor('CFG_ITMF', '<I', [
-    'portID', 'reserved0', 'txReady', 'mode', 'baudRate', 'inProtoMask', 'outProtoMask',
-    'reserved4', 'reserved5'
+  UBloxDescriptor('CFG_ITMF', '<II', [
+    'config', 'config2'
   ]),
   (CLASS_CFG, MSG_CFG_CFG):
   UBloxDescriptor('CFG_CFG', '<III,B',
