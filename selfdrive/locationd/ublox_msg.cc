@@ -303,6 +303,7 @@ kj::Array<capnp::word> UbloxMsgParser::gen_mon_hw(ubx_t::mon_hw_t *msg) {
   MessageBuilder msg_builder;
   auto hwStatus = msg_builder.initEvent().initUbloxGnss().initHwStatus();
   hwStatus.setNoisePerMS(msg->noise_per_ms());
+  hwStatus.setFlags(msg->flags());
   hwStatus.setAgcCnt(msg->agc_cnt());
   hwStatus.setAStatus((cereal::UbloxGnss::HwStatus::AntennaSupervisorState) msg->a_status());
   hwStatus.setAPower((cereal::UbloxGnss::HwStatus::AntennaPowerStatus) msg->a_power());
