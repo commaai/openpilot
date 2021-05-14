@@ -27,7 +27,6 @@ static kj::Array<capnp::word> build_boot_log() {
 
     for (auto &k : log_keywords) {
       if (kv.second.find(k) != std::string::npos) {
-        printf("%s: found %s\n", kv.first.c_str(), k.c_str());
         LOGE("%s: found '%s'", kv.first.c_str(), k.c_str());
       }
     }
