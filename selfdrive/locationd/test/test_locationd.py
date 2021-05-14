@@ -54,6 +54,7 @@ void localizer_handle_msg_bytes(Localizer_t localizer, const char *data, size_t 
   def test_device_fell(self):
     msg = messaging.new_message('sensorEvents', 1)
     msg.sensorEvents[0].sensor = 1
+    msg.sensorEvents[0].timestamp = msg.logMonoTime
     msg.sensorEvents[0].type = 1
     msg.sensorEvents[0].init('acceleration')
     msg.sensorEvents[0].acceleration.v = [10.0, 0.0, 0.0]  # zero with gravity
@@ -64,6 +65,7 @@ void localizer_handle_msg_bytes(Localizer_t localizer, const char *data, size_t 
 
     msg = messaging.new_message('sensorEvents', 1)
     msg.sensorEvents[0].sensor = 1
+    msg.sensorEvents[0].timestamp = msg.logMonoTime
     msg.sensorEvents[0].type = 1
     msg.sensorEvents[0].init('acceleration')
     msg.sensorEvents[0].acceleration.v = [50.1, 0.0, 0.0]  # more than 40 m/s**2
