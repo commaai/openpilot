@@ -35,9 +35,9 @@ def configure_ublox(dev):
                                             0, 0, 0, 0, 0,
                                             0, 0, 0, 0, 0)
   dev.configure_poll(ublox.CLASS_CFG, ublox.MSG_CFG_ODO, payload)
-  #bits_ITMF_config1 = '10101101011000101010110000110011'
+  #bits_ITMF_config1 = '10101101011000101010110111111111'
   #bits_ITMF_config2 = '00000000000000000110001100011110'
-  ITMF_config1 = 2908924979
+  ITMF_config1 = 2908925439
   ITMF_config2 = 25374
   payload = struct.pack('<II', ITMF_config1, ITMF_config2)
   dev.configure_poll(ublox.CLASS_CFG, ublox.MSG_CFG_ITMF, payload)
