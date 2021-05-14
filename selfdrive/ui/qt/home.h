@@ -54,8 +54,6 @@ protected slots:
 private:
   std::unique_ptr<UIVision> vision;
   QTimer *timer;
-  // NVGcontext *vg;
-  // int img_driver_face;
   QImage face_img;
   SubMaster sm;
   bool is_rhd;
