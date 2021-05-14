@@ -16,6 +16,7 @@ static kj::Array<capnp::word> build_boot_log() {
   std::map<std::string, std::string> pstore_map;
   util::read_files_in_dir(pstore, &pstore_map);
 
+  const std::vector<std::string> log_keywords = {"Kernel panic"};
   auto lpstore = boot.initPstore().initEntries(pstore_map.size());
   int i = 0;
   for (auto& kv : pstore_map) {
@@ -23,6 +24,12 @@ static kj::Array<capnp::word> build_boot_log() {
     lentry.setKey(kv.first);
     lentry.setValue(capnp::Data::Reader((const kj::byte*)kv.second.data(), kv.second.size()));
     i++;
+
+    for (auto &k : log_keywords) {
+      if (kv.second.find(k) != std::string::npos) {
+        LOGE("%s: found '%s'", kv.first.c_str(), k.c_str());
+      }
+    }
   }
 
   std::string launchLog = util::read_file("/tmp/launch_log");
