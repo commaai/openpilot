@@ -313,12 +313,12 @@ class CarState(CarStateBase):
       ret.cruiseState.speedOffset = calc_cruise_offset(cp.vl["CRUISE_PARAMS"]['CRUISE_SPEED_OFFSET'], ret.vEgo)
       ret.cruiseState.speed = cp.vl["CRUISE"]['CRUISE_SPEED_PCM'] * CV.KPH_TO_MS
 
+    self.brake_switch = cp.vl["POWERTRAIN_DATA"]['BRAKE_SWITCH'] != 0
     if self.CP.carFingerprint in HONDA_BOSCH_ALT_BRAKE_SIGNAL:
       ret.brakePressed = cp.vl["BRAKE_MODULE"]['BRAKE_PRESSED'] != 0
     else:
       # brake switch has shown some single time step noise, so only considered when
       # switch is on for at least 2 consecutive CAN samples
-      self.brake_switch = cp.vl["POWERTRAIN_DATA"]['BRAKE_SWITCH'] != 0
       ret.brakePressed = bool(cp.vl["POWERTRAIN_DATA"]['BRAKE_PRESSED'] or
                               (self.brake_switch and self.brake_switch_prev and cp.ts["POWERTRAIN_DATA"]['BRAKE_SWITCH'] != self.brake_switch_ts))
 
