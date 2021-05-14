@@ -112,6 +112,11 @@ std::string readlink(const std::string &path) {
   return "";
 }
 
+bool file_exists(const std::string& fn) {
+  std::ifstream f(fn);
+  return f.good();
+}
+
 std::string getenv_default(const char* env_var, const char * suffix, const char* default_val) {
   const char* env_val = getenv(env_var);
   if (env_val != NULL){
@@ -121,9 +126,25 @@ std::string getenv_default(const char* env_var, const char * suffix, const char*
   }
 }
 
-bool file_exists(const std::string& fn) {
-  std::ifstream f(fn);
-  return f.good();
+std::string tohex(const uint8_t *buf, size_t buf_size) {
+  std::unique_ptr<char[]> hexbuf(new char[buf_size * 2 + 1]);
+  for (size_t i = 0; i < buf_size; i++) {
+    sprintf(&hexbuf[i * 2], "%02x", buf[i]);
+  }
+  hexbuf[buf_size * 2] = 0;
+  return std::string(hexbuf.get(), hexbuf.get() + buf_size * 2);
+}
+
+std::string base_name(std::string const &path) {
+  size_t pos = path.find_last_of("/");
+  if (pos == std::string::npos) return path;
+  return path.substr(pos + 1);
+}
+
+std::string dir_name(std::string const &path) {
+  size_t pos = path.find_last_of("/");
+  if (pos == std::string::npos) return "";
+  return path.substr(0, pos);
 }
 
 }  // namespace util

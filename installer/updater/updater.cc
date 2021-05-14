@@ -50,21 +50,6 @@ extern const uint8_t bin_opensans_bold_end[] asm("_binary_opensans_bold_ttf_end"
 
 namespace {
 
-std::string tohex(const uint8_t *buf, size_t buf_size) {
-  std::unique_ptr<char[]> hexbuf(new char[buf_size * 2 + 1]);
-  for (size_t i = 0; i < buf_size; i++) {
-    sprintf(&hexbuf[i * 2], "%02x", buf[i]);
-  }
-  hexbuf[buf_size * 2] = 0;
-  return std::string(hexbuf.get(), hexbuf.get() + buf_size * 2);
-}
-
-std::string base_name(std::string const &path) {
-  size_t pos = path.find_last_of("/");
-  if (pos == std::string::npos) return path;
-  return path.substr(pos + 1);
-}
-
 std::string sha256_file(std::string fn, size_t limit=0) {
   SHA256_CTX ctx;
   SHA256_Init(&ctx);
@@ -95,7 +80,7 @@ std::string sha256_file(std::string fn, size_t limit=0) {
 
   fclose(file);
 
-  return tohex(hash, sizeof(hash));
+  return util::tohex(hash, sizeof(hash));
 }
 
 size_t download_string_write(void *ptr, size_t size, size_t nmeb, void *up) {
@@ -368,7 +353,7 @@ struct Updater {
   }
 
   std::string download(std::string url, std::string hash, std::string name, bool dry_run) {
-    std::string out_fn = UPDATE_DIR "/" + base_name(url);
+    std::string out_fn = UPDATE_DIR "/" + util::base_name(url);
 
     std::string fn_hash = sha256_file(out_fn);
     if (dry_run) {
