@@ -182,7 +182,7 @@ Community Maintained Cars and Features
 | Volkswagen| Atlas 2018-19                 | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| e-Golf 2014, 2019-20          | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| Golf 2015-19                  | Driver Assistance | Stock            | 0mph               | 0mph         |
-| Volkswagen| Golf Alltrack 2017            | Driver Assistance | Stock            | 0mph               | 0mph         |
+| Volkswagen| Golf Alltrack 2017-18         | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| Golf GTE 2016                 | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| Golf GTI 2018-19              | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| Golf R 2016-19                | Driver Assistance | Stock            | 0mph               | 0mph         |
