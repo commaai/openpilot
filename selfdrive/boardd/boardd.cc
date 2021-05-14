@@ -495,6 +495,7 @@ void pigeon_thread() {
     {(char)ublox::CLASS_RXM, int64_t(900000000ULL)}, // 0.9s
   };
 
+  pigeon->init();
   while (!do_exit && panda->connected) {
     bool need_reset = false;
     std::string recv = pigeon->receive();
@@ -521,7 +522,7 @@ void pigeon_thread() {
     }
 
     // Check based on null bytes
-    if (ignition && recv.length() > 0 && recv[0] == (char)0x00){
+    if (recv.length() > 0 && recv[0] == (char)0x00){
       need_reset = true;
       LOGW("received invalid ublox message while onroad, resetting panda GPS");
     }
