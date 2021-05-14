@@ -302,6 +302,7 @@ kj::Array<capnp::word> UbloxMsgParser::gen_rxm_rawx(ubx_t::rxm_rawx_t *msg) {
 kj::Array<capnp::word> UbloxMsgParser::gen_mon_hw(ubx_t::mon_hw_t *msg) {
   MessageBuilder msg_builder;
   auto hwStatus = msg_builder.initEvent().initUbloxGnss().initHwStatus();
+  std::cout << int(msg->flags()) << "\n ------- \n";
   hwStatus.setNoisePerMS(msg->noise_per_ms());
   hwStatus.setAgcCnt(msg->agc_cnt());
   hwStatus.setAStatus((cereal::UbloxGnss::HwStatus::AntennaSupervisorState) msg->a_status());

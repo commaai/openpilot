@@ -96,6 +96,7 @@ MSG_CFG_NMEA = 0x17
 MSG_CFG_NVS = 0x22
 MSG_CFG_PM2 = 0x3B
 MSG_CFG_PM = 0x32
+MSG_CFG_ITMF = 0x39
 MSG_CFG_RINV = 0x34
 MSG_CFG_RST = 0x04
 MSG_CFG_RXM = 0x11
@@ -362,6 +363,11 @@ msg_types = {
   ]),
   (CLASS_CFG, MSG_CFG_PRT):
   UBloxDescriptor('CFG_PRT', '<BBHIIHHHH', [
+    'portID', 'reserved0', 'txReady', 'mode', 'baudRate', 'inProtoMask', 'outProtoMask',
+    'reserved4', 'reserved5'
+  ]),
+  (CLASS_CFG, MSG_CFG_ITMF):
+  UBloxDescriptor('CFG_ITMF', '<I', [
     'portID', 'reserved0', 'txReady', 'mode', 'baudRate', 'inProtoMask', 'outProtoMask',
     'reserved4', 'reserved5'
   ]),
