@@ -674,7 +674,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
 
   EventName.usbError: {
     ET.SOFT_DISABLE: SoftDisableAlert("USB Error: Reboot Your Device"),
-    ET.PERMANENT: NormalPermanentAlert("USB Error: Reboot Device", ""),
+    ET.PERMANENT: NormalPermanentAlert("USB Error: Reboot Your Device", ""),
     ET.NO_ENTRY: NoEntryAlert("USB Error: Reboot Your Device"),
   },
 
