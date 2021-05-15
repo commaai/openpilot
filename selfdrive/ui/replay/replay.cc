@@ -29,6 +29,7 @@ Replay::Replay(QString route_, SubMaster *sm_, QObject *parent) : route(route_),
   qDebug() << "allowlist" << allow;
 
   if (sm == nullptr) {
+    ctx = Context::create();
     for (const auto &it : services) {
       std::string name = it.name;
       if ((allow[0].size() > 0 && !allow.contains(name.c_str())) ||
@@ -45,7 +46,6 @@ Replay::Replay(QString route_, SubMaster *sm_, QObject *parent) : route(route_),
     }
   }
 
-  ctx = Context::create();
   current_segment = -window_padding - 1;
 
   bool create_jwt = true;
@@ -70,37 +70,41 @@ void Replay::parseResponse(const QString &response){
 }
 
 void Replay::addSegment(int i){
+  assert((i >= 0) && (i < log_paths.size()) && (i < camera_paths.size()));
   if (lrs.find(i) != lrs.end()) {
     return;
   }
 
   QThread* lr_thread = new QThread;
+  lrs.insert(i, new LogReader(log_paths.at(i).toString(), &events, &events_lock, &eidx));
 
-  if((0 <= i) && (i < log_paths.size())) {
-    QString log_fn = this->log_paths.at(i).toString();
-    lrs.insert(i, new LogReader(log_fn, &events, &events_lock, &eidx));
+  lrs[i]->moveToThread(lr_thread);
+  QObject::connect(lr_thread, &QThread::started, lrs[i], &LogReader::process);
+  lr_thread->start();
 
-    lrs[i]->moveToThread(lr_thread);
-    QObject::connect(lr_thread, &QThread::started, lrs[i], &LogReader::process);
-    lr_thread->start();
-
-    QString camera_fn = this->camera_paths.at(i).toString();
-    frs.insert(i, new FrameReader(qPrintable(camera_fn)));
-  }
+  frs.insert(i, new FrameReader(qPrintable(camera_paths.at(i).toString())));
 }
 
-void Replay::trimSegment(int seg_num){
-  lrs.remove(seg_num);
-  frs.remove(seg_num);
+void Replay::trimSegment(int n){
+  if (lrs.contains(n)) {
+    auto lr = lrs.take(n);
+    delete lr;
+  }
+  if (frs.contains(n)) {
+    auto fr = frs.take(n);
+    delete fr;
+  }
 
+  events_lock.lockForWrite();
   auto eit = events.begin();
-  while(eit != events.end()){
+  while (eit != events.end()) {
     if(std::abs(eit.key()/1e9 - getCurrentTime()/1e9) > window_padding*60.0){
       eit = events.erase(eit);
       continue;
     }
     eit++;
   }
+  events_lock.unlock();
 }
 
 void Replay::start(){

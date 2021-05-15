@@ -4,11 +4,10 @@
 #include <termios.h>
 
 #include <QFile>
-#include <QQueue>
-#include <QThread>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QThread>
 #include <QQueue>
 
 #include <capnp/dynamic.h>
@@ -18,6 +17,10 @@
 #include "selfdrive/ui/qt/api.h"
 #include "selfdrive/ui/replay/filereader.h"
 #include "tools/clib/framereader.h"
+
+
+constexpr int WINDOW_SIZE = 2;
+
 
 class Replay : public QObject {
   Q_OBJECT
@@ -51,21 +54,21 @@ private:
   uint64_t tc = 0;
   float last_print = 0;
   uint64_t route_start_ts;
-  uint64_t seek_request = 0;
   bool seeking = false;
 
   Events events;
   QReadWriteLock events_lock;
   QMap<int, QPair<int, int>> eidx;
 
+  HttpRequest *http;
   QJsonArray camera_paths;
   QJsonArray log_paths;
   QMap<int, LogReader*> lrs;
   QMap<int, FrameReader*> frs;
 
+  // messaging
   Context *ctx;
   SubMaster *sm;
-  HttpRequest *http;
   QMap<std::string, PubSocket*> socks;
   VisionIpcServer *vipc_server = nullptr;
 };
