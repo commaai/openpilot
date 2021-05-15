@@ -10,6 +10,8 @@
 #include "selfdrive/common/params.h"
 #include "selfdrive/common/util.h"
 #include "selfdrive/ui/qt/home.h"
+#include "selfdrive/ui/qt/widgets/input.h"
+
 
 void TrainingGuide::mouseReleaseEvent(QMouseEvent *e) {
   QPoint touch = QPoint(e->x(), e->y()) - imageCorner;
@@ -77,11 +79,13 @@ void TermsPage::showEvent(QShowEvent *event) {
   QObject *obj = (QObject*)text->rootObject();
   QObject::connect(obj, SIGNAL(qmlSignal()), SLOT(enableAccept()));
 
-  // TODO: add decline page
   QHBoxLayout* buttons = new QHBoxLayout;
   main_layout->addLayout(buttons);
 
-  buttons->addWidget(new QPushButton("Decline"));
+  decline_btn = new QPushButton("Decline");
+  buttons->addWidget(decline_btn);
+  QObject::connect(decline_btn, &QPushButton::released, this, &TermsPage::declinedTerms);
+
   buttons->addSpacing(50);
 
   accept_btn = new QPushButton("Scroll to accept");
@@ -104,6 +108,46 @@ void TermsPage::enableAccept(){
   accept_btn->setText("Accept");
   accept_btn->setEnabled(true);
   return;
+}
+
+void DeclinePage::showEvent(QShowEvent *event) {
+  QVBoxLayout *main_layout = new QVBoxLayout;
+  main_layout->setMargin(40);
+  main_layout->setSpacing(40);
+
+  QLabel *text = new QLabel(this);
+  text->setText("You must accept the Terms and Conditions in order to use openpilot!");
+  text->setStyleSheet(R"(font-size: 50px;)");
+  main_layout->addWidget(text, 0, Qt::AlignCenter);
+
+  QHBoxLayout* buttons = new QHBoxLayout;
+  main_layout->addLayout(buttons);
+
+  back_btn = new QPushButton("Back");
+  buttons->addWidget(back_btn);
+  buttons->addSpacing(50);
+
+  QObject::connect(back_btn, &QPushButton::released, this, &DeclinePage::getBack);
+
+  poweroff_btn = new QPushButton("Power Off");
+  poweroff_btn->setStyleSheet("background-color: #E22C2C;");
+  buttons->addWidget(poweroff_btn);
+
+  QObject::connect(poweroff_btn, &QPushButton::released, [=](){
+    if (ConfirmationDialog::confirm("Are you sure you want to power off?", this)) {
+      Hardware::poweroff();
+    }
+  });
+
+  setLayout(main_layout);
+  setStyleSheet(R"(
+    QPushButton {
+      padding: 50px;
+      font-size: 50px;
+      border-radius: 10px;
+      background-color: #292929;
+    }
+  )");
 }
 
 void OnboardingWindow::updateActiveScreen() {
@@ -138,6 +182,17 @@ OnboardingWindow::OnboardingWindow(QWidget *parent) : QStackedWidget(parent) {
     updateActiveScreen();
   });
   addWidget(tr);
+
+  DeclinePage* declinePage = new DeclinePage(this);
+  addWidget(declinePage);
+
+  connect(terms, &TermsPage::declinedTerms, [=](){
+    setCurrentIndex(2);
+  });
+
+  connect(declinePage, &DeclinePage::getBack, [=](){
+    updateActiveScreen();
+  });
 
   setStyleSheet(R"(
     * {
