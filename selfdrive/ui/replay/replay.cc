@@ -82,6 +82,8 @@ void Replay::addSegment(int n) {
 }
 
 void Replay::removeSegment(int n) {
+  // TODO: fix FrameReader and LogReader destructors
+  /*
   if (lrs.contains(n)) {
     auto lr = lrs.take(n);
     delete lr;
@@ -91,8 +93,6 @@ void Replay::removeSegment(int n) {
     delete fr;
   }
 
-  // TODO: add this back
-  /*
   events_lock.lockForWrite();
   auto eit = events.begin();
   while (eit != events.end()) {
@@ -126,9 +126,11 @@ void Replay::start(){
   queue_thread->start();
 }
 
-void Replay::seekTime(int ts){
+void Replay::seekTime(int ts) {
+  ts = std::clamp(ts, 0, log_paths.size() * 60);
   qInfo() << "seeking to " << ts;
-  current_ts = ts;
+
+  seek_ts = ts;
   current_segment = ts/60;
 }
 
@@ -165,13 +167,13 @@ void Replay::keyboardThread() {
       }
       getch(); // remove \n from entering seek
     } else if (c == 'm') {
-      //seek_queue.enqueue({true, 60});
+      seekTime(current_ts + 60);
     } else if (c == 'M') {
-      //seek_queue.enqueue({true, -60});
+      seekTime(current_ts - 10);
     } else if (c == 's') {
-      //seek_queue.enqueue({true, 10});
+      seekTime(current_ts + 10);
     } else if (c == 'S') {
-      //seek_queue.enqueue({true, -10});
+      seekTime(current_ts - 10);
     } else if (c == 'G') {
       seekTime(0);
     }
@@ -195,17 +197,19 @@ void Replay::stream() {
       route_start_ts = events.firstKey();
     }
 
-    uint64_t t0 = seek_ts * 1e9;
+    uint64_t t0 = route_start_ts + (seek_ts * 1e9);
+    seek_ts = -1;
     qDebug() << "unlogging at" << (t0 - route_start_ts) / 1e9;
 
-    // wait for future events to be ready?
+    // wait until we have events within 1s of the current time
     auto eit = events.lowerBound(t0);
     while (eit.key() - t0 > 1e9) {
       eit = events.lowerBound(t0);
+      QThread::msleep(10);
     }
 
     uint64_t t0r = timer.nsecsElapsed();
-    while ((eit != events.end()) && seek_ts == 0) {
+    while ((eit != events.end()) && seek_ts < 0) {
       cereal::Event::Reader e = (*eit);
       std::string type;
       KJ_IF_MAYBE(e_, static_cast<capnp::DynamicStruct::Reader>(e).which()) {
@@ -213,17 +217,17 @@ void Replay::stream() {
       }
 
       uint64_t tm = e.getLogMonoTime();
-      current_ts = tm / 1e9;
+      current_ts = std::max(tm - route_start_ts, (unsigned long)0) / 1e9;
 
       if (socks.contains(type)) {
-        long etime = tm-t0;
-
         float timestamp = (tm - route_start_ts)/1e9;
         if (std::abs(timestamp - last_print) > 5.0) {
           last_print = timestamp;
           qInfo() << "at " << last_print;
         }
 
+        // keep time
+        long etime = tm-t0;
         long rtime = timer.nsecsElapsed() - t0r;
         long us_behind = ((etime-rtime)*1e-3)+0.5;
         if (us_behind > 0 && us_behind < 1e6) {
@@ -273,9 +277,6 @@ void Replay::stream() {
           messages.push_back({type, e});
           sm->update_msgs(nanos_since_boot(), messages);
         }
-      }
-      else {
-        //qDebug() << "skipping" << type.c_str();
       }
 
       ++eit;
