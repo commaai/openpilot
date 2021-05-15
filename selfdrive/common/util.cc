@@ -83,6 +83,7 @@ int read_files_in_dir(std::string path, std::map<std::string, std::string> *cont
     }
   }
 
+  closedir(d);
   return 0;
 }
 
