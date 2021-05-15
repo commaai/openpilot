@@ -12,7 +12,6 @@ from selfdrive.car.volkswagen.values import CAR as VOLKSWAGEN
 
 # TODO: add routes for these cars
 non_tested_cars = [
-  CHRYSLER.JEEP_CHEROKEE,
   CHRYSLER.JEEP_CHEROKEE_2019,
   CHRYSLER.PACIFICA_2018,
   CHRYSLER.PACIFICA_2018_HYBRID,
@@ -35,7 +34,10 @@ non_tested_cars = [
   TOYOTA.HIGHLANDERH_TSS2,
 ]
 
-routes = {
+routes: dict = {
+  "0c94aa1e1296d7c6|2021-05-05--19-48-37": {
+    'carFingerprint': CHRYSLER.JEEP_CHEROKEE,
+  },
   "420a8e183f1aed48|2020-03-05--07-15-29": {
     'carFingerprint': CHRYSLER.PACIFICA_2017_HYBRID,
     'enableCamera': True,
@@ -251,20 +253,8 @@ routes = {
     'enableCamera': True,
     'enableDsu': False,
   },
-  "b0f5a01cf604185c|2018-01-26--00-54-32": {
+  "4e45c89c38e8ec4d|2021-05-02--02-49-28": {
     'carFingerprint': TOYOTA.COROLLA,
-    'enableCamera': True,
-    'enableDsu': True,
-  },
-  "b0f5a01cf604185c|2018-01-26--10-54-38": {
-    'carFingerprint': TOYOTA.COROLLA,
-    'enableCamera': True,
-    'enableDsu': False,
-  },
-  "b0f5a01cf604185c|2018-01-26--10-59-31": {
-    'carFingerprint': TOYOTA.COROLLA,
-    'enableCamera': False,
-    'enableDsu': False,
   },
   "5f5afb36036506e4|2019-05-14--02-09-54": {
     'carFingerprint': TOYOTA.COROLLA_TSS2,
@@ -412,6 +402,10 @@ routes = {
     'carFingerprint': TOYOTA.MIRAI,
     'enableCamera': True,
     'enableDsu': False,
+  },
+  "2c68dda277d887ac|2021-05-11--15-22-20": {
+    'carFingerprint': VOLKSWAGEN.ATLAS_MK1,
+    'enableCamera': True,
   },
   "cae14e88932eb364|2021-03-26--14-43-28": {
     'carFingerprint': VOLKSWAGEN.GOLF_MK7,

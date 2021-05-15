@@ -1,21 +1,23 @@
 #pragma once
 
-#include <fstream>
-#include <string>
-#include <memory>
-
 #include <eigen3/Eigen/Dense>
+#include <fstream>
+#include <memory>
+#include <string>
 
-#include "messaging.hpp"
-#include "common/params.h"
-#include "common/util.h"
-#include "common/swaglog.h"
-#include "common/timing.h"
+#include "cereal/messaging/messaging.h"
 #include "common/transformations/coordinates.hpp"
 #include "common/transformations/orientation.hpp"
-#include "selfdrive/sensord/sensors/constants.hpp"
+#include "selfdrive/common/params.h"
+#include "selfdrive/common/swaglog.h"
+#include "selfdrive/common/timing.h"
+#include "selfdrive/common/util.h"
+#include <math.h>
 
-#include "models/live_kf.h"
+#include "selfdrive/sensord/sensors/constants.h"
+#define VISION_DECIMATION 2
+#define SENSOR_DECIMATION 10
+#include "selfdrive/locationd/models/live_kf.h"
 
 #define POSENET_STD_HIST_HALF 20
 
@@ -27,6 +29,8 @@ public:
 
   void reset_kalman(double current_time = NAN);
   void reset_kalman(double current_time, Eigen::VectorXd init_orient, Eigen::VectorXd init_pos);
+  void finite_check(double current_time = NAN);
+  void time_check(double current_time = NAN);
 
   kj::ArrayPtr<capnp::byte> get_message_bytes(MessageBuilder& msg_builder, uint64_t logMonoTime,
     bool inputsOK, bool sensorsOK, bool gpsOK);

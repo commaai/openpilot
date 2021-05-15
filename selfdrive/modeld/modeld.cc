@@ -1,16 +1,18 @@
 #include <stdio.h>
 #include <stdlib.h>
+
 #include <mutex>
+
 #include <eigen3/Eigen/Dense>
 
-#include "visionipc_client.h"
-#include "common/swaglog.h"
-#include "common/clutil.h"
-#include "common/util.h"
-#include "common/params.h"
-
-#include "models/driving.h"
-#include "messaging.hpp"
+#include "cereal/messaging/messaging.h"
+#include "cereal/visionipc/visionipc_client.h"
+#include "selfdrive/common/clutil.h"
+#include "selfdrive/common/params.h"
+#include "selfdrive/common/swaglog.h"
+#include "selfdrive/common/util.h"
+#include "selfdrive/hardware/hw.h"
+#include "selfdrive/modeld/models/driving.h"
 
 ExitHandler do_exit;
 // globals
@@ -133,17 +135,12 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client) {
 int main(int argc, char **argv) {
   set_realtime_priority(54);
 
-#ifdef QCOM
-  set_core_affinity(2);
-#elif QCOM2
-  set_core_affinity(7);
-#endif
-
-  bool wide_camera = false;
-
-#ifdef QCOM2
-  wide_camera = Params().getBool("EnableWideCamera");
-#endif
+  if (Hardware::EON()) {
+    set_core_affinity(2);
+  } else if (Hardware::TICI()) {
+    set_core_affinity(7);  
+  }
+  bool wide_camera = Hardware::TICI() ? Params().getBool("EnableWideCamera") : false;
 
   // start calibration thread
   std::thread thread = std::thread(calibration_thread, wide_camera);

@@ -1,22 +1,23 @@
-#include <string>
+#include "settings.h"
+
+#include <cassert>
 #include <iostream>
 #include <sstream>
-#include <cassert>
+#include <string>
 
 #ifndef QCOM
-#include "networking.hpp"
+#include "selfdrive/ui/qt/offroad/networking.h"
 #endif
-#include "settings.hpp"
-#include "widgets/input.hpp"
-#include "widgets/toggle.hpp"
-#include "widgets/offroad_alerts.hpp"
-#include "widgets/scrollview.hpp"
-#include "widgets/controls.hpp"
-#include "widgets/ssh_keys.hpp"
-#include "common/params.h"
-#include "common/util.h"
+#include "selfdrive/common/params.h"
+#include "selfdrive/common/util.h"
 #include "selfdrive/hardware/hw.h"
-#include "ui.hpp"
+#include "selfdrive/ui/qt/widgets/controls.h"
+#include "selfdrive/ui/qt/widgets/input.h"
+#include "selfdrive/ui/qt/widgets/offroad_alerts.h"
+#include "selfdrive/ui/qt/widgets/scrollview.h"
+#include "selfdrive/ui/qt/widgets/ssh_keys.h"
+#include "selfdrive/ui/qt/widgets/toggle.h"
+#include "selfdrive/ui/ui.h"
 
 TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *toggles_list = new QVBoxLayout();
@@ -49,13 +50,13 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "../assets/offroad/icon_shell.png",
                                   this));
 
-#ifndef QCOM2
-  toggles.append(new ParamControl("IsUploadRawEnabled",
-                                 "Upload Raw Logs",
-                                 "Upload full logs and full resolution video by default while on WiFi. If not enabled, individual logs can be marked for upload at my.comma.ai/useradmin.",
-                                 "../assets/offroad/icon_network.png",
-                                 this));
-#endif
+  if (!Hardware::TICI()) {
+    toggles.append(new ParamControl("IsUploadRawEnabled",
+                                    "Upload Raw Logs",
+                                    "Upload full logs and full resolution video by default while on WiFi. If not enabled, individual logs can be marked for upload at my.comma.ai/useradmin.",
+                                    "../assets/offroad/icon_network.png",
+                                    this));
+  }
 
   ParamControl *record_toggle = new ParamControl("RecordFront",
                                                  "Record and Upload Driver Camera",
@@ -69,19 +70,18 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                    "../assets/offroad/icon_road.png",
                                    this));
 
-#ifdef QCOM2
-  toggles.append(new ParamControl("EnableWideCamera",
-                                  "Enable use of Wide Angle Camera",
-                                  "Use wide angle camera for driving and ui. Only takes effect after reboot.",
-                                  "../assets/offroad/icon_openpilot.png",
-                                  this));
-  toggles.append(new ParamControl("EnableLteOnroad",
-                                  "Enable LTE while onroad",
-                                  "",
-                                  "../assets/offroad/icon_network.png",
-                                  this));
-
-#endif
+  if (Hardware::TICI()) {
+    toggles.append(new ParamControl("EnableWideCamera",
+                                    "Enable use of Wide Angle Camera",
+                                    "Use wide angle camera for driving and ui. Only takes effect after reboot.",
+                                    "../assets/offroad/icon_openpilot.png",
+                                    this));
+    toggles.append(new ParamControl("EnableLteOnroad",
+                                    "Enable LTE while onroad",
+                                    "",
+                                    "../assets/offroad/icon_network.png",
+                                    this));
+  }
 
   bool record_lock = Params().getBool("RecordFrontLock");
   record_toggle->setEnabled(!record_lock);
@@ -263,7 +263,13 @@ QWidget * network_panel(QWidget * parent) {
   return w;
 }
 
-SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
+void SettingsWindow::showEvent(QShowEvent *event) {
+  if (layout()) {
+    panel_widget->setCurrentIndex(0);
+    nav_btns->buttons()[0]->setChecked(true);
+    return;
+  }
+
   // setup two main layouts
   QVBoxLayout *sidebar_layout = new QVBoxLayout();
   sidebar_layout->setMargin(0);
@@ -285,11 +291,11 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   close_btn->setFixedSize(200, 200);
   sidebar_layout->addSpacing(45);
   sidebar_layout->addWidget(close_btn, 0, Qt::AlignCenter);
-  QObject::connect(close_btn, SIGNAL(released()), this, SIGNAL(closeSettings()));
+  QObject::connect(close_btn, &QPushButton::released, this, &SettingsWindow::closeSettings);
 
   // setup panels
   DevicePanel *device = new DevicePanel(this);
-  QObject::connect(device, SIGNAL(reviewTrainingGuide()), this, SIGNAL(reviewTrainingGuide()));
+  QObject::connect(device, &DevicePanel::reviewTrainingGuide, this, &SettingsWindow::reviewTrainingGuide);
 
   QPair<QString, QWidget *> panels[] = {
     {"Device", device},
@@ -303,6 +309,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   for (auto &[name, panel] : panels) {
     QPushButton *btn = new QPushButton(name);
     btn->setCheckable(true);
+    btn->setChecked(nav_btns->buttons().size() == 0);
     btn->setStyleSheet(R"(
       QPushButton {
         color: grey;
@@ -366,9 +373,3 @@ void SettingsWindow::hideEvent(QHideEvent *event){
     }
   }
 }
-
-void SettingsWindow::showEvent(QShowEvent *event){
-  panel_widget->setCurrentIndex(0);
-  nav_btns->buttons()[0]->setChecked(true);
-}
-

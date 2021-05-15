@@ -1,7 +1,8 @@
-#include <errno.h>
-#include <sstream>
+#include "selfdrive/common/util.h"
 
-#include "common/util.h"
+#include <errno.h>
+
+#include <sstream>
 
 #ifdef __linux__
 #include <sys/prctl.h>
@@ -10,7 +11,7 @@
 #define __USE_GNU
 #endif
 #include <sched.h>
-#endif // __linux__
+#endif  // __linux__
 
 void set_thread_name(const char* name) {
 #ifdef __linux__
@@ -71,6 +72,21 @@ std::string read_file(const std::string& fn) {
   return buffer.str();
 }
 
+int read_files_in_dir(std::string path, std::map<std::string, std::string> *contents) {
+  DIR *d = opendir(path.c_str());
+  if (!d) return -1;
+
+  struct dirent *de = NULL;
+  while ((de = readdir(d))) {
+    if (isalnum(de->d_name[0])) {
+      (*contents)[de->d_name] = util::read_file(path + "/" + de->d_name);
+    }
+  }
+
+  closedir(d);
+  return 0;
+}
+
 int write_file(const char* path, const void* data, size_t size, int flags, mode_t mode) {
   int fd = open(path, flags, mode);
   if (fd == -1) {
@@ -80,5 +96,6 @@ int write_file(const char* path, const void* data, size_t size, int flags, mode_
   close(fd);
   return (n >= 0 && (size_t)n == size) ? 0 : -1;
 }
+
 
 }  // namespace util

@@ -1,15 +1,14 @@
-#include <QLabel>
-#include <QWidget>
-#include <QPushButton>
-#include <QHBoxLayout>
-#include <QVBoxLayout>
 #include <QApplication>
+#include <QHBoxLayout>
+#include <QLabel>
+#include <QPushButton>
+#include <QVBoxLayout>
+#include <QWidget>
 
-#include "qt_window.hpp"
+#include "selfdrive/ui/qt/qt_window.h"
 
 #define USERDATA "/dev/disk/by-partlabel/userdata"
 #define NVME "/dev/nvme0n1"
-
 
 bool do_reset() {
   std::vector<const char*> cmds = {
@@ -52,7 +51,7 @@ int main(int argc, char *argv[]) {
 
   QPushButton *cancel_btn = new QPushButton("Cancel");
   btn_layout->addWidget(cancel_btn, 0, Qt::AlignLeft);
-  QObject::connect(cancel_btn, SIGNAL(released()), &a, SLOT(quit()));
+  QObject::connect(cancel_btn, &QPushButton::released, &a, &QApplication::quit);
 
   QPushButton *confirm_btn  = new QPushButton("Confirm");
   btn_layout->addWidget(confirm_btn, 0, Qt::AlignRight);

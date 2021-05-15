@@ -1,3 +1,5 @@
+#include "selfdrive/ui/qt/api.h"
+
 #include <QDateTime>
 #include <QDebug>
 #include <QFile>
@@ -5,22 +7,20 @@
 #include <QJsonObject>
 #include <QNetworkReply>
 #include <QNetworkRequest>
-#include <QString>
-#include <QWidget>
-#include <QTimer>
 #include <QRandomGenerator>
+#include <QString>
+#include <QTimer>
+#include <QWidget>
 
-#include "api.hpp"
-#include "common/params.h"
-#include "common/util.h"
+#include "selfdrive/common/params.h"
+#include "selfdrive/common/util.h"
+#include "selfdrive/hardware/hw.h"
 
-#if defined(QCOM) || defined(QCOM2)
-const std::string private_key_path = "/persist/comma/id_rsa";
-#else
-const std::string private_key_path = util::getenv_default("HOME", "/.comma/persist/comma/id_rsa", "/persist/comma/id_rsa");
-#endif
+const std::string private_key_path =
+    Hardware::PC() ? util::getenv_default("HOME", "/.comma/persist/comma/id_rsa", "/persist/comma/id_rsa")
+                   : "/persist/comma/id_rsa";
 
-QByteArray CommaApi::rsa_sign(QByteArray data) {
+QByteArray CommaApi::rsa_sign(const QByteArray &data) {
   auto file = QFile(private_key_path.c_str());
   if (!file.open(QIODevice::ReadOnly)) {
     qDebug() << "No RSA private key found, please run manager.py or registration.py";
@@ -44,7 +44,7 @@ QByteArray CommaApi::rsa_sign(QByteArray data) {
   return sig;
 }
 
-QString CommaApi::create_jwt(QVector<QPair<QString, QJsonValue>> payloads, int expiry) {
+QString CommaApi::create_jwt(const QVector<QPair<QString, QJsonValue>> &payloads, int expiry) {
   QString dongle_id = QString::fromStdString(Params().get("DongleId"));
 
   QJsonObject header;
@@ -57,7 +57,7 @@ QString CommaApi::create_jwt(QVector<QPair<QString, QJsonValue>> payloads, int e
   payload.insert("nbf", t);
   payload.insert("iat", t);
   payload.insert("exp", t + expiry);
-  for (auto load : payloads) {
+  for (auto &load : payloads) {
     payload.insert(load.first, load.second);
   }
 
@@ -72,14 +72,14 @@ QString CommaApi::create_jwt(QVector<QPair<QString, QJsonValue>> payloads, int e
 }
 
 
-HttpRequest::HttpRequest(QObject *parent, QString requestURL, const QString &cache_key, bool create_jwt_) : cache_key(cache_key), create_jwt(create_jwt_), QObject(parent) {
+HttpRequest::HttpRequest(QObject *parent, const QString &requestURL, const QString &cache_key, bool create_jwt_) : cache_key(cache_key), create_jwt(create_jwt_), QObject(parent) {
   networkAccessManager = new QNetworkAccessManager(this);
   reply = NULL;
 
   networkTimer = new QTimer(this);
   networkTimer->setSingleShot(true);
   networkTimer->setInterval(20000);
-  connect(networkTimer, SIGNAL(timeout()), this, SLOT(requestTimeout()));
+  connect(networkTimer, &QTimer::timeout, this, &HttpRequest::requestTimeout);
 
   sendRequest(requestURL);
 
@@ -90,7 +90,7 @@ HttpRequest::HttpRequest(QObject *parent, QString requestURL, const QString &cac
   }
 }
 
-void HttpRequest::sendRequest(QString requestURL){
+void HttpRequest::sendRequest(const QString &requestURL){
   QString token;
   if(create_jwt) {
     token = CommaApi::create_jwt();
@@ -104,17 +104,10 @@ void HttpRequest::sendRequest(QString requestURL){
   request.setUrl(QUrl(requestURL));
   request.setRawHeader(QByteArray("Authorization"), ("JWT " + token).toUtf8());
 
-#ifdef QCOM
-  QSslConfiguration ssl = QSslConfiguration::defaultConfiguration();
-  ssl.setCaCertificates(QSslCertificate::fromPath("/usr/etc/tls/cert.pem",
-                        QSsl::Pem, QRegExp::Wildcard));
-  request.setSslConfiguration(ssl);
-#endif
-
   reply = networkAccessManager->get(request);
 
   networkTimer->start();
-  connect(reply, SIGNAL(finished()), this, SLOT(requestFinished()));
+  connect(reply, &QNetworkReply::finished, this, &HttpRequest::requestFinished);
 }
 
 void HttpRequest::requestTimeout(){

@@ -1,7 +1,4 @@
 """Install exception handler for process crash."""
-import sys
-import capnp
-
 from selfdrive.swaglog import cloudlog
 from selfdrive.version import version
 
@@ -9,11 +6,13 @@ import sentry_sdk
 from sentry_sdk.integrations.threading import ThreadingIntegration
 
 def capture_exception(*args, **kwargs):
-  exc_info = sys.exc_info()
-  if not exc_info[0] is capnp.lib.capnp.KjException:
+  cloudlog.error("crash", exc_info=kwargs.get('exc_info', 1))
+
+  try:
     sentry_sdk.capture_exception(*args, **kwargs)
     sentry_sdk.flush()  # https://github.com/getsentry/sentry-python/issues/291
-  cloudlog.error("crash", exc_info=kwargs.get('exc_info', 1))
+  except Exception:
+    cloudlog.exception("sentry exception")
 
 def bind_user(**kwargs):
   sentry_sdk.set_user(kwargs)

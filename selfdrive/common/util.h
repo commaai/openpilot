@@ -1,19 +1,21 @@
 #pragma once
 
-#include <cstdio>
-#include <csignal>
-#include <cassert>
-#include <cstring>
-#include <unistd.h>
 #include <fcntl.h>
+#include <unistd.h>
+#include <dirent.h>
 
-#include <string>
-#include <memory>
-#include <atomic>
-#include <fstream>
-#include <thread>
-#include <chrono>
 #include <algorithm>
+#include <atomic>
+#include <cassert>
+#include <chrono>
+#include <csignal>
+#include <cstdio>
+#include <cstring>
+#include <fstream>
+#include <memory>
+#include <string>
+#include <thread>
+#include <map>
 
 #ifndef sighandler_t
 typedef void (*sighandler_t)(int sig);
@@ -52,6 +54,8 @@ inline std::string string_format(const std::string& format, Args... args) {
 }
 
 std::string read_file(const std::string &fn);
+
+int read_files_in_dir(std::string path, std::map<std::string, std::string> *contents);
 
 int write_file(const char* path, const void* data, size_t size, int flags = O_WRONLY, mode_t mode = 0777);
 

@@ -1,4 +1,9 @@
-#include "replay.hpp"
+#include "selfdrive/ui/replay/replay.h"
+
+#include "cereal/services.h"
+#include "selfdrive/camerad/cameras/camera_common.h"
+#include "selfdrive/common/timing.h"
+#include "selfdrive/hardware/hw.h"
 
 int getch(void) {
   int ch;
@@ -53,8 +58,8 @@ Replay::Replay(QString route_, SubMaster *sm_) : route(route_), sm(sm_) {
   }
 
   current_segment = -window_padding - 1;
-  bool create_jwt = true;
 
+  bool create_jwt = true;
 #if !defined(QCOM) && !defined(QCOM2)
   create_jwt = false;
 #endif
@@ -63,9 +68,8 @@ Replay::Replay(QString route_, SubMaster *sm_) : route(route_), sm(sm_) {
   QObject::connect(http, &HttpRequest::receivedResponse, this, &Replay::parseResponse);
 }
 
-void Replay::parseResponse(QString response){
-  response = response.trimmed();
-  QJsonDocument doc = QJsonDocument::fromJson(response.toUtf8());
+void Replay::parseResponse(const QString &response){
+  QJsonDocument doc = QJsonDocument::fromJson(response.trimmed().toUtf8());
 
   if (doc.isNull()) {
     qDebug() << "JSON Parse failed";

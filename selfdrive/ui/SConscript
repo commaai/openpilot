@@ -11,7 +11,7 @@ if arch == "Darwin":
   del base_libs[base_libs.index('OpenCL')]
   qt_env['FRAMEWORKS'] += ['OpenCL']
 
-widgets_src = ["qt/widgets/input.cc", "qt/widgets/drive_stats.cc", "qt/sound.cc",
+widgets_src = ["qt/widgets/input.cc", "qt/widgets/drive_stats.cc",
                "qt/widgets/ssh_keys.cc", "qt/widgets/toggle.cc", "qt/widgets/controls.cc",
                "qt/widgets/offroad_alerts.cc", "qt/widgets/setup.cc", "qt/widgets/keyboard.cc",
                "qt/widgets/scrollview.cc", "#phonelibs/qrcode/QrCode.cc", "qt/api.cc",
@@ -63,7 +63,7 @@ if arch == 'x86_64' and os.path.exists(Dir("#tools/").get_abspath()):
   qt_env['CPPPATH'] += ["#tools/clib"]
   qt_env['CXXFLAGS'] += ["-Wno-deprecated-declarations"]
 
-  replay_lib_src = ["replay/replay.cc", "replay/FileReader.cpp", "#tools/clib/FrameReader.cpp"]
+  replay_lib_src = ["replay/replay.cc", "replay/filereader.cc", "#tools/clib/framereader.cc"]
 
   replay_lib = qt_env.Library("qt_replay", replay_lib_src, LIBS=base_libs)
   replay_libs = [replay_lib, 'avutil', 'avcodec', 'avformat', 'swscale', 'bz2'] + qt_libs

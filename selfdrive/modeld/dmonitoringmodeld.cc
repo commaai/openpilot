@@ -1,16 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/resource.h>
+#include <limits.h>
 
-#include "visionipc_client.h"
-#include "common/swaglog.h"
-#include "common/util.h"
-
-#include "models/dmonitoring.h"
-
-#ifndef PATH_MAX
-#include <linux/limits.h>
-#endif
+#include "cereal/visionipc/visionipc_client.h"
+#include "selfdrive/common/swaglog.h"
+#include "selfdrive/common/util.h"
+#include "selfdrive/modeld/models/dmonitoring.h"
 
 ExitHandler do_exit;
 

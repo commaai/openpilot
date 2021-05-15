@@ -1,14 +1,16 @@
-#include <stdexcept>
-#include <cassert>
-#include <iostream>
-#include <vector>
+#include "selfdrive/boardd/panda.h"
+
 #include <unistd.h>
 
-#include "common/swaglog.h"
-#include "common/gpio.h"
-#include "common/util.h"
-#include "messaging.hpp"
-#include "panda.h"
+#include <cassert>
+#include <iostream>
+#include <stdexcept>
+#include <vector>
+
+#include "cereal/messaging/messaging.h"
+#include "selfdrive/common/gpio.h"
+#include "selfdrive/common/swaglog.h"
+#include "selfdrive/common/util.h"
 
 Panda::Panda(){
   // init libusb
@@ -150,6 +152,7 @@ int Panda::usb_bulk_read(unsigned char endpoint, unsigned char* data, int length
     if (err == LIBUSB_ERROR_TIMEOUT) {
       break; // timeout is okay to exit, recv still happened
     } else if (err == LIBUSB_ERROR_OVERFLOW) {
+      comms_healthy = false;
       LOGE_100("overflow got 0x%x", transferred);
     } else if (err != 0) {
       handle_usb_issue(err, __func__);
@@ -294,9 +297,11 @@ int Panda::can_receive(kj::Array<capnp::word>& out_buf) {
 
   size_t num_msg = recv / 0x10;
   MessageBuilder msg;
-  auto canData = msg.initEvent().initCan(num_msg);
+  auto evt = msg.initEvent();
+  evt.setValid(comms_healthy);
 
   // populate message
+  auto canData = evt.initCan(num_msg);
   for (int i = 0; i < num_msg; i++) {
     if (data[i*4] & 4) {
       // extended

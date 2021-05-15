@@ -1,11 +1,13 @@
 #pragma once
 
-#include <ctime>
-#include <cstdint>
 #include <pthread.h>
+
+#include <atomic>
+#include <cstdint>
+#include <ctime>
 #include <mutex>
-#include <vector>
 #include <optional>
+#include <vector>
 
 #include <libusb-1.0/libusb.h>
 
@@ -52,6 +54,7 @@ class Panda {
   ~Panda();
 
   std::atomic<bool> connected = true;
+  std::atomic<bool> comms_healthy = true;
   cereal::PandaState::PandaType hw_type = cereal::PandaState::PandaType::UNKNOWN;
   bool has_rtc = false;
 

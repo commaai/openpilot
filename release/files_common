@@ -64,7 +64,6 @@ release/build_release2.sh
 selfdrive/version.py
 
 selfdrive/__init__.py
-selfdrive/registration.py
 selfdrive/config.py
 selfdrive/crash.py
 selfdrive/swaglog.py
@@ -77,6 +76,7 @@ selfdrive/rtshield.py
 selfdrive/athena/__init__.py
 selfdrive/athena/athenad.py
 selfdrive/athena/manage_athenad.py
+selfdrive/athena/registration.py
 
 selfdrive/boardd/.gitignore
 selfdrive/boardd/SConscript
@@ -331,7 +331,7 @@ selfdrive/sensord/libdiag.h
 selfdrive/sensord/sensors_qcom.cc
 selfdrive/sensord/sensors_qcom2.cc
 selfdrive/sensord/sensors/*.cc
-selfdrive/sensord/sensors/*.hpp
+selfdrive/sensord/sensors/*.h
 selfdrive/sensord/sensord
 
 selfdrive/thermald/thermald.py
@@ -346,18 +346,18 @@ selfdrive/test/test_onroad.py
 selfdrive/ui/.gitignore
 selfdrive/ui/SConscript
 selfdrive/ui/*.cc
-selfdrive/ui/*.hpp
+selfdrive/ui/*.h
 selfdrive/ui/ui
 selfdrive/ui/text
 selfdrive/ui/spinner
 
 selfdrive/ui/qt/*.cc
-selfdrive/ui/qt/*.hpp
+selfdrive/ui/qt/*.h
 selfdrive/ui/qt/offroad/*.cc
-selfdrive/ui/qt/offroad/*.hpp
+selfdrive/ui/qt/offroad/*.h
 selfdrive/ui/qt/offroad/*.qml
 selfdrive/ui/qt/widgets/*.cc
-selfdrive/ui/qt/widgets/*.hpp
+selfdrive/ui/qt/widgets/*.h
 selfdrive/ui/qt/spinner_aarch64
 selfdrive/ui/qt/text_aarch64
 
@@ -496,15 +496,15 @@ cereal/messaging/.gitignore
 cereal/messaging/__init__.py
 cereal/messaging/bridge.cc
 cereal/messaging/impl_msgq.cc
-cereal/messaging/impl_msgq.hpp
+cereal/messaging/impl_msgq.h
 cereal/messaging/impl_zmq.cc
-cereal/messaging/impl_zmq.hpp
+cereal/messaging/impl_zmq.h
 cereal/messaging/messaging.cc
-cereal/messaging/messaging.hpp
+cereal/messaging/messaging.h
 cereal/messaging/messaging.pxd
 cereal/messaging/messaging_pyx.pyx
 cereal/messaging/msgq.cc
-cereal/messaging/msgq.hpp
+cereal/messaging/msgq.h
 cereal/messaging/socketmaster.cc
 cereal/visionipc/.gitignore
 cereal/visionipc/__init__.py

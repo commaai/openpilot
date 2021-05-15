@@ -2,20 +2,19 @@
 
 #include <cstdio>
 #include <cstdlib>
-
 #include <string>
 #include <vector>
 
 extern "C" {
-#include <libavutil/imgutils.h>
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
+#include <libavutil/imgutils.h>
 }
 
-#include "encoder.h"
+#include "selfdrive/loggerd/encoder.h"
 
 class RawLogger : public VideoEncoder {
-public:
+ public:
   RawLogger(const char* filename, int width, int height, int fps,
             int bitrate, bool h265, bool downscale);
   ~RawLogger();

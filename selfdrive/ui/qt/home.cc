@@ -1,16 +1,16 @@
+#include "selfdrive/ui/qt/home.h"
+
 #include <QDateTime>
 #include <QHBoxLayout>
 #include <QMouseEvent>
 #include <QVBoxLayout>
 
-#include "common/util.h"
-#include "common/params.h"
-#include "common/timing.h"
-#include "common/swaglog.h"
-
-#include "home.hpp"
-#include "widgets/drive_stats.hpp"
-#include "widgets/setup.hpp"
+#include "selfdrive/common/params.h"
+#include "selfdrive/common/swaglog.h"
+#include "selfdrive/common/timing.h"
+#include "selfdrive/common/util.h"
+#include "selfdrive/ui/qt/widgets/drive_stats.h"
+#include "selfdrive/ui/qt/widgets/setup.h"
 
 // HomeWindow: the container for the offroad and onroad UIs
 
@@ -30,6 +30,7 @@ HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
   onroad = new OnroadWindow(this);
   slayout->addWidget(onroad);
   QObject::connect(this, &HomeWindow::update, onroad, &OnroadWindow::update);
+  QObject::connect(this, &HomeWindow::offroadTransitionSignal, onroad, &OnroadWindow::offroadTransition);
 
   home = new OffroadHome();
   slayout->addWidget(home);
@@ -45,6 +46,7 @@ void HomeWindow::offroadTransition(bool offroad) {
     slayout->setCurrentWidget(onroad);
   }
   sidebar->setVisible(offroad);
+  emit offroadTransitionSignal(offroad);
 }
 
 void HomeWindow::mousePressEvent(QMouseEvent* e) {
@@ -56,11 +58,10 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
   }
 
   // Handle sidebar collapsing
-  if (childAt(e->pos()) == onroad) {
+  if (onroad->isVisible() && (!sidebar->isVisible() || e->x() > sidebar->width())) {
     sidebar->setVisible(!sidebar->isVisible());
   }
 }
-
 
 // OffroadHome: the offroad home page
 
@@ -77,7 +78,7 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
 
   alert_notification = new QPushButton();
   alert_notification->setVisible(false);
-  QObject::connect(alert_notification, SIGNAL(released()), this, SLOT(openAlerts()));
+  QObject::connect(alert_notification, &QPushButton::released, this, &OffroadHome::openAlerts);
   header_layout->addWidget(alert_notification, 0, Qt::AlignHCenter | Qt::AlignRight);
 
   std::string brand = Params().getBool("Passive") ? "dashcam" : "openpilot";
@@ -99,7 +100,6 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
   statsAndSetup->addWidget(drive);
 
   SetupWidget* setup = new SetupWidget;
-  //setup->setFixedSize(700, 700);
   statsAndSetup->addWidget(setup);
 
   QWidget* statsAndSetupWidget = new QWidget();
@@ -108,7 +108,7 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
   center_layout->addWidget(statsAndSetupWidget);
 
   alerts_widget = new OffroadAlert();
-  QObject::connect(alerts_widget, SIGNAL(closeAlerts()), this, SLOT(closeAlerts()));
+  QObject::connect(alerts_widget, &OffroadAlert::closeAlerts, this, &OffroadHome::closeAlerts);
   center_layout->addWidget(alerts_widget);
   center_layout->setAlignment(alerts_widget, Qt::AlignCenter);
 
@@ -116,8 +116,7 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
 
   // set up refresh timer
   timer = new QTimer(this);
-  QObject::connect(timer, SIGNAL(timeout()), this, SLOT(refresh()));
-  refresh();
+  QObject::connect(timer, &QTimer::timeout, this, &OffroadHome::refresh);
   timer->start(10 * 1000);
 
   setLayout(main_layout);
@@ -129,6 +128,10 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
      color: white;
     }
   )");
+}
+
+void OffroadHome::showEvent(QShowEvent *event) {
+  refresh();
 }
 
 void OffroadHome::openAlerts() {
