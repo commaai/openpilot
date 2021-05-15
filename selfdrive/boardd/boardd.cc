@@ -358,7 +358,10 @@ void panda_state_thread(bool spoofing_started) {
 
     // build msg
     MessageBuilder msg;
-    auto ps = msg.initEvent().initPandaState();
+    auto evt = msg.initEvent();
+    evt.setValid(panda->comms_healthy);
+
+    auto ps = evt.initPandaState();
     ps.setUptime(pandaState.uptime);
 
     if (Hardware::TICI()) {
