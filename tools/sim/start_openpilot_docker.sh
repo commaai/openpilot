@@ -11,8 +11,8 @@ docker pull ghcr.io/commaai/openpilot-sim:latest
 OPENPILOT_DIR="/openpilot"
 if ! [[ -z "$MOUNT_OPENPILOT" ]]
 then
-  EXTRA_ARGS="-v $PWD/../..:/root/openpilot -e PYTHONPATH=/root/openpilot:$PYTHONPATH"
-  OPENPILOT_DIR="/root/openpilot"
+  OPENPILOT_DIR="$(dirname $(dirname $DIR))"
+  EXTRA_ARGS="-v $OPENPILOT_DIR:$OPENPILOT_DIR -e PYTHONPATH=$OPENPILOT_DIR:$PYTHONPATH"
 fi
 
 docker run --net=host\
