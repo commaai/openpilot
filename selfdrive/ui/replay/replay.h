@@ -19,61 +19,53 @@
 #include "selfdrive/ui/replay/filereader.h"
 #include "tools/clib/framereader.h"
 
-// TODO: figure out why logs don't donwload when this is QObject after removing Unlogger
-class Replay : public QWidget {
+class Replay : public QObject {
   Q_OBJECT
 
 public:
-  Replay(QString route_, SubMaster *sm = nullptr);
-  void start(SubMaster *sm = nullptr);
+  Replay(QString route_, SubMaster *sm = nullptr, QObject *parent = 0);
+  void start();
   void addSegment(int i);
   void trimSegment(int seg_num);
   void seekTime(int seek_);
-  QJsonArray camera_paths;
-  QJsonArray log_paths;
 
-  void togglePause() { paused = !paused; }
   uint64_t getCurrentTime() { return tc; }
-  uint64_t getRelativeCurrentTime() { return tc - route_t0; }
-  void setSeekRequest(uint64_t seek_request_) {
-    seeking = true;
-    seek_request = seek_request_;
-  }
+  uint64_t getRelativeCurrentTime() { return tc - route_start_ts; }
 
 public slots:
-  void seekThread();
+  void keyboardThread();
   void seekRequestThread();
   void parseResponse(const QString &response);
   void stream();
 
 private:
-  int seek;
   QString route;
   int current_segment;
 
   QThread *thread;
-  QThread *seek_thread;
+  QThread *kb_thread;
   QThread *queue_thread;
   QQueue<QPair<bool, int>> seek_queue;
   int window_padding = 1;
 
   uint64_t tc = 0;
   float last_print = 0;
-  uint64_t route_t0;
+  uint64_t route_start_ts;
   uint64_t seek_request = 0;
-  bool paused = false;
   bool seeking = false;
-  bool loading_segment = false;
 
   Events events;
   QReadWriteLock events_lock;
-  QMap<int, QPair<int, int> > eidx;
+  QMap<int, QPair<int, int>> eidx;
+
+  QJsonArray camera_paths;
+  QJsonArray log_paths;
+  QMap<int, LogReader*> lrs;
+  QMap<int, FrameReader*> frs;
 
   Context *ctx;
   SubMaster *sm;
   HttpRequest *http;
-  QMap<int, LogReader*> lrs;
-  QMap<int, FrameReader*> frs;
   QMap<std::string, PubSocket*> socks;
   VisionIpcServer *vipc_server = nullptr;
 };

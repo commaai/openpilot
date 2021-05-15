@@ -21,56 +21,43 @@ int getch(void) {
   return ch;
 }
 
-Replay::Replay(QString route_, SubMaster *sm_) : route(route_), sm(sm_) {
-  ctx = Context::create();
-  seek = 0;
-  seek_request = seek*1e9;
-
+Replay::Replay(QString route_, SubMaster *sm_, QObject *parent) : route(route_), sm(sm_), QObject(parent) {
   QStringList block = QString(getenv("BLOCK")).split(",");
   qDebug() << "blocklist" << block;
 
   QStringList allow = QString(getenv("ALLOW")).split(",");
   qDebug() << "allowlist" << allow;
 
-  if(sm == nullptr) {
-    for (const auto& it : services) {
+  if (sm == nullptr) {
+    for (const auto &it : services) {
       std::string name = it.name;
-      if (allow[0].size() > 0 && !allow.contains(name.c_str())) {
-        qDebug() << "not allowing" << name.c_str();
-        continue;
-      }
-
-      if (block.contains(name.c_str())) {
-        qDebug() << "blocking" << name.c_str();
+      if ((allow[0].size() > 0 && !allow.contains(name.c_str())) ||
+          block.contains(name.c_str())) {
         continue;
       }
 
       PubSocket *sock = PubSocket::create(ctx, name);
       if (sock == NULL) {
-        qDebug() << "FAILED" << name.c_str();
+        qDebug() << "FAILED " << name.c_str();
         continue;
       }
-
-      qDebug() << name.c_str();
-
       socks.insert(name, sock);
     }
   }
 
+  ctx = Context::create();
   current_segment = -window_padding - 1;
 
   bool create_jwt = true;
 #if !defined(QCOM) && !defined(QCOM2)
   create_jwt = false;
 #endif
-
   http = new HttpRequest(this, "https://api.commadotai.com/v1/route/" + route + "/files", "", create_jwt);
   QObject::connect(http, &HttpRequest::receivedResponse, this, &Replay::parseResponse);
 }
 
 void Replay::parseResponse(const QString &response){
   QJsonDocument doc = QJsonDocument::fromJson(response.trimmed().toUtf8());
-
   if (doc.isNull()) {
     qDebug() << "JSON Parse failed";
     return;
@@ -79,7 +66,7 @@ void Replay::parseResponse(const QString &response){
   camera_paths = doc["cameras"].toArray();
   log_paths = doc["logs"].toArray();
 
-  seek_queue.enqueue({false, seek});
+  seek_queue.enqueue({false, 0});
 }
 
 void Replay::addSegment(int i){
@@ -116,19 +103,18 @@ void Replay::trimSegment(int seg_num){
   }
 }
 
-void Replay::start(SubMaster *sm){
+void Replay::start(){
   thread = new QThread;
-  this->moveToThread(thread);
   QObject::connect(thread, &QThread::started, [=](){
     stream();
   });
   thread->start();
 
-  seek_thread = new QThread;
-  QObject::connect(seek_thread, &QThread::started, [=](){
-    seekThread();
+  kb_thread = new QThread;
+  QObject::connect(kb_thread, &QThread::started, [=](){
+    keyboardThread();
   });
-  seek_thread->start();
+  kb_thread->start();
 
   queue_thread = new QThread;
   QObject::connect(queue_thread, &QThread::started, [=](){
@@ -140,21 +126,19 @@ void Replay::start(SubMaster *sm){
 void Replay::seekTime(int seek_){
   // TODO: see if eidx also needs to be cleared
   if(!seeking){
-    if(seek >= 0){
-      setSeekRequest(seek_*1e9);
-    }
-
-    if(seek_/60 != current_segment) {
+    if (seek_/60 != current_segment) {
       int last_segment = current_segment;
       current_segment = seek_/60;
 
       for(int i = 0 ; i < 2*window_padding + 1 ; i++) {
+        // maintain window of segments
         // add segments that don't overlap
         int seek_ind = seek_/60 - window_padding + i;
         if(((last_segment + window_padding < seek_ind) || (last_segment - window_padding > seek_ind)) && (seek_ind >= 0)) {
           addSegment(seek_ind);
         }
-        // remove current segments that don't overlap
+
+        // remove old segs
         int cur_ind = last_segment - window_padding + i;
         if(((seek_/60 + window_padding < cur_ind) || (seek_/60 - window_padding > cur_ind)) && (cur_ind >= 0)) {
           trimSegment(cur_ind);
@@ -181,9 +165,9 @@ void Replay::seekRequestThread() {
   }
 }
 
-void Replay::seekThread(){
+void Replay::keyboardThread(){
   char c;
-  while(1){
+  while (true) {
     c = getch();
     if(c == '\n'){
       printf("Enter seek request: ");
@@ -210,50 +194,41 @@ void Replay::seekThread(){
     } else if (c == 'G') {
       seek_queue.clear();
       seek_queue.enqueue({false, 0});
-    } else if (c == ' ') {
-      togglePause();
     }
   }
 }
 
 void Replay::stream() {
-  qDebug() << "hello from unlogger thread";
+
+  // wait for events
   while (events.size() == 0) {
     qDebug() << "waiting for events";
     QThread::sleep(1);
   }
-  qDebug() << "got events";
-
-  route_t0 = events.firstKey();
 
   QElapsedTimer timer;
   timer.start();
 
-  // loops
   while (true) {
     uint64_t t0 = (events.begin()+1).key();
     uint64_t t0r = timer.nsecsElapsed();
     qDebug() << "unlogging at" << t0;
 
+    // wait for future events to be ready?
     auto eit = events.lowerBound(t0);
     while(eit.key() - t0 > 1e9){
       eit = events.lowerBound(t0);
     }
 
     while ((eit != events.end())) {
-      while (paused) {
-        QThread::usleep(1000);
-        t0 = (*eit).getLogMonoTime();
-        t0r = timer.nsecsElapsed();
-      }
-
+      // what does this do?
+      /*
       if (seeking) {
-        t0 = seek_request + route_t0 + 1;
+        t0 = route_start_ts + 1;
         tc = t0;
         qDebug() << "seeking to" << t0;
         t0r = timer.nsecsElapsed();
         eit = events.lowerBound(t0);
-        seek_request = 0;
         if ((eit == events.end()) || (eit.key() - t0 > 1e9)) {
           qWarning() << "seek off end";
           while((eit == events.end()) || (eit.key() - t0 > 1e9)) {
@@ -265,18 +240,16 @@ void Replay::stream() {
         }
         seeking = false;
       }
-
-      float time_to_end = (current_segment + 2)*60.0 - getRelativeCurrentTime()/1e9;
-      if (loading_segment && (time_to_end > 80.0)){
-        loading_segment = false;
-      }
+      */
 
       cereal::Event::Reader e = (*eit);
-
-      capnp::DynamicStruct::Reader e_ds = static_cast<capnp::DynamicStruct::Reader>(e);
       std::string type;
-      KJ_IF_MAYBE(e_, e_ds.which()){
+      KJ_IF_MAYBE(e_, static_cast<capnp::DynamicStruct::Reader>(e).which()) {
         type = e_->getProto().getName();
+      }
+
+      if (type == "initData") {
+        route_start_ts = e.getLogMonoTime();
       }
 
       uint64_t tm = e.getLogMonoTime();
@@ -285,7 +258,7 @@ void Replay::stream() {
       if (it != socks.end()) {
         long etime = tm-t0;
 
-        float timestamp = (tm - route_t0)/1e9;
+        float timestamp = (tm - route_start_ts)/1e9;
         if(std::abs(timestamp-last_print) > 5.0){
           last_print = timestamp;
           printf("at %f\n", last_print);
@@ -304,14 +277,14 @@ void Replay::stream() {
           //qDebug() << "sleeping" << us_behind << etime << timer.nsecsElapsed();
         }
 
+        // publish frame
+        // TODO: publish all frames
         if (type == "roadCameraState") {
           auto fr = e.getRoadCameraState();
 
           auto it_ = eidx.find(fr.getFrameId());
           if (it_ != eidx.end()) {
             auto pp = *it_;
-            //qDebug() << fr.getRoadCameraStateId() << pp;
-
             if (frs.find(pp.first) != frs.end()) {
               auto frm = frs[pp.first];
               auto data = frm->get(pp.second);
@@ -335,6 +308,7 @@ void Replay::stream() {
           }
         }
 
+        // publish msg
         if (sm == nullptr){
           capnp::MallocMessageBuilder msg;
           msg.setRoot(e);
@@ -348,11 +322,8 @@ void Replay::stream() {
           sm->update_msgs(nanos_since_boot(), messages);
         }
       }
+
       ++eit;
-      if ((time_to_end < 60.0) && !loading_segment){
-        loading_segment = true;
-        seek_queue.enqueue({true, 0});
-      }
     }
   }
 }
