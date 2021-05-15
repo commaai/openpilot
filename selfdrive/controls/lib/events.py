@@ -672,6 +672,12 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
     ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("Controls Mismatch"),
   },
 
+  EventName.usbError: {
+    ET.SOFT_DISABLE: SoftDisableAlert("USB Error: Reboot Your Device"),
+    ET.PERMANENT: NormalPermanentAlert("USB Error: Reboot Your Device", ""),
+    ET.NO_ENTRY: NoEntryAlert("USB Error: Reboot Your Device"),
+  },
+
   EventName.canError: {
     ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("CAN Error: Check Connections"),
     ET.PERMANENT: Alert(
