@@ -12,7 +12,7 @@ def capture_exception(*args, **kwargs):
     sentry_sdk.capture_exception(*args, **kwargs)
     sentry_sdk.flush()  # https://github.com/getsentry/sentry-python/issues/291
   except Exception:
-    pass
+    cloudlog.exception("sentry exception")
 
 def bind_user(**kwargs):
   sentry_sdk.set_user(kwargs)
