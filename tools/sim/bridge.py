@@ -6,6 +6,7 @@ import math
 import numpy as np
 import time
 import threading
+from cereal import log
 from typing import Any
 
 import cereal.messaging as messaging
@@ -99,7 +100,7 @@ def gps_callback(gps):
     "latitude": gps.latitude,
     "longitude": gps.longitude,
     "altitude": gps.altitude,
-    "source": 5, # external, copied from log.capnp
+    "source": log.GpsLocationData.SensorSource.ublox,
   }
 
   pm.send('gpsLocationExternal', dat)
