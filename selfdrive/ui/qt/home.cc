@@ -52,7 +52,6 @@ void HomeWindow::offroadTransition(bool offroad) {
 
 void HomeWindow::driverView() {
   if (!driver_view) {
-    Params().putBool("IsDriverViewEnabled", true);
     driver_view = new DriverViewWindow(this);
     slayout->addWidget(driver_view);
     slayout->setCurrentWidget(driver_view);
@@ -64,7 +63,6 @@ void HomeWindow::driverView() {
 void HomeWindow::mousePressEvent(QMouseEvent* e) {
   // TODO: make a nice driver view widget
   if (driver_view) {
-    Params().putBool("IsDriverViewEnabled", false);
     slayout->setCurrentWidget(home);
     driver_view->deleteLater();
     driver_view = nullptr;

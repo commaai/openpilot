@@ -16,6 +16,8 @@ class DriverViewWindow : public QOpenGLWidget, protected QOpenGLFunctions {
   ~DriverViewWindow();
 
  protected:
+  void showEvent(QShowEvent *event);
+  void hideEvent(QHideEvent *event);
   void paintGL() override;
   void initializeGL() override;
 

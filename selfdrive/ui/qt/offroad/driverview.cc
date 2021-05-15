@@ -18,6 +18,14 @@ DriverViewWindow::~DriverViewWindow() {
   doneCurrent();
 }
 
+void DriverViewWindow::showEvent(QShowEvent* event) {
+  Params().putBool("IsDriverViewEnabled", true);
+}
+
+void DriverViewWindow::hideEvent(QHideEvent* event) {
+  Params().putBool("IsDriverViewEnabled", false);
+}
+
 void DriverViewWindow::onTimeout() {
   vision->update();
   update();
@@ -96,4 +104,4 @@ void DriverViewWindow::paintGL() {
   const int img_x = is_rhd ? rect.right() - face_radius * 2 - bdr_s * 2 : rect.x + bdr_s * 2;
   const int img_y = rect.bottom() - face_radius * 2 - bdr_s * 2.5;
   p.drawImage(img_x, img_y, face_img);
-};
+}
