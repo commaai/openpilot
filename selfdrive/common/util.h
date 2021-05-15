@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <dirent.h>
 
+#include <algorithm>
 #include <chrono>
 #include <memory>
 #include <string>
@@ -29,9 +30,7 @@ namespace util {
 // map x from [a1, a2] to [b1, b2]
 template <typename T>
 T map_val(T x, T a1, T a2, T b1, T b2) {
-  if (x < a1) x = a1;
-  if (x > a2) x = a2;
-
+  x = std::clamp(x, a1, a2);
   T ra = a2 - a1;
   T rb = b2 - b1;
   return (x - a1) * rb / ra + b1;
