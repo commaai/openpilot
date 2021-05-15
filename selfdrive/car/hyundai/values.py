@@ -170,7 +170,7 @@ FINGERPRINTS = {
 }
 
 # Don't use these fingerprints for fingerprinting, they are still used for ECU detection
-IGNORED_FINGERPRINTS = [CAR.VELOSTER, CAR.GENESIS_G70, CAR.KONA, CAR.KIA_CEED, CAR.KIA_SELTOS, CAR.ELANTRA_21]
+IGNORED_FINGERPRINTS = [CAR.VELOSTER, CAR.GENESIS_G70, CAR.KONA, CAR.KIA_CEED, CAR.KIA_SELTOS]
 
 FW_VERSIONS = {
   CAR.IONIQ_EV_2020: {
@@ -580,9 +580,6 @@ FW_VERSIONS = {
     (Ecu.eps, 0x7d4, None): [b'\xf1\x00TM  MDPS C 1.00 1.00 56340-S2000 8409'],
     (Ecu.fwdCamera, 0x7c4, None): [b'\xf1\x00JFA LKAS AT USA LHD 1.00 1.02 95895-D5000 h31'],
     (Ecu.transmission, 0x7e1, None): [b'\xf1\x816U2V8051\x00\x00\xf1\x006U2V0_C2\x00\x006U2V8051\x00\x00DJF0T16NL0\t\xd2GW'],
-  },
-  CAR.ELANTRA_21: {
-    # TODO: ADD ELANTRA_21 FPV2 HERE
   }
 }
 
