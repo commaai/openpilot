@@ -1,11 +1,14 @@
 #include "selfdrive/ui/replay/replay.h"
 
+#include <QJsonDocument>
+#include <QJsonObject>
+
 #include "cereal/services.h"
 #include "selfdrive/camerad/cameras/camera_common.h"
 #include "selfdrive/common/timing.h"
 #include "selfdrive/hardware/hw.h"
 
-int getch(void) {
+int getch() {
   int ch;
   struct termios oldt;
   struct termios newt;
@@ -46,17 +49,12 @@ Replay::Replay(QString route, SubMaster *sm_, QObject *parent) : sm(sm_), QObjec
     }
   }
 
-  current_segment = -window_padding - 1;
-
-  bool create_jwt = true;
-#if !defined(QCOM) && !defined(QCOM2)
-  create_jwt = false;
-#endif
-  http = new HttpRequest(this, "https://api.commadotai.com/v1/route/" + route + "/files", "", create_jwt);
+  const QString url = "https://api.commadotai.com/v1/route/" + route + "/files";
+  http = new HttpRequest(this, url, "", Hardware::PC());
   QObject::connect(http, &HttpRequest::receivedResponse, this, &Replay::parseResponse);
 }
 
-void Replay::parseResponse(const QString &response){
+void Replay::parseResponse(const QString &response) {
   QJsonDocument doc = QJsonDocument::fromJson(response.trimmed().toUtf8());
   if (doc.isNull()) {
     qDebug() << "JSON Parse failed";
@@ -69,23 +67,23 @@ void Replay::parseResponse(const QString &response){
   seekTime(0);
 }
 
-void Replay::addSegment(int i){
-  assert((i >= 0) && (i < log_paths.size()) && (i < camera_paths.size()));
-  if (lrs.find(i) != lrs.end()) {
+void Replay::addSegment(int n) {
+  assert((n >= 0) && (n < log_paths.size()) && (n < camera_paths.size()));
+  if (lrs.find(n) != lrs.end()) {
     return;
   }
 
-  QThread* lr_thread = new QThread;
-  lrs.insert(i, new LogReader(log_paths.at(i).toString(), &events, &events_lock, &eidx));
+  QThread *t = new QThread;
+  lrs.insert(n, new LogReader(log_paths.at(n).toString(), &events, &events_lock, &eidx));
 
-  lrs[i]->moveToThread(lr_thread);
-  QObject::connect(lr_thread, &QThread::started, lrs[i], &LogReader::process);
-  lr_thread->start();
+  lrs[n]->moveToThread(t);
+  QObject::connect(t, &QThread::started, lrs[n], &LogReader::process);
+  t->start();
 
-  frs.insert(i, new FrameReader(qPrintable(camera_paths.at(i).toString())));
+  frs.insert(n, new FrameReader(qPrintable(camera_paths.at(n).toString())));
 }
 
-void Replay::trimSegment(int n){
+void Replay::removeSegment(int n) {
   if (lrs.contains(n)) {
     auto lr = lrs.take(n);
     delete lr;
@@ -95,16 +93,19 @@ void Replay::trimSegment(int n){
     delete fr;
   }
 
+  // TODO: add this back
+  /*
   events_lock.lockForWrite();
   auto eit = events.begin();
   while (eit != events.end()) {
-    if(std::abs(eit.key()/1e9 - getCurrentTime()/1e9) > window_padding*60.0){
+    if(std::abs(eit.key()/1e9 - getCurrentTime()/1e9) > 60.0){
       eit = events.erase(eit);
       continue;
     }
     eit++;
   }
   events_lock.unlock();
+  */
 }
 
 void Replay::start(){
@@ -129,14 +130,23 @@ void Replay::start(){
 
 void Replay::seekTime(int ts){
   qInfo() << "seeking to " << ts;
+  current_ts = ts;
   current_segment = ts/60;
-  addSegment(current_segment);
 }
 
 void Replay::segmentQueueThread() {
+  // maintain the segment window
   while (true) {
-    // TODO: maintain the segment window
-    QThread::sleep(1);
+    for (int i = 0; i < log_paths.size(); i++) {
+      int start_idx = std::max(current_segment - BACKWARD_SEGS, 0);
+      int end_idx = std::min(current_segment + FORWARD_SEGS, log_paths.size());
+      if (i >= start_idx && i <= end_idx) {
+        addSegment(i);
+      } else {
+        removeSegment(i);
+      }
+    }
+    QThread::msleep(100);
   }
 }
 
@@ -175,6 +185,7 @@ void Replay::stream() {
   QElapsedTimer timer;
   timer.start();
 
+  route_start_ts = 0;
   while (true) {
     if (events.size() == 0) {
       qDebug() << "waiting for events";
@@ -182,69 +193,44 @@ void Replay::stream() {
       continue;
     }
 
-    uint64_t t0 = (events.begin()+1).key();
-    uint64_t t0r = timer.nsecsElapsed();
-    qDebug() << "unlogging at" << t0;
+    // TODO: use initData's logMonoTime
+    if (route_start_ts == 0) {
+      route_start_ts = events.firstKey();
+    }
+
+    uint64_t t0 = seek_ts * 1e9;
+    qDebug() << "unlogging at" << (t0 - route_start_ts) / 1e9;
 
     // wait for future events to be ready?
     auto eit = events.lowerBound(t0);
-    while(eit.key() - t0 > 1e9){
+    while (eit.key() - t0 > 1e9) {
       eit = events.lowerBound(t0);
     }
 
-    while ((eit != events.end())) {
-      // what does this do?
-      /*
-      if (seeking) {
-        t0 = route_start_ts + 1;
-        tc = t0;
-        qDebug() << "seeking to" << t0;
-        t0r = timer.nsecsElapsed();
-        eit = events.lowerBound(t0);
-        if ((eit == events.end()) || (eit.key() - t0 > 1e9)) {
-          qWarning() << "seek off end";
-          while((eit == events.end()) || (eit.key() - t0 > 1e9)) {
-            qDebug() << "stuck";
-            eit = events.lowerBound(t0);
-            QThread::sleep(1);
-            printf("%f\n", (eit.key() - t0)/1e9);
-          }
-        }
-        seeking = false;
-      }
-      */
-
+    uint64_t t0r = timer.nsecsElapsed();
+    while ((eit != events.end()) && seek_ts == 0) {
       cereal::Event::Reader e = (*eit);
       std::string type;
       KJ_IF_MAYBE(e_, static_cast<capnp::DynamicStruct::Reader>(e).which()) {
         type = e_->getProto().getName();
       }
 
-      if (type == "initData") {
-        route_start_ts = e.getLogMonoTime();
-      }
-
       uint64_t tm = e.getLogMonoTime();
+      current_ts = tm / 1e9;
+
       auto it = socks.find(type);
-      tc = tm;
       if (it != socks.end()) {
         long etime = tm-t0;
 
         float timestamp = (tm - route_start_ts)/1e9;
         if(std::abs(timestamp-last_print) > 5.0){
           last_print = timestamp;
-          printf("at %f\n", last_print);
+          qInfo() << "at " << last_print;
         }
 
         long rtime = timer.nsecsElapsed() - t0r;
         long us_behind = ((etime-rtime)*1e-3)+0.5;
-        if (us_behind > 0) {
-          if (us_behind > 1e6) {
-            qWarning() << "OVER ONE SECOND BEHIND, HACKING" << us_behind;
-            us_behind = 0;
-            t0 = tm;
-            t0r = timer.nsecsElapsed();
-          }
+        if (us_behind > 0 && us_behind < 1e6) {
           QThread::usleep(us_behind);
           //qDebug() << "sleeping" << us_behind << etime << timer.nsecsElapsed();
         }

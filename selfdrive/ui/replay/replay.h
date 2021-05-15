@@ -3,12 +3,8 @@
 #include <iostream>
 #include <termios.h>
 
-#include <QFile>
 #include <QJsonArray>
-#include <QJsonDocument>
-#include <QJsonObject>
 #include <QThread>
-#include <QQueue>
 
 #include <capnp/dynamic.h>
 
@@ -19,7 +15,8 @@
 #include "tools/clib/framereader.h"
 
 
-constexpr int WINDOW_SIZE = 2;
+constexpr int FORWARD_SEGS = 2;
+constexpr int BACKWARD_SEGS = 2;
 
 
 class Replay : public QObject {
@@ -27,13 +24,11 @@ class Replay : public QObject {
 
 public:
   Replay(QString route, SubMaster *sm = nullptr, QObject *parent = 0);
-  void start();
-  void addSegment(int i);
-  void trimSegment(int seg_num);
-  void seekTime(int ts);
 
-  uint64_t getCurrentTime() { return tc; }
-  uint64_t getRelativeCurrentTime() { return tc - route_start_ts; }
+  void start();
+  void addSegment(int n);
+  void removeSegment(int n);
+  void seekTime(int ts);
 
 public slots:
   void keyboardThread();
@@ -42,15 +37,14 @@ public slots:
   void stream();
 
 private:
-  int current_segment;
+  std::atomic<int> seek_ts = 0;
+  std::atomic<int> current_ts = 0;
+  std::atomic<int> current_segment;
 
   QThread *thread;
   QThread *kb_thread;
   QThread *queue_thread;
-  QQueue<QPair<bool, int>> seek_queue;
-  int window_padding = 1;
 
-  uint64_t tc = 0;
   float last_print = 0;
   uint64_t route_start_ts;
 
