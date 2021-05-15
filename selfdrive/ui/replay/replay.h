@@ -31,12 +31,14 @@ public:
   void seekTime(int ts);
 
 public slots:
+  void stream();
   void keyboardThread();
   void segmentQueueThread();
   void parseResponse(const QString &response);
-  void stream();
 
 private:
+  float last_print = 0;
+  uint64_t route_start_ts;
   std::atomic<int> seek_ts = 0;
   std::atomic<int> current_ts = 0;
   std::atomic<int> current_segment;
@@ -45,9 +47,7 @@ private:
   QThread *kb_thread;
   QThread *queue_thread;
 
-  float last_print = 0;
-  uint64_t route_start_ts;
-
+  // logs
   Events events;
   QReadWriteLock events_lock;
   QMap<int, QPair<int, int>> eidx;
@@ -59,8 +59,8 @@ private:
   QMap<int, FrameReader*> frs;
 
   // messaging
-  Context *ctx;
   SubMaster *sm;
-  QMap<std::string, PubSocket*> socks;
+  PubMaster *pm;
+  QVector<std::string> socks;
   VisionIpcServer *vipc_server = nullptr;
 };

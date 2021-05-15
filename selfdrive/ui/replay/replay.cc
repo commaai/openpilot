@@ -8,6 +8,8 @@
 #include "selfdrive/common/timing.h"
 #include "selfdrive/hardware/hw.h"
 
+
+// TODO: use ncurses?
 int getch() {
   int ch;
   struct termios oldt;
@@ -31,22 +33,18 @@ Replay::Replay(QString route, SubMaster *sm_, QObject *parent) : sm(sm_), QObjec
   QStringList allow = QString(getenv("ALLOW")).split(",");
   qDebug() << "allowlist" << allow;
 
-  if (sm == nullptr) {
-    ctx = Context::create();
-    for (const auto &it : services) {
-      std::string name = it.name;
-      if ((allow[0].size() > 0 && !allow.contains(name.c_str())) ||
-          block.contains(name.c_str())) {
-        continue;
-      }
-
-      PubSocket *sock = PubSocket::create(ctx, name);
-      if (sock == NULL) {
-        qDebug() << "FAILED " << name.c_str();
-        continue;
-      }
-      socks.insert(name, sock);
+  std::vector<const char*> s;
+  for (const auto &it : services) {
+    if ((allow[0].size() == 0 || allow.contains(it.name)) &&
+        !block.contains(it.name)) {
+      s.push_back(it.name);
+      socks.append(std::string(it.name));
     }
+  }
+  qDebug() << "services " << s;
+
+  if (sm == nullptr) {
+    pm = new PubMaster(s);
   }
 
   const QString url = "https://api.commadotai.com/v1/route/" + route + "/files";
@@ -175,8 +173,7 @@ void Replay::keyboardThread() {
     } else if (c == 'S') {
       //seek_queue.enqueue({true, -10});
     } else if (c == 'G') {
-      //seek_queue.clear();
-      //seek_queue.enqueue({false, 0});
+      seekTime(0);
     }
   }
 }
@@ -218,12 +215,11 @@ void Replay::stream() {
       uint64_t tm = e.getLogMonoTime();
       current_ts = tm / 1e9;
 
-      auto it = socks.find(type);
-      if (it != socks.end()) {
+      if (socks.contains(type)) {
         long etime = tm-t0;
 
         float timestamp = (tm - route_start_ts)/1e9;
-        if(std::abs(timestamp-last_print) > 5.0){
+        if (std::abs(timestamp - last_print) > 5.0) {
           last_print = timestamp;
           qInfo() << "at " << last_print;
         }
@@ -252,33 +248,34 @@ void Replay::stream() {
                 cl_context context = CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id, NULL, NULL, &err));
 
                 vipc_server = new VisionIpcServer("camerad", device_id, context);
-                vipc_server->create_buffers(VisionStreamType::VISION_STREAM_RGB_BACK, UI_BUF_COUNT, true, frm->width, frm->height);
-
+                vipc_server->create_buffers(VisionStreamType::VISION_STREAM_RGB_BACK, UI_BUF_COUNT,
+                                            true, frm->width, frm->height);
                 vipc_server->start_listener();
               }
 
+              VisionIpcBufExtra extra = {};
               VisionBuf *buf = vipc_server->get_buffer(VisionStreamType::VISION_STREAM_RGB_BACK);
               memcpy(buf->addr, data, frm->getRGBSize());
-              VisionIpcBufExtra extra = {};
-
               vipc_server->send(buf, &extra, false);
             }
           }
         }
 
         // publish msg
-        if (sm == nullptr){
+        if (sm == nullptr) {
           capnp::MallocMessageBuilder msg;
           msg.setRoot(e);
           auto words = capnp::messageToFlatArray(msg);
           auto bytes = words.asBytes();
-
-          (*it)->send((char*)bytes.begin(), bytes.size());
-        } else{
+          pm->send(type.c_str(), (unsigned char*)bytes.begin(), bytes.size());
+        } else {
           std::vector<std::pair<std::string, cereal::Event::Reader>> messages;
           messages.push_back({type, e});
           sm->update_msgs(nanos_since_boot(), messages);
         }
+      }
+      else {
+        //qDebug() << "skipping" << type.c_str();
       }
 
       ++eit;
