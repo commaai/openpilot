@@ -8,8 +8,6 @@
 #include "selfdrive/common/timing.h"
 #include "selfdrive/hardware/hw.h"
 
-
-// TODO: use ncurses?
 int getch() {
   int ch;
   struct termios oldt;
@@ -169,7 +167,7 @@ void Replay::keyboardThread() {
     } else if (c == 'm') {
       seekTime(current_ts + 60);
     } else if (c == 'M') {
-      seekTime(current_ts - 10);
+      seekTime(current_ts - 60);
     } else if (c == 's') {
       seekTime(current_ts + 10);
     } else if (c == 'S') {
