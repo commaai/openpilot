@@ -44,7 +44,7 @@ void OnroadAlerts::updateState(const UIState &s) {
     volume = util::map_val(sm["carState"].getCarState().getVEgo(), 0.f, 20.f,
                            Hardware::MIN_VOLUME, Hardware::MAX_VOLUME);
   }
-  if (s.scene.deviceState.getStarted()) {
+  if (sm["deviceState"].getDeviceState().getStarted()) {
     if (sm.updated("controlsState")) {
       const cereal::ControlsState::Reader &cs = sm["controlsState"].getControlsState();
       updateAlert(QString::fromStdString(cs.getAlertText1()), QString::fromStdString(cs.getAlertText2()),
