@@ -1,15 +1,15 @@
-#include "framebuffer.h"
-#include "util.h"
+#include "selfdrive/common/framebuffer.h"
+
 #include <cstdio>
 #include <cassert>
+
+#include "selfdrive/common/util.h"
 
 #include <ui/DisplayInfo.h>
 
 #include <gui/ISurfaceComposer.h>
 #include <gui/Surface.h>
 #include <gui/SurfaceComposerClient.h>
-
-
 #include <GLES2/gl2.h>
 #include <EGL/eglext.h>
 
@@ -40,7 +40,7 @@ void FrameBuffer::swap() {
 bool set_brightness(int brightness) {
   char bright[64];
   snprintf(bright, sizeof(bright), "%d", brightness);
-  return 0 == write_file("/sys/class/leds/lcd-backlight/brightness", bright, strlen(bright));
+  return 0 == util::write_file("/sys/class/leds/lcd-backlight/brightness", bright, strlen(bright));
 }
 
 void FrameBuffer::set_power(int mode) {

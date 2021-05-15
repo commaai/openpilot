@@ -30,9 +30,9 @@ const int TOYOTA_GAS_INTERCEPTOR_THRSLD = 845;
 #define TOYOTA_GET_INTERCEPTOR(msg) (((GET_BYTE((msg), 0) << 8) + GET_BYTE((msg), 1) + (GET_BYTE((msg), 2) << 8) + GET_BYTE((msg), 3)) / 2) // avg between 2 tracks
 
 const CanMsg TOYOTA_TX_MSGS[] = {{0x283, 0, 7}, {0x2E6, 0, 8}, {0x2E7, 0, 8}, {0x33E, 0, 7}, {0x344, 0, 8}, {0x365, 0, 7}, {0x366, 0, 7}, {0x4CB, 0, 8},  // DSU bus 0
-                                  {0x128, 1, 6}, {0x141, 1, 4}, {0x160, 1, 8}, {0x161, 1, 7}, {0x470, 1, 4},  // DSU bus 1
-                                  {0x2E4, 0, 5}, {0x411, 0, 8}, {0x412, 0, 8}, {0x343, 0, 8}, {0x1D2, 0, 8},  // LKAS + ACC
-                                  {0x200, 0, 6}};  // interceptor
+                                 {0x128, 1, 6}, {0x141, 1, 4}, {0x160, 1, 8}, {0x161, 1, 7}, {0x470, 1, 4},  // DSU bus 1
+                                 {0x2E4, 0, 5}, {0x191, 0, 8}, {0x411, 0, 8}, {0x412, 0, 8}, {0x343, 0, 8}, {0x1D2, 0, 8},  // LKAS + ACC
+                                 {0x200, 0, 6}};  // interceptor
 
 AddrCheckStruct toyota_rx_checks[] = {
   {.msg = {{ 0xaa, 0, 8, .check_checksum = false, .expected_timestep = 12000U}}},
@@ -176,6 +176,21 @@ static int toyota_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
         max_limit_check(desired_accel, TOYOTA_MAX_ACCEL, TOYOTA_MIN_ACCEL);
 
       if (violation) {
+        tx = 0;
+      }
+    }
+
+    // LTA steering check
+    // only sent to prevent dash errors, no actuation is accepted
+    if (addr == 0x191) {
+      // check the STEER_REQUEST, STEER_REQUEST_2, and STEER_ANGLE_CMD signals
+      bool lta_request = (GET_BYTE(to_send, 0) & 1) != 0;
+      bool lta_request2 = ((GET_BYTE(to_send, 3) >> 1) & 1) != 0;
+      int lta_angle = (GET_BYTE(to_send, 1) << 8) | GET_BYTE(to_send, 2);
+      lta_angle = to_signed(lta_angle, 16);
+
+      // block LTA msgs with actuation requests
+      if (lta_request || lta_request2 || (lta_angle != 0)) {
         tx = 0;
       }
     }

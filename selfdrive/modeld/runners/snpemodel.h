@@ -1,15 +1,14 @@
-#ifndef SNPEMODEL_H
-#define SNPEMODEL_H
+#pragma once
 
-#include <SNPE/SNPE.hpp>
-#include <SNPE/SNPEBuilder.hpp>
-#include <SNPE/SNPEFactory.hpp>
 #include <DlContainer/IDlContainer.hpp>
 #include <DlSystem/DlError.hpp>
 #include <DlSystem/ITensor.hpp>
 #include <DlSystem/ITensorFactory.hpp>
 #include <DlSystem/IUserBuffer.hpp>
 #include <DlSystem/IUserBufferFactory.hpp>
+#include <SNPE/SNPE.hpp>
+#include <SNPE/SNPEBuilder.hpp>
+#include <SNPE/SNPEFactory.hpp>
 
 #include "runmodel.h"
 
@@ -18,15 +17,12 @@
 #define USE_DSP_RUNTIME 2
 
 #ifdef USE_THNEED
-#include "thneed/thneed.h"
+#include "selfdrive/modeld/thneed/thneed.h"
 #endif
 
 class SNPEModel : public RunModel {
 public:
   SNPEModel(const char *path, float *loutput, size_t loutput_size, int runtime);
-  ~SNPEModel() {
-    if (model_data) free(model_data);
-  }
   void addRecurrent(float *state, int state_size);
   void addTrafficConvention(float *state, int state_size);
   void addDesire(float *state, int state_size);
@@ -37,7 +33,7 @@ public:
 #endif
 
 private:
-  uint8_t *model_data = NULL;
+  std::string model_data;
 
 #if defined(QCOM) || defined(QCOM2)
   zdl::DlSystem::Runtime_t Runtime;
@@ -66,6 +62,3 @@ private:
   float *desire;
   std::unique_ptr<zdl::DlSystem::IUserBuffer> desireBuffer;
 };
-
-#endif
-

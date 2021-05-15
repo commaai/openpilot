@@ -38,7 +38,7 @@ if __name__ == "__main__":
     values = [s.strip().split(".") for s in args.values.split(",")]
 
   while 1:
-    polld = poller.poll(1000)
+    polld = poller.poll(100)
     for sock in polld:
       msg = sock.receive()
       evt = log.Event.from_bytes(msg)

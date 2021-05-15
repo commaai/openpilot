@@ -1,31 +1,16 @@
-#include <stdexcept>
-#include <cassert>
-#include <iostream>
-#include <vector>
+#include "selfdrive/boardd/panda.h"
+
 #include <unistd.h>
 
-#include "common/swaglog.h"
-#include "common/gpio.h"
-#include "common/util.h"
-#include "messaging.hpp"
-#include "panda.h"
+#include <cassert>
+#include <iostream>
+#include <stdexcept>
+#include <vector>
 
-void panda_set_power(bool power){
-#ifdef QCOM2
-  int err = 0;
-
-  err += gpio_init(GPIO_STM_RST_N, true);
-  err += gpio_init(GPIO_STM_BOOT0, true);
-
-  err += gpio_set(GPIO_STM_RST_N, true);
-  err += gpio_set(GPIO_STM_BOOT0, false);
-
-  util::sleep_for(100); // 100 ms
-
-  err += gpio_set(GPIO_STM_RST_N, !power);
-  assert(err == 0);
-#endif
-}
+#include "cereal/messaging/messaging.h"
+#include "selfdrive/common/gpio.h"
+#include "selfdrive/common/swaglog.h"
+#include "selfdrive/common/util.h"
 
 Panda::Panda(){
   // init libusb

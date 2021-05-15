@@ -1,9 +1,11 @@
-#include <QNetworkReply>
-#include <QHBoxLayout>
-#include "widgets/input.hpp"
-#include "widgets/ssh_keys.hpp"
-#include "common/params.h"
+#include "ssh_keys.h"
 
+#include <QHBoxLayout>
+#include <QNetworkReply>
+
+#include "selfdrive/common/params.h"
+#include "selfdrive/ui/qt/api.h"
+#include "selfdrive/ui/qt/widgets/input.h"
 
 SshControl::SshControl() : AbstractControl("SSH Keys", "Warning: This grants SSH access to all public keys in your GitHub settings. Never enter a GitHub username other than your own. A comma employee will NEVER ask you to add their GitHub username.", "") {
 
@@ -27,33 +29,26 @@ SshControl::SshControl() : AbstractControl("SSH Keys", "Warning: This grants SSH
 
   QObject::connect(&btn, &QPushButton::released, [=]() {
     if (btn.text() == "ADD") {
-      username = InputDialog::getText("Enter your GitHub username");
+      QString username = InputDialog::getText("Enter your GitHub username");
       if (username.length() > 0) {
         btn.setText("LOADING");
         btn.setEnabled(false);
         getUserKeys(username);
       }
     } else {
-      Params().delete_db_value("GithubUsername");
-      Params().delete_db_value("GithubSshKeys");
+      params.remove("GithubUsername");
+      params.remove("GithubSshKeys");
       refresh();
     }
   });
-
-  // setup networking
-  manager = new QNetworkAccessManager(this);
-  networkTimer = new QTimer(this);
-  networkTimer->setSingleShot(true);
-  networkTimer->setInterval(5000);
-  connect(networkTimer, SIGNAL(timeout()), this, SLOT(timeout()));
 
   refresh();
 }
 
 void SshControl::refresh() {
-  QString param = QString::fromStdString(Params().get("GithubSshKeys"));
+  QString param = QString::fromStdString(params.get("GithubSshKeys"));
   if (param.length()) {
-    username_label.setText(QString::fromStdString(Params().get("GithubUsername")));
+    username_label.setText(QString::fromStdString(params.get("GithubUsername")));
     btn.setText("REMOVE");
   } else {
     username_label.setText("");
@@ -62,49 +57,27 @@ void SshControl::refresh() {
   btn.setEnabled(true);
 }
 
-void SshControl::getUserKeys(QString username){
-  QString url = "https://github.com/" + username + ".keys";
-
-  QNetworkRequest request;
-  request.setUrl(QUrl(url));
-#ifdef QCOM
-  QSslConfiguration ssl = QSslConfiguration::defaultConfiguration();
-  ssl.setCaCertificates(QSslCertificate::fromPath("/usr/etc/tls/cert.pem",
-                        QSsl::Pem, QRegExp::Wildcard));
-  request.setSslConfiguration(ssl);
-#endif
-
-  reply = manager->get(request);
-  connect(reply, SIGNAL(finished()), this, SLOT(parseResponse()));
-  networkTimer->start();
-}
-
-void SshControl::timeout(){
-  reply->abort();
-}
-
-void SshControl::parseResponse(){
-  QString err = "";
-  if (reply->error() != QNetworkReply::OperationCanceledError) {
-    networkTimer->stop();
-    QString response = reply->readAll();
-    if (reply->error() == QNetworkReply::NoError && response.length()) {
-      Params().write_db_value("GithubUsername", username.toStdString());
-      Params().write_db_value("GithubSshKeys", response.toStdString());
-    } else if(reply->error() == QNetworkReply::NoError){
-      err = "Username '" + username + "' has no keys on GitHub";
+void SshControl::getUserKeys(const QString &username) {
+  HttpRequest *request = new HttpRequest(this, "https://github.com/" + username + ".keys", "", false);
+  QObject::connect(request, &HttpRequest::receivedResponse, [=](const QString &resp) {
+    if (!resp.isEmpty()) {
+      Params params;
+      params.put("GithubUsername", username.toStdString());
+      params.put("GithubSshKeys", resp.toStdString());
     } else {
-      err = "Username '" + username + "' doesn't exist on GitHub";
+      ConfirmationDialog::alert("Username '" + username + "' has no keys on GitHub");
     }
-  } else {
-    err = "Request timed out";
-  }
-
-  if (err.length()) {
-    ConfirmationDialog::alert(err);
-  }
-
-  refresh();
-  reply->deleteLater();
-  reply = nullptr;
+    refresh();
+    request->deleteLater();
+  });
+  QObject::connect(request, &HttpRequest::failedResponse, [=] {
+    ConfirmationDialog::alert("Username '" + username + "' doesn't exist on GitHub");
+    refresh();
+    request->deleteLater();
+  });
+  QObject::connect(request, &HttpRequest::timeoutResponse, [=] {
+    ConfirmationDialog::alert("Request timed out");
+    refresh();
+    request->deleteLater();
+  });
 }

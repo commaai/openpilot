@@ -57,7 +57,12 @@ class CarInterface(CarInterfaceBase):
 
     # Per-chassis tuning values, override tuning defaults here if desired
 
-    if candidate == CAR.GOLF_MK7:
+    if candidate == CAR.ATLAS_MK1:
+      # Averages of all CA Atlas variants
+      ret.mass = 2011 + STD_CARGO_KG
+      ret.wheelbase = 2.98
+
+    elif candidate == CAR.GOLF_MK7:
       # Averages of all AU Golf variants
       ret.mass = 1397 + STD_CARGO_KG
       ret.wheelbase = 2.62
@@ -77,10 +82,10 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 1715 + STD_CARGO_KG
       ret.wheelbase = 2.74
 
-    elif candidate == CAR.AUDI_A3:
-      # Temporarily carry forward old tuning values while we test vehicle identification
-      ret.mass = 1500 + STD_CARGO_KG
-      ret.wheelbase = 2.64
+    elif candidate == CAR.AUDI_A3_MK3:
+      # Averages of all 8V A3 variants
+      ret.mass = 1335 + STD_CARGO_KG
+      ret.wheelbase = 2.61
 
     elif candidate == CAR.SEAT_ATECA_MK1:
       # Averages of all 5F Ateca variants
@@ -104,7 +109,8 @@ class CarInterface(CarInterfaceBase):
 
     ret.centerToFront = ret.wheelbase * 0.45
 
-    ret.enableCamera = True  # Stock camera detection doesn't apply to VW
+    ret.enableCamera = True
+    ret.enableBsm = 0x30F in fingerprint[0]
 
     # TODO: get actual value, for now starting with reasonable value for
     # civic and scaling by mass and wheelbase
@@ -127,7 +133,7 @@ class CarInterface(CarInterfaceBase):
     self.cp.update_strings(can_strings)
     self.cp_cam.update_strings(can_strings)
 
-    ret = self.CS.update(self.cp, self.CP.transmissionType)
+    ret = self.CS.update(self.cp, self.cp_cam, self.CP.transmissionType)
     ret.canValid = self.cp.can_valid and self.cp_cam.can_valid
     ret.steeringRateLimited = self.CC.steer_rate_limited if self.CC is not None else False
 
@@ -167,8 +173,9 @@ class CarInterface(CarInterfaceBase):
   def apply(self, c):
     can_sends = self.CC.update(c.enabled, self.CS, self.frame, c.actuators,
                    c.hudControl.visualAlert,
-                   c.hudControl.audibleAlert,
                    c.hudControl.leftLaneVisible,
-                   c.hudControl.rightLaneVisible)
+                   c.hudControl.rightLaneVisible,
+                   c.hudControl.leftLaneDepart,
+                   c.hudControl.rightLaneDepart)
     self.frame += 1
     return can_sends

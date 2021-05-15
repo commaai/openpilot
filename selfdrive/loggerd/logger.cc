@@ -1,27 +1,27 @@
+#include "selfdrive/loggerd/logger.h"
+
+#include <assert.h>
+#include <errno.h>
+#include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
-#include <stdbool.h>
 #include <string.h>
-#include <assert.h>
-#include <time.h>
-#include <errno.h>
-#include <unistd.h>
 #include <sys/stat.h>
+#include <time.h>
+#include <unistd.h>
 
-#include <iostream>
 #include <fstream>
+#include <iostream>
 #include <streambuf>
 #ifdef QCOM
 #include <cutils/properties.h>
 #endif
 
-#include "common/swaglog.h"
-#include "common/params.h"
-#include "common/version.h"
-#include "messaging.hpp"
-#include "logger.h"
-
+#include "cereal/messaging/messaging.h"
+#include "selfdrive/common/params.h"
+#include "selfdrive/common/swaglog.h"
+#include "selfdrive/common/version.h"
 
 // ***** logging helpers *****
 
@@ -53,9 +53,9 @@ kj::Array<capnp::word> logger_build_init_data() {
   MessageBuilder msg;
   auto init = msg.initEvent().initInitData();
 
-  if (util::file_exists("/EON")) {
+  if (Hardware::EON()) {
     init.setDeviceType(cereal::InitData::DeviceType::NEO);
-  } else if (util::file_exists("/TICI")) {
+  } else if (Hardware::TICI()) {
     init.setDeviceType(cereal::InitData::DeviceType::TICI);
   } else {
     init.setDeviceType(cereal::InitData::DeviceType::PC);
@@ -91,10 +91,6 @@ kj::Array<capnp::word> logger_build_init_data() {
   }
 #endif
 
-  const char* dongle_id = getenv("DONGLE_ID");
-  if (dongle_id) {
-    init.setDongleId(std::string(dongle_id));
-  }
   init.setDirty(!getenv("CLEAN"));
 
   // log params
@@ -102,10 +98,11 @@ kj::Array<capnp::word> logger_build_init_data() {
   init.setGitCommit(params.get("GitCommit"));
   init.setGitBranch(params.get("GitBranch"));
   init.setGitRemote(params.get("GitRemote"));
-  init.setPassive(params.read_db_bool("Passive"));
+  init.setPassive(params.getBool("Passive"));
+  init.setDongleId(params.get("DongleId"));
   {
     std::map<std::string, std::string> params_map;
-    params.read_db_all(&params_map);
+    params.readAll(&params_map);
     auto lparams = init.initParams().initEntries(params_map.size());
     int i = 0;
     for (auto& kv : params_map) {

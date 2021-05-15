@@ -1,20 +1,22 @@
 #pragma once
 
-#include <stdio.h>
-#include <stdint.h>
 #include <pthread.h>
+#include <stdint.h>
+#include <stdio.h>
+
 #include <memory>
+
 #include <bzlib.h>
-#include <kj/array.h>
 #include <capnp/serialize.h>
-#include "common/util.h"
+#include <kj/array.h>
 
-#if defined(QCOM) || defined(QCOM2)
-const std::string LOG_ROOT = "/data/media/0/realdata";
-#else
-const std::string LOG_ROOT = util::getenv_default("HOME", "/.comma/media/0/realdata", "/data/media/0/realdata");
-#endif
+#include "selfdrive/common/util.h"
+#include "selfdrive/common/swaglog.h"
+#include "selfdrive/hardware/hw.h"
 
+const std::string LOG_ROOT =
+    Hardware::PC() ? util::getenv_default("HOME", "/.comma/media/0/realdata", "/data/media/0/realdata")
+                   : "/data/media/0/realdata";
 #define LOGGER_MAX_HANDLES 16
 
 class BZFile {

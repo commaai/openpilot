@@ -1,36 +1,25 @@
 #pragma once
 
-#include <cstdio>
-#include <csignal>
-#include <cassert>
-#include <cstring>
-#include <unistd.h>
 #include <fcntl.h>
+#include <unistd.h>
+#include <dirent.h>
 
-#include <string>
-#include <memory>
-#include <atomic>
-#include <sstream>
-#include <fstream>
-#include <thread>
-#include <chrono>
 #include <algorithm>
+#include <atomic>
+#include <cassert>
+#include <chrono>
+#include <csignal>
+#include <cstdio>
+#include <cstring>
+#include <fstream>
+#include <memory>
+#include <string>
+#include <thread>
+#include <map>
 
 #ifndef sighandler_t
 typedef void (*sighandler_t)(int sig);
 #endif
-
-#define ARRAYSIZE(x) (sizeof(x)/sizeof(x[0]))
-
-#undef ALIGN
-#define ALIGN(x, align) (((x) + (align)-1) & ~((align)-1))
-
-// Reads a file into a newly allocated buffer.
-//
-// Returns NULL on failure, otherwise the NULL-terminated file contents.
-// The result must be freed by the caller.
-void* read_file(const char* path, size_t* out_len);
-int write_file(const char* path, const void* data, size_t size, int flags=O_WRONLY, mode_t mode=0777);
 
 void set_thread_name(const char* name);
 
@@ -64,12 +53,11 @@ inline std::string string_format(const std::string& format, Args... args) {
   return std::string(buf.get(), buf.get() + size - 1);
 }
 
-inline std::string read_file(const std::string &fn) {
-  std::ifstream t(fn);
-  std::stringstream buffer;
-  buffer << t.rdbuf();
-  return buffer.str();
-}
+std::string read_file(const std::string &fn);
+
+int read_files_in_dir(std::string path, std::map<std::string, std::string> *contents);
+
+int write_file(const char* path, const void* data, size_t size, int flags = O_WRONLY, mode_t mode = 0777);
 
 inline std::string tohex(const uint8_t* buf, size_t buf_size) {
   std::unique_ptr<char[]> hexbuf(new char[buf_size*2+1]);
@@ -160,4 +148,20 @@ struct unique_fd {
   }
   operator int() const { return fd_; }
   int fd_;
+};
+
+class FirstOrderFilter {
+public:
+  FirstOrderFilter(float x0, float ts, float dt) {
+    k_ = (dt / ts) / (1.0 + dt / ts);
+    x_ = x0;
+  }
+  inline float update(float x) {
+    x_ = (1. - k_) * x_ + k_ * x;
+    return x_;
+  }
+  inline void reset(float x) { x_ = x; }
+
+private:
+  float x_, k_;
 };

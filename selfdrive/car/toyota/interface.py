@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 from cereal import car
 from selfdrive.config import Conversions as CV
-from selfdrive.car.toyota.values import Ecu, ECU_FINGERPRINT, CAR, TSS2_CAR, NO_DSU_CAR, FINGERPRINTS, CarControllerParams
-from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, is_ecu_disconnected, gen_empty_fingerprint
+from selfdrive.car.toyota.values import Ecu, CAR, TSS2_CAR, NO_DSU_CAR, CarControllerParams
+from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
 from selfdrive.swaglog import cloudlog
 from selfdrive.car.interfaces import CarInterfaceBase
 
@@ -25,7 +25,7 @@ class CarInterface(CarInterfaceBase):
     ret.steerLimitTimer = 0.4
 
     # Improved longitudinal tune
-    if candidate in [CAR.COROLLA_TSS2, CAR.COROLLAH_TSS2, CAR.RAV4_TSS2, CAR.RAV4H_TSS2]:
+    if candidate in [CAR.COROLLA_TSS2, CAR.COROLLAH_TSS2, CAR.RAV4_TSS2, CAR.RAV4H_TSS2, CAR.LEXUS_NX_TSS2]:
       ret.longitudinalTuning.deadzoneBP = [0., 8.05]
       ret.longitudinalTuning.deadzoneV = [.0, .14]
       ret.longitudinalTuning.kpBP = [0., 5., 20.]
@@ -278,7 +278,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.3], [0.05]]
       ret.lateralTuning.pid.kf = 0.00007
 
-    elif candidate in [CAR.LEXUS_NXH, CAR.LEXUS_NX]:
+    elif candidate in [CAR.LEXUS_NXH, CAR.LEXUS_NX, CAR.LEXUS_NX_TSS2]:
       stop_and_go = True
       ret.safetyParam = 73
       ret.wheelbase = 2.66
@@ -298,6 +298,16 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.35], [0.15]]
       ret.lateralTuning.pid.kf = 0.00007818594
 
+    elif candidate == CAR.MIRAI:
+      stop_and_go = True
+      ret.safetyParam = 73
+      ret.wheelbase = 2.91
+      ret.steerRatio = 14.8
+      tire_stiffness_factor = 0.8
+      ret.mass = 4300. * CV.LB_TO_KG + STD_CARGO_KG
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.1]]
+      ret.lateralTuning.pid.kf = 0.00006
+
     ret.steerRateCost = 1.
     ret.centerToFront = ret.wheelbase * 0.44
 
@@ -311,15 +321,15 @@ class CarInterface(CarInterfaceBase):
                                                                          tire_stiffness_factor=tire_stiffness_factor)
 
     ret.enableCamera = True
+    ret.enableBsm = 0x3F6 in fingerprint[0] and candidate in TSS2_CAR
     # Detect smartDSU, which intercepts ACC_CMD from the DSU allowing openpilot to send it
     smartDsu = 0x2FF in fingerprint[0]
-    # TODO: use FW query for the enableDsu flag
     # In TSS2 cars the camera does long control
-    ret.enableDsu = is_ecu_disconnected(fingerprint[0], FINGERPRINTS, ECU_FINGERPRINT, candidate, Ecu.dsu) and candidate not in NO_DSU_CAR
+    found_ecus = [fw.ecu for fw in car_fw]
+    ret.enableDsu = (len(found_ecus) > 0) and (Ecu.dsu not in found_ecus) and (candidate not in NO_DSU_CAR)
     ret.enableGasInterceptor = 0x201 in fingerprint[0]
     # if the smartDSU is detected, openpilot can send ACC_CMD (and the smartDSU will block it from the DSU) or not (the DSU is "connected")
     ret.openpilotLongitudinalControl = ret.enableCamera and (smartDsu or ret.enableDsu or candidate in TSS2_CAR)
-    cloudlog.warning("ECU Camera Simulated: %r", ret.enableCamera)
     cloudlog.warning("ECU DSU Simulated: %r", ret.enableDsu)
     cloudlog.warning("ECU Gas Interceptor: %r", ret.enableGasInterceptor)
 
