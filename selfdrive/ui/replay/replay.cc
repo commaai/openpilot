@@ -21,7 +21,7 @@ int getch(void) {
   return ch;
 }
 
-Replay::Replay(QString route_, SubMaster *sm_, QObject *parent) : route(route_), sm(sm_), QObject(parent) {
+Replay::Replay(QString route, SubMaster *sm_, QObject *parent) : sm(sm_), QObject(parent) {
   QStringList block = QString(getenv("BLOCK")).split(",");
   qDebug() << "blocklist" << block;
 
@@ -66,7 +66,7 @@ void Replay::parseResponse(const QString &response){
   camera_paths = doc["cameras"].toArray();
   log_paths = doc["logs"].toArray();
 
-  seek_queue.enqueue({false, 0});
+  seekTime(0);
 }
 
 void Replay::addSegment(int i){
@@ -122,98 +122,66 @@ void Replay::start(){
 
   queue_thread = new QThread;
   QObject::connect(queue_thread, &QThread::started, [=](){
-    seekRequestThread();
+    segmentQueueThread();
   });
   queue_thread->start();
 }
 
-void Replay::seekTime(int seek_){
-  // TODO: see if eidx also needs to be cleared
-  if(!seeking){
-    if (seek_/60 != current_segment) {
-      int last_segment = current_segment;
-      current_segment = seek_/60;
+void Replay::seekTime(int ts){
+  qInfo() << "seeking to " << ts;
+  current_segment = ts/60;
+  addSegment(current_segment);
+}
 
-      for(int i = 0 ; i < 2*window_padding + 1 ; i++) {
-        // maintain window of segments
-        // add segments that don't overlap
-        int seek_ind = seek_/60 - window_padding + i;
-        if(((last_segment + window_padding < seek_ind) || (last_segment - window_padding > seek_ind)) && (seek_ind >= 0)) {
-          addSegment(seek_ind);
-        }
-
-        // remove old segs
-        int cur_ind = last_segment - window_padding + i;
-        if(((seek_/60 + window_padding < cur_ind) || (seek_/60 - window_padding > cur_ind)) && (cur_ind >= 0)) {
-          trimSegment(cur_ind);
-        }
-      }
-    }
+void Replay::segmentQueueThread() {
+  while (true) {
+    // TODO: maintain the segment window
+    QThread::sleep(1);
   }
 }
 
-void Replay::seekRequestThread() {
-  while(1) {
-    if(seek_queue.size() > 0 && !seeking) {
-      int calculated_time = getRelativeCurrentTime()/1e9;
-      while(seek_queue.size() > 0) {
-        auto add_val = seek_queue.dequeue();
-        if(add_val.first) {
-          calculated_time += add_val.second;
-        } else {
-          calculated_time = add_val.second;
-        }
-      }
-      seekTime(calculated_time);
-    }
-  }
-}
-
-void Replay::keyboardThread(){
+void Replay::keyboardThread() {
   char c;
   while (true) {
     c = getch();
     if(c == '\n'){
       printf("Enter seek request: ");
-      std::string request;
-      std::cin >> request;
+      std::string r;
+      std::cin >> r;
 
-      seek_queue.clear();
-
-      if(request[0] == '#') {
-        request.erase(0, 1);
-        seek_queue.enqueue({false, std::stoi(request)*60});
-        continue;
+      if(r[0] == '#') {
+        r.erase(0, 1);
+        seekTime(std::stoi(r)*60);
+      } else {
+        seekTime(std::stoi(r));
       }
-      seek_queue.enqueue({false, std::stoi(request)});
       getch(); // remove \n from entering seek
     } else if (c == 'm') {
-      seek_queue.enqueue({true, 60});
+      //seek_queue.enqueue({true, 60});
     } else if (c == 'M') {
-      seek_queue.enqueue({true, -60});
+      //seek_queue.enqueue({true, -60});
     } else if (c == 's') {
-      seek_queue.enqueue({true, 10});
+      //seek_queue.enqueue({true, 10});
     } else if (c == 'S') {
-      seek_queue.enqueue({true, -10});
+      //seek_queue.enqueue({true, -10});
     } else if (c == 'G') {
-      seek_queue.clear();
-      seek_queue.enqueue({false, 0});
+      //seek_queue.clear();
+      //seek_queue.enqueue({false, 0});
     }
   }
 }
 
 void Replay::stream() {
-
-  // wait for events
-  while (events.size() == 0) {
-    qDebug() << "waiting for events";
-    QThread::sleep(1);
-  }
-
   QElapsedTimer timer;
   timer.start();
 
   while (true) {
+    if (events.size() == 0) {
+      qDebug() << "waiting for events";
+      QThread::msleep(100);
+      continue;
+    }
+
     uint64_t t0 = (events.begin()+1).key();
     uint64_t t0r = timer.nsecsElapsed();
     qDebug() << "unlogging at" << t0;

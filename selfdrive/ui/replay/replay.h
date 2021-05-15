@@ -26,23 +26,22 @@ class Replay : public QObject {
   Q_OBJECT
 
 public:
-  Replay(QString route_, SubMaster *sm = nullptr, QObject *parent = 0);
+  Replay(QString route, SubMaster *sm = nullptr, QObject *parent = 0);
   void start();
   void addSegment(int i);
   void trimSegment(int seg_num);
-  void seekTime(int seek_);
+  void seekTime(int ts);
 
   uint64_t getCurrentTime() { return tc; }
   uint64_t getRelativeCurrentTime() { return tc - route_start_ts; }
 
 public slots:
   void keyboardThread();
-  void seekRequestThread();
+  void segmentQueueThread();
   void parseResponse(const QString &response);
   void stream();
 
 private:
-  QString route;
   int current_segment;
 
   QThread *thread;
@@ -54,7 +53,6 @@ private:
   uint64_t tc = 0;
   float last_print = 0;
   uint64_t route_start_ts;
-  bool seeking = false;
 
   Events events;
   QReadWriteLock events_lock;
