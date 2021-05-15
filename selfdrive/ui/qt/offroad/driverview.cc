@@ -9,6 +9,7 @@ DriverViewWindow::DriverViewWindow(QWidget* parent) : sm({"driverState"}), QOpen
   setAttribute(Qt::WA_OpaquePaintEvent);
   is_rhd = Params().getBool("IsRHD");
   face_img = QImage("../assets/img_driver_face").scaled(180, 180, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+
   timer = new QTimer(this);
   connect(timer, &QTimer::timeout, this, &DriverViewWindow::onTimeout);
 }
@@ -28,6 +29,7 @@ void DriverViewWindow::hideEvent(QHideEvent* event) {
 
 void DriverViewWindow::onTimeout() {
   vision->update();
+  sm.update(0);
   update();
 }
 
@@ -44,6 +46,7 @@ void DriverViewWindow::paintGL() {
 
   const Rect viz_rect = Rect{bdr_s, bdr_s, vwp_w - 2 * bdr_s, vwp_h - 2 * bdr_s};
   glViewport(viz_rect.x, viz_rect.y, viz_rect.w, viz_rect.h);
+
   QPainter p(this);
 
   if (!vision->connected()) {
@@ -55,11 +58,6 @@ void DriverViewWindow::paintGL() {
   }
 
   vision->draw();
-  cereal::DriverState::Reader driver_state;
-  sm.update(0);
-  if (sm.updated("driverState")) {
-    driver_state = sm["drive_state"].getDriverState();
-  }
 
   const int width = 4 * viz_rect.h / 3;
   const Rect rect = {viz_rect.centerX() - width / 2, viz_rect.y, width, viz_rect.h};  // x, y, w, h
@@ -79,6 +77,7 @@ void DriverViewWindow::paintGL() {
   p.drawRect(blackout_x_r, rect.y, blackout_w_r, rect.h);
   p.setBrush(Qt::NoBrush);
 
+  cereal::DriverState::Reader driver_state = sm["drive_state"].getDriverState();
   const bool face_detected = driver_state.getFaceProb() > 0.4;
   if (face_detected) {
     auto fxy_list = driver_state.getFacePosition();
