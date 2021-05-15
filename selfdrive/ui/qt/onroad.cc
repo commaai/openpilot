@@ -12,7 +12,7 @@
 #endif
 
 OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
-  layout = new QStackedLayout();
+  layout = new QStackedLayout(this);
   layout->setStackingMode(QStackedLayout::StackAll);
 
   // old UI on bottom

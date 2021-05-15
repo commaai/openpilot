@@ -377,7 +377,6 @@ MapInstructions::MapInstructions(QWidget * parent) : QWidget(parent){
     QWidget * w = new QWidget;
     w->setLayout(layout);
     layout_outer->addWidget(w);
-    layout_outer->addLayout(layout);
   }
 
   setLayout(layout_outer);
