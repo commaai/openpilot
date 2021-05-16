@@ -102,7 +102,7 @@ class CarController():
       pcm_cancel_cmd = True
 
     # Never send cancel command if we never enter cruise state (no cruise if pedal)
-    # Cancel cmd causes brakes to release at a standstill
+    # Cancel cmd causes brakes to release at a standstill causing grinding
     pcm_cancel_cmd &= CS.CP.enableCruise
 
     # *** rate limit after the enable check ***
