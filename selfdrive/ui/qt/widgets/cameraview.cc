@@ -155,8 +155,8 @@ void CameraViewWidget::resizeGL(int w, int h) {
 void CameraViewWidget::paintGL() {
   // draw background
 
-  const NVGcolor color = bg_colors[ui_status];
-  glClearColor(color.r, color.g, color.b, 1.0);
+  const QColor &color = bg_colors[ui_status];
+  glClearColor(color.redF(), color.greenF(), color.blueF(), 1.0);
   glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
   // draw frame

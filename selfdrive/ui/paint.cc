@@ -216,7 +216,9 @@ static void ui_draw_vision_event(UIState *s) {
     const int radius = 96;
     const int center_x = s->viz_rect.right() - radius - bdr_s * 2;
     const int center_y = s->viz_rect.y + radius  + (bdr_s * 1.5);
-    ui_draw_circle_image(s, center_x, center_y, radius, "wheel", bg_colors[s->status], 1.0f);
+    const QColor &color = bg_colors[s->status];
+    NVGcolor nvg_color = nvgRGBA(color.red(), color.green(), color.blue(), color.alpha());
+    ui_draw_circle_image(s, center_x, center_y, radius, "wheel", nvg_color, 1.0f);
   }
 }
 
@@ -266,8 +268,8 @@ static void ui_draw_vision(UIState *s) {
 }
 
 static void ui_draw_background(UIState *s) {
-  const NVGcolor color = bg_colors[s->status];
-  glClearColor(color.r, color.g, color.b, 1.0);
+  const QColor &color = bg_colors[s->status];
+  glClearColor(color.redF(), color.greenF(), color.blueF(), 1.0);
   glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 }
 

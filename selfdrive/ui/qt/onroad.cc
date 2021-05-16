@@ -94,8 +94,7 @@ void OnroadAlerts::updateState(const UIState &s) {
 
   // TODO: add blinking back if performant
   //float alpha = 0.375 * cos((millis_since_boot() / 1000) * 2 * M_PI * blinking_rate) + 0.625;
-  auto c = bg_colors[s.status];
-  bg.setRgbF(c.r, c.g, c.b, c.a);
+  bg = bg_colors[s.status];
 }
 
 void OnroadAlerts::offroadTransition(bool offroad) {
