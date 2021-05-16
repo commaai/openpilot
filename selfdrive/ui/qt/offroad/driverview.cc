@@ -34,7 +34,6 @@ void DriverViewWindow::draw() {
   const int width = 4 * video_rect.height() / 3;
   const QRect rect = {video_rect.center().x() - width / 2, video_rect.top(), width, video_rect.height()};  // x, y, w, h
   const QRect valid_rect = {is_rhd ? rect.right() - rect.height() / 2 : rect.left(), rect.top(), rect.height() / 2, rect.height()};
-
   // blackout
   const int blackout_x_r = valid_rect.right();
   const QRect& blackout_rect = Hardware::TICI() ? video_rect : rect;
@@ -44,6 +43,7 @@ void DriverViewWindow::draw() {
 
   QColor bg;
   bg.setRgbF(0, 0, 0, 0.56);
+  p.setPen(QPen(bg));
   p.setBrush(QBrush(bg));
   p.drawRect(blackout_x_l, rect.top(), blackout_w_l, rect.height());
   p.drawRect(blackout_x_r, rect.top(), blackout_w_r, rect.height());
@@ -57,22 +57,23 @@ void DriverViewWindow::draw() {
     float face_y = fxy_list[1];
     int fbox_x = valid_rect.center().x() + (is_rhd ? face_x : -face_x) * valid_rect.width();
     int fbox_y = valid_rect.center().y() + face_y * valid_rect.height();
-
     float alpha = 0.2;
-    if (face_x = std::abs(face_x), face_y = std::abs(face_y); face_x <= 0.35 && face_y <= 0.4)
+    if (face_x = std::abs(face_x), face_y = std::abs(face_y); face_x <= 0.35 && face_y <= 0.4) {
       alpha = 0.8 - (face_x > face_y ? face_x : face_y) * 0.6 / 0.375;
+    }
 
     const int box_size = 0.6 * rect.height() / 2;
     QColor color;
     color.setRgbF(1.0, 1.0, 1.0, alpha);
-    QPen pen = QPen(QColor(0xff, 0xff, 0xff, alpha));
+    QPen pen = QPen(color);
     pen.setWidth(10);
     p.setPen(pen);
-    p.drawRect(fbox_x - box_size / 2, fbox_y - box_size / 2, box_size, box_size);
+    p.drawRoundedRect(fbox_x - box_size / 2, fbox_y - box_size / 2, box_size, box_size, 35.0, 35.0);
     p.setPen(Qt::NoPen);
   }
   const int face_radius = 85;
   const int img_x = is_rhd ? rect.right() - face_radius * 2 - bdr_s * 2 : rect.left() + bdr_s * 2;
   const int img_y = rect.bottom() - face_radius * 2 - bdr_s * 2.5;
+  p.setOpacity(face_detected ? 1.0 : 0.15);
   p.drawImage(img_x, img_y, face_img);
 }
