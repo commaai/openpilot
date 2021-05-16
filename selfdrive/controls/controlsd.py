@@ -450,7 +450,7 @@ class Controls:
     CC.actuators = actuators
 
     CC.cruiseControl.override = True
-    CC.cruiseControl.cancel = (not self.CP.enableCruise and not self.CP.enableGasInterceptor) or (not self.enabled and CS.cruiseState.enabled)
+    CC.cruiseControl.cancel = not self.CP.enableCruise or (not self.enabled and CS.cruiseState.enabled)
 
     # Some override values for Honda
     # brake discount removes a sharp nonlinearity
