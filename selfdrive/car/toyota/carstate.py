@@ -32,7 +32,10 @@ class CarState(CarStateBase):
       ret.gas = (cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS'] + cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS2']) / 2.
       ret.gasPressed = ret.gas > 15
     else:
-      ret.gas = cp.vl["GAS_PEDAL"]['GAS_PEDAL']
+      if self.CP.carFingerprint == CAR.LEXUS_ISH:
+        ret.gas = cp.vl["GAS_PEDAL_ALT"]['GAS_PEDAL']
+      else:
+        ret.gas = cp.vl["GAS_PEDAL"]['GAS_PEDAL']
       ret.gasPressed = cp.vl["PCM_CRUISE"]['GAS_RELEASED'] == 0
 
     ret.wheelSpeeds.fl = cp.vl["WHEEL_SPEEDS"]['WHEEL_SPEED_FL'] * CV.KPH_TO_MS
@@ -110,7 +113,6 @@ class CarState(CarStateBase):
       ("STEER_ANGLE", "STEER_ANGLE_SENSOR", 0),
       ("GEAR", "GEAR_PACKET", 0),
       ("BRAKE_PRESSED", "BRAKE_MODULE", 0),
-      ("GAS_PEDAL", "GAS_PEDAL", 0),
       ("WHEEL_SPEED_FL", "WHEEL_SPEEDS", 0),
       ("WHEEL_SPEED_FR", "WHEEL_SPEEDS", 0),
       ("WHEEL_SPEED_RL", "WHEEL_SPEEDS", 0),
@@ -142,7 +144,6 @@ class CarState(CarStateBase):
       ("ESP_CONTROL", 3),
       ("EPS_STATUS", 25),
       ("BRAKE_MODULE", 40),
-      ("GAS_PEDAL", 33),
       ("WHEEL_SPEEDS", 80),
       ("STEER_ANGLE_SENSOR", 80),
       ("PCM_CRUISE", 33),
@@ -158,6 +159,13 @@ class CarState(CarStateBase):
       signals.append(("SET_SPEED", "PCM_CRUISE_2", 0))
       signals.append(("LOW_SPEED_LOCKOUT", "PCM_CRUISE_2", 0))
       checks.append(("PCM_CRUISE_2", 33))
+
+    if CP.carFingerprint == CAR.LEXUS_ISH:
+      signals.append(("GAS_PEDAL", "GAS_PEDAL_ALT", 0))
+      checks.append(("GAS_PEDAL_ALT", 33))
+    else:
+      signals.append(("GAS_PEDAL", "GAS_PEDAL", 0))
+      checks.append(("GAS_PEDAL", 33))
 
     # add gas interceptor reading if we are using it
     if CP.enableGasInterceptor:
