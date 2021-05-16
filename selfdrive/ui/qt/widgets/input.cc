@@ -1,9 +1,11 @@
+#include "input.h"
+
 #include <QPushButton>
 
-#include "input.hpp"
-#include "qt_window.hpp"
+#include "selfdrive/ui/qt/qt_window.h"
+#include "selfdrive/hardware/hw.h"
 
-InputDialog::InputDialog(QString prompt_text, QWidget *parent):QDialog(parent) {
+InputDialog::InputDialog(const QString &prompt_text, QWidget *parent) : QDialog(parent) {
   layout = new QVBoxLayout();
   layout->setContentsMargins(50, 50, 50, 50);
   layout->setSpacing(20);
@@ -25,8 +27,8 @@ InputDialog::InputDialog(QString prompt_text, QWidget *parent):QDialog(parent) {
     background-color: #444444;
   )");
   header_layout->addWidget(cancel_btn, 0, Qt::AlignRight);
-  QObject::connect(cancel_btn, SIGNAL(released()), this, SLOT(reject()));
-  QObject::connect(cancel_btn, SIGNAL(released()), this, SIGNAL(cancel()));
+  QObject::connect(cancel_btn, &QPushButton::released, this, &InputDialog::reject);
+  QObject::connect(cancel_btn, &QPushButton::released, this, &InputDialog::cancel);
 
   layout->addLayout(header_layout);
 
@@ -43,7 +45,7 @@ InputDialog::InputDialog(QString prompt_text, QWidget *parent):QDialog(parent) {
   layout->addWidget(line, 1, Qt::AlignTop);
 
   k = new Keyboard(this);
-  QObject::connect(k, SIGNAL(emitButton(QString)), this, SLOT(handleInput(QString)));
+  QObject::connect(k, &Keyboard::emitButton, this, &InputDialog::handleInput);
   layout->addWidget(k, 2, Qt::AlignBottom);
 
   setStyleSheet(R"(
@@ -56,7 +58,7 @@ InputDialog::InputDialog(QString prompt_text, QWidget *parent):QDialog(parent) {
   setLayout(layout);
 }
 
-QString InputDialog::getText(const QString prompt, int minLength) {
+QString InputDialog::getText(const QString &prompt, int minLength) {
   InputDialog d = InputDialog(prompt);
   d.setMinLength(minLength);
   const int ret = d.exec();
@@ -76,7 +78,7 @@ void InputDialog::show(){
   setMainWindow(this);
 }
 
-void InputDialog::handleInput(QString s) {
+void InputDialog::handleInput(const QString &s) {
   if (!QString::compare(s,"⌫")) {
     line->backspace();
   }
@@ -100,7 +102,7 @@ void InputDialog::handleInput(QString s) {
   line->insert(s.left(1));
 }
 
-void InputDialog::setMessage(QString message, bool clearInputField){
+void InputDialog::setMessage(const QString &message, bool clearInputField){
   label->setText(message);
   if (clearInputField){
     line->setText("");
@@ -111,8 +113,7 @@ void InputDialog::setMinLength(int length){
   minLength = length;
 }
 
-
-ConfirmationDialog::ConfirmationDialog(QString prompt_text, QString confirm_text, QString cancel_text,
+ConfirmationDialog::ConfirmationDialog(const QString &prompt_text, const QString &confirm_text, const QString &cancel_text,
                                        QWidget *parent):QDialog(parent) {
   setWindowFlags(Qt::Popup);
   layout = new QVBoxLayout();
@@ -133,13 +134,13 @@ ConfirmationDialog::ConfirmationDialog(QString prompt_text, QString confirm_text
   if (cancel_text.length()) {
     QPushButton* cancel_btn = new QPushButton(cancel_text);
     btn_layout->addWidget(cancel_btn, 0, Qt::AlignRight);
-    QObject::connect(cancel_btn, SIGNAL(released()), this, SLOT(reject()));
+    QObject::connect(cancel_btn, &QPushButton::released, this, &ConfirmationDialog::reject);
   }
 
   if (confirm_text.length()) {
     QPushButton* confirm_btn = new QPushButton(confirm_text);
     btn_layout->addWidget(confirm_btn, 0, Qt::AlignRight);
-    QObject::connect(confirm_btn, SIGNAL(released()), this, SLOT(accept()));
+    QObject::connect(confirm_btn, &QPushButton::released, this, &ConfirmationDialog::accept);
   }
 
   setFixedSize(900, 350);
@@ -161,20 +162,20 @@ ConfirmationDialog::ConfirmationDialog(QString prompt_text, QString confirm_text
   setLayout(layout);
 }
 
-bool ConfirmationDialog::alert(const QString prompt_text) {
-  ConfirmationDialog d = ConfirmationDialog(prompt_text, "Ok", "");
+bool ConfirmationDialog::alert(const QString &prompt_text, QWidget *parent) {
+  ConfirmationDialog d = ConfirmationDialog(prompt_text, "Ok", "", parent);
   return d.exec();
 }
 
-bool ConfirmationDialog::confirm(const QString prompt_text) {
-  ConfirmationDialog d = ConfirmationDialog(prompt_text);
+bool ConfirmationDialog::confirm(const QString &prompt_text, QWidget *parent) {
+  ConfirmationDialog d = ConfirmationDialog(prompt_text, "Ok", "Cancel", parent);
   return d.exec();
 }
 
 int ConfirmationDialog::exec() {
    // TODO: make this work without fullscreen
-#ifdef QCOM2
-  setMainWindow(this);
-#endif
+  if (Hardware::TICI()) {
+    setMainWindow(this);
+  }
   return QDialog::exec();
 }

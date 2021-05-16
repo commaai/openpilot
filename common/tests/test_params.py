@@ -6,7 +6,7 @@ import shutil
 import stat
 import unittest
 
-from common.params import Params, UnknownKeyName, put_nonblocking
+from common.params import Params, ParamKeyType, UnknownKeyName, put_nonblocking
 
 class TestParams(unittest.TestCase):
   def setUp(self):
@@ -35,7 +35,7 @@ class TestParams(unittest.TestCase):
     self.params.put("CarParams", "test")
     self.params.put("DongleId", "cb38263377b873ee")
     assert self.params.get("CarParams") == b"test"
-    self.params.panda_disconnect()
+    self.params.clear_all(ParamKeyType.CLEAR_ON_PANDA_DISCONNECT)
     assert self.params.get("CarParams") is None
     assert self.params.get("DongleId") is not None
 
@@ -43,7 +43,7 @@ class TestParams(unittest.TestCase):
     self.params.put("CarParams", "test")
     self.params.put("DongleId", "cb38263377b873ee")
     assert self.params.get("CarParams") == b"test"
-    self.params.manager_start()
+    self.params.clear_all(ParamKeyType.CLEAR_ON_MANAGER_START)
     assert self.params.get("CarParams") is None
     assert self.params.get("DongleId") is not None
 
@@ -65,6 +65,15 @@ class TestParams(unittest.TestCase):
     with self.assertRaises(UnknownKeyName):
       self.params.get("swag")
 
+    with self.assertRaises(UnknownKeyName):
+      self.params.get_bool("swag")
+
+    with self.assertRaises(UnknownKeyName):
+      self.params.put("swag", "abc")
+
+    with self.assertRaises(UnknownKeyName):
+      self.params.put_bool("swag", True)
+
   def test_params_permissions(self):
     permissions = stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IWGRP | stat.S_IROTH | stat.S_IWOTH
 
@@ -76,6 +85,22 @@ class TestParams(unittest.TestCase):
     assert self.params.get("CarParams") is None
     self.params.delete("CarParams")
     assert self.params.get("CarParams") is None
+
+  def test_get_bool(self):
+    self.params.delete("IsMetric")
+    self.assertFalse(self.params.get_bool("IsMetric"))
+
+    self.params.put_bool("IsMetric", True)
+    self.assertTrue(self.params.get_bool("IsMetric"))
+
+    self.params.put_bool("IsMetric", False)
+    self.assertFalse(self.params.get_bool("IsMetric"))
+
+    self.params.put("IsMetric", "1")
+    self.assertTrue(self.params.get_bool("IsMetric"))
+
+    self.params.put("IsMetric", "0")
+    self.assertFalse(self.params.get_bool("IsMetric"))
 
   def test_put_non_blocking_with_get_block(self):
     q = Params(self.tmpdir)

@@ -2,6 +2,7 @@
 import datetime
 import os
 import time
+from pathlib import Path
 from typing import Dict, Optional, Tuple
 
 import psutil
@@ -11,8 +12,9 @@ import cereal.messaging as messaging
 from cereal import log
 from common.filter_simple import FirstOrderFilter
 from common.numpy_fast import clip, interp
-from common.params import Params
+from common.params import Params, ParamKeyType
 from common.realtime import DT_TRML, sec_since_boot
+from common.dict_helpers import strip_deprecated_keys
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
 from selfdrive.hardware import EON, TICI, HARDWARE
 from selfdrive.loggerd.config import get_available_percent
@@ -22,8 +24,6 @@ from selfdrive.thermald.power_monitoring import PowerMonitoring
 from selfdrive.version import get_git_branch, terms_version, training_version
 
 FW_SIGNATURE = get_expected_signature()
-
-DISABLE_LTE_ONROAD = os.path.exists("/persist/disable_lte_onroad") or TICI
 
 ThermalStatus = log.DeviceState.ThermalStatus
 NetworkType = log.DeviceState.NetworkType
@@ -36,8 +36,8 @@ DISCONNECT_TIMEOUT = 5.  # wait 5 seconds before going offroad after disconnect 
 
 prev_offroad_states: Dict[str, Tuple[bool, Optional[str]]] = {}
 
-LEON = False
 last_eon_fan_val = None
+
 
 def read_tz(x):
   if x is None:
@@ -61,44 +61,24 @@ def read_thermal(thermal_config):
 
 
 def setup_eon_fan():
-  global LEON
-
   os.system("echo 2 > /sys/module/dwc3_msm/parameters/otg_switch")
-
-  bus = SMBus(7, force=True)
-  try:
-    bus.write_byte_data(0x21, 0x10, 0xf)   # mask all interrupts
-    bus.write_byte_data(0x21, 0x03, 0x1)   # set drive current and global interrupt disable
-    bus.write_byte_data(0x21, 0x02, 0x2)   # needed?
-    bus.write_byte_data(0x21, 0x04, 0x4)   # manual override source
-  except IOError:
-    print("LEON detected")
-    LEON = True
-  bus.close()
 
 
 def set_eon_fan(val):
-  global LEON, last_eon_fan_val
+  global last_eon_fan_val
 
   if last_eon_fan_val is None or last_eon_fan_val != val:
     bus = SMBus(7, force=True)
-    if LEON:
-      try:
-        i = [0x1, 0x3 | 0, 0x3 | 0x08, 0x3 | 0x10][val]
-        bus.write_i2c_block_data(0x3d, 0, [i])
-      except IOError:
-        # tusb320
-        if val == 0:
-          bus.write_i2c_block_data(0x67, 0xa, [0])
-          #bus.write_i2c_block_data(0x67, 0x45, [1<<2])
-        else:
-          #bus.write_i2c_block_data(0x67, 0x45, [0])
-          bus.write_i2c_block_data(0x67, 0xa, [0x20])
-          bus.write_i2c_block_data(0x67, 0x8, [(val - 1) << 6])
-    else:
-      bus.write_byte_data(0x21, 0x04, 0x2)
-      bus.write_byte_data(0x21, 0x03, (val*2)+1)
-      bus.write_byte_data(0x21, 0x04, 0x4)
+    try:
+      i = [0x1, 0x3 | 0, 0x3 | 0x08, 0x3 | 0x10][val]
+      bus.write_i2c_block_data(0x3d, 0, [i])
+    except IOError:
+      # tusb320
+      if val == 0:
+        bus.write_i2c_block_data(0x67, 0xa, [0])
+      else:
+        bus.write_i2c_block_data(0x67, 0xa, [0x20])
+        bus.write_i2c_block_data(0x67, 0x8, [(val - 1) << 6])
     bus.close()
     last_eon_fan_val = val
 
@@ -190,6 +170,20 @@ def thermald_thread():
 
   thermal_config = HARDWARE.get_thermal_config()
 
+  # CPR3 logging
+  if EON:
+    base_path = "/sys/kernel/debug/cpr3-regulator/"
+    cpr_files = [p for p in Path(base_path).glob("**/*") if p.is_file()]
+    cpr_files = ["/sys/kernel/debug/regulator/pm8994_s11/voltage"] + cpr_files
+    cpr_data = {}
+    for cf in cpr_files:
+      with open(cf, "r") as f:
+        try:
+          cpr_data[str(cf)] = f.read().strip()
+        except Exception:
+          pass
+    cloudlog.event("CPR", data=cpr_data)
+
   while 1:
     pandaState = messaging.recv_sock(pandaState_sock, wait=True)
     msg = read_thermal(thermal_config)
@@ -228,7 +222,7 @@ def thermald_thread():
       if pandaState_prev is not None:
         if pandaState.pandaState.pandaType == log.PandaState.PandaType.unknown and \
           pandaState_prev.pandaState.pandaType != log.PandaState.PandaType.unknown:
-          params.panda_disconnect()
+          params.clear_all(ParamKeyType.CLEAR_ON_PANDA_DISCONNECT)
       pandaState_prev = pandaState
 
     # get_network_type is an expensive call. update every 10s
@@ -332,8 +326,8 @@ def thermald_thread():
       set_offroad_alert_if_changed("Offroad_ConnectivityNeeded", False)
       set_offroad_alert_if_changed("Offroad_ConnectivityNeededPrompt", False)
 
-    startup_conditions["up_to_date"] = params.get("Offroad_ConnectivityNeeded") is None or params.get("DisableUpdates") == b"1"
-    startup_conditions["not_uninstalling"] = not params.get("DoUninstall") == b"1"
+    startup_conditions["up_to_date"] = params.get("Offroad_ConnectivityNeeded") is None or params.get_bool("DisableUpdates")
+    startup_conditions["not_uninstalling"] = not params.get_bool("DoUninstall")
     startup_conditions["accepted_terms"] = params.get("HasAcceptedTerms") == terms_version
 
     panda_signature = params.get("PandaFirmware")
@@ -344,8 +338,8 @@ def thermald_thread():
     startup_conditions["free_space"] = msg.deviceState.freeSpacePercent > 2
     startup_conditions["completed_training"] = params.get("CompletedTrainingVersion") == training_version or \
                                                (current_branch in ['dashcam', 'dashcam-staging'])
-    startup_conditions["not_driver_view"] = not params.get("IsDriverViewEnabled") == b"1"
-    startup_conditions["not_taking_snapshot"] = not params.get("IsTakingSnapshot") == b"1"
+    startup_conditions["not_driver_view"] = not params.get_bool("IsDriverViewEnabled")
+    startup_conditions["not_taking_snapshot"] = not params.get_bool("IsTakingSnapshot")
     # if any CPU gets above 107 or the battery gets above 63, kill all processes
     # controls will warn with CPU above 95 or battery above 60
     startup_conditions["device_temp_good"] = thermal_status < ThermalStatus.danger
@@ -353,12 +347,14 @@ def thermald_thread():
 
     # Handle offroad/onroad transition
     should_start = all(startup_conditions.values())
-    if should_start:
-      if not should_start_prev:
-        params.delete("IsOffroad")
-        if TICI and DISABLE_LTE_ONROAD:
-          os.system("sudo systemctl stop --no-block lte")
+    if should_start != should_start_prev or (count == 0):
+      params.put_bool("IsOffroad", not should_start)
+      HARDWARE.set_power_save(not should_start)
+      if TICI and not params.get_bool("EnableLteOnroad"):
+        fxn = "off" if should_start else "on"
+        os.system(f"nmcli radio wwan {fxn}")
 
+    if should_start:
       off_ts = None
       if started_ts is None:
         started_ts = sec_since_boot()
@@ -366,11 +362,6 @@ def thermald_thread():
     else:
       if startup_conditions["ignition"] and (startup_conditions != startup_conditions_prev):
         cloudlog.event("Startup blocked", startup_conditions=startup_conditions)
-
-      if should_start_prev or (count == 0):
-        params.put("IsOffroad", "1")
-        if TICI and DISABLE_LTE_ONROAD:
-          os.system("sudo systemctl start --no-block lte")
 
       started_ts = None
       if off_ts is None:
@@ -385,7 +376,7 @@ def thermald_thread():
     msg.deviceState.chargingDisabled = power_monitor.should_disable_charging(pandaState, off_ts)
 
     # Check if we need to shut down
-    if power_monitor.should_shutdown(pandaState, off_ts, started_seen, LEON):
+    if power_monitor.should_shutdown(pandaState, off_ts, started_seen):
       cloudlog.info(f"shutting device down, offroad since {off_ts}")
       # TODO: add function for blocking cloudlog instead of sleep
       time.sleep(10)
@@ -412,14 +403,17 @@ def thermald_thread():
     should_start_prev = should_start
     startup_conditions_prev = startup_conditions.copy()
 
-    # report to server once per minute
-    if (count % int(60. / DT_TRML)) == 0:
+    # report to server once every 10 minutes
+    if (count % int(600. / DT_TRML)) == 0:
+      if EON and started_ts is None and msg.deviceState.memoryUsagePercent > 40:
+        cloudlog.event("High offroad memory usage", mem=msg.deviceState.memoryUsagePercent)
+
       location = messaging.recv_sock(location_sock)
       cloudlog.event("STATUS_PACKET",
                      count=count,
-                     pandaState=(pandaState.to_dict() if pandaState else None),
-                     location=(location.gpsLocationExternal.to_dict() if location else None),
-                     deviceState=msg.to_dict())
+                     pandaState=(strip_deprecated_keys(pandaState.to_dict()) if pandaState else None),
+                     location=(strip_deprecated_keys(location.gpsLocationExternal.to_dict()) if location else None),
+                     deviceState=strip_deprecated_keys(msg.to_dict()))
 
     count += 1
 

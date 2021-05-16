@@ -9,42 +9,39 @@ import traceback
 import cereal.messaging as messaging
 import selfdrive.crash as crash
 from common.basedir import BASEDIR
-from common.params import Params
-from common.spinner import Spinner
+from common.params import Params, ParamKeyType
 from common.text_window import TextWindow
-from selfdrive.hardware import HARDWARE
-from selfdrive.manager.build import MAX_BUILD_PROGRESS, PREBUILT
+from selfdrive.boardd.set_time import set_time
+from selfdrive.hardware import HARDWARE, PC, TICI
 from selfdrive.manager.helpers import unblock_stdout
 from selfdrive.manager.process import ensure_running
 from selfdrive.manager.process_config import managed_processes
-from selfdrive.registration import register
-from selfdrive.swaglog import add_logentries_handler, cloudlog
-from selfdrive.version import dirty, version
+from selfdrive.athena.registration import register, UNREGISTERED_DONGLE_ID
+from selfdrive.swaglog import cloudlog, add_file_handler
+from selfdrive.version import dirty, get_git_commit, version, origin, branch, commit, \
+                              terms_version, training_version, comma_remote, \
+                              get_git_branch, get_git_remote
 
+def manager_init():
 
-def manager_init(spinner=None):
+  # update system time from panda
+  set_time(cloudlog)
+
   params = Params()
-  params.manager_start()
+  params.clear_all(ParamKeyType.CLEAR_ON_MANAGER_START)
 
   default_params = [
-    ("CommunityFeaturesToggle", "0"),
-    ("EndToEndToggle", "0"),
     ("CompletedTrainingVersion", "0"),
-    ("IsRHD", "0"),
-    ("IsMetric", "0"),
-    ("RecordFront", "0"),
     ("HasAcceptedTerms", "0"),
-    ("HasCompletedSetup", "0"),
-    ("IsUploadRawEnabled", "1"),
-    ("IsLdwEnabled", "0"),
     ("LastUpdateTime", datetime.datetime.utcnow().isoformat().encode('utf8')),
     ("OpenpilotEnabledToggle", "1"),
-    ("VisionRadarToggle", "0"),
-    ("IsDriverViewEnabled", "0"),
   ]
 
-  if params.get("RecordFrontLock", encoding='utf-8') == "1":
-    params.put("RecordFront", "1")
+  if TICI:
+    default_params.append(("IsUploadRawEnabled", "1"))
+
+  if params.get_bool("RecordFrontLock"):
+    params.put_bool("RecordFront", True)
 
   # set unset params
   for k, v in default_params:
@@ -53,7 +50,7 @@ def manager_init(spinner=None):
 
   # is this dashcam?
   if os.getenv("PASSIVE") is not None:
-    params.put("Passive", str(int(os.getenv("PASSIVE"))))
+    params.put_bool("Passive", bool(int(os.getenv("PASSIVE"))))
 
   if params.get("Passive") is None:
     raise Exception("Passive must be set to continue")
@@ -68,33 +65,39 @@ def manager_init(spinner=None):
   except PermissionError:
     print("WARNING: failed to make /dev/shm")
 
+  # set version params
+  params.put("Version", version)
+  params.put("TermsVersion", terms_version)
+  params.put("TrainingVersion", training_version)
+  params.put("GitCommit", get_git_commit(default=""))
+  params.put("GitBranch", get_git_branch(default=""))
+  params.put("GitRemote", get_git_remote(default=""))
+
   # set dongle id
-  reg_res = register(spinner)
+  reg_res = register(show_spinner=True)
   if reg_res:
     dongle_id = reg_res
   else:
-    raise Exception("server registration failed")
-  os.environ['DONGLE_ID'] = dongle_id  # Needed for swaglog and loggerd
+    serial = params.get("HardwareSerial")
+    raise Exception(f"Registration failed for device {serial}")
+  os.environ['DONGLE_ID'] = dongle_id  # Needed for swaglog
 
   if not dirty:
     os.environ['CLEAN'] = '1'
 
   cloudlog.bind_global(dongle_id=dongle_id, version=version, dirty=dirty,
                        device=HARDWARE.get_device_type())
+
+  if comma_remote and not (os.getenv("NOLOG") or os.getenv("NOCRASH") or PC):
+    crash.init()
   crash.bind_user(id=dongle_id)
-  crash.bind_extra(version=version, dirty=dirty, device=HARDWARE.get_device_type())
+  crash.bind_extra(dirty=dirty, origin=origin, branch=branch, commit=commit,
+                   device=HARDWARE.get_device_type())
 
 
-def manager_prepare(spinner=None):
-  # build all processes
-  os.chdir(os.path.dirname(os.path.abspath(__file__)))
-
-  total = 100.0 - (0 if PREBUILT else MAX_BUILD_PROGRESS)
-  for i, p in enumerate(managed_processes.values()):
+def manager_prepare():
+  for p in managed_processes.values():
     p.prepare()
-    if spinner:
-      perc = (100.0 - total) + total * (i + 1) / len(managed_processes)
-      spinner.update_progress(perc, 100.)
 
 
 def manager_cleanup():
@@ -104,25 +107,26 @@ def manager_cleanup():
   cloudlog.info("everything is dead")
 
 
-def manager_thread(spinner=None):
+def manager_thread():
   cloudlog.info("manager start")
   cloudlog.info({"environ": os.environ})
 
   # save boot log
   subprocess.call("./bootlog", cwd=os.path.join(BASEDIR, "selfdrive/loggerd"))
 
+  params = Params()
+
   ignore = []
+  if params.get("DongleId") == UNREGISTERED_DONGLE_ID:
+    ignore += ["manage_athenad", "uploader"]
   if os.getenv("NOBOARD") is not None:
     ignore.append("pandad")
   if os.getenv("BLOCK") is not None:
     ignore += os.getenv("BLOCK").split(",")
 
   ensure_running(managed_processes.values(), started=False, not_run=ignore)
-  if spinner:  # close spinner when ui has started
-    spinner.close()
 
   started_prev = False
-  params = Params()
   sm = messaging.SubMaster(['deviceState'])
   pm = messaging.PubMaster(['managerState'])
 
@@ -134,7 +138,7 @@ def manager_thread(spinner=None):
       not_run.append("loggerd")
 
     started = sm['deviceState'].started
-    driverview = params.get("IsDriverViewEnabled") == b"1"
+    driverview = params.get_bool("IsDriverViewEnabled")
     ensure_running(managed_processes.values(), started, driverview, not_run)
 
     # trigger an update after going offroad
@@ -153,49 +157,54 @@ def manager_thread(spinner=None):
     msg.managerState.processes = [p.get_process_state_msg() for p in managed_processes.values()]
     pm.send('managerState', msg)
 
+    # TODO: let UI handle this
     # Exit main loop when uninstall is needed
-    if params.get("DoUninstall", encoding='utf8') == "1":
+    if params.get_bool("DoUninstall"):
       break
 
 
-def main(spinner=None):
-  manager_init(spinner)
-  manager_prepare(spinner)
+def main():
+  prepare_only = os.getenv("PREPAREONLY") is not None
 
-  if os.getenv("PREPAREONLY") is not None:
+  manager_init()
+
+  # Start UI early so prepare can happen in the background
+  if not prepare_only:
+    managed_processes['ui'].start()
+
+  manager_prepare()
+
+  if prepare_only:
     return
 
   # SystemExit on sigterm
   signal.signal(signal.SIGTERM, lambda signum, frame: sys.exit(1))
 
   try:
-    manager_thread(spinner)
+    manager_thread()
   except Exception:
     traceback.print_exc()
     crash.capture_exception()
   finally:
     manager_cleanup()
 
-  if Params().get("DoUninstall", encoding='utf8') == "1":
+  if Params().get_bool("DoUninstall"):
     cloudlog.warning("uninstalling")
     HARDWARE.uninstall()
 
 
 if __name__ == "__main__":
   unblock_stdout()
-  spinner = Spinner()
-  spinner.update_progress(MAX_BUILD_PROGRESS, 100)
 
   try:
-    main(spinner)
+    main()
   except Exception:
-    add_logentries_handler(cloudlog)
+    add_file_handler(cloudlog)
     cloudlog.exception("Manager failed to start")
 
     # Show last 3 lines of traceback
     error = traceback.format_exc(-3)
     error = "Manager failed to start\n\n" + error
-    spinner.close()
     with TextWindow(error) as t:
       t.wait_for_exit()
 

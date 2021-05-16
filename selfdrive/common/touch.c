@@ -1,14 +1,14 @@
+#include "selfdrive/common/touch.h"
+
+#include <assert.h>
+#include <dirent.h>
+#include <fcntl.h>
+#include <linux/input.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdbool.h>
-#include <assert.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <dirent.h>
 #include <sys/poll.h>
-#include <linux/input.h>
-
-#include "touch.h"
+#include <unistd.h>
 
 /* this macro is used to tell if "bit" is set in "array"
  * it selects a byte from the array, and does a boolean AND

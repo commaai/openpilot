@@ -10,9 +10,6 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 
 function two_init {
 
-  export QT_QPA_EGLFS_PHYSICAL_WIDTH=151
-  export QT_QPA_EGLFS_PHYSICAL_HEIGHT=74
-
   # Wifi scan
   wpa_cli IFNAME=wlan0 SCAN
 
@@ -167,6 +164,9 @@ function tici_init {
 function launch {
   # Remove orphaned git lock if it exists on boot
   [ -f "$DIR/.git/index.lock" ] && rm -f $DIR/.git/index.lock
+
+  # Pull time from panda
+  $DIR/selfdrive/boardd/set_time.py
 
   # Check to see if there's a valid overlay-based update available. Conditions
   # are as follows:

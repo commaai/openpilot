@@ -10,7 +10,7 @@
 #include <CL/cl.h>
 #endif
 
-#include "common/mat.h"
+#include "selfdrive/common/mat.h"
 
 typedef struct {
   cl_kernel krnl;

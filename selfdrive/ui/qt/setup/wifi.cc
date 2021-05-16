@@ -1,15 +1,16 @@
+#include "wifi.h"
+
+#include <curl/curl.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <curl/curl.h>
 
+#include <QApplication>
 #include <QLabel>
 #include <QVBoxLayout>
-#include <QApplication>
 
-#include "wifi.hpp"
-#include "offroad/networking.hpp"
-#include "widgets/input.hpp"
-#include "qt_window.hpp"
+#include "selfdrive/ui/qt/offroad/networking.h"
+#include "selfdrive/ui/qt/qt_window.h"
+#include "selfdrive/ui/qt/widgets/input.h"
 
 void WifiSetup::finish() {
   qApp->exit();
@@ -22,7 +23,7 @@ WifiSetup::WifiSetup(QWidget *parent) {
   finish_btn->setFixedSize(400, 200);
   main_layout->addWidget(finish_btn, 0, Qt::AlignTop | Qt::AlignLeft);
 
-  QObject::connect(finish_btn, SIGNAL(released()), this, SLOT(finish()));
+  QObject::connect(finish_btn, &QPushButton::released, this, &WifiSetup::finish);
 
   QWidget* n = new Networking(this, true);
 
@@ -39,9 +40,6 @@ WifiSetup::WifiSetup(QWidget *parent) {
   main_layout->addWidget(q, 1);
 
   setLayout(main_layout);
-
-  QObject::connect(this, SIGNAL(downloadFailed()), this, SLOT(nextPage()));
-
   setStyleSheet(R"(
     * {
       background-color: black;

@@ -4,7 +4,7 @@ from opendbc.can.can_define import CANDefine
 from selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
 from selfdrive.config import Conversions as CV
-from selfdrive.car.toyota.values import CAR, DBC, STEER_THRESHOLD, TSS2_CAR, NO_STOP_TIMER_CAR
+from selfdrive.car.toyota.values import CAR, DBC, STEER_THRESHOLD, NO_STOP_TIMER_CAR
 
 
 class CarState(CarStateBase):
@@ -90,17 +90,14 @@ class CarState(CarStateBase):
     ret.cruiseState.enabled = bool(cp.vl["PCM_CRUISE"]['CRUISE_ACTIVE'])
     ret.cruiseState.nonAdaptive = cp.vl["PCM_CRUISE"]['CRUISE_STATE'] in [1, 2, 3, 4, 5, 6]
 
-    if self.CP.carFingerprint == CAR.PRIUS:
-      ret.genericToggle = cp.vl["AUTOPARK_STATUS"]['STATE'] != 0
-    else:
-      ret.genericToggle = bool(cp.vl["LIGHT_STALK"]['AUTO_HIGH_BEAM'])
+    ret.genericToggle = bool(cp.vl["LIGHT_STALK"]['AUTO_HIGH_BEAM'])
     ret.stockAeb = bool(cp_cam.vl["PRE_COLLISION"]["PRECOLLISION_ACTIVE"] and cp_cam.vl["PRE_COLLISION"]["FORCE"] < -1e-5)
 
     ret.espDisabled = cp.vl["ESP_CONTROL"]['TC_DISABLED'] != 0
     # 2 is standby, 10 is active. TODO: check that everything else is really a faulty state
     self.steer_state = cp.vl["EPS_STATUS"]['LKA_STATE']
 
-    if self.CP.carFingerprint in TSS2_CAR:
+    if self.CP.enableBsm:
       ret.leftBlindspot = (cp.vl["BSM"]['L_ADJACENT'] == 1) or (cp.vl["BSM"]['L_APPROACHING'] == 1)
       ret.rightBlindspot = (cp.vl["BSM"]['R_ADJACENT'] == 1) or (cp.vl["BSM"]['R_APPROACHING'] == 1)
 
@@ -140,13 +137,18 @@ class CarState(CarStateBase):
     ]
 
     checks = [
+      ("GEAR_PACKET", 1),
+      ("LIGHT_STALK", 1),
+      ("STEERING_LEVERS", 0.15),
+      ("SEATS_DOORS", 3),
+      ("ESP_CONTROL", 3),
+      ("EPS_STATUS", 25),
       ("BRAKE_MODULE", 40),
       ("GAS_PEDAL", 33),
       ("WHEEL_SPEEDS", 80),
       ("STEER_ANGLE_SENSOR", 80),
       ("PCM_CRUISE", 33),
       ("STEER_TORQUE_SENSOR", 50),
-      ("EPS_STATUS", 25),
     ]
 
     if CP.carFingerprint == CAR.LEXUS_IS:
@@ -159,20 +161,22 @@ class CarState(CarStateBase):
       signals.append(("LOW_SPEED_LOCKOUT", "PCM_CRUISE_2", 0))
       checks.append(("PCM_CRUISE_2", 33))
 
-    if CP.carFingerprint == CAR.PRIUS:
-      signals += [("STATE", "AUTOPARK_STATUS", 0)]
-
     # add gas interceptor reading if we are using it
     if CP.enableGasInterceptor:
       signals.append(("INTERCEPTOR_GAS", "GAS_SENSOR", 0))
       signals.append(("INTERCEPTOR_GAS2", "GAS_SENSOR", 0))
       checks.append(("GAS_SENSOR", 50))
 
-    if CP.carFingerprint in TSS2_CAR:
-      signals += [("L_ADJACENT", "BSM", 0)]
-      signals += [("L_APPROACHING", "BSM", 0)]
-      signals += [("R_ADJACENT", "BSM", 0)]
-      signals += [("R_APPROACHING", "BSM", 0)]
+    if CP.enableBsm:
+      signals += [
+        ("L_ADJACENT", "BSM", 0),
+        ("L_APPROACHING", "BSM", 0),
+        ("R_ADJACENT", "BSM", 0),
+        ("R_APPROACHING", "BSM", 0),
+      ]
+      checks += [
+        ("BSM", 1)
+      ]
 
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
 
@@ -186,7 +190,8 @@ class CarState(CarStateBase):
 
     # use steering message to check if panda is connected to frc
     checks = [
-      ("STEERING_LKA", 42)
+      ("STEERING_LKA", 42),
+      ("PRE_COLLISION", 0), # TODO: figure out why freq is inconsistent
     ]
 
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2)

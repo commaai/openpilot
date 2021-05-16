@@ -4,6 +4,7 @@ import os
 import sys
 import threading
 import time
+import signal
 from collections import namedtuple
 
 import capnp
@@ -13,19 +14,22 @@ import cereal.messaging as messaging
 from cereal import car, log
 from cereal.services import service_list
 from common.params import Params
-from selfdrive.car.car_helpers import get_car
+from common.timeout import Timeout
+from selfdrive.car.fingerprints import FW_VERSIONS
+from selfdrive.car.car_helpers import get_car, interfaces
 from selfdrive.manager.process import PythonProcess
 from selfdrive.manager.process_config import managed_processes
 
 # Numpy gives different results based on CPU features after version 19
 NUMPY_TOLERANCE = 1e-7
 CI = "CI" in os.environ
+TIMEOUT = 15
 
-ProcessConfig = namedtuple('ProcessConfig', ['proc_name', 'pub_sub', 'ignore', 'init_callback', 'should_recv_callback', 'tolerance'])
+ProcessConfig = namedtuple('ProcessConfig', ['proc_name', 'pub_sub', 'ignore', 'init_callback', 'should_recv_callback', 'tolerance', 'fake_pubsubmaster'])
 
 
 def wait_for_event(evt):
-  if not evt.wait(15):
+  if not evt.wait(TIMEOUT):
     if threading.currentThread().getName() == "MainThread":
       # tested process likely died. don't let test just hang
       raise Exception("Timeout reached. Tested process likely crashed.")
@@ -89,7 +93,6 @@ class FakeSubMaster(messaging.SubMaster):
     self.sock = {s: DumbSocket(s) for s in services}
     self.update_called = threading.Event()
     self.update_ready = threading.Event()
-
     self.wait_on_getitem = False
 
   def __getitem__(self, s):
@@ -148,7 +151,7 @@ class FakePubMaster(messaging.PubMaster):
     return dat
 
 
-def fingerprint(msgs, fsm, can_sock):
+def fingerprint(msgs, fsm, can_sock, fingerprint):
   print("start fingerprinting")
   fsm.wait_on_getitem = True
 
@@ -172,16 +175,27 @@ def fingerprint(msgs, fsm, can_sock):
   print("finished fingerprinting")
 
 
-def get_car_params(msgs, fsm, can_sock):
-  can = FakeSocket(wait=False)
-  sendcan = FakeSocket(wait=False)
+def get_car_params(msgs, fsm, can_sock, fingerprint):
+  if fingerprint:
+    CarInterface, _, _ = interfaces[fingerprint]
+    CP = CarInterface.get_params(fingerprint)
+  else:
+    can = FakeSocket(wait=False)
+    sendcan = FakeSocket(wait=False)
 
-  canmsgs = [msg for msg in msgs if msg.which() == 'can']
-  for m in canmsgs[:300]:
-    can.send(m.as_builder().to_bytes())
-  _, CP = get_car(can, sendcan)
+    canmsgs = [msg for msg in msgs if msg.which() == 'can']
+    for m in canmsgs[:300]:
+      can.send(m.as_builder().to_bytes())
+    _, CP = get_car(can, sendcan)
   Params().put("CarParams", CP.to_bytes())
 
+def controlsd_rcv_callback(msg, CP, cfg, fsm):
+  # no sendcan until controlsd is initialized
+  socks = [s for s in cfg.pub_sub[msg.which()] if
+           (fsm.frame + 1) % int(service_list[msg.which()].frequency / service_list[s].frequency) == 0]
+  if "sendcan" in socks and fsm.frame < 2000:
+    socks.remove("sendcan")
+  return socks, len(socks) > 0
 
 def radar_rcv_callback(msg, CP, cfg, fsm):
   if msg.which() != "can":
@@ -231,8 +245,9 @@ CONFIGS = [
     },
     ignore=["logMonoTime", "valid", "controlsState.startMonoTime", "controlsState.cumLagMs"],
     init_callback=fingerprint,
-    should_recv_callback=None,
+    should_recv_callback=controlsd_rcv_callback,
     tolerance=NUMPY_TOLERANCE,
+    fake_pubsubmaster=True,
   ),
   ProcessConfig(
     proc_name="radard",
@@ -244,6 +259,7 @@ CONFIGS = [
     init_callback=get_car_params,
     should_recv_callback=radar_rcv_callback,
     tolerance=None,
+    fake_pubsubmaster=True,
   ),
   ProcessConfig(
     proc_name="plannerd",
@@ -255,6 +271,7 @@ CONFIGS = [
     init_callback=get_car_params,
     should_recv_callback=None,
     tolerance=None,
+    fake_pubsubmaster=True,
   ),
   ProcessConfig(
     proc_name="calibrationd",
@@ -266,6 +283,7 @@ CONFIGS = [
     init_callback=get_car_params,
     should_recv_callback=calibration_rcv_callback,
     tolerance=None,
+    fake_pubsubmaster=True,
   ),
   ProcessConfig(
     proc_name="dmonitoringd",
@@ -277,6 +295,7 @@ CONFIGS = [
     init_callback=get_car_params,
     should_recv_callback=None,
     tolerance=NUMPY_TOLERANCE,
+    fake_pubsubmaster=True,
   ),
   ProcessConfig(
     proc_name="locationd",
@@ -288,6 +307,7 @@ CONFIGS = [
     init_callback=get_car_params,
     should_recv_callback=None,
     tolerance=NUMPY_TOLERANCE,
+    fake_pubsubmaster=False,
   ),
   ProcessConfig(
     proc_name="paramsd",
@@ -299,6 +319,7 @@ CONFIGS = [
     init_callback=get_car_params,
     should_recv_callback=None,
     tolerance=NUMPY_TOLERANCE,
+    fake_pubsubmaster=True,
   ),
   ProcessConfig(
     proc_name="ubloxd",
@@ -309,19 +330,19 @@ CONFIGS = [
     init_callback=None,
     should_recv_callback=ublox_rcv_callback,
     tolerance=None,
+    fake_pubsubmaster=False,
   ),
 ]
 
 
-def replay_process(cfg, lr):
-  proc = managed_processes[cfg.proc_name]
-  if isinstance(proc, PythonProcess):
-    return python_replay_process(cfg, lr)
+def replay_process(cfg, lr, fingerprint=None):
+  if cfg.fake_pubsubmaster:
+    return python_replay_process(cfg, lr, fingerprint)
   else:
-    return cpp_replay_process(cfg, lr)
+    return cpp_replay_process(cfg, lr, fingerprint)
 
 
-def python_replay_process(cfg, lr):
+def python_replay_process(cfg, lr, fingerprint=None):
   sub_sockets = [s for _, sub in cfg.pub_sub.items() for s in sub]
   pub_sockets = [s for s in cfg.pub_sub.keys() if s != 'can']
 
@@ -337,17 +358,32 @@ def python_replay_process(cfg, lr):
 
   params = Params()
   params.clear_all()
-  params.manager_start()
-  params.put("OpenpilotEnabledToggle", "1")
-  params.put("Passive", "0")
-  params.put("CommunityFeaturesToggle", "1")
+  params.put_bool("OpenpilotEnabledToggle", True)
+  params.put_bool("Passive", False)
+  params.put_bool("CommunityFeaturesToggle", True)
 
   os.environ['NO_RADAR_SLEEP'] = "1"
-  os.environ['SKIP_FW_QUERY'] = "1"
-  os.environ['FINGERPRINT'] = ""
-  for msg in lr:
-    if msg.which() == 'carParams':
-      os.environ['FINGERPRINT'] = msg.carParams.carFingerprint
+
+  # TODO: remove after getting new route for civic & accord
+  migration = {
+    "HONDA CIVIC 2016 TOURING": "HONDA CIVIC 2016",
+    "HONDA ACCORD 2018 SPORT 2T": "HONDA ACCORD 2T 2018",
+  }
+
+  if fingerprint is not None:
+    os.environ['SKIP_FW_QUERY'] = "1"
+    os.environ['FINGERPRINT'] = fingerprint
+  else:
+    os.environ['SKIP_FW_QUERY'] = ""
+    os.environ['FINGERPRINT'] = ""
+    for msg in lr:
+      if msg.which() == 'carParams':
+        car_fingerprint = migration.get(msg.carParams.carFingerprint, msg.carParams.carFingerprint)
+        if len(msg.carParams.carFw) and (car_fingerprint in FW_VERSIONS):
+          params.put("CarParamsCache", msg.carParams.as_builder().to_bytes())
+        else:
+          os.environ['SKIP_FW_QUERY'] = "1"
+          os.environ['FINGERPRINT'] = car_fingerprint
 
   assert(type(managed_processes[cfg.proc_name]) is PythonProcess)
   managed_processes[cfg.proc_name].prepare()
@@ -360,7 +396,7 @@ def python_replay_process(cfg, lr):
   if cfg.init_callback is not None:
     if 'can' not in list(cfg.pub_sub.keys()):
       can_sock = None
-    cfg.init_callback(all_msgs, fsm, can_sock)
+    cfg.init_callback(all_msgs, fsm, can_sock, fingerprint)
 
   CP = car.CarParams.from_bytes(params.get("CarParams", block=True))
 
@@ -376,7 +412,7 @@ def python_replay_process(cfg, lr):
       recv_socks, should_recv = cfg.should_recv_callback(msg, CP, cfg, fsm)
     else:
       recv_socks = [s for s in cfg.pub_sub[msg.which()] if
-                      (fsm.frame + 1) % int(service_list[msg.which()].frequency / service_list[s].frequency) == 0]
+                    (fsm.frame + 1) % int(service_list[msg.which()].frequency / service_list[s].frequency) == 0]
       should_recv = bool(len(recv_socks))
 
     if msg.which() == 'can':
@@ -392,35 +428,48 @@ def python_replay_process(cfg, lr):
       while recv_cnt > 0:
         m = fpm.wait_for_msg()
         log_msgs.append(m)
-
         recv_cnt -= m.which() in recv_socks
   return log_msgs
 
 
-def cpp_replay_process(cfg, lr):
+def cpp_replay_process(cfg, lr, fingerprint=None):
   sub_sockets = [s for _, sub in cfg.pub_sub.items() for s in sub]  # We get responses here
   pm = messaging.PubMaster(cfg.pub_sub.keys())
-  sockets = {s: messaging.sub_sock(s, timeout=1000) for s in sub_sockets}
 
   all_msgs = sorted(lr, key=lambda msg: msg.logMonoTime)
   pub_msgs = [msg for msg in all_msgs if msg.which() in list(cfg.pub_sub.keys())]
+  log_msgs = []
 
+  os.environ["SIMULATION"] = "1"  # Disable submaster alive checks
   managed_processes[cfg.proc_name].prepare()
   managed_processes[cfg.proc_name].start()
 
-  time.sleep(1)  # We give the process time to start
+  with Timeout(TIMEOUT):
+    while not all(pm.all_readers_updated(s) for s in cfg.pub_sub.keys()):
+      time.sleep(0)
 
-  log_msgs = []
-  for s in sub_sockets:
-    messaging.recv_one_or_none(sockets[s])
+    # Make sure all subscribers are connected
+    sockets = {s: messaging.sub_sock(s, timeout=2000) for s in sub_sockets}
+    for s in sub_sockets:
+      messaging.recv_one_or_none(sockets[s])
 
-  for msg in tqdm(pub_msgs, disable=CI):
-    pm.send(msg.which(), msg.as_builder())
-    resp_sockets = sub_sockets if cfg.should_recv_callback is None else cfg.should_recv_callback(msg)
-    for s in resp_sockets:
-      response = messaging.recv_one(sockets[s])
-      if response is not None:
-        log_msgs.append(response)
+    for i, msg in enumerate(tqdm(pub_msgs, disable=CI)):
+      pm.send(msg.which(), msg.as_builder())
 
-  managed_processes[cfg.proc_name].stop()
+      resp_sockets = cfg.pub_sub[msg.which()] if cfg.should_recv_callback is None else cfg.should_recv_callback(msg)
+      for s in resp_sockets:
+        response = messaging.recv_one(sockets[s])
+
+        if response is None:
+          print(f"Warning, no response received {i}")
+        else:
+          log_msgs.append(response)
+
+      if not len(resp_sockets):  # We only need to wait if we didn't already wait for a response
+        while not pm.all_readers_updated(msg.which()):
+          time.sleep(0)
+
+    managed_processes[cfg.proc_name].signal(signal.SIGKILL)
+    managed_processes[cfg.proc_name].stop()
+
   return log_msgs
