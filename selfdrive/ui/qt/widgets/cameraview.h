@@ -28,10 +28,10 @@ protected slots:
   void updateFrame();
 
 private:
-  VisionIpcClient *vipc_client = nullptr;
   VisionBuf *last_frame = nullptr;
   GLuint frame_vao, frame_vbo, frame_ibo;
   mat4 frame_mat;
+  std::unique_ptr<VisionIpcClient> vipc_client;
   std::unique_ptr<EGLImageTexture> texture[UI_BUF_COUNT];
   std::unique_ptr<GLShader> gl_shader;
 

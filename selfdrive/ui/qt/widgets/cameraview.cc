@@ -89,7 +89,6 @@ CameraViewWidget::~CameraViewWidget() {
   glDeleteVertexArrays(1, &frame_vao);
   glDeleteBuffers(1, &frame_vbo);
   glDeleteBuffers(1, &frame_ibo);
-  delete vipc_client;
 }
 
 void CameraViewWidget::initializeGL() {
@@ -145,7 +144,7 @@ void CameraViewWidget::initializeGL() {
     }};
     frame_mat = matmul(device_transform, frame_transform);
   }
-  vipc_client = new VisionIpcClient("camerad", stream_type, true);
+  vipc_client = std::make_unique<VisionIpcClient>("camerad", stream_type, true);
   timer->start(0);
 }
 
