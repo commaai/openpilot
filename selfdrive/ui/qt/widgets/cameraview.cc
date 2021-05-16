@@ -154,6 +154,7 @@ void CameraViewWidget::resizeGL(int w, int h) {
 
 void CameraViewWidget::paintGL() {
   // draw background
+
   const NVGcolor color = bg_colors[ui_status];
   glClearColor(color.r, color.g, color.b, 1.0);
   glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
@@ -187,9 +188,10 @@ void CameraViewWidget::paintGL() {
   glBindVertexArray(0);
 
   // draw others
+
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-  glViewport(0, 0, width(), height());
+  glViewport(0, 0, vwp_w, vwp_h);
   draw();
   glDisable(GL_SCISSOR_TEST);
   glDisable(GL_BLEND);
