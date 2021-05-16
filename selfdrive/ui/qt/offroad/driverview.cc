@@ -21,7 +21,7 @@ void DriverViewWindow::hideEvent(QHideEvent* event) {
 void DriverViewWindow::draw() {
   QPainter p(this);
 
-  if (!connected()) {
+  if (!frameReceived()) {
     p.setPen(QColor(0xff, 0xff, 0xff));
     p.setRenderHint(QPainter::TextAntialiasing);
     configFont(p, "Open Sans", 100, "Bold");

@@ -18,7 +18,7 @@ public:
   using QOpenGLWidget::QOpenGLWidget;
   explicit CameraViewWidget(VisionStreamType stream_type, QWidget* parent = nullptr);
   ~CameraViewWidget();
-  bool connected() { return vipc_client && vipc_client->connected; }
+  bool frameReceived() { return vipc_client && vipc_client->connected && last_frame != nullptr; }
 
 protected:
   void paintGL() override;

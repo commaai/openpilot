@@ -165,27 +165,27 @@ void CameraViewWidget::paintGL() {
   glViewport(video_rect.left(), video_rect.top(), video_rect.width(), video_rect.height());
   glScissor(viz_rect.left(), viz_rect.top(), viz_rect.width(), viz_rect.height());
   
-  glBindVertexArray(frame_vao);
-  glActiveTexture(GL_TEXTURE0);
-
   if (last_frame) {
+    glBindVertexArray(frame_vao);
+    glActiveTexture(GL_TEXTURE0);
+
     glBindTexture(GL_TEXTURE_2D, texture[last_frame->idx]->frame_tex);
     if (!Hardware::EON()) {
       // this is handled in ion on QCOM
       glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, last_frame->width, last_frame->height,
                    0, GL_RGB, GL_UNSIGNED_BYTE, last_frame->addr);
     }
+  
+    glUseProgram(gl_shader->prog);
+    glUniform1i(gl_shader->getUniformLocation("uTexture"), 0);
+    glUniformMatrix4fv(gl_shader->getUniformLocation("uTransform"), 1, GL_TRUE, frame_mat.v);
+
+    assert(glGetError() == GL_NO_ERROR);
+    glEnableVertexAttribArray(0);
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, (const void *)0);
+    glDisableVertexAttribArray(0);
+    glBindVertexArray(0);
   }
-
-  glUseProgram(gl_shader->prog);
-  glUniform1i(gl_shader->getUniformLocation("uTexture"), 0);
-  glUniformMatrix4fv(gl_shader->getUniformLocation("uTransform"), 1, GL_TRUE, frame_mat.v);
-
-  assert(glGetError() == GL_NO_ERROR);
-  glEnableVertexAttribArray(0);
-  glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, (const void *)0);
-  glDisableVertexAttribArray(0);
-  glBindVertexArray(0);
 
   // draw others
 
@@ -193,8 +193,8 @@ void CameraViewWidget::paintGL() {
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glViewport(0, 0, vwp_w, vwp_h);
   draw();
-  glDisable(GL_SCISSOR_TEST);
   glDisable(GL_BLEND);
+  glDisable(GL_SCISSOR_TEST);
 }
 
 
@@ -214,6 +214,7 @@ void CameraViewWidget::updateFrame() {
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
       assert(glGetError() == GL_NO_ERROR);
     }
+    last_frame = nullptr;
   }
 
   if (vipc_client->connected) {
