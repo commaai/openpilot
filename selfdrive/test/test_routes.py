@@ -333,6 +333,9 @@ routes: dict = {
     'enableCamera': True,
     'enableDsu': True,
   },
+  "d72a6d0d7af05505|2021-05-14--14-39-40": {
+    'carFingerprint': TOYOTA.LEXUS_ISH,
+  },
   "886fcd8408d570e9|2020-01-29--05-11-22": {
       'carFingerprint': TOYOTA.LEXUS_RX,
       'enableCamera': True,
