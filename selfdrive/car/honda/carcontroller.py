@@ -101,7 +101,7 @@ class CarController():
       # send pcm acc cancel cmd if drive is disabled but pcm is still on, or if the system can't be activated
       pcm_cancel_cmd = True
 
-    # Never send cancel command if we never enter cruise state (pedal)
+    # Never send cancel command if we never enter cruise state (no cruise if pedal)
     # Cancel cmd causes brakes to release at a standstill
     pcm_cancel_cmd &= CS.CP.enableCruise
 
