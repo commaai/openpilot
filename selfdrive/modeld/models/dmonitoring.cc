@@ -57,8 +57,8 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
   if (HARDWARE.TICI()) {
     const int adapt_width_tici = 668;
     const int cropped_height = adapt_width_tici / 1.33;
-    crop_rect = {HARDWARE.road_cam_size[0] / 2 - adapt_width_tici / 2,
-                 HARDWARE.road_cam_size[1] / 2 - cropped_height / 2 - 196,
+    crop_rect = {HARDWARE.driver_cam_size[0] / 2 - adapt_width_tici / 2,
+                 HARDWARE.driver_cam_size[1] / 2 - cropped_height / 2 - 196,
                  cropped_height / 2,
                  cropped_height};
     if (!s->is_rhd) {

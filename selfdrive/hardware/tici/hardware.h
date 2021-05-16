@@ -24,10 +24,7 @@ class Hardware : public HardwareBase {
   }
 
   bool TICI() const override { return true; }
-  std::string get_os_version() const override {
-    return "AGNOS " + util::read_file("/VERSION");
-  };
-
+  std::string get_os_version() const override { return "AGNOS " + util::read_file("/VERSION"); };
   void reboot() const override { std::system("sudo reboot"); }
   void poweroff() const override { std::system("sudo poweroff"); }
   void set_brightness(int percent) const override {
