@@ -157,11 +157,15 @@ void Replay::keyboardThread() {
       std::string r;
       std::cin >> r;
 
-      if(r[0] == '#') {
-        r.erase(0, 1);
-        seekTime(std::stoi(r)*60);
-      } else {
-        seekTime(std::stoi(r));
+      try {
+        if(r[0] == '#') {
+          r.erase(0, 1);
+          seekTime(std::stoi(r)*60);
+        } else {
+          seekTime(std::stoi(r));
+        }
+      } catch (std::invalid_argument) {
+        qDebug() << "invalid argument";
       }
       getch(); // remove \n from entering seek
     } else if (c == 'm') {
