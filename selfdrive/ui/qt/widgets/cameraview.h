@@ -23,6 +23,12 @@ public:
 protected:
   void paintGL() override;
   void initializeGL() override;
+  void resizeGL(int w, int h) override;
+  virtual void draw() = 0;
+
+  QRect viz_rect;
+  QRect video_rect;
+  UIStatus ui_status = STATUS_DISENGAGED;
 
 protected slots:
   void updateFrame();

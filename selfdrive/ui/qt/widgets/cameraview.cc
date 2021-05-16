@@ -94,6 +94,7 @@ CameraViewWidget::~CameraViewWidget() {
 void CameraViewWidget::initializeGL() {
   initializeOpenGLFunctions();
 
+  video_rect = {bdr_s, bdr_s, vwp_w - 2 * bdr_s, vwp_h - 2 * bdr_s};
   gl_shader = std::make_unique<GLShader>(frame_vertex_shader, frame_fragment_shader);
   GLint frame_pos_loc = glGetAttribLocation(gl_shader->prog, "aPosition");
   GLint frame_texcoord_loc = glGetAttribLocation(gl_shader->prog, "aTexCoord");
@@ -127,18 +128,17 @@ void CameraViewWidget::initializeGL() {
   if (stream_type == VISION_STREAM_RGB_FRONT) {
     frame_mat = matmul(device_transform, get_driver_view_transform());
   } else {
-    Rect video_rect = Rect{bdr_s, bdr_s, vwp_w - 2 * bdr_s, vwp_h - 2 * bdr_s};
     auto intrinsic_matrix = stream_type == VISION_STREAM_RGB_WIDE ? ecam_intrinsic_matrix : fcam_intrinsic_matrix;
     float zoom_ = zoom / intrinsic_matrix.v[0];
     if (stream_type == VISION_STREAM_RGB_WIDE) {
       zoom_ *= 0.5;
     }
-    float zx = zoom_ * 2 * intrinsic_matrix.v[2] / video_rect.w;
-    float zy = zoom_ * 2 * intrinsic_matrix.v[5] / video_rect.h;
+    float zx = zoom_ * 2 * intrinsic_matrix.v[2] / video_rect.width();
+    float zy = zoom_ * 2 * intrinsic_matrix.v[5] / video_rect.height();
 
     const mat4 frame_transform = {{
       zx, 0.0, 0.0, 0.0,
-      0.0, zy, 0.0, -y_offset / video_rect.h * 2,
+      0.0, zy, 0.0, -y_offset / video_rect.height() * 2,
       0.0, 0.0, 1.0, 0.0,
       0.0, 0.0, 0.0, 1.0,
     }};
@@ -148,7 +148,22 @@ void CameraViewWidget::initializeGL() {
   timer->start(0);
 }
 
+void CameraViewWidget::resizeGL(int w, int h) {
+  viz_rect = {bdr_s, bdr_s, w - 2 * bdr_s, h - 2 * bdr_s};
+}
+
 void CameraViewWidget::paintGL() {
+  // draw background
+  const NVGcolor color = bg_colors[ui_status];
+  glClearColor(color.r, color.g, color.b, 1.0);
+  glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+
+  // draw frame
+
+  glEnable(GL_SCISSOR_TEST);
+  glViewport(video_rect.left(), video_rect.top(), video_rect.width(), video_rect.height());
+  glScissor(viz_rect.left(), viz_rect.top(), viz_rect.width(), viz_rect.height());
+  
   glBindVertexArray(frame_vao);
   glActiveTexture(GL_TEXTURE0);
 
@@ -170,6 +185,14 @@ void CameraViewWidget::paintGL() {
   glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, (const void *)0);
   glDisableVertexAttribArray(0);
   glBindVertexArray(0);
+
+  // draw others
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  glViewport(0, 0, width(), height());
+  draw();
+  glDisable(GL_SCISSOR_TEST);
+  glDisable(GL_BLEND);
 }
 
 
