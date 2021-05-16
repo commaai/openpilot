@@ -144,9 +144,6 @@ class CarInterface(CarInterfaceBase):
     ret.enableCruise = not ret.enableGasInterceptor
     ret.communityFeature = ret.enableGasInterceptor
 
-    if not ret.openpilotLongitudinalControl:  # make sure if car is controlling ACC that we don't have pedal, I'm not sure how Honda works
-      assert ret.enableCruise
-
     # Certain Hondas have an extra steering sensor at the bottom of the steering rack,
     # which improves controls quality as it removes the steering column torsion from feedback.
     # Tire stiffness factor fictitiously lower if it includes the steering column torsion effect.
