@@ -61,7 +61,6 @@ void HomeWindow::driverView() {
 }
 
 void HomeWindow::mousePressEvent(QMouseEvent* e) {
-  // TODO: make a nice driver view widget
   if (driver_view) {
     slayout->setCurrentWidget(home);
     driver_view->deleteLater();

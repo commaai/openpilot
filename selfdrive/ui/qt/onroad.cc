@@ -213,7 +213,7 @@ void NvgWindow::initializeGL() {
 
 void NvgWindow::update(const UIState &s) {
   // Connecting to visionIPC requires opengl to be current
-  if (s.vision && s.vision->connected()){
+  if (s.vipc_client->connected){
     makeCurrent();
   }
   repaint();

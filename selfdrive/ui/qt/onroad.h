@@ -90,5 +90,4 @@ private:
 signals:
   void update(const UIState &s);
   void offroadTransition(bool offroad);
-  void driverView();
 };

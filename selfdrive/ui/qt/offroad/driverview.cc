@@ -5,18 +5,9 @@
 #include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/qt/util.h"
 
-DriverViewWindow::DriverViewWindow(QWidget* parent) : sm({"driverState"}), QOpenGLWidget(parent) {
-  setAttribute(Qt::WA_OpaquePaintEvent);
+DriverViewWindow::DriverViewWindow(QWidget* parent) : sm({"driverState"}), CameraViewWidget(VISION_STREAM_RGB_FRONT, parent) {
   is_rhd = Params().getBool("IsRHD");
   face_img = QImage("../assets/img_driver_face").scaled(180, 180, Qt::KeepAspectRatio, Qt::SmoothTransformation);
-
-  timer = new QTimer(this);
-  connect(timer, &QTimer::timeout, this, &DriverViewWindow::onTimeout);
-}
-
-DriverViewWindow::~DriverViewWindow() {
-  makeCurrent();
-  doneCurrent();
 }
 
 void DriverViewWindow::showEvent(QShowEvent* event) {
@@ -25,18 +16,6 @@ void DriverViewWindow::showEvent(QShowEvent* event) {
 
 void DriverViewWindow::hideEvent(QHideEvent* event) {
   Params().putBool("IsDriverViewEnabled", false);
-}
-
-void DriverViewWindow::onTimeout() {
-  vision->update();
-  sm.update(0);
-  update();
-}
-
-void DriverViewWindow::initializeGL() {
-  initializeOpenGLFunctions();
-  vision = std::make_unique<UIVision>(VISION_STREAM_RGB_FRONT);
-  timer->start(0);
 }
 
 void DriverViewWindow::paintGL() {
@@ -49,7 +28,7 @@ void DriverViewWindow::paintGL() {
 
   QPainter p(this);
 
-  if (!vision->connected()) {
+  if (!connected()) {
     p.setPen(QColor(0xff, 0xff, 0xff));
     p.setRenderHint(QPainter::TextAntialiasing);
     configFont(p, "Open Sans", 100, "Bold");
@@ -57,7 +36,8 @@ void DriverViewWindow::paintGL() {
     return;
   }
 
-  vision->draw();
+  CameraViewWidget::paintGL();
+  sm.update(0);
 
   const int width = 4 * viz_rect.h / 3;
   const Rect rect = {viz_rect.centerX() - width / 2, viz_rect.y, width, viz_rect.h};  // x, y, w, h
@@ -77,7 +57,7 @@ void DriverViewWindow::paintGL() {
   p.drawRect(blackout_x_r, rect.y, blackout_w_r, rect.h);
   p.setBrush(Qt::NoBrush);
 
-  cereal::DriverState::Reader driver_state = sm["drive_state"].getDriverState();
+  cereal::DriverState::Reader driver_state = sm["driverState"].getDriverState();
   const bool face_detected = driver_state.getFaceProb() > 0.4;
   if (face_detected) {
     auto fxy_list = driver_state.getFacePosition();
