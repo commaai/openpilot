@@ -95,7 +95,7 @@ class TestValgrind(unittest.TestCase):
 
   def test_config(self):
     open(os.path.join(BASEDIR, "selfdrive/test/valgrind_logs.txt"), "w").close()
-    os.environ["SIMULATION"] = "1"
+
     for cfg in CONFIGS:
       self.done = False
       URL = cfg.segment
