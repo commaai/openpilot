@@ -27,12 +27,12 @@ class Hardware : public HardwareBase {
   void set_brightness(int percent) const override {
     std::ofstream brightness_control("/sys/class/leds/lcd-backlight/brightness");
     if (brightness_control.is_open()) {
-      brightness_control << (int)(percent * (255 / 100.)) << "\n";
+      brightness_control << (int)(percent * (255/100.)) << "\n";
       brightness_control.close();
     }
   };
 
-  inline static void set_display_power(bool on) {
+  void set_display_power(bool on) const override {
     auto dtoken = android::SurfaceComposerClient::getBuiltInDisplay(android::ISurfaceComposer::eDisplayIdMain);
     android::SurfaceComposerClient::setDisplayPowerMode(dtoken, on ? HWC_POWER_MODE_NORMAL : HWC_POWER_MODE_OFF);
   };

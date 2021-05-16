@@ -4,6 +4,7 @@
 #include <string>
 
 #include "selfdrive/common/mat.h"
+
 // no-op base hw class
 class HardwareBase {
 public:
@@ -21,7 +22,7 @@ public:
   virtual void reboot() const {}
   virtual void poweroff() const {}
   virtual void set_brightness(int percent) const {}
-  static void set_display_power(bool on) {}
+  virtual void set_display_power(bool on) const {}
 
   virtual bool get_ssh_enabled() const { return false; }
   virtual void set_ssh_enabled(bool enabled) const {}
