@@ -350,6 +350,11 @@ def thermald_thread():
     startup_conditions["device_temp_good"] = thermal_status < ThermalStatus.danger
     set_offroad_alert_if_changed("Offroad_TemperatureTooHigh", (not startup_conditions["device_temp_good"]))
 
+    if TICI:
+      nvme_path = Path("/data/media")
+      startup_conditions["nvme_mounted"] = nvme_path.is_mount()
+      set_offroad_alert_if_changed("Offroad_NvmeMissing", (not startup_conditions["nvme_mounted"]))
+
     # Handle offroad/onroad transition
     should_start = all(startup_conditions.values())
     if should_start != should_start_prev or (count == 0):
