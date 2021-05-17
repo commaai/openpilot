@@ -3,7 +3,6 @@
 #include <atomic>
 #include <map>
 #include <memory>
-#include <sstream>
 #include <string>
 
 #include <QObject>
