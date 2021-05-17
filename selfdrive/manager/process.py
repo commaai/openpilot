@@ -166,7 +166,7 @@ class ManagerProcess(ABC):
 
 
 class NativeProcess(ManagerProcess):
-  def __init__(self, name, cwd, cmdline, enabled=True, persistent=False, driverview=False, unkillable=False, sigkill=False, watchdog_max_dt=None):
+  def __init__(self, name, cwd, cmdline, enabled=True, persistent=False, driverview=False, unkillable=False, sigkill=False, watchdog_max_dt=None, environs=None):
     self.name = name
     self.cwd = cwd
     self.cmdline = cmdline
@@ -176,6 +176,7 @@ class NativeProcess(ManagerProcess):
     self.unkillable = unkillable
     self.sigkill = sigkill
     self.watchdog_max_dt = watchdog_max_dt
+    self.environs = environs
 
   def prepare(self):
     pass
@@ -190,6 +191,17 @@ class NativeProcess(ManagerProcess):
 
     cwd = os.path.join(BASEDIR, self.cwd)
     cloudlog.info("starting process %s" % self.name)
+
+    if 'LD_LIBRARY_PATH' not in os.environ:
+      os.environ['LD_LIBRARY_PATH'] = ''
+    if '/system/lib64' not in os.environ['LD_LIBRARY_PATH']:
+      os.environ['LD_LIBRARY_PATH'] += os.pathsep + '/system/lib64'
+
+    if (self.environs is not None):
+      for key in self.environs:
+        os.environ[key] = os.path.expandvars(self.environs[key])
+        print(os.path.expandvars(self.environs[key]))
+    
     self.proc = Process(name=self.name, target=nativelauncher, args=(self.cmdline, cwd))
     self.proc.start()
     self.watchdog_seen = False

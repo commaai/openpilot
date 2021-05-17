@@ -45,7 +45,7 @@ qt_src = ["main.cc", "ui.cc", "paint.cc", "qt/sidebar.cc", "qt/onroad.cc",
           "qt/window.cc", "qt/home.cc", "qt/offroad/settings.cc",
           "qt/offroad/onboarding.cc", "#phonelibs/nanovg/nanovg.c"]
 
-qt_env.Program("_ui", qt_src, LIBS=qt_libs)
+qt_env.Program("ui", qt_src, LIBS=qt_libs)
 
 # setup, factory resetter, and installer
 if arch != 'aarch64' and "BUILD_SETUP" in os.environ:
