@@ -6,7 +6,7 @@ base_libs = [gpucommon, common, messaging, cereal, visionipc, transformations, '
              'capnp', 'kj', 'm', 'OpenCL', 'ssl', 'crypto', 'pthread'] + qt_env["LIBS"]
 
 maps = arch in ['larch64', 'x86_64'] and \
-  os.path.exists(File("qt/widgets/map.cc").srcnode().abspath)
+  os.path.exists(File("qt/maps/map.cc").srcnode().abspath)
 
 if arch == 'aarch64':
   base_libs += ['log', 'utils', 'gui', 'ui', 'CB', 'gsl', 'adreno_utils', 'cutils', 'uuid']
@@ -30,7 +30,7 @@ if arch != 'aarch64':
 
 if maps:
   base_libs += ['qmapboxgl']
-  widgets_src += ["qt/widgets/map_helpers.cc", "qt/widgets/map.cc"]
+  widgets_src += ["qt/maps/map_helpers.cc", "qt/maps/map.cc"]
   qt_env['CPPDEFINES'] = ["ENABLE_MAPS"]
 
 widgets = qt_env.Library("qt_widgets", widgets_src, LIBS=base_libs)

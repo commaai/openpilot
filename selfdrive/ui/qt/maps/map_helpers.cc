@@ -1,4 +1,4 @@
-#include "selfdrive/ui/qt/widgets/map_helpers.h"
+#include "selfdrive/ui/qt/maps/map_helpers.h"
 
 
 QGeoCoordinate to_QGeoCoordinate(const QMapbox::Coordinate &in) {

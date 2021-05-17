@@ -8,7 +8,7 @@
 #include "selfdrive/ui/qt/util.h"
 
 #ifdef ENABLE_MAPS
-#include "selfdrive/ui/qt/widgets/map.h"
+#include "selfdrive/ui/qt/maps/map.h"
 #endif
 
 OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {

@@ -8,8 +8,8 @@
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/params.h"
 #include "selfdrive/ui/qt/util.h"
-#include "selfdrive/ui/qt/widgets/map_helpers.h"
-#include "selfdrive/ui/qt/widgets/map.h"
+#include "selfdrive/ui/qt/maps/map_helpers.h"
+#include "selfdrive/ui/qt/maps/map.h"
 
 
 const int PAN_TIMEOUT = 100;
