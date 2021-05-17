@@ -7,6 +7,7 @@
 #include "selfdrive/common/util.h"
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/params.h"
+#include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/widgets/map_helpers.h"
 #include "selfdrive/ui/qt/widgets/map.h"
 
@@ -19,18 +20,6 @@ const float MIN_ZOOM = 14;
 const float MAX_PITCH = 50;
 const float MIN_PITCH = 0;
 const float MAP_SCALE = 2;
-
-static void clearLayout(QLayout* layout) {
-  while (QLayoutItem* item = layout->takeAt(0)) {
-    if (QWidget* widget = item->widget()) {
-      widget->deleteLater();
-    }
-    if (QLayout* childLayout = item->layout()) {
-      clearLayout(childLayout);
-    }
-    delete item;
-  }
-}
 
 
 MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings) {
