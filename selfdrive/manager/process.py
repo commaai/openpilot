@@ -64,7 +64,6 @@ class ManagerProcess(ABC):
   proc = None
   enabled = True
   name = ""
-  env = {}
 
   last_watchdog_time = 0
   watchdog_max_dt = None
@@ -167,7 +166,7 @@ class ManagerProcess(ABC):
 
 
 class NativeProcess(ManagerProcess):
-  def __init__(self, name, cwd, cmdline, enabled=True, persistent=False, driverview=False, unkillable=False, sigkill=False, env={}, watchdog_max_dt=None):
+  def __init__(self, name, cwd, cmdline, enabled=True, persistent=False, driverview=False, unkillable=False, sigkill=False, watchdog_max_dt=None):
     self.name = name
     self.cwd = cwd
     self.cmdline = cmdline
@@ -177,7 +176,6 @@ class NativeProcess(ManagerProcess):
     self.unkillable = unkillable
     self.sigkill = sigkill
     self.watchdog_max_dt = watchdog_max_dt
-    self.env = env
 
   def prepare(self):
     pass
