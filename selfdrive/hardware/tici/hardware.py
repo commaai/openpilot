@@ -137,8 +137,12 @@ class Tici(HardwareBase):
       return None
 
     if info and info.startswith('+QNWINFO: '):
-      info = info.replace('+QNWINFO: ', '').replace('"', '')
-      technology, operator, band, channel = info.split(',')
+      info = info.replace('+QNWINFO: ', '').replace('"', '').split(',')
+
+      if len(info) != 4:
+        return None
+
+      technology, operator, band, channel = info 
 
       return({
         'technology': technology,
