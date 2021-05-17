@@ -81,11 +81,11 @@ def get_can_signals(CP):
       ("GEARBOX", 100),
     ]
 
-  if CP.carFingerprint in HONDA_BOSCH:
-    if CP.carFingerprint in HONDA_BOSCH_ALT_BRAKE_SIGNAL:
-      signals += [("BRAKE_PRESSED", "BRAKE_MODULE", 0)]
-      checks += [("BRAKE_MODULE", 50)]
+  if CP.carFingerprint in HONDA_BOSCH_ALT_BRAKE_SIGNAL:
+    signals += [("BRAKE_PRESSED", "BRAKE_MODULE", 0)]
+    checks += [("BRAKE_MODULE", 50)]
 
+  if CP.carFingerprint in HONDA_BOSCH:
     signals += [
       ("CAR_GAS", "GAS_PEDAL_2", 0),
       ("MAIN_ON", "SCM_FEEDBACK", 0),
@@ -117,6 +117,7 @@ def get_can_signals(CP):
       checks += [("CRUISE_PARAMS", 10)]
     else:
       checks += [("CRUISE_PARAMS", 50)]
+
   if CP.carFingerprint in (CAR.ACCORD, CAR.ACCORD_15, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_HYBRID, CAR.INSIGHT, CAR.ACURA_RDX_3G):
     signals += [("DRIVERS_DOOR_OPEN", "SCM_FEEDBACK", 1)]
   elif CP.carFingerprint == CAR.ODYSSEY_CHN:
