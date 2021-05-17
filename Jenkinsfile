@@ -186,7 +186,7 @@ pipeline {
                   }
                   steps {
                     phone_steps("tici", [
-                      ["build", "SCONS_CACHE=1 scons -j16"],
+                      ["build", "SCONS_CACHE=1 scons -j8"],
                       ["test loggerd", "python selfdrive/loggerd/tests/test_loggerd.py"],
                       ["test encoder", "LD_LIBRARY_PATH=/usr/local/lib python selfdrive/loggerd/tests/test_encoder.py"],
                       ["onroad tests", "cd selfdrive/test/ && ./test_onroad.py"],
@@ -198,7 +198,7 @@ pipeline {
                 stage('camerad') {
                   steps {
                     phone_steps("eon-party", [
-                      ["build", "SCONS_CACHE=1 scons -j16"],
+                      ["build", "SCONS_CACHE=1 scons -j8"],
                       ["test camerad", "python selfdrive/camerad/test/test_camerad.py"],
                       ["test exposure", "python selfdrive/camerad/test/test_exposure.py"],
                     ])
@@ -208,7 +208,7 @@ pipeline {
                 stage('Tici camerad') {
                   steps {
                     phone_steps("tici-party", [
-                      ["build", "SCONS_CACHE=1 scons -j16"],
+                      ["build", "SCONS_CACHE=1 scons -j8"],
                       ["test camerad", "python selfdrive/camerad/test/test_camerad.py"],
                       ["test exposure", "python selfdrive/camerad/test/test_exposure.py"],
                     ])
