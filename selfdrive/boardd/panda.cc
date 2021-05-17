@@ -3,7 +3,6 @@
 #include <unistd.h>
 
 #include <cassert>
-#include <iostream>
 #include <stdexcept>
 #include <vector>
 

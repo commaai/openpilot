@@ -5,7 +5,6 @@
 #include <unistd.h>
 
 #include <cmath>
-#include <iostream>
 
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/util.h"
