@@ -130,6 +130,9 @@ class Android(HardwareBase):
       'data_connected': cell_data_connected
     }
 
+  def get_network_info(self):
+    return None
+
   def get_network_type(self):
     wifi_check = parse_service_call_string(service_call(["connectivity", "2"]))
     if wifi_check is None:
