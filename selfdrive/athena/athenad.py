@@ -132,6 +132,17 @@ def getMessage(service=None, timeout=1000):
 
 
 @dispatcher.add_method
+def setNavDestination(latitude=0, longitude=0):
+  destination = {
+    "latitude": latitude,
+    "longitude": longitude,
+  }
+  Params().put("NavDestination", json.dumps(destination))
+
+  return {"success": 1}
+
+
+@dispatcher.add_method
 def listDataDirectory():
   files = [os.path.relpath(os.path.join(dp, f), ROOT) for dp, dn, fn in os.walk(ROOT) for f in fn]
   return files

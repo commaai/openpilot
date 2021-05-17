@@ -7,14 +7,38 @@
 #include "selfdrive/ui/paint.h"
 #include "selfdrive/ui/qt/util.h"
 
+#ifdef ENABLE_MAPS
+#include "selfdrive/ui/qt/maps/map.h"
+#endif
+
 OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
-  layout = new QStackedLayout();
+  layout = new QStackedLayout(this);
   layout->setStackingMode(QStackedLayout::StackAll);
 
   // old UI on bottom
   nvg = new NvgWindow(this);
-  layout->addWidget(nvg);
   QObject::connect(this, &OnroadWindow::update, nvg, &NvgWindow::update);
+
+  QHBoxLayout* split = new QHBoxLayout();
+  split->setContentsMargins(0, 0, 0, 0);
+  split->setSpacing(0);
+  split->addWidget(nvg);
+
+#ifdef ENABLE_MAPS
+  QString token = QString::fromStdString(Params().get("MapboxToken"));
+  if (!token.isEmpty()){
+    QMapboxGLSettings settings;
+    settings.setCacheDatabasePath("/tmp/mbgl-cache.db");
+    settings.setCacheDatabaseMaximumSize(20 * 1024 * 1024);
+    settings.setAccessToken(token);
+    map = new MapWindow(settings);
+    split->addWidget(map);
+  }
+#endif
+
+  QWidget * split_wrapper = new QWidget;
+  split_wrapper->setLayout(split);
+  layout->addWidget(split_wrapper);
 
   alerts = new OnroadAlerts(this);
   QObject::connect(this, &OnroadWindow::update, alerts, &OnroadAlerts::updateState);
@@ -191,6 +215,10 @@ void NvgWindow::update(const UIState &s) {
     makeCurrent();
   }
   repaint();
+}
+
+void NvgWindow::resizeGL(int w, int h) {
+  ui_resize(&QUIState::ui_state, w, h);
 }
 
 void NvgWindow::paintGL() {
