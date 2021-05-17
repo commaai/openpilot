@@ -229,7 +229,7 @@ routes: dict = {
     'enableCamera': True,
   },
   "82e9cdd3f43bf83e|2021-05-15--02-42-51": {
-    'carFingerprint': HYUNDAI.ELANTRA_21,
+    'carFingerprint': HYUNDAI.ELANTRA_2021,
     'enableCamera': True,
   },
   "f7b6be73e3dfd36c|2019-05-12--18-07-16": {

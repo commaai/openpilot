@@ -77,7 +77,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
       ret.minSteerSpeed = 32 * CV.MPH_TO_MS
-    elif candidate == CAR.ELANTRA_21:
+    elif candidate == CAR.ELANTRA_2021:
       ret.lateralTuning.pid.kf = 0.00005
       ret.mass = (2800. * CV.LB_TO_KG) + STD_CARGO_KG
       ret.wheelbase = 2.72
