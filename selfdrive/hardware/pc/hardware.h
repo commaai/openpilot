@@ -7,6 +7,6 @@
 class Hardware : public HardwareBase {
  public:
   Hardware() {}
-  std::string get_os_version() const override { return "openpilot for PC"; }
-  bool PC() const override { return true; }
+  inline bool PC() override { return true; }
+  std::string get_os_version() override { return "openpilot for PC"; }
 };

@@ -23,17 +23,17 @@ class Hardware : public HardwareBase {
     screen_size[1] = 1080;
   }
 
-  bool TICI() const override { return true; }
-  std::string get_os_version() const override { return "AGNOS " + util::read_file("/VERSION"); };
-  void reboot() const override { std::system("sudo reboot"); }
-  void poweroff() const override { std::system("sudo poweroff"); }
-  void set_brightness(int percent) const override {
+  inline bool TICI() override { return true; }
+  inline std::string get_os_version() override { return "AGNOS " + util::read_file("/VERSION"); };
+  void reboot() override { std::system("sudo reboot"); }
+  void poweroff() override { std::system("sudo poweroff"); }
+  void set_brightness(int percent) override {
     std::ofstream brightness_control("/sys/class/backlight/panel0-backlight/brightness");
     if (brightness_control.is_open()) {
       brightness_control << (percent * (int)(1023/100.)) << "\n";
       brightness_control.close();
     }
   }
-  bool get_ssh_enabled() const override { return Params().getBool("SshEnabled"); }
-  void set_ssh_enabled(bool enabled) const override { Params().putBool("SshEnabled", enabled); }
+  bool get_ssh_enabled() override { return Params().getBool("SshEnabled"); }
+  void set_ssh_enabled(bool enabled) override { Params().putBool("SshEnabled", enabled); }
 };
