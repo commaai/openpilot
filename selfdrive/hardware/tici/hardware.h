@@ -8,7 +8,7 @@
 #include "selfdrive/hardware/base.h"
 
 class Hardware : public HardwareBase {
- public:
+public:
   Hardware() {
     MAX_VOLUME = 0.5;
     MIN_VOLUME = 0.4;
