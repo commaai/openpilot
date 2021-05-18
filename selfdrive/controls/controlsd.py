@@ -216,7 +216,15 @@ class Controls:
     if self.can_rcv_error or not CS.canValid:
       self.events.add(EventName.canError)
 
-    safety_mismatch = self.sm['pandaState'].safetyModel != self.CP.safetyModel or self.sm['pandaState'].safetyParam != self.CP.safetyParam
+    # When the panda and controlsd do not agree on controls_allowed
+    # we want to disengage openpilot. However the status from the panda goes through
+    # another socket other than the CAN messages and one can arrive earlier than the other.
+    # Therefore we allow a mismatch for two samples, then we trigger the disengagement.
+    if self.sm['pandaState'].controlsAllowed != self.enabled:
+      self.mismatch_counter += 1
+
+    safety_mismatch = self.sm['pandaState'].safetyModel != self.CP.safetyModel or \
+                      self.sm['pandaState'].safetyParam != self.CP.safetyParam
     if safety_mismatch or self.mismatch_counter >= 200:
       self.events.add(EventName.controlsMismatch)
 
@@ -291,16 +299,6 @@ class Controls:
       self.can_rcv_error = True
     else:
       self.can_rcv_error = False
-
-    # When the panda and controlsd do not agree on controls_allowed
-    # we want to disengage openpilot. However the status from the panda goes through
-    # another socket other than the CAN messages and one can arrive earlier than the other.
-    # Therefore we allow a mismatch for two samples, then we trigger the disengagement.
-    if not self.enabled:
-      self.mismatch_counter = 0
-
-    if not self.sm['pandaState'].controlsAllowed and self.enabled:
-      self.mismatch_counter += 1
 
     self.distance_traveled += CS.vEgo * DT_CTRL
 
