@@ -133,11 +133,13 @@ class Tici(HardwareBase):
     modem = self.get_modem()
     try:
       info = modem.Command("AT+QNWINFO", int(TIMEOUT * 1000), dbus_interface=MM_MODEM, timeout=TIMEOUT)
+      extra = modem.Command('AT+QENG="servingcell"', int(TIMEOUT * 1000), dbus_interface=MM_MODEM, timeout=TIMEOUT)
     except Exception:
       return None
 
     if info and info.startswith('+QNWINFO: '):
       info = info.replace('+QNWINFO: ', '').replace('"', '').split(',')
+      extra = "" if extra is None else extra.replace('+QENG: "servingcell",', '').replace('"', '')
 
       if len(info) != 4:
         return None
@@ -148,7 +150,8 @@ class Tici(HardwareBase):
         'technology': technology,
         'operator': operator,
         'band': band,
-        'channel': int(channel)
+        'channel': int(channel),
+        'extra': extra,
       })
     else:
       return None
