@@ -30,7 +30,7 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
     QMapboxGLSettings settings;
     settings.setCacheDatabasePath("/tmp/mbgl-cache.db");
     settings.setCacheDatabaseMaximumSize(20 * 1024 * 1024);
-    settings.setAccessToken(token);
+    settings.setAccessToken(token.trimmed());
     map = new MapWindow(settings);
     split->addWidget(map);
   }
