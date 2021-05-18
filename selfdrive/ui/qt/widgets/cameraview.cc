@@ -218,9 +218,10 @@ void CameraViewWidget::updateFrame() {
   }
 
   if (vipc_client->connected) {
-    if (VisionBuf *buf = vipc_client->recv(); buf != nullptr) {
+    VisionBuf *buf = vipc_client->recv();
+    if (buf) {
       last_frame = buf;
-    } else if (!Hardware::PC()) {
+    } else {
       LOGE("visionIPC receive timeout");
     }
   }

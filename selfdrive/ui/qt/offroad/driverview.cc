@@ -6,11 +6,11 @@
 #include "selfdrive/ui/qt/util.h"
 
 DriverViewWindow::DriverViewWindow(QWidget* parent) : sm({"driverState"}), CameraViewWidget(VISION_STREAM_RGB_FRONT, parent) {
-  is_rhd = Params().getBool("IsRHD");
   face_img = QImage("../assets/img_driver_face").scaled(180, 180, Qt::KeepAspectRatio, Qt::SmoothTransformation);
 }
 
 void DriverViewWindow::showEvent(QShowEvent* event) {
+  is_rhd = Params().getBool("IsRHD");
   Params().putBool("IsDriverViewEnabled", true);
 }
 
