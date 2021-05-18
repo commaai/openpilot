@@ -252,7 +252,7 @@ static void update_status(UIState *s) {
 
       // Choose vision ipc client
       if (s->scene.driver_view) {
-        s->vipc_client =s->vipc_client_front;
+        s->vipc_client = s->vipc_client_front;
       } else if (s->wide_camera){
         s->vipc_client = s->vipc_client_wide;
       } else {
