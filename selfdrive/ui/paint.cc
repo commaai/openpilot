@@ -433,6 +433,13 @@ void ui_nvg_init(UIState *s) {
   glBindBuffer(GL_ARRAY_BUFFER, 0);
   glBindVertexArray(0);
 
+  ui_resize(s, s->fb_w, s->fb_h);
+}
+
+void ui_resize(UIState *s, int width, int height){
+  s->fb_w = width;
+  s->fb_h = height;
+
   auto intrinsic_matrix = s->wide_camera ? ecam_intrinsic_matrix : fcam_intrinsic_matrix;
 
   s->zoom = zoom / intrinsic_matrix.v[0];

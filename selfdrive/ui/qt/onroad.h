@@ -66,6 +66,7 @@ public:
 protected:
   void paintGL() override;
   void initializeGL() override;
+  void resizeGL(int w, int h) override;
 
 private:
   double prev_draw_t = 0;

@@ -17,7 +17,6 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
 
   // old UI on bottom
   nvg = new NvgWindow(this);
-  layout->addWidget(nvg);
   QObject::connect(this, &OnroadWindow::update, nvg, &NvgWindow::update);
 
   QHBoxLayout* split = new QHBoxLayout();
@@ -216,6 +215,10 @@ void NvgWindow::update(const UIState &s) {
     makeCurrent();
   }
   repaint();
+}
+
+void NvgWindow::resizeGL(int w, int h) {
+  ui_resize(&QUIState::ui_state, w, h);
 }
 
 void NvgWindow::paintGL() {
