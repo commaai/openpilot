@@ -450,10 +450,6 @@ class CarInterface(CarInterfaceBase):
 
     ret.canValid = self.cp.can_valid and self.cp_cam.can_valid and (self.cp_body is None or self.cp_body.can_valid)
     ret.yawRate = self.VM.yaw_rate(ret.steeringAngleDeg * CV.DEG_TO_RAD, ret.vEgo)
-    # FIXME: read sendcan for brakelights
-    brakelights_threshold = 0.02 if self.CS.CP.carFingerprint == CAR.CIVIC else 0.1
-    ret.brakeLights = bool(self.CS.brake_switch or
-                           c.actuators.brake > brakelights_threshold)
 
     buttonEvents = []
 

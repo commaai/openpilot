@@ -26,7 +26,6 @@ class CarState(CarStateBase):
     ret.gas = cp.vl["EngineData_14"]['ApedPosScal_Pc_Actl'] / 100.
     ret.gasPressed = ret.gas > 1e-6
     ret.brakePressed = bool(cp.vl["Cruise_Status"]["Brake_Drv_Appl"])
-    ret.brakeLights = bool(cp.vl["BCM_to_HS_Body"]["Brake_Lights"])
     ret.genericToggle = bool(cp.vl["Steering_Buttons"]["Dist_Incr"])
     # TODO: we also need raw driver torque, needed for Assisted Lane Change
     self.lkas_state = cp.vl["Lane_Keep_Assist_Status"]['LaActAvail_D_Actl']
@@ -50,7 +49,6 @@ class CarState(CarStateBase):
       ("ApedPosScal_Pc_Actl", "EngineData_14", 0.),
       ("Dist_Incr", "Steering_Buttons", 0.),
       ("Brake_Drv_Appl", "Cruise_Status", 0.),
-      ("Brake_Lights", "BCM_to_HS_Body", 0.),
     ]
     checks = []
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0, enforce_checks=False)
