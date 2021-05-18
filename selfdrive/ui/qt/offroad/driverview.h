@@ -3,6 +3,7 @@
 #include <memory>
 
 #include "selfdrive/ui/qt/widgets/cameraview.h"
+
 class DriverViewWindow : public CameraViewWidget {
 Q_OBJECT
 public:
