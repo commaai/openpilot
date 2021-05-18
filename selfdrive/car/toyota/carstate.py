@@ -29,7 +29,7 @@ class CarState(CarStateBase):
 
     ret.brakePressed = cp.vl["BRAKE_MODULE"]['BRAKE_PRESSED'] != 0  # only user
     ret.brakeLights = bool(cp.vl["ESP_CONTROL"]['BRAKE_LIGHTS_ACC'] or ret.brakePressed)
-    if CP.carFingerprint not in TSS2_CAR:
+    if self.CP.carFingerprint not in TSS2_CAR:
       ret.brakeLights = bool(ret.brakeLights or cp.vl["BRAKE_MODULE2"]['BRAKE_PRESSED'] != 0)
 
     if self.CP.enableGasInterceptor:
