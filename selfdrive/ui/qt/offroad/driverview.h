@@ -5,7 +5,8 @@
 #include "selfdrive/ui/qt/widgets/cameraview.h"
 
 class DriverViewWindow : public CameraViewWidget {
-Q_OBJECT
+  Q_OBJECT
+
 public:
   DriverViewWindow(QWidget *parent);
 
