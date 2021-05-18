@@ -407,8 +407,7 @@ class CarInterface(CarInterfaceBase):
       raise ValueError("unsupported car %s" % candidate)
 
     # These cars use alternate user brake msg (0x1BE)
-    # FIXME: CRV_HYBRID is inconsistent between panda and carstate.
-    if candidate in set([CAR.CRV_HYBRID]) | HONDA_BOSCH_ALT_BRAKE_SIGNAL:
+    if candidate in HONDA_BOSCH_ALT_BRAKE_SIGNAL:
       ret.safetyParam = 1
 
     # min speed to enable ACC. if car can do stop and go, then set enabling speed
