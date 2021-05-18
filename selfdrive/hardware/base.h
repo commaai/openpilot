@@ -37,7 +37,7 @@ public:
   inline mat3 driver_cam_intrinsic_matrix() {
     return get_matrix(driver_cam_focal_len, driver_cam_size);
   }
-  inline mat3 wide_cam_intrinsic_matrix() {
+  inline mat3 wide_road_cam_intrinsic_matrix() {
     return TICI() ? get_matrix(wide_cam_focal_len, wide_road_cam_size) : (mat3){};
   }
 

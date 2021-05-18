@@ -25,7 +25,7 @@ static bool calib_frame_to_full_frame(const UIState *s, float in_x, float in_y, 
   const float margin = 500.0f;
   const vec3 pt = (vec3){{in_x, in_y, in_z}};
   const vec3 Ep = matvecmul3(s->scene.view_from_calib, pt);
-  const vec3 KEp = matvecmul3(s->wide_camera ? HARDWARE.wide_cam_intrinsic_matrix() : HARDWARE.road_cam_intrinsic_matrix(), Ep);
+  const vec3 KEp = matvecmul3(s->wide_camera ? HARDWARE.wide_road_cam_intrinsic_matrix() : HARDWARE.road_cam_intrinsic_matrix(), Ep);
 
   // Project.
   float x = KEp.v[0] / KEp.v[2];
@@ -257,7 +257,7 @@ static void update_status(UIState *s) {
       s->scene.started_frame = s->sm->frame;
 
       s->scene.end_to_end = Params().getBool("EndToEndToggle");
-      s->wide_camera = Hardware::TICI() ? Params().getBool("EnableWideCamera") : false;
+      s->wide_camera = HARDWARE.TICI() ? Params().getBool("EnableWideCamera") : false;
 
       // Update intrinsics matrix after possible wide camera toggle change
       if (s->vg) {

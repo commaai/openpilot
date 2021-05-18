@@ -438,7 +438,7 @@ void ui_resize(UIState *s, int width, int height) {
   s->fb_w = width;
   s->fb_h = height;
 
-  auto intrinsic_matrix = s->wide_camera ? ecam_intrinsic_matrix : fcam_intrinsic_matrix;
+  auto intrinsic_matrix = s->wide_camera ? HARDWARE.wide_road_cam_intrinsic_matrix() : HARDWARE.road_cam_intrinsic_matrix();
 
   s->zoom = zoom / intrinsic_matrix.v[0];
 
