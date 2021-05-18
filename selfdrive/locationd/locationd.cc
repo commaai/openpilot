@@ -163,6 +163,7 @@ void Localizer::build_live_location(cereal::LiveLocationKalman::Builder& fix) {
   fix.setUnixTimestampMillis(this->unix_timestamp_millis);
 
   double time_since_reset = this->kf->get_filter_time() - this->last_reset_time;
+  fix.setTimeSinceReset(time_since_reset);
   if (fix_ecef_std.norm() < VALID_POS_STD && this->calibrated && time_since_reset > VALID_TIME_SINCE_RESET) {
     fix.setStatus(cereal::LiveLocationKalman::Status::VALID);
   } else if (fix_ecef_std.norm() < VALID_POS_STD && time_since_reset > VALID_TIME_SINCE_RESET) {
@@ -354,6 +355,9 @@ void Localizer::finite_check(double current_time) {
 }
 
 void Localizer::time_check(double current_time) {
+  if (isnan(this->last_reset_time)) {
+    this->last_reset_time = current_time;
+  }
   double filter_time = this->kf->get_filter_time();
   bool big_time_gap = !isnan(filter_time) && (current_time - filter_time > 10);
   if (big_time_gap){
