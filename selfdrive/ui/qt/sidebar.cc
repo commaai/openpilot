@@ -80,7 +80,7 @@ void Sidebar::update(const UIState &s) {
     panda_status = danger_color;
     panda_str = "NO\nPANDA";
   } else if (Hardware::TICI() && s.scene.started) {
-    panda_str = QString("SAT CNT\n%1").arg(s.scene.satelliteCount);
+    panda_str = QString("SATS %1\nACC %2").arg(s.scene.satelliteCount).arg(fmin(10, s.scene.gpsAccuracy), 0, 'f', 2);
     panda_status = (*s.sm)["liveLocationKalman"].getLiveLocationKalman().getGpsOK() ? good_color : warning_color;
   }
 
