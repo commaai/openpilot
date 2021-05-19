@@ -111,6 +111,10 @@ void TermsPage::enableAccept(){
 }
 
 void DeclinePage::showEvent(QShowEvent *event) {
+  if (layout()) {
+    return;
+  }
+
   QVBoxLayout *main_layout = new QVBoxLayout;
   main_layout->setMargin(40);
   main_layout->setSpacing(40);
@@ -129,13 +133,13 @@ void DeclinePage::showEvent(QShowEvent *event) {
 
   QObject::connect(back_btn, &QPushButton::released, this, &DeclinePage::getBack);
 
-  poweroff_btn = new QPushButton("Power Off");
-  poweroff_btn->setStyleSheet("background-color: #E22C2C;");
-  buttons->addWidget(poweroff_btn);
+  uninstall_btn = new QPushButton("Decline, uninstall openpilot");
+  uninstall_btn->setStyleSheet("background-color: #E22C2C;");
+  buttons->addWidget(uninstall_btn);
 
-  QObject::connect(poweroff_btn, &QPushButton::released, [=](){
-    if (ConfirmationDialog::confirm("Are you sure you want to power off?", this)) {
-      Hardware::poweroff();
+  QObject::connect(uninstall_btn, &QPushButton::released, [=](){
+    if (ConfirmationDialog::confirm("Are you sure you want to uninstall?", this)) {
+      Params().putBool("DoUninstall", true);
     }
   });
 

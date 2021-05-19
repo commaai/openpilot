@@ -85,7 +85,7 @@ protected:
 
 private:
   QPushButton *back_btn;
-  QPushButton *poweroff_btn;
+  QPushButton *uninstall_btn;
 
 signals:
   void getBack();
