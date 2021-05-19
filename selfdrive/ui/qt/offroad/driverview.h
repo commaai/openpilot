@@ -16,6 +16,7 @@ public:
 
 public slots:
   void update(const UIState &s);
+
 protected:
   void paintEvent(QPaintEvent *event);
   bool face_detected = false;

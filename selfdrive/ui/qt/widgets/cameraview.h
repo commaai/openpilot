@@ -19,6 +19,7 @@ public:
   explicit CameraViewWidget(VisionStreamType stream_type, QWidget* parent = nullptr);
   ~CameraViewWidget();
   bool frameReceived() { return vipc_client && vipc_client->connected && last_frame != nullptr; }
+
 signals:
  void frameUpdated();
 
