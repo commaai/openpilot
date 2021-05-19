@@ -13,7 +13,6 @@
 
 #include "selfdrive/ui/qt/offroad/networking.h"
 #include "selfdrive/ui/qt/widgets/input.h"
-#include "selfdrive/ui/qt_window.h"
 
 #define USER_AGENT "AGNOSSetup-0.1"
 
