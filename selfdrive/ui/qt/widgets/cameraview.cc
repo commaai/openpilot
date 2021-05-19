@@ -94,7 +94,7 @@ CameraViewWidget::~CameraViewWidget() {
 void CameraViewWidget::initializeGL() {
   initializeOpenGLFunctions();
 
-  video_rect = {bdr_s, bdr_s, vwp_w - 2 * bdr_s, vwp_h - 2 * bdr_s};
+  QRect video_rect = {bdr_s, bdr_s, vwp_w - 2 * bdr_s, vwp_h - 2 * bdr_s};
   gl_shader = std::make_unique<GLShader>(frame_vertex_shader, frame_fragment_shader);
   GLint frame_pos_loc = glGetAttribLocation(gl_shader->prog, "aPosition");
   GLint frame_texcoord_loc = glGetAttribLocation(gl_shader->prog, "aTexCoord");
@@ -148,53 +148,31 @@ void CameraViewWidget::initializeGL() {
   timer->start(0);
 }
 
-void CameraViewWidget::resizeGL(int w, int h) {
-  viz_rect = {bdr_s, bdr_s, w - 2 * bdr_s, h - 2 * bdr_s};
-}
-
 void CameraViewWidget::paintGL() {
-  // draw background
+  if (!last_frame) return;
 
-  const QColor &color = bg_colors[ui_status];
-  glClearColor(color.redF(), color.greenF(), color.blueF(), 1.0);
-  glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-
-  // draw frame
-
-  glEnable(GL_SCISSOR_TEST);
+  QRect video_rect = {bdr_s, bdr_s, vwp_w - 2 * bdr_s, vwp_h - 2 * bdr_s};
   glViewport(video_rect.left(), video_rect.top(), video_rect.width(), video_rect.height());
-  glScissor(viz_rect.left(), viz_rect.top(), viz_rect.width(), viz_rect.height());
   
-  if (last_frame) {
-    glBindVertexArray(frame_vao);
-    glActiveTexture(GL_TEXTURE0);
+  glBindVertexArray(frame_vao);
+  glActiveTexture(GL_TEXTURE0);
 
-    glBindTexture(GL_TEXTURE_2D, texture[last_frame->idx]->frame_tex);
-    if (!Hardware::EON()) {
-      // this is handled in ion on QCOM
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, last_frame->width, last_frame->height,
-                   0, GL_RGB, GL_UNSIGNED_BYTE, last_frame->addr);
-    }
-  
-    glUseProgram(gl_shader->prog);
-    glUniform1i(gl_shader->getUniformLocation("uTexture"), 0);
-    glUniformMatrix4fv(gl_shader->getUniformLocation("uTransform"), 1, GL_TRUE, frame_mat.v);
-
-    assert(glGetError() == GL_NO_ERROR);
-    glEnableVertexAttribArray(0);
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, (const void *)0);
-    glDisableVertexAttribArray(0);
-    glBindVertexArray(0);
+  glBindTexture(GL_TEXTURE_2D, texture[last_frame->idx]->frame_tex);
+  if (!Hardware::EON()) {
+    // this is handled in ion on QCOM
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, last_frame->width, last_frame->height,
+                  0, GL_RGB, GL_UNSIGNED_BYTE, last_frame->addr);
   }
 
-  // draw others
+  glUseProgram(gl_shader->prog);
+  glUniform1i(gl_shader->getUniformLocation("uTexture"), 0);
+  glUniformMatrix4fv(gl_shader->getUniformLocation("uTransform"), 1, GL_TRUE, frame_mat.v);
 
-  glEnable(GL_BLEND);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-  glViewport(0, 0, vwp_w, vwp_h);
-  draw();
-  glDisable(GL_BLEND);
-  glDisable(GL_SCISSOR_TEST);
+  assert(glGetError() == GL_NO_ERROR);
+  glEnableVertexAttribArray(0);
+  glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, (const void *)0);
+  glDisableVertexAttribArray(0);
+  glBindVertexArray(0);
 }
 
 
@@ -214,18 +192,16 @@ void CameraViewWidget::updateFrame() {
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
       assert(glGetError() == GL_NO_ERROR);
     }
-    last_frame = nullptr;
   }
 
+  last_frame = nullptr;
   if (vipc_client->connected) {
-    VisionBuf *buf = vipc_client->recv();
-    if (buf) {
-      last_frame = buf;
+    last_frame = vipc_client->recv();
+    if (last_frame) {
+      emit frameUpdated();
+      update();
     } else {
       LOGE("visionIPC receive timeout");
     }
   }
-
-  // repaint
-  QOpenGLWidget::update();
 }

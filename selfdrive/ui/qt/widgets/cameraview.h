@@ -19,16 +19,12 @@ public:
   explicit CameraViewWidget(VisionStreamType stream_type, QWidget* parent = nullptr);
   ~CameraViewWidget();
   bool frameReceived() { return vipc_client && vipc_client->connected && last_frame != nullptr; }
+signals:
+ void frameUpdated();
 
 protected:
   void paintGL() override;
   void initializeGL() override;
-  void resizeGL(int w, int h) override;
-  virtual void draw() = 0;
-
-  QRect viz_rect;
-  QRect video_rect;
-  UIStatus ui_status = STATUS_DISENGAGED;
 
 protected slots:
   void updateFrame();

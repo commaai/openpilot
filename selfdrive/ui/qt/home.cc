@@ -56,6 +56,7 @@ void HomeWindow::driverView() {
     slayout->addWidget(driver_view);
     slayout->setCurrentWidget(driver_view);
     sidebar->setVisible(false);
+    QObject::connect(this, &HomeWindow::update, driver_view, &DriverViewWindow::update);
     emit previewDriverCam();
   }
 }
