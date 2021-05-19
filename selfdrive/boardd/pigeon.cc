@@ -6,10 +6,12 @@
 #include <unistd.h>
 
 #include <cassert>
+#include <optional>
 
 #include "selfdrive/common/gpio.h"
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/util.h"
+#include "selfdrive/locationd/ublox_msg.h"
 
 // Termios on macos doesn't define all baud rate constants
 #ifndef B460800
@@ -24,6 +26,52 @@ const std::string ack = "\xb5\x62\x05\x01\x02\x00";
 const std::string nack = "\xb5\x62\x05\x00\x02\x00";
 const std::string sos_ack = "\xb5\x62\x09\x14\x08\x00\x02\x00\x00\x00\x01\x00\x00\x00";
 const std::string sos_nack = "\xb5\x62\x09\x14\x08\x00\x02\x00\x00\x00\x00\x00\x00\x00";
+
+static std::string ubx_add_checksum(std::string msg){
+  assert(msg.size() > 2);
+
+  uint8_t ck_a = 0, ck_b = 0;
+  for(int i = 2; i < msg.size(); i++) {
+    ck_a = (ck_a + msg[i]) & 0xFF;
+    ck_b = (ck_b + ck_a) & 0xFF;
+  }
+
+  std::string r = msg;
+  r.push_back(ck_a);
+  r.push_back(ck_b);
+  return r;
+}
+
+static std::optional<std::string> build_ubx_mga_ini_time_utc() {
+  auto time = util::get_time();
+  if (!util::time_valid(time)){
+    return std::nullopt;
+  }
+
+  ublox::ubx_mga_ini_time_utc_t payload = {
+    .type = 0x10,
+    .version = 0x0,
+    .ref = 0x0,
+    .leapSecs = -128, // Unknown
+    .year = (uint16_t)(1900 + time.tm_year),
+    .month = (uint8_t)(1 + time.tm_mon),
+    .day = (uint8_t)time.tm_mday,
+    .hour = (uint8_t)time.tm_hour,
+    .minute = (uint8_t)time.tm_min,
+    .second = (uint8_t)time.tm_sec,
+    .reserved1 = 0x0,
+    .ns = 0,
+    .tAccS = 30,
+    .reserved2 = 0x0,
+    .tAccNs = 0,
+  };
+  assert(sizeof(payload) == 24);
+
+  std::string msg = "\xb5\x62\x13\x40\x18\x00"s;
+  msg += std::string((char*)&payload, sizeof(payload));
+
+  return ubx_add_checksum(msg);
+}
 
 
 Pigeon * Pigeon::connect(Panda * p){
@@ -116,6 +164,11 @@ void Pigeon::init() {
     if (!send_with_ack("\xB5\x62\x06\x01\x03\x00\x0A\x09\x01\x1E\x70"s)) continue;
     if (!send_with_ack("\xB5\x62\x06\x01\x03\x00\x0A\x0B\x01\x20\x74"s)) continue;
 
+    auto ubx_mga_ini_time_utc = build_ubx_mga_ini_time_utc();
+    if (ubx_mga_ini_time_utc) {
+      LOGW("Sending current time to ublox");
+      send(*ubx_mga_ini_time_utc);
+    }
 
     LOGW("panda GPS on");
     return;
@@ -124,7 +177,7 @@ void Pigeon::init() {
 }
 
 void Pigeon::stop(){
-  LOGE("Storing almanac in ublox flash");
+  LOGW("Storing almanac in ublox flash");
 
   // Controlled GNSS stop
   send("\xB5\x62\x06\x04\x04\x00\x00\x00\x08\x00\x16\x74"s);
@@ -133,7 +186,7 @@ void Pigeon::stop(){
   send("\xB5\x62\x09\x14\x04\x00\x00\x00\x00\x00\x21\xEC"s);
 
   if (wait_for_ack(sos_ack, sos_nack)) {
-    LOGE("Done storing almanac");
+    LOGW("Done storing almanac");
   } else {
     LOGE("Error storing almanac");
   }

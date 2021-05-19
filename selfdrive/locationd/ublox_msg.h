@@ -22,6 +22,24 @@ namespace ublox {
   const uint8_t CLASS_NAV = 0x01;
   const uint8_t CLASS_RXM = 0x02;
   const uint8_t CLASS_MON = 0x0A;
+
+  struct ubx_mga_ini_time_utc_t {
+    uint8_t type;
+    uint8_t version;
+    uint8_t ref;
+    int8_t leapSecs;
+    uint16_t year;
+    uint8_t month;
+    uint8_t day;
+    uint8_t hour;
+    uint8_t minute;
+    uint8_t second;
+    uint8_t reserved1;
+    uint32_t ns;
+    uint16_t tAccS;
+    uint16_t reserved2;
+    uint32_t tAccNs;
+  } __attribute__((packed));
 }
 
 class UbloxMsgParser {
