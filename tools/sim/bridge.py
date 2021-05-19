@@ -69,7 +69,7 @@ def cam_callback(image):
   frame_id += 1
 
 def imu_callback(imu, vehicle_state):
-  vehicle_state.bearing_deg = ((imu.compass) / (2.0 * math.pi)) * 360.0
+  vehicle_state.bearing_deg = math.degrees(imu.compass)
   dat = messaging.new_message('sensorEvents', 2)
   dat.sensorEvents[0].sensor = 4
   dat.sensorEvents[0].type = 0x10
