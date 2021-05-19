@@ -152,7 +152,8 @@ std::string dir_name(std::string const &path) {
 
 // class ExitHandler
 
-struct ExitHandlerHelper {
+class ExitHandlerHelper {
+public:
   static void set_do_exit(int sig) {
 #ifndef __APPLE__
     power_failure = (sig == SIGPWR);
