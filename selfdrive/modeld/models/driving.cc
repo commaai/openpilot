@@ -50,9 +50,12 @@ constexpr int OUTPUT_SIZE =  POSE_IDX + POSE_SIZE;
   constexpr int TEMPORAL_SIZE = 0;
 #endif
 
-constexpr float FCW_THRESHOLD = 0.25;
+constexpr float FCW_THRESHOLD_5MS_HIGH = 0.15;
+constexpr float FCW_THRESHOLD_5MS_LOW = 0.05;
+constexpr float FCW_THRESHOLD_3MS = 0.7;
 
-float prev_brake_5ms_prob = 0;
+float prev_brake_5ms_probs[5] = {0,0,0,0,0};
+float prev_brake_3ms_probs[3] = {0,0,0};
 
 // #define DUMP_YUV
 
@@ -200,6 +203,20 @@ void fill_meta(cereal::ModelDataV2::MetaData::Builder meta, const float *meta_da
   fill_sigmoid(&meta_data[DESIRE_LEN+5], brake_4ms_sigmoid, NUM_META_INTERVALS, META_STRIDE);
   fill_sigmoid(&meta_data[DESIRE_LEN+6], brake_5ms_sigmoid, NUM_META_INTERVALS, META_STRIDE);
 
+  memmove(prev_brake_5ms_probs, &prev_brake_5ms_probs[1], 4*sizeof(float));
+  memmove(prev_brake_3ms_probs, &prev_brake_3ms_probs[1], 2*sizeof(float));
+  prev_brake_5ms_probs[4] = brake_5ms_sigmoid[0];
+  prev_brake_3ms_probs[2] = brake_3ms_sigmoid[0];
+
+  bool above_fcw_threshold = true;
+  for (int i=0; i<5; i++) {
+    float threshold = i < 2 ? FCW_THRESHOLD_5MS_LOW : FCW_THRESHOLD_5MS_HIGH;
+    above_fcw_threshold = above_fcw_threshold && prev_brake_5ms_probs[i] > threshold;
+  }
+  for (int i=0; i<3; i++) {
+    above_fcw_threshold = above_fcw_threshold && prev_brake_3ms_probs[i] > FCW_THRESHOLD_3MS;
+  }
+
   meta.setDesireState(desire_state_softmax);
   meta.setEngagedProb(sigmoid(meta_data[DESIRE_LEN]));
   meta.setGasDisengageProbs(gas_disengage_sigmoid);
@@ -209,9 +226,7 @@ void fill_meta(cereal::ModelDataV2::MetaData::Builder meta, const float *meta_da
   meta.setBrake4msProbs(brake_4ms_sigmoid);
   meta.setBrake5msProbs(brake_5ms_sigmoid);
   meta.setDesirePrediction(desire_pred_softmax);
-  meta.setForwardCollisionDetected(prev_brake_5ms_prob > FCW_THRESHOLD && brake_5ms_sigmoid[0] > FCW_THRESHOLD);
-
-  prev_brake_5ms_prob = brake_5ms_sigmoid[0];
+  meta.setForwardCollisionDetected(above_fcw_threshold);
 }
 
 void fill_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const float * data,
