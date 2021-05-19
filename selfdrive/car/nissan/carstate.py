@@ -35,9 +35,6 @@ class CarState(CarStateBase):
     elif self.CP.carFingerprint in [CAR.LEAF, CAR.LEAF_IC]:
       ret.brakePressed = bool(cp.vl["BRAKE_PEDAL"]["BRAKE_PEDAL"] > 3)
 
-    if self.CP.carFingerprint in [CAR.ROGUE, CAR.XTRAIL, CAR.ALTIMA]:
-      ret.brakeLights = bool(cp.vl["DOORS_LIGHTS"]["BRAKE_LIGHT"])
-
     ret.wheelSpeeds.fl = cp.vl["WHEEL_SPEEDS_FRONT"]["WHEEL_SPEED_FL"] * CV.KPH_TO_MS
     ret.wheelSpeeds.fr = cp.vl["WHEEL_SPEEDS_FRONT"]["WHEEL_SPEED_FR"] * CV.KPH_TO_MS
     ret.wheelSpeeds.rl = cp.vl["WHEEL_SPEEDS_REAR"]["WHEEL_SPEED_RL"] * CV.KPH_TO_MS
@@ -158,7 +155,6 @@ class CarState(CarStateBase):
     if CP.carFingerprint in [CAR.ROGUE, CAR.XTRAIL, CAR.ALTIMA]:
       signals += [
         ("USER_BRAKE_PRESSED", "DOORS_LIGHTS", 1),
-        ("BRAKE_LIGHT", "DOORS_LIGHTS", 1),
 
         ("GAS_PEDAL", "GAS_PEDAL", 0),
         ("SEATBELT_DRIVER_LATCHED", "HUD", 0),
