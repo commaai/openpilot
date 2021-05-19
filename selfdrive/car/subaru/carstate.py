@@ -63,14 +63,13 @@ class CarState(CarStateBase):
                         cp.vl["BodyInfo"]['DOOR_OPEN_RL'],
                         cp.vl["BodyInfo"]['DOOR_OPEN_FR'],
                         cp.vl["BodyInfo"]['DOOR_OPEN_FL']])
+    ret.steerError = cp.vl["Steering_Torque"]['Steer_Error_1'] == 1
 
     if self.car_fingerprint in PREGLOBAL_CARS:
-      ret.steerError = cp.vl["Steering_Torque"]["LKA_Lockout"] == 1
-      self.button = cp_cam.vl["ES_CruiseThrottle"]["Button"]
+      self.cruise_button = cp_cam.vl["ES_CruiseThrottle"]["Cruise_Button"]
       self.ready = not cp_cam.vl["ES_DashStatus"]["Not_Ready_Startup"]
       self.es_accel_msg = copy.copy(cp_cam.vl["ES_CruiseThrottle"])
     else:
-      ret.steerError = cp.vl["Steering_Torque"]['Steer_Error_1'] == 1
       ret.steerWarning = cp.vl["Steering_Torque"]['Steer_Warning'] == 1
       ret.cruiseState.nonAdaptive = cp_cam.vl["ES_DashStatus"]['Conventional_Cruise'] == 1
       self.es_distance_msg = copy.copy(cp_cam.vl["ES_Distance"])
@@ -85,6 +84,7 @@ class CarState(CarStateBase):
       # sig_name, sig_address, default
       ("Steer_Torque_Sensor", "Steering_Torque", 0),
       ("Steering_Angle", "Steering_Torque", 0),
+      ("Steer_Error_1", "Steering_Torque", 0),
       ("Cruise_On", "CruiseControl", 0),
       ("Cruise_Activated", "CruiseControl", 0),
       ("Brake_Pedal", "Brake_Pedal", 0),
@@ -127,13 +127,8 @@ class CarState(CarStateBase):
         ("BSD_RCTA", 17),
       ]
 
-    if CP.carFingerprint in PREGLOBAL_CARS:
+    if CP.carFingerprint not in PREGLOBAL_CARS:
       signals += [
-        ("LKA_Lockout", "Steering_Torque", 0),
-      ]
-    else:
-      signals += [
-        ("Steer_Error_1", "Steering_Torque", 0),
         ("Steer_Warning", "Steering_Torque", 0),
       ]
 
@@ -170,17 +165,17 @@ class CarState(CarStateBase):
         ("Cruise_Activated", "ES_CruiseThrottle", 0),
         ("Signal2", "ES_CruiseThrottle", 0),
         ("Brake_On", "ES_CruiseThrottle", 0),
-        ("DistanceSwap", "ES_CruiseThrottle", 0),
+        ("Distance_Swap", "ES_CruiseThrottle", 0),
         ("Standstill", "ES_CruiseThrottle", 0),
         ("Signal3", "ES_CruiseThrottle", 0),
-        ("CloseDistance", "ES_CruiseThrottle", 0),
+        ("Close_Distance", "ES_CruiseThrottle", 0),
         ("Signal4", "ES_CruiseThrottle", 0),
         ("Standstill_2", "ES_CruiseThrottle", 0),
-        ("ES_Error", "ES_CruiseThrottle", 0),
+        ("Cruise_Fault", "ES_CruiseThrottle", 0),
         ("Signal5", "ES_CruiseThrottle", 0),
         ("Counter", "ES_CruiseThrottle", 0),
         ("Signal6", "ES_CruiseThrottle", 0),
-        ("Button", "ES_CruiseThrottle", 0),
+        ("Cruise_Button", "ES_CruiseThrottle", 0),
         ("Signal7", "ES_CruiseThrottle", 0),
       ]
 
