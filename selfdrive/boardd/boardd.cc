@@ -545,6 +545,7 @@ void pigeon_thread() {
     } else if (!ignition && ignition_last) {
       // power off on falling edge of ignition
       LOGD("powering off pigeon\n");
+      pigeon->stop();
       pigeon->set_power(false);
     }
 

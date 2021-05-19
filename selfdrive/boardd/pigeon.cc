@@ -22,6 +22,8 @@ extern ExitHandler do_exit;
 
 const std::string ack = "\xb5\x62\x05\x01\x02\x00";
 const std::string nack = "\xb5\x62\x05\x00\x02\x00";
+const std::string sos_ack = "\xb5\x62\x09\x14\x08\x00\x02\x00\x00\x00\x01\x00\x00\x00";
+const std::string sos_nack = "\xb5\x62\x09\x14\x08\x00\x02\x00\x00\x00\x00\x00\x00\x00";
 
 
 Pigeon * Pigeon::connect(Panda * p){
@@ -38,7 +40,7 @@ Pigeon * Pigeon::connect(const char * tty){
   return pigeon;
 }
 
-bool Pigeon::wait_for_ack(){
+bool Pigeon::wait_for_ack(std::string ack, std::string nack){
   std::string s;
   while (!do_exit){
     s += receive();
@@ -57,6 +59,10 @@ bool Pigeon::wait_for_ack(){
     util::sleep_for(1); // Allow other threads to be scheduled
   }
   return false;
+}
+
+bool Pigeon::wait_for_ack(){
+  return wait_for_ack(ack, nack);
 }
 
 bool Pigeon::send_with_ack(std::string cmd){
@@ -115,6 +121,22 @@ void Pigeon::init() {
     return;
   }
   LOGE("failed to initialize panda GPS");
+}
+
+void Pigeon::stop(){
+  LOGE("Storing almanac in ublox flash");
+
+  // Controlled GNSS stop
+  send("\xB5\x62\x06\x04\x04\x00\x00\x00\x08\x00\x16\x74"s);
+
+  // Store almanac in flash
+  send("\xB5\x62\x09\x14\x04\x00\x00\x00\x00\x00\x21\xEC"s);
+
+  if (wait_for_ack(sos_ack, sos_nack)) {
+    LOGE("Done storing almanac");
+  } else {
+    LOGE("Error storing almanac");
+  }
 }
 
 void PandaPigeon::connect(Panda * p) {
