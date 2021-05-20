@@ -4,8 +4,16 @@ Import('qt_env', 'arch', 'common', 'messaging', 'gpucommon', 'visionipc',
 
 base_libs = [gpucommon, common, messaging, cereal, visionipc, transformations, 'zmq',
              'capnp', 'kj', 'm', 'OpenCL', 'ssl', 'crypto', 'pthread'] + qt_env["LIBS"]
+
+maps = arch in ['larch64', 'x86_64'] and \
+  os.path.exists(File("qt/maps/map.cc").srcnode().abspath)
+
 if arch == 'aarch64':
   base_libs += ['log', 'utils', 'gui', 'ui', 'CB', 'gsl', 'adreno_utils', 'cutils', 'uuid']
+
+if maps and arch in ['x86_64']:
+  rpath = [Dir(f"#phonelibs/mapbox-gl-native-qt/{arch}").srcnode().abspath]
+  qt_env["RPATH"] += rpath
 
 if arch == "Darwin":
   del base_libs[base_libs.index('OpenCL')]
@@ -16,8 +24,14 @@ widgets_src = ["qt/widgets/input.cc", "qt/widgets/drive_stats.cc",
                "qt/widgets/offroad_alerts.cc", "qt/widgets/setup.cc", "qt/widgets/keyboard.cc",
                "qt/widgets/scrollview.cc", "#phonelibs/qrcode/QrCode.cc", "qt/api.cc",
                "qt/request_repeater.cc"]
+
 if arch != 'aarch64':
   widgets_src += ["qt/offroad/networking.cc", "qt/offroad/wifiManager.cc"]
+
+if maps:
+  base_libs += ['qmapboxgl']
+  widgets_src += ["qt/maps/map_helpers.cc", "qt/maps/map.cc"]
+  qt_env['CPPDEFINES'] = ["ENABLE_MAPS"]
 
 widgets = qt_env.Library("qt_widgets", widgets_src, LIBS=base_libs)
 qt_libs = [widgets] + base_libs

@@ -1,8 +1,6 @@
 #include "settings.h"
 
 #include <cassert>
-#include <iostream>
-#include <sstream>
 #include <string>
 
 #ifndef QCOM

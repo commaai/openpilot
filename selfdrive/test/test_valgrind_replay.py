@@ -83,7 +83,9 @@ class TestValgrind(unittest.TestCase):
     thread.daemon = True
     thread.start()
 
-    time.sleep(5)  # We give the process time to start
+    while not all(pm.all_readers_updated(s) for s in config.pub_sub.keys()):
+      time.sleep(0)
+
     for msg in tqdm(pub_msgs):
       pm.send(msg.which(), msg.as_builder())
       if config.wait_for_response:
@@ -100,6 +102,7 @@ class TestValgrind(unittest.TestCase):
       lr = LogReader(get_segment(URL))
       self.replay_process(cfg, lr)
       time.sleep(1)  # Wait for the logs to get written
+      self.assertFalse(self.leak)
 
 if __name__ == "__main__":
   unittest.main()

@@ -8,7 +8,6 @@
 #include <cstdio>
 #include <cstdlib>
 #include <ctime>
-#include <iostream>
 #include <unordered_map>
 
 #include "selfdrive/common/swaglog.h"

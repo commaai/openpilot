@@ -61,6 +61,16 @@ def configure_ublox(dev):
   dev.configure_message_rate(ublox.CLASS_MON, ublox.MSG_MON_HW, 1)
   dev.configure_message_rate(ublox.CLASS_MON, ublox.MSG_MON_HW2, 1)
 
+  print("send on stop:")
+
+  # Save on shutdown
+  # Controlled GNSS stop and hot start
+  payload = struct.pack('<HBB', 0x0000, 0x08, 0x00)
+  dev.send_message(ublox.CLASS_CFG, ublox.MSG_CFG_RST, payload)
+
+  # UBX-UPD-SOS backup
+  dev.send_message(0x09, 0x14, b"\x00\x00\x00\x00")
+
 
 if __name__ == "__main__":
   class Device:

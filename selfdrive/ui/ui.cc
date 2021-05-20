@@ -5,7 +5,6 @@
 #include <unistd.h>
 
 #include <cmath>
-#include <iostream>
 
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/util.h"
@@ -170,6 +169,9 @@ static void update_state(UIState *s) {
       scene.satelliteCount = data.getMeasurementReport().getNumMeas();
     }
   }
+  if (sm.updated("gpsLocationExternal")) {
+    scene.gpsAccuracy = sm["gpsLocationExternal"].getGpsLocationExternal().getAccuracy();
+  }
   if (sm.updated("carParams")) {
     scene.longitudinal_control = sm["carParams"].getCarParams().getOpenpilotLongitudinalControl();
   }
@@ -246,7 +248,19 @@ static void update_status(UIState *s) {
 
       s->scene.is_rhd = Params().getBool("IsRHD");
       s->scene.end_to_end = Params().getBool("EndToEndToggle");
-      s->vipc_client = s->scene.driver_view ? s->vipc_client_front : s->vipc_client_rear;
+      s->wide_camera = Hardware::TICI() ? Params().getBool("EnableWideCamera") : false;
+
+      // Update intrinsics matrix after possible wide camera toggle change
+      ui_resize(s, s->fb_w, s->fb_h);
+
+      // Choose vision ipc client
+      if (s->scene.driver_view) {
+        s->vipc_client = s->vipc_client_front;
+      } else if (s->wide_camera){
+        s->vipc_client = s->vipc_client_wide;
+      } else {
+        s->vipc_client = s->vipc_client_rear;
+      }
     } else {
       s->vipc_client->connected = false;
     }
@@ -259,6 +273,7 @@ QUIState::QUIState(QObject *parent) : QObject(parent) {
   ui_state.sm = std::make_unique<SubMaster, const std::initializer_list<const char *>>({
     "modelV2", "controlsState", "liveCalibration", "radarState", "deviceState", "liveLocationKalman",
     "pandaState", "carParams", "driverState", "driverMonitoringState", "sensorEvents", "carState", "ubloxGnss",
+    "gpsLocationExternal",
 #ifdef QCOM2
     "roadCameraState",
 #endif
@@ -270,8 +285,10 @@ QUIState::QUIState(QObject *parent) : QObject(parent) {
   ui_state.last_frame = nullptr;
   ui_state.wide_camera = Hardware::TICI() ? Params().getBool("EnableWideCamera") : false;
 
-  ui_state.vipc_client_rear = new VisionIpcClient("camerad", ui_state.wide_camera ? VISION_STREAM_RGB_WIDE : VISION_STREAM_RGB_BACK, true);
+  ui_state.vipc_client_rear = new VisionIpcClient("camerad", VISION_STREAM_RGB_BACK, true);
   ui_state.vipc_client_front = new VisionIpcClient("camerad", VISION_STREAM_RGB_FRONT, true);
+  ui_state.vipc_client_wide = new VisionIpcClient("camerad", VISION_STREAM_RGB_WIDE, true);
+
   ui_state.vipc_client = ui_state.vipc_client_rear;
 
   // update timer

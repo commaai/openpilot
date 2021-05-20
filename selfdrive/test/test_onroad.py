@@ -134,7 +134,7 @@ class TestOnroad(unittest.TestCase):
     msgs = [m for m in self.lr if m.which() == 'logMessage']
 
     total_size = sum(len(m.as_builder().to_bytes()) for m in msgs)
-    self.assertLess(total_size, 2.5e5)
+    self.assertLess(total_size, 3.5e5)
 
     cnt = Counter([json.loads(m.logMessage)['filename'] for m in msgs])
     big_logs = [f for f, n in cnt.most_common(3) if n / sum(cnt.values()) > 30.]
