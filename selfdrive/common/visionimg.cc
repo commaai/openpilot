@@ -27,7 +27,7 @@ EGLImageTexture::EGLImageTexture(const VisionBuf *buf) {
                              buf->stride/bpp, buf->len/buf->stride,
                              buf->width, buf->height);
 
-  // GraphicBuffer is ref counted by EGLClientBuffer(ANativeWindowBuffer), no need and not possible to release.	
+  // GraphicBuffer is ref counted by EGLClientBuffer(ANativeWindowBuffer), no need and not possible to release. 
   GraphicBuffer* gb = new GraphicBuffer(buf->width, buf->height, (PixelFormat)format,
                                         GraphicBuffer::USAGE_HW_TEXTURE, buf->stride/bpp, (private_handle_t*)private_handle, false);
 
@@ -58,11 +58,14 @@ EGLImageTexture::EGLImageTexture(const VisionBuf *buf) {
   EGLDisplay display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
   assert(display != EGL_NO_DISPLAY);
 
+  eglInitialize(display, NULL, NULL);
+  std::cout << "egl error: " << eglGetError() << std::endl;
+
   // TODO: can we use EGL_NATIVE_BUFFER_ANDROID instead?
   EGLint img_attrs[] = {EGL_IMAGE_PRESERVED_KHR, EGL_TRUE,
-												EGL_WIDTH, (EGLint)buf->width,
-												EGL_HEIGHT, (EGLint)buf->height,
-												EGL_NONE};
+                        EGL_WIDTH, (EGLint)buf->width,
+                        EGL_HEIGHT, (EGLint)buf->height,
+                        EGL_NONE};
   img_khr = eglCreateImageKHR(display, EGL_NO_CONTEXT,
                               EGL_GL_TEXTURE_2D_KHR, buf->addr, img_attrs);
   GLenum err;
@@ -70,7 +73,7 @@ EGLImageTexture::EGLImageTexture(const VisionBuf *buf) {
     std::cout << "OpenGL error: " << err << std::endl;
   }
   std::cout << "egl error: " << eglGetError() << std::endl;
-	assert(img_khr != EGL_NO_IMAGE_KHR);
+  assert(img_khr != EGL_NO_IMAGE_KHR);
 
   glGenTextures(1, &frame_tex);
   glBindTexture(GL_TEXTURE_2D, frame_tex);
