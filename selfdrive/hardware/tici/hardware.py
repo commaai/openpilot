@@ -1,4 +1,5 @@
 import os
+from enum import IntEnum
 import subprocess
 from pathlib import Path
 from smbus2 import SMBus
@@ -17,7 +18,20 @@ MM_MODEM = MM + ".Modem"
 MM_MODEM_SIMPLE = MM + ".Modem.Simple"
 MM_SIM = MM + ".Sim"
 
-MM_MODEM_STATE_CONNECTED = 11
+class MM_MODEM_STATE(IntEnum):
+       FAILED        = -1
+       UNKNOWN       = 0
+       INITIALIZING  = 1
+       LOCKED        = 2
+       DISABLED      = 3
+       DISABLING     = 4
+       ENABLING      = 5
+       ENABLED       = 6
+       SEARCHING     = 7
+       REGISTERED    = 8
+       DISCONNECTING = 9
+       CONNECTING    = 10
+       CONNECTED     = 11
 
 TIMEOUT = 0.1
 
@@ -117,7 +131,7 @@ class Tici(HardwareBase):
         'mcc_mnc': str(sim.Get(MM_SIM, 'OperatorIdentifier', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)),
         'network_type': ["Unknown"],
         'sim_state': ["READY"],
-        'data_connected': modem.Get(MM_MODEM, 'State', dbus_interface=DBUS_PROPS, timeout=TIMEOUT) == MM_MODEM_STATE_CONNECTED,
+        'data_connected': modem.Get(MM_MODEM, 'State', dbus_interface=DBUS_PROPS, timeout=TIMEOUT) == MM_MODEM_STATE.CONNECTED,
       }
 
   def get_subscriber_info(self):
@@ -134,17 +148,19 @@ class Tici(HardwareBase):
     try:
       info = modem.Command("AT+QNWINFO", int(TIMEOUT * 1000), dbus_interface=MM_MODEM, timeout=TIMEOUT)
       extra = modem.Command('AT+QENG="servingcell"', int(TIMEOUT * 1000), dbus_interface=MM_MODEM, timeout=TIMEOUT)
+      state = modem.Get(MM_MODEM, 'State', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
     except Exception:
       return None
 
     if info and info.startswith('+QNWINFO: '):
       info = info.replace('+QNWINFO: ', '').replace('"', '').split(',')
       extra = "" if extra is None else extra.replace('+QENG: "servingcell",', '').replace('"', '')
+      state = "" if state is None else MM_MODEM_STATE(state).name
 
       if len(info) != 4:
         return None
 
-      technology, operator, band, channel = info 
+      technology, operator, band, channel = info
 
       return({
         'technology': technology,
@@ -152,6 +168,7 @@ class Tici(HardwareBase):
         'band': band,
         'channel': int(channel),
         'extra': extra,
+        'state': state,
       })
     else:
       return None
