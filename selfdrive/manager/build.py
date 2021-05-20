@@ -26,7 +26,7 @@ def build(spinner, dirty=False):
   j_flag = "" if nproc is None else f"-j{nproc - 1}"
 
   for retry in [True, False]:
-    scons = subprocess.Popen(["scons", j_flag], cwd=BASEDIR, env=env, stderr=subprocess.PIPE)
+    scons = subprocess.Popen(["scons", j_flag, "--cache-readonly"], cwd=BASEDIR, env=env, stderr=subprocess.PIPE)
 
     compile_output = []
 
@@ -80,6 +80,9 @@ def build(spinner, dirty=False):
           t.wait_for_exit()
         exit(1)
     else:
+      shutil.rmtree("/tmp/scons_cache", ignore_errors=True)
+      shutil.rmtree("/data/scons_cache", ignore_errors=True)
+      os.system(f"cd {BASEDIR} && scons {j_flag} --cache-populate")
       break
 
 

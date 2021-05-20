@@ -234,6 +234,9 @@ if os.environ.get('SCONS_CACHE'):
 
   CacheDir(cache_dir)
 
+  # TODO: nicer way to clear the cache dir on scons --clean?
+  Clean("common/", cache_dir)
+
 node_interval = 5
 node_count = 0
 def progress_function(node):
