@@ -75,6 +75,7 @@ kj::Array<capnp::word> logger_build_init_data() {
   }
 
   init.setKernelVersion(util::read_file("/proc/version"));
+  init.setOsVersion(util::read_file("/VERSION"));
 
 #ifdef QCOM
   {
