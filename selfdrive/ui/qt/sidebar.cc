@@ -54,7 +54,7 @@ void Sidebar::update(const UIState &s) {
     connect_status = warning_color;
     auto last_ping = params.get<float>("LastAthenaPingTime");
     if (last_ping) {
-      bool online = nanos_since_boot() - *last_ping < 70e9;
+      bool online = nanos_since_boot() - *last_ping < 80e9;
       connect_str = online ? "ONLINE" : "ERROR";
       connect_status = online ? good_color : danger_color;
     }
