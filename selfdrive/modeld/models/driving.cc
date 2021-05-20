@@ -50,12 +50,12 @@ constexpr int OUTPUT_SIZE =  POSE_IDX + POSE_SIZE;
   constexpr int TEMPORAL_SIZE = 0;
 #endif
 
-constexpr float FCW_THRESHOLD_5MS_HIGH = 0.15;
-constexpr float FCW_THRESHOLD_5MS_LOW = 0.05;
-constexpr float FCW_THRESHOLD_3MS = 0.7;
+constexpr float FCW_THRESHOLD_5MS2_HIGH = 0.15;
+constexpr float FCW_THRESHOLD_5MS2_LOW = 0.05;
+constexpr float FCW_THRESHOLD_3MS2 = 0.7;
 
-float prev_brake_5ms_probs[5] = {0,0,0,0,0};
-float prev_brake_3ms_probs[3] = {0,0,0};
+float prev_brake_5ms2_probs[5] = {0,0,0,0,0};
+float prev_brake_3ms2_probs[3] = {0,0,0};
 
 // #define DUMP_YUV
 
@@ -192,41 +192,45 @@ void fill_meta(cereal::ModelDataV2::MetaData::Builder meta, const float *meta_da
   float gas_disengage_sigmoid[NUM_META_INTERVALS];
   float brake_disengage_sigmoid[NUM_META_INTERVALS];
   float steer_override_sigmoid[NUM_META_INTERVALS];
-  float brake_3ms_sigmoid[NUM_META_INTERVALS];
-  float brake_4ms_sigmoid[NUM_META_INTERVALS];
-  float brake_5ms_sigmoid[NUM_META_INTERVALS];
+  float brake_3ms2_sigmoid[NUM_META_INTERVALS];
+  float brake_4ms2_sigmoid[NUM_META_INTERVALS];
+  float brake_5ms2_sigmoid[NUM_META_INTERVALS];
 
   fill_sigmoid(&meta_data[DESIRE_LEN+1], gas_disengage_sigmoid, NUM_META_INTERVALS, META_STRIDE);
   fill_sigmoid(&meta_data[DESIRE_LEN+2], brake_disengage_sigmoid, NUM_META_INTERVALS, META_STRIDE);
   fill_sigmoid(&meta_data[DESIRE_LEN+3], steer_override_sigmoid, NUM_META_INTERVALS, META_STRIDE);
-  fill_sigmoid(&meta_data[DESIRE_LEN+4], brake_3ms_sigmoid, NUM_META_INTERVALS, META_STRIDE);
-  fill_sigmoid(&meta_data[DESIRE_LEN+5], brake_4ms_sigmoid, NUM_META_INTERVALS, META_STRIDE);
-  fill_sigmoid(&meta_data[DESIRE_LEN+6], brake_5ms_sigmoid, NUM_META_INTERVALS, META_STRIDE);
+  fill_sigmoid(&meta_data[DESIRE_LEN+4], brake_3ms2_sigmoid, NUM_META_INTERVALS, META_STRIDE);
+  fill_sigmoid(&meta_data[DESIRE_LEN+5], brake_4ms2_sigmoid, NUM_META_INTERVALS, META_STRIDE);
+  fill_sigmoid(&meta_data[DESIRE_LEN+6], brake_5ms2_sigmoid, NUM_META_INTERVALS, META_STRIDE);
 
-  memmove(prev_brake_5ms_probs, &prev_brake_5ms_probs[1], 4*sizeof(float));
-  memmove(prev_brake_3ms_probs, &prev_brake_3ms_probs[1], 2*sizeof(float));
-  prev_brake_5ms_probs[4] = brake_5ms_sigmoid[0];
-  prev_brake_3ms_probs[2] = brake_3ms_sigmoid[0];
+  memmove(prev_brake_5ms2_probs, &prev_brake_5ms2_probs[1], 4*sizeof(float));
+  memmove(prev_brake_3ms2_probs, &prev_brake_3ms2_probs[1], 2*sizeof(float));
+  prev_brake_5ms2_probs[4] = brake_5ms2_sigmoid[0];
+  prev_brake_3ms2_probs[2] = brake_3ms2_sigmoid[0];
 
   bool above_fcw_threshold = true;
   for (int i=0; i<5; i++) {
-    float threshold = i < 2 ? FCW_THRESHOLD_5MS_LOW : FCW_THRESHOLD_5MS_HIGH;
-    above_fcw_threshold = above_fcw_threshold && prev_brake_5ms_probs[i] > threshold;
+    float threshold = i < 2 ? FCW_THRESHOLD_5MS2_LOW : FCW_THRESHOLD_5MS2_HIGH;
+    above_fcw_threshold = above_fcw_threshold && prev_brake_5ms2_probs[i] > threshold;
   }
   for (int i=0; i<3; i++) {
-    above_fcw_threshold = above_fcw_threshold && prev_brake_3ms_probs[i] > FCW_THRESHOLD_3MS;
+    above_fcw_threshold = above_fcw_threshold && prev_brake_3ms2_probs[i] > FCW_THRESHOLD_3MS2;
   }
 
-  meta.setDesireState(desire_state_softmax);
+  auto disengage = meta.initDisengagePredictions();
+  disengage.setT({2,4,6,8,10});
+  disengage.setGasDisengageProbs(gas_disengage_sigmoid);
+  disengage.setBrakeDisengageProbs(brake_disengage_sigmoid);
+  disengage.setSteerOverrideProbs(steer_override_sigmoid);
+  disengage.setBrake3MetersPerSecondSquaredProbs(brake_3ms2_sigmoid);
+  disengage.setBrake4MetersPerSecondSquaredProbs(brake_4ms2_sigmoid);
+  disengage.setBrake5MetersPerSecondSquaredProbs(brake_5ms2_sigmoid);
+
   meta.setEngagedProb(sigmoid(meta_data[DESIRE_LEN]));
-  meta.setGasDisengageProbs(gas_disengage_sigmoid);
-  meta.setBrakeDisengageProbs(brake_disengage_sigmoid);
-  meta.setSteerOverrideProbs(steer_override_sigmoid);
-  meta.setBrake3msProbs(brake_3ms_sigmoid);
-  meta.setBrake4msProbs(brake_4ms_sigmoid);
-  meta.setBrake5msProbs(brake_5ms_sigmoid);
   meta.setDesirePrediction(desire_pred_softmax);
-  meta.setForwardCollisionDetected(above_fcw_threshold);
+  meta.setDesireState(desire_state_softmax);
+  meta.setHardBrakePredicted(above_fcw_threshold);
+  meta.setDisengagePredictions(disengage);
 }
 
 void fill_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const float * data,
