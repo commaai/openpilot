@@ -38,6 +38,7 @@ LOCAL_PORT_WHITELIST = set([8022])
 
 LOG_ATTR_NAME = 'user.upload'
 LOG_ATTR_VALUE_MAX_UNIX_TIME = int.to_bytes(2147483647, 4, sys.byteorder)
+RECONNECT_TIMEOUT_S = 70
 
 dispatcher["echo"] = lambda s: s
 recv_queue: Any = queue.Queue()
@@ -129,6 +130,17 @@ def getMessage(service=None, timeout=1000):
     raise TimeoutError
 
   return ret.to_dict()
+
+
+@dispatcher.add_method
+def setNavDestination(latitude=0, longitude=0):
+  destination = {
+    "latitude": latitude,
+    "longitude": longitude,
+  }
+  Params().put("NavDestination", json.dumps(destination))
+
+  return {"success": 1}
 
 
 @dispatcher.add_method
@@ -374,6 +386,7 @@ def ws_proxy_send(ws, local_sock, signal_sock, end_event):
 
 
 def ws_recv(ws, end_event):
+  last_ping = int(sec_since_boot() * 1e9)
   while not end_event.is_set():
     try:
       opcode, data = ws.recv_data(control_frame=True)
@@ -382,9 +395,13 @@ def ws_recv(ws, end_event):
           data = data.decode("utf-8")
         recv_queue.put_nowait(data)
       elif opcode == ABNF.OPCODE_PING:
-        Params().put("LastAthenaPingTime", str(int(sec_since_boot() * 1e9)))
+        last_ping = int(sec_since_boot() * 1e9)
+        Params().put("LastAthenaPingTime", str(last_ping))
     except WebSocketTimeoutException:
-      pass
+      ns_since_last_ping = int(sec_since_boot() * 1e9) - last_ping
+      if ns_since_last_ping > RECONNECT_TIMEOUT_S * 1e9:
+        cloudlog.exception("athenad.wc_recv.timeout")
+        end_event.set()
     except Exception:
       cloudlog.exception("athenad.ws_recv.exception")
       end_event.set()

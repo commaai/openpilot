@@ -29,7 +29,7 @@ private:
     {cereal::DeviceState::NetworkType::WIFI, "WiFi"},
     {cereal::DeviceState::NetworkType::CELL2_G, "2G"},
     {cereal::DeviceState::NetworkType::CELL3_G, "3G"},
-    {cereal::DeviceState::NetworkType::CELL4_G, "4G"},
+    {cereal::DeviceState::NetworkType::CELL4_G, "LTE"},
     {cereal::DeviceState::NetworkType::CELL5_G, "5G"}
   };
   const QMap<cereal::DeviceState::NetworkStrength, QImage> signal_imgs = {

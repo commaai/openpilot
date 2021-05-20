@@ -16,6 +16,9 @@
 #include <string>
 #include <thread>
 #include <map>
+#include <ctime>
+#include <sstream>
+#include <iomanip>
 
 #ifndef sighandler_t
 typedef void (*sighandler_t)(int sig);
@@ -27,6 +30,23 @@ int set_realtime_priority(int level);
 int set_core_affinity(int core);
 
 namespace util {
+
+// Time helpers
+inline struct tm get_time(){
+  time_t rawtime;
+  time(&rawtime);
+
+  struct tm sys_time;
+  gmtime_r(&rawtime, &sys_time);
+
+  return sys_time;
+}
+
+inline bool time_valid(struct tm sys_time){
+  int year = 1900 + sys_time.tm_year;
+  int month = 1 + sys_time.tm_mon;
+  return (year > 2020) || (year == 2020 && month >= 10);
+}
 
 // ***** math helpers *****
 
@@ -106,6 +126,15 @@ inline void sleep_for(const int milliseconds) {
 inline bool file_exists(const std::string& fn) {
   std::ifstream f(fn);
   return f.good();
+}
+
+inline std::string hexdump(const std::string& in) {
+    std::stringstream ss;
+    ss << std::hex << std::setfill('0');
+    for (size_t i = 0; i < in.size(); i++) {
+        ss << std::setw(2) << static_cast<unsigned int>(static_cast<unsigned char>(in[i]));
+    }
+    return ss.str();
 }
 
 }

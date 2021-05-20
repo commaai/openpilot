@@ -13,6 +13,8 @@ const double TRANS_SANITY_CHECK = 200.0;  // m/s
 const double CALIB_RPY_SANITY_CHECK = 0.5; // rad (+- 30 deg)
 const double ALTITUDE_SANITY_CHECK = 10000; // m
 const double MIN_STD_SANITY_CHECK = 1e-5; // m or rad
+const double VALID_TIME_SINCE_RESET = 1.0; // s
+const double VALID_POS_STD = 50.0; // m
 
 static VectorXd floatlist2vector(const capnp::List<float, capnp::Kind::PRIMITIVE>::Reader& floatlist) {
   VectorXd res(floatlist.size());
@@ -160,9 +162,11 @@ void Localizer::build_live_location(cereal::LiveLocationKalman::Builder& fix) {
   //fix.setGpsTimeOfWeek(this->time.tow);
   fix.setUnixTimestampMillis(this->unix_timestamp_millis);
 
-  if (fix_ecef_std.norm() < 50.0 && this->calibrated) {
+  double time_since_reset = this->kf->get_filter_time() - this->last_reset_time;
+  fix.setTimeSinceReset(time_since_reset);
+  if (fix_ecef_std.norm() < VALID_POS_STD && this->calibrated && time_since_reset > VALID_TIME_SINCE_RESET) {
     fix.setStatus(cereal::LiveLocationKalman::Status::VALID);
-  } else if (fix_ecef_std.norm() < 50.0) {
+  } else if (fix_ecef_std.norm() < VALID_POS_STD && time_since_reset > VALID_TIME_SINCE_RESET) {
     fix.setStatus(cereal::LiveLocationKalman::Status::UNCALIBRATED);
   } else {
     fix.setStatus(cereal::LiveLocationKalman::Status::UNINITIALIZED);
@@ -351,6 +355,9 @@ void Localizer::finite_check(double current_time) {
 }
 
 void Localizer::time_check(double current_time) {
+  if (isnan(this->last_reset_time)) {
+    this->last_reset_time = current_time;
+  }
   double filter_time = this->kf->get_filter_time();
   bool big_time_gap = !isnan(filter_time) && (current_time - filter_time > 10);
   if (big_time_gap){
@@ -367,6 +374,7 @@ void Localizer::reset_kalman(double current_time, VectorXd init_orient, VectorXd
   init_x.head(3) = init_pos;
 
   this->kf->init_state(init_x, init_P, current_time);
+  this->last_reset_time = current_time;
 }
 
 void Localizer::handle_msg_bytes(const char *data, const size_t size) {

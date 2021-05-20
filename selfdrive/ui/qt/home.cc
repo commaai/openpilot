@@ -29,6 +29,7 @@ HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
 
   onroad = new OnroadWindow(this);
   slayout->addWidget(onroad);
+
   QObject::connect(this, &HomeWindow::update, onroad, &OnroadWindow::update);
   QObject::connect(this, &HomeWindow::offroadTransitionSignal, onroad, &OnroadWindow::offroadTransition);
 
@@ -59,7 +60,16 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
 
   // Handle sidebar collapsing
   if (onroad->isVisible() && (!sidebar->isVisible() || e->x() > sidebar->width())) {
-    sidebar->setVisible(!sidebar->isVisible());
+    // Hide map first if visible, then hide sidebar
+    if (onroad->map != nullptr && onroad->map->isVisible()){
+      onroad->map->setVisible(false);
+    } else if (!sidebar->isVisible()) {
+      sidebar->setVisible(true);
+    } else {
+      sidebar->setVisible(false);
+
+      if (onroad->map != nullptr) onroad->map->setVisible(true);
+    }
   }
 }
 

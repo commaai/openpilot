@@ -1,6 +1,5 @@
 #include "light_sensor.h"
 
-#include <iostream>
 #include <string>
 
 #include "selfdrive/common/timing.h"
