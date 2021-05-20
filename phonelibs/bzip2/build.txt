@@ -1,0 +1,6 @@
+git clone https://github.com/enthought/bzip2-1.0.6.git
+cd bzip2-1.0.6
+git reset --hard 288acf97a15d558f96c24c89f578b724d6e06b0c
+
+make libbz2.a
+cp libbz2.a ../
