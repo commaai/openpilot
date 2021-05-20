@@ -12,7 +12,6 @@
 #include <atomic>
 #include <bitset>
 #include <cassert>
-#include <ctime>
 #include <thread>
 #include <unordered_map>
 
@@ -41,21 +40,7 @@ std::atomic<bool> safety_setter_thread_running(false);
 std::atomic<bool> ignition(false);
 
 ExitHandler do_exit;
-struct tm get_time(){
-  time_t rawtime;
-  time(&rawtime);
 
-  struct tm sys_time;
-  gmtime_r(&rawtime, &sys_time);
-
-  return sys_time;
-}
-
-bool time_valid(struct tm sys_time){
-  int year = 1900 + sys_time.tm_year;
-  int month = 1 + sys_time.tm_mon;
-  return (year > 2020) || (year == 2020 && month >= 10);
-}
 
 void safety_setter_thread() {
   LOGD("Starting safety setter thread");
@@ -163,10 +148,10 @@ bool usb_connect() {
 
   if (tmp_panda->has_rtc){
     setenv("TZ","UTC",1);
-    struct tm sys_time = get_time();
+    struct tm sys_time = util::get_time();
     struct tm rtc_time = tmp_panda->get_rtc();
 
-    if (!time_valid(sys_time) && time_valid(rtc_time)) {
+    if (!util::time_valid(sys_time) && util::time_valid(rtc_time)) {
       LOGE("System time wrong, setting from RTC. "
            "System: %d-%02d-%02d %02d:%02d:%02d RTC: %d-%02d-%02d %02d:%02d:%02d",
            sys_time.tm_year + 1900, sys_time.tm_mon + 1, sys_time.tm_mday,
@@ -333,9 +318,9 @@ void panda_state_thread(bool spoofing_started) {
     if ((panda->has_rtc) && !ignition && (no_ignition_cnt % 120 == 1)){
       // Write time to RTC if it looks reasonable
       setenv("TZ","UTC",1);
-      struct tm sys_time = get_time();
+      struct tm sys_time = util::get_time();
 
-      if (time_valid(sys_time)){
+      if (util::time_valid(sys_time)){
         struct tm rtc_time = panda->get_rtc();
         double seconds = difftime(mktime(&rtc_time), mktime(&sys_time));
 
@@ -545,6 +530,7 @@ void pigeon_thread() {
     } else if (!ignition && ignition_last) {
       // power off on falling edge of ignition
       LOGD("powering off pigeon\n");
+      pigeon->stop();
       pigeon->set_power(false);
     }
 
