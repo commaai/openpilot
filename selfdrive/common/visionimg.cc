@@ -1,6 +1,10 @@
 #include "selfdrive/common/visionimg.h"
 
 #include <cassert>
+#include <iostream>
+
+#define GL_GLEXT_PROTOTYPES
+#include <GLES2/gl2ext.h>
 
 #ifdef QCOM
 #include <gralloc_priv.h>
@@ -51,13 +55,33 @@ EGLImageTexture::~EGLImageTexture() {
 #else // ifdef QCOM
 
 EGLImageTexture::EGLImageTexture(const VisionBuf *buf) {
+  EGLDisplay display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+  assert(display != EGL_NO_DISPLAY);
+
+  // TODO: can we use EGL_NATIVE_BUFFER_ANDROID instead?
+  EGLint img_attrs[] = {EGL_IMAGE_PRESERVED_KHR, EGL_TRUE,
+												EGL_WIDTH, (EGLint)buf->width,
+												EGL_HEIGHT, (EGLint)buf->height,
+												EGL_NONE};
+  img_khr = eglCreateImageKHR(display, EGL_NO_CONTEXT,
+                              EGL_GL_TEXTURE_2D_KHR, buf->addr, img_attrs);
+  GLenum err;
+  while ((err = glGetError()) != GL_NO_ERROR) {
+    std::cout << "OpenGL error: " << err << std::endl;
+  }
+  std::cout << "egl error: " << eglGetError() << std::endl;
+	assert(img_khr != EGL_NO_IMAGE_KHR);
+
   glGenTextures(1, &frame_tex);
   glBindTexture(GL_TEXTURE_2D, frame_tex);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, buf->width, buf->height, 0, GL_RGB, GL_UNSIGNED_BYTE, buf->addr);
-  glGenerateMipmap(GL_TEXTURE_2D);
+  glEGLImageTargetTexture2DOES(GL_TEXTURE_2D, img_khr);
 }
 
 EGLImageTexture::~EGLImageTexture() {
   glDeleteTextures(1, &frame_tex);
+  EGLDisplay display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+  assert(display != EGL_NO_DISPLAY);
+  eglDestroyImageKHR(display, img_khr);
 }
+
 #endif // ifdef QCOM

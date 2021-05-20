@@ -29,7 +29,7 @@ if arch == "aarch64":
   ]
   _gpu_libs = ['gui', 'adreno_utils']
 elif arch == "larch64":
-  _gpu_libs = ["GLESv2"]
+  _gpu_libs = ["GLESv2", 'EGL']
 else:
   _gpu_libs = ["GL"]
 

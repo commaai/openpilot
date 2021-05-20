@@ -127,8 +127,8 @@ static void draw_frame(UIState *s) {
 
   if (s->last_frame) {
     glBindTexture(GL_TEXTURE_2D, s->texture[s->last_frame->idx]->frame_tex);
-    if (!Hardware::EON()) {
-      // this is handled in ion on QCOM
+    if (Hardware::PC()) {
+      // this is handled in ion on qcom platforms
       glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, s->last_frame->width, s->last_frame->height,
                    0, GL_RGB, GL_UNSIGNED_BYTE, s->last_frame->addr);
     }

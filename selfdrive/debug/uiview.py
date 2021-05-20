@@ -6,7 +6,7 @@ from selfdrive.manager.process_config import managed_processes
 
 if __name__ == "__main__":
   services = ['controlsState', 'deviceState', 'radarState']  # the services needed to be spoofed to start ui offroad
-  procs = ['camerad', 'ui', 'modeld', 'calibrationd']
+  procs = ['camerad', 'modeld', 'calibrationd']
 
   for p in procs:
     managed_processes[p].start()
