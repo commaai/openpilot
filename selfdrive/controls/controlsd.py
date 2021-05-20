@@ -269,6 +269,7 @@ class Controls:
         err_cnt = sum(err in m for m in messages)
         if err_cnt:
           self.events.add(EventName.cameraError)
+          break
 
     # TODO: fix simulator
     if not SIMULATION:

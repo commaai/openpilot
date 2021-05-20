@@ -673,8 +673,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
   },
 
   EventName.cameraErorr: {
-    ET.PERMANENT: NormalPermanentAlert("Camera Error: Reboot Your Device", ""),
-    ET.NO_ENTRY: NoEntryAlert("Camera Error: Reboot Your Device"),
+    ET.PERMANENT: NormalPermanentAlert("CRC Error", ""),
   },
 
   EventName.usbError: {
