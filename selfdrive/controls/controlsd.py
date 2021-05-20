@@ -70,6 +70,9 @@ class Controls:
       can_timeout = None if os.environ.get('NO_CAN_TIMEOUT', False) else 100
       self.can_sock = messaging.sub_sock('can', timeout=can_timeout)
 
+    if TICI:
+      self.log_sock = messaging.sub_sock('androidLog')
+
     # wait for one pandaState and one CAN packet
     print("Waiting for CAN messages...")
     get_one_can(self.can_sock)
@@ -229,8 +232,6 @@ class Controls:
 
     if len(self.sm['radarState'].radarErrors):
       self.events.add(EventName.radarFault)
-    elif not self.sm.all_valid(self.camera_packets):
-      self.events.add(EventName.cameraError)
     elif not self.sm.valid["pandaState"]:
       self.events.add(EventName.usbError)
     elif not self.sm.all_alive_and_valid():
@@ -254,6 +255,20 @@ class Controls:
       self.events.add(EventName.relayMalfunction)
     if self.sm['longitudinalPlan'].fcw:
       self.events.add(EventName.fcw)
+
+    if TICI and self.enable_lte_onroad:
+      logs = messaging.drain_sock(self.log_sock, wait_for_one=False)
+      messages = []
+      for m in logs:
+        try:
+          messages.append(m.androidLog.message)
+        except UnicodeDecodeError:
+          pass
+
+      for err in ["ERROR_CRC", "ERROR_ECC", "ERROR_STREAM_UNDERFLOW", "APPLY FAILED"]:
+        err_cnt = sum(err in m for m in messages)
+        if err_cnt:
+          self.events.add(EventName.cameraError)
 
     # TODO: fix simulator
     if not SIMULATION:
