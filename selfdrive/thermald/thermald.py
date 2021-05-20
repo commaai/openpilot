@@ -350,6 +350,9 @@ def thermald_thread():
     startup_conditions["device_temp_good"] = thermal_status < ThermalStatus.danger
     set_offroad_alert_if_changed("Offroad_TemperatureTooHigh", (not startup_conditions["device_temp_good"]))
 
+    if TICI:
+      set_offroad_alert_if_changed("Offroad_NvmeMissing", (not Path("/data/media").is_mount()))
+
     # Handle offroad/onroad transition
     should_start = all(startup_conditions.values())
     if should_start != should_start_prev or (count == 0):
@@ -398,6 +401,10 @@ def thermald_thread():
     msg.deviceState.chargingError = current_filter.x > 0. and msg.deviceState.batteryPercent < 90  # if current is positive, then battery is being discharged
     msg.deviceState.started = started_ts is not None
     msg.deviceState.startedMonoTime = int(1e9*(started_ts or 0))
+
+    last_ping = params.get("LastAthenaPingTime")
+    if last_ping is not None:
+      msg.deviceState.lastAthenaPingTime = int(last_ping)
 
     msg.deviceState.thermalStatus = thermal_status
     pm.send("deviceState", msg)
