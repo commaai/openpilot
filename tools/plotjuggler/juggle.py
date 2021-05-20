@@ -37,7 +37,20 @@ def juggle_file(fn, dbc=None, layout=None):
     extra_args += f'-l {layout}'
   subprocess.call(f'{pj} --plugin_folders {os.path.join(juggle_dir, "bin")} -d {fn} {extra_args}', shell=True, env=env, cwd=juggle_dir)
 
-def juggle_route(route_name, segment_number, qlog, can, layout):
+def juggle_route(route_name, segment_number, qlog, can, stream, layout):
+  has_route = route_name is not None
+  if route_name is None and stream:
+    print("Select \"Cereal Subscriber\" in plugin list and click Start!")
+    env = os.environ.copy()
+    env["BASEDIR"] = BASEDIR  # TODO: use --can to enable can streaming and parsing
+
+    pj = os.getenv("PLOTJUGGLER_PATH", "plotjuggler")
+    extra_args = ""
+    if layout is not None:
+      extra_args += f'-l {layout}'
+    subprocess.call(f'{pj} --plugin_folders {os.path.join(juggle_dir, "bin")} {extra_args}', shell=True,
+                    env=env, cwd=juggle_dir)
+    return
 
   if route_name.startswith("http://") or route_name.startswith("https://") or os.path.isfile(route_name):
     logs = [route_name]
@@ -88,6 +101,7 @@ def get_arg_parser():
 
   parser.add_argument("--qlog", action="store_true", help="Use qlogs")
   parser.add_argument("--can", action="store_true", help="Parse CAN data")
+  parser.add_argument("--stream", action="store_true", help="Start PlotJuggler without a route to stream data using Cereal")
   parser.add_argument("--layout", nargs='?', help="Run PlotJuggler with a pre-defined layout")
   parser.add_argument("route_name", nargs='?', help="The name of the route that will be plotted.")
   parser.add_argument("segment_number", type=int, nargs='?', help="The index of the segment that will be plotted")
@@ -99,4 +113,4 @@ if __name__ == "__main__":
     arg_parser.print_help()
     sys.exit()
   args = arg_parser.parse_args(sys.argv[1:])
-  juggle_route(args.route_name, args.segment_number, args.qlog, args.can, args.layout)
+  juggle_route(args.route_name, args.segment_number, args.qlog, args.can, args.stream, args.layout)
