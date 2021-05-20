@@ -672,7 +672,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
     ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("Controls Mismatch"),
   },
 
-  EventName.cameraErorr: {
+  EventName.cameraError: {
     ET.PERMANENT: NormalPermanentAlert("CRC Error", ""),
   },
 
