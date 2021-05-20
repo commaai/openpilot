@@ -230,7 +230,6 @@ void fill_meta(cereal::ModelDataV2::MetaData::Builder meta, const float *meta_da
   meta.setDesirePrediction(desire_pred_softmax);
   meta.setDesireState(desire_state_softmax);
   meta.setHardBrakePredicted(above_fcw_threshold);
-  meta.setDisengagePredictions(disengage);
 }
 
 void fill_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const float * data,
