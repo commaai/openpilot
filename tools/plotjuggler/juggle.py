@@ -24,23 +24,32 @@ def load_segment(segment_name):
     print(f"Error parsing {segment_name}: {e}")
     return []
 
-def juggle_file(fn, dbc=None, layout=None):
+def start_juggler(fn=None, dbc=None, layout=None):
   env = os.environ.copy()
   env["BASEDIR"] = BASEDIR
 
   if dbc:
     env["DBC_NAME"] = dbc
 
-  pj = os.getenv("PLOTJUGGLER_PATH", "plotjuggler")
-  extra_args = ""
+  extra_args = []
+  if fn is None:  # streaming
+    print("Select \"Cereal Subscriber\" in plugin list and click Start!")
+  else:
+    extra_args.append(f'-d {fn}')
+
   if layout is not None:
-    extra_args += f'-l {layout}'
-  subprocess.call(f'{pj} --plugin_folders {os.path.join(juggle_dir, "bin")} -d {fn} {extra_args}', shell=True, env=env, cwd=juggle_dir)
+    extra_args.append(f'-l {layout}')
+
+  extra_args = " ".join(extra_args)
+  pj = os.getenv("PLOTJUGGLER_PATH", "plotjuggler")
+  print(f'{pj} --plugin_folders {os.path.join(juggle_dir, "bin")} {extra_args}')
+  subprocess.call(f'{pj} --plugin_folders {os.path.join(juggle_dir, "bin")} {extra_args}', shell=True, env=env, cwd=juggle_dir)
 
 def juggle_route(route_name, segment_number, qlog, can, stream, layout):
   has_route = route_name is not None
   if route_name is None and stream:
     print("Select \"Cereal Subscriber\" in plugin list and click Start!")
+    start_juggler()
     env = os.environ.copy()
     env["BASEDIR"] = BASEDIR  # TODO: use --can to enable can streaming and parsing
 
@@ -93,7 +102,7 @@ def juggle_route(route_name, segment_number, qlog, can, stream, layout):
   save_log(tempfile.name, all_data, compress=False)
   del all_data
 
-  juggle_file(tempfile.name, dbc, layout)
+  start_juggler(tempfile.name, dbc, layout)
 
 def get_arg_parser():
   parser = argparse.ArgumentParser(description="PlotJuggler plugin for reading rlogs",
