@@ -402,7 +402,6 @@ def ws_recv(ws, end_event):
       if ns_since_last_ping > RECONNECT_TIMEOUT_S * 1e9:
         cloudlog.exception("athenad.wc_recv.timeout")
         end_event.set()
-
     except Exception:
       cloudlog.exception("athenad.ws_recv.exception")
       end_event.set()
