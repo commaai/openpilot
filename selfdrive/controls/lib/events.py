@@ -169,10 +169,10 @@ class EngagementAlert(Alert):
                      audible_alert, .2, 0., 0.),
 
 class NormalPermanentAlert(Alert):
-  def __init__(self, alert_text_1, alert_text_2):
+  def __init__(self, alert_text_1: str, alert_text_2: str, duration_text: float = 0.2):
     super().__init__(alert_text_1, alert_text_2,
                      AlertStatus.normal, AlertSize.mid if len(alert_text_2) else AlertSize.small,
-                     Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
+                     Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., duration_text),
 
 # ********** alert callback functions **********
 
@@ -672,8 +672,19 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
     ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("Controls Mismatch"),
   },
 
-  EventName.cameraError: {
-    ET.PERMANENT: NormalPermanentAlert("CRC Error", ""),
+  EventName.roadCameraError: {
+    ET.PERMANENT: NormalPermanentAlert("Road Camera Error", "",
+                                       duration_text=10.),
+  },
+
+  EventName.driverCameraError: {
+    ET.PERMANENT: NormalPermanentAlert("Driver Camera Error", "",
+                                       duration_text=10.),
+  },
+
+  EventName.wideRoadCameraError: {
+    ET.PERMANENT: NormalPermanentAlert("Wide Road Camera Error", "",
+                                       duration_text=10.),
   },
 
   EventName.usbError: {
