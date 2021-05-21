@@ -71,9 +71,13 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
   if (Hardware::TICI()) {
     toggles.append(new ParamControl("EnableWideCamera",
                                     "Enable use of Wide Angle Camera",
-                                    "Use wide angle camera for driving and ui. Only takes effect after reboot.",
+                                    "Use wide angle camera for driving and ui.",
                                     "../assets/offroad/icon_openpilot.png",
                                     this));
+    QObject::connect(toggles.back(), &ToggleControl::toggleFlipped, [=](bool state) {
+      Params().remove("CalibrationParams");
+    });
+
     toggles.append(new ParamControl("EnableLteOnroad",
                                     "Enable LTE while onroad",
                                     "",
