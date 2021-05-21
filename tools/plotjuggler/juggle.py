@@ -33,10 +33,7 @@ def start_juggler(fn=None, dbc=None, layout=None):
     env["DBC_NAME"] = dbc
 
   extra_args = []
-  if fn is None:  # streaming, just start PJ
-    print("Select \"Cereal Subscriber\" in plugin list and click Start!")
-    print("Make sure to set environment variable `ZMQ` if needed")
-  else:
+  if fn is not None:  # if None, we're streaming
     extra_args.append(f'-d {fn}')
 
   if layout is not None:
@@ -46,9 +43,9 @@ def start_juggler(fn=None, dbc=None, layout=None):
   subprocess.call(f'{pj} --plugin_folders {os.path.join(juggle_dir, "bin")} {extra_args}', shell=True, env=env, cwd=juggle_dir)
 
 def juggle_route(route_name, segment_number, qlog, can, stream, layout):
-  has_route = route_name is not None
   if route_name is None and stream:
     print("Select \"Cereal Subscriber\" in plugin list and click Start!")
+    print("Make sure to set environment variable `ZMQ` if needed")
     start_juggler()
     return
 
