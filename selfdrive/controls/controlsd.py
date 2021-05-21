@@ -273,7 +273,7 @@ class Controls:
           try:
             csid = m.split("CSID:")[-1].split(" ")[0]
             evt = {"0": EventName.wideRoadCameraError, "1": EventName.roadCameraError,
-                   "2": EventName.driverCameraError}.get(csid)
+                   "2": EventName.driverCameraError}.get(csid, None)
             if evt is not None:
               self.events.add(evt)
           except Exception:
