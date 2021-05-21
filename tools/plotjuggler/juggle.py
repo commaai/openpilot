@@ -27,7 +27,7 @@ def load_segment(segment_name):
 def start_juggler(fn=None, dbc=None, layout=None):
   env = os.environ.copy()
   env["BASEDIR"] = BASEDIR
-  pj = os.getenv("PLOTJUGGLER_PATH", "plotjuggler")
+  pj = os.getenv("PLOTJUGGLER_PATH", os.path.join(juggle_dir, "bin/plotjuggler"))
 
   if dbc:
     env["DBC_NAME"] = dbc
