@@ -41,6 +41,7 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   layout->addWidget(split_wrapper);
 
   alerts = new OnroadAlerts(this);
+  alerts->setAttribute(Qt::WA_TransparentForMouseEvents, true);
   QObject::connect(this, &OnroadWindow::update, alerts, &OnroadAlerts::updateState);
   QObject::connect(this, &OnroadWindow::offroadTransition, alerts, &OnroadAlerts::offroadTransition);
   layout->addWidget(alerts);
