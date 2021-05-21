@@ -47,7 +47,7 @@ For this to work, you'll need a few things:
 
 Now start PlotJuggler using the above `juggle.py` command, and find the `Cereal Subscriber` plugin in the dropdown under Streaming. Click Start and enter the IP address of the comma two. You should now be seeing all the messages for each [service in openpilot](https://github.com/commaai/cereal/blob/master/services.py) received live from your car!
 
-## Demo:
+## Demo
 
 For a quick demo, go through the installation step and run this command:
 
