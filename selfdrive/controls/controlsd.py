@@ -72,7 +72,6 @@ class Controls:
 
     if TICI:
       self.log_sock = messaging.sub_sock('androidLog')
-      self.crc_seen = False
 
     # wait for one pandaState and one CAN packet
     print("Waiting for CAN messages...")
@@ -258,24 +257,24 @@ class Controls:
       self.events.add(EventName.fcw)
 
     if TICI and self.enable_lte_onroad:
-      if not self.crc_seen:
-        logs = messaging.drain_sock(self.log_sock, wait_for_one=False)
-        messages = []
-        for m in logs:
-          try:
-            messages.append(m.androidLog.message)
-          except UnicodeDecodeError:
-            pass
+      logs = messaging.drain_sock(self.log_sock, wait_for_one=False)
+      messages = []
+      for m in logs:
+        try:
+          messages.append(m.androidLog.message)
+        except UnicodeDecodeError:
+          pass
 
-        for err in ["ERROR_CRC", "ERROR_ECC", "ERROR_STREAM_UNDERFLOW", "APPLY FAILED"]:
-          err_cnt = sum(err in m for m in messages)
-          if err_cnt:
-            self.crc_seen = True
-            self.events.add(EventName.cameraError)
-            break
+      for err in ["ERROR_CRC", "ERROR_ECC", "ERROR_STREAM_UNDERFLOW", "APPLY FAILED"]:
+        for m in messages:
+          if err not in m:
+            continue
 
-      if self.crc_seen:
-        self.events.add(EventName.cameraError)
+          csid = m.split("CSID:")[-1].split(" ")[0]
+          evt = {"0": EventName.wideRoadCameraError, "1": EventName.roadCameraError,
+                 "2": EventName.driverCameraError}.get(csid, None)
+          if evt is not None:
+            self.events.add(evt)
 
     # TODO: fix simulator
     if not SIMULATION:
