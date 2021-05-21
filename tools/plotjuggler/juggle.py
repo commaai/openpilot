@@ -45,7 +45,7 @@ def start_juggler(fn=None, dbc=None, layout=None):
 def juggle_route(route_name, segment_number, qlog, can, layout):
   if route_name is None:
     print("Select \"Cereal Subscriber\" in plugin list and click Start!")
-    print("Make sure to set environment variable `ZMQ` if needed\n")
+    print("Make sure to set the `ZMQ` environment variable if needed\n")
     start_juggler()
     return
 
