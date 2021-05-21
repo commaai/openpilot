@@ -33,7 +33,7 @@ def start_juggler(fn=None, dbc=None, layout=None):
     env["DBC_NAME"] = dbc
 
   extra_args = []
-  if fn is not None:  # if None, we're streaming
+  if fn is not None:
     extra_args.append(f'-d {fn}')
 
   if layout is not None:
