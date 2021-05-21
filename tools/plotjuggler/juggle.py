@@ -42,13 +42,7 @@ def start_juggler(fn=None, dbc=None, layout=None):
   extra_args = " ".join(extra_args)
   subprocess.call(f'{pj} --plugin_folders {os.path.join(juggle_dir, "bin")} {extra_args}', shell=True, env=env, cwd=juggle_dir)
 
-def juggle_route(route_name, segment_number, qlog, can, stream, layout):
-  if route_name is None and stream:
-    print("Select \"Cereal Subscriber\" in plugin list and click Start!")
-    print("Make sure to set the `ZMQ` environment variable if needed\n")
-    start_juggler()
-    return
-
+def juggle_route(route_name, segment_number, qlog, can, layout):
   if route_name.startswith("http://") or route_name.startswith("https://") or os.path.isfile(route_name):
     logs = [route_name]
   else:
@@ -110,4 +104,10 @@ if __name__ == "__main__":
     arg_parser.print_help()
     sys.exit()
   args = arg_parser.parse_args(sys.argv[1:])
-  juggle_route(args.route_name, args.segment_number, args.qlog, args.can, args.stream, args.layout)
+
+  if args.stream:
+    print("Select \"Cereal Subscriber\" in plugin list and click Start!")
+    print("Make sure to set the `ZMQ` environment variable if needed\n")
+    start_juggler()
+  else:
+    juggle_route(args.route_name, args.segment_number, args.qlog, args.can, args.layout)
