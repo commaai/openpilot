@@ -4,7 +4,7 @@ We've extended [PlotJuggler](https://github.com/facontidavide/PlotJuggler) to pl
 
 ## Installation
 
-Once you've cloned openpilot, download PlotJuggler and install our plugins with this command:
+Once you've cloned and are in openpilot, download PlotJuggler and install our plugins with this command:
 
 `cd tools/plotjuggler && ./install.sh`
 
