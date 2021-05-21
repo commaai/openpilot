@@ -270,14 +270,11 @@ class Controls:
           if err not in m:
             continue
 
-          try:
-            csid = m.split("CSID:")[-1].split(" ")[0]
-            evt = {"0": EventName.wideRoadCameraError, "1": EventName.roadCameraError,
-                   "2": EventName.driverCameraError}.get(csid, None)
-            if evt is not None:
-              self.events.add(evt)
-          except Exception:
-            continue
+          csid = m.split("CSID:")[-1].split(" ")[0]
+          evt = {"0": EventName.wideRoadCameraError, "1": EventName.roadCameraError,
+                 "2": EventName.driverCameraError}.get(csid, None)
+          if evt is not None:
+            self.events.add(evt)
 
     # TODO: fix simulator
     if not SIMULATION:
