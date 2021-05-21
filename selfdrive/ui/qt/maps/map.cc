@@ -286,7 +286,7 @@ void MapWindow::mouseMoveEvent(QMouseEvent *ev){
 
   if (!delta.isNull()) {
     pan_counter = PAN_TIMEOUT;
-    m_map->moveBy(delta);
+    m_map->moveBy(delta / MAP_SCALE);
   }
 
   m_lastPos = ev->localPos();
