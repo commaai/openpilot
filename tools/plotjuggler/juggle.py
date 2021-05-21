@@ -41,6 +41,7 @@ def start_juggler(fn=None, dbc=None, layout=None):
     extra_args.append(f'-l {layout}')
 
   extra_args = " ".join(extra_args)
+
   pj = os.getenv("PLOTJUGGLER_PATH", "plotjuggler")
   print(f'{pj} --plugin_folders {os.path.join(juggle_dir, "bin")} {extra_args}')
   subprocess.call(f'{pj} --plugin_folders {os.path.join(juggle_dir, "bin")} {extra_args}', shell=True, env=env, cwd=juggle_dir)
@@ -50,15 +51,6 @@ def juggle_route(route_name, segment_number, qlog, can, stream, layout):
   if route_name is None and stream:
     print("Select \"Cereal Subscriber\" in plugin list and click Start!")
     start_juggler()
-    env = os.environ.copy()
-    env["BASEDIR"] = BASEDIR  # TODO: use --can to enable can streaming and parsing
-
-    pj = os.getenv("PLOTJUGGLER_PATH", "plotjuggler")
-    extra_args = ""
-    if layout is not None:
-      extra_args += f'-l {layout}'
-    subprocess.call(f'{pj} --plugin_folders {os.path.join(juggle_dir, "bin")} {extra_args}', shell=True,
-                    env=env, cwd=juggle_dir)
     return
 
   if route_name.startswith("http://") or route_name.startswith("https://") or os.path.isfile(route_name):
