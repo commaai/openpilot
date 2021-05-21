@@ -3,10 +3,8 @@
 mkdir -p bin
 cd bin
 
-wget https://github.com/commaai/PlotJuggler/releases/download/latest/libDataLoadRlog.so.tar.gz
-tar -xf libDataLoadRlog.so.tar.gz
-rm libDataLoadRlog.so.tar.gz
-
-wget https://github.com/commaai/PlotJuggler/releases/download/latest/plotjuggler.tar.gz
-tar -xf plotjuggler.tar.gz
-rm plotjuggler.tar.gz
+for lib_name in libDataLoadRlog.so libDataStreamCereal.so plotjuggler; do
+  wget https://github.com/commaai/PlotJuggler/releases/download/latest/${lib_name}.tar.gz
+  tar -xf ${lib_name}.tar.gz
+  rm ${lib_name}.tar.gz
+done
