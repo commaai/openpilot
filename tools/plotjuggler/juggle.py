@@ -27,13 +27,15 @@ def load_segment(segment_name):
 def start_juggler(fn=None, dbc=None, layout=None):
   env = os.environ.copy()
   env["BASEDIR"] = BASEDIR
+  pj = os.getenv("PLOTJUGGLER_PATH", "plotjuggler")
 
   if dbc:
     env["DBC_NAME"] = dbc
 
   extra_args = []
-  if fn is None:  # streaming
+  if fn is None:  # streaming, just start PJ
     print("Select \"Cereal Subscriber\" in plugin list and click Start!")
+    print("Make sure to set environment variable `ZMQ` if needed")
   else:
     extra_args.append(f'-d {fn}')
 
@@ -41,9 +43,6 @@ def start_juggler(fn=None, dbc=None, layout=None):
     extra_args.append(f'-l {layout}')
 
   extra_args = " ".join(extra_args)
-
-  pj = os.getenv("PLOTJUGGLER_PATH", "plotjuggler")
-  print(f'{pj} --plugin_folders {os.path.join(juggle_dir, "bin")} {extra_args}')
   subprocess.call(f'{pj} --plugin_folders {os.path.join(juggle_dir, "bin")} {extra_args}', shell=True, env=env, cwd=juggle_dir)
 
 def juggle_route(route_name, segment_number, qlog, can, stream, layout):
