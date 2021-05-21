@@ -83,7 +83,6 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                     "",
                                     "../assets/offroad/icon_network.png",
                                     this));
-
   }
 
   bool record_lock = Params().getBool("RecordFrontLock");
