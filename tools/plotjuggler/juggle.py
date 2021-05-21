@@ -106,8 +106,6 @@ if __name__ == "__main__":
   args = arg_parser.parse_args(sys.argv[1:])
 
   if args.stream:
-    print("Select \"Cereal Subscriber\" in plugin list and click Start!")
-    print("Make sure to set the `ZMQ` environment variable if needed\n")
     start_juggler()
   else:
     juggle_route(args.route_name, args.segment_number, args.qlog, args.can, args.layout)
