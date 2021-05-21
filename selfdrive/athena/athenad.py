@@ -443,7 +443,8 @@ def main():
     try:
       ws = create_connection(ws_uri,
                              cookie="jwt=" + api.get_token(),
-                             enable_multithread=True)
+                             enable_multithread=True,
+                             timeout=1.0)
       cloudlog.event("athenad.main.connected_ws", ws_uri=ws_uri)
       ws.settimeout(1)
       conn_retries = 0
