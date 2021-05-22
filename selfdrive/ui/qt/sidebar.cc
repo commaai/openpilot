@@ -37,12 +37,13 @@ Sidebar::Sidebar(QWidget *parent) : QFrame(parent) {
   home_img = QImage("../assets/images/button_home.png").scaled(180, 180, Qt::KeepAspectRatio, Qt::SmoothTransformation);
   settings_img = QImage("../assets/images/button_settings.png").scaled(settings_btn.width(), settings_btn.height(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);;
 
-  setFixedWidth(300);
-  setMinimumHeight(vwp_h);
-  setStyleSheet("background-color: rgb(57, 57, 57);");
   connect(this, &Sidebar::valueChanged, [=] {
     QFrame::update();
   });
+
+  setFixedWidth(300);
+  setMinimumHeight(vwp_h);
+  setStyleSheet("background-color: rgb(57, 57, 57);");
 }
 
 void Sidebar::mousePressEvent(QMouseEvent *event) {
@@ -53,23 +54,20 @@ void Sidebar::mousePressEvent(QMouseEvent *event) {
 
 void Sidebar::update(const UIState &s) {
   auto &sm = *(s.sm);
-  if (sm.frame % (6*UI_FREQ) == 0) {
-    QString connectStr = "OFFLINE";
-    QColor connectStatus = warning_color;
-    auto last_ping = params.get<float>("LastAthenaPingTime");
-    if (last_ping) {
-      bool online = nanos_since_boot() - *last_ping < 80e9;
-      connectStr = online ? "ONLINE" : "ERROR";
-      connectStatus = online ? good_color : danger_color;
-    }
-    setProperty("connectStr", connectStr);
-    setProperty("connectStatus", connectStatus);
-  }
-  
 
   auto deviceState = sm["deviceState"].getDeviceState();
   setProperty("netType", (int)deviceState.getNetworkType());
   setProperty("netStrength", (int)deviceState.getNetworkStrength());
+
+  auto last_ping = deviceState.getLastAthenaPingTime();
+  if (last_ping == 0) {
+    setProperty("connectStr", "OFFLINE");
+    setProperty("connectStatus", warning_color);
+  } else {
+    bool online = nanos_since_boot() - last_ping < 80e9;
+    setProperty("connectStr",  online ? "ONLINE" : "ERROR");
+    setProperty("connectStatus", online ? good_color : danger_color);
+  }
 
   QColor tempStatus = danger_color;
   auto ts = deviceState.getThermalStatus();
