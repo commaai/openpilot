@@ -50,11 +50,10 @@ signals:
   void displayPowerChanged(bool on);
   void update(const UIState &s);
   void offroadTransitionSignal(bool offroad);
-  void previewDriverCam();
 
 public slots:
   void offroadTransition(bool offroad);
-  void driverView();
+  void showDriverView(bool show);
 
 protected:
   void mousePressEvent(QMouseEvent* e) override;
@@ -63,6 +62,6 @@ private:
   Sidebar *sidebar;
   OffroadHome *home;
   OnroadWindow *onroad;
-  DriverViewWindow *driver_view = nullptr;
+  DriverViewWindow *driver_view;
   QStackedLayout *slayout;
 };

@@ -5,7 +5,8 @@
 #include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/qt/util.h"
 
-const int FACE_RADIUS = 85;
+const int FACE_IMG_SIZE = 128;
+
 // class DriverViewWindow
 
 DriverViewWindow::DriverViewWindow(QWidget* parent) : QWidget(parent) {
@@ -13,47 +14,39 @@ DriverViewWindow::DriverViewWindow(QWidget* parent) : QWidget(parent) {
   layout = new QStackedLayout(this);
   layout->setStackingMode(QStackedLayout::StackAll);
 
-  cameraView = new CameraViewWidget(VISION_STREAM_RGB_BACK, this);
+  cameraView = new CameraViewWidget(VISION_STREAM_RGB_FRONT, this);
   layout->addWidget(cameraView);
 
   scene = new DriverViewScene(this);
-  connect(this, &DriverViewWindow::update, scene, &DriverViewScene::update);
-  connect(cameraView, &CameraViewWidget::frameUpdated, [=] {
-    if (!scene->frame_updated) {
-      scene->frame_updated = true;
-      scene->repaint();
-    }
-  });
+  connect(cameraView, &CameraViewWidget::frameUpdated, scene, &DriverViewScene::frameUpdated);
   layout->addWidget(scene);
   layout->setCurrentWidget(scene);
 }
 
-void DriverViewWindow::showEvent(QShowEvent* event) {
-  scene->frame_updated = false;
-  scene->is_rhd = params.getBool("IsRHD");
+void DriverViewWindow::mousePressEvent(QMouseEvent* e) {
+  emit done();
+}
+
+// class DirverViewScene
+
+DriverViewScene::DriverViewScene(QWidget* parent) : sm({"driverState"}), QWidget(parent) {
+  face_img = QImage("../assets/img_driver_face.png").scaled(FACE_IMG_SIZE, FACE_IMG_SIZE, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+}
+
+void DriverViewScene::showEvent(QShowEvent* event) {
+  frame_updated = false;
+  is_rhd = params.getBool("IsRHD");
   params.putBool("IsDriverViewEnabled", true);
 }
 
-void DriverViewWindow::hideEvent(QHideEvent* event) {
+void DriverViewScene::hideEvent(QHideEvent* event) {
   params.putBool("IsDriverViewEnabled", false);
 }
 
-// class DirverViewElem
-
-DriverViewScene::DriverViewScene(QWidget* parent) : QWidget(parent) {
-  face_img = QImage("../assets/img_driver_face").scaled(FACE_RADIUS, FACE_RADIUS, Qt::KeepAspectRatio, Qt::SmoothTransformation);
-}
-
-void DriverViewScene::update(const UIState& s) {
-  auto& sm = *(s.sm);
-  if (sm.updated("driverState")) {
-    cereal::DriverState::Reader driver_state = sm["driverState"].getDriverState();
-    face_detected = driver_state.getFaceProb() > 0.4;
-    auto fxy_list = driver_state.getFacePosition();
-    face_x = fxy_list[0];
-    face_y = fxy_list[1];
-    QWidget::update();
-  }
+void DriverViewScene::frameUpdated() {
+  frame_updated = true;
+  sm.update(0);
+  update();
 }
 
 void DriverViewScene::paintEvent(QPaintEvent* event) {
@@ -85,7 +78,12 @@ void DriverViewScene::paintEvent(QPaintEvent* event) {
   p.drawRect(blackout_x_r, rect.top(), blackout_w_r, rect.height());
   p.setBrush(Qt::NoBrush);
 
+  cereal::DriverState::Reader driver_state = sm["driverState"].getDriverState();
+  bool face_detected = driver_state.getFaceProb() > 0.4;
   if (face_detected) {
+    auto fxy_list = driver_state.getFacePosition();
+    float face_x = fxy_list[0];
+    float face_y = fxy_list[1];
     int fbox_x = valid_rect.center().x() + (is_rhd ? face_x : -face_x) * valid_rect.width();
     int fbox_y = valid_rect.center().y() + face_y * valid_rect.height();
     float alpha = 0.2;
@@ -102,8 +100,8 @@ void DriverViewScene::paintEvent(QPaintEvent* event) {
     p.drawRoundedRect(fbox_x - box_size / 2, fbox_y - box_size / 2, box_size, box_size, 35.0, 35.0);
     p.setPen(Qt::NoPen);
   }
-  const int img_x = is_rhd ? rect.right() - FACE_RADIUS * 2 - bdr_s * 2 : rect.left() + bdr_s * 2;
-  const int img_y = rect.bottom() - FACE_RADIUS * 2 - bdr_s * 2.5;
+  const int img_x = is_rhd ? rect.right() - FACE_IMG_SIZE - bdr_s : rect.left() + bdr_s;
+  const int img_y = rect.bottom() - FACE_IMG_SIZE - bdr_s;
   p.setOpacity(face_detected ? 1.0 : 0.15);
   p.drawImage(img_x, img_y, face_img);
 }

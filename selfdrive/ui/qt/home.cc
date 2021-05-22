@@ -37,6 +37,12 @@ HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
   slayout->addWidget(home);
   QObject::connect(this, &HomeWindow::openSettings, home, &OffroadHome::refresh);
 
+  driver_view = new DriverViewWindow(this);
+  connect(driver_view, &DriverViewWindow::done, [=] {
+    showDriverView(false);
+  });
+  slayout->addWidget(driver_view);
+
   setLayout(layout);
 }
 
@@ -50,26 +56,17 @@ void HomeWindow::offroadTransition(bool offroad) {
   emit offroadTransitionSignal(offroad);
 }
 
-void HomeWindow::driverView() {
-  if (!driver_view) {
-    driver_view = new DriverViewWindow(this);
-    slayout->addWidget(driver_view);
+void HomeWindow::showDriverView(bool show) {
+  if (show) {
+    emit closeSettings();
     slayout->setCurrentWidget(driver_view);
-    sidebar->setVisible(false);
-    QObject::connect(this, &HomeWindow::update, driver_view, &DriverViewWindow::update);
-    emit previewDriverCam();
+  } else {
+    slayout->setCurrentWidget(home);
   }
+  sidebar->setVisible(!show);
 }
 
 void HomeWindow::mousePressEvent(QMouseEvent* e) {
-  if (driver_view) {
-    slayout->setCurrentWidget(home);
-    driver_view->deleteLater();
-    driver_view = nullptr;
-    sidebar->setVisible(true);
-    return;
-  }
-
   // Handle sidebar collapsing
   if (onroad->isVisible() && (!sidebar->isVisible() || e->x() > sidebar->width())) {
     // Hide map first if visible, then hide sidebar

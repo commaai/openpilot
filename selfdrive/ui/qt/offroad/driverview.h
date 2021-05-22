@@ -7,41 +7,41 @@
 #include "selfdrive/common/util.h"
 #include "selfdrive/ui/qt/widgets/cameraview.h"
 
-class DriverViewWindow;
 class DriverViewScene : public QWidget {
   Q_OBJECT
 
 public:
-  DriverViewScene(QWidget *parent);
+  explicit DriverViewScene(QWidget *parent);
 
 public slots:
-  void update(const UIState &s);
+  void frameUpdated();
 
 protected:
-  void paintEvent(QPaintEvent *event);
-  bool face_detected = false;
+  void showEvent(QShowEvent *event) override;
+  void hideEvent(QHideEvent *event) override;
+  void paintEvent(QPaintEvent *event) override;
+
+private:
+  Params params;
+  SubMaster sm;
   bool frame_updated = false;
   bool is_rhd = false;
-  float face_x = 0, face_y = 0;
   QImage face_img;
-  friend class DriverViewWindow;
 };
 
 class DriverViewWindow : public QWidget {
   Q_OBJECT
 
 public:
-  DriverViewWindow(QWidget *parent);
+  explicit DriverViewWindow(QWidget *parent);
 
 signals:
-  void update(const UIState &s);
+  void done();
 
 protected:
-  void showEvent(QShowEvent *event);
-  void hideEvent(QHideEvent *event);
-
+  void mousePressEvent(QMouseEvent* e) override;
+  
 private:
-  Params params;
   CameraViewWidget *cameraView;
   DriverViewScene *scene;
   QStackedLayout *layout;

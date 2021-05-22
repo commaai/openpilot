@@ -10,7 +10,6 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   main_layout->addWidget(homeWindow);
   QObject::connect(homeWindow, &HomeWindow::openSettings, this, &MainWindow::openSettings);
   QObject::connect(homeWindow, &HomeWindow::closeSettings, this, &MainWindow::closeSettings);
-  QObject::connect(homeWindow, &HomeWindow::previewDriverCam, this, &MainWindow::closeSettings);
   QObject::connect(&qs, &QUIState::uiUpdate, homeWindow, &HomeWindow::update);
   QObject::connect(&qs, &QUIState::offroadTransition, homeWindow, &HomeWindow::offroadTransition);
   QObject::connect(&qs, &QUIState::offroadTransition, homeWindow, &HomeWindow::offroadTransitionSignal);
@@ -21,7 +20,9 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   QObject::connect(settingsWindow, &SettingsWindow::closeSettings, this, &MainWindow::closeSettings);
   QObject::connect(&qs, &QUIState::offroadTransition, settingsWindow, &SettingsWindow::offroadTransition);
   QObject::connect(settingsWindow, &SettingsWindow::reviewTrainingGuide, this, &MainWindow::reviewTrainingGuide);
-  QObject::connect(settingsWindow, &SettingsWindow::driverView, homeWindow, &HomeWindow::driverView);
+  QObject::connect(settingsWindow, &SettingsWindow::showDriverView, [=] {
+    homeWindow->showDriverView(true);
+  });
 
   onboardingWindow = new OnboardingWindow(this);
   onboardingDone = onboardingWindow->isOnboardingDone();

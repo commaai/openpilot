@@ -18,7 +18,6 @@ public:
   using QOpenGLWidget::QOpenGLWidget;
   explicit CameraViewWidget(VisionStreamType stream_type, QWidget* parent = nullptr);
   ~CameraViewWidget();
-  bool frameReceived() { return vipc_client && vipc_client->connected && last_frame != nullptr; }
 
 signals:
  void frameUpdated();
@@ -26,12 +25,14 @@ signals:
 protected:
   void paintGL() override;
   void initializeGL() override;
+  void showEvent(QShowEvent *event) override;
+  void hideEvent(QHideEvent *event) override;
 
 protected slots:
   void updateFrame();
 
 private:
-  VisionBuf *last_frame = nullptr;
+  VisionBuf *latest_frame = nullptr;
   GLuint frame_vao, frame_vbo, frame_ibo;
   mat4 frame_mat;
   std::unique_ptr<VisionIpcClient> vipc_client;
