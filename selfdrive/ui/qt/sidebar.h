@@ -46,6 +46,17 @@ private:
   const QColor danger_color = QColor(201, 34, 49);
 
   Params params;
+
+  // properties
+
+  Q_PROPERTY(QString connectStr MEMBER connect_str NOTIFY valueChanged);
+  Q_PROPERTY(QColor connectStatus MEMBER connect_status NOTIFY valueChanged);
+  Q_PROPERTY(QString pandaStr MEMBER panda_str NOTIFY valueChanged);
+  Q_PROPERTY(QColor pandaStatus MEMBER panda_status NOTIFY valueChanged);
+  Q_PROPERTY(int tempVal MEMBER temp_val NOTIFY valueChanged);
+  Q_PROPERTY(QColor tempStatus MEMBER temp_status NOTIFY valueChanged);
+  Q_PROPERTY(cereal::DeviceState::NetworkType netType MEMBER net_type NOTIFY valueChanged);
+  Q_PROPERTY(cereal::DeviceState::NetworkStrength netStrength MEMBER net_strength NOTIFY valueChanged);
   QString connect_str = "OFFLINE";
   QColor connect_status = warning_color;
   QString panda_str = "NO\nPANDA";
@@ -53,5 +64,8 @@ private:
   int temp_val = 0;
   QColor temp_status = warning_color;
   cereal::DeviceState::NetworkType net_type;
-  cereal::DeviceState::NetworkStrength strength;
+  cereal::DeviceState::NetworkStrength net_strength;
+
+signals:
+  void valueChanged();
 };
