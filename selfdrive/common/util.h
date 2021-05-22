@@ -2,7 +2,6 @@
 
 #include <fcntl.h>
 #include <unistd.h>
-#include <dirent.h>
 
 #include <algorithm>
 #include <chrono>
@@ -11,12 +10,6 @@
 #include <thread>
 #include <map>
 #include <ctime>
-#include <sstream>
-#include <iomanip>
-
-#ifndef sighandler_t
-typedef void (*sighandler_t)(int sig);
-#endif
 
 void set_thread_name(const char* name);
 
@@ -24,6 +17,10 @@ int set_realtime_priority(int level);
 int set_core_affinity(int core);
 
 namespace util {
+
+// Time helpers
+struct tm get_time();
+bool time_valid(struct tm sys_time);
 
 // ***** math helpers *****
 
@@ -38,7 +35,7 @@ T map_val(T x, T a1, T a2, T b1, T b2) {
 
 // ***** string helpers *****
 
-inline bool starts_with(const std::string &s, const std::string &prefix) {
+inline bool starts_with(const std::string& s, const std::string& prefix) {
   return s.compare(0, prefix.size(), prefix) == 0;
 }
 
@@ -51,13 +48,14 @@ std::string string_format(const std::string& format, Args... args) {
 }
 
 std::string getenv_default(const char* env_var, const char* suffix, const char* default_val);
-std::string tohex(const uint8_t *buf, size_t buf_size);
-std::string base_name(std::string const &path);
-std::string dir_name(std::string const &path);
+std::string tohex(const uint8_t* buf, size_t buf_size);
+std::string hexdump(const std::string& in);
+std::string base_name(std::string const& path);
+std::string dir_name(std::string const& path);
 
 // **** file fhelpers *****
 std::string read_file(const std::string& fn);
-int read_files_in_dir(std::string path, std::map<std::string, std::string> *contents);
+int read_files_in_dir(std::string path, std::map<std::string, std::string>* contents);
 int write_file(const char* path, const void* data, size_t size, int flags = O_WRONLY, mode_t mode = 0777);
 std::string readlink(const std::string& path);
 bool file_exists(const std::string& fn);
@@ -66,16 +64,7 @@ inline void sleep_for(const int milliseconds) {
   std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
 }
 
-inline std::string hexdump(const std::string& in) {
-    std::stringstream ss;
-    ss << std::hex << std::setfill('0');
-    for (size_t i = 0; i < in.size(); i++) {
-        ss << std::setw(2) << static_cast<unsigned int>(static_cast<unsigned char>(in[i]));
-    }
-    return ss.str();
-}
-
-}
+}  // namespace util
 
 class ExitHandler {
 public:
