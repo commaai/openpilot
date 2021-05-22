@@ -37,9 +37,7 @@ Sidebar::Sidebar(QWidget *parent) : QFrame(parent) {
   home_img = QImage("../assets/images/button_home.png").scaled(180, 180, Qt::KeepAspectRatio, Qt::SmoothTransformation);
   settings_img = QImage("../assets/images/button_settings.png").scaled(settings_btn.width(), settings_btn.height(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);;
 
-  connect(this, &Sidebar::valueChanged, [=] {
-    QFrame::update();
-  });
+  connect(this, &Sidebar::valueChanged, [=] { update(); });
 
   setFixedWidth(300);
   setMinimumHeight(vwp_h);
@@ -52,7 +50,7 @@ void Sidebar::mousePressEvent(QMouseEvent *event) {
   }
 }
 
-void Sidebar::update(const UIState &s) {
+void Sidebar::updateState(const UIState &s) {
   auto &sm = *(s.sm);
 
   auto deviceState = sm["deviceState"].getDeviceState();

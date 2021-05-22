@@ -20,9 +20,10 @@ public:
 
 signals:
   void openSettings();
+  void valueChanged();
 
 public slots:
-  void update(const UIState &s);
+  void updateState(const UIState &s);
 
 protected:
   void paintEvent(QPaintEvent *event) override;
@@ -61,7 +62,4 @@ private:
   QColor temp_status = warning_color;
   cereal::DeviceState::NetworkType net_type;
   cereal::DeviceState::NetworkStrength net_strength;
-
-signals:
-  void valueChanged();
 };
