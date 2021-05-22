@@ -63,7 +63,7 @@ void HomeWindow::showDriverView(bool show) {
   } else {
     slayout->setCurrentWidget(home);
   }
-  sidebar->setVisible(!show);
+  sidebar->setVisible(show == false);
 }
 
 void HomeWindow::mousePressEvent(QMouseEvent* e) {
