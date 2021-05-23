@@ -1,17 +1,21 @@
 #!/usr/bin/env python3
 import os
-import shutil
 import subprocess
 import sys
 import time
 import textwrap
+from pathlib import Path
 
 # NOTE: Do NOT import anything here that needs be built (e.g. params)
 from common.basedir import BASEDIR
 from common.spinner import Spinner
 from common.text_window import TextWindow
+from selfdrive.hardware import TICI
 from selfdrive.swaglog import cloudlog, add_file_handler
 from selfdrive.version import dirty
+
+MAX_CACHE_SIZE = 2e9
+CACHE_DIR = Path("/data/scons_cache" if TICI else "/tmp/scons_cache")
 
 TOTAL_SCONS_NODES = 2405
 MAX_BUILD_PROGRESS = 100
@@ -26,7 +30,7 @@ def build(spinner, dirty=False):
   j_flag = "" if nproc is None else f"-j{nproc - 1}"
 
   for retry in [True, False]:
-    scons = subprocess.Popen(["scons", j_flag], cwd=BASEDIR, env=env, stderr=subprocess.PIPE)
+    scons = subprocess.Popen(["scons", j_flag, "--cache-populate"], cwd=BASEDIR, env=env, stderr=subprocess.PIPE)
 
     compile_output = []
 
@@ -60,8 +64,6 @@ def build(spinner, dirty=False):
             print("....%d" % i)
             time.sleep(1)
           subprocess.check_call(["scons", "-c"], cwd=BASEDIR, env=env)
-          shutil.rmtree("/tmp/scons_cache", ignore_errors=True)
-          shutil.rmtree("/data/scons_cache", ignore_errors=True)
         else:
           print("scons build failed after retry")
           sys.exit(1)
@@ -81,6 +83,16 @@ def build(spinner, dirty=False):
         exit(1)
     else:
       break
+
+  # enforce max cache size
+  cache_files = [f for f in CACHE_DIR.rglob('*') if f.is_file()]
+  cache_files.sort(key=lambda f: f.stat().st_mtime)
+  cache_size = sum(f.stat().st_size for f in cache_files)
+  for f in cache_files:
+    if cache_size < MAX_CACHE_SIZE:
+      break
+    cache_size -= f.stat().st_size
+    f.unlink()
 
 
 if __name__ == "__main__" and not PREBUILT:

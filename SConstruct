@@ -229,10 +229,8 @@ if os.environ.get('SCONS_CACHE'):
   if TICI:
     cache_dir = '/data/scons_cache'
 
-  if QCOM_REPLAY:
-    cache_dir = '/tmp/scons_cache_qcom_replay'
-
   CacheDir(cache_dir)
+  Clean(["."], cache_dir)
 
 node_interval = 5
 node_count = 0
