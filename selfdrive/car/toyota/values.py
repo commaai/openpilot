@@ -1640,7 +1640,7 @@ FW_VERSIONS = {
     (Ecu.fwdRadar, 0x750, 0xf): [b'\x018821F6201200\x00\x00\x00\x00',],
     (Ecu.fwdCamera, 0x750, 0x6d): [b'\x028646F6201400\x00\x00\x00\x008646G5301200\x00\x00\x00\x00',],
   },
-  CAR.LEXUS_UX_TSS2: {
+  CAR.LEXUS_UXH_TSS2: {
     (Ecu.esp, 0x7b0, None): [
       b'F152676303\x00\x00\x00\x00\x00\x00',
     ],
