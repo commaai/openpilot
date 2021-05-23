@@ -12,8 +12,8 @@ class Sidebar : public QFrame {
   Q_PROPERTY(QColor pandaStatus MEMBER panda_status NOTIFY valueChanged);
   Q_PROPERTY(int tempVal MEMBER temp_val NOTIFY valueChanged);
   Q_PROPERTY(QColor tempStatus MEMBER temp_status NOTIFY valueChanged);
-  Q_PROPERTY(cereal::DeviceState::NetworkType netType MEMBER net_type NOTIFY valueChanged);
-  Q_PROPERTY(cereal::DeviceState::NetworkStrength netStrength MEMBER net_strength NOTIFY valueChanged);
+  Q_PROPERTY(QString netType MEMBER net_type NOTIFY valueChanged);
+  Q_PROPERTY(QImage netStrength MEMBER net_strength NOTIFY valueChanged);
 
 public:
   explicit Sidebar(QWidget* parent = 0);
@@ -60,6 +60,6 @@ private:
   QColor panda_status = warning_color;
   int temp_val = 0;
   QColor temp_status = warning_color;
-  cereal::DeviceState::NetworkType net_type;
-  cereal::DeviceState::NetworkStrength net_strength;
+  QString net_type;
+  QImage net_strength;
 };
