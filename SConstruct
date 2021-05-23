@@ -233,9 +233,7 @@ if os.environ.get('SCONS_CACHE'):
     cache_dir = '/tmp/scons_cache_qcom_replay'
 
   CacheDir(cache_dir)
-
-  # TODO: nicer way to clear the cache dir on scons --clean?
-  Clean("common/", cache_dir)
+  Clean(["."], cache_dir)
 
 node_interval = 5
 node_count = 0
