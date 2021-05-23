@@ -204,6 +204,81 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
   )");
 }
 
+ReleaseNotes::ReleaseNotes(QWidget* parent) : QFrame(parent) {
+  QVBoxLayout *layout = new QVBoxLayout;
+  layout->setMargin(50);
+  layout->setSpacing(30);
+
+  releaseNotes.setWordWrap(true);
+  releaseNotes.setStyleSheet("font-size: 35px;");
+  releaseNotes.setAlignment(Qt::AlignTop);
+  releaseNotes.setText(QString::fromStdString(params.get("ReleaseNotes")));
+
+  releaseNotesScroll = new ScrollView(&releaseNotes, this);
+  layout->addWidget(releaseNotesScroll);
+
+  setLayout(layout);
+  setStyleSheet(R"(
+    QFrame {
+      border-radius: 30px;
+      background-color: #393939;
+    }
+  )");
+}
+
+UpdatePanel::UpdatePanel(QWidget* parent) : QWidget(parent) {
+  QVBoxLayout *update_layout = new QVBoxLayout;
+
+  Params params = Params();
+
+  std::string rawLastUpdateTime = params.get("LastUpdateTime", false);
+  QString lastUpdateTime = QString::fromStdString(rawLastUpdateTime.substr(0,10) + " at " + rawLastUpdateTime.substr(12,7));
+  update_layout->addWidget(new LabelControl("Last Update Time", lastUpdateTime));
+
+  // offroad-only buttons
+  QList<ButtonControl*> offroad_btns;
+
+  QString checkUpdateDesc = "Check for the latest update";
+  ButtonControl *checkUpdateBtn = new ButtonControl("Check for update", "CHECK", checkUpdateDesc, [=]() {
+  }, "", this);
+  connect(checkUpdateBtn, &ButtonControl::showDescription, [=]() {
+    checkUpdateBtn->setDescription(checkUpdateDesc);
+  });
+  offroad_btns.append(checkUpdateBtn);
+
+ viewReleaseNoteBtn = new ButtonControl("Release Note", "VIEW", "", [=]() {
+     if(releaseNotes->isVisible())
+     {
+       viewReleaseNoteBtn->setText("VIEW");
+     }else
+     {
+       viewReleaseNoteBtn->setText("CLOSE");
+     }
+     releaseNotes->setVisible(!releaseNotes->isVisible());
+  }, "", this);
+  offroad_btns.append(viewReleaseNoteBtn);
+
+  for(auto &btn : offroad_btns){
+    update_layout->addWidget(horizontal_line());
+    QObject::connect(parent, SIGNAL(offroadTransition(bool)), btn, SLOT(setEnabled(bool)));
+    update_layout->addWidget(btn);
+  }
+
+  releaseNotes = new ReleaseNotes();
+  releaseNotes->setVisible(false);
+  update_layout->addWidget(releaseNotes);
+
+  setLayout(update_layout);
+  setStyleSheet(R"(
+    QPushButton {
+      padding: 0;
+      height: 120px;
+      border-radius: 15px;
+      background-color: #393939;
+    }
+  )");
+}
+
 DeveloperPanel::DeveloperPanel(QWidget* parent) : QFrame(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   setLayout(main_layout);
@@ -303,6 +378,7 @@ void SettingsWindow::showEvent(QShowEvent *event) {
     {"Device", device},
     {"Network", network_panel(this)},
     {"Toggles", new TogglesPanel(this)},
+    {"Update", new UpdatePanel(this)},
     {"Developer", new DeveloperPanel()},
   };
 

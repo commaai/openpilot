@@ -9,6 +9,7 @@
 #include <QTimer>
 #include <QWidget>
 
+#include "selfdrive/ui/qt/widgets/scrollview.h"
 #include "selfdrive/ui/qt/widgets/controls.h"
 
 // ********** settings window + top-level panels **********
@@ -25,6 +26,29 @@ class TogglesPanel : public QWidget {
   Q_OBJECT
 public:
   explicit TogglesPanel(QWidget *parent = nullptr);
+};
+
+class ReleaseNotes : public QFrame {
+  Q_OBJECT
+
+public:
+  explicit ReleaseNotes(QWidget *parent = 0);
+
+private:
+  Params params;
+
+  QLabel releaseNotes;
+  ScrollView *releaseNotesScroll;
+};
+
+class UpdatePanel : public QWidget {
+  Q_OBJECT
+public:
+  explicit UpdatePanel(QWidget *parent = nullptr);
+
+private:
+  ReleaseNotes* releaseNotes;
+  ButtonControl* viewReleaseNoteBtn; 
 };
 
 class DeveloperPanel : public QFrame {
