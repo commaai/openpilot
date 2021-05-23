@@ -8,6 +8,10 @@
 
 #include "libyuv.h"
 
+#ifdef QCOM
+#include "CL/cl_ext_qcom.h"
+#endif
+
 #include "cereal/visionipc/visionipc_server.h"
 #include "selfdrive/common/clutil.h"
 #include "selfdrive/common/params.h"
@@ -39,16 +43,18 @@ void party(cl_device_id device_id, cl_context context) {
   cameras_run(&cameras);
 }
 
-#ifdef QCOM
-#include "CL/cl_ext_qcom.h"
-#endif
-
 int main(int argc, char *argv[]) {
   set_realtime_priority(53);
   if (Hardware::EON()) {
     set_core_affinity(2);
   } else if (Hardware::TICI()) {
-    set_core_affinity(6);
+    const int core = 6;
+    set_core_affinity(core);
+
+    // setup IRQs
+    for (int i = 231; i <= 243; i++) {
+      std::system(util::string_format("echo %d | sudo tee /proc/irq/%d/smp_affinity_list", core, i).c_str());
+    }
   }
 
   cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);

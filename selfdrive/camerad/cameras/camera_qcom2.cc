@@ -814,6 +814,9 @@ void cameras_open(MultiCameraState *s) {
   printf("wide road camera opened \n");
   camera_open(&s->driver_cam);
   printf("driver camera opened \n");
+
+  // setup camera workqueues, set cpumask for camerad's core
+  std::system("echo 40 | sudo tee /sys/devices/virtual/workqueue/crm_workq*/cpumask");
 }
 
 static void camera_close(CameraState *s) {

@@ -94,8 +94,14 @@ function two_init {
 }
 
 function tici_init {
+
+  # setup governors
   sudo su -c 'echo "performance" > /sys/class/devfreq/soc:qcom,memlat-cpu0/governor'
   sudo su -c 'echo "performance" > /sys/class/devfreq/soc:qcom,memlat-cpu4/governor'
+
+  # setup workqueues
+  echo f | sudo tee /sys/devices/virtual/workqueue/cpumask
+
   nmcli connection modify --temporary lte gsm.auto-config yes
 
   # set success flag for current boot slot
