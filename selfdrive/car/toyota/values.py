@@ -50,6 +50,7 @@ class CAR:
   LEXUS_NX = "LEXUS NX 2018"
   LEXUS_NX_TSS2 = "LEXUS NX 2020"
   MIRAI = "TOYOTA MIRAI 2021" # TSS 2.5
+  LEXUS_UXH_TSS2 = "LEXUS UX HYBRID 2019"
 
 # addr: (ecu, cars, bus, 1/freq*100, vl)
 STATIC_MSGS = [
@@ -292,12 +293,15 @@ FINGERPRINTS = {
   }],
   CAR.MIRAI: [{
     15: 8, 36: 8, 37: 8, 164: 8, 166: 8, 170: 8, 180: 8, 203: 8, 295: 8, 401: 8, 426: 6, 466: 8, 467: 8, 494: 8, 495: 8, 550: 8, 552: 4, 560: 7, 562: 8, 581: 5, 608: 8, 610: 8, 643: 7, 664: 8, 665: 8, 666: 8, 728: 8, 740: 5, 742: 8, 743: 8, 761: 8, 764: 8, 765: 8, 789: 8, 791: 8, 800: 8, 810: 2, 812: 8, 818: 8, 822: 8, 824: 8, 829: 2, 830: 7, 835: 8, 836: 8, 845: 5, 863: 8, 865: 8, 870: 7, 871: 2, 877: 8, 881: 8, 889: 8, 891: 8, 892: 8, 893: 8, 894: 8, 896: 8, 898: 8, 900: 6, 902: 6, 905: 8, 913: 8, 918: 8, 921: 8, 934: 8, 935: 8, 944: 8, 945: 8, 950: 8, 951: 8, 955: 8, 956: 8, 971: 7, 983: 8, 984: 8, 987: 8, 998: 5, 1002: 8, 1011: 8, 1014: 8, 1017: 8, 1020: 8, 1041: 8, 1042: 8, 1044: 8, 1056: 8, 1059: 1, 1071: 8, 1076: 8, 1077: 8, 1081: 8, 1082: 8, 1114: 8, 1161: 8, 1162: 8, 1163: 8, 1164: 8, 1165: 8, 1166: 8, 1167: 8, 1172: 8, 1228: 8, 1235: 8, 1237: 8, 1263: 8, 1264: 8, 1279: 8, 1541: 8, 1552: 8, 1553: 8, 1556: 8, 1557: 8, 1568: 8, 1570: 8, 1571: 8, 1572: 8, 1593: 8, 1595: 8, 1649: 8, 1653: 8, 1654: 8, 1655: 8, 1677: 8, 1745: 8, 1769: 8, 1770: 8, 1775: 8, 1777: 8, 1779: 8, 1786: 8, 1787: 8, 1788: 8, 1789: 8, 1792: 8, 1872: 8, 1880: 8, 1937: 8, 1945: 8, 1953: 8, 1961: 8, 1968: 8, 1976: 8, 1988: 8, 1996: 8, 2000: 8, 2001: 8, 2008: 8, 2009: 8, 2015: 8, 2016: 8, 2017: 8
+  }],
+  CAR.LEXUS_UXH_TSS2: [{
+    36: 8, 37: 8, 166: 8, 170: 8, 180: 8, 295: 8, 296: 8, 401: 8, 426: 6, 452: 8, 466: 8, 467: 8, 550: 8, 552: 4, 560: 7, 562: 6, 581: 5, 608: 8, 610: 8, 643: 7, 658: 8, 713: 8, 728: 8, 740: 5, 742: 8, 743:8, 761: 8, 764: 8, 765: 8, 800: 8, 810: 2, 812: 8, 814: 8, 818: 8, 824: 8, 829: 2, 830: 7, 835: 8, 836: 8, 863: 8, 865: 8, 869: 7, 870: 7, 871: 2, 877: 8, 881: 8, 882: 8, 885: 8, 889: 8, 896: 8, 898: 8, 900:6, 902: 6, 905: 8, 918: 8, 921: 8, 933: 8, 934: 8, 935: 8, 942: 8, 944: 8, 945: 8, 950: 8, 951: 8, 953: 8, 955: 8, 956: 8, 971: 7, 975: 5, 987: 8, 993: 8, 998: 5, 999: 7, 1000: 8, 1001: 8, 1002: 8, 1014: 8,1017: 8, 1020: 8, 1041: 8, 1042: 8, 1044: 8, 1056: 8, 1057: 8, 1059: 1, 1063: 8, 1071: 8, 1076: 8, 1077: 8, 1082: 8, 1114: 8, 1161: 8, 1162: 8, 1163: 8, 1164: 8, 1165: 8, 1166: 8, 1167: 8, 1172: 8, 1228: 8,1235: 8, 1237: 8, 1264: 8, 1279: 8, 1541: 8, 1552: 8, 1553: 8, 1556: 8, 1557: 8, 1568: 8, 1570: 8, 1571: 8, 1572: 8, 1575: 8, 1592: 8, 1594: 8, 1595: 8, 1649: 8, 1775: 8, 1777: 8, 1779: 8, 1786: 8, 1787: 8,1788: 8, 1789: 8, 1792: 8, 1800: 8, 1872: 8, 1880: 8, 1904: 8, 1912: 8, 1937: 8, 1945: 8, 1953: 8, 1961: 8, 1968: 8, 1976: 8, 1990: 8, 1998: 8, 2015: 8, 2016: 8, 2024: 8
   }]
 }
 
 # Don't use theses fingerprints for fingerprinting, they are still needed for ECU detection
 IGNORED_FINGERPRINTS = [CAR.RAV4H_TSS2, CAR.HIGHLANDERH_TSS2, CAR.LEXUS_RXH_TSS2, CAR.PRIUS_TSS2,
-                        CAR.LEXUS_NX, CAR.LEXUS_NX_TSS2, CAR.CAMRY_TSS2, CAR.CAMRYH_TSS2, CAR.LEXUS_ESH, CAR.MIRAI]
+                        CAR.LEXUS_NX, CAR.LEXUS_NX_TSS2, CAR.CAMRY_TSS2, CAR.CAMRYH_TSS2, CAR.LEXUS_ESH, CAR.MIRAI, CAR.LEXUS_UXH_TSS2]
 
 FW_VERSIONS = {
   CAR.AVALON: {
@@ -1636,6 +1640,23 @@ FW_VERSIONS = {
     (Ecu.fwdRadar, 0x750, 0xf): [b'\x018821F6201200\x00\x00\x00\x00',],
     (Ecu.fwdCamera, 0x750, 0x6d): [b'\x028646F6201400\x00\x00\x00\x008646G5301200\x00\x00\x00\x00',],
   },
+  CAR.LEXUS_UXH_TSS2: {
+    (Ecu.esp, 0x7b0, None): [
+      b'F152676303\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.eps, 0x7a1, None): [
+      b'8965B76012\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.engine, 0x700, None): [
+      b'\x01896637621000\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdRadar, 0x750, 15): [
+      b'\x018821F3301300\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdCamera, 0x750, 109): [
+      b'\x028646F76020C0\x00\x00\x00\x008646G26011A0\x00\x00\x00\x00',
+    ],
+  },
 }
 
 STEER_THRESHOLD = 100
@@ -1675,13 +1696,14 @@ DBC = {
   CAR.LEXUS_NX_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
   CAR.PRIUS_TSS2: dbc_dict('toyota_nodsu_hybrid_pt_generated', 'toyota_tss2_adas'),
   CAR.MIRAI: dbc_dict('toyota_nodsu_hybrid_pt_generated', 'toyota_tss2_adas'),
+  CAR.LEXUS_UXH_TSS2: dbc_dict('toyota_nodsu_hybrid_pt_generated', 'toyota_tss2_adas'),
 }
 
 
 # Toyota/Lexus Safety Sense 2.0 and 2.5
 TSS2_CAR = set([CAR.RAV4_TSS2, CAR.COROLLA_TSS2, CAR.COROLLAH_TSS2, CAR.LEXUS_ES_TSS2, CAR.LEXUS_ESH_TSS2, CAR.RAV4H_TSS2,
                 CAR.LEXUS_RX_TSS2, CAR.LEXUS_RXH_TSS2, CAR.HIGHLANDER_TSS2, CAR.HIGHLANDERH_TSS2, CAR.PRIUS_TSS2, CAR.CAMRY_TSS2, CAR.CAMRYH_TSS2,
-                CAR.MIRAI, CAR.LEXUS_NX_TSS2])
+                CAR.MIRAI, CAR.LEXUS_NX_TSS2, CAR.LEXUS_UXH_TSS2])
 
 NO_DSU_CAR = TSS2_CAR | set([CAR.CHR, CAR.CHRH, CAR.CAMRY, CAR.CAMRYH])
 
