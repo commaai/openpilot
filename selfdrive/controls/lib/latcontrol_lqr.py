@@ -44,7 +44,9 @@ class LatControlLQR():
 
     return self.sat_count > self.sat_limit
 
-  def update(self, active, CS, CP, VM, params, lat_plan):
+  def update(self, active, CI, VM, params, lat_plan):
+    CP = CI.CP
+    CS = CI.CS.out
     lqr_log = log.ControlsState.LateralLQRState.new_message()
 
     steers_max = get_steer_max(CP, CS.vEgo)

@@ -84,7 +84,8 @@ class CarInterface(CarInterfaceBase):
     curvature = self.yaw_rate / max(self.speed, 1.)
     ret.steeringAngleDeg = curvature * self.CP.steerRatio * self.CP.wheelbase * CV.RAD_TO_DEG
 
-    return ret.as_reader()
+    self.CS.out = ret.as_reader()
+    return self.CS.out
 
   def apply(self, c):
     # in mock no carcontrols

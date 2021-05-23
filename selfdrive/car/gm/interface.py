@@ -171,9 +171,7 @@ class CarInterface(CarInterfaceBase):
 
     ret.events = events.to_msg()
 
-    # copy back carState packet to CS
     self.CS.out = ret.as_reader()
-
     return self.CS.out
 
   def apply(self, c):

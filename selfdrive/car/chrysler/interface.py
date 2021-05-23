@@ -50,7 +50,7 @@ class CarInterface(CarInterfaceBase):
     ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront)
 
     ret.enableCamera = True
-    
+
     ret.enableBsm = 720 in fingerprint[0]
 
     return ret
@@ -77,9 +77,7 @@ class CarInterface(CarInterfaceBase):
 
     ret.events = events.to_msg()
 
-    # copy back carState packet to CS
     self.CS.out = ret.as_reader()
-
     return self.CS.out
 
   # pass in a car.CarControl

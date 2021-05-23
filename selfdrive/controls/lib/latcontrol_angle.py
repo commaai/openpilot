@@ -9,7 +9,8 @@ class LatControlAngle():
   def reset(self):
     pass
 
-  def update(self, active, CS, CP, VM, params, lat_plan):
+  def update(self, active, CI, VM, params, lat_plan):
+    CS = CI.CS.out
     angle_log = log.ControlsState.LateralAngleState.new_message()
 
     if CS.vEgo < 0.3 or not active:
