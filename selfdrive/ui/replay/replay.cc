@@ -50,6 +50,12 @@ Replay::Replay(QString route, SubMaster *sm_, QObject *parent) : sm(sm_), QObjec
   QObject::connect(http, &HttpRequest::receivedResponse, this, &Replay::parseResponse);
 }
 
+Replay::~Replay() {
+  for (auto it = events.begin(); it != events.end(); ++it) {
+    delete it.value();
+  }
+}
+
 void Replay::parseResponse(const QString &response) {
   QJsonDocument doc = QJsonDocument::fromJson(response.trimmed().toUtf8());
   if (doc.isNull()) {
@@ -220,7 +226,7 @@ void Replay::stream() {
 
     uint64_t t0r = timer.nsecsElapsed();
     while ((eit != events.end()) && seek_ts < 0) {
-      cereal::Event::Reader e = (*eit);
+      cereal::Event::Reader e = (*eit)->getRoot<cereal::Event>();
       std::string type;
       KJ_IF_MAYBE(e_, static_cast<capnp::DynamicStruct::Reader>(e).which()) {
         type = e_->getProto().getName();

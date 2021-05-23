@@ -3,6 +3,7 @@
 #include <QtNetwork>
 
 FileReader::FileReader(const QString& file_) : file(file_) {
+  qnam = new QNetworkAccessManager(this);
 }
 
 void FileReader::process() {
@@ -13,7 +14,6 @@ void FileReader::process() {
 }
 
 void FileReader::startRequest(const QUrl &url) {
-  qnam = new QNetworkAccessManager;
   reply = qnam->get(QNetworkRequest(url));
   connect(reply, &QNetworkReply::finished, this, &FileReader::httpFinished);
   connect(reply, &QIODevice::readyRead, this, &FileReader::readyRead);
@@ -34,6 +34,8 @@ void FileReader::httpFinished() {
     qDebug() << "done in" << timer.elapsed() << "ms";
     done();
   }
+  reply->deleteLater();
+  reply = nullptr;
 }
 
 void FileReader::readyRead() {
@@ -41,20 +43,10 @@ void FileReader::readyRead() {
   printf("got http ready read: %d\n", dat.size());
 }
 
-FileReader::~FileReader() {
-
-}
-
 LogReader::LogReader(const QString& file, Events *events_, QReadWriteLock* events_lock_, QMap<int, QPair<int, int> > *eidx_) :
     FileReader(file), events(events_), events_lock(events_lock_), eidx(eidx_) {
-  bStream.next_in = NULL;
-  bStream.avail_in = 0;
-  bStream.bzalloc = NULL;
-  bStream.bzfree = NULL;
-  bStream.opaque = NULL;
-
   int ret = BZ2_bzDecompressInit(&bStream, 0, 0);
-  if (ret != BZ_OK) qWarning() << "bz2 init failed";
+  assert(ret == BZ_OK);
 
   // start with 64MB buffer
   raw.resize(1024*1024*64);
@@ -62,38 +54,23 @@ LogReader::LogReader(const QString& file, Events *events_, QReadWriteLock* event
   // auto increment?
   bStream.next_out = raw.data();
   bStream.avail_out = raw.size();
-
-  // parsed no events yet
-  event_offset = 0;
-
-  parser = new std::thread([&]() {
-    while (1) {
-      mergeEvents(cdled.get());
-    }
-  });
 }
 
 LogReader::~LogReader() {
-  delete parser;
+  BZ2_bzDecompressEnd(&bStream);
 }
 
-void LogReader::mergeEvents(int dled) {
-  auto amsg = kj::arrayPtr((const capnp::word*)(raw.data() + event_offset), (dled-event_offset)/sizeof(capnp::word));
+void LogReader::mergeEvents(kj::ArrayPtr<const capnp::word> amsg) {
   Events events_local;
   QMap<int, QPair<int, int> > eidx_local;
-
-  while (amsg.size() > 0) {
+  size_t offset = 0;
+  while (offset < amsg.size()) {
     try {
-      capnp::FlatArrayMessageReader cmsg = capnp::FlatArrayMessageReader(amsg);
+      std::unique_ptr<capnp::FlatArrayMessageReader> reader =
+          std::make_unique<capnp::FlatArrayMessageReader>(amsg.slice(offset, amsg.size()));
 
-      // this needed? it is
-      capnp::FlatArrayMessageReader *tmsg =
-        new capnp::FlatArrayMessageReader(kj::arrayPtr(amsg.begin(), cmsg.getEnd()));
-
-      amsg = kj::arrayPtr(cmsg.getEnd(), amsg.end());
-
-      cereal::Event::Reader event = tmsg->getRoot<cereal::Event>();
-      events_local.insert(event.getLogMonoTime(), event);
+      cereal::Event::Reader event = reader->getRoot<cereal::Event>();
+      offset = reader->getEnd() - amsg.begin();
 
       // hack
       // TODO: rewrite with callback
@@ -102,11 +79,10 @@ void LogReader::mergeEvents(int dled) {
         eidx_local.insert(ee.getFrameId(), qMakePair(ee.getSegmentNum(), ee.getSegmentId()));
       }
 
-      // increment
-      event_offset = (char*)cmsg.getEnd() - raw.data();
+      events_local.insert(event.getLogMonoTime(), reader.release());
     } catch (const kj::Exception& e) {
       // partial messages trigger this
-      //qDebug() << e.getDescription().cStr();
+      // qDebug() << e.getDescription().cStr();
       break;
     }
   }
@@ -132,8 +108,6 @@ void LogReader::readyRead() {
       break;
     }
   }
-
-  int dled = raw.size() - bStream.avail_out;
-  cdled.put(dled);
+  size_t size = (raw.size() - bStream.avail_out) / sizeof(capnp::word);
+  mergeEvents({(const capnp::word*)raw.data(), size});
 }
-

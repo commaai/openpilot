@@ -23,10 +23,9 @@ class FileReader : public QObject {
 public:
   FileReader(const QString& file_);
   void startRequest(const QUrl &url);
-  ~FileReader();
   virtual void readyRead();
   void httpFinished();
-  virtual void done() {};
+  virtual void done() {}
 
 public slots:
   void process();
@@ -40,30 +39,25 @@ private:
   QString file;
 };
 
-typedef QMultiMap<uint64_t, cereal::Event::Reader> Events;
+typedef QMultiMap<uint64_t, capnp::FlatArrayMessageReader*> Events;
 
 class LogReader : public FileReader {
-Q_OBJECT
-public:
-  LogReader(const QString& file, Events *, QReadWriteLock* events_lock_, QMap<int, QPair<int, int> > *eidx_);
-  ~LogReader();
+  Q_OBJECT
 
+public:
+  LogReader(const QString &file, Events *, QReadWriteLock* events_lock_, QMap<int, QPair<int, int> > *eidx_);
+  ~LogReader();
   void readyRead();
   void done() { is_done = true; };
   bool is_done = false;
 
 private:
-  bz_stream bStream;
+  void mergeEvents(kj::ArrayPtr<const capnp::word> amsg);
 
+  bz_stream bStream = {};
   // backing store
   QByteArray raw;
 
-  std::thread *parser;
-  int event_offset;
-  channel<int> cdled;
-
-  // global
-  void mergeEvents(int dled);
   Events *events;
   QReadWriteLock* events_lock;
   QMap<int, QPair<int, int> > *eidx;

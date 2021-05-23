@@ -24,7 +24,7 @@ class Replay : public QObject {
 
 public:
   Replay(QString route, SubMaster *sm = nullptr, QObject *parent = 0);
-
+  ~Replay();
   void start();
   void addSegment(int n);
   void removeSegment(int n);
