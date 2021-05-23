@@ -4,6 +4,7 @@
 #include <termios.h>
 
 #include <QJsonArray>
+#include <QReadWriteLock>
 #include <QThread>
 
 #include <capnp/dynamic.h>
@@ -48,9 +49,9 @@ private:
   QThread *queue_thread;
 
   // logs
-  Events events;
   QReadWriteLock events_lock;
-  QMap<int, QPair<int, int>> eidx;
+  Events events;
+  EncodeIdxMap eidx;
 
   HttpRequest *http;
   QJsonArray camera_paths;

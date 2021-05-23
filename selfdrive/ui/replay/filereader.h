@@ -5,7 +5,6 @@
 #include <QElapsedTimer>
 #include <QMultiMap>
 #include <QNetworkAccessManager>
-#include <QReadWriteLock>
 #include <QString>
 
 #include <capnp/serialize.h>
@@ -14,8 +13,8 @@ class FileReader : public QObject {
   Q_OBJECT
 
 public:
-  FileReader(const QString& file_);
-  
+  FileReader(const QString &file_);
+
 public slots:
   void process();
 
@@ -30,22 +29,28 @@ protected:
   QString file;
 };
 
-typedef QMultiMap<uint64_t, capnp::FlatArrayMessageReader*> Events;
+typedef QMultiMap<uint64_t, capnp::FlatArrayMessageReader *> Events;
+typedef QMap<int, QPair<int, int> > EncodeIdxMap;
 
 class LogReader : public FileReader {
   Q_OBJECT
 
 public:
-  LogReader(const QString &file, Events *, QReadWriteLock* events_lock_, QMap<int, QPair<int, int> > *eidx_);
-  
+  LogReader(const QString &file);
+  ~LogReader();
+  const Events &events() const { return events_; }
+  const EncodeIdxMap &roadCamEncodeIdx() const { return roadCamEncodeIdx_; }
+  const EncodeIdxMap &driverCamEncodeIdx() const { return driverCamEncodeIdx_; }
+
+signals:
+  void done();
+
 protected:
   void readyRead();
-  void mergeEvents(kj::ArrayPtr<const capnp::word> amsg);
+  void parseEvents(kj::ArrayPtr<const capnp::word> amsg);
 
-  // backing store
-  std::vector<uint8_t> raw;
-
-  Events *events;
-  QReadWriteLock* events_lock;
-  QMap<int, QPair<int, int> > *eidx;
+  std::vector<uint8_t> raw_;
+  Events events_;
+  EncodeIdxMap roadCamEncodeIdx_;
+  EncodeIdxMap driverCamEncodeIdx_;
 };

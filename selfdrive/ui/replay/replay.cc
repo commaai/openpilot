@@ -50,11 +50,7 @@ Replay::Replay(QString route, SubMaster *sm_, QObject *parent) : sm(sm_), QObjec
   QObject::connect(http, &HttpRequest::receivedResponse, this, &Replay::parseResponse);
 }
 
-Replay::~Replay() {
-  for (auto it = events.begin(); it != events.end(); ++it) {
-    delete it.value();
-  }
-}
+Replay::~Replay() {}
 
 void Replay::parseResponse(const QString &response) {
   QJsonDocument doc = QJsonDocument::fromJson(response.trimmed().toUtf8());
@@ -75,11 +71,19 @@ void Replay::addSegment(int n) {
     return;
   }
 
-  QThread *t = new QThread;
-  lrs.insert(n, new LogReader(log_paths.at(n).toString(), &events, &events_lock, &eidx));
-
-  lrs[n]->moveToThread(t);
-  QObject::connect(t, &QThread::started, lrs[n], &LogReader::process);
+  LogReader *log_reader = new LogReader(log_paths.at(n).toString());
+  lrs.insert(n, log_reader);
+  QThread *t = new QThread(this);
+  log_reader->moveToThread(t);
+  QObject::connect(t, &QThread::started, log_reader, &LogReader::process);
+  QObject::connect(log_reader, &LogReader::done, [=] {
+    events_lock.lockForWrite();
+    events += log_reader->events();
+    eidx.unite(log_reader->roadCamEncodeIdx());
+    events_lock.unlock();
+    t->quit();
+    t->deleteLater();
+  });
   t->start();
 
   QThread *frame_thread = QThread::create([=]{

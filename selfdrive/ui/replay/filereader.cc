@@ -68,15 +68,18 @@ void FileReader::readyRead() {
   printf("got http ready read: %d\n", dat.size());
 }
 
-LogReader::LogReader(const QString& file, Events *events_, QReadWriteLock* events_lock_, QMap<int, QPair<int, int> > *eidx_) :
-    FileReader(file), events(events_), events_lock(events_lock_), eidx(eidx_) {
+LogReader::LogReader(const QString& file) : FileReader(file) {
   // start with 64MB buffer
-  raw.resize(1024*1024*64);
+  raw_.resize(1024*1024*64);
 }
 
-void LogReader::mergeEvents(kj::ArrayPtr<const capnp::word> amsg) {
-  Events events_local;
-  QMap<int, QPair<int, int> > eidx_local;
+LogReader::~LogReader() {
+  for (auto it = events_.begin(); it != events_.end(); ++it) {
+    delete it.value();
+  }
+}
+
+void LogReader::parseEvents(kj::ArrayPtr<const capnp::word> amsg) {
   size_t offset = 0;
   while (offset < amsg.size()) {
     try {
@@ -90,29 +93,26 @@ void LogReader::mergeEvents(kj::ArrayPtr<const capnp::word> amsg) {
       // TODO: rewrite with callback
       if (event.which() == cereal::Event::ROAD_ENCODE_IDX) {
         auto ee = event.getRoadEncodeIdx();
-        eidx_local.insert(ee.getFrameId(), qMakePair(ee.getSegmentNum(), ee.getSegmentId()));
+        roadCamEncodeIdx_.insert(ee.getFrameId(), qMakePair(ee.getSegmentNum(), ee.getSegmentId()));
+      } else if (event.which() == cereal::Event::DRIVER_ENCODE_IDX) {
+         auto ee = event.getDriverEncodeIdx();
+        driverCamEncodeIdx_.insert(ee.getFrameId(), qMakePair(ee.getSegmentNum(), ee.getSegmentId()));
       }
 
-      events_local.insert(event.getLogMonoTime(), reader.release());
+      events_.insert(event.getLogMonoTime(), reader.release());
     } catch (const kj::Exception& e) {
       // partial messages trigger this
       // qDebug() << e.getDescription().cStr();
       break;
     }
   }
-
-  // merge in events
-  // TODO: add lock
-  events_lock->lockForWrite();
-  *events += events_local;
-  eidx->unite(eidx_local);
-  events_lock->unlock();
+  emit done();
 }
 
 void LogReader::readyRead() {
   QByteArray dat = reply->readAll();
-  if (!decompressBZ2(raw, dat.data(), dat.size())) {
+  if (!decompressBZ2(raw_, dat.data(), dat.size())) {
     qWarning() << "bz2 decompress failed";
   }
-  mergeEvents({(const capnp::word*)raw.data(), raw.size() / sizeof(capnp::word)});
+  parseEvents({(const capnp::word*)raw_.data(), raw_.size() / sizeof(capnp::word)});
 }
