@@ -228,7 +228,7 @@ class CarState(CarStateBase):
                   ("BCM1_Rueckfahrlicht_Schalter", "Gateway_72", 0)]  # Reverse light from BCM
       checks += [("Motor_14", 10)]  # From J623 Engine control module
 
-    # TODO: Detect ACC radar presence and bus location
+    # TODO: Detect ACC radar bus location
     signals += MqbExtraSignals.acc_radar[0]
     checks += MqbExtraSignals.acc_radar[1]
     # TODO: Detect BSM radar bus location
