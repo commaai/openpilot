@@ -186,11 +186,6 @@ class CarState(CarStateBase):
       ("KBI_MFA_v_Einheit_02", "Einheiten_01", 0),  # MPH vs KMH speed display
       ("KBI_Handbremse", "Kombi_01", 0),            # Manual handbrake applied
       ("TSK_Status", "TSK_06", 0),                  # ACC engagement status from drivetrain coordinator
-      ("TSK_Fahrzeugmasse_02", "Motor_16", 0),      # Estimated vehicle mass from drivetrain coordinator
-      ("ACC_Wunschgeschw", "ACC_02", 0),            # ACC set speed
-      ("AWV2_Freigabe", "ACC_10", 0),               # FCW brake jerk release
-      ("ANB_Teilbremsung_Freigabe", "ACC_10", 0),   # AEB partial braking release
-      ("ANB_Zielbremsung_Freigabe", "ACC_10", 0),   # AEB target braking release
       ("GRA_Hauptschalter", "GRA_ACC_01", 0),       # ACC button, on/off
       ("GRA_Abbrechen", "GRA_ACC_01", 0),           # ACC button, cancel
       ("GRA_Tip_Setzen", "GRA_ACC_01", 0),          # ACC button, set
@@ -211,12 +206,10 @@ class CarState(CarStateBase):
       ("ESP_19", 100),      # From J104 ABS/ESP controller
       ("ESP_05", 50),       # From J104 ABS/ESP controller
       ("ESP_21", 50),       # From J104 ABS/ESP controller
-      ("ACC_10", 50),       # From J428 ACC radar control module
       ("Motor_20", 50),     # From J623 Engine control module
       ("TSK_06", 50),       # From J623 Engine control module
-      ("ESP_02", 50),
-      ("GRA_ACC_01", 33),   # From J??? steering wheel control buttons
-      ("ACC_02", 17),       # From J428 ACC radar control module
+      ("ESP_02", 50),       # From J104 ABS/ESP controller
+      ("GRA_ACC_01", 33),   # From J533 CAN gateway (via LIN from steering wheel controls)
       ("Gateway_72", 10),   # From J533 CAN gateway (aggregated data)
       ("Motor_14", 10),     # From J623 Engine control module
       ("Airbag_02", 5),     # From J234 Airbag control module
@@ -224,17 +217,6 @@ class CarState(CarStateBase):
       ("Motor_16", 2),      # From J623 Engine control module
       ("Einheiten_01", 1),  # From J??? not known if gateway, cluster, or BCM
     ]
-
-    if CP.enableBsm:
-      signals += [
-        ("SWA_Infostufe_SWA_li", "SWA_01", 0),        # Blind spot object info, left
-        ("SWA_Warnung_SWA_li", "SWA_01", 0),          # Blind spot object warning, left
-        ("SWA_Infostufe_SWA_re", "SWA_01", 0),        # Blind spot object info, right
-        ("SWA_Warnung_SWA_re", "SWA_01", 0),          # Blind spot object warning, right
-      ]
-      checks += [
-        ("SWA_01", 20),
-      ]
 
     if CP.transmissionType == TransmissionType.automatic:
       signals += [("GE_Fahrstufe", "Getriebe_11", 0)]  # Auto trans gear selector position
@@ -246,6 +228,14 @@ class CarState(CarStateBase):
       signals += [("MO_Kuppl_schalter", "Motor_14", 0),  # Clutch switch
                   ("BCM1_Rueckfahrlicht_Schalter", "Gateway_72", 0)]  # Reverse light from BCM
       checks += [("Motor_14", 10)]  # From J623 Engine control module
+
+    # TODO: Detect ACC radar presence and bus location
+    signals += MqbExtraSignals.acc_radar[0]
+    checks += MqbExtraSignals.acc_radar[1]
+    # TODO: Detect BSM radar bus location
+    if CP.enableBsm:
+      signals += MqbExtraSignals.bsm[0]
+      checks += MqbExtraSignals.bsm[1]
 
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, CANBUS.pt)
 
@@ -266,4 +256,24 @@ class CarState(CarStateBase):
       ("LDW_02", 10)        # From R242 Driver assistance camera
     ]
 
-    return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, CANBUS.cam)
+    return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, CANBUS.cam, enforce_checks=False)
+
+class MqbExtraSignals:
+  # Additional signal and message lists for optional or bus-portable controllers
+  acc_radar = ([
+    ("ACC_Wunschgeschw", "ACC_02", 0),              # ACC set speed
+    ("AWV2_Freigabe", "ACC_10", 0),                 # FCW brake jerk release
+    ("ANB_Teilbremsung_Freigabe", "ACC_10", 0),     # AEB partial braking release
+    ("ANB_Zielbremsung_Freigabe", "ACC_10", 0),     # AEB target braking release
+  ], [
+    ("ACC_10", 50),                                 # From J428 ACC radar control module
+    ("ACC_02", 17),                                 # From J428 ACC radar control module
+  ])
+  bsm = ([
+    ("SWA_Infostufe_SWA_li", "SWA_01", 0),          # Blind spot object info, left
+    ("SWA_Warnung_SWA_li", "SWA_01", 0),            # Blind spot object warning, left
+    ("SWA_Infostufe_SWA_re", "SWA_01", 0),          # Blind spot object info, right
+    ("SWA_Warnung_SWA_re", "SWA_01", 0),            # Blind spot object warning, right
+  ], [
+    ("SWA_01", 20),                                 # From J1086 Lane Change Assist
+  ])
