@@ -229,12 +229,12 @@ class CarState(CarStateBase):
       checks += [("Motor_14", 10)]  # From J623 Engine control module
 
     # TODO: Detect ACC radar bus location
-    signals += MqbExtraSignals.acc_radar[0]
-    checks += MqbExtraSignals.acc_radar[1]
+    signals += MqbExtraSignals.fwd_radar[0]
+    checks += MqbExtraSignals.fwd_radar[1]
     # TODO: Detect BSM radar bus location
     if CP.enableBsm:
-      signals += MqbExtraSignals.bsm[0]
-      checks += MqbExtraSignals.bsm[1]
+      signals += MqbExtraSignals.bsm_radar[0]
+      checks += MqbExtraSignals.bsm_radar[1]
 
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, CANBUS.pt)
 
@@ -259,7 +259,7 @@ class CarState(CarStateBase):
 
 class MqbExtraSignals:
   # Additional signal and message lists for optional or bus-portable controllers
-  acc_radar = ([
+  fwd_radar = ([
     ("ACC_Wunschgeschw", "ACC_02", 0),              # ACC set speed
     ("AWV2_Freigabe", "ACC_10", 0),                 # FCW brake jerk release
     ("ANB_Teilbremsung_Freigabe", "ACC_10", 0),     # AEB partial braking release
@@ -268,7 +268,7 @@ class MqbExtraSignals:
     ("ACC_10", 50),                                 # From J428 ACC radar control module
     ("ACC_02", 17),                                 # From J428 ACC radar control module
   ])
-  bsm = ([
+  bsm_radar = ([
     ("SWA_Infostufe_SWA_li", "SWA_01", 0),          # Blind spot object info, left
     ("SWA_Warnung_SWA_li", "SWA_01", 0),            # Blind spot object warning, left
     ("SWA_Infostufe_SWA_re", "SWA_01", 0),          # Blind spot object info, right
