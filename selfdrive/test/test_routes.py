@@ -371,6 +371,9 @@ routes: dict = {
     'enableCamera': True,
     'enableDsu': False,
   },
+  "f33ec5db3dc94da9|2021-05-22--18-19-45": {
+    'carFingerprint': TOYOTA.LEXUS_UXH_TSS2,
+  },
   # TODO: missing some combos for highlander
   "0a302ffddbb3e3d3|2020-02-08--16-19-08": {
     'carFingerprint': TOYOTA.HIGHLANDER_TSS2,
