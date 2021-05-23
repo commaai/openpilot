@@ -1,6 +1,32 @@
 #include "selfdrive/ui/replay/filereader.h"
 
+#include <bzlib.h>
 #include <QtNetwork>
+#include "cereal/gen/cpp/log.capnp.h"
+
+#include "tools/clib/framereader.h"
+
+static bool decompressBZ2(std::vector<uint8_t> &dest, const char srcData[], size_t srcSize,
+                          size_t outputSizeIncrement = 0x100000U) {
+  bz_stream strm = {};
+  int ret = BZ2_bzDecompressInit(&strm, 0, 0);
+  assert(ret == BZ_OK);
+
+  strm.next_in = const_cast<char *>(srcData);
+  strm.avail_in = srcSize;
+  do {
+    strm.next_out = (char *)&dest[strm.total_out_lo32];
+    strm.avail_out = dest.size() - strm.total_out_lo32;
+    ret = BZ2_bzDecompress(&strm);
+    if (ret == BZ_OK && strm.avail_in > 0 && strm.avail_out == 0) {
+      dest.resize(dest.size() + outputSizeIncrement);
+    }
+  } while (ret == BZ_OK);
+
+  BZ2_bzDecompressEnd(&strm);
+  dest.resize(strm.total_out_lo32);
+  return ret == BZ_STREAM_END;
+}
 
 FileReader::FileReader(const QString& file_) : file(file_) {
   qnam = new QNetworkAccessManager(this);
@@ -45,19 +71,8 @@ void FileReader::readyRead() {
 
 LogReader::LogReader(const QString& file, Events *events_, QReadWriteLock* events_lock_, QMap<int, QPair<int, int> > *eidx_) :
     FileReader(file), events(events_), events_lock(events_lock_), eidx(eidx_) {
-  int ret = BZ2_bzDecompressInit(&bStream, 0, 0);
-  assert(ret == BZ_OK);
-
   // start with 64MB buffer
   raw.resize(1024*1024*64);
-
-  // auto increment?
-  bStream.next_out = raw.data();
-  bStream.avail_out = raw.size();
-}
-
-LogReader::~LogReader() {
-  BZ2_bzDecompressEnd(&bStream);
 }
 
 void LogReader::mergeEvents(kj::ArrayPtr<const capnp::word> amsg) {
@@ -97,17 +112,8 @@ void LogReader::mergeEvents(kj::ArrayPtr<const capnp::word> amsg) {
 
 void LogReader::readyRead() {
   QByteArray dat = reply->readAll();
-
-  bStream.next_in = dat.data();
-  bStream.avail_in = dat.size();
-
-  while (bStream.avail_in > 0) {
-    int ret = BZ2_bzDecompress(&bStream);
-    if (ret != BZ_OK && ret != BZ_STREAM_END) {
-      qWarning() << "bz2 decompress failed";
-      break;
-    }
+  if (!decompressBZ2(raw, dat.data(), dat.size())) {
+    qWarning() << "bz2 decompress failed";
   }
-  size_t size = (raw.size() - bStream.avail_out) / sizeof(capnp::word);
-  mergeEvents({(const capnp::word*)raw.data(), size});
+  mergeEvents({(const capnp::word*)raw.data(), raw.size() / sizeof(capnp::word)});
 }
