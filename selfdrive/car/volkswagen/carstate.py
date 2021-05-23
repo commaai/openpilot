@@ -214,7 +214,6 @@ class CarState(CarStateBase):
       ("Motor_14", 10),     # From J623 Engine control module
       ("Airbag_02", 5),     # From J234 Airbag control module
       ("Kombi_01", 2),      # From J285 Instrument cluster
-      ("Motor_16", 2),      # From J623 Engine control module
       ("Einheiten_01", 1),  # From J??? not known if gateway, cluster, or BCM
     ]
 
