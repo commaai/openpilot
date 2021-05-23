@@ -10,24 +10,21 @@
 
 #include <capnp/serialize.h>
 
-
 class FileReader : public QObject {
   Q_OBJECT
 
 public:
   FileReader(const QString& file_);
-  void startRequest(const QUrl &url);
-  virtual void readyRead();
-  void httpFinished();
-  virtual void done() {}
-
+  
 public slots:
   void process();
 
 protected:
-  QNetworkReply *reply;
+  void startRequest(const QUrl &url);
+  virtual void readyRead();
+  void httpFinished();
 
-private:
+  QNetworkReply *reply;
   QNetworkAccessManager *qnam;
   QElapsedTimer timer;
   QString file;
@@ -40,11 +37,9 @@ class LogReader : public FileReader {
 
 public:
   LogReader(const QString &file, Events *, QReadWriteLock* events_lock_, QMap<int, QPair<int, int> > *eidx_);
+  
+protected:
   void readyRead();
-  void done() { is_done = true; };
-  bool is_done = false;
-
-private:
   void mergeEvents(kj::ArrayPtr<const capnp::word> amsg);
 
   // backing store

@@ -58,7 +58,6 @@ void FileReader::httpFinished() {
     startRequest(redirectedUrl);
   } else {
     qDebug() << "done in" << timer.elapsed() << "ms";
-    done();
   }
   reply->deleteLater();
   reply = nullptr;
