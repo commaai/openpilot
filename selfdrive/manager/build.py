@@ -30,7 +30,7 @@ def build(spinner, dirty=False):
   j_flag = "" if nproc is None else f"-j{nproc - 1}"
 
   for retry in [True, False]:
-    scons = subprocess.Popen(["scons", j_flag], cwd=BASEDIR, env=env, stderr=subprocess.PIPE)
+    scons = subprocess.Popen(["scons", j_flag, "--cache-populate"], cwd=BASEDIR, env=env, stderr=subprocess.PIPE)
 
     compile_output = []
 
@@ -87,11 +87,12 @@ def build(spinner, dirty=False):
   # enforce max cache size
   cache_files = [f for f in CACHE_DIR.rglob('*') if f.is_file()]
   cache_files.sort(key=lambda f: f.stat().st_mtime)
-  for n in cache_files:
-    cache_size = sum(f.stat().st_size for f in CACHE_DIR.rglob('*'))
+  cache_size = sum(f.stat().st_size for f in cache_files)
+  for f in cache_files:
     if cache_size < MAX_CACHE_SIZE:
       break
-    n.unlink()
+    cache_size -= f.stat().st_size
+    f.unlink()
 
 
 if __name__ == "__main__" and not PREBUILT:
