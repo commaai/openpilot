@@ -1,13 +1,8 @@
 #!/usr/bin/env python
 
-# This process publishes joystick events. Such events can be suscribed by
+# This process publishes joystick events. Such events can be subscribed by
 # mocked car controller scripts.
 
-
-### this process needs pygame and can't run on the EON ###
-
-import pygame  # pylint: disable=import-error
-import time
 import zmq
 import cereal.messaging as messaging
 from common.numpy_fast import clip
@@ -16,11 +11,10 @@ import multiprocessing
 from uuid import uuid4
 
 
-kb = KBHit()
-
-
-class Joystick:
+class Joystick:  # TODO: see if we can clean this class up
   def __init__(self, use_keyboard=True):
+    self.kb = KBHit()
+
     self.use_keyboard = use_keyboard
     self.axes_values = {'steer': 0., 'accel': 0.}
 
@@ -34,7 +28,7 @@ class Joystick:
 
   def update(self):
     if self.use_keyboard:
-      key = kb.getch().lower()
+      key = self.kb.getch().lower()
       if key in self.axes:
         event, event_type = self.axes[key]
         sign = 1. if event in ['forward', 'left'] else -1.
@@ -48,17 +42,8 @@ class Joystick:
       return
 
 
-import sys
-import select
-
-joystick = Joystick(use_keyboard=True)
-
-
-# while True:
-#   joystick.update()
-#   print(joystick.axes_values)
-
 BUTTONS = ['pcm_cancel_cmd', 'engaged_toggle', 'steer_required']
+joystick = Joystick(use_keyboard=True)
 
 
 def new_joystick_msg(axes, btns):
@@ -83,9 +68,8 @@ def send_thread(command_address):
   # starting message to send to controlsd if user doesn't type any keys
   msg = joystick.axes_values
   while True:
-    evts = dict(poller.poll(POLL_RATE))  # blocking
-    if command_sock in evts:
-      msg = command_sock.recv_pyobj()  # only receives axes for now
+    for sock in dict(poller.poll(POLL_RATE)):
+      msg = sock.recv_pyobj()  # only receives axes for now
 
     dat = new_joystick_msg([msg[a] for a in ['accel', 'steer']],
                            [False for _ in BUTTONS])
@@ -100,67 +84,18 @@ def joystick_thread():
   command_sock = zmq.Context.instance().socket(zmq.PUSH)
   command_sock.connect(command_address)
 
-  poller = zmq.Poller()
-  poller.register(command_sock, zmq.POLLIN)
-
   send_thread_proc = multiprocessing.Process(target=send_thread, args=(command_address,))
   send_thread_proc.start()
 
-  while 1:
-    joystick.update()
-    command_sock.send_pyobj(joystick.axes_values)
-    time.sleep(1 / 100.)  # TODO: abstract this
+  # Receive joystick/key events and send to joystick send thread
+  try:
+    while 1:
+      joystick.update()
+      command_sock.send_pyobj(joystick.axes_values)
+      # TODO: time shouldn't matter since joystick.update() is blocking
+  except KeyboardInterrupt:
+    send_thread_proc.terminate()
 
-  # pygame.init()
-
-  # Used to manage how fast the screen updates
-  # clock = pygame.time.Clock()
-
-  # Initialize the joysticks
-  # pygame.joystick.init()
-
-  # Get count of joysticks
-  # joystick_count = pygame.joystick.get_count()
-  # if joystick_count > 1:
-  #   raise ValueError("More than one joystick attached")
-  # elif joystick_count < 1:
-  #   raise ValueError("No joystick found")
-
-  # -------- Main Program Loop -----------
-  while True:
-    # EVENT PROCESSING STEP
-    # for event in pygame.event.get():  # User did something
-    #   if event.type == pygame.QUIT:  # If user clicked close
-    #     pass
-    #   Available joystick events: JOYAXISMOTION JOYBALLMOTION JOYBUTTONDOWN JOYBUTTONUP JOYHATMOTION
-      # if event.type == pygame.JOYBUTTONDOWN:
-      #   print("Joystick button pressed.")
-      # if event.type == pygame.JOYBUTTONUP:
-      #   print("Joystick button released.")
-
-    # joystick = pygame.joystick.Joystick(0)
-    # joystick.init()
-
-    # Usually axis run in pairs, up/down for one, and left/right for
-    # the other.
-    joystick.update()
-    axes = [joystick.axes_values[a] for a in ['accel', 'steer']]
-    buttons = [False for _ in BUTTONS]
-    print(axes)
-
-    # for a in range(joystick.get_numaxes()):
-    #   axes.append(joystick.get_axis(a))
-    #
-    # for b in range(joystick.get_numbuttons()):
-    #   buttons.append(bool(joystick.get_button(b)))
-    #
-    dat = messaging.new_message('testJoystick')
-    dat.testJoystick.axes = axes
-    dat.testJoystick.buttons = buttons
-    joystick_sock.send(dat.to_bytes())
-
-    # Limit to 100 frames per second
-    time.sleep(1 / 100)
 
 if __name__ == "__main__":
-  joystick_thread()
+  joystick_thread()   # TODO: take in axes increment as arg, clip maybe
