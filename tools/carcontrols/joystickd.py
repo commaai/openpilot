@@ -46,11 +46,7 @@ BUTTONS = ['pcm_cancel_cmd', 'engaged_toggle', 'steer_required']
 joystick = Joystick(use_keyboard=True)
 
 
-def new_joystick_msg(axes, btns):
-  dat = messaging.new_message('testJoystick')
-  dat.testJoystick.axes = axes
-  dat.testJoystick.buttons = btns
-  return dat
+
 
 
 def send_thread(command_address):
@@ -69,10 +65,11 @@ def send_thread(command_address):
   msg = joystick.axes_values
   while True:
     for sock in dict(poller.poll(POLL_RATE)):
-      msg = sock.recv_pyobj()  # only receives axes for now
+      msg = sock.recv_pyobj()  # TODO: only receives axes for now
 
-    dat = new_joystick_msg([msg[a] for a in ['accel', 'steer']],
-                           [False for _ in BUTTONS])
+    dat = messaging.new_message('testJoystick')
+    dat.testJoystick.axes = [msg[a] for a in ['accel', 'steer']]
+    dat.testJoystick.buttons = [False for _ in BUTTONS]
 
     joystick_sock.send(dat.to_bytes())
     print(f'Sent: {dat}')
