@@ -91,7 +91,7 @@ void FrameReader::process() {
   assert(sws_ctx != NULL);
 
   do {
-    AVPacket * pkt = new AVPacket;
+    AVPacket *pkt = new AVPacket;
     if (av_read_frame(pFormatCtx, pkt) < 0) {
       delete pkt;
       break;
@@ -103,7 +103,7 @@ void FrameReader::process() {
   printf("framereader download done\n");
 
   thread = std::thread(&FrameReader::decodeThread, this);
-  
+
   // get first x frames
   get(0);
 }

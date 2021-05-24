@@ -48,12 +48,10 @@ private:
   std::condition_variable cv_decode;
   std::condition_variable cv_frame;
   int decode_idx = -1;
-  std::atomic<bool> exit_;
+  std::atomic<bool> exit_ = false;
   std::thread thread;
 
   bool valid = true;
   std::string url;
-
-  
 };
 

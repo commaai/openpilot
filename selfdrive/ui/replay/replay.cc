@@ -94,10 +94,6 @@ void Replay::removeSegment(int n) {
     auto lr = lrs.take(n);
     delete lr;
   }
-  if (frs.contains(n)) {
-    auto fr = frs.take(n);
-    delete fr;
-  }
 
   events_lock.lockForWrite();
   auto eit = events.begin();
@@ -110,6 +106,10 @@ void Replay::removeSegment(int n) {
   }
   events_lock.unlock();
   */
+  if (frs.contains(n)) {
+    auto fr = frs.take(n);
+    delete fr;
+  }
 }
 
 void Replay::start(){
