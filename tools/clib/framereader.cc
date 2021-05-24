@@ -38,35 +38,28 @@ static int ffmpeg_lockmgr_cb(void **arg, enum AVLockOp op) {
   return 1;
 }
 
-FrameReader::FrameReader(const char *fn) {
-  int ret;
-
-  ret = av_lockmgr_register(ffmpeg_lockmgr_cb);
+FrameReader::FrameReader(const QString &fn) : url(fn) {
+  int ret = av_lockmgr_register(ffmpeg_lockmgr_cb);
   assert(ret >= 0);
 
   avformat_network_init();
   av_register_all();
-
-  snprintf(url, sizeof(url)-1,"%s",fn);
-  t = new std::thread([&]() { this->loaderThread(); });
 }
 
-void FrameReader::loaderThread() {
-  int ret;
-
-  if (avformat_open_input(&pFormatCtx, url, NULL, NULL) != 0) {
-    fprintf(stderr, "error loading %s\n", url);
+void FrameReader::process() {
+  if (avformat_open_input(&pFormatCtx, url.toStdString().c_str(), NULL, NULL) != 0) {
+    fprintf(stderr, "error loading %s\n", url.toStdString().c_str());
     valid = false;
     return;
   }
-  av_dump_format(pFormatCtx, 0, url, 0);
+  av_dump_format(pFormatCtx, 0, url.toStdString().c_str(), 0);
 
   auto pCodecCtxOrig = pFormatCtx->streams[0]->codec;
   auto pCodec = avcodec_find_decoder(pCodecCtxOrig->codec_id);
   assert(pCodec != NULL);
 
   pCodecCtx = avcodec_alloc_context3(pCodec);
-  ret = avcodec_copy_context(pCodecCtx, pCodecCtxOrig);
+  int ret = avcodec_copy_context(pCodecCtx, pCodecCtxOrig);
   assert(ret == 0);
 
   ret = avcodec_open2(pCodecCtx, pCodec, NULL);

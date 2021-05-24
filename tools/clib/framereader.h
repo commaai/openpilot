@@ -1,5 +1,4 @@
-#ifndef FRAMEREADER_HPP
-#define FRAMEREADER_HPP
+#pragma once
 
 #include <unistd.h>
 #include <vector>
@@ -8,6 +7,8 @@
 #include <mutex>
 #include <list>
 #include <condition_variable>
+
+#include <QString>
 
 #include "tools/clib/channel.h"
 
@@ -21,15 +22,14 @@ extern "C" {
 
 class FrameReader {
 public:
-  FrameReader(const char *fn);
+  FrameReader(const QString &fn);
   uint8_t *get(int idx);
   AVFrame *toRGB(AVFrame *);
   void waitForReady() {
     while (!joined) usleep(10*1000);
   }
   int getRGBSize() { return width*height*3; }
-  void loaderThread();
-  void cacherThread();
+  void process();
 
   //TODO: get this from the actual frame
   int width = 1164;
@@ -43,7 +43,6 @@ private:
 
   std::vector<AVPacket *> pkts;
 
-  std::thread *t;
   bool joined = false;
 
   std::map<int, uint8_t *> cache;
@@ -53,8 +52,6 @@ private:
   channel<int> to_cache;
 
   bool valid = true;
-  char url[0x400];
+  QString url;
 };
-
-#endif
 
