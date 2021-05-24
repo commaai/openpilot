@@ -99,6 +99,9 @@ void FrameReader::process() {
   printf("framereader download done\n");
 
   thread = std::thread(&FrameReader::decodeThread, this);
+  
+  // get first x frames
+  get(0);
 }
 
 void FrameReader::decodeThread() {
