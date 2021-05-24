@@ -59,7 +59,7 @@ class Controls:
 
     self.sm = sm
     if self.sm is None:
-      ignore = ['driverCameraState', 'managerState'] if SIMULATION else None
+      ignore = ['driverCameraState', 'managerState'] if SIMULATION else ['testJoystick']
       self.sm = messaging.SubMaster(['deviceState', 'pandaState', 'modelV2', 'liveCalibration',
                                      'driverMonitoringState', 'longitudinalPlan', 'lateralPlan', 'liveLocationKalman',
                                      'managerState', 'liveParameters', 'radarState'] + self.camera_packets,
@@ -144,8 +144,9 @@ class Controls:
 
     # TODO: no longer necessary, aside from process replay
     self.sm['liveParameters'].valid = True
+    self.debug_mode = self.sm.alive
 
-    self.startup_event = get_startup_event(car_recognized, controller_available, fuzzy_fingerprint)
+    self.startup_event = get_startup_event(car_recognized, controller_available, fuzzy_fingerprint, self.debug_mode)
 
     if not sounds_available:
       self.events.add(EventName.soundsUnavailable, static=True)
