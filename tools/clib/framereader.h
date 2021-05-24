@@ -46,9 +46,9 @@ private:
 	struct SwsContext *sws_ctx = NULL;
 
   std::mutex mutex;
-  std::condition_variable cv_decoding;
-  std::condition_variable cv_decoded;
-  int decoding_idx = -1;
+  std::condition_variable cv_decode;
+  std::condition_variable cv_frame;
+  int decode_idx = -1;
   std::atomic<bool> exit_;
   std::thread thread;
 

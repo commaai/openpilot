@@ -109,11 +109,11 @@ void FrameReader::decodeThread() {
     int gop = 0;
     {
       std::unique_lock lk(mutex);
-      cv_decoding.wait(lk, [=] { return exit_ || decoding_idx != -1; });
+      cv_decode.wait(lk, [=] { return exit_ || decode_idx != -1; });
       if (exit_) break;
 
-      gop = std::min(decoding_idx - decoding_idx % 15, 0);
-      decoding_idx = -1;
+      gop = std::min(decode_idx - decode_idx % 15, 0);
+      decode_idx = -1;
     }
 
     for (int i = gop; i < std::max(gop + 15, (int)frames.size()); ++i) {
@@ -127,7 +127,7 @@ void FrameReader::decodeThread() {
 
       std::unique_lock lk(mutex);
       frames[i]->picture = picture;
-      cv_decoded.notify_all();
+      cv_frame.notify_all();
     }
   }
 }
@@ -144,15 +144,14 @@ AVFrame *FrameReader::toRGB(AVFrame *pFrame) {
 }
 
 uint8_t *FrameReader::get(int idx) {
-  if (!valid) return nullptr;
+  if (!valid || idx < 0 || idx >= frames.size()) return nullptr;
 
-  if (idx < 0 || idx > frames.size() - 1) return nullptr;
   std::unique_lock lk(mutex);
   Frame *frame = frames[idx];
   if (!frame->picture) {
-    decoding_idx = idx;
-    cv_decoding.notify_one();
-    cv_decoded.wait(lk, [=] { return exit_ || frame->picture != nullptr; });
+    decode_idx = idx;
+    cv_decode.notify_one();
+    cv_frame.wait(lk, [=] { return exit_ || frame->picture != nullptr; });
   }
   return frame->picture ? frame->picture->data[0] : nullptr;
 }
