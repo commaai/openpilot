@@ -65,17 +65,14 @@ void Replay::parseResponse(const QString &response) {
 
 void Replay::addSegment(int n) {
   assert((n >= 0) && (n < log_paths.size()) && (n < camera_paths.size()));
-  {
-    std::unique_lock lk(lock);
-    if (lrs.find(n) != lrs.end() && lrs[n] != nullptr) {
-      return;
-    }
-  }
+
+  std::unique_lock lk(lock);
+  if (lrs[n] != nullptr) return;
+
   LogReader *log_reader = new LogReader(log_paths.at(n).toString());
-  {
-    std::unique_lock lk(lock);
-    lrs[n] = log_reader;
-  }
+  lrs[n] = log_reader;
+  lk.unlock();
+
   QThread *t = new QThread;
   log_reader->moveToThread(t);
   QObject::connect(t, &QThread::started, log_reader, &LogReader::process);
