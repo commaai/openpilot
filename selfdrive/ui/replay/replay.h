@@ -54,8 +54,12 @@ private:
   QMap<int, QPair<int, int>> eidx;
 
   HttpRequest *http;
-  QJsonArray camera_paths;
+  QJsonArray road_camera_paths;
+  QJsonArray qcameras_paths;
+  QJsonArray driver_camera_paths;
+  
   QJsonArray log_paths;
+  
   QMap<int, LogReader*> lrs;
   QMap<int, FrameReader*> frs;
 

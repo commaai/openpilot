@@ -36,7 +36,7 @@ Replay::Replay(QString route, SubMaster *sm_, QObject *parent) : route(route), s
     if ((allow[0].size() == 0 || allow.contains(it.name)) &&
         !block.contains(it.name)) {
       s.push_back(it.name);
-      socks.append(std::string(it.name));
+      socks.append(it.name);
     }
   }
   qDebug() << "services " << s;
@@ -59,7 +59,9 @@ void Replay::parseResponse(const QString &response) {
     return;
   }
 
-  camera_paths = doc["cameras"].toArray();
+  road_camera_paths = doc["cameras"].toArray();
+  qcameras_paths = doc["qcameras"].toArray();
+  driver_camera_paths = doc["dcameras"].toArray();
   log_paths = doc["logs"].toArray();
 
   seekTime(0);
@@ -106,7 +108,7 @@ void Replay::cameraThread() {
 }
 
 void Replay::addSegment(int n) {
-  assert((n >= 0) && (n < log_paths.size()) && (n < camera_paths.size()));
+  assert((n >= 0) && (n < log_paths.size()) && (n < road_camera_paths.size()));
   if (lrs.find(n) != lrs.end()) {
     return;
   }
