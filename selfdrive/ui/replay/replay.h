@@ -15,16 +15,11 @@
 #include "selfdrive/ui/replay/filereader.h"
 #include "selfdrive/ui/replay/framereader.h"
 
-
-constexpr int FORWARD_SEGS = 2;
-constexpr int BACKWARD_SEGS = 2;
-
-
 class Replay : public QObject {
   Q_OBJECT
 
 public:
-  Replay(QString route, SubMaster *sm = nullptr, QObject *parent = 0);
+  Replay(const QString &route, SubMaster *sm = nullptr, QObject *parent = nullptr);
 
   void start();
   void addSegment(int n);
@@ -57,7 +52,6 @@ private:
   QJsonArray road_camera_paths;
   QJsonArray qcameras_paths;
   QJsonArray driver_camera_paths;
-  
   QJsonArray log_paths;
   
   QMap<int, LogReader*> lrs;

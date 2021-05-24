@@ -9,6 +9,8 @@
 #include "selfdrive/hardware/hw.h"
 
 const int SEGMENT_LENGTH = 60; // 60s
+const int FORWARD_SEGS = 2;
+const int BACKWARD_SEGS = 2;
 
 int getch() {
   int ch;
@@ -26,7 +28,7 @@ int getch() {
   return ch;
 }
 
-Replay::Replay(QString route, SubMaster *sm_, QObject *parent) : route(route), sm(sm_), QObject(parent) {
+Replay::Replay(const QString &route, SubMaster *sm_, QObject *parent) : route(route), sm(sm_), QObject(parent) {
   QStringList block = QString(getenv("BLOCK")).split(",");
   qDebug() << "blocklist" << block;
 
