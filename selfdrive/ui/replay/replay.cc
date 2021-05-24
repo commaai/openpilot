@@ -75,13 +75,13 @@ void Replay::addSegment(int n) {
   LogReader *log_reader = new LogReader(log_paths.at(n).toString());
   log_reader->moveToThread(t);
   QObject::connect(t, &QThread::started, log_reader, &LogReader::process);
+  QObject::connect(t, &QThread::finished, t, &QThread::deleteLater);
   QObject::connect(log_reader, &LogReader::done, [=] {
     {
       std::unique_lock lk(lock);
       lrs.insert(n, log_reader);
     }
     t->quit();
-    t->deleteLater();
   });
   t->start();
 
