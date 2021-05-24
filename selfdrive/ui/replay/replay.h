@@ -34,7 +34,7 @@ public:
   void parseResponse(const QString &response);
 
 private:
-  void stream();
+  void streamThread();
   void keyboardThread();
   void segmentQueueThread();
   void cameraThread();
@@ -46,9 +46,7 @@ private:
   std::atomic<int> current_ts = 0;
   std::atomic<int> current_segment = 0;
 
-  QThread *thread;
-  QThread *kb_thread;
-  QThread *queue_thread;
+  QThread *stream_thread, *keyboard_thread, *queue_thread, *camera_thread;
 
   // logs
   Events events;

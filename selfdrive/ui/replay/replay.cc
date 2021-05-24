@@ -64,21 +64,17 @@ void Replay::parseResponse(const QString &response) {
 
   seekTime(0);
 
-  queue_thread = QThread::create(&Replay::segmentQueueThread, this);
-  connect(queue_thread, &QThread::finished, queue_thread, &QThread::deleteLater);
-  queue_thread->start();
+  auto startThread = [=](auto functor) -> QThread * {
+    QThread *t = QThread::create(functor, this);
+    connect(t, &QThread::finished, t, &QThread::deleteLater);
+    t->start();
+    return t;
+  };
 
-  kb_thread = QThread::create(&Replay::keyboardThread, this);
-  connect(kb_thread, &QThread::finished, kb_thread, &QThread::deleteLater);
-  kb_thread->start();
-
-  thread = QThread::create(&Replay::stream, this);
-  connect(thread, &QThread::finished, thread, &QThread::deleteLater);
-  thread->start();
-
-  QThread *camera_thread = QThread::create(&Replay::cameraThread, this);
-  connect(camera_thread, &QThread::finished, camera_thread, &QThread::deleteLater);
-  camera_thread->start();
+  queue_thread = startThread(&Replay::segmentQueueThread);
+  stream_thread = startThread(&Replay::streamThread);
+  camera_thread = startThread(&Replay::cameraThread);
+  keyboard_thread = startThread(&Replay::keyboardThread);
 }
 
 void Replay::cameraThread() {
@@ -183,10 +179,9 @@ void Replay::segmentQueueThread() {
 }
 
 void Replay::pushFrameToQueue(uint32_t frameId, const QMap<int, FrameReader *> &framesMap, const QMap<int, QPair<int, int>> &frameEidx) {
-  auto it_ = frameEidx.find(frameId);
-  if (it_ != frameEidx.end()) {
+  if (auto it_ = frameEidx.find(frameId); it_ != frameEidx.end()) {
     auto [segment, idx] = *it_;
-    if (framesMap.find(segment) != framesMap.end()) {
+    if (framesMap.contains(segment)) {
       frame_queue.push({framesMap[segment], idx});
     }
   }
@@ -226,7 +221,7 @@ void Replay::keyboardThread() {
   }
 }
 
-void Replay::stream() {
+void Replay::streamThread() {
   QElapsedTimer timer;
   timer.start();
 
