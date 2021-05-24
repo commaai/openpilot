@@ -10,8 +10,6 @@
 
 #include <QString>
 
-#include "tools/clib/channel.h"
-
 // independent of QT, needs ffmpeg
 extern "C" {
 #include <libavcodec/avcodec.h>
@@ -23,6 +21,7 @@ extern "C" {
 class FrameReader {
 public:
   FrameReader(const QString &fn);
+  ~FrameReader();
   uint8_t *get(int idx);
   AVFrame *toRGB(AVFrame *);
   void waitForReady() {
@@ -36,20 +35,28 @@ public:
   int height = 874;
 
 private:
+  void decodeThread();
+
+  struct Frame{
+    AVPacket *pkt;
+    AVFrame *picture;
+  };
+  std::vector<Frame*> frames;
+
   AVFormatContext *pFormatCtx = NULL;
   AVCodecContext *pCodecCtx = NULL;
 
 	struct SwsContext *sws_ctx = NULL;
 
-  std::vector<AVPacket *> pkts;
-
   bool joined = false;
 
-  std::map<int, uint8_t *> cache;
-  std::mutex mcache;
-
-  void GOPCache(int idx);
-  channel<int> to_cache;
+  std::mutex mutex;
+  std::condition_variable cv_decoding;
+  std::condition_variable cv_decoded;
+  int decoding_idx = -1;
+  int decoded_idx = -1;
+  std::atomic<bool> exit_;
+  std::thread thread;
 
   bool valid = true;
   QString url;
