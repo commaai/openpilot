@@ -93,6 +93,7 @@ void FrameReader::process() {
     assert(frame->pkt != NULL);
     if (av_read_frame(pFormatCtx, frame->pkt) < 0) {
       delete frame->pkt;
+      delete frame;
       break;
     }
     //printf("%d pkt %d %d\n", pkts.size(), pkt->size, pkt->pos);
