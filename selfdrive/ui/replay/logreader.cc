@@ -1,4 +1,4 @@
-#include "selfdrive/ui/replay/filereader.h"
+#include "selfdrive/ui/replay/logreader.h"
 
 #include <bzlib.h>
 #include <QtNetwork>
