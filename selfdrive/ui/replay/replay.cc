@@ -24,7 +24,7 @@ int getch() {
   return ch;
 }
 
-Replay::Replay(QString route, SubMaster *sm_, QObject *parent) : sm(sm_), QObject(parent) {
+Replay::Replay(QString route, SubMaster *sm_, QObject *parent) : route(route), sm(sm_), QObject(parent) {
   QStringList block = QString(getenv("BLOCK")).split(",");
   qDebug() << "blocklist" << block;
 
@@ -44,7 +44,9 @@ Replay::Replay(QString route, SubMaster *sm_, QObject *parent) : sm(sm_), QObjec
   if (sm == nullptr) {
     pm = new PubMaster(s);
   }
+}
 
+void Replay::start() {
   const QString url = "https://api.commadotai.com/v1/route/" + route + "/files";
   http = new HttpRequest(this, url, "", !Hardware::PC());
   QObject::connect(http, &HttpRequest::receivedResponse, this, &Replay::parseResponse);
@@ -61,6 +63,28 @@ void Replay::parseResponse(const QString &response) {
   log_paths = doc["logs"].toArray();
 
   seekTime(0);
+
+  queue_thread = QThread::create(&Replay::segmentQueueThread, this);
+  connect(queue_thread, &QThread::finished, queue_thread, &QThread::deleteLater);
+  queue_thread->start();
+
+  kb_thread = QThread::create(&Replay::keyboardThread, this);
+  connect(kb_thread, &QThread::finished, kb_thread, &QThread::deleteLater);
+  kb_thread->start();
+
+  thread = QThread::create(&Replay::stream, this);
+  connect(thread, &QThread::finished, thread, &QThread::deleteLater);
+  thread->start();
+
+  QThread *camera_thread = QThread::create(&Replay::cameraThread, this);
+  connect(camera_thread, &QThread::finished, camera_thread, &QThread::deleteLater);
+  camera_thread->start();
+}
+
+void Replay::cameraThread() {
+  while (!exit_) {
+    
+  }
 }
 
 void Replay::addSegment(int n) {
@@ -110,26 +134,6 @@ void Replay::removeSegment(int n) {
     auto fr = frs.take(n);
     delete fr;
   }
-}
-
-void Replay::start(){
-  thread = new QThread;
-  QObject::connect(thread, &QThread::started, [=](){
-    stream();
-  });
-  thread->start();
-
-  kb_thread = new QThread;
-  QObject::connect(kb_thread, &QThread::started, [=](){
-    keyboardThread();
-  });
-  kb_thread->start();
-
-  queue_thread = new QThread;
-  QObject::connect(queue_thread, &QThread::started, [=](){
-    segmentQueueThread();
-  });
-  queue_thread->start();
 }
 
 void Replay::seekTime(int ts) {

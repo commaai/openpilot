@@ -30,13 +30,14 @@ public:
   void removeSegment(int n);
   void seekTime(int ts);
 
-public slots:
-  void stream();
-  void keyboardThread();
-  void segmentQueueThread();
   void parseResponse(const QString &response);
 
 private:
+  void stream();
+  void keyboardThread();
+  void segmentQueueThread();
+  void cameraThread();
+
   float last_print = 0;
   uint64_t route_start_ts;
   std::atomic<int> seek_ts = 0;
@@ -63,4 +64,6 @@ private:
   PubMaster *pm;
   QVector<std::string> socks;
   VisionIpcServer *vipc_server = nullptr;
+  QString route;
+  std::atomic<bool> exit_;
 };
