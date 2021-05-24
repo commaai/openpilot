@@ -17,10 +17,9 @@ from selfdrive.car.volkswagen.values import FW_VERSIONS as VW_FW_VERSIONS
 from selfdrive.car.toyota.values import FINGERPRINTS as TOYOTA_FINGERPRINTS
 from selfdrive.car.honda.values import FINGERPRINTS as HONDA_FINGERPRINTS
 from selfdrive.car.hyundai.values import FINGERPRINTS as HYUNDAI_FINGERPRINTS
-from selfdrive.car.volkswagen.values import FINGERPRINTS as VW_FINGERPRINTS
 
 NO_API = "NO_API" in os.environ
-SUPPORTED_CARS = list(TOYOTA_FINGERPRINTS.keys()) + list(HONDA_FINGERPRINTS.keys()) + list(HYUNDAI_FINGERPRINTS.keys())+ list(VW_FINGERPRINTS.keys())
+SUPPORTED_CARS = list(TOYOTA_FINGERPRINTS.keys()) + list(HONDA_FINGERPRINTS.keys()) + list(HYUNDAI_FINGERPRINTS.keys())
 
 try:
   from xx.pipeline.c.CarState import migration
