@@ -21,7 +21,7 @@ class CarState(CarStateBase):
     if self.car_fingerprint in PREGLOBAL_CARS:
       ret.brakePressed = cp.vl["Brake_Pedal"]["Brake_Pedal"] > 2
     else:
-      ret.brakePressed = cp.vl["Brake_Pedal"]["Brake_Pedal"] > 1e-5
+      ret.brakePressed = cp.vl["Brake_Status"]["Brake"] == 1
 
     ret.wheelSpeeds.fl = cp.vl["Wheel_Speeds"]["FL"] * CV.KPH_TO_MS
     ret.wheelSpeeds.fr = cp.vl["Wheel_Speeds"]["FR"] * CV.KPH_TO_MS
