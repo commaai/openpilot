@@ -288,11 +288,9 @@ void Replay::streamThread() {
 
         // publish msg
         if (sm == nullptr) {
-          capnp::MallocMessageBuilder msg;
+          MessageBuilder msg;
           msg.setRoot(e);
-          auto words = capnp::messageToFlatArray(msg);
-          auto bytes = words.asBytes();
-          pm->send(type.c_str(), (unsigned char*)bytes.begin(), bytes.size());
+          pm->send(type.c_str(), msg);
         } else {
           std::vector<std::pair<std::string, cereal::Event::Reader>> messages;
           messages.push_back({type, e});
