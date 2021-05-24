@@ -1,14 +1,15 @@
 #pragma once
 
 #include <unistd.h>
-#include <vector>
-#include <map>
-#include <thread>
-#include <mutex>
-#include <list>
-#include <condition_variable>
 
-#include <QString>
+#include <atomic>
+#include <condition_variable>
+#include <list>
+#include <map>
+#include <mutex>
+#include <string>
+#include <thread>
+#include <vector>
 
 // independent of QT, needs ffmpeg
 extern "C" {
@@ -20,12 +21,14 @@ extern "C" {
 
 class FrameReader {
 public:
-  FrameReader(const QString &fn);
+  FrameReader(const std::string &fn);
   ~FrameReader();
   uint8_t *get(int idx);
   AVFrame *toRGB(AVFrame *);
   int getRGBSize() { return width*height*3; }
   void process();
+
+  int width = 0, height = 0;
 
 private:
   void decodeThread();
@@ -49,8 +52,8 @@ private:
   std::thread thread;
 
   bool valid = true;
-  QString url;
+  std::string url;
 
-  int width, height;
+  
 };
 

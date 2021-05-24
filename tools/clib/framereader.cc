@@ -38,7 +38,7 @@ static int ffmpeg_lockmgr_cb(void **arg, enum AVLockOp op) {
   return 1;
 }
 
-FrameReader::FrameReader(const QString &fn) : url(fn) {
+FrameReader::FrameReader(const std::string &fn) : url(fn) {
   int ret = av_lockmgr_register(ffmpeg_lockmgr_cb);
   assert(ret >= 0);
 
@@ -63,13 +63,13 @@ FrameReader::~FrameReader() {
 }
 
 void FrameReader::process() {
-  if (avformat_open_input(&pFormatCtx, url.toStdString().c_str(), NULL, NULL) != 0) {
-    fprintf(stderr, "error loading %s\n", url.toStdString().c_str());
+  if (avformat_open_input(&pFormatCtx, url.c_str(), NULL, NULL) != 0) {
+    fprintf(stderr, "error loading %s\n", url.c_str());
     valid = false;
     return;
   }
   avformat_find_stream_info(pFormatCtx, NULL);
-  av_dump_format(pFormatCtx, 0, url.toStdString().c_str(), 0);
+  av_dump_format(pFormatCtx, 0, url.c_str(), 0);
 
   auto pCodecCtxOrig = pFormatCtx->streams[0]->codec;
   auto pCodec = avcodec_find_decoder(pCodecCtxOrig->codec_id);
