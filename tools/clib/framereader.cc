@@ -4,38 +4,21 @@
 #include <unistd.h>
 
 static int ffmpeg_lockmgr_cb(void **arg, enum AVLockOp op) {
-  pthread_mutex_t *mutex = (pthread_mutex_t *)*arg;
-  int err;
-
+  std::mutex *mutex = (std::mutex *)*arg;
   switch (op) {
   case AV_LOCK_CREATE:
-    mutex = (pthread_mutex_t *)malloc(sizeof(*mutex));
-    if (!mutex)
-        return AVERROR(ENOMEM);
-    if ((err = pthread_mutex_init(mutex, NULL))) {
-        free(mutex);
-        return AVERROR(err);
-    }
-    *arg = mutex;
-    return 0;
+    mutex = new std::mutex();
+    break;
   case AV_LOCK_OBTAIN:
-    if ((err = pthread_mutex_lock(mutex)))
-        return AVERROR(err);
-
-    return 0;
+    mutex->lock();
+    break;
   case AV_LOCK_RELEASE:
-    if ((err = pthread_mutex_unlock(mutex)))
-        return AVERROR(err);
-
-    return 0;
+    mutex->unlock();
   case AV_LOCK_DESTROY:
-    if (mutex)
-        pthread_mutex_destroy(mutex);
-    free(mutex);
-    *arg = NULL;
-    return 0;
+    delete mutex;
+    break;
   }
-  return 1;
+  return 0;
 }
 
 FrameReader::FrameReader(const std::string &fn) : url(fn) {
