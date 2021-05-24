@@ -48,8 +48,6 @@ private:
 
 	struct SwsContext *sws_ctx = NULL;
 
-  bool joined = false;
-
   std::mutex mutex;
   std::condition_variable cv_decoding;
   std::condition_variable cv_decoded;
@@ -58,7 +56,7 @@ private:
   std::atomic<bool> exit_;
   std::thread thread;
 
-  bool valid = true;
+  bool valid = false;
   QString url;
 };
 

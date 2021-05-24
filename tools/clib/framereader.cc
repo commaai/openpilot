@@ -65,7 +65,6 @@ FrameReader::~FrameReader() {
 void FrameReader::process() {
   if (avformat_open_input(&pFormatCtx, url.toStdString().c_str(), NULL, NULL) != 0) {
     fprintf(stderr, "error loading %s\n", url.toStdString().c_str());
-    valid = false;
     return;
   }
   av_dump_format(pFormatCtx, 0, url.toStdString().c_str(), 0);
@@ -107,7 +106,7 @@ void FrameReader::process() {
   } while (true);
 
   printf("framereader download done\n");
-  joined = true;
+  valid = true;
 
   thread = std::thread(&FrameReader::decodeThread, this);
 }
