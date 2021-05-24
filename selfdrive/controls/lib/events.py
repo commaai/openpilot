@@ -251,7 +251,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
   EventName.startupDebug: {
     ET.PERMANENT: Alert(
       "WARNING: Joystick debug mode is active",
-      "Always keep hands on wheel and eyes on road",
+      "openpilot will not steer or brake without joystickd",
       AlertStatus.userPrompt, AlertSize.mid,
       Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 15.),
   },
