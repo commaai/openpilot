@@ -102,6 +102,7 @@ void HttpRequest::sendRequest(const QString &requestURL){
 
   QNetworkRequest request;
   request.setUrl(QUrl(requestURL));
+  request.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
   request.setRawHeader(QByteArray("Authorization"), ("JWT " + token).toUtf8());
 
   reply = networkAccessManager->get(request);

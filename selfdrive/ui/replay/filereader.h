@@ -13,44 +13,23 @@
 #include <bzlib.h>
 #include <capnp/serialize.h>
 #include <kj/io.h>
+
 #include "cereal/gen/cpp/log.capnp.h"
-
 #include "tools/clib/channel.h"
-
-class FileReader : public QObject {
-  Q_OBJECT
-
-public:
-  FileReader(const QString& file_);
-  void startRequest(const QUrl &url);
-  ~FileReader();
-  virtual void readyRead();
-  void httpFinished();
-  virtual void done() {};
-
-public slots:
-  void process();
-
-protected:
-  QNetworkReply *reply;
-
-private:
-  QNetworkAccessManager *qnam;
-  QElapsedTimer timer;
-  QString file;
-};
+#include "selfdrive/ui/qt/api.h"
 
 typedef QMultiMap<uint64_t, cereal::Event::Reader> Events;
-
-class LogReader : public FileReader {
+class LogReader : public QObject {
 Q_OBJECT
 public:
-  LogReader(const QString& file, Events *, QReadWriteLock* events_lock_, QMap<int, QPair<int, int> > *eidx_);
+  LogReader(const QString& url, Events *, QReadWriteLock* events_lock_, QMap<int, QPair<int, int> > *eidx_);
   ~LogReader();
-
-  void readyRead();
+  void process();
   void done() { is_done = true; };
   bool is_done = false;
+
+protected slots:
+  void readyRead(const QString &resp);
 
 private:
   bz_stream bStream;
@@ -67,4 +46,5 @@ private:
   Events *events;
   QReadWriteLock* events_lock;
   QMap<int, QPair<int, int> > *eidx;
+  QString url;
 };

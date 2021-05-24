@@ -4,51 +4,8 @@
 
 #include "tools/clib/framereader.h"
 
-FileReader::FileReader(const QString& file_) : file(file_) {
-}
-
-void FileReader::process() {
-  timer.start();
-  QString str = file.simplified();
-  str.replace(" ", "");
-  startRequest(QUrl(str));
-}
-
-void FileReader::startRequest(const QUrl &url) {
-  qnam = new QNetworkAccessManager;
-  reply = qnam->get(QNetworkRequest(url));
-  connect(reply, &QNetworkReply::finished, this, &FileReader::httpFinished);
-  connect(reply, &QIODevice::readyRead, this, &FileReader::readyRead);
-  qDebug() << "requesting" << url;
-}
-
-void FileReader::httpFinished() {
-  if (reply->error()) {
-    qWarning() << reply->errorString();
-  }
-
-  const QVariant redirectionTarget = reply->attribute(QNetworkRequest::RedirectionTargetAttribute);
-  if (!redirectionTarget.isNull()) {
-    const QUrl redirectedUrl = redirectionTarget.toUrl();
-    //qDebug() << "redirected to" << redirectedUrl;
-    startRequest(redirectedUrl);
-  } else {
-    qDebug() << "done in" << timer.elapsed() << "ms";
-    done();
-  }
-}
-
-void FileReader::readyRead() {
-  QByteArray dat = reply->readAll();
-  printf("got http ready read: %d\n", dat.size());
-}
-
-FileReader::~FileReader() {
-
-}
-
-LogReader::LogReader(const QString& file, Events *events_, QReadWriteLock* events_lock_, QMap<int, QPair<int, int> > *eidx_) :
-    FileReader(file), events(events_), events_lock(events_lock_), eidx(eidx_) {
+LogReader::LogReader(const QString& url, Events *events_, QReadWriteLock* events_lock_, QMap<int, QPair<int, int> > *eidx_) :
+    url(url), events(events_), events_lock(events_lock_), eidx(eidx_) {
   bStream.next_in = NULL;
   bStream.avail_in = 0;
   bStream.bzalloc = NULL;
@@ -77,6 +34,11 @@ LogReader::LogReader(const QString& file, Events *events_, QReadWriteLock* event
 
 LogReader::~LogReader() {
   delete parser;
+}
+
+void LogReader::process() {
+  HttpRequest *request = new HttpRequest(this, url, "", false);
+  QObject::connect(request, &HttpRequest::receivedResponse, this, &LogReader::readyRead);
 }
 
 void LogReader::mergeEvents(int dled) {
@@ -121,9 +83,8 @@ void LogReader::mergeEvents(int dled) {
   events_lock->unlock();
 }
 
-void LogReader::readyRead() {
-  QByteArray dat = reply->readAll();
-
+void LogReader::readyRead(const QString &resp) {
+  QByteArray dat = resp.toLocal8Bit();
   bStream.next_in = dat.data();
   bStream.avail_in = dat.size();
 
