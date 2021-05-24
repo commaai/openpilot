@@ -6,5 +6,5 @@ from common.params import Params
 
 if __name__ == "__main__":
   coords = sys.argv[1].split("/@")[-1].split("/")[0].split(",")
-  dest = {"latitude": coords[0], "longitude": coords[1]}
+  dest = {"latitude": float(coords[0]), "longitude": float(coords[1])}
   Params().put("NavDestination", json.dumps(dest))
