@@ -127,7 +127,7 @@ void FrameReader::decodeThread() {
 
       std::unique_lock lk(mutex);
       frames[i]->picture = picture;
-      cv_decoding.notify_one();
+      cv_decoded.notify_all();
     }
   }
 }
