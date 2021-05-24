@@ -38,6 +38,7 @@ class LogReader : public FileReader {
 public:
   LogReader(const QString &file);
   ~LogReader();
+  bool ready() const {return ready_; }
   const Events &events() const { return events_; }
   const EncodeIdxMap &roadCamEncodeIdx() const { return roadCamEncodeIdx_; }
   const EncodeIdxMap &driverCamEncodeIdx() const { return driverCamEncodeIdx_; }
@@ -51,6 +52,7 @@ protected:
 
   std::vector<uint8_t> raw_;
   Events events_;
+  std::atomic<bool> ready_ = false;
   EncodeIdxMap roadCamEncodeIdx_;
   EncodeIdxMap driverCamEncodeIdx_;
 };

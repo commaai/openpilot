@@ -67,22 +67,22 @@ void Replay::parseResponse(const QString &response) {
 
 void Replay::addSegment(int n) {
   assert((n >= 0) && (n < log_paths.size()) && (n < camera_paths.size()));
-  if (lrs.find(n) != lrs.end() && lrs[n] != nullptr) {
-    return;
+  {
+    std::unique_lock lk(lock);
+    if (lrs.find(n) != lrs.end() && lrs[n] != nullptr) {
+      return;
+    }
   }
-
-  QThread *t = new QThread(this);
   LogReader *log_reader = new LogReader(log_paths.at(n).toString());
+  {
+    std::unique_lock lk(lock);
+    lrs[n] = log_reader;
+  }
+  QThread *t = new QThread;
   log_reader->moveToThread(t);
   QObject::connect(t, &QThread::started, log_reader, &LogReader::process);
+  QObject::connect(log_reader, &LogReader::done, [=] { t->quit(); });
   QObject::connect(t, &QThread::finished, t, &QThread::deleteLater);
-  QObject::connect(log_reader, &LogReader::done, [=] {
-    {
-      std::unique_lock lk(lock);
-      lrs.insert(n, log_reader);
-    }
-    t->quit();
-  });
   t->start();
 
   QThread *frame_thread = QThread::create([=]{
@@ -195,7 +195,8 @@ void Replay::stream() {
     const int segment = current_segment;
     {
       std::unique_lock lk(lock);
-      if (lrs[segment] == nullptr) {
+      if (lrs[segment] == nullptr || !lrs[segment]->ready()) {
+        lk.unlock();
         qDebug() << "waiting for events";
         QThread::msleep(100);
         continue;

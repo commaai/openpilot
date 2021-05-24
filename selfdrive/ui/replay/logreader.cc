@@ -59,8 +59,6 @@ void FileReader::httpFinished() {
   } else {
     qDebug() << "done in" << timer.elapsed() << "ms";
   }
-  reply->deleteLater();
-  reply = nullptr;
 }
 
 void FileReader::readyRead() {
@@ -106,6 +104,7 @@ void LogReader::parseEvents(kj::ArrayPtr<const capnp::word> amsg) {
       break;
     }
   }
+  ready_ = true;
   emit done();
 }
 
