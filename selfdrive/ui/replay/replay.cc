@@ -82,7 +82,7 @@ void Replay::parseResponse(const QString &response) {
 }
 
 void Replay::cameraThread() {
-  bool buffer_initialized[VISION_STREAM_MAX] = {};
+  bool buffers_initialized[VISION_STREAM_MAX] = {};
 
   cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
   cl_context context = CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id, NULL, NULL, &err));
@@ -95,9 +95,9 @@ void Replay::cameraThread() {
     if (!frame_queue.try_pop(frame, 50)) continue;
 
     auto [frameReader, idx] = frame;
-    if (!buffer_initialized[frameReader->stream_type]) {
+    if (!buffers_initialized[frameReader->stream_type]) {
       vipc_server->create_buffers(frameReader->stream_type, UI_BUF_COUNT, true, frameReader->width, frameReader->height);
-      buffer_initialized[frameReader->stream_type] = true;
+      buffers_initialized[frameReader->stream_type] = true;
     }
 
     VisionIpcBufExtra extra = {};
@@ -179,6 +179,16 @@ void Replay::segmentQueueThread() {
       }
     }
     QThread::msleep(100);
+  }
+}
+
+void Replay::pushFrameToQueue(uint32_t frameId, const QMap<int, FrameReader *> &framesMap, const QMap<int, QPair<int, int>> &frameEidx) {
+  auto it_ = frameEidx.find(frameId);
+  if (it_ != frameEidx.end()) {
+    auto [segment, idx] = *it_;
+    if (framesMap.find(segment) != framesMap.end()) {
+      frame_queue.push({framesMap[segment], idx});
+    }
   }
 }
 
@@ -274,15 +284,11 @@ void Replay::stream() {
         // publish frame
         // TODO: publish all frames
         if (type == "roadCameraState") {
-          auto fr = e.getRoadCameraState();
-          auto it_ = eidx.find(fr.getFrameId());
-          if (it_ != eidx.end()) {
-            auto [segment, idx] = *it_;
-            if (frs.find(segment) != frs.end()) {
-              auto frm = frs[segment];
-              frame_queue.push({frm, idx});
-            }
-          }
+          pushFrameToQueue(e.getRoadCameraState().getFrameId(), frs, eidx);
+        } else if (type == "driverCameraState") {
+          // pushFrameToQueue(e.getDriverCameraState().getFrameId(), driver_cam_frs, driver_cam_eidx);
+        } else if (type == "wideRoadCameraState") {
+          // pushFrameToQueue(e.getWideRoadCameraState().getFrameId(), wide_cam_frs, wide_cam_eidx);
         }
 
         // publish msg

@@ -38,6 +38,7 @@ private:
   void keyboardThread();
   void segmentQueueThread();
   void cameraThread();
+  void pushFrameToQueue(uint32_t frameId, const QMap<int, FrameReader*>& framesMap, const QMap<int, QPair<int, int>>& frameEidx);
 
   float last_print = 0;
   uint64_t route_start_ts;
