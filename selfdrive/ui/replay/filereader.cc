@@ -28,8 +28,7 @@ static bool decompressBZ2(std::vector<uint8_t> &dest, const char srcData[], size
   return ret == BZ_STREAM_END;
 }
 
-FileReader::FileReader(const QString &file_) : file(file_) {
-  qnam = new QNetworkAccessManager(this);
+FileReader::FileReader(const QString& file_) : file(file_) {
 }
 
 void FileReader::process() {
@@ -40,6 +39,7 @@ void FileReader::process() {
 }
 
 void FileReader::startRequest(const QUrl &url) {
+  qnam = new QNetworkAccessManager;
   reply = qnam->get(QNetworkRequest(url));
   connect(reply, &QNetworkReply::finished, this, &FileReader::httpFinished);
   connect(reply, &QIODevice::readyRead, this, &FileReader::readyRead);
@@ -58,12 +58,17 @@ void FileReader::httpFinished() {
     startRequest(redirectedUrl);
   } else {
     qDebug() << "done in" << timer.elapsed() << "ms";
+    done();
   }
 }
 
 void FileReader::readyRead() {
   QByteArray dat = reply->readAll();
   printf("got http ready read: %d\n", dat.size());
+}
+
+FileReader::~FileReader() {
+
 }
 
 LogReader::LogReader(const QString &file) : FileReader(file) {

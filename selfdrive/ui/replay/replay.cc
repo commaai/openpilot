@@ -50,8 +50,6 @@ Replay::Replay(QString route, SubMaster *sm_, QObject *parent) : sm(sm_), QObjec
   QObject::connect(http, &HttpRequest::receivedResponse, this, &Replay::parseResponse);
 }
 
-Replay::~Replay() {}
-
 void Replay::parseResponse(const QString &response) {
   QJsonDocument doc = QJsonDocument::fromJson(response.trimmed().toUtf8());
   if (doc.isNull()) {

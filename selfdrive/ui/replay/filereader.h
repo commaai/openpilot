@@ -13,17 +13,20 @@ class FileReader : public QObject {
   Q_OBJECT
 
 public:
-  FileReader(const QString &file_);
+  FileReader(const QString& file_);
+  void startRequest(const QUrl &url);
+  ~FileReader();
+  virtual void readyRead();
+  void httpFinished();
+  virtual void done() {};
 
 public slots:
   void process();
 
 protected:
-  void startRequest(const QUrl &url);
-  virtual void readyRead();
-  void httpFinished();
-
   QNetworkReply *reply;
+
+private:
   QNetworkAccessManager *qnam;
   QElapsedTimer timer;
   QString file;
