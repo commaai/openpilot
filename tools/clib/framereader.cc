@@ -69,7 +69,6 @@ void FrameReader::process() {
     return;
   }
   avformat_find_stream_info(pFormatCtx, NULL);
-
   av_dump_format(pFormatCtx, 0, url.toStdString().c_str(), 0);
 
   auto pCodecCtxOrig = pFormatCtx->streams[0]->codec;
@@ -82,6 +81,9 @@ void FrameReader::process() {
 
   ret = avcodec_open2(pCodecCtx, pCodec, NULL);
   assert(ret >= 0);
+
+  width = pCodecCtxOrig->width;
+  height = pCodecCtxOrig->height;
 
   sws_ctx = sws_getContext(width, height, AV_PIX_FMT_YUV420P,
                            width, height, AV_PIX_FMT_BGR24,

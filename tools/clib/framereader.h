@@ -27,10 +27,6 @@ public:
   int getRGBSize() { return width*height*3; }
   void process();
 
-  //TODO: get this from the actual frame
-  int width = 1164;
-  int height = 874;
-
 private:
   void decodeThread();
 
@@ -54,5 +50,7 @@ private:
 
   bool valid = true;
   QString url;
+
+  int width, height;
 };
 
