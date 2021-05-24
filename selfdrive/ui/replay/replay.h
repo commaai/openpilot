@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <termios.h>
+#include <set>
 
 #include <QJsonArray>
 #include <QReadWriteLock>
@@ -48,11 +49,6 @@ private:
   QThread *kb_thread;
   QThread *queue_thread;
 
-  // logs
-  QReadWriteLock events_lock;
-  Events events;
-  EncodeIdxMap eidx;
-
   HttpRequest *http;
   QJsonArray camera_paths;
   QJsonArray log_paths;
@@ -62,6 +58,6 @@ private:
   // messaging
   SubMaster *sm;
   PubMaster *pm;
-  QVector<std::string> socks;
+  std::set<std::string> socks;
   VisionIpcServer *vipc_server = nullptr;
 };

@@ -36,7 +36,7 @@ Replay::Replay(QString route, SubMaster *sm_, QObject *parent) : sm(sm_), QObjec
     if ((allow[0].size() == 0 || allow.contains(it.name)) &&
         !block.contains(it.name)) {
       s.push_back(it.name);
-      socks.append(std::string(it.name));
+      socks.insert(it.name);
     }
   }
   qDebug() << "services " << s;
@@ -67,20 +67,16 @@ void Replay::parseResponse(const QString &response) {
 
 void Replay::addSegment(int n) {
   assert((n >= 0) && (n < log_paths.size()) && (n < camera_paths.size()));
-  if (lrs.find(n) != lrs.end()) {
+  if (lrs.find(n) != lrs.end() && lrs[n] != nullptr) {
     return;
   }
 
-  LogReader *log_reader = new LogReader(log_paths.at(n).toString());
-  lrs.insert(n, log_reader);
   QThread *t = new QThread(this);
+  LogReader *log_reader = new LogReader(log_paths.at(n).toString());
   log_reader->moveToThread(t);
   QObject::connect(t, &QThread::started, log_reader, &LogReader::process);
   QObject::connect(log_reader, &LogReader::done, [=] {
-    events_lock.lockForWrite();
-    events += log_reader->events();
-    eidx.unite(log_reader->roadCamEncodeIdx());
-    events_lock.unlock();
+    lrs.insert(n, log_reader);
     t->quit();
     t->deleteLater();
   });
@@ -98,24 +94,10 @@ void Replay::addSegment(int n) {
 }
 
 void Replay::removeSegment(int n) {
-  // TODO: fix FrameReader and LogReader destructors
-  /*
   if (lrs.contains(n)) {
-    auto lr = lrs.take(n);
-    delete lr;
+    delete lrs[n];
+    lrs[n] = nullptr;
   }
-
-  events_lock.lockForWrite();
-  auto eit = events.begin();
-  while (eit != events.end()) {
-    if(std::abs(eit.key()/1e9 - getCurrentTime()/1e9) > 60.0){
-      eit = events.erase(eit);
-      continue;
-    }
-    eit++;
-  }
-  events_lock.unlock();
-  */
   if (frs.contains(n)) {
     auto fr = frs.take(n);
     delete fr;
@@ -206,7 +188,8 @@ void Replay::stream() {
 
   route_start_ts = 0;
   while (true) {
-    if (events.size() == 0) {
+    int segment = current_segment;
+    if (!lrs.contains(segment)) {
       qDebug() << "waiting for events";
       QThread::msleep(100);
       continue;
@@ -214,22 +197,18 @@ void Replay::stream() {
 
     // TODO: use initData's logMonoTime
     if (route_start_ts == 0) {
-      route_start_ts = events.firstKey();
+      route_start_ts = lrs[0]->events().firstKey();
     }
 
     uint64_t t0 = route_start_ts + (seek_ts * 1e9);
-    seek_ts = -1;
     qDebug() << "unlogging at" << (t0 - route_start_ts) / 1e9;
 
-    // wait until we have events within 1s of the current time
+    const Events &events = lrs[segment]->events();
     auto eit = events.lowerBound(t0);
-    while (eit.key() - t0 > 1e9) {
-      eit = events.lowerBound(t0);
-      QThread::msleep(10);
-    }
 
     uint64_t t0r = timer.nsecsElapsed();
-    while ((eit != events.end()) && seek_ts < 0) {
+    int current_seek_ts = seek_ts;
+    while (current_seek_ts == seek_ts && eit != events.end()) {
       cereal::Event::Reader e = (*eit)->getRoot<cereal::Event>();
       std::string type;
       KJ_IF_MAYBE(e_, static_cast<capnp::DynamicStruct::Reader>(e).which()) {
@@ -239,7 +218,7 @@ void Replay::stream() {
       uint64_t tm = e.getLogMonoTime();
       current_ts = std::max(tm - route_start_ts, (unsigned long)0) / 1e9;
 
-      if (socks.contains(type)) {
+      if (socks.find(type) != socks.end()) {
         float timestamp = (tm - route_start_ts)/1e9;
         if (std::abs(timestamp - last_print) > 5.0) {
           last_print = timestamp;
@@ -259,7 +238,7 @@ void Replay::stream() {
         // TODO: publish all frames
         if (type == "roadCameraState") {
           auto fr = e.getRoadCameraState();
-
+          auto &eidx = lrs[segment]->roadCamEncodeIdx();
           auto it_ = eidx.find(fr.getFrameId());
           if (it_ != eidx.end()) {
             auto pp = *it_;
@@ -300,6 +279,12 @@ void Replay::stream() {
       }
 
       ++eit;
+    }
+
+    if (eit == events.end()) {
+      // move to the next segment
+      current_segment += 1;
+      seek_ts = current_ts.load();
     }
   }
 }
