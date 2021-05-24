@@ -4,8 +4,6 @@
 
 #include <atomic>
 #include <condition_variable>
-#include <list>
-#include <map>
 #include <mutex>
 #include <string>
 #include <thread>
@@ -41,7 +39,6 @@ private:
 
   AVFormatContext *pFormatCtx = NULL;
   AVCodecContext *pCodecCtx = NULL;
-
 	struct SwsContext *sws_ctx = NULL;
 
   std::mutex mutex;
@@ -54,4 +51,3 @@ private:
   bool valid = true;
   std::string url;
 };
-
