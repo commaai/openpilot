@@ -21,7 +21,7 @@ static int ffmpeg_lockmgr_cb(void **arg, enum AVLockOp op) {
   return 0;
 }
 
-FrameReader::FrameReader(const std::string &fn) : url(fn) {
+FrameReader::FrameReader(const std::string &fn, VisionStreamType stream_type) : stream_type(stream_type) {
   int ret = av_lockmgr_register(ffmpeg_lockmgr_cb);
   assert(ret >= 0);
 

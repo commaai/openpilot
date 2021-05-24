@@ -82,9 +82,31 @@ void Replay::parseResponse(const QString &response) {
 }
 
 void Replay::cameraThread() {
+  bool buffer_initialized[VISION_STREAM_MAX] = {};
+
+  cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
+  cl_context context = CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id, NULL, NULL, &err));
+
+  vipc_server = new VisionIpcServer("camerad", device_id, context);
+  vipc_server->start_listener();
+
   while (!exit_) {
-    
+    std::pair<FrameReader *, int> frame;
+    if (!frame_queue.try_pop(frame, 50)) continue;
+
+    auto [frameReader, idx] = frame;
+    if (!buffer_initialized[frameReader->stream_type]) {
+      vipc_server->create_buffers(frameReader->stream_type, UI_BUF_COUNT, true, frameReader->width, frameReader->height);
+      buffer_initialized[frameReader->stream_type] = true;
+    }
+
+    VisionIpcBufExtra extra = {};
+    VisionBuf *buf = vipc_server->get_buffer(frameReader->stream_type);
+    memcpy(buf->addr, frameReader->get(idx), frameReader->getRGBSize());
+    vipc_server->send(buf, &extra, false);
   }
+
+  CL_CHECK(clReleaseContext(context));
 }
 
 void Replay::addSegment(int n) {
@@ -253,28 +275,12 @@ void Replay::stream() {
         // TODO: publish all frames
         if (type == "roadCameraState") {
           auto fr = e.getRoadCameraState();
-
           auto it_ = eidx.find(fr.getFrameId());
           if (it_ != eidx.end()) {
-            auto pp = *it_;
-            if (frs.find(pp.first) != frs.end()) {
-              auto frm = frs[pp.first];
-              auto data = frm->get(pp.second);
-
-              if (vipc_server == nullptr) {
-                cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
-                cl_context context = CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id, NULL, NULL, &err));
-
-                vipc_server = new VisionIpcServer("camerad", device_id, context);
-                vipc_server->create_buffers(VisionStreamType::VISION_STREAM_RGB_BACK, UI_BUF_COUNT,
-                                            true, frm->width, frm->height);
-                vipc_server->start_listener();
-              }
-
-              VisionIpcBufExtra extra = {};
-              VisionBuf *buf = vipc_server->get_buffer(VisionStreamType::VISION_STREAM_RGB_BACK);
-              memcpy(buf->addr, data, frm->getRGBSize());
-              vipc_server->send(buf, &extra, false);
+            auto [segment, idx] = *it_;
+            if (frs.find(segment) != frs.end()) {
+              auto frm = frs[segment];
+              frame_queue.push({frm, idx});
             }
           }
         }

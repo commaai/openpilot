@@ -8,6 +8,8 @@
 #include <string>
 #include <thread>
 #include <vector>
+#include "cereal/visionipc/visionbuf.h"
+#include "tools/clib/channel.h"
 
 // independent of QT, needs ffmpeg
 extern "C" {
@@ -19,7 +21,7 @@ extern "C" {
 
 class FrameReader {
 public:
-  FrameReader(const std::string &fn);
+  FrameReader(const std::string &fn, VisionStreamType stream_type);
   ~FrameReader();
   uint8_t *get(int idx);
   AVFrame *toRGB(AVFrame *);
@@ -27,6 +29,7 @@ public:
   void process();
 
   int width = 0, height = 0;
+  VisionStreamType stream_type;
 
 private:
   void decodeThread();

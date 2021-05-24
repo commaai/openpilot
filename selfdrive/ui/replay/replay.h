@@ -9,6 +9,7 @@
 #include <capnp/dynamic.h>
 
 #include "cereal/visionipc/visionipc_server.h"
+#include "selfdrive/common/queue.h"
 #include "selfdrive/common/util.h"
 #include "selfdrive/ui/qt/api.h"
 #include "selfdrive/ui/replay/filereader.h"
@@ -66,4 +67,5 @@ private:
   VisionIpcServer *vipc_server = nullptr;
   QString route;
   std::atomic<bool> exit_;
+  SafeQueue<std::pair<FrameReader *, int>> frame_queue;
 };
