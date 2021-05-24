@@ -28,7 +28,7 @@ static bool decompressBZ2(std::vector<uint8_t> &dest, const char srcData[], size
   return ret == BZ_STREAM_END;
 }
 
-FileReader::FileReader(const QString& file_) : file(file_) {
+FileReader::FileReader(const QString &file_) : file(file_) {
   qnam = new QNetworkAccessManager(this);
 }
 
@@ -66,9 +66,9 @@ void FileReader::readyRead() {
   printf("got http ready read: %d\n", dat.size());
 }
 
-LogReader::LogReader(const QString& file) : FileReader(file) {
+LogReader::LogReader(const QString &file) : FileReader(file) {
   // start with 64MB buffer
-  raw_.resize(1024*1024*64);
+  raw_.resize(1024 * 1024 * 64);
 }
 
 LogReader::~LogReader() {
@@ -93,12 +93,12 @@ void LogReader::parseEvents(kj::ArrayPtr<const capnp::word> amsg) {
         auto ee = event.getRoadEncodeIdx();
         roadCamEncodeIdx_.insert(ee.getFrameId(), qMakePair(ee.getSegmentNum(), ee.getSegmentId()));
       } else if (event.which() == cereal::Event::DRIVER_ENCODE_IDX) {
-         auto ee = event.getDriverEncodeIdx();
+        auto ee = event.getDriverEncodeIdx();
         driverCamEncodeIdx_.insert(ee.getFrameId(), qMakePair(ee.getSegmentNum(), ee.getSegmentId()));
       }
 
       events_.insert(event.getLogMonoTime(), reader.release());
-    } catch (const kj::Exception& e) {
+    } catch (const kj::Exception &e) {
       // partial messages trigger this
       // qDebug() << e.getDescription().cStr();
       break;
@@ -113,5 +113,5 @@ void LogReader::readyRead() {
   if (!decompressBZ2(raw_, dat.data(), dat.size())) {
     qWarning() << "bz2 decompress failed";
   }
-  parseEvents({(const capnp::word*)raw_.data(), raw_.size() / sizeof(capnp::word)});
+  parseEvents({(const capnp::word *)raw_.data(), raw_.size() / sizeof(capnp::word)});
 }

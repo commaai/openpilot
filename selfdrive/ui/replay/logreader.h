@@ -38,7 +38,7 @@ class LogReader : public FileReader {
 public:
   LogReader(const QString &file);
   ~LogReader();
-  bool ready() const {return ready_; }
+  bool ready() const { return ready_; }
   const Events &events() const { return events_; }
   const EncodeIdxMap &roadCamEncodeIdx() const { return roadCamEncodeIdx_; }
   const EncodeIdxMap &driverCamEncodeIdx() const { return driverCamEncodeIdx_; }
