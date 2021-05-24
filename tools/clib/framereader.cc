@@ -131,10 +131,10 @@ uint8_t *FrameReader::get(int idx) {
   if (!valid || idx < 0 || idx >= frames.size()) return nullptr;
 
   std::unique_lock lk(mutex);
+  decode_idx = idx;
+  cv_decode.notify_one();
   Frame *frame = frames[idx];
   if (!frame->picture) {
-    decode_idx = idx;
-    cv_decode.notify_one();
     cv_frame.wait(lk, [=] { return exit_ || frame->picture != nullptr; });
   }
   return frame->picture ? frame->picture->data[0] : nullptr;
