@@ -2,7 +2,11 @@
 
 from selfdrive.car import dbc_dict
 from cereal import car
+
 Ecu = car.CarParams.Ecu
+NetworkLocation = car.CarParams.NetworkLocation
+TransmissionType = car.CarParams.TransmissionType
+GearShifter = car.CarState.GearShifter
 
 class CarControllerParams:
   HCA_STEP = 2                   # HCA_01 message frequency 50Hz
@@ -25,9 +29,6 @@ class CarControllerParams:
 class CANBUS:
   pt = 0
   cam = 2
-
-TransmissionType = car.CarParams.TransmissionType
-GearShifter = car.CarState.GearShifter
 
 BUTTON_STATES = {
   "accelCruise": False,
