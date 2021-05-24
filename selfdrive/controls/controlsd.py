@@ -96,7 +96,7 @@ class Controls:
     # If stock camera is disconnected, we loaded car controls and it's not dashcam mode
     controller_available = self.CP.enableCamera and self.CI.CC is not None and not passive and not self.CP.dashcamOnly
     community_feature = self.CP.communityFeature or self.CP.fuzzyFingerprint or \
-                        self.CP.fingerprintSoure == car.CarParams.FingerprintSource.can
+                        self.CP.fingerprintSource == car.CarParams.FingerprintSource.can
     community_feature_disallowed = community_feature and (not community_feature_toggle)
     self.read_only = not car_recognized or not controller_available or \
                        self.CP.dashcamOnly or community_feature_disallowed
