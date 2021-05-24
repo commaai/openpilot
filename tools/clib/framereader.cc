@@ -8,32 +8,32 @@ static int ffmpeg_lockmgr_cb(void **arg, enum AVLockOp op) {
   int err;
 
   switch (op) {
-    case AV_LOCK_CREATE:
-      mutex = (pthread_mutex_t *)malloc(sizeof(*mutex));
-      if (!mutex)
+  case AV_LOCK_CREATE:
+    mutex = (pthread_mutex_t *)malloc(sizeof(*mutex));
+    if (!mutex)
         return AVERROR(ENOMEM);
-      if ((err = pthread_mutex_init(mutex, NULL))) {
+    if ((err = pthread_mutex_init(mutex, NULL))) {
         free(mutex);
         return AVERROR(err);
-      }
-      *arg = mutex;
-      return 0;
-    case AV_LOCK_OBTAIN:
-      if ((err = pthread_mutex_lock(mutex)))
+    }
+    *arg = mutex;
+    return 0;
+  case AV_LOCK_OBTAIN:
+    if ((err = pthread_mutex_lock(mutex)))
         return AVERROR(err);
 
-      return 0;
-    case AV_LOCK_RELEASE:
-      if ((err = pthread_mutex_unlock(mutex)))
+    return 0;
+  case AV_LOCK_RELEASE:
+    if ((err = pthread_mutex_unlock(mutex)))
         return AVERROR(err);
 
-      return 0;
-    case AV_LOCK_DESTROY:
-      if (mutex)
+    return 0;
+  case AV_LOCK_DESTROY:
+    if (mutex)
         pthread_mutex_destroy(mutex);
-      free(mutex);
-      *arg = NULL;
-      return 0;
+    free(mutex);
+    *arg = NULL;
+    return 0;
   }
   return 1;
 }
