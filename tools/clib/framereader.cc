@@ -68,6 +68,8 @@ void FrameReader::process() {
     valid = false;
     return;
   }
+  avformat_find_stream_info(pFormatCtx, NULL);
+
   av_dump_format(pFormatCtx, 0, url.toStdString().c_str(), 0);
 
   auto pCodecCtxOrig = pFormatCtx->streams[0]->codec;
