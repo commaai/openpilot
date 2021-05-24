@@ -99,11 +99,11 @@ void FrameReader::decodeThread() {
       cv_decode.wait(lk, [=] { return exit_ || decode_idx != -1; });
       if (exit_) break;
 
-      gop = std::min(decode_idx - decode_idx % 15, 0);
+      gop = std::max(decode_idx - decode_idx % 15, 0);
       decode_idx = -1;
     }
 
-    for (int i = gop; i < std::max(gop + 15, (int)frames.size()); ++i) {
+    for (int i = gop; i < std::min(gop + 15, (int)frames.size()); ++i) {
       if (frames[i]->picture != nullptr) continue;
 
       int frameFinished;
