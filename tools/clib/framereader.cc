@@ -119,11 +119,11 @@ void FrameReader::decodeThread() {
       int frameFinished;
       AVFrame *pFrame = av_frame_alloc();
       avcodec_decode_video2(pCodecCtx, pFrame, &frameFinished, frames[i]->pkt);
-      frames[i]->picture = toRGB(pFrame);
+      AVFrame *picture = toRGB(pFrame);
       av_frame_free(&pFrame);
 
       std::unique_lock lk(mutex);
-      decoded_idx = i;
+      frames[i]->picture = picture;
       cv_decoding.notify_one();
     }
   }
@@ -149,7 +149,7 @@ uint8_t *FrameReader::get(int idx) {
   if (!frame->picture) {
     decoding_idx = idx;
     cv_decoding.notify_one();
-    cv_decoded.wait(lk, [=] { return exit_ || decoded_idx == idx; });
+    cv_decoded.wait(lk, [=] { return exit_ || frame->picture != nullptr; });
   }
   return frame->picture ? frame->picture->data[0] : nullptr;
 }

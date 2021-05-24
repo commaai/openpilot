@@ -49,7 +49,6 @@ private:
   std::condition_variable cv_decoding;
   std::condition_variable cv_decoded;
   int decoding_idx = -1;
-  int decoded_idx = -1;
   std::atomic<bool> exit_;
   std::thread thread;
 
