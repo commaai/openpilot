@@ -8,6 +8,8 @@
 #include "selfdrive/common/timing.h"
 #include "selfdrive/hardware/hw.h"
 
+const int SEGMENT_LENGTH = 60; // 60s
+
 int getch() {
   int ch;
   struct termios oldt;
@@ -157,11 +159,11 @@ void Replay::removeSegment(int n) {
 }
 
 void Replay::seekTime(int ts) {
-  ts = std::clamp(ts, 0, log_paths.size() * 60);
+  ts = std::clamp(ts, 0, log_paths.size() * SEGMENT_LENGTH);
   qInfo() << "seeking to " << ts;
 
   seek_ts = ts;
-  current_segment = ts/60;
+  current_segment = ts / SEGMENT_LENGTH;
 }
 
 void Replay::segmentQueueThread() {
