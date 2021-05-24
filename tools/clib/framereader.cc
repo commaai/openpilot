@@ -65,6 +65,7 @@ FrameReader::~FrameReader() {
 void FrameReader::process() {
   if (avformat_open_input(&pFormatCtx, url.toStdString().c_str(), NULL, NULL) != 0) {
     fprintf(stderr, "error loading %s\n", url.toStdString().c_str());
+    valid = false;
     return;
   }
   av_dump_format(pFormatCtx, 0, url.toStdString().c_str(), 0);
@@ -85,28 +86,17 @@ void FrameReader::process() {
                            SWS_BILINEAR, NULL, NULL, NULL);
   assert(sws_ctx != NULL);
 
-  bool first = true;
   do {
-    Frame *frame = new Frame;
-    frame->pkt = new AVPacket;
-    assert(frame->pkt != NULL);
-    if (av_read_frame(pFormatCtx, frame->pkt) < 0) {
-      delete frame->pkt;
-      delete frame;
+    AVPacket * pkt = new AVPacket;
+    if (av_read_frame(pFormatCtx, pkt) < 0) {
+      delete pkt;
       break;
     }
-    //printf("%d pkt %d %d\n", pkts.size(), pkt->size, pkt->pos);
-    if (first) {
-      frame->picture = av_frame_alloc();
-      int frameFinished;
-      avcodec_decode_video2(pCodecCtx, frame->picture, &frameFinished, frame->pkt);
-      first = false;
-    }
+    Frame *frame = new Frame{.pkt = pkt};
     frames.push_back(frame);
   } while (true);
 
   printf("framereader download done\n");
-  valid = true;
 
   thread = std::thread(&FrameReader::decodeThread, this);
 }
@@ -123,7 +113,7 @@ void FrameReader::decodeThread() {
       decoding_idx = -1;
     }
 
-    for (int i = gop; i < std::max(gop + 15, (int)frames.size()); i++) {
+    for (int i = gop; i < std::max(gop + 15, (int)frames.size()); ++i) {
       if (frames[i]->picture != nullptr) continue;
 
       int frameFinished;
@@ -151,9 +141,7 @@ AVFrame *FrameReader::toRGB(AVFrame *pFrame) {
 }
 
 uint8_t *FrameReader::get(int idx) {
-  if (!valid) return NULL;
-
-  waitForReady();
+  if (!valid) return nullptr;
 
   if (idx < 0 || idx > frames.size() - 1) return nullptr;
   std::unique_lock lk(mutex);

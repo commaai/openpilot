@@ -24,9 +24,6 @@ public:
   ~FrameReader();
   uint8_t *get(int idx);
   AVFrame *toRGB(AVFrame *);
-  void waitForReady() {
-    while (!joined) usleep(10*1000);
-  }
   int getRGBSize() { return width*height*3; }
   void process();
 
@@ -56,7 +53,7 @@ private:
   std::atomic<bool> exit_;
   std::thread thread;
 
-  bool valid = false;
+  bool valid = true;
   QString url;
 };
 
