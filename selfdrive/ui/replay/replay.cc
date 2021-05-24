@@ -265,9 +265,8 @@ void Replay::streamThread() {
       current_ts = std::max(tm - route_start_ts, (unsigned long)0) / 1e9;
 
       if (socks.contains(type)) {
-        float timestamp = (tm - route_start_ts)/1e9;
-        if (std::abs(timestamp - last_print) > 5.0) {
-          last_print = timestamp;
+        if (std::abs(current_ts - last_print) > 5.0) {
+          last_print = current_ts;
           qInfo() << "at " << last_print;
         }
 
@@ -296,9 +295,7 @@ void Replay::streamThread() {
           msg.setRoot(e);
           pm->send(type.c_str(), msg);
         } else {
-          std::vector<std::pair<std::string, cereal::Event::Reader>> messages;
-          messages.push_back({type, e});
-          sm->update_msgs(nanos_since_boot(), messages);
+          sm->update_msgs(nanos_since_boot(), {{type, e}});
         }
       }
 
