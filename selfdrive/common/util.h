@@ -5,11 +5,11 @@
 
 #include <algorithm>
 #include <chrono>
+#include <ctime>
+#include <map>
 #include <memory>
 #include <string>
 #include <thread>
-#include <map>
-#include <ctime>
 
 void set_thread_name(const char* name);
 
@@ -18,7 +18,7 @@ int set_core_affinity(int core);
 
 namespace util {
 
-// Time helpers
+// ***** Time helpers *****
 struct tm get_time();
 bool time_valid(struct tm sys_time);
 
