@@ -3,6 +3,7 @@
 #include <iostream>
 #include <termios.h>
 #include <set>
+#include <mutex>
 
 #include <QJsonArray>
 #include <QReadWriteLock>
@@ -44,6 +45,7 @@ private:
   std::atomic<int> seek_ts = 0;
   std::atomic<int> current_ts = 0;
   std::atomic<int> current_segment = 0;
+  std::mutex lock;
 
   QThread *thread;
   QThread *kb_thread;

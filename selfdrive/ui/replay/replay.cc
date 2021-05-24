@@ -76,7 +76,10 @@ void Replay::addSegment(int n) {
   log_reader->moveToThread(t);
   QObject::connect(t, &QThread::started, log_reader, &LogReader::process);
   QObject::connect(log_reader, &LogReader::done, [=] {
-    lrs.insert(n, log_reader);
+    {
+      std::unique_lock lk(lock);
+      lrs.insert(n, log_reader);
+    }
     t->quit();
     t->deleteLater();
   });
@@ -94,6 +97,7 @@ void Replay::addSegment(int n) {
 }
 
 void Replay::removeSegment(int n) {
+  std::unique_lock lk(lock);
   if (lrs.contains(n)) {
     delete lrs[n];
     lrs[n] = nullptr;
@@ -188,11 +192,14 @@ void Replay::stream() {
 
   route_start_ts = 0;
   while (true) {
-    int segment = current_segment;
-    if (!lrs.contains(segment)) {
-      qDebug() << "waiting for events";
-      QThread::msleep(100);
-      continue;
+    const int segment = current_segment;
+    {
+      std::unique_lock lk(lock);
+      if (lrs[segment] == nullptr) {
+        qDebug() << "waiting for events";
+        QThread::msleep(100);
+        continue;
+      }
     }
 
     // TODO: use initData's logMonoTime
@@ -281,7 +288,7 @@ void Replay::stream() {
       ++eit;
     }
 
-    if (eit == events.end()) {
+    if (current_seek_ts == seek_ts) {
       // move to the next segment
       current_segment += 1;
       seek_ts = current_ts.load();
