@@ -58,8 +58,9 @@ def get_snapshots(frame="roadCameraState", front_frame="driverCameraState", focu
       print(rois_in_focus(sm[frame].sharpnessScore))
       print(sum(sm[frame].sharpnessScore) / 12)
       # if rois_in_focus(sm[frame].sharpnessScore) >= focus_perc_threshold:
-      if sum(sm[frame].sharpnessScore) / 12 >= 400:
+      if sum(sm[frame].sharpnessScore) / 12 >= 600:
         break
+  print('time taken: {}'.format(sec_since_boot() - t))
 
   rear = extract_image(sm[frame].image, frame_sizes) if frame is not None else None
   front = extract_image(sm[front_frame].image, frame_sizes) if front_frame is not None else None
