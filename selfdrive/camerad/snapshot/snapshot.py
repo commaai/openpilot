@@ -10,6 +10,7 @@ from PIL import Image
 import cereal.messaging as messaging
 from common.basedir import BASEDIR
 from common.params import Params
+from typing import List
 from common.transformations.camera import eon_f_frame_size, eon_d_frame_size, leon_d_frame_size, tici_f_frame_size
 from selfdrive.hardware import TICI
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
@@ -32,12 +33,10 @@ def extract_image(dat, frame_sizes):
   return np.dstack([r, g, b])
 
 
-def rois_in_focus(lapres):
-  good_sum = 0
-  for sharpness in lapres:
-    if sharpness >= LM_THRESH:
-      good_sum += 1 / len(lapres)
-  return good_sum ** 2
+def rois_in_focus(lapres: List[float]) -> float:
+  sz = len(lapres)
+  return sum([1. / sz for sharpness in
+              lapres if sharpness >= LM_THRESH])
 
 
 def get_snapshots(frame="roadCameraState", front_frame="driverCameraState"):
@@ -57,8 +56,8 @@ def get_snapshots(frame="roadCameraState", front_frame="driverCameraState"):
     sm.update()
     # print(sm[frame].sharpnessScore)
     if min(sm.logMonoTime.values()) and len(sm[frame].sharpnessScore):
-      good_sum = rois_in_focus(sm[frame].sharpnessScore)
-      print(good_sum, good_sum >= min_rois_focused)
+      in_focus_perc = rois_in_focus(sm[frame].sharpnessScore)
+      print(in_focus_perc, in_focus_perc >= min_rois_focused)
 
       # return (bad_sum > LM_PREC_THRESH);
       # if sm['frame'].sharpnessScore[0]
