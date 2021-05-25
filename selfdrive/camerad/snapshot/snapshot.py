@@ -39,7 +39,7 @@ def rois_in_focus(lapres: List[float]) -> float:
               lapres if sharpness >= LM_THRESH])
 
 
-def get_snapshots(frame="roadCameraState", front_frame="driverCameraState"):
+def get_snapshots(frame="roadCameraState", front_frame="driverCameraState", wait_for_focus=False):
   frame_sizes = [eon_f_frame_size, eon_d_frame_size, leon_d_frame_size, tici_f_frame_size]
   frame_sizes = {w * h: (w, h) for (w, h) in frame_sizes}
 
@@ -50,17 +50,21 @@ def get_snapshots(frame="roadCameraState", front_frame="driverCameraState"):
     sockets.append(front_frame)
 
   sm = messaging.SubMaster(sockets)
-  min_rois_focused = 10 / 12  # min regions in focus
+
+  min_rois_focused = 10 / 12  # min required regions in focus
   t = sec_since_boot()
   while sec_since_boot() - t < 10:
     sm.update()
-    # print(sm[frame].sharpnessScore)
-    if min(sm.logMonoTime.values()) and len(sm[frame].sharpnessScore):
-      in_focus_perc = rois_in_focus(sm[frame].sharpnessScore)
-      print(in_focus_perc, in_focus_perc >= min_rois_focused)
 
-      # return (bad_sum > LM_PREC_THRESH);
-      # if sm['frame'].sharpnessScore[0]
+    if not wait_for_focus:
+      print('Not waiting for focus')
+      if min(sm.logMonoTime.values()):
+        break
+    elif min(sm.logMonoTime.values()):
+      print('Waiting for focus...')
+      if rois_in_focus(sm[frame].sharpnessScore) >= min_rois_focused:
+        print('Focused!')
+        break
 
   rear = extract_image(sm[frame].image, frame_sizes) if frame is not None else None
   front = extract_image(sm[front_frame].image, frame_sizes) if front_frame is not None else None
@@ -101,10 +105,9 @@ def snapshot():
                           cwd=os.path.join(BASEDIR, "selfdrive/camerad"), env=env)
   time.sleep(3.0)
 
-  # frame = "wideRoadCameraState" if TICI else "roadCameraState"
-  frame = "roadCameraState"
+  frame = "wideRoadCameraState" if TICI else "roadCameraState"
   front_frame = "driverCameraState" if front_camera_allowed else None
-  rear, front = get_snapshots(frame, front_frame)
+  rear, front = get_snapshots(frame, front_frame, not TICI)
 
   proc.send_signal(signal.SIGINT)
   proc.communicate()
