@@ -113,6 +113,7 @@ def snapshot():
   front_frame = "driverCameraState" if front_camera_allowed else None
 
   focus_perc_threshold = 0. if TICI else 10 / 12.
+  TICI = True
   rear, front = get_snapshots(frame, front_frame, focus_perc_threshold)
 
   proc.send_signal(signal.SIGINT)
