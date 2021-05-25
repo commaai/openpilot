@@ -134,7 +134,7 @@ Community Maintained Cars and Features
 
 | Make      | Model (US Market Reference)   | Supported Package | ACC              | No ACC accel below | No ALC below |
 | ----------| ------------------------------| ------------------| -----------------| -------------------| -------------|
-| Audi      | A3 2014-17                    | Prestige          | Stock            | 0mph               | 0mph         |
+| Audi      | A3 2014-18                    | Prestige          | Stock            | 0mph               | 0mph         |
 | Audi      | A3 Sportback e-tron 2017-18   | Prestige          | Stock            | 0mph               | 0mph         |
 | Buick     | Regal 2018<sup>1</sup>        | Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
 | Cadillac  | ATS 2018<sup>1</sup>          | Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
