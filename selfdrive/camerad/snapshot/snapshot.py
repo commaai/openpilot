@@ -47,9 +47,18 @@ def get_snapshots(frame="roadCameraState", front_frame="driverCameraState"):
   while sec_since_boot() - t < timeout:
     sm.update()
     print(sm.logMonoTime.values())
-    if min(sm.logMonoTime.values()) != 0:
+    print(sm[frame].sharpnessScore)
+    if min(sm.logMonoTime.values()) and len(sm[frame].sharpnessScore):
+      bad_sum = 0
+      LM_THRESH = 120
+      lapmap = sm[frame].sharpnessScore
+      for i in range(len(lapmap)):
+        if lapmap[i] < LM_THRESH:
+          bad_sum += 1 / len(lapmap)
+      print(bad_sum)
+      # return (bad_sum > LM_PREC_THRESH);
+      # if sm['frame'].sharpnessScore[0]
       print('got frame')
-      print(sm['roadCameraState'].sharpnessScore)
 
   rear = extract_image(sm[frame].image, frame_sizes) if frame is not None else None
   front = extract_image(sm[front_frame].image, frame_sizes) if front_frame is not None else None
