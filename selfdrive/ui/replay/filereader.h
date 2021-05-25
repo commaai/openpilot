@@ -26,7 +26,6 @@ public:
   ~FileReader();
   virtual void readyRead();
   void httpFinished();
-  virtual void done() {};
 
 public slots:
   void process();
@@ -49,8 +48,9 @@ public:
   ~LogReader();
 
   void readyRead();
-  void done() { is_done = true; };
-  bool is_done = false;
+
+signals:
+  void done();
 
 private:
   bz_stream bStream;

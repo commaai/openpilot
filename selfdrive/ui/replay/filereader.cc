@@ -32,7 +32,6 @@ void FileReader::httpFinished() {
     startRequest(redirectedUrl);
   } else {
     qDebug() << "done in" << timer.elapsed() << "ms";
-    done();
   }
 }
 
@@ -117,6 +116,7 @@ void LogReader::mergeEvents(int dled) {
   *events += events_local;
   eidx->unite(eidx_local);
   events_lock->unlock();
+  emit done();
 }
 
 void LogReader::readyRead() {

@@ -9,7 +9,8 @@
 #include <thread>
 #include <vector>
 #include "cereal/visionipc/visionbuf.h"
-#include "tools/clib/channel.h"
+
+#include <QObject>
 
 // independent of QT, needs ffmpeg
 extern "C" {
@@ -19,7 +20,9 @@ extern "C" {
 }
 
 
-class FrameReader {
+class FrameReader : public QObject {
+  Q_OBJECT
+
 public:
   FrameReader(const std::string &fn, VisionStreamType stream_type);
   ~FrameReader();
@@ -30,6 +33,9 @@ public:
 
   int width = 0, height = 0;
   VisionStreamType stream_type;
+
+signals:
+  void done();
 
 private:
   void decodeThread();

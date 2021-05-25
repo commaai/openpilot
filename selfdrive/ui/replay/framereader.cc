@@ -87,6 +87,8 @@ void FrameReader::process() {
   printf("framereader download done\n");
 
   thread = std::thread(&FrameReader::decodeThread, this);
+
+  emit done();
 }
 
 void FrameReader::decodeThread() {

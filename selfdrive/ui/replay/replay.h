@@ -15,6 +15,15 @@
 #include "selfdrive/ui/replay/filereader.h"
 #include "selfdrive/ui/replay/framereader.h"
 
+struct SegmentData {
+  LogReader *log_reader = nullptr;
+  FrameReader *road_cam_reader = nullptr;
+  FrameReader *driver_cam_reader = nullptr;
+  std::atomic<bool> loaded = false;
+};
+
+typedef QMap<int, QPair<int, int>> EncodeidxMap;
+
 class Replay : public QObject {
   Q_OBJECT
 
@@ -33,7 +42,6 @@ private:
   void keyboardThread();
   void segmentQueueThread();
   void cameraThread();
-  void pushFrameToQueue(uint32_t frameId, const QMap<int, FrameReader*>& framesMap, const QMap<int, QPair<int, int>>& frameEidx);
 
   float last_print = 0;
   uint64_t route_start_ts;
@@ -46,7 +54,7 @@ private:
   // logs
   Events events;
   QReadWriteLock events_lock;
-  QMap<int, QPair<int, int>> eidx;
+  EncodeidxMap eidx;
 
   HttpRequest *http;
   QJsonArray road_camera_paths;
@@ -54,15 +62,16 @@ private:
   QJsonArray driver_camera_paths;
   QJsonArray log_paths;
   
-  QMap<int, LogReader*> lrs;
-  QMap<int, FrameReader*> frs;
-
   // messaging
   SubMaster *sm;
   PubMaster *pm;
   QVector<std::string> socks;
-  VisionIpcServer *vipc_server = nullptr;
   QString route;
+
   std::atomic<bool> exit_;
+  std::mutex segment_lock;
+  QMap<int, SegmentData*> segments;
   SafeQueue<std::pair<FrameReader *, int>> frame_queue;
+
+  VisionIpcServer *vipc_server = nullptr;
 };

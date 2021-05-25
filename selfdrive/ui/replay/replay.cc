@@ -112,51 +112,51 @@ void Replay::cameraThread() {
 }
 
 void Replay::addSegment(int n) {
-  assert((n >= 0) && (n < log_paths.size()) && (n < road_camera_paths.size()));
-  if (lrs.find(n) != lrs.end()) {
-    return;
-  }
+  assert((n >= 0) && (n < log_paths.size()));
 
+  std::unique_lock lk(segment_lock);
+  if (segments[n] != nullptr) return;
+
+  SegmentData *segment = new SegmentData;
+  segments[n] = segment;
+  lk.unlock();
+
+  int loading_count = 1;
+  auto reader_done = [&] { segment->loaded = --loading_count == 0; };
+  
   QThread *t = new QThread;
-  lrs.insert(n, new LogReader(log_paths.at(n).toString(), &events, &events_lock, &eidx));
-
-  lrs[n]->moveToThread(t);
-  QObject::connect(t, &QThread::started, lrs[n], &LogReader::process);
+  segment->log_reader = new LogReader(log_paths.at(n).toString(), &events, &events_lock, &eidx);
+  segment->log_reader->moveToThread(t);
+  connect(segment->log_reader, &LogReader::done, reader_done);
+  QObject::connect(t, &QThread::started, segment->log_reader, &LogReader::process);
   t->start();
 
-  QThread *frame_thread = QThread::create([=]{
-    FrameReader *frame_reader = new FrameReader(qPrintable(road_camera_paths.at(n).toString()), VISION_STREAM_RGB_BACK);
-    frame_reader->process();
-    frs.insert(n, frame_reader);
-  });
-  QObject::connect(frame_thread, &QThread::finished, frame_thread, &QThread::deleteLater);
-  frame_thread->start();
-  
-  
+  auto load_frame = [&](const QString &path, VisionStreamType stream_type) {
+    loading_count += 1;
+    FrameReader *frame_reader = new FrameReader(qPrintable(path), VISION_STREAM_RGB_BACK);
+    connect(frame_reader, &FrameReader::done, reader_done);
+    QThread *t = QThread::create([=] { frame_reader->process(); });
+    QObject::connect(t, &QThread::finished, t, &QThread::deleteLater);
+    t->start();
+    return frame_reader;
+  };
+
+  if (n < road_camera_paths.size()) {
+    segment->road_cam_reader = load_frame(road_camera_paths.at(n).toString(), VISION_STREAM_RGB_BACK);
+  }
+  if (n < driver_camera_paths.size()) {
+    segment->driver_cam_reader = load_frame(driver_camera_paths.at(n).toString(), VISION_STREAM_RGB_FRONT);
+  }
 }
 
 void Replay::removeSegment(int n) {
-  // TODO: fix FrameReader and LogReader destructors
-  /*
-  if (lrs.contains(n)) {
-    auto lr = lrs.take(n);
-    delete lr;
-  }
-
-  events_lock.lockForWrite();
-  auto eit = events.begin();
-  while (eit != events.end()) {
-    if(std::abs(eit.key()/1e9 - getCurrentTime()/1e9) > 60.0){
-      eit = events.erase(eit);
-      continue;
-    }
-    eit++;
-  }
-  events_lock.unlock();
-  */
-  if (frs.contains(n)) {
-    auto fr = frs.take(n);
-    delete fr;
+  std::unique_lock lk(segment_lock);
+  if (segments.contains(n)) {
+    auto s = segments.take(n);
+    delete s->log_reader;
+    delete s->road_cam_reader;
+    delete s->driver_cam_reader;
+    delete s;
   }
 }
 
@@ -181,15 +181,6 @@ void Replay::segmentQueueThread() {
       }
     }
     QThread::msleep(100);
-  }
-}
-
-void Replay::pushFrameToQueue(uint32_t frameId, const QMap<int, FrameReader *> &framesMap, const QMap<int, QPair<int, int>> &frameEidx) {
-  if (auto it_ = frameEidx.find(frameId); it_ != frameEidx.end()) {
-    auto [segment, idx] = *it_;
-    if (framesMap.contains(segment)) {
-      frame_queue.push({framesMap[segment], idx});
-    }
   }
 }
 
@@ -233,10 +224,16 @@ void Replay::streamThread() {
 
   route_start_ts = 0;
   while (true) {
-    if (events.size() == 0) {
-      qDebug() << "waiting for events";
-      QThread::msleep(100);
-      continue;
+    SegmentData * segment = nullptr;
+    {
+      std::unique_lock lk(segment_lock);
+      segment = segments[current_segment];
+      if (!segment || !segment->loaded) {
+        lk.unlock();
+        qDebug() << "waiting for events";
+        QThread::msleep(100);
+        continue;
+      }
     }
 
     // TODO: use initData's logMonoTime
@@ -284,11 +281,15 @@ void Replay::streamThread() {
         // publish frame
         // TODO: publish all frames
         if (type == "roadCameraState") {
-          pushFrameToQueue(e.getRoadCameraState().getFrameId(), frs, eidx);
+          if (auto it_ = eidx.find(e.getRoadCameraState().getFrameId()); it_ != eidx.end()) {
+            auto [segment, idx] = *it_;
+            SegmentData *frame_segment = segments[segment];
+            if (frame_segment && frame_segment->loaded) {
+              frame_queue.push({frame_segment->road_cam_reader, idx});
+            }
+          }
         } else if (type == "driverCameraState") {
-          // pushFrameToQueue(e.getDriverCameraState().getFrameId(), driver_cam_frs, driver_cam_eidx);
-        } else if (type == "wideRoadCameraState") {
-          // pushFrameToQueue(e.getWideRoadCameraState().getFrameId(), wide_cam_frs, wide_cam_eidx);
+
         }
 
         // publish msg
