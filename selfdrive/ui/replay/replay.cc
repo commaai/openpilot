@@ -48,6 +48,13 @@ Replay::Replay(const QString &route, SubMaster *sm_, QObject *parent) : route(ro
   if (sm == nullptr) {
     pm = new PubMaster(s);
   }
+
+  device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
+  context = CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id, NULL, NULL, &err));
+}
+
+Replay::~Replay() {
+  CL_CHECK(clReleaseContext(context));
 }
 
 void Replay::start() {
@@ -70,7 +77,6 @@ void Replay::parseResponse(const QString &response) {
 
   typedef void (Replay::*threadFunc)();
   threadFunc threads[] = {&Replay::segmentQueueThread,
-                          &Replay::cameraThread,
                           &Replay::keyboardThread,
                           &Replay::streamThread};
   for (auto func : threads) {
@@ -110,43 +116,14 @@ std::optional<std::pair<FrameReader*, int>> Replay::getFrame(const std::string &
   return std::nullopt;
 }
 
-void Replay::cameraThread() {
-  cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
-  cl_context context = CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id, NULL, NULL, &err));
-
-  vipc_server = new VisionIpcServer("camerad", device_id, context);
-  vipc_server->start_listener();
-
-  bool buffers_initialized[VISION_STREAM_MAX] = {};
-  while (!exit_) {
-    std::pair<std::string, uint32_t> frame;
-    if (!frame_queue.try_pop(frame, 50)) continue;
-
-    auto [type, frame_id] = frame;
-    if (auto f = getFrame(type, frame_id); f) {
-      auto [frameReader, idx] = *f;
-      if (!buffers_initialized[frameReader->stream_type]) {
-        vipc_server->create_buffers(frameReader->stream_type, UI_BUF_COUNT, true, frameReader->width, frameReader->height);
-        buffers_initialized[frameReader->stream_type] = true;
-      }
-
-      VisionIpcBufExtra extra = {};
-      VisionBuf *buf = vipc_server->get_buffer(frameReader->stream_type);
-      memcpy(buf->addr, frameReader->get(idx), frameReader->getRGBSize());
-      vipc_server->send(buf, &extra, false);
-    }
-  }
-
-  CL_CHECK(clReleaseContext(context));
-}
-
 void Replay::addSegment(int n) {
   assert((n >= 0) && (n < log_paths.size()));
 
   std::unique_lock lk(segment_lock);
   if (segments[n] != nullptr) return;
 
-  SegmentData *segment = new SegmentData{.loading = 1};
+  SegmentData *segment = new SegmentData;
+  segment->loading = 1;
   segments[n] = segment;
   lk.unlock();
 
@@ -254,6 +231,47 @@ void Replay::keyboardThread() {
   }
 }
 
+void Replay::startVipcServer(const SegmentData *segment) {
+  assert(vipc_server == nullptr);
+
+  FrameReader *frames[] = {segment->road_cam_reader, segment->driver_cam_reader};
+  bool hasFrames = false;
+  for (auto f : frames) {
+    if (f && f->valid()) hasFrames = true;
+  }
+  if (hasFrames) {
+    vipc_server = new VisionIpcServer("camerad", device_id, context);
+    for (auto f : frames) {
+      if (f && f->valid()) {
+        vipc_server->create_buffers(f->stream_type, UI_BUF_COUNT, true, f->width, f->height);
+      }
+    }
+    QThread *t = QThread::create(&Replay::cameraThread, this);
+    connect(t, &QThread::finished, t, &QThread::deleteLater);
+    t->start();
+    qDebug() << "start vipc server";
+  }
+}
+
+void Replay::cameraThread() {
+  vipc_server->start_listener();
+  while (!exit_) {
+    std::pair<std::string, uint32_t> frame;
+    if (!frame_queue.try_pop(frame, 50)) continue;
+
+    auto [type, frame_id] = frame;
+    if (auto f = getFrame(type, frame_id); f) {
+      auto [frameReader, idx] = *f;
+      VisionIpcBufExtra extra = {};
+      VisionBuf *buf = vipc_server->get_buffer(frameReader->stream_type);
+      memcpy(buf->addr, frameReader->get(idx), frameReader->getRGBSize());
+      vipc_server->send(buf, &extra, false);
+    }
+  }
+  delete vipc_server;
+  vipc_server = nullptr;
+}
+
 void Replay::streamThread() {
   QElapsedTimer timer;
   timer.start();
@@ -268,7 +286,9 @@ void Replay::streamThread() {
       QThread::msleep(100);
       continue;
     }
-
+    if (vipc_server == nullptr) {
+      startVipcServer(segment);
+    }
     const Events &events = segment->log_reader->events();
 
     // TODO: use initData's logMonoTime

@@ -48,7 +48,7 @@ FrameReader::~FrameReader() {
 void FrameReader::process() {
   if (avformat_open_input(&pFormatCtx, url.c_str(), NULL, NULL) != 0) {
     fprintf(stderr, "error loading %s\n", url.c_str());
-    valid = false;
+    valid_ = false;
     emit done();
     return;
   }
@@ -132,7 +132,7 @@ AVFrame *FrameReader::toRGB(AVFrame *pFrame) {
 }
 
 uint8_t *FrameReader::get(int idx) {
-  if (!valid || idx < 0 || idx >= frames.size()) return nullptr;
+  if (!valid_ || idx < 0 || idx >= frames.size()) return nullptr;
 
   std::unique_lock lk(mutex);
   decode_idx = idx;

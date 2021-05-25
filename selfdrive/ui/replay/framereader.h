@@ -27,8 +27,9 @@ public:
   FrameReader(const std::string &fn, VisionStreamType stream_type);
   ~FrameReader();
   uint8_t *get(int idx);
+  bool valid() const {return valid_;}
   AVFrame *toRGB(AVFrame *);
-  int getRGBSize() { return width*height*3; }
+  int getRGBSize() const { return width*height*3; }
   void process();
 
   int width = 0, height = 0;
@@ -57,6 +58,6 @@ private:
   std::atomic<bool> exit_ = false;
   std::thread thread;
 
-  bool valid = true;
+  bool valid_ = true;
   std::string url;
 };

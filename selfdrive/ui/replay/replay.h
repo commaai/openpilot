@@ -38,6 +38,7 @@ class Replay : public QObject {
 
 public:
   Replay(const QString &route, SubMaster *sm = nullptr, QObject *parent = nullptr);
+  ~Replay();
   void start();
 
 private:
@@ -53,6 +54,7 @@ private:
   
   void parseResponse(const QString &response);
   void seekTime(int ts);
+  void startVipcServer(const SegmentData *segment);
 
   float last_print = 0;
   std::atomic<int> seek_ts = 0;
@@ -65,7 +67,7 @@ private:
   QStringList qcameras_paths;
   QStringList driver_camera_paths;
   QStringList log_paths;
-  
+
   // messaging
   SubMaster *sm;
   PubMaster *pm;
@@ -78,4 +80,8 @@ private:
   SafeQueue<std::pair<std::string, uint32_t>> frame_queue;
 
   VisionIpcServer *vipc_server = nullptr;
+
+  cl_device_id device_id;
+  cl_context context;
+
 };
