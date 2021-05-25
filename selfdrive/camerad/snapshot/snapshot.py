@@ -117,6 +117,7 @@ def snapshot():
 
 if __name__ == "__main__":
   pic, fpic = snapshot()
+  print(pic, fpic)
   if pic is not None:
     print(pic.shape)
     jpeg_write("/tmp/back.jpg", pic)
