@@ -41,7 +41,7 @@ private:
   uint64_t route_start_ts;
   std::atomic<int> seek_ts = 0;
   std::atomic<int> current_ts = 0;
-  std::atomic<int> current_segment;
+  std::atomic<int> current_segment = 0;
 
   QThread *thread;
   QThread *kb_thread;

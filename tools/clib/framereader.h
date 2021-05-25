@@ -1,15 +1,13 @@
-#ifndef FRAMEREADER_HPP
-#define FRAMEREADER_HPP
+#pragma once
 
 #include <unistd.h>
-#include <vector>
-#include <map>
-#include <thread>
-#include <mutex>
-#include <list>
-#include <condition_variable>
 
-#include "tools/clib/channel.h"
+#include <atomic>
+#include <condition_variable>
+#include <mutex>
+#include <string>
+#include <thread>
+#include <vector>
 
 // independent of QT, needs ffmpeg
 extern "C" {
@@ -21,40 +19,35 @@ extern "C" {
 
 class FrameReader {
 public:
-  FrameReader(const char *fn);
+  FrameReader(const std::string &fn);
+  ~FrameReader();
   uint8_t *get(int idx);
   AVFrame *toRGB(AVFrame *);
-  void waitForReady() {
-    while (!joined) usleep(10*1000);
-  }
   int getRGBSize() { return width*height*3; }
-  void loaderThread();
-  void cacherThread();
+  void process();
 
-  //TODO: get this from the actual frame
-  int width = 1164;
-  int height = 874;
+  int width = 0, height = 0;
 
 private:
+  void decodeThread();
+
+  struct Frame{
+    AVPacket *pkt;
+    AVFrame *picture;
+  };
+  std::vector<Frame*> frames;
+
   AVFormatContext *pFormatCtx = NULL;
   AVCodecContext *pCodecCtx = NULL;
-
 	struct SwsContext *sws_ctx = NULL;
 
-  std::vector<AVPacket *> pkts;
-
-  std::thread *t;
-  bool joined = false;
-
-  std::map<int, uint8_t *> cache;
-  std::mutex mcache;
-
-  void GOPCache(int idx);
-  channel<int> to_cache;
+  std::mutex mutex;
+  std::condition_variable cv_decode;
+  std::condition_variable cv_frame;
+  int decode_idx = -1;
+  std::atomic<bool> exit_ = false;
+  std::thread thread;
 
   bool valid = true;
-  char url[0x400];
+  std::string url;
 };
-
-#endif
-
