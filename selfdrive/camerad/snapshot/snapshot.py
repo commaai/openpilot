@@ -117,10 +117,10 @@ def snapshot():
 
 if __name__ == "__main__":
   pic, fpic = snapshot()
-  print(pic, fpic)
   if pic is not None:
     print(pic.shape)
     jpeg_write("/tmp/back.jpg", pic)
-    jpeg_write("/tmp/front.jpg", fpic)
+    if fpic is not None:  # can be none if not front_camera_allowed
+      jpeg_write("/tmp/front.jpg", fpic)
   else:
     print("Error taking snapshot")
