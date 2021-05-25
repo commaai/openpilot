@@ -16,7 +16,7 @@ from selfdrive.hardware import TICI
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
 from common.realtime import sec_since_boot
 
-LM_THRESH = 120 * 3
+LM_THRESH = 120 * 2
 
 
 def jpeg_write(fn, dat):
@@ -54,6 +54,7 @@ def get_snapshots(frame="roadCameraState", front_frame="driverCameraState", focu
   while sec_since_boot() - t < 10:
     sm.update()
     if min(sm.logMonoTime.values()):
+      print(sm[frame].sharpnessScore)
       print(rois_in_focus(sm[frame].sharpnessScore))
       if rois_in_focus(sm[frame].sharpnessScore) >= focus_perc_threshold:
         break
