@@ -96,6 +96,25 @@ static void draw_lead(UIState *s, const cereal::RadarState::LeadData::Reader &le
   draw_chevron(s, x, y, sz, nvgRGBA(201, 34, 49, fillAlpha), COLOR_YELLOW);
 }
 
+static void draw_car(UIState *s) {
+// Draw lead car indicator
+  auto [x ,y] = s->scene.lead_vertices[0];
+  Rect rect = {int(x) , int(y) , 120, 80};
+  ui_draw_rect(s->vg, rect, COLOR_BLUE_ALPHA(100),10, 20.);
+  // X-Y-dis-V
+
+  std::string num = std::to_string(s->scene.lead_vertices[0].x);
+  std::string text = "X:  "+num;
+  ui_draw_text(s, rect.centerX()-40, rect.centerY()-20, text.c_str(), 10.8 * 2.5, COLOR_WHITE, "sans-bold");
+  num = std::to_string(s->scene.lead_vertices[0].x);
+  text = "Y:  "+num;
+  ui_draw_text(s, rect.centerX()-40, rect.centerY(), text.c_str(), 10.8 * 2.5, COLOR_WHITE, "sans-bold");
+  num = std::to_string(s->scene.lead_vertices[0].y);
+  text = "V:  "+num;
+  ui_draw_text(s, rect.centerX()-40, rect.centerY()+20, text.c_str(), 10.8 * 2.5, COLOR_WHITE, "sans-bold");
+ return;
+
+}
 static void ui_draw_line(UIState *s, const line_vertices_data &vd, NVGcolor *color, NVGpaint *paint) {
   if (vd.cnt == 0) return;
 
@@ -190,6 +209,7 @@ static void ui_draw_world(UIState *s) {
       draw_lead(s, lead_two, s->scene.lead_vertices[1]);
     }
   }
+  draw_car(s);
   nvgResetScissor(s->vg);
 }
 
