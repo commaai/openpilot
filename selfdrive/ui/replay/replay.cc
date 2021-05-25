@@ -68,19 +68,16 @@ void Replay::parseResponse(const QString &response) {
   driver_camera_paths = doc["dcameras"].toVariant().toStringList();
   log_paths = doc["logs"].toVariant().toStringList();
 
-  seekTime(0);
-
-  auto startThread = [=](auto functor) -> QThread * {
-    QThread *t = QThread::create(functor, this);
+  typedef void (Replay::*threadFunc)();
+  threadFunc threads[] = {&Replay::segmentQueueThread,
+                          &Replay::cameraThread,
+                          &Replay::keyboardThread,
+                          &Replay::streamThread};
+  for (auto func : threads) {
+    QThread *t = QThread::create(func, this);
     connect(t, &QThread::finished, t, &QThread::deleteLater);
     t->start();
-    return t;
-  };
-
-  queue_thread = startThread(&Replay::segmentQueueThread);
-  stream_thread = startThread(&Replay::streamThread);
-  camera_thread = startThread(&Replay::cameraThread);
-  keyboard_thread = startThread(&Replay::keyboardThread);
+  }
 }
 
 void Replay::cameraThread() {
@@ -236,7 +233,9 @@ void Replay::streamThread() {
   QElapsedTimer timer;
   timer.start();
 
-  route_start_ts = 0;
+  seekTime(0);
+  int route_start_ts = 0;
+
   while (true) {
     SegmentData * segment = nullptr;
     {

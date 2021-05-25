@@ -45,12 +45,9 @@ private:
   void publishFrame(const std::string &type, const cereal::Event::Reader &event);
 
   float last_print = 0;
-  uint64_t route_start_ts;
   std::atomic<int> seek_ts = 0;
   std::atomic<int> current_ts = 0;
   std::atomic<int> current_segment = 0;
-
-  QThread *stream_thread, *keyboard_thread, *queue_thread, *camera_thread;
 
   // logs
   Events events;
