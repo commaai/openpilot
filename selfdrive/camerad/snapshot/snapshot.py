@@ -15,6 +15,8 @@ from selfdrive.hardware import TICI
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
 from common.realtime import sec_since_boot
 
+LM_THRESH = 120
+
 
 def jpeg_write(fn, dat):
   img = Image.fromarray(dat)
@@ -30,6 +32,14 @@ def extract_image(dat, frame_sizes):
   return np.dstack([r, g, b])
 
 
+def rois_in_focus(lapres):
+  good_sum = 1
+  for sharpness in lapres:
+    if sharpness >= LM_THRESH:
+      good_sum -= 1 / len(lapres)
+  return good_sum
+
+
 def get_snapshots(frame="roadCameraState", front_frame="driverCameraState"):
   frame_sizes = [eon_f_frame_size, eon_d_frame_size, leon_d_frame_size, tici_f_frame_size]
   frame_sizes = {w * h: (w, h) for (w, h) in frame_sizes}
@@ -41,24 +51,17 @@ def get_snapshots(frame="roadCameraState", front_frame="driverCameraState"):
     sockets.append(front_frame)
 
   sm = messaging.SubMaster(sockets)
-  timeout = 10
+  min_rois_focused = 10 / 12  # min regions in focus
   t = sec_since_boot()
-  # while min(sm.logMonoTime.values()) == 0 and sec_since_boot() - t:
-  LM_THRESH = 120
-  while sec_since_boot() - t < timeout:
+  while sec_since_boot() - t < 10:
     sm.update()
     # print(sm[frame].sharpnessScore)
     if min(sm.logMonoTime.values()) and len(sm[frame].sharpnessScore):
-      bad_sum = 1
-      for sharpness in sm[frame].sharpnessScore:
-        if sharpness >= LM_THRESH:
-          bad_sum -= 1 / len(sm[frame].sharpnessScore)
-      # if bad_sum < 0.9:
-        # break
-      print(bad_sum)
+      good_sum = rois_in_focus(sm[frame].sharpnessScore)
+      print(good_sum, good_sum >= min_rois_focused)
+
       # return (bad_sum > LM_PREC_THRESH);
       # if sm['frame'].sharpnessScore[0]
-      print('got frame')
 
   rear = extract_image(sm[frame].image, frame_sizes) if frame is not None else None
   front = extract_image(sm[front_frame].image, frame_sizes) if front_frame is not None else None
