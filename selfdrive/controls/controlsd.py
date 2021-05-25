@@ -533,8 +533,10 @@ class Controls:
     self.AM.add_many(self.sm.frame, alerts, self.enabled)
     self.AM.process_alerts(self.sm.frame, clear_event)
     CC.hudControl.visualAlert = self.AM.visual_alert
-    if self.debug_mode and len(self.sm['testJoystick'].buttons):
-      CC.hudControl.visualAlert = self.sm['testJoystick'].buttons[2]
+
+    if self.debug_mode and len(self.sm['testJoystick'].buttons) and \
+       self.sm['testJoystick'].buttons[2]:
+      CC.hudControl.visualAlert = 'steerRequired'
 
     if not self.read_only and self.initialized:
       # send car controls over can
