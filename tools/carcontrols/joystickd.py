@@ -13,6 +13,11 @@ from uuid import uuid4
 from inputs import devices, get_gamepad
 from selfdrive.controls.lib.pid import apply_deadzone
 
+AXES = ['gb', 'steer']
+BUTTONS = ['cancel', 'engaged_toggle', 'steer_required']
+AXES_INCREMENT = 0.05  # 5% of full actuation each key press
+POLL_RATE = int(1000 / 10.)  # 10 hz
+
 
 class Joystick:  # TODO: see if we can clean this class up
   def __init__(self, use_keyboard=True):
@@ -22,37 +27,26 @@ class Joystick:  # TODO: see if we can clean this class up
     self.axes_values = {ax: 0. for ax in AXES}
     self.btn_states = {btn: False for btn in BUTTONS}
 
+    self.buttons = {'r': 'reset', 'c': 'cancel', 'e': 'engaged_toggle', 't': 'steer_required'}
     if self.use_keyboard:
       self.axes = {'gb': ['w', 's'], 'steer': ['a', 'd']}  # first key is positive
-      self.buttons = {'r': 'reset', 'c': 'cancel', 'e': 'engaged_toggle', 't': 'steer_required'}
     else:
       self.max_axis_value = 255
       self.axes = {'ABS_X': 'steer', 'ABS_Y': 'gb'}
-      # self.button_map = {'BTN_TRIGGER': 'c', 'BTN_THUMB': 'enabled_toggle', 'BTN_TOP': 'steer_required'}
+      self.button_map = {'BTN_TRIGGER': 'c', 'BTN_THUMB': 'e', 'BTN_TOP': 't'}  # TODO: add reset
 
   def update(self):
-    # TODO: event = universal_get_event_function()
-
+    # First get axes event
     if self.use_keyboard:
-      key = self.kb.getch().lower()  # blocking
-      if key in self.axes['gb'] + self.axes['steer']:  # if axis event
-        control_type = 'gb' if key in self.axes['gb'] else 'steer'
-        if self.axes[control_type].index(key) == 0:
+      event = self.kb.getch().lower()
+      if event in self.axes['gb'] + self.axes['steer']:  # if axis event
+        control_type = 'gb' if event in self.axes['gb'] else 'steer'
+        if self.axes[control_type].index(event) == 0:
           v = self.axes_values[control_type] + AXES_INCREMENT
         else:
           v = self.axes_values[control_type] - AXES_INCREMENT
         self.axes_values[control_type] = round(clip(v, -1., 1.), 3)
-
-      elif key in self.buttons:  # TODO: combine the button logic for joystick and keyboard (use a dict and convert joystick btn to key btn)
-        if self.buttons[key] == 'reset':
-          self.axes_values = {ax: 0. for ax in AXES}
-        else:
-          btn = self.buttons[key]
-          self.btn_states[btn] = not self.btn_states[btn]
-
-      else:
-        print('Key not assigned to an action!')
-      return
+        return
     else:
       event = get_gamepad()[0]
       if event.ev_type == 'Absolute':
@@ -60,24 +54,24 @@ class Joystick:  # TODO: see if we can clean this class up
           v = ((event.state / self.max_axis_value) - 0.5) * 2
           v = apply_deadzone(v, 0.03)  # reasonable deadzone
           self.axes_values[self.axes[event.code]] = -clip(v, -1, 1)
+          return
 
+    # Not axis, test if it's a key event
+    if not self.use_keyboard:  # map joystick btn to key
+      # some buttons send events on rising and falling so only allow one state
+      if event.ev_type == 'Key' and event.code in self.button_map and event.state == 0:
+        print((event.ev_type, event.code, event.state))
+        event = self.button_map[event.code]
+      else:
+        return
 
-AXES = ['gb', 'steer']
-BUTTONS = ['cancel', 'engaged_toggle', 'steer_required']
-AXES_INCREMENT = 0.05  # 5% of full actuation each key press
-POLL_RATE = int(1000 / 10.)  # 10 hz
-print(devices.gamepads)
+    if event in self.buttons:
+      if self.buttons[event] == 'reset':
+        self.axes_values = {ax: 0. for ax in AXES}
+      else:
+        btn = self.buttons[event]
+        self.btn_states[btn] = not self.btn_states[btn]
 
-
-while 1:
-  events = get_gamepad()
-  assert len(events) == 1
-  print(len(events))
-  for event in events:
-    if event.ev_type != 'Absolute':
-      print((event.ev_type, event.code, event.state))
-
-raise Exception
 
 def send_thread(command_address, joystick):
   zmq.Context._instance = None
@@ -101,7 +95,6 @@ def send_thread(command_address, joystick):
     dat.testJoystick.buttons = [msg.btn_states[btn] for btn in BUTTONS]
 
     joystick_sock.send(dat.to_bytes())
-    # print(f'Sent: {dat}')
 
 
 def joystick_thread():
@@ -136,9 +129,8 @@ def joystick_thread():
       # TODO: time shouldn't matter since joystick.update() is blocking
   except KeyboardInterrupt:
     print('Interrupted, shutting down!')
-    print(joystick.max)
     send_thread_proc.terminate()
 
 
 if __name__ == "__main__":
-  joystick_thread()   # TODO: take in axes increment as arg, clip maybe
+  joystick_thread()   # TODO: take in axes increment, use_keyboard as arg
