@@ -123,8 +123,12 @@ void Replay::addSegment(int n) {
   QThread *t = new QThread;
   segment->log_reader = new LogReader(log_paths[n], &events, &events_lock, &eidx);
   segment->log_reader->moveToThread(t);
-  connect(segment->log_reader, &LogReader::done, [&] { --segment->loading; });
+  connect(segment->log_reader, &LogReader::done, [&] { 
+    --segment->loading; 
+    t->quit();
+  });
   QObject::connect(t, &QThread::started, segment->log_reader, &LogReader::process);
+  QObject::connect(t, &QThread::finished, t, &QThread::deleteLater);
   t->start();
 
   auto load_frame = [&](const QString &path, VisionStreamType stream_type) {
