@@ -3,6 +3,7 @@ import os
 import signal
 import subprocess
 import time
+import sys
 
 import numpy as np
 from PIL import Image
@@ -58,7 +59,7 @@ def get_snapshots(frame="roadCameraState", front_frame="driverCameraState", focu
       print(rois_in_focus(sm[frame].sharpnessScore))
       print(sum(sm[frame].sharpnessScore) / 12)
       # if rois_in_focus(sm[frame].sharpnessScore) >= focus_perc_threshold:
-      if sum(sm[frame].sharpnessScore) / 12 >= 600:
+      if sum(sm[frame].sharpnessScore) / 12 >= focus_perc_threshold:
         break
   print('time taken: {}'.format(sec_since_boot() - t))
 
@@ -67,7 +68,7 @@ def get_snapshots(frame="roadCameraState", front_frame="driverCameraState", focu
   return rear, front
 
 
-def snapshot():
+def snapshot(threshold):
   params = Params()
   front_camera_allowed = params.get_bool("RecordFront")
 
@@ -104,8 +105,9 @@ def snapshot():
   frame = "wideRoadCameraState" if TICI else "roadCameraState"
   front_frame = "driverCameraState" if front_camera_allowed else None
 
-  focus_perc_threshold = 0. if TICI else 11 / 12.
-  rear, front = get_snapshots(frame, front_frame, focus_perc_threshold)
+  # focus_perc_threshold = 0. if TICI else 11 / 12.
+  print(f'threshold: {threshold}')
+  rear, front = get_snapshots(frame, front_frame, threshold)
 
   proc.send_signal(signal.SIGINT)
   proc.communicate()
@@ -120,7 +122,7 @@ def snapshot():
 
 
 if __name__ == "__main__":
-  pic, fpic = snapshot()
+  pic, fpic = snapshot(int(sys.argv[1]))
   if pic is not None:
     print(pic.shape)
     jpeg_write("/tmp/back.jpg", pic)
