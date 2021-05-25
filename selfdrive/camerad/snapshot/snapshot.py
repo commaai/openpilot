@@ -50,8 +50,6 @@ def get_snapshots(frame="roadCameraState", front_frame="driverCameraState", focu
     sockets.append(front_frame)
 
   sm = messaging.SubMaster(sockets)
-
-  # min_rois_focused = 10 / 12  # min required regions in focus
   t = sec_since_boot()
   while sec_since_boot() - t < 10:
     sm.update()
