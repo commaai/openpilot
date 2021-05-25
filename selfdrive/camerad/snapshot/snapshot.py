@@ -44,17 +44,17 @@ def get_snapshots(frame="roadCameraState", front_frame="driverCameraState"):
   timeout = 10
   t = sec_since_boot()
   # while min(sm.logMonoTime.values()) == 0 and sec_since_boot() - t:
+  bad_sum = 0
+  LM_THRESH = 120
   while sec_since_boot() - t < timeout:
     sm.update()
-    print(sm.logMonoTime.values())
-    print(sm[frame].sharpnessScore)
+    # print(sm[frame].sharpnessScore)
     if min(sm.logMonoTime.values()) and len(sm[frame].sharpnessScore):
-      bad_sum = 0
-      LM_THRESH = 120
-      lapmap = sm[frame].sharpnessScore
-      for i in range(len(lapmap)):
-        if lapmap[i] < LM_THRESH:
-          bad_sum += 1 / len(lapmap)
+      for sharpness in sm[frame].sharpnessScore:
+        if sharpness < LM_THRESH:
+          bad_sum += 1 / len(sm[frame].sharpnessScore)
+      # if bad_sum < 0.9:
+        # break
       print(bad_sum)
       # return (bad_sum > LM_PREC_THRESH);
       # if sm['frame'].sharpnessScore[0]
