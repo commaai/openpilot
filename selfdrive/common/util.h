@@ -150,8 +150,10 @@ public:
 #endif
   };
   inline static std::atomic<bool> power_failure = false;
+  inline static std::atomic<int> signal = 0;
   inline operator bool() { return do_exit; }
   inline ExitHandler& operator=(bool v) {
+    signal = 0;
     do_exit = v;
     return *this;
   }
@@ -160,6 +162,7 @@ private:
 #ifndef __APPLE__
     power_failure = (sig == SIGPWR);
 #endif
+    signal = sig;
     do_exit = true;
   }
   inline static std::atomic<bool> do_exit = false;
