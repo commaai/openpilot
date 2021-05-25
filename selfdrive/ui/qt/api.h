@@ -38,6 +38,7 @@ private:
   QNetworkAccessManager *networkAccessManager;
   QTimer *networkTimer;
   QString cache_key;
+  QUrl oldRedirectUrl;
   bool create_jwt;
 
 private slots:

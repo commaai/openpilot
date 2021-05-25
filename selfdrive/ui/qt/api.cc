@@ -102,7 +102,6 @@ void HttpRequest::sendRequest(const QString &requestURL){
 
   QNetworkRequest request;
   request.setUrl(QUrl(requestURL));
-  request.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
   request.setRawHeader(QByteArray("Authorization"), ("JWT " + token).toUtf8());
 
   reply = networkAccessManager->get(request);
@@ -115,24 +114,31 @@ void HttpRequest::requestTimeout(){
   reply->abort();
 }
 
-// This function should always emit something
+// This function should always emit something except 301 redirect
 void HttpRequest::requestFinished(){
   if (reply->error() != QNetworkReply::OperationCanceledError) {
     networkTimer->stop();
-    QString response = reply->readAll();
 
-    if (reply->error() == QNetworkReply::NoError) {
-      // save to cache
-      if (!cache_key.isEmpty()) {
-        Params().put(cache_key.toStdString(), response.toStdString());
-      }
-      emit receivedResponse(response);
+    QUrl possibleRedirectUrl = reply->attribute(QNetworkRequest::RedirectionTargetAttribute).toUrl();
+    if (!possibleRedirectUrl.isEmpty() && possibleRedirectUrl != oldRedirectUrl) {
+      oldRedirectUrl = possibleRedirectUrl;
+      sendRequest(possibleRedirectUrl.toString());
     } else {
-      if (!cache_key.isEmpty()) {
-        Params().remove(cache_key.toStdString());
+      oldRedirectUrl.clear();
+      QString response = reply->readAll();
+      if (reply->error() == QNetworkReply::NoError) {
+        // save to cache
+        if (!cache_key.isEmpty()) {
+          Params().put(cache_key.toStdString(), response.toStdString());
+        }
+        emit receivedResponse(response);
+      } else {
+        if (!cache_key.isEmpty()) {
+          Params().remove(cache_key.toStdString());
+        }
+        qDebug() << reply->errorString();
+        emit failedResponse(reply->errorString());
       }
-      qDebug() << reply->errorString();
-      emit failedResponse(reply->errorString());
     }
   } else {
     emit timeoutResponse("timeout");
