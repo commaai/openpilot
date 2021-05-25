@@ -42,6 +42,7 @@ private:
   void keyboardThread();
   void segmentQueueThread();
   void cameraThread();
+  void publishFrame(const std::string &type, const cereal::Event::Reader &event);
 
   float last_print = 0;
   uint64_t route_start_ts;

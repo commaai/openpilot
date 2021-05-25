@@ -215,6 +215,20 @@ void Replay::keyboardThread() {
   }
 }
 
+void Replay::publishFrame(const std::string &type, const cereal::Event::Reader &event) {
+  // TODO: publish all frames
+  if (type == "roadCameraState") {
+    if (auto it_ = eidx.find(event.getRoadCameraState().getFrameId()); it_ != eidx.end()) {
+      auto [segment, idx] = *it_;
+      SegmentData *frame_segment = segments[segment];
+      if (frame_segment && !frame_segment->loading) {
+        frame_queue.push({frame_segment->road_cam_reader, idx});
+      }
+    }
+  } else if (type == "driverCameraState") {
+  }
+}
+
 void Replay::streamThread() {
   QElapsedTimer timer;
   timer.start();
@@ -275,19 +289,7 @@ void Replay::streamThread() {
           //qDebug() << "sleeping" << us_behind << etime << timer.nsecsElapsed();
         }
 
-        // publish frame
-        // TODO: publish all frames
-        if (type == "roadCameraState") {
-          if (auto it_ = eidx.find(e.getRoadCameraState().getFrameId()); it_ != eidx.end()) {
-            auto [segment, idx] = *it_;
-            SegmentData *frame_segment = segments[segment];
-            if (frame_segment && !frame_segment->loading) {
-              frame_queue.push({frame_segment->road_cam_reader, idx});
-            }
-          }
-        } else if (type == "driverCameraState") {
-
-        }
+        publishFrame(type, e);
 
         // publish msg
         if (sm == nullptr) {
