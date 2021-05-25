@@ -18,12 +18,13 @@ class Joystick:  # TODO: see if we can clean this class up
 
     self.use_keyboard = use_keyboard
     self.axes_values = {'steer': 0., 'accel': 0.}
+    self.cur_buttons = {btn: False for btn in BUTTONS}
 
     if self.use_keyboard:
       self.axes = {'w': ['forward', 'accel'], 'a': ['left', 'steer'], 's': ['backward', 'accel'], 'd': ['right', 'steer']}   # add more for the joystick buttons
       self.axes_increment = 0.05  # 5% of full actuation each key press
 
-      self.buttons = {'r': 'reset'}  # TODO: add previous buttons (like pcm_cancel_cmd, toggle engaged, etc.)
+      self.buttons = {'r': 'reset', 'c': BUTTONS[0], 'e': BUTTONS[1], 't': BUTTONS[2]}
     else:
       raise NotImplementedError("Only keyboard is supported for now")  # TODO: support joystick
 
@@ -38,14 +39,17 @@ class Joystick:  # TODO: see if we can clean this class up
       elif key in self.buttons:
         if self.buttons[key] == 'reset':
           self.axes_values = {'steer': 0., 'accel': 0.}
+        else:
+          btn = self.buttons[key]
+          self.cur_buttons[btn] = True  # todo: reset other buttons
+
       else:
         print('Key not assigned to an action!')
       return
 
 
-BUTTONS = ['pcm_cancel_cmd', 'engaged_toggle', 'steer_required']
+BUTTONS = ['cancel', 'engaged_toggle', 'steer_required']
 joystick = Joystick(use_keyboard=True)
-
 
 
 
