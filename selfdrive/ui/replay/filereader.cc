@@ -98,3 +98,12 @@ void LogReader::readyRead() {
   }
   parseEvents({(const capnp::word *)raw_.data(), raw_.size() / sizeof(capnp::word)});
 }
+
+std::optional<EncodeIdx> LogReader::getFrameEncodeIdx(const std::string &type, uint32_t frame_id) const {
+  if (auto edix_it = encoderIdx_.find(type); edix_it != encoderIdx_.end()) {
+    if (auto it = edix_it->second.find(frame_id); it != edix_it->second.end()) {
+      return it->second;
+    }
+  }
+  return std::nullopt;
+}

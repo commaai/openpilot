@@ -22,18 +22,18 @@ class SegmentData {
 public:
   FrameReader *getFrameReader(const std::string &type) const {
     if (type == "roadCameraState") {
-      return road_cam_reader;
+      return rd_frm;
     } else if (type == "driverCameraState") {
-      return driver_cam_reader;
+      return drv_frm;
     } else {
-      return wide_road_cam_reader;
+      return w_rd_frm;
     }
   }
 
-  LogReader *log_reader = nullptr;
-  FrameReader *road_cam_reader = nullptr;
-  FrameReader *wide_road_cam_reader = nullptr;
-  FrameReader *driver_cam_reader = nullptr;
+  LogReader *log = nullptr;
+  FrameReader *rd_frm = nullptr;
+  FrameReader *w_rd_frm = nullptr;
+  FrameReader *drv_frm = nullptr;
   std::atomic<int> loading;
 };
 
@@ -50,7 +50,6 @@ private:
   void addSegment(int n);
   const SegmentData *getSegment(int n);
   void removeSegment(int n);
-  std::optional<std::pair<FrameReader*, int>> getFrame(const std::string &type, uint32_t frame_id);
 
   void streamThread();
   void keyboardThread();
@@ -59,6 +58,7 @@ private:
   
   void seekTime(int ts);
   void startVipcServer(const SegmentData *segment);
+  std::optional<std::pair<FrameReader *, uint32_t>> getFrame(int seg_id, const std::string &type, uint32_t frame_id);
 
   float last_print = 0;
   std::atomic<int> seek_ts = 0;
@@ -67,9 +67,9 @@ private:
   std::mutex lock;
 
   HttpRequest *http;
-  QStringList road_camera_paths;
+  QStringList rd_frm_paths;
   QStringList qcameras_paths;
-  QStringList driver_camera_paths;
+  QStringList drv_frm_paths;
   QStringList log_paths;
 
   // messaging

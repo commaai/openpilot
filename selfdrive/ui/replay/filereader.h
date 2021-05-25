@@ -33,8 +33,13 @@ private:
   QString file;
 };
 
+struct EncodeIdx {
+  int segmentNum;
+  uint32_t segmentId;
+};
+
 typedef QMultiMap<uint64_t, capnp::FlatArrayMessageReader *> Events;
-typedef std::unordered_map<int, std::pair<int, int> > EncodeIdxMap;
+typedef std::unordered_map<int, EncodeIdx> EncodeIdxMap;
 
 class LogReader : public FileReader {
   Q_OBJECT
@@ -44,15 +49,7 @@ public:
   ~LogReader();
   bool ready() const { return ready_; }
   const Events &events() const { return events_; }
-  std::optional<std::pair<int, int>> getFrameEncodeIdx(const std::string &type, uint32_t frame_id) const{
-    if (auto edix_it = encoderIdx_.find(type); edix_it != encoderIdx_.end()) {
-      if (auto it = edix_it->second.find(frame_id); it != edix_it->second.end()) {
-        return it->second;
-      }
-    }
-    return std::nullopt;
-
-  }
+  std::optional<EncodeIdx> getFrameEncodeIdx(const std::string &type, uint32_t frame_id) const;
 
 signals:
   void done();
