@@ -58,10 +58,10 @@ private:
   EncodeidxMap eidx;
 
   HttpRequest *http;
-  QJsonArray road_camera_paths;
-  QJsonArray qcameras_paths;
-  QJsonArray driver_camera_paths;
-  QJsonArray log_paths;
+  QStringList road_camera_paths;
+  QStringList qcameras_paths;
+  QStringList driver_camera_paths;
+  QStringList log_paths;
   
   // messaging
   SubMaster *sm;

@@ -63,11 +63,12 @@ void Replay::parseResponse(const QString &response) {
     return;
   }
 
-  road_camera_paths = doc["cameras"].toArray();
-  qcameras_paths = doc["qcameras"].toArray();
-  driver_camera_paths = doc["dcameras"].toArray();
-  log_paths = doc["logs"].toArray();
+  road_camera_paths = doc["cameras"].toVariant().toStringList();
+  qcameras_paths = doc["qcameras"].toVariant().toStringList();
+  driver_camera_paths = doc["dcameras"].toVariant().toStringList();
+  log_paths = doc["logs"].toVariant().toStringList();
 
+  qInfo() << road_camera_paths;
   seekTime(0);
 
   auto startThread = [=](auto functor) -> QThread * {
@@ -122,7 +123,7 @@ void Replay::addSegment(int n) {
   lk.unlock();
 
   QThread *t = new QThread;
-  segment->log_reader = new LogReader(log_paths.at(n).toString(), &events, &events_lock, &eidx);
+  segment->log_reader = new LogReader(log_paths[n], &events, &events_lock, &eidx);
   segment->log_reader->moveToThread(t);
   connect(segment->log_reader, &LogReader::done, [&] { --segment->loading; });
   QObject::connect(t, &QThread::started, segment->log_reader, &LogReader::process);
@@ -139,10 +140,10 @@ void Replay::addSegment(int n) {
   };
 
   if (n < road_camera_paths.size()) {
-    segment->road_cam_reader = load_frame(road_camera_paths.at(n).toString(), VISION_STREAM_RGB_BACK);
+    segment->road_cam_reader = load_frame(road_camera_paths[n], VISION_STREAM_RGB_BACK);
   }
   if (n < driver_camera_paths.size()) {
-    segment->driver_cam_reader = load_frame(driver_camera_paths.at(n).toString(), VISION_STREAM_RGB_FRONT);
+    segment->driver_cam_reader = load_frame(driver_camera_paths[n], VISION_STREAM_RGB_FRONT);
   }
 }
 
