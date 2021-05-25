@@ -226,43 +226,94 @@ ReleaseNotes::ReleaseNotes(QWidget* parent) : QFrame(parent) {
   )");
 }
 
+UpdateResult::UpdateResult(QWidget* parent) : QFrame(parent) {
+  QHBoxLayout *layout = new QHBoxLayout();
+  layout->setMargin(50);
+  layout->setSpacing(30);
+
+  result.setStyleSheet("font-size: 35px;");
+  layout->addWidget(&result, 0, Qt::AlignLeft);
+
+  rebootBtn.setText("Reboot and Update");
+  rebootBtn.setFixedSize(400, 100);
+  rebootBtn.setVisible(false);
+  layout->addWidget(&rebootBtn, 0, Qt::AlignRight);
+  QObject::connect(&rebootBtn, &QPushButton::released, [=]() { Hardware::reboot(); });
+
+  setLayout(layout);
+  setStyleSheet(R"(
+    QFrame {
+      border-radius: 30px;
+      background-color: #393939;
+    }
+    QPushButton {
+      padding: 0;
+      height: 120px;
+      font-size: 35px;
+      border-radius: 15px;
+      color: black;
+      background-color: white;
+    }
+  )");
+}
+
 UpdatePanel::UpdatePanel(QWidget* parent) : QWidget(parent) {
   QVBoxLayout *update_layout = new QVBoxLayout;
 
-  Params params = Params();
+  params = Params();
 
-  std::string rawLastUpdateTime = params.get("LastUpdateTime", false);
-  QString lastUpdateTime = QString::fromStdString(rawLastUpdateTime.substr(0,10) + " at " + rawLastUpdateTime.substr(12,7));
-  update_layout->addWidget(new LabelControl("Last Update Time", lastUpdateTime));
+  std::string lastUpdateTime = params.get("LastUpdateTime", false);
+  update_layout->addWidget(new LabelControl("Last Update Time", QString::fromStdString(lastUpdateTime.substr(0,10) + " at " + lastUpdateTime.substr(12,7))));
 
-  // offroad-only buttons
-  QList<ButtonControl*> offroad_btns;
+  timer = new QTimer(this);
+  QObject::connect(timer, &QTimer::timeout, this, &UpdatePanel::refreshUpdate);
 
-  QString checkUpdateDesc = "Check for the latest update";
-  ButtonControl *checkUpdateBtn = new ButtonControl("Check for update", "CHECK", checkUpdateDesc, [=]() {
+  downloadUpdateBtn = new ButtonControl("Download openpilot Latest Version", "DOWNLOAD", "", [=]() {
+    releaseNotes->setVisible(false);
+    viewReleaseNoteBtn->setText("VIEW");
+
+    if(updateResult->isVisible()) {
+      updateResult->setVisible(false);
+      downloadUpdateBtn->setText("DOWNLOAD");
+    } else {
+      if(!params.get("UpdateAvailable",false).compare("1")) {
+        refreshUpdate();
+      } else {
+        updateFailedCount = params.get("UpdateFailedCount",false);
+        lastUpdate = params.get("LastUpdateTime",false);
+
+        std::system("pkill -1 -f selfdrive.updated");
+
+        downloadUpdateBtn->setText("CHECKING...");
+        downloadUpdateBtn->setEnabled(false);
+
+        timer->start(5 * 1000);
+      }
+    }
   }, "", this);
-  connect(checkUpdateBtn, &ButtonControl::showDescription, [=]() {
-    checkUpdateBtn->setDescription(checkUpdateDesc);
-  });
-  offroad_btns.append(checkUpdateBtn);
 
- viewReleaseNoteBtn = new ButtonControl("Release Note", "VIEW", "", [=]() {
-     if(releaseNotes->isVisible())
-     {
-       viewReleaseNoteBtn->setText("VIEW");
-     }else
-     {
-       viewReleaseNoteBtn->setText("CLOSE");
-     }
-     releaseNotes->setVisible(!releaseNotes->isVisible());
+  update_layout->addWidget(horizontal_line());
+  QObject::connect(parent, SIGNAL(offroadTransition(bool)), downloadUpdateBtn, SLOT(setEnabled(bool)));
+  update_layout->addWidget(downloadUpdateBtn);
+
+  updateResult = new UpdateResult();
+  updateResult->setVisible(false);
+  update_layout->addWidget(updateResult);
+
+  viewReleaseNoteBtn = new ButtonControl("Release Note", "VIEW", "", [=]() {
+    if(releaseNotes->isVisible()) {
+     viewReleaseNoteBtn->setText("VIEW");
+    } else {
+     viewReleaseNoteBtn->setText("CLOSE");
+     updateResult->setVisible(false);
+     downloadUpdateBtn->setText("DOWNLOAD");
+    }
+    releaseNotes->setVisible(!releaseNotes->isVisible());
   }, "", this);
-  offroad_btns.append(viewReleaseNoteBtn);
 
-  for(auto &btn : offroad_btns){
-    update_layout->addWidget(horizontal_line());
-    QObject::connect(parent, SIGNAL(offroadTransition(bool)), btn, SLOT(setEnabled(bool)));
-    update_layout->addWidget(btn);
-  }
+  update_layout->addWidget(horizontal_line());
+  QObject::connect(parent, SIGNAL(offroadTransition(bool)), viewReleaseNoteBtn, SLOT(setEnabled(bool)));
+  update_layout->addWidget(viewReleaseNoteBtn);
 
   releaseNotes = new ReleaseNotes();
   releaseNotes->setVisible(false);
@@ -276,7 +327,41 @@ UpdatePanel::UpdatePanel(QWidget* parent) : QWidget(parent) {
       border-radius: 15px;
       background-color: #393939;
     }
+    QFrame {
+      border-radius: 30px;
+      background-color: #393939;
+    }
   )");
+}
+
+void UpdatePanel::refreshUpdate() {
+  bool update = params.get("UpdateAvailable",false).compare("1") == 0;
+  bool noUpdateFound = params.get("LastUpdateTime",false).compare(lastUpdate) != 0;
+  bool error = params.get("UpdateFailedCount",false).compare(updateFailedCount) != 0;
+
+  std::string resultLabel;
+  bool doneDownloading = true;
+
+  if(update) {
+    resultLabel = "Successfully downloaded the latest version";
+  } else if(noUpdateFound) {
+    resultLabel = "No updates were found";
+  } else if(error) {
+    resultLabel = "Error while checking for updates";
+  } else {
+    doneDownloading = false;
+  }
+
+  downloadUpdateBtn->setEnabled(doneDownloading);
+  downloadUpdateBtn->setText(doneDownloading ? "CLOSE" : "CHECKING...");
+
+  updateResult->setVisible(doneDownloading);
+  updateResult->result.setText(QString::fromStdString(resultLabel));
+  updateResult->rebootBtn.setVisible(update);
+
+  if(doneDownloading) {
+    timer->stop();
+  }
 }
 
 DeveloperPanel::DeveloperPanel(QWidget* parent) : QFrame(parent) {

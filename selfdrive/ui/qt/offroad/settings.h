@@ -36,9 +36,21 @@ public:
 
 private:
   Params params;
-
   QLabel releaseNotes;
   ScrollView *releaseNotesScroll;
+};
+
+class UpdateResult : public QFrame {
+  Q_OBJECT
+
+public:
+  explicit UpdateResult(QWidget *parent = 0);
+  QPushButton rebootBtn;
+  QLabel result;
+
+private:
+  Params params;
+  ScrollView *resultScroll;
 };
 
 class UpdatePanel : public QWidget {
@@ -46,9 +58,18 @@ class UpdatePanel : public QWidget {
 public:
   explicit UpdatePanel(QWidget *parent = nullptr);
 
+private slots:
+  void refreshUpdate();
+
 private:
   ReleaseNotes* releaseNotes;
+  UpdateResult* updateResult;
   ButtonControl* viewReleaseNoteBtn; 
+  ButtonControl* downloadUpdateBtn;
+  Params params;
+  std::string updateFailedCount;
+  std::string lastUpdate;
+  QTimer *timer;
 };
 
 class DeveloperPanel : public QFrame {
