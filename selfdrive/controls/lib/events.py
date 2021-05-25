@@ -217,8 +217,7 @@ def startup_fuzzy_fingerprint_alert(CP: car.CarParams, sm: messaging.SubMaster, 
 
 def debug_mode_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> Alert:
   axes = sm['testJoystick'].axes
-  gb, steer = axes[:2] if len(axes) else 0., 0.  # FIXME: Got TypeError: needs to be int here, not sure why. (`gb, steer = axes[0], axes[1]` works)
-  # FIXME: but i can't reproduce at desk. maybe it fixed itself?
+  gb, steer = list(axes)[:2] if len(axes) else (0., 0.)
   return Alert(
     "WARNING: Joystick debug mode active",
     f"Gas: {round(gb * 100., 1)}%, steer: {round(steer * 100., 1)}%",
