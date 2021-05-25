@@ -21,7 +21,7 @@ static int ffmpeg_lockmgr_cb(void **arg, enum AVLockOp op) {
   return 0;
 }
 
-FrameReader::FrameReader(const std::string &fn, VisionStreamType stream_type) : stream_type(stream_type) {
+FrameReader::FrameReader(const std::string &fn, VisionStreamType stream_type) : url(fn), stream_type(stream_type) {
   int ret = av_lockmgr_register(ffmpeg_lockmgr_cb);
   assert(ret >= 0);
 
@@ -49,6 +49,7 @@ void FrameReader::process() {
   if (avformat_open_input(&pFormatCtx, url.c_str(), NULL, NULL) != 0) {
     fprintf(stderr, "error loading %s\n", url.c_str());
     valid = false;
+    emit done();
     return;
   }
   avformat_find_stream_info(pFormatCtx, NULL);

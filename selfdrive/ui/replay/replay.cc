@@ -117,24 +117,21 @@ void Replay::addSegment(int n) {
   std::unique_lock lk(segment_lock);
   if (segments[n] != nullptr) return;
 
-  SegmentData *segment = new SegmentData;
+  SegmentData *segment = new SegmentData{.loading = 1};
   segments[n] = segment;
   lk.unlock();
 
-  int loading_count = 1;
-  auto reader_done = [&] { segment->loaded = --loading_count == 0; };
-  
   QThread *t = new QThread;
   segment->log_reader = new LogReader(log_paths.at(n).toString(), &events, &events_lock, &eidx);
   segment->log_reader->moveToThread(t);
-  connect(segment->log_reader, &LogReader::done, reader_done);
+  connect(segment->log_reader, &LogReader::done, [&] { --segment->loading; });
   QObject::connect(t, &QThread::started, segment->log_reader, &LogReader::process);
   t->start();
 
   auto load_frame = [&](const QString &path, VisionStreamType stream_type) {
-    loading_count += 1;
+    segment->loading += 1;
     FrameReader *frame_reader = new FrameReader(qPrintable(path), VISION_STREAM_RGB_BACK);
-    connect(frame_reader, &FrameReader::done, reader_done);
+    connect(frame_reader, &FrameReader::done, [&] { --segment->loading; });
     QThread *t = QThread::create([=] { frame_reader->process(); });
     QObject::connect(t, &QThread::finished, t, &QThread::deleteLater);
     t->start();
@@ -228,7 +225,7 @@ void Replay::streamThread() {
     {
       std::unique_lock lk(segment_lock);
       segment = segments[current_segment];
-      if (!segment || !segment->loaded) {
+      if (!segment || segment->loading) {
         lk.unlock();
         qDebug() << "waiting for events";
         QThread::msleep(100);
@@ -284,7 +281,7 @@ void Replay::streamThread() {
           if (auto it_ = eidx.find(e.getRoadCameraState().getFrameId()); it_ != eidx.end()) {
             auto [segment, idx] = *it_;
             SegmentData *frame_segment = segments[segment];
-            if (frame_segment && frame_segment->loaded) {
+            if (frame_segment && !frame_segment->loading) {
               frame_queue.push({frame_segment->road_cam_reader, idx});
             }
           }

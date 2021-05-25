@@ -19,7 +19,7 @@ struct SegmentData {
   LogReader *log_reader = nullptr;
   FrameReader *road_cam_reader = nullptr;
   FrameReader *driver_cam_reader = nullptr;
-  std::atomic<bool> loaded = false;
+  std::atomic<int> loading;
 };
 
 typedef QMap<int, QPair<int, int>> EncodeidxMap;
