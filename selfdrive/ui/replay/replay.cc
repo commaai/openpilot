@@ -125,7 +125,7 @@ void Replay::addSegment(int n) {
   t->start();
 
   QThread *frame_thread = QThread::create([=]{
-    FrameReader *frame_reader = new FrameReader(qPrintable(camera_paths.at(n).toString()));
+    FrameReader *frame_reader = new FrameReader(qPrintable(road_camera_paths.at(n).toString()), VISION_STREAM_RGB_BACK);
     frame_reader->process();
     frs.insert(n, frame_reader);
   });
