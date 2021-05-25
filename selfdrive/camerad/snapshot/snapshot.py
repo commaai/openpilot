@@ -109,11 +109,10 @@ def snapshot():
                           cwd=os.path.join(BASEDIR, "selfdrive/camerad"), env=env)
   time.sleep(3.0)
 
-  TICI = True
   frame = "wideRoadCameraState" if TICI else "roadCameraState"
   front_frame = "driverCameraState" if front_camera_allowed else None
 
-  focus_perc_threshold = 0. if TICI else 10 / 12.
+  focus_perc_threshold = 0.  #  if TICI else 10 / 12.
   rear, front = get_snapshots(frame, front_frame, focus_perc_threshold)
 
   proc.send_signal(signal.SIGINT)
