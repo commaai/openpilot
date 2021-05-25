@@ -1,5 +1,6 @@
 # flake8: noqa
 
+from enum import Enum
 from selfdrive.car import dbc_dict
 from cereal import car
 Ecu = car.CarParams.Ecu
@@ -54,7 +55,7 @@ MQB_LDW_MESSAGES = {
 # chassis code is already listed below, don't add a new CAR, just add to the
 # FW_VERSIONS for that existing CAR.
 
-class CAR:
+class CAR(Enum):
   ATLAS_MK1 = "VOLKSWAGEN ATLAS 1ST GEN"      # Chassis CA, Mk1 VW Atlas and Atlas Cross Sport
   GOLF_MK7 = "VOLKSWAGEN GOLF 7TH GEN"        # Chassis 5G/AU/BA/BE, Mk7 VW Golf and variants
   JETTA_MK7 = "VOLKSWAGEN JETTA 7TH GEN"      # Chassis BU, Mk7 Jetta

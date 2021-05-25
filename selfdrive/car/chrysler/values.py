@@ -1,5 +1,6 @@
 # flake8: noqa
 
+from enum import Enum
 from selfdrive.car import dbc_dict
 from cereal import car
 Ecu = car.CarParams.Ecu
@@ -11,7 +12,7 @@ class CarControllerParams:
   STEER_ERROR_MAX = 80
 
 
-class CAR:
+class CAR(Enum):
   PACIFICA_2017_HYBRID = "CHRYSLER PACIFICA HYBRID 2017"
   PACIFICA_2018_HYBRID = "CHRYSLER PACIFICA HYBRID 2018"
   PACIFICA_2019_HYBRID = "CHRYSLER PACIFICA HYBRID 2019"

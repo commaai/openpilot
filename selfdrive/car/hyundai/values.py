@@ -1,5 +1,6 @@
 # flake8: noqa
 
+from enum import Enum
 from cereal import car
 from selfdrive.car import dbc_dict
 Ecu = car.CarParams.Ecu
@@ -18,7 +19,7 @@ class CarControllerParams:
     self.STEER_DRIVER_FACTOR = 1
 
 
-class CAR:
+class CAR(Enum):
   # Hyundai
   ELANTRA = "HYUNDAI ELANTRA 2017"
   ELANTRA_2021 = "HYUNDAI ELANTRA 2021"

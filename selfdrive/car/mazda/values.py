@@ -1,5 +1,6 @@
 # flake8: noqa
 
+from enum import Enum
 from selfdrive.car import dbc_dict
 from cereal import car
 Ecu = car.CarParams.Ecu
@@ -16,7 +17,7 @@ class CarControllerParams:
   STEER_DRIVER_MULTIPLIER = 1     # weight driver torque
   STEER_DRIVER_FACTOR = 1         # from dbc
 
-class CAR:
+class CAR(Enum):
   CX5 = "Mazda CX-5 2017"
   CX9 = "Mazda CX-9 2017"
   Mazda3 = "Mazda3 2017"

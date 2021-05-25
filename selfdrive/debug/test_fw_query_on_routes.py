@@ -14,12 +14,16 @@ from selfdrive.car.honda.values import FW_VERSIONS as HONDA_FW_VERSIONS
 from selfdrive.car.hyundai.values import FW_VERSIONS as HYUNDAI_FW_VERSIONS
 from selfdrive.car.volkswagen.values import FW_VERSIONS as VW_FW_VERSIONS
 
-from selfdrive.car.toyota.values import FINGERPRINTS as TOYOTA_FINGERPRINTS
-from selfdrive.car.honda.values import FINGERPRINTS as HONDA_FINGERPRINTS
-from selfdrive.car.hyundai.values import FINGERPRINTS as HYUNDAI_FINGERPRINTS
+from selfdrive.car.toyota.values import CAR as TOYOTA
+from selfdrive.car.honda.values import CAR as HONDA
+from selfdrive.car.hyundai.values import CAR as HYUNDAI
+from selfdrive.car.volkswagen.values import CAR as VW
 
 NO_API = "NO_API" in os.environ
-SUPPORTED_CARS = list(TOYOTA_FINGERPRINTS.keys()) + list(HONDA_FINGERPRINTS.keys()) + list(HYUNDAI_FINGERPRINTS.keys())
+SUPPORTED_CARS = set(TOYOTA.__members__)
+SUPPORTED_CARS |= set(HONDA.__members__)
+SUPPORTED_CARS |= set(HYUNDAI.__members__)
+SUPPORTED_CARS |= set(VW.__members__)
 
 try:
   from xx.pipeline.c.CarState import migration

@@ -1,5 +1,6 @@
 # flake8: noqa
 
+from enum import Enum
 from cereal import car
 from selfdrive.car import dbc_dict
 
@@ -33,7 +34,7 @@ VISUAL_HUD = {
   VisualAlert.seatbeltUnbuckled: 5,
   VisualAlert.speedTooHigh: 8}
 
-class CAR:
+class CAR(Enum):
   ACCORD = "HONDA ACCORD 2T 2018"
   ACCORD_15 = "HONDA ACCORD 1.5T 2018"
   ACCORDH = "HONDA ACCORD HYBRID 2018"

@@ -1,5 +1,6 @@
 # flake8: noqa
 
+from enum import Enum
 from cereal import car
 from selfdrive.car import dbc_dict
 Ecu = car.CarParams.Ecu
@@ -31,7 +32,7 @@ class CarControllerParams():
     self.BRAKE_LOOKUP_BP = [-1., -0.25]
     self.BRAKE_LOOKUP_V = [MAX_BRAKE, 0]
 
-class CAR:
+class CAR(Enum):
   HOLDEN_ASTRA = "HOLDEN ASTRA RS-V BK 2017"
   VOLT = "CHEVROLET VOLT PREMIER 2017"
   CADILLAC_ATS = "CADILLAC ATS Premium Performance 2018"
