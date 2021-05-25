@@ -51,7 +51,7 @@ def get_snapshots(frame="roadCameraState", front_frame="driverCameraState"):
     if min(sm.logMonoTime.values()) and len(sm[frame].sharpnessScore):
       bad_sum = 1
       for sharpness in sm[frame].sharpnessScore:
-        if sharpness < LM_THRESH:
+        if sharpness >= LM_THRESH:
           bad_sum -= 1 / len(sm[frame].sharpnessScore)
       # if bad_sum < 0.9:
         # break
