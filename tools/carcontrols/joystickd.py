@@ -57,20 +57,22 @@ class Joystick:
         else:
           event.value = self.axes_values[event.axis] - AXES_INCREMENT
 
-      elif key in self.buttons:
+      elif key in self.buttons:  # if button event
         event.type = 'button'
         event.button = self.buttons[key]
 
     else:  # Joystick
-      js_event = get_gamepad()[0]
-      if js_event.code in self.axes:  # if axis event
+      joystick_event = get_gamepad()[0]
+      if joystick_event.code in self.axes:
         event.type = 'axis'
-        event.axis = self.axes[js_event.code]
-        v = ((js_event.state / self.max_axis_value) - 0.5) * 2  # normalize value from -1 to 1
-        event.value = apply_deadzone(-v, 0.03)  # reasonable deadzone
-      elif js_event.code in self.button_map and js_event.state == 0:
+        event.axis = self.axes[joystick_event.code]
+        v = ((joystick_event.state / self.max_axis_value) - 0.5) * 2  # normalize value from -1 to 1
+        event.value = apply_deadzone(-v, 0.03)
+
+      # some buttons send events on rising and falling so only allow one state
+      elif joystick_event.code in self.button_map and joystick_event.state == 0:
         event.type = 'button'
-        event.button = self.button_map[js_event.code]
+        event.button = self.button_map[joystick_event.code]
 
     return event  # returns empty Event if not mapped axis or button
 
