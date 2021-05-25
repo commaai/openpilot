@@ -12,11 +12,11 @@ def takeSnapshot():
         # f = io.BytesIO()
         with open('/data/snapshot.jpeg', 'wb') as f:
           jpeg_write(f, x)
-        return base64.b64encode(f.getvalue()).decode("utf-8")
-      else:
-        return None
-    return {'jpegBack': b64jpeg(ret[0]),
-            'jpegFront': b64jpeg(ret[1])}
+        print('Wrote image!')
+        # return base64.b64encode(f.getvalue()).decode("utf-8")
+    b64jpeg(ret[0])
+    # return {'jpegBack': b64jpeg(ret[0]),
+    #         'jpegFront': b64jpeg(ret[1])}
   else:
     raise Exception("not available while camerad is started")
 
