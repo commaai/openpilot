@@ -101,7 +101,7 @@ def snapshot():
 
   proc = subprocess.Popen(os.path.join(BASEDIR, "selfdrive/camerad/camerad"),
                           cwd=os.path.join(BASEDIR, "selfdrive/camerad"), env=env)
-  time.sleep(5.0)
+  time.sleep(4.0)
 
   frame = "wideRoadCameraState" if TICI else "roadCameraState"
   front_frame = "driverCameraState" if front_camera_allowed else None
