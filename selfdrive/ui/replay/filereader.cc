@@ -75,6 +75,9 @@ void LogReader::parseEvents(kj::ArrayPtr<const capnp::word> amsg) {
       } else if (event.which() == cereal::Event::DRIVER_ENCODE_IDX) {
         auto ee = event.getDriverEncodeIdx();
         encoderIdx_["driverCameraState"][ee.getFrameId()] = {ee.getSegmentNum(), ee.getSegmentId()};
+      } else if (event.which() == cereal::Event::WIDE_ROAD_ENCODE_IDX) {
+        auto ee = event.getWideRoadEncodeIdx();
+        encoderIdx_["wideRoadCameraState"][ee.getFrameId()] = {ee.getSegmentNum(), ee.getSegmentId()};
       }
 
       events_.insert(event.getLogMonoTime(), reader.release());

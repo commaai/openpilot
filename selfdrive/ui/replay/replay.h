@@ -23,12 +23,16 @@ public:
   FrameReader *getFrameReader(const std::string &type) const {
     if (type == "roadCameraState") {
       return road_cam_reader;
-    } else {
+    } else if (type == "driverCameraState") {
       return driver_cam_reader;
+    } else {
+      return wide_road_cam_reader;
     }
   }
+
   LogReader *log_reader = nullptr;
   FrameReader *road_cam_reader = nullptr;
+  FrameReader *wide_road_cam_reader = nullptr;
   FrameReader *driver_cam_reader = nullptr;
   std::atomic<int> loading;
 };
@@ -40,6 +44,7 @@ public:
   Replay(const QString &route, SubMaster *sm = nullptr, QObject *parent = nullptr);
   ~Replay();
   void start();
+  void loadJson(const QString &response);
 
 private:
   void addSegment(int n);
@@ -52,7 +57,6 @@ private:
   void segmentQueueThread();
   void cameraThread();
   
-  void parseResponse(const QString &response);
   void seekTime(int ts);
   void startVipcServer(const SegmentData *segment);
 

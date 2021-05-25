@@ -60,11 +60,11 @@ Replay::~Replay() {
 void Replay::start() {
   const QString url = "https://api.commadotai.com/v1/route/" + route + "/files";
   http = new HttpRequest(this, url, "", !Hardware::PC());
-  QObject::connect(http, &HttpRequest::receivedResponse, this, &Replay::parseResponse);
+  QObject::connect(http, &HttpRequest::receivedResponse, this, &Replay::loadJson);
 }
 
-void Replay::parseResponse(const QString &response) {
-  QJsonDocument doc = QJsonDocument::fromJson(response.trimmed().toUtf8());
+void Replay::loadJson(const QString &json) {
+  QJsonDocument doc = QJsonDocument::fromJson(json.trimmed().toUtf8());
   if (doc.isNull()) {
     qDebug() << "JSON Parse failed";
     return;
@@ -84,36 +84,6 @@ void Replay::parseResponse(const QString &response) {
     connect(t, &QThread::finished, t, &QThread::deleteLater);
     t->start();
   }
-}
-
-std::optional<std::pair<FrameReader*, int>> Replay::getFrame(const std::string &type, uint32_t frame_id) {
-  std::unique_lock lk(segment_lock);
-  auto frame = segments[current_segment]->log_reader->getFrameEncodeIdx(type, frame_id);
-  if (!frame) {
-    // search in adjacent segments
-    int start = std::max(current_segment - BACKWARD_SEGS, 0);
-    int end = std::min(current_segment + FORWARD_SEGS, segments.size());
-    for (int i = start; i < end; ++i) {
-      if (i != current_segment) {
-        const SegmentData *segment = segments[i];
-        if (segment && !segment->loading) {
-          frame = segment->log_reader->getFrameEncodeIdx(type, frame_id);
-          if (frame) break;
-        }
-      }
-    }
-  }
-  if (frame) {
-    auto [segment_id, idx] = *frame;
-    const SegmentData *segment = segments[segment_id];
-    if (segment && !segment->loading) {
-      FrameReader *reader = segment->getFrameReader(type);
-      if (reader) {
-        return std::make_pair(reader, idx);
-      }
-    }
-  }
-  return std::nullopt;
 }
 
 void Replay::addSegment(int n) {
@@ -181,6 +151,61 @@ void Replay::seekTime(int ts) {
   current_segment = ts / SEGMENT_LENGTH;
 }
 
+void Replay::startVipcServer(const SegmentData *segment) {
+  assert(vipc_server == nullptr);
+
+  FrameReader *frames[] = {segment->road_cam_reader, segment->wide_road_cam_reader, segment->driver_cam_reader};
+  bool hasFrames = false;
+  for (auto f : frames) {
+    if (f && f->valid()) hasFrames = true;
+  }
+  if (hasFrames) {
+    vipc_server = new VisionIpcServer("camerad", device_id, context);
+    for (auto f : frames) {
+      if (f && f->valid()) {
+        vipc_server->create_buffers(f->stream_type, UI_BUF_COUNT, true, f->width, f->height);
+      }
+    }
+    QThread *t = QThread::create(&Replay::cameraThread, this);
+    connect(t, &QThread::finished, t, &QThread::deleteLater);
+    t->start();
+    qDebug() << "start vipc server";
+  }
+}
+
+
+std::optional<std::pair<FrameReader*, int>> Replay::getFrame(const std::string &type, uint32_t frame_id) {
+  std::unique_lock lk(segment_lock);
+  auto frame = segments[current_segment]->log_reader->getFrameEncodeIdx(type, frame_id);
+  if (!frame) {
+    // search in adjacent segments
+    int start = std::max(current_segment - BACKWARD_SEGS, 0);
+    int end = std::min(current_segment + FORWARD_SEGS, segments.size());
+    for (int i = start; i < end; ++i) {
+      if (i != current_segment) {
+        const SegmentData *segment = segments[i];
+        if (segment && !segment->loading) {
+          frame = segment->log_reader->getFrameEncodeIdx(type, frame_id);
+          if (frame) break;
+        }
+      }
+    }
+  }
+  if (frame) {
+    auto [segment_id, idx] = *frame;
+    const SegmentData *segment = segments[segment_id];
+    if (segment && !segment->loading) {
+      FrameReader *reader = segment->getFrameReader(type);
+      if (reader) {
+        return std::make_pair(reader, idx);
+      }
+    }
+  }
+  return std::nullopt;
+}
+
+// threads
+
 void Replay::segmentQueueThread() {
   // maintain the segment window
   while (true) {
@@ -195,6 +220,25 @@ void Replay::segmentQueueThread() {
     }
     QThread::msleep(100);
   }
+}
+
+void Replay::cameraThread() {
+  vipc_server->start_listener();
+  while (!exit_) {
+    std::pair<std::string, uint32_t> frame;
+    if (!frame_queue.try_pop(frame, 50)) continue;
+
+    auto [type, frame_id] = frame;
+    if (auto f = getFrame(type, frame_id); f) {
+      auto [frameReader, idx] = *f;
+      VisionIpcBufExtra extra = {};
+      VisionBuf *buf = vipc_server->get_buffer(frameReader->stream_type);
+      memcpy(buf->addr, frameReader->get(idx), frameReader->getRGBSize());
+      vipc_server->send(buf, &extra, false);
+    }
+  }
+  delete vipc_server;
+  vipc_server = nullptr;
 }
 
 void Replay::keyboardThread() {
@@ -231,46 +275,6 @@ void Replay::keyboardThread() {
   }
 }
 
-void Replay::startVipcServer(const SegmentData *segment) {
-  assert(vipc_server == nullptr);
-
-  FrameReader *frames[] = {segment->road_cam_reader, segment->driver_cam_reader};
-  bool hasFrames = false;
-  for (auto f : frames) {
-    if (f && f->valid()) hasFrames = true;
-  }
-  if (hasFrames) {
-    vipc_server = new VisionIpcServer("camerad", device_id, context);
-    for (auto f : frames) {
-      if (f && f->valid()) {
-        vipc_server->create_buffers(f->stream_type, UI_BUF_COUNT, true, f->width, f->height);
-      }
-    }
-    QThread *t = QThread::create(&Replay::cameraThread, this);
-    connect(t, &QThread::finished, t, &QThread::deleteLater);
-    t->start();
-    qDebug() << "start vipc server";
-  }
-}
-
-void Replay::cameraThread() {
-  vipc_server->start_listener();
-  while (!exit_) {
-    std::pair<std::string, uint32_t> frame;
-    if (!frame_queue.try_pop(frame, 50)) continue;
-
-    auto [type, frame_id] = frame;
-    if (auto f = getFrame(type, frame_id); f) {
-      auto [frameReader, idx] = *f;
-      VisionIpcBufExtra extra = {};
-      VisionBuf *buf = vipc_server->get_buffer(frameReader->stream_type);
-      memcpy(buf->addr, frameReader->get(idx), frameReader->getRGBSize());
-      vipc_server->send(buf, &extra, false);
-    }
-  }
-  delete vipc_server;
-  vipc_server = nullptr;
-}
 
 void Replay::streamThread() {
   QElapsedTimer timer;
@@ -331,6 +335,8 @@ void Replay::streamThread() {
           frame_queue.push({type, e.getRoadCameraState().getFrameId()});
         } else if (type == "driverCameraState") {
           frame_queue.push({type, e.getDriverCameraState().getFrameId()});
+         } else if (type == "wideRoadCameraState") {
+          frame_queue.push({type, e.getWideRoadCameraState().getFrameId()});
         }
 
         // publish msg
