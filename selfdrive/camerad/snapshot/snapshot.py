@@ -16,7 +16,7 @@ from selfdrive.hardware import TICI
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
 from common.realtime import sec_since_boot
 
-LM_THRESH = 120 * 2
+LM_THRESH = 120
 
 
 def jpeg_write(fn, dat):
