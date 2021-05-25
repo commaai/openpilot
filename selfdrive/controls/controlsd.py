@@ -80,14 +80,13 @@ class Controls:
     self.CI, self.CP = get_car(self.can_sock, self.pm.sock['sendcan'])
 
     # read params
-    params = Params()
-    self.is_metric = params.get_bool("IsMetric")
-    self.is_ldw_enabled = params.get_bool("IsLdwEnabled")
-    self.enable_lte_onroad = params.get_bool("EnableLteOnroad")
-    self.debug_mode = params.get_bool("JoystickDebugMode")  # FIXME: this wasn't working properly
-    community_feature_toggle = params.get_bool("CommunityFeaturesToggle")
-    openpilot_enabled_toggle = params.get_bool("OpenpilotEnabledToggle")
-    passive = params.get_bool("Passive") or not openpilot_enabled_toggle
+    self.params = Params()
+    self.is_metric = self.params.get_bool("IsMetric")
+    self.is_ldw_enabled = self.params.get_bool("IsLdwEnabled")
+    self.enable_lte_onroad = self.params.get_bool("EnableLteOnroad")
+    community_feature_toggle = self.params.get_bool("CommunityFeaturesToggle")
+    openpilot_enabled_toggle = self.params.get_bool("OpenpilotEnabledToggle")
+    passive = self.params.get_bool("Passive") or not openpilot_enabled_toggle
 
     # detect sound card presence and ensure successful init
     sounds_available = HARDWARE.get_sound_card_online()
@@ -106,7 +105,7 @@ class Controls:
 
     # Write CarParams for radard
     cp_bytes = self.CP.to_bytes()
-    params.put("CarParams", cp_bytes)
+    self.params.put("CarParams", cp_bytes)
     put_nonblocking("CarParamsCache", cp_bytes)
 
     self.CC = car.CarControl.new_message()
@@ -191,6 +190,7 @@ class Controls:
       self.events.add(EventName.lowMemory)
 
     # If user running in joystick debugging mode
+    self.debug_mode = self.params.get_bool("JoystickDebugMode")
     if self.debug_mode:
       self.events.add(EventName.joystickDebug)
 
@@ -315,7 +315,7 @@ class Controls:
     all_valid = CS.canValid and self.sm.all_alive_and_valid()
     if not self.initialized and (all_valid or self.sm.frame * DT_CTRL > 2.0):
       self.initialized = True
-      Params().put_bool("ControlsReady", True)
+      self.params.put_bool("ControlsReady", True)
 
     # Check for CAN timeout
     if not can_strs:
