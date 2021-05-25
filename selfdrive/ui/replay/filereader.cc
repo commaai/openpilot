@@ -1,6 +1,8 @@
 #include "selfdrive/ui/replay/filereader.h"
 
+#include <bzlib.h>
 #include <QtNetwork>
+#include "cereal/gen/cpp/log.capnp.h"
 
 FileReader::FileReader(const QString& file_) : file(file_) {
 }
@@ -44,96 +46,52 @@ FileReader::~FileReader() {
 
 }
 
-LogReader::LogReader(const QString& file, Events *events_, QReadWriteLock* events_lock_, QMap<int, QPair<int, int> > *eidx_) :
-    FileReader(file), events(events_), events_lock(events_lock_), eidx(eidx_) {
-  bStream.next_in = NULL;
-  bStream.avail_in = 0;
-  bStream.bzalloc = NULL;
-  bStream.bzfree = NULL;
-  bStream.opaque = NULL;
-
-  int ret = BZ2_bzDecompressInit(&bStream, 0, 0);
-  if (ret != BZ_OK) qWarning() << "bz2 init failed";
-
+LogReader::LogReader(const QString &file) : FileReader(file) {
   // start with 64MB buffer
-  raw.resize(1024*1024*64);
-
-  // auto increment?
-  bStream.next_out = raw.data();
-  bStream.avail_out = raw.size();
-
-  // parsed no events yet
-  event_offset = 0;
-
-  parser = new std::thread([&]() {
-    while (1) {
-      mergeEvents(cdled.get());
-    }
-  });
+  raw_.resize(1024 * 1024 * 64);
 }
 
 LogReader::~LogReader() {
-  delete parser;
+  for (auto it = events_.begin(); it != events_.end(); ++it) {
+    delete it.value();
+  }
 }
 
-void LogReader::mergeEvents(int dled) {
-  auto amsg = kj::arrayPtr((const capnp::word*)(raw.data() + event_offset), (dled-event_offset)/sizeof(capnp::word));
-  Events events_local;
-  QMap<int, QPair<int, int> > eidx_local;
-
-  while (amsg.size() > 0) {
+void LogReader::parseEvents(kj::ArrayPtr<const capnp::word> amsg) {
+  size_t offset = 0;
+  while (offset < amsg.size()) {
     try {
-      capnp::FlatArrayMessageReader cmsg = capnp::FlatArrayMessageReader(amsg);
+      std::unique_ptr<capnp::FlatArrayMessageReader> reader =
+          std::make_unique<capnp::FlatArrayMessageReader>(amsg.slice(offset, amsg.size()));
 
-      // this needed? it is
-      capnp::FlatArrayMessageReader *tmsg =
-        new capnp::FlatArrayMessageReader(kj::arrayPtr(amsg.begin(), cmsg.getEnd()));
-
-      amsg = kj::arrayPtr(cmsg.getEnd(), amsg.end());
-
-      cereal::Event::Reader event = tmsg->getRoot<cereal::Event>();
-      events_local.insert(event.getLogMonoTime(), event);
+      cereal::Event::Reader event = reader->getRoot<cereal::Event>();
+      offset = reader->getEnd() - amsg.begin();
 
       // hack
       // TODO: rewrite with callback
       if (event.which() == cereal::Event::ROAD_ENCODE_IDX) {
         auto ee = event.getRoadEncodeIdx();
-        eidx_local.insert(ee.getFrameId(), qMakePair(ee.getSegmentNum(), ee.getSegmentId()));
+        encoderIdx_["roadCameraState"][ee.getFrameId()] = {ee.getSegmentNum(), ee.getSegmentId()};
+      } else if (event.which() == cereal::Event::DRIVER_ENCODE_IDX) {
+        auto ee = event.getDriverEncodeIdx();
+        encoderIdx_["driverCameraState"][ee.getFrameId()] = {ee.getSegmentNum(), ee.getSegmentId()};
       }
 
-      // increment
-      event_offset = (char*)cmsg.getEnd() - raw.data();
-    } catch (const kj::Exception& e) {
+      events_.insert(event.getLogMonoTime(), reader.release());
+    } catch (const kj::Exception &e) {
       // partial messages trigger this
-      //qDebug() << e.getDescription().cStr();
+      // qDebug() << e.getDescription().cStr();
       break;
     }
   }
-
-  // merge in events
-  // TODO: add lock
-  events_lock->lockForWrite();
-  *events += events_local;
-  eidx->unite(eidx_local);
-  events_lock->unlock();
+  ready_ = true;
   emit done();
 }
 
 void LogReader::readyRead() {
   QByteArray dat = reply->readAll();
-
-  bStream.next_in = dat.data();
-  bStream.avail_in = dat.size();
-
-  while (bStream.avail_in > 0) {
-    int ret = BZ2_bzDecompress(&bStream);
-    if (ret != BZ_OK && ret != BZ_STREAM_END) {
-      qWarning() << "bz2 decompress failed";
-      break;
-    }
+  if (!decompressBZ2(raw_, dat.data(), dat.size())) {
+    qWarning() << "bz2 decompress failed";
   }
-
-  int dled = raw.size() - bStream.avail_out;
-  cdled.put(dled);
+  parseEvents({(const capnp::word *)raw_.data(), raw_.size() / sizeof(capnp::word)});
 }
-

@@ -40,7 +40,7 @@ Replay::Replay(const QString &route, SubMaster *sm_, QObject *parent) : route(ro
     if ((allow[0].size() == 0 || allow.contains(it.name)) &&
         !block.contains(it.name)) {
       s.push_back(it.name);
-      socks.append(it.name);
+      socks.insert(it.name);
     }
   }
   qDebug() << "services " << s;
@@ -80,6 +80,36 @@ void Replay::parseResponse(const QString &response) {
   }
 }
 
+std::optional<std::pair<FrameReader*, int>> Replay::getFrame(const std::string &type, uint32_t frame_id) {
+  std::unique_lock lk(segment_lock);
+  auto frame = segments[current_segment]->log_reader->getFrameEncodeIdx(type, frame_id);
+  if (!frame) {
+    // search in adjacent segments
+    int start = std::max(current_segment - BACKWARD_SEGS, 0);
+    int end = std::min(current_segment + FORWARD_SEGS, segments.size());
+    for (int i = start; i < end; ++i) {
+      if (i != current_segment) {
+        const SegmentData *segment = segments[i];
+        if (segment && !segment->loading) {
+          frame = segment->log_reader->getFrameEncodeIdx(type, frame_id);
+          if (frame) break;
+        }
+      }
+    }
+  }
+  if (frame) {
+    auto [segment_id, idx] = *frame;
+    const SegmentData *segment = segments[segment_id];
+    if (segment && !segment->loading) {
+      FrameReader *reader = segment->getFrameReader(type);
+      if (reader) {
+        return std::make_pair(reader, idx);
+      }
+    }
+  }
+  return std::nullopt;
+}
+
 void Replay::cameraThread() {
   cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
   cl_context context = CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id, NULL, NULL, &err));
@@ -89,19 +119,22 @@ void Replay::cameraThread() {
 
   bool buffers_initialized[VISION_STREAM_MAX] = {};
   while (!exit_) {
-    std::pair<FrameReader *, int> frame;
+    std::pair<std::string, uint32_t> frame;
     if (!frame_queue.try_pop(frame, 50)) continue;
 
-    auto [frameReader, idx] = frame;
-    if (!buffers_initialized[frameReader->stream_type]) {
-      vipc_server->create_buffers(frameReader->stream_type, UI_BUF_COUNT, true, frameReader->width, frameReader->height);
-      buffers_initialized[frameReader->stream_type] = true;
-    }
+    auto [type, frame_id] = frame;
+    if (auto f = getFrame(type, frame_id); f) {
+      auto [frameReader, idx] = *f;
+      if (!buffers_initialized[frameReader->stream_type]) {
+        vipc_server->create_buffers(frameReader->stream_type, UI_BUF_COUNT, true, frameReader->width, frameReader->height);
+        buffers_initialized[frameReader->stream_type] = true;
+      }
 
-    VisionIpcBufExtra extra = {};
-    VisionBuf *buf = vipc_server->get_buffer(frameReader->stream_type);
-    memcpy(buf->addr, frameReader->get(idx), frameReader->getRGBSize());
-    vipc_server->send(buf, &extra, false);
+      VisionIpcBufExtra extra = {};
+      VisionBuf *buf = vipc_server->get_buffer(frameReader->stream_type);
+      memcpy(buf->addr, frameReader->get(idx), frameReader->getRGBSize());
+      vipc_server->send(buf, &extra, false);
+    }
   }
 
   CL_CHECK(clReleaseContext(context));
@@ -118,7 +151,7 @@ void Replay::addSegment(int n) {
   lk.unlock();
 
   QThread *t = new QThread;
-  segment->log_reader = new LogReader(log_paths[n], &events, &events_lock, &eidx);
+  segment->log_reader = new LogReader(log_paths[n]);
   segment->log_reader->moveToThread(t);
   connect(segment->log_reader, &LogReader::done, [&] { 
     --segment->loading; 
@@ -128,7 +161,7 @@ void Replay::addSegment(int n) {
   QObject::connect(t, &QThread::finished, t, &QThread::deleteLater);
   t->start();
 
-  auto load_frame = [&](const QString &path, VisionStreamType stream_type) {
+  auto read_frames = [&](const QString &path, VisionStreamType stream_type) {
     segment->loading += 1;
     FrameReader *frame_reader = new FrameReader(qPrintable(path), VISION_STREAM_RGB_BACK);
     connect(frame_reader, &FrameReader::done, [&] { --segment->loading; });
@@ -139,10 +172,10 @@ void Replay::addSegment(int n) {
   };
 
   if (n < road_camera_paths.size()) {
-    segment->road_cam_reader = load_frame(road_camera_paths[n], VISION_STREAM_RGB_BACK);
+    segment->road_cam_reader = read_frames(road_camera_paths[n], VISION_STREAM_RGB_BACK);
   }
   if (n < driver_camera_paths.size()) {
-    segment->driver_cam_reader = load_frame(driver_camera_paths[n], VISION_STREAM_RGB_FRONT);
+    segment->driver_cam_reader = read_frames(driver_camera_paths[n], VISION_STREAM_RGB_FRONT);
   }
 }
 
@@ -221,26 +254,12 @@ void Replay::keyboardThread() {
   }
 }
 
-void Replay::publishFrame(const std::string &type, const cereal::Event::Reader &event) {
-  // TODO: publish all frames
-  if (type == "roadCameraState") {
-    if (auto it_ = eidx.find(event.getRoadCameraState().getFrameId()); it_ != eidx.end()) {
-      auto [segment, idx] = *it_;
-      SegmentData *frame_segment = segments[segment];
-      if (frame_segment && !frame_segment->loading) {
-        frame_queue.push({frame_segment->road_cam_reader, idx});
-      }
-    }
-  } else if (type == "driverCameraState") {
-  }
-}
-
 void Replay::streamThread() {
   QElapsedTimer timer;
   timer.start();
 
   seekTime(0);
-  int route_start_ts = 0;
+  uint64_t route_start_ts = 0;
 
   while (true) {
     const SegmentData * segment = getSegment(current_segment);
@@ -250,25 +269,22 @@ void Replay::streamThread() {
       continue;
     }
 
+    const Events &events = segment->log_reader->events();
+
     // TODO: use initData's logMonoTime
     if (route_start_ts == 0) {
       route_start_ts = events.firstKey();
     }
 
     uint64_t t0 = route_start_ts + (seek_ts * 1e9);
-    seek_ts = -1;
     qDebug() << "unlogging at" << (t0 - route_start_ts) / 1e9;
 
-    // wait until we have events within 1s of the current time
     auto eit = events.lowerBound(t0);
-    while (eit.key() - t0 > 1e9) {
-      eit = events.lowerBound(t0);
-      QThread::msleep(10);
-    }
-
+    assert(eit != events.end());
     uint64_t t0r = timer.nsecsElapsed();
-    while ((eit != events.end()) && seek_ts < 0) {
-      cereal::Event::Reader e = (*eit);
+    int current_seek_ts = seek_ts;
+    while (current_seek_ts == seek_ts && eit != events.end()) {
+      cereal::Event::Reader e = (*eit)->getRoot<cereal::Event>();
       std::string type;
       KJ_IF_MAYBE(e_, static_cast<capnp::DynamicStruct::Reader>(e).which()) {
         type = e_->getProto().getName();
@@ -277,7 +293,7 @@ void Replay::streamThread() {
       uint64_t tm = e.getLogMonoTime();
       current_ts = std::max(tm - route_start_ts, (unsigned long)0) / 1e9;
 
-      if (socks.contains(type)) {
+      if (socks.find(type) != socks.end()) {
         if (std::abs(current_ts - last_print) > 5.0) {
           last_print = current_ts;
           qInfo() << "at " << last_print;
@@ -291,8 +307,11 @@ void Replay::streamThread() {
           QThread::usleep(us_behind);
           //qDebug() << "sleeping" << us_behind << etime << timer.nsecsElapsed();
         }
-
-        publishFrame(type, e);
+        if (type == "roadCameraState") {
+          frame_queue.push({type, e.getRoadCameraState().getFrameId()});
+        } else if (type == "driverCameraState") {
+          frame_queue.push({type, e.getDriverCameraState().getFrameId()});
+        }
 
         // publish msg
         if (sm == nullptr) {
@@ -305,6 +324,12 @@ void Replay::streamThread() {
       }
 
       ++eit;
+    }
+
+    if (current_seek_ts == seek_ts) {
+      // move to the next segment
+      current_segment += 1;
+      seek_ts = current_ts.load();
     }
   }
 }

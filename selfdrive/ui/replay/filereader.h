@@ -1,21 +1,15 @@
 #pragma once
 
-#include <thread>
+#include <optional>
+#include <vector>
+#include <unordered_map>
 
 #include <QElapsedTimer>
 #include <QMultiMap>
 #include <QNetworkAccessManager>
-#include <QReadWriteLock>
 #include <QString>
-#include <QVector>
-#include <QWidget>
 
-#include <bzlib.h>
 #include <capnp/serialize.h>
-#include <kj/io.h>
-#include "cereal/gen/cpp/log.capnp.h"
-
-#include "tools/clib/channel.h"
 
 class FileReader : public QObject {
   Q_OBJECT
@@ -39,32 +33,36 @@ private:
   QString file;
 };
 
-typedef QMultiMap<uint64_t, cereal::Event::Reader> Events;
+typedef QMultiMap<uint64_t, capnp::FlatArrayMessageReader *> Events;
+typedef std::unordered_map<int, std::pair<int, int> > EncodeIdxMap;
 
 class LogReader : public FileReader {
-Q_OBJECT
-public:
-  LogReader(const QString& file, Events *, QReadWriteLock* events_lock_, QMap<int, QPair<int, int> > *eidx_);
-  ~LogReader();
+  Q_OBJECT
 
-  void readyRead();
+public:
+  LogReader(const QString &file);
+  ~LogReader();
+  bool ready() const { return ready_; }
+  const Events &events() const { return events_; }
+  std::optional<std::pair<int, int>> getFrameEncodeIdx(const std::string &type, uint32_t frame_id) const{
+    if (auto edix_it = encoderIdx_.find(type); edix_it != encoderIdx_.end()) {
+      if (auto it = edix_it->second.find(frame_id); it != edix_it->second.end()) {
+        return it->second;
+      }
+    }
+    return std::nullopt;
+
+  }
 
 signals:
   void done();
 
-private:
-  bz_stream bStream;
+protected:
+  void readyRead();
+  void parseEvents(kj::ArrayPtr<const capnp::word> amsg);
 
-  // backing store
-  QByteArray raw;
-
-  std::thread *parser;
-  int event_offset;
-  channel<int> cdled;
-
-  // global
-  void mergeEvents(int dled);
-  Events *events;
-  QReadWriteLock* events_lock;
-  QMap<int, QPair<int, int> > *eidx;
+  std::vector<uint8_t> raw_;
+  Events events_;
+  std::atomic<bool> ready_ = false;
+  std::map<std::string, EncodeIdxMap> encoderIdx_;
 };
