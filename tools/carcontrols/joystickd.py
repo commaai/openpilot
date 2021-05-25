@@ -17,7 +17,7 @@ class Joystick:  # TODO: see if we can clean this class up
     self.kb = KBHit()
 
     self.use_keyboard = use_keyboard
-    self.axes_values = {'gb': 0., 'steer': 0.}
+    self.axes_values = {ax: 0. for ax in AXES}
     self.btn_states = {btn: False for btn in BUTTONS}
 
     if self.use_keyboard:
@@ -40,7 +40,7 @@ class Joystick:  # TODO: see if we can clean this class up
 
       elif key in self.buttons:
         if self.buttons[key] == 'reset':
-          self.axes_values = {'steer': 0., 'gb': 0.}
+          self.axes_values = {ax: 0. for ax in AXES}
         else:
           btn = self.buttons[key]
           self.btn_states[btn] = not self.btn_states[btn]
@@ -94,7 +94,7 @@ def joystick_thread():
   send_thread_proc.start()
 
   if use_keyboard:
-    print('Gas/brake control: `W` and `A` keys')
+    print('\nGas/brake control: `W` and `Sa` keys')
     print('Steer control: `A` and `D` keys')
     print('Buttons:\n'
           '- `R`: Resets axes values\n'
@@ -106,8 +106,9 @@ def joystick_thread():
   try:
     while 1:
       joystick.update()
-      print(joystick.axes_values)
-      print(joystick.btn_states)
+      print()
+      print(', '.join([f'{name}: {v}' for name, v in joystick.axes_values.items()]))
+      print(', '.join([f'{name}: {v}' for name, v in joystick.btn_states.items()]))
       command_sock.send_pyobj(joystick)
       # TODO: time shouldn't matter since joystick.update() is blocking
   except KeyboardInterrupt:

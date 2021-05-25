@@ -489,7 +489,9 @@ class Controls:
 
     CC.cruiseControl.override = True
     CC.cruiseControl.cancel = not self.CP.enableCruise or (not self.enabled and CS.cruiseState.enabled)
-    if self.debug_mode:
+
+    if self.debug_mode and len(self.sm['testJoystick'].buttons):
+      CC.enabled = self.sm['testJoystick'].buttons[1]
       CC.cruiseControl.cancel = self.sm['testJoystick'].buttons[0]
 
     # Some override values for Honda
@@ -531,8 +533,8 @@ class Controls:
     self.AM.add_many(self.sm.frame, alerts, self.enabled)
     self.AM.process_alerts(self.sm.frame, clear_event)
     CC.hudControl.visualAlert = self.AM.visual_alert
-    if self.debug_mode:
-      CC.hudControl.visualAlert = "steerRequired"
+    if self.debug_mode and len(self.sm['testJoystick'].buttons):
+      CC.hudControl.visualAlert = self.sm['testJoystick'].buttons[2]
 
     if not self.read_only and self.initialized:
       # send car controls over can
