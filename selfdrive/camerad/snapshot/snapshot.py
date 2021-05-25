@@ -82,7 +82,8 @@ def snapshot():
                           cwd=os.path.join(BASEDIR, "selfdrive/camerad"), env=env)
   time.sleep(3.0)
 
-  frame = "wideRoadCameraState" if TICI else "roadCameraState"
+  # frame = "wideRoadCameraState" if TICI else "roadCameraState"
+  frame = "roadCameraState"
   front_frame = "driverCameraState" if front_camera_allowed else None
   rear, front = get_snapshots(frame, front_frame)
 
