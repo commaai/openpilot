@@ -9,8 +9,9 @@ def takeSnapshot():
   if ret is not None:
     def b64jpeg(x):
       if x is not None:
-        f = io.BytesIO()
-        jpeg_write(f, x)
+        # f = io.BytesIO()
+        with open('/data/snapshot.jpeg', 'wb') as f:
+          jpeg_write(f, x)
         return base64.b64encode(f.getvalue()).decode("utf-8")
       else:
         return None
@@ -21,6 +22,6 @@ def takeSnapshot():
 
 
 imgs = takeSnapshot()
-if imgs is not None:
-  with open('/data/snapshot.jpeg', 'wb') as f:
-    f.write(imgs['jpegBack'])
+# if imgs is not None:
+#   with open('/data/snapshot.jpeg', 'wb') as f:
+#     f.write(imgs['jpegBack'])
