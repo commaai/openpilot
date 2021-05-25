@@ -17,13 +17,11 @@ class Joystick:  # TODO: see if we can clean this class up
     self.kb = KBHit()
 
     self.use_keyboard = use_keyboard
-    self.axes_values = {'steer': 0., 'accel': 0.}
+    self.axes_values = {'steer': 0., 'gb': 0.}
     self.cur_buttons = {btn: False for btn in BUTTONS}
 
     if self.use_keyboard:
-      self.axes = {'w': ['forward', 'accel'], 'a': ['left', 'steer'], 's': ['backward', 'accel'], 'd': ['right', 'steer']}   # add more for the joystick buttons
-      self.axes_increment = 0.05  # 5% of full actuation each key press
-
+      self.axes = {'gb': ['w', 's'], 'steer': ['a', 'd']}  # first key is positive
       self.buttons = {'r': 'reset', 'c': BUTTONS[0], 'e': BUTTONS[1], 't': BUTTONS[2]}
     else:
       raise NotImplementedError("Only keyboard is supported for now")  # TODO: support joystick
@@ -31,14 +29,15 @@ class Joystick:  # TODO: see if we can clean this class up
   def update(self):
     if self.use_keyboard:
       key = self.kb.getch().lower()
-      if key in self.axes:
-        event, event_type = self.axes[key]
-        sign = 1. if event in ['forward', 'left'] else -1.
-        v = self.axes_values[event_type]
-        self.axes_values[event_type] = round(clip(v + sign * self.axes_increment, -1., 1.), 3)
+      if key in self.axes['gb'] + self.axes['steer']:  # if axis event
+        control_type = 'gb' if key in self.axes['gb'] else 'steer'
+        sign = 1 if self.axes[control_type].index(key) == 0 else -1
+        v = self.axes_values[control_type] + AXES_INCREMENT * sign
+        self.axes_values[control_type] = round(clip(v, -1., 1.), 3)
+
       elif key in self.buttons:
         if self.buttons[key] == 'reset':
-          self.axes_values = {'steer': 0., 'accel': 0.}
+          self.axes_values = {'steer': 0., 'gb': 0.}
         else:
           btn = self.buttons[key]
           self.cur_buttons[btn] = True  # todo: reset other buttons
@@ -49,6 +48,7 @@ class Joystick:  # TODO: see if we can clean this class up
 
 
 BUTTONS = ['cancel', 'engaged_toggle', 'steer_required']
+AXES_INCREMENT = 0.05  # 5% of full actuation each key press
 joystick = Joystick(use_keyboard=True)
 
 
@@ -73,7 +73,7 @@ def send_thread(command_address):
       msg = sock.recv_pyobj()  # TODO: only receives axes for now
 
     dat = messaging.new_message('testJoystick')
-    dat.testJoystick.axes = [msg[a] for a in ['accel', 'steer']]
+    dat.testJoystick.axes = [msg[a] for a in ['gb', 'steer']]
     dat.testJoystick.buttons = [False for _ in BUTTONS]
 
     joystick_sock.send(dat.to_bytes())
