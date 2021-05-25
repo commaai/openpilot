@@ -68,7 +68,6 @@ void Replay::parseResponse(const QString &response) {
   driver_camera_paths = doc["dcameras"].toVariant().toStringList();
   log_paths = doc["logs"].toVariant().toStringList();
 
-  qInfo() << road_camera_paths;
   seekTime(0);
 
   auto startThread = [=](auto functor) -> QThread * {
@@ -85,14 +84,13 @@ void Replay::parseResponse(const QString &response) {
 }
 
 void Replay::cameraThread() {
-  bool buffers_initialized[VISION_STREAM_MAX] = {};
-
   cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
   cl_context context = CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id, NULL, NULL, &err));
 
   vipc_server = new VisionIpcServer("camerad", device_id, context);
   vipc_server->start_listener();
 
+  bool buffers_initialized[VISION_STREAM_MAX] = {};
   while (!exit_) {
     std::pair<FrameReader *, int> frame;
     if (!frame_queue.try_pop(frame, 50)) continue;
