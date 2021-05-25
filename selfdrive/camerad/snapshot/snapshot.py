@@ -52,12 +52,12 @@ def get_snapshots(frame="roadCameraState", front_frame="driverCameraState", focu
   sm = messaging.SubMaster(sockets)
   t = sec_since_boot()
   # wait_for_exposure =
-  i = 0
+  # i = 0
   while sec_since_boot() - t < 10:
     sm.update()
-    i += 1
-    if i < 5:
-      continue
+    # i += 1
+    # if i < 5:
+    #   continue
     if min(sm.logMonoTime.values()):
       print(sm[frame].sharpnessScore)
       print(rois_in_focus(sm[frame].sharpnessScore))
@@ -101,7 +101,7 @@ def snapshot():
 
   proc = subprocess.Popen(os.path.join(BASEDIR, "selfdrive/camerad/camerad"),
                           cwd=os.path.join(BASEDIR, "selfdrive/camerad"), env=env)
-  time.sleep(3.0)
+  time.sleep(5.0)
 
   frame = "wideRoadCameraState" if TICI else "roadCameraState"
   front_frame = "driverCameraState" if front_camera_allowed else None
