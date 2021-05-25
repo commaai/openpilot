@@ -16,7 +16,7 @@ from selfdrive.hardware import TICI
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
 from common.realtime import sec_since_boot
 
-LM_THRESH = 120
+LM_THRESH = 120 * 1.5
 
 
 def jpeg_write(fn, dat):
@@ -102,7 +102,7 @@ def snapshot():
   frame = "wideRoadCameraState" if TICI else "roadCameraState"
   front_frame = "driverCameraState" if front_camera_allowed else None
 
-  focus_perc_threshold = 0. if TICI else 11 / 12.
+  focus_perc_threshold = 0. if TICI else 10 / 12.
   rear, front = get_snapshots(frame, front_frame, focus_perc_threshold)
 
   proc.send_signal(signal.SIGINT)
