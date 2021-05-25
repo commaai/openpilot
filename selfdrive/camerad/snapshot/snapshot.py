@@ -44,8 +44,9 @@ def get_snapshots(frame="roadCameraState", front_frame="driverCameraState"):
   timeout = 10
   t = sec_since_boot()
   # while min(sm.logMonoTime.values()) == 0 and sec_since_boot() - t:
-  while sec_since_boot() - t < 10:
+  while sec_since_boot() - t < timeout:
     sm.update()
+    print(sm.logMonoTime.values())
     if min(sm.logMonoTime.values()) != 0:
       print('got frame')
       print(sm['roadCameraState'].sharpnessScore)
