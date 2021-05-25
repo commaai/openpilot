@@ -37,7 +37,7 @@ def rois_in_focus(lapres):
   for sharpness in lapres:
     if sharpness >= LM_THRESH:
       good_sum += 1 / len(lapres)
-  return good_sum
+  return good_sum ** 2
 
 
 def get_snapshots(frame="roadCameraState", front_frame="driverCameraState"):
