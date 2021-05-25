@@ -99,7 +99,8 @@ def joystick_thread():
     print('Buttons:\n'
           '- `R`: Resets axes values\n'
           '- `C`: Cancel cruise control\n'
-          '- `E`: Toggle enabled')  # and T, steer req hud alert
+          '- `E`: Toggle enabled\n'
+          '- `T`: Steer required HUD')
 
   # Receive joystick/key events and send to joystick send thread
   try:
