@@ -177,8 +177,9 @@ static void update_state(UIState *s) {
   }
   if (sm.updated("sensorEvents")) {
     for (auto sensor : sm["sensorEvents"].getSensorEvents()) {
-      if (!Hardware::TICI() && sensor.which() == cereal::SensorEventData::LIGHT) {
-        scene.light_sensor = sensor.getLight();
+      // Use light sensor when offroad, camera exposure when onroad
+      if (!scene.started && Hardware::EON() && sensor.which() == cereal::SensorEventData::LIGHT) {
+        scene.light_sensor = std::clamp<float>(sensor.getLight(), 0.0, 1023.0);
       }
       if (!scene.started && sensor.which() == cereal::SensorEventData::ACCELERATION) {
         auto accel = sensor.getAcceleration().getV();
@@ -193,10 +194,15 @@ static void update_state(UIState *s) {
       }
     }
   }
-  if (Hardware::TICI() && sm.updated("roadCameraState")) {
+  if (sm.updated("roadCameraState")) {
     auto camera_state = sm["roadCameraState"].getRoadCameraState();
-    float gain = camera_state.getGainFrac() * (camera_state.getGlobalGain() > 100 ? 2.5 : 1.0) / 10.0;
-    scene.light_sensor = std::clamp<float>((1023.0 / 1757.0) * (1757.0 - camera_state.getIntegLines()) * (1.0 - gain), 0.0, 1023.0);
+    if (Hardware::EON()) {
+      float gain = camera_state.getGainFrac();
+      scene.light_sensor = std::clamp<float>((1023.0 / 5408.0) * (5408.0 - camera_state.getIntegLines()) * (1.0 - gain), 0.0, 1023.0);
+    } else if (Hardware::TICI()) {
+      float gain = camera_state.getGainFrac() * (camera_state.getGlobalGain() > 100 ? 2.5 : 1.0) / 10.0;
+      scene.light_sensor = std::clamp<float>((1023.0 / 1757.0) * (1757.0 - camera_state.getIntegLines()) * (1.0 - gain), 0.0, 1023.0);
+    }
   }
   scene.started = sm["deviceState"].getDeviceState().getStarted() || scene.driver_view;
 }
@@ -273,10 +279,7 @@ QUIState::QUIState(QObject *parent) : QObject(parent) {
   ui_state.sm = std::make_unique<SubMaster, const std::initializer_list<const char *>>({
     "modelV2", "controlsState", "liveCalibration", "radarState", "deviceState", "liveLocationKalman",
     "pandaState", "carParams", "driverState", "driverMonitoringState", "sensorEvents", "carState", "ubloxGnss",
-    "gpsLocationExternal",
-#ifdef QCOM2
-    "roadCameraState",
-#endif
+    "gpsLocationExternal", "roadCameraState",
   });
 
   ui_state.fb_w = vwp_w;
