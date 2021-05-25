@@ -121,6 +121,7 @@ def _do_upload(upload_item):
 @dispatcher.add_method
 def getMessage(service=None, timeout=1000):
   if service is None or service not in service_list:
+    print(service)
     raise Exception("invalid service")
 
   socket = messaging.sub_sock(service, timeout=timeout)
