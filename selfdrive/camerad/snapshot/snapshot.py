@@ -13,6 +13,7 @@ from common.params import Params
 from common.transformations.camera import eon_f_frame_size, eon_d_frame_size, leon_d_frame_size, tici_f_frame_size
 from selfdrive.hardware import TICI
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
+from common.realtime import sec_since_boot
 
 
 def jpeg_write(fn, dat):
@@ -40,8 +41,14 @@ def get_snapshots(frame="roadCameraState", front_frame="driverCameraState"):
     sockets.append(front_frame)
 
   sm = messaging.SubMaster(sockets)
-  while min(sm.logMonoTime.values()) == 0:
+  timeout = 10
+  t = sec_since_boot()
+  # while min(sm.logMonoTime.values()) == 0 and sec_since_boot() - t:
+  while sec_since_boot() - t < 10:
     sm.update()
+    if min(sm.logMonoTime.values()) != 0:
+      print('got frame')
+      print(sm['roadCameraState'].sharpnessScore)
 
   rear = extract_image(sm[frame].image, frame_sizes) if frame is not None else None
   front = extract_image(sm[front_frame].image, frame_sizes) if front_frame is not None else None
