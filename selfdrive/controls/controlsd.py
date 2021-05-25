@@ -84,6 +84,7 @@ class Controls:
     self.is_metric = params.get_bool("IsMetric")
     self.is_ldw_enabled = params.get_bool("IsLdwEnabled")
     self.enable_lte_onroad = params.get_bool("EnableLteOnroad")
+    self.debug_mode = params.get_bool("JoystickDebugMode")
     community_feature_toggle = params.get_bool("CommunityFeaturesToggle")
     openpilot_enabled_toggle = params.get_bool("OpenpilotEnabledToggle")
     passive = params.get_bool("Passive") or not openpilot_enabled_toggle
@@ -144,7 +145,6 @@ class Controls:
 
     # TODO: no longer necessary, aside from process replay
     self.sm['liveParameters'].valid = True
-    self.debug_mode = self.sm.alive
 
     self.startup_event = get_startup_event(car_recognized, controller_available, fuzzy_fingerprint, self.debug_mode)
 
@@ -441,11 +441,18 @@ class Controls:
     a_acc_sol = long_plan.aStart + (dt / LON_MPC_STEP) * (long_plan.aTarget - long_plan.aStart)
     v_acc_sol = long_plan.vStart + dt * (a_acc_sol + long_plan.aStart) / 2.0
 
-    # Gas/Brake PID loop
-    actuators.gas, actuators.brake = self.LoC.update(self.active, CS, v_acc_sol, long_plan.vTargetFuture, a_acc_sol, self.CP)
+    if not self.debug_mode:
+      # Gas/Brake PID loop
+      actuators.gas, actuators.brake = self.LoC.update(self.active, CS, v_acc_sol, long_plan.vTargetFuture, a_acc_sol, self.CP)
 
-    # Steering PID loop and lateral MPC
-    actuators.steer, actuators.steeringAngleDeg, lac_log = self.LaC.update(self.active, CS, self.CP, self.VM, params, lat_plan)
+      # Steering PID loop and lateral MPC
+      actuators.steer, actuators.steeringAngleDeg, lac_log = self.LaC.update(self.active, CS, self.CP, self.VM, params, lat_plan)
+    elif len(self.sm['testJoystick'].axes):
+      joystick = self.sm['testJoystick']
+      gb = clip(joystick.axes[0], -1, 1)
+      actuators.gas, actuators.brake = max(gb, 0), max(-gb, 0)
+      steer = clip(joystick.axes[1], -1, 1)
+      actuators.steer, actuators.steeringAngleDeg = steer, steer * 43.  # FIXME random constant from debug_controls
 
     # Check for difference between desired angle and angle for angle based control
     angle_control_saturated = self.CP.steerControlType == car.CarParams.SteerControlType.angle and \

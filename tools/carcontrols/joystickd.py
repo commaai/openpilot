@@ -3,6 +3,7 @@
 # This process publishes joystick events. Such events can be subscribed by
 # mocked car controller scripts.
 
+from common.params import Params
 import zmq
 import cereal.messaging as messaging
 from common.numpy_fast import clip
@@ -76,6 +77,7 @@ def send_thread(command_address):
 
 
 def joystick_thread():
+  Params().put_bool("JoystickDebugMode", True)
   command_address = "ipc:///tmp/{}".format(uuid4())
 
   command_sock = zmq.Context.instance().socket(zmq.PUSH)
