@@ -1,16 +1,26 @@
 # DO NOT PUSH!
-import requests
+import io
+import base64
 
-token = ''
 
-response = requests.post("https://athena.comma.ai/0cf0840158be859e",
-                         json={'method': 'getMessage', "params": {"service": "thermal", "timeout": 5000},
-                               "jsonrpc": "2.0", "id": 0},
-                         headers={'Authorization': f'JWT {token}'})
+def takeSnapshot():
+  from selfdrive.camerad.snapshot.snapshot import snapshot, jpeg_write
+  ret = snapshot()
+  if ret is not None:
+    def b64jpeg(x):
+      if x is not None:
+        f = io.BytesIO()
+        jpeg_write(f, x)
+        return base64.b64encode(f.getvalue()).decode("utf-8")
+      else:
+        return None
+    return {'jpegBack': b64jpeg(ret[0]),
+            'jpegFront': b64jpeg(ret[1])}
+  else:
+    raise Exception("not available while camerad is started")
 
-print(response)
-print(response.json())
-print(response.headers)
-# curl https://athena.comma.ai/0cf0840158be859e \
-# -d '{"method":"getMessage","params":{"service":"thermal","timeout":5000},"jsonrpc":"2.0","id":0}' \
-# -H 'Authorization: JWT eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE2NTM1MDQ0ODYsIm5iZiI6MTYyMTk2ODQ4NiwiaWF0IjoxNjIxOTY4NDg2LCJpZGVudGl0eSI6IjA5MTYwNTNjOGJlZDg3ZDEifQ.TAoajbMBcSy_a9gQa36Pp_RbnvHvgL504-2LJ1ncTvA'
+
+imgs = takeSnapshot()
+if imgs is not None:
+  with open('/data/snapshot.jpeg', 'wb') as f:
+    f.write(imgs['jpegBack'])
