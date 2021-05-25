@@ -62,7 +62,7 @@ class Controls:
       ignore = ['driverCameraState', 'managerState'] if SIMULATION else ['testJoystick']
       self.sm = messaging.SubMaster(['deviceState', 'pandaState', 'modelV2', 'liveCalibration',
                                      'driverMonitoringState', 'longitudinalPlan', 'lateralPlan', 'liveLocationKalman',
-                                     'managerState', 'liveParameters', 'radarState'] + self.camera_packets,
+                                     'managerState', 'liveParameters', 'radarState', 'testJoystick'] + self.camera_packets,
                                      ignore_alive=ignore, ignore_avg_freq=['radarState', 'longitudinalPlan'])
 
     self.can_sock = can_sock
@@ -84,7 +84,7 @@ class Controls:
     self.is_metric = params.get_bool("IsMetric")
     self.is_ldw_enabled = params.get_bool("IsLdwEnabled")
     self.enable_lte_onroad = params.get_bool("EnableLteOnroad")
-    self.debug_mode = params.get_bool("JoystickDebugMode")
+    self.debug_mode = params.get_bool("JoystickDebugMode")  # FIXME: this wasn't working properly
     community_feature_toggle = params.get_bool("CommunityFeaturesToggle")
     openpilot_enabled_toggle = params.get_bool("OpenpilotEnabledToggle")
     passive = params.get_bool("Passive") or not openpilot_enabled_toggle
@@ -156,8 +156,6 @@ class Controls:
       self.events.add(EventName.carUnrecognized, static=True)
     elif self.read_only:
       self.events.add(EventName.dashcamMode, static=True)
-    elif self.debug_mode:
-      self.events.add(EventName.joystickDebug, static=True)
 
     # controlsd is driven by can recv, expected at 100Hz
     self.rk = Ratekeeper(100, print_delay_threshold=None)
@@ -191,6 +189,10 @@ class Controls:
       self.events.add(EventName.outOfSpace)
     if self.sm['deviceState'].memoryUsagePercent > 65:
       self.events.add(EventName.lowMemory)
+
+    # If user running in joystick debugging mode
+    if self.debug_mode:
+      self.events.add(EventName.joystickDebug)
 
     # Alert if fan isn't spinning for 5 seconds
     if self.sm['pandaState'].pandaType in [PandaType.uno, PandaType.dos]:
@@ -449,13 +451,16 @@ class Controls:
 
       # Steering PID loop and lateral MPC
       actuators.steer, actuators.steeringAngleDeg, lac_log = self.LaC.update(self.active, CS, self.CP, self.VM, params, lat_plan)
-    elif len(self.sm['testJoystick'].axes):
-      gb = clip(self.sm['testJoystick'].axes[0], -1, 1)
-      actuators.gas, actuators.brake = max(gb, 0), max(-gb, 0)
+    else:
+      # get appropriate lac_log
+      _, _, lac_log = self.LaC.update(self.active, CS, self.CP, self.VM, params, lat_plan)
+      if len(self.sm['testJoystick'].axes):
+        gb = clip(self.sm['testJoystick'].axes[0], -1, 1)
+        actuators.gas, actuators.brake = max(gb, 0), max(-gb, 0)
 
-      # max angle is 45 for angle-based cars
-      steer = clip(self.sm['testJoystick'].axes[1], -1, 1)
-      actuators.steer, actuators.steeringAngleDeg = steer, steer * 45.
+        # max angle is 45 for angle-based cars
+        steer = clip(self.sm['testJoystick'].axes[1], -1, 1)
+        actuators.steer, actuators.steeringAngleDeg = steer, steer * 45.
 
     # Check for difference between desired angle and angle for angle based control
     angle_control_saturated = self.CP.steerControlType == car.CarParams.SteerControlType.angle and \
