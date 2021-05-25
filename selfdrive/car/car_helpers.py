@@ -65,7 +65,7 @@ def _get_interface_names():
     try:
       brand_name = car_folder.split('/')[-1]
       model_names = __import__('selfdrive.car.%s.values' % brand_name, fromlist=['CAR']).CAR
-      model_names = [getattr(model_names, c) for c in model_names.__dict__.keys() if not c.startswith("__")]
+      model_names = list(model_names.__members__)
       brand_names[brand_name] = model_names
     except (ImportError, IOError):
       pass
