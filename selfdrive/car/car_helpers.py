@@ -13,7 +13,7 @@ from cereal import car
 EventName = car.CarEvent.EventName
 
 
-def get_startup_event(car_recognized, controller_available, fuzzy_fingerprint, debug_mode):
+def get_startup_event(car_recognized, controller_available, fuzzy_fingerprint):
   if comma_remote and tested_branch:
     event = EventName.startup
   else:
@@ -25,8 +25,6 @@ def get_startup_event(car_recognized, controller_available, fuzzy_fingerprint, d
     event = EventName.startupNoControl
   elif car_recognized and fuzzy_fingerprint:
     event = EventName.startupFuzzyFingerprint
-  elif debug_mode:
-    event = EventName.startupDebug
   return event
 
 
