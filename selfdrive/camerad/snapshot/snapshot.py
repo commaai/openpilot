@@ -106,7 +106,7 @@ def snapshot():
   frame = "wideRoadCameraState" if TICI else "roadCameraState"
   front_frame = "driverCameraState" if front_camera_allowed else None
 
-  focus_perc_threshold = 0. if TICI else 10 / 12.
+  focus_perc_threshold = 0. if TICI else 11 / 12.
   rear, front = get_snapshots(frame, front_frame, focus_perc_threshold)
 
   proc.send_signal(signal.SIGINT)
@@ -126,7 +126,7 @@ if __name__ == "__main__":
   if pic is not None:
     print(pic.shape)
     jpeg_write("/tmp/back.jpg", pic)
-    if fpic is not None:  # can be none if not front_camera_allowed
+    if fpic is not None:
       jpeg_write("/tmp/front.jpg", fpic)
   else:
     print("Error taking snapshot")
