@@ -1,19 +1,17 @@
 #!/usr/bin/env python3
 import os
-import signal
-import subprocess
 import time
 
 import numpy as np
 from PIL import Image
 
 import cereal.messaging as messaging
-from common.basedir import BASEDIR
 from common.params import Params
 from typing import List
 from common.transformations.camera import eon_f_frame_size, eon_d_frame_size, leon_d_frame_size, tici_f_frame_size
 from selfdrive.hardware import TICI
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
+from selfdrive.manager.process_config import managed_processes
 from common.realtime import sec_since_boot
 
 LM_THRESH = 120
@@ -81,15 +79,16 @@ def snapshot():
   time.sleep(2.0)  # Give thermald time to read the param, or if just started give camerad time to start
 
   # Check if camerad is already started
-  try:
-    subprocess.check_call(["pgrep", "camerad"])
+  # try:
+  if managed_processes['camerad'].proc is not None:
+    # subprocess.check_call(["pgrep", "camerad"])
 
     print("Camerad already running")
     params.put_bool("IsTakingSnapshot", False)
     params.delete("Offroad_IsTakingSnapshot")
     return None, None
-  except subprocess.CalledProcessError:
-    pass
+  # except subprocess.CalledProcessError:
+  #   pass
 
   env = os.environ.copy()
   env["SEND_ROAD"] = "1"
@@ -98,18 +97,16 @@ def snapshot():
   if front_camera_allowed:
     env["SEND_DRIVER"] = "1"
 
-  proc = subprocess.Popen(os.path.join(BASEDIR, "selfdrive/camerad/camerad"),
-                          cwd=os.path.join(BASEDIR, "selfdrive/camerad"), env=env)
+  managed_processes['camerad'].start()
   time.sleep(3.0)
 
   frame = "wideRoadCameraState" if TICI else "roadCameraState"
   front_frame = "driverCameraState" if front_camera_allowed else None
 
-  focus_perc_threshold = 0. if TICI else 11 / 12.
+  focus_perc_threshold = 0. if TICI else 10 / 12.
   rear, front = get_snapshots(frame, front_frame, focus_perc_threshold)
 
-  proc.send_signal(signal.SIGINT)
-  proc.communicate()
+  managed_processes['camerad'].stop()
 
   params.put_bool("IsTakingSnapshot", False)
   set_offroad_alert("Offroad_IsTakingSnapshot", False)
