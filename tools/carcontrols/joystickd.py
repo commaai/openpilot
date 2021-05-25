@@ -31,8 +31,10 @@ class Joystick:  # TODO: see if we can clean this class up
       key = self.kb.getch().lower()
       if key in self.axes['gb'] + self.axes['steer']:  # if axis event
         control_type = 'gb' if key in self.axes['gb'] else 'steer'
-        sign = 1 if self.axes[control_type].index(key) == 0 else -1
-        v = self.axes_values[control_type] + AXES_INCREMENT * sign
+        if self.axes[control_type].index(key) == 0:
+          v = self.axes_values[control_type] + AXES_INCREMENT
+        else:
+          v = self.axes_values[control_type] - AXES_INCREMENT
         self.axes_values[control_type] = round(clip(v, -1., 1.), 3)
 
       elif key in self.buttons:
