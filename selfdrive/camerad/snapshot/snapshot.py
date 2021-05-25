@@ -54,6 +54,7 @@ def get_snapshots(frame="roadCameraState", front_frame="driverCameraState", focu
   while sec_since_boot() - t < 10:
     sm.update()
     if min(sm.logMonoTime.values()):
+      print(rois_in_focus(sm[frame].sharpnessScore))
       if rois_in_focus(sm[frame].sharpnessScore) >= focus_perc_threshold:
         break
 
