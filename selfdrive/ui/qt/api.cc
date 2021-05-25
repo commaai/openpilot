@@ -122,7 +122,9 @@ void HttpRequest::requestFinished(){
     QUrl possibleRedirectUrl = reply->attribute(QNetworkRequest::RedirectionTargetAttribute).toUrl();
     if (!possibleRedirectUrl.isEmpty() && possibleRedirectUrl != oldRedirectUrl) {
       oldRedirectUrl = possibleRedirectUrl;
-      sendRequest(possibleRedirectUrl.toString());
+      QTimer::singleShot(0, [=] {
+        sendRequest(possibleRedirectUrl.toString());
+      });
     } else {
       oldRedirectUrl.clear();
       QString response = reply->readAll();
