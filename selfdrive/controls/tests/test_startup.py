@@ -48,7 +48,7 @@ class TestStartup(unittest.TestCase):
 
     # dashcamOnly car
     (EventName.startupNoControl, MAZDA.CX5, True, None),
-    (EventName.startupNoControl, MAZDA.CX5, False, None),
+    (EventName.communityFeatureDisallowed, MAZDA.CX5, False, None),
 
     # unrecognized car
     (EventName.startupNoCar, None, True, None),
