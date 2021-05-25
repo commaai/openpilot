@@ -29,20 +29,21 @@ class Replay : public QObject {
 
 public:
   Replay(const QString &route, SubMaster *sm = nullptr, QObject *parent = nullptr);
-
   void start();
-  void addSegment(int n);
-  void removeSegment(int n);
-  void seekTime(int ts);
-
-  void parseResponse(const QString &response);
 
 private:
+  void addSegment(int n);
+  const SegmentData *getSegment(int n);
+  void removeSegment(int n);
+
   void streamThread();
   void keyboardThread();
   void segmentQueueThread();
   void cameraThread();
+  
+  void parseResponse(const QString &response);
   void publishFrame(const std::string &type, const cereal::Event::Reader &event);
+  void seekTime(int ts);
 
   float last_print = 0;
   std::atomic<int> seek_ts = 0;

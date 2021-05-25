@@ -146,6 +146,12 @@ void Replay::addSegment(int n) {
   }
 }
 
+const SegmentData *Replay::getSegment(int n) {
+  std::unique_lock lk(segment_lock);
+  const SegmentData *segment = segments[n];
+  return (segment && !segment->loading) ? segment : nullptr;
+}
+
 void Replay::removeSegment(int n) {
   std::unique_lock lk(segment_lock);
   if (segments.contains(n)) {
@@ -237,16 +243,11 @@ void Replay::streamThread() {
   int route_start_ts = 0;
 
   while (true) {
-    SegmentData * segment = nullptr;
-    {
-      std::unique_lock lk(segment_lock);
-      segment = segments[current_segment];
-      if (!segment || segment->loading) {
-        lk.unlock();
-        qDebug() << "waiting for events";
-        QThread::msleep(100);
-        continue;
-      }
+    const SegmentData * segment = getSegment(current_segment);
+    if (!segment) {
+      qDebug() << "waiting for events";
+      QThread::msleep(100);
+      continue;
     }
 
     // TODO: use initData's logMonoTime
