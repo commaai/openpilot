@@ -10,6 +10,8 @@ from common.numpy_fast import clip
 from tools.lib.kbhit import KBHit
 import multiprocessing
 from uuid import uuid4
+from inputs import devices, get_gamepad
+from selfdrive.controls.lib.pid import apply_deadzone
 
 
 class Joystick:  # TODO: see if we can clean this class up
@@ -22,14 +24,17 @@ class Joystick:  # TODO: see if we can clean this class up
 
     if self.use_keyboard:
       self.axes = {'gb': ['w', 's'], 'steer': ['a', 'd']}  # first key is positive
-      self.buttons = {'r': 'reset', 'c': BUTTONS[0], 'e': BUTTONS[1], 't': BUTTONS[2]}
+      self.buttons = {'r': 'reset', 'c': 'cancel', 'e': 'engaged_toggle', 't': 'steer_required'}
     else:
-      raise NotImplementedError("Only keyboard is supported for now")  # TODO: support joystick
+      self.max_axis_value = 255
+      self.axes = {'ABS_X': 'steer', 'ABS_Y': 'gb'}
+      # self.button_map = {'BTN_TRIGGER': 'c', 'BTN_THUMB': 'enabled_toggle', 'BTN_TOP': 'steer_required'}
 
   def update(self):
-    # self.btn_states = {btn: False for btn in BUTTONS}
+    # TODO: event = universal_get_event_function()
+
     if self.use_keyboard:
-      key = self.kb.getch().lower()
+      key = self.kb.getch().lower()  # blocking
       if key in self.axes['gb'] + self.axes['steer']:  # if axis event
         control_type = 'gb' if key in self.axes['gb'] else 'steer'
         if self.axes[control_type].index(key) == 0:
@@ -38,7 +43,7 @@ class Joystick:  # TODO: see if we can clean this class up
           v = self.axes_values[control_type] - AXES_INCREMENT
         self.axes_values[control_type] = round(clip(v, -1., 1.), 3)
 
-      elif key in self.buttons:
+      elif key in self.buttons:  # TODO: combine the button logic for joystick and keyboard (use a dict and convert joystick btn to key btn)
         if self.buttons[key] == 'reset':
           self.axes_values = {ax: 0. for ax in AXES}
         else:
@@ -48,13 +53,31 @@ class Joystick:  # TODO: see if we can clean this class up
       else:
         print('Key not assigned to an action!')
       return
+    else:
+      event = get_gamepad()[0]
+      if event.ev_type == 'Absolute':
+        if event.code in self.axes:
+          v = ((event.state / self.max_axis_value) - 0.5) * 2
+          v = apply_deadzone(v, 0.03)  # reasonable deadzone
+          self.axes_values[self.axes[event.code]] = -clip(v, -1, 1)
 
 
 AXES = ['gb', 'steer']
 BUTTONS = ['cancel', 'engaged_toggle', 'steer_required']
 AXES_INCREMENT = 0.05  # 5% of full actuation each key press
 POLL_RATE = int(1000 / 10.)  # 10 hz
+print(devices.gamepads)
 
+
+while 1:
+  events = get_gamepad()
+  assert len(events) == 1
+  print(len(events))
+  for event in events:
+    if event.ev_type != 'Absolute':
+      print((event.ev_type, event.code, event.state))
+
+raise Exception
 
 def send_thread(command_address, joystick):
   zmq.Context._instance = None
@@ -82,7 +105,7 @@ def send_thread(command_address, joystick):
 
 
 def joystick_thread():
-  use_keyboard = True
+  use_keyboard = False
   Params().put_bool("JoystickDebugMode", True)
   joystick = Joystick(use_keyboard=use_keyboard)
   command_address = "ipc:///tmp/{}".format(uuid4())
@@ -113,6 +136,7 @@ def joystick_thread():
       # TODO: time shouldn't matter since joystick.update() is blocking
   except KeyboardInterrupt:
     print('Interrupted, shutting down!')
+    print(joystick.max)
     send_thread_proc.terminate()
 
 
