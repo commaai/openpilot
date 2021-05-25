@@ -448,11 +448,12 @@ class Controls:
       # Steering PID loop and lateral MPC
       actuators.steer, actuators.steeringAngleDeg, lac_log = self.LaC.update(self.active, CS, self.CP, self.VM, params, lat_plan)
     elif len(self.sm['testJoystick'].axes):
-      joystick = self.sm['testJoystick']
-      gb = clip(joystick.axes[0], -1, 1)
+      gb = clip(self.sm['testJoystick'].axes[0], -1, 1)
       actuators.gas, actuators.brake = max(gb, 0), max(-gb, 0)
-      steer = clip(joystick.axes[1], -1, 1)
-      actuators.steer, actuators.steeringAngleDeg = steer, steer * 43.  # FIXME random constant from debug_controls
+
+      # max angle is 45 for angle-based cars
+      steer = clip(self.sm['testJoystick'].axes[1], -1, 1)
+      actuators.steer, actuators.steeringAngleDeg = steer, steer * 45.
 
     # Check for difference between desired angle and angle for angle based control
     angle_control_saturated = self.CP.steerControlType == car.CarParams.SteerControlType.angle and \
