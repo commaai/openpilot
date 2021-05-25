@@ -92,11 +92,11 @@ class Controls:
     sounds_available = HARDWARE.get_sound_card_online()
 
     car_recognized = self.CP.carName != 'mock'
-    fuzzy_fingerprint = self.CP.fuzzyFingerprint
 
     # If stock camera is disconnected, we loaded car controls and it's not dashcam mode
     controller_available = self.CP.enableCamera and self.CI.CC is not None and not passive and not self.CP.dashcamOnly
-    community_feature = self.CP.communityFeature or fuzzy_fingerprint
+    community_feature = self.CP.communityFeature or self.CP.fuzzyFingerprint or \
+                        self.CP.fingerprintSource == car.CarParams.FingerprintSource.can
     community_feature_disallowed = community_feature and (not community_feature_toggle)
     self.read_only = not car_recognized or not controller_available or \
                        self.CP.dashcamOnly or community_feature_disallowed
@@ -145,11 +145,11 @@ class Controls:
     # TODO: no longer necessary, aside from process replay
     self.sm['liveParameters'].valid = True
 
-    self.startup_event = get_startup_event(car_recognized, controller_available, fuzzy_fingerprint)
+    self.startup_event = get_startup_event(car_recognized, controller_available, self.CP.fuzzyFingerprint)
 
     if not sounds_available:
       self.events.add(EventName.soundsUnavailable, static=True)
-    if community_feature_disallowed:
+    if community_feature_disallowed and car_recognized:
       self.events.add(EventName.communityFeatureDisallowed, static=True)
     if not car_recognized:
       self.events.add(EventName.carUnrecognized, static=True)

@@ -35,11 +35,8 @@ class TestStartup(unittest.TestCase):
     # TODO: test EventName.startup for release branches
 
     # officially supported car
-    (EventName.startupMaster, HYUNDAI.SONATA, False, None),
-    (EventName.startupMaster, HYUNDAI.SONATA, True, None),
-
-    # offically supported car, FW query
     (EventName.startupMaster, TOYOTA.COROLLA, False, COROLLA_FW_VERSIONS),
+    (EventName.startupMaster, TOYOTA.COROLLA, True, COROLLA_FW_VERSIONS),
 
     # DSU unplugged
     (EventName.startupMaster, TOYOTA.COROLLA, True, COROLLA_FW_VERSIONS_NO_DSU),
@@ -51,7 +48,7 @@ class TestStartup(unittest.TestCase):
 
     # dashcamOnly car
     (EventName.startupNoControl, MAZDA.CX5, True, None),
-    (EventName.startupNoControl, MAZDA.CX5, False, None),
+    (EventName.communityFeatureDisallowed, MAZDA.CX5, False, None),
 
     # unrecognized car
     (EventName.startupNoCar, None, True, None),
@@ -104,7 +101,7 @@ class TestStartup(unittest.TestCase):
     else:
       finger = _FINGERPRINTS[car_model][0]
 
-    for _ in range(500):
+    for _ in range(1000):
       msgs = [[addr, 0, b'\x00'*length, 0] for addr, length in finger.items()]
       pm.send('can', can_list_to_can_capnp(msgs))
 
