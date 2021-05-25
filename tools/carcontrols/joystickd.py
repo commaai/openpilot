@@ -17,8 +17,8 @@ class Joystick:  # TODO: see if we can clean this class up
     self.kb = KBHit()
 
     self.use_keyboard = use_keyboard
-    self.axes_values = {'steer': 0., 'gb': 0.}
-    self.cur_buttons = {btn: False for btn in BUTTONS}
+    self.axes_values = {'gb': 0., 'steer': 0.}
+    self.btn_states = {btn: False for btn in BUTTONS}
 
     if self.use_keyboard:
       self.axes = {'gb': ['w', 's'], 'steer': ['a', 'd']}  # first key is positive
@@ -27,6 +27,7 @@ class Joystick:  # TODO: see if we can clean this class up
       raise NotImplementedError("Only keyboard is supported for now")  # TODO: support joystick
 
   def update(self):
+    # self.btn_states = {btn: False for btn in BUTTONS}
     if self.use_keyboard:
       key = self.kb.getch().lower()
       if key in self.axes['gb'] + self.axes['steer']:  # if axis event
@@ -42,22 +43,20 @@ class Joystick:  # TODO: see if we can clean this class up
           self.axes_values = {'steer': 0., 'gb': 0.}
         else:
           btn = self.buttons[key]
-          self.cur_buttons[btn] = True  # todo: reset other buttons
+          self.btn_states[btn] = not self.btn_states[btn]
 
       else:
         print('Key not assigned to an action!')
       return
 
 
+AXES = ['gb', 'steer']
 BUTTONS = ['cancel', 'engaged_toggle', 'steer_required']
 AXES_INCREMENT = 0.05  # 5% of full actuation each key press
-joystick = Joystick(use_keyboard=True)
+POLL_RATE = int(1000 / 10.)  # 10 hz
 
 
-
-
-def send_thread(command_address):
-  POLL_RATE = int(1000 / 10.)  # 10 hz
+def send_thread(command_address, joystick):
   zmq.Context._instance = None
   context = zmq.Context.instance()
 
@@ -69,36 +68,49 @@ def send_thread(command_address):
   joystick_sock = messaging.pub_sock('testJoystick')
 
   # starting message to send to controlsd if user doesn't type any keys
-  msg = joystick.axes_values
+  msg = joystick
   while True:
     for sock in dict(poller.poll(POLL_RATE)):
       msg = sock.recv_pyobj()  # TODO: only receives axes for now
 
     dat = messaging.new_message('testJoystick')
-    dat.testJoystick.axes = [msg[a] for a in ['gb', 'steer']]
-    dat.testJoystick.buttons = [False for _ in BUTTONS]
+    dat.testJoystick.axes = [msg.axes_values[a] for a in ['gb', 'steer']]
+    dat.testJoystick.buttons = [msg.btn_states[btn] for btn in BUTTONS]
 
     joystick_sock.send(dat.to_bytes())
-    print(f'Sent: {dat}')
+    # print(f'Sent: {dat}')
 
 
 def joystick_thread():
+  use_keyboard = True
   Params().put_bool("JoystickDebugMode", True)
+  joystick = Joystick(use_keyboard=use_keyboard)
   command_address = "ipc:///tmp/{}".format(uuid4())
 
   command_sock = zmq.Context.instance().socket(zmq.PUSH)
   command_sock.connect(command_address)
 
-  send_thread_proc = multiprocessing.Process(target=send_thread, args=(command_address,))
+  send_thread_proc = multiprocessing.Process(target=send_thread, args=(command_address, joystick))
   send_thread_proc.start()
+
+  if use_keyboard:
+    print('Gas/brake control: `W` and `A` keys')
+    print('Steer control: `A` and `D` keys')
+    print('Buttons:\n'
+          '- `R`: Resets axes values\n'
+          '- `C`: Cancel cruise control\n'
+          '- `E`: Toggle enabled')  # and T, steer req hud alert
 
   # Receive joystick/key events and send to joystick send thread
   try:
     while 1:
       joystick.update()
-      command_sock.send_pyobj(joystick.axes_values)
+      print(joystick.axes_values)
+      print(joystick.btn_states)
+      command_sock.send_pyobj(joystick)
       # TODO: time shouldn't matter since joystick.update() is blocking
   except KeyboardInterrupt:
+    print('Interrupted, shutting down!')
     send_thread_proc.terminate()
 
 

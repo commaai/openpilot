@@ -215,6 +215,15 @@ def startup_fuzzy_fingerprint_alert(CP: car.CarParams, sm: messaging.SubMaster, 
     AlertStatus.userPrompt, AlertSize.mid,
     Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 15.)
 
+def debug_mode_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> Alert:
+  axes = sm['testJoystick'].axes
+  gb, steer = axes[:2] if len(axes) else 0., 0.
+  return Alert(
+    "WARNING: Joystick debug mode active",
+    f"Gas: {round(gb, 3)}, steer: {round(steer, 3)}",
+    AlertStatus.normal, AlertSize.mid,
+    Priority.LOWEST, VisualAlert.none, AudibleAlert.none, 0., 0., .1)
+
 EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, bool], Alert]]]] = {
   # ********** events with no alerts **********
 
@@ -248,12 +257,8 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 15.),
   },
 
-  EventName.startupDebug: {
-    ET.PERMANENT: Alert(
-      "WARNING: Joystick debug mode is active",
-      "openpilot will not steer or brake without joystickd",
-      AlertStatus.userPrompt, AlertSize.mid,
-      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 15.),
+  EventName.joystickDebug: {
+    ET.PERMANENT: debug_mode_alert,
   },
 
   EventName.startupNoControl: {

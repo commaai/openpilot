@@ -147,7 +147,6 @@ class Controls:
     self.sm['liveParameters'].valid = True
 
     self.startup_event = get_startup_event(car_recognized, controller_available, fuzzy_fingerprint)
-    self.startup_event = EventName.startupDebug if self.debug_mode else self.startup_event
 
     if not sounds_available:
       self.events.add(EventName.soundsUnavailable, static=True)
@@ -157,6 +156,8 @@ class Controls:
       self.events.add(EventName.carUnrecognized, static=True)
     elif self.read_only:
       self.events.add(EventName.dashcamMode, static=True)
+    elif self.debug_mode:
+      self.events.add(EventName.joystickDebug, static=True)
 
     # controlsd is driven by can recv, expected at 100Hz
     self.rk = Ratekeeper(100, print_delay_threshold=None)
