@@ -56,19 +56,8 @@ def get_snapshots(frame="roadCameraState", front_frame="driverCameraState", focu
   while sec_since_boot() - t < 10:
     sm.update()
     if min(sm.logMonoTime.values()):
-      print('threshold: {}'.format(focus_perc_threshold))
       if rois_in_focus(sm[frame].sharpnessScore) >= focus_perc_threshold:
         break
-
-    # if not wait_for_focus:
-    #   print('Not waiting for focus')
-    #   if min(sm.logMonoTime.values()):
-    #     break
-    # elif min(sm.logMonoTime.values()):
-    #   print('Waiting for focus...')
-    #   if rois_in_focus(sm[frame].sharpnessScore) >= min_rois_focused:
-    #     print('Focused!')
-    #     break
 
   rear = extract_image(sm[frame].image, frame_sizes) if frame is not None else None
   front = extract_image(sm[front_frame].image, frame_sizes) if front_frame is not None else None
@@ -112,7 +101,7 @@ def snapshot():
   frame = "wideRoadCameraState" if TICI else "roadCameraState"
   front_frame = "driverCameraState" if front_camera_allowed else None
 
-  focus_perc_threshold = 0.  #  if TICI else 10 / 12.
+  focus_perc_threshold = 0. if TICI else 10 / 12.
   rear, front = get_snapshots(frame, front_frame, focus_perc_threshold)
 
   proc.send_signal(signal.SIGINT)
