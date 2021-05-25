@@ -54,8 +54,6 @@ def get_snapshots(frame="roadCameraState", front_frame="driverCameraState", focu
   # wait_for_exposure =
   while sec_since_boot() - t < 10:
     sm.update()
-    if sec_since_boot() - t < 1:
-      continue
     if min(sm.logMonoTime.values()):
       print(sm[frame].sharpnessScore)
       print(rois_in_focus(sm[frame].sharpnessScore))
