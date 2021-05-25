@@ -221,7 +221,7 @@ def debug_mode_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -
   # FIXME: but i can't reproduce at desk. maybe it fixed itself?
   return Alert(
     "WARNING: Joystick debug mode active",
-    f"Gas: {round(gb * 100.)}%, steer: {round(steer * 100.)}%",
+    f"Gas: {round(gb * 100., 1)}%, steer: {round(steer * 100., 1)}%",
     AlertStatus.normal, AlertSize.mid,
     Priority.LOWEST, VisualAlert.none, AudibleAlert.none, 0., 0., .1)
 
