@@ -138,7 +138,7 @@ pipeline {
                 stage('Replay Tests') {
                   steps {
                     phone_steps("eon2", [
-                      ["build QCOM_REPLAY", "SCONS_CACHE=1 QCOM_REPLAY=1 scons -j4"],
+                      ["build QCOM_REPLAY", "cd selfdrive/manager && QCOM_REPLAY=1 ./build.py"],
                       ["camerad/modeld replay", "cd selfdrive/test/process_replay && ./camera_replay.py"],
                     ])
                   }
@@ -147,7 +147,7 @@ pipeline {
                 stage('HW + Unit Tests') {
                   steps {
                     phone_steps("eon", [
-                      ["build", "SCONS_CACHE=1 scons -j4"],
+                      ["build", "cd selfdrive/manager && ./build.py"],
                       ["test athena", "nosetests -s selfdrive/athena/tests/test_athenad_old.py"],
                       ["test sounds", "nosetests -s selfdrive/test/test_sounds.py"],
                       ["test boardd loopback", "nosetests -s selfdrive/boardd/tests/test_boardd_loopback.py"],
@@ -186,7 +186,7 @@ pipeline {
                   }
                   steps {
                     phone_steps("tici", [
-                      ["build", "SCONS_CACHE=1 scons -j8"],
+                      ["build", "cd selfdrive/manager && ./build.py"],
                       ["test loggerd", "python selfdrive/loggerd/tests/test_loggerd.py"],
                       ["test encoder", "LD_LIBRARY_PATH=/usr/local/lib python selfdrive/loggerd/tests/test_encoder.py"],
                       ["onroad tests", "cd selfdrive/test/ && ./test_onroad.py"],
@@ -198,7 +198,7 @@ pipeline {
                 stage('camerad') {
                   steps {
                     phone_steps("eon-party", [
-                      ["build", "SCONS_CACHE=1 scons -j8"],
+                      ["build", "cd selfdrive/manager && ./build.py"],
                       ["test camerad", "python selfdrive/camerad/test/test_camerad.py"],
                       ["test exposure", "python selfdrive/camerad/test/test_exposure.py"],
                     ])
@@ -208,7 +208,7 @@ pipeline {
                 stage('Tici camerad') {
                   steps {
                     phone_steps("tici-party", [
-                      ["build", "SCONS_CACHE=1 scons -j8"],
+                      ["build", "cd selfdrive/manager && ./build.py"],
                       ["test camerad", "python selfdrive/camerad/test/test_camerad.py"],
                       ["test exposure", "python selfdrive/camerad/test/test_exposure.py"],
                     ])
