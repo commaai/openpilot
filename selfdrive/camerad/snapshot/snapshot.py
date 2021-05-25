@@ -3,7 +3,6 @@ import os
 import signal
 import subprocess
 import time
-import sys
 
 import numpy as np
 from PIL import Image
@@ -17,7 +16,7 @@ from selfdrive.hardware import TICI
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
 from common.realtime import sec_since_boot
 
-LM_THRESH = 120 * 1.5
+LM_THRESH = 120
 
 
 def jpeg_write(fn, dat):
@@ -56,11 +55,11 @@ def get_snapshots(frame="roadCameraState", front_frame="driverCameraState", focu
     sm.update()
     if min(sm.logMonoTime.values()):
       lapres = sm[frame].sharpnessScore
-      print(lapres)
-      print(rois_in_focus(lapres))
-      print(np.mean(lapres), np.std(lapres))
+      # print(lapres)
+      # print(rois_in_focus(lapres))
+      # print(np.mean(lapres), np.std(lapres))
       # if rois_in_focus(lapres) >= focus_perc_threshold:
-      if sum(lapres) / 12 >= focus_perc_threshold or np.std(lapres):
+      if rois_in_focus(lapres) >= focus_perc_threshold:
         break
   print('time taken: {}'.format(sec_since_boot() - t))
 
@@ -69,7 +68,7 @@ def get_snapshots(frame="roadCameraState", front_frame="driverCameraState", focu
   return rear, front
 
 
-def snapshot(threshold):
+def snapshot():
   params = Params()
   front_camera_allowed = params.get_bool("RecordFront")
 
@@ -101,14 +100,13 @@ def snapshot(threshold):
 
   proc = subprocess.Popen(os.path.join(BASEDIR, "selfdrive/camerad/camerad"),
                           cwd=os.path.join(BASEDIR, "selfdrive/camerad"), env=env)
-  # time.sleep(4.0)
+  time.sleep(3.0)
 
   frame = "wideRoadCameraState" if TICI else "roadCameraState"
   front_frame = "driverCameraState" if front_camera_allowed else None
 
-  # focus_perc_threshold = 0. if TICI else 11 / 12.
-  print(f'threshold: {threshold}')
-  rear, front = get_snapshots(frame, front_frame, threshold)
+  focus_perc_threshold = 0. if TICI else 11 / 12.
+  rear, front = get_snapshots(frame, front_frame, focus_perc_threshold)
 
   proc.send_signal(signal.SIGINT)
   proc.communicate()
@@ -123,7 +121,7 @@ def snapshot(threshold):
 
 
 if __name__ == "__main__":
-  pic, fpic = snapshot(int(sys.argv[1]))
+  pic, fpic = snapshot()
   if pic is not None:
     print(pic.shape)
     jpeg_write("/tmp/back.jpg", pic)
