@@ -45,18 +45,22 @@ class UpdateResult : public QFrame {
 
 public:
   explicit UpdateResult(QWidget *parent = 0);
-  QPushButton rebootBtn;
-  QLabel result;
+  void setText(const QString &text) { result.setText(text); }
+  void setBtnVisible(bool visible) { rebootBtn.setVisible(visible); }
 
 private:
   Params params;
   ScrollView *resultScroll;
+  QLabel result;
+  QPushButton rebootBtn;
 };
 
 class UpdatePanel : public QWidget {
   Q_OBJECT
 public:
   explicit UpdatePanel(QWidget *parent = nullptr);
+  void closeReleaseNote();
+  void closeDownloadUpdate();
 
 private slots:
   void refreshUpdate();
@@ -70,6 +74,7 @@ private:
   std::string updateFailedCount;
   std::string lastUpdate;
   QTimer *timer;
+  bool isDownloading = false;
 };
 
 class DeveloperPanel : public QFrame {

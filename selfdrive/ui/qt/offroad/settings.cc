@@ -269,13 +269,12 @@ UpdatePanel::UpdatePanel(QWidget* parent) : QWidget(parent) {
   QObject::connect(timer, &QTimer::timeout, this, &UpdatePanel::refreshUpdate);
 
   downloadUpdateBtn = new ButtonControl("Download openpilot Latest Version", "DOWNLOAD", "", [=]() {
-    releaseNotes->setVisible(false);
-    viewReleaseNoteBtn->setText("VIEW");
+    closeReleaseNote();
 
     if(updateResult->isVisible()) {
-      updateResult->setVisible(false);
-      downloadUpdateBtn->setText("DOWNLOAD");
+      closeDownloadUpdate();
     } else {
+      isDownloading = true;
       if(!params.get("UpdateAvailable",false).compare("1")) {
         refreshUpdate();
       } else {
@@ -302,13 +301,12 @@ UpdatePanel::UpdatePanel(QWidget* parent) : QWidget(parent) {
 
   viewReleaseNoteBtn = new ButtonControl("Release Note", "VIEW", "", [=]() {
     if(releaseNotes->isVisible()) {
-     viewReleaseNoteBtn->setText("VIEW");
+      closeReleaseNote();
     } else {
-     viewReleaseNoteBtn->setText("CLOSE");
-     updateResult->setVisible(false);
-     downloadUpdateBtn->setText("DOWNLOAD");
+      viewReleaseNoteBtn->setText("CLOSE");
+      releaseNotes->setVisible(true);
+      closeDownloadUpdate();
     }
-    releaseNotes->setVisible(!releaseNotes->isVisible());
   }, "", this);
 
   update_layout->addWidget(horizontal_line());
@@ -334,6 +332,18 @@ UpdatePanel::UpdatePanel(QWidget* parent) : QWidget(parent) {
   )");
 }
 
+void UpdatePanel::closeReleaseNote() {
+  releaseNotes->setVisible(false);
+  viewReleaseNoteBtn->setText("VIEW");
+}
+
+void UpdatePanel::closeDownloadUpdate() {
+  updateResult->setVisible(false);
+  if(!isDownloading) {
+    downloadUpdateBtn->setText("DOWNLOAD");
+  }
+}
+
 void UpdatePanel::refreshUpdate() {
   bool update = params.get("UpdateAvailable",false).compare("1") == 0;
   bool noUpdateFound = params.get("LastUpdateTime",false).compare(lastUpdate) != 0;
@@ -356,11 +366,13 @@ void UpdatePanel::refreshUpdate() {
   downloadUpdateBtn->setText(doneDownloading ? "CLOSE" : "CHECKING...");
 
   updateResult->setVisible(doneDownloading);
-  updateResult->result.setText(QString::fromStdString(resultLabel));
-  updateResult->rebootBtn.setVisible(update);
+  updateResult->setText(QString::fromStdString(resultLabel));
+  updateResult->setBtnVisible(update);
 
   if(doneDownloading) {
     timer->stop();
+    closeReleaseNote();
+    isDownloading = false;
   }
 }
 
