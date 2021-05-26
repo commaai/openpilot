@@ -13,7 +13,6 @@ from common.transformations.camera import eon_f_frame_size, eon_d_frame_size, le
 from selfdrive.hardware import TICI
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
 from selfdrive.manager.process_config import managed_processes
-from common.realtime import sec_since_boot
 
 LM_THRESH = 120
 
@@ -50,8 +49,8 @@ def get_snapshots(frame="roadCameraState", front_frame="driverCameraState", focu
 
   sm = messaging.SubMaster(sockets)
   time.sleep(4.0)  # wait for startup and AF
-  t = sec_since_boot()
-  while sec_since_boot() - t < 10:
+  t = time.time()
+  while time.time() - t < 10:
     sm.update()
     if min(sm.logMonoTime.values()):
       if rois_in_focus(sm[frame].sharpnessScore) >= focus_perc_threshold:
@@ -77,7 +76,6 @@ def snapshot():
   # Check if camerad is already started
   try:
     subprocess.check_call(["pgrep", "camerad"])
-  # if managed_processes['camerad'].proc is not None:  # TODO: make sure this works
     print("Camerad already running")
     params.put_bool("IsTakingSnapshot", False)
     params.delete("Offroad_IsTakingSnapshot")
@@ -92,12 +90,10 @@ def snapshot():
     os.environ["SEND_DRIVER"] = "1"
 
   managed_processes['camerad'].start()
-
   frame = "wideRoadCameraState" if TICI else "roadCameraState"
   front_frame = "driverCameraState" if front_camera_allowed else None
 
-  focus_perc_threshold = 0. if TICI else 10 / 12.
-  rear, front = get_snapshots(frame, front_frame, focus_perc_threshold)
+  rear, front = get_snapshots(frame, front_frame, 0. if TICI else 10 / 12.)
   managed_processes['camerad'].stop()
 
   params.put_bool("IsTakingSnapshot", False)
