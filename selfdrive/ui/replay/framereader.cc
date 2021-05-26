@@ -6,29 +6,37 @@
 static int ffmpeg_lockmgr_cb(void **arg, enum AVLockOp op) {
   std::mutex *mutex = (std::mutex *)*arg;
   switch (op) {
-  case AV_LOCK_CREATE:
-    mutex = new std::mutex();
-    break;
-  case AV_LOCK_OBTAIN:
-    mutex->lock();
-    break;
-  case AV_LOCK_RELEASE:
-    mutex->unlock();
-  case AV_LOCK_DESTROY:
-    delete mutex;
-    break;
+    case AV_LOCK_CREATE:
+      mutex = new std::mutex();
+      break;
+    case AV_LOCK_OBTAIN:
+      mutex->lock();
+      break;
+    case AV_LOCK_RELEASE:
+      mutex->unlock();
+    case AV_LOCK_DESTROY:
+      delete mutex;
+      break;
   }
   return 0;
 }
 
-FrameReader::FrameReader(const std::string &fn, VisionStreamType stream_type, QObject *parent)
-    : url(fn), stream_type(stream_type), QThread(parent) {
-  int ret = av_lockmgr_register(ffmpeg_lockmgr_cb);
-  assert(ret >= 0);
+class AVInitializer {
+ public:
+  AVInitializer() {
+    int ret = av_lockmgr_register(ffmpeg_lockmgr_cb);
+    assert(ret >= 0);
+    av_register_all();
+    avformat_network_init();
+  }
 
-  avformat_network_init();
-  av_register_all();
-}
+  ~AVInitializer() { avformat_network_deinit(); }
+};
+
+static AVInitializer av_initializer;
+
+FrameReader::FrameReader(const std::string &fn, VisionStreamType stream_type, QObject *parent)
+    : url(fn), stream_type(stream_type), QThread(parent) {}
 
 FrameReader::~FrameReader() {
   // exit thread
@@ -45,7 +53,6 @@ FrameReader::~FrameReader() {
   avcodec_free_context(&pCodecCtx);
   avformat_free_context(pFormatCtx);
   sws_freeContext(sws_ctx);
-  avformat_network_deinit();
 }
 
 void FrameReader::run() {
@@ -98,7 +105,6 @@ void FrameReader::process() {
 
 void FrameReader::decodeFrames() {
   while (!exit_) {
-
     while (decode_idx != -1) {
       int from = std::max(decode_idx - decode_idx % 15, 0);
       int to = std::min(from + 15, (int)frames.size());
