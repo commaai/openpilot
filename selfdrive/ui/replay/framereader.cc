@@ -37,8 +37,8 @@ class AVInitializer {
 
 static AVInitializer av_initializer;
 
-FrameReader::FrameReader(const std::string &url, VisionStreamType stream_type, QObject *parent)
-    : url(url), stream_type(stream_type), QThread(parent) {}
+FrameReader::FrameReader(const std::string &url, VisionStreamType stream_type)
+    : url(url), stream_type(stream_type) {}
 
 FrameReader::~FrameReader() {
   // wait until thread is finished.
@@ -97,65 +97,58 @@ void FrameReader::processFrames() {
     }
   } while (!exit_);
 
-  printf("framereader download done\n");
+  qInfo() << "framereader: " << frames.size() << " frames"; 
   valid_ = !exit_;
   emit finished(valid_);
 }
 
 void FrameReader::decodeFrames() {
+  int idx = 0;
   while (!exit_) {
-    while (decode_idx != -1) {
-      int from = std::max(decode_idx - decode_idx % 15, 0);
-      int to = std::min(from + 15, (int)frames.size());
-      decode_idx = -1;
+    const int from = std::max(idx - idx % 15, 0);
+    const int to = std::min(from + 15, (int)frames.size());
+    for (int i = from; i < to && !exit_; ++i) {
+      Frame &frame = frames[i];
+      if (frame.picture != nullptr || frame.failed) continue;
 
-      // the loop will be breaked if another FrameReader::get() is called (decode_idx != -1).
-      for (int i = from; i < to && !exit_ && decode_idx == -1; ++i) {
-        Frame &frame = frames[i];
-        if (frame.picture != nullptr || frame.failed) continue;
+      int gotFrame;
+      AVFrame *pFrame = av_frame_alloc();
+      avcodec_decode_video2(pCodecCtx, pFrame, &gotFrame, &frame.pkt);
+      av_free_packet(&frame.pkt);
 
-        int gotFrame;
-        AVFrame *pFrame = av_frame_alloc();
-        avcodec_decode_video2(pCodecCtx, pFrame, &gotFrame, &frame.pkt);
-        av_free_packet(&frame.pkt);
-        
-        AVFrame *picture = gotFrame ? toRGB(pFrame) : nullptr;
-        av_frame_free(&pFrame);
+      AVFrame *picture = gotFrame ? toRGB(pFrame) : nullptr;
+      av_frame_free(&pFrame);
 
-        if (!picture) {
-          qDebug() << "failed to decode frame " << i << " in " << url.c_str();
-        }
-        std::unique_lock lk(mutex);
-        frame.picture = picture;
-        frame.failed = !picture;
-        cv_frame.notify_all();
+      if (!picture) {
+        qDebug() << "failed to decode frame " << i << " in " << url.c_str();
       }
+      std::unique_lock lk(mutex);
+      frame.picture = picture;
+      frame.failed = !picture;
+      cv_frame.notify_all();
     }
 
     // sleep & wait
     std::unique_lock lk(mutex);
     cv_decode.wait(lk, [=] { return exit_ || decode_idx != -1; });
+    idx = decode_idx;
+    decode_idx = -1;
   }
 }
 
-AVFrame *FrameReader::toRGB(AVFrame *pFrame) {
-  AVFrame *pFrameRGB = nullptr;
-  int numBytes = avpicture_get_size(AV_PIX_FMT_BGR24, pFrame->width, pFrame->height);
+AVFrame *FrameReader::toRGB(AVFrame *frm) {
+  int numBytes = avpicture_get_size(AV_PIX_FMT_BGR24, frm->width, frm->height);
   if (numBytes > 0) {
     uint8_t *buffer = (uint8_t *)av_malloc(numBytes * sizeof(uint8_t));
-    pFrameRGB = av_frame_alloc();
-    bool success = false;
-    if (avpicture_fill((AVPicture *)pFrameRGB, buffer, AV_PIX_FMT_BGR24, pFrame->width, pFrame->height) > 0) {
-      success = sws_scale(sws_ctx, (uint8_t const *const *)pFrame->data,
-                          pFrame->linesize, 0, pFrame->height,
-                          pFrameRGB->data, pFrameRGB->linesize) > 0;
+    AVFrame *frmRgb = av_frame_alloc();
+    if (avpicture_fill((AVPicture *)frmRgb, buffer, AV_PIX_FMT_BGR24, frm->width, frm->height) > 0 &&
+        sws_scale(sws_ctx, (uint8_t const *const *)frm->data, frm->linesize, 0, frm->height,
+                  frmRgb->data, frmRgb->linesize) > 0) {
+      return frmRgb;
     }
-    if (!success) {
-      av_frame_free(&pFrameRGB);
-      pFrameRGB = nullptr;
-    }
+    av_frame_free(&frmRgb);
   }
-  return pFrameRGB;
+  return nullptr;
 }
 
 uint8_t *FrameReader::get(int idx) {
@@ -164,9 +157,6 @@ uint8_t *FrameReader::get(int idx) {
   std::unique_lock lk(mutex);
   decode_idx = idx;
   cv_decode.notify_one();
-  const Frame &frame = frames[idx];
-  if (!frame.picture && !frame.failed) {
-    cv_frame.wait(lk, [=] { return exit_ || frame.picture != nullptr || frame.failed; });
-  }
-  return frame.picture ? frame.picture->data[0] : nullptr;
+  cv_frame.wait(lk, [=] { return exit_ || frames[idx].picture != nullptr || frames[idx].failed; });
+  return frames[idx].picture ? frames[idx].picture->data[0] : nullptr;
 }

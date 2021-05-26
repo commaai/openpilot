@@ -7,9 +7,10 @@
 #include <mutex>
 #include <thread>
 #include <vector>
-#include "cereal/visionipc/visionbuf.h"
 
 #include <QThread>
+
+#include "cereal/visionipc/visionbuf.h"
 
 // independent of QT, needs ffmpeg
 extern "C" {
@@ -21,27 +22,27 @@ extern "C" {
 class FrameReader : public QThread {
   Q_OBJECT
 
-public:
-  FrameReader(const std::string &url, VisionStreamType stream_type, QObject *parent);
+ public:
+  FrameReader(const std::string &url, VisionStreamType stream_type);
   ~FrameReader();
   void run() override;
   uint8_t *get(int idx);
-  bool valid() const {return valid_;}
+  bool valid() const { return valid_; }
   int getRGBSize() const { return width * height * 3; }
 
   int width = 0, height = 0;
   VisionStreamType stream_type;
 
-signals:
+ signals:
   void finished(bool success);
 
-private:
+ private:
   void processFrames();
   void decodeFrames();
-  AVFrame *toRGB(AVFrame *);
+  AVFrame *toRGB(AVFrame *frm);
 
   class Frame {
-  public:
+   public:
     AVPacket pkt = {};
     AVFrame *picture = nullptr;
     bool failed = false;
@@ -51,12 +52,12 @@ private:
 
   AVFormatContext *pFormatCtx = NULL;
   AVCodecContext *pCodecCtx = NULL;
-	struct SwsContext *sws_ctx = NULL;
+  struct SwsContext *sws_ctx = NULL;
 
   std::mutex mutex;
   std::condition_variable cv_decode;
   std::condition_variable cv_frame;
-  std::atomic<int> decode_idx = 0;
+  int decode_idx = 0;
   std::atomic<bool> exit_ = false;
 
   bool valid_ = false;
