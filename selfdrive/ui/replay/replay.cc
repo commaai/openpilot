@@ -2,6 +2,7 @@
 
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QDir>
 
 #include "cereal/services.h"
 #include "selfdrive/camerad/cameras/camera_common.h"
@@ -11,6 +12,9 @@
 const int SEGMENT_LENGTH = 60; // 60s
 const int FORWARD_SEGS = 2;
 const int BACKWARD_SEGS = 2;
+const std::string LOG_ROOT =
+    Hardware::PC() ? util::getenv_default("HOME", "/.comma/media/0/realdata", "/data/media/0/realdata")
+                   : "/data/media/0/realdata";
 
 int getch() {
   int ch;
@@ -60,13 +64,58 @@ Replay::~Replay() {
   CL_CHECK(clReleaseContext(context));
 }
 
-void Replay::start() {
+void Replay::loadFromServer() {
   const QString url = "https://api.commadotai.com/v1/route/" + route + "/files";
   http = new HttpRequest(this, url, "", !Hardware::PC());
-  QObject::connect(http, &HttpRequest::receivedResponse, this, &Replay::loadJson);
+  QObject::connect(http, &HttpRequest::receivedResponse, this, &Replay::loadFromJson);
 }
 
-void Replay::loadJson(const QString &json) {
+void Replay::loadFromLocal() {
+  QStringList list = route.split('|');
+  if (list.size() != 2) return;
+
+  QJsonArray cameras, dcameras, ecameras, qcameras;
+  QJsonArray logs, qlogs;
+
+  QDir log_root(LOG_ROOT.c_str());
+  const  QStringList folders = log_root.entryList(QStringList() << list[1] + "*", QDir::Dirs | QDir::NoDot);
+
+  for (auto folder : folders) {
+    QDir segment(log_root.filePath(folder));
+    const QStringList files = segment.entryList(QDir::Files);
+    for (auto f : files) {
+      const QString file_path = "file://" + segment.filePath(f);
+      if (f.startsWith("fcamera")) {
+        cameras << file_path;
+      } else if (f.startsWith("dcamera")) {
+        dcameras << file_path;
+      } else if (f.startsWith("ecamera")) {
+        ecameras << file_path;
+      } else if (f.startsWith("qcamera")) {
+        qcameras << file_path;
+      } else if (f.startsWith("rlog")) {
+        logs << file_path;
+      } else if (f.startsWith("qlog")) {
+        qlogs << file_path;
+      }
+    }
+  }
+
+  QJsonObject obj;
+  obj["cameras"] = cameras;
+  obj["dcameras"] = dcameras;
+  obj["ecameras"] = ecameras;
+  obj["qcameras"] = qcameras;
+  obj["logs"] = logs;
+  obj["qlogs"] = qlogs;
+
+  QJsonDocument doc(obj);
+  QString json = doc.toJson(QJsonDocument::Compact);
+  loadFromJson(json);
+  
+}
+
+void Replay::loadFromJson(const QString &json) {
   QJsonDocument doc = QJsonDocument::fromJson(json.trimmed().toUtf8());
   if (doc.isNull()) {
     qDebug() << "JSON Parse failed";
@@ -87,6 +136,8 @@ void Replay::loadJson(const QString &json) {
     log_paths = doc["qlogs"].toVariant().toStringList();
   }
 
+  qInfo() << "replay route " << route << ", total segments:" << log_paths.size();
+
   typedef void (Replay::*threadFunc)();
   threadFunc threads[] = {&Replay::segmentQueueThread, &Replay::keyboardThread, &Replay::streamThread};
   for (auto func : threads) {
@@ -98,7 +149,6 @@ void Replay::loadJson(const QString &json) {
 
 void Replay::addSegment(int n) {
   assert((n >= 0) && (n < log_paths.size()));
-
   std::unique_lock lk(segment_lock);
   if (segments[n] != nullptr) return;
 
@@ -111,7 +161,7 @@ void Replay::addSegment(int n) {
   QThread *t = new QThread;
   seg->log = new LogReader(log_paths[n]);
   seg->log->moveToThread(t);
-  connect(seg->log, &LogReader::done, [&] { 
+  connect(seg->log, &LogReader::done, [=] { 
     --seg->loading; 
     t->quit();
   });
@@ -124,7 +174,7 @@ void Replay::addSegment(int n) {
   auto read_frames = [&](const QString &path, VisionStreamType stream_type) {
     seg->loading += 1;
     FrameReader *reader = new FrameReader(path.toStdString(), VISION_STREAM_RGB_BACK);
-    connect(reader, &FrameReader::done, [&] { --seg->loading; });
+    connect(reader, &FrameReader::done, [=] { --seg->loading; });
     QThread *t = QThread::create([=] { reader->process(); });
     QObject::connect(t, &QThread::finished, t, &QThread::deleteLater);
     t->start();
@@ -201,7 +251,7 @@ void Replay::segmentQueueThread() {
       int end_idx = std::min(current_segment + FORWARD_SEGS, log_paths.size());
       if (i >= start_idx && i <= end_idx) {
         addSegment(i);
-      } else {
+      } else if (i != playing_segment) {
         removeSegment(i);
       }
     }
@@ -224,10 +274,13 @@ void Replay::cameraThread() {
 
       if(auto f = getFrame(i, frame_type, frame_id)) {
         auto [frame_reader, fid] = *f;
-        VisionIpcBufExtra extra = {};
-        VisionBuf *buf = vipc_server->get_buffer(frame_reader->stream_type);
-        memcpy(buf->addr, frame_reader->get(fid), frame_reader->getRGBSize());
-        vipc_server->send(buf, &extra, false);
+        uint8_t *data = frame_reader->get(fid);
+        if (data) {
+          VisionIpcBufExtra extra = {};
+          VisionBuf *buf = vipc_server->get_buffer(frame_reader->stream_type);
+          memcpy(buf->addr, frame_reader->get(fid), frame_reader->getRGBSize());
+          vipc_server->send(buf, &extra, false);
+        }
         break;
       }
     }
@@ -277,14 +330,20 @@ void Replay::streamThread() {
 
   seekTime(0);
   uint64_t route_start_ts = 0;
-
+  bool waiting_printed = false;
   while (true) {
-    const SegmentData *seg = getSegment(current_segment);
+    playing_segment = current_segment.load();
+    const SegmentData *seg = getSegment(playing_segment);
     if (!seg) {
-      qDebug() << "waiting for events";
+       if (!waiting_printed) {
+        qDebug() << "waiting for events";
+        waiting_printed = true;
+      }
       QThread::msleep(100);
       continue;
     }
+    waiting_printed = false;
+
     if (vipc_server == nullptr) {
       startVipcServer(seg);
     }
@@ -314,7 +373,7 @@ void Replay::streamThread() {
       if (socks.find(type) != socks.end()) {
         if (std::abs(current_ts - last_print) > 5.0) {
           last_print = current_ts;
-          qInfo() << "at " << last_print;
+          qInfo() << "at " << last_print << "| segment:" << current_segment;
         }
 
         // keep time
@@ -348,10 +407,12 @@ void Replay::streamThread() {
       ++eit;
     }
 
-    if (current_seek_ts == seek_ts) {
+    if (eit == events.end()) {
       // move to the next segment
       current_segment += 1;
+      qDebug() << "move to next segment " << current_segment;
       seek_ts = current_ts.load();
+    } else {
     }
   }
 }

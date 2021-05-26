@@ -52,8 +52,8 @@ LogReader::LogReader(const QString &file) : FileReader(file) {
 }
 
 LogReader::~LogReader() {
-  for (auto it = events_.begin(); it != events_.end(); ++it) {
-    delete it.value();
+  for (auto e : events_) {
+    delete e;
   }
 }
 

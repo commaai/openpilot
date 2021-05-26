@@ -37,8 +37,10 @@ class Replay : public QObject {
 public:
   Replay(const QString &route, SubMaster *sm = nullptr, QObject *parent = nullptr);
   ~Replay();
-  void start();
-  void loadJson(const QString &response);
+  void load();
+  void loadFromServer();
+  void loadFromLocal();
+  void loadFromJson(const QString &response);
 
 private:
   void addSegment(int n);
@@ -58,6 +60,7 @@ private:
   std::atomic<int> seek_ts = 0;
   std::atomic<int> current_ts = 0;
   std::atomic<int> current_segment = 0;
+  std::atomic<int> playing_segment = 0;
   std::mutex lock;
 
   HttpRequest *http;
