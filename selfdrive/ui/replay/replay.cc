@@ -74,10 +74,18 @@ void Replay::loadJson(const QString &json) {
   }
 
   frame_paths[RoadCamFrame] = doc["cameras"].toVariant().toStringList();
+  if (frame_paths[RoadCamFrame].isEmpty()) {
+    // fallback to qcameras
+    frame_paths[RoadCamFrame] = doc["qcameras"].toVariant().toStringList();
+  }
   frame_paths[DriverCamFrame] = doc["dcameras"].toVariant().toStringList();
   frame_paths[WideRoadCamFrame] = doc["ecameras"].toVariant().toStringList();
   
   log_paths = doc["logs"].toVariant().toStringList();
+  if (log_paths.isEmpty()) {
+    // fallback to qlogs
+    log_paths = doc["qlogs"].toVariant().toStringList();
+  }
 
   typedef void (Replay::*threadFunc)();
   threadFunc threads[] = {&Replay::segmentQueueThread, &Replay::keyboardThread, &Replay::streamThread};
