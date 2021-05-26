@@ -120,10 +120,10 @@ void Replay::addSegment(int n) {
   };
 
   if (n < rd_frm_paths.size()) {
-    seg->rd_frm = read_frames(rd_frm_paths[n], VISION_STREAM_RGB_BACK);
+    seg->frames[RoadCamFrame] = read_frames(rd_frm_paths[n], VISION_STREAM_RGB_BACK);
   }
   if (n < drv_frm_paths.size()) {
-    seg->drv_frm = read_frames(drv_frm_paths[n], VISION_STREAM_RGB_FRONT);
+    seg->frames[DriverCamFrame] = read_frames(drv_frm_paths[n], VISION_STREAM_RGB_FRONT);
   }
 }
 
@@ -136,11 +136,7 @@ const SegmentData *Replay::getSegment(int n) {
 void Replay::removeSegment(int n) {
   std::unique_lock lk(segment_lock);
   if (segments.contains(n)) {
-    auto s = segments.take(n);
-    delete s->log;
-    delete s->rd_frm;
-    delete s->drv_frm;
-    delete s;
+    delete segments.take(n);
   }
 }
 
@@ -153,8 +149,7 @@ void Replay::seekTime(int ts) {
 }
 
 void Replay::startVipcServer(const SegmentData *seg) {
-  FrameReader *frames[] = {seg->rd_frm, seg->w_rd_frm, seg->drv_frm};
-  for (auto f : frames) {
+  for (auto f : seg->frames) {
     if (f && f->valid()) {
       if (!vipc_server) {
         vipc_server = new VisionIpcServer("camerad", device_id, context);
@@ -170,20 +165,20 @@ void Replay::startVipcServer(const SegmentData *seg) {
   }
 }
 
-std::optional<std::pair<FrameReader *, uint32_t>> Replay::getFrame(int seg_id, const std::string &type, uint32_t frame_id) {
+std::optional<std::pair<FrameReader *, uint32_t>> Replay::getFrame(int seg_id, FrameType type, uint32_t frame_id) {
   auto seg = getSegment(seg_id);
   if (!seg) return std::nullopt;
 
-  auto eidx = seg->log->getFrameEncodeIdx(type, frame_id);
+  const EncodeIdx *eidx = seg->log->getFrameEncodeIdx(type, frame_id);
   if (!eidx) return std::nullopt;
 
-  auto frame_seg = (seg_id == (*eidx).segmentNum) ? seg : getSegment((*eidx).segmentNum);
+  auto frame_seg = (seg_id == (*eidx).segmentNum) ? seg : getSegment(eidx->segmentNum);
   if (!frame_seg) return std::nullopt;
 
-  FrameReader *frm = frame_seg->getFrameReader(type);
+  FrameReader *frm = frame_seg->frames[type];
   if (!frm) return std::nullopt;
 
-  return std::make_pair(frm, (*eidx).segmentId);
+  return std::make_pair(frm, eidx->segmentId);
 };
 
 // threads
@@ -208,7 +203,7 @@ void Replay::cameraThread() {
   vipc_server->start_listener();
 
   while (!exit_) {
-    std::pair<std::string, uint32_t> frame;
+    std::pair<FrameType, uint32_t> frame;
     if (!frame_queue.try_pop(frame, 50)) continue;
 
     // search frame's encodIdx in adjacent segments.
@@ -322,12 +317,14 @@ void Replay::streamThread() {
           QThread::usleep(us_behind);
           //qDebug() << "sleeping" << us_behind << etime << timer.nsecsElapsed();
         }
-        if (type == "roadCameraState") {
-          frame_queue.push({type, e.getRoadCameraState().getFrameId()});
-        } else if (type == "driverCameraState") {
-          frame_queue.push({type, e.getDriverCameraState().getFrameId()});
-         } else if (type == "wideRoadCameraState") {
-          frame_queue.push({type, e.getWideRoadCameraState().getFrameId()});
+
+        // publish frames
+        if (e.which() == cereal::Event::ROAD_CAMERA_STATE) {
+          frame_queue.push({RoadCamFrame, e.getRoadCameraState().getFrameId()});
+        } else if (e.which() == cereal::Event::DRIVER_CAMERA_STATE) {
+          frame_queue.push({DriverCamFrame, e.getDriverCameraState().getFrameId()});
+        } else if (e.which() == cereal::Event::WIDE_ROAD_CAMERA_STATE) {
+          frame_queue.push({WideRoadCamFrame, e.getWideRoadCameraState().getFrameId()});
         }
 
         // publish msg

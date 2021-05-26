@@ -38,6 +38,12 @@ struct EncodeIdx {
   uint32_t segmentId;
 };
 
+enum FrameType {
+  RoadCamFrame = 0,
+  DriverCamFrame,
+  WideRoadCamFrame
+};
+
 typedef QMultiMap<uint64_t, capnp::FlatArrayMessageReader *> Events;
 typedef std::unordered_map<int, EncodeIdx> EncodeIdxMap;
 
@@ -49,7 +55,7 @@ public:
   ~LogReader();
   bool ready() const { return ready_; }
   const Events &events() const { return events_; }
-  std::optional<EncodeIdx> getFrameEncodeIdx(const std::string &type, uint32_t frame_id) const;
+  const EncodeIdx *getFrameEncodeIdx(FrameType type, uint32_t frame_id) const;
 
 signals:
   void done();
@@ -61,5 +67,5 @@ protected:
   std::vector<uint8_t> raw_;
   Events events_;
   std::atomic<bool> ready_ = false;
-  std::map<std::string, EncodeIdxMap> encoderIdx_;
+  EncodeIdxMap encoderIdx_[WideRoadCamFrame + 1];
 };

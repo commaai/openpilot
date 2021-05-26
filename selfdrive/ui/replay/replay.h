@@ -20,20 +20,14 @@
 
 class SegmentData {
 public:
-  FrameReader *getFrameReader(const std::string &type) const {
-    if (type == "roadCameraState") {
-      return rd_frm;
-    } else if (type == "driverCameraState") {
-      return drv_frm;
-    } else {
-      return w_rd_frm;
-    }
+  SegmentData() = default;
+  ~SegmentData() {
+    delete log;
+    for (auto f : frames) delete f;
   }
 
   LogReader *log = nullptr;
-  FrameReader *rd_frm = nullptr;
-  FrameReader *w_rd_frm = nullptr;
-  FrameReader *drv_frm = nullptr;
+  FrameReader *frames[WideRoadCamFrame + 1] = {};
   std::atomic<int> loading;
 };
 
@@ -58,7 +52,7 @@ private:
   
   void seekTime(int ts);
   void startVipcServer(const SegmentData *segment);
-  std::optional<std::pair<FrameReader *, uint32_t>> getFrame(int seg_id, const std::string &type, uint32_t frame_id);
+  std::optional<std::pair<FrameReader *, uint32_t>> getFrame(int seg_id, FrameType type, uint32_t frame_id);
 
   float last_print = 0;
   std::atomic<int> seek_ts = 0;
@@ -71,7 +65,7 @@ private:
   QStringList qcameras_paths;
   QStringList drv_frm_paths;
   QStringList log_paths;
-
+  
   // messaging
   SubMaster *sm;
   PubMaster *pm;
@@ -81,7 +75,7 @@ private:
   std::atomic<bool> exit_;
   std::mutex segment_lock;
   QMap<int, SegmentData*> segments;
-  SafeQueue<std::pair<std::string, uint32_t>> frame_queue;
+  SafeQueue<std::pair<FrameType, uint32_t>> frame_queue;
 
   VisionIpcServer *vipc_server = nullptr;
 

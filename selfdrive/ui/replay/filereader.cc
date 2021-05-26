@@ -71,13 +71,13 @@ void LogReader::parseEvents(kj::ArrayPtr<const capnp::word> amsg) {
       // TODO: rewrite with callback
       if (event.which() == cereal::Event::ROAD_ENCODE_IDX) {
         auto ee = event.getRoadEncodeIdx();
-        encoderIdx_["roadCameraState"][ee.getFrameId()] = {ee.getSegmentNum(), ee.getSegmentId()};
+        encoderIdx_[RoadCamFrame][ee.getFrameId()] = {ee.getSegmentNum(), ee.getSegmentId()};
       } else if (event.which() == cereal::Event::DRIVER_ENCODE_IDX) {
         auto ee = event.getDriverEncodeIdx();
-        encoderIdx_["driverCameraState"][ee.getFrameId()] = {ee.getSegmentNum(), ee.getSegmentId()};
+        encoderIdx_[DriverCamFrame][ee.getFrameId()] = {ee.getSegmentNum(), ee.getSegmentId()};
       } else if (event.which() == cereal::Event::WIDE_ROAD_ENCODE_IDX) {
         auto ee = event.getWideRoadEncodeIdx();
-        encoderIdx_["wideRoadCameraState"][ee.getFrameId()] = {ee.getSegmentNum(), ee.getSegmentId()};
+        encoderIdx_[WideRoadCamFrame][ee.getFrameId()] = {ee.getSegmentNum(), ee.getSegmentId()};
       }
 
       events_.insert(event.getLogMonoTime(), reader.release());
@@ -99,11 +99,7 @@ void LogReader::readyRead() {
   parseEvents({(const capnp::word *)raw_.data(), raw_.size() / sizeof(capnp::word)});
 }
 
-std::optional<EncodeIdx> LogReader::getFrameEncodeIdx(const std::string &type, uint32_t frame_id) const {
-  if (auto edix_it = encoderIdx_.find(type); edix_it != encoderIdx_.end()) {
-    if (auto it = edix_it->second.find(frame_id); it != edix_it->second.end()) {
-      return it->second;
-    }
-  }
-  return std::nullopt;
+const EncodeIdx *LogReader::getFrameEncodeIdx(FrameType type, uint32_t frame_id) const {
+  auto it = encoderIdx_[type].find(frame_id);
+  return it != encoderIdx_[type].end() ? &(it->second) : nullptr;
 }
