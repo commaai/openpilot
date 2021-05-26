@@ -239,6 +239,7 @@ UpdateResult::UpdateResult(QWidget* parent) : QFrame(parent) {
   rebootBtn.setVisible(false);
   layout->addWidget(&rebootBtn, 0, Qt::AlignRight);
   QObject::connect(&rebootBtn, &QPushButton::released, [=]() { Hardware::reboot(); });
+  QObject::connect(parent, SIGNAL(offroadTransition(bool)), &rebootBtn, SLOT(setEnabled(bool)));
 
   setLayout(layout);
   setStyleSheet(R"(
@@ -295,7 +296,7 @@ UpdatePanel::UpdatePanel(QWidget* parent) : QWidget(parent) {
   QObject::connect(parent, SIGNAL(offroadTransition(bool)), downloadUpdateBtn, SLOT(setEnabled(bool)));
   update_layout->addWidget(downloadUpdateBtn);
 
-  updateResult = new UpdateResult();
+  updateResult = new UpdateResult(parent);
   updateResult->setVisible(false);
   update_layout->addWidget(updateResult);
 
@@ -313,7 +314,7 @@ UpdatePanel::UpdatePanel(QWidget* parent) : QWidget(parent) {
   QObject::connect(parent, SIGNAL(offroadTransition(bool)), viewReleaseNoteBtn, SLOT(setEnabled(bool)));
   update_layout->addWidget(viewReleaseNoteBtn);
 
-  releaseNotes = new ReleaseNotes();
+  releaseNotes = new ReleaseNotes(parent);
   releaseNotes->setVisible(false);
   update_layout->addWidget(releaseNotes);
 
