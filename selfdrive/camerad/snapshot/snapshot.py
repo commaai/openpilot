@@ -48,15 +48,12 @@ def get_snapshots(frame="roadCameraState", front_frame="driverCameraState", focu
     sockets.append(front_frame)
 
   sm = messaging.SubMaster(sockets)
+  time.sleep(3.0)  # wait for startup and AF
   t = sec_since_boot()
   while sec_since_boot() - t < 10:
     sm.update()
     if min(sm.logMonoTime.values()):
       lapres = sm[frame].sharpnessScore
-      # print(lapres)
-      # print(rois_in_focus(lapres))
-      # print(np.mean(lapres), np.std(lapres))
-      # if rois_in_focus(lapres) >= focus_perc_threshold:
       if rois_in_focus(lapres) >= focus_perc_threshold:
         break
   print('time taken: {}'.format(sec_since_boot() - t))
@@ -79,26 +76,20 @@ def snapshot():
   time.sleep(2.0)  # Give thermald time to read the param, or if just started give camerad time to start
 
   # Check if camerad is already started
-  # try:
-  if managed_processes['camerad'].proc is not None:
+  if managed_processes['camerad'].proc is not None:  # TODO: make sure this works
     # subprocess.check_call(["pgrep", "camerad"])
-
     print("Camerad already running")
     params.put_bool("IsTakingSnapshot", False)
     params.delete("Offroad_IsTakingSnapshot")
     return None, None
-  # except subprocess.CalledProcessError:
-  #   pass
 
-  env = os.environ.copy()
-  env["SEND_ROAD"] = "1"
-  env["SEND_WIDE_ROAD"] = "1"
+  os.environ["SEND_ROAD"] = "1"
+  os.environ["SEND_WIDE_ROAD"] = "1"
 
   if front_camera_allowed:
-    env["SEND_DRIVER"] = "1"
+    os.environ["SEND_DRIVER"] = "1"
 
   managed_processes['camerad'].start()
-  time.sleep(3.0)
 
   frame = "wideRoadCameraState" if TICI else "roadCameraState"
   front_frame = "driverCameraState" if front_camera_allowed else None
