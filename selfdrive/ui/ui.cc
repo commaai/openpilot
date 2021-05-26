@@ -193,8 +193,7 @@ static void update_state(UIState *s) {
   if (sm.updated("roadCameraState")) {
     auto camera_state = sm["roadCameraState"].getRoadCameraState();
 
-    // Theoretical maximum, EON: 5408, TICI: 1757
-    float max_lines = Hardware::EON() ? 5408 : 1757; // TICI: 1757
+    float max_lines = Hardware::EON() ? 5408 : 1757;
     float gain = camera_state.getGainFrac();
 
     if (Hardware::TICI()) {
