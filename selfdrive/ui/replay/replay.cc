@@ -143,14 +143,6 @@ void Replay::removeSegment(int n) {
   }
 }
 
-void Replay::seekTime(int ts) {
-  ts = std::clamp(ts, 0, log_paths.size() * SEGMENT_LENGTH);
-  qInfo() << "seeking to " << ts;
-
-  seek_ts = ts;
-  current_segment = ts / SEGMENT_LENGTH;
-}
-
 void Replay::startVipcServer(const SegmentData *seg) {
   for (auto f : seg->frames) {
     if (f && f->valid()) {
@@ -183,6 +175,14 @@ std::optional<std::pair<FrameReader *, uint32_t>> Replay::getFrame(int seg_id, F
 
   return std::make_pair(frm, eidx->segmentId);
 };
+
+void Replay::seekTime(int ts) {
+  ts = std::clamp(ts, 0, log_paths.size() * SEGMENT_LENGTH);
+  qInfo() << "seeking to " << ts;
+
+  seek_ts = ts;
+  current_segment = ts / SEGMENT_LENGTH;
+}
 
 // threads
 
@@ -264,7 +264,6 @@ void Replay::keyboardThread() {
   }
 }
 
-
 void Replay::streamThread() {
   QElapsedTimer timer;
   timer.start();
@@ -293,7 +292,6 @@ void Replay::streamThread() {
     qDebug() << "unlogging at" << (t0 - route_start_ts) / 1e9;
 
     auto eit = events.lowerBound(t0);
-    assert(eit != events.end());
     uint64_t t0r = timer.nsecsElapsed();
     int current_seek_ts = seek_ts;
     while (current_seek_ts == seek_ts && eit != events.end()) {
