@@ -65,7 +65,7 @@ private:
   QStringList qcameras_paths;
   QStringList drv_frm_paths;
   QStringList log_paths;
-  
+
   // messaging
   SubMaster *sm;
   PubMaster *pm;

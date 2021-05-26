@@ -54,6 +54,9 @@ Replay::Replay(const QString &route, SubMaster *sm_, QObject *parent) : route(ro
 }
 
 Replay::~Replay() {
+  for (auto seg : segments) {
+    delete seg;
+  }
   CL_CHECK(clReleaseContext(context));
 }
 
