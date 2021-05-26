@@ -5,12 +5,12 @@
 #include <atomic>
 #include <condition_variable>
 #include <mutex>
-#include <string>
 #include <thread>
 #include <vector>
-#include "cereal/visionipc/visionbuf.h"
 
 #include <QThread>
+
+#include "cereal/visionipc/visionbuf.h"
 
 // independent of QT, needs ffmpeg
 extern "C" {
@@ -19,45 +19,47 @@ extern "C" {
 #include <libswscale/swscale.h>
 }
 
-
 class FrameReader : public QThread {
   Q_OBJECT
 
-public:
-  FrameReader(const std::string &fn, VisionStreamType stream_type, QObject *parent);
+ public:
+  FrameReader(const std::string &url, VisionStreamType stream_type, QObject *parent);
   ~FrameReader();
   void run() override;
   uint8_t *get(int idx);
-  bool valid() const {return valid_;}
-  AVFrame *toRGB(AVFrame *);
-  int getRGBSize() const { return width*height*3; }
+  bool valid() const { return valid_; }
+  int getRGBSize() const { return width * height * 3; }
 
   int width = 0, height = 0;
   VisionStreamType stream_type;
 
-signals:
-  void done();
+ signals:
+  void finished(bool success);
 
-private:
-  void process();
+ private:
+  void processFrames();
   void decodeFrames();
+  AVFrame *toRGB(AVFrame *frm);
 
-  struct Frame {
-    AVPacket pkt;
-    AVFrame *picture;
+  class Frame {
+   public:
+    AVPacket pkt = {};
+    AVFrame *picture = nullptr;
+    bool failed = false;
   };
-  std::vector<Frame*> frames;
+
+  std::vector<Frame> frames;
 
   AVFormatContext *pFormatCtx = NULL;
   AVCodecContext *pCodecCtx = NULL;
-	struct SwsContext *sws_ctx = NULL;
+  struct SwsContext *sws_ctx = NULL;
 
   std::mutex mutex;
   std::condition_variable cv_decode;
   std::condition_variable cv_frame;
-  int decode_idx = -1;
+  int decode_idx = 0;
   std::atomic<bool> exit_ = false;
 
-  bool valid_ = true;
+  bool valid_ = false;
   std::string url;
 };

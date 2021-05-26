@@ -3,61 +3,68 @@
 #include <assert.h>
 #include <unistd.h>
 
+#include <QDebug>
+
 static int ffmpeg_lockmgr_cb(void **arg, enum AVLockOp op) {
   std::mutex *mutex = (std::mutex *)*arg;
   switch (op) {
-  case AV_LOCK_CREATE:
-    mutex = new std::mutex();
-    break;
-  case AV_LOCK_OBTAIN:
-    mutex->lock();
-    break;
-  case AV_LOCK_RELEASE:
-    mutex->unlock();
-  case AV_LOCK_DESTROY:
-    delete mutex;
-    break;
+    case AV_LOCK_CREATE:
+      mutex = new std::mutex();
+      break;
+    case AV_LOCK_OBTAIN:
+      mutex->lock();
+      break;
+    case AV_LOCK_RELEASE:
+      mutex->unlock();
+    case AV_LOCK_DESTROY:
+      delete mutex;
+      break;
   }
   return 0;
 }
 
-FrameReader::FrameReader(const std::string &fn, VisionStreamType stream_type, QObject *parent)
-    : url(fn), stream_type(stream_type), QThread(parent) {
-  int ret = av_lockmgr_register(ffmpeg_lockmgr_cb);
-  assert(ret >= 0);
+class AVInitializer {
+ public:
+  AVInitializer() {
+    int ret = av_lockmgr_register(ffmpeg_lockmgr_cb);
+    assert(ret >= 0);
+    av_register_all();
+    avformat_network_init();
+  }
 
-  avformat_network_init();
-  av_register_all();
-}
+  ~AVInitializer() { avformat_network_deinit(); }
+};
+
+static AVInitializer av_initializer;
+
+FrameReader::FrameReader(const std::string &url, VisionStreamType stream_type, QObject *parent)
+    : url(url), stream_type(stream_type), QThread(parent) {}
 
 FrameReader::~FrameReader() {
-  // exit thread
+  // wait until thread is finished.
   exit_ = true;
   cv_decode.notify_one();
+  cv_frame.notify_all();
   wait();
 
+  // free all.
   for (auto &f : frames) {
-    if (f->picture) {
-      av_frame_free(&f->picture);
-    }
-    delete f;
+    if (f.picture) av_frame_free(&f.picture);
   }
   avcodec_free_context(&pCodecCtx);
   avformat_free_context(pFormatCtx);
   sws_freeContext(sws_ctx);
-  avformat_network_deinit();
 }
 
 void FrameReader::run() {
-  process();
+  processFrames();
   decodeFrames();
 }
 
-void FrameReader::process() {
+void FrameReader::processFrames() {
   if (avformat_open_input(&pFormatCtx, url.c_str(), NULL, NULL) != 0) {
     fprintf(stderr, "error loading %s\n", url.c_str());
-    valid_ = false;
-    emit done();
+    emit finished(false);
     return;
   }
   avformat_find_stream_info(pFormatCtx, NULL);
@@ -83,56 +90,65 @@ void FrameReader::process() {
   assert(sws_ctx != NULL);
 
   do {
-    Frame *frame = new Frame;
-    if (av_read_frame(pFormatCtx, &frame->pkt) < 0) {
-      delete frame;
+    Frame &frame = frames.emplace_back();
+    if (av_read_frame(pFormatCtx, &frame.pkt) < 0) {
+      frames.pop_back();
       break;
     }
-    frames.push_back(frame);
-  } while (true);
+  } while (!exit_);
 
   printf("framereader download done\n");
-
-  emit done();
+  valid_ = !exit_;
+  emit finished(valid_);
 }
 
 void FrameReader::decodeFrames() {
+  int idx = 0;
   while (!exit_) {
-    int gop = 0;
-    {
-      std::unique_lock lk(mutex);
-      cv_decode.wait(lk, [=] { return exit_ || decode_idx != -1; });
-      if (exit_) break;
+    const int from = std::max(idx - idx % 15, 0);
+    const int to = std::min(from + 15, (int)frames.size());
+    for (int i = from; i < to && !exit_; ++i) {
+      Frame &frame = frames[i];
+      if (frame.picture != nullptr || frame.failed) continue;
 
-      gop = std::max(decode_idx - decode_idx % 15, 0);
-      decode_idx = -1;
-    }
-
-    for (int i = gop; i < std::min(gop + 15, (int)frames.size()); ++i) {
-      if (frames[i]->picture != nullptr) continue;
-
-      int frameFinished;
+      int gotFrame;
       AVFrame *pFrame = av_frame_alloc();
-      avcodec_decode_video2(pCodecCtx, pFrame, &frameFinished, &(frames[i]->pkt));
-      AVFrame *picture = toRGB(pFrame);
+      avcodec_decode_video2(pCodecCtx, pFrame, &gotFrame, &frame.pkt);
+      av_free_packet(&frame.pkt);
+
+      AVFrame *picture = gotFrame ? toRGB(pFrame) : nullptr;
       av_frame_free(&pFrame);
 
+      if (!picture) {
+        qDebug() << "failed to decode frame " << i << " in " << url.c_str();
+      }
       std::unique_lock lk(mutex);
-      frames[i]->picture = picture;
+      frame.picture = picture;
+      frame.failed = !picture;
       cv_frame.notify_all();
     }
+
+    // sleep & wait
+    std::unique_lock lk(mutex);
+    cv_decode.wait(lk, [=] { return exit_ || decode_idx != -1; });
+    idx = decode_idx;
+    decode_idx = -1;
   }
 }
 
-AVFrame *FrameReader::toRGB(AVFrame *pFrame) {
-  AVFrame *pFrameRGB = av_frame_alloc();
-  int numBytes = avpicture_get_size(AV_PIX_FMT_BGR24, pFrame->width, pFrame->height);
-  uint8_t *buffer = (uint8_t *)av_malloc(numBytes * sizeof(uint8_t));
-  avpicture_fill((AVPicture *)pFrameRGB, buffer, AV_PIX_FMT_BGR24, pFrame->width, pFrame->height);
-  sws_scale(sws_ctx, (uint8_t const *const *)pFrame->data,
-            pFrame->linesize, 0, pFrame->height,
-            pFrameRGB->data, pFrameRGB->linesize);
-  return pFrameRGB;
+AVFrame *FrameReader::toRGB(AVFrame *frm) {
+  int numBytes = avpicture_get_size(AV_PIX_FMT_BGR24, frm->width, frm->height);
+  if (numBytes > 0) {
+    uint8_t *buffer = (uint8_t *)av_malloc(numBytes * sizeof(uint8_t));
+    AVFrame *frmRgb = av_frame_alloc();
+    if (avpicture_fill((AVPicture *)frmRgb, buffer, AV_PIX_FMT_BGR24, frm->width, frm->height) > 0 &&
+        sws_scale(sws_ctx, (uint8_t const *const *)frm->data, frm->linesize, 0, frm->height,
+                  frmRgb->data, frmRgb->linesize) > 0) {
+      return frmRgb;
+    }
+    av_frame_free(&frmRgb);
+  }
+  return nullptr;
 }
 
 uint8_t *FrameReader::get(int idx) {
@@ -141,9 +157,9 @@ uint8_t *FrameReader::get(int idx) {
   std::unique_lock lk(mutex);
   decode_idx = idx;
   cv_decode.notify_one();
-  Frame *frame = frames[idx];
-  if (!frame->picture) {
-    cv_frame.wait(lk, [=] { return exit_ || frame->picture != nullptr; });
+  const Frame &frame = frames[idx];
+  if (!frame.picture && !frame.failed) {
+    cv_frame.wait(lk, [=] { return exit_ || frame.picture != nullptr || frame.failed; });
   }
-  return frame->picture ? frame->picture->data[0] : nullptr;
+  return frame.picture ? frame.picture->data[0] : nullptr;
 }

@@ -179,7 +179,7 @@ void Replay::addSegment(int n) {
     if (n < frame_paths[i].size()) {
       seg->loading += 1;
       seg->frames[i] = new FrameReader(frame_paths[i][n].toStdString(), VISION_STREAM_RGB_BACK, this);  
-      connect(seg->frames[i], &FrameReader::done, [=] { --seg->loading; });
+      connect(seg->frames[i], &FrameReader::finished, [=](bool success) { --seg->loading; });
       seg->frames[i]->start();
     }  
   }
