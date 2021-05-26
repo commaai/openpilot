@@ -42,7 +42,16 @@ struct EncodeIdx {
   uint32_t segmentId;
 };
 
-typedef QMultiMap<uint64_t, capnp::FlatArrayMessageReader *> Events;
+struct EventMsg {
+  public:
+  EventMsg(const kj::ArrayPtr<const capnp::word> &amsg) : msg(amsg) {
+    words = kj::ArrayPtr<const capnp::word>(amsg.begin(), msg.getEnd());
+  }
+  kj::ArrayPtr<const capnp::word> words;
+  capnp::FlatArrayMessageReader msg;
+};
+
+typedef QMultiMap<uint64_t, EventMsg*> Events;
 typedef std::unordered_map<int, EncodeIdx> EncodeIdxMap;
 
 class LogReader : public QThread {

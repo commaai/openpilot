@@ -157,9 +157,6 @@ uint8_t *FrameReader::get(int idx) {
   std::unique_lock lk(mutex);
   decode_idx = idx;
   cv_decode.notify_one();
-  const Frame &frame = frames[idx];
-  if (!frame.picture && !frame.failed) {
-    cv_frame.wait(lk, [=] { return exit_ || frame.picture != nullptr || frame.failed; });
-  }
-  return frame.picture ? frame.picture->data[0] : nullptr;
+  cv_frame.wait(lk, [=] { return exit_ || frames[idx].picture != nullptr || frames[idx].failed; });
+  return frames[idx].picture ? frames[idx].picture->data[0] : nullptr;
 }

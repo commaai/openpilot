@@ -88,8 +88,10 @@ void LogReader::parseEvents(kj::ArrayPtr<const capnp::word> words) {
   bool success = true;
   while (!exit_ && words.size() > 0) {
     try {
-      std::unique_ptr<capnp::FlatArrayMessageReader> message = std::make_unique<capnp::FlatArrayMessageReader>(words);
-      cereal::Event::Reader event = message->getRoot<cereal::Event>();
+      std::unique_ptr<EventMsg> message = std::make_unique<EventMsg>(words);
+      words = kj::arrayPtr(message->msg.getEnd(), words.end());
+
+      cereal::Event::Reader event = message->msg.getRoot<cereal::Event>();
       switch (event.which()) {
         case cereal::Event::ROAD_ENCODE_IDX:
           insertEidx(RoadCamFrame, event.getRoadEncodeIdx());
@@ -104,7 +106,6 @@ void LogReader::parseEvents(kj::ArrayPtr<const capnp::word> words) {
           break;
       }
       events_.insert(event.getLogMonoTime(), message.release());
-      words = kj::arrayPtr(message->getEnd(), words.end());
     } catch (const kj::Exception &e) {
       // partial messages trigger this
       // qDebug() << e.getDescription().cStr();

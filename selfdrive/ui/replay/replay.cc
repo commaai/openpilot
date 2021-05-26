@@ -245,9 +245,9 @@ void Replay::seekTime(int ts) {
 void Replay::segmentQueueThread() {
   // maintain the segment window
   while (!exit_) {
+    int start_idx = std::max(current_segment - BACKWARD_SEGS, 0);
+    int end_idx = std::min(current_segment + FORWARD_SEGS, log_paths.size());
     for (int i = 0; i < log_paths.size(); i++) {
-      int start_idx = std::max(current_segment - BACKWARD_SEGS, 0);
-      int end_idx = std::min(current_segment + FORWARD_SEGS, log_paths.size());
       if (i >= start_idx && i <= end_idx) {
         addSegment(i);
       } else if (i != playing_segment) {
@@ -356,7 +356,7 @@ void Replay::streamThread() {
     uint64_t t0r = timer.nsecsElapsed();
     int current_seek_ts = seek_ts;
     while (!exit_ && current_seek_ts == seek_ts && eit != events.end()) {
-      cereal::Event::Reader e = (*eit)->getRoot<cereal::Event>();
+      cereal::Event::Reader e = (*eit)->msg.getRoot<cereal::Event>();
       std::string type;
       KJ_IF_MAYBE(e_, static_cast<capnp::DynamicStruct::Reader>(e).which()) {
         type = e_->getProto().getName();
@@ -391,9 +391,8 @@ void Replay::streamThread() {
 
         // publish msg
         if (sm == nullptr) {
-          MessageBuilder msg;
-          msg.setRoot(e);
-          pm->send(type.c_str(), msg);
+          const auto bytes = (*eit)->words.asBytes();
+          pm->send(type.c_str(), (capnp::byte*)bytes.begin(), bytes.size());
         } else {
           sm->update_msgs(nanos_since_boot(), {{type, e}});
         }

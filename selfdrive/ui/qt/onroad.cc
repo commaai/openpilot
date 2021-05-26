@@ -81,27 +81,27 @@ void OnroadAlerts::updateState(const UIState &s) {
     volume = util::map_val(sm["carState"].getCarState().getVEgo(), 0.f, 20.f,
                            Hardware::MIN_VOLUME, Hardware::MAX_VOLUME);
   }
-  if (sm["deviceState"].getDeviceState().getStarted()) {
-    if (sm.updated("controlsState")) {
-      const cereal::ControlsState::Reader &cs = sm["controlsState"].getControlsState();
-      updateAlert(QString::fromStdString(cs.getAlertText1()), QString::fromStdString(cs.getAlertText2()),
-                  cs.getAlertBlinkingRate(), cs.getAlertType(), cs.getAlertSize(), cs.getAlertSound());
-    } else if ((sm.frame - s.scene.started_frame) > 10 * UI_FREQ) {
-      // Handle controls timeout
-      if (sm.rcv_frame("controlsState") < s.scene.started_frame) {
-        // car is started, but controlsState hasn't been seen at all
-        updateAlert("openpilot Unavailable", "Waiting for controls to start", 0,
-                    "controlsWaiting", cereal::ControlsState::AlertSize::MID, AudibleAlert::NONE);
-      } else if ((sm.frame - sm.rcv_frame("controlsState")) > 5 * UI_FREQ) {
-        // car is started, but controls is lagging or died
-        updateAlert("TAKE CONTROL IMMEDIATELY", "Controls Unresponsive", 0,
-                    "controlsUnresponsive", cereal::ControlsState::AlertSize::FULL, AudibleAlert::CHIME_WARNING_REPEAT);
+  // if (sm["deviceState"].getDeviceState().getStarted()) {
+  //   if (sm.updated("controlsState")) {
+  //     const cereal::ControlsState::Reader &cs = sm["controlsState"].getControlsState();
+  //     updateAlert(QString::fromStdString(cs.getAlertText1()), QString::fromStdString(cs.getAlertText2()),
+  //                 cs.getAlertBlinkingRate(), cs.getAlertType(), cs.getAlertSize(), cs.getAlertSound());
+  //   } else if ((sm.frame - s.scene.started_frame) > 10 * UI_FREQ) {
+  //     // Handle controls timeout
+  //     if (sm.rcv_frame("controlsState") < s.scene.started_frame) {
+  //       // car is started, but controlsState hasn't been seen at all
+  //       updateAlert("openpilot Unavailable", "Waiting for controls to start", 0,
+  //                   "controlsWaiting", cereal::ControlsState::AlertSize::MID, AudibleAlert::NONE);
+  //     } else if ((sm.frame - sm.rcv_frame("controlsState")) > 5 * UI_FREQ) {
+  //       // car is started, but controls is lagging or died
+  //       updateAlert("TAKE CONTROL IMMEDIATELY", "Controls Unresponsive", 0,
+  //                   "controlsUnresponsive", cereal::ControlsState::AlertSize::FULL, AudibleAlert::CHIME_WARNING_REPEAT);
 
-        // TODO: clean this up once Qt handles the border
-        QUIState::ui_state.status = STATUS_ALERT;
-      }
-    }
-  }
+  //       // TODO: clean this up once Qt handles the border
+  //       QUIState::ui_state.status = STATUS_ALERT;
+  //     }
+  //   }
+  // }
 
   // TODO: add blinking back if performant
   //float alpha = 0.375 * cos((millis_since_boot() / 1000) * 2 * M_PI * blinking_rate) + 0.625;
