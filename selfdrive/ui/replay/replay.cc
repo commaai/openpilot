@@ -182,19 +182,12 @@ void Replay::addSegment(int n) {
   t->start();
 
   // read frames
-  
-  auto read_frames = [&](const QString &path, VisionStreamType stream_type) {
-    seg->loading += 1;
-    FrameReader *reader = new FrameReader(path.toStdString(), VISION_STREAM_RGB_BACK);
-    connect(reader, &FrameReader::done, [=] { --seg->loading; });
-    QThread *t = QThread::create([=] { reader->process(); });
-    QObject::connect(t, &QThread::finished, t, &QThread::deleteLater);
-    t->start();
-    return reader;
-  };
   for (int i = 0; i < std::size(frame_paths); ++i) {
     if (n < frame_paths[i].size()) {
-      seg->frames[i] = read_frames(frame_paths[i][n], VISION_STREAM_RGB_BACK);  
+      seg->loading += 1;
+      seg->frames[i] = new FrameReader(frame_paths[i][n].toStdString(), VISION_STREAM_RGB_BACK, this);  
+      connect(seg->frames[i], &FrameReader::done, [=] { --seg->loading; });
+      seg->frames[i]->start();
     }  
   }
 }

@@ -10,7 +10,7 @@
 #include <vector>
 #include "cereal/visionipc/visionbuf.h"
 
-#include <QObject>
+#include <QThread>
 
 // independent of QT, needs ffmpeg
 extern "C" {
@@ -20,17 +20,17 @@ extern "C" {
 }
 
 
-class FrameReader : public QObject {
+class FrameReader : public QThread {
   Q_OBJECT
 
 public:
-  FrameReader(const std::string &fn, VisionStreamType stream_type);
+  FrameReader(const std::string &fn, VisionStreamType stream_type, QObject *parent);
   ~FrameReader();
+  void run() override;
   uint8_t *get(int idx);
   bool valid() const {return valid_;}
   AVFrame *toRGB(AVFrame *);
   int getRGBSize() const { return width*height*3; }
-  void process();
 
   int width = 0, height = 0;
   VisionStreamType stream_type;
@@ -39,7 +39,8 @@ signals:
   void done();
 
 private:
-  void decodeThread();
+  void process();
+  void decodeFrames();
 
   struct Frame{
     AVPacket *pkt;
@@ -56,7 +57,6 @@ private:
   std::condition_variable cv_frame;
   int decode_idx = -1;
   std::atomic<bool> exit_ = false;
-  std::thread thread;
 
   bool valid_ = true;
   std::string url;

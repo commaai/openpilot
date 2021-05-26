@@ -21,7 +21,8 @@ static int ffmpeg_lockmgr_cb(void **arg, enum AVLockOp op) {
   return 0;
 }
 
-FrameReader::FrameReader(const std::string &fn, VisionStreamType stream_type) : url(fn), stream_type(stream_type) {
+FrameReader::FrameReader(const std::string &fn, VisionStreamType stream_type, QObject *parent)
+    : url(fn), stream_type(stream_type), QThread(parent) {
   int ret = av_lockmgr_register(ffmpeg_lockmgr_cb);
   assert(ret >= 0);
 
@@ -30,9 +31,11 @@ FrameReader::FrameReader(const std::string &fn, VisionStreamType stream_type) : 
 }
 
 FrameReader::~FrameReader() {
+  // exit thread
   exit_ = true;
   cv_decode.notify_one();
-  thread.join();
+  wait();
+
   for (auto &f : frames) {
     delete f->pkt;
     if (f->picture) {
@@ -44,6 +47,11 @@ FrameReader::~FrameReader() {
   avformat_free_context(pFormatCtx);
   sws_freeContext(sws_ctx);
   avformat_network_deinit();
+}
+
+void FrameReader::run() {
+  process();
+  decodeFrames();
 }
 
 void FrameReader::process() {
@@ -88,12 +96,10 @@ void FrameReader::process() {
 
   printf("framereader download done\n");
 
-  thread = std::thread(&FrameReader::decodeThread, this);
-
   emit done();
 }
 
-void FrameReader::decodeThread() {
+void FrameReader::decodeFrames() {
   while (!exit_) {
     int gop = 0;
     {
