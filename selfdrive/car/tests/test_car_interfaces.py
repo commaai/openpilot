@@ -6,7 +6,7 @@ from parameterized import parameterized
 from cereal import car
 from selfdrive.car.fingerprints import all_known_cars
 from selfdrive.car.car_helpers import interfaces
-from selfdrive.car.fingerprints import _FINGERPRINTS as FINGERPRINTS
+from selfdrive.car.fingerprints import _FINGERPRINTS as FINGERPRINTS, FW_VERSIONS
 
 class TestCarInterfaces(unittest.TestCase):
 

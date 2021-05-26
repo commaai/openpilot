@@ -70,6 +70,11 @@ def eliminate_incompatible_cars(msg, candidate_cars):
   return compatible_cars
 
 
-def all_known_cars():
-  """Returns a list of all known car strings."""
+def all_legacy_fingerprint_cars():
+  """Returns a list of all known car strings, FPv1 only."""
   return list(_FINGERPRINTS.keys())
+
+
+def all_known_cars():
+  """Returns a list of all known car strings, FPv1 and FPv2."""
+  return list({*FW_VERSIONS.keys(), *_FINGERPRINTS.keys()})
