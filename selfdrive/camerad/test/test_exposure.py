@@ -35,7 +35,6 @@ class TestCamerad(unittest.TestCase):
     i = self._numpy_rgb2gray(i)
     i_median = np.median(i) / 255.
     i_mean = np.mean(i) / 255.
-    print([i_median, i_mean])
     return med_ex[0] < i_median < med_ex[1] and mean_ex[0] < i_mean < mean_ex[1]
 
 
