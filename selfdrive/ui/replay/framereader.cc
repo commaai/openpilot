@@ -98,29 +98,31 @@ void FrameReader::process() {
 
 void FrameReader::decodeFrames() {
   while (!exit_) {
-    int gop = 0;
-    {
-      std::unique_lock lk(mutex);
-      cv_decode.wait(lk, [=] { return exit_ || decode_idx != -1; });
-      if (exit_) break;
 
-      gop = std::max(decode_idx - decode_idx % 15, 0);
+    while (decode_idx != -1) {
+      int from = std::max(decode_idx - decode_idx % 15, 0);
+      int to = std::min(from + 15, (int)frames.size());
       decode_idx = -1;
+
+      // break loop if another FrameReader::get() is called, for better seek performance
+      for (int i = from; i < to && decode_idx == -1; ++i) {
+        if (frames[i]->picture != nullptr) continue;
+
+        int frameFinished;
+        AVFrame *pFrame = av_frame_alloc();
+        avcodec_decode_video2(pCodecCtx, pFrame, &frameFinished, &(frames[i]->pkt));
+        AVFrame *picture = toRGB(pFrame);
+        av_frame_free(&pFrame);
+
+        std::unique_lock lk(mutex);
+        frames[i]->picture = picture;
+        cv_frame.notify_all();
+      }
     }
 
-    for (int i = gop; i < std::min(gop + 15, (int)frames.size()); ++i) {
-      if (frames[i]->picture != nullptr) continue;
-
-      int frameFinished;
-      AVFrame *pFrame = av_frame_alloc();
-      avcodec_decode_video2(pCodecCtx, pFrame, &frameFinished, &(frames[i]->pkt));
-      AVFrame *picture = toRGB(pFrame);
-      av_frame_free(&pFrame);
-
-      std::unique_lock lk(mutex);
-      frames[i]->picture = picture;
-      cv_frame.notify_all();
-    }
+    // sleep & wait
+    std::unique_lock lk(mutex);
+    cv_decode.wait(lk, [=] { return exit_ || decode_idx != -1; });
   }
 }
 

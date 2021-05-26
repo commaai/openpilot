@@ -53,7 +53,7 @@ private:
   std::mutex mutex;
   std::condition_variable cv_decode;
   std::condition_variable cv_frame;
-  int decode_idx = -1;
+  std::atomic<int> decode_idx = 0;
   std::atomic<bool> exit_ = false;
 
   bool valid_ = true;
