@@ -17,11 +17,6 @@
 #include "selfdrive/ui/replay/filereader.h"
 #include "selfdrive/ui/replay/framereader.h"
 
-
-constexpr int FORWARD_SEGS = 2;
-constexpr int BACKWARD_SEGS = 2;
-
-
 class Replay : public QObject {
   Q_OBJECT
 
@@ -45,6 +40,7 @@ private:
   std::atomic<int> seek_ts = 0;
   std::atomic<int> current_ts = 0;
   std::atomic<int> current_segment = 0;
+  std::atomic<int> playing_segment = 0;
   std::mutex lock;
 
   QThread *thread;

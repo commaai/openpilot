@@ -8,6 +8,10 @@
 #include "selfdrive/common/timing.h"
 #include "selfdrive/hardware/hw.h"
 
+const int SEGMENT_LENGTH = 60; // 60s
+const int FORWARD_SEGS = 2;
+const int BACKWARD_SEGS = 2;
+
 int getch() {
   int ch;
   struct termios oldt;
@@ -72,13 +76,7 @@ void Replay::addSegment(int n) {
   LogReader *log_reader = new LogReader(log_paths.at(n).toString());
   lrs[n] = log_reader;
   lk.unlock();
-
-  QThread *t = new QThread;
-  log_reader->moveToThread(t);
-  QObject::connect(t, &QThread::started, log_reader, &LogReader::process);
-  QObject::connect(log_reader, &LogReader::done, [=] { t->quit(); });
-  QObject::connect(t, &QThread::finished, t, &QThread::deleteLater);
-  t->start();
+  log_reader->start();
 
   QThread *frame_thread = QThread::create([=]{
     FrameReader *frame_reader = new FrameReader(qPrintable(camera_paths.at(n).toString()));
@@ -124,11 +122,11 @@ void Replay::start(){
 }
 
 void Replay::seekTime(int ts) {
-  ts = std::clamp(ts, 0, log_paths.size() * 60);
+  ts = std::clamp(ts, 0, log_paths.size() * SEGMENT_LENGTH);
   qInfo() << "seeking to " << ts;
 
   seek_ts = ts;
-  current_segment = ts/60;
+  current_segment = ts / SEGMENT_LENGTH;
 }
 
 void Replay::segmentQueueThread() {
@@ -139,7 +137,7 @@ void Replay::segmentQueueThread() {
       int end_idx = std::min(current_segment + FORWARD_SEGS, log_paths.size());
       if (i >= start_idx && i <= end_idx) {
         addSegment(i);
-      } else {
+      } else if (i != playing_segment) {
         removeSegment(i);
       }
     }
@@ -187,10 +185,10 @@ void Replay::stream() {
 
   route_start_ts = 0;
   while (true) {
-    const int segment = current_segment;
+    playing_segment = current_segment.load();
     {
       std::unique_lock lk(lock);
-      if (lrs[segment] == nullptr || !lrs[segment]->ready()) {
+      if (lrs[playing_segment] == nullptr || !lrs[playing_segment]->valid()) {
         lk.unlock();
         qDebug() << "waiting for events";
         QThread::msleep(100);
@@ -206,13 +204,12 @@ void Replay::stream() {
     uint64_t t0 = route_start_ts + (seek_ts * 1e9);
     qDebug() << "unlogging at" << (t0 - route_start_ts) / 1e9;
 
-    const Events &events = lrs[segment]->events();
+    const Events &events = lrs[playing_segment]->events();
     auto eit = events.lowerBound(t0);
-
     uint64_t t0r = timer.nsecsElapsed();
     int current_seek_ts = seek_ts;
     while (current_seek_ts == seek_ts && eit != events.end()) {
-      cereal::Event::Reader e = (*eit)->getRoot<cereal::Event>();
+      cereal::Event::Reader e = (*eit)->msg.getRoot<cereal::Event>();
       std::string type;
       KJ_IF_MAYBE(e_, static_cast<capnp::DynamicStruct::Reader>(e).which()) {
         type = e_->getProto().getName();
@@ -241,13 +238,11 @@ void Replay::stream() {
         // TODO: publish all frames
         if (type == "roadCameraState") {
           auto fr = e.getRoadCameraState();
-          auto &eidx = lrs[segment]->roadCamEncodeIdx();
-          auto it_ = eidx.find(fr.getFrameId());
-          if (it_ != eidx.end()) {
-            auto pp = *it_;
-            if (frs.find(pp.first) != frs.end()) {
-              auto frm = frs[pp.first];
-              auto data = frm->get(pp.second);
+          const EncodeIdx *eidx = lrs[playing_segment]->getFrameEncodeIdx(RoadCamFrame, fr.getFrameId());
+          if (eidx) {
+            if (frs.find(eidx->segmentNum) != frs.end()) {
+              auto frm = frs[eidx->segmentNum];
+              auto data = frm->get(eidx->segmentId);
 
               if (vipc_server == nullptr) {
                 cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
@@ -284,7 +279,7 @@ void Replay::stream() {
       ++eit;
     }
 
-    if (current_seek_ts == seek_ts) {
+    if (eit == events.end()) {
       // move to the next segment
       current_segment += 1;
       seek_ts = current_ts.load();
