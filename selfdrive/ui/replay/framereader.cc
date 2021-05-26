@@ -113,6 +113,7 @@ void FrameReader::decodeFrames() {
         int frameFinished;
         AVFrame *pFrame = av_frame_alloc();
         avcodec_decode_video2(pCodecCtx, pFrame, &frameFinished, &(frames[i].pkt));
+        av_free_packet(&(frames[i].pkt));
         AVFrame *picture = toRGB(pFrame);
         av_frame_free(&pFrame);
 
