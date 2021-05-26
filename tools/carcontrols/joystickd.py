@@ -3,12 +3,12 @@
 # This process publishes joystick events. Such events can be subscribed by
 # mocked car controller scripts.
 
+import sys
 import zmq
 import multiprocessing
 import cereal.messaging as messaging
 
 from uuid import uuid4
-from inputs import get_gamepad
 from dataclasses import dataclass
 
 from common.numpy_fast import clip
@@ -43,7 +43,7 @@ class Joystick:
     else:
       self.max_axis_value = 255  # tune based on your joystick, 0 to this
       self.axes = {'ABS_X': 'steer', 'ABS_Y': 'gb'}
-      self.button_map = {'BTN_TRIGGER': 'c', 'BTN_THUMB': 'e', 'BTN_TOP': 't'}  # TODO: add reset
+      self.button_map = {'BTN_TRIGGER': 'cancel', 'BTN_THUMB': 'engaged_toggle', 'BTN_TOP': 'steer_required'}  # TODO: add reset
 
   def get_event(self):
     event = Event()
@@ -67,7 +67,8 @@ class Joystick:
         event.type = 'axis'
         event.axis = self.axes[joystick_event.code]
         v = ((joystick_event.state / self.max_axis_value) - 0.5) * 2  # normalize value from -1 to 1
-        event.value = apply_deadzone(-v, 0.03)
+        dz_comp = 1 / (1 - 0.03)
+        event.value = apply_deadzone(-v, 0.03) * dz_comp
 
       # some buttons send events on rising and falling so only allow one state
       elif joystick_event.code in self.button_map and joystick_event.state == 0:
@@ -130,6 +131,8 @@ def joystick_thread(use_keyboard):
           '- `C`: Cancel cruise control\n'
           '- `E`: Toggle enabled\n'
           '- `T`: Steer required HUD')
+  else:
+    print('Using joystick!')
 
   # Receive joystick/key events and send to joystick send thread
   try:
@@ -146,5 +149,11 @@ def joystick_thread(use_keyboard):
 
 
 if __name__ == "__main__":
-  use_keyboard = True  # TODO: take in axes increment, use_keyboard as arg
-  joystick_thread(use_keyboard)
+  args = sys.argv[1:]
+  use_keyboard = len(args) and args[0] == '--keyboard'
+  if not use_keyboard:
+    try:
+      from inputs import get_gamepad
+    except ImportError:
+      use_keyboard = True
+  joystick_thread(use_keyboard=use_keyboard)
