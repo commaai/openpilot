@@ -37,7 +37,7 @@ class RouteFrameReader(object):
                 will also be used for frame position indices.
     """
     if not isinstance(camera_paths, dict):
-      camera_paths = {int(k.split('/')[-2]):k for k in camera_paths}
+      camera_paths = {int(k.split('?')[0].split('/')[-2]): k for k in camera_paths}
 
     self._first_camera_idx = min(key for key, value in camera_paths.items() if value is not None)
     self._frame_readers = _FrameReaderDict(camera_paths, cache_paths, kwargs)
