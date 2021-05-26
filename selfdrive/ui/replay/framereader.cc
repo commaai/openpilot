@@ -44,6 +44,7 @@ FrameReader::~FrameReader() {
   // wait until thread is finished.
   exit_ = true;
   cv_decode.notify_one();
+  cv_frame.notify_all();
   wait();
 
   // free all.
@@ -138,13 +139,22 @@ void FrameReader::decodeFrames() {
 }
 
 AVFrame *FrameReader::toRGB(AVFrame *pFrame) {
-  AVFrame *pFrameRGB = av_frame_alloc();
+  AVFrame *pFrameRGB = nullptr;
   int numBytes = avpicture_get_size(AV_PIX_FMT_BGR24, pFrame->width, pFrame->height);
-  uint8_t *buffer = (uint8_t *)av_malloc(numBytes * sizeof(uint8_t));
-  avpicture_fill((AVPicture *)pFrameRGB, buffer, AV_PIX_FMT_BGR24, pFrame->width, pFrame->height);
-  sws_scale(sws_ctx, (uint8_t const *const *)pFrame->data,
-            pFrame->linesize, 0, pFrame->height,
-            pFrameRGB->data, pFrameRGB->linesize);
+  if (numBytes > 0) {
+    uint8_t *buffer = (uint8_t *)av_malloc(numBytes * sizeof(uint8_t));
+    pFrameRGB = av_frame_alloc();
+    bool success = false;
+    if (avpicture_fill((AVPicture *)pFrameRGB, buffer, AV_PIX_FMT_BGR24, pFrame->width, pFrame->height) > 0) {
+      success = sws_scale(sws_ctx, (uint8_t const *const *)pFrame->data,
+                          pFrame->linesize, 0, pFrame->height,
+                          pFrameRGB->data, pFrameRGB->linesize) > 0;
+    }
+    if (!success) {
+      av_frame_free(&pFrameRGB);
+      pFrameRGB = nullptr;
+    }
+  }
   return pFrameRGB;
 }
 
