@@ -73,9 +73,10 @@ void Replay::loadJson(const QString &json) {
     return;
   }
 
-  rd_frm_paths = doc["cameras"].toVariant().toStringList();
-  qcameras_paths = doc["qcameras"].toVariant().toStringList();
-  drv_frm_paths = doc["dcameras"].toVariant().toStringList();
+  frame_paths[RoadCamFrame] = doc["cameras"].toVariant().toStringList();
+  frame_paths[DriverCamFrame] = doc["dcameras"].toVariant().toStringList();
+  frame_paths[WideRoadCamFrame] = doc["ecameras"].toVariant().toStringList();
+  
   log_paths = doc["logs"].toVariant().toStringList();
 
   typedef void (Replay::*threadFunc)();
@@ -121,12 +122,10 @@ void Replay::addSegment(int n) {
     t->start();
     return reader;
   };
-
-  if (n < rd_frm_paths.size()) {
-    seg->frames[RoadCamFrame] = read_frames(rd_frm_paths[n], VISION_STREAM_RGB_BACK);
-  }
-  if (n < drv_frm_paths.size()) {
-    seg->frames[DriverCamFrame] = read_frames(drv_frm_paths[n], VISION_STREAM_RGB_FRONT);
+  for (int i = 0; i < std::size(frame_paths); ++i) {
+    if (n < frame_paths[i].size()) {
+      seg->frames[i] = read_frames(frame_paths[i][n], VISION_STREAM_RGB_BACK);  
+    }  
   }
 }
 
@@ -210,16 +209,16 @@ void Replay::cameraThread() {
     if (!frame_queue.try_pop(frame, 50)) continue;
 
     // search frame's encodIdx in adjacent segments.
-    auto [type, frame_id] = frame;
+    auto [frame_type, frame_id] = frame;
     int search_in[] = {current_segment, current_segment - 1, current_segment + 1};
     for (auto i : search_in) {
       if (i < 0 || i >= segments.size()) continue;
 
-      if(auto f = getFrame(i, type, frame_id); f) {
-        auto [frm, fid] = *f;
+      if(auto f = getFrame(i, frame_type, frame_id)) {
+        auto [frame_reader, fid] = *f;
         VisionIpcBufExtra extra = {};
-        VisionBuf *buf = vipc_server->get_buffer(frm->stream_type);
-        memcpy(buf->addr, frm->get(fid), frm->getRGBSize());
+        VisionBuf *buf = vipc_server->get_buffer(frame_reader->stream_type);
+        memcpy(buf->addr, frame_reader->get(fid), frame_reader->getRGBSize());
         vipc_server->send(buf, &extra, false);
         break;
       }

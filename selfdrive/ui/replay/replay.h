@@ -61,9 +61,7 @@ private:
   std::mutex lock;
 
   HttpRequest *http;
-  QStringList rd_frm_paths;
-  QStringList qcameras_paths;
-  QStringList drv_frm_paths;
+  QStringList frame_paths[WideRoadCamFrame + 1];
   QStringList log_paths;
 
   // messaging
