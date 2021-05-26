@@ -10,7 +10,7 @@ from PIL import Image
 import cereal.messaging as messaging
 from common.basedir import BASEDIR
 from common.params import Params
-from common.transformations.camera import eon_f_frame_size, eon_d_frame_size, leon_d_frame_size, tici_f_frame_size
+from common.transformations.camera import eon_f_frame_size, eon_d_frame_size, tici_f_frame_size
 from selfdrive.hardware import TICI
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
 
@@ -30,7 +30,7 @@ def extract_image(dat, frame_sizes):
 
 
 def get_snapshots(frame="roadCameraState", front_frame="driverCameraState"):
-  frame_sizes = [eon_f_frame_size, eon_d_frame_size, leon_d_frame_size, tici_f_frame_size]
+  frame_sizes = [eon_f_frame_size, eon_d_frame_size, tici_f_frame_size]
   frame_sizes = {w * h: (w, h) for (w, h) in frame_sizes}
 
   sockets = []
