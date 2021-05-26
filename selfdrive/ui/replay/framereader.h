@@ -42,8 +42,8 @@ private:
   void process();
   void decodeFrames();
 
-  struct Frame{
-    AVPacket *pkt;
+  struct Frame {
+    AVPacket pkt;
     AVFrame *picture;
   };
   std::vector<Frame*> frames;

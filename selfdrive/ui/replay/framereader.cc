@@ -37,7 +37,6 @@ FrameReader::~FrameReader() {
   wait();
 
   for (auto &f : frames) {
-    delete f->pkt;
     if (f->picture) {
       av_frame_free(&f->picture);
     }
@@ -84,13 +83,11 @@ void FrameReader::process() {
   assert(sws_ctx != NULL);
 
   do {
-    AVPacket *pkt = new AVPacket;
-    if (av_read_frame(pFormatCtx, pkt) < 0) {
-      delete pkt;
+    Frame *frame = new Frame;
+    if (av_read_frame(pFormatCtx, &frame->pkt) < 0) {
+      delete frame;
       break;
     }
-    Frame *frame = new Frame;
-    frame->pkt = pkt;
     frames.push_back(frame);
   } while (true);
 
@@ -116,7 +113,7 @@ void FrameReader::decodeFrames() {
 
       int frameFinished;
       AVFrame *pFrame = av_frame_alloc();
-      avcodec_decode_video2(pCodecCtx, pFrame, &frameFinished, frames[i]->pkt);
+      avcodec_decode_video2(pCodecCtx, pFrame, &frameFinished, &(frames[i]->pkt));
       AVFrame *picture = toRGB(pFrame);
       av_frame_free(&pFrame);
 
