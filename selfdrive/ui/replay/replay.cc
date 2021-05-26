@@ -170,16 +170,9 @@ void Replay::addSegment(int n) {
   lk.unlock();
 
   // read log
-  QThread *t = new QThread;
-  seg->log = new LogReader(log_paths[n]);
-  seg->log->moveToThread(t);
-  connect(seg->log, &LogReader::done, [=] { 
-    --seg->loading; 
-    t->quit();
-  });
-  QObject::connect(t, &QThread::started, seg->log, &LogReader::process);
-  QObject::connect(t, &QThread::finished, t, &QThread::deleteLater);
-  t->start();
+  seg->log = new LogReader(log_paths[n], this);
+  connect(seg->log, &LogReader::done, [=] { --seg->loading; });
+  seg->log->start();
 
   // read frames
   for (int i = 0; i < std::size(frame_paths); ++i) {

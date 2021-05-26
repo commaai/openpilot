@@ -26,17 +26,9 @@ static bool decompressBZ2(std::vector<uint8_t> &dest, const char srcData[], size
   return ret == BZ_STREAM_END;
 }
 
-FileReader::FileReader(const QString& file_) : file(file_) {
-}
-
-void FileReader::process() {
-  timer.start();
-  QString str = file.simplified();
-  str.replace(" ", "");
-  startRequest(QUrl(str));
-}
-
 void FileReader::startRequest(const QUrl &url) {
+  timer.start();
+
   qnam = new QNetworkAccessManager;
   reply = qnam->get(QNetworkRequest(url));
   connect(reply, &QNetworkReply::finished, this, &FileReader::httpFinished);
@@ -61,27 +53,42 @@ void FileReader::httpFinished() {
 
 void FileReader::readyRead() {
   QByteArray dat = reply->readAll();
-  printf("got http ready read: %d\n", dat.size());
+  emit ready(dat);
 }
 
-FileReader::~FileReader() {
-
-}
-
-LogReader::LogReader(const QString &file) : FileReader(file) {
+LogReader::LogReader(const QString &file, QObject *parent) : file(file),  QThread(parent) {
   // start with 64MB buffer
   raw_.resize(1024 * 1024 * 64);
 }
 
 LogReader::~LogReader() {
+  // wait thread exit
+  exit_ = true;
+  wait();
+
   for (auto e : events_) {
     delete e;
   }
 }
 
+void LogReader::run() {
+  QEventLoop loop;
+  FileReader reader;
+  connect(&reader, &FileReader::ready, [&](const QByteArray &dat) {
+    if (!decompressBZ2(raw_, dat.data(), dat.size())) {
+      qWarning() << "bz2 decompress failed";
+    }
+    loop.exit();
+  });
+  reader.startRequest(file);
+  loop.exec();
+
+  parseEvents({(const capnp::word *)raw_.data(), raw_.size() / sizeof(capnp::word)});
+}
+
 void LogReader::parseEvents(kj::ArrayPtr<const capnp::word> amsg) {
   size_t offset = 0;
-  while (offset < amsg.size()) {
+  while (!exit_ && offset < amsg.size()) {
     try {
       std::unique_ptr<capnp::FlatArrayMessageReader> reader =
           std::make_unique<capnp::FlatArrayMessageReader>(amsg.slice(offset, amsg.size()));
@@ -113,8 +120,7 @@ void LogReader::parseEvents(kj::ArrayPtr<const capnp::word> amsg) {
   emit done();
 }
 
-void LogReader::readyRead() {
-  QByteArray dat = reply->readAll();
+void LogReader::readyRead(const QByteArray &dat) {
   if (!decompressBZ2(raw_, dat.data(), dat.size())) {
     qWarning() << "bz2 decompress failed";
   }
