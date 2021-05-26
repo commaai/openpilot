@@ -27,7 +27,7 @@ public:
   }
 
   LogReader *log = nullptr;
-  FrameReader *frames[WideRoadCamFrame + 1] = {};
+  FrameReader *frames[MAX_FRAME_TYPE] = {};
   std::atomic<int> loading;
 };
 
@@ -57,21 +57,19 @@ private:
   std::optional<std::pair<FrameReader *, uint32_t>> getFrame(int seg_id, FrameType type, uint32_t frame_id);
 
   float last_print = 0;
-  std::atomic<int> seek_ts = 0;
-  std::atomic<int> current_ts = 0;
-  std::atomic<int> current_segment = 0;
-  std::atomic<int> playing_segment = 0;
+  std::atomic<int> current_ts, seek_ts;
+  std::atomic<int> current_segment, playing_segment;
   std::mutex lock;
 
   HttpRequest *http = nullptr;
-  QStringList frame_paths[WideRoadCamFrame + 1];
+  QString route;
   QStringList log_paths;
+  QStringList frame_paths[MAX_FRAME_TYPE];
 
   // messaging
   SubMaster *sm = nullptr;
   PubMaster *pm = nullptr;
   std::set<std::string> socks;
-  QString route;
 
   std::mutex segment_lock;
   QMap<int, SegmentData*> segments;

@@ -30,15 +30,16 @@ private:
   QElapsedTimer timer;
 };
 
-struct EncodeIdx {
-  int segmentNum;
-  uint32_t segmentId;
-};
-
 enum FrameType {
   RoadCamFrame = 0,
   DriverCamFrame,
   WideRoadCamFrame
+};
+const int MAX_FRAME_TYPE = WideRoadCamFrame + 1;
+
+struct EncodeIdx {
+  int segmentNum;
+  uint32_t segmentId;
 };
 
 typedef QMultiMap<uint64_t, capnp::FlatArrayMessageReader *> Events;
@@ -51,8 +52,11 @@ public:
   LogReader(const QString &file, QObject *parent);
   ~LogReader();
   void run() override;
-  const Events &events() const { return events_; }
-  const EncodeIdx *getFrameEncodeIdx(FrameType type, uint32_t frame_id) const;
+  inline const Events &events() const { return events_; }
+  const EncodeIdx *getFrameEncodeIdx(FrameType type, uint32_t frame_id) const {
+    auto it = encoderIdx_[type].find(frame_id);
+    return it != encoderIdx_[type].end() ? &it->second : nullptr;
+  }
 
 signals:
   void finished(bool success);
@@ -63,7 +67,7 @@ protected:
 
   std::vector<uint8_t> raw_;
   Events events_;
-  EncodeIdxMap encoderIdx_[WideRoadCamFrame + 1];
+  EncodeIdxMap encoderIdx_[MAX_FRAME_TYPE];
   QString file_;
   std::atomic<bool> exit_;
 };

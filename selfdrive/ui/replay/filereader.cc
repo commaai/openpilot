@@ -56,19 +56,13 @@ void FileReader::readyRead() {
   emit ready(dat);
 }
 
-LogReader::LogReader(const QString &file, QObject *parent) : file_(file),  QThread(parent) {
-  // start with 64MB buffer
-  raw_.resize(1024 * 1024 * 64);
-}
+LogReader::LogReader(const QString &file, QObject *parent) : file_(file), QThread(parent) {}
 
 LogReader::~LogReader() {
-  // wait thread exit
+  // wait until thread is finished.
   exit_ = true;
   wait();
-
-  for (auto e : events_) {
-    delete e;
-  }
+  for (auto e : events_) delete e;
 }
 
 void LogReader::run() {
@@ -87,26 +81,29 @@ void LogReader::run() {
 }
 
 void LogReader::parseEvents(kj::ArrayPtr<const capnp::word> words) {
+  auto insertEidx = [=](FrameType type, const cereal::EncodeIndex::Reader &e) {
+    encoderIdx_[type][e.getFrameId()] = {e.getSegmentNum(), e.getSegmentId()};
+  };
+
   bool success = true;
   while (!exit_ && words.size() > 0) {
     try {
       std::unique_ptr<capnp::FlatArrayMessageReader> message = std::make_unique<capnp::FlatArrayMessageReader>(words);
       cereal::Event::Reader event = message->getRoot<cereal::Event>();
-      
-      // hack
-      // TODO: rewrite with callback
-      if (event.which() == cereal::Event::ROAD_ENCODE_IDX) {
-        auto ee = event.getRoadEncodeIdx();
-        encoderIdx_[RoadCamFrame][ee.getFrameId()] = {ee.getSegmentNum(), ee.getSegmentId()};
-      } else if (event.which() == cereal::Event::DRIVER_ENCODE_IDX) {
-        auto ee = event.getDriverEncodeIdx();
-        encoderIdx_[DriverCamFrame][ee.getFrameId()] = {ee.getSegmentNum(), ee.getSegmentId()};
-      } else if (event.which() == cereal::Event::WIDE_ROAD_ENCODE_IDX) {
-        auto ee = event.getWideRoadEncodeIdx();
-        encoderIdx_[WideRoadCamFrame][ee.getFrameId()] = {ee.getSegmentNum(), ee.getSegmentId()};
+      switch (event.which()) {
+        case cereal::Event::ROAD_ENCODE_IDX:
+          insertEidx(RoadCamFrame, event.getRoadEncodeIdx());
+          break;
+        case cereal::Event::DRIVER_ENCODE_IDX:
+          insertEidx(DriverCamFrame, event.getDriverEncodeIdx());
+          break;
+        case cereal::Event::WIDE_ROAD_ENCODE_IDX:
+          insertEidx(WideRoadCamFrame, event.getWideRoadEncodeIdx());
+          break;
+        default:
+          break;
       }
       events_.insert(event.getLogMonoTime(), message.release());
-
       words = kj::arrayPtr(message->getEnd(), words.end());
     } catch (const kj::Exception &e) {
       // partial messages trigger this
@@ -115,17 +112,14 @@ void LogReader::parseEvents(kj::ArrayPtr<const capnp::word> words) {
       break;
     }
   }
-  emit finished(success);
+  emit finished(success && !exit_);
 }
 
 void LogReader::readyRead(const QByteArray &dat) {
+  // start with 64MB buffer
+  raw_.resize(1024 * 1024 * 64);
   if (!decompressBZ2(raw_, dat.data(), dat.size())) {
     qWarning() << "bz2 decompress failed";
   }
   parseEvents({(const capnp::word *)raw_.data(), raw_.size() / sizeof(capnp::word)});
-}
-
-const EncodeIdx *LogReader::getFrameEncodeIdx(FrameType type, uint32_t frame_id) const {
-  auto it = encoderIdx_[type].find(frame_id);
-  return it != encoderIdx_[type].end() ? &it->second : nullptr;
 }
