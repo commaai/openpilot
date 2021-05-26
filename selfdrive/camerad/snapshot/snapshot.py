@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import subprocess
 import time
 
 import numpy as np
@@ -74,12 +75,15 @@ def snapshot():
   time.sleep(2.0)  # Give thermald time to read the param, or if just started give camerad time to start
 
   # Check if camerad is already started
-  if managed_processes['camerad'].proc is not None:  # TODO: make sure this works
-    # subprocess.check_call(["pgrep", "camerad"])
+  try:
+    subprocess.check_call(["pgrep", "camerad"])
+  # if managed_processes['camerad'].proc is not None:  # TODO: make sure this works
     print("Camerad already running")
     params.put_bool("IsTakingSnapshot", False)
     params.delete("Offroad_IsTakingSnapshot")
     return None, None
+  except subprocess.CalledProcessError:
+    pass
 
   os.environ["SEND_ROAD"] = "1"
   os.environ["SEND_WIDE_ROAD"] = "1"
