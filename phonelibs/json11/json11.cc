@@ -19,7 +19,7 @@
  * THE SOFTWARE.
  */
 
-#include "json11.hpp"
+#include "json11.h"
 #include <cassert>
 #include <cmath>
 #include <cstdlib>
