@@ -5,10 +5,11 @@ import time
 
 import numpy as np
 from PIL import Image
+from typing import List
 
 import cereal.messaging as messaging
+from common.realtime import DT_MDL
 from common.params import Params
-from typing import List
 from common.transformations.camera import eon_f_frame_size, eon_d_frame_size, leon_d_frame_size, tici_f_frame_size
 from selfdrive.hardware import TICI
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
@@ -48,10 +49,12 @@ def get_snapshots(frame="roadCameraState", front_frame="driverCameraState", focu
     sockets.append(front_frame)
 
   sm = messaging.SubMaster(sockets)
-  time.sleep(4.0)  # wait for startup and AF
-  t = time.monotonic()
-  while time.monotonic() - t < 10:
+
+  start_t = time.monotonic()
+  while time.monotonic() - start_t < 10:
     sm.update()
+    if sm[frame].frameId < 4 / DT_MDL:  # wait for startup and AF
+      continue
     if min(sm.rcv_frame.values()) > 1 and rois_in_focus(sm[frame].sharpnessScore) >= focus_perc_threshold:
       break
 
