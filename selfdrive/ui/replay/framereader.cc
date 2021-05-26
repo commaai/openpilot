@@ -64,7 +64,7 @@ void FrameReader::process() {
   if (avformat_open_input(&pFormatCtx, url.c_str(), NULL, NULL) != 0) {
     fprintf(stderr, "error loading %s\n", url.c_str());
     valid_ = false;
-    emit done();
+    emit finished(false);
     return;
   }
   avformat_find_stream_info(pFormatCtx, NULL);
@@ -100,7 +100,7 @@ void FrameReader::process() {
 
   printf("framereader download done\n");
 
-  emit done();
+  emit finished(true);
 }
 
 void FrameReader::decodeFrames() {

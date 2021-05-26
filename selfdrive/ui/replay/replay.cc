@@ -77,6 +77,13 @@ void Replay::addSegment(int n) {
   t->start();
 
   FrameReader *frame_reader = new FrameReader(qPrintable(camera_paths.at(n).toString()), VISION_STREAM_RGB_BACK, this);
+  connect(frame_reader, &FrameReader::finished, [=](bool success) {
+    if (success) {
+      frs[n] = frame_reader;
+    } else {
+      frame_reader->deleteLater();
+    }
+  });
   frame_reader->start();
 }
 

@@ -27,18 +27,18 @@ public:
   void run() override;
   uint8_t *get(int idx);
   bool valid() const {return valid_;}
-  AVFrame *toRGB(AVFrame *);
   int getRGBSize() const { return width*height*3; }
 
   int width = 0, height = 0;
   VisionStreamType stream_type;
 
 signals:
-  void done();
+  void finished(bool success);
 
 private:
   void process();
   void decodeFrames();
+  AVFrame *toRGB(AVFrame *);
 
   struct Frame {
     AVPacket pkt;
