@@ -49,8 +49,8 @@ def get_snapshots(frame="roadCameraState", front_frame="driverCameraState", focu
 
   sm = messaging.SubMaster(sockets)
   time.sleep(4.0)  # wait for startup and AF
-  t = time.time()
-  while time.time() - t < 10:
+  t = time.monotonic()
+  while time.monotonic() - t < 10:
     sm.update()
     if min(sm.logMonoTime.values()):
       if rois_in_focus(sm[frame].sharpnessScore) >= focus_perc_threshold:
