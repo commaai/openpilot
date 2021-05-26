@@ -18,7 +18,7 @@ ACADOvariables acadoVariables;
 ACADOworkspace acadoWorkspace;
 
 typedef struct {
-  double x_ego, v_ego, a_ego, x_l, v_l, a_l;
+  double x_ego, v_ego, a_ego, x_l, v_l;
 } state_t;
 
 
@@ -29,7 +29,6 @@ typedef struct {
   double j_ego[N];
   double x_l[N+1];
   double v_l[N+1];
-  double a_l[N+1];
   double t[N+1];
   double cost;
 } log_t;
@@ -68,84 +67,13 @@ void init(double ttcCost, double distanceCost, double accelerationCost, double j
 
 }
 
-void init_with_simulation(double v_ego, double x_l_0, double v_l_0, double a_l_0, double l){
+
+int run_mpc(state_t * x0, log_t * solution, double predicted_lead_x[N+1], double predicted_lead_v[N+1]){
   int i;
 
-  double x_l = x_l_0;
-  double v_l = v_l_0;
-  double a_l = a_l_0;
-
-  double x_ego = 0.0;
-  double a_ego = -(v_ego - v_l) * (v_ego - v_l) / (2.0 * x_l + 0.01) + a_l;
-
-  if (a_ego > 0){
-    a_ego = 0.0;
-  }
-
-
-  double dt = 0.2;
-  double t = 0.;
-
   for (i = 0; i < N + 1; ++i){
-    if (i > 4){
-      dt = 0.6;
-    }
-
-    /* printf("%.2f\t%.2f\t%.2f\t%.2f\n", t, x_ego, v_ego, a_l); */
-    acadoVariables.x[i*NX] = x_ego;
-    acadoVariables.x[i*NX+1] = v_ego;
-    acadoVariables.x[i*NX+2] = a_ego;
-
-    v_ego += a_ego * dt;
-
-    if (v_ego <= 0.0) {
-      v_ego = 0.0;
-      a_ego = 0.0;
-    }
-
-    x_ego += v_ego * dt;
-    t += dt;
-  }
-
-  for (i = 0; i < NU * N; ++i)  acadoVariables.u[ i ] = 0.0;
-  for (i = 0; i < NY * N; ++i)  acadoVariables.y[ i ] = 0.0;
-  for (i = 0; i < NYN; ++i)  acadoVariables.yN[ i ] = 0.0;
-}
-
-int run_mpc(state_t * x0, log_t * solution, double l, double a_l_0){
-  // Calculate lead vehicle predictions
-  int i;
-  double t = 0.;
-  double dt = 0.2;
-  double x_l = x0->x_l;
-  double v_l = x0->v_l;
-  double a_l = a_l_0;
-
-  /* printf("t\tx_l\t_v_l\t_al\n"); */
-  for (i = 0; i < N + 1; ++i){
-    if (i > 4){
-      dt = 0.6;
-    }
-
-    /* printf("%.2f\t%.2f\t%.2f\t%.2f\n", t, x_l, v_l, a_l); */
-
-    acadoVariables.od[i*NOD] = x_l;
-    acadoVariables.od[i*NOD+1] = v_l;
-
-    solution->x_l[i] = x_l;
-    solution->v_l[i] = v_l;
-    solution->a_l[i] = a_l;
-    solution->t[i] = t;
-
-    a_l = a_l_0 * exp(-l * t * t / 2);
-    x_l += v_l * dt;
-    v_l += a_l * dt;
-    if (v_l < 0.0){
-      a_l = 0.0;
-      v_l = 0.0;
-    }
-
-    t += dt;
+    acadoVariables.od[i*NOD] = predicted_lead_x[i];
+    acadoVariables.od[i*NOD+1] =predicted_lead_v[i];
   }
 
   acadoVariables.x[0] = acadoVariables.x0[0] = x0->x_ego;

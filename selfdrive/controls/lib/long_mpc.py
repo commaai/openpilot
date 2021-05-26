@@ -53,7 +53,6 @@ class LongitudinalMpc():
     self.cur_state = ffi.new("state_t *")
     self.cur_state[0].v_ego = 0
     self.cur_state[0].a_ego = 0
-    self.a_lead_tau = _LEAD_ACCEL_TAU
 
   def set_cur_state(self, v, a):
     self.cur_state[0].v_ego = v
