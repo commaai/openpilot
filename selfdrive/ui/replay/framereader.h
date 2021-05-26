@@ -22,12 +22,12 @@ class FrameReader : public QThread {
   Q_OBJECT
 
 public:
-  FrameReader(const std::string &fn, VisionStreamType stream_type, QObject *parent);
+  FrameReader(const std::string &url, VisionStreamType stream_type, QObject *parent);
   ~FrameReader();
   void run() override;
   uint8_t *get(int idx);
   bool valid() const {return valid_;}
-  int getRGBSize() const { return width*height*3; }
+  int getRGBSize() const { return width * height * 3; }
 
   int width = 0, height = 0;
   VisionStreamType stream_type;
@@ -36,7 +36,7 @@ signals:
   void finished(bool success);
 
 private:
-  void process();
+  void processFrames();
   void decodeFrames();
   AVFrame *toRGB(AVFrame *);
 
@@ -56,6 +56,6 @@ private:
   std::atomic<int> decode_idx = 0;
   std::atomic<bool> exit_ = false;
 
-  bool valid_ = true;
+  bool valid_ = false;
   std::string url;
 };

@@ -35,19 +35,18 @@ class AVInitializer {
 
 static AVInitializer av_initializer;
 
-FrameReader::FrameReader(const std::string &fn, VisionStreamType stream_type, QObject *parent)
-    : url(fn), stream_type(stream_type), QThread(parent) {}
+FrameReader::FrameReader(const std::string &url, VisionStreamType stream_type, QObject *parent)
+    : url(url), stream_type(stream_type), QThread(parent) {}
 
 FrameReader::~FrameReader() {
-  // exit thread
+  // wait until thread is finished.
   exit_ = true;
   cv_decode.notify_one();
   wait();
 
+  // free all.
   for (auto &f : frames) {
-    if (f.picture) {
-      av_frame_free(&f.picture);
-    }
+    if (f.picture) av_frame_free(&f.picture);
   }
   avcodec_free_context(&pCodecCtx);
   avformat_free_context(pFormatCtx);
@@ -55,14 +54,13 @@ FrameReader::~FrameReader() {
 }
 
 void FrameReader::run() {
-  process();
+  processFrames();
   decodeFrames();
 }
 
-void FrameReader::process() {
+void FrameReader::processFrames() {
   if (avformat_open_input(&pFormatCtx, url.c_str(), NULL, NULL) != 0) {
     fprintf(stderr, "error loading %s\n", url.c_str());
-    valid_ = false;
     emit finished(false);
     return;
   }
@@ -94,11 +92,11 @@ void FrameReader::process() {
       frames.pop_back();
       break;
     }
-  } while (true);
+  } while (!exit_);
 
   printf("framereader download done\n");
-
-  emit finished(true);
+  valid_ = !exit_;
+  emit finished(valid_);
 }
 
 void FrameReader::decodeFrames() {
@@ -108,8 +106,8 @@ void FrameReader::decodeFrames() {
       int to = std::min(from + 15, (int)frames.size());
       decode_idx = -1;
 
-      // break loop if another FrameReader::get() is called, for better seek performance
-      for (int i = from; i < to && decode_idx == -1; ++i) {
+      // the loop will be breaked if another FrameReader::get() is called (decode_idx != -1).
+      for (int i = from; i < to && !exit_ && decode_idx == -1; ++i) {
         if (frames[i].picture != nullptr) continue;
 
         int frameFinished;
