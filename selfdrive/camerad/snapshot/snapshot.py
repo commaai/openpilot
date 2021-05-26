@@ -48,14 +48,15 @@ def get_snapshots(frame="roadCameraState", front_frame="driverCameraState", focu
   if front_frame is not None:
     sockets.append(front_frame)
 
+  # wait 4 sec from camerad startup for focus and exposure
   sm = messaging.SubMaster(sockets)
+  while sm[sockets[0]].frameId < int(4. / DT_MDL):
+    sm.update()
 
   start_t = time.monotonic()
   while time.monotonic() - start_t < 10:
     sm.update()
-    # wait 4 sec from camerad startup for focus and exposure
-    if sm[frame].frameId > int(4. / DT_MDL) and min(sm.rcv_frame.values()) > 1 and \
-      rois_in_focus(sm[frame].sharpnessScore) >= focus_perc_threshold:
+    if min(sm.rcv_frame.values()) > 1 and rois_in_focus(sm[frame].sharpnessScore) >= focus_perc_threshold:
       break
 
   rear = extract_image(sm[frame].image, frame_sizes) if frame is not None else None
