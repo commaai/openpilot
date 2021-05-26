@@ -21,7 +21,8 @@ static int ffmpeg_lockmgr_cb(void **arg, enum AVLockOp op) {
   return 0;
 }
 
-FrameReader::FrameReader(const std::string &fn) : url(fn) {
+FrameReader::FrameReader(const std::string &fn, VisionStreamType stream_type, QObject *parent)
+    : url(fn), stream_type(stream_type), QThread(parent) {
   int ret = av_lockmgr_register(ffmpeg_lockmgr_cb);
   assert(ret >= 0);
 
@@ -30,10 +31,12 @@ FrameReader::FrameReader(const std::string &fn) : url(fn) {
 }
 
 FrameReader::~FrameReader() {
+  // exit thread
   exit_ = true;
-  thread.join();
+  cv_decode.notify_one();
+  wait();
+
   for (auto &f : frames) {
-    delete f->pkt;
     if (f->picture) {
       av_frame_free(&f->picture);
     }
@@ -45,10 +48,16 @@ FrameReader::~FrameReader() {
   avformat_network_deinit();
 }
 
+void FrameReader::run() {
+  process();
+  decodeFrames();
+}
+
 void FrameReader::process() {
   if (avformat_open_input(&pFormatCtx, url.c_str(), NULL, NULL) != 0) {
     fprintf(stderr, "error loading %s\n", url.c_str());
-    valid = false;
+    valid_ = false;
+    emit done();
     return;
   }
   avformat_find_stream_info(pFormatCtx, NULL);
@@ -74,22 +83,20 @@ void FrameReader::process() {
   assert(sws_ctx != NULL);
 
   do {
-    AVPacket *pkt = new AVPacket;
-    if (av_read_frame(pFormatCtx, pkt) < 0) {
-      delete pkt;
+    Frame *frame = new Frame;
+    if (av_read_frame(pFormatCtx, &frame->pkt) < 0) {
+      delete frame;
       break;
     }
-    Frame *frame = new Frame;
-    frame->pkt = pkt;
     frames.push_back(frame);
   } while (true);
 
   printf("framereader download done\n");
 
-  thread = std::thread(&FrameReader::decodeThread, this);
+  emit done();
 }
 
-void FrameReader::decodeThread() {
+void FrameReader::decodeFrames() {
   while (!exit_) {
     int gop = 0;
     {
@@ -106,7 +113,7 @@ void FrameReader::decodeThread() {
 
       int frameFinished;
       AVFrame *pFrame = av_frame_alloc();
-      avcodec_decode_video2(pCodecCtx, pFrame, &frameFinished, frames[i]->pkt);
+      avcodec_decode_video2(pCodecCtx, pFrame, &frameFinished, &(frames[i]->pkt));
       AVFrame *picture = toRGB(pFrame);
       av_frame_free(&pFrame);
 
@@ -129,7 +136,7 @@ AVFrame *FrameReader::toRGB(AVFrame *pFrame) {
 }
 
 uint8_t *FrameReader::get(int idx) {
-  if (!valid || idx < 0 || idx >= frames.size()) return nullptr;
+  if (!valid_ || idx < 0 || idx >= frames.size()) return nullptr;
 
   std::unique_lock lk(mutex);
   decode_idx = idx;

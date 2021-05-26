@@ -5,9 +5,11 @@
 #include <atomic>
 #include <condition_variable>
 #include <mutex>
-#include <string>
 #include <thread>
 #include <vector>
+#include "cereal/visionipc/visionbuf.h"
+
+#include <QThread>
 
 // independent of QT, needs ffmpeg
 extern "C" {
@@ -16,23 +18,30 @@ extern "C" {
 #include <libswscale/swscale.h>
 }
 
+class FrameReader : public QThread {
+  Q_OBJECT
 
-class FrameReader {
 public:
-  FrameReader(const std::string &fn);
+  FrameReader(const std::string &fn, VisionStreamType stream_type, QObject *parent);
   ~FrameReader();
+  void run() override;
   uint8_t *get(int idx);
+  bool valid() const {return valid_;}
   AVFrame *toRGB(AVFrame *);
-  int getRGBSize() { return width*height*3; }
-  void process();
+  int getRGBSize() const { return width*height*3; }
 
   int width = 0, height = 0;
+  VisionStreamType stream_type;
+
+signals:
+  void done();
 
 private:
-  void decodeThread();
+  void process();
+  void decodeFrames();
 
-  struct Frame{
-    AVPacket *pkt;
+  struct Frame {
+    AVPacket pkt;
     AVFrame *picture;
   };
   std::vector<Frame*> frames;
@@ -46,8 +55,7 @@ private:
   std::condition_variable cv_frame;
   int decode_idx = -1;
   std::atomic<bool> exit_ = false;
-  std::thread thread;
 
-  bool valid = true;
+  bool valid_ = true;
   std::string url;
 };

@@ -76,15 +76,8 @@ void Replay::addSegment(int n) {
   QObject::connect(t, &QThread::started, lrs[n], &LogReader::process);
   t->start();
 
-  QThread *frame_thread = QThread::create([=]{
-    FrameReader *frame_reader = new FrameReader(qPrintable(camera_paths.at(n).toString()));
-    frame_reader->process();
-    frs.insert(n, frame_reader);
-  });
-  QObject::connect(frame_thread, &QThread::finished, frame_thread, &QThread::deleteLater);
-  frame_thread->start();
-  
-  
+  FrameReader *frame_reader = new FrameReader(qPrintable(camera_paths.at(n).toString()), VISION_STREAM_RGB_BACK, this);
+  frame_reader->start();
 }
 
 void Replay::removeSegment(int n) {
