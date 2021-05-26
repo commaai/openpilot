@@ -177,10 +177,6 @@ static void update_state(UIState *s) {
   }
   if (sm.updated("sensorEvents")) {
     for (auto sensor : sm["sensorEvents"].getSensorEvents()) {
-      // Use light sensor when offroad, camera exposure when onroad
-      if (!scene.started && Hardware::EON() && sensor.which() == cereal::SensorEventData::LIGHT) {
-        scene.light_sensor = std::clamp<float>(10.0 * sensor.getLight(), 0.0, 1023.0);
-      }
       if (!scene.started && sensor.which() == cereal::SensorEventData::ACCELERATION) {
         auto accel = sensor.getAcceleration().getV();
         if (accel.totalSize().wordCount){ // TODO: sometimes empty lists are received. Figure out why
@@ -348,7 +344,7 @@ void Device::setAwake(bool on, bool reset) {
 
 void Device::updateBrightness(const UIState &s) {
   float clipped_brightness = std::min(100.0f, (s.scene.light_sensor * brightness_m) + brightness_b);
-  if (Hardware::TICI() && !s.scene.started) {
+  if (!s.scene.started) {
     clipped_brightness = BACKLIGHT_OFFROAD;
   }
 
