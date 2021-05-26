@@ -40,10 +40,13 @@ private:
   void decodeFrames();
   AVFrame *toRGB(AVFrame *);
 
-  struct Frame {
-    AVPacket pkt;
-    AVFrame *picture;
+  class Frame {
+  public:
+    AVPacket pkt = {};
+    AVFrame *picture = nullptr;
+    bool failed = false;
   };
+
   std::vector<Frame> frames;
 
   AVFormatContext *pFormatCtx = NULL;

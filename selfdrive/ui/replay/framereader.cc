@@ -3,6 +3,8 @@
 #include <assert.h>
 #include <unistd.h>
 
+#include <QDebug>
+
 static int ffmpeg_lockmgr_cb(void **arg, enum AVLockOp op) {
   std::mutex *mutex = (std::mutex *)*arg;
   switch (op) {
@@ -108,18 +110,26 @@ void FrameReader::decodeFrames() {
 
       // the loop will be breaked if another FrameReader::get() is called (decode_idx != -1).
       for (int i = from; i < to && !exit_ && decode_idx == -1; ++i) {
-        if (frames[i].picture != nullptr) continue;
+        Frame &frame = frames[i];
+        if (frame.picture != nullptr || frame.failed) continue;
 
-        int frameFinished;
+        int gotFrame;
         AVFrame *pFrame = av_frame_alloc();
-        avcodec_decode_video2(pCodecCtx, pFrame, &frameFinished, &(frames[i].pkt));
-        av_free_packet(&(frames[i].pkt));
-        AVFrame *picture = toRGB(pFrame);
+        avcodec_decode_video2(pCodecCtx, pFrame, &gotFrame, &frame.pkt);
+        av_free_packet(&frame.pkt);
+        
+        AVFrame *picture = gotFrame ? toRGB(pFrame) : nullptr;
         av_frame_free(&pFrame);
 
+        if (!picture) {
+          qDebug() << "failed to decode frame " << i << " in " << url.c_str();
+        }
         std::unique_lock lk(mutex);
-        frames[i].picture = picture;
+        frame.picture = picture;
+        frame.failed = !picture;
         cv_frame.notify_all();
+        
+        
       }
     }
 
@@ -147,8 +157,8 @@ uint8_t *FrameReader::get(int idx) {
   decode_idx = idx;
   cv_decode.notify_one();
   const Frame &frame = frames[idx];
-  if (!frame.picture) {
-    cv_frame.wait(lk, [=] { return exit_ || frame.picture != nullptr; });
+  if (!frame.picture && !frame.failed) {
+    cv_frame.wait(lk, [=] { return exit_ || frame.picture != nullptr || frame.failed; });
   }
   return frame.picture ? frame.picture->data[0] : nullptr;
 }
