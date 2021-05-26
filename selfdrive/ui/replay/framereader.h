@@ -44,7 +44,7 @@ private:
     AVPacket pkt;
     AVFrame *picture;
   };
-  std::vector<Frame*> frames;
+  std::vector<Frame> frames;
 
   AVFormatContext *pFormatCtx = NULL;
   AVCodecContext *pCodecCtx = NULL;

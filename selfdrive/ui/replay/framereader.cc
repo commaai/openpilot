@@ -45,10 +45,9 @@ FrameReader::~FrameReader() {
   wait();
 
   for (auto &f : frames) {
-    if (f->picture) {
-      av_frame_free(&f->picture);
+    if (f.picture) {
+      av_frame_free(&f.picture);
     }
-    delete f;
   }
   avcodec_free_context(&pCodecCtx);
   avformat_free_context(pFormatCtx);
@@ -90,12 +89,11 @@ void FrameReader::process() {
   assert(sws_ctx != NULL);
 
   do {
-    Frame *frame = new Frame;
-    if (av_read_frame(pFormatCtx, &frame->pkt) < 0) {
-      delete frame;
+    Frame &frame = frames.emplace_back();
+    if (av_read_frame(pFormatCtx, &frame.pkt) < 0) {
+      frames.pop_back();
       break;
     }
-    frames.push_back(frame);
   } while (true);
 
   printf("framereader download done\n");
@@ -112,16 +110,16 @@ void FrameReader::decodeFrames() {
 
       // break loop if another FrameReader::get() is called, for better seek performance
       for (int i = from; i < to && decode_idx == -1; ++i) {
-        if (frames[i]->picture != nullptr) continue;
+        if (frames[i].picture != nullptr) continue;
 
         int frameFinished;
         AVFrame *pFrame = av_frame_alloc();
-        avcodec_decode_video2(pCodecCtx, pFrame, &frameFinished, &(frames[i]->pkt));
+        avcodec_decode_video2(pCodecCtx, pFrame, &frameFinished, &(frames[i].pkt));
         AVFrame *picture = toRGB(pFrame);
         av_frame_free(&pFrame);
 
         std::unique_lock lk(mutex);
-        frames[i]->picture = picture;
+        frames[i].picture = picture;
         cv_frame.notify_all();
       }
     }
@@ -149,9 +147,9 @@ uint8_t *FrameReader::get(int idx) {
   std::unique_lock lk(mutex);
   decode_idx = idx;
   cv_decode.notify_one();
-  Frame *frame = frames[idx];
-  if (!frame->picture) {
-    cv_frame.wait(lk, [=] { return exit_ || frame->picture != nullptr; });
+  const Frame &frame = frames[idx];
+  if (!frame.picture) {
+    cv_frame.wait(lk, [=] { return exit_ || frame.picture != nullptr; });
   }
-  return frame->picture ? frame->picture->data[0] : nullptr;
+  return frame.picture ? frame.picture->data[0] : nullptr;
 }
