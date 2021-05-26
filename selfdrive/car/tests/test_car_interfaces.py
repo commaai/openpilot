@@ -6,14 +6,17 @@ from parameterized import parameterized
 from cereal import car
 from selfdrive.car.fingerprints import all_known_cars
 from selfdrive.car.car_helpers import interfaces
-from selfdrive.car.fingerprints import _FINGERPRINTS as FINGERPRINTS, FW_VERSIONS
+from selfdrive.car.fingerprints import _FINGERPRINTS as FINGERPRINTS
 
 class TestCarInterfaces(unittest.TestCase):
 
   @parameterized.expand([(car,) for car in all_known_cars()])
   def test_car_interfaces(self, car_name):
     print(car_name)
-    fingerprint = FINGERPRINTS[car_name][0]
+    if car_name in FINGERPRINTS:
+      fingerprint = FINGERPRINTS[car_name][0]
+    else:
+      fingerprint = {}
 
     CarInterface, CarController, CarState = interfaces[car_name]
     fingerprints = {
