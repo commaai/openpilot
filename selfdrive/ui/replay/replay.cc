@@ -64,15 +64,21 @@ Replay::~Replay() {
   CL_CHECK(clReleaseContext(context));
 }
 
+void Replay::load() {
+  if (!loadFromLocal()) {
+    loadFromServer();
+  }
+}
+
 void Replay::loadFromServer() {
   const QString url = "https://api.commadotai.com/v1/route/" + route + "/files";
   http = new HttpRequest(this, url, "", !Hardware::PC());
   QObject::connect(http, &HttpRequest::receivedResponse, this, &Replay::loadFromJson);
 }
 
-void Replay::loadFromLocal() {
+bool Replay::loadFromLocal() {
   QStringList list = route.split('|');
-  if (list.size() != 2) return;
+  if (list.size() != 2) return false;
 
   QJsonArray cameras, dcameras, ecameras, qcameras;
   QJsonArray logs, qlogs;
@@ -111,15 +117,14 @@ void Replay::loadFromLocal() {
 
   QJsonDocument doc(obj);
   QString json = doc.toJson(QJsonDocument::Compact);
-  loadFromJson(json);
-  
+  return loadFromJson(json);
 }
 
-void Replay::loadFromJson(const QString &json) {
+bool Replay::loadFromJson(const QString &json) {
   QJsonDocument doc = QJsonDocument::fromJson(json.trimmed().toUtf8());
   if (doc.isNull()) {
     qDebug() << "JSON Parse failed";
-    return;
+    return false;
   }
 
   frame_paths[RoadCamFrame] = doc["cameras"].toVariant().toStringList();
@@ -145,6 +150,7 @@ void Replay::loadFromJson(const QString &json) {
     connect(t, &QThread::finished, t, &QThread::deleteLater);
     t->start();
   }
+  return !log_paths.isEmpty();
 }
 
 void Replay::addSegment(int n) {

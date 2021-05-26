@@ -39,8 +39,8 @@ public:
   ~Replay();
   void load();
   void loadFromServer();
-  void loadFromLocal();
-  void loadFromJson(const QString &response);
+  bool loadFromLocal();
+  bool loadFromJson(const QString &response);
 
 private:
   void addSegment(int n);
