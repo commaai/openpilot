@@ -53,7 +53,7 @@ def get_snapshots(frame="roadCameraState", front_frame="driverCameraState", focu
   while time.monotonic() - start_t < 10:
     sm.update()
     # wait 4 sec for startup and AF
-    if sm.rcv_frame[frame] >= 80 and rois_in_focus(sm[frame].sharpnessScore) >= focus_perc_threshold:
+    if sm.rcv_frame[frame] * DT_MDL > 4. and rois_in_focus(sm[frame].sharpnessScore) >= focus_perc_threshold:
       break
 
   rear = extract_image(sm[frame].image, frame_sizes) if frame is not None else None
