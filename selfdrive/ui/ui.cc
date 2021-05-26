@@ -16,7 +16,7 @@
 
 #define BACKLIGHT_DT 0.25
 #define BACKLIGHT_TS 2.00
-#define BACKLIGHT_OFFROAD 50
+#define BACKLIGHT_OFFROAD 75
 
 
 // Projects a point in car to space to the corresponding point in full frame
@@ -177,9 +177,6 @@ static void update_state(UIState *s) {
   }
   if (sm.updated("sensorEvents")) {
     for (auto sensor : sm["sensorEvents"].getSensorEvents()) {
-      if (!Hardware::TICI() && sensor.which() == cereal::SensorEventData::LIGHT) {
-        scene.light_sensor = sensor.getLight();
-      }
       if (!scene.started && sensor.which() == cereal::SensorEventData::ACCELERATION) {
         auto accel = sensor.getAcceleration().getV();
         if (accel.totalSize().wordCount){ // TODO: sometimes empty lists are received. Figure out why
@@ -193,10 +190,18 @@ static void update_state(UIState *s) {
       }
     }
   }
-  if (Hardware::TICI() && sm.updated("roadCameraState")) {
+  if (sm.updated("roadCameraState")) {
     auto camera_state = sm["roadCameraState"].getRoadCameraState();
-    float gain = camera_state.getGainFrac() * (camera_state.getGlobalGain() > 100 ? 2.5 : 1.0) / 10.0;
-    scene.light_sensor = std::clamp<float>((1023.0 / 1757.0) * (1757.0 - camera_state.getIntegLines()) * (1.0 - gain), 0.0, 1023.0);
+
+    float max_lines = Hardware::EON() ? 5408 : 1757;
+    float gain = camera_state.getGainFrac();
+
+    if (Hardware::TICI()) {
+      // gainFrac can go up to 4, with another 2.5x multiplier based on globalGain. Scale back to 0 - 1
+      gain *= (camera_state.getGlobalGain() > 100 ? 2.5 : 1.0) / 10.0;
+    }
+
+    scene.light_sensor = std::clamp<float>((1023.0 / max_lines) * (max_lines - camera_state.getIntegLines() * gain), 0.0, 1023.0);
   }
   scene.started = sm["deviceState"].getDeviceState().getStarted() || scene.driver_view;
 }
@@ -273,10 +278,7 @@ QUIState::QUIState(QObject *parent) : QObject(parent) {
   ui_state.sm = std::make_unique<SubMaster, const std::initializer_list<const char *>>({
     "modelV2", "controlsState", "liveCalibration", "radarState", "deviceState", "liveLocationKalman",
     "pandaState", "carParams", "driverState", "driverMonitoringState", "sensorEvents", "carState", "ubloxGnss",
-    "gpsLocationExternal",
-#ifdef QCOM2
-    "roadCameraState",
-#endif
+    "gpsLocationExternal", "roadCameraState",
   });
 
   ui_state.fb_w = vwp_w;
@@ -319,7 +321,7 @@ void QUIState::update() {
 
 Device::Device(QObject *parent) : brightness_filter(BACKLIGHT_OFFROAD, BACKLIGHT_TS, BACKLIGHT_DT), QObject(parent) {
   brightness_b = Params(true).get<float>("BRIGHTNESS_B").value_or(10.0);
-  brightness_m = Params(true).get<float>("BRIGHTNESS_M").value_or(0.1);
+  brightness_m = Params(true).get<float>("BRIGHTNESS_M").value_or(2.6) / 26.0;
 }
 
 void Device::update(const UIState &s) {
@@ -345,7 +347,7 @@ void Device::setAwake(bool on, bool reset) {
 
 void Device::updateBrightness(const UIState &s) {
   float clipped_brightness = std::min(100.0f, (s.scene.light_sensor * brightness_m) + brightness_b);
-  if (Hardware::TICI() && !s.scene.started) {
+  if (!s.scene.started) {
     clipped_brightness = BACKLIGHT_OFFROAD;
   }
 
