@@ -9,6 +9,7 @@ from typing import List
 
 import cereal.messaging as messaging
 from common.params import Params
+from common.realtime import DT_MDL
 from common.transformations.camera import eon_f_frame_size, eon_d_frame_size, leon_d_frame_size, tici_f_frame_size
 from selfdrive.hardware import TICI
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
@@ -53,7 +54,7 @@ def get_snapshots(frame="roadCameraState", front_frame="driverCameraState", focu
   while time.monotonic() - start_t < 10:
     sm.update()
     # wait 4 sec from camerad startup for focus and exposure
-    if sm[frame].frameId > 80 and min(sm.rcv_frame.values()) > 1 and \
+    if sm[frame].frameId > int(4. / DT_MDL) and min(sm.rcv_frame.values()) > 1 and \
       rois_in_focus(sm[frame].sharpnessScore) >= focus_perc_threshold:
       break
 
