@@ -192,13 +192,17 @@ static void update_state(UIState *s) {
   }
   if (sm.updated("roadCameraState")) {
     auto camera_state = sm["roadCameraState"].getRoadCameraState();
-    if (Hardware::EON()) {
-      float gain = camera_state.getGainFrac();
-      scene.light_sensor = std::clamp<float>((1023.0 / 5408.0) * (5408.0 - camera_state.getIntegLines() * gain), 0.0, 1023.0);
-    } else if (Hardware::TICI()) {
-      float gain = camera_state.getGainFrac() * (camera_state.getGlobalGain() > 100 ? 2.5 : 1.0) / 10.0;
-      scene.light_sensor = std::clamp<float>((1023.0 / 1757.0) * (1757.0 - camera_state.getIntegLines() * gain), 0.0, 1023.0);
+
+    // Theoretical maximum, EON: 5408, TICI: 1757
+    float max_lines = Hardware::EON() ? 5408 : 1757; // TICI: 1757
+    float gain = camera_state.getGainFrac();
+
+    if (Hardware::TICI()) {
+      // gainFrac can go up to 4, with another 2.5x multiplier based on globalGain. Scale back to 0 - 1
+      gain *= (camera_state.getGlobalGain() > 100 ? 2.5 : 1.0) / 10.0;
     }
+
+    scene.light_sensor = std::clamp<float>((1023.0 / max_lines) * (max_lines - camera_state.getIntegLines() * gain), 0.0, 1023.0);
   }
   scene.started = sm["deviceState"].getDeviceState().getStarted() || scene.driver_view;
 }
