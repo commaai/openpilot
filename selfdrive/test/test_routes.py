@@ -92,7 +92,7 @@ routes: dict = {
     'carFingerprint': HONDA.HRV,
     'enableCamera': True,
   },
-  "2ac95059f70d76eb|2018-02-05--15-03-29": {
+  "917b074700869333|2021-05-24--20-40-20": {
     'carFingerprint': HONDA.ACURA_ILX,
     'enableCamera': True,
   },

@@ -27,7 +27,6 @@ ROUTES = {v['carFingerprint']: k for k, v in routes.items() if 'enableCamera' no
 
 # TODO: get updated routes for these cars
 ignore_can_valid = [
-  HONDA.ACURA_ILX,
   TOYOTA.LEXUS_RXH,
   TOYOTA.AVALON,
   HONDA.PILOT_2019,
