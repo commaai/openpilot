@@ -63,17 +63,16 @@ private:
   std::atomic<int> playing_segment = 0;
   std::mutex lock;
 
-  HttpRequest *http;
+  HttpRequest *http = nullptr;
   QStringList frame_paths[WideRoadCamFrame + 1];
   QStringList log_paths;
 
   // messaging
-  SubMaster *sm;
-  PubMaster *pm;
+  SubMaster *sm = nullptr;
+  PubMaster *pm = nullptr;
   std::set<std::string> socks;
   QString route;
 
-  std::atomic<bool> exit_;
   std::mutex segment_lock;
   QMap<int, SegmentData*> segments;
   SafeQueue<std::pair<FrameType, uint32_t>> frame_queue;
@@ -82,5 +81,8 @@ private:
 
   cl_device_id device_id;
   cl_context context;
+
+  // TODO: quit replay gracefully
+  std::atomic<bool> exit_ = false;
 
 };

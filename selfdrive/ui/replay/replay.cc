@@ -61,6 +61,7 @@ Replay::~Replay() {
   for (auto seg : segments) {
     delete seg;
   }
+  delete pm;
   CL_CHECK(clReleaseContext(context));
 }
 
@@ -123,7 +124,7 @@ bool Replay::loadFromLocal() {
 bool Replay::loadFromJson(const QString &json) {
   QJsonDocument doc = QJsonDocument::fromJson(json.trimmed().toUtf8());
   if (doc.isNull()) {
-    qDebug() << "JSON Parse failed";
+    qInfo() << "JSON Parse failed";
     return false;
   }
 
@@ -141,20 +142,25 @@ bool Replay::loadFromJson(const QString &json) {
     log_paths = doc["qlogs"].toVariant().toStringList();
   }
 
+  if (log_paths.isEmpty()) {
+    qInfo() << "no logs found in route " << route;
+    return false;
+  }
+  
   qInfo() << "replay route " << route << ", total segments:" << log_paths.size();
 
+  // start threads
   typedef void (Replay::*threadFunc)();
-  threadFunc threads[] = {&Replay::segmentQueueThread, &Replay::keyboardThread, &Replay::streamThread};
-  for (auto func : threads) {
-    QThread *t = QThread::create(func, this);
+  threadFunc thread_func[] = {&Replay::segmentQueueThread, &Replay::keyboardThread, &Replay::streamThread};
+  for (int i = 0; i < std::size(thread_func); ++i) {
+    QThread *t = QThread::create(thread_func[i], this);
     connect(t, &QThread::finished, t, &QThread::deleteLater);
     t->start();
   }
-  return !log_paths.isEmpty();
+  return true;
 }
 
 void Replay::addSegment(int n) {
-  assert((n >= 0) && (n < log_paths.size()));
   std::unique_lock lk(segment_lock);
   if (segments[n] != nullptr) return;
 
@@ -193,6 +199,7 @@ void Replay::addSegment(int n) {
   }
 }
 
+// return nullptr if segment is not loaded
 const SegmentData *Replay::getSegment(int n) {
   std::unique_lock lk(segment_lock);
   const SegmentData *seg = segments[n];
@@ -251,7 +258,7 @@ void Replay::seekTime(int ts) {
 
 void Replay::segmentQueueThread() {
   // maintain the segment window
-  while (true) {
+  while (!exit_) {
     for (int i = 0; i < log_paths.size(); i++) {
       int start_idx = std::max(current_segment - BACKWARD_SEGS, 0);
       int end_idx = std::min(current_segment + FORWARD_SEGS, log_paths.size());
@@ -272,20 +279,21 @@ void Replay::cameraThread() {
     std::pair<FrameType, uint32_t> frame;
     if (!frame_queue.try_pop(frame, 50)) continue;
 
-    // search frame's encodIdx in adjacent segments.
     auto [frame_type, frame_id] = frame;
+    // search frame's encodIdx in adjacent segments.
     int search_in[] = {current_segment, current_segment - 1, current_segment + 1};
     for (auto i : search_in) {
       if (i < 0 || i >= segments.size()) continue;
 
       if(auto f = getFrame(i, frame_type, frame_id)) {
         auto [frame_reader, fid] = *f;
-        uint8_t *data = frame_reader->get(fid);
-        if (data) {
+        if (uint8_t *data = frame_reader->get(fid)) {
           VisionIpcBufExtra extra = {};
           VisionBuf *buf = vipc_server->get_buffer(frame_reader->stream_type);
           memcpy(buf->addr, frame_reader->get(fid), frame_reader->getRGBSize());
           vipc_server->send(buf, &extra, false);
+        } else {
+          qDebug() << "failed to get frame " << frame_id << " from segment " << i;
         }
         break;
       }
@@ -298,7 +306,7 @@ void Replay::cameraThread() {
 
 void Replay::keyboardThread() {
   char c;
-  while (true) {
+  while (!exit_) {
     c = getch();
     if(c == '\n'){
       printf("Enter seek request: ");
@@ -336,19 +344,14 @@ void Replay::streamThread() {
 
   seekTime(0);
   uint64_t route_start_ts = 0;
-  bool waiting_printed = false;
-  while (true) {
+  while (!exit_) {
     playing_segment = current_segment.load();
     const SegmentData *seg = getSegment(playing_segment);
     if (!seg) {
-       if (!waiting_printed) {
-        qDebug() << "waiting for events";
-        waiting_printed = true;
-      }
+      qDebug() << "waiting for events";
       QThread::msleep(100);
       continue;
     }
-    waiting_printed = false;
 
     if (vipc_server == nullptr) {
       startVipcServer(seg);
@@ -366,7 +369,7 @@ void Replay::streamThread() {
     auto eit = events.lowerBound(t0);
     uint64_t t0r = timer.nsecsElapsed();
     int current_seek_ts = seek_ts;
-    while (current_seek_ts == seek_ts && eit != events.end()) {
+    while (!exit_ && current_seek_ts == seek_ts && eit != events.end()) {
       cereal::Event::Reader e = (*eit)->getRoot<cereal::Event>();
       std::string type;
       KJ_IF_MAYBE(e_, static_cast<capnp::DynamicStruct::Reader>(e).which()) {
@@ -379,7 +382,7 @@ void Replay::streamThread() {
       if (socks.find(type) != socks.end()) {
         if (std::abs(current_ts - last_print) > 5.0) {
           last_print = current_ts;
-          qInfo() << "at " << last_print << "| segment:" << current_segment;
+          qInfo() << "at " << last_print << "| segment:" << playing_segment;
         }
 
         // keep time

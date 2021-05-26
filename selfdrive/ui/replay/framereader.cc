@@ -2,9 +2,6 @@
 
 #include <assert.h>
 #include <unistd.h>
-#include <chrono>
-
-using namespace std::chrono_literals;
 
 static int ffmpeg_lockmgr_cb(void **arg, enum AVLockOp op) {
   std::mutex *mutex = (std::mutex *)*arg;
@@ -143,7 +140,7 @@ uint8_t *FrameReader::get(int idx) {
   cv_decode.notify_one();
   Frame *frame = frames[idx];
   if (!frame->picture) {
-    cv_frame.wait_for(lk, 100ms, [=] { return exit_ || frame->picture != nullptr; });
+    cv_frame.wait(lk, [=] { return exit_ || frame->picture != nullptr; });
   }
   return frame->picture ? frame->picture->data[0] : nullptr;
 }

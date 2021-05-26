@@ -11,8 +11,8 @@ int main(int argc, char *argv[]){
     return 1;
   }
 
-  Replay *replay = new Replay(route);
-  replay->loadFromServer();
+  Replay *replay = new Replay(route, nullptr, &a);
+  replay->load();
 
   return a.exec();
 }
