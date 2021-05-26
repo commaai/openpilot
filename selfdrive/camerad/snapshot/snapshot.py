@@ -8,7 +8,6 @@ from PIL import Image
 from typing import List
 
 import cereal.messaging as messaging
-from common.realtime import DT_MDL
 from common.params import Params
 from common.transformations.camera import eon_f_frame_size, eon_d_frame_size, leon_d_frame_size, tici_f_frame_size
 from selfdrive.hardware import TICI
@@ -53,9 +52,8 @@ def get_snapshots(frame="roadCameraState", front_frame="driverCameraState", focu
   start_t = time.monotonic()
   while time.monotonic() - start_t < 10:
     sm.update()
-    if sm[frame].frameId < 4 / DT_MDL:  # wait for startup and AF
-      continue
-    if rois_in_focus(sm[frame].sharpnessScore) >= focus_perc_threshold:
+    # wait 4 sec for startup and AF
+    if sm.rcv_frame[frame] >= 80 and rois_in_focus(sm[frame].sharpnessScore) >= focus_perc_threshold:
       break
 
   rear = extract_image(sm[frame].image, frame_sizes) if frame is not None else None
