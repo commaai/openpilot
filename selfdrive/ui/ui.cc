@@ -16,7 +16,7 @@
 
 #define BACKLIGHT_DT 0.25
 #define BACKLIGHT_TS 2.00
-#define BACKLIGHT_OFFROAD 50
+#define BACKLIGHT_OFFROAD 75
 
 
 // Projects a point in car to space to the corresponding point in full frame
