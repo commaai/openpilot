@@ -479,6 +479,38 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       Priority.LOW, VisualAlert.steerRequired, AudibleAlert.chimePrompt, 1., 1., 1.),
   },
 
+  EventName.pqTimebombWarn: {
+    ET.WARNING: Alert(
+      "WARNING",
+      "Grab wheel to start bypass",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOW, VisualAlert.steerRequired, AudibleAlert.chimePrompt, 1., 2., 3., alert_rate=0.75),
+  },
+  
+  EventName.pqTimebombBypassing: {
+    ET.WARNING: Alert(
+      "BYPASSING",
+      "HOLD WHEEL",
+      AlertStatus.userPrompt, AlertSize.mid,
+      Priority.LOW, VisualAlert.steerRequired, AudibleAlert.none, 1., 2., 3.),
+  },
+  
+  EventName.pqTimebombBypassed: {
+    ET.WARNING: Alert(
+      "Bypassed!",
+      "Release wheel when ready",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOW, VisualAlert.steerRequired, AudibleAlert.none, 1., 2., 3.),
+  },
+  
+  EventName.pqTimebombTERMINAL: {
+    ET.WARNING: Alert(
+      "TIMEBOMB IMMINENT",
+      "Grab wheel now!",
+      AlertStatus.critical, AlertSize.full,
+      Priority.HIGH, VisualAlert.steerRequired, AudibleAlert.chimeWarningRepeat, .1, .1, .1),
+  },
+
   EventName.fanMalfunction: {
     ET.PERMANENT: NormalPermanentAlert("Fan Malfunction", "Contact Support"),
   },
