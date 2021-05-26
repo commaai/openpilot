@@ -37,13 +37,14 @@ class Joystick:
     self.axes_values = {ax: 0. for ax in AXES}
     self.btn_states = {btn: False for btn in BUTTONS}
 
-    self.buttons = {'r': 'reset', 'c': 'cancel', 'e': 'engaged_toggle', 't': 'steer_required'}  # TODO: merge BUTTONS and self.buttons?
+    self.buttons = {'r': 'reset', 'c': 'cancel', 'e': 'engaged_toggle', 't': 'steer_required'}
     if self.use_keyboard:
       self.axes = {'gb': ['w', 's'], 'steer': ['a', 'd']}  # first key is positive
     else:
       self.max_axis_value = 255  # tune based on your joystick, 0 to this
       self.axes = {'ABS_X': 'steer', 'ABS_Y': 'gb'}
-      self.button_map = {'BTN_TRIGGER': 'cancel', 'BTN_THUMB': 'engaged_toggle', 'BTN_TOP': 'steer_required'}  # TODO: add reset
+      self.button_map = {'BTN_TRIGGER': 'cancel', 'BTN_THUMB': 'engaged_toggle',
+                         'BTN_TOP': 'steer_required', 'BTN_THUMB2': 'reset'}
 
   def get_event(self):
     event = Event()
