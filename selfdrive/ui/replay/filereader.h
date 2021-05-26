@@ -51,12 +51,11 @@ public:
   LogReader(const QString &file, QObject *parent);
   ~LogReader();
   void run() override;
-  bool ready() const { return ready_; }
   const Events &events() const { return events_; }
   const EncodeIdx *getFrameEncodeIdx(FrameType type, uint32_t frame_id) const;
 
 signals:
-  void done();
+  void finished(bool success);
 
 protected:
   void readyRead(const QByteArray &dat);
@@ -64,8 +63,7 @@ protected:
 
   std::vector<uint8_t> raw_;
   Events events_;
-  std::atomic<bool> ready_ = false;
   EncodeIdxMap encoderIdx_[WideRoadCamFrame + 1];
-  QString file;
+  QString file_;
   std::atomic<bool> exit_;
 };

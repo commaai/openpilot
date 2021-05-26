@@ -171,7 +171,7 @@ void Replay::addSegment(int n) {
 
   // read log
   seg->log = new LogReader(log_paths[n], this);
-  connect(seg->log, &LogReader::done, [=] { --seg->loading; });
+  connect(seg->log, &LogReader::finished, [=](bool success) { --seg->loading; });
   seg->log->start();
 
   // read frames

@@ -56,7 +56,7 @@ void FileReader::readyRead() {
   emit ready(dat);
 }
 
-LogReader::LogReader(const QString &file, QObject *parent) : file(file),  QThread(parent) {
+LogReader::LogReader(const QString &file, QObject *parent) : file_(file),  QThread(parent) {
   // start with 64MB buffer
   raw_.resize(1024 * 1024 * 64);
 }
@@ -80,22 +80,19 @@ void LogReader::run() {
     }
     loop.exit();
   });
-  reader.startRequest(file);
+  reader.startRequest(file_);
   loop.exec();
 
   parseEvents({(const capnp::word *)raw_.data(), raw_.size() / sizeof(capnp::word)});
 }
 
-void LogReader::parseEvents(kj::ArrayPtr<const capnp::word> amsg) {
-  size_t offset = 0;
-  while (!exit_ && offset < amsg.size()) {
+void LogReader::parseEvents(kj::ArrayPtr<const capnp::word> words) {
+  bool success = true;
+  while (!exit_ && words.size() > 0) {
     try {
-      std::unique_ptr<capnp::FlatArrayMessageReader> reader =
-          std::make_unique<capnp::FlatArrayMessageReader>(amsg.slice(offset, amsg.size()));
-
-      cereal::Event::Reader event = reader->getRoot<cereal::Event>();
-      offset = reader->getEnd() - amsg.begin();
-
+      std::unique_ptr<capnp::FlatArrayMessageReader> message = std::make_unique<capnp::FlatArrayMessageReader>(words);
+      cereal::Event::Reader event = message->getRoot<cereal::Event>();
+      
       // hack
       // TODO: rewrite with callback
       if (event.which() == cereal::Event::ROAD_ENCODE_IDX) {
@@ -108,16 +105,17 @@ void LogReader::parseEvents(kj::ArrayPtr<const capnp::word> amsg) {
         auto ee = event.getWideRoadEncodeIdx();
         encoderIdx_[WideRoadCamFrame][ee.getFrameId()] = {ee.getSegmentNum(), ee.getSegmentId()};
       }
+      events_.insert(event.getLogMonoTime(), message.release());
 
-      events_.insert(event.getLogMonoTime(), reader.release());
+      words = kj::arrayPtr(message->getEnd(), words.end());
     } catch (const kj::Exception &e) {
       // partial messages trigger this
       // qDebug() << e.getDescription().cStr();
+      success = false;
       break;
     }
   }
-  ready_ = true;
-  emit done();
+  emit finished(success);
 }
 
 void LogReader::readyRead(const QByteArray &dat) {
@@ -129,5 +127,5 @@ void LogReader::readyRead(const QByteArray &dat) {
 
 const EncodeIdx *LogReader::getFrameEncodeIdx(FrameType type, uint32_t frame_id) const {
   auto it = encoderIdx_[type].find(frame_id);
-  return it != encoderIdx_[type].end() ? &(it->second) : nullptr;
+  return it != encoderIdx_[type].end() ? &it->second : nullptr;
 }
