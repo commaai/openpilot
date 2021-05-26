@@ -128,8 +128,6 @@ void FrameReader::decodeFrames() {
         frame.picture = picture;
         frame.failed = !picture;
         cv_frame.notify_all();
-        
-        
       }
     }
 
