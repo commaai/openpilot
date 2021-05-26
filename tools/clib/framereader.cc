@@ -31,6 +31,7 @@ FrameReader::FrameReader(const std::string &fn) : url(fn) {
 
 FrameReader::~FrameReader() {
   exit_ = true;
+  cv_decode.notify_one();
   thread.join();
   for (auto &f : frames) {
     delete f->pkt;
