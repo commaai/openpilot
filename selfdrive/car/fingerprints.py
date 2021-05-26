@@ -76,5 +76,5 @@ def all_legacy_fingerprint_cars():
 
 
 def all_known_cars():
-  """Returns a list of all known car strings, FPv1 and FPv2."""
+  """Returns a list of all known car strings. """
   return list({*FW_VERSIONS.keys(), *_FINGERPRINTS.keys()})
