@@ -28,13 +28,14 @@ class TestCamerad(unittest.TestCase):
     ret = np.clip(im[:,:,2] * 0.114 + im[:,:,1] * 0.587 + im[:,:,0] * 0.299, 0, 255).astype(np.uint8)
     return ret
 
-  def _is_exposure_okay(self, i, med_mean=np.array([[0.1, 0.3], [0.1, 0.4]])):
+  def _is_exposure_okay(self, i, med_mean=np.array([[0.2,0.4],[0.2,0.6]])):
     h, w = i.shape[:2]
     i = i[h//10:9*h//10,w//10:9*w//10]
     med_ex, mean_ex = med_mean
     i = self._numpy_rgb2gray(i)
     i_median = np.median(i) / 255.
     i_mean = np.mean(i) / 255.
+    print([i_median, i_mean])
     return med_ex[0] < i_median < med_ex[1] and mean_ex[0] < i_mean < mean_ex[1]
 
 
