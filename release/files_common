@@ -448,8 +448,8 @@ phonelibs/zlib/*
 phonelibs/bzip2/*
 phonelibs/openmax/**
 
-phonelibs/json11/json11.cpp
-phonelibs/json11/json11.hpp
+phonelibs/json11/json11.cc
+phonelibs/json11/json11.h
 
 phonelibs/qpoases/**
 

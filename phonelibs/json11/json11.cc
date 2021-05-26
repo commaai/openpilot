@@ -739,7 +739,7 @@ Json Json::parse(const string &in, string &err, JsonParse strategy) {
     return result;
 }
 
-// Documented in json11.hpp
+// Documented in json11.h
 vector<Json> Json::parse_multi(const string &in,
                                std::string::size_type &parser_stop_pos,
                                string &err,

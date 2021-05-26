@@ -10,7 +10,7 @@
 #include <string>
 
 #include <zmq.h>
-#include "json11.hpp"
+#include "json11.h"
 
 #include "selfdrive/common/util.h"
 #include "selfdrive/common/version.h"

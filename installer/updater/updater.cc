@@ -21,7 +21,7 @@
 #include <GLES3/gl3.h>
 #include "nanovg.h"
 #define NANOVG_GLES3_IMPLEMENTATION
-#include "json11.hpp"
+#include "json11.h"
 #include "nanovg_gl.h"
 #include "nanovg_gl_utils.h"
 

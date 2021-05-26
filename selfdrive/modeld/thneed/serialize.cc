@@ -2,7 +2,7 @@
 
 #include <set>
 
-#include "json11.hpp"
+#include "json11.h"
 #include "selfdrive/modeld/thneed/thneed.h"
 using namespace json11;
 
