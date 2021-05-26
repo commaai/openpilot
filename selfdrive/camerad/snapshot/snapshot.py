@@ -9,6 +9,7 @@ from typing import List
 
 import cereal.messaging as messaging
 from common.params import Params
+from common.realtime import DT_MDL
 from common.transformations.camera import eon_f_frame_size, eon_d_frame_size, leon_d_frame_size, tici_f_frame_size
 from selfdrive.hardware import TICI
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
