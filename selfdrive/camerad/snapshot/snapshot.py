@@ -14,7 +14,7 @@ from selfdrive.hardware import TICI
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
 from selfdrive.manager.process_config import managed_processes
 
-LM_THRESH = 120
+LM_THRESH = 120  # defined in selfdrive/camerad/imgproc/utils.h
 
 
 def jpeg_write(fn, dat):
@@ -52,9 +52,8 @@ def get_snapshots(frame="roadCameraState", front_frame="driverCameraState", focu
   t = time.monotonic()
   while time.monotonic() - t < 10:
     sm.update()
-    if min(sm.logMonoTime.values()):
-      if rois_in_focus(sm[frame].sharpnessScore) >= focus_perc_threshold:
-        break
+    if min(sm.rcv_frames.values()) > 1 and rois_in_focus(sm[frame].sharpnessScore) >= focus_perc_threshold:
+      break
 
   rear = extract_image(sm[frame].image, frame_sizes) if frame is not None else None
   front = extract_image(sm[front_frame].image, frame_sizes) if front_frame is not None else None
@@ -92,8 +91,9 @@ def snapshot():
   managed_processes['camerad'].start()
   frame = "wideRoadCameraState" if TICI else "roadCameraState"
   front_frame = "driverCameraState" if front_camera_allowed else None
+  focus_perc_threshold = 0. if TICI else 10 / 12.
 
-  rear, front = get_snapshots(frame, front_frame, 0. if TICI else 10 / 12.)
+  rear, front = get_snapshots(frame, front_frame, focus_perc_threshold)
   managed_processes['camerad'].stop()
 
   params.put_bool("IsTakingSnapshot", False)
