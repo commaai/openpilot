@@ -48,14 +48,13 @@ def get_snapshots(frame="roadCameraState", front_frame="driverCameraState", focu
     sockets.append(front_frame)
 
   sm = messaging.SubMaster(sockets)
-  time.sleep(3.0)  # wait for startup and AF
+  time.sleep(4.0)  # wait for startup and AF
   t = sec_since_boot()
   while sec_since_boot() - t < 10:
     sm.update()
     if min(sm.logMonoTime.values()):
       if rois_in_focus(sm[frame].sharpnessScore) >= focus_perc_threshold:
         break
-  print('time taken: {}'.format(sec_since_boot() - t))
 
   rear = extract_image(sm[frame].image, frame_sizes) if frame is not None else None
   front = extract_image(sm[front_frame].image, frame_sizes) if front_frame is not None else None
@@ -95,7 +94,6 @@ def snapshot():
 
   focus_perc_threshold = 0. if TICI else 10 / 12.
   rear, front = get_snapshots(frame, front_frame, focus_perc_threshold)
-
   managed_processes['camerad'].stop()
 
   params.put_bool("IsTakingSnapshot", False)
