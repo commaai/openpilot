@@ -50,11 +50,11 @@ def run_following_distance_simulation(v_lead, t_end=200.0):
     CS.carState.aEgo = a_ego
 
     # Setup lead packet
-    lead = log.RadarState.LeadData.new_message()
-    lead.status = True
-    lead.dRel = x_lead - x_ego
-    lead.vLead = v_lead
-    lead.aLeadK = 0.0
+    lead = log.ModelDataV2.LeadDataV3.new_message()
+    lead.prob = .75
+    lead.x = [x_lead - x_ego + i*v_lead for i in range(0,12,2)]
+    lead.v = [v_lead for i in range(6)]
+    lead.a = [0.0 for i in range(6)]
 
     # Run MPC
     mpc.set_cur_state(v_ego, a_ego)
@@ -87,3 +87,7 @@ class TestFollowingDistance(unittest.TestCase):
       correct_steady_state = RW(v_lead, v_lead) + 4.0
 
       self.assertAlmostEqual(simulation_steady_state, correct_steady_state, delta=0.1)
+
+
+if __name__ == "__main__":
+  unittest.main()
