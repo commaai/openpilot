@@ -140,7 +140,7 @@ class CarState(CarStateBase):
       ("STEERING_LEVERS", 0.15),
       ("SEATS_DOORS", 3),
       ("ESP_CONTROL", 3),
-      ("EPS_STATUS", 0),
+      ("EPS_STATUS", 25),
       ("BRAKE_MODULE", 40),
       ("GAS_PEDAL", 33),
       ("WHEEL_SPEEDS", 80),
