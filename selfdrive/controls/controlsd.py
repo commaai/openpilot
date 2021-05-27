@@ -226,8 +226,8 @@ class Controls:
 
     safety_mismatch = self.sm['pandaState'].safetyModel != self.CP.safetyModel or \
                       self.sm['pandaState'].safetyParam != self.CP.safetyParam
-    can_error_count = sum(self.sm['pandaState'].canSendErrs, self.sm['pandaState'].canFwdErrs,
-                          self.sm['pandaState'].caniRxErrs)
+    can_error_count = sum([self.sm['pandaState'].canSendErrs, self.sm['pandaState'].canFwdErrs,
+                           self.sm['pandaState'].canRxErrs])
     if safety_mismatch or can_error_count > 200 or self.mismatch_counter >= 200:
       self.events.add(EventName.controlsMismatch)
 
