@@ -229,7 +229,7 @@ void DeveloperPanel::showEvent(QShowEvent *event) {
     layout()->addWidget(versionLbl);
     layout()->addWidget(horizontal_line());
 
-    lastUpdateTimeLbl = new LabelControl("Last Update Time", lastUpdateTime, "The last time openpilot checked for an update");
+    lastUpdateTimeLbl = new LabelControl("Last Update Check", lastUpdateTime, "The last time openpilot checked for an update");
     connect(lastUpdateTimeLbl, &LabelControl::showDescription, [=]() {
       std::system("pkill -1 -f selfdrive.updated");
     });
