@@ -222,7 +222,16 @@ void DeveloperPanel::showEvent(QShowEvent *event) {
 
   std::string lastUpdateTimeRaw = params.get("LastUpdateTime", false);
   QString version = QString::fromStdString(brand + " v" + params.get("Version", false).substr(0, 14)).trimmed();
-  QString lastUpdateTime = QString::fromStdString(lastUpdateTimeRaw.substr(0,10) + " at " + lastUpdateTimeRaw.substr(12,7)).trimmed();
+
+  int diff = QDateTime::fromString(QString::fromStdString(lastUpdateTimeRaw), Qt::ISODate).daysTo(QDateTime::currentDateTime());
+
+  QString lastUpdateTime;
+
+  if (diff < 1) {
+    lastUpdateTime = "Today";
+  } else {
+    lastUpdateTime = QString::fromStdString(std::to_string(diff) + " day" + (diff > 1 ? "s " : " ") + "ago");
+  }
 
   if (labels.size() < dev_params.size()) {
     versionLbl = new LabelControl("Version", version, QString::fromStdString(params.get("ReleaseNotes", false)).trimmed());
