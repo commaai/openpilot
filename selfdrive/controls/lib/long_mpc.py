@@ -19,7 +19,7 @@ class LongitudinalMpc():
     self.v_mpc_future = 0.0
     self.a_mpc = 0.0
     self.v_cruise = 0.0
-    self.prev_lead_status = False
+    self.lead_status = False
     self.prev_lead_x = 0.0
     self.new_lead = False
 
@@ -48,6 +48,7 @@ class LongitudinalMpc():
     self.cur_state[0].x_ego = 0.0
 
     if lead is not None:
+      self.lead_status = lead.prob > 0.5
       x_lead = lead.x[0]
       v_lead = max(0.0, lead.v[0])
       a_lead = lead.a[0]
@@ -69,17 +70,20 @@ class LongitudinalMpc():
                                      list(lead_x_interp), list(lead_v_interp))
     self.duration = int((sec_since_boot() - t) * 1e9)
 
+    #print(list(self.mpc_solution[0].v_ego))
+    #print(list(self.mpc_solution[0].a_ego))
+    #raise RuntimeError()
     # Get solution. MPC timestep is 0.2 s, so interpolation to 0.05 s is needed
     self.v_mpc = self.mpc_solution[0].v_ego[1]
     self.a_mpc = self.mpc_solution[0].a_ego[1]
     self.v_mpc_future = self.mpc_solution[0].v_ego[10]
 
     # Reset if NaN or goes through lead car
-    crashing = any(lead - ego < -50 for (lead, ego) in zip(self.mpc_solution[0].x_l, self.mpc_solution[0].x_ego))
+    crashing = any(lead - ego < -50 for (lead, ego) in zip(lead_x_interp, self.mpc_solution[0].x_ego))
     nans = any(math.isnan(x) for x in self.mpc_solution[0].v_ego)
     backwards = min(self.mpc_solution[0].v_ego) < -0.01
 
-    if backwards or crashing or nans:
+    if (backwards or crashing or nans):
       if t > self.last_cloudlog_t + 5.0:
         self.last_cloudlog_t = t
         cloudlog.warning("Longitudinal mpc %d reset - backwards: %s crashing: %s nan: %s" % (
