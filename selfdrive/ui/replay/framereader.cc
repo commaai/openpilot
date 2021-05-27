@@ -1,4 +1,4 @@
-#include "tools/clib/framereader.h"
+#include "selfdrive/ui/replay/framereader.h"
 
 #include <assert.h>
 #include <unistd.h>
@@ -79,7 +79,8 @@ void FrameReader::process() {
       delete pkt;
       break;
     }
-    Frame *frame = new Frame{.pkt = pkt};
+    Frame *frame = new Frame;
+    frame->pkt = pkt;
     frames.push_back(frame);
   } while (true);
 
