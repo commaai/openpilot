@@ -94,7 +94,7 @@ CameraViewWidget::~CameraViewWidget() {
 void CameraViewWidget::initializeGL() {
   initializeOpenGLFunctions();
 
-  QRect video_rect = {0, 0, vwp_w, vwp_h};
+  QRect video_rect = {0, 0, width(), height()};
   gl_shader = std::make_unique<GLShader>(frame_vertex_shader, frame_fragment_shader);
   GLint frame_pos_loc = glGetAttribLocation(gl_shader->prog, "aPosition");
   GLint frame_texcoord_loc = glGetAttribLocation(gl_shader->prog, "aTexCoord");
@@ -164,7 +164,7 @@ void CameraViewWidget::paintGL() {
     return;
   }
 
-  QRect video_rect = {0, 0, vwp_w, vwp_h};
+  QRect video_rect = {0, 0, width(), height()};
   glViewport(video_rect.left(), video_rect.top(), video_rect.width(), video_rect.height());
   
   glBindVertexArray(frame_vao);
