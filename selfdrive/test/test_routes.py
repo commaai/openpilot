@@ -26,8 +26,6 @@ non_tested_cars = [
   HYUNDAI.KIA_FORTE,
   HYUNDAI.KIA_OPTIMA_H,
   HYUNDAI.KONA_EV,
-  TOYOTA.CHR,
-  TOYOTA.CHRH,
 ]
 
 routes: dict = {
@@ -344,7 +342,7 @@ routes: dict = {
       'enableCamera': True,
       'enableDsu': False,
     },
-  "1e74caa4ef6938f3|2021-04-29--13-37-56": {
+  "d27ad752e9b08d4f|2021-05-26--19-39-51": {
     'carFingerprint': TOYOTA.LEXUS_RXH,
     'enableCamera': True,
     'enableDsu': True,
@@ -417,6 +415,14 @@ routes: dict = {
     'carFingerprint': TOYOTA.MIRAI,
     'enableCamera': True,
     'enableDsu': False,
+  },
+  "cd9cff4b0b26c435|2021-05-13--15-12-39": {
+    'carFingerprint': TOYOTA.CHR,
+    'enableCamera': True,
+  },
+  "57858ede0369a261|2021-05-18--20-34-20": {
+    'carFingerprint': TOYOTA.CHRH,
+    'enableCamera': True,
   },
   "2c68dda277d887ac|2021-05-11--15-22-20": {
     'carFingerprint': VOLKSWAGEN.ATLAS_MK1,
