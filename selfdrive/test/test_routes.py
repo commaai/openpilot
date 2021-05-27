@@ -38,7 +38,6 @@ TestRoute = namedtuple('TestRoute', ['route', 'car_fingerprint'])
 routes = [
   TestRoute("0c94aa1e1296d7c6|2021-05-05--19-48-37", CHRYSLER.JEEP_CHEROKEE),
   TestRoute("420a8e183f1aed48|2020-03-05--07-15-29", CHRYSLER.PACIFICA_2017_HYBRID),
-  # 2020 model year
   TestRoute("8190c7275a24557b|2020-01-29--08-33-58", CHRYSLER.PACIFICA_2019_HYBRID),
 
   TestRoute("f1b4c567731f4a1b|2018-04-30--10-15-35", FORD.FUSION),
