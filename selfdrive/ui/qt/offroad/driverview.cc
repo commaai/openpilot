@@ -51,21 +51,22 @@ void DriverViewScene::frameUpdated() {
 
 void DriverViewScene::paintEvent(QPaintEvent* event) {
   QPainter p(this);
+
   if (!frame_updated) {
     p.setPen(QColor(0xff, 0xff, 0xff));
     p.setRenderHint(QPainter::TextAntialiasing);
-    configFont(p, "Open Sans", 100, "Bold");
-    p.drawText(geometry(), Qt::AlignCenter, "Please wait for camera to start");
+    configFont(p, "Inter", 100, "Bold");
+    p.drawText(geometry(), Qt::AlignCenter, "camera starting");
     return;
   }
 
-  QRect video_rect = {bdr_s, bdr_s, vwp_w - 2 * bdr_s, vwp_h - 2 * bdr_s};
-  const int width = 4 * video_rect.height() / 3;
-  const QRect rect = {video_rect.center().x() - width / 2, video_rect.top(), width, video_rect.height()};  // x, y, w, h
-  const QRect valid_rect = {is_rhd ? rect.right() - rect.height() / 2 : rect.left(), rect.top(), rect.height() / 2, rect.height()};
+  const int width = 4 * height() / 3;
+  const QRect rect2 = {rect().center().x() - width / 2, rect().top(), width, rect().height()};  // x, y, w, h
+  const QRect valid_rect = {is_rhd ? rect2.right() - rect2.height() / 2 : rect2.left(), rect2.top(), rect2.height() / 2, rect2.height()};
+
   // blackout
   const int blackout_x_r = valid_rect.right();
-  const QRect& blackout_rect = Hardware::TICI() ? video_rect : rect;
+  const QRect& blackout_rect = Hardware::TICI() ? rect() : rect2;
   const int blackout_w_r = blackout_rect.right() - valid_rect.right();
   const int blackout_x_l = blackout_rect.left();
   const int blackout_w_l = valid_rect.left() - blackout_x_l;
@@ -74,8 +75,8 @@ void DriverViewScene::paintEvent(QPaintEvent* event) {
   bg.setRgbF(0.0, 0, 0, 0.56);
   p.setPen(QPen(bg));
   p.setBrush(QBrush(bg));
-  p.drawRect(blackout_x_l, rect.top(), blackout_w_l, rect.height());
-  p.drawRect(blackout_x_r, rect.top(), blackout_w_r, rect.height());
+  p.drawRect(blackout_x_l, rect2.top(), blackout_w_l, rect2.height());
+  p.drawRect(blackout_x_r, rect2.top(), blackout_w_r, rect2.height());
   p.setBrush(Qt::NoBrush);
 
   cereal::DriverState::Reader driver_state = sm["driverState"].getDriverState();
@@ -91,7 +92,7 @@ void DriverViewScene::paintEvent(QPaintEvent* event) {
       alpha = 0.8 - (face_x > face_y ? face_x : face_y) * 0.6 / 0.375;
     }
 
-    const int box_size = 0.6 * rect.height() / 2;
+    const int box_size = 0.6 * rect2.height() / 2;
     QColor color;
     color.setRgbF(1.0, 1.0, 1.0, alpha);
     QPen pen = QPen(color);
@@ -100,8 +101,10 @@ void DriverViewScene::paintEvent(QPaintEvent* event) {
     p.drawRoundedRect(fbox_x - box_size / 2, fbox_y - box_size / 2, box_size, box_size, 35.0, 35.0);
     p.setPen(Qt::NoPen);
   }
-  const int img_x = is_rhd ? rect.right() - FACE_IMG_SIZE - bdr_s : rect.left() + bdr_s;
-  const int img_y = rect.bottom() - FACE_IMG_SIZE - bdr_s;
+
+  const int img_offset = 30;
+  const int img_x = is_rhd ? rect2.right() - FACE_IMG_SIZE - img_offset : rect2.left() + img_offset;
+  const int img_y = rect2.bottom() - FACE_IMG_SIZE - img_offset;
   p.setOpacity(face_detected ? 1.0 : 0.15);
   p.drawImage(img_x, img_y, face_img);
 }
