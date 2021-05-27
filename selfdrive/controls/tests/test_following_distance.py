@@ -32,7 +32,6 @@ def run_following_distance_simulation(v_lead, t_end=200.0):
 
   v_cruise_setpoint = v_lead + 10.
 
-  pm = FakePubMaster()
   mpc = LongitudinalMpc(1)
 
   first = True
@@ -62,9 +61,7 @@ def run_following_distance_simulation(v_lead, t_end=200.0):
     if first:  # Make sure MPC is converged on first timestep
       for _ in range(20):
         mpc.update(CS.carState, lead)
-        mpc.publish(pm)
     mpc.update(CS.carState, lead)
-    mpc.publish(pm)
 
     # Choose slowest of two solutions
     if v_cruise < mpc.v_mpc:
