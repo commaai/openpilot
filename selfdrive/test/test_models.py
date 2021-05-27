@@ -10,7 +10,6 @@ from cereal import log, car
 from selfdrive.car.fingerprints import all_known_cars
 from selfdrive.car.car_helpers import interfaces
 from selfdrive.car.honda.values import HONDA_BOSCH
-from selfdrive.car.honda.values import CAR as HONDA
 from selfdrive.car.chrysler.values import CAR as CHRYSLER
 from selfdrive.car.hyundai.values import CAR as HYUNDAI
 from selfdrive.test.test_routes import routes, non_tested_cars
@@ -32,9 +31,6 @@ ignore_can_valid = [
 ignore_carstate_check = [
   # TODO: chrysler gas state in panda also checks wheel speed, refactor so it's only gas
   CHRYSLER.PACIFICA_2017_HYBRID,
-
-  # TODO: get new routes for these cars, current routes are from giraffe with different buses
-  HONDA.ACCORD,
 ]
 
 @parameterized_class(('car_model'), [(car,) for car in all_known_cars()])
