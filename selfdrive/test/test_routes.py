@@ -25,6 +25,11 @@ non_tested_cars = [
   HYUNDAI.KIA_FORTE,
   HYUNDAI.KIA_OPTIMA_H,
   HYUNDAI.KONA_EV,
+  FORD.FUSION,
+  HONDA.ODYSSEY_CHN,
+  HYUNDAI.SANTA_FE,
+  TOYOTA.LEXUS_ESH_TSS2,
+  TOYOTA.LEXUS_IS,
 ]
 
 routes: dict = {
@@ -38,11 +43,6 @@ routes: dict = {
   "8190c7275a24557b|2020-01-29--08-33-58": {  # 2020 model year
     'carFingerprint': CHRYSLER.PACIFICA_2019_HYBRID,
     'enableCamera': True,
-  },
-  # This pacifica was removed because the fingerprint seemed from a Volt
-  "f1b4c567731f4a1b|2018-04-18--11-29-37": {
-    'carFingerprint': FORD.FUSION,
-    'enableCamera': False,
   },
   "f1b4c567731f4a1b|2018-04-30--10-15-35": {
     'carFingerprint': FORD.FUSION,
@@ -92,10 +92,6 @@ routes: dict = {
   "917b074700869333|2021-05-24--20-40-20": {
     'carFingerprint': HONDA.ACURA_ILX,
     'enableCamera': True,
-  },
-  "81722949a62ea724|2019-03-29--15-51-26": {
-    'carFingerprint': HONDA.ODYSSEY_CHN,
-    'enableCamera': False,
   },
   "81722949a62ea724|2019-04-06--15-19-25": {
     'carFingerprint': HONDA.ODYSSEY_CHN,
@@ -160,10 +156,6 @@ routes: dict = {
   "6b301bf83f10aa90|2020-11-22--16-45-07": {
     'carFingerprint': HYUNDAI.GENESIS_G80,
     'enableCamera': True,
-  },
-  "38bfd238edecbcd7|2018-08-22--09-45-44": {
-    'carFingerprint': HYUNDAI.SANTA_FE,
-    'enableCamera': False,
   },
   "38bfd238edecbcd7|2018-08-29--22-02-15": {
     'carFingerprint': HYUNDAI.SANTA_FE,
@@ -313,11 +305,6 @@ routes: dict = {
     'enableCamera': True,
     'enableDsu': True,
   },
-  "f49e8041283f2939|2019-05-29--13-48-33": {
-    'carFingerprint': TOYOTA.LEXUS_ESH_TSS2,
-    'enableCamera': False,
-    'enableDsu': False,
-  },
   "f49e8041283f2939|2019-05-30--11-51-51": {
     'carFingerprint': TOYOTA.LEXUS_ESH_TSS2,
     'enableCamera': True,
@@ -393,11 +380,6 @@ routes: dict = {
   "2e07163a1ba9a780|2019-08-25--13-15-13": {
     'carFingerprint': TOYOTA.LEXUS_IS,
     'enableCamera': True,
-    'enableDsu': False,
-  },
-  "2e07163a1ba9a780|2019-08-29--09-35-42": {
-    'carFingerprint': TOYOTA.LEXUS_IS,
-    'enableCamera': False,
     'enableDsu': False,
   },
   "0a0de17a1e6a2d15|2020-09-21--21-24-41": {
