@@ -26,7 +26,6 @@ non_tested_cars = [
   HYUNDAI.KIA_FORTE,
   HYUNDAI.KIA_OPTIMA_H,
   HYUNDAI.KONA_EV,
-  TOYOTA.CAMRYH,
   TOYOTA.CHR,
   TOYOTA.CHRH,
   TOYOTA.HIGHLANDER,
@@ -249,6 +248,11 @@ routes: dict = {
   },
   "ffccc77938ddbc44|2021-01-04--16-55-41": {
     'carFingerprint': TOYOTA.CAMRYH_TSS2,
+    'enableCamera': True,
+    'enableDsu': False,
+  },
+  "54034823d30962f5|2021-05-24--06-37-34": {
+    'carFingerprint': TOYOTA.CAMRYH,
     'enableCamera': True,
     'enableDsu': False,
   },
