@@ -31,7 +31,6 @@ non_tested_cars = [
   HONDA.ODYSSEY_CHN,
   HYUNDAI.SANTA_FE,
   TOYOTA.LEXUS_ESH_TSS2,
-  TOYOTA.LEXUS_IS,
 ]
 
 TestRoute = namedtuple('TestRoute', ['route', 'car_fingerprint'])
