@@ -324,11 +324,11 @@ void fill_model(cereal::ModelDataV2::Builder &framed, const ModelDataRaw &net_ou
   fill_meta(framed.initMeta(), net_outputs.meta);
 
   // leads
-  auto leads = framed.initLeads(LEAD_MHP_SELECTION);
-  float t_offsets[LEAD_MHP_SELECTION] = {0.0, 2.0, 4.0};
-  for (int t_offset=0; t_offset<LEAD_MHP_SELECTION; t_offset++) {
-    fill_lead_v2(leads[t_offset], net_outputs.lead, net_outputs.lead_prob, t_offset, t_offsets[t_offset]);
-  }
+  //auto leads = framed.initLeads(LEAD_MHP_SELECTION);
+  //float t_offsets[LEAD_MHP_SELECTION] = {0.0, 2.0, 4.0};
+  //for (int t_offset=0; t_offset<LEAD_MHP_SELECTION; t_offset++) {
+    //fill_lead_v2(leads[t_offset], net_outputs.lead, net_outputs.lead_prob, t_offset, t_offsets[t_offset]);
+  //}
 }
 
 void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id, float frame_drop,

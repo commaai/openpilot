@@ -119,11 +119,11 @@ class Planner():
     v_cruise_kph = min(v_cruise_kph, V_CRUISE_MAX)
     v_cruise_setpoint = v_cruise_kph * CV.KPH_TO_MS
 
-    lead_1 = sm['radarState'].leadOne
-    lead_2 = sm['radarState'].leadTwo
+    lead_0 = sm['modelV2'].leads[0]
+    lead_1 = sm['modelV2'].leads[1]
 
     enabled = (long_control_state == LongCtrlState.pid) or (long_control_state == LongCtrlState.stopping)
-    following = lead_1.status and lead_1.dRel < 45.0 and lead_1.vLeadK > v_ego and lead_1.aLeadK > 0.0
+    following = lead_0.prob > .5 and lead_0.x[0] < 45.0 and lead_0.v[0] > v_ego and lead_0.a[0] > 0.0
 
     self.v_acc_start = self.v_acc_next
     self.a_acc_start = self.a_acc_next
@@ -162,8 +162,8 @@ class Planner():
     self.mpc1.set_cur_state(self.v_acc_start, self.a_acc_start)
     self.mpc2.set_cur_state(self.v_acc_start, self.a_acc_start)
 
-    self.mpc1.update(sm['carState'], lead_1)
-    self.mpc2.update(sm['carState'], lead_2)
+    self.mpc1.update(sm['carState'], lead_0)
+    self.mpc2.update(sm['carState'], lead_1)
 
     self.choose_solution(v_cruise_setpoint, enabled)
 
@@ -175,9 +175,9 @@ class Planner():
     self.fcw = self.fcw_checker.update(self.mpc1.mpc_solution, cur_time,
                                        sm['controlsState'].active,
                                        v_ego, sm['carState'].aEgo,
-                                       lead_1.dRel, lead_1.vLead, lead_1.aLeadK,
-                                       lead_1.yRel, lead_1.vLat,
-                                       lead_1.fcw, blinkers) and not sm['carState'].brakePressed
+                                       lead_0.x[0], lead_0.v[0], lead_0.a[0],
+                                       lead_0.y[0], 0.0,
+                                       lead_0.prob > .9, blinkers) and not sm['carState'].brakePressed
     if self.fcw:
       cloudlog.info("FCW triggered %s", self.fcw_checker.counters)
 
@@ -190,9 +190,6 @@ class Planner():
     self.first_loop = False
 
   def publish(self, sm, pm):
-    self.mpc1.publish(pm)
-    self.mpc2.publish(pm)
-
     plan_send = messaging.new_message('longitudinalPlan')
 
     plan_send.valid = sm.all_alive_and_valid(service_list=['carState', 'controlsState', 'radarState'])
