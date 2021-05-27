@@ -28,7 +28,6 @@ non_tested_cars = [
   HYUNDAI.KONA_EV,
   TOYOTA.CHR,
   TOYOTA.CHRH,
-  TOYOTA.HIGHLANDER,
   TOYOTA.HIGHLANDERH,
   TOYOTA.HIGHLANDERH_TSS2,
 ]
@@ -384,10 +383,9 @@ routes: dict = {
     'enableCamera': True,
     'enableDsu': False,
   },
-  "aa659debdd1a7b54|2018-08-31--11-12-01": {
+  "3183cd9b021e89ce|2021-05-25--10-34-44": {
     'carFingerprint': TOYOTA.HIGHLANDER,
-    'enableCamera': False,
-    'enableDsu': False,
+    'enableCamera': True,
   },
   "eb6acd681135480d|2019-06-20--20-00-00": {
     'carFingerprint': TOYOTA.SIENNA,
