@@ -442,6 +442,10 @@ routes: dict = {
     'carFingerprint': VOLKSWAGEN.SKODA_KODIAQ_MK1,
     'enableCamera': True,
   },
+  "66e5edc3a16459c5|2021-05-25--19-00-29": {
+    'carFingerprint': VOLKSWAGEN.SKODA_OCTAVIA_MK3,
+    'enableCamera': True,
+  },
   "026b6d18fba6417f|2021-03-26--09-17-04": {
     'carFingerprint': VOLKSWAGEN.SKODA_SCALA_MK1,
     'enableCamera': True,
