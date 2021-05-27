@@ -19,14 +19,13 @@ SOURCE_KEYS = [azureutil.get_user_token(account, bucket) for account, bucket in 
 SERVICE = BlockBlobService(_DATA_ACCOUNT_CI, sas_token=DEST_KEY)
 
 def sync_to_ci_public(route):
-  print(f"Uploading {route}")
   key_prefix = route.replace('|', '/')
   dongle_id = key_prefix.split('/')[0]
 
   if next(azureutil.list_all_blobs(SERVICE, "openpilotci", prefix=key_prefix), None) is not None:
-    print("Already synced")
     return True
 
+  print(f"Uploading {route}")
   for (source_account, source_bucket), source_key in zip(SOURCES, SOURCE_KEYS):
     print(f"Trying {source_account}/{source_bucket}")
     cmd = [

@@ -11,7 +11,6 @@ from selfdrive.car.fingerprints import all_known_cars
 from selfdrive.car.car_helpers import interfaces
 from selfdrive.car.honda.values import HONDA_BOSCH
 from selfdrive.car.honda.values import CAR as HONDA
-from selfdrive.car.toyota.values import CAR as TOYOTA
 from selfdrive.car.chrysler.values import CAR as CHRYSLER
 from selfdrive.car.hyundai.values import CAR as HYUNDAI
 from selfdrive.test.test_routes import routes, non_tested_cars
@@ -27,27 +26,12 @@ ROUTES = {v['carFingerprint']: k for k, v in routes.items() if 'enableCamera' no
 
 # TODO: get updated routes for these cars
 ignore_can_valid = [
-  HONDA.ACURA_ILX,
-  TOYOTA.LEXUS_RXH,
-  TOYOTA.AVALON,
-  HONDA.PILOT_2019,
   HYUNDAI.SANTA_FE,
-
-  # TODO: get new routes for these cars, current routes are from giraffe with different buses
-  HONDA.CRV_HYBRID,
-  HONDA.INSIGHT,
-  HONDA.ACCORDH,
 ]
 
 ignore_carstate_check = [
   # TODO: chrysler gas state in panda also checks wheel speed, refactor so it's only gas
   CHRYSLER.PACIFICA_2017_HYBRID,
-
-  # TODO: get new routes for these cars, current routes are from giraffe with different buses
-  HONDA.CRV_HYBRID,
-  HONDA.ACCORD,
-  HONDA.INSIGHT,
-  HONDA.ACCORDH,
 ]
 
 @parameterized_class(('car_model'), [(car,) for car in all_known_cars()])
@@ -194,7 +178,8 @@ class TestCarModel(unittest.TestCase):
         del failed_checks['gasPressed']
 
     # TODO: honda nidec: do same checks in carState and panda
-    if "brakePressed" in failed_checks and self.car_model.startswith(("HONDA", "ACURA")) and self.car_model not in HONDA_BOSCH:
+    if "brakePressed" in failed_checks and self.car_model.startswith(("HONDA", "ACURA")) and \
+      (self.car_model not in HONDA_BOSCH or self.car_model == HONDA.CRV_HYBRID):
       if failed_checks['brakePressed'] < 150:
         del failed_checks['brakePressed']
 
