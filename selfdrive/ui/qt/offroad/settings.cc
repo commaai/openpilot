@@ -220,11 +220,9 @@ void DeveloperPanel::showEvent(QShowEvent *event) {
     {"OS Version", Hardware::get_os_version()},
   };
 
-  std::string lastUpdateTimeRaw = params.get("LastUpdateTime", false);
   QString version = QString::fromStdString(brand + " v" + params.get("Version", false).substr(0, 14)).trimmed();
 
-  int diff = QDateTime::fromString(QString::fromStdString(lastUpdateTimeRaw), Qt::ISODate).daysTo(QDateTime::currentDateTime());
-
+  int diff = QDateTime::fromString(QString::fromStdString(params.get("LastUpdateTime", false)), Qt::ISODate).daysTo(QDateTime::currentDateTime());
   QString lastUpdateTime;
 
   if (diff < 1) {
