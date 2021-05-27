@@ -179,7 +179,8 @@ class TestAthenadMethods(unittest.TestCase):
     keys = ["version", "remote", "branch", "commit"]
     self.assertEqual(list(resp.keys()), keys)
     for k in keys:
-      self.assertTrue(resp[k], f"{k} has no value")
+      self.assertIsInstance(resp[k], str, f"{k} is not a string")
+      self.assertTrue(len(resp[k]) > 0, f"{k} has no value")
 
   def test_jsonrpc_handler(self):
     end_event = threading.Event()
