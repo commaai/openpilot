@@ -108,7 +108,6 @@ class Planner():
     self.v_acc_future = min([self.mpc1.v_mpc_future, self.mpc2.v_mpc_future, v_cruise_setpoint])
 
   def update(self, sm, CP):
-    """Gets called when new radarState is available"""
     cur_time = sec_since_boot()
     v_ego = sm['carState'].vEgo
 
@@ -192,11 +191,11 @@ class Planner():
   def publish(self, sm, pm):
     plan_send = messaging.new_message('longitudinalPlan')
 
-    plan_send.valid = sm.all_alive_and_valid(service_list=['carState', 'controlsState', 'radarState'])
+    plan_send.valid = sm.all_alive_and_valid(service_list=['carState', 'controlsState'])
 
     longitudinalPlan = plan_send.longitudinalPlan
     longitudinalPlan.mdMonoTime = sm.logMonoTime['modelV2']
-    longitudinalPlan.radarStateMonoTime = sm.logMonoTime['radarState']
+    longitudinalPlan.radarStateMonoTime = 0
 
     longitudinalPlan.vCruise = float(self.v_cruise)
     longitudinalPlan.aCruise = float(self.a_cruise)
@@ -205,10 +204,10 @@ class Planner():
     longitudinalPlan.vTarget = float(self.v_acc)
     longitudinalPlan.aTarget = float(self.a_acc)
     longitudinalPlan.vTargetFuture = float(self.v_acc_future)
-    longitudinalPlan.hasLead = self.mpc1.prev_lead_status
+    longitudinalPlan.hasLead = self.mpc1.lead_status
     longitudinalPlan.longitudinalPlanSource = self.longitudinalPlanSource
     longitudinalPlan.fcw = self.fcw
 
-    longitudinalPlan.processingDelay = (plan_send.logMonoTime / 1e9) - sm.rcv_time['radarState']
+    longitudinalPlan.processingDelay = (plan_send.logMonoTime / 1e9) - sm.logMonoTime['modelV2']
 
     pm.send('longitudinalPlan', plan_send)

@@ -344,14 +344,12 @@ def run_maneuver_worker(k):
     valid = False
 
     for _ in range(3):
-      managed_processes['radard'].start()
       managed_processes['controlsd'].start()
       managed_processes['plannerd'].start()
 
       plot, valid = man.evaluate()
       plot.write_plot(output_dir, "maneuver" + str(k + 1).zfill(2))
 
-      managed_processes['radard'].stop()
       managed_processes['controlsd'].stop()
       managed_processes['plannerd'].stop()
 

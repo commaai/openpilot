@@ -406,9 +406,12 @@ class Plant():
         v_rel = 0.
         prob = 0.0
 
-      lead = log.ModelDataV2.LeadDataV2.new_message()
-      lead.xyva = [float(d_rel), 0.0, float(v_rel), 0.0]
-      lead.xyvaStd = [1.0, 1.0, 1.0, 1.0]
+      lead = log.ModelDataV2.LeadDataV3.new_message()
+      lead.x = [float(d_rel + i*v_lead) for i in range(0,12,2)]
+      lead.y = [0.0 for i in range(0,12,2)]
+      lead.v = [float(v_lead) for i in range(0,12,2)]
+      lead.a = [0.0 for i in range(0,12,2)]
+
       lead.prob = prob
       md.modelV2.leads = [lead, lead]
 
