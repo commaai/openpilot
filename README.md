@@ -174,6 +174,7 @@ Community Maintained Cars and Features
 | Nissan    | X-Trail 2017                  | ProPILOT          | Stock            | 0mph               | 0mph         |
 | SEAT      | Ateca 2018                    | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Škoda     | Kodiaq 2018                   | Driver Assistance | Stock            | 0mph               | 0mph         |
+| Škoda     | Octavia 2015, 2019            | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Škoda     | Scala 2020                    | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Škoda     | Superb 2015-18                | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Subaru    | Ascent 2019                   | EyeSight          | Stock            | 0mph               | 0mph         |
