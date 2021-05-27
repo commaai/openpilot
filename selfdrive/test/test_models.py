@@ -29,7 +29,6 @@ ROUTES = {v['carFingerprint']: k for k, v in routes.items() if 'enableCamera' no
 ignore_can_valid = [
   HONDA.ACURA_ILX,
   TOYOTA.LEXUS_RXH,
-  TOYOTA.AVALON,
   HONDA.PILOT_2019,
   HYUNDAI.SANTA_FE,
 
@@ -55,6 +54,9 @@ class TestCarModel(unittest.TestCase):
 
   @classmethod
   def setUpClass(cls):
+    if cls.car_model != TOYOTA.AVALON:
+      raise unittest.SkipTest
+    print(unittest.SkipTest)
     if cls.car_model not in ROUTES:
       # TODO: get routes for missing cars and remove this
       if cls.car_model in non_tested_cars:

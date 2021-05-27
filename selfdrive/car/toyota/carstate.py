@@ -140,7 +140,7 @@ class CarState(CarStateBase):
       ("STEERING_LEVERS", 0.15),
       ("SEATS_DOORS", 3),
       ("ESP_CONTROL", 3),
-      ("EPS_STATUS", 25),
+      ("EPS_STATUS", 0),
       ("BRAKE_MODULE", 40),
       ("GAS_PEDAL", 33),
       ("WHEEL_SPEEDS", 80),
@@ -176,7 +176,7 @@ class CarState(CarStateBase):
         ("BSM", 1)
       ]
 
-    return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
+    return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0, enforce_checks=False)
 
   @staticmethod
   def get_cam_can_parser(CP):
@@ -188,8 +188,8 @@ class CarState(CarStateBase):
 
     # use steering message to check if panda is connected to frc
     checks = [
-      ("STEERING_LKA", 42),
+      # ("STEERING_LKA", 42),
       ("PRE_COLLISION", 0), # TODO: figure out why freq is inconsistent
     ]
 
-    return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2)
+    return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2, enforce_checks=False)
