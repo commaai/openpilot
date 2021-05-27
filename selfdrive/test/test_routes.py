@@ -28,7 +28,6 @@ non_tested_cars = [
   HYUNDAI.KONA_EV,
   TOYOTA.CHR,
   TOYOTA.CHRH,
-  TOYOTA.HIGHLANDERH_TSS2,
 ]
 
 routes: dict = {
@@ -381,6 +380,10 @@ routes: dict = {
     'carFingerprint': TOYOTA.HIGHLANDER_TSS2,
     'enableCamera': True,
     'enableDsu': False,
+  },
+  "437e4d2402abf524|2021-05-25--07-58-50": {
+    'carFingerprint': TOYOTA.HIGHLANDERH_TSS2,
+    'enableCamera': True,
   },
   "3183cd9b021e89ce|2021-05-25--10-34-44": {
     'carFingerprint': TOYOTA.HIGHLANDER,
