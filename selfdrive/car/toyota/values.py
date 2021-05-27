@@ -268,23 +268,23 @@ FW_VERSIONS = {
       b'F152607060\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.dsu, 0x791, None): [
-      b'881510701300\x00\x00\x00\x00',
-      b'881510705100\x00\x00\x00\x00',
-      b'881510705200\x00\x00\x00\x00',
+      # b'881510701300\x00\x00\x00\x00',  # FIXME: added in #1682 but no label which year it is
+      # b'881510705100\x00\x00\x00\x00',  # FIXME: added in #20702 but no label which year it is
+      b'881510705200\x00\x00\x00\x00',  # this one is the original
     ],
     (Ecu.eps, 0x7a1, None): [
       b'8965B41051\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.engine, 0x7e0, None): [
-      b'\x0230721100\x00\x00\x00\x00\x00\x00\x00\x00A0C01000\x00\x00\x00\x00\x00\x00\x00\x00',
-      b'\x0230721200\x00\x00\x00\x00\x00\x00\x00\x00A0C01000\x00\x00\x00\x00\x00\x00\x00\x00',
+      # b'\x0230721100\x00\x00\x00\x00\x00\x00\x00\x00A0C01000\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'\x0230721200\x00\x00\x00\x00\x00\x00\x00\x00A0C01000\x00\x00\x00\x00\x00\x00\x00\x00',  # original
     ],
     (Ecu.fwdRadar, 0x750, 0xf): [
-      b'8821F4702000\x00\x00\x00\x00',
+      # b'8821F4702000\x00\x00\x00\x00',
       b'8821F4702100\x00\x00\x00\x00',
     ],
     (Ecu.fwdCamera, 0x750, 0x6d): [
-      b'8646F0701100\x00\x00\x00\x00',
+      # b'8646F0701100\x00\x00\x00\x00',
       b'8646F0703000\x00\x00\x00\x00',
     ],
   },
