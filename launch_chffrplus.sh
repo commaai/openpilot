@@ -13,12 +13,8 @@ function two_init {
   # Wifi scan
   wpa_cli IFNAME=wlan0 SCAN
 
-  # set preferred network mode
-  settings put global preferred_network_mode "3,3"
-  settings put global preferred_network_mode1 "3"
-  settings put global preferred_network_mode2 "3"
+  # turn off volte
   settings put global volte_vt_enabled "0"
-
   # turn off cell while on wifi
   settings put global mobile_data_always_on "0"
 
