@@ -27,9 +27,6 @@ ROUTES = {v['carFingerprint']: k for k, v in routes.items() if 'enableCamera' no
 # TODO: get updated routes for these cars
 ignore_can_valid = [
   HYUNDAI.SANTA_FE,
-
-  # TODO: get new routes for these cars, current routes are from giraffe with different buses
-  HONDA.ACCORDH,
 ]
 
 ignore_carstate_check = [
@@ -38,7 +35,6 @@ ignore_carstate_check = [
 
   # TODO: get new routes for these cars, current routes are from giraffe with different buses
   HONDA.ACCORD,
-  HONDA.ACCORDH,
 ]
 
 @parameterized_class(('car_model'), [(car,) for car in all_known_cars()])
