@@ -12,7 +12,7 @@
 #include "selfdrive/common/util.h"
 #include "selfdrive/ui/qt/api.h"
 #include "selfdrive/ui/replay/filereader.h"
-#include "tools/clib/framereader.h"
+#include "selfdrive/ui/replay/framereader.h"
 
 
 constexpr int FORWARD_SEGS = 2;

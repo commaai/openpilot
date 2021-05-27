@@ -74,10 +74,9 @@ if arch != 'aarch64' and "BUILD_SETUP" in os.environ:
 
 # build headless replay
 if arch == 'x86_64' and os.path.exists(Dir("#tools/").get_abspath()):
-  qt_env['CPPPATH'] += ["#tools/clib"]
   qt_env['CXXFLAGS'] += ["-Wno-deprecated-declarations"]
 
-  replay_lib_src = ["replay/replay.cc", "replay/filereader.cc", "#tools/clib/framereader.cc"]
+  replay_lib_src = ["replay/replay.cc", "replay/filereader.cc", "replay/framereader.cc"]
 
   replay_lib = qt_env.Library("qt_replay", replay_lib_src, LIBS=base_libs)
   replay_libs = [replay_lib, 'avutil', 'avcodec', 'avformat', 'swscale', 'bz2'] + qt_libs
