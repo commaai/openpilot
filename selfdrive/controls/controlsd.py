@@ -224,8 +224,11 @@ class Controls:
     if self.can_rcv_error or not CS.canValid:
       self.events.add(EventName.canError)
 
-    safety_mismatch = self.sm['pandaState'].safetyModel != self.CP.safetyModel or self.sm['pandaState'].safetyParam != self.CP.safetyParam
-    if safety_mismatch or self.mismatch_counter >= 200:
+    safety_mismatch = self.sm['pandaState'].safetyModel != self.CP.safetyModel or \
+                      self.sm['pandaState'].safetyParam != self.CP.safetyParam
+    can_error_count = sum(self.sm['pandaState'].canSendErrs, self.sm['pandaState'].canFwdErrs,
+                          self.sm['pandaState'].caniRxErrs)
+    if safety_mismatch or can_error_count > 200 or self.mismatch_counter >= 200:
       self.events.add(EventName.controlsMismatch)
 
     if not self.sm['liveParameters'].valid:
