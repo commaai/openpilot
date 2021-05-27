@@ -19,7 +19,6 @@ non_tested_cars = [
   GM.CADILLAC_ATS,
   GM.HOLDEN_ASTRA,
   GM.MALIBU,
-  HONDA.CRV,
   HYUNDAI.ELANTRA,
   HYUNDAI.ELANTRA_GT_I30,
   HYUNDAI.GENESIS_G90,
@@ -72,6 +71,10 @@ routes: dict = {
   },
   "a859a044a447c2b0|2020-03-03--18-42-45": {
     'carFingerprint': HONDA.CRV_EU,
+    'enableCamera': True,
+  },
+  "68aac44ad69f838e|2021-05-18--20-40-52": {
+    'carFingerprint': HONDA.CRV,
     'enableCamera': True,
   },
   "14fed2e5fa0aa1a5|2021-05-25--14-59-42": {
@@ -248,8 +251,6 @@ routes: dict = {
   },
   "54034823d30962f5|2021-05-24--06-37-34": {
     'carFingerprint': TOYOTA.CAMRYH,
-    'enableCamera': True,
-    'enableDsu': False,
   },
   "f7b6be73e3dfd36c|2019-05-11--22-34-20": {
     'carFingerprint': TOYOTA.AVALON,
@@ -381,7 +382,6 @@ routes: dict = {
   },
   "437e4d2402abf524|2021-05-25--07-58-50": {
     'carFingerprint': TOYOTA.HIGHLANDERH_TSS2,
-    'enableCamera': True,
   },
   "3183cd9b021e89ce|2021-05-25--10-34-44": {
     'carFingerprint': TOYOTA.HIGHLANDER,
@@ -389,7 +389,6 @@ routes: dict = {
   },
   "80d16a262e33d57f|2021-05-23--20-01-43": {
     'carFingerprint': TOYOTA.HIGHLANDERH,
-    'enableCamera': True,
   },
   "eb6acd681135480d|2019-06-20--20-00-00": {
     'carFingerprint': TOYOTA.SIENNA,
@@ -418,11 +417,9 @@ routes: dict = {
   },
   "cd9cff4b0b26c435|2021-05-13--15-12-39": {
     'carFingerprint': TOYOTA.CHR,
-    'enableCamera': True,
   },
   "57858ede0369a261|2021-05-18--20-34-20": {
     'carFingerprint': TOYOTA.CHRH,
-    'enableCamera': True,
   },
   "2c68dda277d887ac|2021-05-11--15-22-20": {
     'carFingerprint': VOLKSWAGEN.ATLAS_MK1,
