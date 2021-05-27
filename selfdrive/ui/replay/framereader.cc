@@ -37,8 +37,8 @@ class AVInitializer {
 
 static AVInitializer av_initializer;
 
-FrameReader::FrameReader(const std::string &url, VisionStreamType stream_type, QObject *parent)
-    : url(url), stream_type(stream_type), QThread(parent) {}
+FrameReader::FrameReader(const std::string &url, VisionStreamType stream_type)
+    : url(url), stream_type(stream_type) {}
 
 FrameReader::~FrameReader() {
   // wait until thread is finished.

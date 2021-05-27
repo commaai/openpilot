@@ -56,28 +56,34 @@ void FileReader::readyRead() {
   emit ready(dat);
 }
 
-LogReader::LogReader(const QString &file, QObject *parent) : file_(file), QThread(parent) {}
+LogReader::LogReader(const QString &file) : file_(file) {}
 
 LogReader::~LogReader() {
   // wait until thread is finished.
   exit_ = true;
-  wait();
-  for (auto e : events_) delete e;
+  // quit();
+  // wait();
+  // for (auto e : events_) delete e;
 }
 
-void LogReader::run() {
-  QEventLoop loop;
-  FileReader reader;
-  connect(&reader, &FileReader::ready, [&](const QByteArray &dat) {
+void LogReader::start() {
+  thread = new QThread;
+  moveToThread(thread);
+  connect(thread, &QThread::started, this, &LogReader::process);
+  thread->start();
+}
+
+void LogReader::process() {
+  FileReader *reader = new FileReader;
+  connect(reader, &FileReader::ready, [=](const QByteArray &dat) {
+    raw_.resize(1024 * 1024 * 64);
     if (!decompressBZ2(raw_, dat.data(), dat.size())) {
       qWarning() << "bz2 decompress failed";
     }
-    loop.exit();
+    parseEvents({(const capnp::word *)raw_.data(), raw_.size() / sizeof(capnp::word)});
+    reader->deleteLater();
   });
-  reader.startRequest(file_);
-  loop.exec();
-
-  parseEvents({(const capnp::word *)raw_.data(), raw_.size() / sizeof(capnp::word)});
+  reader->startRequest(file_);
 }
 
 void LogReader::parseEvents(kj::ArrayPtr<const capnp::word> words) {

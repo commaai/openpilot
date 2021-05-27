@@ -23,7 +23,7 @@ class FrameReader : public QThread {
   Q_OBJECT
 
  public:
-  FrameReader(const std::string &url, VisionStreamType stream_type, QObject *parent);
+  FrameReader(const std::string &url, VisionStreamType stream_type);
   ~FrameReader();
   void run() override;
   uint8_t *get(int idx);

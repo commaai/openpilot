@@ -170,7 +170,7 @@ void Replay::addSegment(int n) {
   lk.unlock();
 
   // read log
-  seg->log = new LogReader(log_paths[n], this);
+  seg->log = new LogReader(log_paths[n]);
   connect(seg->log, &LogReader::finished, [=](bool success) { --seg->loading; });
   seg->log->start();
 
@@ -178,7 +178,7 @@ void Replay::addSegment(int n) {
   for (int i = 0; i < std::size(frame_paths); ++i) {
     if (n < frame_paths[i].size()) {
       seg->loading += 1;
-      seg->frames[i] = new FrameReader(frame_paths[i][n].toStdString(), VISION_STREAM_RGB_BACK, this);  
+      seg->frames[i] = new FrameReader(frame_paths[i][n].toStdString(), VISION_STREAM_RGB_BACK);  
       connect(seg->frames[i], &FrameReader::finished, [=](bool success) { --seg->loading; });
       seg->frames[i]->start();
     }  
@@ -220,14 +220,21 @@ std::optional<std::pair<FrameReader *, uint32_t>> Replay::getFrame(int seg_id, F
   auto seg = getSegment(seg_id);
   if (!seg) return std::nullopt;
 
+  // qInfo() << "search in seg " << seg_id << " frame type " << type << " frame id " << frame_id;
+  // qInfo() << "eidx";
   const EncodeIdx *eidx = seg->log->getFrameEncodeIdx(type, frame_id);
   if (!eidx) return std::nullopt;
 
+  // qInfo() << "frame_seg";
   auto frame_seg = (seg_id == (*eidx).segmentNum) ? seg : getSegment(eidx->segmentNum);
   if (!frame_seg) return std::nullopt;
 
+  // qInfo() << "frame reader";
   FrameReader *frm = frame_seg->frames[type];
-  if (!frm) return std::nullopt;
+  if (!frm && type == RoadCamFrame) {
+    qInfo() << "no frame reader " << seg_id;
+    return std::nullopt;
+  }
 
   return std::make_pair(frm, eidx->segmentId);
 };
@@ -245,9 +252,9 @@ void Replay::seekTime(int ts) {
 void Replay::segmentQueueThread() {
   // maintain the segment window
   while (!exit_) {
-    int start_idx = std::max(current_segment - BACKWARD_SEGS, 0);
-    int end_idx = std::min(current_segment + FORWARD_SEGS, log_paths.size());
     for (int i = 0; i < log_paths.size(); i++) {
+      int start_idx = std::max(current_segment - BACKWARD_SEGS, 0);
+      int end_idx = std::min(current_segment + FORWARD_SEGS, log_paths.size());
       if (i >= start_idx && i <= end_idx) {
         addSegment(i);
       } else if (i != playing_segment) {
@@ -265,9 +272,10 @@ void Replay::cameraThread() {
     std::pair<FrameType, uint32_t> frame;
     if (!frame_queue.try_pop(frame, 50)) continue;
 
+    bool frame_sent = false;
     auto [frame_type, frame_id] = frame;
     // search frame's encodIdx in adjacent segments.
-    int search_in[] = {current_segment, current_segment - 1, current_segment + 1};
+    int search_in[] = {playing_segment};//{current_segment, current_segment - 1, current_segment + 1};
     for (auto i : search_in) {
       if (i < 0 || i >= segments.size()) continue;
 
@@ -278,11 +286,15 @@ void Replay::cameraThread() {
           VisionBuf *buf = vipc_server->get_buffer(frame_reader->stream_type);
           memcpy(buf->addr, frame_reader->get(fid), frame_reader->getRGBSize());
           vipc_server->send(buf, &extra, false);
+          frame_sent = true;
         } else {
           qDebug() << "failed to get frame " << frame_id << " from segment " << i;
         }
         break;
       }
+    }
+    if (!frame_sent){
+      qDebug() << "failed to get frame " << frame_id;
     }
   }
 
@@ -368,7 +380,7 @@ void Replay::streamThread() {
       if (socks.find(type) != socks.end()) {
         if (std::abs(current_ts - last_print) > 5.0) {
           last_print = current_ts;
-          qInfo() << "at " << last_print << "| segment:" << playing_segment;
+          qInfo() << "at " << last_print << "| segment:" << playing_segment << " " << log_paths[playing_segment] << " " << frame_paths[RoadCamFrame][playing_segment];
         }
 
         // keep time

@@ -54,13 +54,14 @@ struct EventMsg {
 typedef QMultiMap<uint64_t, EventMsg*> Events;
 typedef std::unordered_map<int, EncodeIdx> EncodeIdxMap;
 
-class LogReader : public QThread {
+class LogReader : public QObject {
   Q_OBJECT
 
 public:
-  LogReader(const QString &file, QObject *parent);
+  LogReader(const QString &file);
   ~LogReader();
-  void run() override;
+  void start();
+  void process();
   inline const Events &events() const { return events_; }
   const EncodeIdx *getFrameEncodeIdx(FrameType type, uint32_t frame_id) const {
     auto it = encoderIdx_[type].find(frame_id);
@@ -79,4 +80,5 @@ protected:
   EncodeIdxMap encoderIdx_[MAX_FRAME_TYPE];
   QString file_;
   std::atomic<bool> exit_;
+  QThread *thread;
 };
