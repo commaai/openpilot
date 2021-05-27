@@ -104,11 +104,11 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
   Params params = Params();
 
   QString dongle = QString::fromStdString(params.get("DongleId", false));
-  device_layout->addWidget(new LabelControl("Dongle ID", dongle));
+  device_layout->addWidget(new LabelControl("Dongle ID", dongle, ""));
   device_layout->addWidget(horizontal_line());
 
   QString serial = QString::fromStdString(params.get("HardwareSerial", false));
-  device_layout->addWidget(new LabelControl("Serial", serial));
+  device_layout->addWidget(new LabelControl("Serial", serial, ""));
 
   // offroad-only buttons
   QList<ButtonControl*> offroad_btns;
@@ -214,12 +214,31 @@ void DeveloperPanel::showEvent(QShowEvent *event) {
   Params params = Params();
   std::string brand = params.getBool("Passive") ? "dashcam" : "openpilot";
   QList<QPair<QString, std::string>> dev_params = {
-    {"Version", brand + " v" + params.get("Version", false).substr(0, 14)},
     {"Git Branch", params.get("GitBranch", false)},
     {"Git Commit", params.get("GitCommit", false).substr(0, 10)},
     {"Panda Firmware", params.get("PandaFirmwareHex", false)},
     {"OS Version", Hardware::get_os_version()},
   };
+
+  std::string lastUpdateTimeRaw = params.get("LastUpdateTime", false);
+  QString version = QString::fromStdString(brand + " v" + params.get("Version", false).substr(0, 14)).trimmed();
+  QString lastUpdateTime = QString::fromStdString(lastUpdateTimeRaw.substr(0,10) + " at " + lastUpdateTimeRaw.substr(12,7)).trimmed();
+
+  if (labels.size() < dev_params.size()) {
+    versionLbl = new LabelControl("Version", version, QString::fromStdString(params.get("ReleaseNotes", false)).trimmed());
+    layout()->addWidget(versionLbl);
+    layout()->addWidget(horizontal_line());
+
+    lastUpdateTimeLbl = new LabelControl("Last Update Time", lastUpdateTime, "The last time openpilot checked for an update");
+    connect(lastUpdateTimeLbl, &LabelControl::showDescription, [=]() {
+      std::system("pkill -1 -f selfdrive.updated");
+    });
+    layout()->addWidget(lastUpdateTimeLbl);
+    layout()->addWidget(horizontal_line());
+  } else {
+    versionLbl->setText(version);
+    lastUpdateTimeLbl->setText(lastUpdateTime);
+  }
 
   for (int i = 0; i < dev_params.size(); i++) {
     const auto &[name, value] = dev_params[i];
@@ -227,7 +246,7 @@ void DeveloperPanel::showEvent(QShowEvent *event) {
     if (labels.size() > i) {
       labels[i]->setText(val);
     } else {
-      labels.push_back(new LabelControl(name, val));
+      labels.push_back(new LabelControl(name, val, ""));
       layout()->addWidget(labels[i]);
       if (i < (dev_params.size() - 1)) {
         layout()->addWidget(horizontal_line());

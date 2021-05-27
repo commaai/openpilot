@@ -143,7 +143,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   vlayout->addWidget(horizontal_line(), 0);
 
   // IP address
-  ipLabel = new LabelControl("IP Address", wifi->ipv4_address);
+  ipLabel = new LabelControl("IP Address", wifi->ipv4_address, "");
   vlayout->addWidget(ipLabel, 0);
   vlayout->addWidget(horizontal_line(), 0);
 
