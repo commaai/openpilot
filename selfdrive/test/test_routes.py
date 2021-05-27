@@ -231,7 +231,7 @@ routes: dict = {
   },
   "000cf3730200c71c|2021-05-24--10-42-05": {
     'carFingerprint': TOYOTA.AVALON,
-    'enableCamera': False,
+    'enableCamera': True,
     'enableDsu': False,
   },
   "6cdecc4728d4af37|2020-02-23--15-44-18": {
@@ -251,11 +251,6 @@ routes: dict = {
   },
   "54034823d30962f5|2021-05-24--06-37-34": {
     'carFingerprint': TOYOTA.CAMRYH,
-  },
-  "f7b6be73e3dfd36c|2019-05-11--22-34-20": {
-    'carFingerprint': TOYOTA.AVALON,
-    'enableCamera': True,
-    'enableDsu': False,
   },
   "4e45c89c38e8ec4d|2021-05-02--02-49-28": {
     'carFingerprint': TOYOTA.COROLLA,
