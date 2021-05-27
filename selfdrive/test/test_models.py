@@ -11,7 +11,6 @@ from selfdrive.car.fingerprints import all_known_cars
 from selfdrive.car.car_helpers import interfaces
 from selfdrive.car.honda.values import HONDA_BOSCH
 from selfdrive.car.honda.values import CAR as HONDA
-from selfdrive.car.toyota.values import CAR as TOYOTA
 from selfdrive.car.chrysler.values import CAR as CHRYSLER
 from selfdrive.car.hyundai.values import CAR as HYUNDAI
 from selfdrive.test.test_routes import routes, non_tested_cars
@@ -27,7 +26,6 @@ ROUTES = {v['carFingerprint']: k for k, v in routes.items() if 'enableCamera' no
 
 # TODO: get updated routes for these cars
 ignore_can_valid = [
-  TOYOTA.AVALON,
   HONDA.PILOT_2019,
   HYUNDAI.SANTA_FE,
 

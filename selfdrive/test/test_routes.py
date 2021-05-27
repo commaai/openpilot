@@ -232,7 +232,7 @@ routes: dict = {
     'carFingerprint': HYUNDAI.ELANTRA_2021,
     'enableCamera': True,
   },
-  "f7b6be73e3dfd36c|2019-05-12--18-07-16": {
+  "000cf3730200c71c|2021-05-24--10-42-05": {
     'carFingerprint': TOYOTA.AVALON,
     'enableCamera': False,
     'enableDsu': False,
