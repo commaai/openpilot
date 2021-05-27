@@ -104,11 +104,11 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
   Params params = Params();
 
   QString dongle = QString::fromStdString(params.get("DongleId", false));
-  device_layout->addWidget(new LabelControl("Dongle ID", dongle, ""));
+  device_layout->addWidget(new LabelControl("Dongle ID", dongle));
   device_layout->addWidget(horizontal_line());
 
   QString serial = QString::fromStdString(params.get("HardwareSerial", false));
-  device_layout->addWidget(new LabelControl("Serial", serial, ""));
+  device_layout->addWidget(new LabelControl("Serial", serial));
 
   // offroad-only buttons
   QList<ButtonControl*> offroad_btns;
@@ -246,7 +246,7 @@ void DeveloperPanel::showEvent(QShowEvent *event) {
     if (labels.size() > i) {
       labels[i]->setText(val);
     } else {
-      labels.push_back(new LabelControl(name, val, ""));
+      labels.push_back(new LabelControl(name, val));
       layout()->addWidget(labels[i]);
       if (i < (dev_params.size() - 1)) {
         layout()->addWidget(horizontal_line());
