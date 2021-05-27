@@ -269,7 +269,7 @@ FW_VERSIONS = {
     ],
     (Ecu.dsu, 0x791, None): [
       b'881510701300\x00\x00\x00\x00',
-      # b'881510705100\x00\x00\x00\x00',  # TODO: this probably is correct, but haven't seen it yet in either Avalon fw data
+      b'881510705100\x00\x00\x00\x00',
       b'881510705200\x00\x00\x00\x00',
     ],
     (Ecu.eps, 0x7a1, None): [
@@ -299,13 +299,14 @@ FW_VERSIONS = {
       b'881510703200\x00\x00\x00\x00',
     ],
     (Ecu.eps, 0x7a1, None): [
-      # b'8965B41080\x00\x00\x00\x00\x00\x00',
+      b'8965B41080\x00\x00\x00\x00\x00\x00',
       b'8965B07010\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.engine, 0x7e0, None): [
-      # b'\x01896630735100\x00\x00\x00\x00',
+
     ],
     (Ecu.engine, 0x700, None): [
+      b'\x01896630735100\x00\x00\x00\x00'
       # b'\001896630735100\x00\x00\x00\x00',
       # b'\x01896630738000\x00\x00\x00\x00',
       b'\x01896630725300\x00\x00\x00\x00',
