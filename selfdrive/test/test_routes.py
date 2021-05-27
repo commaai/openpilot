@@ -136,7 +136,7 @@ routes: dict = {
     'carFingerprint': HONDA.PILOT,
     'enableCamera': True,
   },
-  "22affd6c545d985e|2020-03-08--01-08-09": {
+  "fa1cd231131ca137|2021-05-22--07-59-57": {
     'carFingerprint': HONDA.PILOT_2019,
     'enableCamera': True,
   },

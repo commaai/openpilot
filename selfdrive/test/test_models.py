@@ -26,7 +26,6 @@ ROUTES = {v['carFingerprint']: k for k, v in routes.items() if 'enableCamera' no
 
 # TODO: get updated routes for these cars
 ignore_can_valid = [
-  HONDA.PILOT_2019,
   HYUNDAI.SANTA_FE,
 
   # TODO: get new routes for these cars, current routes are from giraffe with different buses
