@@ -19,19 +19,12 @@ non_tested_cars = [
   GM.CADILLAC_ATS,
   GM.HOLDEN_ASTRA,
   GM.MALIBU,
-  HONDA.CRV,
   HYUNDAI.ELANTRA,
   HYUNDAI.ELANTRA_GT_I30,
   HYUNDAI.GENESIS_G90,
   HYUNDAI.KIA_FORTE,
   HYUNDAI.KIA_OPTIMA_H,
   HYUNDAI.KONA_EV,
-  TOYOTA.CAMRYH,
-  TOYOTA.CHR,
-  TOYOTA.CHRH,
-  TOYOTA.HIGHLANDER,
-  TOYOTA.HIGHLANDERH,
-  TOYOTA.HIGHLANDERH_TSS2,
 ]
 
 routes: dict = {
@@ -80,7 +73,11 @@ routes: dict = {
     'carFingerprint': HONDA.CRV_EU,
     'enableCamera': True,
   },
-  "232585b7784c1af4|2019-04-08--14-12-14": {
+  "68aac44ad69f838e|2021-05-18--20-40-52": {
+    'carFingerprint': HONDA.CRV,
+    'enableCamera': True,
+  },
+  "14fed2e5fa0aa1a5|2021-05-25--14-59-42": {
     'carFingerprint': HONDA.CRV_HYBRID,
     'enableCamera': True,
   },
@@ -92,7 +89,7 @@ routes: dict = {
     'carFingerprint': HONDA.HRV,
     'enableCamera': True,
   },
-  "2ac95059f70d76eb|2018-02-05--15-03-29": {
+  "917b074700869333|2021-05-24--20-40-20": {
     'carFingerprint': HONDA.ACURA_ILX,
     'enableCamera': True,
   },
@@ -108,11 +105,11 @@ routes: dict = {
     'carFingerprint': HONDA.ACCORD_15,
     'enableCamera': True,
   },
-  "a8e8bf6a3864361b|2021-04-20--12-09-18": {
+  "1da5847ac2488106|2021-05-24--19-31-50": {
     'carFingerprint': HONDA.ACCORD,
     'enableCamera': True,
   },
-  "690c4c9f9f2354c7|2018-09-15--17-36-05": {
+  "07585b0da3c88459|2021-05-26--18-52-04": {
     'carFingerprint': HONDA.ACCORDH,
     'enableCamera': True,
   },
@@ -128,7 +125,7 @@ routes: dict = {
     'carFingerprint': HONDA.CIVIC_BOSCH_DIESEL,
     'enableCamera': True,
   },
-  "fb51d190ddfd8a90|2020-02-25--14-43-43": {
+  "f0890d16a07a236b|2021-05-25--17-27-22": {
     'carFingerprint': HONDA.INSIGHT,
     'enableCamera': True,
   },
@@ -136,7 +133,7 @@ routes: dict = {
     'carFingerprint': HONDA.PILOT,
     'enableCamera': True,
   },
-  "22affd6c545d985e|2020-03-08--01-08-09": {
+  "fa1cd231131ca137|2021-05-22--07-59-57": {
     'carFingerprint': HONDA.PILOT_2019,
     'enableCamera': True,
   },
@@ -232,9 +229,9 @@ routes: dict = {
     'carFingerprint': HYUNDAI.ELANTRA_2021,
     'enableCamera': True,
   },
-  "f7b6be73e3dfd36c|2019-05-12--18-07-16": {
+  "000cf3730200c71c|2021-05-24--10-42-05": {
     'carFingerprint': TOYOTA.AVALON,
-    'enableCamera': False,
+    'enableCamera': True,
     'enableDsu': False,
   },
   "6cdecc4728d4af37|2020-02-23--15-44-18": {
@@ -252,10 +249,8 @@ routes: dict = {
     'enableCamera': True,
     'enableDsu': False,
   },
-  "f7b6be73e3dfd36c|2019-05-11--22-34-20": {
-    'carFingerprint': TOYOTA.AVALON,
-    'enableCamera': True,
-    'enableDsu': False,
+  "54034823d30962f5|2021-05-24--06-37-34": {
+    'carFingerprint': TOYOTA.CAMRYH,
   },
   "4e45c89c38e8ec4d|2021-05-02--02-49-28": {
     'carFingerprint': TOYOTA.COROLLA,
@@ -343,7 +338,7 @@ routes: dict = {
       'enableCamera': True,
       'enableDsu': False,
     },
-  "b0f5a01cf604185c|2018-02-01--21-12-28": {
+  "d27ad752e9b08d4f|2021-05-26--19-39-51": {
     'carFingerprint': TOYOTA.LEXUS_RXH,
     'enableCamera': True,
     'enableDsu': True,
@@ -380,10 +375,15 @@ routes: dict = {
     'enableCamera': True,
     'enableDsu': False,
   },
-  "aa659debdd1a7b54|2018-08-31--11-12-01": {
+  "437e4d2402abf524|2021-05-25--07-58-50": {
+    'carFingerprint': TOYOTA.HIGHLANDERH_TSS2,
+  },
+  "3183cd9b021e89ce|2021-05-25--10-34-44": {
     'carFingerprint': TOYOTA.HIGHLANDER,
-    'enableCamera': False,
-    'enableDsu': False,
+    'enableCamera': True,
+  },
+  "80d16a262e33d57f|2021-05-23--20-01-43": {
+    'carFingerprint': TOYOTA.HIGHLANDERH,
   },
   "eb6acd681135480d|2019-06-20--20-00-00": {
     'carFingerprint': TOYOTA.SIENNA,
@@ -409,6 +409,12 @@ routes: dict = {
     'carFingerprint': TOYOTA.MIRAI,
     'enableCamera': True,
     'enableDsu': False,
+  },
+  "cd9cff4b0b26c435|2021-05-13--15-12-39": {
+    'carFingerprint': TOYOTA.CHR,
+  },
+  "57858ede0369a261|2021-05-18--20-34-20": {
+    'carFingerprint': TOYOTA.CHRH,
   },
   "2c68dda277d887ac|2021-05-11--15-22-20": {
     'carFingerprint': VOLKSWAGEN.ATLAS_MK1,
