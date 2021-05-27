@@ -128,7 +128,7 @@ routes: dict = {
     'carFingerprint': HONDA.CIVIC_BOSCH_DIESEL,
     'enableCamera': True,
   },
-  "fb51d190ddfd8a90|2020-02-25--14-43-43": {
+  "f0890d16a07a236b|2021-05-25--17-27-22": {
     'carFingerprint': HONDA.INSIGHT,
     'enableCamera': True,
   },

@@ -32,7 +32,6 @@ ignore_can_valid = [
   HYUNDAI.SANTA_FE,
 
   # TODO: get new routes for these cars, current routes are from giraffe with different buses
-  HONDA.INSIGHT,
   HONDA.ACCORDH,
 ]
 
@@ -42,7 +41,6 @@ ignore_carstate_check = [
 
   # TODO: get new routes for these cars, current routes are from giraffe with different buses
   HONDA.ACCORD,
-  HONDA.INSIGHT,
   HONDA.ACCORDH,
 ]
 
