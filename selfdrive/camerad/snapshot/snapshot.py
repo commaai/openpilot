@@ -10,7 +10,7 @@ from typing import List
 import cereal.messaging as messaging
 from common.params import Params
 from common.realtime import DT_MDL
-from common.transformations.camera import eon_f_frame_size, eon_d_frame_size, leon_d_frame_size, tici_f_frame_size
+from common.transformations.camera import eon_f_frame_size, eon_d_frame_size, tici_f_frame_size
 from selfdrive.hardware import TICI
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
 from selfdrive.manager.process_config import managed_processes
@@ -39,7 +39,7 @@ def rois_in_focus(lapres: List[float]) -> float:
 
 
 def get_snapshots(frame="roadCameraState", front_frame="driverCameraState", focus_perc_threshold=0.):
-  frame_sizes = [eon_f_frame_size, eon_d_frame_size, leon_d_frame_size, tici_f_frame_size]
+  frame_sizes = [eon_f_frame_size, eon_d_frame_size, tici_f_frame_size]
   frame_sizes = {w * h: (w, h) for (w, h) in frame_sizes}
 
   sockets = []
