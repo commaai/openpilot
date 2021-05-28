@@ -310,9 +310,9 @@ void Replay::pushFrame(FrameType type, int seg_id, uint32_t frame_id) {
   if (!cameras_[type]) return;
 
   // find encodeIdx in adjacent segments_.
+  const EncodeIdx *eidx = nullptr;
   int search_in[] = {seg_id, seg_id - 1, seg_id + 1};
   for (auto idx : search_in) {
-    const EncodeIdx *eidx = nullptr;
     if (auto seg = getSegment(idx); seg && (eidx = seg->log->getFrameEncodeIdx(type, frame_id))) {
       cameras_[type]->queue.push(eidx);
       return;
