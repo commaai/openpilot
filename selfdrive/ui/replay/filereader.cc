@@ -4,6 +4,8 @@
 #include <QtNetwork>
 #include "cereal/gen/cpp/log.capnp.h"
 
+#include "selfdrive/common/timing.h"
+
 static bool decompressBZ2(std::vector<uint8_t> &dest, const char srcData[], size_t srcSize,
                           size_t outputSizeIncrement = 0x100000U) {
   bz_stream strm = {};
@@ -30,6 +32,15 @@ static bool decompressBZ2(std::vector<uint8_t> &dest, const char srcData[], size
 
 void FileReader::startRequest(const QUrl &url) {
   timer.start();
+
+  if (url.isLocalFile()) {
+    QFile file(url.toLocalFile());
+    if (file.open(QIODevice::ReadOnly)) {
+      QByteArray dat = file.readAll();
+      emit ready(dat);
+    }
+    return;
+  }
 
   qnam = new QNetworkAccessManager;
   reply = qnam->get(QNetworkRequest(url));
@@ -96,7 +107,7 @@ void LogReader::parseEvents(kj::ArrayPtr<const capnp::word> words) {
   auto insertEidx = [=](FrameType type, const cereal::EncodeIndex::Reader &e) {
     encoderIdx_[type][e.getFrameId()] = {e.getSegmentNum(), e.getSegmentId()};
   };
-
+  double t1 = millis_since_boot();
   valid_ = true;
   while (!exit_ && words.size() > 0) {
     try {
@@ -125,6 +136,8 @@ void LogReader::parseEvents(kj::ArrayPtr<const capnp::word> words) {
       break;
     }
   }
+  double t2 = millis_since_boot();
+  qInfo() << "parse time " << t2 - t1;
   emit finished(valid_ && !exit_);
 }
 
