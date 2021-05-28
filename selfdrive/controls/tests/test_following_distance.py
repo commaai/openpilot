@@ -52,7 +52,7 @@ def run_following_distance_simulation(v_lead, t_end=200.0):
     # Setup lead packet
     lead = log.ModelDataV2.LeadDataV3.new_message()
     lead.prob = .75
-    lead.x = [x_lead - x_ego + i*v_lead - 2.0 for i in range(0,12,2)]
+    lead.x = [x_lead - x_ego + i*v_lead + 2.0 for i in range(0,12,2)]
     lead.v = [v_lead for i in range(6)]
     lead.a = [0.0 for i in range(6)]
 
