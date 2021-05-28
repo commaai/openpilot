@@ -186,7 +186,8 @@ class Controls:
     if self.sm['deviceState'].freeSpacePercent < 7:
       # under 7% of space free no enable allowed
       self.events.add(EventName.outOfSpace)
-    if self.sm['deviceState'].memoryUsagePercent > 65:
+    # TODO: make tici threshold the same
+    if self.sm['deviceState'].memoryUsagePercent > (90 if TICI else 65):
       self.events.add(EventName.lowMemory)
 
     # Alert if fan isn't spinning for 5 seconds
