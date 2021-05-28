@@ -9,7 +9,6 @@ Use `test_processes.py` to run the test locally.
 Currently the following processes are tested:
 
 * controlsd
-* radard
 * plannerd
 * calibrationd
 * ubloxd

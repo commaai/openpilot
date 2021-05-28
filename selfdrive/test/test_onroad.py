@@ -28,7 +28,6 @@ PROCS = {
   "selfdrive.locationd.paramsd": 9.1,
   "./camerad": 7.07,
   "./_sensord": 6.17,
-  "selfdrive.controls.radard": 5.67,
   "./_modeld": 4.48,
   "./boardd": 3.63,
   "./_dmonitoringmodeld": 2.67,
