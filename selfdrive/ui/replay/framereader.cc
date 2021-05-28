@@ -63,7 +63,7 @@ void FrameReader::run() {
 
 void FrameReader::processFrames() {
   if (avformat_open_input(&pFormatCtx, url.c_str(), NULL, NULL) != 0) {
-    fprintf(stderr, "error loading %s\n", url.c_str());
+    qDebug() << "error loading " <<  url.c_str();
     emit finished(false);
     return;
   }
@@ -89,6 +89,7 @@ void FrameReader::processFrames() {
                            SWS_BILINEAR, NULL, NULL, NULL);
   assert(sws_ctx != NULL);
 
+  frames.reserve(60 * 20); // 20fps, one minute
   do {
     Frame &frame = frames.emplace_back();
     if (av_read_frame(pFormatCtx, &frame.pkt) < 0) {
@@ -97,7 +98,7 @@ void FrameReader::processFrames() {
     }
   } while (!exit_);
 
-  qInfo() << "framereader reader " << frames.size() << " frames";
+  qDebug() << "framereader reader " << frames.size() << " frames";
   valid_ = !exit_;
   emit finished(valid_);
 }
