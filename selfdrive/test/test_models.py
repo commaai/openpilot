@@ -39,6 +39,8 @@ class TestCarModel(unittest.TestCase):
 
   @classmethod
   def setUpClass(cls):
+    if cls.car_model != 'HONDA FIT 2018':
+      raise unittest.SkipTest
     if cls.car_model not in ROUTES:
       # TODO: get routes for missing cars and remove this
       if cls.car_model in non_tested_cars:
@@ -47,7 +49,6 @@ class TestCarModel(unittest.TestCase):
       else:
         raise Exception(f"missing test route for car {cls.car_model}")
 
-    print(f'car fp: {cls.car_model}')
     for seg in [2, 1, 0]:
       try:
         lr = LogReader(get_url(ROUTES[cls.car_model], seg))
@@ -100,6 +101,7 @@ class TestCarModel(unittest.TestCase):
 
   def test_car_interface(self):
     # TODO: also check for checkusm and counter violations from can parser
+    print(f'offending car model: {self.car_model}')
     can_invalid_cnt = 0
     CC = car.CarControl.new_message()
     for i, msg in enumerate(self.can_msgs):
