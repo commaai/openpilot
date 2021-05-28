@@ -20,3 +20,23 @@ inline void clearLayout(QLayout* layout) {
     delete item;
   }
 }
+
+inline QString getFormattedTimeSince(QDateTime *date) {
+  date->setTimeSpec(Qt::UTC);
+  int diff = date->secsTo(QDateTime::currentDateTimeUtc());
+  QString formattedTime;
+
+  if (diff < 60) {
+    formattedTime = "now";
+  } else if (diff < 3600) {
+    formattedTime = QString::fromStdString(std::to_string(diff / 60) + " minute" + (diff >= 60 * 2 ? "s " : " ") + "ago");
+  }else if (diff < 3600 * 24) {
+    formattedTime = QString::fromStdString(std::to_string(diff / 3600) + " hour" + (diff >= 3600 * 2 ? "s " : " ") + "ago");
+  } else if (diff < 3600 * 24 * 7) {
+    formattedTime = QString::fromStdString(std::to_string(diff / (3600 * 24)) + " day" + (diff >= 3600 * 48 ? "s " : " ") + "ago");
+  } else {
+    formattedTime = date->date().toString();
+  }
+
+  return formattedTime;
+}

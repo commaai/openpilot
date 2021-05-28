@@ -16,6 +16,7 @@
 #include "selfdrive/ui/qt/widgets/ssh_keys.h"
 #include "selfdrive/ui/qt/widgets/toggle.h"
 #include "selfdrive/ui/ui.h"
+#include "selfdrive/ui/qt/util.h"
 
 TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *toggles_list = new QVBoxLayout();
@@ -221,15 +222,8 @@ void DeveloperPanel::showEvent(QShowEvent *event) {
   };
 
   QString version = QString::fromStdString(brand + " v" + params.get("Version", false).substr(0, 14)).trimmed();
-
-  int diff = QDateTime::fromString(QString::fromStdString(params.get("LastUpdateTime", false)), Qt::ISODate).daysTo(QDateTime::currentDateTime());
-  QString lastUpdateTime;
-
-  if (diff < 1) {
-    lastUpdateTime = "Today";
-  } else {
-    lastUpdateTime = QString::fromStdString(std::to_string(diff) + " day" + (diff > 1 ? "s " : " ") + "ago");
-  }
+  QDateTime lastUpdateDate = QDateTime::fromString(QString::fromStdString(params.get("LastUpdateTime", false)), Qt::ISODate);
+  QString lastUpdateTime = getFormattedTimeSince(&lastUpdateDate);
 
   if (labels.size() < dev_params.size()) {
     versionLbl = new LabelControl("Version", version, QString::fromStdString(params.get("ReleaseNotes", false)).trimmed());
