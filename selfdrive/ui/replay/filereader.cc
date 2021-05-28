@@ -93,7 +93,7 @@ void LogReader::parseEvents(kj::ArrayPtr<const capnp::word> words) {
     encoderIdx_[type][e.getFrameId()] = {e.getSegmentNum(), e.getSegmentId()};
   };
 
-  bool success = true;
+  valid_ = true;
   while (!exit_ && words.size() > 0) {
     try {
       std::unique_ptr<EventMsg> message = std::make_unique<EventMsg>(words);
@@ -116,21 +116,12 @@ void LogReader::parseEvents(kj::ArrayPtr<const capnp::word> words) {
       events_.insert(event.getLogMonoTime(), message.release());
     } catch (const kj::Exception &e) {
       // partial messages trigger this
-      qDebug() << e.getDescription().cStr();
-      assert(0);
-      success = false;
+      // qDebug() << e.getDescription().cStr();
+      valid_ = false;
       break;
     }
   }
-  if (!events_.size()) {
-    if (!exit_) {
-      qInfo() << words.size();
-    assert(0);
-    }
-  }
-  qInfo() << "event size " << events_.size() << " eixt " << exit_ << " words " << words.size();
-  assert(events_.size());
-  emit finished(success && !exit_);
+  emit finished(valid_);
 }
 
 void LogReader::readyRead(const QByteArray &dat) {

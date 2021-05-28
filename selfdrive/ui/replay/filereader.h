@@ -61,7 +61,8 @@ public:
   LogReader(const QString &file);
   ~LogReader();
   void start();
-  void process();
+
+  inline bool valid() const { return valid_; }
   inline const Events &events() const { return events_; }
   const EncodeIdx *getFrameEncodeIdx(FrameType type, uint32_t frame_id) const {
     auto it = encoderIdx_[type].find(frame_id);
@@ -72,6 +73,7 @@ signals:
   void finished(bool success);
 
 protected:
+  void process();
   void readyRead(const QByteArray &dat);
   void parseEvents(kj::ArrayPtr<const capnp::word> amsg);
 
@@ -80,5 +82,6 @@ protected:
   EncodeIdxMap encoderIdx_[MAX_FRAME_TYPE] = {};
   QString file_;
   std::atomic<bool> exit_ = false;
+  std::atomic<bool> valid_ = false;
   QThread *thread;
 };
