@@ -396,6 +396,7 @@ void Replay::streamThread() {
           const auto bytes = (*eit)->words.asBytes();
           pm_->send(type.c_str(), (capnp::byte *)bytes.begin(), bytes.size());
         } else {
+          // TODO: subMaster is not thread safe. Are we sure we need to do this?
           sm_->update_msgs(nanos_since_boot(), {{type, e}});
         }
       }
@@ -408,7 +409,6 @@ void Replay::streamThread() {
       current_segment_ += 1;
       qDebug() << "move to next segment " << current_segment_;
       seek_ts_ = current_ts_.load();
-    } else {
     }
   }
 }

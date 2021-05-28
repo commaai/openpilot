@@ -26,6 +26,8 @@ static bool decompressBZ2(std::vector<uint8_t> &dest, const char srcData[], size
   return ret == BZ_STREAM_END;
 }
 
+// class FileReader
+
 void FileReader::startRequest(const QUrl &url) {
   timer.start();
 
@@ -56,6 +58,8 @@ void FileReader::readyRead() {
   emit ready(dat);
 }
 
+// class LogReader
+
 LogReader::LogReader(const QString &file) : file_(file) {}
 
 LogReader::~LogReader() {
@@ -65,7 +69,6 @@ LogReader::~LogReader() {
   thread_->wait();
 
   // free all
-  delete thread_;
   for (auto e : events_) delete e;
 }
 
@@ -122,14 +125,16 @@ void LogReader::parseEvents(kj::ArrayPtr<const capnp::word> words) {
       break;
     }
   }
-  emit finished(valid_);
+  emit finished(valid_ && !exit_);
 }
 
 void LogReader::readyRead(const QByteArray &dat) {
   // start with 64MB buffer
   raw_.resize(1024 * 1024 * 64);
-  if (!decompressBZ2(raw_, dat.data(), dat.size())) {
+  if (decompressBZ2(raw_, dat.data(), dat.size())) {
+    parseEvents({(const capnp::word *)raw_.data(), raw_.size() / sizeof(capnp::word)});
+  } else {
     qWarning() << "bz2 decompress failed";
+    emit finished(false);
   }
-  parseEvents({(const capnp::word *)raw_.data(), raw_.size() / sizeof(capnp::word)});
 }

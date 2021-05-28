@@ -75,7 +75,7 @@ signals:
 protected:
   void process();
   void readyRead(const QByteArray &dat);
-  void parseEvents(kj::ArrayPtr<const capnp::word> amsg);
+  void parseEvents(kj::ArrayPtr<const capnp::word> words);
 
   std::vector<uint8_t> raw_;
   Events events_;
