@@ -86,50 +86,6 @@ maneuvers = [
     checks=[check_engaged, check_no_collision],
   ),
   Maneuver(
-    'steady state following a car at 20m/s, then lead decel to 0mph at 1m/s^2',
-    duration=50.,
-    initial_speed=20.,
-    lead_relevancy=True,
-    initial_distance_lead=35.,
-    speed_lead_values=[20., 20., 0.],
-    speed_lead_breakpoints=[0., 15., 35.0],
-    cruise_button_presses=[(CB.DECEL_SET, 1.2), (0, 1.3)],
-    checks=[check_engaged, check_no_collision],
-  ),
-  Maneuver(
-    'steady state following a car at 20m/s, then lead decel to 0mph at 2m/s^2',
-    duration=50.,
-    initial_speed=20.,
-    lead_relevancy=True,
-    initial_distance_lead=35.,
-    speed_lead_values=[20., 20., 0.],
-    speed_lead_breakpoints=[0., 15., 25.0],
-    cruise_button_presses=[(CB.DECEL_SET, 1.2), (0, 1.3)],
-    checks=[check_engaged, check_no_collision],
-  ),
-  Maneuver(
-    'steady state following a car at 20m/s, then lead decel to 0mph at 3m/s^2',
-    duration=50.,
-    initial_speed=20.,
-    lead_relevancy=True,
-    initial_distance_lead=35.,
-    speed_lead_values=[20., 20., 0.],
-    speed_lead_breakpoints=[0., 15., 21.66],
-    cruise_button_presses=[(CB.DECEL_SET, 1.2), (0, 1.3)],
-    checks=[check_engaged, check_fcw],
-  ),
-  Maneuver(
-    'steady state following a car at 20m/s, then lead decel to 0mph at 5m/s^2',
-    duration=40.,
-    initial_speed=20.,
-    lead_relevancy=True,
-    initial_distance_lead=35.,
-    speed_lead_values=[20., 20., 0.],
-    speed_lead_breakpoints=[0., 15., 19.],
-    cruise_button_presses=[(CB.DECEL_SET, 1.2), (0, 1.3)],
-    checks=[check_engaged, check_fcw],
-  ),
-  Maneuver(
     'starting at 0mph, approaching a stopped car 100m away',
     duration=30.,
     initial_speed=0.,
@@ -226,22 +182,6 @@ maneuvers = [
     checks=[check_engaged, check_no_collision],
   ),
   Maneuver(
-    "accelerate from 20 while lead vehicle decelerates from 40 to 0 at 2m/s2",
-    duration=30.,
-    initial_speed=10.,
-    lead_relevancy=True,
-    initial_distance_lead=10.,
-    speed_lead_values=[20., 0.],
-    speed_lead_breakpoints=[1., 11.],
-    cruise_button_presses=[(CB.DECEL_SET, 1.2), (0, 1.3),
-                           (CB.RES_ACCEL, 1.4), (0.0, 1.5),
-                           (CB.RES_ACCEL, 1.6), (0.0, 1.7),
-                           (CB.RES_ACCEL, 1.8), (0.0, 1.9),
-                           (CB.RES_ACCEL, 2.0), (0.0, 2.1),
-                           (CB.RES_ACCEL, 2.2), (0.0, 2.3)],
-    checks=[check_engaged, check_no_collision],
-  ),
-  Maneuver(
     "fcw: traveling at 30 m/s and approaching lead traveling at 20m/s",
     duration=15.,
     initial_speed=30.,
@@ -286,6 +226,70 @@ maneuvers = [
     checks=[check_fcw],
   )
 ]
+
+'''
+  Maneuver(
+    'steady state following a car at 20m/s, then lead decel to 0mph at 1m/s^2',
+    duration=50.,
+    initial_speed=20.,
+    lead_relevancy=True,
+    initial_distance_lead=35.,
+    speed_lead_values=[20., 20., 0.],
+    speed_lead_breakpoints=[0., 15., 35.0],
+    cruise_button_presses=[(CB.DECEL_SET, 1.2), (0, 1.3)],
+    checks=[check_engaged, check_no_collision],
+  ),
+  Maneuver(
+    'steady state following a car at 20m/s, then lead decel to 0mph at 2m/s^2',
+    duration=50.,
+    initial_speed=20.,
+    lead_relevancy=True,
+    initial_distance_lead=35.,
+    speed_lead_values=[20., 20., 0.],
+    speed_lead_breakpoints=[0., 15., 25.0],
+    cruise_button_presses=[(CB.DECEL_SET, 1.2), (0, 1.3)],
+    checks=[check_engaged, check_no_collision],
+  ),
+  Maneuver(
+    'steady state following a car at 20m/s, then lead decel to 0mph at 3m/s^2',
+    duration=50.,
+    initial_speed=20.,
+    lead_relevancy=True,
+    initial_distance_lead=35.,
+    speed_lead_values=[20., 20., 0.],
+    speed_lead_breakpoints=[0., 15., 21.66],
+    cruise_button_presses=[(CB.DECEL_SET, 1.2), (0, 1.3)],
+    checks=[check_engaged, check_fcw],
+  ),
+  Maneuver(
+    'steady state following a car at 20m/s, then lead decel to 0mph at 5m/s^2',
+    duration=40.,
+    initial_speed=20.,
+    lead_relevancy=True,
+    initial_distance_lead=35.,
+    speed_lead_values=[20., 20., 0.],
+    speed_lead_breakpoints=[0., 15., 19.],
+    cruise_button_presses=[(CB.DECEL_SET, 1.2), (0, 1.3)],
+    checks=[check_engaged, check_fcw],
+  ),
+  Maneuver(
+    "accelerate from 20 while lead vehicle decelerates from 40 to 0 at 2m/s2",
+    duration=30.,
+    initial_speed=10.,
+    lead_relevancy=True,
+    initial_distance_lead=10.,
+    speed_lead_values=[20., 0.],
+    speed_lead_breakpoints=[1., 11.],
+    cruise_button_presses=[(CB.DECEL_SET, 1.2), (0, 1.3),
+                           (CB.RES_ACCEL, 1.4), (0.0, 1.5),
+                           (CB.RES_ACCEL, 1.6), (0.0, 1.7),
+                           (CB.RES_ACCEL, 1.8), (0.0, 1.9),
+                           (CB.RES_ACCEL, 2.0), (0.0, 2.1),
+                           (CB.RES_ACCEL, 2.2), (0.0, 2.3)],
+    checks=[check_engaged, check_no_collision],
+  ),
+'''
+
 
 
 def setup_output():
@@ -362,7 +366,7 @@ def run_maneuver_worker(k):
 
 
 for k in range(len(maneuvers)):
-  setattr(LongitudinalControl, "test_longitudinal_maneuvers_%d" % (k + 1), run_maneuver_worker(k))
+  setattr(LongitudinalControl, "test_longitudinal_maneuvers_%d : " % (k + 1) + maneuvers[k].title, run_maneuver_worker(k))
 
 if __name__ == "__main__":
   unittest.main(failfast=True)
