@@ -28,6 +28,14 @@ COROLLA_FW_VERSIONS = [
 COROLLA_FW_VERSIONS_FUZZY = COROLLA_FW_VERSIONS[:-1] + [(Ecu.dsu, 0x791, None, b'xxxxxx')]
 COROLLA_FW_VERSIONS_NO_DSU = COROLLA_FW_VERSIONS[:-1]
 
+CX5_FW_VERSIONS = [
+    (Ecu.engine, 0x7e0, None, b'PYNF-188K2-F\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'),
+    (Ecu.esp, 0x760, None, b'K123-437K2-E\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'),
+    (Ecu.eps, 0x730, None, b'KJ01-3210X-G-00\x00\x00\x00\x00\x00\x00\x00\x00\x00'),
+    (Ecu.fwdRadar, 0x764, None, b'K123-67XK2-F\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'),
+    (Ecu.fwdCamera, 0x706, None, b'B61L-67XK2-T\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'),
+    (Ecu.transmission, 0x7e1, None, b'PYNC-21PS1-B\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'),
+]
 
 class TestStartup(unittest.TestCase):
 
@@ -47,8 +55,8 @@ class TestStartup(unittest.TestCase):
     (EventName.communityFeatureDisallowed, HYUNDAI.KIA_STINGER, False, None),
 
     # dashcamOnly car
-    (EventName.startupNoControl, MAZDA.CX5, True, None),
-    (EventName.communityFeatureDisallowed, MAZDA.CX5, False, None),
+    (EventName.startupNoControl, MAZDA.CX5, True, CX5_FW_VERSIONS),
+    (EventName.startupNoControl, MAZDA.CX5, False, CX5_FW_VERSIONS),
 
     # unrecognized car
     (EventName.startupNoCar, None, True, None),
