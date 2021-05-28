@@ -47,6 +47,7 @@ class TestCarModel(unittest.TestCase):
       else:
         raise Exception(f"missing test route for car {cls.car_model}")
 
+    print(f'car fp: {cls.car_model}')
     for seg in [2, 1, 0]:
       try:
         lr = LogReader(get_url(ROUTES[cls.car_model], seg))
