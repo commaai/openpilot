@@ -39,22 +39,22 @@ class AVInitializer {
 static AVInitializer av_initializer;
 
 FrameReader::FrameReader(const std::string &url, VisionStreamType stream_type)
-    : url(url), stream_type(stream_type) {}
+    : url_(url), stream_type(stream_type) {}
 
 FrameReader::~FrameReader() {
   // wait until thread is finished.
   exit_ = true;
-  cv_decode.notify_one();
-  cv_frame.notify_all();
+  cv_decode_.notify_one();
+  cv_frame_.notify_all();
   wait();
 
   // free all.
-  for (auto &f : frames) {
+  for (auto &f : frames_) {
     if (f.picture) av_frame_free(&f.picture);
   }
-  avcodec_free_context(&pCodecCtx);
-  avformat_free_context(pFormatCtx);
-  sws_freeContext(sws_ctx);
+  avcodec_free_context(&pCodecCtx_);
+  avformat_free_context(pFormatCtx_);
+  sws_freeContext(sws_ctx_);
 }
 
 void FrameReader::run() {
@@ -63,43 +63,43 @@ void FrameReader::run() {
 }
 
 void FrameReader::processFrames() {
-  if (avformat_open_input(&pFormatCtx, url.c_str(), NULL, NULL) != 0) {
-    qDebug() << "error loading " <<  url.c_str();
+  if (avformat_open_input(&pFormatCtx_, url_.c_str(), NULL, NULL) != 0) {
+    qDebug() << "error loading " <<  url_.c_str();
     emit finished(false);
     return;
   }
-  avformat_find_stream_info(pFormatCtx, NULL);
-  av_dump_format(pFormatCtx, 0, url.c_str(), 0);
+  avformat_find_stream_info(pFormatCtx_, NULL);
+  av_dump_format(pFormatCtx_, 0, url_.c_str(), 0);
 
-  auto pCodecCtxOrig = pFormatCtx->streams[0]->codec;
+  auto pCodecCtxOrig = pFormatCtx_->streams[0]->codec;
   auto pCodec = avcodec_find_decoder(pCodecCtxOrig->codec_id);
   assert(pCodec != NULL);
 
-  pCodecCtx = avcodec_alloc_context3(pCodec);
-  int ret = avcodec_copy_context(pCodecCtx, pCodecCtxOrig);
+  pCodecCtx_ = avcodec_alloc_context3(pCodec);
+  int ret = avcodec_copy_context(pCodecCtx_, pCodecCtxOrig);
   assert(ret == 0);
 
-  ret = avcodec_open2(pCodecCtx, pCodec, NULL);
+  ret = avcodec_open2(pCodecCtx_, pCodec, NULL);
   assert(ret >= 0);
 
   width = pCodecCtxOrig->width;
   height = pCodecCtxOrig->height;
 
-  sws_ctx = sws_getContext(width, height, AV_PIX_FMT_YUV420P,
+  sws_ctx_ = sws_getContext(width, height, AV_PIX_FMT_YUV420P,
                            width, height, AV_PIX_FMT_BGR24,
                            SWS_BILINEAR, NULL, NULL, NULL);
-  assert(sws_ctx != NULL);
+  assert(sws_ctx_ != NULL);
 
-  frames.reserve(60 * 20); // 20fps, one minute
+  frames_.reserve(60 * 20); // 20fps, one minute
   do {
-    Frame &frame = frames.emplace_back();
-    if (av_read_frame(pFormatCtx, &frame.pkt) < 0) {
-      frames.pop_back();
+    Frame &frame = frames_.emplace_back();
+    if (av_read_frame(pFormatCtx_, &frame.pkt) < 0) {
+      frames_.pop_back();
       break;
     }
   } while (!exit_);
 
-  qDebug() << "framereader reader " << frames.size() << " frames";
+  qDebug() << "framereader reader " << frames_.size() << " frames";
   valid_ = !exit_;
   emit finished(valid_);
 }
@@ -108,33 +108,33 @@ void FrameReader::decodeFrames() {
   int idx = 0;
   while (!exit_) {
     const int from = std::max(idx, -10);
-    const int to = std::min(idx + 20, (int)frames.size());
+    const int to = std::min(idx + 20, (int)frames_.size());
     for (int i = from; i < to && !exit_; ++i) {
-      Frame &frame = frames[i];
+      Frame &frame = frames_[i];
       if (frame.picture != nullptr || frame.failed) continue;
 
       int gotFrame;
       AVFrame *pFrame = av_frame_alloc();
-      avcodec_decode_video2(pCodecCtx, pFrame, &gotFrame, &frame.pkt);
+      avcodec_decode_video2(pCodecCtx_, pFrame, &gotFrame, &frame.pkt);
       av_free_packet(&frame.pkt);
 
       AVFrame *picture = gotFrame ? toRGB(pFrame) : nullptr;
       av_frame_free(&pFrame);
 
       if (!picture) {
-        qDebug() << "failed to decode frame " << i << " in " << url.c_str();
+        qDebug() << "failed to decode frame " << i << " in " << url_.c_str();
       }
-      std::unique_lock lk(mutex);
+      std::unique_lock lk(mutex_);
       frame.picture = picture;
       frame.failed = !picture;
-      cv_frame.notify_one();
+      cv_frame_.notify_one();
     }
 
     // sleep & wait
-    std::unique_lock lk(mutex);
-    cv_decode.wait(lk, [=] { return exit_ || decode_idx != -1; });
-    idx = decode_idx;
-    decode_idx = -1;
+    std::unique_lock lk(mutex_);
+    cv_decode_.wait(lk, [=] { return exit_ || decode_idx_ != -1; });
+    idx = decode_idx_;
+    decode_idx_ = -1;
   }
 }
 
@@ -144,7 +144,7 @@ AVFrame *FrameReader::toRGB(AVFrame *frm) {
     uint8_t *buffer = (uint8_t *)av_malloc(numBytes * sizeof(uint8_t));
     AVFrame *frmRgb = av_frame_alloc();
     if (avpicture_fill((AVPicture *)frmRgb, buffer, AV_PIX_FMT_BGR24, frm->width, frm->height) > 0 &&
-        sws_scale(sws_ctx, (uint8_t const *const *)frm->data, frm->linesize, 0, frm->height,
+        sws_scale(sws_ctx_, (uint8_t const *const *)frm->data, frm->linesize, 0, frm->height,
                   frmRgb->data, frmRgb->linesize) > 0) {
       return frmRgb;
     }
@@ -154,17 +154,16 @@ AVFrame *FrameReader::toRGB(AVFrame *frm) {
 }
 
 uint8_t *FrameReader::get(int idx) {
-  if (!valid_ || idx < 0 || idx >= frames.size()) return nullptr;
+  if (!valid_ || idx < 0 || idx >= frames_.size()) return nullptr;
 
-  std::unique_lock lk(mutex);
-  decode_idx = idx;
-  cv_decode.notify_one();
+  std::unique_lock lk(mutex_);
+  decode_idx_ = idx;
+  cv_decode_.notify_one();
   double t1 = millis_since_boot();
-  cv_frame.wait(lk, [=] { return exit_ || frames[idx].picture != nullptr || frames[idx].failed; });
-  double t2 =  millis_since_boot();
-  if ((t2 - t1) > 10)  {
-    qInfo() << "get frame " << t2 - t1 << " " << idx;
+  cv_frame_.wait(lk, [=] { return exit_ || frames_[idx].picture != nullptr || frames_[idx].failed; });
+  if (double dt =  millis_since_boot() - t1; dt > 20)  {
+    qDebug() << "slow get frame " << idx << ", time: " <<  dt << "ms";
   }
   
-  return frames[idx].picture ? frames[idx].picture->data[0] : nullptr;
+  return frames_[idx].picture ? frames_[idx].picture->data[0] : nullptr;
 }

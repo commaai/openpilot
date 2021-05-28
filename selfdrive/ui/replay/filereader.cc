@@ -61,19 +61,19 @@ LogReader::LogReader(const QString &file) : file_(file) {}
 LogReader::~LogReader() {
   // wait until thread is finished.
   exit_ = true;
-  thread->quit();
-  thread->wait();
+  thread_->quit();
+  thread_->wait();
 
   // free all
-  delete thread;
+  delete thread_;
   for (auto e : events_) delete e;
 }
 
 void LogReader::start() {
-  thread = new QThread(this);
-  moveToThread(thread);
-  connect(thread, &QThread::started, this, &LogReader::process);
-  thread->start();
+  thread_ = new QThread(this);
+  moveToThread(thread_);
+  connect(thread_, &QThread::started, this, &LogReader::process);
+  thread_->start();
 }
 
 void LogReader::process() {

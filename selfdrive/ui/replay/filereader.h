@@ -83,5 +83,5 @@ protected:
   QString file_;
   std::atomic<bool> exit_ = false;
   std::atomic<bool> valid_ = false;
-  QThread *thread;
+  QThread *thread_ = nullptr;
 };

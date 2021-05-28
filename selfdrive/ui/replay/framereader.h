@@ -46,17 +46,17 @@ public:
     AVFrame *picture = nullptr;
     bool failed = false;
   };
-  std::vector<Frame> frames;
+  std::vector<Frame> frames_;
 
-  AVFormatContext *pFormatCtx = NULL;
-  AVCodecContext *pCodecCtx = NULL;
-  struct SwsContext *sws_ctx = NULL;
+  AVFormatContext *pFormatCtx_ = NULL;
+  AVCodecContext *pCodecCtx_ = NULL;
+  struct SwsContext *sws_ctx_ = NULL;
 
-  std::mutex mutex;
-  std::condition_variable cv_decode;
-  std::condition_variable cv_frame;
-  int decode_idx = 0;
+  std::mutex mutex_;
+  std::condition_variable cv_decode_;
+  std::condition_variable cv_frame_;
+  int decode_idx_ = 0;
   std::atomic<bool> exit_ = false;
   bool valid_ = false;
-  std::string url;
+  std::string url_;
 };
