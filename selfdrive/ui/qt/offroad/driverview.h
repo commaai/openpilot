@@ -24,9 +24,9 @@ protected:
 private:
   Params params;
   SubMaster sm;
-  bool frame_updated = false;
+  QImage face;
   bool is_rhd = false;
-  QImage face_img;
+  bool frame_updated = false;
 };
 
 class DriverViewWindow : public QWidget {
@@ -40,7 +40,7 @@ signals:
 
 protected:
   void mousePressEvent(QMouseEvent* e) override;
-  
+
 private:
   CameraViewWidget *cameraView;
   DriverViewScene *scene;
