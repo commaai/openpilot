@@ -68,14 +68,6 @@ static void update_leads(UIState *s, const cereal::ModelDataV2::LeadDataV3::Read
     float z = line ? (*line).getZ()[get_path_length_idx(*line, lead_data.getX()[0])] : 0.0;
     calib_frame_to_full_frame(s, lead_data.getX()[0], -lead_data.getY()[0], z + 1.22, &s->scene.lead_vertices[0]);
   }
-  //for (int i = 0; i < 2; ++i) {
-  //  auto lead_data = (i == 0) ? radar_state.getLeadOne() : radar_state.getLeadTwo();
-  //  if (lead_data.getStatus()) {
-   //   float z = line ? (*line).getZ()[get_path_length_idx(*line, lead_data.getDRel())] : 0.0;
-      // negative because radarState uses left positive convention
-   //   calib_frame_to_full_frame(s, lead_data.getDRel(), -lead_data.getYRel(), z + 1.22, &s->scene.lead_vertices[i]);
-   // }
- // }
 }
 
 static void update_line_data(const UIState *s, const cereal::ModelDataV2::XYZTData::Reader &line,
