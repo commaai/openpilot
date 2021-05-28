@@ -258,7 +258,7 @@ void Replay::cameraThread(FrameType frame_type) {
     if (!seg) continue;
 
     FrameReader *frm = seg->frames[frame_type];
-    if (uint8_t *data = frm->get(eidx->segmentId); data != nullptr) {
+    if (uint8_t *data = frm->get(eidx->segmentId)) {
       VisionIpcBufExtra extra = {};
       VisionBuf *buf = vipc_server_->get_buffer(frm->stream_type);
       memcpy(buf->addr, data, frm->getRGBSize());
@@ -309,15 +309,13 @@ void Replay::pushFrame(FrameType type, int seg_id, uint32_t frame_id) {
   // do nothing if no video stream for this type
   if (!cameras_[type]) return;
 
-  // search frame's encodIdx in adjacent segments_.
+  // search frame's encodeIdx in adjacent segments_.
   int search_in[] = {seg_id, seg_id - 1, seg_id + 1};
   for (auto idx : search_in) {
-    if (std::shared_ptr<Segment> seg = getSegment(idx); seg) {
-      const EncodeIdx *eidx = seg->log->getFrameEncodeIdx(type, frame_id);
-      if (eidx) {
-        cameras_[type]->queue.push(eidx);
-        break;
-      }
+    const EncodeIdx *eidx = nullptr;
+    if (auto seg = getSegment(idx); seg && (eidx = seg->log->getFrameEncodeIdx(type, frame_id))) {
+      cameras_[type]->queue.push(eidx);
+      break;
     }
   }
 }
