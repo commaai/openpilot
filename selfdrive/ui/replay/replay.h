@@ -56,7 +56,7 @@ private:
 
   void seekTime(int ts);
   void startVipcServer(const Segment *segment);
-  std::optional<std::pair<std::shared_ptr<Segment>, uint32_t>> getFrameSegment(int seg_id, FrameType type, uint32_t frame_id);
+  void pushFrame(FrameType type, int seg_id, uint32_t frame_id);
 
   std::atomic<int64_t> current_ts_ = 0, seek_ts_ = 0;
   std::atomic<int> current_segment_ = 0;
@@ -82,7 +82,7 @@ private:
   
   struct Camera {
     QThread *thread = nullptr;
-    SafeQueue<std::tuple<int, uint32_t>> queue; // <segment_id, frame_id>
+    SafeQueue<const EncodeIdx*> queue; // <segment_id, frame_id>
   };
   Camera *cameras_[MAX_FRAME_TYPE] = {};
 

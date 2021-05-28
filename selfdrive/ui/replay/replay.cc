@@ -212,7 +212,8 @@ void Replay::startVipcServer(const Segment *seg) {
       }
       vipc_server_->create_buffers(fr->stream_type, UI_BUF_COUNT, true, fr->width, fr->height);
       QThread *t = QThread::create(&Replay::cameraThread, this, (FrameType)i);
-      cameras_[i] = new Camera{.thread = t};
+      cameras_[i] = new Camera;
+      cameras_[i]->thread = t;
       t->start();
     }
   }
@@ -221,21 +222,6 @@ void Replay::startVipcServer(const Segment *seg) {
     qDebug() << "start vipc server";
   }
 }
-
-std::optional<std::pair<std::shared_ptr<Segment>, uint32_t>> Replay::getFrameSegment(int seg_id, FrameType type, uint32_t frame_id) {
-  auto seg = getSegment(seg_id);
-  if (!seg) return std::nullopt;
-
-  const EncodeIdx *eidx = seg->log->getFrameEncodeIdx(type, frame_id);
-  if (!eidx) return std::nullopt;
-
-  if (seg_id != eidx->segmentNum) {
-    // frame is in anther segment
-    seg = getSegment(eidx->segmentNum);
-    if (!seg) return std::nullopt;
-  }
-  return std::make_pair(seg, eidx->segmentId);
-};
 
 void Replay::seekTime(int ts) {
   ts = std::clamp(ts, 0, log_paths_.size() * SEGMENT_LENGTH);
@@ -265,29 +251,23 @@ void Replay::segmentQueueThread() {
 
 void Replay::cameraThread(FrameType frame_type) {
   while (!exit_) {
-    std::tuple<int, uint32_t> frame;
-    if (!cameras_[frame_type]->queue.try_pop(frame, 50)) continue;
+    const EncodeIdx *eidx = nullptr;
+    if (!cameras_[frame_type]->queue.try_pop(eidx, 50)) continue;
+    
+    std::shared_ptr<Segment> seg = getSegment(eidx->segmentNum);
+    if (!seg) continue;
 
-    auto [seg_id, frame_id] = frame;
-    // search frame's encodIdx in adjacent segments_.
-    int search_in[] = {seg_id, seg_id - 1, seg_id + 1};
-    for (auto i : search_in) {
-      if (auto f = getFrameSegment(i, frame_type, frame_id)) {
-        auto [seg, encode_idx] = *f;
-        FrameReader *frm = seg->frames[frame_type];
-        uint8_t *data = nullptr;
-        if (frm && (data = frm->get(encode_idx))) {
-          VisionIpcBufExtra extra = {};
-          VisionBuf *buf = vipc_server_->get_buffer(frm->stream_type);
-          memcpy(buf->addr, data, frm->getRGBSize());
-          vipc_server_->send(buf, &extra, false);
-        } else {
-          qDebug() << "failed to get frame " << frame_id << " from segment " << i;
-        }
-        break;
-      }
+    FrameReader *frm = seg->frames[frame_type];
+    if (uint8_t *data = frm->get(eidx->segmentId); data != nullptr) {
+      VisionIpcBufExtra extra = {};
+      VisionBuf *buf = vipc_server_->get_buffer(frm->stream_type);
+      memcpy(buf->addr, data, frm->getRGBSize());
+      vipc_server_->send(buf, &extra, false);
+    } else {
+      qDebug() << "failed to get frame eidx " << eidx->segmentId << " from segment " << seg->id;
     }
   }
+
   cameras_[frame_type]->thread->deleteLater();
 }
 
@@ -321,6 +301,23 @@ void Replay::keyboardThread() {
       seekTime(current_ts_ - 10);
     } else if (c == 'G') {
       seekTime(0);
+    }
+  }
+}
+
+void Replay::pushFrame(FrameType type, int seg_id, uint32_t frame_id) {
+  // do nothing if no video stream for this type
+  if (!cameras_[type]) return;
+
+  // search frame's encodIdx in adjacent segments_.
+  int search_in[] = {seg_id, seg_id - 1, seg_id + 1};
+  for (auto idx : search_in) {
+    if (std::shared_ptr<Segment> seg = getSegment(idx); seg) {
+      const EncodeIdx *eidx = seg->log->getFrameEncodeIdx(type, frame_id);
+      if (eidx) {
+        cameras_[type]->queue.push(eidx);
+        break;
+      }
     }
   }
 }
@@ -382,12 +379,12 @@ void Replay::streamThread() {
         }
 
         // publish frames
-        if (e.which() == cereal::Event::ROAD_CAMERA_STATE && cameras_[RoadCamFrame]) {
-          cameras_[RoadCamFrame]->queue.push({seg->id, e.getRoadCameraState().getFrameId()});
-        } else if (e.which() == cereal::Event::DRIVER_CAMERA_STATE && cameras_[DriverCamFrame]) {
-          cameras_[DriverCamFrame]->queue.push({seg->id, e.getDriverCameraState().getFrameId()});
-        } else if (e.which() == cereal::Event::WIDE_ROAD_CAMERA_STATE && cameras_[WideRoadCamFrame]) {
-          cameras_[WideRoadCamFrame]->queue.push({seg->id, e.getWideRoadCameraState().getFrameId()});
+        if (e.which() == cereal::Event::ROAD_CAMERA_STATE) {
+          pushFrame(RoadCamFrame, seg->id, e.getRoadCameraState().getFrameId());
+        } else if (e.which() == cereal::Event::DRIVER_CAMERA_STATE) {
+          pushFrame(DriverCamFrame, seg->id, e.getDriverCameraState().getFrameId());
+        } else if (e.which() == cereal::Event::WIDE_ROAD_CAMERA_STATE) {
+          pushFrame(WideRoadCamFrame, seg->id, e.getWideRoadCameraState().getFrameId());
         }
 
         // publish msg
