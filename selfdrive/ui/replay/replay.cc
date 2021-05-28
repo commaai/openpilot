@@ -309,15 +309,16 @@ void Replay::pushFrame(FrameType type, int seg_id, uint32_t frame_id) {
   // do nothing if no video stream for this type
   if (!cameras_[type]) return;
 
-  // search frame's encodeIdx in adjacent segments_.
+  // find encodeIdx in adjacent segments_.
   int search_in[] = {seg_id, seg_id - 1, seg_id + 1};
   for (auto idx : search_in) {
     const EncodeIdx *eidx = nullptr;
     if (auto seg = getSegment(idx); seg && (eidx = seg->log->getFrameEncodeIdx(type, frame_id))) {
       cameras_[type]->queue.push(eidx);
-      break;
+      return;
     }
   }
+  qDebug() << "failed to find eidx for frame " << frame_id << " in segment " << seg_id;
 }
 
 void Replay::streamThread() {
