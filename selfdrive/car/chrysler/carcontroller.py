@@ -61,7 +61,7 @@ class CarController():
         can_sends.append(new_msg)
         self.hud_count += 1
 
-    new_msg = create_lkas_command(self.packer, int(apply_steer), self.gone_fast_yet, frame)
+    new_msg = create_lkas_command(self.packer, int(apply_steer), (self.gone_fast_yet and enalbed), frame)
     can_sends.append(new_msg)
 
     self.ccframe += 1
