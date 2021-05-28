@@ -35,14 +35,10 @@ def manager_init():
   default_params = [
     ("CompletedTrainingVersion", "0"),
     ("HasAcceptedTerms", "0"),
+    ("HandsOnWheelMonitoring", "0"),
+    ("MaxDecelerationForTurns", "-3.0"),
     ("OpenpilotEnabledToggle", "1"),
-    ("ShowDebugUI", "1"),
-    ("SpeedLimitControl", "1"),
-    ("SpeedLimitPercOffset", "1"),
-    ("SpeedLimitDelayIncrease", "1"),
-    ("TurnSpeedControl", "1"),
     ("TurnVisionControl", "1"),
-    ("HandsOnWheelMonitoring", "1"),
   ]
   if not PC:
     default_params.append(("LastUpdateTime", datetime.datetime.utcnow().isoformat().encode('utf8')))

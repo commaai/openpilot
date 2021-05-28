@@ -588,6 +588,8 @@ class Controls:
     controlsState.startMonoTime = int(start_time * 1e9)
     controlsState.forceDecel = bool(force_decel)
     controlsState.canErrorCounter = self.can_error_counter
+    controlsState.turnControllerState = self.sm['longitudinalPlan'].turnControllerState
+    controlsState.turnAcc = float(self.sm['longitudinalPlan'].turnAcc)
 
     if self.CP.steerControlType == car.CarParams.SteerControlType.angle:
       controlsState.lateralControlState.angleState = lac_log
