@@ -54,18 +54,17 @@ mat4 get_driver_view_transform() {
     const int crop_x_offset = 32;
     const int crop_y_offset = -196;
     const float yscale = full_height_tici * driver_view_ratio / adapt_width_tici;
-    const float xscale = yscale*(1080-2*bdr_s)/(2160-2*bdr_s)*full_width_tici/full_height_tici;
+    const float xscale = yscale*(1080)/(2160)*full_width_tici/full_height_tici;
     transform = (mat4){{
       xscale,  0.0, 0.0, xscale*crop_x_offset/full_width_tici*2,
       0.0,  yscale, 0.0, yscale*crop_y_offset/full_height_tici*2,
       0.0,  0.0, 1.0, 0.0,
       0.0,  0.0, 0.0, 1.0,
     }};
-  
   } else {
-     // frame from 4/3 to 16/9 display
+    // frame from 4/3 to 16/9 display
     transform = (mat4){{
-      driver_view_ratio*(1080-2*bdr_s)/(1920-2*bdr_s),  0.0, 0.0, 0.0,
+      driver_view_ratio*(1080)/(1920),  0.0, 0.0, 0.0,
       0.0,  1.0, 0.0, 0.0,
       0.0,  0.0, 1.0, 0.0,
       0.0,  0.0, 0.0, 1.0,
@@ -166,7 +165,7 @@ void CameraViewWidget::paintGL() {
 
   QRect video_rect = {0, 0, width(), height()};
   glViewport(video_rect.left(), video_rect.top(), video_rect.width(), video_rect.height());
-  
+
   glBindVertexArray(frame_vao);
   glActiveTexture(GL_TEXTURE0);
 
