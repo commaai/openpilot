@@ -166,7 +166,7 @@ void Replay::addSegment(int n) {
   std::unique_lock lk(segment_lock_);
   if (segments_.find(n) != segments_.end()) return;
 
-  std::shared_ptr<SegmentData> seg = std::make_shared<SegmentData>(n);
+  std::shared_ptr<Segment> seg = std::make_shared<Segment>(n);
   seg->loading = 1;
   segments_[n] = seg;
   lk.unlock();
@@ -188,7 +188,7 @@ void Replay::addSegment(int n) {
 }
 
 // return nullptr if segment is not loaded
-std::shared_ptr<SegmentData> Replay::getSegment(int n) {
+std::shared_ptr<Segment> Replay::getSegment(int n) {
   std::unique_lock lk(segment_lock_);
   if (auto it = segments_.find(n); it != segments_.end()) {
     return !it->second->loading ? it->second : nullptr;
@@ -202,7 +202,7 @@ void Replay::removeSegment(int n) {
   segments_.erase(n);
 }
 
-void Replay::startVipcServer(const SegmentData *seg) {
+void Replay::startVipcServer(const Segment *seg) {
   for (auto f : seg->frames) {
     if (f && f->valid()) {
       if (!vipc_server_) {
@@ -219,24 +219,19 @@ void Replay::startVipcServer(const SegmentData *seg) {
   }
 }
 
-std::optional<std::pair<std::shared_ptr<SegmentData>, uint32_t>> Replay::getFrameSegment(int seg_id, FrameType type, uint32_t frame_id) {
+std::optional<std::pair<std::shared_ptr<Segment>, uint32_t>> Replay::getFrameSegment(int seg_id, FrameType type, uint32_t frame_id) {
   auto seg = getSegment(seg_id);
   if (!seg) return std::nullopt;
 
   const EncodeIdx *eidx = seg->log->getFrameEncodeIdx(type, frame_id);
   if (!eidx) return std::nullopt;
 
-  // qInfo() << "frame_seg";
   if (seg_id != eidx->segmentNum) {
+    // frame is in anther segment
     seg = getSegment(eidx->segmentNum);
     if (!seg) return std::nullopt;
   }
   return std::make_pair(seg, eidx->segmentId);
-  // // qInfo() << "frame reader";
-  // FrameReader *frm = frame_seg->frames[type];
-  // if (!frm) return std::nullopt;
-
-  // return std::make_pair(frm, eidx->segmentId);
 };
 
 void Replay::seekTime(int ts) {
@@ -269,12 +264,12 @@ void Replay::cameraThread() {
   vipc_server_->start_listener();
 
   while (!exit_) {
-    std::pair<FrameType, uint32_t> frame;
+    std::tuple<int, FrameType, uint32_t> frame;
     if (!frame_queue_.try_pop(frame, 50)) continue;
 
-    auto [frame_type, frame_id] = frame;
+    auto [seg_id, frame_type, frame_id] = frame;
     // search frame's encodIdx in adjacent segments_.
-    int search_in[] = {current_segment_, current_segment_ - 1, current_segment_ + 1};
+    int search_in[] = {seg_id, seg_id - 1, seg_id + 1};
     for (auto i : search_in) {
       if (auto f = getFrameSegment(i, frame_type, frame_id)) {
         auto [seg, fid] = *f;
@@ -337,8 +332,9 @@ void Replay::streamThread() {
 
   seekTime(0);
   uint64_t route_start_ts = 0;
+  int64_t last_print = 0;
   while (!exit_) {
-    std::shared_ptr<SegmentData> seg = getSegment(current_segment_);
+    std::shared_ptr<Segment> seg = getSegment(current_segment_);
     if (!seg) {
       qDebug() << "waiting for events";
       QThread::msleep(100);
@@ -372,9 +368,9 @@ void Replay::streamThread() {
       current_ts_ = std::max(tm - route_start_ts, (unsigned long)0) / 1e9;
 
       if (socks_.find(type) != socks_.end()) {
-        if (std::abs(current_ts_ - last_print_) > 5.0) {
-          last_print_ = current_ts_;
-          qInfo() << "at " << last_print_ << "| segment:" << seg->id;
+        if (std::abs(current_ts_ - last_print) > 5.0) {
+          last_print = current_ts_;
+          qInfo() << "at " << last_print << "| segment:" << seg->id;
         }
 
         // keep time
@@ -388,11 +384,11 @@ void Replay::streamThread() {
 
         // publish frames
         if (e.which() == cereal::Event::ROAD_CAMERA_STATE) {
-          frame_queue_.push({RoadCamFrame, e.getRoadCameraState().getFrameId()});
+          frame_queue_.push({seg->id, RoadCamFrame, e.getRoadCameraState().getFrameId()});
         } else if (e.which() == cereal::Event::DRIVER_CAMERA_STATE) {
-          frame_queue_.push({DriverCamFrame, e.getDriverCameraState().getFrameId()});
+          frame_queue_.push({seg->id, DriverCamFrame, e.getDriverCameraState().getFrameId()});
         } else if (e.which() == cereal::Event::WIDE_ROAD_CAMERA_STATE) {
-          frame_queue_.push({WideRoadCamFrame, e.getWideRoadCameraState().getFrameId()});
+          frame_queue_.push({seg->id, WideRoadCamFrame, e.getWideRoadCameraState().getFrameId()});
         }
 
         // publish msg
