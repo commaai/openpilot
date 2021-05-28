@@ -64,7 +64,7 @@ class LongitudinalMpc():
     t = sec_since_boot()
     model_t = [0., 2., 4., 6., 8., 10.]
     mpc_t = [0.0, .2, .4, .6, .8] + list(np.arange(1.0, 10.1, .6))
-    lead_x_interp = np.interp(mpc_t, model_t, lead.x)
+    lead_x_interp = np.interp(mpc_t, model_t, lead.x) - 2.0
     lead_v_interp = np.interp(mpc_t, model_t, lead.v)
     self.n_its = self.libmpc.run_mpc(self.cur_state, self.mpc_solution,
                                      list(lead_x_interp), list(lead_v_interp))
