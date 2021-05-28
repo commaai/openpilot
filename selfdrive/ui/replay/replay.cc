@@ -85,7 +85,12 @@ bool Replay::loadFromLocal() {
   QJsonArray logs, qlogs;
 
   QDir log_root(LOG_ROOT.c_str());
-  const  QStringList folders = log_root.entryList(QStringList() << list[1] + "*", QDir::Dirs | QDir::NoDot);
+  QStringList folders = log_root.entryList(QStringList() << list[1] + "*", QDir::Dirs | QDir::NoDot, QDir::NoSort);
+  if (folders.isEmpty()) return false;
+
+  std::sort(folders.begin(), folders.end(), [](const QString &file1, const QString &file2) {
+    return file1.split("--")[2].toInt() < file2.split("--")[2].toInt();
+  });
 
   for (auto folder : folders) {
     QDir segment(log_root.filePath(folder));
@@ -107,7 +112,6 @@ bool Replay::loadFromLocal() {
       }
     }
   }
-
   QJsonObject obj;
   obj["cameras"] = cameras;
   obj["dcameras"] = dcameras;
@@ -188,13 +192,18 @@ void Replay::addSegment(int n) {
 // return nullptr if segment is not loaded
 const SegmentData *Replay::getSegment(int n) {
   std::unique_lock lk(segment_lock);
-  const SegmentData *seg = segments[n];
-  return (seg && !seg->loading) ? seg : nullptr;
+  if (segments.contains(n)) {
+    const SegmentData *seg = segments[n];
+    return (seg && !seg->loading) ? seg : nullptr;
+  } else {
+    return nullptr;
+  }
 }
 
 void Replay::removeSegment(int n) {
   std::unique_lock lk(segment_lock);
   if (segments.contains(n)) {
+    qDebug() << "remove segment " << n;
     delete segments.take(n);
   }
 }
@@ -220,21 +229,16 @@ std::optional<std::pair<FrameReader *, uint32_t>> Replay::getFrame(int seg_id, F
   auto seg = getSegment(seg_id);
   if (!seg) return std::nullopt;
 
-  // qInfo() << "search in seg " << seg_id << " frame type " << type << " frame id " << frame_id;
-  // qInfo() << "eidx";
   const EncodeIdx *eidx = seg->log->getFrameEncodeIdx(type, frame_id);
   if (!eidx) return std::nullopt;
 
   // qInfo() << "frame_seg";
-  auto frame_seg = (seg_id == (*eidx).segmentNum) ? seg : getSegment(eidx->segmentNum);
+  auto frame_seg = (seg_id == eidx->segmentNum) ? seg : getSegment(eidx->segmentNum);
   if (!frame_seg) return std::nullopt;
 
   // qInfo() << "frame reader";
   FrameReader *frm = frame_seg->frames[type];
-  if (!frm && type == RoadCamFrame) {
-    qInfo() << "no frame reader " << seg_id;
-    return std::nullopt;
-  }
+  if (!frm) return std::nullopt;
 
   return std::make_pair(frm, eidx->segmentId);
 };
@@ -272,13 +276,10 @@ void Replay::cameraThread() {
     std::pair<FrameType, uint32_t> frame;
     if (!frame_queue.try_pop(frame, 50)) continue;
 
-    bool frame_sent = false;
     auto [frame_type, frame_id] = frame;
     // search frame's encodIdx in adjacent segments.
-    int search_in[] = {playing_segment};//{current_segment, current_segment - 1, current_segment + 1};
+    int search_in[] = {playing_segment,  playing_segment - 1, playing_segment + 1};
     for (auto i : search_in) {
-      if (i < 0 || i >= segments.size()) continue;
-
       if(auto f = getFrame(i, frame_type, frame_id)) {
         auto [frame_reader, fid] = *f;
         if (uint8_t *data = frame_reader->get(fid)) {
@@ -286,15 +287,11 @@ void Replay::cameraThread() {
           VisionBuf *buf = vipc_server->get_buffer(frame_reader->stream_type);
           memcpy(buf->addr, frame_reader->get(fid), frame_reader->getRGBSize());
           vipc_server->send(buf, &extra, false);
-          frame_sent = true;
         } else {
           qDebug() << "failed to get frame " << frame_id << " from segment " << i;
         }
         break;
       }
-    }
-    if (!frame_sent){
-      qDebug() << "failed to get frame " << frame_id;
     }
   }
 
@@ -413,7 +410,7 @@ void Replay::streamThread() {
       ++eit;
     }
 
-    if (eit == events.end()) {
+    if (current_seek_ts == seek_ts && eit == events.end()) {
       // move to the next segment
       current_segment += 1;
       qDebug() << "move to next segment " << current_segment;

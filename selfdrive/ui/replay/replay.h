@@ -57,8 +57,8 @@ private:
   std::optional<std::pair<FrameReader *, uint32_t>> getFrame(int seg_id, FrameType type, uint32_t frame_id);
 
   float last_print = 0;
-  std::atomic<int> current_ts, seek_ts;
-  std::atomic<int> current_segment, playing_segment;
+  std::atomic<int> current_ts = 0, seek_ts = 0;
+  std::atomic<int> current_segment = 0, playing_segment = 0;
   std::mutex lock;
 
   HttpRequest *http = nullptr;

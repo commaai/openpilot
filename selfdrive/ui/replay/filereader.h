@@ -77,8 +77,8 @@ protected:
 
   std::vector<uint8_t> raw_;
   Events events_;
-  EncodeIdxMap encoderIdx_[MAX_FRAME_TYPE];
+  EncodeIdxMap encoderIdx_[MAX_FRAME_TYPE] = {};
   QString file_;
-  std::atomic<bool> exit_;
+  std::atomic<bool> exit_ = false;
   QThread *thread;
 };

@@ -97,7 +97,7 @@ void FrameReader::processFrames() {
     }
   } while (!exit_);
 
-  printf("framereader download done\n");
+  qInfo() << "framereader reader " << frames.size() << " frames"; 
   valid_ = !exit_;
   emit finished(valid_);
 }

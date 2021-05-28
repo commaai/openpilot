@@ -61,13 +61,15 @@ LogReader::LogReader(const QString &file) : file_(file) {}
 LogReader::~LogReader() {
   // wait until thread is finished.
   exit_ = true;
-  // quit();
-  // wait();
-  // for (auto e : events_) delete e;
+  thread->quit();
+  thread->wait();
+  for (auto e : events_) delete e;
+
+  delete thread;
 }
 
 void LogReader::start() {
-  thread = new QThread;
+  thread = new QThread(this);
   moveToThread(thread);
   connect(thread, &QThread::started, this, &LogReader::process);
   thread->start();
@@ -114,11 +116,20 @@ void LogReader::parseEvents(kj::ArrayPtr<const capnp::word> words) {
       events_.insert(event.getLogMonoTime(), message.release());
     } catch (const kj::Exception &e) {
       // partial messages trigger this
-      // qDebug() << e.getDescription().cStr();
+      qDebug() << e.getDescription().cStr();
+      assert(0);
       success = false;
       break;
     }
   }
+  if (!events_.size()) {
+    if (!exit_) {
+      qInfo() << words.size();
+    assert(0);
+    }
+  }
+  qInfo() << "event size " << events_.size() << " eixt " << exit_ << " words " << words.size();
+  assert(events_.size());
   emit finished(success && !exit_);
 }
 
