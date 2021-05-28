@@ -5,6 +5,7 @@
 
 #include <QDebug>
 
+#include "selfdrive/common/timing.h"
 static int ffmpeg_lockmgr_cb(void **arg, enum AVLockOp op) {
   std::mutex *mutex = (std::mutex *)*arg;
   switch (op) {
@@ -106,8 +107,8 @@ void FrameReader::processFrames() {
 void FrameReader::decodeFrames() {
   int idx = 0;
   while (!exit_) {
-    const int from = std::max(idx - idx % 15, 0);
-    const int to = std::min(from + 15, (int)frames.size());
+    const int from = std::max(idx, -10);
+    const int to = std::min(idx + 20, (int)frames.size());
     for (int i = from; i < to && !exit_; ++i) {
       Frame &frame = frames[i];
       if (frame.picture != nullptr || frame.failed) continue;
@@ -126,7 +127,7 @@ void FrameReader::decodeFrames() {
       std::unique_lock lk(mutex);
       frame.picture = picture;
       frame.failed = !picture;
-      cv_frame.notify_all();
+      cv_frame.notify_one();
     }
 
     // sleep & wait
@@ -158,6 +159,12 @@ uint8_t *FrameReader::get(int idx) {
   std::unique_lock lk(mutex);
   decode_idx = idx;
   cv_decode.notify_one();
+  double t1 = millis_since_boot();
   cv_frame.wait(lk, [=] { return exit_ || frames[idx].picture != nullptr || frames[idx].failed; });
+  double t2 =  millis_since_boot();
+  if ((t2 - t1) > 10)  {
+    qInfo() << "get frame " << t2 - t1 << " " << idx;
+  }
+  
   return frames[idx].picture ? frames[idx].picture->data[0] : nullptr;
 }
