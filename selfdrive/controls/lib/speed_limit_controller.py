@@ -8,18 +8,34 @@ from common.realtime import sec_since_boot
 from selfdrive.controls.lib.speed_smoother import speed_smoother
 from selfdrive.controls.lib.events import Events
 
+
+_PARAMS_UPDATE_PERIOD = 2.  # secs. Time between parameter updates.
+
 _LON_MPC_STEP = 0.2  # Time stemp of longitudinal control (5 Hz)
 _WAIT_TIME_LIMIT_RISE = 2.0  # Waiting time before raising the speed limit.
 
 _MIN_ADAPTING_BRAKE_ACC = -1.5  # Minimum acceleration allowed when adapting to lower speed limit.
-_MIN_ADAPTING_BRAKE_JERK = -1.0  # Minimum jerk allowed when adapting to lower speed limit.
-_SPEED_OFFSET_TH = -3.0  # m/s Maximum offset between speed limit and current speed for adapting state.
-_LIMIT_ADAPT_TIME = 5.0  # Ideal time (s) to adapt to lower speed limit. i.e. braking.
+_MIN_ADAPTING_BRAKE_JERK = -0.5  # Minimum jerk allowed when adapting to lower speed limit.
+_SPEED_OFFSET_TH = -1.  # m/s Maximum offset between speed limit and current speed for adapting state.
 
-_MAX_SPEED_OFFSET_DELTA = 1.0  # m/s Maximum delta for speed limit changes.
+_LIMIT_ADAPT_ACC = -1.0  # Ideal acceleration for the adapting (braking) phase when approaching speed limits.
+
+_MAX_MAP_DATA_AGE = 10.0  # s Maximum time to hold to map data, then consider it invalid.
+
+# Lookup table for speed limit percent offset depending on speed.
+_LIMIT_PERC_OFFSET_V = [0.1, 0.05, 0.038]  # 55, 105, 135 km/h
+_LIMIT_PERC_OFFSET_BP = [13.9, 27.8, 36.1]  # 50, 100, 130 km/h
 
 SpeedLimitControlState = log.ControlsState.SpeedLimitControlState
 EventName = car.CarEvent.EventName
+
+_DEBUG = False
+
+
+def _debug(msg):
+  if not _DEBUG:
+    return
+  print(msg)
 
 
 def _description_for_state(speed_limit_control_state):
@@ -116,12 +132,12 @@ class SpeedLimitResolver():
     # Reset tracking
     self._next_speed_limit_prev = 0.
 
-    # Calculate the time to the next speed limit and the adapt (braking)
-    next_speed_limit_time = (map_data.speedLimitAheadDistance / self._v_ego) - gps_fix_age
-    adapt_time = _LIMIT_ADAPT_TIME_PER_MS * (self._v_ego - next_speed_limit)
+    # Calculated the time needed to adapt to the new limit and the corresponding distance.
+    adapt_time = (next_speed_limit - self._v_ego) / _LIMIT_ADAPT_ACC
+    adapt_distance = self._v_ego * adapt_time + 0.5 * _LIMIT_ADAPT_ACC * adapt_time**2
 
     # When we detect we are close enough, we provide the next limit value and track it.
-    if next_speed_limit_time <= adapt_time:
+    if distance_to_speed_limit_ahead <= adapt_distance:
       self._limit_solutions[SpeedLimitResolver.Source.map_data] = next_speed_limit
       self._distance_solutions[SpeedLimitResolver.Source.map_data] = distance_to_speed_limit_ahead
       self._next_speed_limit_prev = next_speed_limit
@@ -182,13 +198,14 @@ class SpeedLimitResolver():
 
 
 class SpeedLimitController():
-  def __init__(self, CP):
+  def __init__(self):
     self._params = Params()
+    self._resolver = SpeedLimitResolver()
     self._last_params_update = 0.0
     self._is_metric = self._params.get_bool("IsMetric")
     self._is_enabled = self._params.get_bool("SpeedLimitControl")
-    self._speed_limit_perc_offset = float(self._params.get("SpeedLimitPercOffset"))
-    self._CP = CP
+    self._delay_increase = self._params.get_bool("SpeedLimitDelayIncrease")
+    self._offset_enabled = self._params.get_bool("SpeedLimitPercOffset")
     self._op_enabled = False
     self._active_jerk_limits = [0.0, 0.0]
     self._active_accel_limits = [0.0, 0.0]
@@ -212,6 +229,7 @@ class SpeedLimitController():
     self._state = SpeedLimitControlState.inactive
     self._state_prev = SpeedLimitControlState.inactive
     self._adapting_cycles = 0
+    self._adapting_time = 0.
 
     self.v_limit = 0.0
     self.a_limit = 0.0
@@ -224,9 +242,13 @@ class SpeedLimitController():
   @state.setter
   def state(self, value):
     if value != self._state:
-      print(f'Speed Limit Controller state: {_description_for_state(value)}')
+      _debug(f'Speed Limit Controller state: {_description_for_state(value)}')
+
       if value == SpeedLimitControlState.adapting:
         self._adapting_cycles = 0  # Reset adapting state cycle count when entereing state.
+        # Adapting time must be  calculated at the moment we enter adapting state.
+        self._adapting_time = self._v_offset / _LIMIT_ADAPT_ACC
+
       elif value == SpeedLimitControlState.tempInactive:
         # Make sure speed limit is set to `set` value, this will have the effect
         # of canceling delayed increase limit, if pending.
@@ -241,8 +263,18 @@ class SpeedLimitController():
     return self.state > SpeedLimitControlState.tempInactive
 
   @property
+  def speed_limit_offseted(self):
+    return self._speed_limit + self.speed_limit_offset
+
+  @property
+  def speed_limit_offset(self):
+    if self._offset_enabled:
+      return interp(self._speed_limit, _LIMIT_PERC_OFFSET_BP, _LIMIT_PERC_OFFSET_V) * self._speed_limit
+    return 0.
+
+  @property
   def speed_limit(self):
-    return self._speed_limit * (1.0 + self._speed_limit_perc_offset / 100.0)
+    return self._speed_limit
 
   @property
   def distance(self):
@@ -254,11 +286,11 @@ class SpeedLimitController():
 
   def _update_params(self):
     time = sec_since_boot()
-    if time > self._last_params_update + 5.0:
-      self._speed_limit_perc_offset = float(self._params.get("SpeedLimitPercOffset"))
+    if time > self._last_params_update + _PARAMS_UPDATE_PERIOD:
       self._is_enabled = self._params.get_bool("SpeedLimitControl")
-      print(f'Updated Speed limit params. enabled: {self._is_enabled}, \
-              perc_offset: {self._speed_limit_perc_offset:.1f}')
+      self._delay_increase = self._params.get_bool("SpeedLimitDelayIncrease")
+      self._offset_enabled = self._params.get_bool("SpeedLimitPercOffset")
+      _debug(f'Updated Speed limit params. enabled: {self._is_enabled}, delay increase: {self._delay_increase}')
       self._last_params_update = time
 
   def _update_calculations(self):
@@ -346,8 +378,8 @@ class SpeedLimitController():
     # adapting
     elif self.state == SpeedLimitControlState.adapting:
       # Calculate to adapt speed on target time.
-      adapting_time = max(_LIMIT_ADAPT_TIME - self._adapting_cycles * _LON_MPC_STEP, 1.0)  # min adapt time 1 sec.
-      a_target = (self.speed_limit - self._v_ego) / adapting_time
+      adapting_time = max(self._adapting_time - self._adapting_cycles * _LON_MPC_STEP, 1.0)  # min adapt time 1 sec.
+      a_target = (self.speed_limit_offseted - self._v_ego) / adapting_time
       # smooth out acceleration using jerk limits.
       j_limits = np.array(self._adapting_jerk_limits)
       a_limits = self._a_ego + j_limits * _LON_MPC_STEP
@@ -378,7 +410,8 @@ class SpeedLimitController():
     elif self._speed_limit_set_change < 0:
       events.add(EventName.speedLimitDecrease)
 
-  def update(self, enabled, v_ego, a_ego, CS, v_cruise_setpoint, accel_limits, jerk_limits, events=Events()):
+  def update(self, enabled, v_ego, a_ego, sm, v_cruise_setpoint, accel_limits, jerk_limits,
+             events=Events()):
     self._op_enabled = enabled
     self._v_ego = v_ego
     self._a_ego = a_ego

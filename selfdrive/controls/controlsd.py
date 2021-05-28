@@ -580,7 +580,10 @@ class Controls:
     controlsState.longControlState = self.LoC.long_control_state
     controlsState.vPid = float(self.LoC.v_pid)
     controlsState.vCruise = float(self.v_cruise_kph)
-    controlsState.speedLimit = float(CS.cruiseState.speedLimit)
+    controlsState.speedLimit = float(self.sm['longitudinalPlan'].speedLimit)
+    controlsState.speedLimitOffset = float(self.sm['longitudinalPlan'].speedLimitOffset)
+    controlsState.distToSpeedLimit = float(self.sm['longitudinalPlan'].distToSpeedLimit)
+    controlsState.isMapSpeedLimit = bool(self.sm['longitudinalPlan'].isMapSpeedLimit)
     controlsState.upAccelCmd = float(self.LoC.pid.p)
     controlsState.uiAccelCmd = float(self.LoC.pid.id)
     controlsState.ufAccelCmd = float(self.LoC.pid.f)
