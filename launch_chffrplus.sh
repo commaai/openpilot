@@ -253,7 +253,7 @@ function launch {
 
   # start manager
   cd selfdrive/manager
-  ./build.py && ./manager.py
+  ./custom_dep.py && ./build.py && ./manager.py
 
   # if broken, keep on screen error
   while true; do sleep 1; done

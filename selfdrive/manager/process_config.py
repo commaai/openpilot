@@ -37,6 +37,7 @@ procs = [
   PythonProcess("updated", "selfdrive.updated", enabled=not PC and not JETSON, persistent=True),
   PythonProcess("uploader", "selfdrive.loggerd.uploader", enabled=not JETSON, persistent=True),
   PythonProcess("systemd", "selfdrive.dragonpilot.systemd", persistent=True),
+  PythonProcess("mapd", "selfdrive.mapd.mapd"),
 ]
 
 managed_processes = {p.name: p for p in procs}
