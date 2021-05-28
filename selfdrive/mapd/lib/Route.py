@@ -255,7 +255,7 @@ class Route():
       return None
 
     limits_ahead = self.speed_limits_ahead
-    if not len(limits_ahead) or limits_ahead[0].start != 0:
+    if len(limits_ahead) == 0 or limits_ahead[0].start != 0:
       return None
 
     return limits_ahead[0].value
@@ -266,7 +266,7 @@ class Route():
       return None
 
     limits_ahead = self.curvature_speed_limits_ahead
-    if not len(limits_ahead) or limits_ahead[0].start != 0:
+    if len(limits_ahead) == 0 or limits_ahead[0].start != 0:
       return None
 
     return limits_ahead[0]
@@ -277,7 +277,7 @@ class Route():
       return None
 
     limits_ahead = self.speed_limits_ahead
-    if not len(limits_ahead):
+    if len(limits_ahead) == 0:
       return None
 
     # Find the first section that does not start in 0. i.e. the next section
@@ -293,10 +293,15 @@ class Route():
       return None
 
     limits_ahead = self.curvature_speed_limits_ahead
-    if not len(limits_ahead):
+    if len(limits_ahead) == 0:
       return None
 
-    return limits_ahead[0]
+    # Find the first section that does not start in 0. i.e. the next section
+    for section in limits_ahead:
+      if section.start > 0.:
+        return section
+
+    return None
 
   @property
   def distance_to_end(self):
