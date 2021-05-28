@@ -52,7 +52,7 @@ private:
   void streamThread();
   void keyboardThread();
   void segmentQueueThread();
-  void cameraThread();
+  void cameraThread(FrameType frame_type);
 
   void seekTime(int ts);
   void startVipcServer(const Segment *segment);
@@ -79,7 +79,12 @@ private:
   cl_device_id device_id_;
   cl_context context_;
   VisionIpcServer *vipc_server_ = nullptr;
-  SafeQueue<std::tuple<int, FrameType, uint32_t>> frame_queue_; // <segment_id, frame_type, frame_id>
+  
+  struct Camera {
+    QThread *thread = nullptr;
+    SafeQueue<std::tuple<int, uint32_t>> queue; // <segment_id, frame_id>
+  };
+  Camera *cameras_[MAX_FRAME_TYPE] = {};
 
   // TODO: quit replay gracefully
   std::atomic<bool> exit_ = false;

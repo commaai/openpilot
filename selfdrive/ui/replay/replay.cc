@@ -60,6 +60,7 @@ Replay::Replay(const QString &route, SubMaster *sm, QObject *parent) : route_(ro
 Replay::~Replay() {
   segments_.clear();
   delete pm_;
+  delete vipc_server_;
   CL_CHECK(clReleaseContext(context_));
 }
 
@@ -203,18 +204,20 @@ void Replay::removeSegment(int n) {
 }
 
 void Replay::startVipcServer(const Segment *seg) {
-  for (auto f : seg->frames) {
-    if (f && f->valid()) {
+  for (int i = 0; i < std::size(seg->frames); ++i) {
+    FrameReader *fr = seg->frames[i];
+    if (fr && fr->valid()) {
       if (!vipc_server_) {
         vipc_server_ = new VisionIpcServer("camerad", device_id_, context_);
       }
-      vipc_server_->create_buffers(f->stream_type, UI_BUF_COUNT, true, f->width, f->height);
+      vipc_server_->create_buffers(fr->stream_type, UI_BUF_COUNT, true, fr->width, fr->height);
+      QThread *t = QThread::create(&Replay::cameraThread, this, (FrameType)i);
+      cameras_[i] = new Camera{.thread = t};
+      t->start();
     }
   }
   if (vipc_server_) {
-    QThread *t = QThread::create(&Replay::cameraThread, this);
-    connect(t, &QThread::finished, t, &QThread::deleteLater);
-    t->start();
+    vipc_server_->start_listener();
     qDebug() << "start vipc server";
   }
 }
@@ -260,22 +263,20 @@ void Replay::segmentQueueThread() {
   }
 }
 
-void Replay::cameraThread() {
-  vipc_server_->start_listener();
-
+void Replay::cameraThread(FrameType frame_type) {
   while (!exit_) {
-    std::tuple<int, FrameType, uint32_t> frame;
-    if (!frame_queue_.try_pop(frame, 50)) continue;
+    std::tuple<int, uint32_t> frame;
+    if (!cameras_[frame_type]->queue.try_pop(frame, 50)) continue;
 
-    auto [seg_id, frame_type, frame_id] = frame;
+    auto [seg_id, frame_id] = frame;
     // search frame's encodIdx in adjacent segments_.
     int search_in[] = {seg_id, seg_id - 1, seg_id + 1};
     for (auto i : search_in) {
       if (auto f = getFrameSegment(i, frame_type, frame_id)) {
-        auto [seg, fid] = *f;
+        auto [seg, encode_idx] = *f;
         FrameReader *frm = seg->frames[frame_type];
         uint8_t *data = nullptr;
-        if (frm && (data = frm->get(fid))) {
+        if (frm && (data = frm->get(encode_idx))) {
           VisionIpcBufExtra extra = {};
           VisionBuf *buf = vipc_server_->get_buffer(frm->stream_type);
           memcpy(buf->addr, data, frm->getRGBSize());
@@ -287,9 +288,7 @@ void Replay::cameraThread() {
       }
     }
   }
-
-  delete vipc_server_;
-  vipc_server_ = nullptr;
+  cameras_[frame_type]->thread->deleteLater();
 }
 
 void Replay::keyboardThread() {
@@ -383,12 +382,12 @@ void Replay::streamThread() {
         }
 
         // publish frames
-        if (e.which() == cereal::Event::ROAD_CAMERA_STATE) {
-          frame_queue_.push({seg->id, RoadCamFrame, e.getRoadCameraState().getFrameId()});
-        } else if (e.which() == cereal::Event::DRIVER_CAMERA_STATE) {
-          frame_queue_.push({seg->id, DriverCamFrame, e.getDriverCameraState().getFrameId()});
-        } else if (e.which() == cereal::Event::WIDE_ROAD_CAMERA_STATE) {
-          frame_queue_.push({seg->id, WideRoadCamFrame, e.getWideRoadCameraState().getFrameId()});
+        if (e.which() == cereal::Event::ROAD_CAMERA_STATE && cameras_[RoadCamFrame]) {
+          cameras_[RoadCamFrame]->queue.push({seg->id, e.getRoadCameraState().getFrameId()});
+        } else if (e.which() == cereal::Event::DRIVER_CAMERA_STATE && cameras_[DriverCamFrame]) {
+          cameras_[DriverCamFrame]->queue.push({seg->id, e.getDriverCameraState().getFrameId()});
+        } else if (e.which() == cereal::Event::WIDE_ROAD_CAMERA_STATE && cameras_[WideRoadCamFrame]) {
+          cameras_[WideRoadCamFrame]->queue.push({seg->id, e.getWideRoadCameraState().getFrameId()});
         }
 
         // publish msg
@@ -396,7 +395,7 @@ void Replay::streamThread() {
           const auto bytes = (*eit)->words.asBytes();
           pm_->send(type.c_str(), (capnp::byte *)bytes.begin(), bytes.size());
         } else {
-          // TODO: subMaster is not thread safe. Are we sure we need to do this?
+          // TODO: subMaster is not thread safe. are we sure we need to do this?
           sm_->update_msgs(nanos_since_boot(), {{type, e}});
         }
       }
