@@ -181,7 +181,7 @@ void fill_lead_v3(cereal::ModelDataV2::LeadDataV3::Builder lead, const float *le
   float y_stds_arr[LEAD_TRAJ_LEN];
   float v_stds_arr[LEAD_TRAJ_LEN];
   float a_stds_arr[LEAD_TRAJ_LEN];
-  for (int i=0; i<LEAD_MHP_VALS; i++) {
+  for (int i=0; i<LEAD_TRAJ_LEN; i++) {
     x_arr[i] = data[i*LEAD_PRED_DIM+0];
     y_arr[i] = data[i*LEAD_PRED_DIM+1];
     v_arr[i] = data[i*LEAD_PRED_DIM+2];
