@@ -20,12 +20,14 @@
 
 class SegmentData {
 public:
-  SegmentData() = default;
+  SegmentData(int segment_id) : id(segment_id) {}
   ~SegmentData() {
+    qDebug() << QString("remove segment %1").arg(id);
     delete log;
     for (auto f : frames) delete f;
   }
 
+  const int id;
   LogReader *log = nullptr;
   FrameReader *frames[MAX_FRAME_TYPE] = {};
   std::atomic<int> loading;
@@ -44,7 +46,7 @@ public:
 
 private:
   void addSegment(int n);
-  const SegmentData *getSegment(int n);
+  std::shared_ptr<SegmentData> getSegment(int n);
   void removeSegment(int n);
 
   void streamThread();
@@ -54,31 +56,32 @@ private:
   
   void seekTime(int ts);
   void startVipcServer(const SegmentData *segment);
-  std::optional<std::pair<FrameReader *, uint32_t>> getFrame(int seg_id, FrameType type, uint32_t frame_id);
+  std::optional<std::pair<std::shared_ptr<SegmentData>, uint32_t>> getFrameSegment(int seg_id, FrameType type, uint32_t frame_id);
 
-  float last_print = 0;
-  std::atomic<int> current_ts = 0, seek_ts = 0;
-  std::atomic<int> current_segment = 0, playing_segment = 0;
-  std::mutex lock;
+  float last_print_ = 0;
+  std::atomic<int> current_ts_ = 0, seek_ts_ = 0;
+  std::atomic<int> current_segment_ = 0;
+  std::mutex lock_;
 
-  HttpRequest *http = nullptr;
-  QString route;
-  QStringList log_paths;
-  QStringList frame_paths[MAX_FRAME_TYPE];
+  HttpRequest *http_ = nullptr;
+  QString route_;
+  QStringList log_paths_;
+  QStringList frame_paths_[MAX_FRAME_TYPE];
 
   // messaging
-  SubMaster *sm = nullptr;
-  PubMaster *pm = nullptr;
-  std::set<std::string> socks;
+  SubMaster *sm_ = nullptr;
+  PubMaster *pm_ = nullptr;
+  std::set<std::string> socks_;
 
-  std::mutex segment_lock;
-  QMap<int, SegmentData*> segments;
-  SafeQueue<std::pair<FrameType, uint32_t>> frame_queue;
-
-  VisionIpcServer *vipc_server = nullptr;
-
-  cl_device_id device_id;
-  cl_context context;
+  // segments
+  std::mutex segment_lock_;
+  std::map<int, std::shared_ptr<SegmentData>> segments_;
+  
+  // vipc server
+  cl_device_id device_id_;
+  cl_context context_;
+  VisionIpcServer *vipc_server_ = nullptr;
+  SafeQueue<std::pair<FrameType, uint32_t>> frame_queue_;
 
   // TODO: quit replay gracefully
   std::atomic<bool> exit_ = false;

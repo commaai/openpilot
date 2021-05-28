@@ -63,9 +63,10 @@ LogReader::~LogReader() {
   exit_ = true;
   thread->quit();
   thread->wait();
-  for (auto e : events_) delete e;
 
+  // free all
   delete thread;
+  for (auto e : events_) delete e;
 }
 
 void LogReader::start() {
