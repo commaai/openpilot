@@ -53,6 +53,7 @@ MQB_LDW_MESSAGES = {
 # Check the 7th and 8th characters of the VIN before adding a new CAR. If the
 # chassis code is already listed below, don't add a new CAR, just add to the
 # FW_VERSIONS for that existing CAR.
+# Exception: SEAT Leon and SEAT Ateca share a chassis code
 
 class CAR:
   ATLAS_MK1 = "VOLKSWAGEN ATLAS 1ST GEN"      # Chassis CA, Mk1 VW Atlas and Atlas Cross Sport
@@ -62,6 +63,7 @@ class CAR:
   TIGUAN_MK2 = "VOLKSWAGEN TIGUAN 2ND GEN"    # Chassis AD/BW, Mk2 VW Tiguan and variants
   AUDI_A3_MK3 = "AUDI A3 3RD GEN"             # Chassis 8V/FF, Mk3 Audi A3 and variants
   SEAT_ATECA_MK1 = "SEAT ATECA 1ST GEN"       # Chassis 5F, Mk1 SEAT Ateca and CUPRA Ateca
+  SEAT_LEON_MK3 = "SEAT LEON 3RD GEN"         # Chassis 5F, Mk3 SEAT Leon and variants
   SKODA_KODIAQ_MK1 = "SKODA KODIAQ 1ST GEN"   # Chassis NS, Mk1 Skoda Kodiaq
   SKODA_SCALA_MK1 = "SKODA SCALA 1ST GEN"     # Chassis NW, Mk1 Skoda Scala and Skoda Kamiq
   SKODA_SUPERB_MK3 = "SKODA SUPERB 3RD GEN"   # Chassis 3V/NP, Mk3 Skoda Superb and variants
@@ -327,6 +329,23 @@ FW_VERSIONS = {
       b'\xf1\x872Q0907572M \xf1\x890233',
     ],
   },
+  CAR.SEAT_LEON_MK3: {
+    (Ecu.engine, 0x7e0, None): [
+      b'\xf1\x8705E906018AS\xf1\x899596',
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+      b'\xf1\x870CW300050J \xf1\x891908',
+    ],
+    (Ecu.srs, 0x715, None): [
+      b'\xf1\x873Q0959655CM\xf1\x890720\xf1\x82\0161312001313001305171311052900',
+    ],
+    (Ecu.eps, 0x712, None): [
+      b'\xf1\x875Q0909144AB\xf1\x891082\xf1\x82\00521N01342A1',
+    ],
+    (Ecu.fwdRadar, 0x757, None): [
+      b'\xf1\x875Q0907572P \xf1\x890682',
+    ],
+  },
   CAR.SKODA_KODIAQ_MK1: {
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x8704E906027DD\xf1\x893123',
@@ -427,6 +446,7 @@ DBC = {
   CAR.TIGUAN_MK2: dbc_dict('vw_mqb_2010', None),
   CAR.AUDI_A3_MK3: dbc_dict('vw_mqb_2010', None),
   CAR.SEAT_ATECA_MK1: dbc_dict('vw_mqb_2010', None),
+  CAR.SEAT_LEON_MK3: dbc_dict('vw_mqb_2010', None),
   CAR.SKODA_KODIAQ_MK1: dbc_dict('vw_mqb_2010', None),
   CAR.SKODA_OCTAVIA_MK3: dbc_dict('vw_mqb_2010', None),
   CAR.SKODA_SCALA_MK1: dbc_dict('vw_mqb_2010', None),
