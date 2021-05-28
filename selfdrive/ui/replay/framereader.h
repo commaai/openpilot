@@ -5,11 +5,11 @@
 #include <atomic>
 #include <condition_variable>
 #include <mutex>
+#include <string>
 #include <thread>
 #include <vector>
 
 #include <QThread>
-
 #include "cereal/visionipc/visionbuf.h"
 
 // independent of QT, needs ffmpeg
@@ -22,7 +22,7 @@ extern "C" {
 class FrameReader : public QThread {
   Q_OBJECT
 
- public:
+public:
   FrameReader(const std::string &url, VisionStreamType stream_type);
   ~FrameReader();
   void run() override;
@@ -41,13 +41,11 @@ class FrameReader : public QThread {
   void decodeFrames();
   AVFrame *toRGB(AVFrame *frm);
 
-  class Frame {
-   public:
+  struct Frame {
     AVPacket pkt = {};
     AVFrame *picture = nullptr;
     bool failed = false;
   };
-
   std::vector<Frame> frames;
 
   AVFormatContext *pFormatCtx = NULL;
@@ -59,7 +57,6 @@ class FrameReader : public QThread {
   std::condition_variable cv_frame;
   int decode_idx = 0;
   std::atomic<bool> exit_ = false;
-
   bool valid_ = false;
   std::string url;
 };

@@ -97,7 +97,7 @@ void FrameReader::processFrames() {
     }
   } while (!exit_);
 
-  qInfo() << "framereader reader " << frames.size() << " frames"; 
+  qInfo() << "framereader reader " << frames.size() << " frames";
   valid_ = !exit_;
   emit finished(valid_);
 }
