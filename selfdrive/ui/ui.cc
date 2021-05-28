@@ -320,8 +320,6 @@ void QUIState::update() {
 }
 
 Device::Device(QObject *parent) : brightness_filter(BACKLIGHT_OFFROAD, BACKLIGHT_TS, BACKLIGHT_DT), QObject(parent) {
-  brightness_b = Params(true).get<float>("BRIGHTNESS_B").value_or(10.0);
-  brightness_m = Params(true).get<float>("BRIGHTNESS_M").value_or(2.6) / 26.0;
 }
 
 void Device::update(const UIState &s) {
@@ -346,6 +344,8 @@ void Device::setAwake(bool on, bool reset) {
 }
 
 void Device::updateBrightness(const UIState &s) {
+  float brightness_b = 10;
+  float brightness_m = 0.1;
   float clipped_brightness = std::min(100.0f, (s.scene.light_sensor * brightness_m) + brightness_b);
   if (!s.scene.started) {
     clipped_brightness = BACKLIGHT_OFFROAD;
