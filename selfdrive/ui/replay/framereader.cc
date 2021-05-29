@@ -37,8 +37,7 @@ class AVInitializer {
 
 static AVInitializer av_initializer;
 
-FrameReader::FrameReader(const std::string &url, VisionStreamType stream_type)
-    : url(url), stream_type(stream_type) {}
+FrameReader::FrameReader(const std::string &url) : url(url) {}
 
 FrameReader::~FrameReader() {
   // wait until thread is finished.
