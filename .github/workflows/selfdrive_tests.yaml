@@ -244,6 +244,21 @@ jobs:
         name: process_replay_diff.txt
         path: selfdrive/test/process_replay/diff.txt
 
+  #model_replay:
+  #  name: model replay
+  #  runs-on: ubuntu-20.04
+  #  timeout-minutes: 50
+  #  steps:
+  #  - uses: actions/checkout@v2
+  #    with:
+  #      submodules: true
+  #  - name: Build Docker image
+  #    run: eval "$BUILD"
+  #  - name: Run replay
+  #    run: |
+  #      ${{ env.RUN }} "scons -j$(nproc) && \
+  #                      selfdrive/test/process_replay/model_replay.py"
+
   test_longitudinal:
     name: longitudinal
     runs-on: ubuntu-20.04
