@@ -173,8 +173,9 @@ class TestCarModel(unittest.TestCase):
     failed_checks = {k: v for k, v in checks.items() if v > 25}
 
     # TODO: the panda and openpilot interceptor thresholds should match
-    if "gasPressed" in failed_checks and self.CP.enableGasInterceptor:
-      if failed_checks['gasPressed'] < 150:
+    skip_gas_check = self.car_model in [CHRYSLER.JEEP_CHEROKEE_2019, CHRYSLER.PACIFICA_2018, CHRYSLER.PACIFICA_2018_HYBRID]
+    if "gasPressed" in failed_checks and (self.CP.enableGasInterceptor or skip_gas_check):
+      if failed_checks['gasPressed'] < 150 or skip_gas_check:
         del failed_checks['gasPressed']
 
     # TODO: honda nidec: do same checks in carState and panda
