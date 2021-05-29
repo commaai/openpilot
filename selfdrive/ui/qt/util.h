@@ -20,3 +20,25 @@ inline void clearLayout(QLayout* layout) {
     delete item;
   }
 }
+
+inline QString timeAgo(const QDateTime &date) {
+  int diff = date.secsTo(QDateTime::currentDateTime());
+
+  QString s;
+  if (diff < 60) {
+    s = "now";
+  } else if (diff < 60 * 60) {
+    int minutes = diff / 60;
+    s = QString("%1 minute%2 ago").arg(minutes).arg(minutes > 1 ? "s" : "");
+  } else if (diff < 60 * 60 * 24) {
+    int hours = diff / (60 * 60);
+    s = QString("%1 hour%2 ago").arg(hours).arg(hours > 1 ? "s" : "");
+  } else if (diff < 3600 * 24 * 7) {
+    int days = diff / (60 * 60 * 24);
+    s = QString("%1 day%2 ago").arg(days).arg(days > 1 ? "s" : "");
+  } else {
+    s = date.date().toString();
+  }
+
+  return s;
+}
