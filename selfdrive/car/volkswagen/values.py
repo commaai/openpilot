@@ -331,18 +331,23 @@ FW_VERSIONS = {
   },
   CAR.SEAT_LEON_MK3: {
     (Ecu.engine, 0x7e0, None): [
+      b'\xf1\x8704L906026BP\xf1\x891198',
       b'\xf1\x8705E906018AS\xf1\x899596',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x870CW300050J \xf1\x891908',
+      b'\xf1\x870D9300042M \xf1\x895016',
     ],
     (Ecu.srs, 0x715, None): [
+      b'\xf1\x873Q0959655AS\xf1\x890200\xf1\x82\r12110012120012021612110200',
       b'\xf1\x873Q0959655CM\xf1\x890720\xf1\x82\0161312001313001305171311052900',
     ],
     (Ecu.eps, 0x712, None): [
       b'\xf1\x875Q0909144AB\xf1\x891082\xf1\x82\00521N01342A1',
+      b'\xf1\x875Q0909144T \xf1\x891072\xf1\x82\00521N05808A1',
     ],
     (Ecu.fwdRadar, 0x757, None): [
+      b'\xf1\x875Q0907572H \xf1\x890620',
       b'\xf1\x875Q0907572P \xf1\x890682',
     ],
   },
