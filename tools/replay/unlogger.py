@@ -296,16 +296,13 @@ def unlogger_thread(command_address, forward_commands_address, data_address, run
       # Send message.
       try:
         if typ in [VIPC_RGB, VIPC_YUV]:
-          print("sending", typ)
           if not no_visionipc:
-            print("sending2", typ)
             if vipc_server is None:
               vipc_server = _get_vipc_server(len(msg_bytes))
 
-            print("len", len(msg_bytes))
             i, sof, eof = extra[0]
-            typ = VisionStreamType.VISION_STREAM_RGB_BACK if VIPC_RGB else VisionStreamType.VISION_STREAM_YUV_BACK
-            vipc_server.send(typ, msg_bytes, i, sof, eof)
+            stream = VisionStreamType.VISION_STREAM_RGB_BACK if typ == VIPC_RGB else VisionStreamType.VISION_STREAM_YUV_BACK
+            vipc_server.send(stream, msg_bytes, i, sof, eof)
         else:
           send_funcs[typ](msg_bytes)
       except MultiplePublishersError:
