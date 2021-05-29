@@ -2,7 +2,6 @@
 
 #include <bzlib.h>
 #include <QtNetwork>
-#include "cereal/gen/cpp/log.capnp.h"
 
 #include "selfdrive/common/timing.h"
 
@@ -30,62 +29,54 @@ static bool decompressBZ2(std::vector<uint8_t> &dest, const char srcData[], size
 
 // class FileReader
 
-FileReader::FileReader(const QString& file) {
-  QString str = file.simplified();
-  str.replace(" ", "");
-  url_ = file;
-  qnam = new QNetworkAccessManager(this);
-}
+FileReader::FileReader(const QString &fn, QObject *parent) : url_(fn), QObject(parent) {}
 
 void FileReader::read() {
-  timer.start();
   if (url_.isLocalFile()) {
-    QFile file( url_.toLocalFile());
+    QFile file(url_.toLocalFile());
     if (file.open(QIODevice::ReadOnly)) {
-      QByteArray dat = file.readAll();
-      emit ready(dat);
+      emit finished(file.readAll());
+    } else {
+      emit failed(QString("Failed to read file %1").arg(url_.toString()));
     }
-    return;
-  }
-
-  startRequest(url_);
-}
-
-void FileReader::startRequest(const QUrl &url) {
-  reply = qnam->get(QNetworkRequest(url));
-  connect(reply, &QNetworkReply::finished, this, &FileReader::httpFinished);
-  connect(reply, &QIODevice::readyRead, this, &FileReader::readyRead);
-  qDebug() << "requesting" << url;
-}
-
-void FileReader::httpFinished() {
-  if (reply->error()) {
-    qWarning() << reply->errorString();
-  }
-
-  const QVariant redirectionTarget = reply->attribute(QNetworkRequest::RedirectionTargetAttribute);
-  if (!redirectionTarget.isNull()) {
-    const QUrl redirectedUrl = redirectionTarget.toUrl();
-    //qDebug() << "redirected to" << redirectedUrl;
-    startRequest(redirectedUrl);
   } else {
-    qDebug() << "done in" << timer.elapsed() << "ms";
+    startHttpRequest();
   }
-  replay->deleteLater();
 }
 
-void FileReader::readyRead() {
-  QByteArray dat = reply->readAll();
-  emit ready(dat);
+void FileReader::startHttpRequest() {
+  QNetworkAccessManager *qnam = new QNetworkAccessManager(this);
+  QNetworkRequest request(url_);
+  request.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
+  reply_ = qnam->get(request);
+  connect(reply_, &QNetworkReply::finished, [=]() {
+    emit !reply_->error() ? finished(reply_->readAll()) : failed(reply_->errorString());
+    reply_->deleteLater();
+    reply_ = nullptr;
+  });
+}
+
+void FileReader::abort() {
+  if (reply_) reply_->abort();
 }
 
 // class LogReader
 
-LogReader::LogReader(const QString &file) : file_(file) {}
+LogReader::LogReader(const QString &file) {
+  file_reader_ = new FileReader(file, this);
+  connect(file_reader_, &FileReader::finished, this, &LogReader::fileReady);
+  connect(file_reader_, &FileReader::failed, [=](const QString &err) { qInfo() << err; });
+
+  thread_ = new QThread(this);
+  connect(thread_, &QThread::started, this, &LogReader::start);
+  moveToThread(thread_);
+  thread_->start();
+}
 
 LogReader::~LogReader() {
   // wait until thread is finished.
   exit_ = true;
+  file_reader_->abort();
   thread_->quit();
   thread_->wait();
 
@@ -94,51 +85,35 @@ LogReader::~LogReader() {
 }
 
 void LogReader::start() {
-  thread_ = new QThread(this);
-  moveToThread(thread_);
-  connect(thread_, &QThread::started, this, &LogReader::process);
-  thread_->start();
-}
-
-void LogReader::process() {
-  FileReader *reader = new FileReader;
-  connect(reader, &FileReader::ready, [=](const QByteArray &dat) {
-    raw_.resize(1024 * 1024 * 64);
-    if (!decompressBZ2(raw_, dat.data(), dat.size())) {
-      qWarning() << "bz2 decompress failed";
-    }
-    parseEvents({(const capnp::word *)raw_.data(), raw_.size() / sizeof(capnp::word)});
-    reader->deleteLater();
-  });
-  reader->startRequest(file_);
+  file_reader_->read();
 }
 
 void LogReader::parseEvents(kj::ArrayPtr<const capnp::word> words) {
-  auto insertEidx = [=](FrameType type, const cereal::EncodeIndex::Reader &e) {
+  auto insertEidx = [=](CameraType type, const cereal::EncodeIndex::Reader &e) {
     encoderIdx_[type][e.getFrameId()] = {e.getSegmentNum(), e.getSegmentId()};
   };
 
   valid_ = true;
   while (!exit_ && words.size() > 0) {
     try {
-      std::unique_ptr<EventMsg> message = std::make_unique<EventMsg>(words);
-      words = kj::arrayPtr(message->msg.getEnd(), words.end());
+      std::unique_ptr<Event> evt = std::make_unique<Event>(words);
+      words = kj::arrayPtr(evt->reader.getEnd(), words.end());
 
-      cereal::Event::Reader event = message->msg.getRoot<cereal::Event>();
+      cereal::Event::Reader event = evt->event();
       switch (event.which()) {
         case cereal::Event::ROAD_ENCODE_IDX:
-          insertEidx(RoadCamFrame, event.getRoadEncodeIdx());
+          insertEidx(RoadCam, event.getRoadEncodeIdx());
           break;
         case cereal::Event::DRIVER_ENCODE_IDX:
-          insertEidx(DriverCamFrame, event.getDriverEncodeIdx());
+          insertEidx(DriverCam, event.getDriverEncodeIdx());
           break;
         case cereal::Event::WIDE_ROAD_ENCODE_IDX:
-          insertEidx(WideRoadCamFrame, event.getWideRoadEncodeIdx());
+          insertEidx(WideRoadCam, event.getWideRoadEncodeIdx());
           break;
         default:
           break;
       }
-      events_.insert(event.getLogMonoTime(), message.release());
+      events_.insert(event.getLogMonoTime(), evt.release());
     } catch (const kj::Exception &e) {
       // partial messages trigger this
       // qDebug() << e.getDescription().cStr();
@@ -149,13 +124,10 @@ void LogReader::parseEvents(kj::ArrayPtr<const capnp::word> words) {
   emit finished(valid_ && !exit_);
 }
 
-void LogReader::readyRead(const QByteArray &dat) {
-  // start with 64MB buffer
+void LogReader::fileReady(const QByteArray &dat) {
   raw_.resize(1024 * 1024 * 64);
-  if (decompressBZ2(raw_, dat.data(), dat.size())) {
-    parseEvents({(const capnp::word *)raw_.data(), raw_.size() / sizeof(capnp::word)});
-  } else {
+  if (!decompressBZ2(raw_, dat.data(), dat.size())) {
     qWarning() << "bz2 decompress failed";
-    emit finished(false);
   }
+  parseEvents({(const capnp::word *)raw_.data(), raw_.size() / sizeof(capnp::word)});
 }

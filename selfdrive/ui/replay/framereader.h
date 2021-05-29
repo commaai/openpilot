@@ -10,7 +10,6 @@
 #include <vector>
 
 #include <QThread>
-#include "cereal/visionipc/visionbuf.h"
 
 // independent of QT, needs ffmpeg
 extern "C" {
@@ -23,7 +22,7 @@ class FrameReader : public QThread {
   Q_OBJECT
 
 public:
-  FrameReader(const std::string &url, VisionStreamType stream_type);
+  FrameReader(const std::string &url);
   ~FrameReader();
   void run() override;
   uint8_t *get(int idx);
@@ -31,7 +30,6 @@ public:
   int getRGBSize() const { return width * height * 3; }
 
   int width = 0, height = 0;
-  VisionStreamType stream_type;
 
  signals:
   void finished(bool success);

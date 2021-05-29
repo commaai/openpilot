@@ -1,10 +1,9 @@
 #include "selfdrive/ui/replay/replay.h"
 
-#include <regex>
-
 #include <QDir>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <regex>
 
 #include "cereal/services.h"
 #include "selfdrive/camerad/cameras/camera_common.h"
@@ -68,17 +67,15 @@ Replay::~Replay() {
 
 void Replay::clear() {
   segments_.clear();
- 
+  segment_paths_.clear();
+  for (int i = 0; i < std::size(frame_queues_); ++i) {
+    delete frame_queues_[i];
+    frame_queues_[i] = nullptr;
+  }
+
   current_ts_ = 0;
   seek_ts_ = 0;
   current_segment_ = seek_ts_ = 0;
- 
-  segment_paths_.clear();
-
-  for (int i = 0; i < std::size(cameras_); ++i) {
-    delete cameras_[i];
-    cameras_[i] = nullptr;
-  }
 }
 
 void Replay::load() {
@@ -90,7 +87,7 @@ void Replay::load() {
 void Replay::loadFromServer() {
   const QString url = "https://api.commadotai.com/v1/route/" + route_ + "/files";
   HttpRequest *http = new HttpRequest(this, url, "", !Hardware::PC());
-  QObject::connect(http, &HttpRequest::receivedResponse, [=] (const QString json) {
+  QObject::connect(http, &HttpRequest::receivedResponse, [=](const QString json) {
     loadFromJson(json);
     http->deleteLater();
   });
@@ -106,10 +103,11 @@ bool Replay::loadFromLocal() {
 
   QMap<int, QMap<QString, QString>> segment_paths;
   for (auto folder : folders) {
-    auto &paths = segment_paths[folder.split("--")[2].toInt()];
+    const int seg_id = folder.split("--")[2].toInt();
+    auto &paths = segment_paths[seg_id];
+
     QDir segment(log_root.filePath(folder));
-    const QStringList files = segment.entryList(QDir::Files);
-    for (auto f : files) {
+    for (auto f : segment.entryList(QDir::Files)) {
       const QString file_path = "file://" + segment.filePath(f);
       if (f.startsWith("fcamera")) {
         paths["cameras"] = file_path;
@@ -137,12 +135,14 @@ bool Replay::loadFromJson(const QString &json) {
   }
   std::regex regexp(R"(^(.*?)\/(\d+)\/(.*?))");
   QMap<int, QMap<QString, QString>> segment_paths;
+
   QJsonObject obj = doc.object();
-  for (const QString& key : obj.keys()) {
+  for (const QString &key : obj.keys()) {
     for (const auto &p : obj[key].toArray()) {
       std::string path = p.toString().toStdString();
       if (std::smatch match; std::regex_match(path, match, regexp)) {
-        segment_paths[std::stoi(match[2].str())][key] = p.toString();
+        const int seg_id = std::stoi(match[2].str());
+        segment_paths[seg_id][key] = p.toString();
       }
     }
   }
@@ -153,32 +153,33 @@ bool Replay::loadSegments(const QMap<int, QMap<QString, QString>> &segment_paths
   // clear previous segments.
   clear();
 
-  QString road_cam_key = "cameras";
+  QString cam_file_key = "cameras";
   for (const auto &paths : segment_paths) {
     if (!paths.contains("cameras")) {
       // fallback to qcameras
-      road_cam_key = "qcameras";
+      cam_file_key = "qcameras";
       break;
     }
   }
 
   for (int seg_id : segment_paths.keys()) {
     auto &paths = segment_paths[seg_id];
-    auto log = paths.value("logs");
-    if (log.isEmpty()) {
+    auto log_file = paths.value("logs");
+    if (log_file.isEmpty()) {
       // fallback to qlog
-      log = paths.value("qlogs");
+      log_file = paths.value("qlogs");
     }
-    if (log.isEmpty()) continue;
+    if (log_file.isEmpty()) continue;
 
-    auto &seg_path = segment_paths_[seg_id];
-    seg_path.log = log;
-    seg_path.frames[RoadCamFrame] = paths.value(road_cam_key);
-    seg_path.frames[DriverCamFrame] = paths.value("dcameras");
-    seg_path.frames[WideRoadCamFrame] = paths.value("ecameras");
+    SegmentFiles &files = segment_paths_[seg_id];
+    files.log_file = log_file;
+    files.cam_file = paths.value(cam_file_key);
+    files.dcam_file = paths.value("dcameras");
+    files.wcam_file = paths.value("ecameras");
   }
 
   if (segment_paths_.isEmpty()) {
+    qInfo() << "can't find files for " << route_;
     return false;
   }
 
@@ -201,19 +202,27 @@ std::shared_ptr<Segment> Replay::getSegment(int n) {
 }
 
 void Replay::startVipcServer(const Segment *seg) {
-  for (int i = 0; i < std::size(seg->frames); ++i) {
-    FrameReader *fr = seg->frames[i];
-    if (fr && fr->valid()) {
-      if (!vipc_server_) {
-        vipc_server_ = new VisionIpcServer("camerad", device_id_, context_);
-      }
-      vipc_server_->create_buffers(fr->stream_type, UI_BUF_COUNT, true, fr->width, fr->height);
-      QThread *t = QThread::create(&Replay::cameraThread, this, (FrameType)i);
-      cameras_[i] = new Camera;
-      cameras_[i]->thread = t;
-      t->start();
+  VisionStreamType stream_types[] = {
+      [RoadCam] = VISION_STREAM_RGB_BACK,
+      [DriverCam] = VISION_STREAM_RGB_FRONT,
+      [WideRoadCam] = VISION_STREAM_RGB_WIDE,
+  };
+
+  for (auto cam_type : ALL_CAMERAS) {
+    const FrameReader *fr = seg->frames[cam_type];
+    if (!fr || !fr->valid()) continue;
+
+    if (!vipc_server_) {
+      vipc_server_ = new VisionIpcServer("camerad", device_id_, context_);
     }
+
+    vipc_server_->create_buffers(stream_types[cam_type], UI_BUF_COUNT, true, fr->width, fr->height);
+    frame_queues_[cam_type] = new SafeQueue<const EncodeIdx *>();
+    QThread *t = QThread::create(&Replay::cameraThread, this, cam_type, stream_types[cam_type]);
+    connect(t, &QThread::finished, t, &QThread::deleteLater);
+    t->start();
   }
+
   if (vipc_server_) {
     vipc_server_->start_listener();
     qDebug() << "start vipc server";
@@ -235,6 +244,23 @@ void Replay::seekTime(int ts) {
   current_segment_ = ts / SEGMENT_LENGTH;
 }
 
+void Replay::pushFrame(CameraType cam_type, int seg_id, uint32_t frame_id) {
+  // do nothing if no video stream for this type
+  if (!frame_queues_[cam_type]) return;
+
+  // find encodeIdx in adjacent segments_.
+  const EncodeIdx *eidx = nullptr;
+  int search_in[] = {seg_id, seg_id - 1, seg_id + 1};
+  for (auto idx : search_in) {
+    auto seg = getSegment(idx);
+    if (seg && (eidx = seg->log->getFrameEncodeIdx(cam_type, frame_id))) {
+      frame_queues_[cam_type]->push(eidx);
+      return;
+    }
+  }
+  qDebug() << "failed to find eidx for frame " << frame_id << " in segment " << seg_id;
+}
+
 // threads
 
 void Replay::segmentQueueThread() {
@@ -246,8 +272,8 @@ void Replay::segmentQueueThread() {
       const int idx = it.key();
       std::unique_lock lk(segment_lock_);
       if (idx >= start_idx && idx <= end_idx) {
-        if ( segments_.find(idx) == segments_.end()) {
-          // add segment
+        // add segment
+        if (segments_.find(idx) == segments_.end()) {
           segments_[idx] = std::make_shared<Segment>(idx, it.value());
         }
       } else {
@@ -259,26 +285,22 @@ void Replay::segmentQueueThread() {
   }
 }
 
-void Replay::cameraThread(FrameType frame_type) {
+void Replay::cameraThread(CameraType cam_type, VisionStreamType stream_type) {
   while (!exit_) {
     const EncodeIdx *eidx = nullptr;
-    if (!cameras_[frame_type]->queue.try_pop(eidx, 50)) continue;
-    
+    if (!frame_queues_[cam_type]->try_pop(eidx, 50)) continue;
+
     std::shared_ptr<Segment> seg = getSegment(eidx->segmentNum);
     if (!seg) continue;
 
-    FrameReader *frm = seg->frames[frame_type];
+    FrameReader *frm = seg->frames[cam_type];
     if (uint8_t *data = frm->get(eidx->segmentId)) {
       VisionIpcBufExtra extra = {};
-      VisionBuf *buf = vipc_server_->get_buffer(frm->stream_type);
+      VisionBuf *buf = vipc_server_->get_buffer(stream_type);
       memcpy(buf->addr, data, frm->getRGBSize());
       vipc_server_->send(buf, &extra, false);
-    } else {
-      qDebug() << "failed to get frame eidx " << eidx->segmentId << " from segment " << seg->id;
     }
   }
-
-  cameras_[frame_type]->thread->deleteLater();
 }
 
 void Replay::keyboardThread() {
@@ -315,22 +337,6 @@ void Replay::keyboardThread() {
   }
 }
 
-void Replay::pushFrame(FrameType type, int seg_id, uint32_t frame_id) {
-  // do nothing if no video stream for this type
-  if (!cameras_[type]) return;
-
-  // find encodeIdx in adjacent segments_.
-  const EncodeIdx *eidx = nullptr;
-  int search_in[] = {seg_id, seg_id - 1, seg_id + 1};
-  for (auto idx : search_in) {
-    if (auto seg = getSegment(idx); seg && (eidx = seg->log->getFrameEncodeIdx(type, frame_id))) {
-      cameras_[type]->queue.push(eidx);
-      return;
-    }
-  }
-  qDebug() << "failed to find eidx for frame " << frame_id << " in segment " << seg_id;
-}
-
 void Replay::streamThread() {
   QElapsedTimer timer;
   timer.start();
@@ -363,7 +369,7 @@ void Replay::streamThread() {
     uint64_t t0r = timer.nsecsElapsed();
     int current_seek_ts_ = seek_ts_;
     while (!exit_ && current_seek_ts_ == seek_ts_ && eit != events.end()) {
-      cereal::Event::Reader e = (*eit)->msg.getRoot<cereal::Event>();
+      cereal::Event::Reader e = (*eit)->event();
       std::string type;
       KJ_IF_MAYBE(e_, static_cast<capnp::DynamicStruct::Reader>(e).which()) {
         type = e_->getProto().getName();
@@ -389,16 +395,16 @@ void Replay::streamThread() {
 
         // publish frames
         if (e.which() == cereal::Event::ROAD_CAMERA_STATE) {
-          pushFrame(RoadCamFrame, seg->id, e.getRoadCameraState().getFrameId());
+          pushFrame(RoadCam, seg->id, e.getRoadCameraState().getFrameId());
         } else if (e.which() == cereal::Event::DRIVER_CAMERA_STATE) {
-          pushFrame(DriverCamFrame, seg->id, e.getDriverCameraState().getFrameId());
+          pushFrame(DriverCam, seg->id, e.getDriverCameraState().getFrameId());
         } else if (e.which() == cereal::Event::WIDE_ROAD_CAMERA_STATE) {
-          pushFrame(WideRoadCamFrame, seg->id, e.getWideRoadCameraState().getFrameId());
+          pushFrame(WideRoadCam, seg->id, e.getWideRoadCameraState().getFrameId());
         }
 
         // publish msg
         if (sm_ == nullptr) {
-          const auto bytes = (*eit)->words.asBytes();
+          auto bytes = (*eit)->bytes();
           pm_->send(type.c_str(), (capnp::byte *)bytes.begin(), bytes.size());
         } else {
           // TODO: subMaster is not thread safe. are we sure we need to do this?
@@ -418,25 +424,27 @@ void Replay::streamThread() {
   }
 }
 
-
 // class Segment
 
-Segment::Segment(int seg_id,const SegmentPaths &paths) : id(seg_id) {
+Segment::Segment(int seg_id, const SegmentFiles &files) : id(seg_id) {
   // start logreader thread
   loading = 1;
-  log = new LogReader(paths.log);
+  log = new LogReader(files.log_file);
   QObject::connect(log, &LogReader::finished, [=](bool success) { --loading; });
-  log->start();
 
   // start framereader threads
-  for (int t = RoadCamFrame; t < std::size(frames); ++t) {
-    if (!paths.frames[t].isEmpty()) {
+  auto read_cam_frames = [=](CameraType type, const QString &file) {
+    if (!file.isEmpty()) {
       loading += 1;
-      frames[t] = new FrameReader(paths.frames[t].toStdString(), VISION_STREAM_RGB_BACK);
-      QObject::connect(frames[t], &FrameReader::finished, [=](bool success) { --loading; });
-      frames[t]->start();
+      FrameReader *fr = frames[type] = new FrameReader(file.toStdString());
+      QObject::connect(fr, &FrameReader::finished, [=](bool success) { --loading; });
+      fr->start();
     }
-  }
+  };
+
+  read_cam_frames(RoadCam, files.cam_file);
+  read_cam_frames(DriverCam, files.dcam_file);
+  read_cam_frames(WideRoadCam, files.wcam_file);
 }
 
 Segment::~Segment() {
