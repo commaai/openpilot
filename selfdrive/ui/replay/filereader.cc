@@ -30,11 +30,17 @@ static bool decompressBZ2(std::vector<uint8_t> &dest, const char srcData[], size
 
 // class FileReader
 
-void FileReader::startRequest(const QUrl &url) {
-  timer.start();
+FileReader::FileReader(const QString& file) {
+  QString str = file.simplified();
+  str.replace(" ", "");
+  url_ = file;
+  qnam = new QNetworkAccessManager(this);
+}
 
-  if (url.isLocalFile()) {
-    QFile file(url.toLocalFile());
+void FileReader::read() {
+  timer.start();
+  if (url_.isLocalFile()) {
+    QFile file( url_.toLocalFile());
     if (file.open(QIODevice::ReadOnly)) {
       QByteArray dat = file.readAll();
       emit ready(dat);
@@ -42,7 +48,10 @@ void FileReader::startRequest(const QUrl &url) {
     return;
   }
 
-  qnam = new QNetworkAccessManager;
+  startRequest(url_);
+}
+
+void FileReader::startRequest(const QUrl &url) {
   reply = qnam->get(QNetworkRequest(url));
   connect(reply, &QNetworkReply::finished, this, &FileReader::httpFinished);
   connect(reply, &QIODevice::readyRead, this, &FileReader::readyRead);
@@ -62,6 +71,7 @@ void FileReader::httpFinished() {
   } else {
     qDebug() << "done in" << timer.elapsed() << "ms";
   }
+  replay->deleteLater();
 }
 
 void FileReader::readyRead() {
@@ -107,7 +117,7 @@ void LogReader::parseEvents(kj::ArrayPtr<const capnp::word> words) {
   auto insertEidx = [=](FrameType type, const cereal::EncodeIndex::Reader &e) {
     encoderIdx_[type][e.getFrameId()] = {e.getSegmentNum(), e.getSegmentId()};
   };
-  double t1 = millis_since_boot();
+
   valid_ = true;
   while (!exit_ && words.size() > 0) {
     try {
@@ -136,8 +146,6 @@ void LogReader::parseEvents(kj::ArrayPtr<const capnp::word> words) {
       break;
     }
   }
-  double t2 = millis_since_boot();
-  qInfo() << "parse time " << t2 - t1;
   emit finished(valid_ && !exit_);
 }
 

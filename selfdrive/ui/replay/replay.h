@@ -18,14 +18,15 @@
 #include "selfdrive/ui/replay/filereader.h"
 #include "selfdrive/ui/replay/framereader.h"
 
+struct SegmentPaths {
+  QString log;
+  QString frames[MAX_FRAME_TYPE];
+};
+
 class Segment {
 public:
-  Segment(int segment_id) : id(segment_id) {}
-  ~Segment() {
-    qDebug() << QString("remove segment %1").arg(id);
-    delete log;
-    for (auto f : frames) delete f;
-  }
+  Segment(int segment_id, const SegmentPaths &paths);
+  ~Segment();
 
   const int id;
   LogReader *log = nullptr;
@@ -42,11 +43,11 @@ public:
   void load();
   bool loadFromLocal();
   void loadFromServer();
-  bool loadFromJson(const QString &response);
+  bool loadFromJson(const QString &json);
+  bool loadSegments(const QMap<int, QMap<QString, QString>> &segment_paths);
+  void clear();
 
 private:
-  void addSegment(int n);
-  void removeSegment(int n);
   std::shared_ptr<Segment> getSegment(int n);
 
   void streamThread();
@@ -61,11 +62,8 @@ private:
   std::atomic<int64_t> current_ts_ = 0, seek_ts_ = 0;
   std::atomic<int> current_segment_ = 0;
 
-  HttpRequest *http_ = nullptr;
   QString route_;
-  QStringList log_paths_;
-  QStringList frame_paths_[MAX_FRAME_TYPE];
-
+  
   // messaging
   SubMaster *sm_ = nullptr;
   PubMaster *pm_ = nullptr;
@@ -74,6 +72,7 @@ private:
   // segments
   std::mutex segment_lock_;
   std::map<int, std::shared_ptr<Segment>> segments_;
+  QMap<int, SegmentPaths> segment_paths_;
   
   // vipc server
   cl_device_id device_id_;
@@ -88,5 +87,4 @@ private:
 
   // TODO: quit replay gracefully
   std::atomic<bool> exit_ = false;
-
 };

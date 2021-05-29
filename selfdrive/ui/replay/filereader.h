@@ -15,7 +15,8 @@ class FileReader : public QObject {
   Q_OBJECT
 
 public:
-  void startRequest(const QUrl &url);
+  FileReader(const QString& file);
+  void read();
   
 signals:
   void ready(const QByteArray &dat);
@@ -28,6 +29,7 @@ protected:
 private:
   QNetworkAccessManager *qnam;
   QElapsedTimer timer;
+  QUrl url_;
 };
 
 enum FrameType {
@@ -52,7 +54,7 @@ struct EventMsg {
 };
 
 typedef QMultiMap<uint64_t, EventMsg*> Events;
-typedef std::unordered_map<int, EncodeIdx> EncodeIdxMap;
+typedef std::unordered_map<uint32_t, EncodeIdx> EncodeIdxMap;
 
 class LogReader : public QObject {
   Q_OBJECT
@@ -77,10 +79,10 @@ protected:
   void readyRead(const QByteArray &dat);
   void parseEvents(kj::ArrayPtr<const capnp::word> words);
 
+  QString file_;
   std::vector<uint8_t> raw_;
   Events events_;
   EncodeIdxMap encoderIdx_[MAX_FRAME_TYPE] = {};
-  QString file_;
   std::atomic<bool> exit_ = false;
   std::atomic<bool> valid_ = false;
   QThread *thread_ = nullptr;
