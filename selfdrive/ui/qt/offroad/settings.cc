@@ -223,14 +223,14 @@ void DeveloperPanel::showEvent(QShowEvent *event) {
 
   QString version = QString::fromStdString(brand + " v" + params.get("Version", false).substr(0, 14)).trimmed();
   QDateTime lastUpdateDate = QDateTime::fromString(QString::fromStdString(params.get("LastUpdateTime", false)), Qt::ISODate);
-  QString lastUpdateTime = getFormattedTimeSince(&lastUpdateDate);
+  QString lastUpdateTime = timeAgo(lastUpdateDate);
 
   if (labels.size() < dev_params.size()) {
     versionLbl = new LabelControl("Version", version, QString::fromStdString(params.get("ReleaseNotes", false)).trimmed());
     layout()->addWidget(versionLbl);
     layout()->addWidget(horizontal_line());
 
-    lastUpdateTimeLbl = new LabelControl("Last Update Check", lastUpdateTime, "The last time openpilot checked for an update");
+    lastUpdateTimeLbl = new LabelControl("Last Update Check", lastUpdateTime, "The last time openpilot checked for an update.");
     connect(lastUpdateTimeLbl, &LabelControl::showDescription, [=]() {
       std::system("pkill -1 -f selfdrive.updated");
     });

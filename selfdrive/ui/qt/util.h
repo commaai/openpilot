@@ -21,22 +21,24 @@ inline void clearLayout(QLayout* layout) {
   }
 }
 
-inline QString getFormattedTimeSince(QDateTime *date) {
-  date->setTimeSpec(Qt::UTC);
-  int diff = date->secsTo(QDateTime::currentDateTimeUtc());
-  QString formattedTime;
+inline QString timeAgo(const QDateTime &date) {
+  int diff = date.secsTo(QDateTime::currentDateTime());
 
+  QString s;
   if (diff < 60) {
-    formattedTime = "now";
-  } else if (diff < 3600) {
-    formattedTime = QString::fromStdString(std::to_string(diff / 60) + " minute" + (diff >= 60 * 2 ? "s " : " ") + "ago");
-  }else if (diff < 3600 * 24) {
-    formattedTime = QString::fromStdString(std::to_string(diff / 3600) + " hour" + (diff >= 3600 * 2 ? "s " : " ") + "ago");
+    s = "now";
+  } else if (diff < 60 * 60) {
+    int minutes = diff / 60;
+    s = QString("%1 minute%2 ago").arg(minutes).arg(minutes > 1 ? "s" : "");
+  } else if (diff < 60 * 60 * 24) {
+    int hours = diff / (60 * 60);
+    s = QString("%1 hour%2 ago").arg(hours).arg(hours > 1 ? "s" : "");
   } else if (diff < 3600 * 24 * 7) {
-    formattedTime = QString::fromStdString(std::to_string(diff / (3600 * 24)) + " day" + (diff >= 3600 * 48 ? "s " : " ") + "ago");
+    int days = diff / (60 * 60 * 24);
+    s = QString("%1 day%2 ago").arg(days).arg(days > 1 ? "s" : "");
   } else {
-    formattedTime = date->date().toString();
+    s = date.date().toString();
   }
 
-  return formattedTime;
+  return s;
 }
