@@ -88,9 +88,10 @@ def model_replay(lr, fr, desire=None, calib=None):
           break
   except KeyboardInterrupt:
     pass
+  finally:
+    spinner.close()
+    managed_processes['modeld'].stop()
 
-  spinner.close()
-  managed_processes['modeld'].stop()
   return log_msgs
 
 if __name__ == "__main__":
