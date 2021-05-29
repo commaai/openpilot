@@ -113,8 +113,7 @@ def send_thread(command_address, joystick):
 
 
 def joystick_thread(use_keyboard):
-  params = Params()
-  params.put_bool("JoystickDebugMode", True)
+  Params().put_bool("JoystickDebugMode", True)
   joystick = Joystick(use_keyboard=use_keyboard)
   command_address = "ipc:///tmp/{}".format(uuid4())
 
@@ -146,7 +145,6 @@ def joystick_thread(use_keyboard):
   except KeyboardInterrupt:
     print('Interrupted, shutting down!')
     send_thread_proc.terminate()
-    params.put_bool("JoystickDebugMode", False)
 
 
 if __name__ == "__main__":
