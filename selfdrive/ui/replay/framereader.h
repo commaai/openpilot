@@ -10,8 +10,6 @@
 
 #include <QThread>
 
-#include "cereal/visionipc/visionbuf.h"
-
 // independent of QT, needs ffmpeg
 extern "C" {
 #include <libavcodec/avcodec.h>
