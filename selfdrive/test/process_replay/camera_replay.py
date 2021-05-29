@@ -8,9 +8,10 @@ from tqdm import tqdm
 
 import cereal.messaging as messaging
 from cereal import log
+from cereal.visionipc.visionipc_pyx import VisionIpcServer, VisionStreamType  # pylint: disable=no-name-in-module, import-error
 from common.spinner import Spinner
 from common.timeout import Timeout
-from common.transformations.camera import get_view_frame_from_road_frame
+from common.transformations.camera import get_view_frame_from_road_frame, eon_f_frame_size, tici_f_frame_size
 from selfdrive.manager.process_config import managed_processes
 from selfdrive.test.openpilotci import BASE_URL, get_url
 from selfdrive.test.process_replay.compare_logs import compare_logs, save_log
@@ -36,14 +37,13 @@ def camera_replay(lr, fr, desire=None, calib=None):
 
   pm = messaging.PubMaster(['roadCameraState', 'liveCalibration', 'lateralPlan'])
   sm = messaging.SubMaster(['modelV2'])
+  vipc_server = None
 
   # TODO: add dmonitoringmodeld
   print("preparing procs")
-  managed_processes['camerad'].prepare()
   managed_processes['modeld'].prepare()
   try:
     print("starting procs")
-    managed_processes['camerad'].start()
     managed_processes['modeld'].start()
     time.sleep(5)
     sm.update(1000)
@@ -68,16 +68,25 @@ def camera_replay(lr, fr, desire=None, calib=None):
             pm.send('lateralPlan', dat)
 
         f = msg.as_builder()
-        img = fr.get(frame_idx, pix_fmt="rgb24")[0][:,:,::-1]
-        f.roadCameraState.image = img.flatten().tobytes()
-        frame_idx += 1
-
         pm.send(msg.which(), f)
+
+        img = fr.get(frame_idx, pix_fmt="yuv420p")[0]
+        if vipc_server is None:
+          w, h = {int(3*w*h/2): (w, h) for (w, h) in [tici_f_frame_size, eon_f_frame_size]}[len(img)]
+          vipc_server = VisionIpcServer("camerad")
+          vipc_server.create_buffers(VisionStreamType.VISION_STREAM_YUV_BACK, 40, False, w, h)
+          vipc_server.start_listener()
+          time.sleep(1) # wait for modeld to connect
+
+        vipc_server.send(VisionStreamType.VISION_STREAM_YUV_BACK, img.flatten().tobytes(), f.roadCameraState.frameId,
+                         f.roadCameraState.timestampSof, f.roadCameraState.timestampEof)
+
         with Timeout(seconds=15):
           log_msgs.append(messaging.recv_one(sm.sock['modelV2']))
 
         spinner.update("modeld replay %d/%d" % (frame_idx, fr.frame_count))
 
+        frame_idx += 1
         if frame_idx >= fr.frame_count:
           break
   except KeyboardInterrupt:
