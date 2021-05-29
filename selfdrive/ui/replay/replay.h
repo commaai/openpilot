@@ -11,7 +11,7 @@
 #include "cereal/visionipc/visionipc_server.h"
 #include "selfdrive/common/util.h"
 #include "selfdrive/ui/qt/api.h"
-#include "selfdrive/ui/replay/filereader.h"
+#include "selfdrive/ui/replay/logreader.h"
 #include "selfdrive/ui/replay/framereader.h"
 
 
