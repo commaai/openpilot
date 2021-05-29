@@ -34,7 +34,11 @@ public:
 
 protected:
   void showEvent(QShowEvent *event) override;
+
+private:
   QList<LabelControl *> labels;
+  LabelControl *versionLbl;
+  LabelControl *lastUpdateTimeLbl;
 };
 
 class SettingsWindow : public QFrame {
