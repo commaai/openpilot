@@ -17,9 +17,10 @@ class CarControllerParams:
   STEER_DRIVER_FACTOR = 1         # from dbc
 
 class CAR:
-  CX5 = "Mazda CX-5 2017"
-  CX9 = "Mazda CX-9 2017"
-  Mazda3 = "Mazda3 2017"
+  CX5 = "Mazda CX-5"
+  CX9 = "Mazda CX-9"
+  Mazda3 = "Mazda 3"
+  Mazda6 = "Mazda 6"
 
 class LKAS_LIMITS:
   STEER_THRESHOLD = 15
@@ -117,6 +118,27 @@ FW_VERSIONS = {
       b'P52G-21PS1-F\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'PYKE-21PS1-B\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
+  },
+
+  CAR.Mazda6: {
+    (Ecu.eps, 0x730, None): [
+      b'GBEF-3210X-B-00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.engine, 0x7e0, None): [
+      b'PYH7-188K2-C\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdRadar, 0x764, None): [
+      b'K131-67XK2-A\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.esp, 0x760, None): [
+      b'GBVH-437K2-B\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdCamera, 0x706, None): [
+      b'B61L-67XK2-S\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+      b'PYH7-21PS1-B\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
   }
 }
 
@@ -125,6 +147,7 @@ DBC = {
   CAR.CX5: dbc_dict('mazda_2017', None),
   CAR.CX9: dbc_dict('mazda_2017', None),
   CAR.Mazda3: dbc_dict('mazda_2017', None),
+  CAR.Mazda6: dbc_dict('mazda_2017', None),
 }
 
-GEN1 = [ CAR.CX5, CAR.CX9, CAR.Mazda3 ]
+GEN1 = [ CAR.CX5, CAR.CX9, CAR.Mazda3, CAR.Mazda6 ]
