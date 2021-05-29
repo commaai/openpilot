@@ -12,8 +12,8 @@ fi
 docker run \
        -it \
        --rm \
-       --volume $OP_ROOT:/tmp/openpilot \
-       --workdir /tmp/openpilot \
-       --env PYTHONPATH=/tmp/openpilot \
+       --volume $OP_ROOT:$OP_ROOT \
+       --workdir $PWD \
+       --env PYTHONPATH=$OP_ROOT \
        ghcr.io/commaai/openpilot-base:latest \
        /bin/bash
