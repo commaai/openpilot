@@ -99,7 +99,6 @@ class TestCarModel(unittest.TestCase):
 
   def test_car_interface(self):
     # TODO: also check for checkusm and counter violations from can parser
-    print(f'offending car model: {self.car_model}')
     can_invalid_cnt = 0
     CC = car.CarControl.new_message()
     for i, msg in enumerate(self.can_msgs):
