@@ -220,7 +220,7 @@ void Replay::stream() {
 
     uint64_t t0r = timer.nsecsElapsed();
     while ((eit != events.end()) && seek_ts < 0) {
-      cereal::Event::Reader e = (*eit);
+      cereal::Event::Reader e = (*eit)->msg.getRoot<cereal::Event>();
       std::string type;
       KJ_IF_MAYBE(e_, static_cast<capnp::DynamicStruct::Reader>(e).which()) {
         type = e_->getProto().getName();
@@ -277,11 +277,8 @@ void Replay::stream() {
 
         // publish msg
         if (sm == nullptr) {
-          capnp::MallocMessageBuilder msg;
-          msg.setRoot(e);
-          auto words = capnp::messageToFlatArray(msg);
-          auto bytes = words.asBytes();
-          pm->send(type.c_str(), (unsigned char*)bytes.begin(), bytes.size());
+          auto bytes = (*eit)->words.asBytes();
+          pm->send(type.c_str(), (capnp::byte *)bytes.begin(), bytes.size());
         } else {
           std::vector<std::pair<std::string, cereal::Event::Reader>> messages;
           messages.push_back({type, e});

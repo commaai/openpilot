@@ -40,7 +40,16 @@ private:
   QString file;
 };
 
-typedef QMultiMap<uint64_t, cereal::Event::Reader> Events;
+class EventMsg {
+  public:
+  EventMsg(const kj::ArrayPtr<const capnp::word> &amsg) : msg(amsg) {
+    words = kj::ArrayPtr<const capnp::word>(amsg.begin(), msg.getEnd());
+  }
+  kj::ArrayPtr<const capnp::word> words;
+  capnp::FlatArrayMessageReader msg;
+};
+
+typedef QMultiMap<uint64_t, EventMsg*> Events;
 
 class LogReader : public FileReader {
 Q_OBJECT

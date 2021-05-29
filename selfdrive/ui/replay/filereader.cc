@@ -78,22 +78,15 @@ LogReader::~LogReader() {
 }
 
 void LogReader::mergeEvents(int dled) {
-  auto amsg = kj::arrayPtr((const capnp::word*)(raw.data() + event_offset), (dled-event_offset)/sizeof(capnp::word));
+  auto words = kj::arrayPtr((const capnp::word*)(raw.data() + event_offset), (dled-event_offset)/sizeof(capnp::word));
   Events events_local;
   QMap<int, QPair<int, int> > eidx_local;
 
-  while (amsg.size() > 0) {
+  while (words.size() > 0) {
     try {
-      capnp::FlatArrayMessageReader cmsg = capnp::FlatArrayMessageReader(amsg);
+      std::unique_ptr<EventMsg> message = std::make_unique<EventMsg>(words);
 
-      // this needed? it is
-      capnp::FlatArrayMessageReader *tmsg =
-        new capnp::FlatArrayMessageReader(kj::arrayPtr(amsg.begin(), cmsg.getEnd()));
-
-      amsg = kj::arrayPtr(cmsg.getEnd(), amsg.end());
-
-      cereal::Event::Reader event = tmsg->getRoot<cereal::Event>();
-      events_local.insert(event.getLogMonoTime(), event);
+      cereal::Event::Reader event = message->msg.getRoot<cereal::Event>();
 
       // hack
       // TODO: rewrite with callback
@@ -103,7 +96,9 @@ void LogReader::mergeEvents(int dled) {
       }
 
       // increment
-      event_offset = (char*)cmsg.getEnd() - raw.data();
+      words = kj::arrayPtr(message->msg.getEnd(), words.end());
+      event_offset = (char*)message->msg.getEnd() - raw.data();
+      events_local.insert(event.getLogMonoTime(), message.release());
     } catch (const kj::Exception& e) {
       // partial messages trigger this
       //qDebug() << e.getDescription().cStr();
