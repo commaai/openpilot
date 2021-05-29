@@ -30,24 +30,20 @@ def replace_calib(msg, calib):
   return msg
 
 
-def camera_replay(lr, fr, desire=None, calib=None):
+def model_replay(lr, fr, desire=None, calib=None):
 
   spinner = Spinner()
   spinner.update("starting model replay")
 
+  vipc_server = None
   pm = messaging.PubMaster(['roadCameraState', 'liveCalibration', 'lateralPlan'])
   sm = messaging.SubMaster(['modelV2'])
-  vipc_server = None
 
   # TODO: add dmonitoringmodeld
-  print("preparing procs")
-  managed_processes['modeld'].prepare()
   try:
-    print("starting procs")
     managed_processes['modeld'].start()
     time.sleep(5)
     sm.update(1000)
-    print("procs started")
 
     desires_by_index = {v:k for k,v in log.LateralPlan.Desire.schema.enumerants.items()}
 
@@ -92,11 +88,8 @@ def camera_replay(lr, fr, desire=None, calib=None):
   except KeyboardInterrupt:
     pass
 
-  print("replay done")
   spinner.close()
   managed_processes['modeld'].stop()
-  time.sleep(2)
-  managed_processes['camerad'].stop()
   return log_msgs
 
 if __name__ == "__main__":
@@ -109,7 +102,7 @@ if __name__ == "__main__":
   lr = LogReader(get_url(TEST_ROUTE, 0))
   fr = FrameReader(get_url(TEST_ROUTE, 0, log_type="fcamera"))
 
-  log_msgs = camera_replay(list(lr), fr)
+  log_msgs = model_replay(list(lr), fr)
 
   failed = False
   if not update:
