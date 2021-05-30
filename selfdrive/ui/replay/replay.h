@@ -88,10 +88,10 @@ private:
   Route route_;
   std::mutex segment_lock_;
   std::map<int, std::shared_ptr<Segment>> segments_;
-  
+    
   // vipc server
   CameraServer camera_server_;
 
-  // TODO: quit replay gracefully
   std::atomic<bool> exit_ = false;
+  std::vector<std::thread> threads_;
 };

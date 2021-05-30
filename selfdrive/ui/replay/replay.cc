@@ -31,9 +31,16 @@ Replay::Replay(SubMaster *sm, QObject *parent) : sm_(sm), QObject(parent) {
   if (sm_ == nullptr) {
     pm_ = new PubMaster(s);
   }
+  // start threads
+  threads_.push_back(std::thread(&Replay::segmentQueueThread, this));
+  threads_.push_back(std::thread(&Replay::streamThread, this));
 }
 
 Replay::~Replay() {
+  exit_ = true;
+  for (auto &t : threads_) {
+    t.join();
+  }
   clear();
   delete pm_;
 }
@@ -56,14 +63,6 @@ bool Replay::load(const Route &route) {
   current_segment_ = route_.segments().firstKey();
   qInfo() << "replay route " << route_.name() << " from " << current_segment_ << ", total segments:" << route.segments().size();
 
-  // start threads
-  typedef void (Replay::*threadFunc)();
-  threadFunc thread_func[] = {&Replay::segmentQueueThread, &Replay::streamThread};
-  for (int i = 0; i < std::size(thread_func); ++i) {
-    QThread *t = QThread::create(thread_func[i], this);
-    connect(t, &QThread::finished, t, &QThread::deleteLater);
-    t->start();
-  }
   return true;
 }
 
