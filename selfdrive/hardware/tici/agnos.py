@@ -39,18 +39,27 @@ class StreamingDecompressor:
     self.sha256.update(result)
     return result
 
+SPARSE_CHUNK_FMT = struct.Struct('H2xI4x')
 def unsparsify(f: StreamingDecompressor) -> Generator[bytes, None, None]:
+  # https://source.android.com/devices/bootloader/images#sparse-format
   magic = struct.unpack("I", f.read(4))[0]
   assert(magic == 0xed26ff3a)
 
   # Version
-  major, minor = struct.unpack("HH4x", f.read(8)) # (ignore header sizes)
+  major = struct.unpack("H", f.read(2))[0]
+  minor = struct.unpack("H", f.read(2))[0]
   assert(major == 1 and minor == 0)
 
-  block_sz, num_chunks = struct.unpack("I4xI4x", f.read(16))
+  f.read(2)  # file header size
+  f.read(2)  # chunk header size
+
+  block_sz = struct.unpack("I", f.read(4))[0]
+  f.read(4)  # total blocks
+  num_chunks = struct.unpack("I", f.read(4))[0]
+  f.read(4)  # crc checksum
 
   for _ in range(num_chunks):
-    chunk_type, out_blocks = struct.unpack("H2xI4x", f.read(12))
+    chunk_type, out_blocks = SPARSE_CHUNK_FMT.unpack(f.read(12))
 
     if chunk_type == 0xcac1:  # Raw
       # TODO: yield in smaller chunks. Yielding only block_sz is too slow. Largest observed data chunk is 252 MB.
