@@ -33,17 +33,26 @@ public:
   CameraServer();
   ~CameraServer();
   void stop();
-  void cameraThread(CameraType cam_type, VisionStreamType stream_type);
-  void ensureServer(Segment *seg);
-  bool hasCamera(CameraType type) const { return frame_queues_[type] != nullptr; }
-  void pushFrame(CameraType type, std::shared_ptr<Segment> seg, uint32_t segmentId) { frame_queues_[type]->push({seg, segmentId}); }
+  void ensureServerForSegment(Segment *seg);
+  inline bool hasCamera(CameraType type) const { return camera_states_[type] != nullptr; }
+  inline void pushFrame(CameraType type, std::shared_ptr<Segment> seg, uint32_t segmentId) {
+    camera_states_[type]->queue.push({seg, segmentId});
+  }
+
+private:
   cl_device_id device_id_ = nullptr;
   cl_context context_ = nullptr;
   VisionIpcServer *vipc_server_ = nullptr;
-  int road_cam_width_ = 0, road_cam_height_ = 0;
-  SafeQueue<std::pair<std::shared_ptr<Segment>, uint32_t>> *frame_queues_[MAX_CAMERAS] = {};
   std::atomic<bool> exit_ = false;
-  std::vector<std::thread> threads_;
+
+  struct CameraState{
+    std::thread thread;
+    int width, height;
+    VisionStreamType stream_type;
+    SafeQueue<std::pair<std::shared_ptr<Segment>, uint32_t>> queue;
+  };
+  CameraState *camera_states_[MAX_CAMERAS] = {};
+  void cameraThread(CameraType cam_type, CameraState *s);
 };
 
 class Replay : public QObject {

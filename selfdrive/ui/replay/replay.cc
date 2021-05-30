@@ -38,16 +38,6 @@ Replay::~Replay() {
   delete pm_;
 }
 
-void Replay::clear() {
-  std::unique_lock lk(segment_lock_);
-
-  camera_server_.stop();
-  segments_.clear();
-  current_ts_ = 0;
-  seek_ts_ = 0;
-  current_segment_ = seek_ts_ = 0;
-}
-
 bool Replay::load(const QString &routeName) {
   Route route(routeName);
   if (!route.load()) {
@@ -64,7 +54,7 @@ bool Replay::load(const Route &route) {
   std::unique_lock lk(segment_lock_);
   route_ = route;
   current_segment_ = route_.segments().firstKey();
-  qInfo() << "replay route " << route_.name() << " from " << current_segment_ <<  ", total segments:" << route.segments().size();
+  qInfo() << "replay route " << route_.name() << " from " << current_segment_ << ", total segments:" << route.segments().size();
 
   // start threads
   typedef void (Replay::*threadFunc)();
@@ -77,16 +67,19 @@ bool Replay::load(const Route &route) {
   return true;
 }
 
-// return nullptr if segment is not loaded
-std::shared_ptr<Segment> Replay::getSegment(int n) {
+
+void Replay::clear() {
   std::unique_lock lk(segment_lock_);
-  auto it = segments_.find(n);
-  return (it != segments_.end() && it->second->loaded) ? it->second : nullptr;
+
+  camera_server_.stop();
+  segments_.clear();
+  current_ts_ = seek_ts_ = 0;
+  current_segment_ = 0;
 }
 
-// void Replay::ensureVipcServer(const Segment *seg) {
- 
-// }
+void Replay::relativeSeek(int ts) {
+  seekTo(current_ts_ + ts);
+}
 
 void Replay::seekTo(int to_ts) {
   std::unique_lock lk(segment_lock_);
@@ -95,14 +88,9 @@ void Replay::seekTo(int to_ts) {
   int seg_num = std::clamp(to_ts / SEGMENT_LENGTH, 0, route_.maxSegmentNum());
   // skip to next or prev segment if seg_num is missing
   if (!route_.segments().contains(seg_num)) {
-    if (seg_num > current_segment_) {
-      if (int n = route_.nextSegNum(seg_num); n != -1) {
-        seg_num = n;
-      }
-    } else {
-      if (int n = route_.prevSegNum(seg_num); n != -1) {
-        seg_num = n;
-      }
+    int n = seg_num > current_segment_ ? route_.nextSegNum(seg_num) : route_.prevSegNum(seg_num);
+    if (n != -1) {
+      seg_num = n;
     }
   }
   seek_ts_ = to_ts;
@@ -110,12 +98,7 @@ void Replay::seekTo(int to_ts) {
   qInfo() << "seeking to " << seek_ts_;
 }
 
-void Replay::relativeSeek(int ts) {
-  seekTo(current_ts_ + ts);
-}
-
 void Replay::pushFrame(CameraType cam_type, int seg_num, uint32_t frame_id) {
-  // do nothing if no video stream for this type
   if (!camera_server_.hasCamera(cam_type)) return;
 
   // find encodeIdx in adjacent segments_.
@@ -131,7 +114,12 @@ void Replay::pushFrame(CameraType cam_type, int seg_num, uint32_t frame_id) {
   qDebug() << "failed to find eidx for frame " << frame_id << " in segment " << seg_num;
 }
 
-// threads
+// return nullptr if segment is not loaded
+std::shared_ptr<Segment> Replay::getSegment(int n) {
+  std::unique_lock lk(segment_lock_);
+  auto it = segments_.find(n);
+  return (it != segments_.end() && it->second->loaded) ? it->second : nullptr;
+}
 
 void Replay::segmentQueueThread() {
   // maintain the segment window
@@ -141,7 +129,7 @@ void Replay::segmentQueueThread() {
     for (int i = 0; i < seg_nums.size(); ++i) {
       const int seg_num = seg_nums[i];
       const int start_idx = std::max(idx - BACKWARD_SEGS, 0);
-      const int end_idx = std::min(idx + FORWARD_SEGS, (int)seg_nums.size() -1);
+      const int end_idx = std::min(idx + FORWARD_SEGS, (int)seg_nums.size() - 1);
       std::unique_lock lk(segment_lock_);
       if (i >= start_idx && i <= end_idx) {
         // add segment
@@ -170,10 +158,9 @@ void Replay::streamThread() {
       QThread::msleep(100);
       continue;
     }
+    camera_server_.ensureServerForSegment(seg.get());
 
-    camera_server_.ensureServer(seg.get());
     const Events &events = seg->log->events();
-
     // TODO: use initData's logMonoTime
     if (route_start_ts == 0) {
       route_start_ts = events.firstKey();
@@ -182,11 +169,9 @@ void Replay::streamThread() {
     uint64_t t0 = route_start_ts + (seek_ts_ * 1e9);
     auto eit = events.lowerBound(t0);
     if (eit != events.end()) {
-      qInfo() << "no end";
+      // adjust t0 to current event's tm.
       t0 = eit.key();
       seek_ts_ = (t0 - route_start_ts) / 1e9;
-    } else {
-      qInfo() << "end";
     }
     qDebug() << "unlogging at" << seek_ts_;
     uint64_t t0r = timer.nsecsElapsed();
@@ -230,7 +215,7 @@ void Replay::streamThread() {
           auto bytes = (*eit)->bytes();
           pm_->send(type.c_str(), (capnp::byte *)bytes.begin(), bytes.size());
         } else {
-          // TODO: subMaster is not thread safe. are we sure we need to do this?
+          // TODO: subMaster is not thread safe.
           sm_->update_msgs(nanos_since_boot(), {{type, e}});
         }
       }
@@ -251,7 +236,7 @@ void Replay::streamThread() {
   }
 }
 
-// class Replay::Segment
+// class Segment
 
 Segment::Segment(int seg_num, const SegmentFiles &files) : seg_num(seg_num) {
   // fallback to qlog if rlog not exists.
@@ -269,7 +254,7 @@ Segment::Segment(int seg_num, const SegmentFiles &files) : seg_num(seg_num) {
   });
 
   // start framereader threads
-  auto read_cam_frames = [=](CameraType type, const QString &file) {
+  auto read_frames = [=](CameraType type, const QString &file) {
     if (!file.isEmpty()) {
       loading += 1;
       FrameReader *fr = frames[type] = new FrameReader(file.toStdString());
@@ -283,9 +268,9 @@ Segment::Segment(int seg_num, const SegmentFiles &files) : seg_num(seg_num) {
 
   // fallback to qcamera if camera not exists.
   const QString &camera = files.camera.isEmpty() ? files.qcamera : files.camera;
-  read_cam_frames(RoadCam, camera);
-  read_cam_frames(DriverCam, files.dcamera);
-  read_cam_frames(WideRoadCam, files.wcamera);
+  read_frames(RoadCam, camera);
+  read_frames(DriverCam, files.dcamera);
+  read_frames(WideRoadCam, files.wcamera);
 }
 
 Segment::~Segment() {
@@ -297,7 +282,7 @@ Segment::~Segment() {
 // class CameraServer
 
 CameraServer::CameraServer() {
-   device_id_ = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
+  device_id_ = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
   context_ = CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id_, NULL, NULL, &err));
 }
 
@@ -306,7 +291,7 @@ CameraServer::~CameraServer() {
   CL_CHECK(clReleaseContext(context_));
 }
 
-void CameraServer::ensureServer(Segment *seg) {
+void CameraServer::ensureServerForSegment(Segment *seg) {
   static VisionStreamType stream_types[] = {
       [RoadCam] = VISION_STREAM_RGB_BACK,
       [DriverCam] = VISION_STREAM_RGB_FRONT,
@@ -314,10 +299,20 @@ void CameraServer::ensureServer(Segment *seg) {
   };
 
   if (vipc_server_) {
-    const FrameReader *fr = seg->frames[RoadCam];
-    if (fr && fr->valid() && (fr->width != road_cam_width_ || fr->height != road_cam_height_)) {
-      // restart vipc server if road camera size changed.(switch between qcameras and cameras)
-      stop();
+    // restart vipc server if camera changed. such as switched between qcameras and cameras.
+    for (auto cam_type : ALL_CAMERAS) {
+      const FrameReader *fr = seg->frames[cam_type];
+      CameraState *state = camera_states_[cam_type];
+      bool camera_changed = false;
+      if (fr && fr->valid()) {
+        camera_changed = !state || state->width != fr->width || state->height != fr->height; 
+      } else if (state != nullptr) {
+        camera_changed = true;
+      }
+      if (camera_changed) {
+        stop();
+        break;
+      }
     }
   }
   if (!vipc_server_) {
@@ -328,57 +323,52 @@ void CameraServer::ensureServer(Segment *seg) {
       if (!vipc_server_) {
         vipc_server_ = new VisionIpcServer("camerad", device_id_, context_);
       }
-
       vipc_server_->create_buffers(stream_types[cam_type], UI_BUF_COUNT, true, fr->width, fr->height);
-      if (cam_type == RoadCam) {
-        road_cam_width_ = fr->width;
-        road_cam_height_ = fr->height;
-      }
-
-      frame_queues_[cam_type] = new SafeQueue<std::pair<std::shared_ptr<Segment>, uint32_t>>();
-      threads_.push_back(std::thread(&CameraServer::cameraThread, this, cam_type, stream_types[cam_type]));
+      
+      CameraState *state = camera_states_[cam_type] = new CameraState;
+      state->width = fr->width;
+      state->height = fr->height;
+      state->stream_type = stream_types[cam_type];
+      state->thread = std::thread(&CameraServer::cameraThread, this, cam_type, state);
     }
     if (vipc_server_) {
       vipc_server_->start_listener();
-      qDebug() << "start vipc server";
     }
   }
 }
 
-void CameraServer::cameraThread(CameraType cam_type, VisionStreamType stream_type) {
+void CameraServer::cameraThread(CameraType cam_type, CameraServer::CameraState *s) {
   while (!exit_) {
     std::pair<std::shared_ptr<Segment>, uint32_t> frame;
-    if (!frame_queues_[cam_type]->try_pop(frame, 20)) continue;
+    if (!s->queue.try_pop(frame, 20)) continue;
 
     auto [seg, segmentId] = frame;
 
     FrameReader *frm = seg->frames[cam_type];
     if (uint8_t *data = frm->get(segmentId)) {
       VisionIpcBufExtra extra = {};
-      VisionBuf *buf = vipc_server_->get_buffer(stream_type);
+      VisionBuf *buf = vipc_server_->get_buffer(s->stream_type);
       memcpy(buf->addr, data, frm->getRGBSize());
       vipc_server_->send(buf, &extra, false);
     }
   }
-  qDebug() << "camera " << cam_type << " stopped ";
+  qDebug() << "camera thread " << cam_type << " stopped ";
 }
 
 void CameraServer::stop() {
   if (!vipc_server_) return;
 
-  qDebug() << "stop camera server";
+  // stop threads
   exit_ = true;
-  for (auto &t : threads_) {
-    t.join();
+  for (int i = 0; i < std::size(camera_states_); ++i) {
+    if (CameraState *state = camera_states_[i]) {
+      state->thread.join();
+      delete state;
+      camera_states_[i] = nullptr;
+    }
   }
   exit_ = false;
-  threads_.clear();
-  for (int i = 0; i < std::size(frame_queues_); ++i) {
-    delete frame_queues_[i];
-    frame_queues_[i] = nullptr;
-  }
 
   delete vipc_server_;
   vipc_server_ = nullptr;
-  road_cam_width_ = road_cam_height_ = 0;
 }
