@@ -27,7 +27,7 @@ signals:
 
 private:
   void startHttpRequest();
-  QNetworkReply *reply_;
+  QNetworkReply *reply_ = nullptr;
   QUrl url_;
 };
 

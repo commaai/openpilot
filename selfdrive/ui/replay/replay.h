@@ -16,19 +16,6 @@
 #include "selfdrive/ui/replay/filereader.h"
 #include "selfdrive/ui/replay/framereader.h"
 
-class Segment {
-public:
-  Segment(int segment_id, const SegmentFiles &files);
-  ~Segment();
-
-public:
-  const int id;
-  LogReader *log = nullptr;
-  FrameReader *frames[MAX_CAMERAS] = {};
-  std::atomic<bool> loaded = false;
-  std::atomic<int> loading = 0;
-};
-
 class Replay : public QObject {
   Q_OBJECT
 
@@ -42,6 +29,8 @@ public:
   void clear();
 
 private:
+  class Segment;
+
   std::shared_ptr<Segment> getSegment(int n);
 
   void streamThread();
@@ -62,7 +51,7 @@ private:
   // segments
   Route route_;
   std::mutex segment_lock_;
-  std::vector<std::shared_ptr<Segment>> segments_;
+  std::map<int, std::shared_ptr<Segment>> segments_;
   
   // vipc server
   cl_device_id device_id_ = nullptr;

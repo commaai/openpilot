@@ -6,7 +6,6 @@
 
 #include "selfdrive/ui/replay/replay.h"
 
-// TODO handle key press here
 std::atomic<bool> exit_ = false;
 
 int getch() {

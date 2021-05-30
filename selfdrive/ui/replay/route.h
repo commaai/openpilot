@@ -2,10 +2,8 @@
 
 #include <QMap>
 #include <QString>
-#include <QVector>
 
 struct SegmentFiles {
-  int id;
   QString rlog;
   QString qlog;
   QString camera;
@@ -31,9 +29,13 @@ public:
   bool loadSegments(const QMap<int, QMap<QString, QString>> &segment_paths);
 
   inline const QString &name() const { return route_; };
-  inline const QVector<SegmentFiles>& segments() const { return segments_; }
+  inline const QMap<int, SegmentFiles> segments() const { return segments_; }
+  inline int maxSegmentNum() { return segments_.lastKey(); }
+  int nextSegNum(int n) const;
+  int prevSegNum(int n) const;
+  inline int segmentCount() { return segments_.size(); }
 
  private:
   QString route_;
-  QVector<SegmentFiles> segments_;
+  QMap<int, SegmentFiles> segments_;
 };

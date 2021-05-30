@@ -19,8 +19,7 @@ const std::string LOG_ROOT =
 
 Route::Route(const QString &route) : route_(route) {}
 
-Route::~Route() {
-}
+Route::~Route() {}
 
 bool Route::load() {
   if (!loadFromLocal()) {
@@ -59,8 +58,8 @@ bool Route::loadFromLocal() {
 
   QMap<int, QMap<QString, QString>> segment_paths;
   for (auto folder : folders) {
-    const int seg_id = folder.split("--")[2].toInt();
-    auto &paths = segment_paths[seg_id];
+    const int seg_num = folder.split("--")[2].toInt();
+    auto &paths = segment_paths[seg_num];
 
     QDir segment(log_root.filePath(folder));
     for (auto f : segment.entryList(QDir::Files)) {
@@ -97,8 +96,8 @@ bool Route::loadFromJson(const QString &json) {
     for (const auto &p : obj[key].toArray()) {
       std::string path = p.toString().toStdString();
       if (std::smatch match; std::regex_match(path, match, regexp)) {
-        const int seg_id = std::stoi(match[2].str());
-        segment_paths[seg_id][key] = p.toString();
+        const int seg_num = std::stoi(match[2].str());
+        segment_paths[seg_num][key] = p.toString();
       }
     }
   }
@@ -108,17 +107,25 @@ bool Route::loadFromJson(const QString &json) {
 bool Route::loadSegments(const QMap<int, QMap<QString, QString>> &segment_paths) {
   segments_.clear();
 
-  for (int seg_id : segment_paths.keys()) {
-    auto &paths = segment_paths[seg_id];
-    SegmentFiles files;
-    files.id = seg_id;
+  for (int seg_num : segment_paths.keys()) {
+    auto &paths = segment_paths[seg_num];
+    SegmentFiles &files = segments_[seg_num];
     files.rlog = paths.value("logs");
     files.qlog = paths.value("qlogs");
     files.camera = paths.value("cameras");
     files.dcamera = paths.value("dcameras");
     files.wcamera = paths.value("ecameras");
     files.qcamera = paths.value("qcameras");
-    segments_.push_back(files);
   }
   return true;
+}
+
+int Route::nextSegNum(int n) const {
+  auto it = segments_.upperBound(n);
+  return it != segments_.end() ? it.key() : -1;
+}
+
+int Route::prevSegNum(int n) const {
+  auto it = segments_.lowerBound(n);
+  return it != segments_.end() ? it.key() : -1;
 }
