@@ -25,6 +25,8 @@ class Segment {
   LogReader *log = nullptr;
   FrameReader *frames[MAX_CAMERAS] = {};
   std::atomic<bool> loaded = false;
+
+private:
   std::atomic<int> loading = 0;
 };
 
@@ -50,34 +52,31 @@ private:
     int width, height;
     VisionStreamType stream_type;
     SafeQueue<std::pair<std::shared_ptr<Segment>, uint32_t>> queue;
+
   };
   CameraState *camera_states_[MAX_CAMERAS] = {};
   void cameraThread(CameraType cam_type, CameraState *s);
 };
 
-class Replay : public QObject {
-  Q_OBJECT
-
+class Replay  {
 public:
-  Replay(SubMaster *sm = nullptr, QObject *parent = nullptr);
+  Replay(SubMaster *sm = nullptr);
   ~Replay();
-  bool load(const QString &routeName);
-  bool load(const Route &route);
+  bool start(const QString &routeName);
+  bool start(const Route &route);
   void seekTo(int to_ts);
   void relativeSeek(int ts);
-  void clear();
+  void stop();
 
 private:
-  std::shared_ptr<Segment> getSegment(int n);
+  std::shared_ptr<Segment> getSegment(int segment);
+  void queueSegment(int segment);
 
   void streamThread();
-  void segmentQueueThread();
-  void cameraThread(CameraType cam_type, VisionStreamType stream_type);
-  
   void pushFrame(CameraType type, int seg_id, uint32_t frame_id);
 
   std::atomic<int64_t> current_ts_ = 0, seek_ts_ = 0;
-  std::atomic<int> current_segment_ = 0;
+  std::atomic<int> current_segment_ = -1;
 
   // messaging
   SubMaster *sm_ = nullptr;
@@ -86,12 +85,12 @@ private:
 
   // segments
   Route route_;
-  std::mutex segment_lock_;
+  std::mutex mutex_;
   std::map<int, std::shared_ptr<Segment>> segments_;
     
   // vipc server
   CameraServer camera_server_;
 
   std::atomic<bool> exit_ = false;
-  std::vector<std::thread> threads_;
+  std::thread stream_thread_;
 };

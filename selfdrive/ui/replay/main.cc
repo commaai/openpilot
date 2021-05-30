@@ -66,8 +66,8 @@ int main(int argc, char *argv[]){
     printf("Usage: ./replay \"route\"\n");
     return 1;
   }
-  Replay *replay = new Replay(nullptr, &app);
-  replay->load(route);
+  Replay *replay = new Replay();
+  replay->start(route);
 
   QThread *t = QThread::create(keyboardThread, replay);
   QObject::connect(t, &QThread::finished, t, &QThread::deleteLater);
