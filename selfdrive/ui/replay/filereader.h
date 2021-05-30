@@ -2,7 +2,6 @@
 
 #include <thread>
 
-#include <QElapsedTimer>
 #include <QMultiMap>
 #include <QNetworkAccessManager>
 #include <QReadWriteLock>
@@ -10,61 +9,62 @@
 #include <QVector>
 #include <QWidget>
 
-#include <bzlib.h>
 #include <capnp/serialize.h>
-#include <kj/io.h>
 #include "cereal/gen/cpp/log.capnp.h"
-
-#include "tools/clib/channel.h"
 
 class FileReader : public QObject {
   Q_OBJECT
 
 public:
-  FileReader(const QString& file_);
-  void startRequest(const QUrl &url);
-  ~FileReader();
-  virtual void readyRead();
-  void httpFinished();
-  virtual void done() {};
+  FileReader(const QString &fn, QObject *parent);
+  void read();
+  void abort();
 
-public slots:
-  void process();
-
-protected:
-  QNetworkReply *reply;
+signals:
+  void finished(const QByteArray &dat);
+  void failed(const QString &err);
 
 private:
-  QNetworkAccessManager *qnam;
-  QElapsedTimer timer;
-  QString file;
+  void startHttpRequest();
+  QNetworkReply *reply_ = nullptr;
+  QUrl url_;
 };
 
-typedef QMultiMap<uint64_t, cereal::Event::Reader> Events;
+class Event {
+public:
+  Event(const kj::ArrayPtr<const capnp::word> &amsg) : reader(amsg) {
+    words = kj::ArrayPtr<const capnp::word>(amsg.begin(), reader.getEnd());
+  }
+  inline cereal::Event::Reader event() { return reader.getRoot<cereal::Event>(); }
+  inline kj::ArrayPtr<const capnp::byte> bytes() const { return words.asBytes(); }
 
-class LogReader : public FileReader {
-Q_OBJECT
+  kj::ArrayPtr<const capnp::word> words;
+  capnp::FlatArrayMessageReader reader;
+};
+
+typedef QMultiMap<uint64_t, Event*> Events;
+
+class LogReader : public QObject {
+  Q_OBJECT
+
 public:
   LogReader(const QString& file, Events *, QReadWriteLock* events_lock_, QMap<int, QPair<int, int> > *eidx_);
   ~LogReader();
 
-  void readyRead();
-  void done() { is_done = true; };
-  bool is_done = false;
-
 private:
-  bz_stream bStream;
+  void start();
+  void fileReady(const QByteArray &dat);
+  void parseEvents(kj::ArrayPtr<const capnp::word> words);
 
-  // backing store
-  QByteArray raw;
-
-  std::thread *parser;
-  int event_offset;
-  channel<int> cdled;
+  FileReader *file_reader_ = nullptr;
+  std::vector<uint8_t> raw_;
+  Events events_;
 
   // global
-  void mergeEvents(int dled);
   Events *events;
   QReadWriteLock* events_lock;
   QMap<int, QPair<int, int> > *eidx;
+
+  std::atomic<bool> exit_ = false;
+  QThread *thread_ = nullptr;
 };

@@ -1,5 +1,6 @@
 #include "selfdrive/ui/replay/replay.h"
 
+#include <QElapsedTimer>
 #include <QJsonDocument>
 #include <QJsonObject>
 
@@ -69,12 +70,7 @@ void Replay::addSegment(int n) {
     return;
   }
 
-  QThread *t = new QThread;
-  lrs.insert(n, new LogReader(log_paths.at(n).toString(), &events, &events_lock, &eidx));
-
-  lrs[n]->moveToThread(t);
-  QObject::connect(t, &QThread::started, lrs[n], &LogReader::process);
-  t->start();
+  lrs[n] = new LogReader(log_paths.at(n).toString(), &events, &events_lock, &eidx);
 
   QThread *frame_thread = QThread::create([=]{
     FrameReader *frame_reader = new FrameReader(qPrintable(camera_paths.at(n).toString()));
@@ -220,7 +216,7 @@ void Replay::stream() {
 
     uint64_t t0r = timer.nsecsElapsed();
     while ((eit != events.end()) && seek_ts < 0) {
-      cereal::Event::Reader e = (*eit);
+      cereal::Event::Reader e = (*eit)->event();
       std::string type;
       KJ_IF_MAYBE(e_, static_cast<capnp::DynamicStruct::Reader>(e).which()) {
         type = e_->getProto().getName();
@@ -277,10 +273,7 @@ void Replay::stream() {
 
         // publish msg
         if (sm == nullptr) {
-          capnp::MallocMessageBuilder msg;
-          msg.setRoot(e);
-          auto words = capnp::messageToFlatArray(msg);
-          auto bytes = words.asBytes();
+          auto bytes = (*eit)->bytes();
           pm->send(type.c_str(), (unsigned char*)bytes.begin(), bytes.size());
         } else {
           std::vector<std::pair<std::string, cereal::Event::Reader>> messages;
