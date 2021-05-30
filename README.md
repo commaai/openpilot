@@ -173,7 +173,7 @@ Community Maintained Cars and Features
 | Nissan    | Rogue 2018-20                 | ProPILOT          | Stock            | 0mph               | 0mph         |
 | Nissan    | X-Trail 2017                  | ProPILOT          | Stock            | 0mph               | 0mph         |
 | SEAT      | Ateca 2018                    | Driver Assistance | Stock            | 0mph               | 0mph         |
-| SEAT      | Leon 2020                     | Driver Assistance | Stock            | 0mph               | 0mph         |
+| SEAT      | Leon 2017, 2020               | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Škoda     | Kodiaq 2018                   | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Škoda     | Octavia 2015, 2019            | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Škoda     | Scala 2020                    | Driver Assistance | Stock            | 0mph               | 0mph         |
