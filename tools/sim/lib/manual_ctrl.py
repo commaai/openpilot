@@ -143,7 +143,7 @@ def wheel_poll_thread(q):
 
   while True:
     evbuf = jsdev.read(8)
-    _, value, mtype, number = struct.unpack('IhBB', evbuf)
+    value, mtype, number = struct.unpack('4xhBB', evbuf)
     # print(mtype, number, value)
     if mtype & 0x02:  # wheel & paddles
       axis = axis_map[number]
@@ -154,33 +154,30 @@ def wheel_poll_thread(q):
         normalized = (1 - fvalue) * 50
         q.put(str("throttle_%f" % normalized))
 
-      if axis == "rz":  # brake
+      elif axis == "rz":  # brake
         fvalue = value / 32767.0
         axis_states[axis] = fvalue
         normalized = (1 - fvalue) * 50
         q.put(str("brake_%f" % normalized))
 
-      if axis == "x":  # steer angle
+      elif axis == "x":  # steer angle
         fvalue = value / 32767.0
         axis_states[axis] = fvalue
         normalized = fvalue
         q.put(str("steer_%f" % normalized))
 
-    if mtype & 0x01:  # buttons
-      if number in [0, 19]:  # X
-        if value == 1:  # press down
+    elif mtype & 0x01:  # buttons
+      if value == 1: # press down
+        if number in [0, 19]:  # X
           q.put(str("cruise_down"))
 
-      if number in [3, 18]:  # triangle
-        if value == 1:  # press down
+        elif number in [3, 18]:  # triangle
           q.put(str("cruise_up"))
 
-      if number in [1, 6]:  # square
-        if value == 1:  # press down
+        elif number in [1, 6]:  # square
           q.put(str("cruise_cancel"))
 
-      if number in [10, 21]:  # R3
-        if value == 1:  # press down
+        elif number in [10, 21]:  # R3
           q.put(str("reverse_switch"))
 
 if __name__ == '__main__':
