@@ -3,6 +3,7 @@ import json
 import os
 import subprocess
 import time
+import numpy as np
 import unittest
 from collections import Counter
 from pathlib import Path
@@ -146,6 +147,12 @@ class TestOnroad(unittest.TestCase):
     cpu_ok = check_cpu_usage(proclogs[0], proclogs[-1])
     self.assertTrue(cpu_ok)
 
+  def test_model_timings(self):
+    cfgs = [("modelV2", 0.035, 0.03), ("driverState", 0.022, 0.018)]
+    for (s, instant_max, avg_max) in cfgs:
+      ts = [getattr(getattr(m, s), "modelExecutionTime") for m in self.lr if m.which() == s]
+      self.assertLess(min(ts), instant_max, f"high '{s}' execution time: {min(ts)}")
+      self.assertLess(np.mean(ts), avg_max, f"high avg '{s}' execution time: {np.mean(ts)}")
 
 if __name__ == "__main__":
   unittest.main()
