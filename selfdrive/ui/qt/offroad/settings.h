@@ -48,8 +48,8 @@ public:
   explicit SettingsWindow(QWidget *parent = 0) : QFrame(parent) {};
 
 protected:
-  void hideEvent(QHideEvent *event);
-  void showEvent(QShowEvent *event);
+  void hideEvent(QHideEvent *event) override;
+  void showEvent(QShowEvent *event) override;
 
 signals:
   void closeSettings();
