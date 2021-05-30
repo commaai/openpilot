@@ -36,7 +36,7 @@ class CAR:
   HIGHLANDERH = "TOYOTA HIGHLANDER HYBRID 2018"
   HIGHLANDERH_TSS2 = "TOYOTA HIGHLANDER HYBRID 2020"
   AVALON = "TOYOTA AVALON 2016"
-  AVALONH = "TOYOTA AVALON HYBRID 2019" 
+  AVALONH_2019 = "TOYOTA AVALON HYBRID 2019"
   RAV4_TSS2 = "TOYOTA RAV4 2019"
   COROLLA_TSS2 = "TOYOTA COROLLA TSS2 2019"
   COROLLAH_TSS2 = "TOYOTA COROLLA HYBRID TSS2 2019"
@@ -304,7 +304,7 @@ FW_VERSIONS = {
       b'8646F0703000\x00\x00\x00\x00',
     ],
   },
-  CAR.AVALONH: {
+  CAR.AVALONH_2019: {
     (Ecu.esp, 0x7b0, None): [
       b'F152641040\x00\x00\x00\x00\x00\x00',
     ],
@@ -1663,7 +1663,7 @@ DBC = {
   CAR.HIGHLANDERH: dbc_dict('toyota_highlander_hybrid_2018_pt_generated', 'toyota_adas'),
   CAR.HIGHLANDERH_TSS2: dbc_dict('toyota_nodsu_hybrid_pt_generated', 'toyota_tss2_adas'),
   CAR.AVALON: dbc_dict('toyota_avalon_2017_pt_generated', 'toyota_adas'),
-  CAR.AVALONH: dbc_dict('toyota_nodsu_hybrid_pt_generated', 'toyota_adas'),
+  CAR.AVALONH_2019: dbc_dict('toyota_nodsu_hybrid_pt_generated', 'toyota_adas'),
   CAR.RAV4_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
   CAR.COROLLA_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
   CAR.COROLLAH_TSS2: dbc_dict('toyota_nodsu_hybrid_pt_generated', 'toyota_tss2_adas'),
